@@ -62,6 +62,24 @@ const KELOMPOK = [
     tingkat: "usulan",
     syarat: "perkara e-Court; berkeyakinan ragu tidak menimpa isian tangan",
   },
+  {
+    id: "sipp-lanjutan-pasti",
+    kode: ["8705", "8704", "8433"],
+    untuk: "semua",
+    berkas: "aleta_bot/services/abtIsianSippLanjutan.js",
+    sumber: "SIPP perkara_mediasi (hasil Y1: tanggal dan isi kesepakatan; hasil Y2: alasan pencabutan)",
+    tingkat: "otomatis",
+    syarat: "perkara yang hasil mediasinya Y1 atau Y2",
+  },
+  {
+    id: "sipp-lanjutan-ragu",
+    kode: ["1183", "0303", "0185"],
+    untuk: "semua",
+    berkas: "aleta_bot/services/abtIsianSippLanjutan.js",
+    sumber: "SIPP: sidang ikrar pertama + 6 bulan; tanggal pendaftaran itsbat; tanggal kuasa Tergugat",
+    tingkat: "usulan",
+    syarat: "usulan ragu (tidak tercentang sendiri, tidak menimpa isian petugas)",
+  },
 ];
 
 // Tanya jawab / keterangan saksi (kunci dari susun.ts kunciTanyaJawab) yang disusun "Susun keterangan saksi".
@@ -93,7 +111,7 @@ const TANPA_SUMBER = {
 
 // Sumber data yang MUNGKIN bagi isian yang belum terisi (dipakai kolom "sumber yang mungkin" di daftar cek).
 const KURASI = {
-  "0185": ["e-Court (lampiran surat kuasa Tergugat)", "SIPP perkara_pengacara.tanggal_kuasa pihak 2 = tanggal register kepaniteraan, bukan tanggal surat kuasa; Tergugat berkuasa hanya ±1% perkara (34 dari 3267 sejak 2023)."],
+  "0185": ["SIPP perkara_pengacara.tanggal_kuasa pihak 2 (usulan ragu) / e-Court lampiran surat kuasa", "Kolom SIPP sering tanggal register, bukan tanggal surat kuasa; Tergugat berkuasa ±1% perkara (34 dari 3267 sejak 2023)."],
   "0157": ["e-Court (surat kuasa/jawaban Tergugat)", "Nama kantor advokat tidak disimpan SIPP; Tergugat berkuasa ±1% perkara."],
   "9110": ["e-Court (kartu advokat/berita acara sumpah)", "Tergugat berkuasa ±1% perkara; bawaan layar: Pengadilan Tinggi Sulawesi Tengah."],
   "8892": ["e-Court (kartu advokat/berita acara sumpah pada lampiran kuasa)", "Bawaan layar Perlu diisi: Pengadilan Tinggi Sulawesi Tengah; ABT mengisi bila dikosongkan pada sebagian blangko."],
@@ -114,18 +132,19 @@ const KURASI = {
   "7178": ["relaas panggilan (ALETA relaas) - penilaian hakim", ""],
   "8436": ["berkas e-Court (kesimpulan Penggugat)", "Registri cerai: belum."],
   "8437": ["berkas e-Court (kesimpulan Tergugat)", "Registri cerai: belum."],
-  "8433": ["SIPP (sidang/penetapan pencabutan) + BAS", "Registri cerai: belum - tidak tertulis di posita."],
+  "8433": ["hakim mengetik (usulan hanya bila mediasi Y2)", "Sejak 2023: 41 isian petugas, hanya 4 berasal dari mediasi Y2; alasan lain (perbaikan gugatan, alamat tidak ditemukan) bebas."],
   "5171": ["berkas e-Court (gugatan: penghasilan)", ""],
   "5271": ["berkas e-Court (gugatan: penghasilan)", ""],
   "9050": ["berkas e-Court (petitum kenaikan nafkah anak)", ""],
   "8712": ["ALETA Kasir (teguran panjar) - belum dicatat terstruktur", ""],
   "8713": ["ALETA Kasir (teguran panjar) - belum dicatat terstruktur", ""],
   "8714": ["ALETA Kasir (laporan panjar) - belum dicatat terstruktur", ""],
-  "1183": ["dihitung dari SIPP (putusan berkekuatan hukum tetap + 6 bulan)", "Registri cerai: belum; hanya 1 blangko."],
+  "1183": ["SIPP perkara_ikrar_talak.tanggal_sidang_pertama + 6 bulan (usulan ragu)", "Cocok persis dengan 7 dari 11 isian petugas; sisanya sidang ikrar pertama diundur."],
   "1081": ["SIPP perkara_ikrar_talak (tanggal PHS baru)", "Hanya 1 blangko."],
   "1154": ["ALETA/SIPP bantuan panggilan", "Hanya 1 blangko."],
   "1232": ["ALETA/SIPP bantuan panggilan", "Hanya 1 blangko."],
   "5230": ["ALETA Kasir (ongkos panggilan)", "Hanya 1 blangko."],
+  "0303": ["tidak ada tanggal pasti di SIPP; usulan ragu = tanggal pendaftaran", "412 isian petugas: 189 persis sama (46%), 92% jatuh 0-1 hari dari tanggal pendaftaran; juru sita memilih hari pengumuman."],
   "9134": ["belum dikaji", "Isian blangko BAS permohonan."],
   "8603": ["posita (modul asal-usul/hadhanah ada); modul cerai-kumulasi belum", ""],
   "9347": ["e-Court (surat kuasa/anggaran dasar badan hukum)", "Hanya perkara ekonomi syariah badan hukum."],
@@ -138,9 +157,11 @@ const POLA_HAKIM = /pertimbangan|penilaian|fakta|kesimpulan|pokok|alasan (permoh
 const POLA_BUKTI = /alat bukti|bukti (surat|elektronik)|nomor|tanggal surat/i;
 
 function SUMBER_MUNGKIN(r) {
+  if (r.cadangan === "titik" && r.status !== "ya") return { sumberMungkin: "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin", catatan: (KURASI[r.kode[0]] || [])[0] || "" };
   for (const k of r.kode) if (KURASI[k]) return { sumberMungkin: KURASI[k][0], catatan: KURASI[k][1] };
   const nama = `${r.nama} ${r.namaAsli}`;
   if (r.status === "ya") return { sumberMungkin: "", catatan: "" };
+  if (r.cadangan === "titik") return { sumberMungkin: "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin", catatan: "" };
   if (POLA_HAKIM.test(nama)) return { sumberMungkin: "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)", catatan: "" };
   if (POLA_BUKTI.test(nama)) return { sumberMungkin: "berkas e-Court (lampiran bukti; butuh baca dokumen)", catatan: "" };
   return { sumberMungkin: "belum dikaji", catatan: "" };

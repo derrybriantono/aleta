@@ -24,6 +24,7 @@ type Isian = {
   namaAsli: string;
   jenis: string;
   wajib: boolean;
+  cadangan: string;
   status: "ya" | "sebagian" | "tidak";
   jumlahBlangko: number;
   pengisi: Pengisi[];
@@ -45,6 +46,14 @@ const registri = (() => {
   };
   return semuaModul();
 })();
+
+/** Sama dengan jenisCadangan di scripts/isi-sipp-abt/bangun-daftar-cek.cjs: cadangan yang dicetak ABT sendiri bila isian dikosongkan. */
+function jenisCadangan(namaAsli: string): string {
+  if (/kosong\s*=\s*(dari\s*)?(data\s*)?sipp|\(otomatis|bila\s*sipp\s*tidak\s*memuat|isian\s*bila\s*sipp|kosong\s*=\s*otomatis/i.test(namaAsli)) return "sipp";
+  if (/kosong\s*=\s*titik|boleh\s*dikosongkan|^CORET:/i.test(namaAsli)) return "titik";
+  if (/kosong\s*=|\(bawaan|bawaan:/i.test(namaAsli)) return "bawaan";
+  return "";
+}
 
 const bacaBerkas = (rel: string) => fs.readFileSync(path.join(akar, rel), "utf8");
 const adaToken = (isi: string, kode: string) => new RegExp(`(?<![0-9])${kode}(?![0-9])`).test(isi);
@@ -89,7 +98,7 @@ describe("daftar cek isian popup blangko Derry", () => {
       }
       for (const p of i.pengisi) {
         if (p.jenis === "abt-bawaan") {
-          if (i.wajib || !/kosong\s*=\s*dari\s*sipp|\(otomatis/i.test(i.namaAsli)) salah.push(`${i.kunci}: bukan isian bawaan ABT`);
+          if (!["sipp", "bawaan"].includes(jenisCadangan(i.namaAsli)) || jenisCadangan(i.namaAsli) !== i.cadangan) salah.push(`${i.kunci}: bukan isian bawaan ABT`);
         } else if (p.jenis === "saksi") {
           if (i.jenis !== "tj" || !bacaBerkas(p.berkas).includes("BATAS_SAKSI_SDG")) salah.push(`${i.kunci}: pengisi saksi tak terbukti`);
         } else if (p.jenis === "kelompok" || p.jenis === "f23") {

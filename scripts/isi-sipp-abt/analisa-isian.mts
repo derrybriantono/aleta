@@ -12,7 +12,7 @@ const req = createRequire(path.join(akar, "aleta_bot", "package.json"));
 const mysql = req("mysql");
 const { satukanPenandaTerpecah } = req(path.join(akar, "aleta_bot", "services", "abtMesinVariabel.js"));
 const { indeksRtf } = await import(pathToFileURL(path.join(akar, "scripts", "isi-sipp-abt", "indeks-rtf.mjs")).href);
-const { susunIsian } = await import(pathToFileURL(path.join(process.cwd(), "src/app/api/aleta-ecourt/blangko-derry/susun.ts")).href);
+const { susunIsian, rujukan } = await import(pathToFileURL(path.join(process.cwd(), "src/app/api/aleta-ecourt/blangko-derry/susun.ts")).href);
 
 const KELUAR = process.argv[2];
 const SKEMA_KATALOG = "aps_badilag_i18";
@@ -38,6 +38,16 @@ for (const jalur of fx.berkas as string[]) {
   const teks = satukanPenandaTerpecah(mentah).rtf as string;
   const penanda = [...new Set([...teks.matchAll(/#(\d{3,5})#/g)].map((m) => m[1]))];
   const s = susunIsian(penanda, katalog);
+  // Penutup rantai (semua variabel yang tampil di halaman ABT blangko ini): penanda RTF + rujukan berantai.
+  const tutup = new Set<string>();
+  const tumpuk = [...penanda];
+  while (tumpuk.length) {
+    const k = tumpuk.shift() as string;
+    if (tutup.has(k)) continue;
+    tutup.add(k);
+    const d = katalog.get(k);
+    if (d) for (const r of rujukan(d)) if (!tutup.has(r)) tumpuk.push(r);
+  }
   const m = jalur.match(/^derry_briantono\/([^/]+)\/([^/]+)$/);
   hasil.push({
     jalur,
@@ -45,6 +55,7 @@ for (const jalur of fx.berkas as string[]) {
     berkas: m?.[2] ?? "",
     sumberRtf: sumber.p,
     penanda,
+    tutup: [...tutup].filter((k) => katalog.has(k)),
     isian: s.isian.map((i: any) => ({ kode: i.kode, nama: i.nama, namaAsli: i.namaAsli, jenis: i.jenis, wajib: i.wajib, tingkat: i.tingkat, pemicu: i.pemicu, keadaan: i.keadaan, langsung: i.langsung, bawaan: i.bawaan.slice(0, 120), tj: i.tj ? i.tj.kunci : "" })),
     otomatis: s.otomatis.map((o: any) => ({ kode: o.kode, jenis: o.jenis })),
     takDikenal: s.takDikenal,

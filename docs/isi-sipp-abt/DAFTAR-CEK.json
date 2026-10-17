@@ -28,10 +28,11 @@
   "blangko": 982,
   "blangkoTanpaIsian": 31,
   "isianUnik": 252,
-  "ya": 102,
+  "ya": 128,
   "sebagian": 30,
-  "tidak": 120,
-  "tanpaSumber": 44,
+  "tidak": 94,
+  "tanpaSumber": 34,
+  "opsionalTitik": 5,
   "penandaTakDikenal": 53
  },
  "penandaTakDikenal": {
@@ -88,6 +89,96 @@
   "9654": 6,
   "0243": 472,
   "03517": 21
+ },
+ "ukuranLanjutan": {
+  "perkaraDiperiksa": 3267,
+  "dihitung": {
+   "1183": {
+    "perkara": 328,
+    "pasti_cukup": 0,
+    "ragu": 328
+   },
+   "8433": {
+    "perkara": 26,
+    "pasti_cukup": 26,
+    "ragu": 0
+   },
+   "8704": {
+    "perkara": 8,
+    "pasti_cukup": 8,
+    "ragu": 0
+   },
+   "8705": {
+    "perkara": 8,
+    "pasti_cukup": 8,
+    "ragu": 0
+   },
+   "0303": {
+    "perkara": 738,
+    "pasti_cukup": 0,
+    "ragu": 738
+   },
+   "0185": {
+    "perkara": 34,
+    "pasti_cukup": 0,
+    "ragu": 34
+   }
+  },
+  "perJenis": {
+   "1183": {
+    "346": 328
+   },
+   "8433": {
+    "346": 5,
+    "347": 18,
+    "348": 1,
+    "364": 2
+   },
+   "8704": {
+    "346": 1,
+    "347": 2,
+    "348": 2,
+    "364": 3
+   },
+   "8705": {
+    "346": 1,
+    "347": 2,
+    "348": 2,
+    "364": 3
+   },
+   "0303": {
+    "360": 738
+   },
+   "0185": {
+    "346": 16,
+    "347": 5,
+    "348": 7,
+    "360": 1,
+    "364": 5
+   }
+  },
+  "ground": {
+   "1183": {
+    "diketikPetugas": 11,
+    "adaUsulan": 11,
+    "cocokPersis": 7
+   },
+   "8705": {
+    "diketikPetugas": 0,
+    "adaUsulan": 0,
+    "cocokPersis": 0
+   },
+   "0303": {
+    "diketikPetugas": 416,
+    "adaUsulan": 412,
+    "cocokPersis": 189
+   },
+   "0185": {
+    "diketikPetugas": 1,
+    "adaUsulan": 1,
+    "cocokPersis": 1
+   }
+  }
  },
  "blangko": [
   {
@@ -36451,9 +36542,13 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": false,
+   "cadangan": "sipp",
    "keadaan": "kuasaP",
    "pemicu": "11111",
+   "diketikPetugas": 0,
    "jumlahBlangko": 856,
+   "langsung": 32,
+   "bobotLangsung": 22304,
    "bobot": 376981,
    "cakupanBobot": 1,
    "contoh": [
@@ -36531,10 +36626,11 @@
     "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "abt-bawaan",
-     "id": "abt-bawaan",
+     "id": "abt-sipp",
      "berkas": "",
      "tingkat": "otomatis"
     },
@@ -36558,9 +36654,13 @@
    "jenis": "tanggal",
    "tingkat": "tambahan",
    "wajib": false,
+   "cadangan": "sipp",
    "keadaan": "kuasaP",
    "pemicu": "11111",
+   "diketikPetugas": 13,
    "jumlahBlangko": 490,
+   "langsung": 32,
+   "bobotLangsung": 22304,
    "bobot": 165317,
    "cakupanBobot": 1,
    "contoh": [
@@ -36635,10 +36735,11 @@
     "BAS Itsbat Nikah Gugur dan Cabut"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "abt-bawaan",
-     "id": "abt-bawaan",
+     "id": "abt-sipp",
      "berkas": "",
      "tingkat": "otomatis"
     },
@@ -36668,9 +36769,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "kuasaP",
    "pemicu": "11111",
+   "diketikPetugas": 25,
    "jumlahBlangko": 490,
+   "langsung": 130,
+   "bobotLangsung": 83701,
    "bobot": 165317,
    "cakupanBobot": 1,
    "contoh": [
@@ -36745,6 +36850,7 @@
     "BAS Itsbat Nikah Gugur dan Cabut"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -36772,9 +36878,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "kuasaP",
    "pemicu": "11111",
+   "diketikPetugas": 0,
    "jumlahBlangko": 490,
+   "langsung": 32,
+   "bobotLangsung": 22304,
    "bobot": 165317,
    "cakupanBobot": 1,
    "contoh": [
@@ -36849,6 +36959,7 @@
     "BAS Itsbat Nikah Gugur dan Cabut"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -36870,9 +36981,13 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": false,
+   "cadangan": "sipp",
    "keadaan": "kuasaP",
    "pemicu": "11111",
+   "diketikPetugas": 0,
    "jumlahBlangko": 490,
+   "langsung": 32,
+   "bobotLangsung": 22304,
    "bobot": 165317,
    "cakupanBobot": 1,
    "contoh": [
@@ -36947,10 +37062,11 @@
     "BAS Itsbat Nikah Gugur dan Cabut"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "abt-bawaan",
-     "id": "abt-bawaan",
+     "id": "abt-sipp",
      "berkas": "",
      "tingkat": "otomatis"
     },
@@ -36974,9 +37090,13 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": false,
+   "cadangan": "sipp",
    "keadaan": "kuasaP",
    "pemicu": "11111",
+   "diketikPetugas": 0,
    "jumlahBlangko": 487,
+   "langsung": 32,
+   "bobotLangsung": 22304,
    "bobot": 165314,
    "cakupanBobot": 1,
    "contoh": [
@@ -37050,10 +37170,11 @@
     "BAS Itsbat Nikah Gugur dan Cabut"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "abt-bawaan",
-     "id": "abt-bawaan",
+     "id": "abt-sipp",
      "berkas": "",
      "tingkat": "otomatis"
     },
@@ -37077,11 +37198,15 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "kuasaT",
    "pemicu": "11113",
+   "diketikPetugas": 1,
    "jumlahBlangko": 345,
+   "langsung": 94,
+   "bobotLangsung": 56717,
    "bobot": 142928,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputusan Dirjen 1465.rtf",
     "[99] BAS 1 P & T Tidak Hadir - Tunda Panggil P & T.rtf",
@@ -37133,10 +37258,18 @@
     "ALUR 08 Cerai Dicabut",
     "ALUR 09 Cerai Tidak Dapat Diterima (NO)"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "e-Court (lampiran surat kuasa Tergugat)",
-   "catatan": "SIPP perkara_pengacara.tanggal_kuasa pihak 2 = tanggal register kepaniteraan, bukan tanggal surat kuasa; Tergugat berkuasa hanya ±1% perkara (34 dari 3267 sejak 2023)."
+   "status": "sebagian",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "sipp-lanjutan-ragu",
+     "berkas": "aleta_bot/services/abtIsianSippLanjutan.js",
+     "tingkat": "usulan"
+    }
+   ],
+   "sumberMungkin": "SIPP perkara_pengacara.tanggal_kuasa pihak 2 (usulan ragu) / e-Court lampiran surat kuasa",
+   "catatan": "Kolom SIPP sering tanggal register, bukan tanggal surat kuasa; Tergugat berkuasa ±1% perkara (34 dari 3267 sejak 2023)."
   },
   {
    "kunci": "8549",
@@ -37148,9 +37281,13 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": false,
+   "cadangan": "sipp",
    "keadaan": "kuasaP",
    "pemicu": "11111",
+   "diketikPetugas": 0,
    "jumlahBlangko": 338,
+   "langsung": 32,
+   "bobotLangsung": 22304,
    "bobot": 142816,
    "cakupanBobot": 1,
    "contoh": [
@@ -37201,10 +37338,11 @@
     "ALUR 09 Cerai Tidak Dapat Diterima (NO)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "abt-bawaan",
-     "id": "abt-bawaan",
+     "id": "abt-sipp",
      "berkas": "",
      "tingkat": "otomatis"
     },
@@ -37228,9 +37366,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 359,
    "jumlahBlangko": 123,
+   "langsung": 35,
+   "bobotLangsung": 25072,
    "bobot": 141376,
    "cakupanBobot": 1,
    "contoh": [
@@ -37254,6 +37396,7 @@
     "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -37276,9 +37419,13 @@
    "jenis": "tj",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 259,
+   "langsung": 259,
+   "bobotLangsung": 134769,
    "bobot": 134769,
    "cakupanBobot": 1,
    "contoh": [
@@ -37338,6 +37485,7 @@
     "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "saksi",
@@ -37360,9 +37508,13 @@
    "jenis": "tj",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 259,
+   "langsung": 259,
+   "bobotLangsung": 134769,
    "bobot": 134769,
    "cakupanBobot": 1,
    "contoh": [
@@ -37422,6 +37574,7 @@
     "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "saksi",
@@ -37443,9 +37596,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 2009,
    "jumlahBlangko": 90,
+   "langsung": 87,
+   "bobotLangsung": 94939,
    "bobot": 97707,
    "cakupanBobot": 1,
    "contoh": [
@@ -37476,6 +37633,7 @@
     "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -37503,11 +37661,15 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 706,
    "jumlahBlangko": 104,
+   "langsung": 60,
+   "bobotLangsung": 18347,
    "bobot": 88549,
-   "cakupanBobot": 0.206,
+   "cakupanBobot": 0.994,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -37540,6 +37702,13 @@
     "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "- BAS ASAL USUL ANAK -",
+    "4a Harta Bersama",
+    "8 Asal Usul Anak",
+    "8 Asal Usul Anak - BAS",
+    "ALUR 13 Asal Usul Anak"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -37579,9 +37748,13 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": false,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 3,
    "jumlahBlangko": 168,
+   "langsung": 73,
+   "bobotLangsung": 35590,
    "bobot": 85272,
    "cakupanBobot": 1,
    "contoh": [
@@ -37607,6 +37780,7 @@
     "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -37628,9 +37802,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "insidentil",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 276,
+   "langsung": 4,
+   "bobotLangsung": 4680,
    "bobot": 84898,
    "cakupanBobot": 0,
    "contoh": [
@@ -37663,6 +37841,10 @@
     "9b Permohonan Umum"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT"
+   ],
    "pengisi": [],
    "sumberMungkin": "SIPP perkara_jadwal_sidang.keterangan / penetapan izin kuasa insidentil (tidak terstruktur)",
    "catatan": "Kuasa insidentil tidak punya kolom sendiri di SIPP; ±jarang."
@@ -37677,11 +37859,15 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 298,
    "jumlahBlangko": 97,
+   "langsung": 53,
+   "bobotLangsung": 13491,
    "bobot": 83693,
-   "cakupanBobot": 0.161,
+   "cakupanBobot": 0.998,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -37713,6 +37899,11 @@
     "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "- BAS ASAL USUL ANAK -",
+    "8 Asal Usul Anak - BAS",
+    "ALUR 13 Asal Usul Anak"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -37746,9 +37937,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "kuasaP",
    "pemicu": "11111",
+   "diketikPetugas": 44,
    "jumlahBlangko": 126,
+   "langsung": 126,
+   "bobotLangsung": 79021,
    "bobot": 79021,
    "cakupanBobot": 1,
    "contoh": [
@@ -37787,6 +37982,7 @@
     "ALUR 09 Cerai Tidak Dapat Diterima (NO)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -37814,9 +38010,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "ecourt",
    "pemicu": "",
+   "diketikPetugas": 30,
    "jumlahBlangko": 204,
+   "langsung": 68,
+   "bobotLangsung": 33300,
    "bobot": 75686,
    "cakupanBobot": 1,
    "contoh": [
@@ -37860,6 +38060,7 @@
     "ALUR 08 Cerai Dicabut"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -37881,9 +38082,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "prodeo",
    "pemicu": "11112",
+   "diketikPetugas": 3,
    "jumlahBlangko": 189,
+   "langsung": 35,
+   "bobotLangsung": 25072,
    "bobot": 70228,
    "cakupanBobot": 0,
    "contoh": [
@@ -37913,6 +38118,12 @@
     "9a Lain-Lain (Pengangkatan Anak)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada",
    "catatan": "Tanggal penetapan prodeo tidak disimpan SIPP (hasil putusan sela/pertimbangan hakim)."
@@ -37927,9 +38138,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": false,
+   "cadangan": "sipp",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 53,
    "jumlahBlangko": 132,
+   "langsung": 132,
+   "bobotLangsung": 66394,
    "bobot": 66394,
    "cakupanBobot": 1,
    "contoh": [
@@ -37968,10 +38183,11 @@
     "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "abt-bawaan",
-     "id": "abt-bawaan",
+     "id": "abt-sipp",
      "berkas": "",
      "tingkat": "otomatis"
     },
@@ -37996,9 +38212,13 @@
    "jenis": "tj",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 57,
+   "langsung": 57,
+   "bobotLangsung": 63351,
    "bobot": 63351,
    "cakupanBobot": 1,
    "contoh": [
@@ -38027,6 +38247,7 @@
     "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "saksi",
@@ -38049,9 +38270,13 @@
    "jenis": "tj",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 58,
+   "langsung": 58,
+   "bobotLangsung": 58004,
    "bobot": 58004,
    "cakupanBobot": 1,
    "contoh": [
@@ -38081,6 +38306,7 @@
     "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "saksi",
@@ -38102,9 +38328,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 370,
    "jumlahBlangko": 64,
+   "langsung": 64,
+   "bobotLangsung": 57135,
    "bobot": 57135,
    "cakupanBobot": 1,
    "contoh": [
@@ -38123,6 +38353,7 @@
     "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -38144,9 +38375,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "kuasaT",
    "pemicu": "11113",
+   "diketikPetugas": 0,
    "jumlahBlangko": 94,
+   "langsung": 94,
+   "bobotLangsung": 56717,
    "bobot": 56717,
    "cakupanBobot": 0,
    "contoh": [
@@ -38181,6 +38416,32 @@
     "ALUR 09 Cerai Tidak Dapat Diterima (NO)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "- BAS CONTRA PERCERAIAN -",
+    "- BAS VERSTEK PERCERAIAN -",
+    "1 Perceraian CG - BAS",
+    "10 Ekonomi Syariah - BAS",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah - BAS",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 02 Cerai Verstek 2 Sidang",
+    "ALUR 03 Cerai Verstek 3 Sidang atau Lebih",
+    "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)",
+    "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir",
+    "ALUR 08 Cerai Dicabut",
+    "ALUR 09 Cerai Tidak Dapat Diterima (NO)"
+   ],
    "pengisi": [],
    "sumberMungkin": "e-Court (surat kuasa/jawaban Tergugat)",
    "catatan": "Nama kantor advokat tidak disimpan SIPP; Tergugat berkuasa ±1% perkara."
@@ -38195,11 +38456,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "kuasaP",
    "pemicu": "11111",
+   "diketikPetugas": 0,
    "jumlahBlangko": 141,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 56394,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
     "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
@@ -38221,8 +38486,16 @@
     "6a Hak Asuh Anak (Hadhanah)",
     "6b Penguasaan Anak"
    ],
-   "status": "tidak",
-   "pengisi": [],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
    "sumberMungkin": "e-Court (kartu advokat/berita acara sumpah pada lampiran kuasa)",
    "catatan": "Bawaan layar Perlu diisi: Pengadilan Tinggi Sulawesi Tengah; ABT mengisi bila dikosongkan pada sebagian blangko."
   },
@@ -38236,9 +38509,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 364,
    "jumlahBlangko": 63,
+   "langsung": 63,
+   "bobotLangsung": 55223,
    "bobot": 55223,
    "cakupanBobot": 1,
    "contoh": [
@@ -38257,6 +38534,7 @@
     "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -38278,9 +38556,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 373,
    "jumlahBlangko": 63,
+   "langsung": 63,
+   "bobotLangsung": 55223,
    "bobot": 55223,
    "cakupanBobot": 1,
    "contoh": [
@@ -38299,6 +38581,7 @@
     "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -38320,9 +38603,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 374,
    "jumlahBlangko": 59,
+   "langsung": 59,
+   "bobotLangsung": 48203,
    "bobot": 48203,
    "cakupanBobot": 1,
    "contoh": [
@@ -38340,6 +38627,7 @@
     "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -38361,9 +38649,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 681,
    "jumlahBlangko": 64,
+   "langsung": 64,
+   "bobotLangsung": 46444,
    "bobot": 46444,
    "cakupanBobot": 1,
    "contoh": [
@@ -38391,6 +38683,7 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -38430,9 +38723,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 359,
    "jumlahBlangko": 55,
+   "langsung": 55,
+   "bobotLangsung": 41183,
    "bobot": 41183,
    "cakupanBobot": 1,
    "contoh": [
@@ -38447,6 +38744,7 @@
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -38468,9 +38766,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 319,
    "jumlahBlangko": 50,
+   "langsung": 50,
+   "bobotLangsung": 38764,
    "bobot": 38764,
    "cakupanBobot": 1,
    "contoh": [
@@ -38485,6 +38787,7 @@
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -38513,9 +38816,13 @@
    "jenis": "tj",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 57,
+   "langsung": 57,
+   "bobotLangsung": 37866,
    "bobot": 37866,
    "cakupanBobot": 1,
    "contoh": [
@@ -38541,6 +38848,7 @@
     "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "saksi",
@@ -38562,9 +38870,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 711,
    "jumlahBlangko": 65,
+   "langsung": 65,
+   "bobotLangsung": 37431,
    "bobot": 37431,
    "cakupanBobot": 0.998,
    "contoh": [
@@ -38594,6 +38906,12 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "- BAS ASAL USUL ANAK -",
+    "8 Asal Usul Anak",
+    "8 Asal Usul Anak - BAS",
+    "ALUR 13 Asal Usul Anak"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -38633,9 +38951,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 34,
    "jumlahBlangko": 39,
+   "langsung": 39,
+   "bobotLangsung": 36343,
    "bobot": 36343,
    "cakupanBobot": 1,
    "contoh": [
@@ -38654,6 +38976,7 @@
     "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -38675,9 +38998,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 12,
    "jumlahBlangko": 85,
+   "langsung": 85,
+   "bobotLangsung": 36222,
    "bobot": 36222,
    "cakupanBobot": 1,
    "contoh": [
@@ -38714,6 +39041,7 @@
     "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -38735,9 +39063,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 25,
    "jumlahBlangko": 31,
+   "langsung": 31,
+   "bobotLangsung": 32919,
    "bobot": 32919,
    "cakupanBobot": 1,
    "contoh": [
@@ -38756,6 +39088,7 @@
     "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -38777,9 +39110,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 17,
    "jumlahBlangko": 30,
+   "langsung": 30,
+   "bobotLangsung": 32491,
    "bobot": 32491,
    "cakupanBobot": 1,
    "contoh": [
@@ -38798,6 +39135,7 @@
     "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -38819,9 +39157,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 15,
    "jumlahBlangko": 30,
+   "langsung": 23,
+   "bobotLangsung": 21219,
    "bobot": 32491,
    "cakupanBobot": 0,
    "contoh": [
@@ -38840,6 +39182,15 @@
     "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)"
+   ],
    "pengisi": [],
    "sumberMungkin": "keterangan saksi pada BAS (teks bebas)",
    "catatan": "Registri cerai: belum - tidak tertulis di posita."
@@ -38854,9 +39205,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 13,
    "jumlahBlangko": 29,
+   "langsung": 23,
+   "bobotLangsung": 21219,
    "bobot": 30579,
    "cakupanBobot": 0,
    "contoh": [
@@ -38875,6 +39230,15 @@
     "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)"
+   ],
    "pengisi": [],
    "sumberMungkin": "keterangan saksi pada BAS (teks bebas)",
    "catatan": "Registri cerai: belum - tidak tertulis di posita."
@@ -38890,9 +39254,13 @@
    "jenis": "tj",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 29,
+   "langsung": 29,
+   "bobotLangsung": 29002,
    "bobot": 29002,
    "cakupanBobot": 1,
    "contoh": [
@@ -38922,6 +39290,7 @@
     "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "saksi",
@@ -38943,11 +39312,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "sipp",
    "keadaan": "ghaib",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 42,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 25861,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
     "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
@@ -38960,8 +39333,16 @@
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
     "99 PTSP"
    ],
-   "status": "tidak",
-   "pengisi": [],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-sipp",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
    "sumberMungkin": "ALETA panggilan ghaib / pengumuman (belum tercatat terstruktur)",
    "catatan": "Tanggal pengumuman ghaib pertama dan kedua."
   },
@@ -38975,9 +39356,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "alasanH",
    "pemicu": "11117",
+   "diketikPetugas": 1,
    "jumlahBlangko": 35,
+   "langsung": 33,
+   "bobotLangsung": 22732,
    "bobot": 25072,
    "cakupanBobot": 0,
    "contoh": [
@@ -38992,6 +39377,12 @@
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada",
    "catatan": "Tanggal Tergugat berpindah agama/fasakh: SIPP tidak punya kolomnya."
@@ -39006,9 +39397,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "prodeo",
    "pemicu": "11112",
+   "diketikPetugas": 3,
    "jumlahBlangko": 35,
+   "langsung": 35,
+   "bobotLangsung": 25072,
    "bobot": 25072,
    "cakupanBobot": 0,
    "contoh": [
@@ -39023,6 +39418,12 @@
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada",
    "catatan": "Nomor SK prodeo tidak disimpan SIPP; ecourt_prodeo tidak memuat nomor penetapan. Terbukti di kode (abtUsulanService tidak_ada_sumber)."
@@ -39037,9 +39438,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "alasanC",
    "pemicu": "11116",
+   "diketikPetugas": 0,
    "jumlahBlangko": 35,
+   "langsung": 32,
+   "bobotLangsung": 22304,
    "bobot": 25072,
    "cakupanBobot": 0,
    "contoh": [
@@ -39054,6 +39459,12 @@
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (putusan pidana Tergugat diketahui dari bukti surat)",
    "catatan": "Alasan C; ±jarang."
@@ -39069,9 +39480,13 @@
    "jenis": "tj",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 73,
+   "langsung": 73,
+   "bobotLangsung": 21943,
    "bobot": 21943,
    "cakupanBobot": 1,
    "contoh": [
@@ -39106,6 +39521,7 @@
     "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "saksi",
@@ -39128,9 +39544,13 @@
    "jenis": "tj",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 73,
+   "langsung": 73,
+   "bobotLangsung": 21943,
    "bobot": 21943,
    "cakupanBobot": 1,
    "contoh": [
@@ -39165,6 +39585,7 @@
     "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "saksi",
@@ -39186,9 +39607,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 4,
    "jumlahBlangko": 21,
+   "langsung": 21,
+   "bobotLangsung": 18787,
    "bobot": 18787,
    "cakupanBobot": 0,
    "contoh": [
@@ -39216,6 +39641,25 @@
     "ALUR 09 Cerai Tidak Dapat Diterima (NO)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "- BAS CONTRA PERCERAIAN -",
+    "- BAS VERSTEK PERCERAIAN -",
+    "1 Perceraian CG - BAS",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT - BAS",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 02 Cerai Verstek 2 Sidang",
+    "ALUR 03 Cerai Verstek 3 Sidang atau Lebih",
+    "ALUR 09 Cerai Tidak Dapat Diterima (NO)"
+   ],
    "pengisi": [],
    "sumberMungkin": "relaas panggilan (ALETA relaas) - penilaian hakim",
    "catatan": ""
@@ -39230,9 +39674,13 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 13,
    "jumlahBlangko": 77,
+   "langsung": 77,
+   "bobotLangsung": 15034,
    "bobot": 15034,
    "cakupanBobot": 0,
    "contoh": [
@@ -39256,6 +39704,21 @@
     "6b Penguasaan Anak"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "10 Ekonomi Syariah",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5a Pembatalan Perkawinan",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "6b Penguasaan Anak"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (kesimpulan Penggugat)",
    "catatan": "Registri cerai: belum."
@@ -39270,9 +39733,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 701,
    "jumlahBlangko": 39,
+   "langsung": 39,
+   "bobotLangsung": 13721,
    "bobot": 13721,
    "cakupanBobot": 0.998,
    "contoh": [
@@ -39294,6 +39761,12 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "- BAS ASAL USUL ANAK -",
+    "8 Asal Usul Anak",
+    "8 Asal Usul Anak - BAS",
+    "ALUR 13 Asal Usul Anak"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -39321,9 +39794,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 696,
    "jumlahBlangko": 33,
+   "langsung": 33,
+   "bobotLangsung": 13703,
    "bobot": 13703,
    "cakupanBobot": 0.998,
    "contoh": [
@@ -39344,6 +39821,12 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "- BAS ASAL USUL ANAK -",
+    "8 Asal Usul Anak",
+    "8 Asal Usul Anak - BAS",
+    "ALUR 13 Asal Usul Anak"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -39365,9 +39848,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 697,
    "jumlahBlangko": 33,
+   "langsung": 33,
+   "bobotLangsung": 13703,
    "bobot": 13703,
    "cakupanBobot": 0.998,
    "contoh": [
@@ -39388,6 +39875,12 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "- BAS ASAL USUL ANAK -",
+    "8 Asal Usul Anak",
+    "8 Asal Usul Anak - BAS",
+    "ALUR 13 Asal Usul Anak"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -39409,9 +39902,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 697,
    "jumlahBlangko": 33,
+   "langsung": 33,
+   "bobotLangsung": 13703,
    "bobot": 13703,
    "cakupanBobot": 0.998,
    "contoh": [
@@ -39432,6 +39929,12 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "- BAS ASAL USUL ANAK -",
+    "8 Asal Usul Anak",
+    "8 Asal Usul Anak - BAS",
+    "ALUR 13 Asal Usul Anak"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -39453,11 +39956,15 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 678,
    "jumlahBlangko": 33,
+   "langsung": 33,
+   "bobotLangsung": 13703,
    "bobot": 13703,
-   "cakupanBobot": 0.998,
+   "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -39475,8 +39982,15 @@
     "ALUR 11 Itsbat Nikah 1 Sidang",
     "ALUR 13 Asal Usul Anak"
    ],
-   "status": "sebagian",
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    },
     {
      "jenis": "deteksi",
      "id": "itsbat-nikah",
@@ -39484,7 +39998,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -39497,9 +40011,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 696,
    "jumlahBlangko": 33,
+   "langsung": 33,
+   "bobotLangsung": 13703,
    "bobot": 13703,
    "cakupanBobot": 0.998,
    "contoh": [
@@ -39520,6 +40038,12 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "- BAS ASAL USUL ANAK -",
+    "8 Asal Usul Anak",
+    "8 Asal Usul Anak - BAS",
+    "ALUR 13 Asal Usul Anak"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -39541,9 +40065,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 15,
    "jumlahBlangko": 82,
+   "langsung": 82,
+   "bobotLangsung": 12830,
    "bobot": 12830,
    "cakupanBobot": 1,
    "contoh": [
@@ -39568,6 +40096,7 @@
     "6b Penguasaan Anak"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -39590,9 +40119,13 @@
    "jenis": "tj",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 27,
+   "langsung": 27,
+   "bobotLangsung": 12355,
    "bobot": 12355,
    "cakupanBobot": 0,
    "contoh": [
@@ -39620,6 +40153,25 @@
     "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "10 Ekonomi Syariah - BAS",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -39635,9 +40187,13 @@
    "jenis": "tj",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 26,
+   "langsung": 26,
+   "bobotLangsung": 12353,
    "bobot": 12353,
    "cakupanBobot": 0,
    "contoh": [
@@ -39664,6 +40220,24 @@
     "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -39679,9 +40253,13 @@
    "jenis": "tj",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 26,
+   "langsung": 26,
+   "bobotLangsung": 12353,
    "bobot": 12353,
    "cakupanBobot": 0,
    "contoh": [
@@ -39708,6 +40286,24 @@
     "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -39722,11 +40318,15 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 41,
    "jumlahBlangko": 66,
+   "langsung": 66,
+   "bobotLangsung": 12127,
    "bobot": 12127,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "BAS ALUR 08 [A] BAS 1 P Hadir & T Tidak Hadir - Cabut di Sidang Pertama sebelum Mediasi.rtf",
     "[98] [Cabut] 5. Cerai P Hadir & T Tidak Hadir - Setelah Pembuktian.rtf",
@@ -39781,10 +40381,18 @@
     "ALUR 08 Cerai Dicabut",
     "BAS Itsbat Nikah Gugur dan Cabut"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "SIPP (sidang/penetapan pencabutan) + BAS",
-   "catatan": "Registri cerai: belum - tidak tertulis di posita."
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "sipp-lanjutan-pasti",
+     "berkas": "aleta_bot/services/abtIsianSippLanjutan.js",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "hakim mengetik (usulan hanya bila mediasi Y2)",
+   "catatan": "Sejak 2023: 41 isian petugas, hanya 4 berasal dari mediasi Y2; alasan lain (perbaikan gugatan, alamat tidak ditemukan) bebas."
   },
   {
    "kunci": "9958",
@@ -39796,9 +40404,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 188,
    "jumlahBlangko": 25,
+   "langsung": 25,
+   "bobotLangsung": 10689,
    "bobot": 10689,
    "cakupanBobot": 1,
    "contoh": [
@@ -39818,6 +40430,7 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -39845,9 +40458,13 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 3,
    "jumlahBlangko": 48,
+   "langsung": 44,
+   "bobotLangsung": 7816,
    "bobot": 10234,
    "cakupanBobot": 0,
    "contoh": [
@@ -39870,6 +40487,20 @@
     "6b Penguasaan Anak"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5a Pembatalan Perkawinan",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "6b Penguasaan Anak"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (kesimpulan Tergugat)",
    "catatan": "Registri cerai: belum."
@@ -39884,9 +40515,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 277,
    "jumlahBlangko": 19,
+   "langsung": 19,
+   "bobotLangsung": 9197,
    "bobot": 9197,
    "cakupanBobot": 0.997,
    "contoh": [
@@ -39906,6 +40541,12 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "- BAS ASAL USUL ANAK -",
+    "8 Asal Usul Anak",
+    "8 Asal Usul Anak - BAS",
+    "ALUR 13 Asal Usul Anak"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -39927,9 +40568,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 277,
    "jumlahBlangko": 19,
+   "langsung": 19,
+   "bobotLangsung": 9197,
    "bobot": 9197,
    "cakupanBobot": 0.997,
    "contoh": [
@@ -39949,6 +40594,12 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "- BAS ASAL USUL ANAK -",
+    "8 Asal Usul Anak",
+    "8 Asal Usul Anak - BAS",
+    "ALUR 13 Asal Usul Anak"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -39970,9 +40621,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 699,
    "jumlahBlangko": 29,
+   "langsung": 29,
+   "bobotLangsung": 8819,
    "bobot": 8819,
    "cakupanBobot": 0.995,
    "contoh": [
@@ -39994,6 +40649,13 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "- BAS ASAL USUL ANAK -",
+    "7 Wali Adhal",
+    "8 Asal Usul Anak",
+    "8 Asal Usul Anak - BAS",
+    "ALUR 13 Asal Usul Anak"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -40015,9 +40677,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 699,
    "jumlahBlangko": 26,
+   "langsung": 26,
+   "bobotLangsung": 8810,
    "bobot": 8810,
    "cakupanBobot": 0.996,
    "contoh": [
@@ -40038,6 +40704,12 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "- BAS ASAL USUL ANAK -",
+    "8 Asal Usul Anak",
+    "8 Asal Usul Anak - BAS",
+    "ALUR 13 Asal Usul Anak"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -40059,9 +40731,13 @@
    "jenis": "tj",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 13,
+   "langsung": 13,
+   "bobotLangsung": 7086,
    "bobot": 7086,
    "cakupanBobot": 1,
    "contoh": [
@@ -40085,6 +40761,7 @@
     "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "saksi",
@@ -40106,9 +40783,13 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "titik",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 38,
+   "langsung": 38,
+   "bobotLangsung": 5717,
    "bobot": 5717,
    "cakupanBobot": 0,
    "contoh": [
@@ -40124,9 +40805,16 @@
     "9a Lain-Lain (Pengangkatan Anak) - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "2 Itsbat Nikah - BAS",
+    "6 Perwalian - BAS",
+    "8 Asal Usul Anak - BAS",
+    "9 Penetapan Ahli Waris - BAS",
+    "9a Lain-Lain (Pengangkatan Anak) - BAS"
+   ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": "Isian blangko BAS permohonan."
+   "sumberMungkin": "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin",
+   "catatan": "belum dikaji"
   },
   {
    "kunci": "0364",
@@ -40138,9 +40826,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 267,
    "jumlahBlangko": 11,
+   "langsung": 11,
+   "bobotLangsung": 5616,
    "bobot": 5616,
    "cakupanBobot": 1,
    "contoh": [
@@ -40158,6 +40850,7 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -40185,9 +40878,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 263,
    "jumlahBlangko": 11,
+   "langsung": 11,
+   "bobotLangsung": 5616,
    "bobot": 5616,
    "cakupanBobot": 1,
    "contoh": [
@@ -40205,6 +40902,7 @@
     "ALUR 13 Asal Usul Anak"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -40232,9 +40930,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 456,
    "jumlahBlangko": 21,
+   "langsung": 21,
+   "bobotLangsung": 5403,
    "bobot": 5403,
    "cakupanBobot": 1,
    "contoh": [
@@ -40250,6 +40952,7 @@
     "98 Relaas"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -40283,9 +40986,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 6,
+   "langsung": 6,
+   "bobotLangsung": 4758,
    "bobot": 4758,
    "cakupanBobot": 0,
    "contoh": [
@@ -40299,6 +41006,11 @@
     "1c Perceraian Kumulasi Itsbat Nikah"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -40313,11 +41025,15 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 31,
+   "langsung": 8,
+   "bobotLangsung": 4686,
    "bobot": 4727,
-   "cakupanBobot": 0.01,
+   "cakupanBobot": 0.001,
    "contoh": [
     "BAS KUMULASI [2] BAS Putus Verstek CG Kumulasi Hak Asuh Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
     "BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Anak dan Nafkah Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
@@ -40335,6 +41051,9 @@
     "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -40374,9 +41093,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "insidentil",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 4,
+   "langsung": 4,
+   "bobotLangsung": 4680,
    "bobot": 4680,
    "cakupanBobot": 0,
    "contoh": [
@@ -40388,6 +41111,10 @@
     "1a Perceraian CT"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada terstruktur (penetapan izin Ketua)",
    "catatan": ""
@@ -40402,9 +41129,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "insidentil",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 4,
+   "langsung": 4,
+   "bobotLangsung": 4680,
    "bobot": 4680,
    "cakupanBobot": 0,
    "contoh": [
@@ -40416,6 +41147,10 @@
     "1a Perceraian CT"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada terstruktur (penetapan izin Ketua)",
    "catatan": "Hubungan penerima kuasa dengan pemberi kuasa."
@@ -40430,9 +41165,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "insidentil",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 4,
+   "langsung": 4,
+   "bobotLangsung": 4680,
    "bobot": 4680,
    "cakupanBobot": 0,
    "contoh": [
@@ -40444,6 +41183,10 @@
     "1a Perceraian CT"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada terstruktur (penetapan izin Ketua)",
    "catatan": "Nomor izin Ketua Pengadilan."
@@ -40458,11 +41201,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "insidentil",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 4,
+   "langsung": 4,
+   "bobotLangsung": 4680,
    "bobot": 4680,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah (P Tidak Pernah Hadir).rtf",
     "[98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah.rtf"
@@ -40471,8 +41218,16 @@
     "1 Perceraian CG",
     "1a Perceraian CT"
    ],
-   "status": "tidak",
-   "pengisi": [],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
    "sumberMungkin": "penilaian hakim",
    "catatan": ""
   },
@@ -40486,9 +41241,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 3,
    "jumlahBlangko": 10,
+   "langsung": 10,
+   "bobotLangsung": 4280,
    "bobot": 4280,
    "cakupanBobot": 0,
    "contoh": [
@@ -40500,6 +41259,9 @@
     "1a Perceraian CT"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1a Perceraian CT"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (gugatan: penghasilan)",
    "catatan": ""
@@ -40514,9 +41276,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 8,
    "jumlahBlangko": 10,
+   "langsung": 10,
+   "bobotLangsung": 4280,
    "bobot": 4280,
    "cakupanBobot": 1,
    "contoh": [
@@ -40528,6 +41294,7 @@
     "1a Perceraian CT"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -40555,9 +41322,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 7,
    "jumlahBlangko": 10,
+   "langsung": 10,
+   "bobotLangsung": 4280,
    "bobot": 4280,
    "cakupanBobot": 1,
    "contoh": [
@@ -40569,6 +41340,7 @@
     "1a Perceraian CT"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -40590,9 +41362,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "titik",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 21,
+   "langsung": 21,
+   "bobotLangsung": 3347,
    "bobot": 3347,
    "cakupanBobot": 0,
    "contoh": [
@@ -40623,9 +41399,31 @@
     "9a Lain-Lain (Pengangkatan Anak)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2 Itsbat Nikah",
+    "2a Itsbat Nikah Kontensius",
+    "3 Dispensasi Kawin",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5 Izin Poligami",
+    "5a Pembatalan Perkawinan",
+    "5b Pencegahan Perkawinan",
+    "6 Perwalian",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "7 Wali Adhal",
+    "8 Asal Usul Anak",
+    "9 Penetapan Ahli Waris",
+    "9a Lain-Lain (Pengangkatan Anak)"
+   ],
    "pengisi": [],
-   "sumberMungkin": "ALETA Kasir (teguran panjar) - belum dicatat terstruktur",
-   "catatan": ""
+   "sumberMungkin": "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin",
+   "catatan": "ALETA Kasir (teguran panjar) - belum dicatat terstruktur"
   },
   {
    "kunci": "8713",
@@ -40637,9 +41435,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "titik",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 21,
+   "langsung": 21,
+   "bobotLangsung": 3347,
    "bobot": 3347,
    "cakupanBobot": 0,
    "contoh": [
@@ -40670,9 +41472,31 @@
     "9a Lain-Lain (Pengangkatan Anak)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2 Itsbat Nikah",
+    "2a Itsbat Nikah Kontensius",
+    "3 Dispensasi Kawin",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5 Izin Poligami",
+    "5a Pembatalan Perkawinan",
+    "5b Pencegahan Perkawinan",
+    "6 Perwalian",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "7 Wali Adhal",
+    "8 Asal Usul Anak",
+    "9 Penetapan Ahli Waris",
+    "9a Lain-Lain (Pengangkatan Anak)"
+   ],
    "pengisi": [],
-   "sumberMungkin": "ALETA Kasir (teguran panjar) - belum dicatat terstruktur",
-   "catatan": ""
+   "sumberMungkin": "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin",
+   "catatan": "ALETA Kasir (teguran panjar) - belum dicatat terstruktur"
   },
   {
    "kunci": "8714",
@@ -40684,9 +41508,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "titik",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 21,
+   "langsung": 21,
+   "bobotLangsung": 3347,
    "bobot": 3347,
    "cakupanBobot": 0,
    "contoh": [
@@ -40717,9 +41545,31 @@
     "9a Lain-Lain (Pengangkatan Anak)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2 Itsbat Nikah",
+    "2a Itsbat Nikah Kontensius",
+    "3 Dispensasi Kawin",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5 Izin Poligami",
+    "5a Pembatalan Perkawinan",
+    "5b Pencegahan Perkawinan",
+    "6 Perwalian",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "7 Wali Adhal",
+    "8 Asal Usul Anak",
+    "9 Penetapan Ahli Waris",
+    "9a Lain-Lain (Pengangkatan Anak)"
+   ],
    "pengisi": [],
-   "sumberMungkin": "ALETA Kasir (laporan panjar) - belum dicatat terstruktur",
-   "catatan": ""
+   "sumberMungkin": "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin",
+   "catatan": "ALETA Kasir (laporan panjar) - belum dicatat terstruktur"
   },
   {
    "kunci": "0228",
@@ -40731,9 +41581,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 3,
    "jumlahBlangko": 4,
+   "langsung": 4,
+   "bobotLangsung": 2796,
    "bobot": 2796,
    "cakupanBobot": 1,
    "contoh": [
@@ -40748,6 +41602,7 @@
     "ALUR 11 Itsbat Nikah 1 Sidang"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -40769,9 +41624,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 6,
+   "langsung": 6,
+   "bobotLangsung": 2772,
    "bobot": 2772,
    "cakupanBobot": 0,
    "contoh": [
@@ -40786,6 +41645,12 @@
     "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1a Perceraian CT",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (gugatan: penghasilan)",
    "catatan": ""
@@ -40800,9 +41665,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 5,
    "jumlahBlangko": 6,
+   "langsung": 6,
+   "bobotLangsung": 2772,
    "bobot": 2772,
    "cakupanBobot": 1,
    "contoh": [
@@ -40817,6 +41686,7 @@
     "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -40838,9 +41708,13 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "titik",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 4,
+   "langsung": 4,
+   "bobotLangsung": 2418,
    "bobot": 2418,
    "cakupanBobot": 0,
    "contoh": [
@@ -40854,8 +41728,13 @@
     "1c Perceraian Kumulasi Itsbat Nikah"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah"
+   ],
    "pengisi": [],
-   "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
+   "sumberMungkin": "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin",
    "catatan": ""
   },
   {
@@ -40868,9 +41747,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 5,
+   "langsung": 5,
+   "bobotLangsung": 2344,
    "bobot": 2344,
    "cakupanBobot": 0,
    "contoh": [
@@ -40884,6 +41767,11 @@
     "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (petitum kenaikan nafkah anak)",
    "catatan": ""
@@ -40898,9 +41786,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 2341,
    "bobot": 2341,
    "cakupanBobot": 0,
    "contoh": [
@@ -40914,6 +41806,11 @@
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -40928,11 +41825,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 1,
+   "bobotLangsung": 1,
    "bobot": 2341,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
     "[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
@@ -40943,9 +41844,17 @@
     "1a Perceraian CT",
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -40958,9 +41867,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 2340,
    "bobot": 2340,
    "cakupanBobot": 0,
    "contoh": [
@@ -40972,6 +41885,10 @@
     "1a Perceraian CT"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -40986,11 +41903,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "insidentil",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 2340,
    "bobot": 2340,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah (P Tidak Pernah Hadir).rtf"
    ],
@@ -40998,8 +41919,16 @@
     "1 Perceraian CG",
     "1a Perceraian CT"
    ],
-   "status": "tidak",
-   "pengisi": [],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
    "sumberMungkin": "penilaian hakim",
    "catatan": ""
   },
@@ -41013,9 +41942,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "insidentil",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 2340,
    "bobot": 2340,
    "cakupanBobot": 0,
    "contoh": [
@@ -41026,6 +41959,10 @@
     "1a Perceraian CT"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT"
+   ],
    "pengisi": [],
    "sumberMungkin": "penilaian hakim",
    "catatan": ""
@@ -41040,21 +41977,33 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 11,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 2340,
    "bobot": 2340,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[3] BAS Ikrar Talak - P Tidak Hadir & T Hadir, Tunda Tenggang Waktu 6 Bulan.rtf"
    ],
    "folder": [
     "ALUR 10 Cerai Talak Sidang Ikrar Talak"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "dihitung dari SIPP (putusan berkekuatan hukum tetap + 6 bulan)",
-   "catatan": "Registri cerai: belum; hanya 1 blangko."
+   "status": "sebagian",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "sipp-lanjutan-ragu",
+     "berkas": "aleta_bot/services/abtIsianSippLanjutan.js",
+     "tingkat": "usulan"
+    }
+   ],
+   "sumberMungkin": "SIPP perkara_ikrar_talak.tanggal_sidang_pertama + 6 bulan (usulan ragu)",
+   "catatan": "Cocok persis dengan 7 dari 11 isian petugas; sisanya sidang ikrar pertama diundur."
   },
   {
    "kunci": "1025",
@@ -41066,11 +42015,15 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 28,
    "jumlahBlangko": 44,
+   "langsung": 43,
+   "bobotLangsung": 1408,
    "bobot": 1409,
-   "cakupanBobot": 0.779,
+   "cakupanBobot": 0.778,
    "contoh": [
     "BAS ALUR 35 IN Kontensius - Sidang 1 - Jawaban T Mengakui, Pembuktian dan Putusan.rtf",
     "BAS ALUR 35 IN Kontensius - Sidang 2 - Pembuktian dan Putusan.rtf",
@@ -41089,6 +42042,10 @@
     "98 Relaas"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "2a Itsbat Nikah Kontensius",
+    "2a Itsbat Nikah Kontensius - BAS"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41122,9 +42079,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 1398,
    "bobot": 1398,
    "cakupanBobot": 1,
    "contoh": [
@@ -41135,6 +42096,7 @@
     "2 Itsbat Nikah"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41156,9 +42118,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 1398,
    "bobot": 1398,
    "cakupanBobot": 0,
    "contoh": [
@@ -41169,6 +42135,9 @@
     "2 Itsbat Nikah"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "2 Itsbat Nikah"
+   ],
    "pengisi": [],
    "sumberMungkin": "posita/bukti (akta kematian)",
    "catatan": "Itsbat dengan suami meninggal."
@@ -41183,9 +42152,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 34,
    "jumlahBlangko": 20,
+   "langsung": 20,
+   "bobotLangsung": 1120,
    "bobot": 1120,
    "cakupanBobot": 1,
    "contoh": [
@@ -41199,6 +42172,7 @@
     "ALUR 12 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41220,9 +42194,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 41,
    "jumlahBlangko": 20,
+   "langsung": 20,
+   "bobotLangsung": 1120,
    "bobot": 1120,
    "cakupanBobot": 1,
    "contoh": [
@@ -41236,6 +42214,7 @@
     "ALUR 12 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41257,9 +42236,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 12,
    "jumlahBlangko": 22,
+   "langsung": 22,
+   "bobotLangsung": 1047,
    "bobot": 1047,
    "cakupanBobot": 0.991,
    "contoh": [
@@ -41275,6 +42258,9 @@
     "ALUR 12 Dispensasi Kawin"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "7 Wali Adhal"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41302,9 +42288,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 23,
    "jumlahBlangko": 17,
+   "langsung": 17,
+   "bobotLangsung": 952,
    "bobot": 952,
    "cakupanBobot": 1,
    "contoh": [
@@ -41318,6 +42308,7 @@
     "ALUR 12 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41339,9 +42330,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 33,
    "jumlahBlangko": 17,
+   "langsung": 17,
+   "bobotLangsung": 952,
    "bobot": 952,
    "cakupanBobot": 1,
    "contoh": [
@@ -41355,6 +42350,7 @@
     "ALUR 12 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41376,9 +42372,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 35,
    "jumlahBlangko": 17,
+   "langsung": 17,
+   "bobotLangsung": 952,
    "bobot": 952,
    "cakupanBobot": 1,
    "contoh": [
@@ -41392,6 +42392,7 @@
     "ALUR 12 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41413,9 +42414,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 8,
    "jumlahBlangko": 17,
+   "langsung": 17,
+   "bobotLangsung": 952,
    "bobot": 952,
    "cakupanBobot": 1,
    "contoh": [
@@ -41429,6 +42434,7 @@
     "ALUR 12 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41450,9 +42456,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 9,
    "jumlahBlangko": 17,
+   "langsung": 17,
+   "bobotLangsung": 952,
    "bobot": 952,
    "cakupanBobot": 1,
    "contoh": [
@@ -41466,6 +42476,7 @@
     "ALUR 12 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41487,9 +42498,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 9,
    "jumlahBlangko": 17,
+   "langsung": 17,
+   "bobotLangsung": 952,
    "bobot": 952,
    "cakupanBobot": 1,
    "contoh": [
@@ -41503,6 +42518,7 @@
     "ALUR 12 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41524,9 +42540,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 17,
    "jumlahBlangko": 17,
+   "langsung": 17,
+   "bobotLangsung": 952,
    "bobot": 952,
    "cakupanBobot": 1,
    "contoh": [
@@ -41540,6 +42560,7 @@
     "ALUR 12 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41561,9 +42582,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 9,
    "jumlahBlangko": 17,
+   "langsung": 17,
+   "bobotLangsung": 952,
    "bobot": 952,
    "cakupanBobot": 1,
    "contoh": [
@@ -41577,6 +42602,7 @@
     "ALUR 12 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41598,9 +42624,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 8,
    "jumlahBlangko": 17,
+   "langsung": 17,
+   "bobotLangsung": 952,
    "bobot": 952,
    "cakupanBobot": 1,
    "contoh": [
@@ -41614,6 +42644,7 @@
     "ALUR 12 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -41641,9 +42672,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 7,
    "jumlahBlangko": 11,
+   "langsung": 11,
+   "bobotLangsung": 858,
    "bobot": 858,
    "cakupanBobot": 1,
    "contoh": [
@@ -41657,6 +42692,7 @@
     "6 Perwalian - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -41684,9 +42720,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 6,
    "jumlahBlangko": 11,
+   "langsung": 11,
+   "bobotLangsung": 858,
    "bobot": 858,
    "cakupanBobot": 1,
    "contoh": [
@@ -41700,6 +42740,7 @@
     "6 Perwalian - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -41727,9 +42768,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 2,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 856,
    "bobot": 856,
    "cakupanBobot": 1,
    "contoh": [
@@ -41740,6 +42785,7 @@
     "1a Perceraian CT"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -41761,11 +42807,15 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 1,
+   "bobotLangsung": 699,
    "bobot": 715,
-   "cakupanBobot": 0.978,
+   "cakupanBobot": 1,
    "contoh": [
     "[99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya.rtf",
     "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
@@ -41775,7 +42825,8 @@
     "2 Itsbat Nikah",
     "4a Harta Bersama"
    ],
-   "status": "sebagian",
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "f23",
@@ -41784,7 +42835,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -41797,11 +42848,15 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 1,
+   "bobotLangsung": 699,
    "bobot": 715,
-   "cakupanBobot": 0.978,
+   "cakupanBobot": 1,
    "contoh": [
     "[99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya.rtf",
     "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
@@ -41811,7 +42866,8 @@
     "2 Itsbat Nikah",
     "4a Harta Bersama"
    ],
-   "status": "sebagian",
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "f23",
@@ -41820,7 +42876,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -41833,9 +42889,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 699,
    "bobot": 699,
    "cakupanBobot": 1,
    "contoh": [
@@ -41845,6 +42905,7 @@
     "2 Itsbat Nikah"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "f23",
@@ -41866,9 +42927,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 699,
    "bobot": 699,
    "cakupanBobot": 1,
    "contoh": [
@@ -41878,6 +42943,7 @@
     "2 Itsbat Nikah"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "f23",
@@ -41899,9 +42965,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 699,
    "bobot": 699,
    "cakupanBobot": 1,
    "contoh": [
@@ -41911,6 +42981,7 @@
     "2 Itsbat Nikah"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "f23",
@@ -41932,9 +43003,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 699,
    "bobot": 699,
    "cakupanBobot": 1,
    "contoh": [
@@ -41944,6 +43019,7 @@
     "2 Itsbat Nikah"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "f23",
@@ -41965,9 +43041,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 699,
    "bobot": 699,
    "cakupanBobot": 0,
    "contoh": [
@@ -41977,6 +43057,9 @@
     "2 Itsbat Nikah"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "2 Itsbat Nikah"
+   ],
    "pengisi": [],
    "sumberMungkin": "posita/bukti (akta kematian)",
    "catatan": ""
@@ -41991,9 +43074,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 699,
    "bobot": 699,
    "cakupanBobot": 0,
    "contoh": [
@@ -42003,6 +43090,9 @@
     "2 Itsbat Nikah"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "2 Itsbat Nikah"
+   ],
    "pengisi": [],
    "sumberMungkin": "posita/bukti (akta kematian)",
    "catatan": ""
@@ -42017,9 +43107,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 699,
    "bobot": 699,
    "cakupanBobot": 1,
    "contoh": [
@@ -42029,6 +43123,7 @@
     "2 Itsbat Nikah"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42050,9 +43145,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 699,
    "bobot": 699,
    "cakupanBobot": 1,
    "contoh": [
@@ -42062,6 +43161,7 @@
     "2 Itsbat Nikah"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42083,9 +43183,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 18,
    "jumlahBlangko": 21,
+   "langsung": 21,
+   "bobotLangsung": 575,
    "bobot": 575,
    "cakupanBobot": 0.864,
    "contoh": [
@@ -42101,6 +43205,9 @@
     "9 Penetapan Ahli Waris - BAS"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "2a Itsbat Nikah Kontensius"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42122,9 +43229,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 17,
    "jumlahBlangko": 16,
+   "langsung": 16,
+   "bobotLangsung": 570,
    "bobot": 570,
    "cakupanBobot": 0.863,
    "contoh": [
@@ -42139,6 +43250,9 @@
     "9 Penetapan Ahli Waris - BAS"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "2a Itsbat Nikah Kontensius"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42160,9 +43274,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 16,
    "jumlahBlangko": 16,
+   "langsung": 16,
+   "bobotLangsung": 570,
    "bobot": 570,
    "cakupanBobot": 0.863,
    "contoh": [
@@ -42177,6 +43295,9 @@
     "9 Penetapan Ahli Waris - BAS"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "2a Itsbat Nikah Kontensius"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42198,9 +43319,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 5,
    "jumlahBlangko": 9,
+   "langsung": 9,
+   "bobotLangsung": 504,
    "bobot": 504,
    "cakupanBobot": 1,
    "contoh": [
@@ -42214,6 +43339,7 @@
     "ALUR 12 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42235,9 +43361,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 9,
+   "langsung": 9,
+   "bobotLangsung": 432,
    "bobot": 432,
    "cakupanBobot": 1,
    "contoh": [
@@ -42250,6 +43380,7 @@
     "9 Penetapan Ahli Waris - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42271,9 +43402,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 5,
    "jumlahBlangko": 10,
+   "langsung": 10,
+   "bobotLangsung": 430,
    "bobot": 430,
    "cakupanBobot": 1,
    "contoh": [
@@ -42286,6 +43421,7 @@
     "6 Perwalian - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42307,9 +43443,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 4,
    "jumlahBlangko": 10,
+   "langsung": 10,
+   "bobotLangsung": 430,
    "bobot": 430,
    "cakupanBobot": 1,
    "contoh": [
@@ -42322,6 +43462,7 @@
     "6 Perwalian - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42343,9 +43484,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 2,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 428,
    "bobot": 428,
    "cakupanBobot": 0,
    "contoh": [
@@ -42355,6 +43500,9 @@
     "1a Perceraian CT"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1a Perceraian CT"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -42369,9 +43517,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 3,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 428,
    "bobot": 428,
    "cakupanBobot": 1,
    "contoh": [
@@ -42381,6 +43533,7 @@
     "1a Perceraian CT"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -42402,9 +43555,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 1,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 428,
    "bobot": 428,
    "cakupanBobot": 1,
    "contoh": [
@@ -42414,6 +43571,7 @@
     "1a Perceraian CT"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -42435,9 +43593,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 428,
    "bobot": 428,
    "cakupanBobot": 1,
    "contoh": [
@@ -42447,6 +43609,7 @@
     "1a Perceraian CT"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42468,9 +43631,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 428,
    "bobot": 428,
    "cakupanBobot": 0,
    "contoh": [
@@ -42480,6 +43647,9 @@
     "1a Perceraian CT"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "1a Perceraian CT"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -42494,9 +43664,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 30,
    "jumlahBlangko": 6,
+   "langsung": 6,
+   "bobotLangsung": 288,
    "bobot": 288,
    "cakupanBobot": 0,
    "contoh": [
@@ -42509,6 +43683,10 @@
     "9 Penetapan Ahli Waris - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "9 Penetapan Ahli Waris",
+    "9 Penetapan Ahli Waris - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -42523,9 +43701,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 20,
    "jumlahBlangko": 5,
+   "langsung": 5,
+   "bobotLangsung": 280,
    "bobot": 280,
    "cakupanBobot": 1,
    "contoh": [
@@ -42537,6 +43719,7 @@
     "3 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42558,9 +43741,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 6,
    "jumlahBlangko": 5,
+   "langsung": 5,
+   "bobotLangsung": 280,
    "bobot": 280,
    "cakupanBobot": 1,
    "contoh": [
@@ -42572,6 +43759,7 @@
     "3 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42593,9 +43781,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 35,
    "jumlahBlangko": 6,
+   "langsung": 6,
+   "bobotLangsung": 258,
    "bobot": 258,
    "cakupanBobot": 1,
    "contoh": [
@@ -42608,6 +43800,7 @@
     "6 Perwalian - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42629,9 +43822,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 6,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 168,
    "bobot": 168,
    "cakupanBobot": 1,
    "contoh": [
@@ -42643,6 +43840,7 @@
     "3 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42664,11 +43862,15 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 14,
+   "langsung": 4,
+   "bobotLangsung": 22,
    "bobot": 167,
-   "cakupanBobot": 0.048,
+   "cakupanBobot": 0.364,
    "contoh": [
     "[97] [Perdamaian] Akta Perdamaian.rtf",
     "[01] [Kabul] Kewarisan - Kontradiktur.rtf",
@@ -42684,6 +43886,11 @@
     "9a Lain-Lain (Pengangkatan Anak)"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "4b Kewarisan",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "6b Penguasaan Anak"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42705,9 +43912,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 29,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 112,
    "bobot": 112,
    "cakupanBobot": 1,
    "contoh": [
@@ -42718,6 +43929,7 @@
     "3 Dispensasi Kawin"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42739,9 +43951,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 96,
    "bobot": 96,
    "cakupanBobot": 0,
    "contoh": [
@@ -42753,6 +43969,10 @@
     "9 Penetapan Ahli Waris - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "9 Penetapan Ahli Waris",
+    "9 Penetapan Ahli Waris - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -42767,9 +43987,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 96,
    "bobot": 96,
    "cakupanBobot": 0,
    "contoh": [
@@ -42781,6 +44005,10 @@
     "9 Penetapan Ahli Waris - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "9 Penetapan Ahli Waris",
+    "9 Penetapan Ahli Waris - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -42795,11 +44023,15 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 78,
    "bobot": 78,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "BAS ALUR 35 IN Kontensius - Sidang 1 - Jawaban T Mengakui, Pembuktian dan Putusan.rtf",
     "BAS ALUR 35 IN Kontensius - Sidang 1 - Jawaban T Mengakui, Tunda Pembuktian.rtf"
@@ -42807,9 +44039,17 @@
    "folder": [
     "2a Itsbat Nikah Kontensius - BAS"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -42822,11 +44062,15 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 12,
+   "langsung": 12,
+   "bobotLangsung": 48,
    "bobot": 48,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "BAS ALUR 43 ES Acara Biasa - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf",
     "[97] [Perdamaian] ES Acara Biasa - Akta Perdamaian Hasil Mediasi.rtf",
@@ -42846,9 +44090,17 @@
     "6b Penguasaan Anak",
     "6b Penguasaan Anak - BAS"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "sipp-lanjutan-pasti",
+     "berkas": "aleta_bot/services/abtIsianSippLanjutan.js",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -42861,11 +44113,15 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 12,
+   "langsung": 12,
+   "bobotLangsung": 48,
    "bobot": 48,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "BAS ALUR 43 ES Acara Biasa - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf",
     "[97] [Perdamaian] ES Acara Biasa - Akta Perdamaian Hasil Mediasi.rtf",
@@ -42885,9 +44141,17 @@
     "6b Penguasaan Anak",
     "6b Penguasaan Anak - BAS"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "sipp-lanjutan-pasti",
+     "berkas": "aleta_bot/services/abtIsianSippLanjutan.js",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -42900,9 +44164,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 48,
    "cakupanBobot": 1,
    "contoh": [
@@ -42912,6 +44180,7 @@
     "9 Penetapan Ahli Waris"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42933,9 +44202,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 48,
    "bobot": 48,
    "cakupanBobot": 1,
    "contoh": [
@@ -42945,6 +44218,7 @@
     "9 Penetapan Ahli Waris"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42966,9 +44240,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 48,
    "bobot": 48,
    "cakupanBobot": 1,
    "contoh": [
@@ -42978,6 +44256,7 @@
     "9 Penetapan Ahli Waris"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -42999,9 +44278,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 9,
+   "langsung": 9,
+   "bobotLangsung": 45,
    "bobot": 45,
    "cakupanBobot": 1,
    "contoh": [
@@ -43014,6 +44297,7 @@
     "9a Lain-Lain (Pengangkatan Anak) - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -43041,9 +44325,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 9,
+   "langsung": 9,
+   "bobotLangsung": 45,
    "bobot": 45,
    "cakupanBobot": 1,
    "contoh": [
@@ -43056,6 +44344,7 @@
     "9a Lain-Lain (Pengangkatan Anak) - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -43083,9 +44372,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 9,
+   "langsung": 9,
+   "bobotLangsung": 45,
    "bobot": 45,
    "cakupanBobot": 1,
    "contoh": [
@@ -43098,6 +44391,7 @@
     "9a Lain-Lain (Pengangkatan Anak) - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -43125,9 +44419,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 9,
+   "langsung": 9,
+   "bobotLangsung": 45,
    "bobot": 45,
    "cakupanBobot": 1,
    "contoh": [
@@ -43140,6 +44438,7 @@
     "9a Lain-Lain (Pengangkatan Anak) - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -43167,9 +44466,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 3,
    "jumlahBlangko": 23,
+   "langsung": 23,
+   "bobotLangsung": 41,
    "bobot": 41,
    "cakupanBobot": 0.732,
    "contoh": [
@@ -43185,6 +44488,10 @@
     "98 Relaas"
    ],
    "status": "sebagian",
+   "folderTakTertutup": [
+    "5b Pencegahan Perkawinan",
+    "5b Pencegahan Perkawinan - BAS"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -43206,9 +44513,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 5,
+   "langsung": 5,
+   "bobotLangsung": 40,
    "bobot": 40,
    "cakupanBobot": 1,
    "contoh": [
@@ -43221,6 +44532,7 @@
     "4a Harta Bersama - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -43242,9 +44554,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 36,
    "bobot": 36,
    "cakupanBobot": 1,
    "contoh": [
@@ -43256,6 +44572,7 @@
     "4b Kewarisan"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -43277,9 +44594,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 36,
    "bobot": 36,
    "cakupanBobot": 1,
    "contoh": [
@@ -43291,6 +44612,7 @@
     "4b Kewarisan"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -43312,9 +44634,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 36,
    "bobot": 36,
    "cakupanBobot": 1,
    "contoh": [
@@ -43326,6 +44652,7 @@
     "4b Kewarisan"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "f23",
@@ -43347,11 +44674,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "kuasaP",
    "pemicu": "11111",
+   "diketikPetugas": 0,
    "jumlahBlangko": 27,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 35,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "BAS ALUR 40 ES GS - [1d] Sidang 1 - T Tidak Diketahui Tempat Tinggalnya - NO.rtf",
     "[01] [Kabul] ES Gugatan Sederhana - Wanprestasi - P & T Hadir.rtf",
@@ -43363,8 +44694,16 @@
     "10a Ekonomi Syariah Biasa",
     "10a Ekonomi Syariah Biasa - BAS"
    ],
-   "status": "tidak",
-   "pengisi": [],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
    "sumberMungkin": "e-Court (surat kuasa/anggaran dasar badan hukum)",
    "catatan": "Hanya perkara ekonomi syariah badan hukum."
   },
@@ -43378,11 +44717,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "kuasaT",
    "pemicu": "11113",
+   "diketikPetugas": 0,
    "jumlahBlangko": 27,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 35,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "BAS ALUR 40 ES GS - [1d] Sidang 1 - T Tidak Diketahui Tempat Tinggalnya - NO.rtf",
     "[01] [Kabul] ES Gugatan Sederhana - Wanprestasi - P & T Hadir.rtf",
@@ -43394,8 +44737,16 @@
     "10a Ekonomi Syariah Biasa",
     "10a Ekonomi Syariah Biasa - BAS"
    ],
-   "status": "tidak",
-   "pengisi": [],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
    "sumberMungkin": "e-Court (surat kuasa/anggaran dasar badan hukum)",
    "catatan": "Hanya perkara ekonomi syariah badan hukum."
   },
@@ -43409,9 +44760,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 6,
+   "langsung": 6,
+   "bobotLangsung": 30,
    "bobot": 30,
    "cakupanBobot": 1,
    "contoh": [
@@ -43424,6 +44779,7 @@
     "9a Lain-Lain (Pengangkatan Anak) - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -43451,9 +44807,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 23,
    "jumlahBlangko": 9,
+   "langsung": 9,
+   "bobotLangsung": 27,
    "bobot": 27,
    "cakupanBobot": 1,
    "contoh": [
@@ -43466,6 +44826,7 @@
     "7 Wali Adhal - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -43487,9 +44848,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 3,
    "jumlahBlangko": 9,
+   "langsung": 9,
+   "bobotLangsung": 27,
    "bobot": 27,
    "cakupanBobot": 1,
    "contoh": [
@@ -43502,6 +44867,7 @@
     "7 Wali Adhal - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -43523,9 +44889,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 3,
    "jumlahBlangko": 9,
+   "langsung": 9,
+   "bobotLangsung": 27,
    "bobot": 27,
    "cakupanBobot": 1,
    "contoh": [
@@ -43538,6 +44908,7 @@
     "7 Wali Adhal - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -43559,9 +44930,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 5,
+   "langsung": 5,
+   "bobotLangsung": 25,
    "bobot": 25,
    "cakupanBobot": 1,
    "contoh": [
@@ -43574,6 +44949,7 @@
     "9a Lain-Lain (Pengangkatan Anak) - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -43601,9 +44977,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 5,
+   "langsung": 5,
+   "bobotLangsung": 23,
    "bobot": 23,
    "cakupanBobot": 1,
    "contoh": [
@@ -43618,6 +44998,7 @@
     "99 PTSP"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "f23",
@@ -43645,9 +45026,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 4,
+   "langsung": 4,
+   "bobotLangsung": 22,
    "bobot": 22,
    "cakupanBobot": 1,
    "contoh": [
@@ -43661,6 +45046,7 @@
     "97 Sita"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "f23",
@@ -43688,9 +45074,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "insidentil",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 4,
+   "langsung": 4,
+   "bobotLangsung": 22,
    "bobot": 22,
    "cakupanBobot": 0,
    "contoh": [
@@ -43704,6 +45094,11 @@
     "97 Sita"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "97 Sita"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -43718,9 +45113,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 20,
    "bobot": 20,
    "cakupanBobot": 1,
    "contoh": [
@@ -43732,7 +45131,14 @@
     "4b Kewarisan - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    },
     {
      "jenis": "f23",
      "id": "f23-harta-bersama",
@@ -43759,9 +45165,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 20,
    "bobot": 20,
    "cakupanBobot": 0,
    "contoh": [
@@ -43773,6 +45183,10 @@
     "4b Kewarisan - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -43787,9 +45201,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 20,
    "bobot": 20,
    "cakupanBobot": 0,
    "contoh": [
@@ -43801,6 +45219,10 @@
     "4b Kewarisan - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -43815,9 +45237,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 20,
    "bobot": 20,
    "cakupanBobot": 0,
    "contoh": [
@@ -43829,6 +45255,10 @@
     "4b Kewarisan - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -43843,9 +45273,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 20,
    "bobot": 20,
    "cakupanBobot": 0,
    "contoh": [
@@ -43857,6 +45291,10 @@
     "4b Kewarisan - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -43871,11 +45309,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 18,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 18,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "BAS ALUR 38 Hak Asuh - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
     "[01] [Kabul] Hak Asuh - Kontradiktoir - Anak Belum Mumayyiz.rtf",
@@ -43887,9 +45329,17 @@
     "6b Penguasaan Anak",
     "6b Penguasaan Anak - BAS"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "belum dikaji",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -43902,9 +45352,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 13,
+   "langsung": 13,
+   "bobotLangsung": 18,
    "bobot": 18,
    "cakupanBobot": 0,
    "contoh": [
@@ -43919,6 +45373,12 @@
     "10a Ekonomi Syariah Biasa - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "10 Ekonomi Syariah",
+    "10 Ekonomi Syariah - BAS",
+    "10a Ekonomi Syariah Biasa",
+    "10a Ekonomi Syariah Biasa - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -43933,9 +45393,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 6,
+   "langsung": 6,
+   "bobotLangsung": 18,
    "bobot": 18,
    "cakupanBobot": 0,
    "contoh": [
@@ -43948,6 +45412,10 @@
     "7 Wali Adhal - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "7 Wali Adhal",
+    "7 Wali Adhal - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -43962,9 +45430,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 439,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 16,
    "bobot": 16,
    "cakupanBobot": 1,
    "contoh": [
@@ -43975,6 +45447,7 @@
     "8 Asal Usul Anak"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
@@ -44002,9 +45475,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 16,
    "bobot": 16,
    "cakupanBobot": 0,
    "contoh": [
@@ -44015,6 +45492,9 @@
     "4a Harta Bersama"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4a Harta Bersama"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -44029,9 +45509,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 16,
    "bobot": 16,
    "cakupanBobot": 0,
    "contoh": [
@@ -44042,6 +45526,9 @@
     "4a Harta Bersama"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4a Harta Bersama"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -44056,9 +45543,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 16,
    "bobot": 16,
    "cakupanBobot": 1,
    "contoh": [
@@ -44069,6 +45560,7 @@
     "4a Harta Bersama"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -44090,11 +45582,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "kuasaT",
    "pemicu": "11113",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 16,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan.rtf",
     "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf"
@@ -44102,8 +45598,16 @@
    "folder": [
     "4a Harta Bersama"
    ],
-   "status": "tidak",
-   "pengisi": [],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
    "sumberMungkin": "e-Court (kartu advokat/berita acara sumpah)",
    "catatan": "Tergugat berkuasa ±1% perkara; bawaan layar: Pengadilan Tinggi Sulawesi Tengah."
   },
@@ -44117,9 +45621,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 16,
    "cakupanBobot": 0,
    "contoh": [
@@ -44130,6 +45638,9 @@
     "4a Harta Bersama"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4a Harta Bersama"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -44144,9 +45655,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 16,
    "bobot": 16,
    "cakupanBobot": 0,
    "contoh": [
@@ -44157,6 +45672,9 @@
     "4a Harta Bersama"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4a Harta Bersama"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -44171,9 +45689,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 16,
    "bobot": 16,
    "cakupanBobot": 0,
    "contoh": [
@@ -44184,6 +45706,9 @@
     "4a Harta Bersama"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4a Harta Bersama"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -44198,9 +45723,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 16,
    "bobot": 16,
    "cakupanBobot": 0,
    "contoh": [
@@ -44211,6 +45740,9 @@
     "4a Harta Bersama"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4a Harta Bersama"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -44225,9 +45757,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 14,
+   "langsung": 14,
+   "bobotLangsung": 14,
    "bobot": 14,
    "cakupanBobot": 0,
    "contoh": [
@@ -44241,6 +45777,11 @@
     "98 Relaas"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "5b Pencegahan Perkawinan",
+    "5b Pencegahan Perkawinan - BAS",
+    "98 Relaas"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -44255,9 +45796,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 11,
+   "langsung": 11,
+   "bobotLangsung": 11,
    "bobot": 11,
    "cakupanBobot": 0,
    "contoh": [
@@ -44270,6 +45815,10 @@
     "5b Pencegahan Perkawinan - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "5b Pencegahan Perkawinan",
+    "5b Pencegahan Perkawinan - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -44284,9 +45833,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 11,
+   "langsung": 11,
+   "bobotLangsung": 11,
    "bobot": 11,
    "cakupanBobot": 0,
    "contoh": [
@@ -44299,6 +45852,10 @@
     "5b Pencegahan Perkawinan - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "5b Pencegahan Perkawinan",
+    "5b Pencegahan Perkawinan - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -44313,9 +45870,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 11,
+   "langsung": 11,
+   "bobotLangsung": 11,
    "bobot": 11,
    "cakupanBobot": 0,
    "contoh": [
@@ -44328,6 +45889,10 @@
     "5b Pencegahan Perkawinan - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "5b Pencegahan Perkawinan",
+    "5b Pencegahan Perkawinan - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -44342,9 +45907,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 11,
+   "langsung": 11,
+   "bobotLangsung": 11,
    "bobot": 11,
    "cakupanBobot": 0,
    "contoh": [
@@ -44357,6 +45926,10 @@
     "5b Pencegahan Perkawinan - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "5b Pencegahan Perkawinan",
+    "5b Pencegahan Perkawinan - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -44371,9 +45944,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 11,
+   "langsung": 11,
+   "bobotLangsung": 11,
    "bobot": 11,
    "cakupanBobot": 0,
    "contoh": [
@@ -44386,6 +45963,10 @@
     "5b Pencegahan Perkawinan - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "5b Pencegahan Perkawinan",
+    "5b Pencegahan Perkawinan - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -44400,9 +45981,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 11,
+   "langsung": 11,
+   "bobotLangsung": 11,
    "bobot": 11,
    "cakupanBobot": 0,
    "contoh": [
@@ -44415,6 +46000,10 @@
     "5b Pencegahan Perkawinan - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "5b Pencegahan Perkawinan",
+    "5b Pencegahan Perkawinan - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -44429,9 +46018,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 10,
+   "langsung": 10,
+   "bobotLangsung": 10,
    "bobot": 10,
    "cakupanBobot": 0,
    "contoh": [
@@ -44444,6 +46037,10 @@
     "4c Wasiat - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4c Wasiat",
+    "4c Wasiat - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -44458,9 +46055,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 7,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 10,
    "cakupanBobot": 0,
    "contoh": [
@@ -44475,6 +46076,12 @@
     "10a Ekonomi Syariah Biasa - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "10 Ekonomi Syariah",
+    "10 Ekonomi Syariah - BAS",
+    "10a Ekonomi Syariah Biasa",
+    "10a Ekonomi Syariah Biasa - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -44489,9 +46096,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 9,
+   "langsung": 9,
+   "bobotLangsung": 9,
    "bobot": 9,
    "cakupanBobot": 0,
    "contoh": [
@@ -44504,6 +46115,10 @@
     "10a Ekonomi Syariah Biasa - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "10a Ekonomi Syariah Biasa",
+    "10a Ekonomi Syariah Biasa - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -44518,9 +46133,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 9,
    "bobot": 9,
    "cakupanBobot": 0,
    "contoh": [
@@ -44532,6 +46151,9 @@
     "7 Wali Adhal"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "7 Wali Adhal"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -44546,9 +46168,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 9,
    "bobot": 9,
    "cakupanBobot": 0,
    "contoh": [
@@ -44560,6 +46186,9 @@
     "7 Wali Adhal"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "7 Wali Adhal"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -44574,9 +46203,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 9,
    "bobot": 9,
    "cakupanBobot": 1,
    "contoh": [
@@ -44588,6 +46221,7 @@
     "7 Wali Adhal"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "f23",
@@ -44609,9 +46243,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 9,
    "bobot": 9,
    "cakupanBobot": 1,
    "contoh": [
@@ -44623,6 +46261,7 @@
     "7 Wali Adhal"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "f23",
@@ -44644,9 +46283,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 9,
    "bobot": 9,
    "cakupanBobot": 1,
    "contoh": [
@@ -44658,6 +46301,7 @@
     "7 Wali Adhal"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "f23",
@@ -44679,9 +46323,13 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 9,
    "bobot": 9,
    "cakupanBobot": 1,
    "contoh": [
@@ -44693,7 +46341,14 @@
     "7 Wali Adhal"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    },
     {
      "jenis": "f23",
      "id": "f23-wali-adhol",
@@ -44714,9 +46369,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 4,
+   "langsung": 4,
+   "bobotLangsung": 8,
    "bobot": 8,
    "cakupanBobot": 1,
    "contoh": [
@@ -44729,6 +46388,7 @@
     "5 Izin Poligami - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -44750,9 +46410,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 8,
    "bobot": 8,
    "cakupanBobot": 1,
    "contoh": [
@@ -44762,6 +46426,7 @@
     "8 Asal Usul Anak"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -44783,9 +46448,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 8,
    "bobot": 8,
    "cakupanBobot": 1,
    "contoh": [
@@ -44795,6 +46464,7 @@
     "8 Asal Usul Anak"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -44816,20 +46486,32 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 8,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[01a] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan - Rekonvensi Dikabulkan.rtf"
    ],
    "folder": [
     "4a Harta Bersama"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "belum dikaji",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -44842,11 +46524,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 7,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 7,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[01] [Kabul] Pembatalan Perkawinan - Kontradiktoir.rtf",
     "[01a] [Kabul] Pembatalan Perkawinan - T Tidak Hadir Setelah Mediasi.rtf",
@@ -44855,9 +46541,17 @@
    "folder": [
     "5a Pembatalan Perkawinan"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "belum dikaji",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -44870,9 +46564,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 5,
+   "langsung": 5,
+   "bobotLangsung": 7,
    "bobot": 7,
    "cakupanBobot": 0,
    "contoh": [
@@ -44885,6 +46583,10 @@
     "10a Ekonomi Syariah Biasa"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "10 Ekonomi Syariah",
+    "10a Ekonomi Syariah Biasa"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -44899,11 +46601,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "sipp",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 6,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 6,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "BAS ALUR 39 Pembatalan Nikah - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
     "[01] [Kabul] Pembatalan Perkawinan - Kontradiktoir.rtf",
@@ -44913,9 +46619,17 @@
     "5a Pembatalan Perkawinan",
     "5a Pembatalan Perkawinan - BAS"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "belum dikaji",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-sipp",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -44928,11 +46642,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "sipp",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 6,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 6,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "BAS ALUR 39 Pembatalan Nikah - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
     "[01] [Kabul] Pembatalan Perkawinan - Kontradiktoir.rtf",
@@ -44942,9 +46660,17 @@
     "5a Pembatalan Perkawinan",
     "5a Pembatalan Perkawinan - BAS"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-sipp",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -44957,9 +46683,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 6,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 6,
    "cakupanBobot": 0,
    "contoh": [
@@ -44972,6 +46702,10 @@
     "4c Wasiat - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4c Wasiat",
+    "4c Wasiat - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -44986,9 +46720,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 6,
+   "langsung": 5,
+   "bobotLangsung": 5,
    "bobot": 6,
    "cakupanBobot": 0,
    "contoh": [
@@ -45001,6 +46739,10 @@
     "4c Wasiat - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4c Wasiat",
+    "4c Wasiat - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -45015,9 +46757,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 6,
+   "langsung": 5,
+   "bobotLangsung": 5,
    "bobot": 6,
    "cakupanBobot": 0,
    "contoh": [
@@ -45030,6 +46776,10 @@
     "4c Wasiat - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4c Wasiat",
+    "4c Wasiat - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -45044,11 +46794,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 6,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 6,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "BAS ALUR 42 Wasiat - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
     "[01] [Kabul] Wasiat - Kontradiktoir.rtf",
@@ -45058,9 +46812,17 @@
     "4c Wasiat",
     "4c Wasiat - BAS"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -45073,9 +46835,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 6,
+   "langsung": 6,
+   "bobotLangsung": 6,
    "bobot": 6,
    "cakupanBobot": 0,
    "contoh": [
@@ -45087,6 +46853,9 @@
     "4c Wasiat"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4c Wasiat"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -45101,9 +46870,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 6,
+   "langsung": 6,
+   "bobotLangsung": 6,
    "bobot": 6,
    "cakupanBobot": 0,
    "contoh": [
@@ -45115,6 +46888,9 @@
     "4c Wasiat"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4c Wasiat"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -45129,9 +46905,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 6,
+   "langsung": 6,
+   "bobotLangsung": 6,
    "bobot": 6,
    "cakupanBobot": 0,
    "contoh": [
@@ -45144,6 +46924,10 @@
     "4c Wasiat - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4c Wasiat",
+    "4c Wasiat - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -45158,9 +46942,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 6,
    "bobot": 6,
    "cakupanBobot": 1,
    "contoh": [
@@ -45173,6 +46961,7 @@
     "5 Izin Poligami - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -45194,9 +46983,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 6,
    "bobot": 6,
    "cakupanBobot": 1,
    "contoh": [
@@ -45209,6 +47002,7 @@
     "5 Izin Poligami - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -45230,11 +47024,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 5,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 5,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[01] [Kabul] Hak Asuh - Kontradiktoir - Anak Belum Mumayyiz.rtf",
     "[01a] [Kabul] Hak Asuh - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz.rtf",
@@ -45243,9 +47041,17 @@
    "folder": [
     "6a Hak Asuh Anak (Hadhanah)"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -45258,9 +47064,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 5,
+   "langsung": 5,
+   "bobotLangsung": 5,
    "bobot": 5,
    "cakupanBobot": 0,
    "contoh": [
@@ -45273,6 +47083,10 @@
     "6b Penguasaan Anak"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "6a Hak Asuh Anak (Hadhanah)",
+    "6b Penguasaan Anak"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45287,9 +47101,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 5,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 5,
    "cakupanBobot": 0,
    "contoh": [
@@ -45301,6 +47119,9 @@
     "5a Pembatalan Perkawinan"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "5a Pembatalan Perkawinan"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45315,9 +47136,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 5,
+   "langsung": 5,
+   "bobotLangsung": 5,
    "bobot": 5,
    "cakupanBobot": 0,
    "contoh": [
@@ -45330,6 +47155,10 @@
     "10a Ekonomi Syariah Biasa - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "10a Ekonomi Syariah Biasa",
+    "10a Ekonomi Syariah Biasa - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
    "catatan": ""
@@ -45344,9 +47173,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 4,
    "bobot": 4,
    "cakupanBobot": 0,
    "contoh": [
@@ -45359,6 +47192,10 @@
     "10a Ekonomi Syariah Biasa"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "10 Ekonomi Syariah",
+    "10a Ekonomi Syariah Biasa"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45373,9 +47210,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 4,
    "bobot": 4,
    "cakupanBobot": 1,
    "contoh": [
@@ -45387,6 +47228,7 @@
     "5 Izin Poligami - BAS"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -45408,9 +47250,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 1,
+   "bobotLangsung": 2,
    "bobot": 4,
    "cakupanBobot": 1,
    "contoh": [
@@ -45421,6 +47267,7 @@
     "5 Izin Poligami"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -45442,9 +47289,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 4,
    "bobot": 4,
    "cakupanBobot": 0,
    "contoh": [
@@ -45456,6 +47307,10 @@
     "10 Ekonomi Syariah - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "10 Ekonomi Syariah",
+    "10 Ekonomi Syariah - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45470,9 +47325,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 4,
    "bobot": 4,
    "cakupanBobot": 0,
    "contoh": [
@@ -45484,6 +47343,10 @@
     "10 Ekonomi Syariah - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "10 Ekonomi Syariah",
+    "10 Ekonomi Syariah - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45498,9 +47361,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 4,
    "bobot": 4,
    "cakupanBobot": 0,
    "contoh": [
@@ -45512,6 +47379,10 @@
     "10 Ekonomi Syariah - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "10 Ekonomi Syariah",
+    "10 Ekonomi Syariah - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45526,9 +47397,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 4,
    "bobot": 4,
    "cakupanBobot": 0,
    "contoh": [
@@ -45539,6 +47414,9 @@
     "10 Ekonomi Syariah"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "10 Ekonomi Syariah"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45553,9 +47431,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 3,
    "bobot": 3,
    "cakupanBobot": 0,
    "contoh": [
@@ -45567,6 +47449,9 @@
     "5a Pembatalan Perkawinan"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "5a Pembatalan Perkawinan"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45581,11 +47466,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "sipp",
    "keadaan": "kuaKosong",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 3,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[01] [Kabul] Pembatalan Perkawinan - Kontradiktoir.rtf",
     "[01a] [Kabul] Pembatalan Perkawinan - T Tidak Hadir Setelah Mediasi.rtf",
@@ -45594,9 +47483,17 @@
    "folder": [
     "5a Pembatalan Perkawinan"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "belum dikaji",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-sipp",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -45609,9 +47506,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 3,
    "bobot": 3,
    "cakupanBobot": 0,
    "contoh": [
@@ -45623,6 +47524,9 @@
     "4c Wasiat"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4c Wasiat"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45637,9 +47541,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 3,
    "bobot": 3,
    "cakupanBobot": 0,
    "contoh": [
@@ -45649,6 +47557,9 @@
     "7 Wali Adhal"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "7 Wali Adhal"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45663,9 +47574,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 3,
    "bobot": 3,
    "cakupanBobot": 0,
    "contoh": [
@@ -45675,6 +47590,9 @@
     "7 Wali Adhal"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "7 Wali Adhal"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45689,11 +47607,15 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 416,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 2,
    "bobot": 2,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[JS] 9.1. Pengumuman Permohonan Itsbat Nikah (2 Pemohon).rtf",
     "[JS] 9.2. Pengumuman Permohonan Itsbat Nikah (1 Pemohon).rtf"
@@ -45701,10 +47623,18 @@
    "folder": [
     "98 Relaas"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "ALETA panggilan ghaib / pengumuman",
-   "catatan": ""
+   "status": "sebagian",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "sipp-lanjutan-ragu",
+     "berkas": "aleta_bot/services/abtIsianSippLanjutan.js",
+     "tingkat": "usulan"
+    }
+   ],
+   "sumberMungkin": "tidak ada tanggal pasti di SIPP; usulan ragu = tanggal pendaftaran",
+   "catatan": "412 isian petugas: 189 persis sama (46%), 92% jatuh 0-1 hari dari tanggal pendaftaran; juru sita memilih hari pengumuman."
   },
   {
    "kunci": "9307",
@@ -45716,11 +47646,15 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 2,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[01c] [Kabul] Hak Asuh - Kontradiktoir - Anak Mumayyiz Memilih.rtf",
     "[01c] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Mumayyiz Memilih.rtf"
@@ -45729,9 +47663,17 @@
     "6a Hak Asuh Anak (Hadhanah)",
     "6b Penguasaan Anak"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -45744,9 +47686,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 2,
    "bobot": 2,
    "cakupanBobot": 0,
    "contoh": [
@@ -45757,6 +47703,9 @@
     "5a Pembatalan Perkawinan"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "5a Pembatalan Perkawinan"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45771,9 +47720,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 2,
+   "langsung": 2,
+   "bobotLangsung": 2,
    "bobot": 2,
    "cakupanBobot": 0,
    "contoh": [
@@ -45784,6 +47737,9 @@
     "4c Wasiat"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4c Wasiat"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45798,9 +47754,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 2,
    "bobot": 2,
    "cakupanBobot": 1,
    "contoh": [
@@ -45810,6 +47770,7 @@
     "5 Izin Poligami"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -45831,9 +47792,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 2,
    "bobot": 2,
    "cakupanBobot": 1,
    "contoh": [
@@ -45843,6 +47808,7 @@
     "5 Izin Poligami"
    ],
    "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -45864,20 +47830,32 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 2,
    "bobot": 2,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "BAS ALUR 34 Poligami - Sidang 2 - Laporan Mediasi, Permohonan, Jawaban Termohon dan Calon Istri.rtf"
    ],
    "folder": [
     "5 Izin Poligami - BAS"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -45890,9 +47868,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 2,
    "bobot": 2,
    "cakupanBobot": 0,
    "contoh": [
@@ -45902,6 +47884,9 @@
     "5 Izin Poligami - BAS"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "5 Izin Poligami - BAS"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -45916,9 +47901,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 1,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 1,
    "bobot": 1,
    "cakupanBobot": 0,
    "contoh": [
@@ -45928,6 +47917,9 @@
     "99 PTSP"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "99 PTSP"
+   ],
    "pengisi": [],
    "sumberMungkin": "SIPP perkara_ikrar_talak (tanggal PHS baru)",
    "catatan": "Hanya 1 blangko."
@@ -45942,9 +47934,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 1,
    "bobot": 1,
    "cakupanBobot": 0,
    "contoh": [
@@ -45954,6 +47950,9 @@
     "98 Relaas"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "98 Relaas"
+   ],
    "pengisi": [],
    "sumberMungkin": "ALETA/SIPP bantuan panggilan",
    "catatan": "Hanya 1 blangko."
@@ -45968,9 +47967,13 @@
    "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 1,
    "bobot": 1,
    "cakupanBobot": 0,
    "contoh": [
@@ -45980,6 +47983,9 @@
     "98 Relaas"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "98 Relaas"
+   ],
    "pengisi": [],
    "sumberMungkin": "ALETA/SIPP bantuan panggilan",
    "catatan": "Hanya 1 blangko."
@@ -45994,9 +48000,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 1,
    "bobot": 1,
    "cakupanBobot": 0,
    "contoh": [
@@ -46006,6 +48016,9 @@
     "98 Relaas"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "98 Relaas"
+   ],
    "pengisi": [],
    "sumberMungkin": "ALETA Kasir (ongkos panggilan)",
    "catatan": "Hanya 1 blangko."
@@ -46020,9 +48033,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 1,
    "bobot": 1,
    "cakupanBobot": 0,
    "contoh": [
@@ -46032,6 +48049,9 @@
     "6a Hak Asuh Anak (Hadhanah)"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "6a Hak Asuh Anak (Hadhanah)"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -46046,20 +48066,32 @@
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 0,
+   "bobotLangsung": 0,
    "bobot": 1,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz).rtf"
    ],
    "folder": [
     "6a Hak Asuh Anak (Hadhanah)"
    ],
-   "status": "tidak",
-   "pengisi": [],
-   "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -46072,9 +48104,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 1,
    "bobot": 1,
    "cakupanBobot": 0,
    "contoh": [
@@ -46084,6 +48120,9 @@
     "5b Pencegahan Perkawinan"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "5b Pencegahan Perkawinan"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -46098,9 +48137,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 1,
    "bobot": 1,
    "cakupanBobot": 0,
    "contoh": [
@@ -46110,6 +48153,9 @@
     "5b Pencegahan Perkawinan"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "5b Pencegahan Perkawinan"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -46124,9 +48170,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 1,
    "bobot": 1,
    "cakupanBobot": 0,
    "contoh": [
@@ -46136,6 +48186,9 @@
     "4c Wasiat"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "4c Wasiat"
+   ],
    "pengisi": [],
    "sumberMungkin": "belum dikaji",
    "catatan": ""
@@ -46150,9 +48203,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 1,
    "bobot": 1,
    "cakupanBobot": 0,
    "contoh": [
@@ -46162,6 +48219,9 @@
     "10a Ekonomi Syariah Biasa"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "10a Ekonomi Syariah Biasa"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""
@@ -46176,9 +48236,13 @@
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
+   "diketikPetugas": 0,
    "jumlahBlangko": 1,
+   "langsung": 1,
+   "bobotLangsung": 1,
    "bobot": 1,
    "cakupanBobot": 0,
    "contoh": [
@@ -46188,6 +48252,9 @@
     "10a Ekonomi Syariah Biasa"
    ],
    "status": "tidak",
+   "folderTakTertutup": [
+    "10a Ekonomi Syariah Biasa"
+   ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
    "catatan": ""

@@ -15,50 +15,58 @@ const { muat } = require("./registri-bot.cjs");
 const { KELOMPOK, TJ_DIDUKUNG, F23, TANPA_SUMBER, SUMBER_MUNGKIN } = require("./pengisi-kurasi.cjs");
 
 const analisa = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+const bacaOpsional = (nama) => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(akar, "docs", "isi-sipp-abt", nama), "utf8"));
+  } catch {
+    return null;
+  }
+};
+const beban = bacaOpsional("BEBAN-MANUAL.json") || {};
+const ukuranLanjutan = bacaOpsional("UKURAN-LANJUTAN.json");
 
 function kueri(db, sql) {
   const kon = mysql.createConnection({ host: "127.0.0.1", user: "root", database: db });
   return new Promise((ok, gagal) => kon.query(sql, (e, r) => (kon.end(), e ? gagal(e) : ok(r))));
 }
 
-/** Folder Derry -> modul deteksi yang melayaninya + kunci frekuensi (jenis/alur perkara SIPP). */
-function petaFolder(folder) {
-  const f = folder.replace(/ - BAS$/, "");
-  const r = (modul, freq) => ({ modul, freq });
-  if (/^ALUR 11 /.test(f)) return r(["itsbat-nikah"], ["360/16"]);
-  if (/^ALUR 12 /.test(f)) return r(["dispensasi-kawin"], ["362/16"]);
-  if (/^ALUR 13 /.test(f)) return r(["asal-usul"], ["358/16"]);
-  if (/^ALUR \d\d /.test(f) || /CONTRA PERCERAIAN|VERSTEK PERCERAIAN|Kumulasi Cerai Gugat/.test(f)) return r(["cerai"], ["347/15", "346/15"]);
-  if (/^1 Perceraian CG/.test(f)) return r(["cerai"], ["347/15"]);
-  if (/^1a Perceraian CT/.test(f)) return r(["cerai"], ["346/15"]);
-  if (/^1c /.test(f)) return r(["cerai", "itsbat-nikah"], ["360/15"]);
-  if (/^1d /.test(f)) return r(["cerai", "hadhanah"], []);
-  if (/ITSTBAT|Itsbat Nikah/i.test(f) && /^2a /.test(f)) return r(["itsbat-nikah"], ["360/15"]);
-  if (/^2 Itsbat|ITSTBAT|Itsbat Nikah Gugur/i.test(f)) return r(["itsbat-nikah"], ["360/16"]);
-  if (/^3 Dispensasi/.test(f)) return r(["dispensasi-kawin"], ["362/16"]);
-  if (/^4a /.test(f)) return r(["harta-bersama"], ["348/15"]);
-  if (/^4b /.test(f)) return r(["waris"], ["364/15"]);
-  if (/^4c /.test(f)) return r(["waris"], ["365/15"]);
-  if (/^5 Izin/.test(f)) return r(["izin-poligami"], ["341/15"]);
-  if (/^5a /.test(f)) return r([], ["344/15"]);
-  if (/^5b /.test(f)) return r([], ["342/16"]);
-  if (/^6 Perwalian/.test(f)) return r(["perwalian"], ["354/16"]);
-  if (/^6a /.test(f)) return r(["hadhanah"], ["369/15"]);
-  if (/^6b /.test(f)) return r(["hadhanah"], ["349/15"]);
-  if (/^7 Wali/.test(f)) return r(["wali-adhol"], ["363/16"]);
-  if (/^8 Asal|ASAL USUL/.test(f)) return r(["asal-usul"], ["358/16"]);
-  if (/^9 Penetapan Ahli Waris/.test(f)) return r(["waris"], ["371/16"]);
-  if (/^9a /.test(f)) return r(["pengangkatan-anak", "lain-lain"], ["369/16"]);
-  if (/^9b /.test(f)) return r(["lain-lain"], ["369/16"]);
-  if (/^10a /.test(f)) return r([], ["370/15"]);
-  if (/^10 /.test(f)) return r([], ["370/17"]);
-  // Relaas, sita, PTSP dipakai lintas jenis perkara: bobot 1 per blangko, pengisi mana pun dari jenis apa pun dihitung.
-  if (/^(98 Relaas|97 Sita|99 PTSP)/.test(f)) return { modul: [], freq: [], universal: true };
-  return r([], []);
-}
+const { petaFolder } = require("./folder-jenis.cjs");
 
+/** Isian yang oleh ABT sendiri punya cadangan bila dikosongkan: "sipp" (kosong = dari SIPP / OTOMATIS), "bawaan" (teks bawaan), "titik" (titik-titik / coret). */
+function jenisCadangan(namaAsli) {
+  const n = String(namaAsli || "");
+  if (/kosong\s*=\s*(dari\s*)?(data\s*)?sipp|\(otomatis|bila\s*sipp\s*tidak\s*memuat|isian\s*bila\s*sipp|kosong\s*=\s*otomatis/i.test(n)) return "sipp";
+  if (/kosong\s*=\s*titik|boleh\s*dikosongkan|^CORET:/i.test(n)) return "titik";
+  if (/kosong\s*=|\(bawaan|bawaan:/i.test(n)) return "bawaan";
+  return "";
+}
 const teksBersih = (s) => String(s || "").replace(/\s+/g, " ").trim();
 const urutNama = (a, b) => a.localeCompare(b, "id");
+
+function bagianLanjutan(d) {
+  const u = d.ukuranLanjutan;
+  if (!u) return [];
+  const g = u.ground || {};
+  const hit = (k) => (u.dihitung[k] ? u.dihitung[k].perkara : 0);
+  const baris = [
+    "## Dibangun 18 Okt (agen Z1) - isian popup yang datanya ada di SIPP",
+    "",
+    `Kode: \`aleta_bot/services/abtIsianSippLanjutan.js\`, dipanggil dari \`dariSipp\` (kanal "Isi dari SIPP"); SELECT saja. Diukur atas ${u.perkaraDiperiksa} perkara sipp_donggala sejak 2023 (tanpa menulis apa pun):`,
+    "",
+    "| nomor | isian | sumber SIPP | perkara kini terisi | tingkat | pembanding isian petugas (ABT lokal) |",
+    "| --- | --- | --- | ---: | --- | --- |",
+    `| 8705 | Tanggal kesepakatan perdamaian | perkara_mediasi.tgl_kesepakatan_perdamaian (hasil Y1) | ${hit("8705")} | otomatis | belum ada isian petugas (variabel baru 15 Okt) |`,
+    `| 8704 | Isi kesepakatan perdamaian | perkara_mediasi.isi_kesepakatan_perdamaian, HTML jadi baris | ${hit("8704")} | otomatis | belum ada isian petugas |`,
+    `| 8433 | Alasan pencabutan perkara | hasil mediasi Y2 (berhasil dengan pencabutan) | ${hit("8433")} | otomatis | 41 isian petugas sejak 2023, hanya 4 dari Y2 |`,
+    `| 1183 | Tgl. batas waktu ikrar talak | perkara_ikrar_talak.tanggal_sidang_pertama + 6 bulan | ${hit("1183")} | usulan ragu | ${g["1183"] ? `${g["1183"].cocokPersis} dari ${g["1183"].adaUsulan} persis sama` : "-"} |`,
+    `| 0303 | Tgl. pengumuman itsbat | perkara.tanggal_pendaftaran | ${hit("0303")} | usulan ragu | ${g["0303"] ? `${g["0303"].cocokPersis} dari ${g["0303"].adaUsulan} persis sama (92% dalam 0-1 hari)` : "-"} |`,
+    `| 0185 | Tgl. surat kuasa Tergugat | perkara_pengacara pihak 2 | ${hit("0185")} | usulan ragu | ${g["0185"] ? `${g["0185"].cocokPersis} dari ${g["0185"].adaUsulan} persis sama` : "-"} |`,
+    "",
+    "\"Otomatis\" = tercentang sendiri bila isian blangko kosong; \"usulan ragu\" = ditampilkan tanpa centang dan tidak menimpa isian petugas (aturan yang sama dengan usulan lain).",
+    "",
+  ];
+  return baris;
+}
 
 function tulisMd(d) {
   const r = d.ringkasan;
@@ -67,9 +75,9 @@ function tulisMd(d) {
   const kodeTampil = (x) => x.kode.join(", ");
   const ket = { ya: "ya", sebagian: "sebagian", tidak: "tidak" };
   const baris = d.isian.map((x, i) => {
-    const pengisi = [...new Set(x.pengisi.map((p) => (p.jenis === "abt-bawaan" ? "ABT sendiri (kosong = dari SIPP)" : p.jenis === "kelompok" ? p.id : p.jenis === "saksi" ? "susun saksi" : `${p.jenis} ${p.id.replace(/^f23-/, "")}`)))].join("; ");
+    const pengisi = [...new Set(x.pengisi.map((p) => (p.jenis === "abt-bawaan" ? (p.id === "abt-sipp" ? "ABT sendiri dari SIPP bila dikosongkan" : "bawaan ABT bila dikosongkan") : p.jenis === "kelompok" ? p.id : p.jenis === "saksi" ? "susun saksi" : `${p.jenis} ${p.id.replace(/^f23-/, "")}`)))].join("; ");
     const sm = x.status === "ya" ? pengisi : [x.sumberMungkin, pengisi && x.status === "sebagian" ? `(terisi di: ${pengisi})` : ""].filter(Boolean).join(" ");
-    return `| ${i + 1} | ${kodeTampil(x)} | ${nama(x)} | ${x.jumlahBlangko} | ${sel(x.contoh[0] || "").slice(0, 60)} | ${ket[x.status]} | ${sm} | ${sel(x.catatan)} |`;
+    return `| ${i + 1} | ${kodeTampil(x)} | ${nama(x)} | ${x.jumlahBlangko} | ${x.diketikPetugas} | ${sel(x.contoh[0] || "").slice(0, 60)} | ${ket[x.status]} | ${sm} | ${sel(x.catatan)} |`;
   });
   return [
     "# Daftar cek isian popup blangko Derry (Isi dari SIPP & input ke ABT)",
@@ -92,10 +100,15 @@ function tulisMd(d) {
     "- **ya** = ada pengisi yang menghasilkan nilai untuk SEMUA jenis perkara pemakai blangko itu; **sebagian** = hanya sebagian jenis/blangko; **tidak** = belum ada pengisi.",
     "- Pengisi diperiksa uji penjaga (`isi-sipp-abt-daftar-cek.test.ts`): kode harus benar-benar ada di berkas pengisinya.",
     "",
+    ...bagianLanjutan(d),
+    "## Temuan gerbang tombol (diperiksa 18 Okt)",
+    "",
+    "Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `scripts/isi-sipp-abt/gerbang-tombol.cjs` membaca cermin gerbang langsung dari `ekstensi-sipp/abt.js` dan memeriksa tiap blangko x isian berpengisi posita: untuk jenis utama (cerai, itsbat, dispensasi kawin, ahli waris, perwalian) tombolnya selalu terpicu. Celah yang tersisa kecil: BAS sita insidentil harta bersama/kewarisan (9161-9163), pencegahan perkawinan (1029, tanpa modul jenisnya), dan blangko cerai kumulasi cacat formil ([99b]) yang memang tidak memerlukan fakta.",
+    "",
     "## Tabel per isian (urut bobot)",
     "",
-    "| # | nomor | nama | jml blangko | contoh blangko | otomatis? | sumber / pengisi | catatan |",
-    "| ---: | --- | --- | ---: | --- | --- | --- | --- |",
+    "| # | nomor | nama | jml blangko | diketik petugas (perkara sejak 2023) | contoh blangko | otomatis? | sumber / pengisi | catatan |",
+    "| ---: | --- | --- | ---: | ---: | --- | --- | --- | --- |",
     ...baris,
     "",
     "## Penanda tak dikenal (bukan isian popup)",
@@ -143,27 +156,37 @@ function tulisMd(d) {
           jenis: i.jenis,
           tingkat: i.tingkat,
           wajib: i.wajib,
+          cadangan: jenisCadangan(i.namaAsli),
           keadaan: i.keadaan,
           pemicu: i.pemicu,
           jumlahBlangko: 0,
+          langsung: 0,
+          bobotLangsung: 0,
           bobot: 0,
           bobotTertutup: 0,
+          bobotLangsungTertutup: 0,
           contoh: [],
           folder: {},
           pengisi: new Map(),
+          folderTakTertutup: {},
           tertutupBlangko: 0,
         };
         isian.set(kunci, r);
       }
       if (!r.kode.includes(i.kode)) r.kode.push(i.kode);
       r.jumlahBlangko++;
+      if (i.langsung) {
+        r.langsung++;
+        r.bobotLangsung += bobot;
+      }
       r.bobot += bobot;
       r.folder[b.folder] = (r.folder[b.folder] || 0) + 1;
       if (r.contoh.length < 3 && !r.contoh.includes(b.berkas)) r.contoh.push(b.berkas);
 
       // Pengisi yang berlaku untuk kejadian ini (blangko di folder dengan modul tertentu).
       const pengisi = [];
-      if (!i.wajib && /kosong\s*=\s*dari\s*sipp|\(otomatis/i.test(i.namaAsli)) pengisi.push({ jenis: "abt-bawaan", id: "abt-bawaan", tingkat: "otomatis" });
+      const cad = jenisCadangan(i.namaAsli);
+      if (cad === "sipp" || cad === "bawaan") pengisi.push({ jenis: "abt-bawaan", id: `abt-${cad}`, tingkat: "otomatis" });
       if (i.jenis === "tj" && TJ_DIDUKUNG.kunci.includes(String(i.tj))) pengisi.push({ jenis: "saksi", id: "tj-saksi", berkas: TJ_DIDUKUNG.berkas, tingkat: "otomatis" });
       for (const k of [i.kode]) {
         for (const g of kunciKelompok.get(k) || []) {
@@ -177,9 +200,11 @@ function tulisMd(d) {
           }
         }
       }
+      if (!pengisi.length && (i.langsung || r.langsung === 0)) r.folderTakTertutup[b.folder] = (r.folderTakTertutup[b.folder] || 0) + 1;
       if (pengisi.length) {
         r.bobotTertutup += bobot;
         r.tertutupBlangko++;
+        if (i.langsung) r.bobotLangsungTertutup += bobot;
       }
       for (const p of pengisi) r.pengisi.set(`${p.jenis}|${p.id}`, p);
     }
@@ -191,13 +216,17 @@ function tulisMd(d) {
     const tanpa = r.kode.map((k) => TANPA_SUMBER[k]).find(Boolean);
     const ada = [...r.pengisi.values()];
     const otomatis = ada.some((p) => p.tingkat === "otomatis");
+    // Isian yang tertulis langsung di RTF dinilai dari kejadian langsung saja; yang hanya dibaca variabel lain (rantai,
+    // sering bersyarat jenis perkara) dinilai dari semua kejadian.
+    const dasarBobot = r.langsung > 0 ? r.bobotLangsung : r.bobot;
+    const dasarTutup = r.langsung > 0 ? r.bobotLangsungTertutup : r.bobotTertutup;
     let status;
-    if (r.bobotTertutup === 0) status = "tidak";
-    else if (r.bobotTertutup >= r.bobot) status = otomatis || ada.some((p) => p.jenis === "deteksi" || p.jenis === "f23") ? "ya" : "sebagian";
+    if (dasarTutup === 0) status = "tidak";
+    else if (dasarTutup >= dasarBobot) status = otomatis || ada.some((p) => p.jenis === "deteksi" || p.jenis === "f23") ? "ya" : "sebagian";
     else status = "sebagian";
     if (tanpa) status = "tidak";
     
-    const sm = SUMBER_MUNGKIN({ kode: r.kode, nama: r.nama, namaAsli: r.namaAsli, status });
+    const sm = SUMBER_MUNGKIN({ kode: r.kode, nama: r.nama, namaAsli: r.namaAsli, status, cadangan: r.cadangan });
     hasil.push({
       kunci: r.kunci,
       kode: r.kode,
@@ -206,14 +235,19 @@ function tulisMd(d) {
       jenis: r.jenis,
       tingkat: r.tingkat,
       wajib: r.wajib,
+      cadangan: r.cadangan,
       keadaan: r.keadaan,
       pemicu: r.pemicu,
+      diketikPetugas: Math.max(0, ...r.kode.map((k) => (beban[k] || { perkara: 0 }).perkara)),
       jumlahBlangko: r.jumlahBlangko,
+      langsung: r.langsung,
+      bobotLangsung: r.bobotLangsung,
       bobot: r.bobot,
-      cakupanBobot: r.bobot ? Math.round((r.bobotTertutup / r.bobot) * 1000) / 1000 : 0,
+      cakupanBobot: dasarBobot ? Math.round((dasarTutup / dasarBobot) * 1000) / 1000 : 0,
       contoh: r.contoh,
       folder: Object.keys(r.folder).sort(urutNama),
       status,
+      folderTakTertutup: Object.keys(r.folderTakTertutup).sort(urutNama),
       pengisi: ada.map((p) => ({ jenis: p.jenis, id: p.id, berkas: p.berkas || "", tingkat: p.tingkat })),
       sumberMungkin: tanpa ? tanpa.sumberMungkin : sm.sumberMungkin,
       catatan: tanpa ? tanpa.catatan : sm.catatan,
@@ -241,9 +275,11 @@ function tulisMd(d) {
       sebagian: hitung("sebagian"),
       tidak: hitung("tidak"),
       tanpaSumber: hasil.filter((x) => x.status === "tidak" && /^(tidak ada)/i.test(x.sumberMungkin)).length,
+      opsionalTitik: hasil.filter((x) => x.status === "tidak" && x.cadangan === "titik").length,
       penandaTakDikenal: Object.keys(tak).length,
     },
     penandaTakDikenal: tak,
+    ukuranLanjutan: ukuranLanjutan || null,
     blangko: blangkoKeluar,
     isian: hasil,
   };

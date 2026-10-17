@@ -1,0 +1,90 @@
+{
+ "perkaraDiperiksa": 3267,
+ "dihitung": {
+  "1183": {
+   "perkara": 328,
+   "pasti_cukup": 0,
+   "ragu": 328
+  },
+  "8433": {
+   "perkara": 26,
+   "pasti_cukup": 26,
+   "ragu": 0
+  },
+  "8704": {
+   "perkara": 8,
+   "pasti_cukup": 8,
+   "ragu": 0
+  },
+  "8705": {
+   "perkara": 8,
+   "pasti_cukup": 8,
+   "ragu": 0
+  },
+  "0303": {
+   "perkara": 738,
+   "pasti_cukup": 0,
+   "ragu": 738
+  },
+  "0185": {
+   "perkara": 34,
+   "pasti_cukup": 0,
+   "ragu": 34
+  }
+ },
+ "perJenis": {
+  "1183": {
+   "346": 328
+  },
+  "8433": {
+   "346": 5,
+   "347": 18,
+   "348": 1,
+   "364": 2
+  },
+  "8704": {
+   "346": 1,
+   "347": 2,
+   "348": 2,
+   "364": 3
+  },
+  "8705": {
+   "346": 1,
+   "347": 2,
+   "348": 2,
+   "364": 3
+  },
+  "0303": {
+   "360": 738
+  },
+  "0185": {
+   "346": 16,
+   "347": 5,
+   "348": 7,
+   "360": 1,
+   "364": 5
+  }
+ },
+ "ground": {
+  "1183": {
+   "diketikPetugas": 11,
+   "adaUsulan": 11,
+   "cocokPersis": 7
+  },
+  "8705": {
+   "diketikPetugas": 0,
+   "adaUsulan": 0,
+   "cocokPersis": 0
+  },
+  "0303": {
+   "diketikPetugas": 416,
+   "adaUsulan": 412,
+   "cocokPersis": 189
+  },
+  "0185": {
+   "diketikPetugas": 1,
+   "adaUsulan": 1,
+   "cocokPersis": 1
+  }
+ }
+}
