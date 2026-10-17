@@ -127,7 +127,7 @@ afterEach(async () => {
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; abtAwal?: Record<string, string> } = {}): Halaman {
+function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array } = {}): Halaman {
   const badan = `<div id="header"><div class="h_right"><b>Pengguna</b> Panitera</div></div><div id="wrapper"><div id="navbar">${MENU}</div><div id="content"></div></div>`;
   const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${badan}</body></html>`, { url: BERANDA, runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]);
   terbuka.push(dom);
@@ -277,6 +277,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
       return html(`<div class="panel-heading"><b><big>581/Pdt.G/2026/PA.Dgl</big></b> - TanyaJwb Saksi : <b>Nama Saksi</b></div><select><option value='A1a'>(A1a) Pertanyaan Saksi P CG</option></select><script>var ajax_data = ${JSON.stringify(rows)}\n</script>`);
     }
     if (url.startsWith(`${ABT}/preview?`)) {
+      if (p.rtfBytes) return new Response(p.rtfBytes, { status: 200, headers: { "content-type": "application/vnd.ms-word", "content-disposition": `attachment; filename="581/Pdt.G/2026/PA.Dgl - ${BLANGKO_PUT}.rtf"` } });
       return new Response(RTF_PUT(abt["0007"] || "..."), { status: 200, headers: { "content-type": "application/vnd.ms-word", "content-disposition": `attachment; filename="581/Pdt.G/2026/PA.Dgl - ${BLANGKO_PUT}.rtf"` } });
     }
     if (url === `${ABT}/main/anonim`) return new Response(RTF_PUT("ANONIM"), { status: 200, headers: { "content-disposition": 'attachment; filename="anonim_581.rtf"' } });
@@ -924,6 +925,25 @@ describe("audit 17 Okt: E7 huruf alasan 8503 dibaca seperti ABT", () => {
     ketik(h, q(h, "#bd-i8503") as HTMLInputElement, "huruf F", false);
     expect(Boolean(q(h, '.bd-f[data-f="0227"]'))).toBe(false);
     expect(q(h, '[data-peringatan="8503"]')!.textContent).toMatch(/tidak mengenali "huruf F"/);
+  });
+});
+
+describe("audit 17 Okt: E8 byte 0x80-0x9F RTF ke PDF", () => {
+  it("E8: RTF dengan byte mentah 0x80-0x9F dikirim ke pengubah PDF persis sama (latin1 biner, bukan cp1252 yang dipetakan ulang)", async () => {
+    const mentah = RTF_PUT("dua anak \u0093baik\u0094 \u0096 \u0080 \u009f ok");
+    const bita = new Uint8Array(Buffer.from(mentah, "latin1"));
+    expect(Array.from(bita)).toEqual(expect.arrayContaining([0x93, 0x94, 0x96, 0x80, 0x9f]));
+    const h = buka({ rtfBytes: bita });
+    await pilihPutusan(h);
+    await sampai(() => q(h, '[data-bk="P.1"][data-isi="no"]'), "bukti");
+    klik(h, '[data-bd2="cetak"]');
+    await sampai(() => {
+      const e = q(h, "#bd-ingat");
+      return e && !e.hidden ? e : null;
+    }, "pengingat");
+    klik(h, '[data-bd2="tetapcetak"]');
+    await sampai(() => h.pdfRtf.length >= 1, "PDF dibuat", 8000);
+    expect(h.pdfRtf[0]).toBe(mentah);
   });
 });
 
