@@ -96,6 +96,19 @@ function tgl(nilai) {
   return t;
 }
 
+/**
+ * Teks "YYYY-MM-DD HH:MM:SS" dari kolom bot yang ditulis toMysqlDate (UTC) -> Date
+ * yang benar (sama dengan botDbService.fromMysqlDate, tanpa memuat sambungannya).
+ * Date dibiarkan apa adanya; selain itu null.
+ */
+function waktuUtc(nilai) {
+  if (nilai instanceof Date) return nilai;
+  const m = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})/.exec(String(nilai || "").trim());
+  if (!m) return null;
+  const d = new Date(`${m[1]}T${m[2]}Z`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 function hari(dari, sampai) {
   if (!dari || !sampai) return null;
   const a = new Date(`${dari}T00:00:00Z`).getTime();
@@ -762,9 +775,13 @@ async function faktaBanyakPerkara(id, deps = {}) {
         async () => {
           const bacaBot = deps.botKueri || ((sql, p) => require("./botDbService").query(sql, p));
           const store = deps.ecourtStore || require("./ecourtStoreService");
+          // Waktu dibaca sebagai TEKS lalu ditegaskan UTC (toMysqlDate menulis UTC);
+          // Date dari driver ditafsirkan LOKAL dan tanggalnya mundur sehari untuk
+          // unggahan 00.00-07.59 WITA (audit 17 Okt).
           const baris = await bacaBot(
             `SELECT nomor_perkara AS nomorPerkara, judul_dokumen AS judulDokumen, status_verifikasi AS statusVerifikasi,
-                    diunggah_pada AS diunggahPada, terakhir_terlihat AS terlihat
+                    DATE_FORMAT(diunggah_pada, '%Y-%m-%d %H:%i:%s') AS diunggahPada,
+                    DATE_FORMAT(terakhir_terlihat, '%Y-%m-%d %H:%i:%s') AS terlihat
                FROM aleta_bot_ecourt_documents WHERE nomor_perkara IN (${daftarNomor.map(() => "?").join(", ")})`,
             daftarNomor
           );
@@ -772,8 +789,8 @@ async function faktaBanyakPerkara(id, deps = {}) {
             nomor: cleanText(b.nomorPerkara).toLowerCase(),
             judul: cleanText(b.judulDokumen),
             menunggu: store.dokumenMenungguMajelis(b),
-            diunggah: tgl(b.diunggahPada),
-            terlihat: tgl(b.terlihat),
+            diunggah: tgl(waktuUtc(b.diunggahPada)),
+            terlihat: tgl(waktuUtc(b.terlihat)),
           }));
         },
         []
@@ -962,6 +979,7 @@ module.exports = {
   nilaiLimaBulan,
   nilaiVerifikasiEcourt,
   hariKerjaSesudah,
+  waktuUtc,
   susunFakta,
   kodeTerbaca,
   faktaBanyakPerkara,
