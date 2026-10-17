@@ -31,7 +31,7 @@ const crypto = require("crypto");
 const express = require("express");
 
 const { readRuntimeConfig } = require("../config/runtime-config");
-const { layanan } = require("../services/abtPengaturanService");
+const { layanan, kalimatAwam } = require("../services/abtPengaturanService");
 
 const router = express.Router();
 
@@ -67,7 +67,10 @@ router.use(wajibToken);
 
 /** Jawaban galat: penolakan (prasyarat/validasi) = 409/400 dengan kode; lainnya 500. */
 function kirimGalat(res, galat) {
-  const pesan = String((galat && galat.message) || galat || "galat").slice(0, 500);
+  const mentah = String((galat && galat.message) || galat || "galat");
+  // Rincian teknis (ER_*, SQL) hanya di log; layar mendapat kalimat awam.
+  if (!(galat && galat.ditolak)) console.error("[abtPengaturan] galat:", mentah);
+  const pesan = kalimatAwam(mentah).slice(0, 500);
   if (galat && galat.ditolak) {
     const status = galat.kode === "berubah" ? 409 : galat.kode === "tidak_ada" ? 404 : 400;
     return res.status(status).json({ ok: false, kode: galat.kode || "ditolak", message: pesan, uji: galat.uji || undefined });
