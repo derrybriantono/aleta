@@ -57,6 +57,22 @@
     const induk = el && el.parentElement;
     return Boolean(induk && induk.closest(BUKAN_SIPP));
   }
+  /**
+   * Teks SIPP sebuah sel TANPA sisipan ALETA di dalamnya (tombol ABT/ALETA L1,
+   * lencana konten.js, penanda ini sendiri). Sel nomor perkara non-e-Court SIPP
+   * tidak berspasi sesudah nomornya: "123/Pdt.G/2026/PA.Dgl" + "ABTALETA" tidak
+   * lagi cocok dengan pola nomor (batas kata hilang) - penandanya dulu tidak
+   * pernah tergambar di baris itu (audit 17 Okt). Simpul ALETA diganti spasi.
+   */
+  function teksSipp(el) {
+    if (!el) return "";
+    let t = "";
+    for (const n of Array.from(el.childNodes)) {
+      if (n.nodeType === 3) t += n.nodeValue;
+      else if (n.nodeType === 1) t += n.matches && n.matches(BUKAN_SIPP) ? " " : teksSipp(n);
+    }
+    return t;
+  }
   const TINGKAT_URUT = { merah: 0, oranye: 1, kuning: 2, biru: 3, abu: 4, hijau: 5 };
   const NAMA_TINGKAT = { merah: "perlu tindakan", oranye: "perhatian", kuning: "perhatian", biru: "keterangan", abu: "keterangan", hijau: "baik" };
 
@@ -127,7 +143,7 @@
       if (!LABEL_NOMOR.test(String(sel.textContent || "").replace(/\s+/g, " ").trim())) continue;
       let isi = sel.nextElementSibling;
       if (isi && /^:?$/.test(String(isi.textContent || "").trim())) isi = isi.nextElementSibling || isi;
-      const cocok = isi ? POLA.exec(String(isi.textContent || "")) : null;
+      const cocok = isi ? POLA.exec(teksSipp(isi)) : null;
       if (cocok) return cocok[1];
     }
     // Sebagian halaman perkara memuat nomornya hanya di judul jendela.
@@ -144,7 +160,7 @@
       let nomor = "";
       let sel = null;
       for (const c of Array.from(baris.cells || [])) {
-        const cocok = POLA.exec(String(c.textContent || ""));
+        const cocok = POLA.exec(teksSipp(c));
         if (cocok) {
           nomor = cocok[1];
           sel = c;
