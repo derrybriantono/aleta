@@ -258,6 +258,7 @@
     galatSusunan: "",
     nilai: {}, // kode -> { status, teks }
     isi: {}, // kode -> teks yang terlihat di layar (tersimpan atau diketik)
+    diketik: new Set(), // kode yang benar-benar diketik petugas sejak terakhir disimpan (blur hanya menyimpan ini)
     tersimpan: {}, // kode -> "tersimpan" | "menyimpan" | "gagal: ..."
     saran: {}, // kode -> teks saran (bayangan)
     menuSaran: null,
@@ -758,6 +759,7 @@
     S.galatSusunan = "";
     S.nilai = {};
     S.isi = {};
+    S.diketik.clear();
     S.tersimpan = {};
     S.saran = {};
     S.bukti = { P: null, T: null };
@@ -1577,8 +1579,14 @@
         (v && !ada ? `<option value="${esc(v)}" selected>${esc(v)}</option>` : "") +
         `</select></div>`;
     } else {
+      // Nilai ABT bergaris baru (mis. beberapa paragraf): <input type=text> membuang \n dari nilainya,
+      // jadi kotaknya textarea supaya tampil & tersimpan utuh.
+      const kotak =
+        b.jenis !== "tanggal" && /\n/.test(v)
+          ? `<textarea id="bd-i${b.kode}" data-k="${b.kode}" rows="${Math.min(8, v.split("\n").length + 1)}" placeholder="${esc(sr || "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>${esc(v)}</textarea>`
+          : `<input id="bd-i${b.kode}" data-k="${b.kode}" type="${b.jenis === "tanggal" ? "date" : "text"}" value="${esc(v)}" placeholder="${esc(sr && b.jenis !== "tanggal" ? sr : b.jenis === "tanggal" ? "" : "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>`;
       isian =
-        `<div class="bd-isiwadah"><input id="bd-i${b.kode}" data-k="${b.kode}" type="${b.jenis === "tanggal" ? "date" : "text"}" value="${esc(v)}" placeholder="${esc(sr && b.jenis !== "tanggal" ? sr : b.jenis === "tanggal" ? "" : "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>` +
+        `<div class="bd-isiwadah">${kotak}` +
         `${pil.length ? `<button type="button" class="bd-ikon" data-menu="${b.kode}" aria-label="Pilihan lain untuk ${esc(b.nama)}" tabindex="-1">▾</button>` : ""}</div>` +
         `${S.menuSaran === b.kode && pil.length ? `<div class="bd-saranmenu" role="listbox">${pil.map((o) => `<button type="button" role="option" data-ambil="${b.kode}" data-nilai="${esc(o)}">${esc(o)}</button>`).join("")}</div>` : ""}`;
     }
@@ -1888,9 +1896,12 @@
     const nilai = S.semua.nilai || {};
     const baris = (nama, teks, asal, kode, bisaUbah) => {
       const samar = perluDisamarkan(teks);
+      const isiNya = String(S.isi[kode] !== undefined ? S.isi[kode] : teks || "");
       return `<div class="bd-vbaris"><span>${esc(nama)}</span>${
         bisaUbah
-          ? `<input data-k="${kode}" value="${esc(S.isi[kode] !== undefined ? S.isi[kode] : teks)}" placeholder="kosong = dari SIPP" ${bolehTulis() ? "" : "readonly"} aria-label="${esc(nama)}">`
+          ? /\n/.test(isiNya)
+            ? `<textarea data-k="${kode}" rows="${Math.min(6, isiNya.split("\n").length + 1)}" placeholder="kosong = dari SIPP" ${bolehTulis() ? "" : "readonly"} aria-label="${esc(nama)}">${esc(isiNya)}</textarea>`
+            : `<input data-k="${kode}" value="${esc(isiNya)}" placeholder="kosong = dari SIPP" ${bolehTulis() ? "" : "readonly"} aria-label="${esc(nama)}">`
           : `<span class="bd-nilai${samar ? " bd-sembunyi" : ""}" ${samar ? 'tabindex="0" title="Arahkan penunjuk ke sini untuk melihat"' : ""}>${esc(teks || "—")}</span>`
       }<span class="bd-chip">${esc(asal)}</span></div>`;
     };
@@ -2203,11 +2214,9 @@
         : "");
     if (sunting) {
       for (const el of cariSemua("#bd-kertas .bd-v[data-kode]", w)) {
-        if (el.querySelector("input")) continue;
+        if (el.querySelector("input, textarea")) continue;
         const kode = el.getAttribute("data-kode");
-        const inp = document.createElement("input");
-        inp.className = "bd-vinput";
-        inp.value = String(S.isi[kode] || "");
+        const inp = kotakSunting(String(S.isi[kode] || ""));
         inp.setAttribute("data-vk", kode);
         inp.setAttribute("aria-label", `Sunting ${el.getAttribute("data-bagian") || kode}`);
         el.textContent = "";
@@ -2215,26 +2224,37 @@
       }
     }
   }
+  /** Kotak sunting pratinjau: textarea bila nilainya bergaris baru (<input> membuang \n). */
+  function kotakSunting(nilai, tanggal) {
+    const ta = !tanggal && /\n/.test(nilai);
+    const inp = document.createElement(ta ? "textarea" : "input");
+    inp.className = "bd-vinput";
+    if (ta) inp.rows = Math.min(8, nilai.split("\n").length + 1);
+    else inp.type = tanggal ? "date" : "text";
+    inp.value = nilai;
+    inp.setAttribute("data-awal", inp.value);
+    return inp;
+  }
   function suntingSatu(el) {
     if (!bolehTulis()) return toast(`${NAMA_JENIS[S.blangko.jenis]} hanya diubah ${NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]] || "pejabat perkara"}.`);
-    if (el.querySelector("input")) return;
+    if (el.querySelector("input, textarea")) return;
     const kode = el.getAttribute("data-kode");
     const b = S.susunan && S.susunan.isian.find((x) => x.kode === kode);
-    const inp = document.createElement("input");
-    inp.className = "bd-vinput";
-    inp.type = b && b.jenis === "tanggal" ? "date" : "text";
-    inp.value = b && b.jenis === "tanggal" ? keIso(S.isi[kode] || el.textContent) : String(S.isi[kode] || el.textContent || "");
+    const tanggal = Boolean(b && b.jenis === "tanggal");
+    const inp = kotakSunting(tanggal ? keIso(S.isi[kode] || el.textContent) : String(S.isi[kode] || el.textContent || ""), tanggal);
+    let diketik = false;
+    inp.addEventListener("input", () => (diketik = true));
     inp.setAttribute("aria-label", `Sunting ${el.getAttribute("data-bagian") || kode}`);
     const awal = el.innerHTML;
     el.textContent = "";
     el.appendChild(inp);
     inp.focus();
     let selesai = false;
-    const akhir = async (simpan) => {
+    const akhir = async (simpan, lewatBlur) => {
       if (selesai) return;
       selesai = true;
       const nilai = inp.value;
-      if (!simpan || nilai === String(S.isi[kode] || "")) {
+      if (!simpan || (lewatBlur && !diketik) || nilai === String(S.isi[kode] || "")) {
         el.innerHTML = awal;
         return;
       }
@@ -2245,9 +2265,9 @@
       renderStatusIsian(kode);
       if (ok === false) toast(S.tersimpan[kode] || "Belum tersimpan.");
     };
-    inp.addEventListener("blur", () => void akhir(true));
+    inp.addEventListener("blur", () => void akhir(true, true));
     inp.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
+      if (e.key === "Enter" && !(inp.tagName === "TEXTAREA" && e.shiftKey)) {
         e.preventDefault();
         void akhir(true);
       } else if (e.key === "Escape") {
@@ -2257,11 +2277,12 @@
     });
   }
   async function simpanSuntingPenuh() {
-    const inputs = cariSemua("#bd-kertas input[data-vk]", wadah.pratinjau);
+    const inputs = cariSemua("#bd-kertas [data-vk]", wadah.pratinjau);
     const ubah = [];
     for (const i of inputs) {
       const kode = i.getAttribute("data-vk");
-      if (i.value !== String(S.isi[kode] || "")) ubah.push([kode, i.value]);
+      // Dibandingkan juga dengan isi kotak saat dibuka: hanya yang diubah petugas ditulis ke ABT.
+      if (i.value !== i.getAttribute("data-awal") && i.value !== String(S.isi[kode] || "")) ubah.push([kode, i.value]);
     }
     S.prat.suntingPenuh = false;
     if (!ubah.length) {
@@ -3234,6 +3255,7 @@
     const k = t.getAttribute && t.getAttribute("data-k");
     if (k) {
       S.isi[k] = t.value;
+      S.diketik.add(k);
       S.peringat = false;
       if (k === "8503") {
         const pos = t.selectionStart;
@@ -3341,6 +3363,9 @@
     const t = e.target;
     const k = t.getAttribute && t.getAttribute("data-k");
     if (!k || t.type === "date" || t.tagName === "SELECT") return;
+    // Fokus yang sekadar lewat (Tab, klik) tidak menulis apa pun ke ABT - hanya yang diketik.
+    if (!S.diketik.has(k)) return;
+    S.diketik.delete(k);
     const nilai = t.value;
     const lama = S.nilai[k] ? String(S.nilai[k].teks || "") : "";
     if (nilai === lama || (!nilai.trim() && !lama.trim())) return;
@@ -3454,6 +3479,7 @@
       S.susunan = null;
       S.galatSusunan = "";
       S.isi = {};
+      S.diketik.clear();
       S.nilai = {};
       S.tersimpan = {};
       S.saran = {};

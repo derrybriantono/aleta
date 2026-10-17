@@ -231,12 +231,13 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-f.lebar { grid-column: 1 / -1; border-color: var(--line); gap: 8px; }
 #aleta-bd-akar .bd-fh { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 #aleta-bd-akar .bd-fh label { font-weight: 600; min-width: 0; }
-#aleta-bd-akar .bd-f input, #aleta-bd-akar .bd-f select, #aleta-bd-akar .bd-f textarea, #aleta-bd-akar .bd-vbaris input {
+#aleta-bd-akar .bd-f input, #aleta-bd-akar .bd-f select, #aleta-bd-akar .bd-f textarea, #aleta-bd-akar .bd-vbaris input, #aleta-bd-akar .bd-vbaris textarea {
   background: var(--deep); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 15.2px; width: 100%; min-width: 0;
 }
 #aleta-bd-akar .bd-f input[readonly] { opacity: .75; }
 #aleta-bd-akar .bd-isiwadah { display: flex; gap: 6px; align-items: center; }
 #aleta-bd-akar .bd-isiwadah input { flex: 1; }
+#aleta-bd-akar .bd-isiwadah textarea, #aleta-bd-akar .bd-vbaris textarea { flex: 1; resize: vertical; }
 #aleta-bd-akar .bd-isiwadah input::placeholder { color: var(--muted); opacity: .8; font-style: italic; }
 #aleta-bd-akar .bd-saranmenu { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; background: var(--deep); overflow: hidden; }
 #aleta-bd-akar .bd-saranmenu button { all: unset; box-sizing: border-box; cursor: pointer; padding: 6px 10px; font-size: 14.1px; color: var(--fg); }
@@ -350,6 +351,7 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-kertas .bd-v.kosong { background: var(--kosong); }
 #aleta-bd-akar .bd-kertas .bd-v.rusak { background: #ffb4b4; outline: 1px solid #c0392b; }
 #aleta-bd-akar .bd-vinput { font: inherit; border: 1px solid #3c7cf0; border-radius: 3px; padding: 0 3px; min-width: 6em; max-width: 100%; background: #fff; color: #111; }
+#aleta-bd-akar textarea.bd-vinput { display: block; width: 100%; resize: vertical; }
 /* cetak */
 #aleta-bd-akar .bd-utas { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 #aleta-bd-akar .bd-pilc { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; background: var(--deep); cursor: pointer; font-size: 14.1px; }

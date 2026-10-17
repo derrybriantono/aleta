@@ -127,7 +127,7 @@ afterEach(async () => {
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean } = {}): Halaman {
+function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; abtAwal?: Record<string, string> } = {}): Halaman {
   const badan = `<div id="header"><div class="h_right"><b>Pengguna</b> Panitera</div></div><div id="wrapper"><div id="navbar">${MENU}</div><div id="content"></div></div>`;
   const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${badan}</body></html>`, { url: BERANDA, runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]);
   terbuka.push(dom);
@@ -165,7 +165,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
     },
   };
   const minta: Minta[] = [];
-  const abt: Record<string, string> = { "8503": "F" }; // isian tersimpan di ABT (data_teks/tanggal)
+  const abt: Record<string, string> = { "8503": "F", ...(p.abtAwal ?? {}) }; // isian tersimpan di ABT (data_teks/tanggal)
   const tj: Halaman["tj"] = { "5058": [{ no: "1", tanya: "Apakah saudara kenal Penggugat?", jawab: "Kenal, saya kakaknya;" }, { no: "2", tanya: "Apa yang saudara tahu?", jawab: "Mereka sering bertengkar;\nBahwa cukup sekian;" }], "5059": [] };
   const pdfRtf: string[] = [];
   const orang = ORANG[p.orang ?? "hakim"];
@@ -560,6 +560,23 @@ describe("F. perlu diisi", () => {
     expect(idxCek).toBeLessThan(idxSimpan);
     expect(mintaKe(h, /tanyajawab_template\?hapus/)).toEqual([]);
     await sampai(() => /tersimpan di ABT/.test(akar(h).textContent || ""), "keterangan tersimpan");
+  });
+
+  it("audit 17 Okt: nilai ABT bergaris baru tampil di textarea utuh; fokus yang sekadar lewat tidak menulis ke ABT", async () => {
+    const h = buka({ abtAwal: { "0007": "dikaruniai 2 orang anak:\n1. Anak Satu;\n2. Anak Dua;" } });
+    await pilihPutusan(h);
+    const el = (await sampai(() => q(h, "#bd-i0007"), "kotak 0007")) as HTMLTextAreaElement;
+    expect(el.tagName).toBe("TEXTAREA");
+    expect(el.value).toBe("dikaruniai 2 orang anak:\n1. Anak Satu;\n2. Anak Dua;");
+    el.dispatchEvent(new h.w.FocusEvent("focusout", { bubbles: true }));
+    const kotak8503 = q(h, "#bd-i8503") as HTMLInputElement | null;
+    kotak8503?.dispatchEvent(new h.w.FocusEvent("focusout", { bubbles: true }));
+    await tunggu(300);
+    expect(mintaKe(h, /edit_data\?no_var=(0007|8503)/, "POST")).toEqual([]);
+    expect(h.abt["0007"]).toBe("dikaruniai 2 orang anak:\n1. Anak Satu;\n2. Anak Dua;");
+    // Yang benar-benar diketik tetap tersimpan, garis barunya utuh.
+    ketik(h, el as unknown as HTMLInputElement, "dikaruniai 1 orang anak:\n1. Anak Satu;");
+    await sampai(() => h.abt["0007"] === "dikaruniai 1 orang anak:\n1. Anak Satu;", "tersimpan utuh");
   });
 
   it("audit 17 Okt: bacaan ABT gagal -> Muat/Tambah baris/Simpan mati dan simpan ditolak, keterangan lama di ABT tidak terhapus", async () => {
