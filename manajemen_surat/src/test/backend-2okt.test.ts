@@ -222,7 +222,7 @@ describe("butir 14 - tidak ada tanda ALETA di payload tulis SIPP/ABT/e-Court", (
   });
 });
 
-describe("butir 14 - jeda seperti manusia untuk aksi tulis lewat halaman e-Court", () => {
+describe("butir 14 - jeda seperti manusia (tulisan database); pengisian borang e-Court langsung sejak 17 Okt", () => {
   const jeda = () =>
     muatSegar<{
       hitung: (j: string, o?: { acak?: () => number }) => number;
@@ -251,19 +251,14 @@ describe("butir 14 - jeda seperti manusia untuk aksi tulis lewat halaman e-Court
     j.setelSkala(null as unknown as number);
   });
 
-  it("pengemudi peramban e-Court menjeda SEBELUM klik, isi, unggah, dan kirim", () => {
+  it("pengemudi peramban e-Court (17 Okt): isi borang & klik LANGSUNG - tanpa jedaManusia dan tanpa ketikan per huruf", () => {
     const s = baca("services/ecourtPerambanAksiService.js");
-    const sebelum = (jedaTeks: string, aksi: string) => {
-      const a = s.indexOf(aksi);
-      expect(a, aksi).toBeGreaterThan(0);
-      const potongan = s.slice(Math.max(0, a - 120), a);
-      expect(potongan, aksi).toContain(jedaTeks);
-    };
-    sebelum('jedaManusia.jeda("klik"', `page.click('[data-pk-aksi="verifikasi"]')`);
-    sebelum('jedaManusia.jeda("klik")', `page.click('[data-pk-aksi="tte"]')`);
-    sebelum('jedaManusia.jeda("isi")', `kolom[0].type(String(passphrase || ""))`);
-    sebelum('jedaManusia.jeda("unggah")', "kolom[0].uploadFile(jalurBerkas)");
-    sebelum('jedaManusia.jeda("simpan")', `page.click('[data-pk-aksi="kirim-dialog"]')`);
+    expect(s).not.toMatch(/jedaManusia\s*\./);
+    expect(s).not.toContain('require("./jedaManusiaService")');
+    expect(s).toContain('require("./isiBorangLangsung")');
+    // Tidak ada ketikan per huruf di kolom e-Court.
+    expect(s).not.toMatch(/\.type\(/);
+    expect(baca("services/ecourtLoginService.js")).not.toMatch(/\.type\(|delay:/);
   });
 });
 

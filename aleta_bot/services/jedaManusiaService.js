@@ -20,6 +20,12 @@
  *   pindah   800 -  1800   berpindah halaman/langkah
  *   perkara 2000 -  4500   antar dua perkara dalam pekerjaan massal
  *
+ * 17 Okt 2026 (keputusan pengguna): pengisian borang di layar - termasuk
+ * halaman e-Court yang dikemudikan bot - kini LANGSUNG dan tidak lagi memakai
+ * layanan ini (lihat isiBorangLangsung). Layanan ini tinggal untuk TULISAN ke
+ * database SIPP oleh bot (penetapan, jadwal/tunda, putusan, kasir, e-Doc),
+ * supaya riwayatnya tetap tampak seperti kerja petugas.
+ *
  * Yang TIDAK diubah oleh jeda ini: siapa pelakunya dan kapan. Jejak jujur
  * (siapa + waktu + IP + "lewat ALETA") tetap ditulis ke tabel aleta_* milik
  * ALETA - lihat jejakAletaService dan aleta_ecourt_aksi_jejak.

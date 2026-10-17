@@ -18,7 +18,7 @@ import { afterEach, describe, expect, it } from "vitest";
  *             per perkara, pilihan ikut antrean; aletaMassalBarisBlangko (R)
  *             dipakai bila ada
  *   butir 7   tag peran di kepala lipatan (Ketua / Hakim / Panitera / Juru Sita)
- *   butir 14  tekanan Simpan SIPP didahului alatJedaManusia (semua tampilan);
+ *   butir 14  (dicabut 17 Okt) tekanan SIPP langsung, tanpa alatJedaManusia;
  *             yang ditahan tidak menunggu; tidak ada jalur tulis SIPP baru
  *   butir 15  Perkara berikutnya menurut peran; Direktori Putusan gagal dst.
  *             hanya Super Admin & Admin
@@ -817,7 +817,7 @@ describe("butir 3: putusan massal SIPP - blangko utama + pengecualian per perkar
 });
 
 // ============================================================================
-describe("butir 14: jeda seperti manusia sebelum Simpan SIPP; tanpa jalur tulis SIPP baru", () => {
+describe("butir 14 (dicabut 17 Okt): tekan/isi borang SIPP LANGSUNG tanpa jeda; tanpa jalur tulis SIPP baru", () => {
   const pasangPenyadap = (h: Halaman) => {
     const urutan: string[] = [];
     h.w.alatJedaManusia = async (jenis: string) => {
@@ -832,13 +832,23 @@ describe("butir 14: jeda seperti manusia sebelum Simpan SIPP; tanpa jalur tulis 
     return urutan;
   };
 
-  it("UI Baru: tekan = jeda 'simpan' lalu tekanan; isi medan tidak dijeda", async () => {
+  it("UI Baru: tekan dan isi medan langsung - tidak satu pun jeda manusia diminta", async () => {
     const h = buka({ simpanan: UI });
     await siapUi(h);
     const urutan = pasangPenyadap(h);
     await h.w.kirimKeJembatan({ jenis: "tekan", penunjuk: "#simpan" });
     await h.w.kirimKeJembatan({ jenis: "isi", penunjuk: "#amar", jenisMedan: "teks", nilai: "x" });
-    expect(urutan).toEqual(["jeda:simpan", "jembatan:tekan", "jembatan:nilai", "jembatan:isi"]);
+    expect(urutan).toEqual(["jembatan:tekan", "jembatan:nilai", "jembatan:isi"]);
+  });
+
+  it("17 Okt: bahkan dengan jeda manusia ASLI diperbesar 5x, tekan + isi selesai seketika (tidak ada timer jeda)", async () => {
+    const h = buka({ simpanan: UI });
+    await siapUi(h);
+    h.w.alatSetelJedaSkala(5); // dulu: tekan >= 4,5 detik
+    const mulai = Date.now();
+    await h.w.kirimKeJembatan({ jenis: "tekan", penunjuk: "#simpan" });
+    await h.w.kirimKeJembatan({ jenis: "isi", penunjuk: "#amar", jenisMedan: "teks", nilai: "x" });
+    expect(Date.now() - mulai).toBeLessThan(1500);
   });
 
   it("Lama juga (perilaku tulis global, KONTRAK K1/K4)", async () => {
@@ -846,7 +856,7 @@ describe("butir 14: jeda seperti manusia sebelum Simpan SIPP; tanpa jalur tulis 
     await sampai(() => panelDari(h) && panelDari(h).querySelector(".aleta-kelompok"), "panel Lama");
     const urutan = pasangPenyadap(h);
     await h.w.kirimKeJembatan({ jenis: "tekan", penunjuk: "#simpan" });
-    expect(urutan).toEqual(["jeda:simpan", "jembatan:tekan"]);
+    expect(urutan).toEqual(["jembatan:tekan"]);
   });
 
   it("tekanan yang DITAHAN (mode coba) tidak menunggu dan tidak sampai ke jembatan", async () => {

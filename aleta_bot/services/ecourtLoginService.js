@@ -46,6 +46,7 @@
  */
 
 const puppeteer = require("puppeteer");
+const isiBorang = require("./isiBorangLangsung");
 
 const logService = require("./logService");
 const ecourtKredensialService = require("./ecourtKredensialService");
@@ -257,8 +258,8 @@ async function mulaiLogin({ slot = "" } = {}) {
     const tersimpan = ecourtKredensialService.ambil(slot);
     if (tersimpan) {
       try {
-        await page.type('[data-pk="email"]', tersimpan.email, { delay: 10 });
-        await page.type('[data-pk="sandi"]', tersimpan.sandi, { delay: 10 });
+        await isiBorang.isiSelektor(page, '[data-pk="email"]', tersimpan.email);
+        await isiBorang.isiSelektor(page, '[data-pk="sandi"]', tersimpan.sandi);
         terisiOtomatis = true;
       } catch {
         // Gagal mengetik bukan alasan membatalkan login: petugas tetap dapat
@@ -361,11 +362,11 @@ async function kirimLogin({ email, sandi, captcha } = {}) {
 
   try {
     if (!sudahTerisi) {
-      await page.type('[data-pk="email"]', String(email), { delay: 20 });
-      await page.type('[data-pk="sandi"]', String(sandi), { delay: 20 });
+      await isiBorang.isiSelektor(page, '[data-pk="email"]', String(email));
+      await isiBorang.isiSelektor(page, '[data-pk="sandi"]', String(sandi));
     }
     if (captcha) {
-      await page.type('[data-pk="captcha"]', String(captcha), { delay: 20 }).catch(() => {
+      await isiBorang.isiSelektor(page, '[data-pk="captcha"]', String(captcha)).catch(() => {
         /* sebagian halaman login tidak memakai captcha */
       });
     }

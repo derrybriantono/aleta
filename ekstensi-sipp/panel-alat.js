@@ -8375,6 +8375,12 @@ function alatJeda(ms) {
 
 /* ─── 1a-jeda. JEDA SEPERTI MANUSIA UNTUK AKSI TULIS (K4, perbaikan 2 Okt butir 14)
  *
+ * 17 Okt 2026 (keputusan pengguna): PENGISIAN BORANG di layar (isi medan, tekan
+ * tombol SIPP/ABT) LANGSUNG, tanpa jeda tiruan manusia. Fungsi ini kini hanya
+ * dipakai untuk TULISAN ke database yang menumpuk beruntun (jarak antar baris
+ * Court Calendar, upload e-Doc lewat bot) supaya riwayat SIPP tetap seperti
+ * kerja petugas; jangan memasangnya di jalur pengisian borang.
+ *
  * Keputusan pengguna 2 Okt: jeda seperti manusia DIPERTAHANKAN untuk tulisan
  * ke SIPP/ABT/e-Court, dan ekstensi tidak mencolok di halaman sistem luar.
  * (Audit jujur - siapa, kapan, IP, "lewat ALETA" - tetap di tabel aleta_*,
