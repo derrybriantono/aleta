@@ -7383,6 +7383,11 @@ const ALAT_TIPE_BATAS_MS = 5000;
 const ALAT_TIPE_JEDA_GAGAL_MS = 60000;
 /** Sama dengan penyaring bot (K6): lebih dari ini bukan daftar, melainkan kekeliruan. */
 const ALAT_TIPE_MAKS_ENTRI = 200;
+/** Peta blangko bawaan sudah >200 sejak pemetaan i14-i17 (270); cermin portal kontrak.ts BATAS_DAFTAR.entriKhusus. */
+const ALAT_TIPE_MAKS_ENTRI_KHUSUS = { "putusan.peta-blangko": 500 };
+function alatTipeMaksEntri(daftar) {
+  return ALAT_TIPE_MAKS_ENTRI_KHUSUS[daftar] || ALAT_TIPE_MAKS_ENTRI;
+}
 const ALAT_TIPE_MAKS_NILAI = 400;
 /** Sama dengan validasi portal untuk putusan.medan-borang. */
 const ALAT_TIPE_POLA_PENUNJUK_NAMA = /^[a-z]*\[name="[A-Za-z0-9_-]+(\[\])?"\]$/;
@@ -7471,8 +7476,8 @@ function alatTipeSaring(daftar, entri, asal) {
       tolak.push(`${String(e && e.nilai).slice(0, 60)} (${alasan})`);
       continue;
     }
-    if (lolos.length >= ALAT_TIPE_MAKS_ENTRI) {
-      tolak.push(`${e.nilai.slice(0, 60)} (melebihi ${ALAT_TIPE_MAKS_ENTRI} entri)`);
+    if (lolos.length >= alatTipeMaksEntri(daftar)) {
+      tolak.push(`${e.nilai.slice(0, 60)} (melebihi ${alatTipeMaksEntri(daftar)} entri)`);
       continue;
     }
     lolos.push({

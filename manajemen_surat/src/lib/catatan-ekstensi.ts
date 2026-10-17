@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.3",
+    dirilis: "2026-10-18T08:00:00+08:00",
+    judul: "Draf putusan utuh, tutorial per fitur, Blangko Saya, Fitur Satker, tampilan semua layar, dan blangko baru",
+    butir: [
+      "Putusan Advance kini bisa menyusun draf putusan utuh sesudah pemeriksaan selesai, supaya hakim dan konseptor tidak mulai dari halaman kosong; bagian yang belum pasti ditandai merah dan draf hanya diunduh ke komputer sendiri, tidak dikirim ke ABT atau SIPP.",
+      "Panduan menjadi tutorial per fitur dengan tombol tanda tanya di tiap halaman, dan setiap menu atau hak baru wajib punya tutorialnya, supaya petunjuk tidak tertinggal dari fitur yang berjalan.",
+      "Blangko Saya: hakim, panitera, dan konseptor dapat menulis atau mengunggah blangko sendiri, memetakan isiannya, lalu memakainya untuk putusan mandiri atau mengajukannya ke Super Admin untuk ABT, sehingga tidak perlu menunggu blangko baru dibuatkan.",
+      "Fitur Satker (khusus Super Admin): status stabil, uji coba, atau mati per fitur dan saluran pembaruan, sebagai persiapan dipakai banyak satker tanpa fitur Donggala yang sudah berjalan ikut berkurang.",
+      "Mode kembaran di laptop saat server mati: SIPP, ABT, dan ALETA tetap dapat dipakai dari salinan di laptop, tulisan ke SIPP dan ABT ditahan di antrean, lalu dikirim sesudah server hidup lewat Admin > Sinkron kembaran dengan pemeriksaan bentrok dan persetujuan Super Admin, supaya pekerjaan tidak berhenti dan tidak ada tulisan yang menimpa data server tanpa diperiksa.",
+      "Tampilan menyesuaikan layar dari HP, tablet, laptop, sampai TV, supaya petugas tidak perlu memperbesar atau menggulir ke samping.",
+      "Blangko baru dikenali: relaas pencegahan perkawinan, Penguasaan Anak, 106 putusan baru, dan 38 BAS baru, dengan keadaan perkara yang lebih rinci agar blangko yang disarankan lebih tepat.",
+    ],
+  },
+  {
     versi: "1.205.2",
     dirilis: "2026-10-18T02:00:00+08:00",
     judul: "Sesi e-Court pulih sendiri, captcha lewat WhatsApp, perintah e-Court dari chat, dan isian e-Litigasi #7139# otomatis",
