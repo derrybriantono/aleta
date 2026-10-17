@@ -1372,6 +1372,11 @@
       ["ptsp:ktp", "Isi data saksi dari foto KTP"],
     ],
   };
+  /** 17 Okt: Putusan Advance per akun (Pengaturan SIPP & ABT) - akun yang dimatikan admin tidak melihat alatnya. */
+  function alatAdvanceTampil() {
+    const pa = globalThis.aletaPutusanAdvance;
+    return !(pa && typeof pa.menyala === "function" && pa.menyala() === false);
+  }
   function isiAlat() {
     const grup = peranAlat();
     if (!grup.length) return `<p class="bd-catat">Peran Anda belum punya alat di tampilan ini.</p>`;
@@ -1381,7 +1386,7 @@
         .map(
           (g) =>
             `<div class="grup">${esc(NAMA_PERAN[g])}${adm() ? "" : sebagai}</div>` +
-            ALAT[g].map(([id, t]) => `<button type="button" role="menuitem" data-alat="${id}"><span>${esc(t)}</span>${S.alatDaftar.has(id) ? "" : `<span class="bd-chip">menyusul</span>`}</button>`).join("")
+            ALAT[g].filter(([id]) => id !== "advance" || alatAdvanceTampil()).map(([id, t]) => `<button type="button" role="menuitem" data-alat="${id}"><span>${esc(t)}</span>${S.alatDaftar.has(id) ? "" : `<span class="bd-chip">menyusul</span>`}</button>`).join("")
         )
         .join("") + (adm() ? `<p class="bd-catat" style="padding:4px 8px">Admin melihat semua peran. Pilih "Lihat sebagai akun" untuk menyempitkan.</p>` : "")
     );

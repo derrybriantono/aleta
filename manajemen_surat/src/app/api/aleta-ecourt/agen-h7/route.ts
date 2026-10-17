@@ -51,6 +51,9 @@ export async function GET(request: NextRequest) {
       .filter(Boolean);
     if (daftar.length === 0) return ok({ ada: true, peta: {} });
     if (q.get("ringkas") === "1") return ok({ ada: true, peta: await bacaRingkasDrafH7(db, daftar) });
+    // Audit 17 Okt: draf utuh memuat isian & ringkasan perkara (pihak, saksi, bukti) - hanya
+    // pemegang perkara ("blangko-abt"), bukan setiap akun ber-"panel". Lencana (ringkas) tetap.
+    await pastikanKapabilitas(db, actorUserId, "blangko-abt");
     const draf = await bacaDrafH7(db, daftar);
     const peta = Object.fromEntries(Object.entries(draf).map(([pid, d]) => [pid, { ...d, laporan: teksLaporanH7(d) }]));
     return ok({ ada: true, peta });

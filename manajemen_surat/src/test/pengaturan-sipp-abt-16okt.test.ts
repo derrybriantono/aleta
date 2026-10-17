@@ -576,3 +576,69 @@ describe("rute /api/pengaturan-sipp-abt (pg-mem berbenih, bot tiruan)", () => {
     expect((r.isi.data.riwayat as Array<{ jenis: string; kunci: string }>).map((x) => [x.jenis, x.kunci])).toEqual([["variabel", "0046"]]);
   });
 });
+
+describe("audit 17 Okt: riwayat tidak membocorkan kueri variabel ke Admin", () => {
+  beforeEach(async () => {
+    db = await createAletaDatabase({ useInMemory: true, seed: true });
+    aktor = "usr-super";
+    panggilanBot.length = 0;
+    botMenolak = null;
+  });
+  afterEach(async () => {
+    await db?.close();
+    db = null;
+  });
+
+  it("Super Admin menyimpan kueri; Admin membaca riwayat tanpa teks kueri, Super Admin tetap melihatnya", async () => {
+    const KUERI = "select 'Pemohon Rahasia' as data from perkara where perkara_id = #perkara_id#";
+    const s = await rute("POST", { badan: { tindakan: "simpan-variabel", noVar: "0046", lama: { sql_query: "select 'Penggugat' as data" }, baru: { sql_query: KUERI }, perkaraId: 1 } });
+    expect(s.status).toBe(200);
+    expect(JSON.stringify((await rute("GET", { query: "bagian=riwayat" })).isi)).toContain("Pemohon Rahasia");
+    aktor = "usr-admin";
+    const r = await rute("GET", { query: "bagian=riwayat" });
+    expect(r.status).toBe(200);
+    expect(JSON.stringify(r.isi)).not.toContain("Pemohon Rahasia");
+    expect(JSON.stringify(r.isi)).not.toContain("'Penggugat' as data");
+    expect(JSON.stringify(r.isi)).toContain("kueri disembunyikan");
+  });
+});
+
+describe("Putusan Advance per akun (17 Okt) - aleta_ekstensi_setelan, tanpa migrasi", () => {
+  beforeEach(async () => {
+    db = await createAletaDatabase({ useInMemory: true, seed: true });
+    aktor = "usr-admin";
+    panggilanBot.length = 0;
+    botMenolak = null;
+  });
+  afterEach(async () => {
+    await db?.close();
+    db = null;
+  });
+
+  it("bawaan: belum tersimpan, akun benih (tanpa Derry Briantono) semuanya mati", async () => {
+    const r = await rute("GET", { query: "bagian=putusan-advance" });
+    expect(r.status).toBe(200);
+    expect(r.isi.data.tersimpan).toBe(false);
+    const calon = r.isi.data.calon as Array<{ id: string; menyala: boolean }>;
+    expect(calon.some((c) => c.id === "usr-hakim")).toBe(true);
+    expect(calon.every((c) => !c.menyala)).toBe(true);
+  });
+
+  it("Admin menyalakan satu akun: tersimpan, tercatat audit, rute membaca saklarnya; peran lain 403; akun tak dikenal 400", async () => {
+    const r = await rute("POST", { badan: { tindakan: "simpan-putusan-advance", akun: ["usr-hakim"] } });
+    expect(r.status).toBe(200);
+    const calon = r.isi.data.calon as Array<{ id: string; menyala: boolean }>;
+    expect(calon.find((c) => c.id === "usr-hakim")?.menyala).toBe(true);
+    expect(calon.filter((c) => c.menyala).length).toBe(1);
+    const { advanceMenyalaUntuk } = await import("@/server/modules/aleta-ecourt/putusan-advance-akun");
+    expect(await advanceMenyalaUntuk(db!, { id: "usr-hakim", name: "Hj. Nur Aisyah" })).toBe(true);
+    expect(await advanceMenyalaUntuk(db!, { id: "usr-ketua", name: "Drs. H. Malik" })).toBe(false);
+    const jejak = await db!.queryAll<Record<string, string>>("SELECT action FROM audit_logs WHERE action = 'UPDATE_PUTUSAN_ADVANCE_AKUN'");
+    expect(jejak.length).toBe(1);
+    expect((await rute("POST", { badan: { tindakan: "simpan-putusan-advance", akun: ["usr-tidak-ada"] } })).status).toBe(400);
+    aktor = "usr-ppg";
+    expect((await rute("POST", { badan: { tindakan: "simpan-putusan-advance", akun: ["usr-ppg"] } })).status).toBe(403);
+    expect((await rute("GET", { query: "bagian=putusan-advance" })).status).toBe(403);
+    expect(panggilanBot).toEqual([]);
+  });
+});

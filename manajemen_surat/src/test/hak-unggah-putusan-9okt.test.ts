@@ -29,6 +29,8 @@ const keadaan = vi.hoisted(() => ({
   gerbang: [] as Array<{ jalur: string; muatan: Record<string, unknown> }>,
   bot: [] as Array<{ jalur: string; body: Record<string, unknown> }>,
   naskah: 0,
+  /** Majelis AKTIF perkara 450 menurut bot (audit 17 Okt); null = bot tidak menjawab. */
+  majelis: ["Uji hakim", "Hakim Anggota Lain"] as string[] | null,
 }));
 
 vi.mock("@/server/db/client", () => ({
@@ -89,6 +91,10 @@ vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", () => {
     getGatewayStatusPutusan: async () => ({ ok: true, data: {} }),
     getGatewayStatusPerkara: async () => ({ ok: true, data: { identitas: { perkaraId: "450" } } }),
     getGatewaySippKonteks: async () => ({ ok: false, error: "tidak dibaca dalam uji" }),
+    getGatewayKonseptorKeadaan: async () =>
+      keadaan.majelis === null
+        ? { ok: false, error: "ALETA Bot tidak menjawab." }
+        : { ok: true, data: { ok: true, perkara: { "450": { majelis: keadaan.majelis.map((nama) => ({ nama, jabatan: "" })) } }, gagal: [] } },
   };
 });
 
@@ -187,6 +193,7 @@ beforeEach(() => {
   keadaan.gerbang.length = 0;
   keadaan.bot.length = 0;
   keadaan.naskah = 0;
+  keadaan.majelis = ["Uji hakim", "Hakim Anggota Lain"];
 });
 
 describe("hak-putusan.ts: peran yang boleh unggah putusan", () => {
@@ -282,5 +289,35 @@ describe("gerbang bot: hakUnggahPutusanService", () => {
     potong(gerbang, 'router.post("/sipp/putusan-unggah"', "putusanUnggahService.unggahPutusan(");
     potong(gerbang, 'router.post("/sidang/putus"', "putusanTulisService.susunRencanaPutus(");
     potong(aksi, 'router.post("/ecourt-putusan/unggah"', "aksi.unggahSalinan(");
+  });
+});
+
+describe("audit 17 Okt: hakim hanya putusan perkara MAJELISNYA (keputusan 16 Okt) - rute tulis SIPP", () => {
+  const TULIS_SIPP = RUTE.filter((r) => /unggah-sipp|sidang-putus/.test(r.nama));
+  it.each(TULIS_SIPP.map((r) => [r.nama, r] as const))("%s: hakim di luar majelis 403, gerbang tidak dipanggil", async (_n, r) => {
+    keadaan.aktor = aktor("hakim");
+    keadaan.majelis = ["Hakim Lain Sekali"];
+    const { status, badan } = await r.jalan();
+    expect(status).toBe(403);
+    expect(JSON.stringify(badan)).toContain("majelisnya ia duduki");
+    expect(keadaan.gerbang).toEqual([]);
+  });
+  it.each(TULIS_SIPP.map((r) => [r.nama, r] as const))("%s: majelis tak terbaca - hakim ditolak dengan kalimat jujur", async (_n, r) => {
+    keadaan.aktor = aktor("hakim");
+    keadaan.majelis = null;
+    const { status, badan } = await r.jalan();
+    expect(status).toBe(503);
+    expect(JSON.stringify(badan)).toContain("belum dapat dibaca");
+    expect(keadaan.gerbang).toEqual([]);
+  });
+  it.each(TULIS_SIPP.map((r) => [r.nama, r] as const))("%s: Ketua/Wakil/Admin tidak dibatasi majelis", async (_n, r) => {
+    for (const roleId of ["ketua", "wakil-ketua", "admin", "super-admin"]) {
+      keadaan.gerbang.length = 0;
+      keadaan.aktor = aktor(roleId);
+      keadaan.majelis = ["Hakim Lain Sekali"];
+      const { status } = await r.jalan();
+      expect(status, roleId).not.toBe(403);
+      expect(r.lewat(), roleId).toBe(true);
+    }
   });
 });

@@ -254,11 +254,12 @@ export type RingkasKemajuan = {
  */
 /**
  * Langkah yang berlaku untuk satu perkara: langkah tetap, ditambah langkah
- * bersyarat yang keadaannya ada ATAU yang sudah pernah dicentang (centang
- * tidak boleh hilang hanya karena bacaan keadaannya gagal). Murni.
+ * bersyarat yang keadaannya ada ATAU yang sedang dicentang (centang tidak
+ * boleh hilang hanya karena bacaan keadaannya gagal; centang yang DICABUT
+ * tidak menahan langkah itu - audit 17 Okt). Murni.
  */
 export function langkahBerlaku(tanda: Partial<Record<string, TandaLangkah>>, keadaan: KeadaanPerkara | null | undefined): LangkahKatalog[] {
-  return LANGKAH_KONSEPTOR.filter((l) => !l.syarat || keadaan?.[l.syarat] === true || tanda[l.kode] !== undefined);
+  return LANGKAH_KONSEPTOR.filter((l) => !l.syarat || keadaan?.[l.syarat] === true || tanda[l.kode]?.selesai === true);
 }
 
 /** Laporan blangko per langkah, dengan langkah bersyarat yang TIDAK berlaku dilipat ke Pertimbangan hukum. Murni. */

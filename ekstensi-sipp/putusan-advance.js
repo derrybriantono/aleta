@@ -27,7 +27,9 @@
   const ID_KARTU = "bd-advance";
   const NAMA_LANGKAH = { duduk: "Duduk perkara", bukti: "Bukti surat", saksi: "Keterangan saksi", kesimpulan: "Kesimpulan", pertimbangan: "Pertimbangan hukum", amar: "Amar", biaya: "Biaya perkara", koreksi: "Koreksi majelis" };
 
-  const S = { pk: null, rapor: null, memuat: false, galat: "", salinan: [] };
+  // menyala: null = belum diketahui; false = akun ini dimatikan admin (Pengaturan SIPP & ABT > Putusan Advance, 17 Okt).
+  const S = { pk: null, rapor: null, memuat: false, galat: "", salinan: [], menyala: null, sebabMati: "" };
+  const PESAN_MATI = "Putusan Advance belum diaktifkan untuk akun Anda - hubungi admin.";
 
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const kerangka = () => globalThis.aletaBlangkoDerry || null;
@@ -153,6 +155,7 @@
     const k = isian() && typeof isian().keadaan === "function" ? isian().keadaan() : null;
     const put = k && k.blangko && k.blangko.jenis === "put";
     let isi = `${kepala}${ket}`;
+    if (S.menyala === false) return `${isi}<p style="color:var(--warn)" role="alert">${esc(S.sebabMati || PESAN_MATI)}</p>`;
     if (!put) return `${isi}<p class="bd-catat">Buka blangko <b>putusan</b> perkara ini di Blangko Derry dulu, lalu jalankan lagi.</p>`;
     isi += `<div style="font-size:.8rem;color:var(--muted)">${esc((k.pk && k.pk.nomorPerkara) || "")}</div>`;
     isi += `<p><button type="button" data-pa-periksa class="bd-btn" ${S.memuat ? "disabled" : ""}>${S.memuat ? "Memeriksa… (ABT menyusun naskah, bisa 1-5 menit)" : S.rapor ? "Periksa ulang" : "Periksa draf sekarang"}</button></p>`;
@@ -226,7 +229,11 @@
       S.rapor = d && d.rapor ? d.rapor : null;
       if (!S.rapor) S.galat = "Portal tidak mengembalikan rapor.";
     } catch (e) {
-      S.galat = e && e.status === 403 ? "Putusan Advance hanya untuk hakim, konseptor perkara ini (ditunjuk di ALETA atau tercatat di SIPP), dan Admin." : `Pemeriksaan gagal: ${String((e && e.message) || e)}`;
+      if (e && e.status === 403 && /belum diaktifkan/.test(String(e.message))) {
+        S.menyala = false;
+        S.sebabMati = String(e.message);
+      }
+      S.galat = e && e.status === 403 ? (S.menyala === false ? S.sebabMati : "Putusan Advance hanya untuk hakim, konseptor perkara ini (ditunjuk di ALETA atau tercatat di SIPP), dan Admin.") : `Pemeriksaan gagal: ${String((e && e.message) || e)}`;
     } finally {
       S.memuat = false;
       render();
@@ -263,15 +270,31 @@
     render();
   }
 
+  /** Saklar per akun dari portal (GET); gagal dibaca = tetap tampil, rute yang menolak. */
+  async function bacaMenyala() {
+    try {
+      const d = await ambil(API, { method: "GET" });
+      S.menyala = d && d.menyala === false ? false : true;
+      S.sebabMati = (d && d.sebab) || "";
+    } catch (e) {
+      if (e && e.status === 403 && /belum diaktifkan/.test(String(e.message))) {
+        S.menyala = false;
+        S.sebabMati = String(e.message);
+      }
+    }
+    render();
+  }
+
   function mulai() {
     const a = kerangka();
     if (!a || typeof a.daftarkanAlat !== "function") return false;
     a.daftarkanAlat("advance", bukaKartu);
     document.addEventListener("aleta-bd-perkara", saatPerkara);
+    void bacaMenyala();
     return true;
   }
 
-  globalThis.aletaPutusanAdvance = { mulai, bukaKartu, periksa, murni: { bahanDariKeadaan, keBase64 }, keadaan: () => ({ pk: S.pk, rapor: S.rapor, galat: S.galat, memuat: S.memuat }) };
+  globalThis.aletaPutusanAdvance = { mulai, bukaKartu, periksa, murni: { bahanDariKeadaan, keBase64 }, keadaan: () => ({ pk: S.pk, rapor: S.rapor, galat: S.galat, memuat: S.memuat }), menyala: () => S.menyala };
   if (!mulai()) {
     let coba = 0;
     const ulang = setInterval(() => {

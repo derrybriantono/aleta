@@ -487,18 +487,29 @@ describe("jalan agen (sumber tiruan, pg-mem berbenih)", () => {
     return { status: j.status, isi: (await j.json()) as Hasil["isi"] };
   }
 
-  it("rute: baca ringkas/lengkap boleh panel; menjalankan ditolak juru sita; checklist membawa draf", async () => {
+  it("rute: ringkas boleh panel, draf utuh hanya blangko-abt; menjalankan ditolak juru sita; checklist membawa draf", async () => {
     await jalankanAgenH7(db!, { pemicu: "tangan", hariIni: "2026-10-17", sumber: sumberTiruan([]) });
     aktor = "usr-jurusita";
     const ringkas = await rute("/api/aleta-ecourt/agen-h7?ringkas=1&perkaraId=512,601", "GET");
     expect(ringkas.status).toBe(200);
     expect(Object.keys(ringkas.isi.data.peta as object)).toEqual(["512"]);
+    // Audit 17 Okt: draf UTUH hanya pemegang Panel blangko ABT - juru sita tidak (403), hakim boleh.
+    expect((await rute("/api/aleta-ecourt/agen-h7?perkaraId=512", "GET")).status).toBe(403);
+    aktor = "usr-hakim";
     const lengkap = await rute("/api/aleta-ecourt/agen-h7?perkaraId=512", "GET");
+    aktor = "usr-jurusita";
     const d = (lengkap.isi.data.peta as Record<string, { laporan: string[]; isian: unknown[] }>)["512"];
     expect(d.laporan[0]).toMatch(/^Hari Putusan 24 Oktober 2026/);
     expect((await rute("/api/aleta-ecourt/agen-h7", "POST", {})).status).toBe(403);
     const jalan = await rute("/api/aleta-ecourt/agen-h7?jalan=1", "GET");
     expect((jalan.isi.data.jalan as unknown[]).length).toBe(1);
+
+    // Audit 17 Okt: draf UTUH hanya pemegang perkara ("blangko-abt"); lencana tetap untuk semua ber-"panel".
+    aktor = "usr-analiskeu";
+    expect((await rute("/api/aleta-ecourt/agen-h7?ringkas=1&perkaraId=512", "GET")).status).toBe(200);
+    const tolak = await rute("/api/aleta-ecourt/agen-h7?perkaraId=512", "GET");
+    expect(tolak.status).toBe(403);
+    expect(JSON.stringify(tolak.isi)).not.toContain("Hari Putusan 24 Oktober");
 
     aktor = "usr-hakim";
     const k = await rute("/api/aleta-ecourt/konseptor-langkah?perkaraId=512", "GET");

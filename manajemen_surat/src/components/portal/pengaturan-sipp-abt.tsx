@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BagianIdentitasSatker } from "@/components/portal/identitas-satker-abt";
+import { BagianPutusanAdvance } from "@/components/portal/putusan-advance-akun-admin";
 import { SetSaksiAleta } from "@/components/portal/set-saksi-aleta";
 import { PageIntro } from "@/components/portal/shared";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +51,7 @@ import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
  * /api/pengaturan-sipp-abt yang menjaga peran.
  */
 
-type Bagian = "menu" | "variabel" | "templat" | "satker" | "riwayat";
+type Bagian = "menu" | "variabel" | "templat" | "satker" | "advance" | "riwayat";
 
 async function panggil<T>(alamat: string, init?: RequestInit): Promise<T> {
   const r = await fetch(apiPath(alamat), { cache: "no-store", ...init });
@@ -542,17 +543,21 @@ function RinciVar({ noVar, hak, tutup }: { noVar: string; hak: HakPengaturanAbt;
     const t = window.setTimeout(() => void muat(), 0);
     return () => window.clearTimeout(t);
   }, [muat]);
+  // Perkara contoh bawaan SEKALI saat dibuka (audit 17 Okt): dulu efek [perkara] berjalan lagi
+  // ketika "Pakai perkara ini" tidak menemukan nomornya, lalu menimpa kotak nomor dengan bawaan.
+  const bawaanDiminta = useRef(false);
   useEffect(() => {
-    if (perkara) return;
+    if (bawaanDiminta.current) return;
+    bawaanDiminta.current = true;
     void panggil<{ perkara: { perkaraId: number; nomor: string; jenis: string } | null }>("/api/pengaturan-sipp-abt?bagian=perkara")
       .then((d) => {
-        if (d.perkara) {
-          setPerkara(d.perkara);
-          setNomor(d.perkara.nomor);
-        }
+        const p = d.perkara;
+        if (!p) return;
+        setPerkara((lama) => lama ?? p);
+        setNomor((lama) => (lama.trim() ? lama : p.nomor));
       })
       .catch(() => undefined);
-  }, [perkara]);
+  }, []);
 
   if (galat && !v) return <Pesan jenis="galat">{galat}</Pesan>;
   if (!v) return <p className="text-sm text-muted-foreground">Memuat isian...</p>;
@@ -1045,6 +1050,7 @@ const BAGIAN: Array<[Bagian, string]> = [
   ["variabel", "Isian blangko"],
   ["templat", "Template tanya jawab"],
   ["satker", "Identitas satker"],
+  ["advance", "Putusan Advance"],
   ["riwayat", "Riwayat semua"],
 ];
 
@@ -1062,7 +1068,7 @@ export function PengaturanSippAbt({ roleId }: { roleId: string }) {
       try {
         const q = new URLSearchParams(window.location.search);
         const b = q.get("bagian");
-        if (b === "menu" || b === "variabel" || b === "templat" || b === "satker" || b === "riwayat") setBagian(b);
+        if (b === "menu" || b === "variabel" || b === "templat" || b === "satker" || b === "advance" || b === "riwayat") setBagian(b);
         const n = (q.get("noVar") ?? "").replace(/\D/g, "").slice(0, 5);
         if (n) {
           setNoVarAwal(n.padStart(4, "0"));
@@ -1100,6 +1106,7 @@ export function PengaturanSippAbt({ roleId }: { roleId: string }) {
           )}
         />
       ) : null}
+      {bagian === "advance" ? <BagianPutusanAdvance /> : null}
       {bagian === "riwayat" ? (
         <Card>
           <CardHeader>

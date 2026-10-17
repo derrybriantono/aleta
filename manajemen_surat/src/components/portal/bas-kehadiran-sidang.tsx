@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiPath } from "@/lib/base-path";
 import { ringkasSebelumnya, sidangKe, susunRangkaian, tanggalIndonesia } from "@/lib/rangkaian-sidang";
 import { UsulanBasKehadiran } from "@/components/portal/kehadiran-rinci-sidang"; /* F3.2 */
+import { bahanKehadiranDariKeadaan } from "@/lib/kehadiran-rinci";
 
 /**
  * Sidang hari ini - siapa hadir, apa agendanya, apa hasilnya.
@@ -49,12 +50,17 @@ const KOSONG: Kehadiran = {
 export function KehadiranSidang({
   perkaraId,
   nomorPerkara,
+  jenisPerkara,
   riwayatSidang,
 }: {
   perkaraId: string;
   nomorPerkara: string;
+  /** Nama jenis perkara SIPP - menentukan sebutan (Pemohon/Termohon pada cerai talak). */
+  jenisPerkara?: string;
   riwayatSidang: unknown;
 }) {
+  // Audit 17 Okt: sebutan & "tanpa pihak kedua" (Pdt.P) untuk usulan BAS - dulu selalu Penggugat/Tergugat.
+  const bahanHadir = bahanKehadiranDariKeadaan({ nomorPerkara, jenisPerkara });
   const rangkaian = susunRangkaian(riwayatSidang);
   const [nomorSidang, setNomorSidang] = useState(rangkaian[rangkaian.length - 1]?.sidangKe ?? 1);
   const [isi, setIsi] = useState<Kehadiran>(KOSONG);
@@ -197,6 +203,9 @@ export function KehadiranSidang({
             <UsulanBasKehadiran
               perkaraId={perkaraId}
               tanggal={sidang?.tanggal}
+              sebutanSatu={bahanHadir.sebutanSatu}
+              sebutanDua={bahanHadir.sebutanDua}
+              tanpaPihakKedua={bahanHadir.tanpaPihakKedua}
               isiPenggugat={isi.kehadiranPenggugat}
               isiTergugat={isi.kehadiranTergugat}
               onIsi={(medan, bunyiUsul) => ubah(medan, bunyiUsul)}

@@ -114,12 +114,21 @@ function hurufDiluarLatin1(teks) {
   return hasil;
 }
 
-/** Teks di luar kutipan & komentar - untuk menghitung titik koma. */
+/**
+ * Teks di luar kutipan & komentar - untuk menghitung titik koma. Satu sapuan
+ * menurut posisi (audit 17 Okt): kutipan di dalam komentar tidak boleh menelan
+ * kode di antaranya; `/*! ... *\/` (dijalankan MySQL) ditandai `berpelaksana`.
+ */
+const POLA_SAPU = /'(?:[^'\\]|\\.|'')*'|"(?:[^"\\]|\\.|"")*"|`(?:[^`]|``)*`|\/\*[\s\S]*?(?:\*\/|$)|--(?=\s|$)[^\n]*|#[^\n]*/g;
 function kerangkaKueri(sql) {
-  return String(sql)
-    .replace(/'(?:[^'\\]|\\.|'')*'|"(?:[^"\\]|\\.|"")*"/g, "''")
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/(^|\s)(--\s|#(?!\d+#|perkara_id#))[^\n]*/g, " ");
+  let berpelaksana = false;
+  const kerangka = String(sql).replace(POLA_SAPU, (m) => {
+    if (m.startsWith("'") || m.startsWith('"')) return "''";
+    if (m.startsWith("`")) return "`x`";
+    if (/^\/\*M?!/i.test(m)) berpelaksana = true;
+    return " ";
+  });
+  return { kerangka, berpelaksana };
 }
 
 /**
@@ -133,11 +142,13 @@ function periksaKueriVariabel(sql, pagarBaca) {
   if (teks.length > PANJANG_KUERI_MAKS) return `Kueri terlalu panjang (lebih dari ${PANJANG_KUERI_MAKS} huruf).`;
   const luar = hurufDiluarLatin1(teks);
   if (luar.length) return `Kueri memuat huruf yang tidak dapat disimpan ABT: ${luar.join(" ")}`;
-  const kerangka = kerangkaKueri(teks);
-  if (/;\s*;/.test(kerangka)) return "Kueri memuat titik koma ganda.";
-  const tanpaAkhir = kerangka.trim().replace(/;\s*$/, "");
-  if (tanpaAkhir.includes(";")) return "Kueri memuat lebih dari satu perintah (titik koma di tengah).";
   const siap = teks.replace(/#perkara_id#/g, "0").replace(/#\d{1,6}#/g, "0");
+  const sapu = kerangkaKueri(siap);
+  if (sapu.berpelaksana) return "Kueri memuat komentar /*! ... */ yang dijalankan MySQL - hapus komentar itu.";
+  const kerangka = sapu.kerangka.trim();
+  if (/;\s*;/.test(kerangka)) return "Kueri memuat titik koma ganda.";
+  const tanpaAkhir = kerangka.replace(/;\s*$/, "");
+  if (tanpaAkhir.includes(";")) return "Kueri memuat lebih dari satu perintah (titik koma di tengah).";
   const sebab = pagarBaca(siap);
   if (!sebab) return "";
   if (/kata terlarang/.test(sebab)) return `Kueri hanya boleh membaca data: ${sebab.replace(/^memuat /, "memuat ")}.`;
@@ -166,6 +177,25 @@ function galatTolak(pesan, kode = "ditolak") {
   g.kode = kode;
   g.ditolak = true;
   return g;
+}
+
+/**
+ * Galat teknis (kode ER_*, SQLSTATE, ECONN*, kutipan SQL mentah) tidak boleh
+ * sampai ke layar petugas (audit 17 Okt 2026). Kalimat yang ditulis sendiri
+ * (galatTolak) lolos apa adanya; yang berbau teknis diganti kalimat awam,
+ * rinciannya hanya masuk log.
+ */
+const POLA_TEKNIS =
+  /\bER_[A-Z0-9_]+|SQLSTATE|\berrno\b|\bsqlMessage\b|\bE(?:CONN[A-Z]*|TIMEDOUT|HOSTUNREACH|NETUNREACH|PIPE|NOTFOUND|ACCES|NOENT|PERM)\b|You have an error in your SQL|Unknown (?:column|table|database)|doesn't exist|Duplicate entry|Deadlock|Lock wait timeout|Data too long|Incorrect \w+ value|Query execution was interrupted|Truncated incorrect|Cannot (?:add|delete) or update|\bat \S+ \(.*:\d+:\d+\)|\bnode:internal\b/i;
+const POLA_WAKTU = /ETIMEDOUT|Query execution was interrupted|ER_QUERY_TIMEOUT|ER_LOCK_WAIT_TIMEOUT|timeout|timed out|max_statement_time/i;
+const POLA_SAMBUNGAN = /ECONN[A-Z]*|EHOSTUNREACH|ENETUNREACH|ENOTFOUND|EPIPE|ER_ACCESS_DENIED|ER_CON_COUNT|ER_HOST_|PROTOCOL_CONNECTION_LOST|Pool is closed|Connection lost/i;
+
+function kalimatAwam(pesan) {
+  const teks = String((pesan && pesan.message) || pesan || "").trim();
+  if (!teks || !POLA_TEKNIS.test(teks)) return teks || "Terjadi kesalahan di server.";
+  if (POLA_SAMBUNGAN.test(teks)) return "Server ALETA belum dapat terhubung ke database SIPP/ABT. Coba lagi sebentar lagi.";
+  if (POLA_WAKTU.test(teks)) return "Pemeriksaan memakan waktu terlalu lama sehingga dihentikan. Sederhanakan kueri atau coba lagi.";
+  return "Server tidak dapat menyelesaikan permintaan ini. Hubungi pengelola bila berulang.";
 }
 
 /** Nilai baru satu folder menu, dirapikan & diperiksa. Melempar bila tak sah. */
@@ -524,12 +554,13 @@ function buatLayanan(d) {
       return {
         ok: v.status !== "galat" && v.status !== "takada",
         status: v.status,
-        sebab: v.sebab || "",
+        sebab: kalimatAwam(v.sebab || ""),
         nilai: String(v.polos || "").slice(0, 4000),
         ms: Date.now() - mulai,
       };
     } catch (g) {
-      return { ok: false, status: g.kode === "habis_waktu" ? "habis_waktu" : "galat", sebab: String(g.message || g).slice(0, 300), nilai: "", ms: Date.now() - mulai };
+      if (!g || !g.ditolak) console.error("[abtPengaturan] uji variabel gagal:", (g && g.message) || g);
+      return { ok: false, status: g.kode === "habis_waktu" ? "habis_waktu" : "galat", sebab: kalimatAwam(g).slice(0, 300), nilai: "", ms: Date.now() - mulai };
     } finally {
       clearTimeout(penunda);
     }
@@ -844,6 +875,7 @@ module.exports = {
   buatLayanan,
   layanan,
   periksaKueriVariabel,
+  kalimatAwam,
   hurufDiluarLatin1,
   rapikanMenuBaru,
   rapikanBarisTemplat,

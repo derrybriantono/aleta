@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { samarkanSisaBilaTersamar, type PenggantiSamaran } from "@/lib/samarkan-sisa-rtf";
-import { pastikanBolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
+import { pastikanBolehUnggahPutusan, pastikanMajelisPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import {
   kenaliBentuk,
   periksaBerkasUnggahSipp,
@@ -186,6 +186,8 @@ export async function POST(request: NextRequest) {
         sebab: `Nomor perkara ${nomorPerkara} tidak ditemukan di SIPP, jadi berkasnya tidak dapat ditautkan ke perkara mana pun.`,
       });
     }
+    // Keputusan 16 Okt: hakim hanya putusan perkara majelisnya (Ketua/Wakil/Admin semua).
+    await pastikanMajelisPutusan(aktor, peranPenekan, perkaraId);
 
     // Kuasa hukum TIDAK dipakai sebagai penanda: nama advokat lazim tetap
     // tertulis pada putusan anonimisasi. Yang disamarkan nama para pihak.

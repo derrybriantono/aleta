@@ -57,14 +57,25 @@ const BATAS_TUNGGU_MS = 60 * 1000;
 // Pagar kueri
 // ---------------------------------------------------------------------------
 
-function tanpaTeksBerkutip(sql) {
-  return String(sql).replace(/'(?:[^'\\]|\\.|'')*'|"(?:[^"\\]|\\.|"")*"/g, "''");
-}
+/**
+ * Kutipan dan komentar dibuang dalam SATU sapuan menurut posisinya (audit 17
+ * Okt 2026): bila kutipan dibuang lebih dulu, tanda kutip di dalam komentar
+ * "menelan" kode di antaranya (`/* ' *\/, LOAD_FILE(..) /* ' *\/`). Komentar
+ * `/*! ... *\/` dan `/*M! ... *\/` DIJALANKAN MySQL/MariaDB - ditandai, bukan
+ * dibuang. `#` membuka komentar di mana pun; `--` hanya bila diikuti spasi
+ * (1--1 adalah aritmetika).
+ */
+const POLA_SAPU = /'(?:[^'\\]|\\.|'')*'|"(?:[^"\\]|\\.|"")*"|`(?:[^`]|``)*`|\/\*[\s\S]*?(?:\*\/|$)|--(?=\s|$)[^\n]*|#[^\n]*/g;
 
-function tanpaKomentar(sql) {
-  return String(sql)
-    .replace(/\/\*[\s\S]*?\*\//g, " ")
-    .replace(/(^|\s)(--\s|#)[^\n]*/g, " ");
+function kerangkaKueri(sql) {
+  let berpelaksana = false;
+  const kerangka = String(sql).replace(POLA_SAPU, (m) => {
+    if (m.startsWith("'") || m.startsWith('"')) return "''";
+    if (m.startsWith("`")) return "`x`";
+    if (/^\/\*M?!/i.test(m)) berpelaksana = true;
+    return " ";
+  });
+  return { kerangka, berpelaksana };
 }
 
 /**
@@ -78,7 +89,9 @@ const KATA_TERLARANG =
 function pagarBaca(sql) {
   const teks = String(sql || "").trim();
   if (!teks) return "kueri kosong";
-  const kerangka = tanpaKomentar(tanpaTeksBerkutip(teks)).trim().replace(/;\s*$/, "");
+  const sapu = kerangkaKueri(teks);
+  if (sapu.berpelaksana) return "memuat komentar /*! ... */ yang dijalankan MySQL";
+  const kerangka = sapu.kerangka.trim().replace(/;\s*$/, "");
   if (!/^\(*\s*select\b/i.test(kerangka)) return "bukan satu SELECT";
   if (kerangka.includes(";")) return "lebih dari satu pernyataan";
   const t = kerangka.match(KATA_TERLARANG);
@@ -942,6 +955,7 @@ module.exports = {
   buatMesin,
   jalurPengisian,
   pagarBaca,
+  kerangkaKueri,
   bersihkanHtmlAbt,
   keRtf,
   kePolos,

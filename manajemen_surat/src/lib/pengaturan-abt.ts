@@ -62,8 +62,24 @@ export function hurufDiluarLatin1(teks: string): string[] {
 const KATA_TERLARANG =
   /\b(insert|update|delete|drop|alter|create|truncate|grant|revoke|replace\s+into|replace\s+delayed|replace\s+low_priority|rename|call|handler|lock\s+tables|unlock|load_file|load\s+data|into\s+outfile|into\s+dumpfile|sleep|benchmark|get_lock|release_lock|exec|execute|prepare|deallocate|for\s+update|lock\s+in\s+share\s+mode)\b/i;
 
-const tanpaKutip = (sql: string) => sql.replace(/'(?:[^'\\]|\\.|'')*'|"(?:[^"\\]|\\.|"")*"/g, "''");
-const tanpaKomentar = (sql: string) => sql.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|\s)(--\s|#)[^\n]*/g, " ");
+/**
+ * Kutipan dan komentar dibuang dalam SATU sapuan menurut posisinya (audit 17
+ * Okt): bila kutipan dibuang lebih dulu, tanda kutip di dalam komentar
+ * "menelan" kode di antaranya (`/* ' *\/, LOAD_FILE(..) /* ' *\/`). Komentar
+ * `/*! ... *\/` dan `/*M! ... *\/` DIJALANKAN MySQL/MariaDB - ditandai, bukan dibuang.
+ * `#` membuka komentar di mana pun; `--` hanya bila diikuti spasi (1--1 aritmetika).
+ */
+const POLA_SAPU = /'(?:[^'\\]|\\.|'')*'|"(?:[^"\\]|\\.|"")*"|`(?:[^`]|``)*`|\/\*[\s\S]*?(?:\*\/|$)|--(?=\s|$)[^\n]*|#[^\n]*/g;
+function kerangkaKueri(sql: string): { kerangka: string; berpelaksana: boolean } {
+  let berpelaksana = false;
+  const kerangka = sql.replace(POLA_SAPU, (m) => {
+    if (m.startsWith("'") || m.startsWith('"')) return "''";
+    if (m.startsWith("`")) return "`x`";
+    if (/^\/\*M?!/i.test(m)) berpelaksana = true;
+    return " ";
+  });
+  return { kerangka, berpelaksana };
+}
 
 export const PANJANG_KUERI_MAKS = 20000;
 
@@ -80,7 +96,9 @@ export function periksaKueriVariabel(sql: string): string {
   const luar = hurufDiluarLatin1(teks);
   if (luar.length) return `Kueri memuat huruf yang tidak dapat disimpan ABT: ${luar.join(" ")}`;
   const siap = teks.replace(/#perkara_id#/g, "0").replace(/#\d{1,6}#/g, "0");
-  const kerangka = tanpaKomentar(tanpaKutip(siap)).trim();
+  const sapu = kerangkaKueri(siap);
+  if (sapu.berpelaksana) return "Kueri memuat komentar /*! ... */ yang dijalankan MySQL - hapus komentar itu.";
+  const kerangka = sapu.kerangka.trim();
   if (/;\s*;/.test(kerangka)) return "Kueri memuat titik koma ganda.";
   const tanpaAkhir = kerangka.replace(/;\s*$/, "");
   if (tanpaAkhir.includes(";")) return "Kueri memuat lebih dari satu perintah (titik koma di tengah).";
