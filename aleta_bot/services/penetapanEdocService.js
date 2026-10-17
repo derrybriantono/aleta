@@ -37,6 +37,15 @@
  * dikenali dari CIRI isinya - bukan dari urutannya saja: bagian yang tidak
  * cocok ciri jenisnya tidak pernah diunggah sebagai jenis itu.
  *
+ * I9 17 Okt (paket ABT abt-penetap-phs-sita-derry): PPP dan PJS kini punya
+ * berkas TUNGGAL sendiri - "@ 0a - PPP.rtf" dan "@ 0b - PJS.rtf" (satu bagian,
+ * kotak "Ditandatangani secara elektronik oleh"); berkas gabungan "@ 0" tetap
+ * ada dan menjadi CADANGAN bila berkas tunggal tidak ada di ABT satker. PHS
+ * perkara bersita punya dua varian pilihan tangan: "@ 2a - PHS - Sita
+ * Dikabulkan.rtf" dan "@ 2b - PHS - Sita Ditolak.rtf" (bawaan "@ 2" memuat
+ * blok sita DITANGGUHKAN otomatis lewat #7061# bila petitum memohon sita).
+ * Ciri PPP/PJS/PHS tetap cocok untuk semua berkas itu (diuji atas RTF paket).
+ *
  * Alamat ABT per jenis tetap dari pengaturan blangkoPenetapan yang sudah ada
  * (dokumenPenetapanService.pengaturanBlangko) - ALETA tidak menebak alamat ABT.
  *
@@ -205,14 +214,17 @@ const PETA_PTSP = Object.freeze({
       judul: "Penunjukan Panitera Pengganti (PPP)",
       kepala: "PENUNJUKAN",
       bagianGabungan: 2,
-      berkasTunggal: "",
+      // I9 17 Okt: berkas tunggal; gabungan "@ 0" (bagian 2) = cadangan bila berkas tunggal tidak ada.
+      berkasTunggal: "@ 0a - PPP.rtf",
+      cadangan: "@ 0 - PMH - PHS.rtf",
       penandatangan: "panitera",
     },
     pjs: {
       judul: "Penunjukan Jurusita (PJS)",
       kepala: "PENUNJUKAN",
       bagianGabungan: 3,
-      berkasTunggal: "",
+      berkasTunggal: "@ 0b - PJS.rtf",
+      cadangan: "@ 0 - PMH - PHS.rtf",
       penandatangan: "panitera",
     },
     phs: {
@@ -220,6 +232,11 @@ const PETA_PTSP = Object.freeze({
       kepala: "PENETAPAN",
       bagianGabungan: 4,
       berkasTunggal: "@ 2 - PHS.rtf",
+      // I9 17 Okt: perkara bersita - penetapan sita langsung dikabulkan/ditolak (jalur tanpa putusan sela); pilihan tangan di panel.
+      varian: {
+        "sita-dikabulkan": "@ 2a - PHS - Sita Dikabulkan.rtf",
+        "sita-ditolak": "@ 2b - PHS - Sita Ditolak.rtf",
+      },
       // Q3 16 Okt: sama dengan ATUR_JENIS.phs dan peta penetapan portal (dulu "hakim" - bukan kunci PENANDATANGAN yang dikenal).
       penandatangan: "ketua_majelis",
     },
@@ -866,6 +883,8 @@ function depsBawaan() {
     kueriSipp: (sql, params = []) =>
       new Promise((ok, gagal) => sippDb.query(sql, params, (g, h) => (g ? gagal(g) : ok(h)))),
     dokumen: require("./dokumenPenetapanService"),
+    // I9 17 Okt: sita perkara (petitum + SIPP) - hanya untuk menandai perkara bersita di peta().
+    sita: (ids) => require("./sitaEksekusiPerkaraService").sitaEksekusiBanyakPerkara(ids),
     ttd: require("./tandaTanganService"),
     cetak: require("./abtCetakService"),
     jejak: require("./jejakAletaService"),
@@ -977,11 +996,25 @@ function buatLayanan(depsMasuk) {
           menu: `${PETA_PTSP.menu.kelompok}/${PETA_PTSP.menu.direktori} (${PETA_PTSP.menu.nama})`,
           berkas: p.berkasTunggal || PETA_PTSP.berkasGabungan,
           bagianGabungan: p.bagianGabungan,
+          // I9 17 Okt: berkas cadangan (PPP/PJS: gabungan "@ 0") dan varian pilihan tangan (PHS sita).
+          ...(p.cadangan ? { cadangan: p.cadangan } : {}),
+          ...(p.varian ? { varian: p.varian } : {}),
         },
         penandatangan: p.penandatangan,
       });
     }
-    return { ok: true, perkara, jenis, petaBlangko: PETA_PTSP, tteElektronik: Boolean(d.tte && d.tte.tersedia && d.tte.tersedia()) };
+    // I9 17 Okt: perkara bersita (petitum memohon sita, pola sitaEksekusiPerkaraService) -> panel menawarkan pilihan PHS ditangguhkan/dikabulkan/ditolak.
+    // null = tidak terbaca (tidak ditebak).
+    let bersita = null;
+    if (typeof d.sita === "function") {
+      try {
+        const hasilSita = await d.sita([perkara.perkaraId]);
+        bersita = Boolean(hasilSita && hasilSita.sita && hasilSita.sita[String(perkara.perkaraId)]);
+      } catch {
+        bersita = null;
+      }
+    }
+    return { ok: true, perkara: { ...perkara, bersita }, jenis, petaBlangko: PETA_PTSP, tteElektronik: Boolean(d.tte && d.tte.tersedia && d.tte.tersedia()) };
   }
 
   /**

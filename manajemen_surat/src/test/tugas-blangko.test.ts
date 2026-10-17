@@ -101,7 +101,7 @@ describe("A. tugas tiap berkas Derry menurut aturan nama", () => {
     expect(per.hakim).toBeGreaterThan(80);
     expect(per.panitera).toBeGreaterThan(233); // 233 salinan di folder jenis + BAS di folder ALUR/kumulasi/legacy
     expect(per.jurusita).toBe(24); // 10 [JS] + 10 dari "Blangko Jurusita Donggala" + 2 pengumuman itsbat (14 Okt) + 2 panggilan mediasi (I2 16 Okt)
-    expect(per.ptsp).toBe(7); // 3 "@ 0/1/2" (PMH, PHS) + 4 blangko PTSP ikrar talak/mediator (folder "99 PTSP", paket 16 Okt)
+    expect(per.ptsp).toBe(11); // 3 "@ 0/1/2" (PMH, PHS) + 4 blangko PTSP ikrar talak/mediator (folder "99 PTSP", paket 16 Okt) + 4 (I9 17 Okt: @ 0a PPP, @ 0b PJS, @ 2a, @ 2b PHS sita)
   });
 
   it("urutan aturan: relaas/BAS yang menyebut 'putusan' tidak menjadi tugas hakim", () => {
@@ -152,7 +152,8 @@ describe("B. ABT dan ALETA sepakat tentang tugas tiap folder", () => {
   it("menu Derry yang tampil: grup abt_menu = grup tugas folder; menu berpasangan Putusan (hakim) + BAS (panitera)", () => {
     expect(menuDerry.length).toBeGreaterThan(15);
     // Sejak 16 Okt folder relaas/PTSP bernama "98 Relaas"/"99 PTSP" (awalan angka) - bukan folder jenis.
-    const jenis = menuDerry.filter((m) => /^\d/.test(m.direktori) && !/^(98 Relaas|99 PTSP)$/.test(m.direktori));
+    // I9 17 Okt: "97 Sita" (menu 150 putusan sela & penetapan sita) berdiri sendiri - hakim, tanpa pasangan BAS - dan dicek terpisah di bawah.
+    const jenis = menuDerry.filter((m) => /^\d/.test(m.direktori) && !/^(98 Relaas|99 PTSP|97 Sita)$/.test(m.direktori));
     const bas = jenis.filter((m) => / - BAS$/.test(m.direktori));
     const putusan = jenis.filter((m) => !/ - BAS$/.test(m.direktori));
     expect(putusan).toHaveLength(19); // 15 (J3) + 7 Wali Adhal (I2 16 Okt) + 6a Hak Asuh, 5a Pembatalan Perkawinan, 10 Ekonomi Syariah (F21 17 Okt)

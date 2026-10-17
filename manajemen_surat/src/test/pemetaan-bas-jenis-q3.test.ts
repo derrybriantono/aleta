@@ -80,7 +80,8 @@ describe("PTSP: PPP dan PJS lewat '@ 0 - PMH - PHS' (usulan 4)", () => {
   it("peta penetapan bawaan PPP/PJS aktif dengan blangko gabungan, tanpa unggah otomatis; PMH/PHS tidak berubah", () => {
     expect(BERKAS_PTSP_GABUNGAN).toBe("@ 0 - PMH - PHS.rtf");
     for (const j of ["ppp", "pjs"] as const) {
-      expect(BAWAAN_PETA_PENETAPAN[j]).toMatchObject({ aktif: true, namaBerkas: "@ 0 - PMH - PHS.rtf", otomatisUnggah: false, penandatangan: "panitera", pakaiCap: true });
+      // I9 17 Okt: berkas tunggal @ 0a / @ 0b; gabungan @ 0 menjadi cadangan (pemetaan-i9-17okt.test.ts).
+      expect(BAWAAN_PETA_PENETAPAN[j]).toMatchObject({ aktif: true, namaBerkas: j === "ppp" ? "@ 0a - PPP.rtf" : "@ 0b - PJS.rtf", namaBerkasCadangan: "@ 0 - PMH - PHS.rtf", otomatisUnggah: false, penandatangan: "panitera", pakaiCap: true });
     }
     expect(BAWAAN_PETA_PENETAPAN.pmh).toMatchObject({ aktif: true, namaBerkas: "@ 1 - PMH.rtf", otomatisUnggah: true });
     expect(BAWAAN_PETA_PENETAPAN.phs).toMatchObject({ aktif: true, namaBerkas: "@ 2 - PHS.rtf", otomatisUnggah: true, penandatangan: "ketua_majelis" });

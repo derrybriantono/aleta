@@ -316,6 +316,10 @@ export type JenisPeta = {
     menu: string;
     berkas: string;
     bagianGabungan: number;
+    /** I9 17 Okt: berkas cadangan bila berkas tunggal tidak ada di ABT (PPP/PJS: gabungan "@ 0"). */
+    cadangan?: string;
+    /** I9 17 Okt: varian pilihan tangan (PHS: "sita-dikabulkan" -> "@ 2a ...", "sita-ditolak" -> "@ 2b ..."). */
+    varian?: Record<string, string>;
   };
   penandatangan: string;
 };
@@ -323,7 +327,8 @@ export type JenisPeta = {
 export type JawabanPeta = {
   ok: boolean;
   alasan?: string;
-  perkara?: { perkaraId: number; nomorPerkara: string };
+  /** bersita (I9 17 Okt): petitum perkara memohon sita (bot); null/tak ada = tidak terbaca. */
+  perkara?: { perkaraId: number; nomorPerkara: string; bersita?: boolean | null };
   jenis?: JenisPeta[];
   /** Penyedia TTE elektronik disetel di bot (ALETA_TTE_PENETAPAN_URL). */
   tteElektronik?: boolean;

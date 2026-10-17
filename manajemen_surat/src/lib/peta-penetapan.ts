@@ -59,6 +59,11 @@ export const TEMPAT_UNGGAH_SIPP: Record<JenisPetaPenetapan, { tabel: string; jen
 export type AturPenetapan = {
   aktif: boolean;
   namaBerkas: string;
+  /**
+   * I9 17 Okt: blangko cadangan bila `namaBerkas` tidak ada di ABT satker (PPP/PJS: gabungan "@ 0 - PMH - PHS.rtf", bagian 2/3 dipotong bot lewat
+   * cirinya). Turunan bawaan - tidak disimpan di baris admin dan tidak diubah layar.
+   */
+  namaBerkasCadangan?: string;
   kelompok: string;
   otomatisUnggah: boolean;
   pakaiTtd: boolean;
@@ -106,6 +111,23 @@ const UKURAN_BAWAAN: Pick<AturPenetapan, KunciUkuran> = {
 /** Blangko gabungan PTSP di folder derry_briantono/99 PTSP (dulu "PTSP", paket abt-ganti-nama-relaas-ptsp): bagian 1 PMH, 2 PPP, 3 PJS, 4 PHS (cermin PETA_PTSP.berkasGabungan di bot). */
 export const BERKAS_PTSP_GABUNGAN = "@ 0 - PMH - PHS.rtf";
 
+/**
+ * I9 17 Okt (paket abt-penetap-phs-sita-derry): PPP dan PJS punya berkas TUNGGAL sendiri (satu bagian; kotak "Ditandatangani secara elektronik oleh"
+ * dengan nama dan jabatan sungguhan penetapnya - variabel 9531/9533 dst.); berkas gabungan "@ 0" tetap ada sebagai cadangan.
+ */
+export const BERKAS_PPP_TUNGGAL = "@ 0a - PPP.rtf";
+export const BERKAS_PJS_TUNGGAL = "@ 0b - PJS.rtf";
+
+/**
+ * I9 17 Okt: PHS perkara bersita. Bawaan "@ 2 - PHS" memuat blok sita DITANGGUHKAN otomatis (#7061# -> #9534#, hanya bila petitum memohon sita);
+ * varian pilihan tangan (jalur kabul/tolak langsung tanpa putusan sela): "@ 2a" sita dikabulkan, "@ 2b" sita ditolak.
+ */
+export const VARIAN_SITA_PHS = {
+  dikabulkan: "@ 2a - PHS - Sita Dikabulkan.rtf",
+  ditolak: "@ 2b - PHS - Sita Ditolak.rtf",
+} as const;
+export type PilihanSitaPhs = "" | keyof typeof VARIAN_SITA_PHS;
+
 const UMUM: Omit<AturPenetapan, "aktif" | "namaBerkas" | "otomatisUnggah" | "pakaiCap" | "penandatangan"> = {
   kelompok: "Form Bantu PTSP",
   pakaiTtd: true,
@@ -129,8 +151,9 @@ const UMUM: Omit<AturPenetapan, "aktif" | "namaBerkas" | "otomatisUnggah" | "pak
 export const BAWAAN_PETA_PENETAPAN: Record<JenisPetaPenetapan, AturPenetapan> = {
   pmh: { ...UMUM, aktif: true, namaBerkas: "@ 1 - PMH.rtf", otomatisUnggah: true, pakaiCap: true, penandatangan: "ketua" },
   phs: { ...UMUM, aktif: true, namaBerkas: "@ 2 - PHS.rtf", otomatisUnggah: true, pakaiCap: false, penandatangan: "ketua_majelis" },
-  ppp: { ...UMUM, aktif: true, namaBerkas: BERKAS_PTSP_GABUNGAN, otomatisUnggah: false, pakaiCap: true, penandatangan: "panitera" },
-  pjs: { ...UMUM, aktif: true, namaBerkas: BERKAS_PTSP_GABUNGAN, otomatisUnggah: false, pakaiCap: true, penandatangan: "panitera" },
+  // I9 17 Okt: berkas tunggal @ 0a / @ 0b; gabungan @ 0 = cadangan (satu sumber dengan PETA_PTSP bot).
+  ppp: { ...UMUM, aktif: true, namaBerkas: BERKAS_PPP_TUNGGAL, namaBerkasCadangan: BERKAS_PTSP_GABUNGAN, otomatisUnggah: false, pakaiCap: true, penandatangan: "panitera" },
+  pjs: { ...UMUM, aktif: true, namaBerkas: BERKAS_PJS_TUNGGAL, namaBerkasCadangan: BERKAS_PTSP_GABUNGAN, otomatisUnggah: false, pakaiCap: true, penandatangan: "panitera" },
 };
 
 export class GalatPetaPenetapan extends Error {}

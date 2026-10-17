@@ -188,6 +188,11 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   /* === I8 17 Okt: cerai ditolak kontradiktoir [03a] === */
   "9501": { nm: "Penilaian jawaban dan bukti {T} (bantahan apa yang didukung bukti atau saksi, dan mengapa melemahkan dalil {P}; kosong = titik-titik)" },
   /* === AKHIR I8 === */
+  /* === I9 17 Okt: putusan sela dan penetapan sita memakai isian yang SAMA dengan BAS sidang insidentil (blangko 97 Sita, @ 2a/@ 2b) === */
+  "9162": { nm: "Objek yang dimohonkan untuk disita (satu per baris)" },
+  "9163": { nm: "Alasan permohonan sita" },
+  "9164": { nm: "Tanggapan {T} atas permohonan sita (dari jawaban atau sidang insidentil)" },
+  /* === AKHIR I9 === */
 };
 
 const PEMICU_TEKS: Record<string, string> = {

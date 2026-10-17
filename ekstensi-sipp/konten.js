@@ -25473,10 +25473,25 @@ async function e6UnggahEdocPenetapan(p) {
   }
   const abt = [];
   const gagal = [];
-  for (const b of dipakai) {
+  for (const asal of dipakai) {
+    // I9 17 Okt: PHS perkara bersita - pilihan tangan "dikabulkan"/"ditolak" memakai varian @ 2a / @ 2b (tanpa jatuh ke @ 2: bawaannya
+    // bertuliskan sita ditangguhkan, bertentangan dengan pilihan petugas). Tanpa pilihan = bawaan @ 2 (blok ditangguhkan terisi sendiri).
+    const varianSita = String(asal.jenis) === "phs" && p.sita && asal.varianSita ? String(asal.varianSita[p.sita] || "") : "";
+    const b = varianSita ? { ...asal, namaBerkas: varianSita } : asal;
     tulis(`Mencetak ${String(b.jenis).toUpperCase()} dari blangko ABT "${b.namaBerkas}"…`);
-    const r = await e6CetakRtfAbt(perkaraId, b);
-    if (r && r.ok && r.rtfBase64) abt.push({ jenis: b.jenis, isiBase64: r.rtfBase64, berkas: b.namaBerkas });
+    let r = await e6CetakRtfAbt(perkaraId, b);
+    let namaDipakai = b.namaBerkas;
+    // I9 17 Okt: berkas tunggal (PPP "@ 0a", PJS "@ 0b") belum ada di ABT satker -> berkas gabungan "@ 0" (bot memotong bagiannya lewat ciri isi).
+    const cadangan = String(b.namaBerkasCadangan || "").trim();
+    if (!(r && r.ok && r.rtfBase64) && !(r && r.perluMasuk) && cadangan && cadangan !== b.namaBerkas) {
+      tulis(`Blangko "${b.namaBerkas}" tidak ada di ABT ini - mencoba cadangan "${cadangan}"…`);
+      const r2 = await e6CetakRtfAbt(perkaraId, { ...b, namaBerkas: cadangan });
+      if (r2 && r2.ok && r2.rtfBase64) {
+        r = r2;
+        namaDipakai = cadangan;
+      }
+    }
+    if (r && r.ok && r.rtfBase64) abt.push({ jenis: b.jenis, isiBase64: r.rtfBase64, berkas: namaDipakai });
     else gagal.push(`${String(b.jenis).toUpperCase()}: ${(r && r.sebab) || "tidak tercetak"}${r && r.perluMasuk ? " (masuk ke ABT lebih dahulu)" : ""}`);
   }
   if (!abt.length) {
@@ -25553,13 +25568,40 @@ function e6BagianEdocPenetapan(konteks) {
     baris.append(c, buatElemen("span", "aleta-massal-nomor", sebutan));
     kotak.isi.appendChild(baris);
   }
+  // I9 17 Okt: perkara bersita (petitum memohon sita) - pilihan PHS: ditangguhkan (bawaan @ 2) / dikabulkan (@ 2a) / ditolak (@ 2b).
+  // Tampil hanya bila portal menyatakan perkaranya bersita; tidak terbaca = tidak tampil (bawaan @ 2 yang dipakai).
+  const barisSita = buatElemen("label", "aleta-massal-baris");
+  barisSita.hidden = true;
+  barisSita.setAttribute("data-e6-sita", "baris");
+  const pilihSita = document.createElement("select");
+  pilihSita.className = "aleta-massal-ketik";
+  pilihSita.setAttribute("data-e6-sita", "pilihan");
+  for (const [nilai, teks] of [
+    ["", "Sita: ditangguhkan (bawaan) - didengar kedua pihak lebih dulu"],
+    ["dikabulkan", "Sita: dikabulkan"],
+    ["ditolak", "Sita: ditolak"],
+  ]) {
+    const o = document.createElement("option");
+    o.value = nilai;
+    o.textContent = teks;
+    pilihSita.appendChild(o);
+  }
+  barisSita.append(buatElemen("span", "aleta-massal-nomor", "Penetapan Hari Sidang perkara bersita"), pilihSita);
+  kotak.isi.appendChild(barisSita);
+  if (nomor) {
+    void (async () => {
+      const j = await t7AmbilJson(`${S2_API_EDOC_PETA}?nomor=${encodeURIComponent(nomor)}`, "Membaca keadaan sita perkara");
+      const bersita = j.ok && j.data && j.data.perkara ? j.data.perkara.bersita : null;
+      if (bersita === true) barisSita.hidden = false;
+    })();
+  }
   const tombol = buatElemen("button", "aleta-tombol", "Periksa dulu - belum ditulis");
   tombol.type = "button";
   tombol.setAttribute("data-e6-edoc", "tombol");
   const kabar = buatElemen("div", "aleta-abt-kabar", "");
   kotak.isi.append(tombol, kabar);
   let siapTulis = false;
-  for (const c of Object.values(pilihan)) {
+  for (const c of [...Object.values(pilihan), pilihSita]) {
     c.addEventListener("change", () => {
       siapTulis = false;
       tombol.textContent = "Periksa dulu - belum ditulis";
@@ -25573,7 +25615,7 @@ function e6BagianEdocPenetapan(konteks) {
     }
     tombol.disabled = true;
     const tulis = siapTulis;
-    const h = await e6UnggahEdocPenetapan({ nomorPerkara: nomor, perkaraId: idHalaman, jenis, otomatis: false, kering: !tulis, kabar });
+    const h = await e6UnggahEdocPenetapan({ nomorPerkara: nomor, perkaraId: idHalaman, jenis, otomatis: false, kering: !tulis, kabar, sita: pilihSita.value });
     tombol.disabled = false;
     if (!tulis && h && h.ok) {
       siapTulis = true;

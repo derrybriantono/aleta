@@ -6,6 +6,7 @@ import {
   PENANDATANGAN_PENETAPAN,
   SEBUTAN_JENIS_PENETAPAN,
   TEMPAT_UNGGAH_SIPP,
+  VARIAN_SITA_PHS,
   bersihkanAturPenetapan,
   jenisPetaSah,
   type AturPenetapan,
@@ -56,6 +57,8 @@ export type ButirPetaPenetapan = AturPenetapan & {
   diubahPada: string | null;
   diubahOleh: string;
   tempatUnggah: (typeof TEMPAT_UNGGAH_SIPP)[JenisPetaPenetapan];
+  /** I9 17 Okt: varian pilihan tangan PHS perkara bersita ("dikabulkan" -> "@ 2a ...", "ditolak" -> "@ 2b ..."); jenis lain kosong. */
+  varianSita: Partial<Record<"dikabulkan" | "ditolak", string>>;
 };
 
 function dariBaris(jenis: JenisPetaPenetapan, b: Baris | undefined): ButirPetaPenetapan {
@@ -84,6 +87,9 @@ function dariBaris(jenis: JenisPetaPenetapan, b: Baris | undefined): ButirPetaPe
     diubahPada: b ? String(b.diubah_pada) : null,
     diubahOleh: b ? String(b.diubah_oleh) : "",
     tempatUnggah: TEMPAT_UNGGAH_SIPP[jenis],
+    // Cadangan selalu dari bawaan (bukan dari baris admin): satu sumber dengan bot.
+    namaBerkasCadangan: BAWAAN_PETA_PENETAPAN[jenis].namaBerkasCadangan ?? "",
+    varianSita: jenis === "phs" ? { ...VARIAN_SITA_PHS } : {},
   };
 }
 
@@ -160,7 +166,9 @@ export async function simpanPetaPenetapan(db: AletaDatabase, actorUserId: string
   await withTransaction(db, async (tx) => {
     const waktu = new Date().toISOString();
     for (const { jenis, atur } of simpan) {
-      const { namaBerkas, ...lain } = atur;
+      // I9 17 Okt: cadangan dan varian sita adalah turunan bawaan - tidak ikut disimpan di baris admin.
+      const { namaBerkas, namaBerkasCadangan: _cadangan, ...lain } = atur;
+      delete (lain as Record<string, unknown>).varianSita;
       await tx
         .prepare(
           "INSERT INTO aleta_pemetaan_blangko (jenis, kunci, sebutan, nama_berkas, catatan, diubah_oleh, diubah_pada) " +
