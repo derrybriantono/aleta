@@ -28,6 +28,7 @@
  * yang sama dengan M2.
  */
 import { bacaRtfDariBita } from "@/lib/baca-rtf";
+import { keadaanPutusan, type KodeKeadaanPutusan } from "@/lib/keadaan-putusan";
 import { golonganMenuEkstensi, type GolonganMenuEkstensi } from "@/lib/matriks-peran";
 import { isiMenunjukPerkara, nomorPerkaraDariIsi } from "@/lib/naskah-putusan-resmi";
 import { namaCocokSatu } from "@/lib/perkara-sendiri";
@@ -94,6 +95,9 @@ export type BarisUnggahMassal = {
   perlu?: { putusan: boolean; anonim: boolean };
   statusPutusan?: string;
   verstek?: boolean;
+  /** Putusan (audit D3): kumulasi perkara (SIPP + petitum) dan kode keadaan putusan untuk pemilih blangko. */
+  kumulasi?: unknown;
+  keadaanPutusan?: KodeKeadaanPutusan[];
   /** BAS */
   sidangId?: string;
   urutan?: number;
@@ -138,6 +142,17 @@ function barisPutusan(x: UnggahMassalPutusanBot, namaAkun: string): BarisUnggahM
     perlu: { putusan: !x.adaPutusan, anonim: !x.adaAnonim },
     statusPutusan: x.statusPutusan,
     verstek: x.verstek,
+    // Audit D3: sama dengan baris Jadwal Sidang - ekstensi memilih blangko putusan per kumulasi & keadaan (alatPetaUntukPerkara).
+    kumulasi: x.kumulasi ?? null,
+    keadaanPutusan: keadaanPutusan({
+      jenisPerkara: x.jenisPerkara,
+      nomorPerkara: x.nomorPerkara,
+      verstekPutusan: x.verstek,
+      dihadiriOleh: x.dihadiriOleh,
+      panggilan: x.panggilan,
+      mediasi: x.mediasi,
+      mediasiTerbaca: x.mediasiTerbaca,
+    }),
   };
 }
 
