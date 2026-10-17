@@ -120,7 +120,7 @@ const POPUP = (kode: string, tipe: string, nilai: string) =>
   (tipe === "data_tanggal" ? `<input type='text' id='tgl_form' value='${nilai}'>` : `<textarea id="value" ${tipe === "data_sql" ? "readonly" : ""}>${nilai}</textarea>`);
 
 type Minta = { url: string; cara: string; badan: string };
-type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; latar: Array<Record<string, unknown>>; abt: Record<string, string>; tj: Record<string, Array<{ no: string; tanya: string; jawab: string }>>; pdfRtf: string[] };
+type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; latar: Array<Record<string, unknown>>; abt: Record<string, string>; tj: Record<string, Array<{ no: string; tanya: string; jawab: string }>>; pdfRtf: string[]; opsi: { hakTolak?: boolean } };
 const terbuka: JSDOM[] = [];
 afterEach(async () => {
   await tunggu(20);
@@ -282,7 +282,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
   w.Element.prototype.scrollIntoView = function () {};
   w.HTMLElement.prototype.focus = function () {};
   w.eval(SUMBER);
-  return { dom, w, simpanan, minta, latar, abt, tj, pdfRtf };
+  return { dom, w, simpanan, minta, latar, abt, tj, pdfRtf, opsi: p };
 }
 
 const D_ = (h: Halaman) => h.w.document as Document;
@@ -766,6 +766,30 @@ describe("G. pratinjau dan cetak", () => {
     expect(idxPict).toBeLessThan(idxNama);
     expect(rtf.indexOf("\\pict", idxPict + 5)).toBe(-1); // hanya satu tanda tangan
     await sampai(() => /tanda tangan: Hakim Satu/.test(akar(h).textContent || ""), "log ttd");
+  });
+});
+
+describe("audit 17 Okt: perbaikan isian ABT", () => {
+  it("E3: hak ditolak ABT -> pratinjau & Cetak tidak meminta naskah; Coba lagi memeriksa hak ulang dan membuka isian bila kini diizinkan", async () => {
+    const h = buka({ hakTolak: true });
+    await sampaiPerkara(h);
+    klik(h, '[data-bd2="bukamodal"]');
+    await sampai(() => q(h, `[data-bl="${BLANGKO_PUT}"]`), "berkas");
+    klik(h, `[data-bl="${BLANGKO_PUT}"]`);
+    await sampai(() => q(h, "#aleta-bd-akar .bd-peringatan"), "peringatan");
+    klik(h, '[data-bd2="bukaprat"]');
+    klik(h, '[data-bd2="cetak"]');
+    await tunggu(80);
+    expect(mintaKe(h, /abt\/preview\?/)).toEqual([]);
+    expect(mintaKe(h, /main\/anonim$/)).toEqual([]);
+    expect(h.latar.filter((m) => m.jenis === "unduh")).toEqual([]);
+    // Coba lagi: hak diperiksa ulang (POST main/cari kedua), bukan hanya membaca isian.
+    h.opsi.hakTolak = false;
+    klik(h, '[data-bd2="ulangsusunan"]');
+    await sampai(() => q(h, "#bd-perlu .bd-f"), "isian terbuka setelah diizinkan");
+    expect(mintaKe(h, /main\/cari$/, "POST").length).toBe(2);
+    klik(h, '[data-bd2="muatprat"]');
+    await sampai(() => mintaKe(h, /abt\/preview\?/).length === 1, "pratinjau jalan setelah diizinkan");
   });
 });
 

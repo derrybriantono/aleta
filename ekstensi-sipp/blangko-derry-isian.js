@@ -252,7 +252,7 @@
     indeks: null, // folder Derry di server (portal)
     modal: null, // { jenis, kelompok, cari }
     blangko: null, // { berkas, kelompok, a, b, jenis, folder }
-    hak: new Map(), // "berkas|perkaraId" -> { ok, diizinkan, pesan }
+    hak: new Map(), // "berkas|kelompok|perkaraId" -> jawaban diizinkan (penolakan tidak disimpan)
     susunan: null,
     memuatSusunan: false,
     galatSusunan: "",
@@ -746,6 +746,34 @@
     }
   }
 
+  /**
+   * Hak buka blangko (POST main/cari). blangko.hak: "periksa" -> "ok" | "ditolak". Selain "ok", naskah tidak boleh
+   * diminta dari ABT (pratinjau, cetak) - tanpa penjaga ini kotak galat saja yang tampil, tombol Cetak tetap jalan.
+   * Hanya jawaban "diizinkan" yang disimpan; penolakan/galat jaringan diperiksa ulang tiap Coba lagi.
+   */
+  async function periksaHakBlangko(blangko, kelompokNama) {
+    const kunci = `${blangko.berkas}|${kelompokNama || blangko.kelompok}|${perkaraId()}`;
+    blangko.hak = "periksa";
+    let hak = S.hak.get(kunci);
+    if (!hak) {
+      try {
+        hak = await klienAbt().periksaHakBuka({ a: blangko.a, b: blangko.b, perkaraId: perkaraId() });
+      } catch (e) {
+        hak = { ok: false, diizinkan: false, pesan: String((e && e.message) || e) };
+      }
+      if (hak && hak.diizinkan) S.hak.set(kunci, hak);
+    }
+    if (S.blangko !== blangko) return;
+    if (!hak || !hak.diizinkan) {
+      blangko.hak = "ditolak";
+      S.galatSusunan = `ABT tidak mengizinkan blangko ini untuk perkara ${nomorPerkara()}: ${(hak && hak.pesan) || "tanpa sebab"}.`;
+      renderIsian();
+      renderCetak();
+      renderPratinjau();
+      return;
+    }
+    blangko.hak = "ok";
+  }
   /** Memilih blangko: hak diperiksa lewat POST main/cari (tanpa main/view). */
   async function pilihBlangko(nama, kelompokNama) {
     const k = S.menu && S.menu.kelompok.find((x) => x.nama === kelompokNama);
@@ -776,23 +804,8 @@
     renderIsian();
     renderPratinjau();
     renderCetak();
-    const kunci = `${blangko.berkas}|${kelompokNama}|${perkaraId()}`;
-    let hak = S.hak.get(kunci);
-    if (!hak) {
-      try {
-        hak = await klienAbt().periksaHakBuka({ a: b.a, b: b.b, perkaraId: perkaraId() });
-      } catch (e) {
-        hak = { ok: false, diizinkan: false, pesan: String((e && e.message) || e) };
-      }
-      S.hak.set(kunci, hak);
-    }
-    if (S.blangko !== blangko) return;
-    if (!hak.diizinkan) {
-      S.galatSusunan = `ABT tidak mengizinkan blangko ini untuk perkara ${nomorPerkara()}: ${hak.pesan || "tanpa sebab"}.`;
-      renderIsian();
-      renderCetak();
-      return;
-    }
+    await periksaHakBlangko(blangko, kelompokNama);
+    if (S.blangko !== blangko || blangko.hak !== "ok") return;
     await muatSusunan();
   }
 
@@ -2165,6 +2178,7 @@
   }
   async function ambilRtf(paksa) {
     if (!S.blangko || !S.pk) throw new Error("Pilih perkara dan blangko dulu.");
+    if (S.blangko.hak !== "ok") throw new Error(S.blangko.hak === "periksa" ? "Hak buka blangko ini masih diperiksa ke ABT; tunggu sebentar." : "ABT tidak mengizinkan blangko ini untuk perkara ini.");
     if (S.prat.rtf && !S.prat.kotor && !paksa) return S.prat.rtf;
     const h = await klienAbt().cetak({ a: S.blangko.a, b: S.blangko.b, perkaraId: perkaraId(), sidang: sidangUrutan() });
     if (!h.ok) throw new Error(h.pesan || "ABT tidak mengembalikan naskah.");
@@ -2570,6 +2584,7 @@
   async function cetak(paksa) {
     if (!S.blangko || !S.pk || S.sibuk) return;
     if (!daftarFmt().length) return toast("Pilih minimal satu hasil cetak.");
+    if (S.blangko.hak === "ditolak") return toast("ABT tidak mengizinkan blangko ini untuk perkara ini; tidak dapat dicetak.");
     if (!S.susunan && !S.galatSusunan) return toast("Isian blangko masih dibaca; tunggu sebentar.");
     S.sibuk = true;
     renderCetak();
@@ -2852,7 +2867,14 @@
       }
       return;
     }
-    if (kode === "ulangsusunan") return void muatSusunan();
+    if (kode === "ulangsusunan") {
+      const bl = S.blangko;
+      if (!bl || bl.hak === "ok") return void muatSusunan();
+      // Hak belum "ok" (ditolak/galat): periksa ulang ke ABT dulu, baru isian dibaca.
+      S.galatSusunan = "";
+      renderIsian();
+      return void periksaHakBlangko(bl).then(() => (S.blangko === bl && bl.hak === "ok" ? muatSusunan() : undefined));
+    }
     if (kode === "salinskors") return void salinKalimatSkors();
     if (kode === "pakaisaran") return pakaiSemuaSaran();
     if (kode === "ktpbukti") return void ambilTanggalKtp();
