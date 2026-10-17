@@ -1,14 +1,17 @@
 import { type NextRequest } from "next/server";
 
+import { golonganPengguna } from "@/lib/matriks-peran";
+import { isPrivilegedAdmin } from "@/lib/permissions";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { bacaHakBlangko } from "@/server/modules/pengaturan-abt/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
+import { ApiError } from "@/server/shared/errors";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 
-import { jenisFolderDerry, statusNilaiLayar, susunIsian, type Definisi, type Susunan } from "./susun";
+import { jenisDokumenAkun, jenisFolderDariJalur, jenisFolderDerry, statusNilaiLayar, susunIsian, type Definisi, type JenisDokumenDerry, type PeranTiruan, type Susunan } from "./susun";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,6 +44,14 @@ const BATAS_NILAI = 600;
  *       terbaca, status terisi/kosong). Tanpa semua=1 hanya isian tangan dan
  *       pemicu yang dinilai (cepat); semua=1 menilai seluruh penanda untuk
  *       "Lihat semua isi data".
+ *
+ * HAK DOKUMEN DI SERVER (17 Okt 2026, temuan C6): jenis folder (putusan / BAS /
+ * relaas / PTSP) dinilai dari SESI, bukan dari parameter klien - putusan =
+ * hakim & Ketua/Wakil, BAS = PP/panitera/panmud, relaas = juru sita, PTSP =
+ * PTSP; Super Admin/Admin semuanya. Saklar Pengaturan SIPP & ABT ikut (gagal =
+ * mati). "Lihat sebagai akun": admin dapat menambah &sebagaiPeran=hakim|pp|js;
+ * bagi bukan admin parameter itu diabaikan. ?hak=1 tetap terbuka (dipakai
+ * ekstensi sebelum memilih); ?indeks=1 hanya memuat folder yang boleh.
  *
  * Katalog variabel diambil hidup dari ABT (abt.semuaVariabel, disinggahkan 10
  * menit - definisi dapat diubah admin ABT kapan saja), cadangan salinan kamus
@@ -169,13 +180,34 @@ async function nilaiPenanda(perkaraId: string, sidangKe: number, kode: string[])
   }
 }
 
+const PERAN_TIRUAN = new Set(["hakim", "pp", "js"]);
+
+/** Jenis dokumen yang boleh dibuka sesi ini; saklar hanya dibaca bila peran hakim/PP yang menentukan. */
+async function jenisBolehSesi(actor: Parameters<typeof golonganPengguna>[0], sebagaiMinta: string): Promise<JenisDokumenDerry[]> {
+  const admin = isPrivilegedAdmin(actor as Parameters<typeof isPrivilegedAdmin>[0]);
+  const sebagaiPeran = admin && PERAN_TIRUAN.has(sebagaiMinta) ? (sebagaiMinta as PeranTiruan) : null;
+  const golongan = golonganPengguna(actor);
+  const dasar = { admin, golongan, sebagaiPeran };
+  if (admin && !sebagaiPeran) return jenisDokumenAkun(dasar);
+  let saklar: { hakimBas?: boolean; ppPutusan?: boolean } = {};
+  if (jenisDokumenAkun(dasar).some((j) => j === "put" || j === "bas")) {
+    try {
+      const hak = await bacaHakBlangko();
+      if (hak && hak.saklar) saklar = hak.saklar;
+    } catch {
+      /* hak menu tak terbaca: saklar dianggap mati */
+    }
+  }
+  return jenisDokumenAkun({ ...dasar, saklar });
+}
+
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
   let actorUserId: string | null = null;
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "panel");
+    const actor = await pastikanKapabilitas(db, actorUserId, "panel");
     const q = request.nextUrl.searchParams;
 
     if (q.get("hak") === "1") {
@@ -185,13 +217,21 @@ export async function GET(request: NextRequest) {
         return ok({ ada: false, sebab: teks((e as Error)?.message) || "Hak menu ABT tidak terbaca." });
       }
     }
-    if (q.get("indeks") === "1") return ok(await indeksDerry());
+    const jenisBoleh = await jenisBolehSesi(actor, teks(q.get("sebagaiPeran")).toLowerCase());
+    if (q.get("indeks") === "1") {
+      const indeks = await indeksDerry();
+      return ok({ ...indeks, folder: indeks.folder.filter((f) => jenisBoleh.includes(f.jenis as JenisDokumenDerry)) });
+    }
 
     const folder = teks(q.get("folder")).replace(/^\/+|\/+$/g, "");
     const berkas = teks(q.get("berkas"));
     if (!folder || !berkas) return Response.json({ ok: false, alasan: "folder dan berkas harus disebutkan." }, { status: 400 });
     if (folder.includes("..") || berkas.includes("/") || berkas.includes("\\")) {
       return Response.json({ ok: false, alasan: "Nama folder atau berkas tidak sah." }, { status: 400 });
+    }
+    const jenisFolder = jenisFolderDariJalur(folder);
+    if (!jenisFolder || !jenisBoleh.includes(jenisFolder)) {
+      throw new ApiError(403, "Folder blangko ini bukan untuk peran akun Anda.");
     }
     const namaBerkas = /\.(rtf|docx?|odt)$/i.test(berkas) ? berkas : `${berkas}.rtf`;
     const jalurFolder = folder.startsWith(`${AKAR_DERRY}/`) || folder === AKAR_DERRY ? folder : `${AKAR_DERRY}/${folder}`;

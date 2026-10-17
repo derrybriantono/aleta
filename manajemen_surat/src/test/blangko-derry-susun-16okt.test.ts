@@ -141,7 +141,7 @@ const bridge = vi.fn();
 const queryAll = vi.fn();
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({ queryAll, queryOne: async () => null }) }));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "u1" }));
-vi.mock("@/server/modules/aleta-ecourt/akses", () => ({ pastikanKapabilitas: vi.fn(async () => ({ id: "u1", name: "Hakim Satu" })) }));
+vi.mock("@/server/modules/aleta-ecourt/akses", () => ({ pastikanKapabilitas: vi.fn(async () => ({ id: "u1", name: "Admin Uji", roleId: "super-admin" })) }));
 vi.mock("@/server/modules/aleta-sipp/aleta-sipp-datasource", () => ({ callAletaBotSippBridge: (...a: unknown[]) => bridge(...a) }));
 vi.mock("@/server/shared/admin-access-audit", () => ({ handleAdminRouteError: (e: unknown) => new Response(JSON.stringify({ ok: false, alasan: String((e as Error)?.message || e) }), { status: 500 }) }));
 
