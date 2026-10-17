@@ -658,13 +658,17 @@ export function periksaDasarHukum(pertimbangan: string, seluruh: string): Temuan
   const temuan: TemuanAdvance[] = [];
   const t = datar(pertimbangan);
   const h = hurufDikutip(t);
-  if (h.pp19 && h.khi116 && h.pp19 !== h.khi116) {
+  // PP 9/1975 Pasal 19 hanya huruf a-f; KHI Pasal 116 a-h (g taklik talak, h murtad
+  // tidak ada padanannya). Yang dibandingkan huruf a-f saja; g/h hanya sah di Pasal 116.
+  const pp19AF = h.pp19.replace(/[^A-F]/g, "");
+  const khi116AF = h.khi116.replace(/[^A-F]/g, "");
+  if (pp19AF && khi116AF && pp19AF !== khi116AF) {
     temuan.push({
       kode: "huruf-19-116",
       tingkat: "perhatian",
       langkah: "pertimbangan",
       judul: "Huruf Pasal 19 PP 9/1975 berbeda dengan huruf Pasal 116 KHI",
-      rinci: `Pasal 19 menyebut huruf ${h.pp19.toLowerCase().split("").join(", ")}, Pasal 116 huruf ${h.khi116.toLowerCase().split("").join(", ")}. Isi kedua pasal untuk huruf a-f sama; biasanya hurufnya sama. (Ukur: 10 dari 2.257 putusan BHT PA Donggala.)`,
+      rinci: `Pasal 19 menyebut huruf ${pp19AF.toLowerCase().split("").join(", ")}, Pasal 116 huruf ${khi116AF.toLowerCase().split("").join(", ")}. Isi kedua pasal untuk huruf a-f sama; biasanya hurufnya sama. (Ukur: 10 dari 2.257 putusan BHT PA Donggala.)`,
       bukti: [potong(t, /Pasal\s+19\s+huruf/), potong(t, /Pasal\s+116\s+huruf/)].filter(Boolean),
     });
   }
@@ -712,11 +716,19 @@ export type KeadaanNaskah = "dikabulkan" | "ditolak" | "tidakDiterima" | "dicabu
  * Pemohon; ... Dalam Rekonvensi ... menolak selebihnya" terbaca ditolak -
  * pada ukur awal 12 salah tangkap, semuanya perkara berekonvensi.
  */
+/**
+ * "Gugur" sebagai nasib POKOK perkara: gugatan/permohonan/perkara (dengan pihak atau
+ * nomornya) yang gugur. Kata "gugur" pada hak menjawab, eksepsi, dsb. bukan kesimpulan
+ * pokok - pertimbangan lazim memuat "hak Tergugat untuk mengajukan jawaban gugur".
+ */
+const POLA_GUGUR =
+  /(?:gugatan|permohonan|perkara)(?:(?!eksepsi|jawaban|menjawab|replik|duplik|\bhak\b|\bsaksi\b|\bbukti\b)(?:[^.;]|\.(?=\S))){0,100}?\s(?:dinyatakan\s+)?gugur\b|menyatakan\s+gugur\s+(?:gugatan|permohonan|perkara)/;
+
 export function keadaanAmar(amar: string): KeadaanNaskah {
   const t = datar(amar).toLowerCase();
   const calon: Array<[KeadaanNaskah, RegExp]> = [
     ["dicabut", /pencabutan|mencabut|dicabut/],
-    ["gugur", /dinyatakan\s+gugur|\bgugur\b/],
+    ["gugur", POLA_GUGUR],
     ["tidakDiterima", /tidak\s+dapat\s+diterima|niet\s*ontvankelijk/],
     ["ditolak", /menolak\s+(?:gugatan|permohonan)/],
     ["dikabulkan", /mengabulkan\s+(?:gugatan|permohonan|pemohonan)(?!\s+(?:pencabutan|untuk\s+mencabut))|memberi\s+izin|menjatuhkan\s+talak|menetapkan\s+sah/],
@@ -744,7 +756,7 @@ export function kesimpulanPertimbangan(pertimbangan: string): Set<KeadaanNaskah>
   if (new RegExp(`${pokok}(?:harus|patut|dapat|haruslah|patutlah)\\s+(?:dinyatakan\\s+)?ditolak`).test(t)) set.add("ditolak");
   if (new RegExp(`${pokok}(?:harus|patut|haruslah|patutlah)?\\s*dinyatakan\\s+tidak\\s+dapat\\s+diterima`).test(t)) set.add("tidakDiterima");
   if (/mencabut\s+(?:gugatan|permohonan|perkara)|pencabutan\s+(?:gugatan|permohonan|perkara)/.test(t)) set.add("dicabut");
-  if (/dinyatakan\s+gugur|\bgugur\b/.test(t)) set.add("gugur");
+  if (POLA_GUGUR.test(t)) set.add("gugur");
   return set;
 }
 

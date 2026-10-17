@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   hurufDikutip,
   keadaanAmar,
+  kesimpulanPertimbangan,
   periksaDasarHukum,
   periksaKonsistensi,
   samarkanAlinea,
@@ -98,6 +99,14 @@ describe("dasar hukum", () => {
     expect(t.map((x) => x.kode)).toContain("huruf-19-116");
   });
 
+  it("huruf g/h hanya ada di Pasal 116 KHI (PP 9/1975 Pasal 19 hanya a-f): bukan perbedaan", () => {
+    const kode = (p: string) => periksaDasarHukum(p, "").map((x) => x.kode);
+    expect(kode("Menimbang, bahwa memenuhi Pasal 19 huruf f PP Nomor 9 Tahun 1975 jo. Pasal 116 huruf f dan g KHI;")).not.toContain("huruf-19-116");
+    expect(kode("Menimbang, bahwa memenuhi Pasal 19 huruf f PP Nomor 9 Tahun 1975 jo. Pasal 116 huruf f dan h KHI;")).not.toContain("huruf-19-116");
+    // Perbedaan di huruf a-f tetap ditandai, juga bila Pasal 116 menambah g.
+    expect(kode("Menimbang, bahwa Pasal 19 huruf f PP Nomor 9 Tahun 1975 jo. Pasal 116 huruf b dan g KHI;")).toContain("huruf-19-116");
+  });
+
   it("tahun yang tidak cocok dengan nomornya (temuan nyata: UU 50 Tahun 2019)", () => {
     const t = periksaDasarHukum("", "Undang-Undang Nomor 7 Tahun 1989 ... Undang-Undang Nomor 50 Tahun 2019");
     expect(t.find((x) => x.kode === "tahun-peraturan")!.rinci).toMatch(/2009/);
@@ -157,6 +166,18 @@ describe("konsistensi pertimbangan - amar", () => {
   it("kesimpulan pertimbangan bertentangan dengan amar", () => {
     const t = periksaKonsistensi({ jenis: "cg", dudukPerkara: "", pertimbangan: "Menimbang, bahwa gugatan Penggugat harus ditolak;", amar: "Mengabulkan gugatan Penggugat;" });
     expect(t.find((x) => x.kode === "kesimpulan-amar")).toMatchObject({ tingkat: "perhatian", langkah: "amar" });
+  });
+
+  it("kata 'gugur' yang bukan kesimpulan pokok perkara tidak dibaca sebagai gugurnya gugatan", () => {
+    const pert = "Menimbang, bahwa Tergugat tidak hadir sehingga hak Tergugat untuk mengajukan jawaban gugur; bahwa eksepsi Tergugat dinyatakan gugur; bahwa gugatan Penggugat patut dikabulkan dengan verstek;";
+    expect([...kesimpulanPertimbangan(pert)]).toEqual(["dikabulkan"]);
+    expect(periksaKonsistensi({ jenis: "cg", dudukPerkara: "", pertimbangan: pert, amar: "Mengabulkan gugatan Penggugat dengan verstek; Menjatuhkan talak satu ba'in sughra Tergugat terhadap Penggugat;" }).map((x) => x.kode)).not.toContain("kesimpulan-amar");
+    // Amar: "gugur" pada hak/eksepsi bukan keadaan amar pokok.
+    expect(keadaanAmar("Menyatakan hak Tergugat untuk menjawab gugur; Mengabulkan gugatan Penggugat dengan verstek;")).toBe("dikabulkan");
+    // Gugurnya gugatan/permohonan tetap terbaca.
+    expect([...kesimpulanPertimbangan("Menimbang, bahwa gugatan Penggugat harus dinyatakan gugur;")]).toContain("gugur");
+    expect(keadaanAmar("Menyatakan gugatan Penggugat gugur; Membebankan biaya perkara kepada Penggugat;")).toBe("gugur");
+    expect(keadaanAmar("Menyatakan perkara Nomor 5/Pdt.G/2026/PA.Dgl gugur;")).toBe("gugur");
   });
 
   it("tidak pernah ada tingkat 'hentikan' - alat bantu, bukan penahan", () => {
