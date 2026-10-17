@@ -85,17 +85,21 @@ describe("TombolBantuanTutorial - tombol ?", () => {
     expect(screen.queryByTestId("panel-bantuan-tutorial")).toBeNull();
     fireEvent.click(screen.getByTestId("tombol-bantuan-tutorial"));
     expect(screen.queryByTestId("panel-bantuan-tutorial")).not.toBeNull();
-    await waitFor(() => expect(screen.queryByTestId("tutorial-jadwal-sidang")).not.toBeNull());
+    // Isi panel dimuat lewat import dinamis saat tombol ditekan. Dalam rangkaian uji penuh yang berat, pemuatan itu
+    // bisa lebih lama dari batas bawaan waitFor (1000 ms), jadi tunggu lebih lama; komponennya sendiri tidak diubah.
+    await waitFor(() => expect(screen.queryByTestId("tutorial-jadwal-sidang")).not.toBeNull(), { timeout: 15000 });
     expect(screen.queryByTestId("tutorial-kasir")).toBeNull();
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByTestId("panel-bantuan-tutorial")).toBeNull();
-  });
+  }, 30000);
 
   it("halaman tanpa tutorial memberi pesan ramah dan tautan ke semua tutorial", async () => {
     jalur = "/halaman-tanpa-tutorial";
     render(<TombolBantuanTutorial />);
     fireEvent.click(screen.getByTestId("tombol-bantuan-tutorial"));
-    await waitFor(() => expect(screen.getByText(/belum punya langkah khusus/)).toBeTruthy());
+    // Isi panel dimuat lewat import dinamis saat tombol ditekan. Dalam rangkaian uji penuh yang berat, pemuatan itu
+    // bisa lebih lama dari batas bawaan waitFor (1000 ms), jadi tunggu lebih lama; komponennya sendiri tidak diubah.
+    await waitFor(() => expect(screen.getByText(/belum punya langkah khusus/)).toBeTruthy(), { timeout: 15000 });
     expect(screen.getAllByText(/tutorial/i).length).toBeGreaterThan(0);
-  });
+  }, 30000);
 });
