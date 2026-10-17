@@ -477,6 +477,13 @@
       "when": 1792191600001,
       "tag": "0070_aleta_skp_jabatan",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1792195200001,
+      "tag": "0073_aleta_blangko_pribadi",
+      "breakpoints": true
     }
   ]
 }

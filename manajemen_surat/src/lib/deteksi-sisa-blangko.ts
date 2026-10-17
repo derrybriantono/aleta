@@ -392,13 +392,13 @@ const PEMICU_KUTIPAN = /(?:firman\s+allah|firman[-\s]nya|sabda|bersabda|dalam\s+
 
 // Aksara Arab yang terbaca sebagai deretan huruf Latin-1 beraksen (RTF berkode laman 1256) juga dianggap teks Arab.
 const ARAB_RUSAK = /[À-ÿ]{3,}/;
-function dekatArab(p: string, dari: number, sampai: number): boolean {
+export function dekatArab(p: string, dari: number, sampai: number): boolean {
   const w = `${p.slice(Math.max(0, dari - 40), dari)} ${p.slice(sampai, sampai + 40)}`;
   return ARAB.test(w) || ARAB_RUSAK.test(w);
 }
 
 /** Apakah posisi ini di dalam tanda kutip yang belum tertutup (lurus, miring, atau guillemet)? */
-function diapitKutip(p: string, dari: number): boolean {
+export function diapitKutip(p: string, dari: number): boolean {
   const sebelum = p.slice(0, dari);
   if ((sebelum.match(/"/g) || []).length % 2 === 1) return true;
   if (Math.max(sebelum.lastIndexOf("“"), sebelum.lastIndexOf("«")) > Math.max(sebelum.lastIndexOf("”"), sebelum.lastIndexOf("»"))) return true;
@@ -597,7 +597,7 @@ async function lepasDeflate(bita: Uint8Array): Promise<Uint8Array> {
 }
 
 /** Isi satu berkas di dalam ZIP, atau null. */
-async function ambilDariZip(bita: Uint8Array, nama: string): Promise<Uint8Array | null> {
+export async function ambilDariZip(bita: Uint8Array, nama: string): Promise<Uint8Array | null> {
   let eocd = -1;
   for (let i = bita.length - 22; i >= Math.max(0, bita.length - 65557); i -= 1) {
     if (u32(bita, i) === 0x06054b50) {
