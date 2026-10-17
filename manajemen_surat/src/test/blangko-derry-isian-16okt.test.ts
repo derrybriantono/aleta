@@ -856,6 +856,21 @@ describe("audit 17 Okt: E5 huruf cp1252 yang tercetak rusak", () => {
   });
 });
 
+describe("audit 17 Okt: E6 alat bukti 'tulis manual'", () => {
+  it("E6: kalimat manual berakhir 'T.3.' tidak menjadi 'T.3.;'; kode bentuk lain ('tanda bukti P.5') diganti, bukan ditambah kode kedua", () => {
+    const x = (buka() as Halaman).w.aletaBlangkoDerryIsian.murni;
+    const manual = (m: string) => ({ nm: "", an: "", no: "", tgl: "", oleh: "", meterai: 0, cocok: 0, manual: m });
+    const a = x.kalimatBukti(manual("Bukti tersebut telah diberi meterai cukup kemudian diberi tanda pada surat tersebut dengan tanda T.3."), "T", 1);
+    expect(a).toBe("Bukti tersebut telah diberi meterai cukup kemudian diberi tanda pada surat tersebut dengan tanda T.2.");
+    expect(a).not.toMatch(/\.;/);
+    const b = x.kalimatBukti(manual("Fotokopi Kartu Keluarga, telah diberi tanda bukti P.5 oleh Ketua Majelis;"), "P", 0);
+    expect(b).toBe("Fotokopi Kartu Keluarga, telah diberi tanda bukti P.1 oleh Ketua Majelis;");
+    expect(b.match(/\b[PT]\.\d+/g)).toEqual(["P.1"]);
+    // Tanpa kode sama sekali: ekor baku ditambahkan, ditutup ';' (perilaku lama tetap).
+    expect(x.kalimatBukti(manual("Surat perjanjian"), "P", 2)).toBe("Surat perjanjian, lalu diberi tanda P.3 serta diberi tanggal dan paraf oleh Ketua Majelis;");
+  });
+});
+
 describe("murni", () => {
   const m = () => buka().w.aletaBlangkoDerryIsian.murni;
   it("rtfKeHtml: perataan, tebal/miring, tabel, \\'hh dan \\uN, bagian tak dicetak dilewati", () => {

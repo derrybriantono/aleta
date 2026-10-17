@@ -1096,7 +1096,8 @@
     if (/kartu keluarga|\bkk\b/i.test(n)) return "kk";
     return "";
   }
-  const POLA_KODE_BUKTI = /(\btanda\s+)[PT]\.\s?\d+/gi;
+  // Kode tanda bukti di kalimat: "tanda P.3", "diberi tanda bukti P.3", "bertanda P-3", "kode (P.3)".
+  const POLA_KODE_BUKTI = /(\b(?:tanda|bertanda|kode)\s*:?\s*(?:bukti\s+)?\(?)[PT][.-]\s?\d+/gi;
   /**
    * Kalimat satu bukti sesuai pola ABT, kode P.n / T.n otomatis. Semua bagian (atas nama, nomor, tanggal,
    * penerbit, meterai, pencocokan) boleh kosong - bagian kosong tidak ditulis. Bukti "tulis manual" dicetak
@@ -1107,10 +1108,11 @@
     const kode = `${pihak}.${i + 1}`;
     if (typeof r.manual === "string" && r.manual.trim()) {
       let t = r.manual.trim().replace(/\s+/g, " ");
-      if (POLA_KODE_BUKTI.test(t)) t = t.replace(POLA_KODE_BUKTI, `$1${kode}`);
+      const adaKode = new RegExp(POLA_KODE_BUKTI.source, "i").test(t);
+      if (adaKode) t = t.replace(POLA_KODE_BUKTI, `$1${kode}`);
       else t = `${t.replace(/[;.,\s]+$/, "")}, lalu diberi tanda ${kode} serta diberi tanggal dan paraf oleh Ketua Majelis`;
-      POLA_KODE_BUKTI.lastIndex = 0;
-      return /;$/.test(t) ? t : `${t.replace(/\s+$/, "")};`;
+      // Kalimat manual yang sudah ditutup titik/titik koma dibiarkan ("T.3." tidak menjadi "T.3.;"); selainnya ditutup ';'.
+      return /[;.]$/.test(t) ? t : `${t.replace(/\s+$/, "")};`;
     }
     const nm = String(r.nm || "").trim();
     const an = String(r.an || "").trim();
