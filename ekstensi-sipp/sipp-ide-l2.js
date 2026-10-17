@@ -94,8 +94,18 @@
     keadaan.siap = true;
   }
 
+  /** Tampilan Lama tidak berubah sama sekali (sama dengan L1/M1/M2) - penanda Ide ALETA hanya di Baru & UI Baru. */
+  function modeLama() {
+    try {
+      // eslint-disable-next-line no-undef
+      return typeof alatUjiMode === "function" && String(alatUjiMode() || "lama") === "lama";
+    } catch {
+      return false;
+    }
+  }
+
   function nyala() {
-    return keadaan.saklar.aktif && keadaan.saklar.ideL2;
+    return keadaan.saklar.aktif && keadaan.saklar.ideL2 && !modeLama();
   }
 
   function bolehKode(kode) {
@@ -477,6 +487,15 @@ button.aleta-l2-pil[data-tingkat=hijau]{background:#dcfce7;color:#166534;border-
   } catch {
     /* di luar ekstensi */
   }
+
+  // Lama <-> Baru/UI Baru diikuti seketika (audit 17 Okt: dulu penanda tampil
+  // dan meminta portal di Tampilan Lama).
+  document.addEventListener("aleta-uji-berubah", () => {
+    bersihkan();
+    keadaan.lima = null;
+    keadaan.sidik = "";
+    jadwalkan(true);
+  });
 
   pasangGaya();
   void bacaSaklar().then(() => jadwalkan(false));

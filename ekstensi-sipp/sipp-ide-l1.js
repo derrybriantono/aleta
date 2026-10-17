@@ -1348,13 +1348,19 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
       } catch {
         /* di luar konteks ekstensi */
       }
-      if (!nyala) return;
       if (diAbt()) {
-        void terimaSerahAbt();
+        if (nyala) void terimaSerahAbt();
         return;
       }
       if (!document.body) return;
+      // Pengamat, penjaga Simpan, dan pendengar tampilan dipasang SELALU -
+      // juga bila ALETA sedang mati saat halaman dibuka: pasang() dan
+      // saatKirim() sendiri yang memeriksa aktifSekarang(). Dulu ALETA yang
+      // dinyalakan dari popup sesudah halaman terbuka tidak pernah memasang
+      // pita di jendela berikutnya (audit 17 Okt).
       document.addEventListener("submit", saatKirim, true);
+      // Lama <-> Baru/UI Baru (popup, atau tampilan dari server) diikuti seketika.
+      document.addEventListener("aleta-uji-berubah", () => jadwalkan());
       new MutationObserver((daftar) => {
         if (daftar.every(dariAletaSaja)) return;
         jadwalkan();

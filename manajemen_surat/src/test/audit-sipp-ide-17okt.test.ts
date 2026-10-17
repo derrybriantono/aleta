@@ -160,3 +160,68 @@ describe("A. detak pita L1 dan pengamat konten.js", () => {
   }, 10000);
 });
 
+// ============================================================================
+// B. Dimuat saat ALETA mati, lalu dinyalakan dari popup
+// ============================================================================
+describe("B. L1/M1 dinyalakan sesudah halaman terbuka", () => {
+  it("jendela yang dibuka SESUDAH ALETA dinyalakan tetap mendapat pita L1 dan M1", async () => {
+    const h = buka(`<!doctype html><html><head></head><body>${PANEL_PUTUSAN}</body></html>`, {
+      url: URL_DETIL,
+      simpanan: { aktif: false },
+      skrip: ["sipp-ide-l1.js", "sipp-ide-m1.js"],
+    });
+    await tunggu(100);
+    await h.ubah({ aktif: true });
+    await tunggu(500);
+    // Petugas membuka jendela Putusan Akhir dan Tunda Sidang (SIPP: popup_form).
+    h.d.body.insertAdjacentHTML("beforeend", FORM_PUTUSAN + FORM_TUNDA);
+    await sampai(() => h.d.querySelector(".aleta-l1-pita") && h.d.querySelector(".aleta-m1-pita"), "pita L1 dan M1 sesudah dinyalakan", 2000);
+  });
+});
+
+// ============================================================================
+// C. Lama <-> UI Baru
+// ============================================================================
+describe("C. Tampilan Lama tidak berubah, dan pindah tampilan diikuti seketika", () => {
+  it("UI Baru -> Lama (peristiwa aleta-uji-berubah): sisipan L1, M1, M2 hilang tanpa menunggu SIPP berubah; kembali UI Baru muncul lagi", async () => {
+    let mode = "ui";
+    const h = buka(`<!doctype html><html><head></head><body>${PANEL_PUTUSAN}${FORM_PUTUSAN}${FORM_TUNDA}</body></html>`, {
+      url: URL_DETIL,
+      skrip: ["sipp-ide-l1.js", "sipp-ide-m1.js", "sipp-ide-m2.js"],
+      mode: () => mode,
+    });
+    await sampai(() => h.d.querySelector(".aleta-l1-pita") && h.d.querySelector(".aleta-m1-pita") && h.d.documentElement.getAttribute("data-aleta-lencana"), "terpasang di UI Baru");
+    mode = "lama";
+    h.d.dispatchEvent(new h.w.CustomEvent("aleta-uji-berubah", { detail: { mode: "lama" } }));
+    await tunggu(800);
+    expect(h.d.querySelector(".aleta-l1")).toBeNull();
+    expect(h.d.querySelector(".aleta-m1")).toBeNull();
+    expect(h.d.documentElement.hasAttribute("data-aleta-lencana")).toBe(false);
+    mode = "ui";
+    h.d.dispatchEvent(new h.w.CustomEvent("aleta-uji-berubah", { detail: { mode: "ui" } }));
+    await sampai(() => h.d.querySelector(".aleta-l1-pita") && h.d.querySelector(".aleta-m1-pita"), "kembali di UI Baru", 2000);
+  });
+
+  it("penanda L2 di Tampilan Lama: tidak digambar dan TIDAK meminta portal", async () => {
+    const daftar = `<table id="tablePerkaraAll"><tbody><tr><td>1</td><td>${NOMOR}</td><td>Cerai Gugat</td></tr></tbody></table>`;
+    const h = buka(`<!doctype html><html><head><title>SIPP</title></head><body>${daftar}</body></html>`, {
+      url: "http://192.168.10.10/SIPP/perkara_list/x",
+      skrip: ["sipp-ide-l2.js"],
+      mode: () => "lama",
+    });
+    await tunggu(900);
+    expect(h.minta).toEqual([]);
+    expect(h.d.querySelector("[data-aleta-l2]")).toBeNull();
+  });
+
+  it("penanda L2 di UI Baru tetap meminta portal (pembanding)", async () => {
+    const daftar = `<table id="tablePerkaraAll"><tbody><tr><td>1</td><td>${NOMOR}</td><td>Cerai Gugat</td></tr></tbody></table>`;
+    const h = buka(`<!doctype html><html><head><title>SIPP</title></head><body>${daftar}</body></html>`, {
+      url: "http://192.168.10.10/SIPP/perkara_list/x",
+      skrip: ["sipp-ide-l2.js"],
+      mode: () => "ui",
+    });
+    await sampai(() => h.minta.some((a) => a.includes("/sipp-ide-l2")), "permintaan penanda", 2000);
+  });
+});
+

@@ -1391,8 +1391,11 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
       } catch {
         /* di luar konteks ekstensi */
       }
-      if (!nyala || !document.body) return;
+      if (!document.body) return;
+      // Dipasang SELALU (juga saat ALETA mati ketika halaman dibuka) - pasang()
+      // dan saatKirim() memeriksa aktifSekarang() sendiri (audit 17 Okt).
       document.addEventListener("submit", saatKirim, true);
+      document.addEventListener("aleta-uji-berubah", () => jadwalkan());
       new MutationObserver((daftar) => {
         if (daftar.every(dariAletaSaja)) return;
         jadwalkan();
