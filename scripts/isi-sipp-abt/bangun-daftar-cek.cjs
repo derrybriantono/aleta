@@ -24,6 +24,7 @@ const bacaOpsional = (nama) => {
 };
 const beban = bacaOpsional("BEBAN-MANUAL.json") || {};
 const ukuranLanjutan = bacaOpsional("UKURAN-LANJUTAN.json");
+const ukuranDeteksi = bacaOpsional("UKURAN-DETEKSI.json") || {};
 
 function kueri(db, sql) {
   const kon = mysql.createConnection({ host: "127.0.0.1", user: "root", database: db });
@@ -31,6 +32,7 @@ function kueri(db, sql) {
 }
 
 const { petaFolder } = require("./folder-jenis.cjs");
+const DIPANCAR = require("./kode-dipancar.cjs").dipancar();
 const UKUR = (() => {
   try {
     return require(path.join(akar, "aleta_bot", "services", "abtUsulanLainService.js")).UKUR_SUMBER;
@@ -38,6 +40,16 @@ const UKUR = (() => {
     return {};
   }
 })();
+/** Berapa perkara (sejak 2023) yang kini menghasilkan nilai untuk kode ini lewat modul deteksi murni: "itsbat-nikah 734/738". */
+function terisiTerukur(kode, daftarModul) {
+  const keluar = [];
+  for (const m of daftarModul) {
+    const u = ukuranDeteksi[m];
+    if (u && u.kode && u.kode[kode] !== undefined) keluar.push(`${m} ${u.kode[kode]}/${u.perkara}`);
+  }
+  return keluar;
+}
+
 /** Ukuran yang sudah ada (agen sebelumnya): ketepatan ALETA atas isian petugas, per jenis dan kode. */
 function ukuranLama(kode, modul) {
   const sumber = [];
@@ -279,8 +291,28 @@ function tulisMd(d) {
     else if (dasarTutup >= dasarBobot) status = otomatis || ada.some((p) => p.jenis === "deteksi" || p.jenis === "f23") ? "ya" : "sebagian";
     else status = "sebagian";
     if (tanpa) status = "tidak";
+    // Pengisi posita yang terukur nyaris tak pernah menghasilkan nilai (mis. 1267: 19 dari 2339 perkara cerai) dicatat
+    // sebagian, bukan ya. Hanya bila penyebutnya cukup besar (>= 100 perkara) dan tidak ada pengisi lain yang otomatis.
+    let jarang = "";
+    if (status === "ya" && !otomatis) {
+      const modulDeteksi = [...new Set(ada.filter((p) => p.jenis === "deteksi").map((p) => p.id))];
+      const laju = [];
+      for (const m of modulDeteksi) {
+        const u = ukuranDeteksi[m];
+        if (!u || !u.perkara || u.perkara < 100) continue;
+        // Hanya pasangan (modul, kode) yang dipancarkan oleh deteksi() murni modul itu; kode lain diisi layanan lain.
+        const pancar = DIPANCAR.get(m);
+        for (const k of r.kode) if (pancar && pancar.kode.has(k)) laju.push({ m, n: (u.kode && u.kode[k]) || 0, dari: u.perkara });
+      }
+      const adaLain = ada.some((p) => p.jenis !== "deteksi");
+      if (!adaLain && laju.length && Math.max(...laju.map((x) => x.n / x.dari)) < 0.05) {
+        status = "sebagian";
+        jarang = `jarang tertulis di posita: ${laju.map((x) => `${x.m} ${x.n}/${x.dari}`).join("; ")} perkara`;
+      }
+    }
     
-    const sm = SUMBER_MUNGKIN({ kunci: r.kunci, kode: r.kode, nama: r.nama, namaAsli: r.namaAsli, status, cadangan: r.cadangan, folderTakTertutup: Object.keys(r.folderTakTertutup).sort(urutNama) });
+    const sm0 = SUMBER_MUNGKIN({ kunci: r.kunci, kode: r.kode, nama: r.nama, namaAsli: r.namaAsli, status, cadangan: r.cadangan, folderTakTertutup: Object.keys(r.folderTakTertutup).sort(urutNama) });
+    const sm = jarang ? { sumberMungkin: jarang, catatan: sm0.catatan } : sm0;
     hasil.push({
       kunci: r.kunci,
       kode: r.kode,
@@ -304,7 +336,11 @@ function tulisMd(d) {
       folderTakTertutup: Object.keys(r.folderTakTertutup).sort(urutNama),
       pengisi: ada.map((p) => ({ jenis: p.jenis, id: p.id, berkas: p.berkas || "", tingkat: p.tingkat })),
       sumberMungkin: tanpa ? tanpa.sumberMungkin : sm.sumberMungkin,
-      catatan: [tanpa ? tanpa.catatan : sm.catatan, r.kode.map((k) => CATATAN[k]).find(Boolean) || "", r.kode.map((k) => ukuranLama(k)).find(Boolean) || ""].filter(Boolean).join(" "),
+      catatan: [tanpa ? tanpa.catatan : sm.catatan, r.kode.map((k) => CATATAN[k]).find(Boolean) || "", r.kode.map((k) => ukuranLama(k)).find(Boolean) || "", (() => {
+        const modul = [...new Set(ada.filter((p) => p.jenis === "deteksi").map((p) => p.id))];
+        const hasilUkur = r.kode.flatMap((k) => terisiTerukur(k, modul));
+        return hasilUkur.length ? `Terisi dari posita sejak 2023: ${hasilUkur.join("; ")} perkara.` : "";
+      })()].filter(Boolean).join(" "),
     });
   }
   hasil.sort((a, b) => b.bobot - a.bobot || b.jumlahBlangko - a.jumlahBlangko || a.kunci.localeCompare(b.kunci));
