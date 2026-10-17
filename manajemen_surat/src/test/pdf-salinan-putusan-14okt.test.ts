@@ -88,14 +88,26 @@ describe("salinanPutusanService - RTF salinan", () => {
   const asli = rtfTiruan();
   const { rtf, laporan } = salinan.susunSalinan(asli, { ttd: { jenis: "png", isi: PNG } });
 
-  it("a. SALINAN: posisi bingkai dibuang, baris & paragraf rata kanan, warnanya dihitamkan", () => {
+  it("a. SALINAN di KIRI atas: posisi bingkai dibuang, baris (\\trql) & paragraf (\\ql) rata kiri, warnanya dihitamkan", () => {
     const i = rtf.indexOf("SALINAN}");
     const wilayah = rtf.slice(rtf.lastIndexOf("\\trowd", i), rtf.indexOf("\\row", i));
     expect(laporan.salinan).toBe("bingkai");
     expect(wilayah).not.toMatch(/\\t?posx|\\tposy|\\posy/);
-    expect(wilayah).toContain("\\trqr");
+    // Baris rata kiri; tidak ada kendali rata kanan/tengah pada baris maupun paragrafnya.
+    expect(wilayah).toContain("\\trql");
+    expect(wilayah).not.toMatch(/\\trq[rc](?![a-z])/);
     expect(wilayah).toContain("\\cf0 SALINAN");
-    expect(wilayah.slice(wilayah.lastIndexOf("\\pard", wilayah.indexOf("SALINAN")))).toMatch(/^\\pard \\plain \\qr/);
+    const paragraf = wilayah.slice(wilayah.lastIndexOf("\\pard", wilayah.indexOf("SALINAN")), wilayah.indexOf("SALINAN"));
+    expect(paragraf).toMatch(/^\\pard \\plain \\ql/);
+    expect(paragraf).not.toMatch(/\\q[rcj](?![a-z])/);
+    // Tanpa bingkai dan tanpa SALINAN sama sekali: paragraf rata kiri disisipkan sebelum PUTUSAN.
+    const tanpa = salinan.susunSalinan("{\\rtf1\\ansi{\\colortbl;}\\pard \\plain \\qc PUTUSAN\\par \\pard \\plain \\qj isi isi isi isi isi isi isi isi isi isi isi isi\\par }", { ttd: null });
+    expect(tanpa.laporan.salinan).toBe("disisipkan");
+    expect(tanpa.rtf).toMatch(/\\pard\\plain\\ql\{\\b\\fs24 SALINAN\\par\}\\pard/);
+    // Paragraf biasa (tanpa bingkai) yang rata tengah/kanan juga menjadi rata kiri.
+    const biasa = salinan.susunSalinan("{\\rtf1\\ansi{\\colortbl;}\\pard \\plain \\qr SALINAN\\par \\pard \\plain \\qc PUTUSAN\\par \\pard \\plain \\qj isi isi isi isi isi isi isi isi isi isi isi isi isi isi\\par }", { ttd: null });
+    expect(biasa.laporan.salinan).toBe("paragraf");
+    expect(biasa.rtf).toContain("\\pard \\plain \\ql SALINAN");
     // Masih di halaman pertama, sebelum PUTUSAN.
     expect(salinan.teksTampak(rtf).indexOf("SALINAN")).toBeLessThan(salinan.teksTampak(rtf).indexOf("PUTUSAN"));
   });

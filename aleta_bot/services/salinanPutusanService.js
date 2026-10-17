@@ -7,8 +7,10 @@
  *
  * Diminta pengguna: sesudah putusan dirender, tampilkan PDF SALINAN dengan
  *
- *   a. tulisan "SALINAN" di UJUNG KANAN atas halaman pertama - blangko ABT
- *      menaruhnya dalam bingkai bertepatan (\tposx1488, kiri atas);
+ *   a. tulisan "SALINAN" di KIRI ATAS halaman pertama - sesuai blangko ABT,
+ *      yang menaruhnya dalam bingkai bertepatan di kiri (\tposx1488). Posisi
+ *      bingkai dibuang (LibreOffice mengabaikannya), barisnya dirata kiri
+ *      (\trql) dan teksnya dirata kiri (\ql) di tepi kiri halaman;
  *   b. "ttd" di tempat tanda tangan tiap pejabat persidangan (Ketua Majelis,
  *      Hakim Anggota, Panitera Sidang/Pengganti) - blangko [01] belum
  *      memuatnya sama sekali (0 kemunculan pada 573/Pdt.G/2026);
@@ -115,15 +117,15 @@ function wilayahBaris(s, awal, akhir) {
 }
 
 /**
- * a. "SALINAN" ke ujung kanan atas halaman pertama.
+ * a. "SALINAN" ke kiri atas halaman pertama.
  *
  * Bila ia duduk dalam bingkai bertepatan (blangko ABT), bingkainya menjadi
- * baris tabel biasa yang dirata kanan (\trqr), teksnya dirata kanan, dan
+ * baris tabel biasa yang dirata kiri (\trql), teksnya dirata kiri (\ql), dan
  * warna putihnya dihitamkan - lihat catatan di dalam. Bila ia paragraf biasa,
- * cukup rata kanan. Bila tidak ada sama sekali, satu paragraf rata kanan
+ * cukup rata kiri. Bila tidak ada sama sekali, satu paragraf rata kiri
  * disisipkan sebelum paragraf pertama berbunyi PUTUSAN.
  */
-function salinanKeKanan(rtf) {
+function salinanKeKiri(rtf) {
   const s = String(rtf || "");
   const batasCari = Math.floor(s.length * 0.6);
   const daftar = potongParagraf(s, 0, batasCari);
@@ -131,15 +133,15 @@ function salinanKeKanan(rtf) {
   if (!tempat) {
     const judul = daftar.find((p) => /^P\s*U\s*T\s*U\s*S\s*A\s*N$/i.test(p.teks.replace(/\s+/g, " ").trim()));
     if (!judul) return { rtf: s, cara: "tidak_ditemukan" };
-    const sisip = "\\pard\\plain\\qr{\\b\\fs24 SALINAN\\par}";
+    const sisip = "\\pard\\plain\\ql{\\b\\fs24 SALINAN\\par}";
     return { rtf: `${s.slice(0, judul.awal)}${sisip}${s.slice(judul.awal)}`, cara: "disisipkan" };
   }
 
   const putih = warnaPutih(s);
-  const rataKanan = (potong) => hitamkan(potong.replace(/\\q[lcj](?![a-z])/g, "\\qr"), putih);
+  const rataKiri = (potong) => hitamkan(potong.replace(/\\q[rcj](?![a-z])/g, "\\ql"), putih);
   const bingkai = /\\t?posx\d+|\\t?posx[lcrio]/.test(s.slice(Math.max(0, tempat.awal - 4000), tempat.akhir + 1500));
   if (!bingkai) {
-    return { rtf: `${s.slice(0, tempat.awal)}${rataKanan(s.slice(tempat.awal, tempat.akhir))}${s.slice(tempat.akhir)}`, cara: "paragraf" };
+    return { rtf: `${s.slice(0, tempat.awal)}${rataKiri(s.slice(tempat.awal, tempat.akhir))}${s.slice(tempat.akhir)}`, cara: "paragraf" };
   }
 
   // Wilayah baris bingkai: dari \trowd terakhir sebelum SALINAN sampai \row
@@ -148,25 +150,26 @@ function salinanKeKanan(rtf) {
   let wilayah = s.slice(awal, akhir);
 
   // ==========================================================================
-  // POSISI BINGKAI DIBUANG, BARISNYA DIRATA KANAN
+  // POSISI BINGKAI DIBUANG, BARISNYA DIRATA KIRI
   // ==========================================================================
   //
   // Diukur dengan LibreOffice di container bot (mesin PDF ALETA): \tposx
   // bingkai DIABAIKAN - tabelnya jatuh sebaris di tepi kiri, sehingga
-  // memindah \tposx ke kanan tidak menggeser apa pun (SALINAN tetap di kiri,
-  // hanya teksnya bergeser dalam sel). Yang dihormati semua mesin adalah
-  // tabel biasa ber-\trqr (baris rata kanan) - jadi posisi bingkainya dibuang
-  // dan barisnya dirata kanan. Letak tegaknya sama dengan yang dihasilkan
-  // LibreOffice selama ini: baris sendiri di atas "PUTUSAN".
-  wilayah = lepasBingkaiRataKanan(wilayah);
-  // Rata kanan hanya pada paragraf SALINAN-nya sendiri (posisinya bergeser
+  // memindah \tposx tidak menggeser apa pun. Yang dihormati semua mesin adalah
+  // tabel biasa ber-\trql (baris rata kiri) - jadi posisi bingkainya dibuang
+  // dan barisnya dirata kiri, sama dengan letak kiri-atas bingkai blangko
+  // (\posx1488). Letak tegaknya: baris sendiri di atas "PUTUSAN". Teks di
+  // dalam selnya juga dirata kiri (blangko menaruhnya \qc di sel selebar
+  // 3472 twip, sehingga tampak menjorok ke tengah).
+  wilayah = lepasBingkaiRata(wilayah, "l");
+  // Rata kiri hanya pada paragraf SALINAN-nya sendiri (posisinya bergeser
   // oleh pembuangan di atas - dicari ulang).
   const relAwal = wilayah.indexOf("SALINAN");
   const relPard = relAwal >= 0 ? wilayah.lastIndexOf("\\pard", relAwal) : -1;
   if (relPard >= 0) {
     const relAkhir = wilayah.indexOf("\\cell", relAwal);
     const ujung = relAkhir >= 0 ? relAkhir : wilayah.length;
-    wilayah = `${wilayah.slice(0, relPard)}${rataKanan(wilayah.slice(relPard, ujung))}${wilayah.slice(ujung)}`;
+    wilayah = `${wilayah.slice(0, relPard)}${rataKiri(wilayah.slice(relPard, ujung))}${wilayah.slice(ujung)}`;
   }
   return { rtf: `${s.slice(0, awal)}${wilayah}${s.slice(akhir)}`, cara: "bingkai" };
 }
@@ -257,13 +260,19 @@ function selisihKurung(potong) {
   return n;
 }
 
-/** Posisi bingkai dibuang & baris dirata kanan - lihat salinanKeKanan. */
-function lepasBingkaiRataKanan(potong) {
-  return potong
+/**
+ * Posisi bingkai dibuang & baris dirata ("l" kiri / "r" kanan) - lihat
+ * salinanKeKiri (SALINAN: kiri) dan tampakkanUntukSalinan (blok: kanan).
+ */
+function lepasBingkaiRata(potong, sisi) {
+  const trq = `\\trq${sisi}`;
+  const hasil = potong
     .replace(/\\t?pos(?:neg)?[xy](?:-?\d+|[lcrio]|in|out|b|t|c)?(?![a-z])/g, "")
     .replace(/\\t?(?:ph|pv)(?:pg|mrg|col|para)(?![a-z])/g, "")
     .replace(/\\tabsnoovrlp\d*/g, "")
-    .replace(/\\trq[lc](?![a-z])/g, "\\trqr");
+    .replace(/\\trq[lcr](?![a-z])/g, trq);
+  // Baris tanpa perataan eksplisit: tambahkan sesudah \trowd.
+  return /\\trq[lcr](?![a-z])/.test(hasil) ? hasil : hasil.replace(/\\trowd(?![a-z])/g, `\\trowd ${trq}`);
 }
 
 /**
@@ -292,9 +301,9 @@ function tampakkanUntukSalinan(rtf) {
   const penutupDokumen = s.lastIndexOf("}");
   if (selisihKurung(wilayah) !== 0 || penutupDokumen <= ujung) {
     // Tidak dapat dipindah dengan aman - cukup tampak di tempatnya.
-    return { rtf: `${s.slice(0, awal)}${hitamkan(lepasBingkaiRataKanan(wilayah), putih)}${s.slice(ujung)}`, ok: true };
+    return { rtf: `${s.slice(0, awal)}${hitamkan(lepasBingkaiRata(wilayah, "r"), putih)}${s.slice(ujung)}`, ok: true };
   }
-  const pindah = `\\pard\\plain\\par ${hitamkan(lepasBingkaiRataKanan(wilayah), putih)}`;
+  const pindah = `\\pard\\plain\\par ${hitamkan(lepasBingkaiRata(wilayah, "r"), putih)}`;
   const tanpa = `${s.slice(0, awal)}${s.slice(ujung)}`;
   const akhirDok = tanpa.lastIndexOf("}");
   return { rtf: `${tanpa.slice(0, akhirDok)}${pindah}${tanpa.slice(akhirDok)}`, ok: true, dipindah: true };
@@ -363,7 +372,7 @@ function sisipkanTtdPanitera(rtf, ttd, { tinggiTwip = 900, lebarMaks = 2800 } = 
  * tandaTanganService.untukPejabat), atau null.
  */
 function susunSalinan(rtf, { ttd = null } = {}) {
-  const a = salinanKeKanan(rtf);
+  const a = salinanKeKiri(rtf);
   const b = tambahTtdPejabat(a.rtf);
   const u = tampakkanUntukSalinan(b.rtf);
   const namaPanitera = namaPaniteraSalinan(u.rtf);
@@ -385,7 +394,7 @@ function susunSalinan(rtf, { ttd = null } = {}) {
 module.exports = {
   teksTampak,
   potongParagraf,
-  salinanKeKanan,
+  salinanKeKiri,
   tambahTtdPejabat,
   tampakkanUntukSalinan,
   warnaPutih,
