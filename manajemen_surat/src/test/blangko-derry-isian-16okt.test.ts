@@ -277,7 +277,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
       return html(`<div class="panel-heading"><b><big>581/Pdt.G/2026/PA.Dgl</big></b> - TanyaJwb Saksi : <b>Nama Saksi</b></div><select><option value='A1a'>(A1a) Pertanyaan Saksi P CG</option></select><script>var ajax_data = ${JSON.stringify(rows)}\n</script>`);
     }
     if (url.startsWith(`${ABT}/preview?`)) {
-      if (p.rtfBytes) return new Response(p.rtfBytes, { status: 200, headers: { "content-type": "application/vnd.ms-word", "content-disposition": `attachment; filename="581/Pdt.G/2026/PA.Dgl - ${BLANGKO_PUT}.rtf"` } });
+      if (p.rtfBytes) return new Response(new Blob([p.rtfBytes as BlobPart]), { status: 200, headers: { "content-type": "application/vnd.ms-word", "content-disposition": `attachment; filename="581/Pdt.G/2026/PA.Dgl - ${BLANGKO_PUT}.rtf"` } });
       return new Response(RTF_PUT(abt["0007"] || "..."), { status: 200, headers: { "content-type": "application/vnd.ms-word", "content-disposition": `attachment; filename="581/Pdt.G/2026/PA.Dgl - ${BLANGKO_PUT}.rtf"` } });
     }
     if (url === `${ABT}/main/anonim`) return new Response(RTF_PUT("ANONIM"), { status: 200, headers: { "content-disposition": 'attachment; filename="anonim_581.rtf"' } });
@@ -952,15 +952,15 @@ describe("audit 17 Okt: E9 sel tabel berparagraf banyak di pratinjau", () => {
     const x = (buka() as Halaman).w.aletaBlangkoDerryIsian.murni;
     const rtf = (isi: string) => `{\\rtf1\\ansi\\pard Sebelum\\par ${isi}\\pard Sesudah\\par}`;
     const banyak = x.rtfKeHtml(rtf("\\trowd\\cellx3000\\cellx6000\\pard\\intbl Satu\\par Dua\\par Tiga\\cell Kanan\\cell\\row"));
-    const baris = banyak.match(/<tr>.*?<\/tr>/gs) ?? [];
+    const baris = banyak.match(/<tr>[\s\S]*?<\/tr>/g) ?? [];
     expect(baris.length).toBe(1);
-    const sel = baris[0].match(/<td[^>]*>.*?<\/td>/gs) ?? [];
+    const sel = baris[0].match(/<td[^>]*>[\s\S]*?<\/td>/g) ?? [];
     expect(sel.length).toBe(2);
     expect(sel[0]).toContain("Satu<br>Dua<br>Tiga");
     expect(sel[1]).toContain("Kanan");
     // Word menutup sel dengan \par\cell: tidak boleh jadi dua sel / baris kosong tambahan.
     const penutup = x.rtfKeHtml(rtf("\\trowd\\cellx3000\\cellx6000\\pard\\intbl Kiri\\par\\cell Kanan\\par\\cell\\row"));
-    const sel2 = (penutup.match(/<tr>.*?<\/tr>/gs) ?? [""])[0].match(/<td[^>]*>.*?<\/td>/gs) ?? [];
+    const sel2 = (penutup.match(/<tr>[\s\S]*?<\/tr>/g) ?? [""])[0].match(/<td[^>]*>[\s\S]*?<\/td>/g) ?? [];
     expect(sel2.length).toBe(2);
     expect(sel2[0]).not.toContain("<br>");
     // Teks polos (pencarian penanda/nama penandatangan) tetap satu kolom per sel.
