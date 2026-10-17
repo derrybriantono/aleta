@@ -10,6 +10,7 @@ import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { periksaHakPutusanAdvance } from "@/server/modules/aleta-ecourt/putusan-advance-hak";
 import { advanceMenyalaUntuk } from "@/server/modules/aleta-ecourt/putusan-advance-akun";
 import { PESAN_ADVANCE_MATI } from "@/lib/putusan-advance-akun";
+import { fiturMenyala, pastikanFiturMenyala } from "@/server/modules/satker/fitur";
 import { cariButir } from "@/server/modules/aleta-ecourt/pustaka-pertimbangan";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { ApiError } from "@/server/shared/errors";
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     const aktor = await pastikanKapabilitas(db, actorUserId, "blangko-abt");
-    const menyala = await advanceMenyalaUntuk(db, aktor);
+    const menyala = (await advanceMenyalaUntuk(db, aktor)) && (await fiturMenyala(db, "putusan-advance"));
     return ok({ menyala, sebab: menyala ? "" : PESAN_ADVANCE_MATI });
   } catch (error) {
     return handleAdminRouteError(error, request, {
@@ -85,6 +86,8 @@ export async function POST(request: NextRequest) {
     // 17 Okt: saklar per akun dari Pengaturan SIPP & ABT (bawaan hanya Derry Briantono) -
     // syarat tambahan; hak lama (hakim/konseptor/Admin) tetap diperiksa di bawah.
     if (!(await advanceMenyalaUntuk(db, aktor))) throw new ApiError(403, PESAN_ADVANCE_MATI);
+    // Banyak satker: saklar fitur per satker (bawaan menyala; gagal baca = menyala).
+    await pastikanFiturMenyala(db, "putusan-advance");
 
     const body = await readJsonBody<Badan>(request).catch(() => ({}) as Badan);
     const nomorPerkara = String(body.nomorPerkara || "").trim();

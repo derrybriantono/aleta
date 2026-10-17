@@ -1426,6 +1426,23 @@ export const modules: ModuleConfig[] = [
     badgeLabel: "Pemantau",
   },
   {
+    // Banyak satker (Tahap 0): status fitur per satker, saluran pembaruan, dan
+    // daftar akses super admin global. HANYA Super Admin (halaman dan rute
+    // /api/satker/fitur sama-sama menjaganya); Admin biasa tidak melihat menunya.
+    id: "fitur-satker",
+    label: "Fitur Satker",
+    description: "Status fitur (stabil, uji coba, mati), saluran pembaruan, dan akses super admin global.",
+    href: "/admin/fitur-satker",
+    icon: "settings",
+    roleIds: ["super-admin"],
+    showInHub: false,
+    showInSidebar: true,
+    iconBgClass: "bg-violet-100",
+    iconFgClass: "text-violet-700",
+    cardClass: "border-violet-200/80 bg-violet-50/70",
+    badgeLabel: "Satker",
+  },
+  {
     id: "database-viewer",
     label: "Database",
     description: "Lihat dan edit data PostgreSQL aktif secara terbatas.",

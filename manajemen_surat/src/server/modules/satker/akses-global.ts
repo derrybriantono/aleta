@@ -163,14 +163,18 @@ export async function daftarAksesTerbaru(
       WHERE action = ? AND created_at >= ? ORDER BY created_at DESC LIMIT ${batas}`,
     [AKSI_AKSES_GLOBAL, sejak]
   );
-  return baris.map((b) => {
+  const hasil: AksesGlobalTerbaru[] = [];
+  for (const b of baris) {
     let p: Record<string, unknown> = {};
     try {
       p = JSON.parse(String(b.payload_json ?? "{}")) as Record<string, unknown>;
     } catch {
       p = {};
     }
-    return {
+    // Baris tanpa isi jejak yang dikenal (username + cara) bukan akses sungguhan - dilewati,
+    // supaya sumber data yang keliru tidak memunculkan pemberitahuan palsu.
+    if (!b.id || !b.created_at || typeof p.username !== "string" || !p.username || (p.cara !== "sesi-langsung" && p.cara !== "tiket-pusat")) continue;
+    hasil.push({
       id: String(b.id),
       akunId: String(b.actor_user_id ?? ""),
       nama: String(p.nama ?? ""),
@@ -178,6 +182,7 @@ export async function daftarAksesTerbaru(
       alamatIp: String(p.alamatIp ?? ""),
       cara: p.cara === "tiket-pusat" ? "tiket-pusat" : "sesi-langsung",
       waktu: String(b.created_at),
-    };
-  });
+    });
+  }
+  return hasil;
 }

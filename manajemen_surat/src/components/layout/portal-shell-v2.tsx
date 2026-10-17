@@ -203,6 +203,7 @@ const adminSidebarIds: ReadonlySet<ModuleId> = new Set([
   "system-updates",
   "backup-system",
   "server-resources", // 12OKT-J
+  "fitur-satker",
   "database-viewer",
   "aleta-bot",
   "aleta-ecourt-admin",
@@ -236,7 +237,7 @@ const adminSidebarGroups = [
   {
     id: "system",
     label: "Sistem",
-    moduleIds: ["system-updates", "backup-system", "server-resources"], // 12OKT-J: Sumber daya server
+    moduleIds: ["system-updates", "backup-system", "server-resources", "fitur-satker"], // 12OKT-J: Sumber daya server
   },
 ] as const satisfies ReadonlyArray<{
   id: string;
@@ -264,6 +265,7 @@ const compactAdminSidebarDescriptions: Partial<Record<ModuleId, string>> = {
   "system-updates": "Versi dan paket update.",
   "backup-system": "Backup database dan aplikasi.",
   "server-resources": "RAM, CPU, disk, dan GPU server.", // 12OKT-J
+  "fitur-satker": "Fitur, saluran pembaruan, akses global.",
 };
 const DESKTOP_SIDEBAR_STORAGE_KEY = "aleta:portal-sidebar-collapsed";
 const primarySidebarOrder = [

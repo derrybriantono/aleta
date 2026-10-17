@@ -112,7 +112,7 @@ export const BATAS_BUTIR_FITUR = 200;
 
 export class GalatFiturSatker extends Error {}
 
-export function kodeFiturSah(kode: unknown): kode is string {
+export function kodeFiturSah(kode: unknown): boolean {
   return typeof kode === "string" && KODE_KATALOG.has(kode);
 }
 export function statusFiturSah(x: unknown): x is StatusFitur {

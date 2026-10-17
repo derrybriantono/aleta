@@ -4382,6 +4382,8 @@ app.use("/internal/aleta-bot/kamus-deteksi", require("./routes/kamusDeteksiRoute
 // Pengaturan SIPP & ABT (16 Okt 2026, Tahap H): hak menu folder Blangko Derry, saklar abt_config,
 // variabel & template tanya jawab ABT - transaksi + prasyarat nilai lama; peran dijaga portal.
 app.use("/internal/aleta-bot/abt-pengaturan", require("./routes/abtPengaturanRoutes"));
+// Status fitur per satker (banyak satker, Tahap 0): portal mendorong, bot menerima; gagal ke sisi menyala.
+app.use("/internal/aleta-bot/fitur-satker", require("./routes/fiturSatkerRoutes"));
 try {
   const muatKamus = require("./services/kamusDeteksiLapis").mulaiPemuatLapis();
   console.log(
