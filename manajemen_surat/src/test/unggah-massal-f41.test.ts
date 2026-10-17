@@ -322,8 +322,10 @@ describe("C. portal unggah-massal.ts - hak, milik saya, pemeriksa isi, riwayat",
   });
 
   it("bagian yang gagal dibaca disebut (tidak dijawab kosong)", () => {
-    const h = susunDaftarUnggahMassal({ data: { ...DATA_BOT, bas: null, abtTerbaca: false, galat: [{ sumber: "sipp", langkah: "BAS tanpa e-Doc", sebab: "ER" }] }, hak: hakUnggahMassal(AKTOR.pp as never), namaAkun: "Andini Puspita Sari" });
-    expect(h.galat.join(" ")).toMatch(/SIPP - BAS tanpa e-Doc: ER/);
+    const h = susunDaftarUnggahMassal({ data: { ...DATA_BOT, bas: null, abtTerbaca: false, galat: [{ sumber: "sipp", langkah: "BAS tanpa e-Doc", sebab: "Unknown column 'edoc_bas' in 'field list'" }] }, hak: hakUnggahMassal(AKTOR.pp as never), namaAkun: "Andini Puspita Sari" });
+    expect(h.galat.join(" ")).toMatch(/SIPP - BAS tanpa e-Doc: belum dapat dibaca saat ini/);
+    // Audit 17 Okt: pesan SQL mentah dari bot tidak sampai ke layar.
+    expect(h.galat.join(" ")).not.toMatch(/Unknown column|field list/);
     expect(h.galat.join(" ")).toMatch(/Daftar BAS belum dapat dibaca/);
   });
 

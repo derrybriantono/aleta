@@ -189,7 +189,10 @@ export function susunDaftarUnggahMassal(p: {
     putusan: saringanBerlaku(p.saringanDiminta?.putusan, hak.semua.putusan),
     bas: saringanBerlaku(p.saringanDiminta?.bas, hak.semua.bas),
   };
-  const galat: string[] = (data.galat || []).map((g) => `${g.sumber.toUpperCase()} - ${g.langkah}: ${g.sebab}`);
+  // Audit 17 Okt: sebab dari bot bisa pesan SQL mentah ("Unknown column ...") - layar hanya
+  // menyebut sumber & langkahnya; sebab teknisnya ke log server.
+  for (const g of data.galat || []) if (g.sebab) console.warn(`[unggah massal] ${g.sumber}/${g.langkah}: ${g.sebab}`);
+  const galat: string[] = (data.galat || []).map((g) => `${g.sumber.toUpperCase()} - ${g.langkah}: belum dapat dibaca saat ini.`);
 
   const semuaPutusan = hak.putusan && data.putusan ? data.putusan.map((x) => barisPutusan(x, namaAkun)) : [];
   const semuaBas = hak.bas && data.bas ? data.bas.map((x) => barisBas(x, namaAkun, data.hariIni)) : [];
