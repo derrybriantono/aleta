@@ -253,6 +253,12 @@ export function anonimkanTeks(teksAsal: string, entitas: EntitasAnonim, opsi: Op
       for (let k = a; k < a + m[0].length; k += 1) if (!pakai[k]) pakai[k] = 2;
     }
   }
+  // Nomor perkara TIDAK disamarkan (keputusan 17 Okt butir 33): "45/Pdt.G/2025/PA.Dgl"
+  // dikunci, supaya kode satker sesudah titik tidak dibaca sebagai awal deret nama.
+  for (const m of t.matchAll(/\d{1,6}\/[\p{L}.]+\/\d{4}\/[\p{L}.]*\p{L}/gu)) {
+    const a = m.index ?? 0;
+    for (let k = a; k < a + m[0].length; k += 1) if (!pakai[k]) pakai[k] = 2;
+  }
   const dilindungi = (kata: string) => {
     const k = kata.replace(/\s+/g, " ").trim().toLowerCase();
     return k.length >= 4 && lindung.some((n) => n.toLowerCase() === k || n.toLowerCase().includes(k));
