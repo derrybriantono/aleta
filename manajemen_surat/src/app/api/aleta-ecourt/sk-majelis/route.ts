@@ -5,9 +5,9 @@ import { gatewayPegawaiPenunjukan } from "@/server/modules/aleta-bot/whatsapp-ga
 import {
   bacaHariSidang,
   NAMA_HARI,
-  SK_BERLAKU,
   simpanHariSidang,
 } from "@/server/modules/aleta-ecourt/penunjukan-pengaturan";
+import { bacaSkMajelis } from "@/server/modules/pengaturan-abt/nomor-sk-sumber";
 import { getPositionsFromDb } from "@/server/modules/organization/service";
 import { listUsersFromDb } from "@/server/modules/users/service";
 import { getRoleLabel } from "@/lib/permissions";
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
       akun,
       akunAlasan,
       namaHari: NAMA_HARI,
-      skBerlaku: SK_BERLAKU,
+      skBerlaku: await bacaSkMajelis(db),
       // Gagalnya bot TIDAK menggagalkan layar: susunan yang sudah tersimpan
       // tetap terbaca dan tetap dapat disunting hari/kodenya. Yang hilang
       // hanya kemampuan mengikat ke orang, dan itu disebutkan apa adanya.
@@ -140,8 +140,6 @@ export async function POST(request: NextRequest) {
       // dapat ditautkan apabila masuk majelis" berlaku, bukan sekadar
       // dianjurkan.
       akunId: String(badan.akunId ?? ""),
-      skNomor: String(badan.skNomor ?? ""),
-      skTanggal: String(badan.skTanggal ?? ""),
       keterangan: String(badan.keterangan ?? ""),
     });
 

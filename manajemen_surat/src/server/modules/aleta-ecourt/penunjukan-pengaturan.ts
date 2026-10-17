@@ -1,6 +1,7 @@
 import { isPrivilegedAdmin } from "@/lib/permissions";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
 import { requireActorUser } from "@/server/modules/organization/service";
+import { bacaSkMajelis } from "@/server/modules/pengaturan-abt/nomor-sk-sumber";
 import { ApiError } from "@/server/shared/errors";
 
 /**
@@ -50,12 +51,12 @@ export const NAMA_HARI = [
  * SK YANG SEDANG BERLAKU
  * ============================================================================
  *
- * Keputusan Ketua Pengadilan Agama Donggala
- * Nomor 254/KPA-W19-A5/SK.HK2.6/V/2026, tanggal 27 Agustus 2026, Lampiran I.
+ * Keputusan Ketua Pengadilan Agama Donggala, Lampiran I.
  *
- * Dipakai hanya sebagai NILAI AWAL. Begitu ada baris tersimpan, baris itulah
- * yang berlaku - SK berikutnya cukup disunting dari layar pengaturan, tanpa
- * menyentuh kode ini.
+ * NOMOR dan TANGGAL SK-nya TIDAK lagi ditulis di sini (17 Okt 2026): satu sumber
+ * di kartu "Nomor SK penunjukan" (Integrasi e-Court, modules/pengaturan-abt/
+ * nomor-sk-sumber.ts), dibaca juga oleh blangko ABT (#9550#/#9551#). Penunjukan
+ * majelis per hari tetap disunting per majelis dari layar SK majelis.
  *
  * Kode hakim (A, B, C1, C2, C3) cocok persis dengan hakim_pn di SIPP, jadi ia
  * dapat dipakai menemukan orangnya.
@@ -66,10 +67,6 @@ export const NAMA_HARI = [
  * Yang mengikatnya ke orang sungguhan adalah layar pengaturan, dan sampai itu
  * dikerjakan panel tetap memakai perhitungan bebannya sendiri.
  */
-export const SK_BERLAKU = {
-  nomor: "254/KPA-W19-A5/SK.HK2.6/V/2026",
-  tanggal: "2026-08-27",
-};
 
 const MAJELIS_BAWAAN: Record<
   string,
@@ -338,6 +335,8 @@ export async function bacaHariSidang(db: AletaDatabase): Promise<HariSidangMajel
 
   const tersimpan = new Map<string, BarisHari>();
   for (const item of baris) tersimpan.set(String(item.majelis_kode), item);
+  // Nomor dan tanggal SK: satu sumber untuk semua majelis (kolom sk_* per baris tidak lagi dibaca).
+  const sk = await bacaSkMajelis(db);
 
   // Majelis yang tersimpan tetapi tidak ada di bawaan ikut ditampilkan -
   // majelis baru memang ditambahkan lewat menu, dan menyembunyikannya akan
@@ -366,8 +365,8 @@ export async function bacaHariSidang(db: AletaDatabase): Promise<HariSidangMajel
         panitera: bacaPasanganPanitera(String(item?.panitera_id ?? ""), daftar(kodePp)),
         akun: bacaPasanganAkun(String(item?.akun_id ?? "")),
         hakimKode: daftar(kodeHakim),
-        skNomor: item ? String(item.sk_nomor ?? "") : SK_BERLAKU.nomor,
-        skTanggal: item ? String(item.sk_tanggal ?? "") : SK_BERLAKU.tanggal,
+        skNomor: sk.nomor,
+        skTanggal: sk.tanggal,
         keterangan: item ? String(item.keterangan ?? "") : "",
         bawaan: !item,
       };
@@ -460,8 +459,6 @@ export async function simpanHariSidang(
     hakimKode,
     paniteraId,
     akunId,
-    skNomor,
-    skTanggal,
     keterangan,
   }: {
     actorUserId: string;
@@ -471,6 +468,7 @@ export async function simpanHariSidang(
     hakimKode?: string;
     paniteraId?: string;
     akunId?: string;
+    /** Diabaikan (17 Okt 2026): nomor/tanggal SK dari satu sumber, kartu Nomor SK penunjukan. */
     skNomor?: string;
     skTanggal?: string;
     keterangan?: string;
@@ -492,6 +490,8 @@ export async function simpanHariSidang(
   }
 
   const sekarang = new Date().toISOString();
+  // Kolom sk_nomor/sk_tanggal tetap diisi (salinan sumber tunggal) supaya pembaca langsung tabel tidak basi.
+  const sk = await bacaSkMajelis(db);
 
   return withTransaction(db, async (tx) => {
     await tx
@@ -544,8 +544,8 @@ export async function simpanHariSidang(
           })
           .filter(Boolean)
           .join(","),
-        String(skNomor ?? "").trim(),
-        String(skTanggal ?? "").trim(),
+        sk.nomor,
+        sk.tanggal,
         String(keterangan ?? ""),
         sekarang,
         actor.id

@@ -140,8 +140,6 @@ export function AletaEcourtSkMajelis() {
             // yang membuat "hanya dapat ditautkan apabila masuk majelis"
             // berlaku sungguhan, bukan sekadar dianjurkan di layar.
             akunId: (gabung.akun ?? []).map((a) => `${a.kode}=${a.akunId}`).join(","),
-            skNomor: gabung.skNomor,
-            skTanggal: gabung.skTanggal,
             keterangan: gabung.keterangan,
           }),
         });
@@ -170,10 +168,10 @@ export function AletaEcourtSkMajelis() {
           <CardTitle>SK susunan majelis hakim dan panitera sidang</CardTitle>
           <CardDescription>
             {skBerlaku?.nomor
-              ? `Nilai awalnya dari SK Nomor ${skBerlaku.nomor} tanggal ${tanggalPanjang(
+              ? `SK yang berlaku: Nomor ${skBerlaku.nomor} tanggal ${tanggalPanjang(
                   skBerlaku.tanggal,
                   skBerlaku.tanggal
-                )}. `
+                )} (diubah di kartu Nomor SK penunjukan di bawah). `
               : ""}
             Yang tersimpan di sini menang atas susunan yang disimpulkan dari pemakaian di SIPP:
             majelis yang ada di SK muncul lebih dahulu pada panel penetapan, beserta kodenya.
@@ -400,24 +398,13 @@ export function AletaEcourtSkMajelis() {
 
             <div className="flex flex-wrap items-center gap-2">
               <span className="w-32 text-muted-foreground">SK</span>
-              <Input
-                className="max-w-sm"
-                defaultValue={satu.skNomor}
-                placeholder="Nomor SK"
-                onBlur={(e) => {
-                  if (e.target.value === satu.skNomor) return;
-                  void simpan(satu, { skNomor: e.target.value });
-                }}
-              />
-              <Input
-                className="max-w-40"
-                type="date"
-                defaultValue={satu.skTanggal}
-                onBlur={(e) => {
-                  if (e.target.value === satu.skTanggal) return;
-                  void simpan(satu, { skTanggal: e.target.value });
-                }}
-              />
+              <span>
+                Nomor {satu.skNomor || "-"}
+                {satu.skTanggal ? ` tanggal ${tanggalPanjang(satu.skTanggal, satu.skTanggal)}` : ""}
+              </span>
+              <a className="text-xs text-primary underline" href="#nomor-sk">
+                Ubah di kartu Nomor SK penunjukan
+              </a>
             </div>
           </CardContent>
         </Card>

@@ -21,8 +21,8 @@
  *   17 Okt 2026 - identitas satker & logo kop:
  *   GET  /satker                identitas satker SIPP + variabel 9270-9276/#1154# dan nilainya
  *   POST /satker/simpan         {noVar 9271-9274, lama:{sql_query}, baru:{sql_query}, pulihkan?}
- *   GET  /nomor-sk              variabel nomor SK penunjukan (#9550#): ada/tidak + nomor sekarang
- *   POST /nomor-sk/simpan       {noVar 9550, lama:{nomor}, baru:{nomor}, pulihkan?} - kueri SELECT '<nomor>' AS data disusun di bot
+ *   GET  /nomor-sk              variabel nomor (#9550#) dan tanggal (#9551#) SK penunjukan: ada/tidak + isi sekarang
+ *   POST /nomor-sk/simpan       {noVar 9550|9551, lama:{nomor}, baru:{nomor}, pulihkan?} - kueri SELECT '<nomor>' AS data disusun di bot
  *   GET  /logo/pindai           gambar di blangko Derry per isi (md5) + tebakan logo - baca saja
  *   GET  /logo/gambar?md5=      bita satu gambar PNG/JPG (pratinjau)
  *   POST /logo/paket            {md5:[...], logoBase64, oleh} - paket ganti logo ke folder runtime
