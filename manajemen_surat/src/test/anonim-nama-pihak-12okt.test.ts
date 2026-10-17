@@ -190,6 +190,22 @@ describe("penyamar ekstensi atas putusan berbentuk 564 (sesudah ABT)", () => {
     expect(teks).toContain("Peraturan Mahkamah Agung");
   });
 
+  it("audit 17 Okt: nama berapostrof (\\'92, \\rquote, ' polos, tanpa apostrof) disamarkan dan terbaca pemeriksa ekstensi", () => {
+    const f = muatPenyamar();
+    const nama = "Nur'aini binti Ma'ruf";
+    const rtf =
+      "{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}\\pard PUTUSAN\\par " +
+      "Nur\\'92aini, sebagai Penggugat;\\par Bahwa saksi kenal NUR{\\rquote}AINI;\\par " +
+      "atas nama Nur'aini;\\par ditulis juga Nuraini;\\par }";
+    const teksAsli = f.a30TeksRtf(rtf);
+    expect(teksAsli).toContain("Nur’aini, sebagai");
+    expect(teksAsli).toContain("NUR’AINI");
+    const data = sasaranNama(f, [nama]);
+    const teks = f.a30TeksRtf(f.a30SamarkanSisaRtf(rtf, data).rtf);
+    expect(teks).not.toMatch(/nur.?aini/i);
+    expect(f.a30PeriksaAnonim(teksAsli, data).temuan.some((x) => x.jenis === "nama pihak")).toBe(true);
+  });
+
   it("SEBELUM perbaikan (sasaran hanya dipotong di bin/binti) nama itu lolos - sebab penolakan 564", async () => {
     const f = muatPenyamar();
     const lama = { nama: [{ teks: P1, dari: "SIPP" }, { teks: "Wulansari Pratiwi alias Wulan Sari Pratiwi", dari: "SIPP" }], alamat: [] };

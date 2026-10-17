@@ -522,7 +522,7 @@ describe("butir 4: anonimisasi otomatis benar-benar menyamarkan (bentuk dari gam
     expect(teks).toContain("Hakim Ketua Drs. H. Ahmad Fauzi, M.H.");
     expect(teks).toContain("Panitera Pengganti Nurhayati, S.H.");
     expect(teks).toContain("Mengabulkan permohonan PEMOHON secara verstek");
-    expect(teks).toContain("raj’i".replace("’", String.fromCharCode(0x92)));
+    expect(teks).toContain("raj’i"); // 17 Okt: \'92 dibaca cp1252 (’), bukan U+0092
     // Pemeriksa atas hasilnya: bersih.
     const periksa = h.uji.a30PeriksaAnonim(teks, data);
     expect(periksa.temuan).toEqual([]);

@@ -20857,7 +20857,9 @@ function a30PetaRtf(rtf) {
       }
       if (n === "'") {
         const kode = parseInt(s.slice(i + 2, i + 4), 16);
-        if (!lewati && Number.isFinite(kode)) tambah(String.fromCharCode(kode), i, i + 4, false);
+        // 17 Okt: \'80-\'9f adalah cp1252 (\'92 = ’ dalam "Nur’aini"), bukan aksara kendali Latin-1.
+        const CP1252 = "€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008dŽ\u008f\u0090‘’“”•–—˜™š›œ\u009džŸ";
+        if (!lewati && Number.isFinite(kode)) tambah(kode >= 0x80 && kode <= 0x9f ? CP1252[kode - 0x80] : String.fromCharCode(kode), i, i + 4, false);
         i += 4;
         continue;
       }
@@ -20881,6 +20883,7 @@ function a30PetaRtf(rtf) {
       }
       if (kata === "par" || kata === "line" || kata === "sect" || kata === "page" || kata === "row") tambah("\n", mulai, i, true);
       else if (kata === "tab" || kata === "cell") tambah(" ", mulai, i, true);
+      else if (kata === "rquote" || kata === "lquote") tambah(kata === "rquote" ? "’" : "‘", mulai, i, false);
       else if (kata === "u" && m[2] !== undefined) {
         let kode = Number(m[2]);
         if (kode < 0) kode += 65536;
@@ -21193,7 +21196,9 @@ function a30AmanKata(teks, spasiLentur) {
     .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
     .replace(/\\\.\s+/g, "\\.?\\s*")
     .replace(/\s+/g, spasiLentur ? "\\s*" : "\\s+")
-    .replace(/\\\.(?!\?)/g, "\\.?");
+    .replace(/\\\.(?!\?)/g, "\\.?")
+    // 17 Okt: apostrof nama lentur dan boleh tidak ada - "Nur'aini" = "Nur’aini" = "Nuraini" (paritas portal lenturkanApostrof).
+    .replace(/['’‘`´\u0092]/g, "['’‘`´\\u0092]?");
 }
 
 /** Data pribadi yang masih utuh di teks anonim, beserta potongan kalimat di sekitarnya. */
