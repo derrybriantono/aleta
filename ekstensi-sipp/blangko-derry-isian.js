@@ -850,6 +850,10 @@
     q.set("sebutanP", sb.P);
     q.set("sebutanT", sb.T);
     if (semua) q.set("semua", "1");
+    // "Lihat sebagai akun": rute menegakkan hak dokumen peran yang ditiru (server hanya menerimanya dari admin).
+    const a = api();
+    const kd = a && typeof a.keadaan === "function" ? a.keadaan() : null;
+    if (adm() && kd && kd.sebagai && kd.sebagai.nama && kd.sebagai.peran) q.set("sebagaiPeran", kd.sebagai.peran);
     return `${API_BLANGKO}?${q.toString()}`;
   }
   async function muatSusunan() {

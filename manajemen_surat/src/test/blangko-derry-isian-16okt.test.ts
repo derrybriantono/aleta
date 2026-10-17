@@ -663,6 +663,28 @@ describe("F. perlu diisi", () => {
     const brs = await sampai(() => q(h, ".bd-brs"), "baris");
     expect(brs.textContent).toMatch(/Terisi \d+ dari \d+|Isian lengkap/);
   });
+
+  it("audit 17 Okt: Super Admin 'Lihat sebagai' hakim - susunan isian diminta dengan sebagaiPeran=hakim; tanpa meniru tidak dikirim", async () => {
+    const h = buka({ orang: "admin" });
+    await sampaiPerkara(h);
+    const sel = (await sampai(() => q(h, "#bd-lihat"), "pilihan lihat sebagai")) as HTMLSelectElement;
+    sel.value = "hakim|Hakim Satu";
+    sel.dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    await sampai(() => h.minta.some((m) => m.url.includes("peranSebagai=hakim")), "daftar sebagai hakim");
+    await sampai(() => q(h, '[data-pk="581/Pdt.G/2026/PA.Dgl"]'), "daftar termuat ulang");
+    klik(h, '[data-pk="581/Pdt.G/2026/PA.Dgl"]');
+    await sampai(() => q(h, '[data-bd2="bukamodal"]'), "tombol pilih blangko");
+    klik(h, '[data-bd2="bukamodal"]');
+    await sampai(() => q(h, `[data-bl="${BLANGKO_PUT}"]`), "berkas putusan termuat");
+    klik(h, `[data-bl="${BLANGKO_PUT}"]`);
+    const susun = await sampai(() => h.minta.find((m) => /\/aleta-ecourt\/blangko-derry\?folder=/.test(m.url)), "susunan diminta");
+    expect(new URL(susun.url, ASAL).searchParams.get("sebagaiPeran")).toBe("hakim");
+    // Admin yang tidak meniru: tidak mengirim sebagaiPeran.
+    const a = buka({ orang: "admin" });
+    await pilihPutusan(a);
+    const s2 = a.minta.find((m) => /\/aleta-ecourt\/blangko-derry\?folder=/.test(m.url))!;
+    expect(new URL(s2.url, ASAL).searchParams.get("sebagaiPeran")).toBeNull();
+  });
 });
 
 describe("G. pratinjau dan cetak", () => {
