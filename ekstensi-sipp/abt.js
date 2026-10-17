@@ -2621,6 +2621,8 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
   const dariGugatan = Array.isArray(u.sumber) && u.sumber.length > 0 && u.sumber[0] && u.sumber[0].asal === "gugatan-ecourt";
   // 12 Okt (12OKT-D): tanggal KTP yang bacaannya cukup/pasti dan akan diisi sendiri.
   const dariKtp = Array.isArray(u.sumber) && u.sumber.length > 0 && u.sumber[0] && u.sumber[0].asal === "ktp-ecourt";
+  // ELITIGASI-7139 17 Okt: #7139# dari data pihak (email Tergugat / kehadiran) - tercentang sendiri.
+  const dariElitigasi = Array.isArray(u.sumber) && u.sumber.length > 0 && u.sumber[0] && u.sumber[0].asal === "elitigasi";
   const nadaS5 = typeof u.kesepakatan === "string" && u.nilai ? NADA_KESEPAKATAN[u.kesepakatan] : null;
   // 12OKT-M ("langsung timpa"): tanggal KTP yang MENIMPA isian petugas diberi lencana kuning yang menyebut isian lamanya.
   const daftarTimpa = dariKtp && Array.isArray(u.timpa) ? u.timpa.filter((t) => t && t.dari) : [];
@@ -2635,6 +2637,8 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
     : null;
   const nada = nadaTimpa
     ? nadaTimpa
+    : dariElitigasi
+    ? { kelas: "aleta-tanda-hijau", teks: "dari data pihak" }
     : nadaS5
     ? nadaS5
     : dariKtp && u.keyakinan === "cukup"
@@ -2921,7 +2925,7 @@ function kartuUsulan(u, keadaanSekarang, pilih) {
       buatElemen(
         "span",
         "aleta-abt-asal",
-        s.asal === "posita" ? "Posita" : s.asal === "gugatan-ecourt" ? "Gugatan e-Court" : s.asal === "ktp-ecourt" ? "KTP e-Court" : s.saksi ? `Saksi ${s.saksi}` : "SIPP"
+        s.asal === "posita" ? "Posita" : s.asal === "gugatan-ecourt" ? "Gugatan e-Court" : s.asal === "ktp-ecourt" ? "KTP e-Court" : s.asal === "elitigasi" ? "Data pihak" : s.saksi ? `Saksi ${s.saksi}` : "SIPP"
       )
     );
     kutip.appendChild(buatElemen("span", "aleta-abt-kalimat", s.kalimat || s.keterangan || ""));
@@ -15123,6 +15127,8 @@ async function soreBacaIsi(k) {
   tugas.push(p4BacaGugatan(data));
   /* === AKHIR P4P7B2 === */
   await Promise.all(tugas);
+  // ELITIGASI-7139 17 Okt: #7139# otomatis (memakai kontak e-Court yang baru dibaca di atas).
+  if (typeof el7Baca === "function") await el7Baca(data);
   for (const kunci of ["sipp", "saksi", "itsbat", "lain"]) if (galat[kunci]) data.galat.push(galat[kunci]);
   return data;
 }
@@ -15146,7 +15152,7 @@ function sorePilihUsulan(data) {
   const peta = barisVariabel();
   const perKode = new Map();
   // P4P7B2 10 Okt: data.gugatan = isi berkas e-Court (gugatan, jawaban) - lihat p4BacaGugatan.
-  for (const sumber of [data.sipp, data.saksi, data.itsbat, data.lain, data.ktp, data.kuasa, data.gugatan]) {
+  for (const sumber of [data.sipp, data.saksi, data.itsbat, data.lain, data.ktp, data.kuasa, data.gugatan, data.elitigasi]) {
     for (const u of (sumber && sumber.usulan) || []) {
       if (!u || !u.kode || !peta.has(String(u.kode))) continue;
       const lama = perKode.get(String(u.kode));
@@ -15437,6 +15443,8 @@ function soreGambarIsi(k, data) {
   p4GambarEcourt(w.usulan, data);
   // KONTAK-EC 11 Okt: kontak & domisili elektronik dari e-Court (lihat k5GambarKontak).
   if (typeof k5GambarKontak === "function") k5GambarKontak(w.usulan, data);
+  // ELITIGASI-7139 17 Okt: keterangan e-litigasi (kartu 7139 sendiri memuatnya bila tampil).
+  if (typeof el7Gambar === "function") el7Gambar(w.usulan, data, tampil.some((u) => String(u.kode) === "7139"));
   // PEKERJAAN 11 Okt: kategori pekerjaan pihak yang dibaca kueri ABT 8510/8524/8533 (lihat pkGambarPekerjaan).
   if (typeof pkGambarPekerjaan === "function") pkGambarPekerjaan(w.usulan, data);
   // Perbaikan 1 Okt butir 8 (UI Baru saja): posita & keterangan saksi rapi.
@@ -19589,6 +19597,160 @@ function k5GambarKontak(wadah, data) {
   wadah.appendChild(kotak);
 }
 /* === AKHIR KONTAK-EC === */
+
+/* === ELITIGASI-7139 17 Okt === */
+/**
+ * ============================================================================
+ * ELITIGASI-7139 (17 Okt 2026): #7139# TERISI OTOMATIS
+ * ============================================================================
+ *
+ * Isian teks #7139# di Blangko Derry: "1" = e-litigasi PENUH (Tergugat atau kuasanya punya email / domisili
+ * elektronik dan mengunggah sendiri ke e-Court), "2" = e-litigasi HYBRID (Tergugat tanpa email; Panitera Sidang
+ * yang mengunggah ke e-Court). Variabel 7140/7173 membaca isian ini.
+ *
+ * Aturan (el7Putuskan), memakai bahan kontak e-Court yang SUDAH dibaca fitur KONTAK-EC (kontakEcourtService):
+ *   - isian di blangko sudah ada (manual)            -> tidak disentuh sama sekali;
+ *   - email Tergugat / kuasa Tergugat ditemukan,
+ *     di SIPP atau e-Court (pemiliknya tegas)         -> "1";
+ *   - tanpa email, perkara e-Court, Tergugat pernah
+ *     hadir di sidang                                -> "2";
+ *   - selain itu (verstek, belum disidang, bukan
+ *     e-Court, email yang pemiliknya masih ragu)     -> dibiarkan KOSONG.
+ *
+ * Yang ditulis ke ABT hanya angka "1"/"2", lewat jalur Input ke ABT yang sama (kartu tercentang sendiri, seperti
+ * isian otomatis lain). Tidak ada nama aplikasi di nilai maupun di ABT/SIPP. Email Tergugat yang ditemukan di
+ * e-Court tetap diusulkan ke SIPP oleh lajur "Kontak dari e-Court" (KONTAK-EC) - perilakunya tidak diubah.
+ */
+const EL7_KODE = "7139";
+const EL7_NAMA = "Beracara secara elektronik (e-litigasi)";
+const EL7_TEKS = Object.freeze({
+  "1": "E-Litigasi: penuh (Tergugat ber-email)",
+  "2": "E-Litigasi: hybrid (diunggah Panitera Sidang)",
+});
+const EL7_POLA_EMAIL = /^[^\s@,;:<>()]+@[^\s@,;:<>()]+\.[A-Za-z]{2,}$/;
+const EL7_EMAIL_INSTANSI = /@(?:pa-[\w-]+|[\w-]+\.mahkamahagung|mahkamahagung|badilag\.mahkamahagung)\.go\.id$/i;
+const EL7_API_KONTAK = "/aleta/api/aleta-ecourt/kontak-pihak";
+
+/** Murni: email sah (huruf kecil) atau "" - "-", "0", "..." dan surel instansi pengadilan bukan email pihak. */
+function el7Email(teks) {
+  const t = String(teks == null ? "" : teks).replace(/\s+/g, "").replace(/[.,;]+$/, "");
+  return EL7_POLA_EMAIL.test(t) && !EL7_EMAIL_INSTANSI.test(t) ? t.toLowerCase() : "";
+}
+
+/**
+ * Murni: email Tergugat (pihak ke-2) atau kuasanya dari `kontak` (bentuk kontak-pihak / isi-gugatan.kontak).
+ * -> { email, asal: "sipp"|"ecourt", milik: "pihak"|"kuasa", ragu } | null. Yang dari SIPP atau e-Court non-ragu
+ * didahulukan; yang hanya berkeyakinan "ragu" dikembalikan dengan ragu: true.
+ */
+function el7CariEmailTergugat(kontak) {
+  if (!kontak || typeof kontak !== "object") return null;
+  const calon = [];
+  const dom = kontak.domisili && typeof kontak.domisili === "object" ? kontak.domisili[2] : null;
+  if (dom && el7Email(dom.email)) {
+    const sipp = dom.asal === "sipp";
+    calon.push({ email: el7Email(dom.email), asal: sipp ? "sipp" : "ecourt", milik: dom.milik === "kuasa" ? "kuasa" : "pihak", ragu: !sipp && dom.keyakinan === "ragu" });
+  }
+  for (const o of Array.isArray(kontak.orang) ? kontak.orang : []) {
+    if (!o || Number(o.pihakKe) !== 2) continue;
+    const milik = o.jenis === "kuasa" ? "kuasa" : "pihak";
+    const emailSipp = el7Email(o.sipp && o.sipp.email);
+    if (emailSipp) calon.push({ email: emailSipp, asal: "sipp", milik, ragu: false });
+    const u = o.usulan && o.usulan.email;
+    const emailEc = el7Email(u && u.nilai);
+    if (emailEc) calon.push({ email: emailEc, asal: "ecourt", milik, ragu: u.keyakinan === "ragu" });
+  }
+  return calon.find((c) => !c.ragu && c.asal === "sipp") || calon.find((c) => !c.ragu) || calon[0] || null;
+}
+
+/**
+ * Murni: keputusan #7139# dari kontak perkara. -> { nilai: "1"|"2", sebab, keterangan, email? } atau null (biarkan kosong).
+ * `kontak.elitigasi` = fakta dari bot { lewatEcourt, tergugatHadir, jumlahSidang }; bot lama tanpa fakta tetap
+ * dapat memutuskan "1" dari email, tetapi tidak pernah "2".
+ */
+function el7Putuskan(kontak) {
+  if (!kontak || typeof kontak !== "object" || kontak.ada === false) return null;
+  const e = el7CariEmailTergugat(kontak);
+  if (e && !e.ragu) return { nilai: "1", sebab: "email", asal: e.asal, milik: e.milik, email: e.email, keterangan: EL7_TEKS["1"] };
+  if (e) return null; // email ada tetapi pemiliknya belum pasti: petugas yang memutuskan
+  const f = kontak.elitigasi && typeof kontak.elitigasi === "object" ? kontak.elitigasi : null;
+  if (f && f.lewatEcourt === true && f.tergugatHadir === true) return { nilai: "2", sebab: "hadir-tanpa-email", keterangan: EL7_TEKS["2"] };
+  return null;
+}
+
+/** Blangko ini Blangko Derry? (menu "Blangko Derry" di sidebar ABT punya tautan aktif - sama dengan kerangka blangko-derry.js). */
+function el7DariBlangkoDerry() {
+  try {
+    const tombol = Array.from(document.querySelectorAll("#navbar .accordion")).find((b) => /^\s*blangko\s+derry\b/i.test(String(b.textContent || "")));
+    const panel = tombol && tombol.nextElementSibling;
+    return Boolean(panel && panel.classList && panel.classList.contains("panel") && panel.querySelector("a.active"));
+  } catch {
+    return false;
+  }
+}
+
+/** Kontak perkara (SIPP + akun e-Court + teks gugatan/kuasa/jawaban tanpa OCR + fakta sidang). null bila rute/bot belum ada atau gagal. */
+async function el7AmbilKontak(nomor) {
+  if (!nomor) return null;
+  try {
+    const respons = await fetch(`${EL7_API_KONTAK}?nomor=${encodeURIComponent(nomor)}&teks=1`, { credentials: "include", cache: "no-store" });
+    if (!respons || !respons.ok) return null;
+    const luar = await respons.json();
+    const isi = luar && luar.data ? luar.data : luar;
+    return isi && typeof isi === "object" ? isi : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Keputusan #7139# untuk satu perkara dari bahan kontak yang sudah ada (`kontakAda`) atau, bila belum cukup, dari
+ * kontak-pihak. Dipakai panel ABT (el7Baca) dan lapisan Blangko Derry (blangko-derry-isian.js).
+ * -> keputusan el7Putuskan atau null.
+ */
+async function el7Ambil7139(nomor, kontakAda) {
+  const kontak = kontakAda && typeof kontakAda === "object" && kontakAda.ada ? kontakAda : null;
+  let putusan = el7Putuskan(kontak);
+  if (!putusan && (!kontak || !kontak.elitigasi)) {
+    const lain = await el7AmbilKontak(nomor);
+    if (lain) putusan = el7Putuskan(lain);
+  }
+  return putusan;
+}
+
+/** Bacaan panel ABT: data.elitigasi = { usulan: [kartu 7139], keputusan }. Diam bila bukan Blangko Derry / tanpa 7139 / sudah terisi. */
+async function el7Baca(data) {
+  try {
+    const baris = barisVariabel().get(EL7_KODE);
+    if (!baris || !el7DariBlangkoDerry()) return;
+    // Isian manual menang: sudah ada (bukan kosong/titik-titik) -> tidak diusulkan, tidak dibaca.
+    if (keadaanNilai(baris.nilai) !== "kosong") return;
+    const keputusan = await el7Ambil7139(nomorPerkaraAbt(), data && data.gugatan && data.gugatan.kontak);
+    if (!keputusan) return;
+    data.elitigasi = {
+      keputusan,
+      usulan: [
+        {
+          kode: EL7_KODE,
+          nama: EL7_NAMA,
+          nilai: keputusan.nilai,
+          keyakinan: "cukup",
+          awal: true,
+          sumber: [{ asal: "elitigasi", kalimat: keputusan.keterangan }],
+        },
+      ],
+    };
+  } catch {
+    /* tanpa keputusan: isian tetap kosong */
+  }
+}
+
+/** Keterangan sederhana di panel; dilewati bila kartu 7139 sudah tampil (kartu itu memuat keterangan yang sama). */
+function el7Gambar(wadah, data, sudahKartu) {
+  const k = data && data.elitigasi && data.elitigasi.keputusan;
+  if (!wadah || !k || sudahKartu) return;
+  wadah.appendChild(buatElemen("div", "aleta-abt-kutipan aleta-el7-ket", k.keterangan));
+}
+/* === AKHIR ELITIGASI-7139 === */
 
 /* === PEKERJAAN 11 Okt === */
 /**

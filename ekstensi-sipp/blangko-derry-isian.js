@@ -289,6 +289,7 @@
     ganti: {}, // kode -> huruf yang diganti ALETA ke bentuk aman ABT (normalAbt)
     tersimpan: {}, // kode -> "tersimpan" | "menyimpan" | "gagal: ..."
     saran: {}, // kode -> teks saran (bayangan)
+    el7: null, // ELITIGASI-7139: keputusan 1/2 yang diisi otomatis ke #7139# perkara ini
     menuSaran: null,
     bukti: { P: null, T: null },
     tj: {}, // kunci -> { kode, rows:[{no,tanya,jawab}], templates:[], dimuat, berubah, sidang }
@@ -819,6 +820,7 @@
     S.tersimpan = {};
     S.ganti = {};
     S.saran = {};
+    S.el7 = null;
     S.bukti = { P: null, T: null };
     S.tj = {};
     S.tjBuka = null;
@@ -884,6 +886,7 @@
       renderCetak();
       laporKeKerangka();
       void muatSaranAbt(d);
+      void isiElitigasiOtomatis(d);
       void siapkanBukti();
     } catch (e) {
       if (S.blangko !== blangko) return;
@@ -950,6 +953,27 @@
         })
       );
       if (S.susunan === d) renderIsian();
+    }
+  }
+  /**
+   * ELITIGASI-7139 (17 Okt): #7139# kosong diisi sendiri "1" (e-litigasi penuh: Tergugat/kuasanya ber-email) atau "2"
+   * (hybrid: diunggah Panitera Sidang) menurut keputusan abt.js (el7Ambil7139, memakai kontak e-Court KONTAK-EC).
+   * Isian manual menang: sudah terisi di ABT, diketik selagi menunggu, atau perkara berganti -> tidak ditulis.
+   * Data tak cukup (verstek, belum disidang, bukan e-Court) -> dibiarkan kosong. Yang tersimpan hanya angka.
+   */
+  async function isiElitigasiOtomatis(d) {
+    try {
+      if (typeof el7Ambil7139 !== "function" || !S.pk || !bolehTulis()) return;
+      if (!d.isian.some((b) => b.kode === "7139")) return;
+      const ada = () => String(S.isi["7139"] || "").trim() || (S.nilai["7139"] && S.nilai["7139"].status === "terisi");
+      if (ada()) return;
+      const keputusan = await el7Ambil7139(nomorPerkara(), null);
+      if (!keputusan || S.susunan !== d || ada()) return;
+      S.el7 = keputusan;
+      await jadwalkanSimpan("7139", keputusan.nilai, true);
+      renderIsian();
+    } catch {
+      /* tanpa keputusan: isian tetap kosong */
     }
   }
   // F4.2: saran draf H-7 (agen ALETA) didahulukan - nilainya dari deteksi yang sama dengan panel ABT, tetap hanya SARAN.
@@ -1744,6 +1768,7 @@
     return (
       `<div class="bd-f${v.trim() ? " beres" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(b.nama)}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama)}</div>${muncul}` +
       isian +
+      (b.kode === "7139" && S.el7 && v === S.el7.nilai ? `<span class="bd-catat bd-el7">${esc(S.el7.keterangan)}</span>` : "") +
       `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st, b.kode))}</span>` +
       (b.kode === "8503" ? (() => { const w = peringatan8503(); return `<span class="bd-peringatan" data-peringatan="8503" role="alert" ${w ? "" : "hidden"}>${esc(w)}</span>`; })() : "") +
       `</div>`
@@ -3689,6 +3714,7 @@
       S.nilai = {};
       S.tersimpan = {};
       S.saran = {};
+      S.el7 = null;
       S.saranH7 = {}; // F4.2: saran draf H-7 milik perkara sebelumnya tidak terbawa.
       S.bukti = { P: null, T: null };
       S.tj = {};

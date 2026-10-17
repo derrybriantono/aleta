@@ -99,8 +99,8 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "7139": {
     nm: "Beracara secara elektronik",
     opsi: [
-      { nilai: "1", label: "Sepakat beracara secara elektronik" },
-      { nilai: "2", label: "Tidak sepakat beracara secara elektronik" },
+      { nilai: "1", label: "E-Litigasi penuh (Tergugat ber-email)" },
+      { nilai: "2", label: "E-Litigasi hybrid (diunggah Panitera Sidang)" },
     ],
   },
   "8536": { nm: "Putusan pidana {T} (nomor, tanggal, lama hukuman)" },
