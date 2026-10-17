@@ -275,6 +275,10 @@
     void tulisPenyimpanan({ [KUNCI_SERAH]: { nomor: String(nomor || ""), saat: Date.now() } });
   }
 
+  const JUDUL_ABT = "Buka di ABT: Blangko ABT by Derry Briantono langsung di perkara ini (tab baru)";
+  const JUDUL_ALETA = "Buka di ALETA: perkara ini di portal ALETA (tab baru)";
+  const JUDUL_TANPA_NOMOR = "Nomor perkara belum terbaca di halaman ini (tunggu tab Data Umum termuat)";
+
   function buatTautan(nomor, besar) {
     const w = el(besar ? "td" : "span", `${KELAS} ${besar ? "aleta-l1-submenu" : "aleta-l1-tautan"}`);
     w.setAttribute("data-l1-nomor", nomor || "");
@@ -283,7 +287,7 @@
     abt.setAttribute("data-l1", "abt");
     abt.target = "_blank";
     abt.rel = "noopener";
-    abt.title = "Buka di ABT: Blangko ABT by Derry Briantono langsung di perkara ini (tab baru)";
+    abt.title = JUDUL_ABT;
     abt.addEventListener("click", (e) => {
       const n = w.getAttribute("data-l1-nomor");
       if (!n) {
@@ -296,7 +300,7 @@
     aleta.setAttribute("data-l1", "aleta");
     aleta.target = "_blank";
     aleta.rel = "noopener";
-    aleta.title = "Buka di ALETA: perkara ini di portal ALETA (tab baru)";
+    aleta.title = JUDUL_ALETA;
     aleta.addEventListener("click", (e) => {
       if (!w.getAttribute("data-l1-nomor")) e.preventDefault();
     });
@@ -321,13 +325,16 @@
       aleta.href = alamatAleta(n);
       abt.removeAttribute("aria-disabled");
       aleta.removeAttribute("aria-disabled");
+      // Judul "belum terbaca" dari keadaan sebelumnya dipulihkan (audit 17 Okt).
+      abt.title = JUDUL_ABT;
+      aleta.title = JUDUL_ALETA;
     } else {
       abt.removeAttribute("href");
       aleta.removeAttribute("href");
       abt.setAttribute("aria-disabled", "true");
       aleta.setAttribute("aria-disabled", "true");
-      abt.title = "Nomor perkara belum terbaca di halaman ini (tunggu tab Data Umum termuat)";
-      aleta.title = abt.title;
+      abt.title = JUDUL_TANPA_NOMOR;
+      aleta.title = JUDUL_TANPA_NOMOR;
     }
   }
 

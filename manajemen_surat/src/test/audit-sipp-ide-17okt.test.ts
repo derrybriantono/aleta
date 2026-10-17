@@ -225,3 +225,25 @@ describe("C. Tampilan Lama tidak berubah, dan pindah tampilan diikuti seketika",
   });
 });
 
+// ============================================================================
+// D. Judul tombol J01/J02 sesudah nomor terbaca
+// ============================================================================
+describe("D. tombol Buka di ABT / Buka di ALETA di halaman perkara", () => {
+  it("sesudah tab Data Umum termuat, judulnya kembali menerangkan tombolnya", async () => {
+    const detil = `<table width="100%" id="submenus"><tr><td><table><tr>
+<td id="backlist"><a class="btn btn-default btn-sm" href="/SIPP/perkara">Kembali</a></td></tr></table></td></tr></table><div id="tabs1"></div>`;
+    const h = buka(`<!doctype html><html><head></head><body>${detil}</body></html>`, { url: URL_DETIL, skrip: ["sipp-ide-l1.js"] });
+    const api = h.w.aletaSippIdeL1;
+    api.pasang(h.d);
+    const abt = h.d.querySelector('.aleta-l1-submenu [data-l1="abt"]') as HTMLAnchorElement;
+    const aleta = h.d.querySelector('.aleta-l1-submenu [data-l1="aleta"]') as HTMLAnchorElement;
+    expect(abt.title).toMatch(/belum terbaca/);
+    h.d.querySelector("#tabs1")!.innerHTML = `<table><tr><td id="first-child">Nomor Perkara</td><td>${NOMOR}</td></tr></table>`;
+    api.pasang(h.d);
+    expect(abt.getAttribute("href")).toContain(encodeURIComponent(NOMOR));
+    expect(abt.title).not.toMatch(/belum terbaca/);
+    expect(abt.title).toMatch(/Buka di ABT/);
+    expect(aleta.title).toMatch(/Buka di ALETA/);
+  });
+});
+
