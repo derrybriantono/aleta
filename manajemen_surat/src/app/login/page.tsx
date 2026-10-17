@@ -512,8 +512,8 @@ export default function LoginPage() {
         <ThemeToggle />
       </div>
 
-      <Card className="relative w-full max-w-[880px] overflow-hidden rounded-[1.35rem] border-border/80 bg-card/[0.92] text-foreground shadow-[0_26px_78px_rgba(12,38,58,0.16)] backdrop-blur-xl dark:border-white/15 dark:bg-slate-950/[0.92] dark:text-slate-100 dark:shadow-[0_26px_78px_rgba(0,0,0,0.42)]">
-        <CardContent className="grid p-0 lg:grid-cols-[minmax(0,1fr)_390px]">
+      <Card className="relative w-full max-w-[55rem] overflow-hidden rounded-[1.35rem] border-border/80 bg-card/[0.92] text-foreground shadow-[0_26px_78px_rgba(12,38,58,0.16)] backdrop-blur-xl dark:border-white/15 dark:bg-slate-950/[0.92] dark:text-slate-100 dark:shadow-[0_26px_78px_rgba(0,0,0,0.42)]">
+        <CardContent className="grid p-0 lg:grid-cols-[minmax(0,1fr)_24.375rem]">
           <section className="relative flex min-w-0 flex-col justify-between overflow-hidden border-b border-white/15 bg-[linear-gradient(135deg,rgba(21,69,103,0.96),rgba(32,98,139,0.88))] p-6 text-white lg:min-h-[470px] lg:border-b-0 lg:border-r lg:p-8 dark:border-white/10 dark:bg-[linear-gradient(135deg,rgba(8,31,49,0.98),rgba(15,63,96,0.92))]">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.2),transparent_34%),linear-gradient(135deg,rgba(251,191,36,0.13),transparent_36%)] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_34%),linear-gradient(135deg,rgba(251,191,36,0.1),transparent_36%)]" />
             <div className="absolute -right-12 bottom-8 text-amber-50/10 dark:text-amber-100/10">

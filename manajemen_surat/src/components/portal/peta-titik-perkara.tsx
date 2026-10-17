@@ -2899,7 +2899,7 @@ export function PetaTitikPerkara({
               Tidak ada perkara desa ini pada rentang dan golongan yang sedang dipilih.
             </p>
           ) : (
-            <div className="max-h-56 overflow-y-auto">
+            <div className="max-h-56 overflow-auto">
               <table className="w-full text-xs">
                 <thead className="text-left text-muted-foreground">
                   <tr>

@@ -165,6 +165,7 @@ function TabelBagian({
   kelasLabel?: (label: string) => string;
 }) {
   return (
+    <div className="aleta-tabel-gulir">
     <table className="w-full text-sm">
       <tbody>
         {baris.map((b) => (
@@ -178,6 +179,7 @@ function TabelBagian({
         ))}
       </tbody>
     </table>
+    </div>
   );
 }
 

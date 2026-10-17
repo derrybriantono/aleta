@@ -249,6 +249,7 @@ function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => void })
                     Sunting
                   </Button>
                 </div>
+                <div className="aleta-tabel-gulir">
                 <table className="mt-1 w-full text-xs">
                   <tbody>
                     {p.usulan.map((u) => (
@@ -261,6 +262,7 @@ function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => void })
                     ))}
                   </tbody>
                 </table>
+                </div>
                 {p.catatan.length ? <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">{p.catatan.join(" ")}</p> : null}
               </li>
             );
@@ -402,6 +404,7 @@ function IsiRekap({ periode, tanggal }: { periode: PeriodeRekap; tanggal: string
       </div>
       <details className="rounded-md border px-2 py-1">
         <summary className="cursor-pointer text-xs font-medium">Per perkara ({rekap.perPerkara.length})</summary>
+        <div className="aleta-tabel-gulir">
         <table className="mt-1 w-full text-xs">
           <tbody>
             {rekap.perPerkara.map((p) => (
@@ -414,6 +417,7 @@ function IsiRekap({ periode, tanggal }: { periode: PeriodeRekap; tanggal: string
             ))}
           </tbody>
         </table>
+        </div>
       </details>
     </div>
   );

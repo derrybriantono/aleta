@@ -1686,7 +1686,7 @@ export function JlfQuickBlankoWorkbench({
 
         {showPreviewDocumentModal && previewDocument ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/75 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-xl rounded-xl border border-border bg-card p-5 shadow-panel">
+            <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-panel">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Mode Preview</p>

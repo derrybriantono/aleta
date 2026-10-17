@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ModeLayarJauh } from "@/components/layout/mode-layar-jauh";
 
 import { apiPath } from "@/lib/base-path";
 import {
@@ -122,6 +123,7 @@ export default function AntrianRuangPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-[#0a0c10] text-slate-100">
+      <ModeLayarJauh />
       <header className="flex items-baseline justify-between px-5 pt-5">
         <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Antrian Sidang</p>
         <p className="font-mono text-lg tabular-nums text-slate-400">{jam}</p>

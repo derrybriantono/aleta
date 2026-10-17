@@ -595,7 +595,7 @@ export default function SuratDetailPage() {
 
       {workflowModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-[1.35rem] border border-border bg-card p-5 shadow-2xl">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-[1.35rem] border border-border bg-card p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Proses Surat Keluar</p>

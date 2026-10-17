@@ -4224,7 +4224,7 @@ function KalenderSidang({
       onClick={onTutup}
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-lg border bg-background p-4 shadow-lg"
+        className="max-h-[90dvh] w-full max-w-lg overflow-auto rounded-lg border bg-background p-4 shadow-lg"
         onClick={(peristiwa) => peristiwa.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between gap-2">

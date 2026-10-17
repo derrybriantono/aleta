@@ -324,6 +324,7 @@ export function TautanSippSemua() {
         {pratinjau && pratinjau.sippTanpaAkun.length > 0 ? (
           <div className="space-y-2">
             <p className="font-semibold">Petugas SIPP aktif tanpa akun ALETA - dibuatkan akun baru (username = username SIPP, tanpa password ALETA)</p>
+            <div className="aleta-tabel-gulir">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b">
@@ -368,6 +369,7 @@ export function TautanSippSemua() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         ) : null}
 

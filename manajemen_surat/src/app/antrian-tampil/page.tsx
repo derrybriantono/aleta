@@ -23,6 +23,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { ModeLayarJauh } from "@/components/layout/mode-layar-jauh";
 
 import { apiPath } from "@/lib/base-path";
 import { type TampilAntrianPublik } from "@/lib/antrian-publik";
@@ -140,6 +141,7 @@ export default function HalamanAntrianTampil() {
 
   return (
     <main className="min-h-screen bg-neutral-950 p-4 text-neutral-100 sm:p-8">
+      <ModeLayarJauh />
       <header className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl font-bold sm:text-4xl">{judul || "Antrian Sidang"}</h1>
         <span className="text-xl tabular-nums text-neutral-400 sm:text-3xl">{jam}</span>

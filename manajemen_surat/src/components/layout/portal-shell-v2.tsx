@@ -1094,7 +1094,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
       <div
         className={cn(
           "flex flex-col border border-primary/20 bg-[linear-gradient(180deg,rgba(5,20,34,0.98),rgba(8,38,58,0.96))] text-slate-100 shadow-panel backdrop-blur transition-all duration-300",
-          mobile ? "h-[calc(100vh-4rem)] rounded-[1.4rem] p-4" : "h-screen rounded-[2rem]",
+          mobile ? "h-[calc(100dvh-4rem)] rounded-[1.4rem] p-4" : "h-screen rounded-[2rem]",
           collapsed ? "px-3 py-5" : !mobile && "p-5"
         )}
       >
@@ -1384,7 +1384,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
           />
           <aside
             className={cn(
-              "fixed inset-y-0 left-0 z-50 w-[min(320px,calc(100vw-1.5rem))] p-3 transition-transform duration-300 sm:p-4 lg:hidden",
+              "fixed inset-y-0 left-0 z-50 w-[min(20rem,calc(100vw-1.5rem))] p-3 transition-transform duration-300 sm:p-4 lg:hidden",
               mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
             )}
           >
@@ -1403,13 +1403,13 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
         </>
       ) : null}
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-[1600px] items-start gap-3 px-3 py-3 sm:gap-6 sm:px-4 sm:py-4 lg:px-6">
+      <div className="relative mx-auto flex min-h-screen w-full max-w-[100rem] items-start gap-3 px-3 py-3 sm:gap-6 sm:px-4 sm:py-4 lg:px-6">
         {/* Desktop sidebar */}
         {hasSidebar ? (
           <aside
             className={cn(
               "sticky top-0 hidden h-screen shrink-0 transition-[width] duration-300 lg:block",
-              desktopSidebarCollapsed ? "w-[104px]" : "w-[300px]"
+              desktopSidebarCollapsed ? "w-[6.5rem]" : "w-[18.75rem]"
             )}
           >
             {renderSidebar({ collapsed: desktopSidebarCollapsed })}
@@ -1467,6 +1467,20 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
 
                 <div className="flex max-w-full items-center gap-2 self-end overflow-x-auto rounded-2xl border border-border/50 bg-background/25 p-1 sm:gap-2 xl:self-auto xl:border-0 xl:bg-transparent xl:p-0">
                   <TombolBantuanTutorial />
+                  {appContext === "manajemen_surat" && !isAdminArea ? (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0 sm:hidden"
+                      aria-label="Cari cepat"
+                      title="Cari cepat"
+                      asChild
+                    >
+                      <Link href="/search">
+                        <Search className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  ) : null}
 
                   <ThemeToggle />
 
@@ -1513,7 +1527,7 @@ export function PortalShellV2({ children }: { children: React.ReactNode }) {
                         <Bell className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-[300px]">
+                    <DropdownMenuContent align="end" className="w-[min(18.75rem,calc(100vw-1.5rem))]">
                       <DropdownMenuLabel>Pusat Tugas & Notifikasi</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       {hasBellItems ? (
