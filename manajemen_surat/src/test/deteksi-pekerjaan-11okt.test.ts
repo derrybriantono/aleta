@@ -310,7 +310,13 @@ describe("panel ABT: kartu 'Pekerjaan terbaca' (blok PEKERJAAN abt.js)", () => {
     const j = sumber.indexOf('if (typeof pkGambarPekerjaan === "function") pkGambarPekerjaan(w.usulan, data);');
     expect(i).toBeGreaterThan(0);
     expect(j).toBeGreaterThan(i);
-    expect(j - i).toBeLessThan(300);
+    // Urutan kartu: kontak -> e-litigasi (#7139#, el7Gambar) -> pekerjaan. Kartu e-litigasi
+    // boleh duduk di antaranya (komentar + panggilan); batas jarak 700 menjaga ketiganya
+    // tetap berdampingan tanpa menuntut tepat satu baris.
+    const el = sumber.indexOf("el7Gambar(", i);
+    expect(el).toBeGreaterThan(i);
+    expect(el).toBeLessThan(j);
+    expect(j - i).toBeLessThan(700);
   });
 
   it("Lain-Lain yang terbaca PNS: ringkasan menyebut teks + pilihan SIPP, sebutan dua arah, keterangan kalimat izin atasan", () => {
