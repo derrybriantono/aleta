@@ -1,5 +1,5 @@
 {
- "sumber": "KEADAAN SERVER 17 Okt 2026 sesudah paket F21 (abt-hak-asuh-derry, abt-pembatalan-perkawinan-derry, abt-ekonomi-syariah-derry; menu 133-138, terpasang ±03.50): daftar berkas = ssh aleta ls -R _blangko_abt/derry_briantono (baca saja, 17 Okt dini hari), memuat juga paket I2 16 Okt (7 Wali Adhal, penetapan ikrar [90]/[90a]/[91]) dan folder 98 Relaas / 99 PTSP; baris abt_menu 101-132, 981, 991 = kueri baca saja agen F21 17 Okt 02.15 (menu putusan user_cek 3 sesudah paket hak putusan majelis; 113 Wali Adhal ada), baris 133-138 = INSERT paket F21; direktori 981/991 mengikuti folder di disk server (98 Relaas / 99 PTSP; kueri 02.15 masih mencatat nama lama Relaas / PTSP); baris lain dibawa dari fixture 15 Okt. berkasSebelum = keadaan 14 Okt (dibawa). | I7 17 Okt (abt-varian-17okt-derry, BELUM terpasang di server, keadaan disusun dari daftar-pindah.tsv/daftar-rtf.tsv/PASANG.sql paket): 6 BAS mediasi 5a - BAS dipindah ke derry_briantono/terhapus/5a Pembatalan Perkawinan - BAS; berkas baru 4a [01a] HB rekonvensi dikabulkan dan 6a [03a] tolak hadhanah kepada T; menu 133/134 acuan jenis_perkara_id 369-369.",
+ "sumber": "KEADAAN SERVER 17 Okt 2026 sesudah paket F21 (abt-hak-asuh-derry, abt-pembatalan-perkawinan-derry, abt-ekonomi-syariah-derry; menu 133-138, terpasang ±03.50): daftar berkas = ssh aleta ls -R _blangko_abt/derry_briantono (baca saja, 17 Okt dini hari), memuat juga paket I2 16 Okt (7 Wali Adhal, penetapan ikrar [90]/[90a]/[91]) dan folder 98 Relaas / 99 PTSP; baris abt_menu 101-132, 981, 991 = kueri baca saja agen F21 17 Okt 02.15 (menu putusan user_cek 3 sesudah paket hak putusan majelis; 113 Wali Adhal ada), baris 133-138 = INSERT paket F21; direktori 981/991 mengikuti folder di disk server (98 Relaas / 99 PTSP; kueri 02.15 masih mencatat nama lama Relaas / PTSP); baris lain dibawa dari fixture 15 Okt. berkasSebelum = keadaan 14 Okt (dibawa). | I7 17 Okt (abt-varian-17okt-derry, BELUM terpasang di server, keadaan disusun dari daftar-pindah.tsv/daftar-rtf.tsv/PASANG.sql paket): 6 BAS mediasi 5a - BAS dipindah ke derry_briantono/terhapus/5a Pembatalan Perkawinan - BAS; berkas baru 4a [01a] HB rekonvensi dikabulkan dan 6a [03a] tolak hadhanah kepada T; menu 133/134 acuan jenis_perkara_id 369-369. | I8 17 Okt (abt-tolak-ikrar-derry, BELUM terpasang): berkas baru 1 Perceraian CG dan 1a Perceraian CT [03a] tolak kontradiktoir (T hadir jawab-menjawab), 6a Hak Asuh [03b] tolak verstek; 16 berkas lain disunting di tempat (nama tidak berubah).",
  "berkasSebelum": [
   "derry_briantono/- BAS ASAL USUL ANAK -/[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
   "derry_briantono/- BAS CONTRA PERCERAIAN -/[02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputusan Dirjen 1465.rtf",
@@ -297,6 +297,7 @@
   "derry_briantono/1 Perceraian CG/[02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F.rtf",
   "derry_briantono/1 Perceraian CG/[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
   "derry_briantono/1 Perceraian CG/[03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti.rtf",
+  "derry_briantono/1 Perceraian CG/[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti.rtf",
   "derry_briantono/1 Perceraian CG/[98] [Cabut] 1. Cerai P Hadir & T Tidak Hadir - Tanpa Mediasi (P & T Damai).rtf",
   "derry_briantono/1 Perceraian CG/[98] [Cabut] 1a. Cerai P Hadir & T Tidak Hadir - Tanpa Mediasi (Alamat T Tidak Diketahui).rtf",
   "derry_briantono/1 Perceraian CG/[98] [Cabut] 2. Cerai P & T Hadir- Setelah Mediasi (Sebelum Jawaban).rtf",
@@ -405,6 +406,7 @@
   "derry_briantono/1a Perceraian CT/[02a] [Kabul] CT - T Tidak Hadir Setelah Mediasi - F.rtf",
   "derry_briantono/1a Perceraian CT/[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
   "derry_briantono/1a Perceraian CT/[03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti.rtf",
+  "derry_briantono/1a Perceraian CT/[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti.rtf",
   "derry_briantono/1a Perceraian CT/[90] [Ikrar] Penetapan Ikrar Talak - P Hadir & T Tidak Hadir.rtf",
   "derry_briantono/1a Perceraian CT/[90a] [Ikrar] Penetapan Ikrar Talak - P & T Hadir.rtf",
   "derry_briantono/1a Perceraian CT/[91] [Ikrar Gugur] Penetapan Kekuatan Putusan Gugur - P Tidak Ikrar 6 Bulan.rtf",
@@ -716,6 +718,7 @@
   "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[01d] [Kabul] Hak Asuh - Kontradiktoir - Pemegang Hadhanah Tidak Menjamin Keselamatan Anak.rtf",
   "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[03] [Tolak] Hak Asuh - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti.rtf",
   "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz).rtf",
+  "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[03b] [Tolak Verstek] Hak Asuh - Kepentingan Terbaik Anak Tidak Terbukti.rtf",
   "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[97] [Perdamaian] Akta Perdamaian.rtf",
   "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban.rtf",
   "derry_briantono/6a Hak Asuh Anak (Hadhanah)/[98a] [Gugur] Gugatan - P Tidak Hadir Sidang Pertama.rtf",

@@ -132,6 +132,8 @@ const KODE_KE_LANGKAH: Record<string, KodeLangkah> = {
   "8437": "kesimpulan",
   "8503": "pertimbangan",
   "8729": "pertimbangan",
+  // I8 17 Okt: penilaian jawaban & bukti T pada putusan cerai ditolak kontradiktoir [03a] - bagian pertimbangan hukum.
+  "9501": "pertimbangan",
   "8901": "amar",
   "8902": "amar",
   "5230": "biaya",

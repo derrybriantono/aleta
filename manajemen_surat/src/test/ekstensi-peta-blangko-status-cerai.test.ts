@@ -157,11 +157,15 @@ describe("pemilih blangko cerai per status (panel-alat.js yang dijalankan)", () 
       // Folder laptop (PA Bungku) hanya memuat paket cerai; nama berkas permohonan/gugatan lain diperiksa terhadap daftar berkas server
       // (peta perkara L3, 16 Okt 2026) saat dibangun - lihat putusan-per-keadaan-q3.test.ts untuk daftar tetapnya.
       if (!/^Putusan Cerai (Gugat|Talak)$/.test(b.blangko)) continue;
+      // I8 17 Okt: [03a] tolak kontradiktoir milik paket ABT abt-tolak-ikrar-derry - ada di laptop hanya sesudah dipasang di sana (dijaga pemetaan-i8-17okt.test.ts atas fixture server).
+      const belumTerpasangI8 = (nama: string) => /^\[03a\] \[Tolak\] Cerai - Kontradiktoir/.test(nama) && !existsSync(path.join(ABT_DERRY, folder, `${nama}.rtf`));
+      if (belumTerpasangI8(b.berkas)) continue;
       expect(existsSync(path.join(ABT_DERRY, folder, `${b.berkas}.rtf`)), `${kunci}: ${b.berkas}`).toBe(true);
       if (!/^varian: /.test(b.catatan || "")) continue;
       for (const varian of (b.catatan || "").replace(/^varian: /, "").split("; ").filter(Boolean)) {
         // G3 15 Okt: 4b (nama baru, paket agen H3) ikut. F3 14 Okt: 3b (kuasa insidentil) milik paket ABT abt-kuasa-insidentil (agen B3) - ada di laptop hanya sesudah dipasang di sana.
         if (/(\[Gugur\] 3b|\[NO\] 4b)\. Cerai P Diwakili Kuasa Insidentil/.test(varian) && !existsSync(path.join(ABT_DERRY, folder, `${varian}.rtf`))) continue;
+        if (belumTerpasangI8(varian)) continue;
         expect(existsSync(path.join(ABT_DERRY, folder, `${varian}.rtf`)), `${kunci} varian: ${varian}`).toBe(true);
       }
     }

@@ -153,8 +153,9 @@ describe("putusan.peta-blangko dan putusan.padanan-jenis = panel-alat.js yang di
   // F21 17 Okt: + 36 baris = 125: hak asuh "penguasaan anak" (10) dan "lain-lain" Pdt.G berkeadaan hak-asuh (8), pembatalan perkawinan (9),
   // ekonomi syariah gugatan sederhana (9); jenis tanpa status kini 13 (+ penguasaan anak, pembatalan perkawinan, ekonomi syariah).
   // I7 17 Okt: + 3 baris varian = 128: HB rekonvensi dikabulkan [01a] (keadaan) dan hak asuh tolak Tergugat ibu [03a] (penguasaan anak + Lain-Lain).
+  // I8 17 Okt: + 4 baris = 132: cerai ditolak kontradiktoir [03a] (CG, CT) dan hak asuh tolak verstek [03b] (penguasaan anak, Lain-Lain).
   it("ALAT_PETA_BAWAAN: 9 jenis + baris status cerai + keadaan + 4 baris kumulasi (T 13 Okt), isi sama persis ('bawaan: true' = asal bawaan)", () => {
-    expect(Object.keys(ALAT_PETA_BAWAAN)).toHaveLength(128);
+    expect(Object.keys(ALAT_PETA_BAWAAN)).toHaveLength(132);
     expect(Object.keys(ALAT_PETA_BAWAAN).filter((k) => k.includes("+") && k.split("|")[0].includes("+"))).toHaveLength(4);
     expect(Object.keys(ALAT_PETA_BAWAAN).filter((k) => !k.includes("|"))).toHaveLength(13);
     const cermin = CERMIN_EKSTENSI["putusan.peta-blangko"];

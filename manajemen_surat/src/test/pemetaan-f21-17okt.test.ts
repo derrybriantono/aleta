@@ -57,7 +57,8 @@ describe("A. pohon server 17 Okt: menu, folder, berkas", () => {
 
   it("tiap baris putusan bawaan F21: berkas ADA di folder menunya, menu dan alias sama dengan abt_menu server", () => {
     const baris = Object.entries(PETA_PUTUSAN_BAWAAN).filter(([k, v]) => ["Putusan Hak Asuh Anak (Hadhanah)", "Putusan Pembatalan Perkawinan", "Putusan Ekonomi Syariah"].includes(String(v.blangko)));
-    expect(baris).toHaveLength(38); // hak asuh 10 + Lain-Lain Pdt.G 8 + pembatalan 9 + ekonomi syariah 9 + 2 baris tolak "Tergugat ibu" (I7 17 Okt: [03a])
+    // hak asuh 10 + Lain-Lain Pdt.G 8 + pembatalan 9 + ekonomi syariah 9 + 2 baris tolak "Tergugat ibu" (I7 17 Okt: [03a]) + 2 baris tolak verstek (I8 17 Okt: [03b])
+    expect(baris).toHaveLength(40);
     for (const [kunci, b] of baris) {
       const folder = FOLDER_MENU_PUTUSAN[String(b.blangko)];
       expect(FIX.berkas, `${kunci} -> ${b.berkas}`).toContain(`${A}${folder}/${b.berkas}.rtf`);

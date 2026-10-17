@@ -185,6 +185,9 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "9432": { nm: "Fakta pengasuhan anak oleh {T} (dari bukti dan saksi; kosong = kalimat bawaan)" },
   "9434": { nm: "Objek rekonvensi yang ditetapkan sebagai harta bersama (satu per baris; kosong = seluruh objek gugatan rekonvensi)" },
   /* === AKHIR I7 === */
+  /* === I8 17 Okt: cerai ditolak kontradiktoir [03a] === */
+  "9501": { nm: "Penilaian jawaban dan bukti {T} (bantahan apa yang didukung bukti atau saksi, dan mengapa melemahkan dalil {P}; kosong = titik-titik)" },
+  /* === AKHIR I8 === */
 };
 
 const PEMICU_TEKS: Record<string, string> = {

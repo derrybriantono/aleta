@@ -119,7 +119,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "cerai gugat|ditolak",
       nilai: "[03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti",
-      data: { jenisAsli: "Cerai Gugat", statusAsli: "Ditolak", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"] },
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Ditolak", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "varian: [03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti" },
       urutan: 10,
     },
     {
@@ -209,7 +209,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "cerai talak|ditolak",
       nilai: "[03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti",
-      data: { jenisAsli: "Cerai Talak", statusAsli: "Ditolak", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT", "CT - Putusan"] },
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Ditolak", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT", "CT - Putusan"], catatan: "varian: [03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti" },
       urutan: 25,
     },
     {
@@ -622,7 +622,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "penguasaan anak|ditolak",
       nilai: "[03] [Tolak] Hak Asuh - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti",
-      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Ditolak", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "varian: [03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz)" },
+      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Ditolak", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "varian: [03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz); [03b] [Tolak Verstek] Hak Asuh - Kepentingan Terbaik Anak Tidak Terbukti" },
       urutan: 93,
     },
     {
@@ -670,7 +670,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "lain-lain|ditolak|hak-asuh",
       nilai: "[03] [Tolak] Hak Asuh - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti",
-      data: { jenisAsli: "Lain-Lain", statusAsli: "Ditolak", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "varian: [03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz)" },
+      data: { jenisAsli: "Lain-Lain", statusAsli: "Ditolak", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "varian: [03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz); [03b] [Tolak Verstek] Hak Asuh - Kepentingan Terbaik Anak Tidak Terbukti" },
       urutan: 101,
     },
     {
@@ -829,6 +829,31 @@ export const CERMIN_EKSTENSI = {
       nilai: "[03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz)",
       data: { jenisAsli: "Lain-Lain", statusAsli: "Ditolak", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "keadaan: gugatan hak asuh yang didaftarkan sebagai Lain-Lain (Pdt.G), Tergugat ibu (anak belum mumayyiz)" },
       urutan: 127,
+    },
+    /* === I8 17 Okt === cermin blok I8 panel-alat.js (cerai ditolak kontradiktoir [03a], hak asuh tolak verstek [03b]) */
+    {
+      kunci: "cerai gugat|ditolak|kontradiktoir",
+      nilai: "[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Ditolak", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "varian: [03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti" },
+      urutan: 128,
+    },
+    {
+      kunci: "cerai talak|ditolak|kontradiktoir",
+      nilai: "[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Ditolak", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT", "CT - Putusan"], catatan: "varian: [03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti" },
+      urutan: 129,
+    },
+    {
+      kunci: "penguasaan anak|ditolak|verstek",
+      nilai: "[03b] [Tolak Verstek] Hak Asuh - Kepentingan Terbaik Anak Tidak Terbukti",
+      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Ditolak", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "keadaan: Tergugat tidak pernah hadir (verstek)" },
+      urutan: 130,
+    },
+    {
+      kunci: "lain-lain|ditolak|hak-asuh-verstek",
+      nilai: "[03b] [Tolak Verstek] Hak Asuh - Kepentingan Terbaik Anak Tidak Terbukti",
+      data: { jenisAsli: "Lain-Lain", statusAsli: "Ditolak", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "keadaan: gugatan hak asuh yang didaftarkan sebagai Lain-Lain (Pdt.G), putusan verstek" },
+      urutan: 131,
     },
   ],
   "putusan.padanan-jenis": [

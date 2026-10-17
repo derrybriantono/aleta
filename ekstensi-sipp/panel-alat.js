@@ -8803,7 +8803,9 @@ const ALAT_BERKAS_STATUS_CERAI = {
   verstekKabul: [ALAT_BERKAS_CERAI_BAWAAN, ""],
   // "Unus Testis Nullus Testis" hanya ada di folder CG (diperiksa 12 Okt) - catatan CT tidak menyebutnya.
   tolakVerstek: ["[01ab] [Tolak Verstek] Cerai - Tidak ada bukti", "varian: [01ab] [Tolak Verstek] Cerai - Kurang 6 Bulan SEMA 1 Tahun 2022"],
-  tolak: ["[03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti", ""],
+  // I8 17 Okt: [03] hanya benar bila T tidak hadir lagi sesudah mediasi; T hadir jawab-menjawab = [03a] (baris keadaan "kontradiktoir", blok I8).
+  tolak: ["[03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti", "varian: [03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti"],
+  tolakKontradiktoir: "[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti",
   no: [
     "[98] [NO] 4. Cerai P & T Tidak Hadir - Alamat T Tidak Diketahui",
     "varian: [98] [NO] 4a. Cerai P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022); [98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah",
@@ -9125,6 +9127,8 @@ const ALAT_BERKAS_HAK_ASUH = {
   tolak: "[03] [Tolak] Hak Asuh - Kontradiktoir - Kepentingan Terbaik Anak Tidak Terbukti",
   // I7 17 Okt: gugatan ditolak dan anak ditetapkan di bawah hadhanah Tergugat (ibu, anak belum mumayyiz) - pola 177/Pdt.G/2022.
   tolakIbu: "[03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz)",
+  // I8 17 Okt: gugatan ditolak dan Tergugat tidak pernah hadir (verstek).
+  tolakVerstek: "[03b] [Tolak Verstek] Hak Asuh - Kepentingan Terbaik Anak Tidak Terbukti",
   damai: "[97] [Perdamaian] Akta Perdamaian",
   cabut: "[98] [Cabut] Gugatan - P & T Hadir Sebelum Jawaban",
   gugur: "[98a] [Gugur] Gugatan - P Tidak Hadir Sidang Pertama",
@@ -9148,7 +9152,7 @@ function alatPetaHakAsuh(kunci, jenisAsli, keadaan) {
     baris[k("dikabulkan")] = alatBarisPutusanLain("ha", jenisAsli, "Dikabulkan", B.kabul, ALAT_CATATAN_HAK_ASUH);
     baris[k("dikabulkan", "t-tidak-hadir-setelah-mediasi")] = alatBarisPutusanLain("ha", jenisAsli, "Dikabulkan", B.setelahMediasi, "keadaan: T hadir mediasi lalu tidak hadir");
   }
-  baris[k("ditolak", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Ditolak", B.tolak, `varian: ${B.tolakIbu}`);
+  baris[k("ditolak", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Ditolak", B.tolak, `varian: ${B.tolakIbu}; ${B.tolakVerstek}`);
   baris[k("perdamaian", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Perdamaian", B.damai);
   baris[k("dicabut", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Dicabut", B.cabut);
   baris[k("digugurkan", keadaan)] = alatBarisPutusanLain("ha", jenisAsli, "Digugurkan", B.gugur);
@@ -9202,6 +9206,21 @@ Object.assign(ALAT_PETA_BAWAAN, {
   "lain-lain|ditolak|hak-asuh-t-ibu": alatBarisPutusanLain("ha", "Lain-Lain", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakIbu, "keadaan: gugatan hak asuh yang didaftarkan sebagai Lain-Lain (Pdt.G), Tergugat ibu (anak belum mumayyiz)"),
 });
 /* === AKHIR I7 === */
+
+/* === I8 17 Okt === */
+/**
+ * TOLAK 17 Okt (paket ABT abt-tolak-ikrar-derry): cerai ditolak non-verstek dengan T HADIR jawab-menjawab = [03a] (dulu [03] "T Tidak Hadir Setelah
+ * Mediasi" untuk semua penolakan); hak asuh ditolak verstek = [03b]. Cerai: baris keadaan "kontradiktoir" (T hadir pada sidang putusan; tHadirKini di
+ * lib/keadaan-putusan.ts) menang atas baris status "ditolak" yang tetap [03] untuk T yang tidak hadir lagi sesudah mediasi; verstek tetap [01ab].
+ * Catatan: sidang sesudah mediasi tempat T hadir lalu tidak hadir lagi di sidang putusan tidak dapat dibedakan di sini dan memakai [03] (varian [03a] disebut).
+ */
+Object.assign(ALAT_PETA_BAWAAN, {
+  "cerai gugat|ditolak|kontradiktoir": alatBarisStatusCerai("Cerai Gugat", "Ditolak", ALAT_BERKAS_STATUS_CERAI.tolakKontradiktoir, "varian: [03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti"),
+  "cerai talak|ditolak|kontradiktoir": alatBarisStatusCerai("Cerai Talak", "Ditolak", ALAT_BERKAS_STATUS_CERAI.tolakKontradiktoir, "varian: [03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak Terbukti"),
+  "penguasaan anak|ditolak|verstek": alatBarisPutusanLain("ha", "Penguasaan Anak", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakVerstek, "keadaan: Tergugat tidak pernah hadir (verstek)"),
+  "lain-lain|ditolak|hak-asuh-verstek": alatBarisPutusanLain("ha", "Lain-Lain", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakVerstek, "keadaan: gugatan hak asuh yang didaftarkan sebagai Lain-Lain (Pdt.G), putusan verstek"),
+});
+/* === AKHIR I8 === */
 
 /**
  * Pemetaan tersimpan, dilengkapi bawaannya untuk jenis yang belum pernah
