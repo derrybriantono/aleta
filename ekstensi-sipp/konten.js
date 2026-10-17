@@ -20954,9 +20954,10 @@ function a30SamarkanSisaRtf(rtf, data) {
   // Bukti P.1 menulis "KTP-el atas nama ..., NIK 72032567...": ABT tidak
   // menyentuh NIK, dan pemeriksa hanya menanyakannya. Bentuk samarannya sama
   // dengan anonimisasi satker yang sudah terbit ("NIK xxxxxxxxxxxxxxxx").
-  for (const m of t.matchAll(/(^|[^\d])(\d{16})(?=[^\d]|$)/g)) {
+  // 17 Okt: juga NIK/KK berpemisah ("72.03.01.410190.0001", "7203 0141 0190 0001") - tepat 16 angka.
+  for (const m of t.matchAll(/(^|[^\d])(\d(?:[ .-]?\d){15})(?=[^\d]|$)/g)) {
     const mulai = m.index + m[1].length;
-    const akhir = mulai + 16;
+    const akhir = mulai + m[2].length;
     if (!bebas(mulai, akhir)) continue;
     for (let k = mulai; k < akhir; k += 1) terpakai[k] = 1;
     ganti.push({ mulai, akhir, menjadi: "x".repeat(16), jenis: "NIK", kata: m[2] });
@@ -21215,7 +21216,7 @@ function a30PeriksaAnonim(teks, data) {
       konteks: `${awal > 0 ? "…" : ""}${t.slice(awal, akhir).replace(/\s+/g, " ")}${akhir < t.length ? "…" : ""}`,
     });
   };
-  for (const m of t.matchAll(/(?<!\d)\d{16}(?!\d)/g)) catat("NIK", m[0], m.index, "");
+  for (const m of t.matchAll(/(?<!\d)\d(?:[ .-]?\d){15}(?!\d)/g)) catat("NIK", m[0], m.index, "");
   for (const n of (data && data.nama) || []) {
     // 12OKT-I: pola yang SAMA dengan penyamar (spasi lentur; potongan depan
     // hanya sesudah "bernama") - yang dicari pemeriksa = yang disamarkan.

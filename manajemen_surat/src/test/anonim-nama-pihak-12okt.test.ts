@@ -206,6 +206,22 @@ describe("penyamar ekstensi atas putusan berbentuk 564 (sesudah ABT)", () => {
     expect(f.a30PeriksaAnonim(teksAsli, data).temuan.some((x) => x.jenis === "nama pihak")).toBe(true);
   });
 
+  it("audit 17 Okt: NIK/KK berpemisah disamarkan & dilaporkan di ekstensi; 15/17 angka dan telepon utuh", () => {
+    const f = muatPenyamar();
+    const rtf =
+      "{\\rtf1\\ansi\\pard NIK 72.03.01.410190.0001;\\par KK 7203 0141 0190 0002;\\par NIK 7203-0141-0190-0003;\\par " +
+      "angka 720301410190000 dan 72030141019000041;\\par telepon 0822-7111-5021\\par }";
+    const data = { nama: [], alamat: [] };
+    const teksAsli = f.a30TeksRtf(rtf);
+    expect(f.a30PeriksaAnonim(teksAsli, data).temuan.filter((x) => x.jenis === "NIK")).toHaveLength(3);
+    const teks = f.a30TeksRtf(f.a30SamarkanSisaRtf(rtf, data).rtf);
+    expect(teks).toContain("NIK xxxxxxxxxxxxxxxx;");
+    expect(teks).toContain("KK xxxxxxxxxxxxxxxx;");
+    expect(teks).not.toMatch(/0190.?000[123]/);
+    expect(teks).toContain("720301410190000 dan 72030141019000041");
+    expect(teks).toContain("0822-7111-5021");
+  });
+
   it("SEBELUM perbaikan (sasaran hanya dipotong di bin/binti) nama itu lolos - sebab penolakan 564", async () => {
     const f = muatPenyamar();
     const lama = { nama: [{ teks: P1, dari: "SIPP" }, { teks: "Wulansari Pratiwi alias Wulan Sari Pratiwi", dari: "SIPP" }], alamat: [] };
