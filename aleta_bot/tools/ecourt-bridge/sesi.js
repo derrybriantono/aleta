@@ -149,6 +149,109 @@ function clearSession(slot) {
 }
 
 /**
+ * Membuang kunci profil Chromium yang tertinggal.
+ *
+ * ============================================================================
+ * SERVER DIMATIKAN MENDADAK = KUNCI TERTINGGAL
+ * ============================================================================
+ *
+ * Chromium menaruh SingletonLock (tautan simbolik bernama "namaHost-pid"),
+ * SingletonCookie dan SingletonSocket di folder profil. Bila server dimatikan
+ * tanpa menutup peramban, ketiganya tertinggal di volume. Pada penyalaan
+ * berikutnya Chromium membaca "profil sedang dipakai proses lain" dan menolak
+ * terbuka - SETIAP penarikan dan login e-Court gagal, padahal cookie sesinya
+ * sendiri masih utuh. Gejalanya tampak seperti sesi hilang.
+ *
+ * Kunci dianggap tertinggal HANYA bila: nama host-nya beda dengan mesin ini
+ * (container dibuat ulang), atau prosesnya sudah tidak ada, atau prosesnya
+ * ada tetapi bukan Chromium (nomor proses dipakai ulang oleh proses lain
+ * setelah container dinyalakan lagi). Kunci milik peramban yang benar-benar
+ * hidup tidak pernah disentuh.
+ *
+ * @returns {{ dibuang: string[], alasan: string }}
+ */
+function bersihkanKunciUsang(dir, opsi = {}) {
+  const namaHost = opsi.namaHost || os.hostname();
+  const pidHidup = opsi.pidHidup || pidChromiumHidup;
+  const nama = ["SingletonLock", "SingletonCookie", "SingletonSocket"];
+  const jalurKunci = path.join(dir, "SingletonLock");
+
+  let sasaran = null;
+  try {
+    sasaran = fs.readlinkSync(jalurKunci);
+  } catch (error) {
+    if (error && error.code === "ENOENT") {
+      // Tanpa kunci utama, sisa dua lainnya pun tidak berguna - buang bila ada.
+      sasaran = null;
+      let adaSisa = false;
+      for (const n of nama) {
+        try {
+          fs.lstatSync(path.join(dir, n));
+          adaSisa = true;
+        } catch {
+          /* tidak ada */
+        }
+      }
+      if (!adaSisa) return { dibuang: [], alasan: "" };
+    } else {
+      // Bukan tautan (berkas biasa) atau tidak terbaca: perlakukan sebagai sisa.
+      sasaran = "";
+    }
+  }
+
+  let usang = false;
+  let alasan = "";
+  if (sasaran === null || sasaran === "") {
+    usang = true;
+    alasan = "kunci_tanpa_penunjuk";
+  } else {
+    const cocok = String(sasaran).match(/^(.*)-(\d+)$/);
+    if (!cocok) {
+      usang = true;
+      alasan = "penunjuk_tak_dikenali";
+    } else if (cocok[1] !== namaHost) {
+      usang = true;
+      alasan = "host_berbeda";
+    } else if (!pidHidup(Number(cocok[2]))) {
+      usang = true;
+      alasan = "proses_tidak_ada";
+    }
+  }
+  if (!usang) return { dibuang: [], alasan: "" };
+
+  const dibuang = [];
+  for (const n of nama) {
+    const target = path.join(dir, n);
+    try {
+      fs.lstatSync(target);
+      fs.unlinkSync(target);
+      dibuang.push(n);
+    } catch {
+      /* tidak ada atau tidak dapat dibuang: Chromium sendiri yang akan menolak */
+    }
+  }
+  return { dibuang, alasan };
+}
+
+/** Apakah pid ini proses Chromium yang hidup? (Linux membaca /proc; lainnya: ada saja.) */
+function pidChromiumHidup(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+  } catch (error) {
+    // EPERM berarti ada tetapi bukan milik kita - tetap hidup.
+    if (!error || error.code !== "EPERM") return false;
+  }
+  try {
+    const nama = fs.readFileSync(`/proc/${pid}/comm`, "utf8").trim().toLowerCase();
+    return nama.includes("chrom");
+  } catch {
+    // Tanpa /proc (Windows/macOS) tidak dapat dibedakan: anggap hidup, jangan merusak.
+    return true;
+  }
+}
+
+/**
  * Pilihan peluncuran peramban, sudah termasuk profil yang bertahan.
  *
  * @param {{ headless?: boolean }} opsi
@@ -168,13 +271,22 @@ function launchOptions({ headless = false, slot = SLOT_BAWAAN } = {}) {
   };
 
   const sesi = ensureSessionDir(slot);
-  if (sesi.ok) opsi.userDataDir = sesi.dir;
+  if (sesi.ok) {
+    opsi.userDataDir = sesi.dir;
+    // Sisa kunci dari penutupan mendadak jangan sampai memblokir peluncuran.
+    try {
+      bersihkanKunciUsang(sesi.dir);
+    } catch {
+      /* pembersihan gagal bukan alasan membatalkan peluncuran */
+    }
+  }
   return { opsi, sesi };
 }
 
 module.exports = {
   SLOT_BAWAAN,
   bersihkanSlot,
+  bersihkanKunciUsang,
   clearSession,
   ensureSessionDir,
   launchOptions,

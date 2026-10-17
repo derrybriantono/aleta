@@ -600,6 +600,18 @@ function jalankanSatuPutaran({
       } else if (kode === 0) {
         keadaan.terakhirCatatan = "Selesai.";
         if (slotAkun) ecourtAkunService.tandaiBerhasil(slotAkun);
+        // Cap waktu penarikan berhasil (bertahan antar penyalaan) - dasar
+        // rentang SUSULAN saat server menyala kembali. Hanya putaran yang
+        // memantau dokumen baru (berkala, pagi, susulan) yang dihitung:
+        // tarikan tanpa unduhan (verifikasi harian), satu perkara, dan
+        // pemeliharaan arsip (menyeluruh, belum-ada) tidak menutup celah.
+        if (!tanpaUnduh && !nomorPerkara && ["jadwal", "pagi", "susulan"].includes(sumber)) {
+          try {
+            require("./ecourtPulihService").catatBerhasil({ sumber });
+          } catch {
+            // Mencatat cap waktu bukan syarat penarikan.
+          }
+        }
       } else {
         keadaan.terakhirCatatan = dipaksaBerhenti
           ? `Dihentikan paksa setelah melewati batas ${Math.round(batasPutaran / 60000)} menit.`
@@ -613,6 +625,18 @@ function jalankanSatuPutaran({
       }
 
       bereskan(keadaan.terakhirCatatan);
+      // Sesi habis: minta login lewat WhatsApp (bila dinyalakan). Dipicu SETELAH
+      // kunci dilepas supaya pembukaan peramban login tidak bentrok dengan
+      // penarikan yang baru berhenti.
+      if (kode === 2) {
+        try {
+          void require("./ecourtPulihService")
+            .padaSesiHabis({ sumber: "penarikan" })
+            .catch(() => {});
+        } catch {
+          // Pemulihan lewat WhatsApp bukan syarat penjadwal.
+        }
+      }
       selesai({ dilewati: false, kode, catatan: keadaan.terakhirCatatan });
     });
 
@@ -898,6 +922,18 @@ async function jalankanBerkala(kini) {
   return { ...hasil, sidangDiutamakan: daftar.length };
 }
 
+/**
+ * Pemulihan saat menyala (atau login lewat WhatsApp) sedang memakai profil
+ * peramban - penjadwal menunggu detak berikutnya.
+ */
+function pulihSedangMemakaiProfil() {
+  try {
+    return require("./ecourtPulihService").sedangMemulihkan() === true;
+  } catch {
+    return false;
+  }
+}
+
 /** Satu detak penjadwal (tiap menit). */
 async function detakPenjadwal(kini = new Date()) {
   const pengaturan = getSettings();
@@ -912,7 +948,7 @@ async function detakPenjadwal(kini = new Date()) {
     pengaturan,
     berkalaBerikutnyaMs: keadaan.berkalaBerikutnyaMs,
     terakhirPagiTanggal: String(bacaPagi().tanggal || ""),
-    sibuk: keadaan.sedangPutaranTerjadwal || keadaan.sedangJalan || kunciMasihHidup(),
+    sibuk: keadaan.sedangPutaranTerjadwal || keadaan.sedangJalan || kunciMasihHidup() || pulihSedangMemakaiProfil(),
   });
   if (!keputusan.jalan) return keputusan;
 

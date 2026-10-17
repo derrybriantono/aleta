@@ -5891,6 +5891,18 @@ router.get("/ecourt/pantau-sesi", requireInternalToken, (req, res) => {
   }
 });
 
+/**
+ * Keadaan pemulihan sesi e-Court / login captcha lewat WhatsApp (hanya membaca;
+ * tidak membuka peramban, tidak mengirim apa pun, tidak memuat nomor admin).
+ */
+router.get("/ecourt/wa-sesi", requireInternalToken, (req, res) => {
+  try {
+    res.json({ ok: true, waSesi: require("../services/ecourtPulihService").getStatus() });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 /** Menyimpan pengaturan pemantau sesi. */
 router.post("/ecourt/pantau-sesi", requireInternalToken, (req, res) => {
   try {

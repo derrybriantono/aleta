@@ -344,9 +344,13 @@ async function lewatiGerbang(page) {
  * dan tidak disimpan di mana pun. Setelah page.type selesai, satu-satunya
  * tempat sandi itu berada adalah kolom formulir di halaman e-Court.
  *
+ * jalur: "portal" (bawaan) atau "whatsapp" - hanya untuk catatan jejak;
+ * perilakunya identik. Sandi tidak pernah melewati WhatsApp: pada jalur itu
+ * formulir selalu terisi dari simpanan tersandi (terisiOtomatis).
+ *
  * @returns {Promise<{ ok: boolean, alasan: string }>}
  */
-async function kirimLogin({ email, sandi, captcha } = {}) {
+async function kirimLogin({ email, sandi, captcha, jalur = "portal" } = {}) {
   if (!sesiAktif) {
     return { ok: false, alasan: "sesi_login_kedaluwarsa" };
   }
@@ -420,9 +424,9 @@ async function kirimLogin({ email, sandi, captcha } = {}) {
       eventType: berhasil ? "ecourt_login_berhasil" : "ecourt_login_gagal",
       severity: "warning",
       message: berhasil
-        ? "Sesi e-Court dibuka lewat portal."
-        : "Percobaan login e-Court lewat portal gagal.",
-      metadata: { jalur: "portal", berhasil, jalurMendarat, lewatGerbang },
+        ? `Sesi e-Court dibuka lewat ${jalur === "whatsapp" ? "WhatsApp (jawaban captcha)" : "portal"}.`
+        : `Percobaan login e-Court lewat ${jalur === "whatsapp" ? "WhatsApp" : "portal"} gagal.`,
+      metadata: { jalur: jalur === "whatsapp" ? "whatsapp" : "portal", berhasil, jalurMendarat, lewatGerbang },
     });
 
     if (berhasil) {
