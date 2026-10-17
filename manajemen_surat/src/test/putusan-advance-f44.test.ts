@@ -205,6 +205,8 @@ vi.mock("@/server/modules/aleta-bot/whatsapp-gateway-client", () => ({
   getGatewaySippPutusanSerupa: async () => (keadaan.galat ? { ok: false, error: keadaan.galat } : { ok: true, data: keadaan.serupa }),
 }));
 vi.mock("@/server/modules/aleta-ecourt/pustaka-pertimbangan", () => ({ cariButir: async () => keadaan.butir }));
+// Saklar per akun (17 Okt) diuji di putusan-advance-akun-17okt.test.ts - di sini akun dinyalakan.
+vi.mock("@/server/modules/aleta-ecourt/putusan-advance-akun", () => ({ advanceMenyalaUntuk: async () => true }));
 
 function rtfDari(teks: string): string {
   const isi = teks
