@@ -52,6 +52,9 @@ export type ModuleId =
   // dari jumlahnya. Terpisah dari "statistik" dengan sengaja: statistik
   // menghitung perkara, layar ini menghitung orang.
   | "beban-konseptor"
+  // SKP pegawai (17 Okt 2026): realisasi bulanan/triwulan/tahunan dari SIPP
+  // untuk semua jabatan perkara, isian manual berbukti, target, dan penetapan.
+  | "skp"
   // Peta perkara - sebaran wilayah, faktor perceraian, dan siapa yang
   // mengajukan. Terpisah dari "statistik" sebagaimana beban konseptor:
   // statistik menghitung perkara, ini menghitung ASAL perkara.
@@ -113,6 +116,8 @@ export type PortalAppId =
   | "asisten-hakim"
   // Alat bantu tulis BAS untuk kepaniteraan.
   | "bas"
+  // SKP pegawai: tab yang tampil mengikuti hak (lihat matriks-peran).
+  | "skp"
   | "e-kepegawaian"
   | "e-status"
   | "sipp"

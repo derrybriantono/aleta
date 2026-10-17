@@ -985,6 +985,22 @@ export const modules: ModuleConfig[] = [
     badgeLabel: "Kinerja",
   },
   {
+    // SKP pegawai: layar untuk semua pegawai; tab di dalamnya mengikuti hak
+    // dari server (atasan langsung, Ketua/Wakil/Panitera, administrator).
+    id: "skp",
+    label: "SKP",
+    description: "Sasaran kinerja bulanan, triwulan, dan tahunan dari SIPP, lengkap dengan isian dan bukti dukung.",
+    href: "/skp",
+    icon: "briefcase-business",
+    roleIds: roles.map((role) => role.id),
+    showInHub: true,
+    showInSidebar: true,
+    iconBgClass: "bg-sky-100",
+    iconFgClass: "text-sky-700",
+    cardClass: "border-sky-200/80 bg-sky-50/70",
+    badgeLabel: "Kinerja",
+  },
+  {
     id: "disposisi",
     label: "Disposisi Digital",
     description: "Teruskan disposisi dan pantau penyelesaiannya.",
@@ -1767,6 +1783,18 @@ export const portalApps: PortalAppConfig[] = [
     iconBgClass: "bg-emerald-100 dark:bg-emerald-500/15",
     iconFgClass: "text-emerald-700 dark:text-emerald-200",
     cardClass: "border-emerald-200/80 bg-emerald-50/80 dark:border-emerald-500/20 dark:bg-slate-900/80",
+  },
+  {
+    id: "skp",
+    label: "SKP",
+    description: "Sasaran kinerja pegawai per bulan, triwulan, dan tahun dari SIPP; isian sendiri dengan bukti, persetujuan atasan, dan unduhan PDF/Excel/Word.",
+    href: "/skp",
+    icon: "briefcase-business",
+    roleIds: roles.map((role) => role.id),
+    badgeLabel: "Kinerja",
+    iconBgClass: "bg-sky-100 dark:bg-sky-500/15",
+    iconFgClass: "text-sky-700 dark:text-sky-200",
+    cardClass: "border-sky-200/80 bg-sky-50/80 dark:border-sky-500/20 dark:bg-slate-900/80",
   },
   {
     id: "e-kepegawaian",

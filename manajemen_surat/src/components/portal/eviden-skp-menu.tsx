@@ -8,17 +8,21 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiPath } from "@/lib/base-path";
 import { tanganiUnduhan } from "@/lib/unduh-berkas";
-import type { KunciPeriodeSkp, PeranEvidenSkp } from "@/lib/eviden-skp-tipe";
+import type { PeranEvidenSkp } from "@/lib/eviden-skp-tipe";
+import type { JenisSkpPilihan, KunciPeriodeSkpJabatan } from "@/lib/skp-jabatan-tipe";
 import {
   FORMAT_EVIDEN_SKP,
+  PILIHAN_PERIODE_BULANAN_SKP,
   PILIHAN_PERIODE_EVIDEN_SKP,
   SEBUTAN_FORMAT_EVIDEN_SKP,
   SEMUA_DOKUMEN_EVIDEN_SKP,
   alamatDaftarEvidenSkp,
   alamatUnduhEvidenSkp,
+  alamatUnduhSkp,
   bacaTanggalIso,
-  mulaiPeriodeEvidenSkp,
+  mulaiPeriodeSkpJabatan,
   namaDariDisposition,
+  periodeBulananSkpSah,
   triwulanDariTanggal,
   triwulanSelesaiTerakhir,
   type FormatEvidenSkp,
@@ -51,6 +55,17 @@ import { waktuPengadilan } from "@/lib/waktu-pengadilan";
  *     (telaah 2.40.0): eviden eKinerja diunggah untuk periode yang lewat.
  *   - Catatan untuk PETUGAS (konfigurasi SIPP yang perlu dibetulkan, sumber
  *     data) tampil di sini, terpisah dari yang tercetak di dokumen.
+ *
+ * Tambahan 17 Okt 2026 (SKP jabatan perkara):
+ *
+ *   - Periode BULANAN (Januari-Desember) di samping Triwulan dan Tahunan.
+ *   - Ketua dan Wakil Ketua memilih Jenis SKP: "SKP Hakim" (perilaku lama)
+ *     atau "SKP Pimpinan" (SKP Hakim + RHK pimpinan; tanda tangan pejabat
+ *     penilai di kanan). Hanya bila pemanggil menyalakan `pilihanJenis` -
+ *     hakim biasa tidak melihat pilihan itu sama sekali.
+ *   - Alamat lama (/api/aleta-ecourt/eviden-skp) tetap dipakai untuk hakim
+ *     pada Triwulan/Tahunan; periode bulanan dan SKP Pimpinan memakai
+ *     /api/skp/daftar dan /api/skp/unduh.
  */
 
 type DokumenDaftar = {
@@ -70,6 +85,8 @@ type DaftarEviden = {
   galat: string[];
   /** Untuk petugas - tidak tercetak di dokumen yang ditandatangani. */
   catatanOperator: string[];
+  /** Angka diambil dari penetapan yang sudah dikunci (SKP Pimpinan / jabatan). */
+  dariPenetapan: boolean;
 };
 
 const angka = (n: number) => n.toLocaleString("id-ID");
@@ -98,6 +115,7 @@ function bacaDaftar(data: unknown): DaftarEviden {
       })),
     galat: Array.isArray(d.galat) ? d.galat.map((g) => String(g)).filter(Boolean) : [],
     catatanOperator: Array.isArray(d.catatanOperator) ? d.catatanOperator.map((g) => String(g)).filter(Boolean) : [],
+    dariPenetapan: d.dariPenetapan === true,
   };
 }
 
@@ -158,17 +176,26 @@ function TombolUnduh({ alamat, format, sibuk, label, onUnduh }: TombolUnduhProps
   );
 }
 
+/** Bulan yang dipilih setelah pindah ke "Bulanan": bulan berjalan tahun ini, Desember untuk tahun lalu. */
+function bulanBawaan(tahun: number, hariIni: string): KunciPeriodeSkpJabatan {
+  if (tahun !== Number(hariIni.slice(0, 4))) return "b12";
+  return `b${hariIni.slice(5, 7)}` as KunciPeriodeSkpJabatan;
+}
+
 export function EvidenSkpMenu({
   peran,
   id,
   nama,
   onTutup,
+  pilihanJenis = false,
 }: {
   peran: PeranEvidenSkp;
   id: number;
   /** Nama dari rekap, bila sudah terbaca - hanya untuk judul pop up. */
   nama?: string;
   onTutup: () => void;
+  /** Menampilkan pilihan Jenis SKP (hakim / pimpinan) - hanya untuk Ketua dan Wakil Ketua. */
+  pilihanJenis?: boolean;
 }) {
   const hariIni = waktuPengadilan().tanggal;
   const tahunIni = Number(hariIni.slice(0, 4));
@@ -177,7 +204,10 @@ export function EvidenSkpMenu({
   // berjalan dan Tahunan tetap dapat dipilih.
   const [bawaan] = useState(() => triwulanSelesaiTerakhir(hariIni));
   const [tahun, setTahun] = useState(bawaan.tahun);
-  const [periode, setPeriode] = useState<KunciPeriodeSkp>(bawaan.periode);
+  const [periode, setPeriode] = useState<KunciPeriodeSkpJabatan>(bawaan.periode);
+  const [jenisSkp, setJenisSkp] = useState<JenisSkpPilihan>("hakim");
+  // Tanpa pilihan jenis (hakim biasa) selalu SKP Hakim, walau keadaan lama tersisa.
+  const jenisAktif: JenisSkpPilihan = pilihanJenis ? jenisSkp : "hakim";
   const [tanggal, setTanggal] = useState(hariIni);
   const [daftar, setDaftar] = useState<DaftarEviden | null>(null);
   const [memuat, setMemuat] = useState(false);
@@ -205,7 +235,13 @@ export function EvidenSkpMenu({
       setMemuat(true);
       setGalat("");
       try {
-        const balasan = await fetch(apiPath(alamatDaftarEvidenSkp({ peran, id, tahun, periode })), { cache: "no-store" });
+        // Hakim pada Triwulan/Tahunan tetap lewat rute eviden lama; periode bulanan dan SKP Pimpinan lewat rute SKP.
+        const alamatDaftar = periodeBulananSkpSah(periode)
+          ? alamatUnduhSkp({ jenis: jenisAktif, id, tahun, periode, dokumen: "semua", format: "pdf", dasar: "/api/skp/daftar" })
+          : jenisAktif === "hakim"
+            ? alamatDaftarEvidenSkp({ peran, id, tahun, periode })
+            : alamatUnduhSkp({ jenis: jenisAktif, id, tahun, periode, dokumen: "semua", format: "pdf", dasar: "/api/skp/daftar" });
+        const balasan = await fetch(apiPath(alamatDaftar), { cache: "no-store" });
         const isi = (await balasan.json().catch(() => null)) as {
           ok?: boolean;
           data?: unknown;
@@ -227,7 +263,7 @@ export function EvidenSkpMenu({
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [peran, id, tahun, periode, ulang]);
+  }, [peran, id, tahun, periode, jenisAktif, ulang]);
 
   const unduh = useCallback(async (alamat: string) => {
     setSibuk((s) => ({ ...s, [alamat]: true }));
@@ -277,13 +313,19 @@ export function EvidenSkpMenu({
     }
   };
 
-  const alamatUnduh = (dokumen: string, format: FormatEvidenSkp) =>
-    tanggalSah ? apiPath(alamatUnduhEvidenSkp({ peran, id, tahun, periode, dokumen, format, tanggal: tanggalSah })) : null;
+  const alamatUnduh = (dokumen: string, format: FormatEvidenSkp) => {
+    if (!tanggalSah) return null;
+    if (periodeBulananSkpSah(periode) || jenisAktif !== "hakim") {
+      return apiPath(alamatUnduhSkp({ jenis: jenisAktif, id, tahun, periode, dokumen, format, tanggal: tanggalSah }));
+    }
+    return apiPath(alamatUnduhEvidenSkp({ peran, id, tahun, periode, dokumen, format, tanggal: tanggalSah }));
+  };
 
   const tersedia = daftar?.dokumen.filter((d) => d.tersedia) ?? [];
   const pilihanTahun = Array.from({ length: 6 }, (_, i) => tahunIni - i);
   if (!pilihanTahun.includes(tahun)) pilihanTahun.push(tahun);
   const namaTampil = daftar?.namaOrang || nama || "";
+  const bulananDipilih = periodeBulananSkpSah(periode);
 
   return (
     <div
@@ -309,7 +351,9 @@ export function EvidenSkpMenu({
             </h2>
             <p id={idKeterangan} className="mt-0.5 text-xs text-muted-foreground">
               Bukti dukung SKP{namaTampil ? ` ${namaTampil}` : ""} dari data SIPP, dalam PDF, Excel, atau Word - berkop,
-              dengan tempat tanda tangan hakim (kiri) dan Ketua (kanan).
+              {jenisAktif === "pimpinan"
+                ? " dengan tempat tanda tangan pejabat penilai di kanan."
+                : " dengan tempat tanda tangan hakim (kiri) dan Ketua (kanan)."}
             </p>
           </div>
           <Button ref={tombolTutup} type="button" size="sm" variant="ghost" onClick={onTutup} aria-label="Tutup pop up unduh eviden SKP">
@@ -319,12 +363,31 @@ export function EvidenSkpMenu({
 
         <div className="flex flex-col gap-4 overflow-y-auto px-4 py-3">
           {/* ---- Pilihan ------------------------------------------------ */}
+          {pilihanJenis ? (
+            <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+              Jenis SKP
+              <NativeSelect
+                aria-label="Jenis SKP"
+                value={jenisSkp}
+                onChange={(e) => setJenisSkp(e.target.value as JenisSkpPilihan)}
+                className="h-10 sm:max-w-xs"
+              >
+                <option value="hakim">SKP Hakim</option>
+                <option value="pimpinan">SKP Pimpinan</option>
+              </NativeSelect>
+              <span className="font-normal">
+                {jenisSkp === "pimpinan"
+                  ? "SKP Hakim ditambah rencana hasil kerja pimpinan; tanda tangan pejabat penilai di kanan. Pilih ini di halaman Rekap Hakim Anda sendiri."
+                  : "SKP sebagai hakim, seperti biasa."}
+              </span>
+            </label>
+          ) : null}
           <fieldset className="flex flex-col gap-1.5">
             <legend className="mb-1 text-xs font-medium text-muted-foreground">Periode</legend>
             <div className="flex flex-wrap gap-1.5">
               {PILIHAN_PERIODE_EVIDEN_SKP.map((p) => {
                 // Periode yang belum dimulai ditolak rutenya - tidak dapat dipilih.
-                const belumMulai = mulaiPeriodeEvidenSkp(p.kunci, tahun) > hariIni;
+                const belumMulai = mulaiPeriodeSkpJabatan(p.kunci, tahun) > hariIni;
                 return (
                   <label
                     key={p.kunci}
@@ -351,7 +414,42 @@ export function EvidenSkpMenu({
                   </label>
                 );
               })}
+              <label
+                className={cn(
+                  "cursor-pointer rounded-lg border px-3 py-1.5 text-sm transition focus-within:ring-2 focus-within:ring-ring",
+                  bulananDipilih
+                    ? "border-primary bg-primary/10 font-semibold text-foreground"
+                    : "border-border bg-card text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                )}
+              >
+                <input
+                  type="radio"
+                  name="periode-eviden-skp"
+                  value="bulanan"
+                  checked={bulananDipilih}
+                  onChange={() => setPeriode(bulanBawaan(tahun, hariIni))}
+                  className="sr-only"
+                />
+                Bulanan
+              </label>
             </div>
+            {bulananDipilih ? (
+              <label className="mt-1 flex flex-col gap-1 text-xs font-medium text-muted-foreground sm:max-w-xs">
+                Bulan
+                <NativeSelect
+                  aria-label="Bulan SKP"
+                  value={periode}
+                  onChange={(e) => setPeriode(e.target.value as KunciPeriodeSkpJabatan)}
+                  className="h-10"
+                >
+                  {PILIHAN_PERIODE_BULANAN_SKP.map((b) => (
+                    <option key={b.kunci} value={b.kunci} disabled={mulaiPeriodeSkpJabatan(b.kunci, tahun) > hariIni}>
+                      {b.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </label>
+            ) : null}
           </fieldset>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -365,8 +463,14 @@ export function EvidenSkpMenu({
                   setTahun(baru);
                   // Triwulan yang dipilih bisa belum dimulai di tahun baru - kembali ke triwulan terakhir
                   // yang selesai bila ada di tahun itu, selainnya ke triwulan berjalan.
-                  if (mulaiPeriodeEvidenSkp(periode, baru) > hariIni) {
-                    setPeriode(bawaan.tahun === baru ? bawaan.periode : triwulanDariTanggal(hariIni));
+                  if (mulaiPeriodeSkpJabatan(periode, baru) > hariIni) {
+                    setPeriode(
+                      periodeBulananSkpSah(periode)
+                        ? bulanBawaan(baru, hariIni)
+                        : bawaan.tahun === baru
+                          ? bawaan.periode
+                          : triwulanDariTanggal(hariIni)
+                    );
                   }
                 }}
                 className="h-10"
@@ -389,7 +493,9 @@ export function EvidenSkpMenu({
                 aria-invalid={!tanggalSah || undefined}
               />
               <span className={cn("font-normal", tanggalSah ? "text-muted-foreground" : "text-destructive")}>
-                {tanggalSah ? `Tercetak "${tanggalPanjang(tanggalSah)}" di atas tanda tangan Ketua.` : "Tanggal belum sah - tombol unduh dinonaktifkan."}
+                {tanggalSah
+                  ? `Tercetak "${tanggalPanjang(tanggalSah)}" di atas tanda tangan ${jenisAktif === "pimpinan" ? "pejabat penilai" : "Ketua"}.`
+                  : "Tanggal belum sah - tombol unduh dinonaktifkan."}
               </span>
             </label>
           </div>
@@ -425,13 +531,21 @@ export function EvidenSkpMenu({
             <div className={cn("flex flex-col gap-3", memuat && "opacity-60")} aria-busy={memuat || undefined}>
               <div className="flex flex-col gap-1 text-xs text-muted-foreground">
                 {daftar.labelPeriode ? <p>Periode: {daftar.labelPeriode}</p> : null}
-                <p className="flex items-start gap-1.5">
-                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-                  {/* Tanpa titik penutup: nama bergelar sudah berakhir titik ("M.H."). */}
-                  {daftar.namaKetua
-                    ? `Mengetahui: ${daftar.namaKetua}`
-                    : "Nama Ketua tidak terbaca dari SIPP - tempat tanda tangan Ketua dicetak titik-titik untuk diisi tangan."}
-                </p>
+                {jenisAktif === "hakim" ? (
+                  <p className="flex items-start gap-1.5">
+                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                    {/* Tanpa titik penutup: nama bergelar sudah berakhir titik ("M.H."). */}
+                    {daftar.namaKetua
+                      ? `Mengetahui: ${daftar.namaKetua}`
+                      : "Nama Ketua tidak terbaca dari SIPP - tempat tanda tangan Ketua dicetak titik-titik untuk diisi tangan."}
+                  </p>
+                ) : null}
+                {daftar.dariPenetapan ? (
+                  <p className="flex items-start gap-1.5">
+                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                    Angka pada dokumen ini diambil dari penetapan yang sudah dikunci dan tidak berubah lagi.
+                  </p>
+                ) : null}
               </div>
 
               {daftar.galat.length > 0 ? (

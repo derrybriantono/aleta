@@ -376,6 +376,12 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // 17 Oktober 2026 (0069): identitas satker & logo kop untuk blangko ABT
   // (satu baris). Tanpa kunci asing - urutannya bebas.
   "aleta_identitas_satker",
+  // 17 Oktober 2026 (0070): SKP jabatan perkara - pemetaan akun SIPP ke pegawai,
+  // target, isian manual, dan penetapan. Tanpa kunci asing - urutannya bebas.
+  "aleta_skp_akun_pegawai",
+  "aleta_skp_target",
+  "aleta_skp_isian",
+  "aleta_skp_penetapan",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

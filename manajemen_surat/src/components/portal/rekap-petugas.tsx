@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ExternalLink, FileDown, Info } from "lucide-react";
 
 import { EvidenSkpMenu } from "@/components/portal/eviden-skp-menu";
+import { useBolehPilihJenisSkp } from "@/components/portal/skp-umum";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -212,6 +213,8 @@ export function RekapPetugas({ peran, id }: { peran: string; id: string }) {
   const nomorMinta = useRef(0);
   // Pop up Unduh eviden SKP (2.40.0) - fokus kembali ke tombolnya saat ditutup.
   const [bukaEviden, setBukaEviden] = useState(false);
+  // Pilihan "Jenis SKP" (SKP Hakim / SKP Pimpinan) hanya untuk Ketua dan Wakil Ketua.
+  const bolehPilihJenisSkp = useBolehPilihJenisSkp();
   const tombolEviden = useRef<HTMLButtonElement>(null);
   const tutupEviden = useCallback(() => {
     setBukaEviden(false);
@@ -862,7 +865,7 @@ export function RekapPetugas({ peran, id }: { peran: string; id: string }) {
       ) : null}
 
       {bukaEviden && peranEvidenSkpSah(peranSah) ? (
-        <EvidenSkpMenu peran={peranSah} id={idSah} nama={identitas?.nama} onTutup={tutupEviden} />
+        <EvidenSkpMenu peran={peranSah} id={idSah} nama={identitas?.nama} onTutup={tutupEviden} pilihanJenis={bolehPilihJenisSkp} />
       ) : null}
     </div>
   );

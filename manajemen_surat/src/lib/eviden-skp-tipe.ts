@@ -21,6 +21,8 @@
  * disebut di `galat` dan nilainya null - jangan dijadikan false/0 diam-diam.
  */
 
+import type { KunciBulanSkp } from "@/lib/skp-jabatan-tipe";
+
 /** Peran yang didukung. Sementara hanya hakim; panitera dan juru sita menyusul. */
 export type PeranEvidenSkp = "hakim";
 
@@ -28,7 +30,11 @@ export type PeranEvidenSkp = "hakim";
 export type KunciPeriodeSkp = "tw1" | "tw2" | "tw3" | "tw4" | "tahun";
 
 export type PeriodeSkp = {
-  kunci: KunciPeriodeSkp;
+  /**
+   * tw1..tw4|tahun (jalur hakim lama) atau b01..b12 (SKP bulanan, 2026-10-17).
+   * Penggambar tidak membaca kunci ini; yang dipakai label dan rentangnya.
+   */
+  kunci: KunciPeriodeSkp | KunciBulanSkp;
   tahun: number;
   /** "Triwulan II" / "Tahunan". */
   label: string;
@@ -36,7 +42,7 @@ export type PeriodeSkp = {
   labelPanjang: string;
   mulai: string;
   selesai: string;
-  /** Lama periode dalam bulan (3 atau 12) - realisasi aspek Waktu SKP. */
+  /** Lama periode dalam bulan (1, 3, atau 12) - realisasi aspek Waktu SKP. */
   bulan: number;
 };
 
@@ -208,6 +214,16 @@ export type PaketEvidenSkp = {
   dokumen: DokumenEvidenSkp[];
   galat: string[];
   dihitungPada: string;
+  /**
+   * Baris identitas tambahan sesudah Unit Kerja (mis. Pejabat Penilai pada
+   * Lembar SKP). Kosong/tidak ada = tanpa baris tambahan (eviden hakim lama).
+   */
+  identitasTambahan?: Array<{ label: string; nilai: string }>;
+  /**
+   * Baris pembuka tanda tangan kanan. Tidak ada = "Mengetahui," (eviden
+   * hakim lama); Lembar SKP memakai "Pejabat Penilai Kinerja,".
+   */
+  sebutanKanan?: string;
 };
 
 export type DataEvidenSkp = {

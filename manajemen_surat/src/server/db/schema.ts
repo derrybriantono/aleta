@@ -586,6 +586,85 @@ export const DDL_IDENTITAS_SATKER = {
   ],
 } as const;
 
+/**
+ * SKP jabatan perkara (0070, 17 Okt 2026, rancangan disetujui pengguna):
+ * pemetaan akun SIPP ke pegawai (bertanggal), target, isian manual, dan
+ * tangkapan realisasi yang dikunci. Cermin PERSIS dari
+ * drizzle/0070_aleta_skp_jabatan.sql; penjaga skp-server-hak.test.ts
+ * membandingkan keduanya. Tanpa kunci asing.
+ */
+export const DDL_SKP_JABATAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_skp_akun_pegawai (
+  id TEXT PRIMARY KEY,
+  username_sipp TEXT NOT NULL,
+  user_id_sipp TEXT NOT NULL DEFAULT '',
+  user_id TEXT NOT NULL,
+  jabatan_utama TEXT NOT NULL DEFAULT '',
+  jabatan_tambahan_json TEXT NOT NULL DEFAULT '[]',
+  berlaku_dari TEXT NOT NULL,
+  berlaku_sampai TEXT NOT NULL DEFAULT '',
+  dikonfirmasi_oleh_id TEXT NOT NULL DEFAULT '',
+  dikonfirmasi_pada TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  diperbarui_pada TEXT NOT NULL
+)`,
+    `CREATE INDEX IF NOT EXISTS idx_aleta_skp_akun_pegawai_user ON aleta_skp_akun_pegawai(user_id, berlaku_dari)`,
+    `CREATE INDEX IF NOT EXISTS idx_aleta_skp_akun_pegawai_username ON aleta_skp_akun_pegawai(username_sipp, berlaku_dari)`,
+    `CREATE TABLE IF NOT EXISTS aleta_skp_target (
+  id TEXT PRIMARY KEY,
+  jabatan TEXT NOT NULL,
+  tahun INTEGER NOT NULL,
+  kunci_rhk TEXT NOT NULL,
+  kunci_indikator TEXT NOT NULL,
+  target_nilai REAL,
+  target_teks TEXT NOT NULL DEFAULT '',
+  satuan TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'usulan',
+  diubah_oleh_id TEXT NOT NULL DEFAULT '',
+  diubah_pada TEXT NOT NULL
+)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS ux_aleta_skp_target ON aleta_skp_target(jabatan, tahun, kunci_rhk, kunci_indikator)`,
+    `CREATE TABLE IF NOT EXISTS aleta_skp_isian (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  periode TEXT NOT NULL,
+  tahun INTEGER NOT NULL,
+  kunci_rhk TEXT NOT NULL,
+  kunci_indikator TEXT NOT NULL DEFAULT '',
+  nilai REAL,
+  nilai_teks TEXT NOT NULL DEFAULT '',
+  catatan TEXT NOT NULL DEFAULT '',
+  bukti_json TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL DEFAULT 'draf',
+  diisi_oleh_id TEXT NOT NULL DEFAULT '',
+  diajukan_pada TEXT NOT NULL DEFAULT '',
+  ditinjau_oleh_id TEXT NOT NULL DEFAULT '',
+  ditinjau_pada TEXT NOT NULL DEFAULT '',
+  catatan_tinjauan TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  diperbarui_pada TEXT NOT NULL
+)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS ux_aleta_skp_isian ON aleta_skp_isian(user_id, periode, tahun, kunci_rhk, kunci_indikator)`,
+    `CREATE TABLE IF NOT EXISTS aleta_skp_penetapan (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  periode TEXT NOT NULL,
+  tahun INTEGER NOT NULL,
+  tangkapan_json TEXT NOT NULL DEFAULT '{}',
+  dihitung_pada TEXT NOT NULL,
+  pejabat_penilai_id TEXT NOT NULL DEFAULT '',
+  pejabat_penilai_nama TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'draf',
+  dikunci_oleh_id TEXT NOT NULL DEFAULT '',
+  dikunci_pada TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL
+)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS ux_aleta_skp_penetapan ON aleta_skp_penetapan(user_id, jenis, periode, tahun)`,
+  ],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -1599,6 +1678,8 @@ const schemaStatements = [
   ...DDL_AGEN_H7.tabel,
   // Identitas satker & logo kop untuk blangko ABT (0069).
   ...DDL_IDENTITAS_SATKER.tabel,
+  // SKP jabatan perkara: pemetaan akun, target, isian, penetapan (0070).
+  ...DDL_SKP_JABATAN.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,

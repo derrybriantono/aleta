@@ -42,6 +42,9 @@ describe("keterjangkauan aplikasi portal", () => {
     // hari sidang, jadi ia memang harus ada di daftar bawaan.
     "perkara",
     "sipp",
+    // SKP pegawai (17 Okt 2026): setiap pegawai melihat SKP-nya sendiri; tab
+    // di dalam layarnya yang mengikuti hak dari server.
+    "skp",
   ];
 
   it("daftar aplikasi yang terlihat pegawai tidak berubah tanpa sengaja", () => {
