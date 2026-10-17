@@ -15,6 +15,7 @@ import { bacaLogoKop, susunUnduhanEvidenSkp } from "@/server/modules/aleta-ecour
 import { getInstitutionIdentityFromDb } from "@/server/modules/settings/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { appendAuditLog } from "@/server/shared/audit";
+import { bukanJenisHakim, tanganiUnduhSkp } from "@/server/modules/skp/rute";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { getAttachmentSecurityHeaders } from "@/server/shared/download-headers";
 import { ApiError } from "@/server/shared/errors";
@@ -48,6 +49,9 @@ export const dynamic = "force-dynamic";
  * mana - bukan hanya yang gagal.
  */
 export async function GET(request: NextRequest) {
+  // SKP Pimpinan (Ketua/Wakil) dan SKP jabatan perkara: penangan SKP bersama.
+  // Tanpa ?jenis= (atau jenis=hakim) kode di bawah berjalan persis seperti dulu.
+  if (bukanJenisHakim(request)) return tanganiUnduhSkp(request);
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
   let actorUserId: string | null = null;
   try {

@@ -5,6 +5,7 @@ import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { ambilDataEvidenSkp, bacaPermintaanEvidenSkp } from "@/server/modules/aleta-ecourt/eviden-skp-data";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
+import { bukanJenisHakim, tanganiDaftarSkp } from "@/server/modules/skp/rute";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ApiError } from "@/server/shared/errors";
 import { ok } from "@/server/shared/http";
@@ -29,6 +30,9 @@ export const dynamic = "force-dynamic";
  * (ambilDataEvidenSkp), bukan dibungkus 200.
  */
 export async function GET(request: NextRequest) {
+  // SKP Pimpinan (Ketua/Wakil) dan SKP jabatan perkara: penangan SKP bersama.
+  // Tanpa ?jenis= (atau jenis=hakim) kode di bawah berjalan persis seperti dulu.
+  if (bukanJenisHakim(request)) return tanganiDaftarSkp(request);
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
   let actorUserId: string | null = null;
   try {

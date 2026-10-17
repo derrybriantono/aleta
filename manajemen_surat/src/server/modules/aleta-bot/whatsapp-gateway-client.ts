@@ -16,7 +16,8 @@ export type CaraRelaas = {
 };
 
 import type { AletaBotSnapshot, AletaBotDeadLetter, AletaBotWorkerState } from "@/lib/aleta-bot-types";
-import type { DataEvidenSkp, KunciPeriodeSkp, PeranEvidenSkp } from "@/lib/eviden-skp-tipe";
+import type { DataEvidenSkp, PeranEvidenSkp } from "@/lib/eviden-skp-tipe";
+import type { DataSkpJabatan, JabatanSkp, KunciPeriodeSkpJabatan } from "@/lib/skp-jabatan-tipe";
 import type { PermintaanRekap, RekapPetugas } from "@/lib/rekap-petugas";
 import type { WaktuAntrian } from "@/lib/tiga-jarak-sidang";
 import type { PembebananIkrar } from "@/lib/pembebanan-ikrar";
@@ -2229,10 +2230,36 @@ export async function getGatewayEvidenSkp(p: {
   peran: PeranEvidenSkp;
   id: string;
   tahun: number;
-  periode: KunciPeriodeSkp;
+  /** tw1..tw4|tahun (jalur lama) atau b01..b12 (SKP bulanan, 17 Okt 2026). */
+  periode: KunciPeriodeSkpJabatan;
 }): Promise<GatewayResult<DataEvidenSkp>> {
   const kueri = new URLSearchParams({ peran: p.peran, id: String(p.id), tahun: String(p.tahun), periode: p.periode });
   return gatewayFetch(`/internal/aleta-bot/sipp/eviden-skp?${kueri.toString()}`, {
+    timeoutMs: TIMEOUT_PENILAIAN_MS,
+  });
+}
+
+/**
+ * Fakta SKP jabatan perkara (Panitera, Panmud, PP, Jurusita, Kasir, Meja,
+ * Operator, Ketua/Wakil) untuk satu periode - rute bot GET /sipp/skp-jabatan,
+ * bentuk jawaban DataSkpJabatan (lib/skp-jabatan-tipe.ts). Hanya SELECT di
+ * sisi bot.
+ *
+ * `username` DIULANG per akun (?username=a&username=b), tidak digabung dengan
+ * koma: nama akun SIPP boleh memuat koma (mis. "munifa,SH."). `jabatan` memberi
+ * tahu bot indikator mana yang dibaca untuk akun tanpa grup SIPP (Meja,
+ * Operator). Batas waktu penilaian sama dengan eviden SKP hakim.
+ */
+export async function getGatewaySkpJabatan(p: {
+  tahun: number;
+  periode: KunciPeriodeSkpJabatan;
+  jabatan: JabatanSkp | null;
+  username: readonly string[];
+}): Promise<GatewayResult<DataSkpJabatan>> {
+  const kueri = new URLSearchParams({ tahun: String(p.tahun), periode: p.periode });
+  if (p.jabatan) kueri.set("jabatan", p.jabatan);
+  for (const u of p.username) kueri.append("username", u);
+  return gatewayFetch(`/internal/aleta-bot/sipp/skp-jabatan?${kueri.toString()}`, {
     timeoutMs: TIMEOUT_PENILAIAN_MS,
   });
 }

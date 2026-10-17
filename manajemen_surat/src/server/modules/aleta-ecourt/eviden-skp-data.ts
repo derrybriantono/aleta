@@ -2,12 +2,15 @@ import type { DataEvidenSkp, KunciPeriodeSkp, PeranEvidenSkp } from "@/lib/evide
 import {
   PESAN_PERIODE_BELUM_DIMULAI,
   mulaiPeriodeEvidenSkp,
+  mulaiPeriodeSkpJabatan,
   periodeEvidenSkpSah,
+  periodeSkpJabatanSah,
   peranEvidenSkpSah,
 } from "@/lib/eviden-skp-unduh";
 import { bacaIdSipp } from "@/lib/rekap-petugas";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
-import { getGatewayEvidenSkp } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import type { DataSkpJabatan, JabatanSkp, KunciPeriodeSkpJabatan } from "@/lib/skp-jabatan-tipe";
+import { getGatewayEvidenSkp, getGatewaySkpJabatan } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 
 /**
  * ============================================================================
@@ -134,6 +137,101 @@ export async function ambilDataEvidenSkp(p: {
       ok: false,
       status: 502,
       alasan: "Jawaban ALETA Bot bukan data eviden SKP - kemungkinan bot masih versi lama dan perlu dibangun ulang.",
+    };
+  }
+  return { ok: true, data: hasil.data };
+}
+
+// ============================================================================
+// SKP BULANAN DAN SKP JABATAN PERKARA (17 Oktober 2026)
+// ============================================================================
+//
+// Tambahan MURNI: ambilDataEvidenSkp di atas tidak berubah (periode tw/tahun,
+// hakim lama). Dua fungsi ini dipakai rute /api/skp.
+
+/**
+ * Seperti ambilDataEvidenSkp tetapi menerima periode bulanan b01..b12 juga.
+ * Dipakai SKP Pimpinan (Ketua/Wakil) dan unduhan hakim bulanan.
+ */
+export async function ambilDataEvidenSkpPeriode(p: {
+  peran: PeranEvidenSkp;
+  id: string;
+  tahun: number;
+  periode: KunciPeriodeSkpJabatan;
+}): Promise<HasilDataEvidenSkp> {
+  if (!peranEvidenSkpSah(p.peran)) {
+    return { ok: false, status: 400, alasan: "Peran eviden SKP yang dapat diunduh saat ini hanya hakim." };
+  }
+  if (bacaIdSipp(p.id) === null) return { ok: false, status: 400, alasan: "ID SIPP harus bilangan bulat positif." };
+  if (!Number.isInteger(p.tahun) || p.tahun < 2000 || p.tahun > 2100) {
+    return { ok: false, status: 400, alasan: "Tahun harus empat angka antara 2000 dan 2100." };
+  }
+  if (!periodeSkpJabatanSah(p.periode)) {
+    return { ok: false, status: 400, alasan: "Periode harus b01 sampai b12, tw1, tw2, tw3, tw4, atau tahun." };
+  }
+  const hasil = await getGatewayEvidenSkp({ peran: p.peran, id: String(bacaIdSipp(p.id)), tahun: p.tahun, periode: p.periode });
+  if (!hasil.ok) {
+    const alasan = String(hasil.error || "").trim() || "ALETA Bot belum dapat dihubungi.";
+    return { ok: false, status: statusGagalEvidenSkp(alasan), alasan };
+  }
+  if (!bentuknyaData(hasil.data)) {
+    return {
+      ok: false,
+      status: 502,
+      alasan: "Jawaban ALETA Bot bukan data eviden SKP - kemungkinan bot masih versi lama dan perlu dibangun ulang.",
+    };
+  }
+  return { ok: true, data: hasil.data };
+}
+
+export type HasilDataSkpJabatan =
+  | { ok: true; data: DataSkpJabatan }
+  | { ok: false; status: number; alasan: string };
+
+function bentuknyaDataJabatan(nilai: unknown): nilai is DataSkpJabatan {
+  const d = nilai as Partial<DataSkpJabatan> | null;
+  return Boolean(
+    d &&
+      d.ok === true &&
+      Array.isArray(d.akun) &&
+      Array.isArray(d.galat) &&
+      Array.isArray(d.catatan) &&
+      d.periode &&
+      typeof d.periode.mulai === "string" &&
+      typeof d.periode.selesai === "string"
+  );
+}
+
+/**
+ * Fakta SKP jabatan dari bot (rute /sipp/skp-jabatan). Kegagalan selalu
+ * { ok:false, status, alasan } dengan kalimat untuk petugas, sama dengan
+ * ambilDataEvidenSkp. `username` kosong = bot membaca semua akun jabatan itu.
+ */
+export async function ambilDataSkpJabatan(p: {
+  tahun: number;
+  periode: KunciPeriodeSkpJabatan;
+  jabatan: JabatanSkp | null;
+  username: readonly string[];
+}): Promise<HasilDataSkpJabatan> {
+  if (!Number.isInteger(p.tahun) || p.tahun < 2000 || p.tahun > 2100) {
+    return { ok: false, status: 400, alasan: "Tahun harus empat angka antara 2000 dan 2100." };
+  }
+  if (!periodeSkpJabatanSah(p.periode)) {
+    return { ok: false, status: 400, alasan: "Periode harus b01 sampai b12, tw1, tw2, tw3, tw4, atau tahun." };
+  }
+  if (mulaiPeriodeSkpJabatan(p.periode, p.tahun) > waktuPengadilan().tanggal) {
+    return { ok: false, status: 400, alasan: PESAN_PERIODE_BELUM_DIMULAI };
+  }
+  const hasil = await getGatewaySkpJabatan(p);
+  if (!hasil.ok) {
+    const alasan = String(hasil.error || "").trim() || "ALETA Bot belum dapat dihubungi.";
+    return { ok: false, status: statusGagalEvidenSkp(alasan), alasan };
+  }
+  if (!bentuknyaDataJabatan(hasil.data)) {
+    return {
+      ok: false,
+      status: 502,
+      alasan: "Jawaban ALETA Bot bukan data SKP jabatan - kemungkinan bot masih versi lama dan perlu dibangun ulang.",
     };
   }
   return { ok: true, data: hasil.data };
