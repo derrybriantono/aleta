@@ -5,9 +5,9 @@ import { gatewayPegawaiPenunjukan } from "@/server/modules/aleta-bot/whatsapp-ga
 import {
   bacaHariSidang,
   NAMA_HARI,
-  SK_BERLAKU,
   simpanHariSidang,
 } from "@/server/modules/aleta-ecourt/penunjukan-pengaturan";
+import { bacaSkMajelis } from "@/server/modules/pengaturan-abt/nomor-sk-sumber";
 import { getPositionsFromDb } from "@/server/modules/organization/service";
 import { listUsersFromDb } from "@/server/modules/users/service";
 import { getRoleLabel } from "@/lib/permissions";
@@ -93,12 +93,14 @@ export async function GET(request: NextRequest) {
       akun,
       akunAlasan,
       namaHari: NAMA_HARI,
-      skBerlaku: SK_BERLAKU,
+      skBerlaku: await bacaSkMajelis(db),
       // Gagalnya bot TIDAK menggagalkan layar: susunan yang sudah tersimpan
       // tetap terbaca dan tetap dapat disunting hari/kodenya. Yang hilang
       // hanya kemampuan mengikat ke orang, dan itu disebutkan apa adanya.
       pegawaiTerbaca: pegawai.ok === true,
       pegawaiAlasan: pegawai.ok ? "" : String(pegawai.error || "aleta_bot tidak dapat dihubungi"),
+      // SK majelis tetap yang tercatat di SIPP (baca saja) - pilihan pengecualian di layar.
+      skTetap: (pegawai.ok ? (pegawai.data?.skTetap ?? []) : []) as unknown[],
       hakim: (pegawai.ok ? (pegawai.data?.hakim ?? []) : []) as unknown[],
       panitera: (pegawai.ok ? (pegawai.data?.panitera ?? []) : []) as unknown[],
     });
@@ -140,8 +142,9 @@ export async function POST(request: NextRequest) {
       // dapat ditautkan apabila masuk majelis" berlaku, bukan sekadar
       // dianjurkan.
       akunId: String(badan.akunId ?? ""),
-      skNomor: String(badan.skNomor ?? ""),
-      skTanggal: String(badan.skTanggal ?? ""),
+      // Pengecualian SK per majelis: tidak dikirim = biarkan; "" keduanya = ikut SK bawaan.
+      skNomor: badan.skNomor === undefined ? undefined : String(badan.skNomor ?? ""),
+      skTanggal: badan.skTanggal === undefined ? undefined : String(badan.skTanggal ?? ""),
       keterangan: String(badan.keterangan ?? ""),
     });
 

@@ -118,6 +118,22 @@ describe("tidak ada jalan menautkan di luar majelis", () => {
   });
 });
 
+describe("SK per majelis tetap bisa diisi sebagai pengecualian (17 Okt 2026)", () => {
+  it("layar mengirim nomor & tanggal SK majelis dan menawarkan SK dari SIPP; rute meneruskannya", () => {
+    expect(layar).toContain("skNomor: gabung.skIkutBawaan ? \"\" : gabung.skNomor");
+    expect(layar).toContain("skTanggal: gabung.skIkutBawaan ? \"\" : gabung.skTanggal");
+    expect(layar).toContain("ikut SK bawaan");
+    expect(layar).toContain("Pilih dari SK di SIPP");
+    expect(rute).toContain("badan.skNomor === undefined ? undefined : String(badan.skNomor ?? \"\")");
+    expect(rute).toContain("skTetap:");
+  });
+
+  it("baris majelis menyimpan pengecualian; kosong = ikut SK bawaan", () => {
+    expect(layanan).toContain("sk_nomor = excluded.sk_nomor");
+    expect(layanan).toContain("skIkutBawaan: true");
+  });
+});
+
 describe("bentuknya berpasangan", () => {
   it("dibaca sebagai pasangan kode=akun", () => {
     expect(layanan).toContain("function bacaPasanganAkun(tersimpan: string)");

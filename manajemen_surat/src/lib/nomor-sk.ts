@@ -18,35 +18,31 @@ import { tanggalPanjang, tanggalSah } from "@/lib/tanggal-indonesia";
 
 export type ButirNomorSk = {
   kunci: string;
-  /** Variabel ABT yang menampung nilainya. */
+  /** Variabel ABT yang menampung nomornya. */
   noVar: string;
+  /** Variabel ABT yang menampung tanggalnya, ditulis "27 Agustus 2026" (tanggalPanjang). */
+  noVarTanggal: string;
   label: string;
   keterangan: string;
   bawaanNomor: string;
-  /** ISO yyyy-mm-dd; "" = tanpa tanggal. */
+  /** ISO yyyy-mm-dd. */
   bawaanTanggal: string;
-  /**
-   * true: variabel ABT memuat "<nomor> tanggal <tanggal panjang>". false (bawaan #9550#):
-   * hanya nomornya - tanggal SK tetap tertulis di kalimat blangko, jadi isian tanggal
-   * disembunyikan di layar. Dicocokkan dengan paket blangko yang membuat variabelnya.
-   */
-  sertakanTanggal: boolean;
 };
 
 export const DAFTAR_NOMOR_SK: readonly ButirNomorSk[] = [
   {
     kunci: "majelis",
     noVar: "9550",
+    noVarTanggal: "9551",
     label: "SK susunan majelis hakim dan panitera pengganti",
     keterangan: 'Dipakai pada kalimat "Memperhatikan Surat Keputusan ... Nomor ..." di penetapan majelis hakim (PMH).',
     bawaanNomor: "254/KPA.W19-A5/SK.HK2.6/VIII/2026",
-    bawaanTanggal: "",
-    sertakanTanggal: false,
+    bawaanTanggal: "2026-08-27",
   },
 ];
 
 /** Nomor variabel ABT yang boleh ditulis lewat jalur nomor SK. */
-export const NOMOR_VAR_SK: ReadonlySet<string> = new Set(DAFTAR_NOMOR_SK.map((b) => b.noVar));
+export const NOMOR_VAR_SK: ReadonlySet<string> = new Set(DAFTAR_NOMOR_SK.flatMap((b) => [b.noVar, b.noVarTanggal]));
 
 export type NilaiNomorSk = { nomor: string; tanggal: string };
 export type PengaturanNomorSk = Record<string, NilaiNomorSk>;
@@ -63,11 +59,14 @@ export function nomorSkBawaan(): PengaturanNomorSk {
   return Object.fromEntries(Object.entries(NOMOR_SK_BAWAAN).map(([k, v]) => [k, { ...v }]));
 }
 
-/** Teks yang ditulis ke variabel ABT untuk satu butir. */
-export function nilaiLiteral(butir: ButirNomorSk, nilai: NilaiNomorSk): string {
-  const nomor = nilai.nomor.trim();
-  if (butir.sertakanTanggal && nilai.tanggal && tanggalSah(nilai.tanggal)) return `${nomor} tanggal ${tanggalPanjang(nilai.tanggal)}`;
-  return nomor;
+/** Teks nomor yang ditulis ke variabel ABT (#9550#). */
+export function nilaiLiteral(_butir: ButirNomorSk, nilai: NilaiNomorSk): string {
+  return nilai.nomor.trim();
+}
+
+/** Teks tanggal yang ditulis ke variabel ABT (#9551#): "27 Agustus 2026". "" bila belum sah. */
+export function nilaiLiteralTanggal(nilai: NilaiNomorSk): string {
+  return tanggalSah(nilai.tanggal) ? tanggalPanjang(nilai.tanggal) : "";
 }
 
 /**
@@ -87,7 +86,8 @@ export function bersihkanNilaiNomorSk(butir: ButirNomorSk, masukan: unknown): Ni
   if (nomor.length > BATAS_NOMOR_SK) throw new GalatNomorSk(`${label} terlalu panjang (lebih dari ${BATAS_NOMOR_SK} huruf).`);
   if (hurufDiluarLatin1(nomor).length) throw new GalatNomorSk(`${label} memuat huruf yang tidak dapat disimpan ABT.`);
   if (/[\\#"']/.test(nomor)) throw new GalatNomorSk(`${label} tidak boleh memuat tanda #, tanda kutip (" atau '), atau garis miring terbalik.`);
-  if (tanggal && !tanggalSah(tanggal)) throw new GalatNomorSk(`Tanggal SK untuk ${butir.label} tidak sah.`);
+  if (!tanggal) throw new GalatNomorSk(`Tanggal ${butir.label} tidak boleh kosong.`);
+  if (!tanggalSah(tanggal)) throw new GalatNomorSk(`Tanggal ${butir.label} tidak sah.`);
   return { nomor, tanggal };
 }
 

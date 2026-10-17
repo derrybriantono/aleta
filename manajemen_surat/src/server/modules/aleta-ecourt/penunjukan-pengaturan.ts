@@ -1,6 +1,8 @@
 import { isPrivilegedAdmin } from "@/lib/permissions";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
 import { requireActorUser } from "@/server/modules/organization/service";
+import { bacaSkMajelis } from "@/server/modules/pengaturan-abt/nomor-sk-sumber";
+import { tanggalSah } from "@/lib/tanggal-indonesia";
 import { ApiError } from "@/server/shared/errors";
 
 /**
@@ -50,12 +52,14 @@ export const NAMA_HARI = [
  * SK YANG SEDANG BERLAKU
  * ============================================================================
  *
- * Keputusan Ketua Pengadilan Agama Donggala
- * Nomor 254/KPA-W19-A5/SK.HK2.6/V/2026, tanggal 27 Agustus 2026, Lampiran I.
+ * Keputusan Ketua Pengadilan Agama Donggala, Lampiran I.
  *
- * Dipakai hanya sebagai NILAI AWAL. Begitu ada baris tersimpan, baris itulah
- * yang berlaku - SK berikutnya cukup disunting dari layar pengaturan, tanpa
- * menyentuh kode ini.
+ * NOMOR dan TANGGAL SK-nya TIDAK lagi ditulis di sini (17 Okt 2026): SK BAWAAN
+ * ada di kartu "Nomor SK penunjukan" (Integrasi e-Court, modules/pengaturan-abt/
+ * nomor-sk-sumber.ts), dibaca juga oleh blangko ABT (#9550#/#9551#). Tiap majelis
+ * BOLEH memakai SK sendiri sebagai PENGECUALIAN (kolom sk_nomor/sk_tanggal barisnya,
+ * diisi dari layar SK majelis); kosong = ikut SK bawaan. Blangko ABT hanya satu
+ * nilai (bawaan) - SK per majelis di blangko belum didukung.
  *
  * Kode hakim (A, B, C1, C2, C3) cocok persis dengan hakim_pn di SIPP, jadi ia
  * dapat dipakai menemukan orangnya.
@@ -66,10 +70,13 @@ export const NAMA_HARI = [
  * Yang mengikatnya ke orang sungguhan adalah layar pengaturan, dan sampai itu
  * dikerjakan panel tetap memakai perhitungan bebannya sendiri.
  */
-export const SK_BERLAKU = {
-  nomor: "254/KPA-W19-A5/SK.HK2.6/V/2026",
-  tanggal: "2026-08-27",
-};
+
+/**
+ * Nomor SK yang dulu tertanam di kode dan ikut tersimpan di baris majelis lewat layar lama
+ * (ejaan "KPA-" dan "/V/" keliru; SK-nya sendiri ".../VIII/2026"). Bukan pengecualian
+ * sungguhan - dibaca sebagai "ikut SK bawaan".
+ */
+const NOMOR_SK_TERTANAM_LAMA = "254/KPA-W19-A5/SK.HK2.6/V/2026";
 
 const MAJELIS_BAWAAN: Record<
   string,
@@ -110,8 +117,11 @@ export type HariSidangMajelis = {
    * yang menyidangkan perkara adalah MAJELIS, bukan orang lepas.
    */
   akun: { kode: string; akunId: string }[];
+  /** SK yang BERLAKU bagi majelis ini: pengecualiannya bila ada, bila tidak SK bawaan. */
   skNomor: string;
   skTanggal: string;
+  /** true = tidak ada pengecualian, ikut SK bawaan (kartu Nomor SK penunjukan). */
+  skIkutBawaan: boolean;
   keterangan: string;
   bawaan: boolean;
 };
@@ -327,6 +337,13 @@ function bacaPasanganAkun(tersimpan: string): { kode: string; akunId: string }[]
   return hasil;
 }
 
+/** SK yang berlaku bagi satu majelis: pengecualian di barisnya, atau SK bawaan. */
+function skBerlaku(item: BarisHari | undefined, bawaan: { nomor: string; tanggal: string }) {
+  const nomor = String(item?.sk_nomor ?? "").trim();
+  if (!nomor || nomor === NOMOR_SK_TERTANAM_LAMA) return { skNomor: bawaan.nomor, skTanggal: bawaan.tanggal, skIkutBawaan: true };
+  return { skNomor: nomor, skTanggal: String(item?.sk_tanggal ?? "").trim() || bawaan.tanggal, skIkutBawaan: false };
+}
+
 /** Hari sidang tiap majelis, lengkap dengan yang masih memakai bawaan. */
 export async function bacaHariSidang(db: AletaDatabase): Promise<HariSidangMajelis[]> {
   const baris = await db
@@ -338,6 +355,8 @@ export async function bacaHariSidang(db: AletaDatabase): Promise<HariSidangMajel
 
   const tersimpan = new Map<string, BarisHari>();
   for (const item of baris) tersimpan.set(String(item.majelis_kode), item);
+  // SK bawaan; kolom sk_* per baris hanya dipakai bila terisi (pengecualian per majelis).
+  const sk = await bacaSkMajelis(db);
 
   // Majelis yang tersimpan tetapi tidak ada di bawaan ikut ditampilkan -
   // majelis baru memang ditambahkan lewat menu, dan menyembunyikannya akan
@@ -366,8 +385,7 @@ export async function bacaHariSidang(db: AletaDatabase): Promise<HariSidangMajel
         panitera: bacaPasanganPanitera(String(item?.panitera_id ?? ""), daftar(kodePp)),
         akun: bacaPasanganAkun(String(item?.akun_id ?? "")),
         hakimKode: daftar(kodeHakim),
-        skNomor: item ? String(item.sk_nomor ?? "") : SK_BERLAKU.nomor,
-        skTanggal: item ? String(item.sk_tanggal ?? "") : SK_BERLAKU.tanggal,
+        ...skBerlaku(item, sk),
         keterangan: item ? String(item.keterangan ?? "") : "",
         bawaan: !item,
       };
@@ -471,6 +489,10 @@ export async function simpanHariSidang(
     hakimKode?: string;
     paniteraId?: string;
     akunId?: string;
+    /**
+     * Pengecualian SK majelis ini (17 Okt 2026): nomor DAN tanggal (yyyy-mm-dd) sekaligus;
+     * keduanya "" = ikut SK bawaan; tidak dikirim (undefined) = biarkan yang tersimpan.
+     */
     skNomor?: string;
     skTanggal?: string;
     keterangan?: string;
@@ -492,6 +514,18 @@ export async function simpanHariSidang(
   }
 
   const sekarang = new Date().toISOString();
+  let sk = { nomor: "", tanggal: "" };
+  if (skNomor === undefined && skTanggal === undefined) {
+    const lama = await db.prepare("SELECT sk_nomor, sk_tanggal FROM aleta_sipp_hari_sidang WHERE majelis_kode = ?").get<{ sk_nomor: string; sk_tanggal: string }>(kode);
+    sk = { nomor: String(lama?.sk_nomor ?? ""), tanggal: String(lama?.sk_tanggal ?? "") };
+  } else {
+    sk = { nomor: String(skNomor ?? "").replace(/\s+/g, " ").trim(), tanggal: String(skTanggal ?? "").trim() };
+    if (Boolean(sk.nomor) !== Boolean(sk.tanggal)) {
+      throw new ApiError(400, "Isi nomor dan tanggal SK majelis sekaligus, atau kosongkan keduanya agar ikut SK bawaan.");
+    }
+    if (sk.nomor.length > 120) throw new ApiError(400, "Nomor SK majelis terlalu panjang (lebih dari 120 huruf).");
+    if (sk.tanggal && !tanggalSah(sk.tanggal)) throw new ApiError(400, "Tanggal SK majelis tidak sah.");
+  }
 
   return withTransaction(db, async (tx) => {
     await tx
@@ -544,8 +578,8 @@ export async function simpanHariSidang(
           })
           .filter(Boolean)
           .join(","),
-        String(skNomor ?? "").trim(),
-        String(skTanggal ?? "").trim(),
+        sk.nomor,
+        sk.tanggal,
         String(keterangan ?? ""),
         sekarang,
         actor.id

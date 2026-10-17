@@ -82,7 +82,7 @@ const NO_VAR_KODE_SURAT = "1154";
  * tampak langsung di RTF Blangko Derry dan tidak lolos pastikanDerry. Jalur
  * sendiri, daftar nomornya tertutup: hanya yang tercantum di sini.
  */
-const NO_VAR_NOMOR_SK = new Set(["9550"]);
+const NO_VAR_NOMOR_SK = new Set(["9550", "9551"]); // 9550 nomor SK, 9551 tanggal SK ("27 Agustus 2026")
 const PANJANG_NOMOR_SK_MAKS = 300;
 const RE_KUERI_NOMOR_SK = /^SELECT\s+'([^'\\]*)'\s+AS\s+data$/i;
 const KEPALA_CASE_SATKER = /CASE\s*\(\s*SELECT\s+TRIM\(\s*value\s*\)\s+FROM\s+sys_config\s+WHERE\s+name\s*=\s*'KodePN'\s+LIMIT\s+1\s*\)/i;

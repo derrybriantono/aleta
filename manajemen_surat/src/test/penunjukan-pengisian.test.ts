@@ -264,6 +264,23 @@ describe("hari sidang dan panitera majelis", () => {
     expect(majelisB?.bawaan).toBe(false);
   });
 
+  it("SK majelis: ikut SK bawaan; pengecualian per majelis dipakai bila diisi, dan tidak diabaikan diam-diam", async () => {
+    const admin = await buatAdmin();
+    let daftar = await bacaHariSidang(db as AletaDatabase);
+    for (const m of daftar) expect(m).toMatchObject({ skIkutBawaan: true, skNomor: "254/KPA.W19-A5/SK.HK2.6/VIII/2026", skTanggal: "2026-08-27" });
+    await simpanHariSidang(db as AletaDatabase, { actorUserId: admin, majelisKode: "B", hari: 2, skNomor: "155/VII/2025", skTanggal: "2025-07-01" });
+    daftar = await bacaHariSidang(db as AletaDatabase);
+    expect(daftar.find((x) => x.majelisKode === "B")).toMatchObject({ skIkutBawaan: false, skNomor: "155/VII/2025", skTanggal: "2025-07-01" });
+    expect(daftar.find((x) => x.majelisKode === "A")).toMatchObject({ skIkutBawaan: true });
+    // tidak dikirim = pengecualian tetap; separuh terisi ditolak dengan kalimat awam; kosong keduanya = ikut bawaan
+    await simpanHariSidang(db as AletaDatabase, { actorUserId: admin, majelisKode: "B", hari: 3 });
+    expect((await bacaHariSidang(db as AletaDatabase)).find((x) => x.majelisKode === "B")).toMatchObject({ hari: 3, skNomor: "155/VII/2025" });
+    await expect(simpanHariSidang(db as AletaDatabase, { actorUserId: admin, majelisKode: "B", hari: 3, skNomor: "9/X/2026" })).rejects.toThrow(/sekaligus/);
+    await expect(simpanHariSidang(db as AletaDatabase, { actorUserId: admin, majelisKode: "B", hari: 3, skNomor: "9/X/2026", skTanggal: "2026-13-40" })).rejects.toThrow(/tidak sah/);
+    await simpanHariSidang(db as AletaDatabase, { actorUserId: admin, majelisKode: "B", hari: 3, skNomor: "", skTanggal: "" });
+    expect((await bacaHariSidang(db as AletaDatabase)).find((x) => x.majelisKode === "B")).toMatchObject({ skIkutBawaan: true, skNomor: "254/KPA.W19-A5/SK.HK2.6/VIII/2026" });
+  });
+
   it("menolak hari di luar 0..6", async () => {
     const admin = await buatAdmin();
     await expect(

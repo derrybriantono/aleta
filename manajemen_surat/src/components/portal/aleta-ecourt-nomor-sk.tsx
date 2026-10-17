@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
-import { nilaiLiteral, type ButirNomorSk, type NilaiNomorSk, type PengaturanNomorSk } from "@/lib/nomor-sk";
+import { type NilaiNomorSk, type PengaturanNomorSk } from "@/lib/nomor-sk";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import { tanggalPanjang } from "@/lib/tanggal-indonesia";
 import { menyebutAleta, pesanTandaAletaSipp } from "@/lib/tanda-aleta";
 
 /**
@@ -22,6 +23,7 @@ import { menyebutAleta, pesanTandaAletaSipp } from "@/lib/tanda-aleta";
 
 type Rencana = {
   kunci: string;
+  bagian: "nomor" | "tanggal";
   label: string;
   keterangan: string;
   literal: string;
@@ -37,7 +39,7 @@ type Jawaban = {
   tersimpan: boolean;
   diubahOleh: string;
   diubahPada: string;
-  butir: Array<Pick<ButirNomorSk, "kunci" | "noVar" | "label" | "keterangan" | "sertakanTanggal">>;
+  butir: Array<{ kunci: string; noVar: string; noVarTanggal: string; label: string; keterangan: string }>;
   rencana: Rencana[];
   galatAbt: string;
   hak: { ubahBawaan: boolean };
@@ -135,8 +137,9 @@ export function AletaEcourtNomorSk() {
       <CardHeader>
         <CardTitle>Nomor SK penunjukan</CardTitle>
         <CardDescription>
-          Nomor SK yang dikutip pada penetapan majelis hakim. Ubah di sini bila SK berganti, simpan, lalu terapkan ke ABT. Nomor
-          yang berlaku sekarang sudah terisi sebagai bawaan.
+          Nomor dan tanggal SK yang dikutip pada penetapan majelis hakim. Ubah di sini bila SK berganti, simpan, lalu terapkan ke
+          ABT. Ini satu-satunya tempat mengubahnya: panel penunjukan majelis di bawah ikut membaca dari sini. Yang berlaku
+          sekarang sudah terisi sebagai bawaan.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -152,25 +155,24 @@ export function AletaEcourtNomorSk() {
             ) : null}
             {data.butir.map((b) => {
               const nilai = draf[b.kunci] ?? { nomor: "", tanggal: "" };
-              const rencana = data.rencana.find((r) => r.kunci === b.kunci);
-              const teks = nilai.nomor.trim() ? nilaiLiteral(b as ButirNomorSk, nilai) : "";
+              const rencana = data.rencana.filter((r) => r.kunci === b.kunci);
+              const tanggalTeks = tanggalPanjang(nilai.tanggal);
+              const teks = nilai.nomor.trim() ? `${nilai.nomor.trim()}${tanggalTeks ? ` tanggal ${tanggalTeks}` : ""}` : "";
               return (
                 <div key={b.kunci} className="space-y-3 rounded-xl border border-border/70 p-3">
                   <div>
                     <p className="font-medium">{b.label}</p>
                     <p className="text-sm text-muted-foreground">{b.keterangan}</p>
                   </div>
-                  <div className={b.sertakanTanggal ? "grid gap-3 sm:grid-cols-[1fr_12rem]" : "grid gap-3"}>
+                  <div className="grid gap-3 sm:grid-cols-[1fr_12rem]">
                     <label className="space-y-1 text-sm">
                       <span className="font-medium">Nomor SK</span>
                       <Input value={nilai.nomor} disabled={!boleh} maxLength={120} onChange={(e) => ubah(b.kunci, "nomor", e.target.value)} />
                     </label>
-                    {b.sertakanTanggal ? (
-                      <label className="space-y-1 text-sm">
-                        <span className="font-medium">Tanggal SK</span>
-                        <Input type="date" value={nilai.tanggal} disabled={!boleh} onChange={(e) => ubah(b.kunci, "tanggal", e.target.value)} />
-                      </label>
-                    ) : null}
+                    <label className="space-y-1 text-sm">
+                      <span className="font-medium">Tanggal SK</span>
+                      <Input type="date" value={nilai.tanggal} disabled={!boleh} onChange={(e) => ubah(b.kunci, "tanggal", e.target.value)} />
+                    </label>
                   </div>
                   {teks ? (
                     <p className="break-words text-sm">
@@ -179,21 +181,22 @@ export function AletaEcourtNomorSk() {
                     </p>
                   ) : null}
                   {teks && menyebutAleta(teks) ? <p className="text-sm text-amber-800 dark:text-amber-300">{pesanTandaAletaSipp("Nomor SK")}</p> : null}
-                  {rencana ? (
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                      {!rencana.ada ? (
+                  {rencana.map((r) => (
+                    <div key={r.bagian} className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="w-14 font-medium">{r.bagian === "nomor" ? "Nomor" : "Tanggal"}</span>
+                      {!r.ada ? (
                         <Badge variant="warning">Belum terpasang di ABT</Badge>
-                      ) : rencana.perlu ? (
+                      ) : r.perlu ? (
                         <Badge variant="warning">Di ABT masih berbeda</Badge>
-                      ) : rencana.bisa ? (
+                      ) : r.bisa ? (
                         <Badge variant="success">Sudah sama dengan ABT</Badge>
                       ) : (
                         <Badge variant="danger">Tidak dapat diterapkan</Badge>
                       )}
-                      {rencana.sebab ? <span className="break-words text-muted-foreground">{rencana.sebab}</span> : null}
-                      {rencana.ada && rencana.perlu && rencana.nilaiAbt ? <span className="break-words text-muted-foreground">Di ABT sekarang: {rencana.nilaiAbt}</span> : null}
+                      {r.sebab ? <span className="break-words text-muted-foreground">{r.sebab}</span> : null}
+                      {r.ada && r.perlu && r.nilaiAbt ? <span className="break-words text-muted-foreground">Di ABT sekarang: {r.nilaiAbt}</span> : null}
                     </div>
-                  ) : null}
+                  ))}
                 </div>
               );
             })}
