@@ -247,6 +247,16 @@ const TABEL = [
   // petitum. perkara_eksekusi sudah terdaftar di atas.
   "perkara_putusan_sela",
   /* === AKHIR 12OKT-K === */
+  /* === 17OKT-SKP: SKP jabatan perkara === */
+  // Jabatan akun SIPP: sys_user_group (userid, groupid) menautkan akun ke
+  // grup, sys_groups (groupid, name, description, enable) memberi nama grup
+  // (10 Ketua/Wakil, 30 Panitera, 430 Panmud Hukum, 1000 Panmud Gugatan, 1010
+  // Panmud Permohonan, 500 PP, 600 Jurusita, 702 Kasir, ...). panitera_pn.
+  // jabatan = 0 untuk semua baris, jadi jabatan HANYA terbaca dari keduanya.
+  // Tanpa didaftarkan di sini keduanya dijawab "tidak ada" tanpa galat.
+  "sys_user_group",
+  "sys_groups",
+  /* === AKHIR 17OKT-SKP === */
 ];
 
 /** Peta tabel -> Set nama kolom. Kosong sampai muat() dijalankan. */
