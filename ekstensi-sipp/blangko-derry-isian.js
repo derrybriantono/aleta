@@ -911,6 +911,26 @@
         })
       );
     }
+    // 17 Okt: tanya jawab dibaca juga (seperti jalur utama bot: kode penanda dan penyuntingnya) - tanpa ini saksi yang
+    // barisnya sudah ada di ABT terbaca "kosong" dan tampil "Penting" di peringatan cetak. Dibaca lewat penyunting per sidang.
+    const tj = d.isian.filter((b) => b.jenis === "tj" && b.tj && b.tj.kodeSunting);
+    for (let i = 0; i < tj.length; i += 3) {
+      await Promise.all(
+        tj.slice(i, i + 3).map(async (b) => {
+          try {
+            const h = await k.bacaTanyaJawab({ kode: b.tj.kodeSunting, perkaraId: perkaraId(), sidang: sidangUrutan(), a: S.blangko.a, b: S.blangko.b });
+            if (!h.ok) return;
+            const baris = Array.isArray(h.baris) ? h.baris : [];
+            const ada = baris.some((r) => String((r && r.tanya) || "").trim() || String((r && r.jawab) || "").trim());
+            const nilai = { status: ada ? "terisi" : "kosong", teks: "", dariPopup: true };
+            S.nilai[b.kode] = nilai;
+            S.nilai[b.tj.kodeSunting] = nilai;
+          } catch {
+            /* satu saksi gagal terbaca: tetap kosong */
+          }
+        })
+      );
+    }
   }
   /** Saran bayangan: bawaan ABT yang dihitung untuk perkara ini (jendela sembul edit_data) bagi isian kosong. */
   async function muatSaranAbt(d) {

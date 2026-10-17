@@ -127,7 +127,7 @@ afterEach(async () => {
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array } = {}): Halaman {
+function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean; botMati?: boolean; abtAwal?: Record<string, string>; rtfBytes?: Uint8Array } = {}): Halaman {
   const badan = `<div id="header"><div class="h_right"><b>Pengguna</b> Panitera</div></div><div id="wrapper"><div id="navbar">${MENU}</div><div id="content"></div></div>`;
   const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${badan}</body></html>`, { url: BERANDA, runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]);
   terbuka.push(dom);
@@ -231,7 +231,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
       const put = berkas.startsWith("[01]");
       const s = susunIsian(put ? PENANDA_PUT : PENANDA_BAS, KATALOG, { P: q.get("sebutanP") || "Penggugat", T: q.get("sebutanT") || "Tergugat" });
       const kode = kodeUntukNilai(s, q.get("semua") === "1");
-      return json({ ok: true, data: { ada: true, folder: `derry_briantono/${q.get("folder")}`, berkas: `${berkas}.rtf`, jumlahPenanda: s.penanda.length, sumberKatalog: "abt", katalogTersedia: true, ...s, nilai: q.get("perkaraId") ? nilaiDari(kode, kodeTanyaJawab(s)) : undefined, nilaiAda: Boolean(q.get("perkaraId")), nilaiSebab: "" } });
+      return json({ ok: true, data: { ada: true, folder: `derry_briantono/${q.get("folder")}`, berkas: `${berkas}.rtf`, jumlahPenanda: s.penanda.length, sumberKatalog: "abt", katalogTersedia: true, ...s, nilai: q.get("perkaraId") && !p.botMati ? nilaiDari(kode, kodeTanyaJawab(s)) : undefined, nilaiAda: Boolean(q.get("perkaraId")) && !p.botMati, nilaiSebab: "" } });
     }
     if (url.includes("/aleta-bot/abt/pdf")) {
       const b = JSON.parse(badan || "{}");
@@ -844,6 +844,24 @@ describe("audit 17 Okt: E4 tanya jawab yang sudah ada di ABT", () => {
     // Saksi 1 P punya 2 baris di ABT (tanpa dibuka di layar); saksi 2 P kosong.
     expect(ingat.textContent).not.toMatch(/tanya jawab saksi 1/i);
     expect(ingat.textContent).toMatch(/tanya jawab saksi 2/i);
+  });
+});
+
+describe("audit 17 Okt: jalur cadangan tanpa bot membaca tanya jawab", () => {
+  it("bot mati: nilai isian dibaca dari ABT dan tanya jawab yang sudah ada tidak tampil kosong di peringatan cetak", async () => {
+    const h = buka({ botMati: true });
+    await pilihPutusan(h);
+    await sampai(() => q(h, '[data-bk="P.1"][data-isi="no"]'), "bukti");
+    expect((q(h, "#bd-i8503") as HTMLInputElement).value).toBe("F"); // isian tangan tetap dibaca lewat jendela edit_data
+    klik(h, '[data-bd2="cetak"]');
+    const ingat = await sampai(() => {
+      const e = q(h, "#bd-ingat");
+      return e && !e.hidden ? e : null;
+    }, "pengingat");
+    // Saksi 1 P punya 2 baris di ABT (tanpa dibuka di layar); saksi 2 P kosong - sama dengan jalur utama (E4).
+    expect(ingat.textContent).not.toMatch(/tanya jawab saksi 1/i);
+    expect(ingat.textContent).toMatch(/tanya jawab saksi 2/i);
+    expect(mintaKe(h, /tanyajawab_perkara_edit\?no_var=505[89]/, "GET").length).toBeGreaterThan(0);
   });
 });
 
