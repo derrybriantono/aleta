@@ -226,7 +226,7 @@ function tulisMd(d) {
     else status = "sebagian";
     if (tanpa) status = "tidak";
     
-    const sm = SUMBER_MUNGKIN({ kode: r.kode, nama: r.nama, namaAsli: r.namaAsli, status, cadangan: r.cadangan });
+    const sm = SUMBER_MUNGKIN({ kunci: r.kunci, kode: r.kode, nama: r.nama, namaAsli: r.namaAsli, status, cadangan: r.cadangan, folderTakTertutup: Object.keys(r.folderTakTertutup).sort(urutNama) });
     hasil.push({
       kunci: r.kunci,
       kode: r.kode,

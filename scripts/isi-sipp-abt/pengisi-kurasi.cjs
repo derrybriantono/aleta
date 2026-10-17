@@ -63,6 +63,15 @@ const KELOMPOK = [
     syarat: "perkara e-Court; berkeyakinan ragu tidak menimpa isian tangan",
   },
   {
+    id: "itsbat-pasangan-meninggal",
+    kode: ["1025", "1246", "1247", "1509"],
+    untuk: ["itsbat-nikah"],
+    berkas: "aleta_bot/services/deteksi/itsbat.js",
+    sumber: "posita itsbat kontensius (pasangan yang sudah meninggal: nama, tanggal, sebab, tempat)",
+    tingkat: "usulan",
+    syarat: "itsbat nikah kontensius (gugatan); modul itsbat memancarkannya walau tidak tercatat di registri variabel",
+  },
+  {
     id: "sipp-lanjutan-pasti",
     kode: ["8705", "8704", "8433"],
     untuk: "semua",
@@ -111,6 +120,30 @@ const TANPA_SUMBER = {
 
 // Sumber data yang MUNGKIN bagi isian yang belum terisi (dipakai kolom "sumber yang mungkin" di daftar cek).
 const KURASI = {
+  "tj:jawaban lisan 0047": ["tidak ada (jawab-jinawab lisan di persidangan; diketik panitera)", "Cerai kontra lisan; tidak ada kolom terstruktur di SIPP."],
+  "tj:replik lisan 0046": ["tidak ada (jawab-jinawab lisan di persidangan; diketik panitera)", ""],
+  "tj:duplik lisan 0047": ["tidak ada (jawab-jinawab lisan di persidangan; diketik panitera)", ""],
+  "0711": ["posita/petitum hadhanah (belum ada aturan)", "Hanya 1 blangko."],
+  "9220": ["keterangan Termohon di sidang ikrar (BAS ikrar)", "Hanya 1 blangko."],
+  "8617": ["tidak ada (penilaian hakim atas cacat formil)", ""],
+  "9164": ["tidak ada (tanggapan Tergugat di sidang insidentil)", ""],
+  "9165": ["tidak ada (hasil pemeriksaan setempat)", "Perkara kebendaan, sangat jarang."],
+  "9166": ["tidak ada (hasil pemeriksaan setempat)", ""],
+  "9167": ["tidak ada (hasil pemeriksaan setempat)", ""],
+  "9168": ["tidak ada (hasil pemeriksaan setempat)", ""],
+  "0889": ["posita itsbat (duplikat akta nikah; belum ada aturan)", "Jarang."],
+  "1108": ["posita itsbat (duplikat akta nikah; belum ada aturan)", "Jarang."],
+  "9283": ["jawaban/gugatan rekonvensi e-Court", "Harta bersama dengan rekonvensi, sangat jarang."],
+  "9460": ["gugatan e-Court pencegahan perkawinan", "Jenis 342: 0 perkara sejak 2023 (2 sejak 2018); belum ada modul jenisnya."],
+  "9461": ["gugatan e-Court pencegahan perkawinan", "Jenis 342 sangat jarang."],
+  "9462": ["gugatan e-Court pencegahan perkawinan", "Jenis 342 sangat jarang."],
+  "9469": ["tidak ada (fakta persidangan)", "Jenis 342 sangat jarang."],
+  "0652": ["berkas e-Court (lampiran surat penolakan KUA; butuh baca dokumen)", "Dispensasi/wali adhal; belum dibaca OCR."],
+  "0653": ["berkas e-Court (lampiran surat penolakan KUA; butuh baca dokumen)", "Dispensasi/wali adhal; belum dibaca OCR."],
+  "9479": ["gugatan e-Court wasiat", "Jenis 365: 1 perkara sejak 2023."],
+  "9486": ["gugatan e-Court wasiat", ""],
+  "9487": ["gugatan e-Court wasiat", ""],
+  "9485": ["tidak ada (penilaian hakim)", ""],
   "0185": ["SIPP perkara_pengacara.tanggal_kuasa pihak 2 (usulan ragu) / e-Court lampiran surat kuasa", "Kolom SIPP sering tanggal register, bukan tanggal surat kuasa; Tergugat berkuasa ±1% perkara (34 dari 3267 sejak 2023)."],
   "0157": ["e-Court (surat kuasa/jawaban Tergugat)", "Nama kantor advokat tidak disimpan SIPP; Tergugat berkuasa ±1% perkara."],
   "9110": ["e-Court (kartu advokat/berita acara sumpah)", "Tergugat berkuasa ±1% perkara; bawaan layar: Pengadilan Tinggi Sulawesi Tengah."],
@@ -158,7 +191,15 @@ const POLA_BUKTI = /alat bukti|bukti (surat|elektronik)|nomor|tanggal surat/i;
 
 function SUMBER_MUNGKIN(r) {
   if (r.cadangan === "titik" && r.status !== "ya") return { sumberMungkin: "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin", catatan: (KURASI[r.kode[0]] || [])[0] || "" };
+  if (r.kunci && KURASI[r.kunci]) return { sumberMungkin: KURASI[r.kunci][0], catatan: KURASI[r.kunci][1] };
   for (const k of r.kode) if (KURASI[k]) return { sumberMungkin: KURASI[k][0], catatan: KURASI[k][1] };
+  if (r.status === "sebagian") {
+    const tak = (r.folderTakTertutup || []).slice(0, 3).join("; ");
+    return {
+      sumberMungkin: tak ? `terisi di jenis utama; belum di: ${tak}` : "baru diusulkan (ragu), belum terisi otomatis",
+      catatan: "",
+    };
+  }
   const nama = `${r.nama} ${r.namaAsli}`;
   if (r.status === "ya") return { sumberMungkin: "", catatan: "" };
   if (r.cadangan === "titik") return { sumberMungkin: "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin", catatan: "" };

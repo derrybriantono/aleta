@@ -6,7 +6,7 @@ Dibangun 2026-10-18 oleh `scripts/isi-sipp-abt/bangun-daftar-cek.cjs` (data diuk
 
 - Blangko Derry aktif di pohon server: **982** (31 tanpa isian popup).
 - Isian popup (data_teks / data_tanggal / tanya_jawab, kata ABT "isian tangan"): **252** unik.
-- Sudah otomatis (ya): **128** - sebagian: **30** - belum (tidak): **94**, di antaranya **34** memang tanpa sumber data (penilaian hakim / tidak tercatat).
+- Sudah otomatis (ya): **144** - sebagian: **14** - belum (tidak): **94**, di antaranya **45** memang tanpa sumber data (penilaian hakim / tidak tercatat).
 - Penanda yang dirujuk rantai variabel tetapi tidak ada di katalog ABT lokal: 53 (lihat bawah).
 
 ## Sumber dan cara membaca
@@ -52,94 +52,94 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 | 9 | 8503 | Alasan perceraian | 123 | 359 | [01b] (E-Court) BAS 2 P Hadir & T Tidak Hadir Pokok Perkara  | ya | deteksi cerai |  |
 | 10 | 5058, 2021 | TanyaJwb Saksi 1 P [tanya jawab saksi 1 p] | 259 | 0 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | susun saksi |  |
 | 11 | 5059, 2022 | TanyaJwb Saksi 2 P [tanya jawab saksi 2 p] | 259 | 0 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | susun saksi |  |
-| 12 | 1214 | Alat bukti surat Penggugat/Pemohon | 90 | 2009 | [01b] (E-Court) BAS 2 P Hadir & T Tidak Hadir Pokok Perkara  | ya | ktp-teks; deteksi cerai |  |
-| 13 | 5197 | Tgl Nikah | 104 | 706 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | belum dikaji (terisi di: deteksi itsbat-nikah; deteksi perwalian; deteksi waris; deteksi lain-lain) |  |
-| 14 | 7084 | Penanda konvensi/rekonvensi (1 apabila ada) | 168 | 3 | [02] BAS 3 P & T Hadir Jawaban dan (Apabila ada Gugatan Reko | sebagian | belum dikaji (terisi di: gugatan-ecourt) |  |
-| 15 | 8894 | Nama penerima kuasa insidentil | 276 | 0 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | tidak | SIPP perkara_jadwal_sidang.keterangan / penetapan izin kuasa insidentil (tidak terstruktur) | Kuasa insidentil tidak punya kolom sendiri di SIPP; ±jarang. |
-| 16 | 5178 | KUA Kec. | 97 | 298 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | belum dikaji (terisi di: deteksi itsbat-nikah; deteksi dispensasi-kawin; deteksi perwalian) |  |
+| 12 | 8894 | Nama penerima kuasa insidentil | 276 | 0 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | tidak | SIPP perkara_jadwal_sidang.keterangan / penetapan izin kuasa insidentil (tidak terstruktur) | Kuasa insidentil tidak punya kolom sendiri di SIPP; ±jarang. |
+| 13 | 1214 | Alat bukti surat Penggugat/Pemohon | 90 | 2009 | [01b] (E-Court) BAS 2 P Hadir & T Tidak Hadir Pokok Perkara  | ya | ktp-teks; deteksi cerai |  |
+| 14 | 0663 | Tanggal penetapan prodeo | 189 | 3 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | tidak | tidak ada | Tanggal penetapan prodeo tidak disimpan SIPP (hasil putusan sela/pertimbangan hakim). |
+| 15 | 7084 | Penanda konvensi/rekonvensi (1 apabila ada) | 168 | 3 | [02] BAS 3 P & T Hadir Jawaban dan (Apabila ada Gugatan Reko | sebagian | baru diusulkan (ragu), belum terisi otomatis (terisi di: gugatan-ecourt) |  |
+| 16 | 7139 | Beracara secara elektronik | 204 | 30 | [02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputu | ya | elitigasi |  |
 | 17 | 0156 | Nama kantor advokat Penggugat/Pemohon | 126 | 44 | [02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputu | ya | kuasa-penggugat; deteksi cerai |  |
-| 18 | 7139 | Beracara secara elektronik | 204 | 30 | [02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputu | ya | elitigasi |  |
-| 19 | 0663 | Tanggal penetapan prodeo | 189 | 3 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | tidak | tidak ada | Tanggal penetapan prodeo tidak disimpan SIPP (hasil putusan sela/pertimbangan hakim). |
-| 20 | 9955 | Bukti surat perceraian (otomatis) | 132 | 53 | [02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan | ya | ABT sendiri dari SIPP bila dikosongkan; ktp-teks |  |
-| 21 | 8921, 6122 | TanyaJwb Saksi 3 T [tanya jawab saksi 3 t] | 57 | 0 | [02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan | ya | susun saksi |  |
-| 22 | 6124, 8920 | TanyaJwb Saksi 4 P [tanya jawab saksi 4 p] | 58 | 0 | [02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan | ya | susun saksi |  |
-| 23 | 1268 | Upaya damai oleh keluarga | 64 | 370 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
-| 24 | 0157 | Nama kantor advokat Tergugat/Termohon | 94 | 0 | [02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputu | tidak | e-Court (surat kuasa/jawaban Tergugat) | Nama kantor advokat tidak disimpan SIPP; Tergugat berkuasa ±1% perkara. |
-| 25 | 8892 | Pengadilan Tinggi tempat advokat Penggugat/Pemohon disumpah | 141 | 0 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | ya | bawaan ABT bila dikosongkan | Bawaan layar Perlu diisi: Pengadilan Tinggi Sulawesi Tengah; ABT mengisi bila dikosongkan pada sebagian blangko. |
-| 26 | 0222 | Awal perselisihan | 63 | 364 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
-| 27 | 9944 | Lama pisah rumah | 63 | 373 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
-| 28 | 7035 | Yang meninggalkan rumah bersama | 59 | 374 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
-| 29 | 0007 | Anak dari pernikahan ini | 64 | 681 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | gugatan-ecourt; deteksi itsbat-nikah; deteksi cerai; deteksi perwalian |  |
-| 30 | 0246 | Pisah rumah sejak | 55 | 359 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | ya | deteksi cerai |  |
+| 18 | 5197 | Tgl Nikah | 104 | 706 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | terisi di jenis utama; belum di: 4a Harta Bersama (terisi di: deteksi itsbat-nikah; deteksi perwalian; deteksi waris; deteksi lain-lain) |  |
+| 19 | 5178 | KUA Kec. | 97 | 298 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah; deteksi dispensasi-kawin; deteksi perwalian |  |
+| 20 | 8892 | Pengadilan Tinggi tempat advokat Penggugat/Pemohon disumpah | 141 | 0 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | ya | bawaan ABT bila dikosongkan | Bawaan layar Perlu diisi: Pengadilan Tinggi Sulawesi Tengah; ABT mengisi bila dikosongkan pada sebagian blangko. |
+| 21 | 9955 | Bukti surat perceraian (otomatis) | 132 | 53 | [02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan | ya | ABT sendiri dari SIPP bila dikosongkan; ktp-teks |  |
+| 22 | 1268 | Upaya damai oleh keluarga | 64 | 370 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
+| 23 | 0222 | Awal perselisihan | 63 | 364 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
+| 24 | 9944 | Lama pisah rumah | 63 | 373 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
+| 25 | 8921, 6122 | TanyaJwb Saksi 3 T [tanya jawab saksi 3 t] | 57 | 0 | [02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan | ya | susun saksi |  |
+| 26 | 0157 | Nama kantor advokat Tergugat/Termohon | 94 | 0 | [02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputu | tidak | e-Court (surat kuasa/jawaban Tergugat) | Nama kantor advokat tidak disimpan SIPP; Tergugat berkuasa ±1% perkara. |
+| 27 | 7035 | Yang meninggalkan rumah bersama | 59 | 374 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
+| 28 | 6124, 8920 | TanyaJwb Saksi 4 P [tanya jawab saksi 4 p] | 58 | 0 | [02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan | ya | susun saksi |  |
+| 29 | 0246 | Pisah rumah sejak | 55 | 359 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | ya | deteksi cerai |  |
+| 30 | 0007 | Anak dari pernikahan ini | 64 | 681 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | gugatan-ecourt; deteksi itsbat-nikah; deteksi cerai; deteksi perwalian |  |
 | 31 | 5227 | Rincian alasan cerai (sesuai gugatan) | 50 | 319 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | ya | gugatan-ecourt; deteksi cerai |  |
-| 32 | 5060, 2031 | TanyaJwb Saksi 3 P [tanya jawab saksi 3 p] | 57 | 0 | [02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan | ya | susun saksi |  |
-| 33 | 5105 | Alamat Tempat Menikah | 65 | 711 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | belum dikaji (terisi di: deteksi itsbat-nikah; deteksi cerai; deteksi perwalian; deteksi lain-lain) |  |
-| 34 | 1006 | Tempat tinggal setelah menikah | 39 | 34 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
-| 35 | 9911 | Alat bukti surat Tergugat/Termohon | 85 | 12 | [02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan | ya | ktp-teks |  |
-| 36 | 5127 | Alasan-Alasan Cerai | 31 | 25 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
-| 37 | 1267 | Masih berkomunikasi atau tidak | 30 | 17 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
-| 38 | 2557 | (Saksi I) Berapa Kali Melihat dan Mendengar Pertengkaran | 30 | 15 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | tidak | keterangan saksi pada BAS (teks bebas) | Registri cerai: belum - tidak tertulis di posita. |
+| 32 | 9911 | Alat bukti surat Tergugat/Termohon | 85 | 12 | [02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan | ya | ktp-teks |  |
+| 33 | 1006 | Tempat tinggal setelah menikah | 39 | 34 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
+| 34 | 5127 | Alasan-Alasan Cerai | 31 | 25 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
+| 35 | 1267 | Masih berkomunikasi atau tidak | 30 | 17 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | ya | deteksi cerai |  |
+| 36 | 2557 | (Saksi I) Berapa Kali Melihat dan Mendengar Pertengkaran | 30 | 15 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | tidak | keterangan saksi pada BAS (teks bebas) | Registri cerai: belum - tidak tertulis di posita. |
+| 37 | 5060, 2031 | TanyaJwb Saksi 3 P [tanya jawab saksi 3 p] | 57 | 0 | [02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan | ya | susun saksi |  |
+| 38 | 5105 | Alamat Tempat Menikah | 65 | 711 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah; deteksi cerai; deteksi perwalian; deteksi lain-lain |  |
 | 39 | 2558 | (Saksi II) Berapa Kali Melihat dan Mendengar Pertengkaran | 29 | 13 | BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verst | tidak | keterangan saksi pada BAS (teks bebas) | Registri cerai: belum - tidak tertulis di posita. |
-| 40 | 8931, 8932 | TanyaJwb Saksi 5 P [tanya jawab saksi 5 p] | 29 | 0 | [02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan | ya | susun saksi |  |
-| 41 | 8564 | Tanggal pengumuman panggilan ghaib pertama dan kedua | 42 | 0 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | ya | ABT sendiri dari SIPP bila dikosongkan | Tanggal pengumuman ghaib pertama dan kedua. |
-| 42 | 0227 | Tanggal Tergugat/Termohon berpindah agama | 35 | 1 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | tidak | tidak ada | Tanggal Tergugat berpindah agama/fasakh: SIPP tidak punya kolomnya. |
-| 43 | 0661 | Nomor penetapan prodeo | 35 | 3 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | tidak | tidak ada | Nomor SK prodeo tidak disimpan SIPP; ecourt_prodeo tidak memuat nomor penetapan. Terbukti di kode (abtUsulanService tidak_ada_sumber). |
-| 44 | 8536 | Putusan pidana Tergugat/Termohon (nomor, tanggal, lama hukuman) | 35 | 0 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | tidak | tidak ada (putusan pidana Tergugat diketahui dari bukti surat) | Alasan C; ±jarang. |
+| 40 | 8564 | Tanggal pengumuman panggilan ghaib pertama dan kedua | 42 | 0 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | ya | ABT sendiri dari SIPP bila dikosongkan | Tanggal pengumuman ghaib pertama dan kedua. |
+| 41 | 0227 | Tanggal Tergugat/Termohon berpindah agama | 35 | 1 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | tidak | tidak ada | Tanggal Tergugat berpindah agama/fasakh: SIPP tidak punya kolomnya. |
+| 42 | 0661 | Nomor penetapan prodeo | 35 | 3 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | tidak | tidak ada | Nomor SK prodeo tidak disimpan SIPP; ecourt_prodeo tidak memuat nomor penetapan. Terbukti di kode (abtUsulanService tidak_ada_sumber). |
+| 43 | 8536 | Putusan pidana Tergugat/Termohon (nomor, tanggal, lama hukuman) | 35 | 0 | [01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf | tidak | tidak ada (putusan pidana Tergugat diketahui dari bukti surat) | Alasan C; ±jarang. |
+| 44 | 8931, 8932 | TanyaJwb Saksi 5 P [tanya jawab saksi 5 p] | 29 | 0 | [02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan | ya | susun saksi |  |
 | 45 | 6120, 2023 | TanyaJwb Saksi 1 T [tanya jawab saksi 1 t] | 73 | 0 | [02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan | ya | susun saksi |  |
 | 46 | 6121, 2024 | TanyaJwb Saksi 2 T [tanya jawab saksi 2 t] | 73 | 0 | [02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan | ya | susun saksi |  |
-| 47 | 7178 | Alasan panggilan dianggap tidak patut | 21 | 4 | [99] BAS 1 P Hadir & T Tidak Hadir - Alamat Tidak Jelas Atau | tidak | relaas panggilan (ALETA relaas) - penilaian hakim |  |
-| 48 | 8436 | Kesimpulan Penggugat/Pemohon | 77 | 13 | [02] [Kabul] CG - F.rtf | tidak | berkas e-Court (kesimpulan Penggugat) | Registri cerai: belum. |
-| 49 | 1046 | Status Wali Nikah | 39 | 701 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | belum dikaji (terisi di: deteksi itsbat-nikah; deteksi wali-adhol) |  |
-| 50 | 0650 | Saksi Nikah 1 | 33 | 696 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | belum dikaji (terisi di: deteksi itsbat-nikah) |  |
-| 51 | 0651 | Saksi Nikah 2 | 33 | 697 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | belum dikaji (terisi di: deteksi itsbat-nikah) |  |
-| 52 | 1001 | Mas kawin | 33 | 697 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | belum dikaji (terisi di: deteksi itsbat-nikah) |  |
-| 53 | 1217 | Nama Wali Nikah | 33 | 678 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | bawaan ABT bila dikosongkan; deteksi itsbat-nikah |  |
-| 54 | 8087 | Yang Menikahkan | 33 | 696 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | belum dikaji (terisi di: deteksi itsbat-nikah) |  |
-| 55 | 9881 | lisan atau tertulis (jawaban replik dan duplik) | 82 | 15 | [02] [Kabul] CG - F.rtf | sebagian | belum dikaji (terisi di: gugatan-ecourt) |  |
-| 56 | 6112, 2018 | Jawaban Lisan Tergugat/Termohon [tanya jawab jawaban lisan 0047] | 27 | 0 | BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Ja | tidak | belum dikaji |  |
-| 57 | 6114, 2020 | Duplik Lisan Tergugat/Termohon [tanya jawab duplik lisan 0047] | 26 | 0 | BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Ja | tidak | belum dikaji |  |
-| 58 | 6113, 2019 | Replik Lisan Penggugat/Pemohon [tanya jawab replik lisan 0046] | 26 | 0 | BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Ja | tidak | belum dikaji |  |
-| 59 | 8433 | Alasan pencabutan perkara | 66 | 41 | BAS ALUR 08 [A] BAS 1 P Hadir & T Tidak Hadir - Cabut di Sid | ya | sipp-lanjutan-pasti | Sejak 2023: 41 isian petugas, hanya 4 berasal dari mediasi Y2; alasan lain (perbaikan gugatan, alamat tidak ditemukan) bebas. |
-| 60 | 9958 | C3. Alat Bukti Isbat Nikah Terpadu | 25 | 188 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | ktp-teks; deteksi itsbat-nikah |  |
-| 61 | 8437 | Kesimpulan Tergugat/Termohon | 48 | 3 | [02] [Kabul] CG - F.rtf | tidak | berkas e-Court (kesimpulan Tergugat) | Registri cerai: belum. |
-| 62 | 7211 | Umur Isbat P1 (Laki-Laki) | 19 | 277 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | belum dikaji (terisi di: deteksi itsbat-nikah) |  |
-| 63 | 7212 | Umur Isbat P2 (Perempuan) | 19 | 277 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | belum dikaji (terisi di: deteksi itsbat-nikah) |  |
-| 64 | 1002 | Status Penggugat/Pemohon sblm nikah (IN) | 29 | 699 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | belum dikaji (terisi di: deteksi itsbat-nikah) |  |
-| 65 | 1003 | Status #2027# sblm nikah (IN) | 26 | 699 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | belum dikaji (terisi di: deteksi itsbat-nikah) |  |
-| 66 | 8941 | TanyaJwb Saksi 4 T [tanya jawab saksi 4 t] | 13 | 0 | [02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan | ya | susun saksi |  |
-| 67 | 9134 | Bas permohonan | 38 | 0 | BAS ALUR 17 IN 2+ Sidang - [1a] Sidang 1 - Pemeriksaan, Bukt | tidak | opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin | belum dikaji |
-| 68 | 0364 | Tgl. KTP Penggugat/Pemohon | 11 | 267 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | ktp-tanggal; deteksi itsbat-nikah |  |
-| 69 | 0366 | Tgl. KTP Penggugat/Pemohon II | 11 | 263 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | ktp-tanggal; deteksi itsbat-nikah |  |
-| 70 | 8171 | Alasan Permohonan untuk | 21 | 456 | BAS ALUR 17 IN 2+ Sidang - [1a] Sidang 1 - Pemeriksaan, Bukt | ya | deteksi itsbat-nikah; deteksi perwalian; deteksi lain-lain |  |
-| 71 | 8729 | Penilaian keterangan saksi dan fakta yang tidak terbukti | 6 | 0 | [03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
-| 72 | 8603 | Nama anak yang dimohonkan | 31 | 0 | BAS KUMULASI [2] BAS Putus Verstek CG Kumulasi Hak Asuh Anak | sebagian | posita (modul asal-usul/hadhanah ada); modul cerai-kumulasi belum (terisi di: deteksi hadhanah; deteksi asal-usul; deteksi pengangkatan-anak; deteksi lain-lain) |  |
-| 73 | 0182 | Tanggal izin kuasa insidentil | 4 | 0 | [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah | tidak | tidak ada terstruktur (penetapan izin Ketua) |  |
-| 74 | 8895 | Hubungan penerima kuasa dengan Penggugat/Pemohon | 4 | 0 | [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah | tidak | tidak ada terstruktur (penetapan izin Ketua) | Hubungan penerima kuasa dengan pemberi kuasa. |
-| 75 | 8896 | Nomor izin Ketua Pengadilan | 4 | 0 | [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah | tidak | tidak ada terstruktur (penetapan izin Ketua) | Nomor izin Ketua Pengadilan. |
-| 76 | 9123 | Sebab kuasa insidentil tidak sah (huruf a sampai d) | 4 | 0 | [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah | ya | bawaan ABT bila dikosongkan |  |
-| 77 | 5171 | Penghasilan Penggugat/Pemohon Perbulan | 10 | 3 | [01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah - | tidak | berkas e-Court (gugatan: penghasilan) |  |
-| 78 | 6054 | Nafkah iddah | 10 | 8 | [01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah - | ya | gugatan-ecourt; deteksi cerai |  |
-| 79 | 6055 | Mut'ah | 10 | 7 | [01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah - | sebagian | belum dikaji (terisi di: gugatan-ecourt) |  |
-| 80 | 8712 | Nomor dan tanggal surat teguran panitera | 21 | 0 | [98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar H | tidak | opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin | ALETA Kasir (teguran panjar) - belum dicatat terstruktur |
-| 81 | 8713 | Batas waktu menambah panjar | 21 | 0 | [98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar H | tidak | opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin | ALETA Kasir (teguran panjar) - belum dicatat terstruktur |
-| 82 | 8714 | Nomor dan tanggal laporan panjar tidak ditambah | 21 | 0 | [98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar H | tidak | opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin | ALETA Kasir (laporan panjar) - belum dicatat terstruktur |
-| 83 | 0228 | Alasan Syahadah Istifadhah (Itsbat Nikah / Isbat / PAW) | 4 | 3 | [01ab] BAS 1 IN - Kabul Syahadah Istifadhah.rtf | ya | deteksi itsbat-nikah |  |
-| 84 | 5271 | Penghasilan Tergugat/Termohon Perbulan | 6 | 0 | [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).r | tidak | berkas e-Court (gugatan: penghasilan) |  |
-| 85 | 6071 | Nafkah Anak | 6 | 5 | [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).r | sebagian | belum dikaji (terisi di: gugatan-ecourt) |  |
-| 86 | 9501 | Penilaian jawaban dan bukti Tergugat/Termohon (bantahan apa yang didukung bukti atau saksi, dan mengapa melemahkan dalil Penggugat/Pemohon; kosong = titik-titik) | 4 | 0 | [03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) | tidak | opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin |  |
-| 87 | 9050 | Kenaikan nafkah anak per tahun | 5 | 0 | BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Ana | tidak | berkas e-Court (petitum kenaikan nafkah anak) |  |
-| 88 | 8899 | Pokok kesepakatan perdamaian sebagian | 3 | 0 | [02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakata | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
-| 89 | 8902 | Isi pasal kesepakatan perdamaian sebagian | 3 | 0 | [02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakata | ya | bawaan ABT bila dikosongkan |  |
+| 47 | 8436 | Kesimpulan Penggugat/Pemohon | 77 | 13 | [02] [Kabul] CG - F.rtf | tidak | berkas e-Court (kesimpulan Penggugat) | Registri cerai: belum. |
+| 48 | 7178 | Alasan panggilan dianggap tidak patut | 21 | 4 | [99] BAS 1 P Hadir & T Tidak Hadir - Alamat Tidak Jelas Atau | tidak | relaas panggilan (ALETA relaas) - penilaian hakim |  |
+| 49 | 9881 | lisan atau tertulis (jawaban replik dan duplik) | 82 | 15 | [02] [Kabul] CG - F.rtf | sebagian | baru diusulkan (ragu), belum terisi otomatis (terisi di: gugatan-ecourt) |  |
+| 50 | 8603 | Nama anak yang dimohonkan | 31 | 0 | BAS KUMULASI [2] BAS Putus Verstek CG Kumulasi Hak Asuh Anak | ya | deteksi hadhanah; deteksi asal-usul; deteksi pengangkatan-anak; deteksi lain-lain |  |
+| 51 | 6112, 2018 | Jawaban Lisan Tergugat/Termohon [tanya jawab jawaban lisan 0047] | 27 | 0 | BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Ja | tidak | tidak ada (jawab-jinawab lisan di persidangan; diketik panitera) | Cerai kontra lisan; tidak ada kolom terstruktur di SIPP. |
+| 52 | 6114, 2020 | Duplik Lisan Tergugat/Termohon [tanya jawab duplik lisan 0047] | 26 | 0 | BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Ja | tidak | tidak ada (jawab-jinawab lisan di persidangan; diketik panitera) |  |
+| 53 | 6113, 2019 | Replik Lisan Penggugat/Pemohon [tanya jawab replik lisan 0046] | 26 | 0 | BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Ja | tidak | tidak ada (jawab-jinawab lisan di persidangan; diketik panitera) |  |
+| 54 | 8437 | Kesimpulan Tergugat/Termohon | 48 | 3 | [02] [Kabul] CG - F.rtf | tidak | berkas e-Court (kesimpulan Tergugat) | Registri cerai: belum. |
+| 55 | 8433 | Alasan pencabutan perkara | 66 | 41 | BAS ALUR 08 [A] BAS 1 P Hadir & T Tidak Hadir - Cabut di Sid | ya | sipp-lanjutan-pasti | Sejak 2023: 41 isian petugas, hanya 4 berasal dari mediasi Y2; alasan lain (perbaikan gugatan, alamat tidak ditemukan) bebas. |
+| 56 | 1046 | Status Wali Nikah | 39 | 701 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah; deteksi wali-adhol |  |
+| 57 | 0650 | Saksi Nikah 1 | 33 | 696 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
+| 58 | 0651 | Saksi Nikah 2 | 33 | 697 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
+| 59 | 1001 | Mas kawin | 33 | 697 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
+| 60 | 1217 | Nama Wali Nikah | 33 | 678 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | bawaan ABT bila dikosongkan; deteksi itsbat-nikah |  |
+| 61 | 8087 | Yang Menikahkan | 33 | 696 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
+| 62 | 9958 | C3. Alat Bukti Isbat Nikah Terpadu | 25 | 188 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | ktp-teks; deteksi itsbat-nikah |  |
+| 63 | 5271 | Penghasilan Tergugat/Termohon Perbulan | 6 | 0 | [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).r | tidak | berkas e-Court (gugatan: penghasilan) |  |
+| 64 | 6071 | Nafkah Anak | 6 | 5 | [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).r | sebagian | baru diusulkan (ragu), belum terisi otomatis (terisi di: gugatan-ecourt) |  |
+| 65 | 9050 | Kenaikan nafkah anak per tahun | 5 | 0 | BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Ana | tidak | berkas e-Court (petitum kenaikan nafkah anak) |  |
+| 66 | 7211 | Umur Isbat P1 (Laki-Laki) | 19 | 277 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
+| 67 | 7212 | Umur Isbat P2 (Perempuan) | 19 | 277 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
+| 68 | 1002 | Status Penggugat/Pemohon sblm nikah (IN) | 29 | 699 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
+| 69 | 1003 | Status #2027# sblm nikah (IN) | 26 | 699 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
+| 70 | 8941 | TanyaJwb Saksi 4 T [tanya jawab saksi 4 t] | 13 | 0 | [02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan | ya | susun saksi |  |
+| 71 | 9134 | Bas permohonan | 38 | 0 | BAS ALUR 17 IN 2+ Sidang - [1a] Sidang 1 - Pemeriksaan, Bukt | tidak | opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin | belum dikaji |
+| 72 | 0364 | Tgl. KTP Penggugat/Pemohon | 11 | 267 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | ktp-tanggal; deteksi itsbat-nikah |  |
+| 73 | 0366 | Tgl. KTP Penggugat/Pemohon II | 11 | 263 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | ktp-tanggal; deteksi itsbat-nikah |  |
+| 74 | 8171 | Alasan Permohonan untuk | 21 | 456 | BAS ALUR 17 IN 2+ Sidang - [1a] Sidang 1 - Pemeriksaan, Bukt | ya | deteksi itsbat-nikah; deteksi perwalian; deteksi lain-lain |  |
+| 75 | 8712 | Nomor dan tanggal surat teguran panitera | 21 | 0 | [98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar H | tidak | opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin | ALETA Kasir (teguran panjar) - belum dicatat terstruktur |
+| 76 | 8713 | Batas waktu menambah panjar | 21 | 0 | [98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar H | tidak | opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin | ALETA Kasir (teguran panjar) - belum dicatat terstruktur |
+| 77 | 8714 | Nomor dan tanggal laporan panjar tidak ditambah | 21 | 0 | [98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar H | tidak | opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin | ALETA Kasir (laporan panjar) - belum dicatat terstruktur |
+| 78 | 8729 | Penilaian keterangan saksi dan fakta yang tidak terbukti | 6 | 0 | [03] [Tolak] Cerai - T Tidak Hadir Setelah Mediasi - F Tidak | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
+| 79 | 0182 | Tanggal izin kuasa insidentil | 4 | 0 | [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah | tidak | tidak ada terstruktur (penetapan izin Ketua) |  |
+| 80 | 8895 | Hubungan penerima kuasa dengan Penggugat/Pemohon | 4 | 0 | [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah | tidak | tidak ada terstruktur (penetapan izin Ketua) | Hubungan penerima kuasa dengan pemberi kuasa. |
+| 81 | 8896 | Nomor izin Ketua Pengadilan | 4 | 0 | [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah | tidak | tidak ada terstruktur (penetapan izin Ketua) | Nomor izin Ketua Pengadilan. |
+| 82 | 9123 | Sebab kuasa insidentil tidak sah (huruf a sampai d) | 4 | 0 | [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah | ya | bawaan ABT bila dikosongkan |  |
+| 83 | 5171 | Penghasilan Penggugat/Pemohon Perbulan | 10 | 3 | [01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah - | tidak | berkas e-Court (gugatan: penghasilan) |  |
+| 84 | 6054 | Nafkah iddah | 10 | 8 | [01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah - | ya | gugatan-ecourt; deteksi cerai |  |
+| 85 | 6055 | Mut'ah | 10 | 7 | [01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah - | sebagian | baru diusulkan (ragu), belum terisi otomatis (terisi di: gugatan-ecourt) |  |
+| 86 | 8899 | Pokok kesepakatan perdamaian sebagian | 3 | 0 | [02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakata | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
+| 87 | 8902 | Isi pasal kesepakatan perdamaian sebagian | 3 | 0 | [02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakata | ya | bawaan ABT bila dikosongkan |  |
+| 88 | 0228 | Alasan Syahadah Istifadhah (Itsbat Nikah / Isbat / PAW) | 4 | 3 | [01ab] BAS 1 IN - Kabul Syahadah Istifadhah.rtf | ya | deteksi itsbat-nikah |  |
+| 89 | 9501 | Penilaian jawaban dan bukti Tergugat/Termohon (bantahan apa yang didukung bukti atau saksi, dan mengapa melemahkan dalil Penggugat/Pemohon; kosong = titik-titik) | 4 | 0 | [03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) | tidak | opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin |  |
 | 90 | 8901 | Amar kesepakatan perdamaian sebagian (satu butir per baris) | 2 | 0 | [02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakata | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
 | 91 | 9120 | Panggilan ulang karena kuasa insidentil tidak sah | 2 | 0 | [98] [Gugur] 3b. Cerai P Diwakili Kuasa Insidentil Tidak Sah | ya | bawaan ABT bila dikosongkan |  |
 | 92 | 9125 | Keadaan kuasa insidentil tidak sah | 2 | 0 | [98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah.rt | tidak | penilaian hakim |  |
 | 93 | 1183 | Tgl. Batas Waktu Ikrar Talak | 1 | 11 | [3] BAS Ikrar Talak - P Tidak Hadir & T Hadir, Tunda Tenggan | sebagian | SIPP perkara_ikrar_talak.tanggal_sidang_pertama + 6 bulan (usulan ragu) (terisi di: sipp-lanjutan-ragu) | Cocok persis dengan 7 dari 11 isian petugas; sisanya sidang ikrar pertama diundur. |
-| 94 | 1025 | Nama Almarhum / Almarhumah | 44 | 28 | BAS ALUR 35 IN Kontensius - Sidang 1 - Jawaban T Mengakui, P | sebagian | belum dikaji (terisi di: deteksi waris; deteksi perwalian; deteksi lain-lain) |  |
+| 94 | 1025 | Nama Almarhum / Almarhumah | 44 | 28 | BAS ALUR 35 IN Kontensius - Sidang 1 - Jawaban T Mengakui, P | ya | itsbat-pasangan-meninggal; deteksi waris; deteksi perwalian; deteksi lain-lain |  |
 | 95 | 1021 | Nama Istri Pertama | 2 | 0 | [99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya. | ya | deteksi itsbat-nikah |  |
 | 96 | 1513 | Nama Suami Meninggal (bukti Pemohon2) | 2 | 0 | [99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya. | tidak | posita/bukti (akta kematian) | Itsbat dengan suami meninggal. |
 | 97 | 0600 | Nama Pria (Dispensasi) | 20 | 34 | BAS ALUR 12 DK - [1at] Sidang 1 - Calon Istri Hamil (Anak La | ya | deteksi dispensasi-kawin |  |
 | 98 | 0606 | Nama Wanita (Dispensasi) | 20 | 41 | BAS ALUR 12 DK - [1at] Sidang 1 - Calon Istri Hamil (Anak La | ya | deteksi dispensasi-kawin |  |
-| 99 | 6331 | Pekerjaan Calon Suami/Anak Para Pemohon DK / Pekerjaan Perwalian Orang Tua | 22 | 12 | BAS ALUR 12 DK - [1at] Sidang 1 - Calon Istri Hamil (Anak La | sebagian | belum dikaji (terisi di: deteksi dispensasi-kawin; deteksi perwalian) |  |
+| 99 | 6331 | Pekerjaan Calon Suami/Anak Para Pemohon DK / Pekerjaan Perwalian Orang Tua | 22 | 12 | BAS ALUR 12 DK - [1at] Sidang 1 - Calon Istri Hamil (Anak La | sebagian | terisi di jenis utama; belum di: 7 Wali Adhal (terisi di: deteksi dispensasi-kawin; deteksi perwalian) |  |
 | 100 | 0601 | Umur Pria (dispensasi) | 17 | 23 | BAS ALUR 12 DK - [1at] Sidang 1 - Calon Istri Hamil (Anak La | ya | deteksi dispensasi-kawin |  |
 | 101 | 0607 | Umur Wanita (dispensasi) | 17 | 33 | BAS ALUR 12 DK - [1at] Sidang 1 - Calon Istri Hamil (Anak La | ya | deteksi dispensasi-kawin |  |
 | 102 | 0609 | Pendidikan Wanita (dispensasi) | 17 | 35 | BAS ALUR 12 DK - [1at] Sidang 1 - Calon Istri Hamil (Anak La | ya | deteksi dispensasi-kawin |  |
@@ -151,7 +151,7 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 | 108 | 9956 | Detektor klasifikasi bukti surat sesuai dengan jenis perkara | 17 | 8 | BAS ALUR 12 DK - [1at] Sidang 1 - Calon Istri Hamil (Anak La | ya | ktp-teks; deteksi dispensasi-kawin |  |
 | 109 | 0709 | ibu kandung/bapak kandung perkara Hadhanah | 11 | 7 | [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).r | ya | deteksi cerai; deteksi perwalian |  |
 | 110 | 5110 | Nama anak | 11 | 6 | [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).r | ya | gugatan-ecourt; deteksi perwalian |  |
-| 111 | 6072 | Nafkah anak (masing-masing anak) | 2 | 2 | [01a] [Kabul Verstek] CT - F (Ex Offiicio mutah iddah dan na | sebagian | belum dikaji (terisi di: gugatan-ecourt) |  |
+| 111 | 6072 | Nafkah anak (masing-masing anak) | 2 | 2 | [01a] [Kabul Verstek] CT - F (Ex Offiicio mutah iddah dan na | sebagian | baru diusulkan (ragu), belum terisi otomatis (terisi di: gugatan-ecourt) |  |
 | 112 | 1321 | No. Akta Cerai P I (Bukti) | 3 | 0 | [99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya. | ya | f23 itsbat-nikah |  |
 | 113 | 1322 | Tgl. Akta Cerai P I (Bukti) | 3 | 0 | [99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya. | ya | f23 itsbat-nikah |  |
 | 114 | 1324 | Penerbit Akta Cerai P I (Bukti) | 1 | 0 | [99aa] Pertimbangan - Cerai Hidup P1 P2 Pasangan Sebelumnya. | ya | f23 itsbat-nikah |  |
@@ -162,27 +162,27 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 | 119 | 1515 | Penyebab Suami Meninggal (bukti Pemohon2) | 1 | 0 | [99aa] Pertimbangan - Cerai Mati P1 P2 Pasangan Sebelumnya.r | tidak | posita/bukti (akta kematian) |  |
 | 120 | 5015 | Tgl meninggal isteri/ibu | 1 | 0 | [99aa] Pertimbangan - Cerai Mati P1 P2 Pasangan Sebelumnya.r | ya | deteksi itsbat-nikah |  |
 | 121 | 5016 | Sebab meninggal isteri/ibu | 1 | 0 | [99aa] Pertimbangan - Cerai Mati P1 P2 Pasangan Sebelumnya.r | ya | deteksi itsbat-nikah |  |
-| 122 | 1246 | Tanggal meninggalnya #2026# | 21 | 18 | [01] [Kabul] IN Kontensius - Pasangan Meninggal, Ahli Waris  | sebagian | belum dikaji (terisi di: deteksi waris) |  |
-| 123 | 1247 | Sebab meninggalnya #2026# | 16 | 17 | [01] [Kabul] IN Kontensius - Pasangan Meninggal, Ahli Waris  | sebagian | belum dikaji (terisi di: deteksi waris) |  |
-| 124 | 1509 | Tempat Meninggal Dunia | 16 | 16 | [01] [Kabul] IN Kontensius - Pasangan Meninggal, Ahli Waris  | sebagian | belum dikaji (terisi di: deteksi waris) |  |
+| 122 | 1246 | Tanggal meninggalnya #2026# | 21 | 18 | [01] [Kabul] IN Kontensius - Pasangan Meninggal, Ahli Waris  | ya | itsbat-pasangan-meninggal; deteksi waris |  |
+| 123 | 1247 | Sebab meninggalnya #2026# | 16 | 17 | [01] [Kabul] IN Kontensius - Pasangan Meninggal, Ahli Waris  | ya | itsbat-pasangan-meninggal; deteksi waris |  |
+| 124 | 1509 | Tempat Meninggal Dunia | 16 | 16 | [01] [Kabul] IN Kontensius - Pasangan Meninggal, Ahli Waris  | ya | itsbat-pasangan-meninggal; deteksi waris |  |
 | 125 | 0999 | Umur Kandungan Hamil DK Perempuan | 9 | 5 | BAS ALUR 12 DK - [1at] Sidang 1 - Calon Istri Hamil (Anak La | ya | deteksi dispensasi-kawin |  |
 | 126 | 8614 | Harta peninggalan pewaris | 9 | 0 | BAS ALUR 14 PAW - [1] Sidang 1 - Pemeriksaan, Bukti Surat da | ya | deteksi waris |  |
 | 127 | 0712 | Bapak/Ibu yang meninggal dari anak yang di walikan Perwalian | 10 | 5 | BAS ALUR 16 Perwalian - [1] Sidang 1 - Pemeriksaan, Bukti Su | ya | deteksi perwalian |  |
 | 128 | 1230 | Tanggal meninggalnya suami | 10 | 4 | BAS ALUR 16 Perwalian - [1] Sidang 1 - Pemeriksaan, Bukti Su | ya | deteksi perwalian |  |
-| 129 | 0711 | kalah Tergugat ibu kandung/bapak kandung perkara Hadhanah | 1 | 2 | [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).r | tidak | belum dikaji |  |
-| 130 | 2004 | kini anak tersebut diasuh oleh | 1 | 3 | [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).r | sebagian | belum dikaji (terisi di: gugatan-ecourt) |  |
-| 131 | 7120 | Nafkah Lampau (Madhiyah / Madliyah) | 1 | 1 | [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).r | sebagian | belum dikaji (terisi di: gugatan-ecourt) |  |
+| 129 | 0711 | kalah Tergugat ibu kandung/bapak kandung perkara Hadhanah | 1 | 2 | [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).r | tidak | posita/petitum hadhanah (belum ada aturan) | Hanya 1 blangko. |
+| 130 | 2004 | kini anak tersebut diasuh oleh | 1 | 3 | [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).r | sebagian | baru diusulkan (ragu), belum terisi otomatis (terisi di: gugatan-ecourt) |  |
+| 131 | 7120 | Nafkah Lampau (Madhiyah / Madliyah) | 1 | 1 | [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).r | sebagian | baru diusulkan (ragu), belum terisi otomatis (terisi di: gugatan-ecourt) |  |
 | 132 | 8570 | Kediaman bersama terakhir Penggugat/Pemohon dan Tergugat/Termohon sebelum berpisah | 1 | 0 | [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).r | ya | deteksi cerai |  |
-| 133 | 9220 | Ikrar: keadaan Tergugat/Termohon saat ikrar | 1 | 0 | [90a] [Ikrar] Penetapan Ikrar Talak - P & T Hadir.rtf | tidak | belum dikaji |  |
+| 133 | 9220 | Ikrar: keadaan Tergugat/Termohon saat ikrar | 1 | 0 | [90a] [Ikrar] Penetapan Ikrar Talak - P & T Hadir.rtf | tidak | keterangan Termohon di sidang ikrar (BAS ikrar) | Hanya 1 blangko. |
 | 134 | 8132 | Alat Bukti PAW | 6 | 30 | BAS ALUR 14 PAW - [1] Sidang 1 - Pemeriksaan, Bukti Surat da | tidak | berkas e-Court (lampiran bukti; butuh baca dokumen) |  |
 | 135 | 0349 | Tgl. Lahir Wanita (Dispensasi) | 5 | 20 | [01] [Kabul] DK - (Anak P Cewek) Hamil.rtf | ya | deteksi dispensasi-kawin |  |
 | 136 | 8812 | Tanggal Ijazah | 5 | 6 | [01] [Kabul] DK - (Anak P Cewek) Hamil.rtf | ya | deteksi dispensasi-kawin |  |
 | 137 | 8131 | Alat Bukti Perwalian Anak | 6 | 35 | BAS ALUR 16 Perwalian - [1] Sidang 1 - Pemeriksaan, Bukti Su | ya | deteksi perwalian |  |
 | 138 | 0997 | UPT Puskesmas DK | 3 | 6 | [01] [Kabul] DK - (Anak P Cewek) Hamil.rtf | ya | deteksi dispensasi-kawin |  |
-| 139 | 8706 | DASAR PUTUSNYA PERKAWINAN PARA PIHAK - khusus Harta Bersama | 14 | 0 | [97] [Perdamaian] Akta Perdamaian.rtf | sebagian | berkas e-Court (lampiran bukti; butuh baca dokumen) (terisi di: deteksi harta-bersama) |  |
+| 139 | 8706 | DASAR PUTUSNYA PERKAWINAN PARA PIHAK - khusus Harta Bersama | 14 | 0 | [97] [Perdamaian] Akta Perdamaian.rtf | sebagian | terisi di jenis utama; belum di: 4b Kewarisan; 6a Hak Asuh Anak (Hadhanah); 6b Penguasaan Anak (terisi di: deteksi harta-bersama) |  |
 | 140 | 0610 | Pekerjaan Wanita (dispensasi) | 2 | 29 | [01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil.rtf | ya | deteksi dispensasi-kawin |  |
 | 141 | 8616 | Pengakuan Penggugat/Pemohon atas cacat permohonan | 2 | 0 | BAS ALUR 14 PAW - [NO] Permohonan Kabur, Tetap Tidak Diperba | tidak | berkas e-Court (lampiran bukti; butuh baca dokumen) |  |
-| 142 | 8617 | Uraian cacat formil permohonan (no obscuur) | 2 | 0 | BAS ALUR 14 PAW - [NO] Permohonan Kabur, Tetap Tidak Diperba | tidak | belum dikaji |  |
+| 142 | 8617 | Uraian cacat formil permohonan (no obscuur) | 2 | 0 | BAS ALUR 14 PAW - [NO] Permohonan Kabur, Tetap Tidak Diperba | tidak | tidak ada (penilaian hakim atas cacat formil) |  |
 | 143 | 9169 | Itsbat nikah kontensius | 2 | 0 | BAS ALUR 35 IN Kontensius - Sidang 1 - Jawaban T Mengakui, P | ya | bawaan ABT bila dikosongkan |  |
 | 144 | 8704 | Isi kesepakatan perdamaian | 12 | 0 | BAS ALUR 43 ES Acara Biasa - Sidang 2 - Mediasi Berhasil - A | ya | sipp-lanjutan-pasti |  |
 | 145 | 8705 | Tanggal kesepakatan perdamaian | 12 | 0 | BAS ALUR 43 ES Acara Biasa - Sidang 2 - Mediasi Berhasil - A | ya | sipp-lanjutan-pasti |  |
@@ -193,7 +193,7 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 | 150 | 8619 | NAMA ORANG TUA KANDUNG ANAK (pengangkatan anak) | 9 | 0 | BAS ALUR 18 Angkat Anak - [1] Sidang 1 - Pemeriksaan, Bukti  | ya | deteksi pengangkatan-anak; deteksi lain-lain |  |
 | 151 | 8622 | STATUS PERKAWINAN Penggugat/Pemohon (pengangkatan anak) | 9 | 0 | BAS ALUR 18 Angkat Anak - [1] Sidang 1 - Pemeriksaan, Bukti  | ya | deteksi pengangkatan-anak; deteksi lain-lain |  |
 | 152 | 8623 | Hubungan Penggugat/Pemohon dengan calon anak angkat | 9 | 0 | BAS ALUR 18 Angkat Anak - [1] Sidang 1 - Pemeriksaan, Bukti  | ya | deteksi pengangkatan-anak; deteksi lain-lain |  |
-| 153 | 1029 | Nama Calon Suami | 23 | 3 | BAS ALUR 41 Pencegahan - [1] Sidang 1 - Calon Hadir - Bukti  | sebagian | belum dikaji (terisi di: deteksi wali-adhol) |  |
+| 153 | 1029 | Nama Calon Suami | 23 | 3 | BAS ALUR 41 Pencegahan - [1] Sidang 1 - Calon Hadir - Bukti  | sebagian | terisi di jenis utama; belum di: 5b Pencegahan Perkawinan; 5b Pencegahan Perkawinan - BAS (terisi di: deteksi wali-adhol) |  |
 | 154 | 8730 | Harta bersama | 5 | 0 | BAS ALUR 31 HB - Sidang 2 - T Tetap Tidak Hadir - Pembuktian | ya | deteksi harta-bersama |  |
 | 155 | 8717 | Kewarisan | 3 | 0 | [01] [Kabul] Kewarisan - Kontradiktur.rtf | ya | deteksi waris |  |
 | 156 | 8718 | Kewarisan | 3 | 0 | [01] [Kabul] Kewarisan - Kontradiktur.rtf | ya | deteksi waris |  |
@@ -207,27 +207,27 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 | 164 | 8620 | Keterangan orang tua kandung di persidangan | 5 | 0 | BAS ALUR 18 Angkat Anak - [1] Sidang 1 - Pemeriksaan, Bukti  | ya | deteksi pengangkatan-anak; deteksi lain-lain |  |
 | 165 | 9162 | Objek yang dimohonkan untuk disita (satu per baris) | 5 | 0 | BAS ALUR 30 HB - Sidang Insidentil 1 - Pemeriksaan Permohona | ya | f23 harta-bersama; f23 waris |  |
 | 166 | 9163 | Alasan permohonan sita | 4 | 0 | BAS ALUR 30 HB - Sidang Insidentil 1 - Pemeriksaan Permohona | ya | f23 harta-bersama; f23 waris |  |
-| 167 | 9164 | Tanggapan Tergugat/Termohon atas permohonan sita (dari jawaban atau sidang insidentil) | 4 | 0 | BAS ALUR 30 HB - Sidang Insidentil 1 - Pemeriksaan Permohona | tidak | belum dikaji |  |
+| 167 | 9164 | Tanggapan Tergugat/Termohon atas permohonan sita (dari jawaban atau sidang insidentil) | 4 | 0 | BAS ALUR 30 HB - Sidang Insidentil 1 - Pemeriksaan Permohona | tidak | tidak ada (tanggapan Tergugat di sidang insidentil) |  |
 | 168 | 9161 | SITA: JENIS SITA YANG DIMOHONKAN; contoh lain: sita marital | 2 | 0 | BAS ALUR 30 HB - Sidang Insidentil 1 - Pemeriksaan Permohona | ya | bawaan ABT bila dikosongkan; f23 harta-bersama; f23 waris |  |
-| 169 | 9165 | Pemeriksaan setempat | 2 | 0 | BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi  | tidak | belum dikaji |  |
-| 170 | 9166 | Pemeriksaan setempat | 2 | 0 | BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi  | tidak | belum dikaji |  |
-| 171 | 9167 | Pemeriksaan setempat | 2 | 0 | BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi  | tidak | belum dikaji |  |
-| 172 | 9168 | Pemeriksaan setempat | 2 | 0 | BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi  | tidak | belum dikaji |  |
+| 169 | 9165 | Pemeriksaan setempat | 2 | 0 | BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi  | tidak | tidak ada (hasil pemeriksaan setempat) | Perkara kebendaan, sangat jarang. |
+| 170 | 9166 | Pemeriksaan setempat | 2 | 0 | BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi  | tidak | tidak ada (hasil pemeriksaan setempat) |  |
+| 171 | 9167 | Pemeriksaan setempat | 2 | 0 | BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi  | tidak | tidak ada (hasil pemeriksaan setempat) |  |
+| 172 | 9168 | Pemeriksaan setempat | 2 | 0 | BAS ALUR 30 HB - Sidang PS - Pemeriksaan Setempat di Lokasi  | tidak | tidak ada (hasil pemeriksaan setempat) |  |
 | 173 | 9303 | Identitas anak (nama, tempat dan tanggal lahir; satu anak satu baris) | 18 | 0 | BAS ALUR 38 Hak Asuh - Sidang 2 - T Tetap Tidak Hadir - Pemb | ya | bawaan ABT bila dikosongkan |  |
 | 174 | 9340 | Akad yang disengketakan (jenis akad, nomor, tanggal) | 13 | 0 | BAS ALUR 40 ES GS - [2a] Sidang 2 - T Tetap Tidak Hadir - Bu | tidak | berkas e-Court (lampiran bukti; butuh baca dokumen) |  |
 | 175 | 9135 | Alat bukti surat wali adhal | 6 | 0 | BAS ALUR 19 Wali Adhal - [1] Sidang 1 - Pemeriksaan, Bukti S | tidak | berkas e-Court (lampiran bukti; butuh baca dokumen) |  |
 | 176 | 0378 | Bukti Surat IN | 2 | 439 | [03] [Tolak] AUA - Dalil Tidak Terbukti.rtf | ya | ktp-teks; deteksi asal-usul |  |
-| 177 | 0889 | Tanggal Duplikat Kutipan Akta Nikah | 2 | 0 | [01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvens | tidak | belum dikaji |  |
-| 178 | 1108 | Nomor duplikat surat nikah | 2 | 0 | [01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvens | tidak | berkas e-Court (lampiran bukti; butuh baca dokumen) |  |
+| 177 | 0889 | Tanggal Duplikat Kutipan Akta Nikah | 2 | 0 | [01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvens | tidak | posita itsbat (duplikat akta nikah; belum ada aturan) | Jarang. |
+| 178 | 1108 | Nomor duplikat surat nikah | 2 | 0 | [01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvens | tidak | posita itsbat (duplikat akta nikah; belum ada aturan) | Jarang. |
 | 179 | 5032 | Harta bersama/gono-gini | 2 | 0 | [01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvens | ya | deteksi harta-bersama |  |
 | 180 | 9110 | Pengadilan tinggi tempat advokat Tergugat/Termohon disumpah | 2 | 0 | [01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvens | ya | bawaan ABT bila dikosongkan | Tergugat berkuasa ±1% perkara; bawaan layar: Pengadilan Tinggi Sulawesi Tengah. |
 | 181 | 9282 | Harta bersama | 2 | 0 | [01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvens | tidak | berkas e-Court (lampiran bukti; butuh baca dokumen) |  |
-| 182 | 9283 | Harta bersama rekonvensi | 2 | 0 | [01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvens | tidak | belum dikaji |  |
+| 182 | 9283 | Harta bersama rekonvensi | 2 | 0 | [01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvens | tidak | jawaban/gugatan rekonvensi e-Court | Harta bersama dengan rekonvensi, sangat jarang. |
 | 183 | 9951 | Bukti elektronik Penggugat/Pemohon | 2 | 0 | [01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvens | tidak | berkas e-Court (lampiran bukti; butuh baca dokumen) |  |
 | 184 | 9952 | Bukti elektronik Tergugat/Termohon | 2 | 0 | [01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvens | tidak | berkas e-Court (lampiran bukti; butuh baca dokumen) |  |
-| 185 | 9460 | Nama calon istri (nama lengkap binti ...; nama calon suami diisi di kolom nama calon suami) | 14 | 0 | BAS ALUR 41 Pencegahan - [1] Sidang 1 - Calon Hadir - Bukti  | tidak | belum dikaji |  |
-| 186 | 9461 | Wilayah KUA tempat perkawinan akan dilangsungkan (tulis "Kecamatan ..., Kabupaten ...") | 11 | 0 | BAS ALUR 41 Pencegahan - [1] Sidang 1 - Calon Hadir - Bukti  | tidak | belum dikaji |  |
-| 187 | 9462 | Kedudukan Penggugat/Pemohon terhadap calon mempelai (mis. ayah kandung calon istri, wali nikah, istri sah calon suami, Pegawai Pencatat Nikah KUA ...) | 11 | 0 | BAS ALUR 41 Pencegahan - [1] Sidang 1 - Calon Hadir - Bukti  | tidak | belum dikaji |  |
+| 185 | 9460 | Nama calon istri (nama lengkap binti ...; nama calon suami diisi di kolom nama calon suami) | 14 | 0 | BAS ALUR 41 Pencegahan - [1] Sidang 1 - Calon Hadir - Bukti  | tidak | gugatan e-Court pencegahan perkawinan | Jenis 342: 0 perkara sejak 2023 (2 sejak 2018); belum ada modul jenisnya. |
+| 186 | 9461 | Wilayah KUA tempat perkawinan akan dilangsungkan (tulis "Kecamatan ..., Kabupaten ...") | 11 | 0 | BAS ALUR 41 Pencegahan - [1] Sidang 1 - Calon Hadir - Bukti  | tidak | gugatan e-Court pencegahan perkawinan | Jenis 342 sangat jarang. |
+| 187 | 9462 | Kedudukan Penggugat/Pemohon terhadap calon mempelai (mis. ayah kandung calon istri, wali nikah, istri sah calon suami, Pegawai Pencatat Nikah KUA ...) | 11 | 0 | BAS ALUR 41 Pencegahan - [1] Sidang 1 - Calon Hadir - Bukti  | tidak | gugatan e-Court pencegahan perkawinan | Jenis 342 sangat jarang. |
 | 188 | 9463 | Alasan pencegahan perkawinan (pilih satu huruf) | 11 | 0 | BAS ALUR 41 Pencegahan - [1] Sidang 1 - Calon Hadir - Bukti  | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
 | 189 | 9466 | Fakta alasan pencegahan yang terbukti (uraian singkat dari bukti, saksi, dan keterangan calon mempelai) | 11 | 0 | BAS ALUR 41 Pencegahan - [1] Sidang 1 - Calon Hadir - Bukti  | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
 | 190 | 9468 | Pokok keterangan calon mempelai di persidangan (satu kalimat) | 11 | 0 | BAS ALUR 41 Pencegahan - [1] Sidang 1 - Calon Hadir - Bukti  | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
@@ -235,8 +235,8 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 | 192 | 9488 | Alat bukti surat Penggugat/Pemohon (daftar bukti P.1 dst.; kosong = tanpa daftar) | 10 | 0 | BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P.rtf | tidak | berkas e-Court (lampiran bukti; butuh baca dokumen) |  |
 | 193 | 9341 | Jumlah kewajiban Tergugat/Termohon yang dikabulkan (rupiah, angka saja) | 7 | 0 | BAS ALUR 40 ES GS - [2a] Sidang 2 - T Tetap Tidak Hadir - Bu | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
 | 194 | 9492 | Alat bukti surat Penggugat/Pemohon (daftar bukti P.1 dst.: akad, jadwal angsuran, somasi, ...) | 9 | 0 | BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P.rtf | tidak | berkas e-Court (lampiran bukti; butuh baca dokumen) |  |
-| 195 | 0652 | No. Surat Penolakan KUA | 3 | 0 | [01] [Kabul] Wali Adhal - Wali Tidak Hadir.rtf | tidak | belum dikaji |  |
-| 196 | 0653 | Tgl. Surat Penolakan KUA | 3 | 0 | [01] [Kabul] Wali Adhal - Wali Tidak Hadir.rtf | tidak | belum dikaji |  |
+| 195 | 0652 | No. Surat Penolakan KUA | 3 | 0 | [01] [Kabul] Wali Adhal - Wali Tidak Hadir.rtf | tidak | berkas e-Court (lampiran surat penolakan KUA; butuh baca dokumen) | Dispensasi/wali adhal; belum dibaca OCR. |
+| 196 | 0653 | Tgl. Surat Penolakan KUA | 3 | 0 | [01] [Kabul] Wali Adhal - Wali Tidak Hadir.rtf | tidak | berkas e-Court (lampiran surat penolakan KUA; butuh baca dokumen) | Dispensasi/wali adhal; belum dibaca OCR. |
 | 197 | 9201 | Wali adhal | 3 | 0 | [01] [Kabul] Wali Adhal - Wali Tidak Hadir.rtf | ya | f23 wali-adhol |  |
 | 198 | 9203 | Wali adhal | 3 | 0 | [01] [Kabul] Wali Adhal - Wali Tidak Hadir.rtf | ya | f23 wali-adhol |  |
 | 199 | 9204 | Wali adhal | 3 | 0 | [01] [Kabul] Wali Adhal - Wali Tidak Hadir.rtf | ya | f23 wali-adhol |  |
@@ -251,10 +251,10 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 | 208 | 9328 | Akta nikah (nomor, tanggal, KUA penerbit; kosong = dari SIPP) | 6 | 0 | BAS ALUR 39 Pembatalan Nikah - Sidang 2 - T Tetap Tidak Hadi | ya | ABT sendiri dari SIPP bila dikosongkan |  |
 | 209 | 9475 | Pokok tuntutan wasiat (pilih satu huruf) | 6 | 0 | BAS ALUR 42 Wasiat - Sidang 2 - T Tetap Tidak Hadir - Pembuk | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
 | 210 | 9478 | Bentuk dan tanggal wasiat (mis. "secara tertulis tertanggal ... di hadapan 2 (dua) orang saksi" atau "dengan akta Notaris ... Nomor ...") | 6 | 0 | BAS ALUR 42 Wasiat - Sidang 2 - T Tetap Tidak Hadir - Pembuk | tidak | berkas e-Court (lampiran bukti; butuh baca dokumen) |  |
-| 211 | 9479 | Objek wasiat (benda atau manfaat yang diwasiatkan: objek, bukti hak, luas, letak, dan batas-batas) | 6 | 0 | BAS ALUR 42 Wasiat - Sidang 2 - T Tetap Tidak Hadir - Pembuk | tidak | belum dikaji |  |
+| 211 | 9479 | Objek wasiat (benda atau manfaat yang diwasiatkan: objek, bukti hak, luas, letak, dan batas-batas) | 6 | 0 | BAS ALUR 42 Wasiat - Sidang 2 - T Tetap Tidak Hadir - Pembuk | tidak | gugatan e-Court wasiat | Jenis 365: 1 perkara sejak 2023. |
 | 212 | 9480 | Penerima wasiat (nama atau sebutan; kosong = otomatis) | 6 | 0 | BAS ALUR 42 Wasiat - Sidang 2 - T Tetap Tidak Hadir - Pembuk | ya | bawaan ABT bila dikosongkan |  |
-| 213 | 9486 | Kedudukan Penggugat/Pemohon (mis. ahli waris dari pewasiat, penerima wasiat, anak angkat pewasiat) | 6 | 0 | [01] [Kabul] Wasiat - Kontradiktoir.rtf | tidak | belum dikaji |  |
-| 214 | 9487 | Kedudukan Tergugat/Termohon (mis. penerima wasiat, ahli waris lain yang menguasai objek wasiat) | 6 | 0 | [01] [Kabul] Wasiat - Kontradiktoir.rtf | tidak | belum dikaji |  |
+| 213 | 9486 | Kedudukan Penggugat/Pemohon (mis. ahli waris dari pewasiat, penerima wasiat, anak angkat pewasiat) | 6 | 0 | [01] [Kabul] Wasiat - Kontradiktoir.rtf | tidak | gugatan e-Court wasiat |  |
+| 214 | 9487 | Kedudukan Tergugat/Termohon (mis. penerima wasiat, ahli waris lain yang menguasai objek wasiat) | 6 | 0 | [01] [Kabul] Wasiat - Kontradiktoir.rtf | tidak | gugatan e-Court wasiat |  |
 | 215 | 9489 | Alat bukti surat Tergugat/Termohon (daftar bukti T.1 dst.; kosong = tanpa daftar) | 6 | 0 | BAS ALUR 04 [7] BAS 7 P & T Hadir - Pembuktian T.rtf | tidak | berkas e-Court (lampiran bukti; butuh baca dokumen) |  |
 | 216 | 8722 | Izin poligami | 3 | 0 | BAS ALUR 34 Poligami - Sidang 2 - Laporan Mediasi, Permohona | ya | deteksi izin-poligami |  |
 | 217 | 8724 | Izin poligami | 3 | 0 | BAS ALUR 34 Poligami - Sidang 2 - Laporan Mediasi, Permohona | ya | deteksi izin-poligami |  |
@@ -289,8 +289,8 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 | 246 | 9309 | Mengapa pemegang hak asuh tidak dapat menjamin keselamatan anak | 1 | 0 | [01d] [Kabul] Hak Asuh - Kontradiktoir - Pemegang Hadhanah T | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
 | 247 | 9432 | Fakta pengasuhan anak oleh Tergugat/Termohon (dari bukti dan saksi; kosong = kalimat bawaan) | 1 | 0 | [03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan | ya | bawaan ABT bila dikosongkan |  |
 | 248 | 9467 | Pertimbangan mengapa alasan pencegahan tidak terbukti atau tidak beralasan hukum (untuk putusan ditolak) | 1 | 0 | [03] [Tolak] Pencegahan Perkawinan - Alasan Pencegahan Tidak | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
-| 249 | 9469 | Waktu dan tempat perkawinan yang ternyata sudah dilangsungkan | 1 | 0 | [99b] [NO] Pencegahan Perkawinan - Perkawinan Telah Dilangsu | tidak | belum dikaji |  |
-| 250 | 9485 | Pihak yang berkepentingan tetapi tidak ditarik sebagai pihak (untuk putusan tidak dapat diterima karena kurang pihak) | 1 | 0 | [99a] [NO] Wasiat - Kurang Pihak (Plurium Litis Consortium). | tidak | belum dikaji |  |
+| 249 | 9469 | Waktu dan tempat perkawinan yang ternyata sudah dilangsungkan | 1 | 0 | [99b] [NO] Pencegahan Perkawinan - Perkawinan Telah Dilangsu | tidak | tidak ada (fakta persidangan) | Jenis 342 sangat jarang. |
+| 250 | 9485 | Pihak yang berkepentingan tetapi tidak ditarik sebagai pihak (untuk putusan tidak dapat diterima karena kurang pihak) | 1 | 0 | [99a] [NO] Wasiat - Kurang Pihak (Plurium Litis Consortium). | tidak | tidak ada (penilaian hakim) |  |
 | 251 | 9490 | Klausula arbitrase dalam akad (pasal akad dan lembaga arbitrase yang dipilih) | 1 | 0 | [99a] [NO] ES Acara Biasa - Eksepsi Klausula Arbitrase Dikab | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
 | 252 | 9491 | Pokok eksepsi Tergugat/Termohon (satu kalimat) | 1 | 0 | [99a] [NO] ES Acara Biasa - Eksepsi Klausula Arbitrase Dikab | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
 

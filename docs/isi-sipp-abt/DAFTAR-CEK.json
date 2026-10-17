@@ -28,10 +28,10 @@
   "blangko": 982,
   "blangkoTanpaIsian": 31,
   "isianUnik": 252,
-  "ya": 128,
-  "sebagian": 30,
+  "ya": 144,
+  "sebagian": 14,
   "tidak": 94,
-  "tanpaSumber": 34,
+  "tanpaSumber": 45,
   "opsionalTitik": 5,
   "penandaTakDikenal": 53
  },
@@ -185,7 +185,8 @@
    "jalur": "derry_briantono/- BAS ASAL USUL ANAK -/[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
    "folder": "- BAS ASAL USUL ANAK -",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -13730,7 +13731,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8433",
     "8537"
@@ -13747,7 +13748,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537"
    ],
@@ -13763,7 +13764,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537"
    ],
@@ -13779,7 +13780,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537",
     "8538",
@@ -13838,7 +13839,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537"
    ],
@@ -13854,7 +13855,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "7139",
     "0156",
@@ -13916,7 +13917,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "0156",
     "8537",
@@ -13977,7 +13978,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "7178",
     "0156",
@@ -14039,7 +14040,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537"
    ],
@@ -14053,7 +14054,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537",
     "8899",
@@ -14069,7 +14070,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "7084"
    ],
@@ -14083,7 +14084,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "7084"
    ],
@@ -14097,7 +14098,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "7084"
    ],
@@ -14111,7 +14112,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537",
     "9955",
@@ -14129,7 +14130,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537",
     "7084",
@@ -14147,7 +14148,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "7084"
    ],
@@ -14161,7 +14162,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [],
    "takDikenal": []
   },
@@ -14173,7 +14174,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537"
    ],
@@ -14189,7 +14190,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537"
    ],
@@ -14205,7 +14206,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537"
    ],
@@ -14219,7 +14220,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537"
    ],
@@ -14233,7 +14234,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8503",
     "8537",
@@ -14256,7 +14257,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8503",
     "8537",
@@ -14282,7 +14283,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8503",
     "5227",
@@ -14362,7 +14363,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8503",
     "5227",
@@ -14445,7 +14446,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8503",
     "5227",
@@ -14524,7 +14525,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8503",
     "5227",
@@ -14606,7 +14607,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8503",
     "5227",
@@ -14692,7 +14693,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8503",
     "5227",
@@ -14781,7 +14782,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537",
     "8538",
@@ -14844,7 +14845,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537",
     "8538",
@@ -14907,7 +14908,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "7139",
     "8433",
@@ -14976,7 +14977,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537",
     "8538",
@@ -15041,7 +15042,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "8537",
     "8538",
@@ -15103,7 +15104,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "7139",
     "8537",
@@ -15168,7 +15169,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "0222",
     "7035",
@@ -15252,7 +15253,7 @@
     "hadhanah"
    ],
    "universal": false,
-   "bobot": 1,
+   "bobot": 1912,
    "isian": [
     "7139",
     "8537",
@@ -26901,7 +26902,8 @@
    "jalur": "derry_briantono/6 Perwalian - BAS/BAS ALUR 16 Perwalian - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf",
    "folder": "6 Perwalian - BAS",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -26939,7 +26941,8 @@
    "jalur": "derry_briantono/6 Perwalian - BAS/BAS ALUR 16 Perwalian - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
    "folder": "6 Perwalian - BAS",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -26977,7 +26980,8 @@
    "jalur": "derry_briantono/6 Perwalian - BAS/BAS ALUR 16 Perwalian - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf",
    "folder": "6 Perwalian - BAS",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -27013,7 +27017,8 @@
    "jalur": "derry_briantono/6 Perwalian - BAS/BAS ALUR 16 Perwalian - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf",
    "folder": "6 Perwalian - BAS",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -27048,7 +27053,8 @@
    "jalur": "derry_briantono/6 Perwalian - BAS/BAS ALUR 16 Perwalian - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
    "folder": "6 Perwalian - BAS",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -27085,7 +27091,8 @@
    "jalur": "derry_briantono/6 Perwalian - BAS/BAS ALUR 16 Perwalian - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
    "folder": "6 Perwalian - BAS",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -27123,7 +27130,8 @@
    "jalur": "derry_briantono/6 Perwalian - BAS/BAS ALUR 16 Perwalian - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf",
    "folder": "6 Perwalian - BAS",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -27160,7 +27168,8 @@
    "jalur": "derry_briantono/6 Perwalian - BAS/BAS ALUR 16 Perwalian - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
    "folder": "6 Perwalian - BAS",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -27195,7 +27204,8 @@
    "jalur": "derry_briantono/6 Perwalian - BAS/BAS ALUR 16 Perwalian - [C] Pemohon Hadir Mencabut Permohonan.rtf",
    "folder": "6 Perwalian - BAS",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -27225,7 +27235,8 @@
    "jalur": "derry_briantono/6 Perwalian - BAS/BAS ALUR 16 Perwalian - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
    "folder": "6 Perwalian - BAS",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -27254,7 +27265,8 @@
    "jalur": "derry_briantono/6 Perwalian/Perwalian Anak oleh ortu kandung Kabul.rtf",
    "folder": "6 Perwalian",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -27296,7 +27308,8 @@
    "jalur": "derry_briantono/6 Perwalian/Perwalian Anak oleh ortu kandung Tolak Primer Kabul Subsider.rtf",
    "folder": "6 Perwalian",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -27338,7 +27351,8 @@
    "jalur": "derry_briantono/6 Perwalian/[98] [Cabut] Perwalian.rtf",
    "folder": "6 Perwalian",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -27370,7 +27384,8 @@
    "jalur": "derry_briantono/6 Perwalian/[98a] [Gugur] Perwalian - Pemohon Tidak Pernah Hadir.rtf",
    "folder": "6 Perwalian",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -27401,7 +27416,8 @@
    "jalur": "derry_briantono/6 Perwalian/[98c] [Coret] Perwalian - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
    "folder": "6 Perwalian",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -27435,7 +27451,8 @@
    "jalur": "derry_briantono/6 Perwalian/[99] [NO] Perwalian - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf",
    "folder": "6 Perwalian",
    "modul": [
-    "perwalian"
+    "perwalian",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 43,
@@ -30969,7 +30986,8 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31005,7 +31023,8 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31041,7 +31060,8 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31075,7 +31095,8 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31110,7 +31131,8 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31145,7 +31167,8 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31178,7 +31201,8 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [C] Pemohon Hadir Mencabut Permohonan.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31208,7 +31232,8 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31237,7 +31262,8 @@
    "jalur": "derry_briantono/7 Wali Adhal/[01] [Kabul] Wali Adhal - Wali Tidak Hadir.rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31282,7 +31308,8 @@
    "jalur": "derry_briantono/7 Wali Adhal/[01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan.rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31328,7 +31355,8 @@
    "jalur": "derry_briantono/7 Wali Adhal/[03] [Tolak] Wali Adhal - Keengganan Wali Beralasan Hukum.rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31374,7 +31402,8 @@
    "jalur": "derry_briantono/7 Wali Adhal/[98] [Cabut] Wali Adhal.rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31405,7 +31434,8 @@
    "jalur": "derry_briantono/7 Wali Adhal/[98a] [Gugur] Wali Adhal - Pemohon Tidak Pernah Hadir.rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31436,7 +31466,8 @@
    "jalur": "derry_briantono/7 Wali Adhal/[98c] [Coret] Wali Adhal - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31470,7 +31501,8 @@
    "jalur": "derry_briantono/7 Wali Adhal/[99] [NO] Wali Adhal - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol"
+    "wali-adhol",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 3,
@@ -31501,7 +31533,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak - BAS/BAS ALUR 13 AUA - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
    "folder": "8 Asal Usul Anak - BAS",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31536,7 +31569,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak - BAS/BAS ALUR 13 AUA - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf",
    "folder": "8 Asal Usul Anak - BAS",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31569,7 +31603,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak - BAS/BAS ALUR 13 AUA - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf",
    "folder": "8 Asal Usul Anak - BAS",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31601,7 +31636,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak - BAS/BAS ALUR 13 AUA - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
    "folder": "8 Asal Usul Anak - BAS",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31635,7 +31671,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak - BAS/BAS ALUR 13 AUA - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
    "folder": "8 Asal Usul Anak - BAS",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31670,7 +31707,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak - BAS/BAS ALUR 13 AUA - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf",
    "folder": "8 Asal Usul Anak - BAS",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31704,7 +31742,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak - BAS/BAS ALUR 13 AUA - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
    "folder": "8 Asal Usul Anak - BAS",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31736,7 +31775,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak - BAS/BAS ALUR 13 AUA - [C] Pemohon Hadir Mencabut Permohonan.rtf",
    "folder": "8 Asal Usul Anak - BAS",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31766,7 +31806,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak - BAS/BAS ALUR 13 AUA - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
    "folder": "8 Asal Usul Anak - BAS",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31795,7 +31836,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak - BAS/BAS ALUR 13 [1] BAS 1 Asal Usul Anak - Kabul.rtf",
    "folder": "8 Asal Usul Anak - BAS",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31843,7 +31885,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak/[03] [Tolak] AUA - Dalil Tidak Terbukti.rtf",
    "folder": "8 Asal Usul Anak",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31879,7 +31922,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak/[98] [Cabut] AUA - Setelah Pembuktian.rtf",
    "folder": "8 Asal Usul Anak",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31926,7 +31970,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak/[98a] [Gugur] AUA - Pemohon Tidak Pernah Hadir.rtf",
    "folder": "8 Asal Usul Anak",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31957,7 +32002,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak/[98c] [Coret] AUA - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
    "folder": "8 Asal Usul Anak",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -31991,7 +32037,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak/[99] [NO] AUA - Poliandri (Pemohon II Masih Terikat Perkawinan).rtf",
    "folder": "8 Asal Usul Anak",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -32025,7 +32072,8 @@
    "jalur": "derry_briantono/8 Asal Usul Anak/[99a] [NO] AUA - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf",
    "folder": "8 Asal Usul Anak",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -36380,7 +36428,8 @@
    "jalur": "derry_briantono/ALUR 13 Asal Usul Anak/[1] BAS 1 Asal Usul Anak - Kabul.rtf",
    "folder": "ALUR 13 Asal Usul Anak",
    "modul": [
-    "asal-usul"
+    "asal-usul",
+    "itsbat-nikah"
    ],
    "universal": false,
    "bobot": 8,
@@ -36487,10 +36536,11 @@
    "jalur": "derry_briantono/BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)/[2] BAS Putus Verstek CG Kumulasi Hak Asuh Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
    "folder": "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)",
    "modul": [
-    "cerai"
+    "cerai",
+    "hadhanah"
    ],
    "universal": false,
-   "bobot": 2340,
+   "bobot": 1912,
    "isian": [
     "8503",
     "8537",
@@ -36509,10 +36559,11 @@
    "jalur": "derry_briantono/BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)/[2b] BAS Putus Verstek CG Kumulasi Hak Asuh Anak dan Nafkah Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
    "folder": "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)",
    "modul": [
-    "cerai"
+    "cerai",
+    "hadhanah"
    ],
    "universal": false,
-   "bobot": 2340,
+   "bobot": 1912,
    "isian": [
     "8503",
     "8537",
@@ -36548,8 +36599,8 @@
    "diketikPetugas": 0,
    "jumlahBlangko": 856,
    "langsung": 32,
-   "bobotLangsung": 22304,
-   "bobot": 376981,
+   "bobotLangsung": 29948,
+   "bobot": 437277,
    "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
@@ -36660,8 +36711,8 @@
    "diketikPetugas": 13,
    "jumlahBlangko": 490,
    "langsung": 32,
-   "bobotLangsung": 22304,
-   "bobot": 165317,
+   "bobotLangsung": 29948,
+   "bobot": 199715,
    "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
@@ -36775,8 +36826,8 @@
    "diketikPetugas": 25,
    "jumlahBlangko": 490,
    "langsung": 130,
-   "bobotLangsung": 83701,
-   "bobot": 165317,
+   "bobotLangsung": 97078,
+   "bobot": 199715,
    "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
@@ -36884,8 +36935,8 @@
    "diketikPetugas": 0,
    "jumlahBlangko": 490,
    "langsung": 32,
-   "bobotLangsung": 22304,
-   "bobot": 165317,
+   "bobotLangsung": 29948,
+   "bobot": 199715,
    "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
@@ -36987,8 +37038,8 @@
    "diketikPetugas": 0,
    "jumlahBlangko": 490,
    "langsung": 32,
-   "bobotLangsung": 22304,
-   "bobot": 165317,
+   "bobotLangsung": 29948,
+   "bobot": 199715,
    "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
@@ -37096,8 +37147,8 @@
    "diketikPetugas": 0,
    "jumlahBlangko": 487,
    "langsung": 32,
-   "bobotLangsung": 22304,
-   "bobot": 165314,
+   "bobotLangsung": 29948,
+   "bobot": 199712,
    "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
@@ -37204,8 +37255,8 @@
    "diketikPetugas": 1,
    "jumlahBlangko": 345,
    "langsung": 94,
-   "bobotLangsung": 56717,
-   "bobot": 142928,
+   "bobotLangsung": 62450,
+   "bobot": 177326,
    "cakupanBobot": 1,
    "contoh": [
     "[02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputusan Dirjen 1465.rtf",
@@ -37287,8 +37338,8 @@
    "diketikPetugas": 0,
    "jumlahBlangko": 338,
    "langsung": 32,
-   "bobotLangsung": 22304,
-   "bobot": 142816,
+   "bobotLangsung": 29948,
+   "bobot": 177214,
    "cakupanBobot": 1,
    "contoh": [
     "[02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputusan Dirjen 1465.rtf",
@@ -37372,8 +37423,8 @@
    "diketikPetugas": 359,
    "jumlahBlangko": 123,
    "langsung": 35,
-   "bobotLangsung": 25072,
-   "bobot": 141376,
+   "bobotLangsung": 32716,
+   "bobot": 155808,
    "cakupanBobot": 1,
    "contoh": [
     "[01b] (E-Court) BAS 2 P Hadir & T Tidak Hadir Pokok Perkara - Putusan Verstek.rtf",
@@ -37425,8 +37476,8 @@
    "diketikPetugas": 0,
    "jumlahBlangko": 259,
    "langsung": 259,
-   "bobotLangsung": 134769,
-   "bobot": 134769,
+   "bobotLangsung": 149201,
+   "bobot": 149201,
    "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
@@ -37514,8 +37565,8 @@
    "diketikPetugas": 0,
    "jumlahBlangko": 259,
    "langsung": 259,
-   "bobotLangsung": 134769,
-   "bobot": 134769,
+   "bobotLangsung": 149201,
+   "bobot": 149201,
    "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
@@ -37587,6 +37638,63 @@
    "catatan": ""
   },
   {
+   "kunci": "8894",
+   "kode": [
+    "8894"
+   ],
+   "nama": "Nama penerima kuasa insidentil",
+   "namaAsli": "NO KUASA INSIDENTIL: nama penerima kuasa insidentil #0046# (contoh: Rahmadhani binti M. Kasim)",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "insidentil",
+   "pemicu": "",
+   "diketikPetugas": 0,
+   "jumlahBlangko": 276,
+   "langsung": 4,
+   "bobotLangsung": 4680,
+   "bobot": 111652,
+   "cakupanBobot": 0,
+   "contoh": [
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (5 Saksi).rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2 Itsbat Nikah",
+    "2a Itsbat Nikah Kontensius",
+    "3 Dispensasi Kawin",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5 Izin Poligami",
+    "5a Pembatalan Perkawinan",
+    "5b Pencegahan Perkawinan",
+    "6 Perwalian",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "6b Penguasaan Anak",
+    "7 Wali Adhal",
+    "8 Asal Usul Anak",
+    "9 Penetapan Ahli Waris",
+    "9a Lain-Lain (Pengangkatan Anak)",
+    "9b Permohonan Umum"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "SIPP perkara_jadwal_sidang.keterangan / penetapan izin kuasa insidentil (tidak terstruktur)",
+   "catatan": "Kuasa insidentil tidak punya kolom sendiri di SIPP; ±jarang."
+  },
+  {
    "kunci": "1214",
    "kode": [
     "1214"
@@ -37602,8 +37710,8 @@
    "diketikPetugas": 2009,
    "jumlahBlangko": 90,
    "langsung": 87,
-   "bobotLangsung": 94939,
-   "bobot": 97707,
+   "bobotLangsung": 105549,
+   "bobot": 108317,
    "cakupanBobot": 1,
    "contoh": [
     "[01b] (E-Court) BAS 2 P Hadir & T Tidak Hadir Pokok Perkara - Putusan Verstek.rtf",
@@ -37652,91 +37760,60 @@
    "catatan": ""
   },
   {
-   "kunci": "5197",
+   "kunci": "0663",
    "kode": [
-    "5197"
+    "0663"
    ],
-   "nama": "Tgl Nikah",
-   "namaAsli": "Tgl Nikah",
-   "jenis": "teks",
+   "nama": "Tanggal penetapan prodeo",
+   "namaAsli": "Tgl. Pertimbangan/Penetapan Prodeo #11112#",
+   "jenis": "tanggal",
    "tingkat": "penting",
    "wajib": true,
    "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 706,
-   "jumlahBlangko": 104,
-   "langsung": 60,
-   "bobotLangsung": 18347,
-   "bobot": 88549,
-   "cakupanBobot": 0.994,
+   "keadaan": "prodeo",
+   "pemicu": "11112",
+   "diketikPetugas": 3,
+   "jumlahBlangko": 189,
+   "langsung": 35,
+   "bobotLangsung": 32716,
+   "bobot": 96982,
+   "cakupanBobot": 0,
    "contoh": [
-    "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
-    "[01a] BAS 1 IN - Kabul.rtf",
-    "[01ab] BAS 1 IN - Kabul Syahadah Istifadhah.rtf"
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (5 Saksi).rtf"
    ],
    "folder": [
-    "- BAS ASAL USUL ANAK -",
-    "- BAS ITSTBAT NIKAH -",
-    "- BAS VERSTEK PERCERAIAN -",
-    "1 Perceraian CG - BAS",
-    "1a Perceraian CT - BAS",
+    "1 Perceraian CG",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
     "1c Perceraian Kumulasi Itsbat Nikah",
-    "1c Perceraian Kumulasi Itsbat Nikah - BAS",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
     "2 Itsbat Nikah",
-    "2 Itsbat Nikah - BAS",
     "2a Itsbat Nikah Kontensius",
-    "2a Itsbat Nikah Kontensius - BAS",
+    "3 Dispensasi Kawin",
     "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5 Izin Poligami",
+    "5a Pembatalan Perkawinan",
     "6 Perwalian",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "6b Penguasaan Anak",
+    "7 Wali Adhal",
     "8 Asal Usul Anak",
-    "8 Asal Usul Anak - BAS",
-    "9 Penetapan Ahli Waris",
-    "98 Relaas",
-    "ALUR 02 Cerai Verstek 2 Sidang",
-    "ALUR 03 Cerai Verstek 3 Sidang atau Lebih",
-    "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir",
-    "ALUR 11 Itsbat Nikah 1 Sidang",
-    "ALUR 13 Asal Usul Anak",
-    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
+    "9a Lain-Lain (Pengangkatan Anak)"
    ],
-   "status": "sebagian",
+   "status": "tidak",
    "folderTakTertutup": [
-    "- BAS ASAL USUL ANAK -",
-    "4a Harta Bersama",
-    "8 Asal Usul Anak",
-    "8 Asal Usul Anak - BAS",
-    "ALUR 13 Asal Usul Anak"
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
    ],
-   "pengisi": [
-    {
-     "jenis": "deteksi",
-     "id": "itsbat-nikah",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    },
-    {
-     "jenis": "deteksi",
-     "id": "perwalian",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    },
-    {
-     "jenis": "deteksi",
-     "id": "waris",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    },
-    {
-     "jenis": "deteksi",
-     "id": "lain-lain",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    }
-   ],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
+   "pengisi": [],
+   "sumberMungkin": "tidak ada",
+   "catatan": "Tanggal penetapan prodeo tidak disimpan SIPP (hasil putusan sela/pertimbangan hakim)."
   },
   {
    "kunci": "7084",
@@ -37754,8 +37831,8 @@
    "diketikPetugas": 3,
    "jumlahBlangko": 168,
    "langsung": 73,
-   "bobotLangsung": 35590,
-   "bobot": 85272,
+   "bobotLangsung": 43234,
+   "bobot": 96738,
    "cakupanBobot": 1,
    "contoh": [
     "[02] BAS 3 P & T Hadir Jawaban dan (Apabila ada Gugatan Rekonvensi) PERMA 7 2022 & Keputusan Dirjen 1465.rtf",
@@ -37789,142 +37866,79 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "baru diusulkan (ragu), belum terisi otomatis",
    "catatan": ""
   },
   {
-   "kunci": "8894",
+   "kunci": "7139",
    "kode": [
-    "8894"
+    "7139"
    ],
-   "nama": "Nama penerima kuasa insidentil",
-   "namaAsli": "NO KUASA INSIDENTIL: nama penerima kuasa insidentil #0046# (contoh: Rahmadhani binti M. Kasim)",
+   "nama": "Beracara secara elektronik",
+   "namaAsli": "SEPAKAT BERACARA SECARA ELEKTRONIK (1 = SEPAKAT, 2= TIDAK)",
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
    "cadangan": "",
-   "keadaan": "insidentil",
+   "keadaan": "ecourt",
    "pemicu": "",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 276,
-   "langsung": 4,
-   "bobotLangsung": 4680,
-   "bobot": 84898,
-   "cakupanBobot": 0,
+   "diketikPetugas": 30,
+   "jumlahBlangko": 204,
+   "langsung": 68,
+   "bobotLangsung": 42855,
+   "bobot": 96707,
+   "cakupanBobot": 1,
    "contoh": [
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (5 Saksi).rtf"
+    "[02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputusan Dirjen 1465.rtf",
+    "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf",
+    "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
    ],
    "folder": [
+    "- BAS CONTRA PERCERAIAN -",
     "1 Perceraian CG",
-    "10a Ekonomi Syariah Biasa",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2 Itsbat Nikah",
-    "2a Itsbat Nikah Kontensius",
-    "3 Dispensasi Kawin",
-    "4a Harta Bersama",
-    "4b Kewarisan",
-    "4c Wasiat",
-    "5 Izin Poligami",
-    "5a Pembatalan Perkawinan",
-    "5b Pencegahan Perkawinan",
-    "6 Perwalian",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "6b Penguasaan Anak",
-    "7 Wali Adhal",
-    "8 Asal Usul Anak",
-    "9 Penetapan Ahli Waris",
-    "9a Lain-Lain (Pengangkatan Anak)",
-    "9b Permohonan Umum"
-   ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1 Perceraian CG",
-    "1a Perceraian CT"
-   ],
-   "pengisi": [],
-   "sumberMungkin": "SIPP perkara_jadwal_sidang.keterangan / penetapan izin kuasa insidentil (tidak terstruktur)",
-   "catatan": "Kuasa insidentil tidak punya kolom sendiri di SIPP; ±jarang."
-  },
-  {
-   "kunci": "5178",
-   "kode": [
-    "5178"
-   ],
-   "nama": "KUA Kec.",
-   "namaAsli": "KUA Kec.",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 298,
-   "jumlahBlangko": 97,
-   "langsung": 53,
-   "bobotLangsung": 13491,
-   "bobot": 83693,
-   "cakupanBobot": 0.998,
-   "contoh": [
-    "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
-    "[01a] BAS 1 IN - Kabul.rtf",
-    "[01ab] BAS 1 IN - Kabul Syahadah Istifadhah.rtf"
-   ],
-   "folder": [
-    "- BAS ASAL USUL ANAK -",
-    "- BAS ITSTBAT NIKAH -",
-    "- BAS VERSTEK PERCERAIAN -",
     "1 Perceraian CG - BAS",
+    "10a Ekonomi Syariah Biasa",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT",
     "1a Perceraian CT - BAS",
     "1c Perceraian Kumulasi Itsbat Nikah",
     "1c Perceraian Kumulasi Itsbat Nikah - BAS",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
-    "2 Itsbat Nikah",
-    "2 Itsbat Nikah - BAS",
     "2a Itsbat Nikah Kontensius",
     "2a Itsbat Nikah Kontensius - BAS",
-    "3 Dispensasi Kawin",
-    "3 Dispensasi Kawin - BAS",
-    "6 Perwalian",
-    "8 Asal Usul Anak - BAS",
-    "ALUR 02 Cerai Verstek 2 Sidang",
-    "ALUR 03 Cerai Verstek 3 Sidang atau Lebih",
+    "4a Harta Bersama",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan",
+    "4b Kewarisan - BAS",
+    "4c Wasiat",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak",
+    "6b Penguasaan Anak - BAS",
+    "8 Asal Usul Anak",
+    "9 Penetapan Ahli Waris",
+    "9a Lain-Lain (Pengangkatan Anak)",
+    "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)",
     "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir",
-    "ALUR 11 Itsbat Nikah 1 Sidang",
-    "ALUR 12 Dispensasi Kawin",
-    "ALUR 13 Asal Usul Anak",
-    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
+    "ALUR 08 Cerai Dicabut"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "- BAS ASAL USUL ANAK -",
-    "8 Asal Usul Anak - BAS",
-    "ALUR 13 Asal Usul Anak"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
-     "jenis": "deteksi",
-     "id": "itsbat-nikah",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    },
-    {
-     "jenis": "deteksi",
-     "id": "dispensasi-kawin",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    },
-    {
-     "jenis": "deteksi",
-     "id": "perwalian",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
+     "jenis": "kelompok",
+     "id": "elitigasi",
+     "berkas": "ekstensi-sipp/blangko-derry-isian.js",
+     "tingkat": "otomatis"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -37943,8 +37957,8 @@
    "diketikPetugas": 44,
    "jumlahBlangko": 126,
    "langsung": 126,
-   "bobotLangsung": 79021,
-   "bobot": 79021,
+   "bobotLangsung": 92398,
+   "bobot": 92398,
    "cakupanBobot": 1,
    "contoh": [
     "[02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputusan Dirjen 1465.rtf",
@@ -38001,96 +38015,181 @@
    "catatan": ""
   },
   {
-   "kunci": "7139",
+   "kunci": "5197",
    "kode": [
-    "7139"
+    "5197"
    ],
-   "nama": "Beracara secara elektronik",
-   "namaAsli": "SEPAKAT BERACARA SECARA ELEKTRONIK (1 = SEPAKAT, 2= TIDAK)",
+   "nama": "Tgl Nikah",
+   "namaAsli": "Tgl Nikah",
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
    "cadangan": "",
-   "keadaan": "ecourt",
+   "keadaan": "",
    "pemicu": "",
-   "diketikPetugas": 30,
-   "jumlahBlangko": 204,
-   "langsung": 68,
-   "bobotLangsung": 33300,
-   "bobot": 75686,
-   "cakupanBobot": 1,
+   "diketikPetugas": 706,
+   "jumlahBlangko": 104,
+   "langsung": 60,
+   "bobotLangsung": 18347,
+   "bobot": 91515,
+   "cakupanBobot": 0.999,
    "contoh": [
-    "[02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputusan Dirjen 1465.rtf",
-    "BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf",
-    "BAS ALUR 05 [1] BAS 1 P & T Hadir - Mediasi.rtf"
+    "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
+    "[01a] BAS 1 IN - Kabul.rtf",
+    "[01ab] BAS 1 IN - Kabul Syahadah Istifadhah.rtf"
    ],
    "folder": [
-    "- BAS CONTRA PERCERAIAN -",
-    "1 Perceraian CG",
+    "- BAS ASAL USUL ANAK -",
+    "- BAS ITSTBAT NIKAH -",
+    "- BAS VERSTEK PERCERAIAN -",
     "1 Perceraian CG - BAS",
-    "10a Ekonomi Syariah Biasa",
-    "10a Ekonomi Syariah Biasa - BAS",
-    "1a Perceraian CT",
     "1a Perceraian CT - BAS",
     "1c Perceraian Kumulasi Itsbat Nikah",
     "1c Perceraian Kumulasi Itsbat Nikah - BAS",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "2 Itsbat Nikah",
+    "2 Itsbat Nikah - BAS",
     "2a Itsbat Nikah Kontensius",
     "2a Itsbat Nikah Kontensius - BAS",
     "4a Harta Bersama",
-    "4a Harta Bersama - BAS",
-    "4b Kewarisan",
-    "4b Kewarisan - BAS",
-    "4c Wasiat",
-    "4c Wasiat - BAS",
-    "5 Izin Poligami",
-    "5 Izin Poligami - BAS",
-    "5a Pembatalan Perkawinan",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "6a Hak Asuh Anak (Hadhanah) - BAS",
-    "6b Penguasaan Anak",
-    "6b Penguasaan Anak - BAS",
+    "6 Perwalian",
     "8 Asal Usul Anak",
+    "8 Asal Usul Anak - BAS",
     "9 Penetapan Ahli Waris",
-    "9a Lain-Lain (Pengangkatan Anak)",
-    "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)",
+    "98 Relaas",
+    "ALUR 02 Cerai Verstek 2 Sidang",
+    "ALUR 03 Cerai Verstek 3 Sidang atau Lebih",
     "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir",
-    "ALUR 08 Cerai Dicabut"
+    "ALUR 11 Itsbat Nikah 1 Sidang",
+    "ALUR 13 Asal Usul Anak",
+    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
+   ],
+   "status": "sebagian",
+   "folderTakTertutup": [
+    "4a Harta Bersama"
+   ],
+   "pengisi": [
+    {
+     "jenis": "deteksi",
+     "id": "itsbat-nikah",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    },
+    {
+     "jenis": "deteksi",
+     "id": "perwalian",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    },
+    {
+     "jenis": "deteksi",
+     "id": "waris",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    },
+    {
+     "jenis": "deteksi",
+     "id": "lain-lain",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    }
+   ],
+   "sumberMungkin": "terisi di jenis utama; belum di: 4a Harta Bersama",
+   "catatan": ""
+  },
+  {
+   "kunci": "5178",
+   "kode": [
+    "5178"
+   ],
+   "nama": "KUA Kec.",
+   "namaAsli": "KUA Kec.",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 298,
+   "jumlahBlangko": 97,
+   "langsung": 53,
+   "bobotLangsung": 13491,
+   "bobot": 86659,
+   "cakupanBobot": 1,
+   "contoh": [
+    "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
+    "[01a] BAS 1 IN - Kabul.rtf",
+    "[01ab] BAS 1 IN - Kabul Syahadah Istifadhah.rtf"
+   ],
+   "folder": [
+    "- BAS ASAL USUL ANAK -",
+    "- BAS ITSTBAT NIKAH -",
+    "- BAS VERSTEK PERCERAIAN -",
+    "1 Perceraian CG - BAS",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1c Perceraian Kumulasi Itsbat Nikah - BAS",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "2 Itsbat Nikah",
+    "2 Itsbat Nikah - BAS",
+    "2a Itsbat Nikah Kontensius",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "3 Dispensasi Kawin",
+    "3 Dispensasi Kawin - BAS",
+    "6 Perwalian",
+    "8 Asal Usul Anak - BAS",
+    "ALUR 02 Cerai Verstek 2 Sidang",
+    "ALUR 03 Cerai Verstek 3 Sidang atau Lebih",
+    "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir",
+    "ALUR 11 Itsbat Nikah 1 Sidang",
+    "ALUR 12 Dispensasi Kawin",
+    "ALUR 13 Asal Usul Anak",
+    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "status": "ya",
    "folderTakTertutup": [],
    "pengisi": [
     {
-     "jenis": "kelompok",
-     "id": "elitigasi",
-     "berkas": "ekstensi-sipp/blangko-derry-isian.js",
-     "tingkat": "otomatis"
+     "jenis": "deteksi",
+     "id": "itsbat-nikah",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    },
+    {
+     "jenis": "deteksi",
+     "id": "dispensasi-kawin",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    },
+    {
+     "jenis": "deteksi",
+     "id": "perwalian",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
     }
    ],
    "sumberMungkin": "",
    "catatan": ""
   },
   {
-   "kunci": "0663",
+   "kunci": "8892",
    "kode": [
-    "0663"
+    "8892"
    ],
-   "nama": "Tanggal penetapan prodeo",
-   "namaAsli": "Tgl. Pertimbangan/Penetapan Prodeo #11112#",
-   "jenis": "tanggal",
-   "tingkat": "penting",
+   "nama": "Pengadilan Tinggi tempat advokat Penggugat/Pemohon disumpah",
+   "namaAsli": "PENGADILAN TINGGI TEMPAT ADVOKAT #0046# DISUMPAH (kosong = Pengadilan Tinggi provinsi satker), contoh: Pengadilan Tinggi Sulawesi Selatan",
+   "jenis": "teks",
+   "tingkat": "tambahan",
    "wajib": true,
-   "cadangan": "",
-   "keadaan": "prodeo",
-   "pemicu": "11112",
-   "diketikPetugas": 3,
-   "jumlahBlangko": 189,
-   "langsung": 35,
-   "bobotLangsung": 25072,
-   "bobot": 70228,
-   "cakupanBobot": 0,
+   "cadangan": "bawaan",
+   "keadaan": "kuasaP",
+   "pemicu": "11111",
+   "diketikPetugas": 0,
+   "jumlahBlangko": 141,
+   "langsung": 0,
+   "bobotLangsung": 0,
+   "bobot": 77415,
+   "cakupanBobot": 1,
    "contoh": [
     "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
     "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
@@ -38098,35 +38197,32 @@
    ],
    "folder": [
     "1 Perceraian CG",
+    "10 Ekonomi Syariah",
     "10a Ekonomi Syariah Biasa",
     "1a Perceraian CT",
     "1c Perceraian Kumulasi Itsbat Nikah",
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2 Itsbat Nikah",
     "2a Itsbat Nikah Kontensius",
-    "3 Dispensasi Kawin",
     "4a Harta Bersama",
     "4b Kewarisan",
     "4c Wasiat",
     "5 Izin Poligami",
     "5a Pembatalan Perkawinan",
-    "6 Perwalian",
     "6a Hak Asuh Anak (Hadhanah)",
-    "6b Penguasaan Anak",
-    "7 Wali Adhal",
-    "8 Asal Usul Anak",
-    "9a Lain-Lain (Pengangkatan Anak)"
+    "6b Penguasaan Anak"
    ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1 Perceraian CG",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
    ],
-   "pengisi": [],
-   "sumberMungkin": "tidak ada",
-   "catatan": "Tanggal penetapan prodeo tidak disimpan SIPP (hasil putusan sela/pertimbangan hakim)."
+   "sumberMungkin": "e-Court (kartu advokat/berita acara sumpah pada lampiran kuasa)",
+   "catatan": "Bawaan layar Perlu diisi: Pengadilan Tinggi Sulawesi Tengah; ABT mengisi bila dikosongkan pada sebagian blangko."
   },
   {
    "kunci": "9955",
@@ -38144,8 +38240,8 @@
    "diketikPetugas": 53,
    "jumlahBlangko": 132,
    "langsung": 132,
-   "bobotLangsung": 66394,
-   "bobot": 66394,
+   "bobotLangsung": 74038,
+   "bobot": 74038,
    "cakupanBobot": 1,
    "contoh": [
     "[02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan Dirjen 1465 - (3 Saksi).rtf",
@@ -38196,6 +38292,147 @@
      "id": "ktp-teks",
      "berkas": "ekstensi-sipp/abt.js",
      "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
+   "catatan": ""
+  },
+  {
+   "kunci": "1268",
+   "kode": [
+    "1268"
+   ],
+   "nama": "Upaya damai oleh keluarga",
+   "namaAsli": "Pernah/tidak di damaikan keluarga P dan T (Pilih diatas telah didamaikan kalo bawah sesuai gugatan)",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 370,
+   "jumlahBlangko": 64,
+   "langsung": 64,
+   "bobotLangsung": 70512,
+   "bobot": 70512,
+   "cakupanBobot": 1,
+   "contoh": [
+    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
+    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
+    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "deteksi",
+     "id": "cerai",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    }
+   ],
+   "sumberMungkin": "",
+   "catatan": ""
+  },
+  {
+   "kunci": "0222",
+   "kode": [
+    "0222"
+   ],
+   "nama": "Awal perselisihan",
+   "namaAsli": "Awal Konflik : bulan _ / tahun _ / awal tahun / akhir tahun / tanggal _",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 364,
+   "jumlahBlangko": 63,
+   "langsung": 63,
+   "bobotLangsung": 68600,
+   "bobot": 68600,
+   "cakupanBobot": 1,
+   "contoh": [
+    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
+    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
+    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "deteksi",
+     "id": "cerai",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    }
+   ],
+   "sumberMungkin": "",
+   "catatan": ""
+  },
+  {
+   "kunci": "9944",
+   "kode": [
+    "9944"
+   ],
+   "nama": "Lama pisah rumah",
+   "namaAsli": "lama pisah : _ (_) tahun _ (_) bulan",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 373,
+   "jumlahBlangko": 63,
+   "langsung": 63,
+   "bobotLangsung": 68600,
+   "bobot": 68600,
+   "cakupanBobot": 1,
+   "contoh": [
+    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
+    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
+    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "deteksi",
+     "id": "cerai",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
     }
    ],
    "sumberMungkin": "",
@@ -38254,6 +38491,133 @@
      "id": "tj-saksi",
      "berkas": "aleta_bot/services/abtUsulanService.js",
      "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
+   "catatan": ""
+  },
+  {
+   "kunci": "0157",
+   "kode": [
+    "0157"
+   ],
+   "nama": "Nama kantor advokat Tergugat/Termohon",
+   "namaAsli": "Kantor Kuasa #0047#",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "kuasaT",
+   "pemicu": "11113",
+   "diketikPetugas": 0,
+   "jumlahBlangko": 94,
+   "langsung": 94,
+   "bobotLangsung": 62450,
+   "bobot": 62450,
+   "cakupanBobot": 0,
+   "contoh": [
+    "[02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputusan Dirjen 1465.rtf",
+    "[99] BAS 1 P Hadir & T Tidak Hadir - Alamat Tidak Jelas Atau Luar Batas Antar.rtf",
+    "[01a] (E-Court) BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T.rtf"
+   ],
+   "folder": [
+    "- BAS CONTRA PERCERAIAN -",
+    "- BAS VERSTEK PERCERAIAN -",
+    "1 Perceraian CG - BAS",
+    "10 Ekonomi Syariah - BAS",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah - BAS",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 02 Cerai Verstek 2 Sidang",
+    "ALUR 03 Cerai Verstek 3 Sidang atau Lebih",
+    "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)",
+    "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir",
+    "ALUR 08 Cerai Dicabut",
+    "ALUR 09 Cerai Tidak Dapat Diterima (NO)"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "- BAS CONTRA PERCERAIAN -",
+    "- BAS VERSTEK PERCERAIAN -",
+    "1 Perceraian CG - BAS",
+    "10 Ekonomi Syariah - BAS",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah - BAS",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 02 Cerai Verstek 2 Sidang",
+    "ALUR 03 Cerai Verstek 3 Sidang atau Lebih",
+    "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)",
+    "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir",
+    "ALUR 08 Cerai Dicabut",
+    "ALUR 09 Cerai Tidak Dapat Diterima (NO)"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "e-Court (surat kuasa/jawaban Tergugat)",
+   "catatan": "Nama kantor advokat tidak disimpan SIPP; Tergugat berkuasa ±1% perkara."
+  },
+  {
+   "kunci": "7035",
+   "kode": [
+    "7035"
+   ],
+   "nama": "Yang meninggalkan rumah bersama",
+   "namaAsli": "Meninggalkan Kediaman Bersama Cerai (Pilih : #0046# / #0047#)",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 374,
+   "jumlahBlangko": 59,
+   "langsung": 59,
+   "bobotLangsung": 61580,
+   "bobot": 61580,
+   "cakupanBobot": 1,
+   "contoh": [
+    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)"
+   ],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "deteksi",
+     "id": "cerai",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
     }
    ],
    "sumberMungkin": "",
@@ -38319,151 +38683,23 @@
    "catatan": ""
   },
   {
-   "kunci": "1268",
+   "kunci": "0246",
    "kode": [
-    "1268"
+    "0246"
    ],
-   "nama": "Upaya damai oleh keluarga",
-   "namaAsli": "Pernah/tidak di damaikan keluarga P dan T (Pilih diatas telah didamaikan kalo bawah sesuai gugatan)",
+   "nama": "Pisah rumah sejak",
+   "namaAsli": "Pisah Rumah : bulan _ / tahun _ / awal tahun / akhir tahun / tanggal _",
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
    "cadangan": "",
    "keadaan": "",
    "pemicu": "",
-   "diketikPetugas": 370,
-   "jumlahBlangko": 64,
-   "langsung": 64,
-   "bobotLangsung": 57135,
-   "bobot": 57135,
-   "cakupanBobot": 1,
-   "contoh": [
-    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
-    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
-    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "status": "ya",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "deteksi",
-     "id": "cerai",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    }
-   ],
-   "sumberMungkin": "",
-   "catatan": ""
-  },
-  {
-   "kunci": "0157",
-   "kode": [
-    "0157"
-   ],
-   "nama": "Nama kantor advokat Tergugat/Termohon",
-   "namaAsli": "Kantor Kuasa #0047#",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "kuasaT",
-   "pemicu": "11113",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 94,
-   "langsung": 94,
-   "bobotLangsung": 56717,
-   "bobot": 56717,
-   "cakupanBobot": 0,
-   "contoh": [
-    "[02] BAS 1 P & T Hadir Mediasi P dan T PERMA 7 2022 & Keputusan Dirjen 1465.rtf",
-    "[99] BAS 1 P Hadir & T Tidak Hadir - Alamat Tidak Jelas Atau Luar Batas Antar.rtf",
-    "[01a] (E-Court) BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T.rtf"
-   ],
-   "folder": [
-    "- BAS CONTRA PERCERAIAN -",
-    "- BAS VERSTEK PERCERAIAN -",
-    "1 Perceraian CG - BAS",
-    "10 Ekonomi Syariah - BAS",
-    "10a Ekonomi Syariah Biasa - BAS",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah - BAS",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
-    "2a Itsbat Nikah Kontensius - BAS",
-    "4a Harta Bersama",
-    "4a Harta Bersama - BAS",
-    "4b Kewarisan - BAS",
-    "4c Wasiat - BAS",
-    "5 Izin Poligami - BAS",
-    "5a Pembatalan Perkawinan - BAS",
-    "6a Hak Asuh Anak (Hadhanah) - BAS",
-    "6b Penguasaan Anak - BAS",
-    "ALUR 02 Cerai Verstek 2 Sidang",
-    "ALUR 03 Cerai Verstek 3 Sidang atau Lebih",
-    "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)",
-    "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir",
-    "ALUR 08 Cerai Dicabut",
-    "ALUR 09 Cerai Tidak Dapat Diterima (NO)"
-   ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "- BAS CONTRA PERCERAIAN -",
-    "- BAS VERSTEK PERCERAIAN -",
-    "1 Perceraian CG - BAS",
-    "10 Ekonomi Syariah - BAS",
-    "10a Ekonomi Syariah Biasa - BAS",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah - BAS",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
-    "2a Itsbat Nikah Kontensius - BAS",
-    "4a Harta Bersama",
-    "4a Harta Bersama - BAS",
-    "4b Kewarisan - BAS",
-    "4c Wasiat - BAS",
-    "5 Izin Poligami - BAS",
-    "5a Pembatalan Perkawinan - BAS",
-    "6a Hak Asuh Anak (Hadhanah) - BAS",
-    "6b Penguasaan Anak - BAS",
-    "ALUR 02 Cerai Verstek 2 Sidang",
-    "ALUR 03 Cerai Verstek 3 Sidang atau Lebih",
-    "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)",
-    "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir",
-    "ALUR 08 Cerai Dicabut",
-    "ALUR 09 Cerai Tidak Dapat Diterima (NO)"
-   ],
-   "pengisi": [],
-   "sumberMungkin": "e-Court (surat kuasa/jawaban Tergugat)",
-   "catatan": "Nama kantor advokat tidak disimpan SIPP; Tergugat berkuasa ±1% perkara."
-  },
-  {
-   "kunci": "8892",
-   "kode": [
-    "8892"
-   ],
-   "nama": "Pengadilan Tinggi tempat advokat Penggugat/Pemohon disumpah",
-   "namaAsli": "PENGADILAN TINGGI TEMPAT ADVOKAT #0046# DISUMPAH (kosong = Pengadilan Tinggi provinsi satker), contoh: Pengadilan Tinggi Sulawesi Selatan",
-   "jenis": "teks",
-   "tingkat": "tambahan",
-   "wajib": true,
-   "cadangan": "bawaan",
-   "keadaan": "kuasaP",
-   "pemicu": "11111",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 141,
-   "langsung": 0,
-   "bobotLangsung": 0,
-   "bobot": 56394,
+   "diketikPetugas": 359,
+   "jumlahBlangko": 55,
+   "langsung": 55,
+   "bobotLangsung": 54560,
+   "bobot": 54560,
    "cakupanBobot": 1,
    "contoh": [
     "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
@@ -38472,159 +38708,9 @@
    ],
    "folder": [
     "1 Perceraian CG",
-    "10 Ekonomi Syariah",
-    "10a Ekonomi Syariah Biasa",
     "1a Perceraian CT",
     "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2a Itsbat Nikah Kontensius",
-    "4a Harta Bersama",
-    "4b Kewarisan",
-    "4c Wasiat",
-    "5 Izin Poligami",
-    "5a Pembatalan Perkawinan",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "6b Penguasaan Anak"
-   ],
-   "status": "ya",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "abt-bawaan",
-     "id": "abt-bawaan",
-     "berkas": "",
-     "tingkat": "otomatis"
-    }
-   ],
-   "sumberMungkin": "e-Court (kartu advokat/berita acara sumpah pada lampiran kuasa)",
-   "catatan": "Bawaan layar Perlu diisi: Pengadilan Tinggi Sulawesi Tengah; ABT mengisi bila dikosongkan pada sebagian blangko."
-  },
-  {
-   "kunci": "0222",
-   "kode": [
-    "0222"
-   ],
-   "nama": "Awal perselisihan",
-   "namaAsli": "Awal Konflik : bulan _ / tahun _ / awal tahun / akhir tahun / tanggal _",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 364,
-   "jumlahBlangko": 63,
-   "langsung": 63,
-   "bobotLangsung": 55223,
-   "bobot": 55223,
-   "cakupanBobot": 1,
-   "contoh": [
-    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
-    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
-    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "status": "ya",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "deteksi",
-     "id": "cerai",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    }
-   ],
-   "sumberMungkin": "",
-   "catatan": ""
-  },
-  {
-   "kunci": "9944",
-   "kode": [
-    "9944"
-   ],
-   "nama": "Lama pisah rumah",
-   "namaAsli": "lama pisah : _ (_) tahun _ (_) bulan",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 373,
-   "jumlahBlangko": 63,
-   "langsung": 63,
-   "bobotLangsung": 55223,
-   "bobot": 55223,
-   "cakupanBobot": 1,
-   "contoh": [
-    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
-    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
-    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "status": "ya",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "deteksi",
-     "id": "cerai",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    }
-   ],
-   "sumberMungkin": "",
-   "catatan": ""
-  },
-  {
-   "kunci": "7035",
-   "kode": [
-    "7035"
-   ],
-   "nama": "Yang meninggalkan rumah bersama",
-   "namaAsli": "Meninggalkan Kediaman Bersama Cerai (Pilih : #0046# / #0047#)",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 374,
-   "jumlahBlangko": 59,
-   "langsung": 59,
-   "bobotLangsung": 48203,
-   "bobot": 48203,
-   "cakupanBobot": 1,
-   "contoh": [
-    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)"
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
    ],
    "status": "ya",
    "folderTakTertutup": [],
@@ -38655,8 +38741,8 @@
    "diketikPetugas": 681,
    "jumlahBlangko": 64,
    "langsung": 64,
-   "bobotLangsung": 46444,
-   "bobot": 46444,
+   "bobotLangsung": 52177,
+   "bobot": 52177,
    "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
@@ -38714,49 +38800,6 @@
    "catatan": ""
   },
   {
-   "kunci": "0246",
-   "kode": [
-    "0246"
-   ],
-   "nama": "Pisah rumah sejak",
-   "namaAsli": "Pisah Rumah : bulan _ / tahun _ / awal tahun / akhir tahun / tanggal _",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 359,
-   "jumlahBlangko": 55,
-   "langsung": 55,
-   "bobotLangsung": 41183,
-   "bobot": 41183,
-   "cakupanBobot": 1,
-   "contoh": [
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (5 Saksi).rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
-   ],
-   "status": "ya",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "deteksi",
-     "id": "cerai",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    }
-   ],
-   "sumberMungkin": "",
-   "catatan": ""
-  },
-  {
    "kunci": "5227",
    "kode": [
     "5227"
@@ -38772,8 +38815,8 @@
    "diketikPetugas": 319,
    "jumlahBlangko": 50,
    "langsung": 50,
-   "bobotLangsung": 38764,
-   "bobot": 38764,
+   "bobotLangsung": 50230,
+   "bobot": 50230,
    "cakupanBobot": 1,
    "contoh": [
     "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
@@ -38804,6 +38847,260 @@
    ],
    "sumberMungkin": "",
    "catatan": ""
+  },
+  {
+   "kunci": "9911",
+   "kode": [
+    "9911"
+   ],
+   "nama": "Alat bukti surat Tergugat/Termohon",
+   "namaAsli": "C3 Pembuktian Tergugat",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 12,
+   "jumlahBlangko": 85,
+   "langsung": 85,
+   "bobotLangsung": 43866,
+   "bobot": 43866,
+   "cakupanBobot": 1,
+   "contoh": [
+    "[02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan Dirjen 1465 - (3 Saksi).rtf",
+    "[02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan Dirjen 1465 - (4 Saksi).rtf",
+    "[02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan Dirjen 1465.rtf"
+   ],
+   "folder": [
+    "- BAS CONTRA PERCERAIAN -",
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "10 Ekonomi Syariah",
+    "10 Ekonomi Syariah - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1c Perceraian Kumulasi Itsbat Nikah - BAS",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "2a Itsbat Nikah Kontensius",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan",
+    "4b Kewarisan - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "ktp-teks",
+     "berkas": "ekstensi-sipp/abt.js",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "",
+   "catatan": ""
+  },
+  {
+   "kunci": "1006",
+   "kode": [
+    "1006"
+   ],
+   "nama": "Tempat tinggal setelah menikah",
+   "namaAsli": "Tempat tinggal setelah nikah",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 34,
+   "jumlahBlangko": 39,
+   "langsung": 39,
+   "bobotLangsung": 42076,
+   "bobot": 42076,
+   "cakupanBobot": 1,
+   "contoh": [
+    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
+    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
+    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "deteksi",
+     "id": "cerai",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    }
+   ],
+   "sumberMungkin": "",
+   "catatan": ""
+  },
+  {
+   "kunci": "5127",
+   "kode": [
+    "5127"
+   ],
+   "nama": "Alasan-Alasan Cerai",
+   "namaAsli": "Alasan-Alasan Cerai",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 25,
+   "jumlahBlangko": 31,
+   "langsung": 31,
+   "bobotLangsung": 38652,
+   "bobot": 38652,
+   "cakupanBobot": 1,
+   "contoh": [
+    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
+    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
+    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "deteksi",
+     "id": "cerai",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    }
+   ],
+   "sumberMungkin": "",
+   "catatan": ""
+  },
+  {
+   "kunci": "1267",
+   "kode": [
+    "1267"
+   ],
+   "nama": "Masih berkomunikasi atau tidak",
+   "namaAsli": "Masih/tidak komunikasi P dan T",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 17,
+   "jumlahBlangko": 30,
+   "langsung": 30,
+   "bobotLangsung": 38224,
+   "bobot": 38224,
+   "cakupanBobot": 1,
+   "contoh": [
+    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
+    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
+    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "deteksi",
+     "id": "cerai",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    }
+   ],
+   "sumberMungkin": "",
+   "catatan": ""
+  },
+  {
+   "kunci": "2557",
+   "kode": [
+    "2557"
+   ],
+   "nama": "(Saksi I) Berapa Kali Melihat dan Mendengar Pertengkaran",
+   "namaAsli": "(Saksi I) Berapa Kali Melihat dan Mendengar Pertengkaran (CUKUP ANGKA SAJA) (UNTUK ALASAN B TIDAK USAH DI ISI)",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 15,
+   "jumlahBlangko": 30,
+   "langsung": 23,
+   "bobotLangsung": 26952,
+   "bobot": 38224,
+   "cakupanBobot": 0,
+   "contoh": [
+    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
+    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
+    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "keterangan saksi pada BAS (teks bebas)",
+   "catatan": "Registri cerai: belum - tidak tertulis di posita."
   },
   {
    "kunci": "tj:saksi 3 p",
@@ -38878,7 +39175,7 @@
    "langsung": 65,
    "bobotLangsung": 37431,
    "bobot": 37431,
-   "cakupanBobot": 0.998,
+   "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -38905,13 +39202,8 @@
     "ALUR 11 Itsbat Nikah 1 Sidang",
     "ALUR 13 Asal Usul Anak"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "- BAS ASAL USUL ANAK -",
-    "8 Asal Usul Anak",
-    "8 Asal Usul Anak - BAS",
-    "ALUR 13 Asal Usul Anak"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -38938,262 +39230,8 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
-  },
-  {
-   "kunci": "1006",
-   "kode": [
-    "1006"
-   ],
-   "nama": "Tempat tinggal setelah menikah",
-   "namaAsli": "Tempat tinggal setelah nikah",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 34,
-   "jumlahBlangko": 39,
-   "langsung": 39,
-   "bobotLangsung": 36343,
-   "bobot": 36343,
-   "cakupanBobot": 1,
-   "contoh": [
-    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
-    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
-    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "status": "ya",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "deteksi",
-     "id": "cerai",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    }
-   ],
    "sumberMungkin": "",
    "catatan": ""
-  },
-  {
-   "kunci": "9911",
-   "kode": [
-    "9911"
-   ],
-   "nama": "Alat bukti surat Tergugat/Termohon",
-   "namaAsli": "C3 Pembuktian Tergugat",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 12,
-   "jumlahBlangko": 85,
-   "langsung": 85,
-   "bobotLangsung": 36222,
-   "bobot": 36222,
-   "cakupanBobot": 1,
-   "contoh": [
-    "[02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan Dirjen 1465 - (3 Saksi).rtf",
-    "[02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan Dirjen 1465 - (4 Saksi).rtf",
-    "[02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan Dirjen 1465.rtf"
-   ],
-   "folder": [
-    "- BAS CONTRA PERCERAIAN -",
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "10 Ekonomi Syariah",
-    "10 Ekonomi Syariah - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1c Perceraian Kumulasi Itsbat Nikah - BAS",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
-    "2a Itsbat Nikah Kontensius",
-    "2a Itsbat Nikah Kontensius - BAS",
-    "4a Harta Bersama",
-    "4a Harta Bersama - BAS",
-    "4b Kewarisan",
-    "4b Kewarisan - BAS",
-    "5 Izin Poligami - BAS",
-    "5a Pembatalan Perkawinan",
-    "5a Pembatalan Perkawinan - BAS",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "6a Hak Asuh Anak (Hadhanah) - BAS",
-    "6b Penguasaan Anak",
-    "6b Penguasaan Anak - BAS",
-    "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "status": "ya",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "kelompok",
-     "id": "ktp-teks",
-     "berkas": "ekstensi-sipp/abt.js",
-     "tingkat": "otomatis"
-    }
-   ],
-   "sumberMungkin": "",
-   "catatan": ""
-  },
-  {
-   "kunci": "5127",
-   "kode": [
-    "5127"
-   ],
-   "nama": "Alasan-Alasan Cerai",
-   "namaAsli": "Alasan-Alasan Cerai",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 25,
-   "jumlahBlangko": 31,
-   "langsung": 31,
-   "bobotLangsung": 32919,
-   "bobot": 32919,
-   "cakupanBobot": 1,
-   "contoh": [
-    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
-    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
-    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "status": "ya",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "deteksi",
-     "id": "cerai",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    }
-   ],
-   "sumberMungkin": "",
-   "catatan": ""
-  },
-  {
-   "kunci": "1267",
-   "kode": [
-    "1267"
-   ],
-   "nama": "Masih berkomunikasi atau tidak",
-   "namaAsli": "Masih/tidak komunikasi P dan T",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 17,
-   "jumlahBlangko": 30,
-   "langsung": 30,
-   "bobotLangsung": 32491,
-   "bobot": 32491,
-   "cakupanBobot": 1,
-   "contoh": [
-    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
-    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
-    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "status": "ya",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "deteksi",
-     "id": "cerai",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    }
-   ],
-   "sumberMungkin": "",
-   "catatan": ""
-  },
-  {
-   "kunci": "2557",
-   "kode": [
-    "2557"
-   ],
-   "nama": "(Saksi I) Berapa Kali Melihat dan Mendengar Pertengkaran",
-   "namaAsli": "(Saksi I) Berapa Kali Melihat dan Mendengar Pertengkaran (CUKUP ANGKA SAJA) (UNTUK ALASAN B TIDAK USAH DI ISI)",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 15,
-   "jumlahBlangko": 30,
-   "langsung": 23,
-   "bobotLangsung": 21219,
-   "bobot": 32491,
-   "cakupanBobot": 0,
-   "contoh": [
-    "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
-    "BAS ALUR 05 [3] BAS 3 P & T Hadir - Pembuktian P, Tunda Pembuktian T.rtf",
-    "BAS ALUR 05 [3a] BAS 3 P & T Hadir - Pembuktian P dan T.rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "ALUR 01 Cerai Verstek 1 Sidang (Putus Sidang Pertama)"
-   ],
-   "pengisi": [],
-   "sumberMungkin": "keterangan saksi pada BAS (teks bebas)",
-   "catatan": "Registri cerai: belum - tidak tertulis di posita."
   },
   {
    "kunci": "2558",
@@ -39211,8 +39249,8 @@
    "diketikPetugas": 13,
    "jumlahBlangko": 29,
    "langsung": 23,
-   "bobotLangsung": 21219,
-   "bobot": 30579,
+   "bobotLangsung": 26952,
+   "bobot": 36312,
    "cakupanBobot": 0,
    "contoh": [
     "BAS ALUR 01 [1a] BAS 1 P Hadir & T Tidak Hadir - Putus Verstek di Sidang Pertama - Cerai Gugat.rtf",
@@ -39242,6 +39280,173 @@
    "pengisi": [],
    "sumberMungkin": "keterangan saksi pada BAS (teks bebas)",
    "catatan": "Registri cerai: belum - tidak tertulis di posita."
+  },
+  {
+   "kunci": "8564",
+   "kode": [
+    "8564"
+   ],
+   "nama": "Tanggal pengumuman panggilan ghaib pertama dan kedua",
+   "namaAsli": "TANGGAL PENGUMUMAN PANGGILAN GHAIB I DAN II - ISIAN bila SIPP tidak memuat (contoh: 22 Januari 2026 dan 24 Februari 2026)",
+   "jenis": "teks",
+   "tingkat": "tambahan",
+   "wajib": true,
+   "cadangan": "sipp",
+   "keadaan": "ghaib",
+   "pemicu": "",
+   "diketikPetugas": 0,
+   "jumlahBlangko": 42,
+   "langsung": 0,
+   "bobotLangsung": 0,
+   "bobot": 35416,
+   "cakupanBobot": 1,
+   "contoh": [
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (5 Saksi).rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "99 PTSP"
+   ],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-sipp",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "ALETA panggilan ghaib / pengumuman (belum tercatat terstruktur)",
+   "catatan": "Tanggal pengumuman ghaib pertama dan kedua."
+  },
+  {
+   "kunci": "0227",
+   "kode": [
+    "0227"
+   ],
+   "nama": "Tanggal Tergugat/Termohon berpindah agama",
+   "namaAsli": "Tanggal Fasakh / Murtad / Meninggalkan Agama #11117#",
+   "jenis": "tanggal",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "alasanH",
+   "pemicu": "11117",
+   "diketikPetugas": 1,
+   "jumlahBlangko": 35,
+   "langsung": 33,
+   "bobotLangsung": 30376,
+   "bobot": 32716,
+   "cakupanBobot": 0,
+   "contoh": [
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (5 Saksi).rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "tidak ada",
+   "catatan": "Tanggal Tergugat berpindah agama/fasakh: SIPP tidak punya kolomnya."
+  },
+  {
+   "kunci": "0661",
+   "kode": [
+    "0661"
+   ],
+   "nama": "Nomor penetapan prodeo",
+   "namaAsli": "No. SK Prodeo #11112#",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "prodeo",
+   "pemicu": "11112",
+   "diketikPetugas": 3,
+   "jumlahBlangko": 35,
+   "langsung": 35,
+   "bobotLangsung": 32716,
+   "bobot": 32716,
+   "cakupanBobot": 0,
+   "contoh": [
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (5 Saksi).rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "tidak ada",
+   "catatan": "Nomor SK prodeo tidak disimpan SIPP; ecourt_prodeo tidak memuat nomor penetapan. Terbukti di kode (abtUsulanService tidak_ada_sumber)."
+  },
+  {
+   "kunci": "8536",
+   "kode": [
+    "8536"
+   ],
+   "nama": "Putusan pidana Tergugat/Termohon (nomor, tanggal, lama hukuman)",
+   "namaAsli": "Putusan pidana (khusus alasan C, tanpa kata salinan), contoh: Putusan Pengadilan Negeri Donggala Nomor 1/Pid.B/2021/PN Dgl tanggal 1 Maret 2021 dengan pidana penjara 7 (tujuh) tahun #11116#",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "alasanC",
+   "pemicu": "11116",
+   "diketikPetugas": 0,
+   "jumlahBlangko": 35,
+   "langsung": 32,
+   "bobotLangsung": 29948,
+   "bobot": 32716,
+   "cakupanBobot": 0,
+   "contoh": [
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
+    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (5 Saksi).rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "tidak ada (putusan pidana Tergugat diketahui dari bukti surat)",
+   "catatan": "Alasan C; ±jarang."
   },
   {
    "kunci": "tj:saksi 5 p",
@@ -39303,173 +39508,6 @@
    "catatan": ""
   },
   {
-   "kunci": "8564",
-   "kode": [
-    "8564"
-   ],
-   "nama": "Tanggal pengumuman panggilan ghaib pertama dan kedua",
-   "namaAsli": "TANGGAL PENGUMUMAN PANGGILAN GHAIB I DAN II - ISIAN bila SIPP tidak memuat (contoh: 22 Januari 2026 dan 24 Februari 2026)",
-   "jenis": "teks",
-   "tingkat": "tambahan",
-   "wajib": true,
-   "cadangan": "sipp",
-   "keadaan": "ghaib",
-   "pemicu": "",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 42,
-   "langsung": 0,
-   "bobotLangsung": 0,
-   "bobot": 25861,
-   "cakupanBobot": 1,
-   "contoh": [
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (5 Saksi).rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "99 PTSP"
-   ],
-   "status": "ya",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "abt-bawaan",
-     "id": "abt-sipp",
-     "berkas": "",
-     "tingkat": "otomatis"
-    }
-   ],
-   "sumberMungkin": "ALETA panggilan ghaib / pengumuman (belum tercatat terstruktur)",
-   "catatan": "Tanggal pengumuman ghaib pertama dan kedua."
-  },
-  {
-   "kunci": "0227",
-   "kode": [
-    "0227"
-   ],
-   "nama": "Tanggal Tergugat/Termohon berpindah agama",
-   "namaAsli": "Tanggal Fasakh / Murtad / Meninggalkan Agama #11117#",
-   "jenis": "tanggal",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "alasanH",
-   "pemicu": "11117",
-   "diketikPetugas": 1,
-   "jumlahBlangko": 35,
-   "langsung": 33,
-   "bobotLangsung": 22732,
-   "bobot": 25072,
-   "cakupanBobot": 0,
-   "contoh": [
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (5 Saksi).rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
-   ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1 Perceraian CG",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
-   ],
-   "pengisi": [],
-   "sumberMungkin": "tidak ada",
-   "catatan": "Tanggal Tergugat berpindah agama/fasakh: SIPP tidak punya kolomnya."
-  },
-  {
-   "kunci": "0661",
-   "kode": [
-    "0661"
-   ],
-   "nama": "Nomor penetapan prodeo",
-   "namaAsli": "No. SK Prodeo #11112#",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "prodeo",
-   "pemicu": "11112",
-   "diketikPetugas": 3,
-   "jumlahBlangko": 35,
-   "langsung": 35,
-   "bobotLangsung": 25072,
-   "bobot": 25072,
-   "cakupanBobot": 0,
-   "contoh": [
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (5 Saksi).rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
-   ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1 Perceraian CG",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
-   ],
-   "pengisi": [],
-   "sumberMungkin": "tidak ada",
-   "catatan": "Nomor SK prodeo tidak disimpan SIPP; ecourt_prodeo tidak memuat nomor penetapan. Terbukti di kode (abtUsulanService tidak_ada_sumber)."
-  },
-  {
-   "kunci": "8536",
-   "kode": [
-    "8536"
-   ],
-   "nama": "Putusan pidana Tergugat/Termohon (nomor, tanggal, lama hukuman)",
-   "namaAsli": "Putusan pidana (khusus alasan C, tanpa kata salinan), contoh: Putusan Pengadilan Negeri Donggala Nomor 1/Pid.B/2021/PN Dgl tanggal 1 Maret 2021 dengan pidana penjara 7 (tujuh) tahun #11116#",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "alasanC",
-   "pemicu": "11116",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 35,
-   "langsung": 32,
-   "bobotLangsung": 22304,
-   "bobot": 25072,
-   "cakupanBobot": 0,
-   "contoh": [
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (3 Saksi).rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (4 Saksi).rtf",
-    "[01] [Kabul Verstek] Cerai (Format Lengkap) - (5 Saksi).rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
-   ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1 Perceraian CG",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak"
-   ],
-   "pengisi": [],
-   "sumberMungkin": "tidak ada (putusan pidana Tergugat diketahui dari bukti surat)",
-   "catatan": "Alasan C; ±jarang."
-  },
-  {
    "kunci": "tj:saksi 1 t",
    "kode": [
     "6120",
@@ -39486,8 +39524,8 @@
    "diketikPetugas": 0,
    "jumlahBlangko": 73,
    "langsung": 73,
-   "bobotLangsung": 21943,
-   "bobot": 21943,
+   "bobotLangsung": 23854,
+   "bobot": 23854,
    "cakupanBobot": 1,
    "contoh": [
     "[02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan Dirjen 1465 - (3 Saksi).rtf",
@@ -39550,8 +39588,8 @@
    "diketikPetugas": 0,
    "jumlahBlangko": 73,
    "langsung": 73,
-   "bobotLangsung": 21943,
-   "bobot": 21943,
+   "bobotLangsung": 23854,
+   "bobot": 23854,
    "cakupanBobot": 1,
    "contoh": [
     "[02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan Dirjen 1465 - (3 Saksi).rtf",
@@ -39598,6 +39636,65 @@
    "catatan": ""
   },
   {
+   "kunci": "8436",
+   "kode": [
+    "8436"
+   ],
+   "nama": "Kesimpulan Penggugat/Pemohon",
+   "namaAsli": "Kesimpulan oleh #0046#",
+   "jenis": "teks",
+   "tingkat": "tambahan",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 13,
+   "jumlahBlangko": 77,
+   "langsung": 77,
+   "bobotLangsung": 20767,
+   "bobot": 20767,
+   "cakupanBobot": 0,
+   "contoh": [
+    "[02] [Kabul] CG - F.rtf",
+    "[02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F.rtf",
+    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "10 Ekonomi Syariah",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5a Pembatalan Perkawinan",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "6b Penguasaan Anak"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "10 Ekonomi Syariah",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5a Pembatalan Perkawinan",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "6b Penguasaan Anak"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "berkas e-Court (kesimpulan Penggugat)",
+   "catatan": "Registri cerai: belum."
+  },
+  {
    "kunci": "7178",
    "kode": [
     "7178"
@@ -39613,8 +39710,8 @@
    "diketikPetugas": 4,
    "jumlahBlangko": 21,
    "langsung": 21,
-   "bobotLangsung": 18787,
-   "bobot": 18787,
+   "bobotLangsung": 20698,
+   "bobot": 20698,
    "cakupanBobot": 0,
    "contoh": [
     "[99] BAS 1 P Hadir & T Tidak Hadir - Alamat Tidak Jelas Atau Luar Batas Antar.rtf",
@@ -39665,32 +39762,350 @@
    "catatan": ""
   },
   {
-   "kunci": "8436",
+   "kunci": "9881",
    "kode": [
-    "8436"
+    "9881"
    ],
-   "nama": "Kesimpulan Penggugat/Pemohon",
-   "namaAsli": "Kesimpulan oleh #0046#",
+   "nama": "lisan atau tertulis (jawaban replik dan duplik)",
+   "namaAsli": "lisan atau tertulis (jawaban replik dan duplik)",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 15,
+   "jumlahBlangko": 82,
+   "langsung": 82,
+   "bobotLangsung": 20474,
+   "bobot": 20474,
+   "cakupanBobot": 1,
+   "contoh": [
+    "[02] [Kabul] CG - F.rtf",
+    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
+    "[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti.rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "10 Ekonomi Syariah",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5 Izin Poligami",
+    "5a Pembatalan Perkawinan",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "6b Penguasaan Anak"
+   ],
+   "status": "sebagian",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "gugatan-ecourt",
+     "berkas": "ekstensi-sipp/abt.js",
+     "tingkat": "usulan"
+    }
+   ],
+   "sumberMungkin": "baru diusulkan (ragu), belum terisi otomatis",
+   "catatan": ""
+  },
+  {
+   "kunci": "8603",
+   "kode": [
+    "8603"
+   ],
+   "nama": "Nama anak yang dimohonkan",
+   "namaAsli": "NAMA ANAK YANG DIMOHONKAN - ISIAN MANUAL bila SIPP kosong (pisahkan dengan koma; dari petitum/posita)",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 0,
+   "jumlahBlangko": 31,
+   "langsung": 8,
+   "bobotLangsung": 15296,
+   "bobot": 19159,
+   "cakupanBobot": 1,
+   "contoh": [
+    "BAS KUMULASI [2] BAS Putus Verstek CG Kumulasi Hak Asuh Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
+    "BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Anak dan Nafkah Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
+    "[01] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak - Anak Belum Mumayyiz.rtf"
+   ],
+   "folder": [
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak",
+    "6b Penguasaan Anak - BAS",
+    "8 Asal Usul Anak",
+    "9a Lain-Lain (Pengangkatan Anak)",
+    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
+   ],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "deteksi",
+     "id": "hadhanah",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    },
+    {
+     "jenis": "deteksi",
+     "id": "asal-usul",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    },
+    {
+     "jenis": "deteksi",
+     "id": "pengangkatan-anak",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    },
+    {
+     "jenis": "deteksi",
+     "id": "lain-lain",
+     "berkas": "aleta_bot/services/deteksi",
+     "tingkat": "usulan"
+    }
+   ],
+   "sumberMungkin": "posita (modul asal-usul/hadhanah ada); modul cerai-kumulasi belum",
+   "catatan": ""
+  },
+  {
+   "kunci": "tj:jawaban lisan 0047",
+   "kode": [
+    "6112",
+    "2018"
+   ],
+   "nama": "Jawaban Lisan Tergugat/Termohon",
+   "namaAsli": "Jawaban Lisan #0047#",
+   "jenis": "tj",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 0,
+   "jumlahBlangko": 27,
+   "langsung": 27,
+   "bobotLangsung": 18088,
+   "bobot": 18088,
+   "cakupanBobot": 0,
+   "contoh": [
+    "BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Jawab Menjawab Lisan, Tunda Pembuktian P.rtf",
+    "[02] [Kabul] CG - F.rtf",
+    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "10 Ekonomi Syariah - BAS",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "10 Ekonomi Syariah - BAS",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "tidak ada (jawab-jinawab lisan di persidangan; diketik panitera)",
+   "catatan": "Cerai kontra lisan; tidak ada kolom terstruktur di SIPP."
+  },
+  {
+   "kunci": "tj:duplik lisan 0047",
+   "kode": [
+    "6114",
+    "2020"
+   ],
+   "nama": "Duplik Lisan Tergugat/Termohon",
+   "namaAsli": "Duplik Lisan #0047#",
+   "jenis": "tj",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 0,
+   "jumlahBlangko": 26,
+   "langsung": 26,
+   "bobotLangsung": 18086,
+   "bobot": 18086,
+   "cakupanBobot": 0,
+   "contoh": [
+    "BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Jawab Menjawab Lisan, Tunda Pembuktian P.rtf",
+    "[02] [Kabul] CG - F.rtf",
+    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "tidak ada (jawab-jinawab lisan di persidangan; diketik panitera)",
+   "catatan": ""
+  },
+  {
+   "kunci": "tj:replik lisan 0046",
+   "kode": [
+    "6113",
+    "2019"
+   ],
+   "nama": "Replik Lisan Penggugat/Pemohon",
+   "namaAsli": "Replik Lisan #0046#",
+   "jenis": "tj",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 0,
+   "jumlahBlangko": 26,
+   "langsung": 26,
+   "bobotLangsung": 18086,
+   "bobot": 18086,
+   "cakupanBobot": 0,
+   "contoh": [
+    "BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Jawab Menjawab Lisan, Tunda Pembuktian P.rtf",
+    "[02] [Kabul] CG - F.rtf",
+    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan - BAS",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan - BAS",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak - BAS",
+    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "tidak ada (jawab-jinawab lisan di persidangan; diketik panitera)",
+   "catatan": ""
+  },
+  {
+   "kunci": "8437",
+   "kode": [
+    "8437"
+   ],
+   "nama": "Kesimpulan Tergugat/Termohon",
+   "namaAsli": "Kesimpulan oleh #0047#",
    "jenis": "teks",
    "tingkat": "tambahan",
    "wajib": true,
    "cadangan": "",
    "keadaan": "",
    "pemicu": "",
-   "diketikPetugas": 13,
-   "jumlahBlangko": 77,
-   "langsung": 77,
-   "bobotLangsung": 15034,
-   "bobot": 15034,
+   "diketikPetugas": 3,
+   "jumlahBlangko": 48,
+   "langsung": 44,
+   "bobotLangsung": 13549,
+   "bobot": 15967,
    "cakupanBobot": 0,
    "contoh": [
     "[02] [Kabul] CG - F.rtf",
-    "[02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F.rtf",
-    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf"
+    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
+    "[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti.rtf"
    ],
    "folder": [
     "1 Perceraian CG",
-    "10 Ekonomi Syariah",
     "10a Ekonomi Syariah Biasa",
     "1a Perceraian CT",
     "1c Perceraian Kumulasi Itsbat Nikah",
@@ -39706,7 +40121,6 @@
    "status": "tidak",
    "folderTakTertutup": [
     "1 Perceraian CG",
-    "10 Ekonomi Syariah",
     "10a Ekonomi Syariah Biasa",
     "1a Perceraian CT",
     "1c Perceraian Kumulasi Itsbat Nikah",
@@ -39720,8 +40134,94 @@
     "6b Penguasaan Anak"
    ],
    "pengisi": [],
-   "sumberMungkin": "berkas e-Court (kesimpulan Penggugat)",
+   "sumberMungkin": "berkas e-Court (kesimpulan Tergugat)",
    "catatan": "Registri cerai: belum."
+  },
+  {
+   "kunci": "8433",
+   "kode": [
+    "8433"
+   ],
+   "nama": "Alasan pencabutan perkara",
+   "namaAsli": "Alasan Cabut Perkara",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 41,
+   "jumlahBlangko": 66,
+   "langsung": 66,
+   "bobotLangsung": 15949,
+   "bobot": 15949,
+   "cakupanBobot": 1,
+   "contoh": [
+    "BAS ALUR 08 [A] BAS 1 P Hadir & T Tidak Hadir - Cabut di Sidang Pertama sebelum Mediasi.rtf",
+    "[98] [Cabut] 5. Cerai P Hadir & T Tidak Hadir - Setelah Pembuktian.rtf",
+    "[98] [Cabut] 7. Cerai P & T Hadir - Sesudah Jawaban dengan Persetujuan T.rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "1 Perceraian CG - BAS",
+    "10 Ekonomi Syariah",
+    "10 Ekonomi Syariah - BAS",
+    "10a Ekonomi Syariah Biasa",
+    "10a Ekonomi Syariah Biasa - BAS",
+    "1a Perceraian CT",
+    "1a Perceraian CT - BAS",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1c Perceraian Kumulasi Itsbat Nikah - BAS",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "2 Itsbat Nikah",
+    "2 Itsbat Nikah - BAS",
+    "2a Itsbat Nikah Kontensius",
+    "2a Itsbat Nikah Kontensius - BAS",
+    "3 Dispensasi Kawin - BAS",
+    "4a Harta Bersama",
+    "4a Harta Bersama - BAS",
+    "4b Kewarisan",
+    "4b Kewarisan - BAS",
+    "4c Wasiat",
+    "4c Wasiat - BAS",
+    "5 Izin Poligami",
+    "5 Izin Poligami - BAS",
+    "5a Pembatalan Perkawinan",
+    "5a Pembatalan Perkawinan - BAS",
+    "5b Pencegahan Perkawinan",
+    "5b Pencegahan Perkawinan - BAS",
+    "6 Perwalian",
+    "6 Perwalian - BAS",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "6a Hak Asuh Anak (Hadhanah) - BAS",
+    "6b Penguasaan Anak",
+    "6b Penguasaan Anak - BAS",
+    "7 Wali Adhal",
+    "7 Wali Adhal - BAS",
+    "8 Asal Usul Anak",
+    "8 Asal Usul Anak - BAS",
+    "9 Penetapan Ahli Waris",
+    "9 Penetapan Ahli Waris - BAS",
+    "9a Lain-Lain (Pengangkatan Anak)",
+    "9a Lain-Lain (Pengangkatan Anak) - BAS",
+    "9b Permohonan Umum",
+    "9b Permohonan Umum - BAS",
+    "ALUR 08 Cerai Dicabut",
+    "BAS Itsbat Nikah Gugur dan Cabut"
+   ],
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "sipp-lanjutan-pasti",
+     "berkas": "aleta_bot/services/abtIsianSippLanjutan.js",
+     "tingkat": "otomatis"
+    }
+   ],
+   "sumberMungkin": "hakim mengetik (usulan hanya bila mediasi Y2)",
+   "catatan": "Sejak 2023: 41 isian petugas, hanya 4 berasal dari mediasi Y2; alasan lain (perbaikan gugatan, alamat tidak ditemukan) bebas."
   },
   {
    "kunci": "1046",
@@ -39741,7 +40241,7 @@
    "langsung": 39,
    "bobotLangsung": 13721,
    "bobot": 13721,
-   "cakupanBobot": 0.998,
+   "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -39760,13 +40260,8 @@
     "ALUR 11 Itsbat Nikah 1 Sidang",
     "ALUR 13 Asal Usul Anak"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "- BAS ASAL USUL ANAK -",
-    "8 Asal Usul Anak",
-    "8 Asal Usul Anak - BAS",
-    "ALUR 13 Asal Usul Anak"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -39781,7 +40276,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -39802,7 +40297,7 @@
    "langsung": 33,
    "bobotLangsung": 13703,
    "bobot": 13703,
-   "cakupanBobot": 0.998,
+   "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -39820,13 +40315,8 @@
     "ALUR 11 Itsbat Nikah 1 Sidang",
     "ALUR 13 Asal Usul Anak"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "- BAS ASAL USUL ANAK -",
-    "8 Asal Usul Anak",
-    "8 Asal Usul Anak - BAS",
-    "ALUR 13 Asal Usul Anak"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -39835,7 +40325,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -39856,7 +40346,7 @@
    "langsung": 33,
    "bobotLangsung": 13703,
    "bobot": 13703,
-   "cakupanBobot": 0.998,
+   "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -39874,13 +40364,8 @@
     "ALUR 11 Itsbat Nikah 1 Sidang",
     "ALUR 13 Asal Usul Anak"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "- BAS ASAL USUL ANAK -",
-    "8 Asal Usul Anak",
-    "8 Asal Usul Anak - BAS",
-    "ALUR 13 Asal Usul Anak"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -39889,7 +40374,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -39910,7 +40395,7 @@
    "langsung": 33,
    "bobotLangsung": 13703,
    "bobot": 13703,
-   "cakupanBobot": 0.998,
+   "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -39928,13 +40413,8 @@
     "ALUR 11 Itsbat Nikah 1 Sidang",
     "ALUR 13 Asal Usul Anak"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "- BAS ASAL USUL ANAK -",
-    "8 Asal Usul Anak",
-    "8 Asal Usul Anak - BAS",
-    "ALUR 13 Asal Usul Anak"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -39943,7 +40423,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -40019,7 +40499,7 @@
    "langsung": 33,
    "bobotLangsung": 13703,
    "bobot": 13703,
-   "cakupanBobot": 0.998,
+   "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -40037,13 +40517,8 @@
     "ALUR 11 Itsbat Nikah 1 Sidang",
     "ALUR 13 Asal Usul Anak"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "- BAS ASAL USUL ANAK -",
-    "8 Asal Usul Anak",
-    "8 Asal Usul Anak - BAS",
-    "ALUR 13 Asal Usul Anak"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -40052,347 +40527,8 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
-  },
-  {
-   "kunci": "9881",
-   "kode": [
-    "9881"
-   ],
-   "nama": "lisan atau tertulis (jawaban replik dan duplik)",
-   "namaAsli": "lisan atau tertulis (jawaban replik dan duplik)",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 15,
-   "jumlahBlangko": 82,
-   "langsung": 82,
-   "bobotLangsung": 12830,
-   "bobot": 12830,
-   "cakupanBobot": 1,
-   "contoh": [
-    "[02] [Kabul] CG - F.rtf",
-    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
-    "[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti.rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "10 Ekonomi Syariah",
-    "10a Ekonomi Syariah Biasa",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2a Itsbat Nikah Kontensius",
-    "4a Harta Bersama",
-    "4b Kewarisan",
-    "4c Wasiat",
-    "5 Izin Poligami",
-    "5a Pembatalan Perkawinan",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "6b Penguasaan Anak"
-   ],
-   "status": "sebagian",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "kelompok",
-     "id": "gugatan-ecourt",
-     "berkas": "ekstensi-sipp/abt.js",
-     "tingkat": "usulan"
-    }
-   ],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
-  },
-  {
-   "kunci": "tj:jawaban lisan 0047",
-   "kode": [
-    "6112",
-    "2018"
-   ],
-   "nama": "Jawaban Lisan Tergugat/Termohon",
-   "namaAsli": "Jawaban Lisan #0047#",
-   "jenis": "tj",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 27,
-   "langsung": 27,
-   "bobotLangsung": 12355,
-   "bobot": 12355,
-   "cakupanBobot": 0,
-   "contoh": [
-    "BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Jawab Menjawab Lisan, Tunda Pembuktian P.rtf",
-    "[02] [Kabul] CG - F.rtf",
-    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "10 Ekonomi Syariah - BAS",
-    "10a Ekonomi Syariah Biasa - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2a Itsbat Nikah Kontensius - BAS",
-    "4a Harta Bersama - BAS",
-    "4b Kewarisan - BAS",
-    "4c Wasiat - BAS",
-    "5 Izin Poligami - BAS",
-    "5a Pembatalan Perkawinan - BAS",
-    "6a Hak Asuh Anak (Hadhanah) - BAS",
-    "6b Penguasaan Anak - BAS",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "10 Ekonomi Syariah - BAS",
-    "10a Ekonomi Syariah Biasa - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2a Itsbat Nikah Kontensius - BAS",
-    "4a Harta Bersama - BAS",
-    "4b Kewarisan - BAS",
-    "4c Wasiat - BAS",
-    "5 Izin Poligami - BAS",
-    "5a Pembatalan Perkawinan - BAS",
-    "6a Hak Asuh Anak (Hadhanah) - BAS",
-    "6b Penguasaan Anak - BAS",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
-  },
-  {
-   "kunci": "tj:duplik lisan 0047",
-   "kode": [
-    "6114",
-    "2020"
-   ],
-   "nama": "Duplik Lisan Tergugat/Termohon",
-   "namaAsli": "Duplik Lisan #0047#",
-   "jenis": "tj",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 26,
-   "langsung": 26,
-   "bobotLangsung": 12353,
-   "bobot": 12353,
-   "cakupanBobot": 0,
-   "contoh": [
-    "BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Jawab Menjawab Lisan, Tunda Pembuktian P.rtf",
-    "[02] [Kabul] CG - F.rtf",
-    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "10a Ekonomi Syariah Biasa - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2a Itsbat Nikah Kontensius - BAS",
-    "4a Harta Bersama - BAS",
-    "4b Kewarisan - BAS",
-    "4c Wasiat - BAS",
-    "5 Izin Poligami - BAS",
-    "5a Pembatalan Perkawinan - BAS",
-    "6a Hak Asuh Anak (Hadhanah) - BAS",
-    "6b Penguasaan Anak - BAS",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "10a Ekonomi Syariah Biasa - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2a Itsbat Nikah Kontensius - BAS",
-    "4a Harta Bersama - BAS",
-    "4b Kewarisan - BAS",
-    "4c Wasiat - BAS",
-    "5 Izin Poligami - BAS",
-    "5a Pembatalan Perkawinan - BAS",
-    "6a Hak Asuh Anak (Hadhanah) - BAS",
-    "6b Penguasaan Anak - BAS",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
-  },
-  {
-   "kunci": "tj:replik lisan 0046",
-   "kode": [
-    "6113",
-    "2019"
-   ],
-   "nama": "Replik Lisan Penggugat/Pemohon",
-   "namaAsli": "Replik Lisan #0046#",
-   "jenis": "tj",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 26,
-   "langsung": 26,
-   "bobotLangsung": 12353,
-   "bobot": 12353,
-   "cakupanBobot": 0,
-   "contoh": [
-    "BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Jawab Menjawab Lisan, Tunda Pembuktian P.rtf",
-    "[02] [Kabul] CG - F.rtf",
-    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "10a Ekonomi Syariah Biasa - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2a Itsbat Nikah Kontensius - BAS",
-    "4a Harta Bersama - BAS",
-    "4b Kewarisan - BAS",
-    "4c Wasiat - BAS",
-    "5 Izin Poligami - BAS",
-    "5a Pembatalan Perkawinan - BAS",
-    "6a Hak Asuh Anak (Hadhanah) - BAS",
-    "6b Penguasaan Anak - BAS",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "10a Ekonomi Syariah Biasa - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2a Itsbat Nikah Kontensius - BAS",
-    "4a Harta Bersama - BAS",
-    "4b Kewarisan - BAS",
-    "4c Wasiat - BAS",
-    "5 Izin Poligami - BAS",
-    "5a Pembatalan Perkawinan - BAS",
-    "6a Hak Asuh Anak (Hadhanah) - BAS",
-    "6b Penguasaan Anak - BAS",
-    "ALUR 05 Cerai Kontra Lisan (Mediasi s.d. Putusan)"
-   ],
-   "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
-  },
-  {
-   "kunci": "8433",
-   "kode": [
-    "8433"
-   ],
-   "nama": "Alasan pencabutan perkara",
-   "namaAsli": "Alasan Cabut Perkara",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 41,
-   "jumlahBlangko": 66,
-   "langsung": 66,
-   "bobotLangsung": 12127,
-   "bobot": 12127,
-   "cakupanBobot": 1,
-   "contoh": [
-    "BAS ALUR 08 [A] BAS 1 P Hadir & T Tidak Hadir - Cabut di Sidang Pertama sebelum Mediasi.rtf",
-    "[98] [Cabut] 5. Cerai P Hadir & T Tidak Hadir - Setelah Pembuktian.rtf",
-    "[98] [Cabut] 7. Cerai P & T Hadir - Sesudah Jawaban dengan Persetujuan T.rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1 Perceraian CG - BAS",
-    "10 Ekonomi Syariah",
-    "10 Ekonomi Syariah - BAS",
-    "10a Ekonomi Syariah Biasa",
-    "10a Ekonomi Syariah Biasa - BAS",
-    "1a Perceraian CT",
-    "1a Perceraian CT - BAS",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1c Perceraian Kumulasi Itsbat Nikah - BAS",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
-    "2 Itsbat Nikah",
-    "2 Itsbat Nikah - BAS",
-    "2a Itsbat Nikah Kontensius",
-    "2a Itsbat Nikah Kontensius - BAS",
-    "3 Dispensasi Kawin - BAS",
-    "4a Harta Bersama",
-    "4a Harta Bersama - BAS",
-    "4b Kewarisan",
-    "4b Kewarisan - BAS",
-    "4c Wasiat",
-    "4c Wasiat - BAS",
-    "5 Izin Poligami",
-    "5 Izin Poligami - BAS",
-    "5a Pembatalan Perkawinan",
-    "5a Pembatalan Perkawinan - BAS",
-    "5b Pencegahan Perkawinan",
-    "5b Pencegahan Perkawinan - BAS",
-    "6 Perwalian",
-    "6 Perwalian - BAS",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "6a Hak Asuh Anak (Hadhanah) - BAS",
-    "6b Penguasaan Anak",
-    "6b Penguasaan Anak - BAS",
-    "7 Wali Adhal",
-    "7 Wali Adhal - BAS",
-    "8 Asal Usul Anak",
-    "8 Asal Usul Anak - BAS",
-    "9 Penetapan Ahli Waris",
-    "9 Penetapan Ahli Waris - BAS",
-    "9a Lain-Lain (Pengangkatan Anak)",
-    "9a Lain-Lain (Pengangkatan Anak) - BAS",
-    "9b Permohonan Umum",
-    "9b Permohonan Umum - BAS",
-    "ALUR 08 Cerai Dicabut",
-    "BAS Itsbat Nikah Gugur dan Cabut"
-   ],
-   "status": "ya",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "kelompok",
-     "id": "sipp-lanjutan-pasti",
-     "berkas": "aleta_bot/services/abtIsianSippLanjutan.js",
-     "tingkat": "otomatis"
-    }
-   ],
-   "sumberMungkin": "hakim mengetik (usulan hanya bila mediasi Y2)",
-   "catatan": "Sejak 2023: 41 isian petugas, hanya 4 berasal dari mediasi Y2; alasan lain (perbaikan gugatan, alamat tidak ditemukan) bebas."
   },
   {
    "kunci": "9958",
@@ -40449,61 +40585,127 @@
    "catatan": ""
   },
   {
-   "kunci": "8437",
+   "kunci": "5271",
    "kode": [
-    "8437"
+    "5271"
    ],
-   "nama": "Kesimpulan Tergugat/Termohon",
-   "namaAsli": "Kesimpulan oleh #0047#",
+   "nama": "Penghasilan Tergugat/Termohon Perbulan",
+   "namaAsli": "Penghasilan #0047# Perbulan",
    "jenis": "teks",
-   "tingkat": "tambahan",
+   "tingkat": "penting",
    "wajib": true,
    "cadangan": "",
    "keadaan": "",
    "pemicu": "",
-   "diketikPetugas": 3,
-   "jumlahBlangko": 48,
-   "langsung": 44,
-   "bobotLangsung": 7816,
-   "bobot": 10234,
+   "diketikPetugas": 0,
+   "jumlahBlangko": 6,
+   "langsung": 6,
+   "bobotLangsung": 9988,
+   "bobot": 9988,
    "cakupanBobot": 0,
    "contoh": [
-    "[02] [Kabul] CG - F.rtf",
-    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
-    "[03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) - F Tidak Terbukti.rtf"
+    "[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf",
+    "BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Anak dan Nafkah Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
+    "[01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz.rtf"
    ],
    "folder": [
-    "1 Perceraian CG",
-    "10a Ekonomi Syariah Biasa",
     "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2a Itsbat Nikah Kontensius",
-    "4a Harta Bersama",
-    "4b Kewarisan",
-    "4c Wasiat",
-    "5a Pembatalan Perkawinan",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "6b Penguasaan Anak"
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "status": "tidak",
    "folderTakTertutup": [
-    "1 Perceraian CG",
-    "10a Ekonomi Syariah Biasa",
     "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2a Itsbat Nikah Kontensius",
-    "4a Harta Bersama",
-    "4b Kewarisan",
-    "4c Wasiat",
-    "5a Pembatalan Perkawinan",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "6b Penguasaan Anak"
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
    ],
    "pengisi": [],
-   "sumberMungkin": "berkas e-Court (kesimpulan Tergugat)",
-   "catatan": "Registri cerai: belum."
+   "sumberMungkin": "berkas e-Court (gugatan: penghasilan)",
+   "catatan": ""
+  },
+  {
+   "kunci": "6071",
+   "kode": [
+    "6071"
+   ],
+   "nama": "Nafkah Anak",
+   "namaAsli": "Nafkah Anak",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 5,
+   "jumlahBlangko": 6,
+   "langsung": 6,
+   "bobotLangsung": 9988,
+   "bobot": 9988,
+   "cakupanBobot": 1,
+   "contoh": [
+    "[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf",
+    "BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Anak dan Nafkah Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
+    "[01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz.rtf"
+   ],
+   "folder": [
+    "1a Perceraian CT",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
+   ],
+   "status": "sebagian",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "gugatan-ecourt",
+     "berkas": "ekstensi-sipp/abt.js",
+     "tingkat": "usulan"
+    }
+   ],
+   "sumberMungkin": "baru diusulkan (ragu), belum terisi otomatis",
+   "catatan": ""
+  },
+  {
+   "kunci": "9050",
+   "kode": [
+    "9050"
+   ],
+   "nama": "Kenaikan nafkah anak per tahun",
+   "namaAsli": "KENAIKAN NAFKAH ANAK PER TAHUN - ISIAN (SEMA 3/2015 Kamar Agama: 10% s.d. 20% per tahun, di luar biaya pendidikan dan kesehatan), contoh: 10% (sepuluh persen)",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 0,
+   "jumlahBlangko": 5,
+   "langsung": 5,
+   "bobotLangsung": 9560,
+   "bobot": 9560,
+   "cakupanBobot": 0,
+   "contoh": [
+    "BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Anak dan Nafkah Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
+    "[01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz.rtf",
+    "[01d] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - T Tidak Hadir Setelah Mediasi.rtf"
+   ],
+   "folder": [
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "berkas e-Court (petitum kenaikan nafkah anak)",
+   "catatan": ""
   },
   {
    "kunci": "7211",
@@ -40523,7 +40725,7 @@
    "langsung": 19,
    "bobotLangsung": 9197,
    "bobot": 9197,
-   "cakupanBobot": 0.997,
+   "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -40540,13 +40742,8 @@
     "ALUR 11 Itsbat Nikah 1 Sidang",
     "ALUR 13 Asal Usul Anak"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "- BAS ASAL USUL ANAK -",
-    "8 Asal Usul Anak",
-    "8 Asal Usul Anak - BAS",
-    "ALUR 13 Asal Usul Anak"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -40555,7 +40752,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -40576,7 +40773,7 @@
    "langsung": 19,
    "bobotLangsung": 9197,
    "bobot": 9197,
-   "cakupanBobot": 0.997,
+   "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -40593,13 +40790,8 @@
     "ALUR 11 Itsbat Nikah 1 Sidang",
     "ALUR 13 Asal Usul Anak"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "- BAS ASAL USUL ANAK -",
-    "8 Asal Usul Anak",
-    "8 Asal Usul Anak - BAS",
-    "ALUR 13 Asal Usul Anak"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -40608,7 +40800,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -40629,7 +40821,7 @@
    "langsung": 29,
    "bobotLangsung": 8819,
    "bobot": 8819,
-   "cakupanBobot": 0.995,
+   "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -40648,14 +40840,8 @@
     "ALUR 11 Itsbat Nikah 1 Sidang",
     "ALUR 13 Asal Usul Anak"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "- BAS ASAL USUL ANAK -",
-    "7 Wali Adhal",
-    "8 Asal Usul Anak",
-    "8 Asal Usul Anak - BAS",
-    "ALUR 13 Asal Usul Anak"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -40664,7 +40850,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -40685,7 +40871,7 @@
    "langsung": 26,
    "bobotLangsung": 8810,
    "bobot": 8810,
-   "cakupanBobot": 0.996,
+   "cakupanBobot": 1,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -40703,13 +40889,8 @@
     "ALUR 11 Itsbat Nikah 1 Sidang",
     "ALUR 13 Asal Usul Anak"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "- BAS ASAL USUL ANAK -",
-    "8 Asal Usul Anak",
-    "8 Asal Usul Anak - BAS",
-    "ALUR 13 Asal Usul Anak"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -40718,7 +40899,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -40977,6 +41158,225 @@
    "catatan": ""
   },
   {
+   "kunci": "8712",
+   "kode": [
+    "8712"
+   ],
+   "nama": "Nomor dan tanggal surat teguran panitera",
+   "namaAsli": "CORET: NOMOR DAN TANGGAL SURAT TEGURAN PANITERA untuk menambah panjar (contoh: Nomor 123/PAN.PA.W22-A6/HK2.6/IX/2026 tanggal 1 September 2026)",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "titik",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 0,
+   "jumlahBlangko": 21,
+   "langsung": 21,
+   "bobotLangsung": 5258,
+   "bobot": 5258,
+   "cakupanBobot": 0,
+   "contoh": [
+    "[98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
+    "[98c] [Coret] ES Acara Biasa - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
+    "[98c] [Coret] Putusan CG Kumulasi Itsbat Nikah - Dibatalkan dari Pendaftaran - Panjar Habis.rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2 Itsbat Nikah",
+    "2a Itsbat Nikah Kontensius",
+    "3 Dispensasi Kawin",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5 Izin Poligami",
+    "5a Pembatalan Perkawinan",
+    "5b Pencegahan Perkawinan",
+    "6 Perwalian",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "7 Wali Adhal",
+    "8 Asal Usul Anak",
+    "9 Penetapan Ahli Waris",
+    "9a Lain-Lain (Pengangkatan Anak)"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2 Itsbat Nikah",
+    "2a Itsbat Nikah Kontensius",
+    "3 Dispensasi Kawin",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5 Izin Poligami",
+    "5a Pembatalan Perkawinan",
+    "5b Pencegahan Perkawinan",
+    "6 Perwalian",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "7 Wali Adhal",
+    "8 Asal Usul Anak",
+    "9 Penetapan Ahli Waris",
+    "9a Lain-Lain (Pengangkatan Anak)"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin",
+   "catatan": "ALETA Kasir (teguran panjar) - belum dicatat terstruktur"
+  },
+  {
+   "kunci": "8713",
+   "kode": [
+    "8713"
+   ],
+   "nama": "Batas waktu menambah panjar",
+   "namaAsli": "CORET: BATAS WAKTU MENAMBAH PANJAR menurut surat teguran (contoh: 30 (tiga puluh) hari)",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "titik",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 0,
+   "jumlahBlangko": 21,
+   "langsung": 21,
+   "bobotLangsung": 5258,
+   "bobot": 5258,
+   "cakupanBobot": 0,
+   "contoh": [
+    "[98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
+    "[98c] [Coret] ES Acara Biasa - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
+    "[98c] [Coret] Putusan CG Kumulasi Itsbat Nikah - Dibatalkan dari Pendaftaran - Panjar Habis.rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2 Itsbat Nikah",
+    "2a Itsbat Nikah Kontensius",
+    "3 Dispensasi Kawin",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5 Izin Poligami",
+    "5a Pembatalan Perkawinan",
+    "5b Pencegahan Perkawinan",
+    "6 Perwalian",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "7 Wali Adhal",
+    "8 Asal Usul Anak",
+    "9 Penetapan Ahli Waris",
+    "9a Lain-Lain (Pengangkatan Anak)"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2 Itsbat Nikah",
+    "2a Itsbat Nikah Kontensius",
+    "3 Dispensasi Kawin",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5 Izin Poligami",
+    "5a Pembatalan Perkawinan",
+    "5b Pencegahan Perkawinan",
+    "6 Perwalian",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "7 Wali Adhal",
+    "8 Asal Usul Anak",
+    "9 Penetapan Ahli Waris",
+    "9a Lain-Lain (Pengangkatan Anak)"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin",
+   "catatan": "ALETA Kasir (teguran panjar) - belum dicatat terstruktur"
+  },
+  {
+   "kunci": "8714",
+   "kode": [
+    "8714"
+   ],
+   "nama": "Nomor dan tanggal laporan panjar tidak ditambah",
+   "namaAsli": "CORET: NOMOR DAN TANGGAL SURAT KETERANGAN/LAPORAN PANITERA bahwa panjar tidak ditambah",
+   "jenis": "teks",
+   "tingkat": "penting",
+   "wajib": true,
+   "cadangan": "titik",
+   "keadaan": "",
+   "pemicu": "",
+   "diketikPetugas": 0,
+   "jumlahBlangko": 21,
+   "langsung": 21,
+   "bobotLangsung": 5258,
+   "bobot": 5258,
+   "cakupanBobot": 0,
+   "contoh": [
+    "[98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
+    "[98c] [Coret] ES Acara Biasa - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
+    "[98c] [Coret] Putusan CG Kumulasi Itsbat Nikah - Dibatalkan dari Pendaftaran - Panjar Habis.rtf"
+   ],
+   "folder": [
+    "1 Perceraian CG",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2 Itsbat Nikah",
+    "2a Itsbat Nikah Kontensius",
+    "3 Dispensasi Kawin",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5 Izin Poligami",
+    "5a Pembatalan Perkawinan",
+    "5b Pencegahan Perkawinan",
+    "6 Perwalian",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "7 Wali Adhal",
+    "8 Asal Usul Anak",
+    "9 Penetapan Ahli Waris",
+    "9a Lain-Lain (Pengangkatan Anak)"
+   ],
+   "status": "tidak",
+   "folderTakTertutup": [
+    "1 Perceraian CG",
+    "10a Ekonomi Syariah Biasa",
+    "1a Perceraian CT",
+    "1c Perceraian Kumulasi Itsbat Nikah",
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
+    "2 Itsbat Nikah",
+    "2a Itsbat Nikah Kontensius",
+    "3 Dispensasi Kawin",
+    "4a Harta Bersama",
+    "4b Kewarisan",
+    "4c Wasiat",
+    "5 Izin Poligami",
+    "5a Pembatalan Perkawinan",
+    "5b Pencegahan Perkawinan",
+    "6 Perwalian",
+    "6a Hak Asuh Anak (Hadhanah)",
+    "7 Wali Adhal",
+    "8 Asal Usul Anak",
+    "9 Penetapan Ahli Waris",
+    "9a Lain-Lain (Pengangkatan Anak)"
+   ],
+   "pengisi": [],
+   "sumberMungkin": "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin",
+   "catatan": "ALETA Kasir (laporan panjar) - belum dicatat terstruktur"
+  },
+  {
    "kunci": "8729",
    "kode": [
     "8729"
@@ -41013,74 +41413,6 @@
    ],
    "pengisi": [],
    "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
-   "catatan": ""
-  },
-  {
-   "kunci": "8603",
-   "kode": [
-    "8603"
-   ],
-   "nama": "Nama anak yang dimohonkan",
-   "namaAsli": "NAMA ANAK YANG DIMOHONKAN - ISIAN MANUAL bila SIPP kosong (pisahkan dengan koma; dari petitum/posita)",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 31,
-   "langsung": 8,
-   "bobotLangsung": 4686,
-   "bobot": 4727,
-   "cakupanBobot": 0.001,
-   "contoh": [
-    "BAS KUMULASI [2] BAS Putus Verstek CG Kumulasi Hak Asuh Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
-    "BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Anak dan Nafkah Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
-    "[01] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak - Anak Belum Mumayyiz.rtf"
-   ],
-   "folder": [
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "6a Hak Asuh Anak (Hadhanah) - BAS",
-    "6b Penguasaan Anak",
-    "6b Penguasaan Anak - BAS",
-    "8 Asal Usul Anak",
-    "9a Lain-Lain (Pengangkatan Anak)",
-    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
-   ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
-   ],
-   "pengisi": [
-    {
-     "jenis": "deteksi",
-     "id": "hadhanah",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    },
-    {
-     "jenis": "deteksi",
-     "id": "asal-usul",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    },
-    {
-     "jenis": "deteksi",
-     "id": "pengangkatan-anak",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    },
-    {
-     "jenis": "deteksi",
-     "id": "lain-lain",
-     "berkas": "aleta_bot/services/deteksi",
-     "tingkat": "usulan"
-    }
-   ],
-   "sumberMungkin": "posita (modul asal-usul/hadhanah ada); modul cerai-kumulasi belum",
    "catatan": ""
   },
   {
@@ -41349,227 +41681,89 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "baru diusulkan (ragu), belum terisi otomatis",
    "catatan": ""
   },
   {
-   "kunci": "8712",
+   "kunci": "8899",
    "kode": [
-    "8712"
+    "8899"
    ],
-   "nama": "Nomor dan tanggal surat teguran panitera",
-   "namaAsli": "CORET: NOMOR DAN TANGGAL SURAT TEGURAN PANITERA untuk menambah panjar (contoh: Nomor 123/PAN.PA.W22-A6/HK2.6/IX/2026 tanggal 1 September 2026)",
+   "nama": "Pokok kesepakatan perdamaian sebagian",
+   "namaAsli": "KESEPAKATAN PERDAMAIAN SEBAGIAN: pokok yang disepakati (contoh: pengasuhan anak, nafkah anak, nafkah iddah, dan mut�ah)",
    "jenis": "teks",
    "tingkat": "penting",
    "wajib": true,
-   "cadangan": "titik",
+   "cadangan": "",
    "keadaan": "",
    "pemicu": "",
    "diketikPetugas": 0,
-   "jumlahBlangko": 21,
-   "langsung": 21,
-   "bobotLangsung": 3347,
-   "bobot": 3347,
+   "jumlahBlangko": 3,
+   "langsung": 3,
+   "bobotLangsung": 4252,
+   "bobot": 4252,
    "cakupanBobot": 0,
    "contoh": [
-    "[98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
-    "[98c] [Coret] ES Acara Biasa - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
-    "[98c] [Coret] Putusan CG Kumulasi Itsbat Nikah - Dibatalkan dari Pendaftaran - Panjar Habis.rtf"
+    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
+    "[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
+    "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang 2 - Mediasi Berhasil Sebagian (Hak Asuh) dan Court Calendar.rtf"
    ],
    "folder": [
     "1 Perceraian CG",
-    "10a Ekonomi Syariah Biasa",
     "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2 Itsbat Nikah",
-    "2a Itsbat Nikah Kontensius",
-    "3 Dispensasi Kawin",
-    "4a Harta Bersama",
-    "4b Kewarisan",
-    "4c Wasiat",
-    "5 Izin Poligami",
-    "5a Pembatalan Perkawinan",
-    "5b Pencegahan Perkawinan",
-    "6 Perwalian",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "7 Wali Adhal",
-    "8 Asal Usul Anak",
-    "9 Penetapan Ahli Waris",
-    "9a Lain-Lain (Pengangkatan Anak)"
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS"
    ],
    "status": "tidak",
    "folderTakTertutup": [
     "1 Perceraian CG",
-    "10a Ekonomi Syariah Biasa",
     "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2 Itsbat Nikah",
-    "2a Itsbat Nikah Kontensius",
-    "3 Dispensasi Kawin",
-    "4a Harta Bersama",
-    "4b Kewarisan",
-    "4c Wasiat",
-    "5 Izin Poligami",
-    "5a Pembatalan Perkawinan",
-    "5b Pencegahan Perkawinan",
-    "6 Perwalian",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "7 Wali Adhal",
-    "8 Asal Usul Anak",
-    "9 Penetapan Ahli Waris",
-    "9a Lain-Lain (Pengangkatan Anak)"
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS"
    ],
    "pengisi": [],
-   "sumberMungkin": "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin",
-   "catatan": "ALETA Kasir (teguran panjar) - belum dicatat terstruktur"
+   "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
+   "catatan": ""
   },
   {
-   "kunci": "8713",
+   "kunci": "8902",
    "kode": [
-    "8713"
+    "8902"
    ],
-   "nama": "Batas waktu menambah panjar",
-   "namaAsli": "CORET: BATAS WAKTU MENAMBAH PANJAR menurut surat teguran (contoh: 30 (tiga puluh) hari)",
+   "nama": "Isi pasal kesepakatan perdamaian sebagian",
+   "namaAsli": "KESEPAKATAN PERDAMAIAN SEBAGIAN: isi pasal-pasal (kosong = diambil dari SIPP isi_kesepakatan_perdamaian)",
    "jenis": "teks",
-   "tingkat": "penting",
+   "tingkat": "tambahan",
    "wajib": true,
-   "cadangan": "titik",
+   "cadangan": "bawaan",
    "keadaan": "",
    "pemicu": "",
    "diketikPetugas": 0,
-   "jumlahBlangko": 21,
-   "langsung": 21,
-   "bobotLangsung": 3347,
-   "bobot": 3347,
-   "cakupanBobot": 0,
+   "jumlahBlangko": 3,
+   "langsung": 1,
+   "bobotLangsung": 1912,
+   "bobot": 4252,
+   "cakupanBobot": 1,
    "contoh": [
-    "[98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
-    "[98c] [Coret] ES Acara Biasa - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
-    "[98c] [Coret] Putusan CG Kumulasi Itsbat Nikah - Dibatalkan dari Pendaftaran - Panjar Habis.rtf"
+    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
+    "[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
+    "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang 2 - Mediasi Berhasil Sebagian (Hak Asuh) dan Court Calendar.rtf"
    ],
    "folder": [
     "1 Perceraian CG",
-    "10a Ekonomi Syariah Biasa",
     "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2 Itsbat Nikah",
-    "2a Itsbat Nikah Kontensius",
-    "3 Dispensasi Kawin",
-    "4a Harta Bersama",
-    "4b Kewarisan",
-    "4c Wasiat",
-    "5 Izin Poligami",
-    "5a Pembatalan Perkawinan",
-    "5b Pencegahan Perkawinan",
-    "6 Perwalian",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "7 Wali Adhal",
-    "8 Asal Usul Anak",
-    "9 Penetapan Ahli Waris",
-    "9a Lain-Lain (Pengangkatan Anak)"
+    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS"
    ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1 Perceraian CG",
-    "10a Ekonomi Syariah Biasa",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2 Itsbat Nikah",
-    "2a Itsbat Nikah Kontensius",
-    "3 Dispensasi Kawin",
-    "4a Harta Bersama",
-    "4b Kewarisan",
-    "4c Wasiat",
-    "5 Izin Poligami",
-    "5a Pembatalan Perkawinan",
-    "5b Pencegahan Perkawinan",
-    "6 Perwalian",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "7 Wali Adhal",
-    "8 Asal Usul Anak",
-    "9 Penetapan Ahli Waris",
-    "9a Lain-Lain (Pengangkatan Anak)"
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "abt-bawaan",
+     "id": "abt-bawaan",
+     "berkas": "",
+     "tingkat": "otomatis"
+    }
    ],
-   "pengisi": [],
-   "sumberMungkin": "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin",
-   "catatan": "ALETA Kasir (teguran panjar) - belum dicatat terstruktur"
-  },
-  {
-   "kunci": "8714",
-   "kode": [
-    "8714"
-   ],
-   "nama": "Nomor dan tanggal laporan panjar tidak ditambah",
-   "namaAsli": "CORET: NOMOR DAN TANGGAL SURAT KETERANGAN/LAPORAN PANITERA bahwa panjar tidak ditambah",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "titik",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 21,
-   "langsung": 21,
-   "bobotLangsung": 3347,
-   "bobot": 3347,
-   "cakupanBobot": 0,
-   "contoh": [
-    "[98] [Coret] 6. Cerai Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
-    "[98c] [Coret] ES Acara Biasa - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
-    "[98c] [Coret] Putusan CG Kumulasi Itsbat Nikah - Dibatalkan dari Pendaftaran - Panjar Habis.rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "10a Ekonomi Syariah Biasa",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2 Itsbat Nikah",
-    "2a Itsbat Nikah Kontensius",
-    "3 Dispensasi Kawin",
-    "4a Harta Bersama",
-    "4b Kewarisan",
-    "4c Wasiat",
-    "5 Izin Poligami",
-    "5a Pembatalan Perkawinan",
-    "5b Pencegahan Perkawinan",
-    "6 Perwalian",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "7 Wali Adhal",
-    "8 Asal Usul Anak",
-    "9 Penetapan Ahli Waris",
-    "9a Lain-Lain (Pengangkatan Anak)"
-   ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1 Perceraian CG",
-    "10a Ekonomi Syariah Biasa",
-    "1a Perceraian CT",
-    "1c Perceraian Kumulasi Itsbat Nikah",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "2 Itsbat Nikah",
-    "2a Itsbat Nikah Kontensius",
-    "3 Dispensasi Kawin",
-    "4a Harta Bersama",
-    "4b Kewarisan",
-    "4c Wasiat",
-    "5 Izin Poligami",
-    "5a Pembatalan Perkawinan",
-    "5b Pencegahan Perkawinan",
-    "6 Perwalian",
-    "6a Hak Asuh Anak (Hadhanah)",
-    "7 Wali Adhal",
-    "8 Asal Usul Anak",
-    "9 Penetapan Ahli Waris",
-    "9a Lain-Lain (Pengangkatan Anak)"
-   ],
-   "pengisi": [],
-   "sumberMungkin": "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin",
-   "catatan": "ALETA Kasir (laporan panjar) - belum dicatat terstruktur"
+   "sumberMungkin": "",
+   "catatan": ""
   },
   {
    "kunci": "0228",
@@ -41615,90 +41809,6 @@
    "catatan": ""
   },
   {
-   "kunci": "5271",
-   "kode": [
-    "5271"
-   ],
-   "nama": "Penghasilan Tergugat/Termohon Perbulan",
-   "namaAsli": "Penghasilan #0047# Perbulan",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 6,
-   "langsung": 6,
-   "bobotLangsung": 2772,
-   "bobot": 2772,
-   "cakupanBobot": 0,
-   "contoh": [
-    "[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf",
-    "BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Anak dan Nafkah Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
-    "[01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz.rtf"
-   ],
-   "folder": [
-    "1a Perceraian CT",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
-    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
-   ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1a Perceraian CT",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
-    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
-   ],
-   "pengisi": [],
-   "sumberMungkin": "berkas e-Court (gugatan: penghasilan)",
-   "catatan": ""
-  },
-  {
-   "kunci": "6071",
-   "kode": [
-    "6071"
-   ],
-   "nama": "Nafkah Anak",
-   "namaAsli": "Nafkah Anak",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 5,
-   "jumlahBlangko": 6,
-   "langsung": 6,
-   "bobotLangsung": 2772,
-   "bobot": 2772,
-   "cakupanBobot": 1,
-   "contoh": [
-    "[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf",
-    "BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Anak dan Nafkah Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
-    "[01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz.rtf"
-   ],
-   "folder": [
-    "1a Perceraian CT",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
-    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
-   ],
-   "status": "sebagian",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "kelompok",
-     "id": "gugatan-ecourt",
-     "berkas": "ekstensi-sipp/abt.js",
-     "tingkat": "usulan"
-    }
-   ],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
-  },
-  {
    "kunci": "9501",
    "kode": [
     "9501"
@@ -41735,126 +41845,6 @@
    ],
    "pengisi": [],
    "sumberMungkin": "opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin",
-   "catatan": ""
-  },
-  {
-   "kunci": "9050",
-   "kode": [
-    "9050"
-   ],
-   "nama": "Kenaikan nafkah anak per tahun",
-   "namaAsli": "KENAIKAN NAFKAH ANAK PER TAHUN - ISIAN (SEMA 3/2015 Kamar Agama: 10% s.d. 20% per tahun, di luar biaya pendidikan dan kesehatan), contoh: 10% (sepuluh persen)",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 5,
-   "langsung": 5,
-   "bobotLangsung": 2344,
-   "bobot": 2344,
-   "cakupanBobot": 0,
-   "contoh": [
-    "BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Anak dan Nafkah Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
-    "[01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz.rtf",
-    "[01d] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - T Tidak Hadir Setelah Mediasi.rtf"
-   ],
-   "folder": [
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
-    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
-   ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
-    "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)"
-   ],
-   "pengisi": [],
-   "sumberMungkin": "berkas e-Court (petitum kenaikan nafkah anak)",
-   "catatan": ""
-  },
-  {
-   "kunci": "8899",
-   "kode": [
-    "8899"
-   ],
-   "nama": "Pokok kesepakatan perdamaian sebagian",
-   "namaAsli": "KESEPAKATAN PERDAMAIAN SEBAGIAN: pokok yang disepakati (contoh: pengasuhan anak, nafkah anak, nafkah iddah, dan mut�ah)",
-   "jenis": "teks",
-   "tingkat": "penting",
-   "wajib": true,
-   "cadangan": "",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 3,
-   "langsung": 3,
-   "bobotLangsung": 2341,
-   "bobot": 2341,
-   "cakupanBobot": 0,
-   "contoh": [
-    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
-    "[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
-    "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang 2 - Mediasi Berhasil Sebagian (Hak Asuh) dan Court Calendar.rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1a Perceraian CT",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS"
-   ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1 Perceraian CG",
-    "1a Perceraian CT",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS"
-   ],
-   "pengisi": [],
-   "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
-   "catatan": ""
-  },
-  {
-   "kunci": "8902",
-   "kode": [
-    "8902"
-   ],
-   "nama": "Isi pasal kesepakatan perdamaian sebagian",
-   "namaAsli": "KESEPAKATAN PERDAMAIAN SEBAGIAN: isi pasal-pasal (kosong = diambil dari SIPP isi_kesepakatan_perdamaian)",
-   "jenis": "teks",
-   "tingkat": "tambahan",
-   "wajib": true,
-   "cadangan": "bawaan",
-   "keadaan": "",
-   "pemicu": "",
-   "diketikPetugas": 0,
-   "jumlahBlangko": 3,
-   "langsung": 1,
-   "bobotLangsung": 1,
-   "bobot": 2341,
-   "cakupanBobot": 1,
-   "contoh": [
-    "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
-    "[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
-    "BAS ALUR 37 CG Kumulasi Hak Asuh - Sidang 2 - Mediasi Berhasil Sebagian (Hak Asuh) dan Court Calendar.rtf"
-   ],
-   "folder": [
-    "1 Perceraian CG",
-    "1a Perceraian CT",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS"
-   ],
-   "status": "ya",
-   "folderTakTertutup": [],
-   "pengisi": [
-    {
-     "jenis": "abt-bawaan",
-     "id": "abt-bawaan",
-     "berkas": "",
-     "tingkat": "otomatis"
-    }
-   ],
-   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -42023,7 +42013,7 @@
    "langsung": 43,
    "bobotLangsung": 1408,
    "bobot": 1409,
-   "cakupanBobot": 0.778,
+   "cakupanBobot": 1,
    "contoh": [
     "BAS ALUR 35 IN Kontensius - Sidang 1 - Jawaban T Mengakui, Pembuktian dan Putusan.rtf",
     "BAS ALUR 35 IN Kontensius - Sidang 2 - Pembuktian dan Putusan.rtf",
@@ -42041,12 +42031,15 @@
     "9 Penetapan Ahli Waris - BAS",
     "98 Relaas"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "2a Itsbat Nikah Kontensius",
-    "2a Itsbat Nikah Kontensius - BAS"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "itsbat-pasangan-meninggal",
+     "berkas": "aleta_bot/services/deteksi/itsbat.js",
+     "tingkat": "usulan"
+    },
     {
      "jenis": "deteksi",
      "id": "waris",
@@ -42066,7 +42059,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -42275,7 +42268,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "terisi di jenis utama; belum di: 7 Wali Adhal",
    "catatan": ""
   },
   {
@@ -42794,7 +42787,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "baru diusulkan (ragu), belum terisi otomatis",
    "catatan": ""
   },
   {
@@ -43191,7 +43184,7 @@
    "langsung": 21,
    "bobotLangsung": 575,
    "bobot": 575,
-   "cakupanBobot": 0.864,
+   "cakupanBobot": 1,
    "contoh": [
     "[01] [Kabul] IN Kontensius - Pasangan Meninggal, Ahli Waris Mengakui.rtf",
     "[01b] [Kabul Verstek] IN Kontensius - Pasangan Meninggal, Ahli Waris Tidak Hadir.rtf",
@@ -43204,11 +43197,15 @@
     "9 Penetapan Ahli Waris",
     "9 Penetapan Ahli Waris - BAS"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "2a Itsbat Nikah Kontensius"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "itsbat-pasangan-meninggal",
+     "berkas": "aleta_bot/services/deteksi/itsbat.js",
+     "tingkat": "usulan"
+    },
     {
      "jenis": "deteksi",
      "id": "waris",
@@ -43216,7 +43213,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -43237,7 +43234,7 @@
    "langsung": 16,
    "bobotLangsung": 570,
    "bobot": 570,
-   "cakupanBobot": 0.863,
+   "cakupanBobot": 1,
    "contoh": [
     "[01] [Kabul] IN Kontensius - Pasangan Meninggal, Ahli Waris Mengakui.rtf",
     "[01b] [Kabul Verstek] IN Kontensius - Pasangan Meninggal, Ahli Waris Tidak Hadir.rtf",
@@ -43249,11 +43246,15 @@
     "9 Penetapan Ahli Waris",
     "9 Penetapan Ahli Waris - BAS"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "2a Itsbat Nikah Kontensius"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "itsbat-pasangan-meninggal",
+     "berkas": "aleta_bot/services/deteksi/itsbat.js",
+     "tingkat": "usulan"
+    },
     {
      "jenis": "deteksi",
      "id": "waris",
@@ -43261,7 +43262,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -43282,7 +43283,7 @@
    "langsung": 16,
    "bobotLangsung": 570,
    "bobot": 570,
-   "cakupanBobot": 0.863,
+   "cakupanBobot": 1,
    "contoh": [
     "[01] [Kabul] IN Kontensius - Pasangan Meninggal, Ahli Waris Mengakui.rtf",
     "[01b] [Kabul Verstek] IN Kontensius - Pasangan Meninggal, Ahli Waris Tidak Hadir.rtf",
@@ -43294,11 +43295,15 @@
     "9 Penetapan Ahli Waris",
     "9 Penetapan Ahli Waris - BAS"
    ],
-   "status": "sebagian",
-   "folderTakTertutup": [
-    "2a Itsbat Nikah Kontensius"
-   ],
+   "status": "ya",
+   "folderTakTertutup": [],
    "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "itsbat-pasangan-meninggal",
+     "berkas": "aleta_bot/services/deteksi/itsbat.js",
+     "tingkat": "usulan"
+    },
     {
      "jenis": "deteksi",
      "id": "waris",
@@ -43306,7 +43311,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {
@@ -43504,8 +43509,8 @@
     "1a Perceraian CT"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
+   "sumberMungkin": "posita/petitum hadhanah (belum ada aturan)",
+   "catatan": "Hanya 1 blangko."
   },
   {
    "kunci": "2004",
@@ -43542,7 +43547,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "baru diusulkan (ragu), belum terisi otomatis",
    "catatan": ""
   },
   {
@@ -43580,7 +43585,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "baru diusulkan (ragu), belum terisi otomatis",
    "catatan": ""
   },
   {
@@ -43651,8 +43656,8 @@
     "1a Perceraian CT"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
+   "sumberMungkin": "keterangan Termohon di sidang ikrar (BAS ikrar)",
+   "catatan": "Hanya 1 blangko."
   },
   {
    "kunci": "8132",
@@ -43899,7 +43904,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
+   "sumberMungkin": "terisi di jenis utama; belum di: 4b Kewarisan; 6a Hak Asuh Anak (Hadhanah); 6b Penguasaan Anak",
    "catatan": ""
   },
   {
@@ -44010,7 +44015,7 @@
     "9 Penetapan Ahli Waris - BAS"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "tidak ada (penilaian hakim atas cacat formil)",
    "catatan": ""
   },
   {
@@ -44500,7 +44505,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "terisi di jenis utama; belum di: 5b Pencegahan Perkawinan; 5b Pencegahan Perkawinan - BAS",
    "catatan": ""
   },
   {
@@ -45100,7 +45105,7 @@
     "97 Sita"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "tidak ada (tanggapan Tergugat di sidang insidentil)",
    "catatan": ""
   },
   {
@@ -45188,8 +45193,8 @@
     "4b Kewarisan - BAS"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
+   "sumberMungkin": "tidak ada (hasil pemeriksaan setempat)",
+   "catatan": "Perkara kebendaan, sangat jarang."
   },
   {
    "kunci": "9166",
@@ -45224,7 +45229,7 @@
     "4b Kewarisan - BAS"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "tidak ada (hasil pemeriksaan setempat)",
    "catatan": ""
   },
   {
@@ -45260,7 +45265,7 @@
     "4b Kewarisan - BAS"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "tidak ada (hasil pemeriksaan setempat)",
    "catatan": ""
   },
   {
@@ -45296,7 +45301,7 @@
     "4b Kewarisan - BAS"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "tidak ada (hasil pemeriksaan setempat)",
    "catatan": ""
   },
   {
@@ -45496,8 +45501,8 @@
     "4a Harta Bersama"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
+   "sumberMungkin": "posita itsbat (duplikat akta nikah; belum ada aturan)",
+   "catatan": "Jarang."
   },
   {
    "kunci": "1108",
@@ -45530,8 +45535,8 @@
     "4a Harta Bersama"
    ],
    "pengisi": [],
-   "sumberMungkin": "berkas e-Court (lampiran bukti; butuh baca dokumen)",
-   "catatan": ""
+   "sumberMungkin": "posita itsbat (duplikat akta nikah; belum ada aturan)",
+   "catatan": "Jarang."
   },
   {
    "kunci": "5032",
@@ -45676,8 +45681,8 @@
     "4a Harta Bersama"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
+   "sumberMungkin": "jawaban/gugatan rekonvensi e-Court",
+   "catatan": "Harta bersama dengan rekonvensi, sangat jarang."
   },
   {
    "kunci": "9951",
@@ -45783,8 +45788,8 @@
     "98 Relaas"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
+   "sumberMungkin": "gugatan e-Court pencegahan perkawinan",
+   "catatan": "Jenis 342: 0 perkara sejak 2023 (2 sejak 2018); belum ada modul jenisnya."
   },
   {
    "kunci": "9461",
@@ -45820,8 +45825,8 @@
     "5b Pencegahan Perkawinan - BAS"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
+   "sumberMungkin": "gugatan e-Court pencegahan perkawinan",
+   "catatan": "Jenis 342 sangat jarang."
   },
   {
    "kunci": "9462",
@@ -45857,8 +45862,8 @@
     "5b Pencegahan Perkawinan - BAS"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
+   "sumberMungkin": "gugatan e-Court pencegahan perkawinan",
+   "catatan": "Jenis 342 sangat jarang."
   },
   {
    "kunci": "9463",
@@ -46155,8 +46160,8 @@
     "7 Wali Adhal"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
+   "sumberMungkin": "berkas e-Court (lampiran surat penolakan KUA; butuh baca dokumen)",
+   "catatan": "Dispensasi/wali adhal; belum dibaca OCR."
   },
   {
    "kunci": "0653",
@@ -46190,8 +46195,8 @@
     "7 Wali Adhal"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
+   "sumberMungkin": "berkas e-Court (lampiran surat penolakan KUA; butuh baca dokumen)",
+   "catatan": "Dispensasi/wali adhal; belum dibaca OCR."
   },
   {
    "kunci": "9201",
@@ -46781,8 +46786,8 @@
     "4c Wasiat - BAS"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
+   "sumberMungkin": "gugatan e-Court wasiat",
+   "catatan": "Jenis 365: 1 perkara sejak 2023."
   },
   {
    "kunci": "9480",
@@ -46857,7 +46862,7 @@
     "4c Wasiat"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "gugatan e-Court wasiat",
    "catatan": ""
   },
   {
@@ -46892,7 +46897,7 @@
     "4c Wasiat"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "gugatan e-Court wasiat",
    "catatan": ""
   },
   {
@@ -48157,8 +48162,8 @@
     "5b Pencegahan Perkawinan"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
-   "catatan": ""
+   "sumberMungkin": "tidak ada (fakta persidangan)",
+   "catatan": "Jenis 342 sangat jarang."
   },
   {
    "kunci": "9485",
@@ -48190,7 +48195,7 @@
     "4c Wasiat"
    ],
    "pengisi": [],
-   "sumberMungkin": "belum dikaji",
+   "sumberMungkin": "tidak ada (penilaian hakim)",
    "catatan": ""
   },
   {
