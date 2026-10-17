@@ -640,6 +640,53 @@ async function bahanPerkara(perkara) {
   };
 }
 
+/* === ELITIGASI-7139 17 Okt === */
+/**
+ * ELITIGASI-7139 (17 Okt 2026): FAKTA untuk mengisi otomatis variabel ABT #7139# (1 = e-litigasi penuh,
+ * 2 = hybrid). Bot hanya memberi FAKTA; keputusan 1/2 diambil panel ABT (abt.js, blok ELITIGASI-7139) agar
+ * isian manual selalu menang. Hanya SELECT.
+ *
+ *   lewatEcourt    perkara terdaftar lewat e-Court (perkara_efiling_id), true/false; null = tidak terbaca
+ *   tergugatHadir  Tergugat (pihak kedua) pernah hadir di satu sidang: true/false; null = belum ada sidang
+ *                  yang kehadirannya tercatat (jangan ditebak: perkara baru belum disidang)
+ *   jumlahSidang   banyaknya sidang yang kehadirannya tercatat
+ *
+ * Sandi perkara_jadwal_sidang.dihadiri_oleh (borang SIPP): 1 Semua Pihak, 2 Pihak Pertama saja, 3 Pihak Kedua
+ * saja, 4 Para Pihak Tidak Hadir, 8 T+Intervensi, 9 P+T (ada intervensi), 11 Sebagian Tergugat, 15 T+Turut T.
+ * Yang lain (5, 7, 10, 13, 14) tidak menyebut Tergugat hadir.
+ */
+const SANDI_TERGUGAT_HADIR = Object.freeze([1, 3, 8, 9, 11, 15]);
+
+/** Murni: baris sidang [{ dihadiri }] -> { tergugatHadir: true|false|null, jumlahSidang }. */
+function tergugatHadirDariSidang(baris) {
+  const kode = (Array.isArray(baris) ? baris : [])
+    .map((b) => Number(b && (b.dihadiri !== undefined ? b.dihadiri : b.dihadiri_oleh)))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  if (!kode.length) return { tergugatHadir: null, jumlahSidang: 0 };
+  return { tergugatHadir: kode.some((n) => SANDI_TERGUGAT_HADIR.includes(n)), jumlahSidang: kode.length };
+}
+
+async function faktaElitigasi(perkara) {
+  const hasil = { lewatEcourt: null, tergugatHadir: null, jumlahSidang: 0 };
+  try {
+    const r = await sippQuery("SELECT 1 AS ada FROM perkara_efiling_id WHERE perkara_id = ? AND efiling_id <> '' LIMIT 1", [perkara.perkaraId]);
+    hasil.lewatEcourt = Array.isArray(r) && r.length > 0;
+  } catch {
+    /* tidak terbaca: tetap null */
+  }
+  try {
+    const r = await sippQuery(
+      "SELECT dihadiri_oleh AS dihadiri FROM perkara_jadwal_sidang WHERE perkara_id = ? AND dihadiri_oleh IS NOT NULL AND dihadiri_oleh <> ''",
+      [perkara.perkaraId]
+    );
+    Object.assign(hasil, tergugatHadirDariSidang(r));
+  } catch {
+    /* tidak terbaca: tetap null */
+  }
+  return hasil;
+}
+/* === AKHIR ELITIGASI-7139 === */
+
 /**
  * Kontak satu perkara: bahan SIPP + ALETA (+ teks berkas bila dikirim portal),
  * lalu ringkasannya ditulis (kecuali opsi.simpan === false).
@@ -671,7 +718,9 @@ async function kontakPerkara(masukan) {
     }).catch(() => ({ ditulis: 0 }));
     tersimpan = r.ditulis;
   }
-  return { ok: true, ada: true, perkaraId: perkara.perkaraId, nomorPerkara: perkara.nomorPerkara, dariNama: Boolean(dariNama), tersimpan, ...susun };
+  // ELITIGASI-7139: fakta untuk #7139# (panel ABT yang memutuskan).
+  const elitigasi = await faktaElitigasi(perkara).catch(() => null);
+  return { ok: true, ada: true, perkaraId: perkara.perkaraId, nomorPerkara: perkara.nomorPerkara, dariNama: Boolean(dariNama), tersimpan, elitigasi, ...susun };
 }
 
 /* === STATUS-ZIP 12 Okt === */
@@ -932,6 +981,7 @@ module.exports = {
   barisDariUsulanAbt,
   simpanRingkasan,
   kontakPerkara,
+  tergugatHadirDariSidang,
   /* === STATUS-ZIP 12 Okt === */
   kontakParaPihak,
   susunKontakStatus,

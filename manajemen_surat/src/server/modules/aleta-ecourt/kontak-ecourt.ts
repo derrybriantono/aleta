@@ -34,6 +34,8 @@ export type HasilKontakEcourt = {
   orang: unknown[];
   domisili: Record<string, unknown>;
   tanpaPemilik: unknown[];
+  /** ELITIGASI-7139: fakta perkara (lewatEcourt, tergugatHadir, jumlahSidang) dari bot; null/kosong bila bot lama. */
+  elitigasi?: Record<string, unknown> | null;
   dokumen: Array<{ judul: string; peran: string; terbaca: boolean }>;
   catatan: string[];
 };
@@ -93,6 +95,7 @@ export async function bacaKontakEcourt(
     orang: larik("orang"),
     domisili: jawaban.domisili && typeof jawaban.domisili === "object" ? (jawaban.domisili as Record<string, unknown>) : {},
     tanpaPemilik: larik("tanpaPemilik"),
+    elitigasi: jawaban.elitigasi && typeof jawaban.elitigasi === "object" ? (jawaban.elitigasi as Record<string, unknown>) : null,
     dokumen: dibaca,
     catatan,
   };

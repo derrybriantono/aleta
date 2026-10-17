@@ -85,8 +85,8 @@ describe("susun.ts: keadaan, tingkat, label awam", () => {
   it("label awam: tanpa kode, tanpa '(1 = sepakat, 2 = tidak)', tanpa 'ISIAN bila SIPP tidak memuat'; 7139 pilihan bernilai", () => {
     expect(by("7139").nama).toBe("Beracara secara elektronik");
     expect(by("7139").opsi).toEqual([
-      { nilai: "1", label: "Sepakat beracara secara elektronik" },
-      { nilai: "2", label: "Tidak sepakat beracara secara elektronik" },
+      { nilai: "1", label: "E-Litigasi penuh (Tergugat ber-email)" },
+      { nilai: "2", label: "E-Litigasi hybrid (diunggah Panitera Sidang)" },
     ]);
     expect(by("8564").nama).toBe("Tanggal pengumuman panggilan ghaib pertama dan kedua");
     expect(by("8892").nama).toBe("Pengadilan Tinggi tempat advokat Penggugat disumpah");
