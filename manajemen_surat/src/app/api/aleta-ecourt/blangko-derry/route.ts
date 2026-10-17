@@ -11,7 +11,7 @@ import { ApiError } from "@/server/shared/errors";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 
-import { jenisDokumenAkun, jenisFolderDariJalur, jenisFolderDerry, statusNilaiLayar, susunIsian, type Definisi, type JenisDokumenDerry, type PeranTiruan, type Susunan } from "./susun";
+import { jenisDokumenAkun, jenisFolderDariJalur, jenisFolderDerry, kodeTanyaJawab, kodeUntukNilai, statusNilaiLayar, susunIsian, type Definisi, type JenisDokumenDerry, type PeranTiruan, type Susunan } from "./susun";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -253,13 +253,10 @@ export async function GET(request: NextRequest) {
     let nilai: Awaited<ReturnType<typeof nilaiPenanda>> | null = null;
     if (perkaraId && /^\d+$/.test(perkaraId)) {
       const sidangKe = Number(q.get("sidangKe") || 0) || 0;
-      const semua = q.get("semua") === "1";
-      const kode = semua
-        ? [...new Set([...susunan.penanda, ...susunan.isian.map((b) => b.kode), ...susunan.otomatis.map((o) => o.kode), ...susunan.pemicu.map((p) => p.kode)])]
-        : [...susunan.isian.filter((b) => b.jenis !== "tj").map((b) => b.kode), ...susunan.pemicu.map((p) => p.kode)];
+      const kode = kodeUntukNilai(susunan, q.get("semua") === "1");
       nilai = await nilaiPenanda(perkaraId, sidangKe, kode);
       // Teks kosong bukan "terisi" di layar (mesin bot tetap meniru ABT).
-      const tj = new Set(susunan.isian.filter((b) => b.jenis === "tj").map((b) => b.kode));
+      const tj = kodeTanyaJawab(susunan);
       for (const [k, v] of Object.entries(nilai.nilai)) nilai.nilai[k] = statusNilaiLayar(v, tj.has(k));
     }
 
