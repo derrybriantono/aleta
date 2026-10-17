@@ -947,6 +947,15 @@
     if (!/^[A-H]+$/.test(n)) return "";
     return [...new Set(n.split(""))].sort().join("");
   }
+  /**
+   * Nilai 8503 yang DITULIS ke ABT: pilihan ALETA "F · uraian" -> "F" (hurufnya saja, bentuk yang dibaca kueri ABT dan
+   * popup aslinya); ketikan lain (BF, F dan B, Murtad, teks bebas) tidak diubah. Tampilan pilihan tidak berubah.
+   */
+  function nilaiSimpan8503(teks) {
+    const v = String(teks == null ? "" : teks);
+    const depan = v.trim().match(/^([A-Ha-h]+)\s*·/);
+    return depan ? depan[1].toUpperCase() : v;
+  }
   const alasanHuruf = () => hurufAlasanDari(S.isi["8503"]);
   /** Peringatan di bawah kotak 8503 bila isinya tidak terbaca sebagai huruf alasan (ABT tidak akan mengenalinya). */
   const peringatan8503 = () => {
@@ -1097,6 +1106,15 @@
       S.tersimpan[kode] = `gagal: ${NAMA_JENIS[S.blangko.jenis] || "blangko ini"} hanya ditulis ${NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]] || "pejabat perkara"}`;
       renderStatusIsian(kode);
       return false;
+    }
+    // 17 Okt: pilihan "F · uraian" ke ABT hanya hurufnya - kueri paket abt-alasan-cdeh membaca SELURUH isi 8503
+    // (REPLACE ... lalu NOT REGEXP '[^A-H]' + INSTR per huruf), jadi uraian membuatnya "TIDAK BENAR QUERY NYA".
+    const sederhana = kode === "8503" ? nilaiSimpan8503(nilai) : nilai;
+    if (sederhana !== nilai) {
+      nilai = sederhana;
+      S.isi[kode] = nilai;
+      const el8503 = cari(`#bd-i${kode}`, wadah.isian);
+      if (el8503 && el8503.value !== nilai && el8503.tagName !== "SELECT") el8503.value = nilai;
     }
     const norm = normalAbt(nilai);
     if (norm.diganti.length) {
@@ -3756,7 +3774,7 @@
       takBerlaku: daftarTakBerlaku().map((b) => b.kode),
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel },
+    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {

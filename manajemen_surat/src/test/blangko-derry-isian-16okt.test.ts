@@ -29,7 +29,7 @@ import path from "node:path";
 import { JSDOM } from "jsdom";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { kodeTanyaJawab, kodeUntukNilai, statusNilaiLayar, susunIsian, type Definisi } from "@/app/api/aleta-ecourt/blangko-derry/susun";
+import { PILIHAN_ALASAN, kodeTanyaJawab, kodeUntukNilai, statusNilaiLayar, susunIsian, type Definisi } from "@/app/api/aleta-ecourt/blangko-derry/susun";
 import { hurufAlasan, tawarkanSetSaksi } from "@/lib/set-pertanyaan-saksi";
 
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
@@ -441,7 +441,7 @@ describe("F. perlu diisi", () => {
     opsi.click();
     await sampai(() => q(h, '.bd-f[data-f="8536"]'), "8536 muncul");
     expect(q(h, '.bd-f[data-f="8536"] .bd-muncul')!.textContent).toContain("huruf C");
-    await sampai(() => h.abt["8503"] && h.abt["8503"].startsWith("C"), "8503 tersimpan");
+    await sampai(() => h.abt["8503"] === "C", "8503 tersimpan hanya hurufnya (bukan teks pilihan utuh)");
     expect(mintaKe(h, /main\/view/)).toEqual([]);
   });
 
@@ -1049,5 +1049,50 @@ describe("murni", () => {
     const tanpaSalinan = h.rtf.slice(0, h.rtf.indexOf("Untuk Salinan"));
     expect(tanpaSalinan.indexOf("{\\pict")).toBeGreaterThan(tanpaSalinan.indexOf("\\trowd"));
     expect(h.rtf.slice(h.rtf.indexOf("Untuk Salinan"))).not.toContain("\\pict");
+  });
+});
+
+describe("audit 17 Okt: 8503 tersimpan hanya hurufnya agar dibaca kueri paket abt-alasan-cdeh", () => {
+  /**
+   * Tiruan bagian awal kueri 8531/8532/... di ABT (paket abt-alasan-cdeh): FASAKH/MURTAD = H, selain itu
+   * UPPER(TRIM(isi)) tanpa 'DAN', '&', ',', spasi, '+', '/', '.', '-'; sah = tidak kosong dan NOT REGEXP '[^A-H]';
+   * huruf = IF(INSTR(n, huruf) > 0, ...) per huruf A-H. Diperiksa juga langsung ke MariaDB laptop (lihat laporan).
+   */
+  function bacaKueri(isi: string): { sah: boolean; huruf: string } {
+    const u = isi.trim().toUpperCase();
+    const n = /^(FASAKH|MURTAD)$/.test(u) ? "H" : u.replace(/DAN/g, "").replace(/[&,\s+/.-]/g, "");
+    const sah = n !== "" && !/[^A-H]/.test(n);
+    return { sah, huruf: sah ? "ABCDEFGH".split("").filter((x) => n.includes(x)).join("") : "" };
+  }
+
+  it("nilai yang DITULIS dari tiap pilihan alasan dibaca kueri sebagai huruf yang sama persis dengan pilihan", () => {
+    const x = (buka() as Halaman).w.aletaBlangkoDerryIsian.murni;
+    for (const pilihan of PILIHAN_ALASAN) {
+      const huruf = pilihan.split("·")[0].trim();
+      const ditulis = x.nilaiSimpan8503(pilihan);
+      expect(ditulis, pilihan).toBe(huruf);
+      expect(bacaKueri(ditulis), pilihan).toEqual({ sah: true, huruf });
+      // teks utuh yang dulu ditulis TIDAK terbaca kueri (uraian ikut dibaca -> "TIDAK BENAR QUERY NYA")
+      expect(bacaKueri(pilihan).sah, `dulu: ${pilihan}`).toBe(false);
+    }
+  });
+
+  it("ketikan lain tidak diubah (BF, F dan B, Murtad, teks bebas)", () => {
+    const x = (buka() as Halaman).w.aletaBlangkoDerryIsian.murni;
+    for (const v of ["F", "BF", "F dan B", "Murtad", "huruf F", ""]) expect(x.nilaiSimpan8503(v)).toBe(v);
+  });
+
+  it("memilih tiap pilihan di layar menulis hurufnya saja ke ABT, tampilan pilihan tetap utuh", async () => {
+    for (const pilihan of PILIHAN_ALASAN.filter((p) => !/^[CH]/.test(p))) {
+      const h = buka({ abtAwal: { "8503": "Z" } }); // awal bukan huruf pilihan: yang tertulis pasti hasil pilihan
+      await pilihPutusan(h);
+      tombol(h, q(h, "#bd-i8503")!, "ArrowDown");
+      const opsi = await sampai(() => q(h, `[data-ambil="8503"][data-nilai="${pilihan}"]`), `pilihan ${pilihan}`);
+      expect(opsi.textContent).toBe(pilihan);
+      opsi.click();
+      const huruf = pilihan.split("·")[0].trim();
+      await sampai(() => h.abt["8503"] === huruf, `8503 = ${huruf}`);
+      expect((q(h, "#bd-i8503") as HTMLInputElement).value).toBe(huruf);
+    }
   });
 });
