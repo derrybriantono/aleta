@@ -19,6 +19,11 @@
  * ekstensi. Bila tidak ada yang mengambil (wilayah ABT non-Derry, alamat
  * lintas asal, ekstensi belum siap), click berjalan SEPERTI BIASA.
  *
+ * Pembungkus kedua: HTMLFormElement.prototype.submit. form.submit() tidak
+ * melahirkan peristiwa submit, jadi kiriman POST-nya dikabarkan (tidak
+ * dibatalkan) supaya unduhan terblokir dari borang itu dikenali sebagai POST
+ * dan tidak ditebak sebagai GET.
+ *
  * Tidak membaca, mengubah, atau menulis apa pun di halaman selain itu. Detail
  * peristiwa berupa teks JSON: obyek tidak diteruskan lintas dunia oleh Chrome.
  */
@@ -43,6 +48,33 @@
       }
       return asli.apply(this, arguments);
     };
+    // form.submit() tidak melahirkan peristiwa submit. Kiriman POST-nya
+    // dikabarkan (tanpa dibatalkan) supaya unduhan yang terblokir dari borang
+    // itu dikenali sebagai POST dan TIDAK ditebak sebagai GET lalu diulang.
+    if (typeof HTMLFormElement !== "undefined") {
+      const submitAsli = HTMLFormElement.prototype.submit;
+      HTMLFormElement.prototype.submit = function submit() {
+        try {
+          if (String(this.method || "get").toUpperCase() === "POST") {
+            const data = new FormData(this);
+            const entri = [];
+            let berkas = false;
+            for (const [k, v] of data.entries()) {
+              if (typeof v === "string") entri.push([k, v]);
+              else berkas = true;
+            }
+            document.dispatchEvent(
+              new CustomEvent("kirim-borang-ekstensi", {
+                detail: JSON.stringify({ aksi: this.action || location.href, metode: "POST", berkas, entri }),
+              })
+            );
+          }
+        } catch {
+          /* kabar gagal: kirim tetap berjalan */
+        }
+        return submitAsli.apply(this, arguments);
+      };
+    }
   } catch {
     /* tanpa pembungkus, hanya klik nyata dan cadangan yang bekerja */
   }

@@ -591,7 +591,10 @@ function terbitkanUnduhan(alamatMentah, nama) {
  * tautan halaman sebagai cadangan (tanpaCadangan) - itu hanya melahirkan
  * unduhan terblokir berikutnya.
  */
-const GALAT_UNDUHAN_DITAHAN = new Set(["FILE_BLOCKED", "FILE_SECURITY_CHECK_FAILED"]);
+// Kode Chrome untuk "unduhan tidak aman diblokir" belum pasti, jadi SEMUA bentuk
+// ditangani: danger "insecure" (state apa pun yang belum selesai), atau
+// state "interrupted" dengan salah satu galat berikut dari alamat http kita.
+const GALAT_UNDUHAN_DITAHAN = new Set(["FILE_BLOCKED", "FILE_SECURITY_CHECK_FAILED", "FILE_FAILED"]);
 const POLA_ASAL_UNDUHAN = /^(?:blob:)?https?:\/\/(?:192\.168\.10\.10|127\.0\.0\.1)(?::\d+)?(?:\/|$)/i;
 const unduhanSudahDiulang = new Set();
 
@@ -602,8 +605,13 @@ function tanpaHashLatar(u) {
 /** Item blokiran milik halaman kita (bukan ekstensi, bukan asal luar)? */
 function unduhanTerblokirBerhak(item) {
   if (!item || item.byExtensionId) return false;
-  if (item.state !== "interrupted" || !GALAT_UNDUHAN_DITAHAN.has(String(item.error || ""))) return false;
-  if (item.danger && item.danger !== "safe" && item.danger !== "accepted") return false;
+  const tidakAman = item.danger === "insecure";
+  if (tidakAman) {
+    if (item.state === "complete") return false;
+  } else {
+    if (item.state !== "interrupted" || !GALAT_UNDUHAN_DITAHAN.has(String(item.error || ""))) return false;
+    if (item.danger && item.danger !== "safe" && item.danger !== "accepted") return false;
+  }
   return [item.url, item.finalUrl, item.referrer].some((u) => POLA_ASAL_UNDUHAN.test(String(u || "")));
 }
 
@@ -619,6 +627,23 @@ async function tabKandidatUnduhan(item) {
   const rujuk = tanpaHashLatar(item.referrer);
   const bobot = (t) => (rujuk && tanpaHashLatar(t.url) === rujuk ? 0 : t.active ? 1 : 2);
   return semua.filter((t) => Number.isFinite(t.id)).sort((a, b) => bobot(a) - bobot(b));
+}
+
+/**
+ * Membatalkan (bila masih berjalan/menunggu keputusan) lalu menghapus entri
+ * unduhan yang ditahan dari riwayat. Tidak pernah melempar.
+ */
+function bersihkanUnduhanDitahan(id) {
+  try {
+    if (typeof chrome.downloads.cancel === "function") chrome.downloads.cancel(id, () => void chrome.runtime.lastError);
+  } catch {
+    /* sudah selesai/terputus */
+  }
+  try {
+    chrome.downloads.erase({ id });
+  } catch {
+    /* riwayat gagal tetap tinggal - tidak mengganggu */
+  }
 }
 
 /**
@@ -644,18 +669,19 @@ async function ulangiUnduhanTerblokir(id) {
           mime: String(item.mime || ""),
           nama: namaDariJalurUnduhan(item.filename),
           referrer: String(item.referrer || ""),
+          id,
         });
       } catch {
         continue; // tab tanpa skrip konten
       }
       if (jawab && jawab.ok) {
-        try {
-          chrome.downloads.erase({ id });
-        } catch {
-          /* riwayat gagal tetap tinggal - tidak mengganggu */
-        }
+        bersihkanUnduhanDitahan(id);
         return { ok: true, id, tab: t.id };
       }
+      // Sudah ditangani tab itu tanpa mengunduh (menunggu klik petugas, atau
+      // borang berisi berkas): jangan dicoba di tab lain, jangan dibersihkan
+      // dahulu - entri baru dibersihkan sesudah petugas mengklik.
+      if (jawab && jawab.ditangani) return { ok: false, ditangani: true, pesan: String(jawab.pesan || "") };
       if (jawab && jawab.pesan) sebab = String(jawab.pesan);
     }
     return { ok: false, pesan: sebab };
@@ -669,8 +695,11 @@ if (chrome.downloads && chrome.downloads.onChanged) {
     try {
       const galat = ubah && ubah.error && ubah.error.current;
       const keadaan = ubah && ubah.state && ubah.state.current;
-      if (!galat && keadaan !== "interrupted") return;
-      if (galat && !GALAT_UNDUHAN_DITAHAN.has(String(galat))) return;
+      const bahaya = ubah && ubah.danger && ubah.danger.current;
+      if (bahaya !== "insecure") {
+        if (!galat && keadaan !== "interrupted") return;
+        if (galat && !GALAT_UNDUHAN_DITAHAN.has(String(galat))) return;
+      }
       void ulangiUnduhanTerblokir(ubah.id);
     } catch {
       /* pendengar tidak boleh melempar */
@@ -841,6 +870,24 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
   // dibuka di salinan.html (asal chrome-extension://). Lihat salinan.js.
   if (pesan.jenis === "tampilkan-pdf") {
     void tampilkanPdfTitipan(pesan).then(jawab, (e) => jawab({ ok: false, pesan: String((e && e.message) || e).slice(0, 200) }));
+    return true;
+  }
+
+  // Petugas mengklik pemberitahuan "Unduhan ditahan Chrome" dan unduhan ulangnya
+  // berhasil: entri gagalnya dibersihkan. Hanya entri ditahan milik halaman kita.
+  if (pesan.jenis === "unduh-ditahan-bersih") {
+    const idBersih = Number(pesan.id);
+    if (!Number.isFinite(idBersih)) {
+      jawab({ ok: false });
+      return false;
+    }
+    chrome.downloads.search({ id: idBersih }, (daftar) => {
+      const butir = (daftar || [])[0];
+      if (butir && !butir.byExtensionId && [butir.url, butir.finalUrl, butir.referrer].some((u) => POLA_ASAL_UNDUHAN.test(String(u || "")))) {
+        bersihkanUnduhanDitahan(idBersih);
+      }
+      jawab({ ok: true });
+    });
     return true;
   }
 

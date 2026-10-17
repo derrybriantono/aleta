@@ -61,6 +61,7 @@
   const UMUR_DERRY_MS = 2 * 60 * 1000;
   const UMUR_FORM_MS = 3 * 60 * 1000;
   const NAMA_PERISTIWA = "unduh-tautan-ekstensi";
+  const NAMA_PERISTIWA_BORANG = "kirim-borang-ekstensi";
   /** Akhiran yang selalu diunduh peramban, tidak pernah ditampilkan di tab. */
   const POLA_BERKAS_PASTI = /\.(?:rtf|docx?|xlsx?|zip|rar|7z|csv|odt|ods|crx)$/i;
 
@@ -347,12 +348,16 @@
     }
   }
 
+  function simpanKiriman(aksi, badan) {
+    formTerakhir.push({ aksi: tanpaHash(aksi), badan, saat: Date.now() });
+    while (formTerakhir.length > 5) formTerakhir.shift();
+  }
+
   function catatKirimanBorang(e) {
     try {
       const f = e.target;
       if (!f || String(f.tagName).toUpperCase() !== "FORM") return;
       if (String(f.method || "get").toUpperCase() !== "POST") return;
-      const aksi = tanpaHash(f.action || location.href);
       let data;
       try {
         data = new FormData(f, e.submitter || undefined);
@@ -369,11 +374,104 @@
         for (const [k, v] of data.entries()) p.append(k, String(v));
         badan = p;
       }
-      formTerakhir.push({ aksi, badan, saat: Date.now() });
-      while (formTerakhir.length > 5) formTerakhir.shift();
+      simpanKiriman(f.action || location.href, badan);
     } catch {
       /* catatan borang hanya cadangan */
     }
+  }
+
+  /**
+   * form.submit() dari skrip halaman TIDAK melahirkan peristiwa submit; dunia
+   * halaman (unduh-halaman.js) mengabarkannya di sini supaya kiriman POST-nya
+   * tetap dikenali sebagai POST - bukan ditebak sebagai GET saat diulang.
+   */
+  function dengarKirimanHalaman(e) {
+    try {
+      const d = JSON.parse(String(e.detail || "{}"));
+      if (String(d.metode || "").toUpperCase() !== "POST") return;
+      if (d.berkas === true) {
+        simpanKiriman(d.aksi, null); // berisi berkas: dikenali POST, tidak dapat diulang
+        return;
+      }
+      const p = new URLSearchParams();
+      for (const [k, v] of d.entri || []) p.append(String(k), String(v));
+      simpanKiriman(d.aksi, p);
+    } catch {
+      /* catatan borang hanya cadangan */
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // POST: diulang OTOMATIS hanya untuk cetak/ekspor yang terbukti baca-saja
+  // --------------------------------------------------------------------------
+  /**
+   * Hasil telaah kode SIPP setempat (application/controllers): controller
+   * di bawah hanya memanggil model berkueri SELECT untuk menyusun cetakan -
+   * tidak ada insert/update/delete di metode yang dipakai. POST lain di
+   * SIPP/ABT/portal bisa MENULIS data, sehingga ulangan otomatisnya berarti
+   * tindakan ganda; untuk yang itu petugas yang memutuskan (pemberitahuan).
+   *   perkara_list_cetak/cetak            daftar perkara (getXxxCetak)
+   *   sidang_list_cetak/cetak[_jadwal_sidang_ruang]   daftar/jadwal sidang
+   *   jurnal_cetak/cetak[_jurnal_harian]  jurnal & jurnal harian (m_jurnal_harian)
+   *   cetak_register/tampil*              register perkara (cetak_register_m)
+   * jurnal_hkk_cetak TIDAK masuk: modelnya memuat insert pada metode lain.
+   */
+  const POLA_POST_BACA_SAJA =
+    /\/(?:perkara_list_cetak\/cetak|sidang_list_cetak\/(?:cetak|cetak_jadwal_sidang_ruang)|jurnal_cetak\/(?:cetak|cetak_jurnal_harian)|cetak_register\/tampil[a-z_]*)(?:\/|$|\?)/i;
+
+  function postBacaSaja(alamat) {
+    if (jenisHalaman() !== "sipp") return false;
+    try {
+      return POLA_POST_BACA_SAJA.test(new URL(alamat, location.href).pathname);
+    } catch {
+      return false;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Pemberitahuan kecil: unduhan ditahan Chrome, diulang atas klik petugas
+  // --------------------------------------------------------------------------
+  const TEKS_DITAHAN = "Unduhan ditahan Chrome - klik untuk mengunduh ulang";
+  const ID_WADAH_DITAHAN = "unduhan-ditahan-wadah";
+  /** Tanpa kata "aleta" di DOM SIPP/ABT: id/teks netral, gaya sebaris. */
+  function tampilkanPemberitahuan(rincian) {
+    let wadah = document.getElementById(ID_WADAH_DITAHAN);
+    if (!wadah) {
+      wadah = document.createElement("div");
+      wadah.id = ID_WADAH_DITAHAN;
+      wadah.style.cssText =
+        "position:fixed;left:16px;bottom:16px;z-index:2147483000;display:flex;flex-direction:column;gap:8px;max-width:340px;font:13px/1.3 system-ui,sans-serif";
+      document.body.appendChild(wadah);
+    }
+    const tombol = document.createElement("button");
+    tombol.type = "button";
+    tombol.textContent = TEKS_DITAHAN;
+    tombol.style.cssText =
+      "cursor:pointer;text-align:left;padding:10px 12px;border:1px solid #b45309;border-radius:8px;background:#fffbeb;color:#78350f;box-shadow:0 2px 8px rgba(0,0,0,.2)";
+    tombol.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      tombol.disabled = true;
+      tombol.textContent = "Mengunduh ulang...";
+      const hasil = await ambilDanUnduh(rincian.opsi);
+      if (hasil.ok) {
+        tombol.remove();
+        if (rincian.idUnduhan !== undefined) {
+          try {
+            chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis: "unduh-ditahan-bersih", id: rincian.idUnduhan }, () => void chrome.runtime.lastError);
+          } catch {
+            /* entri gagal tinggal di riwayat Chrome */
+          }
+        }
+      } else {
+        catat("unduh-universal-ulang-gagal", `unduh ulang atas klik gagal: ${hasil.pesan}`, String(rincian.opsi.alamat).slice(0, 120));
+        tombol.disabled = false;
+        tombol.textContent = `${TEKS_DITAHAN} (gagal: ${String(hasil.pesan).slice(0, 60)})`;
+      }
+    });
+    wadah.appendChild(tombol);
+    setTimeout(() => tombol.remove(), 10 * 60 * 1000);
+    return tombol;
   }
 
   // --------------------------------------------------------------------------
@@ -392,13 +490,28 @@
       tanpaCadangan: true,
       tolakHtml: true,
     };
+    const kunci = [tanpaHash(sasaran), tanpaHash(alamatBoleh(p.urlAkhir || ""))].filter(Boolean);
     const kiriman = /^blob:|^data:/i.test(sasaran)
       ? null
       : formTerakhir
           .slice()
           .reverse()
-          .find((f) => Date.now() - f.saat < UMUR_FORM_MS && f.aksi === tanpaHash(sasaran));
-    const hasil = await ambilDanUnduh(kiriman ? { ...dasar, metode: "POST", badan: kiriman.badan } : dasar);
+          .find((f) => Date.now() - f.saat < UMUR_FORM_MS && kunci.includes(f.aksi));
+
+    if (kiriman) {
+      if (!kiriman.badan) return { ok: false, ditangani: true, pesan: "borang berisi berkas tidak dapat diulang" };
+      const opsiPost = { ...dasar, metode: "POST", badan: kiriman.badan };
+      if (!postBacaSaja(sasaran)) {
+        // POST yang tidak terbukti baca-saja: JANGAN diulang sendiri.
+        tampilkanPemberitahuan({ opsi: opsiPost, idUnduhan: p.id });
+        catat("unduh-universal-menunggu-klik", "POST tidak terbukti baca-saja: menunggu klik petugas", sasaran.slice(0, 120));
+        return { ok: false, ditangani: true, butuhKlik: true, pesan: "menunggu klik petugas" };
+      }
+      const hasilPost = await ambilDanUnduh(opsiPost);
+      if (!hasilPost.ok) catat("unduh-universal-ulang-gagal", `ulangan unduhan terblokir gagal: ${hasilPost.pesan}`, sasaran.slice(0, 120));
+      return hasilPost;
+    }
+    const hasil = await ambilDanUnduh(dasar);
     if (!hasil.ok) catat("unduh-universal-ulang-gagal", `ulangan unduhan terblokir gagal: ${hasil.pesan}`, sasaran.slice(0, 120));
     return hasil;
   }
@@ -418,6 +531,7 @@
   document.addEventListener("click", dengarKlik, true);
   document.addEventListener("submit", catatKirimanBorang, true);
   document.addEventListener(NAMA_PERISTIWA, dengarPeristiwaHalaman, true);
+  document.addEventListener(NAMA_PERISTIWA_BORANG, dengarKirimanHalaman, true);
 
   globalThis.aletaUnduhUniversal = {
     ambilDanUnduh,
@@ -426,6 +540,8 @@
     namaDariDisposisi,
     pilihNama,
     formTerakhir,
+    postBacaSaja,
     NAMA_PERISTIWA,
+    NAMA_PERISTIWA_BORANG,
   };
 })();

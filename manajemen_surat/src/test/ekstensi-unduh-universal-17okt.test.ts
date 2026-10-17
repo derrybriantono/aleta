@@ -86,6 +86,7 @@ function lingkungan(o: Opsi) {
   // ---- pekerja latar sungguhan -------------------------------------------
   const diterbitkan: Unduhan[] = [];
   const dihapus: number[] = [];
+  const dibatalkan: number[] = [];
   const pendengarLatar: any[] = [];
   const pendengarUbah: any[] = [];
   let pendengarTab: ((p: any, s: any, j: (x: unknown) => void) => unknown) | null = null;
@@ -115,6 +116,10 @@ function lingkungan(o: Opsi) {
         },
         search: (k: { id: number }, balik: (x: unknown[]) => void) => balik(butirUnduhan[k.id] ? [butirUnduhan[k.id]] : []),
         erase: (k: { id: number }) => void dihapus.push(k.id),
+        cancel: (id: number, balik?: () => void) => {
+          dibatalkan.push(id);
+          balik?.();
+        },
       },
       tabs: {
         query: async () => tabTerbuka,
@@ -218,6 +223,7 @@ function lingkungan(o: Opsi) {
     dom,
     diterbitkan,
     dihapus,
+    dibatalkan,
     permintaan,
     catatan,
     tunggu,
@@ -468,22 +474,127 @@ describe("lapis 2: unduhan terblokir diulang lewat tab asal", () => {
     expect(l.diterbitkan.map((d) => d.filename)).toEqual(["630_Pdt.G_2026_PA.Dgl - BAS.rtf"]);
   });
 
-  it("borang POST terakhir diulang sebagai POST dengan isiannya", async () => {
-    const aksi = "http://192.168.10.10/SIPP/index.php/laporan/ekspor";
-    const l = lingkungan({
-      alamat: SIPP,
-      html: `<!doctype html><html><body><form id="f" method="post" action="${aksi}"><input name="bulan" value="10"><input name="tahun" value="2026"></form></body></html>`,
-      balasan: { [aksi]: { disposisi: 'attachment; filename="Laporan 10-2026.csv"', tipe: "text/csv" } },
-    });
+  const borang = (aksi: string) =>
+    `<!doctype html><html><body><form id="f" method="post" action="${aksi}"><input name="bulan" value="10"><input name="tahun" value="2026"></form></body></html>`;
+  const kirimBorang = (l: ReturnType<typeof lingkungan>) => {
     const f = l.w.document.getElementById("f");
     f.addEventListener("submit", (e: Event) => e.preventDefault());
     f.dispatchEvent(new l.w.Event("submit", { bubbles: true, cancelable: true }));
-    l.butirUnduhan[8] = terblokir(8, { url: aksi, finalUrl: aksi, mime: "text/csv" });
+  };
+
+  it("POST cetak SIPP yang terbukti baca-saja (daftar putih) diulang otomatis sebagai POST", async () => {
+    const aksi = "http://192.168.10.10/SIPP/index.php/perkara_list_cetak/cetak/1";
+    const l = lingkungan({
+      alamat: SIPP,
+      html: borang(aksi),
+      balasan: { [aksi]: { disposisi: 'attachment; filename="Daftar perkara 10-2026.xls"', tipe: "application/vnd.ms-excel" } },
+    });
+    kirimBorang(l);
+    l.butirUnduhan[8] = terblokir(8, { url: aksi, finalUrl: aksi, mime: "application/vnd.ms-excel" });
     l.kirimUbah({ id: 8, state: { current: "interrupted" }, error: { current: "FILE_BLOCKED" } });
     await l.tunggu(20);
     expect(l.permintaan[0].init.method).toBe("POST");
     expect(String(l.permintaan[0].init.body)).toBe("bulan=10&tahun=2026");
+    expect(l.diterbitkan.map((d) => d.filename)).toEqual(["Daftar perkara 10-2026.xls"]);
+  });
+
+  it("POST di luar daftar putih TIDAK PERNAH diulang otomatis: hanya pemberitahuan, diulang atas klik", async () => {
+    const aksi = "http://192.168.10.10/SIPP/index.php/laporan/ekspor";
+    const l = lingkungan({
+      alamat: SIPP,
+      html: borang(aksi),
+      balasan: { [aksi]: { disposisi: 'attachment; filename="Laporan 10-2026.csv"', tipe: "text/csv" } },
+    });
+    kirimBorang(l);
+    l.butirUnduhan[8] = terblokir(8, { url: aksi, finalUrl: aksi, mime: "text/csv" });
+    l.kirimUbah({ id: 8, state: { current: "interrupted" }, error: { current: "FILE_BLOCKED" } });
+    await l.tunggu(20);
+    // Tanpa klik: tidak ada permintaan sama sekali, tidak ada unduhan, entri belum disentuh.
+    expect(l.permintaan).toEqual([]);
+    expect(l.diterbitkan).toEqual([]);
+    expect(l.dihapus).toEqual([]);
+    const tombol = l.w.document.querySelector("#unduhan-ditahan-wadah button");
+    expect(tombol.textContent).toBe("Unduhan ditahan Chrome - klik untuk mengunduh ulang");
+    expect(l.w.document.documentElement.outerHTML.toLowerCase()).not.toContain("aleta");
+    // Klik petugas -> barulah POST dikirim, berkas turun, entri gagal dibersihkan.
+    tombol.click();
+    await l.tunggu(20);
+    expect(l.permintaan).toHaveLength(1);
+    expect(l.permintaan[0].init.method).toBe("POST");
+    expect(String(l.permintaan[0].init.body)).toBe("bulan=10&tahun=2026");
     expect(l.diterbitkan.map((d) => d.filename)).toEqual(["Laporan 10-2026.csv"]);
+    expect(l.dihapus).toEqual([8]);
+    expect(l.w.document.querySelector("#unduhan-ditahan-wadah button")).toBeNull();
+  });
+
+  it("POST dari form.submit() skrip halaman (tanpa peristiwa submit) dikenali POST, bukan ditebak GET", async () => {
+    const aksi = "http://192.168.10.10/SIPP/index.php/hapus/semua";
+    const l = lingkungan({ alamat: SIPP, html: borang(aksi), pasangShim: true, balasan: { [aksi]: { tipe: "application/zip" } } });
+    l.w.document.getElementById("f").submit();
+    l.butirUnduhan[3] = terblokir(3, { url: aksi, finalUrl: aksi, mime: "application/zip" });
+    l.kirimUbah({ id: 3, state: { current: "interrupted" }, error: { current: "FILE_BLOCKED" } });
+    await l.tunggu(20);
+    expect(l.permintaan).toEqual([]); // tidak ada GET tebakan ke alamat penulis
+    expect(l.w.document.querySelector("#unduhan-ditahan-wadah button")).not.toBeNull();
+  });
+
+  it("POST di ABT / ALETA tidak pernah di daftar putih (daftar putih hanya SIPP)", async () => {
+    const aksi = "http://192.168.10.10/aleta/api/aleta-ecourt/perkara_list_cetak/cetak/1";
+    const l = lingkungan({ alamat: ALETA, html: borang(aksi), balasan: { [aksi]: {} } });
+    kirimBorang(l);
+    l.butirUnduhan[8] = terblokir(8, { url: aksi, finalUrl: aksi, referrer: ALETA });
+    l.kirimUbah({ id: 8, state: { current: "interrupted" }, error: { current: "FILE_BLOCKED" } });
+    await l.tunggu(20);
+    expect(l.permintaan).toEqual([]);
+    expect(l.diterbitkan).toEqual([]);
+  });
+
+  it("danger 'insecure' (unduhan masih berjalan/menunggu) -> diulang lewat jalur aman, lalu dibatalkan dan dihapus", async () => {
+    const l = lingkungan({
+      alamat: SIPP,
+      balasan: { "http://192.168.10.10/SIPP/index.php/cetak/relaas/7": { disposisi: 'attachment; filename="Relaas 630.rtf"' } },
+    });
+    l.butirUnduhan[21] = terblokir(21, { state: "in_progress", error: undefined, danger: "insecure" });
+    l.kirimUbah({ id: 21, danger: { previous: "safe", current: "insecure" } });
+    await l.tunggu(20);
+    expect(l.permintaan[0].init.method ?? "GET").toBe("GET");
+    expect(l.diterbitkan.map((d) => d.filename)).toEqual(["Relaas 630.rtf"]);
+    expect(l.dibatalkan).toEqual([21]);
+    expect(l.dihapus).toEqual([21]);
+  });
+
+  it("danger 'insecure' pada unduhan yang sudah selesai atau dari asal luar -> tidak disentuh", async () => {
+    const l = lingkungan({ alamat: SIPP, balasan: { "http://192.168.10.10/SIPP/index.php/cetak/relaas/7": {} } });
+    l.butirUnduhan[1] = terblokir(1, { state: "complete", error: undefined, danger: "insecure" });
+    l.butirUnduhan[2] = terblokir(2, { state: "in_progress", error: undefined, danger: "insecure", url: "http://contoh.test/x.rtf", finalUrl: "http://contoh.test/x.rtf", referrer: "http://contoh.test/" });
+    l.kirimUbah({ id: 1, danger: { current: "insecure" } });
+    l.kirimUbah({ id: 2, danger: { current: "insecure" } });
+    await l.tunggu(20);
+    expect(l.pesanKeTab).toEqual([]);
+    expect(l.dibatalkan).toEqual([]);
+  });
+
+  it("danger 'insecure' dari borang POST di luar daftar putih -> pemberitahuan, bukan ulangan otomatis", async () => {
+    const aksi = "http://192.168.10.10/SIPP/index.php/laporan/ekspor";
+    const l = lingkungan({ alamat: SIPP, html: borang(aksi), balasan: { [aksi]: { tipe: "text/csv", disposisi: 'attachment; filename="L.csv"' } } });
+    kirimBorang(l);
+    l.butirUnduhan[30] = terblokir(30, { url: aksi, finalUrl: aksi, state: "in_progress", error: undefined, danger: "insecure" });
+    l.kirimUbah({ id: 30, danger: { current: "insecure" } });
+    await l.tunggu(20);
+    expect(l.permintaan).toEqual([]);
+    expect(l.w.document.querySelector("#unduhan-ditahan-wadah button")).not.toBeNull();
+    expect(l.dibatalkan).toEqual([]);
+  });
+
+  it("galat FILE_FAILED dari alamat kita diulang; galat jaringan / lain tidak", async () => {
+    const l = lingkungan({ alamat: SIPP, balasan: { "http://192.168.10.10/SIPP/index.php/cetak/relaas/7": { disposisi: 'attachment; filename="F.rtf"' } } });
+    l.butirUnduhan[40] = terblokir(40, { error: "FILE_FAILED" });
+    l.butirUnduhan[41] = terblokir(41, { error: "NETWORK_FAILED" });
+    l.kirimUbah({ id: 41, state: { current: "interrupted" }, error: { current: "NETWORK_FAILED" } });
+    l.kirimUbah({ id: 40, state: { current: "interrupted" }, error: { current: "FILE_FAILED" } });
+    await l.tunggu(20);
+    expect(l.diterbitkan.map((d) => d.filename)).toEqual(["F.rtf"]);
+    expect(l.dihapus).toEqual([40]);
   });
 
   it("jawaban ulangan berupa halaman web (bukan berkas) ditolak, tidak jadi berkas", async () => {
@@ -593,7 +704,9 @@ describe("berkas, manifest, dan izin", () => {
   it("kode (bukan komentar) tidak menulis atribut/teks 'aleta' ke DOM halaman", () => {
     const kode = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
     // nama peristiwa & kelas yang DIBACA dari Derry diizinkan; yang ditulis ke DOM tidak ada.
-    expect(kode(SUMBER_UNIVERSAL)).not.toMatch(/setAttribute\([^)]*aleta|dataset\.[a-z]*aleta|innerHTML|textContent\s*=|classList\.add/i);
+    expect(kode(SUMBER_UNIVERSAL)).not.toMatch(/setAttribute\([^)]*aleta|dataset\.[a-z]*aleta|innerHTML|classList\.add/i);
+    // Pemberitahuan "ditahan Chrome": id, teks, dan gaya netral - tidak ada kata itu di kode yang menuliskannya.
+    expect(kode(SUMBER_UNIVERSAL).match(/TEKS_DITAHAN = "[^"]*"|ID_WADAH_DITAHAN = "[^"]*"/g)?.join("")).not.toMatch(/aleta/i);
     expect(kode(SUMBER_HALAMAN)).not.toMatch(/aleta/i);
   });
 });
