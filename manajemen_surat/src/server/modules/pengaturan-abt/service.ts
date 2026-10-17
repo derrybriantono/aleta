@@ -16,6 +16,7 @@ import {
   type JenisSuntingan,
 } from "@/lib/pengaturan-abt";
 import { kerangkaSatker } from "@/lib/identitas-satker";
+import { menyebutAleta, pesanTandaAletaSipp } from "@/lib/tanda-aleta";
 import type { AletaDatabase } from "@/server/db/client";
 import { ApiError } from "@/server/shared/errors";
 
@@ -397,6 +398,8 @@ export async function simpanVariabel(db: AletaDatabase, aktor: AktorPengaturan, 
     if (!hak.ubahBawaan) throw new ApiError(403, "Hanya Super Admin dan Admin yang dapat mengubah isian bawaan.");
     const luar = hurufDiluarLatin1(baru.default_data);
     if (luar.length) throw new ApiError(400, `Isian bawaan memuat huruf yang tidak dapat disimpan ABT: ${luar.join(" ")}`);
+    // 17 Okt 2026: tidak ada kata ALETA di server SIPP/ABT (sisa lama yang tidak diubah dibiarkan).
+    if (menyebutAleta(baru.default_data) && baru.default_data !== lama.default_data) throw new ApiError(400, pesanTandaAletaSipp("Isian bawaan"));
   }
   const bagian = [("sql_query" in baru ? "kueri" : ""), ("default_data" in baru ? "isian bawaan" : "")].filter(Boolean).join(" dan ");
   const hasil = await denganCatatan(
@@ -493,7 +496,7 @@ export async function simpanTemplat(db: AletaDatabase, aktor: AktorPengaturan, i
   const lama = bacaBaris(badan.lama);
   const baru = bacaBaris(badan.baru);
   const bolehKosong = Boolean(pulihDari);
-  const masalah = periksaTemplat(baru).filter((m) => !(bolehKosong && /sedikitnya satu/.test(m)));
+  const masalah = periksaTemplat(baru, lama).filter((m) => !(bolehKosong && /sedikitnya satu/.test(m)));
   if (masalah.length) throw new ApiError(400, masalah.join(" "));
   return denganCatatan(
     db,

@@ -12,6 +12,7 @@ import { apiPath } from "@/lib/base-path";
 import { KOLOM_IDENTITAS, ZONA_WAKTU, gantiKodeSurat, type IdentitasSatker } from "@/lib/identitas-satker";
 import type { HakPengaturanAbt } from "@/lib/pengaturan-abt";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import { isianMemuatAleta, peringatanTandaAleta } from "@/lib/tanda-aleta";
 
 /**
  * Pengaturan SIPP & ABT > Identitas satker (17 Okt 2026, keputusan butir 3/4/7).
@@ -66,11 +67,13 @@ async function panggil<T>(alamat: string, init?: RequestInit): Promise<T> {
 const kirim = <T,>(badan: Record<string, unknown>) =>
   panggil<T>(ALAMAT, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(badan) });
 
-function Pesan({ jenis, children }: { jenis: "galat" | "berhasil" | "info"; children: React.ReactNode }) {
+function Pesan({ jenis, children }: { jenis: "galat" | "berhasil" | "info" | "peringatan"; children: React.ReactNode }) {
   const warna =
     jenis === "galat"
       ? "border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-200"
-      : jenis === "berhasil"
+      : jenis === "peringatan"
+        ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
+        : jenis === "berhasil"
         ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200"
         : "border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950/50 dark:text-sky-200";
   return <div className={`rounded-xl border px-3 py-2 text-sm ${warna}`}>{children}</div>;
@@ -83,6 +86,12 @@ const LABEL_RENCANA: Record<string, string> = {
   surel: "Surel",
   kodeSurat: "Kode surat di nomor surat bawaan",
 };
+
+/** Sebutan isian identitas untuk peringatan kata ALETA (17 Okt 2026). */
+function peringatanAletaIdentitas(isian: IdentitasSatker): string {
+  const label = (k: string) => (k === "kodeSatker" ? "Kode satker SIPP" : (KOLOM_IDENTITAS.find((x) => x.kunci === k)?.label ?? k));
+  return peringatanTandaAleta(isianMemuatAleta(isian as unknown as Record<string, unknown>, label));
+}
 
 const bacaBerkas = (f: File) =>
   new Promise<string>((ok, gagal) => {
@@ -133,7 +142,10 @@ export function BagianIdentitasSatker({ hak, riwayat }: { hak: HakPengaturanAbt;
       await kirim({ tindakan: "simpan-satker", identitas: isian, ...(logoBaru ? { logoBase64: logoBaru } : {}), ...tambahan });
       setLogoBaru("");
       await muat();
-      setBerhasil("Identitas satker tersimpan di ALETA. ABT belum diubah - gunakan Terapkan ke ABT di bawah.");
+      const catatanAleta = peringatanAletaIdentitas(isian);
+      setBerhasil(
+        `Identitas satker tersimpan di ALETA. ABT belum diubah - gunakan Terapkan ke ABT di bawah.${catatanAleta ? ` ${catatanAleta}` : ""}`
+      );
     } catch (e) {
       setGalat(e instanceof Error ? e.message : String(e));
     } finally {
@@ -183,6 +195,7 @@ export function BagianIdentitasSatker({ hak, riwayat }: { hak: HakPengaturanAbt;
   const keteranganSipp: Partial<Record<keyof IdentitasSatker, string>> = sipp
     ? { namaPengadilan: sipp.namaPN, pengadilanTinggi: sipp.namaPT, zonaWaktu: sipp.zonaWaktu }
     : {};
+  const peringatanAleta = peringatanAletaIdentitas(isian);
   const srcLogo = logoBaru || (data.logo.ada ? apiPath(`${ALAMAT}?bagian=satker-logo&v=${data.logo.md5}`) : "");
 
   return (
@@ -270,6 +283,8 @@ export function BagianIdentitasSatker({ hak, riwayat }: { hak: HakPengaturanAbt;
               ) : null}
             </div>
           </div>
+
+          {peringatanAleta ? <Pesan jenis="peringatan">{peringatanAleta}</Pesan> : null}
 
           {boleh ? (
             <div className="flex flex-wrap gap-2">
