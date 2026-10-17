@@ -461,6 +461,6 @@ export function ringkasBedaTemplat(lama: BarisTemplat[], baru: BarisTemplat[]): 
   return bagian.join(", ") || "tidak ada yang berubah";
 }
 
-// "satker" = cabang isian satker kueri 9271-9274; "logo" = jejak paket logo kop (17 Okt 2026).
-export const JENIS_SUNTINGAN = ["menu", "variabel", "templat", "satker", "logo"] as const;
+// "satker" = cabang isian satker kueri 9271-9274; "logo" = jejak paket logo kop; "nomor_sk" = isian bawaan variabel nomor SK (#9550#) - 17 Okt 2026.
+export const JENIS_SUNTINGAN = ["menu", "variabel", "templat", "satker", "logo", "nomor_sk"] as const;
 export type JenisSuntingan = (typeof JENIS_SUNTINGAN)[number];

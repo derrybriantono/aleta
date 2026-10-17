@@ -16,6 +16,7 @@ import {
   type JenisSuntingan,
 } from "@/lib/pengaturan-abt";
 import { kerangkaSatker } from "@/lib/identitas-satker";
+import { NOMOR_VAR_SK, PESAN_NOMOR_SK_BELUM_TERPASANG } from "@/lib/nomor-sk";
 import { menyebutAleta, pesanTandaAletaSipp } from "@/lib/tanda-aleta";
 import type { AletaDatabase } from "@/server/db/client";
 import { ApiError } from "@/server/shared/errors";
@@ -475,6 +476,45 @@ export async function simpanKueriSatker(
   );
 }
 
+/**
+ * Menulis nomor SK penunjukan (variabel #9550#, kueri baku disusun bot) - lihat lib/nomor-sk.ts.
+ * Jalurnya sama dengan identitas satker: hak Super Admin/Admin, catatan 'menunggu'
+ * berisi nilai lama SEBELUM ABT disentuh, bot menulis satu transaksi dengan
+ * prasyarat nilai lama. Variabel yang belum ada -> pesan awam (bot: "tidak_ada").
+ * Dicatat jenis "nomor_sk" - Kembalikan menukar nilai lama/baru.
+ */
+export async function simpanNomorSkAbt(
+  db: AletaDatabase,
+  aktor: AktorPengaturan,
+  ip: string,
+  badan: { noVar: string; lama: string; baru: string; ringkas: string },
+  pulihDari = ""
+) {
+  // lama/baru = NOMOR (teks literal). Bot menyusun kueri baku `SELECT '<nomor>' AS data`; portal tidak mengirim SQL.
+  if (!hakPengaturanAbt(aktor.roleId).ubahBawaan) throw new ApiError(403, "Hanya Super Admin dan Admin yang dapat mengubah nomor SK di ABT.");
+  const noVar = String(badan.noVar ?? "").padStart(4, "0");
+  if (!NOMOR_VAR_SK.has(noVar)) throw new ApiError(400, "Variabel ini bukan isian nomor SK penunjukan.");
+  if (!pulihDari && menyebutAleta(badan.baru)) throw new ApiError(400, pesanTandaAletaSipp("Nomor SK"));
+  const hasil = await denganCatatan(
+    db,
+    { jenis: "nomor_sk", kunci: noVar, ringkas: badan.ringkas, lama: { nomor: badan.lama }, baru: { nomor: badan.baru }, aktor, ip, pulihDari },
+    async () => {
+      try {
+        const h = await bot<{ sebelum: Record<string, string>; sesudah: Record<string, string> }>("/nomor-sk/simpan", {
+          method: "POST",
+          timeoutMs: 45000,
+          body: { noVar, lama: { nomor: badan.lama }, baru: { nomor: badan.baru }, pulihkan: Boolean(pulihDari) },
+        });
+        return { hasil: { sebelum: h.sebelum, sesudah: h.sesudah }, baru: h.sesudah };
+      } catch (e) {
+        if (e instanceof ApiError && (e.status === 404 || (e.details as { kode?: string } | undefined)?.kode === "tidak_ada")) throw new ApiError(404, PESAN_NOMOR_SK_BELUM_TERPASANG, { kode: "tidak_ada" });
+        throw e;
+      }
+    }
+  );
+  return hasil;
+}
+
 /** Jejak paket logo kop di riwayat (bukan tulisan ke ABT - tidak dapat "dikembalikan" dari sini). */
 export async function catatPaketLogo(db: AletaDatabase, aktor: AktorPengaturan, ip: string, isi: { ringkas: string; lama: unknown; baru: unknown }) {
   const id = await mulaiCatat(db, { jenis: "logo", kunci: "logo-kop", ringkas: isi.ringkas, lama: isi.lama, baru: isi.baru, aktor, ip });
@@ -582,6 +622,9 @@ export async function kembalikanSuntingan(db: AletaDatabase, aktor: AktorPengatu
   }
   if (s.jenis === "satker") {
     return simpanKueriSatker(db, aktor, ip, { noVar: s.kunci, lama: String(baru.sql_query ?? ""), baru: String(lama.sql_query ?? ""), ringkas }, s.id);
+  }
+  if (s.jenis === "nomor_sk") {
+    return simpanNomorSkAbt(db, aktor, ip, { noVar: s.kunci, lama: String(baru.nomor ?? ""), baru: String(lama.nomor ?? ""), ringkas }, s.id);
   }
   if (s.jenis === "logo") {
     throw new ApiError(400, "Paket logo kop dikembalikan di server dengan pulih.sh di folder paketnya.");

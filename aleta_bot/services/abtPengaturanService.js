@@ -75,6 +75,16 @@ const VARIABEL_SATKER = Object.freeze({ alamat: "9271", telepon: "9272", laman: 
 const NO_VAR_SATKER = new Set(Object.values(VARIABEL_SATKER));
 const NO_VAR_IDENTITAS = ["9270", "9271", "9272", "9273", "9274", "9275", "9276"];
 const NO_VAR_KODE_SURAT = "1154";
+
+/**
+ * NOMOR SK PENUNJUKAN (17 Okt 2026). Variabel berkueri `SELECT '<nomor>' AS data` (data_sql) yang nilainya
+ * dipakai blangko lewat variabel lain (mis. #7044# memuat #9550#), jadi TIDAK
+ * tampak langsung di RTF Blangko Derry dan tidak lolos pastikanDerry. Jalur
+ * sendiri, daftar nomornya tertutup: hanya yang tercantum di sini.
+ */
+const NO_VAR_NOMOR_SK = new Set(["9550"]);
+const PANJANG_NOMOR_SK_MAKS = 300;
+const RE_KUERI_NOMOR_SK = /^SELECT\s+'([^'\\]*)'\s+AS\s+data$/i;
 const KEPALA_CASE_SATKER = /CASE\s*\(\s*SELECT\s+TRIM\(\s*value\s*\)\s+FROM\s+sys_config\s+WHERE\s+name\s*=\s*'KodePN'\s+LIMIT\s+1\s*\)/i;
 const RE_CABANG_SATKER = /\s*WHEN\s+'((?:[^'\\]|''|\\.)*)'\s+THEN\s+'((?:[^'\\]|''|\\.)*)'/gi;
 
@@ -730,6 +740,76 @@ function buatLayanan(d) {
     return { ...hasil, uji };
   }
 
+  // ---- nomor SK penunjukan (17 Okt 2026) ----------------------------------
+
+  /** Nomor SK di dalam kueri `SELECT '<nomor>' AS data`; null bila kueri berbentuk lain. */
+  function nomorDariKueri(sql) {
+    const m = RE_KUERI_NOMOR_SK.exec(teksDb(sql).trim());
+    return m ? m[1] : null;
+  }
+
+  /** Keadaan variabel nomor SK di ABT (ada/tidak, nomor sekarang). Tidak menulis. */
+  async function bacaNomorSk() {
+    const nos = [...NO_VAR_NOMOR_SK];
+    const baris = await kueri(
+      `SELECT no_var, nama, data_type, sql_query, locked FROM ${t("abt_variabel")} WHERE no_var IN (${nos.map(() => "?").join(",")})`,
+      nos.map(Number)
+    );
+    const peta = new Map(baris.map((b) => [teksDb(b.no_var).padStart(4, "0"), b]));
+    return {
+      variabel: nos.map((no) => {
+        const b = peta.get(no);
+        return {
+          noVar: no,
+          ada: Boolean(b),
+          nama: b ? teksDb(b.nama) : "",
+          jenis: b ? teksDb(b.data_type) : "",
+          nomor: b ? nomorDariKueri(b.sql_query) : null,
+          dikunci: b ? Number(b.locked) === 1 : false,
+        };
+      }),
+    };
+  }
+
+  /**
+   * Menulis nomor SK ke variabel #9550# (jenis data_sql, kueri `SELECT '<nomor>' AS data`).
+   * lama/baru: {nomor}. Kueri DISUSUN di sini dari nomor yang sudah dibersihkan (nilai
+   * lewat parameter + QUOTE, bukan sambung teks) - portal tidak mengirim SQL. Prasyarat:
+   * variabel ada (TIDAK pernah INSERT), tidak dikunci, kueri sekarang berbentuk baku
+   * dan nomornya = lama (satu transaksi, baris dikunci). Hanya nomor di NO_VAR_NOMOR_SK.
+   */
+  async function simpanNomorSk(badan = {}) {
+    const no = noVarSah(badan.noVar);
+    if (!NO_VAR_NOMOR_SK.has(no)) throw galatTolak(`Variabel #${no}# bukan isian nomor SK penunjukan.`, "bukan_nomor_sk");
+    const lama = badan.lama && typeof badan.lama === "object" ? badan.lama : null;
+    const baru = badan.baru && typeof badan.baru === "object" ? badan.baru : null;
+    if (!lama || typeof lama.nomor !== "string" || !baru || typeof baru.nomor !== "string") {
+      throw galatTolak("Nomor lama dan baru wajib dikirim - muat ulang halaman.");
+    }
+    const pulihkan = badan.pulihkan === true;
+    const nilai = baru.nomor.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+    if (!nilai) throw galatTolak("Nomor SK tidak boleh kosong.");
+    if (nilai.length > PANJANG_NOMOR_SK_MAKS) throw galatTolak("Nomor SK terlalu panjang.");
+    if (/[\\#"']/.test(nilai)) throw galatTolak(`Nomor SK tidak boleh memuat tanda #, tanda kutip (" atau '), atau garis miring terbalik.`);
+    const luar = hurufDiluarLatin1(nilai);
+    if (luar.length) throw galatTolak(`Nomor SK memuat huruf yang tidak dapat disimpan ABT: ${luar.join(" ")}`);
+    const hasil = await d.transaksi(async (q) => {
+      const kini = (await q(`SELECT no_var, data_type, sql_query, locked FROM ${t("abt_variabel")} WHERE no_var = ? FOR UPDATE`, [no]))[0];
+      if (!kini) throw galatTolak(`Variabel #${no}# tidak ada di katalog ABT - pasang paket blangko terbaru dulu.`, "tidak_ada");
+      if (Number(kini.locked) === 1) throw galatTolak("Variabel ini dikunci ABT dan tidak dapat diubah.", "dikunci");
+      if (teksDb(kini.data_type) !== "data_sql") throw galatTolak("Variabel ini bukan isian berkueri - nomor SK tidak dapat ditulis ke sini.", "bukan_nomor_sk");
+      const nomorKini = nomorDariKueri(kini.sql_query);
+      if (nomorKini === null) throw galatTolak("Isian nomor SK di ABT berbentuk lain - ubah lewat Isian blangko.", "bukan_nomor_sk");
+      if (nomorKini !== String(lama.nomor)) throw galatTolak("Variabel ini sudah diubah orang lain sejak halaman dimuat - muat ulang lalu ulangi.", "berubah");
+      const sebab = periksaKueriVariabel(`SELECT '${nilai}' AS data`, mesinVar.pagarBaca);
+      if (sebab) throw galatTolak(sebab, "kueri_ditolak");
+      await q(`UPDATE ${t("abt_variabel")} SET sql_query = CONCAT('SELECT ', QUOTE(?), ' AS data') WHERE no_var = ?`, [nilai, no]);
+      const baca = (await q(`SELECT sql_query FROM ${t("abt_variabel")} WHERE no_var = ?`, [no]))[0] || {};
+      return { sebelum: { nomor: nomorKini }, sesudah: { nomor: nomorDariKueri(baca.sql_query) } };
+    });
+    return { ...hasil, pulihkan };
+  }
+
   // ---- logo kop (17 Okt 2026) - HANYA BACA blangko; paket ditulis ke folder runtime ----
 
   const akarDerry = () => path.resolve(akarBlangko, FOLDER_DERRY);
@@ -841,6 +921,8 @@ function buatLayanan(d) {
     simpanTemplat,
     bacaSatker,
     simpanKueriSatker,
+    bacaNomorSk,
+    simpanNomorSk,
     pindaiLogo,
     gambarLogo,
     paketLogo,

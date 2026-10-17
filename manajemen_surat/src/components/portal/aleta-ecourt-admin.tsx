@@ -30,6 +30,7 @@ import { AletaEcourtPanggilanPengaturan } from "@/components/portal/aleta-ecourt
 import { AletaEcourtPenarikan } from "@/components/portal/aleta-ecourt-penarikan";
 import { EcourtStatusPenarikan } from "@/components/portal/ecourt-status-penarikan";
 import { AletaEcourtSkMajelis } from "@/components/portal/aleta-ecourt-sk-majelis";
+import { AletaEcourtNomorSk } from "@/components/portal/aleta-ecourt-nomor-sk";
 import { AletaEcourtJadwal } from "@/components/portal/aleta-ecourt-jadwal";
 /* === 12OKT-E === */
 import { AletaEcourtKtpPihak } from "@/components/portal/aleta-ecourt-ktp-pihak";
@@ -358,6 +359,10 @@ export function AletaEcourtAdmin() {
       {/* SK susunan majelis - satu-satunya tempat susunan majelis dan
           panitera sidangnya dapat diubah tanpa menyentuh kode. */}
       <AletaEcourtSkMajelis />
+
+      {/* Nomor SK penunjukan yang dikutip penetapan majelis hakim (17 Okt 2026):
+          disimpan di ALETA, diterapkan ke ABT. Jangkar #nomor-sk. */}
+      <AletaEcourtNomorSk />
 
       {/* Jangkar untuk tombol "Atur kewenangan ekstensi" di halaman Ekstensi
           SIPP. Tanpa id ini tombolnya hanya membuka halaman admin dari atas,

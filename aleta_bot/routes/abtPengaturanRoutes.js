@@ -21,6 +21,8 @@
  *   17 Okt 2026 - identitas satker & logo kop:
  *   GET  /satker                identitas satker SIPP + variabel 9270-9276/#1154# dan nilainya
  *   POST /satker/simpan         {noVar 9271-9274, lama:{sql_query}, baru:{sql_query}, pulihkan?}
+ *   GET  /nomor-sk              variabel nomor SK penunjukan (#9550#): ada/tidak + nomor sekarang
+ *   POST /nomor-sk/simpan       {noVar 9550, lama:{nomor}, baru:{nomor}, pulihkan?} - kueri SELECT '<nomor>' AS data disusun di bot
  *   GET  /logo/pindai           gambar di blangko Derry per isi (md5) + tebakan logo - baca saja
  *   GET  /logo/gambar?md5=      bita satu gambar PNG/JPG (pratinjau)
  *   POST /logo/paket            {md5:[...], logoBase64, oleh} - paket ganti logo ke folder runtime
@@ -118,6 +120,8 @@ router.post("/templat/simpan", bungkus((req) => layanan().simpanTemplat(req.body
 router.get("/perkara", bungkus(async (req) => ({ perkara: await layanan().cariPerkara(req.query.nomor) })));
 router.get("/satker", bungkus(() => layanan().bacaSatker()));
 router.post("/satker/simpan", bungkus((req) => layanan().simpanKueriSatker(req.body || {})));
+router.get("/nomor-sk", bungkus(() => layanan().bacaNomorSk()));
+router.post("/nomor-sk/simpan", bungkus((req) => layanan().simpanNomorSk(req.body || {})));
 router.get("/logo/pindai", bungkus(() => layanan().pindaiLogo()));
 router.get("/logo/gambar", async (req, res) => {
   try {

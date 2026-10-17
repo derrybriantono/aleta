@@ -29,6 +29,7 @@ import {
   simpanIdentitas,
   terapkanKeAbt,
 } from "@/server/modules/pengaturan-abt/identitas-satker";
+import { bacaLayarNomorSk, simpanNomorSk, terapkanNomorSkKeAbt } from "@/server/modules/pengaturan-abt/nomor-sk";
 import { bacaLayarAdvance, simpanPengaturanAdvance } from "@/server/modules/aleta-ecourt/putusan-advance-akun";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -52,6 +53,7 @@ export const dynamic = "force-dynamic";
  *   GET ?bagian=satker-logo                logo satker ALETA (gambar)
  *   GET ?bagian=logo-pindai                gambar di blangko Derry per isi + tebakan logo (baca saja)
  *   GET ?bagian=logo-blangko&md5=          satu gambar blangko (pratinjau)
+ *   GET ?bagian=nomor-sk                   nomor SK penunjukan di ALETA + keadaan variabel #9550# di ABT + rencana (17 Okt)
  *   GET ?bagian=putusan-advance            akun yang boleh memakai Putusan Advance (17 Okt; bawaan hanya Derry Briantono)
  *
  *   POST {tindakan: "simpan-menu", ubah:[{id,lama,baru}], config:[{name,lama,baru}]}
@@ -62,6 +64,8 @@ export const dynamic = "force-dynamic";
  *   POST {tindakan: "simpan-satker", identitas:{...}, logoBase64?, hapusLogo?}   hanya ALETA
  *   POST {tindakan: "terapkan-satker", kunci:[alamat|telepon|laman|surel|kodeSurat]}  ke ABT, tercatat
  *   POST {tindakan: "logo-dari-blangko", md5}
+ *   POST {tindakan: "simpan-nomor-sk", nilai:{majelis:{nomor, tanggal}}}   hanya ALETA
+ *   POST {tindakan: "terapkan-nomor-sk", kunci?:["majelis"]}   ke ABT (#9550#), tercatat jenis nomor_sk
  *   POST {tindakan: "simpan-putusan-advance", akun:[idAkun...]}   Super Admin & Admin
  *   POST {tindakan: "paket-logo-kop", md5:[...]}   paket di server; blangko diganti saat pasang.sh dijalankan
  *
@@ -108,6 +112,7 @@ export async function GET(request: NextRequest) {
     if (bagian === "perkara") return ok(await cariPerkaraContoh(getSearchParam(request, "nomor") ?? ""));
     if (bagian === "satker") return ok({ ...(await bacaSatker(db)), hak: a.hak });
     if (bagian === "logo-pindai") return ok(await pindaiLogo());
+    if (bagian === "nomor-sk") return ok({ ...(await bacaLayarNomorSk(db)), hak: a.hak });
     if (bagian === "putusan-advance") return ok(await bacaLayarAdvance(db));
     if (bagian === "satker-logo" || bagian === "logo-blangko") {
       const g = bagian === "satker-logo" ? await bacaLogoAleta(db) : await gambarBlangko(String(getSearchParam(request, "md5") ?? "").toLowerCase());
@@ -163,6 +168,10 @@ export async function POST(request: NextRequest) {
         return ok(await simpanIdentitas(db, a.aktor, badan));
       case "terapkan-satker":
         return ok(await terapkanKeAbt(db, a.aktor, ip, badan));
+      case "simpan-nomor-sk":
+        return ok(await simpanNomorSk(db, a.aktor, badan));
+      case "terapkan-nomor-sk":
+        return ok(await terapkanNomorSkKeAbt(db, a.aktor, ip, badan));
       case "logo-dari-blangko":
         return ok(await logoDariBlangko(db, a.aktor, String(badan.md5 ?? "")));
       case "paket-logo-kop":

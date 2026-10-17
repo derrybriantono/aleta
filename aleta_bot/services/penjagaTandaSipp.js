@@ -383,6 +383,9 @@ function isianPengaturanAbt(jalur, badan) {
   } else if (jalur === "/satker/simpan") {
     for (const [k, v] of Object.entries(b.baru && typeof b.baru === "object" ? b.baru : {})) isian[`Identitas satker (variabel #${b.noVar}#) - ${kolom(k)}`] = v;
     lama(b.lama);
+  } else if (jalur === "/nomor-sk/simpan") {
+    if (b.baru && typeof b.baru === "object") isian["Nomor SK penunjukan"] = b.baru.nomor;
+    lama(b.lama);
   } else if (jalur === "/templat/simpan") {
     (Array.isArray(b.baru) ? b.baru : []).forEach((r, i) => {
       isian[`Tanya jawab ${b.kode || ""} - pertanyaan ${i + 1}`] = r && (r.tanya ?? r.pertanyaan);
