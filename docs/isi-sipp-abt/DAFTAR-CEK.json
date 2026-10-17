@@ -28,8 +28,8 @@
   "blangko": 982,
   "blangkoTanpaIsian": 31,
   "isianUnik": 252,
-  "ya": 144,
-  "sebagian": 14,
+  "ya": 142,
+  "sebagian": 16,
   "tidak": 94,
   "tanpaSumber": 45,
   "opsionalTitik": 5,
@@ -30986,8 +30986,7 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31023,8 +31022,7 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31060,8 +31058,7 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31095,8 +31092,7 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31131,8 +31127,7 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31167,8 +31162,7 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31201,8 +31195,7 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [C] Pemohon Hadir Mencabut Permohonan.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31232,8 +31225,7 @@
    "jalur": "derry_briantono/7 Wali Adhal - BAS/BAS ALUR 19 Wali Adhal - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
    "folder": "7 Wali Adhal - BAS",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31262,8 +31254,7 @@
    "jalur": "derry_briantono/7 Wali Adhal/[01] [Kabul] Wali Adhal - Wali Tidak Hadir.rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31308,8 +31299,7 @@
    "jalur": "derry_briantono/7 Wali Adhal/[01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan.rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31355,8 +31345,7 @@
    "jalur": "derry_briantono/7 Wali Adhal/[03] [Tolak] Wali Adhal - Keengganan Wali Beralasan Hukum.rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31402,8 +31391,7 @@
    "jalur": "derry_briantono/7 Wali Adhal/[98] [Cabut] Wali Adhal.rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31434,8 +31422,7 @@
    "jalur": "derry_briantono/7 Wali Adhal/[98a] [Gugur] Wali Adhal - Pemohon Tidak Pernah Hadir.rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31466,8 +31453,7 @@
    "jalur": "derry_briantono/7 Wali Adhal/[98c] [Coret] Wali Adhal - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -31501,8 +31487,7 @@
    "jalur": "derry_briantono/7 Wali Adhal/[99] [NO] Wali Adhal - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf",
    "folder": "7 Wali Adhal",
    "modul": [
-    "wali-adhol",
-    "itsbat-nikah"
+    "wali-adhol"
    ],
    "universal": false,
    "bobot": 3,
@@ -40210,14 +40195,14 @@
     "ALUR 08 Cerai Dicabut",
     "BAS Itsbat Nikah Gugur dan Cabut"
    ],
-   "status": "ya",
+   "status": "sebagian",
    "folderTakTertutup": [],
    "pengisi": [
     {
      "jenis": "kelompok",
-     "id": "sipp-lanjutan-pasti",
+     "id": "sipp-mediasi-cabut",
      "berkas": "aleta_bot/services/abtIsianSippLanjutan.js",
-     "tingkat": "otomatis"
+     "tingkat": "usulan"
     }
    ],
    "sumberMungkin": "hakim mengetik (usulan hanya bila mediasi Y2)",
@@ -40821,7 +40806,7 @@
    "langsung": 29,
    "bobotLangsung": 8819,
    "bobot": 8819,
-   "cakupanBobot": 1,
+   "cakupanBobot": 0.999,
    "contoh": [
     "[01a] BAS 1 Asal Usul Anak - Kabul.rtf",
     "[01a] BAS 1 IN - Kabul.rtf",
@@ -40840,8 +40825,10 @@
     "ALUR 11 Itsbat Nikah 1 Sidang",
     "ALUR 13 Asal Usul Anak"
    ],
-   "status": "ya",
-   "folderTakTertutup": [],
+   "status": "sebagian",
+   "folderTakTertutup": [
+    "7 Wali Adhal"
+   ],
    "pengisi": [
     {
      "jenis": "deteksi",
@@ -40850,7 +40837,7 @@
      "tingkat": "usulan"
     }
    ],
-   "sumberMungkin": "",
+   "sumberMungkin": "terisi di jenis utama; belum di: 7 Wali Adhal",
    "catatan": ""
   },
   {

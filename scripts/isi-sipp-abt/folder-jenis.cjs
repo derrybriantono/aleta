@@ -23,7 +23,7 @@ function petaFolder(folder) {
   if (/^6 Perwalian/.test(f)) return r(["perwalian", "itsbat-nikah"], ["354/16"]);
   if (/^6a /.test(f)) return r(["hadhanah"], ["369/15"]);
   if (/^6b /.test(f)) return r(["hadhanah"], ["349/15"]);
-  if (/^7 Wali/.test(f)) return r(["wali-adhol", "itsbat-nikah"], ["363/16"]);
+  if (/^7 Wali/.test(f)) return r(["wali-adhol"], ["363/16"]);
   if (/^8 Asal|ASAL USUL/.test(f)) return r(["asal-usul", "itsbat-nikah"], ["358/16"]);
   if (/^9 Penetapan Ahli Waris/.test(f)) return r(["waris"], ["371/16"]);
   if (/^9a /.test(f)) return r(["pengangkatan-anak", "lain-lain"], ["369/16"]);

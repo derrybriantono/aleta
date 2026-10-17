@@ -6,7 +6,7 @@ Dibangun 2026-10-18 oleh `scripts/isi-sipp-abt/bangun-daftar-cek.cjs` (data diuk
 
 - Blangko Derry aktif di pohon server: **982** (31 tanpa isian popup).
 - Isian popup (data_teks / data_tanggal / tanya_jawab, kata ABT "isian tangan"): **252** unik.
-- Sudah otomatis (ya): **144** - sebagian: **14** - belum (tidak): **94**, di antaranya **45** memang tanpa sumber data (penilaian hakim / tidak tercatat).
+- Sudah otomatis (ya): **142** - sebagian: **16** - belum (tidak): **94**, di antaranya **45** memang tanpa sumber data (penilaian hakim / tidak tercatat).
 - Penanda yang dirujuk rantai variabel tetapi tidak ada di katalog ABT lokal: 53 (lihat bawah).
 
 ## Sumber dan cara membaca
@@ -95,7 +95,7 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 | 52 | 6114, 2020 | Duplik Lisan Tergugat/Termohon [tanya jawab duplik lisan 0047] | 26 | 0 | BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Ja | tidak | tidak ada (jawab-jinawab lisan di persidangan; diketik panitera) |  |
 | 53 | 6113, 2019 | Replik Lisan Penggugat/Pemohon [tanya jawab replik lisan 0046] | 26 | 0 | BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Ja | tidak | tidak ada (jawab-jinawab lisan di persidangan; diketik panitera) |  |
 | 54 | 8437 | Kesimpulan Tergugat/Termohon | 48 | 3 | [02] [Kabul] CG - F.rtf | tidak | berkas e-Court (kesimpulan Tergugat) | Registri cerai: belum. |
-| 55 | 8433 | Alasan pencabutan perkara | 66 | 41 | BAS ALUR 08 [A] BAS 1 P Hadir & T Tidak Hadir - Cabut di Sid | ya | sipp-lanjutan-pasti | Sejak 2023: 41 isian petugas, hanya 4 berasal dari mediasi Y2; alasan lain (perbaikan gugatan, alamat tidak ditemukan) bebas. |
+| 55 | 8433 | Alasan pencabutan perkara | 66 | 41 | BAS ALUR 08 [A] BAS 1 P Hadir & T Tidak Hadir - Cabut di Sid | sebagian | hakim mengetik (usulan hanya bila mediasi Y2) (terisi di: sipp-mediasi-cabut) | Sejak 2023: 41 isian petugas, hanya 4 berasal dari mediasi Y2; alasan lain (perbaikan gugatan, alamat tidak ditemukan) bebas. |
 | 56 | 1046 | Status Wali Nikah | 39 | 701 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah; deteksi wali-adhol |  |
 | 57 | 0650 | Saksi Nikah 1 | 33 | 696 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
 | 58 | 0651 | Saksi Nikah 2 | 33 | 697 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
@@ -108,7 +108,7 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 | 65 | 9050 | Kenaikan nafkah anak per tahun | 5 | 0 | BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Ana | tidak | berkas e-Court (petitum kenaikan nafkah anak) |  |
 | 66 | 7211 | Umur Isbat P1 (Laki-Laki) | 19 | 277 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
 | 67 | 7212 | Umur Isbat P2 (Perempuan) | 19 | 277 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
-| 68 | 1002 | Status Penggugat/Pemohon sblm nikah (IN) | 29 | 699 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
+| 68 | 1002 | Status Penggugat/Pemohon sblm nikah (IN) | 29 | 699 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | sebagian | terisi di jenis utama; belum di: 7 Wali Adhal (terisi di: deteksi itsbat-nikah) |  |
 | 69 | 1003 | Status #2027# sblm nikah (IN) | 26 | 699 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | deteksi itsbat-nikah |  |
 | 70 | 8941 | TanyaJwb Saksi 4 T [tanya jawab saksi 4 t] | 13 | 0 | [02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan | ya | susun saksi |  |
 | 71 | 9134 | Bas permohonan | 38 | 0 | BAS ALUR 17 IN 2+ Sidang - [1a] Sidang 1 - Pemeriksaan, Bukt | tidak | opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin | belum dikaji |

@@ -190,7 +190,7 @@ function tulisMd(d) {
       if (i.jenis === "tj" && TJ_DIDUKUNG.kunci.includes(String(i.tj))) pengisi.push({ jenis: "saksi", id: "tj-saksi", berkas: TJ_DIDUKUNG.berkas, tingkat: "otomatis" });
       for (const k of [i.kode]) {
         for (const g of kunciKelompok.get(k) || []) {
-          if (g.untuk === "semua" || pf.modul.some((m) => g.untuk.includes(m))) pengisi.push({ jenis: "kelompok", id: g.id, berkas: g.berkas, tingkat: g.tingkat });
+          if (g.untuk === "semua" || pf.modul.some((m) => g.untuk.includes(m))) pengisi.push({ jenis: "kelompok", id: g.id, berkas: g.berkas, tingkat: g.sebagian ? "usulan" : g.tingkat, sebagian: Boolean(g.sebagian) });
         }
         const modulCek = pf.universal ? [...new Set([...reg.get(k) || []].map((e) => e.modul).concat(Object.keys(F23.peta).filter((m) => F23.peta[m].includes(k))))] : pf.modul;
         for (const m of modulCek) {
