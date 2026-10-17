@@ -506,6 +506,30 @@ export function folderPalingCocok(
   return terbaik;
 }
 
+/**
+ * Kode yang nilainya dibaca bot untuk satu blangko. Tanpa `semua`: isian tangan + pemicu (cepat); dengan `semua`:
+ * seluruh penanda. Tanya-jawab ikut dibaca (kode penanda dan kode penyuntingnya) supaya tanya-jawab yang SUDAH ada
+ * di ABT tidak tampil kosong dan "Penting" di peringatan cetak.
+ */
+export function kodeUntukNilai(susunan: Susunan, semua: boolean): string[] {
+  const tj = [...kodeTanyaJawab(susunan)];
+  const dasar = semua
+    ? [...susunan.penanda, ...susunan.isian.map((b) => b.kode), ...susunan.otomatis.map((o) => o.kode), ...susunan.pemicu.map((p) => p.kode), ...tj]
+    : [...susunan.isian.filter((b) => b.jenis !== "tj").map((b) => b.kode), ...susunan.pemicu.map((p) => p.kode), ...tj];
+  return [...new Set(dasar)];
+}
+
+/** Kode tanya-jawab (penanda dan penyuntingnya): nilainya tabel, teks kosongnya bukan tanda belum diisi. */
+export function kodeTanyaJawab(susunan: Susunan): Set<string> {
+  const k = new Set<string>();
+  for (const b of susunan.isian) {
+    if (b.jenis !== "tj") continue;
+    k.add(b.kode);
+    if (b.tj?.kodeSunting) k.add(b.tj.kodeSunting);
+  }
+  return k;
+}
+
 export type NilaiPenanda = { status: string; teks: string; nama: string; sebab: string };
 
 /**

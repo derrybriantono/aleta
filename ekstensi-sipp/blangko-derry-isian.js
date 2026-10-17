@@ -974,7 +974,9 @@
     }
     if (b.jenis === "tj") {
       const t = S.tj[b.tj.kunci];
-      const ada = t && t.rows && t.rows.length ? 1 : S.nilai[b.kode] && S.nilai[b.kode].status === "terisi" ? 1 : 0;
+      // Tanya-jawab yang sudah ada di ABT (nilai bot untuk kode penanda/penyunting) terhitung terisi walau belum dibuka di layar.
+      const dariAbt = [b.kode, b.tj.kodeSunting].some((k) => k && S.nilai[k] && S.nilai[k].status === "terisi");
+      const ada = t && t.rows && t.rows.length ? 1 : dariAbt ? 1 : 0;
       return [ada, 1];
     }
     return [String(S.isi[b.kode] || "").trim() ? 1 : 0, 1];

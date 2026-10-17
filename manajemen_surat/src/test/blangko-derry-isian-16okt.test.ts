@@ -29,7 +29,7 @@ import path from "node:path";
 import { JSDOM } from "jsdom";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { susunIsian, type Definisi } from "@/app/api/aleta-ecourt/blangko-derry/susun";
+import { kodeTanyaJawab, kodeUntukNilai, statusNilaiLayar, susunIsian, type Definisi } from "@/app/api/aleta-ecourt/blangko-derry/susun";
 import { tawarkanSetSaksi } from "@/lib/set-pertanyaan-saksi";
 
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
@@ -171,9 +171,17 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
   const orang = ORANG[p.orang ?? "hakim"];
   const json = (isi: unknown, status = 200) => new Response(JSON.stringify(isi), { status, headers: { "content-type": "application/json" } });
   const html = (isi: string) => new Response(isi, { status: 200, headers: { "content-type": "text/html" } });
-  const nilaiDari = (kode: string[]) => {
+  const nilaiDari = (kode: string[], tjKode: Set<string>) => {
     const n: Record<string, unknown> = {};
-    for (const k of kode) n[k] = abt[k] !== undefined && abt[k] !== "" ? { status: "terisi", teks: abt[k] } : k === "0001" ? { status: "terisi", teks: "581/Pdt.G/2026/PA.Dgl" } : k === "0046" ? { status: "terisi", teks: "Yulfiani binti Tasbih" } : { status: "kosong", teks: "" };
+    for (const k of kode) {
+      // Tanya-jawab: bot menilai "terisi" bila ABT punya barisnya (teksnya sendiri kosong, nilainya tabel).
+      const v = tjKode.has(k)
+        ? tj[k]?.length
+          ? { status: "terisi", teks: "", nama: "", sebab: "" }
+          : { status: "kosong", teks: "", nama: "", sebab: "tanya-jawab belum diisi di ABT" }
+        : abt[k] !== undefined && abt[k] !== "" ? { status: "terisi", teks: abt[k], nama: "", sebab: "" } : k === "0001" ? { status: "terisi", teks: "581/Pdt.G/2026/PA.Dgl", nama: "", sebab: "" } : k === "0046" ? { status: "terisi", teks: "Yulfiani binti Tasbih", nama: "", sebab: "" } : { status: "kosong", teks: "", nama: "", sebab: "" };
+      n[k] = statusNilaiLayar(v, tjKode.has(k));
+    }
     return n;
   };
   w.fetch = async (alamat: string, opsi?: { method?: string; body?: unknown; redirect?: string }) => {
@@ -222,9 +230,8 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
       const berkas = q.get("berkas") || "";
       const put = berkas.startsWith("[01]");
       const s = susunIsian(put ? PENANDA_PUT : PENANDA_BAS, KATALOG, { P: q.get("sebutanP") || "Penggugat", T: q.get("sebutanT") || "Tergugat" });
-      const semua = q.get("semua") === "1";
-      const kode = semua ? [...new Set([...s.penanda, ...s.isian.map((b) => b.kode), ...s.otomatis.map((o) => o.kode)])] : [...s.isian.filter((b) => b.jenis !== "tj").map((b) => b.kode), ...s.pemicu.map((x) => x.kode)];
-      return json({ ok: true, data: { ada: true, folder: `derry_briantono/${q.get("folder")}`, berkas: `${berkas}.rtf`, jumlahPenanda: s.penanda.length, sumberKatalog: "abt", katalogTersedia: true, ...s, nilai: q.get("perkaraId") ? nilaiDari(kode) : undefined, nilaiAda: Boolean(q.get("perkaraId")), nilaiSebab: "" } });
+      const kode = kodeUntukNilai(s, q.get("semua") === "1");
+      return json({ ok: true, data: { ada: true, folder: `derry_briantono/${q.get("folder")}`, berkas: `${berkas}.rtf`, jumlahPenanda: s.penanda.length, sumberKatalog: "abt", katalogTersedia: true, ...s, nilai: q.get("perkaraId") ? nilaiDari(kode, kodeTanyaJawab(s)) : undefined, nilaiAda: Boolean(q.get("perkaraId")), nilaiSebab: "" } });
     }
     if (url.includes("/aleta-bot/abt/pdf")) {
       const b = JSON.parse(badan || "{}");
@@ -790,6 +797,30 @@ describe("audit 17 Okt: perbaikan isian ABT", () => {
     expect(mintaKe(h, /main\/cari$/, "POST").length).toBe(2);
     klik(h, '[data-bd2="muatprat"]');
     await sampai(() => mintaKe(h, /abt\/preview\?/).length === 1, "pratinjau jalan setelah diizinkan");
+  });
+});
+
+describe("audit 17 Okt: E4 tanya jawab yang sudah ada di ABT", () => {
+  it("E4: kodeUntukNilai membaca tanya-jawab (penanda dan penyuntingnya); peringatan cetak tidak menyebut saksi yang sudah punya baris di ABT", async () => {
+    const s = susunIsian(PENANDA_PUT, KATALOG, { P: "Penggugat", T: "Tergugat" });
+    const tjb = s.isian.filter((b) => b.jenis === "tj");
+    expect(tjb.length).toBeGreaterThan(0);
+    const dibaca = kodeUntukNilai(s, false);
+    for (const b of tjb) {
+      expect(dibaca).toContain(b.kode);
+      if (b.tj?.kodeSunting) expect(dibaca).toContain(b.tj.kodeSunting);
+    }
+    const h = buka();
+    await pilihPutusan(h);
+    await sampai(() => q(h, '[data-bk="P.1"][data-isi="no"]'), "bukti");
+    klik(h, '[data-bd2="cetak"]');
+    const ingat = await sampai(() => {
+      const e = q(h, "#bd-ingat");
+      return e && !e.hidden ? e : null;
+    }, "pengingat");
+    // Saksi 1 P punya 2 baris di ABT (tanpa dibuka di layar); saksi 2 P kosong.
+    expect(ingat.textContent).not.toMatch(/tanya jawab saksi 1/i);
+    expect(ingat.textContent).toMatch(/tanya jawab saksi 2/i);
   });
 });
 

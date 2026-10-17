@@ -200,7 +200,7 @@ describe("B. GET /aleta-ecourt/blangko-derry", () => {
       if (op === "abt.nilaiPenanda") {
         expect(p.perkaraId).toBe("10154");
         expect(p.sidangKe).toBe(2);
-        expect((p.penanda as string[]).sort()).toEqual(["0156", "11111", "8503"]);
+        expect((p.penanda as string[]).sort()).toEqual(["0156", "11111", "2021", "5058", "8503"]); // 17 Okt (E4): tanya-jawab ikut dibaca (penanda + penyunting)
         return { ok: true, data: { ok: true, nilai: { "8503": { status: "terisi", teks: "F", nama: "ALASAN" }, "0156": { status: "kosong", teks: "" }, "11111": { status: "terisi", teks: "<mark>(WAJIB ISI INI KARENA KUASA)</mark>" } } } };
       }
       return { ok: false, error: "tidak dikenal" };
