@@ -38,6 +38,41 @@ const SAKLAR_SIPP_IDE = {
 const SAKLAR_ABT = {
   gembokAbt: ["gembokKepalaAbt", false],
 };
+/**
+ * Butir 41 (17 Okt, audit): centang "Kehadiran sidang" dan "Draf putusan H-7"
+ * = kotak yang BENAR-BENAR tampil. UI Baru: bawaan menyala, tampil walau
+ * Checklist milestone mati. Baru (Klasik): kotaknya hanya ada di atas
+ * checklist dan hanya bila dinyalakan sendiri - tanpa Checklist milestone
+ * saklarnya tidak tercentang dan tidak dapat diubah. Lama: popup tidak diubah.
+ */
+const KOTAK_WIDGET_SIDANG = ["widgetKehadiran", "widgetDrafH7"];
+const nilaiKotakWidget = { checklistMilestone: false, widgetKehadiran: undefined, widgetDrafH7: undefined };
+function selaraskanSaklarKotakWidget() {
+  let mode = "lama";
+  try {
+    mode = modePopupBerlaku().mode;
+  } catch {
+    mode = "lama";
+  }
+  const checklist = nilaiKotakWidget.checklistMilestone === true;
+  for (const kunci of KOTAK_WIDGET_SIDANG) {
+    const k = document.getElementById(kunci);
+    if (!k) continue;
+    const v = nilaiKotakWidget[kunci];
+    if (mode !== "baru") {
+      // UI Baru: bawaan menyala, tampil walau Checklist milestone mati. Lama: popup
+      // tetap persis seperti sebelumnya (syarat mutlak Tampilan Lama).
+      k.checked = v !== false;
+      if (k.disabled) k.disabled = false;
+      if (k.hasAttribute("title")) k.removeAttribute("title");
+    } else {
+      k.checked = checklist && v === true;
+      k.disabled = !checklist;
+      if (k.disabled) k.title = "Di tampilan Baru kotak ini tampil di atas Checklist milestone - nyalakan Checklist milestone dulu.";
+      else if (k.hasAttribute("title")) k.removeAttribute("title");
+    }
+  }
+}
 
 /**
  * Penyimpanan ekstensi, bila memang sedang berjalan sebagai ekstensi.
@@ -260,6 +295,9 @@ function pasangNilai(simpan) {
     const k = document.getElementById(id);
     if (k) k.checked = bawaan ? simpan[kunci] !== false : simpan[kunci] === true;
   }
+  nilaiKotakWidget.checklistMilestone = simpan.checklistMilestone === true;
+  for (const kunci of KOTAK_WIDGET_SIDANG) nilaiKotakWidget[kunci] = typeof simpan[kunci] === "boolean" ? simpan[kunci] : undefined;
+  selaraskanSaklarKotakWidget();
 
   // Alamat portal dicatat skrip konten saat halaman SIPP dibuka. Popup
   // berjalan di origin chrome-extension://, sehingga tautan relatif di sini
@@ -517,14 +555,29 @@ try {
   /* di luar konteks ekstensi */
 }
 if (kotakChecklist) {
-  kotakChecklist.addEventListener("change", () => simpan("checklistMilestone", kotakChecklist.checked, kotakChecklist));
+  kotakChecklist.addEventListener("change", () => {
+    nilaiKotakWidget.checklistMilestone = kotakChecklist.checked;
+    selaraskanSaklarKotakWidget();
+    simpan("checklistMilestone", kotakChecklist.checked, kotakChecklist);
+  });
   // × di kepala widget mematikan saklar ini. Centangnya ikut lepas di sini
   // selama jendela ini terbuka - centang yang tertinggal menyala sementara
   // widgetnya sudah tertutup adalah saklar yang berbohong.
   try {
     chrome.storage.onChanged.addListener((ubah, tempat) => {
-      if (tempat !== "local" || !ubah.checklistMilestone) return;
-      kotakChecklist.checked = ubah.checklistMilestone.newValue === true;
+      if (tempat !== "local") return;
+      if (ubah.checklistMilestone) {
+        kotakChecklist.checked = ubah.checklistMilestone.newValue === true;
+        nilaiKotakWidget.checklistMilestone = kotakChecklist.checked;
+      }
+      let ada = Boolean(ubah.checklistMilestone);
+      for (const kunci of KOTAK_WIDGET_SIDANG) {
+        if (!(kunci in ubah)) continue;
+        const v = ubah[kunci].newValue;
+        nilaiKotakWidget[kunci] = typeof v === "boolean" ? v : undefined;
+        ada = true;
+      }
+      if (ada) selaraskanSaklarKotakWidget();
     });
   } catch {
     /* di luar konteks ekstensi */
@@ -995,6 +1048,7 @@ function terapkanKulitPopup() {
   else akar.removeAttribute("data-kulit");
   // Susunan Tahap 2 ikut tampilan yang dipilih - lihat bagian TAHAP 2 di bawah.
   jadwalkanSusunan();
+  selaraskanSaklarKotakWidget();
 }
 
 async function muatUjiPopup() {
