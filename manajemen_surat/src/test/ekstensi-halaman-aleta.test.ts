@@ -166,7 +166,7 @@ describe("berkasnya benar-benar dimuat dan ditanam", () => {
     );
     expect(entri).toBeTruthy();
     // checklist.js - widget checklist milestone, paling belakang.
-    expect(entri.js).toEqual(["panel-alat.js", "aleta.js", "checklist.js"]);
+    expect(entri.js).toEqual(["deteksi-sisa-blangko.js", "panel-alat.js", "aleta.js", "checklist.js"]);
     expect(entri.css).toEqual(["panel.css"]);
   });
 

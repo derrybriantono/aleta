@@ -86,7 +86,7 @@ router.use(pagarTanda);
 function kirimGalat(res, galat) {
   const mentah = String((galat && galat.message) || galat || "galat");
   // Rincian teknis (ER_*, SQL) hanya di log; layar mendapat kalimat awam.
-  if (!(galat && galat.ditolak)) console.error("[abtPengaturan] galat:", mentah);
+  if (!(galat && galat.ditolak)) console.error("[abtPengaturan] kesalahan:", mentah);
   const pesan = kalimatAwam(mentah).slice(0, 500);
   if (galat && galat.ditolak) {
     const status = galat.kode === "berubah" ? 409 : galat.kode === "tidak_ada" ? 404 : 400;

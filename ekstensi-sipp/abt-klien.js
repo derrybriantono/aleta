@@ -88,11 +88,11 @@ function abtKlienSebabBukanJawaban(teks) {
   if (/A PHP Error was encountered|A Database Error Occurred|<b>(Fatal error|Warning|Notice)<\/b>/i.test(t)) {
     // Temuan audit D7: rincian PHP/basis data (nama berkas, baris, akun) bukan untuk petugas - cukup di console.
     try {
-      if (typeof console !== "undefined" && console.warn) console.warn("[ALETA] galat PHP dari ABT:", abtKlienSebaris(t.slice(0, 600)).slice(0, 400));
+      if (typeof console !== "undefined" && console.warn) console.warn("[ALETA] kesalahan PHP dari ABT:", abtKlienSebaris(t.slice(0, 600)).slice(0, 400));
     } catch {
       /* console hanya catatan */
     }
-    return { jenis: "galat-php", pesan: "ABT mengalami galat pada halaman ini (bukan dari ALETA). Coba lagi sebentar lagi; bila berulang, hubungi admin ABT." };
+    return { jenis: "galat-php", pesan: "ABT mengalami kesalahan pada halaman ini (bukan dari ALETA). Coba lagi sebentar lagi; bila berulang, hubungi admin ABT." };
   }
   return null;
 }

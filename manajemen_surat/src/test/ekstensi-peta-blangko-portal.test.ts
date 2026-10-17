@@ -141,8 +141,8 @@ function portalDengan(barisPeta: BarisGabung[], barisPadanan: BarisGabung[] = []
   return () => ({ ok: true, status: 200, json: async () => polos(isi) }) as Jawab;
 }
 
-const WASIAT = { kunci: "wasiat", nilai: "[01] [Kabul] Wasiat", data: { jenisAsli: "Wasiat" }, urutan: 4 };
-const PADANAN_WASIAT = { kunci: "wasiat", nilai: "wasiat khusus", urutan: 10 };
+const WASIAT = { kunci: "jenis uji tambahan", nilai: "[01] [Kabul] Wasiat", data: { jenisAsli: "Wasiat" }, urutan: 4 };
+const PADANAN_WASIAT = { kunci: "jenis uji tambahan", nilai: "wasiat khusus", urutan: 10 };
 const portalMati = () => Promise.reject(new TypeError("Failed to fetch"));
 
 /** Peta yang sudah pernah dipakai di satu peramban: cerai gugat bertoken. */
@@ -170,7 +170,7 @@ const KUNCI_BAWAAN = CERMIN_EKSTENSI["putusan.peta-blangko"].map((e) => e.kunci)
 
 // ============================================================================
 describe("satu jenis tambahan di portal berlaku untuk dua peramban, token tetap per peramban", () => {
-  // Jumlah bawaan dihitung dari cermin, bukan diketik. Jenis tambahan dipilih yang TIDAK berbawaan (Wasiat; Perwalian sudah bawaan sejak Q3 16 Okt).
+  // Jumlah bawaan dihitung dari cermin, bukan diketik. Jenis tambahan dipilih yang TIDAK berbawaan (kunci rekaan "jenis uji tambahan": Wasiat dan Perwalian sudah bawaan sejak pemetaan 16-17 Okt).
   it("tanpa portal: semua jenis bawaan; dengan Wasiat disahkan di portal: bawaan + 1 di KEDUA peramban", async () => {
     const tanpa = peramban(portalMati);
     const petaTanpa = await tanpa.muat();
@@ -187,20 +187,20 @@ describe("satu jenis tambahan di portal berlaku untuk dua peramban, token tetap 
 
     for (const peta of [petaA, petaB]) {
       expect(Object.keys(peta)).toHaveLength(KUNCI_BAWAAN.length + 1);
-      expect(peta.wasiat).toMatchObject({ jenisAsli: "Wasiat", berkas: "[01] [Kabul] Wasiat", bawaan: true });
+      expect(peta["jenis uji tambahan"]).toMatchObject({ jenisAsli: "Wasiat", berkas: "[01] [Kabul] Wasiat", bawaan: true });
     }
     // Token a/b milik masing-masing peramban, tidak tertukar dan tidak dilepas
     // (berkasnya berakhiran .RTF - nama yang SAMA menurut alatKunciBerkas).
     expect([petaA["cerai gugat"].a, petaA["cerai gugat"].b]).toEqual(["tokenAAAAAAAA~1", "tokenBBBBBBBB~1"]);
     expect([petaB["cerai gugat"].a, petaB["cerai gugat"].b]).toEqual(["tokenCCCCCCCC~2", "tokenDDDDDDDD~2"]);
     // Tersimpan di penyimpanan peramban masing-masing, bukan dikirim ke portal.
-    expect((A.simpanan[KUNCI_PETA] as any).wasiat.berkas).toBe("[01] [Kabul] Wasiat");
+    expect((A.simpanan[KUNCI_PETA] as any)["jenis uji tambahan"].berkas).toBe("[01] [Kabul] Wasiat");
     expect((A.simpanan[KUNCI_PETA] as any)["cerai gugat"].a).toBe("tokenAAAAAAAA~1");
     // Satu permintaan per peramban: padanan lalu peta memakai versi yang sama.
     expect(A.permintaan).toHaveLength(1);
     expect(B.permintaan).toHaveLength(1);
     // Padanan dari portal ikut berlaku: nama lain SIPP menunjuk baris baru.
-    expect(A.k.alatKunciJenis("Wasiat Khusus")).toBe("wasiat");
+    expect(A.k.alatKunciJenis("Wasiat Khusus")).toBe("jenis uji tambahan");
     expect(petaA[A.k.alatKunciJenis("Wasiat Khusus")].berkas).toBe("[01] [Kabul] Wasiat");
   });
 

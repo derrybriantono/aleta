@@ -499,7 +499,7 @@
           .find((f) => Date.now() - f.saat < UMUR_FORM_MS && kunci.includes(f.aksi));
 
     if (kiriman) {
-      if (!kiriman.badan) return { ok: false, ditangani: true, pesan: "borang berisi berkas tidak dapat diulang" };
+      if (!kiriman.badan) return { ok: false, ditangani: true, pesan: "formulir berisi berkas tidak dapat diulang" };
       const opsiPost = { ...dasar, metode: "POST", badan: kiriman.badan };
       if (!postBacaSaja(sasaran)) {
         // POST yang tidak terbukti baca-saja: JANGAN diulang sendiri.
