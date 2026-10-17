@@ -1001,6 +1001,22 @@ export const modules: ModuleConfig[] = [
     badgeLabel: "Kinerja",
   },
   {
+    // Blangko pribadi (18 Okt 2026): hanya hakim, panitera, dan konseptor
+    // (panitera muda / pengganti); isinya milik pembuatnya sendiri.
+    id: "blangko-saya",
+    label: "Blangko Saya",
+    description: "Sunting atau unggah blangko sendiri, petakan isiannya, lalu pakai untuk putusan mandiri atau ajukan untuk ABT.",
+    href: "/blangko-saya",
+    icon: "file-text",
+    roleIds: ["super-admin", "admin", "ketua", "wakil-ketua", "hakim", "panitera", "panitera-muda", "panitera-pengganti"],
+    showInHub: true,
+    showInSidebar: true,
+    iconBgClass: "bg-emerald-100",
+    iconFgClass: "text-emerald-700",
+    cardClass: "border-emerald-200/80 bg-emerald-50/70",
+    badgeLabel: "Blangko",
+  },
+  {
     id: "disposisi",
     label: "Disposisi Digital",
     description: "Teruskan disposisi dan pantau penyelesaiannya.",
@@ -1795,6 +1811,18 @@ export const portalApps: PortalAppConfig[] = [
     iconBgClass: "bg-sky-100 dark:bg-sky-500/15",
     iconFgClass: "text-sky-700 dark:text-sky-200",
     cardClass: "border-sky-200/80 bg-sky-50/80 dark:border-sky-500/20 dark:bg-slate-900/80",
+  },
+  {
+    id: "blangko-saya",
+    label: "Blangko Saya",
+    description: "Blangko pribadi: sunting atau unggah, petakan isiannya, lalu pakai untuk putusan mandiri atau ajukan untuk ABT.",
+    href: "/blangko-saya",
+    icon: "file-text",
+    roleIds: ["super-admin", "admin", "ketua", "wakil-ketua", "hakim", "panitera", "panitera-muda", "panitera-pengganti"],
+    badgeLabel: "Blangko",
+    iconBgClass: "bg-emerald-100 dark:bg-emerald-500/15",
+    iconFgClass: "text-emerald-700 dark:text-emerald-200",
+    cardClass: "border-emerald-200/80 bg-emerald-50/80 dark:border-emerald-500/20 dark:bg-slate-900/80",
   },
   {
     id: "e-kepegawaian",

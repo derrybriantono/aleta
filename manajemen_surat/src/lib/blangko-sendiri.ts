@@ -590,7 +590,9 @@ export function usulkanPemetaan(bagian: BagianSendiri[], isian: IsianTerdeteksi[
     const kiri = p.slice(Math.max(0, i.awal - 80), i.awal);
     const potongKiri = kiri.split(/[.;\n]/).pop() ?? kiri;
     const dalamKurung = i.jenis === "kurung" ? i.asli.slice(1, -1) : "";
-    const label = `${dalamKurung} ${potongKiri}`;
+    // Isi kurung lebih menentukan daripada tulisan di kirinya ("pada [tanggal putusan] oleh [nama ketua]").
+    const labelSendiri = dalamKurung && jenisEfektif(i, dalamKurung) !== "kurung" ? dalamKurung : `${dalamKurung} ${potongKiri}`;
+    const label = labelSendiri;
     const jenis = jenisEfektif(i, label);
     const { kunci, kuat } = tentukanKunci(jenis, label);
 
@@ -871,6 +873,7 @@ export function susunDaftarIsianTxt(daftar: ButirDaftarPaket, opsi: { nama: stri
 /** Peran yang boleh membuat blangko sendiri (peran utama berlaku). */
 export const PERAN_BUAT_BLANGKO_SENDIRI: ReadonlySet<string> = new Set([
   "super-admin",
+  "admin",
   "hakim",
   "ketua",
   "wakil-ketua",

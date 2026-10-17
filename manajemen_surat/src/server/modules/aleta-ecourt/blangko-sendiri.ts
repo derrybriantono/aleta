@@ -127,7 +127,7 @@ function peranAktor(aktor: AktorBlangko): string {
 export function pastikanBolehBlangkoSendiri(aktor: AktorBlangko) {
   if (!aktor?.id) throw new ApiError(401, "Masuk dulu untuk membuat blangko sendiri.");
   if (!bolehBuatBlangkoSendiri(peranAktor(aktor))) {
-    throw new ApiError(403, "Buat blangko sendiri hanya untuk Hakim, Panitera, dan Konseptor (Panitera Pengganti).");
+    throw new ApiError(403, "Buat blangko sendiri hanya untuk Hakim, Panitera, Konseptor (Panitera Muda/Pengganti), dan Admin.");
   }
 }
 

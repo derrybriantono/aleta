@@ -55,6 +55,8 @@ export type ModuleId =
   // SKP pegawai (17 Okt 2026): realisasi bulanan/triwulan/tahunan dari SIPP
   // untuk semua jabatan perkara, isian manual berbukti, target, dan penetapan.
   | "skp"
+  // Buat blangko sendiri (18 Okt 2026): blangko pribadi hakim, panitera, konseptor.
+  | "blangko-saya"
   // Peta perkara - sebaran wilayah, faktor perceraian, dan siapa yang
   // mengajukan. Terpisah dari "statistik" sebagaimana beban konseptor:
   // statistik menghitung perkara, ini menghitung ASAL perkara.
@@ -118,6 +120,8 @@ export type PortalAppId =
   | "bas"
   // SKP pegawai: tab yang tampil mengikuti hak (lihat matriks-peran).
   | "skp"
+  // Buat blangko sendiri (18 Okt 2026): blangko pribadi hakim, panitera, konseptor.
+  | "blangko-saya"
   | "e-kepegawaian"
   | "e-status"
   | "sipp"
