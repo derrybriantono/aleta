@@ -159,12 +159,18 @@ function permohonan(jenis: JenisBaru, m: MasukanBasBaru, n: number, agenda: stri
   // Itsbat gugur/cabut sudah dilayani peta 946 (alur-bas-kumulasi): tidak diubah.
   if (jenis === "itsbat" && (akhir === "cabut" || akhir === "gugur")) return null;
 
+  // I16 18 Okt (paket abt-celah-bas-derry): perwalian, wali adhal, AUA, PAW, pengangkatan anak, dan DK (G) punya BAS cabut [C] / gugur [G] di folder
+  // "<jenis> - BAS" sendiri; sebelumnya cabut/gugur menunjuk BAS permohonan umum (9b). Itsbat tetap peta 946 (null di atas). T dan N tetap di 9b.
   if (akhir === "cabut") {
-    return jenis === "dk"
-      ? buat("alur-12l", "C", [], false, "Dispensasi kawin dicabut sesudah nasihat hakim.")
-      : buat("alur-15", "C", [], false, `${namaJenis} dicabut: BAS permohonan umum.`);
+    if (jenis === "dk") return buat("alur-12l", "C", [], false, "Dispensasi kawin dicabut sesudah nasihat hakim.");
+    return (id ? buat(id, "C", [], false, `${namaJenis} dicabut: Pemohon hadir mencabut permohonan.`) : null) ?? buat("alur-15", "C", [], false, `${namaJenis} dicabut: BAS permohonan umum.`);
   }
-  if (akhir === "gugur") return buat("alur-15", "G", ["T", "N"], false, `${namaJenis} gugur (Pemohon tidak pernah hadir): BAS permohonan umum.`);
+  if (akhir === "gugur") {
+    return (
+      (id ? buat(id, "G", [], false, `${namaJenis} gugur (Pemohon tidak pernah hadir).`) : null) ??
+      buat("alur-15", "G", ["T", "N"], false, `${namaJenis} gugur (Pemohon tidak pernah hadir): BAS permohonan umum.`)
+    );
+  }
   if (akhir === "no") {
     return jenis === "paw"
       ? buat("alur-14", "NO", [], false, "Permohonan kabur dan tidak diperbaiki: tidak dapat diterima.")
@@ -238,6 +244,12 @@ function gugatanKebendaan(jenis: "hb" | "waris", m: MasukanBasBaru, n: number, a
   if (akhir === "no") return buat(id31, "NO", ["TP"], false, `${nama}: Penggugat dua kali tidak hadir - tidak dapat diterima (SEMA 1/2022).`);
   if (akhir === "cabut") return buat(id31, "CB", ["AP"], false, `${nama}: gugatan dicabut.`);
   if (RX_DAMAI.test(agenda)) return buat(id31, "AP", ["CB"], false, `${nama}: mediasi berhasil - akta perdamaian (atau gugatan dicabut).`);
+  // I16 18 Okt: harta bersama punya BAS verstek (ALUR 31 V1 sidang 1 tunda panggil T, V2 sidang 2 pembuktian dan putusan verstek); kewarisan (ALUR 33) belum.
+  if (jenis === "hb" && h === 2 && m.tergugatPernahHadir !== true) {
+    return n <= 1
+      ? buat(id31, "V1", ["V2"], false, `${nama} sidang 1: Penggugat hadir, Tergugat tidak hadir - tunda panggil T.`)
+      : buat(id31, "V2", ["V1"], n > 2, `${nama} sidang ke-${n}: Tergugat tetap tidak hadir - pembuktian dan putusan verstek.`);
+  }
   if (h === 3 || h === 4) return buat(id31, "TP", ["NO"], true, `${nama}: Penggugat tidak hadir - tunda panggil P; bila sudah dua kali tidak hadir: putusan NO.`);
   if (RX_SETEMPAT.test(agenda)) return buat(id30, "PS", ["I2"], false, `${nama}: sidang pemeriksaan setempat di lokasi objek.`);
   if (RX_SELA.test(agenda)) return buat(id30, "I2", ["PS"], false, `${nama}: pembacaan putusan sela (sita atau pemeriksaan setempat).`);
@@ -394,38 +406,70 @@ function itsbatKontensius(m: MasukanBasBaru, n: number, agenda: string): HasilBa
 const PETA_KUMULASI_ITSBAT: Record<string, Record<string, string>> = {
   "alur-02": { "1": "S1", "1a": "S1", "2": "P2", "2a": "P3", "2b": "P3", "2c": "P3" },
   "alur-03": { "1": "S1", "1a": "S1", "2": "L", "3": "P2", "3a": "P3", "3b": "P3", "3c": "P3" },
+  // I16 18 Okt: Tergugat HADIR (kontradiktoir, ALUR 04) pada cerai kumulasi itsbat: sidang 1-9 -> H1-H9; BAS saksi 3/4/5 dipetakan ke sidang pembuktian yang sama.
+  "alur-04": { "1": "H1", "2": "H2", "3": "H3", "4": "H4", "5": "H5", "5a": "H5", "6": "H6", "6a": "H6", "6b": "H6", "6c": "H6", "7": "H7", "7a": "H7", "7b": "H7", "8": "H8", "9": "H9" },
 };
 const PETA_KUMULASI_ASUH: Record<string, string> = { "1": "1", "2": "2", "3": "3", "4": "4", "5": "5", "5a": "5", "6": "6", "6a": "6", "6b": "6", "6c": "6", "7": "7", "7a": "7", "7b": "7", "8": "8", "9": "9" };
+/**
+ * I16 18 Okt (paket abt-celah-bas-derry): akhir perkara dan P & T tidak hadir pada cerai kumulasi - BAS cerai (ALUR 07 gugur, 08 cabut, 04 [T]) dipetakan ke
+ * langkah ALUR 36 (1c) / ALUR 37 (1d): tunda panggil P & T TT, gugur G, cabut CA (sidang pertama sebelum mediasi) / CB (gugatan salah) / CD (mediasi berhasil).
+ * Mediasi berhasil ALUR 08 [C1] memakai H1 (1c) / "1" (1d) yang sudah ada.
+ */
+const PETA_KUMULASI_LAIN: Record<string, Record<string, string>> = {
+  "alur-07": { "1": "TT", "3": "G" },
+  "alur-08": { A: "CA", B: "CB", C2: "CD" },
+  "alur-04": { T: "TT" },
+};
+/** Khusus 1d (kumulasi hak asuh): Tergugat tidak hadir, tunda panggil T (sidang 1 T1, lanjutan T2) dan NO karena alamat T salah (N1 sidang 1, N2 putus NO). */
+const PETA_KUMULASI_ASUH_TUNDA: Record<string, Record<string, string>> = {
+  "alur-02": { "1": "T1" },
+  "alur-03": { "1": "T1", "2": "T2" },
+  "alur-09": { "1": "N1", "2": "N2" },
+};
 
-/** Cerai + kumulasi: itsbat verstek (ALUR 36, folder 1c) dan hak asuh kontradiktoir (ALUR 37, folder 1d). */
+/** Cerai + kumulasi: itsbat (ALUR 36, folder 1c: verstek dan Tergugat hadir) dan hak asuh (ALUR 37, folder 1d: kontradiktoir dan tunda/cabut/gugur/NO). */
 function ceraiKumulasi(jenis: JenisBaru, m: MasukanBasBaru): HasilBasBaru | null {
-  if (m.akhir) return null;
   const butir = butirKumulasiAlur(m.kumulasi);
   const ada = (k: string) => butir.some((b) => b.kode === k);
   const dasar = tentukanAlurBasKumulasi(m);
   if (!dasar.alur || !dasar.langkah) return null;
-  if (jenis === "cerai-gugat" && ada("hak-asuh-anak") && dasar.alur.id === "alur-04") {
-    const kode = PETA_KUMULASI_ASUH[dasar.langkah.kode];
-    if (!kode) return null;
-    const sebagian = kode === "2" && /berhasil\s+sebagian|kesepakatan\s+sebagian|hak\s+asuh/i.test(String(m.agenda ?? ""));
-    return buat(
-      "alur-37",
-      sebagian ? "2m" : kode,
-      kode === "2" ? (sebagian ? ["2"] : ["2m"]) : [],
-      dasar.perkiraan,
-      `${dasar.sebab} Kumulasi hak asuh anak kontradiktoir: BAS ALUR 37 (folder 1d).`
-    );
+  const idDasar = dasar.alur.id;
+  const kodeDasar = dasar.langkah.kode;
+  const h = m.dihadiriOleh;
+  const n = Number.isFinite(m.urutanSidang) && m.urutanSidang > 0 ? Math.floor(m.urutanSidang) : 1;
+  if (jenis === "cerai-gugat" && ada("hak-asuh-anak")) {
+    // I16 18 Okt: Penggugat tidak hadir pada sidang lanjutan (T hadir) - tunda panggil P [TP], atau NO bila akhirnya tidak dapat diterima (SEMA 1/2022).
+    if (m.akhir === "no" && h === 3) return buat("alur-37", "NO", ["TP"], false, "Kumulasi hak asuh anak: Penggugat dua kali tidak hadir - tidak dapat diterima (SEMA 1/2022). BAS ALUR 37 (folder 1d).");
+    if (!m.akhir && h === 3 && n >= 2) {
+      return buat("alur-37", "TP", ["NO"], true, "Kumulasi hak asuh anak: Penggugat tidak hadir pada sidang lanjutan - tunda panggil P; bila sudah dua kali tidak hadir: putusan NO. BAS ALUR 37 (folder 1d).");
+    }
+    const kode = idDasar === "alur-04" && !m.akhir ? PETA_KUMULASI_ASUH[kodeDasar] : undefined;
+    if (kode) {
+      const sebagian = kode === "2" && /berhasil\s+sebagian|kesepakatan\s+sebagian|hak\s+asuh/i.test(String(m.agenda ?? ""));
+      return buat(
+        "alur-37",
+        sebagian ? "2m" : kode,
+        kode === "2" ? (sebagian ? ["2"] : ["2m"]) : [],
+        dasar.perkiraan,
+        `${dasar.sebab} Kumulasi hak asuh anak kontradiktoir: BAS ALUR 37 (folder 1d).`
+      );
+    }
+    const lain = PETA_KUMULASI_LAIN[idDasar]?.[kodeDasar] ?? PETA_KUMULASI_ASUH_TUNDA[idDasar]?.[kodeDasar];
+    if (!lain) return null;
+    return buat("alur-37", lain, [], dasar.perkiraan, `${dasar.sebab} Kumulasi hak asuh anak: BAS ALUR 37 (folder 1d).`);
   }
   if ((jenis === "cerai-gugat" || jenis === "cerai-talak") && ada("itsbat-nikah") && !ada("hak-asuh-anak")) {
-    const kode = PETA_KUMULASI_ITSBAT[dasar.alur.id]?.[dasar.langkah.kode];
+    const kode = (m.akhir ? undefined : PETA_KUMULASI_ITSBAT[idDasar]?.[kodeDasar]) ?? PETA_KUMULASI_LAIN[idDasar]?.[kodeDasar];
     if (!kode) return null;
     const dariPetitum = butir.some((b) => b.kode === "itsbat-nikah" && b.sumber === "petitum");
+    // Verstek (ALUR 02/03): kalimat lama; Tergugat hadir / tunda / cabut / gugur (I16 18 Okt): tanpa kata verstek.
+    const verstek = idDasar === "alur-02" || idDasar === "alur-03";
     return buat(
       "alur-36",
       kode,
       kode === "P2" ? ["P3"] : kode === "P3" ? ["P2"] : [],
       dasar.perkiraan,
-      `${dasar.sebab} Kumulasi itsbat nikah verstek: BAS ALUR 36 (folder 1c) memuat amar itsbat.` +
+      `${dasar.sebab} Kumulasi itsbat nikah${verstek ? " verstek" : ""}: BAS ALUR 36 (folder 1c) memuat amar itsbat.` +
         (dariPetitum ? " Kumulasi baru terbaca dari petitum - lengkapi data kumulasi di SIPP." : "")
     );
   }
