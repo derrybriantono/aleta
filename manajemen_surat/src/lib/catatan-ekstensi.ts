@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.2",
+    dirilis: "2026-10-18T02:00:00+08:00",
+    judul: "Sesi e-Court pulih sendiri, captcha lewat WhatsApp, perintah e-Court dari chat, dan isian e-Litigasi #7139# otomatis",
+    butir: [
+      "Sesi e-Court pulih otomatis saat server menyala dan perkara yang tertinggal selama mati ditarik susulan, sehingga petugas tidak perlu masuk ulang dan tidak ada perkara yang terlewat.",
+      "Bila e-Court meminta captcha, gambarnya dikirim ke WhatsApp admin dan dibalas dengan kode; captcha tetap dijawab manusia, dan sandi tidak pernah lewat WhatsApp.",
+      "Perintah e-Court lewat chat ALETA bot (status, tarik, masuk, batal, ringkas) agar sesi dapat dikendalikan dari ponsel tanpa membuka portal.",
+      "Isian e-Litigasi #7139# di Blangko Derry terisi otomatis dari data e-Court (1 = penuh bila Tergugat atau kuasanya ber-email, 2 = hybrid bila diunggah Panitera Sidang); isian yang sudah diubah manual tidak ditimpa.",
+      "Pilihan popup e-Litigasi kini berbunyi jelas: penuh atau hybrid, supaya tidak keliru memilih.",
+    ],
+  },
+  {
     versi: "1.205.1",
     dirilis: "2026-10-17T23:20:00+08:00",
     judul: "Audit menyeluruh, SKP semua jabatan, unduhan tanpa diblokir, deteksi sisa blangko, dan blangko-blangko baru",
