@@ -2036,6 +2036,7 @@
     let align = "";
     let dalamTabel = false;
     let selBaris = [];
+    let selPar = []; // paragraf (\par) sel yang sedang disusun; sel baru ditutup oleh \cell
     const tumpuk = [];
     let gaya = { b: false, i: false, u: false, lewati: false, uc: 1 };
     let buang = 0;
@@ -2049,10 +2050,26 @@
       if (akhir && akhir.b === gaya.b && akhir.i === gaya.i && akhir.u === gaya.u) akhir.t += teks;
       else runs.push({ t: teks, b: gaya.b, i: gaya.i, u: gaya.u });
     };
+    // Satu sel dapat berisi banyak paragraf: \par di dalam tabel hanya menambah paragraf sel; \cell menutup sel
+    // (paragraf digabung dengan baris baru, paragraf kosong di ujung - mis. "\par\cell" dari Word - dibuang).
+    const gabungSel = (lain, akhir) => {
+      const semua = [...lain, akhir];
+      while (semua.length > 1 && !semua[semua.length - 1].runs.some((r) => r.t.trim())) semua.pop();
+      const gabung = [];
+      semua.forEach((q, k) => {
+        if (k) gabung.push({ t: "\n", b: false, i: false, u: false });
+        gabung.push(...q.runs);
+      });
+      const ber = semua.find((q) => q.runs.some((r) => r.t.trim())) || semua[0];
+      return { align: ber.align, runs: gabung, jenis: "sel" };
+    };
     const tutupPar = (jenis) => {
       const p = { align: align || "", runs, jenis: jenis || "" };
-      if (dalamTabel) selBaris.push(p);
-      else par.push(p);
+      if (dalamTabel && jenis !== "sel") selPar.push(p);
+      else if (dalamTabel) {
+        selBaris.push(gabungSel(selPar, p));
+        selPar = [];
+      } else par.push(p);
       runs = [];
     };
     let i = 0;
@@ -2148,9 +2165,10 @@
           dalamTabel = true;
           tutupPar("sel");
         } else if (kata === "row") {
-          if (runs.length) tutupPar("sel");
+          if (runs.length || selPar.length) tutupPar("sel");
           par.push({ align: "", runs: [], jenis: "baris", sel: selBaris });
           selBaris = [];
+          selPar = [];
           dalamTabel = false;
         } else if (kata === "uc") gaya.uc = nilai === null ? 1 : nilai;
         else if (kata === "u") {
