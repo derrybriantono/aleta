@@ -330,7 +330,10 @@ describe("5. kalimat penutup saksi yang terbelah baris (data satker)", () => {
     const h = buka();
     expect(h.u.bersihkanKeteranganSaksi("Sudah\ncukup;")).toBe("");
     expect(h.u.bersihkanKeteranganSaksi("Sudah  cukup ;")).toBe("");
-    expect(h.u.bersihkanKeteranganSaksi("Sudah tidak sanggup lagi.")).toBe("");
+    // 17 Okt: "tidak sanggup lagi" hanya penutup bila pertanyaannya penutup (tanpa pertanyaan dibiarkan).
+    expect(h.u.bersihkanKeteranganSaksi("Sudah tidak sanggup lagi.")).toBe("Sudah tidak sanggup lagi.");
+    expect(h.u.bersihkanKeteranganSaksi("Sudah tidak sanggup lagi.", "Apakah masih ada yang ingin saudara sampaikan?")).toBe("");
+    expect(h.u.bersihkanKeteranganSaksi("Sudah tidak sanggup lagi.", "Apakah saksi masih sanggup untuk mendamaikan Penggugat dan Tergugat?")).toBe("Sudah tidak sanggup lagi.");
     expect(h.u.bersihkanKeteranganSaksi("Tergugat pergi sejak 2024;\nSudah cukup;")).toBe("Tergugat pergi sejak 2024;");
     expect(h.u.bersihkanKeteranganSaksi("Saksi sudah tidak sanggup lagi merukunkan keduanya;")).toBe(
       "Saksi sudah tidak sanggup lagi merukunkan keduanya;"

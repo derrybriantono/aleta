@@ -760,7 +760,8 @@ async function simpanVariabel(kode, nilai, jatiDiri) {
 // menunggu Tergugat" ikut terhapus dari keterangan saksi.
 const POLA_PENUTUP = [
   /^bahwa\s+sudah\s+cukup[\s;.,!:]*$/i,
-  /^bahwa\s+tidak\s+sanggup\s+lagi[\s;.,!:]*$/i,
+  // "tidak sanggup lagi" TIDAK lagi di daftar tegas: 17 Okt, ia jawaban perkara bila pertanyaannya
+  // soal mendamaikan; penentuannya ada di adalahKalimatPenutupSaksi(baris, pertanyaan).
   /^sudah\s+cukup[\s;.,!:]*$/i,
   // ==========================================================================
   // BENTUK TANPA "BAHWA" - DIPERLUKAN SEJAK PEMBERSIHAN MENYENTUH BASIS DATA
@@ -775,7 +776,6 @@ const POLA_PENUTUP = [
   // abt_keterangan_saksi, yang dibersihkan adalah kolom jawaban APA ADANYA -
   // dan di sana kata "Bahwa" tidak ada. "Sudah cukup" tertangkap pola ketiga;
   // "tidak sanggup lagi" tidak tertangkap satu pun, dan akan lolos diam-diam.
-  /^tidak\s+sanggup\s+lagi[\s;.,!:]*$/i,
   // ==========================================================================
   // DENGAN "SUDAH" DI TENGAHNYA - BENTUK YANG PALING SERING DIPAKAI
   // ==========================================================================
@@ -787,8 +787,6 @@ const POLA_PENUTUP = [
   //
   // Lolosnya tidak berbunyi - kalimatnya hanya tetap berdiri di dalam putusan,
   // di antara keterangan saksi yang lain, seolah ia fakta yang dibuktikan.
-  /^bahwa\s+sudah\s+tidak\s+sanggup\s+lagi[\s;.,!:]*$/i,
-  /^sudah\s+tidak\s+sanggup\s+lagi[\s;.,!:]*$/i,
 ];
 
 /**
@@ -798,7 +796,7 @@ const POLA_PENUTUP = [
  * penutup (spasi/baris dirapatkan) dibuang utuh; yang memuat kata lain tetap
  * diperiksa per baris seperti sebelumnya.
  */
-const POLA_PENUTUP_UTUH = /^(?:bahwa\s+)?(?:sudah\s+)?(?:cukup|tidak\s+sanggup\s+lagi)\s*[;.]?$/i;
+const POLA_PENUTUP_UTUH = /^(?:bahwa\s+)?(?:sudah\s+)?cukup\s*[;.]?$/i;
 
 /*
  * ============================================================================
@@ -853,8 +851,34 @@ const POLA_PENUTUP_LENTUR = new RegExp(
   "i"
 );
 
-/** Baris seluruhnya kalimat penutup (bentuk lentur)? Awalan "Bahwa" dan tanda baca ujung tidak dihitung. */
-function adalahKalimatPenutupSaksi(baris) {
+/*
+ * 17 Okt (keputusan pengguna): "Saya tidak sanggup lagi" ialah JAWABAN perkara atas "Apakah saksi masih
+ * sanggup mendamaikan ...?" (452 dari 453 kemunculan di data nyata), bukan penutup. Bentuk yang
+ * bermakna ganda itu (sanggup/kuat/mampu tanpa kata kerja menjawab/menerangkan) hanya dihitung penutup
+ * bila PERTANYAANNYA diketahui dan berupa pertanyaan penutup ("Apakah masih ada yang ingin saudara
+ * sampaikan?"). Tanpa pertanyaan (mis. teks sel gabungan) ia dibiarkan: lebih baik tinggal daripada
+ * menghapus keterangan perkara. Cermin aleta_bot/services/penutupSaksi.js.
+ */
+const POLA_KESANGGUPAN = /\b(?:sanggup|kuat|mampu)\b/i;
+const POLA_KERJA_MENJAWAB = /\b(?:menjawab|memberi(?:kan)?\s+keterangan|menerangkan|menjelaskan|melanjutkan|berbicara|bicara)\b/i;
+// Kata penutup yang pasti (mis. "tidak sanggup lagi, cukup sekian"): kalimat itu penutup apa pun pertanyaannya.
+const POLA_PENUTUP_PASTI = /\b(?:cukup|sekian|terima\s+kasih|tidak\s+ada|sampai\s+di\s+sini|demikian|hanya\s+itu|itu\s+saja)\b/i;
+const POLA_TANYA_PENUTUP =/masih\s+ada\b[^?]*\b(?:sampaikan|sampikan|disampaikan|tanyakan|keterangan|hal\s+lain)|\b(?:sudah\s+cukup|cukup\s+sekian)\b/i;
+const POLA_TANYA_KESANGGUPAN_PERKARA = /\b(?:sanggup|mampu|kuat|bisa|dapat)\b[^?]*(?:damai|rukun|nasihat|nasehat|pertahankan|bersatu|akur)/i;
+
+/** Pertanyaan penutup pemeriksaan saksi (bukan pertanyaan perkara)? */
+function pertanyaanPenutup(pertanyaan) {
+  const t = String(pertanyaan || "").replace(/\s+/g, " ").trim();
+  if (!t) return false;
+  if (POLA_TANYA_KESANGGUPAN_PERKARA.test(t)) return false;
+  return POLA_TANYA_PENUTUP.test(t);
+}
+
+/**
+ * Baris seluruhnya kalimat penutup (bentuk lentur)? Awalan "Bahwa" dan tanda baca ujung tidak dihitung.
+ * `pertanyaan` (opsional) = pertanyaan yang dijawab baris itu; menentukan bentuk bermakna ganda.
+ */
+function adalahKalimatPenutupSaksi(baris, pertanyaan) {
   const inti = String(baris || "")
     .replace(/^[\s\-–•*]+/, "")
     .replace(/\s+/g, " ")
@@ -865,17 +889,20 @@ function adalahKalimatPenutupSaksi(baris) {
   // 17 Okt (keputusan pengguna): "tidak ada yang (saya) ketahui" tanpa "lagi"/"lain" bisa jawaban
   // atas pertanyaan perkara ("tahukah saksi sebabnya?") - tinggal. Dengan "lagi"/"lain" = penutup.
   if (/\btidak\s+ada\b/i.test(inti) && /\b(?:ketahui|diketahui)\b/i.test(inti) && !/\b(?:lagi|lain)\b/i.test(inti)) return false;
-  return inti !== "" && POLA_PENUTUP_LENTUR.test(inti);
+  if (inti === "" || !POLA_PENUTUP_LENTUR.test(inti)) return false;
+  if (POLA_KESANGGUPAN.test(inti) && !POLA_KERJA_MENJAWAB.test(inti) && !POLA_PENUTUP_PASTI.test(inti)) return pertanyaanPenutup(pertanyaan);
+  return true;
 }
 
-function bersihkanKeteranganSaksi(teks) {
+/** `pertanyaan` (opsional): pertanyaan yang dijawab `teks`; tanpa itu "tidak sanggup lagi" dibiarkan. */
+function bersihkanKeteranganSaksi(teks, pertanyaan) {
   const rapat = String(teks || "").replace(/^[\s\-–•]+/, "").replace(/\s+/g, " ").trim();
-  if (rapat && (POLA_PENUTUP_UTUH.test(rapat) || adalahKalimatPenutupSaksi(rapat))) return "";
+  if (rapat && (POLA_PENUTUP_UTUH.test(rapat) || adalahKalimatPenutupSaksi(rapat, pertanyaan))) return "";
   const baris = String(teks || "").replace(/\r\n/g, "\n").split("\n");
   const disimpan = baris.filter((satu) => {
     const bersih = satu.replace(/^[\s\-–•]+/, "").replace(/\s+/g, " ").trim();
     if (bersih === "") return true; // baris kosong diurus di bawah
-    return !POLA_PENUTUP.some((pola) => pola.test(bersih)) && !adalahKalimatPenutupSaksi(bersih);
+    return !POLA_PENUTUP.some((pola) => pola.test(bersih)) && !adalahKalimatPenutupSaksi(bersih, pertanyaan);
   });
 
   return disimpan
@@ -1346,7 +1373,7 @@ async function simpanKeteranganSaksi(kode) {
     const jawabanAsli = String((satu && satu.jawaban) || "");
     // Dibersihkan sebagai SATU baris - tiap baris tanya-jawab satu jawaban,
     // jadi hasilnya kosong berarti seluruh jawabannya memang kalimat penutup.
-    const jawaban = bersihkanKeteranganSaksi(jawabanAsli);
+    const jawaban = bersihkanKeteranganSaksi(jawabanAsli, String((satu && satu.pertanyaan) || ""));
     if (!jawaban.trim()) {
       dibuang += 1;
       continue;

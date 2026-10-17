@@ -1346,12 +1346,13 @@
     }
     return h;
   }
-  const POLA_PENUTUP = [/^(?:bahwa\s+)?(?:saya\s+|saksi\s+)?(?:sudah\s+)?(?:cukup(?:\s+sekian)?|tidak\s+sanggup\s+lagi)[\s;.,!:]*$/i];
-  const POLA_PENUTUP_UTUH = /^(?:bahwa\s+)?(?:sudah\s+)?(?:cukup(?:\s+sekian)?|tidak\s+sanggup\s+lagi)\s*[;.]?$/i;
-  const POLA_EKOR = /(^|[;.]\s+)(?:bahwa\s+)?(?:sudah\s+)?(?:cukup\s+sekian|sudah\s+cukup|tidak\s+sanggup\s+lagi)\s*[;.]?\s*$/i;
+  // 17 Okt: "tidak sanggup lagi" tidak lagi pola tegas - ia jawaban perkara atas "masih sanggup mendamaikan?".
+  const POLA_PENUTUP = [/^(?:bahwa\s+)?(?:saya\s+|saksi\s+)?(?:sudah\s+)?cukup(?:\s+sekian)?[\s;.,!:]*$/i];
+  const POLA_PENUTUP_UTUH = /^(?:bahwa\s+)?(?:sudah\s+)?cukup(?:\s+sekian)?\s*[;.]?$/i;
+  const POLA_EKOR = /(^|[;.]\s+)(?:bahwa\s+)?(?:sudah\s+)?(?:cukup\s+sekian|sudah\s+cukup)\s*[;.]?\s*$/i;
   /** Pembersih kalimat penutup: memakai milik abt.js (F1.3, bentuk lentur) bila ada; cadangan pola baku. */
-  function bersihkanPenutup(teks) {
-    if (typeof bersihkanKeteranganSaksi === "function") return bersihkanKeteranganSaksi(teks);
+  function bersihkanPenutup(teks, tanya) {
+    if (typeof bersihkanKeteranganSaksi === "function") return bersihkanKeteranganSaksi(teks, tanya);
     const rapat = String(teks || "").replace(/^[\s\-–•]+/, "").replace(/\s+/g, " ").trim();
     if (rapat && POLA_PENUTUP_UTUH.test(rapat)) return "";
     const baris = String(teks || "").replace(/\r\n/g, "\n").split("\n").filter((x) => {
@@ -3193,7 +3194,7 @@
       tjCatat([S.tjBuka]);
       let u = 0;
       for (const r of S.tj[S.tjBuka].rows) {
-        const h = bersihkanPenutup(r.jawab);
+        const h = bersihkanPenutup(r.jawab, r.tanya);
         if (h !== r.jawab) {
           r.jawab = h;
           u += 1;
@@ -3292,14 +3293,14 @@
         let u = 0;
         ps.forEach((k) =>
           (S.tj[k].rows || []).forEach((r) => {
-            const h = bersihkanPenutup(r.jawab);
+            const h = bersihkanPenutup(r.jawab, r.tanya);
             if (h !== r.jawab) {
               r.jawab = h;
               u += 1;
             }
           })
         );
-        sesudah(u ? `${u} kalimat penutup dibuang (mis. “Bahwa cukup sekian”, “sudah tidak sanggup lagi”).` : "Tidak ada kalimat penutup yang perlu dibuang.");
+        sesudah(u ? `${u} kalimat penutup dibuang (mis. “Bahwa cukup sekian”, “tidak ada lagi yang ingin disampaikan”).` : "Tidak ada kalimat penutup yang perlu dibuang.");
         return true;
       }
       return true;

@@ -181,18 +181,18 @@ describe("butir 2 - nomor butir yang ditelan \\par", () => {
 });
 
 describe("butir 3 - penutup keterangan saksi", () => {
-  it('"Bahwa sudah tidak sanggup lagi" ikut dibuang', () => {
-    // Lolos dari keempat pola lama: yang berawalan "bahwa" menuntut "tidak"
-    // tepat sesudahnya, yang berawalan "tidak" menuntut kalimatnya dimulai
-    // dari situ. Kata "sudah" di tengah membuat keduanya meleset.
-    // 17 Okt: seluruh baris, bukan awalan (lihat penutup-saksi-lentur.test.ts untuk perilakunya).
-    expect(abt).toContain("/^bahwa\\s+sudah\\s+tidak\\s+sanggup\\s+lagi[\\s;.,!:]*$/i");
-    expect(abt).toContain("/^sudah\\s+tidak\\s+sanggup\\s+lagi[\\s;.,!:]*$/i");
+  it('"tidak sanggup lagi" bukan lagi pola tegas - ia ditentukan oleh pertanyaannya', () => {
+    // 17 Okt: 453 "Saya tidak sanggup lagi" di data nyata = jawaban atas "masih sanggup mendamaikan?".
+    // Pola tegas tanpa pertanyaan menghapus keterangan perkara; kini lewat adalahKalimatPenutupSaksi(baris, pertanyaan)
+    // (perilakunya dijaga penutup-saksi-lentur.test.ts).
+    expect(abt).not.toContain("/^bahwa\\s+sudah\\s+tidak\\s+sanggup\\s+lagi[\\s;.,!:]*$/i");
+    expect(abt).not.toContain("/^sudah\\s+tidak\\s+sanggup\\s+lagi[\\s;.,!:]*$/i");
+    expect(abt).not.toContain("/^tidak\\s+sanggup\\s+lagi[\\s;.,!:]*$/i");
+    expect(abt).toContain("function adalahKalimatPenutupSaksi(baris, pertanyaan)");
   });
 
-  it("pola lamanya tidak dibuang - keduanya masih dipakai petugas", () => {
+  it("pola lamanya tidak dibuang - 'sudah cukup' masih dipakai petugas", () => {
     expect(abt).toContain("/^bahwa\\s+sudah\\s+cukup[\\s;.,!:]*$/i");
-    expect(abt).toContain("/^tidak\\s+sanggup\\s+lagi[\\s;.,!:]*$/i");
   });
 
   it("daftarnya tetap tegas, bukan ditebak dari panjang kalimat", () => {
