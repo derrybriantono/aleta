@@ -257,6 +257,8 @@ function pidChromiumHidup(pid) {
  * @param {{ headless?: boolean }} opsi
  */
 function launchOptions({ headless = false, slot = SLOT_BAWAAN } = {}) {
+  // Mode kembaran (laptop): e-Court adalah sistem Mahkamah Agung - peramban tidak dibuka dari sini.
+  require("../../services/kembaranMode").tolakBilaKembaran("e-Court");
   const opsi = {
     headless,
     defaultViewport: null,

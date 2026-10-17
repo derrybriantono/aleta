@@ -38,6 +38,7 @@
  */
 
 const penjagaTandaSipp = require("./penjagaTandaSipp");
+const kembaranBerkas = require("./kembaranBerkas");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -494,8 +495,8 @@ async function simpanKeSipp({ perkaraId, nomorPerkara, jenis, pdf, olehUsername,
   const penuh = path.join(akar, relatif);
 
   try {
-    fs.mkdirSync(path.dirname(penuh), { recursive: true });
-    fs.writeFileSync(penuh, pdf);
+    // Mode kembaran: berkas ditahan di antrean sinkron, bukan ditulis ke folder SIPP (kembaranBerkas).
+    await kembaranBerkas.tulis(penuh, pdf, { akar });
   } catch (galat) {
     return { ok: false, alasan: "berkas_tidak_dapat_ditulis", pesan: String(galat.message || galat).slice(0, 200) };
   }

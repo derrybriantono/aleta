@@ -1039,6 +1039,7 @@ const pewaktuInfo = { mulaiMs: 0, ms: 0 };
 
 /** Menyalakan penarik berkala. */
 function mulai() {
+  if (require("./kembaranMode").aktif()) return false; // mode kembaran (laptop): e-Court mati
   if (pewaktu) return false;
   if (bersih(process.env.ALETA_ECOURT_VERIFIKASI_AKTIF || "1") === "0") return false;
   // 13 Okt 2026: pewaktu 15 menit sendiri DIGANTI putaran berkala penjadwal

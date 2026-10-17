@@ -1026,6 +1026,11 @@ const JALUR_TULIS_SIPP = Object.freeze([
     sasaran: "pendaftaran jadwal sidang ke aplikasi antrian (isian dari data SIPP)",
   },
   {
+    berkas: "services/kembaranDorong.js",
+    penjaga: ["mengandungAleta", "penjagaTandaSipp.tulisanBocor("],
+    sasaran: "dorong antrean mode kembaran ke server: SQL persis seperti yang dicatat (aktor & jam asli), baris yang memuat kata ALETA ditahan, hanya setelah persetujuan Super Admin dan lolos pemeriksaan bentrok",
+  },
+  {
     berkas: "services/abtPengaturanService.js",
     penjaga: [],
     penjagaDi: [{ berkas: "routes/abtPengaturanRoutes.js", kode: "penjagaTandaSipp.periksaPengaturanAbt(" }],
@@ -1034,6 +1039,7 @@ const JALUR_TULIS_SIPP = Object.freeze([
 ]);
 
 const JALUR_DIKECUALIKAN = Object.freeze({
+  "services/kembaranAntrean.js": "menulis ke basis data antrean sinkron ALETA sendiri (aleta_kembaran di MySQL laptop), bukan ke SIPP; hanya ada di mode kembaran",
   "services/antrianDisidang.js": "hanya menyegarkan penanda waktu layar antrian (NOW()), tanpa teks",
   "services/antrianOnlineService.js": "hanya menyetel kolom online (0/1) dan waktu NOW() di antrian_sidang, tanpa teks",
   "services/kehadiranAntrianService.js": "hanya mengisi/mengosongkan kolom waktu (NOW()/NULL) di antrian_sidang, tanpa teks",

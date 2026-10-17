@@ -9,4 +9,7 @@ const db = mysql.createPool({
   database: process.env.ALETA_BOT_DB4_NAME || "sipp_turunan_antrian",
 });
 
+// MODE KEMBARAN: tulisan ke antrian sidang dialihkan ke antrean sinkron.
+require("./services/penjagaKembaran").pasang(db, "antrian");
+
 module.exports = db;

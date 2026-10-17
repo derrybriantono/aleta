@@ -324,7 +324,33 @@ function getWhatsappSessionName(runtimeConfig = {}) {
   );
 }
 
+/**
+ * MODE KEMBARAN (ALETA_MODE=kembaran): WhatsApp dan semua pengiriman dimatikan APA PUN isi
+ * berkas konfigurasi. Konfigurasi hasil tarikan dari server memuat saklar menyala; tanpa
+ * penimpaan ini bot di laptop akan mencoba memakai sesi WhatsApp yang sama dengan server
+ * dan memutusnya. Penimpaan ada di bacaan, bukan di berkas, jadi aleta-runtime.json tidak berubah.
+ */
+function terapkanModeKembaran(cfg) {
+  if (String(process.env.ALETA_MODE || "").trim().toLowerCase() !== "kembaran") return cfg;
+  return {
+    ...cfg,
+    botEnabled: false,
+    notificationsEnabled: false,
+    kirimPegawaiEnabled: false,
+    kirimPihakEnabled: false,
+    manualSendEnabled: false,
+    publicQaEnabled: false,
+    dryRunEnabled: true,
+    queueWorker: { ...(cfg.queueWorker || {}), enabled: false },
+    kembaran: true,
+  };
+}
+
 function readRuntimeConfig() {
+  return terapkanModeKembaran(bacaRuntimeConfigMentah());
+}
+
+function bacaRuntimeConfigMentah() {
   for (const configPath of candidateConfigPaths) {
     try {
       if (!fs.existsSync(configPath)) continue;

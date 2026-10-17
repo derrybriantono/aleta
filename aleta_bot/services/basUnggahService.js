@@ -47,6 +47,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { tanpaTandaAletaMetadata } = require("./metadataTanpaAletaService");
 const penjagaTandaSipp = require("./penjagaTandaSipp");
+const kembaranBerkas = require("./kembaranBerkas");
 
 const PERAN_BOLEH_UNGGAH_BAS = Object.freeze(["super-admin", "admin", "panitera", "panmud", "pp", "analis"]);
 const PESAN_TOLAK_BAS =
@@ -141,24 +142,13 @@ function depsBawaan() {
     kolomAda: (t, k) => skema.kolomAda(t, k),
     kenaliDokumen: (b) => abtCetak.kenaliDokumen(b),
     periksaAkar: () => dokumen.periksaAkarSipp(undefined, { relatif: FOLDER_DOC }),
-    tulisBerkas: (penuh, isi) => {
-      fs.mkdirSync(path.dirname(penuh), { recursive: true });
+    // Mode kembaran: berkas ditahan di antrean sinkron, bukan ditulis ke folder SIPP (kembaranBerkas).
+    tulisBerkas: async (penuh, isi, akar) => {
       // Butir 45 (17 Okt): metadata berkas tanpa tanda ALETA.
-      fs.writeFileSync(penuh, tanpaTandaAletaMetadata(isi), { flag: "wx" });
+      await kembaranBerkas.tulis(penuh, tanpaTandaAletaMetadata(isi), { akar, flag: "wx" });
     },
     /** Butir 44: berkas BAS lama ke folder "terhapus" (rename; lintas cakram = salin lalu hapus). */
-    pindahBerkas: (dari, ke) => {
-      if (!fs.existsSync(dari)) return false;
-      fs.mkdirSync(path.dirname(ke), { recursive: true });
-      try {
-        fs.renameSync(dari, ke);
-      } catch (e) {
-        if (!e || e.code !== "EXDEV") throw e;
-        fs.copyFileSync(dari, ke, fs.constants.COPYFILE_EXCL);
-        fs.unlinkSync(dari);
-      }
-      return true;
-    },
+    pindahBerkas: (dari, ke, akar) => kembaranBerkas.pindah(dari, ke, { akar }),
     sekarang: () => new Date(),
     hapusBerkas: (penuh) => {
       try {
@@ -272,7 +262,7 @@ function buatLayanan(depsMasuk) {
 
     // Berkas DAHULU, baris sesudahnya - seperti SIPP (move_uploaded_file lalu update_data).
     try {
-      d.tulisBerkas(penuh, siap.isi);
+      await d.tulisBerkas(penuh, siap.isi, keadaanAkar.akar);
       d.samakanPemilik(penuh, keadaanAkar.akar);
     } catch (e) {
       return gagal("berkas_tidak_dapat_ditulis", String((e && e.message) || e).slice(0, 200));
@@ -311,7 +301,7 @@ function buatLayanan(depsMasuk) {
       else if (typeof d.pindahBerkas !== "function") peringatanLama = "Berkas BAS lama belum dapat dipindah.";
       else {
         try {
-          const pindah = d.pindahBerkas(path.join(keadaanAkar.akar, lama), path.join(keadaanAkar.akar, tujuan));
+          const pindah = await d.pindahBerkas(path.join(keadaanAkar.akar, lama), path.join(keadaanAkar.akar, tujuan), keadaanAkar.akar);
           if (pindah === false) peringatanLama = "Berkas BAS lama tidak ditemukan di folder SIPP - tidak ada yang dipindah.";
           else {
             lamaDipindah = tujuan;

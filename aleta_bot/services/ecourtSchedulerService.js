@@ -986,6 +986,7 @@ function berhenti() {
  */
 function mulai() {
   berhenti();
+  if (require("./kembaranMode").aktif()) return; // mode kembaran (laptop): e-Court mati
 
   const pengaturan = getSettings();
   if (!pengaturan.aktif) return;

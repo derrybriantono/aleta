@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { PortalShellV2 } from "@/components/layout/portal-shell-v2";
+import { PitaKembaran } from "@/components/portal/pita-kembaran";
 import { getAuth } from "@/lib/auth";
 import { getDatabase } from "@/server/db/client";
 import { getUserByIdFromDb } from "@/server/modules/organization/service";
@@ -32,8 +33,11 @@ export default async function PortalLayout({
   }
 
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
-      <PortalShellV2>{children}</PortalShellV2>
-    </Suspense>
+    <>
+      <PitaKembaran />
+      <Suspense fallback={<div className="min-h-screen bg-background" />}>
+        <PortalShellV2>{children}</PortalShellV2>
+      </Suspense>
+    </>
   );
 }

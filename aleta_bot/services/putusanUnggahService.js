@@ -92,7 +92,6 @@
  * sebenarnya sudah dapat diselesaikan separuh.
  */
 
-const fs = require("node:fs");
 const path = require("node:path");
 
 const db = require("../db_config");
@@ -104,6 +103,7 @@ const dokumenPenetapanService = require("./dokumenPenetapanService");
 const abtCetakService = require("./abtCetakService");
 const { tanpaTandaAletaMetadata } = require("./metadataTanpaAletaService");
 const penjagaTandaSipp = require("./penjagaTandaSipp");
+const kembaranBerkas = require("./kembaranBerkas");
 
 /** urutan pada dirput_dokumen_ref - 99 putusan akhir, 100 anonimisasi. */
 const URUTAN_REF = { putusan: 99, anonimisasi: 100 };
@@ -499,8 +499,8 @@ async function unggahSatu({
   const penuhAsli = path.join(akar, relatifAsli);
   const penuhPdf = path.join(akar, relatifPdf);
   try {
-    fs.mkdirSync(path.dirname(penuhAsli), { recursive: true });
-    fs.writeFileSync(penuhAsli, pdf);
+    // Mode kembaran: berkas ditahan di antrean sinkron, bukan ditulis ke folder SIPP (kembaranBerkas).
+    await kembaranBerkas.tulis(penuhAsli, pdf, { akar });
     // Pemilik dan izinnya disamakan dengan berkas bikinan SIPP sendiri.
     // Tanpa itu berkasnya tercatat benar di basis data tetapi tidak terbaca
     // oleh proses SIPP - gejalanya sama persis dengan berkas yang tidak
@@ -508,7 +508,7 @@ async function unggahSatu({
     dokumenPenetapanService.samakanPemilikSipp(penuhAsli, akar);
     // PDF ditulis hanya bila ia memang ada DAN bukan berkas yang sama.
     if (pdfTerbit && relatifPdf !== relatifAsli) {
-      fs.writeFileSync(penuhPdf, pdfTerbit);
+      await kembaranBerkas.tulis(penuhPdf, pdfTerbit, { akar });
       dokumenPenetapanService.samakanPemilikSipp(penuhPdf, akar);
     }
   } catch (galat) {

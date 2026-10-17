@@ -185,9 +185,9 @@ describe("sisa audit (ii): metadata berkas yang masuk SIPP tanpa tanda ALETA", (
     const badan = pu.slice(pu.indexOf("async function unggahSatu("));
     const bersih = badan.indexOf("pdf = tanpaTandaAletaMetadata(pdf);");
     expect(bersih).toBeGreaterThan(-1);
-    expect(badan.indexOf("fs.writeFileSync(penuhAsli, pdf)")).toBeGreaterThan(bersih);
+    expect(badan.indexOf("kembaranBerkas.tulis(penuhAsli, pdf, { akar })")).toBeGreaterThan(bersih);
     expect(badan.indexOf("let pdfTerbit = bentuk")).toBeGreaterThan(bersih);
-    expect(baca("aleta_bot/services/basUnggahService.js")).toContain("fs.writeFileSync(penuh, tanpaTandaAletaMetadata(isi), { flag: \"wx\" });");
+    expect(baca("aleta_bot/services/basUnggahService.js")).toContain("kembaranBerkas.tulis(penuh, tanpaTandaAletaMetadata(isi), { akar, flag: \"wx\" });");
   });
 
   it("Laporan Mediasi (RTF unduhan yang diunggah petugas) tanpa {\\author ALETA}", () => {
