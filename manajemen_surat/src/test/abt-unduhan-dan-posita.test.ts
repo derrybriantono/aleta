@@ -185,13 +185,14 @@ describe("butir 3 - penutup keterangan saksi", () => {
     // Lolos dari keempat pola lama: yang berawalan "bahwa" menuntut "tidak"
     // tepat sesudahnya, yang berawalan "tidak" menuntut kalimatnya dimulai
     // dari situ. Kata "sudah" di tengah membuat keduanya meleset.
-    expect(abt).toContain("/^bahwa\\s+sudah\\s+tidak\\s+sanggup\\s+lagi\\b/i");
-    expect(abt).toContain("/^sudah\\s+tidak\\s+sanggup\\s+lagi\\b/i");
+    // 17 Okt: seluruh baris, bukan awalan (lihat penutup-saksi-lentur.test.ts untuk perilakunya).
+    expect(abt).toContain("/^bahwa\\s+sudah\\s+tidak\\s+sanggup\\s+lagi[\\s;.,!:]*$/i");
+    expect(abt).toContain("/^sudah\\s+tidak\\s+sanggup\\s+lagi[\\s;.,!:]*$/i");
   });
 
   it("pola lamanya tidak dibuang - keduanya masih dipakai petugas", () => {
-    expect(abt).toContain("/^bahwa\\s+sudah\\s+cukup\\b/i");
-    expect(abt).toContain("/^tidak\\s+sanggup\\s+lagi\\b/i");
+    expect(abt).toContain("/^bahwa\\s+sudah\\s+cukup[\\s;.,!:]*$/i");
+    expect(abt).toContain("/^tidak\\s+sanggup\\s+lagi[\\s;.,!:]*$/i");
   });
 
   it("daftarnya tetap tegas, bukan ditebak dari panjang kalimat", () => {

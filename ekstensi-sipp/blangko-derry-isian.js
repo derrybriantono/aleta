@@ -1257,7 +1257,7 @@
     }
     return h;
   }
-  const POLA_PENUTUP = [/^bahwa\s+sudah\s+cukup\b/i, /^bahwa\s+tidak\s+sanggup\s+lagi\b/i, /^sudah\s+cukup\b/i, /^tidak\s+sanggup\s+lagi\b/i, /^bahwa\s+sudah\s+tidak\s+sanggup\s+lagi\b/i, /^sudah\s+tidak\s+sanggup\s+lagi\b/i, /^(?:bahwa\s+)?cukup\s+sekian\b/i];
+  const POLA_PENUTUP = [/^(?:bahwa\s+)?(?:saya\s+|saksi\s+)?(?:sudah\s+)?(?:cukup(?:\s+sekian)?|tidak\s+sanggup\s+lagi)[\s;.,!:]*$/i];
   const POLA_PENUTUP_UTUH = /^(?:bahwa\s+)?(?:sudah\s+)?(?:cukup(?:\s+sekian)?|tidak\s+sanggup\s+lagi)\s*[;.]?$/i;
   const POLA_EKOR = /(^|[;.]\s+)(?:bahwa\s+)?(?:sudah\s+)?(?:cukup\s+sekian|sudah\s+cukup|tidak\s+sanggup\s+lagi)\s*[;.]?\s*$/i;
   /** Pembersih kalimat penutup: memakai milik abt.js (F1.3, bentuk lentur) bila ada; cadangan pola baku. */

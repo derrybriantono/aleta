@@ -754,10 +754,14 @@ async function simpanVariabel(kode, nilai, jatiDiri) {
  * ditulis tegas di POLA_PENUTUP, bukan ditebak dari panjang kalimat - kalimat
  * pendek di tengah keterangan bisa saja fakta yang menentukan.
  */
+// 17 Okt 2026 (keputusan pengguna: "hapus kalimat penutup semuanya, jangan hapus keterangan yang
+// berhubungan dengan perkara"): semua pola di bawah SELURUH baris (berakhir $). Dulu cukup
+// AWALANNYA cocok (\b), sehingga "Bahwa sudah cukup lama berpisah" dan "tidak sanggup lagi
+// menunggu Tergugat" ikut terhapus dari keterangan saksi.
 const POLA_PENUTUP = [
-  /^bahwa\s+sudah\s+cukup\b/i,
-  /^bahwa\s+tidak\s+sanggup\s+lagi\b/i,
-  /^sudah\s+cukup\b/i,
+  /^bahwa\s+sudah\s+cukup[\s;.,!:]*$/i,
+  /^bahwa\s+tidak\s+sanggup\s+lagi[\s;.,!:]*$/i,
+  /^sudah\s+cukup[\s;.,!:]*$/i,
   // ==========================================================================
   // BENTUK TANPA "BAHWA" - DIPERLUKAN SEJAK PEMBERSIHAN MENYENTUH BASIS DATA
   // ==========================================================================
@@ -771,7 +775,7 @@ const POLA_PENUTUP = [
   // abt_keterangan_saksi, yang dibersihkan adalah kolom jawaban APA ADANYA -
   // dan di sana kata "Bahwa" tidak ada. "Sudah cukup" tertangkap pola ketiga;
   // "tidak sanggup lagi" tidak tertangkap satu pun, dan akan lolos diam-diam.
-  /^tidak\s+sanggup\s+lagi\b/i,
+  /^tidak\s+sanggup\s+lagi[\s;.,!:]*$/i,
   // ==========================================================================
   // DENGAN "SUDAH" DI TENGAHNYA - BENTUK YANG PALING SERING DIPAKAI
   // ==========================================================================
@@ -783,8 +787,8 @@ const POLA_PENUTUP = [
   //
   // Lolosnya tidak berbunyi - kalimatnya hanya tetap berdiri di dalam putusan,
   // di antara keterangan saksi yang lain, seolah ia fakta yang dibuktikan.
-  /^bahwa\s+sudah\s+tidak\s+sanggup\s+lagi\b/i,
-  /^sudah\s+tidak\s+sanggup\s+lagi\b/i,
+  /^bahwa\s+sudah\s+tidak\s+sanggup\s+lagi[\s;.,!:]*$/i,
+  /^sudah\s+tidak\s+sanggup\s+lagi[\s;.,!:]*$/i,
 ];
 
 /**
@@ -824,9 +828,13 @@ const PENUTUP_INTI = [
   "cukup(?:\\s+sekian)?(?:\\s+(?:saja|dulu|sampai\\s+di\\s+sini))?",
   "sekian(?:\\s+(?:saja|dulu))?(?:\\s+(?:keterangan|jawaban)\\s+(?:saya|saksi))?",
   "sampai\\s+di\\s+sini(?:\\s+saja)?",
-  // tidak sanggup lagi (kata "lagi" WAJIB, kecuali diikuti kata kerja menjawab/menerangkan)
-  "(?:tidak|belum)\\s+(?:sanggup|kuat|mampu)\\s+lagi(?:\\s+" + PENUTUP_KERJA + ")?",
-  "(?:tidak|belum)\\s+lagi\\s+(?:sanggup|kuat|mampu)(?:\\s+" + PENUTUP_KERJA + ")?",
+  // tidak sanggup lagi (kata "lagi" WAJIB, kecuali diikuti kata kerja menjawab/menerangkan).
+  // 17 Okt (keputusan pengguna): "tidak kuat/mampu lagi" TANPA kata kerja menjawab/menerangkan
+  // adalah keterangan perkara ("Bahwa tidak kuat lagi", "Penggugat tidak mampu lagi") - tinggal.
+  "(?:tidak|belum)\\s+sanggup\\s+lagi(?:\\s+" + PENUTUP_KERJA + ")?",
+  "(?:tidak|belum)\\s+(?:kuat|mampu)\\s+lagi\\s+" + PENUTUP_KERJA,
+  "(?:tidak|belum)\\s+lagi\\s+sanggup(?:\\s+" + PENUTUP_KERJA + ")?",
+  "(?:tidak|belum)\\s+lagi\\s+(?:kuat|mampu)\\s+" + PENUTUP_KERJA,
   "(?:tidak|belum)\\s+(?:sanggup|kuat|mampu)\\s+" + PENUTUP_KERJA + "(?:\\s+lagi)?",
   // tidak ada lagi yang ingin disampaikan / tidak ada keterangan lain
   "(?:sudah\\s+)?tidak\\s+ada\\s+(?:lagi\\s+)?(?:yang\\s+)?(?:(?:ingin|akan|hendak|mau|perlu|dapat|bisa)\\s+)?(?:(?:saya|saksi)\\s+)?(?:sampaikan|disampaikan|terangkan|diterangkan|tambahkan|ditambahkan|jelaskan|dijelaskan|katakan|dikatakan|ketahui|diketahui)(?:\\s+lagi)?",
@@ -854,6 +862,9 @@ function adalahKalimatPenutupSaksi(baris) {
     .replace(/^bahwa[\s,]*/i, "")
     .replace(/[\s;.,!:]+$/, "")
     .trim();
+  // 17 Okt (keputusan pengguna): "tidak ada yang (saya) ketahui" tanpa "lagi"/"lain" bisa jawaban
+  // atas pertanyaan perkara ("tahukah saksi sebabnya?") - tinggal. Dengan "lagi"/"lain" = penutup.
+  if (/\btidak\s+ada\b/i.test(inti) && /\b(?:ketahui|diketahui)\b/i.test(inti) && !/\b(?:lagi|lain)\b/i.test(inti)) return false;
   return inti !== "" && POLA_PENUTUP_LENTUR.test(inti);
 }
 
