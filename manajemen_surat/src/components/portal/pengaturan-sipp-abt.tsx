@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BagianIdentitasSatker } from "@/components/portal/identitas-satker-abt";
 import { SetSaksiAleta } from "@/components/portal/set-saksi-aleta";
@@ -542,17 +542,21 @@ function RinciVar({ noVar, hak, tutup }: { noVar: string; hak: HakPengaturanAbt;
     const t = window.setTimeout(() => void muat(), 0);
     return () => window.clearTimeout(t);
   }, [muat]);
+  // Perkara contoh bawaan SEKALI saat dibuka (audit 17 Okt): dulu efek [perkara] berjalan lagi
+  // ketika "Pakai perkara ini" tidak menemukan nomornya, lalu menimpa kotak nomor dengan bawaan.
+  const bawaanDiminta = useRef(false);
   useEffect(() => {
-    if (perkara) return;
+    if (bawaanDiminta.current) return;
+    bawaanDiminta.current = true;
     void panggil<{ perkara: { perkaraId: number; nomor: string; jenis: string } | null }>("/api/pengaturan-sipp-abt?bagian=perkara")
       .then((d) => {
-        if (d.perkara) {
-          setPerkara(d.perkara);
-          setNomor(d.perkara.nomor);
-        }
+        const p = d.perkara;
+        if (!p) return;
+        setPerkara((lama) => lama ?? p);
+        setNomor((lama) => (lama.trim() ? lama : p.nomor));
       })
       .catch(() => undefined);
-  }, [perkara]);
+  }, []);
 
   if (galat && !v) return <Pesan jenis="galat">{galat}</Pesan>;
   if (!v) return <p className="text-sm text-muted-foreground">Memuat isian...</p>;

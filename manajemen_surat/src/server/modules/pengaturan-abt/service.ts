@@ -184,7 +184,18 @@ async function denganCatatan<T>(
   }
 }
 
-export async function riwayatSuntingan(db: AletaDatabase, saring: { jenis?: string; kunci?: string; batas?: number } = {}): Promise<Suntingan[]> {
+/** Kueri SQL hanya untuk Super Admin (sama dengan bacaVariabel) - riwayat dulu membocorkannya ke Admin (audit 17 Okt). */
+const KUERI_TERSEMBUNYI = "(kueri disembunyikan - hanya Super Admin)";
+function sembunyikanKueri(nilai: unknown): unknown {
+  if (!nilai || typeof nilai !== "object" || Array.isArray(nilai) || !("sql_query" in nilai)) return nilai;
+  return { ...(nilai as Record<string, unknown>), sql_query: KUERI_TERSEMBUNYI };
+}
+
+export async function riwayatSuntingan(
+  db: AletaDatabase,
+  saring: { jenis?: string; kunci?: string; batas?: number } = {},
+  hak?: Pick<HakPengaturanAbt, "ubahKueri">
+): Promise<Suntingan[]> {
   const syarat: string[] = [];
   const nilai: string[] = [];
   if (saring.jenis) {
@@ -200,7 +211,9 @@ export async function riwayatSuntingan(db: AletaDatabase, saring: { jenis?: stri
     `SELECT * FROM aleta_abt_suntingan ${syarat.length ? `WHERE ${syarat.join(" AND ")}` : ""} ORDER BY pada DESC LIMIT ${batas}`,
     nilai
   );
-  return baris.map(keSuntingan);
+  const hasil = baris.map(keSuntingan);
+  if (hak?.ubahKueri) return hasil;
+  return hasil.map((x) => ({ ...x, nilaiLama: sembunyikanKueri(x.nilaiLama), nilaiBaru: sembunyikanKueri(x.nilaiBaru) }));
 }
 
 // ---------------------------------------------------------------------------

@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
           jenis: getSearchParam(request, "jenis") ?? "",
           kunci: getSearchParam(request, "kunci") ?? "",
           batas: Number(getSearchParam(request, "batas") ?? 50),
-        }),
+        }, a.hak),
       });
     }
     if (bagian === "perkara") return ok(await cariPerkaraContoh(getSearchParam(request, "nomor") ?? ""));
