@@ -354,7 +354,12 @@ function tulisMd(d) {
   };
   const dir = path.join(akar, "docs", "isi-sipp-abt");
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, "DAFTAR-CEK.json"), JSON.stringify(keluar, null, 1));
+  // Daftar blangko dan isian ditulis satu baris per entri (ringkas di git); bagian lain berindentasi.
+  const ringkas = (daftar) => `[\n${daftar.map((x) => JSON.stringify(x)).join(",\n")}\n]`;
+  const kerangka = JSON.stringify({ ...keluar, blangko: "__BLANGKO__", isian: "__ISIAN__" }, null, 1)
+    .replace('"__BLANGKO__"', () => ringkas(keluar.blangko))
+    .replace('"__ISIAN__"', () => ringkas(keluar.isian));
+  fs.writeFileSync(path.join(dir, "DAFTAR-CEK.json"), kerangka);
   fs.writeFileSync(path.join(dir, "DAFTAR-CEK.md"), tulisMd(keluar));
   console.log(JSON.stringify(keluar.ringkasan));
 })();
