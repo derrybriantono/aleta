@@ -134,6 +134,20 @@
     }
     return luar;
   }
+  /**
+   * Bentuk aman untuk ABT (kolom latin1/cp1252, naskah dicetak per byte): tanda baca "cantik" cp1252 – — … “ ” ‘ „ ‚ •
+   * (byte 0x80-0x9F) tercetak rusak (mis. "â€“"), jadi diganti ke ASCII sebelum disimpan. ’ SENGAJA dibiarkan:
+   * ABT sendiri mengembalikannya ke ' saat mencetak (lihat abtKlienNetralkanPetik). Mengembalikan { teks, diganti }.
+   */
+  const GANTI_ABT = { "–": "-", "—": "-", "…": "...", "“": '"', "”": '"', "„": '"', "‘": "'", "‚": "'", "•": "-" };
+  function normalAbt(teks) {
+    const diganti = [];
+    const t = String(teks == null ? "" : teks).replace(/[–—…“”„‘‚•]/g, (m) => {
+      if (!diganti.includes(m)) diganti.push(m);
+      return GANTI_ABT[m];
+    });
+    return { teks: t, diganti };
+  }
   const latin1 = (buf) => (typeof buf === "string" ? buf : new TextDecoder("latin1").decode(new Uint8Array(buf)));
   const bufDariLatin1 = (s) => {
     const u = new Uint8Array(s.length);
@@ -259,6 +273,7 @@
     nilai: {}, // kode -> { status, teks }
     isi: {}, // kode -> teks yang terlihat di layar (tersimpan atau diketik)
     diketik: new Set(), // kode yang benar-benar diketik petugas sejak terakhir disimpan (blur hanya menyimpan ini)
+    ganti: {}, // kode -> huruf yang diganti ALETA ke bentuk aman ABT (normalAbt)
     tersimpan: {}, // kode -> "tersimpan" | "menyimpan" | "gagal: ..."
     saran: {}, // kode -> teks saran (bayangan)
     menuSaran: null,
@@ -789,6 +804,7 @@
     S.isi = {};
     S.diketik.clear();
     S.tersimpan = {};
+    S.ganti = {};
     S.saran = {};
     S.bukti = { P: null, T: null };
     S.tj = {};
@@ -1034,6 +1050,14 @@
       renderStatusIsian(kode);
       return false;
     }
+    const norm = normalAbt(nilai);
+    if (norm.diganti.length) {
+      nilai = norm.teks;
+      S.isi[kode] = nilai;
+      S.ganti[kode] = norm.diganti.join(" ");
+      const el = cari(`#bd-i${kode}`, wadah.isian);
+      if (el && el.value !== nilai && el.tagName !== "SELECT") el.value = nilai;
+    } else delete S.ganti[kode];
     const luar = hurufDiLuarAbt(nilai);
     if (luar.length) {
       S.tersimpan[kode] = `gagal: huruf ${luar.join(" ")} tidak dapat disimpan ABT - ganti dengan huruf biasa`;
@@ -1405,7 +1429,18 @@
         renderTj();
         continue;
       }
-      const rows = t.rows.filter((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim());
+      let rows = t.rows.filter((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim());
+      const gantiTj = [];
+      rows = rows.map((r) => {
+        const a = normalAbt(r.tanya);
+        const j = normalAbt(r.jawab);
+        for (const m of [...a.diganti, ...j.diganti]) if (!gantiTj.includes(m)) gantiTj.push(m);
+        return a.diganti.length || j.diganti.length ? { ...r, tanya: a.teks, jawab: j.teks } : r;
+      });
+      if (gantiTj.length) {
+        t.rows = t.rows.map((r) => ({ ...r, tanya: normalAbt(r.tanya).teks, jawab: normalAbt(r.jawab).teks }));
+        t.ganti = gantiTj.join(" ");
+      } else t.ganti = "";
       const luar = hurufDiLuarAbt(rows.map((r) => `${r.tanya} ${r.jawab}`).join(" "));
       if (luar.length) {
         t.galat = `huruf ${luar.join(" ")} tidak dapat disimpan ABT - ganti dengan huruf biasa`;
@@ -1608,14 +1643,14 @@
     return (
       `<div class="bd-f${v.trim() ? " beres" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(b.nama)}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama)}</div>${muncul}` +
       isian +
-      `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st))}</span></div>`
+      `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st, b.kode))}</span></div>`
     );
   }
-  const teksStatus = (st) => (st === "tersimpan" ? "✓ tersimpan di ABT" : st === "menyimpan" ? "menyimpan…" : st.startsWith("gagal") ? st : "");
+  const teksStatus = (st, kode) => (st === "tersimpan" ? `✓ tersimpan di ABT${kode && S.ganti[kode] ? ` (huruf ${S.ganti[kode]} diganti ke bentuk aman ABT)` : ""}` : st === "menyimpan" ? "menyimpan…" : st.startsWith("gagal") ? st : "");
   function renderStatusIsian(kode) {
     const e = cari(`[data-status="${kode}"]`, wadah.isian);
     if (e) {
-      e.textContent = teksStatus(S.tersimpan[kode] || "");
+      e.textContent = teksStatus(S.tersimpan[kode] || "", kode);
       e.classList.toggle("gagal", String(S.tersimpan[kode] || "").startsWith("gagal"));
     }
     const f = cari(`.bd-f[data-f="${kode}"]`, wadah.isian);
@@ -1854,7 +1889,7 @@
       if (x.memuat) return `<p class="bd-catat" role="status">Membaca keterangan ${esc(tjItem(k).tj.sebutan)} dari ABT…</p>`;
       if (x.menyimpan) return `<p class="bd-catat" role="status">${esc(x.menyimpan)}</p>`;
       if (x.galat) return `<p class="bd-peringatan">${esc(x.galat)}</p>`;
-      if (x.tersimpanJam && !x.berubah) return `<p class="bd-catat">✓ tersimpan di ABT ${esc(x.tersimpanJam)}</p>`;
+      if (x.tersimpanJam && !x.berubah) return `<p class="bd-catat">✓ tersimpan di ABT ${esc(x.tersimpanJam)}${x.ganti ? ` (huruf ${esc(x.ganti)} diganti ke bentuk aman ABT)` : ""}</p>`;
       return "";
     };
     if (ps) {
@@ -3646,7 +3681,7 @@
       takBerlaku: daftarTakBerlaku().map((b) => b.kode),
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel },
+    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {
