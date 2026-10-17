@@ -55,7 +55,7 @@ function isiBerkas(w: Jendela, el: HTMLInputElement, nama: string, jenis: string
 }
 
 function bukaSipp(jaga: boolean, o: { jalurGalat?: boolean; aletaKosong?: boolean } = {}) {
-  const dom = new JSDOM(HALAMAN, { url: "http://127.0.0.1:8056/index.php/perkara_detil_agama/x", runScripts: "outside-only", pretendToBeVisual: true });
+  const dom = new JSDOM(HALAMAN, { url: "http://127.0.0.1:8056/index.php/perkara_detil_agama/x", runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]);
   terbuka.push(dom);
   const w = dom.window as Jendela;
   const ctx = (dom as JSDOM & { getInternalVMContext(): vm.Context }).getInternalVMContext();
