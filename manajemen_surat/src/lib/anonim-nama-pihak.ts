@@ -88,8 +88,20 @@ export function namaDiriPihak(namaPihak: string[]): string[] {
  * Berbatas kata supaya "Rina" tidak ditemukan di dalam "Marina".
  */
 export function polaNama(nama: string, bendera = "iu"): RegExp {
-  const lolos = RAPIKAN(nama).replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+");
+  const lolos = lenturkanApostrof(RAPIKAN(nama).replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+"));
   return new RegExp(`(?<![\\p{L}\\p{N}])${lolos}(?![\\p{L}\\p{N}])`, bendera);
+}
+
+/**
+ * Apostrof di nama ("Nur'aini", "Ma'ruf", "Ja'far") ditulis berbeda-beda:
+ * SIPP menyimpan ' (ASCII), Word menulis ’ (\'92, \rquote, \u8217) di naskah,
+ * dan RTF yang dibaca sebagai Latin-1 melahirkan U+0092. Diukur: nama itu
+ * bocor utuh di anonimisasi dan periksa sisa kosong. Apostrof dibuat lentur
+ * (dan boleh tidak ada) di sumber regex yang SUDAH dilolos dari karakter khusus.
+ */
+export const APOSTROF_LENTUR = "['\u2019\u2018`\u00b4\\u0092]?";
+export function lenturkanApostrof(sumberRegex: string): string {
+  return sumberRegex.replace(/['\u2019\u2018`\u00b4\u0092]/g, APOSTROF_LENTUR);
 }
 
 export function hitungNama(teks: string, nama: string): number {
