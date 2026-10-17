@@ -288,7 +288,7 @@ function halamanHtml(isi: Record<string, string>, tanpaCetak = false) {
 
 type Halaman = { w: any; minta: Minta[]; tersimpan: Record<string, string>; pesan: any[]; simpanan: Record<string, unknown> };
 
-function buka(opsi: { simpanan?: Record<string, unknown>; tanpaCetak?: boolean; isi?: Record<string, string>; rtf?: string } = {}): Halaman {
+function buka(opsi: { simpanan?: Record<string, unknown>; tanpaCetak?: boolean; isi?: Record<string, string>; rtf?: string; tahanUsulan?: boolean } = {}): Halaman {
   const isiHalaman = opsi.isi || ISI;
   const naskah = opsi.rtf ?? RTF;
   const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${halamanHtml(isiHalaman, opsi.tanpaCetak)}</body></html>`, {
@@ -374,6 +374,8 @@ function buka(opsi: { simpanan?: Record<string, unknown>; tanpaCetak?: boolean; 
     const cara = String(o?.method || "GET").toUpperCase();
     const b = typeof o?.body === "string" ? o.body : o?.body ? String(o.body) : "";
     minta.push({ url, cara, badan: b });
+    // Audit D8: usulan SIPP/saksi tidak pernah tiba -> bagian "Isi dari SIPP" tidak pernah tergambar.
+    if (opsi.tahanUsulan && url.includes("/aleta-bot/abt/usulan") && JSON.parse(b || "{}").sumber !== "siapa") return new Promise<Response>(() => undefined);
     return jawab(url, cara, b);
   };
   w.Response = Response;
@@ -412,6 +414,24 @@ describe("B. tombol Cetak di samping 'Input semua yang pasti'", () => {
     expect(cetak.previousElementSibling.classList.contains("aleta-sore-input-pasti")).toBe(true);
     expect(cetak.parentElement.classList.contains("aleta-sore-tindakan")).toBe(true);
     expect(cetak.title).toContain("Sebelum mencetak");
+  });
+
+  it("audit D8: tombol Cetak sudah ada begitu panel tersusun - tanpa menunggu 'Isi dari SIPP' tergambar - dan tidak dobel sesudahnya", async () => {
+    const h = buka({ tahanUsulan: true });
+    const cetak = await sampai(() => q(h, ".aleta-f15-cetak"), "tombol Cetak sebelum Isi dari SIPP");
+    await tunggu(300);
+    expect(q(h, ".aleta-sore-input-pasti")).toBeNull(); // bagian Isi dari SIPP memang belum tergambar
+    expect(panelDari(h).querySelectorAll(".aleta-f15-cetak")).toHaveLength(1);
+    expect(cetak.textContent).toBe("Cetak");
+    cetak.click();
+    await sampai(() => ambilCetak(h).length === 1, "naskah diambil dari ABT");
+    expect(tulisAbt(h)).toEqual([]);
+    // Sesudah Isi dari SIPP tergambar: tetap SATU tombol, di samping 'Input semua yang pasti'.
+    const h2 = buka();
+    const c2 = await siap(h2);
+    await tunggu(300);
+    expect(panelDari(h2).querySelectorAll(".aleta-f15-cetak")).toHaveLength(1);
+    expect(c2.previousElementSibling.classList.contains("aleta-sore-input-pasti")).toBe(true);
   });
 
   it("tekanan pertama: naskah diambil (GET) dan diperiksa - pasti belum disimpan, Penting/Tidak wajib, penanda #; NOL tulisan, NOL unduhan", async () => {

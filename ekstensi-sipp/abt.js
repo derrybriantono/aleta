@@ -14712,6 +14712,7 @@ function soreHentikan() {
 
 /** Keadaan panel: tombol dan wadah lama dikenali dari susunan susunPanelAbt. */
 function soreSusun(panel, jatiDiri, isi) {
+  f15BuangCetakAwalLama(isi); // penataan ulang panel yang sama: Cetak sementara penataan lalu dibuang dulu
   const aksi = t6Anak(isi, "aleta-abt-aksi");
   const lama = aksi ? Array.from(aksi.children).filter((c) => c.tagName === "BUTTON" && !c.classList.contains("aleta-t6")) : [];
   const daftar = Array.from(isi.children).filter((c) => c.classList.contains("aleta-abt-daftar") && !c.classList.contains("aleta-t6-usulan-sipp"));
@@ -14731,7 +14732,7 @@ function soreSusun(panel, jatiDiri, isi) {
     t6Keadaan.wadah.sdg = wadahSdg;
     t6Amati(t6Keadaan, wadahSdg, { childList: true, subtree: true }, () => t6HiasSemua(t6Keadaan), 0);
   }
-  return {
+  const k = {
     panel,
     jatiDiri: jatiDiri || { perkaraId: "", perkTemp: "" },
     nomor: nomorPerkaraAbt(),
@@ -14762,6 +14763,9 @@ function soreSusun(panel, jatiDiri, isi) {
     pengamat: [],
     pewaktu: [],
   };
+  // Audit D8: Cetak F1.5 ada begitu panel tersusun, tidak menunggu bagian "Isi dari SIPP" tergambar.
+  f15PasangCetakAwal(k);
+  return k;
 }
 
 async function soreTata(panel, jatiDiri) {
@@ -21342,6 +21346,22 @@ async function f15Cetak(ctx, paksa) {
 function f15PasangCetak(k, baris, o) {
   if (!k || !baris || !baris.parentNode) return null;
   const opsi = o || {};
+  // Audit D8: Cetak sementara (f15PasangCetakAwal) DIPINDAH ke baris resmi - tombolnya tetap elemen yang sama,
+  // jadi yang sedang menekannya atau menunggu pemberitahuannya tidak kehilangan apa pun.
+  const awal = k.f15Awal;
+  if (awal && awal.ctx && awal.baris !== baris) {
+    const ctx = awal.ctx;
+    baris.appendChild(ctx.tombol);
+    const acuanBaru = opsi.sesudah && opsi.sesudah.parentNode === baris.parentNode ? opsi.sesudah : baris;
+    baris.parentNode.insertBefore(ctx.wadah, acuanBaru.nextSibling);
+    ctx.pilih = Array.isArray(opsi.pilih) ? opsi.pilih : [];
+    ctx.wadahPasti = opsi.wadahPasti || null;
+    ctx.segar = typeof opsi.segar === "function" ? opsi.segar : () => undefined;
+    awal.baris.remove();
+    k.f15Awal = null;
+    k.f15 = ctx;
+    return ctx;
+  }
   const tombol = buatElemen("button", "aleta-permintaan-tombol aleta-f15-cetak", f15LabelCetak());
   tombol.type = "button";
   tombol.title = f15JudulCetak();
@@ -21367,6 +21387,7 @@ function f15PasangCetak(k, baris, o) {
     peringat: false,
     siap: null,
     sibuk: false,
+    wadah,
   };
   if (!f15TautanCetak()) {
     tombol.setAttribute("aria-disabled", "true");
@@ -21376,4 +21397,34 @@ function f15PasangCetak(k, baris, o) {
   k.f15 = ctx;
   return ctx;
 }
+
+/**
+ * Audit D8: tombol Cetak sementara tepat di bawah tombol kerja panel (di luar wadah "Isi dari SIPP", jadi tidak ikut
+ * terlipat atau terhapus). Begitu bagian Isi dari SIPP tergambar, tombol yang sama DIPINDAH ke samping "Input semua yang pasti"
+ * (f15PasangCetak) - tidak pernah dua tombol sekaligus.
+ */
+function f15PasangCetakAwal(k) {
+  try {
+    if (!k || !k.isi || k.f15Awal) return null;
+    const baris = soreEl("div", "aleta-abt-tindakan aleta-sore-tindakan aleta-f15-awal");
+    const sebelum = k.wadah && Object.values(k.wadah).find((x) => x && x.parentNode === k.isi);
+    k.isi.insertBefore(baris, sebelum || null);
+    const ctx = f15PasangCetak(k, baris, {});
+    k.f15Awal = ctx ? { baris, ctx } : null;
+    return k.f15Awal;
+  } catch {
+    return null;
+  }
+}
+
+/** Cetak sementara dari penataan sebelumnya pada panel yang sama (tombol + wadah kabarnya) dibuang. */
+function f15BuangCetakAwalLama(isi) {
+  if (!isi || typeof isi.querySelectorAll !== "function") return;
+  for (const el of Array.from(isi.querySelectorAll(":scope > .aleta-f15-awal"))) {
+    const wadah = el.nextElementSibling;
+    if (wadah && wadah.classList.contains("aleta-f15-wadah")) wadah.remove();
+    el.remove();
+  }
+}
+
 /* === AKHIR F1.5 === */
