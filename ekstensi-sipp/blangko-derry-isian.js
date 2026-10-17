@@ -1371,11 +1371,23 @@
     t.berubah = true;
     return s;
   }
+  // Simpan ke ABT = HAPUS lalu isi ulang seluruh keterangan sidang itu. Sebelum keterangan
+  // yang sudah ada di ABT terbaca, menyimpan (atau mengganti daftar) akan menghapusnya tanpa
+  // pernah dilihat petugas - jadi penyunting baru boleh diubah/disimpan sesudah bacaan berhasil.
+  function tjSiap(kunciDaftar) {
+    return kunciDaftar.length > 0 && kunciDaftar.every((k) => S.tj[k] && S.tj[k].dimuat && !S.tj[k].memuat);
+  }
+  var PESAN_TJ_BELUM_TERBACA = "Keterangan yang sudah ada di ABT belum terbaca - tunggu sampai selesai dibaca, atau tutup lalu buka lagi tanya jawab ini bila pembacaannya gagal. Tidak disimpan supaya keterangan lama tidak terhapus.";
   async function simpanTj(kunciDaftar) {
     if (!bolehTulis()) return toast(`Tanya jawab ${NAMA_JENIS[S.blangko.jenis].toLowerCase()} hanya disimpan ${NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]]}.`);
     for (const kunci of kunciDaftar) {
       const t = S.tj[kunci];
       if (!t) continue;
+      if (!t.dimuat || t.memuat) {
+        t.galat = PESAN_TJ_BELUM_TERBACA;
+        renderTj();
+        continue;
+      }
       const rows = t.rows.filter((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim());
       const luar = hurufDiLuarAbt(rows.map((r) => `${r.tanya} ${r.jawab}`).join(" "));
       if (luar.length) {
@@ -1810,8 +1822,8 @@
       `<div class="bd-tjalat"><b>${esc(judul)}</b><span class="bd-chip">${esc(sidangTeks)}</span>` +
       (tjPasangan(S.tjBuka) ? `<span class="bd-seg" role="tablist" aria-label="Cara menampilkan saksi"><button type="button" role="tab" data-tjmode="sisi" aria-selected="${S.tjSisi}">Berdampingan</button><button type="button" role="tab" data-tjmode="satu" aria-selected="${!S.tjSisi}">Satu per satu</button></span>` : "") +
       `<label class="bd-lbl" for="bd-muattpl">Set pertanyaan</label><select id="bd-muattpl">${pilihanSetSaksi(t)}</select>` +
-      `<button type="button" class="bd-btn kecil" data-bd2="muattpl" data-kunci="${esc(kunciDaftar.join("|"))}">Muat</button><button type="button" class="bd-btn kecil" data-bd2="tambahtj" data-kunci="${esc(kunciDaftar.join("|"))}">Tambah baris</button>` +
-      `<button type="button" class="bd-btn kecil utama" data-bd2="simpantj" data-kunci="${esc(kunciDaftar.join("|"))}" ${bolehTulis() ? "" : "disabled"}>Simpan ke ABT</button><button type="button" class="bd-btn kecil" data-bd2="tutuptj">Selesai</button></div>` +
+      `<button type="button" class="bd-btn kecil" data-bd2="muattpl" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Muat</button><button type="button" class="bd-btn kecil" data-bd2="tambahtj" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Tambah baris</button>` +
+      `<button type="button" class="bd-btn kecil utama" data-bd2="simpantj" data-kunci="${esc(kunciDaftar.join("|"))}" ${bolehTulis() && tjSiap(kunciDaftar) ? "" : "disabled"}>Simpan ke ABT</button><button type="button" class="bd-btn kecil" data-bd2="tutuptj">Selesai</button></div>` +
       ketSetSaksi();
     const status = (k) => {
       const x = S.tj[k];
@@ -2847,6 +2859,7 @@
       const sel = cari("#bd-muattpl", wadah.isian);
       const kunci = String(aksi.getAttribute("data-kunci") || "").split("|").filter(Boolean);
       if (!sel || !sel.value) return toast("Pilih set pertanyaan dulu.");
+      if (!tjSiap(kunci)) return toast(PESAN_TJ_BELUM_TERBACA);
       tjCatat(kunci);
       if (sel.value.startsWith("aleta:")) {
         const dipakai = kunci.map((k) => pakaiSetSaksi(k, sel.value.slice(6))).filter(Boolean);
@@ -2860,6 +2873,7 @@
     }
     if (kode === "tambahtj") {
       const kunci = String(aksi.getAttribute("data-kunci") || "").split("|").filter(Boolean);
+      if (!tjSiap(kunci)) return toast(PESAN_TJ_BELUM_TERBACA);
       tjCatat(kunci);
       for (const k of kunci) {
         const x = S.tj[k];

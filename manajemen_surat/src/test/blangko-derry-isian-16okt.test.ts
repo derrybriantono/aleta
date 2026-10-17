@@ -127,7 +127,7 @@ afterEach(async () => {
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean } = {}): Halaman {
+function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?: boolean; tjGagal?: boolean } = {}): Halaman {
   const badan = `<div id="header"><div class="h_right"><b>Pengguna</b> Panitera</div></div><div id="wrapper"><div id="navbar">${MENU}</div><div id="content"></div></div>`;
   const dom = new JSDOM(`<!doctype html><html><head><title>ABT</title></head><body>${badan}</body></html>`, { url: BERANDA, runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]);
   terbuka.push(dom);
@@ -265,6 +265,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
         tj[kode] = JSON.parse(String(f.get("data") || "[]"));
         return html("Tanya Jawab Disimpan");
       }
+      if (p.tjGagal && cara === "GET" && kode === "5058") return new Response("galat", { status: 500 });
       const rows = f.get("load_template") ? { "0": { urutan_pertanyaan: "1", pertanyaan: "Apakah saudara kenal Penggugat?", jawaban: "" }, "1": { urutan_pertanyaan: "2", pertanyaan: "Bagaimana rumah tangganya?", jawaban: "" } } : (tj[kode] || []).map((r) => ({ urutan_pertanyaan: r.no, pertanyaan: r.tanya, jawaban: r.jawab }));
       return html(`<div class="panel-heading"><b><big>581/Pdt.G/2026/PA.Dgl</big></b> - TanyaJwb Saksi : <b>Nama Saksi</b></div><select><option value='A1a'>(A1a) Pertanyaan Saksi P CG</option></select><script>var ajax_data = ${JSON.stringify(rows)}\n</script>`);
     }
@@ -559,6 +560,29 @@ describe("F. perlu diisi", () => {
     expect(idxCek).toBeLessThan(idxSimpan);
     expect(mintaKe(h, /tanyajawab_template\?hapus/)).toEqual([]);
     await sampai(() => /tersimpan di ABT/.test(akar(h).textContent || ""), "keterangan tersimpan");
+  });
+
+  it("audit 17 Okt: bacaan ABT gagal -> Muat/Tambah baris/Simpan mati dan simpan ditolak, keterangan lama di ABT tidak terhapus", async () => {
+    const h = buka({ tjGagal: true });
+    await pilihPutusan(h);
+    (q(h, '[data-tj="saksi 1 p"]') as HTMLElement).click();
+    await sampai(() => /ABT menjawab 500/.test(akar(h).textContent || ""), "bacaan gagal tampil");
+    for (const k of ["muattpl", "tambahtj", "simpantj"]) expect((q(h, `[data-bd2="${k}"]`) as HTMLButtonElement).disabled).toBe(true);
+    // Tombol dipaksa hidup (mis. gambar ulang tertinggal): simpan tetap ditolak tanpa menulis ke ABT.
+    const tb = q(h, '[data-bd2="tambahtj"]') as HTMLButtonElement;
+    tb.disabled = false;
+    tb.click();
+    const ta = q(h, '[data-sba="0"][data-sk="0"]') as HTMLTextAreaElement | null;
+    if (ta) {
+      ta.value = "Jawaban baru;";
+      ta.dispatchEvent(new h.w.Event("input", { bubbles: true }));
+    }
+    const sp = q(h, '[data-bd2="simpantj"]') as HTMLButtonElement;
+    sp.disabled = false;
+    sp.click();
+    await sampai(() => /belum terbaca/.test(akar(h).textContent || ""), "simpan ditolak");
+    expect(mintaKe(h, /tanyajawab_perkara_edit\?aksi=simpan/, "POST")).toEqual([]);
+    expect(h.tj["5058"].length).toBe(2);
   });
 
   it("F3.3 set pertanyaan saksi ALETA: disarankan menurut jenis perkara, dimuat ke dua saksi tanpa menulis ke ABT, tambahan disisipkan sebelum penutup", async () => {
