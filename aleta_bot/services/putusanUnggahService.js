@@ -103,6 +103,7 @@ const dokumenPenetapanService = require("./dokumenPenetapanService");
 // di kepala berkas ini tentang mengapa unggah putusan baru memakainya.
 const abtCetakService = require("./abtCetakService");
 const { tanpaTandaAletaMetadata } = require("./metadataTanpaAletaService");
+const penjagaTandaSipp = require("./penjagaTandaSipp");
 
 /** urutan pada dirput_dokumen_ref - 99 putusan akhir, 100 anonimisasi. */
 const URUTAN_REF = { putusan: 99, anonimisasi: 100 };
@@ -157,7 +158,9 @@ function namaBerkas(nomorPerkara, jenis, ekstensi = "pdf") {
   // datang apa adanya dari luar adalah jalan masuk bagi nama yang menembus
   // folder ("../"), dan yang ditulis di sini berada di dalam cakram SIPP.
   const ext = /^[a-z0-9]{1,5}$/i.test(String(ekstensi)) ? String(ekstensi).toLowerCase() : "pdf";
-  return `${bagian[3]}_${bagian[2]}_${bagian[1]}_${bagian[0]}_${akhiran}.${ext}`.replace(/ /g, "_");
+  // 17 Okt 2026: nama berkas tanpa kata ALETA (nomor perkara dari SIPP tidak memuatnya;
+  // pembersihan ini pagar bila suatu saat ada).
+  return penjagaTandaSipp.namaBerkasBersih(`${bagian[3]}_${bagian[2]}_${bagian[1]}_${bagian[0]}_${akhiran}.${ext}`.replace(/ /g, "_"));
 }
 
 /**
@@ -383,6 +386,9 @@ async function unggahSatu({
   // Jam dinding. Dapat ditiru uji; di produksi (null) jam SIPP (WIB) dari
   // basis data - SIPP menulis jamnya dengan PHP Asia/Jakarta (13 Okt 2026).
   jam = null,
+  // Teks dari SIPP yang memuat kata ALETA (nama pihak perkara ini) - tidak dihitung
+  // oleh penjaga isi berkas (penjagaTandaSipp).
+  dariSipp = [],
 }) {
   const kolom = KOLOM_DOK[jenis];
   if (!kolom) return { jenis, ok: false, alasan: "jenis_tidak_didukung" };
@@ -419,6 +425,17 @@ async function unggahSatu({
   // SIPP, yang juga menyimpan berkasnya lebih dulu dan mengubah kemudian.
   // Butir 45 (17 Okt): metadata berkas (Title/Author/Producer) tanpa tanda ALETA -
   // naskah asli DAN PDF terbitannya (dokumenKePdf membersihkan hasilnya sendiri).
+  //
+  // 17 Okt 2026 (penjaga batas): metadata dibersihkan (sistem) lalu ISI naskah
+  // diperiksa (RTF/DOCX/PDF/DOC). Isi dokumen hukum TIDAK diubah diam-diam -
+  // bila memuat kata ALETA di luar nama pihak dari SIPP, unggahan DITAHAN
+  // sebelum satu berkas pun ditulis.
+  const siapBerkas = penjagaTandaSipp.siapkanBerkasSipp(pdf, {
+    nama: jenis === "anonimisasi" ? "Putusan anonimisasi" : "Putusan akhir",
+    dariSipp,
+  });
+  if (!siapBerkas.ok) return { jenis, ok: false, alasan: siapBerkas.alasan, pesan: siapBerkas.pesan };
+  pdf = siapBerkas.isi;
   pdf = tanpaTandaAletaMetadata(pdf);
   let pdfTerbit = bentuk === "pdf" ? pdf : null;
   let sebabTanpaPdf = "";
@@ -457,6 +474,27 @@ async function unggahSatu({
   const relatifAsli = jalurRelatif(nomorPerkara, jenis, tanggalPutusan, bentuk);
   const relatifPdf = jalurRelatif(nomorPerkara, jenis, tanggalPutusan, "pdf");
   if (!relatifAsli) return { jenis, ok: false, alasan: "nomor_atau_tanggal_putusan_tidak_sah" };
+
+  // Semua yang akan tertulis di basis data SIPP untuk berkas ini diperiksa SEBELUM
+  // berkasnya ditulis (jalur, nama berkas, baris audit) - satu pintu dengan
+  // penjalan rencana lainnya.
+  const auditUji = barisAudit({ username: olehUsername, jenis, perkaraId, rincian: { [kolom]: relatifAsli }, ip, saat: "" });
+  const tabelPutusan = "perkara_putusan";
+  const tabelDirput = "dirput_dokumen";
+  const tahanTulis = penjagaTandaSipp.periksaRencana({
+    atasNama: { username: olehUsername },
+    perkara: { nomorPerkara },
+    langkah: [
+      { tabel: tabelPutusan, sql: `UPDATE ${tabelPutusan} SET ${kolom} = ? WHERE perkara_id = ?`, params: [relatifAsli, perkaraId] },
+      { tabel: "sys_audittrail", sql: auditUji.sql, params: auditUji.params },
+      {
+        tabel: tabelDirput,
+        sql: `INSERT INTO ${tabelDirput} (filename, path_filename) VALUES (?,?)`,
+        params: [path.basename(relatifPdf), relatifPdf],
+      },
+    ],
+  });
+  if (!tahanTulis.ok) return { jenis, ok: false, alasan: tahanTulis.alasan, pesan: tahanTulis.pesan };
 
   const penuhAsli = path.join(akar, relatifAsli);
   const penuhPdf = path.join(akar, relatifPdf);
@@ -673,6 +711,7 @@ async function unggahPutusan({
 
   // Kedua konversi dimulai SEKARANG, bersamaan; penulisannya tetap berurutan
   // (putusan dahulu). Lihat mulaiUbahKePdf.
+  const dariSipp = await penjagaTandaSipp.dataSippMemuatAleta(id, runQuery);
   const ubahPutusan = pdfPutusan ? mulaiUbahKePdf(pdfPutusan) : null;
   const ubahAnonimisasi = pdfAnonimisasi ? mulaiUbahKePdf(pdfAnonimisasi) : null;
 
@@ -689,6 +728,7 @@ async function unggahPutusan({
         ip,
         ubahan: ubahPutusan,
         jam,
+        dariSipp,
       })
     );
   }
@@ -704,6 +744,7 @@ async function unggahPutusan({
         ip,
         ubahan: ubahAnonimisasi,
         jam,
+        dariSipp,
       })
     );
   }

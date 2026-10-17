@@ -50,6 +50,7 @@
 
 const externalDbService = require("./externalDbService");
 const logService = require("./logService");
+const penjagaTandaSipp = require("./penjagaTandaSipp");
 const { cleanText } = require("./ecourtTextService");
 
 /** Sambungan yang sama dengan pembaca antrian - lihat antrianSidangService. */
@@ -321,12 +322,20 @@ async function sinkronkan({ tanggal, sidang = [], terapkan = false, olehSiapa = 
   const gagal = [];
 
   for (const baris of akanDitambah) {
+    const nilai = kolomPakai.map((k) => nilaiKolom(baris, k));
+    // 17 Okt 2026: tidak ada kata ALETA di database antrian SIPP. Seluruh isiannya
+    // berasal dari data SIPP (nama petugas, kode majelis); penjaga ini pagar bila
+    // sumbernya suatu saat berubah. Teks SIPP sendiri tidak dihitung.
+    const tahanTanda = penjagaTandaSipp.periksaRencana({
+      dataSipp: [baris.namaPetugas, baris.majelisKode].filter((x) => typeof x === "string"),
+      langkah: [{ tabel: TABEL, sql, params: nilai }],
+    });
+    if (!tahanTanda.ok) {
+      gagal.push({ perkaraId: baris.perkaraId, nomorPerkara: baris.nomorPerkara, sebab: tahanTanda.pesan });
+      continue;
+    }
     try {
-      await externalDbService.query(
-        KUNCI_KONEKSI,
-        sql,
-        kolomPakai.map((k) => nilaiKolom(baris, k))
-      );
+      await externalDbService.query(KUNCI_KONEKSI, sql, nilai);
       ditambahkan += 1;
     } catch (galat) {
       // Satu baris yang gagal tidak menghentikan sisanya - tetapi tiap

@@ -86,6 +86,7 @@ const DAFTAR_TABEL_COURT_CALENDAR = new Set(["perkara_court_calendar"]);
 // data WITA (13 Okt 2026). Tetap berjam dua belas, seperti date("h") SIPP.
 const SAAT_SIPP_SQL = require("./penetapanTulisService").sqlJamSipp("%Y-%m-%d %h:%i:%s");
 const { menyebutAleta } = require("./tandaAletaService");
+const penjagaTandaSipp = require("./penjagaTandaSipp");
 
 /** Batas baris per permintaan - satu perkara jarang lebih dari 12 rencana. */
 const BATAS_BARIS = 30;
@@ -381,6 +382,10 @@ function buatLayanan(deps = {}) {
       return { ok: false, alasan: (rencana && rencana.alasan) || "rencana_tidak_sah" };
     }
     const kering = opsi.kering !== false;
+    // Penjaga terakhir (17 Okt 2026): tak satu nilai pun yang memuat kata ALETA
+    // sampai ke SIPP (agenda/keterangan sudah diperiksa di periksaBaris).
+    const tahanTanda = penjagaTandaSipp.periksaRencana(rencana);
+    if (!tahanTanda.ok) return { ...tahanTanda, kering, hasil: [] };
     const rincian = rencana.langkah.map((x) => ({
       jenis: x.jenis,
       ke: x.ke,

@@ -54,6 +54,7 @@
  *     ditulis, bukan tebakan sisi peramban
  */
 
+const penjagaTandaSipp = require("./penjagaTandaSipp");
 const db = require("../db_config");
 
 /** Posita terpanjang di PA Donggala belasan ribu huruf; ini jauh di atasnya. */
@@ -626,6 +627,12 @@ async function rapikanPosita(perkaraId, ujiKering) {
     return { ok: true, tersentuh: 0, berubah: true, disambung, sebelum: lama, sesudah: baru, alasan: "uji kering" };
   }
 
+  // 17 Okt 2026: tidak ada kata ALETA di SIPP. Posita ini diolah dari teks SIPP
+  // sendiri (hanya penataan); kemunculan yang sudah ada di asalnya tidak dihitung,
+  // yang BERTAMBAH ditahan.
+  const tahanTanda = penjagaTandaSipp.periksaIsian({ Posita: baru }, { teksAsal: lama });
+  if (!tahanTanda.ok) return { ok: false, alasan: tahanTanda.pesan, kode: tahanTanda.alasan, kolom: tahanTanda.kolom };
+
   const hasil = await runQuery("UPDATE perkara SET posita = ? WHERE perkara_id = ? LIMIT 1", [
     baru,
     id,
@@ -723,6 +730,12 @@ async function sambungPecahanRagu(perkaraId, indeks) {
         "penyambungnya sendiri - laporkan, jangan dipaksakan.",
     };
   }
+
+  // 17 Okt 2026: tidak ada kata ALETA di SIPP. Posita ini diolah dari teks SIPP
+  // sendiri (hanya penataan); kemunculan yang sudah ada di asalnya tidak dihitung,
+  // yang BERTAMBAH ditahan.
+  const tahanTanda = penjagaTandaSipp.periksaIsian({ Posita: baru }, { teksAsal: lama });
+  if (!tahanTanda.ok) return { ok: false, alasan: tahanTanda.pesan, kode: tahanTanda.alasan, kolom: tahanTanda.kolom };
 
   const hasil = await runQuery("UPDATE perkara SET posita = ? WHERE perkara_id = ? LIMIT 1", [
     baru,

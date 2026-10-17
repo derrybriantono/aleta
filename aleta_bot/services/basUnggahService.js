@@ -45,6 +45,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { tanpaTandaAletaMetadata } = require("./metadataTanpaAletaService");
+const penjagaTandaSipp = require("./penjagaTandaSipp");
 
 const PERAN_BOLEH_UNGGAH_BAS = Object.freeze(["super-admin", "admin", "panitera", "panmud", "pp", "analis"]);
 const PESAN_TOLAK_BAS =
@@ -75,7 +76,8 @@ function namaBerkasBas(nomorPerkara, urutan, cap, ekstensi) {
   const dasar = `${bagian[3]}_${bagian[2]}_${bagian[1]}_${bagian[0]}_bas_${u}_${Math.floor(Number(cap) || 0)}`
     .replace(/ /g, "_")
     .replace(/\./g, "");
-  return `${dasar}.${ext}`;
+  // 17 Okt 2026: nama berkas tanpa kata ALETA (nomor perkara dari SIPP tidak memuatnya).
+  return penjagaTandaSipp.namaBerkasBersih(`${dasar}.${ext}`);
 }
 
 /**
@@ -244,6 +246,13 @@ function buatLayanan(depsMasuk) {
       return { ok: false, alasan: "sudah_ada", pesan: `e-Doc BAS sidang ini sudah ada di SIPP (${lama.split("/").pop()}). Tidak diganti.`, jalurLama: lama.split("/").pop() };
     }
 
+    // 17 Okt 2026 (penjaga batas): metadata berkas dibersihkan (sistem), ISI naskah
+    // diperiksa - tidak diubah diam-diam; bila memuat kata ALETA di luar nama pihak
+    // dari SIPP, unggahan DITAHAN sebelum berkas atau barisnya ditulis.
+    const dariSipp = await penjagaTandaSipp.dataSippMemuatAleta(pid, d.kueri);
+    const siap = penjagaTandaSipp.siapkanBerkasSipp(bita, { nama: `BAS sidang ke-${Number(r.urutan) || ""}`.trim(), dariSipp });
+    if (!siap.ok) return gagal(siap.alasan, siap.pesan);
+
     const keadaanAkar = d.periksaAkar();
     if (!keadaanAkar.dapatDitulis) return gagal(keadaanAkar.alasan || "akar_tidak_dapat_ditulis", keadaanAkar.pesan || "Folder e-Doc SIPP tidak dapat ditulis.");
 
@@ -254,7 +263,7 @@ function buatLayanan(depsMasuk) {
 
     // Berkas DAHULU, baris sesudahnya - seperti SIPP (move_uploaded_file lalu update_data).
     try {
-      d.tulisBerkas(penuh, bita);
+      d.tulisBerkas(penuh, siap.isi);
       d.samakanPemilik(penuh, keadaanAkar.akar);
     } catch (e) {
       return gagal("berkas_tidak_dapat_ditulis", String((e && e.message) || e).slice(0, 200));

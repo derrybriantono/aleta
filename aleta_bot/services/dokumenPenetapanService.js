@@ -37,6 +37,7 @@
  * sebabnya langkah ketiga tidak dapat dilewati.
  */
 
+const penjagaTandaSipp = require("./penjagaTandaSipp");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -137,7 +138,8 @@ function jalurDokumen(nomorPerkara, jenis, saat = new Date()) {
   const bersih = nomorBersih(nomorPerkara);
   const epoch = Math.floor(saat.getTime() / 1000);
   const berkas = `${bersih}_Dokumen_${jenis.toUpperCase()}_${epoch}.pdf`;
-  return `resources/file/doc/${saat.getFullYear()}/${dua(saat.getMonth() + 1)}/${bersih}/${berkas}`;
+  // 17 Okt 2026: nama berkas & folder tanpa kata ALETA (nomor perkara dari SIPP tidak memuatnya).
+  return penjagaTandaSipp.namaBerkasBersih(`resources/file/doc/${saat.getFullYear()}/${dua(saat.getMonth() + 1)}/${bersih}/${berkas}`);
 }
 
 /**
@@ -463,6 +465,14 @@ async function simpanKeSipp({ perkaraId, nomorPerkara, jenis, pdf, olehUsername,
     return { ok: false, alasan: "tabel_dokumen_penetapan_tidak_ada" };
   }
 
+  // 17 Okt 2026 (penjaga batas): metadata PDF dibersihkan (sistem), ISI diperiksa;
+  // naskah tidak diubah diam-diam - bila memuat kata ALETA di luar nama pihak dari
+  // SIPP, penetapan DITAHAN sebelum berkas atau barisnya ditulis.
+  const dariSipp = await penjagaTandaSipp.dataSippMemuatAleta(id, runQuery);
+  const siapBerkas = penjagaTandaSipp.siapkanBerkasSipp(Buffer.from(pdf), { nama: `Penetapan ${kunci.toUpperCase()}`, dariSipp });
+  if (!siapBerkas.ok) return { ok: false, alasan: siapBerkas.alasan, pesan: siapBerkas.pesan };
+  pdf = siapBerkas.isi;
+
   const keadaanAkar = periksaAkarSipp(undefined, { relatif: "resources/file/doc" });
   if (!keadaanAkar.dapatDitulis) {
     return { ok: false, alasan: keadaanAkar.alasan, pesan: keadaanAkar.pesan };
@@ -470,6 +480,17 @@ async function simpanKeSipp({ perkaraId, nomorPerkara, jenis, pdf, olehUsername,
   const akar = keadaanAkar.akar;
 
   const relatif = jalurDokumen(nomorPerkara, kunci, saat);
+  const tahanTulis = penjagaTandaSipp.periksaRencana({
+    atasNama: { username: String(olehUsername || "") },
+    langkah: [
+      {
+        tabel: "perkara_dokumen_penetapan",
+        sql: "INSERT INTO perkara_dokumen_penetapan (nama_dokumen, dokumen, diinput_oleh) VALUES (?,?,?)",
+        params: [kunci.toUpperCase(), relatif, String(olehUsername || "")],
+      },
+    ],
+  });
+  if (!tahanTulis.ok) return { ok: false, alasan: tahanTulis.alasan, pesan: tahanTulis.pesan };
   const penuh = path.join(akar, relatif);
 
   try {
