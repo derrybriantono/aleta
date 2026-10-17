@@ -196,7 +196,7 @@ function lingkungan(o: Opsi) {
   w.URL.createObjectURL = () => "blob:http://halaman/cadangan-1";
   w.URL.revokeObjectURL = () => {};
 
-  const konteks = dom.getInternalVMContext();
+  const konteks = (dom as any).getInternalVMContext();
   new vm.Script(POTONGAN_ALAT, { filename: "panel-alat.potongan.js" }).runInContext(konteks);
   if (o.pasangShim) new vm.Script(SUMBER_HALAMAN, { filename: "unduh-halaman.js" }).runInContext(konteks);
   new vm.Script(SUMBER_UNIVERSAL, { filename: "unduh-universal.js" }).runInContext(konteks);
