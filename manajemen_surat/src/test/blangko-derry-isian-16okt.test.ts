@@ -824,6 +824,38 @@ describe("audit 17 Okt: E4 tanya jawab yang sudah ada di ABT", () => {
   });
 });
 
+describe("audit 17 Okt: E5 huruf cp1252 yang tercetak rusak", () => {
+  it("E5 murni: normalAbt mengganti – — … “ ” ‘ ke bentuk aman, ’ dan huruf biasa dibiarkan", () => {
+    const x = (buka() as Halaman).w.aletaBlangkoDerryIsian.murni;
+    const h = x.normalAbt("A – B — C … “D” ‘E’ F’ é");
+    expect(h.teks).toBe("A - B - C ... \"D\" 'E’ F’ é"); // ’ penutup dibiarkan
+    expect(h.diganti).toEqual(["–", "—", "…", "“", "”", "‘"]);
+    expect(x.normalAbt("tanpa perubahan ’ é").diganti).toEqual([]);
+  });
+
+  it("E5 isian: yang tersimpan ke ABT sudah bentuk aman dan petugas diberi tahu apa yang diganti; tanya jawab juga", async () => {
+    const h = buka();
+    await pilihPutusan(h);
+    const i = q(h, "#bd-i0007") as HTMLInputElement;
+    ketik(h, i, "dua anak – laki-laki … “baik”");
+    await sampai(() => h.abt["0007"], "tersimpan");
+    expect(h.abt["0007"]).toBe("dua anak - laki-laki ... ’baik’"); // " menjadi ’ oleh klien (petik data_sql)
+    expect(q(h, '[data-status="0007"]')!.textContent).toContain("diganti");
+    expect(q(h, '[data-status="0007"]')!.textContent).toContain("–");
+    expect(i.value).toBe("dua anak - laki-laki ... \"baik\"");
+
+    klik(h, '[data-tj="saksi 1 p"]');
+    await sampai(() => q(h, ".bd-sbs .bd-sbrow"), "berdampingan");
+    const ta = q(h, '[data-sba="0"][data-sk="0"]') as HTMLTextAreaElement;
+    ta.value = "Kenal – sejak kecil…";
+    ta.dispatchEvent(new h.w.Event("input", { bubbles: true }));
+    klik(h, '[data-bd2="simpantj"]');
+    await sampai(() => h.tj["5058"].some((r) => r.jawab.includes("sejak")), "tj tersimpan");
+    expect(h.tj["5058"][0].jawab).toBe("Kenal - sejak kecil...");
+    expect(akar(h).textContent).toContain("diganti");
+  });
+});
+
 describe("murni", () => {
   const m = () => buka().w.aletaBlangkoDerryIsian.murni;
   it("rtfKeHtml: perataan, tebal/miring, tabel, \\'hh dan \\uN, bagian tak dicetak dilewati", () => {
