@@ -196,7 +196,7 @@ const KURASI = {
   "1154": ["ALETA/SIPP bantuan panggilan", "Hanya 1 blangko."],
   "1232": ["ALETA/SIPP bantuan panggilan", "Hanya 1 blangko."],
   "5230": ["ALETA Kasir (ongkos panggilan)", "Hanya 1 blangko."],
-  "0303": ["tidak ada tanggal pasti di SIPP; usulan ragu = tanggal pendaftaran", "412 isian petugas: 189 persis sama (46%), 92% jatuh 0-1 hari dari tanggal pendaftaran; juru sita memilih hari pengumuman."],
+  "0303": ["tidak ada tanggal pasti di SIPP; usulan ragu = tanggal pendaftaran", "409 isian petugas (voluntair dan kontensius): 186 persis sama (45%), 92% jatuh 0-1 hari dari tanggal pendaftaran; juru sita memilih hari pengumuman."],
   "9134": ["belum dikaji", "Isian blangko BAS permohonan."],
   "8603": ["posita (modul asal-usul/hadhanah ada); modul cerai-kumulasi belum", ""],
   "9347": ["e-Court (surat kuasa/anggaran dasar badan hukum)", "Hanya perkara ekonomi syariah badan hukum."],

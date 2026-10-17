@@ -43,7 +43,7 @@ Kode: `aleta_bot/services/abtIsianSippLanjutan.js`, dipanggil dari `dariSipp` (k
 | 8433 | Alasan pencabutan perkara | hasil mediasi Y2 (berhasil dengan pencabutan) | 26 | otomatis | 41 isian petugas sejak 2023, hanya 4 dari Y2 |
 | 8899 | Pokok kesepakatan perdamaian sebagian | topik kata kunci pada perkara_mediasi.isi_kesepakatan_perdamaian (hasil S) | 121 | otomatis (ragu bila isi berupa laporan mediator) | belum ada isian petugas (variabel baru 15 Okt); 140 perkara hasil S sejak 2023 |
 | 1183 | Tgl. batas waktu ikrar talak | perkara_ikrar_talak.tanggal_sidang_pertama + 6 bulan | 328 | usulan ragu | 7 dari 11 persis sama |
-| 0303 | Tgl. pengumuman itsbat | perkara.tanggal_pendaftaran | 738 | usulan ragu | 189 dari 412 persis sama (92% dalam 0-1 hari) |
+| 0303 | Tgl. pengumuman itsbat (voluntair, alur 16) | perkara.tanggal_pendaftaran | 699 | usulan ragu | 186 dari 409 persis sama (92% dalam 0-1 hari) |
 | 0185 | Tgl. surat kuasa Tergugat | perkara_pengacara pihak 2 | 34 | usulan ragu | 1 dari 1 persis sama |
 
 "Otomatis" = tercentang sendiri bila isian blangko kosong; "usulan ragu" = ditampilkan tanpa centang dan tidak menimpa isian petugas (aturan yang sama dengan usulan lain).
@@ -322,7 +322,7 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 | 231 | 9482 | Fakta pokok tuntutan yang terbukti (uraian singkat dari bukti dan saksi) | 3 | 0 | [01] [Kabul] Wasiat - Kontradiktoir.rtf | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
 | 232 | 9207 | Wali adhal | 1 | 0 | [01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan.rtf | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
 | 233 | 9208 | Wali adhal (tolak) | 1 | 0 | [03] [Tolak] Wali Adhal - Keengganan Wali Beralasan Hukum.rt | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
-| 234 | 0303 | Tanggal pengumuman | 2 | 416 | [JS] 9.1. Pengumuman Permohonan Itsbat Nikah (2 Pemohon).rtf | sebagian | tidak ada tanggal pasti di SIPP; usulan ragu = tanggal pendaftaran (terisi di: sipp-lanjutan-ragu) | 412 isian petugas: 189 persis sama (46%), 92% jatuh 0-1 hari dari tanggal pendaftaran; juru sita memilih hari pengumuman. |
+| 234 | 0303 | Tanggal pengumuman | 2 | 416 | [JS] 9.1. Pengumuman Permohonan Itsbat Nikah (2 Pemohon).rtf | sebagian | tidak ada tanggal pasti di SIPP; usulan ragu = tanggal pendaftaran (terisi di: sipp-lanjutan-ragu) | 409 isian petugas (voluntair dan kontensius): 186 persis sama (45%), 92% jatuh 0-1 hari dari tanggal pendaftaran; juru sita memilih hari pengumuman. |
 | 235 | 9307 | Pilihan anak yang sudah mumayyiz di persidangan | 2 | 0 | [01c] [Kabul] Hak Asuh - Kontradiktoir - Anak Mumayyiz Memil | ya | bawaan ABT bila dikosongkan |  |
 | 236 | 9330 | Pertimbangan penolakan pembatalan perkawinan | 2 | 0 | [03] [Tolak] Pembatalan Perkawinan - Kontradiktoir - Alasan  | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
 | 237 | 9483 | Pertimbangan mengapa dalil gugatan tidak terbukti atau tidak beralasan hukum (untuk putusan ditolak) | 2 | 0 | [03] [Tolak] Wasiat - Kontradiktoir - Dalil Tidak Terbukti.r | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |

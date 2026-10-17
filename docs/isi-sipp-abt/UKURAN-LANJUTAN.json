@@ -27,9 +27,9 @@
    "ragu": 1
   },
   "0303": {
-   "perkara": 738,
+   "perkara": 699,
    "pasti_cukup": 0,
-   "ragu": 738
+   "ragu": 699
   },
   "0185": {
    "perkara": 34,
@@ -65,7 +65,7 @@
    "348": 1
   },
   "0303": {
-   "360": 738
+   "360": 699
   },
   "0185": {
    "346": 16,
@@ -88,8 +88,8 @@
   },
   "0303": {
    "diketikPetugas": 416,
-   "adaUsulan": 412,
-   "cocokPersis": 189
+   "adaUsulan": 409,
+   "cocokPersis": 186
   },
   "0185": {
    "diketikPetugas": 1,

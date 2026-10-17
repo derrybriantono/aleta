@@ -121,9 +121,9 @@
     "ragu": 1
    },
    "0303": {
-    "perkara": 738,
+    "perkara": 699,
     "pasti_cukup": 0,
-    "ragu": 738
+    "ragu": 699
    },
    "0185": {
     "perkara": 34,
@@ -159,7 +159,7 @@
     "348": 1
    },
    "0303": {
-    "360": 738
+    "360": 699
    },
    "0185": {
     "346": 16,
@@ -182,8 +182,8 @@
    },
    "0303": {
     "diketikPetugas": 416,
-    "adaUsulan": 412,
-    "cocokPersis": 189
+    "adaUsulan": 409,
+    "cocokPersis": 186
    },
    "0185": {
     "diketikPetugas": 1,
@@ -1410,7 +1410,7 @@
 {"kunci":"9482","kode":["9482"],"nama":"Fakta pokok tuntutan yang terbukti (uraian singkat dari bukti dan saksi)","namaAsli":"WASIAT: FAKTA POKOK TUNTUTAN YANG TERBUKTI - ISIAN (uraian singkat dari bukti & saksi, mis. nilai objek wasiat melebihi sepertiga harta peninggalan dan ahli waris tidak menyetujui)","jenis":"teks","tingkat":"penting","wajib":true,"cadangan":"","keadaan":"","pemicu":"","diketikPetugas":0,"jumlahBlangko":3,"langsung":3,"bobotLangsung":3,"bobot":3,"cakupanBobot":0,"contoh":["[01] [Kabul] Wasiat - Kontradiktoir.rtf","[01a] [Kabul] Wasiat - T Tidak Hadir Setelah Mediasi.rtf","[01b] [Kabul Verstek] Wasiat.rtf"],"folder":["4c Wasiat"],"status":"tidak","folderTakTertutup":["4c Wasiat"],"pengisi":[],"sumberMungkin":"tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)","catatan":""},
 {"kunci":"9207","kode":["9207"],"nama":"Wali adhal","namaAsli":"WALI ADHAL: POKOK KETERANGAN WALI NASAB YANG HADIR DI PERSIDANGAN (varian [01a])","jenis":"teks","tingkat":"penting","wajib":true,"cadangan":"","keadaan":"","pemicu":"","diketikPetugas":0,"jumlahBlangko":1,"langsung":1,"bobotLangsung":3,"bobot":3,"cakupanBobot":0,"contoh":["[01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan.rtf"],"folder":["7 Wali Adhal"],"status":"tidak","folderTakTertutup":["7 Wali Adhal"],"pengisi":[],"sumberMungkin":"tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)","catatan":""},
 {"kunci":"9208","kode":["9208"],"nama":"Wali adhal (tolak)","namaAsli":"WALI ADHAL (TOLAK): PERTIMBANGAN BAHWA KEENGGANAN WALI BERALASAN HUKUM (mis. calon suami tidak sekufu dalam agama/akhlak, ada halangan perkawinan)","jenis":"teks","tingkat":"penting","wajib":true,"cadangan":"","keadaan":"","pemicu":"","diketikPetugas":0,"jumlahBlangko":1,"langsung":1,"bobotLangsung":3,"bobot":3,"cakupanBobot":0,"contoh":["[03] [Tolak] Wali Adhal - Keengganan Wali Beralasan Hukum.rtf"],"folder":["7 Wali Adhal"],"status":"tidak","folderTakTertutup":["7 Wali Adhal"],"pengisi":[],"sumberMungkin":"tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)","catatan":""},
-{"kunci":"0303","kode":["0303"],"nama":"Tanggal pengumuman","namaAsli":"Tgl. Pengumuman","jenis":"tanggal","tingkat":"penting","wajib":true,"cadangan":"","keadaan":"","pemicu":"","diketikPetugas":416,"jumlahBlangko":2,"langsung":2,"bobotLangsung":2,"bobot":2,"cakupanBobot":1,"contoh":["[JS] 9.1. Pengumuman Permohonan Itsbat Nikah (2 Pemohon).rtf","[JS] 9.2. Pengumuman Permohonan Itsbat Nikah (1 Pemohon).rtf"],"folder":["98 Relaas"],"status":"sebagian","folderTakTertutup":[],"pengisi":[{"jenis":"kelompok","id":"sipp-lanjutan-ragu","berkas":"aleta_bot/services/abtIsianSippLanjutan.js","tingkat":"usulan"}],"sumberMungkin":"tidak ada tanggal pasti di SIPP; usulan ragu = tanggal pendaftaran","catatan":"412 isian petugas: 189 persis sama (46%), 92% jatuh 0-1 hari dari tanggal pendaftaran; juru sita memilih hari pengumuman."},
+{"kunci":"0303","kode":["0303"],"nama":"Tanggal pengumuman","namaAsli":"Tgl. Pengumuman","jenis":"tanggal","tingkat":"penting","wajib":true,"cadangan":"","keadaan":"","pemicu":"","diketikPetugas":416,"jumlahBlangko":2,"langsung":2,"bobotLangsung":2,"bobot":2,"cakupanBobot":1,"contoh":["[JS] 9.1. Pengumuman Permohonan Itsbat Nikah (2 Pemohon).rtf","[JS] 9.2. Pengumuman Permohonan Itsbat Nikah (1 Pemohon).rtf"],"folder":["98 Relaas"],"status":"sebagian","folderTakTertutup":[],"pengisi":[{"jenis":"kelompok","id":"sipp-lanjutan-ragu","berkas":"aleta_bot/services/abtIsianSippLanjutan.js","tingkat":"usulan"}],"sumberMungkin":"tidak ada tanggal pasti di SIPP; usulan ragu = tanggal pendaftaran","catatan":"409 isian petugas (voluntair dan kontensius): 186 persis sama (45%), 92% jatuh 0-1 hari dari tanggal pendaftaran; juru sita memilih hari pengumuman."},
 {"kunci":"9307","kode":["9307"],"nama":"Pilihan anak yang sudah mumayyiz di persidangan","namaAsli":"HAK ASUH (ANAK MUMAYYIZ): KETERANGAN ANAK DI PERSIDANGAN - ISIAN (pilihan anak dan alasannya; kosong = memilih #0046#)","jenis":"teks","tingkat":"tambahan","wajib":true,"cadangan":"bawaan","keadaan":"","pemicu":"","diketikPetugas":0,"jumlahBlangko":2,"langsung":0,"bobotLangsung":0,"bobot":2,"cakupanBobot":1,"contoh":["[01c] [Kabul] Hak Asuh - Kontradiktoir - Anak Mumayyiz Memilih.rtf","[01c] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Mumayyiz Memilih.rtf"],"folder":["6a Hak Asuh Anak (Hadhanah)","6b Penguasaan Anak"],"status":"ya","folderTakTertutup":[],"pengisi":[{"jenis":"abt-bawaan","id":"abt-bawaan","berkas":"","tingkat":"otomatis"}],"sumberMungkin":"","catatan":""},
 {"kunci":"9330","kode":["9330"],"nama":"Pertimbangan penolakan pembatalan perkawinan","namaAsli":"PEMBATALAN NIKAH (TOLAK): PERTIMBANGAN MENGAPA ALASAN PEMBATALAN TIDAK TERBUKTI / TIDAK BERALASAN HUKUM","jenis":"teks","tingkat":"penting","wajib":true,"cadangan":"","keadaan":"","pemicu":"","diketikPetugas":0,"jumlahBlangko":2,"langsung":2,"bobotLangsung":2,"bobot":2,"cakupanBobot":0,"contoh":["[03] [Tolak] Pembatalan Perkawinan - Kontradiktoir - Alasan Tidak Terbukti.rtf","[03b] [Tolak Verstek] Pembatalan Perkawinan - Alasan Pembatalan Tidak Terbukti.rtf"],"folder":["5a Pembatalan Perkawinan"],"status":"tidak","folderTakTertutup":["5a Pembatalan Perkawinan"],"pengisi":[],"sumberMungkin":"tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)","catatan":""},
 {"kunci":"9483","kode":["9483"],"nama":"Pertimbangan mengapa dalil gugatan tidak terbukti atau tidak beralasan hukum (untuk putusan ditolak)","namaAsli":"WASIAT (TOLAK): PERTIMBANGAN MENGAPA DALIL GUGATAN TIDAK TERBUKTI / TIDAK BERALASAN HUKUM","jenis":"teks","tingkat":"penting","wajib":true,"cadangan":"","keadaan":"","pemicu":"","diketikPetugas":0,"jumlahBlangko":2,"langsung":2,"bobotLangsung":2,"bobot":2,"cakupanBobot":0,"contoh":["[03] [Tolak] Wasiat - Kontradiktoir - Dalil Tidak Terbukti.rtf","[03b] [Tolak Verstek] Wasiat - Dalil Tidak Terbukti.rtf"],"folder":["4c Wasiat"],"status":"tidak","folderTakTertutup":["4c Wasiat"],"pengisi":[],"sumberMungkin":"tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)","catatan":""},

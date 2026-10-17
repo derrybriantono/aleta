@@ -225,9 +225,10 @@ function usulanBatasIkrar(ikrar) {
   ];
 }
 
-/** Pengumuman itsbat: biasanya pada tanggal pendaftaran atau sehari sesudahnya. */
+/** Pengumuman itsbat voluntair: biasanya pada tanggal pendaftaran atau sehari sesudahnya. */
 function usulanPengumumanItsbat(perkara) {
-  if (!perkara || Number(perkara.jenisPerkaraId) !== 360) return [];
+  // Pengumuman hanya untuk itsbat nikah VOLUNTAIR (jenis 360, alur 16 / Pdt.P); kontensius tidak diumumkan (lib/pengumuman-itsbat.ts).
+  if (!perkara || Number(perkara.jenisPerkaraId) !== 360 || Number(perkara.alurPerkaraId) !== 16) return [];
   const tampil = isoKeTampil(perkara.tanggalDaftar);
   if (!tampil) return [];
   return [
@@ -280,7 +281,7 @@ async function usulanLanjutanSipp(perkaraId, runQuery) {
   const [perkara, mediasi, ikrar, kuasa] = await Promise.all([
     diam(() =>
       runQuery(
-        "SELECT p.jenis_perkara_id AS jenisPerkaraId, DATE_FORMAT(p.tanggal_pendaftaran, '%Y-%m-%d') AS tanggalDaftar FROM perkara p WHERE p.perkara_id = ? LIMIT 1",
+        "SELECT p.jenis_perkara_id AS jenisPerkaraId, p.alur_perkara_id AS alurPerkaraId, DATE_FORMAT(p.tanggal_pendaftaran, '%Y-%m-%d') AS tanggalDaftar FROM perkara p WHERE p.perkara_id = ? LIMIT 1",
         [id]
       )
     ),
