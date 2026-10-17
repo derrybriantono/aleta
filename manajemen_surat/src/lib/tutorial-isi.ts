@@ -594,7 +594,7 @@ export const TUTORIAL: readonly Tutorial[] = [
   {
     id: "unggah-putusan",
     judul: "Mengunggah putusan ke SIPP dan e-Court",
-    ringkas: "Mengirim putusan yang sudah jadi ke e-Doc SIPP, lengkap dengan versi anonim dan isian borang.",
+    ringkas: "Mengirim putusan yang sudah jadi ke e-Doc SIPP, lengkap dengan versi anonim dan isian formulir.",
     kelompok: "putusan",
     mencakup: { aksi: ["putusan.unggah"] },
     halaman: ["/aleta-ecourt", "/perkara"],
@@ -603,14 +603,14 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Buka perkara di SIPP atau ABT, lalu pilih bagian Putusan (Unggah putusan).",
       "ALETA memeriksa lebih dulu apakah masih ada sisa blangko. Bila ada, baca daftarnya.",
       "Putusan anonim dibuat ALETA sendiri sesuai pedoman pengaburan. Lihat pratinjaunya sebelum unggah.",
-      "Periksa isian borang Putusan Akhir yang diisi otomatis dari putusan, lalu simpan.",
+      "Periksa isian formulir Putusan Akhir yang diisi otomatis dari putusan, lalu simpan.",
       "Tekan unggah. Untuk banyak perkara, pakai unggah massal dari daftar perkara.",
     ],
     peringatan: [
       "Hanya hakim (termasuk Ketua dan Wakil), admin, dan Super Admin yang dapat mengunggah putusan.",
       "Unggahan ke SIPP tidak pernah diulang otomatis. Bila gagal, periksa dulu di SIPP sebelum mengunggah lagi.",
     ],
-    kataKunci: ["upload putusan", "anonim", "edoc", "e-doc", "borang putusan akhir", "unggah massal"],
+    kataKunci: ["upload putusan", "anonim", "edoc", "e-doc", "formulir putusan akhir", "unggah massal"],
     baruDi: { sumber: "ekstensi", versi: "1.204.0" },
   },
   {

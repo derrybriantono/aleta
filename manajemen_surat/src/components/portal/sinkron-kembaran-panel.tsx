@@ -466,7 +466,7 @@ export function SinkronKembaranPanel() {
                               ))}
                             </ul>
                           ) : null}
-                          {b.galat ? <p className="text-xs text-rose-700">Galat: {b.galat}</p> : null}
+                          {b.galat ? <p className="text-xs text-rose-700">Kesalahan: {b.galat}</p> : null}
                           {b.disetujuiOleh ? (
                             <p className="text-xs text-muted-foreground">
                               Disetujui {b.disetujuiOleh}, {waktu(b.disetujuiPada)}
