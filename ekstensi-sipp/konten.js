@@ -9020,6 +9020,11 @@ async function isiBorang(medanBorang, nilaiKolom) {
       continue;
     }
 
+    // 17 Okt 2026 (penjaga batas): tidak ada kata ALETA yang diisikan ke kolom SIPP.
+    // Nama pihak "Aleta" yang tampil di halaman SIPP itu sendiri tidak dihitung.
+    const tahanTanda = typeof AletaPenjagaTanda !== "undefined" ? AletaPenjagaTanda.periksaTeks(nilai, kolom.medan) : { ok: true };
+    if (!tahanTanda.ok) return { ok: false, alasan: tahanTanda.pesan, hasil };
+
     const jawab = await kirimKeJembatan({
       jenis: "isi",
       penunjuk: kolom.penunjuk,
