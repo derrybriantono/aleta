@@ -68,6 +68,25 @@ function bagianLanjutan(d) {
   return baris;
 }
 
+function bagianPerBlangko(d) {
+  const r = d.ringkasan;
+  const urut = d.blangko
+    .filter((b) => b.hitung && b.hitung.tidakTanpaSyarat > 0)
+    .sort((a, b) => b.hitung.tidakTanpaSyarat - a.hitung.tidakTanpaSyarat || b.bobot - a.bobot)
+    .slice(0, 25);
+  return [
+    "## Per blangko",
+    "",
+    `- Blangko yang seluruh isian popupnya sudah otomatis (ya): **${r.blangkoSemuaOtomatis}** dari ${r.blangko - r.blangkoTanpaIsian} yang punya isian popup.`,
+    `- Blangko yang masih punya sekurang-kurangnya satu isian manual TANPA syarat keadaan (bukan kuasa/prodeo/ghaib/insidentil/alasan C-H): **${r.blangkoAdaIsianManual}**. 25 terbanyak (sebagian besar isian manual itu keputusan/penilaian hakim atau kesepakatan para pihak):`,
+    "",
+    "| blangko | ya | sebagian | tidak (semua) | tidak tanpa syarat keadaan | opsional |",
+    "| --- | ---: | ---: | ---: | ---: | ---: |",
+    ...urut.map((b) => `| ${b.jalur.replace(/^derry_briantono\//, "").replace(/\|/g, "/").slice(0, 110)} | ${b.hitung.ya} | ${b.hitung.sebagian} | ${b.hitung.tidak} | ${b.hitung.tidakTanpaSyarat} | ${b.hitung.opsional} |`),
+    "",
+  ];
+}
+
 function tulisMd(d) {
   const r = d.ringkasan;
   const sel = (x) => String(x == null ? "" : x).replace(/\|/g, "/").replace(/\s+/g, " ").trim();
@@ -101,6 +120,7 @@ function tulisMd(d) {
     "- Pengisi diperiksa uji penjaga (`isi-sipp-abt-daftar-cek.test.ts`): kode harus benar-benar ada di berkas pengisinya.",
     "",
     ...bagianLanjutan(d),
+    ...bagianPerBlangko(d),
     "## Temuan gerbang tombol (diperiksa 18 Okt)",
     "",
     "Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `scripts/isi-sipp-abt/gerbang-tombol.cjs` membaca cermin gerbang langsung dari `ekstensi-sipp/abt.js` dan memeriksa tiap blangko x isian berpengisi posita: untuk jenis utama (cerai, itsbat, dispensasi kawin, ahli waris, perwalian) tombolnya selalu terpicu. Celah yang tersisa kecil: BAS sita insidentil harta bersama/kewarisan (9161-9163), pencegahan perkawinan (1029, tanpa modul jenisnya), dan blangko cerai kumulasi cacat formil ([99b]) yang memang tidak memerlukan fakta.",
@@ -255,6 +275,19 @@ function tulisMd(d) {
   }
   hasil.sort((a, b) => b.bobot - a.bobot || b.jumlahBlangko - a.jumlahBlangko || a.kunci.localeCompare(b.kunci));
 
+  // Ringkasan per blangko: berapa isian popupnya yang sudah otomatis / sebagian / belum (opsional dipisah).
+  const statusKunci = new Map(hasil.map((x) => [x.kunci, x]));
+  for (const b of blangkoKeluar) {
+    const h = { ya: 0, sebagian: 0, tidak: 0, tidakTanpaSyarat: 0, opsional: 0 };
+    for (const k of b.isian) {
+      const x = statusKunci.get(k);
+      if (!x) continue;
+      if (x.status === "tidak" && x.cadangan === "titik") h.opsional++;
+      else h[x.status]++;
+      if (x.status === "tidak" && x.cadangan !== "titik" && !x.keadaan) h.tidakTanpaSyarat++;
+    }
+    b.hitung = h;
+  }
   const hitung = (s) => hasil.filter((x) => x.status === s).length;
   const tak = {};
   for (const b of analisa.blangko) for (const t of b.takDikenal) tak[t] = (tak[t] || 0) + 1;
@@ -277,6 +310,8 @@ function tulisMd(d) {
       tanpaSumber: hasil.filter((x) => x.status === "tidak" && /^(tidak ada)/i.test(x.sumberMungkin)).length,
       opsionalTitik: hasil.filter((x) => x.status === "tidak" && x.cadangan === "titik").length,
       penandaTakDikenal: Object.keys(tak).length,
+      blangkoSemuaOtomatis: blangkoKeluar.filter((b) => b.isian.length && b.hitung.sebagian === 0 && b.hitung.tidak === 0).length,
+      blangkoAdaIsianManual: blangkoKeluar.filter((b) => b.hitung.tidakTanpaSyarat > 0).length,
     },
     penandaTakDikenal: tak,
     ukuranLanjutan: ukuranLanjutan || null,

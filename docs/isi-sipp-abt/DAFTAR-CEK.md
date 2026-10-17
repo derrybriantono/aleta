@@ -33,6 +33,39 @@ Kode: `aleta_bot/services/abtIsianSippLanjutan.js`, dipanggil dari `dariSipp` (k
 
 "Otomatis" = tercentang sendiri bila isian blangko kosong; "usulan ragu" = ditampilkan tanpa centang dan tidak menimpa isian petugas (aturan yang sama dengan usulan lain).
 
+## Per blangko
+
+- Blangko yang seluruh isian popupnya sudah otomatis (ya): **201** dari 951 yang punya isian popup.
+- Blangko yang masih punya sekurang-kurangnya satu isian manual TANPA syarat keadaan (bukan kuasa/prodeo/ghaib/insidentil/alasan C-H): **197**. 25 terbanyak (sebagian besar isian manual itu keputusan/penilaian hakim atau kesepakatan para pihak):
+
+| blangko | ya | sebagian | tidak (semua) | tidak tanpa syarat keadaan | opsional |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 4c Wasiat/[01] [Kabul] Wasiat - Kontradiktoir.rtf | 16 | 2 | 12 | 10 | 0 |
+| 4c Wasiat/[03] [Tolak] Wasiat - Kontradiktoir - Dalil Tidak Terbukti.rtf | 16 | 2 | 12 | 10 | 0 |
+| 1 Perceraian CG/[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf | 23 | 2 | 11 | 9 | 0 |
+| 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02b] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - Kon | 23 | 3 | 11 | 9 | 0 |
+| 1a Perceraian CT/[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf | 23 | 2 | 11 | 9 | 0 |
+| 1a Perceraian CT/[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf | 25 | 7 | 9 | 8 | 0 |
+| 4c Wasiat/[01a] [Kabul] Wasiat - T Tidak Hadir Setelah Mediasi.rtf | 14 | 2 | 10 | 8 | 0 |
+| 4c Wasiat/[01b] [Kabul Verstek] Wasiat.rtf | 14 | 2 | 10 | 8 | 0 |
+| 4c Wasiat/[03b] [Tolak Verstek] Wasiat - Dalil Tidak Terbukti.rtf | 14 | 2 | 10 | 8 | 0 |
+| 5b Pencegahan Perkawinan/[03] [Tolak] Pencegahan Perkawinan - Alasan Pencegahan Tidak Terbukti.rtf | 8 | 1 | 9 | 8 | 0 |
+| 5b Pencegahan Perkawinan/[99b] [NO] Pencegahan Perkawinan - Perkawinan Telah Dilangsungkan.rtf | 8 | 1 | 9 | 8 | 0 |
+| 1 Perceraian CG/[02] [Kabul] CG - F.rtf | 22 | 2 | 9 | 7 | 0 |
+| 1 Perceraian CG/[98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Gugatan.rtf | 20 | 2 | 9 | 7 | 0 |
+| 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02] [Kabul] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir.r | 23 | 2 | 9 | 7 | 0 |
+| 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[99b] [NO] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir - C | 20 | 2 | 9 | 7 | 0 |
+| 1a Perceraian CT/[02] [Kabul] CT - F.rtf | 22 | 2 | 9 | 7 | 0 |
+| 1a Perceraian CT/[98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Permohonan.rtf | 20 | 2 | 9 | 7 | 0 |
+| 1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir.rtf | 31 | 4 | 9 | 7 | 0 |
+| 1c Perceraian Kumulasi Itsbat Nikah/[02] [Kabul] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir.rtf | 31 | 4 | 9 | 7 | 0 |
+| 1c Perceraian Kumulasi Itsbat Nikah/[99b] [NO] Putusan CG Kumulasi Itsbat Nikah - Kontradiktoir - Cacat Formil | 20 | 2 | 9 | 7 | 0 |
+| 1c Perceraian Kumulasi Itsbat Nikah/[99b] [NO] Putusan CT Kumulasi Itsbat Nikah - Kontradiktoir - Cacat Formil | 20 | 2 | 9 | 7 | 0 |
+| 10a Ekonomi Syariah Biasa/[01] [Kabul] ES Acara Biasa - Wanprestasi - Kontradiktoir.rtf | 15 | 2 | 9 | 7 | 0 |
+| 4c Wasiat/[99a] [NO] Wasiat - Kurang Pihak (Plurium Litis Consortium).rtf | 13 | 2 | 9 | 7 | 0 |
+| 5b Pencegahan Perkawinan - BAS/BAS ALUR 41 Pencegahan - [1] Sidang 1 - Calon Hadir - Bukti & 2 Saksi, Penetapa | 8 | 1 | 7 | 7 | 0 |
+| 5b Pencegahan Perkawinan - BAS/BAS ALUR 41 Pencegahan - [1a] Sidang 1 - Calon Hadir - Bukti & 2 Saksi, Tunda P | 8 | 1 | 7 | 7 | 0 |
+
 ## Temuan gerbang tombol (diperiksa 18 Okt)
 
 Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `scripts/isi-sipp-abt/gerbang-tombol.cjs` membaca cermin gerbang langsung dari `ekstensi-sipp/abt.js` dan memeriksa tiap blangko x isian berpengisi posita: untuk jenis utama (cerai, itsbat, dispensasi kawin, ahli waris, perwalian) tombolnya selalu terpicu. Celah yang tersisa kecil: BAS sita insidentil harta bersama/kewarisan (9161-9163), pencegahan perkawinan (1029, tanpa modul jenisnya), dan blangko cerai kumulasi cacat formil ([99b]) yang memang tidak memerlukan fakta.
