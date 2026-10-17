@@ -10,6 +10,7 @@ import { ok } from "@/server/shared/http";
 import {
   jenjangkan,
   setBlangkoGabung,
+  setCocokPerkara,
   usulanPutusanDariJenjang,
   type BlangkoItem,
   type SetBlangko,
@@ -51,6 +52,9 @@ type SetTerisi = {
   nama: string;
   folder: string;
   untuk: string[];
+  /** I7/F22 17 Okt: syarat nomor perkara (hak asuh Lain-Lain Pdt.G; ES sederhana vs acara biasa) - ekstensi tidak memakai set "acara biasa" untuk pemetaan per jenis. */
+  untukGugatan?: string[];
+  syaratNomor?: string;
   tugas: string;
   ada: boolean;
   sebab: string;
@@ -69,9 +73,14 @@ async function folderDitemukan(): Promise<string[]> {
 }
 
 /** Set putusan yang cocok dengan jenis perkara; set KUMULASI di belakang (cermin alatSetCocokJenis ekstensi). */
-function setPutusanCocok(daftar: SetBlangko[], jenis: string): SetBlangko[] {
+function setPutusanCocok(daftar: SetBlangko[], jenis: string, nomor = ""): SetBlangko[] {
   const j = jenis.toLowerCase();
-  const cocok = daftar.filter((s) => s.jenis === "putusan" && (!j || s.untuk.some((kata) => j.includes(kata))));
+  // I7/F22 17 Okt: nomor perkara (?nomor=) memilih hak asuh Lain-Lain Pdt.G dan ekonomi syariah sederhana (Pdt.G.S) vs acara biasa (Pdt.G).
+  // Tanpa nomor, set "acara biasa" TIDAK ikut: pemetaan per jenis ("ekonomi syariah") mengisi baris yang kosong dan tidak boleh memberi perkara
+  // gugatan sederhana blangko acara biasa.
+  const cocok = daftar.filter(
+    (s) => s.jenis === "putusan" && (!j || (setCocokPerkara(s, jenis, nomor) && (nomor || s.syaratNomor !== "gugatan-biasa")))
+  );
   const kumulasi = (s: SetBlangko) => /kumulasi/i.test(`${s.nama} ${s.folder}`);
   return [...cocok.filter((s) => !kumulasi(s)), ...cocok.filter(kumulasi)];
 }
@@ -87,6 +96,8 @@ async function isiSet(set: SetBlangko): Promise<SetTerisi> {
     nama: set.nama,
     folder: set.folder,
     untuk: set.untuk,
+    ...(set.untukGugatan ? { untukGugatan: set.untukGugatan } : {}),
+    ...(set.syaratNomor ? { syaratNomor: set.syaratNomor } : {}),
     tugas: tugasBlangko(set.folder),
     ada: Boolean(data?.ada) && blangko.length > 0,
     sebab: katalog.ok ? String(data?.sebab ?? "") : String(katalog.error ?? "Katalog blangko tidak terbaca."),
@@ -106,7 +117,8 @@ export async function GET(request: NextRequest) {
 
     const jenis = String(getSearchParam(request, "jenis") ?? "").trim();
     const semua = setBlangkoGabung(await folderDitemukan(), AKAR_DERRY);
-    const daftarSet = jenis ? setPutusanCocok(semua, jenis) : semua.filter((set) => set.jenis === "putusan");
+    const nomor = String(getSearchParam(request, "nomor") ?? "").trim();
+    const daftarSet = jenis ? setPutusanCocok(semua, jenis, nomor) : semua.filter((set) => set.jenis === "putusan");
 
     // Berurutan, bukan serentak: tiap set adalah satu pembacaan folder di
     // peladen lewat jembatan bot, dan tujuh pembacaan sekaligus tidak lebih

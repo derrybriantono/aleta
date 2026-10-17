@@ -78,6 +78,14 @@ export type MasukanRekomendasi = {
   mediasi?: { hasil?: unknown } | null;
   mediasiTerbaca?: boolean;
   lewatEcourt?: boolean | null;
+  /** I9 17 Okt: petitum perkara memohon sita (bot: baris jadwal `sita` terisi). */
+  bersita?: boolean;
+  /** I7 17 Okt: Tergugat perempuan pada gugatan hak asuh (bot); null = tidak diketahui. */
+  tergugatPerempuan?: boolean | null;
+  /** I7 17 Okt: potongan amar "Dalam Rekonvensi" (bot) atau amar penuh; dasar [01a] HB rekonvensi dikabulkan. */
+  amarRekonvensi?: string;
+  /** I7 17 Okt: penanda tegas (saklar konseptor/hakim) bahwa rekonvensi dikabulkan. */
+  rekonvensiDikabulkan?: boolean;
 };
 
 export type HasilRekomendasi = {
@@ -191,7 +199,33 @@ export const FOLDER_MENU_PUTUSAN: Record<string, string> = {
   "Putusan Hak Asuh Anak (Hadhanah)": "6a Hak Asuh Anak (Hadhanah)",
   "Putusan Pembatalan Perkawinan": "5a Pembatalan Perkawinan",
   "Putusan Ekonomi Syariah": "10 Ekonomi Syariah",
+  // I9 17 Okt: paket ABT abt-penetap-phs-sita-derry - menu 150 "Putusan Sela & Penetapan Sita" (alias "Sita - Putusan Sela"), folder baru "97 Sita".
+  "Putusan Sela & Penetapan Sita": "97 Sita",
+  // F22 17 Okt: paket ABT abt-pencegahan-nikah-derry (menu 139), abt-wasiat-derry (141), abt-es-biasa-derry (143).
+  "Putusan Pencegahan Perkawinan": "5b Pencegahan Perkawinan",
+  "Putusan Wasiat": "4c Wasiat",
+  "Putusan Ekonomi Syariah (Acara Biasa)": "10a Ekonomi Syariah Biasa",
 };
+
+/**
+ * I9 17 Okt (paket ABT abt-penetap-phs-sita-derry): putusan sela atas permohonan sita. Jalur perkara bersita:
+ *   - PHS bawaan menangguhkan penetapan sita sampai kedua pihak didengar (blok otomatis, "@ 2");
+ *   - sidang insidentil (BAS ALUR 30/32 "Sidang Insidentil 1" di "4a Harta Bersama - BAS" / "4b Kewarisan - BAS") memeriksa permohonan sita;
+ *   - putusan sela dibacakan: dikabulkan [01] atau ditolak [02] di folder "97 Sita" (menu 150, hakim; acuan alur 15-17).
+ * Pilihan kabul/tolak belum diketahui saat sidang akan memutus, jadi keduanya ditawarkan - [01] sebagai perkiraan, [02] alternatif.
+ */
+export const PUTUSAN_SELA_SITA = {
+  folder: `${AKAR}/97 Sita`,
+  menu: "Putusan Sela & Penetapan Sita",
+  alias: ["Sita - Putusan Sela"],
+  kabul: "[01] [Kabul] Putusan Sela - Sita Dikabulkan.rtf",
+  tolak: "[02] [Tolak] Putusan Sela - Sita Ditolak.rtf",
+} as const;
+
+/** Sidang yang agendanya membacakan putusan sela ATAS PERMOHONAN SITA (sela atas eksepsi bukan sela sita). */
+const RX_SELA_SITA = /putusan\s+sela/i;
+const RX_KONTEKS_SITA = /\bsita\b|insidentil/i;
+
 
 /**
  * I2 16 Okt (paket ABT abt-ikrar-derry): penetapan sidang ikrar talak Derry di folder "1a Perceraian CT" (menu "Putusan Cerai Talak").
@@ -295,8 +329,35 @@ function rekomendasiPenetapanIkrar(m: MasukanRekomendasi, teks: string): Rekomen
   return hasil;
 }
 
+/** Putusan sela sita: hanya sidang yang BELUM memutus perkara, agendanya putusan sela, dan perkaranya bersita (bot) atau agendanya menyebut sita/insidentil. */
+function rekomendasiPutusanSelaSita(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
+  if (m.sudahPutus || !RX_SELA_SITA.test(teks)) return [];
+  const bersita = m.bersita === true;
+  if (!bersita && !RX_KONTEKS_SITA.test(teks)) return [];
+  const i = PUTUSAN_SELA_SITA;
+  const r = (berkas: string, label: string, alasan: string, utama: boolean): Rekomendasi => ({
+    jenis: "putusan",
+    folder: i.folder,
+    berkas,
+    menu: i.menu,
+    alias: [...i.alias],
+    label,
+    alasan,
+    utama,
+    // Kabul/tolak sela ditentukan majelis; hanya bersita-tidaknya yang pasti.
+    perkiraan: true,
+  });
+  return [
+    r(i.kabul, "Putusan sela - sita dikabulkan", `Sidang pembacaan putusan sela atas permohonan sita${bersita ? "" : " (perkara belum ditandai bersita - periksa petitum)"}; dikabulkan diperkirakan, tolak sebagai alternatif.`, true),
+    r(i.tolak, "Putusan sela - sita ditolak", "Alternatif pada sidang putusan sela atas permohonan sita.", false),
+  ];
+}
+
 function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
   if (m.sidangIkrarTalak === true && kunciJenisPerkara(m.jenisPerkara) === "cerai talak") return rekomendasiPenetapanIkrar(m, teks);
+  // I9 17 Okt: putusan sela sita (bukan putusan akhir) - didahulukan; sela di luar konteks sita tetap diperlakukan seperti dulu.
+  const sela = rekomendasiPutusanSelaSita(m, teks);
+  if (sela.length) return sela;
   let status = String(m.statusPutusan ?? "").trim();
   let perkiraan = false;
   if (!status) {
@@ -313,6 +374,9 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
     panggilan: { hadirSebelumnya: m.hadirSebelumnya, tergugatPernahHadir: m.tergugatPernahHadir, penggugatPernahHadir: m.penggugatPernahHadir },
     mediasi: m.mediasi ?? null,
     mediasiTerbaca: m.mediasiTerbaca,
+    tergugatPerempuan: m.tergugatPerempuan,
+    amarPutusan: m.amarRekonvensi,
+    ...(m.rekonvensiDikabulkan === undefined ? {} : { rekonvensiDikabulkan: m.rekonvensiDikabulkan }),
   } as MasukanKeadaanPutusan);
   const p = pilihPutusanBawaan(PETA_PUTUSAN_BAWAAN, m.jenisPerkara, status, m.verstekPutusan === true, m.kumulasi, keadaan);
   if (!p) return [];
@@ -431,6 +495,9 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     mediasi: b.mediasi && typeof b.mediasi === "object" ? (b.mediasi as { hasil?: unknown }) : null,
     mediasiTerbaca: b.mediasiTerbaca === false ? false : true,
     lewatEcourt: typeof b.lewatEcourt === "boolean" ? b.lewatEcourt : null,
+    bersita: Boolean(b.sita) && typeof b.sita === "object",
+    tergugatPerempuan: typeof b.tergugatPerempuan === "boolean" ? b.tergugatPerempuan : null,
+    amarRekonvensi: typeof b.amarRekonvensi === "string" ? b.amarRekonvensi : "",
   };
 }
 export function rekomendasiBlangko(m: MasukanRekomendasi): HasilRekomendasi {

@@ -5,6 +5,10 @@
  * Aturan pemilihan: lib/alur-bas-baru.ts; dijaga src/test/alur-bas-baru.test.ts.
  * F21 17 Okt: ALUR 38 (hak asuh), 39 (pembatalan perkawinan), 40 (ekonomi syariah gugatan sederhana) ditambah dari pohon server
  * (paket abt-hak-asuh-derry, abt-pembatalan-perkawinan-derry, abt-ekonomi-syariah-derry); langkahnya diperiksa terhadap nama berkas di server.
+ * F22 17 Okt (abt-pencegahan-nikah-derry, abt-wasiat-derry, abt-es-biasa-derry): ALUR 41 (pencegahan perkawinan, 10 langkah), 42 (wasiat) dan 43 (ES acara biasa)
+ * dari daftar-rtf.tsv ketiga paket; kode langkah 42/43 sama dengan ALUR 38 (V1, AP, CB, V2, TP, NO).
+ * I7 17 Okt (abt-varian-17okt-derry): ALUR 39 kehilangan langkah CB ("Mediasi Berhasil - Gugatan Dicabut", dipindah ke derry_briantono/terhapus karena
+ * pembatalan perkawinan dikecualikan dari mediasi); menu hak asuh 133/134 kini jenis_perkara_id 369-369 (dulu alur_perkara_id 15), jadi ALUR 38 jenis 369.
  */
 export type MenuBasBaru = { id: number; nama: string; alias: string };
 export type LangkahBasBaru = { kode: string; berkas: string; keterangan: string };
@@ -737,8 +741,8 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
       "nama": "Hak Asuh Anak (Hadhanah) - BAS",
       "alias": "Hak Asuh - BAS"
     },
-    "jenisMin": 349,
-    "jenisMaks": 349,
+    "jenisMin": 369,
+    "jenisMaks": 369,
     "langkah": [
       {
         "kode": "V1",
@@ -775,7 +779,7 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
   {
     "id": "alur-39",
     "nomor": 39,
-    "nama": "Pembatalan Perkawinan - Verstek, Cabut, P Tidak Hadir, NO",
+    "nama": "Pembatalan Perkawinan - Verstek, P Tidak Hadir, NO",
     "folder": "derry_briantono/5a Pembatalan Perkawinan - BAS",
     "menu": {
       "id": 136,
@@ -789,11 +793,6 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "V1",
         "berkas": "BAS ALUR 39 Pembatalan Nikah - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
         "keterangan": "Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T"
-      },
-      {
-        "kode": "CB",
-        "berkas": "BAS ALUR 39 Pembatalan Nikah - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf",
-        "keterangan": "Sidang 2 - Mediasi Berhasil - Gugatan Dicabut"
       },
       {
         "kode": "V2",
@@ -869,6 +868,162 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "C",
         "berkas": "BAS ALUR 40 ES GS - [C] Sidang - P Mencabut Gugatan.rtf",
         "keterangan": "Sidang - P Mencabut Gugatan"
+      }
+    ]
+  },
+  /* === F22 17 Okt === */
+  {
+    "id": "alur-41",
+    "nomor": 41,
+    "nama": "Pencegahan Perkawinan - Permohonan (Calon Mempelai Didengar)",
+    "folder": "derry_briantono/5b Pencegahan Perkawinan - BAS",
+    "menu": {
+      "id": 140,
+      "nama": "Pencegahan Perkawinan - BAS",
+      "alias": "Pencegahan Nikah - BAS"
+    },
+    "jenisMin": 342,
+    "jenisMaks": 342,
+    "langkah": [
+      {
+        "kode": "1",
+        "berkas": "BAS ALUR 41 Pencegahan - [1] Sidang 1 - Calon Hadir - Bukti & 2 Saksi, Penetapan Dibacakan.rtf",
+        "keterangan": "Sidang 1 - Calon Hadir - Bukti & 2 Saksi, Penetapan Dibacakan"
+      },
+      {
+        "kode": "1a",
+        "berkas": "BAS ALUR 41 Pencegahan - [1a] Sidang 1 - Calon Hadir - Bukti & 2 Saksi, Tunda Penetapan.rtf",
+        "keterangan": "Sidang 1 - Calon Hadir - Bukti & 2 Saksi, Tunda Penetapan"
+      },
+      {
+        "kode": "1b",
+        "berkas": "BAS ALUR 41 Pencegahan - [1b] Sidang 1 - Calon Tidak Hadir - Bukti Surat, Tunda Panggil.rtf",
+        "keterangan": "Sidang 1 - Calon Tidak Hadir - Bukti Surat, Tunda Panggil"
+      },
+      {
+        "kode": "2",
+        "berkas": "BAS ALUR 41 Pencegahan - [2] Sidang Lanjutan - Calon Mempelai & 2 Saksi, Tunda Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Calon Mempelai & 2 Saksi, Tunda Penetapan"
+      },
+      {
+        "kode": "2b",
+        "berkas": "BAS ALUR 41 Pencegahan - [2b] Sidang Lanjutan - Calon Mempelai & 2 Saksi, Penetapan Dibacakan.rtf",
+        "keterangan": "Sidang Lanjutan - Calon Mempelai & 2 Saksi, Penetapan Dibacakan"
+      },
+      {
+        "kode": "3",
+        "berkas": "BAS ALUR 41 Pencegahan - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Terakhir - Pembacaan Penetapan"
+      },
+      {
+        "kode": "C",
+        "berkas": "BAS ALUR 41 Pencegahan - [C] Pemohon Hadir Mencabut Permohonan.rtf",
+        "keterangan": "Pemohon Hadir Mencabut Permohonan"
+      },
+      {
+        "kode": "G",
+        "berkas": "BAS ALUR 41 Pencegahan - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
+        "keterangan": "Pemohon Tidak Pernah Hadir - Permohonan Gugur"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 41 Pencegahan - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022)"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 41 Pencegahan - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon Tidak Hadir - Tunda Panggil Pemohon"
+      }
+    ]
+  },
+  {
+    "id": "alur-42",
+    "nomor": 42,
+    "nama": "Wasiat - Verstek, Cabut, P Tidak Hadir, NO",
+    "folder": "derry_briantono/4c Wasiat - BAS",
+    "menu": {
+      "id": 142,
+      "nama": "Wasiat - BAS",
+      "alias": "Wasiat - BAS"
+    },
+    "jenisMin": 365,
+    "jenisMaks": 365,
+    "langkah": [
+      {
+        "kode": "V1",
+        "berkas": "BAS ALUR 42 Wasiat - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T"
+      },
+      {
+        "kode": "AP",
+        "berkas": "BAS ALUR 42 Wasiat - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Akta Perdamaian"
+      },
+      {
+        "kode": "CB",
+        "berkas": "BAS ALUR 42 Wasiat - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Gugatan Dicabut"
+      },
+      {
+        "kode": "V2",
+        "berkas": "BAS ALUR 42 Wasiat - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
+        "keterangan": "Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek"
+      },
+      {
+        "kode": "TP",
+        "berkas": "BAS ALUR 42 Wasiat - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf",
+        "keterangan": "Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P"
+      },
+      {
+        "kode": "NO",
+        "berkas": "BAS ALUR 42 Wasiat - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
+        "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      }
+    ]
+  },
+  {
+    "id": "alur-43",
+    "nomor": 43,
+    "nama": "Ekonomi Syariah Acara Biasa - Verstek, Cabut, P Tidak Hadir, NO",
+    "folder": "derry_briantono/10a Ekonomi Syariah Biasa - BAS",
+    "menu": {
+      "id": 144,
+      "nama": "Ekonomi Syariah (Acara Biasa) - BAS",
+      "alias": "ES Acara Biasa - BAS"
+    },
+    "jenisMin": 370,
+    "jenisMaks": 370,
+    "langkah": [
+      {
+        "kode": "V1",
+        "berkas": "BAS ALUR 43 ES Acara Biasa - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T"
+      },
+      {
+        "kode": "AP",
+        "berkas": "BAS ALUR 43 ES Acara Biasa - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Akta Perdamaian"
+      },
+      {
+        "kode": "CB",
+        "berkas": "BAS ALUR 43 ES Acara Biasa - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Gugatan Dicabut"
+      },
+      {
+        "kode": "V2",
+        "berkas": "BAS ALUR 43 ES Acara Biasa - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
+        "keterangan": "Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek"
+      },
+      {
+        "kode": "TP",
+        "berkas": "BAS ALUR 43 ES Acara Biasa - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf",
+        "keterangan": "Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P"
+      },
+      {
+        "kode": "NO",
+        "berkas": "BAS ALUR 43 ES Acara Biasa - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
+        "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
       }
     ]
   }

@@ -13,10 +13,10 @@ import { cariBerkasBasJenis } from "@/lib/salinan-bas-jenis";
  */
 
 describe("JENIS_BAS_BAKU mengikuti folder '<jenis> - BAS'", () => {
-  it("15 jenis; kunci baku 11 keadaan per jenis; kunci jenis baru dikenal dan dipilih menurut jenis perkara SIPP (dengan padanan ejaan)", () => {
-    expect(JENIS_BAS_BAKU).toHaveLength(15); // 12 + Penguasaan Anak (hak asuh), Pembatalan Perkawinan, Ekonomi Syariah (F21 17 Okt)
-    expect(KUNCI_BAKU_BAS).toHaveLength(15 * KEADAAN_BAS_BAKU.length);
-    expect(KUNCI_BAKU.bas).toHaveLength(15 * KEADAAN_BAS_BAKU.length);
+  it("17 jenis; kunci baku 11 keadaan per jenis; kunci jenis baru dikenal dan dipilih menurut jenis perkara SIPP (dengan padanan ejaan)", () => {
+    expect(JENIS_BAS_BAKU).toHaveLength(17); // 12 + Penguasaan Anak (hak asuh), Pembatalan Perkawinan, Ekonomi Syariah (F21 17 Okt) + Pencegahan Perkawinan, Wasiat (F22 17 Okt)
+    expect(KUNCI_BAKU_BAS).toHaveLength(17 * KEADAAN_BAS_BAKU.length);
+    expect(KUNCI_BAKU.bas).toHaveLength(17 * KEADAAN_BAS_BAKU.length);
     for (const jenis of ["Dispensasi Kawin", "Penetapan Ahli Waris", "Perwalian", "Wali Adhal", "Lain-Lain", "Harta Bersama", "Kewarisan", "Poligami", "Penguasaan Anak", "Pembatalan Perkawinan", "Ekonomi Syariah"]) {
       expect(JENIS_BAS_BAKU as readonly string[]).toContain(jenis);
       expect(KUNCI_BAKU_BAS.some((k) => k.kunci === `${jenis}|1|semua-hadir`)).toBe(true);
@@ -80,7 +80,8 @@ describe("PTSP: PPP dan PJS lewat '@ 0 - PMH - PHS' (usulan 4)", () => {
   it("peta penetapan bawaan PPP/PJS aktif dengan blangko gabungan, tanpa unggah otomatis; PMH/PHS tidak berubah", () => {
     expect(BERKAS_PTSP_GABUNGAN).toBe("@ 0 - PMH - PHS.rtf");
     for (const j of ["ppp", "pjs"] as const) {
-      expect(BAWAAN_PETA_PENETAPAN[j]).toMatchObject({ aktif: true, namaBerkas: "@ 0 - PMH - PHS.rtf", otomatisUnggah: false, penandatangan: "panitera", pakaiCap: true });
+      // I9 17 Okt: berkas tunggal @ 0a / @ 0b; gabungan @ 0 menjadi cadangan (pemetaan-i9-17okt.test.ts).
+      expect(BAWAAN_PETA_PENETAPAN[j]).toMatchObject({ aktif: true, namaBerkas: j === "ppp" ? "@ 0a - PPP.rtf" : "@ 0b - PJS.rtf", namaBerkasCadangan: "@ 0 - PMH - PHS.rtf", otomatisUnggah: false, penandatangan: "panitera", pakaiCap: true });
     }
     expect(BAWAAN_PETA_PENETAPAN.pmh).toMatchObject({ aktif: true, namaBerkas: "@ 1 - PMH.rtf", otomatisUnggah: true });
     expect(BAWAAN_PETA_PENETAPAN.phs).toMatchObject({ aktif: true, namaBerkas: "@ 2 - PHS.rtf", otomatisUnggah: true, penandatangan: "ketua_majelis" });

@@ -101,10 +101,12 @@ describe("peta blangko gugatan lain - pemilih panel-alat.js yang dijalankan", ()
     expect(pilih("Cerai Talak").baris.blangko).toBe("Putusan Cerai Talak");
   });
 
-  it("jenis yang tidak diberi bawaan (Wasiat, Pencegahan Perkawinan) tetap tanpa baris - tidak ditebak", () => {
-    // F21 17 Okt: Ekonomi Syariah (gugatan sederhana), Pembatalan Perkawinan, dan Penguasaan Anak (hak asuh) kini punya bawaan.
-    expect(pilih("Wasiat")).toBeNull();
-    expect(pilih("Pencegahan Perkawinan")).toBeNull();
+  it("jenis yang tidak diberi bawaan tetap tanpa baris - tidak ditebak", () => {
+    // F21 17 Okt: Ekonomi Syariah (gugatan sederhana), Pembatalan Perkawinan, dan Penguasaan Anak (hak asuh) kini punya bawaan;
+    // F22 17 Okt: juga Wasiat, Pencegahan Perkawinan (dan Ekonomi Syariah acara biasa lewat keadaan "es-biasa").
+    expect(pilih("Hibah")).toBeNull();
+    expect(pilih("Wasiat").baris.blangko).toBe("Putusan Wasiat");
+    expect(pilih("Pencegahan Perkawinan").baris.blangko).toBe("Putusan Pencegahan Perkawinan");
     expect(pilih("Ekonomi Syariah").baris.blangko).toBe("Putusan Ekonomi Syariah");
   });
 });

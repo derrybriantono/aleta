@@ -2368,6 +2368,8 @@ const fs = require("fs/promises");
 const fsSync = require("fs");
 
 const AKAR_BLANGKO = process.env.ALETA_BOT_BLANGKO_DIR || "/usr/src/app/blangko_abt";
+/** I7 17 Okt: folder tempat paket ABT memindah blangko yang tidak lagi dipakai (derry_briantono/terhapus/...). */
+const FOLDER_BLANGKO_TERHAPUS = "terhapus";
 
 /**
  * Menolak nama folder yang keluar dari akar blangko.
@@ -2479,6 +2481,7 @@ async function getKatalogBlangko(params = {}) {
     for (const item of entri) {
       if (item.name.startsWith(".")) continue;
       if (item.isDirectory()) {
+        if (item.name.toLowerCase() === FOLDER_BLANGKO_TERHAPUS) continue; // I7 17 Okt: lihat getPohonBlangko
         set.push({ nama: item.name });
       } else if (/\.(rtf|doc|docx|odt)$/i.test(item.name)) {
         // Baris pemisah yang isinya hanya garis - ada di beberapa folder ABT
@@ -2820,6 +2823,8 @@ async function getPohonBlangko(params = {}) {
       if (item.name.startsWith(".")) continue;
       const penuh = path.join(dir, item.name);
       if (item.isDirectory()) {
+        // I7 17 Okt: "terhapus" = blangko yang dipindah paket ABT (bukan blangko aktif, tanpa baris abt_menu) - tidak pernah dibaca.
+        if (item.name.toLowerCase() === FOLDER_BLANGKO_TERHAPUS) continue;
         await turun(penuh, hasil, dalam + 1);
         continue;
       }

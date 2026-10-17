@@ -7,6 +7,7 @@ import {
   type HasilKorpus,
 } from "@/lib/blok-kalimat";
 import { kelengkapanDimensi, kunciDimensi, uraikanDimensi } from "@/lib/taksonomi-blangko";
+import { jalurBlangkoTerhapus } from "@/lib/tugas-blangko";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import type { AletaDatabase } from "@/server/db/client";
 
@@ -76,7 +77,8 @@ export async function tarikSeluruhBlangko(): Promise<{ ok: boolean; sebab: strin
     return { ok: false, sebab: teks(pohon.data?.sebab) || "Pohon blangko tidak terbaca.", berkas: [] };
   }
 
-  const jalur = (pohon.data.berkas ?? []).map((b) => teks(b.jalur)).filter(Boolean);
+  // I7 17 Okt: blangko yang dipindah paket ABT ke derry_briantono/terhapus bukan blangko aktif - tidak ikut dipelajari.
+  const jalur = (pohon.data.berkas ?? []).map((b) => teks(b.jalur)).filter((j) => Boolean(j) && !jalurBlangkoTerhapus(j));
   if (jalur.length === 0) {
     return { ok: false, sebab: "Pohon blangko kosong - penarikan dibatalkan.", berkas: [] };
   }

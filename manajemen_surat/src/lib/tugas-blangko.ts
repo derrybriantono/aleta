@@ -178,6 +178,9 @@ const JENIS_FOLDER: Array<[RegExp, string, string[]]> = [
   [/nafkah/i, "Nafkah", ["nafkah"]],
   [/pembatalan\s+perkawinan/i, "Pembatalan Perkawinan", ["pembatalan perkawinan"]],
   [/ekonomi\s+syari/i, "Ekonomi Syariah", ["ekonomi syariah"]],
+  // F22 17 Okt: pencegahan perkawinan (342) dan wasiat (365).
+  [/pencegahan/i, "Pencegahan Perkawinan", ["pencegahan perkawinan", "pencegahan nikah"]],
+  [/wasiat/i, "Wasiat", ["wasiat"]],
 ];
 
 export function jenisPerkaraDariFolder(folder: string): { label: string[]; untuk: string[] } {
@@ -219,9 +222,18 @@ function namaTampil(direktori: string): string {
   /* === AKHIR K3 === */
 }
 
+/**
+ * I7 17 Okt: "terhapus" = folder tempat paket ABT MEMINDAH blangko yang tidak lagi dipakai (derry_briantono/terhapus/<folder asal>/...,
+ * mis. 6 BAS mediasi pembatalan perkawinan). Tanpa baris abt_menu, tidak tampil di ABT, dan BUKAN blangko aktif: pembaca pohon blangko
+ * (set pohon, indeks Blangko Derry, korpus, rekomendasi) harus melewatinya, baik sebagai nama folder maupun sebagai bagian jalur.
+ */
+export function jalurBlangkoTerhapus(jalur: string): boolean {
+  return String(jalur || "").replace(/\\/g, "/").split("/").some((b) => b.trim().toLowerCase() === "terhapus");
+}
+
 export function folderTugas(direktori: string, akar = "derry_briantono"): FolderTugas | null {
   const d = String(direktori || "").trim();
-  if (!d || d.startsWith(".") || d.startsWith("_")) return null;
+  if (!d || d.startsWith(".") || d.startsWith("_") || jalurBlangkoTerhapus(d)) return null;
   const jenis = jenisDokumenBlangko(d);
   if (!jenis) return null;
   const j = jenis === "relaas" || jenis === "ptsp" ? { label: [], untuk: [] } : jenisPerkaraDariFolder(d);

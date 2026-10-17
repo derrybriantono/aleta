@@ -36,7 +36,7 @@ const ALUR04 = "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)";
 const BERKAS_04 = "[2] BAS 2 P & T Hadir - Laporan Mediasi dan Pemeriksaan Pokok Perkara.rtf";
 const SALIN_04 = `BAS ALUR 04 ${BERKAS_04}`;
 
-describe("A. tabel salinan = 233 BAS paket A3 + 58 salinan F21 + 1 BAS langsung ikrar di fixture", () => {
+describe("A. tabel salinan = 233 BAS paket A3 + 53 salinan F21 (58 - 5 dipindah I7) + 1 BAS langsung ikrar di fixture", () => {
   it("setiap salinan turunan tabel ADA di fixture, dan semua BAS salinan fixture ada di tabel", () => {
     const turunan = new Set<string>();
     for (const [fs, berkas] of Object.entries(SALINAN_BAS_JENIS)) {
@@ -54,8 +54,10 @@ describe("A. tabel salinan = 233 BAS paket A3 + 58 salinan F21 + 1 BAS langsung 
     const basBaru = new Set(ALUR_BAS_BARU.flatMap((a) => a.langkah.map((l) => `${a.folder}/${l.berkas}`)));
     const diFixture = FIX.berkas.filter((b) => /\/BAS (ALUR|KUMULASI|IN GUGUR CABUT) /.test(b) && !/^derry_briantono\/(ALUR |BAS |- BAS )/.test(b) && !basBaru.has(b));
     // 233 salinan paket A3 (15 Okt) + 58 salinan F21 (17 Okt: 29 BAS ALUR 04-09 ke "5a Pembatalan Perkawinan - BAS" dan ke "6a Hak Asuh Anak (Hadhanah) - BAS").
-    expect(turunan.size).toBe(233 + 58);
-    expect([...turunan].filter((b) => /^derry_briantono\/(5a Pembatalan Perkawinan|6a Hak Asuh Anak \(Hadhanah\)) - BAS\//.test(`${A}${b.slice(A.length)}`)).length).toBe(58);
+    // I7 17 Okt: 5 salinan BAS mediasi di "5a Pembatalan Perkawinan - BAS" dipindah ke derry_briantono/terhapus (fixture: kunci `terhapus`, bukan `berkas`).
+    // F22 17 Okt: + 58 salinan (29 BAS ALUR 04-09 ke "4c Wasiat - BAS" dan ke "10a Ekonomi Syariah Biasa - BAS").
+    expect(turunan.size).toBe(233 + 58 - 5 + 58);
+    expect([...turunan].filter((b) => /^derry_briantono\/(5a Pembatalan Perkawinan|6a Hak Asuh Anak \(Hadhanah\)) - BAS\//.test(`${A}${b.slice(A.length)}`)).length).toBe(58 - 5);
     // BAS yang dibuat paket langsung di folder jenis tanpa berkas sumber di folder ALUR (SALINAN_BAS_LANGSUNG: ALUR 10 [4] ikrar, paket I2 16 Okt).
     const langsung = new Set<string>();
     for (const [fs, berkas] of Object.entries(SALINAN_BAS_LANGSUNG)) {
@@ -102,7 +104,7 @@ describe("B. salinan menurut jenis perkara", () => {
     expect(salinanBasJenis(alur01, cgSaja, "Cerai Gugat")).toHaveLength(1);
     expect(salinanBasJenis(alur01, cgSaja, "Cerai Talak")).toEqual([]);
     expect(semuaSalinanBas(alur01, cgSaja).map((s) => s.folder)).toEqual([`${A}1 Perceraian CG - BAS`]);
-    for (const jenis of ["", "   ", "Ekonomi Syariah", "Jenis yang tidak ada"]) {
+    for (const jenis of ["", "   ", "Jenis yang tidak ada"]) {
       expect(salinanBasJenis(`${A}${ALUR04}`, BERKAS_04, jenis), JSON.stringify(jenis)).toEqual([]);
     }
     expect(salinanBasJenis(`${A}${ALUR04}`, "[9] Berkas yang tidak ada.rtf", "Cerai Gugat")).toEqual([]);

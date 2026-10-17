@@ -1017,8 +1017,9 @@
     ghaib: "Tergugat/Termohon dipanggil secara ghaib",
     ecourt: "perkara ini terdaftar lewat e-Court",
     insidentil: "ada kuasa insidentil",
+    kuaKosong: "data KUA tempat perkawinan di SIPP kosong",
   };
-  const KEADAAN_SINGKAT = { kuasaP: "kuasa hukum", kuasaT: "kuasa hukum", prodeo: "prodeo", alasanC: "alasan C", alasanH: "alasan H", ghaib: "panggilan ghaib", ecourt: "e-Court", insidentil: "kuasa insidentil" };
+  const KEADAAN_SINGKAT = { kuasaP: "kuasa hukum", kuasaT: "kuasa hukum", prodeo: "prodeo", alasanC: "alasan C", alasanH: "alasan H", ghaib: "panggilan ghaib", ecourt: "e-Court", insidentil: "kuasa insidentil", kuaKosong: "KUA sudah di SIPP" };
   const perkaraSipp = () => (S.pk && S.pk.perkara) || null;
   const terisi = (b) => Boolean(String(S.isi[b.kode] || "").trim()) || Boolean(S.nilai[b.kode] && S.nilai[b.kode].status === "terisi" && String(S.nilai[b.kode].teks || "").trim());
   /**
@@ -1042,10 +1043,18 @@
     if (k === "ghaib") return Boolean(p && p.ghaib === true);
     if (k === "ecourt") return !p || p.lewatEcourt !== false;
     if (k === "insidentil") return Boolean(b.langsung) || terisi(b);
+    // I7 17 Okt: 9430 (KUA tempat perkawinan) hanya perlu bila variabel otomatis 9431 belum menemukan KUA di SIPP (masih titik-titik/kosong),
+    // atau sudah diisi petugas. Nilai 9431 belum terbaca = tetap tampil (tidak menebak).
+    if (k === "kuaKosong") {
+      if (terisi(b)) return true;
+      const v = ctx.nilai && ctx.nilai["9431"];
+      const teks9431 = v && v.status === "terisi" ? String(v.teks || "").trim() : "";
+      return !teks9431 || /(?:\.{2,}|…)\s*$/.test(teks9431);
+    }
     if (k === "kuasaP" || k === "kuasaT" || k === "prodeo" || k === "alasanC" || k === "alasanH") return terisi(b);
     return true;
   }
-  const keadaanBerlaku = (b) => keadaanBerlakuMurni(b, { perkara: perkaraSipp(), menyala: pemicuMenyala, terisi });
+  const keadaanBerlaku = (b) => keadaanBerlakuMurni(b, { perkara: perkaraSipp(), menyala: pemicuMenyala, terisi, nilai: S.nilai });
   const keteranganKeadaan = (b) => (b.keadaan && KEADAAN_TEKS[b.keadaan]) || (b.pemicu ? keteranganPemicu(b.pemicu).replace(/ \(terbaca dari SIPP\)/, "") : "");
   /** Isian wajib yang keadaannya tidak berlaku untuk perkara ini (disembunyikan; dapat ditampilkan). */
   function daftarTakBerlaku() {
@@ -1130,7 +1139,9 @@
     }
     // 17 Okt: pilihan "F · uraian" ke ABT hanya hurufnya - kueri paket abt-alasan-cdeh membaca SELURUH isi 8503
     // (REPLACE ... lalu NOT REGEXP '[^A-H]' + INSTR per huruf), jadi uraian membuatnya "TIDAK BENAR QUERY NYA".
-    const sederhana = kode === "8503" ? nilaiSimpan8503(nilai) : nilai;
+    // F22 17 Okt: 9463 (alasan pencegahan A-H) dan 9475 (pokok tuntutan wasiat A-G) ditulis hurufnya saja - kueri 9464/9476 membaca huruf pertama,
+    // dan huruf itu pula yang dibaca popup ABT.
+    const sederhana = kode === "8503" || kode === "9463" || kode === "9475" ? nilaiSimpan8503(nilai) : nilai;
     if (sederhana !== nilai) {
       nilai = sederhana;
       S.isi[kode] = nilai;

@@ -62,7 +62,39 @@ export type SetBlangko = {
   jenis: "bas" | "putusan" | "relaas";
   /** Kata kunci jenis perkara SIPP yang cocok dengan set ini. */
   untuk: string[];
+  /**
+   * I7 17 Okt: kata kunci jenis yang cocok HANYA bila nomor perkaranya gugatan (Pdt.G): gugatan hak asuh PA Donggala didaftarkan sebagai
+   * "Lain-Lain" (jenis 369) bernomor Pdt.G, sedangkan "Lain-Lain" Pdt.P adalah pengangkatan anak (set 9a).
+   */
+  untukGugatan?: string[];
+  /**
+   * F22 17 Okt: syarat nomor perkara untuk jenis yang sama-sama bergugatan dua acara. Ekonomi syariah: "10 Ekonomi Syariah" = gugatan sederhana
+   * (Pdt.G.S), "10a Ekonomi Syariah Biasa" = acara biasa (Pdt.G). abt_menu hanya punya SATU kolom acuan jenis (370), jadi ABT menampilkan
+   * keduanya; ALETA memilih menurut nomor. Nomor belum diketahui: kedua set cocok.
+   */
+  syaratNomor?: "gugatan-sederhana" | "gugatan-biasa";
 };
+
+/** Pdt.G.S = gugatan sederhana; Pdt.G (bukan .G.S) = gugatan acara biasa; selain itu (Pdt.P ...) bukan gugatan; kosong/tak terbaca = "". */
+export function acaraNomorPerkara(nomor: unknown): "gugatan-sederhana" | "gugatan-biasa" | "permohonan" | "" {
+  const n = String(nomor ?? "");
+  if (/\/Pdt\.G\.S\//i.test(n)) return "gugatan-sederhana";
+  if (/\/Pdt\.G\//i.test(n)) return "gugatan-biasa";
+  if (/\/Pdt\.P\//i.test(n)) return "permohonan";
+  return "";
+}
+
+/** Set ini cocok untuk jenis perkara (dan nomornya bila diketahui)? Sama dengan penilaian setUntukPerkara. */
+export function setCocokPerkara(set: Pick<SetBlangko, "untuk" | "untukGugatan" | "syaratNomor">, jenisPerkara: string, nomorPerkara?: unknown): boolean {
+  const jenis = String(jenisPerkara || "").toLowerCase();
+  if (!jenis) return false;
+  const acara = acaraNomorPerkara(nomorPerkara);
+  const gugatan = acara === "gugatan-sederhana" || acara === "gugatan-biasa";
+  const cocokJenis = set.untuk.some((kata) => jenis.includes(kata)) || (gugatan && Boolean(set.untukGugatan?.some((kata) => jenis.includes(kata))));
+  if (!cocokJenis) return false;
+  if (set.syaratNomor && acara && acara !== set.syaratNomor) return false;
+  return true;
+}
 
 const AKAR = "derry_briantono";
 /**
@@ -184,6 +216,8 @@ export const SET_BLANGKO: SetBlangko[] = [
     folder: `${AKAR}/6a Hak Asuh Anak (Hadhanah)`,
     jenis: "putusan",
     untuk: ["penguasaan anak", "hak asuh", "hadhanah"],
+    // I7 17 Okt: menu 133/134 kini jenis_perkara_id 369 ("Lain-Lain") saja; cocok hanya untuk Lain-Lain bernomor Pdt.G (bukan pengangkatan anak Pdt.P).
+    untukGugatan: ["lain-lain"],
   },
   {
     id: "putusan-pembatalan-perkawinan",
@@ -193,12 +227,38 @@ export const SET_BLANGKO: SetBlangko[] = [
     untuk: ["pembatalan perkawinan"],
   },
   {
-    // Gugatan sederhana (Pdt.G.S, PERMA 2/2015 jo. 4/2019); gugatan ekonomi syariah acara biasa belum punya blangko.
+    // Gugatan sederhana (Pdt.G.S, PERMA 2/2015 jo. 4/2019); acara biasa (Pdt.G) = set "putusan-ekonomi-syariah-biasa" di bawah (F22 17 Okt).
     id: "putusan-ekonomi-syariah",
     nama: "Putusan Ekonomi Syariah (Gugatan Sederhana)",
     folder: `${AKAR}/10 Ekonomi Syariah`,
     jenis: "putusan",
     untuk: ["ekonomi syariah"],
+    syaratNomor: "gugatan-sederhana", // F22 17 Okt: acara biasa (Pdt.G) = "10a Ekonomi Syariah Biasa"
+  },
+  // F22 17 Okt 2026 (paket ABT abt-pencegahan-nikah-derry, abt-wasiat-derry, abt-es-biasa-derry): pasangan folder putusan (menu 139/141/143, hakim) dan
+  // "<jenis> - BAS" (menu 140/142/144, panitera). Pencegahan = permohonan (Pdt.P) jenis 342 - PENETAPAN; wasiat jenis 365; ES acara biasa jenis 370 nomor Pdt.G.
+  {
+    id: "putusan-pencegahan-perkawinan",
+    nama: "Penetapan Pencegahan Perkawinan",
+    folder: `${AKAR}/5b Pencegahan Perkawinan`,
+    jenis: "putusan",
+    untuk: ["pencegahan perkawinan", "pencegahan nikah"],
+  },
+  {
+    id: "putusan-wasiat",
+    nama: "Putusan Wasiat",
+    folder: `${AKAR}/4c Wasiat`,
+    jenis: "putusan",
+    untuk: ["wasiat"],
+  },
+  {
+    // abt_menu hanya punya satu kolom acuan jenis (370): perkara ES melihat "10" DAN "10a"; ALETA memilih menurut nomor (Pdt.G -> set ini, Pdt.G.S -> "10").
+    id: "putusan-ekonomi-syariah-biasa",
+    nama: "Putusan Ekonomi Syariah (Acara Biasa)",
+    folder: `${AKAR}/10a Ekonomi Syariah Biasa`,
+    jenis: "putusan",
+    untuk: ["ekonomi syariah"],
+    syaratNomor: "gugatan-biasa",
   },
 ];
 
@@ -218,7 +278,23 @@ export function setDariFolder(direktori: string, akar: string = AKAR): SetBlangk
   const f = folderTugas(direktori, akar);
   if (!f || f.jenis === "ptsp") return null;
   const id = `${f.jenis}-${direktori.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`;
-  return { id, nama: `${f.jenis === "putusan" ? "Putusan" : f.jenis === "bas" ? "BAS" : "Relaas"} ${f.nama}`.replace(/^(Putusan|BAS) \1 /i, "$1 "), folder: f.folder, jenis: f.jenis, untuk: f.untuk };
+  return {
+    id,
+    nama: `${f.jenis === "putusan" ? "Putusan" : f.jenis === "bas" ? "BAS" : "Relaas"} ${f.nama}`.replace(/^(Putusan|BAS) \1 /i, "$1 "),
+    folder: f.folder,
+    jenis: f.jenis,
+    untuk: f.untuk,
+    ...syaratDariFolder(direktori),
+  };
+}
+
+/** I7/F22 17 Okt: syarat nomor perkara yang terbaca dari NAMA folder (hak asuh = Lain-Lain Pdt.G; ekonomi syariah sederhana vs biasa). */
+function syaratDariFolder(direktori: string): Pick<SetBlangko, "untukGugatan" | "syaratNomor"> {
+  const d = String(direktori || "");
+  if (/hak\s+asuh|hadh?anah/i.test(d)) return { untukGugatan: ["lain-lain"] };
+  if (/ekonomi\s+syariah\s+biasa/i.test(d)) return { syaratNomor: "gugatan-biasa" };
+  if (/ekonomi\s+syariah/i.test(d)) return { syaratNomor: "gugatan-sederhana" };
+  return {};
 }
 
 /**
@@ -851,14 +927,12 @@ export type SetBerjenjang = Omit<SetBlangko, "jenis"> & { jenis: "bas" | "putusa
  * dapat dipanggil atas set relaas walau seseorang lupa menyaringnya - tsc yang
  * menahannya, bukan kewaspadaan.
  */
-export function setUntukPerkara(jenisPerkara: string): Array<SetBerjenjang & { cocok: boolean }> {
-  const jenis = String(jenisPerkara || "").toLowerCase();
-
+export function setUntukPerkara(jenisPerkara: string, nomorPerkara?: unknown): Array<SetBerjenjang & { cocok: boolean }> {
   const dinilai = SET_BLANGKO.filter(
     (set): set is SetBerjenjang => set.jenis !== "relaas"
   ).map((set) => ({
     ...set,
-    cocok: Boolean(jenis) && set.untuk.some((kata) => jenis.includes(kata)),
+    cocok: setCocokPerkara(set, jenisPerkara, nomorPerkara),
   }));
 
   // BAS lebih dulu dalam kelompok yang cocok: halaman ini alat bantu tulis BAS,
@@ -947,8 +1021,8 @@ export function labelBlangko(jenis: "bas" | "putusan", item: BlangkoItem): strin
  * ia dijenjangkan per sidang, bukan per skenario akhir, dan bukan yang
  * dicetak sebagai putusan.
  */
-export function setPutusanUntukPerkara(jenisPerkara: string): SetBlangko[] {
-  return setUntukPerkara(jenisPerkara).filter((set) => set.cocok && set.jenis === "putusan");
+export function setPutusanUntukPerkara(jenisPerkara: string, nomorPerkara?: unknown): SetBlangko[] {
+  return setUntukPerkara(jenisPerkara, nomorPerkara).filter((set) => set.cocok && set.jenis === "putusan");
 }
 
 export type UsulanBerkas = {

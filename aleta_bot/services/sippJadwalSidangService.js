@@ -236,6 +236,12 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     }
   };
 
+  /* === I7 17 Okt: bahan pilihan varian blangko putusan (hak asuh: Tergugat ibu; HB: amar rekonvensi) === */
+  // Dimulai bersamaan, ditunggu sesudah peta lain. Gagal-terbuka dan dicatat (varianPutusanTerbaca false): tanpa bahan ini portal tetap
+  // memilih blangko bawaan ([03] / [01]); varian [03a] / [01a] hanya ditawarkan sebagai pilihan tangan.
+  const janjiVarianPutusan = aman(() => bahanVarianPutusan(rows), "varian-putusan");
+  /* === AKHIR I7 === */
+
   /* === 12OKT-B: penanda perkara & pihak (dimulai bersamaan, ditunggu sesudah peta lain) === */
   const janjiBahanPenandaB = penandaPerkaraPihakService.bahanPenanda(idPerkara).catch(() => null);
   /* === AKHIR 12OKT-B === */
@@ -349,6 +355,12 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       "penanda-jawaban"
     ),
   ]);
+
+  /* === I7 17 Okt === */
+  const bahanVarian = (await janjiVarianPutusan) || {};
+  const petaTergugatPerempuan = bahanVarian.tergugatPerempuan || {};
+  const petaAmarRekonvensi = bahanVarian.amarRekonvensi || {};
+  /* === AKHIR I7 === */
 
   /* === 12OKT-B === */
   const bahanPenandaB = (await janjiBahanPenandaB) || {
@@ -503,6 +515,11 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       tanggalMinutasi: (petaPutusan[String(row.perkaraId)] || {}).tanggalMinutasi || "",
       tanggalBht: (petaPutusan[String(row.perkaraId)] || {}).tanggalBht || "",
       verstekPutusan: Boolean((petaPutusan[String(row.perkaraId)] || {}).verstek),
+      // I7 17 Okt: true/false = jenis kelamin Tergugat pertama pada gugatan hak asuh (P = perempuan); null = bukan hak asuh / tidak terbaca.
+      tergugatPerempuan: petaTergugatPerempuan[String(row.perkaraId)] === undefined ? null : petaTergugatPerempuan[String(row.perkaraId)],
+      // I7 17 Okt: potongan amar putusan HB mulai "Dalam Rekonvensi" ("" = tidak ada / tidak terbaca) - dasar blangko [01a] rekonvensi dikabulkan.
+      amarRekonvensi: petaAmarRekonvensi[String(row.perkaraId)] || "",
+      varianPutusanTerbaca: !gagal.has("varian-putusan"),
       // Saksi yang DIAJUKAN tiap sisi - bukan yang sudah diperiksa. Dipakai
       // penanda "Saksi P / Saksi T" di daftar.
       saksiPihak1: Number((petaSaksi[String(row.perkaraId)] || {}).diajukanPihak1) || 0,
@@ -2225,6 +2242,78 @@ function caraRelaas(ketTemu) {
 }
 
 /**
+ * I7 17 Okt (paket abt-varian-17okt-derry): bahan memilih varian blangko putusan, hanya untuk perkara yang membutuhkannya.
+ *
+ *   tergugatPerempuan  gugatan hak asuh (jenis "Penguasaan Anak" / "Lain-Lain" bernomor Pdt.G): benar bila Tergugat pertama berjenis
+ *                      kelamin P di tabel pihak. Dasar blangko tolak [03a] "Hadhanah ditetapkan kepada T (ibu)".
+ *   amarRekonvensi     harta bersama: potongan amar putusan (maks. 3000 huruf) mulai "Dalam Rekonvensi". SIPP tidak menyimpan amar
+ *                      rekonvensi sebagai ruas tersendiri; portal menimbang "Mengabulkan" di potongan itu (lib/keadaan-putusan.ts).
+ * Dua kueri baca-saja berparameter, masing-masing hanya bila ada perkaranya; gagal salah satunya tidak menjatuhkan yang lain.
+ *
+ * @returns {Promise<{tergugatPerempuan: Record<string, boolean>, amarRekonvensi: Record<string, string>}>}
+ */
+async function bahanVarianPutusan(rows = []) {
+  const daftar = Array.isArray(rows) ? rows : [];
+  const unik = (saring) => [
+    ...new Set(
+      daftar
+        .filter(saring)
+        .map((r) => Number(r.perkaraId))
+        .filter((x) => Number.isFinite(x) && x > 0)
+    ),
+  ].slice(0, 500);
+  const hakAsuh = unik((r) => {
+    const j = String(r.jenisPerkara || "").toLowerCase();
+    return j.includes("penguasaan anak") || j.includes("hak asuh") || (j.includes("lain-lain") && /\/pdt\.g\//i.test(String(r.nomorPerkara || "")));
+  });
+  const hb = unik((r) => String(r.jenisPerkara || "").toLowerCase().includes("harta bersama"));
+  const hasil = { tergugatPerempuan: {}, amarRekonvensi: {} };
+  const kerja = [];
+  if (hakAsuh.length) {
+    kerja.push(
+      (async () => {
+        const isian = hakAsuh.map(() => "?").join(", ");
+        const baris = await runQuery(
+          `SELECT p2.perkara_id AS perkaraId, ph.jenis_kelamin AS kelamin
+             FROM perkara_pihak2 p2
+             JOIN pihak ph ON ph.id = p2.pihak_id
+            WHERE p2.perkara_id IN (${isian})
+            ORDER BY p2.perkara_id ASC, p2.urutan ASC`,
+          hakAsuh
+        );
+        for (const b of Array.isArray(baris) ? baris : []) {
+          const k = String(b.perkaraId);
+          if (hasil.tergugatPerempuan[k] !== undefined) continue; // Tergugat PERTAMA saja
+          const jk = cleanText(b.kelamin).toUpperCase();
+          if (jk === "P" || jk === "L") hasil.tergugatPerempuan[k] = jk === "P";
+        }
+      })()
+    );
+  }
+  if (hb.length) {
+    kerja.push(
+      (async () => {
+        const isian = hb.map(() => "?").join(", ");
+        const baris = await runQuery(
+          `SELECT pu.perkara_id AS perkaraId,
+                  SUBSTRING(pu.amar_putusan, LOCATE('dalam rekonvensi', pu.amar_putusan), 3000) AS amar
+             FROM perkara_putusan pu
+            WHERE pu.perkara_id IN (${isian}) AND LOCATE('dalam rekonvensi', pu.amar_putusan) > 0`,
+          hb
+        );
+        for (const b of Array.isArray(baris) ? baris : []) {
+          const amar = cleanText(b.amar);
+          if (amar) hasil.amarRekonvensi[String(b.perkaraId)] = amar;
+        }
+      })()
+    );
+  }
+  const selesai = await Promise.allSettled(kerja);
+  if (kerja.length && selesai.every((x) => x.status === "rejected")) throw selesai[0].reason;
+  return hasil;
+}
+
+/**
  * Kehadiran pada sidang-sidang SEBELUM tiap sidang.
  *
  * penggugatPernahHadir (9 Okt 2026, BAS massal tanpa kehadiran): pihak
@@ -3476,6 +3565,7 @@ module.exports = {
   ikrarBanyakPerkara,
   pembebananBanyakPerkara,
   mediasiBanyakPerkara,
+  bahanVarianPutusan,
   hadirLengkapPertamaBanyakPerkara,
   courtCalendarBanyakPerkara,
   sidangLaporanMediasiBanyakPerkara,

@@ -5282,6 +5282,9 @@ export type UnggahMassalPutusanBot = {
   panggilan?: { hadirSebelumnya?: number | null; tergugatPernahHadir?: boolean; penggugatPernahHadir?: boolean | null } | null;
   mediasi?: { hasil?: string } | null;
   mediasiTerbaca?: boolean;
+  /** I7 17 Okt: bahan varian blangko putusan (hak asuh: Tergugat ibu; HB: potongan amar "Dalam Rekonvensi"). */
+  tergugatPerempuan?: boolean | null;
+  amarRekonvensi?: string;
 };
 export type UnggahMassalTertahanBot = { perkaraId: string; nomorPerkara: string; tanggalSidang: string; majelis: string[] };
 export type UnggahMassalBasBot = {

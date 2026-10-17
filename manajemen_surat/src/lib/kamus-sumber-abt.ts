@@ -239,10 +239,23 @@ function tanpaPetik(def: DefinisiAbt | undefined): boolean {
   return false;
 }
 
+/**
+ * I8 17 Okt: variabel yang mengutip AMAR PUTUSAN SIPP (perkara_putusan.amar_putusan): #0065# (data_sipp) dan #9500# (data_sql: amar yang sama,
+ * sisa templat "sidang Pengadilan Agama Bantul/Tangerang" diganti #8008#). Dipakai 16 blangko Derry pengutip amar (ikrar, BAS putusan, relaas).
+ */
+export const KODE_AMAR_SIPP: ReadonlySet<string> = new Set(["0065", "9500"]);
+
+/** Kueri data_sql yang membaca kolom amar_putusan (bukan amar_putusan_dok / _anonimisasi_dok). */
+function kueriBacaAmar(def: DefinisiAbt | undefined): boolean {
+  return /\bamar_putusan\b(?!_)/i.test(teks(def?.sqlQuery));
+}
+
 /** Teks bebas yang diketik orang - dapat memuat petik ganda maupun tunggal. */
 function teksBebas(def: DefinisiAbt | undefined): boolean {
   if (!def) return false;
   const j = teks(def.jenis).toLowerCase();
+  // Amar putusan SIPP selalu teks bebas (memuat petik ganda: "Menolak ..."), juga bila dikutip lewat kueri (#9500#).
+  if (j === "data_sql" && kueriBacaAmar(def)) return true;
   if (j === "data_teks" || j === "tanya_jawab") return true;
   if (j === "multi_sidang") return /agenda|alasan/i.test(teks(def.nama));
   if (j === "data_sipp") return /amar|posita|petitum|keterangan|alasan/i.test(teks(def.dataKolom));
@@ -425,7 +438,7 @@ export function uraiVariabel(def: DefinisiAbt, peta: Map<string, DefinisiAbt>, k
     const bagian: string[] = [];
     if (tabelSipp.length) bagian.push(`tabel ${tabelSipp.join(", ")}`);
     if (rujukan.length) bagian.push(`memakai ${rujukan.map((x) => `#${x}#`).join(", ")}`);
-    const rinci = bagian.join("; ");
+    const rinci = KODE_AMAR_SIPP.has(def.noVar) ? ["perkara_putusan.amar_putusan", ...bagian.filter((b) => b.startsWith("memakai"))].join("; ") : bagian.join("; ");
     const asal =
       sumber === "sipp" ? "Dihitung ABT dari SIPP" : sumber === "ecourt" ? "Dihitung ABT dari data e-Court di SIPP" : sumber === "turunan" ? "Dirangkai ABT dari variabel lain" : "Dihitung ABT";
     return {
