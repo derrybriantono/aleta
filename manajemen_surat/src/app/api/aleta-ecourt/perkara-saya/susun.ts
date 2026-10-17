@@ -184,6 +184,19 @@ export type OpsiSusun = {
   /** Admin melihat sebagai satu akun (nama + perannya). */
   sebagaiNama?: string;
   sebagaiPeran?: PeranDerry | null;
+  /**
+   * Hanya Super Admin/Admin yang boleh "Lihat sebagai akun" dan menerima daftar akun.
+   * Bawaan = lihatSemua (kompatibel); Ketua/Wakil Ketua melihat semua perkara tetapi tidak berhak atas keduanya.
+   */
+  bolehLihatSebagai?: boolean;
+  /** Peran yang dianggap dipegang saat `lihatSemua` tanpa "lihat sebagai". Bawaan: ketiganya (admin); Ketua/Wakil: hakim (putusan). */
+  peranSemua?: PeranDerry[];
+  /**
+   * PTSP: mencari nomor perkara di seluruh satker (baca saja). Hanya perkara yang nomornya memuat
+   * `cariNomor` yang dikembalikan; `sebagai` berisi peran milik akun itu sendiri (biasanya kosong = tanpa hak tulis).
+   */
+  cariNomorSatker?: boolean;
+  cariNomor?: string;
 };
 
 export type HasilSusun = {
@@ -209,12 +222,15 @@ export function susunPerkaraSaya(baris: BarisSidangSaya[], opsi: OpsiSusun): Has
     peta.get(kunci)!.push(b);
   }
 
-  const lihatSebagai = opsi.lihatSemua && teks(opsi.sebagaiNama) ? teks(opsi.sebagaiNama) : "";
+  const bolehSebagai = opsi.lihatSemua && opsi.bolehLihatSebagai !== false;
+  const peranSemua = opsi.peranSemua && opsi.peranSemua.length ? opsi.peranSemua : SEMUA_PERAN;
+  const kataNomor = opsi.cariNomorSatker ? teks(opsi.cariNomor).toLowerCase() : "";
+  const lihatSebagai = bolehSebagai && teks(opsi.sebagaiNama) ? teks(opsi.sebagaiNama) : "";
   const batas = lihatSebagai ? peranDerryValid(opsi.sebagaiPeran) : null;
   const nama = lihatSebagai || teks(opsi.nama);
   const semuaTanpaSaring = opsi.lihatSemua && !lihatSebagai;
 
-  const akun = opsi.lihatSemua
+  const akun = bolehSebagai
     ? { hakim: new Map<string, string>(), pp: new Map<string, string>(), js: new Map<string, string>() }
     : null;
   const perkara: PerkaraSaya[] = [];
@@ -236,7 +252,11 @@ export function susunPerkaraSaya(baris: BarisSidangSaya[], opsi: OpsiSusun): Has
     }
 
     let sebagai: PeranDerry[];
-    if (semuaTanpaSaring) sebagai = [...SEMUA_PERAN];
+    if (opsi.cariNomorSatker) {
+      // Pencarian PTSP: tanpa kata kunci tidak ada yang dikembalikan; peran tulis hanya bila akun itu memang majelis/PP/juru sita.
+      if (!kataNomor || !teks(akhir.nomorPerkara).toLowerCase().includes(kataNomor)) continue;
+      sebagai = sebagaiApa(akhir, nama, batas);
+    } else if (semuaTanpaSaring) sebagai = [...peranSemua];
     else {
       sebagai = sebagaiApa(akhir, nama, batas);
       if (sebagai.length === 0) continue;
@@ -273,7 +293,7 @@ export function susunPerkaraSaya(baris: BarisSidangSaya[], opsi: OpsiSusun): Has
   return {
     perkara,
     jumlahSemua: peta.size,
-    adaYangCocok: semuaTanpaSaring ? peta.size > 0 : perkara.length > 0,
+    adaYangCocok: opsi.cariNomorSatker ? true : semuaTanpaSaring ? peta.size > 0 : perkara.length > 0,
     akun: akun ? { hakim: urutNama(akun.hakim), pp: urutNama(akun.pp), js: urutNama(akun.js) } : null,
   };
 }

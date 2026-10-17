@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 
+import { golonganPengguna } from "@/lib/matriks-peran";
 import { isPrivilegedAdmin } from "@/lib/permissions";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { getDatabase } from "@/server/db/client";
@@ -37,7 +38,10 @@ const SERENTAK = 4;
  *
  * Perkara yang bersidang pada rentang itu dan MILIK akun yang masuk: hakim =
  * perkara yang majelisnya memuat namanya, panitera pengganti = paniteraNama,
- * juru sita = jurusitaNama. Super Admin dan Admin melihat semua perkara.
+ * juru sita = jurusitaNama. Super Admin dan Admin melihat semua perkara
+ * (bertanda semua peran); Ketua/Wakil Ketua juga semua perkara tetapi hanya
+ * sebagai hakim (putusan), tanpa "Lihat sebagai". PTSP:
+ *   GET ... &nomor=<bagian nomor perkara>                  (khusus PTSP: perkara satker yang cocok, tanpa peran tulis)
  *
  * ============================================================================
  * HANYA MEMBACA
@@ -78,10 +82,19 @@ export async function GET(request: NextRequest) {
     );
     if (!rentang.ok) return Response.json({ ok: false, alasan: rentang.alasan }, { status: 400 });
 
-    const lihatSemua = isPrivilegedAdmin(actor);
+    const admin = isPrivilegedAdmin(actor);
+    const golongan = golonganPengguna(actor as Parameters<typeof golonganPengguna>[0]);
+    // Ketua/Wakil Ketua: semua perkara satker untuk putusan (keputusan 9 Okt), tetapi bukan admin: tanpa "Lihat sebagai".
+    const pimpinan = !admin && golongan.includes("pimpinan");
+    const lihatSemua = admin || pimpinan;
+    // PTSP: mencari nomor perkara satker (baca saja; tanpa hak tulis putusan/BAS/relaas) agar folder "99 PTSP" terjangkau.
+    const ptsp = !admin && !pimpinan && golongan.includes("ptsp");
+    const nomorCari = ptsp ? (cari.get("nomor") || "").trim() : "";
+    const punyaPeranPerkara = golongan.some((g) => g === "hakim" || g === "pp" || g === "jurusita");
+    const cariNomorSatker = ptsp && (nomorCari !== "" || !punyaPeranPerkara);
     // "Lihat sebagai" hanya berlaku bagi admin; bagi yang lain parameternya diabaikan.
-    const sebagaiNama = lihatSemua ? (cari.get("sebagai") || "").trim() : "";
-    const sebagaiPeran = lihatSemua ? peranDerryValid(cari.get("peranSebagai")) : null;
+    const sebagaiNama = admin ? (cari.get("sebagai") || "").trim() : "";
+    const sebagaiPeran = admin ? peranDerryValid(cari.get("peranSebagai")) : null;
 
     const potongan = potongRentang(rentang.dari, rentang.sampai);
     const baris: BarisSidangSaya[] = [];
@@ -110,6 +123,10 @@ export async function GET(request: NextRequest) {
       lihatSemua,
       sebagaiNama,
       sebagaiPeran,
+      bolehLihatSebagai: admin,
+      peranSemua: pimpinan ? ["hakim"] : undefined,
+      cariNomorSatker,
+      cariNomor: nomorCari,
     });
 
     return ok({
@@ -121,6 +138,7 @@ export async function GET(request: NextRequest) {
       nama: String(actor?.name || ""),
       sebagaiNama,
       sebagaiPeran,
+      ptspCari: ptsp,
       terpotong,
       jumlahSemua: hasil.jumlahSemua,
       adaYangCocok: hasil.adaYangCocok,
