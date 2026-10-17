@@ -5234,6 +5234,52 @@ router.get("/sipp/eviden-skp", requireInternalToken, async (req, res) => {
 });
 
 /**
+ * Fakta SKP jabatan perkara (17 Okt 2026): kejadian per akun SIPP per jabatan
+ * untuk Ketua, Wakil, Panitera, Panmud, PP, Jurusita, Petugas Meja, Kasir.
+ *
+ *   ?tahun=2026&periode=tw3[&jabatan=jurusita][&username=mustini&username=a,b][&tambahan=1]
+ *
+ * periode: tw1..tw4, tahun, atau b01..b12. Seluruhnya FAKTA (kontrak
+ * DataSkpJabatan di skp-jabatan-tipe.ts); aturan hitung ada di portal
+ * (skp-jabatan-hitung.ts). Hanya SELECT. Masukan tidak sah 400, username
+ * tak dikenal 404, SIPP tidak terbaca 502 - dengan kalimat untuk pembaca.
+ */
+const evidenSkpJabatanService = require("../services/evidenSkpJabatanService");
+router.get("/sipp/skp-jabatan", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await evidenSkpJabatanService.skpJabatan({
+      tahun: String(req.query.tahun || ""),
+      periode: String(req.query.periode || ""),
+      jabatan: String(req.query.jabatan || ""),
+      // username boleh diulang (?username=a&username=b) dan memuat koma: jangan dipecah.
+      username: Array.isArray(req.query.username) ? req.query.username.map((x) => String(x)) : String(req.query.username || ""),
+      tambahan: String(req.query.tambahan || ""),
+    });
+    res.status(hasil.ok ? 200 : hasil.status || 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Jembatan Pemetaan SKP: akun SIPP (aktif; ?semua=1 untuk semua) beserta grup
+ * (sys_user_group + sys_groups) dan jabatan dugaan (jurusita.jabatan).
+ * Layar Pemetaan memakainya sebagai tebakan awal; pemetaan akhir dikonfirmasi
+ * pengguna. Hanya SELECT.
+ */
+router.get("/sipp/skp-akun", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await evidenSkpJabatanService.daftarAkun({
+      username: Array.isArray(req.query.username) ? req.query.username.map((x) => String(x)) : String(req.query.username || ""),
+      semua: String(req.query.semua || ""),
+    });
+    res.status(hasil.ok ? 200 : hasil.status || 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
  * ============================================================================
  * TAUTAN KE HALAMAN PERKARA DI SIPP
  * ============================================================================
