@@ -30,7 +30,7 @@ import { JSDOM } from "jsdom";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { kodeTanyaJawab, kodeUntukNilai, statusNilaiLayar, susunIsian, type Definisi } from "@/app/api/aleta-ecourt/blangko-derry/susun";
-import { tawarkanSetSaksi } from "@/lib/set-pertanyaan-saksi";
+import { hurufAlasan, tawarkanSetSaksi } from "@/lib/set-pertanyaan-saksi";
 
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (berkas: string) => readFileSync(path.join(EKSTENSI, berkas), "utf8").replace(/\r\n/g, "\n");
@@ -875,15 +875,55 @@ describe("audit 17 Okt: E10 isian C/H langsung muncul saat 8503 diketik", () => 
   it("E10: mengetik C/H di 8503 (tanpa meninggalkan kotak) langsung memunculkan 8536/0227; mengganti ke F menyembunyikannya lagi", async () => {
     const h = buka();
     await pilihPutusan(h);
-    expect(q(h, '.bd-f[data-f="8536"]')).toBeNull();
+    expect(Boolean(q(h, '.bd-f[data-f="8536"]'))).toBe(false);
     const i = q(h, "#bd-i8503") as HTMLInputElement;
     ketik(h, i, "C", false); // hanya peristiwa input, belum blur/simpan
-    expect(q(h, '.bd-f[data-f="8536"]')).not.toBeNull();
+    expect(Boolean(q(h, '.bd-f[data-f="8536"]'))).toBe(true);
     ketik(h, q(h, "#bd-i8503") as HTMLInputElement, "H", false);
-    expect(q(h, '.bd-f[data-f="0227"]')).not.toBeNull();
-    expect(q(h, '.bd-f[data-f="8536"]')).toBeNull();
+    expect(Boolean(q(h, '.bd-f[data-f="0227"]'))).toBe(true);
+    expect(Boolean(q(h, '.bd-f[data-f="8536"]'))).toBe(false);
     ketik(h, q(h, "#bd-i8503") as HTMLInputElement, "F", false);
-    expect(q(h, '.bd-f[data-f="0227"]')).toBeNull();
+    expect(Boolean(q(h, '.bd-f[data-f="0227"]'))).toBe(false);
+  });
+});
+
+describe("audit 17 Okt: E7 huruf alasan 8503 dibaca seperti ABT", () => {
+  const TABEL: Array<[string, string]> = [
+    ["F", "F"],
+    ["BF", "BF"],
+    ["fb", "BF"],
+    ["F dan B", "BF"],
+    ["F, B", "BF"],
+    ["A+F", "AF"],
+    ["Murtad", "H"],
+    [" fasakh ", "H"],
+    ["huruf F", ""],
+    ["F · terus-menerus berselisih dan bertengkar", "F"],
+    ["F·perselisihan", "F"],
+    ["", ""],
+    ["Z", ""],
+  ];
+  it("E7: pembaca huruf di ekstensi dan portal (hurufAlasan) sama dan mengikuti aturan ABT ('F dan B' = BF, Murtad = H, teks bebas = tidak dikenal)", () => {
+    const x = (buka() as Halaman).w.aletaBlangkoDerryIsian.murni;
+    for (const [masuk, harapan] of TABEL) {
+      expect(x.hurufAlasanDari(masuk), `ekstensi: ${JSON.stringify(masuk)}`).toBe(harapan);
+      expect(hurufAlasan(masuk), `portal: ${JSON.stringify(masuk)}`).toBe(harapan);
+    }
+  });
+
+  it("E7: 8503 'Murtad' memunculkan isian H, 'huruf F' tidak memunculkan apa pun dan diberi peringatan; pemicu basi dari ABT tidak menahan isian C sesudah huruf diganti", async () => {
+    const h = buka({ abtAwal: { "8503": "C", "11116": "(WAJIB ISI) alasan C" } });
+    await pilihPutusan(h);
+    expect(Boolean(q(h, '.bd-f[data-f="8536"]'))).toBe(true); // C dari ABT
+    ketik(h, q(h, "#bd-i8503") as HTMLInputElement, "F", false); // mengganti huruf menggambar ulang kotak (isian C hilang)
+    q(h, "#bd-i8503")!.dispatchEvent(new h.w.FocusEvent("focusout", { bubbles: true })); // blur pada kotak yang kini tampil
+    await sampai(() => h.abt["8503"] === "F", "8503 tersimpan");
+    expect(Boolean(q(h, '.bd-f[data-f="8536"]'))).toBe(false); // pemicu 11116 basi di ABT tidak menahan
+    ketik(h, q(h, "#bd-i8503") as HTMLInputElement, "Murtad", false);
+    expect(Boolean(q(h, '.bd-f[data-f="0227"]'))).toBe(true);
+    ketik(h, q(h, "#bd-i8503") as HTMLInputElement, "huruf F", false);
+    expect(Boolean(q(h, '.bd-f[data-f="0227"]'))).toBe(false);
+    expect(q(h, '[data-peringatan="8503"]')!.textContent).toMatch(/tidak mengenali "huruf F"/);
   });
 });
 

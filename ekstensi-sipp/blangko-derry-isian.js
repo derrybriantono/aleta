@@ -917,13 +917,45 @@
   }
   // F4.2: saran draf H-7 (agen ALETA) didahulukan - nilainya dari deteksi yang sama dengan panel ABT, tetap hanya SARAN.
   const saranUntuk = (b) => (S.saranH7 && S.saranH7[b.kode] ? S.saranH7[b.kode].nilai : "") || S.saran[b.kode] || b.saran || "";
-  const alasanHuruf = () => String(S.isi["8503"] || "").split("·")[0].toUpperCase().replace(/[^A-H]/g, "");
-  /** Pemicu menyala? Dari nilai ABT (teks tidak kosong); alasan C/H juga dari huruf 8503 yang sedang diketik. */
+  /**
+   * Huruf alasan A-H dari isian 8503, dibaca seperti kueri ABT (REPLACE 'DAN', '&', ',', spasi, '+', '/', '.', '-' lalu INSTR
+   * per huruf; FASAKH/MURTAD = H) tanpa mengarang: "F dan B" = BF, "Murtad" = H. Bentuk pilihan ALETA "F · uraian"
+   * dibaca hurufnya saja. Teks bebas ("huruf F") TIDAK dikenal -> "" (jangan menebak huruf dari kata-katanya).
+   * Sama dengan hurufAlasan di portal (lib/set-pertanyaan-saksi.ts).
+   */
+  function hurufAlasanDari(teks) {
+    const v = String(teks == null ? "" : teks).trim();
+    const depan = v.match(/^([A-Ha-h]+)\s*·/);
+    const u = v.toUpperCase();
+    const n = depan ? depan[1].toUpperCase() : /^(FASAKH|MURTAD)$/.test(u) ? "H" : u.replace(/DAN/g, "").replace(/[&,;+/.\s-]/g, "");
+    if (!/^[A-H]+$/.test(n)) return "";
+    return [...new Set(n.split(""))].sort().join("");
+  }
+  const alasanHuruf = () => hurufAlasanDari(S.isi["8503"]);
+  /** Peringatan di bawah kotak 8503 bila isinya tidak terbaca sebagai huruf alasan (ABT tidak akan mengenalinya). */
+  const peringatan8503 = () => {
+    const v = String(S.isi["8503"] || "").trim();
+    return v && !alasanHuruf() ? `ABT tidak mengenali "${v}" sebagai huruf alasan - tulis hurufnya saja, rapat, mis. F, BF, ABF (atau Murtad untuk H).` : "";
+  };
+  function perbaruiPeringatan8503() {
+    const e = cari('[data-peringatan="8503"]', wadah.isian);
+    if (!e) return;
+    const t = peringatan8503();
+    e.textContent = t;
+    e.hidden = !t;
+  }
+  /**
+   * Pemicu menyala? Pemicu alasan C/H mengikuti isi 8503 yang sedang tampil (diketik maupun tersimpan) - nilai pemicu
+   * yang dibaca dari ABT sebelumnya basi begitu 8503 berubah, jadi hanya dipakai bila 8503 belum terisi. Pemicu lain
+   * dari nilai ABT (teks tidak kosong).
+   */
   function pemicuMenyala(kode) {
     const v = S.nilai[kode];
-    if (kode === "11116") return alasanHuruf().includes("C") || Boolean(v && String(v.teks || "").trim());
-    if (kode === "11117") return alasanHuruf().includes("H") || Boolean(v && String(v.teks || "").trim());
-    return Boolean(v && String(v.teks || "").trim());
+    const dariAbt = Boolean(v && String(v.teks || "").trim());
+    if (kode === "11116" || kode === "11117") {
+      if (String(S.isi["8503"] || "").trim()) return alasanHuruf().includes(kode === "11116" ? "C" : "H");
+    }
+    return dariAbt;
   }
   function keteranganPemicu(kode) {
     const p = S.susunan && S.susunan.pemicu.find((x) => x.kode === kode);
@@ -1645,7 +1677,9 @@
     return (
       `<div class="bd-f${v.trim() ? " beres" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(b.nama)}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama)}</div>${muncul}` +
       isian +
-      `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st, b.kode))}</span></div>`
+      `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st, b.kode))}</span>` +
+      (b.kode === "8503" ? (() => { const w = peringatan8503(); return `<span class="bd-peringatan" data-peringatan="8503" role="alert" ${w ? "" : "hidden"}>${esc(w)}</span>`; })() : "") +
+      `</div>`
     );
   }
   const teksStatus = (st, kode) => (st === "tersimpan" ? `✓ tersimpan di ABT${kode && S.ganti[kode] ? ` (huruf ${S.ganti[kode]} diganti ke bentuk aman ABT)` : ""}` : st === "menyimpan" ? "menyimpan…" : st.startsWith("gagal") ? st : "");
@@ -3323,7 +3357,10 @@
       if (k === "8503") {
         const pos = t.selectionStart;
         if (daftarPerlu().map((x) => x.kode).join() !== sebelum) renderIsian();
-        else renderProgres();
+        else {
+          renderProgres();
+          perbaruiPeringatan8503();
+        }
         const i = cari(`#bd-i${k}`, wadah.isian);
         if (i && i !== document.activeElement) {
           i.focus();
@@ -3684,7 +3721,7 @@
       takBerlaku: daftarTakBerlaku().map((b) => b.kode),
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel },
+    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {
