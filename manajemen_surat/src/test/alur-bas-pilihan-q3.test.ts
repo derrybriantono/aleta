@@ -212,9 +212,9 @@ describe("pilihan BAS massal dari penebak alur (susun.ts sungguhan)", () => {
     expect(g.usulan).toBe(usulanFormat);
     expect(g.pilihan[0]).toBe(usulanFormat);
     expect(g.pilihan.length).toBeGreaterThan(1);
-    // jenis yang tak punya salinan (Ekonomi Syariah): hasil dasar dikembalikan apa adanya
+    // jenis yang tak punya salinan (Pencegahan Perkawinan; F22 17 Okt: Ekonomi Syariah acara biasa kini punya 29 salinan): hasil dasar dikembalikan apa adanya
     const dasarKosong = { usulan: null, pilihan: [], sebab: "belum ada" };
-    expect(gabungAlurLama(dasarKosong, h, "Ekonomi Syariah")).toBe(dasarKosong);
+    expect(gabungAlurLama(dasarKosong, h, "Pencegahan Perkawinan")).toBe(dasarKosong);
     expect(gabungAlurLama(dasarKosong, null, CG)).toBe(dasarKosong);
   });
 

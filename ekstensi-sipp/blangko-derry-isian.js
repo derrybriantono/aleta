@@ -1139,7 +1139,9 @@
     }
     // 17 Okt: pilihan "F · uraian" ke ABT hanya hurufnya - kueri paket abt-alasan-cdeh membaca SELURUH isi 8503
     // (REPLACE ... lalu NOT REGEXP '[^A-H]' + INSTR per huruf), jadi uraian membuatnya "TIDAK BENAR QUERY NYA".
-    const sederhana = kode === "8503" ? nilaiSimpan8503(nilai) : nilai;
+    // F22 17 Okt: 9463 (alasan pencegahan A-H) dan 9475 (pokok tuntutan wasiat A-G) ditulis hurufnya saja - kueri 9464/9476 membaca huruf pertama,
+    // dan huruf itu pula yang dibaca popup ABT.
+    const sederhana = kode === "8503" || kode === "9463" || kode === "9475" ? nilaiSimpan8503(nilai) : nilai;
     if (sederhana !== nilai) {
       nilai = sederhana;
       S.isi[kode] = nilai;

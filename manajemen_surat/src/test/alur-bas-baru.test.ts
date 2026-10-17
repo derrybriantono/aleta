@@ -37,9 +37,9 @@ function t(jenisPerkara: string, m: Partial<Parameters<typeof tentukanBasBaru>[0
 }
 
 describe("A. data", () => {
-  it("19 alur, 112 langkah (93 D3/E3 + 19 F21 sesudah I7), kode unik, nama berkas BAS ALUR nn ... .rtf, menu bernama", () => {
-    expect(ALUR_BAS_BARU).toHaveLength(19);
-    expect(ALUR_BAS_BARU.reduce((n, a) => n + a.langkah.length, 0)).toBe(112);
+  it("22 alur, 134 langkah (93 D3/E3 + 19 F21 sesudah I7 + 22 F22), kode unik, nama berkas BAS ALUR nn ... .rtf, menu bernama", () => {
+    expect(ALUR_BAS_BARU).toHaveLength(22); // + ALUR 41, 42, 43 (F22 17 Okt)
+    expect(ALUR_BAS_BARU.reduce((n, a) => n + a.langkah.length, 0)).toBe(134);
     const semua = new Set<string>();
     for (const a of ALUR_BAS_BARU) {
       expect(a.folder.startsWith(A)).toBe(true);
@@ -53,7 +53,7 @@ describe("A. data", () => {
         semua.add(`${a.folder}/${l.berkas}`);
       }
     }
-    expect(semua.size).toBe(112);
+    expect(semua.size).toBe(112 + 10 + 6 + 6); // F22 17 Okt: ALUR 41 (10), 42 (6), 43 (6)
     expect(jenisDokumenBlangko(`${A}7 Wali Adhal - BAS/${ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.langkah[0].berkas}`)).toBe("bas");
     expect(ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.menu).toMatchObject({ id: 114, nama: "Wali Adhal - BAS" });
   });
@@ -99,7 +99,7 @@ describe("B. jenis perkara", () => {
     expect(jenisBasBaru("Lain-Lain", "3/Pdt.P/2026/PA.Dgl")).toBe("angkat-anak");
     expect(jenisBasBaru("Pembatalan Perkawinan", "3/Pdt.G/2026/PA.Dgl")).toBe("pembatalan");
     expect(jenisBasBaru("Ekonomi Syariah", "3/Pdt.G.S/2026/PA.Dgl")).toBe("es");
-    expect(jenisBasBaru("Ekonomi Syariah", "3/Pdt.G/2026/PA.Dgl")).toBe(""); // acara biasa belum punya blangko BAS
+    expect(jenisBasBaru("Ekonomi Syariah", "3/Pdt.G/2026/PA.Dgl")).toBe("es-biasa"); // F22 17 Okt: acara biasa = ALUR 43
     expect(jenisBasBaru("Ekonomi Syariah")).toBe(""); // nomor tak diketahui: tidak ditebak
     expect(jenisBasBaru(null)).toBe("");
   });

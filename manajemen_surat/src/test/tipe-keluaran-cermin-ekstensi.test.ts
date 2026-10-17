@@ -154,10 +154,11 @@ describe("putusan.peta-blangko dan putusan.padanan-jenis = panel-alat.js yang di
   // ekonomi syariah gugatan sederhana (9); jenis tanpa status kini 13 (+ penguasaan anak, pembatalan perkawinan, ekonomi syariah).
   // I7 17 Okt: + 3 baris varian = 128: HB rekonvensi dikabulkan [01a] (keadaan) dan hak asuh tolak Tergugat ibu [03a] (penguasaan anak + Lain-Lain).
   // I8 17 Okt: + 4 baris = 132: cerai ditolak kontradiktoir [03a] (CG, CT) dan hak asuh tolak verstek [03b] (penguasaan anak, Lain-Lain).
+  // F22 17 Okt: + 34 baris = 166: pencegahan perkawinan (9), wasiat (13), ekonomi syariah acara biasa (12; baris berkeadaan "es-biasa*").
   it("ALAT_PETA_BAWAAN: 9 jenis + baris status cerai + keadaan + 4 baris kumulasi (T 13 Okt), isi sama persis ('bawaan: true' = asal bawaan)", () => {
-    expect(Object.keys(ALAT_PETA_BAWAAN)).toHaveLength(132);
+    expect(Object.keys(ALAT_PETA_BAWAAN)).toHaveLength(166);
     expect(Object.keys(ALAT_PETA_BAWAAN).filter((k) => k.includes("+") && k.split("|")[0].includes("+"))).toHaveLength(4);
-    expect(Object.keys(ALAT_PETA_BAWAAN).filter((k) => !k.includes("|"))).toHaveLength(13);
+    expect(Object.keys(ALAT_PETA_BAWAAN).filter((k) => !k.includes("|"))).toHaveLength(15); // + pencegahan perkawinan, wasiat (F22 17 Okt)
     const cermin = CERMIN_EKSTENSI["putusan.peta-blangko"];
     const dariCermin = Object.fromEntries(
       cermin.map((e) => {

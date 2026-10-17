@@ -15,6 +15,7 @@
  * (urutan sidang, kehadiran, agenda, hasil akhir bila diketahui, kumulasi, nomor perkara Pdt.G/Pdt.P).
  *
  * F21 17 Okt: tiga paket jenis baru menambah ALUR 38 (hak asuh anak), 39 (pembatalan perkawinan), 40 (ekonomi syariah gugatan sederhana).
+ * F22 17 Okt: ALUR 41 (pencegahan perkawinan, permohonan Pdt.P), 42 (wasiat), 43 (ekonomi syariah ACARA BIASA, nomor Pdt.G; gugatan sederhana Pdt.G.S tetap ALUR 40).
  *
  * TIDAK mengubah tentukanAlurBas / tentukanAlurBasKumulasi (peta ALUR 01-13 dan 945/946) maupun pilihan yang sudah ada:
  *   - mode "ganti"  = jenis yang dulu tanpa BAS (PAW, perwalian, wali adhal, pengangkatan anak, HB, waris, poligami, itsbat
@@ -50,7 +51,7 @@ export type HasilBasBaru = {
 
 type JenisBaru =
   | "paw" | "perwalian" | "wali-adhal" | "angkat-anak" | "itsbat" | "itsbat-kontensius" | "dk" | "aua"
-  | "hb" | "waris" | "poligami" | "cerai-gugat" | "cerai-talak" | "hak-asuh" | "pembatalan" | "es" | "";
+  | "hb" | "waris" | "poligami" | "cerai-gugat" | "cerai-talak" | "hak-asuh" | "pembatalan" | "es" | "pencegahan" | "wasiat" | "es-biasa" | "";
 
 /** Jenis perkara SIPP -> jenis yang dikenal berkas ini. Itsbat dipilah menurut nomor (Pdt.G = kontensius). */
 export function jenisBasBaru(jenisPerkara: unknown, nomorPerkara?: unknown): JenisBaru {
@@ -68,9 +69,14 @@ export function jenisBasBaru(jenisPerkara: unknown, nomorPerkara?: unknown): Jen
   if (j.includes("penguasaan anak") || j.includes("hak asuh") || j.includes("hadhanah")) return "hak-asuh";
   if (j.includes("pembatalan perkawinan")) return "pembatalan";
   if (j.includes("ekonomi syariah")) {
-    // Hanya gugatan sederhana (Pdt.G.S) yang punya blangko BAS; acara biasa (Pdt.G) atau nomor yang belum diketahui tidak ditebak.
-    return /\/Pdt\.G\.S\//i.test(String(nomorPerkara ?? "")) ? "es" : "";
+    // Gugatan sederhana (Pdt.G.S) = ALUR 40; acara biasa (Pdt.G) = ALUR 43 (F22 17 Okt); nomor yang belum diketahui tidak ditebak.
+    const nomor = String(nomorPerkara ?? "");
+    if (/\/Pdt\.G\.S\//i.test(nomor)) return "es";
+    return /\/Pdt\.G\//i.test(nomor) ? "es-biasa" : "";
   }
+  // F22 17 Okt: pencegahan perkawinan (342, Pdt.P) dan wasiat (365).
+  if (j.includes("pencegahan")) return "pencegahan";
+  if (/\bwasiat\b/.test(j)) return "wasiat";
   // Gugatan hak asuh PA Donggala terdaftar sebagai "Lain-Lain" (369) bernomor Pdt.G; pengangkatan anak selalu permohonan (Pdt.P).
   if (j.includes("lain-lain") && /\/Pdt\.G\//i.test(String(nomorPerkara ?? ""))) return "hak-asuh";
   if (j.includes("lain-lain") || j.includes("pengangkatan anak")) return "angkat-anak";
@@ -241,10 +247,11 @@ function gugatanKebendaan(jenis: "hb" | "waris", m: MasukanBasBaru, n: number, a
  * kedua pihak memakai salinan BAS kontradiktoir ALUR 04-09 di folder jenisnya (seperti HB/waris); T tidak hadir, mediasi berhasil, cabut,
  * P tidak hadir, dan NO memakai BAS khusus ALUR 38/39. Perdamaian (akta) hanya hak asuh; pembatalan perkawinan tidak dapat didamaikan.
  */
-function gugatanKeluarga(jenis: "hak-asuh" | "pembatalan", m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
-  const asuh = jenis === "hak-asuh";
-  const id = asuh ? "alur-38" : "alur-39";
-  const nama = asuh ? "Hak asuh anak" : "Pembatalan perkawinan";
+function gugatanKeluarga(jenis: "hak-asuh" | "pembatalan" | "wasiat" | "es-biasa", m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
+  // F22 17 Okt: wasiat (ALUR 42) dan ES acara biasa (ALUR 43) berpola sama dengan hak asuh: mediasi dan akta perdamaian ada; hanya pembatalan yang tidak.
+  const asuh = jenis !== "pembatalan";
+  const id = { "hak-asuh": "alur-38", pembatalan: "alur-39", wasiat: "alur-42", "es-biasa": "alur-43" }[jenis];
+  const nama = { "hak-asuh": "Hak asuh anak", pembatalan: "Pembatalan perkawinan", wasiat: "Wasiat", "es-biasa": "Ekonomi syariah (acara biasa)" }[jenis];
   const h = m.dihadiriOleh;
   const akhir = m.akhir ?? (RX_CABUT.test(agenda) ? "cabut" : null);
   if (akhir === "no") return buat(id, "NO", ["TP"], false, `${nama}: Penggugat dua kali tidak hadir - tidak dapat diterima (SEMA 1/2022).`);
@@ -261,7 +268,7 @@ function gugatanKeluarga(jenis: "hak-asuh" | "pembatalan", m: MasukanBasBaru, n:
       ? buat(id, "V1", ["V2"], false, `${nama} sidang 1: Penggugat hadir, Tergugat tidak hadir - tunda panggil T.`)
       : buat(id, "V2", ["V1"], n > 2, `${nama} sidang ke-${n}: Tergugat tetap tidak hadir - pembuktian dan putusan verstek.`);
   }
-  if (!asuh && n <= 1) return pembatalanSidangPertama(m);
+  if (jenis === "pembatalan" && n <= 1) return pembatalanSidangPertama(m);
   return salinanAlur04(alurMenurutId(id).folder, { ...m, urutanSidang: n });
 }
 
@@ -293,6 +300,39 @@ function pembatalanSidangPertama(m: MasukanBasBaru): HasilBasBaru | null {
       "untuk acara tertulis/e-litigasi, ALUR 05 [2] untuk acara lisan).",
     mode: "ganti",
   };
+}
+
+/**
+ * F22 17 Okt - pencegahan perkawinan (ALUR 41, permohonan Pdt.P tanpa Termohon): sidang 1 menurut kehadiran calon mempelai ([1]/[1a] hadir, [1b] tidak hadir ->
+ * tunda panggil), lanjutan [2]/[2b], pembacaan penetapan [3]; Pemohon tidak hadir [T], gugur [G], NO SEMA [N], cabut [C]. Calon mempelai bukan pihak di SIPP,
+ * jadi kehadiran mereka tidak terbaca dari dihadiri_oleh: pilihan sidang 1 selalu perkiraan (agenda menentukan bila menyebut tunda/putus).
+ */
+function pencegahanPerkawinan(m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
+  const h = m.dihadiriOleh;
+  const akhir = m.akhir ?? (RX_CABUT.test(agenda) ? "cabut" : null);
+  const id = "alur-41";
+  if (akhir === "cabut") return buat(id, "C", [], false, "Pencegahan perkawinan: Pemohon hadir mencabut permohonan.");
+  if (akhir === "gugur") return buat(id, "G", ["T", "N"], false, "Pencegahan perkawinan: Pemohon tidak pernah hadir - permohonan gugur.");
+  if (akhir === "no") return buat(id, "N", ["G"], false, "Pencegahan perkawinan: Pemohon hadir lalu dua kali tidak hadir - tidak dapat diterima (SEMA 1/2022).");
+  if (h === 4) {
+    return n <= 1
+      ? buat(id, "T", ["G", "N"], true, "Pencegahan perkawinan: Pemohon tidak hadir - tunda panggil Pemohon.")
+      : buat(id, "G", ["T", "N"], true, "Pencegahan perkawinan: Pemohon tidak hadir lagi - gugur bila tidak pernah hadir (G), NO SEMA 1/2022 bila pernah hadir (N), atau tunda panggil lagi (T).");
+  }
+  const putus = RX_PUTUS.test(agenda) && !/pembacaan\s+permohonan/i.test(agenda);
+  const tundaPanggil = /tidak\s+hadir|panggil/i.test(agenda) && /tunda|panggil/i.test(agenda);
+  if (n <= 1) {
+    if (tundaPanggil) return buat(id, "1b", ["1", "1a"], true, "Pencegahan perkawinan sidang 1: calon mempelai tidak hadir - bukti surat, tunda panggil.");
+    return putus
+      ? buat(id, "1", ["1a", "1b"], false, "Pencegahan perkawinan sidang 1: calon mempelai hadir, bukti dan 2 saksi, penetapan dibacakan.")
+      : buat(id, "1a", ["1", "1b"], true, "Pencegahan perkawinan sidang 1: calon mempelai hadir, bukti dan 2 saksi, penetapan ditunda (bila langsung dibacakan: [1]; bila calon tidak hadir: [1b]).");
+  }
+  if (n === 2) {
+    return putus
+      ? buat(id, "2b", ["2", "3"], false, "Pencegahan perkawinan sidang 2: calon mempelai dan 2 saksi, penetapan dibacakan.")
+      : buat(id, "2", ["2b", "3"], true, "Pencegahan perkawinan sidang 2: calon mempelai dan 2 saksi, penetapan ditunda.");
+  }
+  return buat(id, "3", ["2b"], !putus, `Pencegahan perkawinan sidang ke-${n}: pembacaan penetapan.`);
 }
 
 /** Ekonomi syariah gugatan sederhana (ALUR 40, hakim tunggal): sidang 1 menurut kehadiran, sidang 2 pembuktian/verstek, lalu pengucapan putusan. */
@@ -403,7 +443,11 @@ export function tentukanBasBaru(m: MasukanBasBaru): HasilBasBaru | null {
       return izinPoligami(m, n, agenda);
     case "hak-asuh":
     case "pembatalan":
+    case "wasiat":
+    case "es-biasa":
       return gugatanKeluarga(jenis, m, n, agenda);
+    case "pencegahan":
+      return pencegahanPerkawinan(m, n, agenda);
     case "es":
       return ekonomiSyariah(m, n, agenda);
     case "itsbat-kontensius":

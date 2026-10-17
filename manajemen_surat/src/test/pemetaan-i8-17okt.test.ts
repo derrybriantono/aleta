@@ -46,7 +46,7 @@ describe("A. berkas ada di folder menunya", () => {
   });
 
   it("tiap baris putusan bawaan yang menunjuk [03a]/[03b] mengarah ke berkas yang ADA di folder menunya", () => {
-    const baris = Object.entries(PETA_PUTUSAN_BAWAAN).filter(([, b]) => /^\[03[ab]\]/.test(b.berkas));
+    const baris = Object.entries(PETA_PUTUSAN_BAWAAN).filter(([k, b]) => /^\[03[ab]\]/.test(b.berkas) && !/^(wasiat|ekonomi syariah)\|/.test(k)); // wasiat/ES acara biasa: paket F22
     expect(baris.map(([k]) => k).sort()).toEqual(
       [
         "cerai gugat|ditolak|kontradiktoir",

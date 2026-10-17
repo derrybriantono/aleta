@@ -193,6 +193,58 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "9163": { nm: "Alasan permohonan sita" },
   "9164": { nm: "Tanggapan {T} atas permohonan sita (dari jawaban atau sidang insidentil)" },
   /* === AKHIR I9 === */
+  /* === F22 17 Okt: pencegahan perkawinan (9460-9470), wasiat (9475-9489), ekonomi syariah acara biasa (9490-9493) === */
+  // Pencegahan: 9463 (huruf alasan) mengubah dasar hukum dan bunyi norma otomatis (9464, 9465); nama calon suami memakai isian lama 1029.
+  "9460": { nm: "Nama calon istri (nama lengkap binti ...; nama calon suami diisi di kolom nama calon suami)" },
+  "9461": { nm: 'Wilayah KUA tempat perkawinan akan dilangsungkan (tulis "Kecamatan ..., Kabupaten ...")' },
+  "9462": { nm: "Kedudukan {P} terhadap calon mempelai (mis. ayah kandung calon istri, wali nikah, istri sah calon suami, Pegawai Pencatat Nikah KUA ...)" },
+  "9463": {
+    nm: "Alasan pencegahan perkawinan (pilih satu huruf)",
+    pil: [
+      "A · calon mempelai masih terikat perkawinan",
+      "B · calon mempelai di bawah umur",
+      "C · larangan nasab, semenda, atau sepersusuan",
+      "D · calon istri masih dalam masa iddah",
+      "E · beda agama",
+      "F · talak tiga atau li'an",
+      "G · tanpa persetujuan atau izin yang disyaratkan",
+      "H · calon mempelai di bawah pengampuan",
+    ],
+  },
+  "9466": { nm: "Fakta alasan pencegahan yang terbukti (uraian singkat dari bukti, saksi, dan keterangan calon mempelai)" },
+  "9467": { nm: "Pertimbangan mengapa alasan pencegahan tidak terbukti atau tidak beralasan hukum (untuk putusan ditolak)" },
+  "9468": { nm: "Pokok keterangan calon mempelai di persidangan (satu kalimat)" },
+  "9469": { nm: "Waktu dan tempat perkawinan yang ternyata sudah dilangsungkan" },
+  "9470": { nm: "Alat bukti surat {P} (daftar bukti P.1 dst.; kosong = tanpa daftar)" },
+  // Wasiat: 9475 (huruf pokok tuntutan) mengubah dasar hukum, bunyi norma, dan amar pokok otomatis (9476, 9477, 9484).
+  "9475": {
+    nm: "Pokok tuntutan wasiat (pilih satu huruf)",
+    pil: [
+      "A · wasiat melebihi sepertiga harta peninggalan",
+      "B · wasiat kepada ahli waris tanpa persetujuan ahli waris lain",
+      "C · syarat pewasiat atau bentuk wasiat tidak terpenuhi",
+      "D · harta yang diwasiatkan bukan milik pewasiat",
+      "E · wasiat batal (Pasal 197 KHI)",
+      "F · pengesahan wasiat dan penyerahan objek wasiat",
+      "G · wasiat wajibah",
+    ],
+  },
+  "9478": { nm: 'Bentuk dan tanggal wasiat (mis. "secara tertulis tertanggal ... di hadapan 2 (dua) orang saksi" atau "dengan akta Notaris ... Nomor ...")' },
+  "9479": { nm: "Objek wasiat (benda atau manfaat yang diwasiatkan: objek, bukti hak, luas, letak, dan batas-batas)" },
+  "9480": { nm: "Penerima wasiat (nama atau sebutan; kosong = otomatis)" },
+  "9482": { nm: "Fakta pokok tuntutan yang terbukti (uraian singkat dari bukti dan saksi)" },
+  "9483": { nm: "Pertimbangan mengapa dalil gugatan tidak terbukti atau tidak beralasan hukum (untuk putusan ditolak)" },
+  "9485": { nm: "Pihak yang berkepentingan tetapi tidak ditarik sebagai pihak (untuk putusan tidak dapat diterima karena kurang pihak)" },
+  "9486": { nm: "Kedudukan {P} (mis. ahli waris dari pewasiat, penerima wasiat, anak angkat pewasiat)" },
+  "9487": { nm: "Kedudukan {T} (mis. penerima wasiat, ahli waris lain yang menguasai objek wasiat)" },
+  "9488": { nm: "Alat bukti surat {P} (daftar bukti P.1 dst.; kosong = tanpa daftar)" },
+  "9489": { nm: "Alat bukti surat {T} (daftar bukti T.1 dst.; kosong = tanpa daftar)" },
+  // Ekonomi syariah acara biasa (akad, kewajiban, wanprestasi, pertimbangan tolak memakai isian 9340-9346 paket gugatan sederhana).
+  "9490": { nm: "Klausula arbitrase dalam akad (pasal akad dan lembaga arbitrase yang dipilih)" },
+  "9491": { nm: "Pokok eksepsi {T} (satu kalimat)" },
+  "9492": { nm: "Alat bukti surat {P} (daftar bukti P.1 dst.: akad, jadwal angsuran, somasi, ...)" },
+  "9493": { nm: "Alat bukti surat {T} (daftar bukti T.1 dst.)" },
+  /* === AKHIR F22 === */
 };
 
 const PEMICU_TEKS: Record<string, string> = {

@@ -52,7 +52,10 @@ export const KUNCI_BAKU: Record<JenisPemetaan, { kunci: string; sebutan: string 
     // F21 17 Okt (paket ABT abt-hak-asuh-derry, abt-pembatalan-perkawinan-derry, abt-ekonomi-syariah-derry). "Penguasaan Anak" = nama jenis 349 di SIPP.
     { kunci: "Penguasaan Anak", sebutan: "Hak Asuh Anak (Penguasaan Anak / Hadhanah)" },
     { kunci: "Pembatalan Perkawinan", sebutan: "Pembatalan Perkawinan" },
-    { kunci: "Ekonomi Syariah", sebutan: "Ekonomi Syariah (gugatan sederhana)" },
+    // F22 17 Okt: "Ekonomi Syariah" meliputi gugatan sederhana (Pdt.G.S) DAN acara biasa (Pdt.G, folder 10a): dibedakan ALETA dari nomor perkara.
+    { kunci: "Ekonomi Syariah", sebutan: "Ekonomi Syariah (gugatan sederhana dan acara biasa)" },
+    { kunci: "Pencegahan Perkawinan", sebutan: "Pencegahan Perkawinan" },
+    { kunci: "Wasiat", sebutan: "Wasiat" },
   ],
   relaas: [
     // 6 Okt (butir 10): sidang pertama PER PIHAK - kunci yang sama dengan yang
@@ -768,6 +771,9 @@ export const JENIS_BAS_BAKU = [
   "Penguasaan Anak",
   "Pembatalan Perkawinan",
   "Ekonomi Syariah",
+  // F22 17 Okt: folder "5b Pencegahan Perkawinan - BAS" dan "4c Wasiat - BAS" ("10a Ekonomi Syariah Biasa - BAS" ikut jenis "Ekonomi Syariah").
+  "Pencegahan Perkawinan",
+  "Wasiat",
 ] as const;
 
 function normalkanBagianSidang(x: string): string {

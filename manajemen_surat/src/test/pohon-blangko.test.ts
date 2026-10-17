@@ -145,7 +145,7 @@ describe("set menurut jenis perkara", () => {
   });
 
   it("jenis perkara yang tidak dikenali tetap memberi seluruh set berjenjang", () => {
-    const urut = setUntukPerkara("Wasiat"); // F21 17 Okt: Ekonomi Syariah kini dikenali (set putusan)
+    const urut = setUntukPerkara("Jenis perkara yang tidak ada"); // F21 17 Okt: Ekonomi Syariah, F22 17 Okt: Wasiat dan Pencegahan Perkawinan kini dikenali (set putusan)
     expect(urut).toHaveLength(SET_BERJENJANG.length);
     expect(urut.every((set) => !set.cocok)).toBe(true);
   });

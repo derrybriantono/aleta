@@ -227,13 +227,38 @@ export const SET_BLANGKO: SetBlangko[] = [
     untuk: ["pembatalan perkawinan"],
   },
   {
-    // Gugatan sederhana (Pdt.G.S, PERMA 2/2015 jo. 4/2019); gugatan ekonomi syariah acara biasa belum punya blangko.
+    // Gugatan sederhana (Pdt.G.S, PERMA 2/2015 jo. 4/2019); acara biasa (Pdt.G) = set "putusan-ekonomi-syariah-biasa" di bawah (F22 17 Okt).
     id: "putusan-ekonomi-syariah",
     nama: "Putusan Ekonomi Syariah (Gugatan Sederhana)",
     folder: `${AKAR}/10 Ekonomi Syariah`,
     jenis: "putusan",
     untuk: ["ekonomi syariah"],
     syaratNomor: "gugatan-sederhana", // F22 17 Okt: acara biasa (Pdt.G) = "10a Ekonomi Syariah Biasa"
+  },
+  // F22 17 Okt 2026 (paket ABT abt-pencegahan-nikah-derry, abt-wasiat-derry, abt-es-biasa-derry): pasangan folder putusan (menu 139/141/143, hakim) dan
+  // "<jenis> - BAS" (menu 140/142/144, panitera). Pencegahan = permohonan (Pdt.P) jenis 342 - PENETAPAN; wasiat jenis 365; ES acara biasa jenis 370 nomor Pdt.G.
+  {
+    id: "putusan-pencegahan-perkawinan",
+    nama: "Penetapan Pencegahan Perkawinan",
+    folder: `${AKAR}/5b Pencegahan Perkawinan`,
+    jenis: "putusan",
+    untuk: ["pencegahan perkawinan", "pencegahan nikah"],
+  },
+  {
+    id: "putusan-wasiat",
+    nama: "Putusan Wasiat",
+    folder: `${AKAR}/4c Wasiat`,
+    jenis: "putusan",
+    untuk: ["wasiat"],
+  },
+  {
+    // abt_menu hanya punya satu kolom acuan jenis (370): perkara ES melihat "10" DAN "10a"; ALETA memilih menurut nomor (Pdt.G -> set ini, Pdt.G.S -> "10").
+    id: "putusan-ekonomi-syariah-biasa",
+    nama: "Putusan Ekonomi Syariah (Acara Biasa)",
+    folder: `${AKAR}/10a Ekonomi Syariah Biasa`,
+    jenis: "putusan",
+    untuk: ["ekonomi syariah"],
+    syaratNomor: "gugatan-biasa",
   },
 ];
 

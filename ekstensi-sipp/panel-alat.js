@@ -8979,6 +8979,10 @@ const ALAT_MENU_PUTUSAN = {
   ha: { blangko: "Putusan Hak Asuh Anak (Hadhanah)", lain: ["Hak Asuh - Putusan"] },
   pb: { blangko: "Putusan Pembatalan Perkawinan", lain: ["Pembatalan Nikah - Putusan"] },
   es: { blangko: "Putusan Ekonomi Syariah", lain: ["Ekonomi Syariah - Putusan"] },
+  // F22 17 Okt: paket ABT abt-pencegahan-nikah-derry (menu 139), abt-wasiat-derry (141), abt-es-biasa-derry (143).
+  pc: { blangko: "Putusan Pencegahan Perkawinan", lain: ["Pencegahan Nikah - Putusan"] },
+  ws: { blangko: "Putusan Wasiat", lain: ["Wasiat - Putusan"] },
+  esb: { blangko: "Putusan Ekonomi Syariah (Acara Biasa)", lain: ["ES Acara Biasa - Putusan"] },
 };
 function alatBarisPutusanLain(menu, jenisAsli, statusAsli, berkas, catatan) {
   const m = ALAT_MENU_PUTUSAN[menu];
@@ -9221,6 +9225,109 @@ Object.assign(ALAT_PETA_BAWAAN, {
   "lain-lain|ditolak|hak-asuh-verstek": alatBarisPutusanLain("ha", "Lain-Lain", "Ditolak", ALAT_BERKAS_HAK_ASUH.tolakVerstek, "keadaan: gugatan hak asuh yang didaftarkan sebagai Lain-Lain (Pdt.G), putusan verstek"),
 });
 /* === AKHIR I8 === */
+
+/* === F22 17 Okt === */
+/**
+ * PENCEGAHAN PERKAWINAN (342, Pdt.P - PENETAPAN), WASIAT (365, Pdt.G) dan EKONOMI SYARIAH ACARA BIASA (370, Pdt.G) versi Derry - tiga paket ABT
+ * (folder "5b Pencegahan Perkawinan", "4c Wasiat", "10a Ekonomi Syariah Biasa"; menu putusan 139/141/143 berpasangan dengan BAS 140/142/144).
+ *
+ * abt_menu hanya punya SATU kolom acuan jenis, jadi perkara ekonomi syariah (370) melihat folder "10" (gugatan sederhana) DAN "10a" (acara biasa):
+ * ALETA memilih menurut NOMOR - Pdt.G.S tetap baris "ekonomi syariah|..." di atas, Pdt.G memakai baris berkeadaan "es-biasa*"
+ * (lib/keadaan-putusan.ts; kode gabungan "es-biasa-verstek" / "-setelah-mediasi" / "-sema-1-2022" didahulukan karena satu baris peta memuat satu kode).
+ * Susunan blangko sama untuk wasiat dan ES: kabul kontradiktoir [01] / T tidak hadir setelah mediasi [01a] / verstek [01b], tolak [03] / [03b] verstek,
+ * akta perdamaian [97], cabut [98] (sesudah jawaban dengan persetujuan T [98b]), gugur [98a], coret [98c], NO SEMA 1/2022 [99], NO formil [99a].
+ * Pencegahan: kabul calon mempelai hadir [01] (tidak hadir [01a] - dipilih tangan), tolak [03], cabut [98], gugur [98a], coret [98c], NO SEMA [99],
+ * NO pemohon tidak berhak [99a] (perkawinan sudah dilangsungkan [99b]).
+ */
+const ALAT_BERKAS_PENCEGAHAN = {
+  kabul: "[01] [Kabul] Pencegahan Perkawinan - Calon Mempelai Hadir",
+  kabulTakHadir: "[01a] [Kabul] Pencegahan Perkawinan - Calon Mempelai Tidak Hadir",
+  tolak: "[03] [Tolak] Pencegahan Perkawinan - Alasan Pencegahan Tidak Terbukti",
+  cabut: "[98] [Cabut] Pencegahan Perkawinan - Permohonan Ditarik Kembali",
+  gugur: "[98a] [Gugur] Pencegahan Perkawinan - Pemohon Tidak Pernah Hadir",
+  coret: "[98c] [Coret] Pencegahan Perkawinan - Dibatalkan dari Pendaftaran - Panjar Habis",
+  noSema: "[99] [NO] Pencegahan Perkawinan - Pemohon Tidak Hadir Lagi (SEMA 1 2022)",
+  noTakBerhak: "[99a] [NO] Pencegahan Perkawinan - Pemohon Tidak Berhak Mencegah",
+  noSudahMenikah: "[99b] [NO] Pencegahan Perkawinan - Perkawinan Telah Dilangsungkan",
+};
+const ALAT_BERKAS_WASIAT = {
+  kabul: "[01] [Kabul] Wasiat - Kontradiktoir",
+  setelahMediasi: "[01a] [Kabul] Wasiat - T Tidak Hadir Setelah Mediasi",
+  verstek: "[01b] [Kabul Verstek] Wasiat",
+  tolak: "[03] [Tolak] Wasiat - Kontradiktoir - Dalil Tidak Terbukti",
+  tolakVerstek: "[03b] [Tolak Verstek] Wasiat - Dalil Tidak Terbukti",
+  damai: "[97] [Perdamaian] Wasiat - Akta Perdamaian",
+  cabut: "[98] [Cabut] Wasiat - P & T Hadir Sebelum Jawaban",
+  cabutSesudahJawaban: "[98b] [Cabut] Wasiat - Sesudah Jawaban dengan Persetujuan T",
+  gugur: "[98a] [Gugur] Wasiat - P Tidak Hadir Sidang Pertama",
+  coret: "[98c] [Coret] Wasiat - Dibatalkan dari Pendaftaran - Panjar Habis",
+  noSema: "[99] [NO] Wasiat - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
+  noFormil: "[99a] [NO] Wasiat - Kurang Pihak (Plurium Litis Consortium)",
+};
+const ALAT_BERKAS_ES_BIASA = {
+  kabul: "[01] [Kabul] ES Acara Biasa - Wanprestasi - Kontradiktoir",
+  setelahMediasi: "[01a] [Kabul] ES Acara Biasa - Wanprestasi - T Tidak Hadir Setelah Mediasi",
+  verstek: "[01b] [Kabul Verstek] ES Acara Biasa - Wanprestasi",
+  tolak: "[03] [Tolak] ES Acara Biasa - Wanprestasi Tidak Terbukti - Kontradiktoir",
+  tolakVerstek: "[03b] [Tolak Verstek] ES Acara Biasa - Wanprestasi Tidak Terbukti",
+  damai: "[97] [Perdamaian] ES Acara Biasa - Akta Perdamaian Hasil Mediasi",
+  cabut: "[98] [Cabut] ES Acara Biasa - P & T Hadir Sebelum Jawaban",
+  cabutSesudahJawaban: "[98b] [Cabut] ES Acara Biasa - Sesudah Jawaban dengan Persetujuan T",
+  gugur: "[98a] [Gugur] ES Acara Biasa - P Tidak Hadir Sidang Pertama",
+  coret: "[98c] [Coret] ES Acara Biasa - Dibatalkan dari Pendaftaran - Panjar Habis",
+  noSema: "[99] [NO] ES Acara Biasa - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
+  noFormil: "[99a] [NO] ES Acara Biasa - Eksepsi Klausula Arbitrase Dikabulkan",
+};
+/**
+ * Baris gugatan wasiat / ES acara biasa. `k` = kode keadaan (kosong untuk wasiat; "es-biasa*" untuk ES acara biasa: nomor Pdt.G):
+ * k.dasar = kode umum, k.verstek / k.mediasi / k.sema = kode gabungan. Wasiat memakai kode keadaan umum dan kunci "|verstek".
+ */
+function alatPetaGugatanDua(kunci, jenisAsli, menu, B, k) {
+  const baris = {};
+  const kl = (status, tanda) => `${kunci}|${status}${tanda ? `|${tanda}` : ""}`;
+  const r = (status, berkas, catatan) => alatBarisPutusanLain(menu, jenisAsli, status, berkas, catatan);
+  // Catatan "varian: ..." (hanya nama berkas) dibaca rekomendasi sebagai alternatif; baris tanpa varian memberi keterangan keadaannya.
+  const dasar = k.dasar ? "keadaan: ekonomi syariah gugatan acara biasa (nomor Pdt.G)" : "";
+  if (!k.dasar) baris[kunci] = r("", B.kabul, `varian: ${B.setelahMediasi}; ${B.verstek}`);
+  baris[kl("dikabulkan", k.verstek || "verstek")] = r("Dikabulkan", B.verstek, dasar);
+  baris[kl("dikabulkan", k.mediasi || "t-tidak-hadir-setelah-mediasi")] = r("Dikabulkan", B.setelahMediasi, k.dasar ? `${dasar}; T hadir mediasi lalu tidak hadir` : "keadaan: T hadir mediasi lalu tidak hadir");
+  baris[kl("dikabulkan", k.dasar)] = r("Dikabulkan", B.kabul, `varian: ${B.setelahMediasi}; ${B.verstek}`);
+  baris[kl("ditolak", k.verstek || "verstek")] = r("Ditolak", B.tolakVerstek, dasar);
+  baris[kl("ditolak", k.dasar)] = r("Ditolak", B.tolak, `varian: ${B.tolakVerstek}`);
+  baris[kl("perdamaian", k.dasar)] = r("Perdamaian", B.damai, dasar);
+  baris[kl("dicabut", k.dasar)] = r("Dicabut", B.cabut, `varian: ${B.cabutSesudahJawaban}`);
+  baris[kl("digugurkan", k.dasar)] = r("Digugurkan", B.gugur, dasar);
+  baris[kl("gugur", k.dasar)] = r("Gugur", B.gugur, dasar);
+  baris[kl("dicoret dari register", k.dasar)] = r("Dicoret dari Register", B.coret, dasar);
+  baris[kl("tidak dapat diterima", k.sema || "sema-1-2022")] = r("Tidak Dapat Diterima", B.noSema, "keadaan: P hadir sidang pertama lalu dua sidang beruntun tidak hadir (SEMA 1/2022)");
+  baris[kl("tidak dapat diterima", k.dasar)] = r("Tidak Dapat Diterima", B.noFormil, `varian: ${B.noSema}`);
+  return baris;
+}
+Object.assign(
+  ALAT_PETA_BAWAAN,
+  // --- Pencegahan perkawinan (jenis 342, Pdt.P; penetapan) ---
+  {
+    "pencegahan perkawinan": alatBarisPutusanLain("pc", "Pencegahan Perkawinan", "", ALAT_BERKAS_PENCEGAHAN.kabul, `varian: ${ALAT_BERKAS_PENCEGAHAN.kabulTakHadir}`),
+    "pencegahan perkawinan|dikabulkan": alatBarisPutusanLain("pc", "Pencegahan Perkawinan", "Dikabulkan", ALAT_BERKAS_PENCEGAHAN.kabul, `varian: ${ALAT_BERKAS_PENCEGAHAN.kabulTakHadir}`),
+    "pencegahan perkawinan|ditolak": alatBarisPutusanLain("pc", "Pencegahan Perkawinan", "Ditolak", ALAT_BERKAS_PENCEGAHAN.tolak),
+    "pencegahan perkawinan|dicabut": alatBarisPutusanLain("pc", "Pencegahan Perkawinan", "Dicabut", ALAT_BERKAS_PENCEGAHAN.cabut),
+    "pencegahan perkawinan|digugurkan": alatBarisPutusanLain("pc", "Pencegahan Perkawinan", "Digugurkan", ALAT_BERKAS_PENCEGAHAN.gugur),
+    "pencegahan perkawinan|gugur": alatBarisPutusanLain("pc", "Pencegahan Perkawinan", "Gugur", ALAT_BERKAS_PENCEGAHAN.gugur),
+    "pencegahan perkawinan|dicoret dari register": alatBarisPutusanLain("pc", "Pencegahan Perkawinan", "Dicoret dari Register", ALAT_BERKAS_PENCEGAHAN.coret),
+    "pencegahan perkawinan|tidak dapat diterima|sema-1-2022": alatBarisPutusanLain("pc", "Pencegahan Perkawinan", "Tidak Dapat Diterima", ALAT_BERKAS_PENCEGAHAN.noSema, "keadaan: pemohon hadir sidang pertama lalu dua sidang beruntun tidak hadir (SEMA 1/2022)"),
+    "pencegahan perkawinan|tidak dapat diterima": alatBarisPutusanLain("pc", "Pencegahan Perkawinan", "Tidak Dapat Diterima", ALAT_BERKAS_PENCEGAHAN.noTakBerhak, `varian: ${ALAT_BERKAS_PENCEGAHAN.noSudahMenikah}; ${ALAT_BERKAS_PENCEGAHAN.noSema}`),
+  },
+  // --- Wasiat (jenis 365, Pdt.G) ---
+  alatPetaGugatanDua("wasiat", "Wasiat", "ws", ALAT_BERKAS_WASIAT, {}),
+  // --- Ekonomi syariah acara biasa (jenis 370, nomor Pdt.G; gugatan sederhana Pdt.G.S tetap baris "ekonomi syariah|...") ---
+  alatPetaGugatanDua("ekonomi syariah", "Ekonomi Syariah", "esb", ALAT_BERKAS_ES_BIASA, {
+    dasar: "es-biasa",
+    verstek: "es-biasa-verstek",
+    mediasi: "es-biasa-setelah-mediasi",
+    sema: "es-biasa-sema-1-2022",
+  })
+);
+/* === AKHIR F22 === */
 
 /**
  * Pemetaan tersimpan, dilengkapi bawaannya untuk jenis yang belum pernah

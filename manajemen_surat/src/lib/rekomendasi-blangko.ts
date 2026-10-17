@@ -201,6 +201,10 @@ export const FOLDER_MENU_PUTUSAN: Record<string, string> = {
   "Putusan Ekonomi Syariah": "10 Ekonomi Syariah",
   // I9 17 Okt: paket ABT abt-penetap-phs-sita-derry - menu 150 "Putusan Sela & Penetapan Sita" (alias "Sita - Putusan Sela"), folder baru "97 Sita".
   "Putusan Sela & Penetapan Sita": "97 Sita",
+  // F22 17 Okt: paket ABT abt-pencegahan-nikah-derry (menu 139), abt-wasiat-derry (141), abt-es-biasa-derry (143).
+  "Putusan Pencegahan Perkawinan": "5b Pencegahan Perkawinan",
+  "Putusan Wasiat": "4c Wasiat",
+  "Putusan Ekonomi Syariah (Acara Biasa)": "10a Ekonomi Syariah Biasa",
 };
 
 /**
