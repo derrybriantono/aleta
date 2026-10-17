@@ -990,14 +990,23 @@
           const pengirim = e.submitter || f.querySelector('[type="submit"]');
           (async () => {
             let lanjut = true;
-            for (const b of bacaan) {
-              const h = await tinjau(b, { nama: b.name, jenis, aksi: "unggah" });
-              if (!h.lanjut) {
-                lanjut = false;
-                break;
+            try {
+              for (const b of bacaan) {
+                const h = await tinjau(b, { nama: b.name, jenis, aksi: "unggah" });
+                if (!h.lanjut) {
+                  lanjut = false;
+                  break;
+                }
               }
+            } catch {
+              // Galat pemeriksa TIDAK BOLEH menahan unggah: kirim seperti biasa.
+              lanjut = true;
             }
             if (!lanjut) return;
+            // Lepas dari pengiriman yang sedang berjalan: pengiriman ulang di dalam peristiwa
+            // submit yang sama diabaikan peramban (tahap "sedang mengirim"), terutama bila
+            // pemeriksa gagal seketika tanpa menunggu apa pun.
+            await new Promise((r) => setTimeout(r, 0));
             lolos.add(f);
             try {
               if (pengirim && typeof pengirim.click === "function") pengirim.click();

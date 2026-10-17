@@ -2790,12 +2790,17 @@
     if (typeof aletaDeteksiSisa === "object" && aletaDeteksiSisa) {
       const jenisNaskah = { put: "putusan", bas: "bas", rel: "relaas" }[j] || "";
       if (jenisNaskah) {
-        const tinjau = await aletaDeteksiSisa.tinjau(rtfBuf, {
-          nama: namaUnduhan(nomor, berkas, "rtf"),
-          jenis: jenisNaskah,
-          aksi: S.fmt.edoc && j === "put" ? "unggah" : "unduh",
-        });
-        if (!tinjau.lanjut) {
+        let tinjau = { lanjut: true };
+        try {
+          tinjau = await aletaDeteksiSisa.tinjau(rtfBuf, {
+            nama: namaUnduhan(nomor, berkas, "rtf"),
+            jenis: jenisNaskah,
+            aksi: S.fmt.edoc && j === "put" ? "unggah" : "unduh",
+          });
+        } catch {
+          tinjau = { lanjut: true }; // galat pemeriksa tidak boleh menahan cetak/unggah
+        }
+        if (tinjau && tinjau.lanjut === false) {
           catatLog("dibatalkan: petugas membatalkan karena naskah masih memuat sisa blangko");
           toast("Dibatalkan. Perbaiki sisa blangko di naskah, lalu cetak lagi.");
           return;

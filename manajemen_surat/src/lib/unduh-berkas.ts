@@ -113,9 +113,16 @@ export async function tanganiUnduhan(
     if (opsi.jenisNaskah !== false) {
       const jenis = opsi.jenisNaskah || jenisNaskahDariAlamat(opsi.alamat) || jenisNaskahDariNama(nama);
       if (jenis) {
-        const { tinjauSisaBlangko } = await import("@/lib/dialog-sisa-blangko");
-        const tinjau = await tinjauSisaBlangko(blob, { nama, jenis, aksi: "unduh" });
-        if (!tinjau.lanjut) return { ok: false, pesan: "Unduhan dibatalkan.", dibatalkan: true };
+        let batalkan = false;
+        try {
+          const { tinjauSisaBlangko } = await import("@/lib/dialog-sisa-blangko");
+          const tinjau = await tinjauSisaBlangko(blob, { nama, jenis, aksi: "unduh" });
+          batalkan = tinjau.lanjut === false;
+        } catch {
+          // Galat pemeriksa (termasuk gagal memuat modul dialog) TIDAK BOLEH menahan unduhan.
+          batalkan = false;
+        }
+        if (batalkan) return { ok: false, pesan: "Unduhan dibatalkan.", dibatalkan: true };
       }
     }
     pemicu.simpanBlob(blob, nama);

@@ -496,6 +496,33 @@ describe("5. kait unggah langsung di halaman SIPP (tingkap e-Doc)", () => {
     expect(terkirim2()).toBe(0);
   });
 
+  it("galat pemeriksa TIDAK menahan Simpan SIPP: kiriman tetap terkirim sekali", async () => {
+    const h = buka(HALAMAN("bas"), "http://192.168.10.10/SIPP/perkara_detil_agama/x");
+    const f = berkasRtf(h.w, "bas.rtf", RTF_KOTOR);
+    // Pemeriksa melempar galat pada bacaan nama kedua (di dalam blok async kait), bukan di pemeriksaan awal.
+    let bacaan = 0;
+    Object.defineProperty(f, "name", {
+      configurable: true,
+      get: () => {
+        bacaan += 1;
+        if (bacaan > 1) throw new Error("pemeriksa rusak");
+        return "bas.rtf";
+      },
+    });
+    const el = h.d.getElementById("fileform") as HTMLInputElement;
+    Object.defineProperty(el, "files", { configurable: true, get: () => [f] });
+    let terkirim = 0;
+    h.d.getElementById("frm_upload_file")!.addEventListener("submit", (e) => {
+      terkirim += 1;
+      e.preventDefault();
+    });
+    (h.d.getElementById("simpan") as HTMLInputElement).click();
+    await tunggu(60);
+    expect(bacaan).toBeGreaterThan(1);
+    expect(dialog(h.d)).toBeNull();
+    expect(terkirim).toBe(1);
+  });
+
   it("e-Doc selain putusan/BAS/relaas (dokpmh) tidak disentuh", async () => {
     const h = buka(HALAMAN("dokpmh"), "http://192.168.10.10/SIPP/perkara_detil_agama/x");
     const terkirim = pasangForm(h, "pmh.rtf", RTF_KOTOR);
@@ -584,6 +611,37 @@ describe("6. alatUnduh dan alatAmbil (panel-alat.js sungguhan)", () => {
     const r = await janji2;
     expect(r.ok).toBe(true);
     expect(unggahan()).toBe(1);
+  });
+
+  it("galat pemeriksa TIDAK menahan alatUnduh maupun alatAmbil", async () => {
+    const h = buka("<!doctype html><body></body>", "http://192.168.10.10/SIPP/x", { alat: true });
+    h.w.aletaDeteksiSisa.tinjau = async () => {
+      throw new Error("pemeriksa rusak");
+    };
+    h.w.aletaDeteksiSisa.tinjauFormData = async () => {
+      throw new Error("pemeriksa rusak");
+    };
+    const kirim: string[] = [];
+    h.w.chrome.runtime.sendMessage = (p: { nama: string }, cb: (x: unknown) => void) => {
+      kirim.push(p.nama);
+      cb({ ok: true, id: 1 });
+    };
+    const u = await h.w.alatUnduh(new Blob([RTF_KOTOR], { type: "application/rtf" }), "640_Pdt.G_2026_PA.Dgl - [06] BAS 6 P & T Hadir.rtf");
+    expect(u.ok).toBe(true);
+    expect(u.dibatalkan).toBeUndefined();
+    expect(kirim).toHaveLength(1);
+
+    const semua: string[] = [];
+    h.w.fetch = async (alamat: unknown) => {
+      semua.push(String(alamat));
+      return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
+    };
+    const badan = new h.w.FormData();
+    badan.append("putusan", berkasRtf(h.w, "putusan.rtf", RTF_KOTOR), "putusan.rtf");
+    const r = await h.w.alatAmbil("/aleta/api/aleta-ecourt/putusan/unggah-sipp", { method: "POST", body: badan, credentials: "include" }, "Mengunggah putusan ke SIPP");
+    expect(r.ok).toBe(true);
+    expect(semua.filter((x) => /unggah-sipp/.test(x))).toHaveLength(1);
+    expect(dialog(h.d)).toBeNull();
   });
 
   it("alatAmbil: permintaan biasa (GET) dan unggahan ke rute lain tidak diperiksa", async () => {
