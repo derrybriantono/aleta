@@ -16,6 +16,7 @@ import {
   jalurBlangkoRelaas,
   pihakDipanggil,
   type KeadaanRelaas,
+  type PihakBlangkoRelaas,
   type PihakDipanggil,
 } from "@/lib/pohon-blangko";
 
@@ -125,7 +126,8 @@ type BlangkoTerdaftar = {
   /** APA ADANYA - termasuk spasi sebelum ".rtf" pada blangko sidang lanjutan. */
   berkas: string;
   label: string;
-  pihak: PihakDipanggil;
+  /** I14 18 Okt: "calon-mempelai" = calon suami/istri perkara pencegahan perkawinan ([JS] 11.2/11.3), bukan pihak SIPP. */
+  pihak: PihakBlangkoRelaas;
   keterangan: string;
   /** Jalur relatif di dalam akar blangko, dari jalurBlangkoRelaas(). */
   jalur: string;
