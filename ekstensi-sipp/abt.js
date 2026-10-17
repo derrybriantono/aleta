@@ -19837,6 +19837,8 @@ const F41_API = {
 };
 const F41_HASH = "aleta-unggah-massal";
 const F41_BATAS_UNGGAH_MS = 150000;
+/** Batas anonimisasi ABT (main/anonim) per berkas - ABT sendiri bisa 5 menit; lewat itu dianggap gagal. */
+const F41_BATAS_ANONIM_ABT_MS = 330000;
 const F41_BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
 function f41Esc(s) {
@@ -19881,7 +19883,8 @@ function f41Bawaan() {
       if (typeof alatMuatPetaBlangkoLengkap !== "function" || typeof alatPetaUntukPerkara !== "function") return { sebab: "pemetaan blangko belum termuat" };
       if (!petaPutusan) petaPutusan = await alatMuatPetaBlangkoLengkap();
       const cari = () => {
-        const h = alatPetaUntukPerkara(petaPutusan, baris.jenisPerkara, baris.statusPutusan || "", Boolean(baris.verstek), null, []);
+        // Temuan audit D3: kumulasi (SIPP + petitum) dan keadaan putusan datang per baris dari portal - sama dengan jalur satu perkara.
+        const h = alatPetaUntukPerkara(petaPutusan, baris.jenisPerkara, baris.statusPutusan || "", Boolean(baris.verstek), baris.kumulasi || null, Array.isArray(baris.keadaanPutusan) ? baris.keadaanPutusan : []);
         return h && h.baris ? h.baris : null;
       };
       let b = cari();
@@ -19916,7 +19919,8 @@ function f41Bawaan() {
         token = await cariTokenBlangko(u.berkas, lapor, kelompok);
       }
       if (!token || !token.a || !token.b) return { sebab: `blangko BAS "${u.berkas}" tidak ditemukan di ABT ini` };
-      return { a: token.a, b: token.b, berkas: u.berkas, blangko: u.label || u.berkas };
+      // Temuan audit A5: usulan "perkiraan" (kehadiran belum tercatat) adalah tebakan - mesin menahannya sampai petugas memeriksanya.
+      return { a: token.a, b: token.b, berkas: u.berkas, blangko: u.label || u.berkas, perkiraan: Boolean(u.perkiraan) };
     },
     anonim: (rtf, nomor, lapor) => (typeof alatAnonimMandiri === "function" ? alatAnonimMandiri(rtf, nomor, lapor) : Promise.resolve({ ok: false, sebab: "penyamar ALETA belum termuat" })),
     pratinjauAnonim: (h, o) => (typeof alatPratinjauAnonim === "function" ? alatPratinjauAnonim(h, o) : Promise.resolve("batal")),
@@ -19943,6 +19947,10 @@ function f41Bawaan() {
  */
 function f41Mesin(depsMasuk) {
   const d = depsMasuk || f41Bawaan();
+  // Temuan audit D2: anonimisasi ABT (main/anonim, 25 dtk - 5 mnt) hanya cadangan dan SEKALI per baris.
+  const anonimAbtDicoba = new Set();
+  // Temuan audit D4: antrian validasi BAS ABT dibaca sekali per putaran (bukan per baris).
+  let validasiBacaan = null;
 
   async function daftar(saringan) {
     const q = new URLSearchParams();
@@ -19975,11 +19983,51 @@ function f41Mesin(depsMasuk) {
    * opsi.ganti (BAS saja, butir 43): e-Doc BAS yang sudah ada TIDAK menghentikan pratinjau -
    * baris disiapkan untuk MENGGANTI (s.ganti), dengan nama berkas lamanya.
    */
+  /**
+   * Antrian validasi BAS ABT dibaca sekali per putaran (temuan audit D4). Pulang { ok, fiturAktif, baris } atau
+   * { ok:false, pesan }; null bila klien lama tidak punya pembacanya. Hanya bacaan yang berhasil disimpan.
+   */
+  async function bacaValidasiBas(klien) {
+    if (!klien || typeof klien.daftarValidasiBas !== "function") return null;
+    if (validasiBacaan && Date.now() - validasiBacaan.pada < 60000) return validasiBacaan.hasil;
+    let hasil;
+    try {
+      hasil = await klien.daftarValidasiBas();
+    } catch (e) {
+      return { ok: false, pesan: String((e && e.message) || e) };
+    }
+    if (hasil && hasil.ok !== false) validasiBacaan = { pada: Date.now(), hasil };
+    return hasil || { ok: false, pesan: "tanpa jawaban" };
+  }
+
+  /** Kalimat halangan bila BAS ini belum di-acc hakim di ABT ("" = lolos). Saklar validasi mati = lolos. */
+  async function halanganValidasiBas(klien, baris) {
+    const v = await bacaValidasiBas(klien);
+    if (v === null) return "";
+    if (v.ok === false) return `Antrian validasi BAS di ABT tidak terbaca (${v.pesan || "tanpa keterangan"}) - tidak dapat dipastikan BAS ini sudah di-acc hakim.`;
+    if (v.fiturAktif === false) return "";
+    const rapat = (x) => String(x || "").replace(/\s+/g, "").toLowerCase();
+    const ada = (Array.isArray(v.baris) ? v.baris : []).some((x) => {
+      const tautan = (x && x.tautanBuka) || {};
+      const cocokPerkara = (x && x.perkaraNomor && rapat(x.perkaraNomor) === rapat(baris.nomorPerkara)) || (tautan.c && String(tautan.c) === String(baris.perkaraId));
+      if (!cocokPerkara) return false;
+      const ke = (String((x && x.sidangTeks) || "").match(/sidang\s*ke\s*-?\s*(\d+)/i) || [])[1] || tautan.d || "";
+      return !ke || Number(ke) === Number(baris.urutan);
+    });
+    return ada ? `BAS sidang ke-${baris.urutan || "?"} masih menunggu validasi hakim di ABT (validasi BAS menyala) - unggah setelah di-acc.` : "";
+  }
+
   async function siapkan(baris, lapor, opsi) {
     const kabar = typeof lapor === "function" ? lapor : () => {};
     const ganti = Boolean(opsi && opsi.ganti) && baris.jenis === "bas";
-    const s = { baris, keadaan: "halangan", halangan: "", catatan: [], nama: "", blangko: "", rtf: null, anonim: null, keputusanAnonim: "", perlu: null, ukuran: 0, ganti: false, jalurLama: "" };
+    const sinyalLuar = (opsi && opsi.sinyal) || null;
+    const dihentikan = () => Boolean(sinyalLuar && sinyalLuar.aborted);
+    const s = { baris, keadaan: "halangan", halangan: "", catatan: [], nama: "", blangko: "", rtf: null, anonim: null, keputusanAnonim: "", perlu: null, ukuran: 0, ganti: false, jalurLama: "", tebakan: false };
     try {
+      if (dihentikan()) {
+        s.halangan = "Dihentikan petugas sebelum diperiksa.";
+        return s;
+      }
       kabar("memeriksa e-Doc di SIPP…");
       const c = await cek(baris);
       if (baris.jenis === "putusan" && c.adaBaris === false) {
@@ -20008,11 +20056,32 @@ function f41Mesin(depsMasuk) {
         return s;
       }
       s.blangko = b.berkas;
+      // Temuan audit A5: blangko BAS yang hanya perkiraan (kehadiran belum tercatat) tidak diunggah tanpa tanda "sudah diperiksa".
+      if (baris.jenis === "bas" && b.perkiraan) {
+        if (opsi && opsi.tebakanDiperiksa) s.catatan.push(`Blangko "${b.berkas}" adalah perkiraan - sudah diperiksa petugas.`);
+        else {
+          s.tebakan = true;
+          s.halangan = `Blangko BAS "${b.berkas}" hanya perkiraan (kehadiran belum tercatat di SIPP; dipilih menurut urutan sidang dan agenda). Periksa dulu, lalu tekan "Sudah diperiksa".`;
+          return s;
+        }
+      }
       const klien = d.klien();
       kabar("memeriksa hak buka blangko di ABT…");
       const hak = await klien.periksaHakBuka({ a: b.a, b: b.b, perkaraId: baris.perkaraId });
       if (!hak || hak.ok === false) {
         s.halangan = `ABT menolak blangko ini: ${(hak && (hak.pesan || hak.sebab)) || "alasan tidak terbaca"}.`;
+        return s;
+      }
+      // Temuan audit D4: ABT preview tidak memeriksa acc hakim - saklar validasi BAS yang menyala diperiksa di sini.
+      if (baris.jenis === "bas") {
+        const tahan = await halanganValidasiBas(klien, baris);
+        if (tahan) {
+          s.halangan = tahan;
+          return s;
+        }
+      }
+      if (dihentikan()) {
+        s.halangan = "Pemeriksaan dihentikan petugas.";
         return s;
       }
       kabar("mencetak dari ABT…");
@@ -20024,7 +20093,9 @@ function f41Mesin(depsMasuk) {
       s.rtf = cetak.rtf;
       s.ukuran = cetak.ukuran || (cetak.rtf.byteLength || 0);
       s.nama = d.namaBaku(baris.nomorPerkara, b.berkas);
-      const sisaPenanda = cetak.periksa && Number(cetak.periksa.penandaSisa) > 0 ? Number(cetak.periksa.penandaSisa) : 0;
+      // Temuan audit D1: abtKlienPeriksaRtf mengembalikan LARIK penanda, bukan angka.
+      const rawSisa = cetak.periksa ? cetak.periksa.penandaSisa : 0;
+      const sisaPenanda = Array.isArray(rawSisa) ? rawSisa.length : Number(rawSisa) > 0 ? Number(rawSisa) : 0;
       if (sisaPenanda) s.catatan.push(`${sisaPenanda} isian blangko masih kosong di naskah - periksa sebelum diunggah.`);
 
       if (baris.jenis === "putusan" && s.perlu.anonim) {
@@ -20032,9 +20103,29 @@ function f41Mesin(depsMasuk) {
         if (an && an.ok && an.rtf) {
           s.anonim = { ...an, sumber: "ALETA" };
           s.keputusanAnonim = (an.sisa || []).length ? "" : "unggah";
+        } else if (anonimAbtDicoba.has(String(baris.kunci || baris.perkaraId))) {
+          // Temuan audit D2: main/anonim mahal (25 dtk - 5 mnt) - tidak diulang untuk baris yang sama.
+          s.catatan.push(`Anonimisasi belum dapat dibuat (${(an && an.sebab) || "penyamar ALETA gagal"}; anonimisasi ABT sudah dicoba untuk perkara ini dan tidak diulang).`);
+        } else if (dihentikan()) {
+          s.halangan = "Pemeriksaan dihentikan petugas.";
+          return s;
         } else {
           kabar("penyamar ALETA gagal - memakai anonimisasi ABT…");
-          const abt = await klien.anonim({ perkaraId: baris.perkaraId, nomor: baris.nomorPerkara, rtf: s.rtf, namaBerkas: s.nama });
+          anonimAbtDicoba.add(String(baris.kunci || baris.perkaraId));
+          // Sinyal Hentikan petugas + batas waktu sendiri, supaya ABT yang macet tidak menggantung selamanya.
+          const pembatalAbt = new AbortController();
+          const batalkan = () => pembatalAbt.abort();
+          const pewaktu = setTimeout(batalkan, F41_BATAS_ANONIM_ABT_MS);
+          if (sinyalLuar && typeof sinyalLuar.addEventListener === "function") sinyalLuar.addEventListener("abort", batalkan);
+          let abt;
+          try {
+            abt = await klien.anonim({ perkaraId: baris.perkaraId, nomor: baris.nomorPerkara, rtf: s.rtf, namaBerkas: s.nama, sinyal: pembatalAbt.signal });
+          } catch (e) {
+            abt = { ok: false, pesan: pembatalAbt.signal.aborted ? (dihentikan() ? "dihentikan petugas" : "melewati batas waktu") : String((e && e.message) || e) };
+          } finally {
+            clearTimeout(pewaktu);
+            if (sinyalLuar && typeof sinyalLuar.removeEventListener === "function") sinyalLuar.removeEventListener("abort", batalkan);
+          }
           if (abt && abt.ok && abt.rtf) {
             s.anonim = { ok: true, rtf: abt.rtf, sumber: "ABT", ringkas: {}, sisa: [], potongan: [] };
             s.keputusanAnonim = "unggah";
@@ -20280,7 +20371,7 @@ function aletaUnggahMassalBuka(jenisAwal, depsMasuk) {
   if (f41Terbuka && f41Terbuka.isConnected) return f41Terbuka;
   f41PasangGaya();
   const mesin = f41Mesin(depsMasuk);
-  const S = { data: null, tab: "", saringan: {}, basAda: false, centang: new Set(), siap: new Map(), jalan: false, pembatal: null, ringkas: null, riwayat: null, galatMuat: "" };
+  const S = { data: null, tab: "", saringan: {}, basAda: false, centang: new Set(), siap: new Map(), jalan: false, pembatal: null, ringkas: null, riwayat: null, galatMuat: "", tebakanOk: new Set(), fase: "" };
   const tirai = document.createElement("div");
   tirai.className = "aleta-f41-tirai";
   tirai.setAttribute("role", "dialog");
@@ -20369,6 +20460,7 @@ function aletaUnggahMassalBuka(jenisAwal, depsMasuk) {
       r.push(
         `<div><span class="aleta-f41-chip ${s.keadaan === "dobel" ? "kuning" : "merah"}">${s.keadaan === "dobel" ? "Sudah ada" : "Belum bisa"}</span> ${f41Esc(s.halangan)}` +
           (s.keadaan === "dobel" && s.baris.jenis === "bas" && !s.hasil ? ` <button type="button" data-f41-ganti="${f41Esc(s.baris.kunci)}">Ganti</button>` : "") +
+          (s.tebakan && !s.hasil ? ` <button type="button" data-f41-tebakan="${f41Esc(s.baris.kunci)}" title="Saya sudah memeriksa bahwa blangko BAS ini memang yang tepat untuk sidang ini">Sudah diperiksa</button>` : "") +
           `</div>`
       );
     }
@@ -20549,13 +20641,20 @@ function aletaUnggahMassalBuka(jenisAwal, depsMasuk) {
     if (!dipilih.length || S.jalan) return;
     S.jalan = true;
     S.ringkas = null;
+    // Temuan audit D2: Periksa dapat dihentikan (tombol Hentikan) - ABT beranonim bisa 5 menit per berkas.
+    S.pembatal = new AbortController();
+    S.fase = "periksa";
+    const sinyal = S.pembatal.signal;
     gambar();
     let i = 0;
+    let diperiksa = 0;
     for (const b of dipilih) {
+      if (sinyal.aborted) break;
       i += 1;
       status(`Memeriksa ${i} dari ${dipilih.length}: ${b.nomorPerkara}…`);
       laporBaris({ baris: b }, "jalan", "memeriksa…");
-      const s = await mesin.siapkan(b, (t) => laporBaris({ baris: b }, "jalan", t));
+      const s = await mesin.siapkan(b, (t) => laporBaris({ baris: b }, "jalan", t), { sinyal, tebakanDiperiksa: S.tebakanOk.has(b.kunci) });
+      diperiksa += 1;
       S.siap.set(b.kunci, s);
       const el = elBadan.querySelector(`[data-kunci="${f41Esc(b.kunci)}"]`);
       if (el) {
@@ -20564,13 +20663,36 @@ function aletaUnggahMassalBuka(jenisAwal, depsMasuk) {
         el.querySelector("[data-f41-kemajuan]").textContent = "";
       }
     }
+    const berhenti = sinyal.aborted;
     S.jalan = false;
+    S.pembatal = null;
     const siap = dipilih.filter((b) => mesin.kiriman(S.siap.get(b.kunci))).length;
     const perluLihat = dipilih.filter((b) => {
       const s = S.siap.get(b.kunci);
       return s && s.keadaan === "siap" && s.anonim && !s.keputusanAnonim;
     }).length;
-    status(`${siap} siap diunggah dari ${dipilih.length} yang diperiksa${perluLihat ? ` · ${perluLihat} naskah anonim perlu Anda lihat dulu` : ""}.`);
+    status(
+      berhenti
+        ? `Pemeriksaan dihentikan petugas - ${diperiksa} dari ${dipilih.length} sudah diperiksa, ${siap} siap diunggah.`
+        : `${siap} siap diunggah dari ${dipilih.length} yang diperiksa${perluLihat ? ` · ${perluLihat} naskah anonim perlu Anda lihat dulu` : ""}.`
+    );
+    gambar();
+  }
+
+  /** Tombol "Sudah diperiksa" (temuan audit A5): blangko BAS perkiraan disiapkan ulang sebagai pilihan petugas. */
+  async function tandaiTebakan(kunci) {
+    const b = daftarTab().find((x) => x.kunci === kunci);
+    if (!b || S.jalan) return;
+    const lama = S.siap.get(kunci);
+    S.tebakanOk.add(kunci);
+    S.jalan = true;
+    gambar();
+    laporBaris({ baris: b }, "jalan", "menyiapkan…");
+    const s = await mesin.siapkan(b, (t) => laporBaris({ baris: b }, "jalan", t), { ganti: Boolean(lama && lama.ganti), tebakanDiperiksa: true });
+    S.siap.set(kunci, s);
+    if (s.keadaan === "siap") S.centang.add(kunci);
+    S.jalan = false;
+    status(s.keadaan === "siap" ? `${b.nomorPerkara} sidang ke-${b.urutan || "?"} siap diunggah.` : `${b.nomorPerkara}: ${s.halangan}`);
     gambar();
   }
 
@@ -20597,6 +20719,7 @@ function aletaUnggahMassalBuka(jenisAwal, depsMasuk) {
     if (!setuju) return;
     S.jalan = true;
     S.pembatal = new AbortController();
+    S.fase = "unggah";
     for (const s of dipilih) {
       delete s.hasil;
       delete s.catatanHasil;
@@ -20645,7 +20768,7 @@ function aletaUnggahMassalBuka(jenisAwal, depsMasuk) {
     S.jalan = true;
     gambar();
     laporBaris({ baris: b }, "jalan", "menyiapkan pengganti…");
-    const s = await mesin.siapkan(b, (t) => laporBaris({ baris: b }, "jalan", t), { ganti: true });
+    const s = await mesin.siapkan(b, (t) => laporBaris({ baris: b }, "jalan", t), { ganti: true, tebakanDiperiksa: S.tebakanOk.has(kunci) });
     S.siap.set(kunci, s);
     if (s.keadaan === "siap") S.centang.add(kunci);
     S.jalan = false;
@@ -20689,9 +20812,11 @@ function aletaUnggahMassalBuka(jenisAwal, depsMasuk) {
     if (kode === "unggah") return void unggah();
     if (kode === "henti" && S.pembatal) {
       S.pembatal.abort();
-      status("Berhenti sesudah berkas yang sedang dikirim selesai…");
+      status(S.fase === "periksa" ? "Pemeriksaan berhenti sesudah berkas yang sedang diperiksa selesai…" : "Berhenti sesudah berkas yang sedang dikirim selesai…");
       return;
     }
+    const tb = c("[data-f41-tebakan]");
+    if (tb && !S.jalan) return void tandaiTebakan(tb.getAttribute("data-f41-tebakan"));
     if (kode === "semua" && !S.jalan) {
       // Yang sudah ada di SIPP tidak ikut "Centang semua" - Ganti selalu satu per satu.
       for (const b of daftarTab()) if (!b.adaBas) S.centang.add(b.kunci);

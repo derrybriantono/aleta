@@ -82,6 +82,39 @@ function depsBawaan() {
       const b = await kueri(sippDb)("SELECT DATE_FORMAT(CURDATE(), '%Y-%m-%d') AS h");
       return tgl(b[0] && b[0].h) || new Date().toISOString().slice(0, 10);
     },
+    // Bahan blangko putusan per kumulasi & keadaan (temuan audit D3): peta perkaraId -> keterangan, sama dengan layar Jadwal Sidang.
+    kumulasi: (ids) => require("./kumulasiPerkaraService").kumulasiBanyakPerkara(ids),
+    mediasi: (ids) => require("./sippJadwalSidangService").mediasiBanyakPerkara(ids),
+  };
+}
+
+/**
+ * Kehadiran pada sidang putusan beserta sidang-sidang sebelumnya (sepadan kehadiranSebelumnya di
+ * sippJadwalSidangService - ditulis ulang murni di sini supaya layanan ini tidak memuat layanan jadwal).
+ * `sidang` = baris {tanggalSidang, dihadiriOleh} SATU perkara terurut tanggal; sidang putusan = yang terakhir
+ * dengan tanggal <= tanggal putusan. Pulang { dihadiriOleh, panggilan } ; tanpa sidang -> semuanya null/false.
+ */
+function kehadiranSidangPutusan(sidang, tanggalPutusan) {
+  const urut = (Array.isArray(sidang) ? sidang : []).filter((x) => tgl(x.tanggalSidang) && (!tanggalPutusan || tgl(x.tanggalSidang) <= tanggalPutusan));
+  const idx = urut.length - 1;
+  if (idx < 0) return { dihadiriOleh: null, panggilan: { hadirSebelumnya: null, tergugatPernahHadir: false, penggugatPernahHadir: false } };
+  const kode = (x) => (x.dihadiriOleh === null || x.dihadiriOleh === undefined || x.dihadiriOleh === "" ? null : Number(x.dihadiriOleh));
+  let tergugat = false;
+  let penggugat = false;
+  let adaKosong = false;
+  for (let i = 0; i < idx; i += 1) {
+    const k = kode(urut[i]);
+    if (k === 1 || k === 3) tergugat = true;
+    if (k === 1 || k === 2) penggugat = true;
+    if (!(k >= 1 && k <= 4)) adaKosong = true;
+  }
+  return {
+    dihadiriOleh: kode(urut[idx]),
+    panggilan: {
+      hadirSebelumnya: idx > 0 ? kode(urut[idx - 1]) : null,
+      tergugatPernahHadir: tergugat,
+      penggugatPernahHadir: penggugat ? true : adaKosong ? null : false,
+    },
   };
 }
 
@@ -156,6 +189,38 @@ function buatLayanan(depsMasuk) {
         panitera: daftarNama(r.panitera),
       }));
     });
+
+    // Bahan pemilih blangko putusan (temuan audit D3): kumulasi, kehadiran pada sidang putusan, dan mediasi terakhir -
+    // sama dengan yang dipakai layar Jadwal Sidang. Gagal baca = disebut di galat dan TIDAK ditebak (kode keadaan kosong).
+    if (putusan && putusan.length) {
+      const idp = [...new Set(putusan.map((x) => Number(x.perkaraId)).filter((n) => n > 0))];
+      const sidangPer = {};
+      const sidangDibaca = await coba("sipp", "sidang putusan", async () => {
+        for (let i = 0; i < idp.length; i += 200) {
+          const potong = idp.slice(i, i + 200);
+          const b = await d.kueriSipp(
+            `SELECT j.id AS sidangId, j.perkara_id AS perkaraId, DATE_FORMAT(j.tanggal_sidang, '%Y-%m-%d') AS tanggalSidang, j.dihadiri_oleh AS dihadiriOleh
+               FROM perkara_jadwal_sidang j WHERE j.perkara_id IN (${potong.map(() => "?").join(",")})
+              ORDER BY j.perkara_id ASC, j.tanggal_sidang ASC, j.id ASC`,
+            potong
+          );
+          for (const r of b) (sidangPer[String(angka(r.perkaraId))] = sidangPer[String(angka(r.perkaraId))] || []).push(r);
+        }
+        return true;
+      });
+      const petaKumulasi = typeof d.kumulasi === "function" ? await coba("sipp", "kumulasi putusan", () => d.kumulasi(idp)) : null;
+      const petaMediasi = typeof d.mediasi === "function" ? await coba("sipp", "mediasi putusan", () => d.mediasi(idp)) : null;
+      for (const x of putusan) {
+        const hadir = sidangDibaca ? kehadiranSidangPutusan(sidangPer[x.perkaraId], x.tanggalPutusan) : kehadiranSidangPutusan([], "");
+        x.dihadiriOleh = hadir.dihadiriOleh;
+        x.panggilan = hadir.panggilan;
+        x.kumulasi = petaKumulasi ? petaKumulasi[x.perkaraId] || null : null;
+        x.kumulasiTerbaca = Boolean(petaKumulasi);
+        const m = petaMediasi ? petaMediasi[x.perkaraId] : null;
+        x.mediasi = m ? { hasil: teks(m.hasil) } : null;
+        x.mediasiTerbaca = Boolean(petaMediasi);
+      }
+    }
 
     const tertahan = await coba("sipp", "putusan belum diisi", async () => {
       const b = await d.kueriSipp(

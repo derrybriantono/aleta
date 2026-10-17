@@ -5247,6 +5247,13 @@ export type UnggahMassalPutusanBot = {
   adaAnonim: boolean;
   majelis: string[];
   panitera: string[];
+  /** Bahan pemilih blangko putusan (audit D3). Bot lama tidak mengirimnya - semuanya opsional. */
+  kumulasi?: { daftar?: Array<{ kode?: string }> | string[] } | null;
+  kumulasiTerbaca?: boolean;
+  dihadiriOleh?: number | null;
+  panggilan?: { hadirSebelumnya?: number | null; tergugatPernahHadir?: boolean; penggugatPernahHadir?: boolean | null } | null;
+  mediasi?: { hasil?: string } | null;
+  mediasiTerbaca?: boolean;
 };
 export type UnggahMassalTertahanBot = { perkaraId: string; nomorPerkara: string; tanggalSidang: string; majelis: string[] };
 export type UnggahMassalBasBot = {

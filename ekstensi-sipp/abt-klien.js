@@ -774,14 +774,15 @@ function abtKlienBuat(opsi) {
      * di Windows/PC lokal hanya .rtf (docx -> "Proses Anonim Gagal" karena butuh soffice Linux).
      * `rtf` = ArrayBuffer/Uint8Array/Blob. Pulang { ok, rtf:ArrayBuffer, nama } atau gagal + pesan ABT.
      */
-    async anonim({ perkaraId, nomor, rtf, namaBerkas }) {
+    async anonim({ perkaraId, nomor, rtf, namaBerkas, sinyal }) {
       const blob = rtf instanceof Blob ? rtf : new Blob([rtf], { type: "application/rtf" });
       const form = new FormData();
       form.set("perkara_id", String(perkaraId));
       form.set("perkara_no", nomor);
       form.set("file_putusan", blob, namaBerkas || "putusan.rtf");
       await jeda("anonim", `${asal}/main/anonim`);
-      const r = await ambil(`${asal}/main/anonim`, { method: "POST", credentials: "include", cache: "no-store", body: form });
+      // `sinyal` (AbortSignal) = tombol Hentikan / batas waktu pemanggil: main/anonim bisa 5 menit.
+      const r = await ambil(`${asal}/main/anonim`, { method: "POST", credentials: "include", cache: "no-store", body: form, ...(sinyal ? { signal: sinyal } : {}) });
       if (r.status >= 400) return gagal(`ABT menjawab ${r.status}.`);
       const buf = await r.arrayBuffer();
       const awal = new TextDecoder("latin1").decode(new Uint8Array(buf).subarray(0, 6));
