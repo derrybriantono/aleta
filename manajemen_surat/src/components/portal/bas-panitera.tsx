@@ -336,6 +336,7 @@ export function BasPanitera() {
             <KehadiranSidang
               perkaraId={berkas.perkaraId}
               nomorPerkara={berkas.nomorPerkara}
+              jenisPerkara={String((berkas.identitas.nilai as { jenisPerkara?: string } | null)?.jenisPerkara ?? "")}
               riwayatSidang={berkas.riwayatSidang.nilai}
             />
 

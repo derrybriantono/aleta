@@ -18,6 +18,7 @@ import {
   type PotonganRingkas,
 } from "@/lib/kehadiran-rinci";
 import { cn } from "@/lib/utils";
+import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 
 /**
  * ============================================================================
@@ -305,8 +306,8 @@ export function UsulanKehadiranBlangko({
 // ============================================================================
 
 function hariIniLokal(): string {
-  const t = new Date();
-  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+  // Tanggal WITA, bukan zona perangkat (audit 17 Okt).
+  return waktuPengadilan().tanggal;
 }
 
 /**
@@ -322,6 +323,7 @@ export function UsulanBasKehadiran({
   tanggal,
   sebutanSatu = "Penggugat",
   sebutanDua = "Tergugat",
+  tanpaPihakKedua = false,
   isiPenggugat,
   isiTergugat,
   onIsi,
@@ -330,6 +332,8 @@ export function UsulanBasKehadiran({
   tanggal: string | null | undefined;
   sebutanSatu?: string;
   sebutanDua?: string;
+  /** Permohonan (Pdt.P) tanpa pihak kedua - tidak ada usulan "tidak hadir" untuk pihak yang tidak ada. */
+  tanpaPihakKedua?: boolean;
   isiPenggugat: string;
   isiTergugat: string;
   onIsi: (medan: "kehadiranPenggugat" | "kehadiranTergugat", bunyi: string) => void;
@@ -355,7 +359,7 @@ export function UsulanBasKehadiran({
   }, [perkaraId, hari]);
 
   if (!hadir || hadir.kunci !== `${perkaraId}|${hari}` || hadir.daftar.length === 0) return null;
-  const bahan: BahanPerkaraHadir = { sebutanSatu, sebutanDua };
+  const bahan: BahanPerkaraHadir = { sebutanSatu, sebutanDua, tanpaPihakKedua };
   const susun = susunKehadiran(hadir.daftar, hari < hariIniLokal() ? { selesaiDisidang: true } : null);
   const usul = usulanBas(susun, bahan);
   const baris: Array<{ medan: "kehadiranPenggugat" | "kehadiranTergugat"; label: string; bunyi: string; sekarang: string }> = [
