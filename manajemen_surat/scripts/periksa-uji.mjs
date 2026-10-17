@@ -42,15 +42,30 @@ const FOLDER_KERJA = process.env.ALETA_FOLDER_KERJA || "D:/aleta-dev/kerja";
 const UTAS_MAKS = Number(process.env.ALETA_UJI_UTAS) || 3;
 
 /**
- * Lingkungan yang TIDAK menyentuh C: - aturan tetap sesi ini. Vitest dan npm
- * menulis cache dan berkas sementara; keduanya dialihkan ke D:.
+ * Lingkungan uji: di luar C:\aleta\ TIDAK ADA tulisan ke drive C: (aturan
+ * pengguna, C: = SSD 128 GB; disetujui 17 Okt). Vitest dan npm menulis cache
+ * dan berkas sementara; folder itu dipilih begini:
+ *   1. env ALETA_UJI_TMP bila ada (ALETA_TMP lama tetap dikenal);
+ *   2. cwd di drive C: (salinan kerja SSD C:\aleta\kerja) -> C:\aleta\tmp;
+ *   3. selain itu D:\Aplikasi\aleta\tmp.
+ * Parameter env dan cwd hanya agar dapat diuji tanpa menyentuh proses ini.
  */
-export function lingkunganUji() {
+export function lingkunganUji(env = process.env, cwd = process.cwd()) {
+  const diC = /^[cC]:[\\/]/.test(String(cwd));
+  const dariEnv = env.ALETA_UJI_TMP || env.ALETA_TMP;
+  const tmp = dariEnv || (diC ? "C:/aleta/tmp" : "D:/Aplikasi/aleta/tmp");
+  const cache =
+    env.ALETA_NPM_CACHE ||
+    (dariEnv
+      ? `${dariEnv.replace(/[\\/]+$/, "")}/npm-cache`
+      : diC
+        ? "C:/aleta/cache/npm"
+        : "D:/Aplikasi/aleta/cache/npm");
   return {
-    ...process.env,
-    TMP: process.env.ALETA_TMP || "D:/Aplikasi/aleta/tmp",
-    TEMP: process.env.ALETA_TMP || "D:/Aplikasi/aleta/tmp",
-    npm_config_cache: process.env.ALETA_NPM_CACHE || "D:/Aplikasi/aleta/cache/npm",
+    ...env,
+    TMP: tmp,
+    TEMP: tmp,
+    npm_config_cache: cache,
   };
 }
 

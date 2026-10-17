@@ -62,8 +62,11 @@ Sebelum menulis apa pun: `node scripts/rilis-ekstensi.mjs --periksa` (langkah 1â
 
 ## Aturan yang tidak boleh dilanggar
 
-- **Jangan sentuh C:** - skrip sudah mengalihkan `TMP`, `TEMP`, `npm_config_cache`
-  ke D:. Jangan jalankan vitest/npm dengan lingkungan bawaan.
+- **Jangan sentuh C:** di luar `C:\aleta\` (C: = SSD 128 GB) - skrip sudah
+  mengalihkan `TMP`, `TEMP`, `npm_config_cache` ke D:. Jangan jalankan vitest/npm
+  dengan lingkungan bawaan. Pengecualian (disetujui 17 Okt): bila dijalankan dari
+  salinan kerja SSD `C:\aleta\kerja`, skrip memakai `C:\aleta\tmp` (atau env
+  `ALETA_UJI_TMP`). Sisa C: wajib minimal 10 GB.
 - **Jangan naikkan `APP_VERSION`** portal (2.15.0) - itu keputusan lintas sesi
   (memori `versi-pc-android-harus-sama`). Versi ekstensi terpisah dari versi
   portal.

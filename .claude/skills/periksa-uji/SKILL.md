@@ -50,7 +50,11 @@ yang habis waktu lalu lulus sendirian - sebutkan keduanya.
 
 ## Aturan
 
-- **Jangan sentuh C:** - skrip mengalihkan `TMP`, `TEMP`, `npm_config_cache` ke D:.
+- **Jangan sentuh C:** di luar `C:\aleta\` (C: = SSD 128 GB) - skrip mengalihkan
+  `TMP`, `TEMP`, `npm_config_cache` ke D:. Pengecualian (disetujui 17 Okt): uji
+  penuh dan `tsc` boleh dari salinan kerja SSD `C:\aleta\kerja` (git worktree
+  terpisah, detached); TMP/TEMP otomatis `C:\aleta\tmp` bila cwd di C:, atau
+  dipilih lewat env `ALETA_UJI_TMP`. Sisa C: wajib minimal 10 GB.
 - Jalankan **sesudah suntingan terakhir**, bukan di tengah (memori
   `jalankan-uji-penuh-sebelum-commit`): penjaga menyisir teks mentah berkas
   ekstensi; komentar pun dapat mematahkannya.
