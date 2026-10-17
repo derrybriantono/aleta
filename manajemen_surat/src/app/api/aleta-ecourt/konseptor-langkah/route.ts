@@ -102,12 +102,16 @@ export async function POST(request: NextRequest) {
     await pastikanAksi(db, actorUserId, "putusan.draf"); // HAK-PERAN: penyusun draf putusan
 
     const masukan = (await request.json().catch(() => ({}))) as Masukan;
-    const perkaraId = String(masukan.perkaraId ?? "");
+    // Audit 17 Okt: dirapikan SEBELUM diperiksa - "koreksi " / "123 " dulu lolos penjaga butir 36
+    // lalu dirapikan penyimpan menjadi "koreksi" / "123".
+    const perkaraId = String(masukan.perkaraId ?? "").trim();
+    const langkah = String(masukan.langkah ?? "").trim();
+    if (!/^\d{1,12}$/.test(perkaraId)) return ok({ ok: false, alasan: "Perkara wajib disebut." });
     const oleh = aktor.name || String(actorUserId ?? "petugas");
     const keadaan = await bacaKeadaanKonseptor([perkaraId]);
     const hak = hakKoreksiUntuk(aktor, [perkaraId], keadaan.peta)[perkaraId] ?? { boleh: false, alasan: "" };
     // Butir 36 (17 Okt): "Dikoreksi majelis" hanya ketua/anggota majelis - dijaga di sini, bukan hanya di layar.
-    if (!masukan.lapor && String(masukan.langkah ?? "") === "koreksi" && !hak.boleh) {
+    if (!masukan.lapor && langkah === "koreksi" && !hak.boleh) {
       return Response.json({ ok: false, error: { message: hak.alasan }, data: { ok: false, alasan: hak.alasan } }, { status: 403 });
     }
 
@@ -121,7 +125,7 @@ export async function POST(request: NextRequest) {
         })
       : await simpanTandaLangkah(db, {
           perkaraId,
-          langkah: String(masukan.langkah ?? ""),
+          langkah,
           selesai: masukan.selesai === true,
           catatan: String(masukan.catatan ?? ""),
           oleh,

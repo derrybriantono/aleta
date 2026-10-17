@@ -202,6 +202,18 @@ describe("nilaiKemajuan - blangko kosong mengalahkan centang", () => {
     expect(k.langkah.find((x) => x.kode === "amar")!.status).toBe("belum");
   });
 
+  it("audit 17 Okt: langkah bersyarat yang centangnya DICABUT dan keadaannya tidak ada tidak menahan 'siap'", () => {
+    const semua = Object.fromEntries(LANGKAH_KONSEPTOR.filter((l) => !l.syarat).map((l) => [l.kode, { selesai: true, oleh: "x", pada: PADA, catatan: "" }]));
+    const bersyarat = LANGKAH_KONSEPTOR.find((l) => l.syarat)!;
+    const tanda = { ...semua, [bersyarat.kode]: { selesai: false, oleh: "x", pada: PADA, catatan: "" } };
+    const k = nilaiKemajuan(tanda, null, { eksepsi: false, rekonvensi: false, sela: false });
+    expect(k.siap).toBe(true);
+    expect(k.langkah.some((l) => l.kode === bersyarat.kode)).toBe(false);
+    // Keadaan tak terbaca + centang SELESAI: langkahnya tetap tampil.
+    const tetap = nilaiKemajuan({ ...semua, [bersyarat.kode]: { selesai: true, oleh: "x", pada: PADA, catatan: "" } }, null, null);
+    expect(tetap.langkah.some((l) => l.kode === bersyarat.kode)).toBe(true);
+  });
+
   it("siap dibacakan hanya bila SEMUA langkah selesai - termasuk koreksi majelis", () => {
     const semua = Object.fromEntries(LANGKAH_KONSEPTOR.filter((l) => !l.syarat).map((l) => [l.kode, { selesai: true, oleh: "x", pada: PADA, catatan: "" }]));
     expect(nilaiKemajuan(semua, null).siap).toBe(true);
@@ -288,6 +300,16 @@ describe("penyimpanan dan rute (pg-mem berbenih)", () => {
     expect(k.langkah.find((l) => l.kode === "kesimpulan")!.blangko!.kosong).toEqual(["Kesimpulan Tergugat"]);
     expect(k.langkah.find((l) => l.kode === "bukti")!.status).toBe("selesai");
     expect((await simpanLaporBlangko(db!, { perkaraId: "581", isian: [], oleh: "x" })).ok).toBe(false);
+  });
+
+  it("audit 17 Okt: 'koreksi ' / perkara berspasi tidak melewati penjaga butir 36 lalu dirapikan penyimpan", async () => {
+    aktor = "usr-ppg";
+    const r = await rute("/api/aleta-ecourt/konseptor-langkah", "POST", { perkaraId: "581", langkah: "koreksi ", selesai: true });
+    expect(r.status).toBe(403);
+    const r2 = await rute("/api/aleta-ecourt/konseptor-langkah", "POST", { perkaraId: " 581 ", langkah: "koreksi", selesai: true });
+    expect(r2.status).toBe(403);
+    const baris = await db!.queryAll<Record<string, unknown>>("SELECT langkah FROM aleta_konseptor_langkah WHERE langkah = 'koreksi'");
+    expect(baris).toEqual([]);
   });
 
   it("rute: hakim mencentang; juru sita hanya membaca (403 saat menulis)", async () => {
