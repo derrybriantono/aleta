@@ -119,6 +119,11 @@ const BERKAS = [
   // SIPP/ABT. Dimuat document_start, SEBELUM tema-awal.js, supaya fetch sudah
   // terbungkus saat skrip konten lain berjalan.
   "penjaga-tanda.js",
+  // Deteksi sisa blangko (17 Okt 2026): periksa putusan/BAS/relaas sebelum
+  // diunduh atau diunggah (kurung siku, #nnnn#, "perlu di review", titik-titik,
+  // garis isian, tulisan merah). Salinan JS dari src/lib/deteksi-sisa-blangko.ts;
+  // dimuat paling depan di blok skrip konten SIPP/ABT/portal.
+  "deteksi-sisa-blangko.js",
   "tema-awal.js",
   // Unduhan universal (17 Okt 2026): unduhan SIPP/ALETA/Blangko Derry lewat
   // chrome.downloads supaya tidak diblokir Chrome di situs http.

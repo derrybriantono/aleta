@@ -2774,6 +2774,23 @@
     const berkas = S.blangko.berkas;
     const j = S.blangko.jenis;
     const hasil = [];
+    // Deteksi sisa blangko (17 Okt 2026): naskah diperiksa SEKALI untuk semua keluaran (RTF, PDF,
+    // e-Doc). Bila masih ada sisa blangko/perbaikan, petugas diperingatkan - tetap boleh lanjut.
+    if (typeof aletaDeteksiSisa === "object" && aletaDeteksiSisa) {
+      const jenisNaskah = { put: "putusan", bas: "bas", rel: "relaas" }[j] || "";
+      if (jenisNaskah) {
+        const tinjau = await aletaDeteksiSisa.tinjau(rtfBuf, {
+          nama: namaUnduhan(nomor, berkas, "rtf"),
+          jenis: jenisNaskah,
+          aksi: S.fmt.edoc && j === "put" ? "unggah" : "unduh",
+        });
+        if (!tinjau.lanjut) {
+          catatLog("dibatalkan: petugas membatalkan karena naskah masih memuat sisa blangko");
+          toast("Dibatalkan. Perbaiki sisa blangko di naskah, lalu cetak lagi.");
+          return;
+        }
+      }
+    }
     let anonimRtf = null;
     let anonimAleta = null; // 16OKT-F43
     if (S.fmt.rtf) {

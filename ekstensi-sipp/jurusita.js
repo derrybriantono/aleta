@@ -1306,6 +1306,36 @@ function jurusitaGambarPutaran(kotak, jawab, pantau) {
     rinci.appendChild(ul);
     kotak.appendChild(rinci);
   }
+  // Deteksi sisa blangko (17 Okt 2026): relaas yang sudah tercetak tetapi masih memuat titik-titik isian,
+  // tanda isian, atau tulisan merah. Hanya pemberitahuan - cetaknya tidak ditahan.
+  const adaSisa = (p.butir || []).filter((b) => b.keadaan === "selesai" && b.sisaBlangko && Number(b.sisaBlangko.jumlah) > 0);
+  if (adaSisa.length > 0) {
+    const rinci = jurusitaEl("details", "aleta-jurusita-rinci");
+    rinci.appendChild(jurusitaEl("summary", "", `Masih memuat sisa blangko (${adaSisa.length} dokumen) - periksa sebelum dipakai`));
+    const ul = jurusitaEl("ul", "aleta-jurusita-daftar");
+    for (const b of adaSisa.slice(0, 30)) {
+      ul.appendChild(jurusitaEl("li", "", `${b.nomorPerkara || ""} ${b.label || ""}: ${(b.sisaBlangko.ringkas || []).join("; ")}`.trim()));
+    }
+    rinci.appendChild(ul);
+    const unduh = jurusitaTombol("Unduh daftar masalah (.txt)", "aleta-jurusita-tombol-kecil");
+    unduh.addEventListener("click", async () => {
+      unduh.disabled = true;
+      try {
+        const baris = ["DAFTAR MASALAH PADA RELAAS", ""];
+        for (const b of adaSisa) {
+          baris.push(`${b.nomorPerkara || ""} ${b.label || ""} - ${b.sisaBlangko.jumlah} hal`.trim());
+          for (const c of b.sisaBlangko.contoh || []) baris.push(`   ${c.label} (paragraf ke-${c.paragraf}, kira-kira halaman ${c.halaman}): ${c.kalimat}`);
+          baris.push("");
+        }
+        const blob = new Blob([`﻿${baris.join("\r\n")}`], { type: "text/plain;charset=utf-8" });
+        await alatUnduh(blob, "Daftar masalah relaas.txt", { tanpaPeriksaSisa: true });
+      } finally {
+        unduh.disabled = false;
+      }
+    });
+    rinci.appendChild(unduh);
+    kotak.appendChild(rinci);
+  }
   return !p.selesai;
 }
 

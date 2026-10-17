@@ -1,3 +1,4 @@
+import { jenisNaskahDariAlamat, jenisNaskahDariNama, type JenisNaskah } from "@/lib/deteksi-sisa-blangko";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 
 /**
@@ -31,7 +32,7 @@ import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 
 export type HasilUnduhan =
   | { ok: true; nama: string; cara: "blob" | "diambil-alih" | "navigasi" }
-  | { ok: false; pesan: string };
+  | { ok: false; pesan: string; dibatalkan?: boolean };
 
 export type PemicuUnduhan = {
   /** Menyimpan blob sebagai berkas (tautan <a download>). */
@@ -88,6 +89,12 @@ export async function tanganiUnduhan(
     alamat?: string;
     pesanKosong?: string;
     pemicu?: PemicuUnduhan;
+    /**
+     * Jenis naskah untuk pemeriksaan sisa blangko sebelum diunduh (17 Okt 2026).
+     * Tanpa ini ditebak dari alamat (berkas-sipp?jenis=relaas|bas|putusan) lalu nama berkas.
+     * false = jangan periksa sama sekali.
+     */
+    jenisNaskah?: JenisNaskah | "" | false;
   }
 ): Promise<HasilUnduhan> {
   const pemicu = opsi.pemicu ?? pemicuPeramban();
@@ -101,6 +108,16 @@ export async function tanganiUnduhan(
   const nama = opsi.nama || namaDariDisposisi(respons.headers.get("content-disposition")) || opsi.namaCadangan;
   const blob = await respons.blob();
   if (blob.size > 0) {
+    // Putusan, BAS, dan relaas diperiksa dulu: bila masih ada sisa blangko petugas
+    // diperingatkan (tetap boleh lanjut). Tanpa temuan -> alur lama persis.
+    if (opsi.jenisNaskah !== false) {
+      const jenis = opsi.jenisNaskah || jenisNaskahDariAlamat(opsi.alamat) || jenisNaskahDariNama(nama);
+      if (jenis) {
+        const { tinjauSisaBlangko } = await import("@/lib/dialog-sisa-blangko");
+        const tinjau = await tinjauSisaBlangko(blob, { nama, jenis, aksi: "unduh" });
+        if (!tinjau.lanjut) return { ok: false, pesan: "Unduhan dibatalkan.", dibatalkan: true };
+      }
+    }
     pemicu.simpanBlob(blob, nama);
     return { ok: true, nama, cara: "blob" };
   }
