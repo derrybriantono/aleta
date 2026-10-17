@@ -43,12 +43,21 @@ describe("pilih blangko varian tolak", () => {
     expect(varianTolakBerbeda(pilihBlangkoH7(BARIS, "putusan"), hadir)).toBe(true);
   });
 
-  it("jenis tanpa baris tolak di peta (kewarisan, PAW): TIDAK ada varian - bukan blangko kabul berlabel tolak", () => {
-    for (const jenisPerkara of ["Kewarisan", "P3HP/Penetapan Ahli Waris", "Izin Poligami"]) {
+  it("jenis tanpa baris tolak di peta (Hibah, Wakaf, Isbat Wasiat): TIDAK ada varian - bukan blangko kabul berlabel tolak", () => {
+    // 18 Okt 2026 (paket i17): Kewarisan, PAW, dan Izin Poligami KINI punya blangko tolak sendiri, jadi contoh
+    // "tanpa baris tolak" diganti jenis yang memang belum dipetakan sama sekali.
+    for (const jenisPerkara of ["Hibah", "Wakaf", "Isbat Wasiat"]) {
       const b = { ...BARIS, jenisPerkara, nomorPerkara: "9/Pdt.G/2026/PA.Dgl" };
       const t = pilihBlangkoH7(b, "putusan", "ditolak");
       expect(t.utama, jenisPerkara).toBeNull();
       expect(varianTolakBerbeda(pilihBlangkoH7(b, "putusan"), t)).toBe(false);
+    }
+    // Sebaliknya, jenis yang kini punya blangko tolak harus mendapat varian tolak (bukan blangko kabul).
+    for (const jenisPerkara of ["Kewarisan", "P3HP/Penetapan Ahli Waris", "Izin Poligami"]) {
+      const b = { ...BARIS, jenisPerkara, nomorPerkara: "9/Pdt.G/2026/PA.Dgl" };
+      const t = pilihBlangkoH7(b, "putusan", "ditolak");
+      expect(t.utama?.label, jenisPerkara).toMatch(/^\[03\] \[Tolak\]/);
+      expect(varianTolakBerbeda(pilihBlangkoH7(b, "putusan"), t), jenisPerkara).toBe(true);
     }
     expect(pilihBlangkoH7({ ...BARIS, jenisPerkara: "Pengesahan Perkawinan/Istbat Nikah", nomorPerkara: "194/Pdt.P/2026/PA.Dgl" }, "putusan", "ditolak").utama?.label).toBe(
       "[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah)"
@@ -112,11 +121,19 @@ describe("agen menyusun varian ditolak", () => {
     expect(daftarVarianH7(d).map((x) => x.status)).toEqual(["dikabulkan", "ditolak"]);
   });
 
-  it("jenis tanpa blangko tolak: satu blangko dibaca, tanpa varian", async () => {
+  it("jenis tanpa blangko tolak (belum dipetakan): tanpa varian", async () => {
+    const panggilan: string[] = [];
+    const d = (await susunDrafSatu({} as AletaDatabase, { ...BARIS, jenisPerkara: "Hibah" }, sumber(panggilan)))!;
+    expect(panggilan.filter((p) => p.startsWith("blangko.baca"))).toHaveLength(0);
+    expect(d.varian).toEqual([]);
+  });
+
+  it("jenis yang kini punya blangko tolak (Kewarisan, paket i17): dua blangko dibaca, satu varian ditolak", async () => {
     const panggilan: string[] = [];
     const d = (await susunDrafSatu({} as AletaDatabase, { ...BARIS, jenisPerkara: "Kewarisan" }, sumber(panggilan)))!;
-    expect(panggilan.filter((p) => p.startsWith("blangko.baca"))).toHaveLength(1);
-    expect(d.varian).toEqual([]);
+    expect(panggilan.filter((p) => p.startsWith("blangko.baca"))).toHaveLength(2);
+    expect(d.varian).toHaveLength(1);
+    expect(d.varian![0].status).toBe("ditolak");
   });
 });
 

@@ -36,6 +36,9 @@ describe("keterjangkauan aplikasi portal", () => {
     // Alat bantu tulis BAS. Yang paling membutuhkannya panitera, bukan super
     // admin - jadi ia memang harus ada di daftar bawaan.
     "bas",
+    // Blangko Saya (18 Okt 2026): blangko pribadi hakim, panitera, dan konseptor; yang berhak
+    // diatur matriks peran, sehingga harus ada di daftar bawaan agar menunya muncul bagi mereka.
+    "blangko-saya",
     "e-kepegawaian",
     "manajemen-surat",
     // Ruang kerja perkara (H1-H4). Yang membukanya hakim dan panitera setiap

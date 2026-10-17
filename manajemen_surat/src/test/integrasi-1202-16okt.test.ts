@@ -260,13 +260,15 @@ describe("A. saran portal Tahap E di jendela pilih blangko F-G", () => {
 // B. Pemetaan paket I2
 // ============================================================================
 describe("B. wali adhal (abt-wali-adhal, menu 113)", () => {
-  it("putusan per status: kabul [01] (+ varian [01a]), tolak [03], cabut [98], gugur/NO -> 9b; ejaan SIPP 'Wali Adhol' dipadankan", () => {
+  it("putusan per status: kabul [01] (+ varian [01a]), tolak [03], cabut [98], gugur [98a] sendiri, NO -> 9b; ejaan SIPP 'Wali Adhol' dipadankan", () => {
     const pilih = (status: string) => pilihPutusanBawaan(PETA_PUTUSAN_BAWAAN, "Wali Adhol", status, false);
     expect(pilih("Dikabulkan")).toMatchObject({ tingkat: "status", baris: { berkas: tanpaRtf(WA.kabul), blangko: "Putusan Wali Adhal", blangkoLain: ["Wali Adhal - Putusan"] } });
     expect(pilih("Dikabulkan")!.baris.catatan).toBe(`varian: ${tanpaRtf(WA.kabulHadir)}`);
     expect(pilih("Ditolak")!.baris.berkas).toBe(tanpaRtf(WA.tolak));
     expect(pilih("Dicabut")!.baris.berkas).toBe(tanpaRtf(WA.cabut));
-    expect(pilih("Digugurkan")!.baris).toMatchObject({ berkas: "[98] [Gugur] Permohonan - Pemohon Tidak Pernah Hadir", blangko: "Putusan Permohonan Umum (Cabut/Gugur/NO)" });
+    // 18 Okt 2026 (pemetaan i17, disengaja): gugur kini ke blangko Wali Adhal sendiri ([98a]), bukan lagi 9b;
+    // NO (SEMA 1/2022) tetap ke blangko permohonan umum 9b.
+    expect(pilih("Digugurkan")!.baris).toMatchObject({ berkas: "[98a] [Gugur] Wali Adhal - Pemohon Tidak Pernah Hadir", blangko: "Putusan Wali Adhal" });
     expect(pilih("Tidak Dapat Diterima")!.baris.blangko).toBe("Putusan Permohonan Umum (Cabut/Gugur/NO)");
     expect(pilih("")).toMatchObject({ tingkat: "jenis", baris: { berkas: tanpaRtf(WA.kabul) } });
     expect(FOLDER_MENU_PUTUSAN["Putusan Wali Adhal"]).toBe("7 Wali Adhal");

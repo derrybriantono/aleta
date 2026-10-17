@@ -514,7 +514,8 @@ describe("sidebar admin: Sumber daya server di kelompok Sistem", () => {
   });
 
   it("kelompok Sistem memuatnya setelah Pembaruan dan Backup; ada di himpunan menu admin; deskripsi ringkas sesuai", () => {
-    expect(sumber).toMatch(/id: "system",\s*label: "Sistem",\s*moduleIds: \["system-updates", "backup-system", "server-resources"\]/);
+    expect(sumber).toMatch(/id: "system",\s*label: "Sistem",\s*moduleIds: \["system-updates", "backup-system", "server-resources"(?:, "fitur-satker")?\]/);
+    // 18 Okt 2026: menu Fitur Satker (Super Admin) ditaruh SESUDAH Sumber daya server; urutan tiga menu pertama dipertahankan.
     expect(sumber).toMatch(/adminSidebarIds[\s\S]*?"server-resources"[\s\S]*?\]\);/);
     expect(sumber).toContain('"server-resources": "RAM, CPU, disk, dan GPU server."');
     expect(sumber).toContain("server: Server");

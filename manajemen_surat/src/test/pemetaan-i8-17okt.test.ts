@@ -51,9 +51,15 @@ describe("A. berkas ada di folder menunya", () => {
       [
         "cerai gugat|ditolak|kontradiktoir",
         "cerai talak|ditolak|kontradiktoir",
+        // I17 18 Okt (disengaja): paket tolak verstek [03b] untuk harta bersama, itsbat kontensius, kewarisan, dan pembatalan
+        // perkawinan menambah baris. Loop di bawah tetap menuntut tiap berkasnya ADA di pohon folder menunya.
+        "harta bersama|ditolak|verstek",
+        "itsbat nikah|ditolak|kontensius-verstek",
+        "kewarisan|ditolak|verstek",
         "lain-lain|ditolak|hak-asuh-t-ibu",
         "lain-lain|ditolak|hak-asuh-verstek",
         // I15 18 Okt: jenis 349 pindah ke folder 6b (baris "hak-asuh-t-ibu" dihapus: 6b tidak punya padanannya; "verstek" menunjuk [03a] 6b).
+        "pembatalan perkawinan|ditolak|verstek",
         "penguasaan anak|ditolak|verstek",
       ].sort()
     );

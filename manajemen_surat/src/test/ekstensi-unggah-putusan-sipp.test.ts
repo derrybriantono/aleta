@@ -77,7 +77,7 @@ describe("baris yang ditulis ke SIPP", () => {
 
   it("berkas ditulis DAHULU, barisnya sesudahnya", () => {
     const badan = bot.slice(bot.indexOf("async function unggahSatu("));
-    const tulisBerkas = badan.indexOf("fs.writeFileSync(penuhAsli, pdf)");
+    const tulisBerkas = badan.indexOf("await kembaranBerkas.tulis(penuhAsli, pdf, { akar })");
     const tulisBaris = badan.indexOf("UPDATE perkara_putusan SET");
     expect(tulisBerkas).toBeGreaterThan(-1);
     expect(tulisBaris).toBeGreaterThan(tulisBerkas);
@@ -157,7 +157,7 @@ describe("e-Doc dan Direktori Putusan adalah DUA berkas", () => {
     // mencegahnya URUTAN, bukan penolakan.
     const badan = bot.slice(bot.indexOf("async function unggahSatu("));
     const konversi = badan.indexOf("abtCetakService.dokumenKePdf(pdf)");
-    const tulis = badan.indexOf("fs.writeFileSync(penuhAsli, pdf)");
+    const tulis = badan.indexOf("await kembaranBerkas.tulis(penuhAsli, pdf, { akar })");
     expect(konversi).toBeGreaterThan(-1);
     expect(tulis, "berkas ditulis sebelum konversinya selesai").toBeGreaterThan(konversi);
   });
