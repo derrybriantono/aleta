@@ -475,9 +475,11 @@ export function susunIsian(
 export function jenisFolderDerry(nama: string): "put" | "bas" | "rel" | "ptsp" | "" {
   const n = String(nama || "").trim();
   if (!n) return "";
-  if (/^relaas/i.test(n)) return "rel";
-  if (/^ptsp/i.test(n)) return "ptsp";
-  if (/^(alur\s*\d|bas\b|-\s*bas)/i.test(n)) return "bas";
+  // Server 17 Okt: folder bernomor ("98 Relaas", "99 PTSP") dan pasangan BAS bernama "<Jenis> - BAS".
+  const polos = n.replace(/^\d+[a-z]?\s+/i, "");
+  if (/^relaas/i.test(polos)) return "rel";
+  if (/^ptsp/i.test(polos)) return "ptsp";
+  if (/^(alur\s*\d|bas\b|-\s*bas)/i.test(n) || /\s-\s*bas\s*$/i.test(n)) return "bas";
   return "put";
 }
 
