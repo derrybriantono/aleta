@@ -54,3 +54,24 @@ describe("C5. jenisFolderDerry atas nama folder server 17 Okt", () => {
     expect(folder.filter((f) => jenisFolderDerry(f) === "put").length).toBeGreaterThan(10);
   });
 });
+
+// ----------------------------------------------------------------------------
+// Ekstensi: berkas sumber (bukan jsdom penuh) - kunci urutan harus punya nama
+// ----------------------------------------------------------------------------
+const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
+const bacaEks = (berkas: string) => readFileSync(path.join(EKSTENSI, berkas), "utf8").replace(/\r\n/g, "\n");
+const kunciObjek = (sumber: string, nama: string): string[] => {
+  const m = sumber.match(new RegExp(`const ${nama} = \\{\\n([\\s\\S]*?)\\n  \\};`));
+  if (!m) throw new Error(`objek ${nama} tidak ditemukan`);
+  return [...m[1].matchAll(/^\s+(\w+):/gm)].map((x) => x[1]);
+};
+
+describe("C4. 'diurutkan menurut undefined': setiap kunci urutan punya nama", () => {
+  const sumber = bacaEks("blangko-derry.js");
+  it("NAMA_URUT memuat semua kunci KUNCI_URUT (minutasi ikut)", () => {
+    const kunci = kunciObjek(sumber, "KUNCI_URUT");
+    const nama = kunciObjek(sumber, "NAMA_URUT");
+    expect(kunci).toContain("minutasi");
+    expect(kunci.filter((k) => !nama.includes(k))).toEqual([]);
+  });
+});

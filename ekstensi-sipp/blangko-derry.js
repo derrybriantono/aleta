@@ -415,6 +415,7 @@
     jenis: "jenis perkara",
     isian: "kelengkapan isian",
     cetak: "status dokumen di SIPP",
+    minutasi: "batas minutasi",
   };
 
   function urutkan(daftar, urut, arah, depan) {
@@ -1062,6 +1063,7 @@
       `</div></div>` +
       `<div class="bd-kontrol"><label class="bd-lbl" for="bd-urut">Urutkan</label><select id="bd-urut">` +
       Object.keys(NAMA_URUT)
+        .filter((k) => k !== "minutasi" || S.urut === "minutasi")
         .map((k) => `<option value="${k}" ${S.urut === k ? "selected" : ""}>${k === "prioritas" ? "Paling perlu dikerjakan" : NAMA_URUT[k].charAt(0).toUpperCase() + NAMA_URUT[k].slice(1)}</option>`)
         .join("") +
       `</select><button type="button" class="bd-btn kecil" data-bd="arah" aria-label="Balik urutan">${S.arah > 0 ? "Urutan: naik ▲" : "Urutan: turun ▼"}</button>` +
