@@ -1155,12 +1155,12 @@ export const modules: ModuleConfig[] = [
   },
   {
     // Tahap H (16 Okt 2026): hak menu ABT folder Blangko Derry, saklar
-    // kebijakan (hakim melihat BAS, dll.), variabel & template tanya jawab
+    // kebijakan (hakim melihat BAS, dll.), variabel & blangko tanya jawab
     // ABT. Dibuka Super Admin dan Admin; hak menu & kueri Super Admin saja
     // (rute /api/pengaturan-sipp-abt yang menjaganya).
     id: "pengaturan-sipp-abt",
     label: "Pengaturan SIPP & ABT",
-    description: "Hak menu ABT, saklar kebijakan, isian blangko, dan template tanya jawab ABT.",
+    description: "Hak menu ABT, saklar kebijakan, isian blangko, dan blangko tanya jawab ABT.",
     href: "/admin/pengaturan-sipp-abt",
     icon: "settings",
     roleIds: ["super-admin", "admin"],

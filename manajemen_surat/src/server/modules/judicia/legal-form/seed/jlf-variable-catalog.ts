@@ -952,7 +952,7 @@ function buildCatalogInternal() {
         dataType: "long_text",
         sourceType: "jlf_bas_qa",
         sourceKey: `${caseType}.pertanyaan_standar`,
-        adminNote: "Acuan dari template tanya jawab ABT; import final harus melalui dry-run dan review admin.",
+        adminNote: "Acuan dari blangko tanya jawab ABT; import final harus melalui dry-run dan review admin.",
       }),
       variable({
         key: `bas_${caseType}_jawaban_standar`,
@@ -960,7 +960,7 @@ function buildCatalogInternal() {
         dataType: "long_text",
         sourceType: "jlf_bas_qa",
         sourceKey: `${caseType}.jawaban_standar`,
-        adminNote: "Acuan dari template tanya jawab ABT; jawaban aktual perkara tidak diimport otomatis.",
+        adminNote: "Acuan dari blangko tanya jawab ABT; jawaban aktual perkara tidak diimport otomatis.",
       }),
     ]),
     ...buildAbtCompatibleVariables(),

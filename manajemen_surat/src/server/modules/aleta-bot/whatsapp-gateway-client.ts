@@ -3642,7 +3642,7 @@ export async function getGatewayAbtUsulan(muatan: {
   pemohon?: string;
   /** Sebutan pemohon kedua pada itsbat nikah dua pemohon. */
   pemohon2?: string;
-  /** Kode kumpulan templat tanya-jawab ABT - ikut menentukan varian kalimat. */
+  /** Kode kumpulan blangko tanya jawab ABT - ikut menentukan varian kalimat. */
   kodeKumpulan?: string;
   /**
    * Jenis perkara (id SIPP atau nama): sumber 'posita-lain', dan syarat bentuk
@@ -3665,7 +3665,7 @@ export async function getGatewayAbtUsulan(muatan: {
   /** Gugatannya. Dipakai menyaring alasan yang tidak pernah didalilkan. */
   posita?: string;
   /**
-   * Templat tanya-jawab ABT, diambil ekstensi lewat halaman penyunting ABT.
+   * Blangko tanya jawab ABT, diambil ekstensi lewat halaman penyunting ABT.
    * jawabMentah = jawaban templat SEBELUM variabelnya diganti ABT
    * ("#1241# / #1242#"): hanya dari situ hubungan dua saksi dipecah dengan
    * pasti, bukan ditebak dari teks yang sudah terganti.

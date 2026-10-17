@@ -90,7 +90,7 @@ export const DAFTAR_FITUR_EKSTENSI: readonly FiturEkstensi[] = [
   { kode: "abt-25", bagian: "abt", nomor: 25, jenis: "baru", judul: "Mode baca untuk hakim", perluKeputusan: false },
   { kode: "abt-26", bagian: "abt", nomor: 26, jenis: "baru", judul: "Pemeriksa anonimisasi", perluKeputusan: true },
   { kode: "abt-27", bagian: "abt", nomor: 27, jenis: "baru", judul: "Saran dasar hukum per huruf alasan", perluKeputusan: true },
-  { kode: "abt-28", bagian: "abt", nomor: 28, jenis: "baru", judul: "Templat pertanyaan pribadi", perluKeputusan: false },
+  { kode: "abt-28", bagian: "abt", nomor: 28, jenis: "baru", judul: "Blangko tanya jawab pribadi", perluKeputusan: false },
   { kode: "abt-29", bagian: "abt", nomor: 29, jenis: "baru", judul: "Simpan draf otomatis", perluKeputusan: false },
   { kode: "abt-30", bagian: "abt", nomor: 30, jenis: "baru", judul: "Ringkasan musyawarah majelis", perluKeputusan: false },
   { kode: "portal-1", bagian: "portal", nomor: 1, jenis: "upgrade", judul: "Ekstensi: \"Terbaru ✓\" dan apa yang baru", perluKeputusan: false },

@@ -811,7 +811,7 @@ function buildBasTemplates(rows: Record<string, string>[], legacySource: string)
       legacySource,
       legacyId: normalizeCell(row.id),
       code,
-      name: normalizeCell(row.nama) || `Template Tanya Jawab ${code}`,
+      name: normalizeCell(row.nama) || `Blangko Tanya Jawab ${code}`,
       caseType: "",
       legacyJenisPerkaraId: normalizeCell(row.jenis_perkara_id),
       status: "mapped",

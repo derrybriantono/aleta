@@ -334,7 +334,7 @@ describe("templat tanya-jawab ABT: dua bentuk, satu pembaca", () => {
 
   it("templat kosong disebut apa adanya, bukan diteruskan sebagai nol baris", () => {
     const badan = abt.slice(abt.indexOf("async function muatTemplatAbt("));
-    expect(badan.slice(0, 2600)).toContain("templat itu tidak memuat satu pun pertanyaan.");
+    expect(badan.slice(0, 2600)).toContain("blangko tanya jawab itu tidak memuat satu pun pertanyaan.");
   });
 });
 

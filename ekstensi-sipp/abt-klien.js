@@ -708,7 +708,7 @@ function abtKlienBuat(opsi) {
       });
       if (status >= 400) return gagal(`ABT menjawab ${status}.`);
       const h = abtKlienUraiTanyaJawab(t);
-      return h.ok ? { ...h, ok: true } : gagal(h.sebab ? h.sebab.pesan : "Templat tidak terbaca.");
+      return h.ok ? { ...h, ok: true } : gagal(h.sebab ? h.sebab.pesan : "Blangko tanya jawab tidak terbaca.");
     },
     /**
      * Simpan SELURUH daftar tanya-jawab satu saksi/pihak pada satu sidang (menghapus lalu menulis ulang).
@@ -792,7 +792,7 @@ function abtKlienBuat(opsi) {
       return { ok: true, rtf: buf, nama: abtKlienNamaDariHeader(r.headers.get("content-disposition")), ukuran: buf.byteLength };
     },
 
-    // ── (7) template tanya jawab (kumpulan) ────────────────────────────────
+    // ── (7) blangko tanya jawab (kumpulan) ────────────────────────────────
     /** Daftar kumpulan template (halaman main/tanyajawab_template). TIDAK melewati main?hapus= . */
     async daftarTemplate() {
       const { t, status } = await teksDari(`${asal}/main/tanyajawab_template`);
@@ -806,7 +806,7 @@ function abtKlienBuat(opsi) {
       const { t, status } = await teksDari(`${asal}/tanyajawab_template_edit?${q({ kode: kodeKumpulan })}`);
       if (status >= 400) return gagal(`ABT menjawab ${status}.`);
       const h = abtKlienUraiTanyaJawab(t);
-      return h.ok ? { ...h, ok: true } : gagal(h.sebab ? h.sebab.pesan : "Templat tidak terbaca.");
+      return h.ok ? { ...h, ok: true } : gagal(h.sebab ? h.sebab.pesan : "Blangko tanya jawab tidak terbaca.");
     },
     /**
      * Simpan satu kumpulan (admin/Super Admin): DELETE seluruh baris kode itu lalu INSERT batch. Satu-satunya

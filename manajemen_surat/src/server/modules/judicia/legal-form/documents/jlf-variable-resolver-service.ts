@@ -1023,7 +1023,7 @@ async function resolveBySource(
       });
       source = "jlf_bas_qa";
       confidence = isEmptyResolvedValue(value) ? 0.2 : 0.75;
-      if (isEmptyResolvedValue(value)) warnings.push("Template Tanya Jawab/BAS belum tersedia atau tidak aktif untuk sumber ini.");
+      if (isEmptyResolvedValue(value)) warnings.push("Blangko Tanya Jawab/BAS belum tersedia atau tidak aktif untuk sumber ini.");
       break;
     case "function":
     case "computed":
