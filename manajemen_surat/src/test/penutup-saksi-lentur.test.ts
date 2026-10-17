@@ -14,10 +14,10 @@ import { describe, expect, it } from "vitest";
  */
 const require_ = createRequire(import.meta.url);
 const bot = require_(path.resolve(process.cwd(), "../aleta_bot/services/penutupSaksi.js")) as {
-  adalahKalimatPenutupSaksi: (t: string) => boolean;
+  adalahKalimatPenutupSaksi: (t: string, tanya?: string) => boolean;
 };
 const deteksi = require_(path.resolve(process.cwd(), "../aleta_bot/services/deteksiSaksiService.js")) as {
-  POLA_PENUTUP_JAWAB: { test: (t: string) => boolean };
+  POLA_PENUTUP_JAWAB: { test: (t: string, tanya?: string) => boolean };
 };
 
 function ekstensi() {
@@ -27,15 +27,15 @@ function ekstensi() {
   expect(awal).toBeGreaterThan(0);
   expect(akhir).toBeGreaterThan(awal);
   const konteks: {
-    bersihkanKeteranganSaksi?: (t: string) => string;
+    bersihkanKeteranganSaksi?: (t: string, tanya?: string) => string;
     adalahKalimatPenutupSaksi?: (t: string) => boolean;
   } = {};
   vm.createContext(konteks);
   // function deklarasi menjadi properti global konteks.
   vm.runInContext(isi.slice(awal, akhir), konteks);
   return konteks as {
-    bersihkanKeteranganSaksi: (t: string) => string;
-    adalahKalimatPenutupSaksi: (t: string) => boolean;
+    bersihkanKeteranganSaksi: (t: string, tanya?: string) => string;
+    adalahKalimatPenutupSaksi: (t: string, tanya?: string) => boolean;
   };
 }
 
