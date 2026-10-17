@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.1",
+    dirilis: "2026-10-17T23:20:00+08:00",
+    judul: "Audit menyeluruh, SKP semua jabatan, unduhan tanpa diblokir, deteksi sisa blangko, dan blangko-blangko baru",
+    butir: [
+      "Deteksi sisa blangko sebelum unggah/unduh putusan, BAS, dan relaas (kurung siku, variabel mentah, titik-titik, tulisan merah); tetap bisa dilanjutkan, dengan pilihan unduh daftar masalah. Titik-titik dalam kutipan ayat atau fiqh tidak dihitung.",
+      "SKP untuk Ketua/Wakil (pilihan SKP Hakim atau SKP Pimpinan), Panitera, Panmud, Panitera Pengganti, Jurusita, Petugas Meja, Operator, dan Kasir, dihitung dari SIPP per bulan, triwulan, dan tahun.",
+      "Unduhan dari SIPP, ABT (Blangko Derry), dan ALETA tidak lagi diblokir peramban; unggahan ke SIPP tidak pernah diulang otomatis.",
+      "Nomor dan tanggal SK majelis menjadi isian di Integrasi e-Court; SK per majelis tetap bisa dipakai sebagai pengecualian.",
+      "Blangko baru dikenali: HB rekonvensi dikabulkan, hak asuh ditolak, cerai ditolak kontradiktoir, PPP/PJS berkas tunggal, pilihan sita di PHS, pencegahan perkawinan, wasiat, dan ekonomi syariah acara biasa.",
+      "Tulisan SALINAN di kiri atas halaman pertama putusan PDF; penetapan tanpa salinan.",
+      "Tidak satu kata ALETA pun masuk ke SIPP; jadwal pesan WhatsApp mengikuti WITA; penyaring kueri dan unggah putusan di luar majelis diperketat; berkas e-Doc tidak lagi mengganggu unggahan SIPP.",
+    ],
+  },
+  {
     versi: "1.205.0",
     dirilis: "2026-10-17T11:30:00+08:00",
     judul: "Tindak lanjut keputusan 17 Okt: identitas satker, checklist lengkap, varian draf ditolak, Putusan Advance semua jenis",
