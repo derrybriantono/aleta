@@ -773,6 +773,12 @@ describe("E - skrip tarik", () => {
     expect(() => t.periksaKonfigurasiKembaran({ folderKembaran: "C:/kembaran" })).toThrow(/drive D:/);
     expect(() => t.periksaKonfigurasiKembaran({ antrean: { basisData: "aleta_bot" } })).toThrow(/tidak boleh sama dengan aleta_bot/);
     expect(() => t.periksaKonfigurasiKembaran({ tujuan: { abt: "drop;table" } })).toThrow(/tidak sah/);
+    // Aturan penyimpanan baru: D: atau di bawah C:\aleta\ diterima; C: lainnya (termasuk C:\aleta2 dan "..") ditolak.
+    expect(() => t.periksaKonfigurasiKembaran({ folderKembaran: "D:/Aplikasi/aleta/kembaran", folderSimpan: "D:\\Aplikasi\\aleta\\sinkron" })).not.toThrow();
+    expect(() => t.periksaKonfigurasiKembaran({ folderKembaran: "C:\\aleta\\kembaran", folderSimpan: "C:/aleta/sinkron" })).not.toThrow();
+    expect(() => t.periksaKonfigurasiKembaran({ folderKembaran: "C:\\aleta2\\kembaran" })).toThrow(/drive D:/);
+    expect(() => t.periksaKonfigurasiKembaran({ folderKembaran: "C:\\aleta\\..\\Users\\x" })).toThrow(/drive D:/);
+    expect(() => t.periksaKonfigurasiKembaran({ folderKembaran: "kembaran-relatif" })).toThrow(/drive D:/);
     expect(() => t.periksaKonfigurasiKembaran({})).not.toThrow();
   });
 

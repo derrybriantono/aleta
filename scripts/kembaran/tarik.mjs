@@ -61,11 +61,22 @@ function gabung(dasar, atas) {
   return hasil;
 }
 
-/** Konfigurasi kembaran (sebagian) + bawaan. Menolak drive C: dan nama basis data yang tidak sah. */
+/**
+ * Aturan penyimpanan baru (18 Okt 2026): tulisan hanya ke drive D:, kecuali di bawah C:\aleta\ yang memang
+ * disediakan. C: lainnya tetap ditolak; "C:\aleta2" atau "C:\alet" BUKAN bagian dari C:\aleta\.
+ */
+export function jalurDiizinkan(jalur) {
+  const j = String(jalur);
+  if (!path.isAbsolute(j)) return false;
+  if (/^[dD]:[\\/]/.test(j)) return true;
+  return /^[cC]:[\\/]aleta([\\/]|$)/.test(j) && !j.split(/[\\/]/).includes("..");
+}
+
+/** Konfigurasi kembaran (sebagian) + bawaan. Menolak C: (kecuali C:\aleta\) dan nama basis data yang tidak sah. */
 export function periksaKonfigurasiKembaran(mentah = {}) {
   const k = gabung(KONFIGURASI_KEMBARAN_BAWAAN, mentah);
   for (const [nama, jalur] of [["folderKembaran", k.folderKembaran], ["folderSimpan", k.folderSimpan]]) {
-    if (!path.isAbsolute(String(jalur)) || /^[cC]:/.test(String(jalur))) throw new Error(`${nama} harus jalur lengkap di drive D: (bukan C:), mis. D:/Aplikasi/aleta/kembaran.`);
+    if (!jalurDiizinkan(jalur)) throw new Error(`${nama} harus jalur lengkap di drive D: (atau di bawah C:\\aleta\\, bukan C: lainnya), mis. D:/Aplikasi/aleta/kembaran.`);
   }
   if (!/^[A-Za-z0-9_]{1,64}$/.test(String(k.antrean.basisData))) throw new Error("Nama basis data antrean tidak sah.");
   for (const [sumber, nama] of Object.entries(k.tujuan)) {
