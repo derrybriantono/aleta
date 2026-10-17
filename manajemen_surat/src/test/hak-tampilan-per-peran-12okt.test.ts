@@ -188,11 +188,11 @@ describe("2. ubin portal & modul per peran", () => {
   const MATANG_SEMUA = ["aleta-ecourt", "e-kepegawaian", "manajemen-surat", "sipp"];
 
   it.each([
-    ["admin", ["aleta-bot", "aleta-ecourt", "aps-badilag", "asisten-hakim", "audit-trail", "bas", "e-kepegawaian", "manajemen-surat", "perkara", "sipp"]],
-    ["ketua", ["aleta-bot", "aleta-ecourt", "aps-badilag", "asisten-hakim", "bas", "e-kepegawaian", "manajemen-surat", "perkara", "sipp"]],
-    ["hakim", ["aleta-bot", "aleta-ecourt", "aps-badilag", "asisten-hakim", "bas", "e-kepegawaian", "manajemen-surat", "perkara", "sipp"]],
-    ["pp", ["aleta-bot", "aleta-ecourt", "aps-badilag", "bas", "e-kepegawaian", "manajemen-surat", "perkara", "sipp"]],
-    ["panitera", ["aleta-bot", "aleta-ecourt", "aps-badilag", "bas", "e-kepegawaian", "manajemen-surat", "perkara", "sipp"]],
+    ["admin", ["aleta-bot", "aleta-ecourt", "aps-badilag", "asisten-hakim", "audit-trail", "bas", "blangko-saya", "e-kepegawaian", "manajemen-surat", "perkara", "sipp"]],
+    ["ketua", ["aleta-bot", "aleta-ecourt", "aps-badilag", "asisten-hakim", "bas", "blangko-saya", "e-kepegawaian", "manajemen-surat", "perkara", "sipp"]],
+    ["hakim", ["aleta-bot", "aleta-ecourt", "aps-badilag", "asisten-hakim", "bas", "blangko-saya", "e-kepegawaian", "manajemen-surat", "perkara", "sipp"]],
+    ["pp", ["aleta-bot", "aleta-ecourt", "aps-badilag", "bas", "blangko-saya", "e-kepegawaian", "manajemen-surat", "perkara", "sipp"]],
+    ["panitera", ["aleta-bot", "aleta-ecourt", "aps-badilag", "bas", "blangko-saya", "e-kepegawaian", "manajemen-surat", "perkara", "sipp"]],
     ["js", ["aleta-bot", "aleta-ecourt", "aps-badilag", "e-kepegawaian", "manajemen-surat", "sipp"]],
     ["kasir", ["aleta-bot", "aleta-ecourt", "e-kepegawaian", "manajemen-surat", "sipp"]],
     ["ptsp", ["aleta-bot", "aleta-ecourt", "aps-badilag", "e-kepegawaian", "manajemen-surat", "sipp"]],

@@ -587,6 +587,55 @@ export const DDL_IDENTITAS_SATKER = {
 } as const;
 
 /**
+ * Buat blangko sendiri (0073, 18 Okt 2026): blangko pribadi milik akun beserta
+ * pemetaan isiannya dan riwayat tindakan. Cermin PERSIS dari
+ * drizzle/0073_aleta_blangko_pribadi.sql; penjaga blangko-sendiri-18okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing.
+ */
+export const DDL_BLANGKO_PRIBADI = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_blangko_pribadi (
+  id TEXT PRIMARY KEY,
+  pemilik_id TEXT NOT NULL,
+  pemilik_nama TEXT NOT NULL DEFAULT '',
+  nama TEXT NOT NULL,
+  jenis TEXT NOT NULL DEFAULT 'lain',
+  asal TEXT NOT NULL DEFAULT 'sunting',
+  berkas_asal TEXT NOT NULL DEFAULT '',
+  keadaan TEXT NOT NULL DEFAULT 'draf',
+  untuk_putusan_mandiri INTEGER NOT NULL DEFAULT 0,
+  isi_json TEXT NOT NULL DEFAULT '[]',
+  pemetaan_json TEXT NOT NULL DEFAULT '[]',
+  peringatan_json TEXT NOT NULL DEFAULT '[]',
+  paket_status TEXT NOT NULL DEFAULT 'tidak',
+  paket_diajukan_at TEXT NOT NULL DEFAULT '',
+  paket_rtf TEXT NOT NULL DEFAULT '',
+  paket_daftar TEXT NOT NULL DEFAULT '',
+  paket_diputuskan_oleh TEXT NOT NULL DEFAULT '',
+  paket_diputuskan_at TEXT NOT NULL DEFAULT '',
+  paket_catatan TEXT NOT NULL DEFAULT '',
+  versi INTEGER NOT NULL DEFAULT 1,
+  dibuat_at TEXT NOT NULL,
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_blangko_pribadi_riwayat (
+  id TEXT PRIMARY KEY,
+  blangko_id TEXT NOT NULL,
+  tindakan TEXT NOT NULL,
+  ringkas TEXT NOT NULL DEFAULT '',
+  oleh_id TEXT NOT NULL DEFAULT '',
+  oleh_nama TEXT NOT NULL DEFAULT '',
+  pada TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_blangko_pribadi_pemilik ON aleta_blangko_pribadi(pemilik_id, diubah_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_blangko_pribadi_paket ON aleta_blangko_pribadi(paket_status, paket_diajukan_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_blangko_pribadi_riwayat ON aleta_blangko_pribadi_riwayat(blangko_id, pada)`,
+  ],
+} as const;
+
+/**
  * SKP jabatan perkara (0070, 17 Okt 2026, rancangan disetujui pengguna):
  * pemetaan akun SIPP ke pegawai (bertanggal), target, isian manual, dan
  * tangkapan realisasi yang dikunci. Cermin PERSIS dari
@@ -1680,6 +1729,8 @@ const schemaStatements = [
   ...DDL_IDENTITAS_SATKER.tabel,
   // SKP jabatan perkara: pemetaan akun, target, isian, penetapan (0070).
   ...DDL_SKP_JABATAN.tabel,
+  // Buat blangko sendiri: blangko pribadi & riwayatnya (0073).
+  ...DDL_BLANGKO_PRIBADI.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -3626,6 +3677,7 @@ const indexStatements = [
   ...DDL_KAMUS_SUMBER.indeks,
   ...DDL_KAMUS_DETEKSI.indeks,
   ...DDL_ABT_SUNTINGAN.indeks,
+  ...DDL_BLANGKO_PRIBADI.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.

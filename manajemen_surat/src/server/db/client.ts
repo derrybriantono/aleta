@@ -382,6 +382,10 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_skp_target",
   "aleta_skp_isian",
   "aleta_skp_penetapan",
+  // 18 Oktober 2026 (0073): blangko pribadi (buat blangko sendiri) dan riwayatnya.
+  // Tanpa kunci asing - urutannya bebas.
+  "aleta_blangko_pribadi",
+  "aleta_blangko_pribadi_riwayat",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

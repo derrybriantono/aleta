@@ -351,6 +351,14 @@ export const ATURAN_APLIKASI: readonly AturanAplikasi[] = [
     hak: hakUntuk(["pimpinan", "hakim", "panitera", "panmud", "sekretariat"], "R"),
   },
   {
+    id: "blangko-saya",
+    label: "Blangko Saya (buat blangko sendiri)",
+    status: "matang",
+    alasan:
+      "Blangko pribadi milik pembuatnya: hakim, panitera/panmud, dan konseptor (PP). Pemilik mengubah; Super Admin melihat, memutus paket ABT, dan menghapus.",
+    hak: hakUntuk(["pimpinan", "hakim", "panitera", "panmud", "pp"], "CRUD"),
+  },
+  {
     id: "skp",
     label: "SKP (kinerja pegawai)",
     status: "matang",
@@ -435,6 +443,7 @@ export const MODUL_MILIK_APLIKASI: Readonly<Record<string, string>> = {
   "peta-perkara": "peta-perkara",
   "beban-konseptor": "beban-konseptor",
   skp: "skp",
+  "blangko-saya": "blangko-saya",
 };
 
 /**
