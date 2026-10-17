@@ -278,6 +278,13 @@ describe("bot putusanSerupaService (SELECT saja)", () => {
     const utama = sql.find((q) => /pertimbangan_hukum/.test(q))!;
     expect(utama).toMatch(/tanggal_bht IS NOT NULL/);
     expect(utama).toMatch(/jabatan_hakim_id IN \(1, 3\)/);
+    // Audit 17 Okt: ketua PEMERIKSAAN pada hari putusan, bukan aktif='Y' (majelis ikrar
+    // talak ikut aktif - 27 dari 301 cerai talak BHT terkredit ke hakim lain, sipp_donggala_1610).
+    expect(utama).toMatch(/h\.tahapan_id = 10/);
+    expect(utama).toMatch(/h\.tanggal_penetapan <= pu\.tanggal_putusan/);
+    expect(utama).not.toMatch(/h\.aktif = 'Y'/);
+    const ketua = sql.find((q) => /FROM perkara_hakim_pn/.test(q) && !/EXISTS/.test(q))!;
+    expect(ketua).toMatch(/ORDER BY \(tahapan_id = 10\) DESC/);
   });
 
   it("nomor tidak sah / majelis belum ditetapkan", async () => {
