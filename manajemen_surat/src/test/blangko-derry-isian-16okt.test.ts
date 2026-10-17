@@ -871,6 +871,22 @@ describe("audit 17 Okt: E6 alat bukti 'tulis manual'", () => {
   });
 });
 
+describe("audit 17 Okt: E10 isian C/H langsung muncul saat 8503 diketik", () => {
+  it("E10: mengetik C/H di 8503 (tanpa meninggalkan kotak) langsung memunculkan 8536/0227; mengganti ke F menyembunyikannya lagi", async () => {
+    const h = buka();
+    await pilihPutusan(h);
+    expect(q(h, '.bd-f[data-f="8536"]')).toBeNull();
+    const i = q(h, "#bd-i8503") as HTMLInputElement;
+    ketik(h, i, "C", false); // hanya peristiwa input, belum blur/simpan
+    expect(q(h, '.bd-f[data-f="8536"]')).not.toBeNull();
+    ketik(h, q(h, "#bd-i8503") as HTMLInputElement, "H", false);
+    expect(q(h, '.bd-f[data-f="0227"]')).not.toBeNull();
+    expect(q(h, '.bd-f[data-f="8536"]')).toBeNull();
+    ketik(h, q(h, "#bd-i8503") as HTMLInputElement, "F", false);
+    expect(q(h, '.bd-f[data-f="0227"]')).toBeNull();
+  });
+});
+
 describe("murni", () => {
   const m = () => buka().w.aletaBlangkoDerryIsian.murni;
   it("rtfKeHtml: perataan, tebal/miring, tabel, \\'hh dan \\uN, bagian tak dicetak dilewati", () => {

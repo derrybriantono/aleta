@@ -3315,12 +3315,13 @@
     }
     const k = t.getAttribute && t.getAttribute("data-k");
     if (k) {
+      // Daftar isian yang tampil diambil SEBELUM nilai baru dicatat; 8503 menentukan isian C/H (pemicu).
+      const sebelum = k === "8503" ? daftarPerlu().map((x) => x.kode).join() : "";
       S.isi[k] = t.value;
       S.diketik.add(k);
       S.peringat = false;
       if (k === "8503") {
         const pos = t.selectionStart;
-        const sebelum = daftarPerlu().map((x) => x.kode).join();
         if (daftarPerlu().map((x) => x.kode).join() !== sebelum) renderIsian();
         else renderProgres();
         const i = cari(`#bd-i${k}`, wadah.isian);
