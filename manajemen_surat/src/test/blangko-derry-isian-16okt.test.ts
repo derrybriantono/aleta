@@ -947,6 +947,27 @@ describe("audit 17 Okt: E8 byte 0x80-0x9F RTF ke PDF", () => {
   });
 });
 
+describe("audit 17 Okt: E9 sel tabel berparagraf banyak di pratinjau", () => {
+  it("E9: satu sel dengan beberapa \\par tetap SATU <td> (tidak pecah jadi banyak kolom); \\par sebelum \\cell tidak menambah kolom kosong", () => {
+    const x = (buka() as Halaman).w.aletaBlangkoDerryIsian.murni;
+    const rtf = (isi: string) => `{\\rtf1\\ansi\\pard Sebelum\\par ${isi}\\pard Sesudah\\par}`;
+    const banyak = x.rtfKeHtml(rtf("\\trowd\\cellx3000\\cellx6000\\pard\\intbl Satu\\par Dua\\par Tiga\\cell Kanan\\cell\\row"));
+    const baris = banyak.match(/<tr>.*?<\/tr>/gs) ?? [];
+    expect(baris.length).toBe(1);
+    const sel = baris[0].match(/<td[^>]*>.*?<\/td>/gs) ?? [];
+    expect(sel.length).toBe(2);
+    expect(sel[0]).toContain("Satu<br>Dua<br>Tiga");
+    expect(sel[1]).toContain("Kanan");
+    // Word menutup sel dengan \par\cell: tidak boleh jadi dua sel / baris kosong tambahan.
+    const penutup = x.rtfKeHtml(rtf("\\trowd\\cellx3000\\cellx6000\\pard\\intbl Kiri\\par\\cell Kanan\\par\\cell\\row"));
+    const sel2 = (penutup.match(/<tr>.*?<\/tr>/gs) ?? [""])[0].match(/<td[^>]*>.*?<\/td>/gs) ?? [];
+    expect(sel2.length).toBe(2);
+    expect(sel2[0]).not.toContain("<br>");
+    // Teks polos (pencarian penanda/nama penandatangan) tetap satu kolom per sel.
+    expect(x.rtfKeTeks(rtf("\\trowd\\cellx3000\\cellx6000\\pard\\intbl Satu\\par Dua\\cell Kanan\\cell\\row"))).toContain("Satu\nDua\tKanan");
+  });
+});
+
 describe("murni", () => {
   const m = () => buka().w.aletaBlangkoDerryIsian.murni;
   it("rtfKeHtml: perataan, tebal/miring, tabel, \\'hh dan \\uN, bagian tak dicetak dilewati", () => {
