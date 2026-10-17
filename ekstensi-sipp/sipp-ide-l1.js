@@ -122,6 +122,16 @@
     return b;
   }
   const milikAleta = (n) => Boolean(n && n.nodeType === 1 && typeof n.closest === "function" && n.closest(BUKAN_SIPP));
+  /**
+   * Teks hanya ditulis bila BERBEDA. Menulis textContent yang sama tetap
+   * mengganti simpul teksnya, dan pengamat konten.js (perubahanDariAleta)
+   * menganggap simpul teks sebagai perubahan SIPP - detak pita tiap detik
+   * dulu menyegarkan seluruh panel ALETA tiap detik (audit 17 Okt).
+   */
+  function setelTeks(e, teks) {
+    const t = String(teks == null ? "" : teks);
+    if (e && e.textContent !== t) e.textContent = t;
+  }
 
   /** Teks sel tanpa sisipan ALETA di dalamnya. */
   function teksSipp(sel) {
@@ -698,7 +708,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
 
   function kabar(p, teks, gagal) {
     if (!p || !p.kabar) return;
-    p.kabar.textContent = teks || "";
+    setelTeks(p.kabar, teks || "");
     p.kabar.classList.toggle("aleta-l1-gagal", Boolean(gagal));
   }
 
@@ -795,13 +805,13 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
 
   function segarkanHitung(p) {
     const h = hitungKolom(p.form);
-    p.hitung.textContent = kalimatHitung(h);
+    setelTeks(p.hitung, kalimatHitung(h));
     const adaKosongWajib = h.wajib ? h.wajibTerisi < h.wajib : h.terisi < h.jumlah;
     p.hitung.classList.toggle("aleta-l1-ada-kosong", adaKosongWajib);
     if (p.chip) {
       const nKosong = h.kosong.filter((k) => k.wajib).length;
       p.chip.hidden = nKosong === 0;
-      p.chip.textContent = nKosong ? `${nKosong} kolom wajib kosong` : "";
+      setelTeks(p.chip, nKosong ? `${nKosong} kolom wajib kosong` : "");
     }
     return h;
   }
@@ -1003,7 +1013,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
 
     const e = bacaEdocTabPutusan(document);
     const sebut = (s) => (s === "ada" ? "sudah ada" : s === "belum" ? "belum ada" : "belum terbaca");
-    st.edoc.textContent = `e-Doc di tab Putusan: putusan ${sebut(e.putusan)}, anonimisasi ${sebut(e.anonimisasi)}.`;
+    setelTeks(st.edoc, `e-Doc di tab Putusan: putusan ${sebut(e.putusan)}, anonimisasi ${sebut(e.anonimisasi)}.`);
   }
 
   function gambarUsulan(st, u) {
