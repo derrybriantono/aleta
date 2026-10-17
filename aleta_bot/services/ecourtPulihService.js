@@ -1072,6 +1072,7 @@ function periksaProfil() {
 }
 
 function mulai() {
+  if (require("./kembaranMode").aktif()) return; // mode kembaran (laptop): e-Court mati
   if (keadaan.timerMulai) clearTimeout(keadaan.timerMulai);
   if (String(process.env.ALETA_ECOURT_PULIH_AKTIF || "").trim() === "0") return;
   periksaProfil();

@@ -1,0 +1,34 @@
+{
+  "folderKembaran": "D:/Aplikasi/aleta/kembaran",
+  "folderSimpan": "D:/Aplikasi/aleta/sinkron",
+  "simpanSalinan": 3,
+  "ssh": { "alias": "aleta", "folderArsip": "/var/www/html/aleta-data/reports/sinkron/arsip" },
+  "sandiDariEnv": "ALETA_SINKRON_SANDI",
+  "sandiBerkas": "",
+  "mysql": {
+    "mysqlExe": "D:/satker asal/website pa bungku/xampp/mysql/bin/mysql.exe",
+    "mysqldumpExe": "",
+    "host": "127.0.0.1",
+    "port": 3306,
+    "pengguna": "root",
+    "sandiDariEnv": ""
+  },
+  "postgres": {
+    "binFolder": "",
+    "host": "127.0.0.1",
+    "port": 54329,
+    "pengguna": "postgres",
+    "sandiDariEnv": "PGPASSWORD",
+    "tujuhZipExe": ""
+  },
+  "tujuan": {
+    "aleta": "aleta",
+    "sipp": "sipp_donggala",
+    "abt": "aps_badilag",
+    "antrian": "sipp_turunan_antrian",
+    "aleta_bot": "aleta_bot"
+  },
+  "antrean": { "basisData": "aleta_kembaran" },
+  "portBot": 3003,
+  "portPortal": 3000
+}

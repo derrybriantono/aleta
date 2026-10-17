@@ -41,6 +41,11 @@ const queryMetricsService = require("./services/queryMetricsService");
 const sippCircuitBreaker = require("./services/sippCircuitBreakerService");
 const penjagaTandaSipp = require("./services/penjagaTandaSipp");
 
+// MODE KEMBARAN (ALETA_MODE=kembaran): tulisan ke SIPP dialihkan ke antrean "menunggu
+// sinkron". Di mode biasa baris ini tidak mengubah apa pun. Dipasang SEBELUM
+// pembungkus di bawah, jadi originalQuery di bawah sudah melewati penjaga.
+require("./services/penjagaKembaran").pasang(db, "sipp");
+
 const originalQuery = db.query.bind(db);
 
 function sqlTextOf(target) {

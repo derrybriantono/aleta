@@ -10,4 +10,7 @@ const db = mysql.createPool({
   multipleStatements: true
 });
 
+// MODE KEMBARAN: tulisan ke ABT (aps_badilag) dialihkan ke antrean sinkron.
+require("./services/penjagaKembaran").pasang(db, "abt");
+
 module.exports = db;

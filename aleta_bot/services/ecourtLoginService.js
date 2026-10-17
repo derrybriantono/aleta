@@ -192,6 +192,9 @@ function bacaNamaPengguna() {
  * @returns {Promise<{ ok: boolean, alasan: string, captcha: string, formulir: object }>}
  */
 async function mulaiLogin({ slot = "" } = {}) {
+  if (require("./kembaranMode").aktif()) {
+    return { ok: false, alasan: "kembaran_dimatikan", captcha: "", formulir: null };
+  }
   bersihkanSesiAktif();
 
   // Slot menentukan folder profil mana yang akan menerima sesinya. Salah slot

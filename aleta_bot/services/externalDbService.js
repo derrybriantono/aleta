@@ -223,6 +223,14 @@ function getConnectionConfig(connectionKey = "sipp_primary") {
   return { ...legacy, source: "legacy" };
 }
 
+/** Nama sumber antrean sinkron untuk kunci koneksi (sipp_primary -> sipp, dst.). */
+function sumberKembaran(kunci) {
+  if (kunci === "sipp_primary") return "sipp";
+  if (kunci === "aps_badilag") return "abt";
+  if (kunci === "antrian_sidang") return "antrian";
+  return String(kunci || "lain");
+}
+
 function createConnectionPool(connectionKey = "sipp_primary") {
   const config = getConnectionConfig(connectionKey);
   const poolKey = `${config.source}:${config.key}:${config.host}:${config.port}:${config.databaseName}:${config.username}`;
@@ -243,6 +251,9 @@ function createConnectionPool(connectionKey = "sipp_primary") {
     connectionLimit: queryGuardService.getGuardConfig().connectionLimit,
     multipleStatements: false,
   });
+  // MODE KEMBARAN: kolam ini juga jalur tulis ke SIPP/ABT/antrian (abtPengaturanService,
+  // antrianSinkronService, dst.) - dibungkus sama seperti db_config*.js.
+  require("./penjagaKembaran").pasang(pool, sumberKembaran(config.key));
   pools.set(poolKey, pool);
   return pool;
 }
@@ -305,6 +316,7 @@ function queryWithConfig(config, sql, params = []) {
     multipleStatements: false,
   });
 
+  require("./penjagaKembaran").pasang(pool, sumberKembaran(normalized.key));
   // Kolam sementara ini hanya dipakai sekali (uji koneksi dari portal), jadi
   // wajib ditutup apa pun hasilnya - termasuk saat query melewati batas waktu.
   return runGuardedQuery(pool, sql, params, normalized.key || "uji_koneksi").finally(() => {

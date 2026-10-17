@@ -46,6 +46,7 @@ const nomorVerificationService = require("./services/nomorVerificationService");
 const ecourtSchedulerService = require("./services/ecourtSchedulerService");
 const ecourtSesiPantauService = require("./services/ecourtSesiPantauService");
 const ecourtPulihService = require("./services/ecourtPulihService");
+const kembaranMode = require("./services/kembaranMode");
 const ecourtWaPerintahService = require("./services/ecourtWaPerintahService");
 const logService = require("./services/logService");
 const rateLimitService = require("./services/rateLimitService");
@@ -197,6 +198,9 @@ app.use("/internal/aleta-bot/kamus-deteksi/lapis", express.json({ limit: "8mb" }
 // Paket logo kop (17 Okt 2026): badan memuat logo satker (base64, <= 3 MB).
 app.use("/internal/aleta-bot/abt-pengaturan/logo/paket", express.json({ limit: "6mb" }));
 app.use(express.json({ limit: "1mb" }));
+// MODE KEMBARAN: satu permintaan = satu kelompok antrean sinkron. Dipasang SESUDAH pembaca
+// badan supaya konteks bertahan sampai penangan rute. Di mode biasa tidak berbuat apa-apa.
+app.use(require("./services/penjagaKembaran").middlewareExpress());
 app.use(express.static("public"));
 
 app.get("/", (req, res) => {
@@ -210,6 +214,8 @@ app.get("/health", (req, res) => {
   res.status(200).json({
     ok: true,
     service: "aleta_bot",
+    mode: kembaranMode.aktif() ? "kembaran" : "biasa",
+    pita: kembaranMode.aktif() ? kembaranMode.kalimatPita() : undefined,
     uptimeSeconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
   });
@@ -397,6 +403,9 @@ function createWhatsappClientInstance(source = "startup") {
 }
 
 function ensureWhatsappClient(source = "runtime") {
+  // MODE KEMBARAN: WhatsApp TIDAK PERNAH menyala di laptop - sesi yang sama dari dua tempat
+  // memutus sesi server. Melempar di sini menutup semua jalur (kirim manual, antrean, reconnect).
+  kembaranMode.tolakBilaKembaran("WhatsApp");
   if (!client) {
     client = createWhatsappClientInstance(source);
   }
@@ -907,6 +916,12 @@ const markWhatsappInitializeTimeoutIfNeeded = async () => {
 };
 
 const startWhatsappClient = async (source = "manual") => {
+  if (kembaranMode.aktif()) {
+    whatsappStatusService.setStatus("disconnected", "kembaran_dimatikan", {
+      message: "WhatsApp dimatikan di mode kembaran (laptop).",
+    });
+    return { started: false, status: "disconnected", message: "WhatsApp dimatikan di mode kembaran (laptop)." };
+  }
   await markWhatsappInitializeTimeoutIfNeeded();
   const currentState = whatsappStatusService.getStatus();
   const currentStatus = currentState.status || "unknown";
@@ -1146,6 +1161,7 @@ if (penilaianAwalTimer.unref) penilaianAwalTimer.unref();
 // pesan diserahkan ke antrean, bukan dikirim langsung dari sini.
 const PEKERJA_ECOURT_INTERVAL_MS = Number(process.env.ALETA_BOT_ECOURT_WORKER_INTERVAL_MS || 15 * 60 * 1000);
 function jalankanPekerjaEcourt() {
+  if (kembaranMode.aktif()) return; // e-Court dimatikan di mode kembaran
   ecourtNotificationWorker
     .runOnce()
     .then((hasil) => {
@@ -4428,6 +4444,8 @@ cron.schedule(selisihHarianService.jadwalCron(), () => {
 
 // Sinkron & cadangan (butir 29/30, 30 Sep 2026): dump MySQL baca-saja untuk portal.
 app.use("/internal/aleta-bot/sinkron", require("./routes/sinkronRoutes"));
+// Mode kembaran (laptop): antrean tulis ke SIPP/ABT, pemeriksaan bentrok, persetujuan, dorong ke server.
+app.use("/internal/aleta-bot/kembaran", require("./routes/kembaranRoutes"));
 // Jadwal Sidang: Selesai dua arah dengan antrian, penetapan mediator, proses mediasi (perbaikan 1 Okt 2026, J1/J2/J7).
 app.use("/internal/aleta-bot/jadwal-sidang", require("./routes/jadwalSidangRoutes"));
 // Panggil petugas/pihak (WhatsApp + pengumuman suara) dan status pertemuan mediasi (butir 33-36, 5 Okt 2026).
@@ -4560,6 +4578,7 @@ app.get("/internal/aleta-bot/status", async (req, res) => {
     notificationRegistryService.getRegistrySnapshotAsync(),
   ]).then(([queueStats, messageStatsToday, systemStatsToday, whatsappEvents, notificationRuns, publicQa, aiConfig, registrySnapshot]) => res.status(200).json({
     status: true,
+    kembaran: kembaranMode.ringkasan(),
     whatsapp: {
       ...safeWhatsappStatus,
       qrAvailable: waStatus.status === "qr_needed" && Boolean(lastQrString),
@@ -5134,4 +5153,5 @@ if (readRuntimeConfig().botEnabled) {
 
 server.listen(port, '0.0.0.0', () => {
   console.log(`Aleta listening at port ${port}`);
+  if (kembaranMode.aktif()) console.log(`[ALETA Bot] ${kembaranMode.kalimatPita()} - tulisan ke SIPP/ABT ditahan di antrean, WhatsApp dan e-Court mati.`);
 });

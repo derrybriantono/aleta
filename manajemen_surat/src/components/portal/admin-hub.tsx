@@ -348,6 +348,15 @@ export function AdminHub() {
               icon={<DatabaseBackup className="h-5 w-5 text-indigo-600" />}
               badge="Sinkron"
             />
+            {isSuperAdmin && (
+              <AdminMenuAction
+                href="/admin/sinkron-kembaran"
+                title="Sinkron kembaran"
+                description="Antrean tulisan ke SIPP dan ABT yang ditahan di laptop selama server mati: periksa bentrok, setujui, lalu kirim."
+                icon={<ShieldCheck className="h-5 w-5 text-amber-600" />}
+                badge="Kembaran"
+              />
+            )}
             <AdminMenuAction
               href="/admin/sumber-daya"
               title="Sumber daya server"
