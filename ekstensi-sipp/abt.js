@@ -17317,8 +17317,9 @@ function a2Tombol(teks, judul, kelas) {
 async function a2JedaTulis(jenis, alamat) {
   // 1.184.0 (5 Okt 2026, butir 16): TANPA jeda untuk tulisan ke ABT - keputusan
   // pengguna ("Tanpa jeda di ABT"), menggantikan butir 14 (2 Okt) KHUSUS ABT.
-  // ±75% waktu "Input ke ABT" adalah jeda 0,9-2,2 detik per variabel. SIPP
-  // dan e-Court tetap berjeda (alatJedaManusia di konten.js dan bot). Riwayat
+  // ±75% waktu "Input ke ABT" adalah jeda 0,9-2,2 detik per variabel. Sejak
+  // 17 Okt pengisian borang SIPP juga langsung; jeda tinggal untuk tulisan database
+  // beruntun (alatJedaManusia di konten.js dan bot). Riwayat
   // ALETA tetap jujur dan lengkap (catatRiwayat). Tulisan ke ABT tetap satu
   // per satu - ABT tidak pernah menerima dua tulisan sekaligus.
   void jenis;

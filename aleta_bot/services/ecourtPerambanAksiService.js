@@ -16,11 +16,12 @@
  *     aksi, membaca cookie yang mungkin diperbarui e-Court, lalu menutup
  *     peramban dan MENGHAPUS folder sementaranya. Tidak ada profil pengguna
  *     yang tertinggal tak tersandi di disk.
- *   - JEDA SEPERTI MANUSIA sebelum tiap aksi tulis - menekan tombol aksi,
- *     mengetik passphrase, memilih berkas, mengirim dialog (keputusan
- *     pengguna 2 Okt 2026, butir 14, membalik keputusan 26 Sep). Rentangnya
- *     di jedaManusiaService, sama dengan alatJedaManusia ekstensi. Mode
- *     kering tidak menunggu. Jejak jujur tetap di tabel aleta_* (siapa,
+ *   - PENGISIAN BORANG LANGSUNG (keputusan pengguna 17 Okt 2026, membalik
+ *     butir 14 tanggal 2 Okt): menekan tombol aksi, mengisi passphrase,
+ *     memilih berkas, dan mengirim dialog dikerjakan seketika - tanpa jeda
+ *     tiruan manusia dan tanpa ketikan per huruf (isiBorangLangsung). Jeda
+ *     seperti petugas (jedaManusiaService) kini hanya untuk tulisan ke
+ *     database SIPP. Jejak jujur tetap di tabel aleta_* (siapa,
  *     waktu, IP, "lewat ALETA"), tidak pernah di halaman e-Court. Penanda
  *     elemen sementara di halaman pun bernama netral (data-pk-*), bukan
  *     nama ALETA.
@@ -53,7 +54,7 @@ const path = require("path");
 const scraper = require("../tools/ecourt-bridge/scraper");
 const sesiEcourt = require("../tools/ecourt-bridge/sesi");
 const kirimVerifikasi = require("../tools/ecourt-bridge/kirim-verifikasi");
-const jedaManusia = require("./jedaManusiaService");
+const isiBorang = require("./isiBorangLangsung");
 
 /** Penunjuk yang dapat ditimpa lewat lingkungan - lihat catatan kepala berkas. */
 const POLA = {
@@ -260,8 +261,7 @@ async function tekanKirimDialog(page) {
     POLA.tombolKirimDialog.flags
   );
   if (jumlah !== 1) return { ok: false, alasan: jumlah === 0 ? "tombol_kirim_tidak_ditemukan" : "tombol_kirim_ganda" };
-  // Jeda seperti manusia sebelum mengirim simpanan (butir 14, K4).
-  await jedaManusia.jeda("simpan");
+  // 17 Okt 2026: mengirim dialog e-Court langsung - tanpa jeda tiruan manusia.
   await Promise.all([
     page.click('[data-pk-aksi="kirim-dialog"]'),
     page.waitForNavigation({ waitUntil: "networkidle2", timeout: BATAS_HALAMAN_MS }).catch(() => null),
@@ -335,9 +335,9 @@ async function kirimLogin(token, { email, sandi, captcha } = {}) {
   const rahasia = [sandi];
   const { page } = sesi;
   try {
-    await page.type('[data-pk="email"]', String(email || ""));
-    await page.type('[data-pk="sandi"]', String(sandi || ""));
-    if (captcha) await page.type('[data-pk="captcha"]', String(captcha)).catch(() => {});
+    await isiBorang.isiSelektor(page, '[data-pk="email"]', String(email || ""));
+    await isiBorang.isiSelektor(page, '[data-pk="sandi"]', String(sandi || ""));
+    if (captcha) await isiBorang.isiSelektor(page, '[data-pk="captcha"]', String(captcha)).catch(() => {});
     await Promise.all([
       page.click('[data-pk="tombol"]'),
       page.waitForNavigation({ waitUntil: "networkidle2", timeout: BATAS_HALAMAN_MS }).catch(() => null),
@@ -472,7 +472,6 @@ async function verifikasi({ cookies, alamatPerkara, judulDokumen, keputusan, ket
     if (jumlah !== 1) {
       return { ok: false, alasan: jumlah === 0 ? "tombol_verifikasi_tidak_ditemukan" : "tombol_verifikasi_ganda" };
     }
-    await jedaManusia.jeda("klik", { kering });
     await page.click('[data-pk-aksi="verifikasi"]');
     if (!(await tungguDialog(page))) return { ok: false, alasan: "dialog_verifikasi_tidak_muncul" };
 
@@ -487,7 +486,6 @@ async function verifikasi({ cookies, alamatPerkara, judulDokumen, keputusan, ket
       return { ok: true, alasan: "", kering: true, dialog: { namaDokumen: dialog.namaDokumen, pemilikDokumen: dialog.pemilikDokumen } };
     }
 
-    await jedaManusia.jeda("isi");
     await page.evaluate(
       (sel, kep, ket) => {
         const d = document.querySelector(sel.dialog);
@@ -536,7 +534,6 @@ async function tteSalinan({ cookies, alamatPerkara, passphrase }) {
       tanda: "tte",
     });
     if (jumlah !== 1) return { ok: false, alasan: jumlah === 0 ? "tombol_tte_tidak_ditemukan" : "tombol_tte_ganda" };
-    await jedaManusia.jeda("klik");
     await page.click('[data-pk-aksi="tte"]');
     if (!(await tungguDialog(page))) return { ok: false, alasan: "dialog_tte_tidak_muncul" };
 
@@ -545,8 +542,7 @@ async function tteSalinan({ cookies, alamatPerkara, passphrase }) {
       await tutupDialog(page);
       return { ok: false, alasan: kolom.length === 0 ? "kolom_passphrase_tidak_ditemukan" : "kolom_passphrase_ganda" };
     }
-    await jedaManusia.jeda("isi");
-    await kolom[0].type(String(passphrase || ""));
+    await isiBorang.isiKolom(kolom[0], String(passphrase || ""));
     const kirim = await tekanKirimDialog(page);
     if (!kirim.ok) {
       await tutupDialog(page);
@@ -570,7 +566,6 @@ async function unggahSalinan({ cookies, alamatPerkara, jalurBerkas }) {
       tanda: "unggah",
     });
     if (jumlah !== 1) return { ok: false, alasan: jumlah === 0 ? "tombol_unggah_tidak_ditemukan" : "tombol_unggah_ganda" };
-    await jedaManusia.jeda("klik");
     await page.click('[data-pk-aksi="unggah"]');
     if (!(await tungguDialog(page))) return { ok: false, alasan: "dialog_unggah_tidak_muncul" };
     const kolom = await page.$$(`${PENUNJUK_DIALOG} input[type="file"]`);
@@ -578,7 +573,6 @@ async function unggahSalinan({ cookies, alamatPerkara, jalurBerkas }) {
       await tutupDialog(page);
       return { ok: false, alasan: kolom.length === 0 ? "kolom_berkas_tidak_ditemukan" : "kolom_berkas_ganda" };
     }
-    await jedaManusia.jeda("unggah");
     await kolom[0].uploadFile(jalurBerkas);
     const kirim = await tekanKirimDialog(page);
     if (!kirim.ok) {

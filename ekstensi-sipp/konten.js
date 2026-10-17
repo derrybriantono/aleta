@@ -8889,12 +8889,12 @@ async function kirimKeJembatan(pesan) {
     }
   }
 
-  // Perbaikan 2 Okt (S, butir 14 - KONTRAK K4, berlaku di semua tampilan):
-  // tekanan yang SUNGGUH menyimpan ke SIPP didahului jeda seperti manusia
-  // (alatJedaManusia milik W). Mode latihan/kering/coba sudah pulang di atas,
-  // jadi tekanan yang ditahan tidak pernah menunggu. Isian medan tidak dijeda:
-  // SIPP tidak menerima apa pun sampai Simpan-nya ditekan.
-  if (jenis === "tekan" && typeof s2JedaTulis === "function") await s2JedaTulis("simpan");
+  // 17 Okt 2026 - keputusan pengguna: "isi form itu otomatis langsung isi,
+  // jangan seperti manusia". Isian medan DAN tekanan tombol di layar SIPP
+  // langsung dikerjakan, tanpa jeda tiruan manusia (sebelumnya tekanan didahului
+  // jeda tiruan manusia "simpan" 0,9-2,2 detik, juga untuk tombol buka-tab/popup).
+  // Yang tetap meniru petugas hanyalah tulisan ke database SIPP oleh bot dan
+  // jarak antar baris simpanan beruntun (lihat ccInputKeSipp).
 
   const jawab = await kirimKeJembatanLangsung(pesan);
 
@@ -9805,9 +9805,12 @@ async function ccInputKeSipp(daftar, opsi) {
       continue;
     }
     kabar(`Menyimpan baris ${nomorKe} dari ${layak.length} ke SIPP…`);
-    if (typeof alatJedaManusia === "function") {
+    // Jarak antar DUA simpanan beruntun dipertahankan (tiap baris = satu baris
+    // audit SIPP atas akun petugas; lima baris dalam sekejap tampak seperti mesin).
+    // Baris PERTAMA langsung dikirim - isian blangko sudah ada, tak ada yang ditunggu.
+    if (dikirim.length && typeof alatJedaManusia === "function") {
       try {
-        await alatJedaManusia(dikirim.length ? "simpan" : "klik", { alamat: blangko.action });
+        await alatJedaManusia("simpan", { alamat: blangko.action });
       } catch {
         /* jeda gagal - simpanan tetap berjalan */
       }
@@ -23825,10 +23828,9 @@ function s1GambarDaftarMassal(daftar, sidang, gambarBaris, lain) {
  *             alatJadikanLipat milik W, K2): Penetapan "Ketua", Putusan
  *             "Hakim", Juru Sita "Jurusita", BAS massal "Panitera", dst.
  *             Tag yang sudah dipasang pemilik bagiannya tidak ditimpa.
- *   butir 14  tekanan Simpan SIPP lewat jembatan didahului alatJedaManusia
- *             (W, K4) - di semua tampilan; ditahan (kering/latihan/coba) =
- *             tanpa jeda. Tidak ada penanda ALETA yang disisipkan ke isian
- *             atau elemen SIPP yang ikut tersimpan.
+ *   butir 14  (17 Okt: DICABUT untuk layar) isian dan tekanan tombol SIPP lewat
+ *             jembatan langsung, tanpa alatJedaManusia. Tidak ada penanda ALETA
+ *             yang disisipkan ke isian atau elemen SIPP yang ikut tersimpan.
  *   butir 15  "Perkara berikutnya" menurut kepentingan peran: hakim/ketua =
  *             perkara yang perlu putusan, PP = BAS, juru sita = relaas/PBT
  *             (persidangan ikut di belakangnya). Antrean Direktori Putusan

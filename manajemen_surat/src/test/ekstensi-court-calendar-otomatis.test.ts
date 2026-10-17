@@ -662,6 +662,30 @@ describe("Input semua ke SIPP", () => {
     expect(kotak.querySelector(".aleta-cc-input").disabled).toBe(true);
   });
 
+  it("17 Okt: baris pertama langsung; jeda 'simpan' hanya sebelum baris kedua dst (jarak antar tulisan database)", async () => {
+    const pertama = selasaDepan(7);
+    const h = buka({ simpanan: UI, status: statusBawaan(pertama), sipp: [{ tanggal: pertama, jam: "09:00", agenda: "Sidang Pertama", keterangan: "" }] });
+    const jeda: Array<{ jenis: string; ke: number }> = [];
+    h.w.alatJedaManusia = async (jenis: string) => {
+      jeda.push({ jenis, ke: kirimanSimpan(h).length });
+      return 0;
+    };
+    const kotak = await bukaCc(h);
+    kotak.querySelector(".aleta-cc-tambah").click();
+    const baru = Array.from(kotak.querySelectorAll(".aleta-cc-baris")).at(-1) as any;
+    const agendaBaru = baru.querySelector(".aleta-cc-agenda");
+    agendaBaru.value = "Musyawarah Majelis";
+    agendaBaru.dispatchEvent(new h.w.Event("input"));
+    const tombol = kotak.querySelector(".aleta-cc-input");
+    tombol.click();
+    await tunggu(20);
+    tombol.click();
+    await sampai(() => /tersimpan dan terbaca ulang/.test(kotak.querySelector(".aleta-cc-kabar").textContent), "selesai");
+    expect(kirimanSimpan(h)).toHaveLength(2);
+    // Satu jeda saja, diminta sesudah 1 POST (yaitu sebelum POST kedua); tak ada jeda "klik" di depan baris pertama.
+    expect(jeda).toEqual([{ jenis: "simpan", ke: 1 }]);
+  });
+
   it("penolakan SIPP disebut per baris, baris lain tetap dikirim; jawaban 'tersimpan' yang tidak terbaca ulang TIDAK disebut tersimpan", async () => {
     const pertama = selasaDepan(7);
     const h = buka({ simpanan: UI, status: statusBawaan(pertama), tolak: [pertama] });
