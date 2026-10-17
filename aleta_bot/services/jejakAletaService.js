@@ -87,6 +87,11 @@ function pastikanTabel() {
     // harus disusulkan sendiri - sepola dengan addColumnIfMissing di
     // botDbService.
     .then(() => lengkapiKolom())
+    // waktu disimpan UTC; isi lama (jam proses) dipindah lebih dulu.
+    .then(() => {
+      const botDb = require("./botDbService");
+      return typeof botDb.pastikanUtc === "function" ? botDb.pastikanUtc() : null;
+    })
     .catch((galat) => {
       // Gagal sekali tidak berarti gagal selamanya - percobaan berikutnya
       // membangunnya lagi. Tanpa ini, satu kegagalan sesaat membuat seluruh
@@ -147,13 +152,13 @@ function nomorPerkaraSaja(nilai) {
   return potong(nilai, 120);
 }
 
-function waktuMysqlSekarang() {
-  const d = new Date();
-  const dua = (n) => String(n).padStart(2, "0");
-  return (
-    `${d.getFullYear()}-${dua(d.getMonth() + 1)}-${dua(d.getDate())} ` +
-    `${dua(d.getHours())}:${dua(d.getMinutes())}:${dua(d.getSeconds())}`
-  );
+/**
+ * Saat ini dalam UTC - sama dengan tabel ALETA lain. Dulu jam LOKAL proses
+ * (getHours peti Asia/Makassar); isi lamanya dipindah ke UTC oleh
+ * botDbService.pastikanUtc. jam_sipp TIDAK ikut: ia salinan teks jam SIPP.
+ */
+function waktuUtcSekarang() {
+  return new Date().toISOString().slice(0, 19).replace("T", " ");
 }
 
 /** Tanggal "YYYY-MM-DD" saja yang diterima; selain itu NULL. */
@@ -201,7 +206,7 @@ async function catat(jejak) {
           jumlah_langkah, tabel_disentuh, rincian)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
-        waktuMysqlSekarang(),
+        waktuUtcSekarang(),
         potong(j.aksi || "tulis", 12),
         potong(j.jenis, 20),
         Number(j.perkaraId) || 0,

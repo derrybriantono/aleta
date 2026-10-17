@@ -1,5 +1,7 @@
 "use strict";
 
+const { sqlDariSetempat } = require("../utils/waktuUtc");
+
 /**
  * ============================================================================
  * CHECKLIST MILESTONE - PEMBACA FAKTANYA
@@ -1158,16 +1160,16 @@ async function koleksiPenetapanGagal({ dari, alat = ALAT_DIAM }) {
               WHERE s.perkara_id = g.perkara_id AND s.jenis = g.jenis
                 AND s.berhasil = 1 AND s.kering = 0 AND s.waktu > g.waktu) AS berhasilSesudah
        FROM aleta_bot_jejak_penetapan g
-      WHERE g.berhasil = 0 AND g.kering = 0 AND g.waktu >= ?
+      WHERE g.berhasil = 0 AND g.kering = 0 AND g.waktu >= ${sqlDariSetempat("?")}
       ORDER BY g.waktu ASC
       LIMIT 301`,
     [`${dari} 00:00:00`]
   );
   const baris = potongBatas(Array.isArray(mentah) ? mentah : [], 300, alat, "kegagalan terlama");
-  // waktu jejak ditulis sebagai JAM LOKAL peladen (waktuMysqlSekarang di
-  // jejakAletaService), bukan UTC - dan driver mysql membacanya kembali
-  // sebagai jam lokal pula. Karena itu Date-nya langsung diubah ke ISO,
-  // sama dengan cara jejakAletaService.riwayat membacanya.
+  // waktu jejak disimpan UTC (sejak 17 Okt 2026; isi lama dipindah oleh
+  // botDbService.pastikanUtc) dan driver bertimezone "Z" membacanya sebagai
+  // saat yang benar - Date-nya langsung diubah ke ISO. Batas "dari" adalah
+  // tanggal SETEMPAT, karena itu diubah ke UTC di SQL.
   const iso = (x) => (x instanceof Date && !Number.isNaN(x.getTime()) ? x.toISOString() : waktuTeks(x));
   return (Array.isArray(baris) ? baris : []).map((b) => ({
     id: String(b.id),

@@ -1,5 +1,8 @@
 "use strict";
 
+// Kolom waktu ALETA disimpan UTC; yang tampil di layar jam setempat.
+const { sqlSetempat } = require("../utils/waktuUtc");
+
 /**
  * ============================================================================
  * PENYATU SIPP - ABT - ALETA SATU PERKARA (TAHAP M2, 16 OKT 2026) - BACA SAJA
@@ -426,7 +429,7 @@ function buatLayanan(depsMasuk) {
       "putusan e-Court",
       async () => {
         const b = await d.kueriBot(
-          `SELECT ada_tab, ada_baris, dokumen_ada, tanggal_putusan_teks, tanggal_bht_teks, DATE_FORMAT(diperiksa_pada, '%Y-%m-%d %H:%i') AS diperiksa
+          `SELECT ada_tab, ada_baris, dokumen_ada, tanggal_putusan_teks, tanggal_bht_teks, DATE_FORMAT(${sqlSetempat("diperiksa_pada")}, '%Y-%m-%d %H:%i') AS diperiksa
              FROM aleta_bot_ecourt_putusan WHERE nomor_perkara = ? LIMIT 1`,
           [nomor]
         );
@@ -477,7 +480,7 @@ function buatLayanan(depsMasuk) {
       async () => {
         try {
           const b = await d.kueriBot(
-            `SELECT aksi, jenis, DATE_FORMAT(tanggal_penetapan, '%Y-%m-%d') AS tgl, DATE_FORMAT(waktu, '%Y-%m-%d %H:%i') AS waktu
+            `SELECT aksi, jenis, DATE_FORMAT(tanggal_penetapan, '%Y-%m-%d') AS tgl, DATE_FORMAT(${sqlSetempat("waktu")}, '%Y-%m-%d %H:%i') AS waktu
                FROM aleta_bot_jejak_penetapan WHERE perkara_id = ? AND berhasil = 1 AND kering = 0 ORDER BY waktu DESC LIMIT 60`,
             [pid]
           );

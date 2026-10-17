@@ -1208,7 +1208,7 @@ describe("butir 3 - bot setelBerjalan (basis data tiruan)", () => {
     const hasil = await L.setelBerjalan({ ...minta, kering: false });
     expect(hasil).toMatchObject({ ok: true, berjalan: true });
     const sisip = bot.catatan.find((c) => c.sql.startsWith(`INSERT INTO ${selesaiMod.TABEL_BERJALAN}`));
-    expect(sisip?.sql).toContain("'ALETA', NOW()");
+    expect(sisip?.sql).toContain("'ALETA', UTC_TIMESTAMP()");
     expect(sisip?.params).toEqual(["5", HARI, "5/Pdt.G/2026/PA.Dgl", "Ruang 1", "Ani Panitera", "192.168.10.21"]);
     expect(tulis(sipp.catatan)).toHaveLength(0);
     expect(ruang.catatan).toHaveLength(0);
@@ -1275,7 +1275,7 @@ describe("butir 3 - bot setelBerjalan (basis data tiruan)", () => {
     const hasil = await aleta.L.setelBerjalan({ ...minta, berjalan: false, kering: false });
     expect(hasil).toMatchObject({ ok: true, berjalan: false });
     expect(aleta.bot.catatan.some((c) => c.sql.startsWith("DELETE"))).toBe(false);
-    expect(aleta.bot.catatan.some((c) => c.sql.startsWith(`UPDATE ${selesaiMod.TABEL_BERJALAN} SET dibatalkan_pada = NOW()`))).toBe(true);
+    expect(aleta.bot.catatan.some((c) => c.sql.startsWith(`UPDATE ${selesaiMod.TABEL_BERJALAN} SET dibatalkan_pada = UTC_TIMESTAMP()`))).toBe(true);
     const ubah = tulis(aleta.ruang.catatan).filter((c) => c.sql.includes("antrian_sidang"));
     expect(ubah).toHaveLength(1);
     expect(ubah[0].sql).toBe("UPDATE sipp_turunan_antrian.antrian_sidang SET disidang = NULL WHERE perkara_id = ? AND tanggal_sidang = ? AND disidang = ruangan_id AND disidang BETWEEN 1 AND 9");
@@ -1372,7 +1372,7 @@ describe("butir 3 - bot: peta, skors, selesai, diagnosa dengan nilai proses", ()
       setelAntrian: async () => ({ ok: true }),
     });
     await L.setelSelesai({ perkaraId: "5", tanggalSidang: HARI, oleh: "Ani", kering: false });
-    expect(bot.catatan.some((c) => c.sql.startsWith(`UPDATE ${selesaiMod.TABEL_BERJALAN} SET dibatalkan_pada = NOW()`))).toBe(true);
+    expect(bot.catatan.some((c) => c.sql.startsWith(`UPDATE ${selesaiMod.TABEL_BERJALAN} SET dibatalkan_pada = UTC_TIMESTAMP()`))).toBe(true);
     expect(bot.catatan.some((c) => c.sql.startsWith("DELETE FROM aleta_bot_sidang_berjalan"))).toBe(false);
   });
 

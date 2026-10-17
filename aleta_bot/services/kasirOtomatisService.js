@@ -298,6 +298,10 @@ function buatLayanan(deps = {}) {
         require("../bot_db_config").query(sql, params, (galat, hasil) => (galat ? gagal(galat) : selesai(hasil)));
       }));
   const sedang = new Set();
+  // Isi lama kolom waktu dipindah ke UTC sebelum tulisan pertama (botDbService).
+  // Basis data tiruan (uji) tidak dimigrasi kecuali disebut tegas.
+  const migrasiUtc = deps.migrasiUtc || (deps.kueriAleta ? async () => {} : () => require("./botDbService").pastikanUtc());
+  const sqlSetempat = (kolom) => require("../utils/waktuUtc").sqlSetempat(kolom);
 
   async function semua(sql, params) {
     const baris = await kueri(sql, params);
@@ -325,10 +329,12 @@ function buatLayanan(deps = {}) {
         diubah DATETIME NULL,
         PRIMARY KEY (id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    `).catch((galat) => {
-      siap = null;
-      throw galat;
-    });
+    `)
+      .then(() => migrasiUtc())
+      .catch((galat) => {
+        siap = null;
+        throw galat;
+      });
     return siap;
   }
 
@@ -336,7 +342,7 @@ function buatLayanan(deps = {}) {
   async function bacaSetelan() {
     await pastikanTabel();
     const baris = await kueriAleta(
-      `SELECT nyala, butir, diubah_oleh AS diubahOleh, DATE_FORMAT(diubah, '%Y-%m-%d %H:%i:%s') AS diubah FROM ${TABEL_SETELAN} WHERE id = 1 LIMIT 1`,
+      `SELECT nyala, butir, diubah_oleh AS diubahOleh, DATE_FORMAT(${sqlSetempat("diubah")}, '%Y-%m-%d %H:%i:%s') AS diubah FROM ${TABEL_SETELAN} WHERE id = 1 LIMIT 1`,
       []
     );
     const b = Array.isArray(baris) && baris[0];
@@ -357,8 +363,8 @@ function buatLayanan(deps = {}) {
     const nyala = typeof minta.nyala === "boolean" ? minta.nyala : lama.nyala;
     const butir = Array.isArray(minta.butir) ? butirSah(minta.butir) : lama.butir;
     await kueriAleta(
-      `INSERT INTO ${TABEL_SETELAN} (id, nyala, butir, diubah_oleh, diubah) VALUES (1, ?, ?, ?, NOW())
-       ON DUPLICATE KEY UPDATE nyala = VALUES(nyala), butir = VALUES(butir), diubah_oleh = VALUES(diubah_oleh), diubah = NOW()`,
+      `INSERT INTO ${TABEL_SETELAN} (id, nyala, butir, diubah_oleh, diubah) VALUES (1, ?, ?, ?, UTC_TIMESTAMP())
+       ON DUPLICATE KEY UPDATE nyala = VALUES(nyala), butir = VALUES(butir), diubah_oleh = VALUES(diubah_oleh), diubah = UTC_TIMESTAMP()`,
       [nyala ? 1 : 0, JSON.stringify(butir), operator]
     );
     return { ok: true, setelan: await bacaSetelan() };

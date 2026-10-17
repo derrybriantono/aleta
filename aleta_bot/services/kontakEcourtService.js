@@ -518,6 +518,8 @@ async function pastikanSkema() {
   if (!skemaSiap) {
     skemaSiap = (async () => {
       await botDb().query(DDL_RINGKASAN);
+      // diperbarui disimpan UTC; isi lama (jam proses) dipindah dulu.
+      if (typeof botDb().pastikanUtc === "function") await botDb().pastikanUtc();
       return true;
     })().catch((e) => {
       skemaSiap = null;
@@ -537,7 +539,7 @@ async function simpanRingkasan(perkaraId, nomorPerkara, baris, opsi) {
   const nomor = String(nomorPerkara || "").trim();
   if (!nomor) return { ditulis: 0 };
   await pastikanSkema();
-  const sekarang = new Date();
+  const sekarang = botDb().toMysqlDate(new Date());
   let ditulis = 0;
   for (const b of baris) {
     await botDb().query(

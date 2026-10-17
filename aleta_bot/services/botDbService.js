@@ -478,6 +478,15 @@ async function initializeSchema() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
 
+    // Isi lama ber-jam setempat dipindah ke UTC sedini mungkin. Kegagalannya
+    // tidak menahan antrean pesan; layanan pemilik tabel menunggunya sendiri.
+    try {
+      await pastikanUtc();
+    } catch (error) {
+      lastError = error;
+      console.warn(`[ALETA Bot] Migrasi waktu UTC belum berhasil: ${String(error && error.message).slice(0, 200)}`);
+    }
+
     schemaReady = true;
     return true;
   })();
@@ -514,6 +523,8 @@ function toMysqlDate(value = new Date()) {
  * ulang sebelum tiga hari" sebenarnya berakhir tujuh jam lebih cepat.
  *
  * Driver mysql dapat mengembalikan Date maupun string, jadi keduanya diterima.
+ * Date dari kolam bot sudah benar sejak bot_db_config memakai timezone "Z"
+ * (17 Okt 2026); sebelumnya Date itu ditafsirkan jam lokal peti dan mundur 8 jam.
  */
 function fromMysqlDate(value) {
   if (!value) return null;
@@ -526,6 +537,172 @@ function fromMysqlDate(value) {
   const cocok = teks.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})/);
   const tanggal = cocok ? new Date(`${cocok[1]}T${cocok[2]}Z`) : new Date(teks);
   return Number.isNaN(tanggal.getTime()) ? null : tanggal;
+}
+
+/*
+ * ============================================================================
+ * ATURAN WAKTU KOLOM ALETA (17 Okt 2026)
+ * ============================================================================
+ *
+ * Kolom waktu milik ALETA (aleta_bot_*) DISIMPAN UTC:
+ *   tulis  : toMysqlDate(Date) atau UTC_TIMESTAMP() - BUKAN NOW()/CURDATE(),
+ *            bukan teks jam dinding yang disusun dari getHours() proses;
+ *   baca   : kolom mentah (driver timezone "Z" -> Date yang benar) atau teks
+ *            DATE_FORMAT lalu fromMysqlDate;
+ *   banding: dengan UTC_TIMESTAMP(), atau dengan SQL_AWAL_HARI_SETEMPAT untuk
+ *            "hari ini".
+ * Jam dinding setempat (WITA = NOW() server MySQL, sebasis aplikasi antrian
+ * dan SIPP) hanya muncul di BATAS: keluaran teks untuk layar lewat
+ * sqlSetempat(kolom), dan masukan jam setempat (jam antrian, isian perkiraan)
+ * lewat sqlDariSetempat("?") sebelum disimpan atau dibandingkan.
+ *
+ * Pengecualian yang disengaja - SALINAN teks jam sistem lain, tidak pernah
+ * dibaca sebagai Date: aleta_bot_antrian_waktu (cermin jam antrian, lihat
+ * antrianWaktuService), aleta_bot_jejak_penetapan.jam_sipp dan
+ * aleta_bot_sidang_skors.panggil_saat_skors.
+ *
+ * Penyusun SQL-nya (selisih dihitung di pernyataan itu sendiri, tanpa tabel
+ * zona MySQL) ada di utils/waktuUtc dan diekspor ulang di sini.
+ */
+const { SQL_SELISIH_SETEMPAT, sqlSetempat, sqlDariSetempat, SQL_AWAL_HARI_SETEMPAT } = require("../utils/waktuUtc");
+
+/*
+ * Kolom yang DULU ditulis jam setempat dan sejak 17 Okt 2026 ditulis UTC.
+ * Isi lamanya dipindah SEKALI ke UTC (pastikanUtc) supaya satu kolom tidak
+ * memuat dua basis. basis "mysql" = dulu NOW() (selisih server MySQL);
+ * "proses" = dulu Date parameter / getHours() proses Node (selisih TZ peti).
+ * Sebelum digeser, isi tabel disalin utuh ke <tabel>_pra_utc.
+ */
+const DAFTAR_MIGRASI_UTC = [
+  { tabel: "aleta_bot_kasir_otomatis", kolom: ["diubah"], basis: "mysql" },
+  { tabel: "aleta_bot_kasir_setor_pnbp", kolom: ["dicatat"], basis: "mysql" },
+  { tabel: "aleta_bot_kendali_runs", kolom: ["dimulai_pada"], basis: "proses" },
+  { tabel: "aleta_bot_kendali_runs", kolom: ["detak_pada", "selesai_pada"], basis: "mysql" },
+  { tabel: "aleta_bot_kendali_berkas", kolom: ["disinkron_pada", "updated_at"], basis: "proses" },
+  { tabel: "aleta_bot_mediasi_status", kolom: ["ditandai_pada", "dibatalkan_pada"], basis: "mysql" },
+  { tabel: "aleta_bot_panggil_riwayat", kolom: ["dibuat_pada", "diperbarui_pada"], basis: "mysql" },
+  { tabel: "aleta_bot_ecourt_putusan", kolom: ["diperiksa_pada"], basis: "mysql" },
+  { tabel: "aleta_bot_sidang_selesai", kolom: ["ditandai_pada"], basis: "mysql" },
+  { tabel: "aleta_bot_sidang_berjalan", kolom: ["ditandai_pada", "dibatalkan_pada"], basis: "mysql" },
+  { tabel: "aleta_bot_sidang_skors", kolom: ["diskors_pada", "dilanjutkan_pada", "perkiraan_lanjut"], basis: "mysql" },
+  { tabel: "aleta_bot_ecourt_ringkasan", kolom: ["diperbarui"], basis: "proses" },
+  { tabel: "aleta_bot_jejak_penetapan", kolom: ["waktu"], basis: "proses" },
+  { tabel: "aleta_bot_tanda_tangan", kolom: ["diinput_tanggal", "disahkan_pada"], basis: "proses" },
+  // Antrean pesan: hanya klaim 'processing' yang dulu ber-NOW(); sisanya
+  // sudah UTC. Jam setempat yang belum lewat 8 jam tampak DI DEPAN jam UTC -
+  // itulah pembedanya, sehingga klaim baru (UTC) tidak ikut tergeser.
+  {
+    tabel: "aleta_bot_message_queue",
+    kolom: ["updated_at"],
+    basis: "mysql",
+    label: "processing",
+    syarat: "t.status = 'processing' AND t.updated_at > UTC_TIMESTAMP() + INTERVAL 30 MINUTE",
+  },
+];
+
+const DDL_MIGRASI_UTC = `
+  CREATE TABLE IF NOT EXISTS aleta_bot_migrasi_utc (
+    kunci VARCHAR(191) NOT NULL PRIMARY KEY,
+    tabel VARCHAR(64) NOT NULL,
+    kolom VARCHAR(255) NOT NULL DEFAULT '',
+    basis VARCHAR(8) NOT NULL DEFAULT '',
+    selisih_detik INT NOT NULL DEFAULT 0,
+    selesai TINYINT NOT NULL DEFAULT 0,
+    cadangan VARCHAR(64) NOT NULL DEFAULT '',
+    dibuat_pada DATETIME NOT NULL,
+    selesai_pada DATETIME NULL
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`;
+
+async function pindahkanKolomKeUtc(entri) {
+  const kunci = `${entri.tabel}:${entri.kolom.join(",")}${entri.label ? `:${entri.label}` : ""}`;
+  // Jawaban yang bukan baris (basis data tiruan pada uji) = tidak terbaca:
+  // tidak ada yang digeser dan tidak ada yang ditandai.
+  const tidakTerbaca = { kunci, tidakTerbaca: true };
+  const tanda0 = await query("SELECT selesai FROM aleta_bot_migrasi_utc WHERE kunci = ?", [kunci]);
+  if (!Array.isArray(tanda0)) return tidakTerbaca;
+  if (tanda0[0] && Number(tanda0[0].selesai) === 1) return { kunci, sudah: true };
+
+  const kolomAda = await query(
+    "SELECT COLUMN_NAME AS k FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?",
+    [entri.tabel]
+  );
+  if (!Array.isArray(kolomAda)) return tidakTerbaca;
+  const ada = new Set(kolomAda.map((b) => String(b.k).toLowerCase()));
+  // Kolom yang belum ada akan lahir lewat kode baru - isinya UTC sejak awal.
+  const kolom = entri.kolom.filter((k) => ada.has(k));
+  let selisih = -new Date().getTimezoneOffset() * 60;
+  if (entri.basis !== "proses") {
+    const b = await query(`SELECT ${SQL_SELISIH_SETEMPAT} AS s`);
+    selisih = Array.isArray(b) && b[0] ? Number(b[0].s) : NaN;
+  }
+  if (!Number.isFinite(selisih)) return tidakTerbaca;
+  // Selisih yang PERTAMA dicatat yang dipakai, juga bila jalan ini terulang.
+  await query(
+    `INSERT IGNORE INTO aleta_bot_migrasi_utc (kunci, tabel, kolom, basis, selisih_detik, selesai, dibuat_pada)
+     VALUES (?, ?, ?, ?, ?, 0, UTC_TIMESTAMP())`,
+    [kunci, entri.tabel, kolom.join(","), entri.basis, selisih]
+  );
+  const tandaBaris = await query("SELECT selesai, selisih_detik AS s FROM aleta_bot_migrasi_utc WHERE kunci = ?", [kunci]);
+  const tanda = Array.isArray(tandaBaris) ? tandaBaris[0] : null;
+  if (!tanda) return tidakTerbaca;
+  if (Number(tanda.selesai) === 1) return { kunci, sudah: true };
+  const geser = Number(tanda.s) || 0;
+
+  let baris = 0;
+  let cadangan = "";
+  if (kolom.length > 0 && geser !== 0) {
+    const syarat = entri.syarat ? ` WHERE ${entri.syarat}` : "";
+    const n = await query(`SELECT COUNT(*) AS n FROM \`${entri.tabel}\` t${syarat}`);
+    if (Array.isArray(n) && n[0] && Number(n[0].n) > 0) {
+      cadangan = `${entri.tabel}_pra_utc`.slice(0, 64);
+      await query(`CREATE TABLE IF NOT EXISTS \`${cadangan}\` LIKE \`${entri.tabel}\``);
+      const isi = await query(`SELECT COUNT(*) AS n FROM \`${cadangan}\``);
+      // Cadangan yang sudah berisi = salinan dari SEBELUM pergeseran pertama.
+      if (!(Array.isArray(isi) && isi[0] && Number(isi[0].n) > 0)) await query(`INSERT INTO \`${cadangan}\` SELECT * FROM \`${entri.tabel}\``);
+      const set = kolom
+        .map((k) => `t.\`${k}\` = IF(t.\`${k}\` > '1000-01-02', DATE_SUB(t.\`${k}\`, INTERVAL ${geser} SECOND), t.\`${k}\`)`)
+        .join(", ");
+      // Satu pernyataan menggeser baris DAN menandai selesai: terputus di
+      // tengah tidak pernah meninggalkan baris tergeser tanpa tanda (dan
+      // sebaliknya), sehingga jalan ulang tidak menggeser dua kali.
+      const r = await query(
+        `UPDATE \`${entri.tabel}\` t, aleta_bot_migrasi_utc m
+            SET ${set}, m.selesai = 1, m.cadangan = ?, m.selesai_pada = UTC_TIMESTAMP()
+          WHERE m.kunci = ? AND m.selesai = 0${entri.syarat ? ` AND (${entri.syarat})` : ""}`,
+        [cadangan, kunci]
+      );
+      baris = Math.max(0, Number((r && r.affectedRows) || 0) - 1);
+    }
+  }
+  await query(
+    "UPDATE aleta_bot_migrasi_utc SET selesai = 1, selesai_pada = COALESCE(selesai_pada, UTC_TIMESTAMP()) WHERE kunci = ? AND selesai = 0",
+    [kunci]
+  );
+  return { kunci, selisih: geser, baris, cadangan };
+}
+
+let utcPromise = null;
+
+/**
+ * Memindah isi lama kolom DAFTAR_MIGRASI_UTC ke UTC, sekali seumur basis
+ * data. Wajib ditunggu layanan pemilik tabel SEBELUM menulis - tulisan UTC
+ * baru yang mendahuluinya akan ikut tergeser. Gagal = dilempar (dan dicoba
+ * lagi pada panggilan berikut): lebih baik tulisan gagal daripada satu
+ * kolom bercampur dua basis.
+ */
+function pastikanUtc(opsi = {}) {
+  if (utcPromise && !opsi.paksaUlang) return utcPromise;
+  utcPromise = (async () => {
+    await query(DDL_MIGRASI_UTC);
+    const hasil = [];
+    for (const entri of DAFTAR_MIGRASI_UTC) hasil.push(await pindahkanKolomKeUtc(entri));
+    return hasil;
+  })().catch((galat) => {
+    utcPromise = null;
+    lastError = galat;
+    throw galat;
+  });
+  return utcPromise;
 }
 
 function getDbStatus() {
@@ -546,5 +723,11 @@ module.exports = {
   ensureSchema,
   toMysqlDate,
   fromMysqlDate,
+  SQL_SELISIH_SETEMPAT,
+  SQL_AWAL_HARI_SETEMPAT,
+  sqlSetempat,
+  sqlDariSetempat,
+  DAFTAR_MIGRASI_UTC,
+  pastikanUtc,
   getDbStatus,
 };

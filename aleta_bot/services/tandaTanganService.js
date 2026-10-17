@@ -111,6 +111,11 @@ function pastikanTabel() {
         if (!punya) await kueri(`ALTER TABLE ${TABEL} ADD COLUMN ${kolom} ${bentuk}`);
       }
     })
+    // Waktu disimpan UTC; isi lama (jam proses) dipindah lebih dulu.
+    .then(() => {
+      const botDb = require("./botDbService");
+      return typeof botDb.pastikanUtc === "function" ? botDb.pastikanUtc() : null;
+    })
     .catch((galat) => {
       siapPromise = null;
       throw galat;
@@ -118,16 +123,12 @@ function pastikanTabel() {
   return siapPromise;
 }
 
-function dua(n) {
-  return String(n).padStart(2, "0");
-}
-
-function waktuMysqlSekarang() {
-  const d = new Date();
-  return (
-    `${d.getFullYear()}-${dua(d.getMonth() + 1)}-${dua(d.getDate())} ` +
-    `${dua(d.getHours())}:${dua(d.getMinutes())}:${dua(d.getSeconds())}`
-  );
+/**
+ * Saat ini dalam UTC - sama dengan tabel ALETA lain. Dulu jam LOKAL proses;
+ * isi lamanya dipindah ke UTC oleh botDbService.pastikanUtc.
+ */
+function waktuUtcSekarang() {
+  return new Date().toISOString().slice(0, 19).replace("T", " ");
 }
 
 function potong(nilai, panjang) {
@@ -235,7 +236,7 @@ async function impor(isiDoc, { asal = "", oleh = "" } = {}) {
     await kueri(
       `INSERT INTO ${TABEL} (sidik, jenis_berkas, ukuran, isi, asal, diinput_oleh, diinput_tanggal)
        VALUES (?,?,?,?,?,?,?)`,
-      [sidik, g.jenis, g.isi.length, g.isi, potong(asal, 255), potong(oleh, 120), waktuMysqlSekarang()]
+      [sidik, g.jenis, g.isi.length, g.isi, potong(asal, 255), potong(oleh, 120), waktuUtcSekarang()]
     );
     masuk += 1;
   }
@@ -335,7 +336,7 @@ async function tambah({
       isi,
       potong(asal, 255),
       potong(oleh, 120),
-      waktuMysqlSekarang(),
+      waktuUtcSekarang(),
     ]
   );
 
@@ -510,7 +511,7 @@ async function sahkan(id, { oleh = "" } = {}) {
 
   await kueri(
     `UPDATE ${TABEL} SET disahkan = 1, disahkan_oleh = ?, disahkan_pada = ? WHERE id = ?`,
-    [pengesah, waktuMysqlSekarang(), nomor]
+    [pengesah, waktuUtcSekarang(), nomor]
   );
   return { ok: true, id: nomor, oleh: pengesah };
 }

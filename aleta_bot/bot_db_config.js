@@ -44,6 +44,12 @@ const db = mysql.createPool({
   password: process.env.ALETA_BOT_DB_PASSWORD || "",
   database: internalDatabase,
   multipleStatements: false,
+  // Seluruh kolom waktu ALETA disimpan UTC (toMysqlDate / UTC_TIMESTAMP()).
+  // Tanpa ini driver menafsirkan DATETIME sebagai jam LOKAL proses (peti =
+  // Asia/Makassar) - Date yang dibaca mundur 8 jam - dan menulis Date
+  // parameter sebagai jam lokal pula. Dengan "Z" baca dan tulis sama-sama
+  // UTC, apa pun TZ prosesnya. Audit zona waktu 17 Okt 2026.
+  timezone: "Z",
 });
 
 module.exports = db;

@@ -111,7 +111,7 @@ describe("C2 - 404 ditandai di basis data, bukan hanya di log", () => {
     // pun, dan berkas yang dibutuhkan hakim tidak boleh menjadi berkas yang
     // tidak pernah ditanyakan lagi.
     expect(toko).toContain("TIDAK_TERSEDIA_JEDA_HARI");
-    expect(toko).toContain("DATE_SUB(NOW(), INTERVAL ? DAY)");
+    expect(toko).toContain("DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)");
   });
 
   it("tidak menandai dokumen yang gagal karena sebab lain", () => {

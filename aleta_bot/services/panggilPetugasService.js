@@ -156,6 +156,11 @@ function buatLayanan(deps = {}) {
         require("../db_config").query(sql, params, (galat, hasil) => (galat ? gagal(galat) : selesai(hasil)));
       }));
   const kueriBot = deps.kueriBot || ((sql, params = []) => require("./botDbService").query(sql, params));
+  // Waktu disimpan UTC; isi lama (NOW() setempat) dipindah dulu - kecuali
+  // basis data tiruan (uji) yang tidak meminta migrasi. Jam di pesan dan di
+  // layar tetap jam setempat (sqlSetempat).
+  const migrasiUtc = deps.migrasiUtc || (deps.kueriBot ? async () => {} : () => require("./botDbService").pastikanUtc());
+  const sqlSetempat = (kolom) => require("../utils/waktuUtc").sqlSetempat(kolom);
   const statusNomor =
     deps.statusNomor || ((nomor, nama) => require("./nomorVerificationService").getStatus(nomor, nama));
 
@@ -430,6 +435,7 @@ function buatLayanan(deps = {}) {
         INDEX idx_panggil_saluran (saluran, id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
+    await migrasiUtc();
     tabelSiap = true;
   }
 
@@ -450,10 +456,10 @@ function buatLayanan(deps = {}) {
       await pastikanTabel();
       if (jeda > 0) {
         const baru = await kueriBot(
-          `SELECT id, oleh, DATE_FORMAT(dibuat_pada, '%H:%i') AS jam FROM ${TABEL}
+          `SELECT id, oleh, DATE_FORMAT(${sqlSetempat("dibuat_pada")}, '%H:%i') AS jam FROM ${TABEL}
             WHERE perkara_id = ? AND sasaran_kunci = ? AND saluran = ?
               AND hasil IN ('diproses', 'diantre', 'diumumkan')
-              AND dibuat_pada >= (NOW() - INTERVAL ? SECOND)
+              AND dibuat_pada >= (UTC_TIMESTAMP() - INTERVAL ? SECOND)
             ORDER BY id DESC LIMIT 1`,
           [perkaraId, kunci, saluran, jeda]
         );
@@ -470,7 +476,7 @@ function buatLayanan(deps = {}) {
            (perkara_id, mediasi_id, konteks, nomor_perkara, sasaran_kunci, sasaran_nama, sasaran_peran,
             sasaran_jenis, saluran, nomor_tersamar, teks, ruang, oleh, oleh_user_id, ip, lewat, hasil,
             keterangan, dibuat_pada)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ALETA', ?, ?, NOW())`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ALETA', ?, ?, UTC_TIMESTAMP())`,
         [
           perkaraId,
           bersih(isi.mediasiId).slice(0, 32),
@@ -504,7 +510,7 @@ function buatLayanan(deps = {}) {
     try {
       await pastikanTabel();
       await kueriBot(
-        `UPDATE ${TABEL} SET hasil = ?, keterangan = ?, antrean_id = ?, diperbarui_pada = NOW() WHERE id = ?`,
+        `UPDATE ${TABEL} SET hasil = ?, keterangan = ?, antrean_id = ?, diperbarui_pada = UTC_TIMESTAMP() WHERE id = ?`,
         [bersih(hasil).slice(0, 32), bersih(keterangan).slice(0, 255), bersih(antreanId).slice(0, 64), nomor]
       );
       return { ok: true };
@@ -528,10 +534,10 @@ function buatLayanan(deps = {}) {
         return { ok: true, terakhirId: Number(akhir && akhir[0] && akhir[0].id) || 0, daftar: [] };
       }
       const baris = await kueriBot(
-        `SELECT id, teks, ruang, DATE_FORMAT(dibuat_pada, '%Y-%m-%d %H:%i:%s') AS dibuat
+        `SELECT id, teks, ruang, DATE_FORMAT(${sqlSetempat("dibuat_pada")}, '%Y-%m-%d %H:%i:%s') AS dibuat
            FROM ${TABEL}
           WHERE saluran = 'audio' AND hasil = 'diumumkan' AND id > ?
-            AND dibuat_pada >= (NOW() - INTERVAL ? SECOND)
+            AND dibuat_pada >= (UTC_TIMESTAMP() - INTERVAL ? SECOND)
           ORDER BY id ASC LIMIT 20`,
         [sejak, UMUR_PENGUMUMAN_DETIK]
       );
@@ -557,9 +563,9 @@ function buatLayanan(deps = {}) {
       await pastikanTabel();
       const baris = await kueriBot(
         `SELECT id, sasaran_kunci AS kunci, sasaran_nama AS nama, saluran, hasil, keterangan, oleh,
-                DATE_FORMAT(dibuat_pada, '%Y-%m-%d %H:%i:%s') AS waktu
+                DATE_FORMAT(${sqlSetempat("dibuat_pada")}, '%Y-%m-%d %H:%i:%s') AS waktu
            FROM ${TABEL}
-          WHERE perkara_id = ? ${/^\d{4}-\d{2}-\d{2}$/.test(tgl) ? "AND DATE(dibuat_pada) = ?" : ""}
+          WHERE perkara_id = ? ${/^\d{4}-\d{2}-\d{2}$/.test(tgl) ? `AND DATE(${sqlSetempat("dibuat_pada")}) = ?` : ""}
           ORDER BY id DESC LIMIT 50`,
         /^\d{4}-\d{2}-\d{2}$/.test(tgl) ? [id, tgl] : [id]
       );

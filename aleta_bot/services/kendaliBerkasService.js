@@ -160,6 +160,9 @@ async function ensureSchema() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
 
+  // Isi lama (jam setempat) dipindah ke UTC sebelum tulisan pertama.
+  if (typeof botDb.pastikanUtc === "function") await botDb.pastikanUtc();
+
   skemaSiap = true;
 }
 
@@ -540,7 +543,8 @@ function susunKendali(perkara, dariSipp, dariAleta) {
 async function simpanKendali(baris) {
   await ensureSchema();
 
-  const sekarang = new Date();
+  // UTC, sama dengan tabel ALETA lain (driver bertimezone "Z").
+  const sekarang = botDb.toMysqlDate(new Date());
   const sipp = baris.sipp || {};
 
   await botDb.query(
@@ -622,7 +626,7 @@ async function jalanYangMasihHidup() {
     `SELECT id, dimulai_pada AS dimulaiPada, detak_pada AS detakPada, diperiksa, target, sumber
        FROM aleta_bot_kendali_runs
       WHERE keadaan = 'berjalan'
-        AND detak_pada >= DATE_SUB(NOW(), INTERVAL ? MINUTE)
+        AND detak_pada >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? MINUTE)
       ORDER BY dimulai_pada DESC
       LIMIT 1`,
     [BATAS_DETAK_MENIT]
@@ -636,10 +640,10 @@ async function tutupJalanMangkrak() {
   await botDb.query(
     `UPDATE aleta_bot_kendali_runs
         SET keadaan = 'terputus',
-            selesai_pada = NOW(),
+            selesai_pada = UTC_TIMESTAMP(),
             pesan = CONCAT(COALESCE(pesan, ''), ' Detak berhenti lebih dari ${BATAS_DETAK_MENIT} menit.')
       WHERE keadaan = 'berjalan'
-        AND detak_pada < DATE_SUB(NOW(), INTERVAL ? MINUTE)`,
+        AND detak_pada < DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? MINUTE)`,
     [BATAS_DETAK_MENIT]
   );
 }
@@ -682,7 +686,7 @@ async function sinkron(pilihan = {}) {
   }
 
   const idJalan = crypto.randomBytes(16).toString("hex");
-  const mulai = new Date();
+  const mulai = botDb.toMysqlDate(new Date());
   await botDb.query(
     `INSERT INTO aleta_bot_kendali_runs
        (id, dimulai_pada, detak_pada, dijalankan_oleh, sumber, target, keadaan)
@@ -693,7 +697,7 @@ async function sinkron(pilihan = {}) {
   const detak = async (angka = {}) => {
     await botDb.query(
       `UPDATE aleta_bot_kendali_runs
-          SET detak_pada = NOW(), target = ?, diperiksa = ?, berubah = ?, kurang = ?, gagal = ?
+          SET detak_pada = UTC_TIMESTAMP(), target = ?, diperiksa = ?, berubah = ?, kurang = ?, gagal = ?
         WHERE id = ?`,
       [
         angka.target || 0,
@@ -709,7 +713,7 @@ async function sinkron(pilihan = {}) {
   const tutup = async (keadaan, pesan, angka) => {
     await botDb.query(
       `UPDATE aleta_bot_kendali_runs
-          SET keadaan = ?, selesai_pada = NOW(), detak_pada = NOW(),
+          SET keadaan = ?, selesai_pada = UTC_TIMESTAMP(), detak_pada = UTC_TIMESTAMP(),
               target = ?, diperiksa = ?, berubah = ?, kurang = ?, gagal = ?, pesan = ?
         WHERE id = ?`,
       [
