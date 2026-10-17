@@ -260,17 +260,24 @@ function buatLayanan(depsMasuk) {
       return gagal("berkas_tidak_dapat_ditulis", String((e && e.message) || e).slice(0, 200));
     }
 
+    // Bersyarat pada isi yang DIBACA tadi: "Ganti" hanya mengganti berkas lama yang
+    // dilihat petugas; yang diisi/diganti orang lain sementara itu tidak ditimpa diam-diam.
     const hasil = await d.kueri(
-      ganti
-        ? "UPDATE perkara_jadwal_sidang SET edoc_bas = ? WHERE id = ? AND perkara_id = ?"
+      lama
+        ? "UPDATE perkara_jadwal_sidang SET edoc_bas = ? WHERE id = ? AND perkara_id = ? AND edoc_bas = ?"
         : "UPDATE perkara_jadwal_sidang SET edoc_bas = ? WHERE id = ? AND perkara_id = ? AND (edoc_bas IS NULL OR edoc_bas = '')",
-      [relatif, sid, pid]
+      lama ? [relatif, sid, pid, r.edoc_bas] : [relatif, sid, pid]
     );
     const terubah = Number((hasil && hasil.affectedRows) || 0);
     if (terubah < 1) {
       // Orang lain mengunggah di antara bacaan dan tulisan: berkas kita dibuang, miliknya dibiarkan.
       d.hapusBerkas(penuh);
-      return gagal("sudah_ada", "Sementara ALETA menyiapkan berkas, e-Doc BAS sidang ini sudah diisi orang lain di SIPP. Tidak diganti.");
+      return gagal(
+        "sudah_ada",
+        lama
+          ? "Sementara berkas disiapkan, e-Doc BAS sidang ini sudah diganti orang lain di SIPP. Tidak diganti - muat ulang daftarnya."
+          : "Sementara ALETA menyiapkan berkas, e-Doc BAS sidang ini sudah diisi orang lain di SIPP. Tidak diganti."
+      );
     }
 
     // Butir 44 (17 Okt 2026): berkas lama TIDAK dibiarkan di tempatnya - dipindah ke

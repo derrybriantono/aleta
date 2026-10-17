@@ -228,6 +228,24 @@ describe("B. bot basUnggahService - e-Doc BAS persis tingkap SIPP, dobel tidak d
     expect(h3.peringatanLama).toMatch(/tidak ditemukan/);
   });
 
+  it("audit 17 Okt: Ganti bersyarat pada berkas lama yang dibaca - tidak menimpa unggahan/penggantian orang lain", async () => {
+    // ganti=1 dari layar yang basi (kosong saat dibaca) -> tetap UPDATE bersyarat "masih kosong".
+    const t = tiruan();
+    await svc.buatLayanan(t.d).unggahBas({ ...MASUK, ganti: true });
+    expect(t.kejadian).toContain("UPDATE-bersyarat");
+    // Ada berkas lama -> UPDATE hanya bila edoc_bas MASIH berkas lama itu.
+    const t2 = tiruan({ edoc: "resources/file/doc/2026/09/lama.rtf" });
+    await svc.buatLayanan(t2.d).unggahBas({ ...MASUK, ganti: true });
+    const upd = t2.kejadian.find((k) => k.startsWith("UPDATE ["));
+    expect(upd).toContain('"resources/file/doc/2026/09/lama.rtf"');
+    // Sudah diganti orang lain di antara bacaan dan tulisan -> berkas kita dibuang, berkas lama tidak dipindah.
+    const t3 = tiruan({ edoc: "resources/file/doc/2026/09/lama.rtf", terubah: 0 });
+    const h3 = await svc.buatLayanan(t3.d).unggahBas({ ...MASUK, ganti: true });
+    expect(h3).toMatchObject({ ok: false, alasan: "sudah_ada" });
+    expect(t3.kejadian.some((k) => k.startsWith("HAPUS"))).toBe(true);
+    expect(t3.kejadian.some((k) => k.startsWith("PINDAH"))).toBe(false);
+  });
+
   it("jalurTerhapus: folder dokumen yang sama, tanpa '..', di luar resources/file/doc ditolak", () => {
     expect(svc.jalurTerhapus("resources/file/doc/2026/08/PADgl_2026_PdtG_497_bas_7_1792096162.pdf", new Date("2026-10-17T01:02:03Z"))).toBe(
       "resources/file/doc/2026/08/terhapus/PADgl_2026_PdtG_497_bas_7_1792096162_20261017-090203.pdf"
