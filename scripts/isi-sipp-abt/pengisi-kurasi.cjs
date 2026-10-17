@@ -227,4 +227,10 @@ function SUMBER_MUNGKIN(r) {
   return { sumberMungkin: "belum dikaji", catatan: "" };
 }
 
-module.exports = { KELOMPOK, TJ_DIDUKUNG, F23, TANPA_SUMBER, SUMBER_MUNGKIN };
+// Catatan tambahan yang selalu ditempel pada baris isian (apa pun statusnya).
+const CATATAN = {
+  "5197": "Pada blangko cerai isian ini hanya terbaca lewat variabel 7184 (kumulasi itsbat, bersyarat jenis perkara 360); pada cerai biasa tidak tercetak.",
+  "5178": "Pada blangko cerai isian ini hanya terbaca lewat variabel 7184 (kumulasi itsbat, bersyarat jenis perkara 360); pada cerai biasa tidak tercetak.",
+};
+
+module.exports = { KELOMPOK, TJ_DIDUKUNG, F23, TANPA_SUMBER, SUMBER_MUNGKIN, CATATAN };

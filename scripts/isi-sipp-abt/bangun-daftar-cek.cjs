@@ -12,7 +12,7 @@ const { createRequire } = require("module");
 const akar = path.resolve(__dirname, "..", "..");
 const mysql = createRequire(path.join(akar, "aleta_bot", "package.json"))("mysql");
 const { muat } = require("./registri-bot.cjs");
-const { KELOMPOK, TJ_DIDUKUNG, F23, TANPA_SUMBER, SUMBER_MUNGKIN } = require("./pengisi-kurasi.cjs");
+const { KELOMPOK, TJ_DIDUKUNG, F23, TANPA_SUMBER, SUMBER_MUNGKIN, CATATAN } = require("./pengisi-kurasi.cjs");
 
 const analisa = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 const bacaOpsional = (nama) => {
@@ -304,7 +304,7 @@ function tulisMd(d) {
       folderTakTertutup: Object.keys(r.folderTakTertutup).sort(urutNama),
       pengisi: ada.map((p) => ({ jenis: p.jenis, id: p.id, berkas: p.berkas || "", tingkat: p.tingkat })),
       sumberMungkin: tanpa ? tanpa.sumberMungkin : sm.sumberMungkin,
-      catatan: [tanpa ? tanpa.catatan : sm.catatan, r.kode.map((k) => ukuranLama(k)).find(Boolean) || ""].filter(Boolean).join(" "),
+      catatan: [tanpa ? tanpa.catatan : sm.catatan, r.kode.map((k) => CATATAN[k]).find(Boolean) || "", r.kode.map((k) => ukuranLama(k)).find(Boolean) || ""].filter(Boolean).join(" "),
     });
   }
   hasil.sort((a, b) => b.bobot - a.bobot || b.jumlahBlangko - a.jumlahBlangko || a.kunci.localeCompare(b.kunci));

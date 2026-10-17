@@ -174,6 +174,13 @@ describe("usulanLanjutanSipp", () => {
     });
     expect(u.map((x) => x.kode).sort()).toEqual(["0185", "0303", "1183"]);
   });
+  it("pembaca yang melempar galat sinkron tidak menjatuhkan hasil lain", async () => {
+    const u = await M.usulanLanjutanSipp(10, ((s: string) => {
+      if (/perkara_ikrar_talak/.test(s)) throw new Error("koneksi putus");
+      return Promise.resolve(baris(s));
+    }) as never);
+    expect(u.map((x) => x.kode).sort()).toEqual(["0185", "0303", "8704", "8705"]);
+  });
   it("perkara tak sah atau tanpa pembaca menghasilkan kosong", async () => {
     expect(await M.usulanLanjutanSipp(0, async () => [])).toEqual([]);
     expect(await M.usulanLanjutanSipp(5, undefined as never)).toEqual([]);

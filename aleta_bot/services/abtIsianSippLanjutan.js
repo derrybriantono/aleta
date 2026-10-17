@@ -261,7 +261,14 @@ function usulanKuasaTergugat(kuasa) {
   ];
 }
 
-const diam = (janji) => Promise.resolve(janji).catch(() => null);
+/** Menjalankan satu pembacaan; galat sinkron maupun penolakan janji menjadi null (pembacaan lain jalan terus). */
+const diam = (kerja) => {
+  try {
+    return Promise.resolve(kerja()).catch(() => null);
+  } catch {
+    return Promise.resolve(null);
+  }
+};
 
 /**
  * Semua usulan lanjutan satu perkara. `runQuery(sql, params)` = pembaca SIPP baca-saja milik abtUsulanService.
@@ -271,13 +278,13 @@ async function usulanLanjutanSipp(perkaraId, runQuery) {
   const id = Number(perkaraId);
   if (!Number.isFinite(id) || id <= 0 || typeof runQuery !== "function") return [];
   const [perkara, mediasi, ikrar, kuasa] = await Promise.all([
-    diam(
+    diam(() =>
       runQuery(
         "SELECT p.jenis_perkara_id AS jenisPerkaraId, DATE_FORMAT(p.tanggal_pendaftaran, '%Y-%m-%d') AS tanggalDaftar FROM perkara p WHERE p.perkara_id = ? LIMIT 1",
         [id]
       )
     ),
-    diam(
+    diam(() =>
       runQuery(
         `SELECT m.hasil_mediasi AS hasil, DATE_FORMAT(m.tgl_kesepakatan_perdamaian, '%Y-%m-%d') AS tgl, m.isi_kesepakatan_perdamaian AS isi
            FROM perkara_mediasi m
@@ -286,13 +293,13 @@ async function usulanLanjutanSipp(perkaraId, runQuery) {
         [id]
       )
     ),
-    diam(
+    diam(() =>
       runQuery(
         "SELECT DATE_FORMAT(tanggal_sidang_pertama, '%Y-%m-%d') AS sidangPertama FROM perkara_ikrar_talak WHERE perkara_id = ? LIMIT 1",
         [id]
       )
     ),
-    diam(
+    diam(() =>
       runQuery(
         `SELECT nama, nomor_kuasa AS nomorKuasa, DATE_FORMAT(tanggal_kuasa, '%Y-%m-%d') AS tanggalKuasa
            FROM perkara_pengacara WHERE perkara_id = ? AND pihak_ke = 2 AND aktif = 'Y' ORDER BY urutan, id`,

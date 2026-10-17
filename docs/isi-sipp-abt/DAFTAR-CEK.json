@@ -28587,7 +28587,7 @@
     }
    ],
    "sumberMungkin": "terisi di jenis utama; belum di: 4a Harta Bersama",
-   "catatan": "Terukur atas isian petugas: itsbat 232/296 benar; asal-usul 1/2 benar."
+   "catatan": "Pada blangko cerai isian ini hanya terbaca lewat variabel 7184 (kumulasi itsbat, bersyarat jenis perkara 360); pada cerai biasa tidak tercetak. Terukur atas isian petugas: itsbat 232/296 benar; asal-usul 1/2 benar."
   },
   {
    "kunci": "5178",
@@ -28661,7 +28661,7 @@
     }
    ],
    "sumberMungkin": "",
-   "catatan": "Terukur atas isian petugas: itsbat 260/269 benar; dispensasi-kawin 6/7 benar."
+   "catatan": "Pada blangko cerai isian ini hanya terbaca lewat variabel 7184 (kumulasi itsbat, bersyarat jenis perkara 360); pada cerai biasa tidak tercetak. Terukur atas isian petugas: itsbat 260/269 benar; dispensasi-kawin 6/7 benar."
   },
   {
    "kunci": "8892",
