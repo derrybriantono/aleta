@@ -351,6 +351,14 @@ export const ATURAN_APLIKASI: readonly AturanAplikasi[] = [
     hak: hakUntuk(["pimpinan", "hakim", "panitera", "panmud", "sekretariat"], "R"),
   },
   {
+    id: "skp",
+    label: "SKP (kinerja pegawai)",
+    status: "matang",
+    alasan:
+      "Semua pegawai melihat SKP-nya sendiri; tab Bawahan, Seluruh pegawai, Pemetaan, dan Target mengikuti hak dari server (atasan langsung, Ketua/Wakil/Panitera, administrator).",
+    hak: hakUntuk(SEMUA_GOLONGAN, "R"),
+  },
+  {
     id: "beban-konseptor",
     label: "Beban Konseptor (modul)",
     status: "matang",
@@ -426,6 +434,7 @@ export const MODUL_MILIK_APLIKASI: Readonly<Record<string, string>> = {
   perkara: "perkara",
   "peta-perkara": "peta-perkara",
   "beban-konseptor": "beban-konseptor",
+  skp: "skp",
 };
 
 /**

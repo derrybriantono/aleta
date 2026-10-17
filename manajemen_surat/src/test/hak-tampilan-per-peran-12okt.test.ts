@@ -199,7 +199,8 @@ describe("2. ubin portal & modul per peran", () => {
     ["sekretaris", MATANG_SEMUA],
     ["staf", MATANG_SEMUA],
   ] as Array<[NamaAkun, string[]]>)("%s melihat tepat ubin matriksnya", (nama, harap) => {
-    expect(ubin(AKUN[nama])).toEqual([...harap].sort());
+    // "skp" (17 Okt 2026): layar SKP terbuka bagi semua pegawai (tab di dalamnya mengikuti hak dari server).
+    expect(ubin(AKUN[nama])).toEqual([...harap, "skp"].sort());
   });
 
   it("aplikasi BELUM FIX hanya Super Admin - walau baris lama Akses Menu membukanya", () => {
