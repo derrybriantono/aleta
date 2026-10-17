@@ -58,6 +58,7 @@ function bagianLanjutan(d) {
     `| 8705 | Tanggal kesepakatan perdamaian | perkara_mediasi.tgl_kesepakatan_perdamaian (hasil Y1) | ${hit("8705")} | otomatis | belum ada isian petugas (variabel baru 15 Okt) |`,
     `| 8704 | Isi kesepakatan perdamaian | perkara_mediasi.isi_kesepakatan_perdamaian, HTML jadi baris | ${hit("8704")} | otomatis | belum ada isian petugas |`,
     `| 8433 | Alasan pencabutan perkara | hasil mediasi Y2 (berhasil dengan pencabutan) | ${hit("8433")} | otomatis | 41 isian petugas sejak 2023, hanya 4 dari Y2 |`,
+    `| 8899 | Pokok kesepakatan perdamaian sebagian | topik kata kunci pada perkara_mediasi.isi_kesepakatan_perdamaian (hasil S) | ${hit("8899")} | otomatis (ragu bila isi berupa laporan mediator) | belum ada isian petugas (variabel baru 15 Okt); 140 perkara hasil S sejak 2023 |`,
     `| 1183 | Tgl. batas waktu ikrar talak | perkara_ikrar_talak.tanggal_sidang_pertama + 6 bulan | ${hit("1183")} | usulan ragu | ${g["1183"] ? `${g["1183"].cocokPersis} dari ${g["1183"].adaUsulan} persis sama` : "-"} |`,
     `| 0303 | Tgl. pengumuman itsbat | perkara.tanggal_pendaftaran | ${hit("0303")} | usulan ragu | ${g["0303"] ? `${g["0303"].cocokPersis} dari ${g["0303"].adaUsulan} persis sama (92% dalam 0-1 hari)` : "-"} |`,
     `| 0185 | Tgl. surat kuasa Tergugat | perkara_pengacara pihak 2 | ${hit("0185")} | usulan ragu | ${g["0185"] ? `${g["0185"].cocokPersis} dari ${g["0185"].adaUsulan} persis sama` : "-"} |`,

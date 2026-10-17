@@ -6,7 +6,7 @@ Dibangun 2026-10-18 oleh `scripts/isi-sipp-abt/bangun-daftar-cek.cjs` (data diuk
 
 - Blangko Derry aktif di pohon server: **982** (31 tanpa isian popup).
 - Isian popup (data_teks / data_tanggal / tanya_jawab, kata ABT "isian tangan"): **252** unik.
-- Sudah otomatis (ya): **142** - sebagian: **16** - belum (tidak): **94**, di antaranya **45** memang tanpa sumber data (penilaian hakim / tidak tercatat).
+- Sudah otomatis (ya): **143** - sebagian: **16** - belum (tidak): **93**, di antaranya **44** memang tanpa sumber data (penilaian hakim / tidak tercatat).
 - Penanda yang dirujuk rantai variabel tetapi tidak ada di katalog ABT lokal: 53 (lihat bawah).
 
 ## Sumber dan cara membaca
@@ -27,6 +27,7 @@ Kode: `aleta_bot/services/abtIsianSippLanjutan.js`, dipanggil dari `dariSipp` (k
 | 8705 | Tanggal kesepakatan perdamaian | perkara_mediasi.tgl_kesepakatan_perdamaian (hasil Y1) | 8 | otomatis | belum ada isian petugas (variabel baru 15 Okt) |
 | 8704 | Isi kesepakatan perdamaian | perkara_mediasi.isi_kesepakatan_perdamaian, HTML jadi baris | 8 | otomatis | belum ada isian petugas |
 | 8433 | Alasan pencabutan perkara | hasil mediasi Y2 (berhasil dengan pencabutan) | 26 | otomatis | 41 isian petugas sejak 2023, hanya 4 dari Y2 |
+| 8899 | Pokok kesepakatan perdamaian sebagian | topik kata kunci pada perkara_mediasi.isi_kesepakatan_perdamaian (hasil S) | 121 | otomatis (ragu bila isi berupa laporan mediator) | belum ada isian petugas (variabel baru 15 Okt); 140 perkara hasil S sejak 2023 |
 | 1183 | Tgl. batas waktu ikrar talak | perkara_ikrar_talak.tanggal_sidang_pertama + 6 bulan | 328 | usulan ragu | 7 dari 11 persis sama |
 | 0303 | Tgl. pengumuman itsbat | perkara.tanggal_pendaftaran | 738 | usulan ragu | 189 dari 412 persis sama (92% dalam 0-1 hari) |
 | 0185 | Tgl. surat kuasa Tergugat | perkara_pengacara pihak 2 | 34 | usulan ragu | 1 dari 1 persis sama |
@@ -35,17 +36,17 @@ Kode: `aleta_bot/services/abtIsianSippLanjutan.js`, dipanggil dari `dariSipp` (k
 
 ## Per blangko
 
-- Blangko yang seluruh isian popupnya sudah otomatis (ya): **201** dari 951 yang punya isian popup.
-- Blangko yang masih punya sekurang-kurangnya satu isian manual TANPA syarat keadaan (bukan kuasa/prodeo/ghaib/insidentil/alasan C-H): **197**. 25 terbanyak (sebagian besar isian manual itu keputusan/penilaian hakim atau kesepakatan para pihak):
+- Blangko yang seluruh isian popupnya sudah otomatis (ya): **202** dari 951 yang punya isian popup.
+- Blangko yang masih punya sekurang-kurangnya satu isian manual TANPA syarat keadaan (bukan kuasa/prodeo/ghaib/insidentil/alasan C-H): **196**. 25 terbanyak (sebagian besar isian manual itu keputusan/penilaian hakim atau kesepakatan para pihak):
 
 | blangko | ya | sebagian | tidak (semua) | tidak tanpa syarat keadaan | opsional |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 4c Wasiat/[01] [Kabul] Wasiat - Kontradiktoir.rtf | 16 | 2 | 12 | 10 | 0 |
 | 4c Wasiat/[03] [Tolak] Wasiat - Kontradiktoir - Dalil Tidak Terbukti.rtf | 16 | 2 | 12 | 10 | 0 |
-| 1 Perceraian CG/[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf | 23 | 2 | 11 | 9 | 0 |
 | 1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02b] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - Kon | 23 | 3 | 11 | 9 | 0 |
-| 1a Perceraian CT/[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf | 23 | 2 | 11 | 9 | 0 |
+| 1 Perceraian CG/[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf | 24 | 2 | 10 | 8 | 0 |
 | 1a Perceraian CT/[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf | 25 | 7 | 9 | 8 | 0 |
+| 1a Perceraian CT/[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf | 24 | 2 | 10 | 8 | 0 |
 | 4c Wasiat/[01a] [Kabul] Wasiat - T Tidak Hadir Setelah Mediasi.rtf | 14 | 2 | 10 | 8 | 0 |
 | 4c Wasiat/[01b] [Kabul Verstek] Wasiat.rtf | 14 | 2 | 10 | 8 | 0 |
 | 4c Wasiat/[03b] [Tolak Verstek] Wasiat - Dalil Tidak Terbukti.rtf | 14 | 2 | 10 | 8 | 0 |
@@ -159,7 +160,7 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 | 83 | 5171 | Penghasilan Penggugat/Pemohon Perbulan | 10 | 3 | [01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah - | tidak | berkas e-Court (gugatan: penghasilan) |  |
 | 84 | 6054 | Nafkah iddah | 10 | 8 | [01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah - | ya | gugatan-ecourt; deteksi cerai |  |
 | 85 | 6055 | Mut'ah | 10 | 7 | [01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah - | sebagian | baru diusulkan (ragu), belum terisi otomatis (terisi di: gugatan-ecourt) |  |
-| 86 | 8899 | Pokok kesepakatan perdamaian sebagian | 3 | 0 | [02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakata | tidak | tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak) |  |
+| 86 | 8899 | Pokok kesepakatan perdamaian sebagian | 3 | 0 | [02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakata | ya | sipp-mediasi-sebagian |  |
 | 87 | 8902 | Isi pasal kesepakatan perdamaian sebagian | 3 | 0 | [02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakata | ya | bawaan ABT bila dikosongkan |  |
 | 88 | 0228 | Alasan Syahadah Istifadhah (Itsbat Nikah / Isbat / PAW) | 4 | 3 | [01ab] BAS 1 IN - Kabul Syahadah Istifadhah.rtf | ya | deteksi itsbat-nikah |  |
 | 89 | 9501 | Penilaian jawaban dan bukti Tergugat/Termohon (bantahan apa yang didukung bukti atau saksi, dan mengapa melemahkan dalil Penggugat/Pemohon; kosong = titik-titik) | 4 | 0 | [03a] [Tolak] Cerai - Kontradiktoir (T Hadir Jawab-Menjawab) | tidak | opsional: bila dikosongkan ABT mencetak titik-titik/bawaan; isi hanya bila hakim ingin |  |

@@ -16,6 +16,8 @@ type Modul = {
   htmlKeBaris: (s: string) => string;
   usulanKesepakatan: (m: unknown) => Usulan[];
   usulanAlasanCabut: (m: unknown) => Usulan[];
+  pokokKesepakatan: (s: string) => string[];
+  usulanPokokSebagian: (m: unknown) => Usulan[];
   usulanBatasIkrar: (m: unknown) => Usulan[];
   usulanPengumumanItsbat: (m: unknown) => Usulan[];
   usulanKuasaTergugat: (m: unknown) => Usulan[];
@@ -97,6 +99,23 @@ describe("usulan per isian", () => {
   it("8433 hanya pada hasil mediasi Y2 (berhasil dengan pencabutan)", () => {
     expect(M.usulanAlasanCabut({ hasil: "Y2" })).toMatchObject([{ kode: "8433", nilai: "mediasi berhasil dan para pihak telah berdamai", keyakinan: "cukup" }]);
     for (const h of ["Y1", "S", "T", "D", "", undefined]) expect(M.usulanAlasanCabut({ hasil: h })).toEqual([]);
+  });
+  it("8899 membaca topik kesepakatan sebagian dari isi SIPP (hasil S)", () => {
+    // Isi disalin dari bentuk sebenarnya di SIPP (nama dan angka disamarkan).
+    const asuh = "<p><strong>Pasal 1</strong></p><p>Para Pihak sepakat untuk mengakhiri konflik terkait hak asuh /hadhanah kedua anak dengan cara musyawarah mufakat.</p>";
+    const iddahMutah = "1. Pemohon dibebankan unutk memberikan nafkah iddah kepada Termohon selama 3 (tiga) bulan;<br>2. Pemohon dibebankan untuk memberikan nafkah mut&#39;ah kepada Termohon berupa cincin emas;";
+    const iddahSaja = "1. Bahwa kedua belah pihak sepakat Tergugat membayar Nafkah &#39;iddah untuk Penggugat selama 3 bulan; 2. terkait perkara perceraian tidak berhasil mencapai kesepakatan;";
+    const semua = "hak asuh anak, nafkah anak sebesar Rp1.000.000, nafkah iddah, mut'ah, nafkah madliyah dan harta bersama";
+    expect(M.pokokKesepakatan(asuh)).toEqual(["pengasuhan anak"]);
+    expect(M.pokokKesepakatan(iddahMutah)).toEqual(["nafkah iddah", "mut'ah"]);
+    expect(M.pokokKesepakatan(iddahSaja)).toEqual(["nafkah iddah"]);
+    expect(M.pokokKesepakatan(semua)).toEqual(["pengasuhan anak", "nafkah anak", "nafkah iddah", "mut'ah", "nafkah lampau (madliyah)", "harta bersama"]);
+    expect(M.pokokKesepakatan("")).toEqual([]);
+    expect(M.usulanPokokSebagian({ hasil: "S", isi: iddahMutah })).toMatchObject([{ kode: "8899", nilai: "nafkah iddah dan mut'ah", keyakinan: "cukup" }]);
+    expect(M.usulanPokokSebagian({ hasil: "S", isi: "pengasuhan anak, nafkah anak, nafkah iddah" })[0].nilai).toBe("pengasuhan anak, nafkah anak, dan nafkah iddah");
+    expect(M.usulanPokokSebagian({ hasil: "S", isi: "<p>Hal : Laporan Mediasi</p><p>berhasil sebagian, hak asuh anak</p>" })[0].keyakinan).toBe("ragu");
+    for (const h of ["Y1", "Y2", "T", "D", ""]) expect(M.usulanPokokSebagian({ hasil: h, isi: asuh })).toEqual([]);
+    expect(M.usulanPokokSebagian({ hasil: "S", isi: "<p>tidak menyebut apa pun</p>" })).toEqual([]);
   });
   it("1183 = sidang ikrar pertama + 6 bulan, selalu ragu", () => {
     const [u] = M.usulanBatasIkrar({ sidangPertama: "2026-06-22" });

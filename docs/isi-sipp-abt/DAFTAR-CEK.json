@@ -28,14 +28,14 @@
   "blangko": 982,
   "blangkoTanpaIsian": 31,
   "isianUnik": 252,
-  "ya": 142,
+  "ya": 143,
   "sebagian": 16,
-  "tidak": 94,
-  "tanpaSumber": 45,
+  "tidak": 93,
+  "tanpaSumber": 44,
   "opsionalTitik": 5,
   "penandaTakDikenal": 53,
-  "blangkoSemuaOtomatis": 201,
-  "blangkoAdaIsianManual": 197
+  "blangkoSemuaOtomatis": 202,
+  "blangkoAdaIsianManual": 196
  },
  "penandaTakDikenal": {
   "3121": 497,
@@ -115,6 +115,11 @@
     "pasti_cukup": 8,
     "ragu": 0
    },
+   "8899": {
+    "perkara": 121,
+    "pasti_cukup": 120,
+    "ragu": 1
+   },
    "0303": {
     "perkara": 738,
     "pasti_cukup": 0,
@@ -147,6 +152,11 @@
     "347": 2,
     "348": 2,
     "364": 3
+   },
+   "8899": {
+    "346": 54,
+    "347": 66,
+    "348": 1
    },
    "0303": {
     "360": 738
@@ -4344,10 +4354,10 @@
     "0243"
    ],
    "hitung": {
-    "ya": 23,
+    "ya": 24,
     "sebagian": 2,
-    "tidak": 11,
-    "tidakTanpaSyarat": 9,
+    "tidak": 10,
+    "tidakTanpaSyarat": 8,
     "opsional": 0
    }
   },
@@ -12094,10 +12104,10 @@
     "0243"
    ],
    "hitung": {
-    "ya": 23,
+    "ya": 24,
     "sebagian": 2,
-    "tidak": 11,
-    "tidakTanpaSyarat": 9,
+    "tidak": 10,
+    "tidakTanpaSyarat": 8,
     "opsional": 0
    }
   },
@@ -16339,10 +16349,10 @@
    ],
    "takDikenal": [],
    "hitung": {
-    "ya": 2,
+    "ya": 3,
     "sebagian": 0,
-    "tidak": 1,
-    "tidakTanpaSyarat": 1,
+    "tidak": 0,
+    "tidakTanpaSyarat": 0,
     "opsional": 0
    }
   },
@@ -48565,7 +48575,7 @@
    "langsung": 3,
    "bobotLangsung": 4252,
    "bobot": 4252,
-   "cakupanBobot": 0,
+   "cakupanBobot": 1,
    "contoh": [
     "[02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
     "[02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar).rtf",
@@ -48576,14 +48586,17 @@
     "1a Perceraian CT",
     "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS"
    ],
-   "status": "tidak",
-   "folderTakTertutup": [
-    "1 Perceraian CG",
-    "1a Perceraian CT",
-    "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS"
+   "status": "ya",
+   "folderTakTertutup": [],
+   "pengisi": [
+    {
+     "jenis": "kelompok",
+     "id": "sipp-mediasi-sebagian",
+     "berkas": "aleta_bot/services/abtIsianSippLanjutan.js",
+     "tingkat": "otomatis"
+    }
    ],
-   "pengisi": [],
-   "sumberMungkin": "tidak ada (penilaian/keputusan hakim atau kesepakatan para pihak)",
+   "sumberMungkin": "",
    "catatan": ""
   },
   {

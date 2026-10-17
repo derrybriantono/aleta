@@ -12,6 +12,8 @@
  *   8705  Tanggal kesepakatan perdamaian        perkara_mediasi.tgl_kesepakatan_perdamaian (hasil Y1 = akta perdamaian)
  *   8704  Isi kesepakatan perdamaian            perkara_mediasi.isi_kesepakatan_perdamaian (HTML -> baris "<br>")
  *   8433  Alasan pencabutan perkara             hasil_mediasi Y2 = "Berhasil Dengan Pencabutan" (borang SIPP tab_mediasi_edit2)
+ *   8899  Pokok kesepakatan perdamaian sebagian  isi_kesepakatan_perdamaian (hasil S): topik yang disebut - pengasuhan anak,
+ *                                               nafkah anak, nafkah iddah, mut'ah, nafkah lampau, harta bersama
  *   1183  Tgl. batas waktu ikrar talak          perkara_ikrar_talak.tanggal_sidang_pertama + 6 bulan  (RAGU: 8 dari 12 isian
  *                                               petugas persis sama; sisanya sidang ikrar pertama diundur)
  *   0303  Tgl. pengumuman itsbat                perkara.tanggal_pendaftaran (RAGU: 92% isian petugas jatuh 0-1 hari dari
@@ -24,7 +26,7 @@
  *   - semua usulan membawa jagaIsianLama: hanya mengisi isian yang kosong atau berisi garis bawah "_".
  */
 
-const KODE = Object.freeze({ tanggalKesepakatan: "8705", isiKesepakatan: "8704", alasanCabut: "8433", batasIkrar: "1183", pengumumanItsbat: "0303", suratKuasaTergugat: "0185" });
+const KODE = Object.freeze({ pokokSebagian: "8899", tanggalKesepakatan: "8705", isiKesepakatan: "8704", alasanCabut: "8433", batasIkrar: "1183", pengumumanItsbat: "0303", suratKuasaTergugat: "0185" });
 const BATAS_TEKS = 6000;
 
 /** "YYYY-MM-DD" -> "DD/MM/YYYY" (bentuk tampil usulan tanggal); "" bila bukan tanggal sungguhan. */
@@ -144,6 +146,50 @@ function usulanKesepakatan(m) {
   return keluar;
 }
 
+/** Topik kesepakatan perdamaian sebagian, dalam urutan penyebutan yang lazim di putusan. */
+const POKOK = Object.freeze([
+  ["pengasuhan anak", /hak\s+asuh|hadhanah|hadlanah|hadanah|pengasuhan|asuhan/i],
+  ["nafkah anak", /nafkah\s+(?:untuk\s+|bagi\s+)?(?:kedua\s+|ketiga\s+)?anak|nafkah\s+\d+\s*(?:\(\w+\)\s*)?orang\s+anak|biaya\s+(?:pemeliharaan|pendidikan|hidup)\s+(?:kedua\s+)?anak/i],
+  ["nafkah iddah", /nafkah\s+\W{0,2}idd?ah/i],
+  ["mut'ah", /mut\W{0,2}ah/i],
+  ["nafkah lampau (madliyah)", /madhiyah|madliyah|madhiah|nafkah\s+lampau|nafkah\s+terdahulu/i],
+  ["harta bersama", /harta\s+bersama|gono[\s-]?gini/i],
+]);
+
+/** Daftar topik yang disebut isi kesepakatan (HTML SIPP), urutan tetap. */
+function pokokKesepakatan(isiHtml) {
+  const teks = dekodeEntitas(String(isiHtml == null ? "" : isiHtml).replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ");
+  return POKOK.filter(([, pola]) => pola.test(teks)).map(([nama]) => nama);
+}
+
+/** "a", "a dan b", "a, b, dan c". */
+function daftarKalimat(daftar) {
+  if (daftar.length <= 1) return daftar.join("");
+  if (daftar.length === 2) return `${daftar[0]} dan ${daftar[1]}`;
+  return `${daftar.slice(0, -1).join(", ")}, dan ${daftar[daftar.length - 1]}`;
+}
+
+/** Pokok kesepakatan perdamaian sebagian (hasil mediasi S) dari topik yang disebut isi kesepakatan. */
+function usulanPokokSebagian(m) {
+  if (!m || String(m.hasil || "").toUpperCase() !== "S") return [];
+  const topik = pokokKesepakatan(m.isi);
+  if (!topik.length) return [];
+  const laporan = /laporan\s+(hasil\s+)?mediasi|melaporkan\s+bahwa/i.test(String(m.isi || "").replace(/<[^>]*>/g, " "));
+  return [
+    butir(
+      KODE.pokokSebagian,
+      "Pokok kesepakatan perdamaian sebagian",
+      daftarKalimat(topik),
+      laporan ? "ragu" : "cukup",
+      `SIPP mediasi (berhasil sebagian): isi kesepakatan menyebut ${topik.join(", ")}`,
+      laporan
+        ? "Isi di SIPP berupa laporan mediator, bukan butir kesepakatan; topik dibaca dari kata kunci - periksa."
+        : "Topik dibaca dari kata kunci pada isi kesepakatan di SIPP (pengasuhan anak, nafkah anak, nafkah iddah, mut'ah, nafkah lampau, harta bersama); tambahkan bila ada pokok lain.",
+      "sipp-mediasi-pokok-sebagian"
+    ),
+  ];
+}
+
 /** Alasan pencabutan karena mediasi berhasil dengan pencabutan (hasil_mediasi Y2). */
 function usulanAlasanCabut(m) {
   if (!m || String(m.hasil || "").toUpperCase() !== "Y2") return [];
@@ -259,6 +305,7 @@ async function usulanLanjutanSipp(perkaraId, runQuery) {
   return [
     ...usulanKesepakatan(satu(mediasi)),
     ...usulanAlasanCabut(satu(mediasi)),
+    ...usulanPokokSebagian(satu(mediasi)),
     ...usulanBatasIkrar(satu(ikrar)),
     ...usulanPengumumanItsbat(jenis),
     ...usulanKuasaTergugat(Array.isArray(kuasa) ? kuasa : []),
@@ -272,6 +319,8 @@ module.exports = {
   htmlKeBaris,
   usulanKesepakatan,
   usulanAlasanCabut,
+  pokokKesepakatan,
+  usulanPokokSebagian,
   usulanBatasIkrar,
   usulanPengumumanItsbat,
   usulanKuasaTergugat,

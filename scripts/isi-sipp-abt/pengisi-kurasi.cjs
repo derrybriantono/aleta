@@ -81,6 +81,15 @@ const KELOMPOK = [
     syarat: "perkara yang hasil mediasinya Y1 (blangko akta perdamaian hanya dipakai pada perkara itu)",
   },
   {
+    id: "sipp-mediasi-sebagian",
+    kode: ["8899"],
+    untuk: "semua",
+    berkas: "aleta_bot/services/abtIsianSippLanjutan.js",
+    sumber: "SIPP perkara_mediasi hasil S (berhasil sebagian): topik yang disebut isi kesepakatan",
+    tingkat: "otomatis",
+    syarat: "perkara yang hasil mediasinya S; topik dibaca dari kata kunci",
+  },
+  {
     id: "sipp-mediasi-cabut",
     kode: ["8433"],
     untuk: "semua",
