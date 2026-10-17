@@ -150,6 +150,16 @@ const JALUR_TULIS = [
       "jejak pesan, kejadian keamanan, dan galat kueri hilang - justru yang ditulis ketika basis datanya sedang mati",
   },
   {
+    nama: "cap waktu penarikan e-Court dan gambar captcha login WhatsApp",
+    layanan: "aleta_bot",
+    berkas: "services/ecourtPulihService.js",
+    bukti: 'path.resolve(__dirname, "..", "data")',
+    env: "ALETA_BOT_DATA_DIR",
+    bawaan: "/usr/src/app/data",
+    akibat:
+      "rentang susulan sesudah server mati tidak diketahui (hanya hari ini yang ditarik ulang); riwayat batas captcha hilang",
+  },
+  {
     nama: "kredensial e-Court tersandi beserta kuncinya",
     layanan: "aleta_bot",
     berkas: "services/ecourtKredensialService.js",

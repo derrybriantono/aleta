@@ -215,7 +215,18 @@ async function detak({ paksa = false } = {}) {
     // yang gagal karena jaringan. Mengirim peringatan untuk keadaan yang
     // tidak pasti membuat peringatannya berhenti dipercaya.
     if (hasil.berlaku === false && (sebelumnya !== false || bolehMemperingatkanLagi() || paksa)) {
-      await kirimPeringatan(hasil.alasan || "sesi_kedaluwarsa").catch(() => {});
+      // Jalur utama: captcha dikirim ke WhatsApp super admin (pemberitahuan
+      // SEKALIGUS jalan keluarnya). Peringatan teks lama hanya bila jalur itu
+      // tidak dapat mengurusnya - supaya admin tidak menerima dua pesan.
+      let diurus = false;
+      try {
+        const pulih = await require("./ecourtPulihService").padaSesiHabis({ sumber: "pemantau" });
+        diurus = Boolean(pulih && pulih.diurus);
+      } catch {
+        diurus = false;
+      }
+      if (diurus) keadaan.terakhirPeringatan = new Date().toISOString();
+      else await kirimPeringatan(hasil.alasan || "sesi_kedaluwarsa").catch(() => {});
     }
 
     // Sesi hidup kembali: penanda peringatan dilepas supaya kematian

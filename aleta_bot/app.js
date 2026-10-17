@@ -45,6 +45,8 @@ const ecourtVerificationService = require("./services/ecourtVerificationService"
 const nomorVerificationService = require("./services/nomorVerificationService");
 const ecourtSchedulerService = require("./services/ecourtSchedulerService");
 const ecourtSesiPantauService = require("./services/ecourtSesiPantauService");
+const ecourtPulihService = require("./services/ecourtPulihService");
+const ecourtWaPerintahService = require("./services/ecourtWaPerintahService");
 const logService = require("./services/logService");
 const rateLimitService = require("./services/rateLimitService");
 const whatsappStatusService = require("./services/whatsappStatusService");
@@ -748,6 +750,22 @@ function createEcourtDocumentMedia(documentPath) {
   };
 }
 
+/**
+ * Menyiapkan gambar captcha e-Court (login lewat WhatsApp) sebagai lampiran.
+ * Hanya berkas captcha-<id>.png di folder captcha milik ecourtPulihService
+ * yang diterima; jalur lain ditolak.
+ */
+function createEcourtCaptchaMedia(captchaPath) {
+  const berkas = ecourtPulihService.deskripsikanBerkasCaptcha(captchaPath);
+  if (!berkas.ok) return { ok: false, reason: berkas.reason };
+  return {
+    ok: true,
+    media: MessageMedia.fromFilePath(berkas.absolutePath),
+    source: berkas.absolutePath,
+    fileName: berkas.fileName,
+  };
+}
+
 function createSippDocumentAttachment(documentPath) {
   const documentInfo = sanitizeSippDocumentInput(documentPath);
   if (!documentInfo.ok) return null;
@@ -994,7 +1012,9 @@ const queuedMessageSender = async (payload = {}) => {
       // dirancang menolak apa pun di luar root SIPP.
       mediaResult = attachment.kind === "ecourt_document"
         ? createEcourtDocumentMedia(attachment.source)
-        : await createSippDocumentMedia(attachment.source);
+        : attachment.kind === "ecourt_captcha"
+          ? createEcourtCaptchaMedia(attachment.source)
+          : await createSippDocumentMedia(attachment.source);
     } catch (error) {
       mediaResult = { ok: false, reason: error.message };
     }
@@ -1050,6 +1070,12 @@ ecourtSchedulerService.mulai();
 // kecuali admin menyalakannya - detaknya membuka peramban ke sistem Mahkamah
 // Agung, dan itu tidak pantas menyala sendiri oleh pembaruan.
 ecourtSesiPantauService.mulai();
+
+// Pemulihan sesi e-Court saat bot menyala: periksa sesi, tarik susulan untuk
+// rentang selama server mati, atau minta login lewat WhatsApp super admin.
+// Hanya bekerja bila penjadwal penarikan dinyalakan admin; dimatikan dengan
+// ALETA_ECOURT_PULIH_AKTIF=0. Lihat ecourtPulihService.
+ecourtPulihService.mulai();
 dynamicNotificationSchedulerService.startDynamicNotificationScheduler();
 
 // Pemantau kelengkapan data: mengirim pemberitahuan begitu perkara baru
@@ -1389,6 +1415,39 @@ activeClient.on('message', async (msg) => {
       let prefix = message.split("#");
 
       if (!chat.isGroup) {
+          // Perintah e-Court dan jawaban captcha dari super admin. Layanannya
+          // mengembalikan null untuk nomor lain dan untuk pesan yang bukan
+          // urusannya, sehingga alur di bawah tetap berjalan seperti biasa.
+          try {
+              let pengirimEcourt = msg.from || "";
+              if (/@lid$/i.test(pengirimEcourt)) {
+                  // Pengenal @lid bukan nomor telepon; terjemahkan bila bisa.
+                  try {
+                      const kontakEcourt = await msg.getContact();
+                      if (kontakEcourt && kontakEcourt.number) pengirimEcourt = kontakEcourt.number;
+                  } catch (_) { /* tetap @lid: tidak akan dikenali sebagai admin */ }
+              }
+              const hasilEcourtWa = await ecourtWaPerintahService.tanganiPesan({
+                  pengirim: pengirimEcourt,
+                  teks: rawMessage,
+                  terkutip: msg.hasQuotedMsg === true,
+              });
+              if (hasilEcourtWa && hasilEcourtWa.reply) {
+                  await balasChat(msg, hasilEcourtWa.reply, {
+                      action: "ecourt_wa",
+                      withGlossary: false,
+                  });
+                  return;
+              }
+          } catch (error) {
+              logService.logSystemEvent({
+                  eventType: "ecourt_wa_menu_failed",
+                  severity: "warning",
+                  message: "Perintah e-Court WhatsApp gagal; alur chat lain tetap berjalan.",
+                  metadata: { errorMessage: String(error.message || error).slice(0, 200) },
+              });
+          }
+
           // Jawaban verifikasi kepemilikan nomor didahulukan dari semua menu.
           //
           // Kata "ya" dan "bukan" terlalu umum untuk dibiarkan bertabrakan
