@@ -89,7 +89,7 @@ const BUKAN_NASKAH = new Set([
  * "ba'in" dan "syar'i" dengan apostrof miring, dan tanpa peta ini keduanya
  * terbaca sebagai aksara kendali.
  */
-const CP1252: Record<number, string> = {
+export const CP1252: Record<number, string> = {
   0x80: "€", 0x82: "‚", 0x83: "ƒ", 0x84: "„", 0x85: "…",
   0x86: "†", 0x87: "‡", 0x88: "ˆ", 0x89: "‰", 0x8a: "Š",
   0x8b: "‹", 0x8c: "Œ", 0x8e: "Ž", 0x91: "‘", 0x92: "’",
@@ -247,6 +247,13 @@ export function bacaRtf(isi: string): string {
           break;
         case "tab":
           tulis("\t");
+          break;
+        // Apostrof miring: Word menulis nama berapostrof ("Nur'aini") dengan \rquote.
+        case "rquote":
+          tulis("’");
+          break;
+        case "lquote":
+          tulis("‘");
           break;
         case "uc":
           if (angka !== null) keadaan.uc = angka;

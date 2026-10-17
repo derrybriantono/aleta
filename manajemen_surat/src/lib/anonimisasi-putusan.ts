@@ -35,8 +35,8 @@
  * dikerjakan di atas teks datar petaRtf lalu dipetakan balik ke sumber RTF,
  * sehingga format (tebal, tab, paragraf) tetap.
  */
-import { bentukNamaPihak, polaNama } from "@/lib/anonim-nama-pihak";
-import { depanMilikPihak, petaRtf, polaSasaran, sasaranNamaPihak, type Sasaran } from "@/lib/samarkan-sisa-rtf";
+import { bentukNamaPihak, lenturkanApostrof, polaNama } from "@/lib/anonim-nama-pihak";
+import { KATA_DEPAN_UMUM, POLA_NIK, depanMilikPihak, petaRtf, polaSasaran, sasaranNamaPihak, type Sasaran } from "@/lib/samarkan-sisa-rtf";
 
 export type OrangSipp = {
   nama: string;
@@ -142,6 +142,23 @@ const POLA_KAB = /(?<![\p{L}])(?:Kabupaten|KABUPATEN|Kab\.|KAB\.|Kota(?!\s*madya
 
 const GELAR_DEPAN = /^(?:prof|dr|drs|dra|ir|h|hj|kh|hajjah|haji|st|nyonya|ny|tuan|tn|sdr|sdri)\.?$/i;
 
+/**
+ * Kata PERTAMA nama diri yang bermakna untuk periksa sisa: berhuruf kapital,
+ * minimal 3 huruf, bukan gelar/awalan umum ("Muh.", "Siti", "Andi"), bukan
+ * sebutan/jabatan atau kata umum. Nama satu kata sudah diperiksa utuh - null.
+ */
+export function kataDepanBermakna(diri: string): string | null {
+  const kata = String(diri ?? "").replace(/\s+/g, " ").trim().split(" ");
+  if (kata.length < 2) return null;
+  for (const k of kata) {
+    if (KATA_DEPAN_UMUM.test(k) || GELAR_DEPAN.test(k)) continue;
+    const huruf = k.replace(/[^\p{L}]/gu, "");
+    if (huruf.length < 3 || !/^\p{Lu}/u.test(k) || PERAN.test(k) || kataBukanNama(k)) return null;
+    return k.replace(/[.,]+$/, "");
+  }
+  return null;
+}
+
 /** Nama inti tanpa gelar: "Drs. H. Ahmad Yani, M.H." -> "Ahmad Yani". */
 export function namaTanpaGelar(nama: string): string {
   const depan = String(nama ?? "").split(",")[0];
@@ -151,12 +168,14 @@ export function namaTanpaGelar(nama: string): string {
 }
 
 function amanRegex(teks: string): string {
-  return String(teks)
-    .trim()
-    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-    .replace(/\\\.\s+/g, "\\.?\\s*")
-    .replace(/\s+/g, "\\s*")
-    .replace(/\\\.(?!\?)/g, "\\.?");
+  return lenturkanApostrof(
+    String(teks)
+      .trim()
+      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      .replace(/\\\.\s+/g, "\\.?\\s*")
+      .replace(/\s+/g, "\\s*")
+      .replace(/\\\.(?!\?)/g, "\\.?")
+  );
 }
 function polaLentur(teks: string): RegExp {
   return new RegExp(`(?<![${HURUF}])${amanRegex(teks)}(?![${HURUF}])`, "giu");
@@ -463,13 +482,15 @@ export function anonimkanTeks(teksAsal: string, entitas: EntitasAnonim, opsi: Op
 
   // ── 4. Nomor: NIK, telepon, rekening, email, NIP ───────────────────────────
   const semua = [...pihak, ...(entitas.saksi ?? []), ...(entitas.anak ?? [])];
-  for (const m of t.matchAll(/(?<!\d)(\d{4}[ .-]?\d{4}[ .-]?\d{4}[ .-]?\d{4})(?!\d)/g)) {
-    const angka = m[1].replace(/\D/g, "");
-    if (angka.length === 16) tandai(m.index ?? 0, (m.index ?? 0) + m[1].length, "x".repeat(16), "NIK");
-  }
+  // NIK/KK 16 angka, juga yang berpemisah ("72.03.01.410190.0001", "7203 0141 0190 0001").
+  for (const m of t.matchAll(POLA_NIK)) tandai(m.index ?? 0, (m.index ?? 0) + m[0].length, "x".repeat(16), "NIK");
   for (const o of semua) {
     const nik = String(o.nik ?? "").replace(/\s+/g, "");
-    if (nik.length >= 8 && /\d/.test(nik)) for (const m of t.matchAll(polaLentur(nik))) tandai(m.index ?? 0, (m.index ?? 0) + m[0].length, "xxx", "NIK");
+    if (nik.length >= 8 && /^\d+$/.test(nik)) {
+      // NIK SIPP bukan 16 angka (salah ketik) tetap dicari, juga bila berpemisah.
+      const polaAngka = new RegExp(`(?<!\\d)${nik.split("").join("[ .-]?")}(?!\\d)`, "g");
+      for (const m of t.matchAll(polaAngka)) tandai(m.index ?? 0, (m.index ?? 0) + m[0].length, "xxx", "NIK");
+    } else if (nik.length >= 8 && /\d/.test(nik)) for (const m of t.matchAll(polaLentur(nik))) tandai(m.index ?? 0, (m.index ?? 0) + m[0].length, "xxx", "NIK");
     const telp = String(o.telepon ?? "").replace(/\D/g, "");
     if (telp.length >= 8) {
       const inti = telp.replace(/^(?:62|0)/, "");
@@ -640,14 +661,27 @@ export function periksaSisa(teks: string, entitas: EntitasAnonim): SisaAnonim[] 
       if (lihat.has(k) || lindung.some((l) => l.includes(k))) continue;
       lihat.add(k);
       // Sama dengan penyamar: nama satu kata yang tertulis huruf kecil adalah kata biasa.
+      const penuh: Array<[number, number]> = [];
+      let dilapor = false;
       for (const m of t.matchAll(polaNama(diri, "giu"))) {
-        if (!/\s/.test(m[0]) && m[0] === m[0].toLowerCase()) continue;
+        penuh.push([m.index ?? 0, (m.index ?? 0) + m[0].length]);
+        if (dilapor || (!/\s/.test(m[0]) && m[0] === m[0].toLowerCase())) continue;
         catat(jenis, m[0], m.index ?? 0);
+        dilapor = true;
+      }
+      // Nama depan saja ("Melki" dari "Melki Saputra") yang masih tampil di luar nama utuh.
+      const depan = kataDepanBermakna(diri);
+      if (!depan || lihat.has(`depan:${depan.toLowerCase()}`) || lindung.some((l) => l.split(/[\s,]+/).includes(depan.toLowerCase()))) continue;
+      for (const m of t.matchAll(polaNama(depan, "gu"))) {
+        const a = m.index ?? 0;
+        if (!/^\p{Lu}/u.test(m[0]) || penuh.some(([x, y]) => a >= x && a < y)) continue;
+        lihat.add(`depan:${depan.toLowerCase()}`);
+        catat(`${jenis} (nama depan)`, m[0], a);
         break;
       }
     }
   }
-  for (const m of t.matchAll(/(?<!\d)\d{16}(?!\d)/g)) catat("NIK", m[0], m.index ?? 0);
+  for (const m of t.matchAll(POLA_NIK)) catat("NIK", m[0], m.index ?? 0);
   for (const m of t.matchAll(/(?<![\d+])(?:\+62|62|0)8\d(?:[ .-]?\d){6,11}(?!\d)/g)) catat("nomor telepon", m[0], m.index ?? 0);
   return sisa;
 }
