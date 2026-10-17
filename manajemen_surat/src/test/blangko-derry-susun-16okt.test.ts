@@ -242,7 +242,8 @@ describe("B. GET /aleta-ecourt/blangko-derry", () => {
     const kap = akses.pastikanKapabilitas as unknown as ReturnType<typeof vi.fn>;
     kap.mockImplementation(async (_db: unknown, _id: unknown, k: string) => {
       if (k === "blangko-abt") throw Object.assign(new Error("Peran Anda tidak diberi Panel blangko ABT."), { status: 403 });
-      return { id: "u9", name: "Analis Keuangan" };
+      // Peran hakim (golongan boleh folder putusan, hak rute audit-abt) tetapi tanpa kemampuan blangko-abt.
+      return { id: "u9", name: "Hakim Tanpa Panel Blangko", roleId: "hakim" };
     });
     bridge.mockImplementation(async (op: string) => {
       if (op === "blangko.baca") return { ok: true, data: { ada: true, berkas: "a.rtf", penanda: ["0001"] } };
