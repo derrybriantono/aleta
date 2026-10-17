@@ -30,7 +30,7 @@ import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
 import { tentukanBasBaru } from "@/lib/alur-bas-baru";
 import { keadaanPutusan, type MasukanKeadaanPutusan } from "@/lib/keadaan-putusan";
 import { kunciJenisPerkara, kunciStatusPutusan } from "@/lib/pemetaan-blangko";
-import { blangkoAmplopPendamping, blangkoRelaas, pihakDipanggil, type BlangkoRelaas, type KeadaanRelaas, type PihakDipanggil } from "@/lib/pohon-blangko";
+import { JENIS_PENCEGAHAN_PERKAWINAN, blangkoAmplopPendamping, blangkoRelaas, pihakDipanggil, type BlangkoRelaas, type KeadaanRelaas, type PihakDipanggil } from "@/lib/pohon-blangko";
 import { CERMIN_EKSTENSI } from "@/lib/tipe-keluaran/bawaan/bawaan-ekstensi";
 
 const AKAR = "derry_briantono";
@@ -78,6 +78,8 @@ export type MasukanRekomendasi = {
   mediasi?: { hasil?: unknown } | null;
   mediasiTerbaca?: boolean;
   lewatEcourt?: boolean | null;
+  /** I14 18 Okt: jenis_perkara_id (bot); 342 = pencegahan perkawinan -> relaas Pemohon [JS] 11.1. Kosong: dikenali dari nama jenis. */
+  jenisPerkaraId?: number | null;
   /** I9 17 Okt: petitum perkara memohon sita (bot: baris jadwal `sita` terisi). */
   bersita?: boolean;
   /** I7 17 Okt: Tergugat perempuan pada gugatan hak asuh (bot); null = tidak diketahui. */
@@ -435,7 +437,12 @@ function dariRelaas(b: BlangkoRelaas, alasan: string, utama: boolean): Rekomenda
 }
 
 function rekomendasiRelaas(m: MasukanRekomendasi, teks = ""): Rekomendasi[] {
-  const opsi = { lewatEcourt: m.lewatEcourt === true, verstek: m.verstekPutusan === true };
+  const opsi = {
+    lewatEcourt: m.lewatEcourt === true,
+    verstek: m.verstekPutusan === true,
+    // I14 18 Okt: pencegahan perkawinan dikenali dari jenis_perkara_id, atau dari namanya bila id tidak terkirim.
+    jenisPerkaraId: m.jenisPerkaraId ?? (/pencegahan\s+perkawinan/i.test(String(m.jenisPerkara ?? "")) ? JENIS_PENCEGAHAN_PERKAWINAN : null),
+  };
   const hasil: Rekomendasi[] = [];
   const tambah = (b: BlangkoRelaas | null, alasan: string, utama = true) => {
     if (b && !hasil.some((x) => x.berkas === b.berkas)) hasil.push(dariRelaas(b, alasan, utama));
@@ -497,6 +504,7 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     lewatEcourt: typeof b.lewatEcourt === "boolean" ? b.lewatEcourt : null,
     bersita: Boolean(b.sita) && typeof b.sita === "object",
     tergugatPerempuan: typeof b.tergugatPerempuan === "boolean" ? b.tergugatPerempuan : null,
+    jenisPerkaraId: angka(b.jenisPerkaraId),
     amarRekonvensi: typeof b.amarRekonvensi === "string" ? b.amarRekonvensi : "",
   };
 }

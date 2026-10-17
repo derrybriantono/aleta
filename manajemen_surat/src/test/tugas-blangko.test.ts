@@ -101,7 +101,7 @@ describe("A. tugas tiap berkas Derry menurut aturan nama", () => {
     for (const b of FIX.berkas) per[tugasBlangko(b)] = (per[tugasBlangko(b)] ?? 0) + 1;
     expect(per.hakim).toBeGreaterThan(80);
     expect(per.panitera).toBeGreaterThan(233); // 233 salinan di folder jenis + BAS di folder ALUR/kumulasi/legacy
-    expect(per.jurusita).toBe(24); // 10 [JS] + 10 dari "Blangko Jurusita Donggala" + 2 pengumuman itsbat (14 Okt) + 2 panggilan mediasi (I2 16 Okt)
+    expect(per.jurusita).toBe(27); // 10 [JS] + 10 dari "Blangko Jurusita Donggala" + 2 pengumuman itsbat (14 Okt) + 2 panggilan mediasi (I2 16 Okt) + 3 pencegahan perkawinan (I14 18 Okt)
     expect(per.ptsp).toBe(11); // 3 "@ 0/1/2" (PMH, PHS) + 4 blangko PTSP ikrar talak/mediator (folder "99 PTSP", paket 16 Okt) + 4 (I9 17 Okt: @ 0a PPP, @ 0b PJS, @ 2a, @ 2b PHS sita)
   });
 

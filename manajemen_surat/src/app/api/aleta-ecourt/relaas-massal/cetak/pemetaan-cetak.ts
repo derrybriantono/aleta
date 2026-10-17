@@ -1,4 +1,4 @@
-import { blangkoRelaasPerPihak, keadaanUntukGolongan } from "@/lib/pohon-blangko";
+import { blangkoRelaasPerPihak, jenisPencegahanPerkawinan, keadaanUntukGolongan } from "@/lib/pohon-blangko";
 import {
   AWALAN_KUNCI_BAS_DB,
   pilihKunciRelaas,
@@ -35,11 +35,18 @@ type DokumenPetakan = {
   /** Q3 16 Okt: perkara terdaftar lewat e-Court / putusannya verstek (bot relaasMassalService); kosong = tidak diketahui (perilaku lama). */
   lewatEcourt?: unknown;
   verstekPutusan?: unknown;
+  /** I14 18 Okt: jenis_perkara_id dari bot; 342 (pencegahan perkawinan) memakai relaas [JS] 11.1 untuk Pemohon. */
+  jenisPerkaraId?: unknown;
 };
 
-/** Q3 16 Okt: opsi pemilihan blangko e-Court dari dokumen. */
-export function opsiEcourtDokumen(dokumen: Pick<DokumenPetakan, "lewatEcourt" | "verstekPutusan">) {
-  return { lewatEcourt: dokumen.lewatEcourt === true, verstek: dokumen.verstekPutusan === true };
+/** Q3 16 Okt: opsi pemilihan blangko e-Court dari dokumen (I14 18 Okt: plus jenis perkara untuk pencegahan perkawinan). */
+export function opsiEcourtDokumen(dokumen: Pick<DokumenPetakan, "lewatEcourt" | "verstekPutusan" | "jenisPerkaraId">) {
+  const jenis = Number(dokumen.jenisPerkaraId);
+  return {
+    lewatEcourt: dokumen.lewatEcourt === true,
+    verstek: dokumen.verstekPutusan === true,
+    jenisPerkaraId: Number.isInteger(jenis) && jenis > 0 ? jenis : null,
+  };
 }
 
 function sebutanKhusus(teks: unknown): PihakKunci {
@@ -57,6 +64,14 @@ export function permintaanUntukDokumen(dokumen: DokumenPetakan): PermintaanRelaa
   // 14 Okt: pengumuman itsbat - pihakDipanggil "pertama" = satu Pemohon (1P).
   if (keadaan === "pengumuman-itsbat") {
     return { awalan: "pengumuman", keadaan: String(dokumen.pihakDipanggil ?? "") === "pertama" ? "1p" : "2p", khusus: "", umum: "" };
+  }
+  // I14 18 Okt: pencegahan perkawinan (jenis 342) - panggilan Pemohon sidang pertama maupun lanjutan; kuncinya "pencegahan-perkawinan-pemohon".
+  if (
+    jenisPencegahanPerkawinan(dokumen.jenisPerkaraId) &&
+    (keadaan === "sidang-pertama" || keadaan === "sidang-ditunda") &&
+    (String(dokumen.pihakDipanggil ?? "") === "pertama" || String(dokumen.pihakDipanggil ?? "") === "keduanya")
+  ) {
+    return { awalan: "pencegahan", keadaan: "pemohon", khusus: "", umum: "" };
   }
   let awalan: PermintaanRelaas["awalan"];
   let k: KeadaanKunci;
@@ -156,6 +171,8 @@ export function pecahDokumenPerPihak<T extends DokumenPecah>(
 ): T[] {
   const keadaan = keadaanUntukGolongan(dokumen.golongan);
   if (String(dokumen.pihakDipanggil ?? "") !== "keduanya") return [dokumen];
+  // I14 18 Okt: pencegahan perkawinan hanya punya satu pihak SIPP (Pemohon) - satu dokumen, blangko [JS] 11.1; tidak dipecah ke blangko T.
+  if (jenisPencegahanPerkawinan(dokumen.jenisPerkaraId) && (keadaan === "sidang-pertama" || keadaan === "sidang-ditunda")) return [dokumen];
   if (keadaan !== "sidang-pertama" && keadaan !== "sidang-ditunda" && keadaan !== "pemberitahuan-putusan") return [dokumen];
   const p = berkasSisi(dokumen, "pertama", petaRelaas, petaPbt);
   const t = berkasSisi(dokumen, "kedua", petaRelaas, petaPbt);

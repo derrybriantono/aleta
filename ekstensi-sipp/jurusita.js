@@ -161,8 +161,16 @@ const JURUSITA_BLANGKO_ECOURT_IKRAR = "[JS] 7. Relaas Panggilan Ikrar Talak (e-C
 const JURUSITA_BLANGKO_PENGUMUMAN_2P = "[JS] 9.1. Pengumuman Permohonan Itsbat Nikah (2 Pemohon).rtf";
 const JURUSITA_BLANGKO_PENGUMUMAN_1P = "[JS] 9.2. Pengumuman Permohonan Itsbat Nikah (1 Pemohon).rtf";
 const JURUSITA_GOLONGAN_PENGUMUMAN = "pengumuman-itsbat";
+// 18 Okt: panggilan sidang pencegahan perkawinan (jenis 342, Pdt.P; paket ABT abt-relaas-pencegahan-derry) - cermin BLANGKO_RELAAS "pencegahan-perkawinan".
+const JURUSITA_JENIS_PENCEGAHAN = 342;
+const JURUSITA_BLANGKO_PENCEGAHAN_PEMOHON = "[JS] 11.1. Relaas Panggilan Sidang Pencegahan Perkawinan - Pemohon.rtf";
+const JURUSITA_BLANGKO_PENCEGAHAN_CALON_SUAMI = "[JS] 11.2. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Suami.rtf";
+const JURUSITA_BLANGKO_PENCEGAHAN_CALON_ISTRI = "[JS] 11.3. Relaas Panggilan Sidang Pencegahan Perkawinan - Calon Istri.rtf";
 const JURUSITA_TERTANAM = {
   relaas: {
+    "pencegahan-perkawinan-pemohon": JURUSITA_BLANGKO_PENCEGAHAN_PEMOHON,
+    "pencegahan-perkawinan-calon-suami": JURUSITA_BLANGKO_PENCEGAHAN_CALON_SUAMI,
+    "pencegahan-perkawinan-calon-istri": JURUSITA_BLANGKO_PENCEGAHAN_CALON_ISTRI,
     "pengumuman-itsbat": JURUSITA_BLANGKO_PENGUMUMAN_2P,
     "pengumuman-itsbat-1p": JURUSITA_BLANGKO_PENGUMUMAN_1P,
     "relaas-panggilan-sidang-pertama-penggugat": JURUSITA_BLANGKO_PERTAMA_P,
@@ -383,6 +391,11 @@ const JURUSITA_KATA_PENGUMUMAN = new Set([
   "pengumuman", "permohonan", "itsbat", "isbat", "istbat", "nikah", "pengesahan", "perkawinan", "voluntair", "pemohon", "1p", "2p",
 ]);
 
+/** 18 Okt: kata kunci pencegahan perkawinan - hanya dikenal pada kunci berkata "pencegahan" (KATA_PENCEGAHAN server). */
+const JURUSITA_KATA_PENCEGAHAN = new Set([
+  "pencegahan", "perkawinan", "nikah", "panggilan", "relaas", "sidang", "pertama", "lanjutan", "pemohon", "calon", "suami", "istri", "isteri",
+]);
+
 /** Kunci relaas/PBT dinormalkan seperti server: huruf kecil, tanda hubung. */
 function jurusitaNormalKunci(kunci) {
   return String(kunci || "")
@@ -397,6 +410,12 @@ function jurusitaNormalKunci(kunci) {
 function jurusitaUraiKunci(kunci) {
   const kata = jurusitaNormalKunci(kunci).split("-").filter(Boolean);
   const ada = (x) => kata.includes(x);
+  // 18 Okt: pencegahan perkawinan - keadaan = siapa yang dipanggil: calon suami / calon istri, selainnya Pemohon.
+  if (ada("pencegahan")) {
+    const asingC = kata.filter((k) => !JURUSITA_KATA_PENCEGAHAN.has(k));
+    const keadaanC = ada("suami") ? "calon-suami" : ada("istri") || ada("isteri") ? "calon-istri" : "pemohon";
+    return { awalan: "pencegahan", keadaan: keadaanC, pihak: "", dikenal: asingC.length === 0, asing: asingC, ecourt: false, verstek: false };
+  }
   // 14 Okt: pengumuman itsbat - keadaan = jumlah Pemohon ("1p", selainnya "2p").
   if (ada("pengumuman")) {
     const asingP = kata.filter((k) => !JURUSITA_KATA_PENGUMUMAN.has(k));
@@ -467,6 +486,10 @@ function jurusitaPermintaan(golongan, sisi, sebutan, ec) {
   const ecourt = Boolean(ec && ec.ecourt);
   const verstek = Boolean(ec && ec.verstek);
   const tambahEc = { ecourt, verstek };
+  // 18 Okt: pencegahan perkawinan (jenis 342) - panggilan Pemohon (pihak pertama) sidang pertama maupun lanjutan memakai [JS] 11.1.
+  if (ec && ec.pencegahan && sisi === 1 && (golongan === "sidang-pertama" || golongan === "sidang-ditunda" || golongan === "sidang-lanjutan")) {
+    return { jenis: "relaas", awalan: "pencegahan", keadaan: "pemohon", khusus: "", umum: "", ...tambahEc, tertanam: ["pencegahan-perkawinan-pemohon"] };
+  }
   const perPihakEc = (awalanKunci) => (ecourt ? [...new Set([khusus, umum].filter(Boolean))].map((p) => `${awalanKunci}-ecourt-${p}`) : []);
   if (golongan === "pemberitahuan-putusan") {
     // [JS] 6.2 hanya untuk Tergugat/Termohon dan hanya bila putusannya verstek.
@@ -495,7 +518,11 @@ function jurusitaPermintaan(golongan, sisi, sebutan, ec) {
 function jurusitaEcOpsi(x) {
   if (!x || typeof x !== "object") return { ecourt: false, verstek: false };
   const verstekRincian = x.putusan && typeof x.putusan === "object" ? x.putusan.verstek === true : false;
-  return { ecourt: x.lewatEcourt === true, verstek: x.verstekPutusan === true || verstekRincian };
+  // 18 Okt: pencegahan = perkara jenis 342 (rincian.jenisPerkaraId atau dokumen rute jenisPerkaraId).
+  // (kunci `pencegahan` hanya ada bila benar, supaya bentuk lama {ecourt, verstek} tidak berubah untuk jenis lain)
+  const hasil = { ecourt: x.lewatEcourt === true, verstek: x.verstekPutusan === true || verstekRincian };
+  if (Number(x.jenisPerkaraId) === JURUSITA_JENIS_PENCEGAHAN) hasil.pencegahan = true;
+  return hasil;
 }
 
 /**
