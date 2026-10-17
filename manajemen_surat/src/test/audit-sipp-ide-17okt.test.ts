@@ -382,3 +382,89 @@ describe("F. saklar penanda SIPP (ideL2*) ikut setelan per akun", () => {
   });
 });
 
+// ============================================================================
+// G. Widget kehadiran saat jadwal tidak terbaca
+// ============================================================================
+describe("G. widget kehadiran: jadwal sidang tidak terbaca bukan 'tidak ada sidang'", () => {
+  const SUMBER_ALAT = baca("panel-alat.js");
+  const SUMBER_CHECKLIST = baca("checklist.js");
+  const API_KH = "/aleta/api/aleta-ecourt/antrian/kehadiran-saya";
+
+  function bukaWidget(jawabKh: unknown) {
+    const dom = new JSDOM(`<!doctype html><html><head></head><body></body></html>`, {
+      url: "http://192.168.10.10/SIPP/detil_perkara_agama",
+      runScripts: "outside-only",
+      pretendToBeVisual: true,
+    } as ConstructorParameters<typeof JSDOM>[1]) as JSDOM & { getInternalVMContext(): vm.Context };
+    terbuka.push(dom);
+    const w = dom.window as Jendela;
+    const simpanan: Record<string, unknown> = { posisiChecklistSipp: { kecil: false }, checklistMilestone: true, widgetKehadiran: true, ujiTampilan: "ui" };
+    w.chrome = {
+      runtime: { id: "aleta-uji", getManifest: () => ({ version: "0.0.0" }), getURL: (x: string) => `chrome-extension://aleta-uji/${x}`, sendMessage: async () => ({}) },
+      storage: {
+        local: {
+          get: async (kunci?: string | string[] | null) => {
+            const daftar = kunci == null ? Object.keys(simpanan) : [kunci].flat();
+            const hasil: Record<string, unknown> = {};
+            for (const k of daftar) if (k in simpanan) hasil[k] = polos(simpanan[k]);
+            return hasil;
+          },
+          set: async (isi: Record<string, unknown>) => void Object.assign(simpanan, polos(isi)),
+          remove: async () => undefined,
+        },
+        session: { get: async () => ({}), set: async () => undefined },
+        onChanged: { addListener: () => undefined },
+      },
+    };
+    const tanggapan = (isi: unknown) => {
+      const r = { ok: true, status: 200, json: async () => polos(isi), clone: () => r };
+      return r;
+    };
+    w.fetch = (alamat: string) => {
+      const url = String(alamat);
+      if (url.includes(API_KH)) return Promise.resolve(tanggapan(jawabKh));
+      if (url.includes("/aleta-ecourt/checklist")) {
+        return Promise.resolve(
+          tanggapan({
+            ok: true,
+            data: {
+              pengguna: { nama: "PP Dua", peran: ["pp"], superAdmin: false },
+              peranTersedia: [{ kunci: "pp", label: "Panitera Pengganti" }],
+              peranAktif: "pp",
+              dibuat: new Date().toISOString(),
+              ringkas: { lewat: 0, hariIni: 0, mingguIni: 0, selesaiHariIni: 0, totalHariIni: 0 },
+              butir: [],
+              jenisTidakTersedia: [],
+              galat: [],
+            },
+          })
+        );
+      }
+      return Promise.resolve(tanggapan({ ok: true, data: {} }));
+    };
+    const ctx = dom.getInternalVMContext();
+    vm.runInContext(SUMBER_ALAT, ctx, { filename: "panel-alat.js" });
+    vm.runInContext(SUMBER_CHECKLIST, ctx, { filename: "checklist.js" });
+    const kotak = () => {
+      const a = w.document.querySelector("aleta-cm-widget");
+      return a && a.shadowRoot ? (a.shadowRoot.querySelector("[data-kehadiran-widget]") as HTMLElement | null) : null;
+    };
+    return { w, kotak };
+  }
+
+  it("portal menjawab available:false (bot/jadwal tidak terbaca): kalimatnya 'belum dapat dibaca'", async () => {
+    const h = bukaWidget({ ok: true, data: { available: false, ok: false, alasan: "ALETA Bot tidak terjangkau.", perkara: [] } });
+    const k = await sampai(() => h.kotak(), "kotak kehadiran");
+    await sampai(() => !/Memuat kehadiran/.test(k.textContent || ""), "jawaban kehadiran tergambar");
+    await tunggu(50);
+    const teks = h.kotak()!.textContent || "";
+    expect(teks).not.toMatch(/Tidak ada sidang Anda hari ini|tidak ada sidang/);
+    expect(teks).toMatch(/Kehadiran belum dapat dibaca/);
+  });
+
+  it("pembanding: jawaban sah tanpa sidang tetap 'Tidak ada sidang Anda hari ini'", async () => {
+    const h = bukaWidget({ ok: true, data: { available: true, ok: true, jumlah: 0, perkara: [] } });
+    await sampai(() => /Tidak ada sidang Anda hari ini/.test(h.kotak()?.textContent || ""), "kalimat tanpa sidang");
+  });
+});
+

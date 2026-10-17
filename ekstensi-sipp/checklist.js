@@ -3573,6 +3573,9 @@
   /** Jawaban portal -> bentuk yang dipercaya kotak. null bila bentuknya tidak dikenal. */
   function khBersihkan(isi) {
     const x = objek(isi);
+    // Rute menjawab { available:false, ok:false, perkara:[] } saat jadwal sidang tidak
+    // terbaca - itu GALAT, bukan "tidak ada sidang hari ini" (audit 17 Okt).
+    if (x.available === false || x.ok === false) return null;
     if (!Array.isArray(x.perkara)) return null;
     return {
       jumlah: Number(x.jumlah) || 0,
@@ -3720,6 +3723,7 @@
   /** Jawaban portal -> bentuk yang dipercaya kotak. null bila bentuknya tidak dikenal. */
   function h7Bersihkan(isi) {
     const x = objek(isi);
+    if (x.available === false || x.ok === false) return null; // galat portal, bukan "tidak ada"
     if (!Array.isArray(x.perkara)) return null;
     return {
       jumlah: Number(x.jumlah) || 0,
