@@ -2,7 +2,9 @@
   {
     "id": "fitur-terbaru-semua-pegawai",
     "title": "Fitur terbaru untuk semua pegawai (rilis 7 sampai 18 Oktober 2026)",
-    "audiences": ["all"],
+    "audiences": [
+      "all"
+    ],
     "summary": "Hal yang berubah bagi semua pegawai: tutorial per fitur, masuk otomatis dari SIPP, tampilan semua layar, unduhan tanpa diblokir, dan peringatan sisa blangko.",
     "steps": [
       "Tekan tombol bulat bertanda ? di kepala halaman mana pun untuk membuka tutorial fitur halaman itu. Menu Panduan memuat semuanya, lengkap dengan kotak cari dan tanda Baru.",
@@ -17,7 +19,8 @@
     "notes": [
       "Tidak ada tanda ALETA yang masuk ke data SIPP. Yang tertulis ke SIPP memakai akun SIPP Anda sendiri.",
       "Menu dan tombol yang tampil mengikuti peran Anda. Tidak tampil berarti memang bukan hak peran Anda.",
-      "Pengaturan widget tersimpan per akun dan per peran."
+      "Pengaturan widget tersimpan per akun dan per peran.",
+      "Menu dan tombol yang tampil mengikuti peran Anda. Data pribadi pihak (kontak, KTP, pekerjaan) hanya tampil bagi yang melayani perkara."
     ],
     "troubleshooting": [
       "Panel ALETA tidak muncul di SIPP atau ABT: periksa bahwa ekstensi terpasang dan versinya terbaru lewat ikon ekstensi (Perbarui sekarang).",
@@ -27,7 +30,9 @@
   {
     "id": "fitur-terbaru-super-admin",
     "title": "Fitur terbaru untuk Super Admin (rilis 7 sampai 18 Oktober 2026)",
-    "audiences": ["super_admin"],
+    "audiences": [
+      "super_admin"
+    ],
     "summary": "Pengaturan dan pemantauan yang kini ada di tangan Super Admin: Fitur Satker, Sinkron kembaran, Blangko Saya, identitas satker, Lihat sebagai, dan sesi e-Court lewat WhatsApp.",
     "steps": [
       "Fitur Satker (menu Admin): atur tiap fitur menjadi Stabil, Uji coba, atau Mati, dan pilih saluran pembaruan. Fitur yang sudah berjalan sekarang berstatus Stabil.",
@@ -36,7 +41,8 @@
       "Pengaturan SIPP & ABT: tab Identitas satker (logo kop, telepon, alamat, laman, surel, kode surat, zona waktu) diterapkan ke blangko ABT dengan cadangan dan tombol Kembalikan.",
       "Lihat sebagai: di halaman Panduan dan di ekstensi, tirukan tampilan peran lain untuk memeriksa laporan menu atau tombol yang tidak muncul.",
       "Integrasi e-Court: isi nomor dan tanggal SK majelis, baca Kamus variabel ABT, kelola Kamus deteksi dan kalimat, dan baca riwayat login WhatsApp pada kartu Sesi e-Court saya.",
-      "Sumber Daya Server memantau CPU, memori, dan cakram per server, per ALETA, dan per aplikasi. Widget di SIPP juga menampilkan RAM, CPU, disk, dan GPU khusus untuk Super Admin."
+      "Sumber Daya Server memantau CPU, memori, dan cakram per server, per ALETA, dan per aplikasi. Widget di SIPP juga menampilkan RAM, CPU, disk, dan GPU khusus untuk Super Admin.",
+      "Hak akses per peran (Pusat Kendali): lihat siapa boleh apa, per peran atau dalam satu tabel, lengkap dengan rincian teknis dan daftar perubahan hak 18 Oktober. Super Admin memegang dan melihat semua fitur."
     ],
     "notes": [
       "Perintah chat e-Court hanya dijawab untuk nomor Super Admin: ecourt status, ecourt tarik, ecourt masuk, ecourt batal, dan ecourt ringkas.",
@@ -52,7 +58,9 @@
   {
     "id": "fitur-terbaru-admin",
     "title": "Fitur terbaru untuk Admin (rilis 7 sampai 18 Oktober 2026)",
-    "audiences": ["admin"],
+    "audiences": [
+      "admin"
+    ],
     "summary": "Hal yang perlu diperiksa Admin: tautan akun SIPP, akses menu, penghubung e-Court, hak menu ABT, dan riwayat login WhatsApp.",
     "steps": [
       "Manajemen Akun: tinjau tautan akun SIPP yang dibuat ALETA sendiri (dikenali dari sesi SIPP, NIP, atau nama tanpa gelar). Tolak yang keliru. Atur juga peran tambahan seperti kasir atau mediator.",
@@ -61,12 +69,14 @@
       "Pada Integrasi e-Court, buka Kamus variabel ABT untuk melihat arti dan sumber tiap variabel, serta Kamus deteksi dan kalimat untuk menambah, menguji, atau menonaktifkan pola tanpa menunggu rilis.",
       "Pengaturan SIPP & ABT: ubah cara sebuah isian diisi dan atur hak menu ABT per peran. Folder blangko berpasangan: Jenis - Putusan milik hakim, Jenis - BAS milik panitera.",
       "Pada kartu Sesi e-Court saya, baca riwayat login e-Court lewat WhatsApp: siapa meminta masuk, kapan, dan hasilnya.",
-      "Widget ekstensi: atur profil saklar untuk tiap peran. Pengaturan pegawai tersimpan per akun dan per peran."
+      "Widget ekstensi: atur profil saklar untuk tiap peran. Pengaturan pegawai tersimpan per akun dan per peran.",
+      "Hak akses per peran (Pusat Kendali): baca fitur, blangko, dan kewenangan yang dapat dibuka tiap peran untuk menjawab pegawai yang menunya tidak muncul. Halaman ini hanya dapat dibaca."
     ],
     "notes": [
       "Perubahan hak dan pengaturan berlaku untuk seluruh satuan kerja dan tercatat di Audit Trail.",
       "Unggah putusan ke SIPP dan e-Court hanya untuk Hakim, Admin, dan Super Admin.",
-      "Rute Integrasi e-Court hanya untuk Admin dan Super Admin."
+      "Rute Integrasi e-Court hanya untuk Admin dan Super Admin.",
+      "Admin tidak meng-acc berita acara sidang dan tidak melihat Audit Trail; keduanya khusus hakim dan Super Admin."
     ],
     "troubleshooting": [
       "Pegawai melapor tidak bisa masuk otomatis dari SIPP: periksa tautan akun SIPP-nya di Manajemen Akun.",
@@ -76,7 +86,9 @@
   {
     "id": "fitur-terbaru-pimpinan",
     "title": "Fitur terbaru untuk Ketua dan Wakil Ketua (rilis 7 sampai 18 Oktober 2026)",
-    "audiences": ["pimpinan"],
+    "audiences": [
+      "pimpinan"
+    ],
     "summary": "Penetapan awal perkara dari panel SIPP, SKP Pimpinan, serta peta dan beban kerja sebagai bahan pengambilan keputusan.",
     "steps": [
       "Penetapan: di perkara SIPP dengan ekstensi, buka tab Penetapan. Kerjakan Penetapan Majelis Hakim, Penunjukan Panitera Pengganti, Penunjukan Juru Sita, dan Penetapan Hari Sidang. Pilih Pejabat yang menetapkan, dan penetapan tercatat atas akun pejabat itu.",
@@ -98,7 +110,10 @@
   {
     "id": "fitur-terbaru-hakim",
     "title": "Fitur terbaru untuk Hakim (rilis 7 sampai 18 Oktober 2026)",
-    "audiences": ["hakim", "pimpinan"],
+    "audiences": [
+      "hakim",
+      "pimpinan"
+    ],
     "summary": "Draf putusan otomatis, Putusan Advance, Blangko Derry di ABT, kartu bacaan, unggah putusan anonim, dan eviden SKP.",
     "steps": [
       "Draf H-7: tiap pagi ALETA menyiapkan draf putusan untuk sidang tujuh hari ke depan, baik dikabulkan maupun ditolak. Kesiapannya tampil di Jadwal Sidang, checklist konseptor, ABT, dan widget.",
@@ -127,7 +142,9 @@
   {
     "id": "fitur-terbaru-panitera",
     "title": "Fitur terbaru untuk Panitera, Panitera Muda, dan Panitera Pengganti (rilis 7 sampai 18 Oktober 2026)",
-    "audiences": ["panitera"],
+    "audiences": [
+      "panitera"
+    ],
     "summary": "Kehadiran per orang, skors, tunda dan putus (termasuk ikrar talak), BAS massal, Susun keterangan saksi, Kasir, dan penarikan dokumen e-Court.",
     "steps": [
       "Jadwal Sidang: catat kehadiran per orang (pihak, kuasa, saksi), klik nama saksi untuk memanggilnya, dan catat skors dengan alasan serta perkiraan jam lanjut. Semuanya terbawa ke antrian, usulan Dihadiri oleh, dan BAS.",
@@ -146,7 +163,8 @@
     "notes": [
       "BAS ditulis Panitera Pengganti. Panitera, panitera muda, dan pimpinan hanya mengawasi.",
       "Skors hanya diusulkan masuk BAS bila terjadi sebelum putusan diucapkan.",
-      "Keterangan saksi harus sama dengan yang diucapkan di sidang. Set pertanyaan hanya bahan bantu."
+      "Keterangan saksi harus sama dengan yang diucapkan di sidang. Set pertanyaan hanya bahan bantu.",
+      "Berita acara sidang hanya dibuka hakim, panitera, panitera muda, Panitera Pengganti, dan staf kepaniteraan; kasir, PTSP, dan juru sita tidak membukanya."
     ],
     "troubleshooting": [
       "BAS massal tidak mengusulkan blangko: periksa kehadiran sudah tercatat di Jadwal Sidang. Lewat pukul 14.00 tanpa kehadiran, usulannya gugur atau tunda.",
@@ -156,7 +174,9 @@
   {
     "id": "fitur-terbaru-jurusita",
     "title": "Fitur terbaru untuk Juru Sita (rilis 7 sampai 18 Oktober 2026)",
-    "audiences": ["jurusita"],
+    "audiences": [
+      "jurusita"
+    ],
     "summary": "Relaas dengan pihak tidak hadir yang sudah tercentang, pengumuman itsbat, tugas pemberitahuan putusan verstek, dan cetak yang lebih cepat.",
     "steps": [
       "Buka perkara di ABT dengan ekstensi, lalu buka bagian Juru Sita di panel ALETA.",
@@ -177,7 +197,9 @@
   {
     "id": "fitur-terbaru-kasir",
     "title": "Fitur terbaru untuk Kasir (rilis 7 sampai 18 Oktober 2026)",
-    "audiences": ["kasir"],
+    "audiences": [
+      "kasir"
+    ],
     "summary": "Usulan jurnal per kejadian, Kasir otomatis bersaklar, Kasir massal satu hari, rekap sampai tahunan, dan pengingat.",
     "steps": [
       "Di Jadwal Sidang, tekan Kasir lalu pilih perkara. Usulan baris jurnal disusun per kejadian: panggilan pertama, sidang ditunda, putusan, ikrar talak, dan tambahan panjar. Tiap kejadian bertanda sudah atau belum.",
@@ -199,7 +221,9 @@
   {
     "id": "fitur-terbaru-ptsp",
     "title": "Fitur terbaru untuk PTSP dan Operator (rilis 7 sampai 18 Oktober 2026)",
-    "audiences": ["ptsp"],
+    "audiences": [
+      "ptsp"
+    ],
     "summary": "Usulan kontak dan pekerjaan di blangko pihak, penarikan berkas e-Court, folder ABT untuk PTSP, dan data umum dari gugatan.",
     "steps": [
       "Saat menambah atau mengubah pihak di SIPP dengan ekstensi, email dan nomor HP dari e-Court diusulkan di blangko pihak. Usulan sudah tercentang, dan Anda yang menyimpan.",

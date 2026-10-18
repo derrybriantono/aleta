@@ -308,6 +308,13 @@ export function AdminHub() {
               badge="Akun"
             />
             <AdminMenuAction
+              href="/admin/hak-akses"
+              title="Hak akses per peran"
+              description="Lihat fitur, blangko, dan kewenangan yang dapat dibuka tiap peran. Super Admin dapat membuka semuanya."
+              icon={<ShieldCheck className="h-5 w-5 text-indigo-600" />}
+              badge="Hak"
+            />
+            <AdminMenuAction
               href="/admin/e-kepegawaian"
               title="Pengaturan E-Kepegawaian"
               description="Atur jenis cuti, workflow approval, kalender libur, upload, dan rekap modul E-Kepegawaian."

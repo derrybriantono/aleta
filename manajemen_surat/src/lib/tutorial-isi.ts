@@ -1444,6 +1444,28 @@ export const TUTORIAL: readonly Tutorial[] = [
     baruDi: { sumber: "ekstensi", versi: "1.205.5" },
   },
   {
+    id: "pengelola-hak-akses",
+    judul: "Hak akses per peran: siapa boleh apa",
+    ringkas: "Peta lengkap fitur, blangko, dan kewenangan yang dapat dibuka tiap peran, untuk menjawab pertanyaan mengapa sebuah menu tidak muncul.",
+    kelompok: "pengelola",
+    mencakup: { modul: ["hak-akses"] },
+    halaman: ["/admin/hak-akses"],
+    tautan: { teks: "Buka Hak akses per peran", href: "/admin/hak-akses" },
+    langkah: [
+      "Buka Hak akses per peran dari Pusat Kendali atau menu samping. Admin dapat membacanya; Super Admin melihat juga rincian teknis dan daftar perubahan hak.",
+      "Pilih Per peran, lalu pilih peran dari daftar. Layar menampilkan semua yang dapat dilakukan peran itu, dikelompokkan menurut fitur, dengan tingkat Lihat, Pakai, atau Ubah.",
+      "Pilih Per akun, lalu pilih seorang pegawai: layar menampilkan hak gabungan dari jabatan dan peran tambahannya, misalnya Panitera Pengganti yang juga Kasir.",
+      "Pilih Tabel lengkap untuk membandingkan semua peran berdampingan. Gulir ke samping untuk melihat peran lain.",
+      "Gunakan kotak Cari fitur atau pilihan Kelompok untuk menyempit, misalnya ketik BAS, kasir, atau relaas.",
+      "Baca Kewenangan khusus di bagian bawah: atas akun siapa sesuatu ditulis, siapa yang meng-acc, dan syarat tambahan seperti saklar Fitur Satker.",
+    ],
+    peringatan: [
+      "Halaman ini hanya menjelaskan hak yang berlaku. Mengubah hak per peran dilakukan Super Admin di Akses Menu, Integrasi e-Court, dan Fitur Satker.",
+      "Super Admin memegang dan melihat semua fitur; Admin tidak membuka aplikasi yang belum fix dan tidak meng-acc BAS.",
+    ],
+    kataKunci: ["hak akses", "siapa boleh apa", "matriks peran", "menu tidak muncul", "kewenangan", "peran", "izin"],
+  },
+  {
     id: "pengelola-lihat-sebagai",
     judul: "Lihat sebagai: memeriksa tampilan dan hak peran lain",
     ringkas: "Super Admin dapat menirukan tampilan peran lain untuk menjawab laporan menu atau tombol yang tidak muncul.",

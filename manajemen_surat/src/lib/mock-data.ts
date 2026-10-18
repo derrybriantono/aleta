@@ -1073,6 +1073,20 @@ export const modules: ModuleConfig[] = [
     badgeLabel: "Kontrol",
   },
   {
+    id: "hak-akses",
+    label: "Hak akses per peran",
+    description: "Fitur, blangko, dan kewenangan tiap peran. Admin membaca; Super Admin lengkap.",
+    href: "/admin/hak-akses",
+    icon: "shield-check",
+    roleIds: ["super-admin", "admin"],
+    showInHub: false,
+    showInSidebar: true,
+    iconBgClass: "bg-indigo-100",
+    iconFgClass: "text-indigo-700",
+    cardClass: "border-indigo-200/80 bg-indigo-50/70",
+    badgeLabel: "Hak",
+  },
+  {
     id: "laporan",
     label: "Laporan",
     description: "Ringkasan laporan kerja dan ketepatan tindak lanjut.",
@@ -1937,6 +1951,7 @@ function buildVisibility(roleId: Role["id"], enabledModuleIds: ModuleId[]): Modu
 export const moduleVisibility: ModuleVisibility[] = [
   buildVisibility("super-admin", modules.map((module) => module.id)),
   buildVisibility("admin", [
+    "hak-akses",
     "aleta-ecourt-admin",
     "pengaturan-sipp-abt",
     "dashboard",

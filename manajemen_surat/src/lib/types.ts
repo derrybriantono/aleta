@@ -65,6 +65,8 @@ export type ModuleId =
   | "search"
   | "mapping-user-jabatan"
   | "visibility-role"
+  // Hak akses per peran (18 Okt 2026): peta siapa boleh apa; Admin membaca, Super Admin lengkap.
+  | "hak-akses"
   | "laporan"
   | "audit"
   | "kepegawaian"
