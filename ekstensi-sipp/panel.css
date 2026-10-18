@@ -5713,6 +5713,16 @@ html[data-aleta-tema-sipp="gelap"] .aleta-abt-batal {
   background: transparent;
 }
 
+/* AUDIT-GALAT 18 Okt: sudut pertemuan bilah gulir tegak dan mendatar tidak
+   pernah diberi warna - di tema gelap ia tampil sebagai kotak putih kecil di
+   pojok kanan bawah isi panel (terukur di panel putusan massal ABT). Ikut
+   jalurnya: tembus pandang. */
+.aleta-panel::-webkit-scrollbar-corner,
+.aleta-panel .aleta-isi::-webkit-scrollbar-corner,
+.aleta-panel .aleta-perkakas-isi::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 .aleta-panel::-webkit-scrollbar-thumb,
 .aleta-panel .aleta-isi::-webkit-scrollbar-thumb,
 .aleta-panel .aleta-perkakas-isi::-webkit-scrollbar-thumb {
@@ -5954,6 +5964,13 @@ html[data-aleta-kering="ya"] .aleta-panel {
 .aleta-perkakas-nama {
   flex: none;
   min-width: 8.5em;
+  /* AUDIT-GALAT 18 Okt: nama jenis yang panjang ("Asal Usul Anak · Dikabulkan
+     (anak sah perkawinan tercatat)") tidak pernah dipatahkan, menghimpit kolom
+     nilai sampai berkasnya terbaca "[01 ] [Ka" per dua huruf dan isi panel
+     bergulir menyamping. Nama dibatasi separuh baris dan boleh dipatahkan;
+     nama pendek tidak berubah. */
+  max-width: 45%;
+  overflow-wrap: anywhere;
   font-weight: 600;
   color: var(--aleta-tulisan);
 }
