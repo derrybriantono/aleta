@@ -46,6 +46,7 @@ import { hasilSidangPutusan } from "@/lib/hasil-sidang";
 import { agendaMusyawarah, hasilSidangBelumDicatat, sidangIkrar } from "@/lib/keadaan-sidang";
 import { bandingkanKonseptor } from "@/lib/konseptor-sementara";
 import { teksKesiapan, type RingkasKemajuan } from "@/lib/konseptor-langkah";
+import { BULAN_TUNDA_IKRAR_TIDAK_HADIR, tambahBulanIso } from "@/lib/ikrar-talak";
 import { PETA_ATURAN, STATUS_DIKABULKAN, type FaktaTenggat, tanggalIso } from "@/lib/penjaga-tenggat";
 import { JAM_BATAS_HASIL_SIDANG, waktuPengadilan } from "@/lib/waktu-pengadilan";
 
@@ -609,7 +610,6 @@ function aturanLimaBulan(b: BahanAturan, saring: (p: BerjalanFakta) => boolean, 
 
 function aturanIkrar(b: BahanAturan, saring: (i: IkrarFakta) => boolean): HasilJenis {
   const { konteks } = b;
-  const batasHari = PETA_ATURAN.get("ikrar-talak")?.batasHari ?? 180;
   const calon: Calon[] = [];
   let selesaiHariIni = 0;
   for (const i of koleksi<IkrarFakta>(b.fakta, "ikrar")) {
@@ -619,9 +619,9 @@ function aturanIkrar(b: BahanAturan, saring: (i: IkrarFakta) => boolean): HasilJ
       if (i.tanggalIkrar === konteks.tanggal) selesaiHariIni += 1;
       continue;
     }
-    const batas = geserTanggal(i.tanggalBht, batasHari);
-    const sisa = selisihTanggal(konteks.tanggal, batas);
-    const sisaTeks = sisa >= 0 ? `sisa tenggang ${sisa} hari` : `tenggang lewat ${-sisa} hari`;
+    // (a) Hari sidang ikrar belum ditetapkan: tenggat 6 bulan BELUM berjalan (Pasal 70 ayat (6) UU 7/1989
+    //     menghitung sejak hari sidang ikrar ditetapkan - keputusan pengguna no. 91, 18 Okt 2026); yang
+    //     ditagih adalah penetapannya sendiri, sesudah BHT (Pasal 70 ayat (3)).
     if (!i.penetapanSidangIkrar) {
       calon.push({
         kunci: `phs-ikrar:${i.perkaraId}`,
@@ -629,22 +629,27 @@ function aturanIkrar(b: BahanAturan, saring: (i: IkrarFakta) => boolean): HasilJ
         nomorPerkara: i.nomorPerkara,
         tenggat: { tanggal: i.tanggalBht },
         keterangan:
-          `BHT ${tglPendek(i.tanggalBht)}; hari sidang ikrar belum ditetapkan; ${sisaTeks} ` +
-          `(dihitung ALETA 180 hari sejak BHT, Pasal 70 ayat (6) UU 7/1989).`,
+          `BHT ${tglPendek(i.tanggalBht)}; hari sidang ikrar belum ditetapkan - tenggat 6 bulan ikrar belum berjalan ` +
+          `(dihitung sejak hari sidang ikrar ditetapkan, Pasal 70 ayat (6) UU 7/1989).`,
         kerjakan: { tujuan: "sipp", halaman: "ikrar" },
       });
       continue;
     }
+    // (b) Sudah ditetapkan: batas = penetapan hari sidang ikrar + 6 bulan kalender.
     if (i.penetapanSidangIkrar === konteks.tanggal) selesaiHariIni += 1;
+    const batas = tambahBulanIso(i.penetapanSidangIkrar, BULAN_TUNDA_IKRAR_TIDAK_HADIR);
+    if (!batas) continue;
+    const sisa = selisihTanggal(konteks.tanggal, batas);
+    const sisaTeks = sisa >= 0 ? `sisa tenggang ${sisa} hari` : `tenggang lewat ${-sisa} hari`;
     calon.push({
       kunci: `ikrar:${i.perkaraId}`,
       perkaraId: i.perkaraId,
       nomorPerkara: i.nomorPerkara,
       tenggat: { tanggal: batas },
       keterangan:
-        `BHT ${tglPendek(i.tanggalBht)}; sidang ikrar ditetapkan ${tglPendek(i.penetapanSidangIkrar)}` +
+        `BHT ${tglPendek(i.tanggalBht)}; hari sidang ikrar ditetapkan ${tglPendek(i.penetapanSidangIkrar)}` +
         `${i.sidangIkrarBerikut ? `, sidang ikrar berikut ${tglPendek(i.sidangIkrarBerikut)}` : ", belum ada sidang ikrar mendatang"}` +
-        `; ikrar belum diucapkan; ${sisaTeks}.`,
+        `; ikrar belum diucapkan; batas 6 bulan ${tglPendek(batas)}, ${sisaTeks}.`,
       kerjakan: { tujuan: "sipp", halaman: "ikrar" },
     });
   }

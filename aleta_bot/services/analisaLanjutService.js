@@ -101,6 +101,15 @@ function isoTanggal(nilai) {
 }
 
 /** Selisih hari antara dua tanggal, atau null bila salah satunya kosong. */
+/** Tambah bulan kalender pada "YYYY-MM-DD"; 31 Agustus + 6 bulan = hari terakhir Februari. */
+function tambahBulanIsoLokal(iso, bulan) {
+  const [t, b, h] = String(iso).split('-').map(Number);
+  if (!t || !b || !h) return '';
+  const d = new Date(t, b - 1 + bulan, h);
+  if (d.getDate() !== h) d.setDate(0);
+  return isoTanggal(d);
+}
+
 function selisihHari(dari, ke) {
   if (!dari || !ke) return null;
   const a = new Date(dari);
@@ -2561,7 +2570,9 @@ async function pemantauAturan(perkara) {
       // Nama kolomnya tgl_ikrar_talak, bukan tanggal_ikrar - dibaca langsung
       // dari SIPP yang berjalan. Nama yang keliru gagal DIAM-DIAM lewat catch
       // dan melaporkan 'belum waktunya' padahal ikrarnya sudah tercatat.
-      `SELECT ik.tgl_ikrar_talak AS tanggalIkrar FROM perkara_ikrar_talak ik
+      `SELECT ik.tgl_ikrar_talak AS tanggalIkrar,
+              ik.tanggal_penetapan_sidang_ikrar AS penetapanSidangIkrar
+         FROM perkara_ikrar_talak ik
         WHERE ik.perkara_id = ? LIMIT 1`,
       [id]
     ).catch(() => []),
@@ -2572,6 +2583,9 @@ async function pemantauAturan(perkara) {
   const adaMediasi = angka((mediasi[0] || {}).jumlah) > 0;
   const keduaHadir = angka((hadir[0] || {}).jumlah) > 0;
   const gugatan = /\/Pdt\.G/i.test(cleanText(perkara.nomorPerkara));
+  const penetapanIkrar = isoTanggal((ikrar[0] || {}).penetapanSidangIkrar);
+  const tanggalIkrar = isoTanggal((ikrar[0] || {}).tanggalIkrar);
+  const batasIkrar = penetapanIkrar ? tambahBulanIsoLokal(penetapanIkrar, 6) : '';
   const umur = selisihHari(isoTanggal(perkara.tanggalDaftar), tanggalPutus || isoTanggal(new Date()));
   const jedaMinutasi = selisihHari(tanggalPutus, isoTanggal(p.minutasi));
 
@@ -2620,17 +2634,22 @@ async function pemantauAturan(perkara) {
           : `Diminutasi ${jedaMinutasi} hari sesudah putus.`,
     },
     {
-      aturan: 'Ikrar talak dalam 6 bulan sesudah BHT',
+      // Pasal 70 ayat (6) UU 7/1989: 6 bulan SEJAK DITETAPKAN HARI SIDANG IKRAR, bukan sejak BHT
+      // (keputusan pengguna no. 91, 18 Okt 2026). Tanpa penetapan itu tenggat belum berjalan.
+      aturan: 'Ikrar talak dalam 6 bulan sesudah penetapan hari sidang ikrar',
       keadaan: (() => {
-        const bht = isoTanggal(p.bht);
-        const tanggalIkrar = isoTanggal((ikrar[0] || {}).tanggalIkrar);
         if (!/\/Pdt\.G/i.test(cleanText(perkara.nomorPerkara))) return 'tidak berlaku';
-        if (!bht) return 'belum waktunya';
-        if (tanggalIkrar) return 'terpenuhi';
-        const lewat = selisihHari(bht, isoTanggal(new Date()));
-        return lewat !== null && lewat > 180 ? 'PERIKSA' : 'belum waktunya';
+        if (!batasIkrar) return tanggalIkrar ? 'terpenuhi' : 'belum waktunya';
+        if (tanggalIkrar) return tanggalIkrar <= batasIkrar ? 'terpenuhi' : 'PERIKSA';
+        return isoTanggal(new Date()) > batasIkrar ? 'PERIKSA' : 'belum waktunya';
       })(),
-      dasar: 'Berlaku pada cerai talak; perkara lain tidak menerbitkan ikrar.',
+      dasar: !/\/Pdt\.G/i.test(cleanText(perkara.nomorPerkara))
+        ? 'Berlaku pada cerai talak; perkara lain tidak menerbitkan ikrar.'
+        : !batasIkrar
+          ? 'Hari sidang ikrar belum ditetapkan - tenggat 6 bulan belum berjalan.'
+          : `Hari sidang ikrar ditetapkan ${penetapanIkrar}; batas 6 bulan ${batasIkrar}${
+              tanggalIkrar ? `; ikrar ${tanggalIkrar}.` : '; ikrar belum tercatat.'
+            }`,
     },
   ];
 

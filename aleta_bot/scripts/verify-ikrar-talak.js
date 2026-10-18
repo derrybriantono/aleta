@@ -94,7 +94,7 @@ function periksa(nama, kondisi, rinci = "") {
 
   console.log("== Batas 6 bulan ==");
   periksa("31 Agustus + 6 bulan = 28 Februari", ik.batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: "2026-08-31" }) === "2027-02-28");
-  periksa("tanpa penetapan hari sidang: dari BHT", ik.batasEnamBulanIkrar({ tanggalBht: "2026-09-15" }) === "2027-03-15");
+  periksa("tanpa penetapan hari sidang: kosong walau BHT ada (tanpa cadangan BHT)", ik.batasEnamBulanIkrar({ tanggalBht: "2026-09-15" }) === "");
   periksa("tanpa dasar: kosong", ik.batasEnamBulanIkrar({}) === "");
 
   console.log("== Rencana pengisian form ikrar ==");

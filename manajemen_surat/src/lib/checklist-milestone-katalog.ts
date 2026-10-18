@@ -286,9 +286,9 @@ export const KATALOG_CHECKLIST: JenisKatalog[] = [
     judul: "Ikrar talak: tetapkan dan laksanakan sidang ikrar",
     tersedia: true,
     masuk:
-      "Cerai talak dikabulkan (status 62), sudah BHT, ikrar belum diucapkan, Anda ketua majelis/hakim tunggal. (a) Hari sidang ikrar belum ditetapkan - selalu tampil. (b) Sudah ditetapkan tetapi batas 180 hari sejak BHT jatuh dalam 7 hari atau sudah lewat.",
+      "Cerai talak dikabulkan (status 62), sudah BHT, ikrar belum diucapkan, Anda ketua majelis/hakim tunggal. (a) Hari sidang ikrar belum ditetapkan - selalu tampil. (b) Sudah ditetapkan tetapi batas 6 bulan sejak penetapan hari sidang ikrar jatuh dalam 7 hari atau sudah lewat.",
     tenggat:
-      "(a) Hari BHT - Pasal 70 ayat (3) UU 7/1989: sesudah BHT pengadilan menentukan hari sidang ikrar (diukur rata-rata 2,4 hari). (b) BHT + 180 hari (KT16, batas ALETA yang lebih hati-hati daripada hitungan sejak penetapan sidang ikrar).",
+      "(a) Hari BHT - Pasal 70 ayat (3) UU 7/1989: sesudah BHT pengadilan menentukan hari sidang ikrar (diukur rata-rata 2,4 hari). (b) Penetapan hari sidang ikrar + 6 bulan kalender (Pasal 70 ayat (6) UU 7/1989; keputusan pengguna no. 91, 18 Okt 2026; sama dengan hitungan KT16). Selama hari sidang ikrar belum ditetapkan, tenggat 6 bulan belum berjalan.",
     selesai: "(a) tanggal_penetapan_sidang_ikrar terisi. (b) tgl_ikrar_talak terisi.",
     selesaiHariIni: "Penetapan sidang ikrar atau ikrarnya bertanggal hari ini.",
     kerjakan: { tujuan: "sipp", halaman: "ikrar" },

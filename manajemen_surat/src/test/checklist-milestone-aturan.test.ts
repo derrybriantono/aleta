@@ -485,10 +485,10 @@ describe("hakim", () => {
     expect(akhir.map((b) => b.id)).toEqual(["hakim.mediasi-30-hari:m1"]);
   });
 
-  it("ikrar-talak: sidang ikrar belum ditetapkan ditagih sejak BHT; yang sudah ditetapkan hanya menjelang 180 hari", () => {
+  it("ikrar-talak: sidang ikrar belum ditetapkan ditagih sejak BHT; yang sudah ditetapkan hanya menjelang batas 6 bulan sejak penetapan hari sidang ikrar", () => {
     const ikrar: IkrarFakta[] = [
       { perkaraId: "a", nomorPerkara: "A", tanggalBht: geser(-2), statusPutusanId: 62, penetapanSidangIkrar: "", tanggalIkrar: "", sidangIkrarBerikut: "", jabatanSaya: 1 },
-      { perkaraId: "b", nomorPerkara: "B", tanggalBht: geser(-176), statusPutusanId: 62, penetapanSidangIkrar: geser(-170), tanggalIkrar: "", sidangIkrarBerikut: "", jabatanSaya: 1 },
+      { perkaraId: "b", nomorPerkara: "B", tanggalBht: geser(-186), statusPutusanId: 62, penetapanSidangIkrar: geser(-180), tanggalIkrar: "", sidangIkrarBerikut: "", jabatanSaya: 1 },
       { perkaraId: "c", nomorPerkara: "C", tanggalBht: geser(-20), statusPutusanId: 62, penetapanSidangIkrar: geser(-18), tanggalIkrar: "", sidangIkrarBerikut: geser(5), jabatanSaya: 1 },
       { perkaraId: "d", nomorPerkara: "D", tanggalBht: geser(-30), statusPutusanId: 62, penetapanSidangIkrar: geser(-28), tanggalIkrar: HARI, sidangIkrarBerikut: "", jabatanSaya: 1 },
       { perkaraId: "e", nomorPerkara: "E", tanggalBht: geser(-2), statusPutusanId: 63, penetapanSidangIkrar: "", tanggalIkrar: "", sidangIkrarBerikut: "", jabatanSaya: 1 },
@@ -496,7 +496,12 @@ describe("hakim", () => {
     ];
     const akhir = nilai("hakim", { ikrar }).butir.filter((b) => b.jenis === "hakim.ikrar-talak");
     expect(Object.fromEntries(akhir.map((b) => [b.perkara?.id, b.kelompok]))).toEqual({ a: "lewat", b: "minggu-ini" });
-    expect(akhir.find((b) => b.perkara?.id === "a")?.keterangan).toMatch(/belum ditetapkan; sisa tenggang 178 hari/);
+    // Tanpa penetapan hari sidang ikrar tenggat 6 bulan BELUM berjalan: tidak ada hitungan sisa hari dari BHT.
+    const ketA = akhir.find((b) => b.perkara?.id === "a")?.keterangan ?? "";
+    expect(ketA).toMatch(/hari sidang ikrar belum ditetapkan - tenggat 6 bulan ikrar belum berjalan/);
+    expect(ketA).not.toMatch(/sisa tenggang/);
+    // Yang sudah ditetapkan: batas = penetapan + 6 bulan kalender (bukan BHT + 180 hari).
+    expect(akhir.find((b) => b.perkara?.id === "b")?.keterangan).toMatch(/batas 6 bulan .*sisa tenggang [1-4] hari/);
     expect(jalan("hakim.ikrar-talak", { ikrar }).selesaiHariIni).toBe(1);
   });
 });

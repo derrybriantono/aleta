@@ -17,6 +17,7 @@ import {
   bawaanTundaIkrar,
   ikrarTerlaksanaMenurutTeks,
   keHariKerja,
+  mundurKeHariKerja,
   peringatanBatasIkrar,
   tambahBulanIso,
   tambahHariIso,
@@ -35,23 +36,75 @@ describe("bawaan tunda sidang ikrar talak", () => {
     expect(b.agenda).toBe(AGENDA_IKRAR);
   });
 
-  it("(b) tidak hadir: 6 bulan dari tanggal BHT, 09.00, alasan baku", () => {
-    const b = bawaanTundaIkrar("tidak-hadir", { tanggalSidang: "2026-10-07", tanggalBht: "2026-09-15" });
-    expect(b.tanggal).toBe("2027-03-15");
+  it("(b) tidak hadir: batas 6 bulan sejak penetapan hari sidang ikrar, 09.00, alasan baku", () => {
+    const b = bawaanTundaIkrar("tidak-hadir", { tanggalSidang: "2026-10-07", tanggalPenetapanSidangIkrar: "2026-09-15" });
+    expect(b.tanggal).toBe("2027-03-15"); // Senin
+    expect(b.digeser).toBe(false);
+    expect(b.perluDiisi).toBe(false);
     expect(b.jam).toBe("09:00");
     expect(b.alasan).toBe(ALASAN_IKRAR_TIDAK_HADIR);
     expect(b.alasan).toBe("Pemohon tidak hadir Ikrar Talak");
   });
 
-  it("akhir pekan bergeser ke Senin dan diberi tanda; BHT tak terbaca = petugas mengisi", () => {
+  it("(b) tanpa penetapan hari sidang ikrar: tenggat belum berjalan, BHT TIDAK dipakai sebagai cadangan", () => {
+    const b = bawaanTundaIkrar("tidak-hadir", { tanggalSidang: "2026-10-07", tanggalBht: "2026-09-15" });
+    expect(b.tanggal).toBe("");
+    expect(b.perluDiisi).toBe(true);
+    expect(b.penjelasan).toBe(
+      "Hari sidang ikrar belum ditetapkan - tenggat 6 bulan belum berjalan; isi tanggal sidang ikrar berikutnya."
+    );
+  });
+
+  it("(b) batas jatuh Sabtu/Minggu: MUNDUR ke Jumat (maju akan melewati tenggat), diberi tanda", () => {
+    const sabtu = bawaanTundaIkrar("tidak-hadir", { tanggalSidang: "2026-10-07", tanggalPenetapanSidangIkrar: "2026-09-13" });
+    expect(sabtu.tanggal).toBe("2027-03-12"); // batas Sabtu 13 Mar
+    expect(sabtu.digeser).toBe(true);
+    const minggu = bawaanTundaIkrar("tidak-hadir", { tanggalSidang: "2026-10-07", tanggalPenetapanSidangIkrar: "2026-09-14" });
+    expect(minggu.tanggal).toBe("2027-03-12"); // batas Minggu 14 Mar
+    // 31 Agustus + 6 bulan = Minggu 28 Februari -> Jumat 26 Februari
+    const februari = bawaanTundaIkrar("tidak-hadir", { tanggalSidang: "2026-10-07", tanggalPenetapanSidangIkrar: "2026-08-31" });
+    expect(februari.tanggal).toBe("2027-02-26");
+    // Hasilnya tidak pernah melampaui batas.
+    for (const b of [sabtu, minggu, februari]) expect(b.tanggal <= "2027-03-14").toBe(true);
+  });
+
+  it("(a) belum siap: 14 hari bila masih dalam batas, dijepit ke batas bila melewatinya", () => {
+    // Dalam batas: tidak berubah.
+    const dalam = bawaanTundaIkrar("belum-siap", { tanggalSidang: "2026-10-07", tanggalPenetapanSidangIkrar: "2026-09-22" });
+    expect(dalam.tanggal).toBe("2026-10-21");
+    expect(dalam.digeser).toBe(false);
+    // 14 hari dari sidang 15 Mar 2027 = 29 Mar > batas Senin 22 Mar: dijepit ke 22 Mar.
+    const jepitSenin = bawaanTundaIkrar("belum-siap", { tanggalSidang: "2027-03-15", tanggalPenetapanSidangIkrar: "2026-09-22" });
+    expect(jepitSenin.tanggal).toBe("2027-03-22");
+    expect(jepitSenin.digeser).toBe(true);
+    expect(jepitSenin.penjelasan).toContain("dijepit");
+    // Batas Sabtu 13 Mar: dijepit mundur ke Jumat 12 Mar.
+    const jepitSabtu = bawaanTundaIkrar("belum-siap", { tanggalSidang: "2027-03-03", tanggalPenetapanSidangIkrar: "2026-09-13" });
+    expect(jepitSabtu.tanggal).toBe("2027-03-12");
+    // Tanpa penetapan hari sidang ikrar: tidak ada batas untuk menjepit.
+    expect(bawaanTundaIkrar("belum-siap", { tanggalSidang: "2027-03-15" }).tanggal).toBe("2027-03-29");
+  });
+
+  it("tenggat sudah lewat dari tanggal sidang ini: tidak ada bawaan, petugas diberi tahu (penetapan gugur, blangko [91])", () => {
+    for (const jenis of ["belum-siap", "tidak-hadir"] as const) {
+      const lewat = bawaanTundaIkrar(jenis, { tanggalSidang: "2027-04-01", tanggalPenetapanSidangIkrar: "2026-09-22" });
+      expect(lewat.tanggal, jenis).toBe("");
+      expect(lewat.perluDiisi, jenis).toBe(true);
+      expect(lewat.penjelasan, jenis).toContain("gugur");
+      expect(lewat.penjelasan, jenis).toContain("[91]");
+      // Sidang tepat pada hari batas: tidak ada hari berikutnya yang sah.
+      const tepat = bawaanTundaIkrar(jenis, { tanggalSidang: "2027-03-22", tanggalPenetapanSidangIkrar: "2026-09-22" });
+      expect(tepat.tanggal, jenis).toBe("");
+      expect(tepat.perluDiisi, jenis).toBe(true);
+    }
+  });
+
+  it("akhir pekan bergeser ke Senin (maju) atau Jumat (mundur)", () => {
     expect(keHariKerja("2027-03-13")).toBe("2027-03-15"); // Sabtu
     expect(keHariKerja("2027-03-14")).toBe("2027-03-15"); // Minggu
-    const b = bawaanTundaIkrar("tidak-hadir", { tanggalSidang: "2026-10-07", tanggalBht: "2026-09-13" });
-    expect(b.tanggal).toBe("2027-03-15");
-    expect(b.digeser).toBe(true);
-    const tanpa = bawaanTundaIkrar("tidak-hadir", { tanggalSidang: "2026-10-07" });
-    expect(tanpa.tanggal).toBe("");
-    expect(tanpa.perluDiisi).toBe(true);
+    expect(mundurKeHariKerja("2027-03-13")).toBe("2027-03-12");
+    expect(mundurKeHariKerja("2027-03-14")).toBe("2027-03-12");
+    expect(mundurKeHariKerja("2027-03-15")).toBe("2027-03-15");
   });
 
   it("penambah bulan memangkas ke hari terakhir bulan", () => {
@@ -61,17 +114,41 @@ describe("bawaan tunda sidang ikrar talak", () => {
 });
 
 describe("batas 6 bulan ikrar (Pasal 70 ayat (6) UU 7/1989)", () => {
-  it("dihitung dari penetapan hari sidang ikrar, cadangan dari BHT", () => {
+  it("dihitung dari penetapan hari sidang ikrar; BHT tidak pernah menjadi cadangan", () => {
     expect(batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: "2026-09-22", tanggalBht: "2026-09-01" })).toBe("2027-03-22");
-    expect(batasEnamBulanIkrar({ tanggalBht: "2026-09-15" })).toBe("2027-03-15");
+    expect(batasEnamBulanIkrar({ tanggalBht: "2026-09-15" })).toBe("");
+    expect(batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: "", tanggalBht: "2026-09-15" })).toBe("");
+    expect(batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: null, tanggalBht: "2026-09-15" })).toBe("");
     expect(batasEnamBulanIkrar({})).toBe("");
   });
 
-  it("peringatan hanya bila tanggal berikutnya melewati batas", () => {
+  it("hari yang tidak ada di bulan tujuan jatuh ke hari terakhir bulan itu (Februari biasa dan kabisat)", () => {
+    expect(batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: "2026-08-31" })).toBe("2027-02-28");
+    expect(batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: "2027-08-31" })).toBe("2028-02-29");
+    expect(batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: "2026-08-30" })).toBe("2027-02-28");
+    expect(batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: "2026-12-31" })).toBe("2027-06-30");
+  });
+
+  it("peringatan hanya bila tanggal berikutnya MELEWATI batas (tepat pada batas masih sah)", () => {
     const bahan = { tanggalPenetapanSidangIkrar: "2026-09-22" };
+    expect(peringatanBatasIkrar("2027-03-21", bahan)).toBe("");
     expect(peringatanBatasIkrar("2027-03-22", bahan)).toBe("");
     expect(peringatanBatasIkrar("2027-03-23", bahan)).toContain("Pasal 70 ayat (6)");
+    expect(peringatanBatasIkrar("2027-03-23", bahan)).toContain("2027-03-22");
+    // Tanpa penetapan hari sidang ikrar tenggat belum berjalan: tidak ada peringatan, walau BHT ada.
     expect(peringatanBatasIkrar("2027-03-23", {})).toBe("");
+    expect(peringatanBatasIkrar("2030-01-01", { tanggalBht: "2026-09-15" })).toBe("");
+    // Tanggal tak sah tidak memicu peringatan.
+    expect(peringatanBatasIkrar("", bahan)).toBe("");
+  });
+
+  it("bawaan sendiri tidak pernah memicu peringatan", () => {
+    for (const phs of ["2026-09-13", "2026-09-14", "2026-09-22", "2026-08-31"]) {
+      for (const jenis of ["belum-siap", "tidak-hadir"] as const) {
+        const b = bawaanTundaIkrar(jenis, { tanggalSidang: "2026-10-07", tanggalPenetapanSidangIkrar: phs });
+        expect(peringatanBatasIkrar(b.tanggal, { tanggalPenetapanSidangIkrar: phs }), `${jenis} ${phs}`).toBe("");
+      }
+    }
   });
 });
 
@@ -103,6 +180,9 @@ describe("kabel layar, rute, dan bot", () => {
     expect(ringkas).toContain("data-putus-ikrar");
     expect(ringkas).toContain("ikrarDilaksanakan: true");
     expect(ringkas).toContain("peringatanBatasIkrar(");
+    // Penetapan hari sidang ikrar ikut ke bawaan dan peringatan batas mencegah simpan.
+    expect(ringkas).toContain("tanggalPenetapanSidangIkrar: keadaan.tanggalPenetapanSidangIkrar");
+    expect(ringkas).toContain("&& !peringatanIkrar");
   });
 
   it("blangko biasa (bukan ikrar) tidak berubah: status putusan tetap dikirim", () => {

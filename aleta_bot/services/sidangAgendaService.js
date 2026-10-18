@@ -117,7 +117,7 @@ const DEFAULT_AGENDA_CLASSES = [
     persiapan: [
       "Kehadiran Anda wajib. Ikrar talak tidak dapat diwakilkan.",
       "Bawa KTP asli dan buku nikah.",
-      "Penetapan ikrar talak gugur bila tidak dilaksanakan dalam 6 bulan sejak penetapan berkekuatan hukum tetap.",
+      "Penetapan ikrar talak gugur bila tidak dilaksanakan dalam 6 bulan sejak ditetapkan hari sidang ikrar talak.",
     ],
   },
   {

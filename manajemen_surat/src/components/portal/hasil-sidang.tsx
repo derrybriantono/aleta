@@ -1342,6 +1342,7 @@ export function CatatHasilRingkas({
       ? bawaanTundaIkrar(jenisIkrar, {
           tanggalSidang: String(keadaan.tanggalSidang || "").slice(0, 10),
           tanggalBht: keadaan.tanggalBht,
+          tanggalPenetapanSidangIkrar: keadaan.tanggalPenetapanSidangIkrar,
         })
       : null;
   const alasanTunda = bawaanIkrar && !alasanDisentuh ? bawaanIkrar.alasan : alasanTundaIsi;
@@ -1438,7 +1439,8 @@ export function CatatHasilRingkas({
 
   const lengkap =
     jalan === "tunda"
-      ? Boolean(alasanTunda.trim() && tanggalBerikut && jamBerikut && agendaBerikut.trim())
+      ? // Sidang ikrar yang melewati batas 6 bulan tidak boleh disimpan (bot juga menolak).
+        Boolean(alasanTunda.trim() && tanggalBerikut && jamBerikut && agendaBerikut.trim()) && !peringatanIkrar
       : modeIkrarPutus
         ? ikrarDilaksanakan
         : Boolean(statusId && tanggalPutus);
@@ -1592,7 +1594,7 @@ export function CatatHasilRingkas({
               className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100"
             >
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>{peringatanIkrar}</span>
+              <span>{peringatanIkrar} Penundaan tidak dapat disimpan - pilih tanggal paling lambat pada batas itu.</span>
             </p>
           ) : null}
         </div>
@@ -1871,7 +1873,9 @@ export function CatatHasilRingkas({
         {!lengkap ? (
           <span className="text-xs text-muted-foreground">
             {jalan === "tunda"
-              ? "Alasan, agenda, tanggal, dan jam harus terisi."
+              ? peringatanIkrar
+                ? "Tanggal melewati batas 6 bulan ikrar - ubah tanggal berikutnya."
+                : "Alasan, agenda, tanggal, dan jam harus terisi."
               : modeIkrarPutus
                 ? "Centang konfirmasi ikrar dilaksanakan."
                 : "Status putusan dan tanggalnya harus terisi."}
