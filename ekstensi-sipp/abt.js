@@ -18911,7 +18911,7 @@ function a3KartuKuasaKosong(tampil, sama, data) {
  *
  * Tidak ada yang ditulis sebelum petugas mencentang dan menekan Input ke ABT.
  */
-const P4_VAR_ECOURT = Object.freeze(["6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227"]);
+const P4_VAR_ECOURT = Object.freeze(["6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227", "8436", "8437", "9355", "9491", "9681"]);
 const ALETA_API_ISI_GUGATAN = "/aleta/api/aleta-ecourt/isi-gugatan";
 
 /** Dibaca bersama bacaan Isi dari SIPP lainnya. Diam bila server lama belum punya rutenya. */
