@@ -1,0 +1,691 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "permohonan-umum",
+ "judul": "Permohonan umum",
+ "versi": 1,
+ "penulis": "SAKSI-E",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "369"
+  ],
+  "alurPerkaraId": [
+   "16"
+  ],
+  "kecualiPolaNama": "angkat|asuh|hadhanah|hadanah|perwalian|waris|wali|ahli"
+ },
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [
+  {
+   "folder": "9b Permohonan Umum - BAS",
+   "berkas": "BAS ALUR 15 Permohonan - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon",
+   "variabelSaksi": [],
+   "catatan": "folder 9b hanya memuat BAS tunda, gugur, cabut dan tidak dapat diterima (tanpa pemeriksaan saksi); dipakai bila permohonan lain yang tidak punya katalog khusus memeriksa saksi; saksi memakai variabel tanya_jawab 2021 dan 2022 (BAS memakai 5058/5059) pada BAS pembuktian jenis perkaranya"
+  }
+ ],
+ "dasarHukum": [
+  {
+   "id": "dh-sebab-pengetahuan",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 102: syarat materiil saksi (Pasal 308 ayat (2) RBg)",
+   "uraian": "keterangan saksi harus tentang peristiwa yang dialami, didengar atau dilihat sendiri dan menyebut sumber pengetahuannya; pendapat atau dugaan bukan kesaksian",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-de-auditu",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (7)",
+   "uraian": "keterangan yang diperoleh saksi dari orang lain (de auditu) dapat dipakai hanya sebagai sumber persangkaan",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-unus-testis",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (8)",
+   "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak cukup (satu saksi bukan saksi)",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-larangan-saksi",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 100-101 butir (3)-(4) (Pasal 172 RBg)",
+   "uraian": "keluarga sedarah dan semenda garis lurus serta suami atau istri salah satu pihak tidak dapat didengar sebagai saksi; pengecualian untuk perkara tentang keadaan menurut hukum sipil seseorang. Penilaian ada pada hakim",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-kesesuaian-saksi",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (2) (Pasal 309 RBg)",
+   "uraian": "hakim menilai kesesuaian keterangan saksi yang satu dengan lainnya dan alasan saksi memberi keterangan",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-permohonan-voluntair",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 69 butir B.1.a (Pedoman Umum Permohonan)",
+   "uraian": "perkara permohonan diputus dalam bentuk penetapan; pengadilan agama berwenang memeriksa permohonan sepanjang ditentukan peraturan perundang-undangan dan atau jika ada kepentingan hukum",
+   "status": "terverifikasi",
+   "sumber": "salinan teks Buku II 2013 (dibaca SAKSI-E 18 Okt 2026)"
+  }
+ ],
+ "keadaan": {},
+ "pokokPembuktian": [
+  {
+   "id": "pp-hubungan-saksi",
+   "judul": "Hubungan saksi dengan pemohon",
+   "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal pemohon (sebab pengetahuan)",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-sebab-pengetahuan",
+    "dh-larangan-saksi",
+    "dh-unus-testis"
+   ]
+  },
+  {
+   "id": "pp-maksud-kepentingan",
+   "judul": "Maksud dan kepentingan hukum pemohon",
+   "uraian": "maksud permohonan dan kepentingan hukum pemohon atas hal yang dimohonkan",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-permohonan-voluntair"
+   ]
+  },
+  {
+   "id": "pp-peristiwa",
+   "judul": "Peristiwa yang menjadi dasar permohonan",
+   "uraian": "peristiwa yang didalilkan: apa, kapan, di mana, siapa yang terlibat dan bagaimana saksi mengetahuinya",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-sebab-pengetahuan",
+    "dh-kesesuaian-saksi"
+   ]
+  },
+  {
+   "id": "pp-keberatan",
+   "judul": "Pihak lain dan keberatan",
+   "uraian": "pihak yang terkait dan ada tidaknya keberatan",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-permohonan-voluntair"
+   ]
+  },
+  {
+   "id": "pp-pendukung",
+   "judul": "Bukti dan keadaan pendukung",
+   "uraian": "dokumen atau keadaan yang mendukung permohonan dan keadaan sekarang",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-sebab-pengetahuan"
+   ]
+  },
+  {
+   "id": "pp-penutup",
+   "judul": "Penutup keterangan",
+   "uraian": "saksi menyatakan keterangannya telah cukup",
+   "wajib": false,
+   "dasarHukum": []
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-kenal",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 10,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi kenal dengan #7036# ?",
+   "teksVarian": [
+    "Apakah saksi mengenal #7036# ?",
+    "Apakah Saudara saksi kenal dengan #7036# ?"
+   ],
+   "variabelAbt": [
+    "7036"
+   ],
+   "hal": "hubungan saksi dengan pemohon",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal pemohon dan menyebut hubungannya",
+     "saksi1": [
+      "saya kenal dengan #7036# karena saya adalah {hubungan}",
+      "saya mengenal #7036# sebab saya ini {hubungan}",
+      "benar saya kenal dengan #7036# dan saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya mengenal #7036#"
+     ],
+     "saksi2": [
+      "pihak yang saya kenal dengan baik adalah #7036# sebab saya adalah {hubungan}",
+      "saya tahu dan kenal #7036# sebab hubungan saya dengannya adalah {hubungan}",
+      "lama saya bergaul dengan #7036# karena kedudukan saya sebagai {hubungan}",
+      "yang saya kenal adalah #7036# lantaran saya berkedudukan sebagai {hubungan}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-maksud-pemohon",
+   "pokok": "pp-maksud-kepentingan",
+   "urutan": 20,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi mengetahui maksud #7036# mengajukan permohonan ini ?",
+   "teksVarian": [
+    "Apa yang saksi ketahui tentang maksud #7036# datang ke persidangan ?"
+   ],
+   "variabelAbt": [
+    "7036"
+   ],
+   "hal": "maksud #7036# mengajukan permohonan ini",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan maksud permohonan pemohon",
+     "saksi1": [
+      "maksud #7036# mengajukan permohonan ini yang saya ketahui langsung adalah {daftar}",
+      "saya tahu sendiri #7036# memohon agar pengadilan {daftar}",
+      "sepengetahuan saya #7036# datang ke pengadilan dengan maksud {daftar}",
+      "yang #7036# inginkan melalui permohonan ini menurut penglihatan saya adalah {daftar}"
+     ],
+     "saksi2": [
+      "saya mengerti #7036# mengajukan permohonan untuk {daftar} dan hal itu saya ketahui langsung",
+      "tujuan #7036# ke persidangan yang saya saksikan sendiri yaitu {daftar}",
+      "#7036# bermaksud {daftar} lewat permohonan ini sebagaimana saya ketahui",
+      "menurut yang saya ketahui sendiri permohonan #7036# ini bertujuan {daftar}"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: permohonan diajukan demi kepentingan sendiri pemohon; versi B: permohonan diajukan demi kepentingan orang lain - berselisih pada MAKSUD PERMOHONAN",
+     "saksi1": [
+      "#7036# mengajukan permohonan ini demi kepentingannya sendiri menurut penglihatan saya",
+      "saya tahu permohonan ini untuk keperluan #7036# sendiri",
+      "maksud #7036# adalah mengurus kebutuhannya sendiri sebagaimana saya saksikan",
+      "permohonan ini menyangkut urusan pribadi #7036# menurut yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "#7036# mengajukan permohonan ini demi kepentingan orang lain menurut penglihatan saya",
+      "saya tahu permohonan #7036# ini untuk keperluan keluarganya",
+      "maksud #7036# adalah mengurus kebutuhan pihak lain sebagaimana saya saksikan",
+      "permohonan #7036# ini menyangkut urusan orang lain menurut yang saya ketahui langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-kepentingan-pemohon",
+   "pokok": "pp-maksud-kepentingan",
+   "urutan": 30,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa hubungan dan kepentingan #7036# dengan hal yang dimohonkan ?",
+   "variabelAbt": [
+    "7036"
+   ],
+   "hal": "hubungan dan kepentingan #7036# dengan hal yang dimohonkan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan hubungan dan kepentingan hukum pemohon",
+     "saksi1": [
+      "hubungan dan kepentingan #7036# dengan hal yang dimohonkan yang saya ketahui langsung adalah {daftar}",
+      "saya tahu sendiri #7036# berkepentingan atas permohonan ini karena {daftar}",
+      "kedudukan #7036# terhadap hal yang dimohonkan sebagaimana saya lihat adalah {daftar}",
+      "alasan #7036# berkepentingan menurut yang saya saksikan ialah {daftar}"
+     ],
+     "saksi2": [
+      "menurut penglihatan saya #7036# punya kepentingan karena {daftar}",
+      "yang menghubungkan #7036# dengan hal yang dimohonkan adalah {daftar} dan saya mengetahuinya sendiri",
+      "kepentingan #7036# atas permohonan ini yang saya saksikan berupa {daftar}",
+      "saya tahu langsung bahwa #7036# berkepentingan sebab {daftar}"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pemohon berkepentingan langsung; versi B: kepentingan pemohon hanya tidak langsung - berselisih pada KEPENTINGAN PEMOHON",
+     "saksi1": [
+      "#7036# berkepentingan langsung atas hal yang dimohonkan menurut penglihatan saya",
+      "saya tahu hal yang dimohonkan menyangkut diri #7036# secara langsung",
+      "#7036# terkait langsung dengan hal yang dimohonkan sebagaimana saya saksikan",
+      "kepentingan #7036# atas permohonan ini langsung menurut yang saya ketahui"
+     ],
+     "saksi2": [
+      "kepentingan #7036# atas hal yang dimohonkan hanya tidak langsung menurut penglihatan saya",
+      "saya tahu hal yang dimohonkan hanya terkait tidak langsung dengan #7036#",
+      "#7036# hanya tidak langsung terkait dengan hal yang dimohonkan sebagaimana saya saksikan",
+      "kepentingan #7036# atas permohonan ini hanya tidak langsung menurut yang saya ketahui"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-peristiwa",
+   "pokok": "pp-peristiwa",
+   "urutan": 40,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa yang saksi ketahui tentang peristiwa yang menjadi dasar permohonan ini, kapan dan di mana terjadinya ?",
+   "variabelAbt": [],
+   "hal": "peristiwa yang menjadi dasar permohonan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan peristiwa yang menjadi dasar permohonan yang ia lihat atau alami sendiri",
+     "saksi1": [
+      "peristiwa yang menjadi dasar permohonan ini yang saya lihat sendiri adalah {daftar} dan terjadi sejak {sejak}",
+      "saya menyaksikan langsung peristiwa {daftar} yang terjadi sejak {sejak}",
+      "yang saya alami dan saksikan sendiri sebagai dasar permohonan adalah {daftar} sejak {sejak}",
+      "dengan mata kepala sendiri saya melihat {daftar} yang berlangsung sejak {sejak}"
+     ],
+     "saksi2": [
+      "saya hadir ketika {daftar} terjadi sejak {sejak} dan itu dasar permohonan ini",
+      "menurut yang saya ketahui langsung peristiwa dasar permohonan ini ialah {daftar} yang bermula sejak {sejak}",
+      "peristiwa {daftar} yang menjadi pokok permohonan saya saksikan sendiri sejak {sejak}",
+      "saya mengalami dan melihat langsung {daftar} sejak {sejak} sebagaimana didalilkan pemohon"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: peristiwa terjadi pada waktu yang diisikan petugas; versi B: peristiwa terjadi jauh lebih belakangan - berselisih pada WAKTU PERISTIWA",
+     "saksi1": [
+      "peristiwa itu terjadi sejak {sejak} menurut penglihatan saya",
+      "saya saksikan sendiri peristiwa itu bermula sejak {sejak}",
+      "peristiwa dasar permohonan ini berlangsung sejak {sejak} sebagaimana saya lihat",
+      "sejak {sejak} saya melihat peristiwa itu berlangsung"
+     ],
+     "saksi2": [
+      "peristiwa itu baru terjadi belakangan ini menurut penglihatan saya",
+      "saya saksikan sendiri peristiwa itu baru bermula beberapa waktu terakhir",
+      "peristiwa dasar permohonan ini baru berlangsung belakangan sebagaimana saya lihat",
+      "baru dalam waktu dekat saya melihat peristiwa itu terjadi"
+     ],
+     "bedaPada": "waktu"
+    }
+   }
+  },
+  {
+   "id": "q-sebab-tahu",
+   "pokok": "pp-peristiwa",
+   "urutan": 50,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana saksi mengetahui peristiwa itu, apakah melihat, mendengar atau mengalami sendiri ?",
+   "variabelAbt": [],
+   "hal": "cara saksi mengetahui peristiwa",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui peristiwa karena melihat dan mengalami sendiri",
+     "saksi1": [
+      "saya mengetahui peristiwa itu karena melihat dan mengalaminya sendiri",
+      "pengetahuan saya tentang peristiwa itu berasal dari penglihatan saya sendiri di tempat kejadian",
+      "saya berada di tempat ketika peristiwa itu terjadi sehingga saya melihatnya langsung",
+      "yang saya terangkan adalah yang saya saksikan dengan mata kepala sendiri"
+     ],
+     "saksi2": [
+      "saya menyaksikan peristiwa itu secara langsung dengan mata kepala sendiri",
+      "sumber pengetahuan saya adalah pengalaman dan penglihatan saya sendiri",
+      "saya ikut mengalami peristiwa itu sehingga saya mengetahuinya sendiri",
+      "saya ada di sana ketika peristiwa itu terjadi dan melihat seluruhnya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: saksi melihat langsung; versi B: saksi mengetahui sesudah kejadian - berselisih pada CARA SAKSI MENGETAHUI",
+     "saksi1": [
+      "saya melihat langsung peristiwa itu terjadi",
+      "saya berada di tempat ketika peristiwa itu terjadi dan menyaksikannya",
+      "pengetahuan saya berasal dari penglihatan saya sendiri saat kejadian",
+      "saya mengalami dan menyaksikan peristiwa itu secara langsung"
+     ],
+     "saksi2": [
+      "saya baru mengetahui peristiwa itu sesudah kejadian",
+      "saya datang setelah peristiwa itu berlangsung",
+      "pengetahuan saya baru ada sesudah peristiwa itu selesai",
+      "saya mengetahuinya dari keadaan yang tampak sesudah kejadian"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-pihak-terkait",
+   "pokok": "pp-keberatan",
+   "urutan": 60,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Siapa saja pihak yang terkait dengan peristiwa itu dan apakah mereka mengetahui permohonan ini ?",
+   "variabelAbt": [],
+   "hal": "pihak yang terkait dengan peristiwa dan pengetahuan mereka atas permohonan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pihak-pihak yang terkait dan pengetahuan mereka atas permohonan",
+     "saksi1": [
+      "pihak yang terkait dengan peristiwa itu yang saya ketahui langsung adalah {daftar}",
+      "saya melihat sendiri orang-orang yang terlibat dalam peristiwa itu yaitu {daftar}",
+      "yang terkait dengan peristiwa ini menurut penglihatan saya adalah {daftar} dan mereka mengetahui adanya permohonan ini",
+      "pihak-pihak {daftar} saya kenal sebagai yang terlibat dan mereka mengetahui permohonan ini"
+     ],
+     "saksi2": [
+      "menurut yang saya ketahui sendiri yang terlibat adalah {daftar} dan mereka mengetahui permohonan ini",
+      "saya tahu langsung pihak terkait peristiwa ini yaitu {daftar} yang mengetahui perihal permohonan",
+      "orang yang berkaitan dengan peristiwa ini sebagaimana saya saksikan adalah {daftar} dan mereka mengetahui hal ini",
+      "di depan mata saya {daftar} terlibat dalam peristiwa itu dan mengetahui permohonan ini"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pihak terkait mengetahui permohonan; versi B: pihak terkait belum mengetahui permohonan - berselisih pada PENGETAHUAN PIHAK TERKAIT",
+     "saksi1": [
+      "pihak terkait mengetahui adanya permohonan ini menurut penglihatan saya",
+      "saya tahu langsung pihak yang terlibat telah diberi kabar tentang permohonan ini",
+      "mereka yang terlibat mengetahui permohonan ini sebagaimana saya saksikan",
+      "pihak terkait telah mengetahui permohonan ini menurut yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "pihak terkait belum mengetahui adanya permohonan ini menurut penglihatan saya",
+      "saya tahu langsung pihak yang terlibat belum diberi kabar tentang permohonan ini",
+      "mereka yang terlibat belum mengetahui permohonan ini sebagaimana saya saksikan",
+      "pihak terkait belum mengetahui permohonan ini menurut yang saya ketahui langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-keberatan-pihak",
+   "pokok": "pp-keberatan",
+   "urutan": 70,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah ada pihak yang keberatan atau mempersoalkan hal yang dimohonkan ?",
+   "variabelAbt": [],
+   "hal": "keberatan pihak lain atas hal yang dimohonkan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "tidak ada pihak yang keberatan atau mempersoalkan hal yang dimohonkan",
+     "saksi1": [
+      "tidak ada pihak yang keberatan atas hal yang dimohonkan menurut yang saya ketahui langsung",
+      "setahu saya tidak seorang pun mempersoalkan hal yang dimohonkan ini",
+      "tidak ada keberatan dari keluarga maupun orang lain sebagaimana saya lihat",
+      "saya tidak mendengar ada yang menolak atau mempermasalahkan permohonan ini"
+     ],
+     "saksi2": [
+      "tidak ada yang menentang hal yang dimohonkan di depan mata saya",
+      "saya tahu langsung tidak ada orang yang menyatakan keberatan atas permohonan ini",
+      "tidak ada pihak yang mengajukan sanggahan sepanjang pengetahuan saya",
+      "tidak seorang pun yang menyampaikan keberatan kepada saya mengenai hal ini"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: tidak ada yang keberatan; versi B: ada yang keberatan - berselisih pada KEBERATAN PIHAK LAIN",
+     "saksi1": [
+      "tidak ada yang keberatan atas hal yang dimohonkan menurut penglihatan saya",
+      "setahu saya tidak seorang pun menolak hal yang dimohonkan",
+      "tidak ada pihak yang menyatakan keberatan sebagaimana saya saksikan",
+      "tidak ada yang mempersoalkan hal yang dimohonkan menurut yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "ada yang keberatan atas hal yang dimohonkan menurut penglihatan saya",
+      "setahu saya ada orang yang menolak hal yang dimohonkan",
+      "ada pihak yang menyatakan keberatan sebagaimana saya saksikan",
+      "ada yang mempersoalkan hal yang dimohonkan menurut yang saya ketahui langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-bukti-pendukung",
+   "pokok": "pp-pendukung",
+   "urutan": 80,
+   "tingkat": "pilihan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi mengetahui dokumen atau keadaan lain yang mendukung permohonan ini ?",
+   "variabelAbt": [],
+   "hal": "dokumen atau keadaan yang mendukung permohonan",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan dokumen atau keadaan lain yang mendukung permohonan",
+     "saksi1": [
+      "dokumen atau keadaan yang mendukung permohonan ini yang saya lihat sendiri adalah {daftar}",
+      "saya melihat langsung {daftar} yang menguatkan permohonan ini",
+      "yang saya ketahui sebagai pendukung permohonan ini adalah {daftar}",
+      "keadaan yang menguatkan permohonan ini menurut penglihatan saya berupa {daftar}"
+     ],
+     "saksi2": [
+      "menurut yang saya saksikan sendiri permohonan ini didukung oleh {daftar}",
+      "saya tahu langsung ada {daftar} yang mendukung permohonan ini",
+      "bukti pendukung yang saya lihat adalah {daftar}",
+      "yang menguatkan dalil pemohon sebagaimana saya ketahui adalah {daftar}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-keadaan-sekarang",
+   "pokok": "pp-pendukung",
+   "urutan": 90,
+   "tingkat": "pilihan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana keadaan sekarang berkaitan dengan hal yang dimohonkan ?",
+   "variabelAbt": [],
+   "hal": "keadaan sekarang berkaitan dengan hal yang dimohonkan",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan keadaan sekarang berkaitan dengan hal yang dimohonkan",
+     "saksi1": [
+      "keadaan sekarang berkaitan dengan hal yang dimohonkan yang saya lihat sendiri adalah {daftar}",
+      "saya menyaksikan sendiri bahwa saat ini {daftar}",
+      "sampai sekarang yang saya ketahui langsung adalah {daftar}",
+      "kondisi terakhir menurut penglihatan saya yaitu {daftar}"
+     ],
+     "saksi2": [
+      "menurut yang saya ketahui sendiri keadaan terkini adalah {daftar}",
+      "saya tahu langsung bahwa sekarang {daftar}",
+      "keadaan saat ini sebagaimana saya saksikan ialah {daftar}",
+      "di depan mata saya kondisi sekarang berupa {daftar}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-tujuan-penetapan",
+   "pokok": "pp-maksud-kepentingan",
+   "urutan": 100,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Untuk apa #7036# memerlukan penetapan pengadilan ini ?",
+   "variabelAbt": [
+    "7036"
+   ],
+   "hal": "keperluan #7036# atas penetapan pengadilan",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan keperluan pemohon atas penetapan pengadilan",
+     "saksi1": [
+      "#7036# memerlukan penetapan ini untuk {daftar} dan saya mengetahuinya langsung",
+      "keperluan #7036# atas penetapan ini yang saya ketahui sendiri adalah {daftar}",
+      "saya tahu penetapan ini dibutuhkan #7036# supaya {daftar}",
+      "alasan #7036# memerlukan penetapan pengadilan menurut penglihatan saya ialah {daftar}"
+     ],
+     "saksi2": [
+      "menurut yang saya ketahui langsung #7036# membutuhkan penetapan ini guna {daftar}",
+      "saya mengerti #7036# mengurus penetapan ini agar {daftar}",
+      "kegunaan penetapan bagi #7036# sebagaimana saya saksikan adalah {daftar}",
+      "#7036# memerlukan penetapan ini dengan tujuan {daftar} yang saya ketahui sendiri"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-penutup",
+   "pokok": "pp-penutup",
+   "urutan": 900,
+   "tingkat": "inti",
+   "kelompok": "penutup",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+   "teksVarian": [
+    "Apakah masih ada keterangan lain yang akan saksi sampaikan ?",
+    "Adakah hal lain yang hendak saksi terangkan ?"
+   ],
+   "variabelAbt": [],
+   "hal": "keterangan tambahan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan keterangannya sudah cukup",
+     "saksi1": [
+      "sudah cukup",
+      "sudah cukup sekian dari saya",
+      "sudah cukup keterangan saya",
+      "sudah cukup itu saja"
+     ],
+     "saksi2": [
+      "sudah cukup demikian keterangan saya",
+      "sudah cukup semua yang dapat saya terangkan",
+      "sudah cukup sampai di sini keterangan saya",
+      "sudah cukup demikian yang saya ketahui"
+     ]
+    }
+   }
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Keterangan saksi harus menyebut sebab pengetahuannya; keterangan seorang saksi saja tanpa alat bukti lain tidak cukup.",
+  "Keluarga sedarah dan semenda garis lurus serta suami atau istri salah satu pihak pada dasarnya tidak dapat didengar sebagai saksi; perkara tentang keadaan menurut hukum sipil seseorang dikecualikan (Buku II Edisi Revisi 2013 hlm. 100-101). Penilaian ada pada hakim.",
+  "Keterangan yang hanya berasal dari cerita orang lain hanya dapat menjadi sumber persangkaan.",
+  "Katalog ini kerangka umum untuk permohonan yang tidak punya katalog khusus; isi bagian yang kosong pada borang dengan fakta perkara itu. Bila perkara termasuk jenis lain (itsbat nikah, dispensasi kawin, perwalian, wali adhal, asal-usul anak, ahli waris, pengangkatan anak), pakai katalog jenis itu.",
+  "Perkara permohonan bersifat voluntair dan diputus dalam bentuk penetapan (Buku II Edisi Revisi 2013 hlm. 69)."
+ ]
+}

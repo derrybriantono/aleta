@@ -11293,3 +11293,26 @@ html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-
 html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-biru    { background: #2856a8; color: #f0f4fb; border-color: #4a76c4; }
 html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-ungu    { background: #4f53b3; color: #f2f2fb; border-color: #7074cc; }
 html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-sita    { background: #d9a600; color: #2a1d00; border-color: #f2c233; }
+
+/* === SUSUN SAKSI MENURUT KEADAAN PERKARA (18 Okt 2026) - saksi-susun.js === */
+.aleta-ssk { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.aleta-ssk-saksi { display: flex; flex-direction: column; gap: 6px; padding: 6px 0; border-top: 1px solid rgba(127, 127, 127, 0.35); }
+.aleta-ssk-baris { display: flex; flex-direction: column; gap: 3px; padding: 4px 6px; border-left: 3px solid transparent; }
+.aleta-ssk-tanya { font-size: calc(12px * var(--aleta-skala-huruf, 1)); font-weight: 600; }
+.aleta-ssk-jawab {
+  font: inherit;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 3.2em;
+  resize: vertical;
+  padding: 4px 6px;
+  border: 1px solid var(--aleta-garis);
+  border-radius: 4px;
+  background: var(--aleta-latar-naik);
+  color: var(--aleta-tulisan);
+}
+.aleta-ssk-kuning { border-left-color: #9a5b06; }
+.aleta-ssk-merah { border-left-color: #b42318; }
+.aleta-ssk-sumber { width: 100%; box-sizing: border-box; }
+.aleta-ssk-beda summary { cursor: pointer; font-size: calc(12px * var(--aleta-skala-huruf, 1)); }

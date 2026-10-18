@@ -1,0 +1,1585 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "asal-usul-anak",
+ "judul": "Asal usul anak",
+ "versi": 1,
+ "penulis": "SAKSI-D",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "358"
+  ]
+ },
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [
+  {
+   "folder": "8 Asal Usul Anak - BAS",
+   "berkas": "BAS ALUR 13 AUA - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "8 Asal Usul Anak - BAS",
+   "berkas": "BAS ALUR 13 AUA - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "8 Asal Usul Anak - BAS",
+   "berkas": "BAS ALUR 13 AUA - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "8 Asal Usul Anak - BAS",
+   "berkas": "BAS ALUR 13 AUA - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "8 Asal Usul Anak - BAS",
+   "berkas": "BAS ALUR 13 [1] BAS 1 Asal Usul Anak - Kabul",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  }
+ ],
+ "dasarHukum": [
+  {
+   "id": "dh-sebab-pengetahuan",
+   "rujukan": "Pasal 171 ayat (1) dan (2) HIR / Pasal 308 ayat (1) dan (2) RBg",
+   "uraian": "saksi harus menyebut alasan dan cara ia mengetahui hal yang diterangkan; pendapat atau dugaan bukan kesaksian",
+   "status": "terverifikasi",
+   "sumber": "HIR / RBg (hukum acara perdata yang berlaku di peradilan agama, Pasal 54 UU 7/1989); sama dengan katalog contoh"
+  },
+  {
+   "id": "dh-unus-testis",
+   "rujukan": "Pasal 169 HIR / Pasal 306 RBg / Pasal 1905 KUHPerdata",
+   "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak dapat dipercaya",
+   "status": "terverifikasi",
+   "sumber": "HIR / RBg / KUHPerdata; sama dengan katalog contoh"
+  },
+  {
+   "id": "dh-saksi-syarat",
+   "rujukan": "Pasal 171, 172, 175, 307, 308 dan 309 RBg",
+   "uraian": "syarat formil saksi (dewasa, bukan orang yang dilarang, disumpah, didengar satu per satu) dan syarat materiil (fakta yang dialami, didengar dan dilihat sendiri, saling bersesuaian)",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 4c Wasiat [01], 5a Pembatalan [01], 5b Pencegahan [01], 5 Izin Poligami [01]"
+  },
+  {
+   "id": "dh-beban-bukti",
+   "rujukan": "Pasal 283 RBg jo. Pasal 1865 KUHPerdata",
+   "uraian": "siapa yang mendalilkan suatu peristiwa wajib membuktikannya",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 4c Wasiat [01] dan 5a Pembatalan [01]"
+  },
+  {
+   "id": "dh-aua-kewenangan",
+   "rujukan": "Pasal 49 ayat (1) huruf a UU 7/1989 jo UU 3/2006 jo UU 50/2009; Pasal 73 ayat (1) UU 7/1989",
+   "uraian": "permohonan asal usul anak yang didasarkan pada perkawinan antara orang beragama Islam termasuk bidang perkawinan, kewenangan absolut Pengadilan Agama; kewenangan relatif menurut tempat tinggal pemohon",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 8 Asal Usul Anak [99] NO Poliandri"
+  },
+  {
+   "id": "dh-aua-poliandri",
+   "rujukan": "Pasal 9 UU 1/1974 jo. Pasal 40 huruf a Kompilasi Hukum Islam",
+   "uraian": "seorang yang masih terikat tali perkawinan dengan orang lain tidak dapat kawin lagi; perempuan yang masih bersuami tidak boleh dinikahi laki-laki lain",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 8 Asal Usul Anak [99] NO Poliandri"
+  },
+  {
+   "id": "dh-aua-rukun",
+   "rujukan": "Pasal 14 Kompilasi Hukum Islam; Pasal 39 sampai Pasal 44 Kompilasi Hukum Islam",
+   "uraian": "rukun perkawinan: calon suami, calon istri, wali nikah, dua orang saksi, ijab dan kabul; larangan kawin karena nasab, semenda, sesusuan dan keadaan lain",
+   "status": "terverifikasi",
+   "sumber": "Pasal 14 dan Pasal 39 sampai 44 cocok dengan naskah KHI lampiran Inpres 1/1991 terbitan Direktorat Pembinaan Badan Peradilan Agama Islam Departemen Agama (buku digital simbi.kemenag.go.id), dicocokkan dengan digitalisasi pasal.id; diperiksa 18 Okt 2026; rincian di VERIFIKASI-HUKUM.md"
+  },
+  {
+   "id": "dh-aua-sah",
+   "rujukan": "Pasal 42 UU 1/1974; Pasal 99 Kompilasi Hukum Islam",
+   "uraian": "anak yang sah adalah anak yang dilahirkan dalam atau akibat perkawinan yang sah",
+   "status": "terverifikasi",
+   "sumber": "Pasal 42 UU 1/1974 cocok dengan naskah UU 1/1974 di peraturan.bpk.go.id/Download/36382; Pasal 99 KHI cocok dengan naskah KHI lampiran Inpres 1/1991 terbitan Direktorat Pembinaan Badan Peradilan Agama Islam Departemen Agama (buku digital simbi.kemenag.go.id), dicocokkan dengan digitalisasi pasal.id; diperiksa 18 Okt 2026; rincian di VERIFIKASI-HUKUM.md"
+  },
+  {
+   "id": "dh-aua-103",
+   "rujukan": "Pasal 103 Kompilasi Hukum Islam",
+   "uraian": "asal usul anak dibuktikan dengan akta kelahiran atau alat bukti lain; bila tidak ada, Pengadilan Agama dapat menetapkan asal usul anak setelah pemeriksaan yang teliti berdasarkan bukti yang sah, dan atas penetapan itu instansi pencatat kelahiran menerbitkan akta kelahiran",
+   "status": "terverifikasi",
+   "sumber": "Pasal 103 ayat (1) sampai (3) cocok dengan naskah KHI lampiran Inpres 1/1991 terbitan Direktorat Pembinaan Badan Peradilan Agama Islam Departemen Agama (buku digital simbi.kemenag.go.id), dicocokkan dengan digitalisasi pasal.id; diperiksa 18 Okt 2026; rincian di VERIFIKASI-HUKUM.md"
+  },
+  {
+   "id": "dh-aua-100",
+   "rujukan": "Pasal 100 Kompilasi Hukum Islam dan Putusan Mahkamah Konstitusi Nomor 46/PUU-VIII/2010",
+   "uraian": "anak yang lahir di luar perkawinan yang sah mempunyai hubungan nasab dengan ibunya dan keluarga ibunya; putusan Mahkamah Konstitusi memperluas hubungan perdata anak dengan laki-laki yang dapat dibuktikan sebagai ayahnya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 100 KHI cocok dengan naskah KHI lampiran Inpres 1/1991 terbitan Direktorat Pembinaan Badan Peradilan Agama Islam Departemen Agama (buku digital simbi.kemenag.go.id), dicocokkan dengan digitalisasi pasal.id; diperiksa 18 Okt 2026; amar putusan MK 46/PUU-VIII/2010 (diputus 13 Feb 2012, diucapkan 17 Feb 2012) cocok dengan salinan putusan di s.mkri.id (berkas putusan_sidang_46 PUU 2010-TELAH BACA.pdf); rincian di VERIFIKASI-HUKUM.md"
+  },
+  {
+   "id": "dh-aua-buku2",
+   "rujukan": "Buku II Tahun 2026 aspek 21 dan 31 (ringkasan PTA Pontianak)",
+   "uraian": "isbat nikah poligami sirri dinyatakan tidak dapat diterima meskipun untuk kepentingan anak; perlindungan anak ditempuh melalui permohonan asal usul anak; pengingkaran dan pengakuan anak memakai tenggat dan kemungkinan tes DNA",
+   "status": "perlu-verifikasi",
+   "sumber": "memori rujukan Buku II 2026: ringkasan sekunder, naskah resmi belum dibaca"
+  }
+ ],
+ "keadaan": {
+  "perkawinan": {
+   "sumber": "borang",
+   "nilai": [
+    "dicatat-sebelum-lahir",
+    "sirri-dicatat-kemudian",
+    "sirri-belum-dicatat"
+   ],
+   "bawaan": "sirri-dicatat-kemudian",
+   "label": "Keadaan perkawinan orang tua anak"
+  },
+  "waktuLahir": {
+   "sumber": "borang",
+   "nilai": [
+    "sesudah-enam-bulan",
+    "kurang-enam-bulan"
+   ],
+   "bawaan": "sesudah-enam-bulan",
+   "label": "Jarak antara akad nikah dan kelahiran anak"
+  },
+  "pemohon": {
+   "sumber": "borang",
+   "nilai": [
+    "suami-istri",
+    "ibu-saja"
+   ],
+   "bawaan": "suami-istri",
+   "label": "Yang mengajukan permohonan"
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-hubungan-saksi",
+   "judul": "Hubungan saksi dengan para pemohon",
+   "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal para pemohon (sebab pengetahuan)",
+   "dasarHukum": [
+    "dh-sebab-pengetahuan",
+    "dh-saksi-syarat"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-maksud",
+   "judul": "Maksud permohonan",
+   "uraian": "permohonan penetapan asal usul anak",
+   "dasarHukum": [
+    "dh-aua-kewenangan",
+    "dh-aua-103"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-perkawinan-orangtua",
+   "judul": "Perkawinan orang tua anak",
+   "uraian": "kapan dan di mana menikah, umur, status, wali, saksi nikah dan mahar",
+   "dasarHukum": [
+    "dh-aua-rukun"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-halangan",
+   "judul": "Tidak ada halangan perkawinan",
+   "uraian": "tidak terikat perkawinan lain, tidak ada hubungan nasab, semenda atau sesusuan dan tidak ada keberatan",
+   "dasarHukum": [
+    "dh-aua-poliandri",
+    "dh-aua-rukun"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-pencatatan",
+   "judul": "Pencatatan perkawinan",
+   "uraian": "perkawinan dicatat atau belum dicatat pada Kantor Urusan Agama",
+   "dasarHukum": [
+    "dh-aua-103"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-anak",
+   "judul": "Anak yang dimohonkan penetapannya",
+   "uraian": "nama, kelahiran dan hubungan darah anak dengan para pemohon",
+   "dasarHukum": [
+    "dh-aua-sah",
+    "dh-aua-103"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-kendala-akta",
+   "judul": "Kendala akta kelahiran dan kebutuhan penetapan",
+   "uraian": "sebab anak belum memiliki akta kelahiran dan pengasuhannya",
+   "dasarHukum": [
+    "dh-aua-103"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-ibu-saja",
+   "judul": "Permohonan oleh ibu",
+   "uraian": "untuk permohonan yang diajukan ibu saja: ibu yang melahirkan dan status ibu",
+   "dasarHukum": [
+    "dh-aua-100",
+    "dh-aua-buku2"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-suami-terikat",
+   "judul": "Status suami ketika menikah",
+   "uraian": "suami masih atau tidak terikat perkawinan dengan perempuan lain ketika menikah sirri",
+   "dasarHukum": [
+    "dh-aua-poliandri",
+    "dh-aua-buku2"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-penutup",
+   "judul": "Penutup keterangan",
+   "uraian": "saksi menyatakan keterangannya telah cukup",
+   "dasarHukum": [],
+   "wajib": false
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-kenal-pemohon",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 10,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Apakah saksi kenal dengan #0046# I dan #0046# II ?",
+   "hal": "hubungan saksi dengan para pemohon",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal kedua pemohon dan menyebut hubungannya dengan pemohon",
+     "saksi1": [
+      "saya kenal dengan #0046# I dan #0046# II karena saya adalah {hubungan}",
+      "saya mengenal #0046# I maupun #0046# II sebab saya adalah {hubungan}",
+      "#0046# I dan #0046# II saya kenal baik karena kedudukan saya sebagai {hubungan}",
+      "saya sudah lama mengenal #0046# I dan #0046# II karena saya adalah {hubungan}"
+     ],
+     "saksi2": [
+      "kedua pemohon yaitu #0046# I dan #0046# II saya kenal karena saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya kenal dengan #0046# I serta #0046# II",
+      "saya tahu dan kenal #0046# I juga #0046# II karena saya adalah {hubungan}",
+      "perkenalan saya dengan #0046# I dan #0046# II terjadi karena saya adalah {hubungan}"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-kenal-ibu",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 15,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "ibu-saja"
+   },
+   "teks": "Apakah saksi kenal dengan #0046# ?",
+   "hal": "hubungan saksi dengan pemohon",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal pemohon dan menyebut hubungannya dengan pemohon",
+     "saksi1": [
+      "saya kenal dengan #0046# karena saya adalah {hubungan}",
+      "saya mengenal #0046# sebab saya adalah {hubungan}",
+      "#0046# saya kenal baik karena kedudukan saya sebagai {hubungan}",
+      "saya sudah lama mengenal #0046# karena saya adalah {hubungan}"
+     ],
+     "saksi2": [
+      "pemohon yaitu #0046# saya kenal karena saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya kenal dengan #0046#",
+      "saya tahu dan kenal #0046# karena saya adalah {hubungan}",
+      "perkenalan saya dengan #0046# terjadi karena saya adalah {hubungan}"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-maksud",
+   "pokok": "pp-maksud",
+   "urutan": 20,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Apakah saksi mengetahui maksud #0046# I dan #0046# II menghadap di persidangan ?",
+   "hal": "maksud para pemohon menghadap di persidangan",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "para pemohon memohon penetapan asal usul anak",
+     "saksi1": [
+      "saya tahu maksud #0046# I dan #0046# II menghadap di persidangan yaitu terkait asal usul anak",
+      "yang menjadi maksud #0046# I dan #0046# II ke persidangan adalah memohon penetapan asal usul anak mereka",
+      "saya mengetahui sendiri bahwa #0046# I dan #0046# II datang untuk meminta penetapan tentang asal usul anak",
+      "kedatangan #0046# I dan #0046# II ke pengadilan adalah untuk mengurus penetapan asal usul anak"
+     ],
+     "saksi2": [
+      "sepengetahuan saya #0046# I dan #0046# II menghadap sidang untuk memohon pengesahan asal usul anak mereka",
+      "tujuan #0046# I dan #0046# II mengajukan perkara ini adalah memperoleh penetapan asal usul anak",
+      "saya tahu langsung bahwa #0046# I dan #0046# II ke pengadilan agar asal usul anak mereka ditetapkan",
+      "permohonan #0046# I dan #0046# II ini berkaitan dengan penetapan asal usul anak yang saya ketahui"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-maksud-ibu",
+   "pokok": "pp-maksud",
+   "urutan": 25,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "ibu-saja"
+   },
+   "teks": "Apakah saksi mengetahui maksud #0046# menghadap di persidangan ?",
+   "hal": "maksud pemohon menghadap di persidangan",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "pemohon memohon penetapan asal usul anaknya",
+     "saksi1": [
+      "saya tahu maksud #0046# menghadap di persidangan yaitu terkait asal usul anak",
+      "yang menjadi maksud #0046# ke persidangan adalah memohon penetapan asal usul anaknya",
+      "saya mengetahui sendiri bahwa #0046# datang untuk meminta penetapan tentang asal usul anak",
+      "kedatangan #0046# ke pengadilan adalah untuk mengurus penetapan asal usul anaknya"
+     ],
+     "saksi2": [
+      "sepengetahuan saya #0046# menghadap sidang untuk memohon pengesahan asal usul anaknya",
+      "tujuan #0046# mengajukan perkara ini adalah memperoleh penetapan asal usul anak",
+      "saya tahu langsung bahwa #0046# ke pengadilan agar asal usul anaknya ditetapkan",
+      "permohonan #0046# ini berkaitan dengan penetapan asal usul anak yang saya ketahui"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-tanggal-nikah",
+   "pokok": "pp-perkawinan-orangtua",
+   "urutan": 30,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Kapan dan di mana #0046# I dan #0046# II menikah dan apakah saksi hadir ketika itu ?",
+   "hal": "kapan dan di mana para pemohon menikah dan kehadiran saksi",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "para pemohon menikah pada tanggal dan tempat yang disebut dan saksi hadir",
+     "saksi1": [
+      "#0046# I dan #0046# II menikah pada tanggal #5197# di #5105# dan saya hadir",
+      "saya mengetahui sendiri bahwa pernikahan #0046# I dengan #0046# II berlangsung pada #5197# di #5105# dan saya menghadirinya",
+      "akad nikah #0046# I dan #0046# II terjadi pada #5197# bertempat di #5105# dan saya ada di sana",
+      "pada #5197# di #5105# #0046# I dan #0046# II melangsungkan pernikahan yang saya saksikan sendiri"
+     ],
+     "saksi2": [
+      "pernikahan #0046# I dengan #0046# II dilaksanakan pada #5197# di #5105# dan saya turut hadir",
+      "saya hadir ketika #0046# I dan #0046# II menikah pada #5197# di #5105#",
+      "tanggal #5197# adalah hari pernikahan #0046# I dengan #0046# II di #5105# yang saya saksikan",
+      "sepengetahuan saya #0046# I dan #0046# II menikah di #5105# pada #5197# karena saya ikut hadir"
+     ]
+    },
+    "mendengar": {
+     "maksud": "saksi mendengar sendiri ijab kabul pernikahan",
+     "saksi1": [
+      "saya mendengar sendiri ijab kabul antara #0046# I dan #0046# II pada pernikahan mereka",
+      "dengan telinga saya sendiri saya mendengar akad nikah #0046# I dan #0046# II diucapkan",
+      "ucapan ijab kabul #0046# I dan #0046# II terdengar langsung oleh saya",
+      "saya ikut mendengar #0046# I mengucapkan kabul untuk #0046# II"
+     ],
+     "saksi2": [
+      "saya turut mendengar langsung akad nikah #0046# I dengan #0046# II dibacakan",
+      "ijab dan kabul pernikahan #0046# I dan #0046# II saya dengar sendiri",
+      "perkataan ijab kabul pada pernikahan #0046# I dengan #0046# II terdengar langsung oleh saya",
+      "ketika #0046# I mengucapkan kabul bagi #0046# II saya mendengarnya secara langsung"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi mengetahui pernikahan dari cerita orang lain dan tidak hadir",
+     "saksi1": [
+      "pernikahan #0046# I dan #0046# II saya ketahui dari cerita {sumber} dan saya tidak hadir pada akad nikahnya",
+      "{sumber} menceritakan kepada saya bahwa #0046# I dan #0046# II sudah menikah dan saya sendiri tidak menyaksikannya",
+      "perihal pernikahan #0046# I dengan #0046# II saya diberi tahu oleh {sumber} dan saya tidak berada di tempat akad",
+      "pernikahan #0046# I dan #0046# II hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+     ],
+     "saksi2": [
+      "kabar pernikahan #0046# I dan #0046# II saya terima dari {sumber} dan saya tidak ikut menghadirinya",
+      "saya mendengar dari {sumber} bahwa #0046# I dan #0046# II telah menikah dan saya tidak mengalaminya langsung",
+      "{sumber} bercerita kepada saya tentang akad nikah #0046# I dengan #0046# II dan saya tidak menyaksikannya",
+      "soal pernikahan #0046# I dan #0046# II saya dikabari oleh {sumber} dan bukan dari yang saya lihat"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian tentang pernikahan",
+     "saksi1": [
+      "saya hanya mengetahui sebagian tentang pernikahan #0046# I dan #0046# II dan selebihnya saya tidak tahu",
+      "pernikahan #0046# I dengan #0046# II baru sebagian yang saya ketahui sedangkan sisanya tidak saya ketahui",
+      "sebagian dari acara akad nikah #0046# I dan #0046# II saya lihat sendiri dan selebihnya tidak saya saksikan",
+      "pernikahan #0046# I dan #0046# II hanya sebagian yang saya ketahui dan sisanya tidak"
+     ],
+     "saksi2": [
+      "pengetahuan saya tentang pernikahan #0046# I dan #0046# II terbatas pada sebagian dan selebihnya saya tidak dapat menerangkan",
+      "saya hanya tahu sebagian dari pernikahan #0046# I dengan #0046# II sementara bagian lainnya tidak saya ketahui",
+      "mengenai akad nikah #0046# I dan #0046# II sebatas yang saya saksikan saja dan selebihnya saya tidak tahu",
+      "sebagian dari pernikahan #0046# I dan #0046# II pernah saya lihat tetapi selebihnya tidak saya ketahui"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pernikahan berlangsung tepat pada tanggal yang disebut; versi B: pernikahan berlangsung beberapa waktu sebelum tanggal itu - berselisih pada WAKTU pernikahan",
+     "saksi1": [
+      "pernikahan #0046# I dengan #0046# II berlangsung tepat pada #5197# menurut penglihatan saya sendiri",
+      "saya melihat sendiri #0046# I dan #0046# II menikah pada #5197#",
+      "akad nikah #0046# I dan #0046# II terjadi pada #5197# sebagaimana saya saksikan",
+      "pada #5197# #0046# I dan #0046# II melangsungkan pernikahan yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "pernikahan #0046# I dengan #0046# II berlangsung beberapa bulan sebelum #5197# menurut penglihatan saya sendiri",
+      "saya melihat sendiri #0046# I dan #0046# II sudah menikah jauh sebelum #5197#",
+      "akad nikah #0046# I dan #0046# II terjadi lebih awal dari #5197# sebagaimana saya saksikan",
+      "sebelum #5197# #0046# I dan #0046# II telah melangsungkan pernikahan yang saya ketahui langsung"
+     ],
+     "bedaPada": "waktu"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "5105",
+    "5197"
+   ]
+  },
+  {
+   "id": "q-umur-nikah",
+   "pokok": "pp-perkawinan-orangtua",
+   "urutan": 40,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Berapa umur #0046# I dan #0046# II ketika menikah ?",
+   "hal": "umur para pemohon ketika menikah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan umur kedua pemohon ketika menikah",
+     "saksi1": [
+      "umur #0046# I ketika menikah adalah #7211# tahun dan #0046# II #7212# tahun",
+      "setahu saya #0046# I berumur #7211# tahun dan #0046# II berumur #7212# tahun ketika melaksanakan pernikahan",
+      "saat akad nikah #0046# I berusia #7211# tahun sedangkan #0046# II berusia #7212# tahun",
+      "ketika menikah usia #0046# I #7211# tahun dan usia #0046# II #7212# tahun"
+     ],
+     "saksi2": [
+      "pada waktu menikah #0046# I sudah berumur #7211# tahun dan #0046# II #7212# tahun",
+      "umur #0046# I #7211# tahun serta umur #0046# II #7212# tahun saat mereka menikah yang saya ketahui",
+      "saya tahu #0046# I berusia #7211# tahun dan #0046# II berusia #7212# tahun ketika akad nikah",
+      "ketika pernikahan berlangsung #0046# I berumur #7211# tahun sementara #0046# II berumur #7212# tahun"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: keduanya sudah dewasa ketika menikah; versi B: salah seorang masih remaja ketika menikah - berselisih pada JUMLAH (umur)",
+     "saksi1": [
+      "saya melihat sendiri #0046# I dan #0046# II sudah dewasa ketika menikah",
+      "keduanya sudah cukup umur ketika akad nikah sebagaimana saya saksikan",
+      "sepengetahuan saya #0046# I dan #0046# II telah dewasa saat melaksanakan pernikahan",
+      "saya mengetahui sendiri umur #0046# I dan #0046# II sudah matang ketika menikah"
+     ],
+     "saksi2": [
+      "saya melihat sendiri salah seorang dari #0046# I dan #0046# II masih remaja ketika menikah",
+      "salah satu dari mereka masih berusia muda ketika akad nikah sebagaimana saya saksikan",
+      "sepengetahuan saya salah seorang dari #0046# I dan #0046# II masih belia saat melaksanakan pernikahan",
+      "saya mengetahui sendiri salah satu dari #0046# I dan #0046# II masih sangat muda ketika menikah"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "7211",
+    "7212"
+   ]
+  },
+  {
+   "id": "q-status-nikah",
+   "pokok": "pp-halangan",
+   "urutan": 50,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Apa status #0046# I dan #0046# II sebelum menikah, apakah salah satunya masih terikat perkawinan dengan orang lain ?",
+   "hal": "status para pemohon sebelum menikah dan ada tidaknya ikatan perkawinan lain",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "status kedua pemohon sebelum menikah dan keduanya tidak terikat perkawinan lain",
+     "saksi1": [
+      "ketika menikah #0046# I masih berstatus #1002# sedangkan #0046# II masih berstatus #1003# dan keduanya tidak terikat perkawinan dengan orang lain",
+      "saya mengetahui sendiri bahwa status #0046# I saat itu #1002# dan #0046# II #1003# serta tidak ada yang masih beristri atau bersuami",
+      "pada waktu menikah #0046# I berstatus #1002# dan #0046# II berstatus #1003# dan tidak ada ikatan perkawinan lain pada keduanya",
+      "status #0046# I sebelum menikah adalah #1002# dan status #0046# II adalah #1003# tanpa terikat perkawinan dengan siapa pun"
+     ],
+     "saksi2": [
+      "sebelum menikah #0046# I berstatus #1002# dan #0046# II berstatus #1003# serta tidak terikat perkawinan lain",
+      "setahu saya #0046# I #1002# sedangkan #0046# II #1003# dan keduanya tidak sedang terikat perkawinan dengan orang lain",
+      "ketika akad nikah #0046# I masih #1002# dan #0046# II masih #1003# tanpa ikatan perkawinan dengan pihak lain",
+      "status keduanya waktu menikah yaitu #1002# bagi #0046# I dan #1003# bagi #0046# II dan tidak ada yang terikat perkawinan lain"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: tidak ada yang terikat perkawinan lain; versi B: salah seorang masih terikat perkawinan lain - berselisih pada PERISTIWA (status perkawinan)",
+     "saksi1": [
+      "saya melihat sendiri tidak ada pihak yang masih terikat perkawinan lain ketika #0046# I dan #0046# II menikah",
+      "ketika akad nikah tidak seorang pun dari #0046# I dan #0046# II terikat perkawinan lain sebagaimana saya saksikan",
+      "sepengetahuan saya tidak ada ikatan perkawinan lain pada #0046# I maupun #0046# II waktu menikah",
+      "saya mengetahui sendiri tidak ada yang beristri atau bersuami di antara #0046# I dan #0046# II saat itu"
+     ],
+     "saksi2": [
+      "saya mengetahui sendiri salah satu dari #0046# I dan #0046# II masih terikat perkawinan dengan orang lain ketika menikah",
+      "ketika akad nikah salah seorang dari #0046# I dan #0046# II masih beristri atau bersuami sebagaimana saya saksikan",
+      "sepengetahuan saya salah satu dari #0046# I dan #0046# II waktu menikah masih punya ikatan perkawinan lain",
+      "saya melihat sendiri salah seorang dari #0046# I dan #0046# II masih terikat perkawinannya yang terdahulu ketika menikah"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "1002",
+    "1003"
+   ]
+  },
+  {
+   "id": "q-wali",
+   "pokok": "pp-perkawinan-orangtua",
+   "urutan": 60,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Siapa yang menjadi wali nikah pada saat #0046# I dan #0046# II menikah dan siapa yang menikahkan ?",
+   "hal": "wali nikah dan orang yang menikahkan pada pernikahan para pemohon",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan wali nikah dan orang yang menikahkan",
+     "saksi1": [
+      "yang menjadi wali nikah #0046# II adalah #1046# bernama #1217# dan yang menikahkan adalah #8087#",
+      "saya mengetahui sendiri bahwa wali nikah #0046# II ialah #1046# yang bernama #1217# sedangkan yang menikahkan #8087#",
+      "wali dalam pernikahan itu adalah #1046# yaitu #1217# dan yang menikahkan adalah #8087#",
+      "pada akad nikah #0046# II dinikahkan oleh #8087# dengan wali nikahnya #1046# bernama #1217#"
+     ],
+     "saksi2": [
+      "wali nikah #0046# II pada saat itu #1046# bernama #1217# dan yang bertindak menikahkan #8087# sebagaimana saya saksikan",
+      "saya hadir ketika #0046# II dinikahkan oleh #8087# dengan wali #1046# yaitu #1217#",
+      "yang bertindak sebagai wali #0046# II adalah #1046# bernama #1217# lalu #8087# yang menikahkan",
+      "dalam pernikahan itu wali #0046# II ialah #1046# bernama #1217# dan penghulunya adalah #8087# yang saya ketahui langsung"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: wali nikah adalah ayah kandung mempelai perempuan; versi B: wali nikah adalah wali lain - berselisih pada PELAKU (wali nikah)",
+     "saksi1": [
+      "wali nikah #0046# II adalah ayah kandungnya dan saya melihatnya sendiri",
+      "saya menyaksikan sendiri ayah kandung #0046# II yang menjadi walinya",
+      "yang menjadi wali pada pernikahan itu adalah ayah kandung #0046# II sebagaimana saya ketahui",
+      "ayah kandung #0046# II bertindak langsung sebagai wali nikah yang saya saksikan"
+     ],
+     "saksi2": [
+      "wali nikah #0046# II adalah wali lain yang bukan ayah kandungnya dan saya melihatnya sendiri",
+      "saya menyaksikan sendiri yang menjadi wali #0046# II bukan ayah kandungnya melainkan wali lain",
+      "yang menjadi wali pada pernikahan itu bukan ayah kandung #0046# II melainkan wali lain sebagaimana saya ketahui",
+      "wali lain yang bukan ayah kandung bertindak sebagai wali nikah #0046# II yang saya saksikan"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "1046",
+    "1217",
+    "8087"
+   ]
+  },
+  {
+   "id": "q-saksi-nikah",
+   "pokok": "pp-perkawinan-orangtua",
+   "urutan": 70,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Siapa yang menjadi saksi pada pernikahan #0046# I dan #0046# II ?",
+   "hal": "saksi pada pernikahan para pemohon",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan dua orang saksi nikah",
+     "saksi1": [
+      "ada dua orang yang menjadi saksi pada pernikahan #0046# I dan #0046# II yaitu #0650# dan #0651#",
+      "yang menjadi saksi nikah #0046# I dan #0046# II adalah #0650# dan #0651# sebagaimana saya ketahui",
+      "saya mengetahui sendiri bahwa pernikahan #0046# I dan #0046# II disaksikan oleh #0650# dan #0651#",
+      "dua orang saksi pada akad nikah #0046# I dan #0046# II adalah #0650# serta #0651#"
+     ],
+     "saksi2": [
+      "pernikahan #0046# I dengan #0046# II dihadiri dua orang saksi yaitu #0650# dan #0651# yang saya lihat langsung",
+      "saksi akad nikah #0046# I dan #0046# II terdiri dari #0650# dan #0651#",
+      "saya tahu yang bertindak sebagai saksi nikah #0046# I dan #0046# II ialah #0650# dan #0651#",
+      "pada akad nikah #0046# I dan #0046# II hadir sebagai saksi #0650# bersama #0651# dan saya menyaksikannya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: saksi nikah dua orang; versi B: saksi nikah hanya satu orang - berselisih pada JUMLAH saksi nikah",
+     "saksi1": [
+      "saya melihat sendiri pernikahan #0046# I dan #0046# II disaksikan oleh dua orang",
+      "saksi pada akad nikah #0046# I dan #0046# II berjumlah dua orang sebagaimana saya saksikan",
+      "dua orang hadir sebagai saksi nikah #0046# I dan #0046# II dan itu saya lihat sendiri",
+      "sepengetahuan saya saksi nikah #0046# I dan #0046# II ada dua orang"
+     ],
+     "saksi2": [
+      "saya melihat sendiri pernikahan #0046# I dan #0046# II hanya disaksikan seorang saja",
+      "saksi pada akad nikah #0046# I dan #0046# II cuma satu orang sebagaimana saya saksikan",
+      "satu orang saja yang hadir sebagai saksi nikah #0046# I dan #0046# II dan itu saya lihat sendiri",
+      "sepengetahuan saya saksi nikah #0046# I dan #0046# II hanya satu orang"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0650",
+    "0651"
+   ]
+  },
+  {
+   "id": "q-mahar",
+   "pokok": "pp-perkawinan-orangtua",
+   "urutan": 80,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Apa mahar yang diserahkan oleh #0046# I kepada #0046# II pada saat mereka menikah ?",
+   "hal": "mahar yang diserahkan pada saat menikah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan mahar yang diserahkan langsung pada saat akad",
+     "saksi1": [
+      "setahu saya mas kawinnya berupa #1001# yang diserahkan langsung oleh #0046# I kepada #0046# II pada saat itu juga",
+      "saya mengetahui sendiri bahwa mahar pernikahan itu adalah #1001# dan #0046# I menyerahkannya sendiri kepada #0046# II saat akad",
+      "mas kawin yang diberikan #0046# I kepada #0046# II berupa #1001# dan diserahkan ketika itu juga yang saya saksikan",
+      "pada saat akad nikah #0046# I memberikan mahar #1001# secara langsung kepada #0046# II"
+     ],
+     "saksi2": [
+      "mahar dalam pernikahan #0046# I dengan #0046# II ialah #1001# yang diterimakan saat itu juga sebagaimana saya ketahui",
+      "saya melihat #0046# I menyerahkan #1001# sebagai mas kawin kepada #0046# II pada hari akad",
+      "#1001# adalah mas kawin yang diserahkan #0046# I kepada #0046# II seketika setelah akad dan saya hadir",
+      "yang menjadi mahar pernikahan itu adalah #1001# dan saya menyaksikan penyerahannya dari #0046# I kepada #0046# II"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: mahar diserahkan ketika akad; versi B: mahar belum diserahkan - berselisih pada PERISTIWA (penyerahan mahar)",
+     "saksi1": [
+      "saya melihat sendiri mahar diserahkan #0046# I kepada #0046# II ketika akad",
+      "penyerahan mas kawin dilakukan saat akad nikah sebagaimana saya saksikan",
+      "mahar langsung diterimakan kepada #0046# II pada hari akad yang saya lihat sendiri",
+      "sepengetahuan saya mas kawin sudah diserahkan #0046# I pada waktu akad"
+     ],
+     "saksi2": [
+      "saya melihat sendiri mahar belum diserahkan #0046# I kepada #0046# II ketika akad",
+      "mas kawin belum diterimakan saat akad nikah sebagaimana saya saksikan",
+      "mahar belum sampai ke tangan #0046# II pada hari akad yang saya lihat sendiri",
+      "sepengetahuan saya mas kawin belum diserahkan #0046# I pada waktu akad"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "1001"
+   ]
+  },
+  {
+   "id": "q-halangan-nasab",
+   "pokok": "pp-halangan",
+   "urutan": 90,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Apakah antara #0046# I dan #0046# II ada hubungan nasab, semenda atau sesusuan ?",
+   "hal": "ada tidaknya hubungan nasab, semenda atau sesusuan antara para pemohon",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "tidak ada hubungan nasab, semenda atau sesusuan antara para pemohon",
+     "saksi1": [
+      "antara #0046# I dan #0046# II tidak ada pertalian nasab semenda maupun sesusuan sehingga pernikahan mereka memenuhi syarat",
+      "saya mengetahui sendiri bahwa #0046# I dan #0046# II tidak memiliki hubungan darah semenda atau susuan yang melarang mereka menikah",
+      "setahu saya tidak ada halangan nasab semenda ataupun sesusuan antara #0046# I dan #0046# II untuk menikah",
+      "pernikahan #0046# I dan #0046# II memenuhi syarat karena tidak ada hubungan darah semenda dan sesusuan di antara mereka"
+     ],
+     "saksi2": [
+      "antara #0046# I dengan #0046# II tidak terdapat pertalian kekerabatan nasab semenda maupun susuan sehingga mereka boleh menikah",
+      "saya tahu langsung #0046# I dan #0046# II tidak bersaudara sedarah semenda atau sesusuan",
+      "tidak ada larangan menikah karena nasab semenda dan sesusuan di antara #0046# I dan #0046# II sebagaimana saya ketahui",
+      "hubungan nasab semenda dan sesusuan yang menjadi penghalang menikah tidak ada pada #0046# I dan #0046# II yang saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: tidak ada hubungan terlarang; versi B: ada hubungan kekerabatan - berselisih pada PERISTIWA (hubungan keluarga)",
+     "saksi1": [
+      "saya melihat sendiri tidak ada hubungan kekerabatan antara #0046# I dan #0046# II",
+      "antara #0046# I dan #0046# II tidak ada pertalian keluarga sebagaimana saya saksikan",
+      "sepengetahuan saya tidak ada hubungan darah antara #0046# I dengan #0046# II",
+      "saya mengetahui sendiri tidak ada kekerabatan di antara #0046# I dan #0046# II"
+     ],
+     "saksi2": [
+      "saya melihat sendiri ada hubungan kekerabatan antara #0046# I dan #0046# II",
+      "antara #0046# I dan #0046# II ada pertalian keluarga sebagaimana saya saksikan",
+      "sepengetahuan saya ada hubungan darah antara #0046# I dengan #0046# II",
+      "saya mengetahui sendiri ada kekerabatan di antara #0046# I dan #0046# II"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-keberatan",
+   "pokok": "pp-halangan",
+   "urutan": 100,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Apakah ada pihak yang keberatan atas pernikahan #0046# I dan #0046# II ?",
+   "hal": "ada tidaknya pihak yang keberatan atas pernikahan para pemohon",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "tidak ada pihak yang keberatan atas pernikahan para pemohon",
+     "saksi1": [
+      "sejak pernikahan #0046# I dan #0046# II tidak ada pihak yang keberatan atas pernikahan mereka",
+      "setahu saya tidak pernah ada orang yang menyatakan keberatan terhadap pernikahan #0046# I dengan #0046# II",
+      "pernikahan #0046# I dan #0046# II berlangsung dan tidak ada yang mempersoalkannya sampai sekarang",
+      "saya mengetahui sendiri bahwa tidak ada keberatan dari siapa pun atas pernikahan #0046# I dan #0046# II"
+     ],
+     "saksi2": [
+      "selama ini tidak seorang pun menolak pernikahan #0046# I dan #0046# II yang saya ketahui langsung",
+      "sepengetahuan saya pernikahan #0046# I dengan #0046# II tidak pernah dipersoalkan oleh pihak mana pun",
+      "tidak terdapat penentangan dari siapa pun terhadap pernikahan #0046# I dan #0046# II sebagaimana saya saksikan",
+      "sejak akad nikah #0046# I dan #0046# II tidak ada seorang pun yang keberatan menurut penglihatan saya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: tidak ada yang keberatan; versi B: ada pihak yang keberatan - berselisih pada PERISTIWA (keberatan atas pernikahan)",
+     "saksi1": [
+      "saya melihat sendiri tidak ada yang keberatan atas pernikahan #0046# I dan #0046# II",
+      "pernikahan #0046# I dan #0046# II berjalan tanpa penolakan siapa pun sebagaimana saya saksikan",
+      "sepengetahuan saya tidak ada pihak yang menentang pernikahan #0046# I dan #0046# II",
+      "saya mengetahui sendiri tidak ada orang yang mempersoalkan pernikahan #0046# I dan #0046# II"
+     ],
+     "saksi2": [
+      "saya melihat sendiri ada pihak yang keberatan atas pernikahan #0046# I dan #0046# II",
+      "pernikahan #0046# I dan #0046# II ditentang oleh seseorang sebagaimana saya saksikan",
+      "sepengetahuan saya ada pihak yang menolak pernikahan #0046# I dan #0046# II",
+      "saya mengetahui sendiri ada orang yang mempersoalkan pernikahan #0046# I dan #0046# II"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-pencatatan",
+   "pokok": "pp-pencatatan",
+   "urutan": 110,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Apakah pernikahan #0046# I dan #0046# II sudah dicatat pada Kantor Urusan Agama dan apakah mereka memiliki buku nikah ?",
+   "hal": "pencatatan pernikahan para pemohon pada Kantor Urusan Agama",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "perkawinan": "dicatat-sebelum-lahir"
+      },
+      "maksud": "pernikahan dicatat oleh Pegawai Pencatat Nikah sebelum anak lahir",
+      "saksi1": [
+       "pernikahan #0046# I dan #0046# II dicatat oleh Pegawai Pencatat Nikah dan mereka memiliki Kutipan Akta Nikah sebelum anak itu lahir",
+       "saya mengetahui sendiri bahwa pernikahan #0046# I dengan #0046# II tercatat di Kantor Urusan Agama dan buku nikahnya sudah ada sebelum anak lahir",
+       "sebelum anaknya lahir #0046# I dan #0046# II sudah memegang Kutipan Akta Nikah dari Kantor Urusan Agama",
+       "pernikahan #0046# I dan #0046# II telah dicatatkan dan akta nikahnya terbit lebih dahulu daripada kelahiran anak yang saya ketahui"
+      ],
+      "saksi2": [
+       "sepengetahuan saya pernikahan #0046# I dan #0046# II dicatat di Kantor Urusan Agama dan akta nikahnya sudah ada ketika anak lahir",
+       "akta nikah #0046# I dan #0046# II sudah diterbitkan Kantor Urusan Agama sebelum kelahiran anak sebagaimana saya lihat",
+       "saya tahu langsung bahwa #0046# I dan #0046# II mencatatkan pernikahan mereka lebih dulu daripada kelahiran anak",
+       "buku nikah #0046# I dan #0046# II terbit dari Kantor Urusan Agama sebelum anak mereka lahir dan saya pernah melihatnya"
+      ]
+     },
+     {
+      "keadaan": {
+       "perkawinan": "sirri-dicatat-kemudian"
+      },
+      "maksud": "pernikahan semula dilakukan secara agama dan belum dicatat, kemudian dicatatkan",
+      "saksi1": [
+       "pada waktu itu pernikahan #0046# I dan #0046# II dilakukan secara agama dan belum dicatat di Kantor Urusan Agama sampai kemudian dicatatkan sehingga sekarang punya akta nikah",
+       "saya mengetahui sendiri bahwa pernikahan #0046# I dan #0046# II semula secara agama dan belum tercatat lalu dicatatkan di Kantor Urusan Agama sehingga mereka kini memiliki akta nikah",
+       "mulanya pernikahan #0046# I dengan #0046# II hanya secara agama dan belum dicatat namun kemudian mereka mencatatkannya dan sekarang memegang Kutipan Akta Nikah",
+       "akad nikah #0046# I dan #0046# II awalnya belum dicatatkan di Kantor Urusan Agama tetapi belakangan dicatatkan hingga sekarang ada Kutipan Akta Nikah yang saya lihat"
+      ],
+      "saksi2": [
+       "sepengetahuan saya #0046# I dan #0046# II menikah secara agama yang belum dicatat dan sesudahnya mencatatkan pernikahan itu sehingga kini punya akta nikah",
+       "pernikahan #0046# I dan #0046# II pada mulanya belum tercatat lalu dicatatkan pada waktu berikutnya dan sekarang mereka memiliki Kutipan Akta Nikah sebagaimana saya ketahui",
+       "saya tahu langsung bahwa pernikahan sirri #0046# I dan #0046# II belum dicatat di awal kemudian dicatatkan sehingga sekarang tersedia akta nikah",
+       "awalnya pernikahan #0046# I dan #0046# II belum dicatatkan kepada Pegawai Pencatat Nikah tetapi kemudian dicatatkan dan akta nikahnya sekarang sudah ada yang saya saksikan"
+      ]
+     },
+     {
+      "keadaan": {
+       "perkawinan": "sirri-belum-dicatat"
+      },
+      "maksud": "pernikahan dilakukan secara agama dan sampai sekarang belum dicatat",
+      "saksi1": [
+       "pernikahan #0046# I dan #0046# II dilakukan secara agama dan sampai sekarang belum dicatat di Kantor Urusan Agama",
+       "saya mengetahui sendiri bahwa pernikahan #0046# I dengan #0046# II hanya secara agama dan hingga kini belum tercatat di Kantor Urusan Agama",
+       "akad nikah #0046# I dan #0046# II sah secara agama tetapi belum dicatatkan kepada Pegawai Pencatat Nikah sampai sekarang",
+       "sampai saat ini pernikahan #0046# I dan #0046# II belum didaftarkan ke Kantor Urusan Agama sebagaimana saya ketahui"
+      ],
+      "saksi2": [
+       "sepengetahuan saya #0046# I dan #0046# II menikah secara agama yang belum dicatat hingga hari ini",
+       "pernikahan #0046# I dan #0046# II sampai kini belum tercatat di Kantor Urusan Agama menurut yang saya saksikan",
+       "saya tahu langsung bahwa pernikahan sirri #0046# I dan #0046# II sampai sekarang belum dicatatkan",
+       "hingga hari ini akad nikah #0046# I dan #0046# II belum dicatatkan di Kantor Urusan Agama yang saya ketahui langsung"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: pernikahan sudah dicatat di Kantor Urusan Agama; versi B: pernikahan belum dicatat - berselisih pada PERISTIWA (pencatatan nikah)",
+     "saksi1": [
+      "saya melihat sendiri pernikahan #0046# I dan #0046# II sudah dicatat di Kantor Urusan Agama",
+      "pernikahan #0046# I dengan #0046# II tercatat di Kantor Urusan Agama sebagaimana saya saksikan",
+      "sepengetahuan saya #0046# I dan #0046# II sudah memiliki akta nikah dari Kantor Urusan Agama",
+      "saya mengetahui sendiri pernikahan #0046# I dan #0046# II telah dicatatkan"
+     ],
+     "saksi2": [
+      "saya melihat sendiri pernikahan #0046# I dan #0046# II belum dicatat di Kantor Urusan Agama",
+      "pernikahan #0046# I dengan #0046# II belum tercatat di Kantor Urusan Agama sebagaimana saya saksikan",
+      "sepengetahuan saya #0046# I dan #0046# II belum memiliki akta nikah dari Kantor Urusan Agama",
+      "saya mengetahui sendiri pernikahan #0046# I dan #0046# II belum dicatatkan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-anak",
+   "pokok": "pp-anak",
+   "urutan": 120,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Apakah #0046# I dan #0046# II sudah memiliki anak yang bernama #8602# dan kapan serta di mana anak itu lahir ?",
+   "hal": "anak para pemohon beserta kelahirannya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "para pemohon memiliki anak yang disebut namanya dan kelahirannya",
+     "saksi1": [
+      "#0046# I dan #0046# II telah dikaruniai anak bernama #8602# yang lahir pada ... di ... dan saya mengetahuinya sendiri",
+      "saya mengetahui sendiri bahwa dari pernikahan #0046# I dan #0046# II lahir anak bernama #8602# pada ... di ... sebagaimana saya saksikan",
+      "anak bernama #8602# lahir dari #0046# I dan #0046# II pada ... bertempat di ... dan saya melihatnya",
+      "pasangan #0046# I dan #0046# II memiliki anak yang bernama #8602# dan kelahirannya terjadi pada ... di ... yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "dari perkawinan #0046# I dengan #0046# II telah lahir #8602# pada ... di ... dan saya ikut mengetahuinya",
+      "anak #0046# I dan #0046# II bernama #8602# dilahirkan pada ... bertempat di ... sebagaimana saya ketahui sendiri",
+      "saya tahu #0046# I dan #0046# II punya anak bernama #8602# yang lahir pada ... di ... dan saya mengenalnya",
+      "#8602# adalah anak yang lahir pada ... di ... dari pasangan #0046# I dan #0046# II yang saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: anak lahir setelah beberapa tahun pernikahan; versi B: anak lahir segera setelah pernikahan - berselisih pada WAKTU kelahiran",
+     "saksi1": [
+      "anak bernama #8602# lahir setelah #0046# I dan #0046# II menikah beberapa tahun dan saya mengetahuinya sendiri",
+      "saya melihat sendiri #8602# lahir cukup lama sesudah pernikahan #0046# I dengan #0046# II",
+      "kelahiran #8602# terjadi beberapa tahun setelah akad nikah #0046# I dan #0046# II sebagaimana saya saksikan",
+      "#8602# dilahirkan lama setelah pernikahan #0046# I dan #0046# II yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "anak bernama #8602# lahir segera setelah #0046# I dan #0046# II menikah dan saya mengetahuinya sendiri",
+      "saya melihat sendiri #8602# lahir sebentar sesudah pernikahan #0046# I dengan #0046# II",
+      "kelahiran #8602# terjadi beberapa bulan setelah akad nikah #0046# I dan #0046# II sebagaimana saya saksikan",
+      "#8602# dilahirkan segera setelah pernikahan #0046# I dan #0046# II yang saya ketahui langsung"
+     ],
+     "bedaPada": "waktu"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "8602"
+   ]
+  },
+  {
+   "id": "q-anak-kandung",
+   "pokok": "pp-anak",
+   "urutan": 130,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Apakah anak bernama #8602# adalah anak kandung yang lahir dari pernikahan #0046# I dan #0046# II ?",
+   "hal": "apakah anak itu anak kandung hasil pernikahan para pemohon",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "anak itu anak kandung hasil pernikahan para pemohon",
+     "saksi1": [
+      "anak bernama #8602# adalah anak kandung #0046# I dan #0046# II dan bukan anak orang lain",
+      "saya mengetahui sendiri bahwa #8602# lahir dari rahim #0046# II hasil pernikahan dengan #0046# I dan bukan anak angkat",
+      "#8602# merupakan anak kandung dari pernikahan #0046# I dengan #0046# II dan bukan hasil hubungan dengan pihak lain",
+      "anak yang bernama #8602# adalah darah daging #0046# I dan #0046# II dan bukan anak dari orang lain"
+     ],
+     "saksi2": [
+      "sepengetahuan saya #8602# anak kandung yang dilahirkan #0046# II dari pernikahannya dengan #0046# I dan bukan anak pungut",
+      "saya tahu langsung #8602# adalah anak yang lahir dari pasangan #0046# I dan #0046# II sendiri dan bukan anak tetangga",
+      "anak #8602# merupakan keturunan langsung #0046# I dan #0046# II sebagaimana saya saksikan dan bukan anak angkat",
+      "yang bernama #8602# itu anak yang dilahirkan #0046# II dari pernikahan dengan #0046# I dan bukan berasal dari orang lain"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: anak itu anak kandung kedua pemohon; versi B: anak itu bukan anak kandung pemohon I - berselisih pada PELAKU (orang tua kandung)",
+     "saksi1": [
+      "anak bernama #8602# adalah anak kandung #0046# I dan #0046# II dan bukan anak orang lain yang saya ketahui sendiri",
+      "saya melihat sendiri #8602# lahir dari pernikahan #0046# I dengan #0046# II dan bukan anak angkat",
+      "#8602# adalah darah daging #0046# I dan #0046# II dan bukan anak titipan sebagaimana saya saksikan",
+      "sepengetahuan saya #8602# anak kandung kedua pemohon dan bukan anak dari pihak lain"
+     ],
+     "saksi2": [
+      "anak bernama #8602# bukan anak kandung #0046# I melainkan hanya anak #0046# II yang saya ketahui sendiri",
+      "saya melihat sendiri #8602# lahir dari #0046# II dan bukan darah daging #0046# I",
+      "#8602# adalah anak #0046# II saja dan bukan keturunan #0046# I sebagaimana saya saksikan",
+      "sepengetahuan saya #8602# hanya anak kandung #0046# II dan bukan anak kandung #0046# I"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "8602"
+   ]
+  },
+  {
+   "id": "q-waktu-lahir",
+   "pokok": "pp-anak",
+   "urutan": 140,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "suami-istri"
+   },
+   "teks": "Berapa lama jarak antara akad nikah #0046# I dan #0046# II dengan kelahiran anak itu ?",
+   "hal": "jarak waktu antara akad nikah dan kelahiran anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "waktuLahir": "sesudah-enam-bulan"
+      },
+      "maksud": "anak lahir lebih dari enam bulan sesudah akad nikah",
+      "saksi1": [
+       "anak itu lahir lebih dari enam bulan setelah akad nikah #0046# I dan #0046# II yang saya ketahui sendiri",
+       "saya mengetahui sendiri bahwa kelahiran anak itu terjadi sesudah enam bulan lebih dari pernikahan #0046# I dengan #0046# II",
+       "jarak antara akad nikah #0046# I dan #0046# II dengan kelahiran anak lebih dari enam bulan sebagaimana saya saksikan",
+       "anak #0046# I dan #0046# II dilahirkan melewati enam bulan sejak akad nikah mereka dan saya mengetahuinya"
+      ],
+      "saksi2": [
+       "sepengetahuan saya anak itu lahir setelah lewat enam bulan dari pernikahan #0046# I dan #0046# II",
+       "saya tahu langsung kelahiran anak terjadi lebih dari enam bulan sesudah #0046# I dan #0046# II menikah",
+       "dari akad nikah #0046# I dan #0046# II sampai anak lahir sudah lebih dari enam bulan yang saya saksikan",
+       "anak itu lahir pada waktu yang melampaui enam bulan setelah pernikahan #0046# I dan #0046# II yang saya ketahui langsung"
+      ]
+     },
+     {
+      "keadaan": {
+       "waktuLahir": "kurang-enam-bulan"
+      },
+      "maksud": "anak lahir kurang dari enam bulan sesudah akad nikah",
+      "saksi1": [
+       "anak itu lahir kurang dari enam bulan setelah akad nikah #0046# I dan #0046# II yang saya ketahui sendiri",
+       "saya mengetahui sendiri bahwa kelahiran anak itu terjadi sebelum genap enam bulan dari pernikahan #0046# I dengan #0046# II",
+       "jarak antara akad nikah #0046# I dan #0046# II dengan kelahiran anak kurang dari enam bulan sebagaimana saya saksikan",
+       "anak #0046# I dan #0046# II dilahirkan di bawah enam bulan sejak akad nikah mereka dan saya mengetahuinya"
+      ],
+      "saksi2": [
+       "sepengetahuan saya anak itu lahir sebelum mencapai enam bulan dari pernikahan #0046# I dan #0046# II",
+       "saya tahu langsung kelahiran anak terjadi kurang dari enam bulan sesudah #0046# I dan #0046# II menikah",
+       "dari akad nikah #0046# I dan #0046# II sampai anak lahir kurang dari enam bulan yang saya saksikan",
+       "anak itu lahir pada waktu yang kurang dari enam bulan setelah pernikahan #0046# I dan #0046# II yang saya ketahui langsung"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: jarak kelahiran lebih dari enam bulan; versi B: jarak kelahiran kurang dari enam bulan - berselisih pada LAMA jarak",
+     "saksi1": [
+      "saya melihat sendiri anak itu lahir lebih dari enam bulan setelah akad nikah",
+      "kelahiran anak itu melewati enam bulan dari pernikahan sebagaimana saya saksikan",
+      "sepengetahuan saya jarak akad nikah dengan kelahiran anak itu lebih dari enam bulan",
+      "saya mengetahui sendiri anak itu lahir sesudah lewat enam bulan dari pernikahan"
+     ],
+     "saksi2": [
+      "saya melihat sendiri anak itu lahir kurang dari enam bulan setelah akad nikah",
+      "kelahiran anak itu sebelum enam bulan dari pernikahan sebagaimana saya saksikan",
+      "sepengetahuan saya jarak akad nikah dengan kelahiran anak itu kurang dari enam bulan",
+      "saya mengetahui sendiri anak itu lahir di bawah enam bulan dari pernikahan"
+     ],
+     "bedaPada": "lama"
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-kendala-akta",
+   "pokok": "pp-kendala-akta",
+   "urutan": 150,
+   "tingkat": "inti",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa kendala yang menyebabkan anak itu sulit mendapatkan akta kelahiran padahal orang tuanya sekarang sudah menikah ?",
+   "hal": "kendala anak mendapatkan akta kelahiran",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "perkawinan": "sirri-dicatat-kemudian"
+      },
+      "maksud": "akta kelahiran sulit dibuat karena perkawinan orang tua belum dicatat ketika anak lahir",
+      "saksi1": [
+       "anak itu sulit dibuatkan akta kelahiran karena ketika ia lahir pernikahan orang tuanya belum dicatatkan di Kantor Urusan Agama",
+       "saya mengetahui sendiri bahwa akta kelahiran anak itu terhambat sebab pernikahan orang tuanya waktu itu belum tercatat",
+       "sebab anak itu sulit memperoleh akta kelahiran adalah pernikahan #0046# I dan #0046# II belum dicatat ketika ia dilahirkan",
+       "kendala akta kelahiran anak itu ada pada pernikahan orang tuanya yang belum dicatatkan saat ia lahir dan saya mengetahuinya"
+      ],
+      "saksi2": [
+       "sepengetahuan saya akta kelahiran anak itu terhambat karena pada waktu lahir pernikahan orang tuanya belum tercatat",
+       "saya tahu langsung bahwa anak itu sulit memperoleh akta kelahiran sebab saat kelahirannya pernikahan orang tuanya belum dicatat",
+       "penyebab sulitnya akta kelahiran anak itu ialah pernikahan orang tuanya belum tercatat pada saat ia lahir yang saya saksikan",
+       "akta kelahiran anak itu tertunda karena waktu ia lahir pernikahan #0046# I dan #0046# II belum dicatatkan sebagaimana saya ketahui"
+      ]
+     },
+     {
+      "keadaan": {
+       "perkawinan": "sirri-belum-dicatat"
+      },
+      "maksud": "akta kelahiran sulit dibuat karena perkawinan orang tua sampai sekarang belum dicatat",
+      "saksi1": [
+       "anak itu sulit dibuatkan akta kelahiran karena pernikahan orang tuanya sampai kini belum dicatat di Kantor Urusan Agama",
+       "saya mengetahui sendiri bahwa akta kelahiran anak itu terhambat sebab pernikahan orang tuanya hingga sekarang belum tercatat",
+       "sebab anak itu sulit memperoleh akta kelahiran adalah pernikahan #0046# I dan #0046# II belum dicatatkan sampai saat ini",
+       "kendala akta kelahiran anak itu ada pada pernikahan orang tuanya yang sampai sekarang belum dicatatkan dan saya mengetahuinya"
+      ],
+      "saksi2": [
+       "sepengetahuan saya akta kelahiran anak itu terhambat karena pernikahan orang tuanya hingga hari ini belum tercatat",
+       "saya tahu langsung bahwa anak itu sulit memperoleh akta kelahiran sebab pernikahan orang tuanya sampai kini belum dicatat",
+       "penyebab sulitnya akta kelahiran anak itu ialah pernikahan orang tuanya hingga sekarang belum tercatat yang saya saksikan",
+       "akta kelahiran anak itu tertunda karena pernikahan #0046# I dan #0046# II sampai saat ini belum dicatatkan sebagaimana saya ketahui"
+      ]
+     },
+     {
+      "keadaan": {
+       "perkawinan": "dicatat-sebelum-lahir"
+      },
+      "maksud": "akta kelahiran belum diurus meskipun perkawinan orang tua sudah dicatat",
+      "saksi1": [
+       "akta kelahiran anak itu belum terbit karena pengurusannya ke Dinas Kependudukan dan Pencatatan Sipil sampai sekarang tertunda",
+       "saya mengetahui sendiri bahwa akta kelahiran anak itu belum diurus oleh #0046# I dan #0046# II",
+       "sebab akta kelahiran anak itu belum ada adalah orang tuanya menunda mengurusnya ke Dinas Kependudukan dan Pencatatan Sipil",
+       "kendala akta kelahiran anak itu karena pengurusannya belum dilakukan dan saya mengetahuinya"
+      ],
+      "saksi2": [
+       "sepengetahuan saya akta kelahiran anak itu belum terbit karena orang tuanya menunda pengurusannya",
+       "saya tahu langsung bahwa akta kelahiran anak itu belum diajukan ke Dinas Kependudukan dan Pencatatan Sipil",
+       "penyebab akta kelahiran anak itu belum ada ialah dokumen itu terlambat diurus oleh orang tuanya yang saya saksikan",
+       "akta kelahiran anak itu tertunda sebab permohonannya belum pernah diajukan oleh #0046# I dan #0046# II sebagaimana saya ketahui"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: sebab akta belum terbit adalah pernikahan orang tua yang belum dicatat; versi B: sebab akta belum terbit adalah belum diurus - berselisih pada PENYEBAB",
+     "saksi1": [
+      "saya melihat sendiri akta kelahiran anak itu tertunda karena pernikahan orang tuanya belum tercatat",
+      "sebab terhambatnya akta kelahiran anak itu adalah pencatatan nikah orang tuanya belum ada",
+      "sepengetahuan saya akta kelahiran anak itu terhambat pencatatan nikah yang belum dilakukan",
+      "saya mengetahui sendiri akta anak itu tertunda gara-gara nikah orang tuanya belum tercatat"
+     ],
+     "saksi2": [
+      "saya melihat sendiri akta kelahiran anak itu tertunda karena orang tuanya belum mengurusnya",
+      "sebab terhambatnya akta kelahiran anak itu adalah pengurusannya belum dilakukan",
+      "sepengetahuan saya akta kelahiran anak itu terhambat karena belum pernah diajukan permohonannya",
+      "saya mengetahui sendiri akta anak itu tertunda sebab belum dimohonkan oleh orang tuanya"
+     ],
+     "bedaPada": "penyebab"
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-pengasuhan",
+   "pokok": "pp-kendala-akta",
+   "urutan": 160,
+   "tingkat": "pilihan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Siapa yang mengasuh dan membiayai anak itu sehari-hari ?",
+   "hal": "siapa yang mengasuh dan membiayai anak itu sehari-hari",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "anak diasuh dan dibiayai oleh orang tuanya sendiri",
+     "saksi1": [
+      "anak itu diasuh dan dibiayai sehari-hari oleh orang tuanya sendiri yaitu #0046# I dan #0046# II yang saya lihat sendiri",
+      "saya mengetahui sendiri bahwa #0046# I dan #0046# II yang mengurus dan membiayai anak itu setiap hari",
+      "kebutuhan sehari-hari anak itu ditanggung oleh #0046# I dan #0046# II yang juga mengasuhnya sebagaimana saya saksikan",
+      "pengasuhan dan biaya hidup anak itu dipikul oleh #0046# I bersama #0046# II dan saya melihatnya langsung"
+     ],
+     "saksi2": [
+      "sepengetahuan saya anak itu tinggal bersama #0046# I dan #0046# II yang merawat dan membiayainya",
+      "saya tahu langsung #0046# I dan #0046# II sendiri yang merawat anak itu dan menanggung biayanya",
+      "yang membesarkan dan membiayai anak itu adalah ayah ibunya yaitu #0046# I dan #0046# II sebagaimana saya ketahui",
+      "anak itu berada dalam asuhan dan tanggungan #0046# I dan #0046# II sehari-hari yang saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: anak diasuh oleh kedua orang tuanya; versi B: anak diasuh oleh ibunya saja - berselisih pada PELAKU (pengasuh)",
+     "saksi1": [
+      "saya melihat sendiri anak itu diasuh oleh #0046# I dan #0046# II bersama-sama",
+      "kedua orang tuanya mengurus anak itu sehari-hari sebagaimana saya saksikan",
+      "sepengetahuan saya #0046# I dan #0046# II sama-sama merawat anak itu",
+      "saya mengetahui sendiri anak itu dibesarkan oleh ayah dan ibunya"
+     ],
+     "saksi2": [
+      "saya melihat sendiri anak itu diasuh oleh #0046# II saja",
+      "ibunya yang mengurus anak itu sehari-hari sebagaimana saya saksikan",
+      "sepengetahuan saya hanya #0046# II yang merawat anak itu",
+      "saya mengetahui sendiri anak itu dibesarkan oleh ibunya seorang diri"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-suami-terikat",
+   "pokok": "pp-suami-terikat",
+   "urutan": 170,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "perkawinan": [
+     "sirri-dicatat-kemudian",
+     "sirri-belum-dicatat"
+    ],
+    "pemohon": "suami-istri"
+   },
+   "teks": "Apakah ketika menikah dengan #0046# II, #0046# I masih terikat perkawinan dengan perempuan lain ?",
+   "hal": "status suami ketika menikah dengan pemohon II",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "suami masih terikat perkawinan sah dengan perempuan lain ketika menikah sirri",
+     "saksi1": [
+      "ketika menikah dengan #0046# II pada pernikahan sirri itu #0046# I masih terikat perkawinan yang sah dengan perempuan lain",
+      "saya mengetahui sendiri bahwa saat menikah sirri dengan #0046# II suami #0046# I masih beristri dengan perempuan lain",
+      "pada waktu akad dengan #0046# II perempuan lain masih menjadi istri sah #0046# I sebagaimana saya saksikan",
+      "#0046# I waktu itu sudah mempunyai istri sah lain ketika menikahi #0046# II dan saya mengetahuinya"
+     ],
+     "saksi2": [
+      "sepengetahuan saya sewaktu menikahi #0046# II secara sirri #0046# I masih berstatus suami dari perempuan lain",
+      "saya tahu langsung bahwa #0046# I masih menjadi suami dari istrinya ketika menikah dengan #0046# II",
+      "istri pertama #0046# I masih sah ketika ia menikah sirri dengan #0046# II sebagaimana saya ketahui",
+      "ketika akad dengan #0046# II berlangsung #0046# I masih terikat perkawinan dengan perempuan lain yang saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: suami masih terikat perkawinan dengan perempuan lain; versi B: suami sudah bercerai dari perempuan lain - berselisih pada PERISTIWA (status suami)",
+     "saksi1": [
+      "saya melihat sendiri #0046# I masih beristri ketika menikah sirri dengan #0046# II",
+      "ketika akad dengan #0046# II suami #0046# I masih terikat perkawinan sebagaimana saya saksikan",
+      "sepengetahuan saya #0046# I masih menjadi suami perempuan lain saat menikahi #0046# II",
+      "saya mengetahui sendiri #0046# I masih punya istri sah ketika menikah dengan #0046# II"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0046# I sudah bercerai dari istrinya ketika menikah sirri dengan #0046# II",
+      "ketika akad dengan #0046# II suami #0046# I sudah lepas dari perkawinan sebelumnya sebagaimana saya saksikan",
+      "sepengetahuan saya #0046# I sudah resmi berpisah dari perempuan lain saat menikahi #0046# II",
+      "saya mengetahui sendiri #0046# I sudah menjadi duda ketika menikah dengan #0046# II"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-ibu-melahirkan",
+   "pokok": "pp-ibu-saja",
+   "urutan": 180,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "ibu-saja"
+   },
+   "teks": "Apakah #0046# adalah ibu yang melahirkan anak bernama #8602# dan kapan serta di mana anak itu lahir ?",
+   "hal": "ibu yang melahirkan anak itu beserta kelahirannya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "pemohon adalah ibu yang melahirkan anak yang disebut namanya",
+     "saksi1": [
+      "#0046# adalah ibu yang melahirkan anak bernama #8602# pada ... di ... dan saya mengetahuinya sendiri",
+      "saya mengetahui sendiri bahwa #8602# dilahirkan oleh #0046# pada ... bertempat di ... sebagaimana saya saksikan",
+      "anak bernama #8602# lahir dari rahim #0046# pada ... di ... dan saya ada ketika itu",
+      "yang melahirkan #8602# adalah #0046# sendiri pada ... di ... yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "sepengetahuan saya #8602# dilahirkan oleh #0046# pada ... di ... dan saya mengenal anak itu",
+      "saya tahu langsung bahwa #0046# adalah ibu kandung #8602# yang lahir pada ... di ... menurut penglihatan saya",
+      "ibu kandung anak bernama #8602# adalah #0046# yang melahirkannya pada ... di ... sebagaimana saya lihat",
+      "#8602# lahir dari #0046# pada ... di ... dan peristiwa itu saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pemohon yang melahirkan dan mengasuh anak itu; versi B: anak itu dilahirkan perempuan lain - berselisih pada PELAKU (ibu yang melahirkan)",
+     "saksi1": [
+      "saya melihat sendiri #0046# yang melahirkan anak bernama #8602#",
+      "anak bernama #8602# dilahirkan oleh #0046# sebagaimana saya saksikan",
+      "sepengetahuan saya ibu kandung #8602# adalah #0046#",
+      "saya mengetahui sendiri #8602# lahir dari rahim #0046#"
+     ],
+     "saksi2": [
+      "saya melihat sendiri anak bernama #8602# bukan dilahirkan oleh #0046# melainkan oleh perempuan lain",
+      "ibu yang melahirkan #8602# bukan #0046# sebagaimana saya saksikan",
+      "sepengetahuan saya ibu kandung #8602# adalah orang lain yang bukan #0046#",
+      "saya mengetahui sendiri #8602# tidak lahir dari rahim #0046#"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "8602"
+   ]
+  },
+  {
+   "id": "q-status-ibu",
+   "pokok": "pp-ibu-saja",
+   "urutan": 190,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohon": "ibu-saja"
+   },
+   "teks": "Apakah ketika hamil dan melahirkan anak itu #0046# masih terikat perkawinan dengan laki-laki lain ?",
+   "hal": "status perkawinan ibu ketika hamil dan melahirkan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "ibu tidak terikat perkawinan dengan laki-laki lain ketika hamil dan melahirkan",
+     "saksi1": [
+      "ketika hamil dan melahirkan anak itu #0046# tidak terikat perkawinan dengan laki-laki lain sebagaimana saya ketahui sendiri",
+      "saya mengetahui sendiri bahwa selama mengandung dan melahirkan #0046# tidak sedang bersuami dengan orang lain",
+      "pada masa kehamilan dan kelahiran anak itu #0046# tidak ada ikatan perkawinan dengan pria lain yang saya saksikan",
+      "#0046# waktu hamil dan bersalin tidak berstatus istri laki-laki lain dan saya mengetahuinya"
+     ],
+     "saksi2": [
+      "sepengetahuan saya #0046# ketika mengandung sampai melahirkan tidak terikat perkawinan dengan pria mana pun selain yang disebut",
+      "saya tahu langsung #0046# tidak punya suami lain selama hamil dan melahirkan anak itu",
+      "selama kehamilan hingga persalinan #0046# tidak terikat tali perkawinan dengan laki-laki lain sebagaimana saya lihat",
+      "masa hamil dan melahirkan anak itu dijalani #0046# tanpa ikatan perkawinan dengan pria lain yang saya ketahui langsung"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: ibu tidak terikat perkawinan lain; versi B: ibu masih terikat perkawinan dengan laki-laki lain - berselisih pada PERISTIWA (status ibu)",
+     "saksi1": [
+      "saya melihat sendiri #0046# tidak terikat perkawinan lain ketika hamil dan melahirkan",
+      "selama mengandung dan bersalin #0046# tidak sedang bersuami orang lain sebagaimana saya saksikan",
+      "sepengetahuan saya tidak ada ikatan perkawinan lain pada #0046# saat hamil dan melahirkan",
+      "saya mengetahui sendiri #0046# tidak punya suami lain pada masa itu"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0046# masih terikat perkawinan dengan laki-laki lain ketika hamil dan melahirkan",
+      "selama mengandung dan bersalin #0046# masih bersuami orang lain sebagaimana saya saksikan",
+      "sepengetahuan saya #0046# masih memiliki ikatan perkawinan lain saat hamil dan melahirkan",
+      "saya mengetahui sendiri #0046# masih punya suami lain pada masa itu"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-penutup",
+   "pokok": "pp-penutup",
+   "urutan": 200,
+   "tingkat": "inti",
+   "kelompok": "penutup",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+   "hal": "keterangan penutup",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan keterangannya sudah cukup",
+     "saksi1": [
+      "keterangan yang saya berikan sudah cukup",
+      "sekian keterangan saya dan sudah cukup",
+      "bagi saya keterangan ini sudah cukup",
+      "sudah cukup yang dapat saya terangkan"
+     ],
+     "saksi2": [
+      "dengan ini keterangan saya sudah cukup",
+      "sudah cukup apa yang saya ketahui untuk diterangkan",
+      "hanya itu keterangan saya dan sudah cukup",
+      "saya anggap keterangan saya sudah cukup sampai di sini"
+     ]
+    }
+   },
+   "variabelAbt": []
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Titik-titik (...) pada keterangan saksi wajib diganti dengan keterangan saksi yang sebenarnya; jangan dibiarkan kosong.",
+  "Periksa dengan teliti bahwa pada saat menikah salah satu pemohon tidak masih terikat perkawinan dengan orang lain; hal itu menentukan sahnya perkawinan yang menjadi dasar permohonan (Pasal 9 UU 1/1974 jo. Pasal 40 huruf a KHI).",
+  "Isbat nikah poligami sirri tidak dapat diterima menurut ringkasan Buku II 2026; perlindungan anak ditempuh melalui permohonan asal usul anak. Rujukan ini berasal dari ringkasan sekunder dan belum diperiksa pada naskah resminya.",
+  "Keterangan saksi yang ragu atau hanya cerita orang lain bukan keterangan yang dialami sendiri; pertimbangkan menghadirkan saksi tambahan untuk waktu dan keabsahan pernikahan serta kelahiran anak."
+ ],
+ "tanpaLawan": true
+}

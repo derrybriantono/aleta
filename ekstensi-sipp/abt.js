@@ -4556,7 +4556,39 @@ function susunPanelAbt(jatiDiri) {
   tombolBaris.appendChild(tombolItsbat);
   tombolBaris.appendChild(tombolPositaLain);
   tombolBaris.appendChild(tombolSdg);
+
+  // ==========================================================================
+  // SUSUN SAKSI MENURUT KEADAAN DAN JENIS PERKARA (18 Okt 2026)
+  // ==========================================================================
+  //
+  // Borang katalog di saksi-susun.js: jenis perkaranya dikenali dari data SIPP
+  // (jenis_perkara_id dan alur), BUKAN dari variabel cerai. Perkara yang jenisnya
+  // tidak punya katalog tidak mendapat tombolnya. Tombol dan borang "Susun
+  // keterangan saksi 1 & 2" di atas tidak diubah.
+  const susunKatalog =
+    typeof globalThis.AletaSaksiSusun === "object" && globalThis.AletaSaksiSusun
+      ? globalThis.AletaSaksiSusun.pasang({
+          buatElemen,
+          petaVariabel: () => barisVariabel(),
+          nomorPerkara: () => nomorPerkaraAbt(),
+          jenisPerkaraTeks: () => (barisVariabel().get(VAR_JENIS_PERKARA) || {}).nilai || sebutJenisPerkara(nomorPerkaraAbt()),
+          idJenisPerkara: (teks) => idJenisPerkaraSipp(teks),
+          alurPerkara: (nomor) => idAlurPerkaraSipp(nomor),
+          variabelSaksi: (pihak, ke) => variabelSaksiSdg(pihak, ke),
+          ambilTanyaJawab: (kode) => ambilTanyaJawab(kode),
+          kirimTanyaJawab: (kode, urutan, baris) => kirimTanyaJawab(kode, urutan, baris),
+          nilaiVariabel: (kode) => nilaiVariabel(kode),
+          urutanSidang: () => ruasAlamatAbt().d || "1",
+          catatRiwayat: (catatan) => catatRiwayat(catatan),
+          jatiDiri: () => jatiDiri,
+          halamanTanyaJawab: () => halamanTanyaJawab(),
+          t6Aktif: () => t6Aktif(),
+          bolehAbt: (kunci) => bolehAbt(kunci),
+        })
+      : { tombol: null, wadah: null };
+  if (susunKatalog.tombol) tombolBaris.appendChild(susunKatalog.tombol);
   isi.appendChild(tombolBaris);
+  if (susunKatalog.wadah) isi.appendChild(susunKatalog.wadah);
 
   const kabar = buatElemen("div", "aleta-abt-kabar");
   isi.appendChild(kabar);
@@ -5330,7 +5362,7 @@ function susunPanelAbt(jatiDiri) {
     // Menawarkan tombol lalu menolaknya sesudah ditekan terbaca sebagai
     // kerusakan, bukan sebagai pembatasan yang disengaja.
     if (!bolehAbt("blangko-abt")) {
-      for (const tombol of [tombolSipp, tombolSaksi, tombolItsbat, tombolPositaLain, tombolSdg]) tombol.hidden = true;
+      for (const tombol of [tombolSipp, tombolSaksi, tombolItsbat, tombolPositaLain, tombolSdg, susunKatalog.tombol]) if (tombol) tombol.hidden = true;
       kabar.textContent =
         "Peran Anda tidak diberi akses panel blangko ABT. Panel ini hanya menampilkan keterangan.";
     }
