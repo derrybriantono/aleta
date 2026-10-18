@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 
+import { buangGrupTersembunyiRtf } from "@/lib/buang-grup-tersembunyi-rtf";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import {
@@ -73,7 +74,8 @@ async function bacaBadan(request: NextRequest): Promise<Badan> {
       if (jenisManual.length && !jenisManual.includes(j)) continue;
       manual.push({
         jenis: j,
-        isiBase64: Buffer.from(await berkas.arrayBuffer()).toString("base64"),
+        // 18 Okt 2026 (butir 18): grup RTF tersembunyi {*isianasal ...} tidak ikut ke SIPP.
+        isiBase64: Buffer.from(buangGrupTersembunyiRtf(new Uint8Array(await berkas.arrayBuffer()))).toString("base64"),
         ukuran: berkas.size,
       });
     }

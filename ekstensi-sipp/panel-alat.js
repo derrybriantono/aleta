@@ -2308,7 +2308,78 @@ async function alatSekaliAmbil(alamat, opsi) {
   }
 }
 
+/**
+ * 18 Okt 2026 (butir 18): grup RTF tersembunyi {\*\isianasal ...} / {\*\aletaasal ...} dibuang BESERTA ISINYA dari
+ * berkas RTF yang akan diunggah ke SIPP (putusan, anonimisasi, BAS, penetapan, relaas) sebelum meninggalkan peramban.
+ * Bot dan portal membuangnya lagi (berlapis). Mengembalikan FormData baru bila ada yang berubah, atau yang sama.
+ */
+const ALAT_ALAMAT_UNGGAH_SIPP = /\/(?:putusan\/unggah-sipp|bas\/unggah-sipp|penetapan-edoc\/unggah|relaas[^?]*\/unggah[^?]*)(?:[?#]|$)/i;
+
+function alatBuangGrupTersembunyiTeks(s) {
+  const penanda = /\{\\\*\s*\\(?:isianasal|aletaasal)(?![a-z])/gi;
+  if (!penanda.test(s)) return s;
+  penanda.lastIndex = 0;
+  let keluar = "";
+  let akhir = 0;
+  let m;
+  while ((m = penanda.exec(s))) {
+    if (m.index < akhir) continue;
+    let dalam = 1;
+    let i = m.index + m[0].length;
+    for (; i < s.length && dalam > 0; i += 1) {
+      const c = s[i];
+      if (c === "\\") i += 1;
+      else if (c === "{") dalam += 1;
+      else if (c === "}") dalam -= 1;
+    }
+    keluar += s.slice(akhir, m.index);
+    akhir = i;
+    penanda.lastIndex = i;
+  }
+  return keluar + s.slice(akhir);
+}
+
+async function alatBuangGrupTersembunyiBadan(badan) {
+  const baru = new FormData();
+  let berubah = false;
+  for (const [nama, nilai] of badan.entries()) {
+    if (typeof nilai === "string" || typeof Blob === "undefined" || !(nilai instanceof Blob)) {
+      baru.append(nama, nilai);
+      continue;
+    }
+    let kepala = "";
+    try {
+      kepala = await nilai.slice(0, 5).text();
+    } catch {
+      kepala = "";
+    }
+    if (kepala !== "{\\rtf") {
+      baru.append(nama, nilai, nilai.name);
+      continue;
+    }
+    const isi = new TextDecoder("latin1").decode(await nilai.arrayBuffer());
+    const bersih = alatBuangGrupTersembunyiTeks(isi);
+    if (bersih === isi) {
+      baru.append(nama, nilai, nilai.name);
+      continue;
+    }
+    const bita = new Uint8Array(bersih.length);
+    for (let i = 0; i < bersih.length; i += 1) bita[i] = bersih.charCodeAt(i) & 255;
+    baru.append(nama, new Blob([bita], { type: nilai.type || "application/rtf" }), nilai.name);
+    berubah = true;
+  }
+  return berubah ? baru : badan;
+}
+
 async function alatAmbil(alamat, opsi, yangDiminta) {
+  if (opsi && opsi.body && typeof FormData === "function" && opsi.body instanceof FormData && ALAT_ALAMAT_UNGGAH_SIPP.test(String(alamat || ""))) {
+    try {
+      const bersih = await alatBuangGrupTersembunyiBadan(opsi.body);
+      if (bersih !== opsi.body) opsi = { ...opsi, body: bersih };
+    } catch {
+      /* gagal membersihkan di sini tidak menahan unggah: bot membuangnya lagi */
+    }
+  }
   // Deteksi sisa blangko (17 Okt 2026): unggahan naskah putusan/BAS ke portal (unggah-sipp, unggah-naskah,
   // ecourt-putusan, bas/unggah-sipp) diperiksa dulu. Ada sisa -> peringatan; Batal -> unggahan tidak dikirim.
   if (opsi && opsi.body && typeof FormData === "function" && opsi.body instanceof FormData && typeof aletaDeteksiSisa === "object" && aletaDeteksiSisa) {

@@ -44,7 +44,7 @@
 
 const zlib = require("node:zlib");
 const { menyebutAleta, bakukan } = require("./tandaAletaService");
-const { tanpaTandaAletaMetadata } = require("./metadataTanpaAletaService");
+const { tanpaTandaAletaMetadata, buangGrupTersembunyiRtf, grupTersembunyiMenyebut } = require("./metadataTanpaAletaService");
 
 const KODE = "teks_menyebut_aleta";
 const KODE_BERKAS = "isi_berkas_menyebut_aleta";
@@ -845,7 +845,8 @@ function bersihkanMetadataBerkas(isi, nama = "") {
     return { ok: true, isi, dibersihkan: false };
   }
   if (bentuk === "rtf") {
-    const baru = tanpaTandaAletaMetadata(isi);
+    // 18 Okt 2026 (butir 18): grup tersembunyi {*isianasal ...} / {*aletaasal ...} dibuang beserta isinya.
+    const baru = tanpaTandaAletaMetadata(buangGrupTersembunyiRtf(isi));
     return { ok: true, isi: baru, dibersihkan: baru !== isi };
   }
   if (bentuk === "zip") {
@@ -874,7 +875,10 @@ function periksaIsiBerkas(isi, { nama = "", dariSipp = [] } = {}) {
   const tahanBerkas = (bagian) => ({ ok: false, alasan: KODE_BERKAS, bagian, pesan: pesanBerkas(nama, bagian) });
   const kena = (teks) => menyebutAletaBaru(teks, { dariSipp });
   if (bentuk === "rtf") {
-    return kena(teksRtf(isi.toString("latin1"))) ? tahanBerkas("isi dokumen") : { ok: true };
+    if (kena(teksRtf(isi.toString("latin1")))) return tahanBerkas("isi dokumen");
+    // 18 Okt 2026: grup tujuan-tersembunyi yang tersisa juga tidak boleh menyebut kata itu
+    // (teksRtf melewatinya, padahal ikut terunggah di dalam berkas).
+    return grupTersembunyiMenyebut(isi, kena) ? tahanBerkas("grup tersembunyi dalam berkas") : { ok: true };
   }
   if (bentuk === "zip") {
     const bagian = teksDocx(isi);
@@ -1070,6 +1074,7 @@ module.exports = {
   bersihkanMetadataBerkas,
   periksaIsiBerkas,
   siapkanBerkasSipp,
+  buangGrupTersembunyiRtf,
   teksRtf,
   teksPdf,
   teksDocx,

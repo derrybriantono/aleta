@@ -22,6 +22,7 @@ import {
   type SaluranSatker,
   type StatusFitur,
 } from "@/lib/fitur-satker";
+import { FITUR_BLANGKO_SAYA_SEMUA_PERAN } from "@/lib/fitur-satker";
 import { moduleVisibility, modules } from "@/lib/mock-data";
 import { createAletaDatabase, type AletaDatabase } from "@/server/db/client";
 import {
@@ -110,21 +111,31 @@ describe("A - matriks saklar (murni)", () => {
   });
 });
 
+/**
+ * Pengecualian TUNGGAL (18 Okt 2026, butir 10): saklar tahap awal Blangko Saya. Fitur baru ini belum pernah menyala di
+ * satker mana pun, jadi bawaannya MATI (hanya Super Admin) sampai dibuka; "fitur lama tidak boleh berkurang" tidak terlanggar.
+ */
+const BAWAAN_MATI = new Set([FITUR_BLANGKO_SAYA_SEMUA_PERAN]);
+const FITUR_LAMA = KATALOG_FITUR_SATKER.filter((f) => !BAWAAN_MATI.has(f.kode));
+const hanyaLama = (peta: Record<string, unknown>) => Object.entries(peta).filter(([k]) => !BAWAAN_MATI.has(k)).map(([, v]) => v);
+
 describe("B - bawaan: semua yang ada sekarang menyala", () => {
   it("katalog: setiap fitur bawaannya stabil; peta tanpa pengaturan menyala semua", () => {
-    for (const f of KATALOG_FITUR_SATKER) expect(f.bawaan, f.kode).toBe("stabil");
+    for (const f of FITUR_LAMA) expect(f.bawaan, f.kode).toBe("stabil");
+    for (const f of KATALOG_FITUR_SATKER.filter((x) => BAWAAN_MATI.has(x.kode))) expect(f.bawaan, f.kode).toBe("mati");
     const peta = petaKeadaanFitur({});
-    expect(Object.values(peta).every((k) => k.menyala && k.status === "stabil")).toBe(true);
+    expect((hanyaLama(peta) as Array<{ menyala: boolean; status: string }>).every((k) => k.menyala && k.status === "stabil")).toBe(true);
+    expect(peta[FITUR_BLANGKO_SAYA_SEMUA_PERAN]).toMatchObject({ menyala: false, status: "mati" });
     const ringkas = ringkasUntukKlien({});
     expect(ringkas.saluran).toBe("stabil");
-    expect(Object.values(ringkas.fitur).every((s) => s === "stabil")).toBe(true);
+    expect(hanyaLama(ringkas.fitur).every((s) => s === "stabil")).toBe(true);
     expect(Object.values(bagianEkstensiMenyala(ringkas)).every(Boolean)).toBe(true);
   });
 
   it("basis data berbenih yang belum pernah diatur: semua menyala dan pastikanFiturMenyala tidak melempar", async () => {
     const db = await createAletaDatabase({ useInMemory: true, seed: true });
     try {
-      for (const f of KATALOG_FITUR_SATKER) {
+      for (const f of FITUR_LAMA) {
         expect(await fiturMenyala(db, f.kode), f.kode).toBe(true);
         await expect(pastikanFiturMenyala(db, f.kode)).resolves.toBeUndefined();
       }
@@ -145,7 +156,7 @@ describe("B - bawaan: semua yang ada sekarang menyala", () => {
     } as unknown as AletaDatabase;
     expect(await fiturMenyala(patah, "putusan-advance")).toBe(true);
     const ringkas = await bacaRingkasanFiturKlien(patah);
-    expect(Object.values(ringkas.fitur).every((s) => s === "stabil")).toBe(true);
+    expect(hanyaLama(ringkas.fitur).every((s) => s === "stabil")).toBe(true);
 
     const rusak = {
       queryOne: async () => ({ nilai: "{bukan json" }),

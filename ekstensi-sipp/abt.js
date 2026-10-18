@@ -19611,7 +19611,8 @@ function k5GambarKontak(wadah, data) {
  * Aturan (el7Putuskan), memakai bahan kontak e-Court yang SUDAH dibaca fitur KONTAK-EC (kontakEcourtService):
  *   - isian di blangko sudah ada (manual)            -> tidak disentuh sama sekali;
  *   - email Tergugat / kuasa Tergugat ditemukan,
- *     di SIPP atau e-Court (pemiliknya tegas)         -> "1";
+ *     di SIPP atau e-Court (pemiliknya tegas),
+ *     DAN perkara e-Court (18 Okt)                    -> "1";
  *   - tanpa email, perkara e-Court, Tergugat pernah
  *     hadir di sidang                                -> "2";
  *   - selain itu (verstek, belum disidang, bukan
@@ -19665,14 +19666,17 @@ function el7CariEmailTergugat(kontak) {
 /**
  * Murni: keputusan #7139# dari kontak perkara. -> { nilai: "1"|"2", sebab, keterangan, email? } atau null (biarkan kosong).
  * `kontak.elitigasi` = fakta dari bot { lewatEcourt, tergugatHadir, jumlahSidang }; bot lama tanpa fakta tetap
- * dapat memutuskan "1" dari email, tetapi tidak pernah "2".
+ * tidak pernah memutuskan apa pun (18 Okt: "1" pun menuntut perkara e-Court yang terbukti).
  */
 function el7Putuskan(kontak) {
   if (!kontak || typeof kontak !== "object" || kontak.ada === false) return null;
   const e = el7CariEmailTergugat(kontak);
+  const f = kontak.elitigasi && typeof kontak.elitigasi === "object" ? kontak.elitigasi : null;
+  // 18 Okt 2026 (keputusan 2): "1" HANYA untuk perkara e-Court; perkara bukan e-Court (atau yang belum diketahui
+  // lewat e-Court atau tidak) dibiarkan KOSONG - tidak diunggah ke e-Court, jadi e-litigasi tidak berlaku.
+  if (e && !e.ragu && !(f && f.lewatEcourt === true)) return null;
   if (e && !e.ragu) return { nilai: "1", sebab: "email", asal: e.asal, milik: e.milik, email: e.email, keterangan: EL7_TEKS["1"] };
   if (e) return null; // email ada tetapi pemiliknya belum pasti: petugas yang memutuskan
-  const f = kontak.elitigasi && typeof kontak.elitigasi === "object" ? kontak.elitigasi : null;
   if (f && f.lewatEcourt === true && f.tergugatHadir === true) return { nilai: "2", sebab: "hadir-tanpa-email", keterangan: EL7_TEKS["2"] };
   return null;
 }

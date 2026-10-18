@@ -63,6 +63,9 @@ export type FiturKatalog = {
   bawaan: StatusFitur;
 };
 
+/** Saklar tahap awal Blangko Saya (18 Okt 2026): mati = hanya Super Admin; menyala = semua peran yang berhak. */
+export const FITUR_BLANGKO_SAYA_SEMUA_PERAN = "blangko-saya-semua-peran";
+
 const portal = (kode: string, nama: string, keterangan: string): FiturKatalog => ({ kode, nama, bagian: "portal", keterangan, bawaan: "stabil" });
 const bot = (kode: string, nama: string, keterangan: string): FiturKatalog => ({ kode, nama, bagian: "bot", keterangan, bawaan: "stabil" });
 
@@ -92,6 +95,13 @@ export const KATALOG_FITUR_SATKER: readonly FiturKatalog[] = [
   portal("sipp-jembatan", "Jembatan SIPP", "Kamus SIPP, registry, penilaian, dan tautan akun."),
   portal("blangko-bas", "Blangko dan BAS", "Blangko Derry, BAS, relaas, dan penetapan."),
   portal("pengaturan-sipp-abt", "Pengaturan SIPP dan ABT", "Hak menu, saklar kebijakan, variabel, dan identitas satker untuk ABT."),
+  {
+    kode: FITUR_BLANGKO_SAYA_SEMUA_PERAN,
+    nama: "Blangko Saya untuk semua peran",
+    bagian: "portal",
+    keterangan: "Mati: Blangko Saya (buat blangko sendiri) hanya untuk Super Admin. Nyalakan agar hakim, panitera, dan konseptor juga dapat memakainya.",
+    bawaan: "mati",
+  },
   portal("putusan-advance", "Putusan Advance", "Draf putusan lengkap oleh konseptor dan hakim."),
   portal("konseptor-putusan", "Konseptor putusan", "Langkah konseptor, usulan pertimbangan, dan amar."),
   portal("kasir-otomatis", "Kasir otomatis", "Usulan jurnal, rekap, dan biaya perkara."),

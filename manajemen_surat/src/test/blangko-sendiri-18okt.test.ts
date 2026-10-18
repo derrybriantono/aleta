@@ -27,6 +27,9 @@ import {
 import { buatDocx } from "@/lib/docx";
 import { IN_MEMORY_TABLE_PERSISTENCE_ORDER, createAletaDatabase, type AletaDatabase } from "@/server/db/client";
 import { DDL_BLANGKO_PRIBADI } from "@/server/db/schema";
+import { FITUR_BLANGKO_SAYA_SEMUA_PERAN } from "@/lib/fitur-satker";
+import { KUNCI_FITUR_SATKER } from "@/server/modules/satker/fitur";
+import { tulisSetelanSistem } from "@/server/modules/satker/setelan";
 
 vi.mock("@/server/modules/pengaturan-abt/service", () => ({
   cariPerkaraContoh: vi.fn(async (nomor: string) => ({ perkara: { perkaraId: 7, nomor, jenis: "Cerai Gugat" } })),
@@ -364,6 +367,19 @@ describe("alur penuh: unggah, putuskan, pratinjau, putusan mandiri, paket", () =
   });
 
   const rtfRekaan = () => enc.encode(bangunRtf(bagianDariParagraf(NASKAH).bagian));
+
+  it("TAHAP AWAL (18 Okt, butir 10): saklar Fitur Satker mati -> hanya Super Admin; dibuka -> peran berhak lain ikut", async () => {
+    // Bawaan katalog: mati. Hakim yang berhak menurut peran pun ditolak sampai Super Admin membuka saklarnya.
+    await expect(buatDariTeks(db, hakimA, { nama: "x", teks: "isi" })).rejects.toMatchObject({ status: 403 });
+    await expect(daftarBlangko(db, hakimA)).rejects.toMatchObject({ status: 403 });
+    const punyaSuper = await buatDariTeks(db, superAdmin, { nama: "Milik super", teks: "Isi blangko super admin" });
+    expect(punyaSuper.milikSaya).toBe(true);
+    expect((await daftarBlangko(db, superAdmin)).length).toBe(1);
+    await hapusBlangko(db, superAdmin, punyaSuper.id);
+    // Saklar dibuka (seperti simpanPengaturanFitur): tanpa perubahan kode, hakim langsung boleh.
+    await tulisSetelanSistem(db, KUNCI_FITUR_SATKER, { fitur: { [FITUR_BLANGKO_SAYA_SEMUA_PERAN]: "stabil" }, diubahOleh: "uji", diubahPada: new Date().toISOString() }, new Date().toISOString());
+    expect((await daftarBlangko(db, hakimA)).length).toBe(0);
+  });
 
   it("peran lain ditolak 403; unggah menghasilkan blangko pribadi dengan usulan", async () => {
     await expect(buatDariTeks(db, jurusita, { nama: "x", teks: "isi" })).rejects.toMatchObject({ status: 403 });

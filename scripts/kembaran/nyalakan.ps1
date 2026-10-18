@@ -4,7 +4,10 @@
 #   powershell -File scripts\kembaran\nyalakan.ps1                 bot + portal (mode dev)
 #   powershell -File scripts\kembaran\nyalakan.ps1 -Apa bot        bot saja
 #   powershell -File scripts\kembaran\nyalakan.ps1 -Portal produksi portal hasil `npm run build` (bukan dev)
-#   powershell -File scripts\kembaran\nyalakan.ps1 -Henti          mematikan bot dan portal kembaran
+#   powershell -File scripts\kembaran\nyalakan.ps1 -Henti          mematikan bot dan portal kembaran DAN membuka kunci SIPP/ABT
+#   powershell -File scripts\kembaran\nyalakan.ps1 -TanpaKunci     melewati penguncian SIPP/ABT hanya-baca (hanya untuk perbaikan)
+#
+# SIPP/ABT lokal (port 8056) dijadikan HANYA-BACA selama mode kembaran: kunci-sipp-abt.ps1 (lihat docs/kembaran/KEMBARAN-LAPTOP.md).
 #
 # Prasyarat (sekali): MySQL XAMPP hidup (sipp_donggala, aps_badilag, aleta_bot), PostgreSQL 16
 # hidup, manajemen_surat\.env.local dan aleta_bot\.env sudah ada, token internal bot-portal sama.
@@ -14,7 +17,8 @@
 param(
   [ValidateSet('semua', 'bot', 'portal')][string]$Apa = 'semua',
   [ValidateSet('dev', 'produksi')][string]$Portal = 'dev',
-  [switch]$Henti
+  [switch]$Henti,
+  [switch]$TanpaKunci
 )
 
 $ErrorActionPreference = 'Stop'
@@ -34,7 +38,19 @@ if ($Henti) {
     $dengar = Get-NetTCPConnection -State Listen -LocalPort $p -ErrorAction SilentlyContinue
     foreach ($d in $dengar) { Stop-Process -Id $d.OwningProcess -Force -ErrorAction SilentlyContinue; Write-Host "Dimatikan: port $p (proses $($d.OwningProcess))" }
   }
+  # Keluar dari mode kembaran = SIPP/ABT lokal boleh menulis lagi (hak asli dipulihkan).
+  & (Join-Path $PSScriptRoot 'kunci-sipp-abt.ps1') -Balik
   return
+}
+
+# --- SIPP/ABT lokal HANYA-BACA (butir 23, 18 Okt 2026) ----------------------------------------------------
+# Gagal mengunci = berhenti (gagal tertutup): kembaran tidak dinyalakan dengan SIPP/ABT yang masih bisa menulis.
+if (-not $TanpaKunci) {
+  & (Join-Path $PSScriptRoot 'kunci-sipp-abt.ps1')
+  # Bot memakai akun penuh kembaran_penuh (hak dan sandi sama dengan root asli); root kini SELECT-saja untuk SIPP/ABT.
+  foreach ($n in 'ALETA_BOT_DB_USER', 'ALETA_BOT_DB_SIPP_USER', 'ALETA_BOT_DB_APS_USER', 'ALETA_BOT_DB_ANTRIAN_USER') { Set-Item -Path "Env:$n" -Value 'kembaran_penuh' }
+} else {
+  Write-Host 'PERINGATAN: -TanpaKunci - SIPP/ABT lokal MASIH BISA MENULIS ke basis data laptop.' -ForegroundColor Yellow
 }
 
 # --- Penanda mode dan basis data (salinan hasil tarikan, bukan server) ---------------------------------

@@ -102,6 +102,16 @@ describe("keputusan #7139# (el7Putuskan)", () => {
     expect(E.el7Putuskan(null)).toBeNull();
   });
 
+  it("18 Okt (keputusan 2): \"1\" HANYA perkara e-Court - ber-email tetapi bukan e-Court / tak terbaca / tanpa fakta -> kosong", () => {
+    const dom = { 1: null, 2: { email: "siti.a@gmail.com", milik: "pihak", asal: "sipp", keyakinan: "pasti" } };
+    expect(E.el7Putuskan(kontak({ domisili: dom, elitigasi: { lewatEcourt: false, tergugatHadir: true, jumlahSidang: 2 } }))).toBeNull();
+    expect(E.el7Putuskan(kontak({ domisili: dom, elitigasi: { lewatEcourt: null, tergugatHadir: null, jumlahSidang: 0 } }))).toBeNull();
+    expect(E.el7Putuskan(kontak({ domisili: dom, elitigasi: undefined }))).toBeNull();
+    expect(E.el7Putuskan(kontak({ orang: [orang(1, "pihak"), orang(2, "pihak", { sipp: "x@gmail.com" })], elitigasi: { lewatEcourt: false, tergugatHadir: false, jumlahSidang: 0 } }))).toBeNull();
+    // perkara e-Court tetap "1", walau Tergugat belum pernah hadir
+    expect(E.el7Putuskan(kontak({ domisili: dom, elitigasi: { lewatEcourt: true, tergugatHadir: false, jumlahSidang: 0 } }))).toMatchObject({ nilai: "1" });
+  });
+
   it("email sampah SIPP ('-', '0', '...') dan surel instansi pengadilan bukan email Tergugat", () => {
     for (const x of ["-", "0", "...", "", "bukan email", "info@pa-donggala.go.id", "noreply@mahkamahagung.go.id"]) expect(E.el7Email(x)).toBe("");
     expect(E.el7Email(" Siti.A@Gmail.com, ")).toBe("siti.a@gmail.com");
@@ -297,7 +307,7 @@ describe("lapisan Blangko Derry (blangko-derry-isian.js): isiElitigasiOtomatis",
   });
 
   it("dipasang sesudah isian dimuat dan keadaannya dibersihkan saat perkara berganti", () => {
-    expect(sumber).toContain("void muatSaranAbt(d);\n      void isiElitigasiOtomatis(d);");
+    expect(sumber).toContain("void muatSaranAbt(d);\n      void simpanBawaanAbtItsbat(d);\n      void isiElitigasiOtomatis(d);");
     expect(sumber.match(/S\.el7 = null;/g)!.length).toBeGreaterThanOrEqual(2);
   });
 });

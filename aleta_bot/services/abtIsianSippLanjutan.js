@@ -14,15 +14,15 @@
  *   8433  Alasan pencabutan perkara             hasil_mediasi Y2 = "Berhasil Dengan Pencabutan" (borang SIPP tab_mediasi_edit2)
  *   8899  Pokok kesepakatan perdamaian sebagian  isi_kesepakatan_perdamaian (hasil S): topik yang disebut - pengasuhan anak,
  *                                               nafkah anak, nafkah iddah, mut'ah, nafkah lampau, harta bersama
- *   1183  Tgl. batas waktu ikrar talak          perkara_ikrar_talak.tanggal_sidang_pertama + 6 bulan  (RAGU: 8 dari 12 isian
+ *   1183  Tgl. batas waktu ikrar talak          perkara_ikrar_talak.tanggal_sidang_pertama + 6 bulan  (18 Okt: TERISI OTOMATIS; dulu ragu: 8 dari 12 isian
  *                                               petugas persis sama; sisanya sidang ikrar pertama diundur)
- *   0303  Tgl. pengumuman itsbat                perkara.tanggal_pendaftaran (RAGU: 92% isian petugas jatuh 0-1 hari dari
+ *   0303  Tgl. pengumuman itsbat                perkara.tanggal_pendaftaran (18 Okt: TERISI OTOMATIS; dulu ragu: 92% isian petugas jatuh 0-1 hari dari
  *                                               tanggal pendaftaran, tepatnya 45% hari-H dan 47% sehari sesudahnya)
- *   0185  Tgl. surat kuasa Tergugat             perkara_pengacara pihak 2 (RAGU: kolom itu sering tanggal register)
+ *   0185  Tgl. surat kuasa Tergugat             perkara_pengacara pihak 2 (18 Okt: TERISI OTOMATIS; dulu ragu: kolom itu sering tanggal register)
  *
  * Aturan:
  *   - hanya SELECT, tiap pembacaan dijaga (tabel/kolom yang tidak ada = isian itu dilewati);
- *   - nilai ditulis hanya bila datanya ada; "ragu" tidak pernah tercentang sendiri dan tidak menimpa isian petugas;
+ *   - nilai ditulis hanya bila datanya ada; 1183/0303/0185 sejak 18 Okt (keputusan 26) bukan lagi "ragu": terisi otomatis, tetapi tidak pernah menimpa isian petugas (jagaIsianLama);
  *   - semua usulan membawa jagaIsianLama: hanya mengisi isian yang kosong atau berisi garis bawah "_".
  */
 
@@ -217,7 +217,7 @@ function usulanBatasIkrar(ikrar) {
       KODE.batasIkrar,
       "Tgl. batas waktu ikrar talak",
       tampil,
-      "ragu",
+      "cukup",
       `SIPP ikrar talak: sidang ikrar pertama ${isoKeTampil(sp)} + 6 bulan`,
       "Dihitung 6 bulan sesudah sidang ikrar pertama; bila sidang ikrar pertama diundur atau dipanggil ulang, hitung dari tanggal yang berlaku.",
       "sipp-ikrar-batas-6-bulan"
@@ -236,7 +236,7 @@ function usulanPengumumanItsbat(perkara) {
       KODE.pengumumanItsbat,
       "Tgl. pengumuman",
       tampil,
-      "ragu",
+      "cukup",
       `SIPP: perkara didaftarkan ${tampil}`,
       "Pengumuman umumnya dilakukan pada tanggal pendaftaran atau sehari sesudahnya; isi sesuai tanggal juru sita mengumumkan.",
       "sipp-pendaftaran-pengumuman"
@@ -254,7 +254,7 @@ function usulanKuasaTergugat(kuasa) {
       KODE.suratKuasaTergugat,
       "Tgl. surat kuasa Tergugat/Termohon",
       tampil,
-      "ragu",
+      "cukup",
       `SIPP kuasa Tergugat: ${String(p.nama || "").trim()} tanggal ${tampil}${p.nomorKuasa ? ` (register ${String(p.nomorKuasa).trim()})` : ""}`,
       "Kolom tanggal kuasa SIPP kadang berisi tanggal register kepaniteraan, bukan tanggal surat kuasa; cocokkan dengan surat kuasanya.",
       "sipp-kuasa-tergugat-tgl"

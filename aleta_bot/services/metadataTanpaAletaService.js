@@ -81,4 +81,77 @@ function tanpaTandaAletaMetadata(isi) {
   return isi;
 }
 
-module.exports = { tanpaTandaAletaMetadata };
+/**
+ * Keputusan 18 Okt 2026 (butir 18): grup RTF tersembunyi penanda asal blangko -
+ * {\*\isianasal ...} dan {\*\aletaasal ...} - milik Blangko Derry (pagar tempat
+ * tanda tangan), tidak berguna di SIPP dan tidak boleh ikut terunggah. Dibuang
+ * BESERTA ISINYA, grup bersarang dihitung (\{ \} \\ dilewati). Berkas tanpa grup
+ * itu dikembalikan apa adanya (objek yang sama).
+ */
+const PENANDA_GRUP_TERSEMBUNYI = /\{\\\*\s*\\(?:isianasal|aletaasal)(?![a-z])/gi;
+
+/** Indeks tepat sesudah kurung penutup grup yang dibuka sebelum `dari`. */
+function akhirGrupRtf(s, dari) {
+  let dalam = 1;
+  let i = dari;
+  for (; i < s.length && dalam > 0; i += 1) {
+    const c = s[i];
+    if (c === "\\") i += 1;
+    else if (c === "{") dalam += 1;
+    else if (c === "}") dalam -= 1;
+  }
+  return i;
+}
+
+function buangGrupTersembunyiRtfTeks(s) {
+  PENANDA_GRUP_TERSEMBUNYI.lastIndex = 0;
+  if (!PENANDA_GRUP_TERSEMBUNYI.test(s)) return s;
+  PENANDA_GRUP_TERSEMBUNYI.lastIndex = 0;
+  let keluar = "";
+  let akhir = 0;
+  let m;
+  while ((m = PENANDA_GRUP_TERSEMBUNYI.exec(s))) {
+    if (m.index < akhir) continue;
+    const i = akhirGrupRtf(s, m.index + m[0].length);
+    keluar += s.slice(akhir, m.index);
+    akhir = i;
+    PENANDA_GRUP_TERSEMBUNYI.lastIndex = i;
+  }
+  return keluar + s.slice(akhir);
+}
+
+/** Buffer atau string RTF masuk, jenis yang sama keluar; yang bukan RTF dikembalikan apa adanya. */
+function buangGrupTersembunyiRtf(isi) {
+  if (Buffer.isBuffer(isi)) {
+    if (isi.length < 5 || jenisBerkas(isi) !== "rtf") return isi;
+    const s = isi.toString("latin1");
+    const baru = buangGrupTersembunyiRtfTeks(s);
+    return baru === s ? isi : Buffer.from(baru, "latin1");
+  }
+  if (typeof isi === "string" && isi.startsWith("{\\rtf")) return buangGrupTersembunyiRtfTeks(isi);
+  return isi;
+}
+
+/**
+ * Grup tujuan-tersembunyi RTF ({\*\xxx ...}) yang masih menyebut kata itu
+ * (sesudah metadata dibersihkan dan grup asal dibuang). teksRtf melewati grup
+ * semacam ini, jadi pemeriksaan isi biasa tidak melihatnya. Pulang teks grup
+ * pertama yang kena, atau "". Gambar (pict) dan data biner teknis dilewati.
+ */
+function grupTersembunyiMenyebut(isi, menyebut) {
+  const s = Buffer.isBuffer(isi) ? isi.toString("latin1") : String(isi);
+  const pola = /\{\\\*/g;
+  let m;
+  while ((m = pola.exec(s))) {
+    const i = akhirGrupRtf(s, m.index + m[0].length);
+    const grup = s.slice(m.index, i);
+    if (/^\{\\\*\s*\\(?:pict|blipuid|themedata|colorschememapping|datastore)/i.test(grup)) {
+      pola.lastIndex = i;
+      continue;
+    }
+    if (menyebut(grup)) return grup;
+  }
+  return "";
+}
+
+module.exports = { tanpaTandaAletaMetadata, buangGrupTersembunyiRtf, grupTersembunyiMenyebut };

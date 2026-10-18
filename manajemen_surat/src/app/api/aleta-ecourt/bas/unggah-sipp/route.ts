@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { buangGrupTersembunyiRtf } from "@/lib/buang-grup-tersembunyi-rtf";
 import { getDatabase } from "@/server/db/client";
 import { gatewayUnggahBasSipp } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
@@ -82,7 +83,8 @@ export async function POST(request: NextRequest) {
     const berkas = formulir.get("bas");
     if (!(berkas instanceof File) || berkas.size === 0) return ok({ ok: false, sebab: "Berkas BAS belum dipilih." });
     if (berkas.size > BATAS_BERKAS) return ok({ ok: false, sebab: "Berkas BAS melampaui 10 MB." });
-    const bita = new Uint8Array(await berkas.arrayBuffer());
+    // 18 Okt 2026 (butir 18): grup RTF tersembunyi {*isianasal ...} tidak ikut ke SIPP.
+    const bita = buangGrupTersembunyiRtf(new Uint8Array(await berkas.arrayBuffer()));
 
     const periksa = periksaBerkasBas(bita, nomorPerkara);
     if (periksa.tolak) {

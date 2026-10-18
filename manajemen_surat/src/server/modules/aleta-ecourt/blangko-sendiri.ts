@@ -27,6 +27,7 @@ import {
   type KeputusanButir,
   type RingkasPemetaan,
 } from "@/lib/blangko-sendiri";
+import { FITUR_BLANGKO_SAYA_SEMUA_PERAN } from "@/lib/fitur-satker";
 import { ambilDariZip, bacaDocxXml, bacaRtfParagraf } from "@/lib/deteksi-sisa-blangko";
 import { buatDocx, type AlineaDocx } from "@/lib/docx";
 import { penandaDalam } from "@/lib/penyelesai-variabel";
@@ -37,6 +38,7 @@ import { kenaliBentukNaskah } from "@/server/modules/aleta-ecourt/konversi-naska
 import { isianPerkara } from "@/server/modules/aleta-ecourt/isian-perkara";
 import { isiNaskah, lengkapiDariAbt, selesaikanPenanda } from "@/server/modules/aleta-ecourt/penyelesai";
 import { cariPerkaraContoh } from "@/server/modules/pengaturan-abt/service";
+import { fiturMenyala } from "@/server/modules/satker/fitur";
 import { ApiError } from "@/server/shared/errors";
 
 /**
@@ -123,11 +125,22 @@ function peranAktor(aktor: AktorBlangko): string {
   return teks(aktor.roleId);
 }
 
-/** Hanya peran yang diizinkan membuat/memakai blangko sendiri (dan Super Admin). */
-export function pastikanBolehBlangkoSendiri(aktor: AktorBlangko) {
+/**
+ * Hanya peran yang diizinkan membuat/memakai blangko sendiri (dan Super Admin).
+ *
+ * TAHAP AWAL (keputusan 18 Okt 2026, butir 10): selama saklar Fitur Satker "blangko-saya-semua-peran" mati
+ * (bawaan), HANYA Super Admin yang memakai Blangko Saya. Peran lain tetap sah menurut daftar peran di atas dan
+ * otomatis boleh begitu Super Admin membuka saklar itu di /admin/fitur-satker - tanpa perubahan kode. Saklar
+ * yang tak terbaca dianggap mati (tertutup).
+ */
+export async function pastikanBolehBlangkoSendiri(db: AletaDatabase, aktor: AktorBlangko) {
   if (!aktor?.id) throw new ApiError(401, "Masuk dulu untuk membuat blangko sendiri.");
   if (!bolehBuatBlangkoSendiri(peranAktor(aktor))) {
     throw new ApiError(403, "Buat blangko sendiri hanya untuk Hakim, Panitera, Konseptor (Panitera Muda/Pengganti), dan Admin.");
+  }
+  if (superAdminKah(peranAktor(aktor))) return;
+  if (!(await fiturMenyala(db, FITUR_BLANGKO_SAYA_SEMUA_PERAN))) {
+    throw new ApiError(403, "Blangko Saya masih tahap awal: baru Super Admin yang dapat memakainya. Peran lain dibuka nanti oleh Super Admin.");
   }
 }
 
@@ -145,7 +158,7 @@ async function muatBaris(db: AletaDatabase, id: string): Promise<BarisBlangko> {
 
 /** Membuka (membaca/mengunduh/pratinjau): pemilik atau Super Admin. Orang lain: seolah tidak ada. */
 async function muatUntukBaca(db: AletaDatabase, aktor: AktorBlangko, id: string): Promise<BarisBlangko> {
-  pastikanBolehBlangkoSendiri(aktor);
+  await pastikanBolehBlangkoSendiri(db, aktor);
   const baris = await muatBaris(db, id);
   if (teks(baris.pemilik_id) !== teks(aktor.id) && !superAdminKah(peranAktor(aktor))) {
     throw new ApiError(404, "Blangko itu tidak ditemukan.");
@@ -383,7 +396,7 @@ export async function buatDariBerkas(
   aktor: AktorBlangko,
   masukan: { bita: Uint8Array; namaBerkas: string; nama?: string; jenis?: unknown }
 ): Promise<RincianBlangkoPribadi> {
-  pastikanBolehBlangkoSendiri(aktor);
+  await pastikanBolehBlangkoSendiri(db, aktor);
   const jenis = periksaJenis(masukan.jenis);
   const dasarNama = teks(masukan.namaBerkas).replace(/\.(rtf|docx?|pdf)$/i, "");
   const nama = periksaNama(masukan.nama || dasarNama || "Blangko saya");
@@ -403,7 +416,7 @@ export async function buatDariTeks(
   aktor: AktorBlangko,
   masukan: { nama: unknown; jenis?: unknown; teks: unknown }
 ): Promise<RincianBlangkoPribadi> {
-  pastikanBolehBlangkoSendiri(aktor);
+  await pastikanBolehBlangkoSendiri(db, aktor);
   const { bagian } = bagianDariTeksBebas(teks(masukan.teks));
   if (bagian.length === 0) throw new ApiError(400, "Isi blangko masih kosong.");
   return simpanBaru(db, aktor, {
@@ -421,7 +434,7 @@ export async function daftarBlangko(
   aktor: AktorBlangko,
   opsi: { semua?: boolean } = {}
 ): Promise<RingkasBlangkoPribadi[]> {
-  pastikanBolehBlangkoSendiri(aktor);
+  await pastikanBolehBlangkoSendiri(db, aktor);
   const semua = Boolean(opsi.semua) && superAdminKah(peranAktor(aktor));
   const baris = semua
     ? await db.queryAll<BarisBlangko>(`SELECT * FROM aleta_blangko_pribadi ORDER BY diubah_at DESC LIMIT 500`)
@@ -722,7 +735,7 @@ export async function putuskanPaket(
   id: string,
   masukan: { setuju: boolean; catatan?: unknown }
 ): Promise<RincianBlangkoPribadi> {
-  pastikanBolehBlangkoSendiri(aktor);
+  await pastikanBolehBlangkoSendiri(db, aktor);
   pastikanSuperAdmin(aktor, "memutuskan paket blangko");
   const baris = await muatBaris(db, id);
   if (teks(baris.paket_status) !== "menunggu") throw new ApiError(409, "Paket ini tidak sedang menunggu keputusan.");

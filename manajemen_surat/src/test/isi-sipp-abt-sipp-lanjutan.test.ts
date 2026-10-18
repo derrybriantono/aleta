@@ -117,24 +117,24 @@ describe("usulan per isian", () => {
     for (const h of ["Y1", "Y2", "T", "D", ""]) expect(M.usulanPokokSebagian({ hasil: h, isi: asuh })).toEqual([]);
     expect(M.usulanPokokSebagian({ hasil: "S", isi: "<p>tidak menyebut apa pun</p>" })).toEqual([]);
   });
-  it("1183 = sidang ikrar pertama + 6 bulan, selalu ragu", () => {
+  it("1183 = sidang ikrar pertama + 6 bulan, terisi otomatis (keyakinan cukup, bukan ragu)", () => {
     const [u] = M.usulanBatasIkrar({ sidangPertama: "2026-06-22" });
-    expect(u).toMatchObject({ kode: "1183", nilai: "22/12/2026", keyakinan: "ragu" });
+    expect(u).toMatchObject({ kode: "1183", nilai: "22/12/2026", keyakinan: "cukup", jagaIsianLama: true });
     expect(M.usulanBatasIkrar({ sidangPertama: "" })).toEqual([]);
     expect(M.usulanBatasIkrar(null)).toEqual([]);
   });
-  it("0303 hanya itsbat nikah voluntair (jenis 360, alur 16), selalu ragu", () => {
-    expect(M.usulanPengumumanItsbat({ jenisPerkaraId: 360, alurPerkaraId: 16, tanggalDaftar: "2026-10-01" })).toMatchObject([{ kode: "0303", nilai: "01/10/2026", keyakinan: "ragu" }]);
+  it("0303 hanya itsbat nikah voluntair (jenis 360, alur 16), terisi otomatis", () => {
+    expect(M.usulanPengumumanItsbat({ jenisPerkaraId: 360, alurPerkaraId: 16, tanggalDaftar: "2026-10-01" })).toMatchObject([{ kode: "0303", nilai: "01/10/2026", keyakinan: "cukup", jagaIsianLama: true }]);
     expect(M.usulanPengumumanItsbat({ jenisPerkaraId: 360, alurPerkaraId: 15, tanggalDaftar: "2026-10-01" })).toEqual([]);
     expect(M.usulanPengumumanItsbat({ jenisPerkaraId: 347, alurPerkaraId: 15, tanggalDaftar: "2026-10-01" })).toEqual([]);
     expect(M.usulanPengumumanItsbat({ jenisPerkaraId: 360, alurPerkaraId: 16, tanggalDaftar: "" })).toEqual([]);
   });
-  it("0185 dari kuasa Tergugat pertama yang bertanggal, ragu", () => {
+  it("0185 dari kuasa Tergugat pertama yang bertanggal, terisi otomatis", () => {
     const [u] = M.usulanKuasaTergugat([
       { nama: "A", nomorKuasa: "", tanggalKuasa: "" },
       { nama: "Budi, S.H.", nomorKuasa: "12/SK/IV/2026", tanggalKuasa: "2026-04-10" },
     ]);
-    expect(u).toMatchObject({ kode: "0185", nilai: "10/04/2026", keyakinan: "ragu" });
+    expect(u).toMatchObject({ kode: "0185", nilai: "10/04/2026", keyakinan: "cukup", jagaIsianLama: true });
     expect(M.usulanKuasaTergugat([])).toEqual([]);
   });
   it("nilai yang ditulis ke ABT hanya data (tidak memuat kata Aleta)", () => {

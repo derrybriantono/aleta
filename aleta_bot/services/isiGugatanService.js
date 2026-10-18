@@ -43,6 +43,9 @@ const VAR = Object.freeze({
   rekonvensi: "7084",
   lisanTertulis: "9881",
   alasan: "5227",
+  // 18 Okt 2026 (keputusan 14): saklar "petitum meminta penyerahan anak" blangko Penguasaan Anak (jenis 349, folder 6b).
+  // 1 = petitum memintanya; 0 = tidak (amar+pertimbangan penyerahan tidak tercetak, anti ultra petita). PEMETAAN-ALETA i20: #9720#.
+  penyerahanAnak: "9720",
 });
 
 const BATAS_TEKS = 400000;
@@ -87,6 +90,28 @@ function positaDari(teks) {
   const rapi = T.rapikanTeks(teks);
   const { petitum } = T.bagianDokumen(T.datarkan(rapi));
   return petitum.length ? rapi.slice(0, petitum[0][0]) : rapi;
+}
+
+/** Bagian PETITUM surat gugatan (dari penanda petitum sampai akhir); "" bila petitumnya tidak terbaca. */
+function petitumDari(teks) {
+  const rapi = T.rapikanTeks(teks);
+  const { petitum } = T.bagianDokumen(T.datarkan(rapi));
+  return petitum.length ? rapi.slice(petitum[0][0]) : "";
+}
+
+/** Petitum yang meminta anak diserahkan (Tergugat menyerahkan anak / penyerahan anak / anak diserahkan kepada Penggugat). */
+const POLA_PENYERAHAN_ANAK =
+  /(?:menyerahkan|mengembalikan)\s+(?:kembali\s+)?(?:\S+\s+){0,8}?anak|penyerahan\s+(?:kembali\s+)?(?:\S+\s+){0,5}?anak|anak\b[^.;\n]{0,100}?\b(?:diserahkan|dikembalikan)\b/i;
+
+/**
+ * Saklar #9720#: nilai "1"/"0" dari petitum gugatan. null bila petitum tidak terbaca atau tidak menyangkut anak sama sekali
+ * (jangan menebak "0" dari teks yang bukan petitum - itu akan menghapus amar penyerahan dari putusan).
+ */
+function saklarPenyerahanAnak(teksGugatan) {
+  const petitum = petitumDari(teksGugatan);
+  if (!petitum || !/\banak\b/i.test(petitum)) return null;
+  const m = POLA_PENYERAHAN_ANAK.exec(petitum);
+  return { nilai: m ? "1" : "0", kutipan: m ? petitum.slice(Math.max(0, m.index - 40), m.index + m[0].length + 80).replace(/\s+/g, " ").trim() : "Petitum menyangkut anak tetapi tidak meminta penyerahan anak." };
 }
 
 const ANGKA_KATA = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh"];
@@ -207,6 +232,22 @@ function susunIsiGugatan(masukan) {
   const hadhanah = ambil("hadhanah");
   if (hadhanah) {
     tambah(VAR.hadhanah, "HADHANAH (Apabila Ada Ketik : 1)", "1", hadhanah, `Hak asuh dituntut ${sebutanPihak(hadhanah.penuntutKode, sebutan)}${anak.length ? ` atas ${anak.map((a) => a.nama).join(", ")}` : ""} - menandai bagian hadhanah di blangko.`);
+  }
+  // Saklar penyerahan anak (#9720#): hanya dari petitum SURAT GUGATAN; terisi otomatis (cukup), isian manual menang.
+  const dokGugatan = dokumen.find((d) => d.peran === "gugatan");
+  const saklarAnak = dokGugatan ? saklarPenyerahanAnak(dokGugatan.teks) : null;
+  if (saklarAnak) {
+    usulan.push({
+      kode: VAR.penyerahanAnak,
+      nama: "Petitum meminta penyerahan anak (saklar)",
+      nilai: saklarAnak.nilai,
+      keyakinan: "cukup",
+      bentrok: "",
+      sumber: sumberDari(dokGugatan, saklarAnak.kutipan, null),
+      kodePola: "gugatan-petitum-penyerahan-anak",
+      catatan: saklarAnak.nilai === "1" ? "Petitum gugatan meminta penyerahan anak - amar dan pertimbangan penyerahan tercetak." : "Petitum tidak meminta penyerahan anak - amar dan pertimbangan penyerahan tidak tercetak (anti ultra petita).",
+      jagaIsianLama: true,
+    });
   }
   if (anak.length) {
     const a0 = anak[0];
@@ -339,4 +380,4 @@ function susunIsiGugatan(masukan) {
   };
 }
 
-module.exports = { susunIsiGugatan, saringDokumen, positaDari, bunyiDikaruniai, VAR };
+module.exports = { susunIsiGugatan, saringDokumen, positaDari, bunyiDikaruniai, saklarPenyerahanAnak, petitumDari, VAR };
