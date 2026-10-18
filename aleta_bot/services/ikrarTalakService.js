@@ -231,14 +231,11 @@ function akhirPekan(iso) {
 }
 
 /**
- * Menyusun rencana pengisian form ikrar - TIDAK menulis apa pun.
- *
- * @param {object} minta { jadwalId, ip, operator, sudahPutus, ambilBiaya }  `sudahPutus`: keterangan
- *   jadwal sidang ditulis pada transaksi yang sama (belum terbaca di basis data).
- *   `ambilBiaya(perkaraId)`: pengganti pembaca biaya ikrar (uji); bawaannya variabel ABT 1101/2050.
+ * Syarat dan isian bersama (`minta`: lihat susunRencanaIsiIkrar): dipakai rencana tulis bot (susunRencanaIsiIkrar) DAN
+ * isian borang ekstensi (susunIsianBorangIkrar). Tidak menulis apa pun.
+ * Pulang { ok:true, k, tanggalIkrar, ketua, amar, amarSudahAda, biaya, andaian, batas } atau { ok:false, alasan, ... }.
  */
-async function susunRencanaIsiIkrar(minta = {}) {
-  const k = await keadaanIkrar(minta.jadwalId);
+async function siapkanIsianIkrar(minta, k) {
   if (!k) return { ok: false, alasan: "jadwal_tidak_ketemu" };
   if (bersih(k.ikrarTalak) !== "Y") return { ok: false, alasan: "bukan_sidang_ikrar" };
 
@@ -297,6 +294,68 @@ async function susunRencanaIsiIkrar(minta = {}) {
   if (batas && tanggalIkrar > batas) {
     andaian.push(`Tanggal ikrar ${tanggalIkrar} melewati batas 6 bulan ikrar (${batas}) - Pasal 70 ayat (6) UU 7/1989.`);
   }
+  return { ok: true, k, tanggalIkrar, ketua, amar, amarSudahAda, biaya, andaian, batas };
+}
+
+/**
+ * Isian borang "Data Penetapan Ikrar Talak" SIPP untuk ekstensi (31, 18 Okt 2026) - MEMBACA
+ * saja. Perkara dicari lewat nomor atau perkara_id; sidang ikrarnya yang terbaru. Nilai
+ * mengikuti nama medan borang SIPP (form_ikrar_putusan.php): tgl_ikrar (dd/mm/yyyy),
+ * status_penetapan (1 diikrarkan), keadaan_istri (1-4), amar (HTML). Syarat yang sama dengan
+ * pengisian oleh bot; yang belum memenuhi dijawab ok:false + alasan (ekstensi diam).
+ */
+async function susunIsianBorangIkrar(minta = {}) {
+  let perkaraId = Number(minta.perkaraId) || 0;
+  const nomor = bersih(minta.nomorPerkara);
+  if (!perkaraId && nomor) {
+    const p = await kueri(`SELECT perkara_id AS id FROM perkara WHERE nomor_perkara = ? LIMIT 1`, [nomor]).catch(() => []);
+    perkaraId = Number(p && p[0] && p[0].id) || 0;
+  }
+  if (!perkaraId) return { ok: false, alasan: "perkara_tidak_ketemu" };
+  const s = await kueri(
+    `SELECT id FROM perkara_jadwal_sidang WHERE perkara_id = ? AND ikrar_talak = 'Y' ORDER BY tanggal_sidang DESC, id DESC LIMIT 1`,
+    [perkaraId]
+  ).catch(() => []);
+  const jadwalId = Number(s && s[0] && s[0].id) || 0;
+  if (!jadwalId) return { ok: false, alasan: "bukan_sidang_ikrar" };
+  const k = await keadaanIkrar(jadwalId);
+  const siap = await siapkanIsianIkrar(minta, k);
+  if (!siap.ok) return siap;
+  const keadaanSekarang = Number(siap.k.keadaanIstri);
+  const keadaanIstri = keadaanSekarang >= 1 && keadaanSekarang <= 4 ? keadaanSekarang : KEADAAN_ISTRI_TIDAK_DIKETAHUI;
+  const [t, b, h] = siap.tanggalIkrar.split("-");
+  const andaian = [...siap.andaian];
+  if (!(keadaanSekarang >= 1 && keadaanSekarang <= 4)) {
+    andaian.push('Keadaan istri belum tercatat; diisi "Tidak Diketahui" - ubah di SIPP bila diketahui.');
+  }
+  return {
+    ok: true,
+    perkara: { perkaraId, nomorPerkara: siap.k.nomorPerkara },
+    jadwalId,
+    tanggalIkrar: siap.tanggalIkrar,
+    atasNama: { username: siap.ketua.username, namaLengkap: siap.ketua.fullname, peran: "ketua majelis ikrar talak" },
+    nilai: {
+      tgl_ikrar: `${h}/${b}/${t}`,
+      status_penetapan: String(STATUS_DIIKRARKAN),
+      keadaan_istri: String(keadaanIstri),
+      amar: siap.amar,
+    },
+    andaian,
+  };
+}
+
+/**
+ * Menyusun rencana pengisian form ikrar - TIDAK menulis apa pun.
+ *
+ * @param {object} minta { jadwalId, ip, operator, sudahPutus, ambilBiaya }  `sudahPutus`: keterangan
+ *   jadwal sidang ditulis pada transaksi yang sama (belum terbaca di basis data).
+ *   `ambilBiaya(perkaraId)`: pengganti pembaca biaya ikrar (uji); bawaannya variabel ABT 1101/2050.
+ */
+async function susunRencanaIsiIkrar(minta = {}) {
+  const k = await keadaanIkrar(minta.jadwalId);
+  const siap = await siapkanIsianIkrar(minta, k);
+  if (!siap.ok) return siap;
+  const { tanggalIkrar, ketua, amar, andaian, batas } = siap;
 
   const saat = await penetapan.waktuSipp();
   const ip = bersih(minta.ip);
@@ -405,5 +464,6 @@ module.exports = {
   bacaBiayaIkrar,
   ambilBiayaIkrar,
   susunAmar,
+  susunIsianBorangIkrar,
   susunRencanaIsiIkrar,
 };

@@ -45,6 +45,8 @@ const palsu = {
     const s = String(sql);
     if (/^\s*(INSERT|UPDATE|DELETE|CALL)/i.test(s)) tulis.push(s);
     if (/FROM perkara_jadwal_sidang j/.test(s) && /perkara_ikrar_talak it/.test(s)) return cb(null, [keadaan]);
+    if (/FROM perkara WHERE nomor_perkara/.test(s)) return cb(null, [{ id: 9988 }]);
+    if (/FROM perkara_jadwal_sidang WHERE perkara_id = \? AND ikrar_talak = 'Y'/.test(s)) return cb(null, [{ id: 500 }]);
     if (/FROM perkara_hakim_pn/.test(s)) return cb(null, [{ hakimId: 32, jabatanId: 1 }, { hakimId: 26, jabatanId: 2 }]);
     if (/user_hakim/.test(s) && /sys_users/.test(s)) return cb(null, [akunKetua]);
     if (/FROM sys_users/.test(s)) return cb(null, [akunKetua]);
@@ -139,6 +141,34 @@ function periksa(nama, kondisi, rinci = "") {
   const ikrarAda = (adaAmar.langkah || []).find((l) => l.tabel === "perkara_ikrar_talak");
   periksa("amar yang sudah diketik petugas tidak ditimpa", ikrarAda && /Rp 29\.500/.test(String(ikrarAda.params[2])));
   keadaan = dasar();
+
+  console.log("== Isian borang untuk ekstensi (butir 31: terisi otomatis saat halaman perkara dibuka) ==");
+  {
+    const tulisSebelum = tulis.length;
+    const b = await ik.susunIsianBorangIkrar({ nomorPerkara: "474/Pdt.G/2026/PA.Dgl" });
+    periksa("borang: ok untuk sidang ikrar terlaksana, form kosong", b.ok === true, b.alasan);
+    periksa("borang: tgl_ikrar dd/mm/yyyy = tanggal sidang", b.nilai && b.nilai.tgl_ikrar === "07/10/2026");
+    periksa("borang: status 1 (Diikrarkan), keadaan istri 4 (tidak diketahui) karena belum tercatat", b.nilai && b.nilai.status_penetapan === "1" && b.nilai.keadaan_istri === "4");
+    periksa("borang: amar memuat biaya dari ABT dan >= 50 huruf", b.nilai && /Rp14\.500,-/.test(b.nilai.amar) && b.nilai.amar.length >= 50);
+    periksa("borang: atas nama ketua majelis ikrar (informasi, bukan penulis)", b.atasNama && b.atasNama.username === "fahri");
+    periksa("borang: MEMBACA saja - tidak satu pun tulisan ke basis data", tulis.length === tulisSebelum);
+    periksa("borang: medan sesuai nama medan form SIPP", Object.keys(b.nilai).sort().join(",") === "amar,keadaan_istri,status_penetapan,tgl_ikrar");
+
+    keadaan = { ...dasar(), keadaanIstri: 2 };
+    const suci = await ik.susunIsianBorangIkrar({ perkaraId: 9988 });
+    periksa("borang: keadaan istri yang sudah tercatat dipakai (tidak ditimpa)", suci.ok && suci.nilai.keadaan_istri === "2");
+
+    keadaan = { ...dasar(), tglIkrar: new Date(2026, 9, 7), statusIkrar: 1, amarIkrar: "<ol><li>Menyatakan perkawinan putus karena talak satu raj'i;</li><li>Biaya Rp14.500,-</li></ol>" };
+    const sudah = await ik.susunIsianBorangIkrar({ perkaraId: 9988 });
+    periksa("borang: form sudah terisi -> tidak diisi lagi", sudah.ok === false && sudah.alasan === "form_ikrar_sudah_terisi");
+
+    keadaan = { ...dasar(), alasanDitunda: "Pemohon tidak hadir ikrar" };
+    periksa("borang: ikrar belum terlaksana -> diam", (await ik.susunIsianBorangIkrar({ perkaraId: 9988 })).alasan === "ikrar_belum_dinyatakan_terlaksana");
+    keadaan = { ...dasar(), tanggalSidang: new Date(2026, 9, 10) };
+    periksa("borang: sidang Sabtu -> diam seperti SIPP", (await ik.susunIsianBorangIkrar({ perkaraId: 9988 })).alasan === "tanggal_ikrar_akhir_pekan");
+    keadaan = dasar();
+    periksa("borang: tanpa nomor/perkara -> perkara_tidak_ketemu", (await ik.susunIsianBorangIkrar({})).alasan === "perkara_tidak_ketemu");
+  }
 
   console.log("== Penolakan ==");
   keadaan = { ...dasar(), alasanDitunda: "Pemohon tidak hadir ikrar" };
