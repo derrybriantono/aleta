@@ -11319,6 +11319,13 @@ html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-
 /* Panel sempit (HP, laptop kecil): label keadaan yang panjang membungkus, tidak terpotong di tepi kanan. */
 .aleta-ssk .aleta-abt-label { white-space: normal; overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
 .aleta-ssk .aleta-sdg-ruas, .aleta-ssk .aleta-sdg-alasan { min-width: 0; max-width: 100%; }
+/* Tab "Saksi" / "Keterangan anak, calon, dan orang tua" (hanya jenis perkara yang punya katalog keterangan). */
+.aleta-ssk-tab { display: flex; flex-wrap: wrap; gap: 6px; }
+.aleta-ssk-tab-tombol { flex: 1 1 auto; min-width: 0; white-space: normal; }
+.aleta-ssk-tab-aktif { font-weight: 700; box-shadow: inset 0 -3px 0 currentColor; }
+.aleta-ssk-kartu { display: flex; flex-direction: column; gap: 6px; }
+.aleta-ssk-pemberi { display: flex; flex-direction: column; gap: 4px; }
+.aleta-ssk-salin, .aleta-ssk-salin-semua { align-self: flex-start; }
 
 /* ==========================================================================
    V2 LAYAR (18 Okt 2026) - PANEL MENYESUAIKAN LAPTOP KECIL SAMPAI TV

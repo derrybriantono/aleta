@@ -28,6 +28,8 @@
   if (akar) akar.AletaSaksiKatalog = api;
 })(typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : null, function () {
   const VERSI_SKEMA = "saksi-katalog/1";
+  /** Katalog pihak yang didengar Hakim tetapi BUKAN saksi (dispensasi kawin: anak, calon, orang tua). SKEMA.md bagian 14. */
+  const JENIS_KATALOG_KETERANGAN = "keterangan-pihak";
   const JENIS_KETERANGAN = Object.freeze(["melihat", "mendengar", "de-auditu", "sebagian", "tidak-tahu", "ragu", "berbeda"]);
   const JENIS_UMUM = Object.freeze(["mendengar", "de-auditu", "sebagian", "tidak-tahu", "ragu"]);
   const TINGKAT = Object.freeze(["inti", "pilihan", "jarang", "tambahan"]);
@@ -388,6 +390,9 @@
         if (typeof tv !== "string" || !tv.trim()) g(`${lok}: teksVarian[${j}] kosong`);
         else if (JSON.stringify(penandaDi(tv)) !== JSON.stringify(penandaDi(q.teks || ""))) g(`${lok}: teksVarian[${j}] himpunan penanda berbeda dari teks`);
       }
+      if (q.menggantikan !== undefined) {
+        if (!Array.isArray(q.menggantikan) || !q.menggantikan.length || !q.menggantikan.every((x) => typeof x === "string" && /^q-[a-z0-9-]+$/.test(x) && x !== q.id)) g(`${lok}: menggantikan harus daftar id butir lain (q-...)`);
+      }
       const tb = daftar(q.tidakBerlaku);
       for (const x of tb) if (!JENIS_KETERANGAN.includes(x) || x === "melihat") g(`${lok}: tidakBerlaku memuat "${x}" (sah: ${JENIS_KETERANGAN.filter((y) => y !== "melihat").join(", ")})`);
       const tetap = KELOMPOK_TETAP.includes(q.kelompok);
@@ -424,6 +429,14 @@
       }
     });
     if (!idQ.size) g("pertanyaan kosong");
+    // butir yang digantikan harus ada: pada katalog tambahan berdiri sendiri butir utamanya tidak terlihat, jadi diperiksa
+    // hanya pada katalog utuh (tanpa tambahanUntuk) atau hasil gabungan.
+    if (!daftar(kat.tambahanUntuk).length || kat.digabungDari) {
+      for (const q of daftar(kat.pertanyaan)) {
+        if (!laRaya(q)) continue;
+        for (const id of daftar(q.menggantikan)) if (!idQ.has(id)) g(`pertanyaan ${q.id}: menggantikan butir "${id}" yang tidak ada`);
+      }
+    }
     for (const p of pokokWajib) if (!pokokDipakai.has(p)) g(`pokok wajib ${p} tidak punya pertanyaan`);
 
     if (o.variabelAda) {
@@ -558,7 +571,9 @@
    */
   function gabungKatalog(utama, tambahanDaftar) {
     const hasil = salin(utama);
-    const tambahan = daftar(tambahanDaftar).filter((t) => laRaya(t) && daftar(t.tambahanUntuk).includes(utama.kunci));
+    // Katalog keterangan pihak (anak, calon, orang tua) menempel pada katalog utama yang sama TETAPI bukan butir saksi:
+    // dipakai tab sendiri lewat kenaliKeterangan/susunKeterangan, jadi tidak boleh melebur ke butir saksi (SKEMA.md 14.6).
+    const tambahan = daftar(tambahanDaftar).filter((t) => laRaya(t) && t.jenisKatalog !== JENIS_KATALOG_KETERANGAN && daftar(t.tambahanUntuk).includes(utama.kunci));
     if (!tambahan.length) return hasil;
     hasil.digabungDari = tambahan.map((t) => t.kunci);
     const idDasar = new Set(daftar(hasil.dasarHukum).map((d) => d.id));
@@ -570,6 +585,8 @@
         if (!hasil.keadaan[kunci]) hasil.keadaan[kunci] = salin(dek);
         else if (Array.isArray(hasil.keadaan[kunci].nilai) && Array.isArray(dek.nilai)) {
           for (const n of dek.nilai) if (!hasil.keadaan[kunci].nilai.map(String).includes(String(n))) hasil.keadaan[kunci].nilai.push(n);
+          // tulisan nilai baru ikut terbawa; tulisan milik katalog utama tidak ditimpa
+          if (laRaya(dek.labelNilai)) hasil.keadaan[kunci].labelNilai = Object.assign({}, dek.labelNilai, laRaya(hasil.keadaan[kunci].labelNilai) ? hasil.keadaan[kunci].labelNilai : {});
         }
       }
       hasil.dasarHukum = daftar(hasil.dasarHukum);
@@ -588,6 +605,14 @@
         if (idQ.has(q.id)) continue;
         const baru = salin(q);
         baru.urutan = (typeof q.urutan === "number" ? q.urutan : 0) + geser;
+        // butir yang MENGGANTIKAN butir utama (mis. versi Tergugat) duduk tepat di belakang butir yang digantikannya
+        const digantikan = daftar(q.menggantikan).map((id) => hasil.pertanyaan.find((x) => x && x.id === id)).find(Boolean);
+        if (digantikan && typeof digantikan.urutan === "number") {
+          const dipakai = new Set(hasil.pertanyaan.map((x) => x.urutan));
+          let calon = digantikan.urutan + 1;
+          while (dipakai.has(calon)) calon += 1;
+          baru.urutan = calon;
+        }
         hasil.pertanyaan.push(baru);
         idQ.add(q.id);
       }
@@ -615,7 +640,7 @@
   function pertanyaanAktif(kat, keadaan, pihak, opsi) {
     const o = opsi || {};
     const tingkatBolehAda = new Set(o.tingkat || ["inti", "pilihan", "tambahan"]);
-    return daftar(kat && kat.pertanyaan)
+    const aktif = daftar(kat && kat.pertanyaan)
       .filter((q) => {
         if (!laRaya(q)) return false;
         const ps = daftar(q.pihakSaksi);
@@ -633,6 +658,12 @@
         const akhirB = b.kelompok === "penutup" ? 1 : 0;
         return akhirA - akhirB || a.urutan - b.urutan;
       });
+    // Butir yang `menggantikan` butir lain (versi Tergugat atas harta bersama / kewarisan): bila butir pengganti aktif
+    // untuk saksi ini, butir yang digantikannya tidak ditanyakan. Tanpa pihak (daftar utuh untuk borang) tidak dipangkas.
+    if (!pihak) return aktif;
+    const diganti = new Set();
+    for (const q of aktif) for (const id of daftar(q.menggantikan)) diganti.add(id);
+    return diganti.size ? aktif.filter((q) => !diganti.has(q.id)) : aktif;
   }
 
   /** Jenis keterangan yang masuk akal untuk butir ini. */
@@ -893,6 +924,159 @@
   }
 
   // ──────────────────────────────────────────────────────────────────────
+  // Keterangan pihak (anak, calon, orang tua) - bukan saksi (SKEMA.md bagian 14)
+  // ──────────────────────────────────────────────────────────────────────
+
+  /** Pokok yang baru tercetak sesudah petugas mengonfirmasi: kehamilan dan hubungan badan (sensitif; bawaan mati). */
+  const POKOK_PERLU_KONFIRMASI = Object.freeze(["pp-kt-sebab"]);
+  /** Pokok yang menentukan: ragu atau berselisih di sini pada anak atau calon harus digali lebih lanjut. */
+  const POKOK_MENENTUKAN = Object.freeze(["pp-kt-kehendak", "pp-kt-kesiapan", "pp-kt-nasihat"]);
+  const PERINGATAN_MENENTUKAN = "Pemberi keterangan ini ragu atau berselisih pada hal yang menentukan; gali lebih lanjut sebelum menetapkan.";
+  /** Pilihan sumber cerita orang tua (jenis "berdasarkan cerita orang lain"); bawaan yang pertama. */
+  const SUMBER_CERITA = Object.freeze(["anak saya", "keluarga", "tetangga", "guru"]);
+
+  /**
+   * Katalog keterangan pihak untuk katalog utama ini (menempel lewat tambahanUntuk), atau null: jenis perkara yang tidak
+   * punya katalog keterangan tidak mendapat tab keterangan.
+   */
+  function kenaliKeterangan(katalogDaftar, utama) {
+    const kunci = utama && utama.kunci;
+    if (!kunci) return null;
+    return daftar(katalogDaftar).find((t) => laRaya(t) && t.contoh !== true && t.jenisKatalog === JENIS_KATALOG_KETERANGAN && daftar(t.tambahanUntuk).includes(kunci)) || null;
+  }
+
+  /**
+   * Rumusan untuk WALI (bukan orang tua kandung): "anak saya" menjadi "anak yang saya asuh" dan sebutan kandung menjadi wali.
+   * Dikenakan pada kalimat yang sudah terisi.
+   */
+  function rumusWali(teks) {
+    return String(teks)
+      .replace(/\b(orang tua|ayah|ibu) kandung\b/gi, "wali")
+      .replace(/\banak kandung saya\b/gi, (x) => (x[0] === "A" ? "Anak yang saya asuh" : "anak yang saya asuh"))
+      .replace(/\banak saya\b/gi, (x) => (x[0] === "A" ? "Anak yang saya asuh" : "anak yang saya asuh"))
+      .replace(/\borang tuanya\b/gi, "walinya")
+      .replace(/\borang tua\b(?! atau wali)/gi, "wali");
+  }
+
+  /** Peran terurut menurut urutan periksa, dengan nomor urut GLOBAL pemberi keterangan pertama peran itu (anak 1, calon 2, ortu anak 3-4, ortu calon 5-6). */
+  function peranTerurut(kat) {
+    const defs = daftar(kat && kat.peranKeterangan)
+      .filter((d) => laRaya(d) && typeof d.kode === "string")
+      .slice()
+      .sort((a, b) => (a.urutanPeriksa || 0) - (b.urutanPeriksa || 0));
+    let n = 0;
+    return defs.map((d) => {
+      const mulaiKe = n + 1;
+      n += d.boleh2 ? 2 : 1;
+      return Object.assign({}, d, { mulaiKe });
+    });
+  }
+
+  /**
+   * Menyusun tanya-jawab keterangan anak, calon, dan orang tua dari katalog keterangan pihak.
+   *
+   * @param {object} kat katalog keterangan pihak (kenaliKeterangan)
+   * @param {{
+   *   keadaan?: object,                    // jenisKelaminAnak, sebabDK, calonJuga, sekolah, tidakHadir[], sebabTidakHadir, pendampingan[]
+   *   benih?: string,
+   *   konfirmasiSebab?: boolean,           // butir kehamilan dan hubungan badan baru tercetak bila true (bawaan false)
+   *   periksa: Array<{ peran: string, hadir?: boolean, jumlah?: 1|2, jenis?: string, perButir?: object, berbeda?: string[], wali?: boolean, sumber?: string,
+   *                    orang?: Array<{ jenis?: string, perButir?: object, berbeda?: string[], wali?: boolean, sumber?: string }> }>,
+   *   variabel?: (kode:string)=>string|undefined,
+   *   slot?: object,
+   *   tingkat?: string[],
+   * }} masukan
+   * @returns {{pemberi: Array<{ke:number,peran:string,label:string,baris:object[]}>, peringatan: string[], ditahan: string[]}}
+   *
+   * Aturan: pemberi keterangan diurutkan menurut urutanPeriksa; `ke` = nomor GLOBAL (ganjil memakai saksi1, genap saksi2) sehingga
+   * anak dan calon, ayah dan ibu tidak pernah berbunyi sama; jenis "berbeda" memakai versi B (saksi2) pada pemberi yang ditandai.
+   */
+  function susunKeterangan(kat, masukan) {
+    const m = masukan || {};
+    const benih = String(m.benih || "");
+    const peringatan = [];
+    const konfirmasi = m.konfirmasiSebab === true;
+    const dasar = keadaanBawaan(kat, m.keadaan);
+    const masuk = daftar(m.periksa).filter(laRaya);
+    // pihak yang tidak hadir: dari keadaan, ditambah kartu yang ditandai tidak hadir (hanya peran yang memang dapat tidak hadir)
+    const nilaiTidakHadir = new Set(daftar(kat && kat.keadaan && kat.keadaan.tidakHadir && kat.keadaan.tidakHadir.nilai).map(String));
+    const tidakHadir = new Set([].concat(dasar.tidakHadir === undefined || dasar.tidakHadir === null ? [] : dasar.tidakHadir).map(String));
+    for (const e of masuk) if (e.hadir === false && nilaiTidakHadir.has(String(e.peran))) tidakHadir.add(String(e.peran));
+    dasar.tidakHadir = Array.from(tidakHadir);
+
+    const terpakaiPerButir = new Map();
+    const pemberi = [];
+    const ditahan = new Set();
+    for (const d of peranTerurut(kat)) {
+      const entri = masuk.find((e) => e.peran === d.kode);
+      if (!entri || entri.hadir === false || tidakHadir.has(d.kode)) continue;
+      const banyak = d.boleh2 ? Math.min(2, Math.max(1, Number(entri.jumlah) || 1)) : 1;
+      for (let i = 0; i < banyak; i += 1) {
+        const ke = d.mulaiKe + i;
+        const orang = laRaya(daftar(entri.orang)[i]) ? entri.orang[i] : {};
+        const pilih = (kunci, cadangan) => (orang[kunci] !== undefined ? orang[kunci] : entri[kunci] !== undefined ? entri[kunci] : cadangan);
+        const jenisDasar = pilih("jenis", "melihat");
+        const perButir = Object.assign({}, entri.perButir, orang.perButir);
+        const berbeda = daftar(orang.berbeda !== undefined ? orang.berbeda : entri.berbeda);
+        const wali = pilih("wali", false) === true;
+        const sumberCerita = String(pilih("sumber", "") || "").trim() || (d.kelas === "ortu" ? SUMBER_CERITA[0] : "keluarga");
+        const keadaan = Object.assign({}, dasar, { peran: d.kode, pihakSaksi: "P" });
+        const butir = pertanyaanAktif(kat, keadaan, "P", { tingkat: m.tingkat });
+        const baris = [];
+        let perluGali = false;
+        for (const q of butir) {
+          if (!konfirmasi && POKOK_PERLU_KONFIRMASI.includes(q.pokok)) {
+            ditahan.add(q.id);
+            continue;
+          }
+          const boleh = jenisKeteranganButir(q);
+          let jenis = perButir[q.id] || jenisDasar || "melihat";
+          if (!JENIS_KETERANGAN.includes(jenis)) jenis = "melihat";
+          if (!boleh.includes(jenis)) jenis = "melihat";
+          if (berbeda.includes(q.id) && boleh.includes("berbeda")) jenis = "berbeda";
+          const terpakai = terpakaiPerButir.get(q.id + "|" + jenis) || new Set();
+          // "berbeda": versi B (saksi2) untuk pemberi yang ditandai - aturan ke === 1 pada saksi tidak berlaku di sini (SKEMA 14.4)
+          const pilihan = pilihJawaban(kat, q, jenis, keadaan, jenis === "berbeda" ? 2 : ke, benih, terpakai);
+          if (!pilihan) {
+            peringatan.push(`butir ${q.id} (${jenis}) tidak punya jawaban untuk keadaan ini`);
+            continue;
+          }
+          terpakai.add(rapikan(pilihan.teks));
+          terpakaiPerButir.set(q.id + "|" + jenis, terpakai);
+          const slotButir = Object.assign({}, m.slot || {}, { hal: q.hal || (m.slot && m.slot.hal), sumber: sumberCerita });
+          const tanya = isiPenanda(pilihTeksPertanyaan(q, ke, benih), { variabel: m.variabel, slot: slotButir });
+          const jawab = isiPenanda(pilihan.teks, { variabel: m.variabel, slot: slotButir });
+          tanya.teks = amankanKeAbt(wali ? rumusWali(tanya.teks) : tanya.teks);
+          jawab.teks = amankanKeAbt(wali ? rumusWali(jawab.teks) : jawab.teks);
+          const ragu = jenis === "ragu" || jenis === "berbeda";
+          if (ragu && d.kelas === "diri" && POKOK_MENENTUKAN.includes(q.pokok)) perluGali = true;
+          baris.push({
+            no: baris.length + 1,
+            butir: q.id,
+            pokok: q.pokok,
+            jenis,
+            tanya: tanya.teks,
+            jawab: jawab.teks,
+            kosong: tanpaKosongGanda([...tanya.kosong, ...jawab.kosong]),
+            tandaKuning: jenis === "ragu" || jenis === "sebagian" || jenis === "berbeda",
+          });
+        }
+        const label = d.label + (banyak === 2 ? (i === 0 ? " (ayah)" : " (ibu)") : "") + (wali ? " - wali" : "");
+        if (perluGali) peringatan.push(`${label}: ${PERINGATAN_MENENTUKAN}`);
+        pemberi.push({ ke, peran: d.kode, orangKe: i, label, jenis: jenisDasar, wali, baris });
+      }
+    }
+    return { pemberi, peringatan, ditahan: Array.from(ditahan) };
+  }
+
+  /** Teks siap tempel ke berita acara: "Pertanyaan ?Jawaban;" satu baris per butir (format blangko Derry). */
+  function teksTanyaJawab(baris) {
+    return daftar(baris)
+      .map((b) => `${String(b.tanya || "").replace(/\s*\?\s*$/, "")} ?${String(b.jawab || "").trim()};`)
+      .join("\n");
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
   // Penolong tampilan (borang)
   // ──────────────────────────────────────────────────────────────────────
 
@@ -1049,6 +1233,16 @@
     amankanKeAbt,
     tidakTerisi,
     susunSaksi,
+    JENIS_KATALOG_KETERANGAN,
+    POKOK_PERLU_KONFIRMASI,
+    POKOK_MENENTUKAN,
+    PERINGATAN_MENENTUKAN,
+    SUMBER_CERITA,
+    kenaliKeterangan,
+    susunKeterangan,
+    peranTerurut,
+    rumusWali,
+    teksTanyaJawab,
     LABEL_JENIS_KETERANGAN,
     LABEL_KEADAAN_BAKU,
     LABEL_NILAI_BAKU,
