@@ -81,7 +81,25 @@ dengan SELECT saja. Paket ABT diuji pada salinan sementara `aps_badilag_uji_jeja
   FormData ke ABT; urutan penjaga di `kirimKeJembatan`/`saksiscanJembatan` (pemeriksa dibuktikan menangkap pintu tanpa
   penjaga); teks salinan musyawarah.
 
-## Perlu keputusan pengguna
+## Keputusan pengguna (18 Okt ±23.00) dan pelaksanaannya
+
+| no | keputusan | pelaksanaan |
+|---|---|---|
+| 94 | (b) basis data netral untuk kueri ABT | paket `D:/aleta-dev/kerja/audit-jejak-18okt/abt-db-netral/` (PRASYARAT → CADANGAN → PASANG transaksi → PERIKSA → PULIH, MD5SUMS, PASANG.md, uji jalur). Basis data `isian_data`, VIEW `ecourt_ringkasan`, `ktp_pihak`, `ecourt_berkas`; 18 variabel (2223, 8800–8811, 8813, 8870–8872, 11114). Render php56 85 nilai sebelum = sesudah. Definisi VIEW tetap menyebut sumber `aleta_bot` (dicatat jujur di PASANG.md). |
+| 95 | paket netral nama variabel dipasang Senin | **diganti**: 25 dari 26 sasarannya sudah dikerjakan paket i21 (`abt-netral-db-derry`); memasang keduanya membuat hasil bergantung urutan. Sisa (modifier `aleta` 8570) dipindah ke `abt-db-netral`. Berkas `abt-netral-nama-variabel.sql` diberi tanda JANGAN DIPASANG. Urutan: `D:/aleta-dev/kerja/audit-jejak-18okt/URUTAN-PASANG.md`. |
+| 96 | nama DB/pengguna MySQL ALETA tidak diganti | tidak ada perubahan |
+| 97 | teks layar dibiarkan | tidak ada perubahan |
+| 98 | Eviden SKP dinetralkan | "Data dibaca dari SIPP pada …", "… adalah USULAN dan belum disahkan …", sumber penilai "Pejabat penilai pada Lembar SKP"; uji D2 memindai PDF (teks pdf.js), XLSX, DOCX SKP: 0 kata ALETA |
+
+Penjaga repo baru (uji E): Pengaturan SIPP & ABT menolak kueri variabel yang merujuk `aleta_bot` dan menerima `isian_data`; pemindai repo
+memastikan tidak ada kode yang menyusun kueri variabel ABT (`#perkara_id#`) ke `aleta_bot` (pemindai dibuktikan menangkap contoh lama).
+Kode repo memang tidak pernah membuatnya — kueri lama berasal dari paket ABT di luar repo (`abt-tanggal-ktp`, `abt-tanggal-ktp-2`, `abt-data-ecourt`).
+
+Temuan sampingan: variabel ABT **2223** (salinan `pm57`/`i28`) membuat render ABT macet sampai memori habis — sebelum paket apa pun; namanya memuat
+penanda `#2223#` (dugaan: ABT mengisi dirinya sendiri berulang). Kuerinya sama dengan 8872 yang normal. Perlu diperiksa pemilik paket yang membuatnya
+sebelum dipasang.
+
+## Perlu keputusan pengguna (asli, sebelum jawaban di atas)
 
 1. **Rujukan basis data `aleta_bot.` di 18 kueri variabel ABT** (KTP e-Court 2223/8870–8872/11114, kontak &
    domisili elektronik 8800–8813). Siapa pun yang membuka `abt_variabel` melihat nama basis data `aleta_bot`.

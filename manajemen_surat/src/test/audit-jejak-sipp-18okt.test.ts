@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import zlib from "node:zlib";
@@ -17,8 +17,11 @@ import { susunNaskahEvidenSkp } from "@/lib/eviden-skp-cetak";
 import { teksKeRtf } from "@/server/modules/aleta-ecourt/konversi-naskah";
 import { gambarPdfEvidenSkp } from "@/server/modules/aleta-ecourt/eviden-skp-pdf";
 import { gambarXlsxEvidenSkp } from "@/server/modules/aleta-ecourt/eviden-skp-xlsx";
+import { gambarDocxEvidenSkp } from "@/server/modules/aleta-ecourt/eviden-skp-docx";
+import { KALIMAT_USULAN_SKP } from "@/lib/skp-jabatan-katalog";
 import { createXlsxWorkbook } from "@/server/shared/xlsx";
 
+import { bacaPdfUji } from "./eviden-skp-baca";
 import { INSTANSI_CONTOH, dokumenRekapContoh, paketContoh } from "./eviden-skp-contoh";
 
 /**
@@ -382,5 +385,81 @@ describe("D2 - Eviden SKP (keluar ke sistem kinerja pusat): metadata tanpa ALETA
     expect(zip["docProps/core.xml"]).toBeDefined();
     expect(menyebutAleta(zip["docProps/core.xml"])).toBe(false);
     expect(menyebutAleta(zip["docProps/app.xml"])).toBe(false);
+  });
+
+  // Keputusan 98 (18 Okt): teks BADAN juga netral ("Data dibaca dari SIPP", "USULAN").
+  const naskahLembar = () => {
+    const dok = dokumenRekapContoh();
+    return susunNaskahEvidenSkp(paketContoh(), { ...dok, catatan: [...(dok.catatan ?? []), KALIMAT_USULAN_SKP] }, {
+      instansi: INSTANSI_CONTOH,
+      tanggalTandaTangan: "2026-06-30",
+      sebutanOrang: "Hakim",
+    } as never);
+  };
+
+  it("naskah: catatan waktu baca dan kalimat usulan tanpa kata ALETA (yang dicetak ke tiga format)", () => {
+    const n = naskahLembar();
+    expect(n.catatan.some((c) => c.startsWith("Data dibaca dari SIPP pada "))).toBe(true);
+    expect(n.catatan).toContain(KALIMAT_USULAN_SKP);
+    expect(n.catatan.filter((c) => menyebutAleta(c))).toEqual([]);
+    expect(menyebutAleta(KALIMAT_USULAN_SKP)).toBe(false);
+  });
+
+  it("PDF (teks halaman dibaca pdf.js), XLSX, dan DOCX seluruh isinya tanpa ALETA", async () => {
+    const n = naskahLembar();
+    const halaman = await bacaPdfUji(Buffer.from((await gambarPdfEvidenSkp(n)).berkas));
+    const teks = halaman.map((h) => h.teks).join("\n");
+    expect(teks).toContain("Data dibaca dari SIPP pada");
+    expect(menyebutAleta(teks)).toBe(false);
+    for (const [nama, berkas] of [
+      ["xlsx", await gambarXlsxEvidenSkp(n)],
+      ["docx", await gambarDocxEvidenSkp(n)],
+    ] as const) {
+      const isi = bacaZip(Buffer.from(berkas));
+      expect(Object.values(isi).join("\n"), nama).toContain("Data dibaca dari SIPP pada");
+      expect(berkasMenyebut(Buffer.from(berkas)), nama).toBe(false);
+    }
+  });
+});
+
+// ============================================================================
+// E. KUERI VARIABEL ABT TIDAK MENYEBUT BASIS DATA ALETA (keputusan 94b, 18 Okt)
+// ============================================================================
+describe("E - kueri variabel ABT memakai basis data netral isian_data, bukan aleta_bot", () => {
+  const KUERI_LAMA = "SELECT k.tanggal_ktp AS data FROM aleta_bot.aleta_bot_ktp_pihak k WHERE k.perkara_id = '#perkara_id#' LIMIT 1";
+  const KUERI_NETRAL = "SELECT k.tanggal_ktp AS data FROM isian_data.ktp_pihak k WHERE k.perkara_id = '#perkara_id#' LIMIT 1";
+
+  it("Pengaturan SIPP & ABT: variabel baru/ubah yang merujuk aleta_bot ditolak; rujukan isian_data diterima", () => {
+    const simpan = (sql: string) => g.periksaPengaturanAbt("/variabel/simpan", { noVar: "9800", lama: { sql_query: "SELECT 1" }, baru: { sql_query: sql } });
+    expect(simpan(KUERI_LAMA)).toMatchObject({ ok: false });
+    expect(simpan(KUERI_NETRAL)).toEqual({ ok: true });
+  });
+
+  /** Kueri variabel ABT (berpenanda #perkara_id#) di dalam sumber yang menyebut basis data aleta_bot. */
+  const kueriAbtKeAleta = (kode: string) =>
+    [...kode.matchAll(/(["'`])((?:(?!\1)[^\n])*?#perkara_id#(?:(?!\1)[^\n])*?)\1/g)].map((m) => m[2]).filter((s) => /\b(FROM|JOIN)\s+`?aleta_bot`?\s*\./i.test(s));
+
+  it("pemindai terbukti menangkap kueri ABT lama dan meloloskan yang netral", () => {
+    expect(kueriAbtKeAleta(`const q = "${KUERI_LAMA}";`)).toHaveLength(1);
+    expect(kueriAbtKeAleta(`const q = "${KUERI_NETRAL}";`)).toHaveLength(0);
+  });
+
+  it("tidak ada kode di repo yang menyusun kueri variabel ABT ke aleta_bot", () => {
+    const temuan: string[] = [];
+    const jelajah = (dir: string) => {
+      for (const nama of readdirSync(dir)) {
+        if (["node_modules", ".next", "test", "archive_unused", "public", "dist", "kamus-deteksi", "naskah", "runtime-data", "data"].includes(nama)) continue;
+        const j = path.join(dir, nama);
+        const st = statSync(j);
+        if (st.isDirectory()) jelajah(j);
+        else if (/\.(js|mjs|ts|tsx|py|sql|sh)$/.test(nama) && st.size < 3_000_000) {
+          for (const k of kueriAbtKeAleta(readFileSync(j, "latin1"))) temuan.push(`${path.relative(AKAR, j)}: ${k.slice(0, 80)}`);
+        }
+      }
+    };
+    for (const d of ["aleta_bot", "manajemen_surat/src", "manajemen_surat/scripts", "ekstensi-sipp", "scripts", "tools"]) {
+      if (existsSync(path.join(AKAR, d))) jelajah(path.join(AKAR, d));
+    }
+    expect(temuan).toEqual([]);
   });
 });

@@ -236,7 +236,7 @@ export function susunNaskahEvidenSkp(
     catatan.push(`Tidak terbaca dari SIPP: ${galat}`);
   }
   const dibaca = waktuBaca(paket.dihitungPada);
-  if (dibaca) catatan.push(`Data dibaca ALETA dari SIPP pada ${dibaca}.`);
+  if (dibaca) catatan.push(`Data dibaca dari SIPP pada ${dibaca}.`); // tanpa nama aplikasi: berkas keluar ke e-Kinerja (keputusan 98, 18 Okt)
 
   // Jabatan Ketua dari datanya bila ada; bila Ketua tidak terbaca, jabatannya
   // tetap ditulis supaya dokumen dapat ditandatangani - namanya yang titik-titik.

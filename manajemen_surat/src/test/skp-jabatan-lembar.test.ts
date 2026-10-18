@@ -140,7 +140,7 @@ describe("Lembar SKP jabatan perkara", () => {
     expect(baris.some((b) => b.rhk === "PREDIKAT KINERJA PERIODIK")).toBe(true);
     // Nomor berurutan tanpa celah.
     expect(baris.map((b) => b.no)).toEqual(baris.map((_, i) => String(i + 1)));
-    expect(lembar.catatan.join(" ")).toContain("USULAN ALETA");
+    expect(lembar.catatan.join(" ")).toContain("adalah USULAN dan belum disahkan");
   });
 
   it("indikator tak terbaca tampil — di Lembar, tidak 0", () => {

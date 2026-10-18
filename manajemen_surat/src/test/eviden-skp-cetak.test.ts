@@ -162,7 +162,7 @@ describe("naskah - identitas, catatan, dan kertas", () => {
     expect(n.catatan[0]).toContain("Perkara masuk periode");
     expect(n.catatan).toContain("Tidak terbaca dari SIPP: Tanggal musyawarah majelis tidak tercatat di SIPP untuk 3 perkara.");
     // 05:40 UTC = 13.40 WITA.
-    expect(n.catatan.at(-1)).toBe("Data dibaca ALETA dari SIPP pada 27 September 2026 pukul 13.40 WITA.");
+    expect(n.catatan.at(-1)).toBe("Data dibaca dari SIPP pada 27 September 2026 pukul 13.40 WITA.");
   });
 
   it("A4 mendatar sampai 12 kolom; F4 mendatar dan huruf kecil untuk kumulasi 25 kolom", () => {
