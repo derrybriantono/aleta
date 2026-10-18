@@ -2236,6 +2236,24 @@ async function alatUnduh(blob, namaMentah, opsi) {
     }
     if (batalkan) return { ok: false, lewat: "", pesan: "Unduhan dibatalkan.", dibatalkan: true };
   }
+  // Audit jejak 18 Okt 2026: RTF unduhan dapat diunggah petugas LANGSUNG lewat borang
+  // SIPP (di luar ALETA). Jejak sistem - grup tersembunyi {\*\isianasal}/{\*\aletaasal}
+  // dan properti {\info} yang menyebut ALETA - dibuang di sini juga; naskah tidak diubah.
+  if (/\.rtf$/i.test(nama) && typeof AletaPenjagaTanda !== "undefined" && typeof AletaPenjagaTanda.bersihkanRtf === "function") {
+    try {
+      const bita = new Uint8Array(await blob.arrayBuffer());
+      let teks = "";
+      for (let k = 0; k < bita.length; k += 8192) teks += String.fromCharCode(...bita.subarray(k, k + 8192));
+      const bersih = AletaPenjagaTanda.bersihkanRtf(teks);
+      if (bersih !== teks) {
+        const keluar = new Uint8Array(bersih.length);
+        for (let k = 0; k < bersih.length; k += 1) keluar[k] = bersih.charCodeAt(k) & 255;
+        blob = new Blob([keluar], { type: blob.type || "application/rtf" });
+      }
+    } catch {
+      /* gagal membersihkan tidak menahan unduhan */
+    }
+  }
   let sebab = "";
   try {
     const alamat = await alatBlobKeData(blob);

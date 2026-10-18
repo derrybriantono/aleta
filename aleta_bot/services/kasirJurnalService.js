@@ -1904,7 +1904,7 @@ function buatLayanan(deps = {}) {
     const baris = Array.isArray(minta.baris) ? minta.baris : [];
     if (!baris.length) return { ok: false, alasan: "Tidak ada baris jurnal yang dikirim." };
     if (baris.length > 30) return { ok: false, alasan: "Paling banyak 30 baris sekali simpan." };
-    const ip = bersih(minta.ip).slice(0, 15);
+    const ip = penjagaTandaSipp.ipAuditSipp(minta.ip);
 
     const akun = await akunPetugas(minta.akunSipp, ip);
     if (!akun.ok) return { ok: false, alasan: akun.alasan, akunSipp: akun.username || bersih(minta.akunSipp), calon: akun.calon };

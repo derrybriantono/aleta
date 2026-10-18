@@ -146,10 +146,12 @@ export async function gambarPdfEvidenSkp(
 
   const judulPdf = [naskah.judulLengkap, naskah.namaOrang].filter(Boolean).join(" - ");
   dok.setTitle(judulPdf || "Eviden SKP");
-  dok.setAuthor("ALETA");
+  // Eviden SKP keluar dari ALETA (diunggah ke sistem kinerja pusat): metadata tanpa
+  // nama ALETA, juga tanpa bawaan pdf-lib (audit jejak 18 Okt 2026).
+  dok.setAuthor(naskah.namaOrang || "");
   dok.setSubject("Eviden SKP");
-  dok.setCreator("ALETA");
-  dok.setProducer("ALETA (pdf-lib)");
+  dok.setCreator("");
+  dok.setProducer("");
   dok.setLanguage("id-ID");
   const saat = new Date(naskah.dihitungPada);
   if (!Number.isNaN(saat.getTime())) {

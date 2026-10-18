@@ -612,6 +612,15 @@ function buatLayanan(d) {
       if (luar.length) throw galatTolak(`Isian bawaan memuat huruf yang tidak dapat disimpan ABT: ${luar.join(" ")}`);
       rapi.default_data = v;
     }
+    if ("sql_query" in rapi) {
+      const putar = await jalurKeDirinya(no, def.nama, rapi.sql_query);
+      if (putar) {
+        throw galatTolak(
+          `Kueri ini membuat variabel #${no}# memanggil dirinya sendiri (${putar}). Cetak ABT akan macet sampai memori habis - tidak ada yang disimpan.`,
+          "penanda_berputar"
+        );
+      }
+    }
     let uji = null;
     if ("sql_query" in rapi && !pulihkan) {
       uji = await ujiVariabel({ noVar: no, perkaraId: badan.perkaraId, sidangKe: badan.sidangKe, sql_query: rapi.sql_query });
@@ -623,6 +632,46 @@ function buatLayanan(d) {
     }
     const hasil = await tulisVariabel(no, lama, rapi);
     return { ...hasil, uji };
+  }
+
+  /**
+   * Audit 18 Okt 2026 (variabel 2223): ABT mengisi penanda #nnnn# di NAMA (Abt_model: 'nama' => variabel($nama)) dan di
+   * KUERI (variabel_var_data) setiap kali satu variabel dihitung. Bila rantai penanda kembali ke variabel itu sendiri,
+   * cetak berputar tanpa ujung sampai memori PHP habis (terbukti: #2223# di nama 2223 -> render macet >110 detik).
+   * Pulang jalur "#a# -> #b# -> #a#" bila ada putaran, selain itu "". default_data tidak dihitung (hanya popup).
+   */
+  async function jalurKeDirinya(no, namaSendiri, sqlBaru) {
+    const PENANDA = /#(\d{4,5})#/g;
+    const kode = (s) => [...String(s || "").matchAll(PENANDA)].map((m) => m[1].padStart(4, "0"));
+    const asal = { [no]: null };
+    const antre = [];
+    for (const k of new Set([...kode(namaSendiri), ...kode(sqlBaru)])) {
+      if (k === no) return `#${no}# -> #${no}#`;
+      if (!(k in asal)) {
+        asal[k] = no;
+        antre.push(k);
+      }
+    }
+    let dibaca = 0;
+    while (antre.length && dibaca < 400) {
+      const k = antre.shift();
+      dibaca += 1;
+      const b = (await kueri(`SELECT no_var, nama, sql_query FROM ${t("abt_variabel")} WHERE no_var = ?`, [k]))[0];
+      if (!b) continue;
+      for (const j of new Set([...kode(b.nama), ...kode(b.sql_query)])) {
+        if (j === no) {
+          const jalur = [no];
+          for (let x = k; x !== null && x !== no; x = asal[x]) jalur.unshift(x);
+          jalur.unshift(no);
+          return jalur.map((x) => `#${x}#`).join(" -> ");
+        }
+        if (!(j in asal)) {
+          asal[j] = k;
+          antre.push(j);
+        }
+      }
+    }
+    return "";
   }
 
   /** Satu transaksi: kunci baris, prasyarat nilai lama, tulis, baca kembali. */

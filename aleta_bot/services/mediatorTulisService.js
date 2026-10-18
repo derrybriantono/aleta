@@ -168,7 +168,7 @@ function barisAudit({ saat, ip, username, judul, nilai }) {
       "VALUES (?,?,?,?,?,?,?,?)",
     params: [
       saat,
-      bersih(ip).slice(0, 15),
+      penjagaTandaSipp.ipAuditSipp(ip),
       bersih(username).slice(0, 30),
       "perkara_mediasi",
       NAMA_BORANG,

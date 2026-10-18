@@ -13,4 +13,7 @@ const db = mysql.createPool({
 // MODE KEMBARAN: tulisan ke ABT (aps_badilag) dialihkan ke antrean sinkron.
 require("./services/penjagaKembaran").pasang(db, "abt");
 
+// Jaring tanda ALETA (audit jejak 18 Okt 2026): struktur ber-nama ALETA ditolak, nilai dicatat.
+require("./services/penjagaTandaSipp").pasangJaring(db, "abt");
+
 module.exports = db;

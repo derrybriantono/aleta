@@ -267,7 +267,7 @@ function ketuaDariPenilai(penilai: LembarSkp["pejabatPenilai"]): KetuaEvidenSkp 
     nama: penilai?.nama ?? "",
     nip: penilai?.nip ?? null,
     jabatan: penilai?.jabatan?.trim() || TITIK_JABATAN_PENILAI,
-    sumber: "Pejabat penilai pada Lembar SKP (isian ALETA)",
+    sumber: "Pejabat penilai pada Lembar SKP",
   };
 }
 

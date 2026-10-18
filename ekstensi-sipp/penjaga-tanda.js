@@ -203,11 +203,41 @@
    * selain itu { ok:true } atau { ok:false, kolom, pesan }.
    * opsi.asal (location.origin) dan opsi.jalurAleta ("/aleta") untuk uji.
    */
+  /** Pasangan [nama, nilai] kepala permintaan (Headers, larik pasangan, objek biasa, atau Request). */
+  function daftarKepala(kepala) {
+    const hasil = [];
+    if (!kepala) return hasil;
+    try {
+      if (typeof kepala.forEach === "function" && typeof kepala.get === "function") {
+        kepala.forEach((v, k) => hasil.push([String(k), String(v)]));
+      } else if (Array.isArray(kepala)) {
+        for (const p of kepala) if (Array.isArray(p)) hasil.push([String(p[0]), String(p[1])]);
+      } else if (typeof kepala === "object") {
+        for (const [k, v] of Object.entries(kepala)) hasil.push([String(k), String(v)]);
+      }
+    } catch {
+      /* kepala tak terbaca: tidak ada yang diperiksa */
+    }
+    return hasil;
+  }
+
+  const tolak = (nama) => ({ ok: false, kolom: nama, pesan: pesanIsian(nama) });
+
+  /**
+   * Periksa satu permintaan fetch ke SIPP/ABT (bukan jalur /aleta).
+   *   - SEMUA cara (juga GET): NAMA & NILAI kepala permintaan dan NAMA isian
+   *     query - tidak satu pun berasal dari data SIPP, dan semuanya sampai ke
+   *     server (catatan akses). Audit jejak 18 Okt 2026.
+   *   - Cara TULIS (POST/PUT/PATCH/DELETE): juga nilai query, jalur, NAMA isian
+   *     badan, dan nilai badan (teks data SIPP di halaman dikecualikan).
+   * Pulang null bila tidak ada yang perlu diperiksa / GET yang bersih, selain itu
+   * { ok:true } atau { ok:false, kolom, pesan }.
+   * opsi.asal (location.origin) dan opsi.jalurAleta ("/aleta") untuk uji.
+   */
   function periksaPermintaan(masukan, init, opsi) {
     const o = opsi || {};
     const metode = String((init && init.method) || (masukan && typeof masukan === "object" && masukan.method) || "GET").toUpperCase();
-    if (!METODE_TULIS.has(metode)) return null;
-    const teksUrl = typeof masukan === "string" ? masukan : masukan && masukan.url ? String(masukan.url) : "";
+    const teksUrl = typeof masukan === "string" ? masukan : masukan && masukan.url ? String(masukan.url) : masukan && typeof masukan.href === "string" ? masukan.href : "";
     let url;
     try {
       url = new URL(teksUrl, o.asal || (typeof location !== "undefined" ? location.href : "http://localhost/"));
@@ -217,18 +247,141 @@
     const jalurAleta = o.jalurAleta || "/aleta";
     if (url.pathname === jalurAleta || url.pathname.startsWith(`${jalurAleta}/`)) return null;
     if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+
+    const kepala = [...daftarKepala(masukan && typeof masukan === "object" ? masukan.headers : null), ...daftarKepala(init && init.headers)];
+    for (const [k, v] of kepala) if (menyebutAleta(k) || menyebutAleta(v)) return tolak(`kepala permintaan ${k}`);
+    for (const [k] of url.searchParams) if (menyebutAleta(k)) return tolak(`alamat (${k})`);
+
+    if (!METODE_TULIS.has(metode)) return null;
     if (POLA_BACA.test(url.pathname)) return null;
-    const badan = init && init.body !== undefined ? init.body : null;
     let dariSipp = null;
-    for (const [kunci, teks] of isianBadan(badan)) {
-      if (!menyebutAleta(teks)) continue;
+    const masihMenyebut = (teks) => {
+      if (!menyebutAleta(teks)) return false;
       if (dariSipp === null) dariSipp = o.dariSipp || dataSippHalaman(o.dokumen);
-      if (menyebutAleta(tanpaDataSipp(teks, dariSipp))) {
-        const nama = sebut(kunci, url.href);
-        return { ok: false, kolom: nama, pesan: pesanIsian(nama) };
-      }
+      return menyebutAleta(tanpaDataSipp(teks, dariSipp));
+    };
+    let jalur = url.pathname;
+    try {
+      jalur = decodeURIComponent(url.pathname);
+    } catch {
+      /* jalur apa adanya */
+    }
+    if (masihMenyebut(jalur)) return tolak("alamat");
+    for (const [k, v] of url.searchParams) if (masihMenyebut(v)) return tolak(sebut(k, url.href));
+    const badan = init && init.body !== undefined ? init.body : null;
+    for (const [kunci, teks] of isianBadan(badan)) {
+      if (menyebutAleta(String(kunci).replace(/^nama berkas /, ""))) return tolak(`nama isian ${kunci}`);
+      if (masihMenyebut(teks)) return tolak(sebut(kunci, url.href));
     }
     return { ok: true };
+  }
+
+  // -------------------------------------------------------------------------
+  // Berkas RTF yang dikirim LANGSUNG ke SIPP/ABT (mis. ABT main/anonim)
+  // -------------------------------------------------------------------------
+
+  /** Ujung grup RTF yang dibuka di `mulai` ("{"); pulang indeks sesudah "}". */
+  function ujungGrup(s, mulai) {
+    let dalam = 0;
+    for (let i = mulai; i < s.length; i += 1) {
+      const c = s[i];
+      if (c === "\\") i += 1;
+      else if (c === "{") dalam += 1;
+      else if (c === "}") {
+        dalam -= 1;
+        if (dalam === 0) return i + 1;
+      }
+    }
+    return s.length;
+  }
+
+  /**
+   * Teks RTF tanpa jejak buatan sistem (audit jejak 18 Okt 2026): grup tersembunyi
+   * {\*\isianasal ...}/{\*\aletaasal ...} dibuang beserta isinya, dan properti naskah
+   * di {\info ...} serta {\*\generator ...} yang menyebut ALETA dibuang. Isi naskah
+   * tidak disentuh (padanan bot: metadataTanpaAletaService).
+   */
+  function bersihkanRtf(s) {
+    if (typeof s !== "string" || !s.startsWith("{\\rtf")) return s;
+    let keluar = "";
+    let i = 0;
+    const pola = /\{\\\*\s*\\(?:isianasal|aletaasal|generator)(?![a-z])|\{\\info(?![a-z])/gi;
+    let m;
+    while ((m = pola.exec(s))) {
+      if (m.index < i) continue;
+      const akhir = ujungGrup(s, m.index);
+      const grup = s.slice(m.index, akhir);
+      let ganti = grup;
+      if (/^\{\\info/i.test(grup)) {
+        // buang sub-grup properti yang menyebut ALETA
+        let dalam = "";
+        let j = m[0].length;
+        while (j < grup.length - 1) {
+          if (grup[j] === "{") {
+            const u = ujungGrup(grup, j);
+            const sub = grup.slice(j, u);
+            if (!menyebutAleta(sub.replace(/\\[a-z]+-?\d* ?/gi, " "))) dalam += sub;
+            j = u;
+          } else {
+            dalam += grup[j];
+            j += 1;
+          }
+        }
+        ganti = `${m[0]}${dalam}}`;
+      } else if (/generator/i.test(m[0])) {
+        ganti = menyebutAleta(grup) ? "" : grup;
+      } else {
+        ganti = "";
+      }
+      keluar += s.slice(i, m.index) + ganti;
+      i = akhir;
+      pola.lastIndex = akhir;
+    }
+    return i === 0 ? s : keluar + s.slice(i);
+  }
+
+  /** Bita sebuah Blob (Blob.arrayBuffer, atau FileReader pada peramban/uji lama). */
+  function bacaBita(blob) {
+    if (typeof blob.arrayBuffer === "function") return blob.arrayBuffer().then((b) => new Uint8Array(b));
+    return new Promise((selesai, gagal) => {
+      const r = new FileReader();
+      r.onload = () => selesai(new Uint8Array(r.result));
+      r.onerror = () => gagal(r.error);
+      r.readAsArrayBuffer(blob);
+    });
+  }
+
+  /** FormData baru bila ada berkas RTF yang dibersihkan; selain itu badan yang sama. */
+  async function bersihkanBadanBerkas(badan) {
+    if (typeof FormData === "undefined" || !(badan instanceof FormData) || typeof Blob === "undefined") return badan;
+    const baru = new FormData();
+    let berubah = false;
+    for (const [nama, nilai] of badan.entries()) {
+      if (!(nilai instanceof Blob)) {
+        baru.append(nama, nilai);
+        continue;
+      }
+      const namaBerkas = typeof nilai.name === "string" ? nilai.name : "blob";
+      let isi = "";
+      try {
+        const bita = await bacaBita(nilai);
+        if (bita.length >= 5 && String.fromCharCode(...bita.subarray(0, 5)) === "{\\rtf") {
+          for (let k = 0; k < bita.length; k += 8192) isi += String.fromCharCode(...bita.subarray(k, k + 8192));
+        }
+      } catch {
+        isi = "";
+      }
+      const bersih = isi ? bersihkanRtf(isi) : isi;
+      if (!isi || bersih === isi) {
+        baru.append(nama, nilai, namaBerkas);
+        continue;
+      }
+      const keluar = new Uint8Array(bersih.length);
+      for (let k = 0; k < bersih.length; k += 1) keluar[k] = bersih.charCodeAt(k) & 255;
+      baru.append(nama, new Blob([keluar], { type: nilai.type || "application/rtf" }), namaBerkas);
+      berubah = true;
+    }
+    return berubah ? baru : badan;
   }
 
   /** Bungkus fetch pada `dunia` (window skrip konten). Idempoten. */
@@ -250,6 +403,14 @@
         galat.kolom = periksa.kolom;
         return Promise.reject(galat);
       }
+      // Tulisan ke SIPP/ABT yang membawa berkas: RTF dibersihkan dulu (jejak sistem saja).
+      if (periksa && periksa.ok === true && init && typeof FormData !== "undefined" && init.body instanceof FormData) {
+        const diri = this;
+        return bersihkanBadanBerkas(init.body).then(
+          (badan) => asli.call(diri, masukan, badan === init.body ? init : { ...init, body: badan }),
+          () => asli.call(diri, masukan, init)
+        );
+      }
       return asli.apply(this, arguments);
     };
     bungkus.__aletaPenjaga = true;
@@ -264,6 +425,8 @@
     dataSippHalaman,
     periksaTeks,
     periksaPermintaan,
+    bersihkanRtf,
+    bersihkanBadanBerkas,
     pasangFetch,
     pesanIsian,
   };

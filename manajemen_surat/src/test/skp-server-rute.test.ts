@@ -233,7 +233,7 @@ describe("unduhan SKP jabatan perkara", () => {
     expect(bot).toHaveBeenCalledWith({ tahun: 2026, periode: "b08", jabatan: "kasir", username: ["kasir1"] });
     const teks = (await bacaPdfUji(isi)).map((h) => h.teks).join("\n");
     expect(teks).toContain("Pejabat Penilai Kinerja");
-    expect(teks).toContain("USULAN ALETA");
+    expect(teks).toContain("adalah USULAN dan belum disahkan");
     expect(teks).toMatch(/350\.000/);
   }, 60_000);
 

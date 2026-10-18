@@ -425,6 +425,28 @@ describe("penulis bot abtPengaturanService (ABT tiruan bertransaksi)", () => {
     expect(ujiDiminta.length).toBe(sebelumUji);
     expect(abt.isi.variabel["0046"]).toMatchObject({ sql_query: "select 'Penggugat' as data", default_data: null });
   });
+
+  // Audit 18 Okt 2026: nama 2223 memuat #2223# -> render ABT macet >110 detik (memori habis); tanpa penanda itu selesai.
+  // ABT mengisi penanda di NAMA dan KUERI tiap variabel dihitung, jadi rantai yang kembali ke dirinya berputar tanpa ujung.
+  it("variabel: kueri yang membuat penanda berputar (langsung, lewat nama, lewat kueri lain) ditolak sebelum diuji dan ditulis", async () => {
+    abt.isi.variabel["0700"] = { no_var: "0700", nama: "Nama untuk #0046#", data_type: "data_sql", sql_query: "select 'x' as data", default_data: null, locked: 0 };
+    abt.isi.variabel["0701"] = { no_var: "0701", nama: "Rantai", data_type: "data_sql", sql_query: "select '#0700#' as data", default_data: null, locked: 0 };
+    abt.isi.variabel["0702"] = { no_var: "0702", nama: "Bawaan saja", data_type: "data_teks", sql_query: null, default_data: "#0046#", locked: 0 };
+    const simpan = (sql: string) => layanan.simpanVariabel({ noVar: "0046", lama: { sql_query: "select 'Penggugat' as data" }, baru: { sql_query: sql }, perkaraId: 1 });
+    await expect(simpan("select '#0046#' as data")).rejects.toMatchObject({ kode: "penanda_berputar", message: expect.stringContaining("#0046# -> #0046#") });
+    await expect(simpan("select '#0700#' as data")).rejects.toMatchObject({ kode: "penanda_berputar", message: expect.stringContaining("#0046# -> #0700# -> #0046#") });
+    await expect(simpan("select '#0701#' as data")).rejects.toMatchObject({ message: expect.stringContaining("#0046# -> #0701# -> #0700# -> #0046#") });
+    expect(ujiDiminta).toEqual([]);
+    expect(abt.tulisan).toEqual([]);
+    // bawaan (default_data) hanya dipakai popup - bukan putaran cetak; penanda biasa tetap boleh
+    await layanan.simpanVariabel({ noVar: "0046", lama: { sql_query: "select 'Penggugat' as data" }, baru: { sql_query: "select '#0702# #0500#' as data" }, perkaraId: 1 });
+    expect(abt.isi.variabel["0046"].sql_query).toBe("select '#0702# #0500#' as data");
+  });
+
+  it("variabel: nama tidak dapat diubah dari Pengaturan (hanya kueri dan bawaan) - nama berpenanda hanya lewat paket", async () => {
+    await expect(layanan.simpanVariabel({ noVar: "0046", lama: { nama: "Sebutan P" }, baru: { nama: "Sebutan #0046#" } })).rejects.toThrow(/tidak boleh diubah/);
+    expect(abt.tulisan).toEqual([]);
+  });
 });
 
 // ─── 5. Rute portal ──────────────────────────────────────────────────────────

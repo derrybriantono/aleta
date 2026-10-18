@@ -112,3 +112,101 @@ describe("pasangFetch - satu pintu untuk semua tulisan ekstensi", () => {
     expect(dipanggil).toHaveLength(3);
   });
 });
+
+// ============================================================================
+// Audit jejak 18 Okt 2026 - celah yang lolos dari penjaga 17 Okt
+// ============================================================================
+describe("audit jejak 18 Okt - kepala permintaan, alamat, dan NAMA isian juga sampai ke server", () => {
+  it("kepala permintaan ber-ALETA ditolak pada SEMUA cara (juga GET); GET bersih tetap null", () => {
+    expect(P.periksaPermintaan(SIPP, { method: "GET", headers: { "X-Aleta-Versi": "1.205" } }, ASAL)).toMatchObject({ ok: false, kolom: "kepala permintaan X-Aleta-Versi" });
+    expect(P.periksaPermintaan(SIPP, { method: "POST", body: "a=1", headers: new Headers({ "X-Sumber": "aleta" }) }, ASAL)).toMatchObject({ ok: false });
+    expect(P.periksaPermintaan(SIPP, { method: "GET", headers: [["Accept", "text/html"]] }, ASAL)).toBeNull();
+    // jalur ALETA sendiri tetap bebas
+    expect(P.periksaPermintaan("http://192.168.10.10/aleta/api/x", { method: "GET", headers: { "X-Aleta": "1" } }, ASAL)).toBeNull();
+  });
+
+  it("alamat: nama query ber-ALETA ditolak (GET juga); nilai query dan jalur diperiksa pada tulisan", () => {
+    expect(P.periksaPermintaan(`${SIPP}?aleta=1`, { method: "GET" }, ASAL)).toMatchObject({ ok: false, kolom: "alamat (aleta)" });
+    expect(P.periksaPermintaan(`${SIPP}?ket=lewat%20ALETA`, { method: "POST", body: "a=1" }, ASAL)).toMatchObject({ ok: false, kolom: "ket" });
+    expect(P.periksaPermintaan("http://192.168.10.10/SIPP/simpan/Aleta", { method: "POST", body: "a=1" }, ASAL)).toMatchObject({ ok: false, kolom: "alamat" });
+    expect(P.periksaPermintaan(`${SIPP}?id=5`, { method: "POST", body: "a=1" }, ASAL)).toEqual({ ok: true });
+    // fragmen (#aleta-tab=3) tidak pernah sampai ke server
+    expect(P.periksaPermintaan(`${SIPP}#aleta-tab=3`, { method: "POST", body: "a=1" }, ASAL)).toEqual({ ok: true });
+  });
+
+  it("NAMA isian badan (urlencoded, FormData, JSON) ber-ALETA ditolak walau nilainya bersih", () => {
+    expect(P.periksaPermintaan(SIPP, { method: "POST", body: "aleta_token=1" }, ASAL)).toMatchObject({ ok: false, kolom: "nama isian aleta_token" });
+    const f = new FormData();
+    f.append("dariAleta", "1");
+    expect(P.periksaPermintaan(SIPP, { method: "POST", body: f }, ASAL)).toMatchObject({ ok: false });
+    expect(P.periksaPermintaan(SIPP, { method: "POST", body: JSON.stringify({ data: { aletaAsal: "x" } }) }, ASAL)).toMatchObject({ ok: false, kolom: "nama isian aletaAsal" });
+  });
+
+  it("bersihkanRtf: grup tersembunyi isianasal/aletaasal dan properti {\\info} ber-ALETA dibuang; naskah tetap", () => {
+    const rtf =
+      "{\\rtf1{\\info{\\title Putusan}{\\author ALETA}{\\*\\company Aleta Bot}}{\\*\\generator ALETA 1.205;}\\pard Isi naskah Aleta Sari\\par{\\*\\isianasal #0046#}{\\*\\aletaasal sisa {bersarang}}\\par}";
+    expect(P.bersihkanRtf(rtf)).toBe("{\\rtf1{\\info{\\title Putusan}}\\pard Isi naskah Aleta Sari\\par\\par}");
+    const bersih = "{\\rtf1{\\info{\\title Putusan}}\\pard x\\par}";
+    expect(P.bersihkanRtf(bersih)).toBe(bersih);
+    expect(P.bersihkanRtf("bukan rtf ALETA")).toBe("bukan rtf ALETA");
+  });
+
+  it("pasangFetch: berkas RTF di FormData ke SIPP/ABT dibersihkan SEBELUM terkirim (ABT main/anonim); berkas lain tak disentuh", async () => {
+    const terkirim: Array<{ url: unknown; init: { body?: unknown } }> = [];
+    const dunia = { fetch: async (url: unknown, init: { body?: unknown }) => terkirim.push({ url, init }) } as unknown as { fetch: (...a: unknown[]) => Promise<unknown> };
+    P.pasangFetch(dunia);
+    const f = new FormData();
+    f.set("perkara_id", "1");
+    f.set("file_putusan", new Blob(["{\\rtf1{\\info{\\author ALETA}}\\pard Isi\\par{\\*\\isianasal x}}"], { type: "application/rtf" }), "putusan.rtf");
+    f.set("lampiran", new Blob(["%PDF-1.4 biasa"], { type: "application/pdf" }), "lampiran.pdf");
+    await dunia.fetch("http://192.168.10.10/aps_badilag/main/anonim", { method: "POST", body: f });
+    expect(terkirim).toHaveLength(1);
+    const badan = terkirim[0].init.body as FormData;
+    const berkas = badan.get("file_putusan") as File;
+    const teks = (b: Blob) =>
+      new Promise<string>((selesai) => {
+        const r = new FileReader();
+        r.onload = () => selesai(String(r.result));
+        r.readAsText(b);
+      });
+    expect(berkas.name).toBe("putusan.rtf");
+    expect(await teks(berkas)).toBe("{\\rtf1{\\info}\\pard Isi\\par}");
+    expect(await teks(badan.get("lampiran") as File)).toBe("%PDF-1.4 biasa");
+    expect(badan.get("perkara_id")).toBe("1");
+  });
+});
+
+describe("audit jejak 18 Okt - semua pintu pengisi kolom SIPP lewat penjaga", () => {
+  const baca = (b: string) => (req("node:fs") as typeof import("node:fs")).readFileSync(path.join(AKAR, b), "utf8");
+  /** Badan fungsi `kepala` dalam sumber. */
+  const badan = (s: string, kepala: string) => {
+    const i = s.indexOf(kepala);
+    return i < 0 ? "" : s.slice(i, s.indexOf("\n}\n", i));
+  };
+  const dijagaSebelum = (isi: string, kirim: string) => {
+    const i = isi.indexOf("AletaPenjagaTanda.periksaTeks(");
+    return i > -1 && i < isi.indexOf(kirim);
+  };
+
+  it("pemeriksa urutan terbukti menangkap pintu tanpa penjaga", () => {
+    expect(dijagaSebelum("async function x(p) {\n  return kirimKeJembatanLangsung(p);\n}", "kirimKeJembatanLangsung(")).toBe(false);
+  });
+
+  it("kirimKeJembatan (satu pintu konten.js: CKEditor pertimbangan/amar, alamat, email/HP) dan saksiscanJembatan memeriksa SEBELUM mengirim", () => {
+    const konten = badan(baca("ekstensi-sipp/konten.js"), "async function kirimKeJembatan(pesan) {");
+    expect(konten.length).toBeGreaterThan(100);
+    expect(dijagaSebelum(konten, "kirimKeJembatanLangsung(")).toBe(true);
+    const saksi = badan(baca("ekstensi-sipp/saksiscan.js"), "function saksiscanJembatan(pesan, batasMs) {");
+    expect(dijagaSebelum(saksi, "window.postMessage(")).toBe(true);
+  });
+
+  it("teks salinan ringkasan musyawarah (papan klip) tanpa kata ALETA", () => {
+    const s = baca("ekstensi-sipp/abt.js");
+    const f = badan(s, "function t6TeksMusyawarah(");
+    expect(f.length).toBeGreaterThan(100);
+    // literal teks (bukan pemilih CSS ".aleta-abt-..." milik panel sendiri)
+    const literal = [...f.matchAll(/`([^`]*)`|"([^"]*)"/g)].map((m) => m[1] ?? m[2]).filter((t) => !/^[.#]?aleta-[\w-]+(\s[.#]aleta-[\w-]+)*$/.test(t));
+    expect(literal.some((t) => t.includes("Bahan musyawarah"))).toBe(true);
+    expect(literal.filter((t) => P.menyebutAleta(t))).toEqual([]);
+  });
+});

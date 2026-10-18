@@ -254,6 +254,7 @@ function createConnectionPool(connectionKey = "sipp_primary") {
   // MODE KEMBARAN: kolam ini juga jalur tulis ke SIPP/ABT/antrian (abtPengaturanService,
   // antrianSinkronService, dst.) - dibungkus sama seperti db_config*.js.
   require("./penjagaKembaran").pasang(pool, sumberKembaran(config.key));
+  pool.__namaBasisData = config.databaseName;
   pools.set(poolKey, pool);
   return pool;
 }
@@ -265,7 +266,22 @@ function createConnectionPool(connectionKey = "sipp_primary") {
  * kode driver — pesan ini bisa berakhir di layar admin maupun di pesan WhatsApp
  * seseorang, jadi harus bisa dibaca tanpa penjelasan tambahan.
  */
-function runGuardedQuery(pool, sqlOrOptions, params, connectionKey) {
+function runGuardedQuery(pool, sqlOrOptions, params, connectionKey, databaseName) {
+  // Kolam ke SIPP/ABT/antrian (bukan basis data milik ALETA): struktur ber-nama ALETA
+  // ditolak, tulisan yang memuat kata ALETA dicatat - sama dengan db_config.js
+  // (audit jejak 18 Okt 2026; dulu kolam ini tanpa jaring sama sekali).
+  if (!/^aleta/i.test(String(databaseName || ""))) {
+    const penjagaTandaSipp = require("./penjagaTandaSipp");
+    const tolak = penjagaTandaSipp.galatStrukturAleta(sqlOrOptions);
+    if (tolak) return Promise.reject(tolak);
+    try {
+      if (penjagaTandaSipp.tulisanBocor(sqlOrOptions, Array.isArray(params) ? params : undefined)) {
+        console.error(`[penjagaTandaSipp] PERINGATAN: tulisan ke ${connectionKey || "SIPP/ABT"} memuat kata ALETA - periksa jalur tulis yang memanggilnya.`);
+      }
+    } catch {
+      /* jaring pengaman tidak boleh mengganggu kueri */
+    }
+  }
   const guardConfig = queryGuardService.getGuardConfig();
   const guard = queryGuardService.applyQueryGuard(sqlOrOptions, guardConfig);
   const options = guard.applied ? guard.options : sqlOrOptions;
@@ -299,7 +315,7 @@ function runGuardedQuery(pool, sqlOrOptions, params, connectionKey) {
 
 function query(connectionKey, sql, params = []) {
   const pool = createConnectionPool(connectionKey);
-  return runGuardedQuery(pool, sql, params, connectionKey);
+  return runGuardedQuery(pool, sql, params, connectionKey, pool.__namaBasisData);
 }
 
 function queryWithConfig(config, sql, params = []) {
@@ -319,7 +335,7 @@ function queryWithConfig(config, sql, params = []) {
   require("./penjagaKembaran").pasang(pool, sumberKembaran(normalized.key));
   // Kolam sementara ini hanya dipakai sekali (uji koneksi dari portal), jadi
   // wajib ditutup apa pun hasilnya - termasuk saat query melewati batas waktu.
-  return runGuardedQuery(pool, sql, params, normalized.key || "uji_koneksi").finally(() => {
+  return runGuardedQuery(pool, sql, params, normalized.key || "uji_koneksi", normalized.databaseName).finally(() => {
     pool.end(() => null);
   });
 }

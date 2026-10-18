@@ -40,6 +40,10 @@ const crypto = require("crypto");
 
 const { normalizeCaseNumber, cleanText } = require("./ecourtTextService");
 const sesiPengguna = require("./ecourtSesiPenggunaService");
+const { menyebutAleta } = require("./tandaAletaService");
+
+/** Kalimat penolakan untuk isian yang dikirim ke e-Court (padanan pesanIsian SIPP). */
+const PESAN_ECOURT_ALETA = (kolom) => `Isian "${kolom}" memuat kata 'ALETA'; hapus dulu sebelum dikirim ke e-Court.`;
 
 const BATAS_AKSI_PER_JAM = Number(process.env.ALETA_ECOURT_AKSI_PER_JAM || 30);
 const BATAS_PERAMBAN_SERENTAK = Number(process.env.ALETA_ECOURT_AKSI_SERENTAK || 2);
@@ -114,6 +118,17 @@ function depsBawaan() {
         );
       }),
     catat: (data) => logService.logSecurityEvent(data),
+    // Nama pihak dari SIPP yang memuat kata ALETA (pengecualian penjaga isi berkas).
+    pihakSippAleta: async (nomor) => {
+      const baris = await new Promise((selesai) =>
+        sippDb.query("SELECT perkara_id AS id FROM perkara WHERE nomor_perkara = ? LIMIT 1", [nomor], (g, r) => selesai(g ? [] : r || []))
+      );
+      const perkaraId = baris[0] && baris[0].id;
+      if (!perkaraId) return [];
+      return require("./penjagaTandaSipp").dataSippMemuatAleta(perkaraId, (sql, p) =>
+        new Promise((ok, gagal) => sippDb.query(sql, p, (g, r) => (g ? gagal(g) : ok(r))))
+      );
+    },
     folderSementara: () => path.join(require("../tools/ecourt-bridge/sesi").sessionRoot(), "pengguna-tmp"),
   };
 }
@@ -386,6 +401,9 @@ function buatLayanan(depsMasuk = {}) {
   } = {}) {
     const id = sesiPengguna.normalkanPengguna(penggunaId);
     if (!id) return { ok: false, alasan: "pengguna_tidak_sah" };
+    // Audit jejak 18 Okt 2026: keterangan diketik ke kotak verifikasi e-Court - tidak
+    // boleh menyebut ALETA (dulu hanya dipotong 500 huruf).
+    if (menyebutAleta(keterangan)) return { ok: false, alasan: "teks_menyebut_aleta", pesan: PESAN_ECOURT_ALETA("Keterangan verifikasi") };
     if (keputusan !== "valid" && keputusan !== "tidak_valid") return { ok: false, alasan: "keputusan_tidak_dikenali" };
     if (konfirmasi !== true) return { ok: false, alasan: "konfirmasi_belum_diberikan" };
 
@@ -531,6 +549,20 @@ function buatLayanan(depsMasuk = {}) {
     if (buf.length < 5 || buf.subarray(0, 5).toString("latin1") !== "%PDF-") return { ok: false, alasan: "berkas_bukan_pdf" };
     if (buf.length > BATAS_BERKAS_BYTE) return { ok: false, alasan: "berkas_terlalu_besar" };
 
+    // Audit jejak 18 Okt 2026: salinan dulu diunggah ke e-Court apa adanya. Kini sama
+    // dengan unggahan ke SIPP: metadata ber-ALETA dibersihkan, isi naskah diperiksa
+    // (nama pihak dari SIPP dikecualikan), PDF bertanda tangan tidak diubah diam-diam.
+    const penjaga = require("./penjagaTandaSipp");
+    let dariSipp = [];
+    try {
+      if (typeof deps().pihakSippAleta === "function") dariSipp = (await deps().pihakSippAleta(nomor)) || [];
+    } catch {
+      dariSipp = [];
+    }
+    const siap = penjaga.siapkanBerkasSipp(buf, { nama: "Salinan putusan", dariSipp });
+    if (!siap.ok) return { ok: false, alasan: siap.alasan, pesan: String(siap.pesan || "").replace(/ke SIPP/g, "ke e-Court") };
+    const berkasBersih = require("./metadataTanpaAletaService").tanpaTandaAletaMetadata(siap.isi);
+
     const baris = deps().sesi.pilihSesi(id, "unggah");
     if (!baris) return tolakTanpaSesi(id, "unggah", "sesi_pribadi_belum_tersambung");
     const cookies = deps().sesi.ambilCookies(id, baris.peran);
@@ -542,7 +574,7 @@ function buatLayanan(depsMasuk = {}) {
       const folder = deps().folderSementara();
       fs.mkdirSync(folder, { recursive: true, mode: 0o700 });
       const jalur = path.join(folder, `salinan-${crypto.randomBytes(6).toString("hex")}.pdf`);
-      fs.writeFileSync(jalur, buf, { mode: 0o600 });
+      fs.writeFileSync(jalur, berkasBersih, { mode: 0o600 });
       let hasil;
       try {
         hasil = await deps().pengemudi.unggahSalinan({ cookies, alamatPerkara, jalurBerkas: jalur });

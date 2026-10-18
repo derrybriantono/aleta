@@ -548,7 +548,7 @@ export const PERILAKU_KERJA_SKP: readonly string[] = [
 
 /** Tanda "usulan" pada bunyi dan target sampai disahkan (dicetak di catatan Lembar SKP). */
 export const KALIMAT_USULAN_SKP =
-  "Bunyi Rencana Hasil Kerja, indikator, dan target pada dokumen ini adalah USULAN ALETA dan belum disahkan; " +
+  "Bunyi Rencana Hasil Kerja, indikator, dan target pada dokumen ini adalah USULAN dan belum disahkan; " +
   "sesuaikan dengan SKP resmi di e-Kinerja BKN.";
 
 // ─── Turunan: daftar kunci yang harus dikirim bot ───────────────────────────

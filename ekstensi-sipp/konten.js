@@ -8842,6 +8842,18 @@ async function kirimKeJembatan(pesan) {
     return { ok: false, alasan: "mode_coba" };
   }
 
+  // Penjaga batas di SATU PINTU (audit jejak 18 Okt 2026): dulu hanya isiBorang yang
+  // memeriksa; isian CKEditor (pertimbangan/amar), alamat, email/HP lewat pintu ini
+  // tanpa pemeriksaan. Teks yang memuat kata ALETA (selain data SIPP yang tampil di
+  // halaman, mis. nama pihak) tidak diisikan ke kolom SIPP.
+  if (jenis === "isi" && typeof AletaPenjagaTanda !== "undefined" && typeof pesan.nilai === "string") {
+    const tahan = AletaPenjagaTanda.periksaTeks(pesan.nilai, String(pesan.label || penunjuk || "isian"));
+    if (!tahan.ok) {
+      alatCatat("jembatan", `DITAHAN isi ${penunjuk}`, tahan.pesan);
+      return { ok: false, alasan: tahan.pesan };
+    }
+  }
+
   // lamaTerbaca dibedakan dari nilaiLama yang kosong, dan bedanya menentukan.
   //
   // Medan yang memang kosong sebelumnya PUNYA jalan pulang: dikosongkan lagi.

@@ -7,6 +7,7 @@ import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-d
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { getSearchParam } from "@/server/shared/request";
+import { buangGrupTersembunyiRtf } from "@/lib/buang-grup-tersembunyi-rtf";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -95,7 +96,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const rtf = Buffer.from(data.rtfBase64, "base64");
+    // Audit jejak 18 Okt 2026: unduhan ini dapat diunggah petugas langsung lewat borang
+    // SIPP - grup tersembunyi isianasal/aletaasal dibuang lebih dulu.
+    const rtf = Buffer.from(buangGrupTersembunyiRtf(Buffer.from(data.rtfBase64, "base64")));
     const namaUnduhan = `${isian.nomorPerkara || perkaraId} - ${data.berkas ?? berkas}`.replace(/[\\/:*?"<>|]/g, "_");
 
     return new Response(new Uint8Array(rtf), {

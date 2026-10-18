@@ -790,7 +790,7 @@ function barisAudit({
       "VALUES (?,?,?,?,?,?,?,?)",
     params: [
       saat,
-      String(ip || "").slice(0, 15),
+      penjagaTandaSipp.ipAuditSipp(ip),
       String(username).slice(0, 30),
       tabel,
       formulir,

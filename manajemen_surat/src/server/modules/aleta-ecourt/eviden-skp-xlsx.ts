@@ -397,7 +397,9 @@ export async function gambarXlsxEvidenSkp(naskah: NaskahEvidenSkp): Promise<Buff
       },
     ],
     {
-      creator: "ALETA",
+      // Eviden SKP keluar dari ALETA (diunggah ke sistem kinerja pusat): metadata tanpa nama ALETA.
+      creator: "",
+      aplikasi: "",
       createdAt: Number.isNaN(new Date(naskah.dihitungPada).getTime()) ? undefined : new Date(naskah.dihitungPada),
     }
   );
