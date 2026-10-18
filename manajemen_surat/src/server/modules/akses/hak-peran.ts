@@ -11,12 +11,15 @@
 import { getEffectiveRoleId } from "@/lib/permissions";
 import {
   PETA_ATURAN_APLIKASI,
+  TAB_ECOURT,
   aplikasiTampil,
   bolehAksi,
   kunciBukaAplikasi,
   kunciTutupAplikasi,
   pesanTolakAksi,
+  tabEcourtTampil,
   type KunciAksi,
+  type TabEcourt,
 } from "@/lib/matriks-peran";
 import type { UserPersona } from "@/lib/types";
 import { type AletaDatabase } from "@/server/db/client";
@@ -35,6 +38,18 @@ export function pastikanAksiAktor(actor: UserPersona, aksi: KunciAksi) {
   if (!bolehAksi(actor, aksi)) {
     throw new ApiError(403, pesanTolakAksi(aksi), { aksi, alasan: "matriks_peran" });
   }
+}
+
+/**
+ * 18 Okt 2026: tab ALETA e-Court yang disembunyikan di layar (TAB_ECOURT) juga dijaga di rute yang memberi
+ * isinya - menyembunyikan tab bukan penjagaan. 401 tanpa sesi; 403 bila golongan tidak melihat tab itu.
+ */
+export async function pastikanTab(db: AletaDatabase, actorUserId: string | null | undefined, tab: TabEcourt, nama: string) {
+  const actor = await requireActorUser(db, actorUserId);
+  if (!tabEcourtTampil(actor, tab)) {
+    throw new ApiError(403, `${nama} tidak dibuka untuk peran Anda (matriks peran). ${TAB_ECOURT[tab].alasan}`, { tab, alasan: "matriks_peran" });
+  }
+  return actor;
 }
 
 /** Timpaan Akses Menu (buka:/tutup:) untuk peran berlaku si aktor. */

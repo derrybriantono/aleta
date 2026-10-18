@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import {
   bacaKuasaGugatan,
   type BarisKuasaSipp,
@@ -51,6 +52,7 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
+    await pastikanAksi(db, actorUserId, "status.data-pihak"); // 18 Okt 2026: matriks hak akses
 
     const nomor = String(request.nextUrl.searchParams.get("nomor") || "").trim().slice(0, 80);
     if (!nomor) return ok({ ada: false, usulan: [], catatan: ["Nomor perkara kosong."] });

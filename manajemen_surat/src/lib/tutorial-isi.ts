@@ -274,7 +274,7 @@ export const TUTORIAL: readonly Tutorial[] = [
     judul: "Panduan pertanyaan saksi di Jadwal Sidang dan Status Perkara",
     ringkas: "Daftar pertanyaan dan unsur pembuktian menurut jenis perkara, untuk memandu pemeriksaan saksi di sidang.",
     kelompok: "persidangan",
-    mencakup: { aksi: ["pandu.saksi"] },
+    mencakup: { aksi: ["pandu.saksi", "saksi.susun"] },
     halaman: ["/aleta-ecourt"],
     tautan: { teks: "Buka Jadwal Sidang", href: "/aleta-ecourt" },
     langkah: [
@@ -680,7 +680,7 @@ export const TUTORIAL: readonly Tutorial[] = [
     judul: "Alat Bantu Tulis BAS (Berita Acara Sidang)",
     ringkas: "Menyusun berita acara sidang dari data SIPP, lalu diperiksa hakim.",
     kelompok: "putusan",
-    mencakup: { aplikasi: ["bas"], modul: ["bas"] },
+    mencakup: { aplikasi: ["bas"], modul: ["bas"], aksi: ["bas.baca", "bas.tulis"] },
     halaman: ["/bas"],
     tautan: { teks: "Buka Alat Bantu Tulis BAS", href: "/bas" },
     langkah: [
@@ -691,7 +691,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Setelah selesai, hakim memeriksa dan memberi komentar atau persetujuan.",
     ],
     peringatan: [
-      "BAS ditulis Panitera Pengganti. Panitera, panitera muda, dan pimpinan hanya mengawasi.",
+      "BAS ditulis Panitera Pengganti, dibantu panitera, panitera muda, dan staf kepaniteraan. Hakim, Ketua, dan Wakil Ketua membaca dan meng-acc; kasir, PTSP, juru sita, dan kesekretariatan tidak membukanya.",
       "Sebelum diunggah, ekstensi memeriksa sisa blangko (kurung siku atau titik-titik yang belum diisi).",
     ],
     kataKunci: ["berita acara", "bas", "kehadiran saksi", "skors", "pp"],

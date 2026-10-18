@@ -54,6 +54,8 @@ export async function GET(request: NextRequest) {
     // Audit 17 Okt: draf utuh memuat isian & ringkasan perkara (pihak, saksi, bukti) - hanya
     // pemegang perkara ("blangko-abt"), bukan setiap akun ber-"panel". Lencana (ringkas) tetap.
     await pastikanKapabilitas(db, actorUserId, "blangko-abt");
+    // 18 Okt 2026 (matriks hak akses): isi draf putusan hanya penyusun draf (majelis, PP, panitera, panmud); juru sita tidak.
+    await pastikanAksi(db, actorUserId, "putusan.draf");
     const draf = await bacaDrafH7(db, daftar);
     const peta = Object.fromEntries(Object.entries(draf).map(([pid, d]) => [pid, { ...d, laporan: teksLaporanH7(d) }]));
     return ok({ ada: true, peta });

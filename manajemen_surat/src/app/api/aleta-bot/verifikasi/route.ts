@@ -6,6 +6,7 @@ import {
   postGatewayVerifikasiDecision,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { requireActorUser } from "@/server/modules/organization/service";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    await pastikanAplikasiAktor(db, actor, "aleta-bot"); // 18 Okt 2026 (matriks hak akses)
 
     const limit = Number(request.nextUrl.searchParams.get("limit") || 50);
     const hasil = await getGatewayVerifikasiList(actor.name, { limit });

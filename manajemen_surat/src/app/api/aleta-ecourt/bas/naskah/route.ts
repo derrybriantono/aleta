@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import { susunIsianNaskahBas } from "@/server/modules/aleta-ecourt/bas-isian-naskah";
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -55,6 +56,7 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
+    await pastikanAksi(db, actorUserId, "bas.baca"); // 18 Okt 2026: matriks hak akses
 
     const perkaraId = String(getSearchParam(request, "perkaraId") ?? "").trim();
     const folder = String(getSearchParam(request, "folder") ?? "").trim();
