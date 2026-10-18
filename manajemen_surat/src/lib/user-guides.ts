@@ -1,3 +1,5 @@
+import ringkasanPeran from "@/lib/panduan-fitur-peran.json";
+
 export type GuideAudience =
   | "all"
   | "super_admin"
@@ -6,11 +8,13 @@ export type GuideAudience =
   | "hakim"
   | "panitera"
   | "jurusita"
+  | "kasir"
   | "ptsp"
   | "pegawai";
 
 export type GuideModule =
   | "general"
+  | "fitur_peran"
   | "mail"
   | "tasks"
   | "hr"
@@ -38,6 +42,7 @@ export type UserGuide = {
 
 export const GUIDE_MODULE_LABELS: Record<GuideModule, string> = {
   general: "Mulai Menggunakan ALETA",
+  fitur_peran: "Fitur Terbaru per Peran",
   mail: "Manajemen Surat",
   tasks: "Pusat Tugas",
   hr: "E-Kepegawaian",
@@ -53,7 +58,19 @@ export const GUIDE_MODULE_LABELS: Record<GuideModule, string> = {
   production_status: "Status Produksi",
 };
 
+/**
+ * Ringkasan fitur rilis 7 sampai 18 Oktober 2026 per peran. Isinya satu
+ * sumber dengan bab "Fitur terbaru per peran" di buku panduan lengkap
+ * (scripts/generate-portal-aleta-lengkap-guide.mjs membaca berkas JSON yang sama).
+ */
+type RingkasanPeran = Omit<UserGuide, "module" | "audiences"> & { audiences: GuideAudience[] };
+export const PANDUAN_FITUR_PERAN: UserGuide[] = (ringkasanPeran as RingkasanPeran[]).map((guide) => ({
+  ...guide,
+  module: "fitur_peran" as const,
+}));
+
 export const USER_GUIDES: UserGuide[] = [
+  ...PANDUAN_FITUR_PERAN,
   {
     id: "getting-started",
     title: "Mulai Menggunakan ALETA",
