@@ -1,0 +1,464 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "kewarisan-tergugat",
+ "judul": "Kewarisan - keterangan saksi yang diajukan Tergugat",
+ "versi": 1,
+ "penulis": "SAKSI-LANJUT",
+ "tahap": 1,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "364"
+  ]
+ },
+ "tambahanUntuk": [
+  "kewarisan"
+ ],
+ "urutanAwal": 1000,
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [],
+ "dasarHukum": [
+  {
+   "id": "dh-rbg-283",
+   "rujukan": "Pasal 283 RBg jo Pasal 1865 KUH Perdata",
+   "uraian": "pihak yang mendalilkan suatu hak atau peristiwa wajib membuktikannya",
+   "status": "terverifikasi",
+   "sumber": "blangko Derry 4b Kewarisan [01] [Kabul] Kewarisan - Kontradiktur (pertimbangan hukum)"
+  }
+ ],
+ "keadaan": {
+  "bantahan": {
+   "sumber": "borang",
+   "nilai": [
+    "bukan-harta-pewaris",
+    "sudah-dibagi-atau-dihibahkan",
+    "bukan-ahli-waris",
+    "ahli-waris-lain",
+    "utang-pewaris"
+   ],
+   "jamak": true,
+   "bawaan": [],
+   "label": "Bantahan Tergugat",
+   "labelNilai": {
+    "ahli-waris-lain": "ada ahli waris lain",
+    "utang-pewaris": "pewaris meninggalkan utang"
+   }
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-bantahan",
+   "judul": "Bantahan lawan",
+   "uraian": "bantahan Tergugat atas harta, ahli waris atau pembagian",
+   "dasarHukum": [
+    "dh-rbg-283"
+   ],
+   "wajib": false,
+   "keadaan": {
+    "kehadiran": [
+     "kontradiktoir",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   }
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-tg-sudah-dibagi-waris",
+   "pokok": "pp-bantahan",
+   "urutan": 10,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "sudah-dibagi-atau-dihibahkan"
+    ]
+   },
+   "teks": "Apakah harta peninggalan #2026# #1025# sudah dibagi di antara para ahli waris, kapan, dan bagaimana caranya ?",
+   "teksVarian": [
+    "Bagaimana pembagian harta peninggalan #2026# #1025# di antara para ahli warisnya, apakah sudah dilakukan ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi Tergugat menerangkan bahwa harta peninggalan sudah dibagi di antara ahli waris",
+     "saksi1": [
+      "saya melihat sendiri bahwa harta peninggalan #2026# #1025# sudah dibagi di antara para ahli warisnya dan masing-masing telah menerima bagiannya",
+      "saya mengetahui sendiri bahwa pembagian harta #2026# #1025# telah dilakukan secara musyawarah oleh keluarga dan sudah dijalankan",
+      "saya menyaksikan langsung bahwa sebelum perkara ini diajukan para ahli waris #2026# #1025# telah membagi hartanya dan bagian #0046# sudah diserahkan",
+      "saya tahu betul bahwa sisa harta #2026# #1025# yang dikuasai #0047# adalah bagiannya setelah harta itu dibagi di antara ahli waris"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa pembagian harta #2026# #1025# telah dilakukan secara musyawarah oleh keluarga dan sudah dijalankan",
+      "sebelum perkara ini diajukan para ahli waris #2026# #1025# telah membagi hartanya dan bagian #0046# sudah diserahkan, demikian yang tampak oleh saya waktu itu",
+      "sisa harta #2026# #1025# yang dikuasai #0047# adalah bagiannya setelah harta itu dibagi di antara ahli waris, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa harta peninggalan #2026# #1025# sudah dibagi di antara para ahli warisnya dan masing-masing telah menerima bagiannya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: harta peninggalan sudah dibagi; versi B: harta peninggalan belum pernah dibagi - berselisih pada PERISTIWA (pembagian harta peninggalan)",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa harta peninggalan #2026# #1025# sudah dibagi di antara para ahli warisnya",
+      "keterangan saya adalah bahwa pembagian harta #2026# #1025# telah dilakukan secara musyawarah keluarga",
+      "para ahli waris #2026# #1025# telah membagi hartanya sebelum perkara ini diajukan, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa bagian tiap ahli waris dari harta #2026# #1025# sudah diserahkan kepada masing-masing"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa harta peninggalan #2026# #1025# belum pernah dibagi di antara para ahli warisnya",
+      "pembagian harta #2026# #1025# belum pernah dilakukan secara musyawarah keluarga, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa para ahli waris #2026# #1025# belum membagi hartanya sampai perkara ini diajukan",
+      "bagian tiap ahli waris dari harta #2026# #1025# belum diserahkan kepada masing-masing, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "hal": "pembagian harta peninggalan di antara ahli waris",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "1025",
+    "2026"
+   ],
+   "menggantikan": [
+    "q-belum-dibagi",
+    "q-dalil-sudah-dibagi"
+   ]
+  },
+  {
+   "id": "q-tg-hibah-pewaris",
+   "pokok": "pp-bantahan",
+   "urutan": 20,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "sudah-dibagi-atau-dihibahkan"
+    ]
+   },
+   "teks": "Apakah semasa hidupnya #2026# #1025# pernah menghibahkan atau menyerahkan sebagian hartanya kepada #0047# atau kepada orang lain, dan kapan ?",
+   "teksVarian": [
+    "Apakah #2026# #1025# sebelum meninggal pernah memberikan sebagian hartanya kepada #0047# atau orang lain, dan kapan ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi Tergugat menerangkan bahwa pewaris semasa hidupnya menghibahkan sebagian hartanya",
+     "saksi1": [
+      "saya melihat sendiri bahwa semasa hidupnya #2026# #1025# menghibahkan sebagian hartanya kepada #0047#",
+      "saya mengetahui sendiri bahwa #2026# #1025# menyerahkan harta tertentu kepada #0047# sebagai hibah sebelum wafat",
+      "saya menyaksikan langsung bahwa sebelum meninggal #2026# #1025# memberikan bagian hartanya kepada #0047# dan penerimaan itu disaksikan keluarga",
+      "saya tahu betul bahwa hibah dari #2026# #1025# atas sebagian harta itu sudah diterima #0047# semasa pewaris masih hidup"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa semasa hidupnya #2026# #1025# menghibahkan sebagian hartanya kepada #0047#",
+      "yang saya ketahui secara langsung adalah bahwa #2026# #1025# menyerahkan harta tertentu kepada #0047# sebagai hibah sebelum wafat",
+      "sebelum meninggal #2026# #1025# memberikan bagian hartanya kepada #0047# dan penerimaan itu disaksikan keluarga, demikian yang tampak oleh saya waktu itu",
+      "hibah dari #2026# #1025# atas sebagian harta itu sudah diterima #0047# semasa pewaris masih hidup, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pewaris menghibahkan sebagian hartanya semasa hidup; versi B: pewaris tidak pernah menghibahkan hartanya - berselisih pada PERISTIWA (hibah pewaris)",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #2026# #1025# menghibahkan sebagian hartanya semasa hidupnya",
+      "keterangan saya adalah bahwa sebelum wafat #2026# #1025# menyerahkan harta tertentu sebagai hibah",
+      "#2026# #1025# memberikan bagian hartanya kepada seseorang semasa hidup, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa hibah dari #2026# #1025# atas sebagian harta itu sudah diterima penerimanya"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #2026# #1025# tidak pernah menghibahkan hartanya kepada siapa pun",
+      "sampai wafat #2026# #1025# tidak menyerahkan harta tertentu sebagai hibah, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #2026# #1025# tidak memberikan bagian hartanya kepada seseorang semasa hidup",
+      "tidak ada hibah dari #2026# #1025# atas harta itu yang diterima siapa pun, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "hal": "hibah atau penyerahan harta oleh pewaris semasa hidup",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0047",
+    "1025",
+    "2026"
+   ],
+   "menggantikan": [
+    "q-wasiat-hibah"
+   ]
+  },
+  {
+   "id": "q-tg-bukan-harta-pewaris",
+   "pokok": "pp-bantahan",
+   "urutan": 30,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "bukan-harta-pewaris"
+    ]
+   },
+   "teks": "Apakah harta yang digugat itu milik #2026# #1025#, milik #0047# sendiri, atau milik pihak lain, dan bagaimana asal-usulnya ?",
+   "teksVarian": [
+    "Siapa pemilik harta yang digugat itu, #2026# #1025# atau #0047#, menurut pengetahuan saksi, dan bagaimana harta itu diperoleh ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi Tergugat menerangkan bahwa harta yang digugat milik Tergugat sendiri dan bukan harta peninggalan pewaris",
+     "saksi1": [
+      "saya melihat sendiri bahwa harta yang digugat itu milik #0047# sendiri dan bukan harta peninggalan #2026# #1025#",
+      "saya mengetahui sendiri bahwa #0047# memperoleh harta itu dari usahanya sendiri sehingga bukan termasuk harta yang ditinggalkan #2026# #1025#",
+      "saya menyaksikan langsung bahwa harta tersebut dibeli #0047# dengan uangnya sendiri dan bukan milik #2026# #1025# semasa hidupnya",
+      "saya tahu betul bahwa sejak awal harta itu atas nama dan milik #0047# dan bukan bagian dari harta #2026# #1025#"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa harta tersebut dibeli #0047# dengan uangnya sendiri dan bukan milik #2026# #1025# semasa hidupnya",
+      "yang saya ketahui secara langsung adalah bahwa sejak awal harta itu atas nama dan milik #0047# dan bukan bagian dari harta #2026# #1025#",
+      "harta yang digugat itu milik #0047# sendiri dan bukan harta peninggalan #2026# #1025#, demikian yang tampak oleh saya waktu itu",
+      "#0047# memperoleh harta itu dari usahanya sendiri sehingga bukan termasuk harta yang ditinggalkan #2026# #1025#, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: harta milik Tergugat sendiri; versi B: harta milik pewaris semasa hidupnya - berselisih pada PERISTIWA (pemilik harta)",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa harta yang digugat itu milik #0047# sendiri",
+      "keterangan saya adalah bahwa #0047# memperoleh harta itu dari usahanya sendiri",
+      "harta tersebut dibeli #0047# dengan uangnya sendiri, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa sejak awal harta itu atas nama dan milik #0047#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa harta yang digugat itu milik pewaris semasa hidupnya",
+      "pewaris memperoleh harta itu dari usahanya sendiri, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa harta tersebut dibeli pewaris dengan uangnya sendiri",
+      "sejak awal harta itu atas nama dan milik pewaris, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "hal": "asal-usul harta yang dibantah sebagai harta peninggalan",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0047",
+    "1025",
+    "2026"
+   ],
+   "menggantikan": [
+    "q-asal-harta",
+    "q-dalil-bukan-harta"
+   ]
+  },
+  {
+   "id": "q-tg-ahli-waris-lain",
+   "pokok": "pp-bantahan",
+   "urutan": 40,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "ahli-waris-lain"
+    ]
+   },
+   "teks": "Selain #0046#, siapa lagi ahli waris #2026# #1025# yang masih hidup ketika ia meninggal dunia, dan apa hubungan mereka dengannya ?",
+   "teksVarian": [
+    "Apakah ahli waris #2026# #1025# hanya #0046#, atau masih ada ahli waris lain yang hidup ketika ia meninggal dunia ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi Tergugat menerangkan bahwa selain pengaju masih ada ahli waris lain yang berhak atas harta peninggalan",
+     "saksi1": [
+      "saya melihat sendiri bahwa selain #0046# masih ada ahli waris lain dari #2026# #1025# yang berhak atas harta peninggalannya",
+      "saya mengetahui sendiri bahwa ketika #2026# #1025# meninggal dunia ia meninggalkan beberapa ahli waris lain di samping #0046#",
+      "saya menyaksikan langsung bahwa ahli waris #2026# #1025# terdiri dari #0046# dan sejumlah ahli waris lain yang hidup pada saat itu",
+      "saya tahu betul bahwa ada ahli waris lain dari #2026# #1025# di luar gugatan ini yang juga berhak atas harta itu"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa selain #0046# masih ada ahli waris lain dari #2026# #1025# yang berhak atas harta peninggalannya",
+      "yang saya ketahui secara langsung adalah bahwa ketika #2026# #1025# meninggal dunia ia meninggalkan beberapa ahli waris lain di samping #0046#",
+      "ahli waris #2026# #1025# terdiri dari #0046# dan sejumlah ahli waris lain yang hidup pada saat itu, demikian yang tampak oleh saya waktu itu",
+      "ada ahli waris lain dari #2026# #1025# di luar gugatan ini yang juga berhak atas harta itu, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: selain pengaju masih ada ahli waris lain; versi B: pengaju satu-satunya ahli waris - berselisih pada JUMLAH (ahli waris)",
+     "bedaPada": "jumlah",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa selain #0046# masih ada ahli waris lain yang berhak atas harta itu",
+      "keterangan saya adalah bahwa di samping #0046# ada ahli waris lain yang hidup ketika pewaris meninggal",
+      "ahli waris pewaris terdiri dari #0046# dan sejumlah ahli waris lain, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa ada ahli waris lain di luar gugatan ini"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa tidak ada ahli waris selain #0046# yang hidup ketika pewaris meninggal",
+      "ahli waris pewaris tidak lain hanyalah #0046# seorang diri, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa tidak ada ahli waris lain di samping #0046# yang berhak atas harta itu",
+      "tidak ada ahli waris lain di luar gugatan ini yang berhak atas harta itu, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "hal": "ahli waris lain dari pewaris",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "1025",
+    "2026"
+   ],
+   "menggantikan": [
+    "q-ahli-waris-daftar"
+   ]
+  },
+  {
+   "id": "q-tg-utang-pewaris",
+   "pokok": "pp-bantahan",
+   "urutan": 50,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "utang-pewaris"
+    ]
+   },
+   "teks": "Apakah #2026# #1025# meninggalkan utang, kepada siapa, untuk apa, dan siapa yang telah melunasinya ?",
+   "teksVarian": [
+    "Adakah utang #2026# #1025# yang harus dilunasi dari harta peninggalannya sebelum harta itu dibagi ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi Tergugat menerangkan bahwa pewaris meninggalkan utang yang harus dilunasi dari harta peninggalan",
+     "saksi1": [
+      "saya melihat sendiri bahwa #2026# #1025# meninggalkan utang yang harus dilunasi lebih dahulu dari harta peninggalannya",
+      "saya mengetahui sendiri bahwa sebelum meninggal #2026# #1025# berutang kepada pihak lain dan utang itu dilunasi #0047# sesudah ia wafat",
+      "saya menyaksikan langsung bahwa biaya pengurusan jenazah dan utang #2026# #1025# ditanggung #0047# dengan uangnya sendiri",
+      "saya tahu betul bahwa ada utang #2026# #1025# yang masih tersisa dan harus diperhitungkan sebelum harta dibagi kepada ahli waris"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #2026# #1025# meninggalkan utang yang harus dilunasi lebih dahulu dari harta peninggalannya",
+      "yang saya ketahui secara langsung adalah bahwa sebelum meninggal #2026# #1025# berutang kepada pihak lain dan utang itu dilunasi #0047# sesudah ia wafat",
+      "biaya pengurusan jenazah dan utang #2026# #1025# ditanggung #0047# dengan uangnya sendiri, demikian yang tampak oleh saya waktu itu",
+      "ada utang #2026# #1025# yang masih tersisa dan harus diperhitungkan sebelum harta dibagi kepada ahli waris, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pewaris meninggalkan utang; versi B: pewaris tidak meninggalkan utang - berselisih pada PERISTIWA (utang pewaris)",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #2026# #1025# meninggalkan utang yang harus dilunasi dari harta peninggalannya",
+      "keterangan saya adalah bahwa sebelum wafat #2026# #1025# berutang kepada pihak lain",
+      "ada utang #2026# #1025# yang masih harus diperhitungkan, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa utang #2026# #1025# kepada pihak lain dilunasi sesudah ia wafat"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #2026# #1025# tidak meninggalkan utang apa pun",
+      "sampai wafat #2026# #1025# tidak berutang kepada pihak lain, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa tidak ada utang #2026# #1025# yang masih harus diperhitungkan",
+      "tidak ada utang #2026# #1025# kepada pihak lain yang dilunasi sesudah ia wafat, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "hal": "utang pewaris dan pelunasannya",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0047",
+    "1025",
+    "2026"
+   ],
+   "menggantikan": [
+    "q-utang-pewaris"
+   ]
+  }
+ ],
+ "jawabanUmum": {
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri ucapan atau pembicaraan para pihak tentang {hal}",
+   "saksi1": [
+    "saya mendengar sendiri pembicaraan para pihak mengenai {hal}",
+    "saya mendengar langsung ucapan salah satu pihak yang menyinggung {hal}",
+    "mengenai {hal} saya ikut mendengar ketika para pihak membicarakannya di depan saya",
+    "ucapan para pihak tentang {hal} terdengar langsung oleh saya"
+   ],
+   "saksi2": [
+    "perihal {hal} saya mendengar sendiri apa yang diucapkan para pihak",
+    "saya hadir dan mendengar sendiri perkataan para pihak tentang {hal}",
+    "saya berada di dekat mereka dan mendengar sendiri pembicaraan soal {hal}",
+    "saya mendengar secara langsung para pihak berbicara tentang {hal}"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui {hal} dari cerita pihak lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} kepada saya dan tidak menyaksikannya sendiri",
+    "tentang {hal} saya diberi tahu oleh {sumber} karena saya tidak ada di tempat kejadian",
+    "{sumber} menceritakan {hal} kepada saya sedangkan saya tidak melihat sendiri kejadiannya",
+    "yang saya ketahui tentang {hal} berasal dari penuturan {sumber} dan bukan dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "saya mendengar kabar tentang {hal} dari {sumber} dan tidak mengalaminya sendiri",
+    "pengetahuan saya tentang {hal} berasal dari cerita {sumber} karena saya tidak berada di tempat",
+    "{sumber} memberi tahu saya tentang {hal} dan saya sendiri tidak menyaksikannya",
+    "setahu saya {hal} itu dikatakan oleh {sumber} kepada saya sedangkan saya tidak ikut melihatnya"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari {hal} dan selebihnya tidak diketahui",
+   "saksi1": [
+    "saya hanya mengetahui sebagian dari {hal} dan selebihnya tidak saya ketahui",
+    "mengenai {hal} yang saya ketahui sebatas yang saya lihat sendiri dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sedangkan bagian lainnya tidak saya ketahui",
+    "saya mengetahui sebagian saja tentang {hal} dan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "tentang {hal} pengetahuan saya terbatas pada sebagian saja dan selebihnya tidak saya ketahui",
+    "hanya sebagian hal tentang {hal} yang saya ketahui dan lainnya tidak saya ketahui",
+    "sejauh yang saya ketahui tentang {hal} hanya sebagian dan sisanya tidak saya ketahui",
+    "saya tidak mengetahui seluruh {hal} dan hanya tahu sebagian saja"
+   ]
+  },
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui {hal}",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu apa-apa",
+    "soal {hal} saya tidak mengetahuinya",
+    "saya tidak tahu menahu tentang {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} tidak ada yang saya ketahui",
+    "{hal} itu tak saya ketahui",
+    "saya tak mengetahui apa pun mengenai {hal}",
+    "perihal {hal} saya tidak punya pengetahuan"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu atau lupa tentang {hal} sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu mengenai {hal} karena ingatan saya kurang kuat",
+    "tentang {hal} saya lupa rinciannya",
+    "mengenai {hal} rasanya demikian tetapi saya kurang yakin",
+    "saya kurang yakin soal {hal}"
+   ],
+   "saksi2": [
+    "{hal} itu mungkin benar tetapi saya ragu",
+    "tentang {hal} saya ragu-ragu mengatakannya karena ingatan saya samar",
+    "kira-kira begitu yang saya ingat tentang {hal} dan saya sulit memastikannya",
+    "saya lupa sebagian besar tentang {hal}"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Saksi yang diajukan Tergugat menerangkan versi Tergugat: tandai bantahan Tergugat pada keadaan perkara, lalu pilih Tergugat pada saksi yang bersangkutan.",
+  "Butir arah Tergugat hanya muncul untuk saksi Tergugat dan menggantikan butir yang arahnya dalil Penggugat atas hal yang sama."
+ ]
+}
