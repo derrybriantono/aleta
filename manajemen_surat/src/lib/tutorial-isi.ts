@@ -278,7 +278,7 @@ export const TUTORIAL: readonly Tutorial[] = [
     halaman: ["/aleta-ecourt"],
     tautan: { teks: "Buka Jadwal Sidang", href: "/aleta-ecourt" },
     langkah: [
-      "Di Jadwal Sidang, panduan tidak terbuka sendiri. Setelah perkara masuk pemeriksaan (sedang disidang di ruangnya, atau sudah selesai disidang hari itu), muncul tombol kecil Pertanyaan saksi di kolom paling kanan, di bawah tombol Status. Tekan tombolnya: panduan keluar sebagai jendela pop-up, dan tombol Tutup membawa Anda kembali ke daftar.",
+      "Di Jadwal Sidang, panduan tidak terbuka sendiri. Setelah perkara masuk pemeriksaan (sedang disidang di ruangnya, selesai disidang hari itu, atau Anda tandai sedang berjalan), muncul tombol kecil Pertanyaan saksi di kolom paling kanan, di bawah tombol Status. Tekan tombolnya: panduan keluar sebagai jendela pop-up, dan tombol Tutup membawa Anda kembali ke daftar.",
       "Pada agenda pembuktian tombolnya diberi warna menonjol. Selama perkara masih mengantre atau belum punya nomor antrian, tombolnya tidak muncul. Bila tidak diperlukan, matikan lewat panel Tampilan, baris Tombol Pertanyaan saksi.",
       "Di Status Perkara, bagian Panduan pertanyaan saksi tetap ada tepat di bawah bagian Saksi: terlipat, dan terbuka sendiri hanya pada agenda pembuktian. Tekan judulnya untuk membuka atau melipatnya.",
       "Jenis perkara dikenali dari data SIPP. Bila jenis itu belum punya panduan, layar menyebut bahwa panduannya belum ada, dan tidak memakai panduan perkara cerai sebagai gantinya.",

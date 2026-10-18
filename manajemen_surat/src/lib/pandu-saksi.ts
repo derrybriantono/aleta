@@ -228,11 +228,20 @@ export function agendaPembuktianSaksi(agenda: string | null | undefined): boolea
  * NULL (menunggu), tidak ada baris antrian, atau nilai tak dikenal = tidak tampil:
  * perkara yang masih mengantre belum diperiksa.
  */
-export function sudahMasukPemeriksaan(disidang: number | null | undefined): boolean {
+export function sudahMasukPemeriksaan(disidang: number | null | undefined, tandaManual?: TandaManualPemeriksaan): boolean {
+  // Tanda petugas (Tandai sedang berjalan / diskors / Selesai) ikut dihitung walau perkaranya tanpa nomor antrian.
+  if (tandaManual && (tandaManual.berjalan || tandaManual.diskors || tandaManual.selesai)) return true;
   if (disidang === null || disidang === undefined) return false;
   const n = Number(disidang);
   return Number.isInteger(n) && n >= 1 && n <= 10;
 }
+
+/**
+ * Tanda yang diberikan petugas di Jadwal Sidang (diputuskan pengguna 18 Okt 2026): perkara yang ditandai
+ * sedang berjalan, diskors, atau selesai dianggap sudah masuk pemeriksaan walau tidak punya nomor antrian.
+ * Sidang yang menunggu tanpa tanda apa pun tetap tidak diberi tombol.
+ */
+export type TandaManualPemeriksaan = { berjalan?: boolean; diskors?: boolean; selesai?: boolean };
 
 // ─── Saksi per pihak ─────────────────────────────────────────────────────────
 

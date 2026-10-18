@@ -8910,8 +8910,15 @@ export function AletaEcourtSidang({
                                 pemeriksaan menurut aplikasi antrian: disidang 1..9
                                 (sedang di ruang) atau 10 (selesai hari itu, supaya PP
                                 masih dapat melengkapi). Mengantre atau belum ada
-                                antrian = tidak tampil. Hak peran ditegakkan komponennya. */}
-                            {tampil(tampilan, "pertanyaan-saksi") && sudahMasukPemeriksaan(disidangPerKunci[kunciTiga]) ? (
+                                antrian = tidak tampil. Perkara tanpa nomor antrian yang ditandai
+                                petugas sedang berjalan, diskors, atau selesai ikut dihitung
+                                (keputusan pengguna 18 Okt). Hak peran ditegakkan komponennya. */}
+                            {tampil(tampilan, "pertanyaan-saksi") &&
+                            sudahMasukPemeriksaan(disidangPerKunci[kunciTiga], {
+                              berjalan: Boolean(berjalanIni),
+                              diskors: Boolean(skorsIni),
+                              selesai: selesaiTanda.ditandai,
+                            }) ? (
                               <PanduanPemeriksaanSaksi
                                 {...bahanPanduDariBaris(baris, institutionIdentity?.courtName || "")}
                                 bentuk="tombol"

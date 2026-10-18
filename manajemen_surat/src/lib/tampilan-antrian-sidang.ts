@@ -581,7 +581,7 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kunci: "pertanyaan-saksi",
     label: "Tombol Pertanyaan saksi",
     keterangan:
-      "Tombol kecil di kolom paling kanan, di bawah Status. Ditekan = panduan pertanyaan saksi keluar sebagai jendela pop-up (pokok wajib, centang, layar sidang, cetak). Hanya tampil setelah perkara masuk pemeriksaan (sedang atau sudah disidang hari itu), bukan saat masih mengantre, dan hanya bagi hakim, panitera, panitera pengganti, dan admin.",
+      "Tombol kecil di kolom paling kanan, di bawah Status. Ditekan = panduan pertanyaan saksi keluar sebagai jendela pop-up (pokok wajib, centang, layar sidang, cetak). Hanya tampil setelah perkara masuk pemeriksaan (sedang atau sudah disidang hari itu, atau ditandai petugas sedang berjalan, diskors, atau selesai), bukan saat masih mengantre, dan hanya bagi hakim, panitera, panitera pengganti, dan admin.",
     kelompok: "alat",
   },
   {

@@ -161,9 +161,24 @@ describe("tombol Pertanyaan saksi di Jadwal Sidang", () => {
     for (const nilai of [null, undefined, 0, -1, 11, 99, 1.5, Number.NaN]) expect(sudahMasukPemeriksaan(nilai as number | null | undefined), String(nilai)).toBe(false);
   });
 
+  it("tanda manual petugas (berjalan, diskors, selesai) ikut dihitung; menunggu tanpa tanda tidak", () => {
+    expect(sudahMasukPemeriksaan(null, { berjalan: true })).toBe(true);
+    expect(sudahMasukPemeriksaan(undefined, { diskors: true })).toBe(true);
+    expect(sudahMasukPemeriksaan(null, { selesai: true })).toBe(true);
+    // antrian menunggu (NULL) dan tidak ada tanda: tidak muncul
+    expect(sudahMasukPemeriksaan(null, { berjalan: false, diskors: false, selesai: false })).toBe(false);
+    expect(sudahMasukPemeriksaan(null, {})).toBe(false);
+    expect(sudahMasukPemeriksaan(undefined)).toBe(false);
+    // tanda manual tidak menghapus aturan antrian
+    expect(sudahMasukPemeriksaan(3, { berjalan: false })).toBe(true);
+  });
+
   it("layar memakai aturan itu atas nilai antrian hari ini dan menggambar tombol, bukan bagian terbuka", () => {
     const layar = baca(LAYAR_SIDANG);
-    expect(layar).toContain('tampil(tampilan, "pertanyaan-saksi") && sudahMasukPemeriksaan(disidangPerKunci[kunciTiga])');
+    expect(layar).toContain('sudahMasukPemeriksaan(disidangPerKunci[kunciTiga], {');
+    expect(layar).toContain("berjalan: Boolean(berjalanIni),");
+    expect(layar).toContain("diskors: Boolean(skorsIni),");
+    expect(layar).toContain("selesai: selesaiTanda.ditandai,");
     expect(layar).toContain('bentuk="tombol"');
     // nilai disidang berasal dari waktu antrian yang sudah ditimpa keadaan langsung
     expect(layar).toContain("for (const b of waktuAntrianHidup.baris) peta[kunciWaktu(b.tanggalSidang, b.perkaraId)] = b.disidang;");
