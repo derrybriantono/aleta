@@ -30,6 +30,14 @@ const KATALOG = readdirSync(AKAR_KATALOG)
   .map((n) => JSON.parse(readFileSync(path.join(AKAR_KATALOG, n), "utf8")) as Record<string, any>)
   .filter((k) => k.contoh !== true);
 
+// Rujukan yang tampil mengikuti hukum acara satker (RBg; pasangan HIR dibuang) - bandingkan dengan versi yang sama dari katalog (18 Okt 2026).
+const duniaMesin: Record<string, unknown> = {};
+{
+  const modul = { exports: {} };
+  new Function("module", "globalThis", "self", readFileSync(path.resolve(AKAR_KATALOG, "../saksi-katalog.js"), "utf8"))(modul, duniaMesin, duniaMesin);
+}
+const rujukanTampil = (duniaMesin.AletaSaksiKatalog as { rujukanTampil: (t: string) => string }).rujukanTampil;
+
 function ada(p: PanduanSaksi): PanduanTersedia {
   if (!p.tersedia) throw new Error(`panduan tidak tersedia: ${p.alasan}`);
   return p;
@@ -182,7 +190,7 @@ describe("panduan pertanyaan saksi - pokok wajib dan dasar hukum", () => {
     const dasar = p.saksi.P.pokok.flatMap((x) => x.dasarHukum);
     expect(dasar.length).toBeGreaterThan(0);
     const kat = KATALOG.find((k) => k.kunci === "cerai-gugat")!;
-    const terverifikasi = new Set(kat.dasarHukum.filter((d: any) => d.status === "terverifikasi").map((d: any) => d.rujukan));
+    const terverifikasi = new Set(kat.dasarHukum.filter((d: any) => d.status === "terverifikasi").map((d: any) => rujukanTampil(d.rujukan)));
     for (const d of dasar) expect(terverifikasi.has(d.rujukan)).toBe(true);
   });
 
