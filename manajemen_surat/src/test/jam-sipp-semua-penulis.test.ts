@@ -109,9 +109,23 @@ describe("penjaga sumber: tiap penulis ke SIPP memakai jam SIPP, bukan NOW()/jam
 
   it("Tunda & Putusan Jadwal Sidang: cap = waktuSipp; sampai_jam tetap jam sidang setempat", () => {
     const s = svc("sidangHasilService.js");
-    expect(s.split("const saat = await penetapan.waktuSipp();").length - 1).toBe(2);
+    // 3 jalur tulis: tunda, putusan biasa, dan putus ikrar talak (susunRencanaPutusIkrar,
+    // 18 Okt 2026). Jalur ikrar menulis cap yang sama dengan dua yang lain, jadi
+    // jumlahnya memang naik dari 2 menjadi 3 - bukan jalur yang lolos dari penjaga.
+    expect(s.split("const saat = await penetapan.waktuSipp();").length - 1).toBe(3);
     expect(s).not.toContain("const saat = await penetapan.waktuBasisData();");
-    expect(s.split("jamDariCap(saatSetempat)").length - 1).toBe(2);
+    expect(s.split("jamDariCap(saatSetempat)").length - 1).toBe(3);
+    // Jalur putus ikrar tidak boleh memakai NOW()/CURRENT_TIMESTAMP/jam container sebagai nilai tulis.
+    const awalIkrar = s.indexOf("async function susunRencanaPutusIkrar");
+    expect(awalIkrar).toBeGreaterThan(-1);
+    const sisa = s.slice(awalIkrar);
+    const akhirIkrar = sisa.search(/\n(?:async )?function (?!susunRencanaPutusIkrar)/);
+    const jalurIkrar = (akhirIkrar > 0 ? sisa.slice(0, akhirIkrar) : sisa)
+      .split("\n")
+      .filter((baris) => !/^\s*(\/\/|\*|\/\*)/.test(baris))
+      .join("\n");
+    expect(jalurIkrar).toContain("await penetapan.waktuSipp()");
+    expect(jalurIkrar).not.toMatch(/\bNOW\(\)|CURRENT_TIMESTAMP|CURDATE\(\)|CURTIME\(\)|new Date\(\)/);
   });
 
   it("Putusan akhir dan Penetapan kembali: cap = waktuSipp; pagar tanggal tetap tanggal setempat", () => {
