@@ -83,7 +83,7 @@ describe("A. pohon server: menu, folder, berkas", () => {
     }
     expect(ALUR_BAS_BARU.find((a) => a.id === "alur-41")!.langkah.map((l) => l.kode)).toEqual(["1", "1a", "1b", "2", "2b", "3", "C", "G", "N", "T"]);
     expect(ALUR_BAS_BARU.find((a) => a.id === "alur-42")!.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO"]);
-    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-43")!.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO"]);
+    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-43")!.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO", "CS", "CM"]); // + CS / CM (I25 18 Okt)
   });
 
   it("29 BAS ALUR 04-09 disalin ke 4c Wasiat - BAS dan 10a Ekonomi Syariah Biasa - BAS: tabel salinan = berkas server, menu bernama; pencegahan tanpa salinan", () => {

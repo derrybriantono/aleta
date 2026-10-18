@@ -1401,6 +1401,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "NO",
         "berkas": "BAS ALUR 43 ES Acara Biasa - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
         "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      },
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 43 ES Acara Biasa - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 43 ES Acara Biasa - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
       }
     ]
   },

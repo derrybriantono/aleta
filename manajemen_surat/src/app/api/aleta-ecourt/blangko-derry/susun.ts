@@ -272,6 +272,11 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "9749": { nm: "Kedudukan {P} bila bukan ibu atau ayah kandung anak (kosong = ibu atau ayah kandung)" },
   "9750": { nm: "Alasan petitum ditolak (untuk putusan dikabulkan sebagian atau ditolak; kosong = kalimat bawaan)" },
   /* === AKHIR I23 === */
+  /* === I25 18 Okt: BAS verstek Izin Poligami (bukti persetujuan istri; 9761 otomatis) dan surat keterangan KUA di bukti Itsbat (9957) === */
+  "9760": { nm: "Bukti persetujuan tertulis {T} (istri) yang diajukan {P} (mis. surat pernyataan persetujuan istri bermeterai tanggal ...; kosong = tidak ada bukti yang diajukan)" },
+  "0654": { nm: "Nomor surat keterangan dari KUA (mis. surat keterangan nikah tidak tercatat)" },
+  "0655": { nm: "Tanggal surat keterangan dari KUA (mis. surat keterangan nikah tidak tercatat)" },
+  /* === AKHIR I25 === */
 };
 
 const PEMICU_TEKS: Record<string, string> = {
@@ -304,7 +309,7 @@ const KEADAAN_PEMICU: Partial<Record<Keadaan, string>> = Object.fromEntries(Obje
  * I7 18 Okt (revisi): isian 9430 (KUA tempat perkawinan) dan variabel otomatis 9431 TIDAK dipakai lagi - amar/pertimbangan kirim salinan ke Pegawai Pencatat Nikah dibuang dari
  * blangko pembatalan perkawinan. Bila berkas lama masih memuat penandanya, keduanya tidak ditampilkan (bukan isian, bukan otomatis, bukan tak dikenal).
  */
-const TIDAK_DIPAKAI = new Set(["9430", "9431"]);
+const TIDAK_DIPAKAI = new Set(["9430", "9431", "5009"]); // I25 18 Okt: 5009 (Tempat menikah) tanpa jenis data, tak terisi; bukti penolakan KUA (9956 P.10) kini memakai 5178
 
 /**
  * Keadaan sebuah isian tangan dari namanya di katalog ABT. Nama ABT memang menuliskan syaratnya:
