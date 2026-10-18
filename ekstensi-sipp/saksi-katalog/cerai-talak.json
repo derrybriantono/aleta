@@ -1,0 +1,2195 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "cerai-talak",
+ "judul": "Cerai talak",
+ "versi": 1,
+ "penulis": "SAKSI-A",
+ "tahap": 1,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "346"
+  ],
+  "alurPerkaraId": [
+   "15"
+  ]
+ },
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [
+  {
+   "folder": "ALUR 02 Cerai Verstek 2 Sidang",
+   "berkas": "[2] BAS 2 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (2 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": "varian 3, 4, 5 saksi: [2a], [2b], [2c] menambah 5060, 6124, 8931 dan seterusnya"
+  },
+  {
+   "folder": "ALUR 03 Cerai Verstek 3 Sidang atau Lebih",
+   "berkas": "[3] BAS Terakhir P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (2 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)",
+   "berkas": "[6] BAS 6 P & T Hadir - Pembuktian P",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": "kontradiktoir; [6c] 5 saksi memuat 5058, 5059, 5060, 6124, 8931"
+  },
+  {
+   "folder": "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)",
+   "berkas": "[7] BAS 7 P & T Hadir - Pembuktian T",
+   "variabelSaksi": [
+    "6120",
+    "6121"
+   ],
+   "catatan": "saksi Tergugat/Termohon; [7b] 4 saksi memuat 6120, 6121, 8921, 8941"
+  },
+  {
+   "folder": "ALUR 06 Cerai T Hadir Mediasi lalu Tidak Hadir",
+   "berkas": "[3] BAS 3 P Hadir & T Tidak Hadir - Saksi dan Putusan (2 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": "Tergugat hadir sampai mediasi lalu tidak hadir"
+  }
+ ],
+ "dasarHukum": [
+  {
+   "id": "dh-sebab-pengetahuan",
+   "rujukan": "Pasal 171 ayat (1) dan (2) HIR / Pasal 308 ayat (1) dan (2) RBg",
+   "uraian": "saksi harus menyebut alasan dan cara ia mengetahui hal yang diterangkan; pendapat atau dugaan bukan kesaksian",
+   "status": "terverifikasi",
+   "sumber": "HIR / RBg, berlaku di peradilan agama menurut Pasal 54 UU 7/1989"
+  },
+  {
+   "id": "dh-unus-testis",
+   "rujukan": "Pasal 169 HIR / Pasal 306 RBg / Pasal 1905 KUHPerdata",
+   "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak dapat dipercaya",
+   "status": "terverifikasi",
+   "sumber": "HIR / RBg / KUHPerdata"
+  },
+  {
+   "id": "dh-pasal-39-uu-1-1974",
+   "rujukan": "Pasal 39 UU 1/1974 tentang Perkawinan",
+   "uraian": "perceraian hanya di depan sidang pengadilan setelah pengadilan berusaha mendamaikan dan harus ada cukup alasan bahwa suami istri tidak akan dapat hidup rukun",
+   "status": "terverifikasi",
+   "sumber": "UU 1/1974 Pasal 39 ayat (1) dan (2)"
+  },
+  {
+   "id": "dh-pp-9-1975-pasal-19",
+   "rujukan": "Pasal 19 PP 9/1975",
+   "uraian": "alasan perceraian huruf a sampai f: zina/pemabuk/pemadat/penjudi, meninggalkan 2 tahun berturut-turut tanpa izin, penjara 5 tahun atau lebih, kekejaman atau penganiayaan, cacat badan atau penyakit, perselisihan dan pertengkaran terus-menerus",
+   "status": "terverifikasi",
+   "sumber": "PP 9/1975 Pasal 19"
+  },
+  {
+   "id": "dh-khi-116",
+   "rujukan": "Pasal 116 Kompilasi Hukum Islam",
+   "uraian": "alasan perceraian huruf a sampai h; huruf g pelanggaran taklik talak dan huruf h peralihan agama atau murtad yang menyebabkan ketidakrukunan",
+   "status": "terverifikasi",
+   "sumber": "KHI (Inpres 1/1991) Pasal 116"
+  },
+  {
+   "id": "dh-pasal-76",
+   "rujukan": "Pasal 76 ayat (1) UU 7/1989 sebagaimana diubah UU 3/2006 dan UU 50/2009",
+   "uraian": "alasan syiqaq: didengar keterangan saksi yang berasal dari keluarga atau orang dekat suami istri",
+   "status": "terverifikasi",
+   "sumber": "UU 7/1989 jo UU 3/2006 jo UU 50/2009"
+  },
+  {
+   "id": "dh-damai",
+   "rujukan": "Pasal 82 UU 7/1989 sebagaimana diubah UU 3/2006 dan UU 50/2009",
+   "uraian": "hakim berusaha mendamaikan para pihak pada tiap sidang perkara perceraian",
+   "status": "terverifikasi",
+   "sumber": "UU 7/1989 jo UU 3/2006 jo UU 50/2009"
+  },
+  {
+   "id": "dh-verstek",
+   "rujukan": "Pasal 125 ayat (1) HIR / Pasal 149 ayat (1) RBg",
+   "uraian": "Tergugat yang tidak hadir dapat diputus verstek bila gugatan tidak melawan hak atau beralasan; dalil gugatan tetap harus dibuktikan",
+   "status": "terverifikasi",
+   "sumber": "HIR / RBg"
+  },
+  {
+   "id": "dh-sema-1-2022",
+   "rujukan": "SEMA Nomor 1 Tahun 2022",
+   "uraian": "perceraian atas alasan perselisihan terus-menerus dihubungkan dengan pisah tempat tinggal; rincian rumusan kamar agama belum dibaca dari naskah",
+   "status": "perlu-verifikasi",
+   "sumber": "judul blangko Derry [01ab] Kurang 6 Bulan SEMA 1 Tahun 2022; naskah SEMA belum diperiksa"
+  },
+  {
+   "id": "dh-pasal-41-uu-1-1974",
+   "rujukan": "Pasal 41 UU 1/1974",
+   "uraian": "akibat putusnya perkawinan karena perceraian: ibu atau bapak tetap berkewajiban memelihara dan mendidik anak; bapak memikul biaya pemeliharaan; pengadilan dapat mewajibkan biaya penghidupan bagi bekas istri",
+   "status": "terverifikasi",
+   "sumber": "UU 1/1974 Pasal 41"
+  },
+  {
+   "id": "dh-khi-105-149-156",
+   "rujukan": "Pasal 105, 149, dan 156 Kompilasi Hukum Islam",
+   "uraian": "pemeliharaan anak belum mumayyiz hak ibunya; akibat talak berupa mut'ah, nafkah iddah, dan hadhanah; akibat putusnya perkawinan karena perceraian",
+   "status": "terverifikasi",
+   "sumber": "KHI (Inpres 1/1991) Pasal 105, 149, 156"
+  },
+  {
+   "id": "dh-buku-ii-2026-mutah",
+   "rujukan": "Buku II Tahun 2026 aspek 23 (ringkasan PTA Pontianak)",
+   "uraian": "mut'ah dan nafkah iddah dapat ditetapkan karena jabatan bila istri tidak terbukti nusyuz",
+   "status": "perlu-verifikasi",
+   "sumber": "ringkasan sekunder PTA Pontianak; naskah resmi Buku II 2026 belum tersedia"
+  },
+  {
+   "id": "dh-harta-bersama",
+   "rujukan": "Pasal 35 UU 1/1974 dan Pasal 97 Kompilasi Hukum Islam",
+   "uraian": "harta yang diperoleh selama perkawinan menjadi harta bersama; janda atau duda cerai hidup masing-masing berhak seperdua",
+   "status": "terverifikasi",
+   "sumber": "UU 1/1974 Pasal 35; KHI Pasal 97"
+  },
+  {
+   "id": "dh-khi-7-3",
+   "rujukan": "Pasal 7 ayat (3) Kompilasi Hukum Islam",
+   "uraian": "itsbat nikah dapat diajukan antara lain untuk penyelesaian perceraian, hilangnya akta nikah, keraguan sah atau tidaknya syarat perkawinan, dan perkawinan tanpa halangan menurut UU 1/1974",
+   "status": "terverifikasi",
+   "sumber": "KHI Pasal 7 ayat (3)"
+  }
+ ],
+ "keadaan": {
+  "kehadiran": {
+   "sumber": "otomatis",
+   "nilai": [
+    "verstek",
+    "kontradiktoir",
+    "t-tidak-hadir-setelah-mediasi"
+   ],
+   "bawaan": "kontradiktoir",
+   "label": "Kehadiran Tergugat/Termohon"
+  },
+  "kumulasi": {
+   "sumber": "otomatis",
+   "nilai": [
+    "hak-asuh",
+    "nafkah-anak",
+    "nafkah-iddah",
+    "mutah",
+    "nafkah-madliyah",
+    "harta-bersama",
+    "itsbat-nikah",
+    "rekonvensi"
+   ],
+   "jamak": true,
+   "label": "Gugatan atau permohonan yang digabung"
+  },
+  "alasan": {
+   "sumber": "borang",
+   "nilai": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H"
+   ],
+   "jamak": true,
+   "bawaan": [
+    "F"
+   ],
+   "label": "Alasan perceraian"
+  },
+  "perilakuA": {
+   "sumber": "borang",
+   "nilai": [
+    "pihak-ketiga",
+    "mabuk",
+    "obat-terlarang",
+    "judi"
+   ],
+   "jamak": true,
+   "bawaan": [
+    "pihak-ketiga"
+   ],
+   "label": "Perilaku pada alasan A"
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-hubungan-saksi",
+   "judul": "Hubungan saksi dengan para pihak",
+   "uraian": "saksi menerangkan siapa dirinya dan cara mengenal para pihak (sebab pengetahuan)",
+   "dasarHukum": [
+    "dh-sebab-pengetahuan",
+    "dh-pasal-76"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-perkawinan",
+   "judul": "Perkawinan yang sah dan keadaan rumah tangga",
+   "uraian": "saksi menerangkan para pihak suami istri yang sah, tempat tinggal bersama, dan anak",
+   "dasarHukum": [
+    "dh-pasal-39-uu-1-1974"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-perselisihan",
+   "judul": "Perselisihan dan pertengkaran terus-menerus",
+   "uraian": "saksi menerangkan sejak kapan, penyebab, dan cara ia mengetahuinya",
+   "dasarHukum": [
+    "dh-pp-9-1975-pasal-19",
+    "dh-khi-116",
+    "dh-sebab-pengetahuan",
+    "dh-unus-testis"
+   ],
+   "wajib": true,
+   "keadaan": {
+    "alasan": "F"
+   }
+  },
+  {
+   "id": "pp-pisah",
+   "judul": "Pisah tempat tinggal dan akibatnya",
+   "uraian": "saksi menerangkan sejak kapan pisah, siapa yang meninggalkan, lamanya, dan nafkah",
+   "dasarHukum": [
+    "dh-sema-1-2022",
+    "dh-pp-9-1975-pasal-19"
+   ],
+   "wajib": true,
+   "keadaan": {
+    "alasan": "F"
+   }
+  },
+  {
+   "id": "pp-upaya-damai",
+   "judul": "Upaya mendamaikan",
+   "uraian": "saksi menerangkan upaya keluarga atau dirinya merukunkan para pihak dan hasilnya",
+   "dasarHukum": [
+    "dh-damai",
+    "dh-pasal-39-uu-1-1974"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-alasan-a",
+   "judul": "Alasan huruf A: zina, pemabuk, pemadat, penjudi",
+   "uraian": "saksi menerangkan perilaku yang didalilkan dan cara mengetahuinya",
+   "dasarHukum": [
+    "dh-pp-9-1975-pasal-19",
+    "dh-khi-116"
+   ],
+   "wajib": true,
+   "keadaan": {
+    "alasan": "A"
+   }
+  },
+  {
+   "id": "pp-alasan-b",
+   "judul": "Alasan huruf B: meninggalkan 2 tahun berturut-turut tanpa izin",
+   "uraian": "saksi menerangkan lamanya kepergian, tanpa izin, dan usaha mencari",
+   "dasarHukum": [
+    "dh-pp-9-1975-pasal-19",
+    "dh-khi-116"
+   ],
+   "wajib": true,
+   "keadaan": {
+    "alasan": "B"
+   }
+  },
+  {
+   "id": "pp-alasan-c",
+   "judul": "Alasan huruf C: penjara 5 tahun atau lebih",
+   "uraian": "saksi menerangkan pemidanaan yang didalilkan",
+   "dasarHukum": [
+    "dh-pp-9-1975-pasal-19",
+    "dh-khi-116"
+   ],
+   "wajib": true,
+   "keadaan": {
+    "alasan": "C"
+   }
+  },
+  {
+   "id": "pp-alasan-d",
+   "judul": "Alasan huruf D: kekejaman atau penganiayaan",
+   "uraian": "saksi menerangkan perbuatan dan akibatnya",
+   "dasarHukum": [
+    "dh-pp-9-1975-pasal-19",
+    "dh-khi-116"
+   ],
+   "wajib": true,
+   "keadaan": {
+    "alasan": "D"
+   }
+  },
+  {
+   "id": "pp-alasan-e",
+   "judul": "Alasan huruf E: cacat badan atau penyakit",
+   "uraian": "saksi menerangkan cacat atau penyakit dan akibatnya bagi kewajiban suami istri",
+   "dasarHukum": [
+    "dh-pp-9-1975-pasal-19",
+    "dh-khi-116"
+   ],
+   "wajib": true,
+   "keadaan": {
+    "alasan": "E"
+   }
+  },
+  {
+   "id": "pp-alasan-g",
+   "judul": "Alasan huruf G: pelanggaran taklik talak",
+   "uraian": "saksi menerangkan pelanggaran yang didalilkan",
+   "dasarHukum": [
+    "dh-khi-116"
+   ],
+   "wajib": true,
+   "keadaan": {
+    "alasan": "G"
+   }
+  },
+  {
+   "id": "pp-alasan-h",
+   "judul": "Alasan huruf H: peralihan agama atau murtad",
+   "uraian": "saksi menerangkan perpindahan agama dan akibatnya pada kerukunan",
+   "dasarHukum": [
+    "dh-khi-116"
+   ],
+   "wajib": true,
+   "keadaan": {
+    "alasan": "H"
+   }
+  },
+  {
+   "id": "pp-itsbat",
+   "judul": "Itsbat nikah yang digabung",
+   "uraian": "saksi menerangkan pernikahan yang tidak tercatat",
+   "dasarHukum": [
+    "dh-khi-7-3"
+   ],
+   "wajib": true,
+   "keadaan": {
+    "kumulasi": "itsbat-nikah"
+   }
+  },
+  {
+   "id": "pp-penutup",
+   "judul": "Penutup keterangan",
+   "uraian": "saksi menyatakan keterangannya telah cukup",
+   "dasarHukum": [],
+   "wajib": false
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-kenal",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 10,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi kenal dengan #0046# dan #0047# ?",
+   "teksVarian": [
+    "Apakah saksi mengenal #0046# dan #0047# ?",
+    "Apakah Saudara saksi kenal dengan #0046# serta #0047# ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "hubungan saksi dengan para pihak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal kedua pihak dan menyebut hubungannya dengan pihak",
+     "saksi1": [
+      "saya kenal dengan #0046# dan #0047# karena saya adalah {hubungan}",
+      "saya mengenal #0046# dan #0047# sebab saya adalah {hubungan}",
+      "saya kenal baik dengan #0046# maupun #0047# dan saya adalah {hubungan}",
+      "#0046# dan #0047# saya kenal karena kedudukan saya sebagai {hubungan}"
+     ],
+     "saksi2": [
+      "kedua pihak yaitu #0046# dan #0047# saya kenal dengan baik karena saya adalah {hubungan}",
+      "saya tahu dan kenal #0046# serta #0047# karena saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya kenal dengan #0046# juga #0047#",
+      "saya sudah lama mengenal #0046# berikut #0047# karena saya adalah {hubungan}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-maksud",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 20,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi mengetahui maksud {pihakSaksi} menghadirkan saksi di persidangan ini ?",
+   "variabelAbt": [],
+   "hal": "maksud saksi dihadirkan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui bahwa ia dihadirkan untuk menerangkan perkara perceraian para pihak",
+     "saksi1": [
+      "saya dihadirkan {pihakSaksi} untuk memberi keterangan dalam perkara perceraian dengan {lawanSaksi}",
+      "maksud {pihakSaksi} menghadirkan saya adalah agar saya menerangkan perkara perceraiannya dengan {lawanSaksi}",
+      "saya mengetahui {pihakSaksi} menghadirkan saya sebagai saksi dalam perkara perceraian melawan {lawanSaksi}",
+      "kehadiran saya atas permintaan {pihakSaksi} untuk bersaksi tentang perceraiannya dengan {lawanSaksi}"
+     ],
+     "saksi2": [
+      "{pihakSaksi} meminta saya hadir memberi keterangan mengenai perkara cerai dengan {lawanSaksi}",
+      "tujuan saya dihadirkan oleh {pihakSaksi} yaitu menerangkan perkara perceraian dengan {lawanSaksi}",
+      "saya tahu bahwa {pihakSaksi} membawa saya untuk bersaksi dalam sengketa perceraiannya dengan {lawanSaksi}",
+      "kedatangan saya ke sidang ini karena {pihakSaksi} meminta saya menerangkan perceraiannya dengan {lawanSaksi}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-hubungan-pihak",
+   "pokok": "pp-perkawinan",
+   "urutan": 30,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi mengetahui hubungan antara #0046# dengan #0047# ?",
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "hubungan para pihak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan para pihak adalah suami istri yang sah",
+     "saksi1": [
+      "antara #0046# dengan #0047# adalah suami istri yang sah",
+      "#0046# dan #0047# adalah pasangan suami istri yang sah",
+      "keduanya terikat perkawinan yang sah sebagai suami istri",
+      "hubungan #0046# dengan #0047# adalah suami istri sah"
+     ],
+     "saksi2": [
+      "mereka berdua adalah suami istri yang sah menurut sepengetahuan saya",
+      "#0046# dan #0047# merupakan suami istri yang menikah secara sah",
+      "setahu saya #0046# serta #0047# adalah pasangan suami istri sah",
+      "yang saya ketahui #0046# dan #0047# terikat dalam perkawinan yang sah"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-tinggal",
+   "pokok": "pp-perkawinan",
+   "urutan": 40,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Di mana #0046# dan #0047# tinggal bersama setelah menikah ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8491"
+   ],
+   "hal": "tempat tinggal mereka setelah menikah",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan tempat tinggal bersama setelah menikah",
+     "saksi1": [
+      "setelah menikah #0046# dan #0047# membina rumah tangga di #8491#",
+      "sesudah menikah keduanya tinggal bersama di #8491#",
+      "#0046# dan #0047# bertempat tinggal bersama di #8491# setelah menikah",
+      "tempat tinggal #0046# dan #0047# sesudah pernikahan adalah di #8491#"
+     ],
+     "saksi2": [
+      "usai menikah mereka berdua menetap di #8491#",
+      "rumah tangga #0046# dan #0047# dibina di #8491# sejak mereka menikah",
+      "mereka tinggal serumah di #8491# setelah resmi menikah",
+      "pasangan itu menempati #8491# sebagai tempat tinggal bersama sesudah menikah"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-anak",
+   "pokok": "pp-perkawinan",
+   "urutan": 50,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah #0046# dan #0047# sudah dikaruniai anak ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8535"
+   ],
+   "hal": "anak mereka",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan jumlah anak para pihak",
+     "saksi1": [
+      "#0046# dan #0047# #8535#",
+      "keduanya #8535# dari perkawinan mereka",
+      "dalam perkawinan mereka #0046# dan #0047# #8535#",
+      "perkawinan #0046# dengan #0047# #8535#"
+     ],
+     "saksi2": [
+      "pasangan #0046# dan #0047# #8535#",
+      "sepengetahuan saya #0046# dan #0047# #8535#",
+      "mereka berdua #8535#",
+      "rumah tangga #0046# dan #0047# #8535#"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-kehidupan",
+   "pokok": "pp-perkawinan",
+   "urutan": 60,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana keadaan rumah tangga #0046# dan #0047# pada awalnya dan sekarang ?",
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "keadaan rumah tangga mereka",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan rumah tangga semula rukun lalu berubah menjadi penuh perselisihan",
+     "saksi1": [
+      "awalnya rumah tangga #0046# dan #0047# rukun dan harmonis namun kini sudah tidak harmonis karena sering berselisih dan bertengkar",
+      "pada mulanya mereka hidup rukun dan harmonis tetapi sekarang sering terjadi perselisihan dan pertengkaran",
+      "dulu rumah tangga mereka rukun lalu belakangan sering diwarnai perselisihan dan pertengkaran",
+      "di awal pernikahan mereka rukun dan bahagia namun lama-kelamaan sering bertengkar"
+     ],
+     "saksi2": [
+      "semula keduanya hidup rukun dan harmonis namun sekarang rumah tangganya sudah tidak harmonis akibat pertengkaran terus-menerus",
+      "mula-mula rumah tangga #0046# dan #0047# tenteram tetapi sekarang tidak harmonis lagi karena sering cekcok",
+      "pada awal menikah mereka akur tetapi kini sering terjadi perselisihan yang berulang",
+      "kehidupan rumah tangga mereka awalnya baik dan rukun sedangkan saat ini sudah dipenuhi pertengkaran"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-awal-konflik",
+   "pokok": "pp-perselisihan",
+   "urutan": 70,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Sejak kapan #0046# dan #0047# mulai berselisih dan bertengkar ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "0222"
+   ],
+   "hal": "awal mulai tidak rukunnya mereka",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan keduanya mulai tidak rukun sejak waktu yang didalilkan, berdasarkan penglihatannya sendiri",
+     "saksi1": [
+      "sejak #0222# #0046# dan #0047# mulai berselisih dan hal itu saya lihat sendiri",
+      "saya melihat sendiri keduanya mulai bertengkar sejak #0222#",
+      "perselisihan #0046# dengan #0047# mulai terlihat oleh saya sejak #0222#",
+      "sejak #0222# saya menyaksikan sendiri #0046# dan #0047# bertengkar"
+     ],
+     "saksi2": [
+      "mereka berdua mulai berselisih sejak #0222# dan saya menyaksikannya sendiri",
+      "saya sendiri yang melihat kerukunan #0046# dan #0047# retak sejak #0222#",
+      "mulai #0222# saya tahu sendiri keduanya sudah sering bertengkar",
+      "perselisihan #0046# dan #0047# saya saksikan sendiri sejak #0222#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "saksi menyebut waktu mulai berselisih yang berbeda dari saksi lain; versi A: sejak waktu pada gugatan; versi B: lebih belakangan",
+     "saksi1": [
+      "saya melihat sendiri #0046# dan #0047# mulai berselisih sejak #0222#",
+      "sejak #0222# saya menyaksikan sendiri keduanya bertengkar",
+      "keduanya mulai bertengkar sejak #0222# dan saya lihat sendiri",
+      "saya saksikan sendiri bahwa sejak #0222# #0046# dan #0047# berselisih"
+     ],
+     "saksi2": [
+      "setahu saya #0046# dan #0047# baru berselisih beberapa waktu sesudah #0222# dan saya lihat sendiri",
+      "saya baru menyaksikan keduanya bertengkar beberapa waktu sesudah #0222#",
+      "keretakan #0046# dan #0047# baru saya lihat jauh sesudah #0222#",
+      "sesudah lewat #0222# beberapa waktu barulah saya melihat sendiri keduanya bertengkar"
+     ],
+     "bedaPada": "waktu"
+    }
+   }
+  },
+  {
+   "id": "q-penyebab",
+   "pokok": "pp-perselisihan",
+   "urutan": 80,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa yang menjadi penyebab perselisihan dan pertengkaran antara #0046# dengan #0047# ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "5227"
+   ],
+   "hal": "penyebab perselisihan mereka",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan penyebab perselisihan sesuai alasan yang didalilkan, berdasarkan penglihatannya sendiri",
+     "saksi1": [
+      "penyebab perselisihan dan pertengkaran mereka yang saya ketahui yaitu #5227#",
+      "penyebabnya sepengetahuan saya adalah #5227#",
+      "sepanjang yang saya ketahui mereka berselisih karena #5227#",
+      "yang menjadi penyebab perselisihan mereka sepengetahuan saya adalah #5227#"
+     ],
+     "saksi2": [
+      "mereka bertengkar karena #5227# dan saya menyaksikannya sendiri",
+      "saya sendiri mengetahui bahwa pangkal perselisihan mereka adalah #5227#",
+      "setahu saya karena menyaksikan sendiri keduanya berselisih disebabkan #5227#",
+      "penyebab keduanya sering cekcok yang saya lihat langsung yaitu #5227#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "saksi menyebut penyebab perselisihan yang berbeda dari saksi lain; versi A: ekonomi; versi B: pihak ketiga",
+     "saksi1": [
+      "penyebab perselisihan mereka yang saya ketahui adalah masalah ekonomi rumah tangga",
+      "pertengkaran #0046# dan #0047# menurut yang saya lihat berpangkal dari kekurangan nafkah",
+      "yang saya saksikan keduanya sering bertengkar gara-gara uang belanja kurang",
+      "perselisihan mereka berawal dari soal ekonomi keluarga yang saya ketahui sendiri"
+     ],
+     "saksi2": [
+      "penyebab perselisihan mereka yang saya ketahui adalah hadirnya pihak ketiga dalam rumah tangga",
+      "pertengkaran #0046# dan #0047# menurut yang saya lihat berpangkal dari orang ketiga",
+      "yang saya saksikan keduanya sering bertengkar gara-gara adanya pihak lain",
+      "perselisihan mereka berawal dari kehadiran orang lain yang saya ketahui sendiri"
+     ],
+     "bedaPada": "penyebab"
+    }
+   }
+  },
+  {
+   "id": "q-cara-tahu",
+   "pokok": "pp-perselisihan",
+   "urutan": 90,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana saksi mengetahui penyebab perselisihan dan pertengkaran tersebut ?",
+   "variabelAbt": [],
+   "hal": "cara saksi mengetahui penyebab perselisihan mereka",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui dengan melihat dan mendengar sendiri pertengkaran para pihak",
+     "saksi1": [
+      "saya mengetahuinya karena melihat dan mendengar sendiri perselisihan dan pertengkaran mereka",
+      "saya mengetahui karena saya menyaksikan sendiri mereka bertengkar",
+      "saya sering berada di dekat mereka sehingga melihat dan mendengar sendiri pertengkaran itu",
+      "saya tahu sebab saya langsung melihat dan mendengar mereka berselisih"
+     ],
+     "saksi2": [
+      "saya mengetahuinya dari penglihatan dan pendengaran saya sendiri ketika mereka bertengkar",
+      "saya sendiri yang pernah menyaksikan keduanya bertengkar",
+      "karena sering bertemu dengan mereka saya melihat dan mendengar sendiri pertengkaran tersebut",
+      "pengetahuan saya berasal dari kejadian yang saya lihat dan dengar sendiri"
+     ]
+    },
+    "mendengar": {
+     "maksud": "saksi mendengar sendiri pertengkaran para pihak tanpa melihat kejadiannya",
+     "saksi1": [
+      "saya mengetahuinya karena mendengar sendiri mereka bertengkar dari rumah mereka",
+      "saya tahu karena suara pertengkaran mereka terdengar langsung oleh saya",
+      "saya mendengar langsung ucapan mereka ketika sedang berselisih",
+      "saya sendiri mendengar mereka cekcok dan saling berkata kasar"
+     ],
+     "saksi2": [
+      "saya mengetahui dari pertengkaran mereka yang saya dengar sendiri",
+      "dari rumah saya terdengar jelas mereka bertengkar",
+      "saya turut mendengar langsung perkataan mereka saat berselisih",
+      "saya mendengar mereka bertengkar dengan telinga saya sendiri"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi mengetahui dari cerita orang lain dan tidak menyaksikan sendiri",
+     "saksi1": [
+      "saya mengetahuinya dari cerita {sumber} dan tidak menyaksikan sendiri",
+      "{sumber} yang menceritakan penyebab itu kepada saya dan saya tidak melihatnya sendiri",
+      "saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikan pertengkaran itu",
+      "penyebab itu hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+     ],
+     "saksi2": [
+      "yang saya ketahui berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+      "saya mendengar dari {sumber} dan saya tidak berada di sana ketika kejadian",
+      "{sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+      "saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya menyaksikan sebagian pertengkaran dan selebihnya tidak diketahuinya",
+     "saksi1": [
+      "saya hanya melihat sendiri sebagian pertengkaran mereka dan selebihnya saya tidak tahu",
+      "sebagian saya saksikan sendiri sedangkan sisanya tidak saya ketahui",
+      "yang saya lihat dan dengar sendiri hanya sebagian saja dan selebihnya tidak saya ketahui",
+      "hanya sebagian pertengkaran mereka yang saya saksikan dan selebihnya saya tidak tahu"
+     ],
+     "saksi2": [
+      "pengetahuan saya sebatas sebagian pertengkaran yang saya lihat sendiri dan selain itu saya tidak tahu",
+      "saya baru menyaksikan sebagian saja dan lainnya tidak saya ketahui",
+      "yang saya saksikan sendiri hanya sebagian dan selebihnya saya tidak tahu",
+      "saya hanya mengetahui sebagian secara langsung sedangkan sisanya tidak saya ketahui"
+     ]
+    },
+    "tidak-tahu": {
+     "maksud": "saksi tidak mengetahui bagaimana penyebab itu terjadi",
+     "saksi1": [
+      "saya tidak mengetahui bagaimana penyebab itu terjadi",
+      "saya tidak tahu sebabnya sama sekali",
+      "penyebab itu tidak saya ketahui",
+      "saya tidak pernah mengetahui sebab perselisihan mereka"
+     ],
+     "saksi2": [
+      "bagaimana perselisihan itu terjadi saya tidak mengetahuinya",
+      "tentang sebabnya saya tidak tahu apa-apa",
+      "tidak ada yang saya ketahui tentang penyebabnya",
+      "sebab pertengkaran mereka sama sekali tidak saya ketahui"
+     ]
+    },
+    "ragu": {
+     "maksud": "saksi ragu dari mana ia mengetahui penyebab itu",
+     "saksi1": [
+      "saya ragu apakah saya melihat sendiri atau hanya mendengar dari orang",
+      "saya kurang yakin dari mana saya mengetahuinya",
+      "saya lupa bagaimana persisnya saya mengetahui hal itu",
+      "sumber pengetahuan saya itu kurang jelas bagi saya dan saya ragu"
+     ],
+     "saksi2": [
+      "saya ragu dengan cara saya mengetahuinya sebab ingatan saya kurang jelas",
+      "saya mungkin hanya mendengar tetapi saya kurang pasti",
+      "saya lupa-lupa ingat apakah saya melihat sendiri atau hanya mendengar",
+      "entah melihat sendiri atau mendengar saja saya kurang ingat"
+     ]
+    },
+    "berbeda": {
+     "maksud": "saksi menyebut cara mengetahui yang berbeda dari saksi lain; versi A: melihat dan mendengar sendiri; versi B: hanya dari cerita",
+     "saksi1": [
+      "saya mengetahuinya karena melihat dan mendengar sendiri mereka bertengkar",
+      "saya menyaksikan sendiri pertengkaran mereka sehingga saya tahu penyebabnya",
+      "saya sendiri yang melihat dan mendengar keduanya berselisih",
+      "pengetahuan saya berasal dari yang saya saksikan langsung"
+     ],
+     "saksi2": [
+      "saya mengetahuinya dari cerita orang saja dan bukan dari yang saya saksikan",
+      "saya hanya diberi tahu orang lain mengenai penyebabnya",
+      "tahu saya berasal dari penuturan orang lain saja",
+      "yang saya ketahui sebatas cerita dari orang sekitar"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-pisah",
+   "pokok": "pp-pisah",
+   "urutan": 100,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah #0046# dan #0047# masih tinggal serumah sampai sekarang ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "0246"
+   ],
+   "hal": "pisah tempat tinggal mereka",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan para pihak sudah pisah tempat tinggal sejak waktu yang didalilkan",
+     "saksi1": [
+      "keduanya sudah pisah tempat tinggal sejak #0246#",
+      "#0046# dan #0047# tidak tinggal serumah lagi sejak #0246#",
+      "sejak #0246# mereka telah berpisah rumah",
+      "sudah sejak #0246# #0046# dan #0047# hidup terpisah"
+     ],
+     "saksi2": [
+      "mereka berpisah tempat tinggal terhitung sejak #0246#",
+      "terhitung #0246# keduanya tidak serumah lagi",
+      "rumah tangga mereka terpisah tempat tinggal mulai #0246#",
+      "sejak #0246# mereka berdua tinggal di tempat yang berbeda"
+     ]
+    },
+    "berbeda": {
+     "maksud": "saksi menyebut waktu pisah yang berbeda dari saksi lain; versi A: sejak waktu pada gugatan; versi B: lebih belakangan",
+     "saksi1": [
+      "#0046# dan #0047# berpisah rumah sejak #0246# dan saya mengetahuinya sendiri",
+      "sejak #0246# keduanya tidak tinggal bersama lagi menurut yang saya lihat",
+      "saya tahu mereka pisah tempat tinggal sejak #0246#",
+      "mereka berdua hidup terpisah dari #0246# sepengetahuan saya"
+     ],
+     "saksi2": [
+      "setahu saya #0046# dan #0047# baru berpisah beberapa waktu sesudah #0246#",
+      "keduanya baru tidak serumah lagi lama sesudah #0246# menurut yang saya lihat",
+      "saya tahu mereka pisah rumah jauh setelah #0246#",
+      "perpisahan mereka baru terjadi beberapa waktu sesudah #0246# sepengetahuan saya"
+     ],
+     "bedaPada": "waktu"
+    }
+   }
+  },
+  {
+   "id": "q-yang-pergi",
+   "pokok": "pp-pisah",
+   "urutan": 110,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Siapa yang meninggalkan tempat tinggal bersama ?",
+   "variabelAbt": [
+    "7035"
+   ],
+   "hal": "siapa yang meninggalkan tempat tinggal bersama",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pihak yang meninggalkan tempat tinggal bersama",
+     "saksi1": [
+      "yang meninggalkan tempat tinggal bersama adalah #7035#",
+      "#7035# yang pergi meninggalkan tempat tinggal bersama",
+      "yang pergi dari rumah bersama adalah #7035#",
+      "tempat tinggal bersama ditinggalkan oleh #7035#"
+     ],
+     "saksi2": [
+      "#7035# yang keluar dari rumah tempat mereka tinggal bersama",
+      "yang meninggalkan rumah kediaman bersama itu adalah #7035#",
+      "pihak yang pergi dari kediaman bersama yaitu #7035#",
+      "#7035# lah yang meninggalkan kediaman bersama mereka"
+     ]
+    },
+    "berbeda": {
+     "maksud": "saksi menyebut pihak yang meninggalkan berbeda dari saksi lain; versi A: pihak yang menghadirkan saksi pergi; versi B: lawannya yang pergi",
+     "saksi1": [
+      "yang meninggalkan tempat tinggal bersama adalah {pihakSaksi}",
+      "{pihakSaksi} yang pergi dari rumah bersama menurut yang saya lihat",
+      "saya melihat {pihakSaksi} meninggalkan tempat tinggal bersama",
+      "tempat tinggal bersama ditinggalkan oleh {pihakSaksi}"
+     ],
+     "saksi2": [
+      "yang meninggalkan tempat tinggal bersama adalah {lawanSaksi}",
+      "{lawanSaksi} yang pergi dari rumah bersama menurut yang saya lihat",
+      "saya melihat {lawanSaksi} meninggalkan tempat tinggal bersama",
+      "tempat tinggal bersama ditinggalkan oleh {lawanSaksi}"
+     ],
+     "bedaPada": "pelaku"
+    }
+   }
+  },
+  {
+   "id": "q-lama-pisah",
+   "pokok": "pp-pisah",
+   "urutan": 120,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Sudah berapa lama #0046# dan #0047# berpisah tempat tinggal ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9944"
+   ],
+   "hal": "lamanya mereka berpisah tempat tinggal",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan lamanya para pihak berpisah tempat tinggal",
+     "saksi1": [
+      "mereka berpisah tempat tinggal sudah kurang lebih #9944#",
+      "sampai sekarang keduanya telah berpisah sekitar #9944#",
+      "lamanya #0046# dan #0047# berpisah tempat tinggal kurang lebih #9944#",
+      "perpisahan tempat tinggal mereka sudah berlangsung sekitar #9944#"
+     ],
+     "saksi2": [
+      "keduanya hidup terpisah selama sekitar #9944#",
+      "hingga kini mereka tidak serumah lagi selama kurang lebih #9944#",
+      "mereka telah pisah rumah selama lebih kurang #9944#",
+      "masa pisah rumah #0046# dan #0047# berlangsung sekitar #9944# sampai sekarang"
+     ]
+    },
+    "berbeda": {
+     "maksud": "saksi menyebut lama pisah yang berbeda dari saksi lain; versi A: selama yang tercantum pada gugatan; versi B: jauh lebih singkat",
+     "saksi1": [
+      "mereka berpisah tempat tinggal sudah kurang lebih #9944#",
+      "sampai sekarang keduanya telah berpisah sekitar #9944#",
+      "lamanya #0046# dan #0047# berpisah rumah kurang lebih #9944#",
+      "perpisahan mereka sudah berlangsung sekitar #9944#"
+     ],
+     "saksi2": [
+      "setahu saya mereka baru berpisah beberapa bulan saja",
+      "keduanya berpisah rumah belum lama menurut yang saya ketahui",
+      "lamanya mereka berpisah hanya sebentar sepengetahuan saya",
+      "perpisahan #0046# dan #0047# baru berjalan beberapa bulan"
+     ],
+     "bedaPada": "lama"
+    }
+   }
+  },
+  {
+   "id": "q-komunikasi",
+   "pokok": "pp-pisah",
+   "urutan": 130,
+   "tingkat": "inti",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Selama berpisah apakah masih ada komunikasi antara #0046# dan #0047# ?",
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "komunikasi mereka selama berpisah",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan tidak ada lagi komunikasi selama berpisah",
+     "saksi1": [
+      "selama berpisah keduanya tidak ada komunikasi lagi",
+      "mereka sudah tidak berkomunikasi selama berpisah",
+      "setelah pisah tidak ada lagi hubungan komunikasi di antara keduanya",
+      "sejak berpisah #0046# dan #0047# tidak saling berkomunikasi"
+     ],
+     "saksi2": [
+      "komunikasi keduanya terputus selama pisah rumah",
+      "selama terpisah mereka tidak saling menghubungi",
+      "tidak pernah ada kabar dari satu ke yang lain sejak berpisah",
+      "sesudah berpisah keduanya tidak lagi bertegur sapa"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-nafkah-pisah",
+   "pokok": "pp-pisah",
+   "urutan": 140,
+   "tingkat": "inti",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Selama berpisah apakah #0046# masih memberikan nafkah kepada #0047# ?",
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "nafkah selama berpisah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan suami tidak lagi memberi nafkah kepada istri selama berpisah",
+     "saksi1": [
+      "sejak berpisah #0046# tidak lagi memberikan nafkah kepada #0047#",
+      "#0046# sudah tidak menafkahi #0047# selama mereka berpisah",
+      "selama pisah tidak ada nafkah dari #0046# untuk #0047#",
+      "nafkah dari #0046# kepada #0047# terhenti sejak mereka berpisah"
+     ],
+     "saksi2": [
+      "#0046# berhenti memberi nafkah kepada #0047# sesudah mereka pisah rumah",
+      "#0047# tidak lagi dinafkahi #0046# selama terpisah",
+      "semenjak berpisah #0046# tidak pernah memberi uang belanja kepada #0047#",
+      "selama tinggal berjauhan #0046# tidak menanggung nafkah #0047#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "saksi menyebut nafkah selama berpisah berbeda dari saksi lain; versi A: tidak diberi; versi B: masih diberi sebagian",
+     "saksi1": [
+      "sejak berpisah #0046# tidak lagi memberikan nafkah kepada #0047#",
+      "#0046# sudah tidak menafkahi #0047# selama mereka berpisah",
+      "selama pisah tidak ada nafkah dari #0046# untuk #0047#",
+      "#0047# tidak lagi dinafkahi #0046# sejak berpisah"
+     ],
+     "saksi2": [
+      "selama berpisah #0046# masih memberikan sebagian nafkah kepada #0047#",
+      "#0046# masih sesekali mengirim uang untuk #0047# sesudah mereka pisah",
+      "sepengetahuan saya #0047# masih menerima nafkah dari #0046# meski tidak penuh",
+      "nafkah dari #0046# kepada #0047# masih ada walau jumlahnya berkurang"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-upaya-keluarga-verstek",
+   "pokok": "pp-upaya-damai",
+   "urutan": 150,
+   "tingkat": "inti",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kehadiran": [
+     "verstek",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   },
+   "teks": "Apakah sudah ada upaya dari keluarga untuk merukunkan #0046# dengan #0047# ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "1268"
+   ],
+   "hal": "upaya keluarga merukunkan mereka",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "keluarga sudah berupaya merukunkan namun tidak berhasil; Tergugat tidak hadir sehingga tidak ada tanggapan darinya",
+     "saksi1": [
+      "upaya merukunkan itu sudah ada karena #1268#",
+      "sudah ada usaha mendamaikan mereka sebab #1268#",
+      "benar sudah pernah diupayakan perdamaian karena #1268#",
+      "perdamaian pernah diusahakan karena #1268#"
+     ],
+     "saksi2": [
+      "upaya damai itu pernah ditempuh karena #1268#",
+      "usaha merukunkan mereka memang ada sebab #1268#",
+      "betul ada upaya mendamaikan keduanya karena #1268#",
+      "mereka sudah pernah diupayakan rukun karena #1268#"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-upaya-keluarga",
+   "pokok": "pp-upaya-damai",
+   "urutan": 151,
+   "tingkat": "inti",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kehadiran": "kontradiktoir"
+   },
+   "teks": "Apakah sudah ada upaya dari keluarga untuk merukunkan #0046# dengan #0047# dan bagaimana tanggapan mereka ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "1268"
+   ],
+   "hal": "upaya keluarga merukunkan mereka",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "keluarga sudah berupaya merukunkan namun tidak berhasil",
+     "saksi1": [
+      "upaya merukunkan itu sudah ada karena #1268#",
+      "sudah ada usaha mendamaikan mereka sebab #1268#",
+      "benar sudah pernah diupayakan perdamaian karena #1268#",
+      "perdamaian pernah diusahakan karena #1268#"
+     ],
+     "saksi2": [
+      "upaya damai itu pernah ditempuh karena #1268#",
+      "usaha merukunkan mereka memang ada sebab #1268#",
+      "betul ada upaya mendamaikan keduanya karena #1268#",
+      "mereka sudah pernah diupayakan rukun karena #1268#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "saksi menyebut ada atau tidaknya upaya merukunkan berbeda dari saksi lain; versi A: sudah ada upaya; versi B: belum pernah ada upaya",
+     "saksi1": [
+      "sudah ada upaya merukunkan mereka karena #1268#",
+      "keluarga telah merukunkan #0046# dan #0047# sebab #1268#",
+      "saya pernah berupaya merukunkan mereka karena #1268#",
+      "upaya damai sudah ditempuh karena #1268#"
+     ],
+     "saksi2": [
+      "belum pernah ada yang berupaya merukunkan mereka dan #1268# tidak benar",
+      "setahu saya keluarga belum pernah merukunkan #0046# dan #0047# sehingga #1268# tidak saya ketahui",
+      "tidak pernah ada upaya merukunkan keduanya walau tertulis #1268#",
+      "belum ada upaya damai dari keluarga padahal disebut #1268#"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-upaya-saksi",
+   "pokok": "pp-upaya-damai",
+   "urutan": 160,
+   "tingkat": "inti",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi sendiri pernah berusaha merukunkan #0046# dan #0047# ?",
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "upaya saksi merukunkan mereka",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi sendiri pernah berusaha merukunkan namun tidak berhasil",
+     "saksi1": [
+      "saya pernah menasihati dan berusaha merukunkan mereka namun tidak berhasil",
+      "saya sendiri sudah mencoba merukunkan keduanya tetapi gagal",
+      "saya turut mendamaikan mereka namun usaha itu tidak membuahkan hasil",
+      "saya sudah beberapa kali berupaya merukunkan #0046# dan #0047# tetapi tidak berhasil"
+     ],
+     "saksi2": [
+      "saya ikut menasihati keduanya supaya rukun namun gagal",
+      "usaha saya mendamaikan mereka tidak berhasil",
+      "saya pernah mencoba mempertemukan dan merukunkan mereka tetapi tidak berhasil",
+      "saya sudah berupaya mendamaikan mereka akan tetapi hasilnya gagal"
+     ]
+    },
+    "berbeda": {
+     "maksud": "saksi menyebut ia pernah atau belum pernah merukunkan, berbeda dari saksi lain; versi A: pernah; versi B: belum pernah",
+     "saksi1": [
+      "saya pernah menasihati dan berusaha merukunkan mereka",
+      "saya sendiri sudah mencoba merukunkan keduanya",
+      "saya turut mendamaikan mereka beberapa kali",
+      "saya sudah berupaya merukunkan #0046# dan #0047#"
+     ],
+     "saksi2": [
+      "saya belum pernah ikut merukunkan mereka",
+      "saya sendiri tidak pernah mencoba mendamaikan keduanya",
+      "sampai sekarang saya belum berupaya merukunkan #0046# dan #0047#",
+      "saya tidak ikut mendamaikan mereka sama sekali"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-sanggup-damai",
+   "pokok": "pp-upaya-damai",
+   "urutan": 170,
+   "tingkat": "inti",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi masih sanggup mendamaikan #0046# dan #0047# ?",
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "kesanggupan saksi mendamaikan mereka",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan tidak sanggup lagi mendamaikan",
+     "saksi1": [
+      "saya tidak sanggup lagi",
+      "saya sudah tidak sanggup lagi mendamaikan mereka",
+      "saya tak sanggup lagi merukunkan keduanya",
+      "mendamaikan mereka sudah tidak sanggup lagi saya lakukan"
+     ],
+     "saksi2": [
+      "saya sudah tidak mampu lagi mendamaikan keduanya",
+      "saya menyerah mendamaikan mereka karena sudah tidak sanggup",
+      "upaya saya untuk merukunkan mereka sudah sampai batas dan tidak sanggup lagi",
+      "saya sudah angkat tangan dan tidak sanggup lagi merukunkan mereka"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-a-pihak-ketiga",
+   "pokok": "pp-alasan-a",
+   "urutan": 200,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "A",
+    "perilakuA": "pihak-ketiga"
+   },
+   "teks": "Apakah saksi mengetahui {pelaku} berhubungan dengan orang lain di luar pernikahan ?",
+   "variabelAbt": [],
+   "hal": "hubungan {pelaku} dengan orang lain di luar pernikahan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui pihak itu menjalin hubungan dengan orang lain di luar pernikahan",
+     "saksi1": [
+      "saya mengetahui {pelaku} menjalin hubungan dengan orang lain di luar pernikahan dan saya melihatnya sendiri",
+      "saya pernah melihat sendiri {pelaku} berhubungan dengan orang lain di luar pernikahannya",
+      "benar {pelaku} berhubungan dengan orang lain di luar pernikahan sebagaimana saya lihat sendiri",
+      "{pelaku} menjalin hubungan dengan orang lain di luar pernikahan yang saya saksikan sendiri"
+     ],
+     "saksi2": [
+      "saya sendiri yang melihat {pelaku} dekat dengan orang lain di luar pernikahannya",
+      "{pelaku} saya saksikan berhubungan dengan orang di luar pernikahan",
+      "yang saya lihat langsung {pelaku} menjalin hubungan dengan orang lain di luar pernikahan",
+      "saya menyaksikan sendiri {pelaku} berhubungan dengan pihak lain di luar pernikahannya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "saksi menyebut ada atau tidaknya hubungan dengan orang lain berbeda dari saksi lain; versi A: ada; versi B: tidak pernah dilihat",
+     "saksi1": [
+      "saya melihat sendiri {pelaku} berhubungan dengan orang lain di luar pernikahan",
+      "benar {pelaku} menjalin hubungan dengan orang lain menurut yang saya saksikan",
+      "{pelaku} berhubungan dengan orang di luar pernikahannya dan saya lihat sendiri",
+      "saya pernah menyaksikan {pelaku} bersama orang lain di luar pernikahannya"
+     ],
+     "saksi2": [
+      "saya belum pernah melihat {pelaku} berhubungan dengan orang lain",
+      "setahu saya {pelaku} tidak menjalin hubungan dengan orang lain",
+      "tidak pernah saya saksikan {pelaku} bersama orang lain di luar pernikahannya",
+      "saya tidak pernah menyaksikan {pelaku} berhubungan dengan pihak lain"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-a-mabuk",
+   "pokok": "pp-alasan-a",
+   "urutan": 210,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "A",
+    "perilakuA": "mabuk"
+   },
+   "teks": "Apakah saksi pernah melihat {pelaku} mabuk-mabukan ?",
+   "variabelAbt": [],
+   "hal": "kebiasaan {pelaku} mabuk-mabukan",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi pernah melihat sendiri pihak itu mabuk-mabukan",
+     "saksi1": [
+      "saya pernah melihat sendiri {pelaku} mabuk-mabukan",
+      "saya menyaksikan {pelaku} minum minuman keras sampai mabuk",
+      "benar {pelaku} suka mabuk-mabukan sebagaimana saya lihat sendiri",
+      "{pelaku} sering saya lihat dalam keadaan mabuk"
+     ],
+     "saksi2": [
+      "saya sendiri melihat {pelaku} mabuk karena minuman keras",
+      "{pelaku} saya saksikan minum minuman beralkohol hingga mabuk",
+      "yang saya lihat langsung {pelaku} sering pulang dalam keadaan mabuk",
+      "saya menyaksikan sendiri {pelaku} mabuk-mabukan"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-a-obat",
+   "pokok": "pp-alasan-a",
+   "urutan": 220,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "A",
+    "perilakuA": "obat-terlarang"
+   },
+   "teks": "Apakah saksi pernah melihat {pelaku} menggunakan obat terlarang ?",
+   "variabelAbt": [],
+   "hal": "penggunaan obat terlarang oleh {pelaku}",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi pernah melihat sendiri pihak itu menggunakan obat terlarang",
+     "saksi1": [
+      "saya pernah melihat sendiri {pelaku} menggunakan obat terlarang",
+      "saya menyaksikan {pelaku} memakai narkotika",
+      "benar {pelaku} memakai obat terlarang sebagaimana saya lihat sendiri",
+      "{pelaku} saya lihat menggunakan obat terlarang"
+     ],
+     "saksi2": [
+      "saya sendiri melihat {pelaku} memakai obat-obatan terlarang",
+      "{pelaku} saya saksikan menggunakan zat terlarang",
+      "yang saya lihat langsung {pelaku} mengonsumsi obat terlarang",
+      "saya menyaksikan sendiri {pelaku} memakai barang terlarang"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-a-judi",
+   "pokok": "pp-alasan-a",
+   "urutan": 230,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "A",
+    "perilakuA": "judi"
+   },
+   "teks": "Apakah saksi pernah melihat {pelaku} berjudi ?",
+   "variabelAbt": [],
+   "hal": "perjudian oleh {pelaku}",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi pernah melihat sendiri pihak itu berjudi",
+     "saksi1": [
+      "saya pernah melihat sendiri {pelaku} bermain judi",
+      "saya menyaksikan {pelaku} berjudi",
+      "benar {pelaku} suka berjudi sebagaimana saya lihat sendiri",
+      "{pelaku} sering saya lihat sedang berjudi"
+     ],
+     "saksi2": [
+      "saya sendiri menyaksikan {pelaku} duduk bermain judi",
+      "{pelaku} saya saksikan duduk berjudi bersama orang lain",
+      "yang saya lihat langsung {pelaku} berjudi dan kalah uang",
+      "saya menyaksikan sendiri {pelaku} berjudi"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-b-lama-pergi",
+   "pokok": "pp-alasan-b",
+   "urutan": 240,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "B"
+   },
+   "teks": "Sudah berapa lama {pelaku} meninggalkan {korban} ?",
+   "variabelAbt": [
+    "9944"
+   ],
+   "hal": "lamanya {pelaku} meninggalkan {korban}",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan lamanya pihak itu meninggalkan pasangannya, yaitu dua tahun atau lebih",
+     "saksi1": [
+      "{pelaku} sudah meninggalkan {korban} selama kurang lebih #9944#",
+      "kepergian {pelaku} dari {korban} sudah berlangsung sekitar #9944#",
+      "sampai sekarang {pelaku} pergi dari {korban} selama kurang lebih #9944#",
+      "sudah sekitar #9944# lamanya {pelaku} meninggalkan {korban}"
+     ],
+     "saksi2": [
+      "{pelaku} pergi dari {korban} selama sekitar #9944#",
+      "{korban} ditinggal {pelaku} hingga kini selama lebih kurang #9944#",
+      "hingga kini {pelaku} tidak kembali kepada {korban} selama kurang lebih #9944#",
+      "kepergian {pelaku} meninggalkan {korban} telah berjalan sekitar #9944#"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-b-tanpa-izin",
+   "pokok": "pp-alasan-b",
+   "urutan": 250,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "B"
+   },
+   "teks": "Apakah kepergian {pelaku} atas izin {korban} atau karena hal di luar kemampuannya ?",
+   "variabelAbt": [],
+   "hal": "alasan kepergian {pelaku}",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kepergian terjadi tanpa izin dan bukan karena hal di luar kemampuan",
+     "saksi1": [
+      "{pelaku} pergi tanpa izin {korban} dan bukan karena hal di luar kemampuannya",
+      "kepergian {pelaku} tanpa sepengetahuan dan izin {korban} serta bukan karena keadaan yang memaksa",
+      "{pelaku} meninggalkan {korban} tanpa izin dan tanpa alasan yang memaksa",
+      "izin dari {korban} tidak ada dan kepergian {pelaku} bukan karena sesuatu di luar kemampuannya"
+     ],
+     "saksi2": [
+      "{korban} tidak pernah memberi izin atas kepergian {pelaku} dan tidak ada keadaan yang memaksa",
+      "{pelaku} pergi tanpa persetujuan {korban} dan bukan karena terpaksa",
+      "tidak ada izin dari {korban} untuk kepergian {pelaku} dan tidak ada halangan di luar kemampuannya",
+      "kepergian {pelaku} dilakukan tanpa seizin {korban} dan tanpa sebab yang memaksa"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-b-mencari",
+   "pokok": "pp-alasan-b",
+   "urutan": 260,
+   "tingkat": "tambahan",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "B"
+   },
+   "teks": "Apakah {korban} pernah berusaha mencari atau menghubungi {pelaku} ?",
+   "variabelAbt": [],
+   "hal": "usaha {korban} mencari {pelaku}",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pihak yang ditinggalkan sudah berusaha mencari atau menghubungi",
+     "saksi1": [
+      "{korban} pernah berusaha mencari dan menghubungi {pelaku} tetapi tidak membuahkan hasil",
+      "{korban} sudah mencoba mencari {pelaku} namun tidak berhasil",
+      "saya mengetahui {korban} berupaya menghubungi {pelaku} tetapi tidak ada tanggapan",
+      "usaha {korban} mencari {pelaku} sudah dilakukan walau tidak berhasil"
+     ],
+     "saksi2": [
+      "{korban} telah berusaha menemui dan menghubungi {pelaku} tetapi gagal",
+      "{korban} mencari keberadaan {pelaku} namun tidak menemukannya",
+      "saya tahu {korban} berusaha menghubungi {pelaku} akan tetapi tidak dijawab",
+      "{korban} sudah berupaya menemui {pelaku} tetapi tidak bertemu"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-c-penjara",
+   "pokok": "pp-alasan-c",
+   "urutan": 270,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "C"
+   },
+   "teks": "Apakah {pelaku} dihukum penjara dan berapa lama ?",
+   "variabelAbt": [],
+   "hal": "hukuman penjara {pelaku}",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pihak itu dihukum penjara selama lima tahun atau lebih setelah perkawinan",
+     "saksi1": [
+      "{pelaku} dihukum penjara selama {lama} sejak {sejak}",
+      "saya mengetahui {pelaku} menjalani pidana penjara selama {lama} sejak {sejak}",
+      "sejak {sejak} {pelaku} menjalani hukuman penjara selama {lama}",
+      "pidana penjara {pelaku} berlangsung selama {lama} terhitung {sejak}"
+     ],
+     "saksi2": [
+      "{pelaku} menjalani hukuman kurungan selama {lama} mulai {sejak}",
+      "hukuman bagi {pelaku} berupa penjara selama {lama} dan dijalani sejak {sejak}",
+      "{pelaku} ditahan menjalani pidana selama {lama} terhitung sejak {sejak}",
+      "terhitung {sejak} {pelaku} dipenjara selama {lama}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-c-akibat",
+   "pokok": "pp-alasan-c",
+   "urutan": 280,
+   "tingkat": "tambahan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "C"
+   },
+   "teks": "Bagaimana keadaan rumah tangga selama {pelaku} dipenjara ?",
+   "variabelAbt": [],
+   "hal": "keadaan rumah tangga selama {pelaku} dipenjara",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan akibat pemenjaraan terhadap rumah tangga dan kewajiban pihak itu",
+     "saksi1": [
+      "selama {pelaku} dipenjara rumah tangga mereka tidak dapat berjalan sebagaimana mestinya",
+      "dengan dipenjaranya {pelaku} kewajiban dalam rumah tangga tidak dapat dijalankan",
+      "kehidupan rumah tangga mereka terhenti selama {pelaku} berada di penjara",
+      "{pelaku} tidak dapat menjalankan kewajibannya dalam rumah tangga selama dipenjara"
+     ],
+     "saksi2": [
+      "rumah tangga mereka tidak terurus selama {pelaku} menjalani hukuman",
+      "sejak {pelaku} dipenjara tanggung jawab rumah tangga tidak berjalan lagi",
+      "selama masa hukuman {pelaku} kehidupan rumah tangga terganggu",
+      "dengan {pelaku} berada di dalam penjara kewajiban sebagai pasangan tidak terlaksana"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-d-kekerasan",
+   "pokok": "pp-alasan-d",
+   "urutan": 290,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "D"
+   },
+   "teks": "Apakah saksi pernah melihat {pelaku} memukul atau menyakiti {korban} ?",
+   "variabelAbt": [],
+   "hal": "kekerasan {pelaku} terhadap {korban}",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi pernah melihat sendiri pihak itu memukul atau menyakiti pasangannya",
+     "saksi1": [
+      "saya pernah melihat sendiri {pelaku} memukul {korban}",
+      "saya menyaksikan {pelaku} menyakiti {korban} secara fisik",
+      "benar {pelaku} memukul {korban} sebagaimana saya lihat sendiri",
+      "{pelaku} saya lihat melakukan kekerasan terhadap {korban}"
+     ],
+     "saksi2": [
+      "saya sendiri melihat {pelaku} memukuli {korban}",
+      "{pelaku} saya saksikan bersikap kasar dan menyakiti {korban}",
+      "yang saya lihat langsung {pelaku} menganiaya {korban}",
+      "saya menyaksikan sendiri {pelaku} berbuat kasar kepada {korban}"
+     ]
+    },
+    "berbeda": {
+     "maksud": "saksi menyebut ada atau tidaknya kekerasan berbeda dari saksi lain; versi A: pernah melihat; versi B: tidak pernah melihat",
+     "saksi1": [
+      "saya pernah melihat {pelaku} memukul {korban}",
+      "saya menyaksikan sendiri {pelaku} menyakiti {korban}",
+      "{pelaku} saya lihat melakukan kekerasan kepada {korban}",
+      "saya sendiri melihat {pelaku} berbuat kasar terhadap {korban}"
+     ],
+     "saksi2": [
+      "saya belum pernah melihat {pelaku} memukul {korban}",
+      "saya tidak pernah menyaksikan {pelaku} menyakiti {korban}",
+      "tidak pernah saya lihat {pelaku} melakukan kekerasan kepada {korban}",
+      "saya tidak melihat sendiri {pelaku} berbuat kasar terhadap {korban}"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-d-akibat",
+   "pokok": "pp-alasan-d",
+   "urutan": 300,
+   "tingkat": "tambahan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "D"
+   },
+   "teks": "Apa akibat perbuatan {pelaku} itu terhadap {korban} ?",
+   "variabelAbt": [],
+   "hal": "akibat perbuatan {pelaku} terhadap {korban}",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan akibat perbuatan itu bagi pihak yang menjadi korban",
+     "saksi1": [
+      "akibat perbuatan {pelaku} itu {korban} mengalami luka dan merasa takut",
+      "{korban} menderita sakit dan ketakutan karena perbuatan {pelaku}",
+      "perbuatan {pelaku} membuat {korban} terluka dan trauma",
+      "karena perbuatan {pelaku} {korban} kesakitan dan takut tinggal bersama"
+     ],
+     "saksi2": [
+      "{korban} luka-luka dan ketakutan akibat tindakan {pelaku}",
+      "tindakan {pelaku} menyebabkan {korban} merasa tertekan dan sakit",
+      "saya melihat {korban} terluka dan takut sesudah diperlakukan kasar oleh {pelaku}",
+      "{korban} menanggung sakit dan rasa takut karena sikap {pelaku}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-e-cacat",
+   "pokok": "pp-alasan-e",
+   "urutan": 310,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "E"
+   },
+   "teks": "Apakah {pelaku} menderita cacat badan atau penyakit dan sejak kapan ?",
+   "variabelAbt": [],
+   "hal": "cacat badan atau penyakit {pelaku}",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pihak itu menderita cacat badan atau penyakit dan sejak kapan",
+     "saksi1": [
+      "{pelaku} menderita {isi} sejak {sejak}",
+      "saya mengetahui {pelaku} mengidap {isi} terhitung sejak {sejak}",
+      "sejak {sejak} {pelaku} sakit {isi}",
+      "{pelaku} mengalami {isi} yang dideritanya sejak {sejak}"
+     ],
+     "saksi2": [
+      "{pelaku} diketahui menderita {isi} mulai {sejak}",
+      "penyakit atau cacat {pelaku} berupa {isi} dan sudah ada sejak {sejak}",
+      "sejak {sejak} {pelaku} mengidap {isi} sepengetahuan saya",
+      "{pelaku} terkena {isi} terhitung {sejak}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-e-kewajiban",
+   "pokok": "pp-alasan-e",
+   "urutan": 320,
+   "tingkat": "tambahan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "E"
+   },
+   "teks": "Apakah cacat atau penyakit itu membuat {pelaku} tidak dapat menjalankan kewajibannya sebagai suami atau istri ?",
+   "variabelAbt": [],
+   "hal": "akibat cacat atau penyakit {pelaku} bagi kewajibannya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan cacat atau penyakit itu menghalangi pihak itu menjalankan kewajibannya sebagai suami atau istri",
+     "saksi1": [
+      "karena penyakit itu {pelaku} tidak dapat menjalankan kewajibannya dalam rumah tangga",
+      "keadaan {pelaku} membuatnya tidak mampu memenuhi kewajiban sebagai pasangan",
+      "akibat cacat atau penyakitnya {pelaku} tidak sanggup melaksanakan kewajiban suami istri",
+      "{pelaku} tidak bisa lagi menunaikan kewajibannya sebagai pasangan karena keadaan badannya"
+     ],
+     "saksi2": [
+      "penyakit yang diderita {pelaku} menghalanginya menjalankan kewajiban dalam rumah tangga",
+      "{pelaku} tidak mampu memenuhi kewajiban rumah tangga akibat penyakitnya",
+      "dengan kondisi badannya {pelaku} tidak dapat melaksanakan kewajiban sebagai pasangan",
+      "kewajiban suami istri tidak dapat ditunaikan {pelaku} karena cacat atau sakitnya"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-g-taklik",
+   "pokok": "pp-alasan-g",
+   "urutan": 330,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "G"
+   },
+   "teks": "Apakah saksi mengetahui #0046# melanggar taklik talak yang diucapkannya ?",
+   "variabelAbt": [
+    "0046"
+   ],
+   "hal": "pelanggaran taklik talak oleh #0046#",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui suami melanggar taklik talak yang diucapkannya setelah akad nikah",
+     "saksi1": [
+      "saya mengetahui #0046# melanggar taklik talak yang ia ucapkan setelah akad nikah",
+      "benar #0046# telah melanggar sighat taklik talak yang diucapkannya",
+      "#0046# tidak menepati taklik talak yang ia ikrarkan sesudah akad",
+      "pelanggaran taklik talak oleh #0046# saya ketahui sendiri"
+     ],
+     "saksi2": [
+      "#0046# melanggar janji taklik talak yang dibacakannya setelah menikah",
+      "yang saya ketahui #0046# tidak mematuhi taklik talak yang telah diucapkan",
+      "taklik talak yang diikrarkan #0046# sesudah akad telah dilanggarnya",
+      "saya tahu #0046# mengingkari taklik talak yang ia bacakan"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-g-bentuk",
+   "pokok": "pp-alasan-g",
+   "urutan": 340,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "G"
+   },
+   "teks": "Bentuk pelanggaran apa yang dilakukan #0046# ?",
+   "variabelAbt": [
+    "0046"
+   ],
+   "hal": "bentuk pelanggaran taklik talak oleh #0046#",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan bentuk pelanggaran taklik talak yang dilakukan suami",
+     "saksi1": [
+      "bentuk pelanggaran yang dilakukan #0046# adalah {isi}",
+      "pelanggaran taklik talak oleh #0046# berupa {isi}",
+      "#0046# melanggar dengan cara {isi}",
+      "yang dilakukan #0046# sebagai pelanggaran yaitu {isi}"
+     ],
+     "saksi2": [
+      "#0046# melanggar taklik talak dalam bentuk {isi}",
+      "pelanggaran yang saya ketahui dari #0046# adalah {isi}",
+      "wujud pelanggaran oleh #0046# yaitu {isi}",
+      "tindakan #0046# yang melanggar taklik talak berupa {isi}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-h-murtad",
+   "pokok": "pp-alasan-h",
+   "urutan": 350,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "H"
+   },
+   "teks": "Apakah {pelaku} berpindah agama dan sejak kapan ?",
+   "variabelAbt": [],
+   "hal": "perpindahan agama {pelaku}",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pihak itu berpindah agama dan sejak kapan",
+     "saksi1": [
+      "{pelaku} berpindah agama sejak {sejak}",
+      "saya mengetahui {pelaku} telah pindah agama terhitung {sejak}",
+      "sejak {sejak} {pelaku} tidak lagi menganut agama semula",
+      "{pelaku} beralih agama mulai {sejak}"
+     ],
+     "saksi2": [
+      "{pelaku} pindah agama dan itu terjadi sejak {sejak}",
+      "perpindahan agama {pelaku} saya ketahui terjadi pada {sejak}",
+      "mulai {sejak} {pelaku} memeluk agama yang lain",
+      "terhitung {sejak} {pelaku} keluar dari agamanya yang semula"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-h-akibat",
+   "pokok": "pp-alasan-h",
+   "urutan": 360,
+   "tingkat": "tambahan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "H"
+   },
+   "teks": "Apakah perpindahan agama itu menyebabkan ketidakrukunan dalam rumah tangga ?",
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "akibat perpindahan agama bagi kerukunan rumah tangga",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan perpindahan agama menyebabkan ketidakrukunan dalam rumah tangga",
+     "saksi1": [
+      "sejak pindah agama itu rumah tangga mereka tidak rukun lagi",
+      "perpindahan agama tersebut membuat keduanya sering berselisih",
+      "karena beralih agama itu kerukunan rumah tangga mereka terganggu",
+      "setelah perpindahan agama itu #0046# dan #0047# tidak lagi rukun"
+     ],
+     "saksi2": [
+      "pindah agamanya menimbulkan perselisihan di antara keduanya",
+      "rumah tangga mereka retak sesudah peralihan agama itu",
+      "peralihan agama tersebut menyebabkan mereka sering bertengkar",
+      "kerukunan keduanya hilang akibat perpindahan agama itu"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-in-akad",
+   "pokok": "pp-itsbat",
+   "urutan": 470,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "itsbat-nikah"
+   },
+   "teks": "Kapan dan di mana #0046# dan #0047# menikah ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "5105",
+    "5197"
+   ],
+   "hal": "waktu dan tempat pernikahan mereka",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan waktu dan tempat pernikahan",
+     "saksi1": [
+      "#0046# dan #0047# menikah pada #5197# di #5105#",
+      "pernikahan mereka berlangsung pada #5197# bertempat di #5105#",
+      "akad nikah keduanya dilaksanakan #5197# di #5105#",
+      "mereka menikah di #5105# pada #5197#"
+     ],
+     "saksi2": [
+      "keduanya melangsungkan pernikahan pada #5197# di #5105#",
+      "akad nikah #0046# dan #0047# terjadi di #5105# pada #5197#",
+      "pada #5197# mereka berdua menikah di #5105#",
+      "pernikahan #0046# dengan #0047# dilakukan pada #5197# bertempat di #5105#"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-in-wali",
+   "pokok": "pp-itsbat",
+   "urutan": 480,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "itsbat-nikah"
+   },
+   "teks": "Siapa yang bertindak sebagai wali dan siapa saksi nikahnya ?",
+   "variabelAbt": [
+    "0650",
+    "0651",
+    "1217",
+    "8087"
+   ],
+   "hal": "wali dan saksi nikah mereka",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan wali nikah dan saksi nikah",
+     "saksi1": [
+      "yang menikahkan adalah #8087# dengan wali #1217# dan saksi nikah #0650# serta #0651#",
+      "wali nikahnya #1217# dan yang menikahkan #8087# disaksikan #0650# dan #0651#",
+      "pernikahan itu dinikahkan oleh #8087# dengan wali #1217# serta saksi #0650# dan #0651#",
+      "saksi nikahnya adalah #0650# dan #0651# sedangkan wali #1217# dan penghulunya #8087#"
+     ],
+     "saksi2": [
+      "yang bertindak sebagai wali adalah #1217# dan penghulunya #8087# dengan saksi #0650# dan #0651#",
+      "akad dilakukan oleh #8087# dengan wali #1217# dan disaksikan #0650# serta #0651#",
+      "wali dalam pernikahan itu #1217# dan saksinya #0650# juga #0651# sedangkan yang menikahkan #8087#",
+      "pernikahan dihadiri saksi #0650# dan #0651# dengan wali #1217# yang dinikahkan oleh #8087#"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-in-mahar",
+   "pokok": "pp-itsbat",
+   "urutan": 490,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "itsbat-nikah"
+   },
+   "teks": "Apa mas kawin yang diberikan pada saat akad nikah ?",
+   "variabelAbt": [
+    "1001"
+   ],
+   "hal": "mas kawin dalam pernikahan mereka",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan mas kawin pernikahan",
+     "saksi1": [
+      "mas kawin yang diberikan pada saat akad nikah berupa #1001#",
+      "pada akad nikah dibayarkan mas kawin yaitu #1001#",
+      "mahar dalam pernikahan itu adalah #1001#",
+      "saat akad mas kawinnya #1001#"
+     ],
+     "saksi2": [
+      "mahar yang diserahkan ketika akad nikah berupa #1001#",
+      "ketika menikah mempelai memberikan mas kawin #1001#",
+      "mas kawin pernikahan mereka yaitu #1001#",
+      "dalam akad nikah itu maharnya #1001#"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-in-halangan",
+   "pokok": "pp-itsbat",
+   "urutan": 500,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "itsbat-nikah"
+   },
+   "teks": "Apakah ada halangan perkawinan dan mengapa pernikahan itu tidak tercatat ?",
+   "variabelAbt": [
+    "1358"
+   ],
+   "hal": "halangan perkawinan dan sebab tidak tercatat",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan tidak ada halangan perkawinan dan sebab pernikahan tidak dicatat",
+     "saksi1": [
+      "tidak ada halangan untuk keduanya menikah dan pernikahan itu tidak dicatat karena #1358#",
+      "sepengetahuan saya tidak ada larangan bagi mereka menikah dan tidak tercatat sebab #1358#",
+      "keduanya tidak terhalang untuk menikah dan tidak tercatat dikarenakan #1358#",
+      "tidak ada halangan perkawinan di antara mereka dan pencatatan tidak dilakukan karena #1358#"
+     ],
+     "saksi2": [
+      "tidak ada hubungan yang menghalangi pernikahan mereka dan tidak dicatat karena #1358#",
+      "pernikahan itu tidak terhalang apa pun dan tidak tercatat sebab #1358#",
+      "saya mengetahui tidak ada penghalang bagi keduanya dan tidak dicatat dikarenakan #1358#",
+      "tidak ada larangan perkawinan di antara keduanya sedangkan ketiadaan catatan disebabkan #1358#"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-penutup",
+   "pokok": "pp-penutup",
+   "urutan": 900,
+   "tingkat": "inti",
+   "kelompok": "penutup",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+   "variabelAbt": [],
+   "hal": "keterangan tambahan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan keterangannya sudah cukup",
+     "saksi1": [
+      "sudah cukup",
+      "cukup sekian dari saya",
+      "keterangan saya sudah cukup",
+      "tidak ada lagi yang ingin saya sampaikan"
+     ],
+     "saksi2": [
+      "sudah tidak ada tambahan dari saya",
+      "itu saja yang dapat saya sampaikan",
+      "hanya itu keterangan saya",
+      "sudah cukup keterangan dari saya"
+     ]
+    }
+   }
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Keterangan saksi harus menyebut sebab pengetahuannya; pendapat atau dugaan bukan kesaksian.",
+  "Keterangan seorang saksi saja tidak cukup; periksa jumlah saksi dan kesesuaian keterangannya.",
+  "Pilihan 'ragu' dan 'tahu sebagian' tidak dapat dijadikan dasar untuk mengisi tanggal atau lamanya pisah; isi sendiri bila perlu.",
+  "Jawaban bertanda kuning perlu diperiksa dulu sebelum disimpan."
+ ]
+}

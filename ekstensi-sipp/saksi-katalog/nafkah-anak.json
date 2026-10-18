@@ -1,0 +1,1535 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "nafkah-anak",
+ "judul": "Nafkah anak",
+ "versi": 1,
+ "penulis": "SAKSI-E",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "743",
+   "350"
+  ]
+ },
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [
+  {
+   "folder": "6c Nafkah Anak - BAS",
+   "berkas": "BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P",
+   "variabelSaksi": [
+    "2021",
+    "2022",
+    "2031",
+    "6124",
+    "8932"
+   ],
+   "catatan": "paket abt-nafkah-anak-derry (I23, 18 Okt; belum terpasang di server; menu 165/166, jenis 743); saksi P lewat variabel tanya_jawab (BAS memakai 5058/5059/5060 yang berbagi data); [6a] 3 saksi, [6b] 4 saksi, [6c] 5 saksi sama"
+  },
+  {
+   "folder": "6c Nafkah Anak - BAS",
+   "berkas": "BAS ALUR 04 [7] BAS 7 P & T Hadir - Pembuktian T",
+   "variabelSaksi": [
+    "2023",
+    "2024",
+    "2032",
+    "8942"
+   ],
+   "catatan": "saksi T (BAS memakai 6120/6121/6122 dan 8921/8941); [7a] 3 saksi, [7b] 4 saksi"
+  },
+  {
+   "folder": "6c Nafkah Anak - BAS",
+   "berkas": "BAS ALUR 46 Nafkah Anak - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek",
+   "variabelSaksi": [
+    "2021",
+    "2022"
+   ],
+   "catatan": "verstek: hanya saksi P (2 saksi); varian ... Verstek Kabul Sebagian untuk petitum sebagian"
+  }
+ ],
+ "dasarHukum": [
+  {
+   "id": "dh-sebab-pengetahuan",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 102: syarat materiil saksi (Pasal 308 ayat (2) RBg)",
+   "uraian": "keterangan saksi harus tentang peristiwa yang dialami, didengar atau dilihat sendiri dan menyebut sumber pengetahuannya; pendapat atau dugaan bukan kesaksian",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-de-auditu",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (7)",
+   "uraian": "keterangan yang diperoleh saksi dari orang lain (de auditu) dapat dipakai hanya sebagai sumber persangkaan",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-unus-testis",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (8)",
+   "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak cukup (satu saksi bukan saksi)",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-larangan-saksi",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 100-101 butir (3)-(4) (Pasal 172 RBg)",
+   "uraian": "keluarga sedarah dan semenda garis lurus serta suami atau istri salah satu pihak tidak dapat didengar sebagai saksi; pengecualian untuk perkara tentang keadaan menurut hukum sipil seseorang. Penilaian ada pada hakim",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-kesesuaian-saksi",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (2) (Pasal 309 RBg)",
+   "uraian": "hakim menilai kesesuaian keterangan saksi yang satu dengan lainnya dan alasan saksi memberi keterangan",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-uu1-41-45-nafkah",
+   "rujukan": "Pasal 41 huruf b dan c serta Pasal 45 ayat (1)-(2) UU 1/1974 tentang Perkawinan",
+   "uraian": "bapak bertanggung jawab atas semua biaya pemeliharaan dan pendidikan anak; bila bapak dalam kenyataan tidak dapat memenuhi, pengadilan dapat menentukan ibu ikut memikul biaya; pengadilan dapat mewajibkan bekas suami memberi biaya penghidupan; kewajiban orang tua berlaku sampai anak kawin atau dapat berdiri sendiri dan terus berlaku meskipun perkawinan putus",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 1/1974 dalam buku KHI terbitan Kemenag (dibaca agen I23, 18 Okt 2026)"
+  },
+  {
+   "id": "dh-penjelasan-49-12",
+   "rujukan": "Penjelasan Pasal 49 huruf a angka 12 UU 7/1989 sebagaimana diubah UU 3/2006",
+   "uraian": "ibu dapat memikul biaya pemeliharaan dan pendidikan anak bilamana bapak yang seharusnya bertanggung jawab tidak mematuhinya; menjadi kewenangan pengadilan agama",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 3/2006 (peraturan.bpk.go.id, dibaca agen I23, 18 Okt 2026)"
+  },
+  {
+   "id": "dh-khi-80-4",
+   "rujukan": "Pasal 80 ayat (4) huruf b dan c Kompilasi Hukum Islam",
+   "uraian": "sesuai penghasilannya suami menanggung biaya perawatan dan pengobatan bagi istri dan anak serta biaya pendidikan bagi anak",
+   "status": "terverifikasi",
+   "sumber": "KHI terbitan Kemenag (dibaca agen I23)"
+  },
+  {
+   "id": "dh-khi-105-156",
+   "rujukan": "Pasal 105 huruf c dan Pasal 156 huruf d, e, f Kompilasi Hukum Islam",
+   "uraian": "biaya pemeliharaan ditanggung ayah; semua biaya hadhanah dan nafkah anak tanggung jawab ayah menurut kemampuannya sekurang-kurangnya sampai anak dewasa dan dapat mengurus diri sendiri (21 tahun); pengadilan dapat menetapkan jumlah biaya dengan mengingat kemampuan ayah",
+   "status": "terverifikasi",
+   "sumber": "KHI terbitan Kemenag (dibaca agen I23)"
+  },
+  {
+   "id": "dh-sema-2-2019-a",
+   "rujukan": "SEMA 2/2019 Rumusan Kamar Agama, Hukum Keluarga huruf a",
+   "uraian": "nafkah lampau (madliyah) anak yang dilalaikan ayahnya dapat digugat oleh ibunya atau orang yang secara nyata mengasuh anak",
+   "status": "terverifikasi",
+   "sumber": "Buku Kompilasi Rumusan Kamar Mahkamah Agung (dibaca agen I23)"
+  },
+  {
+   "id": "dh-sema-3-2018-b",
+   "rujukan": "SEMA 3/2018 Rumusan Kamar Agama, Hukum Keluarga huruf b",
+   "uraian": "dalam menetapkan nafkah anak hakim mempertimbangkan keadilan dan kepatutan dengan menggali fakta kemampuan ekonomi suami dan fakta kebutuhan dasar hidup anak",
+   "status": "terverifikasi",
+   "sumber": "Buku Kompilasi Rumusan Kamar Mahkamah Agung (dibaca agen I23)"
+  },
+  {
+   "id": "dh-sema-3-2015-14",
+   "rujukan": "SEMA 3/2015 Rumusan Kamar Agama angka 14",
+   "uraian": "pembebanan nafkah anak hendaknya diikuti penambahan 10% sampai 20% per tahun dari jumlah yang ditetapkan, di luar biaya pendidikan dan kesehatan",
+   "status": "terverifikasi",
+   "sumber": "Buku Kompilasi Rumusan Kamar Mahkamah Agung (dibaca agen I23)"
+  },
+  {
+   "id": "dh-sema-5-2021-sita",
+   "rujukan": "SEMA 5/2021 Rumusan Kamar Agama, Hukum Perkawinan huruf a dan SEMA 3/2015 angka 11",
+   "uraian": "demi kepentingan terbaik anak dapat dimohonkan penetapan sita atas harta suami sebagai jaminan nafkah anak dengan objek diuraikan rinci; sita harus atas harta yang sudah ada",
+   "status": "terverifikasi",
+   "sumber": "Buku Kompilasi Rumusan Kamar Mahkamah Agung (dibaca agen I23)"
+  },
+  {
+   "id": "dh-buku2-2026-25-27",
+   "rujukan": "Buku II Tahun 2026 aspek 25, 26 dan 27 (ringkasan perbandingan PTA Pontianak)",
+   "uraian": "standar biaya hidup minimal setempat dan pemotongan langsung penghasilan; nafkah lampau anak dapat digugat ibu atau pengasuh nyata; tambahan 10-20% per tahun, biaya pendidikan dan kesehatan, sita atas harta suami",
+   "status": "perlu-verifikasi",
+   "sumber": "berkas rujukan BUKU-II-2013-vs-2026-PTA-Pontianak.txt dari pengguna (ringkasan sekunder; naskah resmi Buku II 2026 belum ada). Isinya sejalan dengan SEMA di atas yang terverifikasi"
+  }
+ ],
+ "keadaan": {
+  "kehadiran": {
+   "sumber": "otomatis",
+   "nilai": [
+    "verstek",
+    "kontradiktoir",
+    "t-tidak-hadir-setelah-mediasi"
+   ],
+   "label": "Kehadiran Tergugat",
+   "bawaan": "kontradiktoir"
+  },
+  "jenisNafkah": {
+   "sumber": "borang",
+   "nilai": [
+    "ke-depan",
+    "lampau",
+    "pendidikan-kesehatan",
+    "kenaikan",
+    "sita-jaminan",
+    "pemotongan-penghasilan"
+   ],
+   "label": "Yang dituntut dalam gugatan",
+   "bawaan": [
+    "ke-depan"
+   ],
+   "jamak": true
+  },
+  "kemampuanAyah": {
+   "sumber": "borang",
+   "nilai": [
+    "mampu",
+    "terbatas"
+   ],
+   "label": "Kemampuan ekonomi ayah menurut gugatan",
+   "bawaan": "mampu"
+  },
+  "nafkahDiberikan": {
+   "sumber": "borang",
+   "nilai": [
+    "tidak",
+    "sebagian"
+   ],
+   "label": "Nafkah anak dari ayah selama ini",
+   "bawaan": "tidak"
+  },
+  "kedudukanPenggugat": {
+   "sumber": "borang",
+   "nilai": [
+    "ibu",
+    "pengasuh-lain"
+   ],
+   "label": "Kedudukan Penggugat terhadap anak",
+   "bawaan": "ibu"
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-hubungan-saksi",
+   "judul": "Hubungan saksi dengan para pihak",
+   "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal para pihak (sebab pengetahuan)",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-sebab-pengetahuan",
+    "dh-larangan-saksi",
+    "dh-unus-testis"
+   ]
+  },
+  {
+   "id": "pp-anak-ayah",
+   "judul": "Anak dan kewajiban ayah",
+   "uraian": "anak lahir dari perkawinan para pihak dan Tergugat adalah ayah kandung yang berkewajiban menanggung biaya anak",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-uu1-41-45-nafkah",
+    "dh-khi-105-156"
+   ]
+  },
+  {
+   "id": "pp-pengasuhan-nyata",
+   "judul": "Pengasuh nyata anak",
+   "uraian": "Penggugat atau orang yang secara nyata mengasuh anak, dan sejak kapan",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-sema-2-2019-a",
+    "dh-penjelasan-49-12"
+   ]
+  },
+  {
+   "id": "pp-kedudukan-penggugat",
+   "judul": "Kedudukan Penggugat bila bukan orang tua kandung",
+   "uraian": "hubungan pengasuh nyata dengan anak bila bukan ibu atau ayah kandung",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-sema-2-2019-a"
+   ],
+   "keadaan": {
+    "kedudukanPenggugat": "pengasuh-lain"
+   }
+  },
+  {
+   "id": "pp-kebutuhan-anak",
+   "judul": "Kebutuhan dasar anak",
+   "uraian": "kebutuhan hidup, sekolah dan kesehatan anak serta biayanya setiap bulan",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-sema-3-2018-b",
+    "dh-khi-80-4",
+    "dh-buku2-2026-25-27"
+   ]
+  },
+  {
+   "id": "pp-kemampuan-ayah",
+   "judul": "Kemampuan ekonomi ayah",
+   "uraian": "pekerjaan, penghasilan, harta dan kehidupan sehari-hari Tergugat sebagai ukuran kemampuan membayar",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-sema-3-2018-b",
+    "dh-khi-105-156"
+   ]
+  },
+  {
+   "id": "pp-kelalaian",
+   "judul": "Kelalaian memberi nafkah",
+   "uraian": "apakah Tergugat memberi nafkah anak, sejak kapan terhenti, dan upaya meminta nafkah",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-uu1-41-45-nafkah",
+    "dh-penjelasan-49-12"
+   ]
+  },
+  {
+   "id": "pp-nafkah-lampau",
+   "judul": "Nafkah lampau anak",
+   "uraian": "lamanya nafkah anak dilalaikan, siapa yang menanggung, dan jumlah yang dikeluarkan",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-sema-2-2019-a",
+    "dh-buku2-2026-25-27"
+   ],
+   "keadaan": {
+    "jenisNafkah": "lampau"
+   }
+  },
+  {
+   "id": "pp-pendidikan-kesehatan",
+   "judul": "Biaya pendidikan dan kesehatan",
+   "uraian": "biaya sekolah dan kesehatan anak di luar nafkah pokok",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-khi-80-4",
+    "dh-sema-3-2015-14"
+   ],
+   "keadaan": {
+    "jenisNafkah": "pendidikan-kesehatan"
+   }
+  },
+  {
+   "id": "pp-kenaikan",
+   "judul": "Kenaikan kebutuhan",
+   "uraian": "kebutuhan anak bertambah dari tahun ke tahun",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-sema-3-2015-14",
+    "dh-buku2-2026-25-27"
+   ],
+   "keadaan": {
+    "jenisNafkah": "kenaikan"
+   }
+  },
+  {
+   "id": "pp-sita",
+   "judul": "Harta Tergugat sebagai jaminan",
+   "uraian": "harta Tergugat yang sudah ada, letak dan atas nama siapa (bila sita jaminan dimohonkan)",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-sema-5-2021-sita"
+   ],
+   "keadaan": {
+    "jenisNafkah": "sita-jaminan"
+   }
+  },
+  {
+   "id": "pp-pemotongan",
+   "judul": "Tempat kerja Tergugat",
+   "uraian": "tempat Tergugat bekerja dan cara menerima penghasilan (bila pemotongan langsung dimohonkan)",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-buku2-2026-25-27"
+   ],
+   "keadaan": {
+    "jenisNafkah": "pemotongan-penghasilan"
+   }
+  },
+  {
+   "id": "pp-keadaan-anak",
+   "judul": "Keadaan anak",
+   "uraian": "keadaan anak selama nafkahnya dilalaikan",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-uu1-41-45-nafkah"
+   ]
+  },
+  {
+   "id": "pp-penutup",
+   "judul": "Penutup keterangan",
+   "uraian": "saksi menyatakan keterangannya telah cukup",
+   "wajib": false,
+   "dasarHukum": []
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-kenal",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 10,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi kenal dengan #0046# dan #0047# ?",
+   "teksVarian": [
+    "Apakah saksi mengenal #0046# dan #0047# ?",
+    "Apakah Saudara saksi kenal dengan #0046# serta #0047# ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "hubungan saksi dengan para pihak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal kedua pihak dan menyebut hubungannya dengan pihak",
+     "saksi1": [
+      "saya kenal dengan #0046# dan #0047# karena saya adalah {hubungan}",
+      "saya mengenal #0046# dan #0047# sebab saya ini {hubungan}",
+      "benar saya kenal kedua pihak yaitu #0046# dan #0047# dan saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya mengenal #0046# serta #0047#"
+     ],
+     "saksi2": [
+      "kedua pihak #0046# dan #0047# saya kenal dengan baik karena saya adalah {hubungan}",
+      "saya tahu dan kenal #0046# serta #0047# sebab hubungan saya dengan mereka adalah {hubungan}",
+      "saya lama mengenal #0046# berikut #0047# dan saya adalah {hubungan}",
+      "yang saya kenal adalah #0046# dan #0047# karena saya berkedudukan sebagai {hubungan}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-hubungan-pihak",
+   "pokok": "pp-anak-ayah",
+   "urutan": 20,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi tahu hubungan antara #0046#, #0047# dan anak bernama #8602# ?",
+   "teksVarian": [
+    "Apakah saksi tahu hubungan #0046# dan #0047# serta anak bernama #8602# ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8602"
+   ],
+   "hal": "hubungan para pihak dengan anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan para pihak dahulu suami istri yang sah, telah berpisah, dan anak itu anak mereka",
+     "saksi1": [
+      "#0046# dan #0047# dahulu suami istri yang sah dan sekarang telah bercerai dan anak bernama #8602# adalah anak mereka",
+      "saya tahu keduanya dulu suami istri yang menikah secara sah lalu berpisah dan anak bernama #8602# lahir dari perkawinan mereka",
+      "antara #0046# dengan #0047# dahulu terikat perkawinan sah yang telah berakhir dan anak bernama #8602# adalah buah perkawinan itu",
+      "benar #0046# dan #0047# dahulu suami istri sah yang kini bercerai dan anak bernama #8602# adalah anak mereka berdua"
+     ],
+     "saksi2": [
+      "hubungan #0046# dan #0047# dahulu suami istri sah yang telah berakhir dan anak bernama #8602# lahir dari perkawinan mereka",
+      "saya kenal betul bahwa dulu mereka berdua suami istri sah lalu bercerai dan anak bernama #8602# adalah anak keduanya",
+      "mereka adalah bekas suami istri yang dahulu menikah dengan sah dan anak bernama #8602# anak dari perkawinan itu",
+      "dahulu #0046# dan #0047# hidup sebagai suami istri sah dan telah putus perkawinannya sedangkan anak bernama #8602# anak mereka"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-ayah-kandung",
+   "pokok": "pp-anak-ayah",
+   "urutan": 30,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Siapa ayah kandung anak bernama #8602# ?",
+   "teksVarian": [
+    "Siapa ayah dari anak bernama #8602# ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8602"
+   ],
+   "hal": "ayah kandung anak",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan Tergugat adalah ayah kandung anak",
+     "saksi1": [
+      "ayah kandung anak bernama #8602# adalah #0047# dan saya mengenalnya sebagai ayah anak itu",
+      "anak bernama #8602# adalah anak kandung #0047# dari perkawinannya dengan #0046#",
+      "saya tahu langsung bahwa #0047# adalah ayah kandung anak bernama #8602#",
+      "#0047# ayah kandung dari anak bernama #8602# sebagaimana saya ketahui sejak anak itu lahir"
+     ],
+     "saksi2": [
+      "yang menjadi ayah kandung anak bernama #8602# ialah #0047# dan itu saya ketahui sendiri",
+      "anak bernama #8602# lahir dari perkawinan #0046# dengan #0047# dan #0047# ayahnya",
+      "saya menyaksikan sendiri #0047# diakui sebagai ayah anak bernama #8602# oleh keluarga",
+      "ayah dari anak bernama #8602# adalah #0047# menurut yang saya ketahui langsung"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-pengasuh-nyata",
+   "pokok": "pp-pengasuhan-nyata",
+   "urutan": 40,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Siapa yang secara nyata mengasuh dan merawat anak bernama #8602# sehari-hari ?",
+   "teksVarian": [
+    "Sehari-hari anak bernama #8602# diasuh dan dirawat oleh siapa ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "8602"
+   ],
+   "hal": "pihak yang secara nyata mengasuh anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "Penggugat yang secara nyata mengasuh dan merawat anak sehari-hari",
+     "saksi1": [
+      "yang secara nyata mengasuh dan merawat anak bernama #8602# sehari-hari adalah #0046# dan saya melihatnya sendiri",
+      "saya menyaksikan sendiri #0046# yang mengurus anak bernama #8602# dari hari ke hari",
+      "anak bernama #8602# tinggal bersama #0046# yang merawat dan membesarkannya sebagaimana saya lihat",
+      "sehari-hari #0046# yang mengasuh anak bernama #8602# menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "saya tahu langsung bahwa pengasuh nyata anak bernama #8602# adalah #0046#",
+      "#0046# yang menyiapkan makan dan keperluan anak bernama #8602# di rumahnya dan saya melihatnya",
+      "perawatan anak bernama #8602# dari hari ke hari dikerjakan #0046# sebagaimana saya saksikan",
+      "yang membesarkan anak bernama #8602# sehari-hari adalah #0046# di depan mata saya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: anak diasuh Penggugat; versi B: anak lebih banyak diasuh neneknya - berselisih pada PENGASUH NYATA",
+     "saksi1": [
+      "anak bernama #8602# diasuh sehari-hari oleh #0046# menurut penglihatan saya",
+      "saya lihat sendiri #0046# yang membesarkan anak bernama #8602#",
+      "pengasuh anak bernama #8602# sehari-hari adalah #0046# sebagaimana saya saksikan",
+      "anak bernama #8602# dirawat langsung oleh #0046# di depan mata saya"
+     ],
+     "saksi2": [
+      "anak bernama #8602# lebih banyak diasuh neneknya menurut penglihatan saya",
+      "saya lihat sendiri neneknya yang membesarkan anak bernama #8602#",
+      "pengasuh anak bernama #8602# sehari-hari adalah kerabatnya sebagaimana saya saksikan",
+      "anak bernama #8602# dirawat keluarga lain di depan mata saya"
+     ],
+     "bedaPada": "pelaku"
+    }
+   }
+  },
+  {
+   "id": "q-kedudukan-penggugat",
+   "pokok": "pp-kedudukan-penggugat",
+   "urutan": 45,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kedudukanPenggugat": "pengasuh-lain"
+   },
+   "teks": "Apa hubungan #0046# dengan anak bernama #8602# dan mengapa #0046# yang mengasuhnya ?",
+   "variabelAbt": [
+    "0046",
+    "8602"
+   ],
+   "hal": "hubungan Penggugat dengan anak dan alasan ia mengasuh",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan hubungan Penggugat dengan anak dan alasannya mengasuh",
+     "saksi1": [
+      "hubungan #0046# dengan anak bernama #8602# yang saya ketahui sendiri adalah {daftar}",
+      "saya tahu langsung #0046# mengasuh anak bernama #8602# karena {daftar}",
+      "alasan #0046# mengasuh anak bernama #8602# sebagaimana saya lihat adalah {daftar}",
+      "kedudukan #0046# terhadap anak bernama #8602# menurut yang saya saksikan ialah {daftar}"
+     ],
+     "saksi2": [
+      "menurut yang saya ketahui langsung #0046# mengasuh anak bernama #8602# sebab {daftar}",
+      "yang saya lihat sendiri tentang hubungan #0046# dengan anak bernama #8602# adalah {daftar}",
+      "saya menyaksikan #0046# mengurus anak bernama #8602# karena {daftar}",
+      "hubungan #0046# dengan anak bernama #8602# dan sebabnya mengasuh ialah {daftar} yang saya ketahui sendiri"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-sejak-asuh",
+   "pokok": "pp-pengasuhan-nyata",
+   "urutan": 50,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Sejak kapan #0046# mengasuh anak bernama #8602# sendiri ?",
+   "variabelAbt": [
+    "0046",
+    "8602"
+   ],
+   "hal": "sejak kapan Penggugat mengasuh anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "Penggugat mengasuh anak sejak waktu yang diisikan petugas",
+     "saksi1": [
+      "#0046# mengasuh anak bernama #8602# sejak {sejak} dan saya mengetahuinya sendiri",
+      "sejak {sejak} saya menyaksikan #0046# mengurus anak bernama #8602# seorang diri",
+      "saya melihat sendiri #0046# mulai mengasuh anak bernama #8602# sejak {sejak}",
+      "mulai {sejak} anak bernama #8602# dirawat #0046# menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "pengasuhan anak bernama #8602# oleh #0046# dimulai sejak {sejak} dan saya ada di sana ketika itu",
+      "saya tahu langsung #0046# merawat anak bernama #8602# sejak {sejak}",
+      "terhitung {sejak} #0046# yang membesarkan anak bernama #8602# sebagaimana saya lihat sendiri",
+      "sejak {sejak} saya menyaksikan anak bernama #8602# berada dalam asuhan #0046#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: sejak waktu pada isian; versi B: baru beberapa bulan terakhir - berselisih pada WAKTU",
+     "saksi1": [
+      "#0046# mengasuh anak bernama #8602# sejak {sejak} dan saya lihat sendiri",
+      "sejak {sejak} saya saksikan #0046# mengurus anak bernama #8602#",
+      "saya melihat #0046# mulai mengasuh anak bernama #8602# sejak {sejak}",
+      "mulai {sejak} anak bernama #8602# dirawat #0046#"
+     ],
+     "saksi2": [
+      "#0046# baru dalam beberapa bulan terakhir mengasuh anak bernama #8602#",
+      "setahu saya #0046# mengurus anak bernama #8602# masih baru",
+      "pengasuhan anak bernama #8602# oleh #0046# terjadi beberapa bulan lalu",
+      "anak bernama #8602# baru beberapa bulan dirawat #0046#"
+     ],
+     "bedaPada": "waktu"
+    }
+   }
+  },
+  {
+   "id": "q-kebutuhan-anak",
+   "pokok": "pp-kebutuhan-anak",
+   "urutan": 60,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa saja kebutuhan sehari-hari anak bernama #8602# dan berapa biayanya setiap bulan ?",
+   "teksVarian": [
+    "Berapa kira-kira biaya kebutuhan anak bernama #8602# setiap bulannya ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "8602"
+   ],
+   "hal": "kebutuhan dan biaya anak setiap bulan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kebutuhan anak setiap bulan beserta perkiraan biayanya",
+     "saksi1": [
+      "kebutuhan anak bernama #8602# setiap bulan meliputi makan pakaian dan keperluan sekolah dengan biaya {daftar}",
+      "saya melihat sendiri anak bernama #8602# membutuhkan biaya {daftar} setiap bulan untuk makan pakaian dan sekolah",
+      "untuk makan pakaian dan sekolah anak bernama #8602# diperlukan sekitar {daftar} tiap bulan menurut yang saya ketahui langsung",
+      "biaya hidup bulanan anak bernama #8602# yang saya ketahui sendiri adalah {daftar}"
+     ],
+     "saksi2": [
+      "setiap bulan #0046# mengeluarkan {daftar} untuk makan pakaian dan sekolah anak bernama #8602# sebagaimana saya lihat",
+      "kebutuhan bulanan anak bernama #8602# mencapai {daftar} dan itu saya saksikan sendiri",
+      "menurut yang saya ketahui langsung anak bernama #8602# memerlukan biaya {daftar} setiap bulannya",
+      "pengeluaran untuk anak bernama #8602# tiap bulan adalah {daftar} yang saya lihat sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: kebutuhan anak setiap bulan besar; versi B: kebutuhan anak sederhana - berselisih pada BESAR KEBUTUHAN",
+     "saksi1": [
+      "kebutuhan anak bernama #8602# setiap bulan besar karena sekolah dan makannya",
+      "saya lihat sendiri biaya anak bernama #8602# tiap bulan cukup banyak",
+      "pengeluaran bulanan untuk anak bernama #8602# tergolong besar sebagaimana saya saksikan",
+      "anak bernama #8602# memerlukan biaya bulanan yang besar menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "kebutuhan anak bernama #8602# setiap bulan sederhana saja",
+      "saya lihat sendiri biaya anak bernama #8602# tiap bulan kecil",
+      "pengeluaran bulanan untuk anak bernama #8602# tergolong kecil sebagaimana saya saksikan",
+      "anak bernama #8602# memerlukan biaya bulanan yang ringan menurut penglihatan saya"
+     ],
+     "bedaPada": "jumlah"
+    }
+   }
+  },
+  {
+   "id": "q-pekerjaan-ayah",
+   "pokok": "pp-kemampuan-ayah",
+   "urutan": 80,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa pekerjaan #0047# dan berapa penghasilannya ?",
+   "teksVarian": [
+    "Pekerjaan #0047# apa dan penghasilannya berapa ?"
+   ],
+   "variabelAbt": [
+    "0047",
+    "0104"
+   ],
+   "hal": "pekerjaan dan penghasilan #0047#",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "kemampuanAyah": "mampu"
+      },
+      "maksud": "Tergugat bekerja dengan penghasilan yang mampu membiayai anak",
+      "saksi1": [
+       "#0047# bekerja sebagai #0104# dengan penghasilan {penghasilan} yang menurut saya cukup untuk membiayai anak",
+       "pekerjaan #0047# adalah #0104# dan penghasilannya {penghasilan} yang saya ketahui langsung mencukupi biaya anak",
+       "saya tahu sendiri #0047# berpenghasilan {penghasilan} dari pekerjaannya sebagai #0104# sehingga mampu membiayai anak",
+       "dari pekerjaan sebagai #0104# #0047# memperoleh {penghasilan} dan itu mampu menanggung biaya anak menurut penglihatan saya"
+      ],
+      "saksi2": [
+       "#0047# menjalani pekerjaan sebagai #0104# dengan hasil {penghasilan} yang saya lihat mampu menanggung biaya anak",
+       "yang saya ketahui langsung #0047# bekerja sebagai #0104# dan hasilnya {penghasilan} lebih dari cukup untuk biaya anak",
+       "penghasilan #0047# dari pekerjaan sebagai #0104# sebesar {penghasilan} dan mampu memenuhi kebutuhan anak",
+       "saya menyaksikan sendiri #0047# bekerja sebagai #0104# dan penghasilannya {penghasilan} sanggup menanggung kebutuhan anak"
+      ]
+     },
+     {
+      "keadaan": {
+       "kemampuanAyah": "terbatas"
+      },
+      "maksud": "Tergugat bekerja dengan penghasilan terbatas",
+      "saksi1": [
+       "#0047# bekerja sebagai #0104# namun penghasilannya {penghasilan} terbatas untuk membiayai anak",
+       "pekerjaan #0047# adalah #0104# dengan penghasilan {penghasilan} yang menurut penglihatan saya pas-pasan",
+       "saya tahu sendiri #0047# berpenghasilan {penghasilan} dari pekerjaannya sebagai #0104# dan cukup untuk dirinya sendiri saja",
+       "dari pekerjaan sebagai #0104# #0047# memperoleh {penghasilan} dan itu pas-pasan sebagaimana saya lihat"
+      ],
+      "saksi2": [
+       "#0047# menjalani pekerjaan sebagai #0104# dengan hasil {penghasilan} yang saya lihat sederhana",
+       "yang saya ketahui langsung #0047# bekerja sebagai #0104# dan hasilnya {penghasilan} terbatas",
+       "penghasilan #0047# dari pekerjaan sebagai #0104# sebesar {penghasilan} dan itu sederhana saja",
+       "saya menyaksikan sendiri #0047# bekerja sebagai #0104# dan penghasilannya {penghasilan} terbatas"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: penghasilan Tergugat besar dan mencukupi; versi B: penghasilan Tergugat kecil - berselisih pada PENGHASILAN",
+     "saksi1": [
+      "penghasilan #0047# besar dan mencukupi untuk anak menurut penglihatan saya",
+      "saya tahu langsung #0047# berpenghasilan banyak dan mampu membiayai anak",
+      "hasil kerja #0047# melimpah sebagaimana saya saksikan",
+      "penghasilan #0047# lebih dari cukup menurut yang saya lihat sendiri"
+     ],
+     "saksi2": [
+      "penghasilan #0047# kecil menurut penglihatan saya",
+      "saya tahu langsung #0047# berpenghasilan sedikit",
+      "hasil kerja #0047# pas-pasan sebagaimana saya saksikan",
+      "penghasilan #0047# kurang menurut yang saya lihat sendiri"
+     ],
+     "bedaPada": "jumlah"
+    }
+   }
+  },
+  {
+   "id": "q-harta-ayah",
+   "pokok": "pp-kemampuan-ayah",
+   "urutan": 90,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah #0047# memiliki harta atau usaha lain, misalnya tanah, rumah, kendaraan atau kebun ?",
+   "variabelAbt": [
+    "0047"
+   ],
+   "hal": "harta dan usaha lain milik #0047#",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan harta atau usaha lain milik Tergugat yang ia lihat sendiri",
+     "saksi1": [
+      "harta milik #0047# yang saya lihat sendiri berupa {daftar}",
+      "saya mengetahui langsung #0047# memiliki {daftar}",
+      "yang saya saksikan sendiri sebagai milik #0047# adalah {daftar}",
+      "selain pekerjaannya #0047# memiliki {daftar} sebagaimana saya lihat"
+     ],
+     "saksi2": [
+      "menurut yang saya ketahui langsung #0047# mempunyai {daftar}",
+      "harta #0047# yang saya tahu sendiri meliputi {daftar}",
+      "saya melihat #0047# menguasai {daftar} di depan mata saya",
+      "kekayaan #0047# yang saya saksikan langsung berupa {daftar}"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: Tergugat punya harta lain; versi B: Tergugat hampir tidak punya harta lain - berselisih pada HARTA TERGUGAT",
+     "saksi1": [
+      "#0047# memiliki harta lain selain penghasilannya menurut penglihatan saya",
+      "saya lihat sendiri #0047# mempunyai tanah dan kendaraan",
+      "#0047# berharta cukup sebagaimana saya saksikan",
+      "harta #0047# lumayan banyak menurut yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "harta lain milik #0047# hampir tidak ada menurut penglihatan saya",
+      "saya lihat sendiri #0047# tidak mempunyai tanah dan kendaraan",
+      "#0047# tidak berharta banyak sebagaimana saya saksikan",
+      "harta #0047# nyaris tidak ada menurut yang saya ketahui langsung"
+     ],
+     "bedaPada": "jumlah"
+    }
+   }
+  },
+  {
+   "id": "q-kehidupan-ayah",
+   "pokok": "pp-kemampuan-ayah",
+   "urutan": 100,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana kehidupan #0047# sehari-hari, apakah ia hidup berkecukupan ?",
+   "variabelAbt": [
+    "0047"
+   ],
+   "hal": "kehidupan sehari-hari #0047#",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "kemampuanAyah": "mampu"
+      },
+      "maksud": "Tergugat hidup berkecukupan",
+      "saksi1": [
+       "kehidupan #0047# sehari-hari berkecukupan dan ia leluasa membelanjakan uangnya menurut penglihatan saya",
+       "saya melihat sendiri #0047# hidup layak dan mampu membeli barang yang ia inginkan",
+       "#0047# tampak berkecukupan dalam kesehariannya sebagaimana saya saksikan",
+       "gaya hidup #0047# menunjukkan ia berkecukupan yang saya lihat sendiri"
+      ],
+      "saksi2": [
+       "yang saya ketahui langsung #0047# hidup dengan cukup dan serba ada",
+       "dalam keseharian #0047# terlihat mampu memenuhi kebutuhannya dan saya menyaksikannya",
+       "saya tahu sendiri #0047# hidup lebih dari sekadar cukup",
+       "kehidupan #0047# sehari-hari nyaman dan berkecukupan di depan mata saya"
+      ]
+     },
+     {
+      "keadaan": {
+       "kemampuanAyah": "terbatas"
+      },
+      "maksud": "Tergugat hidup sederhana dan terbatas",
+      "saksi1": [
+       "kehidupan #0047# sehari-hari sederhana dan terbatas menurut penglihatan saya",
+       "saya melihat sendiri #0047# hidup pas-pasan",
+       "#0047# tampak hidup sederhana dalam kesehariannya sebagaimana saya saksikan",
+       "gaya hidup #0047# menunjukkan ia terbatas yang saya lihat sendiri"
+      ],
+      "saksi2": [
+       "yang saya ketahui langsung #0047# hidup dengan seadanya",
+       "dalam keseharian #0047# terlihat sederhana dan saya menyaksikannya",
+       "saya tahu sendiri #0047# hidup apa adanya",
+       "kehidupan #0047# sehari-hari sederhana dan terbatas di depan mata saya"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: Tergugat hidup berkecukupan; versi B: Tergugat hidup sederhana - berselisih pada KEHIDUPAN TERGUGAT",
+     "saksi1": [
+      "#0047# hidup berkecukupan menurut penglihatan saya",
+      "saya lihat sendiri #0047# hidup layak dan mampu",
+      "kehidupan #0047# nyaman sebagaimana saya saksikan",
+      "#0047# hidup lebih dari cukup menurut yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "#0047# hidup sederhana menurut penglihatan saya",
+      "saya lihat sendiri #0047# hidup pas-pasan",
+      "kehidupan #0047# apa adanya sebagaimana saya saksikan",
+      "#0047# hidup seadanya menurut yang saya ketahui langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-nafkah-diberikan",
+   "pokok": "pp-kelalaian",
+   "urutan": 110,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah #0047# memberi nafkah untuk anak bernama #8602# setelah berpisah ?",
+   "teksVarian": [
+    "Setelah berpisah apakah #0047# menafkahi anak bernama #8602# ?"
+   ],
+   "variabelAbt": [
+    "0047",
+    "8602"
+   ],
+   "hal": "pemberian nafkah anak oleh #0047#",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "nafkahDiberikan": "tidak"
+      },
+      "maksud": "Tergugat tidak memberi nafkah anak sejak waktu yang diisikan petugas",
+      "saksi1": [
+       "#0047# tidak memberi nafkah untuk anak bernama #8602# sejak {sejak} dan saya mengetahuinya sendiri",
+       "sejak {sejak} saya tidak melihat #0047# memberi uang atau keperluan untuk anak bernama #8602#",
+       "nafkah anak bernama #8602# tidak diberikan oleh #0047# sejak {sejak} menurut penglihatan saya",
+       "saya menyaksikan sendiri #0047# tidak memenuhi kebutuhan anak bernama #8602# sejak {sejak}"
+      ],
+      "saksi2": [
+       "sejak {sejak} #0047# tidak lagi memberi biaya hidup kepada anak bernama #8602# dan saya melihatnya",
+       "saya tahu langsung #0047# tidak menafkahi anak bernama #8602# sejak {sejak}",
+       "tidak ada uang nafkah dari #0047# untuk anak bernama #8602# sejak {sejak} sebagaimana saya saksikan",
+       "#0047# tidak menyerahkan nafkah kepada anak bernama #8602# sejak {sejak} di depan mata saya"
+      ]
+     },
+     {
+      "keadaan": {
+       "nafkahDiberikan": "sebagian"
+      },
+      "maksud": "Tergugat memberi nafkah anak sebagian saja dan tidak teratur",
+      "saksi1": [
+       "sejak {sejak} #0047# memberi nafkah untuk anak bernama #8602# sebagian kecil dan tidak teratur menurut penglihatan saya",
+       "nafkah dari #0047# untuk anak bernama #8602# sejak {sejak} jumlahnya sedikit dan tidak menentu sebagaimana saya lihat",
+       "saya menyaksikan sendiri #0047# memberi uang untuk anak bernama #8602# sejak {sejak} sekadarnya dan tidak rutin",
+       "yang saya ketahui langsung #0047# sejak {sejak} memberi biaya anak bernama #8602# kurang dari kebutuhan dan tidak berkala"
+      ],
+      "saksi2": [
+       "pemberian #0047# untuk anak bernama #8602# sejak {sejak} sedikit dan tidak tetap sebagaimana saya saksikan",
+       "sejak {sejak} #0047# sesekali memberi uang untuk anak bernama #8602# dan tidak mencukupi",
+       "saya tahu sendiri nafkah #0047# bagi anak bernama #8602# sejak {sejak} tidak lengkap dan kurang teratur",
+       "bantuan #0047# kepada anak bernama #8602# sejak {sejak} jauh dari cukup dan tidak berjalan rutin menurut penglihatan saya"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: Tergugat tidak memberi nafkah; versi B: Tergugat memberi nafkah dengan teratur - berselisih pada PEMBERIAN NAFKAH",
+     "saksi1": [
+      "#0047# tidak memberi nafkah untuk anak bernama #8602# menurut penglihatan saya",
+      "saya lihat sendiri #0047# tidak menyerahkan uang untuk anak bernama #8602#",
+      "nafkah anak bernama #8602# tidak datang dari #0047# sebagaimana saya saksikan",
+      "saya tahu langsung #0047# tidak menafkahi anak bernama #8602#"
+     ],
+     "saksi2": [
+      "#0047# memberi nafkah untuk anak bernama #8602# dengan teratur menurut penglihatan saya",
+      "saya lihat sendiri #0047# menyerahkan uang untuk anak bernama #8602# setiap bulan",
+      "nafkah anak bernama #8602# datang dari #0047# sebagaimana saya saksikan",
+      "saya tahu langsung #0047# menafkahi anak bernama #8602# secara rutin"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-upaya-minta",
+   "pokok": "pp-kelalaian",
+   "urutan": 120,
+   "tingkat": "inti",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah #0046# pernah meminta nafkah anak kepada #0047# dan bagaimana tanggapannya ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8602"
+   ],
+   "hal": "permintaan nafkah anak kepada #0047# dan tanggapannya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "Penggugat telah meminta nafkah anak dan Tergugat mengabaikan",
+     "saksi1": [
+      "#0046# meminta nafkah untuk anak bernama #8602# kepada #0047# tetapi #0047# mengabaikannya dan saya menyaksikan sendiri",
+      "saya melihat sendiri #0046# menagih nafkah anak bernama #8602# dan #0047# menolak",
+      "permintaan nafkah anak bernama #8602# dari #0046# diabaikan #0047# sebagaimana saya lihat",
+      "#0046# berulang kali meminta nafkah anak bernama #8602# namun #0047# mengabaikan menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "di depan mata saya #0046# meminta #0047# memberi biaya untuk anak bernama #8602# dan permintaan itu diabaikan",
+      "saya ada ketika #0046# menyampaikan kebutuhan anak bernama #8602# kepada #0047# namun diabaikan begitu saja",
+      "#0047# menolak permintaan nafkah anak bernama #8602# dari #0046# sebagaimana saya saksikan",
+      "#0046# telah menagih nafkah anak bernama #8602# secara baik-baik kepada #0047# tetapi diabaikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: Penggugat sudah meminta nafkah; versi B: Penggugat belum meminta nafkah - berselisih pada ADA TIDAKNYA PERMINTAAN",
+     "saksi1": [
+      "#0046# telah meminta nafkah anak bernama #8602# kepada #0047#",
+      "saya lihat sendiri #0046# menagih nafkah anak bernama #8602# kepada #0047#",
+      "permintaan nafkah anak bernama #8602# telah disampaikan #0046# menurut penglihatan saya",
+      "#0046# meminta nafkah anak bernama #8602# sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "#0046# belum meminta nafkah anak bernama #8602# kepada #0047#",
+      "setahu saya #0046# belum menagih nafkah anak bernama #8602# kepada #0047#",
+      "belum ada permintaan nafkah anak bernama #8602# dari #0046# menurut penglihatan saya",
+      "#0046# belum menyampaikan permintaan nafkah anak bernama #8602# sebagaimana saya saksikan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-lama-lalai",
+   "pokok": "pp-nafkah-lampau",
+   "urutan": 130,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisNafkah": "lampau"
+   },
+   "teks": "Sudah berapa lama #0047# tidak memberi nafkah untuk anak bernama #8602# ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8602"
+   ],
+   "hal": "lamanya nafkah anak tidak diberikan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "lamanya Tergugat tidak memberi nafkah anak sesuai isian petugas",
+     "saksi1": [
+      "selama {lama} #0047# tidak memberi nafkah untuk anak bernama #8602# dan saya mengetahuinya langsung",
+      "lamanya #0047# tidak memberi nafkah anak bernama #8602# adalah {lama} menurut penglihatan saya",
+      "saya menyaksikan sendiri selama {lama} anak bernama #8602# tidak menerima nafkah dari #0047#",
+      "tanpa nafkah dari #0047# anak bernama #8602# menjalani {lama} sebagaimana saya lihat"
+     ],
+     "saksi2": [
+      "anak bernama #8602# tidak menerima nafkah dari #0047# selama {lama} di depan mata saya",
+      "selama {lama} #0047# tidak menyerahkan biaya untuk anak bernama #8602# yang saya ketahui langsung",
+      "saya tahu sendiri jangka waktu #0047# tidak menafkahi anak bernama #8602# adalah {lama}",
+      "tanpa nafkah dari #0047# selama {lama} anak bernama #8602# dibesarkan oleh #0046# sebagaimana saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: nafkah dilalaikan lebih dari setahun; versi B: baru beberapa bulan - berselisih pada LAMA KELALAIAN",
+     "saksi1": [
+      "#0047# melalaikan nafkah anak bernama #8602# selama lebih dari setahun",
+      "lebih dari setahun lamanya #0047# lalai menafkahi anak bernama #8602# menurut penglihatan saya",
+      "kelalaian nafkah anak bernama #8602# oleh #0047# berlangsung lebih dari setahun",
+      "saya saksikan #0047# lalai memberi nafkah anak bernama #8602# lebih dari setahun lamanya"
+     ],
+     "saksi2": [
+      "#0047# melalaikan nafkah anak bernama #8602# baru beberapa bulan",
+      "baru beberapa bulan lamanya #0047# lalai menafkahi anak bernama #8602# menurut penglihatan saya",
+      "kelalaian nafkah anak bernama #8602# oleh #0047# berlangsung beberapa bulan saja",
+      "saya saksikan #0047# lalai memberi nafkah anak bernama #8602# beberapa bulan lamanya"
+     ],
+     "bedaPada": "lama"
+    }
+   }
+  },
+  {
+   "id": "q-yang-menanggung",
+   "pokok": "pp-nafkah-lampau",
+   "urutan": 140,
+   "tingkat": "tambahan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisNafkah": "lampau"
+   },
+   "teks": "Siapa yang menanggung biaya hidup anak selama #0047# tidak memberi nafkah ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8602"
+   ],
+   "hal": "pihak yang menanggung biaya anak selama nafkah dilalaikan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "Penggugat menanggung seluruh biaya anak selama nafkah dilalaikan",
+     "saksi1": [
+      "selama itu seluruh biaya hidup anak bernama #8602# ditanggung sendiri oleh #0046# dan saya menyaksikannya",
+      "saya melihat sendiri #0046# yang membiayai makan dan sekolah anak bernama #8602# selama nafkah dilalaikan",
+      "kebutuhan anak bernama #8602# selama itu dipenuhi oleh #0046# sebagaimana saya lihat",
+      "yang menanggung biaya anak bernama #8602# selama itu adalah #0046# menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "biaya hidup anak bernama #8602# selama nafkah dilalaikan dipikul seorang diri oleh #0046# di depan mata saya",
+      "saya tahu langsung #0046# membanting tulang membiayai anak bernama #8602# selama itu",
+      "selama itu #0046# yang mencukupi kebutuhan anak bernama #8602# sebagaimana saya saksikan",
+      "pembiayaan anak bernama #8602# selama itu menjadi beban #0046# yang saya ketahui sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: biaya anak ditanggung Penggugat; versi B: biaya anak dibantu keluarga besar - berselisih pada PIHAK YANG MENANGGUNG",
+     "saksi1": [
+      "biaya anak bernama #8602# selama itu ditanggung #0046# menurut penglihatan saya",
+      "saya lihat sendiri #0046# yang membiayai anak bernama #8602#",
+      "kebutuhan anak bernama #8602# dipenuhi #0046# sebagaimana saya saksikan",
+      "#0046# yang mencukupi biaya anak bernama #8602# di depan mata saya"
+     ],
+     "saksi2": [
+      "biaya anak bernama #8602# selama itu ditanggung keluarga besar menurut penglihatan saya",
+      "saya lihat sendiri kakek neneknya yang membiayai anak bernama #8602#",
+      "kebutuhan anak bernama #8602# dipenuhi kerabat sebagaimana saya saksikan",
+      "keluarga besar yang mencukupi biaya anak bernama #8602# di depan mata saya"
+     ],
+     "bedaPada": "pelaku"
+    }
+   }
+  },
+  {
+   "id": "q-jumlah-ditanggung",
+   "pokok": "pp-nafkah-lampau",
+   "urutan": 150,
+   "tingkat": "tambahan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisNafkah": "lampau"
+   },
+   "teks": "Berapa biaya yang dikeluarkan #0046# untuk anak bernama #8602# selama itu ?",
+   "variabelAbt": [
+    "0046",
+    "8602"
+   ],
+   "hal": "biaya yang dikeluarkan Penggugat untuk anak selama itu",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan perkiraan biaya yang dikeluarkan Penggugat selama nafkah dilalaikan",
+     "saksi1": [
+      "biaya yang dikeluarkan #0046# untuk anak bernama #8602# selama itu adalah {daftar}",
+      "saya melihat sendiri #0046# mengeluarkan {daftar} untuk anak bernama #8602#",
+      "pengeluaran #0046# bagi anak bernama #8602# selama itu sebesar {daftar} menurut yang saya ketahui langsung",
+      "yang dikeluarkan #0046# untuk kebutuhan anak bernama #8602# selama itu mencapai {daftar} sebagaimana saya lihat"
+     ],
+     "saksi2": [
+      "selama itu #0046# menghabiskan {daftar} untuk anak bernama #8602# dan saya menyaksikannya",
+      "saya tahu sendiri biaya anak bernama #8602# yang ditanggung #0046# selama itu berjumlah {daftar}",
+      "total pengeluaran #0046# untuk anak bernama #8602# selama itu adalah {daftar} di depan mata saya",
+      "menurut yang saya ketahui langsung #0046# membelanjakan {daftar} bagi anak bernama #8602# selama itu"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-sekolah-kesehatan",
+   "pokok": "pp-pendidikan-kesehatan",
+   "urutan": 160,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisNafkah": "pendidikan-kesehatan"
+   },
+   "teks": "Berapa biaya sekolah dan kesehatan anak bernama #8602# dan siapa yang membayarnya ?",
+   "variabelAbt": [
+    "0046",
+    "8602"
+   ],
+   "hal": "biaya sekolah dan kesehatan anak",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan biaya sekolah dan kesehatan anak dan siapa yang membayarnya",
+     "saksi1": [
+      "biaya sekolah dan kesehatan anak bernama #8602# yang saya ketahui sendiri adalah {daftar} dan dibayar oleh #0046#",
+      "saya melihat sendiri #0046# membayar {daftar} untuk sekolah dan kesehatan anak bernama #8602#",
+      "untuk sekolah dan berobat anak bernama #8602# dikeluarkan {daftar} oleh #0046# menurut penglihatan saya",
+      "pengeluaran sekolah dan kesehatan anak bernama #8602# sebesar {daftar} ditanggung #0046# sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "#0046# membayar {daftar} untuk sekolah dan kesehatan anak bernama #8602# dan saya menyaksikannya",
+      "saya tahu langsung biaya sekolah serta kesehatan anak bernama #8602# adalah {daftar} yang dibayar #0046#",
+      "menurut yang saya ketahui sendiri #0046# yang membiayai sekolah dan berobat anak bernama #8602# sebesar {daftar}",
+      "sekolah dan kesehatan anak bernama #8602# menelan biaya {daftar} yang dipikul #0046# di depan mata saya"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-kenaikan-kebutuhan",
+   "pokok": "pp-kenaikan",
+   "urutan": 170,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisNafkah": "kenaikan"
+   },
+   "teks": "Apakah kebutuhan anak bernama #8602# bertambah dari tahun ke tahun ?",
+   "variabelAbt": [
+    "8602"
+   ],
+   "hal": "pertambahan kebutuhan anak dari tahun ke tahun",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "kebutuhan anak bertambah dari tahun ke tahun",
+     "saksi1": [
+      "kebutuhan anak bernama #8602# bertambah dari tahun ke tahun karena ia bertambah besar dan harga naik menurut penglihatan saya",
+      "saya melihat sendiri biaya anak bernama #8602# naik tiap tahun mengikuti umur dan harga kebutuhan",
+      "makin besar anak bernama #8602# makin banyak kebutuhannya sebagaimana saya saksikan",
+      "pengeluaran untuk anak bernama #8602# meningkat dari tahun ke tahun yang saya ketahui sendiri"
+     ],
+     "saksi2": [
+      "seiring pertambahan umur anak bernama #8602# biaya sekolah dan makannya meningkat dan saya melihat langsung",
+      "setiap tahun kebutuhan anak bernama #8602# bertambah dan harga barang ikut naik di depan mata saya",
+      "biaya hidup anak bernama #8602# terus naik tiap tahun seperti yang saya ketahui langsung",
+      "saya tahu sendiri kebutuhan anak bernama #8602# semakin banyak dari tahun ke tahun"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: kebutuhan anak bertambah; versi B: kebutuhan anak tetap - berselisih pada PERTAMBAHAN KEBUTUHAN",
+     "saksi1": [
+      "kebutuhan anak bernama #8602# bertambah tiap tahun menurut penglihatan saya",
+      "saya lihat sendiri biaya anak bernama #8602# naik setiap tahun",
+      "pengeluaran anak bernama #8602# meningkat sebagaimana saya saksikan",
+      "makin besar anak bernama #8602# makin banyak biayanya menurut yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "kebutuhan anak bernama #8602# tetap sama dari tahun ke tahun menurut penglihatan saya",
+      "saya lihat sendiri biaya anak bernama #8602# datar setiap tahun",
+      "pengeluaran anak bernama #8602# stabil sebagaimana saya saksikan",
+      "kebutuhan anak bernama #8602# konstan menurut yang saya ketahui langsung"
+     ],
+     "bedaPada": "jumlah"
+    }
+   }
+  },
+  {
+   "id": "q-objek-sita",
+   "pokok": "pp-sita",
+   "urutan": 180,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisNafkah": "sita-jaminan"
+   },
+   "teks": "Harta apa milik #0047# yang saksi ketahui, di mana letaknya dan atas nama siapa ?",
+   "variabelAbt": [
+    "0047"
+   ],
+   "hal": "harta milik #0047# beserta letaknya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan harta Tergugat yang sudah ada beserta letak dan atas nama siapa",
+     "saksi1": [
+      "harta milik #0047# yang saya ketahui langsung berupa {daftar}",
+      "saya melihat sendiri harta #0047# yaitu {daftar} lengkap dengan letaknya",
+      "yang saya ketahui sebagai milik #0047# beserta letaknya adalah {daftar}",
+      "harta #0047# yang saya saksikan sendiri meliputi {daftar}"
+     ],
+     "saksi2": [
+      "menurut yang saya ketahui sendiri #0047# memiliki {daftar} yang letaknya saya tahu",
+      "harta atas nama #0047# yang saya lihat langsung adalah {daftar}",
+      "saya tahu betul harta milik #0047# berupa {daftar} dan letaknya",
+      "kepunyaan #0047# yang saya saksikan sendiri adalah {daftar}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-tempat-kerja",
+   "pokok": "pp-pemotongan",
+   "urutan": 190,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisNafkah": "pemotongan-penghasilan"
+   },
+   "teks": "Di mana #0047# bekerja dan bagaimana ia menerima gajinya ?",
+   "variabelAbt": [
+    "0047"
+   ],
+   "hal": "tempat kerja dan cara #0047# menerima gaji",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan tempat Tergugat bekerja dan cara menerima gaji",
+     "saksi1": [
+      "#0047# bekerja di {daftar} menurut yang saya ketahui langsung",
+      "saya melihat sendiri tempat #0047# bekerja yaitu {daftar}",
+      "tempat kerja #0047# yang saya ketahui sendiri adalah {daftar} dan gajinya diterima di sana",
+      "gaji #0047# dibayarkan oleh {daftar} sebagaimana saya lihat"
+     ],
+     "saksi2": [
+      "saya tahu langsung #0047# menerima gaji dari {daftar}",
+      "menurut penglihatan saya #0047# bekerja pada {daftar} dan menerima penghasilan dari sana",
+      "tempat #0047# mencari nafkah adalah {daftar} yang saya ketahui sendiri",
+      "yang membayar gaji #0047# adalah {daftar} di depan mata saya"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-keadaan-anak",
+   "pokok": "pp-keadaan-anak",
+   "urutan": 200,
+   "tingkat": "pilihan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana keadaan anak bernama #8602# selama nafkahnya tidak dipenuhi ?",
+   "variabelAbt": [
+    "0046",
+    "8602"
+   ],
+   "hal": "keadaan anak selama nafkahnya tidak dipenuhi",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "anak tetap bersekolah dan terawat karena Penggugat berusaha sendiri memenuhi kebutuhan, meski berat",
+     "saksi1": [
+      "anak bernama #8602# tetap sekolah dan terawat karena #0046# berusaha memenuhi kebutuhannya sendiri dengan susah payah",
+      "saya melihat sendiri anak bernama #8602# terpelihara berkat jerih payah #0046# meski serba kekurangan",
+      "kebutuhan anak bernama #8602# terpenuhi oleh usaha #0046# sendiri walau berat sebagaimana saya lihat",
+      "meski kekurangan anak bernama #8602# tetap terurus oleh #0046# menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "berkat usaha #0046# sendiri anak bernama #8602# tetap terawat dan bersekolah walau hidup pas-pasan",
+      "saya menyaksikan #0046# berjuang agar anak bernama #8602# tetap terurus meski kekurangan",
+      "anak bernama #8602# tetap sehat dan sekolah karena banting tulang #0046# di depan mata saya",
+      "dengan susah payah #0046# memenuhi kebutuhan anak bernama #8602# sebagaimana saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: anak terawat; versi B: anak kekurangan dan terlantar - berselisih pada KEADAAN ANAK",
+     "saksi1": [
+      "anak bernama #8602# terawat dan sekolah menurut penglihatan saya",
+      "saya lihat sendiri anak bernama #8602# sehat dan terurus",
+      "kebutuhan pokok anak bernama #8602# terpenuhi sebagaimana saya saksikan",
+      "anak bernama #8602# tampak terpelihara di depan mata saya"
+     ],
+     "saksi2": [
+      "anak bernama #8602# kekurangan dan sulit bersekolah menurut penglihatan saya",
+      "saya lihat sendiri anak bernama #8602# kurus dan kurang terurus",
+      "kebutuhan pokok anak bernama #8602# terbengkalai sebagaimana saya saksikan",
+      "anak bernama #8602# tampak terlantar di depan mata saya"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-keberadaan-ayah",
+   "pokok": "pp-kelalaian",
+   "urutan": 210,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kehadiran": "verstek"
+   },
+   "teks": "Apa yang saksi ketahui tentang tempat tinggal dan pekerjaan #0047# sekarang ?",
+   "variabelAbt": [
+    "0047"
+   ],
+   "hal": "tempat tinggal dan pekerjaan #0047# sekarang",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan tempat tinggal dan pekerjaan Tergugat sekarang yang ia ketahui",
+     "saksi1": [
+      "yang saya ketahui langsung tentang tempat tinggal dan pekerjaan #0047# sekarang adalah {daftar}",
+      "saya melihat sendiri keadaan #0047# sekarang yaitu {daftar}",
+      "tempat tinggal serta pekerjaan #0047# saat ini menurut yang saya saksikan adalah {daftar}",
+      "kediaman dan mata pencarian #0047# sekarang berupa {daftar} sebagaimana saya lihat"
+     ],
+     "saksi2": [
+      "menurut penglihatan saya sendiri #0047# sekarang {daftar}",
+      "saya tahu langsung bahwa #0047# sekarang tinggal dan bekerja sebagai berikut yaitu {daftar}",
+      "keberadaan dan pekerjaan #0047# saat ini adalah {daftar} yang saya ketahui sendiri",
+      "sepengetahuan saya yang menyaksikan langsung #0047# sekarang berada pada {daftar}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-penutup",
+   "pokok": "pp-penutup",
+   "urutan": 900,
+   "tingkat": "inti",
+   "kelompok": "penutup",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+   "teksVarian": [
+    "Apakah masih ada keterangan lain yang akan saksi sampaikan ?",
+    "Adakah hal lain yang hendak saksi terangkan ?"
+   ],
+   "variabelAbt": [],
+   "hal": "keterangan tambahan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan keterangannya sudah cukup",
+     "saksi1": [
+      "sudah cukup",
+      "sudah cukup sekian dari saya",
+      "sudah cukup keterangan saya",
+      "sudah cukup itu saja"
+     ],
+     "saksi2": [
+      "sudah cukup demikian keterangan saya",
+      "sudah cukup semua yang dapat saya terangkan",
+      "sudah cukup sampai di sini keterangan saya",
+      "sudah cukup demikian yang saya ketahui"
+     ]
+    }
+   }
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Keterangan saksi harus menyebut sebab pengetahuannya; keterangan seorang saksi saja tanpa alat bukti lain tidak cukup.",
+  "Keluarga sedarah dan semenda garis lurus serta suami atau istri salah satu pihak pada dasarnya tidak dapat didengar sebagai saksi; perkara tentang keadaan menurut hukum sipil seseorang dikecualikan (Buku II Edisi Revisi 2013 hlm. 100-101). Penilaian ada pada hakim.",
+  "Keterangan yang hanya berasal dari cerita orang lain hanya dapat menjadi sumber persangkaan.",
+  "Isi nafkah ke depan, nafkah lampau, kenaikan, sita jaminan dan pemotongan penghasilan hanya bila dituntut dalam gugatan; yang tidak dituntut tidak perlu ditanyakan.",
+  "Hakim menggali fakta kemampuan ekonomi ayah dan kebutuhan dasar anak (SEMA 3/2018). Sita hanya atas harta yang sudah ada dan objeknya harus dirinci.",
+  "Pilih jenis tuntutan pada borang agar butir yang sesuai (nafkah lampau, pendidikan dan kesehatan, kenaikan, sita, pemotongan) ikut diajukan."
+ ]
+}

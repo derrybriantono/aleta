@@ -1,0 +1,1423 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "ekonomi-syariah",
+ "judul": "Ekonomi syariah",
+ "versi": 1,
+ "penulis": "SAKSI-E",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "370"
+  ]
+ },
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [
+  {
+   "folder": "10 Ekonomi Syariah - BAS",
+   "berkas": "BAS ALUR 40 ES GS - [2] Sidang 2 - P & T Hadir - Pembuktian, Tunda Putusan",
+   "variabelSaksi": [
+    "2021",
+    "2022"
+   ],
+   "catatan": "gugatan sederhana (ES GS, paket abt-ekonomi-syariah-derry F21, terpasang 17 Okt malam); saksi P lewat variabel tanya_jawab (BAS memakai 5058/5059 yang berbagi data)"
+  },
+  {
+   "folder": "10 Ekonomi Syariah - BAS",
+   "berkas": "BAS ALUR 40 ES GS - [2a] Sidang 2 - T Tetap Tidak Hadir - Bukti dan Putusan Verstek",
+   "variabelSaksi": [
+    "2021",
+    "2022"
+   ],
+   "catatan": "verstek gugatan sederhana: saksi P"
+  },
+  {
+   "folder": "10a Ekonomi Syariah Biasa - BAS",
+   "berkas": "BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P",
+   "variabelSaksi": [
+    "2021",
+    "2022",
+    "2031",
+    "6124",
+    "8932"
+   ],
+   "catatan": "acara biasa (paket abt-es-biasa-derry F22; folder 10a belum terpasang di server); [6a] 3 saksi, [6b] 4 saksi, [6c] 5 saksi sama"
+  },
+  {
+   "folder": "10a Ekonomi Syariah Biasa - BAS",
+   "berkas": "BAS ALUR 04 [7] BAS 7 P & T Hadir - Pembuktian T",
+   "variabelSaksi": [
+    "2023",
+    "2024",
+    "2032",
+    "8942"
+   ],
+   "catatan": "saksi T acara biasa; [7a] 3 saksi, [7b] 4 saksi"
+  },
+  {
+   "folder": "10a Ekonomi Syariah Biasa - BAS",
+   "berkas": "BAS ALUR 43 ES Acara Biasa - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek",
+   "variabelSaksi": [
+    "2021",
+    "2022"
+   ],
+   "catatan": "verstek acara biasa: saksi P"
+  }
+ ],
+ "dasarHukum": [
+  {
+   "id": "dh-sebab-pengetahuan",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 102: syarat materiil saksi (Pasal 308 ayat (2) RBg)",
+   "uraian": "keterangan saksi harus tentang peristiwa yang dialami, didengar atau dilihat sendiri dan menyebut sumber pengetahuannya; pendapat atau dugaan bukan kesaksian",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-de-auditu",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (7)",
+   "uraian": "keterangan yang diperoleh saksi dari orang lain (de auditu) dapat dipakai hanya sebagai sumber persangkaan",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-unus-testis",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (8)",
+   "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak cukup (satu saksi bukan saksi)",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-larangan-saksi",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 100-101 butir (3)-(4) (Pasal 172 RBg)",
+   "uraian": "keluarga sedarah dan semenda garis lurus serta suami atau istri salah satu pihak tidak dapat didengar sebagai saksi; pengecualian untuk perkara tentang keadaan menurut hukum sipil seseorang. Penilaian ada pada hakim",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-kesesuaian-saksi",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (2) (Pasal 309 RBg)",
+   "uraian": "hakim menilai kesesuaian keterangan saksi yang satu dengan lainnya dan alasan saksi memberi keterangan",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-pasal-49-i",
+   "rujukan": "Pasal 49 huruf i UU 7/1989 sebagaimana diubah UU 3/2006 dan Penjelasan huruf i",
+   "uraian": "pengadilan agama berwenang memeriksa dan memutus perkara ekonomi syariah, yaitu perbuatan atau kegiatan usaha menurut prinsip syariah antara lain bank syariah, lembaga keuangan mikro syariah, asuransi, reasuransi, reksa dana, obligasi, sekuritas, pembiayaan, pegadaian, dana pensiun lembaga keuangan syariah dan bisnis syariah",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 3/2006 (peraturan.bpk.go.id, dibaca agen I15, 18 Okt 2026)"
+  },
+  {
+   "id": "dh-khes-36-38",
+   "rujukan": "Pasal 36 dan Pasal 38 Kompilasi Hukum Ekonomi Syariah",
+   "uraian": "pihak dianggap ingkar janji bila karena kesalahannya tidak melakukan yang dijanjikan, melaksanakan tetapi tidak sebagaimana dijanjikan, terlambat, atau melakukan yang menurut perjanjian tidak boleh dilakukan; sanksinya antara lain ganti rugi, pembatalan akad, peralihan risiko, denda dan biaya perkara",
+   "status": "perlu-verifikasi",
+   "sumber": "dikutip blangko Derry ES; naskah KHES (PERMA 2/2008) belum dibaca"
+  },
+  {
+   "id": "dh-khes-21",
+   "rujukan": "Pasal 21 huruf b Kompilasi Hukum Ekonomi Syariah",
+   "uraian": "akad yang dibuat sah berlaku sebagai ketentuan yang mengikat para pihak dan wajib dilaksanakan sesuai kesepakatan",
+   "status": "perlu-verifikasi",
+   "sumber": "dikutip blangko Derry ES; naskah KHES belum dibaca"
+  },
+  {
+   "id": "dh-kuhperdata-1338",
+   "rujukan": "Pasal 1338 ayat (1) KUHPerdata",
+   "uraian": "persetujuan yang dibuat secara sah berlaku sebagai undang-undang bagi yang membuatnya",
+   "status": "perlu-verifikasi",
+   "sumber": "dikutip blangko Derry ES; naskah KUHPerdata belum dibaca agen ini"
+  },
+  {
+   "id": "dh-perma-14-2016",
+   "rujukan": "PERMA 14/2016 tentang Tata Cara Penyelesaian Perkara Ekonomi Syariah dan PERMA 2/2015 jo PERMA 4/2019 tentang Gugatan Sederhana",
+   "uraian": "tata cara acara biasa dan gugatan sederhana perkara ekonomi syariah (gugatan sederhana sampai Rp500 juta)",
+   "status": "perlu-verifikasi",
+   "sumber": "dikutip blangko Derry ES; naskah PERMA belum dibaca agen ini"
+  },
+  {
+   "id": "dh-buku2-2026-41-42",
+   "rujukan": "Buku II Tahun 2026 aspek 41 dan 42 (ringkasan perbandingan PTA Pontianak)",
+   "uraian": "sifat syariah ditentukan pula oleh substansi akad; batas pembatalan akad ex officio, akibat pembatalan, perbuatan melawan hukum dalam kegiatan syariah dan eksekusi jaminan; gugatan sederhana ekonomi syariah sampai Rp500 juta dengan syarat pihak dan pembuktian",
+   "status": "perlu-verifikasi",
+   "sumber": "berkas rujukan BUKU-II-2013-vs-2026-PTA-Pontianak.txt dari pengguna (ringkasan sekunder; naskah resmi Buku II 2026 belum ada)"
+  }
+ ],
+ "keadaan": {
+  "kehadiran": {
+   "sumber": "otomatis",
+   "nilai": [
+    "verstek",
+    "kontradiktoir",
+    "t-tidak-hadir-setelah-mediasi"
+   ],
+   "label": "Kehadiran Tergugat",
+   "bawaan": "kontradiktoir"
+  },
+  "bentukWanprestasi": {
+   "sumber": "borang",
+   "nilai": [
+    "tidak-melakukan",
+    "terlambat",
+    "tidak-sesuai",
+    "melakukan-terlarang"
+   ],
+   "label": "Bentuk ingkar janji yang didalilkan",
+   "bawaan": [
+    "tidak-melakukan"
+   ],
+   "jamak": true
+  },
+  "jaminan": {
+   "sumber": "borang",
+   "nilai": [
+    "ada",
+    "tidak"
+   ],
+   "label": "Akad memuat jaminan atau agunan",
+   "bawaan": "tidak"
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-hubungan-saksi",
+   "judul": "Hubungan saksi dengan para pihak",
+   "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal para pihak (sebab pengetahuan)",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-sebab-pengetahuan",
+    "dh-larangan-saksi",
+    "dh-unus-testis"
+   ]
+  },
+  {
+   "id": "pp-akad",
+   "judul": "Akad antara para pihak",
+   "uraian": "adanya akad berdasarkan prinsip syariah, jenisnya, isi pokoknya dan kesepakatan sukarela para pihak",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-pasal-49-i",
+    "dh-khes-21",
+    "dh-kuhperdata-1338",
+    "dh-buku2-2026-41-42"
+   ]
+  },
+  {
+   "id": "pp-pelaksanaan",
+   "judul": "Pelaksanaan akad",
+   "uraian": "apa yang telah dilakukan masing-masing pihak: penyerahan, penerimaan dan pembayaran",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-khes-21",
+    "dh-kesesuaian-saksi"
+   ]
+  },
+  {
+   "id": "pp-wanprestasi",
+   "judul": "Ingkar janji (wanprestasi)",
+   "uraian": "bentuk ingkar janji Tergugat, sejak kapan dan sisa kewajibannya",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-khes-36-38",
+    "dh-kesesuaian-saksi"
+   ]
+  },
+  {
+   "id": "pp-penyelesaian",
+   "judul": "Teguran dan upaya penyelesaian",
+   "uraian": "teguran atau penagihan kepada Tergugat dan upaya musyawarah penyelesaian",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-khes-36-38"
+   ]
+  },
+  {
+   "id": "pp-kerugian",
+   "judul": "Kerugian Penggugat",
+   "uraian": "kerugian yang dialami Penggugat akibat ingkar janji",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-khes-36-38"
+   ]
+  },
+  {
+   "id": "pp-jaminan",
+   "judul": "Jaminan atau agunan",
+   "uraian": "bentuk, letak dan kepemilikan jaminan bila akad memuatnya",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-buku2-2026-41-42"
+   ],
+   "keadaan": {
+    "jaminan": "ada"
+   }
+  },
+  {
+   "id": "pp-bantahan",
+   "judul": "Alasan Tergugat",
+   "uraian": "alasan Tergugat tidak memenuhi kewajibannya dan keadaan di luar kemampuannya",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-khes-36-38"
+   ]
+  },
+  {
+   "id": "pp-penutup",
+   "judul": "Penutup keterangan",
+   "uraian": "saksi menyatakan keterangannya telah cukup",
+   "wajib": false,
+   "dasarHukum": []
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-kenal",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 10,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi kenal dengan #0046# dan #0047# ?",
+   "teksVarian": [
+    "Apakah saksi mengenal #0046# dan #0047# ?",
+    "Apakah Saudara saksi kenal dengan #0046# serta #0047# ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "hubungan saksi dengan para pihak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal kedua pihak dan menyebut hubungannya dengan pihak",
+     "saksi1": [
+      "saya kenal dengan #0046# dan #0047# karena saya adalah {hubungan}",
+      "saya mengenal #0046# dan #0047# sebab saya ini {hubungan}",
+      "benar saya kenal kedua pihak yaitu #0046# dan #0047# dan saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya mengenal #0046# serta #0047#"
+     ],
+     "saksi2": [
+      "kedua pihak #0046# dan #0047# saya kenal dengan baik karena saya adalah {hubungan}",
+      "saya tahu dan kenal #0046# serta #0047# sebab hubungan saya dengan mereka adalah {hubungan}",
+      "saya lama mengenal #0046# berikut #0047# dan saya adalah {hubungan}",
+      "yang saya kenal adalah #0046# dan #0047# karena saya berkedudukan sebagai {hubungan}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-hubungan-pihak",
+   "pokok": "pp-akad",
+   "urutan": 20,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi tahu hubungan hukum antara #0046# dan #0047# ?",
+   "teksVarian": [
+    "Apakah saksi mengetahui hubungan hukum #0046# dengan #0047# ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9340"
+   ],
+   "hal": "hubungan hukum antara para pihak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan para pihak terikat akad yang disengketakan",
+     "saksi1": [
+      "antara #0046# dan #0047# terikat akad #9340# dan saya mengetahuinya sendiri",
+      "saya tahu #0046# dengan #0047# mempunyai hubungan hukum berdasarkan akad #9340#",
+      "keduanya terikat perjanjian syariah berupa akad #9340# yang saya ketahui langsung",
+      "hubungan #0046# dan #0047# adalah hubungan akad #9340# sebagaimana saya ketahui"
+     ],
+     "saksi2": [
+      "#0046# dan #0047# membuat akad #9340# di antara mereka dan saya tahu hal itu",
+      "yang mengikat #0046# dengan #0047# adalah akad #9340# menurut yang saya ketahui sendiri",
+      "saya mengetahui langsung bahwa keduanya terhubung lewat akad #9340#",
+      "dasar hubungan #0046# dengan #0047# ialah akad #9340# yang saya saksikan pembuatannya"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-akad-dibuat",
+   "pokok": "pp-akad",
+   "urutan": 30,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi mengetahui #0046# dan #0047# membuat akad #9340# dan ikut menyaksikan penandatanganannya ?",
+   "teksVarian": [
+    "Apakah saksi menyaksikan #0046# dan #0047# menandatangani akad #9340# ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9340"
+   ],
+   "hal": "pembuatan dan penandatanganan akad",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi hadir dan menyaksikan sendiri para pihak menandatangani akad",
+     "saksi1": [
+      "saya hadir dan menyaksikan sendiri #0046# dan #0047# menandatangani akad #9340#",
+      "saya melihat langsung kedua pihak membuat dan menandatangani akad #9340#",
+      "penandatanganan akad #9340# oleh #0046# dan #0047# saya saksikan sendiri",
+      "saya ada di tempat ketika akad #9340# ditandatangani kedua pihak"
+     ],
+     "saksi2": [
+      "akad #9340# dibuat dan ditandatangani #0046# serta #0047# di depan mata saya",
+      "saya turut menyaksikan kedua pihak menandatangani akad #9340#",
+      "saya mengetahui langsung #0046# dan #0047# menandatangani akad #9340# saat itu",
+      "pembuatan akad #9340# antara kedua pihak terjadi di hadapan saya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: saksi hadir ketika akad ditandatangani; versi B: saksi mengetahui akad sesudah ditandatangani - berselisih pada KEHADIRAN SAKSI",
+     "saksi1": [
+      "saya hadir ketika akad #9340# ditandatangani kedua pihak",
+      "saya berada di ruangan saat kedua pihak menandatangani akad #9340#",
+      "penandatanganan akad #9340# saya saksikan langsung",
+      "saya ikut hadir waktu akad #9340# dibuat kedua pihak"
+     ],
+     "saksi2": [
+      "saya mengetahui akad #9340# setelah ditandatangani kedua pihak",
+      "saya baru berada di tempat sesudah akad #9340# selesai ditandatangani",
+      "akad #9340# telah ditandatangani ketika saya datang",
+      "saya mengetahui adanya akad #9340# dari dokumen yang diperlihatkan sesudah penandatanganan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-isi-akad",
+   "pokok": "pp-akad",
+   "urutan": 40,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa isi pokok akad tersebut, yaitu objek, harga atau jumlah, jangka waktu dan cara pembayarannya ?",
+   "variabelAbt": [
+    "9340"
+   ],
+   "hal": "isi pokok akad",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan isi pokok akad yang ia ketahui sendiri",
+     "saksi1": [
+      "isi pokok akad #9340# yang saya ketahui langsung adalah {daftar}",
+      "saya mengetahui sendiri akad #9340# memuat {daftar}",
+      "mengenai objek jumlah dan jangka waktu akad #9340# yang saya lihat sendiri yaitu {daftar}",
+      "pokok perjanjian dalam akad #9340# menurut yang saya saksikan adalah {daftar}"
+     ],
+     "saksi2": [
+      "menurut yang saya ketahui sendiri akad #9340# berisi {daftar}",
+      "saya tahu langsung bahwa akad #9340# mengatur {daftar}",
+      "yang tertulis dalam akad #9340# dan saya ketahui langsung adalah {daftar}",
+      "isi akad #9340# yang saya saksikan sendiri meliputi {daftar}"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: jangka waktu akad setahun; versi B: jangka waktu akad dua tahun - berselisih pada JANGKA WAKTU AKAD",
+     "saksi1": [
+      "jangka waktu akad #9340# adalah setahun menurut yang saya ketahui",
+      "saya tahu langsung akad #9340# berlaku selama setahun",
+      "akad #9340# disepakati untuk jangka waktu setahun sebagaimana saya saksikan",
+      "masa berlaku akad #9340# setahun menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "jangka waktu akad #9340# adalah dua tahun menurut yang saya ketahui",
+      "saya tahu langsung akad #9340# berlaku selama dua tahun",
+      "akad #9340# disepakati untuk jangka waktu dua tahun sebagaimana saya saksikan",
+      "masa berlaku akad #9340# dua tahun menurut penglihatan saya"
+     ],
+     "bedaPada": "lama"
+    }
+   }
+  },
+  {
+   "id": "q-sukarela",
+   "pokok": "pp-akad",
+   "urutan": 50,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah kedua pihak membuat akad itu atas kemauan sendiri tanpa paksaan ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9340"
+   ],
+   "hal": "kesepakatan sukarela para pihak dalam akad",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "kedua pihak bersepakat membuat akad secara sukarela tanpa paksaan",
+     "saksi1": [
+      "kedua pihak membuat akad #9340# atas kemauan sendiri tanpa paksaan dan saya menyaksikannya",
+      "saya melihat sendiri #0046# dan #0047# bersepakat atas akad #9340# dengan sukarela tanpa tekanan siapa pun",
+      "akad #9340# disepakati dengan sukarela tanpa paksaan menurut penglihatan saya",
+      "saya ada ketika keduanya menyatakan setuju atas akad #9340# secara sukarela tanpa intimidasi"
+     ],
+     "saksi2": [
+      "persetujuan #0046# dan #0047# atas akad #9340# diberikan secara ikhlas tanpa paksaan di depan mata saya",
+      "keduanya menandatangani akad #9340# dengan kemauan sendiri tanpa ada yang memaksa",
+      "saya tahu langsung kedua pihak sepakat atas akad #9340# secara sukarela tanpa tekanan",
+      "tanpa dorongan dari siapa pun #0046# dan #0047# menyepakati akad #9340# sebagaimana saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: kesepakatan dibuat sukarela; versi B: ada tekanan atau paksaan - berselisih pada KESUKARELAAN",
+     "saksi1": [
+      "#0046# dan #0047# menyepakati akad #9340# dengan sukarela menurut penglihatan saya",
+      "saya lihat sendiri kedua pihak setuju dengan ikhlas atas akad #9340#",
+      "akad #9340# disepakati dengan kemauan kedua pihak sebagaimana saya saksikan",
+      "keduanya menandatangani akad #9340# secara sukarela di depan mata saya"
+     ],
+     "saksi2": [
+      "ada tekanan dari salah satu pihak ketika akad #9340# disepakati menurut penglihatan saya",
+      "saya lihat sendiri salah satu pihak didesak menandatangani akad #9340#",
+      "akad #9340# disepakati di bawah paksaan sebagaimana saya saksikan",
+      "salah satu pihak dipaksa menandatangani akad #9340# di depan mata saya"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-kewajiban",
+   "pokok": "pp-akad",
+   "urutan": 60,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa kewajiban masing-masing pihak menurut akad itu ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9340"
+   ],
+   "hal": "kewajiban masing-masing pihak menurut akad",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kewajiban tiap pihak menurut akad",
+     "saksi1": [
+      "kewajiban #0046# menurut akad #9340# adalah menyerahkan atau mencairkan sesuatu sedangkan kewajiban #0047# adalah {daftar}",
+      "menurut akad #9340# yang saya ketahui langsung #0047# berkewajiban {daftar}",
+      "saya tahu sendiri kewajiban #0047# dalam akad #9340# yaitu {daftar} dan kewajiban #0046# menyerahkan prestasinya",
+      "pembagian kewajiban dalam akad #9340# yang saya saksikan adalah #0046# menyerahkan prestasi dan #0047# {daftar}"
+     ],
+     "saksi2": [
+      "isi kewajiban dalam akad #9340# menurut yang saya ketahui #0046# memenuhi prestasinya dan #0047# {daftar}",
+      "saya melihat langsung bahwa akad #9340# mewajibkan #0047# {daftar} sedangkan #0046# menyerahkan prestasinya",
+      "kewajiban #0047# menurut akad #9340# sebagaimana saya saksikan ialah {daftar} dan #0046# lebih dahulu menyerahkan prestasinya",
+      "dalam akad #9340# #0046# wajib menyerahkan prestasi dan #0047# wajib {daftar} sebagaimana saya ketahui langsung"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-pelaksanaan-pengaju",
+   "pokok": "pp-pelaksanaan",
+   "urutan": 70,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah #0046# telah melaksanakan kewajibannya menurut akad itu, misalnya menyerahkan barang atau mencairkan dana ?",
+   "variabelAbt": [
+    "0046",
+    "9340"
+   ],
+   "hal": "pelaksanaan kewajiban #0046# menurut akad",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "Penggugat telah memenuhi kewajibannya menurut akad",
+     "saksi1": [
+      "#0046# telah memenuhi kewajibannya menurut akad #9340# dan saya menyaksikannya sendiri",
+      "saya melihat langsung #0046# menyerahkan prestasinya sesuai akad #9340#",
+      "kewajiban #0046# dalam akad #9340# telah dilaksanakan sebagaimana saya lihat",
+      "saya ada ketika #0046# menunaikan kewajibannya menurut akad #9340#"
+     ],
+     "saksi2": [
+      "di depan mata saya #0046# melaksanakan kewajibannya sesuai akad #9340#",
+      "saya tahu langsung #0046# telah menyerahkan apa yang dijanjikan dalam akad #9340#",
+      "pelaksanaan kewajiban #0046# menurut akad #9340# saya saksikan sendiri",
+      "#0046# telah menunaikan bagiannya dalam akad #9340# yang saya ketahui langsung"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: Penggugat telah memenuhi kewajibannya; versi B: Penggugat belum memenuhi sepenuhnya - berselisih pada PELAKSANAAN KEWAJIBAN PENGGUGAT",
+     "saksi1": [
+      "#0046# telah memenuhi seluruh kewajibannya dalam akad #9340#",
+      "saya lihat sendiri #0046# menyerahkan seluruh prestasinya menurut akad #9340#",
+      "kewajiban #0046# dalam akad #9340# telah selesai dilaksanakan menurut penglihatan saya",
+      "#0046# telah menunaikan semua bagiannya dalam akad #9340# sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "#0046# belum memenuhi seluruh kewajibannya dalam akad #9340#",
+      "saya lihat sendiri #0046# belum menyerahkan seluruh prestasinya menurut akad #9340#",
+      "kewajiban #0046# dalam akad #9340# belum selesai dilaksanakan menurut penglihatan saya",
+      "#0046# belum menunaikan semua bagiannya dalam akad #9340# sebagaimana saya saksikan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-penerimaan-lawan",
+   "pokok": "pp-pelaksanaan",
+   "urutan": 80,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah #0047# telah menerima barang, dana atau manfaat yang dijanjikan dalam akad itu ?",
+   "variabelAbt": [
+    "0047",
+    "9340"
+   ],
+   "hal": "penerimaan barang atau dana oleh #0047#",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "Tergugat telah menerima barang, dana atau manfaat yang dijanjikan dalam akad",
+     "saksi1": [
+      "#0047# telah menerima {daftar} sebagaimana akad #9340# dan saya melihat penyerahannya",
+      "saya menyaksikan sendiri #0047# menerima {daftar} menurut akad #9340#",
+      "penerimaan {daftar} oleh #0047# berdasarkan akad #9340# saya lihat langsung",
+      "saya tahu sendiri #0047# memperoleh {daftar} sesuai akad #9340#"
+     ],
+     "saksi2": [
+      "di depan mata saya #0047# menerima {daftar} sesuai akad #9340#",
+      "saya ada ketika {daftar} diserahkan kepada #0047# menurut akad #9340#",
+      "#0047# telah memegang {daftar} dari akad #9340# yang saya ketahui langsung",
+      "yang diterima #0047# dari akad #9340# adalah {daftar} sebagaimana saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: Tergugat telah menerima; versi B: Tergugat belum menerima - berselisih pada PENERIMAAN OLEH TERGUGAT",
+     "saksi1": [
+      "#0047# telah menerima apa yang dijanjikan dalam akad #9340#",
+      "saya lihat sendiri #0047# menerima penyerahan menurut akad #9340#",
+      "penerimaan oleh #0047# atas akad #9340# telah terjadi menurut penglihatan saya",
+      "#0047# telah memegang apa yang diserahkan dalam akad #9340# sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "#0047# belum menerima apa yang dijanjikan dalam akad #9340#",
+      "saya lihat sendiri #0047# belum menerima penyerahan menurut akad #9340#",
+      "penerimaan oleh #0047# atas akad #9340# belum terjadi menurut penglihatan saya",
+      "#0047# belum memegang apa yang dijanjikan dalam akad #9340# sebagaimana saya saksikan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-angsuran",
+   "pokok": "pp-pelaksanaan",
+   "urutan": 90,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah #0047# pernah membayar angsuran atau cicilan dan berapa kali ?",
+   "variabelAbt": [
+    "0047",
+    "9340"
+   ],
+   "hal": "pembayaran angsuran oleh #0047#",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pembayaran angsuran yang dilakukan Tergugat",
+     "saksi1": [
+      "angsuran yang dibayar #0047# menurut akad #9340# yang saya ketahui langsung adalah {daftar}",
+      "saya melihat sendiri #0047# membayar angsuran akad #9340# sebanyak {daftar}",
+      "pembayaran angsuran akad #9340# oleh #0047# yang saya saksikan adalah {daftar}",
+      "mengenai cicilan akad #9340# yang dibayar #0047# saya ketahui sendiri yaitu {daftar}"
+     ],
+     "saksi2": [
+      "menurut yang saya ketahui langsung #0047# membayar angsuran akad #9340# sebanyak {daftar}",
+      "saya tahu sendiri cicilan akad #9340# yang dibayar #0047# adalah {daftar}",
+      "angsuran akad #9340# yang telah disetor #0047# berjumlah {daftar} sebagaimana saya lihat",
+      "pembayaran #0047# atas akad #9340# yang saya saksikan langsung adalah {daftar}"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: Tergugat membayar lancar pada awalnya; versi B: Tergugat membayar beberapa kali saja - berselisih pada JUMLAH ANGSURAN",
+     "saksi1": [
+      "#0047# membayar angsuran akad #9340# dengan lancar pada awalnya menurut penglihatan saya",
+      "saya lihat sendiri #0047# rutin membayar cicilan akad #9340# di bulan-bulan pertama",
+      "pada awalnya #0047# membayar angsuran akad #9340# tiap bulan sebagaimana saya saksikan",
+      "#0047# melunasi cicilan akad #9340# secara teratur di awal menurut yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "#0047# hanya membayar beberapa kali angsuran akad #9340# menurut penglihatan saya",
+      "saya lihat sendiri #0047# hanya menyetor cicilan akad #9340# satu dua kali",
+      "#0047# hanya membayar sebagian kecil angsuran akad #9340# sebagaimana saya saksikan",
+      "angsuran akad #9340# hanya dibayar #0047# beberapa kali menurut yang saya ketahui langsung"
+     ],
+     "bedaPada": "jumlah"
+    }
+   }
+  },
+  {
+   "id": "q-wanprestasi-tidak-melakukan",
+   "pokok": "pp-wanprestasi",
+   "urutan": 100,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "bentukWanprestasi": "tidak-melakukan"
+   },
+   "teks": "Apakah #0047# tidak melakukan apa yang dijanjikannya dalam akad, misalnya tidak membayar, dan sejak kapan ?",
+   "variabelAbt": [
+    "0047",
+    "9340"
+   ],
+   "hal": "tidak dilaksanakannya kewajiban #0047# dan sejak kapan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "Tergugat tidak melaksanakan kewajibannya menurut akad sejak waktu yang diisikan petugas",
+     "saksi1": [
+      "#0047# tidak memenuhi kewajibannya menurut akad #9340# sejak {sejak} dan saya mengetahuinya sendiri",
+      "sejak {sejak} saya melihat #0047# tidak membayar kewajibannya menurut akad #9340#",
+      "kewajiban #0047# menurut akad #9340# tidak dijalankan sejak {sejak} sebagaimana saya lihat",
+      "saya tahu langsung #0047# tidak melaksanakan akad #9340# sejak {sejak}"
+     ],
+     "saksi2": [
+      "terhitung {sejak} #0047# tidak menunaikan kewajibannya dalam akad #9340# di depan mata saya",
+      "#0047# tidak melakukan pembayaran menurut akad #9340# sejak {sejak} yang saya ketahui langsung",
+      "sejak {sejak} #0047# tidak lagi menjalankan kewajiban akad #9340# menurut penglihatan saya",
+      "saya menyaksikan sendiri #0047# tidak memenuhi akad #9340# sejak {sejak}"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: kewajiban tidak dijalankan sejak waktu pada isian; versi B: baru belakangan ini - berselisih pada WAKTU",
+     "saksi1": [
+      "#0047# tidak memenuhi kewajibannya menurut akad #9340# sejak {sejak}",
+      "sejak {sejak} saya lihat #0047# tidak membayar menurut akad #9340#",
+      "kewajiban #0047# menurut akad #9340# tidak dijalankan sejak {sejak}",
+      "saya tahu langsung #0047# tidak melaksanakan akad #9340# sejak {sejak}"
+     ],
+     "saksi2": [
+      "#0047# tidak memenuhi kewajibannya menurut akad #9340# baru belakangan ini",
+      "baru-baru ini saya lihat #0047# tidak membayar menurut akad #9340#",
+      "kewajiban #0047# menurut akad #9340# tidak dijalankan baru dalam beberapa bulan terakhir",
+      "saya tahu langsung #0047# tidak melaksanakan akad #9340# baru-baru ini"
+     ],
+     "bedaPada": "waktu"
+    }
+   }
+  },
+  {
+   "id": "q-wanprestasi-terlambat",
+   "pokok": "pp-wanprestasi",
+   "urutan": 110,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "bentukWanprestasi": "terlambat"
+   },
+   "teks": "Apakah #0047# terlambat memenuhi kewajibannya dan berapa lama keterlambatannya ?",
+   "variabelAbt": [
+    "0047",
+    "9340"
+   ],
+   "hal": "keterlambatan #0047# memenuhi kewajibannya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "Tergugat terlambat memenuhi kewajibannya selama waktu yang diisikan petugas",
+     "saksi1": [
+      "#0047# terlambat memenuhi kewajibannya menurut akad #9340# selama {lama} dan saya mengetahuinya sendiri",
+      "keterlambatan #0047# atas kewajiban akad #9340# berlangsung {lama} menurut penglihatan saya",
+      "saya melihat sendiri #0047# memenuhi kewajiban akad #9340# terlambat selama {lama}",
+      "kewajiban #0047# menurut akad #9340# baru dipenuhi setelah terlambat {lama} sebagaimana saya lihat"
+     ],
+     "saksi2": [
+      "pembayaran #0047# atas akad #9340# terlambat {lama} di depan mata saya",
+      "saya tahu langsung #0047# menunda kewajibannya menurut akad #9340# selama {lama}",
+      "lamanya #0047# terlambat memenuhi akad #9340# adalah {lama} yang saya ketahui sendiri",
+      "dari jadwal akad #9340# #0047# terlambat {lama} sebagaimana saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: keterlambatan lama; versi B: keterlambatan hanya sebentar - berselisih pada LAMA KETERLAMBATAN",
+     "saksi1": [
+      "keterlambatan #0047# memenuhi akad #9340# berlangsung berbulan-bulan",
+      "saya lihat sendiri #0047# menunda kewajiban akad #9340# selama berbulan-bulan",
+      "pembayaran #0047# atas akad #9340# terlambat dalam waktu lama menurut penglihatan saya",
+      "kewajiban akad #9340# oleh #0047# tertunda berbulan-bulan sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "keterlambatan #0047# memenuhi akad #9340# hanya beberapa hari",
+      "saya lihat sendiri #0047# menunda kewajiban akad #9340# hanya sebentar",
+      "pembayaran #0047# atas akad #9340# terlambat hanya dalam hitungan hari menurut penglihatan saya",
+      "kewajiban akad #9340# oleh #0047# tertunda hanya sebentar sebagaimana saya saksikan"
+     ],
+     "bedaPada": "lama"
+    }
+   }
+  },
+  {
+   "id": "q-wanprestasi-tidak-sesuai",
+   "pokok": "pp-wanprestasi",
+   "urutan": 120,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "bentukWanprestasi": "tidak-sesuai"
+   },
+   "teks": "Apakah #0047# melaksanakan kewajibannya tetapi tidak sesuai dengan yang dijanjikan dalam akad ?",
+   "variabelAbt": [
+    "0047",
+    "9340"
+   ],
+   "hal": "pelaksanaan kewajiban #0047# yang tidak sesuai akad",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "Tergugat melaksanakan kewajiban tetapi tidak sebagaimana yang dijanjikan dalam akad",
+     "saksi1": [
+      "pelaksanaan kewajiban #0047# tidak sesuai akad #9340# dalam hal {daftar} dan saya melihatnya sendiri",
+      "saya menyaksikan sendiri #0047# melaksanakan akad #9340# tidak sebagaimana dijanjikan yaitu {daftar}",
+      "yang tidak sesuai dari pelaksanaan akad #9340# oleh #0047# menurut penglihatan saya adalah {daftar}",
+      "#0047# menjalankan akad #9340# tidak seperti perjanjian khususnya {daftar} sebagaimana saya lihat"
+     ],
+     "saksi2": [
+      "menurut yang saya ketahui langsung #0047# tidak mengikuti akad #9340# dalam hal {daftar}",
+      "saya tahu sendiri pelaksanaan #0047# tidak sesuai kesepakatan akad #9340# yaitu {daftar}",
+      "bagian pelaksanaan akad #9340# oleh #0047# yang tidak cocok dan saya saksikan adalah {daftar}",
+      "di depan mata saya #0047# melaksanakan akad #9340# tidak sebagaimana mestinya yakni {daftar}"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pelaksanaan tidak sesuai akad; versi B: pelaksanaan sesuai akad - berselisih pada KESESUAIAN PELAKSANAAN",
+     "saksi1": [
+      "pelaksanaan akad #9340# oleh #0047# tidak sesuai kesepakatan menurut penglihatan saya",
+      "saya lihat sendiri #0047# tidak mengikuti akad #9340#",
+      "#0047# menjalankan akad #9340# tidak seperti perjanjian sebagaimana saya saksikan",
+      "pelaksanaan #0047# atas akad #9340# tidak cocok dengan yang dijanjikan menurut yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "pelaksanaan akad #9340# oleh #0047# sesuai kesepakatan menurut penglihatan saya",
+      "saya lihat sendiri #0047# menjalankan akad #9340# sebagaimana mestinya",
+      "#0047# menjalankan akad #9340# seperti perjanjian sebagaimana saya saksikan",
+      "pelaksanaan #0047# atas akad #9340# cocok dengan yang dijanjikan menurut yang saya ketahui langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-wanprestasi-terlarang",
+   "pokok": "pp-wanprestasi",
+   "urutan": 130,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "bentukWanprestasi": "melakukan-terlarang"
+   },
+   "teks": "Apakah #0047# melakukan sesuatu yang menurut akad tidak boleh dilakukan ?",
+   "variabelAbt": [
+    "0047",
+    "9340"
+   ],
+   "hal": "perbuatan #0047# yang dilarang dalam akad",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "Tergugat melakukan sesuatu yang dilarang dalam akad",
+     "saksi1": [
+      "#0047# melakukan {daftar} yang dilarang dalam akad #9340# dan saya menyaksikannya sendiri",
+      "saya melihat langsung #0047# berbuat {daftar} padahal akad #9340# melarangnya",
+      "perbuatan #0047# berupa {daftar} bertentangan dengan larangan dalam akad #9340# sebagaimana saya lihat",
+      "yang dilarang akad #9340# namun dilakukan #0047# adalah {daftar} menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "di depan mata saya #0047# melakukan {daftar} yang terlarang menurut akad #9340#",
+      "saya tahu sendiri #0047# melanggar larangan akad #9340# dengan {daftar}",
+      "#0047# melakukan {daftar} meski akad #9340# melarangnya yang saya ketahui langsung",
+      "pelanggaran #0047# atas akad #9340# yang saya saksikan berupa {daftar}"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: Tergugat melanggar larangan akad; versi B: Tergugat menaati larangan akad - berselisih pada PELANGGARAN LARANGAN",
+     "saksi1": [
+      "#0047# melanggar larangan dalam akad #9340# menurut penglihatan saya",
+      "saya lihat sendiri #0047# berbuat yang dilarang akad #9340#",
+      "perbuatan #0047# melanggar akad #9340# sebagaimana saya saksikan",
+      "#0047# melakukan hal terlarang menurut akad #9340# di depan mata saya"
+     ],
+     "saksi2": [
+      "#0047# menaati larangan dalam akad #9340# menurut penglihatan saya",
+      "saya lihat sendiri #0047# menjauhi yang dilarang akad #9340#",
+      "perbuatan #0047# selaras dengan akad #9340# sebagaimana saya saksikan",
+      "#0047# mematuhi hal yang dilarang akad #9340# di depan mata saya"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-sisa-kewajiban",
+   "pokok": "pp-wanprestasi",
+   "urutan": 140,
+   "tingkat": "inti",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Berapa sisa kewajiban #0047# kepada #0046# sampai sekarang ?",
+   "teksVarian": [
+    "Berapa kewajiban #0047# kepada #0046# yang belum dibayar ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9344"
+   ],
+   "hal": "sisa kewajiban #0047# kepada #0046#",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sisa kewajiban Tergugat kepada Penggugat",
+     "saksi1": [
+      "sisa kewajiban #0047# kepada #0046# menurut yang saya ketahui langsung adalah Rp#9344#",
+      "saya mengetahui sendiri #0047# masih berutang kepada #0046# sebesar Rp#9344#",
+      "jumlah yang masih harus dibayar #0047# kepada #0046# sebagaimana saya lihat adalah Rp#9344#",
+      "sisa tagihan #0046# atas #0047# yang saya ketahui adalah Rp#9344#"
+     ],
+     "saksi2": [
+      "yang masih harus dilunasi #0047# kepada #0046# menurut penglihatan saya sebesar Rp#9344#",
+      "saya tahu langsung kewajiban #0047# yang tersisa kepada #0046# berjumlah Rp#9344#",
+      "tunggakan #0047# kepada #0046# yang saya saksikan hitungannya Rp#9344#",
+      "kekurangan pembayaran #0047# kepada #0046# adalah Rp#9344# sebagaimana saya ketahui sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: sisa kewajiban masih besar; versi B: sisa kewajiban tinggal sedikit - berselisih pada BESAR SISA KEWAJIBAN",
+     "saksi1": [
+      "sisa kewajiban #0047# kepada #0046# masih besar menurut penglihatan saya",
+      "saya tahu langsung tunggakan #0047# kepada #0046# banyak",
+      "yang masih harus dibayar #0047# kepada #0046# cukup besar sebagaimana saya saksikan",
+      "kewajiban #0047# yang tersisa masih tinggi menurut yang saya ketahui"
+     ],
+     "saksi2": [
+      "sisa kewajiban #0047# kepada #0046# tinggal sedikit menurut penglihatan saya",
+      "saya tahu langsung tunggakan #0047# kepada #0046# kecil",
+      "yang masih harus dibayar #0047# kepada #0046# tinggal sebagian kecil sebagaimana saya saksikan",
+      "kewajiban #0047# yang tersisa rendah menurut yang saya ketahui"
+     ],
+     "bedaPada": "jumlah"
+    }
+   }
+  },
+  {
+   "id": "q-teguran",
+   "pokok": "pp-penyelesaian",
+   "urutan": 150,
+   "tingkat": "inti",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah #0046# pernah menagih atau menegur #0047# agar memenuhi kewajibannya dan bagaimana tanggapannya ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9340"
+   ],
+   "hal": "penagihan atau teguran kepada #0047# dan tanggapannya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "Penggugat telah menagih atau menegur Tergugat namun kewajiban tetap tidak dipenuhi",
+     "saksi1": [
+      "#0046# menagih dan menegur #0047# agar memenuhi akad #9340# tetapi tanggapannya berupa janji kosong dan saya menyaksikannya",
+      "saya melihat sendiri #0046# menegur #0047# secara lisan dan tertulis atas akad #9340# namun kewajiban tetap dilalaikan",
+      "teguran #0046# kepada #0047# soal akad #9340# disampaikan berkali-kali dan kewajiban tetap dilalaikan sebagaimana saya lihat",
+      "#0046# menagih #0047# dengan baik-baik atas akad #9340# namun #0047# sekadar berjanji menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "di depan mata saya #0046# menagih kewajiban akad #9340# kepada #0047# dan jawabannya janji belaka",
+      "saya ada ketika #0046# mengirim peringatan kepada #0047# soal akad #9340# namun kewajiban tetap dilalaikan",
+      "penagihan #0046# kepada #0047# atas akad #9340# berulang dan hasilnya janji belaka menurut yang saya ketahui langsung",
+      "#0046# telah menegur #0047# agar memenuhi akad #9340# tetapi kewajiban tetap dilalaikan sebagaimana saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: sudah ada teguran atau penagihan; versi B: belum ada teguran - berselisih pada ADA TIDAKNYA TEGURAN",
+     "saksi1": [
+      "ada teguran dari #0046# kepada #0047# soal akad #9340#",
+      "saya lihat sendiri #0046# menagih #0047# soal akad #9340#",
+      "#0046# telah memperingatkan #0047# atas akad #9340# menurut penglihatan saya",
+      "penagihan atas akad #9340# telah disampaikan #0046# sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "belum ada teguran dari #0046# kepada #0047# soal akad #9340#",
+      "saya lihat #0046# belum menagih #0047# soal akad #9340#",
+      "#0046# belum memperingatkan #0047# atas akad #9340# menurut penglihatan saya",
+      "penagihan atas akad #9340# belum disampaikan #0046# sebagaimana saya saksikan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-musyawarah",
+   "pokok": "pp-penyelesaian",
+   "urutan": 160,
+   "tingkat": "inti",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah kedua pihak pernah bermusyawarah mencari penyelesaian, misalnya keringanan atau penjadwalan ulang pembayaran ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9340"
+   ],
+   "hal": "musyawarah penyelesaian antara para pihak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "para pihak telah bermusyawarah namun tidak mencapai penyelesaian",
+     "saksi1": [
+      "#0046# dan #0047# telah bermusyawarah soal akad #9340# tetapi gagal mencapai penyelesaian dan saya menyaksikannya",
+      "saya hadir dalam pertemuan #0046# dan #0047# membahas keringanan akad #9340# namun gagal",
+      "pembicaraan penjadwalan ulang akad #9340# antara kedua pihak telah dilakukan dan gagal sebagaimana saya lihat",
+      "kedua pihak telah mencoba berunding atas akad #9340# namun gagal menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "di hadapan saya #0046# dan #0047# berunding soal pelunasan akad #9340# dan perundingan itu gagal",
+      "saya ikut menyaksikan upaya kedua pihak mencari jalan keluar akad #9340# yang gagal",
+      "musyawarah #0046# dengan #0047# tentang akad #9340# telah ditempuh tetapi gagal",
+      "pertemuan penyelesaian akad #9340# antara kedua pihak yang saya hadiri gagal"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: sudah ada musyawarah; versi B: belum ada musyawarah - berselisih pada ADA TIDAKNYA MUSYAWARAH",
+     "saksi1": [
+      "ada musyawarah antara #0046# dan #0047# soal akad #9340#",
+      "saya lihat sendiri kedua pihak berunding soal akad #9340#",
+      "pertemuan penyelesaian akad #9340# telah dilakukan menurut penglihatan saya",
+      "kedua pihak telah berembuk soal akad #9340# sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "belum ada musyawarah antara #0046# dan #0047# soal akad #9340#",
+      "saya lihat kedua pihak belum berunding soal akad #9340#",
+      "pertemuan penyelesaian akad #9340# belum dilakukan menurut penglihatan saya",
+      "kedua pihak belum berembuk soal akad #9340# sebagaimana saya saksikan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-kerugian",
+   "pokok": "pp-kerugian",
+   "urutan": 170,
+   "tingkat": "inti",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Kerugian apa yang dialami #0046# akibat #0047# tidak memenuhi kewajibannya ?",
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "kerugian #0046# akibat ingkar janji #0047#",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kerugian yang dialami Penggugat akibat Tergugat tidak memenuhi kewajiban",
+     "saksi1": [
+      "kerugian yang dialami #0046# akibat #0047# yang saya lihat sendiri adalah {daftar}",
+      "saya menyaksikan sendiri #0046# menderita kerugian berupa {daftar} karena kewajiban akad dilalaikan",
+      "akibat kewajiban akad dilalaikan #0047# kerugian #0046# yang saya ketahui adalah {daftar}",
+      "dengan mata kepala sendiri saya melihat #0046# rugi {daftar} sebab #0047# lalai"
+     ],
+     "saksi2": [
+      "menurut yang saya ketahui langsung #0046# dirugikan dalam bentuk {daftar}",
+      "saya tahu sendiri kerugian #0046# karena kelalaian #0047# atas akad berupa {daftar}",
+      "kerugian #0046# yang saya saksikan akibat kewajiban akad dilalaikan ialah {daftar}",
+      "akibat perbuatan #0047# #0046# mengalami {daftar} sebagaimana saya lihat sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: Penggugat mengalami kerugian besar; versi B: kerugian Penggugat kecil - berselisih pada BESAR KERUGIAN",
+     "saksi1": [
+      "kerugian #0046# akibat kelalaian #0047# cukup besar menurut penglihatan saya",
+      "saya lihat sendiri #0046# rugi banyak karena kewajiban akad dilalaikan",
+      "dampak kelalaian #0047# bagi #0046# berat sebagaimana saya saksikan",
+      "#0046# menanggung kerugian besar akibat #0047# menurut yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "kerugian #0046# akibat kelalaian #0047# kecil menurut penglihatan saya",
+      "saya lihat sendiri #0046# rugi sedikit karena kewajiban akad dilalaikan",
+      "dampak kelalaian #0047# bagi #0046# ringan sebagaimana saya saksikan",
+      "#0046# menanggung kerugian kecil akibat #0047# menurut yang saya ketahui langsung"
+     ],
+     "bedaPada": "jumlah"
+    }
+   }
+  },
+  {
+   "id": "q-jaminan",
+   "pokok": "pp-jaminan",
+   "urutan": 180,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jaminan": "ada"
+   },
+   "teks": "Apakah ada jaminan atau agunan dalam akad itu, apa bentuknya dan di mana letaknya ?",
+   "variabelAbt": [
+    "9340"
+   ],
+   "hal": "jaminan atau agunan dalam akad",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan jaminan atau agunan dalam akad beserta bentuk dan letaknya",
+     "saksi1": [
+      "jaminan dalam akad #9340# yang saya ketahui langsung berupa {daftar}",
+      "saya melihat sendiri agunan akad #9340# yaitu {daftar}",
+      "bentuk dan letak jaminan akad #9340# menurut yang saya saksikan adalah {daftar}",
+      "yang dijadikan agunan dalam akad #9340# sebagaimana saya ketahui adalah {daftar}"
+     ],
+     "saksi2": [
+      "menurut penglihatan saya sendiri akad #9340# dijamin dengan {daftar}",
+      "saya tahu langsung agunan akad #9340# berupa {daftar} beserta letaknya",
+      "jaminan akad #9340# yang saya saksikan adalah {daftar}",
+      "dalam akad #9340# disebutkan jaminan {daftar} yang saya ketahui sendiri"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-alasan-lawan",
+   "pokok": "pp-bantahan",
+   "urutan": 190,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kehadiran": [
+     "kontradiktoir",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   },
+   "teks": "Apa alasan #0047# tidak memenuhi kewajibannya menurut yang saksi ketahui ?",
+   "variabelAbt": [
+    "0047",
+    "9340"
+   ],
+   "hal": "alasan #0047# tidak memenuhi kewajibannya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan alasan Tergugat tidak memenuhi kewajiban yang ia ketahui sendiri",
+     "saksi1": [
+      "alasan yang #0047# ucapkan sendiri kepada saya soal akad #9340# adalah {daftar}",
+      "saya mendengar langsung #0047# beralasan {daftar} atas akad #9340#",
+      "menurut ucapan #0047# yang saya dengar sendiri kewajiban akad #9340# ditunda karena {daftar}",
+      "alasan yang #0047# sampaikan di hadapan saya mengenai akad #9340# adalah {daftar}"
+     ],
+     "saksi2": [
+      "di hadapan saya #0047# mengatakan alasannya mengenai akad #9340# yaitu {daftar}",
+      "saya sendiri mendengar #0047# menjelaskan sebabnya soal akad #9340# yakni {daftar}",
+      "#0047# menyebut {daftar} sebagai alasan akad #9340# tertunda dan saya mendengarnya langsung",
+      "ucapan #0047# yang saya dengar langsung tentang sebab akad #9340# tertunda adalah {daftar}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-keadaan-memaksa",
+   "pokok": "pp-bantahan",
+   "urutan": 200,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kehadiran": [
+     "kontradiktoir",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   },
+   "teks": "Apakah saksi mengetahui keadaan di luar kemampuan #0047# yang membuatnya tidak dapat memenuhi kewajibannya ?",
+   "variabelAbt": [
+    "0047"
+   ],
+   "hal": "keadaan di luar kemampuan #0047# yang menghalangi pemenuhan kewajiban",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan keadaan di luar kemampuan Tergugat yang menghalanginya memenuhi kewajiban",
+     "saksi1": [
+      "keadaan di luar kemampuan #0047# yang saya lihat sendiri adalah {daftar}",
+      "saya menyaksikan sendiri #0047# terhalang memenuhi akad oleh {daftar}",
+      "hal di luar kuasa #0047# berupa {daftar} sebagaimana saya lihat membuat akad tertunda",
+      "dengan mata kepala sendiri saya melihat #0047# terkena {daftar} sehingga akad terhambat"
+     ],
+     "saksi2": [
+      "menurut yang saya ketahui langsung #0047# menghadapi {daftar} di luar kemampuannya atas akad",
+      "saya tahu sendiri penghalang #0047# memenuhi akad adalah {daftar}",
+      "keadaan yang menimpa #0047# berupa {daftar} dan saya menyaksikannya terkait akad",
+      "di depan mata saya #0047# mengalami {daftar} yang menghambat akad"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: ada keadaan di luar kemampuan Tergugat; versi B: Tergugat mampu memenuhi kewajiban - berselisih pada ADANYA KEADAAN PENGHALANG",
+     "saksi1": [
+      "ada keadaan di luar kemampuan #0047# yang menghambat akad menurut penglihatan saya",
+      "saya lihat sendiri #0047# terhalang oleh keadaan di luar kuasanya atas akad",
+      "akad terhambat oleh keadaan di luar kemampuan #0047# sebagaimana saya saksikan",
+      "#0047# menghadapi halangan di luar kuasanya menurut yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "#0047# mampu memenuhi akad menurut penglihatan saya",
+      "saya lihat sendiri #0047# leluasa menjalankan kewajiban akad",
+      "#0047# sanggup melaksanakan akad sebagaimana saya saksikan",
+      "kemampuan #0047# memenuhi akad cukup menurut yang saya ketahui langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-keberadaan-lawan",
+   "pokok": "pp-wanprestasi",
+   "urutan": 210,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kehadiran": "verstek"
+   },
+   "teks": "Apa yang saksi ketahui tentang keberadaan dan usaha #0047# sekarang ?",
+   "variabelAbt": [
+    "0047"
+   ],
+   "hal": "keberadaan dan usaha #0047# sekarang",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan keberadaan dan usaha Tergugat sekarang yang ia ketahui",
+     "saksi1": [
+      "yang saya ketahui langsung tentang keberadaan dan usaha #0047# sekarang adalah {daftar}",
+      "saya melihat sendiri keadaan #0047# sekarang yaitu {daftar}",
+      "tempat dan usaha #0047# saat ini menurut yang saya saksikan adalah {daftar}",
+      "kediaman serta kegiatan usaha #0047# sekarang berupa {daftar} sebagaimana saya lihat"
+     ],
+     "saksi2": [
+      "menurut penglihatan saya sendiri #0047# sekarang {daftar}",
+      "saya tahu langsung bahwa #0047# sekarang berada dan berusaha sebagai berikut yaitu {daftar}",
+      "keberadaan dan usaha #0047# saat ini adalah {daftar} yang saya ketahui sendiri",
+      "sepengetahuan saya yang menyaksikan langsung #0047# sekarang berada pada {daftar}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-penutup",
+   "pokok": "pp-penutup",
+   "urutan": 900,
+   "tingkat": "inti",
+   "kelompok": "penutup",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+   "teksVarian": [
+    "Apakah masih ada keterangan lain yang akan saksi sampaikan ?",
+    "Adakah hal lain yang hendak saksi terangkan ?"
+   ],
+   "variabelAbt": [],
+   "hal": "keterangan tambahan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan keterangannya sudah cukup",
+     "saksi1": [
+      "sudah cukup",
+      "sudah cukup sekian dari saya",
+      "sudah cukup keterangan saya",
+      "sudah cukup itu saja"
+     ],
+     "saksi2": [
+      "sudah cukup demikian keterangan saya",
+      "sudah cukup semua yang dapat saya terangkan",
+      "sudah cukup sampai di sini keterangan saya",
+      "sudah cukup demikian yang saya ketahui"
+     ]
+    }
+   }
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Keterangan saksi harus menyebut sebab pengetahuannya; keterangan seorang saksi saja tanpa alat bukti lain tidak cukup.",
+  "Keluarga sedarah dan semenda garis lurus serta suami atau istri salah satu pihak pada dasarnya tidak dapat didengar sebagai saksi; perkara tentang keadaan menurut hukum sipil seseorang dikecualikan (Buku II Edisi Revisi 2013 hlm. 100-101). Penilaian ada pada hakim.",
+  "Keterangan yang hanya berasal dari cerita orang lain hanya dapat menjadi sumber persangkaan.",
+  "Sifat syariah suatu akad ditentukan pula oleh substansinya, bukan hanya namanya (Buku II 2026 aspek 41, ringkasan).",
+  "Pilih bentuk ingkar janji yang didalilkan pada borang agar butir yang sesuai (tidak melakukan, terlambat, tidak sesuai, melakukan yang terlarang) ikut diajukan.",
+  "Pada gugatan sederhana pemeriksaan lebih ringkas; butir tambahan dapat dilewati bila saksi sudah menerangkan intinya."
+ ],
+ "variabelBaru": [
+  "9340",
+  "9344"
+ ]
+}

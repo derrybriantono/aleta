@@ -84,6 +84,13 @@ const BERKAS = [
   // C) - skrip konten SIPP yang memasang dirinya sendiri pada blangko "Tambah
   // Referensi Data Pihak"; dimuat sesudah basmassal.js, sebelum konten.js.
   "saksiscan.js",
+  // Susun saksi menurut keadaan dan jenis perkara (18 Okt 2026): mesin katalog
+  // (murni, tanpa DOM), data katalog yang DIHASILKAN dari saksi-katalog/*.json
+  // oleh scripts/susun-saksi-katalog.mjs, dan borangnya. Dimuat di ABT sebelum
+  // abt.js; borang dipasang abt.js lewat globalThis.AletaSaksiSusun.
+  "saksi-katalog.js",
+  "saksi-katalog-data.js",
+  "saksi-susun.js",
   // Blangko ABT by Derry Briantono (tahap C-D, 16 Okt 2026) - skrip konten ABT
   // dan gayanya, dimuat sesudah checklist.js. abt-klien.js (klien rute ABT,
   // tahap A) dimuat sebelumnya; blangko-derry-isian.js (tahap F-G: perlu
@@ -171,6 +178,12 @@ const BERKAS_BINER = [
  * penjelasan tiap kali dijalankan - dan supaya yang menambah berkas baru harus
  * memutuskan: dikirim, atau dikecualikan beserta sebabnya.
  */
+// Awalan folder yang SENGAJA tidak dikirim: sumber data yang sudah dilebur ke berkas lain.
+const DIKECUALIKAN_AWALAN = [
+  // Katalog Susun saksi per jenis (JSON); dilebur ke saksi-katalog-data.js oleh scripts/susun-saksi-katalog.mjs.
+  "saksi-katalog/",
+];
+
 const DIKECUALIKAN = new Map([
   // Belum ada. Contoh yang pernah dipertimbangkan: berkas catatan
   // pengembangan, atau ikon sumber berformat .svg yang tidak dipakai Chrome.
@@ -194,7 +207,7 @@ function sapuFolder(akar, awalan = "") {
 const didaftarkan = new Set([...BERKAS, ...BERKAS_BINER]);
 const adaDiFolder = sapuFolder(sumber);
 const tanpaKeputusan = adaDiFolder.filter(
-  (nama) => !didaftarkan.has(nama) && !DIKECUALIKAN.has(nama)
+  (nama) => !didaftarkan.has(nama) && !DIKECUALIKAN.has(nama) && !DIKECUALIKAN_AWALAN.some((awalan) => nama.startsWith(awalan))
 );
 
 if (tanpaKeputusan.length > 0) {

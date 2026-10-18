@@ -1,0 +1,1333 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "wali-adhal",
+ "judul": "Wali adhal",
+ "versi": 1,
+ "penulis": "SAKSI-C",
+ "tahap": 1,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "363"
+  ]
+ },
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [
+  {
+   "folder": "7 Wali Adhal - BAS",
+   "berkas": "BAS ALUR 19 Wali Adhal - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": "dua saksi Pemohon"
+  },
+  {
+   "folder": "7 Wali Adhal - BAS",
+   "berkas": "BAS ALUR 19 Wali Adhal - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "7 Wali Adhal - BAS",
+   "berkas": "BAS ALUR 19 Wali Adhal - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "7 Wali Adhal - BAS",
+   "berkas": "BAS ALUR 19 Wali Adhal - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  }
+ ],
+ "dasarHukum": [
+  {
+   "id": "dh-pasal-49a-wa",
+   "rujukan": "Pasal 49 huruf a UU 7/1989 jo UU 3/2006 jo UU 50/2009 jo Pasal 23 ayat (2) KHI",
+   "uraian": "permohonan penetapan wali adhal termasuk bidang perkawinan dan menjadi kewenangan Pengadilan Agama",
+   "status": "terverifikasi",
+   "sumber": "blangko Derry 7 Wali Adhal [01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan (pertimbangan hukum)"
+  },
+  {
+   "id": "dh-khi-19-20",
+   "rujukan": "Pasal 19 dan Pasal 20 ayat (1) KHI",
+   "uraian": "wali nikah merupakan rukun yang harus dipenuhi bagi calon mempelai perempuan; wali nikah ialah laki-laki muslim, akil dan baligh",
+   "status": "terverifikasi",
+   "sumber": "blangko Derry 7 Wali Adhal [01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan (pertimbangan hukum)"
+  },
+  {
+   "id": "dh-khi-23",
+   "rujukan": "Pasal 23 ayat (1) dan ayat (2) KHI",
+   "uraian": "wali hakim baru dapat bertindak bila wali nasab tidak ada, tidak mungkin dihadirkan, gaib, adlal atau enggan; dalam hal wali adlal atau enggan wali hakim bertindak setelah ada putusan Pengadilan Agama",
+   "status": "terverifikasi",
+   "sumber": "blangko Derry 7 Wali Adhal [01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan (pertimbangan hukum)"
+  },
+  {
+   "id": "dh-hadis-sulthan",
+   "rujukan": "Hadis riwayat Abu Dawud, at-Tirmidzi dan Ibnu Majah dari Aisyah r.a.",
+   "uraian": "bila para wali berselisih maka sulthan (penguasa) adalah wali bagi orang yang tidak mempunyai wali",
+   "status": "terverifikasi",
+   "sumber": "blangko Derry 7 Wali Adhal [01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan (pertimbangan hukum)"
+  },
+  {
+   "id": "dh-rbg-saksi-formil",
+   "rujukan": "Pasal 172 ayat (1) RBg",
+   "uraian": "syarat formil saksi: dewasa, cakap dan memberi keterangan di bawah sumpah",
+   "status": "terverifikasi",
+   "sumber": "blangko Derry 7 Wali Adhal [01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan (pertimbangan hukum)"
+  },
+  {
+   "id": "dh-rbg-saksi-materiil",
+   "rujukan": "Pasal 308 dan Pasal 309 RBg",
+   "uraian": "syarat materiil saksi: keterangan berdasar pengetahuan sendiri dan saling bersesuaian",
+   "status": "terverifikasi",
+   "sumber": "blangko Derry 7 Wali Adhal [01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan (pertimbangan hukum)"
+  },
+  {
+   "id": "dh-khi-21",
+   "rujukan": "Pasal 21 KHI",
+   "uraian": "wali nasab terdiri atas empat kelompok dalam urutan kedudukan menurut erat tidaknya kekerabatan dengan calon mempelai",
+   "status": "perlu-verifikasi",
+   "sumber": "pengetahuan umum penulis katalog; belum dicocokkan dengan naskah KHI"
+  },
+  {
+   "id": "dh-uup-7-khi-16",
+   "rujukan": "Pasal 7 ayat (1) UU 1/1974 jo UU 16/2019 dan Pasal 16 KHI",
+   "uraian": "batas umur perkawinan 19 tahun bagi laki-laki dan perempuan; perkawinan didasarkan atas persetujuan calon mempelai",
+   "status": "perlu-verifikasi",
+   "sumber": "pengetahuan umum penulis katalog; belum dicocokkan dengan naskah undang-undang dan KHI"
+  },
+  {
+   "id": "dh-halangan-kawin",
+   "rujukan": "Pasal 8 UU 1/1974 dan Pasal 39 sampai Pasal 44 KHI",
+   "uraian": "larangan perkawinan karena hubungan nasab, semenda, sesusuan dan keadaan lain",
+   "status": "perlu-verifikasi",
+   "sumber": "pengetahuan umum penulis katalog; belum dicocokkan dengan naskah undang-undang dan KHI"
+  },
+  {
+   "id": "dh-khi-61",
+   "rujukan": "Pasal 61 KHI",
+   "uraian": "tidak sekufu tidak dapat dijadikan alasan mencegah perkawinan kecuali karena perbedaan agama",
+   "status": "perlu-verifikasi",
+   "sumber": "pengetahuan umum penulis katalog; belum dicocokkan dengan naskah KHI"
+  },
+  {
+   "id": "dh-khi-153",
+   "rujukan": "Pasal 153 KHI",
+   "uraian": "waktu tunggu (iddah) bagi istri yang perkawinannya putus",
+   "status": "perlu-verifikasi",
+   "sumber": "pengetahuan umum penulis katalog; belum dicocokkan dengan naskah KHI"
+  }
+ ],
+ "keadaan": {
+  "statusPemohon": {
+   "sumber": "borang",
+   "nilai": [
+    "gadis",
+    "janda-cerai",
+    "janda-mati"
+   ],
+   "bawaan": "gadis",
+   "label": "Status Pemohon sebelum menikah"
+  },
+  "hubunganWali": {
+   "sumber": "borang",
+   "nilai": [
+    "ayah-kandung",
+    "kakek",
+    "saudara-kandung",
+    "paman",
+    "lainnya"
+   ],
+   "bawaan": "ayah-kandung",
+   "label": "Hubungan wali yang menolak dengan Pemohon"
+  },
+  "waliHadir": {
+   "sumber": "borang",
+   "nilai": [
+    "hadir",
+    "tidak-hadir"
+   ],
+   "bawaan": "tidak-hadir",
+   "label": "Wali hadir di persidangan"
+  },
+  "penolakanKua": {
+   "sumber": "borang",
+   "nilai": [
+    "ada",
+    "tidak-ada"
+   ],
+   "bawaan": "ada",
+   "label": "Ada surat penolakan dari Kantor Urusan Agama"
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-saksi-formil",
+   "judul": "Syarat formil saksi",
+   "uraian": "saksi mengenal Pemohon, menyebut hubungannya, dan tidak berkepentingan",
+   "dasarHukum": [
+    "dh-rbg-saksi-formil"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-maksud-calon",
+   "judul": "Maksud pernikahan dan calon suami",
+   "uraian": "Pemohon hendak menikah dengan calon suami tertentu; identitas, umur dan status keduanya",
+   "dasarHukum": [
+    "dh-pasal-49a-wa",
+    "dh-khi-19-20"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-wali-nasab",
+   "judul": "Wali nasab yang berhak",
+   "uraian": "siapa wali nasab Pemohon, hubungannya dan apakah ada wali lain yang lebih berhak",
+   "dasarHukum": [
+    "dh-khi-19-20",
+    "dh-khi-21"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-penolakan-wali",
+   "judul": "Wali menolak menikahkan dan alasannya",
+   "uraian": "wali nasab tidak bersedia menikahkan dan sebabnya",
+   "dasarHukum": [
+    "dh-khi-23",
+    "dh-hadis-sulthan"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-upaya-wali",
+   "judul": "Upaya meminta kesediaan wali",
+   "uraian": "wali telah diminta dan dinasihati, serta pegawai pencatat nikah menolak mencatat karena wali enggan",
+   "dasarHukum": [
+    "dh-khi-23"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-halangan-kafaah",
+   "judul": "Tidak ada halangan perkawinan dan calon suami sekufu",
+   "uraian": "tidak ada halangan nasab, semenda atau sesusuan; keduanya beragama Islam; calon suami sekufu, berakhlak dan mampu",
+   "dasarHukum": [
+    "dh-halangan-kawin",
+    "dh-khi-61"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-persetujuan-umur",
+   "judul": "Umur dan persetujuan Pemohon",
+   "uraian": "Pemohon telah cukup umur dan menikah atas kehendaknya sendiri",
+   "dasarHukum": [
+    "dh-uup-7-khi-16"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-iddah",
+   "judul": "Masa tunggu Pemohon yang berstatus janda",
+   "uraian": "masa iddah Pemohon telah berakhir",
+   "dasarHukum": [
+    "dh-khi-153"
+   ],
+   "wajib": false,
+   "keadaan": {
+    "statusPemohon": [
+     "janda-cerai",
+     "janda-mati"
+    ]
+   }
+  },
+  {
+   "id": "pp-sikap-wali",
+   "judul": "Sikap wali di persidangan dan ketidakhadirannya",
+   "uraian": "sikap wali yang hadir atau keadaan wali yang tidak hadir",
+   "dasarHukum": [
+    "dh-khi-23"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-penutup",
+   "judul": "Penutup keterangan saksi",
+   "uraian": "saksi menyatakan keterangannya telah cukup",
+   "dasarHukum": [],
+   "wajib": false
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-kenal-pemohon",
+   "pokok": "pp-saksi-formil",
+   "urutan": 10,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Apakah saksi kenal dengan #0046# ?",
+   "teksVarian": [
+    "Apakah saksi mengenal #0046# dan apa hubungan saksi dengannya ?",
+    "Kenalkah saksi dengan #0046# ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal Pemohon dan menyebut hubungannya",
+     "saksi1": [
+      "saya kenal dengan #0046# karena saya adalah {hubungan}",
+      "saya mengenal #0046# sejak lama sebab saya adalah {hubungan}",
+      "benar saya kenal #0046# dalam kedudukan saya sebagai {hubungan}",
+      "#0046# saya kenal baik karena saya adalah {hubungan}"
+     ],
+     "saksi2": [
+      "saya mengetahui siapa #0046# karena kedudukan saya sebagai {hubungan}",
+      "hubungan saya dengan #0046# adalah sebagai {hubungan} sehingga saya mengenalnya",
+      "saya telah lama mengenal #0046# dan hubungan saya dengannya adalah {hubungan}",
+      "sebagai {hubungan} saya kenal dengan #0046# dari dahulu"
+     ]
+    }
+   },
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-hubungan-kepentingan",
+   "pokok": "pp-saksi-formil",
+   "urutan": 20,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Apakah saksi mempunyai kepentingan atau hubungan lain dengan #0046#, calon suaminya, maupun walinya yang dapat memengaruhi keterangan saksi ?",
+   "teksVarian": [
+    "Apakah saksi punya kepentingan lain atas permohonan #0046# ini ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi tidak punya kepentingan yang memengaruhi keterangannya",
+     "saksi1": [
+      "saya tidak mempunyai kepentingan apa pun atas permohonan #0046# ini selain menjadi saksi",
+      "saya datang hanya sebagai saksi dan tidak punya kepentingan pribadi terhadap #0046# maupun calon suaminya",
+      "tidak ada hubungan kerja atau kepentingan lain antara saya dengan #0046# yang memengaruhi keterangan saya",
+      "saya tidak terikat kepentingan dengan #0046# atau calon suaminya dan berdiri netral dalam perkara ini"
+     ],
+     "saksi2": [
+      "keterangan ini saya berikan tanpa kepentingan pribadi terhadap #0046# ataupun wali #0046#",
+      "tak ada kepentingan lain antara saya dan #0046# selain keterangan yang saya berikan hari ini",
+      "saya bukan pihak yang berkepentingan atas permohonan #0046# ini",
+      "saya tidak memiliki ikatan kepentingan dengan #0046# dan menerangkan apa adanya"
+     ]
+    }
+   },
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-maksud-permohonan",
+   "pokok": "pp-maksud-calon",
+   "urutan": 30,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Apakah saksi mengetahui maksud #0046# mengajukan permohonan wali adhal ini ?",
+   "teksVarian": [
+    "Apakah saksi tahu mengapa #0046# datang ke pengadilan untuk memohon penetapan wali adhal ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui bahwa Pemohon hendak menikah tetapi walinya tidak bersedia menikahkan",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa #0046# ingin menikah dengan #1029# tetapi walinya tidak bersedia menikahkannya",
+      "saya tahu langsung #0046# mengajukan permohonan ini karena hendak menikah dengan #1029# sedangkan walinya tidak bersedia menikahkan",
+      "maksud #0046# adalah memperoleh penetapan wali adhal agar dapat menikah dengan #1029# karena walinya tidak mau menikahkan dan saya mengetahuinya sendiri",
+      "saya menyaksikan sendiri #0046# berusaha menikah dengan #1029# namun walinya tidak mau menjadi wali nikahnya"
+     ],
+     "saksi2": [
+      "#0046# hendak melangsungkan pernikahan dengan #1029# dan walinya tidak bersedia sebagaimana yang saya ketahui langsung",
+      "saya ikut mengetahui bahwa #0046# memohon penetapan wali adhal karena walinya tidak mau menikahkannya dengan #1029#",
+      "rencana pernikahan #0046# dengan #1029# terhambat karena wali tidak mau menikahkan dan saya mengalaminya bersama keluarga",
+      "saya ada ketika #0046# menyampaikan keinginan menikah dengan #1029# dan walinya tidak menyetujui"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: wali menolak menikahkan; versi B: wali sebenarnya belum pernah diminta menjadi wali - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "saya melihat sendiri bahwa wali #0046# menolak menikahkannya dengan #1029#",
+      "menurut yang saya saksikan wali #0046# menolak menjadi wali nikah dalam pernikahan dengan #1029#",
+      "saya menyaksikan wali #0046# menyatakan penolakannya atas pernikahan dengan #1029#",
+      "wali #0046# menolak menikahkannya dengan #1029# dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri bahwa wali #0046# belum pernah diminta menjadi wali nikah dalam pernikahan dengan #1029#",
+      "menurut yang saya saksikan permintaan kesediaan kepada wali #0046# belum dilakukan untuk pernikahan dengan #1029#",
+      "saya menyaksikan wali #0046# belum ditanya soal pernikahan dengan #1029#",
+      "wali #0046# belum pernah dimintai kesediaannya untuk pernikahan dengan #1029# dan saya mengetahuinya langsung"
+     ]
+    }
+   },
+   "hal": "maksud pemohon mengajukan permohonan wali adhal",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "1029"
+   ]
+  },
+  {
+   "id": "q-kenal-calon",
+   "pokok": "pp-maksud-calon",
+   "urutan": 40,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Apakah saksi kenal dengan calon suami #0046#, dan siapa namanya ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal calon suami Pemohon dan menyebut namanya",
+     "saksi1": [
+      "saya kenal dengan calon suami #0046# yang bernama #1029#",
+      "calon suami #0046# bernama #1029# dan saya mengenalnya secara langsung",
+      "saya mengenal sendiri calon suami #0046# yaitu #1029#",
+      "benar saya kenal calon suami #0046# bernama #1029#"
+     ],
+     "saksi2": [
+      "laki-laki yang hendak menikahi #0046# adalah #1029# dan saya mengenalnya dengan baik",
+      "saya sudah mengenal calon suami #0046# yang bernama #1029# dan sering bertemu dengannya",
+      "saya tahu sendiri bahwa nama calon suami #0046# adalah #1029#",
+      "calon pasangan #0046# bernama #1029# dan saya kenal dengannya dalam pergaulan sehari-hari"
+     ]
+    }
+   },
+   "hal": "calon suami pemohon",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046",
+    "1029"
+   ]
+  },
+  {
+   "id": "q-umur-calon",
+   "pokok": "pp-maksud-calon",
+   "urutan": 50,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Berapa umur calon suami #0046# ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan umur calon suami Pemohon",
+     "saksi1": [
+      "calon suami #0046# berumur #1030# sepengetahuan saya",
+      "umur calon suami #0046# adalah #1030# dan saya mengetahuinya dari pergaulan dengannya",
+      "saya mengetahui sendiri bahwa calon suami #0046# berusia #1030#",
+      "calon suami #0046# berusia #1030# sebagaimana yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "menurut yang saya ketahui sendiri umur calon suami #0046# adalah #1030#",
+      "saya mengenal calon suami #0046# yang saat ini berumur #1030#",
+      "usia calon suami #0046# adalah #1030# dan saya tahu dari pergaulan sehari-hari",
+      "saya melihat calon suami #0046# dewasa dan umurnya adalah #1030#"
+     ]
+    }
+   },
+   "hal": "umur calon suami pemohon",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046",
+    "1030"
+   ]
+  },
+  {
+   "id": "q-hubungan-wali",
+   "pokok": "pp-wali-nasab",
+   "urutan": 60,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Siapa wali nasab #0046# yang tidak mau menikahkannya, dan apa hubungannya dengan #0046# ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyebut wali nasab Pemohon dan hubungannya",
+     "saksi1": [
+      "wali nasab #0046# adalah #9202# #0046# bernama #9200# dan saya mengenalnya sendiri",
+      "saya mengetahui langsung bahwa yang berhak menjadi wali #0046# adalah #9202# #0046# yaitu #9200#",
+      "wali yang enggan menikahkan #0046# ialah #9202# #0046# bernama #9200# sebagaimana yang saya ketahui",
+      "hubungan wali dengan #0046# adalah #9202# dan namanya #9200# yang saya kenal dengan baik"
+     ],
+     "saksi2": [
+      "saya kenal #9200# yang merupakan #9202# #0046# dan berkedudukan sebagai wali nasabnya",
+      "orang yang berhak menikahkan #0046# adalah #9200# yang hubungannya dengan #0046# ialah #9202#",
+      "saya tahu sendiri wali nasab #0046# bernama #9200# dan dia adalah #9202# #0046#",
+      "saya mengalami sendiri pergaulan dengan keluarga #0046# dan mengetahui walinya adalah #9200# selaku #9202# #0046#"
+     ]
+    }
+   },
+   "hal": "wali nasab pemohon dan hubungannya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046",
+    "9200",
+    "9202"
+   ]
+  },
+  {
+   "id": "q-ayah-kandung",
+   "pokok": "pp-wali-nasab",
+   "urutan": 70,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Apakah ayah kandung #0046# masih hidup ?",
+   "jawaban": {
+    "melihat": [
+     {
+      "maksud": "ayah kandung Pemohon masih hidup dan dialah wali nasab",
+      "keadaan": {
+       "hubunganWali": "ayah-kandung"
+      },
+      "saksi1": [
+       "ayah kandung #0046# masih hidup dan dialah yang berhak menjadi wali nikahnya sebagaimana yang saya ketahui langsung",
+       "saya melihat sendiri bahwa ayah kandung #0046# masih ada dan ialah wali nasabnya",
+       "ayah kandung #0046# masih hidup dan saya mengenalnya sebagai wali nikah #0046#",
+       "saya mengetahui sendiri bahwa ayah kandung #0046# masih hidup dan berhak menjadi walinya"
+      ],
+      "saksi2": [
+       "wali nikah #0046# adalah ayah kandungnya yang masih hidup menurut yang saya saksikan sendiri",
+       "saya menyaksikan sendiri ayah kandung #0046# masih hidup sampai sekarang dan dialah walinya",
+       "sepanjang yang saya alami ayah kandung #0046# masih hidup dan menjadi wali nasabnya",
+       "ayah kandung #0046# masih hidup dan saya mengenalnya langsung sebagai orang yang berhak menikahkan #0046#"
+      ]
+     },
+     {
+      "maksud": "ayah kandung Pemohon telah meninggal sehingga wali berpindah kepada wali nasab berikutnya",
+      "keadaan": {
+       "bukan:hubunganWali": "ayah-kandung"
+      },
+      "saksi1": [
+       "ayah kandung #0046# telah meninggal dunia sehingga perwaliannya berpindah dan saya mengetahuinya langsung",
+       "saya melihat sendiri bahwa ayah kandung #0046# sudah wafat dan walinya kini orang lain",
+       "ayah kandung #0046# telah meninggal dunia dan saya turut hadir ketika ia dimakamkan",
+       "saya mengetahui sendiri bahwa ayah kandung #0046# telah meninggal sehingga yang menjadi wali adalah wali nasab berikutnya"
+      ],
+      "saksi2": [
+       "ayah kandung #0046# sudah meninggal menurut yang saya saksikan sendiri dan perwalian dipegang kerabat lain",
+       "saya menyaksikan sendiri kematian ayah kandung #0046# yang membuat hak perwalian berpindah",
+       "sepanjang yang saya alami ayah kandung #0046# telah wafat dan perwalian dipegang wali nasab yang lain",
+       "ayah kandung #0046# telah meninggal dunia dan saya mengenal wali penggantinya secara langsung"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: ayah kandung masih hidup; versi B: ayah kandung telah meninggal - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "saya melihat sendiri bahwa ayah kandung #0046# masih hidup",
+      "menurut yang saya saksikan ayah kandung #0046# masih ada sampai sekarang",
+      "saya menyaksikan ayah kandung #0046# masih hidup dan sehat",
+      "ayah kandung #0046# masih hidup dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri bahwa ayah kandung #0046# telah meninggal dunia",
+      "menurut yang saya saksikan ayah kandung #0046# sudah wafat",
+      "saya menyaksikan pemakaman ayah kandung #0046#",
+      "ayah kandung #0046# telah meninggal dan saya mengetahuinya langsung"
+     ]
+    }
+   },
+   "hal": "keadaan ayah kandung pemohon",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-wali-lain",
+   "pokok": "pp-wali-nasab",
+   "urutan": 80,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "bukan:hubunganWali": "ayah-kandung"
+   },
+   "teks": "Apakah ada wali nasab lain yang lebih berhak daripada wali yang menolak itu ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan bahwa tidak ada wali nasab lain yang lebih berhak",
+     "saksi1": [
+      "setahu saya tidak ada wali nasab lain yang lebih berhak daripada wali yang menolak itu",
+      "saya mengenal keluarga #0046# dan tidak ada kerabat laki-laki lain yang lebih dekat sebagai walinya",
+      "wali yang menolak itulah yang paling berhak dan tidak ada yang lebih dekat darinya menurut yang saya ketahui langsung",
+      "saya menyaksikan sendiri bahwa tidak ada wali nasab lain yang lebih berhak menikahkan #0046#"
+     ],
+     "saksi2": [
+      "dalam keluarga #0046# tidak ada kerabat laki-laki yang lebih berhak daripada wali tersebut sebagaimana yang saya lihat sendiri",
+      "sepanjang yang saya alami wali itu adalah satu-satunya yang paling berhak dan tidak ada pengganti yang lebih dekat",
+      "saya turut mengenal silsilah keluarga #0046# dan tidak ada wali yang lebih berhak dari wali tersebut",
+      "saya tahu langsung bahwa tidak ada wali lain yang lebih dekat hubungannya dengan #0046#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: tidak ada wali lain yang lebih berhak; versi B: masih ada wali lain yang lebih berhak - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "saya melihat sendiri bahwa tidak ada wali lain yang lebih berhak",
+      "menurut yang saya saksikan wali yang menolak itu paling berhak dan tidak ada yang lebih dekat",
+      "saya menyaksikan tidak ada kerabat laki-laki yang lebih dekat dari wali tersebut",
+      "tidak ada wali lain yang lebih berhak dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri bahwa masih ada wali lain yang lebih berhak",
+      "menurut yang saya saksikan ada kerabat laki-laki lain yang lebih dekat dari wali tersebut",
+      "saya menyaksikan ada saudara laki-laki yang lebih berhak menjadi wali",
+      "ada wali lain yang lebih berhak dan saya mengetahuinya langsung"
+     ]
+    }
+   },
+   "hal": "ada tidaknya wali nasab lain yang lebih berhak",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-wali-diminta",
+   "pokok": "pp-upaya-wali",
+   "urutan": 90,
+   "tingkat": "inti",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Apakah wali tersebut pernah diminta dan dinasihati agar bersedia menjadi wali nikah #0046#, oleh siapa, dan bagaimana jawabannya ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan bahwa wali telah diminta dan dinasihati tetapi tetap tidak bersedia",
+     "saksi1": [
+      "wali tersebut pernah diminta dan dinasihati oleh keluarga serta calon suami #0046# agar bersedia menjadi wali nikah namun tetap tidak bersedia",
+      "saya hadir ketika keluarga dan calon suami #0046# meminta wali itu menjadi wali nikah tetapi ia tetap tidak mau",
+      "saya menyaksikan sendiri wali itu dinasihati berkali-kali agar menikahkan #0046# namun ia tidak bersedia",
+      "wali tersebut sudah dimintai kesediaannya oleh keluarga dan jawabannya tetap tidak bersedia sebagaimana yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "saya ikut membujuk wali itu agar menikahkan #0046# tetapi ia tidak mau",
+      "keluarga #0046# beserta calon suaminya datang meminta wali itu menikahkan dan saya melihat sendiri ia tidak bersedia",
+      "saya mengalami sendiri upaya meminta kesediaan wali itu dan hasilnya wali tidak bersedia menjadi wali nikah",
+      "wali itu telah dinasihati dalam pertemuan yang saya hadiri dan sikapnya tidak berubah"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: wali sudah diminta dan dinasihati; versi B: wali belum pernah diminta - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "saya melihat sendiri bahwa wali itu sudah diminta menjadi wali nikah dan dinasihati",
+      "menurut yang saya saksikan wali itu telah dimintai kesediaannya oleh keluarga",
+      "saya menyaksikan wali itu dinasihati agar bersedia menikahkan #0046#",
+      "wali itu telah diminta dan dinasihati dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri bahwa wali itu belum pernah diminta menjadi wali nikah",
+      "menurut yang saya saksikan wali itu belum dimintai kesediaannya oleh keluarga",
+      "saya menyaksikan wali itu belum dinasihati agar menikahkan #0046#",
+      "wali itu belum pernah diminta dan dinasihati dan saya mengetahuinya langsung"
+     ]
+    }
+   },
+   "hal": "upaya meminta kesediaan wali menjadi wali nikah",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-alasan-wali",
+   "pokok": "pp-penolakan-wali",
+   "urutan": 100,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Apa sebabnya wali tersebut tidak mau menjadi wali nikah #0046# ?",
+   "teksVarian": [
+    "Mengapa wali tersebut tidak mau menikahkan #0046# dengan calon suaminya ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sebab wali enggan menjadi wali nikah",
+     "saksi1": [
+      "wali #0046# enggan menjadi wali nikah dari #0046# #6087# dan saya mengetahuinya langsung",
+      "saya mengetahui sendiri bahwa wali #0046# menolak menikahkannya #6087#",
+      "sebab wali itu menolak menjadi wali nikah #0046# adalah sebagaimana saya dengar sendiri dari ucapannya #6087#",
+      "saya menyaksikan sendiri wali #0046# menolak menjadi wali nikah #6087#"
+     ],
+     "saksi2": [
+      "penolakan wali #0046# untuk menikahkannya saya ketahui langsung dan alasannya #6087#",
+      "wali #0046# berkeberatan menjadi wali nikah #6087# menurut yang saya saksikan",
+      "saya hadir ketika wali #0046# menyatakan enggan menikahkannya #6087#",
+      "alasan wali #0046# menolak menjadi wali nikahnya saya alami sendiri yaitu #6087#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: wali menolak karena tidak merestui calon suami; versi B: wali menolak karena meminta imbalan - berselisih pada PENYEBAB",
+     "bedaPada": "penyebab",
+     "saksi1": [
+      "saya melihat sendiri bahwa wali itu menolak karena tidak merestui calon suami #0046#",
+      "menurut yang saya saksikan wali itu enggan sebab tidak menyetujui laki-laki pilihan #0046#",
+      "saya menyaksikan wali itu menolak karena tidak suka pada calon suami #0046#",
+      "wali itu menolak karena tidak merestui calon suami #0046# dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri bahwa wali itu menolak karena meminta imbalan uang dari calon suami #0046#",
+      "menurut yang saya saksikan wali itu baru bersedia bila diberi imbalan",
+      "saya menyaksikan wali itu mengajukan syarat imbalan kepada calon suami #0046#",
+      "wali itu menolak karena soal imbalan dan saya mengetahuinya langsung"
+     ]
+    }
+   },
+   "hal": "sebab wali enggan menjadi wali nikah",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "6087"
+   ]
+  },
+  {
+   "id": "q-penolakan-kua",
+   "pokok": "pp-upaya-wali",
+   "urutan": 110,
+   "tingkat": "inti",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "penolakanKua": "ada"
+   },
+   "teks": "Apakah Kantor Urusan Agama telah menolak mencatat pernikahan #0046# karena wali enggan menikahkan ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan bahwa Kantor Urusan Agama menolak mencatat pernikahan karena wali enggan",
+     "saksi1": [
+      "saya mengetahui bahwa Kantor Urusan Agama #9205# menolak mencatat pernikahan #0046# dengan surat Nomor #0652# tanggal #0653# karena wali enggan menikahkan",
+      "saya melihat sendiri surat penolakan dari Kantor Urusan Agama #9205# Nomor #0652# tanggal #0653# karena wali #0046# enggan",
+      "pernikahan #0046# ditolak oleh Kantor Urusan Agama #9205# dengan surat Nomor #0652# tanggal #0653# sebab wali enggan menikahkan dan saya mengetahuinya langsung",
+      "saya ikut mendatangi Kantor Urusan Agama #9205# dan menerima surat penolakan Nomor #0652# tanggal #0653# karena wali enggan"
+     ],
+     "saksi2": [
+      "pihak Kantor Urusan Agama #9205# menolak mencatat pernikahan #0046# berdasarkan surat Nomor #0652# tanggal #0653# karena wali enggan dan saya menyaksikan hal itu",
+      "saya membaca sendiri surat dari Kantor Urusan Agama #9205# Nomor #0652# tanggal #0653# yang menolak pernikahan #0046# karena wali enggan",
+      "saya pernah memegang surat bernomor #0652# tertanggal #0653# dari Kantor Urusan Agama #9205# yang menolak pernikahan #0046# karena wali enggan",
+      "saya mengalami sendiri penolakan pernikahan #0046# oleh Kantor Urusan Agama #9205# melalui surat Nomor #0652# tanggal #0653# karena wali enggan"
+     ]
+    }
+   },
+   "hal": "penolakan Kantor Urusan Agama atas pernikahan pemohon",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0652",
+    "0653",
+    "9205"
+   ]
+  },
+  {
+   "id": "q-sikap-wali-hadir",
+   "pokok": "pp-sikap-wali",
+   "urutan": 120,
+   "tingkat": "tambahan",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "waliHadir": "hadir"
+   },
+   "teks": "Apakah wali tersebut hadir di persidangan, dan bagaimana sikapnya terhadap pernikahan #0046# ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sikap wali yang hadir yang tetap tidak bersedia",
+     "saksi1": [
+      "saya melihat sendiri wali itu hadir di persidangan dan tetap tidak bersedia menikahkan #0046#",
+      "wali itu datang ke persidangan namun sikapnya tidak berubah dan saya menyaksikannya sendiri",
+      "saya mendengar langsung wali itu menyatakan di persidangan bahwa ia tidak bersedia menikahkan #0046#",
+      "saya hadir di persidangan dan melihat wali itu tetap tidak mau menikahkan #0046#"
+     ],
+     "saksi2": [
+      "di persidangan wali itu tetap pada pendiriannya untuk tidak menikahkan #0046# sebagaimana yang saya saksikan",
+      "saya menyaksikan sendiri wali itu hadir dan menegaskan bahwa ia tidak bersedia menjadi wali nikah #0046#",
+      "ucapan wali itu di persidangan yang menyatakan tidak bersedia menikahkan #0046# saya dengar sendiri",
+      "saya berada di ruang sidang ketika wali itu tetap tidak mau menikahkan #0046#"
+     ]
+    }
+   },
+   "hal": "sikap wali yang hadir di persidangan",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-wali-tidak-hadir",
+   "pokok": "pp-sikap-wali",
+   "urutan": 130,
+   "tingkat": "tambahan",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "waliHadir": "tidak-hadir"
+   },
+   "teks": "Di mana wali tersebut bertempat tinggal, dan apakah ia mengetahui rencana pernikahan serta perkara ini ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan tempat tinggal wali dan bahwa wali mengetahui rencana pernikahan dan perkara ini",
+     "saksi1": [
+      "saya mengetahui tempat tinggal wali itu dan ia mengetahui rencana pernikahan #0046# serta perkara ini",
+      "wali itu bertempat tinggal di daerah yang saya ketahui dan telah mengetahui rencana pernikahan #0046# menurut yang saya saksikan",
+      "saya pernah datang ke rumah wali itu dan ia mengetahui bahwa #0046# hendak menikah serta mengajukan perkara ini",
+      "tempat tinggal wali itu saya kenal dan ia telah diberi kabar tentang rencana pernikahan #0046#"
+     ],
+     "saksi2": [
+      "saya melihat sendiri bahwa wali itu tinggal di tempat yang dapat dihubungi dan ia mengetahui perkara ini",
+      "wali itu tinggal dekat dengan keluarga #0046# dan saya tahu ia mengetahui rencana pernikahan ini",
+      "saya mengalami sendiri mendatangi wali itu di tempat tinggalnya untuk menyampaikan rencana pernikahan #0046#",
+      "wali itu dapat ditemui di tempat tinggalnya sebagaimana yang saya ketahui langsung dan ia sudah tahu perkara ini"
+     ]
+    }
+   },
+   "hal": "tempat tinggal wali dan pengetahuannya tentang perkara ini",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-halangan-kawin",
+   "pokok": "pp-halangan-kafaah",
+   "urutan": 140,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Apakah antara #0046# dan calon suaminya ada hubungan keluarga, semenda, atau sesusuan yang menyebabkan mereka terhalang untuk menikah ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan bahwa tidak ada halangan perkawinan antara Pemohon dan calon suami",
+     "saksi1": [
+      "setahu saya antara #0046# dan calon suaminya tidak ada hubungan keluarga semenda atau sesusuan yang menghalangi mereka menikah",
+      "saya mengenal keluarga kedua belah pihak dan tidak ada hubungan nasab maupun sesusuan antara mereka",
+      "saya mengetahui sendiri bahwa tidak ada halangan hubungan keluarga atau sesusuan antara #0046# dan calon suaminya",
+      "tidak ada hubungan darah semenda atau sesusuan antara #0046# dan calon suaminya menurut yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "sepanjang yang saya saksikan keduanya tidak memiliki pertalian keluarga yang melarang pernikahan",
+      "saya tahu silsilah keluarga mereka dan tidak ada larangan nikah karena nasab atau sesusuan",
+      "dari pergaulan saya dengan kedua keluarga tidak ada hubungan yang menjadi halangan pernikahan #0046# dan calon suaminya",
+      "saya mengalami sendiri pergaulan dengan kedua keluarga dan tidak mengetahui halangan nikah apa pun di antara mereka"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: tidak ada hubungan keluarga yang menghalangi; versi B: ada hubungan keluarga atau sesusuan antara keduanya - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "saya melihat sendiri bahwa tidak ada hubungan keluarga yang menghalangi #0046# dan calon suaminya",
+      "menurut yang saya saksikan keduanya tidak memiliki pertalian nasab",
+      "saya menyaksikan tidak ada hubungan sesusuan antara #0046# dan calon suaminya",
+      "tidak ada halangan hubungan keluarga dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri bahwa ada hubungan keluarga antara #0046# dan calon suaminya",
+      "menurut yang saya saksikan keduanya memiliki pertalian sesusuan",
+      "saya menyaksikan ada hubungan semenda antara #0046# dan calon suaminya",
+      "ada hubungan keluarga yang menjadi halangan dan saya mengetahuinya langsung"
+     ]
+    }
+   },
+   "hal": "ada tidaknya halangan perkawinan antara pemohon dan calon suaminya",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-status-calon",
+   "pokok": "pp-maksud-calon",
+   "urutan": 150,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Apa status #0046# dan calon suaminya saat ini sebelum menikah ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan status Pemohon dan calon suami sebelum menikah",
+     "saksi1": [
+      "#0046# berstatus #1002# sedangkan calon suaminya berstatus #9204# dan saya mengetahuinya langsung",
+      "saya mengetahui sendiri bahwa #0046# berstatus #1002# dan calon suaminya berstatus #9204#",
+      "status #0046# adalah #1002# dan status calon suaminya adalah #9204# sebagaimana yang saya saksikan",
+      "sepengetahuan saya yang saya lihat sendiri #0046# berstatus #1002# dan calon suaminya #9204#"
+     ],
+     "saksi2": [
+      "saya kenal keadaan keduanya dan #0046# berstatus #1002# sementara calon suaminya berstatus #9204#",
+      "baik #0046# maupun calon suaminya saya ketahui statusnya yaitu #1002# dan #9204#",
+      "menurut pergaulan saya dengan mereka #0046# berstatus #1002# sedangkan calon suaminya berstatus #9204#",
+      "saya mengalami sendiri pergaulan dengan keduanya dan tahu #0046# berstatus #1002# serta calon suaminya #9204#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: Pemohon belum pernah menikah; versi B: Pemohon pernah menikah sebelumnya - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0046# belum pernah menikah sebelumnya",
+      "menurut yang saya saksikan #0046# masih gadis dan belum pernah bersuami",
+      "saya menyaksikan #0046# hidup sebagai perempuan yang belum pernah menikah",
+      "#0046# belum pernah menikah dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri bahwa #0046# pernah menikah sebelumnya",
+      "menurut yang saya saksikan #0046# pernah bersuami dan kini menjanda",
+      "saya menyaksikan #0046# menjalani perkawinan terdahulu",
+      "#0046# pernah menikah dan saya mengetahuinya langsung"
+     ]
+    }
+   },
+   "hal": "status pemohon dan calon suaminya",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "1002",
+    "9204"
+   ]
+  },
+  {
+   "id": "q-umur-persetujuan",
+   "pokok": "pp-persetujuan-umur",
+   "urutan": 160,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Apakah #0046# sudah dewasa dan cukup umur untuk menikah, dan apakah ia sendiri yang menghendaki pernikahan ini ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan bahwa Pemohon telah dewasa dan menikah atas kehendaknya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0046# telah dewasa dan menghendaki pernikahan ini atas kemauannya sendiri tanpa paksaan",
+      "#0046# sudah cukup umur dan saya menyaksikan sendiri ia menikah atas kehendaknya tanpa tekanan siapa pun",
+      "saya mengetahui langsung bahwa #0046# dewasa dan memilih sendiri pernikahan ini tanpa dipaksa",
+      "pernikahan ini dikehendaki #0046# sendiri dan ia sudah dewasa menurut yang saya saksikan tanpa campur tangan pihak lain"
+     ],
+     "saksi2": [
+      "saya mengenal #0046# yang telah dewasa dan mantap menikah tanpa paksaan sebagaimana yang saya lihat sendiri",
+      "sepanjang yang saya alami bersama #0046# ia sudah dewasa dan menikah dengan kemauannya sendiri tanpa dorongan paksaan",
+      "saya hadir ketika #0046# menyatakan keinginannya menikah tanpa paksaan dan ia sudah dewasa",
+      "saya tahu sendiri bahwa #0046# sudah cukup umur dan menghendaki pernikahan ini tanpa ada yang memaksa"
+     ]
+    }
+   },
+   "hal": "umur dan persetujuan pemohon untuk menikah",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-hubungan-calon",
+   "pokok": "pp-halangan-kafaah",
+   "urutan": 170,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Bagaimana hubungan #0046# dengan calon suaminya, apakah mereka saling mengenal dan saling menyukai ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan bahwa Pemohon dan calon suami saling mengenal dan memiliki hubungan baik",
+     "saksi1": [
+      "#0046# dan calon suaminya sudah saling mengenal dan #1014# sebagaimana yang saya saksikan sendiri",
+      "saya melihat langsung bahwa #0046# dan calon suaminya sudah saling mengenal dan #1014#",
+      "hubungan #0046# dengan calon suaminya saya ketahui sendiri yaitu sudah saling mengenal dan #1014#",
+      "saya menyaksikan #0046# dan calon suaminya sudah saling mengenal dan #1014#"
+     ],
+     "saksi2": [
+      "sepanjang yang saya lihat #0046# dan calon suaminya sudah akrab dan #1014#",
+      "saya sering bertemu mereka berdua dan mengetahui bahwa mereka sudah saling mengenal dan #1014#",
+      "saya mengalami sendiri pergaulan dengan keduanya dan tahu mereka sudah saling mengenal dan #1014#",
+      "dari pergaulan sehari-hari yang saya saksikan #0046# dan calon suaminya sudah saling mengenal dan #1014#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: keduanya sudah lama saling mengenal; versi B: keduanya baru saling mengenal - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0046# dan calon suaminya sudah lama saling mengenal",
+      "menurut yang saya saksikan keduanya telah berkenalan jauh sebelum rencana pernikahan ini",
+      "saya menyaksikan #0046# dan calon suaminya berhubungan baik sejak lama",
+      "keduanya sudah lama saling kenal dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri bahwa #0046# dan calon suaminya baru saling mengenal",
+      "menurut yang saya saksikan keduanya baru berkenalan menjelang rencana pernikahan ini",
+      "saya menyaksikan #0046# dan calon suaminya baru berhubungan belakangan ini",
+      "keduanya baru saling kenal dan saya mengetahuinya langsung"
+     ]
+    }
+   },
+   "hal": "hubungan pemohon dengan calon suaminya",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "1014"
+   ]
+  },
+  {
+   "id": "q-agama-kedua-calon",
+   "pokok": "pp-halangan-kafaah",
+   "urutan": 180,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Apakah #0046# dan calon suaminya sama-sama beragama Islam ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan bahwa Pemohon dan calon suami sama-sama beragama Islam",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa #0046# dan calon suaminya sama-sama beragama Islam",
+      "#0046# maupun calon suaminya adalah muslim dan saya melihat sendiri ibadah mereka",
+      "saya menyaksikan sendiri bahwa keduanya memeluk agama Islam dan menjalankan ibadahnya",
+      "agama #0046# dan calon suaminya adalah Islam menurut yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "saya sering beribadah bersama mereka berdua yang sama-sama muslim",
+      "sepanjang yang saya lihat #0046# dan calon suaminya sama-sama muslim",
+      "baik #0046# maupun calon suaminya beragama Islam sebagaimana yang saya saksikan sendiri",
+      "saya mengenal keduanya sebagai pemeluk agama Islam dalam pergaulan sehari-hari"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: keduanya sama-sama beragama Islam; versi B: calon suami beragama selain Islam - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0046# dan calon suaminya sama-sama beragama Islam",
+      "menurut yang saya saksikan keduanya adalah muslim",
+      "saya menyaksikan keduanya menjalankan ibadah Islam",
+      "keduanya beragama Islam dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri bahwa calon suami #0046# beragama selain Islam",
+      "menurut yang saya saksikan calon suami #0046# beragama selain Islam",
+      "saya menyaksikan calon suami #0046# menjalankan ibadah agama lain",
+      "calon suami #0046# memeluk agama lain dan saya mengetahuinya langsung"
+     ]
+    }
+   },
+   "hal": "agama pemohon dan calon suaminya",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-sekufu",
+   "pokok": "pp-halangan-kafaah",
+   "urutan": 190,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Bagaimana agama, akhlak, dan pekerjaan calon suami, apakah ia layak dan sekufu dengan #0046# ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan bahwa calon suami berakhlak baik, bekerja dan layak sekufu dengan Pemohon",
+     "saksi1": [
+      "calon suami #0046# berakhlak baik dan bekerja dengan pekerjaan #6331# sehingga layak dan sekufu dengan #0046#",
+      "saya melihat sendiri calon suami #0046# berperilaku baik dan pekerjaannya #6331# dan ia sekufu dengan #0046#",
+      "menurut pergaulan saya yang saya alami sendiri calon suami #0046# beragama dan berakhlak baik serta bekerja sebagai #6331# sehingga sekufu dengan #0046#",
+      "saya mengenal calon suami #0046# yang taat dan jujur dengan pekerjaan #6331# dan layak bagi #0046#"
+     ],
+     "saksi2": [
+      "calon suami #0046# adalah orang baik dengan pekerjaan #6331# dan sepadan dengan #0046# sebagaimana yang saya saksikan",
+      "saya sering bertemu calon suami #0046# dan mengetahui ia berakhlak baik serta berpekerjaan #6331# sehingga sepadan dengan #0046#",
+      "dari yang saya lihat sendiri calon suami #0046# berperilaku terpuji dan bekerja #6331# sehingga layak menjadi suami #0046#",
+      "saya mengetahui langsung bahwa calon suami #0046# mempunyai pekerjaan #6331# dan berakhlak baik sehingga sekufu dengan #0046#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: calon suami berakhlak baik dan sekufu; versi B: calon suami berperilaku tercela - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "saya melihat sendiri bahwa calon suami #0046# berakhlak baik dan layak bagi #0046#",
+      "menurut yang saya saksikan calon suami #0046# berperilaku baik dan sepadan dengan #0046#",
+      "saya menyaksikan calon suami #0046# taat beragama dan jujur",
+      "calon suami #0046# layak dan sekufu dengan #0046# dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri bahwa calon suami #0046# berperilaku tercela",
+      "menurut yang saya saksikan calon suami #0046# suka berbuat onar di lingkungannya",
+      "saya menyaksikan calon suami #0046# berakhlak buruk",
+      "calon suami #0046# berperilaku buruk dan saya mengetahuinya langsung"
+     ]
+    }
+   },
+   "hal": "kelayakan dan kesekufuan calon suami",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "6331"
+   ]
+  },
+  {
+   "id": "q-kemampuan-calon",
+   "pokok": "pp-halangan-kafaah",
+   "urutan": 200,
+   "tingkat": "pilihan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Apakah calon suami #0046# mampu menafkahi dan bertanggung jawab terhadap #0046# sebagai istrinya kelak ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan bahwa calon suami mampu menafkahi dan bertanggung jawab",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa calon suami #0046# bekerja dan mampu menafkahi #0046# kelak",
+      "calon suami #0046# memiliki penghasilan tetap dan saya melihat sendiri ia bertanggung jawab",
+      "saya menyaksikan calon suami #0046# bekerja keras sehingga mampu memenuhi kebutuhan #0046# sebagai istrinya",
+      "menurut yang saya alami sendiri calon suami #0046# sanggup menafkahi dan menjaga #0046#"
+     ],
+     "saksi2": [
+      "calon suami #0046# adalah orang yang bertanggung jawab dan mempunyai pekerjaan sebagaimana yang saya saksikan",
+      "saya melihat calon suami #0046# mencari nafkah dengan baik dan siap menanggung kebutuhan #0046#",
+      "sepanjang yang saya lihat calon suami #0046# sanggup menghidupi #0046# dan berkomitmen kepadanya",
+      "saya turut menyaksikan calon suami #0046# bekerja dan mampu menanggung keluarga kelak"
+     ]
+    }
+   },
+   "hal": "kemampuan calon suami menafkahi pemohon",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-iddah-janda",
+   "pokok": "pp-iddah",
+   "urutan": 210,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "statusPemohon": [
+     "janda-cerai",
+     "janda-mati"
+    ]
+   },
+   "teks": "Apakah #0046# yang berstatus janda telah selesai masa iddahnya ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan bahwa masa iddah Pemohon telah berakhir",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa masa iddah #0046# telah berakhir sebelum ia mengajukan permohonan ini",
+      "saya menghitung bersama keluarga bahwa masa tunggu #0046# telah lewat dan saya menyaksikannya sendiri",
+      "iddah #0046# telah selesai menurut yang saya ketahui langsung sehingga ia boleh menikah lagi",
+      "saya melihat sendiri bahwa masa iddah #0046# berakhir beberapa waktu lalu"
+     ],
+     "saksi2": [
+      "sepanjang yang saya alami waktu tunggu #0046# telah terlewati sebelum rencana pernikahan ini",
+      "saya turut mengetahui masa iddah #0046# yang telah berakhir karena saya dekat dengan keluarganya",
+      "masa tunggu #0046# sudah habis dan saya menyaksikan hal itu sendiri",
+      "saya hadir ketika keluarga memastikan bahwa iddah #0046# telah selesai"
+     ]
+    }
+   },
+   "hal": "masa iddah pemohon",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-penutup",
+   "pokok": "pp-penutup",
+   "urutan": 900,
+   "tingkat": "inti",
+   "kelompok": "penutup",
+   "pihakSaksi": [
+    "*"
+   ],
+   "teks": "Apakah masih ada keterangan lain yang ingin saksi sampaikan ?",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan keterangannya telah cukup",
+     "saksi1": [
+      "sudah cukup",
+      "cukup sekian",
+      "cukup sekian keterangan saya",
+      "itu saja keterangan yang dapat saya sampaikan"
+     ],
+     "saksi2": [
+      "cukup itu saja",
+      "sekian keterangan dari saya",
+      "keterangan saya cukup sampai di sini",
+      "demikian yang dapat saya terangkan"
+     ]
+    }
+   },
+   "tidakBerlaku": [],
+   "variabelAbt": []
+  }
+ ],
+ "jawabanUmum": {
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri ucapan atau pembicaraan para pihak tentang {hal}",
+   "saksi1": [
+    "saya mendengar sendiri pembicaraan para pihak mengenai {hal}",
+    "saya mendengar langsung ucapan salah satu pihak yang menyinggung {hal}",
+    "mengenai {hal} saya ikut mendengar ketika para pihak membicarakannya di depan saya",
+    "ucapan para pihak tentang {hal} terdengar langsung oleh saya"
+   ],
+   "saksi2": [
+    "perihal {hal} saya mendengar sendiri apa yang diucapkan para pihak",
+    "saya hadir dan mendengar sendiri perkataan para pihak tentang {hal}",
+    "saya berada di dekat mereka dan mendengar sendiri pembicaraan soal {hal}",
+    "saya mendengar secara langsung para pihak berbicara tentang {hal}"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui {hal} dari cerita pihak lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} kepada saya dan tidak menyaksikannya sendiri",
+    "tentang {hal} saya diberi tahu oleh {sumber} karena saya tidak ada di tempat kejadian",
+    "{sumber} menceritakan {hal} kepada saya sedangkan saya tidak melihat sendiri kejadiannya",
+    "yang saya ketahui tentang {hal} berasal dari penuturan {sumber} dan bukan dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "saya mendengar kabar tentang {hal} dari {sumber} dan tidak mengalaminya sendiri",
+    "pengetahuan saya tentang {hal} berasal dari cerita {sumber} karena saya tidak berada di tempat",
+    "{sumber} memberi tahu saya tentang {hal} dan saya sendiri tidak menyaksikannya",
+    "setahu saya {hal} itu dikatakan oleh {sumber} kepada saya sedangkan saya tidak ikut melihatnya"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari {hal} dan selebihnya tidak diketahui",
+   "saksi1": [
+    "saya hanya mengetahui sebagian dari {hal} dan selebihnya tidak saya ketahui",
+    "mengenai {hal} yang saya ketahui sebatas yang saya lihat sendiri dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sedangkan bagian lainnya tidak saya ketahui",
+    "saya mengetahui sebagian saja tentang {hal} dan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "tentang {hal} pengetahuan saya terbatas pada sebagian saja dan selebihnya tidak saya ketahui",
+    "hanya sebagian hal tentang {hal} yang saya ketahui dan lainnya tidak saya ketahui",
+    "sejauh yang saya ketahui tentang {hal} hanya sebagian dan sisanya tidak saya ketahui",
+    "saya tidak mengetahui seluruh {hal} dan hanya tahu sebagian saja"
+   ]
+  },
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui {hal}",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu apa-apa",
+    "soal {hal} saya tidak mengetahuinya",
+    "saya tidak tahu menahu tentang {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} tidak ada yang saya ketahui",
+    "{hal} itu tak saya ketahui",
+    "saya tak mengetahui apa pun mengenai {hal}",
+    "perihal {hal} saya tidak punya pengetahuan"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu atau lupa tentang {hal} sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu mengenai {hal} karena ingatan saya kurang kuat",
+    "tentang {hal} saya lupa rinciannya",
+    "mengenai {hal} rasanya demikian tetapi saya kurang yakin",
+    "saya kurang yakin soal {hal}"
+   ],
+   "saksi2": [
+    "{hal} itu mungkin benar tetapi saya ragu",
+    "tentang {hal} saya ragu-ragu mengatakannya karena ingatan saya samar",
+    "kira-kira begitu yang saya ingat tentang {hal} dan saya sulit memastikannya",
+    "saya lupa sebagian besar tentang {hal}"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Isi nama calon suami, umur, status, alasan wali menolak, dan surat penolakan Kantor Urusan Agama pada isian blangko sebelum menyusun; isian kosong tampil sebagai titik-titik.",
+  "Alasan wali yang hanya diketahui saksi dari cerita Pemohon tidak menjadi bukti atas alasan itu; usahakan saksi yang hadir saat wali menyatakan penolakan.",
+  "Bila wali memberi alasan yang dibenarkan hukum Islam, misalnya calon suami tidak sekufu karena agama atau akhlak, permohonan dapat ditolak; gali butir kesekufuan dengan cermat."
+ ],
+ "variabelBaru": [
+  "9200",
+  "9202",
+  "9204",
+  "9205"
+ ]
+}

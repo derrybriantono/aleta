@@ -1,0 +1,1382 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "pembatalan-perkawinan",
+ "judul": "Pembatalan perkawinan",
+ "versi": 1,
+ "penulis": "SAKSI-D",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "344"
+  ]
+ },
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [
+  {
+   "folder": "5a Pembatalan Perkawinan - BAS",
+   "berkas": "BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5a Pembatalan Perkawinan - BAS",
+   "berkas": "BAS ALUR 04 [6a] BAS 6 P & T Hadir - Pembuktian P (3 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5a Pembatalan Perkawinan - BAS",
+   "berkas": "BAS ALUR 04 [6b] BAS 6 P & T Hadir - Pembuktian P (4 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060",
+    "6124"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5a Pembatalan Perkawinan - BAS",
+   "berkas": "BAS ALUR 04 [6c] BAS 6 P & T Hadir - Pembuktian P (5 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060",
+    "6124",
+    "8931"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5a Pembatalan Perkawinan - BAS",
+   "berkas": "BAS ALUR 04 [7] BAS 7 P & T Hadir - Pembuktian T",
+   "variabelSaksi": [
+    "6120",
+    "6121"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5a Pembatalan Perkawinan - BAS",
+   "berkas": "BAS ALUR 04 [7a] BAS 7 P & T Hadir - Pembuktian T (3 Saksi)",
+   "variabelSaksi": [
+    "6120",
+    "6121",
+    "8921"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5a Pembatalan Perkawinan - BAS",
+   "berkas": "BAS ALUR 04 [7b] BAS 7 P & T Hadir - Pembuktian T (4 Saksi)",
+   "variabelSaksi": [
+    "6120",
+    "6121",
+    "8921",
+    "8941"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5a Pembatalan Perkawinan - BAS",
+   "berkas": "BAS ALUR 39 Pembatalan Nikah - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  }
+ ],
+ "dasarHukum": [
+  {
+   "id": "dh-sebab-pengetahuan",
+   "rujukan": "Pasal 171 ayat (1) dan (2) HIR / Pasal 308 ayat (1) dan (2) RBg",
+   "uraian": "saksi harus menyebut alasan dan cara ia mengetahui hal yang diterangkan; pendapat atau dugaan bukan kesaksian",
+   "status": "terverifikasi",
+   "sumber": "HIR / RBg (hukum acara perdata yang berlaku di peradilan agama, Pasal 54 UU 7/1989); sama dengan katalog contoh"
+  },
+  {
+   "id": "dh-unus-testis",
+   "rujukan": "Pasal 169 HIR / Pasal 306 RBg / Pasal 1905 KUHPerdata",
+   "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak dapat dipercaya",
+   "status": "terverifikasi",
+   "sumber": "HIR / RBg / KUHPerdata; sama dengan katalog contoh"
+  },
+  {
+   "id": "dh-saksi-syarat",
+   "rujukan": "Pasal 171, 172, 175, 307, 308 dan 309 RBg",
+   "uraian": "syarat formil saksi (dewasa, bukan orang yang dilarang, disumpah, didengar satu per satu) dan syarat materiil (fakta yang dialami, didengar dan dilihat sendiri, saling bersesuaian)",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 4c Wasiat [01], 5a Pembatalan [01], 5b Pencegahan [01], 5 Izin Poligami [01]"
+  },
+  {
+   "id": "dh-beban-bukti",
+   "rujukan": "Pasal 283 RBg jo. Pasal 1865 KUHPerdata",
+   "uraian": "siapa yang mendalilkan suatu peristiwa wajib membuktikannya",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 4c Wasiat [01] dan 5a Pembatalan [01]"
+  },
+  {
+   "id": "dh-bt-kewenangan",
+   "rujukan": "Pasal 49 huruf a beserta penjelasan angka 6 UU 7/1989 jo UU 3/2006 jo UU 50/2009; Pasal 25 UU 1/1974 jo. Pasal 38 ayat (1) PP 9/1975 jo. Pasal 74 ayat (1) Kompilasi Hukum Islam",
+   "uraian": "pembatalan perkawinan antara orang beragama Islam menjadi kewenangan Pengadilan Agama yang mewilayahi tempat tinggal suami atau istri atau tempat perkawinan dilangsungkan",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 5a Pembatalan Perkawinan [01]"
+  },
+  {
+   "id": "dh-bt-pihak",
+   "rujukan": "Pasal 23 UU 1/1974 jo. Pasal 73 Kompilasi Hukum Islam",
+   "uraian": "pihak yang berhak mengajukan pembatalan perkawinan",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 5a Pembatalan Perkawinan [01]"
+  },
+  {
+   "id": "dh-bt-umum",
+   "rujukan": "Pasal 22 UU 1/1974 jo. Pasal 37 PP 9/1975 jo. Pasal 74 ayat (2) Kompilasi Hukum Islam",
+   "uraian": "perkawinan dapat dibatalkan bila para pihak tidak memenuhi syarat perkawinan; batalnya perkawinan hanya dapat diputuskan oleh Pengadilan",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 5a Pembatalan Perkawinan [01]"
+  },
+  {
+   "id": "dh-bt-a",
+   "rujukan": "Pasal 22 jo. Pasal 4 ayat (1) UU 1/1974 jo. Pasal 56 ayat (3) dan Pasal 71 huruf a Kompilasi Hukum Islam",
+   "uraian": "alasan A: suami berpoligami tanpa izin Pengadilan Agama",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9320 sampai 9331 (paket Derry F21, pembatalan nikah) dan pertimbangan hukum blangko putusan Derry 5a Pembatalan Perkawinan [01]"
+  },
+  {
+   "id": "dh-bt-b",
+   "rujukan": "Pasal 9, Pasal 22 dan Pasal 24 UU 1/1974 jo. Pasal 40 huruf a dan b dan Pasal 71 huruf b dan c Kompilasi Hukum Islam",
+   "uraian": "alasan B: perempuan yang dikawini masih terikat perkawinan dengan laki-laki lain atau masih dalam masa iddah",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9320 sampai 9331 (paket Derry F21, pembatalan nikah) dan pertimbangan hukum blangko putusan Derry 5a Pembatalan Perkawinan [01]"
+  },
+  {
+   "id": "dh-bt-c",
+   "rujukan": "Pasal 7 ayat (1) dan Pasal 22 UU 1/1974 sebagaimana diubah UU 16/2019 jo. Pasal 71 huruf d Kompilasi Hukum Islam",
+   "uraian": "alasan C: perkawinan melanggar batas umur perkawinan (sembilan belas tahun)",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9320 sampai 9331 (paket Derry F21, pembatalan nikah) dan pertimbangan hukum blangko putusan Derry 5a Pembatalan Perkawinan [01]"
+  },
+  {
+   "id": "dh-bt-d",
+   "rujukan": "Pasal 26 ayat (1) UU 1/1974 jo. Pasal 19, Pasal 20 dan Pasal 71 huruf e Kompilasi Hukum Islam",
+   "uraian": "alasan D: perkawinan dilangsungkan tanpa wali atau oleh wali yang tidak berhak",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9320 sampai 9331 (paket Derry F21, pembatalan nikah) dan pertimbangan hukum blangko putusan Derry 5a Pembatalan Perkawinan [01]"
+  },
+  {
+   "id": "dh-bt-e",
+   "rujukan": "Pasal 27 ayat (1) UU 1/1974 jo. Pasal 72 ayat (1) Kompilasi Hukum Islam",
+   "uraian": "alasan E: perkawinan dilangsungkan di bawah ancaman yang melanggar hukum",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9320 sampai 9331 (paket Derry F21, pembatalan nikah) dan pertimbangan hukum blangko putusan Derry 5a Pembatalan Perkawinan [01]"
+  },
+  {
+   "id": "dh-bt-f",
+   "rujukan": "Pasal 27 ayat (2) UU 1/1974 jo. Pasal 72 ayat (2) Kompilasi Hukum Islam",
+   "uraian": "alasan F: pada waktu perkawinan terjadi penipuan atau salah sangka mengenai diri suami atau istri",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9320 sampai 9331 (paket Derry F21, pembatalan nikah) dan pertimbangan hukum blangko putusan Derry 5a Pembatalan Perkawinan [01]"
+  },
+  {
+   "id": "dh-bt-enam-bulan",
+   "rujukan": "Pasal 27 ayat (3) UU 1/1974 jo. Pasal 72 ayat (3) Kompilasi Hukum Islam",
+   "uraian": "hak mengajukan pembatalan karena ancaman atau salah sangka gugur bila setelah ancaman berhenti atau keadaan disadari, dalam enam bulan masih hidup sebagai suami istri dan tidak menggunakan haknya",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9320 sampai 9331 (paket Derry F21, pembatalan nikah) dan pertimbangan hukum blangko putusan Derry 5a Pembatalan Perkawinan [01]"
+  },
+  {
+   "id": "dh-bt-g",
+   "rujukan": "Pasal 8 dan Pasal 22 UU 1/1974 jo. Pasal 39 dan Pasal 70 huruf d Kompilasi Hukum Islam",
+   "uraian": "alasan G: perkawinan antara dua orang yang mempunyai hubungan darah, semenda atau sesusuan yang dilarang kawin",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9320 sampai 9331 (paket Derry F21, pembatalan nikah) dan pertimbangan hukum blangko putusan Derry 5a Pembatalan Perkawinan [01]"
+  },
+  {
+   "id": "dh-bt-akibat",
+   "rujukan": "Pasal 28 ayat (1) dan (2) UU 1/1974 jo. Pasal 74 ayat (2), Pasal 75 dan Pasal 76 Kompilasi Hukum Islam",
+   "uraian": "pembatalan berlaku sejak berlangsungnya perkawinan tetapi tidak berlaku surut terhadap anak-anak yang dilahirkan dan tidak memutuskan hubungan hukum anak dengan orang tuanya",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 5a Pembatalan Perkawinan [01]"
+  },
+  {
+   "id": "dh-bt-buku2",
+   "rujukan": "Buku II Tahun 2026 aspek 32 (ringkasan PTA Pontianak)",
+   "uraian": "pembatalan berlaku sejak berlangsungnya perkawinan; pembatalan setelah perkawinan putus karena kematian tidak dapat diterima kecuali didalilkan dan terbukti adanya iktikad tidak baik",
+   "status": "perlu-verifikasi",
+   "sumber": "memori rujukan Buku II 2026: ringkasan sekunder, naskah resmi belum dibaca"
+  }
+ ],
+ "keadaan": {
+  "kehadiran": {
+   "sumber": "otomatis",
+   "nilai": [
+    "verstek",
+    "kontradiktoir",
+    "t-tidak-hadir-setelah-mediasi"
+   ],
+   "bawaan": "kontradiktoir",
+   "label": "Kehadiran Tergugat"
+  },
+  "alasan": {
+   "sumber": "borang",
+   "nilai": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G"
+   ],
+   "bawaan": "A",
+   "label": "Alasan pembatalan (huruf A sampai G)"
+  },
+  "kedudukanPengaju": {
+   "sumber": "borang",
+   "nilai": [
+    "suami-istri",
+    "keluarga",
+    "berkepentingan"
+   ],
+   "bawaan": "suami-istri",
+   "label": "Kedudukan pengaju pembatalan"
+  },
+  "perkawinanPutus": {
+   "sumber": "borang",
+   "nilai": [
+    "tidak",
+    "karena-kematian"
+   ],
+   "bawaan": "tidak",
+   "label": "Perkawinan sudah putus karena kematian ?"
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-hubungan-saksi",
+   "judul": "Hubungan saksi dengan para pihak",
+   "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal para pihak (sebab pengetahuan)",
+   "dasarHukum": [
+    "dh-sebab-pengetahuan",
+    "dh-saksi-syarat"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-kedudukan-pengaju",
+   "judul": "Kedudukan pengaju pembatalan",
+   "uraian": "pengaju termasuk pihak yang berhak mengajukan pembatalan perkawinan",
+   "dasarHukum": [
+    "dh-bt-pihak"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-perkawinan",
+   "judul": "Perkawinan yang dimohonkan pembatalannya",
+   "uraian": "perkawinan benar dilangsungkan, kapan, di mana dan dicatat",
+   "dasarHukum": [
+    "dh-bt-umum",
+    "dh-bt-kewenangan"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-alasan-pembatalan",
+   "judul": "Alasan pembatalan",
+   "uraian": "syarat perkawinan yang dilanggar menurut huruf alasan yang didalilkan",
+   "dasarHukum": [
+    "dh-bt-a",
+    "dh-bt-b",
+    "dh-bt-c",
+    "dh-bt-d",
+    "dh-bt-e",
+    "dh-bt-f",
+    "dh-bt-g"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-pengetahuan",
+   "judul": "Kapan keadaan diketahui dan sikap sesudahnya",
+   "uraian": "kapan pengaju mengetahui keadaan itu dan apakah masih hidup sebagai suami istri",
+   "dasarHukum": [
+    "dh-bt-enam-bulan"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-hidup-bersama",
+   "judul": "Kehidupan bersama sesudah menikah",
+   "uraian": "apakah dan berapa lama para pihak hidup bersama sebagai suami istri",
+   "dasarHukum": [
+    "dh-bt-enam-bulan"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-anak",
+   "judul": "Anak dari perkawinan itu",
+   "uraian": "anak yang lahir dari perkawinan dan pengasuhannya",
+   "dasarHukum": [
+    "dh-bt-akibat"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-iktikad",
+   "judul": "Iktikad ketika menikah",
+   "uraian": "untuk perkawinan yang sudah putus karena kematian: perbuatan yang menunjukkan iktikad tidak baik",
+   "dasarHukum": [
+    "dh-bt-buku2"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-keberadaan-lawan",
+   "judul": "Tempat tinggal pihak lawan",
+   "uraian": "untuk perkara yang diputus tanpa hadirnya Tergugat: tempat tinggal Tergugat",
+   "dasarHukum": [
+    "dh-saksi-syarat"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-bantahan",
+   "judul": "Bantahan atas alasan pembatalan",
+   "uraian": "keterangan saksi Tergugat yang menyangkal alasan pembatalan",
+   "dasarHukum": [
+    "dh-beban-bukti"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-penutup",
+   "judul": "Penutup keterangan",
+   "uraian": "saksi menyatakan keterangannya telah cukup",
+   "dasarHukum": [],
+   "wajib": false
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-kenal",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 10,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi kenal dengan #0046# dan #0047# ?",
+   "teksVarian": [
+    "Apakah saksi mengenal #0046# dan #0047# ?",
+    "Apakah Saudara saksi kenal dengan #0046# serta #0047# ?"
+   ],
+   "hal": "hubungan saksi dengan para pihak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal kedua pihak dan menyebut hubungannya dengan pihak",
+     "saksi1": [
+      "saya kenal dengan #0046# dan #0047# karena saya adalah {hubungan}",
+      "saya mengenal #0046# maupun #0047# sebab saya adalah {hubungan}",
+      "#0046# dan #0047# saya kenal baik karena kedudukan saya sebagai {hubungan}",
+      "saya sudah lama mengenal #0046# dan #0047# karena saya adalah {hubungan}"
+     ],
+     "saksi2": [
+      "kedua pihak yaitu #0046# dan #0047# saya kenal karena saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya kenal dengan #0046# serta #0047#",
+      "saya tahu dan kenal #0046# juga #0047# karena saya adalah {hubungan}",
+      "perkenalan saya dengan #0046# dan #0047# terjadi karena saya adalah {hubungan}"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-kedudukan-pengaju",
+   "pokok": "pp-kedudukan-pengaju",
+   "urutan": 20,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa hubungan #0046# dengan perkawinan yang dimohonkan pembatalannya ?",
+   "hal": "kedudukan pengaju dalam perkawinan yang dimohonkan pembatalannya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "kedudukanPengaju": "suami-istri"
+      },
+      "maksud": "pengaju adalah suami atau istri dalam perkawinan itu",
+      "saksi1": [
+       "#0046# adalah pasangan #0047# dalam perkawinan yang dimohonkan pembatalannya dan itu saya ketahui sendiri",
+       "saya mengetahui sendiri bahwa #0046# dan #0047# terikat dalam perkawinan yang sekarang dimohonkan pembatalannya",
+       "perkawinan yang hendak dibatalkan itu adalah perkawinan antara #0046# dengan #0047# sebagaimana saya saksikan",
+       "#0046# merupakan suami atau istri dari #0047# dalam perkawinan yang dipersoalkan di perkara ini"
+      ],
+      "saksi2": [
+       "sepengetahuan saya #0046# adalah suami atau istri #0047# yang menikah dalam perkawinan yang dimohonkan pembatalannya",
+       "perkawinan yang dipersoalkan itu dijalani oleh #0046# bersama #0047# sebagai pasangan suami istri",
+       "saya tahu sendiri bahwa #0046# adalah pasangan nikah #0047# dalam perkawinan yang hendak dibatalkan",
+       "#0046# berkedudukan sebagai suami atau istri #0047# menurut perkawinan yang dimohonkan pembatalannya"
+      ]
+     },
+     {
+      "keadaan": {
+       "kedudukanPengaju": "keluarga"
+      },
+      "maksud": "pengaju adalah keluarga dalam garis keturunan lurus ke atas dari suami atau istri",
+      "saksi1": [
+       "#0046# adalah keluarga dalam garis keturunan lurus ke atas dari salah seorang suami istri dalam perkawinan itu",
+       "saya mengetahui sendiri bahwa #0046# adalah orang tua atau kakek nenek dari salah satu pihak dalam perkawinan yang dimohonkan pembatalannya",
+       "hubungan #0046# dengan perkawinan itu adalah sebagai keluarga garis lurus ke atas dari salah seorang mempelai",
+       "#0046# merupakan keluarga sedarah dalam garis lurus ke atas dari suami atau istri dalam perkawinan yang dipersoalkan"
+      ],
+      "saksi2": [
+       "sepengetahuan saya #0046# termasuk keluarga garis keturunan lurus ke atas dari salah satu mempelai",
+       "saya tahu sendiri bahwa #0046# adalah orang tua atau leluhur dari salah satu pihak dalam perkawinan itu",
+       "dalam perkawinan yang dimohonkan pembatalannya #0046# berkedudukan sebagai keluarga lurus ke atas dari salah satu mempelai",
+       "#0046# ada hubungan darah garis lurus ke atas dengan salah seorang mempelai dalam perkawinan yang dipersoalkan"
+      ]
+     },
+     {
+      "keadaan": {
+       "kedudukanPengaju": "berkepentingan"
+      },
+      "maksud": "pengaju adalah pihak yang berkepentingan atas perkawinan itu",
+      "saksi1": [
+       "#0046# mempunyai kepentingan hukum langsung atas perkawinan itu yaitu ... dan saya mengetahuinya sendiri",
+       "saya mengetahui sendiri bahwa perkawinan itu menyangkut kepentingan #0046# secara langsung yaitu ... sebagaimana saya ketahui",
+       "kepentingan #0046# atas perkawinan yang dipersoalkan itu berupa ... sebagaimana saya saksikan",
+       "perkawinan itu berkaitan langsung dengan hak #0046# yaitu ... yang saya ketahui sendiri"
+      ],
+      "saksi2": [
+       "sepengetahuan saya #0046# berkepentingan atas perkawinan itu karena ... dan saya mengenal duduk perkaranya",
+       "saya tahu sendiri bahwa #0046# memiliki kepentingan hukum dalam perkawinan itu yaitu ... yang saya saksikan",
+       "dengan adanya perkawinan itu hak #0046# terpengaruh secara langsung yaitu ... sebagaimana saya lihat",
+       "#0046# berkepentingan secara hukum atas perkawinan tersebut karena ... dan saya mengetahuinya langsung"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: pengaju adalah pasangan dalam perkawinan itu; versi B: pengaju bukan pasangan dalam perkawinan itu - berselisih pada PELAKU (kedudukan pengaju)",
+     "saksi1": [
+      "saya melihat sendiri #0046# adalah pasangan dalam perkawinan yang dimohonkan pembatalannya",
+      "#0046# adalah suami atau istri dalam perkawinan itu sebagaimana saya saksikan",
+      "sepengetahuan saya #0046# menikah dengan #0047# dalam perkawinan yang dipersoalkan",
+      "saya mengetahui sendiri #0046# berstatus pasangan nikah dalam perkawinan itu"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0046# bukan pasangan dalam perkawinan yang dimohonkan pembatalannya",
+      "#0046# bukan suami atau istri dalam perkawinan itu sebagaimana saya saksikan",
+      "sepengetahuan saya #0046# bukan orang yang menikah dengan #0047# dalam perkawinan yang dipersoalkan",
+      "saya mengetahui sendiri #0046# bukan berstatus pasangan nikah dalam perkawinan itu"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-perkawinan",
+   "pokok": "pp-perkawinan",
+   "urutan": 30,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Kapan dan di mana #0046# dan #0047# melangsungkan perkawinan, dan apakah perkawinan itu dicatat oleh Pegawai Pencatat Nikah ?",
+   "hal": "kapan dan di mana perkawinan dilangsungkan serta pencatatannya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "perkawinan dilangsungkan pada tanggal dan tempat yang disebut dan dicatat oleh Pegawai Pencatat Nikah",
+     "saksi1": [
+      "perkawinan #0046# dan #0047# dilangsungkan pada #5197# di #5105# dan dicatat oleh Pegawai Pencatat Nikah yang saya ketahui sendiri",
+      "saya mengetahui sendiri bahwa #0046# dan #0047# menikah pada #5197# di #5105# dan pernikahan itu tercatat oleh Pegawai Pencatat Nikah",
+      "akad nikah #0046# dengan #0047# berlangsung pada #5197# bertempat di #5105# dan dicatatkan kepada Pegawai Pencatat Nikah",
+      "pada #5197# di #5105# #0046# dan #0047# melangsungkan perkawinan dan saya melihat pencatatannya oleh Pegawai Pencatat Nikah"
+     ],
+     "saksi2": [
+      "sepengetahuan saya #0046# dan #0047# menikah pada #5197# di #5105# dan perkawinan itu dicatat di hadapan Pegawai Pencatat Nikah",
+      "perkawinan mereka terjadi pada #5197# di #5105# lalu dicatat oleh Pegawai Pencatat Nikah sebagaimana saya saksikan",
+      "saya hadir ketika #0046# dan #0047# menikah pada #5197# di #5105# dan pernikahan itu dicatat Pegawai Pencatat Nikah",
+      "tanggal #5197# adalah hari pernikahan #0046# dengan #0047# yang berlangsung di #5105# dan tercatat oleh Pegawai Pencatat Nikah"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: perkawinan dilangsungkan tepat pada tanggal yang disebut; versi B: perkawinan dilangsungkan jauh lebih awal - berselisih pada WAKTU perkawinan",
+     "saksi1": [
+      "saya mengetahui sendiri #0046# dan #0047# menikah pada #5197#",
+      "perkawinan #0046# dan #0047# dilangsungkan pada #5197# dan saya melihatnya sendiri",
+      "akad nikah mereka berlangsung pada #5197# sebagaimana saya saksikan",
+      "pada #5197# #0046# dan #0047# melangsungkan perkawinan yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0046# dan #0047# sudah menikah jauh sebelum #5197#",
+      "perkawinan #0046# dan #0047# terjadi lebih awal dari #5197# dan saya menyaksikannya",
+      "akad nikah mereka berlangsung beberapa tahun sebelum #5197# sebagaimana saya ketahui",
+      "sebelum #5197# #0046# dan #0047# sudah melangsungkan perkawinan yang saya saksikan sendiri"
+     ],
+     "bedaPada": "waktu"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "5105",
+    "5197"
+   ]
+  },
+  {
+   "id": "q-alasan-a",
+   "pokok": "pp-alasan-pembatalan",
+   "urutan": 40,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "A"
+   },
+   "teks": "Ketika perkawinan itu dilangsungkan, apakah suami masih terikat perkawinan dengan istri lain dan apakah sudah ada izin Pengadilan Agama untuk beristri lebih dari seorang ?",
+   "hal": "terikatnya suami pada perkawinan lain dan ada tidaknya izin pengadilan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "suami masih terikat perkawinan lain dan belum ada izin pengadilan",
+     "saksi1": [
+      "ketika perkawinan itu dilangsungkan suami masih terikat perkawinan yang sah dengan istri lain dan belum ada izin dari Pengadilan Agama",
+      "saya mengetahui sendiri suami dalam perkawinan itu masih beristri dan belum mendapat izin Pengadilan Agama untuk beristri lebih dari seorang",
+      "saat akad nikah berlangsung suami masih berstatus suami orang lain dan izin pengadilan belum pernah ada",
+      "sewaktu menikah suami masih mempunyai istri sah dan belum memiliki izin poligami dari pengadilan"
+     ],
+     "saksi2": [
+      "pada hari perkawinan itu suami masih terikat dengan istri pertamanya dan izin dari Pengadilan Agama belum diperolehnya",
+      "saya tahu langsung bahwa suami sudah beristri ketika menikah lagi dan belum ada izin Pengadilan Agama untuk itu",
+      "ketika perkawinan berlangsung suami masih terikat perkawinan dengan istrinya dan belum mengantongi izin berpoligami",
+      "waktu akad dilaksanakan suami tetap menjadi suami istri pertamanya dan belum mendapat izin pengadilan untuk beristri lagi"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: suami masih terikat perkawinan dengan istri lain; versi B: suami sudah bercerai dari istri lain - berselisih pada PERISTIWA (status suami)",
+     "saksi1": [
+      "saya melihat sendiri suami dalam perkawinan itu masih beristri ketika menikah",
+      "ketika akad nikah suami masih terikat perkawinan dengan istri lain sebagaimana saya saksikan",
+      "saya mengetahui sendiri suami itu masih menjadi suami istri pertamanya ketika menikah lagi",
+      "pada saat perkawinan itu suami masih berstatus beristri yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri suami dalam perkawinan itu sudah bercerai dari istri pertamanya ketika menikah",
+      "ketika akad nikah suami sudah lepas dari ikatan perkawinan dengan istri lain sebagaimana saya saksikan",
+      "saya mengetahui sendiri suami itu telah resmi berpisah dari istri pertamanya ketika menikah lagi",
+      "pada saat perkawinan itu suami sudah berstatus duda yang saya ketahui langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": []
+  },
+  {
+   "id": "q-alasan-b",
+   "pokok": "pp-alasan-pembatalan",
+   "urutan": 50,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "B"
+   },
+   "teks": "Ketika perkawinan itu dilangsungkan, apakah istri masih terikat perkawinan dengan laki-laki lain atau masih dalam masa iddah ?",
+   "hal": "status istri sebelum perkawinan, yaitu masih terikat perkawinan lain atau dalam masa iddah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "istri masih terikat perkawinan lain atau dalam masa iddah",
+     "saksi1": [
+      "ketika perkawinan itu dilangsungkan istri masih terikat perkawinan dengan laki-laki lain atau masih menjalani masa iddah",
+      "saya mengetahui sendiri bahwa istri dalam perkawinan itu masih berada dalam ikatan perkawinan sebelumnya atau iddahnya masih berjalan",
+      "saat akad nikah berlangsung istri masih berstatus istri orang lain atau berada dalam masa iddah",
+      "sewaktu menikah istri masih terikat dengan suami terdahulunya atau sedang menjalani iddah"
+     ],
+     "saksi2": [
+      "pada hari perkawinan itu istri masih menjadi istri sah laki-laki lain atau masa iddahnya sedang berjalan",
+      "saya tahu langsung bahwa istri masih dalam ikatan perkawinan dengan orang lain atau sedang dalam masa iddah ketika menikah",
+      "ketika perkawinan berlangsung istri masih terikat perkawinan sebelumnya atau iddahnya masih berlangsung",
+      "waktu akad dilaksanakan istri masih bersuami atau masih menjalani iddah dari suami lamanya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: istri masih terikat atau dalam iddah; versi B: istri sudah bercerai dan iddahnya habis - berselisih pada PERISTIWA (status istri)",
+     "saksi1": [
+      "saya melihat sendiri istri dalam perkawinan itu masih terikat perkawinan dengan laki-laki lain ketika menikah",
+      "ketika akad nikah istri masih bersuami orang lain sebagaimana saya saksikan",
+      "saya mengetahui sendiri istri itu masih menjalani iddah dari suami terdahulunya ketika menikah",
+      "pada saat perkawinan itu istri masih dalam masa iddah yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri istri dalam perkawinan itu sudah bercerai dan masa iddahnya sudah selesai ketika menikah",
+      "ketika akad nikah istri sudah lepas dari ikatan perkawinan dan iddahnya telah habis sebagaimana saya saksikan",
+      "saya mengetahui sendiri istri itu telah menyelesaikan iddah dari suami terdahulunya ketika menikah",
+      "pada saat perkawinan itu istri sudah berstatus janda yang iddahnya habis dan saya ketahui langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": []
+  },
+  {
+   "id": "q-alasan-c",
+   "pokok": "pp-alasan-pembatalan",
+   "urutan": 60,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "C"
+   },
+   "teks": "Berapa umur #0046# dan #0047# ketika perkawinan dilangsungkan dan apakah ada dispensasi kawin dari pengadilan ?",
+   "hal": "umur para pihak ketika menikah dan ada tidaknya dispensasi kawin",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "umur para pihak ketika menikah dan ada tidaknya dispensasi kawin",
+     "saksi1": [
+      "ketika menikah salah seorang dari mereka masih kurang dari sembilan belas tahun dan perkawinan itu berlangsung tanpa dispensasi kawin dari pengadilan",
+      "saya mengetahui sendiri salah seorang dari mereka berusia di bawah sembilan belas tahun waktu menikah dan tanpa dispensasi dari pengadilan",
+      "waktu akad nikah umur salah satu dari mereka kurang dari sembilan belas tahun dan tidak pernah ada dispensasi kawin dari pengadilan",
+      "salah seorang dari mereka masih di bawah umur sembilan belas tahun saat menikah dan tidak ada dispensasi kawin yang saya ketahui"
+     ],
+     "saksi2": [
+      "pada saat perkawinan itu salah satu dari mereka masih berumur di bawah sembilan belas tahun dan dispensasi kawin tidak pernah ada",
+      "sepengetahuan saya salah seorang di antara mereka kurang dari sembilan belas tahun ketika menikah tanpa ada dispensasi pengadilan",
+      "saya tahu sendiri usia salah satu mempelai kurang dari sembilan belas tahun dan perkawinannya berlangsung tanpa dispensasi kawin",
+      "ketika menikah umur salah seorang dari mereka di bawah batas sembilan belas tahun dan pengadilan tidak pernah memberi dispensasi"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: salah seorang masih di bawah sembilan belas tahun; versi B: keduanya sudah lebih dari sembilan belas tahun - berselisih pada JUMLAH (umur)",
+     "saksi1": [
+      "salah seorang dari mereka masih di bawah sembilan belas tahun ketika menikah dan saya mengetahuinya sendiri",
+      "saya melihat sendiri salah satu mempelai berumur kurang dari sembilan belas tahun waktu akad nikah",
+      "usia salah seorang dari mereka kurang dari sembilan belas tahun saat menikah sebagaimana saya saksikan",
+      "ketika akad nikah salah satu mempelai masih berusia di bawah sembilan belas tahun yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "keduanya sudah lebih dari sembilan belas tahun ketika menikah dan saya mengetahuinya sendiri",
+      "saya melihat sendiri kedua mempelai berumur di atas sembilan belas tahun waktu akad nikah",
+      "usia kedua mempelai sudah melampaui sembilan belas tahun saat menikah sebagaimana saya saksikan",
+      "ketika akad nikah kedua mempelai sudah berusia lebih dari sembilan belas tahun yang saya ketahui langsung"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-alasan-d",
+   "pokok": "pp-alasan-pembatalan",
+   "urutan": 70,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "D"
+   },
+   "teks": "Siapa yang menjadi wali nikah ketika perkawinan dilangsungkan dan apakah ia wali yang berhak ?",
+   "hal": "wali nikah dan hak walinya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "wali nikah yang bukan wali berhak",
+     "saksi1": [
+      "yang bertindak sebagai wali nikah ketika itu bukan wali yang berhak padahal wali yang berhak masih ada",
+      "saya mengetahui sendiri bahwa perkawinan itu dinikahkan oleh orang yang bukan wali nikah yang berhak",
+      "wali yang berhak masih ada tetapi yang menikahkan mereka bukan dia melainkan orang lain",
+      "saat akad dilangsungkan yang menjadi wali bukan wali yang sah menurut hukum dan saya melihatnya sendiri"
+     ],
+     "saksi2": [
+      "pada perkawinan itu yang menikahkan bukan wali nikah yang sebenarnya dan saya ada di tempat itu",
+      "saya tahu langsung bahwa wali nikah yang berhak tidak bertindak menikahkan dan digantikan orang lain",
+      "ketika akad berlangsung orang yang menikahkan bukan wali yang berhak menurut hukum",
+      "wali nikah yang sah masih ada namun yang bertindak sebagai wali bukan dia sebagaimana saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: yang menikahkan adalah wali yang berhak; versi B: yang menikahkan adalah orang lain - berselisih pada PELAKU (wali nikah)",
+     "saksi1": [
+      "saya melihat sendiri wali yang berhak sendiri yang menikahkan mereka",
+      "yang menikahkan dalam perkawinan itu adalah wali yang berhak sebagaimana saya saksikan",
+      "wali nikah yang sah bertindak langsung menikahkan mereka dan saya ada di tempat itu",
+      "saya mengetahui sendiri wali yang berhak itulah yang menjadi wali nikah"
+     ],
+     "saksi2": [
+      "saya melihat sendiri yang menikahkan mereka adalah orang lain yang menggantikan wali",
+      "yang menikahkan dalam perkawinan itu adalah seseorang di luar wali yang berhak sebagaimana saya saksikan",
+      "wali nikah diwakilkan kepada orang lain dan orang itulah yang menikahkan mereka yang saya ada di tempat",
+      "saya mengetahui sendiri orang lain yang menjadi wali nikah menggantikan wali sebenarnya"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "variabelAbt": []
+  },
+  {
+   "id": "q-alasan-e",
+   "pokok": "pp-alasan-pembatalan",
+   "urutan": 80,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "E"
+   },
+   "teks": "Apakah ketika perkawinan itu dilangsungkan ada paksaan atau ancaman kepada #0046# dan siapa yang melakukannya ?",
+   "hal": "adanya paksaan atau ancaman ketika perkawinan dilangsungkan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "adanya paksaan atau ancaman ketika perkawinan dilangsungkan",
+     "saksi1": [
+      "ketika perkawinan itu dilangsungkan #0046# berada di bawah ancaman dari pihak yang memaksanya dan saya melihatnya sendiri",
+      "saya menyaksikan sendiri #0046# dipaksa menikah dengan ancaman yang melanggar hukum",
+      "#0046# menikah karena diancam dan terpaksa menuruti kehendak orang yang mengancamnya sebagaimana saya ketahui",
+      "perkawinan itu terjadi karena paksaan dan ancaman terhadap #0046# yang saya lihat langsung"
+     ],
+     "saksi2": [
+      "saat akad nikah #0046# dalam keadaan tertekan karena ancaman dan saya hadir di sana",
+      "saya tahu langsung #0046# dipaksa dan diancam sehingga ia terpaksa menikah",
+      "ancaman yang diterima #0046# membuatnya menikah dengan terpaksa sebagaimana saya saksikan sendiri",
+      "tekanan dan ancaman dari pihak tertentu kepada #0046# saya lihat sendiri pada saat perkawinan itu dilangsungkan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pengaju dipaksa dan diancam; versi B: pengaju menikah dengan sukarela - berselisih pada PERISTIWA (paksaan)",
+     "saksi1": [
+      "saya melihat sendiri #0046# dipaksa dan diancam ketika menikah",
+      "ketika akad nikah #0046# menikah di bawah ancaman sebagaimana saya saksikan",
+      "saya mengetahui sendiri #0046# terpaksa menikah karena ancaman",
+      "pada saat perkawinan itu #0046# berada dalam tekanan dan ancaman yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0046# menikah dengan sukarela atas kemauannya sendiri",
+      "ketika akad nikah #0046# menikah dengan senang hati sebagaimana saya saksikan",
+      "saya mengetahui sendiri #0046# menikah dengan sepenuh hati dan atas pilihannya",
+      "pada saat perkawinan itu #0046# berada dalam keadaan rela yang saya ketahui langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-alasan-f",
+   "pokok": "pp-alasan-pembatalan",
+   "urutan": 90,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "F"
+   },
+   "teks": "Apakah sebelum atau ketika perkawinan itu dilangsungkan ada penipuan atau salah sangka mengenai diri #0047#, dan apa kenyataan yang sebenarnya ?",
+   "hal": "adanya penipuan atau salah sangka mengenai diri suami atau istri",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "adanya penipuan atau salah sangka mengenai diri suami atau istri",
+     "saksi1": [
+      "sebelum menikah #0047# menyembunyikan keadaan dirinya yaitu ... sehingga #0046# keliru mengira ia orang yang berbeda dan saya mengetahuinya sendiri",
+      "saya menyaksikan sendiri #0046# tertipu mengenai diri #0047# karena keadaan sebenarnya yaitu ... baru terungkap setelah menikah",
+      "kenyataan tentang diri #0047# yaitu ... disembunyikan dari #0046# sampai perkawinan itu berlangsung dan itu saya ketahui langsung",
+      "#0046# salah sangka tentang #0047# karena ia menutupi keadaannya yaitu ... sebagaimana saya lihat sendiri"
+     ],
+     "saksi2": [
+      "#0046# menikah dengan #0047# dalam keadaan mengira ia berbeda dari kenyataannya yaitu ... dan saya menyaksikannya",
+      "saya tahu langsung #0047# menutupi keadaan dirinya yaitu ... dari #0046# sampai setelah perkawinan",
+      "penipuan mengenai diri #0047# berupa ... dialami #0046# sebagaimana saya saksikan sendiri",
+      "baru sesudah perkawinan #0046# mengetahui bahwa keadaan sebenarnya #0047# adalah ... dan hal itu saya lihat sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pengaju tertipu mengenai keadaan lawan; versi B: pengaju sudah mengetahui keadaan lawan sebelum menikah - berselisih pada PERISTIWA (penipuan)",
+     "saksi1": [
+      "saya melihat sendiri #0047# menyembunyikan keadaan dirinya dari #0046# sebelum menikah",
+      "sebelum akad nikah #0047# menutupi keadaan sebenarnya dari #0046# sebagaimana saya saksikan",
+      "saya mengetahui sendiri #0046# tertipu mengenai diri #0047# ketika menikah",
+      "keadaan #0047# yang sebenarnya disembunyikan dari #0046# dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0046# sudah mengetahui keadaan #0047# yang sebenarnya sebelum menikah",
+      "sebelum akad nikah #0046# telah diberi gambaran jujur tentang keadaan #0047# sebagaimana saya saksikan",
+      "saya mengetahui sendiri #0046# menikah dengan #0047# dengan mengetahui keadaan yang sebenarnya",
+      "keadaan #0047# yang sebenarnya telah diterangkan kepada #0046# dan saya mengetahuinya langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-alasan-g",
+   "pokok": "pp-alasan-pembatalan",
+   "urutan": 100,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "alasan": "G"
+   },
+   "teks": "Apakah antara #0046# dan #0047# ada hubungan darah, semenda atau sesusuan yang dilarang kawin ?",
+   "hal": "hubungan darah, semenda atau sesusuan antara mereka",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "hubungan darah, semenda atau sesusuan yang dilarang kawin",
+     "saksi1": [
+      "antara #0046# dan #0047# ada hubungan darah atau semenda atau sesusuan yaitu ... yang dilarang untuk menikah dan saya mengetahuinya sendiri",
+      "saya mengetahui sendiri bahwa #0046# dan #0047# masih berhubungan keluarga yang terlarang untuk menikah yaitu ... sesuai pengetahuan saya",
+      "hubungan ... antara #0046# dan #0047# termasuk hubungan yang dilarang kawin sebagaimana saya ketahui langsung",
+      "#0046# dan #0047# terhubung dalam kekerabatan ... yang dilarang untuk dinikahi dan saya melihatnya sendiri"
+     ],
+     "saksi2": [
+      "saya tahu langsung #0046# dan #0047# memiliki pertalian ... yang menurut agama dilarang menikah",
+      "kekerabatan antara #0046# dan #0047# berupa ... adalah hubungan terlarang untuk menikah sebagaimana saya saksikan",
+      "mereka berdua #0046# dan #0047# masih terikat hubungan ... yang menjadi larangan untuk kawin dan saya mengetahuinya",
+      "hubungan keluarga ... di antara #0046# dan #0047# dilarang untuk dijadikan dasar menikah dan hal itu saya ketahui sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: ada hubungan terlarang kawin; versi B: tidak ada hubungan terlarang kawin - berselisih pada PERISTIWA (hubungan keluarga)",
+     "saksi1": [
+      "saya melihat sendiri ada hubungan keluarga yang terlarang antara #0046# dan #0047#",
+      "saya mengetahui sendiri #0046# dan #0047# berkerabat dalam tingkat yang dilarang menikah",
+      "hubungan terlarang untuk kawin antara #0046# dan #0047# ada sebagaimana saya saksikan",
+      "sepengetahuan saya #0046# dan #0047# terikat pertalian yang menghalangi pernikahan"
+     ],
+     "saksi2": [
+      "saya melihat sendiri tidak ada hubungan keluarga yang terlarang antara #0046# dan #0047#",
+      "saya mengetahui sendiri #0046# dan #0047# tidak berkerabat dalam tingkat yang dilarang menikah",
+      "hubungan yang terlarang untuk kawin antara #0046# dan #0047# tidak ada sebagaimana saya saksikan",
+      "sepengetahuan saya #0046# dan #0047# tidak terikat pertalian yang menghalangi pernikahan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-kapan-tahu",
+   "pokok": "pp-pengetahuan",
+   "urutan": 110,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Kapan #0046# mengetahui keadaan itu dan apa yang dilakukannya sejak mengetahuinya ?",
+   "hal": "kapan pengaju mengetahui keadaan itu dan apa yang dilakukannya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "alasan": [
+        "E",
+        "F"
+       ]
+      },
+      "maksud": "pengaju mengetahui keadaan itu pada waktu tertentu lalu tidak melanjutkan hidup sebagai suami istri",
+      "saksi1": [
+       "#0046# baru mengetahui keadaan itu setelah ... dan sejak itu tidak lagi hidup bersama sebagai suami istri serta segera mengajukan perkara ini",
+       "saya mengetahui sendiri bahwa sejak ... #0046# berhenti hidup sebagai suami istri dan tidak lama kemudian membawa perkara ini ke pengadilan",
+       "ancaman atau kekeliruan itu berakhir pada ... dan sesudah itu #0046# tidak meneruskan hidup sebagai suami istri dengan #0047#",
+       "sejak ... #0046# sadar akan keadaan sebenarnya dan tidak pernah lagi tinggal serumah dengan #0047# sebagai suami istri"
+      ],
+      "saksi2": [
+       "pada ... #0046# mengetahui kenyataannya lalu tidak melanjutkan kehidupan suami istri dan mengajukan pembatalan",
+       "saya tahu langsung bahwa sesudah ... #0046# tidak lagi tinggal bersama #0047# dan melaporkan hal itu ke pengadilan",
+       "begitu mengetahui keadaannya pada ... #0046# tidak mau hidup bersama lagi sebagai suami istri dan segera mengurus pembatalan",
+       "semenjak ... #0046# mengerti keadaan sebenarnya dan tidak pernah kembali menjalani rumah tangga dengan #0047#"
+      ]
+     },
+     {
+      "keadaan": {
+       "bukan:alasan": [
+        "E",
+        "F"
+       ]
+      },
+      "maksud": "pengaju mengetahui keadaan itu pada waktu tertentu",
+      "saksi1": [
+       "#0046# mengetahui keadaan itu pada ... dan saya mengetahuinya sendiri",
+       "saya mengetahui sendiri bahwa pada ... #0046# baru tahu keadaan yang sebenarnya",
+       "sejak ... #0046# mengetahui keadaan perkawinan itu sebagaimana saya ketahui langsung",
+       "pengetahuan #0046# tentang keadaan itu dimulai pada ... dan saya menyaksikannya"
+      ],
+      "saksi2": [
+       "pada ... #0046# mulai mengetahui keadaan itu dan saya mengetahuinya langsung",
+       "saya tahu pada ... #0046# baru menyadari keadaan perkawinan itu",
+       "waktu #0046# mengetahui keadaan itu adalah ... sebagaimana saya saksikan sendiri",
+       "mulai ... #0046# mengerti keadaan perkawinannya dan saya melihatnya sendiri"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: pengaju mengetahui keadaan itu beberapa bulan setelah menikah; versi B: pengaju sudah mengetahuinya sejak sebelum menikah - berselisih pada WAKTU diketahuinya keadaan",
+     "saksi1": [
+      "#0046# baru mengetahui keadaan itu beberapa bulan setelah menikah dan saya mengetahuinya sendiri",
+      "saya melihat sendiri #0046# mulai tahu keadaan itu sesudah beberapa bulan berumah tangga",
+      "pengetahuan #0046# tentang keadaan itu muncul beberapa bulan sesudah akad nikah sebagaimana saya saksikan",
+      "beberapa bulan setelah menikah barulah #0046# mengerti keadaan itu yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "#0046# sudah mengetahui keadaan itu sejak sebelum menikah dan saya mengetahuinya sendiri",
+      "saya melihat sendiri #0046# telah tahu keadaan itu sebelum akad nikah",
+      "pengetahuan #0046# tentang keadaan itu sudah ada sebelum perkawinan sebagaimana saya saksikan",
+      "jauh sebelum menikah #0046# sudah mengerti keadaan itu yang saya ketahui langsung"
+     ],
+     "bedaPada": "waktu"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-hidup-bersama",
+   "pokok": "pp-hidup-bersama",
+   "urutan": 120,
+   "tingkat": "pilihan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah sesudah menikah #0046# dan #0047# hidup bersama sebagai suami istri dan selama berapa lama ?",
+   "hal": "hidup bersama sebagai suami istri dan lamanya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "para pihak hidup bersama sebagai suami istri sesudah menikah selama waktu tertentu",
+     "saksi1": [
+      "sesudah menikah #0046# dan #0047# hidup bersama sebagai suami istri selama ... sebelum akhirnya berpisah",
+      "saya melihat sendiri #0046# dan #0047# tinggal serumah sebagai suami istri selama ... lalu berpisah",
+      "setelah akad nikah mereka berdua tinggal bersama selama ... sebagaimana saya ketahui langsung",
+      "#0046# dan #0047# sempat menjalani kehidupan rumah tangga selama ... dan hal itu saya saksikan"
+     ],
+     "saksi2": [
+      "sepengetahuan saya #0046# dan #0047# hidup sebagai suami istri dalam satu rumah selama ... kemudian berpisah",
+      "setelah perkawinan itu keduanya tinggal bersama selama ... menurut penglihatan saya",
+      "saya tahu #0046# dan #0047# berumah tangga bersama selama ... sebelum berpisah",
+      "kehidupan suami istri #0046# dengan #0047# berlangsung selama ... dan saya menyaksikannya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: mereka hidup bersama dalam waktu lama; versi B: mereka hidup bersama hanya sebentar - berselisih pada LAMA",
+     "saksi1": [
+      "#0046# dan #0047# hidup bersama dalam waktu yang lama dan saya melihatnya sendiri",
+      "saya menyaksikan sendiri #0046# dan #0047# tinggal serumah selama bertahun-tahun",
+      "kehidupan rumah tangga #0046# dan #0047# berjalan lama sebagaimana saya ketahui",
+      "sudah lama #0046# dan #0047# hidup sebagai suami istri yang saya lihat langsung"
+     ],
+     "saksi2": [
+      "#0046# dan #0047# hidup bersama hanya sebentar dan saya melihatnya sendiri",
+      "saya menyaksikan sendiri #0046# dan #0047# tinggal serumah cuma beberapa hari",
+      "kehidupan rumah tangga #0046# dan #0047# berjalan singkat sebagaimana saya ketahui",
+      "sebentar saja #0046# dan #0047# hidup sebagai suami istri yang saya lihat langsung"
+     ],
+     "bedaPada": "lama"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-anak",
+   "pokok": "pp-anak",
+   "urutan": 130,
+   "tingkat": "pilihan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "anak": "ada"
+   },
+   "teks": "Apakah dari perkawinan itu lahir anak dan siapa yang merawatnya sekarang ?",
+   "hal": "anak yang lahir dari perkawinan itu dan siapa yang merawatnya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "dari perkawinan itu lahir anak yang sekarang dirawat oleh pihak tertentu",
+     "saksi1": [
+      "dari perkawinan #0046# dan #0047# telah lahir anak dan sekarang anak itu dirawat oleh ... yang saya ketahui sendiri",
+      "saya mengetahui sendiri bahwa #0046# dan #0047# mempunyai anak dari perkawinan itu dan anak tersebut diasuh oleh ... yang saya kenal",
+      "anak hasil perkawinan #0046# dengan #0047# sekarang berada dalam asuhan ... sebagaimana saya lihat",
+      "perkawinan itu menghasilkan anak yang kini diurus oleh ... dan saya menyaksikannya"
+     ],
+     "saksi2": [
+      "sepengetahuan saya #0046# dan #0047# dikaruniai anak dari perkawinan itu dan sekarang pengasuhnya adalah ... yang saya kenal",
+      "anak dari perkawinan itu masih dirawat oleh ... sebagaimana saya lihat sendiri",
+      "saya tahu anak #0046# dan #0047# dari perkawinan itu kini diasuh oleh ... dan keadaannya saya saksikan",
+      "dari pernikahan itu lahir seorang anak yang sekarang tinggal bersama ... sebagaimana saya ketahui langsung"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: anak dirawat oleh pengaju; versi B: anak dirawat oleh lawan - berselisih pada PELAKU (pengasuh)",
+     "saksi1": [
+      "saya melihat sendiri anak dari perkawinan itu dirawat oleh #0046#",
+      "anak hasil perkawinan itu berada dalam asuhan #0046# sebagaimana saya saksikan",
+      "yang mengurus anak dari perkawinan itu sehari-hari adalah #0046# yang saya ketahui langsung",
+      "sepengetahuan saya #0046# yang merawat anak dari perkawinan itu"
+     ],
+     "saksi2": [
+      "saya melihat sendiri anak dari perkawinan itu dirawat oleh #0047#",
+      "anak hasil perkawinan itu berada dalam asuhan #0047# sebagaimana saya saksikan",
+      "yang mengurus anak dari perkawinan itu sehari-hari adalah #0047# yang saya ketahui langsung",
+      "sepengetahuan saya #0047# yang merawat anak dari perkawinan itu"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-iktikad",
+   "pokok": "pp-iktikad",
+   "urutan": 140,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "perkawinanPutus": "karena-kematian"
+   },
+   "teks": "Apakah saksi mengetahui perbuatan yang menunjukkan iktikad tidak baik pada saat perkawinan itu dilangsungkan ?",
+   "hal": "perbuatan yang menunjukkan iktikad buruk ketika menikah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "ada perbuatan beriktikad buruk ketika perkawinan dilangsungkan",
+     "saksi1": [
+      "saat menikah ada perbuatan yang menunjukkan iktikad tidak baik yaitu ... dan saya mengetahuinya sendiri",
+      "saya melihat sendiri perbuatan yang beriktikad tidak baik ketika perkawinan itu dilangsungkan yaitu ... dan itu nyata bagi saya",
+      "pada waktu akad nikah ada tindakan berniat tidak baik berupa ... sebagaimana saya saksikan",
+      "sewaktu perkawinan itu berlangsung terdapat perbuatan dengan itikad tidak baik yaitu ... yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "ketika akad dilangsungkan saya mengetahui ada perbuatan yang berniat tidak baik yaitu ... sendiri",
+      "perbuatan beriktikad tidak baik pada saat perkawinan itu berupa ... saya lihat langsung",
+      "saya tahu sendiri bahwa waktu menikah ada tindakan dengan iktikad tidak baik yaitu ... sebagaimana saya ketahui",
+      "dalam perkawinan itu terdapat perbuatan yang tidak jujur dan beriktikad buruk berupa ... yang saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: ada perbuatan beriktikad buruk ketika menikah; versi B: tidak ada perbuatan yang demikian - berselisih pada PERISTIWA (iktikad)",
+     "saksi1": [
+      "saya melihat sendiri ada perbuatan beriktikad buruk ketika perkawinan itu dilangsungkan",
+      "saat menikah terdapat tindakan yang berniat buruk sebagaimana saya saksikan",
+      "pada waktu akad nikah ada perbuatan curang yang saya ketahui langsung",
+      "sewaktu perkawinan berlangsung saya mengetahui sendiri ada perbuatan yang berniat buruk"
+     ],
+     "saksi2": [
+      "saya melihat sendiri tidak ada perbuatan beriktikad buruk ketika perkawinan itu dilangsungkan",
+      "saat menikah tidak terdapat tindakan yang berniat buruk sebagaimana saya saksikan",
+      "pada waktu akad nikah tidak ada perbuatan curang yang saya ketahui langsung",
+      "sewaktu perkawinan berlangsung saya mengetahui sendiri tidak ada perbuatan yang berniat buruk"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": []
+  },
+  {
+   "id": "q-keberadaan-lawan",
+   "pokok": "pp-keberadaan-lawan",
+   "urutan": 150,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "P"
+   ],
+   "keadaan": {
+    "kehadiran": [
+     "verstek",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   },
+   "teks": "Apakah saksi mengetahui di mana #0047# bertempat tinggal sekarang ?",
+   "hal": "tempat tinggal pihak lawan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui tempat tinggal Tergugat sendiri",
+     "saksi1": [
+      "saya mengetahui #0047# bertempat tinggal di ... dan alamat itu masih ditempatinya sampai sekarang",
+      "#0047# tinggal di ... yang sering saya lewati dan ia masih menetap di sana",
+      "tempat tinggal #0047# saat ini ada di ... dan saya mengetahuinya sendiri",
+      "sampai sekarang #0047# menetap di ... sebagaimana yang saya lihat sendiri"
+     ],
+     "saksi2": [
+      "alamat #0047# yang saya ketahui adalah ... dan ia masih tinggal di situ",
+      "saya pernah datang ke rumah #0047# di ... dan ia masih menempatinya",
+      "#0047# masih berdomisili di ... sepanjang pengetahuan saya sendiri",
+      "rumah #0047# berada di ... dan ia masih berada di sana"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: Tergugat masih tinggal di alamat yang disebut; versi B: Tergugat sudah pindah - berselisih pada TEMPAT tinggal",
+     "saksi1": [
+      "saya melihat sendiri #0047# masih tinggal di alamatnya yang lama",
+      "#0047# masih menetap di alamat yang dahulu dan saya mengetahuinya sendiri",
+      "sampai sekarang #0047# berada di rumahnya yang semula sebagaimana saya saksikan",
+      "alamat #0047# tetap di tempat yang dahulu dan saya melihatnya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0047# sudah pindah ke tempat lain",
+      "#0047# sudah berpindah dari alamatnya yang dahulu dan saya mengetahuinya sendiri",
+      "sekarang #0047# berada di tempat yang baru sebagaimana saya saksikan",
+      "alamat #0047# telah berubah ke tempat lain dan saya melihatnya langsung"
+     ],
+     "bedaPada": "tempat"
+    }
+   },
+   "variabelAbt": [
+    "0047"
+   ]
+  },
+  {
+   "id": "q-bantahan",
+   "pokok": "pp-bantahan",
+   "urutan": 160,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "kehadiran": [
+     "kontradiktoir",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   },
+   "teks": "Apakah saksi pernah melihat atau mengetahui hal yang didalilkan #0046# sebagai alasan pembatalan perkawinan ini ?",
+   "hal": "hal yang didalilkan pengaju sebagai alasan pembatalan perkawinan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi tidak pernah melihat atau mengetahui hal yang didalilkan pengaju",
+     "saksi1": [
+      "saya tidak pernah melihat adanya hal yang didalilkan #0046# sebagai alasan pembatalan perkawinan itu",
+      "sepanjang saya mengetahui perkawinan #0046# dan #0047# tidak mengalami hal seperti yang didalilkan #0046#",
+      "tidak ada kejadian yang saya ketahui sendiri yang sesuai dengan dalil #0046# tentang alasan pembatalan",
+      "setahu saya apa yang didalilkan #0046# sebagai sebab pembatalan tidak pernah terjadi dalam perkawinan itu"
+     ],
+     "saksi2": [
+      "saya sendiri tidak pernah menyaksikan keadaan yang dijadikan #0046# sebagai alasan membatalkan perkawinan",
+      "dalil #0046# mengenai alasan pembatalan perkawinan tidak sesuai dengan yang saya lihat",
+      "peristiwa yang dijadikan alasan pembatalan oleh #0046# tidak pernah saya saksikan",
+      "dalam penglihatan saya perkawinan #0046# dan #0047# berlangsung tanpa hal yang didalilkan #0046# sebagai alasan pembatalan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: hal yang didalilkan tidak pernah terjadi; versi B: hal yang didalilkan memang terjadi - berselisih pada PERISTIWA",
+     "saksi1": [
+      "saya tidak pernah melihat hal yang didalilkan #0046# terjadi dalam perkawinan itu",
+      "sepanjang pengetahuan saya hal yang didalilkan #0046# tidak terjadi",
+      "tidak ada peristiwa seperti dalil #0046# yang pernah saya saksikan",
+      "setahu saya dalil #0046# tentang alasan pembatalan tidak benar terjadi"
+     ],
+     "saksi2": [
+      "saya melihat sendiri hal yang didalilkan #0046# terjadi dalam perkawinan itu",
+      "sepanjang pengetahuan saya hal yang didalilkan #0046# benar terjadi",
+      "peristiwa seperti dalil #0046# pernah saya saksikan sendiri",
+      "setahu saya dalil #0046# tentang alasan pembatalan benar adanya"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-penutup",
+   "pokok": "pp-penutup",
+   "urutan": 200,
+   "tingkat": "inti",
+   "kelompok": "penutup",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+   "hal": "keterangan penutup",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan keterangannya sudah cukup",
+     "saksi1": [
+      "keterangan yang saya berikan sudah cukup",
+      "sekian keterangan saya dan sudah cukup",
+      "bagi saya keterangan ini sudah cukup",
+      "sudah cukup yang dapat saya terangkan"
+     ],
+     "saksi2": [
+      "dengan ini keterangan saya sudah cukup",
+      "sudah cukup apa yang saya ketahui untuk diterangkan",
+      "hanya itu keterangan saya dan sudah cukup",
+      "saya anggap keterangan saya sudah cukup sampai di sini"
+     ]
+    }
+   },
+   "variabelAbt": []
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Titik-titik (...) pada keterangan saksi wajib diganti dengan keterangan saksi yang sebenarnya; jangan dibiarkan kosong.",
+  "Pilih satu huruf alasan pembatalan pada borang; pertanyaan alasan hanya diajukan sesuai huruf yang dipilih.",
+  "Untuk alasan paksaan atau penipuan/salah sangka, perhatikan tenggang enam bulan (Pasal 27 ayat (3) UU 1/1974): hak gugur bila setelah keadaan disadari para pihak masih hidup sebagai suami istri selama enam bulan.",
+  "Pembatalan berlaku sejak berlangsungnya perkawinan tetapi tidak berlaku surut terhadap anak (Pasal 28 UU 1/1974). Rujukan Buku II 2026 aspek 32 (perkawinan yang sudah putus karena kematian) berasal dari ringkasan sekunder dan belum diperiksa pada naskah resminya.",
+  "Keterangan saksi yang ragu atau hanya cerita orang lain bukan keterangan yang dialami sendiri; pertimbangkan menghadirkan saksi tambahan untuk alasan pembatalan."
+ ]
+}
