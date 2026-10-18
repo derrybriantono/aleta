@@ -7190,10 +7190,18 @@ async function susunPanelMassalAbt() {
   // Pemetaan yang baru bernama - dari popup, atau bawaan cerai - tokennya
   // diambil di latar dari halaman kelompok ABT, lalu daftarnya digambar ulang.
   // Tidak menahan panel: yang membuka panel belum tentu hendak memutus massal.
-  void lengkapiTokenPeta(keadaan.peta, () => {}).then((terisi) => {
-    if (terisi > 0 && keadaan.gambarPeta) keadaan.gambarPeta();
-    if (terisi > 0 && keadaan.muatDaftar) void keadaan.muatDaftar();
-  });
+  // AUDIT-GALAT 18 Okt: ABT yang tidak terjangkau / menjawab bukan-200 membuat
+  // pencarian ini menolak. Tanpa .catch, tiap pembukaan beranda ABT menambah satu
+  // "Uncaught (in promise)" di chrome://extensions. Baris yang belum bertoken
+  // tetap bernama saja; tombol "Ambil token dari ABT" mengulanginya.
+  void lengkapiTokenPeta(keadaan.peta, () => {})
+    .then((terisi) => {
+      if (terisi > 0 && keadaan.gambarPeta) keadaan.gambarPeta();
+      if (terisi > 0 && keadaan.muatDaftar) void keadaan.muatDaftar();
+    })
+    .catch((galat) => {
+      alatCatat("massal-galat", `token blangko belum terambil: ${String((galat && galat.message) || galat)}`, "");
+    });
   return panel;
 }
 
@@ -7480,9 +7488,18 @@ function bagianPetaBlangkoAbt(keadaan) {
       alatCatat("massal", `pemetaan blangko diketik: ${label} → ${nama}`, "");
       pemilih.hidden = true;
       gambar();
-      const hasil = await cariTokenBlangko(nama, (t) => {
-        kabarAmbil.textContent = t;
-      });
+      // AUDIT-GALAT 18 Okt: ABT tak terjangkau -> cariTokenBlangko menolak. Dulu
+      // galatnya lepas tanpa kabar dan baris kabar membeku di "mencari…".
+      let hasil = null;
+      try {
+        hasil = await cariTokenBlangko(nama, (t) => {
+          kabarAmbil.textContent = t;
+        });
+      } catch (galat) {
+        kabarAmbil.textContent = `Token "${nama}" belum terambil: ${String((galat && galat.message) || galat)} - namanya tetap tersimpan.`;
+        gambar();
+        return;
+      }
       if (hasil) {
         keadaan.peta[kunci] = { ...alatRapikanBlangko(hasil), jenisAsli: label, bawaan: false };
         await alatSimpanPetaBlangko(keadaan.peta);
