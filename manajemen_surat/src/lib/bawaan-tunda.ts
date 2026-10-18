@@ -1,3 +1,4 @@
+import { geserUsulanKeHariKerja } from "@/lib/hari-libur";
 import { sebutanPihakPerkara, type BahanSebutan } from "@/lib/sebutan-pihak";
 
 /**
@@ -304,6 +305,8 @@ export type TanggalBerikut = {
   rencanaKe: number | null;
   rencana: RencanaKalender | null;
   penjelasan: string;
+  /** Diisi bila usulan jatuh di hari libur dan digeser ke hari kerja berikutnya. */
+  bergeserDari?: string;
 };
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
@@ -396,8 +399,20 @@ function tundaKetidakhadiran(opsi: {
  *      terbaca - dua pekan, perilaku sebelumnya.
  *
  * Hanya USULAN: tetap dapat diganti, dan hari liburnya diperiksa server.
+ *
+ * Usulan yang jatuh pada hari libur (Sabtu, Minggu, libur nasional, cuti
+ * bersama, libur tambahan Pengaturan) digeser ke hari kerja berikutnya, dan
+ * penjelasannya menyebut pergeseran itu (18 Okt 2026).
  */
-export function tanggalSidangBerikut(opsi: {
+export function tanggalSidangBerikut(opsi: Parameters<typeof tanggalSidangBerikutMentah>[0]): TanggalBerikut {
+  const t = tanggalSidangBerikutMentah(opsi);
+  if (!ISO.test(t.tanggal)) return t;
+  const g = geserUsulanKeHariKerja(t.tanggal);
+  if (!g.bergeser) return t;
+  return { ...t, tanggal: g.tanggal, bergeserDari: t.tanggal, penjelasan: `${t.penjelasan} ${g.pemberitahuan}` };
+}
+
+function tanggalSidangBerikutMentah(opsi: {
   tanggalSidang: string;
   /** Kehadiran sidang ini (1..4). Tanpa itu aturan ketidakhadiran tidak berlaku. */
   kehadiran?: number | null;

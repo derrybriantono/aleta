@@ -35,6 +35,7 @@ import { CalendarClock, Pencil, Plus, RotateCcw, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { usePortal } from "@/lib/app-state";
+import { PemilihTanggalSidang } from "@/components/ui/pemilih-tanggal-sidang";
 import { apiPath } from "@/lib/base-path";
 import { bolehIsiCourtCalendar } from "@/lib/court-calendar-hak";
 import {
@@ -187,13 +188,14 @@ function IsianCourtCalendar({
   return (
     <div className="grid gap-1.5">
       <div className="flex flex-wrap items-center gap-1.5">
-        <input
-          type="date"
+        <PemilihTanggalSidang
           aria-label="Tanggal rencana sidang"
           className={cn(kelasMedan, sebab && "border-amber-500")}
+          kelasBungkus="flex-none"
           value={nilai.tanggal}
           disabled={kunci}
-          onChange={(e) => ubah({ tanggal: e.target.value })}
+          sebutan="Tanggal rencana sidang"
+          onChange={(v) => ubah({ tanggal: v })}
         />
         <input
           type="time"

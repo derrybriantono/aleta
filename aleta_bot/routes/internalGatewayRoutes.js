@@ -624,6 +624,20 @@ router.get("/ecourt/pengaturan", requireInternalToken, (req, res) => {
   }
 });
 
+/**
+ * Libur tambahan dari Pengaturan portal (18 Okt 2026). Portal satu-satunya
+ * sumbernya; bot menyimpan salinan di folder datanya supaya tetap berlaku
+ * sesudah dimulai ulang. Hanya hari libur - tidak menulis ke SIPP.
+ */
+router.post("/hari-libur/tambahan", requireInternalToken, (req, res) => {
+  try {
+    const jumlah = require("../services/hariLiburService").pasangTambahan(req.body && req.body.tambahan);
+    res.json({ ok: true, jumlah });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 /** Menyimpan satu aturan pemberitahuan. */
 router.post("/ecourt/pengaturan/aturan", requireInternalToken, (req, res) => {
   try {

@@ -33,45 +33,17 @@
  */
 
 import { HARI_TUNDA_MEDIASI, JAM_PAGI, JAM_SORE, jamSidangBerikut } from "@/lib/bawaan-tunda";
+import { TAHUN_SKB_LENGKAP, petaLiburBerlaku, petaSingkat } from "@/lib/hari-libur";
 
 // ─── Tetapan - persis konten.js ──────────────────────────────────────────────
 
-/** Hari libur nasional & cuti bersama. 2026 cocok dengan hari kerja tanpa satu pun sidang di sipp_donggala. */
-export const CC_LIBUR: Readonly<Record<string, string>> = {
-  "2026-01-01": "Tahun Baru Masehi",
-  "2026-01-16": "Isra Mikraj",
-  "2026-02-16": "cuti bersama Tahun Baru Imlek",
-  "2026-02-17": "Tahun Baru Imlek",
-  "2026-03-18": "cuti bersama Nyepi",
-  "2026-03-19": "Hari Suci Nyepi",
-  "2026-03-20": "cuti bersama Idul Fitri",
-  "2026-03-21": "Idul Fitri",
-  "2026-03-22": "Idul Fitri",
-  "2026-03-23": "cuti bersama Idul Fitri",
-  "2026-03-24": "cuti bersama Idul Fitri",
-  "2026-04-03": "Wafat Isa Almasih",
-  "2026-05-01": "Hari Buruh",
-  "2026-05-14": "Kenaikan Isa Almasih",
-  "2026-05-15": "cuti bersama Kenaikan Isa Almasih",
-  "2026-05-27": "Idul Adha",
-  "2026-05-28": "cuti bersama Idul Adha",
-  "2026-05-31": "Waisak",
-  "2026-06-01": "Hari Lahir Pancasila",
-  "2026-06-16": "Tahun Baru Islam",
-  "2026-08-17": "Hari Kemerdekaan",
-  "2026-08-25": "Maulid Nabi",
-  "2026-12-24": "cuti bersama Natal",
-  "2026-12-25": "Natal",
-  // 2027: hanya yang tanggalnya pasti - lihat konten.js.
-  "2027-01-01": "Tahun Baru Masehi",
-  "2027-03-26": "Wafat Isa Almasih",
-  "2027-05-01": "Hari Buruh",
-  "2027-05-06": "Kenaikan Isa Almasih",
-  "2027-06-01": "Hari Lahir Pancasila",
-  "2027-08-17": "Hari Kemerdekaan",
-  "2027-12-25": "Natal",
-};
-export const CC_LIBUR_TAHUN_LENGKAP: readonly string[] = ["2026"];
+/**
+ * Hari libur nasional & cuti bersama - DITURUNKAN dari @/lib/hari-libur (SKB
+ * 2024-2027, satu sumber). konten.js memuat salinan literalnya; uji
+ * court-calendar-sidang menuntut keduanya sama.
+ */
+export const CC_LIBUR: Readonly<Record<string, string>> = petaSingkat(2024);
+export const CC_LIBUR_TAHUN_LENGKAP: readonly string[] = TAHUN_SKB_LENGKAP.filter((t) => Number(t) >= 2026);
 
 export type GolonganCc = "cerai-gugat" | "cerai-talak" | "gugatan" | "itsbat" | "dispensasi" | "permohonan" | "sederhana";
 
@@ -193,7 +165,11 @@ export function ccHariKe(iso: string): number {
 export function ccBukanHariKerja(iso: string): string {
   const h = ccHariKe(iso);
   if (h === 0 || h === 6) return h === 0 ? "hari Minggu" : "hari Sabtu";
-  return CC_LIBUR[iso] ? `libur: ${CC_LIBUR[iso]}` : "";
+  // Peta yang berlaku = SKB + tambahan Pengaturan (hari-libur.ts); tanpa
+  // tambahan isinya sama dengan CC_LIBUR.
+  const b = petaLiburBerlaku().get(iso);
+  if (b) return `libur: ${b.asal === "skb" ? b.singkat : b.nama}`;
+  return "";
 }
 
 /** Maju ke hari kerja pertama pada atau sesudah iso. */
@@ -501,6 +477,9 @@ export function ccPeriksaBaris(b: { agenda?: string; tanggal?: string; jam?: str
   if (!ccJamSah(b.jam)) return "jam wajib diisi (JJ:MM)";
   const h = ccHariKe(b.tanggal);
   if (h === 0 || h === 6) return "SIPP menolak Sabtu dan Minggu";
+  // Libur nasional/cuti bersama/tambahan tidak ditolak SIPP - dicegah di sini.
+  const libur = ccBukanHariKerja(String(b.tanggal));
+  if (libur) return `${libur} - tanggal libur tidak dikirim`;
   if (ccIsoSah(tanggalDaftar) && b.tanggal < tanggalDaftar) return "sebelum tanggal pendaftaran - SIPP menolak";
   return "";
 }

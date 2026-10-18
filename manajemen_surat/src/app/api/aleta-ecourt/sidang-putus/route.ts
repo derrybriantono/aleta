@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
+import { tolakBilaHariLibur } from "@/server/modules/hari-libur/sumber";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { pastikanBolehUnggahPutusan, pastikanMajelisPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import { akunSippPengguna } from "@/server/modules/aleta-ecourt/court-calendar-akun";
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
       // Penginput di SIPP = PP perkara (keputusan 7 Okt 2026, ditentukan bot);
       // penekan sebenarnya hanya untuk jejak ALETA.
       const akunPenekan = await akunSippPengguna(db, aktor.id).catch(() => null);
+      await tolakBilaHariLibur(db, badan.tanggalPutus, "Tanggal putusan");
       const respons = await postGatewayPutusSidang({
         jadwalId: badan.jadwalId,
         perkaraId: badan.perkaraId,
@@ -140,6 +142,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    await tolakBilaHariLibur(db, badan.tanggalPutusan, "Tanggal putusan");
     const hasil = await postGatewayTulisPutusan({
       perkaraId: badan.perkaraId,
       tanggalPutusan: String(badan.tanggalPutusan || ""),

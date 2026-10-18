@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { bolehIsiCourtCalendar } from "@/lib/court-calendar-hak";
 import { getDatabase } from "@/server/db/client";
+import { tolakBilaHariLibur } from "@/server/modules/hari-libur/sumber";
 import { getGatewayStatusPerkara } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { akunSippPengguna } from "@/server/modules/aleta-ecourt/court-calendar-akun";
@@ -148,6 +149,15 @@ export async function POST(request: NextRequest) {
     const tambah = Array.isArray(badan.tambah) ? badan.tambah.slice(0, 30) : [];
     const ubah = Array.isArray(badan.ubah) ? badan.ubah.slice(0, 30) : [];
     const kering = badan.kering !== false;
+    // Libur nasional/cuti bersama/tambahan diterima SIPP - dicegah di sini.
+    for (const b of [...tambah, ...ubah]) {
+      const t = b && typeof b === "object" ? (b as Record<string, unknown>).tanggal : "";
+      try {
+        await tolakBilaHariLibur(db, t, "Tanggal rencana sidang");
+      } catch (galat) {
+        return ok({ available: true, ok: false, alasan: galat instanceof Error ? galat.message : String(galat) });
+      }
+    }
     const hasil = await panggilBotJadwalSidang("/court-calendar", {
       method: "POST",
       body: {

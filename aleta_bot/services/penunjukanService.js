@@ -47,6 +47,7 @@
 const db = require("../db_config");
 const { cleanText } = require("./ecourtTextService");
 const sippSkemaService = require("./sippSkemaService");
+const hariLiburService = require("./hariLiburService");
 
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -1821,18 +1822,38 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
         ? hariSidang[kodeKetua]
         : undefined;
   const jeda = Number(aturan.jedaMinimalHari) || 0;
-  const tanggalSidang =
+  const tanggalAwal =
     hariMajelis === undefined
       ? ""
       : tanggalSidangPertama(identitas.tanggalDaftar, Number(hariMajelis), jeda);
+  // ==========================================================================
+  // HARI SIDANG YANG JATUH PADA HARI LIBUR DIGESER (18 Okt 2026)
+  // ==========================================================================
+  //
+  // Libur nasional, cuti bersama, dan libur tambahan Pengaturan. Digeser ke
+  // hari sidang majelis yang sama pada pekan berikutnya - bukan ke hari kerja
+  // sembarang, sebab majelis hanya bersidang pada harinya - dan sebabnya ikut
+  // disebut di usulan.
+  const liburDilewati = [];
+  let tanggalSidang = tanggalAwal;
+  for (let i = 0; i < 8 && tanggalSidang; i += 1) {
+    const libur = hariLiburService.hariLibur(tanggalSidang);
+    if (!libur) break;
+    liburDilewati.push({ tanggal: tanggalSidang, nama: String(libur.nama || "") });
+    tanggalSidang = geserHari(tanggalSidang, 7);
+  }
+  const catatanLibur = liburDilewati.length
+    ? `; ${liburDilewati.map((x) => `${sebutTanggal(x.tanggal)} libur (${x.nama})`).join(", ")} - digeser ke pekan berikutnya`
+    : "";
 
   const phs = {
     usulan: tanggalSidang,
     sebut: tanggalSidang ? sebutTanggal(tanggalSidang) : "",
+    liburDilewati,
     sebab: tanggalSidang
-      ? dariKetua
+      ? (dariKetua
         ? `hari sidang mengikuti ketua majelis (kode ${kodeKetua}) - susunan ini di luar SK; sekurangnya ${jeda} hari sesudah pendaftaran`
-        : `hari sidang Majelis ${acuan.majelisKode}, sekurangnya ${jeda} hari sesudah pendaftaran`
+        : `hari sidang Majelis ${acuan.majelisKode}, sekurangnya ${jeda} hari sesudah pendaftaran`) + catatanLibur
       : acuan.majelisKode
         ? `hari sidang Majelis ${acuan.majelisKode} belum diatur di ALETA`
         : "menunggu majelisnya ditentukan lebih dulu",
@@ -1873,6 +1894,11 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
               sebut: sebutTanggal(iso),
               usulan: maju === 0,
               pekan: maju / 7,
+              // Hari libur tetap ditampilkan (bertanda) tetapi tidak dapat dipilih.
+              libur: (() => {
+                const l = hariLiburService.hariLibur(iso);
+                return l ? String(l.nama || "") : "";
+              })(),
               // Diisi sesudah seluruh calonnya tersusun - lihat di bawah.
               jumlahSidang: null,
             };

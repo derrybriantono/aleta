@@ -27,6 +27,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } fro
 import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
+import { PemilihTanggalSidang } from "@/components/ui/pemilih-tanggal-sidang";
 import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import {
@@ -500,7 +501,7 @@ export function PopupPenetapanKembali({
         <section className="mb-3 grid gap-3 rounded-md border p-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm">
             <span className="text-xs font-medium text-muted-foreground">Tanggal penetapan kembali</span>
-            <input type="date" aria-label="Tanggal penetapan kembali" className={kelasMedan} value={tanggalPenetapan} max={hariIniLokal()} onChange={(e) => setTanggalPenetapan(e.target.value)} />
+            <PemilihTanggalSidang aria-label="Tanggal penetapan kembali" className={kelasMedan} value={tanggalPenetapan} max={hariIniLokal()} sebutan="Tanggal penetapan" onChange={setTanggalPenetapan} />
           </label>
           <div className="grid gap-1 text-sm">
             <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
@@ -717,7 +718,7 @@ export function PopupPenetapanKembali({
                       sekarang={`${k.phs.tanggalSidang || "-"}${k.phs.jam ? ` ${k.phs.jam}` : ""}${k.phs.ruangan ? `, ${k.phs.ruangan}` : ""}`}
                       hasil={hasil[`${p.perkaraId}:phs`]}
                     >
-                      <input type="date" aria-label={`Tanggal sidang baru ${k.nomorPerkara}`} className={kelasMedan} value={b.tanggalSidang} min={tanggalPenetapan} onChange={(e) => ubahBaris(p.perkaraId, (x) => ({ ...x, tanggalSidang: e.target.value }))} />
+                      <PemilihTanggalSidang aria-label={`Tanggal sidang baru ${k.nomorPerkara}`} className={kelasMedan} kelasBungkus="flex-none" value={b.tanggalSidang} min={tanggalPenetapan} sebutan="Tanggal sidang baru" onChange={(v) => ubahBaris(p.perkaraId, (x) => ({ ...x, tanggalSidang: v }))} />
                       <input type="time" aria-label={`Jam sidang ${k.nomorPerkara}`} className={kelasMedan} value={b.jamSidang} onChange={(e) => ubahBaris(p.perkaraId, (x) => ({ ...x, jamSidang: e.target.value.slice(0, 5) }))} />
                       <select aria-label={`Ruang sidang ${k.nomorPerkara}`} className={kelasMedan} value={b.ruanganId} onChange={(e) => ubahBaris(p.perkaraId, (x) => ({ ...x, ruanganId: Number(e.target.value) }))}>
                         <option value={0}>Ruang sidang</option>

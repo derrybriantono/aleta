@@ -1082,6 +1082,8 @@ function bagianMalas(judul, kunci, nomor, gambar) {
  * tiap perkara yang kebetulan dibuka.
  */
 async function ambilUsulanPenunjukan(nomor, pilihanMajelis, andaian) {
+  // Libur tambahan Pengaturan - dibaca sekali per halaman, tidak ditunggu.
+  if (typeof ccMuatLiburTambahan === "function") void ccMuatLiburTambahan();
   const majelis = Array.isArray(pilihanMajelis) && pilihanMajelis.length > 0
     ? `&majelis=${encodeURIComponent(pilihanMajelis.join(","))}`
     : "";
@@ -1220,7 +1222,14 @@ function tanggalSidangTerpilih(usulan, pilihanManual = {}) {
  */
 function masalahTanggalSidang(usulan, pilihanManual = {}) {
   const manual = String((pilihanManual && pilihanManual.phs) || "").trim();
-  if (!manual) return "";
+  if (!manual) {
+    // Usulan mesin yang jatuh pada hari libur (mis. libur tambahan Pengaturan
+    // yang belum dikenal bot) juga ditahan, dengan sebabnya (18 Okt 2026).
+    const usul = String((usulan && usulan.phs && usulan.phs.usulan) || "").slice(0, 10);
+    const jenisUsul = Number(((usulan && usulan.perkara) || {}).jenisPerkaraId || 0);
+    const awas = jenisUsul === 746 || typeof peringatanLiburPhs !== "function" ? "" : peringatanLiburPhs(usul);
+    return awas ? `Usulan hari sidang ${awas}` : "";
+  }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(manual)) {
     return `Tanggal sidang pilihan Anda (${manual}) tidak terbaca. Pilih ulang dari kalender.`;
   }
@@ -1235,7 +1244,21 @@ function masalahTanggalSidang(usulan, pilihanManual = {}) {
   if (libur) {
     return `Tanggal sidang pilihan Anda jatuh pada hari ${libur} (${sebutTanggal(manual)}) - SIPP menolak hari sidang di hari libur. Pilih tanggal lain - ALETA tidak menggantinya sendiri.`;
   }
+  // Libur nasional, cuti bersama, dan libur tambahan Pengaturan (18 Okt 2026).
+  // SIPP sendiri hanya menolak Sabtu/Minggu - yang ini dicegah ALETA.
+  const nasional = jenisPerkara === 746 || typeof ccBukanHariKerja !== "function" ? "" : ccBukanHariKerja(manual);
+  if (nasional) {
+    return `Tanggal sidang pilihan Anda (${sebutTanggal(manual)}) hari ${nasional.replace(/^libur: /, "libur ")}. Pilih hari kerja lain - ALETA tidak menggantinya sendiri.`;
+  }
   return "";
+}
+
+/** Peringatan bila tanggal sidang (usulan atau pilihan) jatuh pada hari libur. */
+function peringatanLiburPhs(iso) {
+  const t = String(iso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(t) || typeof ccBukanHariKerja !== "function") return "";
+  const libur = ccBukanHariKerja(t);
+  return libur ? `${sebutTanggal(t)} hari ${libur.replace(/^libur: /, "libur ")} - pilih hari sidang lain sebelum menetapkan.` : "";
 }
 
 function idUntukTulis(jenis, usulan, pilihanManual = {}) {
@@ -1499,7 +1522,7 @@ const KALIMAT_ALASAN = [
   },
   {
     pola: /^tanggal_sidang_hari_libur$/,
-    kalimat: () => "Tanggal sidang jatuh pada hari Sabtu/Minggu - SIPP menolaknya. Pilih tanggal lain; ALETA tidak menggantinya sendiri.",
+    kalimat: () => "Tanggal sidang jatuh pada hari libur (Sabtu/Minggu, libur nasional, atau cuti bersama). Pilih hari kerja lain; ALETA tidak menggantinya sendiri.",
   },
   {
     pola: /^sidang_mendahului_penetapan$/,
@@ -1507,7 +1530,7 @@ const KALIMAT_ALASAN = [
   },
   {
     pola: /^tanggal_penetapan_hari_libur$/,
-    kalimat: () => "Tanggal penetapan jatuh pada hari Sabtu/Minggu - SIPP menolak penetapan di hari libur.",
+    kalimat: () => "Tanggal penetapan jatuh pada hari libur (Sabtu/Minggu, libur nasional, atau cuti bersama). Penetapan tidak dibuat pada hari libur.",
   },
   {
     pola: /^tanggal_penetapan_masa_depan$/,
@@ -2838,6 +2861,8 @@ function pilihanOrang(label, daftar, terpilihId, onPilih) {
     const opsi = document.createElement("option");
     opsi.value = String(orang.id);
     opsi.textContent = orang.label;
+    // Hari libur tampil tetapi tidak dapat dipilih (18 Okt 2026).
+    if (orang.mati) opsi.disabled = true;
     if (String(orang.id) === String(terpilihId)) opsi.selected = true;
     kotak.appendChild(opsi);
   }
@@ -3499,7 +3524,7 @@ function gambarPenunjukan(isi, data) {
           "Penetapan Hari Sidang",
           phsTerbaca,
           phs.sebab + (phs.jarakHari ? ` · ${phs.jarakHari} hari sejak daftar` : "") + bebanTerpilih,
-          "",
+          peringatanLiburPhs(pilihanManual.phs || phs.usulan),
           penetapUntuk(data, "phs")
         )
   );
@@ -3589,12 +3614,18 @@ function gambarPenunjukan(isi, data) {
     // ATAS dan bertanda asalnya. Ia tidak menggantikan satu pun calon:
     // memilih kembali salah satu calon tetap dapat dilakukan dengan satu
     // gerakan yang sama.
-    const calonTampil = phs.calon.map((x) => ({
-      id: x.tanggal,
-      label:
-        `${x.sebut} — ${x.usulan ? "usulan" : `mundur ${x.pekan} pekan`}` +
-        ` · ${sebutBeban(x)}`,
-    }));
+    const calonTampil = phs.calon.map((x) => {
+      // Hari libur (nasional, cuti bersama, tambahan Pengaturan) tampil
+      // dengan namanya dan tidak dapat dipilih.
+      const libur = typeof ccBukanHariKerja === "function" ? ccBukanHariKerja(x.tanggal) : "";
+      return {
+        id: x.tanggal,
+        mati: Boolean(libur),
+        label: libur
+          ? `${x.sebut} — ${libur.replace(/^libur: /, "libur ")} · tidak dapat dipilih`
+          : `${x.sebut} — ${x.usulan ? "usulan" : `mundur ${x.pekan} pekan`}` + ` · ${sebutBeban(x)}`,
+      };
+    });
     const dariKalender = String(pilihanManual.phs || "");
     if (dariKalender && !calonTampil.some((c) => c.id === dariKalender)) {
       calonTampil.unshift({
@@ -3785,12 +3816,21 @@ function gambarPenunjukan(isi, data) {
       // sebagai peringatan yang dibaca, bukan sebagai pintu yang dikunci.
       kalender.min = new Date().toISOString().slice(0, 10);
       kalender.addEventListener("change", () => {
-        pilihanManual.phs = kalender.value;
+        // Hari libur tidak diterima kalender: pilihan lama dipertahankan dan
+        // sebabnya disebut (18 Okt 2026).
+        const libur = kalender.value && typeof ccBukanHariKerja === "function" ? ccBukanHariKerja(kalender.value) : "";
+        if (libur) {
+          data.phsDitolakLibur = `${sebutTanggal(kalender.value)} hari ${libur.replace(/^libur: /, "libur ")} - tidak dapat dipilih.`;
+        } else {
+          data.phsDitolakLibur = "";
+          pilihanManual.phs = kalender.value;
+        }
         isi.textContent = "";
         gambarPenunjukan(isi, data);
       });
       barisBebas.appendChild(kalender);
       isi.appendChild(barisBebas);
+      if (data.phsDitolakLibur) isi.appendChild(buatElemen("div", "aleta-tetap-awas", data.phsDitolakLibur));
 
       const dipilihBebas = pilihanManual.phs;
 
@@ -9179,8 +9219,68 @@ function setLencana(kotak, ringkas) {
  *                     "tersimpan" hanya disebut bila memang terbaca kembali.
  */
 
-/** Hari libur nasional & cuti bersama. 2026 cocok dengan hari kerja tanpa satu pun sidang di sipp_donggala. */
+/**
+ * Hari libur nasional & cuti bersama SKB 2024-2027 - SALINAN @/lib/hari-libur
+ * (manajemen_surat; uji court-calendar-sidang menuntut sama persis). Tambahan
+ * dari Pengaturan (libur daerah, cuti bersama tambahan) dibaca dari
+ * /api/hari-libur saat panel dimuat dan diterapkan ccTerapkanLiburTambahan.
+ */
 const CC_LIBUR = {
+  "2024-01-01": "Tahun Baru Masehi",
+  "2024-02-08": "Isra Mikraj",
+  "2024-02-09": "cuti bersama Tahun Baru Imlek",
+  "2024-02-10": "Tahun Baru Imlek",
+  "2024-03-11": "Hari Suci Nyepi",
+  "2024-03-12": "cuti bersama Nyepi",
+  "2024-03-29": "Wafat Isa Almasih",
+  "2024-03-31": "Paskah",
+  "2024-04-08": "cuti bersama Idul Fitri",
+  "2024-04-09": "cuti bersama Idul Fitri",
+  "2024-04-10": "Idul Fitri",
+  "2024-04-11": "Idul Fitri",
+  "2024-04-12": "cuti bersama Idul Fitri",
+  "2024-04-15": "cuti bersama Idul Fitri",
+  "2024-05-01": "Hari Buruh",
+  "2024-05-09": "Kenaikan Isa Almasih",
+  "2024-05-10": "cuti bersama Kenaikan Isa Almasih",
+  "2024-05-23": "Waisak",
+  "2024-05-24": "cuti bersama Waisak",
+  "2024-06-01": "Hari Lahir Pancasila",
+  "2024-06-17": "Idul Adha",
+  "2024-06-18": "cuti bersama Idul Adha",
+  "2024-07-07": "Tahun Baru Islam",
+  "2024-08-17": "Hari Kemerdekaan",
+  "2024-09-16": "Maulid Nabi",
+  "2024-12-25": "Natal",
+  "2024-12-26": "cuti bersama Natal",
+  "2025-01-01": "Tahun Baru Masehi",
+  "2025-01-27": "Isra Mikraj",
+  "2025-01-28": "cuti bersama Tahun Baru Imlek",
+  "2025-01-29": "Tahun Baru Imlek",
+  "2025-03-28": "cuti bersama Nyepi",
+  "2025-03-29": "Hari Suci Nyepi",
+  "2025-03-31": "Idul Fitri",
+  "2025-04-01": "Idul Fitri",
+  "2025-04-02": "cuti bersama Idul Fitri",
+  "2025-04-03": "cuti bersama Idul Fitri",
+  "2025-04-04": "cuti bersama Idul Fitri",
+  "2025-04-07": "cuti bersama Idul Fitri",
+  "2025-04-18": "Wafat Isa Almasih",
+  "2025-04-20": "Paskah",
+  "2025-05-01": "Hari Buruh",
+  "2025-05-12": "Waisak",
+  "2025-05-13": "cuti bersama Waisak",
+  "2025-05-29": "Kenaikan Isa Almasih",
+  "2025-05-30": "cuti bersama Kenaikan Isa Almasih",
+  "2025-06-01": "Hari Lahir Pancasila",
+  "2025-06-06": "Idul Adha",
+  "2025-06-09": "cuti bersama Idul Adha",
+  "2025-06-27": "Tahun Baru Islam",
+  "2025-08-17": "Hari Kemerdekaan",
+  "2025-08-18": "cuti bersama HUT Kemerdekaan",
+  "2025-09-05": "Maulid Nabi",
+  "2025-12-25": "Natal",
+  "2025-12-26": "cuti bersama Natal",
   "2026-01-01": "Tahun Baru Masehi",
   "2026-01-16": "Isra Mikraj",
   "2026-02-16": "cuti bersama Tahun Baru Imlek",
@@ -9193,6 +9293,7 @@ const CC_LIBUR = {
   "2026-03-23": "cuti bersama Idul Fitri",
   "2026-03-24": "cuti bersama Idul Fitri",
   "2026-04-03": "Wafat Isa Almasih",
+  "2026-04-05": "Paskah",
   "2026-05-01": "Hari Buruh",
   "2026-05-14": "Kenaikan Isa Almasih",
   "2026-05-15": "cuti bersama Kenaikan Isa Almasih",
@@ -9205,18 +9306,34 @@ const CC_LIBUR = {
   "2026-08-25": "Maulid Nabi",
   "2026-12-24": "cuti bersama Natal",
   "2026-12-25": "Natal",
-  // 2027: hanya yang tanggalnya pasti (tetap, atau dihitung dari Paskah).
-  // Libur Hijriah/Imlek/Saka 2027 belum dimuat - SKB-nya belum terbit ketika
-  // ini ditulis; layar menyebutnya supaya petugas memeriksa sendiri.
   "2027-01-01": "Tahun Baru Masehi",
+  "2027-01-05": "Isra Mikraj",
+  "2027-02-05": "cuti bersama Tahun Baru Imlek",
+  "2027-02-06": "Tahun Baru Imlek",
+  "2027-03-08": "Hari Suci Nyepi",
+  "2027-03-09": "cuti bersama Idul Fitri",
+  "2027-03-10": "Idul Fitri",
+  "2027-03-11": "Idul Fitri",
+  "2027-03-12": "cuti bersama Idul Fitri",
+  "2027-03-15": "cuti bersama Idul Fitri",
+  "2027-03-25": "cuti bersama Wafat Isa Almasih",
   "2027-03-26": "Wafat Isa Almasih",
+  "2027-03-28": "Paskah",
   "2027-05-01": "Hari Buruh",
   "2027-05-06": "Kenaikan Isa Almasih",
+  "2027-05-17": "Idul Adha",
+  "2027-05-18": "cuti bersama Idul Adha",
+  "2027-05-19": "cuti bersama Waisak",
+  "2027-05-20": "Waisak",
   "2027-06-01": "Hari Lahir Pancasila",
+  "2027-06-06": "Tahun Baru Islam",
+  "2027-08-15": "Maulid Nabi",
   "2027-08-17": "Hari Kemerdekaan",
+  "2027-12-24": "cuti bersama Natal",
   "2027-12-25": "Natal",
+  "2027-12-26": "Isra Mikraj",
 };
-const CC_LIBUR_TAHUN_LENGKAP = ["2026"];
+const CC_LIBUR_TAHUN_LENGKAP = ["2026", "2027"];
 
 /** Pendaftaran -> sidang pertama (median terukur, lihat di atas) bila PHS belum ada. */
 const CC_HARI_DAFTAR = {
@@ -9295,6 +9412,41 @@ function ccBukanHariKerja(iso) {
   const h = ccHariKe(iso);
   if (h === 0 || h === 6) return h === 0 ? "hari Minggu" : "hari Sabtu";
   return CC_LIBUR[iso] ? `libur: ${CC_LIBUR[iso]}` : "";
+}
+
+/**
+ * Libur tambahan dari Pengaturan portal (libur daerah, cuti bersama tambahan,
+ * tanggal SKB yang dibatalkan) - diterapkan ke CC_LIBUR yang sama, sehingga
+ * seluruh pemeriksaan libur di panel ikut. Gagal dibaca = tetap daftar SKB.
+ */
+const ALETA_API_HARI_LIBUR = "/aleta/api/hari-libur";
+let ccLiburTambahanDimuat = null;
+
+function ccTerapkanLiburTambahan(tambahan) {
+  for (const t of Array.isArray(tambahan) ? tambahan : []) {
+    const tanggal = String((t && t.tanggal) || "");
+    if (!ccIsoSah(tanggal)) continue;
+    if (t.aksi === "hapus") delete CC_LIBUR[tanggal];
+    else if (String(t.nama || "").trim()) CC_LIBUR[tanggal] = String(t.nama).trim();
+  }
+}
+
+function ccMuatLiburTambahan() {
+  if (ccLiburTambahanDimuat) return ccLiburTambahanDimuat;
+  ccLiburTambahanDimuat = (async () => {
+    try {
+      if (typeof alatAmbil !== "function") return false;
+      const respons = await alatAmbil(ALETA_API_HARI_LIBUR, { credentials: "include", cache: "no-store" }, "Membaca daftar hari libur");
+      if (!respons || !respons.ok) return false;
+      const luar = await respons.json();
+      const isi = (luar && luar.data) || luar || {};
+      ccTerapkanLiburTambahan(isi.tambahan);
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+  return ccLiburTambahanDimuat;
 }
 
 /** Maju ke hari kerja pertama pada atau sesudah iso. */
@@ -9755,6 +9907,9 @@ function ccPeriksaBaris(b, tanggalDaftar) {
   if (!ccJamSah(b.jam)) return "jam wajib diisi (JJ:MM)";
   const h = ccHariKe(b.tanggal);
   if (h === 0 || h === 6) return "SIPP menolak Sabtu dan Minggu";
+  // Libur nasional/cuti bersama/tambahan tidak ditolak SIPP - dicegah di sini.
+  const libur = ccBukanHariKerja(b.tanggal);
+  if (libur) return `${libur} - tanggal libur tidak dikirim`;
   if (ccIsoSah(tanggalDaftar) && b.tanggal < tanggalDaftar) return "sebelum tanggal pendaftaran - SIPP menolak";
   return "";
 }
@@ -9892,6 +10047,7 @@ function ccBolehTampil() {
 /** Bagian "Court Calendar otomatis" - null bila tidak berlaku untuk tampilan/peran ini. */
 function ccBagian(konteks) {
   if (!konteks || !konteks.nomorPerkara || !ccBolehTampil()) return null;
+  void ccMuatLiburTambahan();
   const kotak = bagianMalas("Court Calendar otomatis", "courtCalendarOtomatis", konteks.nomorPerkara, (isi, status) =>
     ccGambar(isi, status, konteks)
   );
@@ -10096,7 +10252,16 @@ function ccGambar(isi, status, konteks) {
         el.classList.toggle("aleta-cc-libur", Boolean(sebab));
       };
       tgl.addEventListener("change", () => {
-        b.tanggal = tgl.value;
+        // Hari libur tidak dapat dipilih (18 Okt 2026): tanggal lama kembali,
+        // sebabnya disebut di baris itu.
+        const libur = ccIsoSah(tgl.value) ? ccBukanHariKerja(tgl.value) : "";
+        if (libur) {
+          b.pesan = `${ccTeksTanggal(tgl.value)} ${libur} - tidak dapat dipilih`;
+          tgl.value = b.tanggal;
+        } else {
+          b.pesan = "";
+          b.tanggal = tgl.value;
+        }
         segarkanPeringatan();
       });
       jam.addEventListener("change", () => {

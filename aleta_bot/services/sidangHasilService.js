@@ -860,17 +860,21 @@ async function susunRencanaTunda(minta = {}) {
   // null - karena itu ketersediaan tahunnya diperiksa TERPISAH, supaya
   // "belum ada daftarnya" tidak terbaca sebagai "bukan hari libur".
   const tahunBerikut = Number(tanggalBerikut.slice(0, 4));
-  if (!hariLiburService.tahunTersedia(tahunBerikut)) {
+  // tahunTersedia() memulangkan DAFTAR tahun (dahulu dipanggil seolah
+  // predikat, sehingga selalu benar). Tahun tanpa SKB tetap diperiksa terhadap
+  // libur tambahan Pengaturan, dan keterangannya ikut disebut.
+  if (!hariLiburService.tahunTersedia().includes(tahunBerikut)) {
     andaian.push(
-      `Daftar hari libur tahun ${tahunBerikut} belum ada, jadi tanggal sidang berikutnya belum diperiksa terhadap hari libur.`
+      `Daftar hari libur SKB tahun ${tahunBerikut} belum ada, jadi tanggal sidang berikutnya hanya diperiksa terhadap Sabtu, Minggu, dan libur tambahan Pengaturan.`
     );
-  } else {
+  }
+  {
     const libur = hariLiburService.hariLibur(tanggalBerikut);
     if (libur) {
       return {
         ok: false,
         alasan: "tanggal_berikut_hari_libur",
-        keterangan: typeof libur === "string" ? libur : String(libur.keterangan || ""),
+        keterangan: typeof libur === "string" ? libur : String(libur.nama || libur.keterangan || ""),
       };
     }
   }

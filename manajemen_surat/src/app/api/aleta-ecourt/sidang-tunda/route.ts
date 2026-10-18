@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
+import { tolakBilaHariLibur } from "@/server/modules/hari-libur/sumber";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { akunSippPengguna } from "@/server/modules/aleta-ecourt/court-calendar-akun";
 import {
@@ -114,6 +115,8 @@ export async function POST(request: NextRequest) {
     //
     // Yang dikirim tetap diteruskan sebagai CADANGAN - dipakai layanan hanya
     // bila perkaranya sungguh tidak punya panitera sidang aktif.
+    // Hari libur (SKB + tambahan Pengaturan) ditolak sebelum diteruskan.
+    await tolakBilaHariLibur(db, badan.tanggalBerikut, "Tanggal sidang berikutnya");
     const hasil = await postGatewayTundaSidang({
       jadwalId: badan.jadwalId,
       perkaraId: badan.perkaraId,

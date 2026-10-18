@@ -30,6 +30,7 @@ import { Download, FileText, Save, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PemilihTanggalSidang } from "@/components/ui/pemilih-tanggal-sidang";
 import { Textarea } from "@/components/ui/textarea";
 import { terbilang } from "@/lib/biaya-perkara";
 import { apiPath } from "@/lib/base-path";
@@ -725,11 +726,13 @@ export function HasilMediasiDialog({
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pertemuan mediasi</p>
                   {d.pertemuan.map((p, i) => (
                     <div key={i} className="mb-1 flex flex-wrap items-center gap-1">
-                      <Input
-                        type="date"
+                      <PemilihTanggalSidang
                         value={p.tanggal}
-                        onChange={(e) => ubahDokumen({ pertemuan: d.pertemuan.map((x, j) => (j === i ? { ...x, tanggal: e.target.value } : x)) })}
-                        className="h-8 w-40 text-sm"
+                        sebutan="Tanggal pertemuan mediasi"
+                        aria-label={`Tanggal pertemuan mediasi ke-${i + 1}`}
+                        kelasBungkus="flex-none"
+                        onChange={(v) => ubahDokumen({ pertemuan: d.pertemuan.map((x, j) => (j === i ? { ...x, tanggal: v } : x)) })}
+                        className="h-8 w-40 rounded-md border border-input bg-background px-2 text-sm"
                       />
                       <Input
                         value={p.jam}

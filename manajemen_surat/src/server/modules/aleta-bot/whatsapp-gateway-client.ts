@@ -4522,6 +4522,14 @@ export async function saveGatewayEcourtRule(payload: {
   });
 }
 
+/** Libur tambahan Pengaturan ke bot (salinan; sumbernya simpanan portal). */
+export async function gatewayHariLiburTambahan(tambahan: unknown[]): Promise<GatewayResult<{ ok?: boolean; jumlah?: number }>> {
+  return gatewayFetch("/internal/aleta-bot/hari-libur/tambahan", {
+    method: "POST",
+    body: JSON.stringify({ tambahan }),
+  });
+}
+
 /** Menghapus aturan tambahan, atau mengembalikan kelas bawaan ke bentuk asalnya. */
 export async function deleteGatewayEcourtRule(payload: {
   key: string;

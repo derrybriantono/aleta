@@ -259,7 +259,8 @@ describe("butir 1 - bawaanTunda memakai aturan bersama atas data perkara", () =>
       { ...KEADAAN_314, dihadiriOleh: 2, jadwalId: 18602, tanggalSidang: "2026-03-09", agenda: "Panggil Tergugat", nomorPerkara: "104/Pdt.G/2026/PA.Dgl", alurPerkaraId: 15, jenisPerkaraId: 347 },
       { sidang: [r(18602, "2026-03-09", 2, false, "Panggil Tergugat", "")], mediasi: null, kalender: [rencana("2026-03-16"), rencana("2026-03-23")] }
     );
-    expect(usul).toMatchObject({ tanggal: "2026-03-23", sumberTanggal: "tidak-hadir" });
+    // 23 Maret 2026 cuti bersama Idul Fitri (SKB 2026): usulan dua pekan bergeser ke Rabu 25 Maret (18 Okt 2026).
+    expect(usul).toMatchObject({ tanggal: "2026-03-25", sumberTanggal: "tidak-hadir" });
     expect(usul?.penjelasanTanggal).toContain("data e-Court belum dibaca");
   });
 
@@ -483,7 +484,7 @@ describe("butir 1c - SATU fungsi bersama: kedua layar tidak memegang aturan send
     pasangFetch({ keadaan: KEADAAN_104, sidang: SIDANG_104, mediasi: null, kontak: kontak({ persetujuan: "tidak_setuju" }), kalender: [] });
     const { cRingkas, cPenuh } = await renderKeduanya104();
     for (const c of [cRingkas, cPenuh]) {
-      await waitFor(() => expect(tanggalDari(c)).toBe("2026-03-23"));
+      await waitFor(() => expect(tanggalDari(c)).toBe("2026-03-25"));
       expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("tergugat tidak setuju e-Court: 2 minggu");
       expect(c.querySelector("[data-kontak-pihak]")?.textContent).toContain("persetujuan e-Court: tidak setuju");
     }
@@ -493,7 +494,7 @@ describe("butir 1c - SATU fungsi bersama: kedua layar tidak memegang aturan send
     pasangFetch({ keadaan: KEADAAN_104, sidang: SIDANG_104, mediasi: null, kalender: [] });
     const { cRingkas, cPenuh } = await renderKeduanya104();
     for (const c of [cRingkas, cPenuh]) {
-      await waitFor(() => expect(tanggalDari(c)).toBe("2026-03-23"));
+      await waitFor(() => expect(tanggalDari(c)).toBe("2026-03-25"));
       expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("data e-Court belum dibaca");
       expect(c.querySelector("[data-kontak-pihak]")?.textContent).toContain("belum dapat dibaca");
     }
@@ -503,7 +504,7 @@ describe("butir 1c - SATU fungsi bersama: kedua layar tidak memegang aturan send
     pasangFetch({ keadaan: KEADAAN_104, sidang: SIDANG_104, mediasi: null, kalender: [] });
     const { cRingkas, cPenuh } = await renderKeduanya104();
     for (const c of [cRingkas, cPenuh]) {
-      await waitFor(() => expect(tanggalDari(c)).toBe("2026-03-23"));
+      await waitFor(() => expect(tanggalDari(c)).toBe("2026-03-25"));
       const pilih = Array.from(c.querySelectorAll("select")).find((x) => /Pihak pertama saja/.test(x.textContent ?? "")) as HTMLSelectElement;
       fireEvent.change(pilih, { target: { value: "3" } });
       await waitFor(() => expect(tanggalDari(c)).toBe("2026-03-16"));
@@ -646,8 +647,8 @@ describe("butir 1e - aturan ketidakhadiran (fungsi bersama)", () => {
       sebutan: { alurPerkaraId: 15, jenisPerkaraId: 347, nomorPerkara: "104/Pdt.G/2026/PA.Dgl" },
     };
     expect(bawaanTunda({ ...masukan, kontak: kontak() })).toMatchObject({ tanggal: "2026-03-16", sumberTanggal: "tidak-hadir", kehadiran: 2 });
-    expect(bawaanTunda({ ...masukan, kontak: kontak({ persetujuan: "tidak_setuju" }) })).toMatchObject({ tanggal: "2026-03-23", sumberTanggal: "tidak-hadir" });
-    expect(bawaanTunda({ ...masukan })).toMatchObject({ tanggal: "2026-03-23", sumberTanggal: "tidak-hadir" });
+    expect(bawaanTunda({ ...masukan, kontak: kontak({ persetujuan: "tidak_setuju" }) })).toMatchObject({ tanggal: "2026-03-25", sumberTanggal: "tidak-hadir" });
+    expect(bawaanTunda({ ...masukan })).toMatchObject({ tanggal: "2026-03-25", sumberTanggal: "tidak-hadir" });
     // Kehadiran diganti ke pihak kedua saja (penggugat tidak hadir): sepekan.
     expect(bawaanTunda({ ...masukan }, 3)).toMatchObject({ tanggal: "2026-03-16", sumberTanggal: "tidak-hadir" });
   });
