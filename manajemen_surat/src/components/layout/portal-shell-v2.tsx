@@ -195,6 +195,7 @@ const adminSidebarIds: ReadonlySet<ModuleId> = new Set([
   "mapping-user-jabatan",
   "audit",
   "visibility-role",
+  "hak-akses",
   "identity",
   "panel-settings",
   "public-access",
@@ -223,7 +224,7 @@ const adminSidebarGroups = [
   {
     id: "governance",
     label: "Akses & Pemeriksaan",
-    moduleIds: ["visibility-role", "audit", "database-viewer"],
+    moduleIds: ["visibility-role", "hak-akses", "audit", "database-viewer"],
   },
   {
     id: "services",
@@ -253,6 +254,7 @@ const compactAdminSidebarDescriptions: Partial<Record<ModuleId, string>> = {
   "public-access": "Domain publik dan akses internet.",
   feedback: "Kendala dan saran pengguna.",
   "visibility-role": "Akses menu tiap peran.",
+  "hak-akses": "Siapa boleh apa: fitur, blangko, kewenangan.",
   audit: "Jejak aktivitas penting.",
   "database-viewer": "Lihat dan edit PostgreSQL.",
   "whatsapp-settings": "Koneksi dan QR WhatsApp.",

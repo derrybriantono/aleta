@@ -51,6 +51,8 @@ export async function GET(request: NextRequest) {
       id: actor.id,
       roleId: String(actor.roleId),
       additionalRoleIds: actor.additionalRoleIds ?? [],
+      positionId: actor.positionId,
+      actingAssignment: actor.actingAssignment,
     });
     const penuh = isPrivilegedAdmin(actor);
 

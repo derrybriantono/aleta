@@ -12,6 +12,7 @@ import {
   saveGatewayEcourtThresholds,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { requireActorUser } from "@/server/modules/organization/service";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -25,7 +26,8 @@ export async function GET(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await requireActorUser(db, actorUserId);
+    // 18 Okt 2026 (matriks hak akses): pengaturan e-Court bot dibaca hanya peran yang diberi aplikasi ALETA Bot.
+    await pastikanAplikasiAktor(db, await requireActorUser(db, actorUserId), "aleta-bot");
 
     const [hasil, agenda] = await Promise.all([getGatewayEcourtSettings(), getGatewayAgendaSettings()]);
     if (!hasil.ok) {

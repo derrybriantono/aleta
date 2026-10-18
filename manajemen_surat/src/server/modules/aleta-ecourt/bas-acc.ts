@@ -56,6 +56,16 @@ import { ApiError } from "@/server/shared/errors";
  */
 export const PERAN_PENGACC: RoleId[] = ["ketua", "wakil-ketua", "hakim"];
 
+/**
+ * Hak acc seorang pemegang peran. Super Admin ikut (18 Okt 2026, matriks hak akses): "Super Admin boleh semua",
+ * dan akun Super Admin satker ini memang dipegang seorang hakim. Admin biasa TIDAK ikut - ia pengelola sistem,
+ * bukan pemeriksa berita acara. PERAN_PENGACC sendiri tidak diubah (dipakai pula oleh daftar pemberi perintah).
+ */
+export function bolehMengaccPeran(roleId: unknown): boolean {
+  const peran = String(roleId ?? "");
+  return peran === "super-admin" || (PERAN_PENGACC as string[]).includes(peran);
+}
+
 export type KeadaanAcc = "belum-selesai" | "menunggu-acc" | "dikembalikan" | "diacc";
 
 export type BarisAcc = {
@@ -112,7 +122,7 @@ export async function bolehMengacc(
 ): Promise<boolean> {
   try {
     const aktor = await requireActorUser(db, actorUserId);
-    return PERAN_PENGACC.includes(String(aktor.roleId ?? "") as RoleId);
+    return bolehMengaccPeran(aktor.roleId);
   } catch {
     return false;
   }
@@ -120,11 +130,10 @@ export async function bolehMengacc(
 
 async function pastikanPengacc(db: AletaDatabase, actorUserId: string | null | undefined) {
   const aktor = await requireActorUser(db, actorUserId);
-  const peran = String(aktor.roleId ?? "") as RoleId;
-  if (!PERAN_PENGACC.includes(peran)) {
+  if (!bolehMengaccPeran(aktor.roleId)) {
     throw new ApiError(
       403,
-      "Hanya hakim yang dapat meng-acc berita acara sidang. Acc adalah pemeriksaan oleh orang lain; panitera tidak meng-acc berita acaranya sendiri."
+      "Hanya hakim (atau Super Admin) yang dapat meng-acc berita acara sidang. Acc adalah pemeriksaan oleh orang lain; panitera tidak meng-acc berita acaranya sendiri."
     );
   }
   return aktor;

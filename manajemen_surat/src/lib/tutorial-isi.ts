@@ -274,7 +274,7 @@ export const TUTORIAL: readonly Tutorial[] = [
     judul: "Panduan pertanyaan saksi di Jadwal Sidang dan Status Perkara",
     ringkas: "Daftar pertanyaan dan unsur pembuktian menurut jenis perkara, untuk memandu pemeriksaan saksi di sidang.",
     kelompok: "persidangan",
-    mencakup: { aksi: ["pandu.saksi"] },
+    mencakup: { aksi: ["pandu.saksi", "saksi.susun"] },
     halaman: ["/aleta-ecourt"],
     tautan: { teks: "Buka Jadwal Sidang", href: "/aleta-ecourt" },
     langkah: [
@@ -464,10 +464,10 @@ export const TUTORIAL: readonly Tutorial[] = [
   {
     id: "penetapan-pmh-ppp-pjs-phs",
     judul: "Penetapan majelis, panitera pengganti, juru sita, dan hari sidang",
-    ringkas: "Ketua menetapkan empat penetapan awal perkara dari panel SIPP, satu per satu atau sekaligus, atas akun pejabat yang dipilih.",
+    ringkas: "Ketua, Wakil Ketua, dan petugas PTSP, Operator, atau Petugas Meja menjalankan empat penetapan awal perkara dari panel SIPP, satu per satu atau sekaligus, atas akun pejabat yang dipilih.",
     kelompok: "persidangan",
     mencakup: {},
-    untuk: ["pimpinan"],
+    untuk: ["pimpinan", "ptsp"],
     halaman: ["/aleta-ecourt"],
     tautan: { teks: "Buka ALETA e-Court", href: "/aleta-ecourt" },
     langkah: [
@@ -480,6 +480,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Periksa hasilnya di Riwayat ALETA.",
     ],
     peringatan: [
+      "Tab Penetapan hanya untuk Ketua, Wakil Ketua, Admin, dan pegawai bersub-peran Operator, Petugas Meja, atau PTSP. Hakim dan Panitera tidak mendapat tab sendiri.",
       "Akun SIPP yang dipilih harus akun pejabat (hakim atau panitera). Akun admin atau meja ditolak, supaya penetapan tidak tercatat atas akun yang salah.",
       "Setiap penetapan ditulis sekali jalan, jadi tidak pernah tertinggal setengah jadi.",
     ],
@@ -683,7 +684,7 @@ export const TUTORIAL: readonly Tutorial[] = [
     judul: "Alat Bantu Tulis BAS (Berita Acara Sidang)",
     ringkas: "Menyusun berita acara sidang dari data SIPP, lalu diperiksa hakim.",
     kelompok: "putusan",
-    mencakup: { aplikasi: ["bas"], modul: ["bas"] },
+    mencakup: { aplikasi: ["bas"], modul: ["bas"], aksi: ["bas.baca", "bas.tulis"] },
     halaman: ["/bas"],
     tautan: { teks: "Buka Alat Bantu Tulis BAS", href: "/bas" },
     langkah: [
@@ -694,7 +695,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Setelah selesai, hakim memeriksa dan memberi komentar atau persetujuan.",
     ],
     peringatan: [
-      "BAS ditulis Panitera Pengganti. Panitera, panitera muda, dan pimpinan hanya mengawasi.",
+      "BAS ditulis Panitera Pengganti, dibantu panitera, panitera muda, dan staf kepaniteraan. Hakim, Ketua, dan Wakil Ketua membaca dan meng-acc; kasir, PTSP, juru sita, dan kesekretariatan tidak membukanya.",
       "Sebelum diunggah, ekstensi memeriksa sisa blangko (kurung siku atau titik-titik yang belum diisi).",
     ],
     kataKunci: ["berita acara", "bas", "kehadiran saksi", "skors", "pp"],
@@ -1445,6 +1446,28 @@ export const TUTORIAL: readonly Tutorial[] = [
     ],
     kataKunci: ["captcha", "sesi ecourt", "login ulang", "perintah chat", "ecourt status", "ecourt tarik", "ecourt masuk", "tarik susulan", "pulih"],
     baruDi: { sumber: "ekstensi", versi: "1.205.5" },
+  },
+  {
+    id: "pengelola-hak-akses",
+    judul: "Hak akses per peran: siapa boleh apa",
+    ringkas: "Peta lengkap fitur, blangko, dan kewenangan yang dapat dibuka tiap peran, untuk menjawab pertanyaan mengapa sebuah menu tidak muncul.",
+    kelompok: "pengelola",
+    mencakup: { modul: ["hak-akses"] },
+    halaman: ["/admin/hak-akses"],
+    tautan: { teks: "Buka Hak akses per peran", href: "/admin/hak-akses" },
+    langkah: [
+      "Buka Hak akses per peran dari Pusat Kendali atau menu samping. Admin dapat membacanya; Super Admin melihat juga rincian teknis dan daftar perubahan hak.",
+      "Pilih Per peran, lalu pilih peran dari daftar. Layar menampilkan semua yang dapat dilakukan peran itu, dikelompokkan menurut fitur, dengan tingkat Lihat, Pakai, atau Ubah.",
+      "Pilih Per akun, lalu pilih seorang pegawai: layar menampilkan hak gabungan dari jabatan dan peran tambahannya, misalnya Panitera Pengganti yang juga Kasir.",
+      "Pilih Tabel lengkap untuk membandingkan semua peran berdampingan. Gulir ke samping untuk melihat peran lain.",
+      "Gunakan kotak Cari fitur atau pilihan Kelompok untuk menyempit, misalnya ketik BAS, kasir, atau relaas.",
+      "Baca Kewenangan khusus di bagian bawah: atas akun siapa sesuatu ditulis, siapa yang meng-acc, dan syarat tambahan seperti saklar Fitur Satker.",
+    ],
+    peringatan: [
+      "Halaman ini hanya menjelaskan hak yang berlaku. Mengubah hak per peran dilakukan Super Admin di Akses Menu, Integrasi e-Court, dan Fitur Satker.",
+      "Super Admin memegang dan melihat semua fitur; Admin tidak membuka aplikasi yang belum fix dan tidak meng-acc BAS.",
+    ],
+    kataKunci: ["hak akses", "siapa boleh apa", "matriks peran", "menu tidak muncul", "kewenangan", "peran", "izin"],
   },
   {
     id: "pengelola-lihat-sebagai",

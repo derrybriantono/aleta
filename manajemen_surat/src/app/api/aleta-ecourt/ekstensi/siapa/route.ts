@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       peran: peran ? peran.name : roleId,
       roleId,
       peranTambahan: additionalRoleIds,
-      kapabilitas: await kapabilitasPengguna(db, { id: actor.id, roleId, additionalRoleIds }),
+      kapabilitas: await kapabilitasPengguna(db, { id: actor.id, roleId, additionalRoleIds, positionId: actor.positionId, actingAssignment: actor.actingAssignment }),
       keterangan: KETERANGAN_KAPABILITAS,
       menu: susunMenuEkstensi(roleId, additionalRoleIds),
       bolehMengatur: bolehMenyuntingAkses(actor),

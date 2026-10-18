@@ -1154,6 +1154,8 @@ export function PortalProvider({
   const [state, dispatch] = useReducer(portalReducer, initialState ?? defaultState);
   const [seenPendingDispositionIds, setSeenPendingDispositionIds] = useState<string[]>([]);
   const [taskSourcesSnapshot, setTaskSourcesSnapshot] = useState<TaskSourcesPayload | null>(null);
+  // 18 Okt 2026 (hak akses): Blangko Saya tahap awal hanya Super Admin. Diingat PER AKUN; belum diketahui = ikut matriks.
+  const [hakBlangkoSaya, setHakBlangkoSaya] = useState<{ userId: string; terbuka: boolean } | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(Boolean(initialState));
@@ -1369,6 +1371,7 @@ export function PortalProvider({
         requestBackendJson<InstitutionIdentity>("/api/settings/institution", undefined, actorUserId),
         requestBackendJson<PanelSettings>("/api/settings/panel", undefined, actorUserId),
         requestBackendJson<AssistantJudgeConfig>("/api/settings/assistant-judge", undefined, actorUserId),
+        requestBackendJson<{ blangkoSayaTerbuka?: boolean }>("/api/hak-akses/saya", undefined, actorUserId),
       ]),
       30_000,
       "Sebagian data portal belum selesai dimuat. Data akan dicoba lagi saat halaman dimuat ulang."
@@ -1409,6 +1412,7 @@ export function PortalProvider({
       institutionResult,
       panelSettingsResult,
       assistantJudgeResult,
+      hakSayaResult,
     ] = results;
     const lettersPayload = getFulfilledValue(lettersResult);
     const dispositionsPayload = getFulfilledValue(dispositionsResult);
@@ -1417,6 +1421,7 @@ export function PortalProvider({
     const institutionPayload = getFulfilledValue(institutionResult);
     const panelSettingsPayload = getFulfilledValue(panelSettingsResult);
     const assistantJudgePayload = getFulfilledValue(assistantJudgeResult);
+    const hakSayaPayload = getFulfilledValue(hakSayaResult);
 
     startTransition(() => {
       if (lettersPayload) {
@@ -1440,6 +1445,11 @@ export function PortalProvider({
       if (assistantJudgePayload) {
         dispatch({ type: "set-assistant-judge-config", payload: assistantJudgePayload });
       }
+      setHakBlangkoSaya(
+        typeof hakSayaPayload?.blangkoSayaTerbuka === "boolean"
+          ? { userId: actorUserId, terbuka: hakSayaPayload.blangkoSayaTerbuka }
+          : null
+      );
     });
   }
 
@@ -1522,12 +1532,17 @@ export function PortalProvider({
   // Mode default portal: selain Super Admin, grid aplikasi hanya menampilkan
   // aplikasi inti berikut (tetap dipotong lagi oleh hak akses role & Akses Menu).
   // HAK-PERAN 12 Okt: belum-fix/bawaan sudah disaring matriks peran di getAccessiblePortalApps.
+  const blangkoSayaTerbuka = hakBlangkoSaya && hakBlangkoSaya.userId === currentUser?.id ? hakBlangkoSaya.terbuka : null;
   const accessiblePortalApps = getAccessiblePortalApps(currentUser, state.moduleVisibility)
     .filter((app) => {
+      if (app.id === "blangko-saya") return blangkoSayaTerbuka !== false;
       if (app.id !== "asisten-hakim") return true;
       return canAccessAssistantJudge(currentRoleId, state.assistantJudgeConfig, currentUser?.id);
     });
-  const accessibleModules = getAccessibleModules(currentUser, state.moduleVisibility);
+  // Blangko Saya: selama tahap awal (saklar Fitur Satker mati) menu tidak tampil bagi selain Super Admin.
+  const accessibleModules = getAccessibleModules(currentUser, state.moduleVisibility).filter(
+    (modul) => modul.id !== "blangko-saya" || blangkoSayaTerbuka !== false
+  );
   const accessibleLetters = getAccessibleLetters(currentUser, state.letters, state.dispositions, state.positions);
   const pendingInbox = getPendingInbox(currentUser, state.dispositions, state.letters);
   const fallbackTaskSources = useMemo(

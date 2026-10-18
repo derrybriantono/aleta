@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { getGatewayPaniteraDashboard } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { requireActorUser } from "@/server/modules/organization/service";
+import { pastikanAplikasiAktor } from "@/server/modules/akses/hak-peran";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -22,7 +23,8 @@ export async function GET(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await requireActorUser(db, actorUserId);
+    // 18 Okt 2026 (matriks hak akses): data ALETA Bot hanya untuk peran yang diberi aplikasinya.
+    await pastikanAplikasiAktor(db, await requireActorUser(db, actorUserId), "aleta-bot");
 
     const limit = Number(request.nextUrl.searchParams.get("limit") || 100);
     const hasil = await getGatewayPaniteraDashboard({ limit });

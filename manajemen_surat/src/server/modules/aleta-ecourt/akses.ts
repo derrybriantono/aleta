@@ -1,4 +1,5 @@
 import { roles as defaultRoles } from "@/lib/mock-data";
+import { bolehMenjalankanPenetapan, type PenggunaGolongan } from "@/lib/matriks-peran";
 import { isPrivilegedAdmin } from "@/lib/permissions";
 import { type RoleId } from "@/lib/types";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
@@ -96,7 +97,7 @@ export const KETERANGAN_KAPABILITAS: Record<
   penunjukan: {
     label: "Papan penunjukan",
     penjelasan:
-      "Melihat usulan PMH, PPP, PJS, dan PHS di halaman SIPP, serta memilih sendiri dari daftarnya. Tidak mengisi blangko tanpa ditekan.",
+      "Melihat usulan PMH, PPP, PJS, dan PHS di halaman SIPP, serta memilih sendiri dari daftarnya. Tidak mengisi blangko tanpa ditekan. Sejak 18 Okt 2026 hanya Ketua, Wakil Ketua, Admin, dan pengguna bersub-peran Operator, Petugas Meja, atau PTSP; pilihan peran lain di tabel tidak berlaku.",
   },
   "penunjukan-otomatis": {
     label: "Tombol otomatis penunjukan",
@@ -195,7 +196,9 @@ const PERAN_PEMEGANG_PERKARA: RoleId[] = [
  * jadi papannya mati bagi mereka - bukan karena tidak dipercaya, melainkan
  * karena tidak ada borang yang menjadi urusannya.
  */
-const PERAN_PENETAP: RoleId[] = ["ketua", "wakil-ketua", "hakim", "panitera"];
+// Keputusan 111 (18 Okt 2026): hakim dan Panitera tidak lagi menjalankan penetapan di panel; Operator, Petugas Meja, dan
+// PTSP memegangnya lewat sub-peran (bolehMenjalankanPenetapan), bukan lewat tabel peran ini.
+const PERAN_PENETAP: RoleId[] = ["ketua", "wakil-ketua"];
 
 /**
  * Yang boleh menyalakan tombol otomatisnya lebih sempit lagi.
@@ -204,7 +207,7 @@ const PERAN_PENETAP: RoleId[] = ["ketua", "wakil-ketua", "hakim", "panitera"];
  * penyusunan otomatis dibiarkan pada dua jabatan yang memang menetapkan
  * berombongan - Ketua untuk PMH, Panitera untuk PPP dan PJS.
  */
-const PERAN_OTOMATIS: RoleId[] = ["ketua", "panitera"];
+const PERAN_OTOMATIS: RoleId[] = ["ketua"];
 
 /**
  * ============================================================================
@@ -438,7 +441,7 @@ export async function bacaPengecualianPengguna(
  */
 export async function kapabilitasPengguna(
   db: AletaDatabase,
-  pengguna: { id: string; roleId: string; additionalRoleIds?: string[] }
+  pengguna: { id: string; roleId: string; additionalRoleIds?: string[] } & Pick<PenggunaGolongan, "positionId" | "actingAssignment">
 ): Promise<Record<KapabilitasEkstensi, boolean>> {
   const roleId = pengguna.roleId as RoleId;
   if (PERAN_SELALU_PENUH.has(roleId)) return kemampuanPenuh();
@@ -475,6 +478,18 @@ export async function kapabilitasPengguna(
     if (kecuali.kedaluwarsa) continue;
     hasil[kecuali.kapabilitas] = kecuali.aktif;
   }
+
+  // ==========================================================================
+  // KEPUTUSAN 111 (18 Okt 2026): SIAPA MENJALANKAN PENETAPAN
+  // ==========================================================================
+  //
+  // Papan penunjukan hanya untuk Ketua/Wakil dan sub-peran Operator, Petugas Meja, PTSP (Admin dan Super Admin penuh di
+  // atas). Hakim dan Panitera tidak lagi memegangnya, dan pengecualian per orang tidak membukanya bagi mereka. Yang
+  // memenuhi syarat memegangnya OTOMATIS - Admin tidak perlu menyalakannya per peran. Tombol otomatis tetap ikut
+  // pengaturan Admin tetapi hanya untuk yang memenuhi syarat itu.
+  const boleh = bolehMenjalankanPenetapan(pengguna);
+  hasil.penunjukan = boleh;
+  hasil["penunjukan-otomatis"] = hasil["penunjukan-otomatis"] && boleh;
 
   return hasil;
 }
@@ -519,6 +534,8 @@ export async function pastikanKapabilitas(
     id: actor.id,
     roleId: String(actor.roleId),
     additionalRoleIds: actor.additionalRoleIds ?? [],
+    positionId: actor.positionId,
+    actingAssignment: actor.actingAssignment,
   });
   if (!kemampuan[kapabilitas]) {
     throw new ApiError(

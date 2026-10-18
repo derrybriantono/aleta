@@ -11,6 +11,11 @@
  * Admin. Matriks lengkap beserta alasannya: D:/aleta-dev/kerja/peran-12okt/
  * matriks-peran.md.
  *
+ * 18 Okt 2026: peta lengkap "siapa boleh apa" (fitur, blangko, kewenangan khusus) disusun dari berkas ini
+ * dan sumber-sumber lain di lib/hak-akses-peta.ts - dipakai halaman Pengaturan > Hak akses per peran,
+ * dokumen docs/hak-akses/MATRIKS-HAK-AKSES-18okt.md, dan uji kelengkapan. Aksi, aplikasi, dan tab di sini otomatis masuk peta; menu samping atau menu
+ * ekstensi baru WAJIB diberi butir di peta (uji hak-akses-peta-18okt merah bila terlewat).
+ *
  * Berkas ini fungsi murni (tanpa React, tanpa basis data) supaya SATU aturan
  * dipakai di empat tempat:
  *   1. ubin & halaman portal (lib/app-state.tsx -> accessiblePortalApps),
@@ -202,6 +207,22 @@ export function golonganPengguna(pengguna: PenggunaGolongan | null | undefined):
   return hasil;
 }
 
+/**
+ * Keputusan 111 (18 Okt 2026): yang boleh MENJALANKAN penetapan PMH/PPP/PJS/PHS di panel adalah Ketua, Wakil Ketua,
+ * Super Admin, Admin, dan pengguna dengan sub-peran Operator, Petugas Meja (Meja 1, 2, 3, dan informasi), atau PTSP.
+ * Hakim dan Panitera TIDAK mendapat tab sendiri. Pencatatan di SIPP tetap atas akun pejabat pilihan (keputusan 13 Okt):
+ * yang berubah hanya siapa yang menekan tombol. Sub-peran disimpan di additionalRoleIds (peran utama tidak berubah).
+ * Golongan PTSP sudah memuat Operator, keluarga PTSP, dan Meja 1; Meja 2/3 jatuh ke golongan analis-perkara sehingga
+ * dikenali dari polanya di sini.
+ */
+export function bolehMenjalankanPenetapan(pengguna: PenggunaGolongan | null | undefined): boolean {
+  if (!pengguna) return false;
+  const g = golonganPengguna(pengguna);
+  if (g.includes("super-admin") || g.includes("admin") || g.includes("pimpinan") || g.includes("ptsp")) return true;
+  const tambahan = (pengguna.additionalRoleIds ?? []).map((x) => String(x).toLowerCase());
+  return tambahan.some((x) => POLA_SUB_PERAN_MEJA_KEPANITERAAN.test(x));
+}
+
 export function subPanmud(pengguna: PenggunaGolongan | null | undefined): SubPanmud | null {
   if (!pengguna) return null;
   const posisi = posisiBerlaku(pengguna);
@@ -244,6 +265,11 @@ export type AturanAplikasi = {
   alasan: string;
   /** Hak bawaan per golongan. Golongan yang tidak disebut = tidak tampil. */
   hak: Partial<Record<GolonganPeran, TingkatHak>>;
+  /**
+   * 18 Okt 2026: aplikasi matang yang halaman dan rutenya HANYA Super Admin. Admin tidak melihat ubinnya
+   * (dulu tampil lalu ditolak). Akses Menu `buka:<id>` tetap dapat membukanya per peran.
+   */
+  hanyaSuperAdmin?: boolean;
 };
 
 function hakUntuk(golongan: readonly GolonganPeran[], tingkat: TingkatHak): Partial<Record<GolonganPeran, TingkatHak>> {
@@ -305,7 +331,9 @@ export const ATURAN_APLIKASI: readonly AturanAplikasi[] = [
     label: "Alat Bantu Tulis BAS",
     status: "matang",
     alasan: "BAS ditulis PP dan di-acc hakim; panitera/panmud/pimpinan mengawasi (baca). Juru sita, kasir, PTSP, kesekretariatan tidak menulis BAS.",
-    hak: { pimpinan: "R", hakim: "CRU", panitera: "CRU", panmud: "R", pp: "CRUD", "analis-perkara": "R" },
+    // 18 Okt 2026 (matriks hak akses): panmud dan analis perkara (staf kepaniteraan meja 2/3) sudah memegang menu
+    // "Isi BAS" dan BAS massal di ekstensi sejak 12-16 Okt, jadi di sini ikut menulis (dulu hanya baca).
+    hak: { pimpinan: "R", hakim: "CRU", panitera: "CRU", panmud: "CRU", pp: "CRUD", "analis-perkara": "CRU" },
   },
   {
     id: "sipp",
@@ -333,8 +361,9 @@ export const ATURAN_APLIKASI: readonly AturanAplikasi[] = [
     id: "audit-trail",
     label: "Audit Trail",
     status: "matang",
-    alasan: "Jejak seluruh perubahan sistem - pengelola (Admin/Super Admin) saja.",
+    alasan: "Jejak seluruh perubahan sistem - Super Admin saja (halaman dan rutenya menolak Admin).",
     hak: {},
+    hanyaSuperAdmin: true,
   },
   {
     id: "aleta-ecourt-admin",
@@ -482,7 +511,7 @@ export function bawaanAplikasiGolongan(golongan: readonly GolonganPeran[], appId
   if (golongan.includes("super-admin")) return true;
   const aturan = PETA_ATURAN_APLIKASI.get(appId);
   if (!aturan) return true;
-  if (aturan.status === "belum-fix") return false;
+  if (aturan.status === "belum-fix" || aturan.hanyaSuperAdmin) return false;
   if (golongan.includes("admin")) return true;
   return golongan.some((g) => Boolean(aturan.hak[g]));
 }
@@ -519,7 +548,7 @@ export function tingkatAplikasi(pengguna: PenggunaGolongan | null | undefined, a
   if (golongan.includes("super-admin")) return "CRUD";
   const aturan = PETA_ATURAN_APLIKASI.get(appId);
   if (!aturan) return null;
-  if (aturan.status === "belum-fix") return null;
+  if (aturan.status === "belum-fix" || aturan.hanyaSuperAdmin) return null;
   if (golongan.includes("admin")) return "CRUD";
   const urut: TingkatHak[] = ["R", "CRU", "CRUD"];
   let terbaik = -1;
@@ -557,8 +586,8 @@ export const TAB_ECOURT: Readonly<Record<TabEcourt, { golongan: readonly Golonga
   status: { golongan: "semua", alasan: "Penelusuran satu perkara & arsip e-Court - boleh semua (keputusan 9 Okt); data pribadi pihak dibatasi aksi status.data-pihak." },
   berkas: { golongan: "semua", alasan: "Kendali Berkas = arsip e-Court - boleh dilihat semua (keputusan 9 Okt); tarik & sinkron dibatasi aksi." },
   riwayat: {
-    golongan: ["pimpinan", "hakim", "panitera", "ptsp"],
-    alasan: "Riwayat penetapan yang dituliskan ALETA ke SIPP - rutenya menuntut kemampuan 'penunjukan' (bawaan ketua/wakil/hakim/panitera; PTSP bila diberi).",
+    golongan: ["pimpinan", "ptsp"],
+    alasan: "Riwayat penetapan yang dituliskan ALETA ke SIPP - rutenya menuntut kemampuan 'penunjukan', yang sejak keputusan 111 (18 Okt 2026) hanya Ketua/Wakil, Admin, Operator, Petugas Meja, dan PTSP; hakim dan panitera tidak lagi.",
   },
   ttd: { golongan: [], alasan: "Tanda tangan pejabat & cap berlaku untuk seluruh satker - hanya Admin/Super Admin." },
   ekstensi: { golongan: "semua", alasan: "Unduh & pasang ekstensi - semua pegawai." },
@@ -744,7 +773,20 @@ export const AKSI = {
     crud: "R",
     golongan: [...PEMEGANG_PERKARA, "kasir", "ptsp", "mediator"],
     lingkup: "semua",
-    rute: ["GET /api/aleta-ecourt/identitas-pihak", "GET /api/aleta-ecourt/riwayat-pihak", "GET /api/aleta-ecourt/kontak-para-pihak", "GET /api/aleta-ecourt/ktp-pihak-status"],
+    rute: [
+      "GET /api/aleta-ecourt/identitas-pihak",
+      "GET /api/aleta-ecourt/riwayat-pihak",
+      "GET /api/aleta-ecourt/kontak-para-pihak",
+      "GET /api/aleta-ecourt/ktp-pihak-status",
+      // 18 Okt 2026: rute data pribadi yang dipakai panel SIPP/ABT ikut dijaga (dulu hanya kemampuan panel = semua peran).
+      "GET /api/aleta-ecourt/kontak-pihak",
+      "GET /api/aleta-ecourt/ktp-pihak",
+      "GET /api/aleta-ecourt/ktp-terbit",
+      "GET /api/aleta-ecourt/pekerjaan-pihak",
+      "GET /api/aleta-ecourt/isi-gugatan",
+      "GET /api/aleta-ecourt/kuasa-gugatan",
+      "POST /api/aleta-ecourt/saksi-scan",
+    ],
     alasan:
       "Data pribadi pihak (NIK, alamat, riwayat perkara lain, email/WA & kesediaan e-Litigasi) - hanya yang melayani perkara (UU PDP); kesekretariatan/TI/pelaksana/petugas sidang tidak.",
   },
@@ -798,6 +840,41 @@ export const AKSI = {
     rute: ["POST /api/aleta-ecourt/tanda-tangan"],
     alasan: "Berlaku untuk seluruh satker & semua perkara sesudahnya - Admin/Super Admin (layar sudah admin; rute kini ikut).",
   },
+  // === 18OKT-PERAN: BAS, susun saksi ===
+  "bas.baca": {
+    label: "Membaca lembar BAS dan naskahnya",
+    crud: "R",
+    golongan: ["pimpinan", "hakim", "panitera", "panmud", "pp", "analis-perkara"],
+    lingkup: "milik",
+    rute: [
+      "GET /api/aleta-ecourt/bas/lembar",
+      "GET /api/aleta-ecourt/bas/naskah",
+      "GET /api/aleta-ecourt/bas/blangko",
+      "GET /api/aleta-ecourt/bas/tanya-jawab",
+      "GET /api/aleta-ecourt/bas/periksa",
+    ],
+    alasan:
+      "Isi BAS memuat keterangan saksi dan para pihak: hanya majelis (hakim dan pimpinan) serta kepaniteraan penyusunnya. Kasir, PTSP, juru sita, mediator non-hakim, kesekretariatan, TI, dan petugas sidang tidak.",
+  },
+  "bas.tulis": {
+    label: "Menyusun dan menyimpan lembar BAS",
+    crud: "CU",
+    golongan: ["hakim", "panitera", "panmud", "pp", "analis-perkara"],
+    lingkup: "milik",
+    rute: ["PUT /api/aleta-ecourt/bas/lembar"],
+    alasan:
+      "BAS disusun Panitera Pengganti (dibantu panitera, panmud, dan staf kepaniteraan meja 2/3 yang memegang menu Isi BAS) lalu di-acc hakim; Ketua/Wakil hanya membaca dan meng-acc. Acc-nya sendiri dijaga bas-acc.",
+  },
+  "saksi.susun": {
+    label: "Set pertanyaan saksi untuk tanya jawab ABT",
+    crud: "R",
+    golongan: ["pimpinan", "hakim", "panitera", "panmud", "pp", "analis-perkara"],
+    lingkup: "semua",
+    rute: ["GET /api/aleta-ecourt/blangko-derry/set-saksi"],
+    alasan:
+      "Panduan pertanyaan saksi per jenis perkara untuk Blangko Derry: majelis dan kepaniteraan penyusun BAS. Hanya katalog pertanyaan; menyimpan ke ABT tetap oleh sesi petugas sendiri.",
+  },
+  // === AKHIR 18OKT-PERAN ===
   // Analitik
   "analitik.peta-beban": {
     label: "Peta perkara & beban konseptor",
@@ -894,7 +971,7 @@ export type GolonganMenuEkstensi =
   | "sekretariat"
   | "lain";
 
-const PETA_GOLONGAN_EKSTENSI: Record<GolonganPeran, GolonganMenuEkstensi> = {
+export const PETA_GOLONGAN_EKSTENSI: Record<GolonganPeran, GolonganMenuEkstensi> = {
   "super-admin": "admin",
   admin: "admin",
   pimpinan: "ketua",

@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import { daftarLembar, muatLembar, simpanLembar, type MasukanSimpan } from "@/server/modules/aleta-ecourt/bas-lembar";
 import { bolehMengacc } from "@/server/modules/aleta-ecourt/bas-acc";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -37,6 +38,7 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
+    await pastikanAksi(db, actorUserId, "bas.baca"); // 18 Okt 2026: matriks hak akses
 
     const perkaraId = String(getSearchParam(request, "perkaraId") ?? "").trim();
     const kode = String(getSearchParam(request, "kode") ?? "").trim();
@@ -69,6 +71,7 @@ export async function PUT(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
+    await pastikanAksi(db, actorUserId, "bas.tulis"); // 18 Okt 2026: matriks hak akses
 
     const masukan = (await request.json()) as MasukanSimpan;
     const lembar = await simpanLembar(db, String(actorUserId ?? ""), masukan);

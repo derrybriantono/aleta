@@ -102,23 +102,25 @@ describe("pengecualian akses ekstensi untuk satu orang", () => {
     expect(dariOrang).toEqual(dariPeran);
   });
 
+  // 18 Okt 2026 (keputusan 111): penunjukan tidak lagi dapat diberikan lewat pengecualian (hanya Ketua/Wakil, Admin, dan
+  // sub-peran Operator/Petugas Meja/PTSP), jadi contoh pengecualian memakai kemampuan "kerjakan".
   it("memberi kemampuan yang perannya tidak punya", async () => {
     const admin = await buatSuperAdmin();
     const jurusita = await buatJurusita();
 
     const sebelum = await kapabilitasPengguna(db!, { id: jurusita.id, roleId: jurusita.roleId });
-    expect(sebelum["penunjukan-otomatis"]).toBe(false);
+    expect(sebelum["kerjakan"]).toBe(false);
 
     await simpanPengecualianPengguna(db!, {
       actorUserId: admin.id,
       userId: jurusita.id,
-      kapabilitas: "penunjukan-otomatis",
+      kapabilitas: "kerjakan",
       aktif: true,
       alasan: "Ditugaskan membantu kepaniteraan selama panitera cuti.",
     });
 
     const sesudah = await kapabilitasPengguna(db!, { id: jurusita.id, roleId: jurusita.roleId });
-    expect(sesudah["penunjukan-otomatis"]).toBe(true);
+    expect(sesudah["kerjakan"]).toBe(true);
     // Kemampuan lain tidak ikut berubah.
     expect(sesudah.panel).toBe(sebelum.panel);
     expect(sesudah.berkas).toBe(sebelum.berkas);
@@ -147,17 +149,17 @@ describe("pengecualian akses ekstensi untuk satu orang", () => {
     const admin = await buatSuperAdmin();
     const jurusita = await buatJurusita();
 
-    await expect(pastikanKapabilitas(db!, jurusita.id, "penunjukan")).rejects.toThrow(/tidak diberi akses/i);
+    await expect(pastikanKapabilitas(db!, jurusita.id, "kerjakan")).rejects.toThrow(/tidak diberi akses/i);
 
     await simpanPengecualianPengguna(db!, {
       actorUserId: admin.id,
       userId: jurusita.id,
-      kapabilitas: "penunjukan",
+      kapabilitas: "kerjakan",
       aktif: true,
       alasan: "Merangkap tugas kepaniteraan.",
     });
 
-    await expect(pastikanKapabilitas(db!, jurusita.id, "penunjukan")).resolves.toBeTruthy();
+    await expect(pastikanKapabilitas(db!, jurusita.id, "kerjakan")).resolves.toBeTruthy();
   });
 
   it("pengecualian mengalahkan pengaturan peran, ke arah mana pun", async () => {
@@ -227,19 +229,19 @@ describe("pengecualian akses ekstensi untuk satu orang", () => {
     // Dipilih kemampuan yang perannya TIDAK punya - kalau tidak, ujinya lulus
     // tanpa membuktikan apa pun: nilai perannya kebetulan sama dengan nilai
     // pengecualiannya.
-    expect((await kapabilitasPeran(db!, jurusita.roleId as never))["penunjukan-otomatis"]).toBe(false);
+    expect((await kapabilitasPeran(db!, jurusita.roleId as never))["kerjakan"]).toBe(false);
 
     await simpanPengecualianPengguna(db!, {
       actorUserId: admin.id,
       userId: jurusita.id,
-      kapabilitas: "penunjukan-otomatis",
+      kapabilitas: "kerjakan",
       aktif: true,
       alasan: "Membantu kepaniteraan selama dua pekan, sesuai surat tugas.",
       berlakuSampai: kemarin(),
     });
 
     const hasil = await kapabilitasPengguna(db!, { id: jurusita.id, roleId: jurusita.roleId });
-    expect(hasil["penunjukan-otomatis"]).toBe(false);
+    expect(hasil["kerjakan"]).toBe(false);
 
     // "Siapa yang pernah diberi akses ini" adalah pertanyaan pemeriksaan -
     // jawaban yang terhapus bukan jawaban.
@@ -257,14 +259,14 @@ describe("pengecualian akses ekstensi untuk satu orang", () => {
     await simpanPengecualianPengguna(db!, {
       actorUserId: admin.id,
       userId: jurusita.id,
-      kapabilitas: "penunjukan-otomatis",
+      kapabilitas: "kerjakan",
       aktif: true,
       alasan: "Membantu kepaniteraan, sesuai surat tugas.",
       berlakuSampai: besok(),
     });
 
     const hasil = await kapabilitasPengguna(db!, { id: jurusita.id, roleId: jurusita.roleId });
-    expect(hasil["penunjukan-otomatis"]).toBe(true);
+    expect(hasil["kerjakan"]).toBe(true);
   });
 
   it("menolak pemberian tanpa alasan, dan menerima pencabutan tanpa alasan", async () => {

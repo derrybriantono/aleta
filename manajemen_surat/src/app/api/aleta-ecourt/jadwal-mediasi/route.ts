@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanTab } from "@/server/modules/akses/hak-peran";
 import { getGatewayJadwalMediasi } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -33,6 +34,8 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
+    // 18 Okt 2026: mediasi tertutup untuk umum - tab sudah disembunyikan di layar, rutenya kini ikut dijaga.
+    await pastikanTab(db, actorUserId, "mediasi", "Jadwal Mediasi");
 
     const p = request.nextUrl.searchParams;
     const hasil = await getGatewayJadwalMediasi({
