@@ -1204,8 +1204,43 @@
     return { pertanyaan: daftar(kat && kat.pertanyaan).length, kombinasi, kalimat, perJenis };
   }
 
+  // ─────────────────────────────────────────────────────────────────
+  // Hukum acara satker pada rujukan yang ditampilkan
+  // ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Hukum acara perdata yang berlaku di satker: "RBg" (di luar Jawa dan Madura; bawaan SEMUA satker sekarang) atau "HIR". Satu-satunya tempat pengaturannya;
+   * rencana RBg/HIR per wilayah cukup mengubah nilai ini (atau memberi argumen `hukumAcara` pada rujukanTampil). Data katalog TIDAK diubah: katalog menyimpan
+   * pasangan "Pasal 171 ayat (1) dan (2) HIR / Pasal 308 ayat (1) dan (2) RBg" dan hanya tampilannya yang disaring.
+   */
+  const HUKUM_ACARA_SATKER = "RBg";
+  const POLA_HUKUM_ACARA = Object.freeze({ RBg: /\bRBg\b/, HIR: /\bHIR\b/ });
+
+  /**
+   * Rujukan hukum untuk tampilan menurut hukum acara satker: segmen berpasangan ("A / B / C") yang hanya menyebut hukum acara LAIN dibuang, sehingga satker RBg
+   * melihat "Pasal 308 ayat (1) dan (2) RBg" dan "Pasal 306 RBg / Pasal 1905 KUHPerdata" - tidak pernah "HIR/RBg". Penyebutan kembar dalam satu segmen ("HIR / RBg")
+   * disusutkan ke hukum acara satker. Teks yang hanya menyebut hukum acara lain dan tidak punya padanan dikembalikan apa adanya (padanan tidak boleh dikarang).
+   * @param {string} teks
+   * @param {string} [hukumAcara] "RBg" | "HIR"; bawaan HUKUM_ACARA_SATKER
+   */
+  function rujukanTampil(teks, hukumAcara) {
+    const asli = typeof teks === "string" ? teks : "";
+    const pakai = hukumAcara === "HIR" || hukumAcara === "RBg" ? hukumAcara : HUKUM_ACARA_SATKER;
+    const lain = pakai === "RBg" ? "HIR" : "RBg";
+    if (!POLA_HUKUM_ACARA[lain].test(asli)) return asli;
+    const segmen = asli.split(" / ");
+    const tinggal = segmen.filter((s) => !(POLA_HUKUM_ACARA[lain].test(s) && !POLA_HUKUM_ACARA[pakai].test(s)));
+    const dasar = tinggal.length ? tinggal : segmen;
+    return dasar
+      .join(" / ")
+      .replace(new RegExp(`\\b${lain}\\s*/\\s*${pakai}\\b`, "g"), pakai)
+      .replace(new RegExp(`\\b${pakai}\\s*/\\s*${lain}\\b`, "g"), pakai);
+  }
+
   return Object.freeze({
     VERSI_SKEMA,
+    HUKUM_ACARA_SATKER,
+    rujukanTampil,
     JENIS_KETERANGAN,
     JENIS_UMUM,
     TINGKAT,

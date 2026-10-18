@@ -1121,7 +1121,7 @@
         const ringkas = document.createElement("summary");
         ringkas.textContent = "Dasar hukum pokok pembuktian";
         rinci.appendChild(ringkas);
-        for (const d of dasar) rinci.appendChild(buat("div", "aleta-abt-kabar", `${d.rujukan}: ${d.uraian}`));
+        for (const d of dasar) rinci.appendChild(buat("div", "aleta-abt-kabar", `${Mesin().rujukanTampil ? Mesin().rujukanTampil(d.rujukan) : d.rujukan}: ${Mesin().rujukanTampil ? Mesin().rujukanTampil(d.uraian) : d.uraian}`));
         form.appendChild(rinci);
       }
       if (S.ket) {

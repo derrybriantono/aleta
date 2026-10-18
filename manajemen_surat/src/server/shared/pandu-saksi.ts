@@ -58,6 +58,8 @@ type Mesin = {
   peranTerurut(kat: Katalog): Array<Record<string, unknown>>;
   isiPenanda(teks: string, ctx: Record<string, unknown>): { teks: string; kosong: string[] };
   rumusWali?(teks: string): string;
+  /** Rujukan hukum untuk tampilan menurut hukum acara satker (RBg bawaan): pasangan HIR / RBg disusutkan. */
+  rujukanTampil?(teks: string, hukumAcara?: string): string;
   POKOK_PERLU_KONFIRMASI: readonly string[];
   LABEL_NILAI_BAKU: Readonly<Record<string, string>>;
   KEADAAN_TURUNAN: readonly string[];
@@ -205,6 +207,11 @@ function rujukanBelumPasti(kat: Katalog): string[] {
     .map((d) => String(d.rujukan).toLowerCase());
 }
 
+/** Rujukan untuk tampilan menurut hukum acara satker (RBg bawaan; lihat HUKUM_ACARA_SATKER di mesin). Mesin tertanam lama tanpa fungsinya: teks apa adanya. */
+function tampilHukum(mesin: Mesin, teks: string): string {
+  return typeof mesin.rujukanTampil === "function" ? mesin.rujukanTampil(teks) : teks;
+}
+
 function bersihDariRujukan(teks: string, terlarang: string[]): string {
   const rendah = teks.toLowerCase();
   return terlarang.some((r) => rendah.includes(r)) ? "" : teks;
@@ -221,7 +228,7 @@ function susunPokok(
   const dasarTerverifikasi = new Map<string, { rujukan: string; uraian: string }>();
   for (const d of daftar<Record<string, unknown>>(kat.dasarHukum)) {
     if (d.status === "terverifikasi" && typeof d.id === "string") {
-      dasarTerverifikasi.set(d.id, { rujukan: String(d.rujukan ?? ""), uraian: String(d.uraian ?? "") });
+      dasarTerverifikasi.set(d.id, { rujukan: tampilHukum(mesin, String(d.rujukan ?? "")), uraian: tampilHukum(mesin, String(d.uraian ?? "")) });
     }
   }
   const urutPokok: string[] = [];
