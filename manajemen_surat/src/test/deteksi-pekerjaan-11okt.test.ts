@@ -331,7 +331,9 @@ describe("panel ABT: kartu 'Pekerjaan terbaca' (blok PEKERJAAN abt.js)", () => {
     expect(wadah.querySelector("summary")!.textContent).toBe("Pekerjaan terbaca: PNS (dari teks 'ASN Dinas Pendidikan', pilihan SIPP: Lain-Lain)");
     expect(teks).toContain("Penggugat - SITI: PNS (dari teks 'ASN Dinas Pendidikan', pilihan SIPP: Lain-Lain)");
     expect(teks).toContain("Tergugat - BUDI: pensiunan PNS - tidak dibaca sebagai PNS");
-    expect(teks).toContain("Kalimat izin atasan (#8510# duduk perkara, #8524# pertimbangan, #8533# BAS) dipakai untuk PNS");
+    // 18 Okt (1.205.7): kartu menyebut isian dan pihak dengan nama, bukan kode #nnnn#.
+    expect(teks).toContain("Kalimat izin atasan (duduk perkara, pertimbangan, dan BAS) dipakai untuk PNS");
+    expect(teks).not.toMatch(/#\d{4}#/);
   });
 
   it("Tergugat PNS/PPPK: kartu menyebut kalimat kewajiban pemberitahuan gugatan kepada atasan di #8524# dan BAS #8533# (dasar hukum, tanpa tanda perlu ditinjau - revisi 3); Tergugat pensiunan/BUMN/desa tidak", () => {
@@ -339,7 +341,7 @@ describe("panel ABT: kartu 'Pekerjaan terbaca' (blok PEKERJAAN abt.js)", () => {
     const orang = (pihakKe: number, pekerjaan: string) => ({ pihakKe, urutan: 1, nama: "X", pekerjaan, ...svc.klasifikasiPekerjaan(pekerjaan), kalimat: svc.kalimatTerbaca(pekerjaan) });
     const w1 = document.createElement("div");
     p.pkGambarPekerjaan(w1, { sipp: { pekerjaanPihak: [orang(1, "Petani"), orang(2, "PPPK (Guru SDN 2)")] } });
-    expect(w1.textContent).toContain("#0047# ASN (PPPK): #8524# (pertimbangan) dan #8533# (BAS) juga memuat kalimat kewajiban surat permintaan izin atau pemberitahuan adanya gugatan perceraian kepada atasan #0047#");
+    expect(w1.textContent).toContain("Tergugat/Termohon ASN (PPPK): pertimbangan dan BAS juga memuat kalimat kewajiban surat permintaan izin atau pemberitahuan adanya gugatan perceraian kepada atasan Tergugat/Termohon");
     expect(w1.textContent).toContain("(dasar: Pasal 3 ayat (2)(3) PP 10/1983 jo PP 45/1990)");
     expect(w1.textContent).not.toMatch(/ditinjau/i);
     for (const kerja of ["Pensiunan PNS", "Karyawan BUMN", "Karyawan PDAM", "Perangkat Desa Sipeso", "CPNS Guru"]) {
