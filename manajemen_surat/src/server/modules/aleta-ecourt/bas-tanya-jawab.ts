@@ -435,6 +435,7 @@ export const ID_JENIS_PERKARA_SIPP: Readonly<Record<string, string>> = Object.fr
   "lain-lain *)": "369",
   "ekonomi syariah": "370",
   "p3hp/penetapan ahli waris": "371",
+  "nafkah anak pasca perceraian": "743",
 });
 
 /** Id jenis perkara SIPP dari namanya; nama apa adanya bila tidak dikenal (sama dengan ekstensi). */

@@ -206,7 +206,7 @@ describe("D. isian 9590 / 9592", () => {
     const s = susunIsian([...KATALOG.keys()], KATALOG);
     const peta = Object.fromEntries(s.isian.map((b) => [b.kode, b]));
     expect(Object.keys(peta).sort()).toEqual(["9590", "9592"]);
-    expect(peta["9590"].nama).toMatch(/^Keadaan penguasaan anak saat ini/);
+    expect(peta["9590"].nama).toMatch(/^Keadaan penguasaan anak yang sebenarnya saat ini/);
     expect(peta["9592"].nama).toMatch(/^Tempat tinggal anak senyatanya/);
     for (const b of Object.values(peta)) expect(b.nama, b.kode).not.toMatch(/\b9[0-9]{3}\b|OTOMATIS|ISIAN/);
     expect(s.otomatis.map((o) => o.kode).sort()).toEqual(["9591", "9593"]);

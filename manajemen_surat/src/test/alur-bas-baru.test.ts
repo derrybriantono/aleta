@@ -67,9 +67,9 @@ const LANGKAH_I16: Record<string, string[]> = {
 };
 
 describe("A. data", () => {
-  it("25 alur, 221 langkah (93 D3/E3 + 19 F21 sesudah I7 + 22 F22 + 6 I15 + 38 I16 + 43 I20), kode unik, nama berkas BAS ALUR nn ... .rtf, menu bernama", () => {
-    expect(ALUR_BAS_BARU).toHaveLength(25); // + ALUR 41, 42, 43 (F22 17 Okt), ALUR 44 (I15 18 Okt), "alur-08g" / "alur-08t" cerai biasa cabut sesudah jawaban (I20 18 Okt)
-    expect(ALUR_BAS_BARU.reduce((n, a) => n + a.langkah.length, 0)).toBe(178 + 43);
+  it("26 alur, 230 langkah (93 D3/E3 + 19 F21 sesudah I7 + 22 F22 + 6 I15 + 38 I16 + 43 I20 + 9 I23), kode unik, nama berkas BAS ALUR nn ... .rtf, menu bernama", () => {
+    expect(ALUR_BAS_BARU).toHaveLength(26); // + ALUR 46 nafkah anak (I23 18 Okt); // + ALUR 41, 42, 43 (F22 17 Okt), ALUR 44 (I15 18 Okt), "alur-08g" / "alur-08t" cerai biasa cabut sesudah jawaban (I20 18 Okt)
+    expect(ALUR_BAS_BARU.reduce((n, a) => n + a.langkah.length, 0)).toBe(178 + 43 + 9);
     const semua = new Set<string>();
     for (const a of ALUR_BAS_BARU) {
       expect(a.folder.startsWith(A)).toBe(true);
@@ -83,7 +83,7 @@ describe("A. data", () => {
         semua.add(`${a.folder}/${l.berkas}`);
       }
     }
-    expect(semua.size).toBe(112 + 10 + 6 + 6 + 6 + 38 + 43); // F22 17 Okt: ALUR 41 (10), 42 (6), 43 (6); I15 18 Okt: ALUR 44 (6); I16 18 Okt: 38 langkah celah BAS
+    expect(semua.size).toBe(112 + 10 + 6 + 6 + 6 + 38 + 43 + 9); // F22 17 Okt: ALUR 41 (10), 42 (6), 43 (6); I15 18 Okt: ALUR 44 (6); I16 18 Okt: 38 langkah celah BAS
     expect(jenisDokumenBlangko(`${A}7 Wali Adhal - BAS/${ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.langkah[0].berkas}`)).toBe("bas");
     expect(ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.menu).toMatchObject({ id: 114, nama: "Wali Adhal - BAS" });
   });

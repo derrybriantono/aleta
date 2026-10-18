@@ -137,6 +137,22 @@ const KODE_KE_LANGKAH: Record<string, KodeLangkah> = {
   // I15 18 Okt: penguasaan anak - keadaan penguasaan anak saat ini (9590) dan tempat tinggal anak senyatanya (9592; kewenangan relatif SEMA 2/2024).
   "9590": "pertimbangan",
   "9592": "pertimbangan",
+  // I20 18 Okt: saklar penyerahan anak (9720: amar menyerahkan anak) dan alasan petitum selebihnya ditolak (9726) pada penguasaan anak 6b.
+  "9720": "amar",
+  "9726": "pertimbangan",
+  // I23 18 Okt: nafkah anak (6c; 9751-9759 otomatis): jumlah per bulan, kenaikan, biaya pendidikan/kesehatan, sita, pemotongan penghasilan, nafkah lampau = amar;
+  // dasar kemampuan, fakta asuhan, kedudukan pengasuh, alasan petitum ditolak = pertimbangan.
+  "9740": "amar",
+  "9741": "amar",
+  "9742": "amar",
+  "9743": "amar",
+  "9744": "pertimbangan",
+  "9745": "amar",
+  "9746": "amar",
+  "9747": "amar",
+  "9748": "pertimbangan",
+  "9749": "pertimbangan",
+  "9750": "pertimbangan",
   // F22 17 Okt: alasan pencegahan (huruf), fakta terbukti, pertimbangan tolak; pokok tuntutan wasiat (huruf), fakta, pertimbangan tolak, kurang pihak; arbitrase ES.
   "9463": "pertimbangan",
   "9466": "pertimbangan",

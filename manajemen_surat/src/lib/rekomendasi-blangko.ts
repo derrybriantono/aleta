@@ -112,6 +112,8 @@ export type MasukanRekomendasi = {
   anakSahPerkawinanTercatat?: boolean;
   pencairanDana?: boolean;
   kumulasiNafkahIstri?: boolean;
+  /** I23 18 Okt: hak asuh yang petitumnya juga memuat nafkah anak (bot membaca petitum; saklar). */
+  plusNafkahAnak?: boolean;
   eksepsiKewenangan?: string;
   putusanSela?: boolean;
   alasanItsbat?: string;
@@ -237,6 +239,8 @@ export const FOLDER_MENU_PUTUSAN: Record<string, string> = {
   // F22 17 Okt: paket ABT abt-pencegahan-nikah-derry (menu 139), abt-wasiat-derry (141), abt-es-biasa-derry (143).
   // I15 18 Okt: paket ABT abt-penguasaan-anak-derry (menu 153).
   "Putusan Penguasaan Anak": "6b Penguasaan Anak",
+  // I23 18 Okt: paket ABT abt-nafkah-anak-derry - menu 165 "Putusan Nafkah Anak" (alias "Nafkah Anak - Putusan"), folder baru "6c Nafkah Anak", jenis 743.
+  "Putusan Nafkah Anak": "6c Nafkah Anak",
   "Putusan Pencegahan Perkawinan": "5b Pencegahan Perkawinan",
   "Putusan Wasiat": "4c Wasiat",
   "Putusan Ekonomi Syariah (Acara Biasa)": "10a Ekonomi Syariah Biasa",
@@ -439,6 +443,7 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
     anakSahPerkawinanTercatat: m.anakSahPerkawinanTercatat,
     pencairanDana: m.pencairanDana,
     kumulasiNafkahIstri: m.kumulasiNafkahIstri,
+    plusNafkahAnak: m.plusNafkahAnak,
     eksepsiKewenangan: m.eksepsiKewenangan,
     putusanSela: m.putusanSela,
     alasanItsbat: m.alasanItsbat,
@@ -587,6 +592,7 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     ...(typeof b.anakSahPerkawinanTercatat === "boolean" ? { anakSahPerkawinanTercatat: b.anakSahPerkawinanTercatat } : {}),
     ...(typeof b.pencairanDana === "boolean" ? { pencairanDana: b.pencairanDana } : {}),
     ...(typeof b.kumulasiNafkahIstri === "boolean" ? { kumulasiNafkahIstri: b.kumulasiNafkahIstri } : {}),
+    ...(typeof b.plusNafkahAnak === "boolean" ? { plusNafkahAnak: b.plusNafkahAnak } : {}),
     ...(typeof b.sikapTergugatCabut === "string" ? { sikapTergugatCabut: b.sikapTergugatCabut } : {}),
     ...(typeof b.eksepsiKewenangan === "string" ? { eksepsiKewenangan: b.eksepsiKewenangan } : {}),
     ...(typeof b.putusanSela === "boolean" ? { putusanSela: b.putusanSela } : {}),

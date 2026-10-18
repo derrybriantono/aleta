@@ -60,7 +60,7 @@ const JENIS_DIANALISA = new Set([346, 347]);
 const JENIS_KUMULASI = [
   { kode: "itsbat-nikah", nama: "Itsbat Nikah", jenisPerkaraId: 360 },
   { kode: "hak-asuh-anak", nama: "Hak Asuh Anak", jenisPerkaraId: 349 },
-  { kode: "nafkah-anak", nama: "Nafkah Anak", jenisPerkaraId: null },
+  { kode: "nafkah-anak", nama: "Nafkah Anak", jenisPerkaraId: 743 }, // I23 18 Okt: jenis SIPP 743 "Nafkah Anak Pasca Perceraian"
   { kode: "nafkah-iddah", nama: "Nafkah Iddah", jenisPerkaraId: null },
   { kode: "mutah", nama: "Mut'ah", jenisPerkaraId: null },
   { kode: "nafkah-madliyah", nama: "Nafkah Madliyah", jenisPerkaraId: null },
@@ -74,6 +74,7 @@ const JENIS_KUMULASI = [
 const SEBUTAN_JENIS_SIPP = {
   360: { kode: "itsbat-nikah", nama: "Itsbat Nikah" },
   349: { kode: "hak-asuh-anak", nama: "Hak Asuh Anak" },
+  743: { kode: "nafkah-anak", nama: "Nafkah Anak" }, // I23 18 Okt
   348: { kode: "harta-bersama", nama: "Harta Bersama" },
   352: { kode: "pengesahan-anak", nama: "Pengesahan Anak" },
   358: { kode: "asal-usul-anak", nama: "Asal Usul Anak" },

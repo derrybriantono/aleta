@@ -9103,6 +9103,8 @@ const ALAT_MENU_PUTUSAN = {
   pc: { blangko: "Putusan Pencegahan Perkawinan", lain: ["Pencegahan Nikah - Putusan"] },
   ws: { blangko: "Putusan Wasiat", lain: ["Wasiat - Putusan"] },
   esb: { blangko: "Putusan Ekonomi Syariah (Acara Biasa)", lain: ["ES Acara Biasa - Putusan"] },
+  // I23 18 Okt: paket ABT abt-nafkah-anak-derry - menu 165 "Putusan Nafkah Anak" (alias "Nafkah Anak - Putusan"), folder derry_briantono/6c Nafkah Anak, jenis SIPP 743.
+  nfk: { blangko: "Putusan Nafkah Anak", lain: ["Nafkah Anak - Putusan"] },
 };
 function alatBarisPutusanLain(menu, jenisAsli, statusAsli, berkas, catatan) {
   const m = ALAT_MENU_PUTUSAN[menu];
@@ -9763,6 +9765,69 @@ for (const [kunci, jenis, jenisAsli, statusAsli, berkas, catatan] of ALAT_BARIS_
 }
 alatTambahVarianPeta("cerai gugat|dikabulkan", ["[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir"]);
 /* === AKHIR I22 === */
+
+/* === I23 18 Okt === */
+/**
+ * NAFKAH ANAK PASCA PERCERAIAN (jenis SIPP 743, gugatan Pdt.G) versi Derry - paket ABT abt-nafkah-anak-derry (folder "6c Nafkah Anak" + " - BAS", menu 165/166; peta:
+ * i23-nafkah-anak-2026/PEMETAAN-ALETA.md) dan abt-nafkah-anak-kumulasi-derry (menyunting 4 berkas 1d, nama tetap). Dipilih menurut JENIS 743, bukan menurut petitum
+ * (0 perkara jenis 743 di kedua salinan SIPP; bila PA mendaftarkannya sebagai 350, rentang menu 165/166 diubah dan kunci "<jenis>|..." mengikuti nama jenisnya).
+ * Kabul sebagian dibaca dari amar (keadaan "dikabulkan-sebagian"; status SIPP tetap "Dikabulkan"). Hak asuh (Lain-Lain Pdt.G) yang juga menuntut nafkah anak: tiga varian [02] / [02a] /
+ * [02b] di folder 6a lewat keadaan plus-nafkah-anak(-verstek|-setelah-mediasi). Isian KOSONG = bagian itu tidak tercetak (anti ultra petita, SEMA 3/2018).
+ */
+const ALAT_NFK_JENIS = "Nafkah Anak Pasca Perceraian";
+const ALAT_BERKAS_NAFKAH_ANAK = {
+  kabul: "[01] [Kabul] Nafkah Anak - Kontradiktoir",
+  setelahMediasi: "[01a] [Kabul] Nafkah Anak - T Tidak Hadir Setelah Mediasi",
+  verstek: "[01b] [Kabul Verstek] Nafkah Anak",
+  sebagian: "[02] [Kabul Sebagian] Nafkah Anak - Kontradiktoir - Petitum Selebihnya Ditolak",
+  sebagianVerstek: "[02b] [Kabul Sebagian Verstek] Nafkah Anak - T Tidak Hadir - Petitum Selebihnya Ditolak",
+  tolak: "[03] [Tolak] Nafkah Anak - Kontradiktoir - Dalil Tidak Terbukti",
+  tolakVerstek: "[03b] [Tolak Verstek] Nafkah Anak - T Tidak Hadir - Dalil Tidak Terbukti",
+  damai: "[97] [Perdamaian] Nafkah Anak - Akta Perdamaian",
+  cabut: "[98] [Cabut] Nafkah Anak - P & T Hadir Sebelum Jawaban",
+  cabutSesudahJawaban: "[98b] [Cabut] Nafkah Anak - Sesudah Jawaban dengan Persetujuan T",
+  gugur: "[98a] [Gugur] Nafkah Anak - P Tidak Hadir Sidang Pertama",
+  coret: "[98c] [Coret] Nafkah Anak - Dibatalkan dari Pendaftaran - Panjar Habis",
+  noSema: "[99] [NO] Nafkah Anak - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
+  noKurangPihak: "[99a] [NO] Nafkah Anak - Kurang Pihak (Plurium Litis Consortium)",
+  noKabur: "[99b] [NO] Nafkah Anak - Gugatan Kabur (Obscuur Libel)",
+};
+function alatPetaNafkahAnak() {
+  const B = ALAT_BERKAS_NAFKAH_ANAK;
+  const kunci = "nafkah anak pasca perceraian";
+  const k = (status, tanda) => `${kunci}|${status}${tanda ? `|${tanda}` : ""}`;
+  const baris = (status, berkas, catatan) => alatBarisPutusanLain("nfk", ALAT_NFK_JENIS, status, berkas, catatan);
+  const sebutKabul = `varian: ${B.setelahMediasi}; ${B.sebagian}`;
+  const catatanNo = `varian: ${B.noKurangPihak}; ${B.noKabur}`;
+  return {
+    [kunci]: baris("", B.kabul, sebutKabul),
+    [k("dikabulkan", "verstek")]: baris("Dikabulkan", B.verstek),
+    [k("dikabulkan")]: baris("Dikabulkan", B.kabul, sebutKabul),
+    [k("dikabulkan", "t-tidak-hadir-setelah-mediasi")]: baris("Dikabulkan", B.setelahMediasi, "keadaan: T hadir mediasi lalu tidak hadir"),
+    [k("dikabulkan sebagian")]: baris("Dikabulkan Sebagian", B.sebagian, "keadaan: dikabulkan untuk sebagian (amar), Tergugat hadir"),
+    [k("dikabulkan sebagian", "verstek")]: baris("Dikabulkan Sebagian", B.sebagianVerstek, "keadaan: dikabulkan untuk sebagian (amar), Tergugat tidak pernah hadir (verstek)"),
+    [k("ditolak")]: baris("Ditolak", B.tolak, `varian: ${B.tolakVerstek}`),
+    [k("ditolak", "verstek")]: baris("Ditolak", B.tolakVerstek, "keadaan: Tergugat tidak pernah hadir (verstek)"),
+    [k("perdamaian")]: baris("Perdamaian", B.damai),
+    [k("dicabut")]: baris("Dicabut", B.cabut, `varian: ${B.cabutSesudahJawaban}`),
+    [k("dicabut", "sesudah-jawaban")]: baris("Dicabut", B.cabutSesudahJawaban, "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)"),
+    [k("digugurkan")]: baris("Digugurkan", B.gugur),
+    [k("gugur")]: baris("Gugur", B.gugur),
+    [k("dicoret dari register")]: baris("Dicoret dari Register", B.coret),
+    [k("tidak dapat diterima")]: baris("Tidak Dapat Diterima", B.noSema, catatanNo),
+    [k("tidak dapat diterima", "sema-1-2022")]: baris("Tidak Dapat Diterima", B.noSema, "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"),
+    [k("tidak dapat diterima", "kurang-pihak")]: baris("Tidak Dapat Diterima", B.noKurangPihak, "dipilih manual: kurang pihak (plurium litis consortium) - SIPP tidak menyimpan alasan NO terstruktur"),
+    [k("tidak dapat diterima", "cacat-formil")]: baris("Tidak Dapat Diterima", B.noKabur, "dipilih manual: gugatan kabur (cacat formil) - SIPP tidak menyimpan alasan NO terstruktur"),
+  };
+}
+Object.assign(ALAT_PETA_BAWAAN, alatPetaNafkahAnak(), {
+  // Hak asuh (369 Lain-Lain Pdt.G) yang petitumnya juga memuat nafkah anak: [02] kontradiktoir, [02a] T tidak hadir setelah mediasi, [02b] verstek (folder 6a).
+  "lain-lain|dikabulkan|plus-nafkah-anak": alatBarisPutusanLain("ha", "Lain-Lain", "Dikabulkan", "[02] [Kabul] Hak Asuh dan Nafkah Anak - Kontradiktoir - Anak Belum Mumayyiz", "keadaan: gugatan hak asuh (Lain-Lain Pdt.G) yang petitumnya juga memuat nafkah anak"),
+  "lain-lain|dikabulkan|plus-nafkah-anak-setelah-mediasi": alatBarisPutusanLain("ha", "Lain-Lain", "Dikabulkan", "[02a] [Kabul] Hak Asuh dan Nafkah Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz", "keadaan: hak asuh + nafkah anak; T hadir mediasi lalu tidak hadir"),
+  "lain-lain|dikabulkan|plus-nafkah-anak-verstek": alatBarisPutusanLain("ha", "Lain-Lain", "Dikabulkan", "[02b] [Kabul Verstek] Hak Asuh dan Nafkah Anak - Anak Belum Mumayyiz", "keadaan: hak asuh + nafkah anak; Tergugat tidak pernah hadir (verstek)"),
+});
+/* === AKHIR I23 === */
+
 
 
 

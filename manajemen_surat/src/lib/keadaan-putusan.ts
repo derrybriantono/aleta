@@ -47,6 +47,9 @@
  *                                    (bot membaca petitum) atau saklar
  *   anak-sah-perkawinan-tercatat     asal usul anak kabul, anak sah dari perkawinan tercatat yang belum punya akta kelahiran -> [01] baru (I22); saklar, pilih manual
  *   kumulasi-nafkah-istri(-verstek)  cerai gugat yang petitumnya memuat nafkah madliyah / iddah / mut'ah -> [02c] kontradiktoir / [01d] verstek (I22); bahan: `kumulasiNafkahIstri`
+ *   plus-nafkah-anak(-verstek|-setelah-mediasi)
+ *                                    gugatan hak asuh (Lain-Lain Pdt.G) yang petitumnya juga memuat nafkah anak -> [02] / [02b] / [02a] folder 6a (I23 18 Okt); bahan: `plusNafkahAnak`
+ *                                    (bot membaca petitum) atau kumulasi "nafkah-anak"; nafkah anak pasca perceraian (jenis 743) = folder 6c, jenisnya sendiri
  *   nikah-sesudah-2019-tidak-dicatat / poligami-sirri-atau-terikat / terikat-perkawinan-lain
  *                                    itsbat nikah (Pdt.P): NO [99d] / NO [99c] / tolak alternatif [03c] (I19; saklar `alasanItsbat`, pilih manual)
  *
@@ -100,7 +103,11 @@ export type KodeKeadaanPutusan =
   | "pencairan-dana"
   | "anak-sah-perkawinan-tercatat"
   | "kumulasi-nafkah-istri"
-  | "kumulasi-nafkah-istri-verstek";
+  | "kumulasi-nafkah-istri-verstek"
+  // I23 18 Okt (paket abt-nafkah-anak-derry): hak asuh + nafkah anak di folder 6a.
+  | "plus-nafkah-anak"
+  | "plus-nafkah-anak-verstek"
+  | "plus-nafkah-anak-setelah-mediasi";
 
 export type MasukanKeadaanPutusan = {
   jenisPerkara?: unknown;
@@ -158,6 +165,8 @@ export type MasukanKeadaanPutusan = {
   /** I22: petitum memohon pencairan dana (BPJS, Taspen, bank, tabungan) dan petitum cerai gugat memuat nafkah madliyah / iddah / mut'ah - bot membaca petitum; saklar boleh menimpa. */
   pencairanDana?: unknown;
   kumulasiNafkahIstri?: unknown;
+  /** I23 18 Okt: gugatan hak asuh yang petitumnya juga memuat nafkah anak (bot membaca petitum; saklar menang; selain itu dari kumulasi "nafkah-anak"). */
+  plusNafkahAnak?: unknown;
 };
 
 const angka = (x: unknown): number | null => {
@@ -177,7 +186,8 @@ function jenisItsbat(j: string) {
 
 /** F21 17 Okt: hak asuh anak (349 Penguasaan Anak), pembatalan perkawinan, ekonomi syariah - gugatan yang mengenal mediasi dan verstek seperti cerai. */
 function jenisGugatanBaru(j: string) {
-  return j.includes("penguasaan anak") || j.includes("hak asuh") || j.includes("pembatalan perkawinan") || j.includes("ekonomi syariah");
+  // I23 18 Okt: "Nafkah Anak Pasca Perceraian" (jenis 743, folder 6c) - gugatan yang mengenal mediasi, verstek, dan cabut sesudah jawaban seperti penguasaan anak.
+  return j.includes("penguasaan anak") || j.includes("hak asuh") || j.includes("pembatalan perkawinan") || j.includes("ekonomi syariah") || j.includes("nafkah anak");
 }
 /** Gugatan hak asuh anak yang didaftarkan sebagai "Lain-Lain" (369) bernomor Pdt.G; pengangkatan anak (Pdt.P) bukan. */
 function hakAsuhTerdaftarLainLain(j: string, nomor: unknown) {
@@ -319,6 +329,10 @@ export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
     if (m.dikabulkanSebagian === true || (m.dikabulkanSebagian === undefined && kabulSebagianDariAmar(m.amarPutusan))) awalan.push("dikabulkan-sebagian");
   }
   if (j.includes("penguasaan anak") && m.penguasaanDialihkan === true) awalan.push("dialihkan");
+  // I23 18 Okt: hak asuh (Lain-Lain Pdt.G) + nafkah anak: kode gabungan per kehadiran (satu kode per baris peta), didahulukan atas "hak-asuh*".
+  if (hakAsuh && (m.plusNafkahAnak === true || (m.plusNafkahAnak === undefined && kumulasiKode.includes("nafkah-anak")))) {
+    awalan.push(verstekAkhir ? "plus-nafkah-anak-verstek" : hasil.includes("t-tidak-hadir-setelah-mediasi") ? "plus-nafkah-anak-setelah-mediasi" : "plus-nafkah-anak");
+  }
   // I22 18 Okt: PAW susunan dinamis, AUA anak sah perkawinan tercatat, cerai gugat kumulasi nafkah istri; hanya dari penanda (bot membaca petitum / saklar).
   if ((j.includes("ahli waris") || j.includes("p3hp")) && m.susunanAhliWaris === true) awalan.push("susunan-ahli-waris");
   if ((j.includes("asal usul") || j.includes("asal-usul")) && m.anakSahPerkawinanTercatat === true) awalan.push("anak-sah-perkawinan-tercatat");

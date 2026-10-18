@@ -234,6 +234,8 @@ function buatLayanan(depsMasuk) {
         x.pencairanDana = pd === undefined ? null : pd;
         const ni = bahanVarian && bahanVarian.kumulasiNafkahIstri ? bahanVarian.kumulasiNafkahIstri[x.perkaraId] : undefined;
         x.kumulasiNafkahIstri = ni === undefined ? null : ni;
+        const pn = bahanVarian && bahanVarian.plusNafkahAnak ? bahanVarian.plusNafkahAnak[x.perkaraId] : undefined;
+        x.plusNafkahAnak = pn === undefined ? null : pn;
       }
     }
 

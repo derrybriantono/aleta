@@ -15,6 +15,7 @@
  * I20 18 Okt (abt-bas-perbaikan-derry 20, abt-bas-cabut-jawaban-derry 22, abt-penguasaan-anak-derry revisi): V1/V2 verstek di ALUR 33/34/35, [T]/[N] permohonan di ALUR 17/12l/16/19/13l/14/18,
  * CS/CM cabut sesudah jawaban di ALUR 31/33/35/36/37/38/39/40/44 dan dua alur baru "alur-08g"/"alur-08t" (cerai gugat / talak biasa, folder 1 / 1a - BAS, berkas "BAS ALUR 08 ..."),
  * V2S verstek kabul sebagian di ALUR 44; dari pemetaan-langkah-baru.json dan daftar-rtf.tsv paket itu.
+ * I23 18 Okt (abt-nafkah-anak-derry): ALUR 46 (nafkah anak pasca perceraian, jenis 743, folder 6c - BAS, menu 166) 9 langkah: V1, V2, V2S, AP, GD, N, T, CS, CM; 29 salinan ALUR 04-09 di salinan-bas-jenis-data.ts.
  */
 export type MenuBasBaru = { id: number; nama: string; alias: string };
 export type LangkahBasBaru = { kode: string; berkas: string; keterangan: string };
@@ -1511,6 +1512,67 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
       {
         "kode": "CM",
         "berkas": "BAS ALUR 08 Cerai Talak - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
+      }
+    ]
+  },
+  /* === I23 18 Okt === */
+  {
+    "id": "alur-46",
+    "nomor": 46,
+    "nama": "Nafkah Anak Pasca Perceraian - Verstek, Perdamaian, Cabut, P Tidak Hadir, NO",
+    "folder": "derry_briantono/6c Nafkah Anak - BAS",
+    "menu": {
+      "id": 166,
+      "nama": "Nafkah Anak - BAS",
+      "alias": "Nafkah Anak - BAS"
+    },
+    "jenisMin": 743,
+    "jenisMaks": 743,
+    "langkah": [
+      {
+        "kode": "V1",
+        "berkas": "BAS ALUR 46 Nafkah Anak - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T"
+      },
+      {
+        "kode": "V2",
+        "berkas": "BAS ALUR 46 Nafkah Anak - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
+        "keterangan": "Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek"
+      },
+      {
+        "kode": "V2S",
+        "berkas": "BAS ALUR 46 Nafkah Anak - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek Kabul Sebagian.rtf",
+        "keterangan": "Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek Kabul Sebagian"
+      },
+      {
+        "kode": "AP",
+        "berkas": "BAS ALUR 46 Nafkah Anak - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Akta Perdamaian"
+      },
+      {
+        "kode": "GD",
+        "berkas": "BAS ALUR 46 Nafkah Anak - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Gugatan Dicabut"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 46 Nafkah Anak - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
+        "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 46 Nafkah Anak - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf",
+        "keterangan": "Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P"
+      },
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 46 Nafkah Anak - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 46 Nafkah Anak - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
         "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
       }
     ]

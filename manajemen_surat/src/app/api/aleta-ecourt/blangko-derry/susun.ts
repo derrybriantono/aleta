@@ -246,9 +246,32 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "9493": { nm: "Alat bukti surat {T} (daftar bukti T.1 dst.)" },
   /* === AKHIR F22 === */
   /* === I15 18 Okt: penguasaan anak (jenis 349; 9591 dan 9593 otomatis) === */
-  "9590": { nm: "Keadaan penguasaan anak saat ini (siapa yang menguasai anak, sejak kapan, dan di mana; dari bukti dan saksi; kosong = kalimat bawaan)" },
+  "9590": { nm: "Keadaan penguasaan anak yang sebenarnya saat ini (penguasaan faktual: siapa yang menguasai anak, sejak kapan, dan di mana; dari bukti dan saksi; kosong = kalimat bawaan)" }, // I20 18 Okt: faktual
   "9592": { nm: 'Tempat tinggal anak senyatanya (satu kalimat, mis. "bertempat tinggal di Desa ..."; kosong = wilayah hukum Pengadilan ini)' },
   /* === AKHIR I15 === */
+  /* === I20 18 Okt: penguasaan anak 6b revisi - 9590 kini penguasaan FAKTUAL; saklar penyerahan anak 9720 (1 = diminta, 0 = tidak); alasan petitum selebihnya ditolak 9726 === */
+  "9720": {
+    nm: "Apakah gugatan meminta {T} menyerahkan anak?",
+    opsi: [
+      { nilai: "1", label: "Ya, diminta dalam gugatan" },
+      { nilai: "0", label: "Tidak diminta" },
+    ],
+  },
+  "9726": { nm: "Alasan sebagian petitum ditolak (untuk putusan dikabulkan sebagian; kosong = kalimat bawaan)" },
+  /* === AKHIR I20 === */
+  /* === I23 18 Okt: nafkah anak (folder 6c; 9751-9759 otomatis). Kosong = bagian itu tidak dituntut dan tidak tercetak. === */
+  "9740": { nm: "Nafkah anak ke depan: jumlah setiap bulan (rupiah, angka saja; kosong = tidak dituntut)" },
+  "9741": { nm: "Kenaikan nafkah anak setiap tahun (persen, angka 10 sampai 20 saja; kosong = tidak dituntut)" },
+  "9742": { nm: "Biaya pendidikan dan kesehatan anak (rincian; kosong = tidak dituntut)" },
+  "9743": { nm: "Sita jaminan: objek yang dirinci (letak, luas, batas, sertifikat) dan nomor serta tanggal berita acara sita (kosong = tanpa sita)" },
+  "9744": { nm: "Dasar kemampuan {T} dan standar biaya hidup minimal setempat (pekerjaan, penghasilan, UMK atau garis kemiskinan)" },
+  "9745": { nm: "Pemotongan langsung dari penghasilan {T}: nama instansi atau perusahaan tempat bekerja (kosong = tanpa pemotongan)" },
+  "9746": { nm: "Nafkah lampau anak: jangka waktu (mis. sejak bulan ... sampai bulan ...)" },
+  "9747": { nm: "Nafkah lampau anak: jumlah (rupiah dan terbilang, mis. jumlah bulan x besaran)" },
+  "9748": { nm: "Fakta pengasuhan dan kelalaian nafkah (berpisah sejak kapan, anak diasuh siapa, tidak diberi nafkah; kosong = kalimat bawaan)" },
+  "9749": { nm: "Kedudukan {P} bila bukan ibu atau ayah kandung anak (kosong = ibu atau ayah kandung)" },
+  "9750": { nm: "Alasan petitum ditolak (untuk putusan dikabulkan sebagian atau ditolak; kosong = kalimat bawaan)" },
+  /* === AKHIR I23 === */
 };
 
 const PEMICU_TEKS: Record<string, string> = {

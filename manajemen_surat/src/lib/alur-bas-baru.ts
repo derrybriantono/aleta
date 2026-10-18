@@ -17,6 +17,7 @@
  * F21 17 Okt: tiga paket jenis baru menambah ALUR 38 (hak asuh anak), 39 (pembatalan perkawinan), 40 (ekonomi syariah gugatan sederhana).
  * I15 18 Okt: ALUR 44 (penguasaan anak, jenis 349, folder 6b) menggantikan ALUR 38 untuk jenis 349; hak asuh/hadhanah (jenis 369) tetap ALUR 38.
  * F22 17 Okt: ALUR 41 (pencegahan perkawinan, permohonan Pdt.P), 42 (wasiat), 43 (ekonomi syariah ACARA BIASA, nomor Pdt.G; gugatan sederhana Pdt.G.S tetap ALUR 40).
+ * I23 18 Okt (abt-nafkah-anak-derry): ALUR 46 (nafkah anak pasca perceraian, jenis 743, folder 6c - BAS, menu 166): V1, V2, V2S, AP, GD, N, T, CS, CM + 29 salinan ALUR 04-09.
  * I20 18 Okt (abt-bas-perbaikan-derry, abt-bas-cabut-jawaban-derry): verstek V1/V2 untuk kewarisan (ALUR 33), poligami (34) dan itsbat kontensius (35); [T] tunda panggil
  * Pemohon dan [N] NO SEMA 1/2022 permohonan di folder jenisnya (itsbat 17, DK 12l, perwalian 16, wali adhal 19, AUA 13l, PAW 14, pengangkatan anak 18; dulu 9b);
  * cabut sesudah jawaban CS (Tergugat setuju) / CM (Tergugat menolak, perkara dilanjutkan) untuk 11 jenis gugatan (cerai CG/CT = "alur-08g"/"alur-08t").
@@ -61,7 +62,7 @@ export type HasilBasBaru = {
 
 type JenisBaru =
   | "paw" | "perwalian" | "wali-adhal" | "angkat-anak" | "itsbat" | "itsbat-kontensius" | "dk" | "aua"
-  | "hb" | "waris" | "poligami" | "cerai-gugat" | "cerai-talak" | "hak-asuh" | "penguasaan-anak" | "pembatalan" | "es" | "pencegahan" | "wasiat" | "es-biasa" | "";
+  | "hb" | "waris" | "poligami" | "cerai-gugat" | "cerai-talak" | "hak-asuh" | "penguasaan-anak" | "nafkah-anak" | "pembatalan" | "es" | "pencegahan" | "wasiat" | "es-biasa" | "";
 
 /** Jenis perkara SIPP -> jenis yang dikenal berkas ini. Itsbat dipilah menurut nomor (Pdt.G = kontensius). */
 export function jenisBasBaru(jenisPerkara: unknown, nomorPerkara?: unknown): JenisBaru {
@@ -78,6 +79,8 @@ export function jenisBasBaru(jenisPerkara: unknown, nomorPerkara?: unknown): Jen
   // F21 17 Okt: hak asuh anak (349 "Penguasaan Anak"), pembatalan perkawinan (344), ekonomi syariah gugatan sederhana (370, Pdt.G.S).
   // I15 18 Okt: penguasaan anak (349) punya folder sendiri "6b Penguasaan Anak - BAS" (ALUR 44), terpisah dari hak asuh/hadhanah (ALUR 38, jenis 369).
   if (j.includes("penguasaan anak")) return "penguasaan-anak";
+  // I23 18 Okt: "Nafkah Anak Pasca Perceraian" (jenis 743) punya folder sendiri "6c Nafkah Anak - BAS" (ALUR 46).
+  if (j.includes("nafkah anak")) return "nafkah-anak";
   if (j.includes("hak asuh") || j.includes("hadhanah")) return "hak-asuh";
   if (j.includes("pembatalan perkawinan")) return "pembatalan";
   if (j.includes("ekonomi syariah")) {
@@ -281,32 +284,35 @@ function gugatanKebendaan(jenis: "hb" | "waris", m: MasukanBasBaru, n: number, a
  * kedua pihak memakai salinan BAS kontradiktoir ALUR 04-09 di folder jenisnya (seperti HB/waris); T tidak hadir, mediasi berhasil, cabut,
  * P tidak hadir, dan NO memakai BAS khusus ALUR 38/39. Perdamaian (akta) hanya hak asuh; pembatalan perkawinan tidak dapat didamaikan.
  */
-function gugatanKeluarga(jenis: "hak-asuh" | "penguasaan-anak" | "pembatalan" | "wasiat" | "es-biasa", m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
+function gugatanKeluarga(jenis: "hak-asuh" | "penguasaan-anak" | "nafkah-anak" | "pembatalan" | "wasiat" | "es-biasa", m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
   // F22 17 Okt: wasiat (ALUR 42) dan ES acara biasa (ALUR 43) berpola sama dengan hak asuh: mediasi dan akta perdamaian ada; hanya pembatalan yang tidak.
   const asuh = jenis !== "pembatalan";
-  const id = { "hak-asuh": "alur-38", "penguasaan-anak": "alur-44", pembatalan: "alur-39", wasiat: "alur-42", "es-biasa": "alur-43" }[jenis];
+  const id = { "hak-asuh": "alur-38", "penguasaan-anak": "alur-44", "nafkah-anak": "alur-46", pembatalan: "alur-39", wasiat: "alur-42", "es-biasa": "alur-43" }[jenis];
+  // ALUR 46 memakai kode langkah N (NO), T (tunda panggil P) dan GD (gugatan dicabut, mediasi berhasil); alur lain NO / TP / CB.
+  const kd = (c: string) => (id === "alur-46" ? (({ NO: "N", TP: "T", CB: "GD" }) as Record<string, string>)[c] ?? c : c);
   const nama = {
     "hak-asuh": "Hak asuh anak",
     "penguasaan-anak": "Penguasaan anak",
+    "nafkah-anak": "Nafkah anak pasca perceraian",
     pembatalan: "Pembatalan perkawinan",
     wasiat: "Wasiat",
     "es-biasa": "Ekonomi syariah (acara biasa)",
   }[jenis];
   const h = m.dihadiriOleh;
   const akhir = m.akhir ?? (RX_CABUT.test(agenda) ? "cabut" : null);
-  if (akhir === "no") return buat(id, "NO", ["TP"], false, `${nama}: Penggugat dua kali tidak hadir - tidak dapat diterima (SEMA 1/2022).`);
+  if (akhir === "no") return buat(id, kd("NO"), [kd("TP")], false, `${nama}: Penggugat dua kali tidak hadir - tidak dapat diterima (SEMA 1/2022).`);
   // I7 17 Okt: pembatalan perkawinan DIKECUALIKAN dari mediasi (PERMA 1/2016 Pasal 4 ayat (2) huruf d); BAS "Mediasi Berhasil - Gugatan Dicabut" dan
   // semua BAS mediasi salinan ALUR 04-08 dipindah ke derry_briantono/terhapus. Cabut/damai pada 344 tidak diusulkan BAS mediasi dari folder mana pun.
-  if (akhir === "cabut") return asuh ? buat(id, "CB", ["AP"], false, `${nama}: gugatan dicabut.`) : null;
+  if (akhir === "cabut") return asuh ? buat(id, kd("CB"), ["AP"], false, `${nama}: gugatan dicabut.`) : null;
   if (RX_DAMAI.test(agenda)) {
-    return asuh ? buat(id, "AP", ["CB"], false, `${nama}: mediasi berhasil - akta perdamaian (atau gugatan dicabut).`) : null;
+    return asuh ? buat(id, "AP", [kd("CB")], false, `${nama}: mediasi berhasil - akta perdamaian (atau gugatan dicabut).`) : null;
   }
-  if (h === 3 || h === 4) return buat(id, "TP", ["NO"], true, `${nama}: Penggugat tidak hadir - tunda panggil P; bila sudah dua kali tidak hadir: putusan NO.`);
+  if (h === 3 || h === 4) return buat(id, kd("TP"), [kd("NO")], true, `${nama}: Penggugat tidak hadir - tunda panggil P; bila sudah dua kali tidak hadir: putusan NO.`);
   // T tidak hadir dan tidak pernah hadir: verstek (sidang 1 tunda panggil T, sidang 2 pembuktian dan putusan verstek).
   if (h === 2 && m.tergugatPernahHadir !== true) {
     return n <= 1
       ? buat(id, "V1", ["V2"], false, `${nama} sidang 1: Penggugat hadir, Tergugat tidak hadir - tunda panggil T.`)
-      : buat(id, "V2", jenis === "penguasaan-anak" ? ["V1", "V2S"] : ["V1"], n > 2, `${nama} sidang ke-${n}: Tergugat tetap tidak hadir - pembuktian dan putusan verstek${jenis === "penguasaan-anak" ? " (dikabulkan untuk sebagian: V2S)" : ""}.`);
+      : buat(id, "V2", (jenis === "penguasaan-anak" || jenis === "nafkah-anak") ? ["V1", "V2S"] : ["V1"], n > 2, `${nama} sidang ke-${n}: Tergugat tetap tidak hadir - pembuktian dan putusan verstek${jenis === "penguasaan-anak" || jenis === "nafkah-anak" ? " (dikabulkan untuk sebagian: V2S)" : ""}.`);
   }
   if (jenis === "pembatalan" && n <= 1) return pembatalanSidangPertama(m);
   return salinanAlur04(alurMenurutId(id).folder, { ...m, urutanSidang: n });
@@ -525,7 +531,7 @@ function cabutSesudahJawaban(jenis: JenisBaru, m: MasukanBasBaru, agenda: string
     const ada = (k: string) => butir.some((b) => b.kode === k);
     id = jenis === "cerai-gugat" && ada("hak-asuh-anak") ? "alur-37" : ada("itsbat-nikah") ? "alur-36" : jenis === "cerai-gugat" ? "alur-08g" : "alur-08t";
   } else {
-    id = ({ hb: "alur-31", waris: "alur-33", "itsbat-kontensius": "alur-35", "hak-asuh": "alur-38", pembatalan: "alur-39", es: "alur-40", "penguasaan-anak": "alur-44" } as Record<string, string>)[jenis] ?? "";
+    id = ({ hb: "alur-31", waris: "alur-33", "itsbat-kontensius": "alur-35", "hak-asuh": "alur-38", pembatalan: "alur-39", es: "alur-40", "penguasaan-anak": "alur-44", "nafkah-anak": "alur-46" } as Record<string, string>)[jenis] ?? "";
   }
   if (!id) return null;
   return sikap === "setuju"
@@ -556,6 +562,7 @@ export function tentukanBasBaru(m: MasukanBasBaru): HasilBasBaru | null {
       return izinPoligami(m, n, agenda);
     case "hak-asuh":
     case "penguasaan-anak":
+    case "nafkah-anak":
     case "pembatalan":
     case "wasiat":
     case "es-biasa":

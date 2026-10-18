@@ -160,14 +160,16 @@ describe("pemilih blangko cerai per status (panel-alat.js yang dijalankan)", () 
       // I8 17 Okt: [03a] tolak kontradiktoir milik paket ABT abt-tolak-ikrar-derry - ada di laptop hanya sesudah dipasang di sana (dijaga pemetaan-i8-17okt.test.ts atas fixture server).
       // I17 18 Okt: [98] [Cabut] 7. (sesudah jawaban) dan [98] [NO] 8. (cacat formil) milik paket abt-putusan-celah-gugatan-derry - dijaga pemetaan-i17-18okt.test.ts atas fixture server.
       const belumTerpasangI17 = (nama: string) => /^\[98\] \[(Cabut|NO)\] [78]\. Cerai P & T Hadir/.test(nama) && !existsSync(path.join(ABT_DERRY, folder, `${nama}.rtf`));
+      // I19/I22 18 Okt: [02c] cabut ditolak T / kumulasi nafkah istri, [99c]/[99d] eksepsi kewenangan, [98e]/[98f] putusan sela, [01d] verstek kumulasi nafkah istri - paket belum terpasang di laptop (dijaga pemetaan-i19/i22-18okt.test.ts atas fixture server).
+      const belumTerpasangBaru = (nama: string) => /Pencabutan Ditolak T Sesudah Jawaban|Eksepsi Kewenangan|Kumulasi Nafkah Istri/.test(nama) && !existsSync(path.join(ABT_DERRY, folder, `${nama}.rtf`));
       const belumTerpasangI8 = (nama: string) => /^\[03a\] \[Tolak\] Cerai - Kontradiktoir/.test(nama) && !existsSync(path.join(ABT_DERRY, folder, `${nama}.rtf`));
-      if (belumTerpasangI8(b.berkas) || belumTerpasangI17(b.berkas)) continue;
+      if (belumTerpasangI8(b.berkas) || belumTerpasangI17(b.berkas) || belumTerpasangBaru(b.berkas)) continue;
       expect(existsSync(path.join(ABT_DERRY, folder, `${b.berkas}.rtf`)), `${kunci}: ${b.berkas}`).toBe(true);
       if (!/^varian: /.test(b.catatan || "")) continue;
       for (const varian of (b.catatan || "").replace(/^varian: /, "").split("; ").filter(Boolean)) {
         // G3 15 Okt: 4b (nama baru, paket agen H3) ikut. F3 14 Okt: 3b (kuasa insidentil) milik paket ABT abt-kuasa-insidentil (agen B3) - ada di laptop hanya sesudah dipasang di sana.
         if (/(\[Gugur\] 3b|\[NO\] 4b)\. Cerai P Diwakili Kuasa Insidentil/.test(varian) && !existsSync(path.join(ABT_DERRY, folder, `${varian}.rtf`))) continue;
-        if (belumTerpasangI8(varian) || belumTerpasangI17(varian)) continue;
+        if (belumTerpasangI8(varian) || belumTerpasangI17(varian) || belumTerpasangBaru(varian)) continue;
         expect(existsSync(path.join(ABT_DERRY, folder, `${varian}.rtf`)), `${kunci} varian: ${varian}`).toBe(true);
       }
     }

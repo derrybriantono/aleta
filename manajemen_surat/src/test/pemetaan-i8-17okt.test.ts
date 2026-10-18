@@ -61,6 +61,8 @@ describe("A. berkas ada di folder menunya", () => {
         // I15 18 Okt: jenis 349 pindah ke folder 6b (baris "hak-asuh-t-ibu" dihapus: 6b tidak punya padanannya; "verstek" menunjuk [03a] 6b).
         "pembatalan perkawinan|ditolak|verstek",
         "penguasaan anak|ditolak|verstek",
+        // I23 18 Okt: nafkah anak pasca perceraian (6c) punya [03b] tolak verstek sendiri.
+        "nafkah anak pasca perceraian|ditolak|verstek",
       ].sort()
     );
     for (const [k, b] of baris) expect(FIX.berkas, k).toContain(`${A}${FOLDER_MENU_PUTUSAN[String(b.blangko)]}/${b.berkas}.rtf`);

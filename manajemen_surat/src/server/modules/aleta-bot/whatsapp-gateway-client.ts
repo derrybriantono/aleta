@@ -5304,6 +5304,8 @@ export type UnggahMassalPutusanBot = {
   /** I22 18 Okt: petitum memohon pencairan dana (PAW, itsbat kontensius) / nafkah istri (cerai gugat); null = tidak diketahui. */
   pencairanDana?: boolean | null;
   kumulasiNafkahIstri?: boolean | null;
+  /** I23 18 Okt: petitum hak asuh juga memuat nafkah (anak); null = tidak diketahui. */
+  plusNafkahAnak?: boolean | null;
 };
 export type UnggahMassalTertahanBot = { perkaraId: string; nomorPerkara: string; tanggalSidang: string; majelis: string[] };
 export type UnggahMassalBasBot = {
