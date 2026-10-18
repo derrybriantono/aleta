@@ -108,6 +108,20 @@
    "sumber": "teks HIR/RBg; dikonfirmasi dari ringkasan hukumonline.com (diperiksa 18 Okt 2026)"
   },
   {
+   "id": "dh-saksi-materiil",
+   "rujukan": "Pasal 307, 308, dan 309 RBg jo. Pasal 1905 sampai dengan 1908 KUH Perdata",
+   "uraian": "syarat materiil kesaksian: keterangan dari yang dialami, didengar, dan dilihat sendiri, bersumber pengetahuan jelas, relevan, dan bersesuaian antar saksi; minimal dua saksi",
+   "status": "terverifikasi",
+   "sumber": "dikutip pada blangko putusan Derry \"3 Dispensasi Kawin\", \"2 Itsbat Nikah\", dan \"9 Penetapan Ahli Waris\" (teks derry-teks), diperiksa 18 Okt 2026"
+  },
+  {
+   "id": "dh-saksi-formil",
+   "rujukan": "Pasal 22 ayat (2) PP 9/1975 jo. Pasal 171, 172 ayat (2), dan 175 RBg jo. Pasal 1909 sampai dengan 1912 KUH Perdata",
+   "uraian": "syarat formil saksi: hadir pribadi, diperiksa satu per satu, tidak terhalang secara hukum, dan memberi keterangan di bawah sumpah",
+   "status": "terverifikasi",
+   "sumber": "dikutip pada blangko putusan Derry \"3 Dispensasi Kawin\" dan \"6 Perwalian\" (teks derry-teks), diperiksa 18 Okt 2026"
+  },
+  {
    "id": "dh-hir-172",
    "rujukan": "Pasal 172 HIR / Pasal 309 RBg",
    "uraian": "hakim menilai kesaksian dari kecocokan antar saksi, alasan saksi, dan kedudukan saksi",
@@ -137,10 +151,10 @@
   },
   {
    "id": "dh-khi-24-26",
-   "rujukan": "Pasal 24 sampai Pasal 26 Kompilasi Hukum Islam",
-   "uraian": "saksi nikah: kedudukan, syarat, dan kewajiban hadir menyaksikan akad serta menandatangani akta",
-   "status": "perlu-verifikasi",
-   "sumber": "belum dibaca pada naskah resmi"
+   "rujukan": "Pasal 24 dan Pasal 25 (juga Pasal 26) Kompilasi Hukum Islam",
+   "uraian": "saksi nikah: dua orang saksi sebagai rukun, syarat saksi, dan kewajiban hadir menyaksikan akad",
+   "status": "terverifikasi",
+   "sumber": "blangko putusan Derry \"2 Itsbat Nikah\" [01] [Kabul] IN (teks derry-teks), diperiksa 18 Okt 2026; Pasal 24 sampai 26 dikutip pada blangko putusan Derry \"1c Perceraian Kumulasi Itsbat Nikah\""
   },
   {
    "id": "dh-khi-27",
@@ -152,16 +166,16 @@
   {
    "id": "dh-khi-30",
    "rujukan": "Pasal 30 Kompilasi Hukum Islam",
-   "uraian": "calon mempelai pria wajib membayar mahar kepada calon mempelai wanita",
-   "status": "perlu-verifikasi",
-   "sumber": "belum dibaca pada naskah resmi"
+   "uraian": "kewajiban suami memberikan mahar kepada istri",
+   "status": "terverifikasi",
+   "sumber": "blangko putusan Derry \"2 Itsbat Nikah\" [01] [Kabul] IN (teks derry-teks), diperiksa 18 Okt 2026"
   },
   {
    "id": "dh-khi-39-44",
-   "rujukan": "Pasal 39 sampai Pasal 44 Kompilasi Hukum Islam",
-   "uraian": "larangan perkawinan karena pertalian nasab, kerabat semenda, dan sesusuan, serta larangan karena keadaan tertentu termasuk perbedaan agama",
-   "status": "perlu-verifikasi",
-   "sumber": "hanya kalimat pembuka Pasal 39 yang dapat dibaca; sisanya belum dibaca pada naskah resmi"
+   "rujukan": "Pasal 39 sampai dengan Pasal 44 Kompilasi Hukum Islam",
+   "uraian": "larangan perkawinan (nasab, semenda, sesusuan, dan keadaan tertentu); itsbat nikah untuk perkawinan yang tidak mempunyai halangan perkawinan (Pasal 7 ayat (3) huruf e KHI)",
+   "status": "terverifikasi",
+   "sumber": "blangko putusan Derry \"2 Itsbat Nikah\" [01] [Kabul] IN (teks derry-teks), diperiksa 18 Okt 2026"
   },
   {
    "id": "dh-uu1-74-7",
@@ -172,10 +186,10 @@
   },
   {
    "id": "dh-uu1-74-poligami",
-   "rujukan": "Pasal 3 ayat (2), Pasal 4, dan Pasal 9 UU 1/1974",
-   "uraian": "orang yang masih terikat perkawinan tidak dapat kawin lagi kecuali dengan izin pengadilan",
-   "status": "perlu-verifikasi",
-   "sumber": "pengetahuan hukum; belum dibaca pada naskah resmi"
+   "rujukan": "Pasal 9 UU 1/1974 jo. Pasal 3 ayat (2) dan Pasal 4",
+   "uraian": "orang yang masih terikat tali perkawinan dengan orang lain tidak dapat kawin lagi kecuali dalam hal yang tersebut pada Pasal 3 ayat (2) dan Pasal 4 UU 1/1974",
+   "status": "terverifikasi",
+   "sumber": "bunyi Pasal 9 dikutip pada blangko putusan Derry \"2 Itsbat Nikah\" [99] NO Masih Terikat Nikah Sebelumnya, diperiksa 18 Okt 2026"
   },
   {
    "id": "dh-sema-3-2018",
@@ -239,7 +253,9 @@
    "uraian": "saksi menerangkan hubungannya dengan para pihak dan mengetahui maksud perkara",
    "dasarHukum": [
     "dh-hir-171",
-    "dh-hir-169"
+    "dh-hir-169",
+    "dh-saksi-materiil",
+    "dh-saksi-formil"
    ],
    "wajib": true
   },

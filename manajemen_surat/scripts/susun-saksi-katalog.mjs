@@ -58,6 +58,11 @@ export function bangunIsi(katalog) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === SKRIP) {
   const katalog = bacaKatalog();
+  if (process.argv.includes("--stdout")) {
+    // hanya mencetak isi yang SEHARUSNYA (dipakai uji penjaga), tanpa menulis berkas
+    process.stdout.write(bangunIsi(katalog));
+    process.exit(0);
+  }
   fs.writeFileSync(BERKAS_DATA, bangunIsi(katalog), "utf8");
   console.log(`saksi-katalog-data.js ditulis: ${katalog.length} katalog (${katalog.map((k) => k.kunci).join(", ")})`);
 }

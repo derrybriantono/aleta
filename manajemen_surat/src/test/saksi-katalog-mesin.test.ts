@@ -87,6 +87,29 @@ describe("deteksi jenis - bukan dari variabel cerai", () => {
     expect(Mesin.kenaliKatalog([], { jenisPerkaraId: "347" })).toBeNull();
   });
 
+  it("pemilihan katalog per jenis_perkara_id (369 menurut nama, 349, 743/350, 370, tambahan cerai tidak berdiri sendiri)", () => {
+    const pilih = (jenisPerkaraId: string, nama = "", alurPerkaraId = "") => Mesin.kenaliKatalog(katalog, { jenisPerkaraId, alurPerkaraId, nama })?.kunci ?? null;
+    expect(pilih("369", "Lain-lain Hak Asuh Anak", "15")).toBe("hak-asuh");
+    expect(pilih("369", "Lain-lain Pengangkatan Anak", "16")).toBe("pengangkatan-anak");
+    expect(pilih("369", "Permohonan Umum", "16")).toBe("permohonan-umum");
+    expect(pilih("369", "Hibah", "16")).toBe("permohonan-umum"); // penampung 369/permohonan di luar angkat, asuh, perwalian, waris
+    expect(pilih("369", "Hibah", "15")).toBeNull();
+    expect(pilih("349", "", "15")).toBe("penguasaan-anak");
+    expect(pilih("743")).toBe("nafkah-anak");
+    expect(pilih("350")).toBe("nafkah-anak");
+    expect(pilih("370", "", "15")).toBe("ekonomi-syariah");
+    expect(pilih("341")).toBe("izin-poligami");
+    expect(pilih("360")).toBe("itsbat-nikah");
+    expect(pilih("362")).toBe("dispensasi-kawin");
+    expect(pilih("364")).toBe("kewarisan");
+    expect(pilih("371")).toBe("penetapan-ahli-waris");
+    expect(pilih("354")).toBe("perwalian");
+    expect(pilih("348")).toBe("harta-bersama");
+    expect(pilih("363")).toBe("wali-adhal");
+    // katalog tambahan tidak pernah dikembalikan sebagai katalog utama
+    for (const id of ["346", "347"]) expect(pilih(id, "", "15")).not.toMatch(/kumulasi/);
+  });
+
   it("katalog contoh tidak pernah dikenali", () => {
     const contoh = { ...CG, kunci: "contoh", contoh: true };
     expect(Mesin.kenaliKatalog([contoh], { jenisPerkaraId: "347", alurPerkaraId: "15" })).toBeNull();
@@ -126,11 +149,11 @@ describe("keadaan perkara", () => {
     const dasar = Mesin.pertanyaanAktif(CG, { kehadiran: "verstek", alasan: ["F"] }, "P").map((q: any) => q.id);
     expect(dasar).not.toContain("q-d-kekerasan");
     expect(dasar).not.toContain("q-anak-lahir");
-    expect(dasar).not.toContain("q-in-akad");
+    expect(dasar).not.toContain("q-in-waktu-tempat-km");
     const khusus = Mesin.pertanyaanAktif(CG, { kehadiran: "verstek", alasan: ["F", "D"], kumulasi: ["hak-asuh", "itsbat-nikah"] }, "P").map((q: any) => q.id);
     expect(khusus).toContain("q-d-kekerasan");
     expect(khusus).toContain("q-anak-lahir");
-    expect(khusus).toContain("q-in-akad");
+    expect(khusus).toContain("q-in-waktu-tempat-km");
     const alasanA = Mesin.pertanyaanAktif(CG, { kehadiran: "verstek", alasan: ["A"], perilakuA: ["judi"] }, "P").map((q: any) => q.id);
     expect(alasanA).toContain("q-a-judi");
     expect(alasanA).not.toContain("q-a-mabuk");
@@ -140,8 +163,11 @@ describe("keadaan perkara", () => {
 
   it("urutan pertanyaan naik dan tidak ada yang kembar", () => {
     const daftar = Mesin.pertanyaanAktif(CG, { kehadiran: "kontradiktoir", alasan: ["A", "B", "C", "D", "E", "F", "G", "H"], kumulasi: ["hak-asuh", "nafkah-anak", "harta-bersama", "itsbat-nikah", "mutah"], suami: "lawan", perilakuA: ["pihak-ketiga", "mabuk", "obat-terlarang", "judi"] }, "P");
-    const urutan = daftar.map((q: any) => q.urutan);
+    const tanpaPenutup = daftar.filter((q: any) => q.kelompok !== "penutup");
+    const urutan = tanpaPenutup.map((q: any) => q.urutan);
     expect([...urutan].sort((a, b) => a - b)).toEqual(urutan);
+    // penutup selalu terakhir, walau urutannya lebih kecil daripada butir tambahan
+    expect(daftar[daftar.length - 1].kelompok).toBe("penutup");
     expect(new Set(daftar.map((q: any) => q.id)).size).toBe(daftar.length);
   });
 });

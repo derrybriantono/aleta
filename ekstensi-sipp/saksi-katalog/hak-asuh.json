@@ -173,23 +173,23 @@
    "label": "Kehadiran Tergugat",
    "bawaan": "kontradiktoir"
   },
-  "mumayyiz": {
+  "anakMumayyiz": {
    "sumber": "borang",
    "nilai": [
     "belum",
     "sudah"
    ],
-   "label": "Umur anak (belum atau sudah 12 tahun)",
+   "label": "Anak sudah berumur 12 tahun (mumayyiz)",
    "bawaan": "belum"
   },
-  "pengasuhSaatIni": {
+  "pengasuhAnak": {
    "sumber": "borang",
    "nilai": [
-    "penggugat",
-    "tergugat"
+    "pengaju",
+    "lawan"
    ],
-   "label": "Anak saat ini tinggal dan diasuh oleh",
-   "bawaan": "penggugat"
+   "label": "Pihak yang mengasuh anak sekarang",
+   "bawaan": "pengaju"
   },
   "akses": {
    "sumber": "borang",
@@ -203,20 +203,20 @@
   "pilihanAnak": {
    "sumber": "borang",
    "nilai": [
-    "penggugat",
-    "tergugat"
+    "pengaju",
+    "lawan"
    ],
    "label": "Anak (sudah 12 tahun) memilih tinggal bersama",
-   "bawaan": "penggugat"
+   "bawaan": "pengaju"
   },
-  "dasarGugat": {
+  "pengalihan": {
    "sumber": "borang",
    "nilai": [
-    "pemeliharaan",
-    "pengalihan"
+    "tidak",
+    "ya"
    ],
-   "label": "Dasar gugatan (pemeliharaan biasa atau pengalihan hak hadhanah)",
-   "bawaan": "pemeliharaan"
+   "label": "Hadhanah dimohonkan dialihkan karena pengasuh tidak dapat menjamin keselamatan anak",
+   "bawaan": "tidak"
   }
  },
  "pokokPembuktian": [
@@ -294,7 +294,7 @@
     "dh-khi-156"
    ],
    "keadaan": {
-    "mumayyiz": "sudah"
+    "anakMumayyiz": "sudah"
    }
   },
   {
@@ -306,7 +306,7 @@
     "dh-khi-156"
    ],
    "keadaan": {
-    "dasarGugat": "pengalihan"
+    "pengalihan": "ya"
    }
   },
   {
@@ -487,7 +487,7 @@
     "melihat": [
      {
       "keadaan": {
-       "mumayyiz": "belum"
+       "anakMumayyiz": "belum"
       },
       "maksud": "anak masih di bawah 12 tahun",
       "saksi1": [
@@ -505,7 +505,7 @@
      },
      {
       "keadaan": {
-       "mumayyiz": "sudah"
+       "anakMumayyiz": "sudah"
       },
       "maksud": "anak berumur lebih dari 12 tahun",
       "saksi1": [
@@ -566,7 +566,7 @@
     "melihat": [
      {
       "keadaan": {
-       "pengasuhSaatIni": "penggugat"
+       "pengasuhAnak": "pengaju"
       },
       "maksud": "anak sekarang tinggal bersama pihak yang diterangkan dan saksi melihatnya sendiri",
       "saksi1": [
@@ -584,7 +584,7 @@
      },
      {
       "keadaan": {
-       "pengasuhSaatIni": "tergugat"
+       "pengasuhAnak": "lawan"
       },
       "maksud": "anak sekarang tinggal bersama pihak yang diterangkan dan saksi melihatnya sendiri",
       "saksi1": [
@@ -696,7 +696,7 @@
     "melihat": [
      {
       "keadaan": {
-       "pengasuhSaatIni": "penggugat"
+       "pengasuhAnak": "pengaju"
       },
       "maksud": "pihak yang mengasuh mengurus keperluan anak sehari-hari dan saksi melihatnya sendiri",
       "saksi1": [
@@ -714,7 +714,7 @@
      },
      {
       "keadaan": {
-       "pengasuhSaatIni": "tergugat"
+       "pengasuhAnak": "lawan"
       },
       "maksud": "pihak yang mengasuh mengurus keperluan anak sehari-hari dan saksi melihatnya sendiri",
       "saksi1": [
@@ -774,7 +774,7 @@
     "melihat": [
      {
       "keadaan": {
-       "pengasuhSaatIni": "penggugat"
+       "pengasuhAnak": "pengaju"
       },
       "maksud": "selama dalam asuhan pihak itu anak sehat dan terawat",
       "saksi1": [
@@ -792,7 +792,7 @@
      },
      {
       "keadaan": {
-       "pengasuhSaatIni": "tergugat"
+       "pengasuhAnak": "lawan"
       },
       "maksud": "selama dalam asuhan pihak itu anak sehat dan terawat",
       "saksi1": [
@@ -849,7 +849,7 @@
     "melihat": [
      {
       "keadaan": {
-       "pengasuhSaatIni": "penggugat"
+       "pengasuhAnak": "pengaju"
       },
       "maksud": "pihak yang mengasuh mengurus sekolah dan pendidikan agama anak",
       "saksi1": [
@@ -867,7 +867,7 @@
      },
      {
       "keadaan": {
-       "pengasuhSaatIni": "tergugat"
+       "pengasuhAnak": "lawan"
       },
       "maksud": "pihak yang mengasuh mengurus sekolah dan pendidikan agama anak",
       "saksi1": [
@@ -927,7 +927,7 @@
     "melihat": [
      {
       "keadaan": {
-       "pengasuhSaatIni": "penggugat"
+       "pengasuhAnak": "pengaju"
       },
       "maksud": "pihak yang mengasuh bersikap baik dan penuh perhatian kepada anak",
       "saksi1": [
@@ -945,7 +945,7 @@
      },
      {
       "keadaan": {
-       "pengasuhSaatIni": "tergugat"
+       "pengasuhAnak": "lawan"
       },
       "maksud": "pihak yang mengasuh bersikap baik dan penuh perhatian kepada anak",
       "saksi1": [
@@ -1003,7 +1003,7 @@
     "melihat": [
      {
       "keadaan": {
-       "pengasuhSaatIni": "penggugat"
+       "pengasuhAnak": "pengaju"
       },
       "maksud": "pihak yang mengasuh bekerja dan penghasilannya mencukupi kebutuhan anak",
       "saksi1": [
@@ -1021,7 +1021,7 @@
      },
      {
       "keadaan": {
-       "pengasuhSaatIni": "tergugat"
+       "pengasuhAnak": "lawan"
       },
       "maksud": "pihak yang mengasuh bekerja dan penghasilannya mencukupi kebutuhan anak",
       "saksi1": [
@@ -1078,7 +1078,7 @@
     "melihat": [
      {
       "keadaan": {
-       "pengasuhSaatIni": "penggugat"
+       "pengasuhAnak": "pengaju"
       },
       "maksud": "pihak yang mengasuh memiliki waktu cukup untuk mengurus anak",
       "saksi1": [
@@ -1096,7 +1096,7 @@
      },
      {
       "keadaan": {
-       "pengasuhSaatIni": "tergugat"
+       "pengasuhAnak": "lawan"
       },
       "maksud": "pihak yang mengasuh memiliki waktu cukup untuk mengurus anak",
       "saksi1": [
@@ -1320,7 +1320,7 @@
     "*"
    ],
    "keadaan": {
-    "mumayyiz": "sudah"
+    "anakMumayyiz": "sudah"
    },
    "teks": "Apakah anak bernama #8602# pernah menyampaikan kepada saksi dengan siapa ia ingin tinggal ?",
    "variabelAbt": [
@@ -1334,7 +1334,7 @@
     "melihat": [
      {
       "keadaan": {
-       "pilihanAnak": "penggugat"
+       "pilihanAnak": "pengaju"
       },
       "maksud": "anak menyampaikan langsung kepada saksi pilihannya tinggal bersama salah satu orang tua",
       "saksi1": [
@@ -1352,7 +1352,7 @@
      },
      {
       "keadaan": {
-       "pilihanAnak": "tergugat"
+       "pilihanAnak": "lawan"
       },
       "maksud": "anak menyampaikan langsung kepada saksi pilihannya tinggal bersama salah satu orang tua",
       "saksi1": [
@@ -1397,7 +1397,7 @@
     "*"
    ],
    "keadaan": {
-    "dasarGugat": "pengalihan"
+    "pengalihan": "ya"
    },
    "teks": "Apa yang saksi ketahui tentang keadaan yang membuat keselamatan jasmani dan rohani anak kurang terjamin bila tetap bersama pemegang asuh sekarang ?",
    "variabelAbt": [
@@ -1449,7 +1449,7 @@
     "*"
    ],
    "keadaan": {
-    "dasarGugat": "pengalihan"
+    "pengalihan": "ya"
    },
    "teks": "Apakah ada teguran atau upaya agar keadaan itu diperbaiki dan bagaimana tanggapan pemegang asuh sekarang ?",
    "variabelAbt": [],

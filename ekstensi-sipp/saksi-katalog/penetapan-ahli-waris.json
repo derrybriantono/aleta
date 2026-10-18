@@ -76,32 +76,46 @@
    "sumber": "pengetahuan hukum acara; belum dibaca pada naskah resmi"
   },
   {
+   "id": "dh-saksi-materiil",
+   "rujukan": "Pasal 307, 308, dan 309 RBg jo. Pasal 1905 sampai dengan 1908 KUH Perdata",
+   "uraian": "syarat materiil kesaksian: keterangan dari yang dialami, didengar, dan dilihat sendiri, bersumber pengetahuan jelas, relevan, dan bersesuaian antar saksi; minimal dua saksi",
+   "status": "terverifikasi",
+   "sumber": "dikutip pada blangko putusan Derry \"3 Dispensasi Kawin\", \"2 Itsbat Nikah\", dan \"9 Penetapan Ahli Waris\" (teks derry-teks), diperiksa 18 Okt 2026"
+  },
+  {
+   "id": "dh-saksi-formil",
+   "rujukan": "Pasal 22 ayat (2) PP 9/1975 jo. Pasal 171, 172 ayat (2), dan 175 RBg jo. Pasal 1909 sampai dengan 1912 KUH Perdata",
+   "uraian": "syarat formil saksi: hadir pribadi, diperiksa satu per satu, tidak terhalang secara hukum, dan memberi keterangan di bawah sumpah",
+   "status": "terverifikasi",
+   "sumber": "dikutip pada blangko putusan Derry \"3 Dispensasi Kawin\" dan \"6 Perwalian\" (teks derry-teks), diperiksa 18 Okt 2026"
+  },
+  {
    "id": "dh-khi-171",
    "rujukan": "Pasal 171 huruf b, c, dan d Kompilasi Hukum Islam",
-   "uraian": "pewaris adalah orang yang pada saat meninggalnya beragama Islam; ahli waris adalah orang yang pada saat pewaris meninggal mempunyai hubungan darah atau hubungan perkawinan dengan pewaris, beragama Islam, dan tidak terhalang; harta peninggalan adalah harta yang ditinggalkan pewaris",
+   "uraian": "pewaris adalah orang yang pada saat meninggalnya atau dinyatakan meninggal berdasarkan putusan pengadilan beragama Islam, meninggalkan ahli waris dan harta peninggalan; ahli waris adalah orang yang pada saat pewaris meninggal mempunyai hubungan darah atau hubungan perkawinan dengan pewaris, beragama Islam, dan tidak terhalang karena hukum; harta peninggalan adalah harta yang ditinggalkan pewaris",
    "status": "terverifikasi",
-   "sumber": "Inpres 1/1991 (KHI) pada wikisource.org (huruf b, c, d dikutip sebagian); diperiksa 18 Okt 2026"
+   "sumber": "blangko putusan Derry \"9 Penetapan Ahli Waris\" [01] (teks derry-teks), diperiksa 18 Okt 2026; juga Inpres 1/1991 pada wikisource.org (huruf b, c, d)"
   },
   {
    "id": "dh-khi-172",
    "rujukan": "Pasal 172 Kompilasi Hukum Islam",
    "uraian": "ahli waris dipandang beragama Islam apabila diketahui dari kartu identitas, pengakuan, atau amalan atau kesaksian",
    "status": "terverifikasi",
-   "sumber": "Inpres 1/1991 (KHI) pada wikisource.org (kalimat awal dikutip); diperiksa 18 Okt 2026"
+   "sumber": "blangko putusan Derry \"9 Penetapan Ahli Waris\" [01] (teks derry-teks), diperiksa 18 Okt 2026; juga Inpres 1/1991 pada wikisource.org (kalimat awal)"
   },
   {
    "id": "dh-khi-173",
    "rujukan": "Pasal 173 Kompilasi Hukum Islam",
-   "uraian": "ahli waris terhalang bila dipersalahkan membunuh, mencoba membunuh, atau menganiaya berat pewaris, atau memfitnah pewaris melakukan kejahatan yang diancam hukuman lima tahun atau lebih",
-   "status": "perlu-verifikasi",
-   "sumber": "pengetahuan hukum; belum dibaca pada naskah resmi"
+   "uraian": "penghalang mewarisi: ahli waris yang terhalang karena hukum tidak dapat menjadi ahli waris",
+   "status": "terverifikasi",
+   "sumber": "disebut pada blangko putusan Derry \"9 Penetapan Ahli Waris\" [01] (teks derry-teks), diperiksa 18 Okt 2026 (rumusan lengkap penghalang tidak dikutip; hanya dinyatakan ahli waris tidak terhalang hukum)"
   },
   {
    "id": "dh-khi-174",
-   "rujukan": "Pasal 174 Kompilasi Hukum Islam",
-   "uraian": "kelompok ahli waris menurut hubungan darah (ayah, anak, saudara, paman, kakek; ibu, anak perempuan, saudara perempuan, nenek) dan hubungan perkawinan (duda atau janda)",
-   "status": "perlu-verifikasi",
-   "sumber": "pengetahuan hukum; belum dibaca pada naskah resmi"
+   "rujukan": "Pasal 174 Kompilasi Hukum Islam jo. QS An-Nisa ayat 11 dan 12",
+   "uraian": "kelompok ahli waris; di antara ahli waris yang tidak dapat dihijab adalah istri atau suami dan anak",
+   "status": "terverifikasi",
+   "sumber": "blangko putusan Derry \"9 Penetapan Ahli Waris\" [01] (teks derry-teks), diperiksa 18 Okt 2026"
   },
   {
    "id": "dh-khi-185",
@@ -119,10 +133,10 @@
   },
   {
    "id": "dh-uu50-2009-49",
-   "rujukan": "Pasal 49 huruf b UU 3/2006 jo. UU 50/2009 beserta penjelasannya",
-   "uraian": "Pengadilan Agama berwenang menentukan siapa yang menjadi ahli waris, harta peninggalan, dan bagian masing-masing",
-   "status": "perlu-verifikasi",
-   "sumber": "pengetahuan hukum; belum dibaca pada naskah resmi"
+   "rujukan": "Penjelasan Pasal 49 huruf b UU 3/2006",
+   "uraian": "waris termasuk penetapan pengadilan atas permohonan seseorang tentang penentuan siapa yang menjadi ahli waris",
+   "status": "terverifikasi",
+   "sumber": "blangko putusan Derry \"9 Penetapan Ahli Waris\" [01] (teks derry-teks), diperiksa 18 Okt 2026"
   },
   {
    "id": "dh-bukuii-2026-36",
@@ -194,7 +208,9 @@
    "uraian": "saksi menerangkan hubungannya dengan pemohon dan mengetahui maksud perkara",
    "dasarHukum": [
     "dh-hir-171",
-    "dh-hir-169"
+    "dh-hir-169",
+    "dh-saksi-materiil",
+    "dh-saksi-formil"
    ],
    "wajib": true
   },

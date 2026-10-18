@@ -136,9 +136,25 @@
    "uraian": "pengangkatan anak hanya dilakukan untuk kepentingan terbaik anak dan berdasarkan adat kebiasaan serta peraturan perundang-undangan; tidak memutus hubungan darah antara anak dan orang tua kandungnya; calon orang tua angkat seagama dengan anak",
    "status": "perlu-verifikasi",
    "sumber": "dikutip blangko Derry 9a dan Buku II 2013 (Pasal 39 UU 23/2002); naskah UU 35/2014 belum dibaca"
+  },
+  {
+   "id": "dh-permensos-110",
+   "rujukan": "Permensos 110/HUK/2009 tentang Persyaratan Pengangkatan Anak",
+   "uraian": "aturan teknis persyaratan dan tata cara izin pengangkatan anak oleh instansi sosial yang dipakai bersama Pasal 12 dan 13 PP 54/2007",
+   "status": "perlu-verifikasi",
+   "sumber": "hanya disebut jurnal hukum hasil pencarian web; naskah dan statusnya masih berlaku belum diperiksa"
   }
  ],
  "keadaan": {
+  "izinInstansiSosial": {
+   "sumber": "borang",
+   "nilai": [
+    "berlaku",
+    "tidak-berlaku"
+   ],
+   "label": "Syarat izin atau rekomendasi instansi sosial berlaku untuk perkara ini",
+   "bawaan": "berlaku"
+  },
   "hubunganPemohon": {
    "sumber": "borang",
    "nilai": [
@@ -147,15 +163,6 @@
    ],
    "label": "Pemohon berkerabat dengan anak yang akan diangkat",
    "bawaan": "keluarga"
-  },
-  "orangTuaKandung": {
-   "sumber": "borang",
-   "nilai": [
-    "hadir",
-    "tidak-hadir"
-   ],
-   "label": "Orang tua kandung hadir di persidangan",
-   "bawaan": "hadir"
   }
  },
  "pokokPembuktian": [
@@ -250,6 +257,19 @@
     "dh-pp54-6",
     "dh-khi-171h"
    ]
+  },
+  {
+   "id": "pp-izin-sosial",
+   "judul": "Izin atau rekomendasi instansi sosial",
+   "uraian": "pemohon telah mengurus izin atau rekomendasi instansi sosial (hanya bila syarat itu berlaku pada perkara ini)",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-pp54-13",
+    "dh-permensos-110"
+   ],
+   "keadaan": {
+    "izinInstansiSosial": "berlaku"
+   }
   },
   {
    "id": "pp-penilaian-sosial",
@@ -627,6 +647,60 @@
       "setahu saya #7036# mengasuh anak bernama #8602# masih baru",
       "pengasuhan anak bernama #8602# oleh #7036# terjadi beberapa bulan lalu",
       "anak bernama #8602# baru beberapa bulan dirawat #7036#"
+     ],
+     "bedaPada": "lama"
+    }
+   }
+  },
+  {
+   "id": "q-pengasuhan-enam-bulan",
+   "pokok": "pp-pengasuhan",
+   "urutan": 75,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah anak bernama #8602# telah diasuh dan dirawat #7036# paling singkat enam bulan ?",
+   "teksVarian": [
+    "Sudah berapa lama anak bernama #8602# dirawat #7036#, apakah paling singkat enam bulan ?"
+   ],
+   "variabelAbt": [
+    "7036",
+    "8602"
+   ],
+   "hal": "lamanya anak diasuh #7036#, paling singkat enam bulan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "anak telah diasuh pemohon lebih dari enam bulan sejak waktu yang diisikan petugas",
+     "saksi1": [
+      "sejak {sejak} anak bernama #8602# diasuh #7036# dan lamanya telah lebih dari enam bulan sebagaimana saya lihat sendiri",
+      "saya menyaksikan sendiri anak bernama #8602# berada dalam asuhan #7036# sejak {sejak} yaitu lebih dari enam bulan",
+      "pengasuhan anak bernama #8602# oleh #7036# sejak {sejak} telah melampaui enam bulan menurut penglihatan saya",
+      "lebih dari enam bulan lamanya #7036# merawat anak bernama #8602# terhitung sejak {sejak} dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "terhitung {sejak} #7036# mengasuh anak bernama #8602# dan sampai sekarang lewat dari enam bulan di depan mata saya",
+      "saya tahu langsung #7036# merawat anak bernama #8602# sejak {sejak} dan masa itu melewati enam bulan",
+      "anak bernama #8602# tinggal bersama #7036# sejak {sejak} lebih dari enam bulan lamanya yang saya saksikan",
+      "masa pengasuhan #7036# atas anak bernama #8602# sejak {sejak} telah melebihi enam bulan sebagaimana saya ketahui sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pengasuhan telah lebih dari enam bulan; versi B: pengasuhan belum sampai enam bulan - berselisih pada LAMA PENGASUHAN",
+     "saksi1": [
+      "pengasuhan anak bernama #8602# oleh #7036# telah lebih dari enam bulan",
+      "saya lihat sendiri #7036# merawat anak bernama #8602# lebih dari enam bulan lamanya",
+      "anak bernama #8602# diasuh #7036# melampaui enam bulan menurut penglihatan saya",
+      "masa pengasuhan #7036# atas anak bernama #8602# melewati enam bulan sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "pengasuhan anak bernama #8602# oleh #7036# belum sampai enam bulan",
+      "saya lihat sendiri #7036# baru merawat anak bernama #8602# belum genap enam bulan",
+      "anak bernama #8602# diasuh #7036# belum melewati enam bulan menurut penglihatan saya",
+      "masa pengasuhan #7036# atas anak bernama #8602# belum mencapai enam bulan sebagaimana saya saksikan"
      ],
      "bedaPada": "lama"
     }
@@ -1305,6 +1379,62 @@
       "di depan mata saya {daftar} memeriksa keadaan rumah tangga #7036#",
       "pihak yang meninjau kelayakan #7036# yang saya ketahui langsung adalah {daftar}"
      ]
+    }
+   }
+  },
+  {
+   "id": "q-izin-instansi-sosial",
+   "pokok": "pp-izin-sosial",
+   "urutan": 215,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "izinInstansiSosial": "berlaku"
+   },
+   "teks": "Apakah saksi mengetahui #7036# telah mengurus izin atau rekomendasi dari instansi sosial untuk mengangkat anak itu ?",
+   "teksVarian": [
+    "Apakah #7036# sudah memperoleh izin atau rekomendasi instansi sosial untuk pengangkatan anak ini ?"
+   ],
+   "variabelAbt": [
+    "7036",
+    "8602"
+   ],
+   "hal": "izin atau rekomendasi instansi sosial atas pengangkatan anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "pemohon telah mengurus dan memperoleh izin atau rekomendasi instansi sosial",
+     "saksi1": [
+      "saya mengetahui #7036# telah mengurus izin atau rekomendasi dari instansi sosial untuk mengangkat anak bernama #8602# dan saya melihat suratnya",
+      "saya menyaksikan sendiri #7036# mendatangi instansi sosial untuk memperoleh izin pengangkatan anak bernama #8602#",
+      "rekomendasi instansi sosial atas pengangkatan anak bernama #8602# telah diperoleh #7036# sebagaimana saya lihat",
+      "izin dari instansi sosial untuk #7036# mengangkat anak bernama #8602# saya ketahui langsung telah diurus"
+     ],
+     "saksi2": [
+      "di depan mata saya #7036# mengajukan permohonan izin ke instansi sosial untuk anak bernama #8602# dan izin itu diperolehnya",
+      "saya tahu langsung #7036# mengantongi rekomendasi instansi sosial untuk mengangkat anak bernama #8602#",
+      "instansi sosial telah memberi izin kepada #7036# mengangkat anak bernama #8602# menurut yang saya saksikan",
+      "pengurusan izin pengangkatan anak bernama #8602# ke instansi sosial oleh #7036# berhasil sebagaimana saya ketahui sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: izin instansi sosial telah diperoleh; versi B: izin instansi sosial belum diperoleh - berselisih pada IZIN INSTANSI SOSIAL",
+     "saksi1": [
+      "izin instansi sosial atas pengangkatan anak bernama #8602# telah diperoleh #7036#",
+      "saya lihat sendiri #7036# memegang rekomendasi instansi sosial untuk anak bernama #8602#",
+      "instansi sosial telah memberi izin kepada #7036# atas anak bernama #8602# menurut penglihatan saya",
+      "#7036# telah mengantongi izin instansi sosial untuk anak bernama #8602# sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "izin instansi sosial atas pengangkatan anak bernama #8602# belum diperoleh #7036#",
+      "saya lihat sendiri #7036# belum memegang rekomendasi instansi sosial untuk anak bernama #8602#",
+      "instansi sosial belum memberi izin kepada #7036# atas anak bernama #8602# menurut penglihatan saya",
+      "#7036# belum mengantongi izin instansi sosial untuk anak bernama #8602# sebagaimana saya saksikan"
+     ],
+     "bedaPada": "peristiwa"
     }
    }
   },

@@ -165,7 +165,6 @@
    "sumber": "borang",
    "nilai": [
     "ke-depan",
-    "lampau",
     "pendidikan-kesehatan",
     "kenaikan",
     "sita-jaminan",
@@ -176,6 +175,15 @@
     "ke-depan"
    ],
    "jamak": true
+  },
+  "nafkahLampauAnak": {
+   "sumber": "borang",
+   "nilai": [
+    "tidak",
+    "ya"
+   ],
+   "label": "Nafkah anak pernah dilalaikan ayah",
+   "bawaan": "tidak"
   },
   "kemampuanAyah": {
    "sumber": "borang",
@@ -290,7 +298,7 @@
     "dh-buku2-2026-25-27"
    ],
    "keadaan": {
-    "jenisNafkah": "lampau"
+    "nafkahLampauAnak": "ya"
    }
   },
   {
@@ -1017,7 +1025,7 @@
     "*"
    ],
    "keadaan": {
-    "jenisNafkah": "lampau"
+    "nafkahLampauAnak": "ya"
    },
    "teks": "Sudah berapa lama #0047# tidak memberi nafkah untuk anak bernama #8602# ?",
    "variabelAbt": [
@@ -1071,7 +1079,7 @@
     "*"
    ],
    "keadaan": {
-    "jenisNafkah": "lampau"
+    "nafkahLampauAnak": "ya"
    },
    "teks": "Siapa yang menanggung biaya hidup anak selama #0047# tidak memberi nafkah ?",
    "variabelAbt": [
@@ -1125,7 +1133,7 @@
     "*"
    ],
    "keadaan": {
-    "jenisNafkah": "lampau"
+    "nafkahLampauAnak": "ya"
    },
    "teks": "Berapa biaya yang dikeluarkan #0046# untuk anak bernama #8602# selama itu ?",
    "variabelAbt": [

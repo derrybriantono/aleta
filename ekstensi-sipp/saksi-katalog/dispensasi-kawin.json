@@ -70,6 +70,20 @@
    "sumber": "pengetahuan hukum acara; belum dibaca pada naskah resmi"
   },
   {
+   "id": "dh-saksi-materiil",
+   "rujukan": "Pasal 307, 308, dan 309 RBg jo. Pasal 1905 sampai dengan 1908 KUH Perdata",
+   "uraian": "syarat materiil kesaksian: keterangan dari yang dialami, didengar, dan dilihat sendiri, bersumber pengetahuan jelas, relevan, dan bersesuaian antar saksi; minimal dua saksi",
+   "status": "terverifikasi",
+   "sumber": "dikutip pada blangko putusan Derry \"3 Dispensasi Kawin\", \"2 Itsbat Nikah\", dan \"9 Penetapan Ahli Waris\" (teks derry-teks), diperiksa 18 Okt 2026"
+  },
+  {
+   "id": "dh-saksi-formil",
+   "rujukan": "Pasal 22 ayat (2) PP 9/1975 jo. Pasal 171, 172 ayat (2), dan 175 RBg jo. Pasal 1909 sampai dengan 1912 KUH Perdata",
+   "uraian": "syarat formil saksi: hadir pribadi, diperiksa satu per satu, tidak terhalang secara hukum, dan memberi keterangan di bawah sumpah",
+   "status": "terverifikasi",
+   "sumber": "dikutip pada blangko putusan Derry \"3 Dispensasi Kawin\" dan \"6 Perwalian\" (teks derry-teks), diperiksa 18 Okt 2026"
+  },
+  {
    "id": "dh-uu1-74-7",
    "rujukan": "Pasal 7 ayat (1) UU 1/1974 sebagaimana diubah UU 16/2019",
    "uraian": "perkawinan hanya diizinkan bila pria dan wanita sudah mencapai umur 19 tahun",
@@ -78,52 +92,52 @@
   },
   {
    "id": "dh-khi-39-44",
-   "rujukan": "Pasal 39 sampai Pasal 44 Kompilasi Hukum Islam",
-   "uraian": "larangan perkawinan karena pertalian nasab, kerabat semenda, dan sesusuan, serta larangan karena keadaan tertentu termasuk perbedaan agama",
-   "status": "perlu-verifikasi",
-   "sumber": "hanya kalimat pembuka Pasal 39 yang dapat dibaca; sisanya belum dibaca pada naskah resmi"
+   "rujukan": "Pasal 39 sampai dengan Pasal 44 Kompilasi Hukum Islam",
+   "uraian": "larangan perkawinan (nasab, semenda, sesusuan, dan keadaan tertentu); itsbat nikah untuk perkawinan yang tidak mempunyai halangan perkawinan (Pasal 7 ayat (3) huruf e KHI)",
+   "status": "terverifikasi",
+   "sumber": "blangko putusan Derry \"2 Itsbat Nikah\" [01] [Kabul] IN (teks derry-teks), diperiksa 18 Okt 2026"
   },
   {
    "id": "dh-uu1-74-poligami",
-   "rujukan": "Pasal 3 ayat (2), Pasal 4, dan Pasal 9 UU 1/1974",
-   "uraian": "orang yang masih terikat perkawinan tidak dapat kawin lagi kecuali dengan izin pengadilan",
-   "status": "perlu-verifikasi",
-   "sumber": "pengetahuan hukum; belum dibaca pada naskah resmi"
+   "rujukan": "Pasal 9 UU 1/1974 jo. Pasal 3 ayat (2) dan Pasal 4",
+   "uraian": "orang yang masih terikat tali perkawinan dengan orang lain tidak dapat kawin lagi kecuali dalam hal yang tersebut pada Pasal 3 ayat (2) dan Pasal 4 UU 1/1974",
+   "status": "terverifikasi",
+   "sumber": "bunyi Pasal 9 dikutip pada blangko putusan Derry \"2 Itsbat Nikah\" [99] NO Masih Terikat Nikah Sebelumnya, diperiksa 18 Okt 2026"
   },
   {
    "id": "dh-uu16-2019-7-2-3",
-   "rujukan": "Pasal 7 ayat (2) dan (3) UU 1/1974 sebagaimana diubah UU 16/2019",
-   "uraian": "dispensasi hanya dapat diberikan pengadilan atas alasan sangat mendesak disertai bukti pendukung yang cukup; pengadilan wajib mendengar pendapat kedua calon mempelai",
+   "rujukan": "Pasal 7 ayat (1) dan (2) UU 1/1974 sebagaimana diubah UU 16/2019",
+   "uraian": "ayat (1) batas umur kawin 19 tahun; ayat (2) orang tua dapat meminta dispensasi kepada pengadilan dengan alasan sangat mendesak disertai bukti pendukung yang cukup; pemberian dispensasi berdasarkan semangat pencegahan perkawinan anak, pertimbangan moral, agama, adat dan budaya, aspek psikologis, aspek kesehatan, dan dampak yang ditimbulkan",
    "status": "terverifikasi",
-   "sumber": "UU 16/2019; dikutip pada skripsi dan ringkasan hukum (diperiksa 18 Okt 2026)"
+   "sumber": "blangko putusan Derry \"3 Dispensasi Kawin\" [01] (teks derry-teks), diperiksa 18 Okt 2026 (kutipan bunyi ayat (2) dan rumusan pertimbangan yang oleh blangko dikaitkan dengan ayat (3))"
   },
   {
    "id": "dh-perma5-2019-hakim",
-   "rujukan": "PERMA 5/2019 tentang Pedoman Mengadili Permohonan Dispensasi Kawin (hakim wajib mengidentifikasi anak)",
-   "uraian": "hakim menggali latar belakang dan alasan perkawinan anak, ada tidaknya halangan, pemahaman dan persetujuan anak, kondisi psikologis, kesehatan, dan kesiapan anak, serta ada tidaknya paksaan psikis, fisik, seksual, atau ekonomi",
-   "status": "perlu-verifikasi",
-   "sumber": "ringkasan tata cara mengadili dispensasi kawin PTA Palangka Raya (Desember 2019); nomor pasal tidak dicantumkan dan sumber lain menyebut pasal berbeda, sehingga tidak dikutip per pasal"
+   "rujukan": "Pasal 16 huruf h, i, dan j PERMA 5/2019 tentang Pedoman Mengadili Permohonan Dispensasi Kawin",
+   "uraian": "hakim mempertimbangkan kondisi psikologis, sosiologis, budaya, pendidikan, kesehatan, dan ekonomi anak dan orang tua (huruf h); ada tidaknya unsur paksaan psikis, fisik, seksual, dan atau ekonomi (huruf i); serta komitmen orang tua ikut bertanggung jawab atas ekonomi, sosial, kesehatan, dan pendidikan anak (huruf j)",
+   "status": "terverifikasi",
+   "sumber": "blangko putusan Derry \"3 Dispensasi Kawin\" [01] (teks derry-teks), diperiksa 18 Okt 2026; huruf a sampai g (menggali latar belakang, halangan, pemahaman dan persetujuan anak, mendengar keterangan) dikutip sebagian pada blangko yang sama"
   },
   {
    "id": "dh-perma5-2019-pemohon",
-   "rujukan": "PERMA 5/2019 tentang syarat pengajuan dan pihak yang mengajukan",
-   "uraian": "permohonan diajukan orang tua atau wali anak; pada sidang pertama pemohon menghadirkan anak, calon suami atau istri, serta orang tua atau wali calon",
-   "status": "perlu-verifikasi",
-   "sumber": "ringkasan tata cara mengadili dispensasi kawin PTA Palangka Raya (Desember 2019); nomor pasal tidak dicantumkan"
+   "rujukan": "Pasal 6 ayat (1) dan Pasal 13 PERMA 5/2019",
+   "uraian": "permohonan diajukan oleh orang tua calon mempelai (kedudukan hukum pemohon); hakim mendengar keterangan anak yang dimohonkan, calon suami atau istri, orang tua anak, dan orang tua calon suami atau istri",
+   "status": "terverifikasi",
+   "sumber": "blangko putusan Derry \"3 Dispensasi Kawin\" [01] (teks derry-teks), diperiksa 18 Okt 2026"
   },
   {
    "id": "dh-perma5-2019-komitmen",
-   "rujukan": "PERMA 5/2019 tentang komitmen orang tua",
-   "uraian": "hakim memastikan komitmen orang tua ikut bertanggung jawab atas masalah ekonomi, sosial, kesehatan, dan pendidikan anak",
-   "status": "perlu-verifikasi",
-   "sumber": "ringkasan tata cara mengadili dispensasi kawin PTA Palangka Raya (Desember 2019); nomor pasal tidak dicantumkan"
+   "rujukan": "Pasal 16 huruf j PERMA 5/2019 dan Pasal 26 ayat (1) huruf c UU 35/2014",
+   "uraian": "orang tua berkewajiban dan bertanggung jawab mencegah perkawinan usia anak; hakim memastikan komitmen orang tua bertanggung jawab atas ekonomi, sosial, kesehatan, dan pendidikan anak",
+   "status": "terverifikasi",
+   "sumber": "blangko putusan Derry \"3 Dispensasi Kawin\" [01] (teks derry-teks), diperiksa 18 Okt 2026"
   },
   {
    "id": "dh-perma5-2019-12-4",
-   "rujukan": "Pasal 12 ayat (4) PERMA 5/2019",
-   "uraian": "hakim wajib memberi nasihat kepada pemohon, anak, calon suami atau istri, dan orang tua atau wali calon; bila nasihat tidak diberikan penetapan batal demi hukum",
+   "rujukan": "Pasal 12 PERMA 5/2019 (ayat (4) penetapan batal demi hukum bila nasihat tidak diberikan)",
+   "uraian": "hakim wajib memberi nasihat tentang risiko perkawinan: berhentinya pendidikan, wajib belajar 12 tahun, belum siapnya organ reproduksi, dampak ekonomi, sosial, dan psikologis, serta potensi perselisihan dan kekerasan dalam rumah tangga; bila nasihat tidak diberikan penetapan batal demi hukum",
    "status": "terverifikasi",
-   "sumber": "disebut pada ringkasan PTA Palangka Raya dan dalam hasil pencarian jurnal (diperiksa 18 Okt 2026); isi ayat (1) dan (2) tidak dikutip"
+   "sumber": "daftar risiko dikutip pada blangko putusan Derry \"3 Dispensasi Kawin\" [01] (teks derry-teks), diperiksa 18 Okt 2026; ayat (4) pada ringkasan PTA Palangka Raya dan hasil pencarian jurnal"
   },
   {
    "id": "dh-bukuii-2026-19-20",
@@ -170,7 +184,9 @@
    "uraian": "saksi menerangkan hubungannya dengan pemohon dan mengetahui maksud perkara",
    "dasarHukum": [
     "dh-hir-171",
-    "dh-hir-169"
+    "dh-hir-169",
+    "dh-saksi-materiil",
+    "dh-saksi-formil"
    ],
    "wajib": true
   },

@@ -63,6 +63,7 @@ function buka(kode: string[], opsi: Opsi = {}) {
       onChanged: { addListener: () => {} },
     },
   };
+  w.Response = globalThis.Response;
   w.fetch = opsi.fetch || (async () => ({ ok: false, status: 401, json: async () => ({}), text: async () => "", clone() { return this; } }));
   Object.defineProperty(w.HTMLElement.prototype, "innerText", {
     configurable: true,
@@ -70,7 +71,7 @@ function buka(kode: string[], opsi: Opsi = {}) {
       return String(this.innerHTML || "").replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "");
     },
   });
-  w.eval(`${SUMBER}\n;\nwindow.__uji = { mode: () => alatUjiMode() };`);
+  w.eval(`${SUMBER}\n;\nwindow.__uji = { mode: () => alatUjiMode(), tahanPost: (nilai) => { alatCobaMenahan = () => nilai; } };`);
   return w;
 }
 
@@ -184,7 +185,9 @@ describe("borang menyusun saksi", () => {
     expect(jawabDi(0, "q-penyebab")).toContain("tidak memberi nafkah dan sering bertengkar");
     expect(jawabDi(0, "q-kenal")).toContain("ibu kandung");
     expect(jawabDi(1, "q-kenal")).toContain("tetangga");
-    expect(wadah.textContent).not.toMatch(/#\d{4}#|\{[a-z]+\}/i);
+    const nilaiJawab = Array.from(wadah.querySelectorAll("textarea")).map((x: any) => x.value as string);
+    expect(nilaiJawab.length).toBeGreaterThan(20);
+    expect(nilaiJawab.filter((v) => /#\d{4}#|\{[a-z]+\}/i.test(v))).toEqual([]);
     // verstek / kontradiktoir diturunkan dari nama blangko; bawaan kontradiktoir
     expect(kolom[0].querySelector('.aleta-ssk-baris[data-butir="q-upaya-keluarga"]')).toBeTruthy();
     // menyunting satu jawaban tidak terhapus oleh mengubah jenis butir lain
@@ -211,12 +214,13 @@ describe("borang menyusun saksi", () => {
     const permintaan: Array<{ alamat: string; badan: string }> = [];
     const fetchTiruan = async (alamat: string, o?: any) => {
       if (o && o.method === "POST") {
-        permintaan.push({ alamat, badan: String(o.body) });
+        if (/tanyajawab_perkara_edit/.test(alamat)) permintaan.push({ alamat, badan: String(o.body) });
         return { ok: true, status: 200, text: async () => "Tanya Jawab Disimpan", json: async () => ({}), clone() { return this; } };
       }
       return { ok: false, status: 404, text: async () => "", json: async () => ({}), clone() { return this; } };
     };
     const { w, panel } = await bukaBorang({ fetch: fetchTiruan });
+    w.__uji.tahanPost(false); // mode coba tidak boleh menahan penyimpanan di uji ini
     const wadah = panel.querySelector(".aleta-ssk");
     tombolDi(wadah, "Susun pertanyaan dan jawaban").click();
     await tunggu(() => wadah.querySelectorAll(".aleta-ssk-saksi").length === 2, "dua saksi tersusun");
@@ -225,7 +229,12 @@ describe("borang menyusun saksi", () => {
     const simpan = tombolDi(wadah, "Simpan ke ABT");
     expect(simpan.hidden).toBe(false);
     simpan.click();
-    await tunggu(() => permintaan.length === 2, "dua permintaan simpan");
+    try {
+      await tunggu(() => permintaan.length === 2, "dua permintaan simpan");
+    } catch (e) {
+      const kabar = Array.from(wadah.querySelectorAll(".aleta-sdg-form > .aleta-abt-kabar")).map((x: any) => x.textContent).join(" | ");
+      throw new Error(`${(e as Error).message}; permintaan=${permintaan.length}; kabar=${kabar}`);
+    }
     expect(permintaan[0].alamat).toContain("no_var=2021");
     expect(permintaan[1].alamat).toContain("no_var=2022");
     const data0 = JSON.parse(new URLSearchParams(permintaan[0].badan).get("data") as string);

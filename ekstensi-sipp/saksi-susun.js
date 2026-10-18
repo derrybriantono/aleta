@@ -284,10 +284,43 @@
     const tanpaLawan = () => Boolean(S.kat && S.kat.tanpaLawan === true) || (typeof k.alurPerkara === "function" && k.alurPerkara(nomor()) === "16");
     const JENIS_PILIHAN = ["melihat", "mendengar", "de-auditu", "sebagian", "tidak-tahu", "ragu"];
 
+    /** Syarat-syarat keadaan di katalog yang memuat kunci ini. */
+    function syaratMemuat(kunci) {
+      const hasil = [];
+      const ambil = (sy) => {
+        if (sy && typeof sy === "object" && (kunci in sy || `bukan:${kunci}` in sy)) hasil.push(sy);
+      };
+      for (const q of S.kat.pertanyaan || []) {
+        ambil(q.keadaan);
+        for (const j of Object.keys(q.jawaban || {})) for (const x of [].concat(q.jawaban[j])) ambil(x && x.keadaan);
+      }
+      for (const p of S.kat.pokokPembuktian || []) ambil(p.keadaan);
+      return hasil;
+    }
+
+    /** Isian keadaan khusus hanya digambar bila ada butir yang memakainya dan syarat LAIN-nya terpenuhi (mis. isian hak asuh hanya bila hak asuh digabung). */
+    function keadaanRelevan(kunci) {
+      if (["kehadiran", "kumulasi", "alasan"].includes(kunci)) return true;
+      const pakai = syaratMemuat(kunci);
+      if (!pakai.length) return true;
+      return pakai.some((sy) => {
+        const sisa = Object.assign({}, sy);
+        delete sisa[kunci];
+        delete sisa[`bukan:${kunci}`];
+        return m.cocokKeadaan(sisa, S.keadaan);
+      });
+    }
+
+    function ubahKeadaan() {
+      S.hasil = null;
+      gambarUlang();
+    }
+
     function gambarKeadaan(form) {
       const kotak = buat("div", "aleta-sdg-alasan");
       kotak.appendChild(buat("div", "aleta-abt-label", "Keadaan perkara"));
       for (const f of m.keadaanUntukBorang(S.kat)) {
+        if (!keadaanRelevan(f.kunci)) continue;
         const nilaiSekarang = S.keadaan[f.kunci];
         const labelNilai = (n) =>
           (S.kat.keadaan && S.kat.keadaan[f.kunci] && S.kat.keadaan[f.kunci].labelNilai && S.kat.keadaan[f.kunci].labelNilai[n]) ||
@@ -308,6 +341,7 @@
               if (cb.checked) sekarang.add(n);
               else sekarang.delete(n);
               S.keadaan[f.kunci] = Array.from(sekarang);
+              ubahKeadaan();
             });
             c.appendChild(cb);
             c.appendChild(buat("span", "", labelNilai(n)));
@@ -318,6 +352,7 @@
           const opsi = f.nilai.map((n) => [n, labelNilai(n)]);
           const sel = pilihan(opsi, nilaiSekarang !== undefined ? String(nilaiSekarang) : opsi[0][0], (v) => {
             S.keadaan[f.kunci] = v;
+            ubahKeadaan();
           });
           if (nilaiSekarang === undefined) S.keadaan[f.kunci] = opsi[0][0];
           kotak.appendChild(label(f.label, sel));

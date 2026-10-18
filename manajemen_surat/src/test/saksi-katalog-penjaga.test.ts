@@ -2,7 +2,7 @@
 import { createRequire } from "node:module";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { execFileSync } from "node:child_process";
 
 import { describe, expect, it } from "vitest";
 
@@ -94,11 +94,11 @@ describe("katalog di repo lolos skema", () => {
 });
 
 describe("data ekstensi = hasil susun katalog", () => {
-  it("saksi-katalog-data.js sama persis dengan keluaran scripts/susun-saksi-katalog.mjs", async () => {
-    const gen: any = await import(pathToFileURL(path.join(REPO, "manajemen_surat/scripts/susun-saksi-katalog.mjs")).href);
-    const harap = gen.bangunIsi(gen.bacaKatalog());
+  it("saksi-katalog-data.js sama persis dengan keluaran scripts/susun-saksi-katalog.mjs", () => {
+    // dijalankan sebagai proses terpisah: modul ESM dengan jalur ber-spasi dan junction tidak dimuat vite
+    const harap = execFileSync(process.execPath, [path.join(REPO, "manajemen_surat/scripts/susun-saksi-katalog.mjs"), "--stdout"], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }).replace(/\r\n/g, "\n");
     const nyata = readFileSync(path.join(AKAR, "saksi-katalog-data.js"), "utf8").replace(/\r\n/g, "\n");
-    expect(nyata === harap.replace(/\r\n/g, "\n"), "jalankan: node scripts/susun-saksi-katalog.mjs").toBe(true);
+    expect(nyata === harap, "jalankan: node scripts/susun-saksi-katalog.mjs").toBe(true);
   });
 
   it("data dapat dimuat sebagai skrip ekstensi dan setiap katalognya dikenali mesin", () => {
