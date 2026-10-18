@@ -56,6 +56,7 @@ const db = require("../db_config");
 const penetapan = require("./penetapanTulisService");
 const hariLiburService = require("./hariLiburService");
 const { menyebutAleta } = require("./tandaAletaService");
+const ikrar = require("./ikrarTalakService");
 const externalDbService = require("./externalDbService");
 const { keadaanDisidang, ruangDisidang } = require("./antrianDisidang");
 
@@ -498,10 +499,14 @@ async function keadaanJadwal(jadwalId) {
             j.verzet        AS verzet,
             j.keberatan     AS keberatan,
             j.ikrar_talak   AS ikrarTalak,
+            j.keterangan    AS keterangan,
             p.nomor_perkara AS nomorPerkara,
             p.alur_perkara_id AS alurPerkaraId,
             p.jenis_perkara_id AS jenisPerkaraId,
-            p.jenis_perkara_text AS jenisPerkara
+            p.jenis_perkara_text AS jenisPerkara,
+            (SELECT pu.tanggal_putusan FROM perkara_putusan pu WHERE pu.perkara_id = j.perkara_id LIMIT 1) AS tanggalPutusan,
+            (SELECT pu.tanggal_bht FROM perkara_putusan pu WHERE pu.perkara_id = j.perkara_id LIMIT 1) AS tanggalBht,
+            (SELECT it.tanggal_penetapan_sidang_ikrar FROM perkara_ikrar_talak it WHERE it.perkara_id = j.perkara_id LIMIT 1) AS tanggalPenetapanSidangIkrar
        FROM perkara_jadwal_sidang j
        JOIN perkara p ON p.perkara_id = j.perkara_id
       WHERE j.id = ? LIMIT 1`,
@@ -528,6 +533,10 @@ async function keadaanJadwal(jadwalId) {
   // Diubah di sini, satu kali, bukan di tiap pembacanya: pembaca berikutnya
   // tidak akan tahu ada yang perlu diwaspadai.
   satu.tanggalSidang = penetapan.tanggalIso(satu.tanggalSidang);
+  // Bahan sidang ikrar talak (tombol tunda/putus ikrar, 18 Okt 2026) - juga tanggal.
+  satu.tanggalPutusan = penetapan.tanggalIso(satu.tanggalPutusan);
+  satu.tanggalBht = penetapan.tanggalIso(satu.tanggalBht);
+  satu.tanggalPenetapanSidangIkrar = penetapan.tanggalIso(satu.tanggalPenetapanSidangIkrar);
   return satu;
 }
 
@@ -833,6 +842,19 @@ async function susunRencanaTunda(minta = {}) {
   }
 
   const andaian = [];
+  // Sidang ikrar talak: peringatan batas 6 bulan (Pasal 70 ayat (6) UU 7/1989) -
+  // peringatan, bukan penolakan: petugas yang memutuskan.
+  if (bersih(keadaan.ikrarTalak) === "Y") {
+    const batas = ikrar.batasEnamBulanIkrar({
+      tanggalPenetapanSidangIkrar: keadaan.tanggalPenetapanSidangIkrar,
+      tanggalBht: keadaan.tanggalBht,
+    });
+    if (batas && tanggalBerikut > batas) {
+      andaian.push(
+        `Tanggal sidang ikrar berikutnya ${tanggalBerikut} melewati batas 6 bulan ikrar (${batas}) - Pasal 70 ayat (6) UU 7/1989: penetapan gugur bila Pemohon tidak datang dalam tenggang itu.`
+      );
+    }
+  }
   // hariLibur() memulangkan keterangan hari liburnya, atau null bila hari itu
   // hari kerja biasa. Tahun yang daftarnya belum dimuat juga memulangkan
   // null - karena itu ketersediaan tahunnya diperiksa TERPISAH, supaya
@@ -1466,6 +1488,134 @@ async function susunRencanaPutus(minta = {}) {
 }
 
 /**
+ * ============================================================================
+ * PUTUS SIDANG IKRAR TALAK: "IKRAR DILAKSANAKAN" (permintaan 18 Okt 2026)
+ * ============================================================================
+ *
+ * Sidang ikrar tidak memutus perkara (putusannya dijatuhkan jauh sebelumnya) -
+ * yang dicatat adalah IKRAR TERLAKSANA. Tombol PUTUS pada sidang ikrar karena
+ * itu tidak menanyakan jenis putusan; petugas hanya mengonfirmasi "ikrar
+ * dilaksanakan". Yang ditulis:
+ *
+ *   1. perkara_jadwal_sidang: ditunda = 'T', alasan_ditunda (kolom hasil sidang)
+ *      "telah ikrar talak" - EJAAN SIPP SENDIRI (446 sidang ikrar di satker),
+ *      dan keterangan "Ikrar Telah Dilaksanakan" (diisi bila kosong; bila sudah
+ *      ada isi petugas, ditambahkan di belakang - tidak ditimpa). Atas nama PP
+ *      perkara (keputusan 7 Okt 2026), seperti tombol putus biasa.
+ *   2. Form "Penetapan Ikrar Talak" (ikrarTalakService), atas nama KETUA MAJELIS
+ *      ikrar. Bila form belum dapat diisi (mis. penetapan majelis ikrar belum
+ *      ada), hasil sidangnya tetap dicatat dan sebabnya dilaporkan di andaian.
+ *
+ * Semuanya dalam SATU transaksi (jalankanRencanaUtuh).
+ */
+async function susunRencanaPutusIkrar(minta = {}) {
+  const keadaan = await keadaanJadwal(minta.jadwalId);
+  if (!keadaan) return { ok: false, alasan: "jadwal_tidak_ketemu" };
+  if (bersih(keadaan.ikrarTalak) !== "Y") return { ok: false, alasan: "bukan_sidang_ikrar" };
+  if (minta.ikrarDilaksanakan !== true) return { ok: false, alasan: "ikrar_belum_dikonfirmasi" };
+  if (bersih(keadaan.ditunda) === "Y") {
+    const utuh = await adaSidangSesudah(keadaan);
+    if (utuh !== false) return { ok: false, alasan: "sidang_ditunda_tidak_dapat_diputus" };
+  }
+
+  const pp = await paniteraSidang(keadaan.perkaraId, keadaan.tanggalSidang);
+  if (!pp.ok) return { ok: false, alasan: pp.alasan, nama: pp.nama || [] };
+  const akun = pp.akun;
+  const antrian = await antrianSidangUntuk(keadaan);
+
+  const saat = await penetapan.waktuSipp();
+  const saatSetempat = await penetapan.waktuBasisData();
+  const ip = bersih(minta.ip) || "";
+  const dihadiri = Number(minta.dihadiriOleh) || Number((antrian && antrian.dihadiriOleh) || 0);
+  const adaDihadiri = Number.isInteger(dihadiri) && dihadiri >= 1 && dihadiri <= 4;
+  const andaian = [];
+  if (antrian && antrian.jamMasuk) {
+    andaian.push(`Jam mulai sidang ${antrian.jamMasuk.slice(0, 5)} diambil dari antrian sidang (jam masuk ruang).`);
+  }
+
+  // Keterangan: tidak menimpa tulisan petugas.
+  const ada = bersih(keadaan.keterangan);
+  const keterangan = !ada
+    ? ikrar.KETERANGAN_IKRAR
+    : ada.toLowerCase().includes(ikrar.KETERANGAN_IKRAR.toLowerCase())
+      ? ada
+      : `${ada}; ${ikrar.KETERANGAN_IKRAR}`.slice(0, 500);
+
+  const nilaiJadwal = {
+    sampai_jam: jamDariCap(saatSetempat),
+    alasan_ditunda: ikrar.HASIL_SIDANG_IKRAR,
+    keterangan,
+    jam_sidang: (antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang),
+    ditunda: "T",
+    ...(adaDihadiri ? { dihadiri_oleh: dihadiri } : {}),
+    diperbaharui_oleh: akun.username,
+    diperbaharui_tanggal: saat,
+  };
+  const langkah = [];
+  langkah.push({
+    tabel: "perkara_jadwal_sidang",
+    aksi: "UPDATE",
+    keterangan: `sidang ikrar ${penetapan.tanggalIso(keadaan.tanggalSidang)} selesai - ikrar telah dilaksanakan`,
+    sql:
+      `UPDATE perkara_jadwal_sidang
+          SET sampai_jam = ?, alasan_ditunda = ?, keterangan = ?, jam_sidang = ?, ditunda = ?,
+              ${adaDihadiri ? "dihadiri_oleh = ?, " : ""}diperbaharui_oleh = ?, diperbaharui_tanggal = ?
+        WHERE id = ?`,
+    params: [
+      nilaiJadwal.sampai_jam,
+      nilaiJadwal.alasan_ditunda,
+      nilaiJadwal.keterangan,
+      nilaiJadwal.jam_sidang,
+      nilaiJadwal.ditunda,
+      ...(adaDihadiri ? [dihadiri] : []),
+      nilaiJadwal.diperbaharui_oleh,
+      nilaiJadwal.diperbaharui_tanggal,
+      keadaan.jadwalId,
+    ],
+  });
+  langkah.push(
+    penetapan.barisAudit({
+      username: akun.username,
+      tabel: "perkara_jadwal_sidang",
+      formulir: NAMA_HALAMAN,
+      aksi: "UPDATE",
+      nilai: nilaiJadwal,
+      kunciSendiri: `id=${keadaan.jadwalId}`,
+      ip,
+      saat,
+    })
+  );
+
+  // Form ikrar - atas nama ketua majelis ikrar. Gagal menyusun = andaian, bukan penolakan.
+  const form = await ikrar.susunRencanaIsiIkrar({ jadwalId: keadaan.jadwalId, ip, sudahPutus: true });
+  let formIkrar = { ok: false, alasan: form.alasan };
+  if (form.ok) {
+    langkah.push(...form.langkah);
+    andaian.push(...(form.andaian || []));
+    formIkrar = { ok: true, atasNama: form.atasNama, tanggalIkrar: form.tanggalIkrar };
+  } else {
+    andaian.push(
+      `Hasil sidang dicatat, tetapi form ikrar talak di SIPP BELUM terisi (${form.alasan}). Isi lewat tombol Isi form ikrar setelah sebabnya dibereskan.`
+    );
+  }
+
+  return {
+    ok: true,
+    jenis: "putus-ikrar",
+    hanyaJadwal: !form.ok,
+    antrian,
+    perkara: { perkaraId: keadaan.perkaraId, nomorPerkara: keadaan.nomorPerkara },
+    sidangSekarang: { jadwalId: keadaan.jadwalId, tanggal: penetapan.tanggalIso(keadaan.tanggalSidang) },
+    atasNama: { username: akun.username, namaLengkap: akun.fullname, peran: "panitera sidang" },
+    formIkrar,
+    operator: bersih(minta.operator),
+    saat,
+    langkah,
+    andaian,
+  };
+}
+
+/**
  * Menggerakkan antrian sidang - dipanggil, diskors, atau selesai.
  *
  * Terpisah dari penundaannya dan disengaja: antrian bergerak beberapa kali
@@ -1516,6 +1666,7 @@ module.exports = {
   ruangDipilih,
   susunRencanaTunda,
   susunRencanaPutus,
+  susunRencanaPutusIkrar,
   AMAR_BELUM,
   SUMBER_HUKUM_TETAP,
   setelAntrian,

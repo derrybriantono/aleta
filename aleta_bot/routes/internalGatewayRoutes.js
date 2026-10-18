@@ -1200,6 +1200,21 @@ router.post("/sidang/putus-sidang", requireInternalToken, async (req, res) => {
 });
 
 /**
+ * Mengisi form "Penetapan Ikrar Talak" SIPP sesudah ikrar terlaksana (18 Okt 2026):
+ * tanggal ikrar = tanggal sidang ikrar, status diikrarkan, amar, keadaan istri.
+ * Atas nama ketua majelis ikrar; ditolak bila keterangan jadwal sidang belum
+ * menyatakan ikrar terlaksana. Kering sebagai bawaan.
+ */
+router.post("/sidang/isi-ikrar", requireInternalToken, async (req, res) => {
+  try {
+    const { status, body } = await sidangHasilAlur.jalankanIsiIkrar(req.body || {}, { ip: alamatAudit(req) });
+    res.status(status).json(body);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
  * Status putusan yang dapat dipilih - dibaca dari tabel rujukan SIPP.
  *
  * Tidak disalin ke dalam kode: daftar yang disalin akan basi tanpa berbunyi,

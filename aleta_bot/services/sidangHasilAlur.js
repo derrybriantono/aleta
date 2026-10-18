@@ -83,7 +83,7 @@ async function jalankanHasilSidang(jalan, badan = {}, konteks = {}, deps = layan
   const ip = bersih(konteks.ip);
   const operatorId = bersih(badan.operator);
   const kering = badan.kering !== false;
-  const jenis = jalan === "tunda" ? "penundaan" : "putus-sidang";
+  const jenis = jalan === "tunda" ? "penundaan" : badan.ikrarDilaksanakan === true ? "putus-ikrar" : "putus-sidang";
   const aksi = jalan === "tunda" ? "tunda" : "putus";
 
   if (!operatorId) {
@@ -113,7 +113,16 @@ async function jalankanHasilSidang(jalan, badan = {}, konteks = {}, deps = layan
           operator,
           ip,
         })
-      : await layanan.susunRencanaPutus({
+      : badan.ikrarDilaksanakan === true
+        ? await layanan.susunRencanaPutusIkrar({
+            jadwalId: badan.jadwalId,
+            ikrarDilaksanakan: true,
+            jamSekarang: String(badan.jamSekarang || ""),
+            dihadiriOleh: badan.dihadiriOleh,
+            operator,
+            ip,
+          })
+        : await layanan.susunRencanaPutus({
           jadwalId: badan.jadwalId,
           statusPutusanId: badan.statusPutusanId,
           tanggalPutus: String(badan.tanggalPutus || ""),
@@ -188,6 +197,7 @@ async function jalankanHasilSidang(jalan, badan = {}, konteks = {}, deps = layan
     ...hasil,
     jenis: rencana.jenis,
     hanyaJadwal: jalan === "putus" ? rencana.hanyaJadwal === true : undefined,
+    formIkrar: rencana.formIkrar,
     perkara: rencana.perkara,
     atasNama: rencana.atasNama,
     operator,
@@ -202,6 +212,76 @@ async function jalankanHasilSidang(jalan, badan = {}, konteks = {}, deps = layan
   if (!hasil.ok) {
     body.kode = hasil.alasan;
     body.error = pesanHasilSidang(hasil, jalan);
+  }
+  return { status: hasil.ok ? 200 : 409, body };
+}
+
+
+/**
+ * Mengisi form ikrar talak SIPP untuk sidang ikrar yang keterangannya sudah
+ * menyatakan ikrar terlaksana (diisi lewat SIPP atau tombol sebelumnya). Alur
+ * yang sama: rencana -> jeda -> SATU transaksi -> jejak jujur. Atas nama
+ * ketua majelis ikrar; penekan sebenarnya hanya di jejak.
+ */
+async function jalankanIsiIkrar(badan = {}, konteks = {}, deps = layananBawaan()) {
+  const { layanan, jejak, jeda } = deps;
+  const ikrarLayanan = deps.ikrar || require("./ikrarTalakService");
+  const ip = bersih(konteks.ip);
+  const kering = badan.kering !== false;
+  if (!bersih(badan.operator)) {
+    const tolak = { ok: false, alasan: "operator_tidak_disebut" };
+    return { status: 400, body: { ...tolak, kode: tolak.alasan, error: pesanHasilSidang(tolak, "putus") } };
+  }
+  const operator = operatorJejak(badan);
+  if (!kering && jeda && typeof jeda.jeda === "function") await jeda.jeda("simpan", { kering });
+
+  const rencana = await ikrarLayanan.susunRencanaIsiIkrar({ jadwalId: badan.jadwalId, ip });
+  if (!rencana || !rencana.ok) {
+    const tolak = rencana || { ok: false, alasan: "ditolak" };
+    void jejak.catat({
+      aksi: "isi",
+      jenis: "isi-ikrar",
+      perkaraId: badan.perkaraId,
+      akunSipp: "",
+      operator,
+      ip,
+      berhasil: false,
+      kering,
+      alasan: alasanJejak(tolak),
+      langkah: [],
+    });
+    return { status: 400, body: { ...tolak, kode: tolak.alasan, error: pesanHasilSidang(tolak, "putus") } };
+  }
+
+  const hasil = await layanan.jalankanRencanaUtuh(rencana, { kering });
+  void jejak.catat({
+    aksi: "isi",
+    jenis: "isi-ikrar",
+    perkaraId: rencana.perkara && rencana.perkara.perkaraId,
+    nomorPerkara: (rencana.perkara && rencana.perkara.nomorPerkara) || "",
+    tanggalPenetapan: rencana.tanggalIkrar,
+    akunSipp: (rencana.atasNama && rencana.atasNama.username) || "",
+    namaPejabat: (rencana.atasNama && rencana.atasNama.namaLengkap) || "",
+    operator,
+    ip,
+    berhasil: hasil.ok === true,
+    kering,
+    alasan: alasanJejak(hasil),
+    langkah: rencana.langkah,
+  });
+  const body = {
+    ...hasil,
+    jenis: rencana.jenis,
+    perkara: rencana.perkara,
+    atasNama: rencana.atasNama,
+    tanggalIkrar: rencana.tanggalIkrar,
+    batasEnamBulan: rencana.batasEnamBulan,
+    andaian: rencana.andaian || [],
+    rencana: rencanaTerbaca(rencana, kering),
+  };
+  if (!hasil.ok) {
+    body.kode = hasil.alasan;
+    body.error = pesanHasilSidang(hasil, "putus");
   }
   return { status: hasil.ok ? 200 : 409, body };
 }
@@ -230,4 +310,4 @@ async function keadaanHasilSidang(jadwalId, deps = layananBawaan()) {
   return { status: 200, body: { ok: true, keadaan, riwayat, ruangan, antrian, atasNama } };
 }
 
-module.exports = { jalankanHasilSidang, keadaanHasilSidang, operatorJejak, alasanJejak };
+module.exports = { jalankanHasilSidang, jalankanIsiIkrar, keadaanHasilSidang, operatorJejak, alasanJejak };

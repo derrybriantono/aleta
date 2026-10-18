@@ -35,6 +35,11 @@ import {
 } from "@/lib/antrian-hasil-sidang";
 import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
 import {
+  bawaanTundaIkrar,
+  peringatanBatasIkrar,
+  type JenisTundaIkrar,
+} from "@/lib/ikrar-talak";
+import {
   antrianDariRingkas,
   bahanKehadiranDariKeadaan,
   susunKehadiran,
@@ -106,6 +111,11 @@ type KeadaanSidang = {
   jenisPerkaraId?: number | null;
   jenisPerkara?: string;
   ikrarTalak?: string;
+  /** Bahan tombol tunda/putus ikrar talak (18 Okt 2026) - bot 18 Okt ke atas. */
+  keterangan?: string | null;
+  tanggalPutusan?: string | null;
+  tanggalBht?: string | null;
+  tanggalPenetapanSidangIkrar?: string | null;
 };
 
 /**
@@ -140,6 +150,8 @@ type Hasil = {
   selesai?: LangkahRencana[];
   /** true: putus hanya menulis perkara_jadwal_sidang (butir 12). */
   hanyaJadwal?: boolean;
+  /** Pengisian form ikrar talak SIPP yang menyertai putus ikrar (18 Okt 2026). */
+  formIkrar?: { ok: boolean; alasan?: string; atasNama?: { username: string; namaLengkap: string }; tanggalIkrar?: string };
 };
 
 type StatusPutusan = { id: number; nama: string; dipakai: number };
@@ -1161,10 +1173,10 @@ export function CatatHasilRingkas({
   const [galatMuat, setGalatMuat] = useState<string | null>(null);
   const [status, setStatus] = useState<StatusPutusan[]>([]);
 
-  const [alasanTunda, setAlasanTunda] = useState("");
-  const [tanggalBerikut, setTanggalBerikut] = useState("");
-  const [jamBerikut, setJamBerikut] = useState("09:00");
-  const [agendaBerikut, setAgendaBerikut] = useState("");
+  const [alasanTundaIsi, setAlasanTunda] = useState("");
+  const [tanggalBerikutIsi, setTanggalBerikut] = useState("");
+  const [jamBerikutIsi, setJamBerikut] = useState("09:00");
+  const [agendaBerikutIsi, setAgendaBerikut] = useState("");
   const [dihadiri, setDihadiri] = useState(KEHADIRAN_BAWAAN);
   // Isian yang sudah disentuh tangan tidak ditimpa usulan lagi ketika
   // kehadirannya diganti.
@@ -1196,6 +1208,10 @@ export function CatatHasilRingkas({
   const [kehadiranRinci, setKehadiranRinci] = useState<KehadiranOrang[] | null>(null);
   const [atasNama, setAtasNama] = useState<AtasNamaSipp>(null);
   const [kelilingDisentuh, setKelilingDisentuh] = useState(false);
+  // Sidang ikrar talak (18 Okt 2026): dua tombol tunda (hadir belum siap / tidak
+  // hadir) dan konfirmasi "ikrar dilaksanakan" menggantikan blangko putus biasa.
+  const [ikrarTunda, setIkrarTunda] = useState<JenisTundaIkrar | null>(null);
+  const [ikrarDilaksanakan, setIkrarDilaksanakan] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -1293,6 +1309,7 @@ export function CatatHasilRingkas({
     (nilai: number) => {
       setDihadiri(nilai);
       if (!keadaan || !riwayat) return;
+      if (String(keadaan.ikrarTalak || "").toUpperCase() === "Y") return;
       const usul = usulanTunda(keadaan, riwayat, nilai);
       setUsulan(usul);
       if (!usul) return;
@@ -1310,13 +1327,43 @@ export function CatatHasilRingkas({
   // Jam dan tanggal ikut alasan + agenda yang SEDANG tampak: tundaan mediasi =
   // 3 minggu pukul 09:00 (mendahului Court Calendar dan aturan sore). Yang
   // sudah disetel tangan tidak ditimpa. Aturannya satu - @/lib/bawaan-tunda.
+  const sidangIkrar = String(keadaan?.ikrarTalak || "").toUpperCase() === "Y";
+  const modeIkrarTunda = sidangIkrar && jalan === "tunda";
+  const modeIkrarPutus = sidangIkrar && jalan === "putus";
+
+  // Sidang ikrar talak: isian bawaan DITURUNKAN saat menggambar dari pilihan tombol
+  // (hadir belum siap / tidak hadir) - bukan disalin lewat efek. Isian yang sudah
+  // disentuh tangan petugas tidak ditimpa; semuanya dapat diubah sebelum disimpan.
+  const jenisIkrar: JenisTundaIkrar = ikrarTunda ?? (dihadiri === 3 || dihadiri === 4 ? "tidak-hadir" : "belum-siap");
+  const bawaanIkrar =
+    modeIkrarTunda && keadaan
+      ? bawaanTundaIkrar(jenisIkrar, {
+          tanggalSidang: String(keadaan.tanggalSidang || "").slice(0, 10),
+          tanggalBht: keadaan.tanggalBht,
+        })
+      : null;
+  const alasanTunda = bawaanIkrar && !alasanDisentuh ? bawaanIkrar.alasan : alasanTundaIsi;
+  const agendaBerikut = bawaanIkrar && !agendaDisentuh ? bawaanIkrar.agenda : agendaBerikutIsi;
+  const tanggalBerikut = bawaanIkrar && !tanggalDisentuh ? bawaanIkrar.tanggal : tanggalBerikutIsi;
+  const jamBerikut = bawaanIkrar && !jamDisentuh ? bawaanIkrar.jam : jamBerikutIsi;
+  const pilihJenisIkrar = (nilai: JenisTundaIkrar) => {
+    setIkrarTunda(nilai);
+    setAlasanDisentuh(false);
+    setAgendaDisentuh(false);
+    setTanggalDisentuh(false);
+    setJamDisentuh(false);
+  };
+
+  const peringatanIkrar = modeIkrarTunda && keadaan ? peringatanBatasIkrar(tanggalBerikut, keadaan) : "";
+
   useEffect(() => {
-    if (!keadaan) return;
+    if (!keadaan || modeIkrarTunda) return;
     const dasar = usulan?.dasar ?? dasarTanggalKosong(String(keadaan.tanggalSidang || "").slice(0, 10));
     const berikut = tanggalJamUntuk(dasar, alasanTunda, agendaBerikut, dihadiri);
     if (!tanggalDisentuh) setTanggalBerikut(berikut.tanggal);
     if (!jamDisentuh) setJamBerikut(berikut.jam);
-  }, [keadaan, usulan, alasanTunda, agendaBerikut, dihadiri, tanggalDisentuh, jamDisentuh]);
+  }, [keadaan, usulan, alasanTunda, agendaBerikut, dihadiri, tanggalDisentuh, jamDisentuh, modeIkrarTunda]);
+
 
   const pilihan = useMemo(() => pilihanTunda(keadaan ? sebutanDari(keadaan) : {}, ALASAN_LAZIM, AGENDA_LAZIM), [keadaan]);
 
@@ -1344,9 +1391,9 @@ export function CatatHasilRingkas({
               jalur: "sidang",
               jadwalId: keadaan.jadwalId,
               perkaraId: keadaan.perkaraId,
-              statusPutusanId: Number(statusId),
-              tanggalPutus,
-              verstek: verstek ? "Y" : "T",
+              ...(modeIkrarPutus
+                ? { ikrarDilaksanakan: true, tanggalPutus: String(keadaan.tanggalSidang || "").slice(0, 10) }
+                : { statusPutusanId: Number(statusId), tanggalPutus, verstek: verstek ? "Y" : "T" }),
               jamSekarang: keadaan.jamSidang,
               dihadiriOleh: dihadiri,
               ruangId: keadaan.ruanganId,
@@ -1384,12 +1431,15 @@ export function CatatHasilRingkas({
     verstek,
     ruangPilih,
     onSelesai,
+    modeIkrarPutus,
   ]);
 
   const lengkap =
     jalan === "tunda"
       ? Boolean(alasanTunda.trim() && tanggalBerikut && jamBerikut && agendaBerikut.trim())
-      : Boolean(statusId && tanggalPutus);
+      : modeIkrarPutus
+        ? ikrarDilaksanakan
+        : Boolean(statusId && tanggalPutus);
 
   if (galatMuat) {
     return (
@@ -1413,8 +1463,16 @@ export function CatatHasilRingkas({
         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
         <div className="min-w-0">
           <p className="font-semibold">
-            {jalan === "tunda" ? "Penundaan" : "Hasil sidang putus"} {nomorPerkara} tercatat di SIPP.
+            {jalan === "tunda" ? "Penundaan" : modeIkrarPutus ? "Ikrar talak dilaksanakan -" : "Hasil sidang putus"}{" "}
+            {nomorPerkara} tercatat di SIPP.
           </p>
+          {modeIkrarPutus && hasil?.formIkrar ? (
+            <p className="text-xs" data-form-ikrar="">
+              {hasil.formIkrar.ok
+                ? `Form ikrar talak di SIPP terisi (tanggal ikrar ${hasil.formIkrar.tanggalIkrar ?? ""}).`
+                : "Form ikrar talak di SIPP belum terisi - lihat catatan di bawah, lalu isi dari baris sidang ini."}
+            </p>
+          ) : null}
           {hasil?.atasNama ? (
             <p className="text-xs">
               Atas nama {hasil.atasNama.namaLengkap} ({hasil.atasNama.username})
@@ -1473,7 +1531,8 @@ export function CatatHasilRingkas({
           <Gavel className="h-4 w-4 text-primary" aria-hidden="true" />
         )}
         <span className="text-sm font-semibold">
-          {jalan === "tunda" ? "Tunda sidang" : "Catat putusan"} {nomorPerkara}
+          {jalan === "tunda" ? (sidangIkrar ? "Tunda sidang ikrar talak" : "Tunda sidang") : modeIkrarPutus ? "Ikrar talak" : "Catat putusan"}{" "}
+          {nomorPerkara}
         </span>
         <Badge variant="muted">{keadaan.agenda || "tanpa agenda"}</Badge>
         {usulan ? <Badge variant="outline">sidang ke-{usulan.sidangKe}</Badge> : null}
@@ -1481,6 +1540,54 @@ export function CatatHasilRingkas({
           Tutup
         </Button>
       </div>
+
+      {modeIkrarTunda ? (
+        <div className="space-y-1" data-tunda-ikrar="">
+          <span className="block text-xs font-medium text-muted-foreground">Keadaan sidang ikrar</span>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["belum-siap", "Pemohon hadir, belum siap membayar akibat perceraian"],
+                ["tidak-hadir", "Pemohon tidak hadir"],
+              ] as const
+            ).map(([nilai, label]) => (
+              <button
+                key={nilai}
+                type="button"
+                aria-pressed={jenisIkrar === nilai}
+                onClick={() => pilihJenisIkrar(nilai)}
+                className={cn(
+                  "rounded-md border px-2.5 py-1 text-xs font-semibold transition",
+                  jenisIkrar === nilai
+                    ? "border-amber-600 bg-amber-600 text-white"
+                    : "border-amber-400 text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-500/15"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
+            <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+            <span>
+              {bawaanIkrar ? bawaanIkrar.penjelasan : ""}{" "}
+              Semua isian dapat diubah sebelum disimpan.
+              {jenisIkrar === "belum-siap"
+                ? " Catatan: pada cerai talak, pembayaran akibat perceraian (nafkah iddah, mut’ah, dan sejenisnya) dapat diperintahkan sebelum ikrar talak, kecuali istri tidak keberatan (Buku II 2026)."
+                : ""}
+            </span>
+          </p>
+          {peringatanIkrar ? (
+            <p
+              data-batas-ikrar=""
+              className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100"
+            >
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>{peringatanIkrar}</span>
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {jalan === "tunda" ? (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -1548,6 +1655,28 @@ export function CatatHasilRingkas({
             </span>
           </label>
         </div>
+      ) : modeIkrarPutus ? (
+        <div className="space-y-1.5" data-putus-ikrar="">
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={ikrarDilaksanakan}
+              onChange={(e) => setIkrarDilaksanakan(e.target.checked)}
+              className="mt-0.5 h-4 w-4"
+            />
+            <span>
+              Ikrar talak sudah dilaksanakan pada sidang{" "}
+              <strong>{String(keadaan.tanggalSidang || "").slice(0, 10)}</strong>
+            </span>
+          </label>
+          <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
+            <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+            <span>
+              Keterangan sidang di SIPP otomatis berisi “Ikrar Telah Dilaksanakan”, lalu form ikrar talak di SIPP
+              terisi (tanggal ikrar sama dengan tanggal sidang ini) atas nama ketua majelis ikrar.
+            </span>
+          </p>
+        </div>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           <label className="text-xs">
@@ -1589,7 +1718,7 @@ export function CatatHasilRingkas({
       {/* Butir 25 (5 Okt 2026): ruang sidang + sidang keliling, seperti blangko
           tunda SIPP. Tunda = untuk sidang BERIKUTNYA; putus = sidang INI
           (ditulis hanya bila diubah). */}
-      <div className="flex flex-wrap items-end gap-3" data-ruang-sidang-blangko="">
+      <div className={cn("flex flex-wrap items-end gap-3", modeIkrarPutus && "hidden")} data-ruang-sidang-blangko="">
         <label className="block min-w-[14rem] text-xs sm:max-w-md">
           <span className="mb-0.5 block font-medium text-muted-foreground">
             {jalan === "tunda" ? "Ruang sidang berikutnya" : "Ruang sidang"}
@@ -1677,7 +1806,7 @@ export function CatatHasilRingkas({
         </p>
       ) : null}
 
-      {jalan === "putus" ? (
+      {jalan === "putus" && !modeIkrarPutus ? (
         <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
           <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
           <span>
@@ -1725,13 +1854,18 @@ export function CatatHasilRingkas({
           disabled={!lengkap || sibuk || atasNama?.ok === false}
           onClick={() => void kirim()}
         >
-          {sibuk ? "Menulis…" : jalan === "tunda" ? "Tunda sekarang" : "Catat putus"}
+          {modeIkrarPutus && !sibuk ? "Catat ikrar dilaksanakan" : null}
+          {modeIkrarPutus && !sibuk ? null : (
+            <>{sibuk ? "Menulis…" : jalan === "tunda" ? "Tunda sekarang" : "Catat putus"}</>
+          )}
         </Button>
         {!lengkap ? (
           <span className="text-xs text-muted-foreground">
             {jalan === "tunda"
               ? "Alasan, agenda, tanggal, dan jam harus terisi."
-              : "Status putusan dan tanggalnya harus terisi."}
+              : modeIkrarPutus
+                ? "Centang konfirmasi ikrar dilaksanakan."
+                : "Status putusan dan tanggalnya harus terisi."}
           </span>
         ) : null}
       </div>

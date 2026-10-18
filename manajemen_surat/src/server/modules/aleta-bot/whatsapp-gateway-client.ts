@@ -2668,6 +2668,20 @@ export async function postGatewayPutusSidang(
 }
 
 /**
+ * Mengisi form "Penetapan Ikrar Talak" SIPP sesudah ikrar terlaksana (18 Okt
+ * 2026). Kering sebagai bawaan; ditolak bot bila keterangan jadwal sidang belum
+ * menyatakan ikrar terlaksana.
+ */
+export async function postGatewayIsiIkrar(
+  isi: Record<string, unknown>
+): Promise<GatewayResult<Record<string, unknown>>> {
+  return gatewayFetch(`/internal/aleta-bot/sidang/isi-ikrar`, {
+    method: "POST",
+    body: JSON.stringify(isi),
+  });
+}
+
+/**
  * Mengubah naskah (RTF/DOC/DOCX) ke bentuk lain lewat soffice di bot - kontrak
  * K1 (30 Sep 2026). Hanya menghitung; tidak menyimpan apa pun. Batasnya di
  * bawah batas ekstensi 150 dtk dan di atas batas soffice bot 90 dtk.

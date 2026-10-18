@@ -128,7 +128,29 @@ function pesanHasilSidang(hasil, jalan = "tunda") {
         "Coba lagi; bila berulang, catat lewat SIPP dan laporkan pesan ini ke admin."
       );
     }
+    case "bukan_sidang_ikrar":
+      return `Jadwal sidang ini bukan sidang ikrar talak. ${tidakAdaPerubahan}`;
+    case "ikrar_belum_dinyatakan_terlaksana":
+      return `Keterangan jadwal sidang ini belum menyatakan ikrar talak sudah dilaksanakan, jadi form ikrar tidak diisi. ${tidakAdaPerubahan}`;
+    case "penetapan_ikrar_belum_ada":
+      return `Perkara ini belum punya penetapan majelis ikrar talak di SIPP - form ikrar belum bisa diisi. ${tidakAdaPerubahan}`;
+    case "form_ikrar_sudah_terisi":
+      return `Form ikrar talak perkara ini sudah terisi di SIPP pada tanggal sidang ini. ${tidakAdaPerubahan}`;
+    case "tanggal_ikrar_lain_sudah_tercatat":
+      return `Form ikrar talak sudah berisi tanggal ikrar lain${bersih(h.tercatat) ? ` (${bersih(h.tercatat)})` : ""} - tidak ditimpa. Periksa di SIPP. ${tidakAdaPerubahan}`;
+    case "tanggal_ikrar_masa_depan":
+      return `Tanggal sidang ikrar${bersih(h.tanggal) ? ` (${bersih(h.tanggal)})` : ""} belum tiba, jadi ikrar belum bisa dinyatakan terlaksana. ${tidakAdaPerubahan}`;
+    case "tanggal_ikrar_akhir_pekan":
+      return `Tanggal sidang ikrar jatuh pada Sabtu/Minggu - SIPP menolak tanggal ikrar di akhir pekan. ${tidakAdaPerubahan}`;
+    case "ketua_majelis_ikrar_tidak_ada":
+      return `Ketua majelis ikrar talak perkara ini belum tercatat di SIPP, padahal form ikrar dicatat atas akunnya. ${tidakAdaPerubahan}`;
+    case "akun_ketua_majelis_tidak_ada":
+    case "akun_ketua_majelis_ganda":
+      return `Akun SIPP ketua majelis ikrar${daftarNama(h.nama)} tidak ada atau ganda - ALETA tidak memilih salah satunya. ${tidakAdaPerubahan}`;
     default:
+      if (/^tanggal_ikrar_mendahului_/.test(kode)) {
+        return `Tanggal ikrar mendahului ${kode.replace("tanggal_ikrar_mendahului_", "").replace(/_/g, " ")}${bersih(h.batas) ? ` (${bersih(h.batas)})` : ""} - SIPP menolaknya. ${tidakAdaPerubahan}`;
+      }
       return `${aksi} ditolak (${kode}). ${tidakAdaPerubahan}`;
   }
 }

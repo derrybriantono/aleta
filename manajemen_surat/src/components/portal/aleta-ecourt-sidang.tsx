@@ -78,6 +78,7 @@ import { PenandaJawabanAgenda } from "@/components/portal/penanda-jawaban-agenda
 import type { PembebananIkrar } from "@/lib/pembebanan-ikrar";
 import { cocokNamaPenerimaLawan } from "@/lib/nama-penerima-lawan";
 import { CatatHasilRingkas } from "@/components/portal/hasil-sidang";
+import { IsiIkrarTalak } from "@/components/portal/isi-ikrar-talak";
 import { CourtCalendarSidang } from "@/components/portal/court-calendar-sidang";
 import { TombolPenetapanKembali } from "@/components/portal/penetapan-kembali";
 import { TombolKasirJurnal } from "@/components/portal/kasir-jurnal";
@@ -7924,6 +7925,16 @@ export function AletaEcourtSidang({
                               >
                                 Selesai · telah ikrar talak
                               </span>
+                            ) : null}
+                            {/* 18 Okt 2026: ikrar sudah dinyatakan terlaksana (mis. diisi lewat SIPP)
+                                tetapi form ikrar talak di SIPP belum terisi tanggalnya. */}
+                            {ikrarSelesai(baris) && !baris.ikrarTercatat && tampil(tampilan, "tombol-tunda-putus") ? (
+                              <IsiIkrarTalak
+                                jadwalId={baris.sidangId}
+                                perkaraId={baris.perkaraId}
+                                nomorPerkara={baris.nomorPerkara}
+                                onSelesai={() => void muatTanggal(dari, sampai, nilaiKesiapan)}
+                              />
                             ) : null}
 
                             {/* ================================================
