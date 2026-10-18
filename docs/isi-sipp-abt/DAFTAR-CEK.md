@@ -4,7 +4,7 @@ Dibangun 2026-10-18 oleh `scripts/isi-sipp-abt/bangun-daftar-cek.cjs` (data diuk
 
 ## Ringkasan
 
-- Blangko Derry aktif di pohon server: **1111** (32 tanpa isian popup).
+- Blangko Derry aktif di pohon server: **1113** (32 tanpa isian popup).
 - Isian popup (data_teks / data_tanggal / tanya_jawab, kata ABT "isian tangan"): **288** unik.
 - Sudah otomatis (ya): **151** - sebagian: **25** - belum (tidak): **112**, di antaranya **44** memang tanpa sumber data (penilaian hakim / tidak tercatat).
 - Penanda yang dirujuk rantai variabel tetapi tidak ada di katalog ABT lokal: 51 (lihat bawah).
@@ -50,7 +50,7 @@ Kode: `aleta_bot/services/abtIsianSippLanjutan.js`, dipanggil dari `dariSipp` (k
 
 ## Per blangko
 
-- Blangko yang seluruh isian popupnya sudah otomatis (ya): **230** dari 1079 yang punya isian popup.
+- Blangko yang seluruh isian popupnya sudah otomatis (ya): **230** dari 1081 yang punya isian popup.
 - Blangko yang masih punya sekurang-kurangnya satu isian manual TANPA syarat keadaan (bukan kuasa/prodeo/ghaib/insidentil/alasan C-H): **209**. 25 terbanyak (sebagian besar isian manual itu keputusan/penilaian hakim atau kesepakatan para pihak):
 
 | blangko | ya | sebagian | tidak (semua) | tidak tanpa syarat keadaan | opsional |
@@ -89,7 +89,7 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 
 | # | nomor | nama | jml blangko | diketik petugas (perkara sejak 2023) | contoh blangko | otomatis? | sumber / pengisi | catatan |
 | ---: | --- | --- | ---: | ---: | --- | --- | --- | --- |
-| 1 | 8537 | Nama advokat Penggugat/Pemohon | 979 | 0 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | ABT sendiri dari SIPP bila dikosongkan; kuasa-penggugat |  |
+| 1 | 8537 | Nama advokat Penggugat/Pemohon | 981 | 0 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | ABT sendiri dari SIPP bila dikosongkan; kuasa-penggugat |  |
 | 2 | 0132 | Tanggal register surat kuasa Penggugat/Pemohon di kepaniteraan | 562 | 13 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | ABT sendiri dari SIPP bila dikosongkan; kuasa-penggugat; deteksi cerai |  |
 | 3 | 0184 | Tanggal surat kuasa Penggugat/Pemohon | 562 | 25 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | kuasa-penggugat; deteksi cerai |  |
 | 4 | 8538 | Alamat kantor advokat Penggugat/Pemohon | 562 | 0 | [01a] BAS 1 Asal Usul Anak - Kabul.rtf | ya | kuasa-penggugat |  |
@@ -139,7 +139,7 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 | 48 | 6113, 2019 | Replik Lisan Penggugat/Pemohon [tanya jawab replik lisan 0046] | 38 | 0 | BAS ALUR 05 [2] BAS 2 P & T Hadir - Pembacaan Gugatan dan Ja | tidak | lisan: diketik panitera. Tertulis: butir pokok replik e-Court sebagai kalimat salin 'jawab-tertulis-replik'; tanya-jawab tidak ditulis otomatis |  |
 | 49 | 8437 | Kesimpulan Tergugat/Termohon | 76 | 3 | [02] [Kabul] CG - F.rtf | sebagian | baru diusulkan (ragu), belum terisi otomatis (terisi di: jawab-menjawab-ecourt) |  |
 | 50 | 8931, 8932 | TanyaJwb Saksi 5 P [tanya jawab saksi 5 p] | 30 | 0 | [02] BAS 6 P & T Hadir Pembuktian P PERMA 7 2022 & Keputusan | ya | susun saksi |  |
-| 51 | 8433 | Alasan pencabutan perkara | 97 | 41 | BAS ALUR 08 [A] BAS 1 P Hadir & T Tidak Hadir - Cabut di Sid | sebagian | hakim mengetik (usulan hanya bila mediasi Y2) (terisi di: sipp-mediasi-cabut) | Sejak 2023: 41 isian petugas, hanya 4 berasal dari mediasi Y2; alasan lain (perbaikan gugatan, alamat tidak ditemukan) bebas. |
+| 51 | 8433 | Alasan pencabutan perkara | 99 | 41 | BAS ALUR 08 [A] BAS 1 P Hadir & T Tidak Hadir - Cabut di Sid | sebagian | hakim mengetik (usulan hanya bila mediasi Y2) (terisi di: sipp-mediasi-cabut) | Sejak 2023: 41 isian petugas, hanya 4 berasal dari mediasi Y2; alasan lain (perbaikan gugatan, alamat tidak ditemukan) bebas. |
 | 52 | 6120, 2023 | TanyaJwb Saksi 1 T [tanya jawab saksi 1 t] | 93 | 0 | [02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan | ya | susun saksi |  |
 | 53 | 6121, 2024 | TanyaJwb Saksi 2 T [tanya jawab saksi 2 t] | 93 | 0 | [02] BAS 7 P & T Hadir Pembuktian T PERMA 7 2022 & Keputusan | ya | susun saksi |  |
 | 54 | 7178 | Alasan panggilan dianggap tidak patut | 22 | 4 | [99] BAS 1 P Hadir & T Tidak Hadir - Alamat Tidak Jelas Atau | tidak | relaas panggilan (ALETA relaas) - penilaian hakim |  |
@@ -380,4 +380,4 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 
 ## Penanda tak dikenal (bukan isian popup)
 
-3121(569), 3122(559), 3123(559), 3124(559), 3125(559), 3127(559), 3128(559), 3129(559), 3131(10), 3510(21), 3511(21), 3512(21), 3513(21), 3514(21), 3515(21), 5078(401), 5079(401), 5080(401), 5081(401), 5082(401), 5083(401), 5084(401), 5085(401), 5086(401), 5087(401), 5088(401), 5089(401), 5090(401), 5091(401), 5092(401), 5093(401), 5094(401), 5095(401), 5096(401), 5097(401), 5098(401), 5099(391), 5102(391), 5103(391), 5104(391), 5106(391), 5107(391), 5117(391), 7064(569), 9650(6), 9651(6), 9652(6), 9653(5), 9654(6), 0243(552), 03517(21)
+3121(569), 3122(559), 3123(559), 3124(559), 3125(559), 3127(559), 3128(559), 3129(559), 3131(10), 3510(21), 3511(21), 3512(21), 3513(21), 3514(21), 3515(21), 5078(401), 5079(401), 5080(401), 5081(401), 5082(401), 5083(401), 5084(401), 5085(401), 5086(401), 5087(401), 5088(401), 5089(401), 5090(401), 5091(401), 5092(401), 5093(401), 5094(401), 5095(401), 5096(401), 5097(401), 5098(401), 5099(391), 5102(391), 5103(391), 5104(391), 5106(391), 5107(391), 5117(391), 7064(569), 9650(6), 9651(6), 9652(6), 9653(5), 9654(6), 0243(553), 03517(21)
