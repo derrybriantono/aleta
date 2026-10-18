@@ -9669,6 +9669,58 @@ const ALAT_VARIAN_I17 = [
 for (const [kunci, berkas] of ALAT_VARIAN_I17) alatTambahVarianPeta(kunci, berkas);
 /* === AKHIR I17 === */
 
+/* === I19 18 Okt === */
+/**
+ * PUTUSAN JAWABAN & EKSEPSI 18 Okt (paket ABT abt-putusan-eksepsi-cabut-derry, abt-putusan-sela-eksepsi-derry, abt-putusan-itsbat-tolak-derry; peta:
+ * i19-putusan-jawaban-18okt/PEMETAAN-ALETA.md): pencabutan sesudah jawaban yang DITOLAK Tergugat ([02c] CG/CT, [01c] kewarisan), NO karena eksepsi kewenangan absolut
+ * [99c] / relatif [99d] (cerai, HB, kewarisan), PUTUSAN SELA eksepsi ditolak [98e] / [98f] (status "Putusan Sela"; bukan status akhir SIPP), serta itsbat nikah:
+ * alternatif tolak [03c] (masih terikat perkawinan lain), NO [99c] (poligami sirri) dan NO [99d] (nikah sesudah 2019 tidak dicatatkan). Keadaan baru (lib/keadaan-putusan.ts):
+ * cabut-ditolak-t, eksepsi-absolut-dikabulkan, eksepsi-relatif-dikabulkan, eksepsi-absolut-ditolak-putusan-sela, eksepsi-relatif-ditolak-putusan-sela,
+ * nikah-sesudah-2019-tidak-dicatat, poligami-sirri-atau-terikat, terikat-perkawinan-lain - semua tidak tersimpan di SIPP: hanya dari penanda tegas, dipilih manual.
+ * Kolom: [kunci, jenis blangko, jenisAsli, statusAsli, berkas, catatan].
+ */
+const ALAT_BARIS_I19 = [
+  ["cerai gugat|dikabulkan|cabut-ditolak-t", "cg", "Cerai Gugat", "Dikabulkan", "[02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban", "keadaan: Penggugat mencabut sesudah jawaban, Tergugat menolak (perkara dilanjutkan dan diputus) - dipilih manual dari BAS"],
+  ["cerai gugat|tidak dapat diterima|eksepsi-absolut-dikabulkan", "cg", "Cerai Gugat", "Tidak Dapat Diterima", "[99c] [NO] CG - Eksepsi Kewenangan Absolut Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan absolut dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["cerai gugat|tidak dapat diterima|eksepsi-relatif-dikabulkan", "cg", "Cerai Gugat", "Tidak Dapat Diterima", "[99d] [NO] CG - Eksepsi Kewenangan Relatif Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan relatif dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["cerai gugat|putusan sela|eksepsi-absolut-ditolak-putusan-sela", "cg", "Cerai Gugat", "Putusan Sela", "[98e] [Sela] CG - Eksepsi Kewenangan Absolut Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (absolut ditolak)"],
+  ["cerai gugat|putusan sela|eksepsi-relatif-ditolak-putusan-sela", "cg", "Cerai Gugat", "Putusan Sela", "[98f] [Sela] CG - Eksepsi Kewenangan Relatif Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (relatif ditolak)"],
+  ["cerai talak|dikabulkan|cabut-ditolak-t", "cg", "Cerai Talak", "Dikabulkan", "[02c] [Kabul] CT - F - Pencabutan Ditolak T Sesudah Jawaban", "keadaan: Penggugat mencabut sesudah jawaban, Tergugat menolak (perkara dilanjutkan dan diputus) - dipilih manual dari BAS"],
+  ["cerai talak|tidak dapat diterima|eksepsi-absolut-dikabulkan", "cg", "Cerai Talak", "Tidak Dapat Diterima", "[99c] [NO] CT - Eksepsi Kewenangan Absolut Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan absolut dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["cerai talak|tidak dapat diterima|eksepsi-relatif-dikabulkan", "cg", "Cerai Talak", "Tidak Dapat Diterima", "[99d] [NO] CT - Eksepsi Kewenangan Relatif Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan relatif dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["cerai talak|putusan sela|eksepsi-absolut-ditolak-putusan-sela", "cg", "Cerai Talak", "Putusan Sela", "[98e] [Sela] CT - Eksepsi Kewenangan Absolut Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (absolut ditolak)"],
+  ["cerai talak|putusan sela|eksepsi-relatif-ditolak-putusan-sela", "cg", "Cerai Talak", "Putusan Sela", "[98f] [Sela] CT - Eksepsi Kewenangan Relatif Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (relatif ditolak)"],
+  ["harta bersama|tidak dapat diterima|eksepsi-absolut-dikabulkan", "hb", "Harta Bersama", "Tidak Dapat Diterima", "[99c] [NO] HB - Eksepsi Kewenangan Absolut Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan absolut dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["harta bersama|tidak dapat diterima|eksepsi-relatif-dikabulkan", "hb", "Harta Bersama", "Tidak Dapat Diterima", "[99d] [NO] HB - Eksepsi Kewenangan Relatif Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan relatif dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["harta bersama|putusan sela|eksepsi-absolut-ditolak-putusan-sela", "hb", "Harta Bersama", "Putusan Sela", "[98e] [Sela] HB - Eksepsi Kewenangan Absolut Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (absolut ditolak)"],
+  ["harta bersama|putusan sela|eksepsi-relatif-ditolak-putusan-sela", "hb", "Harta Bersama", "Putusan Sela", "[98f] [Sela] HB - Eksepsi Kewenangan Relatif Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (relatif ditolak)"],
+  ["kewarisan|tidak dapat diterima|eksepsi-absolut-dikabulkan", "waris", "Kewarisan", "Tidak Dapat Diterima", "[99c] [NO] Kewarisan - Eksepsi Kewenangan Absolut Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan absolut dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["kewarisan|tidak dapat diterima|eksepsi-relatif-dikabulkan", "waris", "Kewarisan", "Tidak Dapat Diterima", "[99d] [NO] Kewarisan - Eksepsi Kewenangan Relatif Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan relatif dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["kewarisan|putusan sela|eksepsi-absolut-ditolak-putusan-sela", "waris", "Kewarisan", "Putusan Sela", "[98e] [Sela] Kewarisan - Eksepsi Kewenangan Absolut Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (absolut ditolak)"],
+  ["kewarisan|putusan sela|eksepsi-relatif-ditolak-putusan-sela", "waris", "Kewarisan", "Putusan Sela", "[98f] [Sela] Kewarisan - Eksepsi Kewenangan Relatif Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (relatif ditolak)"],
+  ["kewarisan|dikabulkan|cabut-ditolak-t", "waris", "Kewarisan", "Dikabulkan", "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban", "keadaan: Penggugat mencabut sesudah jawaban, Tergugat menolak (perkara dilanjutkan dan diputus) - dipilih manual dari BAS"],
+  ["itsbat nikah|ditolak|terikat-perkawinan-lain", "in", "Itsbat Nikah", "Ditolak", "[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain", "dipilih manual: alternatif tolak bila salah satu pihak terbukti masih terikat perkawinan lain"],
+  ["itsbat nikah|tidak dapat diterima|poligami-sirri-atau-terikat", "in", "Itsbat Nikah", "Tidak Dapat Diterima", "[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026)", "dipilih manual: itsbat poligami sirri / salah satu pihak masih terikat perkawinan lain (SEMA 3/2018, Buku II 2026)"],
+  ["itsbat nikah|tidak dapat diterima|nikah-sesudah-2019-tidak-dicatat", "in", "Itsbat Nikah", "Tidak Dapat Diterima", "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk)", "dipilih manual: nikah sesudah 2019 tidak dicatatkan tanpa alasan mendesak (UU Adminduk)"],
+];
+for (const [kunci, jenis, jenisAsli, statusAsli, berkas, catatan] of ALAT_BARIS_I19) {
+  if (jenis === "cg" || jenis === "ct") ALAT_PETA_BAWAAN[kunci] = alatBarisStatusCerai(jenisAsli, statusAsli, berkas, catatan);
+  else ALAT_PETA_BAWAAN[kunci] = alatBarisPutusanLain(jenis, jenisAsli, statusAsli, berkas, catatan);
+}
+const ALAT_VARIAN_I19 = [
+  ["cerai gugat|dikabulkan", ["[02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban"]],
+  ["cerai talak|dikabulkan", ["[02c] [Kabul] CT - F - Pencabutan Ditolak T Sesudah Jawaban"]],
+  ["cerai gugat|tidak dapat diterima", ["[99c] [NO] CG - Eksepsi Kewenangan Absolut Dikabulkan", "[99d] [NO] CG - Eksepsi Kewenangan Relatif Dikabulkan"]],
+  ["cerai talak|tidak dapat diterima", ["[99c] [NO] CT - Eksepsi Kewenangan Absolut Dikabulkan", "[99d] [NO] CT - Eksepsi Kewenangan Relatif Dikabulkan"]],
+  ["harta bersama|tidak dapat diterima", ["[99c] [NO] HB - Eksepsi Kewenangan Absolut Dikabulkan", "[99d] [NO] HB - Eksepsi Kewenangan Relatif Dikabulkan"]],
+  ["kewarisan|tidak dapat diterima", ["[99c] [NO] Kewarisan - Eksepsi Kewenangan Absolut Dikabulkan", "[99d] [NO] Kewarisan - Eksepsi Kewenangan Relatif Dikabulkan"]],
+  ["itsbat nikah|ditolak", ["[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain"]],
+  ["itsbat nikah|tidak dapat diterima", ["[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026)", "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk)"]],
+];
+for (const [kunci, berkas] of ALAT_VARIAN_I19) alatTambahVarianPeta(kunci, berkas);
+/* === AKHIR I19 === */
+
+
 /**
  * Pemetaan tersimpan, dilengkapi bawaannya untuk jenis yang belum pernah
  * disentuh. Yang pernah disunting - termasuk yang sengaja dihapus lalu

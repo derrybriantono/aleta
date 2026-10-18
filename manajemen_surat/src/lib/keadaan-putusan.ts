@@ -32,6 +32,15 @@
  *   alamat-t-tidak-diketahui         Tergugat ghaib / alamat tidak diketahui (penandaPerkara.ghaib atau saklar) -> NO [99c] (I17)
  *   itsbat-kabul-cerai-ditolak       cerai kumulasi itsbat: itsbat dikabulkan, cerai ditolak -> [03] folder 1c (I17); dari saklar atau amar yang menyebutnya
  *   kontensius-verstek               itsbat kontensius, putusan verstek -> [01b] / [03b] (I17), didahulukan atas "kontensius"
+ *   cabut-ditolak-t                  Penggugat mencabut sesudah jawaban tetapi Tergugat/Termohon MENOLAK -> perkara dilanjutkan dan diputus kabul [02c]/[01c] (I19 18 Okt);
+ *                                    pilihan hakim dari BAS (saklar `cabutDitolakT`), tidak ada di SIPP
+ *   eksepsi-(absolut|relatif)-dikabulkan
+ *                                    eksepsi kewenangan absolut / relatif dikabulkan -> NO [99c] / [99d] (I19); saklar `eksepsiKewenangan` ("absolut"|"relatif"), SIPP tidak menyimpannya
+ *   eksepsi-(absolut|relatif)-ditolak-putusan-sela
+ *                                    eksepsi kewenangan ditolak dalam PUTUSAN SELA -> [98e] / [98f] (I19); saklar `eksepsiKewenangan` + `putusanSela`; bukan status akhir SIPP,
+ *                                    baris petanya berstatus "Putusan Sela"
+ *   nikah-sesudah-2019-tidak-dicatat / poligami-sirri-atau-terikat / terikat-perkawinan-lain
+ *                                    itsbat nikah (Pdt.P): NO [99d] / NO [99c] / tolak alternatif [03c] (I19; saklar `alasanItsbat`, pilih manual)
  *
  * Fungsi ini MURNI (tanpa jaringan/basis data) dan dipanggil route jadwal sidang untuk tiap baris; kode-kodenya dikirim ke ekstensi
  * sebagai `keadaanPutusan` dan dipakai `alatPetaUntukPerkara` (ekstensi-sipp/panel-alat.js, argumen ke-6). Urutan kode = urutan
@@ -65,7 +74,16 @@ export type KodeKeadaanPutusan =
   | "kumulasi-hak-asuh"
   | "alamat-t-tidak-diketahui"
   | "itsbat-kabul-cerai-ditolak"
-  | "kontensius-verstek";
+  | "kontensius-verstek"
+  // I19 18 Okt (paket abt-putusan-eksepsi-cabut/-sela-eksepsi/-itsbat-tolak): lihat daftar di kepala berkas.
+  | "cabut-ditolak-t"
+  | "eksepsi-absolut-dikabulkan"
+  | "eksepsi-relatif-dikabulkan"
+  | "eksepsi-absolut-ditolak-putusan-sela"
+  | "eksepsi-relatif-ditolak-putusan-sela"
+  | "nikah-sesudah-2019-tidak-dicatat"
+  | "poligami-sirri-atau-terikat"
+  | "terikat-perkawinan-lain";
 
 export type MasukanKeadaanPutusan = {
   jenisPerkara?: unknown;
@@ -105,6 +123,14 @@ export type MasukanKeadaanPutusan = {
   alamatTergugatTidakDiketahui?: unknown;
   /** I17: cerai kumulasi itsbat, itsbat dikabulkan dan cerai ditolak (saklar tegas; selain itu dari amarPutusan bila memuatnya). */
   itsbatKabulCeraiDitolak?: unknown;
+  /** I19 18 Okt: Penggugat mencabut sesudah jawaban tetapi Tergugat menolak (saklar tegas hakim/konseptor; SIPP tidak menyimpannya). */
+  cabutDitolakT?: unknown;
+  /** I19: eksepsi kewenangan yang diajukan Tergugat dalam jawaban - "absolut" | "relatif" (saklar tegas; SIPP tidak menyimpannya). */
+  eksepsiKewenangan?: unknown;
+  /** I19: eksepsi kewenangan diputus dalam PUTUSAN SELA (ditolak, perkara dilanjutkan); tanpa ini eksepsi dianggap dikabulkan (NO). */
+  putusanSela?: unknown;
+  /** I19: itsbat nikah (Pdt.P) - "nikah-sesudah-2019-tidak-dicatat" | "poligami-sirri-atau-terikat" | "terikat-perkawinan-lain" (saklar tegas, pilih manual). */
+  alasanItsbat?: unknown;
 };
 
 const angka = (x: unknown): number | null => {
@@ -235,13 +261,23 @@ export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
     jenisCerai(j) || j.includes("harta bersama") || j.includes("kewarisan") || jenisGugatanBaru(j) || jenisWasiat(j) || hakAsuh || (jenisItsbat(j) && /\/pdt\.g\//i.test(String(m.nomorPerkara ?? "")));
   const awalan: KodeKeadaanPutusan[] = [];
   if (gugatan) {
+    // I19 18 Okt: eksepsi kewenangan (absolut / relatif) - dikabulkan (NO) atau ditolak dalam putusan sela; saklar tegas, tidak ditebak.
+    const eksepsi = kecil(m.eksepsiKewenangan);
+    if (eksepsi === "absolut" || eksepsi === "relatif") awalan.push(m.putusanSela === true ? `eksepsi-${eksepsi}-ditolak-putusan-sela` : `eksepsi-${eksepsi}-dikabulkan`);
     // Penanda tegas hakim/konseptor menang atas semua dugaan.
     if (m.kurangPihak === true) awalan.push("kurang-pihak");
     if (m.cacatFormil === true) awalan.push("cacat-formil");
     if (jenisCerai(j) && kumulasiKode.includes("itsbat-nikah") && (m.itsbatKabulCeraiDitolak === true || (m.itsbatKabulCeraiDitolak === undefined && itsbatKabulCeraiDitolakDariAmar(m.amarPutusan)))) {
       awalan.push("itsbat-kabul-cerai-ditolak");
     }
-    if (m.sesudahJawaban === true || (m.sesudahJawaban === undefined && Number(m.penandaJawaban?.berkas) > 0)) awalan.push("sesudah-jawaban");
+    // I19: pencabutan yang ditolak Tergugat sesudah jawaban - perkara diputus kabul; didahulukan atas "sesudah-jawaban".
+    if (m.cabutDitolakT === true) awalan.push("cabut-ditolak-t");
+    if (m.sesudahJawaban === true || m.cabutDitolakT === true || (m.sesudahJawaban === undefined && Number(m.penandaJawaban?.berkas) > 0)) awalan.push("sesudah-jawaban");
+  }
+  // I19: itsbat nikah permohonan (Pdt.P) - alasan NO / tolak alternatif; hanya dari saklar tegas.
+  if (jenisItsbat(j) && !hasil.includes("kontensius")) {
+    const alasan = kecil(m.alasanItsbat);
+    if (alasan === "nikah-sesudah-2019-tidak-dicatat" || alasan === "poligami-sirri-atau-terikat" || alasan === "terikat-perkawinan-lain") awalan.push(alasan);
   }
   hasil.unshift(...awalan);
   if (gugatan && (m.alamatTergugatTidakDiketahui === true || m.penandaPerkara?.ghaib === true)) {

@@ -156,7 +156,7 @@ describe("putusan.peta-blangko dan putusan.padanan-jenis = panel-alat.js yang di
   // I8 17 Okt: + 4 baris = 132: cerai ditolak kontradiktoir [03a] (CG, CT) dan hak asuh tolak verstek [03b] (penguasaan anak, Lain-Lain).
   // F22 17 Okt: + 34 baris = 166: pencegahan perkawinan (9), wasiat (13), ekonomi syariah acara biasa (12; baris berkeadaan "es-biasa*").
   it("ALAT_PETA_BAWAAN: 9 jenis + baris status cerai + keadaan + 4 baris kumulasi (T 13 Okt), isi sama persis ('bawaan: true' = asal bawaan)", () => {
-    expect(Object.keys(ALAT_PETA_BAWAAN)).toHaveLength(270); // I15 18 Okt: -1 (baris "penguasaan anak|ditolak|hak-asuh-t-ibu" dihapus; 349 pindah ke 6b); I17 18 Okt: +105 (celah putusan)
+    expect(Object.keys(ALAT_PETA_BAWAAN)).toHaveLength(292); // I15 18 Okt: -1 (baris "penguasaan anak|ditolak|hak-asuh-t-ibu" dihapus; 349 pindah ke 6b); I17 18 Okt: +105 (celah putusan); I19 18 Okt: +22 (cabut ditolak T, eksepsi kewenangan, putusan sela, itsbat)
     expect(Object.keys(ALAT_PETA_BAWAAN).filter((k) => k.includes("+") && k.split("|")[0].includes("+"))).toHaveLength(44); // 4 (T 13 Okt: verstek) + 40 (I17 18 Okt: cerai kumulasi itsbat / hak asuh, folder 1c / 1d)
     expect(Object.keys(ALAT_PETA_BAWAAN).filter((k) => !k.includes("|"))).toHaveLength(15); // + pencegahan perkawinan, wasiat (F22 17 Okt)
     const cermin = CERMIN_EKSTENSI["putusan.peta-blangko"];

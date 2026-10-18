@@ -100,6 +100,11 @@ export type MasukanRekomendasi = {
   itsbatKabulCeraiDitolak?: boolean;
   /** I17: amar putusan penuh bila tersedia (dasar itsbat kabul / cerai ditolak). */
   amarPutusan?: string;
+  /** I19 18 Okt: penanda tegas hakim/konseptor - pencabutan ditolak Tergugat sesudah jawaban; eksepsi kewenangan ("absolut"|"relatif") dikabulkan atau ditolak dalam putusan sela; alasan itsbat. */
+  cabutDitolakT?: boolean;
+  eksepsiKewenangan?: string;
+  putusanSela?: boolean;
+  alasanItsbat?: string;
 };
 
 export type HasilRekomendasi = {
@@ -381,7 +386,10 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
   if (sela.length) return sela;
   let status = String(m.statusPutusan ?? "").trim();
   let perkiraan = false;
-  if (!status) {
+  if (!status && m.putusanSela === true && /^(?:absolut|relatif)$/i.test(String(m.eksepsiKewenangan ?? ""))) {
+    // I19 18 Okt: putusan sela atas eksepsi kewenangan bukan status akhir SIPP - baris petanya berstatus "Putusan Sela".
+    status = "Putusan Sela";
+  } else if (!status) {
     // Belum putus: hanya sidang yang agendanya memutus yang diberi blangko, dengan anggapan dikabulkan.
     if (!/putus|musyawarah|pembacaan\s+(?:putusan|penetapan)/i.test(teks)) return [];
     status = "Dikabulkan";
@@ -407,6 +415,11 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
     penandaPerkara: m.penandaPerkara ?? null,
     alamatTergugatTidakDiketahui: m.alamatTergugatTidakDiketahui,
     ...(m.itsbatKabulCeraiDitolak === undefined ? {} : { itsbatKabulCeraiDitolak: m.itsbatKabulCeraiDitolak }),
+    // I19 18 Okt: pencabutan ditolak T, eksepsi kewenangan (dikabulkan / putusan sela), alasan itsbat.
+    cabutDitolakT: m.cabutDitolakT,
+    eksepsiKewenangan: m.eksepsiKewenangan,
+    putusanSela: m.putusanSela,
+    alasanItsbat: m.alasanItsbat,
   } as MasukanKeadaanPutusan);
   const p = pilihPutusanBawaan(PETA_PUTUSAN_BAWAAN, m.jenisPerkara, status, m.verstekPutusan === true, m.kumulasi, keadaan);
   if (!p) return [];
@@ -542,6 +555,11 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     ...(typeof b.kurangPihak === "boolean" ? { kurangPihak: b.kurangPihak } : {}),
     ...(typeof b.alamatTergugatTidakDiketahui === "boolean" ? { alamatTergugatTidakDiketahui: b.alamatTergugatTidakDiketahui } : {}),
     ...(typeof b.itsbatKabulCeraiDitolak === "boolean" ? { itsbatKabulCeraiDitolak: b.itsbatKabulCeraiDitolak } : {}),
+    // I19 18 Okt: penanda tegas (tidak ada = tidak ditebak).
+    ...(typeof b.cabutDitolakT === "boolean" ? { cabutDitolakT: b.cabutDitolakT } : {}),
+    ...(typeof b.eksepsiKewenangan === "string" ? { eksepsiKewenangan: b.eksepsiKewenangan } : {}),
+    ...(typeof b.putusanSela === "boolean" ? { putusanSela: b.putusanSela } : {}),
+    ...(typeof b.alasanItsbat === "string" ? { alasanItsbat: b.alasanItsbat } : {}),
   };
 }
 export function rekomendasiBlangko(m: MasukanRekomendasi): HasilRekomendasi {
