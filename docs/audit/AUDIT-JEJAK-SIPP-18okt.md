@@ -95,9 +95,18 @@ Penjaga repo baru (uji E): Pengaturan SIPP & ABT menolak kueri variabel yang mer
 memastikan tidak ada kode yang menyusun kueri variabel ABT (`#perkara_id#`) ke `aleta_bot` (pemindai dibuktikan menangkap contoh lama).
 Kode repo memang tidak pernah membuatnya — kueri lama berasal dari paket ABT di luar repo (`abt-tanggal-ktp`, `abt-tanggal-ktp-2`, `abt-data-ecourt`).
 
-Temuan sampingan: variabel ABT **2223** (salinan `pm57`/`i28`) membuat render ABT macet sampai memori habis — sebelum paket apa pun; namanya memuat
-penanda `#2223#` (dugaan: ABT mengisi dirinya sendiri berulang). Kuerinya sama dengan 8872 yang normal. Perlu diperiksa pemilik paket yang membuatnya
-sebelum dipasang.
+**Temuan 2223 (TERBUKTI, sudah ada di server 14 Okt):** nama variabel 2223 "... untuk blangko yang memakai #2223#". ABT mengisi penanda di nama
+setiap kali variabel dihitung (`Abt_model::data_variabel_detil`: `'nama' => variabel($nama, $perkara_id)`), jadi 2223 memanggil dirinya tanpa ujung:
+render php56 macet (>110 detik, "Allowed memory size exhausted"); nama tanpa `#2223#` -> selesai, nilai sama dengan 8872. Blangko Derry
+`DK Pria sudah berhubungan badan.rtf` memakai `#2223#` -> cetaknya di server kemungkinan besar macet sekarang. Sisir semua nama berpenanda
+(server 14 Okt 265, `pm57` 386): hanya 2223 yang menyebut dirinya; tidak ada siklus lain lewat nama/kueri. Penanda lain di nama adalah label dinamis
+yang sengaja (popup "Tgl. KTP #0046#" -> "Tgl. KTP Penggugat") dan TIDAK dibuang. Perbaikan: paket `abt-db-netral` mengganti `#2223#` di nama 2223
+menjadi `kode 2223` (bercadangan + pulih; render 2223 sesudahnya 5/5 sama dengan 8872). Bukti: `abt-db-netral/hasil/bukti-2223.txt`.
+
+Penjaga baru di Pengaturan SIPP & ABT (`abtPengaturanService.simpanVariabel`): kueri yang membuat penanda berputar kembali ke variabel itu sendiri
+(langsung, lewat nama, atau lewat kueri variabel lain) DITOLAK sebelum diuji/ditulis (`penanda_berputar`, menyebut jalurnya, mis.
+`#0046# -> #0701# -> #0700# -> #0046#`). Nama variabel memang tidak dapat diubah dari Pengaturan (hanya kueri dan bawaan) - diuji. Blangko Saya
+tidak menulis variabel ABT (kamus ALETA sendiri), jadi tidak perlu penjaga di sana.
 
 ## Perlu keputusan pengguna (asli, sebelum jawaban di atas)
 
