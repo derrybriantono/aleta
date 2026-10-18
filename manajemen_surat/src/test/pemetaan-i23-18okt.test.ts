@@ -287,6 +287,7 @@ describe("G. isian 9740-9750 (label awam, tanpa label teknis)", () => {
     expect(peta["9720"].opsi).toEqual([
       { nilai: "1", label: "Ya, diminta dalam gugatan" },
       { nilai: "0", label: "Tidak diminta" },
+      { nilai: "2", label: "Tidak diminta, tetapi ditetapkan oleh Hakim karena jabatannya (Buku II 2026)" },
     ]);
     expect(peta["9751"]).toBeUndefined();
     expect(s.otomatis.map((o) => o.kode)).toContain("9751");

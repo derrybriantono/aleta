@@ -248,12 +248,13 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "9590": { nm: "Keadaan penguasaan anak yang sebenarnya saat ini (penguasaan faktual: siapa yang menguasai anak, sejak kapan, dan di mana; dari bukti dan saksi; kosong = kalimat bawaan)" }, // I20 18 Okt: faktual
   "9592": { nm: 'Tempat tinggal anak senyatanya (satu kalimat, mis. "bertempat tinggal di Desa ..."; kosong = wilayah hukum Pengadilan ini)' },
   /* === AKHIR I15 === */
-  /* === I20 18 Okt: penguasaan anak 6b revisi - 9590 kini penguasaan FAKTUAL; saklar penyerahan anak 9720 (1 = diminta, 0 = tidak); alasan petitum selebihnya ditolak 9726 === */
+  /* === I20 18 Okt: penguasaan anak 6b revisi - 9590 kini penguasaan FAKTUAL; saklar penyerahan anak 9720 (1 = diminta, 0 = tidak, 2 = ditetapkan ex officio, keputusan 28); alasan petitum selebihnya ditolak 9726 === */
   "9720": {
     nm: "Apakah gugatan meminta {T} menyerahkan anak?",
     opsi: [
       { nilai: "1", label: "Ya, diminta dalam gugatan" },
       { nilai: "0", label: "Tidak diminta" },
+      { nilai: "2", label: "Tidak diminta, tetapi ditetapkan oleh Hakim karena jabatannya (Buku II 2026)" },
     ],
   },
   "9726": { nm: "Alasan sebagian petitum ditolak (untuk putusan dikabulkan sebagian; kosong = kalimat bawaan)" },
