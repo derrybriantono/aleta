@@ -175,7 +175,7 @@ import { tandaAntrianOnline, type TandaAntrianOnline as TandaOnline } from "@/li
 import { bahanKehadiranDariBaris, kunciKehadiran, ringkasKehadiran, susunKehadiran, type KehadiranOrang } from "@/lib/kehadiran-rinci"; /* F3.2 */
 import { DaftarHadirRinci, RingkasKehadiran, daftarPilihanHadir, type PilihanHadir } from "@/components/portal/kehadiran-rinci-sidang"; /* F3.2 */
 import { EcourtAksiPerkara, EcourtLencanaPutusan } from "@/components/portal/ecourt-aksi-perkara";
-import { bolehAksi, saringSaklarSidang } from "@/lib/matriks-peran";
+import { bolehAksi, saringSaklarSidang, type PenggunaGolongan } from "@/lib/matriks-peran";
 import {
   AGENDA_ELITIGASI,
   AGENDA_MUSYAWARAH,
@@ -231,6 +231,8 @@ import {
 import type { KeadaanTarik } from "@/lib/tarik-belum-upload";
 import { useTarikBelumUpload } from "@/components/portal/use-tarik-belum-upload";
 import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
+import { PanduanPemeriksaanSaksi, type PropsPanduanSaksi } from "@/components/portal/panduan-pemeriksaan-saksi";
+import { agendaPembuktianSaksi, keadaanAwalDariSidang } from "@/lib/pandu-saksi";
 
 /**
  * Dialog Cetak relaas dimuat SAAT DIBUKA, bukan bersama jadwal.
@@ -272,6 +274,8 @@ type SidangBaris = {
   kumulasiTerbaca?: boolean;
   /* === AKHIR 12OKT-A === */
   alurPerkaraId: number;
+  /** Nomor jenis perkara SIPP (dikirim bot sejak 18 Okt 2026); dasar panduan pertanyaan saksi. */
+  jenisPerkaraId?: number | null;
   sudahPutus: boolean;
   tanggalPutusan: string;
   statusPutusan: string;
@@ -8996,6 +9000,29 @@ export function AletaEcourtSidang({
                                       ? tandaAntrianOnline(antrianUntuk(antrian.peta, baris))
                                       : null
                                   }
+                                  /* panduan pertanyaan saksi (18 Okt 2026) */
+                                  penggunaPandu={currentUser}
+                                  pandu={{
+                                    perkara: {
+                                      nomorPerkara: baris.nomorPerkara,
+                                      jenisPerkaraId: baris.jenisPerkaraId,
+                                      alurPerkaraId: baris.alurPerkaraId,
+                                      jenisPerkara: baris.jenisPerkara,
+                                    },
+                                    sidangId: baris.sidangId,
+                                    tanggalSidang: baris.tanggalSidang,
+                                    agenda: baris.agenda,
+                                    menonjol: agendaPembuktianSaksi(baris.agenda),
+                                    namaPengadilan: institutionIdentity?.courtName || "",
+                                    keadaanAwal: keadaanAwalDariSidang({
+                                      dihadiriOleh: baris.dihadiriOleh,
+                                      verstekPutusan: baris.verstekPutusan,
+                                      tergugatPernahHadir: baris.panggilan?.tergugatPernahHadir,
+                                      kumulasi: baris.kumulasiTerbaca ? baris.kumulasi ?? null : null,
+                                      adaRekonvensi: Boolean(baris.penandaJawaban?.rekonvensi),
+                                    }),
+                                    namaSaksi: { P: baris.saksiNamaPihak1 ?? [], T: baris.saksiNamaPihak2 ?? [] },
+                                  }}
                                 />
                               )}
                             </div>
@@ -9081,7 +9108,15 @@ export function RincianSidang({
   tampilSita = false,
   tampilEksekusi = false /* 12OKT-N */,
   /* === AKHIR 12OKT-K === */
+  pandu = null,
+  penggunaPandu,
 }: {
+  /**
+   * Panduan pertanyaan saksi (18 Okt 2026, permintaan hakim): bahan perkara dari barisnya.
+   * null = tidak digambar. penggunaPandu menentukan hak (hakim, panitera, PP, admin).
+   */
+  pandu?: Omit<PropsPanduanSaksi, "kunciBagian" | "pengguna"> | null;
+  penggunaPandu?: PenggunaGolongan | null;
   /* === 12OKT-B: penanda perkara & pihak di rincian (dikirim dari barisnya) === */
   penanda?: BahanPenandaBaris;
   aktifPenandaPerkara?: boolean;
@@ -9378,6 +9413,9 @@ export function RincianSidang({
           )}
         </div>
       ) : null}
+
+      {/* Panduan pertanyaan saksi: menonjol pada agenda pembuktian, tetap dapat dibuka di agenda lain. */}
+      {pandu ? <PanduanPemeriksaanSaksi {...pandu} kunciBagian="sidang-pandu-saksi" pengguna={penggunaPandu} /> : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* --- Majelis dan petugas --- */}

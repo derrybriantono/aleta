@@ -351,6 +351,7 @@ describe("4. rute menjawab 403 bagi peran tak berhak (penjaga sisi server)", () 
     { nama: "tanda-tangan", impor: () => import("@/app/api/aleta-ecourt/tanda-tangan/route"), method: "POST", url: "/api/aleta-ecourt/tanda-tangan", aksi: "ttd.kelola", tolak: "hakim", terima: "admin" },
     { nama: "identitas-pihak", impor: () => import("@/app/api/aleta-ecourt/identitas-pihak/route"), method: "GET", url: "/api/aleta-ecourt/identitas-pihak?nomorPerkara=1/Pdt.G/2026/PA.Dgl", aksi: "status.data-pihak", tolak: "sekretaris", terima: "kasir" },
     { nama: "kontak-para-pihak (Agen D)", impor: () => import("@/app/api/aleta-ecourt/kontak-para-pihak/route"), method: "GET", url: "/api/aleta-ecourt/kontak-para-pihak?nomor=1/Pdt.G/2026/PA.Dgl", aksi: "status.data-pihak", tolak: "staf", terima: "mediator" },
+    { nama: "pandu-saksi (panduan pertanyaan saksi)", impor: () => import("@/app/api/aleta-ecourt/pandu-saksi/route"), method: "GET", url: "/api/aleta-ecourt/pandu-saksi?jenisPerkaraId=347&alurPerkaraId=15", aksi: "pandu.saksi", tolak: "kasir", terima: "hakim" },
     { nama: "prompt-putusan", impor: () => import("@/app/api/aleta-ecourt/prompt-putusan/route"), method: "GET", url: "/api/aleta-ecourt/prompt-putusan?nomor=1/Pdt.G/2026/PA.Dgl", aksi: "status.analisa", tolak: "kasir", terima: "hakim" },
   ];
 

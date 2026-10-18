@@ -57,6 +57,8 @@ import {
   bolehBertanda,
 } from "@/components/portal/riwayat-pihak";
 import { usePortal } from "@/lib/app-state";
+import { PanduanPemeriksaanSaksi } from "@/components/portal/panduan-pemeriksaan-saksi";
+import { agendaPembuktianSaksi, keadaanAwalDariSidang } from "@/lib/pandu-saksi";
 import { AMBANG_HARI_SEMA, ringkasStatus } from "@/lib/ringkas-status";
 import {
   BULAN_PANJANG,
@@ -424,6 +426,9 @@ export type Status = {
     jenisPerkara: string;
     jenisPerkaraLengkap: string;
     tanggalDaftar: string;
+    /** Dikirim bot sejak 2.39.0; dasar panduan pertanyaan saksi (jenis dikenali dari nomor, bukan kata). */
+    alurPerkaraId?: number;
+    jenisPerkaraId?: number;
   };
   umur: {
     hariBersih: number | null;
@@ -503,6 +508,8 @@ export type Status = {
     alasanDitunda: string;
     urutanSidang: number;
     adaBas: boolean;
+    /** Kehadiran sidang menurut SIPP (1 semua pihak, 2 pihak pertama saja); bot lama tidak mengirimnya. */
+    dihadiriOleh?: number | null;
   }>;
   penundaan: Array<{ tanggalSidang: string; agenda: string; alasanDitunda: string }>;
   putusan: {
@@ -2920,7 +2927,7 @@ function IsiStatus({
    * daripada tidak ada tautan: ia menyalahkan orangnya atas pintu yang memang
    * bukan untuk dia.
    */
-  const { accessibleModules } = usePortal();
+  const { accessibleModules, currentUser, institutionIdentity } = usePortal();
   /* === 12OKT-A: kumulasi perkara === */
   // Saklar "Kumulasi perkara" panel Tampilan Jadwal Sidang; hanya bila bot
   // sudah mengirim ruasnya (kumulasiTerbaca) - selain itu tampilan lama.
@@ -2980,6 +2987,17 @@ function IsiStatus({
   // kemarin sementara grafiknya sudah menggambar sidang hari ini berongga.
   const sidangBerikut = status.jadwal.find((x) => x.tanggalSidang >= hariIniIso());
   const sidangTerakhir = status.jadwal[status.jadwal.length - 1];
+  // Panduan pertanyaan saksi memandu sidang yang akan datang (atau yang terakhir); centangnya sama dengan Jadwal Sidang.
+  const sidangPandu = sidangBerikut ?? sidangTerakhir;
+  const hadirPandu = (() => {
+    for (let i = status.jadwal.length - 1; i >= 0; i -= 1) {
+      const h = status.jadwal[i].dihadiriOleh;
+      if (status.jadwal[i].tanggalSidang <= hariIniIso() && (h === 1 || h === 2)) return h;
+    }
+    return null;
+  })();
+  const namaSaksiPandu = (sisi: RegExp) =>
+    status.saksiRinci.baris.filter((x) => sisi.test(x.diajukanOleh || "")).map((x) => x.nama);
 
   return (
     // Penanda pembungkus cetak: yang di dalamnya tercetak dengan palet kertas,
@@ -4110,6 +4128,29 @@ function IsiStatus({
           </div>
         )}
       </Bagian>
+      {/* Panduan pertanyaan saksi: dekat bagian Saksi, memandu sidang yang akan datang. */}
+      <PanduanPemeriksaanSaksi
+        perkara={{
+          nomorPerkara: status.identitas.nomorPerkara,
+          jenisPerkaraId: status.identitas.jenisPerkaraId,
+          alurPerkaraId: status.identitas.alurPerkaraId,
+          jenisPerkara: status.identitas.jenisPerkara,
+        }}
+        sidangId={sidangPandu?.sidangId ?? ""}
+        tanggalSidang={sidangPandu?.tanggalSidang ?? ""}
+        agenda={sidangPandu?.agenda ?? ""}
+        menonjol={agendaPembuktianSaksi(sidangPandu?.agenda)}
+        namaPengadilan={institutionIdentity?.courtName || ""}
+        keadaanAwal={keadaanAwalDariSidang({
+          dihadiriOleh: hadirPandu,
+          verstekPutusan: status.putusan?.verstek === true,
+          kumulasi: status.kumulasiTerbaca ? status.kumulasi ?? null : null,
+          adaRekonvensi: Boolean(status.penandaJawaban?.rekonvensi),
+        })}
+        namaSaksi={{ P: namaSaksiPandu(/penggugat|pemohon/i), T: namaSaksiPandu(/tergugat|termohon/i) }}
+        kunciBagian="status-pandu-saksi"
+        pengguna={currentUser}
+      />
       {/* ==================================================================
           PUTUSAN LENGKAP
           ==================================================================
