@@ -112,17 +112,38 @@
   },
   {
    "id": "dh-khes-36-38",
-   "rujukan": "Pasal 36 dan Pasal 38 Kompilasi Hukum Ekonomi Syariah",
-   "uraian": "pihak dianggap ingkar janji bila karena kesalahannya tidak melakukan yang dijanjikan, melaksanakan tetapi tidak sebagaimana dijanjikan, terlambat, atau melakukan yang menurut perjanjian tidak boleh dilakukan; sanksinya antara lain ganti rugi, pembatalan akad, peralihan risiko, denda dan biaya perkara",
-   "status": "perlu-verifikasi",
-   "sumber": "dikutip blangko Derry ES; naskah KHES (PERMA 2/2008) belum dibaca"
+   "rujukan": "Pasal 36, Pasal 37, dan Pasal 38 Kompilasi Hukum Ekonomi Syariah (PERMA 2/2008)",
+   "uraian": "pihak dapat dianggap ingkar janji bila karena kesalahannya tidak melakukan apa yang dijanjikan, melaksanakan tetapi tidak sebagaimana dijanjikan, terlambat, atau melakukan sesuatu yang menurut perjanjian tidak boleh dilakukan (Pasal 36); ingkar janji terjadi bila telah dinyatakan ingkar janji dengan surat perintah atau akta sejenis, atau perjanjian sendiri menetapkan ingkar janji dengan lewatnya waktu (Pasal 37); sanksinya dapat berupa membayar ganti rugi, pembatalan akad, peralihan risiko, denda, dan atau membayar biaya perkara (Pasal 38)",
+   "status": "terverifikasi",
+   "sumber": "bunyi Pasal 36, 37, dan 38 dibaca langsung pada naskah resmi PERMA 2/2008 tentang KHES (berkas dari pengguna 19 Okt 2026); sebelumnya dikutip blangko Derry ES"
   },
   {
    "id": "dh-khes-21",
-   "rujukan": "Pasal 21 huruf b Kompilasi Hukum Ekonomi Syariah",
-   "uraian": "akad yang dibuat sah berlaku sebagai ketentuan yang mengikat para pihak dan wajib dilaksanakan sesuai kesepakatan",
-   "status": "perlu-verifikasi",
-   "sumber": "dikutip blangko Derry ES; naskah KHES belum dibaca"
+   "rujukan": "Pasal 21 huruf a dan b serta Pasal 44 Kompilasi Hukum Ekonomi Syariah (PERMA 2/2008)",
+   "uraian": "akad dilakukan berdasarkan asas ikhtiyari atau sukarela, atas kehendak para pihak tanpa keterpaksaan karena tekanan (Pasal 21 huruf a), dan asas amanah atau menepati janji, yaitu setiap akad wajib dilaksanakan sesuai kesepakatan dan terhindar dari cidera janji (Pasal 21 huruf b); semua akad yang dibentuk secara sah berlaku sebagai nash syariah bagi mereka yang mengadakan akad (Pasal 44)",
+   "status": "terverifikasi",
+   "sumber": "bunyi Pasal 21 huruf a dan b serta Pasal 44 dibaca langsung pada naskah resmi PERMA 2/2008 tentang KHES (berkas dari pengguna 19 Okt 2026); uraian lama (akad sah mengikat) tidak tepat dikaitkan ke Pasal 21 huruf b dan dipindah ke Pasal 44"
+  },
+  {
+   "id": "dh-khes-22",
+   "rujukan": "Pasal 22 sampai dengan Pasal 25 Kompilasi Hukum Ekonomi Syariah (PERMA 2/2008)",
+   "uraian": "rukun akad terdiri atas pihak-pihak yang berakad, obyek akad, tujuan pokok akad, dan kesepakatan (Pasal 22); pihak yang berakad adalah orang, persekutuan, atau badan usaha yang cakap melakukan perbuatan hukum (Pasal 23); obyek akad adalah amwal atau jasa yang dihalalkan (Pasal 24)",
+   "status": "terverifikasi",
+   "sumber": "bunyi Pasal 22, 23, dan 24 dibaca langsung pada naskah resmi PERMA 2/2008 tentang KHES (berkas dari pengguna 19 Okt 2026)"
+  },
+  {
+   "id": "dh-khes-39",
+   "rujukan": "Pasal 39 Kompilasi Hukum Ekonomi Syariah (PERMA 2/2008)",
+   "uraian": "sanksi ganti rugi dapat dijatuhkan bila pihak yang ingkar janji, setelah dinyatakan ingkar janji, tetap ingkar janji; bila yang harus diberikan atau dibuat hanya dapat diberikan atau dibuat dalam tenggang waktu yang telah dilampaui; dan bila ia tidak dapat membuktikan bahwa ingkar janjinya tidak di bawah paksaan",
+   "status": "terverifikasi",
+   "sumber": "bunyi Pasal 39 dibaca langsung pada naskah resmi PERMA 2/2008 tentang KHES (berkas dari pengguna 19 Okt 2026)"
+  },
+  {
+   "id": "dh-khes-40-41",
+   "rujukan": "Pasal 40 dan Pasal 41 Kompilasi Hukum Ekonomi Syariah (PERMA 2/2008)",
+   "uraian": "keadaan memaksa atau darurat adalah keadaan ketika salah satu pihak terhalang melaksanakan prestasinya (Pasal 40); syaratnya antara lain peristiwa itu tidak terduga para pihak, tidak dapat dipertanggungjawabkan kepada pihak yang harus berprestasi, di luar kesalahannya, dan ia tidak beriktikad buruk (Pasal 41)",
+   "status": "terverifikasi",
+   "sumber": "bunyi Pasal 40 dan 41 dibaca langsung pada naskah resmi PERMA 2/2008 tentang KHES (berkas dari pengguna 19 Okt 2026) (penomoran huruf pada Pasal 41 di naskah tidak berurutan sehingga huruf tidak dikutip)"
   },
   {
    "id": "dh-kuhperdata-1338",
@@ -202,7 +223,8 @@
     "dh-pasal-49-i",
     "dh-khes-21",
     "dh-kuhperdata-1338",
-    "dh-buku2-2026-41-42"
+    "dh-buku2-2026-41-42",
+    "dh-khes-22"
    ]
   },
   {
@@ -240,7 +262,8 @@
    "uraian": "kerugian yang dialami Penggugat akibat ingkar janji",
    "wajib": true,
    "dasarHukum": [
-    "dh-khes-36-38"
+    "dh-khes-36-38",
+    "dh-khes-39"
    ]
   },
   {
@@ -261,7 +284,8 @@
    "uraian": "alasan Tergugat tidak memenuhi kewajibannya dan keadaan di luar kemampuannya",
    "wajib": false,
    "dasarHukum": [
-    "dh-khes-36-38"
+    "dh-khes-36-38",
+    "dh-khes-40-41"
    ]
   },
   {
