@@ -55,12 +55,23 @@ const KELOMPOK = [
   },
   {
     id: "gugatan-ecourt",
-    kode: ["6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227"],
+    kode: ["6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "5227"],
     untuk: "semua",
     berkas: "ekstensi-sipp/abt.js",
-    sumber: "surat gugatan dan jawab-menjawab e-Court (petitum accessoir, anak, rekonvensi)",
+    sumber: "surat gugatan e-Court (petitum accessoir, anak, alasan cerai)",
     tingkat: "usulan",
     syarat: "perkara e-Court; berkeyakinan ragu tidak menimpa isian tangan",
+  },
+  {
+    // JJ 18 Okt 2026: jawab-menjawab TERTULIS (jawaban, replik, duplik, rereplik, kesimpulan) dari e-Court.
+    id: "jawab-menjawab-ecourt",
+    kode: ["9881", "7084", "8436", "8437", "9355", "9491", "9681"],
+    untuk: "semua",
+    berkas: "aleta_bot/services/jawabMenjawabEcourtService.js",
+    sumber:
+      "jawaban/replik/duplik/kesimpulan e-Court: jenis dikenali dari jenis+judul e-Court DAN isi surat (kop, salam, identitas, penutup dibuang); 9881 tertulis bila berkasnya ada; 7084 hanya bila jawaban jelas memuat gugatan balik; 8436/8437 klausa kesimpulan kedua pihak; 9355/9491/9681 pokok jawaban dan eksepsi",
+    tingkat: "usulan",
+    syarat: "perkara e-Court dengan berkas jawab-menjawab berlapis teks (OCR bila pindaian); semua usulan ragu dan tidak menimpa isian petugas, belum diukur atas berkas sungguhan (ukur di server)",
   },
   {
     id: "itsbat-pasangan-meninggal",
@@ -139,13 +150,13 @@ const TANPA_SUMBER = {
 
 // Sumber data yang MUNGKIN bagi isian yang belum terisi (dipakai kolom "sumber yang mungkin" di daftar cek).
 const KURASI = {
-  "tj:jawaban lisan 0047": ["tidak ada (jawab-jinawab lisan di persidangan; diketik panitera)", "Cerai kontra lisan; tidak ada kolom terstruktur di SIPP."],
-  "tj:replik lisan 0046": ["tidak ada (jawab-jinawab lisan di persidangan; diketik panitera)", ""],
-  "tj:duplik lisan 0047": ["tidak ada (jawab-jinawab lisan di persidangan; diketik panitera)", ""],
+  "tj:jawaban lisan 0047": ["lisan: diketik panitera (tidak ada kolom terstruktur di SIPP). Tertulis: butir pokok dari berkas e-Court tersedia sebagai kalimat salin 'jawab-tertulis-jawaban' (isi-gugatan); tanya-jawab tidak ditulis otomatis", "Blangko putusan: 'COPY FILE JAWABAN APABILA TERTULIS' - kini butir pokoknya disiapkan; 9881 diisi 'tertulis' bila berkasnya ada."],
+  "tj:replik lisan 0046": ["lisan: diketik panitera. Tertulis: butir pokok replik e-Court sebagai kalimat salin 'jawab-tertulis-replik'; tanya-jawab tidak ditulis otomatis", ""],
+  "tj:duplik lisan 0047": ["lisan: diketik panitera. Tertulis: butir pokok duplik/rereplik e-Court sebagai kalimat salin 'jawab-tertulis-duplik'; tanya-jawab tidak ditulis otomatis", ""],
   "0711": ["posita/petitum hadhanah (belum ada aturan)", "Hanya 1 blangko."],
   "9220": ["keterangan Termohon di sidang ikrar (BAS ikrar)", "Hanya 1 blangko."],
   "8617": ["tidak ada (penilaian hakim atas cacat formil)", ""],
-  "9164": ["tidak ada (tanggapan Tergugat di sidang insidentil)", ""],
+  "9164": ["jawaban e-Court (paragraf tentang sita) bila Tergugat menjawab tertulis - belum dibangun; selebihnya diketik di sidang insidentil", "JJ 18 Okt: pengisi jawab-menjawab belum memilah dalil per topik sita."],
   "9165": ["tidak ada (hasil pemeriksaan setempat)", "Perkara kebendaan, sangat jarang."],
   "9166": ["tidak ada (hasil pemeriksaan setempat)", ""],
   "9167": ["tidak ada (hasil pemeriksaan setempat)", ""],
@@ -182,8 +193,6 @@ const KURASI = {
   "0303": ["ALETA panggilan ghaib / pengumuman", ""],
   "8536": ["tidak ada (putusan pidana Tergugat diketahui dari bukti surat)", "Alasan C; ±jarang."],
   "7178": ["relaas panggilan (ALETA relaas) - penilaian hakim", ""],
-  "8436": ["berkas e-Court (kesimpulan Penggugat)", "Registri cerai: belum."],
-  "8437": ["berkas e-Court (kesimpulan Tergugat)", "Registri cerai: belum."],
   "8433": ["hakim mengetik (usulan hanya bila mediasi Y2)", "Sejak 2023: 41 isian petugas, hanya 4 berasal dari mediasi Y2; alasan lain (perbaikan gugatan, alamat tidak ditemukan) bebas."],
   "5171": ["berkas e-Court (gugatan: penghasilan)", ""],
   "5271": ["berkas e-Court (gugatan: penghasilan)", ""],

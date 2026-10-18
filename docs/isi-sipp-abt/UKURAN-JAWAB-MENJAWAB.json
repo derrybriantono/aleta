@@ -1,0 +1,128 @@
+{
+  "dibuat": "2026-10-18",
+  "sumber": "salinan lokal aleta_bot / aps_badilag / sipp_donggala (hanya SELECT)",
+  "A_metadata": {
+    "dokumenArsip": 2151,
+    "berjenisJawabMenjawab": 81,
+    "perPeran": {
+      "duplik": 19,
+      "jawaban": 20,
+      "kesimpulan": 20,
+      "replik": 18,
+      "gugatan": 3,
+      "lain": 1
+    },
+    "raguKarenaJenisLawanJudul": 1,
+    "pihakTakDikenal": 0,
+    "contohBertentangan": [
+      "Replik / \"Jawaban dari penggugat\" -> replik"
+    ],
+    "catatan": "Dokumen berjenis kosong (mayoritas: gugatan, kuasa, bukti, KTP) tidak ikut; jenis kosong dibaca dari judul hanya bila judulnya memuat kata jawaban/replik/duplik/kesimpulan.",
+    "perkaraDenganArsip": 500,
+    "perkaraDenganJawabMenjawab": 25
+  },
+  "B_9881": {
+    "petugas9881": 15,
+    "terukur": 4,
+    "cocok": 4,
+    "tidakCocok": [],
+    "tanpaMetadataArsip": 11,
+    "catatan": "terukur = perkara yang punya isian petugas 9881 DAN metadata arsip e-Court di laptop; sisanya tidak dapat dinilai."
+  },
+  "C_kebiasaanPetugas": {
+    "7084": {
+      "baris": 4,
+      "berisi": 3,
+      "persisBunyiBawaan": 3,
+      "lain": []
+    },
+    "8436": {
+      "baris": 13,
+      "berisi": 13,
+      "persisBunyiBawaan": 10,
+      "lain": [
+        "Bahwa istri tidak merubah perilakunya, tidak menjalankan kewajibannya, serta tid",
+        "sebagai berikut :",
+        "yang pada pokoknya sebagai berikut :"
+      ]
+    },
+    "8437": {
+      "baris": 4,
+      "berisi": 3,
+      "persisBunyiBawaan": 0,
+      "lain": [
+        "Penggugat mengajukan kesimpulan secara lisan yang pada pokoknya tetap pada dalil",
+        "Keberatan dan tidak ingin bercerai dengan Penggugat",
+        "sebagai berikut :"
+      ]
+    },
+    "perkara8436": [
+      {
+        "nomor": "396/Pdt.G/2025/PA.Dgl",
+        "arsip": false,
+        "jawabMenjawabDiArsip": false
+      },
+      {
+        "nomor": "435/Pdt.G/2025/PA.Dgl",
+        "arsip": false,
+        "jawabMenjawabDiArsip": false
+      },
+      {
+        "nomor": "523/Pdt.G/2025/PA.Dgl",
+        "arsip": false,
+        "jawabMenjawabDiArsip": false
+      },
+      {
+        "nomor": "539/Pdt.G/2025/PA.Dgl",
+        "arsip": false,
+        "jawabMenjawabDiArsip": false
+      },
+      {
+        "nomor": "542/Pdt.G/2025/PA.Dgl",
+        "arsip": false,
+        "jawabMenjawabDiArsip": false
+      },
+      {
+        "nomor": "579/Pdt.G/2025/PA.Dgl",
+        "arsip": false,
+        "jawabMenjawabDiArsip": false
+      },
+      {
+        "nomor": "15/Pdt.G/2026/PA.Dgl",
+        "arsip": false,
+        "jawabMenjawabDiArsip": false
+      },
+      {
+        "nomor": "87/Pdt.G/2026/PA.Dgl",
+        "arsip": false,
+        "jawabMenjawabDiArsip": false
+      },
+      {
+        "nomor": "143/Pdt.G/2026/PA.Dgl",
+        "arsip": false,
+        "jawabMenjawabDiArsip": false
+      },
+      {
+        "nomor": "184/Pdt.G/2026/PA.Dgl",
+        "arsip": false,
+        "jawabMenjawabDiArsip": false
+      },
+      {
+        "nomor": "350/Pdt.G/2026/PA.Dgl",
+        "arsip": true,
+        "jawabMenjawabDiArsip": true
+      },
+      {
+        "nomor": "477/Pdt.G/2026/PA.Dgl",
+        "arsip": true,
+        "jawabMenjawabDiArsip": false
+      },
+      {
+        "nomor": "547/Pdt.G/2026/PA.Dgl",
+        "arsip": true,
+        "jawabMenjawabDiArsip": false
+      }
+    ],
+    "catatan": "Bunyi bawaan ABT 8436: 'tetap pada gugatan semula untuk bercerai dengan <pihak>'. Isi surat kesimpulan belum dapat dibandingkan karena PDF-nya tidak ada di laptop."
+  }
+}

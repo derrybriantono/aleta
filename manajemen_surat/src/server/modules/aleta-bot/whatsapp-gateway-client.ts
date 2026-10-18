@@ -5045,7 +5045,7 @@ export async function postGatewayIsiGugatan(muatan: {
   nomorPerkara: string;
   sebutan: { lawan: string; pelaku: string };
   majelis?: string;
-  dokumen: Array<{ judul: string; peran: string; teks: string; baca: "teks" | "ocr"; penuntutKode: string }>;
+  dokumen: Array<{ judul: string; peran: string; teks: string; baca: "teks" | "ocr"; penuntutKode: string; jenis?: string; pengunggah?: string }>;
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/abt/isi-gugatan", {
     method: "POST",

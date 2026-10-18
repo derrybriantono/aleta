@@ -19,6 +19,12 @@
  *             dengan kutipan "e-Court: <judul> hal. n"
  *   kalimat   rangkaian kata hakim (P7) untuk disalin/disunting
  *
+ * JJ (18 Okt 2026): jawab-menjawab TERTULIS. Jawaban, replik, duplik, rereplik, dan kesimpulan kini diunggah ke e-Court.
+ * jawabMenjawabEcourtService mengenali jenis berkasnya dari jenis/judul e-Court DAN isi suratnya (daftar bukti yang
+ * diunggah sebagai "Kesimpulan" dikeluarkan), membuang kop/salam/identitas/penutup, lalu mengisi 9881 (tertulis), 7084
+ * (hanya bila jawaban jelas memuat gugatan balik), 8436/8437 (kesimpulan), 9355/9491/9681 (pokok jawaban & eksepsi) -
+ * semuanya jagaIsianLama dan ragu kecuali 9881 - dan menambah butir yang dapat disalin ke bagian kalimat.
+ *
  * TIDAK menulis apa pun. Keyakinan: tuntutan, nominal, anak = "ragu" (tidak
  * dicentang sendiri; hasil ukur di hasil-agen3.md di bawah 95%). Hanya 9881
  * ("tertulis" - jawaban memang diunggah sebagai berkas e-Court) "cukup".
@@ -28,6 +34,7 @@
 const T = require("./tuntutanDeteksiService");
 const K = require("./kalimatHakimService");
 const U = require("./abtUsulanService");
+const J = require("./jawabMenjawabEcourtService");
 
 const VAR = Object.freeze({
   mutah: "6055",
@@ -55,7 +62,8 @@ const PERAN_SAH = new Set(["gugatan", "jawaban", "replik", "duplik", "kesimpulan
 function saringDokumen(dokumen) {
   let sisa = BATAS_TEKS;
   const hasil = [];
-  for (const d of Array.isArray(dokumen) ? dokumen.slice(0, 8) : []) {
+  // JJ 18 Okt: sampai 12 berkas (satu gugatan + jawaban, replik, duplik, rereplik, kesimpulan kedua pihak).
+  for (const d of Array.isArray(dokumen) ? dokumen.slice(0, 12) : []) {
     if (!d || typeof d !== "object") continue;
     const peran = PERAN_SAH.has(String(d.peran)) ? String(d.peran) : "gugatan";
     const teks = String(d.teks || "").slice(0, Math.max(0, sisa));
@@ -68,6 +76,9 @@ function saringDokumen(dokumen) {
       baca: d.baca === "ocr" ? "ocr" : "teks",
       penuntutKode: d.penuntutKode === "0046" || d.penuntutKode === "0047" ? d.penuntutKode : "",
       rekonvensi: d.rekonvensi === "ada" ? "ada" : d.rekonvensi === "tidak" ? "tidak" : "",
+      // Jenis dokumen & pengunggah menurut e-Court: dasar pengenalan jawaban/replik/duplik/kesimpulan (jawabMenjawabEcourtService).
+      jenis: String(d.jenis || "").replace(/[\r\n]+/g, " ").slice(0, 60),
+      pengunggah: String(d.pengunggah || "").replace(/[\r\n]+/g, " ").slice(0, 60),
     });
   }
   return hasil;
@@ -177,21 +188,34 @@ function susunIsiGugatan(masukan) {
   const ikut = butir.length ? U.anakIkutPosita(butir) : "";
   const ciri = posita ? U.alasanDariPosita(posita) : [];
 
-  // ── Jawab-menjawab ──
+  // ── Jawab-menjawab (JJ 18 Okt: jenis dikenali dari jenis/judul e-Court DAN isi surat) ──
+  const jm = J.susunJawabMenjawab({ dokumen, sebutan });
+  const infoJm = new Map(jm.dokumen.map((x) => [dokumen[x.indeks], x]));
   const jawab = dokumen
     .filter((d) => d.peran !== "gugatan")
+    .filter((d) => {
+      // Daftar bukti / surat gugatan yang diunggah sebagai "Kesimpulan" atau "Jawaban" bukan jawab-menjawab.
+      const i = infoJm.get(d);
+      return !(i && i.dipakai === false);
+    })
     .map((d) => {
       const sikap = T.sikapJawaban(d.teks);
       const rapi = T.rapikanTeks(d.teks).replace(/[\f\s]+/g, " ").trim();
       const mulai = rapi.search(/\b(?:DALAM\s+KONVENSI|Dalam\s+Pokok\s+Perkara|Bahwa)\b/);
+      const i = infoJm.get(d) || null;
       return {
         judul: d.judul,
-        peran: d.peran,
+        peran: i && i.peran ? i.peran : d.peran,
         baca: d.baca,
-        ringkas: rapi.slice(Math.max(0, mulai), Math.max(0, mulai) + 700),
+        // Pokok bersih (tanpa kop, salam, identitas, penutup) bila terbaca; selain itu awal teks seperti semula.
+        ringkas: i && i.butir && i.butir.length ? i.butir.join("; ").slice(0, 700) : rapi.slice(Math.max(0, mulai), Math.max(0, mulai) + 700),
+        butir: i ? i.butir : [],
+        pihak: i ? i.pihak : "",
+        ragu: i ? i.ragu : true,
+        catatan: i ? i.catatan : [],
         diakui: sikap.diakui,
         dibantah: sikap.dibantah,
-        rekonvensi: d.rekonvensi || (T.bagianDokumen(T.datarkan(T.rapikanTeks(d.teks))).rekonvensi >= 0 ? "ada" : "tidak"),
+        rekonvensi: i && i.rekonvensi ? i.rekonvensi : d.rekonvensi || (T.bagianDokumen(T.datarkan(T.rapikanTeks(d.teks))).rekonvensi >= 0 ? "ada" : "tidak"),
         tuntutan: tuntutan.filter((t) => t.dok === d).length,
       };
     });
@@ -273,15 +297,10 @@ function susunIsiGugatan(masukan) {
   if (ikut && gugatan) {
     usulan.push({ kode: VAR.diasuhOleh, nama: "kini anak tersebut diasuh oleh", nilai: ikut === "pelaku" ? sebutan.pelaku : sebutan.lawan, keyakinan: "ragu", bentrok: "", sumber: sumberDari(gugatan, butir.find((b) => /anak/i.test(b) && /(?:tinggal|ikut|asuh|pelihara)/i.test(b)) || "", null), kodePola: "", catatan: "Dari posita surat gugatan e-Court." });
   }
-  const dokRek = jawab.find((j) => j.rekonvensi === "ada");
-  if (dokRek) {
-    const d = dokumen.find((x) => x.judul === dokRek.judul);
-    usulan.push({ kode: VAR.rekonvensi, nama: "PENANDA KONVENSI/REKONVENSI (1 apabila ada)", nilai: "1", keyakinan: "ragu", bentrok: "", sumber: sumberDari(d, dokRek.ringkas.slice(0, 200), null), kodePola: "tuntutan-bagian-rekonvensi", catatan: "Jawaban e-Court memuat gugatan rekonvensi - pastikan rekonvensi diajukan sebelum pembuktian." });
-  }
-  if (jawab.length) {
-    const d = dokumen.find((x) => x.peran !== "gugatan");
-    usulan.push({ kode: VAR.lisanTertulis, nama: "lisan atau tertulis (jawaban replik dan duplik)", nilai: "tertulis", keyakinan: "cukup", bentrok: "", sumber: sumberDari(d, `${jawab.length} berkas jawab-menjawab diunggah di e-Court: ${jawab.map((j) => j.judul).join("; ")}`, null), kodePola: "", catatan: "" });
-  }
+  // JJ 18 Okt: 9881 (tertulis), 7084 (rekonvensi - hanya dari jawaban yang jelas memuat gugatan balik), 8436/8437
+  // (kesimpulan), 9355/9491/9681 (pokok jawaban & eksepsi) dari jawabMenjawabEcourtService. Semua jagaIsianLama.
+  usulan.push(...jm.usulan);
+  catatan.push(...jm.catatan);
 
   // 5227 - bunyi pilihan dari dalil gugatan (templat hakim)
   const v5227 = ciri.length ? K.varian5227(ciri, sebutan) : { varian: [], tanpaFrasa: [] };
@@ -342,6 +361,8 @@ function susunIsiGugatan(masukan) {
   }
   kalimat.push(...K.kalimatBersesuaian(sebutan, "lawan"));
   if (jawab.length) kalimat.push(...K.kalimatBersesuaian(sebutan, "pelaku"), ...K.kalimatBersesuaian(sebutan, "keduanya"));
+  // JJ 18 Okt: butir jawaban/replik/duplik dan klausa kesimpulan tertulis, siap disalin ke blangko putusan.
+  kalimat.push(...jm.kalimat);
   const ct = /pemohon/i.test(sebutan.lawan);
   if (ct) {
     const tidakAda = ["mutah", "iddah"].filter((j) => !tuntutan.some((t) => t.jenis === j));
