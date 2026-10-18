@@ -1206,7 +1206,9 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     // F1.6 (17 Okt): konseptor-langkah.js tepat sesudah blangko-derry-isian.js (mendengar peristiwa aleta-bd-isian).
     // F4.4 (17 Okt): putusan-advance.js sesudah konseptor-langkah.js (alat Putusan Advance di Alat saya hakim).
     // 17 Okt: deteksi-sisa-blangko.js paling depan (dipakai panel-alat.js saat unggah/unduh, bukan saat dimuat).
-    expect(entri?.js).toEqual(["deteksi-sisa-blangko.js", "panel-alat.js", "jurusita.js", "basmassal.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-isian.js", "konseptor-langkah.js", "putusan-advance.js", "sipp-ide-l1.js"]);
+    // 18 Okt (1.205.6): mesin, data, dan form Susun saksi menurut keadaan perkara dimuat sebelum abt.js
+    // (abt.js memanggil AletaSaksiSusun.pasang saat bagian tanya-jawab disusun).
+    expect(entri?.js).toEqual(["deteksi-sisa-blangko.js", "panel-alat.js", "jurusita.js", "basmassal.js", "saksi-katalog.js", "saksi-katalog-data.js", "saksi-susun.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-isian.js", "konseptor-langkah.js", "putusan-advance.js", "sipp-ide-l1.js"]);
   });
 
   it("tujuh perkakas ada semuanya", () => {
