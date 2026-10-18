@@ -83,10 +83,10 @@ describe("A. pohon server 17 Okt: menu, folder, berkas", () => {
       expect(diServer.length, id).toBe(alur.langkah.length);
       expect(alur.langkah.map((l) => `${alur.folder}/${l.berkas}`).sort(), id).toEqual([...diServer].sort());
     }
-    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-38")!.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO"]);
+    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-38")!.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO", "CS", "CM"]); // + CS/CM cabut sesudah jawaban (I20 18 Okt)
     // I7 17 Okt: langkah CB ("Mediasi Berhasil - Gugatan Dicabut") dipindah ke derry_briantono/terhapus (pembatalan perkawinan dikecualikan dari mediasi).
-    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-39")!.langkah.map((l) => l.kode)).toEqual(["V1", "V2", "TP", "NO"]);
-    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-40")!.langkah.map((l) => l.kode)).toEqual(["1", "1a", "1b", "1c", "1d", "2", "2a", "3", "C"]);
+    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-39")!.langkah.map((l) => l.kode)).toEqual(["V1", "V2", "TP", "NO", "CS", "CM"]);
+    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-40")!.langkah.map((l) => l.kode)).toEqual(["1", "1a", "1b", "1c", "1d", "2", "2a", "3", "C", "CS", "CM"]);
   });
 
   it("29 BAS ALUR 04-09 disalin ke 5a dan 6a - BAS: tabel salinan = berkas server, menu bernama", () => {

@@ -5299,6 +5299,8 @@ export type UnggahMassalPutusanBot = {
   /** I7 17 Okt: bahan varian blangko putusan (hak asuh: Tergugat ibu; HB: potongan amar "Dalam Rekonvensi"). */
   tergugatPerempuan?: boolean | null;
   amarRekonvensi?: string;
+  /** I20 18 Okt: dikabulkan untuk sebagian menurut amar (hak asuh, penguasaan anak, nafkah anak); null = tidak diketahui. */
+  dikabulkanSebagian?: boolean | null;
 };
 export type UnggahMassalTertahanBot = { perkaraId: string; nomorPerkara: string; tanggalSidang: string; majelis: string[] };
 export type UnggahMassalBasBot = {

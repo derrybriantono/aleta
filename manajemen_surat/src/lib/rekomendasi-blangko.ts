@@ -102,6 +102,11 @@ export type MasukanRekomendasi = {
   amarPutusan?: string;
   /** I19 18 Okt: penanda tegas hakim/konseptor - pencabutan ditolak Tergugat sesudah jawaban; eksepsi kewenangan ("absolut"|"relatif") dikabulkan atau ditolak dalam putusan sela; alasan itsbat. */
   cabutDitolakT?: boolean;
+  /** I20 18 Okt: sikap Tergugat atas pencabutan sesudah jawaban ("setuju" | "menolak") - dasar BAS CS / CM. */
+  sikapTergugatCabut?: string;
+  /** I20 18 Okt: putusan dikabulkan untuk sebagian (bot: amar memuat "untuk sebagian"; atau saklar) dan penguasaan anak dialihkan (saklar). */
+  dikabulkanSebagian?: boolean;
+  penguasaanDialihkan?: boolean;
   eksepsiKewenangan?: string;
   putusanSela?: boolean;
   alasanItsbat?: string;
@@ -149,6 +154,10 @@ function rekomendasiBas(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
     kumulasi: m.kumulasi,
     nomorPerkara: m.nomorPerkara,
     akhir,
+    // I20 18 Okt: Pemohon pernah hadir (N vs G), cabut sesudah jawaban (CS / CM).
+    penggugatPernahHadir: m.penggugatPernahHadir,
+    sudahJawaban: m.sudahJawaban === true || Number(m.penandaJawaban?.berkas) > 0,
+    sikapTergugatCabut: m.sikapTergugatCabut ?? null,
   };
   const hAlur = tentukanAlurBasKumulasi(masukan);
   const baru = tentukanBasBaru(masukan);
@@ -300,8 +309,10 @@ export function pilihPutusanBawaan(
 ): PilihanPutusanBawaan | null {
   const j = kunciJenisPerkara(jenis);
   if (!j) return null;
-  const s = kunciStatusPutusan(status);
+  let s = kunciStatusPutusan(status);
   const kodeKeadaan = [...new Set((keadaan ?? []).map((x) => String(x || "").trim().toLowerCase()).filter((x) => /^[a-z0-9-]{2,40}$/.test(x)))];
+  // I20 18 Okt: kabul sebagian - status tetap "Dikabulkan", baris petanya "<jenis>|dikabulkan sebagian[|verstek]" bila jenis itu punya (cermin alatPetaUntukPerkara).
+  if (s === "dikabulkan" && kodeKeadaan.includes("dikabulkan-sebagian") && Object.keys(peta).some((k) => k.startsWith(`${j}|dikabulkan sebagian`))) s = "dikabulkan sebagian";
   const v = Boolean(verstek) || /verstek/i.test(String(status || "")) || kodeKeadaan.includes("verstek-tanpa-bendera");
   const ada = (k: string) => Boolean(peta[k] && String(peta[k].berkas || "").trim());
   if (s) {
@@ -417,6 +428,8 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
     ...(m.itsbatKabulCeraiDitolak === undefined ? {} : { itsbatKabulCeraiDitolak: m.itsbatKabulCeraiDitolak }),
     // I19 18 Okt: pencabutan ditolak T, eksepsi kewenangan (dikabulkan / putusan sela), alasan itsbat.
     cabutDitolakT: m.cabutDitolakT,
+    dikabulkanSebagian: m.dikabulkanSebagian,
+    penguasaanDialihkan: m.penguasaanDialihkan,
     eksepsiKewenangan: m.eksepsiKewenangan,
     putusanSela: m.putusanSela,
     alasanItsbat: m.alasanItsbat,
@@ -557,6 +570,10 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     ...(typeof b.itsbatKabulCeraiDitolak === "boolean" ? { itsbatKabulCeraiDitolak: b.itsbatKabulCeraiDitolak } : {}),
     // I19 18 Okt: penanda tegas (tidak ada = tidak ditebak).
     ...(typeof b.cabutDitolakT === "boolean" ? { cabutDitolakT: b.cabutDitolakT } : {}),
+    // I20 18 Okt: kabul sebagian (bot), penguasaan anak dialihkan (saklar), sikap Tergugat atas pencabutan (saklar), sudah menjawab.
+    ...(typeof b.dikabulkanSebagian === "boolean" ? { dikabulkanSebagian: b.dikabulkanSebagian } : {}),
+    ...(typeof b.penguasaanDialihkan === "boolean" ? { penguasaanDialihkan: b.penguasaanDialihkan } : {}),
+    ...(typeof b.sikapTergugatCabut === "string" ? { sikapTergugatCabut: b.sikapTergugatCabut } : {}),
     ...(typeof b.eksepsiKewenangan === "string" ? { eksepsiKewenangan: b.eksepsiKewenangan } : {}),
     ...(typeof b.putusanSela === "boolean" ? { putusanSela: b.putusanSela } : {}),
     ...(typeof b.alasanItsbat === "string" ? { alasanItsbat: b.alasanItsbat } : {}),

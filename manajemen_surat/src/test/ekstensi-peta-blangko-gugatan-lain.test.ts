@@ -80,7 +80,7 @@ describe("peta blangko gugatan lain - pemilih panel-alat.js yang dijalankan", ()
 
   it("Kewarisan -> [01] [Kabul] Kewarisan - Kontradiktur di menu Putusan Kewarisan; perdamaian -> [97] (Q3 16 Okt)", () => {
     const h = pilih("Kewarisan", "Dikabulkan");
-    expect(h.baris.berkas).toBe("[01] [Kabul] Kewarisan - Kontradiktur");
+    expect(h.baris.berkas).toBe("[01] [Kabul] Kewarisan - Kontradiktoir");
     expect(h.baris.blangko).toBe("Putusan Kewarisan");
     const damai = pilih("Kewarisan", "Perdamaian");
     expect(damai.baris.berkas).toBe("[97] [Perdamaian] Akta Perdamaian");
@@ -115,7 +115,7 @@ describe("saran layar admin portal = bawaan ekstensi", () => {
   it("menawarkan berkas paket untuk Harta Bersama, Kewarisan, Izin Poligami", () => {
     const saran = Object.fromEntries(saranPemetaan("putusan").map((s) => [s.kunci, s.namaBerkas]));
     expect(saran["Harta Bersama"]).toBe("[02a] [Kabul] HB - T Tidak Hadir Setelah Mediasi");
-    expect(saran["Kewarisan"]).toBe("[01] [Kabul] Kewarisan - Kontradiktur");
+    expect(saran["Kewarisan"]).toBe("[01] [Kabul] Kewarisan - Kontradiktoir");
     expect(saran["Izin Poligami"]).toBe("[01] [Kabul] Izin Poligami");
   });
 });

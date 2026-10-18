@@ -226,6 +226,9 @@ function buatLayanan(depsMasuk) {
         const tp = bahanVarian && bahanVarian.tergugatPerempuan ? bahanVarian.tergugatPerempuan[x.perkaraId] : undefined;
         x.tergugatPerempuan = tp === undefined ? null : tp;
         x.amarRekonvensi = bahanVarian && bahanVarian.amarRekonvensi ? bahanVarian.amarRekonvensi[x.perkaraId] || "" : "";
+        // I20 18 Okt: dikabulkan untuk sebagian menurut amar (true/false); null = tidak diketahui.
+        const sb = bahanVarian && bahanVarian.kabulSebagian ? bahanVarian.kabulSebagian[x.perkaraId] : undefined;
+        x.dikabulkanSebagian = sb === undefined ? null : sb;
       }
     }
 

@@ -12,6 +12,9 @@
  * cerai kumulasi itsbat T hadir H1-H9, TT, CA/CB/CD, G di ALUR 36; kumulasi hak asuh T1/T2/TT/CA/CB/CD/G/TP/NO/N1/N2 di ALUR 37), dari pemetaan-langkah-baru.json.
  * I7 17 Okt (abt-varian-17okt-derry): ALUR 39 kehilangan langkah CB ("Mediasi Berhasil - Gugatan Dicabut", dipindah ke derry_briantono/terhapus karena
  * pembatalan perkawinan dikecualikan dari mediasi); menu hak asuh 133/134 kini jenis_perkara_id 369-369 (dulu alur_perkara_id 15), jadi ALUR 38 jenis 369.
+ * I20 18 Okt (abt-bas-perbaikan-derry 20, abt-bas-cabut-jawaban-derry 22, abt-penguasaan-anak-derry revisi): V1/V2 verstek di ALUR 33/34/35, [T]/[N] permohonan di ALUR 17/12l/16/19/13l/14/18,
+ * CS/CM cabut sesudah jawaban di ALUR 31/33/35/36/37/38/39/40/44 dan dua alur baru "alur-08g"/"alur-08t" (cerai gugat / talak biasa, folder 1 / 1a - BAS, berkas "BAS ALUR 08 ..."),
+ * V2S verstek kabul sebagian di ALUR 44; dari pemetaan-langkah-baru.json dan daftar-rtf.tsv paket itu.
  */
 export type MenuBasBaru = { id: number; nama: string; alias: string };
 export type LangkahBasBaru = { kode: string; berkas: string; keterangan: string };
@@ -95,6 +98,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "G",
         "berkas": "BAS ALUR 14 PAW - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
         "keterangan": "Pemohon tidak pernah hadir meskipun dipanggil patut - permohonan gugur (penetapan)"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 14 PAW - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon tidak hadir - tunda panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 14 PAW - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon pernah hadir lalu 2x tidak hadir - permohonan tidak dapat diterima (SEMA 1/2022, penetapan)"
       }
     ]
   },
@@ -195,6 +208,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "G",
         "berkas": "BAS ALUR 16 Perwalian - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
         "keterangan": "Pemohon tidak pernah hadir meskipun dipanggil patut - permohonan gugur (penetapan)"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 16 Perwalian - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon tidak hadir - tunda panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 16 Perwalian - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon pernah hadir lalu 2x tidak hadir - permohonan tidak dapat diterima (SEMA 1/2022, penetapan)"
       }
     ]
   },
@@ -245,6 +268,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "3",
         "berkas": "BAS ALUR 17 IN 2+ Sidang - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
         "keterangan": "Sidang Terakhir - Pembacaan Penetapan"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 17 IN 2+ Sidang - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon tidak hadir - tunda panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 17 IN 2+ Sidang - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon pernah hadir lalu 2x tidak hadir - permohonan tidak dapat diterima (SEMA 1/2022, penetapan)"
       }
     ]
   },
@@ -310,6 +343,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "G",
         "berkas": "BAS ALUR 18 Angkat Anak - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
         "keterangan": "Pemohon tidak pernah hadir meskipun dipanggil patut - permohonan gugur (penetapan)"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 18 Angkat Anak - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon tidak hadir - tunda panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 18 Angkat Anak - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon pernah hadir lalu 2x tidak hadir - permohonan tidak dapat diterima (SEMA 1/2022, penetapan)"
       }
     ]
   },
@@ -365,6 +408,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "G",
         "berkas": "BAS ALUR 19 Wali Adhal - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
         "keterangan": "Pemohon tidak pernah hadir meskipun dipanggil patut - permohonan gugur (penetapan)"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 19 Wali Adhal - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon tidak hadir - tunda panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 19 Wali Adhal - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon pernah hadir lalu 2x tidak hadir - permohonan tidak dapat diterima (SEMA 1/2022, penetapan)"
       }
     ]
   },
@@ -425,6 +478,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "G",
         "berkas": "BAS ALUR 13 AUA - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
         "keterangan": "Pemohon tidak pernah hadir meskipun dipanggil patut - permohonan gugur (penetapan)"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 13 AUA - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon tidak hadir - tunda panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 13 AUA - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon pernah hadir lalu 2x tidak hadir - permohonan tidak dapat diterima (SEMA 1/2022, penetapan)"
       }
     ]
   },
@@ -475,6 +538,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "G",
         "berkas": "BAS ALUR 12 DK - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
         "keterangan": "Pemohon tidak pernah hadir meskipun dipanggil patut - permohonan dispensasi kawin gugur (penetapan)"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 12 DK - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon tidak hadir - tunda panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 12 DK - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon pernah hadir lalu 2x tidak hadir - permohonan tidak dapat diterima (SEMA 1/2022, penetapan)"
       }
     ]
   },
@@ -550,6 +623,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "V2",
         "berkas": "BAS ALUR 31 HB - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
         "keterangan": "Sidang 2: Tergugat tetap tidak hadir - pembuktian (2 saksi) dan putusan verstek harta bersama"
+      },
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 31 HB - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 31 HB - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
       }
     ]
   },
@@ -615,6 +698,26 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "NO",
         "berkas": "BAS ALUR 33 Waris - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
         "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      },
+      {
+        "kode": "V1",
+        "berkas": "BAS ALUR 33 Waris - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1: Penggugat/Pemohon hadir, Tergugat/Termohon tidak hadir - tunda panggil T (tanpa mediasi)"
+      },
+      {
+        "kode": "V2",
+        "berkas": "BAS ALUR 33 Waris - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
+        "keterangan": "Sidang 2: Tergugat/Termohon tetap tidak hadir - pembuktian (2 saksi) dan putusan verstek"
+      },
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 33 Waris - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 33 Waris - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
       }
     ]
   },
@@ -650,6 +753,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "CB",
         "berkas": "BAS ALUR 34 Poligami - Sidang 2 - Mediasi Berhasil - Permohonan Dicabut.rtf",
         "keterangan": "Sidang 2 - Mediasi Berhasil - Permohonan Dicabut"
+      },
+      {
+        "kode": "V1",
+        "berkas": "BAS ALUR 34 Poligami - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1: Penggugat/Pemohon hadir, Tergugat/Termohon tidak hadir - tunda panggil T (tanpa mediasi)"
+      },
+      {
+        "kode": "V2",
+        "berkas": "BAS ALUR 34 Poligami - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
+        "keterangan": "Sidang 2: Tergugat/Termohon tetap tidak hadir - pembuktian (2 saksi) dan putusan verstek"
       }
     ]
   },
@@ -695,6 +808,26 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "NO",
         "berkas": "BAS ALUR 35 IN Kontensius - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
         "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      },
+      {
+        "kode": "V1",
+        "berkas": "BAS ALUR 35 IN Kontensius - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1: Penggugat/Pemohon hadir, Tergugat/Termohon tidak hadir - tunda panggil T (tanpa mediasi)"
+      },
+      {
+        "kode": "V2",
+        "berkas": "BAS ALUR 35 IN Kontensius - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
+        "keterangan": "Sidang 2: Tergugat/Termohon tetap tidak hadir - pembuktian (2 saksi) dan putusan verstek"
+      },
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 35 IN Kontensius - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 35 IN Kontensius - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
       }
     ]
   },
@@ -800,6 +933,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "G",
         "berkas": "BAS ALUR 36 Cerai Kumulasi IN - P & T Tidak Hadir - Putus Gugur.rtf",
         "keterangan": "Sidang: P & T tidak hadir - gugatan gugur (cerai kumulasi itsbat)"
+      },
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 36 Cerai Kumulasi IN - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
       }
     ]
   },
@@ -920,6 +1063,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "N2",
         "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Putus NO - Alamat T Salah.rtf",
         "keterangan": "Putusan NO: alamat T salah (P hadir, T tidak hadir)"
+      },
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 37 CG Kumulasi Hak Asuh - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
       }
     ]
   },
@@ -966,6 +1119,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "NO",
         "berkas": "BAS ALUR 38 Hak Asuh - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
         "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      },
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 38 Hak Asuh - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 38 Hak Asuh - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
       }
     ]
   },
@@ -1001,6 +1164,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "NO",
         "berkas": "BAS ALUR 39 Pembatalan Nikah - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
         "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      },
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 39 Pembatalan Nikah - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 39 Pembatalan Nikah - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
       }
     ]
   },
@@ -1061,6 +1234,16 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "C",
         "berkas": "BAS ALUR 40 ES GS - [C] Sidang - P Mencabut Gugatan.rtf",
         "keterangan": "Sidang - P Mencabut Gugatan"
+      },
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 40 ES GS - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 40 ES GS - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
       }
     ]
   },
@@ -1263,6 +1446,72 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "NO",
         "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
         "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      },
+      {
+        "kode": "V2S",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek Kabul Sebagian.rtf",
+        "keterangan": "Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek Kabul Sebagian"
+      },
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 44 Penguasaan Anak - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
+      }
+    ]
+  },
+  /* === I20 18 Okt === */
+  {
+    "id": "alur-08g",
+    "nomor": 8,
+    "nama": "Cerai Gugat - Cabut sesudah Jawaban",
+    "folder": "derry_briantono/1 Perceraian CG - BAS",
+    "menu": {
+      "id": 102,
+      "nama": "Cerai Gugat - BAS",
+      "alias": "CG - BAS"
+    },
+    "jenisMin": 347,
+    "jenisMaks": 347,
+    "langkah": [
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 08 Cerai Gugat - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 08 Cerai Gugat - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
+      }
+    ]
+  },
+  {
+    "id": "alur-08t",
+    "nomor": 8,
+    "nama": "Cerai Talak - Cabut sesudah Jawaban",
+    "folder": "derry_briantono/1a Perceraian CT - BAS",
+    "menu": {
+      "id": 104,
+      "nama": "Cerai Talak - BAS",
+      "alias": "CT - BAS"
+    },
+    "jenisMin": 346,
+    "jenisMaks": 346,
+    "langkah": [
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 08 Cerai Talak - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 08 Cerai Talak - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
       }
     ]
   }

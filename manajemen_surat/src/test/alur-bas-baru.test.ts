@@ -36,6 +36,23 @@ function t(jenisPerkara: string, m: Partial<Parameters<typeof tentukanBasBaru>[0
   return { h, id: h?.alur.id ?? null, kode: h?.langkah.kode ?? null, mode: h?.mode ?? null };
 }
 
+/** Kode langkah yang ditambahkan paket I20 (abt-bas-perbaikan-derry, abt-bas-cabut-jawaban-derry, penguasaan anak 6b revisi, 18 Okt) per alur - dijaga pemetaan-i20-18okt.test.ts. */
+const LANGKAH_I20: Record<string, string[]> = {
+  "alur-33": ["V1", "V2", "CS", "CM"],
+  "alur-34": ["V1", "V2"],
+  "alur-35": ["V1", "V2", "CS", "CM"],
+  "alur-17": ["T", "N"],
+  "alur-12l": ["T", "N"],
+  "alur-16": ["T", "N"],
+  "alur-19": ["T", "N"],
+  "alur-13l": ["T", "N"],
+  "alur-14": ["T", "N"],
+  "alur-18": ["T", "N"],
+  "alur-31": ["CS", "CM"],
+  "alur-36": ["CS", "CM"],
+  "alur-37": ["CS", "CM"],
+};
+
 /** Kode langkah yang ditambahkan paket I16 (abt-celah-bas-derry, 18 Okt) per alur. */
 const LANGKAH_I16: Record<string, string[]> = {
   "alur-31": ["V1", "V2"],
@@ -50,23 +67,23 @@ const LANGKAH_I16: Record<string, string[]> = {
 };
 
 describe("A. data", () => {
-  it("23 alur, 178 langkah (93 D3/E3 + 19 F21 sesudah I7 + 22 F22 + 6 I15 + 38 I16), kode unik, nama berkas BAS ALUR nn ... .rtf, menu bernama", () => {
-    expect(ALUR_BAS_BARU).toHaveLength(23); // + ALUR 41, 42, 43 (F22 17 Okt), ALUR 44 (I15 18 Okt)
-    expect(ALUR_BAS_BARU.reduce((n, a) => n + a.langkah.length, 0)).toBe(178);
+  it("25 alur, 221 langkah (93 D3/E3 + 19 F21 sesudah I7 + 22 F22 + 6 I15 + 38 I16 + 43 I20), kode unik, nama berkas BAS ALUR nn ... .rtf, menu bernama", () => {
+    expect(ALUR_BAS_BARU).toHaveLength(25); // + ALUR 41, 42, 43 (F22 17 Okt), ALUR 44 (I15 18 Okt), "alur-08g" / "alur-08t" cerai biasa cabut sesudah jawaban (I20 18 Okt)
+    expect(ALUR_BAS_BARU.reduce((n, a) => n + a.langkah.length, 0)).toBe(178 + 43);
     const semua = new Set<string>();
     for (const a of ALUR_BAS_BARU) {
       expect(a.folder.startsWith(A)).toBe(true);
       expect(a.menu.id).toBeGreaterThanOrEqual(101);
       expect(new Set(a.langkah.map((l) => l.kode)).size, a.id).toBe(a.langkah.length);
       for (const l of a.langkah) {
-        expect(l.berkas, l.berkas).toMatch(new RegExp(`^BAS ALUR ${a.nomor} .+\\.rtf$`));
+        expect(l.berkas, l.berkas).toMatch(new RegExp(`^BAS ALUR 0?${a.nomor} .+\\.rtf$`)); // "BAS ALUR 08" (nomor 8) berawalan nol
         expect(berkasBasSalinan(l.berkas)).toBe(true);
         expect(tugasBlangko(`${a.folder}/${l.berkas}`)).toBe("panitera"); // BAS di folder jenis tetap tugas panitera
         expect(l.berkas).not.toMatch(/[\\/:*?"<>|]/);
         semua.add(`${a.folder}/${l.berkas}`);
       }
     }
-    expect(semua.size).toBe(112 + 10 + 6 + 6 + 6 + 38); // F22 17 Okt: ALUR 41 (10), 42 (6), 43 (6); I15 18 Okt: ALUR 44 (6); I16 18 Okt: 38 langkah celah BAS
+    expect(semua.size).toBe(112 + 10 + 6 + 6 + 6 + 38 + 43); // F22 17 Okt: ALUR 41 (10), 42 (6), 43 (6); I15 18 Okt: ALUR 44 (6); I16 18 Okt: 38 langkah celah BAS
     expect(jenisDokumenBlangko(`${A}7 Wali Adhal - BAS/${ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.langkah[0].berkas}`)).toBe("bas");
     expect(ALUR_BAS_BARU.find((a) => a.id === "alur-19")!.menu).toMatchObject({ id: 114, nama: "Wali Adhal - BAS" });
   });
@@ -88,7 +105,7 @@ describe("A. data", () => {
     // K3: daftar-rtf.tsv paket D3/E3 memuat folder putusan (sebelum dipindah ke "... - BAS"); folder BAS = folder itu + " - BAS".
     // ALUR 38-40 berasal dari paket F21 (17 Okt), bukan D3/E3: dijaga di bagian F di bawah terhadap pohon server.
     // I16 18 Okt: 38 langkah celah BAS (paket abt-celah-bas-derry) ditambahkan ke alur yang sudah ada dan dijaga pemetaan-i16-18okt.test.ts.
-    const data = new Set(ALUR_BAS_BARU.filter((a) => a.nomor < 38).flatMap((a) => a.langkah.filter((l) => !LANGKAH_I16[a.id]?.includes(l.kode)).map((l) => `${a.folder.replace(/ - BAS$/, "")}/${l.berkas}`)));
+    const data = new Set(ALUR_BAS_BARU.filter((a) => a.nomor < 38 && a.nomor !== 8).flatMap((a) => a.langkah.filter((l) => !LANGKAH_I16[a.id]?.includes(l.kode) && !LANGKAH_I20[a.id]?.includes(l.kode)).map((l) => `${a.folder.replace(/ - BAS$/, "")}/${l.berkas}`)));
     expect([...data].sort()).toEqual([...dari].sort());
   });
 });
@@ -131,19 +148,21 @@ describe("C. pemilihan menurut jenis + keadaan sidang", () => {
     expect(t("P3HP/Penetapan Ahli Waris", { urutanSidang: 4 })).toMatchObject({ kode: "3" });
   });
 
-  it("permohonan tidak hadir / gugur / cabut -> ALUR 15 di 9b untuk semua jenis permohonan", () => {
-    for (const j of ["P3HP/Penetapan Ahli Waris", "Perwalian", "Wali Adhol", "Lain-Lain", "Dispensasi Kawin", "Asal Usul Anak"]) {
-      expect(t(j, { dihadiriOleh: 4 }), j).toMatchObject({ id: "alur-15", kode: "T" });
-      expect(t(j, { dihadiriOleh: 4, urutanSidang: 2 }), j).toMatchObject({ id: "alur-15", kode: "G" });
+  it("permohonan tidak hadir / gugur / cabut -> BAS di folder jenisnya sendiri (I20 18 Okt: [T] dan [N] kini ada di sana; 9b tinggal cadangan)", () => {
+    const alurJenis: Record<string, string> = { "P3HP/Penetapan Ahli Waris": "alur-14", Perwalian: "alur-16", "Wali Adhol": "alur-19", "Lain-Lain": "alur-18", "Dispensasi Kawin": "alur-12l", "Asal Usul Anak": "alur-13l" };
+    for (const j of Object.keys(alurJenis)) {
+      expect(t(j, { dihadiriOleh: 4 }), j).toMatchObject({ id: alurJenis[j], kode: "T" });
+      expect(t(j, { dihadiriOleh: 4, urutanSidang: 2 }), j).toMatchObject({ id: alurJenis[j], kode: "G" });
     }
     // I16 18 Okt: cabut / gugur punya BAS di folder jenisnya sendiri ([C] / [G]); T dan N tetap di 9b.
     expect(t("Perwalian", { akhir: "cabut" })).toMatchObject({ id: "alur-16", kode: "C" });
     expect(t("Perwalian", { agenda: "Pencabutan permohonan" })).toMatchObject({ id: "alur-16", kode: "C" });
     expect(t("Dispensasi Kawin", { akhir: "cabut" })).toMatchObject({ id: "alur-12l", kode: "C" });
     expect(t("P3HP/Penetapan Ahli Waris", { akhir: "gugur" })).toMatchObject({ id: "alur-14", kode: "G" });
-    expect(t("Perwalian", { akhir: "no" })).toMatchObject({ id: "alur-15", kode: "N" });
-    expect(t("Perwalian", { dihadiriOleh: 4 }).h!.alur.folder).toBe(`${A}9b Permohonan Umum - BAS`);
-    expect(t("Perwalian", { dihadiriOleh: 4 }).h!.alur.menu.id).toBe(122);
+    // I20 18 Okt: T dan N juga di folder jenisnya (perwalian = 6 Perwalian - BAS, menu 112); 9b (menu 122) tinggal untuk jenis tanpa BAS sendiri.
+    expect(t("Perwalian", { akhir: "no" })).toMatchObject({ id: "alur-16", kode: "N" });
+    expect(t("Perwalian", { dihadiriOleh: 4 }).h!.alur.folder).toBe(`${A}6 Perwalian - BAS`);
+    expect(t("Perwalian", { dihadiriOleh: 4 }).h!.alur.menu.id).toBe(112);
   });
 
   it("perwalian, wali adhal, pengangkatan anak: folder & menu masing-masing", () => {
@@ -163,7 +182,7 @@ describe("C. pemilihan menurut jenis + keadaan sidang", () => {
     expect(s1).toMatchObject({ id: "alur-17", kode: "1a", mode: "tambah" });
     expect(t("Pengesahan Perkawinan/Istbat Nikah", { urutanSidang: 2 })).toMatchObject({ id: "alur-17", kode: "3", mode: "ganti" });
     expect(t("Pengesahan Perkawinan/Istbat Nikah", { urutanSidang: 3, agenda: "Pemeriksaan Saksi" })).toMatchObject({ kode: "2" });
-    expect(t("Pengesahan Perkawinan/Istbat Nikah", { dihadiriOleh: 4 })).toMatchObject({ id: "alur-15", kode: "T" });
+    expect(t("Pengesahan Perkawinan/Istbat Nikah", { dihadiriOleh: 4 })).toMatchObject({ id: "alur-17", kode: "T" }); // I20 18 Okt: [T] kini di folder itsbat (dulu 9b)
     expect(t("Pengesahan Perkawinan/Istbat Nikah", { urutanSidang: 2, dihadiriOleh: 4 }).h).toBeNull(); // 946 [G] tetap
     expect(t("Pengesahan Perkawinan/Istbat Nikah", { akhir: "gugur" }).h).toBeNull();
     expect(t("Pengesahan Perkawinan/Istbat Nikah", { akhir: "cabut" }).h).toBeNull();

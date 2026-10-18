@@ -91,6 +91,10 @@ export type BarisSidangBas = {
   sidangIkrarTalak?: unknown;
   /** T 13 Okt: keterangan kumulasi bot ({daftar:[{kode, sumber}]}) - BAS putus verstek kumulasi hak asuh. */
   kumulasi?: unknown;
+  /** I20 18 Okt: penanda jawaban Tergugat dari bot ({berkas}) dan saklar tegas; sikap Tergugat atas pencabutan ("setuju" | "menolak") - BAS cabut sesudah jawaban CS / CM. */
+  penandaJawaban?: { berkas?: unknown } | null;
+  sudahJawaban?: unknown;
+  sikapTergugatCabut?: unknown;
   panggilan?: {
     tergugatPernahHadir?: unknown;
     /** true / false / null - bot sejak 9 Okt 2026; tidak ada = bot lama. */
@@ -1188,6 +1192,10 @@ export function susunBarisBasMassal(
       sidangIkrarTalak: s.sidangIkrarTalak === true,
       kumulasi: s.kumulasi,
       nomorPerkara: nomor,
+      // I20 18 Okt: Pemohon pernah hadir (N vs G permohonan), cabut sesudah jawaban (CS / CM) - hanya dari penanda tegas.
+      penggugatPernahHadir: s.panggilan?.penggugatPernahHadir,
+      sudahJawaban: s.sudahJawaban === true || Number(s.penandaJawaban?.berkas) > 0,
+      sikapTergugatCabut: typeof s.sikapTergugatCabut === "string" ? s.sikapTergugatCabut : null,
     });
     // Q3 16 Okt: hasil lengkap penebak alur (bukan hanya ringkasannya) - dipakai juga untuk pilihan blangko.
     const hasilAlurDasar = tentukanAlurBasKumulasi({

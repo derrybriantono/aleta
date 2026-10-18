@@ -17,6 +17,9 @@
  * F21 17 Okt: tiga paket jenis baru menambah ALUR 38 (hak asuh anak), 39 (pembatalan perkawinan), 40 (ekonomi syariah gugatan sederhana).
  * I15 18 Okt: ALUR 44 (penguasaan anak, jenis 349, folder 6b) menggantikan ALUR 38 untuk jenis 349; hak asuh/hadhanah (jenis 369) tetap ALUR 38.
  * F22 17 Okt: ALUR 41 (pencegahan perkawinan, permohonan Pdt.P), 42 (wasiat), 43 (ekonomi syariah ACARA BIASA, nomor Pdt.G; gugatan sederhana Pdt.G.S tetap ALUR 40).
+ * I20 18 Okt (abt-bas-perbaikan-derry, abt-bas-cabut-jawaban-derry): verstek V1/V2 untuk kewarisan (ALUR 33), poligami (34) dan itsbat kontensius (35); [T] tunda panggil
+ * Pemohon dan [N] NO SEMA 1/2022 permohonan di folder jenisnya (itsbat 17, DK 12l, perwalian 16, wali adhal 19, AUA 13l, PAW 14, pengangkatan anak 18; dulu 9b);
+ * cabut sesudah jawaban CS (Tergugat setuju) / CM (Tergugat menolak, perkara dilanjutkan) untuk 11 jenis gugatan (cerai CG/CT = "alur-08g"/"alur-08t").
  *
  * TIDAK mengubah tentukanAlurBas / tentukanAlurBasKumulasi (peta ALUR 01-13 dan 945/946) maupun pilihan yang sudah ada:
  *   - mode "ganti"  = jenis yang dulu tanpa BAS (PAW, perwalian, wali adhal, pengangkatan anak, HB, waris, poligami, itsbat
@@ -36,6 +39,12 @@ export type { AlurBasBaru, LangkahBasBaru, MenuBasBaru };
 export type MasukanBasBaru = MasukanAlurBasKumulasi & {
   /** "123/Pdt.G/2026/PA.Dgl" - membedakan itsbat kontensius (Pdt.G) dari permohonan (Pdt.P). */
   nomorPerkara?: string;
+  /** I20 18 Okt: Pemohon/Penggugat pernah hadir pada sidang sebelumnya (bot: panggilan.penggugatPernahHadir) - membedakan [N] NO SEMA 1/2022 dari [G] gugur. */
+  penggugatPernahHadir?: unknown;
+  /** I20 18 Okt: Tergugat sudah menjawab (ada sidang jawaban / BAS ALUR 04 [3] dicetak) - syarat BAS cabut sesudah jawaban. */
+  sudahJawaban?: boolean;
+  /** I20 18 Okt: sikap Tergugat atas pencabutan sesudah jawaban - "setuju" (CS) atau "menolak" (CM); kosong + akhir cabut + sudah jawaban = setuju. */
+  sikapTergugatCabut?: "setuju" | "menolak" | string | null;
 };
 
 export type AlurBasBaruRingkas = { id: string; nomor: number; nama: string; folder: string; menu: MenuBasBaru };
@@ -171,17 +180,26 @@ function permohonan(jenis: JenisBaru, m: MasukanBasBaru, n: number, agenda: stri
       buat("alur-15", "G", ["T", "N"], false, `${namaJenis} gugur (Pemohon tidak pernah hadir): BAS permohonan umum.`)
     );
   }
+  // I20 18 Okt (abt-bas-perbaikan-derry): [T] tunda panggil Pemohon dan [N] NO SEMA 1/2022 kini ada di folder jenisnya sendiri; 9b (alur-15) tinggal cadangan.
   if (akhir === "no") {
     return jenis === "paw"
       ? buat("alur-14", "NO", [], false, "Permohonan kabur dan tidak diperbaiki: tidak dapat diterima.")
-      : buat("alur-15", "N", ["G"], false, `${namaJenis} tidak dapat diterima (SEMA 1/2022).`);
+      : (id ? buat(id, "N", ["G"], false, `${namaJenis} tidak dapat diterima (SEMA 1/2022).`) : null) ?? buat("alur-15", "N", ["G"], false, `${namaJenis} tidak dapat diterima (SEMA 1/2022).`);
   }
   if (h === 4) {
     // Itsbat sidang ke-2 dst. tanpa Pemohon: sudah dilayani peta 946 [G].
     if (jenis === "itsbat" && n >= 2) return null;
-    return n <= 1
-      ? buat("alur-15", "T", ["G", "N"], true, `${namaJenis}: Pemohon tidak hadir - tunda panggil Pemohon.`)
-      : buat("alur-15", "G", ["T", "N"], true, `${namaJenis}: Pemohon tidak hadir lagi - gugur bila tidak pernah hadir (G), NO SEMA 1/2022 bila pernah hadir (N), atau tunda panggil lagi (T).`);
+    if (n <= 1) {
+      const sebabT = `${namaJenis}: Pemohon tidak hadir - tunda panggil Pemohon.`;
+      return (id ? buat(id, "T", ["G", "N"], true, sebabT) : null) ?? buat("alur-15", "T", ["G", "N"], true, sebabT);
+    }
+    // Pemohon pernah hadir lalu dua kali tidak hadir = NO SEMA 1/2022 [N]; tidak pernah hadir = gugur [G]; belum pasti = gugur dengan [N]/[T] sebagai alternatif.
+    if (m.penggugatPernahHadir === true) {
+      const sebabN = `${namaJenis}: Pemohon pernah hadir lalu dua kali tidak hadir - tidak dapat diterima (SEMA 1/2022).`;
+      return (id ? buat(id, "N", ["T", "G"], false, sebabN) : null) ?? buat("alur-15", "N", ["T", "G"], false, sebabN);
+    }
+    const sebabG = `${namaJenis}: Pemohon tidak hadir lagi - gugur bila tidak pernah hadir (G), NO SEMA 1/2022 bila pernah hadir (N), atau tunda panggil lagi (T).`;
+    return (id ? buat(id, "G", ["T", "N"], true, sebabG) : null) ?? buat("alur-15", "G", ["T", "N"], true, sebabG);
   }
   if (!id) return null;
 
@@ -244,8 +262,9 @@ function gugatanKebendaan(jenis: "hb" | "waris", m: MasukanBasBaru, n: number, a
   if (akhir === "no") return buat(id31, "NO", ["TP"], false, `${nama}: Penggugat dua kali tidak hadir - tidak dapat diterima (SEMA 1/2022).`);
   if (akhir === "cabut") return buat(id31, "CB", ["AP"], false, `${nama}: gugatan dicabut.`);
   if (RX_DAMAI.test(agenda)) return buat(id31, "AP", ["CB"], false, `${nama}: mediasi berhasil - akta perdamaian (atau gugatan dicabut).`);
-  // I16 18 Okt: harta bersama punya BAS verstek (ALUR 31 V1 sidang 1 tunda panggil T, V2 sidang 2 pembuktian dan putusan verstek); kewarisan (ALUR 33) belum.
-  if (jenis === "hb" && h === 2 && m.tergugatPernahHadir !== true) {
+  // I16 18 Okt: harta bersama punya BAS verstek (ALUR 31 V1 sidang 1 tunda panggil T, V2 sidang 2 pembuktian dan putusan verstek).
+  // I20 18 Okt: kewarisan (ALUR 33) kini juga punya V1/V2 (abt-bas-perbaikan-derry).
+  if (h === 2 && m.tergugatPernahHadir !== true) {
     return n <= 1
       ? buat(id31, "V1", ["V2"], false, `${nama} sidang 1: Penggugat hadir, Tergugat tidak hadir - tunda panggil T.`)
       : buat(id31, "V2", ["V1"], n > 2, `${nama} sidang ke-${n}: Tergugat tetap tidak hadir - pembuktian dan putusan verstek.`);
@@ -287,7 +306,7 @@ function gugatanKeluarga(jenis: "hak-asuh" | "penguasaan-anak" | "pembatalan" | 
   if (h === 2 && m.tergugatPernahHadir !== true) {
     return n <= 1
       ? buat(id, "V1", ["V2"], false, `${nama} sidang 1: Penggugat hadir, Tergugat tidak hadir - tunda panggil T.`)
-      : buat(id, "V2", ["V1"], n > 2, `${nama} sidang ke-${n}: Tergugat tetap tidak hadir - pembuktian dan putusan verstek.`);
+      : buat(id, "V2", jenis === "penguasaan-anak" ? ["V1", "V2S"] : ["V1"], n > 2, `${nama} sidang ke-${n}: Tergugat tetap tidak hadir - pembuktian dan putusan verstek${jenis === "penguasaan-anak" ? " (dikabulkan untuk sebagian: V2S)" : ""}.`);
   }
   if (jenis === "pembatalan" && n <= 1) return pembatalanSidangPertama(m);
   return salinanAlur04(alurMenurutId(id).folder, { ...m, urutanSidang: n });
@@ -382,6 +401,12 @@ function ekonomiSyariah(m: MasukanBasBaru, n: number, agenda: string): HasilBasB
 function izinPoligami(m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
   const akhir = m.akhir ?? (RX_CABUT.test(agenda) ? "cabut" : null);
   if (akhir === "cabut") return buat("alur-34", "CB", ["S2"], false, "Izin poligami: mediasi berhasil, permohonan dicabut.");
+  // I20 18 Okt: Termohon (istri) tidak pernah hadir - verstek: V1 sidang 1 tunda panggil T, V2 sidang 2 pembuktian dan putusan verstek.
+  if (m.dihadiriOleh === 2 && m.tergugatPernahHadir !== true) {
+    return n <= 1
+      ? buat("alur-34", "V1", ["V2"], false, "Izin poligami sidang 1: Pemohon hadir, Termohon tidak hadir - tunda panggil Termohon.")
+      : buat("alur-34", "V2", ["V1"], n > 2, `Izin poligami sidang ke-${n}: Termohon tetap tidak hadir - pembuktian dan putusan verstek (persetujuan istri harus dibuktikan).`);
+  }
   const perkiraan = m.dihadiriOleh !== 1;
   if (n <= 1) return buat("alur-34", "S1", ["S2"], perkiraan, "Izin poligami sidang 1: P & T hadir, mediasi.");
   if (n === 2) return buat("alur-34", "S2", ["S3", "CB"], perkiraan, "Izin poligami sidang 2: laporan mediasi, permohonan, jawaban Termohon dan calon istri.");
@@ -394,6 +419,12 @@ function itsbatKontensius(m: MasukanBasBaru, n: number, agenda: string): HasilBa
   if (akhir === "no") return buat("alur-35", "NO", ["TP"], false, "Itsbat nikah kontensius: Penggugat dua kali tidak hadir - tidak dapat diterima (SEMA 1/2022).");
   if (akhir === "cabut") return buat("alur-35", "CB", [], false, "Itsbat nikah kontensius: P & T hadir, gugatan dicabut.");
   if (h === 3 || h === 4) return buat("alur-35", "TP", ["NO"], true, "Itsbat nikah kontensius: Penggugat tidak hadir - tunda panggil P; bila sudah dua kali tidak hadir: putusan NO.");
+  // I20 18 Okt: Tergugat tidak pernah hadir - verstek (V1 sidang 1 tunda panggil T, V2 sidang 2 pembuktian dan putusan verstek).
+  if (h === 2 && m.tergugatPernahHadir !== true) {
+    return n <= 1
+      ? buat("alur-35", "V1", ["V2"], false, "Itsbat nikah kontensius sidang 1: Penggugat hadir, Tergugat tidak hadir - tunda panggil T.")
+      : buat("alur-35", "V2", ["V1"], n > 2, `Itsbat nikah kontensius sidang ke-${n}: Tergugat tetap tidak hadir - pembuktian dan putusan verstek.`);
+  }
   if (n <= 1) {
     const putus = RX_PUTUS.test(agenda) || (RX_BUKTI.test(agenda) && !/tunda/i.test(agenda));
     return putus
@@ -477,6 +508,32 @@ function ceraiKumulasi(jenis: JenisBaru, m: MasukanBasBaru): HasilBasBaru | null
 }
 
 /**
+ * I20 18 Okt (abt-bas-cabut-jawaban-derry): gugatan dicabut SESUDAH Tergugat menjawab perlu persetujuannya. CS = Tergugat setuju (akhir perkara); CM = Tergugat menolak
+ * (BUKAN akhir perkara - pemeriksaan dilanjutkan, BAS berikutnya dipilih seperti biasa). Sebelum jawaban tetap CA/CB/CD/[A]/[B]/[C2] seperti sekarang.
+ * Hanya dari penanda tegas: sudah menjawab (`sudahJawaban`, atau agenda menyebut jawaban) dan sikap Tergugat (`sikapTergugatCabut`; kosong + akhir cabut = setuju).
+ * Id alur: cerai gugat/talak biasa = "alur-08g"/"alur-08t" (folder CG/CT - BAS), kumulasi itsbat = alur-36, kumulasi hak asuh = alur-37, lainnya menurut jenisnya.
+ */
+function cabutSesudahJawaban(jenis: JenisBaru, m: MasukanBasBaru, agenda: string): HasilBasBaru | null {
+  const sikapMentah = String(m.sikapTergugatCabut ?? "").trim().toLowerCase();
+  const sikap = sikapMentah === "setuju" || sikapMentah === "menolak" ? sikapMentah : m.akhir === "cabut" ? "setuju" : "";
+  if (!sikap) return null;
+  const sudahJawaban = m.sudahJawaban === true || /\bjawaban\b/i.test(agenda);
+  if (!sudahJawaban || (sikap === "setuju" && m.akhir !== "cabut") || (sikap === "menolak" && m.akhir)) return null;
+  let id = "";
+  if (jenis === "cerai-gugat" || jenis === "cerai-talak") {
+    const butir = butirKumulasiAlur(m.kumulasi);
+    const ada = (k: string) => butir.some((b) => b.kode === k);
+    id = jenis === "cerai-gugat" && ada("hak-asuh-anak") ? "alur-37" : ada("itsbat-nikah") ? "alur-36" : jenis === "cerai-gugat" ? "alur-08g" : "alur-08t";
+  } else {
+    id = ({ hb: "alur-31", waris: "alur-33", "itsbat-kontensius": "alur-35", "hak-asuh": "alur-38", pembatalan: "alur-39", es: "alur-40", "penguasaan-anak": "alur-44" } as Record<string, string>)[jenis] ?? "";
+  }
+  if (!id) return null;
+  return sikap === "setuju"
+    ? buat(id, "CS", ["CM"], false, "Gugatan dicabut sesudah jawaban dengan persetujuan Tergugat: BAS cabut sesudah jawaban (Tergugat setuju).")
+    : buat(id, "CM", ["CS"], false, "Penggugat mencabut sesudah jawaban tetapi Tergugat menolak: BAS cabut sesudah jawaban (Tergugat menolak) - pemeriksaan dilanjutkan, BAS berikutnya dipilih menurut tahap.");
+}
+
+/**
  * BAS baru untuk satu sidang, atau null bila tidak ada yang berubah (jenis/keadaan lama tetap dilayani peta ALUR 01-13 dan
  * pilihan katalog yang sudah ada).
  */
@@ -485,6 +542,9 @@ export function tentukanBasBaru(m: MasukanBasBaru): HasilBasBaru | null {
   if (!jenis) return null;
   const n = Number.isFinite(m.urutanSidang) && m.urutanSidang > 0 ? Math.floor(m.urutanSidang) : 1;
   const agenda = String(m.agenda ?? "");
+  // I20 18 Okt: cabut sesudah jawaban (CS / CM) didahulukan atas jalur biasa bila ditandai tegas.
+  const cabut = cabutSesudahJawaban(jenis, m, agenda);
+  if (cabut) return cabut;
   switch (jenis) {
     case "cerai-gugat":
     case "cerai-talak":

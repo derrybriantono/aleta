@@ -89,9 +89,8 @@ describe("B. harta bersama: BAS verstek V1 / V2 (kewarisan belum)", () => {
     expect(t({ ...hb, akhir: "cabut" })).toMatchObject({ id: "alur-31", kode: "CB" });
     expect(t({ ...hb, akhir: "no", dihadiriOleh: 4, urutanSidang: 3 })).toMatchObject({ id: "alur-31", kode: "NO" });
     expect(t({ ...hb, urutanSidang: 2, agenda: "Mediasi berhasil" })).toMatchObject({ id: "alur-31", kode: "AP" });
-    const waris = t({ jenisPerkara: "Kewarisan", nomorPerkara: "4/Pdt.G/2026/PA.Dgl", dihadiriOleh: 2 });
-    expect(waris.id).not.toBe("alur-33");
-    expect(waris.kode).not.toBe("V1");
+    // I20 18 Okt: kewarisan kini juga punya V1/V2 (abt-bas-perbaikan-derry).
+    expect(t({ jenisPerkara: "Kewarisan", nomorPerkara: "4/Pdt.G/2026/PA.Dgl", dihadiriOleh: 2 })).toMatchObject({ id: "alur-33", kode: "V1" });
   });
 });
 
@@ -121,9 +120,11 @@ describe("C. permohonan: cabut [C] dan gugur [G] di folder BAS jenisnya (bukan 9
   it("DK: gugur [G] di 3 Dispensasi Kawin - BAS (cabut [C] sudah ada); tunda panggil Pemohon [T] dan NO [N] tetap di 9b; itsbat tetap peta 946", () => {
     expect(t({ jenisPerkara: "Dispensasi Kawin", akhir: "gugur" })).toMatchObject({ id: "alur-12l", kode: "G" });
     expect(t({ jenisPerkara: "Dispensasi Kawin", akhir: "cabut" })).toMatchObject({ id: "alur-12l", kode: "C" });
-    for (const j of ["Perwalian", "Wali Adhol", "Asal Usul Anak", "Dispensasi Kawin"]) {
-      expect(t({ jenisPerkara: j, dihadiriOleh: 4 })).toMatchObject({ id: "alur-15", kode: "T" });
-      expect(t({ jenisPerkara: j, akhir: "no" })).toMatchObject({ id: "alur-15", kode: "N" });
+    // I20 18 Okt: [T] dan [N] kini di folder BAS jenisnya (abt-bas-perbaikan-derry); 9b (alur-15) tinggal cadangan.
+    const alurJenis: Record<string, string> = { Perwalian: "alur-16", "Wali Adhol": "alur-19", "Asal Usul Anak": "alur-13l", "Dispensasi Kawin": "alur-12l" };
+    for (const j of Object.keys(alurJenis)) {
+      expect(t({ jenisPerkara: j, dihadiriOleh: 4 })).toMatchObject({ id: alurJenis[j], kode: "T" });
+      expect(t({ jenisPerkara: j, akhir: "no" })).toMatchObject({ id: alurJenis[j], kode: "N" });
     }
     expect(t({ jenisPerkara: "Pengesahan Perkawinan/Istbat Nikah", akhir: "gugur" }).h).toBeNull();
     expect(t({ jenisPerkara: "Pengesahan Perkawinan/Istbat Nikah", akhir: "cabut" }).h).toBeNull();

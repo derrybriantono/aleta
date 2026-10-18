@@ -155,6 +155,7 @@ function barisPutusan(x: UnggahMassalPutusanBot, namaAkun: string): BarisUnggahM
       tergugatPerempuan: x.tergugatPerempuan,
       amarPutusan: x.amarRekonvensi,
       kumulasi: x.kumulasi, // I17 18 Okt: kode keadaan kumulasi-itsbat / kumulasi-hak-asuh
+      ...(typeof x.dikabulkanSebagian === "boolean" ? { dikabulkanSebagian: x.dikabulkanSebagian } : {}), // I20 18 Okt: dikabulkan untuk sebagian (amar)
     }),
   };
 }

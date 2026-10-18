@@ -39,6 +39,9 @@
  *   eksepsi-(absolut|relatif)-ditolak-putusan-sela
  *                                    eksepsi kewenangan ditolak dalam PUTUSAN SELA -> [98e] / [98f] (I19); saklar `eksepsiKewenangan` + `putusanSela`; bukan status akhir SIPP,
  *                                    baris petanya berstatus "Putusan Sela"
+ *   dikabulkan-sebagian              putusan dikabulkan UNTUK SEBAGIAN (amar "untuk sebagian" / "selain dan selebihnya", atau saklar `dikabulkanSebagian`) -> baris petanya
+ *                                    "<jenis>|dikabulkan sebagian" (penguasaan anak [02]/[02b], nafkah anak [02]/[02b]); status SIPP tetap "Dikabulkan" (I20 18 Okt)
+ *   dialihkan                        penguasaan anak dialihkan (pemindahan hak asuh) -> [01d]; hanya dari saklar `penguasaanDialihkan` (pilih manual) (I20)
  *   nikah-sesudah-2019-tidak-dicatat / poligami-sirri-atau-terikat / terikat-perkawinan-lain
  *                                    itsbat nikah (Pdt.P): NO [99d] / NO [99c] / tolak alternatif [03c] (I19; saklar `alasanItsbat`, pilih manual)
  *
@@ -83,7 +86,10 @@ export type KodeKeadaanPutusan =
   | "eksepsi-relatif-ditolak-putusan-sela"
   | "nikah-sesudah-2019-tidak-dicatat"
   | "poligami-sirri-atau-terikat"
-  | "terikat-perkawinan-lain";
+  | "terikat-perkawinan-lain"
+  // I20 18 Okt (penguasaan anak 6b revisi, nafkah anak 6c): lihat daftar di kepala berkas.
+  | "dikabulkan-sebagian"
+  | "dialihkan";
 
 export type MasukanKeadaanPutusan = {
   jenisPerkara?: unknown;
@@ -131,6 +137,10 @@ export type MasukanKeadaanPutusan = {
   putusanSela?: unknown;
   /** I19: itsbat nikah (Pdt.P) - "nikah-sesudah-2019-tidak-dicatat" | "poligami-sirri-atau-terikat" | "terikat-perkawinan-lain" (saklar tegas, pilih manual). */
   alasanItsbat?: unknown;
+  /** I20 18 Okt: putusan dikabulkan untuk sebagian - saklar tegas, atau dari amarPutusan ("untuk sebagian" / "selebihnya ditolak"). */
+  dikabulkanSebagian?: unknown;
+  /** I20: penguasaan anak dialihkan ([01d]) - saklar tegas (pilih manual). */
+  penguasaanDialihkan?: unknown;
 };
 
 const angka = (x: unknown): number | null => {
@@ -182,6 +192,16 @@ export function rekonvensiDikabulkanDariAmar(amar: unknown): boolean {
   if (kabul < 0) return false;
   const tolak = isi.search(/menolak\s+gugatan\s+rekonvensi|menolak\s+gugatan\s+penggugat\s+rekonvensi/i);
   return tolak < 0 || kabul < tolak;
+}
+
+/**
+ * I20 18 Okt: amar putusan yang mengabulkan UNTUK SEBAGIAN. Konservatif: harus ada "mengabulkan" dan salah satu dari "untuk sebagian" atau "menolak ... selain dan selebihnya /
+ * selebihnya"; amar yang tidak memuatnya tidak ditebak. SIPP tidak menyimpan "kabul sebagian" sebagai status.
+ */
+export function kabulSebagianDariAmar(amar: unknown): boolean {
+  const t = String(amar ?? "").replace(/\s+/g, " ");
+  if (!/mengabulkan/i.test(t)) return false;
+  return /untuk\s+sebagian/i.test(t) || /menolak[^;]{0,200}?(?:selain\s+dan\s+selebihnya|selebihnya)/i.test(t);
 }
 
 /** I17 18 Okt: kode kumulasi dari bot - larik kode atau {daftar:[{kode}|kode]}; hanya yang berbentuk kode. */
@@ -275,6 +295,11 @@ export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
     if (m.sesudahJawaban === true || m.cabutDitolakT === true || (m.sesudahJawaban === undefined && Number(m.penandaJawaban?.berkas) > 0)) awalan.push("sesudah-jawaban");
   }
   // I19: itsbat nikah permohonan (Pdt.P) - alasan NO / tolak alternatif; hanya dari saklar tegas.
+  // I20: kabul sebagian dan penguasaan anak dialihkan - hanya gugatan penguasaan anak / hak asuh / nafkah anak (jenis lain tidak punya baris petanya).
+  if (gugatan) {
+    if (m.dikabulkanSebagian === true || (m.dikabulkanSebagian === undefined && kabulSebagianDariAmar(m.amarPutusan))) awalan.push("dikabulkan-sebagian");
+  }
+  if (j.includes("penguasaan anak") && m.penguasaanDialihkan === true) awalan.push("dialihkan");
   if (jenisItsbat(j) && !hasil.includes("kontensius")) {
     const alasan = kecil(m.alasanItsbat);
     if (alasan === "nikah-sesudah-2019-tidak-dicatat" || alasan === "poligami-sirri-atau-terikat" || alasan === "terikat-perkawinan-lain") awalan.push(alasan);

@@ -87,7 +87,7 @@ export const CERMIN_EKSTENSI = {
     },
     {
       kunci: "kewarisan",
-      nilai: "[01] [Kabul] Kewarisan - Kontradiktur",
+      nilai: "[01] [Kabul] Kewarisan - Kontradiktoir",
       data: { jenisAsli: "Kewarisan", blangko: "Putusan Kewarisan", blangkoLain: ["Putusan Waris", "Waris - Putusan"], catatan: "paket ABT abt-blangko-gugatan-lain - varian: [97] [Perdamaian] Akta Perdamaian" },
       urutan: 5,
     },
@@ -600,7 +600,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "penguasaan anak",
       nilai: "[01] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Belum Mumayyiz",
-      data: { jenisAsli: "Penguasaan Anak", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "varian: [01a] [Kabul] Penguasaan Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz; [01c] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Mumayyiz Memilih" },
+      data: { jenisAsli: "Penguasaan Anak", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "varian: [01a] [Kabul] Penguasaan Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz; [01c] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Mumayyiz Memilih; [01d] [Kabul] Penguasaan Anak - Kontradiktoir - Penguasaan Dialihkan; [02] [Kabul Sebagian] Penguasaan Anak - Kontradiktoir - Petitum Selebihnya Ditolak" },
       urutan: 89,
     },
     {
@@ -612,7 +612,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "penguasaan anak|dikabulkan",
       nilai: "[01] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Belum Mumayyiz",
-      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Dikabulkan", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "varian: [01a] [Kabul] Penguasaan Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz; [01c] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Mumayyiz Memilih" },
+      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Dikabulkan", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "varian: [01a] [Kabul] Penguasaan Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz; [01c] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Mumayyiz Memilih; [01d] [Kabul] Penguasaan Anak - Kontradiktoir - Penguasaan Dialihkan; [02] [Kabul Sebagian] Penguasaan Anak - Kontradiktoir - Petitum Selebihnya Ditolak" },
       urutan: 91,
     },
     {
@@ -1819,6 +1819,25 @@ export const CERMIN_EKSTENSI = {
       nilai: "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk)",
       data: { jenisAsli: "Itsbat Nikah", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Itsbat Nikah", blangkoLain: ["Itsbat - Putusan"], catatan: "dipilih manual: nikah sesudah 2019 tidak dicatatkan tanpa alasan mendesak (UU Adminduk)" },
       urutan: 291,
+    },
+    /* === I20 18 Okt === cermin blok I20 panel-alat.js (penguasaan anak 6b revisi: kabul sebagian [02]/[02b], dialihkan [01d]) */
+    {
+      kunci: "penguasaan anak|dikabulkan sebagian",
+      nilai: "[02] [Kabul Sebagian] Penguasaan Anak - Kontradiktoir - Petitum Selebihnya Ditolak",
+      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Dikabulkan Sebagian", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "keadaan: dikabulkan untuk sebagian (amar), Tergugat hadir" },
+      urutan: 292,
+    },
+    {
+      kunci: "penguasaan anak|dikabulkan sebagian|verstek",
+      nilai: "[02b] [Kabul Sebagian Verstek] Penguasaan Anak - T Tidak Hadir - Petitum Selebihnya Ditolak",
+      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Dikabulkan Sebagian", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "keadaan: dikabulkan untuk sebagian (amar), Tergugat tidak pernah hadir (verstek)" },
+      urutan: 293,
+    },
+    {
+      kunci: "penguasaan anak|dikabulkan|dialihkan",
+      nilai: "[01d] [Kabul] Penguasaan Anak - Kontradiktoir - Penguasaan Dialihkan",
+      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Dikabulkan", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "dipilih manual: penguasaan anak dialihkan (pemindahan hak asuh)" },
+      urutan: 294,
     },
   ],
   "putusan.padanan-jenis": [

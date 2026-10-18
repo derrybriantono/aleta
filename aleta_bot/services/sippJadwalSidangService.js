@@ -360,6 +360,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
   const bahanVarian = (await janjiVarianPutusan) || {};
   const petaTergugatPerempuan = bahanVarian.tergugatPerempuan || {};
   const petaAmarRekonvensi = bahanVarian.amarRekonvensi || {};
+  const petaKabulSebagian = bahanVarian.kabulSebagian || {};
   /* === AKHIR I7 === */
 
   /* === 12OKT-B === */
@@ -519,6 +520,8 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       tergugatPerempuan: petaTergugatPerempuan[String(row.perkaraId)] === undefined ? null : petaTergugatPerempuan[String(row.perkaraId)],
       // I7 17 Okt: potongan amar putusan HB mulai "Dalam Rekonvensi" ("" = tidak ada / tidak terbaca) - dasar blangko [01a] rekonvensi dikabulkan.
       amarRekonvensi: petaAmarRekonvensi[String(row.perkaraId)] || "",
+      // I20 18 Okt: dikabulkan untuk sebagian menurut amar (true/false); null = bukan gugatan anak / amar belum ada / tidak terbaca.
+      dikabulkanSebagian: petaKabulSebagian[String(row.perkaraId)] === undefined ? null : petaKabulSebagian[String(row.perkaraId)],
       varianPutusanTerbaca: !gagal.has("varian-putusan"),
       // Saksi yang DIAJUKAN tiap sisi - bukan yang sudah diperiksa. Dipakai
       // penanda "Saksi P / Saksi T" di daftar.
@@ -2248,9 +2251,11 @@ function caraRelaas(ketTemu) {
  *                      kelamin P di tabel pihak. Dasar blangko tolak [03a] "Hadhanah ditetapkan kepada T (ibu)".
  *   amarRekonvensi     harta bersama: potongan amar putusan (maks. 3000 huruf) mulai "Dalam Rekonvensi". SIPP tidak menyimpan amar
  *                      rekonvensi sebagai ruas tersendiri; portal menimbang "Mengabulkan" di potongan itu (lib/keadaan-putusan.ts).
- * Dua kueri baca-saja berparameter, masing-masing hanya bila ada perkaranya; gagal salah satunya tidak menjatuhkan yang lain.
+ *   kabulSebagian      gugatan hak asuh / penguasaan anak / nafkah anak: true bila amar putusan memuat "untuk sebagian" atau "selebihnya" (I20 18 Okt: dikabulkan
+ *                      untuk sebagian - SIPP tidak menyimpannya sebagai status); false bila amar terbaca tanpa kata itu; tidak ada bila amar kosong / belum putus.
+ * Tiga kueri baca-saja berparameter, masing-masing hanya bila ada perkaranya; gagal salah satunya tidak menjatuhkan yang lain.
  *
- * @returns {Promise<{tergugatPerempuan: Record<string, boolean>, amarRekonvensi: Record<string, string>}>}
+ * @returns {Promise<{tergugatPerempuan: Record<string, boolean>, amarRekonvensi: Record<string, string>, kabulSebagian: Record<string, boolean>}>}
  */
 async function bahanVarianPutusan(rows = []) {
   const daftar = Array.isArray(rows) ? rows : [];
@@ -2267,7 +2272,12 @@ async function bahanVarianPutusan(rows = []) {
     return j.includes("penguasaan anak") || j.includes("hak asuh") || (j.includes("lain-lain") && /\/pdt\.g\//i.test(String(r.nomorPerkara || "")));
   });
   const hb = unik((r) => String(r.jenisPerkara || "").toLowerCase().includes("harta bersama"));
-  const hasil = { tergugatPerempuan: {}, amarRekonvensi: {} };
+  // I20 18 Okt: kabul sebagian dibaca untuk gugatan anak (hak asuh, penguasaan anak, nafkah anak).
+  const anak = unik((r) => {
+    const j = String(r.jenisPerkara || "").toLowerCase();
+    return j.includes("penguasaan anak") || j.includes("hak asuh") || j.includes("nafkah anak") || (j.includes("lain-lain") && /\/pdt\.g\//i.test(String(r.nomorPerkara || "")));
+  });
+  const hasil = { tergugatPerempuan: {}, amarRekonvensi: {}, kabulSebagian: {} };
   const kerja = [];
   if (hakAsuh.length) {
     kerja.push(
@@ -2305,6 +2315,21 @@ async function bahanVarianPutusan(rows = []) {
           const amar = cleanText(b.amar);
           if (amar) hasil.amarRekonvensi[String(b.perkaraId)] = amar;
         }
+      })()
+    );
+  }
+  if (anak.length) {
+    kerja.push(
+      (async () => {
+        const isian = anak.map(() => "?").join(", ");
+        const baris = await runQuery(
+          `SELECT pu.perkara_id AS perkaraId,
+                  (LOCATE('untuk sebagian', LOWER(pu.amar_putusan)) > 0 OR LOCATE('selebihnya', LOWER(pu.amar_putusan)) > 0) AS sebagian
+             FROM perkara_putusan pu
+            WHERE pu.perkara_id IN (${isian}) AND pu.amar_putusan IS NOT NULL AND pu.amar_putusan <> ''`,
+          anak
+        );
+        for (const b of Array.isArray(baris) ? baris : []) hasil.kabulSebagian[String(b.perkaraId)] = Number(b.sebagian) === 1;
       })()
     );
   }

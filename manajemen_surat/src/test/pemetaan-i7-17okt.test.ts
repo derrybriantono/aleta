@@ -78,7 +78,7 @@ describe("A. pohon: berkas baru, berkas yang dipindah, folder terhapus", () => {
 
   it("pohon aktif: BAS 5a tidak lagi memuat BAS mediasi; ALUR 04 [2], 05 [2], 06 [2], 08 [A] tetap", () => {
     const di5a = FIX.berkas.filter((b) => b.startsWith(`${A}${PB_BAS}/`)).map((b) => b.split("/").pop()!);
-    expect(di5a).toHaveLength(24 + 4);
+    expect(di5a).toHaveLength(24 + 4 + 2); // + CS/CM cabut sesudah jawaban (I20 18 Okt)
     expect(di5a.some((b) => /ALUR 04 \[1\]|ALUR 05 \[1\]|ALUR 06 \[1\]|ALUR 08 \[C[12]\]|Mediasi Berhasil/.test(b))).toBe(false);
     for (const b of ["BAS ALUR 04 [2] ", "BAS ALUR 05 [2] ", "BAS ALUR 06 [2] ", "BAS ALUR 08 [A] "]) expect(di5a.some((x) => x.startsWith(b)), b).toBe(true);
   });

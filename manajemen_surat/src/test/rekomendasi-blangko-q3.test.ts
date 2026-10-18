@@ -105,7 +105,13 @@ describe("putusan: per keadaan", () => {
     const ink = rekomendasiBlangko({ jenisPerkara: "Pengesahan Perkawinan/Istbat Nikah", nomorPerkara: "5/Pdt.G/2026/PA.Dgl", urutanSidang: 3, dihadiriOleh: 1, sudahPutus: true, statusPutusan: "Dikabulkan" });
     expect(ink.putusan[0]).toMatchObject({ folder: "derry_briantono/2a Itsbat Nikah Kontensius", menu: "Putusan Itsbat Nikah Kontensius" });
     const tidakDapat = rekomendasiBlangko({ jenisPerkara: "Pengesahan Perkawinan/Istbat Nikah", nomorPerkara: "5/Pdt.P/2026/PA.Dgl", sudahPutus: true, statusPutusan: "Tidak Dapat Diterima", urutanSidang: 1, dihadiriOleh: 2 });
-    expect(tidakDapat.putusan.map((x) => x.berkas)).toEqual(["[99] [NO] IN - Dibawah Umur.rtf", "[99] [NO] IN - Masih Terikat Nikah Sebelumnya (Belum Cerai).rtf"]);
+    expect(tidakDapat.putusan.map((x) => x.berkas)).toEqual([
+      "[99] [NO] IN - Dibawah Umur.rtf",
+      "[99] [NO] IN - Masih Terikat Nikah Sebelumnya (Belum Cerai).rtf",
+      // I19 18 Okt: varian pilih manual
+      "[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026).rtf",
+      "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk).rtf",
+    ]);
     const cerai = rekomendasiBlangko({ jenisPerkara: CG, urutanSidang: 2, dihadiriOleh: 2, sudahPutus: true, statusPutusan: "Dicabut" });
     expect(cerai.putusan.length).toBeGreaterThan(1);
     expect(cerai.putusan.filter((x) => x.utama)).toHaveLength(1);

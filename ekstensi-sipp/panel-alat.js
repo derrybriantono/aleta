@@ -8071,10 +8071,12 @@ function alatPetaUntukPerkara(peta, jenis, status, verstek, kumulasi, keadaan) {
   const p = peta && typeof peta === "object" ? peta : {};
   const j = alatKunciJenis(jenis);
   if (!j) return null;
-  const s = alatKunciStatusPutusan(status);
+  let s = alatKunciStatusPutusan(status);
   /* === Q3 16 Okt === */
   // Keadaan putusan (portal: lib/keadaan-putusan.ts, dikirim sebagai keadaanPutusan pada baris sidang): kode berurut dari yang paling khusus.
   const kodeKeadaan = alatKodeKeadaan(keadaan);
+  // I20 18 Okt: kabul sebagian (amar "untuk sebagian" / saklar) - status SIPP tetap "Dikabulkan", baris petanya "<jenis>|dikabulkan sebagian[|verstek]" bila jenis itu punya.
+  if (s === "dikabulkan" && kodeKeadaan.includes("dikabulkan-sebagian") && Object.keys(p).some((k) => k.startsWith(`${j}|dikabulkan sebagian`))) s = "dikabulkan sebagian";
   // Bendera verstek di SIPP kosong padahal T tak pernah hadir dan tak ada mediasi (56 perkara kabul, 2 tolak di PA Donggala): dianggap verstek.
   const v = Boolean(verstek) || /verstek/i.test(String(status || "")) || kodeKeadaan.includes("verstek-tanpa-bendera");
   /* === AKHIR Q3 === */
@@ -8868,7 +8870,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
   },
   kewarisan: {
     jenisAsli: "Kewarisan",
-    berkas: "[01] [Kabul] Kewarisan - Kontradiktur",
+    berkas: "[01] [Kabul] Kewarisan - Kontradiktoir", // I20 18 Okt: abt-cacat-lama-derry mengoreksi ejaan "Kontradiktur"
     blangko: "Putusan Kewarisan",
     blangkoLain: ["Putusan Waris", "Waris - Putusan"],
     bawaan: true,
@@ -9719,6 +9721,27 @@ const ALAT_VARIAN_I19 = [
 ];
 for (const [kunci, berkas] of ALAT_VARIAN_I19) alatTambahVarianPeta(kunci, berkas);
 /* === AKHIR I19 === */
+
+/* === I20 18 Okt === */
+/**
+ * PENGUASAAN ANAK 6b REVISI 2 (paket ABT abt-penguasaan-anak-derry revisi, peta: i20-bas-perbaikan-18okt/PEMETAAN-ALETA.md bagian "6b Penguasaan Anak (revisi i20)"):
+ * varian BARU [02] kabul sebagian kontradiktoir, [02b] kabul sebagian verstek, [01d] penguasaan dialihkan. Penyerahan anak kini bersaklar #9720# (1 = diminta dalam petitum,
+ * 0/kosong = tidak, 2 = ditetapkan hakim) di dalam blangko yang sama - tidak ada berkas tambahan untuk saklar itu. Keadaan: "dikabulkan-sebagian" (portal: amar "untuk sebagian" /
+ * "selain dan selebihnya" atau saklar; status SIPP tetap "Dikabulkan" - lihat alatPetaUntukPerkara) dan "dialihkan" ([01d] hanya dipilih manual: pemindahan hak asuh).
+ */
+const ALAT_PGN_I20 = {
+  kabulSebagian: "[02] [Kabul Sebagian] Penguasaan Anak - Kontradiktoir - Petitum Selebihnya Ditolak",
+  kabulSebagianVerstek: "[02b] [Kabul Sebagian Verstek] Penguasaan Anak - T Tidak Hadir - Petitum Selebihnya Ditolak",
+  dialihkan: "[01d] [Kabul] Penguasaan Anak - Kontradiktoir - Penguasaan Dialihkan",
+};
+Object.assign(ALAT_PETA_BAWAAN, {
+  "penguasaan anak|dikabulkan sebagian": alatBarisPutusanLain("pgn", "Penguasaan Anak", "Dikabulkan Sebagian", ALAT_PGN_I20.kabulSebagian, "keadaan: dikabulkan untuk sebagian (amar), Tergugat hadir"),
+  "penguasaan anak|dikabulkan sebagian|verstek": alatBarisPutusanLain("pgn", "Penguasaan Anak", "Dikabulkan Sebagian", ALAT_PGN_I20.kabulSebagianVerstek, "keadaan: dikabulkan untuk sebagian (amar), Tergugat tidak pernah hadir (verstek)"),
+  "penguasaan anak|dikabulkan|dialihkan": alatBarisPutusanLain("pgn", "Penguasaan Anak", "Dikabulkan", ALAT_PGN_I20.dialihkan, "dipilih manual: penguasaan anak dialihkan (pemindahan hak asuh)"),
+});
+for (const kunci of ["penguasaan anak", "penguasaan anak|dikabulkan"]) alatTambahVarianPeta(kunci, [ALAT_PGN_I20.dialihkan, ALAT_PGN_I20.kabulSebagian]);
+/* === AKHIR I20 === */
+
 
 
 /**
