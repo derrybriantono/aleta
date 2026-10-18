@@ -17,9 +17,19 @@ import {
   type BahanPrompt,
   type PilihanPrompt,
 } from "@/lib/prompt-putusan";
+import { bacaParagrafBerkas, teksDariParagraf } from "@/lib/berkas-ke-paragraf";
+import { bacaPdfPeramban } from "@/lib/dialog-sisa-blangko";
 import {
+  bahanDrafDariBerkas,
+  kalimatJumlahKosong,
+} from "@/lib/draf-blangko-prompt";
+import { useSimpananPeramban } from "@/lib/use-simpanan-peramban";
+import {
+  CATATAN_HAPUS_DATA,
   PILIHAN_META,
   TUJUAN_AI,
+  samarkanContohFormat,
+  type DrafBlangkoBahan,
   isianKurangAi,
   masukanAwal,
   susunPromptAi,
@@ -131,6 +141,12 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
   const [bahan, setBahan] = useState<BahanPrompt | null>(null);
   const [pilihan, setPilihan] = useState<PilihanPrompt | null>(null);
   const [tersalin, setTersalin] = useState(false);
+  // Dua saklar fitur baru, diingat per pengguna: format putusan tertentu (bawaan MATI) dan
+  // putusan yang masih berbentuk blangko (bawaan NYALA). Format yang disimpan pengguna juga per pengguna.
+  const [drafBerkas, setDrafBerkas] = useState<(DrafBlangkoBahan & { jumlahKosong?: number }) | null>(null);
+  const [drafAleta, setDrafAleta] = useState<DrafBlangkoBahan[]>([]);
+  const [galatBerkas, setGalatBerkas] = useState("");
+  const [namaFormatBaru, setNamaFormatBaru] = useState("");
   const pengguna = usePenggunaAktifOpsional();
   const kunciSimpanCentang = `aleta.prompt-ai.pakai-project.${pengguna?.id ?? "tamu"}`;
   // Pilihan centang diingat per pengguna (per peramban), bukan per perkara: yang
@@ -143,6 +159,12 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
     }
   };
   const [masukan, setMasukan] = useState<MasukanAi>(() => ({ ...masukanAwal(), pakaiProject: bacaCentang(kunciSimpanCentang) }));
+  const idPengguna = pengguna?.id ?? "tamu";
+  const [saklar, setSaklar] = useSimpananPeramban(`aleta.prompt-ai.saklar.${idPengguna}`, { ikutiFormat: false, sertakanBlangko: true });
+  const [formatSaya, setFormatSaya] = useSimpananPeramban<Array<{ id: string; nama: string; teks: string }>>(
+    `aleta.prompt-ai.format-saya.${idPengguna}`,
+    []
+  );
   const [kunciDibaca, setKunciDibaca] = useState(kunciSimpanCentang);
   if (kunciDibaca !== kunciSimpanCentang) {
     // Pengguna aktif berganti: pilihannya dibaca ulang saat render, bukan lewat efek.
@@ -234,6 +256,17 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
         return;
       }
 
+      // Draf tambahan di ALETA (draf perakit, draf H-7) - bila ada. Gagal tidak menghalangi apa pun.
+      try {
+        const j = await fetch(
+          apiPath(`/api/aleta-ecourt/prompt-putusan/draf-blangko?perkaraId=${encodeURIComponent(isi.identitas.perkaraId)}`),
+          { cache: "no-store" }
+        );
+        const lj = (await j.json()) as { data?: { draf?: DrafBlangkoBahan[] } } | null;
+        setDrafAleta(Array.isArray(lj?.data?.draf) ? lj.data.draf : []);
+      } catch {
+        setDrafAleta([]);
+      }
       setBahan(isi);
       setPilihan(pilihanAwal(isi));
       setKeadaan("siap");
@@ -249,8 +282,17 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
   };
 
   const teks = useMemo(
-    () => (bahan && pilihan ? susunPromptAi(bahan, pilihan, masukan, profil) : ""),
-    [bahan, pilihan, masukan, profil]
+    () =>
+      bahan && pilihan
+        ? susunPromptAi(
+            bahan,
+            pilihan,
+            { ...masukan, ikutiFormat: saklar.ikutiFormat, sertakanBlangko: saklar.sertakanBlangko },
+            profil,
+            { drafBlangko: [...(drafBerkas ? [drafBerkas] : []), ...drafAleta] }
+          )
+        : "",
+    [bahan, pilihan, masukan, profil, saklar, drafBerkas, drafAleta]
   );
   const kurang = useMemo(
     () =>
@@ -262,6 +304,40 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
         : [],
     [bahan, pilihan, masukan]
   );
+
+  /** Membaca berkas di peramban; tidak ada yang dikirim ke server. */
+  const bacaBerkas = async (berkas: File | undefined) => {
+    if (!berkas) return null;
+    const hasil = await bacaParagrafBerkas(new Uint8Array(await berkas.arrayBuffer()), berkas.name, bacaPdfPeramban);
+    if (!hasil.ok) {
+      setGalatBerkas(hasil.alasan);
+      return null;
+    }
+    setGalatBerkas("");
+    return hasil.paragraf;
+  };
+  const unggahDraf = async (berkas: File | undefined) => {
+    const paragraf = await bacaBerkas(berkas);
+    if (paragraf && berkas) {
+      setDrafBerkas(bahanDrafDariBerkas(berkas.name, paragraf));
+      setTersalin(false);
+    }
+  };
+  const unggahContoh = async (berkas: File | undefined) => {
+    const paragraf = await bacaBerkas(berkas);
+    if (paragraf) ubahMasukan("contohFormat", teksDariParagraf(paragraf));
+  };
+  const simpanFormat = () => {
+    const nama = namaFormatBaru.trim();
+    if (!nama || !masukan.contohFormat.trim()) return;
+    // Yang disimpan sudah disamarkan: nama dan NIK dari contoh tidak ikut tersimpan di peramban.
+    setFormatSaya([
+      ...formatSaya.filter((f) => f.nama !== nama),
+      { id: `f${Date.now()}`, nama, teks: samarkanContohFormat(masukan.contohFormat) },
+    ]);
+    setNamaFormatBaru("");
+  };
+  const jumlahDrafAda = (drafBerkas ? 1 : 0) + drafAleta.length;
 
   const salin = async () => {
     try {
@@ -371,6 +447,127 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
 
       <div className="space-y-3">
         <h4 className="text-sm font-semibold">Yang harus Anda tentukan</h4>
+
+        {tujuan.butuhArah ? (
+          <div className="space-y-3 rounded-md border px-3 py-3">
+            <Centang
+              label="Ikuti format putusan tertentu"
+              keterangan="Contoh putusan dipakai sebagai format rujukan: susunan bagian, judul, gaya kalimat, dan format amar - tanpa menyalin fakta, nama, atau angkanya."
+              nilai={saklar.ikutiFormat}
+              ubah={(v) => setSaklar({ ...saklar, ikutiFormat: v })}
+            />
+            {saklar.ikutiFormat ? (
+              <div className="space-y-2 pl-1">
+                {formatSaya.length > 0 ? (
+                  <label className="block space-y-1">
+                    <span className="text-sm font-medium">Format yang pernah Anda simpan</span>
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const f = formatSaya.find((x) => x.id === e.target.value);
+                        if (f) ubahMasukan("contohFormat", f.teks);
+                      }}
+                      className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                    >
+                      <option value="">— pilih format —</option>
+                      {formatSaya.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.nama}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+                <label className="block space-y-1">
+                  <span className="text-sm font-medium">Unggah contoh putusan (RTF, DOCX, PDF, TXT)</span>
+                  <input
+                    type="file"
+                    accept=".rtf,.docx,.pdf,.txt"
+                    onChange={(e) => void unggahContoh(e.target.files?.[0])}
+                    className="block w-full text-sm"
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-sm font-medium">Atau tempel contoh putusan</span>
+                  <textarea
+                    value={masukan.contohFormat}
+                    onChange={(e) => ubahMasukan("contohFormat", e.target.value)}
+                    rows={5}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  Nama dan NIK pada contoh disamarkan otomatis sebelum masuk perintah. Contoh tidak disimpan kecuali Anda
+                  memilih menyimpannya di bawah (tersimpan di peramban ini, atas nama Anda).
+                </p>
+                <div className="flex flex-wrap items-end gap-2">
+                  <label className="min-w-[10rem] flex-1 space-y-1">
+                    <span className="text-sm font-medium">Simpan sebagai format saya</span>
+                    <Input value={namaFormatBaru} onChange={(e) => setNamaFormatBaru(e.target.value)} placeholder="Nama format, mis. Cerai gugat kabul" />
+                  </label>
+                  <Button type="button" size="sm" variant="outline" disabled={!namaFormatBaru.trim() || !masukan.contohFormat.trim()} onClick={simpanFormat}>
+                    Simpan
+                  </Button>
+                </div>
+                {formatSaya.length > 0 ? (
+                  <ul className="space-y-1 text-sm">
+                    {formatSaya.map((f) => (
+                      <li key={f.id} className="flex items-center justify-between gap-2 rounded border px-2 py-1">
+                        <span>{f.nama}</span>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => setFormatSaya(formatSaya.filter((x) => x.id !== f.id))}>
+                          Hapus
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            ) : null}
+
+            <Centang
+              label="Sertakan putusan yang masih berbentuk blangko"
+              keterangan="Putusan hasil cetak blangko ABT yang belum penuh disertakan, dengan tiap bagian kosong bertanda, supaya AI melengkapinya dari data perkara."
+              nilai={saklar.sertakanBlangko}
+              ubah={(v) => setSaklar({ ...saklar, sertakanBlangko: v })}
+            />
+            {saklar.sertakanBlangko ? (
+              <div className="space-y-2 pl-1">
+                <label className="block space-y-1">
+                  <span className="text-sm font-medium">Unggah putusan hasil ABT (RTF; DOCX, PDF, atau TXT juga bisa)</span>
+                  <input
+                    type="file"
+                    accept=".rtf,.docx,.pdf,.txt"
+                    onChange={(e) => void unggahDraf(e.target.files?.[0])}
+                    className="block w-full text-sm"
+                  />
+                </label>
+                {drafBerkas ? (
+                  <div className="flex flex-wrap items-center gap-2 rounded border bg-muted/30 px-2 py-1.5 text-sm">
+                    <span className="font-medium">{drafBerkas.judul}</span>
+                    <span>— {kalimatJumlahKosong(drafBerkas.jumlahKosong ?? 0)}</span>
+                    <Button type="button" size="sm" variant="ghost" className="ml-auto" onClick={() => setDrafBerkas(null)}>
+                      Lepas berkas
+                    </Button>
+                  </div>
+                ) : null}
+                {galatBerkas ? <p className="text-sm text-destructive">{galatBerkas}</p> : null}
+                {drafAleta.length > 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Draf tambahan di ALETA ikut disertakan: {drafAleta.map((d) => `${d.sumber} (${d.judul})`).join("; ")}.
+                  </p>
+                ) : null}
+                {jumlahDrafAda === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Belum ada draf blangko untuk perkara ini. Unduh hasil cetak RTF dari ABT lalu unggah di sini
+                    (pengambilan langsung dari ABT belum tersedia).
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="pl-1 text-xs text-muted-foreground">Draf blangko tidak disertakan.</p>
+            )}
+          </div>
+        ) : null}
 
         {tujuan.butuhArah ? (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -585,7 +782,9 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
       <div className="space-y-2">
         <h4 className="text-sm font-semibold">Sudah terisi dari SIPP</h4>
         <p className="text-xs text-muted-foreground">
-          Di layar ini nama tampil apa adanya; di dalam perintah, nama pihak, kuasa, dan saksi diganti inisial.
+          {tujuan.namaAsli
+            ? "Untuk tujuan membuat putusan, nama pihak, kuasa, dan saksi ditulis apa adanya di dalam perintah karena putusan memerlukannya; NIK dan nomor telepon tetap ditutup."
+            : "Di layar ini nama tampil apa adanya; di dalam perintah, nama pihak, kuasa, dan saksi diganti inisial."}
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
           <DariSipp label="Jenis perkara" isi={bahan.identitas.jenisPerkara} />
@@ -661,6 +860,7 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
             kurang.length ? "border-amber-400/60" : ""
           )}
         />
+        {tujuan.namaAsli ? <p className="text-xs text-muted-foreground">{CATATAN_HAPUS_DATA}</p> : null}
         {pesan ? <p className="text-sm text-destructive">{pesan}</p> : null}
         <p className="text-sm text-muted-foreground">
           {masukan.pakaiProject ? (

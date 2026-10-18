@@ -106,14 +106,62 @@ describe("penyusun perintah AI di Status Perkara", () => {
     await waitFor(() => expect(lagi.checked).toBe(true));
   });
 
-  it("tidak membocorkan NIK pada produk pihak yang ditempel", async () => {
+  it("tujuan putusan: nama asli, NIK tertutup, catatan hapus data tampil di bawah tombol salin", async () => {
     await bukaPenyusun();
     fireEvent.click(screen.getByText(/Produk para pihak/));
     const kotak = screen.getByText("Gugatan").closest("label")!.querySelector("textarea")!;
     fireEvent.change(kotak, { target: { value: "Penggugat Aminah binti Salim NIK 7203123456789012." } });
     expect(hasil()).not.toMatch(/\d{16}/);
+    expect(hasil()).toContain("Aminah binti Salim");
+    expect(hasil()).toContain("[placeholder: NIK]");
+    expect(hasil()).toContain("anggap data pribadi tersebut telah dihapus");
+    expect(screen.getByText("AI hanya bisa diminta; untuk menghapus data, hapus percakapan di aplikasi AI setelah selesai.")).toBeTruthy();
+  });
+
+  it("tujuan lain: inisial, tanpa catatan hapus data", async () => {
+    await bukaPenyusun();
+    const [pilihTujuan] = screen.getAllByRole("combobox");
+    fireEvent.change(pilihTujuan, { target: { value: "ringkasan" } });
+    fireEvent.click(screen.getByText(/Produk para pihak/));
+    const kotak = screen.getByText("Gugatan").closest("label")!.querySelector("textarea")!;
+    fireEvent.change(kotak, { target: { value: "Penggugat Aminah binti Salim NIK 7203123456789012." } });
     expect(hasil()).not.toContain("Aminah");
-    expect(hasil()).toContain("#VERBATIM");
+    expect(hasil()).toContain("A. binti S.");
+    expect(screen.queryByText(/AI hanya bisa diminta/)).toBeNull();
+  });
+
+  it("saklar: format putusan tertentu bawaan MATI, putusan blangko bawaan NYALA, diingat per pengguna", async () => {
+    await bukaPenyusun();
+    const format = screen.getByLabelText(/Ikuti format putusan tertentu/) as HTMLInputElement;
+    const blangko = screen.getByLabelText(/Sertakan putusan yang masih berbentuk blangko/) as HTMLInputElement;
+    expect(format.checked).toBe(false);
+    expect(blangko.checked).toBe(true);
+    expect(screen.getByText(/Belum ada draf blangko untuk perkara ini/)).toBeTruthy();
+
+    fireEvent.click(format);
+    fireEvent.click(blangko);
+    expect(JSON.parse(window.localStorage.getItem("aleta.prompt-ai.saklar.usr_uji_1") || "{}")).toEqual({ ikutiFormat: true, sertakanBlangko: false });
+    expect(screen.getByText(/Draf blangko tidak disertakan/)).toBeTruthy();
+
+    cleanup();
+    await bukaPenyusun();
+    expect((screen.getByLabelText(/Ikuti format putusan tertentu/) as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByLabelText(/Sertakan putusan yang masih berbentuk blangko/) as HTMLInputElement).checked).toBe(false);
+  });
+
+  it("contoh format yang ditempel disamarkan dan dibungkus; format dapat disimpan sebagai format saya", async () => {
+    await bukaPenyusun();
+    fireEvent.click(screen.getByLabelText(/Ikuti format putusan tertentu/));
+    const kotak = screen.getByText("Atau tempel contoh putusan").closest("label")!.querySelector("textarea")!;
+    fireEvent.change(kotak, { target: { value: "MENGADILI\nSiti Rahmawati binti Ahmad NIK 7271098765432101" } });
+    expect(hasil()).toContain("#CONTOH_FORMAT");
+    expect(hasil()).not.toMatch(/Rahmawati|7271098765432101/);
+    fireEvent.change(screen.getByPlaceholderText(/Nama format/), { target: { value: "Cerai gugat kabul" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
+    const tersimpan = JSON.parse(window.localStorage.getItem("aleta.prompt-ai.format-saya.usr_uji_1") || "[]");
+    expect(tersimpan).toHaveLength(1);
+    expect(tersimpan[0].nama).toBe("Cerai gugat kabul");
+    expect(tersimpan[0].teks).not.toMatch(/Rahmawati|7271098765432101/);
   });
 });
 

@@ -90,6 +90,13 @@ export type DefinisiTujuan = {
   format: string;
   /** Tujuan yang memerlukan arah putusan dari majelis. */
   butuhArah?: boolean;
+  /**
+   * Tujuan MEMBUAT putusan/penetapan: nama pihak, kuasa, dan saksi ditulis asli
+   * karena putusan memerlukannya (keputusan 100, 18 Okt 2026). NIK dan nomor
+   * telepon tetap ditutup - tidak diperlukan di putusan - dan perintahnya
+   * memuat instruksi tegas agar data pribadi tidak disimpan atau dipakai lagi.
+   */
+  namaAsli?: boolean;
 };
 
 export const TUJUAN_AI: readonly DefinisiTujuan[] = [
@@ -102,6 +109,7 @@ export const TUJUAN_AI: readonly DefinisiTujuan[] = [
     format:
       "Mulai dengan analisa singkat perkara dan rumusan pembebanan (bila diminta), lalu teks putusan utuh bernomor sesuai susunan Pengadilan Agama.",
     butuhArah: true,
+    namaAsli: true,
   },
   {
     kunci: "pertimbangan",
@@ -114,6 +122,7 @@ export const TUJUAN_AI: readonly DefinisiTujuan[] = [
     format:
       "Paragraf pertimbangan berurutan: fakta yang terbukti, dasar hukum, penerapan pada fakta, lalu kesimpulan isu. Tiap dasar hukum disebut dengan nama aturan dan pasalnya.",
     butuhArah: true,
+    namaAsli: true,
   },
   {
     kunci: "amar",
@@ -122,6 +131,7 @@ export const TUJUAN_AI: readonly DefinisiTujuan[] = [
     tugas: "Rumuskan amar putusan yang sesuai dengan arah putusan dan fakta perkara ini.",
     format: "Amar dalam butir bernomor, memakai rumusan baku putusan Pengadilan Agama, dengan pembebanan biaya perkara.",
     butuhArah: true,
+    namaAsli: true,
   },
   {
     kunci: "blueprint",
@@ -133,6 +143,7 @@ export const TUJUAN_AI: readonly DefinisiTujuan[] = [
     tugas: "Susun kerangka (blueprint) dokumen berjenis {p} untuk perkara ini, lengkap dengan bagian yang wajib ada.",
     format: "Daftar bagian berurutan beserta isi pokok tiap bagian dan data yang masih harus dilengkapi.",
     butuhArah: true,
+    namaAsli: true,
   },
   {
     kunci: "pembuktian",
@@ -297,11 +308,17 @@ export function inisialNama(nama: string): string {
   return `${diri ? `${diri}.` : ""} ${m[2].toLowerCase()}${ayah ? ` ${ayah}.` : ""}`.trim();
 }
 
-/** NIK, telepon, dan nomor panjang lain ditutup. */
-export function tutupDataPribadi(teks: string): string {
+/**
+ * NIK dan telepon ditutup. Mode "samar" menulis [NIK disamarkan]; mode
+ * "placeholder" (tujuan membuat putusan) menulis [placeholder: NIK] supaya
+ * AI menandainya sebagai data yang diisi manusia bila blangko memintanya.
+ */
+export function tutupDataPribadi(teks: string, mode: "samar" | "placeholder" = "samar"): string {
+  const nik = mode === "placeholder" ? "[placeholder: NIK]" : "[NIK disamarkan]";
+  const telp = mode === "placeholder" ? "[placeholder: telepon]" : "[telepon disamarkan]";
   return String(teks ?? "")
-    .replace(/(?<!\d)\d{4}[ .-]?\d{4}[ .-]?\d{4}[ .-]?\d{4}(?!\d)/g, "[NIK disamarkan]")
-    .replace(/(?<![\d])(?:\+62|62|0)8\d{1,3}[ .-]?\d{3,4}[ .-]?\d{3,5}(?!\d)/g, "[telepon disamarkan]");
+    .replace(/(?<!\d)\d{4}[ .-]?\d{4}[ .-]?\d{4}[ .-]?\d{4}(?!\d)/g, nik)
+    .replace(/(?<![\d])(?:\+62|62|0)8\d{1,3}[ .-]?\d{3,4}[ .-]?\d{3,5}(?!\d)/g, telp);
 }
 
 /** Semua nama orang pada bahan - pihak, kuasa, saksi. Mediator dan pejabat tidak. */
@@ -321,7 +338,7 @@ export function namaOrangBahan(bahan: BahanPrompt): string[] {
  * telepon. Nama terpanjang dikerjakan lebih dulu supaya "Ewardin bin Lasan"
  * tidak tercabik oleh "Ewardin".
  */
-export function samarkanTeks(teks: string, namaOrang: string[]): string {
+export function samarkanTeks(teks: string, namaOrang: string[], mode: "samar" | "placeholder" = "samar"): string {
   let hasil = String(teks ?? "");
   const pengganti = new Map<string, string>();
   for (const nama of namaOrang) {
@@ -341,7 +358,7 @@ export function samarkanTeks(teks: string, namaOrang: string[]): string {
   for (const [asli, ganti] of urut) {
     hasil = hasil.replace(polaNama(asli, "giu"), ganti);
   }
-  return tutupDataPribadi(hasil);
+  return tutupDataPribadi(hasil, mode);
 }
 
 /** Salinan bahan dengan nama orang berganti inisial dan alamat diringkas. */
@@ -401,6 +418,24 @@ export type MasukanAi = {
   /** Pertanyaan yang ingin dijawab, bebas. */
   pertanyaan: string;
   tempelan: TempelanPihak;
+  /** Saklar "Ikuti format putusan tertentu" (bawaan MATI). */
+  ikutiFormat: boolean;
+  /** Teks contoh putusan sebagai format rujukan; disamarkan otomatis sebelum masuk perintah. */
+  contohFormat: string;
+  /** Saklar "Sertakan putusan yang masih berbentuk blangko" (bawaan NYALA). */
+  sertakanBlangko: boolean;
+};
+
+/** Draf putusan perkara ini yang masih berbentuk blangko (dari draf H-7 atau perakit putusan). */
+export type DrafBlangkoBahan = {
+  /** Asal draf dalam bahasa awam, mis. "Draf agen H-7". */
+  sumber: string;
+  judul: string;
+  /** Teks draf; bagian kosong sudah ditandai [KOSONG-n: ...] atau [placeholder: ...]. */
+  teks: string;
+  /** Rekap kekosongan (jumlah per jenis dan letaknya); kosong bila sumbernya tidak dihitung. */
+  rekap?: string;
+  dibuatPada?: string;
 };
 
 export function masukanAwal(): MasukanAi {
@@ -413,10 +448,15 @@ export function masukanAwal(): MasukanAi {
     keteranganSaksiBas: "",
     pertanyaan: "",
     tempelan: { gugatan: "", jawaban: "", replik: "", duplik: "", kesimpulan: "" },
+    ikutiFormat: false,
+    contohFormat: "",
+    sertakanBlangko: true,
   };
 }
 
 export type OpsiPromptAi = {
+  /** Draf blangko perkara ini (hanya dipakai bila saklarnya nyala). */
+  drafBlangko?: DrafBlangkoBahan[];
   /** Hukum acara satker: "RBg" untuk luar Jawa-Madura. Bawaan RBg. */
   hukumAcara?: "RBg" | "HIR";
 };
@@ -475,8 +515,74 @@ export function isianKurangAi(masukan: MasukanAi, bahan: BahanPrompt): string[] 
 }
 
 /* ========================================================================== */
+/* Contoh format dan draf blangko                                             */
+/* ========================================================================== */
+
+const KATA_PENYEBUT = /^(?:Penggugat|Tergugat|Pemohon|Termohon|Saksi|Kuasa|Nama|Sdr|Sdri|Tn|Ny|Bapak|Ibu|Turut|Pembanding|Terbanding|Atas|Antara|Dan|Melawan|Bahwa)$/i;
+
+/** Panjang contoh format yang masuk perintah; selebihnya dipotong dengan catatan. */
+export const BATAS_CONTOH_FORMAT = 30000;
+
+/**
+ * Menyamarkan contoh putusan milik perkara LAIN: NIK dan telepon ditutup,
+ * pasangan "X bin/binti Y" menjadi inisial, lalu nama orang perkara ini (bila
+ * kebetulan ikut) juga menjadi inisial. Susunan kalimatnya tidak disentuh.
+ */
+export function samarkanContohFormat(teks: string, namaKenal: string[] = []): string {
+  const kata = "(?:\\p{Lu}[\\p{L}'’.]*)";
+  const nama = `${kata}(?:\\s+${kata}){0,4}`;
+  const pola = new RegExp(`(${nama})\\s+(bin|binti|BIN|BINTI)\\s+(${nama})`, "gu");
+  let hasil = tutupDataPribadi(String(teks ?? ""));
+  hasil = hasil.replace(pola, (_m, a: string, c: string, b: string) => {
+    // Kata penyebut peran di depan nama ("Penggugat Aminah binti Salim") bukan bagian nama.
+    const kataA = a.split(/\s+/);
+    let awal = 0;
+    while (awal < kataA.length - 1 && KATA_PENYEBUT.test(kataA[awal])) awal += 1;
+    const depan = kataA.slice(0, awal).join(" ");
+    const ini = inisialNama(`${kataA.slice(awal).join(" ")} ${c.toLowerCase()} ${b}`);
+    return `${depan ? `${depan} ` : ""}${ini || "[nama disamarkan]"}`;
+  });
+  return samarkanTeks(hasil, namaKenal);
+}
+
+function potongContoh(teks: string): { isi: string; dipotong: boolean } {
+  const isi = String(teks ?? "").trim();
+  return isi.length > BATAS_CONTOH_FORMAT ? { isi: isi.slice(0, BATAS_CONTOH_FORMAT), dipotong: true } : { isi, dipotong: false };
+}
+
+/* ========================================================================== */
 /* Perangkaian                                                                */
 /* ========================================================================== */
+
+/**
+ * Instruksi tegas untuk tujuan yang memakai nama asli. AI hanya dapat DIMINTA;
+ * penghapusan sebenarnya ada pada pengguna (hapus percakapan) - layar
+ * mengatakannya terus terang di bawah tombol salin.
+ */
+export const INSTRUKSI_DATA_PRIBADI =
+  "Nama dan data pribadi dalam perintah ini hanya dipakai untuk menyusun putusan ini. Jangan disimpan, diingat, atau dipakai untuk keperluan lain. Setelah putusan selesai, jangan mengulang data pribadi itu pada jawaban berikutnya; anggap data pribadi tersebut telah dihapus.";
+
+/** Catatan di bawah tombol salin, untuk tujuan yang memakai nama asli. */
+export const CATATAN_HAPUS_DATA =
+  "AI hanya bisa diminta; untuk menghapus data, hapus percakapan di aplikasi AI setelah selesai.";
+
+/**
+ * Bahan untuk tujuan membuat putusan: nama asli dipertahankan, alamat hanya
+ * sampai kabupaten/kota, NIK/telepon pada teks bebas ditutup.
+ */
+export function bahanTanpaPribadi(bahan: BahanPrompt): BahanPrompt {
+  const tutup = (t: string) => tutupDataPribadi(t, "placeholder");
+  return {
+    ...bahan,
+    pihak: {
+      penggugat: bahan.pihak.penggugat.map((x) => ({ ...x, alamat: kabupatenDari(x.alamat) })),
+      tergugat: bahan.pihak.tergugat.map((x) => ({ ...x, alamat: kabupatenDari(x.alamat) })),
+    },
+    sidang: bahan.sidang.map((s) => ({ ...s, agenda: tutup(s.agenda), alasanDitunda: tutup(s.alasanDitunda) })),
+    mediasi: { ...bahan.mediasi, isiKesepakatan: tutup(bahan.mediasi.isiKesepakatan) },
+    berkas: bahan.berkas.map((b) => ({ ...b, judul: tutup(b.judul) })),
+  };
+}
 
 const KALIMAT_PERAN =
   "Anda adalah asisten hukum yang membantu hakim Pengadilan Agama menyusun dan memeriksa dokumen perkara. Bekerjalah dengan cermat, netral, dan hanya atas dasar data yang diberikan.";
@@ -498,8 +604,10 @@ export function susunPromptAi(
   const hukumAcara = opsi.hukumAcara ?? "RBg";
   const tujuan = tujuanDari(masukan.tujuan);
   const orang = namaOrangBahan(bahanAsli);
-  const bahan = samarkanBahan(bahanAsli);
-  const bebas = (t: string) => samarkanTeks(t, orang);
+  const namaAsli = tujuan.namaAsli === true;
+  // Tujuan membuat putusan: nama ditulis asli (putusan memerlukannya); NIK/telepon tetap ditutup.
+  const bahan = namaAsli ? bahanTanpaPribadi(bahanAsli) : samarkanBahan(bahanAsli);
+  const bebas = (t: string) => (namaAsli ? tutupDataPribadi(t, "placeholder") : samarkanTeks(t, orang));
   const { satu, dua } = sebutanPihak(bahan);
   const penuhPutusan = tujuan.kunci === "putusan-lengkap";
 
@@ -616,6 +724,47 @@ export function susunPromptAi(
     if (isi) blokData.push(label.startsWith("PRODUK") ? `${label}\n${isi}` : `${label}: ${isi.includes("\n") ? `\n${isi}` : isi}`);
   }
 
+  const contoh = masukan.ikutiFormat && tujuan.butuhArah && masukan.contohFormat.trim() ? potongContoh(samarkanContohFormat(masukan.contohFormat, orang)) : null;
+  const draf = masukan.sertakanBlangko && tujuan.butuhArah ? (opsi.drafBlangko ?? []).filter((d) => d.teks.trim()) : [];
+
+  const blokContoh = contoh
+    ? baris(
+        masukan.pakaiProject ? "FORMAT RUJUKAN" : "CONTOH FORMAT PUTUSAN (format rujukan)",
+        masukan.pakaiProject
+          ? "Contoh berikut hanya format rujukan: susunan bagian, judul, gaya kalimat, dan format amar. Gaya rumah Project tetap berlaku. Jangan menyalin fakta, nama, atau angka dari contoh."
+          : "Ikuti susunan bagian, judul, gaya kalimat, dan format amar contoh di bawah ini. Jangan menyalin fakta, nama, atau angka dari contoh; isi hanya dari data perkara ini.",
+        "#CONTOH_FORMAT",
+        contoh.isi,
+        contoh.dipotong ? "[contoh dipotong karena terlalu panjang]" : "",
+        "#ENDCONTOH_FORMAT"
+      )
+    : "";
+
+  // Draf putusan yang masih berbentuk blangko (hasil cetak ABT yang belum penuh): bagian
+  // kosongnya sudah bertanda [KOSONG-n: ...]; AI diminta mengisinya HANYA dari data perkara
+  // ini, membiarkan [placeholder] bila datanya tidak ada, dan mengembalikan naskah utuh.
+  const blokDraf = draf.length
+    ? draf
+        .map((d) =>
+          baris(
+            `DRAF PUTUSAN DARI BLANGKO - ${d.sumber}: ${d.judul}${d.dibuatPada ? ` (${d.dibuatPada})` : ""}`,
+            "Draf ini dibuat dari blangko dan masih banyak yang belum terisi. Setiap bagian kosong ditandai [KOSONG-n: ...] atau [placeholder: ...].",
+            "Tugas atas draf ini:",
+            "- Isi setiap bagian kosong HANYA dari data perkara yang disertakan dalam perintah ini (SIPP, e-Court, BAS dan saksi, bukti).",
+            "- Bila datanya tidak ada, biarkan [placeholder: nama data]; jangan menebak.",
+            "- Jangan mengubah kalimat lain di draf kecuali yang jelas keliru; tiap perubahan semacam itu tandai [DIUBAH: alasan].",
+            "- Kembalikan naskah utuh yang sudah dilengkapi, lalu daftar isian yang diisi beserta sumbernya, lalu daftar yang masih kosong.",
+            "#DRAF_BLANGKO",
+            bebas(d.teks).trim(),
+            "#ENDDRAF_BLANGKO",
+            d.rekap ? `REKAP KEKOSONGAN\n${bebas(d.rekap).trim()}` : ""
+          )
+        )
+        .join("\n\n")
+    : "";
+
+  const blokPribadi = namaAsli ? INSTRUKSI_DATA_PRIBADI : "";
+
   const perintahPutusan = penuhPutusan
     ? susunPrompt(bahan, {
         ...pilihanAsli,
@@ -629,7 +778,9 @@ export function susunPromptAi(
 
   /* ---- DENGAN Project ------------------------------------------------------ */
   if (masukan.pakaiProject) {
-    const pemicu = pemicuProject(masukan, bahan);
+    const pemicuDasar = pemicuProject(masukan, bahan);
+    // Ada draf blangko pada tujuan putusan lengkap: periksa dulu (CEK BLANGKO), lalu lengkapi (PL).
+    const pemicu = draf.length && tujuan.kunci === "putusan-lengkap" ? `CEK BLANGKO lalu ${pemicuDasar}` : pemicuDasar;
     const catatanFormat = baris(
       profil.formatKeluaran && `Format keluaran: ${profil.formatKeluaran}`,
       profil.istilah && `Istilah dan aturan: ${profil.istilah}`,
@@ -639,7 +790,10 @@ export function susunPromptAi(
       profil.pembuka.trim() || PEMBUKA_AMAN,
       blokData.join("\n"),
       baris(`YANG DIMINTA: ${pemicu}`, permintaanPertanyaan),
+      blokDraf,
+      blokContoh,
       perintahPutusan && `RINCIAN PENYUSUNAN PUTUSAN\n\n${perintahPutusan}`,
+      blokPribadi && `DATA PRIBADI\n${blokPribadi}`,
       catatanFormat,
     ]
       .filter(Boolean)
@@ -656,7 +810,9 @@ export function susunPromptAi(
     "Data yang tidak ada pada perintah ini jangan diisi dengan tebakan. Tulis [placeholder: nama data] di tempatnya.",
     `Hukum acara yang berlaku ${hukumAcara}${hukumAcara === "RBg" ? " (bukan HIR)" : ""}.`,
     "Tenggat ikrar talak dihitung enam bulan sejak tanggal penetapan hari sidang ikrar talak (PHS ikrar), bukan sejak putusan berkekuatan hukum tetap.",
-    "Identitas pihak sudah disamarkan menjadi inisial. Jangan mencoba menebak atau memulihkan identitas asli.",
+    namaAsli
+      ? "Nama pihak, kuasa, dan saksi ditulis apa adanya karena putusan memerlukannya. NIK dan nomor telepon tidak disertakan; bila blangko memintanya, tulis [placeholder: NIK] atau [placeholder: telepon]."
+      : "Identitas pihak sudah disamarkan menjadi inisial. Jangan mencoba menebak atau memulihkan identitas asli.",
     "Teks di antara #VERBATIM dan #ENDVERBATIM adalah kutipan persis; jangan diubah, dirapikan, atau diringkas. Keterangan saksi yang bertanda kutipan BAS dikutip sebagaimana tercatat.",
   ];
 
@@ -669,6 +825,8 @@ export function susunPromptAi(
       `${tugas}${meta?.kalimat ? ` ${meta.kalimat}` : ""}`,
       permintaanPertanyaan
     ),
+    blokDraf,
+    blokContoh,
     perintahPutusan && `RINCIAN PENYUSUNAN PUTUSAN\n\n${perintahPutusan}`,
     baris(
       "FORMAT JAWABAN",
@@ -676,6 +834,7 @@ export function susunPromptAi(
       "Tulis dalam bahasa Indonesia hukum yang baku. Pisahkan bagian dengan judul singkat. Tandai data yang kurang dengan [placeholder: ...]."
     ),
     baris("BATASAN", batasan.map((b) => `- ${b}`).join("\n")),
+    blokPribadi && baris("DATA PRIBADI", blokPribadi),
   ]
     .filter(Boolean)
     .join("\n\n");

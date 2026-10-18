@@ -14,6 +14,9 @@ import {
   keadaanPersidangan,
   masukanAwal,
   pemicuProject,
+  INSTRUKSI_DATA_PRIBADI,
+  CATATAN_HAPUS_DATA,
+  samarkanContohFormat,
   samarkanTeks,
   susunPromptAi,
   tutupDataPribadi,
@@ -261,12 +264,6 @@ describe("penyamaran identitas", () => {
     });
   }
 
-  it("perintah putusan lengkap juga tanpa nama mentah", () => {
-    const teks = susunPromptAi(bahan, { ...pilihan, arahPutusan: "kabul" }, masukan({ tujuan: "putusan-lengkap" }), profilEfektif(null));
-    expect(teks).not.toMatch(/Aminah|Hamid|Contoh Advokat|Saksi Satu Rekaan/);
-    expect(teks).toContain("Kabul seluruhnya");
-  });
-
   it("alamat hanya sampai kabupaten/kota", () => {
     const teks = susunPromptAi(bahan, pilihan, masukan({ pakaiProject: true, tujuan: "ringkasan" }), profilEfektif(null));
     expect(teks).not.toContain("Jl. Mawar");
@@ -320,5 +317,152 @@ describe("keadaan, kekurangan, dan versi profil", () => {
     const p = bersihkanProfilProject({ bagian: "A\nB\n\nC", tanggal: "bukan" });
     expect(p?.bagian).toEqual(["A", "B", "C"]);
     expect(p?.tanggal).toBe("");
+  });
+});
+
+/* ---- keputusan 100: tujuan membuat putusan memakai nama asli ---- */
+describe("tujuan membuat putusan: nama asli, NIK tertutup, instruksi hapus", () => {
+  const nik = "7203123456789012";
+  const TUJUAN_PUTUSAN = ["putusan-lengkap", "pertimbangan", "amar", "blueprint"] as const;
+  const bahanNik: BahanPrompt = { ...bahan, kuasa: [{ nama: "Contoh Advokat", klien: "Aminah binti Salim", pihak: "Penggugat/Pemohon" }] };
+
+  for (const pakai of [false, true]) {
+    for (const t of TUJUAN_PUTUSAN) {
+      it(`${t} (Project: ${pakai}) memuat nama asli, menutup NIK, dan menyertakan instruksi`, () => {
+        const teks = susunPromptAi(
+          bahanNik,
+          { ...pilihan, arahPutusan: "kabul", buktiSurat: `P.1 KTP-el atas nama Aminah binti Salim NIK ${nik}` },
+          masukan({ pakaiProject: pakai, tujuan: t, parameter: "nafkah iddah", fakta: "Telepon Hamid bin Yusuf 0812-3456-7890", tempelan: { gugatan: `Aminah binti Salim NIK ${nik}`, jawaban: "", replik: "", duplik: "", kesimpulan: "" } }),
+          profilEfektif(null)
+        );
+        expect(teks).toContain("Aminah binti Salim");
+        expect(teks).toContain("Hamid bin Yusuf");
+        expect(teks).toContain("Contoh Advokat");
+        expect(teks).toContain("Saksi Satu Rekaan");
+        expect(teks).not.toMatch(/\d{16}/);
+        expect(teks).not.toContain(nik);
+        expect(teks).not.toMatch(/0812/);
+        expect(teks).toContain("[placeholder: NIK]");
+        expect(teks).toContain("[placeholder: telepon]");
+        expect(teks).toContain(INSTRUKSI_DATA_PRIBADI);
+        expect(teks).toMatch(/Jangan disimpan, diingat, atau dipakai untuk keperluan lain/);
+        expect(teks).toMatch(/jangan mengulang data pribadi itu pada jawaban berikutnya/);
+        expect(teks).toMatch(/anggap data pribadi tersebut telah dihapus/);
+        if (pakai) expect(teks).not.toMatch(/Kamu adalah|Anda adalah|\bperan\b|\brole\b/i);
+      });
+    }
+  }
+
+  it("tujuan lain tetap disamarkan menjadi inisial dan tanpa instruksi hapus", () => {
+    for (const t of ["pembuktian", "ringkasan", "analisa-sebelum", "komparasi", "sidang"] as const) {
+      const teks = susunPromptAi(bahanNik, pilihan, masukan({ tujuan: t, parameter: "x", fakta: "Hamid bin Yusuf" }), profilEfektif(null));
+      expect(teks, t).not.toMatch(/Aminah|Hamid|Contoh Advokat|Saksi Satu Rekaan/);
+      expect(teks, t).toContain("H. bin Y.");
+      expect(teks, t).not.toContain(INSTRUKSI_DATA_PRIBADI);
+    }
+  });
+
+  it("catatan jujur di layar menyebut hanya bisa diminta", () => {
+    expect(CATATAN_HAPUS_DATA).toBe("AI hanya bisa diminta; untuk menghapus data, hapus percakapan di aplikasi AI setelah selesai.");
+  });
+});
+
+/* ---- saklar: ikuti format putusan tertentu ---- */
+describe("saklar format putusan tertentu", () => {
+  const contoh = [
+    "PUTUSAN",
+    "Nomor 77/Pdt.G/2026/PA.Lain",
+    "Siti Rahmawati binti Ahmad, NIK 7271098765432101, Penggugat melawan Budi Santoso bin Karim, Tergugat",
+    "MENGADILI",
+    "1. Mengabulkan gugatan Penggugat;",
+  ].join("\n");
+
+  it("bawaan MATI: contoh tidak masuk perintah walau terisi", () => {
+    expect(masukanAwal().ikutiFormat).toBe(false);
+    const teks = susunPromptAi(bahan, pilihan, masukan({ tujuan: "putusan-lengkap", contohFormat: contoh }), profilEfektif(null));
+    expect(teks).not.toContain("#CONTOH_FORMAT");
+    expect(teks).not.toContain("Rahmawati");
+  });
+
+  it("menyala: contoh disamarkan otomatis, dibungkus, dengan instruksi tanpa menyalin fakta", () => {
+    const teks = susunPromptAi(bahan, pilihan, masukan({ tujuan: "putusan-lengkap", ikutiFormat: true, contohFormat: contoh }), profilEfektif(null));
+    expect(teks).toContain("CONTOH FORMAT PUTUSAN (format rujukan)");
+    expect(teks).toMatch(/#CONTOH_FORMAT\n[\s\S]+\n#ENDCONTOH_FORMAT/);
+    expect(teks).toMatch(/susunan bagian, judul, gaya kalimat, dan format amar/);
+    expect(teks).toMatch(/Jangan menyalin fakta, nama, atau angka dari contoh/);
+    expect(teks).not.toMatch(/Rahmawati|Santoso|7271098765432101/);
+    expect(teks).toContain("S.R. binti A.");
+    expect(teks).toContain("B.S. bin K.");
+    expect(teks).toContain("MENGADILI");
+    // fakta contoh tidak dipindah ke bagian data perkara
+    const dataPerkara = teks.slice(0, teks.indexOf("#CONTOH_FORMAT"));
+    expect(dataPerkara).not.toContain("77/Pdt.G/2026/PA.Lain");
+  });
+
+  it("dengan Project: disebut format rujukan saja, tanpa role", () => {
+    const teks = susunPromptAi(bahan, pilihan, masukan({ pakaiProject: true, tujuan: "putusan-lengkap", ikutiFormat: true, contohFormat: contoh }), profilEfektif(null));
+    expect(teks).toContain("FORMAT RUJUKAN");
+    expect(teks).toMatch(/hanya format rujukan/);
+    expect(teks).toMatch(/Gaya rumah Project tetap berlaku/);
+    expect(teks).not.toMatch(/Kamu adalah|Anda adalah|\bperan\b|\brole\b/i);
+  });
+
+  it("tidak berlaku untuk tujuan yang bukan membuat putusan", () => {
+    const teks = susunPromptAi(bahan, pilihan, masukan({ tujuan: "ringkasan", ikutiFormat: true, contohFormat: contoh }), profilEfektif(null));
+    expect(teks).not.toContain("#CONTOH_FORMAT");
+  });
+
+  it("samarkanContohFormat tidak memakan kata penyebut peran", () => {
+    expect(samarkanContohFormat("Penggugat Aminah binti Salim hadir")).toBe("Penggugat A. binti S. hadir");
+  });
+});
+
+/* ---- saklar: sertakan putusan yang masih berbentuk blangko ---- */
+describe("saklar putusan yang masih berbentuk blangko", () => {
+  const draf = [
+    {
+      sumber: "Berkas putusan hasil ABT",
+      judul: "putusan-123.rtf",
+      teks: "Bahwa menikah pada tanggal [KOSONG-1: titik-titik] di [KOSONG-2: kurung siku «[KUA]»]",
+      rekap: "Ditemukan 2 bagian kosong (titik-titik 1, kurung siku 1).\n- KOSONG-1 (titik-titik): …menikah pada tanggal [ISI] di…",
+    },
+  ];
+
+  it("bawaan NYALA dan draf disertakan beserta tugas dan rekap", () => {
+    expect(masukanAwal().sertakanBlangko).toBe(true);
+    for (const pakai of [false, true]) {
+      const teks = susunPromptAi(bahan, pilihan, masukan({ pakaiProject: pakai, tujuan: "putusan-lengkap" }), profilEfektif(null), { drafBlangko: draf });
+      expect(teks).toContain("#DRAF_BLANGKO");
+      expect(teks).toContain("[KOSONG-1: titik-titik]");
+      expect(teks).toContain("REKAP KEKOSONGAN");
+      expect(teks).toContain("Ditemukan 2 bagian kosong");
+      expect(teks).toMatch(/HANYA dari data perkara yang disertakan/);
+      expect(teks).toMatch(/biarkan \[placeholder: nama data\]/);
+      expect(teks).toMatch(/kecuali yang jelas keliru; tiap perubahan semacam itu tandai \[DIUBAH/);
+      expect(teks).toMatch(/naskah utuh yang sudah dilengkapi, lalu daftar isian yang diisi beserta sumbernya, lalu daftar yang masih kosong/);
+      if (pakai) expect(teks).not.toMatch(/Kamu adalah|Anda adalah|\bperan\b|\brole\b/i);
+    }
+  });
+
+  it("dengan Project: pemicu CEK BLANGKO lalu PL", () => {
+    const teks = susunPromptAi(bahan, pilihan, masukan({ pakaiProject: true, tujuan: "putusan-lengkap" }), profilEfektif(null), { drafBlangko: draf });
+    expect(teks).toContain("YANG DIMINTA: CEK BLANGKO lalu PL");
+  });
+
+  it("saklar MATI: draf tidak disertakan", () => {
+    const teks = susunPromptAi(bahan, pilihan, masukan({ tujuan: "putusan-lengkap", sertakanBlangko: false }), profilEfektif(null), { drafBlangko: draf });
+    expect(teks).not.toContain("#DRAF_BLANGKO");
+    expect(teks).not.toContain("KOSONG-1");
+  });
+
+  it("tanpa draf: tidak ada bagian draf", () => {
+    expect(susunPromptAi(bahan, pilihan, masukan({ tujuan: "putusan-lengkap" }), profilEfektif(null))).not.toContain("#DRAF_BLANGKO");
+  });
+
+  it("NIK pada draf tetap tertutup dan nama asli dipakai pada tujuan putusan", () => {
+    const d = [{ ...draf[0], teks: "Aminah binti Salim NIK 7203123456789012 [KOSONG-1: titik-titik]" }];
+    const teks = susunPromptAi(bahan, pilihan, masukan({ tujuan: "amar" }), profilEfektif(null), { drafBlangko: d });
+    expect(teks).toContain("Aminah binti Salim");
+    expect(teks).not.toMatch(/\d{16}/);
   });
 });
