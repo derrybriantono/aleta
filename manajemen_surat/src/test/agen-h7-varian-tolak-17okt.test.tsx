@@ -43,17 +43,17 @@ describe("pilih blangko varian tolak", () => {
     expect(varianTolakBerbeda(pilihBlangkoH7(BARIS, "putusan"), hadir)).toBe(true);
   });
 
-  it("jenis tanpa baris tolak di peta (Hibah, Wakaf, Isbat Wasiat): TIDAK ada varian - bukan blangko kabul berlabel tolak", () => {
+  it("jenis tanpa baris tolak di peta (Zakat, Isbat Wasiat): TIDAK ada varian - bukan blangko kabul berlabel tolak", () => {
     // 18 Okt 2026 (paket i17): Kewarisan, PAW, dan Izin Poligami KINI punya blangko tolak sendiri, jadi contoh
-    // "tanpa baris tolak" diganti jenis yang memang belum dipetakan sama sekali.
-    for (const jenisPerkara of ["Hibah", "Wakaf", "Isbat Wasiat"]) {
+    // "tanpa baris tolak" diganti jenis yang memang belum dipetakan sama sekali. 18 Okt (paket i28): Hibah dan Wakaf kini punya blangko tolak sendiri (folder 4d / 4e).
+    for (const jenisPerkara of ["Zakat", "Isbat Wasiat"]) {
       const b = { ...BARIS, jenisPerkara, nomorPerkara: "9/Pdt.G/2026/PA.Dgl" };
       const t = pilihBlangkoH7(b, "putusan", "ditolak");
       expect(t.utama, jenisPerkara).toBeNull();
       expect(varianTolakBerbeda(pilihBlangkoH7(b, "putusan"), t)).toBe(false);
     }
     // Sebaliknya, jenis yang kini punya blangko tolak harus mendapat varian tolak (bukan blangko kabul).
-    for (const jenisPerkara of ["Kewarisan", "P3HP/Penetapan Ahli Waris", "Izin Poligami"]) {
+    for (const jenisPerkara of ["Kewarisan", "P3HP/Penetapan Ahli Waris", "Izin Poligami", "Hibah", "Wakaf"]) {
       const b = { ...BARIS, jenisPerkara, nomorPerkara: "9/Pdt.G/2026/PA.Dgl" };
       const t = pilihBlangkoH7(b, "putusan", "ditolak");
       expect(t.utama?.label, jenisPerkara).toMatch(/^\[03\] \[Tolak\]/);
@@ -123,7 +123,7 @@ describe("agen menyusun varian ditolak", () => {
 
   it("jenis tanpa blangko tolak (belum dipetakan): tanpa varian", async () => {
     const panggilan: string[] = [];
-    const d = (await susunDrafSatu({} as AletaDatabase, { ...BARIS, jenisPerkara: "Hibah" }, sumber(panggilan)))!;
+    const d = (await susunDrafSatu({} as AletaDatabase, { ...BARIS, jenisPerkara: "Zakat" }, sumber(panggilan)))!;
     expect(panggilan.filter((p) => p.startsWith("blangko.baca"))).toHaveLength(0);
     expect(d.varian).toEqual([]);
   });
