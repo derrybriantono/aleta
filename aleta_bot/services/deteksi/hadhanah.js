@@ -31,6 +31,10 @@ const variabel = Object.freeze([
   { kode: "0711", nama: "Tergugat dari sisi anak", sumber: "posita", blangko: ["putusan"] },
   { kode: "2004", nama: "Anak kini diasuh oleh", sumber: "posita", blangko: ["putusan", "bas"] },
   { kode: "8603", nama: "Nama anak", sumber: "posita", blangko: ["putusan"] },
+  // 18 Okt 2026 (keputusan 14): saklar "petitum meminta penyerahan anak" - 1/0 dari PETITUM surat gugatan
+  // (isiGugatanService.saklarPenyerahanAnak, bukan dari posita di modul ini); 0 = amar+pertimbangan penyerahan
+  // tidak tercetak (anti ultra petita).
+  { kode: "9720", nama: "Petitum meminta penyerahan anak (saklar)", sumber: "petitum", blangko: ["putusan"] },
   { kode: "0708", nama: "Tergugat menjenguk anak", sumber: "saksi-sipp", blangko: ["putusan", "bas"] },
   { kode: "0710", nama: "Kepentingan Penggugat", sumber: "posita", blangko: ["putusan"], deteksi: false },
   { kode: "5171", nama: "Penghasilan Penggugat", sumber: "posita", blangko: ["putusan"], deteksi: false },
