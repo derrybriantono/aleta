@@ -48,6 +48,10 @@ const keadaan = vi.hoisted(() => ({
 
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({}) }));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "usr_uji" }));
+// 18 Okt 2026 (matriks hak akses): rute ini kini juga memeriksa golongan aktor; yang diuji di sini bukan haknya.
+vi.mock("@/server/modules/organization/service", () => ({
+  requireActorUser: async () => ({ id: "usr_uji", name: "Uji", roleId: "super-admin", positionId: "", additionalRoleIds: [], isActive: true }),
+}));
 vi.mock("@/server/modules/aleta-ecourt/akses", () => ({
   pastikanKapabilitas: async (_db: unknown, _aktor: unknown, kapabilitas: string) => {
     keadaan.kapabilitas.push(kapabilitas);

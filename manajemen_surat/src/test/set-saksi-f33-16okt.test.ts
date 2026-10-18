@@ -161,6 +161,10 @@ const bridge = vi.fn();
 const kapabilitas = vi.fn(async () => ({ id: "u1", name: "Panitera" }));
 vi.mock("@/server/db/client", () => ({ getDatabase: async () => ({ queryAll: async () => [], queryOne: async () => null }) }));
 vi.mock("@/server/shared/auth", () => ({ resolveActorUserId: async () => "u1" }));
+// 18 Okt 2026 (matriks hak akses): rute ini kini juga memeriksa golongan aktor; yang diuji di sini bukan haknya.
+vi.mock("@/server/modules/organization/service", () => ({
+  requireActorUser: async () => ({ id: "usr_uji", name: "Uji", roleId: "super-admin", positionId: "", additionalRoleIds: [], isActive: true }),
+}));
 vi.mock("@/server/modules/aleta-ecourt/akses", () => ({ pastikanKapabilitas: (...a: unknown[]) => kapabilitas(...(a as [])) }));
 vi.mock("@/server/modules/aleta-sipp/aleta-sipp-datasource", () => ({ callAletaBotSippBridge: (...a: unknown[]) => bridge(...a) }));
 vi.mock("@/server/shared/admin-access-audit", () => ({ handleAdminRouteError: (e: unknown) => new Response(JSON.stringify({ ok: false, alasan: String((e as Error)?.message || e) }), { status: 500 }) }));
