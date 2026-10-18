@@ -1,6 +1,6 @@
-export const APP_VERSION = "2.40.1";
+export const APP_VERSION = "2.41.0";
 export const APP_VERSION_LABEL =
-  "ALETA Judicia v2.40.1 - Tata Letak Jadwal dan Antrian Sidang";
+  "ALETA Judicia v2.41.0 - Oktober 2026";
 
 export type PatchNote = {
   version: string;
@@ -21,6 +21,58 @@ export type PatchNote = {
 };
 
 export const PATCH_NOTES: PatchNote[] = [
+  {
+    version: "2.41.0",
+    title: "ALETA Judicia v2.41.0 - Oktober 2026",
+    date: "2026-10-18",
+    status: "Belum terpasang",
+    summary:
+      "Rangkuman pembaruan portal sejak v2.40.1 (28 September 2026) sampai rilis ekstensi 1.205.7 (18 Oktober 2026). Selama Oktober versi portal tidak dinaikkan sehingga kartu ini tertinggal; rinciannya per rilis ada di Catatan Ekstensi SIPP di bawah. Pokoknya: masuk ALETA dengan akun SIPP, Blangko ABT by Derry Briantono lengkap untuk semua jenis perkara yang ada, Putusan Advance dan draf putusan H-7, ikrar talak dari penetapan sampai e-Doc, sesi e-Court yang pulih sendiri lewat WhatsApp, Kasir otomatis, SKP semua jabatan, susun keterangan saksi untuk semua jenis perkara, serta tampilan yang menyesuaikan HP sampai TV.",
+    added: [
+      "Masuk ALETA dengan akun SIPP: nama dan sandi SIPP dicocokkan langsung ke SIPP tanpa menyimpan sandi; SIPP dan ABT terbuka otomatis sesudah masuk.",
+      "Blangko ABT by Derry Briantono: putusan dan BAS berpasangan per jenis perkara (menu 'Jenis - Putusan' / 'Jenis - BAS'), isian, bukti, tanya jawab, pratinjau dan cetak; identitas satker terisi otomatis sehingga blangko berlaku untuk satker mana pun.",
+      "Blangko Saya: Super Admin dapat menyimpan dan mengelola blangko sendiri di ALETA.",
+      "Putusan Advance untuk semua jenis perkara dan agen draf putusan H-7: draf putusan utuh disiapkan sebelum sidang putus, dengan varian kabul dan tolak.",
+      "Ikrar talak lengkap: tunda (+14 hari, batas 6 bulan sejak BHT) dan putus dari Jadwal Sidang, form Penetapan Ikrar Talak di SIPP terisi saat perkara dibuka, penetapan disusun dari blangko lalu diunggah sebagai e-Doc atas akun ketua majelis, biaya ikrar diambil dari biaya perkara.",
+      "Sesi e-Court pulih sendiri saat server menyala; captcha dijawab petugas lewat WhatsApp, perintah e-Court dari chat, dan riwayat login WhatsApp untuk Super Admin dan Admin.",
+      "Isian e-Litigasi terisi otomatis dari data e-Court (Tergugat terdaftar = e-litigasi, tanpa email = hybrid), isian manual tetap menang.",
+      "Kasir otomatis bersaklar dengan rekap, usulan per kejadian, dan jurnal; tambahan panjar dipilih kasir.",
+      "SKP semua jabatan dan eviden SKP hakim dari data SIPP; Fitur Satker untuk mengatur fitur per satker.",
+      "Jawab-menjawab dari e-Court (jawaban, replik, duplik, kesimpulan) dikenali otomatis: isian lisan atau tertulis terisi sendiri, rekonvensi, kesimpulan, dan pokok jawaban diusulkan ke blangko beserta kutipan asalnya.",
+      "Susun keterangan saksi menurut keadaan perkara untuk 22 kumpulan jenis perkara (cerai beserta kumulasi, itsbat, dispensasi kawin, PAW, perwalian, harta bersama, kewarisan, wali adhal, wasiat, poligami, pembatalan dan pencegahan perkawinan, asal usul anak, hak asuh, Penguasaan Anak, nafkah anak, ekonomi syariah, pengangkatan anak, permohonan umum) dengan tujuh jenis keterangan termasuk ragu, dan kalimat saksi yang tidak pernah sama; termasuk keterangan anak, calon, dan orang tua pada dispensasi kawin serta saksi yang diajukan Tergugat pada harta bersama dan kewarisan.",
+      "Kembaran laptop hanya-baca untuk bekerja saat server mati, dan tutorial per fitur lewat tombol '?' di tiap halaman.",
+      "Peringatan sisa blangko saat mengunggah putusan, BAS, atau relaas ([ ], titik-titik, placeholder, teks merah) beserta unduhan daftarnya.",
+    ],
+    changed: [
+      "Tampilan semua halaman menyesuaikan HP, tablet, laptop kecil dan besar, sampai TV 40-65 inci; panel ekstensi SIPP menempel di kanan mulai layar 900 px dan ukurannya ikut layar.",
+      "Panel ekstensi menyebut isian dengan namanya, bukan kode angka; kode hanya tampil saat kursor diarahkan.",
+      "Menu dan hak per peran: tiap peran melihat menu, widget, dan tombol yang menjadi tugasnya; peran utama ditautkan pengguna, alat hanya sub-peran.",
+      "Penetapan PMH/PPP/PJS/PHS tercatat atas akun SIPP pejabat yang dipilih; tunda dan putusan Jadwal Sidang atas PP perkara.",
+      "Unduhan tidak lagi diblokir dan bernama baku; salinan putusan memuat tanda SALINAN di kiri atas.",
+      "Deteksi isi dari SIPP dan input ke ABT diperluas ke semua jenis perkara, termasuk kumulasi, KTP, pekerjaan pihak, kuasa, saksi, dan huruf alasan cerai.",
+    ],
+    fixed: [
+      "Isian e-Litigasi yang tertulis 'ISI DULU' tidak lagi muncul pada perkara e-Court yang datanya tersedia.",
+      "Perkara non-cerai tidak lagi dikenali sebagai cerai saat menyusun keterangan saksi.",
+      "Tidak ada lagi kata atau penanda ALETA yang terbawa ke SIPP, e-Doc, maupun berkas ABT.",
+      "Puluhan perbaikan dari uji nyata 9 Oktober dan audit menyeluruh 17 Oktober (rincian per rilis di Catatan Ekstensi SIPP).",
+    ],
+    security: [
+      "Sandi SIPP tidak pernah disimpan maupun ditampilkan; pencocokan dilakukan ke SIPP saat masuk.",
+      "NIK dan nama pihak disamarkan pada unggahan anonim; jejak tindakan otomatis tercatat jujur di tabel ALETA.",
+      "Captcha e-Court selalu dijawab manusia; ALETA tidak memecahkan captcha.",
+    ],
+    operationalNotes: [
+      "Paket server: aleta-update-2.41.0-ekst1.205.7.tar.gz. Migrasi basis data baru (0073 Blangko Saya, 0074 riwayat login WhatsApp) berjalan hanya dengan ALETA_RUN_DB_MIGRATIONS=1.",
+      "Paket blangko ABT i7-i28 dipasang terpisah menurut urutan pemasangan; sapu penanda dan penetral basis data ABT dipasang paling akhir.",
+      "Ekstensi Chrome dimuat dari folder unduhan dan disalin tiap rilis.",
+    ],
+    knownLimitations: [
+      "Tampilan panel ekstensi baru diukur di replika; perlu dicoba di Chrome kantor (1366 px, zoom 100/125/150%).",
+      "Jenis perkara yang belum punya blangko Derry (13 jenis SIPP serta zakat, eksekusi, verzet) masih memakai blangko ABT bawaan.",
+      "Rujukan Buku II, HIR/RBg, dan KHES yang belum dapat dicocokkan ke naskah resmi tidak dicetak di keterangan saksi.",
+    ],
+  },
   {
     version: "2.40.1",
     title: "ALETA Judicia v2.40.1 - Tata Letak Jadwal dan Antrian Sidang",

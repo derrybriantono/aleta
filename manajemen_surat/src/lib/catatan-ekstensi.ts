@@ -57,6 +57,21 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.7",
+    dirilis: "2026-10-18T20:00:00+08:00",
+    judul: "Isian disebut dengan nama, jawab-menjawab e-Court terbaca, keterangan anak/calon/orang tua dispensasi, dan saksi Tergugat",
+    butir: [
+      "Panel \"Isi dari SIPP & input ke ABT\", pita peringatan, dialog Cetak, urungkan/ulangi, dan kabar gagal simpan kini menyebut isian dengan namanya (mis. \"Sunting (Alasan Perceraian, Tanggal Pisah Rumah)\"), bukan kode angka; kodenya hanya tampil saat kursor diarahkan, supaya petugas tidak perlu menghafal nomor variabel.",
+      "Jawab-menjawab yang diunggah di e-Court (jawaban, replik, duplik, kesimpulan) dibaca otomatis: \"lisan atau tertulis\" terisi \"tertulis\" bila berkasnya ada, sedangkan rekonvensi, kesimpulan, dan pokok jawaban/eksepsi diusulkan beserta kutipan asalnya; jawaban, replik, dan duplik dapat disalin ke BAS. Usulan tidak menimpa isian petugas dan akan dinaikkan menjadi otomatis sesudah diukur atas berkas e-Court di server.",
+      "Pembacaan e-Court kini juga berjalan pada blangko \"Tolak - Tergugat Tidak Hadir Setelah Mediasi\" (cerai gugat dan cerai talak) dan \"Ekonomi Syariah Gugatan Sederhana - Sidang Kedua\".",
+      "Susun saksi pada dispensasi kawin punya tab kedua \"Keterangan anak, calon, dan orang tua\" (PERMA 5/2019): 69 pertanyaan, ayah dan ibu diperiksa terpisah, wali memakai rumusan \"anak yang saya asuh\", dan butir kehamilan tercentang sendiri bila posita menyebutnya - tertulis \"(menurut posita)\" dan centang petugas selalu menang; hasilnya disalin ke BAS dengan satu tombol.",
+      "Saksi yang diajukan Tergugat pada harta bersama dan kewarisan kini menerangkan versi Tergugat (harta sudah dibagi, dihibahkan, utang bersama, pisah harta, ahli waris lain, utang pewaris) lewat pilihan \"Diajukan oleh Penggugat/Tergugat\" per saksi.",
+      "Kalimat saksi dispensasi kawin, itsbat, dan asal usul anak tidak lagi menulis \"tahun tahun\" sesudah umur.",
+      "BAS cabut sesudah jawaban (Tergugat setuju/menolak) untuk Ekonomi Syariah acara biasa dipilih otomatis; isian bukti persetujuan istri pada BAS verstek Izin Poligami dan isian surat keterangan KUA pada itsbat mendapat nama yang jelas.",
+      "Tutorial \"Susun saksi\" dan \"Tampilan panel menyesuaikan layar\" kini tampil, dan panduan per peran memuat susun saksi, tampilan panel, dan jawab-menjawab e-Court.",
+    ],
+  },
+  {
     versi: "1.205.6",
     dirilis: "2026-10-18T16:00:00+08:00",
     judul: "Susun saksi menurut keadaan perkara untuk semua jenis perkara, dan panel ekstensi yang menyesuaikan layar laptop sampai TV",
