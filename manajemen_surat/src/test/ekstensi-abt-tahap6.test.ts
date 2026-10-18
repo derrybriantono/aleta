@@ -662,12 +662,12 @@ describe("SYARAT MUTLAK: tampilan Lama IDENTIK dengan abt.js sebelum Tahap 6 (fd
   // 1-3). Penjaganya tetap sama kuat: lapisan sore dikupas (unsur .aleta-sore,
   // atribut data-sore*, kelas aleta-teknis) dan sisanya harus SAMA PERSIS
   // dengan Lama - jadi lapisan itulah SATU-SATUNYA perubahan. Perannya
-  // "Operator" (peran "lain" = susunan lama): tanpa pembacaan otomatis, yang
+  // "Staf Umum" (peran "lain" = susunan lama; Operator kini golongan PTSP yang dibatasi di ABT, keputusan 112): tanpa pembacaan otomatis, yang
   // dijaga uji tersendiri.
   it("Baru TANPA satu saklar abt pun: DOM panel sama dengan Lama sesudah lapisan perbaikan 30 Sep sore dikupas", async () => {
     const operator: Pengganti = (url, _cara, badan) =>
       url.includes("/aleta-bot/abt/usulan") && JSON.parse(badan || "{}").sumber === "siapa"
-        ? { isi: { data: { available: true, pengguna: { nama: "Derry Briantono", peran: "Operator" }, kapabilitas: {} } } }
+        ? { isi: { data: { available: true, pengguna: { nama: "Derry Briantono", peran: "Staf Umum" }, kapabilitas: {} } } }
         : undefined;
     const lama = buka({ simpanan: {}, ganti: operator });
     const kini = buka({ simpanan: baru(["sipp-5", "portal-3"]), ganti: operator });
