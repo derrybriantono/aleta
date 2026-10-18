@@ -50,7 +50,8 @@ describe("katalog di repo lolos skema", () => {
       expect(kat.contoh, "berkas contoh tidak ikut ke repo").not.toBe(true);
       const r = Mesin.periksaKatalog(kat, { namaBerkas: nama, variabelAda });
       expect(r.galat, `${nama}:\n${r.galat.slice(0, 12).join("\n")}`).toEqual([]);
-      expect(Mesin.ringkasKatalog(kat).pertanyaan).toBeGreaterThanOrEqual(10);
+      // katalog tambahan arah Tergugat sengaja kecil (butir pengganti saja); katalog utama minimal 10 butir
+      expect(Mesin.ringkasKatalog(kat).pertanyaan).toBeGreaterThanOrEqual(kat.tambahanUntuk ? 5 : 10);
     });
   }
 

@@ -302,3 +302,111 @@ describe("borang menyusun saksi", () => {
     w.close;
   });
 });
+
+describe("tab keterangan anak, calon, dan orang tua (dispensasi kawin)", () => {
+  async function bukaDk(isi: Record<string, string> = {}) {
+    const w = buka([...KODE_BLANGKO_CERAI, "0600", "0606", "0601", "0607", "0999"], { isi: { "0048": "Dispensasi Kawin", "0600": "Budi", "0606": "Siti", "0601": "20 (dua puluh) tahun", "0607": "16 (enam belas) tahun", "0999": "2 (dua) bulan", ...isi }, nomor: "5/Pdt.P/2026/PA.Dgl", judul: "[1] BAS DK - Anak Perempuan Hamil" });
+    const panel = await panelDari(w);
+    await tunggu(() => !tombolDi(panel, TOMBOL)?.hidden, "tombol katalog tampak");
+    tombolDi(panel, TOMBOL).click();
+    await tunggu(() => Boolean(panel.querySelector(".aleta-ssk .aleta-sdg-form")), "form");
+    return { w, panel, wadah: panel.querySelector(".aleta-ssk") as any };
+  }
+  const tab = (wadah: any, nilai: string) => wadah.querySelector(`.aleta-ssk-tab-tombol[data-tab="${nilai}"]`) as any;
+
+  it("dispensasi kawin punya dua tab; cerai gugat tidak punya tab keterangan", async () => {
+    const { wadah } = await bukaDk();
+    expect(tab(wadah, "saksi")).toBeTruthy();
+    expect(tab(wadah, "keterangan").textContent).toBe("Keterangan anak, calon, dan orang tua");
+    expect(tab(wadah, "saksi").getAttribute("aria-pressed")).toBe("true");
+    const w = buka(KODE_BLANGKO_CERAI, { isi: { "0048": "Cerai Gugat" } });
+    const panel = await panelDari(w);
+    await tunggu(() => !tombolDi(panel, TOMBOL)?.hidden, "tombol katalog tampak");
+    tombolDi(panel, TOMBOL).click();
+    await tunggu(() => Boolean(panel.querySelector(".aleta-ssk .aleta-sdg-form")), "form cerai");
+    expect(panel.querySelector(".aleta-ssk-tab-tombol")).toBeNull();
+  });
+
+  it("tab keterangan: kartu empat peran, konfirmasi kehamilan bawaan mati, susun, dan salin", async () => {
+    const { w, wadah } = await bukaDk();
+    tab(wadah, "keterangan").click();
+    await tunggu(() => wadah.querySelectorAll(".aleta-ssk-kartu").length === 4, "empat kartu peran");
+    const teksForm = wadah.textContent as string;
+    expect(teksForm).toContain("Orang tua atau wali anak");
+    expect(teksForm).not.toMatch(/aleta|borang|peladen|galat|template/i);
+    const pilihSebab = (Array.from(wadah.querySelectorAll("select")) as any[]).find((s) => Array.from(s.options).some((o: any) => o.value === "hubungan-badan"));
+    pilihSebab.value = "hamil";
+    pilihSebab.dispatchEvent(new w.Event("change"));
+    await tunggu(() => Boolean(wadah.querySelector(".aleta-ssk-konfirmasi input")), "kotak konfirmasi");
+    expect(wadah.querySelector(".aleta-ssk-konfirmasi input").checked).toBe(false);
+    tombolDi(wadah, "Susun tanya-jawab keterangan").click();
+    await tunggu(() => wadah.querySelectorAll(".aleta-ssk-saksi").length >= 4, "pemberi keterangan tersusun");
+    expect(wadah.querySelector('.aleta-ssk-baris[data-butir="q-kt-hamil-diri"]')).toBeNull();
+    expect(wadah.textContent).toContain("belum ikut disusun");
+    const nilai = (Array.from(wadah.querySelectorAll("textarea")) as any[]).map((x) => x.value as string);
+    expect(nilai.filter((v) => /#\d{4}#|\{[a-z]+\}/i.test(v))).toEqual([]);
+    expect(nilai.join(" ")).toContain("16 (enam belas) tahun");
+    wadah.querySelector(".aleta-ssk-konfirmasi input").click();
+    tombolDi(wadah, "Susun tanya-jawab keterangan").click();
+    await tunggu(() => Boolean(wadah.querySelector('.aleta-ssk-baris[data-butir="q-kt-hamil-diri"]')), "butir kehamilan setelah konfirmasi");
+    tombolDi(wadah, "Salin semua tanya-jawab ke BAS").click();
+    await tunggu(() => Boolean(wadah.querySelector(".aleta-ssk-salin-teks")), "kotak salin");
+    expect(wadah.querySelector(".aleta-ssk-salin-teks").value).toMatch(/ \?.+;/);
+  });
+
+  it("kartu: orang tua 2 orang menjadi ayah dan ibu terpisah; calon tidak hadir tidak diperiksa", async () => {
+    const { w, wadah } = await bukaDk();
+    tab(wadah, "keterangan").click();
+    await tunggu(() => wadah.querySelectorAll(".aleta-ssk-kartu").length === 4, "empat kartu");
+    const kartu = (kode: string) => wadah.querySelector(`.aleta-ssk-kartu[data-peran="${kode}"]`) as any;
+    const ubah = (el: any, nilaiBaru: string) => {
+      el.value = nilaiBaru;
+      el.dispatchEvent(new w.Event("change"));
+    };
+    ubah(Array.from(kartu("orangTuaAnak").querySelectorAll("select")).find((s: any) => Array.from(s.options).some((o: any) => o.value === "2")), "2");
+    await tunggu(() => kartu("orangTuaAnak").querySelectorAll(".aleta-ssk-pemberi").length === 2, "dua pemberi");
+    ubah(kartu("calon").querySelector("select"), "tidak");
+    await tunggu(() => kartu("calon").querySelectorAll(".aleta-ssk-pemberi").length === 0, "calon tidak hadir");
+    tombolDi(wadah, "Susun tanya-jawab keterangan").click();
+    await tunggu(() => wadah.querySelectorAll(".aleta-ssk-saksi").length === 4, "anak, ayah, ibu, orang tua calon");
+    const label = (Array.from(wadah.querySelectorAll(".aleta-ssk-saksi")) as any[]).map((k) => k.querySelector(".aleta-abt-label").textContent as string);
+    expect(label.some((l) => /ayah/.test(l))).toBe(true);
+    expect(label.some((l) => /ibu/.test(l))).toBe(true);
+    expect(label.some((l) => /^Calon suami atau istri -/.test(l))).toBe(false);
+  });
+});
+
+describe("saksi diajukan oleh Penggugat atau Tergugat (harta bersama, versi Tergugat)", () => {
+  it("pilihan 'Diajukan oleh' per saksi; saksi Tergugat tanpa bantahan diingatkan, dengan bantahan mendapat butir versi Tergugat", async () => {
+    const w = buka(KODE_BLANGKO_CERAI, { isi: { "0048": "Harta Bersama", "0046": "Penggugat", "0047": "Tergugat" }, nomor: "7/Pdt.G/2026/PA.Dgl", judul: "BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P" });
+    const panel = await panelDari(w);
+    await tunggu(() => !tombolDi(panel, TOMBOL)?.hidden, "tombol katalog tampak");
+    tombolDi(panel, TOMBOL).click();
+    await tunggu(() => Boolean(panel.querySelector(".aleta-ssk .aleta-sdg-form")), "form");
+    const wadah = panel.querySelector(".aleta-ssk");
+    expect(wadah.textContent).toContain("Diajukan oleh Penggugat");
+    expect(wadah.textContent).toContain("menerangkan versi Tergugat");
+    const pilihPihak = () => (Array.from(wadah.querySelectorAll(".aleta-sdg-modus")) as any[])[1].querySelector("select");
+    let sel = pilihPihak();
+    sel.value = "T";
+    sel.dispatchEvent(new w.Event("change"));
+    tombolDi(wadah, "Susun pertanyaan dan jawaban").click();
+    await tunggu(() => wadah.querySelectorAll(".aleta-ssk-saksi").length === 2, "dua saksi");
+    expect(wadah.textContent).toMatch(/belum menerangkan versinya/);
+    const cb = (Array.from(wadah.querySelectorAll(".aleta-sdg-centang")) as any[]).find((c) => /harta sudah dibagi/.test(c.textContent));
+    expect(cb, "centang bantahan sudah dibagi").toBeTruthy();
+    cb.querySelector("input").click();
+    await tunggu(() => !wadah.querySelector(".aleta-ssk-saksi"), "form tergambar ulang");
+    sel = pilihPihak();
+    sel.value = "T";
+    sel.dispatchEvent(new w.Event("change"));
+    tombolDi(wadah, "Susun pertanyaan dan jawaban").click();
+    await tunggu(() => wadah.querySelectorAll(".aleta-ssk-saksi").length === 2, "dua saksi lagi");
+    const kolom = Array.from(wadah.querySelectorAll(".aleta-ssk-saksi")) as any[];
+    expect(kolom[1].querySelector('.aleta-ssk-baris[data-butir="q-tg-sudah-dibagi"]')).toBeTruthy();
+    expect(kolom[1].querySelector('.aleta-ssk-baris[data-butir="q-belum-terbagi"]')).toBeNull();
+    expect(kolom[0].querySelector('.aleta-ssk-baris[data-butir="q-belum-terbagi"]')).toBeTruthy();
+    expect(kolom[0].querySelector('.aleta-ssk-baris[data-butir="q-tg-sudah-dibagi"]')).toBeNull();
+    expect(wadah.textContent).not.toMatch(/aleta|borang|peladen|galat/i);
+  });
+});
