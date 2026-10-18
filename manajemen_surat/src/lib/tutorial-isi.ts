@@ -262,12 +262,16 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Tekan tombol Tunda atau Putus pada barisnya.",
       "Untuk tunda: pilih tanggal dan jam sidang berikutnya serta alasannya. Untuk putus: pilih jenis putusannya.",
       "Periksa ringkasan, lalu simpan. ALETA menuliskannya ke SIPP.",
+      "Pada sidang ikrar talak, tersedia dua tombol tunda: Pemohon hadir tetapi belum siap, atau Pemohon tidak hadir. Tanggal sidang berikutnya dan alasannya terisi sendiri, tetapi tetap dapat Anda ubah sebelum disimpan.",
+      "Bila ikrar sudah terlaksana, tekan Putus, centang konfirmasi ikrar dilaksanakan, lalu tekan Catat ikrar dilaksanakan. Form Penetapan Ikrar Talak di SIPP ikut terisi dengan tanggal ikrar dan keadaan istri. Bila ikrar sudah dicatat lewat SIPP tetapi form-nya masih kosong, tekan Isi form ikrar pada baris sidangnya.",
     ],
     peringatan: [
       "Hasil sidang dicatat oleh Panitera Pengganti perkara itu. Hakim, pimpinan, dan panitera mengawasi.",
       "Sidang yang ditunda lewat pukul 15.00 akan ditandai agar tidak terlupa.",
+      "Sidang ikrar talak yang ditunda melewati batas enam bulan memunculkan peringatan. Periksa tanggalnya sebelum menyimpan.",
     ],
-    kataKunci: ["tunda sidang", "putus perkara", "hasil sidang", "sidang berikutnya"],
+    kataKunci: ["tunda sidang", "putus perkara", "hasil sidang", "sidang berikutnya", "ikrar talak", "tunda ikrar"],
+    baruDi: { sumber: "ekstensi", versi: "1.205.4" },
   },
   {
     id: "antrian-sidang",
@@ -538,6 +542,7 @@ export const TUTORIAL: readonly Tutorial[] = [
     ],
     peringatan: [
       "Blangko ini milik akun Anda. Orang lain tidak ikut memakainya kecuali paketnya disetujui Super Admin.",
+      "Pada tahap awal, Blangko Saya hanya dibuka untuk Super Admin. Peran lain mulai dapat memakainya setelah Super Admin menyalakan Blangko Saya untuk semua peran di Fitur Satker.",
       "Persetujuan Super Admin hanya mencatat bahwa paket boleh dipasang. Berkasnya dipasang manual ke folder blangko ABT.",
       "Mengubah isi blangko membatalkan pengajuan yang sedang berjalan, jadi ajukan lagi sesudah selesai menyunting.",
       "Isian baru tidak dibuat otomatis di ABT. Pada hasil cetak tertulis tiga titik, dan namanya masuk daftar usulan.",
@@ -1088,6 +1093,7 @@ export const TUTORIAL: readonly Tutorial[] = [
     peringatan: [
       "Jangan menarik data baru dari server selama antrean masih berisi tulisan yang belum dikirim, karena data laptop akan tertimpa.",
       "Jangan menyalakan WhatsApp di laptop. Sesi yang sama dari dua tempat memutus sesi di server.",
+      "Selama mode kembaran, halaman SIPP dan ABT di laptop hanya dapat dibaca. Menyimpan langsung di halaman itu akan ditolak, jadi pekerjaan yang harus sampai ke server dikerjakan lewat ALETA. Hak penuh kembali sendiri saat kembaran dimatikan.",
       "Mode kembaran tidak dipakai di server kantor. Di sana menu ini tidak berisi antrean.",
     ],
     kataKunci: ["kembaran", "laptop", "server mati", "antrean", "bentrok", "dorong", "offline", "sinkron"],
