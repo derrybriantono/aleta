@@ -427,7 +427,7 @@ describe("libur Pengaturan portal dan antrean jam kerja", () => {
 
     // Super Admin menambah libur daerah Senin 26 Okt 2026 di Pengaturan.
     hl.pasangTambahan([{ tanggal: "2026-10-26", nama: "Libur daerah", jenis: "daerah", aksi: "tambah" }], { simpan: false });
-    const r1 = await antreanDengan(dbTiruan(), jam).antrekan({ jenis: "x", kunci: "x:libur1", muatan: {} });
+    const r1 = await a0.antrekan({ jenis: "x", kunci: "x:libur1", muatan: {} });
     expect(r1.dikerjakanPada.slice(0, 10)).toBe("2026-10-27");
     hl.pasangTambahan([], { simpan: false });
   });

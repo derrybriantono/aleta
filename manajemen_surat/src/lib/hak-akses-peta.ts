@@ -590,7 +590,7 @@ export const MENU_EKSTENSI: TabelMenuEkstensi = {
 const LABEL_MENU_EKSTENSI: Record<string, { judul: string; keterangan: string }> = {
   "sipp.perkara.penetapan": { judul: "Panel SIPP: tab Penetapan", keterangan: "Menyusun penetapan PMH, PPP, PJS, dan PHS dari halaman perkara." },
   "sipp.perkara.ptsp": { judul: "Panel SIPP: tab PTSP", keterangan: "Data Umum dari berkas gugatan, saksi dan pihak dari foto KTP, rapikan identitas pihak." },
-  "sipp.perkara.putusan": { judul: "Panel SIPP: tab Putusan", keterangan: "Isi borang Putusan Akhir dari berkas putusan dan unggah e-Doc." },
+  "sipp.perkara.putusan": { judul: "Panel SIPP: tab Putusan", keterangan: "Isi formulir Putusan Akhir dari berkas putusan dan unggah e-Doc." },
   "sipp.perkara.jurusita": { judul: "Panel SIPP: tab Juru Sita", keterangan: "Relaas dan PBT, mencentang pihak yang tidak hadir." },
   "sipp.perkara.berkas": { judul: "Panel SIPP: tab Berkas e-Court", keterangan: "Dokumen e-Court perkara, tenggat, dan selisih." },
   "sipp.perkara.perkara": { judul: "Panel SIPP: tab Perkara", keterangan: "Ringkasan perkara dan kotak penyatu SIPP-ABT-ALETA." },

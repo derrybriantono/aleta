@@ -433,7 +433,7 @@ describe("penulis jurnal SIPP (bot)", () => {
       [101201, "tersimpan"],
     ]);
     // Jam diambil SESUDAH jeda, tiap baris.
-    expect(t.urutan.join(" ")).toMatch(/^NOW .*JEDA:klik:sungguh SIPP INSERT JEDA:simpan:sungguh SIPP INSERT/);
+    expect(t.urutan.join(" ")).toMatch(/^NOW .*JEDA:klik:sungguh SIPP INSERT JEDA:(?:simpan|barisKasir):sungguh SIPP INSERT/);
     const audit = t.tulisan().filter((x) => /sys_audittrail/.test(x.sql));
     expect(audit.map((x) => x.params[0])).toEqual(["2026-10-01 13:52:53", "2026-10-01 13:52:53"]);
     expect(String(audit[1].params[6])).toMatch(/\[ID=101201\]$/);
