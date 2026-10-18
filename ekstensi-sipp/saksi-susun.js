@@ -249,7 +249,7 @@
       const adaPilihan = !kat && typeof k.halamanTanyaJawab === "function" && k.halamanTanyaJawab() && kandidatKatalog(alur).length > 0;
       tombol.hidden = !(bisa && (kat || adaPilihan));
       if (kat) tombol.title = `Pertanyaan saksi menurut pokok pembuktian ${kat.judul} dan keadaan perkara; 2 sampai 5 saksi, semua jenis keterangan.`;
-      else tombol.title = "Jenis perkara tidak terbaca di halaman ini; pilih jenis perkaranya di borang.";
+      else tombol.title = "Jenis perkara tidak terbaca di halaman ini; pilih jenis perkaranya di form.";
     }
     hasil.segarkan = segarkanTombol;
 

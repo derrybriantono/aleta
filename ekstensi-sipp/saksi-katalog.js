@@ -224,7 +224,7 @@
         g(`keadaan.${k} bukan objek`);
         continue;
       }
-      if (!["otomatis", "borang"].includes(v.sumber)) g(`keadaan.${k}.sumber harus otomatis|borang`);
+      if (!["otomatis", "borang"].includes(v.sumber)) g(`keadaan.${k}.sumber harus salah satu nilai sumber keadaan yang dikenal`);
       if (!daftar(v.nilai).length) g(`keadaan.${k}.nilai kosong`);
       if (typeof v.label !== "string" || !v.label.trim()) g(`keadaan.${k}.label kosong`);
       if (v.sumber === "otomatis" && !KEADAAN_BAKU[k]) g(`keadaan.${k}: sumber otomatis hanya untuk kunci baku (${Object.keys(KEADAAN_BAKU).join(", ")})`);
