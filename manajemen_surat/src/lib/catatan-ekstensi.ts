@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.8",
+    dirilis: "2026-10-19T00:30:00+08:00",
+    judul: "Jawab-menjawab e-Court tertulis di tanya-jawab ABT, bukti dari e-Court, panduan saksi di Jadwal Sidang, dan blangko hibah, wakaf, mafqud",
+    butir: [
+      "Jawaban, replik, dan duplik yang diunggah di e-Court langsung tertulis di tanya-jawab ABT bila berkasnya rapi dan baris sidangnya masih kosong; baris yang sudah ada tidak pernah ditimpa, berkas yang formatnya kacau tetap dapat disalin petugas, dan saklar \"Tanya-jawab jawab-menjawab otomatis\" di popup/Widget (bawaan menyala) dapat mematikannya.",
+      "Daftar bukti surat P.1/T.1 dan bukti elektronik, tanggapan atas sita, rekonvensi harta bersama, dan nomor/tanggal surat keterangan KUA pada itsbat diusulkan dari berkas e-Court (posita, daftar bukti, atau pembacaan berkas bukti), supaya petugas tidak mengetik ulang; semuanya usulan yang dicentang sampai terukur atas berkas asli.",
+      "Panduan pertanyaan saksi tersedia di rincian Jadwal Sidang dan di Status Perkara: pertanyaan menurut jenis dan keadaan perkara, pokok wajib ditandai, centang per saksi, mode layar sidang berhuruf besar, dan cetak A4 - tanpa contoh jawaban supaya tidak mengarahkan saksi.",
+      "Blangko baru dikenali: penetapan ahli waris dengan cucu pengganti, kakek, nenek, saudara seibu, 'aul dan radd; dispensasi kawin ditolak; itsbat ditolak beserta cerai tidak dapat diterima; BAS verstek Izin Poligami yang lengkap; serta putusan, penetapan, dan BAS hibah, wakaf, dan mafqud beserta pertanyaan saksinya.",
+      "Dasar hukum di pertanyaan saksi dicocokkan ulang dengan naskah HIR, RBg, KUHPerdata, dan Buku II, dan kini ditulis menurut RBg saja (tanpa HIR); rujukan yang belum pasti tidak dicetak.",
+    ],
+  },
+  {
     versi: "1.205.7",
     dirilis: "2026-10-18T20:00:00+08:00",
     judul: "Isian disebut dengan nama, jawab-menjawab e-Court terbaca, keterangan anak/calon/orang tua dispensasi, dan saksi Tergugat",
