@@ -771,7 +771,12 @@ describe("tidak ada jalur tulis SIPP baru dari blok 1 Okt", () => {
   // penjaganya sendiri di ekstensi-sipp-2okt.test.ts.
   const awal1Okt = konten.indexOf("PERBAIKAN 1 OKTOBER 2026 - PANEL SIPP");
   const awal2Okt = konten.indexOf("PERBAIKAN 2 OKTOBER 2026 - PANEL SIPP", awal1Okt);
-  const blok = konten.slice(awal1Okt, awal2Okt > awal1Okt ? awal2Okt : undefined);
+  // Disesuaikan 18 Okt: blok IKRAR-OTOMATIS (butir 31, form ikrar terisi saat halaman
+  // dibuka) disisipkan di wilayah ini dan punya penjaganya sendiri di
+  // ikrar-edoc-otomatis-18okt.test.ts; ia dikeluarkan dari potongan blok 1 Okt.
+  const blok = konten
+    .slice(awal1Okt, awal2Okt > awal1Okt ? awal2Okt : undefined)
+    .replace(/\/\* === IKRAR-OTOMATIS 18 Okt === \*\/[\s\S]*?\/\* === AKHIR IKRAR-OTOMATIS === \*\//, "");
 
   it("pesan ke jembatan dari blok ini hanya BACAAN (nilai / pilihan); tidak ada postMessage sendiri", () => {
     expect(blok.length).toBeGreaterThan(5000);

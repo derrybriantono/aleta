@@ -23535,7 +23535,7 @@ async function ikrarOtomatis(konteks) {
     const buka = await ikrarBukaBorang();
     if (!buka.ok) {
       ikrarKabar(`${nomor}: ${buka.pesan}`, true);
-      alatCatat("ikrar-otomatis", `${nomor}: borang tidak terbuka`, buka.pesan);
+      alatCatat("ikrar-otomatis", `${nomor}: form ikrar tidak terbuka`, buka.pesan);
       return;
     }
     // Borang yang dibuka petugas sendiri dan sudah terisi tidak ditimpa.
