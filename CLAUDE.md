@@ -51,15 +51,17 @@ Subjek singkat bergaya conventional, bahasa Indonesia; badan 1–3 baris menjela
 ## Tim agen (`.claude/agents/`) — kapan WAJIB dipanggil
 Sesi utama = perencana/koordinator. Delegasikan sesuai tabel; agen melapor ke sesi utama, sesi utama yang memperbarui papan kemajuan
 (`pelaku` = "agen <nama>").
-| Keadaan | Agen |
-| :--- | :--- |
-| Kode menulis ke SIPP/ABT, transaksi, kasir, migrasi Drizzle | `penjaga-sipp` (mengerjakan/memeriksa) |
-| Logika hukum: alasan, amar, penetapan, ikrar, BAS, tenggat, dasar hukum | `ahli-hukum` (memeriksa) |
-| Fitur/perbaikan `aleta_bot/` | `bot-whatsapp` |
-| Fitur/perbaikan/rilis `ekstensi-sipp/` | `ekstensi-chrome` |
-| Usulan atau perubahan tampilan | `ui-ux` — tampilan TIDAK diubah tanpa permintaan pengguna; setiap saran wajib disertai mockup HTML |
-| Auth/hak akses, rute API baru, data pribadi, sebelum rilis besar | `keamanan` (memeriksa) |
-| Uji sasaran / uji penuh sebelum commit rilis | `penguji` |
-| Sesudah perubahan selesai, SEBELUM commit | `peninjau` — commit hanya bila PUTUSAN: LOLOS |
+| Keadaan | Agen | Model · effort (dari tabel di atas) |
+| :--- | :--- | :--- |
+| Kode menulis ke SIPP/ABT, transaksi, kasir, migrasi Drizzle | `penjaga-sipp` (mengerjakan/memeriksa) | Sonnet 5.5 · high |
+| Logika hukum: alasan, amar, penetapan, ikrar, BAS, tenggat, dasar hukum | `ahli-hukum` (memeriksa) | Opus 5.5 · high |
+| Fitur/perbaikan `aleta_bot/` | `bot-whatsapp` | Sonnet 5.5 · high (subagen kode) |
+| Fitur/perbaikan/rilis `ekstensi-sipp/` | `ekstensi-chrome` | Sonnet 5.5 · high (subagen kode) |
+| Usulan atau perubahan tampilan | `ui-ux` — tampilan TIDAK diubah tanpa permintaan pengguna; setiap saran wajib disertai mockup HTML | Sonnet 5.5 · high (subagen kode) |
+| Auth/hak akses, rute API baru, data pribadi, sebelum rilis besar | `keamanan` (memeriksa) | Opus 5.5 · high |
+| Uji sasaran / uji penuh sebelum commit rilis | `penguji` | Haiku 5.5 · low |
+| Sesudah perubahan selesai, SEBELUM commit | `peninjau` — commit hanya bila PUTUSAN: LOLOS | Opus 5.5 · high |
+- Model & effort tertulis di berkas tiap agen (`model:`, `effort:`) dan dicatat apa adanya di papan kemajuan. Ubah tabel ini dan berkas agennya bersamaan.
+- Agen ikut membaca CLAUDE.md ini, jadi aturan hemat token (konteks sempit, keluaran tersaring, tanpa keluaran tak diminta) berlaku juga bagi mereka.
 - Satu berkas hanya boleh disunting satu agen pada satu waktu. Agen pemeriksa (`peninjau`, `keamanan`, `ahli-hukum`, `penguji`) tidak menyunting.
 - Tugas kecil (teks/satu baris) tidak perlu agen selain `peninjau`. Jangan memanggil agen yang tidak relevan — tiap agen memakan token.

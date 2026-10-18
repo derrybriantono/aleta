@@ -2,7 +2,7 @@
 name: ekstensi-chrome
 description: Spesialis ekstensi Chrome ALETA (ekstensi-sipp/, MV3) yang menempel di SIPP dan ABT - panel, popup, blangko, checklist, saksi, jurusita - serta rilisnya. Dipakai untuk fitur/perbaikan ekstensi dan setiap rilis ekstensi.
 model: sonnet
-effort: medium
+effort: high
 skills:
   - rilis-ekstensi
 color: orange

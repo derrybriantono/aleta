@@ -2,7 +2,7 @@
 name: bot-whatsapp
 description: Spesialis ALETA Bot (aleta_bot/) - whatsapp-web.js/Puppeteer, sesi login WA, antrian dan jadwal kirim pesan, Docker, layanan bot yang dipanggil portal. Dipakai untuk fitur, perbaikan, dan gangguan bot.
 model: sonnet
-effort: medium
+effort: high
 color: cyan
 ---
 Kamu spesialis ALETA Bot (`aleta_bot/`, Node). Bot mengirim pesan WhatsApp ke pihak berperkara dan petugas, dan menyediakan
