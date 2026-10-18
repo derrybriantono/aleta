@@ -34,10 +34,13 @@ const akhirKonst = sumber.indexOf("/**\n * 9 Okt 2026 (KUASA butir 1-4)", awalKo
 const blok = sumber.slice(awalKonst, akhirKonst);
 const awalKeadaan = sumber.indexOf("const NILAI_KOSONG");
 const keadaanKode = sumber.slice(awalKeadaan, sumber.indexOf("const ALETA_API_ABT", awalKeadaan));
+// 18 Okt (1.205.7): catatan KTP menyebut isian dengan namanya lewat isianBernama (blok NAMA-ISIAN).
+const awalNama = sumber.indexOf("/* === NAMA-ISIAN === */");
+const namaKode = sumber.slice(awalNama, sumber.indexOf("function namaIsianDaftar(", awalNama));
 
 function muatMurni(): Apa {
   const f = new Function(
-    `${keadaanKode}\n${blok}\nreturn { ktpTeksCariTanggal, ktpTeksButir, ktpTeksSusun, ktpTeksPilihPihak, ktpTeksAdaTanggal, ktpTeksPeranDiButir, ktpTeksNamaDiButir, ktpTeksTanggalDiAwal };`
+    `${keadaanKode}\n${namaKode}\n${blok}\nreturn { ktpTeksCariTanggal, ktpTeksButir, ktpTeksSusun, ktpTeksPilihPihak, ktpTeksAdaTanggal, ktpTeksPeranDiButir, ktpTeksNamaDiButir, ktpTeksTanggalDiAwal };`
   );
   return f();
 }
@@ -60,7 +63,7 @@ function pasang({ sel, tipe = {}, jati = { perkaraId: "9293", perkTemp: "" }, na
     "muatTipeHalaman",
     "tipeVariabel",
     "a3SebabBukanAbt",
-    `${keadaanKode}\n${blok}\nreturn { a3UsulanTanggalKtp, ktpKandidatTeks, ktpUsulanTanggal };`
+    `${keadaanKode}\n${namaKode}\n${blok}\nreturn { a3UsulanTanggalKtp, ktpKandidatTeks, ktpUsulanTanggal };`
   );
   return f(
     () => peta,

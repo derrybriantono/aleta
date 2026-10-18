@@ -154,7 +154,12 @@ describe("tidak ada berkas ekstensi yang lolos tanpa keputusan", () => {
     if (!fs.existsSync(folderEkstensi)) return;
 
     const penyusunIsi = fs.readFileSync(penyusun, "utf8");
-    const adaDiFolder = sapuFolder(folderEkstensi);
+    // Awalan folder yang sengaja tidak dikirim (sumber data yang dilebur ke berkas lain).
+    const bagianAwalan = /DIKECUALIKAN_AWALAN = \[([\s\S]*?)\];/.exec(penyusunIsi);
+    const awalanKecuali = bagianAwalan
+      ? [...bagianAwalan[1].replace(/\/\/[^\n]*/g, "").matchAll(/"([^"]+)"/g)].map((m) => m[1])
+      : [];
+    const adaDiFolder = sapuFolder(folderEkstensi).filter((n) => !awalanKecuali.some((aw) => n.startsWith(aw)));
 
     for (const nama of adaDiFolder) {
       expect(

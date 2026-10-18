@@ -1,0 +1,57 @@
+[
+ {
+  "zoom": 100,
+  "kulit": "klasik",
+  "jendela": "300x600",
+  "scrollW": 300,
+  "clientW": 300,
+  "scrollH": 3497,
+  "clientH": 600,
+  "bodyW": 300,
+  "meluapKanan": []
+ },
+ {
+  "zoom": 125,
+  "kulit": "klasik",
+  "jendela": "300x480",
+  "scrollW": 300,
+  "clientW": 300,
+  "scrollH": 3438,
+  "clientH": 480,
+  "bodyW": 300,
+  "meluapKanan": []
+ },
+ {
+  "zoom": 150,
+  "kulit": "klasik",
+  "jendela": "300x400",
+  "scrollW": 300,
+  "clientW": 300,
+  "scrollH": 3438,
+  "clientH": 400,
+  "bodyW": 300,
+  "meluapKanan": []
+ },
+ {
+  "zoom": 100,
+  "kulit": "modern",
+  "jendela": "340x600",
+  "scrollW": 340,
+  "clientW": 340,
+  "scrollH": 3362,
+  "clientH": 600,
+  "bodyW": 340,
+  "meluapKanan": []
+ },
+ {
+  "zoom": 150,
+  "kulit": "modern",
+  "jendela": "340x400",
+  "scrollW": 340,
+  "clientW": 340,
+  "scrollH": 3354,
+  "clientH": 400,
+  "bodyW": 340,
+  "meluapKanan": []
+ }
+]

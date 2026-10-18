@@ -701,6 +701,17 @@
   .tb-status[data-ringkas="ya"][data-terbuka="ya"] .tb-status-isi { display: block; margin-top: 6px; }
   .tb-status-lipat { flex: none; border: 0; background: transparent; color: var(--tulisan-lembut); font-size: 12px; cursor: pointer; text-decoration: underline; }
   .tb-status-lipat[hidden] { display: none; }
+  /* V2 LAYAR (18 Okt 2026): zoom Windows 125-150%. Popup Chrome dibatasi
+     800x600 DIP, jadi pada zoom 150% halaman hanya melihat ~400px tinggi.
+     Kepalanya menempel di atas selagi isi digulir dan merapat di jendela
+     pendek; tidak ada isi yang disembunyikan. */
+  html { overflow-x: hidden; }
+  .kepala { position: sticky; top: 0; z-index: 20; }
+  @media (max-height: 520px) {
+    .kepala { padding: 8px 14px; gap: 8px; }
+    .kepala img { width: 26px; height: 26px; }
+    .isi { padding: 10px 14px 14px; }
+  }
 </style>
 
 <div class="kepala">

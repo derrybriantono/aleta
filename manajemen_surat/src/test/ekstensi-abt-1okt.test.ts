@@ -501,7 +501,7 @@ describe("butir 10: variabel turunan ABT tidak diperingatkan sebelum Input", () 
     await selesaiIsi(h);
     await sampai(() => pitaTunggu(h) && !pitaTunggu(h).hidden, "catatan tunggu");
     expect(pita(h).hidden).toBe(true);
-    expect(pitaTunggu(h).textContent).toContain("4020, 8521 diisi otomatis oleh ABT sesudah variabel lain diinput");
+    expect(pitaTunggu(h).textContent).toContain("Kalimat Alasan (OTOMATIS), PERTIMBANGAN FAKTA HUKUM diisi otomatis oleh ABT sesudah variabel lain diinput");
     expect(pitaTunggu(h).classList.contains("aleta-teknis")).toBe(true);
     h.w.document.getElementById("cetak").click();
     await tunggu(30);
@@ -514,7 +514,7 @@ describe("butir 10: variabel turunan ABT tidak diperingatkan sebelum Input", () 
     const h = buka({ simpanan: ui([], { abtInputSelesai: { "10018": Date.now() - 60000 } }), peran: "Hakim" });
     await selesaiIsi(h);
     const p = await sampai(() => (pita(h) && !pita(h).hidden ? pita(h) : null), "pita error");
-    expect(p.textContent).toContain("2 variabel berbunyi pesan error (4020, 8521)");
+    expect(p.textContent).toContain("2 variabel berbunyi pesan error (Kalimat Alasan (OTOMATIS), PERTIMBANGAN FAKTA HUKUM)");
     h.w.document.getElementById("cetak").click();
     const tirai = await sampai(() => h.w.document.querySelector(".aleta-t6-tirai"), "dialog CETAK");
     expect(tirai.textContent).toContain("4020 Kalimat Alasan (OTOMATIS)");
@@ -530,7 +530,7 @@ describe("butir 10: variabel turunan ABT tidak diperingatkan sebelum Input", () 
     const h = buka({ simpanan: ui([]), peran: "Hakim", ganti: kosong, isi: { ...KERANGKA_LENGKAP, "2021": "Saksi kenal dengan kedua pihak." } });
     await sampai(() => kerjaIsiSelesai(h), "isi selesai");
     const p = await sampai(() => (pita(h) && !pita(h).hidden ? pita(h) : null), "pita error");
-    expect(p.textContent).toContain("4020, 8521");
+    expect(p.textContent).toContain("Kalimat Alasan (OTOMATIS), PERTIMBANGAN FAKTA HUKUM");
   });
 
   it("Input ke ABT di halaman ini: catatan berubah menjadi 'muat ulang', penanda tersimpan per perkara", async () => {
@@ -546,7 +546,7 @@ describe("butir 10: variabel turunan ABT tidak diperingatkan sebelum Input", () 
   it("Baru (abt-5): 4020/8521 tetap diperingatkan seperti 1.176.0, dan penanda tidak pernah ditulis", async () => {
     const h = buka({ simpanan: baru(["abt-5"], nyata), peran: "Hakim" });
     const p = await sampai(() => (pita(h) && !pita(h).hidden ? pita(h) : null), "pita error Baru");
-    expect(p.textContent).toContain("4020, 8521");
+    expect(p.textContent).toContain("Kalimat Alasan (OTOMATIS), PERTIMBANGAN FAKTA HUKUM");
     const input = await selesaiIsi(h);
     input.click();
     await sampai(() => /tersimpan/.test(kabarInput(h)?.textContent || ""), "input Baru");

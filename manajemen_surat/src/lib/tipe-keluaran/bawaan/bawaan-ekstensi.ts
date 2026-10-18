@@ -282,13 +282,13 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "cerai gugat+itsbat-nikah|dikabulkan|verstek",
       nilai: "[01aa] [Kabul Verstek] Putusan CG Kumulasi Itsbat Nikah - Format Lengkap",
-      data: { jenisAsli: "Cerai Gugat Kumulasi Itsbat Nikah", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"], catatan: "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian 8503 (pengganti [01aa] IN + CG - F / B & F)" },
+      data: { jenisAsli: "Cerai Gugat Kumulasi Itsbat Nikah", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"], catatan: "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian huruf alasan (pengganti [01aa] IN + CG - F / B & F)" },
       urutan: 37,
     },
     {
       kunci: "cerai talak+itsbat-nikah|dikabulkan|verstek",
       nilai: "[01aa] [Kabul Verstek] Putusan CT Kumulasi Itsbat Nikah - Format Lengkap",
-      data: { jenisAsli: "Cerai Talak Kumulasi Itsbat Nikah", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"], catatan: "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian 8503" },
+      data: { jenisAsli: "Cerai Talak Kumulasi Itsbat Nikah", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"], catatan: "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian huruf alasan" },
       urutan: 38,
     },
     {
@@ -1843,13 +1843,13 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "penetapan ahli waris|dikabulkan|susunan-ahli-waris",
       nilai: "[01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis)",
-      data: { jenisAsli: "Penetapan Ahli Waris", statusAsli: "Dikabulkan", blangko: "Putusan Penetapan Ahli Waris (P3HP)", blangkoLain: ["PAW/P3HP - Putusan"], catatan: "dipilih manual: susunan ahli waris dinamis (isian 9701-9704, 9718; pencairan dana lewat 9700); [01] = anak kandung saja" },
+      data: { jenisAsli: "Penetapan Ahli Waris", statusAsli: "Dikabulkan", blangko: "Putusan Penetapan Ahli Waris (P3HP)", blangkoLain: ["PAW/P3HP - Putusan"], catatan: "dipilih manual: susunan ahli waris dinamis (isian ahli waris dan pencairan dana); [01] = anak kandung saja" },
       urutan: 295,
     },
     {
       kunci: "itsbat nikah|dikabulkan|pencairan-dana",
       nilai: "[01c] [Kabul] IN Kontensius - Pasangan Meninggal, Pencairan Dana (Taspen, BPJS, Bank)",
-      data: { jenisAsli: "Itsbat Nikah Kontensius", statusAsli: "Dikabulkan", blangko: "Putusan Itsbat Nikah Kontensius", blangkoLain: ["IN Kontensius - Putusan"], catatan: "keadaan: petitum memohon pencairan dana (BPJS, Taspen, bank, tabungan); isian 9719" },
+      data: { jenisAsli: "Itsbat Nikah Kontensius", statusAsli: "Dikabulkan", blangko: "Putusan Itsbat Nikah Kontensius", blangkoLain: ["IN Kontensius - Putusan"], catatan: "keadaan: petitum memohon pencairan dana (BPJS, Taspen, bank, tabungan); isian pencairan dana" },
       urutan: 296,
     },
     {

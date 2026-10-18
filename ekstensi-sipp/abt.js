@@ -389,6 +389,89 @@ function barisVariabel(akar) {
 }
 
 /**
+ * ============================================================================
+ * NAMA ISIAN UNTUK TEKS TAMPIL (tanpa kode variabel)
+ * ============================================================================
+ *
+ * Petugas membaca nama isian, bukan nomor variabelnya. Nama diambil dari kolom
+ * nama pada baris variabel halaman ABT; bila barisnya tidak ada atau namanya
+ * memuat angka, dipakai nama cadangan di bawah; bila itu pun tidak ada,
+ * ditulis "N isian". Kodenya hanya boleh muncul di atribut title.
+ */
+/* === NAMA-ISIAN === */
+const NAMA_ISIAN_CADANGAN = Object.freeze({
+  "0001": "nomor perkara",
+  "0048": "jenis perkara",
+  "4001": "amar putusan",
+  "4020": "kalimat dasar alasan perceraian",
+  "5125": "isi gugatan",
+  "5227": "alasan perceraian",
+  "8503": "huruf alasan perceraian",
+  "9944": "lama pisah",
+});
+
+/** Buang penanda #nnnn# dan keterangan dalam kurung yang memuat kode (mis. "(OTOMATIS DARI 8503)") dari nama baris ABT. */
+function bersihkanNamaIsian(teks) {
+  return String(teks)
+    .replace(/#\d{4}#/g, "")
+    .replace(/\s*\([^)]*\b\d{4}\b[^)]*\)/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Nama isian (tanpa kode) atau "" bila tak ada nama yang pantas dibaca. */
+function namaIsian(kode, peta) {
+  const k = String(kode == null ? "" : kode).replace(/#/g, "").trim();
+  const sumber = peta && typeof peta.get === "function" ? peta : barisVariabel();
+  const item = sumber.get(k);
+  let nama = item && item.nama ? bersihkanNamaIsian(item.nama) : "";
+  if (!nama || /^Variabel\s*\d{4}$/i.test(nama) || /\b\d{4}\b/.test(nama)) nama = NAMA_ISIAN_CADANGAN[k] || "";
+  return nama;
+}
+
+/** Di tengah kalimat: "Nama" atau "isian ini". */
+function sebutIsian(kode, peta) {
+  const nama = namaIsian(kode, peta);
+  return nama ? `"${nama}"` : "isian ini";
+}
+
+/** Di awal kalimat: Isian "Nama" atau "Isian ini". */
+function isianBernama(kode, peta) {
+  const nama = namaIsian(kode, peta);
+  return nama ? `Isian "${nama}"` : "Isian ini";
+}
+
+/** Daftar kode -> {teks: "Nama A, Nama B, 2 isian lain", kode: "0222, 5227"}; kode hanya untuk title. */
+function namaIsianDaftar(daftar, peta) {
+  const sumber = peta && typeof peta.get === "function" ? peta : barisVariabel();
+  const nama = [];
+  const kode = [];
+  let tanpaNama = 0;
+  for (const x of daftar || []) {
+    const k = String(x == null ? "" : x).replace(/#/g, "").trim();
+    if (!k) continue;
+    if (!kode.includes(k)) kode.push(k);
+    const n = namaIsian(k, sumber);
+    if (!n) tanpaNama += 1;
+    else if (!nama.includes(n)) nama.push(n);
+  }
+  const MAKS = 6;
+  const sisaNama = nama.length > MAKS ? nama.length - MAKS : 0;
+  const tampak = nama.slice(0, MAKS);
+  const lain = tanpaNama + sisaNama;
+  if (lain) {
+    tampak.push(!tampak.length ? (lain === 1 ? "satu isian" : `${lain} isian`) : lain === 1 ? "satu isian lain" : `${lain} isian lain`);
+  }
+  return { teks: tampak.join(", "), kode: kode.join(", ") };
+}
+
+/** Pesan gagal "<kode>: <sebab>" dari penulis ABT -> "<nama isian>: <sebab>" untuk dibaca petugas. */
+function gagalTampil(g) {
+  return String(g).replace(/^(\d{4}): /, (_m, kode) => `${namaIsian(kode) || "Satu isian"}: `);
+}
+/* === AKHIR NAMA-ISIAN === */
+
+/**
  * perkara_id dan penanda perkara sementara, dibaca dari tombol edit ABT.
  *
  * Keduanya tidak ada di alamat halaman dalam bentuk yang dapat dibaca -
@@ -646,7 +729,7 @@ function a3NetralkanPetik(nilai) {
 async function simpanVariabel(kode, nilai, jatiDiri) {
   const tipe = await tipeData(kode, jatiDiri);
   if (!dapatDisimpan(tipe)) {
-    return { ok: false, pesan: `Variabel ${kode} bertipe ${tipe || "tidak dikenal"} - tidak dapat disunting.` };
+    return { ok: false, pesan: `${isianBernama(kode)} bertipe ${tipe || "tidak dikenal"} - tidak dapat disunting.` };
   }
 
   const alamat =
@@ -657,7 +740,7 @@ async function simpanVariabel(kode, nilai, jatiDiri) {
   if (tipe === "data_tanggal") {
     nilaiKirim = a3TanggalAbt(nilai);
     if (!nilaiKirim) {
-      return { ok: false, pesan: `Variabel ${kode} bertipe tanggal - "${nilai}" tidak terbaca sebagai tanggal (contoh 15/10/2026).` };
+      return { ok: false, pesan: `${isianBernama(kode)} bertipe tanggal - "${nilai}" tidak terbaca sebagai tanggal (contoh 15/10/2026).` };
     }
   } else {
     // Uji 9 Okt: petik/garis miring terbalik mentah mematahkan kueri data_sql
@@ -3983,11 +4066,11 @@ function blangkoMemuatVariabelSiapLain(petaVariabel, kunciJenis) {
 function kabarPositaLain(lain, petaVariabel) {
   const ada = (k) => Boolean(petaVariabel && typeof petaVariabel.has === "function" && petaVariabel.has(k));
   const hasil = lain || {};
-  const bawaan = (hasil.bawaanAbt || []).filter((b) => ada(b.kode)).map((b) => `${b.kode} dari kueri #${b.acuan}#`);
-  const belum = (hasil.belumSiap || []).filter((b) => ada(b.kode)).map((b) => `${b.kode} (${b.alasan})`);
+  const bawaan = namaIsianDaftar((hasil.bawaanAbt || []).filter((b) => ada(b.kode)).map((b) => b.kode), petaVariabel);
+  const belum = (hasil.belumSiap || []).filter((b) => ada(b.kode)).map((b) => `${namaIsian(b.kode, petaVariabel) || "satu isian"} (${b.alasan})`);
   return [
     hasil.catatan || "",
-    bawaan.length ? `ABT menawarkan isian bawaan, tidak diusulkan ALETA - periksa sebelum menyimpan: ${bawaan.join(", ")}.` : "",
+    bawaan.teks ? `ABT menawarkan isian bawaan, tidak diusulkan ALETA - periksa sebelum menyimpan: ${bawaan.teks}.` : "",
     belum.length ? `Belum lulus gerbang ukur, tidak diusulkan: ${belum.join(", ")}.` : "",
   ]
     .filter(Boolean)
@@ -4139,7 +4222,7 @@ function susunKartuAlasan(hasil) {
       buatElemen(
         "div",
         "aleta-abt-catatan",
-        "Gugatan (5125) tidak terbaca dari halaman ini, jadi pencocokan dengan " +
+        "Isi gugatan tidak terbaca dari halaman ini, jadi pencocokan dengan " +
           "dalil gugatan TIDAK dijalankan."
       )
     );
@@ -4180,7 +4263,7 @@ function susunKartuAlasan(hasil) {
   kelompok(
     "Siap dipakai",
     "Dikuatkan KEDUA saksi dan didalilkan dalam gugatan. Inilah yang sudah " +
-      "tertulis pada alasan perceraian (5227); tidak ada yang perlu dikerjakan.",
+      "tertulis pada isian alasan perceraian; tidak ada yang perlu dikerjakan.",
     terbukti,
     () => "Terbukti",
     "siap"
@@ -4189,7 +4272,7 @@ function susunKartuAlasan(hasil) {
   kelompok(
     "Hanya disebut satu saksi",
     "Perlu penguat. Tanyakan kepada saksi yang belum menyebutnya, atau kuatkan " +
-      "dengan alat bukti lain sebelum memasukkannya sendiri ke 5227.",
+      "dengan alat bukti lain sebelum memasukkannya sendiri ke isian alasan perceraian.",
     sepihak,
     (x) => `Saksi ${x.saksi}`,
     "sebagian"
@@ -4298,7 +4381,7 @@ async function tulisHurufAlasan(dipilih, jatiDiri, opsi) {
     const hasil = await simpanVariabel(VAR_HURUF, isi8503, jatiDiri);
     if (!hasil.ok) {
       gagal = true;
-      pesan = `8503: ${hasil.pesan}`;
+      pesan = `Huruf alasan: ${hasil.pesan}`;
     } else {
       void catatRiwayat({
         perkaraId: jatiDiri.perkaraId,
@@ -4311,11 +4394,11 @@ async function tulisHurufAlasan(dipilih, jatiDiri, opsi) {
       });
       const item = barisVariabel().get(VAR_HURUF);
       if (item) item.selNilai.textContent = isi8503;
-      pesan = `8503 diisi "${isi8503}". 4020 mengikuti sendiri sesudah halaman disegarkan.`;
+      pesan = `Huruf alasan diisi "${isi8503}". Kalimat dasar alasan perceraian mengikuti sendiri sesudah halaman disegarkan.`;
     }
   } catch (galat) {
     gagal = true;
-    pesan = `8503: ${String((galat && galat.message) || galat)}`;
+    pesan = `Huruf alasan: ${String((galat && galat.message) || galat)}`;
   }
 
   // ==========================================================================
@@ -4328,11 +4411,11 @@ async function tulisHurufAlasan(dipilih, jatiDiri, opsi) {
   if (!gagal && !dikenali4020(dipilih)) {
     gagal = true;
     pesan = abtKenalSemuaHuruf()
-      ? `8503 diisi "${isi8503}", tetapi itu bukan deretan huruf A-H - ` +
-        `4020 akan berbunyi "TIDAK BENAR QUERY NYA" dan kalimat itu ikut tercetak.`
-      : `8503 diisi "${isi8503}", tetapi kueri 4020 milik ABT tidak mengenali gabungan ini - ` +
+      ? `Huruf alasan diisi "${isi8503}", tetapi itu bukan deretan huruf A-H - ` +
+        `kalimat dasar alasan perceraian akan berbunyi "TIDAK BENAR QUERY NYA" dan kalimat itu ikut tercetak.`
+      : `Huruf alasan diisi "${isi8503}", tetapi kueri kalimat dasar alasan perceraian milik ABT tidak mengenali gabungan ini - ` +
         `ia hanya mengenal A, B, F, H sendiri-sendiri, AB, AF, BF, dan ABF (blangko satker ini belum dipasangi paket ABT abt-alasan-cdeh). ` +
-        `4020 akan berbunyi "TIDAK BENAR QUERY NYA" dan kalimat itu ikut tercetak. ` +
+        `kalimat dasar alasan perceraian akan berbunyi "TIDAK BENAR QUERY NYA" dan kalimat itu ikut tercetak. ` +
         `Pasang paketnya di ABT, atau kurangi hurufnya.`;
   }
   return { gagal, pesan, isi8503 };
@@ -4556,7 +4639,39 @@ function susunPanelAbt(jatiDiri) {
   tombolBaris.appendChild(tombolItsbat);
   tombolBaris.appendChild(tombolPositaLain);
   tombolBaris.appendChild(tombolSdg);
+
+  // ==========================================================================
+  // SUSUN SAKSI MENURUT KEADAAN DAN JENIS PERKARA (18 Okt 2026)
+  // ==========================================================================
+  //
+  // Borang katalog di saksi-susun.js: jenis perkaranya dikenali dari data SIPP
+  // (jenis_perkara_id dan alur), BUKAN dari variabel cerai. Perkara yang jenisnya
+  // tidak punya katalog tidak mendapat tombolnya. Tombol dan borang "Susun
+  // keterangan saksi 1 & 2" di atas tidak diubah.
+  const susunKatalog =
+    typeof globalThis.AletaSaksiSusun === "object" && globalThis.AletaSaksiSusun
+      ? globalThis.AletaSaksiSusun.pasang({
+          buatElemen,
+          petaVariabel: () => barisVariabel(),
+          nomorPerkara: () => nomorPerkaraAbt(),
+          jenisPerkaraTeks: () => (barisVariabel().get(VAR_JENIS_PERKARA) || {}).nilai || sebutJenisPerkara(nomorPerkaraAbt()),
+          idJenisPerkara: (teks) => idJenisPerkaraSipp(teks),
+          alurPerkara: (nomor) => idAlurPerkaraSipp(nomor),
+          variabelSaksi: (pihak, ke) => variabelSaksiSdg(pihak, ke),
+          ambilTanyaJawab: (kode) => ambilTanyaJawab(kode),
+          kirimTanyaJawab: (kode, urutan, baris) => kirimTanyaJawab(kode, urutan, baris),
+          nilaiVariabel: (kode) => nilaiVariabel(kode),
+          urutanSidang: () => ruasAlamatAbt().d || "1",
+          catatRiwayat: (catatan) => catatRiwayat(catatan),
+          jatiDiri: () => jatiDiri,
+          halamanTanyaJawab: () => halamanTanyaJawab(),
+          t6Aktif: () => t6Aktif(),
+          bolehAbt: (kunci) => bolehAbt(kunci),
+        })
+      : { tombol: null, wadah: null };
+  if (susunKatalog.tombol) tombolBaris.appendChild(susunKatalog.tombol);
   isi.appendChild(tombolBaris);
+  if (susunKatalog.wadah) isi.appendChild(susunKatalog.wadah);
 
   const kabar = buatElemen("div", "aleta-abt-kabar");
   isi.appendChild(kabar);
@@ -5330,7 +5445,7 @@ function susunPanelAbt(jatiDiri) {
     // Menawarkan tombol lalu menolaknya sesudah ditekan terbaca sebagai
     // kerusakan, bukan sebagai pembatasan yang disengaja.
     if (!bolehAbt("blangko-abt")) {
-      for (const tombol of [tombolSipp, tombolSaksi, tombolItsbat, tombolPositaLain, tombolSdg]) tombol.hidden = true;
+      for (const tombol of [tombolSipp, tombolSaksi, tombolItsbat, tombolPositaLain, tombolSdg, susunKatalog.tombol]) if (tombol) tombol.hidden = true;
       kabar.textContent =
         "Peran Anda tidak diberi akses panel blangko ABT. Panel ini hanya menampilkan keterangan.";
     }
@@ -5389,7 +5504,7 @@ function susunPanelAbt(jatiDiri) {
     }
     if (hurufGabung) {
       hurufGabung.tombol.setAttribute("data-sore-tampak", "tidak");
-      terap.title = "Menerapkan usulan yang dicentang, lalu menuliskan huruf alasan yang dicentang ke 8503.";
+      terap.title = "Menerapkan usulan yang dicentang, lalu menuliskan huruf alasan yang dicentang ke isian huruf alasan (8503).";
     }
     wadahUsulan.appendChild(barisTindakan);
     wadahUsulan.appendChild(hasilTerap);
@@ -9570,7 +9685,7 @@ function t6Lompat(kode) {
 
 /** Kode variabel sebagai tombol lompat. */
 function t6KepingKode(kode, nama) {
-  const b = t6Tombol(nama ? `${kode} ${nama}` : String(kode), `Lompat ke baris ${kode} di blangko`, "aleta-t6-keping");
+  const b = t6Tombol(nama ? `${kode} ${nama}` : namaIsian(kode) || "satu isian", `Lompat ke baris ${kode} di blangko`, "aleta-t6-keping");
   b.addEventListener("click", () => t6Lompat(kode));
   return b;
 }
@@ -9894,7 +10009,10 @@ async function t6Tata(panel, jatiDiri) {
   if (!isi) return;
   const aksi = t6Anak(isi, "aleta-abt-aksi");
   const daftar = Array.from(isi.children).filter((c) => c.classList.contains("aleta-abt-daftar"));
-  const tombolAksi = aksi ? Array.from(aksi.children) : [];
+  // Tombol katalog "Susun saksi menurut keadaan perkara" (saksi-susun.js) disisipkan di antara "Susun
+  // keterangan saksi" dan "Riwayat"; ia dikeluarkan dari pemetaan menurut urutan ini supaya riwayat dan
+  // rapikan tidak bergeser satu tempat (tombolnya diatur terpisah di soreKelola).
+  const tombolAksi = aksi ? Array.from(aksi.children).filter((c) => !c.classList.contains("aleta-ssk-tombol")) : [];
   const objek = (x) => (x && typeof x === "object" && !Array.isArray(x) ? x : {});
   const nomor = nomorPerkaraAbt();
   const k = {
@@ -10060,7 +10178,7 @@ function t6SegarkanPitaBahaya(k) {
     try {
       t6Segarkan8503(k, kesatuan || []);
     } catch (galat) {
-      t6CatatGalat(galat, "Butir 8503 panel ABT gagal disegarkan");
+      t6CatatGalat(galat, "Butir huruf alasan panel ABT gagal disegarkan");
     }
   }
   const sidik =
@@ -10077,7 +10195,7 @@ function t6SegarkanPitaBahaya(k) {
         t6El(
           "span",
           "",
-          `${tunggu.map((x) => x.kode).join(", ")} akan terisi sesudah 8503 (huruf alasan) diisi - bunyi "TIDAK BENAR QUERY NYA" di sana belum dihitung sebagai error. `
+          `${namaIsianDaftar(tunggu.map((x) => x.kode)).teks} akan terisi sesudah huruf alasan perceraian diisi - bunyi "TIDAK BENAR QUERY NYA" di sana belum dihitung sebagai error. `
         )
       );
       k.pitaTunggu.appendChild(t6KepingKode(VAR_HURUF, "Huruf Alasan"));
@@ -10087,13 +10205,13 @@ function t6SegarkanPitaBahaya(k) {
   pita.hidden = rusak.length === 0;
   if (!rusak.length) return;
   const takBercabang = t6HurufTakBercabang();
-  const kode = rusak.map((x) => x.kode).join(", ");
+  const kode = namaIsianDaftar(rusak.map((x) => x.kode)).teks;
   pita.appendChild(
     t6El(
       "div",
       "aleta-t6-pita-judul",
       takBercabang.length
-        ? `Blangko ini belum punya cabang untuk huruf ${takBercabang.join(", ")}. 8503 berisi "${nilaiVariabel(VAR_HURUF)}", sehingga ${kode} berbunyi "TIDAK BENAR QUERY NYA" - dan kalimat itu ikut tercetak ke dalam putusan.`
+        ? `Blangko ini belum punya cabang untuk huruf ${takBercabang.join(", ")}. Huruf alasan berisi "${nilaiVariabel(VAR_HURUF)}", sehingga ${kode} berbunyi "TIDAK BENAR QUERY NYA" - dan kalimat itu ikut tercetak ke dalam putusan.`
         : `${rusak.length} variabel berbunyi pesan error (${kode}) - kalimat itu ikut tercetak ke dalam putusan.`
     )
   );
@@ -10109,7 +10227,7 @@ function t6SegarkanPitaBahaya(k) {
       "aleta-t6-lembut",
       takBercabang.length
         ? "Tugas ABT satker \"enam baris huruf C/D/E/G\" - kini paket ABT abt-alasan-cdeh (huruf A-H dan gabungannya, beserta pertimbangan C, D, E, H): pasang paket itu di ABT satker (sudah disiapkan, belum terpasang). " +
-            "Sampai itu terpasang, isi 8503 hanya dengan A, B, F, H, AB, AF, BF, atau ABF - atau tulis pertimbangannya sendiri di variabel pertimbangan."
+            "Sampai itu terpasang, isi huruf alasan hanya dengan A, B, F, H, AB, AF, BF, atau ABF - atau tulis pertimbangannya sendiri di variabel pertimbangan."
         : "Variabel (OTOMATIS) disusun ABT dari kerangka fakta. Lengkapi variabel yang menyuapinya (lihat kartu huruf alasan dan variabel kerangka), lalu muat ulang halaman."
     )
   );
@@ -10128,15 +10246,15 @@ async function t6KonfirmasiCetak(k, tautan, rusak) {
     judul: "Sebelum CETAK - kalimat error akan ikut tercetak",
     isi: [
       takBercabang.length
-        ? `8503 berisi huruf ${takBercabang.join(", ")} yang belum punya cabang di blangko ini.`
+        ? `Huruf alasan berisi huruf ${takBercabang.join(", ")} yang belum punya cabang di blangko ini.`
         : "",
       kesatuan.length
-        ? `Huruf alasan perceraian (8503) belum diisi atau tidak dikenali ABT - ${kesatuan.map((x) => x.kode).join(", ")} berbunyi "TIDAK BENAR QUERY NYA" dan ikut tercetak. Isi 8503 di panel supaya ABT menyusun seluruhnya.`
+        ? `Huruf alasan perceraian belum diisi atau tidak dikenali ABT - ${namaIsianDaftar(kesatuan.map((x) => x.kode)).teks} berbunyi "TIDAK BENAR QUERY NYA" dan ikut tercetak. Isi huruf alasan di panel supaya ABT menyusun seluruhnya.`
         : "",
       t6PilahGalat().tunggu.length
         ? t6Modern()
-          ? `${t6PilahGalat().tunggu.map((x) => x.kode).join(", ")} diisi otomatis oleh ABT sesudah Input ke ABT - belum dihitung error. Bila dicetak sekarang, bunyinya tercetak apa adanya.`
-          : `8503 (huruf alasan) masih kosong - ${t6PilahGalat().tunggu.map((x) => x.kode).join(", ")} baru terisi sesudah 8503 diisi. Bila dicetak sekarang, kalimatnya tercetak apa adanya.`
+          ? `${namaIsianDaftar(t6PilahGalat().tunggu.map((x) => x.kode)).teks} diisi otomatis oleh ABT sesudah Input ke ABT - belum dihitung error. Bila dicetak sekarang, bunyinya tercetak apa adanya.`
+          : `Huruf alasan masih kosong - ${namaIsianDaftar(t6PilahGalat().tunggu.map((x) => x.kode)).teks} baru terisi sesudah huruf alasan diisi. Bila dicetak sekarang, kalimatnya tercetak apa adanya.`
         : "",
       t6DaftarDialog(
         `${rusak.length} variabel berbunyi pesan error - kalimatnya ikut tercetak sebagai bagian putusan:`,
@@ -10152,7 +10270,7 @@ async function t6KonfirmasiCetak(k, tautan, rusak) {
   });
   try {
     if (typeof alatCatat === "function") {
-      alatCatat("abt-cetak", ya ? "CETAK dilanjutkan sesudah konfirmasi error" : "CETAK dibatalkan di dialog error", rusak.map((x) => x.kode).join(", "));
+      alatCatat("abt-cetak", ya ? "CETAK dilanjutkan sesudah konfirmasi error" : "CETAK dibatalkan di dialog error", namaIsianDaftar(rusak.map((x) => x.kode)).teks);
     }
   } catch {
     /* kotak hitam hanya catatan */
@@ -10325,20 +10443,20 @@ async function t6BacaUlangTurunan() {
 function t6KabarHitungUlang(nilai, h) {
   if (!h.ok) {
     return {
-      teks: `8503 berisi "${nilai}", tetapi variabel turunannya belum dapat dihitung ulang dari ABT (${h.pesan}). Muat ulang halaman untuk melihat hasilnya.`,
+      teks: `Huruf alasan berisi "${nilai}", tetapi variabel turunannya belum dapat dihitung ulang dari ABT (${h.pesan}). Muat ulang halaman untuk melihat hasilnya.`,
       gagal: true,
       muatUlang: true,
     };
   }
   if (h.sisa.length) {
     return {
-      teks: `8503 berisi "${nilai}" dan turunannya sudah dihitung ulang ABT, tetapi ${h.sisa.join(", ")} masih berbunyi pesan error - lihat daftar error di atas.`,
+      teks: `Huruf alasan berisi "${nilai}" dan turunannya sudah dihitung ulang ABT, tetapi ${namaIsianDaftar(h.sisa).teks} masih berbunyi pesan error - lihat daftar error di atas.`,
       gagal: true,
     };
   }
   const turunan = h.diganti.filter((x) => x !== VAR_HURUF);
   return {
-    teks: `8503 berisi "${nilai}". Variabel turunan dihitung ulang ABT${turunan.length ? ` (${turunan.join(", ")})` : ""} dan sudah terisi - tidak ada lagi pesan error dari 8503.`,
+    teks: `Huruf alasan berisi "${nilai}". Variabel turunan dihitung ulang ABT${turunan.length ? ` (${namaIsianDaftar(turunan).teks})` : ""} dan sudah terisi - tidak ada lagi pesan error dari huruf alasan.`,
     gagal: false,
   };
 }
@@ -10393,7 +10511,7 @@ function t6Buka8503(k) {
 
 /** Ringkasan satu baris untuk kartu yang ciut: apa yang harus dikerjakan. */
 function t6Ringkas8503(kosong, nilai, usulan, jumlah) {
-  const sebab = kosong ? "8503 masih kosong" : `8503 berisi "${nilai}" (tidak dikenali ABT)`;
+  const sebab = kosong ? "Huruf alasan masih kosong" : `Huruf alasan berisi "${nilai}" (tidak dikenali ABT)`;
   let tindak;
   if (usulan === undefined) tindak = "usulan huruf belum terbaca - isi sendiri";
   else if (!usulan || (!usulan.yakin && !usulan.ragu)) tindak = "huruf alasan tidak terdeteksi dari gugatan maupun keterangan saksi - isi sendiri sesuai pertimbangan majelis";
@@ -10417,7 +10535,7 @@ function t6Kepala8503(k, kotak, badan, kosong, nilai, usulan, jumlah) {
   ikon.setAttribute("aria-hidden", "true");
   const teks = t6El("span", "aleta-t6-8503-kepala-teks");
   const judulBaris = t6El("span", "aleta-t6-8503-kepala-judul");
-  judulBaris.appendChild(t6El("span", "aleta-t6-pita-judul", "Isi huruf alasan perceraian (8503)"));
+  judulBaris.appendChild(t6El("span", "aleta-t6-pita-judul", "Isi huruf alasan perceraian"));
   judulBaris.appendChild(t6El("span", "aleta-t6-8503-perlu", "Perlu dikerjakan"));
   teks.appendChild(judulBaris);
   const ringkas = t6El("span", "aleta-t6-lembut aleta-t6-8503-ringkas", t6Ringkas8503(kosong, nilai, usulan, jumlah));
@@ -10429,7 +10547,7 @@ function t6Kepala8503(k, kotak, badan, kosong, nilai, usulan, jumlah) {
   kepala.appendChild(panah);
   const atur = (buka) => {
     kepala.setAttribute("aria-expanded", buka ? "true" : "false");
-    kepala.title = buka ? "Ciutkan kartu huruf alasan (8503)" : "Buka kartu huruf alasan (8503) untuk mengisinya";
+    kepala.title = buka ? "Ciutkan kartu huruf alasan" : "Buka kartu huruf alasan untuk mengisinya";
     ringkas.hidden = buka;
   };
   atur(!badan.hidden);
@@ -10484,7 +10602,7 @@ function t6Segarkan8503(k, kesatuan) {
       kabar.textContent = k.kabar8503.teks;
       kabar.classList.toggle("aleta-t6-gagal", Boolean(k.kabar8503.gagal));
       if (k.kabar8503.muatUlang) {
-        const ulang = t6Tombol("Muat ulang halaman", "Memuat ulang halaman blangko ABT supaya variabel turunan 8503 dihitung ulang", "aleta-t6-kecil aleta-t6-8503-ulang");
+        const ulang = t6Tombol("Muat ulang halaman", "Memuat ulang halaman blangko ABT supaya variabel turunan huruf alasan dihitung ulang", "aleta-t6-kecil aleta-t6-8503-ulang");
         ulang.addEventListener("click", () => location.reload());
         kabar.appendChild(document.createTextNode(" "));
         kabar.appendChild(ulang);
@@ -10519,8 +10637,8 @@ function t6Segarkan8503(k, kesatuan) {
       "div",
       "aleta-t6-lembut",
       kosong
-        ? `8503 masih kosong, sehingga ${kesatuan.length} variabel turunannya berbunyi "TIDAK BENAR QUERY NYA" - dan kalimat itu ikut tercetak ke dalam putusan. Cukup isi 8503: ABT menyusun seluruh turunannya sendiri.`
-        : `8503 berisi "${nilai}" - bentuk itu tidak dikenali kueri ABT, sehingga ${kesatuan.length} variabel turunannya berbunyi "TIDAK BENAR QUERY NYA". Tulis hurufnya rapat tanpa koma atau spasi (mis. AF).`
+        ? `Huruf alasan masih kosong, sehingga ${kesatuan.length} variabel turunannya berbunyi "TIDAK BENAR QUERY NYA" - dan kalimat itu ikut tercetak ke dalam putusan. Cukup isi huruf alasan: ABT menyusun seluruh turunannya sendiri.`
+        : `Huruf alasan berisi "${nilai}" - bentuk itu tidak dikenali kueri ABT, sehingga ${kesatuan.length} variabel turunannya berbunyi "TIDAK BENAR QUERY NYA". Tulis hurufnya rapat tanpa koma atau spasi (mis. AF).`
     )
   );
   const rinci = document.createElement("details");
@@ -10538,7 +10656,7 @@ function t6Segarkan8503(k, kesatuan) {
   if (k.ketik8503 !== undefined) awal = k.ketik8503;
   else if (hurufKini && hurufKini.ok) {
     awal = hurufKini.isi;
-    asalAwal = `Diambil dari isi 8503 sekarang ("${nilai}"), dirapatkan - periksa, lalu simpan.`;
+    asalAwal = `Diambil dari isi huruf alasan sekarang ("${nilai}"), dirapatkan - periksa, lalu simpan.`;
   } else if (usulan && usulan.yakin) {
     awal = usulan.yakin;
   }
@@ -10565,9 +10683,9 @@ function t6Segarkan8503(k, kesatuan) {
   kotakKetik.className = "aleta-t6 aleta-t6-8503-ketik";
   kotakKetik.maxLength = 24;
   kotakKetik.placeholder = "mis. F, AF, BF, ABF";
-  kotakKetik.setAttribute("aria-label", "Isi 8503 - huruf alasan perceraian");
+  kotakKetik.setAttribute("aria-label", "Isi huruf alasan perceraian");
   kotakKetik.value = awal;
-  const simpan = t6Tombol("Simpan ke ABT", "Menyimpan huruf alasan ke variabel 8503 di ABT, lalu menghitung ulang seluruh turunannya", "aleta-t6-8503-simpan");
+  const simpan = t6Tombol("Simpan ke ABT", "Menyimpan huruf alasan ke ABT (variabel 8503), lalu menghitung ulang seluruh turunannya", "aleta-t6-8503-simpan");
   baris.appendChild(kotakKetik);
   baris.appendChild(simpan);
   badan.appendChild(baris);
@@ -10633,11 +10751,11 @@ function t6Segarkan8503(k, kesatuan) {
             : `Usulan ALETA dari gugatan dan keterangan saksi: ${usulan.yakin}. `
         )
       );
-      if (!terisi) usul.appendChild(tombolPakai(usulan.yakin, `Menambahkan huruf ${usulan.yakin} ke isian 8503 (belum menyimpan)`));
+      if (!terisi) usul.appendChild(tombolPakai(usulan.yakin, `Menambahkan huruf ${usulan.yakin} ke isian huruf alasan (belum menyimpan)`));
     }
     if (usulan.ragu) {
       usul.appendChild(document.createTextNode(` Usulan ragu: ${usulan.ragu} - tidak diisikan sendiri; periksa kartu Alasan perceraian lebih dulu. `));
-      usul.appendChild(tombolPakai(usulan.ragu, `Menambahkan huruf ${usulan.ragu} ke isian 8503 (belum menyimpan)`));
+      usul.appendChild(tombolPakai(usulan.ragu, `Menambahkan huruf ${usulan.ragu} ke isian huruf alasan (belum menyimpan)`));
     }
   }
   badan.appendChild(usul);
@@ -10660,18 +10778,18 @@ function t6Segarkan8503(k, kesatuan) {
     }
     const jati = t6JatiDiri8503(k);
     if (!jati) {
-      k.kabar8503 = { teks: "Perkara ini tidak terbaca dari halaman (tombol edit ABT tidak ditemukan) - 8503 tidak disimpan.", gagal: true };
+      k.kabar8503 = { teks: "Perkara ini tidak terbaca dari halaman (tombol edit ABT tidak ditemukan) - huruf alasan tidak disimpan.", gagal: true };
       t6SegarkanHalaman(k);
       return;
     }
     k.simpan8503Jalan = true;
-    k.kabar8503 = { teks: `Menyimpan 8503 "${p.isi}" ke ABT…`, gagal: false };
+    k.kabar8503 = { teks: `Menyimpan huruf alasan "${p.isi}" ke ABT…`, gagal: false };
     t6SegarkanHalaman(k);
     let r;
     try {
-      r = await tulisHurufAlasan(p.isi.split(""), jati, { cara: "isian huruf alasan di panel (8503 satu kesatuan dengan turunannya)" });
+      r = await tulisHurufAlasan(p.isi.split(""), jati, { cara: "isian huruf alasan di panel (satu kesatuan dengan turunannya)" });
     } catch (galat) {
-      r = { gagal: true, pesan: `8503: ${sorePesan(galat)}` };
+      r = { gagal: true, pesan: `Huruf alasan: ${sorePesan(galat)}` };
     }
     if (t6Keadaan !== k) return;
     k.simpan8503Jalan = false;
@@ -10681,7 +10799,7 @@ function t6Segarkan8503(k, kesatuan) {
       return;
     }
     k.ketik8503 = undefined;
-    k.kabar8503 = { teks: `8503 diisi "${r.isi8503}". Menghitung ulang variabel turunan dari ABT…`, gagal: false };
+    k.kabar8503 = { teks: `Huruf alasan diisi "${r.isi8503}". Menghitung ulang variabel turunan dari ABT…`, gagal: false };
     t6SegarkanHalaman(k);
     await t6HitungUlangTurunan(k, nilaiVariabel(VAR_HURUF) || r.isi8503);
   });
@@ -10830,7 +10948,7 @@ function t6SegarkanWajib(k) {
   }
   if (k.wajibUnggah) {
     k.wajibUnggah.hidden = !kosong.length;
-    k.wajibUnggah.textContent = kosong.length ? `⚠ ${kosong.length} variabel wajib masih kosong (${kosong.map((x) => x.kode).join(", ")}) - tidak ditahan.` : "";
+    k.wajibUnggah.textContent = kosong.length ? `⚠ ${kosong.length} variabel wajib masih kosong (${namaIsianDaftar(kosong.map((x) => x.kode)).teks}) - tidak ditahan.` : "";
   }
   if (k.kakiWajib) {
     k.kakiWajib.hidden = !kosong.length;
@@ -11293,7 +11411,7 @@ function t6PasangCari(k) {
     const masuk = document.createElement("input");
     masuk.type = "search";
     masuk.className = "aleta-t6 aleta-t6-cari-masuk";
-    masuk.placeholder = "Cari variabel… #0222 atau \"awal konflik\"";
+    masuk.placeholder = "Cari variabel… nama atau nomornya, mis. \"awal konflik\"";
     masuk.setAttribute("aria-label", "Cari variabel di blangko ini");
     const hasil = t6El("div", "aleta-t6-cari-hasil");
     masuk.addEventListener("input", () => t6GambarCari(k, masuk.value, hasil));
@@ -12528,7 +12646,7 @@ function t6PeriksaKonsistensi(k) {
     hasil.push({
       cocok: sama,
       judul: "Nomor perkara",
-      rinci: sama ? `0001 sama dengan kepala halaman (${k.nomor}).` : `0001 berisi ${n0001}, sedangkan panel bekerja untuk ${k.nomor}.`,
+      rinci: sama ? `Nomor perkara di blangko sama dengan kepala halaman (${k.nomor}).` : `Nomor perkara di blangko berisi ${n0001}, sedangkan panel bekerja untuk ${k.nomor}.`,
       kode: "0001",
     });
   }
@@ -12543,7 +12661,7 @@ function t6PeriksaKonsistensi(k) {
     hasil.push({
       cocok: ada,
       judul: `Nama ${sebut}`,
-      rinci: ada ? `"${nama.inti}" (${kode}) juga tertulis di amar 4001.` : `"${nama.inti}" (${kode}) tidak ditemukan di amar 4001.`,
+      rinci: ada ? `"${nama.inti}" juga tertulis di amar putusan.` : `"${nama.inti}" tidak ditemukan di amar putusan.`,
       kode: ada ? kode : "4001",
     });
   }
@@ -12559,7 +12677,7 @@ function t6PeriksaKonsistensi(k) {
       hasil.push({
         cocok: sama,
         judul: `Tahun nikah: posita dan ${nama}`,
-        rinci: sama ? `Keduanya ${posita.tahun}.` : `Posita (5125) ${posita.tahun}, ${nama} (${kode}) menjawab ${saksi.tahun}: "${saksi.kalimat}"`,
+        rinci: sama ? `Keduanya ${posita.tahun}.` : `Posita ${posita.tahun}, ${nama} menjawab ${saksi.tahun}: "${saksi.kalimat}"`,
         kode,
       });
     }
@@ -12718,8 +12836,8 @@ async function t6SusunSaranPasal(k, wadah) {
       "div",
       "aleta-t6-lembut",
       huruf.length
-        ? `Untuk huruf ${huruf.join(", ")} (8503). Saran saja - yang memutus dasar hukumnya majelis.`
-        : "8503 belum berisi huruf alasan - seluruh huruf ditampilkan. Saran saja - yang memutus dasar hukumnya majelis."
+        ? `Untuk huruf ${huruf.join(", ")} (huruf alasan). Saran saja - yang memutus dasar hukumnya majelis.`
+        : "Huruf alasan belum diisi - seluruh huruf ditampilkan. Saran saja - yang memutus dasar hukumnya majelis."
     )
   );
   if (!dipakai.length) {
@@ -12782,8 +12900,8 @@ function t6TeksMusyawarah(k) {
   daftar("Fakta yang diterangkan sama oleh kedua saksi", fakta);
   const huruf = nilaiVariabel(VAR_HURUF);
   const alasan = nilaiVariabel("5227");
-  if (huruf) baris.push(`Huruf alasan (8503): ${huruf}`);
-  if (alasan) baris.push(`Alasan perceraian (5227): ${t6Pendek(alasan, 400)}`);
+  if (huruf) baris.push(`Huruf alasan: ${huruf}`);
+  if (alasan) baris.push(`Alasan perceraian: ${t6Pendek(alasan, 400)}`);
   if (k.komentar && k.komentar.ok) {
     const terbuka = k.komentar.daftar.filter((x) => !x.selesai);
     if (terbuka.length) daftar("Komentar hakim yang belum selesai", terbuka.map((x) => `${t6LabelBagian(x.bagian)}: ${t6Pendek(x.isi, 160)}`));
@@ -12905,20 +13023,20 @@ async function t6Urungkan(k) {
   if (!t6DapatDitulisUlang(e.kode)) {
     t.urung.pop();
     t6SegarkanUrung(k);
-    t6Lapor(k, `${e.kode} tidak dapat diurungkan dari sini - pakai "Lihat riwayat perubahan".`, true);
+    t6Lapor(k, `${t6SebutSunting(e)} tidak dapat diurungkan dari sini - pakai "Lihat riwayat perubahan".`, true);
     return;
   }
   const nilai = t6NilaiSimpan(e.sebelum);
-  t6Lapor(k, `Mengurungkan ${e.kode}…`);
+  t6Lapor(k, `Mengurungkan ${t6SebutSunting(e)}…`);
   const h = await t6SimpanNilai(k, e.kode, nilai, "diurungkan", e.sesudah, e.nama);
   if (!h.ok) {
-    t6Lapor(k, `Urungkan ${e.kode} gagal: ${h.pesan}`, true);
+    t6Lapor(k, `Urungkan ${t6SebutSunting(e)} gagal: ${h.pesan}`, true);
     return;
   }
   t.urung.pop();
   t.ulang.push(e);
   t6SegarkanUrung(k);
-  t6Lapor(k, `${e.kode} dikembalikan ke isi sebelumnya. Ctrl+Y mengulanginya.`);
+  t6Lapor(k, `${t6SebutSunting(e)} dikembalikan ke isi sebelumnya. Ctrl+Y mengulanginya.`);
 }
 
 async function t6Ulangi(k) {
@@ -12929,16 +13047,22 @@ async function t6Ulangi(k) {
     return;
   }
   const nilai = t6NilaiSimpan(e.sesudah);
-  t6Lapor(k, `Mengulangi ${e.kode}…`);
+  t6Lapor(k, `Mengulangi ${t6SebutSunting(e)}…`);
   const h = await t6SimpanNilai(k, e.kode, nilai, "diulang", e.sebelum, e.nama);
   if (!h.ok) {
-    t6Lapor(k, `Ulangi ${e.kode} gagal: ${h.pesan}`, true);
+    t6Lapor(k, `Ulangi ${t6SebutSunting(e)} gagal: ${h.pesan}`, true);
     return;
   }
   t.ulang.pop();
   t.urung.push(e);
   t6SegarkanUrung(k);
-  t6Lapor(k, `${e.kode} diulang.`);
+  t6Lapor(k, `${t6SebutSunting(e)} diulang.`);
+}
+
+/** Sebutan isian yang disunting untuk laporan ke petugas: nama isian, bukan kodenya. */
+function t6SebutSunting(e) {
+  const nama = (e && e.nama ? bersihkanNamaIsian(e.nama) : "") || namaIsian(e && e.kode);
+  return nama ? `"${nama}"` : "isian ini";
 }
 
 function t6SegarkanUrung(k) {
@@ -13215,7 +13339,7 @@ function t6HiasUsulan(k) {
 // ─── abt-9: riwayat per variabel dengan tombol pulihkan ─────────────────────
 
 function t6TombolRiwayatVar(k, kode, induk) {
-  const b = t6Tombol("⟲", `Riwayat ${kode} - dengan tombol pulihkan`, "aleta-t6-kecil aleta-t6-riwayat-tombol");
+  const b = t6Tombol("⟲", `Riwayat ${namaIsian(kode) || "isian ini"} - dengan tombol pulihkan`, "aleta-t6-kecil aleta-t6-riwayat-tombol");
   b.addEventListener("click", async () => {
     const ada = Array.from(induk.children).find((c) => c.classList.contains("aleta-t6-riwayat-var"));
     if (ada) {
@@ -13238,7 +13362,11 @@ async function t6GambarRiwayatVar(k, kode, kotak) {
     daftar = [];
   }
   kotak.textContent = "";
-  kotak.appendChild(t6El("div", "aleta-t6-riwayat-judul", `Riwayat ${kode}`));
+  {
+    const judulRiwayat = t6El("div", "aleta-t6-riwayat-judul", `Riwayat ${namaIsian(kode) || "isian ini"}`);
+    judulRiwayat.title = `Variabel ${kode}`;
+    kotak.appendChild(judulRiwayat);
+  }
   if (!daftar.length) {
     kotak.appendChild(t6El("div", "aleta-t6-lembut", "Belum ada perubahan yang tercatat untuk variabel ini."));
     return;
@@ -13254,7 +13382,7 @@ async function t6GambarRiwayatVar(k, kode, kotak) {
     } else if (catatan) {
       el.appendChild(t6El("span", "aleta-t6-lembut", ` ${catatan}`));
     } else if (dapat) {
-      const pulih = t6Tombol("pulihkan", `Tulis isi ini kembali ke ${kode} di ABT`, "aleta-t6-kecil");
+      const pulih = t6Tombol("pulihkan", `Tulis isi ini kembali ke ${namaIsian(kode) || "isian ini"} di ABT`, "aleta-t6-kecil");
       const kabar = t6El("span", "aleta-t6-lembut");
       pulih.addEventListener("click", async () => {
         pulih.disabled = true;
@@ -13275,7 +13403,7 @@ async function t6GambarRiwayatVar(k, kode, kotak) {
   }
   const tertua = daftar[Math.min(daftar.length, 10) - 1];
   if (tertua && !tertua.dariPeladen) baris("sebelum perubahan pertama", "isi awal", tertua.sebelum, "");
-  if (!dapat) kotak.appendChild(t6El("div", "aleta-t6-lembut", `${kode} tidak dapat ditulis ulang dari sini - pakai "Lihat riwayat perubahan".`));
+  if (!dapat) kotak.appendChild(t6El("div", "aleta-t6-lembut", `${isianBernama(kode)} tidak dapat ditulis ulang dari sini - pakai "Lihat riwayat perubahan".`));
 }
 
 // ─── abt-6: tombol cepat untuk alasan yang belum terbukti ────────────────────
@@ -13479,7 +13607,7 @@ function t6KelompokkanAlasan(kotak, posita) {
     kelompok.get(cocok ? cocok[0] : "Lainnya").push(l);
     if (t6DidalilkanPosita(teks, posita)) {
       const g = t6El("span", "aleta-t6-tanda-g", "G");
-      g.title = "Kata kuncinya terbaca di posita (5125) - perkiraan dari kata, periksa dalilnya sendiri.";
+      g.title = "Kata kuncinya terbaca di posita (isi gugatan) - perkiraan dari kata, periksa dalilnya sendiri.";
       l.appendChild(g);
     }
   }
@@ -13542,7 +13670,7 @@ function t6KelompokkanAlasanSaksi(kotak, posita, sesuai) {
       kelompok.get(cocok ? cocok[0] : "Lainnya").push(l);
       if (!l.querySelector(".aleta-t6-tanda-g") && t6DidalilkanPosita(teks, posita)) {
         const g = t6El("span", "aleta-t6-tanda-g", "G");
-        g.title = "Kata kuncinya terbaca di posita (5125) - perkiraan dari kata, periksa dalilnya sendiri.";
+        g.title = "Kata kuncinya terbaca di posita (isi gugatan) - perkiraan dari kata, periksa dalilnya sendiri.";
         l.appendChild(g);
       }
     }
@@ -14428,11 +14556,11 @@ function t6DataPribadi() {
     const item = peta.get(kode);
     if (!item || keadaanNilai(item.nilai) !== "terisi") continue;
     const n = t6NamaDariIdentitas(item.nilai);
-    if (n) tambahNama(n.inti, kode);
+    if (n) tambahNama(n.inti, namaIsian(kode, peta) || "nama pihak");
     const pola = /\b(Desa|Kelurahan|Dusun|Jalan|Jl\.|Lorong|Kampung|Perumahan|Kompleks)\s+([A-Z][A-Za-z'.-]+(?:\s+[A-Z][A-Za-z'.-]+){0,2})/g;
     for (const m of item.nilai.matchAll(pola)) {
       const tempat = m[2].replace(/[.,]+$/, "");
-      if (tempat.length >= 3 && !alamat.has(tempat.toLowerCase())) alamat.set(tempat.toLowerCase(), { teks: tempat, dari: `${kode} (${m[1]})` });
+      if (tempat.length >= 3 && !alamat.has(tempat.toLowerCase())) alamat.set(tempat.toLowerCase(), { teks: tempat, dari: `${namaIsian(kode, peta) || "alamat pihak"} (${m[1]})` });
     }
   }
   // Nama pihak pada blangko permohonan (lihat "sebutan bukan nama pihak").
@@ -14748,7 +14876,7 @@ function soreHentikan() {
 function soreSusun(panel, jatiDiri, isi) {
   f15BuangCetakAwalLama(isi); // penataan ulang panel yang sama: Cetak sementara penataan lalu dibuang dulu
   const aksi = t6Anak(isi, "aleta-abt-aksi");
-  const lama = aksi ? Array.from(aksi.children).filter((c) => c.tagName === "BUTTON" && !c.classList.contains("aleta-t6")) : [];
+  const lama = aksi ? Array.from(aksi.children).filter((c) => c.tagName === "BUTTON" && !c.classList.contains("aleta-t6") && !c.classList.contains("aleta-ssk-tombol")) : [];
   const daftar = Array.from(isi.children).filter((c) => c.classList.contains("aleta-abt-daftar") && !c.classList.contains("aleta-t6-usulan-sipp"));
   // 16 Okt (F1.1): wadah penyunting keterangan saksi tersendiri - dibuat di sini
   // (lapisan sore, ikut dikupas uji "Lama identik"), dipakai borang Susun.
@@ -15435,10 +15563,18 @@ function soreGambarIsi(k, data) {
   }
   if (tidakAda.length || sama.length || dihitung.length) {
     const bagian = [];
-    if (tidakAda.length) bagian.push(`${tidakAda.length} tidak terdeteksi (${tidakAda.join(", ")})`);
-    if (sama.length) bagian.push(`${sama.length} sudah sama di blangko (${sama.join(", ")})`);
-    if (dihitung.length) bagian.push(`${dihitung.length} dihitung ABT sendiri, bukan isian (${dihitung.join(", ")})`);
-    w.usulan.appendChild(soreEl("div", "aleta-t6-lembut aleta-teknis aleta-sore-tak-tampil", `Tidak ditampilkan: ${bagian.join("; ")}.`));
+    const kodeTitle = [];
+    const sebut = (daftar) => {
+      const r = namaIsianDaftar(daftar);
+      if (r.kode) kodeTitle.push(r.kode);
+      return r.teks;
+    };
+    if (tidakAda.length) bagian.push(`${tidakAda.length} tidak terdeteksi (${sebut(tidakAda)})`);
+    if (sama.length) bagian.push(`${sama.length} sudah sama di blangko (${sebut(sama)})`);
+    if (dihitung.length) bagian.push(`${dihitung.length} dihitung ABT sendiri, bukan isian (${sebut(dihitung)})`);
+    const tidakTampil = soreEl("div", "aleta-t6-lembut aleta-teknis aleta-sore-tak-tampil", `Tidak ditampilkan: ${bagian.join("; ")}.`);
+    if (kodeTitle.length) tidakTampil.title = `Kode isian: ${kodeTitle.join("; ")}`;
+    w.usulan.appendChild(tidakTampil);
   }
   // P4P7B2 10 Okt: tuntutan, anak, jawab-menjawab, dan kalimat hakim dari berkas e-Court.
   p4GambarEcourt(w.usulan, data);
@@ -15463,7 +15599,7 @@ function soreGambarIsi(k, data) {
   ringkas.push(
     terisi || hurufPilihan.length || wajib.length
       ? `${terisi} data${hurufPilihan.length ? ` dan ${hurufPilihan.length} huruf alasan` : ""} siap diperiksa${
-          wajib.length ? `; ${wajib.length} tidak terdeteksi - isi lewat Sunting (${wajib.map((u) => u.kode).join(", ")})` : ""
+          wajib.length ? `; ${wajib.length} tidak terdeteksi - isi lewat Sunting (${namaIsianDaftar(wajib.map((u) => u.kode)).teks})` : ""
         }`
       : rapiPilihan.length
         ? "Tidak ada data baru untuk diinput selain perapian posita/keterangan saksi (ikut tersimpan saat Input ke ABT)"
@@ -15574,7 +15710,7 @@ function soreBarisInput(k, pilih, hurufPilihan, rapiPilihan) {
           { jalur: "Input ke ABT" } /* KAMUS-DB 10 Okt: D2 */
         );
         if (r.gagal.length) gagal = true;
-        bagian.push(r.gagal.length ? `${r.berhasil} tersimpan, ${r.gagal.length} gagal — ${r.gagal.join("; ")}` : `${r.berhasil} variabel tersimpan`);
+        bagian.push(r.gagal.length ? `${r.berhasil} tersimpan, ${r.gagal.length} gagal — ${r.gagal.map(gagalTampil).join("; ")}` : `${r.berhasil} variabel tersimpan`);
       }
       if (huruf.length) {
         kabar.textContent = "Menuliskan huruf alasan…";
@@ -15970,6 +16106,9 @@ function soreKelola(k) {
   const mati = (kunci) => (menuTentu && (semua || k.menu.includes(kunci)) ? [] : menuTentu ? ["peran"] : ["mati"]);
   if (k.kerjaIsi) hasil.push([k.kerjaIsi, mati("isi-input")]);
   if (k.kerjaSusun) hasil.push([k.kerjaSusun, mati("susun-saksi")]);
+  // Tombol "Susun saksi menurut keadaan perkara": mengikuti menu peran "susun-saksi" (tanpa menu = tampak).
+  const tombolKatalog = k.aksi ? k.aksi.querySelector(".aleta-ssk-tombol") : null;
+  if (tombolKatalog) hasil.push([tombolKatalog, peranSalah(["susun-saksi"])]);
   if (k.bukanPenangan) hasil.push([k.bukanPenangan, menuTentu && k.menu.length === 0 ? [] : ["mati"]]);
   for (const el of [k.wadah.selisih, k.wadah.huruf]) if (el) hasil.push([el, isiInput]);
   if (k.wadah.sepihak) hasil.push([k.wadah.sepihak, [...isiInput, ...(k.adaRinci ? ["rinci"] : [])]]);
@@ -16451,7 +16590,7 @@ function a1GalatDitunda(kode) {
   if (!t6Modern()) return false;
   if (!T6_TERGANTUNG_8503.includes(String(kode))) return false;
   // 7 Okt: 8503 kosong/tidak dikenali = turunannya tidak akan terisi oleh
-  // Input lain mana pun - ia butir "Isi huruf alasan perceraian (8503)", dan
+  // Input lain mana pun - ia butir "Isi huruf alasan perceraian", dan
   // penjaga CETAK (termasuk penjaga lama) tetap menanyakannya.
   if (t6Kesatuan8503Aktif()) return false;
   a1MuatStatusInput();
@@ -16484,7 +16623,7 @@ function a1IsiPitaTunggu(pita, tunggu) {
   pita.hidden = tunggu.length === 0;
   pita.classList.add("aleta-teknis", "aleta-a1-tunggu");
   if (!tunggu.length) return;
-  const kode = tunggu.map((x) => x.kode).join(", ");
+  const kode = namaIsianDaftar(tunggu.map((x) => x.kode)).teks;
   pita.appendChild(
     t6El(
       "span",
@@ -16718,7 +16857,7 @@ function a1IntiKeterangan(k, h, saksi) {
     const nama = String(p || "");
     if (banyak) baris.push({ judul: a1Besar(nama) });
     if (/^lama pisah/i.test(nama)) {
-      baris.push({ teks: "Dihitung dari keterangan saksi tentang pisah rumah - lihat usulan 9944 (Lama Pisah) di daftar Input ke ABT." });
+      baris.push({ teks: "Dihitung dari keterangan saksi tentang pisah rumah - lihat usulan Lama Pisah di daftar Input ke ABT." });
       continue;
     }
     const inti = (Array.isArray(s.intiCiri) ? s.intiCiri : []).find((x) => x && t6Baku(x.ciri) === t6Baku(nama));
@@ -17018,7 +17157,7 @@ function a1PilihBlangkoHalaman(pilih, peta) {
 function a1SiapkanUnggahSatu(jenis, nomor, unggah) {
   const nomorPakai = nomor || a1NomorDariVariabel();
   if (unggah && !nomorPakai) {
-    throw new Error("Nomor perkara tidak terbaca dari kepala halaman maupun variabel 0001 - unggah ke SIPP membutuhkannya.");
+    throw new Error("Nomor perkara tidak terbaca dari kepala halaman maupun dari isian nomor perkara di blangko - unggah ke SIPP membutuhkannya.");
   }
   if (jenis !== A1_BLANGKO_HALAMAN) return { nomor: nomorPakai, peta: null };
   const t = a1TokenHalaman();
@@ -18663,27 +18802,27 @@ async function ktpUsulanTeks(pihak, kodeTeks) {
     try {
       asli = await ktpBacaTeksAsli(kode, jati);
     } catch (g) {
-      hasil.catatan.push(`Variabel ${kode}: isi tidak terbaca (${String((g && g.message) || g)}).`);
+      hasil.catatan.push(`${isianBernama(kode)}: isi tidak terbaca (${String((g && g.message) || g)}).`);
       continue;
     }
     if (asli.tipe !== "data_teks") continue; // dihitung ABT / bukan isian
     if (asli.teks.indexOf("\uFFFD") >= 0) {
-      hasil.catatan.push(`Variabel ${kode}: teks memuat karakter rusak - tanggal KTP di dalamnya disunting tangan.`);
+      hasil.catatan.push(`${isianBernama(kode)}: teks memuat karakter rusak - tanggal KTP di dalamnya disunting tangan.`);
       continue;
     }
     // 13 Okt: baris DATA_TIDAK_ADA - dasarnya bawaan ABT di borang sunting (bukan isi sel).
     const barisKosong = typeof keadaanNilai === "function" && keadaanNilai(item.nilai) === "kosong";
     if (barisKosong && /#\d{4,5}#/.test(asli.teks)) {
-      hasil.catatan.push(`Variabel ${kode}: bawaan ABT masih memuat variabel yang belum diolah - diisi tangan.`);
+      hasil.catatan.push(`${isianBernama(kode)}: bawaan ABT masih memuat variabel yang belum diolah - diisi tangan.`);
       continue;
     }
     if (!barisKosong && ktpTeksInti(asli.teks) !== ktpTeksInti(item.nilai)) {
-      hasil.catatan.push(`Variabel ${kode}: isi di ABT berbeda dari yang tampil - tanggal KTP di dalamnya tidak diubah.`);
+      hasil.catatan.push(`${isianBernama(kode)}: isi di ABT berbeda dari yang tampil - tanggal KTP di dalamnya tidak diubah.`);
       continue;
     }
     const s = ktpTeksSusun(asli.teks, kode, pihak);
     for (const t of s.tetap) {
-      if (/belum terbaca|tak dikenal|ambigu|ragu|tidak terbaca/.test(t.alasan)) hasil.catatan.push(`Variabel ${kode}: ${t.label} dibiarkan - ${t.alasan}.`);
+      if (/belum terbaca|tak dikenal|ambigu|ragu|tidak terbaca/.test(t.alasan)) hasil.catatan.push(`${isianBernama(kode)}: ${t.label} dibiarkan - ${t.alasan}.`);
     }
     if (barisKosong && !s.nilai) {
       // Bawaan ABT yang tanggal KTP-nya SUDAH lengkap (8870/8872 membaca tabel KTP e-Court): disimpan apa
@@ -18694,7 +18833,7 @@ async function ktpUsulanTeks(pihak, kodeTeks) {
         return slot && ["tulis", "angka", "iso"].includes(slot.jenis);
       });
       if (!lengkap) {
-        hasil.catatan.push(`Variabel ${kode}: KTP belum terdeteksi - tanggal KTP di bawaan ABT masih kosong.`);
+        hasil.catatan.push(`${isianBernama(kode)}: KTP belum terdeteksi - tanggal KTP di bawaan ABT masih kosong.`);
         continue;
       }
       s.nilai = asli.teks;
@@ -19459,7 +19598,7 @@ function p7PasangBas(k) {
         kabar.textContent = t;
       });
       kabar.className = h.gagal.length ? "aleta-p7-kabar aleta-abt-gagal" : "aleta-p7-kabar";
-      kabar.textContent = `${h.berhasil} variabel tersimpan ke ABT${h.gagal.length ? `; gagal: ${h.gagal.join("; ")}` : "."}`;
+      kabar.textContent = `${h.berhasil} variabel tersimpan ke ABT${h.gagal.length ? `; gagal: ${h.gagal.map(gagalTampil).join("; ")}` : "."}`;
     } catch (galat) {
       kabar.className = "aleta-p7-kabar aleta-abt-gagal";
       kabar.textContent = String((galat && galat.message) || galat);
@@ -19607,7 +19746,7 @@ function k5GambarKontak(wadah, data) {
     buatElemen(
       "div",
       "aleta-t6-lembut aleta-teknis",
-      "Masuk ke blangko lewat variabel 8800-8811 (SIPP lebih dulu; kosong = e-Court berkeyakinan cukup). Variabel lama 0027/0045/8179/8180/0370/0372 membaca SIPP saja - simpan kontaknya di SIPP (Data Pihak / Pengacara: lajur \"Kontak dari e-Court\" menawarkan isiannya). Tidak ada yang ditulis dari sini."
+      "Masuk ke blangko lewat isian kontak elektronik (SIPP lebih dulu; kosong = e-Court berkeyakinan cukup). Isian kontak lama membaca SIPP saja - simpan kontaknya di SIPP (Data Pihak / Pengacara: lajur \"Kontak dari e-Court\" menawarkan isiannya). Tidak ada yang ditulis dari sini."
     )
   );
   wadah.appendChild(kotak);
@@ -19826,8 +19965,8 @@ function pkGambarPekerjaan(wadah, data) {
       "div",
       "aleta-t6-lembut aleta-teknis",
       izin
-        ? `Kalimat izin atasan (#8510# duduk perkara, #8524# pertimbangan, #8533# BAS) dipakai untuk ${p1.label || p1.kunci} pada cerai gugat/talak - nomor/tanggal/pejabat surat izin dari SIPP (Izin Cerai). Hanya dibaca, tidak ada yang ditulis dari sini.`
-        : "Kalimat izin atasan (#8510#/#8524#/#8533#) TIDAK dipakai untuk pekerjaan #0046# ini. Hanya dibaca, tidak ada yang ditulis dari sini."
+        ? `Kalimat izin atasan (duduk perkara, pertimbangan, dan BAS) dipakai untuk ${p1.label || p1.kunci} pada cerai gugat/talak - nomor/tanggal/pejabat surat izin dari SIPP (Izin Cerai). Hanya dibaca, tidak ada yang ditulis dari sini.`
+        : "Kalimat izin atasan (duduk perkara, pertimbangan, dan BAS) TIDAK dipakai untuk pekerjaan Penggugat/Pemohon ini. Hanya dibaca, tidak ada yang ditulis dari sini."
     )
   );
   // Keputusan pengguna 11 Okt (5): Tergugat/Termohon PNS/PPPK/POLRI/TNI -> kalimat kewajiban pemberitahuan gugatan
@@ -19838,7 +19977,7 @@ function pkGambarPekerjaan(wadah, data) {
       buatElemen(
         "div",
         "aleta-t6-lembut aleta-teknis",
-        `#0047# ${p2.label || p2.kunci}: #8524# (pertimbangan) dan #8533# (BAS) juga memuat kalimat kewajiban surat permintaan izin atau pemberitahuan adanya gugatan perceraian kepada atasan #0047# (dasar: Pasal 3 ayat (2)(3) PP 10/1983 jo PP 45/1990).`
+        `Tergugat/Termohon ${p2.label || p2.kunci}: pertimbangan dan BAS juga memuat kalimat kewajiban surat permintaan izin atau pemberitahuan adanya gugatan perceraian kepada atasan Tergugat/Termohon (dasar: Pasal 3 ayat (2)(3) PP 10/1983 jo PP 45/1990).`
       )
     );
   }

@@ -618,8 +618,8 @@ describe("P. sembul SIPP tidak tertutup panel berlabuh (butir 15)", () => {
     expect(aturan).toMatch(/html\[data-aleta-sembul-geser="ya"\] :is\(\.popup, \.popup2nd, #popup-detil\) \{[^}]*width: calc\(100% - var\(--aleta-sembul-kiri, 0px\) - var\(--aleta-sembul-kanan, 0px\)\) !important/);
   });
 
-  it("layar sempit (< 1100px, panel mengambang): tidak ada yang digeser", async () => {
-    const h = bukaPanel({ lebar: 1000 });
+  it("layar sempit (< 900px, panel mengambang): tidak ada yang digeser", async () => {
+    const h = bukaPanel({ lebar: 800 });
     await siapUi(h);
     await tunggu(300);
     expect(h.d.documentElement.hasAttribute("data-aleta-sembul-geser")).toBe(false);

@@ -571,7 +571,11 @@ describe("D. dobel penuh: disembunyikan di UI Baru, dapat dimunculkan lagi, Tamp
 
 describe("F. lencana ALETA di SIPP: satu gaya bersama rupa rancangan, UI Baru saja", () => {
   const css = baca("panel.css");
-  const blok = css.slice(css.lastIndexOf("/*", css.indexOf("LENCANA ALETA DI SIPP - RUPA RANCANGAN")));
+  // 18 Okt (1.205.6): blok Susun saksi dan tampilan panel V2 ditambahkan SESUDAH blok lencana;
+  // potongan blok lencana berhenti di penanda blok berikutnya.
+  const awalLencana = css.lastIndexOf("/*", css.indexOf("LENCANA ALETA DI SIPP - RUPA RANCANGAN"));
+  const sesudahLencana = css.indexOf("/* === SUSUN SAKSI MENURUT KEADAAN PERKARA", awalLencana);
+  const blok = css.slice(awalLencana, sesudahLencana > awalLencana ? sesudahLencana : undefined);
 
   it("panel.css: tiap aturan rupa rancangan tercakup html[data-aleta-lencana=rancangan]; warna tetap (bukan peubah panel), huruf 13px, (i) dari title", () => {
     const aturan = blok.replace(/\/\*[\s\S]*?\*\//g, "").split("}").map((x) => x.trim()).filter((x) => x.includes("{"));

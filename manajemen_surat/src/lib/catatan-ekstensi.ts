@@ -57,6 +57,36 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.7",
+    dirilis: "2026-10-18T20:00:00+08:00",
+    judul: "Isian disebut dengan nama, jawab-menjawab e-Court terbaca, keterangan anak/calon/orang tua dispensasi, dan saksi Tergugat",
+    butir: [
+      "Panel \"Isi dari SIPP & input ke ABT\", pita peringatan, dialog Cetak, urungkan/ulangi, dan kabar gagal simpan kini menyebut isian dengan namanya (mis. \"Sunting (Alasan Perceraian, Tanggal Pisah Rumah)\"), bukan kode angka; kodenya hanya tampil saat kursor diarahkan, supaya petugas tidak perlu menghafal nomor variabel.",
+      "Jawab-menjawab yang diunggah di e-Court (jawaban, replik, duplik, kesimpulan) dibaca otomatis: \"lisan atau tertulis\" terisi \"tertulis\" bila berkasnya ada, sedangkan rekonvensi, kesimpulan, dan pokok jawaban/eksepsi diusulkan beserta kutipan asalnya; jawaban, replik, dan duplik dapat disalin ke BAS. Usulan tidak menimpa isian petugas dan akan dinaikkan menjadi otomatis sesudah diukur atas berkas e-Court di server.",
+      "Pembacaan e-Court kini juga berjalan pada blangko \"Tolak - Tergugat Tidak Hadir Setelah Mediasi\" (cerai gugat dan cerai talak) dan \"Ekonomi Syariah Gugatan Sederhana - Sidang Kedua\".",
+      "Susun saksi pada dispensasi kawin punya tab kedua \"Keterangan anak, calon, dan orang tua\" (PERMA 5/2019): 69 pertanyaan, ayah dan ibu diperiksa terpisah, wali memakai rumusan \"anak yang saya asuh\", dan butir kehamilan tercentang sendiri bila posita menyebutnya - tertulis \"(menurut posita)\" dan centang petugas selalu menang; hasilnya disalin ke BAS dengan satu tombol.",
+      "Saksi yang diajukan Tergugat pada harta bersama dan kewarisan kini menerangkan versi Tergugat (harta sudah dibagi, dihibahkan, utang bersama, pisah harta, ahli waris lain, utang pewaris) lewat pilihan \"Diajukan oleh Penggugat/Tergugat\" per saksi.",
+      "Kalimat saksi dispensasi kawin, itsbat, dan asal usul anak tidak lagi menulis \"tahun tahun\" sesudah umur.",
+      "BAS cabut sesudah jawaban (Tergugat setuju/menolak) untuk Ekonomi Syariah acara biasa dipilih otomatis; isian bukti persetujuan istri pada BAS verstek Izin Poligami dan isian surat keterangan KUA pada itsbat mendapat nama yang jelas.",
+      "Tutorial \"Susun saksi\" dan \"Tampilan panel menyesuaikan layar\" kini tampil, dan panduan per peran memuat susun saksi, tampilan panel, dan jawab-menjawab e-Court.",
+    ],
+  },
+  {
+    versi: "1.205.6",
+    dirilis: "2026-10-18T16:00:00+08:00",
+    judul: "Susun saksi menurut keadaan perkara untuk semua jenis perkara, dan panel ekstensi yang menyesuaikan layar laptop sampai TV",
+    butir: [
+      "Tombol \"Susun saksi menurut keadaan perkara\" di tanya jawab ABT kini tersedia untuk 22 kumpulan jenis perkara: cerai gugat dan cerai talak beserta kumulasinya (hak asuh, nafkah, harta bersama, itsbat), itsbat nikah, dispensasi kawin, penetapan ahli waris, perwalian, harta bersama, kewarisan, wali adhal, wasiat, izin poligami, pembatalan dan pencegahan perkawinan, asal usul anak, hak asuh, Penguasaan Anak, nafkah anak, ekonomi syariah, pengangkatan anak, dan permohonan umum, supaya pertanyaan dan keterangan saksi tidak lagi hanya untuk perkara cerai.",
+      "Jenis perkara dikenali dari data perkara SIPP, bukan dari isian cerai di blangko, sehingga perkara bukan cerai tidak lagi mendapat pertanyaan cerai; jenis yang belum punya kumpulan pertanyaan tidak menampilkan tombol itu.",
+      "Keadaan perkara (verstek atau dihadiri, kumulasi, kehadiran pihak) dan tujuh jenis keterangan dapat dipilih per saksi: melihat langsung, mendengar, de auditu, tahu sebagian, tidak tahu, ragu, dan berbeda; dua sampai lima saksi, dan dua saksi tidak pernah mendapat kalimat yang sama pada satu pertanyaan, supaya maksud keterangan sama tetapi kata-katanya berbeda.",
+      "Keterangan ragu, sebagian, atau berbeda bertanda kuning dan tidak mengisi isian turunan di ABT; bila semua saksi ragu pada pokok yang wajib, muncul peringatan, supaya pembuktian tidak tampak lebih kuat dari keterangan sebenarnya.",
+      "Isian yang tidak terbaca dari data perkara disebut dengan namanya dan dibiarkan titik-titik untuk dilengkapi petugas, tidak pernah ditebak; rujukan hukum yang belum dicocokkan ke naskah resmi tidak dicetak.",
+      "Tombol cerai yang lama (Input ke ABT dan Susun keterangan saksi 1 & 2) tetap ada dan bekerja seperti sebelumnya.",
+      "Panel ekstensi menyesuaikan layar: panel SIPP menempel di kanan mulai lebar 900 px (laptop 1366 dengan zoom 125% tidak lagi tertutup), lebar panel dan ukuran huruf ikut layar sampai TV dan 4K, panel ABT paling lebar 36% layar sehingga tombolnya tidak terpotong, serta widget, draf H-7, dan popup ikut menyesuaikan; tidak ada tombol atau fitur yang dihilangkan.",
+      "Bilah tab panel SIPP digulir ke samping pada layar sempit, lampu SIPP/ALETA/e-Court turun ke baris kedua bila ruang kurang, dan judul panel di layar HP tidak lagi tertimpa tombol.",
+    ],
+  },
+  {
     versi: "1.205.5",
     dirilis: "2026-10-18T14:30:00+08:00",
     judul: "Penetapan ikrar talak dan e-Doc, form ikrar terisi saat perkara dibuka, riwayat login WhatsApp, dan blangko baru dikenali",

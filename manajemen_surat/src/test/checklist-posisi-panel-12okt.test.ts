@@ -326,12 +326,12 @@ describe("7. panel ALETA: sesi baru di KANAN ATAS dengan ukuran bawaan besar", (
     expect(panel.dataset.tinggiSendiri).toBeUndefined();
   });
 
-  it("ukuran bawaan dihitung dari layar: sepertiga lebar (520-760) dan 70% tinggi, tidak melewati layar", () => {
+  it("ukuran bawaan dihitung dari layar: sepertiga lebar (520-760, V2: 420 di bawah 1500px dan dikali pengali layar di atas 2200px) dan 70% tinggi, tidak melewati layar", () => {
     const tabel: Array<[number, number, { lebar: number; tinggi: number }]> = [
       [1920, 1080, { lebar: 634, tinggi: 756 }],
-      [1366, 768, { lebar: 520, tinggi: 538 }],
-      [2560, 1440, { lebar: 760, tinggi: 1008 }],
-      [800, 600, { lebar: 520, tinggi: 420 }],
+      [1366, 768, { lebar: 451, tinggi: 538 }],
+      [2560, 1440, { lebar: 845, tinggi: 1008 }],
+      [800, 600, { lebar: 420, tinggi: 420 }],
       [400, 300, { lebar: 376, tinggi: 276 }],
     ];
     for (const [lebar, tinggi, harapan] of tabel) {
@@ -419,7 +419,7 @@ describe("7. panel ALETA: sesi baru di KANAN ATAS dengan ukuran bawaan besar", (
 
     const baru = h.w.document.createElement("div");
     terapkan(baru, null);
-    expect([baru.style.width, baru.style.height]).toEqual(["520px", "538px"]);
+    expect([baru.style.width, baru.style.height]).toEqual(["451px", "538px"]);
     expect(baru.style.maxHeight).toBe("none");
     expect(baru.style.left).toBe(""); // tetap berjangkar kanan atas (CSS)
 

@@ -22,7 +22,7 @@ const generatedDate = new Intl.DateTimeFormat("id-ID", {
   timeZone: "Asia/Makassar",
 }).format(generatedAt);
 
-const version = process.env.PORTAL_ALETA_DOC_VERSION ?? "v1.1 - Juli 2026";
+const version = process.env.PORTAL_ALETA_DOC_VERSION ?? "v1.2 - Oktober 2026";
 const institution = process.env.PORTAL_ALETA_DOC_INSTITUTION ?? "Pengadilan Agama Donggala";
 
 function escapeHtml(value) {
@@ -99,7 +99,20 @@ const chapters = [
   "FAQ",
   "Glosarium",
   "Lampiran Checklist Operasional",
+  "Lampiran Fitur Terbaru per Peran (7 sampai 18 Oktober 2026)",
 ];
+
+// Ringkasan fitur per peran: satu sumber dengan halaman Panduan di aplikasi
+// (src/lib/user-guides.ts membaca berkas JSON yang sama).
+const fiturPeran = JSON.parse(fs.readFileSync(path.join(rootDir, "src", "lib", "panduan-fitur-peran.json"), "utf8"));
+
+function daftarTeks(items) {
+  return `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+}
+
+function mdDaftar(items, bernomor = false) {
+  return items.map((item, index) => `${bernomor ? `${index + 1}.` : "-"} ${item}`).join("\n");
+}
 
 const dashboardRows = [
   ["Kartu aplikasi", "Menampilkan aplikasi yang boleh dibuka pengguna.", "Klik kartu untuk masuk ke modul terkait."],
@@ -500,6 +513,22 @@ const htmlContent = [
     ${flow(["Input surat", "Validasi data", "Upload lampiran", "Simpan", "Disposisi", "Tindak lanjut", "Arsip"])}
     <p class="closing">Dokumen ini dibuat otomatis tanpa screenshot, tanpa gambar halaman aplikasi, tanpa placeholder loading, dan tanpa data sensitif.</p>
   `),
+  chapter(19, "Lampiran Fitur Terbaru per Peran (7 sampai 18 Oktober 2026)", "Ringkasan fitur rilis ekstensi 1.188 sampai 1.205 menurut peran. Tombol tanda tanya di tiap halaman ALETA membuka tutorial langkah demi langkah untuk fitur yang sama.", `
+    ${fiturPeran
+      .map(
+        (guide) => `<div class="panel">
+      <h3>${escapeHtml(guide.title)}</h3>
+      <p>${escapeHtml(guide.summary)}</p>
+      <h4>Langkah</h4>
+      ${steps(guide.steps.map(escapeHtml))}
+      <h4>Catatan</h4>
+      ${daftarTeks(guide.notes)}
+      <h4>Jika bermasalah</h4>
+      ${daftarTeks(guide.troubleshooting)}
+    </div>`
+      )
+      .join("\n")}
+  `),
 ].join("\n");
 
 const html = `<!doctype html>
@@ -639,6 +668,7 @@ const html = `<!doctype html>
       page-break-inside: avoid;
     }
     .card h3, .panel h3, .faq h3 { margin-top: 7px; font-size: 16px; }
+    .panel h4 { margin: 12px 0 4px; font-size: 13px; }
     .card p, .panel p, .faq p { color: var(--muted); }
     .tag {
       display: inline-block;
@@ -824,6 +854,28 @@ ${faqRows.map(([question, answer]) => `### ${question}\n\n${answer}`).join("\n\n
 
 ${mdTable(["Istilah", "Penjelasan"], glossaryRows)}
 
+## Lampiran Fitur Terbaru per Peran (7 sampai 18 Oktober 2026)
+
+${fiturPeran
+  .map(
+    (guide) => `### ${guide.title}
+
+${guide.summary}
+
+**Langkah**
+
+${mdDaftar(guide.steps, true)}
+
+**Catatan**
+
+${mdDaftar(guide.notes)}
+
+**Jika bermasalah**
+
+${mdDaftar(guide.troubleshooting)}`
+  )
+  .join("\n\n")}
+
 > File HTML/PDF berisi versi lengkap dengan uraian bab, checklist, callout, dan diagram alur teks.
 `;
 
@@ -857,7 +909,8 @@ async function main() {
     generatedDate,
     version,
     institution,
-    files: output,
+    // Jalur relatif terhadap manajemen_surat/, supaya laporan sama dari checkout mana pun.
+    files: Object.fromEntries(Object.entries(output).map(([nama, jalur]) => [nama, path.relative(rootDir, jalur).split(path.sep).join("/")])),
     pdfPageCount: pdf.getPageCount(),
     method: "Node.js membuat Markdown dan HTML konseptual tanpa screenshot. Playwright hanya merender HTML menjadi PDF.",
     focus: [
@@ -866,6 +919,7 @@ async function main() {
       "Manajemen Surat",
       "Fitur AI",
       "Admin / Pengaturan Admin",
+      "Fitur terbaru per peran (rilis 7 sampai 18 Oktober 2026)",
     ],
     intentionallyBrief: [
       "ALETA x SIPP",

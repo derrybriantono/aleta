@@ -12,15 +12,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { usePortal } from "@/lib/app-state";
 import { APP_VERSION } from "@/lib/patch-notes";
+import { golonganPengguna, type GolonganPeran } from "@/lib/matriks-peran";
 import { getEffectiveRoleId, getUserPositionLabel, getUserRoleBadge } from "@/lib/permissions";
 import { GUIDE_MODULE_LABELS, USER_GUIDES, type GuideAudience, type GuideModule, type UserGuide } from "@/lib/user-guides";
 
-function audiencesForUser(roleId: string | null | undefined, positionLabel: string): GuideAudience[] {
+function audiencesForUser(roleId: string | null | undefined, positionLabel: string, golongan: readonly GolonganPeran[] = []): GuideAudience[] {
   const normalizedPosition = positionLabel.toLowerCase();
   const audiences = new Set<GuideAudience>(["all", "pegawai"]);
 
   if (roleId === "super-admin") {
-    return ["all", "super_admin", "admin", "pimpinan", "hakim", "panitera", "jurusita", "ptsp", "pegawai"];
+    return ["all", "super_admin", "admin", "pimpinan", "hakim", "panitera", "jurusita", "kasir", "ptsp", "pegawai"];
   }
   if (roleId === "admin") audiences.add("admin");
   if (roleId === "ketua" || roleId === "wakil-ketua") audiences.add("pimpinan");
@@ -39,6 +40,14 @@ function audiencesForUser(roleId: string | null | undefined, positionLabel: stri
   if (normalizedPosition.includes("jurusita")) audiences.add("jurusita");
   if (normalizedPosition.includes("ptsp")) audiences.add("ptsp");
   if (normalizedPosition.includes("kasubag")) audiences.add("pimpinan");
+
+  // Golongan dari matriks peran memuat peran tambahan (kasir, mediator) dan
+  // jabatan yang tidak tercermin di nama jabatan.
+  if (golongan.includes("kasir") || normalizedPosition.includes("kasir") || normalizedPosition.includes("bendahara")) audiences.add("kasir");
+  if (golongan.includes("ptsp")) audiences.add("ptsp");
+  if (golongan.includes("jurusita")) audiences.add("jurusita");
+  if (golongan.some((g) => g === "panitera" || g === "panmud" || g === "pp" || g === "analis-perkara")) audiences.add("panitera");
+  if (golongan.includes("hakim")) audiences.add("hakim");
 
   return Array.from(audiences);
 }
@@ -67,7 +76,8 @@ function PanduanLengkap() {
   const roleLabel = getUserRoleBadge(currentUser);
   const positionLabel = getUserPositionLabel(currentUser, positions);
   const roleId = getEffectiveRoleId(currentUser);
-  const audiences = useMemo(() => audiencesForUser(roleId, positionLabel), [roleId, positionLabel]);
+  const golongan = useMemo(() => golonganPengguna(currentUser), [currentUser]);
+  const audiences = useMemo(() => audiencesForUser(roleId, positionLabel, golongan), [roleId, positionLabel, golongan]);
 
   const visibleGuides = useMemo(() => {
     return USER_GUIDES.filter((guide) => guideMatchesAudience(guide, audiences))

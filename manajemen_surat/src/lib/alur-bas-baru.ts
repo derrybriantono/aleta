@@ -531,7 +531,7 @@ function cabutSesudahJawaban(jenis: JenisBaru, m: MasukanBasBaru, agenda: string
     const ada = (k: string) => butir.some((b) => b.kode === k);
     id = jenis === "cerai-gugat" && ada("hak-asuh-anak") ? "alur-37" : ada("itsbat-nikah") ? "alur-36" : jenis === "cerai-gugat" ? "alur-08g" : "alur-08t";
   } else {
-    id = ({ hb: "alur-31", waris: "alur-33", "itsbat-kontensius": "alur-35", "hak-asuh": "alur-38", pembatalan: "alur-39", es: "alur-40", "penguasaan-anak": "alur-44", "nafkah-anak": "alur-46" } as Record<string, string>)[jenis] ?? "";
+    id = ({ hb: "alur-31", waris: "alur-33", "itsbat-kontensius": "alur-35", "hak-asuh": "alur-38", pembatalan: "alur-39", es: "alur-40", "es-biasa": "alur-43", "penguasaan-anak": "alur-44", "nafkah-anak": "alur-46" } as Record<string, string>)[jenis] ?? "";
   }
   if (!id) return null;
   return sikap === "setuju"
