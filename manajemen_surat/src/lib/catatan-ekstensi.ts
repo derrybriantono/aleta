@@ -57,6 +57,24 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.9",
+    dirilis: "2026-10-19T05:00:00+08:00",
+    judul: "Pertanyaan saksi lewat pop-up, hari libur tidak bisa dipilih, penetapan satu klik, antrean jam kerja, Status Perkara Seamless, prompt AI lengkap, dan audit SIPP",
+    butir: [
+      "Tombol kecil \"Pertanyaan saksi\" di Jadwal Sidang membuka panduan pertanyaan saksi sebagai jendela pop-up, dan hanya muncul bila perkara sedang atau sudah diperiksa (antrian disidang atau ditandai berjalan/diskors/selesai), supaya panduan tidak memenuhi layar saat perkara masih menunggu.",
+      "Checklist tampilan Jadwal Sidang (74 baris) dan Jadwal Mediasi (9 baris) kini memuat semua tombol dan fitur baru, dan keterangan teknis di tunda, putusan, Court Calendar, Kasir, serta Penetapan kembali diganti kalimat biasa.",
+      "Hari libur nasional, cuti bersama (SKB 3 Menteri 2026-2027), Sabtu, Minggu, dan libur tambahan di Pengaturan > Hari libur tidak dapat dipilih sebagai tanggal sidang, mediasi, putusan, Court Calendar, maupun PHS; usulan tanggal otomatis yang jatuh di hari libur digeser dengan pemberitahuan.",
+      "Penetapan di panel SIPP cukup satu tombol \"Tetapkan semua\": PMH, PPP, PJS, dan PHS diperiksa lalu dituliskan berurutan dengan alur yang sama seperti sebelumnya, dan penetapan dapat dijalankan Ketua, Wakil, Super Admin, Admin, serta petugas bersub-peran Operator, Petugas Meja, dan PTSP, tetap tercatat atas akun pejabat pilihan.",
+      "Tulisan otomatis ke SIPP di luar jam kerja (Senin-Kamis 07.30-16.00, Jumat sampai 16.30 WITA) dan di hari libur diantrekan lalu dikerjakan sendiri pada jam kerja berikutnya, dan tombol tulis manual di luar jam kerja memberi pilihan Antrekan atau Tulis sekarang, supaya jam input sama dengan kebiasaan petugas; tanggal peristiwa tidak berubah.",
+      "Jam dan jeda penetapan, tunda/putus, e-Doc, dan Kasir disamakan dengan pola petugas menurut audit data SIPP Donggala, dan tenggat ikrar talak 6 bulan dihitung sejak penetapan hari sidang ikrar (Pasal 70 ayat (6) UU 7/1989), bukan sejak BHT.",
+      "Penjagaan tanpa tanda ALETA diperluas ke unggahan salinan putusan ke e-Court, isian editor dan alamat/saksi di SIPP, header dan parameter permintaan, RTF yang dikirim ke ABT, serta Eviden SKP.",
+      "Status Perkara tampil Seamless sebagai bawaan (toggle Kompleks tetap ada): linimasa perkara, kotak Perlu tindakan dengan titik per kelompok, lima kelompok yang bisa dilipat, dan pencarian di dalam perkara, tanpa fitur yang hilang.",
+      "Prompt AI di Status Perkara lebih lengkap dengan 20 pilihan tujuan, centang \"Project ALETA AI PA CLAUDE ULTRA\" (tanpa role, mengikuti pola dan pemicu Project), nama asli untuk tujuan membuat putusan (NIK dan telepon tetap ditutup), saklar \"Ikuti format putusan tertentu\", dan saklar \"Sertakan putusan yang masih berbentuk blangko\" yang menandai bagian kosong di berkas .rtf hasil ABT.",
+      "Panel PTSP di ABT hanya menampilkan \"Isi dari SIPP & input ke ABT\", dan Pengaturan memuat halaman Hak akses per peran.",
+      "Ekstensi tidak lagi menumpuk galat saat ABT tidak terjangkau, tombol \"Simpan nama\" tidak membeku, dan kalimat galat tidak lagi berulang seperti \"X: X ...\".",
+    ],
+  },
+  {
     versi: "1.205.8",
     dirilis: "2026-10-19T00:30:00+08:00",
     judul: "Jawab-menjawab e-Court tertulis di tanya-jawab ABT, bukti dari e-Court, panduan saksi di Jadwal Sidang, dan blangko hibah, wakaf, mafqud",
