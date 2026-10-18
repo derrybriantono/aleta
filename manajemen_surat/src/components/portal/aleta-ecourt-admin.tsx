@@ -34,6 +34,7 @@ import { AletaEcourtNomorSk } from "@/components/portal/aleta-ecourt-nomor-sk";
 import { AletaEcourtJadwal } from "@/components/portal/aleta-ecourt-jadwal";
 /* === 12OKT-E === */
 import { AletaEcourtKtpPihak } from "@/components/portal/aleta-ecourt-ktp-pihak";
+import { AletaEcourtProfilProjectAi } from "@/components/portal/aleta-ecourt-profil-project-ai";
 /* === AKHIR 12OKT-E === */
 import { AletaEcourtTampilanEkstensi } from "@/components/portal/aleta-ecourt-tampilan-ekstensi";
 import { AletaEcourtTemplatHukum } from "@/components/portal/aleta-ecourt-templat-hukum";
@@ -185,6 +186,8 @@ export function AletaEcourtAdmin() {
           Sesudah penarikan: berkas KTP datang dari arsip yang ditarik di atas. Jangkar #ktp-pihak. */}
       <AletaEcourtKtpPihak />
       {/* === AKHIR 12OKT-E === */}
+      {/* Profil Project ALETA AI (18 Okt 2026): hanya tampil bagi Super Admin. */}
+      <AletaEcourtProfilProjectAi />
 
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">

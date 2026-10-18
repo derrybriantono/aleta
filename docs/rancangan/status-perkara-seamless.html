@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rancangan Status Perkara Seamless</title>
+<style>
+:root{
+  --bg:207 42% 93%;--fg:211 48% 10%;--card:205 38% 98%;--pri:201 70% 27%;--prifg:42 55% 97%;
+  --mut:205 31% 88%;--mutfg:212 21% 33%;--acc:198 64% 91%;--bd:204 25% 74%;--rad:.6rem;
+  --warn:38 92% 50%;--ok:152 60% 32%;--bad:350 70% 45%;
+}
+:root[data-tema="gelap"]{
+  --bg:212 46% 8%;--fg:210 40% 98%;--card:212 36% 11%;--pri:198 88% 70%;--prifg:212 46% 9%;
+  --mut:211 29% 16%;--mutfg:211 20% 78%;--acc:202 38% 19%;--bd:205 24% 29%;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font:14px/1.45 system-ui,"Segoe UI",Roboto,sans-serif;background:hsl(var(--bg));color:hsl(var(--fg))}
+button,input{font:inherit;color:inherit}
+h1,h2,h3,h4,h5,p{margin:0}
+.rancangan-bar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:space-between;padding:.5rem 1rem;background:hsl(var(--pri));color:hsl(var(--prifg));font-size:12px}
+.rancangan-bar a,.rancangan-bar button{color:inherit;background:transparent;border:1px solid currentColor;border-radius:999px;padding:.15rem .7rem;cursor:pointer;text-decoration:none;font-size:12px}
+.halaman{max-width:1760px;margin:0 auto;padding:12px 16px 40px}
+
+/* ---------- pembungkus Card "Status Perkara" ---------- */
+.kartu-luar{background:hsl(var(--card));border:1px solid hsl(var(--bd));border-radius:calc(var(--rad) + .3rem);padding:12px 14px}
+.judul-luar{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.judul-luar h2{font-size:18px;font-weight:650}
+.sakelar{display:inline-flex;border:1px solid hsl(var(--bd));border-radius:999px;padding:2px;background:hsl(var(--mut)/.6)}
+.sakelar button{border:0;background:transparent;padding:.28rem .85rem;border-radius:999px;cursor:pointer;font-size:12.5px;font-weight:600;color:hsl(var(--mutfg))}
+.sakelar button[aria-pressed="true"]{background:hsl(var(--pri));color:hsl(var(--prifg))}
+.cari-luar{display:flex;gap:.5rem;margin-top:10px;flex-wrap:wrap}
+.cari-luar input{flex:1;min-width:12rem;border:1px solid hsl(var(--bd));border-radius:var(--rad);padding:.4rem .6rem;background:hsl(var(--card))}
+.cari-luar .btn{white-space:nowrap}
+.tag-luar{margin-top:8px;display:flex;gap:.4rem;flex-wrap:wrap}
+
+/* ---------- komponen dasar ---------- */
+.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid hsl(var(--bd));background:hsl(var(--card));border-radius:var(--rad);padding:.3rem .65rem;font-size:12.5px;cursor:pointer;text-decoration:none;color:inherit}
+.btn:hover{background:hsl(var(--mut)/.6)}
+.btn.utama{background:hsl(var(--pri));color:hsl(var(--prifg));border-color:hsl(var(--pri));font-weight:600}
+.btn.utama:hover{filter:brightness(1.08)}
+.btn.kecil{padding:.2rem .5rem;font-size:12px}
+.lencana{display:inline-flex;align-items:center;border:1px solid hsl(var(--bd));border-radius:999px;padding:.12rem .6rem;font-size:12px;background:hsl(var(--mut)/.7);color:hsl(var(--mutfg))}
+.lencana.pri{background:hsl(var(--pri)/.14);color:hsl(var(--pri));border-color:hsl(var(--pri)/.3)}
+.lencana.warn{background:hsl(var(--warn)/.18);color:hsl(36 80% 28%);border-color:hsl(var(--warn)/.5)}
+.lencana.ok{background:hsl(var(--ok)/.14);color:hsl(var(--ok));border-color:hsl(var(--ok)/.4)}
+:root[data-tema="gelap"] .lencana.warn{color:hsl(40 90% 70%)}
+.redup{color:hsl(var(--mutfg))}
+.kecilteks{font-size:12px}
+.tebal{font-weight:650}
+table{border-collapse:collapse;width:100%;font-size:13px}
+.bagian td,.bagian th{min-width:4.5rem}
+th,td{text-align:left;padding:.3rem .5rem;border-bottom:1px solid hsl(var(--bd)/.6);vertical-align:top}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:hsl(var(--mutfg))}
+.kotak{border:1px solid hsl(var(--bd));border-radius:var(--rad);background:hsl(var(--card));padding:.45rem .7rem}
+.kotak .t{font-size:12px;color:hsl(var(--mutfg))}
+.kotak .v{font-weight:650}
+.ruang{display:grid;gap:8px}
+.ruang.dua{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ruang.tiga{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ruang.empat{grid-template-columns:repeat(4,minmax(0,1fr))}
+.centang{display:flex;gap:.5rem;align-items:flex-start;padding:.15rem 0}
+.peringatan{border:1px solid hsl(var(--warn)/.45);background:hsl(var(--warn)/.1);border-radius:var(--rad);padding:.5rem .75rem}
+.peringatan ul{margin:.25rem 0 0;padding:0;list-style:none}
+.peringatan li{display:flex;gap:.5rem;padding:.12rem 0}
+.peringatan li:before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:hsl(var(--warn));margin-top:.5rem}
+
+/* ---------- tampilan KOMPLEKS (sekarang) ---------- */
+#kompleks .kepala{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem;align-items:flex-start}
+#kompleks .kepala h3{font-size:18px}
+#kompleks .alat{display:flex;flex-direction:column;gap:.5rem;border:1px solid hsl(var(--bd));border-radius:var(--rad);background:hsl(var(--card));padding:.5rem .7rem}
+#kompleks .alat .baris{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
+#kompleks .alat input{flex:1;min-width:12rem;border:1px solid hsl(var(--bd));border-radius:.4rem;padding:.25rem .5rem;background:hsl(var(--card))}
+#kompleks>.isi>*+*{margin-top:12px}
+#kompleks .bagian-grid{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:1024px){#kompleks .bagian-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.bagian{border:1px solid hsl(var(--bd));border-radius:var(--rad);background:hsl(var(--card));scroll-margin-top:90px}
+.bagian>button.kep{display:flex;gap:.5rem;align-items:center;width:100%;text-align:left;border:0;background:transparent;padding:.5rem .75rem;cursor:pointer}
+.bagian>button.kep:hover{background:hsl(var(--mut)/.4)}
+.bagian .panah{width:.5rem;height:.5rem;border-right:2px solid hsl(var(--mutfg));border-bottom:2px solid hsl(var(--mutfg));transform:rotate(45deg);transition:transform .15s;flex:none;margin:0 .15rem .2rem 0}
+.bagian.ciut .panah{transform:rotate(-45deg)}
+.bagian h5{flex:1;font-size:12.5px;font-weight:650;text-transform:uppercase;letter-spacing:.04em;color:hsl(var(--mutfg))}
+.bagian .ket{font-size:12px;color:hsl(var(--mutfg))}
+.bagian{min-width:0}
+.bagian .badan{border-top:1px solid hsl(var(--bd));padding:.6rem .75rem;overflow-x:auto;min-width:0}
+.bagian.ciut .badan{display:none}
+
+/* ---------- tampilan SEAMLESS (baru) ---------- */
+#seamless .kepala-lekat{position:sticky;top:0;z-index:20;background:hsl(var(--bg)/.94);backdrop-filter:blur(8px);margin:0 -14px;padding:10px 14px 8px;border-bottom:1px solid hsl(var(--bd)/.7)}
+#seamless .k1{display:flex;gap:.75rem;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+#seamless .nomor{font-size:22px;font-weight:700;letter-spacing:-.01em;line-height:1.15}
+#seamless .jenis{color:hsl(var(--mutfg));font-size:13px}
+#seamless .aksi{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;position:relative}
+#seamless .lencana-baris{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.5rem}
+.menu-lainnya{position:absolute;right:0;top:calc(100% + 6px);min-width:17rem;z-index:30;background:hsl(var(--card));border:1px solid hsl(var(--bd));border-radius:var(--rad);box-shadow:0 12px 32px hsl(211 48% 10%/.22);padding:.35rem;display:none}
+.menu-lainnya.buka{display:block}
+.menu-lainnya button,.menu-lainnya a{display:flex;width:100%;gap:.5rem;align-items:center;border:0;background:transparent;text-align:left;padding:.4rem .55rem;border-radius:.4rem;cursor:pointer;text-decoration:none;color:inherit;font-size:13px}
+.menu-lainnya button:hover,.menu-lainnya a:hover{background:hsl(var(--mut)/.7)}
+.menu-lainnya hr{border:0;border-top:1px solid hsl(var(--bd)/.7);margin:.25rem 0}
+.menu-lainnya .judul-kecil{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:hsl(var(--mutfg));padding:.3rem .55rem 0}
+.menu-lainnya .riwayat-baris{display:flex;flex-wrap:wrap;gap:.3rem;padding:.2rem .55rem .4rem}
+.cari-dalam{position:relative;margin-top:.55rem}
+.cari-dalam input{width:100%;border:1px solid hsl(var(--bd));border-radius:999px;padding:.42rem .9rem .42rem 2rem;background:hsl(var(--card))}
+.cari-dalam:before{content:"";position:absolute;left:.8rem;top:.62rem;width:.6rem;height:.6rem;border:2px solid hsl(var(--mutfg));border-radius:50%}
+.cari-dalam kbd{position:absolute;right:.7rem;top:.4rem;font-size:11px;border:1px solid hsl(var(--bd));border-radius:.3rem;padding:0 .35rem;color:hsl(var(--mutfg))}
+.hasil-cari{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:25;background:hsl(var(--card));border:1px solid hsl(var(--bd));border-radius:var(--rad);box-shadow:0 12px 32px hsl(211 48% 10%/.22);padding:.3rem;display:none}
+.hasil-cari.buka{display:block}
+.hasil-cari button{display:flex;width:100%;justify-content:space-between;gap:1rem;border:0;background:transparent;padding:.4rem .6rem;border-radius:.4rem;cursor:pointer;text-align:left}
+.hasil-cari button:hover,.hasil-cari button.fokus{background:hsl(var(--mut)/.7)}
+.hasil-cari .kel{font-size:11.5px;color:hsl(var(--mutfg))}
+.hasil-cari mark{background:hsl(var(--warn)/.35);color:inherit;border-radius:.2rem}
+.rel{display:grid;gap:14px;margin-top:12px;grid-template-columns:minmax(0,1fr)}
+.rel>*{min-width:0}
+.rel-bawah{display:flex;flex-direction:column;gap:6px}
+.rel .rail{display:flex;flex-direction:column;gap:10px}
+.linimasa-wadah{border:1px solid hsl(var(--bd));border-radius:var(--rad);background:hsl(var(--card));padding:.65rem .8rem .5rem}
+.linimasa-wadah .judul-lm{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem}
+.linimasa{display:flex;gap:0;overflow-x:auto;padding:.2rem 0 .3rem;scroll-snap-type:x proximity}
+.lm{flex:1 0 5.6rem;min-width:5.6rem;text-align:center;position:relative;scroll-snap-align:center;cursor:pointer;padding:0 .15rem;background:transparent;border:0}
+.lm:before{content:"";position:absolute;top:.55rem;left:-50%;width:100%;height:3px;background:hsl(var(--bd));z-index:0}
+.lm:first-child:before{display:none}
+.lm.lalu:before,.lm.kini:before{background:hsl(var(--pri))}
+.lm .titik{position:relative;z-index:1;display:block;margin:0 auto;width:1.15rem;height:1.15rem;border-radius:50%;border:3px solid hsl(var(--bd));background:hsl(var(--card))}
+.lm.lalu .titik{background:hsl(var(--pri));border-color:hsl(var(--pri))}
+.lm.kini .titik{border-color:hsl(var(--pri));background:hsl(var(--card));box-shadow:0 0 0 4px hsl(var(--pri)/.2)}
+.lm.tunda .titik{background:hsl(var(--warn));border-color:hsl(var(--warn))}
+.lm .nm{display:block;font-size:12px;font-weight:650;margin-top:.3rem}
+.lm .tg{display:block;font-size:11.5px;color:hsl(var(--mutfg))}
+.lm:hover .nm{text-decoration:underline}
+.nav-kelompok{position:sticky;top:var(--tinggi-kepala,132px);z-index:15;display:flex;gap:.4rem;overflow-x:auto;padding:.35rem 0;background:hsl(var(--bg)/.94);backdrop-filter:blur(8px);scrollbar-width:none}
+.nav-kelompok::-webkit-scrollbar{display:none}
+.nav-kelompok button{flex:none;border:1px solid hsl(var(--bd));background:hsl(var(--card));border-radius:999px;padding:.28rem .8rem;font-size:12.5px;cursor:pointer;display:inline-flex;gap:.4rem;align-items:center}
+.nav-kelompok button[aria-current="true"]{background:hsl(var(--pri));color:hsl(var(--prifg));border-color:hsl(var(--pri))}
+.nav-kelompok .n{font-size:11px;opacity:.75}
+.nav-kelompok .titik-w{width:7px;height:7px;border-radius:50%;background:hsl(var(--warn))}
+.kelompok-daftar{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+.kelompok{border:1px solid hsl(var(--bd));border-radius:calc(var(--rad) + .2rem);background:hsl(var(--card));scroll-margin-top:calc(var(--tinggi-kepala,132px) + 54px)}
+.kelompok>.kk{display:flex;gap:.6rem;align-items:center;width:100%;text-align:left;border:0;background:transparent;padding:.65rem .85rem;cursor:pointer;border-radius:inherit}
+.kelompok>.kk:hover{background:hsl(var(--mut)/.4)}
+.kelompok .ikon{flex:none;width:1.9rem;height:1.9rem;border-radius:.55rem;display:grid;place-items:center;background:hsl(var(--pri)/.14);color:hsl(var(--pri));font-weight:700;font-size:13px}
+.kelompok .kt{flex:1;min-width:0}
+.kelompok .kt h4{font-size:15px;font-weight:650}
+.kelompok .kt p{font-size:12.5px;color:hsl(var(--mutfg));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kelompok .kpanah{width:.55rem;height:.55rem;border-right:2px solid hsl(var(--mutfg));border-bottom:2px solid hsl(var(--mutfg));transform:rotate(45deg);transition:transform .15s;margin-right:.3rem}
+.kelompok.ciut .kpanah{transform:rotate(-45deg)}
+.kelompok .kisi{border-top:1px solid hsl(var(--bd)/.8)}
+.kelompok.ciut .kisi{display:none}
+.kelompok .bagian{border:0;border-radius:0;background:transparent;border-bottom:1px solid hsl(var(--bd)/.55)}
+.kelompok .bagian:last-child{border-bottom:0;border-radius:0 0 var(--rad) var(--rad)}
+.kelompok .bagian>button.kep{padding:.5rem .85rem}
+.kelompok .bagian h5{font-size:13px;text-transform:none;letter-spacing:0;color:inherit}
+.kelompok .bagian .badan{border-top:0;padding:.1rem .85rem .75rem}
+.kelompok .bagian.sorot{animation:sorot 1.6s ease}
+@keyframes sorot{0%,60%{background:hsl(var(--warn)/.22)}100%{background:transparent}}
+.rail .kotak.besar .v{font-size:15px}
+.rail details.peringatan summary{cursor:pointer;font-weight:650;list-style:none}
+.rail details.peringatan summary::-webkit-details-marker{display:none}
+.angka-rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.angka-rail .kotak .v{font-size:17px}
+.baik{color:hsl(var(--ok))}.kurang{color:hsl(var(--bad))}.perhatian{color:hsl(36 85% 36%)}
+:root[data-tema="gelap"] .perhatian{color:hsl(40 90% 70%)}
+.catatan-rancangan{font-size:12px;color:hsl(var(--mutfg));margin-top:6px}
+
+@media(min-width:1100px){
+  #seamless .rel{grid-template-columns:minmax(0,1fr) 21rem;align-items:start}
+  #seamless .rel-atas{grid-column:1;grid-row:1}
+  #seamless .rel-bawah{grid-column:1;grid-row:2}
+  #seamless .rail{grid-column:2;grid-row:1 / span 2;position:sticky;top:calc(var(--tinggi-kepala,132px) + 12px)}
+}
+@media(min-width:1700px){
+  #seamless .rel{grid-template-columns:minmax(0,1fr) 25rem}
+  #seamless .kelompok-daftar{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+  #seamless .kelompok.lebar{grid-column:1/-1}
+}
+@media(max-width:639px){
+  .halaman{padding:8px 8px 32px}
+  .ruang.tiga,.ruang.empat,.ruang.dua{grid-template-columns:1fr 1fr}
+  #seamless .nomor{font-size:19px}
+  #seamless .kepala-lekat{position:static}
+  :root{--tinggi-kepala:0px!important}
+  #seamless .aksi .btn.teks-hp-sembunyi span.tk{display:none}
+  .menu-lainnya{position:fixed;left:8px;right:8px;top:auto;bottom:8px;min-width:0}
+  .kelompok .kt p{white-space:normal}
+}
+.tersembunyi{display:none!important}
+
+/* ---------- panel daftar fitur ---------- */
+.peta-fitur{margin-top:22px}
+.peta-fitur h2{font-size:17px;margin-bottom:6px}
+.peta-fitur .wadah{overflow-x:auto;border:1px solid hsl(var(--bd));border-radius:var(--rad);background:hsl(var(--card))}
+.peta-fitur td:first-child{font-weight:600}
+.peta-fitur td.nomor-f{width:2.4rem;color:hsl(var(--mutfg))}
+.peta-fitur .ada{color:hsl(var(--ok));font-weight:650;white-space:nowrap}
+.peta-fitur tr.kel td{background:hsl(var(--mut)/.6);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+</style>
+</head>
+<body>
+
+<div class="rancangan-bar">
+  <span><strong>Rancangan</strong> Status Perkara &mdash; Kompleks (sekarang) dan Seamless (baru). Data rekaan, bukan perkara asli.</span>
+  <span style="display:flex;gap:.4rem;flex-wrap:wrap">
+    <a href="#peta-fitur">Daftar fitur lama &rarr; Seamless</a>
+    <button type="button" id="tema">Gelap / Terang</button>
+  </span>
+</div>
+
+<main class="halaman">
+  <div class="kartu-luar">
+    <div class="judul-luar">
+      <h2>Status Perkara</h2>
+      <!-- Ujung kanan atas: pilihan tampilan, diingat per pengguna -->
+      <div class="sakelar" role="group" aria-label="Tampilan Status Perkara">
+        <button type="button" id="p-kompleks" aria-pressed="false">Kompleks</button>
+        <button type="button" id="p-seamless" aria-pressed="true">Seamless</button>
+      </div>
+    </div>
+    <div class="cari-luar">
+      <input value="0123" aria-label="Cari perkara" placeholder="419, nama pihak, kuasa, NIK, akta cerai…">
+      <button class="btn utama" type="button">Cari</button>
+      <button class="btn" type="button">Pencarian lanjutan</button>
+    </div>
+    <div class="tag-luar">
+      <span class="lencana">Tag perkara</span><span class="lencana pri">Perlu BAS</span><span class="lencana">Sidang pekan ini</span>
+    </div>
+  </div>
+
+  <div style="height:12px"></div>
+  <div class="kartu-luar" id="wadah-isi">
+    <section id="kompleks" class="tersembunyi" aria-label="Tampilan Kompleks"><div class="isi" id="isi-kompleks"></div></section>
+    <section id="seamless" aria-label="Tampilan Seamless"></section>
+  </div>
+
+  <section class="peta-fitur" id="peta-fitur">
+    <h2>Daftar fitur lama &rarr; letaknya di Seamless</h2>
+    <p class="catatan-rancangan" style="margin-bottom:8px">Tidak ada fitur yang dibuang. Kedua tampilan memakai komponen dan data yang sama; Seamless hanya mengatur ulang letaknya. &ldquo;Kompleks&rdquo; = susunan sekarang.</p>
+    <div class="wadah"><table id="tabel-fitur"></table></div>
+  </section>
+</main>
+
+<script>
+/* ===================== DATA REKAAN ===================== */
+const P = {
+  nomor: "0123/Pdt.G/2026/PA.Contoh",
+  jenis: "Cerai Gugat",
+  kini: "18 Okt 2026"
+};
+
+/* butir "Perlu tindakan" per kelompok (penanda kelompok ikut pada tiap butir) */
+const TINDAKAN = {A:0,B:2,C:0,D:0,E:0};
+const KELOMPOK = [
+  {id:"A", nama:"Pihak dan majelis", ikon:"P", ringkas:"2 pihak, 1 kuasa, majelis 3 hakim", bagian:["majelis","pihak"], lebar:true},
+  {id:"B", nama:"Jalannya perkara", ikon:"J", ringkas:"Sidang ke-3 berikutnya 21 Okt, 1 relaas belum kembali", bagian:["tahapan","sidang","kalender","relaas","mediasi","saksi"], lebar:true},
+  {id:"C", nama:"Putusan dan tindak lanjut", ikon:"U", ringkas:"Belum putus; aksi e-Court tersedia", bagian:["putusan-lengkap","putusan","ikrar","upaya","putusanEcourt","ecourtAksi"]},
+  {id:"D", nama:"Berkas, arsip, dan biaya", ikon:"B", ringkas:"Sisa panjar Rp 125.000, 6 berkas", bagian:["arsip","delegasi","berkas","biaya"]},
+  {id:"E", nama:"Penilaian dan analisis", ikon:"A", ringkas:"Nilai kelengkapan 82, perintah AI siap disusun", bagian:["rubrik","sk","analisa-lanjut","banding-perkara","prompt-putusan","analisa"], lebar:true}
+];
+
+const tabel = (kepala, baris) => `<table><thead><tr>${kepala.map(k=>`<th>${k}</th>`).join("")}</tr></thead><tbody>${baris.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+
+const BAGIAN = [
+ {k:"majelis", j:"Majelis dan petugas", ciut:false, html:`
+   ${tabel(["Jabatan","Nama"],[["Ketua Majelis","Drs. H. Contoh Satu, M.H. <a class='redup' href='#'>(rekap)</a>"],["Hakim Anggota 1","Dra. Contoh Dua, S.H."],["Hakim Anggota 2","Contoh Tiga, S.H.I."],["Panitera Pengganti","Contoh Empat, S.H."],["Jurusita Pengganti","Contoh Lima"]])}
+   <p class="kecilteks redup" style="margin-top:6px">Majelis ikrar talak tampil terpisah bila perkara sudah sampai ikrar. Nama membuka rekap orangnya di tab baru.</p>`},
+ {k:"pihak", j:"Para pihak", ket:"2 pihak, 1 kuasa", ciut:false, html:`
+   ${tabel(["Pihak","Nama","KTP","Kontak"],[
+     ["Penggugat","<button class='btn kecil'>Aminah binti Salim (rekaan)</button> <span class='lencana warn'>pernah berperkara 1x</span>","KTP-el, berlaku seumur hidup","<a class='btn kecil' href='#'>WhatsApp</a> <a class='btn kecil' href='#'>Telepon</a>"],
+     ["Tergugat","<button class='btn kecil'>Hamid bin Yusuf (rekaan)</button>","KTP hingga 12 Mei 2027 (NIK 7203********0001)","<a class='btn kecil' href='#'>WhatsApp</a>"],
+     ["Kuasa Penggugat","<button class='btn kecil'>Contoh Advokat, S.H.</button>","&mdash;","<a class='btn kecil' href='#'>Telepon</a>"]])}
+   <p class="kecilteks redup" style="margin-top:6px">Mengetuk nama membuka kartu identitas (satu per satu) lengkap dengan riwayat pihak dan perkara lain orang itu.</p>
+   <p style="margin-top:6px"><a class="btn kecil" href="#">Lihat sebaran perkara sejenis pada Peta Perkara</a></p>`},
+ {k:"tahapan", j:"Tahapan perkara dan waktu penginputannya", ciut:true, html:`
+   ${tabel(["Tahapan","Tanggal","Diinput"],[["Pendaftaran","02 Sep 2026","02 Sep, 09.12"],["Penetapan Majelis Hakim","03 Sep 2026","03 Sep, 10.40"],["Penetapan hari sidang","03 Sep 2026","03 Sep, 10.55"],["Pemeriksaan sidang","07 Okt 2026","07 Okt, 13.20"]])}
+   <p style="margin-top:6px"><a class="btn kecil" href="#">Unduh tabel</a></p>
+   <div class="kotak" style="margin-top:8px"><span class="t">Diagram batang waktu antar tahapan</span><div style="height:30px;margin-top:4px;background:linear-gradient(90deg,hsl(var(--pri)) 0 38%,hsl(var(--pri)/.55) 38% 72%,hsl(var(--pri)/.25) 72% 100%);border-radius:.3rem"></div></div>`},
+ {k:"sidang", j:"Perjalanan sidang", ciut:false, html:`
+   ${tabel(["No","Tanggal","Agenda","Hadir","Keadaan"],[
+     ["1","07 Okt 2026","Mediasi gagal; pembacaan gugatan","Penggugat, kuasa","<span class='lencana ok'>terlaksana</span>"],
+     ["2","14 Okt 2026","Jawaban Tergugat","Semua pihak","<span class='lencana ok'>terlaksana</span>"],
+     ["3","21 Okt 2026","Pembuktian saksi","&mdash;","<span class='lencana pri'>berikutnya</span>"]])}
+   <div class="kotak" style="margin-top:8px"><span class="t">Diagram perjalanan sidang</span> <span class="kecilteks">1 &rarr; 2 &rarr; 3 (jeda 7 hari, 7 hari)</span></div>
+   <p style="margin-top:6px"><a class="btn kecil" href="#">Unduh daftar sidang</a></p>`},
+ {k:"kalender", j:"Kalender perkara", ket:"seluruh peristiwa perkara ini pada satu bulan", ciut:true, html:`
+   <div class="ruang" style="grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px">
+     ${["Sen","Sel","Rab","Kam","Jum","Sab","Min"].map(h=>`<b class="redup">${h}</b>`).join("")}
+     ${Array.from({length:31},(_,i)=>`<span class="kotak" style="padding:.15rem;${[7,14,21].includes(i+1)?"background:hsl(var(--pri)/.18);font-weight:700":""}">${i+1}</span>`).join("")}
+   </div><p class="kecilteks redup" style="margin-top:6px">Oktober 2026 &middot; <button class="btn kecil">Kembali</button> <button class="btn kecil">Berikutnya</button></p>`},
+ {k:"relaas", j:"Relaas panggilan", ket:"1 dari 2 belum kembali", ciut:false, html:`
+   ${tabel(["Untuk sidang","Pihak","Jurusita","Cara","Keadaan"],[["3 (21 Okt)","Tergugat","Contoh Lima","Langsung","<span class='lencana warn'>belum kembali</span>"],["3 (21 Okt)","Penggugat","Contoh Lima","Kuasa","<span class='lencana ok'>sudah kembali</span>"]])}
+   <p class="kecilteks redup" style="margin-top:6px">Patut atau tidaknya panggilan dihitung dari tenggang tiga hari sebelum sidang.</p>
+   <p style="margin-top:6px"><a class="btn kecil" href="#">Unduh relaas</a></p>`},
+ {k:"mediasi", j:"Mediasi", ket:"gagal, 14 hari", ciut:true, html:`
+   ${tabel(["Mediator","Mulai","Selesai","Hasil"],[["Contoh Enam, S.H. <a href='#'>(rekap)</a>","07 Okt 2026","21 Okt 2026","tidak berhasil"]])}`},
+ {k:"saksi", j:"Saksi", ket:"2 saksi diajukan", ciut:false, html:`
+   ${tabel(["Saksi","Diajukan oleh","Hadir","Sumpah"],[["Saksi 1 (rekaan)","Penggugat","belum","belum"],["Saksi 2 (rekaan)","Penggugat","belum","belum"]])}
+   <div class="kotak" style="margin-top:8px">
+     <p class="tebal">Panduan pemeriksaan saksi <span class="lencana pri">sidang 21 Okt</span></p>
+     <p class="kecilteks redup">Agenda pembuktian saksi, penggugat hadir.</p>
+     <div class="centang"><input type="checkbox" checked> Identitas, hubungan dengan para pihak</div>
+     <div class="centang"><input type="checkbox"> Pengetahuan atas rumah tangga</div>
+     <div class="centang"><input type="checkbox"> Upaya mendamaikan</div>
+   </div>`},
+ {k:"putusan-lengkap", j:"Keterangan putusan", ciut:true, muncul:"sesudah putus", html:`<p class="redup">Muncul setelah perkara diputus: amar putusan, tanggal, biaya, dan keterangan tambahan. Belum ada pada perkara contoh ini.</p>`},
+ {k:"putusan", j:"Putusan dan tindak lanjutnya", ciut:true, muncul:"sesudah putus", html:`<p class="redup">Putusan, minutasi, pemberitahuan, kekuatan hukum tetap, dan akta cerai. Belum ada pada perkara contoh ini.</p>`},
+ {k:"ikrar", j:"Ikrar talak", ciut:true, muncul:"cerai talak", html:`<p class="redup">Khusus cerai talak: jadwal ikrar, amar penetapan ikrar talak, dan unduhan. Tidak ada pada cerai gugat.</p>`},
+ {k:"upaya", j:"Upaya hukum", ciut:true, html:`<p class="redup">Belum ada upaya hukum (muncul rinci bila ada banding, kasasi, atau PK).</p>`},
+ {k:"putusanEcourt", j:"Putusan di e-Court", ciut:true, muncul:"sesudah putus", html:`<p class="redup">Keadaan putusan di e-Court: tahap unggah, verifikasi, dan tanda tangan elektronik.</p>`},
+ {k:"ecourtAksi", j:"Aksi e-Court", ciut:false, html:`
+   <p class="kecilteks redup">Dokumen perkara ini di e-Court.</p>
+   ${tabel(["Dokumen","Keadaan",""],[["Jawaban Tergugat","<span class='lencana warn'>menunggu verifikasi</span>","<button class='btn kecil'>Verifikasi</button>"],["Replik","<span class='lencana ok'>terverifikasi</span>","<button class='btn kecil'>Lihat</button>"]])}
+   <p style="margin-top:6px"><button class="btn kecil">Tampilkan semua dokumen</button> <a class="btn kecil" href="#">Sambungkan sesi e-Court saya</a></p>`},
+ {k:"arsip", j:"Arsip berkas", ciut:true, html:`<p class="redup">Belum diarsipkan. Pilihan arsip fisik dan unduhan ada di sini.</p><p style="margin-top:6px"><a class="btn kecil" href="#">Unduh keterangan arsip</a></p>`},
+ {k:"delegasi", j:"Delegasi", ciut:true, muncul:"bila ada", html:`<p class="redup">Delegasi masuk dan keluar bila ada. Tidak ada pada perkara contoh ini.</p>`},
+ {k:"berkas", j:"Berkas", ket:"6 berkas", ciut:false, html:`
+   ${tabel(["Jenis","Berkas",""],[["Gugatan / permohonan","gugatan.pdf","<a class='btn kecil' href='#'>Unduh</a>"],["Relaas panggilan","relaas-sidang-2.pdf","<a class='btn kecil' href='#'>Unduh</a>"],["Lampiran lain","bukti-surat-1.pdf, bukti-surat-2.pdf","<a class='btn kecil' href='#'>Unduh</a>"]])}
+   <p style="margin-top:6px"><a class="btn kecil" href="#">Unduh seluruh berkas</a></p>`},
+ {k:"biaya", j:"Biaya perkara", ket:"sisa Rp 125.000", ciut:false, html:`
+   ${tabel(["Uraian","Jumlah"],[["Panjar","Rp 500.000"],["Pemakaian","Rp 375.000"],["Sisa","Rp 125.000"]])}
+   <div class="kotak" style="margin-top:8px"><span class="t">Diagram pai pemakaian</span> <span class="kecilteks">pendaftaran 20%, panggilan 45%, ATK 10%</span></div>`},
+ {k:"rubrik", j:"Penilaian kelengkapan perkara", ciut:true, html:`<p>Skor 82 dari 100, <b class="baik">baik</b>. Rubrik butir demi butir ada di sini.</p>`},
+ {k:"sk", j:"Penilaian SIPP menurut SK Dirjen Badilag 048/2024", ciut:true, html:`<p class="redup">Diagram batang per butir penilaian SK beserta alasan tiap butir.</p>`},
+ {k:"analisa-lanjut", j:"Analisis lanjutan", ket:"Empat puluh satu analisis; masing-masing dihitung hanya saat ditekan.", ciut:true, html:`<p class="redup">Daftar empat puluh satu analisis (mis. pola penundaan, pembanding perkara sejenis, perkara lain milik pihak). Tiap analisis dihitung hanya saat ditekan.</p><p style="margin-top:6px"><button class="btn kecil">Analisis pola penundaan</button> <button class="btn kecil">Analisis biaya</button> <button class="btn kecil">…</button></p>`},
+ {k:"banding-perkara", j:"Bandingkan dengan perkara lain", ciut:true, html:`<p class="redup">Menjajarkan perkara ini dengan perkara lain beserta selisihnya.</p>`},
+ {k:"prompt-putusan", j:"Susun perintah putusan untuk AI", ket:"Jadwal sidang, mediasi, saksi, kuasa, dan nama berkas terisi sendiri dari SIPP.", ciut:true, html:`
+   <p class="kecilteks redup">Tujuan:</p>
+   <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin:.2rem 0 .4rem"><span class="lencana pri">Draf pertimbangan</span><span class="lencana">Amar</span><span class="lencana">Analisis pembuktian</span><span class="lencana">Ringkasan</span></div>
+   <label class="centang"><input type="checkbox"> Apakah Anda menggunakan Project ALETA AI PA CLAUDE ULTRA?</label>
+   <p style="margin-top:6px"><button class="btn utama kecil">Susun dan salin</button></p>`},
+ {k:"analisa", j:"Analisa perkara", ciut:true, html:`<p class="redup">Garis waktu, jeda antar sidang, dan ketepatan input ke SIPP, disusun dari data yang sudah ada di layar ini.</p>`}
+];
+const byK = Object.fromEntries(BAGIAN.map(b=>[b.k,b]));
+
+const PERINGATAN = [
+  {p:"Relaas panggilan Tergugat untuk sidang 21 Okt belum kembali", s:"Sidang 3 hari lagi; tenggang panggilan patut 3 hari.", b:true},
+  {p:"Jawaban Tergugat belum diverifikasi di e-Court", s:"Diunggah 14 Okt.", b:true},
+  {p:"Nilai kelengkapan: tanggal penetapan hari sidang diinput terlambat", s:"", b:false}
+];
+
+const TIMELINE = [
+  {n:"Daftar", t:"02 Sep", s:"lalu", ke:"tahapan"},
+  {n:"Majelis", t:"03 Sep", s:"lalu", ke:"majelis"},
+  {n:"Mediasi", t:"07-21 Okt", s:"lalu", ke:"mediasi"},
+  {n:"Sidang 1", t:"07 Okt", s:"lalu", ke:"sidang"},
+  {n:"Sidang 2", t:"14 Okt", s:"lalu", ke:"sidang"},
+  {n:"Sidang 3", t:"21 Okt", s:"kini", ke:"sidang"},
+  {n:"Putusan", t:"belum", s:"", ke:"putusan"},
+  {n:"Minutasi", t:"belum", s:"", ke:"putusan"},
+  {n:"Akta cerai", t:"belum", s:"", ke:"putusan"},
+  {n:"Arsip", t:"belum", s:"", ke:"arsip"}
+];
+
+/* kata lain untuk pencarian dalam perkara */
+const KATA = {
+  majelis:"hakim ketua panitera jurusita petugas",
+  pihak:"penggugat tergugat kuasa advokat ktp nik kontak whatsapp telepon riwayat peta identitas",
+  tahapan:"waktu input diagram",
+  sidang:"jadwal agenda tunda penundaan hadir bas berita acara",
+  kalender:"bulan tanggal peristiwa",
+  relaas:"panggilan jurusita patut",
+  mediasi:"mediator damai",
+  saksi:"panduan pertanyaan pemeriksaan sumpah",
+  "putusan-lengkap":"amar pertimbangan",
+  putusan:"minutasi bht akta cerai pemberitahuan",
+  ikrar:"talak penetapan",
+  upaya:"banding kasasi pk",
+  putusanEcourt:"tte tanda tangan elektronik",
+  ecourtAksi:"e-court verifikasi dokumen jawaban replik duplik sesi",
+  arsip:"arsip fisik",
+  delegasi:"panggilan luar",
+  berkas:"unduh zip gugatan lampiran",
+  biaya:"panjar kasir sisa pai",
+  rubrik:"nilai skor kelengkapan",
+  sk:"dirjen badilag 048 penilaian",
+  "analisa-lanjut":"analisis empat puluh satu",
+  "banding-perkara":"bandingkan",
+  "prompt-putusan":"ai prompt claude perintah project",
+  analisa:"garis waktu jeda ketepatan"
+};
+
+/* ===================== RENDER ===================== */
+const e = s => document.querySelector(s);
+const sj = (id) => { try { return localStorage.getItem(id); } catch (_) { return null; } };
+const sm = (id, v) => { try { localStorage.setItem(id, v); } catch (_) {} };
+
+function htmlBagian(b, cls=""){
+  const ciut = sj("rancangan.ciut."+b.k);
+  const c = ciut === null ? b.ciut : ciut === "1";
+  return `<section class="bagian ${c?"ciut":""} ${cls}" id="bagian-${b.k}" data-k="${b.k}">
+    <button type="button" class="kep" aria-expanded="${!c}"><span class="panah"></span><h5>${b.j}</h5>${b.ket?`<span class="ket">${b.ket}</span>`:""}</button>
+    <div class="badan">${b.html}</div></section>`;
+}
+
+const lencana = `
+  <span class="lencana pri">e-Court</span><span class="lencana warn">Masih berjalan</span>
+  <span class="lencana">dengan kuasa</span>`;
+
+function renderKompleks(){
+  e("#isi-kompleks").innerHTML = `
+  <div class="kepala">
+    <div><h3>${P.nomor}</h3><p class="redup">${P.jenis}</p></div>
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap"><a class="btn" href="#">Unduh seluruh berkas</a><button class="btn">Cari perkara lain</button></div>
+  </div>
+  <div style="display:flex;gap:.35rem;flex-wrap:wrap">${lencana}</div>
+  <div class="ruang empat">
+    <div class="kotak"><div class="t">Lama perkara</div><div class="v perhatian">46 hari</div><div class="t">(47 hari daftar sampai hari ini, mediasi 14 hari)</div></div>
+    <div class="kotak"><div class="t">Nilai kelengkapan</div><div class="v baik">82</div><div class="t">dari 100 &middot; baik</div></div>
+    <div class="kotak"><div class="t">Sidang</div><div class="v">3</div><div class="t">1 kali ditunda</div></div>
+    <div class="kotak"><div class="t">Sisa panjar</div><div class="v">Rp 125.000</div><div class="t">panjar Rp 500.000</div></div>
+  </div>
+  <div class="alat">
+    <div class="baris">
+      <button class="btn">Salin ringkasan</button><button class="btn">Salin tautan</button><button class="btn">Cetak</button>
+      <button class="btn" data-aba="buka">Buka semua</button><button class="btn" data-aba="tutup">Tutup semua</button><button class="btn">Sematkan</button>
+    </div>
+    <div class="baris"><input placeholder="Cari bagian — relaas, biaya, putusan…" aria-label="Cari bagian"><a class="btn" href="#">Buka SIPP</a></div>
+    <div class="baris" style="border-top:1px solid hsl(var(--bd)/.6);padding-top:.4rem"><button class="btn kecil">Pin 0098/Pdt.P/2026/PA.Contoh</button><button class="btn kecil redup">0101/Pdt.G/2026/PA.Contoh</button></div>
+  </div>
+  <div class="ruang tiga">
+    <div class="kotak"><div class="t">Keadaan</div><div class="v">Pembuktian</div><div class="t">46 hari dari batas 150 hari SEMA</div></div>
+    <div class="kotak"><div class="t">Sidang berikutnya</div><div class="v">21 Okt 2026, 09.00 (3 hari lagi)</div></div>
+    <div class="kotak"><div class="t">Majelis</div><div class="v">Ketua Contoh Satu + 2 anggota</div><div class="t">PP: Contoh Empat</div></div>
+  </div>
+  <div class="peringatan"><p class="tebal">Perlu tindakan — ${PERINGATAN.length} butir</p><ul>${PERINGATAN.map(x=>`<li><span>${x.p}${x.s?`<br><span class="kecilteks redup">${x.s}</span>`:""}</span></li>`).join("")}</ul></div>
+  <div class="bagian-grid">${BAGIAN.map(b=>htmlBagian(b)).join("")}</div>`;
+}
+
+function renderSeamless(){
+  e("#seamless").innerHTML = `
+  <div class="kepala-lekat" id="kepala-lekat">
+    <div class="k1">
+      <div>
+        <h3 class="nomor">${P.nomor}</h3>
+        <p class="jenis">${P.jenis} &middot; Pembuktian &middot; sidang ke-3 berikutnya <b>21 Okt</b></p>
+      </div>
+      <div class="aksi">
+        <a class="btn utama" href="#" title="Unduh seluruh berkas">Unduh seluruh berkas</a>
+        <button class="btn" type="button">Salin ringkasan</button>
+        <button class="btn" type="button" id="lainnya" aria-haspopup="menu" aria-expanded="false">Lainnya &#9662;</button>
+        <div class="menu-lainnya" id="menu-lainnya" role="menu">
+          <button type="button" role="menuitem">Salin tautan</button>
+          <button type="button" role="menuitem">Cetak</button>
+          <a role="menuitem" href="#">Buka SIPP</a>
+          <button type="button" role="menuitem">Sematkan perkara ini</button>
+          <hr>
+          <button type="button" role="menuitem" data-aba="buka">Buka semua bagian</button>
+          <button type="button" role="menuitem" data-aba="tutup">Tutup semua bagian</button>
+          <hr>
+          <p class="judul-kecil">Sematan dan riwayat</p>
+          <div class="riwayat-baris"><button class="btn kecil" style="width:auto">0098/Pdt.P/2026/PA.Contoh</button><button class="btn kecil" style="width:auto">0101/Pdt.G/2026/PA.Contoh</button></div>
+          <hr>
+          <button type="button" role="menuitem">Cari perkara lain</button>
+        </div>
+      </div>
+    </div>
+    <div class="lencana-baris">${lencana}</div>
+    <div class="cari-dalam">
+      <input id="cari-dalam" autocomplete="off" aria-label="Cari di perkara ini" placeholder="Cari di perkara ini — bagian, pihak, KTP, relaas, panjar…"><kbd>/</kbd>
+      <div class="hasil-cari" id="hasil-cari"></div>
+    </div>
+  </div>
+
+  <div class="rel">
+    <div class="rel-atas">
+      <div class="linimasa-wadah">
+        <div class="judul-lm"><b>Linimasa perkara</b><span class="kecilteks redup">ketuk satu titik untuk melompat ke bagiannya</span></div>
+        <div class="linimasa" id="linimasa">${TIMELINE.map(x=>`<button type="button" class="lm ${x.s}" data-ke="${x.ke}"><span class="titik"></span><span class="nm">${x.n}</span><span class="tg">${x.t}</span></button>`).join("")}</div>
+      </div>
+    </div>
+    <aside class="rail" aria-label="Ringkasan dan tindakan">
+      <details class="peringatan" open><summary>Perlu tindakan &mdash; ${PERINGATAN.length} butir</summary><ul>${PERINGATAN.map(x=>`<li><span>${x.p}${x.s?`<br><span class="kecilteks redup">${x.s}</span>`:""}</span></li>`).join("")}</ul></details>
+      <div class="kotak besar"><div class="t">Keadaan</div><div class="v">Pembuktian</div><div class="t">46 hari dari batas 150 hari SEMA</div></div>
+      <div class="kotak besar"><div class="t">Sidang berikutnya</div><div class="v">21 Okt 2026, 09.00</div><div class="t">3 hari lagi</div></div>
+      <div class="kotak besar"><div class="t">Majelis</div><div class="v">Ketua Contoh Satu + 2 anggota</div><div class="t">PP: Contoh Empat</div></div>
+      <div class="angka-rail">
+        <div class="kotak"><div class="t">Lama perkara</div><div class="v perhatian">46 hari</div><div class="t">47 hari daftar, mediasi 14 hari</div></div>
+        <div class="kotak"><div class="t">Nilai kelengkapan</div><div class="v baik">82</div><div class="t">dari 100 &middot; baik</div></div>
+        <div class="kotak"><div class="t">Sidang</div><div class="v">3</div><div class="t">1 kali ditunda</div></div>
+        <div class="kotak"><div class="t">Sisa panjar</div><div class="v">Rp 125.000</div><div class="t">panjar Rp 500.000</div></div>
+      </div>
+      <p class="catatan-rancangan">Di HP kolom ini turun tepat di bawah linimasa dan menjadi satu kolom.</p>
+    </aside>
+    <div class="rel-bawah">
+      <div class="nav-kelompok" id="nav-kelompok">${KELOMPOK.map((g,i)=>`<button type="button" data-g="${g.id}" aria-current="${i===0}">${g.nama}<span class="n">${g.bagian.length}</span>${TINDAKAN[g.id]?'<span class="titik-w" title="Ada yang perlu tindakan"></span>':""}</button>`).join("")}</div>
+      <div class="kelompok-daftar" id="kelompok-daftar" style="margin-top:6px">
+        ${KELOMPOK.map(g=>{
+          const c = sj("rancangan.kel."+g.id)==="1";
+          return `<section class="kelompok ${c?"ciut":""} ${g.lebar?"lebar":""}" id="kel-${g.id}" data-g="${g.id}">
+            <button type="button" class="kk" aria-expanded="${!c}"><span class="ikon">${g.ikon}</span><span class="kt"><h4>${g.nama}${TINDAKAN[g.id]?` <span class="lencana warn" style="font-size:11px;padding:0 .45rem;vertical-align:middle">${TINDAKAN[g.id]} perlu tindakan</span>`:""}</h4><p>${g.ringkas}</p></span><span class="kpanah"></span></button>
+            <div class="kisi">${g.bagian.map(k=>htmlBagian(byK[k])).join("")}</div></section>`}).join("")}
+      </div>
+    </div>
+  </div>`;
+  pasangSeamless();
+}
+
+function ukurKepala(){
+  const k = e("#kepala-lekat"); if(!k) return;
+  document.documentElement.style.setProperty("--tinggi-kepala", k.offsetHeight+"px");
+}
+
+function pasangSeamless(){
+  // lipatan kelompok
+  document.querySelectorAll("#seamless .kelompok>.kk").forEach(t=>t.addEventListener("click",()=>{
+    const s=t.parentElement; s.classList.toggle("ciut"); t.setAttribute("aria-expanded",!s.classList.contains("ciut"));
+    sm("rancangan.kel."+s.dataset.g, s.classList.contains("ciut")?"1":"0");
+  }));
+  // chip kelompok
+  document.querySelectorAll("#nav-kelompok button").forEach(t=>t.addEventListener("click",()=>{
+    const s=e("#kel-"+t.dataset.g); s.classList.remove("ciut"); s.scrollIntoView({behavior:"smooth",block:"start"});
+    document.querySelectorAll("#nav-kelompok button").forEach(x=>x.setAttribute("aria-current",x===t));
+  }));
+  // menu Lainnya
+  const m=e("#menu-lainnya"), tb=e("#lainnya");
+  tb.addEventListener("click",ev=>{ev.stopPropagation(); m.classList.toggle("buka"); tb.setAttribute("aria-expanded",m.classList.contains("buka"));});
+  document.addEventListener("click",ev=>{ if(!m.contains(ev.target)) m.classList.remove("buka"); });
+  // linimasa
+  document.querySelectorAll("#linimasa .lm").forEach(t=>t.addEventListener("click",()=>loncat(t.dataset.ke)));
+  // pencarian dalam perkara
+  const ci=e("#cari-dalam"), hs=e("#hasil-cari");
+  const kelDari = k => KELOMPOK.find(g=>g.bagian.includes(k)).nama;
+  ci.addEventListener("input",()=>{
+    const q=ci.value.trim().toLowerCase();
+    if(!q){hs.classList.remove("buka");return;}
+    const hit=BAGIAN.filter(b=>(b.j+" "+(KATA[b.k]||"")).toLowerCase().includes(q)).slice(0,8);
+    hs.innerHTML = hit.length ? hit.map((b,i)=>{
+      const j=b.j.replace(new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","ig"),"<mark>$1</mark>");
+      const via = b.j.toLowerCase().includes(q) ? "" : `<span class="kel">cocok: ${q}</span>`;
+      return `<button type="button" data-k="${b.k}" class="${i===0?"fokus":""}"><span>${j}</span><span class="kel">${kelDari(b.k)} ${via}</span></button>`}).join("")
+      : `<p class="redup" style="padding:.5rem .7rem">Tidak ada bagian yang cocok.</p>`;
+    hs.classList.add("buka");
+  });
+  hs.addEventListener("click",ev=>{const b=ev.target.closest("button[data-k]"); if(b){loncat(b.dataset.k); ci.value=""; hs.classList.remove("buka");}});
+  ci.addEventListener("keydown",ev=>{ if(ev.key==="Enter"){const b=hs.querySelector("button[data-k]"); if(b){loncat(b.dataset.k); ci.value=""; hs.classList.remove("buka");}} if(ev.key==="Escape"){hs.classList.remove("buka");ci.blur();} });
+  document.addEventListener("keydown",ev=>{ if(ev.key==="/" && document.activeElement.tagName!=="INPUT"){ev.preventDefault(); ci.focus();} });
+  pasangBagian("#seamless");
+  ukurKepala();
+}
+
+function pasangBagian(akar){
+  document.querySelectorAll(akar+" .bagian>button.kep").forEach(t=>t.addEventListener("click",()=>{
+    const s=t.parentElement; s.classList.toggle("ciut"); t.setAttribute("aria-expanded",!s.classList.contains("ciut"));
+    sm("rancangan.ciut."+s.dataset.k, s.classList.contains("ciut")?"1":"0");
+  }));
+  document.querySelectorAll(akar+" [data-aba]").forEach(t=>t.addEventListener("click",()=>{
+    const tutup=t.dataset.aba==="tutup";
+    document.querySelectorAll(akar+" .bagian").forEach(s=>{s.classList.toggle("ciut",tutup); s.querySelector(".kep").setAttribute("aria-expanded",!tutup);});
+    if(!tutup) document.querySelectorAll(akar+" .kelompok").forEach(s=>s.classList.remove("ciut"));
+    const m=e("#menu-lainnya"); if(m) m.classList.remove("buka");
+  }));
+}
+
+function loncat(k){
+  const s=document.querySelector("#seamless #bagian-"+k); if(!s) return;
+  const kel=s.closest(".kelompok"); kel.classList.remove("ciut");
+  s.classList.remove("ciut"); s.querySelector(".kep").setAttribute("aria-expanded","true");
+  setTimeout(()=>{ s.scrollIntoView({behavior:"smooth",block:"start"}); s.classList.remove("sorot"); void s.offsetWidth; s.classList.add("sorot"); },60);
+}
+
+/* ===================== PILIHAN TAMPILAN ===================== */
+function pilih(mode, simpan=true){
+  e("#kompleks").classList.toggle("tersembunyi", mode!=="kompleks");
+  e("#seamless").classList.toggle("tersembunyi", mode!=="seamless");
+  e("#p-kompleks").setAttribute("aria-pressed", mode==="kompleks");
+  e("#p-seamless").setAttribute("aria-pressed", mode==="seamless");
+  if(simpan) sm("rancangan.tampilan", mode);
+  if(mode==="seamless") setTimeout(ukurKepala,30);
+}
+e("#p-kompleks").onclick=()=>pilih("kompleks");
+e("#p-seamless").onclick=()=>pilih("seamless");
+e("#tema").onclick=()=>{const d=document.documentElement; const g=d.dataset.tema==="gelap"; if(g) delete d.dataset.tema; else d.dataset.tema="gelap"; sm("rancangan.tema", g?"terang":"gelap");};
+if(sj("rancangan.tema")==="gelap") document.documentElement.dataset.tema="gelap";
+
+renderKompleks(); pasangBagian("#kompleks");
+renderSeamless();
+const param = new URLSearchParams(location.search).get("tampilan");
+pilih(param==="kompleks"||param==="seamless" ? param : (sj("rancangan.tampilan")||"seamless"), !param);
+window.addEventListener("resize",ukurKepala);
+
+/* ===================== DAFTAR FITUR LAMA -> SEAMLESS ===================== */
+const FITUR = [
+ ["Kepala",null,null],
+ ["Nomor perkara dan jenis (termasuk kumulasi)","Kepala, kiri atas","Kepala lekat: nomor besar, jenis, keadaan, dan sidang berikutnya"],
+ ["Unduh seluruh berkas (ZIP, JSON, CSV)","Kepala, kanan","Kepala lekat: tombol utama yang menonjol"],
+ ["Cari perkara lain","Kepala, kanan","Menu Lainnya, paling bawah"],
+ ["Lencana: e-Court / perkara biasa, putus + tanggal + status, masih berjalan, verstek, ghaib, mafqud (terindikasi), penanda instansi, kumulasi, dengan/tanpa kuasa","Baris lencana","Baris lencana di bawah nomor; tooltip sumber ghaib/mafqud tetap"],
+ ["Rincian kumulasi; rincian jawaban, sita, dan eksekusi (sesuai saklar)","Di bawah lencana","Di bawah linimasa, sebelum kelompok (sesuai saklar yang sama)"],
+ ["Ringkasan",null,null],
+ ["Angka: Lama perkara, Nilai kelengkapan, Sidang, Sisa panjar","Jajaran empat angka","Kolom ringkasan (kanan di laptop/TV, di bawah linimasa di HP)"],
+ ["Kartu Keadaan, Sidang berikutnya, Majelis + panitera","Tiga kartu","Kolom ringkasan; Sidang berikutnya juga di kepala"],
+ ["Perlu tindakan (semua butir beserta sebab)","Kotak kuning","Kolom ringkasan, terbuka bawaan; titik kuning dan lencana pada kelompok yang memuat butirnya"],
+ ["Bilah alat",null,null],
+ ["Salin ringkasan","Bilah alat","Kepala, tombol kedua"],
+ ["Salin tautan SIPP / tautan ALETA (dengan cadangan salin tangan)","Bilah alat","Menu Lainnya"],
+ ["Cetak (lembar kertas)","Bilah alat","Menu Lainnya"],
+ ["Buka semua / Tutup semua","Bilah alat","Menu Lainnya (juga membuka lipatan kelompok)"],
+ ["Sematkan perkara; sematan dan riwayat perkara","Bilah alat","Menu Lainnya, bagian Sematan dan riwayat"],
+ ["Buka SIPP (atau beranda SIPP, Coba lagi)","Bilah alat","Menu Lainnya; pesan alasan tetap tampil di dalam menu"],
+ ["Cari bagian lalu loncat","Bilah alat","Kotak Cari di perkara ini (tekan /): judul bagian ditambah kata lain seperti KTP, panjar, saksi"],
+ ["Linimasa",null,null],
+ ["Garis waktu, jeda antar sidang, ketepatan input ke SIPP","Analisa perkara (bawah)","Tetap di Analisa perkara; linimasa baru di atas hanya jalan pintas"],
+ ["Majelis dan petugas; majelis ikrar; tautan rekap petugas dan akses Beban Kinerja sesuai hak","Bagian Majelis dan petugas","Kelompok Pihak dan majelis"],
+ ["Para pihak: nama membuka kartu identitas, KTP + masa berlaku, riwayat pihak, kontak, Peta Perkara","Bagian Para pihak","Kelompok Pihak dan majelis"],
+ ["Tahapan perkara dan waktu input + diagram + unduh","Bagian Tahapan","Kelompok Jalannya perkara"],
+ ["Perjalanan sidang + diagram + nomor sidang + unduh","Bagian Perjalanan sidang","Kelompok Jalannya perkara"],
+ ["Kalender perkara (dan kalender pengadilan)","Bagian Kalender","Kelompok Jalannya perkara"],
+ ["Relaas panggilan (patut/tidak, cara, jurusita)","Bagian Relaas","Kelompok Jalannya perkara"],
+ ["Mediasi (mediator tertaut)","Bagian Mediasi","Kelompok Jalannya perkara"],
+ ["Saksi + Panduan pemeriksaan saksi (centang, agenda, nama saksi)","Bagian Saksi","Kelompok Jalannya perkara, bagian Saksi"],
+ ["Keterangan putusan; Putusan dan tindak lanjutnya; Ikrar talak; Upaya hukum; Putusan di e-Court","Lima bagian","Kelompok Putusan dan tindak lanjut"],
+ ["Aksi e-Court (verifikasi dokumen, TTE putusan, sambung sesi)","Bagian Aksi e-Court","Kelompok Putusan dan tindak lanjut"],
+ ["Arsip berkas; Delegasi; Berkas + unduh","Tiga bagian","Kelompok Berkas, arsip, dan biaya"],
+ ["Biaya perkara + diagram pai (dasar kasir)","Bagian Biaya","Kelompok Berkas, arsip, dan biaya"],
+ ["Penilaian kelengkapan; Penilaian SK Dirjen 048/2024","Dua bagian","Kelompok Penilaian dan analisis"],
+ ["Analisis lanjutan (41 analisis, hitung saat ditekan)","Bagian Analisis lanjutan","Kelompok Penilaian dan analisis"],
+ ["Bandingkan dengan perkara lain","Bagian Bandingkan","Kelompok Penilaian dan analisis"],
+ ["Prompt AI putusan (Susun perintah putusan untuk AI)","Bagian Susun perintah","Kelompok Penilaian dan analisis"],
+ ["Analisa perkara","Bagian Analisa","Kelompok Penilaian dan analisis"],
+ ["Perilaku",null,null],
+ ["Ciut/buka tiap bagian, diingat per peramban","Tiap bagian","Tiap bagian dalam kelompok memakai kunci simpan yang sama; ditambah lipatan kelompok"],
+ ["Hak per peran (bagian, tombol, unduhan yang tampil)","Sesuai peran","Tidak berubah: komponen dan pemeriksaan hak yang sama"],
+ ["Pencarian perkara, pencarian lanjutan, tag perkara, hasil pencarian","Kartu atas","Sama persis di kedua tampilan"],
+ ["Cetak kertas","Lembar cetak","Mencetak ke susunan yang sama dengan Kompleks"]
+];
+(function(){
+  const t=e("#tabel-fitur");
+  let n=0;
+  t.innerHTML = "<thead><tr><th>#</th><th>Fitur lama</th><th>Letak di Kompleks</th><th>Letak di Seamless</th><th>Status</th></tr></thead><tbody>"+
+    FITUR.map(r=>r[1]===null ? `<tr class="kel"><td colspan="5">${r[0]}</td></tr>` : `<tr><td class="nomor-f">${++n}</td><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td class="ada">ada</td></tr>`).join("")+"</tbody>";
+})();
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,10 +14,36 @@ import {
   isianKurang,
   pilihanAwal,
   sebutanPihak,
-  susunPrompt,
   type BahanPrompt,
   type PilihanPrompt,
 } from "@/lib/prompt-putusan";
+import { bacaParagrafBerkas, teksDariParagraf } from "@/lib/berkas-ke-paragraf";
+import { bacaPdfPeramban } from "@/lib/dialog-sisa-blangko";
+import {
+  bahanDrafDariBerkas,
+  kalimatJumlahKosong,
+} from "@/lib/draf-blangko-prompt";
+import { useSimpananPeramban } from "@/lib/use-simpanan-peramban";
+import {
+  CATATAN_HAPUS_DATA,
+  PILIHAN_META,
+  TUJUAN_AI,
+  samarkanContohFormat,
+  type DrafBlangkoBahan,
+  isianKurangAi,
+  masukanAwal,
+  susunPromptAi,
+  tujuanDari,
+  type KunciMeta,
+  type KunciTujuan,
+  type MasukanAi,
+} from "@/lib/prompt-ai";
+import {
+  NAMA_PROJECT_AI,
+  labelVersiProfil,
+  profilEfektif,
+  type ProfilProjectAi,
+} from "@/lib/profil-project-ai";
 import { cn } from "@/lib/utils";
 
 /**
@@ -115,6 +141,71 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
   const [bahan, setBahan] = useState<BahanPrompt | null>(null);
   const [pilihan, setPilihan] = useState<PilihanPrompt | null>(null);
   const [tersalin, setTersalin] = useState(false);
+  // Dua saklar fitur baru, diingat per pengguna: format putusan tertentu (bawaan MATI) dan
+  // putusan yang masih berbentuk blangko (bawaan NYALA). Format yang disimpan pengguna juga per pengguna.
+  const [drafBerkas, setDrafBerkas] = useState<(DrafBlangkoBahan & { jumlahKosong?: number }) | null>(null);
+  const [drafAleta, setDrafAleta] = useState<DrafBlangkoBahan[]>([]);
+  const [galatBerkas, setGalatBerkas] = useState("");
+  const [namaFormatBaru, setNamaFormatBaru] = useState("");
+  const pengguna = usePenggunaAktifOpsional();
+  const kunciSimpanCentang = `aleta.prompt-ai.pakai-project.${pengguna?.id ?? "tamu"}`;
+  // Pilihan centang diingat per pengguna (per peramban), bukan per perkara: yang
+  // memakai Project hampir pasti memakainya di perkara berikutnya juga.
+  const bacaCentang = (k: string) => {
+    try {
+      return window.localStorage.getItem(k) === "1";
+    } catch {
+      return false; // peramban yang memblokir penyimpanan tetap dapat memakai layar ini
+    }
+  };
+  const [masukan, setMasukan] = useState<MasukanAi>(() => ({ ...masukanAwal(), pakaiProject: bacaCentang(kunciSimpanCentang) }));
+  const idPengguna = pengguna?.id ?? "tamu";
+  const [saklar, setSaklar] = useSimpananPeramban(`aleta.prompt-ai.saklar.${idPengguna}`, { ikutiFormat: false, sertakanBlangko: true });
+  const [formatSaya, setFormatSaya] = useSimpananPeramban<Array<{ id: string; nama: string; teks: string }>>(
+    `aleta.prompt-ai.format-saya.${idPengguna}`,
+    []
+  );
+  const [kunciDibaca, setKunciDibaca] = useState(kunciSimpanCentang);
+  if (kunciDibaca !== kunciSimpanCentang) {
+    // Pengguna aktif berganti: pilihannya dibaca ulang saat render, bukan lewat efek.
+    setKunciDibaca(kunciSimpanCentang);
+    setMasukan((lama) => ({ ...lama, pakaiProject: bacaCentang(kunciSimpanCentang) }));
+  }
+  const [profil, setProfil] = useState<ProfilProjectAi>(() => profilEfektif(null));
+
+  // Profil Project: yang diisi Super Admin, atau bawaan V.4.5 bila belum/gagal.
+  useEffect(() => {
+    let batal = false;
+    void (async () => {
+      try {
+        const jawab = await fetch(apiPath("/api/aleta-ecourt/profil-project-ai"), { cache: "no-store" });
+        const luar = (await jawab.json()) as { data?: { profil?: ProfilProjectAi } } | null;
+        if (!batal && luar?.data?.profil) setProfil(profilEfektif(luar.data.profil));
+      } catch {
+        /* tanpa profil dari server, bawaan V.4.5 yang berlaku */
+      }
+    })();
+    return () => {
+      batal = true;
+    };
+  }, []);
+
+  const ubahMasukan = <K extends keyof MasukanAi>(kunci: K, nilai: MasukanAi[K]) => {
+    setMasukan((lama) => ({ ...lama, [kunci]: nilai }));
+    setTersalin(false);
+  };
+  const ubahCentangProject = (v: boolean) => {
+    ubahMasukan("pakaiProject", v);
+    try {
+      window.localStorage.setItem(kunciSimpanCentang, v ? "1" : "0");
+    } catch {
+      /* lihat di atas */
+    }
+  };
+  const ubahTempelan = (kunci: keyof MasukanAi["tempelan"], nilai: string) => {
+    setMasukan((lama) => ({ ...lama, tempelan: { ...lama.tempelan, [kunci]: nilai } }));
+    setTersalin(false);
+  };
 
   const ambil = useCallback(async () => {
     setKeadaan("muat");
@@ -165,6 +256,17 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
         return;
       }
 
+      // Draf tambahan di ALETA (draf perakit, draf H-7) - bila ada. Gagal tidak menghalangi apa pun.
+      try {
+        const j = await fetch(
+          apiPath(`/api/aleta-ecourt/prompt-putusan/draf-blangko?perkaraId=${encodeURIComponent(isi.identitas.perkaraId)}`),
+          { cache: "no-store" }
+        );
+        const lj = (await j.json()) as { data?: { draf?: DrafBlangkoBahan[] } } | null;
+        setDrafAleta(Array.isArray(lj?.data?.draf) ? lj.data.draf : []);
+      } catch {
+        setDrafAleta([]);
+      }
       setBahan(isi);
       setPilihan(pilihanAwal(isi));
       setKeadaan("siap");
@@ -180,13 +282,62 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
   };
 
   const teks = useMemo(
-    () => (bahan && pilihan ? susunPrompt(bahan, pilihan) : ""),
-    [bahan, pilihan]
+    () =>
+      bahan && pilihan
+        ? susunPromptAi(
+            bahan,
+            pilihan,
+            { ...masukan, ikutiFormat: saklar.ikutiFormat, sertakanBlangko: saklar.sertakanBlangko },
+            profil,
+            { drafBlangko: [...(drafBerkas ? [drafBerkas] : []), ...drafAleta] }
+          )
+        : "",
+    [bahan, pilihan, masukan, profil, saklar, drafBerkas, drafAleta]
   );
   const kurang = useMemo(
-    () => (bahan && pilihan ? isianKurang(bahan, pilihan) : []),
-    [bahan, pilihan]
+    () =>
+      bahan && pilihan
+        ? [
+            ...(masukan.tujuan === "putusan-lengkap" ? isianKurang(bahan, pilihan) : []),
+            ...isianKurangAi(masukan, bahan),
+          ]
+        : [],
+    [bahan, pilihan, masukan]
   );
+
+  /** Membaca berkas di peramban; tidak ada yang dikirim ke server. */
+  const bacaBerkas = async (berkas: File | undefined) => {
+    if (!berkas) return null;
+    const hasil = await bacaParagrafBerkas(new Uint8Array(await berkas.arrayBuffer()), berkas.name, bacaPdfPeramban);
+    if (!hasil.ok) {
+      setGalatBerkas(hasil.alasan);
+      return null;
+    }
+    setGalatBerkas("");
+    return hasil.paragraf;
+  };
+  const unggahDraf = async (berkas: File | undefined) => {
+    const paragraf = await bacaBerkas(berkas);
+    if (paragraf && berkas) {
+      setDrafBerkas(bahanDrafDariBerkas(berkas.name, paragraf));
+      setTersalin(false);
+    }
+  };
+  const unggahContoh = async (berkas: File | undefined) => {
+    const paragraf = await bacaBerkas(berkas);
+    if (paragraf) ubahMasukan("contohFormat", teksDariParagraf(paragraf));
+  };
+  const simpanFormat = () => {
+    const nama = namaFormatBaru.trim();
+    if (!nama || !masukan.contohFormat.trim()) return;
+    // Yang disimpan sudah disamarkan: nama dan NIK dari contoh tidak ikut tersimpan di peramban.
+    setFormatSaya([
+      ...formatSaya.filter((f) => f.nama !== nama),
+      { id: `f${Date.now()}`, nama, teks: samarkanContohFormat(masukan.contohFormat) },
+    ]);
+    setNamaFormatBaru("");
+  };
+  const jumlahDrafAda = (drafBerkas ? 1 : 0) + drafAleta.length;
 
   const salin = async () => {
     try {
@@ -203,9 +354,10 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
     return (
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Menyusun perintah lengkap untuk Project Claude <b>ALETA AI PA CLAUDE</b> - jadwal sidang,
-          mediasi, saksi, kuasa, dan nama berkas terisi sendiri dari SIPP; arah putusan dan blangko
-          diisi sendiri.
+          Menyusun perintah AI yang lengkap - draf pertimbangan, amar, putusan, analisis pembuktian,
+          ringkasan, dan lainnya. Jadwal sidang, mediasi, saksi, kuasa, dan nama berkas terisi sendiri
+          dari SIPP, dengan identitas pihak disamarkan menjadi inisial; arah putusan dan blangko diisi
+          sendiri.
         </p>
         <Button type="button" onClick={ambil} disabled={keadaan === "muat"}>
           {keadaan === "muat" ? "Mengambil bahan…" : "Ambil bahan dari SIPP"}
@@ -217,13 +369,207 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
 
   const { satu, dua } = sebutanPihak(bahan);
   const berkas = daftarBerkas(bahan);
+  const tujuan = tujuanDari(masukan.tujuan);
+  const penuhPutusan = tujuan.kunci === "putusan-lengkap";
 
   return (
     <div className="space-y-5">
       {/* --------------------------------------------------- yang diisi orang */}
+      {/* ------------------------------------------------------- tujuan */}
+      <div className="space-y-3">
+        <h4 className="text-sm font-semibold">Yang ingin dikerjakan</h4>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="space-y-1">
+            <span className="text-sm font-medium">Tujuan</span>
+            <select
+              value={masukan.tujuan}
+              onChange={(e) => ubahMasukan("tujuan", e.target.value as KunciTujuan)}
+              className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+            >
+              {TUJUAN_AI.map((t) => (
+                <option key={t.kunci} value={t.kunci}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1">
+            <span className="text-sm font-medium">Cakupan jawaban</span>
+            <select
+              value={masukan.meta}
+              onChange={(e) => ubahMasukan("meta", e.target.value as KunciMeta)}
+              className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+            >
+              {PILIHAN_META.map((m) => (
+                <option key={m.kunci || "bawaan"} value={m.kunci}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {tujuan.parameter ? (
+          <label className="block space-y-1">
+            <span className="text-sm font-medium">{tujuan.labelParameter}</span>
+            <Input
+              value={masukan.parameter}
+              onChange={(e) => ubahMasukan("parameter", e.target.value)}
+              placeholder={tujuan.parameter === "jenis" ? bahan.identitas.jenisPerkara : tujuan.contohParameter}
+            />
+          </label>
+        ) : null}
+
+        <label className="block space-y-1">
+          <span className="text-sm font-medium">Pertanyaan yang ingin dijawab (boleh kosong)</span>
+          <textarea
+            value={masukan.pertanyaan}
+            onChange={(e) => ubahMasukan("pertanyaan", e.target.value)}
+            rows={2}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            placeholder="Mis. apakah nafkah madhiyah dapat dikabulkan tanpa tuntutan?"
+          />
+        </label>
+
+        <div>
+          <Centang
+            label="Apakah Anda menggunakan Project ALETA AI PA CLAUDE ULTRA?"
+            keterangan="Bila dicentang, perintah tidak menulis peran dan tidak menyapa; hanya data perkara dan permintaan dengan pemicu Project."
+            nilai={masukan.pakaiProject}
+            ubah={ubahCentangProject}
+          />
+          <p className="mt-1 px-1 text-xs text-muted-foreground">
+            {labelVersiProfil(profil)}
+            {profil.namaProject && profil.namaProject !== NAMA_PROJECT_AI ? ` (${profil.namaProject})` : ""}
+          </p>
+        </div>
+      </div>
+
       <div className="space-y-3">
         <h4 className="text-sm font-semibold">Yang harus Anda tentukan</h4>
 
+        {tujuan.butuhArah ? (
+          <div className="space-y-3 rounded-md border px-3 py-3">
+            <Centang
+              label="Ikuti format putusan tertentu"
+              keterangan="Contoh putusan dipakai sebagai format rujukan: susunan bagian, judul, gaya kalimat, dan format amar - tanpa menyalin fakta, nama, atau angkanya."
+              nilai={saklar.ikutiFormat}
+              ubah={(v) => setSaklar({ ...saklar, ikutiFormat: v })}
+            />
+            {saklar.ikutiFormat ? (
+              <div className="space-y-2 pl-1">
+                {formatSaya.length > 0 ? (
+                  <label className="block space-y-1">
+                    <span className="text-sm font-medium">Format yang pernah Anda simpan</span>
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const f = formatSaya.find((x) => x.id === e.target.value);
+                        if (f) ubahMasukan("contohFormat", f.teks);
+                      }}
+                      className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                    >
+                      <option value="">— pilih format —</option>
+                      {formatSaya.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.nama}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+                <label className="block space-y-1">
+                  <span className="text-sm font-medium">Unggah contoh putusan (RTF, DOCX, PDF, TXT)</span>
+                  <input
+                    type="file"
+                    accept=".rtf,.docx,.pdf,.txt"
+                    onChange={(e) => void unggahContoh(e.target.files?.[0])}
+                    className="block w-full text-sm"
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-sm font-medium">Atau tempel contoh putusan</span>
+                  <textarea
+                    value={masukan.contohFormat}
+                    onChange={(e) => ubahMasukan("contohFormat", e.target.value)}
+                    rows={5}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  Nama dan NIK pada contoh disamarkan otomatis sebelum masuk perintah. Contoh tidak disimpan kecuali Anda
+                  memilih menyimpannya di bawah (tersimpan di peramban ini, atas nama Anda).
+                </p>
+                <div className="flex flex-wrap items-end gap-2">
+                  <label className="min-w-[10rem] flex-1 space-y-1">
+                    <span className="text-sm font-medium">Simpan sebagai format saya</span>
+                    <Input value={namaFormatBaru} onChange={(e) => setNamaFormatBaru(e.target.value)} placeholder="Nama format, mis. Cerai gugat kabul" />
+                  </label>
+                  <Button type="button" size="sm" variant="outline" disabled={!namaFormatBaru.trim() || !masukan.contohFormat.trim()} onClick={simpanFormat}>
+                    Simpan
+                  </Button>
+                </div>
+                {formatSaya.length > 0 ? (
+                  <ul className="space-y-1 text-sm">
+                    {formatSaya.map((f) => (
+                      <li key={f.id} className="flex items-center justify-between gap-2 rounded border px-2 py-1">
+                        <span>{f.nama}</span>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => setFormatSaya(formatSaya.filter((x) => x.id !== f.id))}>
+                          Hapus
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            ) : null}
+
+            <Centang
+              label="Sertakan putusan yang masih berbentuk blangko"
+              keterangan="Putusan hasil cetak blangko ABT yang belum penuh disertakan, dengan tiap bagian kosong bertanda, supaya AI melengkapinya dari data perkara."
+              nilai={saklar.sertakanBlangko}
+              ubah={(v) => setSaklar({ ...saklar, sertakanBlangko: v })}
+            />
+            {saklar.sertakanBlangko ? (
+              <div className="space-y-2 pl-1">
+                <label className="block space-y-1">
+                  <span className="text-sm font-medium">Unggah putusan hasil ABT (RTF; DOCX, PDF, atau TXT juga bisa)</span>
+                  <input
+                    type="file"
+                    accept=".rtf,.docx,.pdf,.txt"
+                    onChange={(e) => void unggahDraf(e.target.files?.[0])}
+                    className="block w-full text-sm"
+                  />
+                </label>
+                {drafBerkas ? (
+                  <div className="flex flex-wrap items-center gap-2 rounded border bg-muted/30 px-2 py-1.5 text-sm">
+                    <span className="font-medium">{drafBerkas.judul}</span>
+                    <span>— {kalimatJumlahKosong(drafBerkas.jumlahKosong ?? 0)}</span>
+                    <Button type="button" size="sm" variant="ghost" className="ml-auto" onClick={() => setDrafBerkas(null)}>
+                      Lepas berkas
+                    </Button>
+                  </div>
+                ) : null}
+                {galatBerkas ? <p className="text-sm text-destructive">{galatBerkas}</p> : null}
+                {drafAleta.length > 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Draf tambahan di ALETA ikut disertakan: {drafAleta.map((d) => `${d.sumber} (${d.judul})`).join("; ")}.
+                  </p>
+                ) : null}
+                {jumlahDrafAda === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Belum ada draf blangko untuk perkara ini. Unduh hasil cetak RTF dari ABT lalu unggah di sini
+                    (pengambilan langsung dari ABT belum tersedia).
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="pl-1 text-xs text-muted-foreground">Draf blangko tidak disertakan.</p>
+            )}
+          </div>
+        ) : null}
+
+        {tujuan.butuhArah ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="space-y-1">
             <span className="text-sm font-medium">Arah putusan</span>
@@ -257,26 +603,32 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
             </select>
           </label>
         </div>
+        ) : null}
 
         <div className="grid gap-2 sm:grid-cols-2">
+          {tujuan.butuhArah ? (
           <Centang
             label="Ada gugatan Rekonvensi"
             keterangan="Bila tidak dicentang, perintah menyuruh membuang seluruh format rekonvensi dari blangko."
             nilai={pilihan.adaRekonvensi}
             ubah={(v) => ubah("adaRekonvensi", v)}
           />
+          ) : null}
+          {penuhPutusan ? (<>
           <Centang
             label={`${dua} mengajukan alat bukti`}
             keterangan={`Bila tidak dicentang, perintah menyatakan ${dua} tegas tidak mengajukan bukti.`}
             nilai={pilihan.termohonAdaBukti}
             ubah={(v) => ubah("termohonAdaBukti", v)}
           />
+          </>) : null}
           <Centang
             label="Ada bukti elektronik"
             keterangan="Tangkapan layar, USB, dan sejenisnya."
             nilai={pilihan.adaBuktiElektronik}
             ubah={(v) => ubah("adaBuktiElektronik", v)}
           />
+          {penuhPutusan ? (<>
           <Centang
             label={`Replik ${satu} benar-benar diajukan`}
             keterangan="SIPP kerap menjadwalkan agenda replik meski akhirnya tidak diajukan."
@@ -300,8 +652,10 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
             nilai={pilihan.mintaBerkasDoc}
             ubah={(v) => ubah("mintaBerkasDoc", v)}
           />
+          </>) : null}
         </div>
 
+        {penuhPutusan ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="space-y-1">
             <span className="text-sm font-medium">Nama file blangko</span>
@@ -320,6 +674,18 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
             />
           </label>
         </div>
+        ) : null}
+
+        <label className="block space-y-1">
+          <span className="text-sm font-medium">Fakta kunci</span>
+          <textarea
+            value={masukan.fakta}
+            onChange={(e) => ubahMasukan("fakta", e.target.value)}
+            rows={3}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            placeholder="Fakta yang menurut Anda menentukan, satu per baris. Nama pihak otomatis diganti inisial."
+          />
+        </label>
 
         <label className="block space-y-1">
           <span className="text-sm font-medium">Bukti surat {satu}</span>
@@ -330,6 +696,49 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
           />
         </label>
 
+        <label className="block space-y-1">
+          <span className="text-sm font-medium">Keterangan saksi (kutipan BAS, boleh kosong)</span>
+          <textarea
+            value={masukan.keteranganSaksiBas}
+            onChange={(e) => ubahMasukan("keteranganSaksiBas", e.target.value)}
+            rows={4}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            placeholder="Tempel keterangan saksi dari BAS apa adanya; ditandai sebagai kutipan BAS."
+          />
+        </label>
+
+        <details className="rounded-md border px-3 py-2">
+          <summary className="cursor-pointer text-sm font-medium">
+            Produk para pihak (gugatan, jawaban, replik, duplik, kesimpulan)
+          </summary>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Tempel apa adanya - tidak diringkas dan tidak dirapikan. NIK, nomor telepon, dan nama pihak otomatis
+            ditutup; selebihnya dikutip persis.
+          </p>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            {(
+              [
+                ["gugatan", satu === "Pemohon" ? "Permohonan" : "Gugatan"],
+                ["jawaban", `Jawaban ${dua}`],
+                ["replik", `Replik ${satu}`],
+                ["duplik", `Duplik ${dua}`],
+                ["kesimpulan", "Kesimpulan"],
+              ] as const
+            ).map(([kunci, label]) => (
+              <label key={kunci} className="block space-y-1">
+                <span className="text-sm font-medium">{label}</span>
+                <textarea
+                  value={masukan.tempelan[kunci]}
+                  onChange={(e) => ubahTempelan(kunci, e.target.value)}
+                  rows={4}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                />
+              </label>
+            ))}
+          </div>
+        </details>
+
+        {tujuan.butuhArah ? (
         <label className="block space-y-1">
           <span className="text-sm font-medium">
             Isi kesepakatan mediasi{" "}
@@ -343,8 +752,10 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
             placeholder={"Pasal 1: …\nPasal 2: …"}
           />
         </label>
+        ) : null}
 
         <div className="grid gap-3 sm:grid-cols-2">
+          {penuhPutusan ? (
           <label className="space-y-1">
             <span className="text-sm font-medium">Lampiran tambahan (satu per baris)</span>
             <textarea
@@ -354,6 +765,7 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             />
           </label>
+          ) : null}
           <label className="space-y-1">
             <span className="text-sm font-medium">Catatan khusus majelis</span>
             <textarea
@@ -369,6 +781,11 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
       {/* ------------------------------------------------ yang diambil mesin */}
       <div className="space-y-2">
         <h4 className="text-sm font-semibold">Sudah terisi dari SIPP</h4>
+        <p className="text-xs text-muted-foreground">
+          {tujuan.namaAsli
+            ? "Untuk tujuan membuat putusan, nama pihak, kuasa, dan saksi ditulis apa adanya di dalam perintah karena putusan memerlukannya; NIK dan nomor telepon tetap ditutup."
+            : "Di layar ini nama tampil apa adanya; di dalam perintah, nama pihak, kuasa, dan saksi diganti inisial."}
+        </p>
         <div className="grid gap-2 sm:grid-cols-2">
           <DariSipp label="Jenis perkara" isi={bahan.identitas.jenisPerkara} />
           <DariSipp label="Sebutan pihak" isi={`${satu} dan ${dua}`} />
@@ -404,7 +821,10 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
             )
             .join("\n")}
         />
-        <DariSipp label={`Berkas e-Court (${berkas.length})`} isi={berkas.join("\n")} />
+        <DariSipp
+          label={`Berkas e-Court (${berkas.length})`}
+          isi={berkas.map((b) => (b.penjelas ? `${b.nama} (${b.penjelas})` : b.nama)).join("\n")}
+        />
       </div>
 
       {/* ------------------------------------------------------- peringatan */}
@@ -440,10 +860,20 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
             kurang.length ? "border-amber-400/60" : ""
           )}
         />
+        {tujuan.namaAsli ? <p className="text-xs text-muted-foreground">{CATATAN_HAPUS_DATA}</p> : null}
         {pesan ? <p className="text-sm text-destructive">{pesan}</p> : null}
         <p className="text-sm text-muted-foreground">
-          Tempelkan ke Project <b>ALETA AI PA CLAUDE</b>, lalu lampirkan berkas yang disebut pada
-          bagian E.
+          {masukan.pakaiProject ? (
+            <>
+              Tempelkan ke Project <b>ALETA AI PA CLAUDE ULTRA</b>
+              {penuhPutusan ? ", lalu lampirkan berkas yang disebut pada bagian E." : "."}
+            </>
+          ) : (
+            <>
+              Tempelkan ke percakapan Claude
+              {penuhPutusan ? ", lalu lampirkan berkas yang disebut pada bagian E." : "."}
+            </>
+          )}
         </p>
       </div>
     </div>

@@ -72,6 +72,12 @@ export type Peringatan = {
   sebab: string;
   /** "berat" menuntut tindakan hari ini; "ringan" perlu diketahui saja. */
   berat: boolean;
+  /**
+   * Kelompok Status Perkara (tampilan Seamless) tempat butir ini ditindaklanjuti:
+   * A pihak dan majelis, B jalannya perkara, C putusan dan tindak lanjut.
+   * Dipakai memberi titik pada kelompoknya.
+   */
+  kelompok?: "A" | "B" | "C" | "D" | "E";
 };
 
 export type Ringkasan = {
@@ -167,6 +173,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
       pesan: "Majelis hakim belum ditetapkan",
       sebab: "Tanpa penetapan majelis, perkara tidak dapat dijadwalkan bersidang.",
       berat: true,
+      kelompok: "A",
     });
   }
 
@@ -175,6 +182,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
       pesan: `Sudah ${angka(hari)} hari dan belum putus`,
       sebab: `Melewati lima bulan (SEMA 2/2014) — ambangnya ${AMBANG_HARI_SEMA} hari.`,
       berat: true,
+      kelompok: "B",
     });
   }
 
@@ -183,6 +191,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
       pesan: `Mediasi sudah ${angka(status.umur.hariMediasi)} hari`,
       sebab: `Melewati tiga puluh hari (PERMA 1/2016).`,
       berat: true,
+      kelompok: "B",
     });
   }
 
@@ -191,6 +200,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
       pesan: "Belum ada sidang berikutnya yang terjadwal",
       sebab: "Sidang terakhir sudah lewat dan tidak ada tanggal baru di SIPP.",
       berat: true,
+      kelompok: "B",
     });
   }
 
@@ -200,6 +210,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
         pesan: "Minutasi belum tercatat",
         sebab: "Berkas belum dapat diarsipkan sebelum minutasinya tercatat.",
         berat: true,
+        kelompok: "C",
       });
     }
     if (!putusan.tanggalBht) {
@@ -207,6 +218,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
         pesan: "Tanggal berkekuatan hukum tetap belum tercatat",
         sebab: "Akta cerai tidak dapat terbit sebelum BHT-nya tercatat.",
         berat: false,
+        kelompok: "C",
       });
     }
     if (putusan.aktaCerai && !putusan.aktaCerai.diserahkanPihak1) {
@@ -214,6 +226,7 @@ export function ringkasStatus(status: BahanRingkas, hariIni: string): Ringkasan 
         pesan: "Akta cerai belum diserahkan kepada pihak pertama",
         sebab: `Akta ${putusan.aktaCerai.nomor || "sudah terbit"} tetapi penyerahannya belum tercatat.`,
         berat: false,
+        kelompok: "C",
       });
     }
   }

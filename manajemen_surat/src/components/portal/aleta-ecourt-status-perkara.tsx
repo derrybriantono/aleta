@@ -92,6 +92,15 @@ import { EcourtAksiPerkara } from "@/components/portal/ecourt-aksi-perkara";
 import { DaftarMajelisPetugas, NamaMediatorTertaut, type MajelisIkrar } from "@/components/portal/tautan-petugas";
 import { daftarkanBagian, kunciCiut, langgananAba } from "@/lib/alat-bagian";
 import { Bagian } from "@/components/portal/bagian-ciut";
+import {
+  KelompokKartu,
+  LinimasaPerkara,
+  NavKelompok,
+  SakelarTampilanStatus,
+  TataLetakSeamless,
+  useTampilanStatus,
+} from "@/components/portal/status-perkara-seamless";
+import { susunLinimasa } from "@/lib/status-perkara-seamless";
 import { apiPath, withBasePath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { GalatJawaban, bacaJsonAman, botTakTerjangkau, useCobaLagiOtomatis } from "@/lib/coba-lagi-otomatis";
@@ -1229,7 +1238,9 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
   // selama layar ini terbuka.
   const [tampilanHasil, setTampilanHasil] = useState<TampilanHasil>(bacaTampilanTersimpan);
   const [urutHasil, setUrutHasil] = useState<Urutan>(null);
-  const { institutionIdentity } = usePortal();
+  const { institutionIdentity, currentUser: penggunaTampilan } = usePortal();
+  // Pilihan tampilan (Kompleks = susunan lama, Seamless = susunan baru) diingat per pengguna.
+  const [tampilanStatus, pilihTampilanStatus] = useTampilanStatus(penggunaTampilan?.id);
 
   // ======================================================================
   // PANEL YANG MENGECIL SENDIRI (butir 9)
@@ -1944,7 +1955,10 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
           membuka layar ini tetap perlu tahu bahwa nomornya boleh diketik
           angkanya saja, dan sejauh mana isinya. */}
       <CardHeader className="gap-1 p-4 pb-2 sm:p-5 sm:pb-2">
-        <CardTitle className="text-base sm:text-lg">Status Perkara</CardTitle>
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-base sm:text-lg">Status Perkara</CardTitle>
+          <SakelarTampilanStatus nilai={tampilanStatus} onPilih={pilihTampilanStatus} />
+        </div>
         <CardDescription className="text-sm">
           Masukkan nomor perkara — cukup angkanya saja, atau cari dengan nama pihak dan jenis
           perkara lewat Saringan lain. Seluruh keadaan perkara ditampilkan: sejak didaftarkan,
@@ -2613,6 +2627,7 @@ export function AletaEcourtStatusPerkara({ nomorAwal = "" }: { nomorAwal?: strin
         {status ? (
           <IsiStatus
             status={status}
+            seamless={tampilanStatus === "seamless"}
             onKembali={() => {
               // Pembukaan yang masih berjalan tidak boleh memunculkan perkara
               // lagi sesudah penggunanya kembali ke daftar.
@@ -2903,10 +2918,13 @@ export function PanelTagPerkara({
 
 function IsiStatus({
   status,
+  seamless = false,
   onKembali,
   onBuka,
 }: {
   status: Status;
+  /** Tampilan Seamless: isi dan hak sama dengan Kompleks, hanya letaknya yang berbeda. */
+  seamless?: boolean;
   onKembali: () => void;
   /** Membuka perkara lain - dipakai riwayat dan sematan pada bilah alat. */
   onBuka: (nomorPerkara: string) => void;
@@ -2972,6 +2990,40 @@ function IsiStatus({
     return ringkasStatus(status, `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`);
   }, [status]);
 
+  // Linimasa dan ringkasan kelompok (tampilan Seamless): disusun dari muatan yang SUDAH ada.
+  const titikLinimasa = useMemo(
+    () =>
+      susunLinimasa(susunPeristiwa(status), hariIniIso(), {
+        sudahPutus: Boolean(status.putusan?.sudahPutus),
+        adaIkrar: status.ikrarTalak.ada,
+      }),
+    [status]
+  );
+  const perluTindakanKelompok = useMemo(() => {
+    const hitung: Record<string, number> = {};
+    for (const p of ringkas.peringatan) if (p.kelompok) hitung[p.kelompok] = (hitung[p.kelompok] ?? 0) + 1;
+    return hitung;
+  }, [ringkas]);
+  const ringkasKelompok: Record<string, string> = {
+    A: [
+      `${status.pihak.length} pihak`,
+      status.identitasPihak?.adaKuasa ? "dengan kuasa" : "tanpa kuasa",
+      ringkas.majelisKalimat,
+    ]
+      .filter(Boolean)
+      .join(", "),
+    B: [`${status.jadwal.length} sidang`, ringkas.berikutnya ? `berikutnya: ${ringkas.berikutnya}` : ""]
+      .filter(Boolean)
+      .join(", "),
+    C: status.putusan?.sudahPutus
+      ? `Putus ${tanggalHariPendek(status.putusan.tanggalPutusan, status.putusan.tanggalPutusan)}${
+          status.putusan.statusPutusan ? ` · ${status.putusan.statusPutusan}` : ""
+        }`
+      : "Belum putus",
+    D: `Sisa panjar ${rupiah(status.biaya.sisa)}`,
+    E: `Nilai kelengkapan ${status.penilaian.skor} dari 100 · ${status.penilaian.keadaan}`,
+  };
+
   const [pihakDibuka, setPihakDibuka] = useState("");
   const identitas = useIdentitasPihak(status.identitas.nomorPerkara, Boolean(pihakDibuka));
 
@@ -2999,13 +3051,7 @@ function IsiStatus({
   const namaSaksiPandu = (sisi: RegExp) =>
     status.saksiRinci.baris.filter((x) => sisi.test(x.diajukanOleh || "")).map((x) => x.nama);
 
-  return (
-    // Penanda pembungkus cetak: yang di dalamnya tercetak dengan palet kertas,
-    // yang di luarnya (navigasi, pencarian) tidak - lihat cetak-status-perkara.tsx.
-    <div className="space-y-3" data-cetak-status-perkara="">
-      {/* items-start, bukan items-baseline: tombol unduh membawa pilihan
-          arsip fisik di bawahnya, dan garis alas akan menggantungnya. */}
-      <div className="flex flex-wrap items-start justify-between gap-2">
+  const blokNomor = (
         <div>
           <h3 className="text-lg font-semibold">{status.identitas.nomorPerkara}</h3>
           <p className="text-sm text-muted-foreground">
@@ -3021,30 +3067,12 @@ function IsiStatus({
             {/* === AKHIR 12OKT-A === */}
           </p>
         </div>
-        {/* ==============================================================
-            SELURUH PERKARA DALAM SATU BERKAS
-            ==============================================================
+  );
 
-            Berdiri di KEPALA layar, bukan di bagian Berkas yang berada pada
-            urutan ketujuh belas dari dua puluh enam. Yang datang untuk
-            membawa perkaranya keluar - banding, pemeriksaan pengawas, serah
-            terima pemegang perkara - datang untuk itu saja, dan menyuruhnya
-            menggulung melewati enam belas bagian lebih dulu berarti
-            tombolnya tidak akan ditemukan.
+  const blokUnduh = <TombolUnduhZip nomorPerkara={status.identitas.nomorPerkara} isi="lengkap" />;
 
-            Yang turun bukan hanya berkasnya: seluruh keterangan perkara ikut
-            sebagai JSON dan CSV, sebab yang dikirim ke banding dan yang
-            diperiksa pengawas adalah keduanya. */}
-        <div className="flex flex-wrap items-start gap-2 print:hidden">
-          {/* Tulisannya "Unduh seluruh berkas" (bawaan isi="lengkap") sejak
-              butir 25, 6 Okt 2026. */}
-          <TombolUnduhZip nomorPerkara={status.identitas.nomorPerkara} isi="lengkap" />
-          <Button size="sm" variant="outline" onClick={onKembali}>
-            Cari perkara lain
-          </Button>
-        </div>
-      </div>
-
+  const blokLencana = (
+    <>
       {/* ==================================================================
           PENANDA PERKARA
           ==================================================================
@@ -3136,7 +3164,11 @@ function IsiStatus({
           {status.identitasPihak?.adaKuasa ? "dengan kuasa" : "tanpa kuasa"}
         </Badge>
       </div>
+    </>
+  );
 
+  const blokKumulasi = (
+    <>
       {/* === 12OKT-A: kumulasi perkara === */}
       {kumulasiBaru ? <RincianKumulasi kumulasi={status.kumulasi} /> : null}
       {/* === AKHIR 12OKT-A === */}
@@ -3144,7 +3176,11 @@ function IsiStatus({
       {/* === 12OKT-K: eksepsi/rekonvensi, sita, eksekusi === */}
       <RincianJawabanSitaEksekusi bahan={status} tampilJawaban={saklarJawaban} tampilSita={saklarSita} tampilEksekusi={saklarEksekusi} />
       {/* === AKHIR 12OKT-K === */}
+    </>
+  );
 
+  const blokAngka = (
+    <>
       {/* --- Jajaran angka --- */}
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {/* ==================================================================
@@ -3202,7 +3238,11 @@ function IsiStatus({
           nada={status.biaya.sisa < 0 ? "kurang" : undefined}
         />
       </div>
+    </>
+  );
 
+  const blokAlat = (
+    <>
       {/* Bilah alat - sepuluh pekerjaan kecil yang selama ini dikerjakan
           tangan. Riwayat dan sematan tidak pernah meninggalkan peramban; yang
           ditanyakan ke peladen hanya alamat halaman perkara di SIPP. Muatan
@@ -3215,7 +3255,11 @@ function IsiStatus({
         ringkas={ringkas}
         onBuka={onBuka}
       />
+    </>
+  );
 
+  const blokKartu = (
+    <>
       {/* ==================================================================
           KARTU RINGKAS - TIGA PERTANYAAN PEMBUKA
           ==================================================================
@@ -3254,7 +3298,11 @@ function IsiStatus({
           </p>
         </div>
       </div>
+    </>
+  );
 
+  const blokPeringatan = (
+    <>
       {/* ==================================================================
           PERLU TINDAKAN - PERINGATAN YANG DIKUMPULKAN, BUKAN DILAHIRKAN
           ==================================================================
@@ -3291,8 +3339,13 @@ function IsiStatus({
           </ul>
         </div>
       ) : null}
+    </>
+  );
 
-      <div className="grid gap-3 lg:grid-cols-2">
+  const blokA = (
+    <>
+    <KelompokKartu id="A" seamless={seamless} ringkas={ringkasKelompok.A} perluTindakan={perluTindakanKelompok.A ?? 0}>
+      <div className={seamless ? "contents" : "grid gap-3 lg:grid-cols-2"}>
         <Bagian judul="Majelis dan petugas" kunci="majelis">
           {/* Tiap nama membuka rekap orangnya di tab baru, lewat ID SIPP -
               lihat tautan-petugas.tsx (butir 9 permintaan 27 September 2026).
@@ -3533,7 +3586,13 @@ function IsiStatus({
           )}
         </Bagian>
       </div>
+    </KelompokKartu>
+    </>
+  );
 
+  const blokB = (
+    <>
+    <KelompokKartu id="B" seamless={seamless} ringkas={ringkasKelompok.B} perluTindakan={perluTindakanKelompok.B ?? 0}>
         {/* ==================================================================
           TAHAPAN PERKARA
           ==================================================================
@@ -4151,6 +4210,13 @@ function IsiStatus({
         kunciBagian="status-pandu-saksi"
         pengguna={currentUser}
       />
+    </KelompokKartu>
+    </>
+  );
+
+  const blokC = (
+    <>
+    <KelompokKartu id="C" seamless={seamless} ringkas={ringkasKelompok.C} perluTindakan={perluTindakanKelompok.C ?? 0}>
       {/* ==================================================================
           PUTUSAN LENGKAP
           ==================================================================
@@ -4806,7 +4872,13 @@ function IsiStatus({
           konteks="status"
         />
       </Bagian>
+    </KelompokKartu>
+    </>
+  );
 
+  const blokD = (
+    <>
+    <KelompokKartu id="D" seamless={seamless} ringkas={ringkasKelompok.D} perluTindakan={perluTindakanKelompok.D ?? 0}>
       <Bagian
         judul="Arsip berkas"
         kunci="arsip"
@@ -5049,7 +5121,7 @@ function IsiStatus({
         </Bagian>
       ) : null}
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className={seamless ? "contents" : "grid gap-3 lg:grid-cols-2"}>
         {/* ==============================================================
             BERKAS
             ==============================================================
@@ -5340,6 +5412,13 @@ function IsiStatus({
           })()}
         </Bagian>
       </div>
+    </KelompokKartu>
+    </>
+  );
+
+  const blokE = (
+    <>
+    <KelompokKartu id="E" seamless={seamless} ringkas={ringkasKelompok.E} perluTindakan={perluTindakanKelompok.E ?? 0}>
       {/* --- Penilaian --- */}
       <Bagian judul="Penilaian kelengkapan perkara" kunci="rubrik" ciutBawaan>
         <div className="space-y-1.5">
@@ -5695,6 +5774,101 @@ function IsiStatus({
           </div>
         </Bagian>
       ) : null}
+    </KelompokKartu>
+    </>
+  );
+
+  if (seamless) {
+    return (
+      <div className="space-y-3" data-cetak-status-perkara="">
+        {/* Kepala lekat: nomor, aksi utama, lencana, dan pencarian di dalam perkara.
+            Aksi lainnya ada di menu Lainnya - fungsinya sama dengan bilah alat Kompleks. */}
+        <AlatStatusPerkara
+          varian="seamless"
+          nomorPerkara={status.identitas.nomorPerkara}
+          jenisPerkara={status.identitas.jenisPerkara}
+          perkaraId={status.identitas.perkaraId}
+          bahan={status}
+          ringkas={ringkas}
+          onBuka={onBuka}
+          kepalaNomor={blokNomor}
+          unduh={blokUnduh}
+          lencana={<div className="mt-2">{blokLencana}</div>}
+          menuTambahan={
+            <button
+              type="button"
+              role="menuitem"
+              onClick={onKembali}
+              className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition hover:bg-muted/70"
+            >
+              Cari perkara lain
+            </button>
+          }
+        />
+        {blokKumulasi}
+        <TataLetakSeamless
+          linimasa={<LinimasaPerkara titik={titikLinimasa} />}
+          rail={
+            <>
+              {blokPeringatan}
+              <div className="[&>div]:!grid-cols-1">{blokKartu}</div>
+              <div className="[&>div]:!grid-cols-2">{blokAngka}</div>
+            </>
+          }
+          nav={<NavKelompok ringkasan={ringkasKelompok} perluTindakan={perluTindakanKelompok} />}
+        >
+          {blokA}
+          {blokB}
+          {blokC}
+          {blokD}
+          {blokE}
+        </TataLetakSeamless>
+      </div>
+    );
+  }
+
+  return (
+    // Penanda pembungkus cetak: yang di dalamnya tercetak dengan palet kertas,
+    // yang di luarnya (navigasi, pencarian) tidak - lihat cetak-status-perkara.tsx.
+    <div className="space-y-3" data-cetak-status-perkara="">
+      {/* items-start, bukan items-baseline: tombol unduh membawa pilihan
+          arsip fisik di bawahnya, dan garis alas akan menggantungnya. */}
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        {blokNomor}
+        {/* ==============================================================
+            SELURUH PERKARA DALAM SATU BERKAS
+            ==============================================================
+
+            Berdiri di KEPALA layar, bukan di bagian Berkas yang berada pada
+            urutan ketujuh belas dari dua puluh enam. Yang datang untuk
+            membawa perkaranya keluar - banding, pemeriksaan pengawas, serah
+            terima pemegang perkara - datang untuk itu saja, dan menyuruhnya
+            menggulung melewati enam belas bagian lebih dulu berarti
+            tombolnya tidak akan ditemukan.
+
+            Yang turun bukan hanya berkasnya: seluruh keterangan perkara ikut
+            sebagai JSON dan CSV, sebab yang dikirim ke banding dan yang
+            diperiksa pengawas adalah keduanya. */}
+        <div className="flex flex-wrap items-start gap-2 print:hidden">
+          {/* Tulisannya "Unduh seluruh berkas" (bawaan isi="lengkap") sejak
+              butir 25, 6 Okt 2026. */}
+          {blokUnduh}
+          <Button size="sm" variant="outline" onClick={onKembali}>
+            Cari perkara lain
+          </Button>
+        </div>
+      </div>
+      {blokLencana}
+      {blokKumulasi}
+      {blokAngka}
+      {blokAlat}
+      {blokKartu}
+      {blokPeringatan}
+      {blokA}
+      {blokB}
+      {blokC}
+      {blokD}
+      {blokE}
     </div>
   );
 }

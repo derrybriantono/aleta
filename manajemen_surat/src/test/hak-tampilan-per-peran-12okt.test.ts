@@ -353,6 +353,8 @@ describe("4. rute menjawab 403 bagi peran tak berhak (penjaga sisi server)", () 
     { nama: "kontak-para-pihak (Agen D)", impor: () => import("@/app/api/aleta-ecourt/kontak-para-pihak/route"), method: "GET", url: "/api/aleta-ecourt/kontak-para-pihak?nomor=1/Pdt.G/2026/PA.Dgl", aksi: "status.data-pihak", tolak: "staf", terima: "mediator" },
     { nama: "pandu-saksi (panduan pertanyaan saksi)", impor: () => import("@/app/api/aleta-ecourt/pandu-saksi/route"), method: "GET", url: "/api/aleta-ecourt/pandu-saksi?jenisPerkaraId=347&alurPerkaraId=15", aksi: "pandu.saksi", tolak: "kasir", terima: "hakim" },
     { nama: "prompt-putusan", impor: () => import("@/app/api/aleta-ecourt/prompt-putusan/route"), method: "GET", url: "/api/aleta-ecourt/prompt-putusan?nomor=1/Pdt.G/2026/PA.Dgl", aksi: "status.analisa", tolak: "kasir", terima: "hakim" },
+    { nama: "prompt-putusan/draf-blangko (putusan berbentuk blangko)", impor: () => import("@/app/api/aleta-ecourt/prompt-putusan/draf-blangko/route"), method: "GET", url: "/api/aleta-ecourt/prompt-putusan/draf-blangko?perkaraId=1", aksi: "status.analisa", tolak: "kasir", terima: "hakim" },
+    { nama: "profil-project-ai (profil Project ALETA AI)", impor: () => import("@/app/api/aleta-ecourt/profil-project-ai/route"), method: "GET", url: "/api/aleta-ecourt/profil-project-ai", aksi: "status.analisa", tolak: "kasir", terima: "hakim" },
   ];
 
   it.each(RUTE)("$nama: $tolak 403, $terima lolos pagar matriks", async ({ impor, method, url, tolak, terima, badan }) => {

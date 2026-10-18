@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import {
   Check,
+  ChevronDown,
   ChevronsDownUp,
   ChevronsUpDown,
   Clock,
@@ -40,6 +42,7 @@ import {
 } from "@/lib/ringkasan-salin";
 import { salinTeks } from "@/lib/salin-teks";
 import { useTautanSipp } from "@/lib/tautan-sipp";
+import { cariBagianSeamless } from "@/lib/status-perkara-seamless";
 
 /**
  * ============================================================================
@@ -91,6 +94,11 @@ export function AlatStatusPerkara({
   bahan,
   ringkas,
   onBuka,
+  varian = "kompleks",
+  kepalaNomor,
+  unduh,
+  lencana,
+  menuTambahan,
 }: {
   nomorPerkara: string;
   jenisPerkara: string;
@@ -104,6 +112,17 @@ export function AlatStatusPerkara({
   ringkas: Ringkasan;
   /** Membuka perkara lain - dipakai riwayat dan sematan. */
   onBuka: (nomorPerkara: string) => void;
+  /**
+   * "seamless": seluruh KEPALA layar (nomor, aksi utama, lencana, pencarian)
+   * digambar di sini - aksi utama menonjol, sisanya di menu Lainnya. Fungsinya
+   * sama dengan "kompleks": hanya letaknya yang berbeda.
+   */
+  varian?: "kompleks" | "seamless";
+  kepalaNomor?: ReactNode;
+  unduh?: ReactNode;
+  lencana?: ReactNode;
+  /** Butir tambahan pada menu Lainnya (mis. Cari perkara lain). */
+  menuTambahan?: ReactNode;
 }) {
   const [bagian, setBagian] = useState<BagianTerdaftar[]>([]);
   const [cari, setCari] = useState("");
@@ -211,11 +230,357 @@ export function AlatStatusPerkara({
     setCari("");
   }, []);
 
+  const [menuBuka, setMenuBuka] = useState(false);
+  const kepalaRef = useRef<HTMLDivElement | null>(null);
+  const seamless = varian === "seamless";
+
+  // Menu Lainnya menutup saat mengetuk di luar atau menekan Escape.
+  useEffect(() => {
+    if (!seamless || !menuBuka) return;
+    const diLuar = (e: MouseEvent) => {
+      const t = e.target as Node | null;
+      if (t && document.getElementById("menu-lainnya-status")?.contains(t)) return;
+      if (t && document.getElementById("tombol-lainnya-status")?.contains(t)) return;
+      setMenuBuka(false);
+    };
+    const tombol = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuBuka(false);
+    };
+    document.addEventListener("mousedown", diLuar);
+    document.addEventListener("keydown", tombol);
+    return () => {
+      document.removeEventListener("mousedown", diLuar);
+      document.removeEventListener("keydown", tombol);
+    };
+  }, [seamless, menuBuka]);
+
+  // Tinggi kepala lekat dipakai deret pintasan kelompok supaya melekat tepat di bawahnya.
+  useEffect(() => {
+    if (!seamless || !kepalaRef.current || typeof ResizeObserver === "undefined") return;
+    const el = kepalaRef.current;
+    const ukur = () => document.documentElement.style.setProperty("--tinggi-kepala-seamless", `${el.offsetHeight}px`);
+    ukur();
+    const pengamat = new ResizeObserver(ukur);
+    pengamat.observe(el);
+    return () => {
+      pengamat.disconnect();
+      document.documentElement.style.removeProperty("--tinggi-kepala-seamless");
+    };
+  }, [seamless]);
+
+  // Pintasan "/" memfokuskan pencarian di dalam perkara.
+  useEffect(() => {
+    if (!seamless) return;
+    const tombol = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+      const aktif = document.activeElement;
+      const tag = aktif?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (aktif as HTMLElement | null)?.isContentEditable) return;
+      e.preventDefault();
+      document.getElementById("cari-dalam-perkara")?.focus();
+    };
+    document.addEventListener("keydown", tombol);
+    return () => document.removeEventListener("keydown", tombol);
+  }, [seamless]);
+
+  const bagianSeamless = useMemo(() => cariBagianSeamless(bagian, cari), [bagian, cari]);
+
   const sippAda = tautan.keadaan === "ada";
   const sippTidakTersedia = tautan.keadaan === "tidak-ada" || tautan.keadaan === "gagal";
 
   const kelasTautan =
     "inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs text-foreground transition hover:bg-muted/50";
+
+  if (seamless) {
+    const butirMenu =
+      "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition hover:bg-muted/70";
+    const tutupLalu = (f: () => void) => () => {
+      f();
+      setMenuBuka(false);
+    };
+    return (
+      <div
+        ref={kepalaRef}
+        data-kepala-seamless=""
+        className="-mx-3 border-b border-border/70 bg-card/95 px-3 pb-2 pt-2 backdrop-blur sm:sticky sm:top-0 sm:z-20 print:static print:border-0"
+      >
+        <GayaCetakStatusPerkara />
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">{kepalaNomor}</div>
+          <div className="relative flex flex-wrap items-center gap-1.5 print:hidden">
+            {unduh}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              title="Salin ringkasan lengkap perkara ini - pihak, majelis, sidang, putusan, biaya - untuk WhatsApp atau surel"
+              onClick={() => void salin(susunRingkasan(), "ringkas", "ringkasan perkara")}
+            >
+              {disalin === "ringkas" ? (
+                <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              ) : (
+                <Copy className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              )}
+              {disalin === "ringkas" ? "Tersalin" : "Salin ringkasan"}
+            </Button>
+            <Button
+              id="tombol-lainnya-status"
+              type="button"
+              size="sm"
+              variant="outline"
+              aria-haspopup="menu"
+              aria-expanded={menuBuka}
+              onClick={() => setMenuBuka((x) => !x)}
+            >
+              Lainnya
+              <ChevronDown className="ml-1 h-3.5 w-3.5" aria-hidden />
+            </Button>
+            {menuBuka ? (
+              <div
+                id="menu-lainnya-status"
+                role="menu"
+                className="absolute right-0 top-full z-30 mt-1.5 w-72 max-w-[calc(100vw-1.5rem)] rounded-lg border border-border bg-card p-1.5 shadow-xl max-sm:fixed max-sm:inset-x-3 max-sm:bottom-3 max-sm:top-auto max-sm:mt-0 max-sm:w-auto"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={butirMenu}
+                  disabled={tautan.keadaan === "memuat"}
+                  title={
+                    sippAda
+                      ? "Salin alamat halaman perkara ini di SIPP"
+                      : tautan.keadaan === "memuat"
+                        ? "Menyiapkan alamat halaman perkara di SIPP…"
+                        : "Alamat SIPP tidak tersedia - yang disalin tautan ALETA ke perkara ini"
+                  }
+                  onClick={tutupLalu(() =>
+                    sippAda
+                      ? void salin(tautan.alamat, "tautan", "alamat SIPP")
+                      : void salin(tautanAleta(), "tautan-aleta", "tautan ALETA")
+                  )}
+                >
+                  <Link2 className="h-3.5 w-3.5" aria-hidden />
+                  {sippTidakTersedia ? "Salin tautan ALETA" : "Salin tautan"}
+                </button>
+                <button type="button" role="menuitem" className={butirMenu} onClick={tutupLalu(() => window.print())}>
+                  <Printer className="h-3.5 w-3.5" aria-hidden />
+                  Cetak
+                </button>
+                {sippAda ? (
+                  <a
+                    role="menuitem"
+                    href={tautan.alamat}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`Buka halaman perkara ${nomorPerkara} di SIPP (tab baru)`}
+                    className={butirMenu}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                    Buka SIPP
+                  </a>
+                ) : tautan.keadaan === "memuat" ? (
+                  <span
+                    role="menuitem"
+                    aria-disabled="true"
+                    title="Menyiapkan alamat halaman perkara di SIPP…"
+                    className={cn(butirMenu, "cursor-wait opacity-60 hover:bg-transparent")}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                    Buka SIPP
+                  </span>
+                ) : (
+                  <a
+                    role="menuitem"
+                    href={withBasePath(PINTU_SIPP)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Halaman perkaranya tidak tersedia - membuka SIPP dari berandanya (tab baru)"
+                    className={butirMenu}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                    Buka SIPP (beranda)
+                  </a>
+                )}
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={butirMenu}
+                  title={sudahSemat ? "Lepas sematan" : "Sematkan perkara ini"}
+                  onClick={tutupLalu(() => setSemat(balikSemat(singkat)))}
+                >
+                  <Pin className="h-3.5 w-3.5" aria-hidden />
+                  {sudahSemat ? "Lepas sematan" : "Sematkan perkara ini"}
+                </button>
+                <div className="my-1 border-t border-border/70" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={butirMenu}
+                  onClick={tutupLalu(() => siarkanAba({ jenis: "buka-semua" }))}
+                >
+                  <ChevronsUpDown className="h-3.5 w-3.5" aria-hidden />
+                  Buka semua bagian
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={butirMenu}
+                  onClick={tutupLalu(() => siarkanAba({ jenis: "tutup-semua" }))}
+                >
+                  <ChevronsDownUp className="h-3.5 w-3.5" aria-hidden />
+                  Tutup semua bagian
+                </button>
+                {semat.length > 0 || riwayat.length > 1 ? (
+                  <>
+                    <div className="my-1 border-t border-border/70" />
+                    <p className="px-2.5 pt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Sematan dan riwayat
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 px-2.5 pb-1.5 pt-1">
+                      {semat.map((x) => (
+                        <button
+                          type="button"
+                          key={`semat-${x.nomorPerkara}`}
+                          onClick={tutupLalu(() => onBuka(x.nomorPerkara))}
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition hover:bg-muted/50",
+                            x.nomorPerkara === nomorPerkara
+                              ? "border-primary/60 text-primary"
+                              : "border-border text-foreground"
+                          )}
+                        >
+                          <Pin className="h-3 w-3" aria-hidden />
+                          {x.nomorPerkara}
+                        </button>
+                      ))}
+                      {riwayat
+                        .filter((x) => x.nomorPerkara !== nomorPerkara)
+                        .filter((x) => !semat.some((y) => y.nomorPerkara === x.nomorPerkara))
+                        .map((x) => (
+                          <button
+                            type="button"
+                            key={`riwayat-${x.nomorPerkara}`}
+                            onClick={tutupLalu(() => onBuka(x.nomorPerkara))}
+                            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted/50 hover:text-foreground"
+                          >
+                            <Clock className="h-3 w-3" aria-hidden />
+                            {x.nomorPerkara}
+                          </button>
+                        ))}
+                    </div>
+                  </>
+                ) : null}
+                {menuTambahan ? (
+                  <>
+                    <div className="my-1 border-t border-border/70" />
+                    <div onClick={() => setMenuBuka(false)}>{menuTambahan}</div>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {lencana}
+
+        <div className="relative mt-2 print:hidden">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            id="cari-dalam-perkara"
+            value={cari}
+            autoComplete="off"
+            onChange={(e) => setCari(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && bagianSeamless[0]) loncat(bagianSeamless[0].kunci);
+              if (e.key === "Escape") setCari("");
+            }}
+            aria-label="Cari di perkara ini"
+            placeholder="Cari di perkara ini — bagian, pihak, KTP, relaas, panjar…"
+            className="h-9 rounded-full pl-8 pr-9 text-sm"
+          />
+          <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 text-[11px] text-muted-foreground max-sm:hidden">
+            /
+          </kbd>
+          {cari.trim() ? (
+            <div
+              role="listbox"
+              aria-label="Bagian yang cocok"
+              className="absolute inset-x-0 top-full z-30 mt-1 rounded-lg border border-border bg-card p-1 shadow-xl"
+            >
+              {bagianSeamless.length > 0 ? (
+                bagianSeamless.map((b, i) => (
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={i === 0}
+                    key={b.kunci}
+                    onClick={() => loncat(b.kunci)}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-3 rounded-md px-2.5 py-1.5 text-left text-sm transition hover:bg-muted/70",
+                      i === 0 && "bg-muted/60"
+                    )}
+                  >
+                    <span>{b.judul}</span>
+                    {b.lewatKataLain ? <span className="text-xs text-muted-foreground">cocok: {cari.trim()}</span> : null}
+                  </button>
+                ))
+              ) : (
+                <p className="px-2.5 py-2 text-sm text-muted-foreground">Tidak ada bagian yang cocok.</p>
+              )}
+            </div>
+          ) : null}
+        </div>
+
+        {salinTangan ? (
+          <div
+            role="status"
+            className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:text-amber-100"
+          >
+            <p className="mb-1.5">
+              Peramban menolak menyalin otomatis. Isi {salinTangan.apa} sudah terpilih di kotak ini — tekan
+              Ctrl+C untuk menyalinnya.
+            </p>
+            <textarea
+              readOnly
+              autoFocus
+              aria-label={`Isi ${salinTangan.apa} untuk disalin tangan`}
+              value={salinTangan.teks}
+              rows={Math.min(12, Math.max(2, salinTangan.teks.split("\n").length))}
+              onFocus={(e) => e.currentTarget.select()}
+              className="w-full resize-y rounded border border-border bg-background p-1.5 font-mono text-xs text-foreground"
+            />
+            <div className="mt-1 flex justify-end">
+              <Button type="button" size="sm" variant="ghost" onClick={() => setSalinTangan(null)}>
+                Tutup
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {sippTidakTersedia ? (
+          <p className="mt-2 text-xs text-amber-800 dark:text-amber-200 print:hidden">
+            {tautan.alasan} Buka SIPP (beranda) tetap membuka SIPP, dan Salin tautan ALETA menyalin tautan
+            layar ini.
+            {tautan.keadaan === "gagal" ? (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  onClick={ulangiTautan}
+                  className="font-medium underline underline-offset-2 hover:text-foreground"
+                >
+                  Coba lagi
+                </button>
+              </>
+            ) : null}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-card px-3 py-2 print:hidden">

@@ -510,11 +510,14 @@ function kutipanSekitar(p: string, dari: number, sampai: number) {
   };
 }
 
-/** Periksa daftar paragraf -> { temuan, jumlahParagraf, jumlahHalaman, terpotong }. */
-export function periksaParagraf(daftar: Paragraf[]): HasilPeriksa {
-  const temuan: Temuan[] = [];
-  let terpotong = 0;
-  for (const par of daftar) {
+export type RentangTemuan = { jenis: JenisTemuan; dari: number; sampai: number };
+
+/**
+ * Rentang sisa blangko pada SATU paragraf (sesudah rentang yang tertelan rentang
+ * lebih besar disisihkan), terurut menurut letaknya. Dipakai periksaParagraf dan
+ * penanda kekosongan pada perintah AI - satu aturan, satu hasil.
+ */
+export function rentangParagraf(par: Paragraf): { p: string; pemenang: RentangTemuan[] } {
     const p = par.teks.replace(/ /g, " ");
     const rentang: Array<{ jenis: JenisTemuan; dari: number; sampai: number }> = [];
     // Rentang merah yang hanya dipisah spasi digabung: "Saksi kenal dengan" satu temuan, bukan tiga.
@@ -549,6 +552,15 @@ export function periksaParagraf(daftar: Paragraf[]): HasilPeriksa {
       return true;
     });
     pemenang.sort((x, y) => x.dari - y.dari);
+    return { p, pemenang };
+}
+
+/** Periksa daftar paragraf -> { temuan, jumlahParagraf, jumlahHalaman, terpotong }. */
+export function periksaParagraf(daftar: Paragraf[]): HasilPeriksa {
+  const temuan: Temuan[] = [];
+  let terpotong = 0;
+  for (const par of daftar) {
+    const { p, pemenang } = rentangParagraf(par);
     for (const r of pemenang) {
       if (temuan.length >= BATAS_TEMUAN) {
         terpotong += 1;
