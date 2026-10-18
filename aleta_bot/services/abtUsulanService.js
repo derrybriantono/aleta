@@ -1831,6 +1831,15 @@ async function dariSipp(nomorPerkara) {
     },
   ];
 
+  // Z1 18 Okt: isian popup yang datanya ada di SIPP (kesepakatan perdamaian, alasan cabut karena mediasi, batas ikrar,
+  // pengumuman itsbat, kuasa Tergugat) - lihat abtIsianSippLanjutan.js dan docs/isi-sipp-abt/DAFTAR-CEK.md.
+  try {
+    const lanjutan = await require("./abtIsianSippLanjutan").usulanLanjutanSipp(perkaraId, runQuery);
+    for (const u of lanjutan) if (!hasil.some((x) => x.kode === u.kode)) hasil.push(u);
+  } catch {
+    /* usulan lanjutan bersifat tambahan: gagal membaca tidak menggagalkan usulan SIPP lain */
+  }
+
   return {
     ok: true,
     perkaraId,
