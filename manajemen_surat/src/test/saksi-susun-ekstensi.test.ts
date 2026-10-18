@@ -354,6 +354,59 @@ describe("tab keterangan anak, calon, dan orang tua (dispensasi kawin)", () => {
     expect(wadah.querySelector(".aleta-ssk-salin-teks").value).toMatch(/ \?.+;/);
   });
 
+  // Keputusan pengguna 18 Okt (no. 65): butir kehamilan dan hubungan badan mengikuti posita; centang petugas menang.
+  const POSITA_HAMIL = "Bahwa anak Pemohon bernama Siti sekarang sedang hamil 2 (dua) bulan dari calon suaminya, sehingga perkawinan perlu segera dilaksanakan;";
+  const POSITA_BIASA = "Bahwa anak Pemohon bernama Siti berumur 16 tahun dan ingin menikah dengan calon suaminya Budi yang telah bekerja tetap;";
+
+  it("posita menyebut calon istri hamil: kotak konfirmasi tercentang sendiri bertuliskan 'menurut posita', dan butir kehamilan ikut disusun", async () => {
+    const { wadah } = await bukaDk({ "5125": POSITA_HAMIL });
+    tab(wadah, "keterangan").click();
+    await tunggu(() => Boolean(wadah.querySelector(".aleta-ssk-konfirmasi input")), "kotak konfirmasi muncul tanpa memilih latar belakang");
+    const kotak = wadah.querySelector(".aleta-ssk-konfirmasi") as any;
+    expect(kotak.querySelector("input").checked).toBe(true);
+    expect(kotak.textContent).toContain("menurut posita");
+    expect(kotak.textContent).not.toMatch(/\b5125\b|#\d{4}#/);
+    tombolDi(wadah, "Susun tanya-jawab keterangan").click();
+    await tunggu(() => Boolean(wadah.querySelector('.aleta-ssk-baris[data-butir="q-kt-hamil-diri"]')), "butir kehamilan tersusun tanpa centang manual");
+    expect(wadah.textContent).not.toContain("belum ikut disusun");
+  });
+
+  it("posita tidak menyebut kehamilan atau hubungan badan: tetap mati, tidak ada kotak konfirmasi dan tidak ada butirnya", async () => {
+    const { wadah } = await bukaDk({ "5125": POSITA_BIASA });
+    tab(wadah, "keterangan").click();
+    await tunggu(() => wadah.querySelectorAll(".aleta-ssk-kartu").length === 4, "empat kartu peran");
+    expect(wadah.querySelector(".aleta-ssk-konfirmasi")).toBeNull();
+    tombolDi(wadah, "Susun tanya-jawab keterangan").click();
+    await tunggu(() => wadah.querySelectorAll(".aleta-ssk-saksi").length >= 4, "pemberi keterangan tersusun");
+    expect(wadah.querySelector('.aleta-ssk-baris[data-butir="q-kt-hamil-diri"]')).toBeNull();
+    expect(wadah.querySelector('.aleta-ssk-baris[data-butir="q-kt-hubungan-badan-diri"]')).toBeNull();
+  });
+
+  it("posita yang menyangkal ('tidak hamil', 'belum pernah berhubungan badan') tidak mencentang apa pun", async () => {
+    const { wadah } = await bukaDk({ "5125": "Bahwa anak Pemohon tidak hamil dan belum pernah berhubungan badan dengan calon suaminya, namun keduanya sudah bertunangan;" });
+    tab(wadah, "keterangan").click();
+    await tunggu(() => wadah.querySelectorAll(".aleta-ssk-kartu").length === 4, "empat kartu peran");
+    expect(wadah.querySelector(".aleta-ssk-konfirmasi")).toBeNull();
+  });
+
+  it("centang manual menang: petugas mencabut centang otomatis, butir ditahan; mencentang lagi menyalakannya; keterangan sumber hilang", async () => {
+    const { wadah } = await bukaDk({ "5125": POSITA_HAMIL });
+    tab(wadah, "keterangan").click();
+    await tunggu(() => Boolean(wadah.querySelector(".aleta-ssk-konfirmasi input")), "kotak konfirmasi");
+    const cb = wadah.querySelector(".aleta-ssk-konfirmasi input") as any;
+    expect(cb.checked).toBe(true);
+    cb.click();
+    expect(cb.checked).toBe(false);
+    expect((wadah.querySelector(".aleta-ssk-sumber") as any).hidden).toBe(true);
+    tombolDi(wadah, "Susun tanya-jawab keterangan").click();
+    await tunggu(() => wadah.querySelectorAll(".aleta-ssk-saksi").length >= 4, "pemberi keterangan tersusun");
+    expect(wadah.querySelector('.aleta-ssk-baris[data-butir="q-kt-hamil-diri"]')).toBeNull();
+    expect(wadah.textContent).toContain("belum ikut disusun");
+    cb.click();
+    tombolDi(wadah, "Susun tanya-jawab keterangan").click();
+    await tunggu(() => Boolean(wadah.querySelector('.aleta-ssk-baris[data-butir="q-kt-hamil-diri"]')), "butir kehamilan setelah dicentang petugas");
+  });
+
   it("kartu: orang tua 2 orang menjadi ayah dan ibu terpisah; calon tidak hadir tidak diperiksa", async () => {
     const { w, wadah } = await bukaDk();
     tab(wadah, "keterangan").click();

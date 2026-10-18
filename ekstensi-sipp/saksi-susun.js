@@ -119,9 +119,34 @@
     };
   }
 
+  /** Variabel posita di blangko; teksnya disinggahkan supaya halaman tanya-jawab tahu latar belakang permohonan. */
+  const VAR_POSITA_DK = "5125";
+
+  /**
+   * Latar belakang permohonan dispensasi kawin yang disebut POSITA: "hamil" atau "hubungan-badan" ("" bila tidak disebut).
+   * Kata yang diawali penyangkalan ("tidak/belum hamil", "tidak pernah berhubungan badan") tidak dihitung. Kehamilan didahulukan
+   * bila keduanya disebut. Hanya penanda: yang memutuskan butir sensitif ikut dicetak tetap kotak konfirmasi di tab keterangan.
+   */
+  function sebabDariPosita(teks) {
+    const t = String(teks || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    if (!t.trim()) return "";
+    const adaTanpaSangkal = (pola) => {
+      const re = new RegExp(pola.source, "gi");
+      let m;
+      while ((m = re.exec(t))) {
+        const depan = t.slice(Math.max(0, m.index - 30), m.index);
+        if (!/\b(?:tidak|belum|bukan|tanpa)\s+(?:pernah\s+|sedang\s+|lagi\s+|sama\s+sekali\s+)*(?:ada\s+|terjadi\s+)?$/i.test(depan)) return true;
+      }
+      return false;
+    };
+    if (adaTanpaSangkal(/\b(?:hamil|mengandung|kehamilan)\b/)) return "hamil";
+    if (adaTanpaSangkal(/\b(?:berhubungan\s+(?:badan|intim|seksual|suami\s+(?:istri|isteri))|hubungan\s+(?:badan|intim|seksual|layaknya\s+suami\s+(?:istri|isteri))|bersetubuh|berzina)\b/)) return "hubungan-badan";
+    return "";
+  }
+
   /** Kode variabel yang dipakai seluruh katalog (untuk singgahan). */
   function kodeDipakaiKatalog(daftar) {
-    const kode = new Set(["0046", "0047", "0048", "8503"]);
+    const kode = new Set(["0046", "0047", "0048", "8503", VAR_POSITA_DK]);
     for (const kat of daftar || []) {
       for (const q of (kat && kat.pertanyaan) || []) for (const v of q.variabelAbt || []) kode.add(String(v));
       for (const vs of Object.values(Mesin() ? Mesin().VARIABEL_HUBUNGAN : {})) for (const grup of vs) for (const v of grup) kode.add(v);
@@ -206,7 +231,7 @@
       // keterangan anak, calon, dan orang tua (hanya jenis perkara yang punya katalog keterangan, mis. dispensasi kawin)
       ket: null,
       tab: "saksi",
-      kt: { periksa: {}, konfirmasi: false, hasil: null, perButir: {} },
+      kt: { periksa: {}, konfirmasi: null, hasil: null, perButir: {} },
     };
 
     const peta = () => (typeof k.petaVariabel === "function" ? k.petaVariabel() : null);
@@ -288,11 +313,28 @@
       aturKeterangan(kat);
     }
 
+    /**
+     * Latar belakang permohonan untuk tab keterangan. Pilihan petugas (hamil / hubungan badan) menang; bila masih "lain",
+     * posita yang menyebutnya yang menentukan. `otomatis` = posita menyebutnya (dasar mencentang konfirmasi sendiri).
+     */
+    function sebabKeterangan() {
+      const pilihan = String(S.keadaan.sebabDK || "");
+      const dariPosita = sebabDariPosita(bacaVar()(VAR_POSITA_DK));
+      const sebab = ["hamil", "hubungan-badan"].includes(pilihan) ? pilihan : dariPosita;
+      return { sebab, otomatis: Boolean(dariPosita) && Boolean(sebab) };
+    }
+
+    /** Konfirmasi butir sensitif: centang petugas (ya/tidak) menang; selebihnya tercentang sendiri bila posita menyebutnya. */
+    function konfirmasiKeterangan() {
+      if (S.kt.konfirmasi === true || S.kt.konfirmasi === false) return S.kt.konfirmasi;
+      return sebabKeterangan().otomatis;
+    }
+
     /** Tab keterangan: katalog keterangan pihak yang menempel pada katalog ini, kartu per peran, dan keadaan tambahannya. */
     function aturKeterangan(kat) {
       S.ket = typeof m.kenaliKeterangan === "function" ? m.kenaliKeterangan(DataKatalog(), kat) : null;
       S.tab = "saksi";
-      S.kt = { periksa: {}, konfirmasi: false, hasil: null, perButir: {} };
+      S.kt = { periksa: {}, konfirmasi: null, hasil: null, perButir: {} };
       if (!S.ket) return;
       // isian keadaan keterangan yang belum ada di keadaan saksi (sekolah, pendampingan, dst.) mendapat nilai bawaannya;
       // kunci yang sama dengan katalog saksi (jenis kelamin anak, latar belakang, umur calon) memakai yang sudah dipilih
@@ -720,9 +762,9 @@
         };
       });
       return {
-        keadaan: Object.assign({}, S.keadaan),
+        keadaan: Object.assign({}, S.keadaan, sebabKeterangan().sebab ? { sebabDK: sebabKeterangan().sebab } : {}),
         benih: nomor(),
-        konfirmasiSebab: S.kt.konfirmasi === true,
+        konfirmasiSebab: konfirmasiKeterangan() === true,
         periksa,
         variabel: bacaVar(),
         slot: {},
@@ -874,19 +916,30 @@
       form.appendChild(buat("div", "aleta-abt-kabar", "Pilih siapa yang hadir dan jenis keterangannya, lalu susun."));
       gambarKeadaan(form, S.ket, KEADAAN_KARTU);
       // butir yang sensitif tidak ikut tercetak sebelum petugas mengonfirmasi (bawaan: mati)
-      if (["hamil", "hubungan-badan"].includes(String(S.keadaan.sebabDK))) {
+      // Posita yang menyebut kehamilan atau hubungan badan mencentang kotaknya sendiri; centang petugas tetap menang.
+      const sebabKini = sebabKeterangan();
+      if (["hamil", "hubungan-badan"].includes(sebabKini.sebab)) {
         const c = buat("label", "aleta-sdg-centang aleta-ssk-konfirmasi");
         const cb = document.createElement("input");
         cb.type = "checkbox";
-        cb.checked = S.kt.konfirmasi === true;
+        cb.checked = konfirmasiKeterangan();
+        const sumber = buat("small", "aleta-ssk-sumber", " (menurut posita)");
+        const catatan = buat("div", "aleta-abt-kabar", "Selama belum dicentang, butir kehamilan dan hubungan badan tidak ikut disusun.");
+        const segarkan = () => {
+          sumber.hidden = !(sebabKini.otomatis && S.kt.konfirmasi === null);
+          catatan.hidden = cb.checked;
+        };
         cb.addEventListener("change", () => {
           S.kt.konfirmasi = cb.checked;
           S.kt.hasil = null;
+          segarkan();
         });
         c.appendChild(cb);
         c.appendChild(buat("span", "", "Butir kehamilan dan hubungan badan sudah ditanyakan di persidangan dan boleh ikut dicetak"));
+        c.appendChild(sumber);
         form.appendChild(c);
-        if (!S.kt.konfirmasi) form.appendChild(buat("div", "aleta-abt-kabar", "Selama belum dicentang, butir kehamilan dan hubungan badan tidak ikut disusun."));
+        form.appendChild(catatan);
+        segarkan();
       }
       const kotak = buat("div", "aleta-sdg-alasan aleta-ssk-kartu-wadah");
       kotak.appendChild(buat("div", "aleta-abt-label", "Pihak yang didengar keterangannya"));
@@ -1273,6 +1326,7 @@
     turunkanKeadaan,
     pembaca,
     kodeDipakaiKatalog,
+    sebabDariPosita,
     BATAS_SAKSI,
   });
 })();

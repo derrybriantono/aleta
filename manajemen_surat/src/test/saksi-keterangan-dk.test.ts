@@ -392,3 +392,31 @@ describe("isi keluaran: variabel, istilah, dan cakupan", () => {
     expect(t).toBe("Berapa umur Saudara saat ini ?saya berumur 16 tahun;\nApakah masih ada yang ingin disampaikan ?sudah cukup;");
   });
 });
+
+describe("kehamilan dan hubungan badan mengikuti posita (keputusan pengguna no. 65)", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require(path.join(AKAR, "saksi-susun.js"));
+  const sebab = (teks: string): string => (globalThis as any).AletaSaksiSusun.sebabDariPosita(teks);
+
+  it("posita hamil -> 'hamil' (konfirmasi tercentang sendiri di panel); hubungan badan -> 'hubungan-badan'; hamil didahulukan", () => {
+    expect(sebab("Bahwa anak Pemohon sekarang sedang hamil 2 (dua) bulan")).toBe("hamil");
+    expect(sebab("Bahwa calon istri anak Pemohon sedang mengandung")).toBe("hamil");
+    expect(sebab("Bahwa keduanya sudah berhubungan badan layaknya suami istri")).toBe("hubungan-badan");
+    expect(sebab("Bahwa keduanya sudah berhubungan badan dan sekarang hamil")).toBe("hamil");
+  });
+
+  it("posita tanpa kehamilan atau hubungan badan, atau yang menyangkalnya -> tetap mati", () => {
+    expect(sebab("Bahwa anak Pemohon berumur 16 tahun dan ingin menikah")).toBe("");
+    expect(sebab("Bahwa anak Pemohon tidak hamil dan belum pernah berhubungan badan")).toBe("");
+    expect(sebab("")).toBe("");
+    expect(sebab(undefined as unknown as string)).toBe("");
+  });
+
+  it("centang manual menang: mesin hanya mencetak butir bila konfirmasi persis true, apa pun isi posita", () => {
+    for (const nilai of [false, null, undefined]) {
+      const h = susunKet({ sebabDK: "hamil" }, SEMUA_HADIR, { konfirmasiSebab: nilai });
+      expect(adaButir(h, "q-kt-hamil-diri"), String(nilai)).toBe(false);
+    }
+    expect(adaButir(susunKet({ sebabDK: "hamil" }, SEMUA_HADIR, { konfirmasiSebab: true }), "q-kt-hamil-diri")).toBe(true);
+  });
+});
