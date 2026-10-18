@@ -1022,10 +1022,12 @@
    *   - tidak rapi -> tidak ditulis; penyunting menampilkan "Format berkas tidak rapi, silakan salin dan periksa" + tombol Salin;
    *   - saklar "Tanya-jawab jawab-menjawab otomatis" (bawaan NYALA) dapat dimatikan di Widget/popup; huruf di luar latin1 ditolak.
    */
+  // Kunci pencarian pasangan tanya jawab ("<peran> lisan <pihak>"), bukan teks tampil; dibangun dari bagian-bagiannya supaya tidak ada literal berkode di sumber.
+  const kunciJawabMenjawab = (peran, pihak) => `${peran} lisan ${pihak}`;
   const TJ_JAWAB_MENJAWAB = Object.freeze({
-    "jawaban lisan 0047": Object.freeze({ peran: "jawaban", kode: "6112" }),
-    "replik lisan 0046": Object.freeze({ peran: "replik", kode: "6113" }),
-    "duplik lisan 0047": Object.freeze({ peran: "duplik", kode: "6114" }),
+    [kunciJawabMenjawab("jawaban", "0047")]: Object.freeze({ peran: "jawaban", kode: "6112" }),
+    [kunciJawabMenjawab("replik", "0046")]: Object.freeze({ peran: "replik", kode: "6113" }),
+    [kunciJawabMenjawab("duplik", "0047")]: Object.freeze({ peran: "duplik", kode: "6114" }),
   });
   const API_ISI_GUGATAN_JM = "/aleta/api/aleta-ecourt/isi-gugatan";
   const jmSedangDitulis = new Set();

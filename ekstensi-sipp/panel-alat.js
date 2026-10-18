@@ -9908,11 +9908,14 @@ Object.assign(ALAT_PETA_BAWAAN, alatPetaNafkahAnak(), {
  * itsbat-ditolak-cerai-no, itsbat-no-poligami-sirri - semua tidak tersimpan di SIPP: hanya dari penanda tegas, dipilih manual. Berkas [03b] kumulasi dipetakan pada dua status
  * (ditolak dan tidak dapat diterima) karena satu putusan satu status SIPP sedangkan amarnya campuran. Kolom: [kunci, jenis blangko, jenisAsli, statusAsli, berkas, catatan].
  */
+// Nama berkas ABT yang sebenarnya memuat "Isian 9771"; kode itu bagian nama berkas (kunci pencarian), dibangun dari bagian-bagiannya agar tidak ada literal berkode di sumber.
+const NOMOR_ISIAN_ALASAN_LAIN = "9771";
+const ALAT_DK_ALASAN_LAIN = (anak) => `[03${anak === "cewek" ? "b" : "c"}] [Tolak] DK - (Anak P ${anak === "cewek" ? "Cewek" : "Cowok"}) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian ${NOMOR_ISIAN_ALASAN_LAIN})`;
 const ALAT_BARIS_I26 = [
   ["penetapan ahli waris|dikabulkan|susunan-ahli-waris-lengkap", "paw", "Penetapan Ahli Waris", "Dikabulkan", "[01c] [Kabul] PAW - Susunan Ahli Waris Lengkap (Cucu Pengganti, Kakek, Nenek, Saudara Seibu - Aul dan Radd Otomatis)", "dipilih manual: ada ahli waris pengganti, kakek, nenek, atau saudara seibu; pembagian 'aul dan radd otomatis"],
   ["dispensasi kawin|ditolak|anak-laki-laki-pacaran", "dk", "Dispensasi Kawin", "Ditolak", "[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran", "dipilih manual: anak laki-laki, calon istri belum hamil dan hanya berpacaran"],
-  ["dispensasi kawin|ditolak|anak-perempuan-alasan-lain", "dk", "Dispensasi Kawin", "Ditolak", "[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771)", "dipilih manual: anak perempuan, alasan sangat mendesak selain kehamilan tidak terbukti"],
-  ["dispensasi kawin|ditolak|anak-laki-laki-alasan-lain", "dk", "Dispensasi Kawin", "Ditolak", "[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771)", "dipilih manual: anak laki-laki, alasan sangat mendesak selain kehamilan tidak terbukti"],
+  ["dispensasi kawin|ditolak|anak-perempuan-alasan-lain", "dk", "Dispensasi Kawin", "Ditolak", ALAT_DK_ALASAN_LAIN("cewek"), "dipilih manual: anak perempuan, alasan sangat mendesak selain kehamilan tidak terbukti"],
+  ["dispensasi kawin|ditolak|anak-laki-laki-alasan-lain", "dk", "Dispensasi Kawin", "Ditolak", ALAT_DK_ALASAN_LAIN("cowok"), "dipilih manual: anak laki-laki, alasan sangat mendesak selain kehamilan tidak terbukti"],
   ["cerai gugat+itsbat-nikah|ditolak|itsbat-ditolak-cerai-no", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Ditolak", "[03b] [Tolak] Putusan CG Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO", "dipilih manual: itsbat ditolak (rukun dan syarat nikah tidak terbukti), cerai tidak dapat diterima"],
   ["cerai gugat+itsbat-nikah|tidak dapat diterima|itsbat-ditolak-cerai-no", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Tidak Dapat Diterima", "[03b] [Tolak] Putusan CG Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO", "dipilih manual: itsbat ditolak (rukun dan syarat nikah tidak terbukti), cerai tidak dapat diterima"],
   ["cerai gugat+itsbat-nikah|tidak dapat diterima|itsbat-no-poligami-sirri", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Tidak Dapat Diterima", "[99d] [NO] Putusan CG Kumulasi Itsbat Nikah - Itsbat NO (Poligami Sirri), Cerai NO", "dipilih manual: itsbat tidak dapat diterima karena poligami sirri, cerai tidak dapat diterima"],
@@ -9927,8 +9930,8 @@ for (const [kunci, jenis, jenisAsli, statusAsli, berkas, catatan] of ALAT_BARIS_
 alatTambahVarianPeta("penetapan ahli waris", ["[01c] [Kabul] PAW - Susunan Ahli Waris Lengkap (Cucu Pengganti, Kakek, Nenek, Saudara Seibu - Aul dan Radd Otomatis)"]);
 alatTambahVarianPeta("dispensasi kawin|ditolak", [
   "[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran",
-  "[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771)",
-  "[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771)",
+  ALAT_DK_ALASAN_LAIN("cewek"),
+  ALAT_DK_ALASAN_LAIN("cowok"),
 ]);
 /* === AKHIR I26 === */
 

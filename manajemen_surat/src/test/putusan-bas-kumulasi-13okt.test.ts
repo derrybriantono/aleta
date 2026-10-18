@@ -148,7 +148,7 @@ describe("A. pemilih blangko putusan kumulasi (panel-alat.js yang dijalankan)", 
     const tertanam = jalan("alatTipeTertanamPeta()") as { kunci: string; nilai: string; data: Record<string, unknown> }[];
     const kum = tertanam.filter((e) => e.kunci.includes("+"));
     // I17 18 Okt: + 40 baris kumulasi cabut/gugur/coret/NO/kabul/tolak (folder 1c dan 1d) di samping empat baris verstek (T 13 Okt).
-    expect(kum).toHaveLength(44);
+    expect(kum).toHaveLength(50); // I26 18 Okt: + 6 baris cerai kumulasi itsbat ditolak [03b] / NO poligami sirri [99d] (CG dan CT)
     expect(kum.map((e) => e.kunci)).toEqual(
       expect.arrayContaining([
         "cerai gugat+hak-asuh-anak+nafkah-anak|dikabulkan|verstek",

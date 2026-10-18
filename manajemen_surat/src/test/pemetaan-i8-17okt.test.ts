@@ -63,6 +63,17 @@ describe("A. berkas ada di folder menunya", () => {
         "penguasaan anak|ditolak|verstek",
         // I23 18 Okt: nafkah anak pasca perceraian (6c) punya [03b] tolak verstek sendiri.
         "nafkah anak pasca perceraian|ditolak|verstek",
+        // I26 18 Okt: DK ditolak [03a] (anak laki-laki, pacaran) dan [03b] (anak perempuan, alasan lain), serta cerai kumulasi itsbat yang itsbatnya ditolak [03b] (CG dan CT,
+        // pada status ditolak maupun tidak dapat diterima). [03c] DK menunjuk [03c] sehingga tidak terhitung di sini.
+        "dispensasi kawin|ditolak|anak-laki-laki-pacaran",
+        "dispensasi kawin|ditolak|anak-perempuan-alasan-lain",
+        "cerai gugat+itsbat-nikah|ditolak|itsbat-ditolak-cerai-no",
+        "cerai gugat+itsbat-nikah|tidak dapat diterima|itsbat-ditolak-cerai-no",
+        "cerai talak+itsbat-nikah|ditolak|itsbat-ditolak-cerai-no",
+        "cerai talak+itsbat-nikah|tidak dapat diterima|itsbat-ditolak-cerai-no",
+        // I28 18 Okt: hibah dan wakaf (pola wasiat) punya [03b] tolak verstek sendiri (folder 4d / 4e).
+        "hibah|ditolak|verstek",
+        "wakaf|ditolak|verstek",
       ].sort()
     );
     for (const [k, b] of baris) expect(FIX.berkas, k).toContain(`${A}${FOLDER_MENU_PUTUSAN[String(b.blangko)]}/${b.berkas}.rtf`);
