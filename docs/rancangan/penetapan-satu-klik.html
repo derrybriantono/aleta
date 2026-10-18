@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Penetapan Satu Klik</title>
+<!--
+  Rancangan panel Penetapan di ekstensi (UI Baru), 18 Okt 2026.
+  Data rekaan. Keadaan dipilih dengan tombol di atas atau alamat:
+    #keadaan=awal|sebagian|berjalan|selesai|galat|ubah|libur  &lebar=hp|laptop
+  Kelas dan teks di sini SAMA dengan yang dibangun t7KartuPenetapan di
+  ekstensi-sipp/konten.js; warnanya token kulit UI Baru (panel.css).
+-->
+<style>
+  :root {
+    --latar: #ffffff; --latar-naik: #f3f5f9; --garis: #e2e7ef; --garis-kuat: #cdd5e1;
+    --tulisan: #111827; --lembut: #4b5565; --merek: #0b89a8; --aman: #047857;
+    --mendesak: #b45309; --lewat: #b91c1c;
+    --merek-latar: #e2f4f8; --aman-latar: #e7f6ef; --mendesak-latar: #fdf3e3; --lewat-latar: #fdecec;
+    --halaman: #e9edf3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --latar: #111a2b; --latar-naik: #162238; --garis: #24324b; --garis-kuat: #344560;
+      --tulisan: #e8eef7; --lembut: #aab6c8; --merek: #3ec6e6; --aman: #34d399;
+      --mendesak: #f5b83d; --lewat: #f87171;
+      --merek-latar: #10324a; --aman-latar: #0f3328; --mendesak-latar: #3a2c10; --lewat-latar: #3b1717;
+      --halaman: #0b1220;
+    }
+  }
+  :root[data-theme="dark"] {
+    --latar: #111a2b; --latar-naik: #162238; --garis: #24324b; --garis-kuat: #344560;
+    --tulisan: #e8eef7; --lembut: #aab6c8; --merek: #3ec6e6; --aman: #34d399;
+    --mendesak: #f5b83d; --lewat: #f87171;
+    --merek-latar: #10324a; --aman-latar: #0f3328; --mendesak-latar: #3a2c10; --lewat-latar: #3b1717;
+    --halaman: #0b1220;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--halaman); color: var(--tulisan);
+    font: 14px/1.45 "Plus Jakarta Sans", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  }
+  .pengatur { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 10px 16px; background: var(--latar); border-bottom: 1px solid var(--garis); }
+  .pengatur b { margin-right: 4px; font-size: 12px; color: var(--lembut); }
+  .pengatur button { font: inherit; font-size: 12.5px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--garis-kuat); background: var(--latar); color: var(--tulisan); cursor: pointer; }
+  .pengatur button[aria-pressed="true"] { background: var(--merek); border-color: var(--merek); color: var(--latar); }
+  .pengatur .jarak { width: 14px; }
+
+  /* Halaman SIPP tiruan (laptop) + panel berlabuh di kanan */
+  .layar { display: flex; min-height: calc(100vh - 46px); }
+  .sipp { flex: 1; padding: 16px; min-width: 0; }
+  .sipp .bilah-sipp { height: 34px; border-radius: 6px; background: #2f5f8f; opacity: .85; margin-bottom: 12px; }
+  .sipp .tab-sipp { display: flex; gap: 4px; margin-bottom: 10px; }
+  .sipp .tab-sipp span { padding: 5px 10px; border-radius: 4px 4px 0 0; background: #d7dee8; color: #374151; font-size: 12px; }
+  .sipp .tabel-sipp { background: #fff; border: 1px solid #cfd6df; border-radius: 4px; padding: 10px; color: #374151; font-size: 12.5px; }
+  .sipp .tabel-sipp div { display: grid; grid-template-columns: 170px 1fr; padding: 4px 0; border-bottom: 1px solid #edf0f4; }
+  [data-lebar="hp"] .sipp { display: none; }
+  .panel {
+    width: 470px; flex: none; background: var(--latar); border-left: 1px solid var(--garis);
+    display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 12px 30px rgba(16,24,40,.14);
+  }
+  [data-lebar="hp"] .layar { justify-content: center; }
+  [data-lebar="hp"] .panel { width: 100%; max-width: 390px; border-left: 0; }
+
+  .kepala { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--garis); }
+  .kepala .nomor { font-weight: 700; font-size: 14px; }
+  .kepala .ket { display: block; font-size: 12px; color: var(--lembut); font-weight: 500; }
+  .kepala .titik { margin-left: auto; color: var(--lembut); font-size: 18px; letter-spacing: 2px; }
+  .tab { display: flex; gap: 2px; padding: 0 8px; border-bottom: 1px solid var(--garis); overflow-x: auto; }
+  .tab span { padding: 8px 10px; font-size: 12.5px; color: var(--lembut); white-space: nowrap; border-bottom: 2px solid transparent; }
+  .tab span.aktif { color: var(--merek); border-color: var(--merek); font-weight: 700; }
+  .isi { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* ── Kartu Penetapan (aleta-t7-penetapan) ───────────────────────────── */
+  .aleta-t7-penetapan { border: 1px solid var(--garis); border-radius: 12px; background: var(--latar); overflow: hidden; }
+  .aleta-t7-penetapan-kepala { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px; }
+  .aleta-t7-penetapan-judul { font-weight: 700; font-size: 15px; }
+  .lipat { color: var(--tulisan); font-weight: 700; }
+  .aleta-t7-penetapan-ringkas { margin-left: auto; font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--merek-latar); color: var(--merek); font-weight: 600; white-space: nowrap; }
+  .aleta-t7-penetapan-ringkas.aman { color: var(--aman); }
+  .aleta-t7-perkara { margin: 0 12px 8px; padding: 8px 10px; border-radius: 8px; background: var(--latar-naik); font-size: 12.5px; color: var(--lembut); }
+  .aleta-t7-perkara strong { display: block; color: var(--tulisan); font-size: 13px; }
+
+  .aleta-t7-keputusan-daftar { border-top: 1px solid var(--garis); }
+  .aleta-t7-keputusan-baris { display: grid; grid-template-columns: 34px 1fr auto; gap: 2px 8px; align-items: start; padding: 9px 12px; border-top: 1px solid var(--garis); }
+  .aleta-t7-keputusan-baris:first-child { border-top: 0; }
+  .aleta-t7-kode { grid-row: span 2; display: inline-flex; align-items: center; justify-content: center; height: 22px; border-radius: 6px; background: var(--latar-naik); color: var(--lembut); font-size: 10.5px; font-weight: 700; letter-spacing: .03em; margin-top: 1px; }
+  .aleta-t7-keputusan-label { font-size: 12px; color: var(--lembut); }
+  .aleta-t7-keputusan-nilai { grid-column: 2; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; font-size: 13px; }
+  .aleta-t7-keputusan-nilai strong { font-weight: 650; }
+  .aleta-t7-chip-kecil { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--merek-latar); color: var(--merek); font-size: 11px; font-weight: 600; }
+  .aleta-t7-chip-kecil.sudah { color: var(--aman); }
+  .aleta-t7-info { color: var(--merek); cursor: help; font-size: 12px; }
+  .aleta-t7-tautan { border: 0; background: none; padding: 0; color: var(--merek); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .aleta-t7-awas { grid-column: 2 / -1; color: var(--mendesak); font-size: 12px; }
+  .aleta-t7-langkah-status { grid-row: 1; grid-column: 3; font-size: 11.5px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; color: var(--lembut); }
+  .aleta-t7-langkah-status.ok { color: var(--aman); }
+  .aleta-t7-langkah-status.gagal { color: var(--lewat); }
+  .aleta-t7-langkah-status.ditahan { color: var(--mendesak); }
+  .aleta-t7-langkah-status.jalan { color: var(--merek); }
+  .putar { width: 11px; height: 11px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: putar .8s linear infinite; }
+  @keyframes putar { to { transform: rotate(360deg); } }
+  .aleta-t7-langkah-sebab { grid-column: 2 / -1; font-size: 12px; color: var(--lewat); }
+  .aleta-t7-langkah-sebab.ditahan { color: var(--mendesak); }
+
+  .aleta-t7-pejabat { padding: 8px 12px; border-top: 1px solid var(--garis); font-size: 12px; color: var(--lembut); }
+  .aleta-t7-pejabat strong { color: var(--tulisan); font-weight: 600; }
+  .aleta-t7-mode { margin: 0 12px 8px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--mendesak); color: var(--mendesak); font-size: 12px; font-weight: 600; }
+
+  .aleta-t7-penetapan-kaki { padding: 10px 12px 12px; border-top: 1px solid var(--garis); display: flex; flex-direction: column; gap: 8px; }
+  .aleta-t7-tetapkan-semua { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--merek); background: var(--merek); color: #fff; font: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; }
+  :root[data-theme="dark"] .aleta-t7-tetapkan-semua { color: #0b1220; }
+  .aleta-t7-tetapkan-semua[disabled] { opacity: .55; cursor: default; }
+  .aleta-t7-tetapkan-petunjuk { font-size: 12px; color: var(--lembut); text-align: center; }
+  .aleta-t7-hasil { padding: 8px 10px; border-radius: 8px; font-size: 12.5px; }
+  .aleta-t7-hasil.ok { border: 1px solid var(--aman); color: var(--aman); }
+  .aleta-t7-hasil.gagal { border: 1px solid var(--lewat); color: var(--lewat); }
+  .aleta-t7-hasil.jalan { border: 1px solid var(--merek); color: var(--merek); }
+  .aleta-t7-lain { font-size: 12.5px; }
+  .aleta-t7-lain summary { cursor: pointer; color: var(--lembut); font-weight: 600; }
+  .aleta-t7-lain-isi { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 6px; }
+  .aleta-t7-kecil { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--garis-kuat); background: var(--latar-naik); color: var(--tulisan); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .aleta-t7-lain-ket { flex-basis: 100%; font-size: 11.5px; color: var(--lembut); }
+
+  /* Bagian rinci yang dibuka "Ubah" (bagian lama, sama isinya) */
+  .rinci { border: 1px solid var(--garis); border-radius: 10px; background: var(--latar); }
+  .rinci-judul { padding: 8px 12px; font-weight: 700; font-size: 13px; border-bottom: 1px solid var(--garis); display: flex; }
+  .rinci-judul span { margin-left: auto; font-weight: 500; color: var(--lembut); font-size: 12px; }
+  .rinci-isi { padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .saklar { display: inline-flex; border: 1px solid var(--garis-kuat); border-radius: 8px; overflow: hidden; font-size: 12px; }
+  .saklar span { padding: 3px 10px; }
+  .saklar span.aktif { background: var(--merek); color: #fff; }
+  .pilih { display: grid; grid-template-columns: 110px 1fr; gap: 6px; align-items: center; font-size: 12.5px; }
+  .pilih span { color: var(--lembut); }
+  .pilih select { font: inherit; font-size: 12.5px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--garis-kuat); background: var(--latar); color: var(--tulisan); min-width: 0; }
+  .sorot { outline: 2px solid var(--merek); outline-offset: 2px; border-radius: 6px; }
+  .tetap { display: grid; grid-template-columns: minmax(104px, 32%) 1fr; gap: 6px; padding: 6px 0; border-top: 1px solid var(--garis); font-size: 12.5px; }
+  .tetap-label { color: var(--lembut); font-weight: 600; }
+  .tetap-nilai { display: flex; flex-direction: column; gap: 2px; }
+  .tetap-sebab { color: var(--lembut); font-size: 11.5px; }
+  .rinci-awas { color: var(--mendesak); font-size: 12px; }
+  .rinci-ket { color: var(--lembut); font-size: 12px; }
+
+  /* Bilah bawah lengket (sipp-5) */
+  .aleta-t7-bilah { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 12px; border-top: 1px solid var(--garis); background: var(--latar-naik); position: sticky; bottom: 0; }
+  .aleta-t7-bilah-ringkas { flex: 1 1 160px; font-size: 12.5px; font-weight: 600; }
+  .aleta-t7-utama { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--merek); background: var(--merek); color: #fff; font: inherit; font-size: 13px; font-weight: 700; }
+
+  .keterangan-rancangan { max-width: 980px; margin: 14px auto 28px; padding: 0 16px; color: var(--lembut); font-size: 12.5px; }
+  .keterangan-rancangan h2 { font-size: 14px; color: var(--tulisan); margin: 10px 0 4px; }
+  .keterangan-rancangan table { border-collapse: collapse; width: 100%; background: var(--latar); }
+  .keterangan-rancangan td, .keterangan-rancangan th { border: 1px solid var(--garis); padding: 5px 8px; text-align: left; vertical-align: top; }
+  @media (max-width: 520px) { .pengatur { padding: 8px 16px; } }
+</style>
+</head>
+<body>
+<div class="pengatur" role="toolbar" aria-label="Pilih keadaan">
+  <b>Keadaan</b>
+  <button data-k="awal">Sebelum klik</button>
+  <button data-k="sebagian">Sebagian sudah</button>
+  <button data-k="berjalan">Sedang berjalan</button>
+  <button data-k="selesai">Sesudah klik</button>
+  <button data-k="galat">Galat</button>
+  <button data-k="ubah">Ubah usulan</button>
+  <button data-k="libur">Hari libur</button>
+  <span class="jarak"></span><b>Lebar</b>
+  <button data-l="hp">HP 390</button>
+  <button data-l="laptop">Laptop 1366</button>
+</div>
+
+<div class="layar" id="layar">
+  <div class="sipp" aria-hidden="true">
+    <div class="bilah-sipp"></div>
+    <div class="tab-sipp"><span>Data Umum</span><span>Pihak</span><span>Penetapan</span><span>Jadwal Sidang</span><span>Riwayat Perkara</span></div>
+    <div class="tabel-sipp">
+      <div><b>Nomor Perkara</b><span>712/Pdt.G/2026/PA.Dgl</span></div>
+      <div><b>Tanggal Pendaftaran</b><span>Senin, 19 Oktober 2026</span></div>
+      <div><b>Jenis Perkara</b><span>Cerai Gugat</span></div>
+      <div><b>Penggugat</b><span>NURHAYATI binti LAHAMA</span></div>
+      <div><b>Tergugat</b><span>MUHAMMAD RIZAL bin SYAMSUDDIN</span></div>
+    </div>
+  </div>
+
+  <aside class="panel" aria-label="Panel ALETA">
+    <div class="kepala">
+      <span><span class="nomor">712/Pdt.G/2026</span><span class="ket">Cerai Gugat</span></span>
+      <span class="titik">⋯</span>
+    </div>
+    <div class="tab"><span class="aktif">Penetapan</span><span>PTSP</span><span>Berkas</span><span>Perkara</span><span>Putusan</span><span>Juru Sita</span></div>
+    <div class="isi" id="isi"></div>
+    <div class="aleta-t7-bilah" id="bilah"></div>
+  </aside>
+</div>
+
+<div class="keterangan-rancangan">
+  <h2>Alur lama dan satu klik</h2>
+  <table>
+    <tr><th>Langkah</th><th>Alur lama (UI Baru 1.205)</th><th>Satu klik</th></tr>
+    <tr><td>Melihat usulan</td><td>Kartu "Keputusan penetapan" + bagian rinci di balik "Tinjau &amp; ubah pilihan"</td><td>Kartu "Penetapan": ringkasan perkara dan 4 baris PMH, PPP, PJS, PHS dengan status</td></tr>
+    <tr><td>Memeriksa</td><td>Tekan "Tetapkan dan tuliskan ke SIPP" (rencana tampil, rincian teknis panjang)</td><td>Termasuk dalam "Tetapkan semua" - pemeriksaan yang sama dijalankan lebih dulu</td></tr>
+    <tr><td>Menulis</td><td>Tekan lagi "Tuliskan ke SIPP"</td><td>Berjalan sendiri bila pemeriksaan lulus; berhenti bila ada yang gagal</td></tr>
+    <tr><td>Hasil</td><td>Teks hasil per langkah di bawah tombol asli</td><td>Status per baris (Ditetapkan / Dilewati / Gagal / Ditahan) + satu kalimat hasil</td></tr>
+    <tr><td>Mengubah</td><td>"Tinjau &amp; ubah pilihan" membuka semua pilihan</td><td>"Ubah" pada baris membuka bagian yang sama, tepat di pilihannya</td></tr>
+    <tr><td>Jarang dipakai</td><td>Bercampur di bagian rinci</td><td>"Pilihan lain": ubah semua pilihan, lihat rincian pemeriksaan; batalkan penetapan tetap di ⋯ › Zona berbahaya</td></tr>
+  </table>
+</div>
+
+<script>
+const BARIS = [
+  { kode: "PMH", label: "Penetapan Majelis Hakim", isi: "B — Himawan Tatura Wijaya, Idris, Derry Briantono", sebab: "beban perkara paling ringan bulan ini" },
+  { kode: "PPP", label: "Penunjukan Panitera Pengganti", isi: "Sri Susilowati", sebab: "panitera sidang Majelis B menurut SK" },
+  { kode: "PJS", label: "Penunjukan Juru Sita", isi: "Tanty", sebab: "giliran juru sita" },
+  { kode: "PHS", label: "Penetapan Hari Sidang", isi: "Rabu, 04-11-2026", sebab: "hari sidang Majelis B, sekurangnya 14 hari sesudah pendaftaran" },
+];
+const PEJABAT = "PMH Abdul Rahman — Ketua · PPP Rusdiana — Panitera · PJS Rusdiana — Panitera";
+
+function el(tag, kelas, teks) { const e = document.createElement(tag); if (kelas) e.className = kelas; if (teks !== undefined) e.textContent = teks; return e; }
+
+function statusLangkah(jenis, teks) {
+  const s = el("span", "aleta-t7-langkah-status " + jenis);
+  if (jenis === "jalan") s.appendChild(el("span", "putar"));
+  s.appendChild(document.createTextNode(teks));
+  return s;
+}
+
+function kartu(k) {
+  const sudahPmh = k === "sebagian";
+  const kartu = el("section", "aleta-t7-penetapan aleta-t7-keputusan");
+  const kepala = el("div", "aleta-t7-penetapan-kepala");
+  kepala.appendChild(el("span", "lipat", "⌄"));
+  kepala.appendChild(el("span", "aleta-t7-penetapan-judul", "Penetapan"));
+  const ringkas = {
+    awal: "4 belum ditetapkan", ubah: "4 belum ditetapkan", libur: "4 belum ditetapkan",
+    sebagian: "1 sudah di SIPP · 3 belum", berjalan: "Sedang menetapkan…",
+    selesai: "Semua sudah ditetapkan", galat: "4 belum ditetapkan",
+  }[k];
+  kepala.appendChild(el("span", "aleta-t7-penetapan-ringkas" + (k === "selesai" ? " aman" : ""), ringkas));
+  kartu.appendChild(kepala);
+
+  const perkara = el("div", "aleta-t7-perkara");
+  perkara.appendChild(el("strong", "", "712/Pdt.G/2026/PA.Dgl · Cerai Gugat"));
+  perkara.appendChild(document.createTextNode(sudahPmh
+    ? "Didaftarkan Senin, 19-10-2026 · ditetapkan setanggal PMH yang sudah ada (Senin, 19-10-2026)"
+    : "Didaftarkan Senin, 19-10-2026 · keempatnya ditetapkan Senin, 19-10-2026"));
+  kartu.appendChild(perkara);
+
+  const daftar = el("div", "aleta-t7-keputusan-daftar");
+  BARIS.forEach((b, i) => {
+    const r = el("div", "aleta-t7-keputusan-baris");
+    r.appendChild(el("span", "aleta-t7-kode", b.kode));
+    r.appendChild(el("span", "aleta-t7-keputusan-label", b.label));
+    const nilai = el("span", "aleta-t7-keputusan-nilai");
+    const tercatat = (sudahPmh && i === 0) || k === "selesai";
+    let isi = b.isi;
+    if (sudahPmh && i === 0) isi = "C — Himawan Tatura Wijaya, Idris, Derry Briantono";
+    if (k === "libur" && i === 3) isi = "Rabu, 25-11-2026";
+    nilai.appendChild(el("strong", "", isi));
+    if (tercatat) nilai.appendChild(el("span", "aleta-t7-chip-kecil sudah", "Sudah di SIPP"));
+    else nilai.appendChild(el("span", "aleta-t7-chip-kecil", "Usulan ALETA"));
+    if (!tercatat) { const info = el("span", "aleta-t7-info", "ⓘ"); info.title = b.sebab; nilai.appendChild(info); }
+    if (!tercatat && k !== "berjalan") nilai.appendChild(el("button", "aleta-t7-tautan", "Ubah"));
+    r.appendChild(nilai);
+    if (k === "libur" && i === 3) r.appendChild(el("span", "aleta-t7-awas", "Rabu, 25-11-2026 hari libur HUT Kabupaten Donggala - pilih hari sidang lain sebelum menetapkan."));
+    // status kemajuan
+    if (k === "berjalan") r.appendChild(statusLangkah("jalan", "Menulis…"));
+    if (k === "selesai") r.appendChild(statusLangkah("ok", "✓ Ditetapkan"));
+    if (k === "galat") {
+      if (i < 2) r.appendChild(statusLangkah("ok", "✓ Siap"));
+      if (i === 2) { r.appendChild(statusLangkah("gagal", "✗ Gagal")); r.appendChild(el("span", "aleta-t7-langkah-sebab", "Juru sita Tanty tidak aktif di SIPP. Pilih juru sita lain lewat Ubah.")); }
+      if (i === 3) { r.appendChild(statusLangkah("ditahan", "Ditahan")); r.appendChild(el("span", "aleta-t7-langkah-sebab ditahan", "Menunggu PJS berhasil lebih dulu.")); }
+    }
+    daftar.appendChild(r);
+  });
+  kartu.appendChild(daftar);
+
+  const pej = el("div", "aleta-t7-pejabat");
+  pej.appendChild(document.createTextNode("Ditetapkan atas nama "));
+  pej.appendChild(el("strong", "", sudahPmh ? "PPP Rusdiana — Panitera · PJS Rusdiana — Panitera" : PEJABAT));
+  kartu.appendChild(pej);
+
+  const kaki = el("div", "aleta-t7-penetapan-kaki");
+  if (k === "berjalan") kaki.appendChild(el("div", "aleta-t7-hasil jalan", "Pemeriksaan lulus. Menuliskan PMH, PPP, PJS, dan PHS ke SIPP…"));
+  if (k === "selesai") kaki.appendChild(el("div", "aleta-t7-hasil ok", "Keempat penetapan tersimpan di SIPP. Halaman dimuat ulang sebentar lagi."));
+  if (k === "galat") kaki.appendChild(el("div", "aleta-t7-hasil gagal", "Belum ada yang ditulis ke SIPP. Perbaiki PJS, lalu tekan Tetapkan semua lagi."));
+  const tombol = el("button", "aleta-t7-tetapkan-semua", {
+    awal: "Tetapkan semua", sebagian: "Tetapkan semua", ubah: "Tetapkan semua", libur: "Tetapkan semua",
+    berjalan: "Menetapkan…", selesai: "Penetapan selesai", galat: "Tetapkan semua",
+  }[k]);
+  if (k === "berjalan" || k === "selesai" || k === "libur") tombol.disabled = true;
+  kaki.appendChild(tombol);
+  if (k !== "berjalan" && k !== "selesai") kaki.appendChild(el("div", "aleta-t7-tetapkan-petunjuk",
+    k === "sebagian" ? "Satu kali tekan: ALETA memeriksa lalu menuliskan PPP, PJS, dan PHS. PMH sudah ada di SIPP."
+    : k === "libur" ? "Tanggal sidang jatuh pada hari libur. Ubah hari sidangnya dulu."
+    : "Satu kali tekan: ALETA memeriksa lalu menuliskan PMH, PPP, PJS, dan PHS sesuai urutannya."));
+  const lain = el("details", "aleta-t7-lain");
+  lain.appendChild(el("summary", "", "Pilihan lain"));
+  const li = el("div", "aleta-t7-lain-isi");
+  li.appendChild(el("button", "aleta-t7-kecil", "Ubah semua pilihan"));
+  li.appendChild(el("button", "aleta-t7-kecil", "Lihat rincian pemeriksaan"));
+  li.appendChild(el("span", "aleta-t7-lain-ket", "Cara manual, susunan per orang, sidang keliling, dan pejabat penetap ada di Ubah semua pilihan. Membatalkan penetapan ada di menu ⋯ › Zona berbahaya."));
+  lain.appendChild(li);
+  if (k === "ubah") lain.open = true;
+  kaki.appendChild(lain);
+  kartu.appendChild(kaki);
+  return kartu;
+}
+
+function rinci() {
+  // Bagian rinci LAMA ("Penetapan dan Penunjukan Perkara") - isinya tidak berubah;
+  // "Ubah" membukanya dan menyorot baris yang dipilih.
+  const r = el("section", "rinci");
+  const j = el("div", "rinci-judul", "Penetapan dan Penunjukan Perkara");
+  j.appendChild(el("span", "aleta-t7-tautan", "Selesai mengubah"));
+  r.appendChild(j);
+  const isi = el("div", "rinci-isi");
+  const saklar = el("div", "saklar"); saklar.appendChild(el("span", "aktif", "Manual")); saklar.appendChild(el("span", "", "Otomatis")); isi.appendChild(saklar);
+  const baris = (label, nilai, sebab, sorot) => { const b = el("div", "tetap" + (sorot ? " sorot" : "")); b.appendChild(el("span", "tetap-label", label)); const n = el("span", "tetap-nilai"); n.appendChild(el("b", "", nilai)); n.appendChild(el("span", "tetap-sebab", sebab)); b.appendChild(n); return b; };
+  const pilih = (label, opsi) => { const p = el("label", "pilih"); p.appendChild(el("span", "", label)); const s = el("select"); opsi.forEach(([t, mati]) => { const o = el("option", "", t); if (mati) o.disabled = true; s.appendChild(o); }); p.appendChild(s); return p; };
+  isi.appendChild(baris("Penetapan Majelis Hakim", "B — Himawan Tatura Wijaya, Idris, Derry Briantono", "beban perkara paling ringan bulan ini"));
+  isi.appendChild(pilih("Majelis", [["B — Himawan Tatura Wijaya · Idris · Derry Briantono — 12 perkara"], ["A — Fahri Saifuddin · Wakil Ketua · Hakim Lain — 15 perkara"]]));
+  isi.appendChild(baris("Penunjukan Panitera Pengganti", "Sri Susilowati", "panitera sidang Majelis B menurut SK", true));
+  isi.appendChild(pilih("Panitera Pengganti", [["Sri Susilowati — 9 perkara"], ["Hasriani — 11 perkara"]]));
+  isi.appendChild(baris("Penunjukan Juru Sita", "Tanty", "giliran juru sita"));
+  isi.appendChild(pilih("Juru Sita", [["Tanty — 7 perkara"], ["Rahmat — 8 perkara"]]));
+  isi.appendChild(baris("Penetapan Hari Sidang", "Rabu, 04-11-2026", "hari sidang Majelis B, sekurangnya 14 hari sesudah pendaftaran"));
+  isi.appendChild(pilih("Hari sidang", [["Rabu, 04-11-2026 — usulan · 6 sidang"], ["Rabu, 11-11-2026 — mundur 1 pekan · 4 sidang"], ["Rabu, 18-11-2026 — mundur 2 pekan · 2 sidang"], ["Rabu, 25-11-2026 — libur HUT Kabupaten Donggala · tidak dapat dipilih", true]]));
+  isi.appendChild(el("div", "rinci-ket", "Tanggal penetapan keempatnya: 2026-10-19"));
+  r.appendChild(isi);
+  return r;
+}
+
+function bilah(k) {
+  const b = document.getElementById("bilah"); b.textContent = "";
+  b.appendChild(el("span", "aleta-t7-bilah-ringkas", k === "selesai" ? "Semua sudah ditetapkan" : k === "sebagian" ? "3 penetapan siap ditulis" : "4 penetapan siap ditulis"));
+  const t = el("button", "aleta-t7-utama", k === "berjalan" ? "Menetapkan…" : k === "selesai" ? "Penetapan selesai" : "Tetapkan semua");
+  if (k === "berjalan" || k === "selesai" || k === "libur") t.disabled = true;
+  b.appendChild(t);
+}
+
+function gambar() {
+  const q = new URLSearchParams(location.hash.slice(1));
+  const k = q.get("keadaan") || "awal";
+  const l = q.get("lebar") || (innerWidth < 700 ? "hp" : "laptop");
+  document.body.setAttribute("data-lebar", l);
+  if (q.get("tema")) document.documentElement.setAttribute("data-theme", q.get("tema"));
+  const isi = document.getElementById("isi"); isi.textContent = "";
+  isi.appendChild(kartu(k));
+  if (k === "ubah") isi.appendChild(rinci());
+  bilah(k);
+  document.querySelectorAll("[data-k]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.k === k)));
+  document.querySelectorAll("[data-l]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.l === l)));
+}
+document.querySelectorAll("[data-k]").forEach((b) => b.addEventListener("click", () => { const q = new URLSearchParams(location.hash.slice(1)); q.set("keadaan", b.dataset.k); location.hash = q.toString(); }));
+document.querySelectorAll("[data-l]").forEach((b) => b.addEventListener("click", () => { const q = new URLSearchParams(location.hash.slice(1)); q.set("lebar", b.dataset.l); location.hash = q.toString(); }));
+addEventListener("hashchange", gambar);
+gambar();
+</script>
+</body>
+</html>
