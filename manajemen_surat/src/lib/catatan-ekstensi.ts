@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.4",
+    dirilis: "2026-10-18T10:00:00+08:00",
+    judul: "Isi dari SIPP dan Input ke ABT lebih lengkap, tunda dan putus ikrar talak, dan kembaran hanya-baca",
+    butir: [
+      "Isi dari SIPP dan Input ke ABT diperluas: daftar cek kini memuat isian popup semua blangko Derry beserta sumbernya, dan isian baru (kesepakatan perdamaian, alasan cabut, batas ikrar, pengumuman itsbat, kuasa Tergugat, penyerahan anak) terisi otomatis dari SIPP dan gugatan, supaya petugas tidak mengetik ulang dan tidak ada isian yang tertinggal tanpa diketahui.",
+      "Ikrar talak di Jadwal Sidang: ada dua tombol tunda (Pemohon hadir tetapi belum siap, atau tidak hadir) dengan tanggal berikutnya terisi sendiri dan peringatan bila melewati batas enam bulan, serta tombol untuk mencatat ikrar dilaksanakan yang sekaligus mengisi form Penetapan Ikrar Talak di SIPP, supaya panitera tidak membuka SIPP satu per satu.",
+      "Berkas putusan, BAS, dan penetapan yang diunggah ke SIPP kini dibersihkan dari grup tersembunyi penanda asal isian sebelum terkirim, supaya tidak ada sisa penanda internal yang ikut tersimpan di SIPP.",
+      "Isian e-Litigasi #7139# bernilai 1 hanya untuk perkara e-Court, supaya perkara yang tidak didaftarkan lewat e-Court tidak keliru ditandai e-Litigasi penuh.",
+      "Blangko Saya pada tahap awal hanya untuk Super Admin, dan dapat dibuka untuk semua peran lewat saklar di Fitur Satker, supaya dicoba dulu sebelum dipakai seluruh pegawai.",
+      "Mode kembaran: SIPP dan ABT di laptop hanya dapat dibaca selama kembaran menyala, supaya tidak ada tulisan yang masuk langsung ke salinan laptop tanpa lewat antrean dan tidak pernah sampai ke server.",
+    ],
+  },
+  {
     versi: "1.205.3",
     dirilis: "2026-10-18T08:00:00+08:00",
     judul: "Draf putusan utuh, tutorial per fitur, Blangko Saya, Fitur Satker, tampilan semua layar, dan blangko baru",
