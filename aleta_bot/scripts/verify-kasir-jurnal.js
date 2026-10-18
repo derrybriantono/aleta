@@ -61,7 +61,9 @@ const JENIS = [
 function jawabKueri(sql, params) {
   const s = String(sql).replace(/\s+/g, " ").trim();
   rekaman.push({ sql: s, params });
-  if (/DATE_FORMAT\(NOW\(\)/.test(s)) return [{ saat: "2026-10-01 14:52:53" }];
+  // Jam SIPP: dahulu NOW(), kini UTC_TIMESTAMP() digeser ke zona SIPP (jam-sipp-semua-penulis) - tiruan mengenal keduanya.
+  if (/^(START TRANSACTION|COMMIT|ROLLBACK)/.test(s)) return [];
+  if (/DATE_FORMAT\((NOW\(\)|DATE_ADD\(UTC_TIMESTAMP\(\))/.test(s)) return [{ saat: "2026-10-01 14:52:53" }];
   if (/FROM sys_users WHERE username = \?/.test(s)) return String(params[0]) === "kasir" ? [{ username: "kasir", fullname: "Petugas Kasir", block: "0" }] : [];
   if (/FROM sys_users WHERE TRIM\(fullname\)/.test(s)) return [];
   if (/FROM perkara WHERE nomor_perkara LIKE/.test(s)) return String(params[0]) === "580/%" ? [{ perkaraId: 10132, nomorPerkara: "580/Pdt.G/2026/PA.Dgl", jenisPerkara: "Cerai Gugat", tanggalDaftar: "2026-09-15" }] : [];
@@ -120,7 +122,7 @@ function jawabKueri(sql, params) {
 }
 
 function penadah() {
-  return {
+  const ini = {
     query: (sql, params, selesai) => {
       const cb = typeof params === "function" ? params : selesai;
       const p = typeof params === "function" ? [] : params || [];
@@ -130,9 +132,14 @@ function penadah() {
         cb(galat);
       }
     },
-    getConnection: (cb) => cb(new Error("tanpa koneksi")),
+    // Penulis kasir kini satu transaksi (transaksiSipp.denganTransaksi): sambungan tiruan memakai penjawab yang sama.
+    getConnection: (cb) => {
+      const sambungan = { query: (sql, params, selesai) => ini.query(sql, params, selesai), release: () => {} };
+      cb(null, sambungan);
+    },
     on: () => {},
   };
+  return ini;
 }
 
 for (const nama of ["../db_config", "../bot_db_config"]) {

@@ -30,6 +30,7 @@ import { createPortal } from "react-dom";
 import { CalendarClock, FileDown, ListChecks, X } from "lucide-react";
 
 import { DialogKasir } from "@/components/portal/kasir-jurnal";
+import { KabarDiantrekan, TanyaJamKerja, type PilihJamKerja } from "@/components/portal/pilihan-jam-kerja";
 import { Button } from "@/components/ui/button";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
@@ -70,7 +71,7 @@ type Akun = { ok: boolean; username?: string; milik?: string[]; pesan?: string; 
 
 // ─── Massal ──────────────────────────────────────────────────────────────────
 
-function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => void }) {
+export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => void }) {
   const [tanggal, setTanggal] = useState(() => waktuPengadilan().tanggal);
   const [data, setData] = useState<(DaftarHarian & { akun?: Akun }) | null>(null);
   const [memuat, setMemuat] = useState(false);
@@ -80,6 +81,9 @@ function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => void })
   const [laporan, setLaporan] = useState<Record<number, HasilMassal>>({});
   const [sedang, setSedang] = useState(false);
   const [yakin, setYakin] = useState(false);
+  // Di luar jam kerja (keputusan 104): kalimat pertanyaan Antrekan / Tulis sekarang.
+  const [tanyaJam, setTanyaJam] = useState<string | null>(null);
+  const [diantrekan, setDiantrekan] = useState("");
   const henti = useRef(false);
 
   const muat = useCallback(async (t: string) => {
@@ -116,11 +120,14 @@ function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => void })
   const akunSiap = Boolean(akun && (akun.ok || (akun.alasan === "akun_sipp_ganda" && akunPilihan)));
   const dipilih = (data?.perkara ?? []).filter((p) => centang[p.perkaraId] && barisMassal(p).length > 0);
 
-  async function jalankan(kering: boolean) {
+  async function jalankan(kering: boolean, pilihJam?: PilihJamKerja) {
     if (!data || sedang || !dipilih.length) return;
     setSedang(true);
     henti.current = false;
     setLaporan({});
+    setTanyaJam(null);
+    setDiantrekan("");
+    let perluTanya = "";
     try {
       await jalankanMassal(
         dipilih,
@@ -135,9 +142,20 @@ function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => void })
                 baris: barisMassal(p),
                 kering,
                 massal: true,
+                // Di luar jam kerja bot bertanya dulu; pilihan petugas berlaku untuk semua perkara.
+                ...(kering ? {} : { tanyaJamKerja: true, ...(pilihJam ? { jamKerja: pilihJam } : {}) }),
               }),
             })
           );
+          if (isi.perluPilihan === true || isi.kode === "di_luar_jam_kerja") {
+            perluTanya = String(isi.pesan || isi.alasan || "Sekarang di luar jam kerja.");
+            henti.current = true;
+            return { ok: false, tersimpan: 0, pesan: "menunggu pilihan jam kerja" };
+          }
+          if (isi.diantrekan === true) {
+            setDiantrekan(String(isi.pesan || isi.kalimat || ""));
+            return { ok: true, tersimpan: 0, pesan: String(isi.kalimat || isi.pesan || "diantrekan - dikerjakan pada jam kerja berikutnya") };
+          }
           const ringkas = (isi.ringkas ?? {}) as { tersimpan?: number; gagal?: number; sebagian?: number; sudahAda?: number };
           const ditolak = Array.isArray(isi.ditolak) ? isi.ditolak.length : 0;
           if (kering) {
@@ -161,6 +179,11 @@ function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => void })
       );
     } finally {
       setSedang(false);
+      if (perluTanya) {
+        // Belum ada yang ditulis: laporan sementara dibuang, petugas memilih dulu.
+        setLaporan({});
+        setTanyaJam(perluTanya);
+      }
     }
   }
 
@@ -269,6 +292,8 @@ function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => void })
           })}
         </ul>
       ) : null}
+      {tanyaJam !== null ? <TanyaJamKerja pesan={tanyaJam} sibuk={sedang} onPilih={(p) => void jalankan(false, p)} /> : null}
+      {diantrekan ? <KabarDiantrekan pesan={diantrekan} /> : null}
       {hasil.length ? (
         <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
           Laporan: {hasil.filter((h) => h.keadaan === "tersimpan").length} perkara berhasil, {hasil.filter((h) => h.keadaan === "sebagian").length} sebagian,{" "}

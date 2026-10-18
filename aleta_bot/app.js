@@ -1112,6 +1112,8 @@ antrianWaktuService.mulai();
 // berikutnya (WITA), berurutan, dengan jeda petugas. Tahan restart - antreannya
 // di basis data ALETA. Dimatikan dengan ALETA_ANTREAN_TULIS_SIPP_AKTIF=0.
 {
+  // Libur Pengaturan portal (hariLiburService) ikut menunda antrean jam kerja.
+  require("./services/jamKerjaService").sambungkanLiburPengaturan();
   const antreanTulisSipp = require("./services/antreanTulisSippService").layanan();
   antreanTulisSipp.daftarkanPelaksana("kasir-otomatis", async (muatan) => {
     const hasil = await require("./services/kasirOtomatisService").tulisMuatan(muatan, { kering: false });

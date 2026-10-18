@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 
+import { KabarDiantrekan, TanyaJamKerja, type PilihJamKerja } from "@/components/portal/pilihan-jam-kerja";
 import { apiPath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 
@@ -25,26 +26,45 @@ export function IsiIkrarTalak({
 }) {
   const [tahap, setTahap] = useState<"diam" | "tanya" | "sibuk" | "selesai" | "gagal">("diam");
   const [pesan, setPesan] = useState("");
+  // Di luar jam kerja (keputusan 104): pertanyaan Antrekan / Tulis sekarang.
+  const [tanyaJam, setTanyaJam] = useState<string | null>(null);
+  const [diantrekan, setDiantrekan] = useState("");
 
-  const isi = useCallback(async () => {
+  const isi = useCallback(async (pilihJam?: PilihJamKerja) => {
     setTahap("sibuk");
     setPesan("");
+    setTanyaJam(null);
     try {
       const balasan = await fetch(apiPath("/api/aleta-ecourt/sidang-ikrar-isi"), {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ jadwalId, perkaraId, kering: false }),
+        body: JSON.stringify({ jadwalId, perkaraId, kering: false, tanyaJamKerja: true, ...(pilihJam ? { jamKerja: pilihJam } : {}) }),
       });
       const mentah = (await balasan.json()) as { data?: Record<string, unknown> } & Record<string, unknown>;
       const isiBalasan = (mentah && typeof mentah === "object" && "data" in mentah && mentah.data ? mentah.data : mentah) as {
         ok?: boolean;
         alasan?: string;
         error?: string;
+        kode?: string;
+        perluPilihan?: boolean;
+        diantrekan?: boolean;
+        pesan?: string;
+        kalimat?: string;
         tanggalIkrar?: string;
         andaian?: string[];
         formSudahTerisi?: boolean;
         edocIkrar?: { ok?: boolean; nama?: string; pesan?: string; alasan?: string };
       };
+      if (isiBalasan.perluPilihan || isiBalasan.kode === "di_luar_jam_kerja") {
+        setTahap("diam");
+        setTanyaJam(isiBalasan.pesan || isiBalasan.error || isiBalasan.alasan || "Sekarang di luar jam kerja.");
+        return;
+      }
+      if (isiBalasan.ok && isiBalasan.diantrekan) {
+        setTahap("selesai");
+        setDiantrekan(isiBalasan.kalimat || isiBalasan.pesan || "");
+        return;
+      }
       if (isiBalasan.ok) {
         setTahap("selesai");
         const edoc = isiBalasan.edocIkrar;
@@ -70,6 +90,10 @@ export function IsiIkrarTalak({
       setPesan(e instanceof Error ? e.message : "Permintaan gagal.");
     }
   }, [jadwalId, perkaraId, nomorPerkara, onSelesai]);
+
+  if (tahap === "selesai" && diantrekan) {
+    return <KabarDiantrekan pesan={diantrekan} />;
+  }
 
   if (tahap === "selesai") {
     return (
@@ -114,6 +138,7 @@ export function IsiIkrarTalak({
           {tahap === "sibuk" ? "Mengisi…" : "Isi form ikrar"}
         </button>
       )}
+      {tanyaJam !== null ? <TanyaJamKerja pesan={tanyaJam} sibuk={tahap === "sibuk"} onPilih={(p) => void isi(p)} /> : null}
       {tahap === "gagal" && pesan ? (
         <span className="text-[11px] text-red-700 dark:text-red-300" role="alert">
           {pesan}

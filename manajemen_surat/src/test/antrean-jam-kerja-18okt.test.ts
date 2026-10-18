@@ -28,7 +28,12 @@ function pasang(relatif: string, isi: unknown) {
   (require_.cache as Record<string, unknown>)[jalur] = m;
   dipasang.push(jalur);
 }
-const SEGAR = ["services/antreanTulisSippService.js", "services/kasirOtomatisService.js", "services/jamKerjaService.js"];
+const SEGAR = [
+  "services/antreanTulisSippService.js",
+  "services/kasirOtomatisService.js",
+  "services/jamKerjaService.js",
+  "services/hariLiburService.js",
+];
 function muat<T>(relatif: string): T {
   for (const r of SEGAR) delete (require_.cache as Record<string, unknown>)[jalurBot(r)];
   return require_(jalurBot(relatif)) as T;
@@ -401,5 +406,29 @@ describe("jeda antarbaris kasir (hitungBarisKasir)", () => {
     const tengah = j.hitungBarisKasir(() => 0.65);
     expect(tengah).toBeGreaterThan(10_000);
     expect(tengah).toBeLessThan(12_000);
+  });
+});
+
+// ============================================================================
+// Libur dari Pengaturan portal ikut menunda antrean (sambungan 1.205.9)
+// ============================================================================
+describe("libur Pengaturan portal dan antrean jam kerja", () => {
+  it("tanggal libur tambahan dari Pengaturan dilewati antrean; tanpa tambahan hari itu hari kerja", async () => {
+    const jam = { kini: "2026-10-23 17:00:00" }; // Jumat sore
+    const a0 = antreanDengan(dbTiruan(), jam);
+    const jk = require_(jalurBot("services/jamKerjaService.js")) as { sambungkanLiburPengaturan: () => void };
+    const hl = require_(jalurBot("services/hariLiburService.js")) as {
+      pasangTambahan: (d: unknown[], o?: { simpan?: boolean }) => number;
+    };
+    jk.sambungkanLiburPengaturan();
+    hl.pasangTambahan([], { simpan: false });
+    const r0 = await a0.antrekan({ jenis: "x", kunci: "x:libur0", muatan: {} });
+    expect(r0.dikerjakanPada.slice(0, 10)).toBe("2026-10-26");
+
+    // Super Admin menambah libur daerah Senin 26 Okt 2026 di Pengaturan.
+    hl.pasangTambahan([{ tanggal: "2026-10-26", nama: "Libur daerah", jenis: "daerah", aksi: "tambah" }], { simpan: false });
+    const r1 = await antreanDengan(dbTiruan(), jam).antrekan({ jenis: "x", kunci: "x:libur1", muatan: {} });
+    expect(r1.dikerjakanPada.slice(0, 10)).toBe("2026-10-27");
+    hl.pasangTambahan([], { simpan: false });
   });
 });

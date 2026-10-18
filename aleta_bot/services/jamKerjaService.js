@@ -25,9 +25,9 @@
  *
  * HARI LIBUR. Bukan daftar baru. Fungsi penyedia libur DISUNTIKKAN
  * (`setelPenyediaLibur`) - bawaannya hariLiburService yang sudah ada.
- * TODO sambungan: bila sumber tunggal daftar libur dari branch
- * fitur/libur-penetapan digabung, panggil setelPenyediaLibur(fungsinya) di
- * sini satu kali (fungsi (tanggalIso) => truthy bila libur).
+ * SUDAH TERSAMBUNG: `sambungkanLiburPengaturan()` dipanggil sekali saat bot
+ * mulai (app.js) dan memasang hariLiburService.hariLibur - sumber tunggal
+ * daftar libur yang sudah memuat tambahan Pengaturan portal.
  */
 
 const ZONA_SATKER = "Asia/Makassar";
@@ -49,6 +49,14 @@ function liburBawaan(tanggal) {
 /** Sambungan ke sumber tunggal daftar libur. null = kembali ke bawaan. */
 function setelPenyediaLibur(fungsi) {
   penyediaLibur = typeof fungsi === "function" ? fungsi : null;
+}
+
+/**
+ * Memasang sumber tunggal libur (SKB + tambahan Pengaturan portal) sebagai
+ * penyedia libur antrean jam kerja. Dipanggil satu kali saat bot mulai.
+ */
+function sambungkanLiburPengaturan() {
+  setelPenyediaLibur((tanggal) => require("./hariLiburService").hariLibur(tanggal));
 }
 
 function liburkah(tanggal, libur) {
@@ -174,6 +182,7 @@ module.exports = {
   MENIT_AKHIR,
   SELISIH_SIPP_MENIT,
   setelPenyediaLibur,
+  sambungkanLiburPengaturan,
   hariKerja,
   rentangKerja,
   rentangKerjaSipp,
