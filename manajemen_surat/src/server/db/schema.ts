@@ -191,6 +191,10 @@ export const DDL_PEMETAAN_PROFIL = {
  * Alasan yang sama dengan DDL_TIPE_KELUARAN: pg-mem dan mode cadangan tidak
  * menjalankan drizzle/*.sql, dan penjaga ecourt-aksi-1okt.test.ts
  * membandingkan konstanta ini dengan isi berkasnya.
+ *
+ * 0074 (18 Okt 2026): daftar nilai CHECK kolom aksi bertambah 'login_wa' (login e-Court
+ * lewat WhatsApp). Basis data BARU langsung memakai daftar baru; basis data yang sudah
+ * berdiri mengubahnya lewat drizzle/0074_aleta_ecourt_aksi_login_wa.sql.
  */
 export const DDL_ECOURT_AKSI_JEJAK = {
   tabel: [
@@ -198,7 +202,7 @@ export const DDL_ECOURT_AKSI_JEJAK = {
   id TEXT PRIMARY KEY,
   pengguna_id TEXT NOT NULL,
   pengguna_nama TEXT NOT NULL DEFAULT '',
-  aksi TEXT NOT NULL CHECK (aksi IN ('sambung', 'putus', 'periksa', 'unduh', 'verifikasi', 'verifikasi_kering', 'tte', 'unggah_salinan')),
+  aksi TEXT NOT NULL CHECK (aksi IN ('sambung', 'putus', 'periksa', 'unduh', 'verifikasi', 'verifikasi_kering', 'tte', 'unggah_salinan', 'login_wa')),
   peran_ecourt TEXT NOT NULL DEFAULT '',
   akun_ecourt TEXT NOT NULL DEFAULT '',
   nomor_perkara TEXT NOT NULL DEFAULT '',

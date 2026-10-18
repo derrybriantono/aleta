@@ -484,6 +484,13 @@
       "when": 1792195200001,
       "tag": "0073_aleta_blangko_pribadi",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1792198800001,
+      "tag": "0074_aleta_ecourt_aksi_login_wa",
+      "breakpoints": true
     }
   ]
 }

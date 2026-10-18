@@ -186,7 +186,8 @@ export type AksiJejak =
   | "verifikasi"
   | "verifikasi_kering"
   | "tte"
-  | "unggah_salinan";
+  | "unggah_salinan"
+  | "login_wa";
 
 /**
  * Mencatat satu aksi. Bentuk masukannya SENGAJA tidak punya tempat untuk
@@ -270,6 +271,123 @@ export async function bacaJejakPengguna(db: AletaDatabase, penggunaId: string, b
     peranEcourt: String(b.peran_ecourt ?? ""),
     akunEcourt: String(b.akun_ecourt ?? ""),
     nomorPerkara: String(b.nomor_perkara ?? ""),
+    sasaran: String(b.sasaran ?? ""),
+    hasil: String(b.hasil),
+    alasan: String(b.alasan ?? ""),
+    dibuatPada: String(b.dibuat_pada),
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Riwayat login e-Court lewat WhatsApp (0074, 18 Okt 2026) - HANYA Super Admin & Admin
+// ---------------------------------------------------------------------------
+
+/** pengguna_id baris jejak login WhatsApp: bukan pengguna ALETA, jadi tak pernah masuk riwayat per pengguna. */
+export const PENGGUNA_LOGIN_WA = "whatsapp";
+
+export type PeristiwaLoginWa = {
+  id: string;
+  eventType: string;
+  severity?: string;
+  message?: string;
+  createdAt: string;
+  metadata?: Record<string, unknown>;
+};
+
+/**
+ * Peristiwa jejak keamanan bot -> isi baris aleta_ecourt_aksi_jejak. null bila bukan peristiwa login
+ * WhatsApp yang dikenal (login lewat portal sudah punya jejak per pengguna: aksi "sambung"). Murni.
+ */
+export function jejakDariPeristiwaLoginWa(
+  p: PeristiwaLoginWa
+): { sasaran: string; hasil: "berhasil" | "gagal" | "ditolak"; alasan: string } | null {
+  switch (p.eventType) {
+    case "ecourt_login_berhasil":
+      if (p.metadata?.jalur !== "whatsapp") return null;
+      return { sasaran: "Login e-Court lewat WhatsApp (jawaban captcha)", hasil: "berhasil", alasan: "" };
+    case "ecourt_login_gagal":
+      if (p.metadata?.jalur !== "whatsapp") return null;
+      return { sasaran: "Login e-Court lewat WhatsApp (jawaban captcha)", hasil: "gagal", alasan: "login_ditolak_ecourt" };
+    case "ecourt_wa_captcha_dikirim":
+      return { sasaran: "Captcha e-Court dikirim ke WhatsApp Super Admin", hasil: "berhasil", alasan: "" };
+    case "ecourt_wa_captcha_kedaluwarsa":
+      return { sasaran: "Captcha e-Court lewat WhatsApp", hasil: "gagal", alasan: "captcha_kedaluwarsa_tanpa_jawaban" };
+    case "ecourt_wa_captcha_dibatalkan":
+      return { sasaran: "Captcha e-Court lewat WhatsApp", hasil: "ditolak", alasan: "dibatalkan_super_admin" };
+    default:
+      return null;
+  }
+}
+
+/** Saat sinkron terakhir PER basis data (singleton di produksi; basis data uji baru tidak mewarisi jeda). */
+const sinkronLoginWaTerakhir = new WeakMap<AletaDatabase, number>();
+const JEDA_SINKRON_LOGIN_WA_MS = 30_000;
+
+/**
+ * Menyalin peristiwa login WhatsApp dari bot ke aleta_ecourt_aksi_jejak (aksi "login_wa").
+ * IDEMPOTEN: id baris tetap ("eaj-wa-<id peristiwa bot>"), peristiwa yang sudah ada dilewati,
+ * dan waktu baris = waktu peristiwa. Dipanggil saat Super Admin/Admin membuka riwayat e-Court;
+ * berkala dibatasi (30 detik) kecuali `paksa`. Gagal menghubungi bot tidak menggagalkan layar.
+ */
+export async function sinkronLoginWa(
+  db: AletaDatabase,
+  { paksa = false }: { paksa?: boolean } = {}
+): Promise<{ ok: boolean; dibaca: number; baru: number; alasan?: string }> {
+  const sekarang = Date.now();
+  if (!paksa && sekarang - (sinkronLoginWaTerakhir.get(db) ?? 0) < JEDA_SINKRON_LOGIN_WA_MS) {
+    return { ok: true, dibaca: 0, baru: 0, alasan: "baru_disinkronkan" };
+  }
+  sinkronLoginWaTerakhir.set(db, sekarang);
+
+  // Hanya peristiwa sesudah yang terakhir tersalin (mundur satu hari sebagai pengaman jam).
+  const terakhir = (await db
+    .prepare("SELECT MAX(dibuat_pada) AS t FROM aleta_ecourt_aksi_jejak WHERE aksi = 'login_wa'")
+    .get()
+    .catch(() => null)) as { t?: string | null } | null;
+  let sejak = "";
+  if (terakhir?.t) {
+    const t = new Date(terakhir.t);
+    if (!Number.isNaN(t.getTime())) sejak = new Date(t.getTime() - 24 * 3600 * 1000).toISOString();
+  }
+  const q = new URLSearchParams({ batas: "300" });
+  if (sejak) q.set("sejak", sejak);
+  const hasil = await panggilBot<{ ok?: boolean; peristiwa?: PeristiwaLoginWa[]; alasan?: string }>(`/ecourt-wa/riwayat-login?${q.toString()}`);
+  if (!hasil.ok) return { ok: false, dibaca: 0, baru: 0, alasan: hasil.alasan };
+  if (hasil.data.ok === false) return { ok: false, dibaca: 0, baru: 0, alasan: String(hasil.data.alasan || "bot_menolak") };
+
+  const daftar = Array.isArray(hasil.data.peristiwa) ? hasil.data.peristiwa : [];
+  let baru = 0;
+  // Terlama dulu supaya urutan sisipan mengikuti urutan kejadian.
+  for (const p of [...daftar].reverse()) {
+    const isi = jejakDariPeristiwaLoginWa(p);
+    const idBot = String(p.id || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60);
+    const waktu = new Date(p.createdAt);
+    if (!isi || !idBot || Number.isNaN(waktu.getTime())) continue;
+    const id = `eaj-wa-${idBot}`;
+    const ada = await db.prepare("SELECT id FROM aleta_ecourt_aksi_jejak WHERE id = ?").get(id);
+    if (ada) continue;
+    await db
+      .prepare(
+        "INSERT INTO aleta_ecourt_aksi_jejak (id, pengguna_id, pengguna_nama, aksi, peran_ecourt, akun_ecourt, nomor_perkara, sasaran, hasil, alasan, alamat_ip, lewat, dibuat_pada) " +
+          "VALUES (?, ?, ?, 'login_wa', '', '', '', ?, ?, ?, '', 'ALETA', ?)"
+      )
+      .run(id, PENGGUNA_LOGIN_WA, "WhatsApp", isi.sasaran.slice(0, 300), isi.hasil, isi.alasan.slice(0, 300), waktu.toISOString());
+    baru += 1;
+  }
+  return { ok: true, dibaca: daftar.length, baru };
+}
+
+/** Jejak login WhatsApp terbaru - untuk Super Admin & Admin (pemanggil WAJIB memeriksa perannya). */
+export async function bacaJejakLoginWa(db: AletaDatabase, batas = 30) {
+  const baris = await db
+    .prepare(
+      "SELECT id, aksi, sasaran, hasil, alasan, dibuat_pada FROM aleta_ecourt_aksi_jejak WHERE aksi = 'login_wa' ORDER BY dibuat_pada DESC LIMIT " +
+        Math.max(1, Math.min(200, Math.floor(batas)))
+    )
+    .all();
+  return (baris as Array<Record<string, unknown>>).map((b) => ({
+    id: String(b.id),
+    aksi: String(b.aksi),
     sasaran: String(b.sasaran ?? ""),
     hasil: String(b.hasil),
     alasan: String(b.alasan ?? ""),

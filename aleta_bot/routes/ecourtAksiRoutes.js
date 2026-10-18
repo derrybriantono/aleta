@@ -282,6 +282,27 @@ router.post("/ecourt-putusan/unggah", wajibToken, async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// Riwayat login e-Court lewat WhatsApp (18 Okt 2026, butir 4) - HANYA MEMBACA.
+// Portal membatasi tampilannya untuk Super Admin dan Admin dan menyinkronkannya
+// ke aleta_ecourt_aksi_jejak (aksi "login_wa"). Sumber: aleta_bot_system_logs
+// (event ecourt_login_* berjalur whatsapp, ecourt_wa_captcha_*), tanpa rahasia.
+// ---------------------------------------------------------------------------
+
+router.get("/ecourt-wa/riwayat-login", wajibToken, async (req, res) => {
+  try {
+    const riwayat = require("../services/ecourtRiwayatLoginWaService");
+    const hasil = await riwayat.bacaPeristiwa({
+      botDb: require("../services/botDbService"),
+      sejak: req.query.sejak,
+      batas: req.query.batas,
+    });
+    res.status(hasil.ok ? 200 : 503).json(hasil);
+  } catch {
+    res.status(500).json({ ok: false, peristiwa: [], alasan: "gagal_membaca_riwayat_login_wa" });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Pemantau putusan (E11)
 // ---------------------------------------------------------------------------
 

@@ -67,6 +67,8 @@ type Data = {
   akunDidukung?: boolean;
   peranTersedia: Array<{ kode: string; sebutan: string }>;
   jejak: Jejak[];
+  /** Riwayat login e-Court lewat WhatsApp - hanya dikirim server kepada Super Admin dan Admin. */
+  jejakWa?: Array<{ id: string; sasaran: string; hasil: string; alasan: string; dibuatPada: string }>;
 };
 
 const SEBUT_UJI: Record<string, string> = {
@@ -84,6 +86,7 @@ const SEBUT_AKSI: Record<string, string> = {
   verifikasi_kering: "Periksa dialog verifikasi",
   tte: "TTE salinan putusan",
   unggah_salinan: "Unggah salinan putusan",
+  login_wa: "Login e-Court lewat WhatsApp",
 };
 
 function waktu(iso: string) {
@@ -452,6 +455,29 @@ export function EcourtSesiPribadi() {
                 </li>
               ))}
             </ul>
+          </details>
+        ) : null}
+
+        {data?.jejakWa ? (
+          <details data-riwayat-login-wa="">
+            <summary className="cursor-pointer text-muted-foreground">
+              Riwayat login e-Court lewat WhatsApp - khusus Super Admin dan Admin ({data.jejakWa.length})
+            </summary>
+            {data.jejakWa.length ? (
+              <ul className="mt-2 space-y-1">
+                {data.jejakWa.map((j) => (
+                  <li key={j.id} className="text-muted-foreground">
+                    {waktu(j.dibuatPada)} · {j.sasaran} ·{" "}
+                    <span className={j.hasil === "berhasil" ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}>
+                      {j.hasil}
+                    </span>
+                    {j.alasan ? ` (${j.alasan.replace(/_/g, " ")})` : ""}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-muted-foreground">Belum ada login atau captcha e-Court lewat WhatsApp yang tercatat.</p>
+            )}
           </details>
         ) : null}
       </CardContent>
