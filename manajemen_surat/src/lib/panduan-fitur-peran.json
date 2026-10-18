@@ -11,7 +11,8 @@
       "Unduhan putusan, BAS, relaas, dan blangko dari SIPP, ABT, dan ALETA tidak lagi diblokir peramban, dan selalu bernama nomor perkara diikuti nama blangko.",
       "Sebelum mengunggah atau mengunduh putusan, BAS, atau relaas, ekstensi memeriksa sisa blangko: kurung siku, isian mentah, titik-titik, dan tulisan merah. Anda boleh melanjutkan, atau mengunduh daftar masalahnya lebih dulu.",
       "Widget di kiri bawah menampilkan lampu sambungan, kehadiran, kesiapan draf H-7, dan kabar versi ekstensi baru. Tekan Perbarui bila ada versi baru.",
-      "Di daftar perkara SIPP, penanda warna menunjukkan perkara yang perlu perhatian, misalnya sita, potensi verstek, umur perkara, dan sisa waktu ikrar."
+      "Di daftar perkara SIPP, penanda warna menunjukkan perkara yang perlu perhatian, misalnya sita, potensi verstek, umur perkara, dan sisa waktu ikrar.",
+      "Tampilan panel ekstensi menyesuaikan layar. Pada layar 900 piksel ke atas, panel SIPP tampilan UI Baru menempel di sisi kanan sehingga halaman SIPP tidak tertutup. Lebar panel dan ukuran huruf ikut layar sampai TV dan 4K, dan jendela ikon ekstensi tetap nyaman pada zoom 125 sampai 150 persen."
     ],
     "notes": [
       "Tidak ada tanda ALETA yang masuk ke data SIPP. Yang tertulis ke SIPP memakai akun SIPP Anda sendiri.",
@@ -107,7 +108,10 @@
       "Kartu bacaan di panel ABT merangkum alasan, pekerjaan pihak, tanggal KTP, dan tuntutan tambahan beserta kutipan sumbernya. Semuanya usulan yang Anda putuskan.",
       "Putusan cerai ditawarkan sesuai status putusan di SIPP. Pada Penguasaan Anak, penyerahan anak punya tiga pilihan: diminta, tidak diminta, atau tidak diminta tetapi ditetapkan Hakim karena jabatannya.",
       "Unggah putusan: ALETA membuat putusan anonim sendiri dengan pratinjau, memeriksa sisa blangko, lalu mengisi form Putusan Akhir. Unggah massal tersedia dari daftar perkara.",
-      "SKP Hakim: tombol Unduh eviden SKP di Rekap Hakim menyiapkan bukti dukung dalam PDF, Excel, Word, atau ZIP."
+      "SKP Hakim: tombol Unduh eviden SKP di Rekap Hakim menyiapkan bukti dukung dalam PDF, Excel, Word, atau ZIP.",
+      "Susun saksi: di panel ALETA pada ABT tekan Susun saksi menurut keadaan perkara. ALETA mengenali jenis perkara dari SIPP (22 kumpulan pertanyaan). Pilih keadaan perkara, jumlah saksi, dan jenis keterangan tiap saksi, lalu Susun pertanyaan dan jawaban. Baris kuning berarti ragu, sebagian, atau berbeda. Baca dan sunting sebelum Simpan ke ABT.",
+      "Pada harta bersama dan kewarisan, tandai Bantahan Tergugat lalu pilih Diajukan oleh Tergugat untuk saksi dari pihak itu, sehingga keterangannya memuat versi Tergugat. Pada dispensasi kawin, tab Keterangan anak, calon, dan orang tua menyusun tanya-jawab bagi pihak yang didengar. Butir kehamilan dan hubungan badan tercentang sendiri bila posita menyebutnya (tertulis menurut posita); centang Anda menang.",
+      "Jawab-menjawab e-Court: jawaban, replik, duplik, dan kesimpulan yang diunggah ke e-Court dikenali otomatis. Di Isi dari SIPP & input ke ABT, pokoknya diusulkan ke isian blangko putusan beserta kutipan asalnya dari berkas e-Court. Usulan ini bertanda ragu dan tidak tercentang sendiri; isian yang sudah Anda tulis tidak ditimpa."
     ],
     "notes": [
       "Unggah putusan ke SIPP dan e-Court hanya untuk Hakim (termasuk Ketua dan Wakil), Admin, dan Super Admin.",
@@ -132,7 +136,10 @@
       "Susun keterangan saksi di ABT: identitas saksi terbaca otomatis, pilih set pertanyaan baku, lalu salin paragraf keterangan gaya Ringkas atau Lengkap.",
       "Penanda belum upload di Jadwal Sidang dapat ditekan untuk menarik ulang dokumen e-Court khusus perkara itu.",
       "Kasir (panitera dan panitera muda): periksa usulan jurnal per kejadian, lalu simpan ke SIPP. Saklar Kasir otomatis di daftar perkara SIPP bawaannya mati.",
-      "TTE salinan putusan di e-Court dilakukan panitera atau panitera muda. Hakim dan pimpinan memverifikasi dokumen e-Litigasi."
+      "TTE salinan putusan di e-Court dilakukan panitera atau panitera muda. Hakim dan pimpinan memverifikasi dokumen e-Litigasi.",
+      "Susun saksi menurut keadaan perkara: di panel ALETA pada ABT, pilih keadaan perkara, jumlah saksi, dan jenis keterangan tiap saksi (melihat sendiri, mendengar sendiri, cerita orang lain, sebagian, tidak tahu, atau ragu), lalu Susun pertanyaan dan jawaban. Untuk saksi Tergugat pilih Diajukan oleh Tergugat. Periksa baris kuning, lalu Simpan ke ABT.",
+      "Pada dispensasi kawin, tab Keterangan anak, calon, dan orang tua menyusun tanya-jawab pihak yang didengar, lalu Salin semua tanya-jawab ke BAS. Butir kehamilan dan hubungan badan tercentang sendiri bila posita menyebutnya (menurut posita); bila Anda mencabut centangnya, butir itu tidak ikut disusun.",
+      "Jawab-menjawab e-Court: jawaban, replik, duplik, dan kesimpulan di e-Court kini dikenali otomatis dan diusulkan ke isian blangko di Isi dari SIPP & input ke ABT, lengkap dengan kutipan asalnya. Semuanya usulan ragu: periksa dulu sebelum mencentang. Isian yang sudah Anda tulis tidak ditimpa."
     ],
     "notes": [
       "BAS ditulis Panitera Pengganti. Panitera, panitera muda, dan pimpinan hanya mengawasi.",

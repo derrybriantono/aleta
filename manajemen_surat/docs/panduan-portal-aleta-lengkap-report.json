@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-18T06:55:06.071Z",
+  "generatedAt": "2026-10-18T10:18:30.317Z",
   "generatedDate": "18 Oktober 2026",
   "version": "v1.2 - Oktober 2026",
   "institution": "Pengadilan Agama Donggala",
@@ -9,7 +9,7 @@
     "pdf": "docs/panduan-portal-aleta-lengkap.pdf",
     "report": "docs/panduan-portal-aleta-lengkap-report.json"
   },
-  "pdfPageCount": 37,
+  "pdfPageCount": 38,
   "method": "Node.js membuat Markdown dan HTML konseptual tanpa screenshot. Playwright hanya merender HTML menjadi PDF.",
   "focus": [
     "ALETA Dashboard SSO / Portal Utama",

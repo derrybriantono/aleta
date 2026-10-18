@@ -194,6 +194,10 @@ describe("tutorial per fitur rilis 1.188 sampai 1.205.5", () => {
       ["1.205.4", "tunda"],
       ["1.205.5", "penetapan ikrar"],
       ["1.205.5", "penguasaan anak"],
+      ["1.205.6", "susun saksi"],
+      ["1.205.6", "900 piksel"],
+      ["1.205.7", "jawab-menjawab"],
+      ["1.205.7", "keterangan anak, calon, dan orang tua"],
     ];
     const hilang = WAJIB.filter(([, kata]) => !jerami.includes(kata)).map(([v, k]) => `${v}: ${k}`);
     expect(hilang, `Fitur rilis ini belum disebut di panduan: ${hilang.join("; ")}`).toEqual([]);
@@ -230,7 +234,8 @@ describe("tutorial yang menunggu ekstensi 1.205.6", () => {
     expect(saksi).toBeTruthy();
     expect(v2).toBeTruthy();
     const a = saksi ? teksTutorial(saksi).join(" ").toLowerCase() : "";
-    for (const kata of ["22", "melihat langsung", "mendengar langsung", "de auditu", "tahu sebagian", "tidak tahu", "ragu", "berbeda", "kuning", "terverifikasi", "penguasaan anak", "dispensasi kawin", "ekonomi syariah"]) {
+    // kata-kata ini = nama pilihan di layar (saksi-susun.js, LABEL_JENIS_KETERANGAN dan tombolnya), dicocokkan 18 Okt 2026
+    for (const kata of ["22", "susun saksi menurut keadaan perkara", "melihat sendiri", "mendengar sendiri", "cerita orang lain", "de auditu", "sebagian", "tidak tahu", "ragu", "berbeda", "kuning", "diajukan oleh", "bantahan tergugat", "keterangan anak, calon, dan orang tua", "menurut posita", "simpan ke abt", "terverifikasi", "penguasaan anak", "dispensasi kawin", "ekonomi syariah"]) {
       expect(a, `Susun saksi: ${kata}`).toContain(kata);
     }
     const b = v2 ? teksTutorial(v2).join(" ").toLowerCase() : "";
