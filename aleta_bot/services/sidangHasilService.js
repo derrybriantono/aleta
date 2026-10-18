@@ -1062,7 +1062,7 @@ async function susunRencanaTunda(minta = {}) {
     const alur = await prosesAlur(keadaan.alurPerkaraId, prosesId);
     if (!alur) {
       andaian.push(
-        `Alur perkara ini tidak punya proses ${prosesId}, jadi riwayat perkaranya tidak diperbarui.`
+        "Alur perkara ini tidak punya tahap riwayat yang dimaksud, jadi riwayat perkaranya tidak diperbarui."
       );
     } else {
       langkah.push({
@@ -1369,8 +1369,8 @@ async function susunRencanaPutus(minta = {}) {
 
   if (!tulisPutusan) {
     andaian.push(
-      "Hanya hasil sidang di jadwal sidang yang dicatat. Putusan akhir (perkara_putusan), audit putusannya, " +
-        "dan tahapan perkara tidak ditulis dari tombol ini - diinput lewat SIPP / putusan otomatis."
+      "Hanya hasil sidang di jadwal sidang yang dicatat. Putusan akhir dan tahapan perkara " +
+        "tidak ditulis dari tombol ini - diinput lewat SIPP / putusan otomatis."
     );
   }
 

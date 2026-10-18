@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bagian } from "@/components/portal/bagian-ciut";
 import { apiPath } from "@/lib/base-path";
+import { langkahUntukPetugas, ringkasTabel, sebutanTabel } from "@/lib/ringkasan-langkah-sipp";
 import {
   bawaanPenetapanMediator,
   JENIS_PENETAPAN_MEDIATOR,
@@ -379,7 +380,7 @@ export function IsianMediator({
         setPesan({
           ok: false,
           teks: gagalTulis
-            ? `SIPP menolak langkah ${pada || "penulisan"}${isi.pesan ? ` (${String(isi.pesan)})` : ""} - ${
+            ? `SIPP menolak salah satu langkah penulisan (${pada ? sebutanTabel(pada).toLowerCase() : "penulisan"}) - ${
                 isi.dipulihkan === true
                   ? "seluruh penetapan mediator dibatalkan, tidak ada yang tertinggal di SIPP. Dapat dicoba lagi."
                   : "periksa tab Mediasi di SIPP sebelum mencoba lagi."
@@ -553,7 +554,7 @@ export function IsianMediator({
             atas nama {String((rencana.atasNama as { namaLengkap?: string; username?: string })?.namaLengkap || (rencana.atasNama as { username?: string })?.username || "")}
           </p>
           <p className="text-muted-foreground">
-            {langkah.length} langkah: {Array.from(new Set(langkah.map((l) => l.tabel))).join(", ")}.
+            {langkahUntukPetugas(langkah).length} langkah akan ditulis ke SIPP: {ringkasTabel(langkah).toLowerCase()}.
           </p>
           <div className="mt-1.5 flex gap-2">
             <Button size="sm" disabled={sibuk} onClick={() => void kirim(false)}>

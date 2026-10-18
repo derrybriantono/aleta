@@ -286,7 +286,7 @@ async function siapkanIsianIkrar(minta, k) {
   if (!amarSudahAda) {
     andaian.push(
       biaya
-        ? `Amar penetapan ikrar disusun otomatis (talak satu raj'i); biaya penetapan Rp${biaya.angka},- diambil dari biaya perkara (variabel ABT biaya ikrar).`
+        ? `Amar penetapan ikrar disusun otomatis (talak satu raj'i); biaya penetapan Rp${biaya.angka},- diambil dari biaya perkara yang tercatat pada data satker.`
         : "Amar penetapan ikrar disusun otomatis (talak satu raj'i); jumlah biaya penetapan tidak disebut karena tidak terbaca dari biaya perkara - periksa di SIPP."
     );
   }

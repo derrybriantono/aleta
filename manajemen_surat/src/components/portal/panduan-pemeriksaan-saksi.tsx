@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, ChevronRight, Maximize2, Plus, Printer, RotateCcw, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListChecks, Maximize2, Plus, Printer, RotateCcw, X } from "lucide-react";
 
 import { Bagian } from "@/components/portal/bagian-ciut";
 import { apiPath } from "@/lib/base-path";
@@ -114,6 +114,12 @@ export type PropsPanduanSaksi = {
   namaSaksi?: { P?: ReadonlyArray<string>; T?: ReadonlyArray<string> };
   /** Menonjol: agenda pembuktian atau pemeriksaan saksi. */
   menonjol?: boolean;
+  /**
+   * "lipat" (bawaan, Status Perkara): bagian lipat di halaman.
+   * "tombol" (Jadwal Sidang, 18 Okt 2026): hanya tombol kecil; panduan keluar sebagai jendela pop-up
+   * ketika ditekan, tidak pernah terbuka sendiri.
+   */
+  bentuk?: "lipat" | "tombol";
   /** Awalan kunci lipatan; tiap tempat memakai awalan sendiri. */
   kunciBagian: string;
   /** undefined = layar lepas (tidak dibatasi); rute tetap menegakkan hak. */
@@ -128,8 +134,9 @@ export type PropsPanduanSaksi = {
  * admin, dan super admin).
  */
 export function PanduanPemeriksaanSaksi(props: PropsPanduanSaksi) {
-  const { menonjol = false, kunciBagian, pengguna } = props;
+  const { menonjol = false, kunciBagian, pengguna, bentuk = "lipat" } = props;
   if (!bolehAksiLayar(pengguna, "pandu.saksi")) return null;
+  if (bentuk === "tombol") return <TombolPanduSaksi {...props} />;
   return (
     <div
       data-pandu-saksi-bagian=""
@@ -148,6 +155,105 @@ export function PanduanPemeriksaanSaksi(props: PropsPanduanSaksi) {
         <PanduanPemeriksaanSaksiIsi key={kunciSimpanCentang(props.perkara.nomorPerkara, props.sidangId ?? "")} {...props} />
       </Bagian>
     </div>
+  );
+}
+
+// ─── Tombol kecil dan jendela pop-up (Jadwal Sidang) ─────────────────────────
+
+/**
+ * Tombol "Pertanyaan saksi". Panduannya TIDAK dimuat dan TIDAK digambar sampai
+ * tombol ditekan: jendela pop-up memasang isi yang sama dengan bagian lipat
+ * (pokok wajib, centang, layar sidang, cetak). Centang tetap tersimpan per
+ * perkara per sidang, jadi menutup lalu membuka lagi tidak menghilangkannya.
+ */
+function TombolPanduSaksi(props: PropsPanduanSaksi) {
+  const [buka, setBuka] = useState(false);
+  const tutup = useCallback(() => setBuka(false), []);
+  const nomor = props.perkara.nomorPerkara;
+  return (
+    <>
+      <button
+        type="button"
+        data-tombol-pandu-saksi={nomor}
+        data-menonjol={props.menonjol ? "ya" : "tidak"}
+        aria-haspopup="dialog"
+        aria-expanded={buka}
+        onClick={() => setBuka(true)}
+        title={`Pertanyaan saksi untuk perkara ${nomor}: panduan pertanyaan, pokok wajib, layar sidang, dan cetak`}
+        className={cn(
+          "inline-flex max-w-full items-center justify-center gap-1 rounded-md border px-2 py-1 text-center text-xs leading-tight transition",
+          props.menonjol
+            ? "border-primary/60 bg-primary/10 font-semibold text-primary hover:bg-primary/20"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        )}
+      >
+        <ListChecks className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <span>Pertanyaan saksi</span>
+      </button>
+      {buka ? <JendelaPanduSaksi {...props} onTutup={tutup} /> : null}
+    </>
+  );
+}
+
+function JendelaPanduSaksi({ onTutup, ...props }: PropsPanduanSaksi & { onTutup: () => void }) {
+  const kotak = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const awal = document.activeElement as HTMLElement | null;
+    kotak.current?.focus();
+    const lamaGulir = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const tekan = (e: KeyboardEvent) => {
+      // Layar sidang (di atas jendela ini) menutup dirinya sendiri dengan Esc; jendela ini menunggu.
+      if (e.key === "Escape" && !document.querySelector("[data-pandu-layar-sidang]")) onTutup();
+    };
+    window.addEventListener("keydown", tekan);
+    return () => {
+      window.removeEventListener("keydown", tekan);
+      document.body.style.overflow = lamaGulir;
+      if (awal && document.contains(awal)) awal.focus();
+    };
+  }, [onTutup]);
+
+  if (typeof document === "undefined") return null;
+  const nomor = props.perkara.nomorPerkara;
+
+  return createPortal(
+    <div
+      data-pandu-saksi-jendela=""
+      className="fixed inset-0 z-[150] flex items-stretch justify-center bg-black/50 sm:items-center sm:p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onTutup();
+      }}
+    >
+      <div
+        ref={kotak}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Pertanyaan saksi ${nomor}`}
+        tabIndex={-1}
+        className="flex min-h-0 w-full max-w-5xl flex-col overflow-hidden bg-background text-foreground shadow-xl outline-none sm:max-h-[94vh] sm:rounded-xl sm:border 2xl:max-w-7xl"
+      >
+        <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
+          <ListChecks className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          <p className="min-w-0 flex-1 text-sm font-semibold">
+            Pertanyaan saksi <span className="font-normal text-muted-foreground">· {nomor}</span>
+          </p>
+          <button
+            type="button"
+            onClick={onTutup}
+            className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold hover:bg-muted/60"
+          >
+            <X className="h-3.5 w-3.5" aria-hidden="true" /> Tutup
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
+          {/* Dipasang ulang bila perkara atau sidangnya berganti, supaya centang yang diingat selalu milik sidang ini. */}
+          <PanduanPemeriksaanSaksiIsi key={kunciSimpanCentang(props.perkara.nomorPerkara, props.sidangId ?? "")} {...props} />
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 

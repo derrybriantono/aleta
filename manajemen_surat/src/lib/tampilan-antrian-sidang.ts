@@ -398,6 +398,38 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kelompok: "penanda",
   },
   // === AKHIR 12OKT-L ===
+  // === 18 Okt 2026 (audit fitur tanpa saklar, permintaan hakim) ===
+  // Lima fitur yang sudah tampil di layar tetapi belum punya baris di panel ini.
+  // Semuanya menyala bawaan: tidak ada yang hilang dari layar siapa pun.
+  {
+    kunci: "ikrar-selesai",
+    label: "Ikrar talak sudah dilaksanakan",
+    keterangan:
+      "Lencana hijau \"Selesai · telah ikrar talak\" di samping jenis perkara bila ikrar sudah dilaksanakan (tercatat di form ikrar SIPP atau di hasil sidangnya). Sidang itu tidak lagi ditawari tombol tunda atau putus.",
+    kelompok: "penanda",
+  },
+  {
+    kunci: "kesiapan-putusan",
+    label: "Kesiapan draf putusan",
+    keterangan:
+      "Lencana kemajuan draf putusan (dari daftar langkah penyusun draf) di samping penanda Hari Putusan. Ikut tidak tampil bila Hari Putusan dimatikan.",
+    kelompok: "penanda",
+  },
+  {
+    kunci: "draf-putusan-agen",
+    label: "Draf putusan dari agen ALETA",
+    keterangan:
+      "Lencana draf putusan yang disiapkan agen tujuh hari sebelum Hari Putusan (juga perkiraan putusan verstek) beserta rinciannya di kolom Putusan. Lencananya ikut tidak tampil bila Hari Putusan dimatikan; rinciannya hanya ada di mode Lengkap.",
+    kelompok: "penanda",
+  },
+  {
+    kunci: "sedang-berjalan",
+    label: "Sedang berjalan dan diskors",
+    keterangan:
+      "Lencana \"sedang berjalan\" (dengan jam berjalannya) atau \"diskors\" di kolom Antrian. Tombol Skors, Lanjutkan, dan Tandai berjalan di kolom paling kanan punya saklarnya sendiri (Tombol jalannya sidang).",
+    kelompok: "penanda",
+  },
+  // === AKHIR 18 Okt 2026 ===
 
   // --- Keterangan tambahan -------------------------------------------------
   {
@@ -507,6 +539,13 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
   // yang hilang hanya kalimat yang menerangkan cara ALETA menghitung. Itu
   // sebabnya keduanya boleh mati sejak awal, sementara yang lain tidak.
   {
+    kunci: "checklist-konseptor",
+    label: "Daftar langkah draf putusan",
+    keterangan:
+      "Daftar centang langkah menyusun draf putusan di kolom Putusan, untuk perkara yang konseptornya sudah ditunjuk atau tercatat di SIPP. Centang yang sudah diberikan tetap tersimpan; yang dimatikan hanya tidak digambar. Hanya ada di mode Lengkap.",
+    kelompok: "keterangan",
+  },
+  {
     kunci: "kolom-siap",
     label: "Kolom Siap",
     keterangan:
@@ -528,7 +567,21 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kunci: "tombol-tunda-putus",
     label: "Tombol tunda | putus",
     keterangan:
-      "Dua tombol pencatat hasil di samping jenis perkara. Hasil sidang tetap dapat dicatat di layar hasil sidang atau di SIPP.",
+      "Dua tombol pencatat hasil di samping jenis perkara. Pada sidang ikrar talak tombolnya khusus: tunda (pemohon hadir tetapi belum siap, atau tidak hadir) dan putus yang mengonfirmasi ikrar sudah dilaksanakan. Hasil sidang tetap dapat dicatat di layar hasil sidang atau di SIPP.",
+    kelompok: "alat",
+  },
+  {
+    kunci: "tombol-isi-ikrar",
+    label: "Tombol Isi form ikrar talak",
+    keterangan:
+      "Tombol di samping lencana \"Selesai · telah ikrar talak\" bila ikrar sudah dinyatakan terlaksana (mis. lewat SIPP) tetapi form ikrar di SIPP belum terisi. Ikut tidak tampil bila Tombol tunda | putus dimatikan.",
+    kelompok: "alat",
+  },
+  {
+    kunci: "pertanyaan-saksi",
+    label: "Tombol Pertanyaan saksi",
+    keterangan:
+      "Tombol kecil di kolom paling kanan, di bawah Status. Ditekan = panduan pertanyaan saksi keluar sebagai jendela pop-up (pokok wajib, centang, layar sidang, cetak). Hanya tampil setelah perkara masuk pemeriksaan (sedang atau sudah disidang hari itu), bukan saat masih mengantre, dan hanya bagi hakim, panitera, panitera pengganti, dan admin.",
     kelompok: "alat",
   },
   {
@@ -682,6 +735,20 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     label: "Kartu ruang sidang",
     keterangan:
       "Di bawah deretan tombol (Hitung skor dan lainnya): satu kartu berwarna per ruang sidang yang dipakai, berisi nama ruang, jumlah perkara, dan jumlah yang perlu diperiksa. Bawaannya diciutkan; ditekan = buka.",
+    kelompok: "atas",
+  },
+  {
+    kunci: "ringkasan-ruang",
+    label: "Ringkasan ruang sidang",
+    keterangan:
+      "Deretan di atas tabel yang menyebut perkara apa yang sedang disidangkan di tiap ruang dan yang diskors; ditekan = menggulung ke barisnya. Tombol ruang dan kartu ruang punya saklarnya sendiri.",
+    kelompok: "atas",
+  },
+  {
+    kunci: "tombol-layar-penuh",
+    label: "Tombol Layar penuh",
+    keterangan:
+      "Tombol di kepala layar untuk memperbesar Jadwal Sidang memenuhi jendela (Esc untuk keluar). Selama layar penuh sedang menyala tombolnya tetap tampil.",
     kelompok: "atas",
   },
   {

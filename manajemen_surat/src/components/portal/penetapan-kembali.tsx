@@ -28,6 +28,7 @@ import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 import { apiPath } from "@/lib/base-path";
+import { kalimatLangkah } from "@/lib/ringkasan-langkah-sipp";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import {
   type BarisKembali,
@@ -421,7 +422,7 @@ export function PopupPenetapanKembali({
                 pesan: kering
                   ? `siap: ${String(isi.jumlahLangkah ?? rencana.length)} pernyataan${isi.ringkas ? ` - ${String(isi.ringkas)}` : ""}`
                   : `tertulis di SIPP${isi.ringkas ? ` - ${String(isi.ringkas)}` : ""}`,
-                rincian: [...catatan, ...rencana.map((r) => `${r.aksi} ${r.tabel}: ${r.keterangan}`)],
+                rincian: [...catatan, ...rencana.map((r) => kalimatLangkah(r)).filter((k): k is string => k !== null)],
               }
             : { keadaan: "tolak", pesan: kalimatTolakKembali(String(isi.alasan || isi.pesan || "ditolak")) },
         }));

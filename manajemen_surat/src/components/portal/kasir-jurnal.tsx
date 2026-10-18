@@ -31,6 +31,7 @@ import { Plus, RotateCcw, Search, Wallet, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
+import { keteranganAwam } from "@/lib/ringkasan-langkah-sipp";
 import {
   bolehMengerjakanKasir,
   hitungSisaOtomatis,
@@ -338,7 +339,7 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
         const akun = String((isi.akunSipp as { username?: string })?.username || "");
         setKabar({
           teks: rincian.length
-            ? `Pratinjau: ${rincian.length} baris jurnal akan ditulis ke perkara_biaya (+ Audit Trail SIPP) atas akun SIPP ${akun}. Belum ada yang disimpan.`
+            ? `Pratinjau: ${rincian.length} baris jurnal akan ditulis ke jurnal keuangan perkara di SIPP atas akun SIPP ${akun}. Belum ada yang disimpan.`
             : "Pratinjau: tidak ada baris yang perlu ditulis.",
           gagal: false,
         });
@@ -479,7 +480,7 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
             <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
               {data.akun.ok ? (
                 <span>
-                  Ditulis di SIPP atas akun SIPP Anda: <b>{data.akun.username}</b> (diinput_oleh dan Audit Trail SIPP).
+                  Ditulis di SIPP atas akun SIPP Anda: <b>{data.akun.username}</b>.
                 </span>
               ) : data.akun.alasan === "akun_sipp_ganda" ? (
                 <label className="flex flex-wrap items-center gap-2">
@@ -711,21 +712,22 @@ export function DialogKasir({ daftar, onTutup, awal }: { daftar: PerkaraPilihan[
 
             {pratinjau && pratinjau.length ? (
               <details className="rounded-md border bg-muted/40 px-3 py-2 text-xs" open>
-                <summary className="cursor-pointer text-sm font-medium">Pratinjau pernyataan ke SIPP ({pratinjau.length} baris jurnal)</summary>
+                <summary className="cursor-pointer text-sm font-medium">Pratinjau yang akan ditulis ke SIPP ({pratinjau.length} baris jurnal)</summary>
                 <p className="mt-1 text-muted-foreground">
-                  Persis blangko Tambah jurnal SIPP: perkara_biaya (id = MAX+1), satu baris Audit Trail SIPP, dan juru sita bila biaya panggilan/
-                  pemberitahuan. Id dan jam diambil basis data saat menyimpan, sesudah jeda.
+                  Sama dengan blangko Tambah jurnal di SIPP; biaya panggilan atau pemberitahuan juga dicatat atas juru sita. Nomor dan jam
+                  ditetapkan saat menyimpan, sesudah jeda.
                 </p>
                 <ol className="mt-1 grid list-decimal gap-1 pl-5">
                   {pratinjau.map((p) => (
                     <li key={p.ke}>
-                      {p.pernyataan.map((x, j) => (
-                        <div key={j} className="mb-0.5">
-                          <div>{x.keterangan}</div>
-                          <code className="block whitespace-pre-wrap break-all text-muted-foreground">{x.sql}</code>
-                          <code className="block whitespace-pre-wrap break-all">{JSON.stringify(x.nilai)}</code>
-                        </div>
-                      ))}
+                      {p.pernyataan
+                        .map((x) => keteranganAwam(x.keterangan))
+                        .filter((k) => k !== "")
+                        .map((k, j) => (
+                          <div key={j} className="mb-0.5">
+                            {k}
+                          </div>
+                        ))}
                     </li>
                   ))}
                 </ol>
