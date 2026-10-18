@@ -235,6 +235,29 @@ describe("borang menyusun saksi", () => {
     expect(t.value).toBe("disunting petugas");
   });
 
+  it("isian yang belum terisi disebut dengan nama manusiawi: teks tampil tanpa kode #nnnn#, kode hanya di title", async () => {
+    const { w, panel } = await bukaBorang({ isi: { "5227": "DATA_TIDAK_ADA", "0222": "DATA_TIDAK_ADA" } });
+    // satu variabel diberi nama yang dapat dibaca (seperti kolom nama di halaman ABT), yang lain tanpa nama
+    (w.document.getElementById("5227") as any).nextElementSibling.textContent = "Penyebab perselisihan";
+    const wadah = panel.querySelector(".aleta-ssk");
+    tombolDi(wadah, "Susun pertanyaan dan jawaban").click();
+    await tunggu(() => wadah.querySelectorAll(".aleta-ssk-saksi").length === 2, "dua saksi tersusun");
+    const kabar = Array.from(wadah.querySelectorAll(".aleta-abt-gagal")) as any[];
+    const kosong = kabar.filter((x) => /Belum terisi dari data perkara|titik-titik isian/.test(x.textContent));
+    expect(kosong.length).toBeGreaterThan(0);
+    for (const x of kosong) {
+      expect(x.textContent, x.textContent).not.toMatch(/#\d{4}#/);
+      expect(x.textContent).not.toMatch(/\{[^}]*\}/);
+    }
+    expect(kosong.some((x) => /Penyebab perselisihan/.test(x.textContent))).toBe(true);
+    expect(kosong.some((x) => /satu isian|isian lain/.test(x.textContent))).toBe(true);
+    expect(kosong.some((x) => /Kode isian: .*5227/.test(x.getAttribute("title") || ""))).toBe(true);
+    // seluruh teks tampil form (di luar nilai kotak isian) dan nilai jawaban tidak memuat kode variabel mentah
+    expect(wadah.textContent).not.toMatch(/#\d{4}#/);
+    const nilai = (Array.from(wadah.querySelectorAll("textarea")) as any[]).map((x) => x.value as string);
+    expect(nilai.filter((v) => /#\d{4}#/.test(v))).toEqual([]);
+  });
+
   it("nama blangko Verstek menurunkan keadaan verstek", async () => {
     const { panel } = await bukaBorang({ judul: "[2] BAS 2 P Hadir & T Tidak Hadir - Saksi dan Putusan Verstek (2 Saksi)" });
     const wadah = panel.querySelector(".aleta-ssk");

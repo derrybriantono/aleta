@@ -210,6 +210,46 @@
     const bacaVar = () => pembaca(peta(), S.singgahan);
     const sebutan = (kode, cadangan) => bacaVar()(kode) || cadangan;
 
+    /** Nama slot teks bebas katalog yang manusiawi (tanpa kurung kurawal). */
+    const NAMA_SLOT = {
+      pengaju: "nama pihak yang mengajukan",
+      lawan: "nama pihak lawan",
+      sumber: "sumber cerita saksi",
+      hal: "hal yang diterangkan",
+      daftar: "daftar yang disebut saksi",
+      isi: "isian dari petugas",
+      lama: "lama kejadian",
+      sejak: "waktu mulai kejadian",
+      penghasilan: "penghasilan",
+    };
+    /**
+     * Penanda yang belum terisi (#nnnn# atau {slot}) -> nama isian yang dapat dibaca petugas. Kode variabel TIDAK
+     * tampil: nama diambil dari kolom nama baris variabel di halaman ABT, bila tidak ada ditulis "satu isian".
+     * Kodenya dikembalikan terpisah untuk atribut title (penelusuran).
+     */
+    function namaKosong(daftarKosong) {
+      const nama = [];
+      const kode = [];
+      let tanpaNama = 0;
+      for (const x of daftarKosong) {
+        const m4 = /^#(\d{4})#$/.exec(x);
+        const msl = /^\{([^{}]*)\}$/.exec(x);
+        let n = "";
+        if (m4) {
+          kode.push(m4[1]);
+          const it = peta() && typeof peta().get === "function" ? peta().get(m4[1]) : null;
+          n = it && it.nama ? String(it.nama).replace(/#\d{4}#/g, "").replace(/\s+/g, " ").trim() : "";
+          if (/^Variabel\s*\d{4}$/i.test(n) || /\d{4}/.test(n)) n = "";
+        } else if (msl) {
+          n = NAMA_SLOT[msl[1]] || "";
+        }
+        if (!n) tanpaNama += 1;
+        else if (!nama.includes(n)) nama.push(n);
+      }
+      if (tanpaNama) nama.push(tanpaNama === 1 && !nama.length ? "satu isian" : tanpaNama === 1 ? "satu isian lain" : `${tanpaNama} isian lain`);
+      return { teks: nama.join(", "), kode: Array.from(new Set(kode)).join(", ") };
+    }
+
     /** Jenis perkara halaman ini -> katalog (atau null). */
     function kenali() {
       const teks = typeof k.jenisPerkaraTeks === "function" ? k.jenisPerkaraTeks() : "";
@@ -560,13 +600,21 @@
               )
             );
           }
-          if (b.kosong.length) baris.appendChild(buat("div", "aleta-abt-kabar aleta-abt-gagal", `Belum terisi dari data perkara: ${b.kosong.join(", ")} (jadi titik-titik)`));
+          if (b.kosong.length) {
+            const nk = namaKosong(b.kosong);
+            const kabarKosong = buat("div", "aleta-abt-kabar aleta-abt-gagal", `Belum terisi dari data perkara: ${nk.teks} (jadi titik-titik)`);
+            if (nk.kode) kabarKosong.title = `Kode isian: ${nk.kode}`;
+            baris.appendChild(kabarKosong);
+          }
           kolom.appendChild(baris);
         }
         wadahHasil.appendChild(kolom);
       });
       if (semuaKosong.size) {
-        wadahHasil.appendChild(buat("div", "aleta-abt-kabar aleta-abt-gagal", `Ada titik-titik isian yang harus dilengkapi: ${Array.from(semuaKosong).join(", ")}.`));
+        const nsemua = namaKosong(Array.from(semuaKosong));
+        const kabarSemua = buat("div", "aleta-abt-kabar aleta-abt-gagal", `Ada titik-titik isian yang harus dilengkapi: ${nsemua.teks}.`);
+        if (nsemua.kode) kabarSemua.title = `Kode isian: ${nsemua.kode}`;
+        wadahHasil.appendChild(kabarSemua);
       }
     }
 

@@ -11372,6 +11372,12 @@ html[data-aleta-kulit="modern"] #aleta-panel-abt[data-t6="ui"]:not(.aleta-panel-
 /* Kepala bagian yang berlebar penuh: padding tidak boleh mendorong tombol di
    ujung kanannya keluar dari panel ("Susun", "Baca ulang"). */
 .aleta-lipat-kepala { box-sizing: border-box; max-width: 100%; }
+
+/* Kepala panel di layar sempit (HP 390px): deret tombol alat lebih lebar daripada ruang di sebelah kanan judul,
+   sehingga tombol paling kiri menimpa tulisan ALETA. Deretnya boleh menyusut dan membungkus ke baris kedua;
+   tidak ada tombol yang disembunyikan atau dipotong. */
+.aleta-kepala > .aleta-merek { flex: none; }
+.aleta-kepala > .aleta-alat-kepala { flex: 0 1 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end; row-gap: 2px; }
 #aleta-panel-abt[data-sore] .aleta-sore-kerja-kepala { flex-wrap: wrap; row-gap: 4px; }
 
 /* Bilah tab panel SIPP di layar di bawah 1500px: satu baris, digulir ke
