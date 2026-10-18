@@ -8,10 +8,10 @@
  *   - berkas baru `4a Harta Bersama/[01a] ... Rekonvensi Dikabulkan` dan `6a Hak Asuh Anak (Hadhanah)/[03a] [Tolak] ... Hadhanah Ditetapkan kepada T`;
  *   - 6 BAS mediasi pembatalan perkawinan (344) dipindah ke derry_briantono/terhapus (PERMA 1/2016 Pasal 4 ayat (2) huruf d);
  *   - menu hak asuh 133/134 kini jenis_perkara_id 369-369 (Lain-Lain), bukan alur_perkara_id 15;
- *   - isian baru 9430/9432/9434 (+ variabel otomatis 9431/9433/9435).
+ *   - isian baru 9430/9432/9434 (+ variabel otomatis 9431/9433/9435); REVISI 18 Okt: 9430/9431 tidak dipakai lagi (amar kirim salinan ke Pegawai Pencatat Nikah dibuang).
  * Yang dijaga: (A) pohon: berkas baru ada, yang dipindah tidak lagi dirujuk ALETA dan folder terhapus TIDAK pernah muncul di pembaca mana pun;
  * (B) putusan bawaan: HB rekonvensi dikabulkan -> [01a], hak asuh tolak Tergugat ibu -> [03a], bawaan lama utuh; (C) BAS pembatalan tanpa mediasi;
- * (D) hak asuh hanya untuk Lain-Lain Pdt.G; (E) label isian 9430/9432/9434 dan syarat "KUA di SIPP kosong".
+ * (D) hak asuh hanya untuk Lain-Lain Pdt.G; (E) label isian 9432/9434; 9430/9431 tidak ditampilkan (revisi 18 Okt).
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -251,7 +251,7 @@ describe("D. hak asuh hanya untuk jenis 369 (Lain-Lain Pdt.G), bukan cerai maupu
   });
 });
 
-describe("E. isian 9430 / 9432 / 9434", () => {
+describe("E. isian 9432 / 9434 (9430 / 9431 tidak dipakai lagi - revisi 18 Okt)", () => {
   const D = (kode: string, nama: string, jenis = "data_teks"): [string, Definisi] => [kode, { kode, nama, jenis, sql: "", bawaan: "" }];
   const KATALOG = new Map<string, Definisi>([
     D("9430", 'PEMBATALAN NIKAH: PEGAWAI PENCATAT NIKAH TEMPAT PERKAWINAN DICATAT - ISIAN (tulis "Kantor Urusan Agama Kecamatan ..., Kabupaten ..."; kosong = data SIPP)'),
@@ -264,33 +264,24 @@ describe("E. isian 9430 / 9432 / 9434", () => {
   ]);
   const sus = (penanda: string[] = [...KATALOG.keys()]) => susunIsian(penanda, KATALOG);
 
-  it("label awam tanpa nomor variabel; 9431/9433/9435 otomatis (bukan isian)", () => {
-    const s = sus();
+  it("label awam tanpa nomor variabel; 9433/9435 otomatis (bukan isian)", () => {
+    const s = sus(["9432", "9433", "9434", "9435", "0047"]);
     const peta = Object.fromEntries(s.isian.map((b) => [b.kode, b]));
-    expect(Object.keys(peta).sort()).toEqual(["9430", "9432", "9434"]);
-    expect(peta["9430"].nama).toBe('Kantor Urusan Agama tempat perkawinan dicatat (tulis "Kantor Urusan Agama Kecamatan ..., Kabupaten ..."; kosong = data SIPP)');
+    expect(Object.keys(peta).sort()).toEqual(["9432", "9434"]);
     expect(peta["9432"].nama).toMatch(/^Fakta pengasuhan anak oleh /);
     expect(peta["9434"].nama).toMatch(/^Objek rekonvensi yang ditetapkan sebagai harta bersama/);
     for (const b of Object.values(peta)) expect(b.nama, b.kode).not.toMatch(/\b9[0-9]{3}\b|OTOMATIS|ISIAN/);
-    expect(s.otomatis.map((o) => o.kode).sort()).toEqual(["0047", "9431", "9433", "9435"]);
+    expect(s.otomatis.map((o) => o.kode).sort()).toEqual(["0047", "9433", "9435"]);
   });
 
-  it("9430 berlaku hanya bila KUA di SIPP kosong (9431 masih titik-titik) atau sudah diisi petugas", () => {
-    expect(keadaanIsian("apa pun", "9430")).toBe("kuaKosong");
-    expect(keadaanIsian("apa pun", "9432")).toBe("");
-    const b = sus().isian.find((x) => x.kode === "9430")!;
-    expect(b.keadaan).toBe("kuaKosong");
+  it("revisi 18 Okt: 9430 dan 9431 tidak ditampilkan (bukan isian, bukan otomatis, bukan tak dikenal) walau berkas lama masih memuat penandanya; keadaan kuaKosong dihapus", () => {
+    const s = sus(["9430", "9431", "9432"]);
+    expect(s.isian.map((b) => b.kode)).toEqual(["9432"]);
+    expect(s.otomatis.map((o) => o.kode).sort()).not.toContain("9431");
+    expect(s.takDikenal).toEqual([]);
+    expect(keadaanIsian("apa pun", "9430")).toBe("");
     const sumber = readFileSync(path.resolve(__dirname, "../../../ekstensi-sipp/blangko-derry-isian.js"), "utf8");
-    // jalankan keadaanBerlakuMurni dari ekstensi (fungsi murni di dalam IIFE: ambil lewat teks sumbernya)
-    const awal = sumber.indexOf("function keadaanBerlakuMurni(b, ctx) {");
-    const akhir = sumber.indexOf("const keadaanBerlaku = ", awal);
-    expect(awal).toBeGreaterThan(0);
-    const fn = vm.runInNewContext(`(${sumber.slice(awal, akhir).trim().replace(/;$/, "")})`) as (b: object, c: object) => boolean;
-    const uji = (nilai: Record<string, { status: string; teks: string }> | undefined, terisi = false) => fn({ keadaan: "kuaKosong", pemicu: "", langsung: false, kode: "9430" }, { perkara: null, menyala: () => false, terisi: () => terisi, nilai });
-    expect(uji({ "9431": { status: "terisi", teks: "Kantor Urusan Agama Kecamatan ..." } })).toBe(true); // SIPP kosong -> perlu diisi
-    expect(uji({ "9431": { status: "terisi", teks: "Kantor Urusan Agama Kecamatan Banawa, Kabupaten Donggala, Provinsi Sulawesi Tengah" } })).toBe(false); // SIPP sudah punya
-    expect(uji({ "9431": { status: "terisi", teks: "Kantor Urusan Agama Kecamatan Banawa, Kabupaten Donggala" } }, true)).toBe(true); // sudah diisi petugas tetap tampil
-    expect(uji(undefined)).toBe(true); // belum terbaca: tetap tampil (tidak menebak)
-    expect(uji({ "9431": { status: "kosong", teks: "" } })).toBe(true);
+    expect(sumber).not.toMatch(/k === "kuaKosong"/);
+    expect(sumber).not.toMatch(/kuaKosong: "/);
   });
 });

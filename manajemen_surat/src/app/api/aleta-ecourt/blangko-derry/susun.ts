@@ -49,7 +49,7 @@ export type ButirIsian = {
   opsi: Array<{ nilai: string; label: string }>;
   tj: null | { kunci: string; sebutan: string; peran: "tanyajawab" | "keterangan"; kodeSunting: string };
 };
-export type Keadaan = "" | "kuasaP" | "kuasaT" | "prodeo" | "alasanC" | "alasanH" | "ghaib" | "ecourt" | "insidentil" | "kuaKosong";
+export type Keadaan = "" | "kuasaP" | "kuasaT" | "prodeo" | "alasanC" | "alasanH" | "ghaib" | "ecourt" | "insidentil";
 export type Susunan = {
   penanda: string[];
   isian: ButirIsian[];
@@ -181,7 +181,6 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "9355": { nm: "Pokok jawaban {T} (satu kalimat)" },
   /* === AKHIR F21 === */
   /* === I7 17 Okt: paket varian (pembatalan [01]/[01a]/[01b], hak asuh [03a], harta bersama [01a]) === */
-  "9430": { nm: "Kantor Urusan Agama tempat perkawinan dicatat (tulis \"Kantor Urusan Agama Kecamatan ..., Kabupaten ...\"; kosong = data SIPP)" },
   "9432": { nm: "Fakta pengasuhan anak oleh {T} (dari bukti dan saksi; kosong = kalimat bawaan)" },
   "9434": { nm: "Objek rekonvensi yang ditetapkan sebagai harta bersama (satu per baris; kosong = seluruh objek gugatan rekonvensi)" },
   /* === AKHIR I7 === */
@@ -292,8 +291,6 @@ export const KEADAAN_TEKS: Record<Exclude<Keadaan, "">, string> = {
   ghaib: "Tergugat/Termohon dipanggil secara ghaib",
   ecourt: "perkara ini terdaftar lewat e-Court",
   insidentil: "ada kuasa insidentil",
-  // I7 17 Okt: 9430 hanya berlaku bila data pernikahan SIPP (kua_tempat_nikah) kosong - variabel otomatis 9431 masih titik-titik.
-  kuaKosong: "data KUA tempat perkawinan di SIPP kosong",
 };
 
 const BUKTI_KODE: Record<string, "P" | "T"> = { "1214": "P", "9911": "T" };
@@ -302,8 +299,11 @@ const BUKTI_KODE: Record<string, "P" | "T"> = { "1214": "P", "9911": "T" };
 const PEMICU_KEADAAN: Record<string, Keadaan> = { "11111": "kuasaP", "11113": "kuasaT", "11112": "prodeo", "11116": "alasanC", "11117": "alasanH" };
 const KEADAAN_PEMICU: Partial<Record<Keadaan, string>> = Object.fromEntries(Object.entries(PEMICU_KEADAAN).map(([k, v]) => [v, k]));
 
-/** Keadaan isian yang ditetapkan menurut KODE variabelnya (nama ABT-nya tidak menyebut syaratnya dengan kata yang dikenal). */
-const KEADAAN_KODE: Record<string, Keadaan> = { "9430": "kuaKosong" };
+/**
+ * I7 18 Okt (revisi): isian 9430 (KUA tempat perkawinan) dan variabel otomatis 9431 TIDAK dipakai lagi - amar/pertimbangan kirim salinan ke Pegawai Pencatat Nikah dibuang dari
+ * blangko pembatalan perkawinan. Bila berkas lama masih memuat penandanya, keduanya tidak ditampilkan (bukan isian, bukan otomatis, bukan tak dikenal).
+ */
+const TIDAK_DIPAKAI = new Set(["9430", "9431"]);
 
 /**
  * Keadaan sebuah isian tangan dari namanya di katalog ABT. Nama ABT memang menuliskan syaratnya:
@@ -311,7 +311,6 @@ const KEADAAN_KODE: Record<string, Keadaan> = { "9430": "kuaKosong" };
  * "NO KUASA INSIDENTIL: ...", "SEPAKAT BERACARA SECARA ELEKTRONIK". Penanda #111xx# di nama didahulukan.
  */
 export function keadaanIsian(namaPolos: string, kode = ""): Keadaan {
-  if (KEADAAN_KODE[kode]) return KEADAAN_KODE[kode];
   const n = String(namaPolos || "");
   const pem = (n.match(POLA_PEMICU) || [])[1] || "";
   if (pem && PEMICU_KEADAAN[pem]) return PEMICU_KEADAAN[pem];
@@ -449,6 +448,7 @@ export function susunIsian(
     const k = tumpuk.shift() as string;
     if (dilihat.has(k)) continue;
     dilihat.add(k);
+    if (TIDAK_DIPAKAI.has(k)) continue; // I7 18 Okt (revisi): 9430 / 9431 tidak dipakai lagi
     const d = katalog.get(k);
     if (!d) {
       if (!/^111\d\d$/.test(k)) takDikenal.push(k);
