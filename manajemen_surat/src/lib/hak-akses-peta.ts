@@ -820,7 +820,7 @@ function butirBlangko(): ButirPeta[] {
     buat({
       id: "blangko.pengaturan-sipp-abt",
       kelompok: "blangko",
-      judul: "Pengaturan SIPP & ABT: hak menu folder, variabel, templat tanya jawab, identitas satker",
+      judul: "Pengaturan SIPP & ABT: hak menu folder, variabel, blangko tanya jawab, identitas satker",
       keterangan: "Mengatur siapa membuka folder Blangko Derry, variabel, isian bawaan, dan identitas satker yang diterapkan ke ABT.",
       hak: { "super-admin": "U" },
       admin: "P",
@@ -865,7 +865,7 @@ const PENGATURAN: readonly Pengaturan[] = [
     id: "pengaturan-sipp-abt",
     modul: ["pengaturan-sipp-abt"],
     judul: "Pengaturan SIPP & ABT (menu pengelola)",
-    keterangan: "Pintu pengaturan hak menu folder, variabel, templat tanya jawab, dan identitas satker untuk ABT.",
+    keterangan: "Pintu pengaturan hak menu folder, variabel, blangko tanya jawab, dan identitas satker untuk ABT.",
     catatan: "Pembagian rincian Super Admin dan Admin ada di butir Blangko: Pengaturan SIPP & ABT.",
   },
   { id: "bot", modul: ["aleta-bot"], judul: "ALETA Bot (WhatsApp, antrian pesan, tindakan)", keterangan: "Pengelolaan bot dan antrian pesan." },

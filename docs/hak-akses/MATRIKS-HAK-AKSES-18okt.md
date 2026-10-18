@@ -284,7 +284,7 @@ Catatan kewenangan:
 | Blangko e-Court | P | P | - | P | - | P | P | P | - | - | - | - | - | - | - | - |
 | Blangko Saya (blangko pribadi, putusan mandiri, ajukan paket ABT) | U | U | U | U | U | U | U | - | - | - | - | - | - | - | - | - |
 | Pengelolaan blangko mandiri ALETA (kamus, korpus, templat) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
-| Pengaturan SIPP & ABT: hak menu folder, variabel, templat tanya jawab, identitas satker | U | P | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Pengaturan SIPP & ABT: hak menu folder, variabel, blangko tanya jawab, identitas satker | U | P | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 
 Catatan kewenangan:
 
@@ -296,7 +296,7 @@ Catatan kewenangan:
 - **Blangko akta cerai (Cerai Gugat dan Cerai Talak)**: Panitera selalu boleh.
 - **Blangko mediasi**: Mediator non-hakim tidak punya akun ABT: hasil mediasi dibuat dari ALETA e-Court.
 - **Blangko Saya (blangko pribadi, putusan mandiri, ajukan paket ABT)**: Tahap awal: hanya Super Admin sampai saklar 'Blangko Saya untuk semua peran' dinyalakan. Pemilik saja yang mengubah; Super Admin melihat, memutus paket ABT, dan menghapus. Hanya Blangko Derry yang dipakai di ABT.
-- **Pengaturan SIPP & ABT: hak menu folder, variabel, templat tanya jawab, identitas satker**: Admin membuka, mengubah isian bawaan dan templat; hak menu folder, saklar kebijakan, dan kueri variabel hanya Super Admin.
+- **Pengaturan SIPP & ABT: hak menu folder, variabel, blangko tanya jawab, identitas satker**: Admin membuka, mengubah isian bawaan dan templat; hak menu folder, saklar kebijakan, dan kueri variabel hanya Super Admin.
 
 ### Hak menu ABT per folder (kelompok pengguna SIPP)
 

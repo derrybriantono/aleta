@@ -374,7 +374,8 @@ describe("mengikuti antrian sidang", () => {
     const ubah = (rencana.langkah as Baris[])[0];
     const params = ubah.params as unknown[];
     // jam_sidang, sampai_jam, agenda, dihadiri_oleh, ...
-    expect(params[0]).toBe("13:12:50");
+    // Jam borang SIPP: HH:mm, detik 00 (audit pola 18 Okt 2026, jamBorang).
+    expect(params[0]).toBe("13:12:00");
     expect(params[3]).toBe(2);
   });
 
@@ -390,7 +391,8 @@ describe("mengikuti antrian sidang", () => {
     const rencana = await layanan.susunRencanaPutus({ jadwalId: 20219, statusPutusanId: 62, operator: "usr-super" });
     expect(rencana.ok, JSON.stringify(rencana)).toBe(true);
     const params = (rencana.langkah as Baris[])[0].params as unknown[];
-    expect(params[2]).toBe("13:12:50");
+    // Jam borang SIPP: HH:mm, detik 00 (audit pola 18 Okt 2026, jamBorang).
+    expect(params[2]).toBe("13:12:00");
   });
 });
 

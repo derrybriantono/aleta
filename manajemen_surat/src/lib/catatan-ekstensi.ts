@@ -71,7 +71,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
       "Status Perkara tampil Seamless sebagai bawaan (toggle Kompleks tetap ada): linimasa perkara, kotak Perlu tindakan dengan titik per kelompok, lima kelompok yang bisa dilipat, dan pencarian di dalam perkara, tanpa fitur yang hilang.",
       "Prompt AI di Status Perkara lebih lengkap dengan 20 pilihan tujuan, centang \"Project ALETA AI PA CLAUDE ULTRA\" (tanpa role, mengikuti pola dan pemicu Project), nama asli untuk tujuan membuat putusan (NIK dan telepon tetap ditutup), saklar \"Ikuti format putusan tertentu\", dan saklar \"Sertakan putusan yang masih berbentuk blangko\" yang menandai bagian kosong di berkas .rtf hasil ABT.",
       "Panel PTSP di ABT hanya menampilkan \"Isi dari SIPP & input ke ABT\", dan Pengaturan memuat halaman Hak akses per peran.",
-      "Ekstensi tidak lagi menumpuk galat saat ABT tidak terjangkau, tombol \"Simpan nama\" tidak membeku, dan kalimat galat tidak lagi berulang seperti \"X: X ...\".",
+      "Ekstensi tidak lagi menumpuk kesalahan saat ABT tidak terjangkau, tombol \"Simpan nama\" tidak membeku, dan kalimat kesalahan tidak lagi berulang seperti \"X: X ...\".",
     ],
   },
   {

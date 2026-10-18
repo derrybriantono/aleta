@@ -210,7 +210,8 @@ describe("kewenangan dan jalur gerbangnya", () => {
   });
 
   it("gerbang menuntut token internal, sama seperti rute penetapan", () => {
-    expect(gerbang).toContain('router.post("/sidang/tunda", requireInternalToken');
+    // Sejak keputusan 104 (18 Okt 2026) rute tulis dibungkus manualJamKerja(...) sesudah token, ditulis multibaris.
+    expect(gerbang).toMatch(/router\.post\(\s*"\/sidang\/tunda",\s*requireInternalToken,\s*manualJamKerja\(/);
     expect(gerbang).toContain('router.get("/sidang/keadaan", requireInternalToken');
   });
 });

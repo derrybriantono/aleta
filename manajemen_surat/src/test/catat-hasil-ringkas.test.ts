@@ -133,7 +133,7 @@ describe("langsung dieksekusi, ringkasannya sesudah menulis (butir 13, 30 Sep 20
 
   it("sesudah tertulis borangnya berganti ringkasan dari jawaban server", () => {
     expect(ringkas).toContain("if (isi.ok && isi.kering !== true) {");
-    expect(ringkas).toContain("(hasil?.selesai ?? []).map(");
+    expect(ringkas).toContain("langkahUntukPetugas(hasil?.selesai).map(");
     expect(ringkas).toContain('aria-label="Yang ditulis ke SIPP"');
     // Ringkasan itu cabang TERSENDIRI - tidak ada tombol tulis di dalamnya.
     const i = ringkas.indexOf("if (sudahTertulis) {");

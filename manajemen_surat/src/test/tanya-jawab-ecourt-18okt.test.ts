@@ -186,7 +186,9 @@ describe("JJ2 - lewat isiGugatanService: keluaran ke ekstensi", () => {
 // ─── Penulis di ekstensi ─────────────────────────────────────────────────────
 
 const sumber = readFileSync(path.join(AKAR, "ekstensi-sipp/blangko-derry-isian.js"), "utf8").replace(/\r\n/g, "\n");
-const a = sumber.indexOf("const TJ_JAWAB_MENJAWAB");
+// Mulai dari pembantu kunci (kunciJawabMenjawab, dipakai tabel di bawahnya) bila ada: literal berkode dibuang dari sumber ekstensi.
+const awalPembantu = sumber.indexOf("const kunciJawabMenjawab");
+const a = awalPembantu >= 0 ? awalPembantu : sumber.indexOf("const TJ_JAWAB_MENJAWAB");
 const b = sumber.indexOf("// F4.2: saran draf H-7", a);
 const kode = sumber.slice(a, b);
 

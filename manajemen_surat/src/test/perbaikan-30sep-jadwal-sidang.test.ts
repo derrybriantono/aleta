@@ -274,9 +274,10 @@ describe("14. bawaan tunda - sidang pertama, pihak kedua tidak hadir (104/Pdt.G/
     expect(u.sebab).toBe("sidang-pertama");
   });
 
-  it("tanggal: dua pekan, hari yang sama (Senin 9 Mar -> Senin 23 Mar)", () => {
-    expect(u.tanggal).toBe("2026-03-23");
-    expect(new Date(u.tanggal + "T00:00:00Z").getUTCDay()).toBe(new Date("2026-03-09T00:00:00Z").getUTCDay());
+  it("tanggal: dua pekan dari Senin 9 Mar = Senin 23 Mar, tetapi 23-24 Mar 2026 cuti bersama Idulfitri -> maju ke Rabu 25 Mar", () => {
+    // 18 Okt 2026 (hari libur satu sumber): hari libur tidak dapat dipilih sebagai tanggal sidang, jadi
+    // usulan dua pekan yang jatuh pada libur dimajukan ke hari kerja berikutnya.
+    expect(u.tanggal).toBe("2026-03-25");
   });
 
   it("sidang ke-2, Tergugat masih belum pernah hadir: panggilan kedua (petugas menulis 'Tergugat tidak hadir')", () => {

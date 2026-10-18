@@ -187,6 +187,9 @@ describe("Status Perkara - perkara yang tidak ada", () => {
   it("membuka perkara yang tidak ada dari riwayat: perkara lama tidak dibiarkan tampil di bawah pesannya", async () => {
     const A = "100/Pdt.G/2026/PA.Dgl";
     const HILANG = "777/Pdt.G/2020/PA.Dgl";
+    // Seamless menjadi bawaan (18 Okt 2026) dan menaruh riwayat di dalam menu; uji ini menjaga alur riwayat
+    // pada bilah alat, jadi tampilan Kompleks dipilih. Pengguna uji tanpa id memakai kunci "tamu".
+    window.localStorage.setItem("aleta.status-perkara.tampilan.tamu", "kompleks");
     window.localStorage.setItem(
       "aleta.status-perkara.riwayat",
       JSON.stringify([{ nomorPerkara: HILANG, jenisPerkara: "Cerai Gugat", dibuka: "2026-10-01" }])
