@@ -112,6 +112,7 @@ th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:hsl(var(
 .hasil-cari mark{background:hsl(var(--warn)/.35);color:inherit;border-radius:.2rem}
 .rel{display:grid;gap:14px;margin-top:12px;grid-template-columns:minmax(0,1fr)}
 .rel>*{min-width:0}
+.rel-bawah{display:flex;flex-direction:column;gap:6px}
 .rel .rail{display:flex;flex-direction:column;gap:10px}
 .linimasa-wadah{border:1px solid hsl(var(--bd));border-radius:var(--rad);background:hsl(var(--card));padding:.65rem .8rem .5rem}
 .linimasa-wadah .judul-lm{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem}
@@ -163,14 +164,16 @@ th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:hsl(var(
 
 @media(min-width:1100px){
   #seamless .rel{grid-template-columns:minmax(0,1fr) 21rem;align-items:start}
-  #seamless .rail{position:sticky;top:calc(var(--tinggi-kepala,132px) + 54px)}
+  #seamless .rel-atas{grid-column:1;grid-row:1}
+  #seamless .rel-bawah{grid-column:1;grid-row:2}
+  #seamless .rail{grid-column:2;grid-row:1 / span 2;position:sticky;top:calc(var(--tinggi-kepala,132px) + 12px)}
 }
 @media(min-width:1700px){
   #seamless .rel{grid-template-columns:minmax(0,1fr) 25rem}
   #seamless .kelompok-daftar{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
   #seamless .kelompok.lebar{grid-column:1/-1}
 }
-@media(max-width:700px){
+@media(max-width:639px){
   .halaman{padding:8px 8px 32px}
   .ruang.tiga,.ruang.empat,.ruang.dua{grid-template-columns:1fr 1fr}
   #seamless .nomor{font-size:19px}
@@ -244,11 +247,11 @@ const P = {
 };
 
 const KELOMPOK = [
-  {id:"A", nama:"Pihak dan majelis", ikon:"P", ringkas:"2 pihak, 1 kuasa, majelis 3 hakim", bagian:["majelis","pihak"]},
+  {id:"A", nama:"Pihak dan majelis", ikon:"P", ringkas:"2 pihak, 1 kuasa, majelis 3 hakim", bagian:["majelis","pihak"], lebar:true},
   {id:"B", nama:"Jalannya perkara", ikon:"J", ringkas:"Sidang ke-3 berikutnya 21 Okt, 1 relaas belum kembali", bagian:["tahapan","sidang","kalender","relaas","mediasi","saksi"], lebar:true},
   {id:"C", nama:"Putusan dan tindak lanjut", ikon:"U", ringkas:"Belum putus; aksi e-Court tersedia", bagian:["putusan-lengkap","putusan","ikrar","upaya","putusanEcourt","ecourtAksi"]},
   {id:"D", nama:"Berkas, arsip, dan biaya", ikon:"B", ringkas:"Sisa panjar Rp 125.000, 6 berkas", bagian:["arsip","delegasi","berkas","biaya"]},
-  {id:"E", nama:"Penilaian dan analisis", ikon:"A", ringkas:"Nilai kelengkapan 82, perintah AI siap disusun", bagian:["rubrik","sk","analisa-lanjut","banding-perkara","prompt-putusan","analisa"]}
+  {id:"E", nama:"Penilaian dan analisis", ikon:"A", ringkas:"Nilai kelengkapan 82, perintah AI siap disusun", bagian:["rubrik","sk","analisa-lanjut","banding-perkara","prompt-putusan","analisa"], lebar:true}
 ];
 
 const tabel = (kepala, baris) => `<table><thead><tr>${kepala.map(k=>`<th>${k}</th>`).join("")}</tr></thead><tbody>${baris.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
@@ -420,7 +423,6 @@ function renderKompleks(){
 }
 
 function renderSeamless(){
-  const jumlahWarn = {A:0,B:2,C:1,D:0,E:0};
   e("#seamless").innerHTML = `
   <div class="kepala-lekat" id="kepala-lekat">
     <div class="k1">
@@ -456,21 +458,12 @@ function renderSeamless(){
   </div>
 
   <div class="rel">
-    <div>
+    <div class="rel-atas">
       <div class="linimasa-wadah">
         <div class="judul-lm"><b>Linimasa perkara</b><span class="kecilteks redup">ketuk satu titik untuk melompat ke bagiannya</span></div>
         <div class="linimasa" id="linimasa">${TIMELINE.map(x=>`<button type="button" class="lm ${x.s}" data-ke="${x.ke}"><span class="titik"></span><span class="nm">${x.n}</span><span class="tg">${x.t}</span></button>`).join("")}</div>
       </div>
-      <div class="nav-kelompok" id="nav-kelompok">${KELOMPOK.map((g,i)=>`<button type="button" data-g="${g.id}" aria-current="${i===0}">${g.nama}<span class="n">${g.bagian.length}</span>${jumlahWarn[g.id]?'<span class="titik-w" title="Ada yang perlu tindakan"></span>':""}</button>`).join("")}</div>
-      <div class="kelompok-daftar" id="kelompok-daftar" style="margin-top:6px">
-        ${KELOMPOK.map(g=>{
-          const c = sj("rancangan.kel."+g.id)==="1";
-          return `<section class="kelompok ${c?"ciut":""} ${g.lebar?"lebar":""}" id="kel-${g.id}" data-g="${g.id}">
-            <button type="button" class="kk" aria-expanded="${!c}"><span class="ikon">${g.ikon}</span><span class="kt"><h4>${g.nama}</h4><p>${g.ringkas}</p></span><span class="kpanah"></span></button>
-            <div class="kisi">${g.bagian.map(k=>htmlBagian(byK[k])).join("")}</div></section>`}).join("")}
-      </div>
     </div>
-
     <aside class="rail" aria-label="Ringkasan dan tindakan">
       <details class="peringatan" open><summary>Perlu tindakan &mdash; ${PERINGATAN.length} butir</summary><ul>${PERINGATAN.map(x=>`<li><span>${x.p}${x.s?`<br><span class="kecilteks redup">${x.s}</span>`:""}</span></li>`).join("")}</ul></details>
       <div class="kotak besar"><div class="t">Keadaan</div><div class="v">Pembuktian</div><div class="t">46 hari dari batas 150 hari SEMA</div></div>
@@ -482,8 +475,18 @@ function renderSeamless(){
         <div class="kotak"><div class="t">Sidang</div><div class="v">3</div><div class="t">1 kali ditunda</div></div>
         <div class="kotak"><div class="t">Sisa panjar</div><div class="v">Rp 125.000</div><div class="t">panjar Rp 500.000</div></div>
       </div>
-      <p class="catatan-rancangan">Di HP kolom ini turun di bawah linimasa dan menjadi satu kolom.</p>
+      <p class="catatan-rancangan">Di HP kolom ini turun tepat di bawah linimasa dan menjadi satu kolom.</p>
     </aside>
+    <div class="rel-bawah">
+      <div class="nav-kelompok" id="nav-kelompok">${KELOMPOK.map((g,i)=>`<button type="button" data-g="${g.id}" aria-current="${i===0}">${g.nama}<span class="n">${g.bagian.length}</span></button>`).join("")}</div>
+      <div class="kelompok-daftar" id="kelompok-daftar" style="margin-top:6px">
+        ${KELOMPOK.map(g=>{
+          const c = sj("rancangan.kel."+g.id)==="1";
+          return `<section class="kelompok ${c?"ciut":""} ${g.lebar?"lebar":""}" id="kel-${g.id}" data-g="${g.id}">
+            <button type="button" class="kk" aria-expanded="${!c}"><span class="ikon">${g.ikon}</span><span class="kt"><h4>${g.nama}</h4><p>${g.ringkas}</p></span><span class="kpanah"></span></button>
+            <div class="kisi">${g.bagian.map(k=>htmlBagian(byK[k])).join("")}</div></section>`}).join("")}
+      </div>
+    </div>
   </div>`;
   pasangSeamless();
 }
@@ -582,7 +585,7 @@ const FITUR = [
  ["Ringkasan",null,null],
  ["Angka: Lama perkara, Nilai kelengkapan, Sidang, Sisa panjar","Jajaran empat angka","Kolom ringkasan (kanan di laptop/TV, di bawah linimasa di HP)"],
  ["Kartu Keadaan, Sidang berikutnya, Majelis + panitera","Tiga kartu","Kolom ringkasan; Sidang berikutnya juga di kepala"],
- ["Perlu tindakan (semua butir beserta sebab)","Kotak kuning","Kolom ringkasan, terbuka bawaan; titik kuning di kelompok yang memuatnya"],
+ ["Perlu tindakan (semua butir beserta sebab)","Kotak kuning","Kolom ringkasan, terbuka bawaan"],
  ["Bilah alat",null,null],
  ["Salin ringkasan","Bilah alat","Kepala, tombol kedua"],
  ["Salin tautan SIPP / tautan ALETA (dengan cadangan salin tangan)","Bilah alat","Menu Lainnya"],
