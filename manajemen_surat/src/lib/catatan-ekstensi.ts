@@ -57,6 +57,21 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.6",
+    dirilis: "2026-10-18T16:00:00+08:00",
+    judul: "Susun saksi menurut keadaan perkara untuk semua jenis perkara, dan panel ekstensi yang menyesuaikan layar laptop sampai TV",
+    butir: [
+      "Tombol \"Susun saksi menurut keadaan perkara\" di tanya jawab ABT kini tersedia untuk 22 kumpulan jenis perkara: cerai gugat dan cerai talak beserta kumulasinya (hak asuh, nafkah, harta bersama, itsbat), itsbat nikah, dispensasi kawin, penetapan ahli waris, perwalian, harta bersama, kewarisan, wali adhal, wasiat, izin poligami, pembatalan dan pencegahan perkawinan, asal usul anak, hak asuh, Penguasaan Anak, nafkah anak, ekonomi syariah, pengangkatan anak, dan permohonan umum, supaya pertanyaan dan keterangan saksi tidak lagi hanya untuk perkara cerai.",
+      "Jenis perkara dikenali dari data perkara SIPP, bukan dari isian cerai di blangko, sehingga perkara bukan cerai tidak lagi mendapat pertanyaan cerai; jenis yang belum punya kumpulan pertanyaan tidak menampilkan tombol itu.",
+      "Keadaan perkara (verstek atau dihadiri, kumulasi, kehadiran pihak) dan tujuh jenis keterangan dapat dipilih per saksi: melihat langsung, mendengar, de auditu, tahu sebagian, tidak tahu, ragu, dan berbeda; dua sampai lima saksi, dan dua saksi tidak pernah mendapat kalimat yang sama pada satu pertanyaan, supaya maksud keterangan sama tetapi kata-katanya berbeda.",
+      "Keterangan ragu, sebagian, atau berbeda bertanda kuning dan tidak mengisi isian turunan di ABT; bila semua saksi ragu pada pokok yang wajib, muncul peringatan, supaya pembuktian tidak tampak lebih kuat dari keterangan sebenarnya.",
+      "Isian yang tidak terbaca dari data perkara disebut dengan namanya dan dibiarkan titik-titik untuk dilengkapi petugas, tidak pernah ditebak; rujukan hukum yang belum dicocokkan ke naskah resmi tidak dicetak.",
+      "Tombol cerai yang lama (Input ke ABT dan Susun keterangan saksi 1 & 2) tetap ada dan bekerja seperti sebelumnya.",
+      "Panel ekstensi menyesuaikan layar: panel SIPP menempel di kanan mulai lebar 900 px (laptop 1366 dengan zoom 125% tidak lagi tertutup), lebar panel dan ukuran huruf ikut layar sampai TV dan 4K, panel ABT paling lebar 36% layar sehingga tombolnya tidak terpotong, serta widget, draf H-7, dan popup ikut menyesuaikan; tidak ada tombol atau fitur yang dihilangkan.",
+      "Bilah tab panel SIPP digulir ke samping pada layar sempit, lampu SIPP/ALETA/e-Court turun ke baris kedua bila ruang kurang, dan judul panel di layar HP tidak lagi tertimpa tombol.",
+    ],
+  },
+  {
     versi: "1.205.5",
     dirilis: "2026-10-18T14:30:00+08:00",
     judul: "Penetapan ikrar talak dan e-Doc, form ikrar terisi saat perkara dibuka, riwayat login WhatsApp, dan blangko baru dikenali",
