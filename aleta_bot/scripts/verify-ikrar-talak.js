@@ -57,6 +57,16 @@ const palsu = {
 };
 require.cache[dbPath] = { id: dbPath, filename: dbPath, loaded: true, exports: palsu };
 
+// Bridge SIPP baca-saja dipalsukan: biaya ikrar dari variabel ABT 1101/2050 (tanpa basis data sungguhan).
+let nilaiBiaya = { 1101: { status: "terisi", teks: "14.500" }, 2050: { status: "terisi", teks: "empat belas ribu lima ratus" } };
+const jembatanPath = require.resolve(path.join(__dirname, "..", "services", "sippReadOnlyBridgeService.js"));
+require.cache[jembatanPath] = {
+  id: jembatanPath,
+  filename: jembatanPath,
+  loaded: true,
+  exports: { handleBridgeOperation: async () => ({ ok: true, nilai: nilaiBiaya }) },
+};
+
 const ik = require("../services/ikrarTalakService");
 const penetapan = require("../services/penetapanTulisService");
 
@@ -110,6 +120,25 @@ function periksa(nama, kondisi, rinci = "") {
   periksa("lolos penjaga tanda & daftar tabel (kering)", kering.ok === true, kering.alasan);
   periksa("rencana tidak menulis apa pun ke basis data", tulis.length === 0);
   periksa("tanpa kata aleta di isian", !/aleta/i.test(JSON.stringify((r.langkah || []).map((l) => l.params))));
+
+  console.log("== Biaya amar dari variabel ABT biaya ikrar (#1101# / #2050#) ==");
+  periksa("amar memuat biaya + terbilang dari ABT", /sebesar Rp14\.500,- \(empat belas ribu lima ratus rupiah\);/.test(String(ikrar.params[2])), String(ikrar.params[2]));
+  periksa("andaian menyebut biaya diambil dari biaya perkara", (r.andaian || []).some((x) => /Rp14\.500,- diambil dari biaya perkara/.test(x)));
+  periksa("bacaBiayaIkrar: angka berbentuk ribuan diterima", ik.bacaBiayaIkrar({ 1101: { status: "terisi", teks: "29.500" }, 2050: { status: "terisi", teks: "dua puluh sembilan ribu lima ratus" } }).jumlah === 29500);
+  periksa("bacaBiayaIkrar: #1101# kosong -> null (tidak dikarang)", ik.bacaBiayaIkrar({ 1101: { status: "kosong", teks: "..." } }) === null);
+  periksa("bacaBiayaIkrar: bukan angka / nol -> null", ik.bacaBiayaIkrar({ 1101: { status: "terisi", teks: "abc" } }) === null && ik.bacaBiayaIkrar({ 1101: { status: "terisi", teks: "0" } }) === null);
+  periksa("bacaBiayaIkrar: tanpa terbilang tetap memuat angka", ik.bacaBiayaIkrar({ 1101: { status: "terisi", teks: "14.500" } }).terbilang === "");
+  nilaiBiaya = { 1101: { status: "kosong", teks: "..." } };
+  const tanpa = await ik.susunRencanaIsiIkrar({ jadwalId: 500, ip: "192.168.1.5" });
+  const ikrarTanpa = (tanpa.langkah || []).find((l) => l.tabel === "perkara_ikrar_talak");
+  periksa("biaya tak terbaca: amar tanpa angka + andaian periksa di SIPP", ikrarTanpa && !/Rp\d/.test(String(ikrarTanpa.params[2])) && (tanpa.andaian || []).some((x) => /tidak disebut/.test(x)));
+  periksa("biaya tak terbaca: amar tetap >= 50 huruf", ikrarTanpa && String(ikrarTanpa.params[2]).length >= 50);
+  nilaiBiaya = { 1101: { status: "terisi", teks: "14.500" }, 2050: { status: "terisi", teks: "empat belas ribu lima ratus" } };
+  keadaan = { ...dasar(), amarIkrar: "<ol><li>Menyatakan perkawinan putus karena perceraian dengan talak satu raj'i;</li><li>Biaya Rp 29.500,-</li></ol>" };
+  const adaAmar = await ik.susunRencanaIsiIkrar({ jadwalId: 500 });
+  const ikrarAda = (adaAmar.langkah || []).find((l) => l.tabel === "perkara_ikrar_talak");
+  periksa("amar yang sudah diketik petugas tidak ditimpa", ikrarAda && /Rp 29\.500/.test(String(ikrarAda.params[2])));
+  keadaan = dasar();
 
   console.log("== Penolakan ==");
   keadaan = { ...dasar(), alasanDitunda: "Pemohon tidak hadir ikrar" };

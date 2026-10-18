@@ -169,19 +169,58 @@ function escHtml(teks) {
 }
 
 /**
+ * Biaya penetapan ikrar dari variabel ABT yang SUDAH ADA (tidak dikarang):
+ *   #1101# "Biaya Penetapan Ikrar Talak" = #1090# + #1164# (biaya panggilan terakhir
+ *          kedua pihak dari perkara_biaya, jenis_biaya 12/13 dan 14/15),
+ *   #2050# "Terbilang Biaya Ikrar" = terbilang #1101#.
+ * Diukur atas data satker 18 Okt 2026: perkara 9988 -> 14.500, 9953/9950 -> 29.500,
+ * sama dengan angka yang diketik petugas di amar_ikrar_talak mereka.
+ *
+ * `nilai` = {noVar: {status, teks}} (keluaran abt.nilaiPenanda). Murni.
+ * Pulang { angka: "14.500", terbilang: "empat belas ribu lima ratus", jumlah: 14500 } atau null
+ * bila #1101# belum terisi / bukan angka / nol - amar lalu TANPA angka (tidak dikarang).
+ */
+function bacaBiayaIkrar(nilai) {
+  const a = nilai && nilai["1101"];
+  if (!a || a.status !== "terisi") return null;
+  const angka = bersih(a.teks);
+  if (!/^\d{1,3}(\.\d{3})*$/.test(angka)) return null;
+  const jumlah = Number(angka.replace(/\./g, ""));
+  if (!jumlah) return null;
+  const t = nilai["2050"];
+  const terbilang = t && t.status === "terisi" ? bersih(t.teks).replace(/\s+/g, " ") : "";
+  return { angka, terbilang: /^[A-Za-z ]+$/.test(terbilang) ? terbilang : "", jumlah };
+}
+
+/** Biaya penetapan ikrar lewat mesin variabel ABT (bridge baca-saja). null bila tak terbaca. */
+async function ambilBiayaIkrar(perkaraId) {
+  try {
+    const { handleBridgeOperation } = require("./sippReadOnlyBridgeService");
+    const j = await handleBridgeOperation("abt.nilaiPenanda", { perkaraId: Number(perkaraId), sidangKe: 0, penanda: ["1101", "2050"] });
+    return bacaBiayaIkrar(j && j.nilai);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Amar penetapan ikrar (HTML penyunting SIPP, minimal 50 huruf). Bentuk dari
  * amar_ikrar_talak yang sudah ada di satker: dua butir - perkawinan putus
- * karena talak satu raj'i, dan pembebanan biaya penetapan. JUMLAH biaya
- * penetapan TIDAK dikarang: butir kedua tidak menyebut angka dan petugas
- * diberi tahu lewat andaian.
+ * karena talak satu raj'i, dan pembebanan biaya penetapan. JUMLAH biaya diambil
+ * dari variabel ABT biaya ikrar (bacaBiayaIkrar); bila tidak terbaca, butir kedua
+ * tidak menyebut angka dan petugas diberi tahu lewat andaian.
  */
-function susunAmar(pihak1, pihak2) {
+function susunAmar(pihak1, pihak2, biaya = null) {
   const p1 = bersih(pihak1);
   const p2 = bersih(pihak2);
+  const jumlah =
+    biaya && biaya.angka
+      ? ` sebesar Rp${biaya.angka},-${biaya.terbilang ? ` (${biaya.terbilang} rupiah)` : ""}`
+      : " sesuai ketentuan yang berlaku";
   return (
     `<ol>\n <li>Menyatakan perkawinan antara Pemohon (<strong>${escHtml(p1)}</strong>) dengan Termohon ` +
     `(<strong>${escHtml(p2)}</strong>) putus karena perceraian dengan talak satu raj&#39;i;</li>\n` +
-    ` <li>Membebankan kepada Pemohon untuk membayar biaya penetapan ini sesuai ketentuan yang berlaku;</li>\n</ol>`
+    ` <li>Membebankan kepada Pemohon untuk membayar biaya penetapan ini${jumlah};</li>\n</ol>`
   );
 }
 
@@ -194,8 +233,9 @@ function akhirPekan(iso) {
 /**
  * Menyusun rencana pengisian form ikrar - TIDAK menulis apa pun.
  *
- * @param {object} minta { jadwalId, ip, operator, sudahPutus }  `sudahPutus`: keterangan
+ * @param {object} minta { jadwalId, ip, operator, sudahPutus, ambilBiaya }  `sudahPutus`: keterangan
  *   jadwal sidang ditulis pada transaksi yang sama (belum terbaca di basis data).
+ *   `ambilBiaya(perkaraId)`: pengganti pembaca biaya ikrar (uji); bawaannya variabel ABT 1101/2050.
  */
 async function susunRencanaIsiIkrar(minta = {}) {
   const k = await keadaanIkrar(minta.jadwalId);
@@ -240,13 +280,17 @@ async function susunRencanaIsiIkrar(minta = {}) {
   const ketua = await ketuaMajelisIkrar(k.perkaraId);
   if (!ketua.ok) return { ok: false, alasan: ketua.alasan, nama: ketua.calon || [] };
 
-  const amar = bersih(k.amarIkrar).length >= 50 ? k.amarIkrar : susunAmar(k.pihak1, k.pihak2);
+  const amarSudahAda = bersih(k.amarIkrar).length >= 50;
+  const biaya = amarSudahAda ? null : await (typeof minta.ambilBiaya === "function" ? minta.ambilBiaya : ambilBiayaIkrar)(k.perkaraId);
+  const amar = amarSudahAda ? k.amarIkrar : susunAmar(k.pihak1, k.pihak2, biaya);
   if (menyebutAleta(amar)) return { ok: false, alasan: "teks_menyebut_aleta" };
 
   const andaian = [];
-  if (bersih(k.amarIkrar).length < 50) {
+  if (!amarSudahAda) {
     andaian.push(
-      "Amar penetapan ikrar disusun otomatis (talak satu raj'i); jumlah biaya penetapan tidak disebut karena tidak terbaca dari data - periksa di SIPP."
+      biaya
+        ? `Amar penetapan ikrar disusun otomatis (talak satu raj'i); biaya penetapan Rp${biaya.angka},- diambil dari biaya perkara (variabel ABT biaya ikrar).`
+        : "Amar penetapan ikrar disusun otomatis (talak satu raj'i); jumlah biaya penetapan tidak disebut karena tidak terbaca dari biaya perkara - periksa di SIPP."
     );
   }
   const batas = batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: k.tanggalPenetapanSidang, tanggalBht: k.tanggalBht });
@@ -358,6 +402,8 @@ module.exports = {
   batasEnamBulanIkrar,
   keadaanIkrar,
   ketuaMajelisIkrar,
+  bacaBiayaIkrar,
+  ambilBiayaIkrar,
   susunAmar,
   susunRencanaIsiIkrar,
 };
