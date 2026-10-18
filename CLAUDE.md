@@ -47,3 +47,19 @@ Kebersihan sesi (dijalankan pengguna): `/compact` saat percakapan panjang, `/cle
 Subjek singkat bergaya conventional, bahasa Indonesia; badan 1–3 baris menjelaskan SEBAB (bukan kronologi); akhiri dengan baris `Co-Authored-By`.
 - Baik: `fix(kasir): usulan jurnal putus memuat biaya pemberitahuan putusan`
 - Buruk: `Saya sudah memperbarui logika kasir karena sebelumnya ada yang salah...`
+
+## Tim agen (`.claude/agents/`) — kapan WAJIB dipanggil
+Sesi utama = perencana/koordinator. Delegasikan sesuai tabel; agen melapor ke sesi utama, sesi utama yang memperbarui papan kemajuan
+(`pelaku` = "agen <nama>").
+| Keadaan | Agen |
+| :--- | :--- |
+| Kode menulis ke SIPP/ABT, transaksi, kasir, migrasi Drizzle | `penjaga-sipp` (mengerjakan/memeriksa) |
+| Logika hukum: alasan, amar, penetapan, ikrar, BAS, tenggat, dasar hukum | `ahli-hukum` (memeriksa) |
+| Fitur/perbaikan `aleta_bot/` | `bot-whatsapp` |
+| Fitur/perbaikan/rilis `ekstensi-sipp/` | `ekstensi-chrome` |
+| Usulan atau perubahan tampilan | `ui-ux` — tampilan TIDAK diubah tanpa permintaan pengguna; setiap saran wajib disertai mockup HTML |
+| Auth/hak akses, rute API baru, data pribadi, sebelum rilis besar | `keamanan` (memeriksa) |
+| Uji sasaran / uji penuh sebelum commit rilis | `penguji` |
+| Sesudah perubahan selesai, SEBELUM commit | `peninjau` — commit hanya bila PUTUSAN: LOLOS |
+- Satu berkas hanya boleh disunting satu agen pada satu waktu. Agen pemeriksa (`peninjau`, `keamanan`, `ahli-hukum`, `penguji`) tidak menyunting.
+- Tugas kecil (teks/satu baris) tidak perlu agen selain `peninjau`. Jangan memanggil agen yang tidak relevan — tiap agen memakan token.
