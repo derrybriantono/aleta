@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.10",
+    dirilis: "2026-10-19T06:20:00+08:00",
+    judul: "Rujukan PERMA 5/2019 dan KHES dicocokkan ke naskah resmi, alamat lengkap di prompt putusan",
+    butir: [
+      "Rujukan PERMA 5/2019 di pertanyaan saksi dan keterangan anak, calon, dan orang tua dispensasi kawin kini dicocokkan dengan naskah resmi: Pasal 12 ayat (4) serta butir pendamping dan rekomendasi psikolog atau tenaga kesehatan (Pasal 15 huruf c dan d) yang sebelumnya ditahan kini tercetak.",
+      "Rujukan KHES (PERMA 2/2008) di pertanyaan saksi ekonomi syariah dicocokkan dengan naskah resmi: ingkar janji (Pasal 36-38), asas dan mengikatnya akad (Pasal 21 dan 44), rukun akad (Pasal 22-24), ganti rugi (Pasal 39), dan keadaan memaksa (Pasal 40-41).",
+      "Prompt AI untuk membuat putusan kini memuat alamat pihak secara lengkap (nama asli dan alamat lengkap; NIK dan telepon tetap ditutup), sedangkan tujuan lain tetap disamarkan.",
+    ],
+  },
+  {
     versi: "1.205.9",
     dirilis: "2026-10-19T05:00:00+08:00",
     judul: "Pertanyaan saksi lewat pop-up, hari libur tidak bisa dipilih, penetapan satu klik, antrean jam kerja, Status Perkara Seamless, prompt AI lengkap, dan audit SIPP",
