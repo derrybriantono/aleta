@@ -84,7 +84,7 @@ function muatDasar(): Dasar {
     const kode = EKSTENSI_BERKAS[nama];
     if (typeof kode !== "string") throw new Error(`Berkas ekstensi ${nama} tidak tertanam di portal`);
     const modul: { exports: unknown } = { exports: {} };
-    // eslint-disable-next-line no-new-func -- skrip ekstensi tertanam milik repo ini, bukan masukan pengguna
+    // Skrip ekstensi tertanam milik repo ini (bukan masukan pengguna).
     new Function("module", "globalThis", "self", kode)(modul, dunia, dunia);
   };
   jalankan("saksi-katalog.js");

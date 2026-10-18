@@ -144,7 +144,8 @@ export function PanduanPemeriksaanSaksi(props: PropsPanduanSaksi) {
         ciutBawaan={!menonjol}
         keterangan={menonjol ? "agenda pembuktian: panduan terbuka" : ""}
       >
-        <PanduanPemeriksaanSaksiIsi {...props} />
+        {/* Dipasang ulang bila perkara atau sidangnya berganti, supaya centang yang diingat selalu milik sidang ini. */}
+        <PanduanPemeriksaanSaksiIsi key={kunciSimpanCentang(props.perkara.nomorPerkara, props.sidangId ?? "")} {...props} />
       </Bagian>
     </div>
   );
@@ -166,9 +167,7 @@ export function PanduanPemeriksaanSaksiIsi({
   const kelas = useKelasLayar();
   const [pilihan, setPilihan] = useState<Record<string, string | string[]>>({});
   const [sensitif, setSensitif] = useState(false);
-  const [tahap, setTahap] = useState<Tahap>("memuat");
-  const [pesan, setPesan] = useState("");
-  const [panduan, setPanduan] = useState<PanduanSaksi | null>(null);
+  const [hasilMuat, setHasilMuat] = useState<{ kunci: string; panduan: PanduanSaksi | null; pesan: string } | null>(null);
   const [bagian, setBagian] = useState<"saksi" | "keterangan">("saksi");
   const [pihak, setPihak] = useState<PihakSaksi>("P");
   const [peranAktif, setPeranAktif] = useState("");
@@ -179,41 +178,41 @@ export function PanduanPemeriksaanSaksiIsi({
   const jenisId = jenisPerkaraIdPandu(perkara);
   const keadaanKirim = useMemo(() => ({ ...(keadaanAwal ?? {}), ...pilihan }), [keadaanAwal, pilihan]);
   const kunciKeadaan = JSON.stringify(keadaanKirim);
+  const kunciMuat = JSON.stringify([jenisId, perkara.alurPerkaraId ?? "", perkara.jenisPerkara ?? "", kunciKeadaan, sensitif, ulangMuat]);
 
   // ── Muat panduan menurut jenis dan keadaan ──
-  const nomorMuat = useRef(0);
+  // Panduan yang sudah ada tetap tampil selama yang baru dimuat; "memuat" diturunkan dari kunci, bukan disetel.
   useEffect(() => {
-    const nomor = (nomorMuat.current += 1);
+    let batal = false;
     const kueri = new URLSearchParams();
     if (jenisId) kueri.set("jenisPerkaraId", String(jenisId));
     if (perkara.alurPerkaraId) kueri.set("alurPerkaraId", String(perkara.alurPerkaraId));
     if (perkara.jenisPerkara) kueri.set("jenisPerkara", perkara.jenisPerkara);
     kueri.set("keadaan", kunciKeadaan);
     if (sensitif) kueri.set("sensitif", "1");
-    setTahap("memuat");
     muat(kueri).then(
       (hasil) => {
-        if (nomor !== nomorMuat.current) return;
-        setPanduan(hasil);
-        setTahap("siap");
+        if (!batal) setHasilMuat({ kunci: kunciMuat, panduan: hasil, pesan: "" });
       },
       (galat: unknown) => {
-        if (nomor !== nomorMuat.current) return;
-        setPesan(galat instanceof Error ? galat.message : "Panduan pertanyaan belum dapat dimuat.");
-        setTahap("gagal");
+        if (batal) return;
+        const pesanGagal = galat instanceof Error ? galat.message : "Panduan pertanyaan belum dapat dimuat.";
+        setHasilMuat((lama) => ({ kunci: kunciMuat, panduan: lama?.panduan ?? null, pesan: pesanGagal }));
       }
     );
-  }, [jenisId, perkara.alurPerkaraId, perkara.jenisPerkara, kunciKeadaan, sensitif, muat, ulangMuat]);
+    return () => {
+      batal = true;
+    };
+  }, [jenisId, perkara.alurPerkaraId, perkara.jenisPerkara, kunciKeadaan, kunciMuat, sensitif, muat]);
+  const panduan: PanduanSaksi | null = hasilMuat?.panduan ?? null;
+  const tahap: Tahap = hasilMuat?.kunci !== kunciMuat ? "memuat" : hasilMuat.pesan ? "gagal" : "siap";
+  const pesan = hasilMuat?.pesan ?? "";
 
   // ── Centang: hanya di peramban ini ──
   const kunciSimpan = kunciSimpanCentang(perkara.nomorPerkara, sidangId);
-  const [isi, setIsi] = useState<IsiSimpanan>(SIMPANAN_KOSONG);
-  const isiRef = useRef<IsiSimpanan>(SIMPANAN_KOSONG);
-  useEffect(() => {
-    const baca = bacaSimpanan(kunciSimpan);
-    isiRef.current = baca;
-    setIsi(baca);
-  }, [kunciSimpan]);
+  // Dibaca sekali saat dipasang; komponen dipasang ulang (key) bila perkara atau sidangnya berganti.
+  const [isi, setIsi] = useState<IsiSimpanan>(() => bacaSimpanan(kunciSimpan));
+  const isiRef = useRef<IsiSimpanan>(isi);
   const ubah = useCallback(
     (fungsi: (lama: IsiSimpanan) => IsiSimpanan) => {
       const baru = fungsi(isiRef.current);
@@ -237,8 +236,10 @@ export function PanduanPemeriksaanSaksiIsi({
   const adaKeterangan = Boolean(tersedia?.keterangan && tersedia.keterangan.peran.length > 0);
   const bagianAktif = bagian === "keterangan" && adaKeterangan ? "keterangan" : "saksi";
   const kehadiran = tersedia ? tersedia.keadaanDipakai.kehadiran : undefined;
-  const namaP = namaSaksi?.P ?? [];
-  const namaT = namaSaksi?.T ?? [];
+  const kunciNamaP = JSON.stringify(namaSaksi?.P ?? []);
+  const kunciNamaT = JSON.stringify(namaSaksi?.T ?? []);
+  const namaP = useMemo(() => JSON.parse(kunciNamaP) as string[], [kunciNamaP]);
+  const namaT = useMemo(() => JSON.parse(kunciNamaT) as string[], [kunciNamaT]);
   const tampilT = !(kehadiran === "verstek" && namaT.length === 0);
   const pihakAktif: PihakSaksi = pihak === "T" && !tampilT ? "P" : pihak;
   const saksiPihak = useMemo(

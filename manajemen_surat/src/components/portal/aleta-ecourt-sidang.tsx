@@ -9013,7 +9013,7 @@ export function AletaEcourtSidang({
                                     tanggalSidang: baris.tanggalSidang,
                                     agenda: baris.agenda,
                                     menonjol: agendaPembuktianSaksi(baris.agenda),
-                                    namaPengadilan: institutionIdentity.courtName || "",
+                                    namaPengadilan: institutionIdentity?.courtName || "",
                                     keadaanAwal: keadaanAwalDariSidang({
                                       dihadiriOleh: baris.dihadiriOleh,
                                       verstekPutusan: baris.verstekPutusan,

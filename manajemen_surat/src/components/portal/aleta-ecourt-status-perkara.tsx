@@ -4140,7 +4140,7 @@ function IsiStatus({
         tanggalSidang={sidangPandu?.tanggalSidang ?? ""}
         agenda={sidangPandu?.agenda ?? ""}
         menonjol={agendaPembuktianSaksi(sidangPandu?.agenda)}
-        namaPengadilan={institutionIdentity.courtName || ""}
+        namaPengadilan={institutionIdentity?.courtName || ""}
         keadaanAwal={keadaanAwalDariSidang({
           dihadiriOleh: hadirPandu,
           verstekPutusan: status.putusan?.verstek === true,
