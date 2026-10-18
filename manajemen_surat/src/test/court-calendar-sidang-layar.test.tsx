@@ -153,7 +153,7 @@ describe("Court Calendar di kolom Agenda", () => {
     expect(agenda).toContain("Sidang Tambahan Saksi");
     expect(agenda.some((x: string) => /Musyawarah Majelis/.test(x))).toBe(false);
     expect(pratinjau.tambah.find((x: { agenda: string }) => x.agenda === "Sidang Tambahan Saksi")).toMatchObject({ tanggal: "2026-11-04", jam: "09:00" });
-    await within(dialog).findByText(/Pratinjau pernyataan ke SIPP/);
+    await within(dialog).findByText(/Pratinjau yang akan ditulis ke SIPP/);
 
     const simpan = within(dialog).getByRole("button", { name: /Simpan ke SIPP/ });
     fireEvent.click(simpan);

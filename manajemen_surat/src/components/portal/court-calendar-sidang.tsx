@@ -36,6 +36,7 @@ import { CalendarClock, Pencil, Plus, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePortal } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
+import { keteranganAwam } from "@/lib/ringkasan-langkah-sipp";
 import { bolehIsiCourtCalendar } from "@/lib/court-calendar-hak";
 import {
   ccBarisTambahan,
@@ -411,7 +412,7 @@ function DialogCourtCalendar({
         setPratinjau(rincian);
         setKabar({
           teks: rincian.length
-            ? `Pratinjau: ${rincian.length} pernyataan akan ditulis ke perkara_court_calendar atas akun SIPP ${String((isi.akunSipp as { username?: string })?.username || "")}. Belum ada yang disimpan.`
+            ? `Pratinjau: ${rincian.length} catatan Court Calendar akan ditulis ke SIPP atas akun SIPP ${String((isi.akunSipp as { username?: string })?.username || "")}. Belum ada yang disimpan.`
             : "Pratinjau: tidak ada baris yang perlu ditulis.",
           gagal: false,
         });
@@ -495,7 +496,7 @@ function DialogCourtCalendar({
             <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
               {data.akun.ok ? (
                 <span>
-                  Tersimpan di SIPP atas akun SIPP Anda: <b>{data.akun.username}</b> (diinput_oleh / diperbaharui_oleh).
+                  Tersimpan di SIPP atas akun SIPP Anda: <b>{data.akun.username}</b>.
                 </span>
               ) : data.akun.alasan === "akun_sipp_ganda" ? (
                 <label className="flex flex-wrap items-center gap-2">
@@ -658,18 +659,13 @@ function DialogCourtCalendar({
             {/* 3. Pratinjau dan simpan */}
             {pratinjau && pratinjau.length ? (
               <details className="rounded-md border bg-muted/40 px-3 py-2 text-xs" open>
-                <summary className="cursor-pointer text-sm font-medium">Pratinjau pernyataan ke SIPP ({pratinjau.length})</summary>
+                <summary className="cursor-pointer text-sm font-medium">Pratinjau yang akan ditulis ke SIPP ({pratinjau.length})</summary>
                 <p className="mt-1 text-muted-foreground">
-                  Hanya tabel perkara_court_calendar. Tanpa baris Audit Trail - blangko Court Calendar SIPP sendiri tidak mencatatnya. Jam
-                  diinput/diperbarui diambil basis data saat menyimpan, dalam bentuk jam SIPP.
+                  Hanya data Court Calendar yang ditulis, sama seperti blangko Court Calendar di SIPP. Jam simpan mengikuti jam SIPP.
                 </p>
                 <ol className="mt-1 grid list-decimal gap-1 pl-5">
                   {pratinjau.map((p, i) => (
-                    <li key={i}>
-                      <div>{p.keterangan}</div>
-                      <code className="block whitespace-pre-wrap break-all text-muted-foreground">{p.sql}</code>
-                      <code className="block whitespace-pre-wrap break-all">{JSON.stringify(p.nilai)}</code>
-                    </li>
+                    <li key={i}>{keteranganAwam(p.keterangan)}</li>
                   ))}
                 </ol>
               </details>

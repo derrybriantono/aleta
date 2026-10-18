@@ -388,3 +388,106 @@ describe("panduan pemeriksaan saksi - hak per peran dan penempatan", () => {
     await waitFor(() => expect(document.querySelector("[data-pandu-saksi]")).not.toBeNull());
   });
 });
+
+describe("panduan pemeriksaan saksi - tombol kecil dan jendela pop-up di Jadwal Sidang (18 Okt 2026)", () => {
+  function gambarTombol(pengguna = AKUN.hakim, menonjol = false) {
+    return render(
+      createElement(PanduanPemeriksaanSaksi, {
+        perkara: PERKARA_CERAI,
+        sidangId: "7001",
+        tanggalSidang: "2026-10-20",
+        kunciBagian: "uji-pandu",
+        muat: pemuatSungguhan,
+        pengguna,
+        menonjol,
+        bentuk: "tombol",
+        namaSaksi: { P: ["Fulanah Rekaan", "Fulan Rekaan"], T: [] },
+      })
+    );
+  }
+  const tombolPandu = () => document.querySelector("[data-tombol-pandu-saksi]") as HTMLElement;
+
+  it("hanya tombol kecil: panduan tidak dimuat dan tidak terbuka sendiri, juga pada agenda pembuktian", () => {
+    gambarTombol(AKUN.hakim, true);
+    expect(tombolPandu()).not.toBeNull();
+    expect(tombolPandu().textContent).toContain("Pertanyaan saksi");
+    expect(tombolPandu().getAttribute("data-menonjol")).toBe("ya");
+    expect(document.querySelector("[data-pandu-saksi]")).toBeNull();
+    expect(document.querySelector("[data-pandu-saksi-bagian]")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(dipanggil).toHaveLength(0);
+  });
+
+  it("ditekan: panduan keluar di jendela pop-up dengan pokok wajib, centang, layar sidang, dan cetak", async () => {
+    gambarTombol();
+    fireEvent.click(tombolPandu());
+    const dialog = await screen.findByRole("dialog", { name: /Pertanyaan saksi 901\/Pdt\.G\/2026\/PA\.Uji/ });
+    await waitFor(() => expect(dialog.querySelector("[data-pandu-saksi]")).not.toBeNull());
+    expect(dialog.querySelectorAll('[data-pokok="wajib"]').length).toBeGreaterThanOrEqual(3);
+    expect(dialog.querySelector('[data-butir] input[type="checkbox"]')).not.toBeNull();
+    expect(within(dialog).getByRole("button", { name: /Layar sidang/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: /Cetak lembar panduan/ })).toBeInTheDocument();
+    expect(dialog.className).not.toMatch(/(?:min-)?w-\[\d+px\]/);
+    expect(dialog.querySelector("[data-pandu-saksi]")!.className).toContain("min-w-0");
+  });
+
+  it("Tutup dan Esc menutup jendela; centang yang sudah diberikan tetap ada saat dibuka lagi", async () => {
+    gambarTombol();
+    fireEvent.click(tombolPandu());
+    let dialog = await screen.findByRole("dialog");
+    await waitFor(() => expect(dialog.querySelector("[data-pandu-saksi]")).not.toBeNull());
+    fireEvent.click(dialog.querySelector('[data-butir] input[type="checkbox"]') as HTMLElement);
+    fireEvent.click(within(dialog).getByRole("button", { name: /^Tutup$/ }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+    fireEvent.click(tombolPandu());
+    dialog = await screen.findByRole("dialog");
+    await waitFor(() => expect(dialog.querySelector("[data-pandu-saksi]")).not.toBeNull());
+    await waitFor(() => expect(dialog.querySelector<HTMLInputElement>('[data-butir] input[type="checkbox"]')!.checked).toBe(true));
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.body.style.overflow).not.toBe("hidden");
+  });
+
+  it("Esc saat layar sidang terbuka hanya menutup layar sidang, jendela tetap", async () => {
+    gambarTombol();
+    fireEvent.click(tombolPandu());
+    const jendela = await screen.findByRole("dialog", { name: /Pertanyaan saksi 901/ });
+    await waitFor(() => expect(jendela.querySelector("[data-pandu-saksi]")).not.toBeNull());
+    fireEvent.click(within(jendela).getByRole("button", { name: /Layar sidang/ }));
+    await screen.findByRole("dialog", { name: /Layar sidang/ });
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: /Layar sidang/ })).toBeNull());
+    expect(screen.queryByRole("dialog", { name: /Pertanyaan saksi 901/ })).not.toBeNull();
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("peran tak berhak (kasir, juru sita, PTSP) tidak diberi tombol; hakim, panitera, PP, admin diberi", () => {
+    for (const nama of ["kasir", "js", "ptsp"] as const) {
+      const { container, unmount } = gambarTombol(AKUN[nama]);
+      expect(container.querySelector("[data-tombol-pandu-saksi]"), nama).toBeNull();
+      unmount();
+    }
+    for (const nama of ["hakim", "panitera", "pp", "admin", "superadmin"] as const) {
+      const { container, unmount } = gambarTombol(AKUN[nama]);
+      expect(container.querySelector("[data-tombol-pandu-saksi]"), nama).not.toBeNull();
+      unmount();
+    }
+  });
+
+  it("lebar 390, 1366, dan 1920: jendela memenuhi layar tanpa lebar tetap", async () => {
+    for (const lebar of [390, 1366, 1920]) {
+      pasangLebar(lebar);
+      const { unmount } = gambarTombol();
+      fireEvent.click(tombolPandu());
+      const dialog = await screen.findByRole("dialog");
+      await waitFor(() => expect(dialog.querySelector("[data-pandu-saksi]")).not.toBeNull());
+      const latar = document.querySelector("[data-pandu-saksi-jendela]") as HTMLElement;
+      expect(latar.className).toContain("fixed inset-0");
+      expect(latar.outerHTML).not.toMatch(/(?:min-)?w-\[\d{3,}px\]/);
+      expect(dialog.querySelector("[data-pandu-saksi]")!.getAttribute("data-kelas-layar")).toBe(lebar === 390 ? "ponsel" : lebar === 1366 ? "laptop" : "tv");
+      unmount();
+    }
+  });
+});

@@ -27,6 +27,56 @@ export const SAKLAR_TAMPILAN_MEDIASI: readonly SaklarTampilanMediasi[] = [
     keterangan:
       "Tombol di ujung kanan tiap baris: pop-up hasil mediasi dan butir kesepakatan, lalu unduh laporan mediator + kesepakatan perdamaian dalam satu berkas .rtf. Hanya tampil bagi mediator perkara itu dan Super Admin.",
   },
+  // 18 Okt 2026 (audit fitur tanpa centang, permintaan hakim): layar ini tumbuh sejak 7 Okt
+  // dan hanya tombol hasil mediasi yang punya centang. Delapan lainnya menyala bawaan -
+  // tidak ada yang hilang dari layar siapa pun. Hak tetap dari peran (saklar bukan hak).
+  {
+    kunci: "tombol-status-mediasi",
+    label: "Tombol Tandai berjalan | Selesai",
+    keterangan:
+      "Dua tombol di ujung kanan tiap baris untuk menandai pertemuan mediasi sedang berjalan atau sudah selesai (tersinkron dengan Jadwal Sidang). Hanya tampil bagi yang berwenang mencatat mediasi.",
+  },
+  {
+    kunci: "lencana-status-mediasi",
+    label: "Lencana sedang berjalan | selesai",
+    keterangan:
+      "Lencana \"sedang berjalan\" atau \"selesai\" di kolom Waktu beserta bingkai berwarna pada barisnya (biru berjalan, hijau selesai). Datanya tetap tersimpan; hanya tidak digambar.",
+  },
+  {
+    kunci: "lencana-ditunda",
+    label: "Lencana ditunda",
+    keterangan: "Lencana kuning \"ditunda\" di kolom Waktu pada pertemuan mediasi yang ditunda.",
+  },
+  {
+    kunci: "penetapan-mediator",
+    label: "Tanggal penetapan dan nomor SK mediator",
+    keterangan:
+      "Dua baris kecil di bawah nama mediator: tanggal mediator ditetapkan (patokan tenggang 30 hari) dan nomor SK-nya. Nama dan sebutan mediator tetap tampil.",
+  },
+  {
+    kunci: "kartu-ringkasan",
+    label: "Tiga kartu angka di atas daftar",
+    keterangan:
+      "Jumlah pertemuan mediasi, yang lewat tenggang 30 hari (merah bila ada), dan yang ditunda pada rentang tanggal yang tampil.",
+  },
+  {
+    kunci: "saring-keadaan",
+    label: "Tombol saring keadaan",
+    keterangan:
+      "Deretan tombol bulat di atas daftar (mis. lewat tenggang, ditunda, sudah ada hasil) beserta jumlahnya; ditekan = hanya yang cocok. Saat dimatikan, saringan keadaan yang sedang dipilih tidak dipakai.",
+  },
+  {
+    kunci: "pencarian-mediasi",
+    label: "Kotak saring dan pencarian lanjutan",
+    keterangan:
+      "Kotak untuk menyaring di dalam hasil (nomor, pihak, mediator, tempat, hasil) dan tombol Pencarian lanjutan. Kotak Cari di atas (nomor perkara atau jenis) tidak terpengaruh. Saat dimatikan, isian saringan yang sedang berisi tidak dipakai.",
+  },
+  {
+    kunci: "catatan-tenggang",
+    label: "Catatan cara menghitung tenggang",
+    keterangan:
+      "Kalimat di dasar layar yang menerangkan tenggang 30 hari dihitung sejak penetapan mediator (PERMA 1/2016 Pasal 24), bukan sejak pertemuan pertama. Sama pada tiap perkara.",
+  },
 ];
 
 export type PilihanTampilanMediasi = Record<string, boolean>;

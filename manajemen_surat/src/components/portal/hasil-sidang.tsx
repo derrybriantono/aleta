@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiPath } from "@/lib/base-path";
 import { adaHasilSidang, hasilSidangPutusan } from "@/lib/hasil-sidang";
+import { kalimatLangkah, langkahUntukPetugas } from "@/lib/ringkasan-langkah-sipp";
 import {
   dasarTanggalKosong,
   jamSidangBerikut,
@@ -711,7 +712,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                 </CardTitle>
                 <CardDescription>
                   {jalan === "tunda"
-                    ? "Yang ditulis ini SIPP sungguhan beserta audit trail-nya, atas nama panitera sidang perkara ini."
+                    ? "Yang dicatat di sini langsung masuk ke SIPP, atas nama panitera sidang perkara ini."
                     : "Mencatat bahwa hari ini perkaranya diputus. Amar dan pertimbangan hukumnya ditulis hakim belakangan lewat SIPP — di sini tidak ditanyakan."}
                 </CardDescription>
               </CardHeader>
@@ -980,17 +981,14 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
               </p>
             ) : null}
 
-            {(hasil.rencana ?? []).length > 0 ? (
+            {langkahUntukPetugas(hasil.rencana).length > 0 ? (
               <div className="flex flex-col gap-2">
                 <p className="text-xs text-muted-foreground">
-                  {hasil.rencana!.length} baris akan ditulis — termasuk barisnya di sys_audittrail.
+                  {langkahUntukPetugas(hasil.rencana).length} catatan akan ditulis ke SIPP.
                 </p>
-                {hasil.rencana!.map((l, i) => (
+                {langkahUntukPetugas(hasil.rencana).map((l, i) => (
                   <div key={i} className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
-                    <p className="font-medium">
-                      {l.aksi} · {l.tabel}
-                    </p>
-                    <p className="mt-0.5 text-muted-foreground">{l.keterangan}</p>
+                    <p className="font-medium">{kalimatLangkah(l)}</p>
                   </div>
                 ))}
               </div>
@@ -1493,12 +1491,10 @@ export function CatatHasilRingkas({
           ) : null}
           {/* RINGKASAN YANG DITULIS - dari jawaban server sesudah menulis
               (baris yang SUNGGUH tertulis), bukan dari rencana. */}
-          {(hasil?.selesai ?? []).length > 0 ? (
+          {langkahUntukPetugas(hasil?.selesai).length > 0 ? (
             <ul className="mt-1 space-y-0.5 text-xs" aria-label="Yang ditulis ke SIPP">
-              {(hasil?.selesai ?? []).map((l, n) => (
-                <li key={`${l.tabel}-${n}`}>
-                  <span className="font-mono">{l.tabel}</span> {l.aksi} - {l.keterangan}
-                </li>
+              {langkahUntukPetugas(hasil?.selesai).map((l, n) => (
+                <li key={`${l.tabel}-${n}`}>{kalimatLangkah(l)}</li>
               ))}
             </ul>
           ) : null}
@@ -1819,8 +1815,8 @@ export function CatatHasilRingkas({
         <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
           <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
           <span>
-            Hanya hasil sidang di jadwal sidang yang dicatat. Putusan akhir, audit putusannya, dan tahapan
-            perkara tidak ditulis dari tombol ini.
+            Hanya hasil sidang di jadwal sidang yang dicatat. Putusan akhir dan tahapan perkara tidak
+            ditulis dari tombol ini.
           </span>
         </p>
       ) : null}

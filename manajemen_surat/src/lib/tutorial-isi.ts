@@ -278,7 +278,9 @@ export const TUTORIAL: readonly Tutorial[] = [
     halaman: ["/aleta-ecourt"],
     tautan: { teks: "Buka Jadwal Sidang", href: "/aleta-ecourt" },
     langkah: [
-      "Di Jadwal Sidang, buka rincian baris sidang (tekan barisnya). Bagian Panduan pertanyaan saksi terbuka sendiri dan diberi bingkai pada agenda pembuktian atau pemeriksaan saksi. Pada agenda lain bagian ini terlipat; tekan judulnya untuk membukanya. Di Status Perkara, bagiannya ada tepat di bawah bagian Saksi.",
+      "Di Jadwal Sidang, panduan tidak terbuka sendiri. Setelah perkara masuk pemeriksaan (sedang disidang di ruangnya, selesai disidang hari itu, atau Anda tandai sedang berjalan), muncul tombol kecil Pertanyaan saksi di kolom paling kanan, di bawah tombol Status. Tekan tombolnya: panduan keluar sebagai jendela pop-up, dan tombol Tutup membawa Anda kembali ke daftar.",
+      "Pada agenda pembuktian tombolnya diberi warna menonjol. Selama perkara masih mengantre atau belum punya nomor antrian, tombolnya tidak muncul. Bila tidak diperlukan, matikan lewat panel Tampilan, baris Tombol Pertanyaan saksi.",
+      "Di Status Perkara, bagian Panduan pertanyaan saksi tetap ada tepat di bawah bagian Saksi: terlipat, dan terbuka sendiri hanya pada agenda pembuktian. Tekan judulnya untuk membuka atau melipatnya.",
       "Jenis perkara dikenali dari data SIPP. Bila jenis itu belum punya panduan, layar menyebut bahwa panduannya belum ada, dan tidak memakai panduan perkara cerai sebagai gantinya.",
       "Buka Keadaan perkara. Kehadiran Tergugat atau Termohon (hadir atau verstek) dan gugatan yang digabung terbaca dari sidang dan kumulasi perkara; keadaan lain, misalnya alasan perceraian atau bantahan Tergugat pada harta bersama dan kewarisan, Anda pilih sendiri. Daftar pertanyaan menyesuaikan pilihan itu.",
       "Pertanyaan dikelompokkan menurut pokok yang harus digali. Pokok yang ditandai Wajib adalah unsur pembuktian, lengkap dengan dasar hukum yang sudah terverifikasi.",
@@ -336,7 +338,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Klik nama saksi untuk memanggilnya ke ruang sidang. Anda dapat memilih satu saksi, beberapa saksi, atau semua saksi dari satu pihak.",
       "Untuk skors, isi alasan dan perkiraan jam sidang dilanjutkan. Hitung mundurnya tampil di baris dan di layar antrian, dan alasannya diusulkan menjadi kalimat BAS. Ikon berputar di bawah tombol Selesai menandai sidang yang pernah diskors.",
       "Kartu ruang sidang berwarna ada di bawah Hitung skor (bawaannya diciutkan), dan nama mediator tampil di bawah juru sita.",
-      "Buka panel Tampilan untuk menyalakan atau mematikan penanda sesuai kebutuhan. Saklar Sita dan saklar Eksekusi terpisah.",
+      "Buka panel Tampilan untuk menyalakan atau mematikan penanda sesuai kebutuhan. Setiap fitur yang tampil di layar punya satu baris kotak centang di sana, dengan contoh bentuknya. Kotak Sita dan kotak Eksekusi terpisah.",
     ],
     peringatan: [
       "Penanda dibaca dari SIPP dan petitum. Bila tampak janggal, buka Status Perkara dan periksa sendiri.",
@@ -415,6 +417,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Buka ALETA e-Court, pilih Jadwal Mediasi di menu kiri.",
       "Baca daftar pertemuan mediasi dan sisa waktunya.",
       "Mediator dan kepaniteraan perkara itu mencatat kehadiran dan status mediasi pada barisnya.",
+      "Panel Tampilan di atas daftar memuat satu kotak centang untuk tiap fitur layar ini: tombol hasil mediasi, tombol Tandai berjalan dan Selesai, lencana status dan ditunda, penetapan dan SK mediator, tiga kartu angka, tombol saring keadaan, kotak saring dan pencarian lanjutan, serta catatan cara menghitung tenggang. Yang dimatikan hanya tidak digambar; hak Anda tidak berubah.",
       "Setelah mediasi selesai, mediator perkara itu menekan tombol Buat hasil mediasi (.rtf) pada barisnya.",
       "Pilih hasilnya, lalu centang butir kesepakatan yang tercapai, misalnya mut'ah, nafkah iddah, nafkah anak, hak asuh, atau harta bersama.",
       "Unduh laporan mediasi beserta kesepakatan perdamaiannya dalam Word, periksa, lalu serahkan kepada majelis.",

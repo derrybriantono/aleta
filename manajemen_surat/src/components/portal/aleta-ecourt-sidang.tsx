@@ -232,7 +232,7 @@ import type { KeadaanTarik } from "@/lib/tarik-belum-upload";
 import { useTarikBelumUpload } from "@/components/portal/use-tarik-belum-upload";
 import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import { PanduanPemeriksaanSaksi, type PropsPanduanSaksi } from "@/components/portal/panduan-pemeriksaan-saksi";
-import { agendaPembuktianSaksi, keadaanAwalDariSidang } from "@/lib/pandu-saksi";
+import { agendaPembuktianSaksi, keadaanAwalDariSidang, sudahMasukPemeriksaan } from "@/lib/pandu-saksi";
 
 /**
  * Dialog Cetak relaas dimuat SAAT DIBUKA, bukan bersama jadwal.
@@ -242,6 +242,35 @@ import { agendaPembuktianSaksi, keadaanAwalDariSidang } from "@/lib/pandu-saksi"
  * membukanya. Petugas lain yang membuka jadwal tidak perlu menunggu peramban
  * mengurainya. ssr:false: tanggal bawaannya hari ini menurut jam pengadilan.
  */
+/**
+ * Bahan panduan pertanyaan saksi dari satu baris sidang (18 Okt 2026, permintaan hakim).
+ * Dipakai tombol "Pertanyaan saksi" di kolom kanan baris; panduannya sendiri baru dimuat
+ * ketika jendela pop-up dibuka.
+ */
+function bahanPanduDariBaris(baris: SidangBaris, namaPengadilan: string): Omit<PropsPanduanSaksi, "kunciBagian" | "pengguna"> {
+  return {
+    perkara: {
+      nomorPerkara: baris.nomorPerkara,
+      jenisPerkaraId: baris.jenisPerkaraId,
+      alurPerkaraId: baris.alurPerkaraId,
+      jenisPerkara: baris.jenisPerkara,
+    },
+    sidangId: baris.sidangId,
+    tanggalSidang: baris.tanggalSidang,
+    agenda: baris.agenda,
+    menonjol: agendaPembuktianSaksi(baris.agenda),
+    namaPengadilan,
+    keadaanAwal: keadaanAwalDariSidang({
+      dihadiriOleh: baris.dihadiriOleh,
+      verstekPutusan: baris.verstekPutusan,
+      tergugatPernahHadir: baris.panggilan?.tergugatPernahHadir,
+      kumulasi: baris.kumulasiTerbaca ? baris.kumulasi ?? null : null,
+      adaRekonvensi: Boolean(baris.penandaJawaban?.rekonvensi),
+    }),
+    namaSaksi: { P: baris.saksiNamaPihak1 ?? [], T: baris.saksiNamaPihak2 ?? [] },
+  };
+}
+
 const DialogCetakRelaas = dynamic(
   () => import("@/components/portal/aleta-ecourt-cetak-relaas").then((m) => m.DialogCetakRelaas),
   { ssr: false }
@@ -2387,7 +2416,7 @@ function UmurPerkara({ durasi, telahIkrar = false }: { durasi: SidangBaris["dura
       : "",
     sk && pita
       ? `Waktu putus ${sk.sebutan}: ${pita.warna} - tangga nilai ${sk.nilai} dari 5 pada SK Dirjen Badilag Nomor 048/DJA/SK.KP3.4.3/IV/2024, atas hari di luar mediasi.`
-      : "Nilai waktu putus SK belum dikirim bot.",
+      : "Nilai waktu putus SK belum diterima dari server.",
     !durasi.sudahPutus && sk && pita && sk.sisaDiPita !== null
       ? sk.sisaDiPita === 0
         ? `Hari ini hari terakhir ${pita.warna}.`
@@ -5363,6 +5392,17 @@ export function AletaEcourtSidang({
   }, [waktuAntrian]);
 
   /**
+   * Nilai `disidang` aplikasi antrian hari ini per kunciWaktu, sesudah ditimpa keadaan langsung
+   * (tanya tiap 5 detik). Dasar tombol "Pertanyaan saksi": hanya perkara yang SUDAH MASUK
+   * pemeriksaan (1..9 sedang disidang, 10 selesai hari itu) yang diberi tombolnya.
+   */
+  const disidangPerKunci = useMemo(() => {
+    const peta: Record<string, number | null | undefined> = {};
+    for (const b of waktuAntrianHidup.baris) peta[kunciWaktu(b.tanggalSidang, b.perkaraId)] = b.disidang;
+    return peta;
+  }, [waktuAntrianHidup]);
+
+  /**
    * Sebutan tetangga untuk title: nomor antriannya DAN nomor perkaranya.
    *
    * Tetangga yang tidak ada di daftar yang dimuat - tersaring di sisi SIPP,
@@ -5772,7 +5812,7 @@ export function AletaEcourtSidang({
         const data = (isi?.data ?? isi) as Record<string, unknown>;
         if (batal) return;
         if (!jawaban.ok || data?.available === false || data?.ok === false) {
-          setVerifikasi({ ...DATA_VERIFIKASI_KOSONG, alasan: String(data?.alasan || data?.message || "bot tidak tersambung") });
+          setVerifikasi({ ...DATA_VERIFIKASI_KOSONG, alasan: String(data?.alasan || data?.message || "layanan ALETA belum tersambung") });
           return;
         }
         setVerifikasi({
@@ -5966,7 +6006,7 @@ export function AletaEcourtSidang({
             itu, layar yang penandanya sudah dipadamkan berbulan-bulan lalu
             terbaca sebagai layar yang memang tidak punya penanda - dan yang
             membacanya akan menyimpulkan perkaranya bersih. */}
-        <TombolLayarPenuh penuh={layarPenuh} onUbah={setLayarPenuh} />
+        {tampil(tampilan, "tombol-layar-penuh") || layarPenuh ? <TombolLayarPenuh penuh={layarPenuh} onUbah={setLayarPenuh} /> : null}
 
         <button
           type="button"
@@ -6650,9 +6690,8 @@ export function AletaEcourtSidang({
             sambungannya memang dapat disunting dari menu Koneksi SQL. */}
         {!antrian.terbaca && antrian.alasan && sidang.length > 0 ? (
           <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
-            Nomor antrian tidak terbaca: {antrian.alasan} — periksa sambungan
-            <strong> antrian_sidang</strong> di Admin ALETA Bot, tab Koneksi SQL. Jadwalnya
-            sendiri tetap benar.
+            Nomor antrian tidak terbaca: {antrian.alasan} — periksa sambungan ke aplikasi antrian
+            di Admin ALETA Bot. Jadwalnya sendiri tetap benar.
           </p>
         ) : null}
 
@@ -6662,10 +6701,10 @@ export function AletaEcourtSidang({
             para pihak ikut bergeser. Disebutkan, bukan didiamkan. */}
         {antrian.terbaca && antrian.tanggal.length > 1 ? (
           <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
-            Tabel antrian memuat {antrian.tanggal.length} tanggal sekaligus (
+            Aplikasi antrian memuat {antrian.tanggal.length} tanggal sekaligus (
             {antrian.tanggal.map((t) => tanggalHariPendek(t, t)).join(", ")}). Nomor antrian dihitung dari seluruhnya, sama
-            seperti nomor yang dikirim lewat WhatsApp — periksa apakah tabel turunannya
-            sudah dibersihkan.
+            seperti nomor yang dikirim lewat WhatsApp — periksa apakah data antrian hari-hari
+            sebelumnya sudah dibersihkan.
           </p>
         ) : null}
 
@@ -7255,17 +7294,19 @@ export function AletaEcourtSidang({
             </button>
           </p>
         ) : null}
-        <RingkasRuangSidang
-          perRuang={ruangSidang.perRuang}
-          nomorPerkara={(k) => bahanTigaJarak.nomorPerkara[k] ?? ""}
-          diskors={diskorsHariIni}
-          onLihat={(k) => {
-            const el = Array.from(document.querySelectorAll<HTMLElement>("[data-kunci-waktu]")).find(
-              (x) => x.dataset.kunciWaktu === k
-            );
-            el?.scrollIntoView({ block: "center", behavior: "smooth" });
-          }}
-        />
+        {tampil(tampilan, "ringkasan-ruang") ? (
+          <RingkasRuangSidang
+            perRuang={ruangSidang.perRuang}
+            nomorPerkara={(k) => bahanTigaJarak.nomorPerkara[k] ?? ""}
+            diskors={diskorsHariIni}
+            onLihat={(k) => {
+              const el = Array.from(document.querySelectorAll<HTMLElement>("[data-kunci-waktu]")).find(
+                (x) => x.dataset.kunciWaktu === k
+              );
+              el?.scrollIntoView({ block: "center", behavior: "smooth" });
+            }}
+          />
+        ) : null}
 
         <div
           ref={kotakTabel}
@@ -7572,8 +7613,8 @@ export function AletaEcourtSidang({
                               )}
                             />
                           ) : null}
-                          {berjalanIni ? <LencanaSedangBerjalan berjalan={berjalanIni} /> : null}
-                          {skorsIni && !berjalanIni ? <LencanaDiskors catatan={skorsIni} /> : null}
+                          {tampil(tampilan, "sedang-berjalan") && berjalanIni ? <LencanaSedangBerjalan berjalan={berjalanIni} /> : null}
+                          {tampil(tampilan, "sedang-berjalan") && skorsIni && !berjalanIni ? <LencanaDiskors catatan={skorsIni} /> : null}
 
                           {/* Pengambilan antrian dari sisi PETUGAS, di kolom
                               yang memang sudah memuat nomornya. Sebelumnya
@@ -7920,12 +7961,12 @@ export function AletaEcourtSidang({
                               </span>
                               ) : null
                             )}
-                            {ikrarSelesai(baris) ? (
+                            {tampil(tampilan, "ikrar-selesai") && ikrarSelesai(baris) ? (
                               <span
                                 className="inline-flex items-center rounded-full border border-emerald-500 bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-200"
                                 title={
                                   baris.ikrarTercatat
-                                    ? "Ikrar talak sudah tercatat di SIPP (perkara_ikrar_talak) pada tanggal sidang ini - perkaranya selesai; tidak ada lagi yang ditunda atau diputus."
+                                    ? "Ikrar talak sudah tercatat di SIPP pada tanggal sidang ini - perkaranya selesai; tidak ada lagi yang ditunda atau diputus."
                                     : `Hasil sidang di SIPP: "${baris.alasanDitunda}" - ikrar talak sudah dilaksanakan, perkaranya selesai.`
                                 }
                               >
@@ -7934,7 +7975,7 @@ export function AletaEcourtSidang({
                             ) : null}
                             {/* 18 Okt 2026: ikrar sudah dinyatakan terlaksana (mis. diisi lewat SIPP)
                                 tetapi form ikrar talak di SIPP belum terisi tanggalnya. */}
-                            {ikrarSelesai(baris) && !baris.ikrarTercatat && tampil(tampilan, "tombol-tunda-putus") ? (
+                            {ikrarSelesai(baris) && !baris.ikrarTercatat && tampil(tampilan, "tombol-tunda-putus") && tampil(tampilan, "tombol-isi-ikrar") ? (
                               <IsiIkrarTalak
                                 jadwalId={baris.sidangId}
                                 perkaraId={baris.perkaraId}
@@ -8080,13 +8121,14 @@ export function AletaEcourtSidang({
                               </span>
                             ) : null}
                             {/* F1.6: kesiapan draf dari checklist konseptor sementara. */}
-                            {tampil(tampilan, "hari-putusan") && hariPutusan(baris) ? (
+                            {tampil(tampilan, "hari-putusan") && tampil(tampilan, "kesiapan-putusan") && hariPutusan(baris) ? (
                               <LencanaKesiapanPutusan
                                 kemajuan={tunjukan[String(baris.perkaraId)]?.kemajuan ?? checklistTanpaTunjukan[String(baris.perkaraId)]?.kemajuan}
                               />
                             ) : null}
                             {/* F4.2: draf H-7 agen ALETA untuk sidang INI - juga perkiraan putusan verstek (agenda bukan putusan). */}
                             {tampil(tampilan, "hari-putusan") &&
+                            tampil(tampilan, "draf-putusan-agen") &&
                             drafH7[String(baris.perkaraId)]?.tanggalSidang === String(baris.tanggalSidang).slice(0, 10) ? (
                               <LencanaDrafH7 ringkas={drafH7[String(baris.perkaraId)]} />
                             ) : null}
@@ -8736,12 +8778,12 @@ export function AletaEcourtSidang({
                             tampilKosong={tampil(tampilan, "tunjuk-konseptor")}
                           />
                           {/* F4.2: rincian draf H-7 agen - untuk majelis dan konseptor, ditunjuk atau belum. */}
-                          {drafH7[String(baris.perkaraId)]?.tanggalSidang === String(baris.tanggalSidang).slice(0, 10) ? (
+                          {tampil(tampilan, "draf-putusan-agen") && drafH7[String(baris.perkaraId)]?.tanggalSidang === String(baris.tanggalSidang).slice(0, 10) ? (
                             <PanelDrafH7 perkaraId={String(baris.perkaraId)} ringkas={drafH7[String(baris.perkaraId)]} />
                           ) : null}
                           {/* F1.6: checklist draf putusan - bila konseptornya sudah ditunjuk, ATAU
                               (butir 38, 17 Okt) sudah tercatat di SIPP tanpa tunjukan sementara. */}
-                          {tunjukan[String(baris.perkaraId)]?.nama ? (
+                          {!tampil(tampilan, "checklist-konseptor") ? null : tunjukan[String(baris.perkaraId)]?.nama ? (
                             <ChecklistKonseptor
                               perkaraId={String(baris.perkaraId)}
                               nomorPerkara={baris.nomorPerkara}
@@ -8857,6 +8899,34 @@ export function AletaEcourtSidang({
                                 <FileSearch className="h-3.5 w-3.5" />
                                 Status
                               </button>
+                            ) : null}
+
+                            {/* ============================================
+                                PERTANYAAN SAKSI - TOMBOL KECIL, BUKAN BAGIAN TERBUKA
+                                ============================================
+
+                                Diminta hakim 18 Okt 2026: panduan tidak boleh terbuka
+                                sendiri di rincian. Hanya tombol ini; ditekan, panduan
+                                (pokok wajib, centang, layar sidang, cetak) keluar sebagai
+                                jendela pop-up. Tampil HANYA bila perkaranya sudah masuk
+                                pemeriksaan menurut aplikasi antrian: disidang 1..9
+                                (sedang di ruang) atau 10 (selesai hari itu, supaya PP
+                                masih dapat melengkapi). Mengantre atau belum ada
+                                antrian = tidak tampil. Perkara tanpa nomor antrian yang ditandai
+                                petugas sedang berjalan, diskors, atau selesai ikut dihitung
+                                (keputusan pengguna 18 Okt). Hak peran ditegakkan komponennya. */}
+                            {tampil(tampilan, "pertanyaan-saksi") &&
+                            sudahMasukPemeriksaan(disidangPerKunci[kunciTiga], {
+                              berjalan: Boolean(berjalanIni),
+                              diskors: Boolean(skorsIni),
+                              selesai: selesaiTanda.ditandai,
+                            }) ? (
+                              <PanduanPemeriksaanSaksi
+                                {...bahanPanduDariBaris(baris, institutionIdentity?.courtName || "")}
+                                bentuk="tombol"
+                                kunciBagian="sidang-pandu-saksi"
+                                pengguna={currentUser}
+                              />
                             ) : null}
 
                             {/* =============================================
@@ -9002,30 +9072,6 @@ export function AletaEcourtSidang({
                                       ? tandaAntrianOnline(antrianUntuk(antrian.peta, baris))
                                       : null
                                   }
-                                  /* panduan pertanyaan saksi (18 Okt 2026) */
-                                  penggunaPandu={currentUser}
-                                  pandu={{
-                                    perkara: {
-                                      nomorPerkara: baris.nomorPerkara,
-                                      jenisPerkaraId: baris.jenisPerkaraId,
-                                      alurPerkaraId: baris.alurPerkaraId,
-                                      jenisPerkara: baris.jenisPerkara,
-                                      mafqud: baris.mafqud,
-                                    },
-                                    sidangId: baris.sidangId,
-                                    tanggalSidang: baris.tanggalSidang,
-                                    agenda: baris.agenda,
-                                    menonjol: agendaPembuktianSaksi(baris.agenda),
-                                    namaPengadilan: institutionIdentity?.courtName || "",
-                                    keadaanAwal: keadaanAwalDariSidang({
-                                      dihadiriOleh: baris.dihadiriOleh,
-                                      verstekPutusan: baris.verstekPutusan,
-                                      tergugatPernahHadir: baris.panggilan?.tergugatPernahHadir,
-                                      kumulasi: baris.kumulasiTerbaca ? baris.kumulasi ?? null : null,
-                                      adaRekonvensi: Boolean(baris.penandaJawaban?.rekonvensi),
-                                    }),
-                                    namaSaksi: { P: baris.saksiNamaPihak1 ?? [], T: baris.saksiNamaPihak2 ?? [] },
-                                  }}
                                 />
                               )}
                             </div>
@@ -9111,15 +9157,7 @@ export function RincianSidang({
   tampilSita = false,
   tampilEksekusi = false /* 12OKT-N */,
   /* === AKHIR 12OKT-K === */
-  pandu = null,
-  penggunaPandu,
 }: {
-  /**
-   * Panduan pertanyaan saksi (18 Okt 2026, permintaan hakim): bahan perkara dari barisnya.
-   * null = tidak digambar. penggunaPandu menentukan hak (hakim, panitera, PP, admin).
-   */
-  pandu?: Omit<PropsPanduanSaksi, "kunciBagian" | "pengguna"> | null;
-  penggunaPandu?: PenggunaGolongan | null;
   /* === 12OKT-B: penanda perkara & pihak di rincian (dikirim dari barisnya) === */
   penanda?: BahanPenandaBaris;
   aktifPenandaPerkara?: boolean;
@@ -9416,9 +9454,6 @@ export function RincianSidang({
           )}
         </div>
       ) : null}
-
-      {/* Panduan pertanyaan saksi: menonjol pada agenda pembuktian, tetap dapat dibuka di agenda lain. */}
-      {pandu ? <PanduanPemeriksaanSaksi {...pandu} kunciBagian="sidang-pandu-saksi" pengguna={penggunaPandu} /> : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* --- Majelis dan petugas --- */}
@@ -10146,7 +10181,7 @@ export function RincianSidang({
                       {orang.dariAudit ? (
                         <span
                           className="ml-1 text-sm font-normal text-muted-foreground"
-                          title="Diambil dari jejak audit: inilah yang PERTAMA mencatat putusan, belum tentu yang menyusunnya."
+                          title="Diambil dari catatan SIPP: inilah yang PERTAMA mencatat putusan, belum tentu yang menyusunnya."
                         >
                           (pencatat pertama)
                         </span>
@@ -10917,7 +10952,7 @@ export function RincianSidang({
                   dari 5
                 </span>
               ) : (
-                <span className="text-xs text-muted-foreground">belum dikirim bot</span>
+                <span className="text-xs text-muted-foreground">belum diterima dari server</span>
               )}
             </dd>
 

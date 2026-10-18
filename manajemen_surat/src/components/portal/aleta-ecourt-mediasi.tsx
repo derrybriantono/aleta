@@ -842,6 +842,10 @@ export function AletaEcourtMediasi({
     });
   };
   const tombolHasilTampil = tampilMediasi(tampilan, "tombol-hasil-mediasi");
+  // 18 Okt 2026: saklar baru. Saringan yang tidak tampil juga tidak dipakai, supaya daftar
+  // tidak tersaring oleh isian yang tak terlihat.
+  const saringKeadaanTampil = tampilMediasi(tampilan, "saring-keadaan");
+  const pencarianTampil = tampilMediasi(tampilan, "pencarian-mediasi");
 
   const alihkanKeadaan = (kunci: string) =>
     setKeadaanTerpilih((sekarang) =>
@@ -960,7 +964,7 @@ export function AletaEcourtMediasi({
   const mediasiTampil = useMemo(() => {
     let hasil = mediasi;
 
-    if (keadaanTerpilih.length > 0) {
+    if (saringKeadaanTampil && keadaanTerpilih.length > 0) {
       const dipilih = KEADAAN_MEDIASI.filter((x) => keadaanTerpilih.includes(x.kunci));
       // "Atau", bukan "dan": menyalakan lewat tenggang dan ditunda sekaligus
       // berarti "tunjukkan yang bermasalah". Menggabungnya dengan "dan"
@@ -968,19 +972,20 @@ export function AletaEcourtMediasi({
       hasil = hasil.filter((baris) => dipilih.some((keadaan) => keadaan.cocok(baris)));
     }
 
-    if (cariCepat.trim()) {
+    if (pencarianTampil && cariCepat.trim()) {
       hasil = hasil.filter((baris) => cocokCariCepatMediasi(baris, cariCepat));
     }
 
-    if (cariLanjut.jumlahAktif > 0) {
+    if (pencarianTampil && cariLanjut.jumlahAktif > 0) {
       hasil = hasil.filter((baris) => cocokCariLanjutMediasi(baris, cariLanjut.isian));
     }
 
     return urutkan(hasil, urutTabel, nilaiUrutMediasi);
-  }, [mediasi, keadaanTerpilih, cariCepat, cariLanjut.isian, cariLanjut.jumlahAktif, urutTabel]);
+  }, [mediasi, keadaanTerpilih, cariCepat, cariLanjut.isian, cariLanjut.jumlahAktif, urutTabel, saringKeadaanTampil, pencarianTampil]);
 
   const adaPenyaringTabel =
-    keadaanTerpilih.length > 0 || cariCepat.trim() !== "" || cariLanjut.jumlahAktif > 0;
+    (saringKeadaanTampil && keadaanTerpilih.length > 0) ||
+    (pencarianTampil && (cariCepat.trim() !== "" || cariLanjut.jumlahAktif > 0));
 
   const bersihkanTabel = () => {
     setKeadaanTerpilih([]);
@@ -1110,6 +1115,7 @@ export function AletaEcourtMediasi({
         ) : null}
 
         {/* --- Angka ringkas --- */}
+        {tampilMediasi(tampilan, "kartu-ringkasan") ? (
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-lg border bg-card p-3">
             <div className="text-2xl font-semibold tabular-nums">{mediasi.length}</div>
@@ -1132,6 +1138,7 @@ export function AletaEcourtMediasi({
             <div className="text-xs text-muted-foreground">Pertemuan ditunda</div>
           </div>
         </div>
+        ) : null}
 
         {/* ==================================================================
             KOTAK KEADAAN
@@ -1144,7 +1151,7 @@ export function AletaEcourtMediasi({
             masuk" karena keduanya pertanyaan berbeda - yang satu tentang
             beban kerja, yang lain tentang angka keberhasilan yang
             dilaporkan tiap bulan. */}
-        {mediasi.length > 0 ? (
+        {saringKeadaanTampil && mediasi.length > 0 ? (
           <div className="flex flex-wrap items-center gap-1.5">
             {/* Kotak yang sedang dinyalakan tidak pernah disembunyikan, walau
                 jumlahnya jatuh ke nol sesudah dimuat ulang - saringan aktif
@@ -1171,7 +1178,7 @@ export function AletaEcourtMediasi({
         {/* Terpisah dari kotak Cari di atas, dan sengaja: yang di atas dikirim
             ke SIPP dan menuntut tombol Tampilkan; yang ini menyaring baris yang
             sudah termuat, seketika, tanpa satu pun kueri. */}
-        {mediasi.length > 0 ? (
+        {pencarianTampil && mediasi.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
             <Input
               value={cariCepat}
@@ -1203,7 +1210,7 @@ export function AletaEcourtMediasi({
           </div>
         ) : null}
 
-        {lanjutTerbuka && mediasi.length > 0 ? (
+        {pencarianTampil && lanjutTerbuka && mediasi.length > 0 ? (
           <PanelCariLanjut
             medan={MEDAN_CARI_MEDIASI}
             isian={cariLanjut.isian}
@@ -1275,7 +1282,7 @@ export function AletaEcourtMediasi({
                   const kunciBaris = `${baris.mediasiId}|${baris.tanggal}`;
                   return (
                   <Fragment key={`${kunciBaris}-${baris.jam}-${urutan}`}>
-                  <tr className={`border-t align-top ${kelasBarisMediasi(statusMediasi.peta[kunciBaris])}`}>
+                  <tr className={`border-t align-top ${tampilMediasi(tampilan, "lencana-status-mediasi") ? kelasBarisMediasi(statusMediasi.peta[kunciBaris]) : ""}`}>
                     <td className="px-2 py-2 text-right text-xs tabular-nums text-muted-foreground">
                       {urutan + 1}
                     </td>
@@ -1290,12 +1297,14 @@ export function AletaEcourtMediasi({
                           {tanggalHariPendek(baris.tanggal, baris.tanggal)}
                         </div>
                       ) : null}
-                      {baris.ditunda ? (
+                      {baris.ditunda && tampilMediasi(tampilan, "lencana-ditunda") ? (
                         <div className="mt-1">
                           <Badge variant="warning">ditunda</Badge>
                         </div>
                       ) : null}
-                      <LencanaStatusMediasi status={statusMediasi.peta[kunciBaris]} />
+                      {tampilMediasi(tampilan, "lencana-status-mediasi") ? (
+                        <LencanaStatusMediasi status={statusMediasi.peta[kunciBaris]} />
+                      ) : null}
                     </td>
 
                     <td className="px-3 py-2">
@@ -1361,13 +1370,13 @@ export function AletaEcourtMediasi({
                           </div>
                         ))
                       )}
-                      {baris.penetapanMediator ? (
+                      {tampilMediasi(tampilan, "penetapan-mediator") && baris.penetapanMediator ? (
                         <div className="text-muted-foreground">
                           ditetapkan{" "}
                           {tanggalHariPendek(baris.penetapanMediator, baris.penetapanMediator)}
                         </div>
                       ) : null}
-                      {baris.nomorSk ? (
+                      {tampilMediasi(tampilan, "penetapan-mediator") && baris.nomorSk ? (
                         <div className="text-muted-foreground">SK {baris.nomorSk}</div>
                       ) : null}
                     </td>
@@ -1434,7 +1443,7 @@ export function AletaEcourtMediasi({
                           </button>
                         </div>
                       ) : null}
-                      {bolehCatatMediasi ? (
+                      {bolehCatatMediasi && tampilMediasi(tampilan, "tombol-status-mediasi") ? (
                       <div className="mb-1">
                         <TombolStatusMediasi baris={{ mediasiId: String(baris.mediasiId), perkaraId: String(baris.perkaraId), nomorPerkara: baris.nomorPerkara, tanggal: baris.tanggal.slice(0, 10), tempat: baris.tempat }} status={statusMediasi.peta[kunciBaris]} onBerubah={statusMediasi.muatUlang} />
                       </div>
@@ -1491,12 +1500,14 @@ export function AletaEcourtMediasi({
           />
         ) : null}
 
-        <p className="text-xs text-muted-foreground">
-          Tenggang 30 hari dihitung sejak <strong>penetapan mediator</strong>, bukan sejak pertemuan
-          pertama &mdash; itulah patokan PERMA 1/2016 Pasal 24, dan pertemuan pertama kerap jauh
-          sesudahnya. Mediasi yang laporan mediatornya sudah masuk tidak lagi dihitung, berapa pun
-          lamanya.
-        </p>
+        {tampilMediasi(tampilan, "catatan-tenggang") ? (
+          <p className="text-xs text-muted-foreground">
+            Tenggang 30 hari dihitung sejak <strong>penetapan mediator</strong>, bukan sejak pertemuan
+            pertama &mdash; itulah patokan PERMA 1/2016 Pasal 24, dan pertemuan pertama kerap jauh
+            sesudahnya. Mediasi yang laporan mediatornya sudah masuk tidak lagi dihitung, berapa pun
+            lamanya.
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   );

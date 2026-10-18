@@ -255,6 +255,27 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
   "tombol-kasir": { letak: "deretan tombol di atas tabel", contoh: tombol("Kasir") },
   "tombol-kasir-harian": { letak: "deretan tombol di atas tabel", contoh: tombol("Kasir harian") },
   "layar-antrian": { letak: "deretan tombol di atas tabel", contoh: tombol("Layar antrian") },
+  // === 18 Okt 2026: fitur yang sudah tampil tetapi belum punya saklar ===
+  "ikrar-selesai": {
+    letak: "kolom Perkara, di samping jenis perkara",
+    contoh: pil("border-emerald-500 bg-emerald-100 text-emerald-800", "Selesai · telah ikrar talak"),
+  },
+  "kesiapan-putusan": { letak: "kolom Perkara, di samping Hari Putusan", contoh: lencana("bg-emerald-100 text-emerald-900 ring-1 ring-emerald-400", "draf 6 dari 8 langkah") },
+  "draf-putusan-agen": { letak: "kolom Perkara (lencana) dan kolom Putusan (rincian)", contoh: lencana("bg-violet-100 text-violet-900 ring-1 ring-violet-400", "draf siap diperiksa") },
+  "sedang-berjalan": {
+    letak: "kolom Antrian / Jam",
+    contoh: (
+      <span className="inline-flex flex-wrap items-center gap-1">
+        {lencana("bg-sky-600 text-white", "sedang berjalan · 12 menit")}
+        {lencana("bg-amber-100 text-amber-900 ring-1 ring-amber-400", "diskors")}
+      </span>
+    ),
+  },
+  "checklist-konseptor": { letak: "kolom Putusan, di bawah penunjukan konseptor", contoh: redup("☑ Duduk perkara · ☑ Pertimbangan · ☐ Amar") },
+  "tombol-isi-ikrar": { letak: "kolom Perkara, di samping jenis perkara", contoh: tombol("Isi form ikrar", "border-emerald-500 text-emerald-800") },
+  "pertanyaan-saksi": { letak: "kolom paling kanan, di bawah Status (setelah masuk pemeriksaan)", contoh: tombol("Pertanyaan saksi") },
+  "ringkasan-ruang": { letak: "di atas tabel", contoh: redup("Ruang 1: 321/Pdt.G/2026 sedang disidang · 1 diskors") },
+  "tombol-layar-penuh": { letak: "kepala layar", contoh: tombol("Layar penuh") },
 };
 
 /** Dua keadaan berdampingan: tampil dan disembunyikan; yang berlaku sekarang ditandai. */
