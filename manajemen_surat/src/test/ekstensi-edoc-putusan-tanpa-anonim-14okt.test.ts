@@ -49,7 +49,7 @@ function muat(jawaban: Array<{ status: number; badan: unknown }>) {
     ke += 1;
     return new Response(JSON.stringify(j.badan), { status: j.status, headers: { "content-type": "application/json" } });
   };
-  const sumber = potongFungsi(konten, ["kirimBadanUnggahSipp", "kirimUnggahSippTetap", "a30UnggahEdoc"]);
+  const sumber = potongFungsi(konten, ["kirimBadanUnggahSipp", "kirimUnggahSippTetap", "a30UnggahEdoc", "sambungSebab"]);
   const fn = new Function(
     "alatAmbil",
     "ALETA_API_UNGGAH_SIPP",

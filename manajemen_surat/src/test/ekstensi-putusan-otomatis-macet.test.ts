@@ -331,6 +331,8 @@ function pasang(o: { abt: Abt; batasTungguMs?: number; batasAbtMs?: number }) {
         "a30NamaAnonim",
         "a30GantiAkhiran",
         "a30SiapkanAnonimisasi",
+        // AUDIT-GALAT 18 Okt: kalimat galat tanpa awalan berulang.
+        "sambungSebab",
         "a30PerkaraIdUntukAbt",
         "a30HalamanMasukAbt",
         "a30AnonimAbt",

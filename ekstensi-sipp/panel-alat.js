@@ -1974,8 +1974,11 @@ function alatPesanGagal(galat, status, yangDiminta) {
     return `${pekerjaan}: ALETA menjawab ${status}. Kalau berulang, sebutkan angka itu saat melapor.`;
   }
 
-  const pesan = String((galat && galat.message) || galat || "").slice(0, 160);
-  return `${pekerjaan}: ${pesan || "sebabnya tidak terbaca"}.`;
+  // AUDIT-GALAT 18 Okt: galat yang dibungkus ulang sudah berbunyi "<pekerjaan>: ..."
+  // - jangan menjadi "X gagal: X gagal: ...", dan jangan berakhir "..".
+  const pesan = String((galat && galat.message) || galat || "").slice(0, 160).trim();
+  if (pesan && pesan.toLowerCase().startsWith(pekerjaan.toLowerCase())) return /[.!?]$/.test(pesan) ? pesan : `${pesan}.`;
+  return `${pekerjaan}: ${pesan.replace(/[.\s]+$/, "") || "sebabnya tidak terbaca"}.`;
 }
 
 /**

@@ -122,7 +122,12 @@ describe("teks tampil di abt.js, panel-alat.js, blangko-derry-isian.js tidak mem
     return hasil;
   }
   // Yang sah: nama kelas CSS, atribut data, dan teks title (kode boleh di sini).
-  const SAH = [/aleta-t6-8503-/, /data-peringatan=/, /Jenis perkara menurut SIPP \(variabel 0048/, /isian huruf alasan \(8503\)\./, /ke ABT \(variabel 8503\)/, /huruf alasan \(8503\)\."$/,/ms\b|detik/];
+  const SAH = [/aleta-t6-8503-/, /data-peringatan=/, /Jenis perkara menurut SIPP \(variabel 0048/, /isian huruf alasan \(8503\)\./, /ke ABT \(variabel 8503\)/, /huruf alasan \(8503\)\."$/,/ms\b|detik/,
+    // AUDIT-GALAT 18 Okt (benturan gabungan integrasi-1205-8): nama berkas blangko ABT
+    // apa adanya ("[03b] [Tolak] DK - ... Isian 9771)") - harus persis sama dengan ABT agar cocok.
+    /^"\[\d{2,3}[a-z]?\] \[[A-Za-z]+\] /,
+    // kunci internal peta agenda jawab-menjawab (blangko-derry-isian TJ_JAWAB_MENJAWAB), bukan teks tampil.
+    /^"(?:jawaban|replik|duplik) lisan 004[67]"$/];
 
   for (const [nama, sumber] of [
     ["abt.js", abt],

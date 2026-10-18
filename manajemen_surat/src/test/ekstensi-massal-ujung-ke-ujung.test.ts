@@ -691,6 +691,8 @@ function muatHalaman(dunia: Dunia, simpanan: Record<string, unknown>, opsi: Opsi
         "a30TungguAnonim",
         "a30PilihSesudahBatas",
         "a30UnggahEdoc",
+        // AUDIT-GALAT 18 Okt: kalimat galat tanpa awalan berulang.
+        "sambungSebab",
         "kirimBadanUnggahSipp",
         "pesanGagalUnggah",
         "perkaraIdDariHalaman",
