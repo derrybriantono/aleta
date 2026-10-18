@@ -59,35 +59,35 @@
    "rujukan": "Pasal 171 ayat (1) dan (2) HIR / Pasal 308 RBg",
    "uraian": "tiap kesaksian harus disertai keterangan tentang bagaimana saksi mengetahuinya; pendapat atau dugaan saksi bukan kesaksian",
    "status": "terverifikasi",
-   "sumber": "teks HIR/RBg; dikonfirmasi dari ringkasan hukumonline.com dan jurnal hukum (diperiksa 18 Okt 2026)"
+   "sumber": "Pasal 171 ayat (1)-(2) HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 308 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
   },
   {
    "id": "dh-hir-169",
    "rujukan": "Pasal 169 HIR / Pasal 306 RBg",
-   "uraian": "keterangan satu saksi saja tanpa alat bukti lain tidak cukup; sedikitnya dua saksi yang memenuhi syarat",
+   "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak dapat dipercaya; karena itu diperlukan sedikitnya dua saksi yang memenuhi syarat, atau satu saksi disertai alat bukti lain",
    "status": "terverifikasi",
-   "sumber": "teks HIR/RBg; dikonfirmasi dari ringkasan hukumonline.com (diperiksa 18 Okt 2026)"
+   "sumber": "Pasal 169 HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 306 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
   },
   {
    "id": "dh-hir-172",
    "rujukan": "Pasal 172 HIR / Pasal 309 RBg",
    "uraian": "hakim menilai kesaksian dari kecocokan antar saksi, alasan saksi, dan kedudukan saksi",
-   "status": "perlu-verifikasi",
-   "sumber": "pengetahuan hukum acara; belum dibaca pada naskah resmi"
+   "status": "terverifikasi",
+   "sumber": "Pasal 172 HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 309 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); sejalan dengan Pasal 1908 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
   },
   {
    "id": "dh-saksi-materiil",
    "rujukan": "Pasal 307, 308, dan 309 RBg jo. Pasal 1905 sampai dengan 1908 KUH Perdata",
-   "uraian": "syarat materiil kesaksian: keterangan dari yang dialami, didengar, dan dilihat sendiri, bersumber pengetahuan jelas, relevan, dan bersesuaian antar saksi; minimal dua saksi",
+   "uraian": "syarat materiil kesaksian: keterangan dari yang dialami, didengar dan dilihat sendiri, disertai sumber pengetahuan yang jelas, berkaitan dengan perkara, dan bersesuaian antar saksi; keterangan seorang saksi saja tanpa alat bukti lain tidak dapat dipercaya (Pasal 1905)",
    "status": "terverifikasi",
-   "sumber": "dikutip pada blangko putusan Derry \"3 Dispensasi Kawin\", \"2 Itsbat Nikah\", dan \"9 Penetapan Ahli Waris\" (teks derry-teks), diperiksa 18 Okt 2026"
+   "sumber": "Pasal 307, 308, 309 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (memuat padanan KUHperd. 1906, 1907, 1908); Pasal 1905-1908 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: dikutip pada blangko putusan Derry \"3 Dispensasi Kawin\", \"2 Itsbat Nikah\", dan \"9 Penetapan Ahli Waris\" (teks derry-teks), diperiksa 18 Okt 2026"
   },
   {
    "id": "dh-saksi-formil",
    "rujukan": "Pasal 22 ayat (2) PP 9/1975 jo. Pasal 171, 172 ayat (2), dan 175 RBg jo. Pasal 1909 sampai dengan 1912 KUH Perdata",
    "uraian": "syarat formil saksi: hadir pribadi, diperiksa satu per satu, tidak terhalang secara hukum, dan memberi keterangan di bawah sumpah",
    "status": "terverifikasi",
-   "sumber": "dikutip pada blangko putusan Derry \"3 Dispensasi Kawin\" dan \"6 Perwalian\" (teks derry-teks), diperiksa 18 Okt 2026"
+   "sumber": "Pasal 171 (dipanggil satu per satu), 172 ayat (1)-(2) (orang yang tidak boleh didengar dan pengecualiannya), 175 (sumpah) RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056); Pasal 1909-1912 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf); Pasal 22 ayat (2) PP 9/1975 (pihak keluarga dan orang yang dekat dengan suami-isteri didengar; naskah BPK, referensi/_unduhan/pp9-1975). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: dikutip pada blangko putusan Derry \"3 Dispensasi Kawin\" dan \"6 Perwalian\" (teks derry-teks), diperiksa 18 Okt 2026"
   },
   {
    "id": "dh-khi-171",

@@ -108,7 +108,7 @@ describe("tombol Susun saksi menurut keadaan perkara - menurut jenis perkara", (
   });
 
   it("jenis tanpa katalog TIDAK jatuh ke cerai - tersembunyi walau blangko memuat variabel cerai", async () => {
-    for (const jenis of ["Hibah", "Perkara Rekaan", ""]) {
+    for (const jenis of ["Zakat", "Perkara Rekaan", ""]) { // I28 18 Okt: Hibah kini punya katalog (366)
       const w = buka(KODE_BLANGKO_CERAI, { isi: jenis ? { "0048": jenis } : {} });
       const panel = await panelDari(w);
       await tunggu(() => w.__uji.mode() === "baru", "mode baru");

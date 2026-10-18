@@ -83,7 +83,7 @@ describe("panduan pertanyaan saksi - pemilihan katalog per jenis perkara", () =>
       if (k.tambahanUntuk || k.jenisKatalog) continue;
       const jenis = Number(k.syarat.jenisPerkaraId[0]);
       const alur = k.syarat.alurPerkaraId ? Number(k.syarat.alurPerkaraId[0]) : undefined;
-      const nama = k.kunci === "pengangkatan-anak" ? "Pengangkatan Anak" : k.kunci === "hak-asuh" ? "Hak Asuh Anak" : k.kunci === "permohonan-umum" ? "Lain-lain" : "";
+      const nama = k.kunci === "pengangkatan-anak" ? "Pengangkatan Anak" : k.kunci === "hak-asuh" ? "Hak Asuh Anak" : k.kunci === "permohonan-umum" ? "Lain-lain" : k.kunci === "mafqud" ? "Lain-Lain mafqud" : "";
       const p = ada(susunPanduan({ jenisPerkaraId: jenis, alurPerkaraId: alur, jenisPerkara: nama }));
       expect(p.kunci, k.kunci).toBe(k.kunci);
       expect(p.saksi.P.jumlahTanya, k.kunci).toBeGreaterThan(5);
@@ -212,7 +212,7 @@ describe("panduan pertanyaan saksi - pokok wajib dan dasar hukum", () => {
 
 describe("panduan pertanyaan saksi - tanpa contoh jawaban dan tanpa kode tampil", () => {
   const SEMUA = KATALOG.filter((k) => !k.tambahanUntuk && !k.jenisKatalog).map((k) => {
-    const nama = k.kunci === "pengangkatan-anak" ? "Pengangkatan Anak" : k.kunci === "hak-asuh" ? "Hak Asuh Anak" : k.kunci === "permohonan-umum" ? "Lain-lain" : "";
+    const nama = k.kunci === "pengangkatan-anak" ? "Pengangkatan Anak" : k.kunci === "hak-asuh" ? "Hak Asuh Anak" : k.kunci === "permohonan-umum" ? "Lain-lain" : k.kunci === "mafqud" ? "Lain-Lain mafqud" : "";
     return ada(
       susunPanduan({
         jenisPerkaraId: Number(k.syarat.jenisPerkaraId[0]),

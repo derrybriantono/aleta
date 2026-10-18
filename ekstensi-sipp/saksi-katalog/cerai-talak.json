@@ -71,14 +71,14 @@
    "rujukan": "Pasal 171 ayat (1) dan (2) HIR / Pasal 308 ayat (1) dan (2) RBg",
    "uraian": "saksi harus menyebut alasan dan cara ia mengetahui hal yang diterangkan; pendapat atau dugaan bukan kesaksian",
    "status": "terverifikasi",
-   "sumber": "HIR / RBg, berlaku di peradilan agama menurut Pasal 54 UU 7/1989"
+   "sumber": "Pasal 171 ayat (1)-(2) HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 308 ayat (1)-(2) RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); sejalan dengan Pasal 1907 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
   },
   {
    "id": "dh-unus-testis",
    "rujukan": "Pasal 169 HIR / Pasal 306 RBg / Pasal 1905 KUHPerdata",
    "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak dapat dipercaya",
    "status": "terverifikasi",
-   "sumber": "HIR / RBg / KUHPerdata"
+   "sumber": "Pasal 169 HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 306 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); Pasal 1905 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
   },
   {
    "id": "dh-pasal-39-uu-1-1974",
@@ -118,9 +118,9 @@
   {
    "id": "dh-verstek",
    "rujukan": "Pasal 125 ayat (1) HIR / Pasal 149 ayat (1) RBg",
-   "uraian": "Tergugat yang tidak hadir dapat diputus verstek bila gugatan tidak melawan hak atau beralasan; dalil gugatan tetap harus dibuktikan",
+   "uraian": "tergugat yang dipanggil dengan patut tetapi tidak hadir dan tidak mengirim wakil: gugatan dapat dikabulkan tanpa kehadirannya (verstek), kecuali nyata bahwa gugatan melawan hak atau tidak beralasan",
    "status": "terverifikasi",
-   "sumber": "HIR / RBg"
+   "sumber": "Pasal 125 ayat (1) HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 149 ayat (1) RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (memuat padanan IR. 125). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
   },
   {
    "id": "dh-sema-1-2022",

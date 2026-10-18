@@ -1,0 +1,1527 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "hibah",
+ "judul": "Hibah",
+ "versi": 1,
+ "penulis": "L60",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "366"
+  ]
+ },
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [
+  {
+   "folder": "4d Hibah - BAS",
+   "berkas": "BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4d Hibah - BAS",
+   "berkas": "BAS ALUR 04 [6a] BAS 6 P & T Hadir - Pembuktian P (3 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4d Hibah - BAS",
+   "berkas": "BAS ALUR 04 [6b] BAS 6 P & T Hadir - Pembuktian P (4 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060",
+    "6124"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4d Hibah - BAS",
+   "berkas": "BAS ALUR 04 [6c] BAS 6 P & T Hadir - Pembuktian P (5 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060",
+    "6124",
+    "8931"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4d Hibah - BAS",
+   "berkas": "BAS ALUR 04 [7] BAS 7 P & T Hadir - Pembuktian T",
+   "variabelSaksi": [
+    "6120",
+    "6121"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4d Hibah - BAS",
+   "berkas": "BAS ALUR 04 [7a] BAS 7 P & T Hadir - Pembuktian T (3 Saksi)",
+   "variabelSaksi": [
+    "6120",
+    "6121",
+    "8921"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4d Hibah - BAS",
+   "berkas": "BAS ALUR 04 [7b] BAS 7 P & T Hadir - Pembuktian T (4 Saksi)",
+   "variabelSaksi": [
+    "6120",
+    "6121",
+    "8921",
+    "8941"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4d Hibah - BAS",
+   "berkas": "BAS ALUR 47 Hibah - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4d Hibah - BAS",
+   "berkas": "BAS ALUR 47 Hibah Mohon - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4d Hibah - BAS",
+   "berkas": "BAS ALUR 47 Hibah Mohon - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4d Hibah - BAS",
+   "berkas": "BAS ALUR 47 Hibah Mohon - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4d Hibah - BAS",
+   "berkas": "BAS ALUR 47 Hibah Mohon - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4d Hibah - BAS",
+   "berkas": "BAS ALUR 47 Hibah Mohon - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  }
+ ],
+ "dasarHukum": [
+  {
+   "id": "dh-sebab-pengetahuan",
+   "rujukan": "Pasal 171 ayat (1) dan (2) HIR / Pasal 308 ayat (1) dan (2) RBg",
+   "uraian": "saksi harus menyebut alasan dan cara ia mengetahui hal yang diterangkan; pendapat atau dugaan bukan kesaksian",
+   "status": "terverifikasi",
+   "sumber": "Pasal 171 ayat (1)-(2) HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 308 ayat (1)-(2) RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); sejalan dengan Pasal 1907 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-unus-testis",
+   "rujukan": "Pasal 169 HIR / Pasal 306 RBg / Pasal 1905 KUHPerdata",
+   "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak dapat dipercaya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 169 HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 306 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); Pasal 1905 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-saksi-syarat",
+   "rujukan": "Pasal 171, 172, 175, 307, 308 dan 309 RBg",
+   "uraian": "syarat formil saksi (bukan orang yang dilarang didengar menurut Pasal 172, antara lain anak yang belum berumur lima belas tahun; dipanggil dan diperiksa satu per satu; disumpah menurut agamanya) dan syarat materiil (kesaksian disertai alasan pengetahuan, yaitu peristiwa yang dialami, didengar dan dilihat sendiri; kesaksian yang berdiri sendiri saling bersesuaian)",
+   "status": "terverifikasi",
+   "sumber": "Pasal 171 (saksi dipanggil satu per satu, ditanya identitas dan hubungan dengan pihak), 172 (orang yang tidak boleh didengar), 175 (sumpah), 307, 308, 309 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); syarat materiil \"dialami, didengar dan dilihat sendiri\" juga pada Buku II Edisi Revisi 2013 (Ditjen Badilag MA RI), salinan PDF PA Rumbia (pa-rumbia.go.id/images/Pedoman_Organisasi/1-Buku-II-edisi-Rev_2013_Pedoman-Tugas-dan-Adm.pdf), bagian Bukti Saksi. Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: pertimbangan hukum blangko putusan Derry 4c Wasiat [01], 5a Pembatalan [01], 5b Pencegahan [01], 5 Izin Poligami [01]"
+  },
+  {
+   "id": "dh-beban-bukti",
+   "rujukan": "Pasal 283 RBg jo. Pasal 1865 KUHPerdata",
+   "uraian": "siapa yang mendalilkan suatu peristiwa wajib membuktikannya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 283 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (memuat padanan KUHperd. 1865 dan IR. 163); Pasal 1865 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: pertimbangan hukum blangko putusan Derry 4c Wasiat [01] dan 5a Pembatalan [01]"
+  },
+  {
+   "id": "dh-kewenangan-hibah",
+   "rujukan": "Pasal 49 huruf d UU 7/1989 jo UU 3/2006 jo UU 50/2009",
+   "uraian": "sengketa dan permohonan hibah antara orang-orang beragama Islam menjadi kewenangan absolut Pengadilan Agama",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 3/2006 Pasal 49 (referensi/_unduhan/ekstra/uu3-2006.txt)"
+  },
+  {
+   "id": "dh-hibah-definisi",
+   "rujukan": "Penjelasan Pasal 49 huruf d UU 7/1989 jo UU 3/2006",
+   "uraian": "hibah adalah pemberian suatu benda secara sukarela dan tanpa imbalan dari seseorang atau badan hukum kepada orang lain atau badan hukum untuk dimiliki",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 3/2006 (penjelasan Pasal 49 huruf d)"
+  },
+  {
+   "id": "dh-khi-210",
+   "rujukan": "Pasal 210 ayat (1) dan (2) Kompilasi Hukum Islam",
+   "uraian": "penghibah berumur sekurang-kurangnya 21 tahun, berakal sehat dan tanpa paksaan; paling banyak 1/3 harta bendanya; di hadapan dua orang saksi; harta yang dihibahkan harus hak penghibah",
+   "status": "terverifikasi",
+   "sumber": "KHI (lampiran Inpres 1/1991, naskah di referensi/_unduhan/khi/khi.txt, Bab VI Hibah hlm 222-223)"
+  },
+  {
+   "id": "dh-khi-211",
+   "rujukan": "Pasal 211 Kompilasi Hukum Islam",
+   "uraian": "hibah dari orang tua kepada anaknya dapat diperhitungkan sebagai warisan",
+   "status": "terverifikasi",
+   "sumber": "KHI (lampiran Inpres 1/1991, naskah di referensi/_unduhan/khi/khi.txt, Bab VI Hibah hlm 222-223)"
+  },
+  {
+   "id": "dh-khi-212",
+   "rujukan": "Pasal 212 Kompilasi Hukum Islam",
+   "uraian": "hibah tidak dapat ditarik kembali, kecuali hibah orang tua kepada anaknya",
+   "status": "terverifikasi",
+   "sumber": "KHI (lampiran Inpres 1/1991, naskah di referensi/_unduhan/khi/khi.txt, Bab VI Hibah hlm 222-223)"
+  },
+  {
+   "id": "dh-khi-213",
+   "rujukan": "Pasal 213 Kompilasi Hukum Islam",
+   "uraian": "hibah yang diberikan pada saat pemberi hibah dalam keadaan sakit yang dekat dengan kematian harus mendapat persetujuan dari ahli warisnya",
+   "status": "terverifikasi",
+   "sumber": "KHI (lampiran Inpres 1/1991, naskah di referensi/_unduhan/khi/khi.txt, Bab VI Hibah hlm 222-223)"
+  }
+ ],
+ "keadaan": {
+  "kehadiran": {
+   "sumber": "otomatis",
+   "nilai": [
+    "verstek",
+    "kontradiktoir",
+    "t-tidak-hadir-setelah-mediasi"
+   ],
+   "bawaan": "kontradiktoir",
+   "label": "Kehadiran Tergugat"
+  },
+  "perkara": {
+   "sumber": "borang",
+   "nilai": [
+    "gugatan",
+    "permohonan"
+   ],
+   "bawaan": "gugatan",
+   "label": "Jenis perkara",
+   "labelNilai": {
+    "gugatan": "Gugatan (ada Tergugat)",
+    "permohonan": "Permohonan (tanpa lawan)"
+   }
+  },
+  "pokokTuntutan": {
+   "sumber": "borang",
+   "nilai": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G"
+   ],
+   "bawaan": [
+    "F"
+   ],
+   "jamak": true,
+   "label": "Pokok tuntutan hibah",
+   "labelNilai": {
+    "A": "A - Penghibah menarik kembali hibah kepada anak",
+    "B": "B - Hibah melebihi sepertiga harta",
+    "C": "C - Syarat penghibah atau bentuk hibah tidak terpenuhi",
+    "D": "D - Benda bukan hak penghibah",
+    "E": "E - Hibah ketika sakit tanpa persetujuan ahli waris",
+    "F": "F - Pengesahan hibah dan penyerahan benda",
+    "G": "G - Hibah diperhitungkan sebagai warisan"
+   }
+  },
+  "bentukHibah": {
+   "sumber": "borang",
+   "nilai": [
+    "lisan",
+    "tertulis",
+    "akta-ppat"
+   ],
+   "bawaan": "tertulis",
+   "label": "Bentuk hibah",
+   "labelNilai": {
+    "lisan": "Lisan",
+    "tertulis": "Tertulis",
+    "akta-ppat": "Dengan akta pejabat"
+   }
+  },
+  "penerima": {
+   "sumber": "borang",
+   "nilai": [
+    "anak-penghibah",
+    "bukan-anak"
+   ],
+   "bawaan": "bukan-anak",
+   "label": "Penerima hibah",
+   "labelNilai": {
+    "anak-penghibah": "Anak penghibah",
+    "bukan-anak": "Bukan anak penghibah"
+   }
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-hubungan-saksi",
+   "judul": "Hubungan saksi dengan para pihak dan penghibah",
+   "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal para pihak dan penghibah (sebab pengetahuan)",
+   "dasarHukum": [
+    "dh-sebab-pengetahuan",
+    "dh-saksi-syarat"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-syarat-penghibah",
+   "judul": "Keadaan penghibah ketika menghibahkan",
+   "uraian": "penghibah berumur sekurang-kurangnya 21 tahun, berakal sehat dan tanpa paksaan",
+   "dasarHukum": [
+    "dh-khi-210"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-bentuk-hibah",
+   "judul": "Bentuk, waktu dan saksi hibah",
+   "uraian": "hibah diberikan di hadapan dua orang saksi; bagaimana, kapan dan di mana hibah itu diberikan",
+   "dasarHukum": [
+    "dh-khi-210",
+    "dh-hibah-definisi"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-objek-hibah",
+   "judul": "Benda yang dihibahkan",
+   "uraian": "benda yang dihibahkan, letak, luas dan batas-batasnya",
+   "dasarHukum": [
+    "dh-hibah-definisi"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-milik-penghibah",
+   "judul": "Benda yang dihibahkan adalah hak penghibah",
+   "uraian": "benda yang dihibahkan harus merupakan hak dari penghibah",
+   "dasarHukum": [
+    "dh-khi-210"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-penerima-hibah",
+   "judul": "Penerima hibah",
+   "uraian": "siapa penerima hibah dan hubungannya dengan penghibah",
+   "dasarHukum": [
+    "dh-hibah-definisi",
+    "dh-khi-211"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-penyerahan",
+   "judul": "Penyerahan dan penguasaan benda hibah",
+   "uraian": "hibah dimiliki penerima; sejak kapan benda diserahkan dan siapa yang menguasainya",
+   "dasarHukum": [
+    "dh-hibah-definisi"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-batas-sepertiga",
+   "judul": "Batas sepertiga harta penghibah",
+   "uraian": "hibah paling banyak 1/3 harta benda penghibah",
+   "dasarHukum": [
+    "dh-khi-210"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-hibah-sakit",
+   "judul": "Hibah ketika penghibah sakit dekat kematian",
+   "uraian": "hibah ketika sakit yang dekat dengan kematian harus mendapat persetujuan ahli waris",
+   "dasarHukum": [
+    "dh-khi-213"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-tarik-hibah",
+   "judul": "Penarikan kembali hibah",
+   "uraian": "hibah tidak dapat ditarik kembali kecuali hibah orang tua kepada anaknya",
+   "dasarHukum": [
+    "dh-khi-212"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-hibah-warisan",
+   "judul": "Hibah orang tua kepada anak diperhitungkan sebagai warisan",
+   "uraian": "penerima hibah anak penghibah; ahli waris lain; perhitungan sebagai warisan",
+   "dasarHukum": [
+    "dh-khi-211"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-harta-ahli-waris",
+   "judul": "Harta penghibah dan ahli warisnya",
+   "uraian": "harta penghibah seluruhnya dan ahli waris yang masih hidup",
+   "dasarHukum": [
+    "dh-khi-210"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-keberadaan-lawan",
+   "judul": "Tempat tinggal pihak lawan",
+   "uraian": "untuk perkara yang diputus tanpa hadirnya Tergugat: tempat tinggal Tergugat",
+   "dasarHukum": [
+    "dh-saksi-syarat"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-bantahan",
+   "judul": "Bantahan atas adanya hibah",
+   "uraian": "keterangan saksi Tergugat yang menyangkal adanya hibah",
+   "dasarHukum": [
+    "dh-beban-bukti"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-tanpa-sengketa",
+   "judul": "Hibah tidak dipersengketakan (permohonan)",
+   "uraian": "sukarela tanpa imbalan dan tidak ada pihak yang keberatan atau menyengketakan",
+   "dasarHukum": [
+    "dh-hibah-definisi"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-penutup",
+   "judul": "Penutup keterangan",
+   "uraian": "saksi menyatakan keterangannya telah cukup",
+   "dasarHukum": [],
+   "wajib": false
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-kenal",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 10,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "perkara": "gugatan"
+   },
+   "teks": "Apakah saksi kenal dengan #0046# dan #0047# ?",
+   "teksVarian": [
+    "Apakah saksi mengenal #0046# dan #0047# ?",
+    "Apakah Saudara saksi kenal dengan #0046# serta #0047# ?"
+   ],
+   "hal": "hubungan saksi dengan para pihak",
+   "tidakBerlaku": [
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu",
+    "ragu",
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal kedua pihak dan menyebut hubungannya dengan pihak",
+     "saksi1": [
+      "saya kenal dengan #0046# dan #0047# karena saya adalah {hubungan}",
+      "saya mengenal #0046# maupun #0047# sebab saya adalah {hubungan}",
+      "#0046# dan #0047# saya kenal baik karena kedudukan saya sebagai {hubungan}",
+      "saya sudah lama mengenal #0046# dan #0047# karena saya adalah {hubungan}"
+     ],
+     "saksi2": [
+      "kedua pihak yaitu #0046# dan #0047# saya kenal karena saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya kenal dengan #0046# serta #0047#",
+      "saya tahu dan kenal #0046# juga #0047# karena saya adalah {hubungan}",
+      "perkenalan saya dengan #0046# dan #0047# terjadi karena saya adalah {hubungan}"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-kenal-pemohon",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 11,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "perkara": "permohonan"
+   },
+   "teks": "Apakah saksi kenal dengan #0046# ?",
+   "hal": "hubungan saksi dengan pemohon",
+   "tidakBerlaku": [
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu",
+    "ragu",
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal pemohon dan menyebut hubungannya dengan pemohon",
+     "saksi1": [
+      "saya kenal dengan #0046# karena saya adalah {hubungan}",
+      "saya mengenal #0046# sebab saya adalah {hubungan}",
+      "#0046# saya kenal baik karena kedudukan saya sebagai {hubungan}",
+      "saya sudah lama mengenal #0046# karena saya adalah {hubungan}"
+     ],
+     "saksi2": [
+      "pemohon yaitu #0046# saya kenal karena saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya kenal dengan #0046#",
+      "saya tahu dan kenal #0046# karena saya adalah {hubungan}",
+      "perkenalan saya dengan #0046# terjadi karena saya adalah {hubungan}"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-kenal-penghibah",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 20,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi kenal dengan #9793# selaku penghibah ?",
+   "hal": "hubungan saksi dengan penghibah",
+   "tidakBerlaku": [
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu",
+    "ragu",
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal penghibah dan menyebut hubungannya",
+     "saksi1": [
+      "saya kenal dengan #9793# karena saya adalah {hubungan}",
+      "saya mengenal #9793# sebab saya adalah {hubungan}",
+      "#9793# saya kenal baik karena kedudukan saya sebagai {hubungan}",
+      "saya sudah lama mengenal #9793# karena saya adalah {hubungan}"
+     ],
+     "saksi2": [
+      "penghibah yaitu #9793# saya kenal karena saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya kenal dengan #9793#",
+      "saya tahu dan kenal #9793# karena saya adalah {hubungan}",
+      "perkenalan saya dengan #9793# terjadi karena saya adalah {hubungan}"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9793"
+   ]
+  },
+  {
+   "id": "q-syarat-penghibah",
+   "pokok": "pp-syarat-penghibah",
+   "urutan": 30,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Ketika memberikan hibah berapa umur #9793# dan apakah ia sehat akalnya serta memberikannya tanpa paksaan ?",
+   "hal": "keadaan penghibah ketika menghibahkan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "penghibah sudah berumur lebih dari 21 tahun berakal sehat dan memberikan hibah tanpa paksaan",
+     "saksi1": [
+      "pada waktu memberikan hibah #9793# sudah berumur lebih dari 21 tahun dan sehat akalnya serta memberikannya atas kemauan sendiri tanpa paksaan",
+      "saya mengetahui sendiri bahwa #9793# ketika menghibahkan hartanya telah berusia di atas 21 tahun dan berakal sehat serta tidak ada yang memaksanya",
+      "#9793# saat itu sudah dewasa dengan umur lebih dari 21 tahun dan sehat pikirannya sehingga hibah itu diberikan atas kehendak sendiri tanpa paksaan",
+      "setahu saya yang menyaksikan langsung #9793# waktu itu telah berumur lebih dari 21 tahun dan sehat akal dan hibah itu bukan karena dipaksa"
+     ],
+     "saksi2": [
+      "ketika hibah diberikan #9793# telah melewati usia 21 tahun dan akalnya sehat dan saya melihat tidak ada tekanan dari siapa pun kepadanya",
+      "saya hadir saat itu dan melihat #9793# yang berumur di atas 21 tahun dalam keadaan sehat akal menyerahkan hibah itu tanpa dipaksa",
+      "menurut penglihatan saya sendiri #9793# sudah dewasa lebih dari 21 tahun dan sadar penuh ketika memberikan hibah tanpa paksaan siapa pun",
+      "pada hari hibah itu #9793# telah berusia lebih dari 21 tahun dan berakal sehat dan saya menyaksikan beliau memberikannya dengan sukarela"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: penghibah sudah lebih dari 21 tahun; versi B: penghibah belum genap 21 tahun - berselisih pada JUMLAH umur",
+     "saksi1": [
+      "saya melihat sendiri #9793# sudah berumur lebih dari 21 tahun ketika memberikan hibah",
+      "ketika menghibahkan hartanya #9793# telah di atas 21 tahun dan saya mengetahuinya sendiri",
+      "umur #9793# pada hari hibah itu sudah melewati 21 tahun sebagaimana yang saya saksikan",
+      "saya menyaksikan bahwa #9793# saat itu sudah berusia lebih dari 21 tahun"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #9793# belum genap 21 tahun ketika memberikan hibah",
+      "ketika menghibahkan hartanya #9793# masih di bawah 21 tahun dan saya mengetahuinya sendiri",
+      "umur #9793# pada hari hibah itu belum sampai 21 tahun sebagaimana yang saya saksikan",
+      "saya menyaksikan bahwa #9793# saat itu berusia kurang dari 21 tahun"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "9793"
+   ]
+  },
+  {
+   "id": "q-bentuk-hibah",
+   "pokok": "pp-bentuk-hibah",
+   "urutan": 40,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana cara #9793# memberikan hibahnya secara lisan tertulis atau dengan akta dan di mana serta kapan ?",
+   "hal": "cara dan waktu hibah diberikan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "bentukHibah": "lisan"
+      },
+      "maksud": "hibah diberikan secara lisan di hadapan dua orang saksi",
+      "saksi1": [
+       "#9793# memberikan hibah itu secara lisan di hadapan dua orang saksi dan saya hadir mendengarkannya",
+       "saya menyaksikan sendiri #9793# mengucapkan hibahnya secara lisan di depan dua orang saksi",
+       "hibah itu diucapkan langsung oleh #9793# dengan lisan dan disaksikan dua orang saksi dan saya ada di tempat itu",
+       "secara lisan #9793# menghibahkan hartanya di hadapan dua orang saksi dan saya melihat kejadian itu sendiri"
+      ],
+      "saksi2": [
+       "hibah #9793# disampaikan dengan lisan di muka dua orang saksi dan saya turut hadir ketika itu",
+       "saya ikut hadir ketika #9793# menyatakan hibah lisannya di hadapan dua orang saksi",
+       "pernyataan hibah itu diucapkan sendiri oleh #9793# dengan lisan dan dihadiri dua orang saksi yang saya lihat langsung",
+       "#9793# menghibahkan dengan ucapan lisan di depan dua orang saksi dan saya menyaksikannya sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "bentukHibah": "tertulis"
+      },
+      "maksud": "hibah dibuat tertulis dan ditandatangani di hadapan dua orang saksi",
+      "saksi1": [
+       "#9793# membuat hibahnya secara tertulis dan menandatanganinya di hadapan dua orang saksi yang saya lihat sendiri",
+       "saya menyaksikan sendiri #9793# menandatangani surat hibah tertulis di hadapan dua orang saksi",
+       "hibah itu dibuat tertulis oleh #9793# dengan dua orang saksi dan saya ada ketika surat itu ditandatangani",
+       "dalam bentuk surat tertulis #9793# menyatakan hibahnya di hadapan dua orang saksi dan saya melihatnya sendiri"
+      ],
+      "saksi2": [
+       "surat hibah tertulis itu ditandatangani #9793# di depan dua orang saksi dan saya hadir saat itu",
+       "saya ada di tempat ketika #9793# menandatangani hibah tertulisnya di muka dua orang saksi",
+       "#9793# menghibahkan secara tertulis dengan disaksikan dua orang saksi yang saya lihat langsung",
+       "hibah berupa tulisan itu dibubuhi tanda tangan #9793# di hadapan dua orang saksi dan saya menyaksikannya"
+      ]
+     },
+     {
+      "keadaan": {
+       "bentukHibah": "akta-ppat"
+      },
+      "maksud": "hibah dibuat dengan akta di hadapan pejabat pembuat akta",
+      "saksi1": [
+       "#9793# menghibahkan hartanya di hadapan pejabat pembuat akta dan dibuatkan akta hibah yang saya lihat sendiri",
+       "saya menyaksikan sendiri #9793# menghadap pejabat pembuat akta untuk membuat akta hibah",
+       "hibah itu dinyatakan #9793# di kantor pejabat pembuat akta dan saya ada di sana ketika itu",
+       "di hadapan pejabat pembuat akta #9793# menyatakan hibahnya dan saya melihatnya sendiri"
+      ],
+      "saksi2": [
+       "akta hibah dibuat pejabat pembuat akta atas permintaan #9793# dan saya menyaksikannya",
+       "saya ikut menyaksikan #9793# menghibahkan hartanya melalui akta yang dibuat oleh pejabat pembuat akta",
+       "#9793# datang kepada pejabat pembuat akta dan menyatakan hibahnya yang saya lihat langsung",
+       "hibah #9793# dituangkan dalam akta pejabat pembuat akta dan prosesnya saya saksikan sendiri"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: hibah diberikan pada tanggal yang disebut dalam perkara; versi B: hibah diberikan pada waktu yang berbeda - berselisih pada WAKTU",
+     "saksi1": [
+      "saya mengetahui sendiri #9793# memberikan hibahnya pada waktu yang disebut dalam perkara ini",
+      "hibah #9793# diberikan pada hari yang dimaksud dalam perkara ini dan saya hadir saat itu",
+      "pada hari yang disebut dalam perkara ini #9793# menghibahkan hartanya sebagaimana yang saya saksikan",
+      "waktu hibah #9793# sesuai dengan yang didalilkan dalam perkara ini dan saya melihatnya sendiri"
+     ],
+     "saksi2": [
+      "saya mengetahui sendiri #9793# memberikan hibahnya pada waktu yang berbeda dari yang disebut dalam perkara ini",
+      "hibah #9793# diberikan bukan pada hari yang dimaksud dalam perkara ini melainkan lebih awal dan saya hadir saat itu",
+      "bukan pada hari yang disebut dalam perkara ini #9793# menghibahkan hartanya sebagaimana yang saya saksikan",
+      "waktu hibah #9793# berbeda dengan yang didalilkan dalam perkara ini dan saya melihatnya sendiri"
+     ],
+     "bedaPada": "waktu"
+    }
+   },
+   "variabelAbt": [
+    "9793"
+   ]
+  },
+  {
+   "id": "q-saksi-hibah",
+   "pokok": "pp-bentuk-hibah",
+   "urutan": 50,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Siapa saja yang menjadi dua orang saksi ketika hibah itu diberikan ?",
+   "hal": "saksi-saksi ketika hibah diberikan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "hibah diberikan di hadapan dua orang saksi yang disebut saksi",
+     "saksi1": [
+      "ketika hibah diberikan ada dua orang saksi yang hadir dan saya mengenal keduanya",
+      "yang menjadi saksi hibah itu ada dua orang dan saya melihat sendiri mereka hadir",
+      "dua orang saksi hadir menyaksikan hibah itu dan saya tahu siapa mereka",
+      "saya melihat dua orang saksi ikut hadir ketika hibah itu diberikan"
+     ],
+     "saksi2": [
+      "pada saat hibah itu diberikan dua orang saksi turut hadir dan keduanya saya kenal",
+      "hibah itu disaksikan oleh dua orang dan saya sendiri melihat kehadiran mereka",
+      "saya mengetahui dua orang yang menjadi saksi hibah itu karena saya ada di tempat",
+      "dua orang saksi menyaksikan hibah itu secara langsung sebagaimana yang saya lihat"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: hibah disaksikan dua orang saksi; versi B: hibah disaksikan satu orang saja - berselisih pada JUMLAH saksi",
+     "saksi1": [
+      "saya melihat sendiri hibah itu disaksikan oleh dua orang saksi",
+      "yang hadir menyaksikan hibah itu ada dua orang dan saya mengetahuinya sendiri",
+      "dua orang saksi ada ketika hibah itu diberikan sebagaimana yang saya lihat",
+      "saya menyaksikan hibah itu dihadiri dua orang saksi"
+     ],
+     "saksi2": [
+      "saya melihat sendiri hibah itu hanya disaksikan oleh satu orang saksi",
+      "yang hadir menyaksikan hibah itu hanya satu orang dan saya mengetahuinya sendiri",
+      "satu orang saja yang ada ketika hibah itu diberikan sebagaimana yang saya lihat",
+      "saya menyaksikan hibah itu dihadiri hanya satu orang saksi"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": []
+  },
+  {
+   "id": "q-objek-hibah",
+   "pokok": "pp-objek-hibah",
+   "urutan": 60,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa saja benda yang dihibahkan oleh #9793# dan di mana letak serta batas-batasnya ?",
+   "hal": "benda yang dihibahkan dan letaknya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui benda yang dihibahkan beserta letaknya",
+     "saksi1": [
+      "benda yang dihibahkan #9793# adalah #9795# dan saya mengetahui letaknya karena sering melewatinya",
+      "saya tahu objek hibah #9793# itu yaitu #9795# yang berada di tempat yang saya kenal",
+      "menurut pengetahuan saya sendiri yang dihibahkan oleh #9793# adalah #9795#",
+      "objek hibah #9793# berupa #9795# dan saya pernah mendatangi lokasinya"
+     ],
+     "saksi2": [
+      "hibah #9793# berupa #9795# dan lokasinya saya ketahui sendiri",
+      "saya pernah melihat langsung benda yang dihibahkan #9793# yaitu #9795#",
+      "yang menjadi objek hibah #9793# adalah #9795# sebagaimana yang saya ketahui",
+      "benda hibah #9793# yaitu #9795# berada di lokasi yang saya kenal dengan baik"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: luas benda hibah sebagaimana yang disebut dalam perkara; versi B: luas benda hibah lebih kecil - berselisih pada JUMLAH luas",
+     "saksi1": [
+      "luas benda yang dihibahkan #9793# sama dengan yang disebut dalam perkara ini sebagaimana yang saya ketahui",
+      "saya mengetahui sendiri luas objek hibah #9793# sesuai dengan yang didalilkan",
+      "ukuran benda hibah #9793# menurut penglihatan saya cocok dengan yang disebut dalam perkara ini",
+      "luas benda yang dihibahkan #9793# sesuai dengan yang tertulis dalam perkara ini menurut saya"
+     ],
+     "saksi2": [
+      "luas benda yang dihibahkan #9793# lebih kecil dari yang disebut dalam perkara ini sebagaimana yang saya ketahui",
+      "saya mengetahui sendiri luas objek hibah #9793# tidak sebesar yang didalilkan",
+      "ukuran benda hibah #9793# menurut penglihatan saya lebih sempit dari yang disebut dalam perkara ini",
+      "luas benda yang dihibahkan #9793# lebih kecil dari yang tertulis dalam perkara ini menurut saya"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "9793",
+    "9795"
+   ]
+  },
+  {
+   "id": "q-milik-penghibah",
+   "pokok": "pp-milik-penghibah",
+   "urutan": 70,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah benda yang dihibahkan itu milik #9793# sendiri dan bagaimana ia memperolehnya ?",
+   "hal": "benda yang dihibahkan adalah milik penghibah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "benda yang dihibahkan adalah milik penghibah sendiri yang diperolehnya secara sah",
+     "saksi1": [
+      "benda itu milik #9793# sendiri dan saya mengetahui ia memperolehnya secara sah",
+      "setahu saya yang melihat sendiri benda itu adalah hak #9793# sejak ia memperolehnya",
+      "benda yang dihibahkan adalah milik #9793# pribadi dan tidak ada orang lain yang mengakuinya",
+      "saya mengetahui #9793# adalah pemilik sah benda itu karena saya menyaksikan sendiri perolehannya"
+     ],
+     "saksi2": [
+      "#9793# adalah pemilik benda yang dihibahkan itu dan saya menyaksikan sendiri bagaimana ia memperolehnya",
+      "benda hibah itu hak #9793# sendiri sebagaimana yang saya ketahui dari awal",
+      "saya melihat #9793# menguasai dan memiliki benda itu sebelum ia menghibahkannya",
+      "kepemilikan benda hibah itu ada pada #9793# dan saya mengetahui asal-usul perolehannya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: benda itu milik penghibah sendiri; versi B: benda itu milik bersama dengan orang lain - berselisih pada PELAKU pemilik",
+     "saksi1": [
+      "saya mengetahui benda itu milik #9793# sendiri",
+      "benda yang dihibahkan adalah hak #9793# seorang diri sebagaimana yang saya ketahui",
+      "saya melihat sendiri benda itu dimiliki #9793# seorang",
+      "pemilik benda itu hanya #9793# menurut pengetahuan saya sendiri"
+     ],
+     "saksi2": [
+      "saya mengetahui benda itu milik bersama #9793# dengan orang lain",
+      "benda yang dihibahkan adalah hak #9793# bersama pihak lain sebagaimana yang saya ketahui",
+      "saya melihat sendiri benda itu dimiliki #9793# bersama orang lain",
+      "pemilik benda itu #9793# dan orang lain menurut pengetahuan saya sendiri"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "variabelAbt": [
+    "9793",
+    "9795"
+   ]
+  },
+  {
+   "id": "q-penerima",
+   "pokok": "pp-penerima-hibah",
+   "urutan": 80,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Siapa penerima hibah itu dan apa hubungannya dengan #9793# ?",
+   "hal": "penerima hibah dan hubungannya dengan penghibah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "penerima": "anak-penghibah"
+      },
+      "maksud": "penerima hibah adalah anak kandung penghibah",
+      "saksi1": [
+       "penerima hibah itu adalah anak kandung #9793# dan saya mengetahuinya sendiri",
+       "yang menerima hibah #9793# adalah anaknya sendiri sebagaimana yang saya lihat",
+       "saya tahu penerima hibah itu anak kandung #9793# karena saya mengenal keluarganya",
+       "#9793# menghibahkan hartanya kepada anak kandungnya dan saya menyaksikannya"
+      ],
+      "saksi2": [
+       "anak kandung #9793# yang menjadi penerima hibah dan saya mengenalnya dengan baik",
+       "hibah #9793# diterima oleh anaknya sendiri yang saya kenal",
+       "penerima hibah adalah anak dari #9793# menurut penglihatan saya sendiri",
+       "saya menyaksikan anak kandung #9793# menerima hibah itu"
+      ]
+     },
+     {
+      "keadaan": {
+       "penerima": "bukan-anak"
+      },
+      "maksud": "penerima hibah bukan anak penghibah tetapi kerabat atau orang lain",
+      "saksi1": [
+       "penerima hibah itu bukan anak #9793# melainkan kerabat atau orang lain dan saya mengetahuinya sendiri",
+       "yang menerima hibah #9793# bukan anaknya tetapi orang lain yang saya kenal",
+       "saya tahu penerima hibah itu bukan anak kandung #9793# karena saya mengenal keluarganya",
+       "#9793# menghibahkan hartanya kepada orang yang bukan anaknya dan saya menyaksikannya"
+      ],
+      "saksi2": [
+       "orang yang bukan anak #9793# yang menjadi penerima hibah dan saya mengenalnya dengan baik",
+       "hibah #9793# diterima oleh orang lain yang bukan anaknya dan saya kenal",
+       "penerima hibah bukan anak dari #9793# menurut penglihatan saya sendiri",
+       "saya menyaksikan orang yang bukan anak #9793# menerima hibah itu"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: penerima hibah adalah anak penghibah; versi B: penerima hibah bukan anak penghibah - berselisih pada PELAKU penerima",
+     "saksi1": [
+      "saya mengetahui sendiri penerima hibah itu anak #9793#",
+      "penerima hibah #9793# adalah anaknya sendiri menurut penglihatan saya",
+      "yang menerima hibah itu anak #9793# sebagaimana yang saya saksikan",
+      "saya melihat langsung anak #9793# menerima hibah tersebut"
+     ],
+     "saksi2": [
+      "saya mengetahui sendiri penerima hibah itu bukan anak #9793#",
+      "penerima hibah #9793# bukan anaknya sendiri menurut penglihatan saya",
+      "yang menerima hibah itu bukan anak #9793# sebagaimana yang saya saksikan",
+      "saya melihat langsung orang yang bukan anak #9793# menerima hibah tersebut"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "variabelAbt": [
+    "9793"
+   ]
+  },
+  {
+   "id": "q-penyerahan",
+   "pokok": "pp-penyerahan",
+   "urutan": 90,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah benda yang dihibahkan sudah diserahkan kepada penerima hibah sejak kapan dan siapa yang menguasainya sekarang ?",
+   "hal": "penyerahan dan penguasaan benda hibah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "benda hibah sudah diserahkan kepada penerima hibah dan dikuasainya",
+     "saksi1": [
+      "benda hibah itu sudah diserahkan #9793# kepada penerima hibah dan sampai sekarang dikuasai penerima hibah",
+      "saya melihat sendiri #9793# menyerahkan benda itu kepada penerima hibah yang kemudian menguasainya",
+      "sejak diserahkan oleh #9793# benda itu berada dalam penguasaan penerima hibah sebagaimana yang saya ketahui",
+      "penerima hibah menguasai benda hibah itu setelah #9793# menyerahkannya dan saya menyaksikan hal itu"
+     ],
+     "saksi2": [
+      "penyerahan benda hibah oleh #9793# kepada penerima hibah sudah terjadi dan penerima hibah yang menguasainya sekarang",
+      "saya menyaksikan #9793# memberikan benda itu kepada penerima hibah yang lalu menempatinya",
+      "benda hibah itu telah berpindah ke tangan penerima hibah dari #9793# menurut penglihatan saya",
+      "setelah #9793# menyerahkannya benda itu dikuasai oleh penerima hibah sebagaimana yang saya lihat"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: benda hibah sudah diserahkan sejak hibah diberikan; versi B: benda hibah belum diserahkan - berselisih pada PERISTIWA penyerahan",
+     "saksi1": [
+      "benda hibah sudah diserahkan #9793# sejak hibah diberikan menurut penglihatan saya",
+      "saya melihat sendiri benda hibah langsung diserahkan #9793# ketika hibah diberikan",
+      "penyerahan benda hibah oleh #9793# sudah terjadi sejak awal sebagaimana yang saya saksikan",
+      "sejak hari hibah itu benda tersebut telah diserahkan #9793# dan saya mengetahuinya sendiri"
+     ],
+     "saksi2": [
+      "benda hibah belum pernah diserahkan #9793# sampai sekarang menurut penglihatan saya",
+      "saya melihat sendiri benda hibah tetap dikuasai #9793# dan tidak diserahkan",
+      "penyerahan benda hibah oleh #9793# belum terjadi sebagaimana yang saya saksikan",
+      "sejak hari hibah itu benda tersebut masih berada pada #9793# dan saya mengetahuinya sendiri"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "9793"
+   ]
+  },
+  {
+   "id": "q-sepertiga",
+   "pokok": "pp-batas-sepertiga",
+   "urutan": 100,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": "B"
+   },
+   "teks": "Berapa perbandingan nilai atau luas benda yang dihibahkan dengan seluruh harta #9793# apakah melebihi sepertiga ?",
+   "hal": "perbandingan benda hibah dengan seluruh harta penghibah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "benda yang dihibahkan melebihi sepertiga seluruh harta penghibah",
+     "saksi1": [
+      "benda yang dihibahkan #9793# nilainya melebihi sepertiga dari seluruh hartanya sebagaimana yang saya ketahui",
+      "saya mengetahui harta #9793# yang dihibahkan itu lebih dari sepertiga seluruh hartanya",
+      "perbandingan benda hibah dengan seluruh harta #9793# menurut pengetahuan saya sudah di atas sepertiga",
+      "hibah itu mengambil lebih dari sepertiga harta #9793# dan saya mengetahuinya sendiri"
+     ],
+     "saksi2": [
+      "harta yang dihibahkan #9793# melampaui sepertiga dari semua hartanya menurut yang saya ketahui",
+      "seluruh harta #9793# saya kenal dan yang dihibahkan itu lebih dari sepertiganya",
+      "nilai benda hibah itu lebih besar dari sepertiga harta #9793# sebagaimana yang saya lihat sendiri",
+      "saya tahu hibah itu melebihi sepertiga bagian dari harta #9793#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: benda hibah melebihi sepertiga harta; versi B: benda hibah kurang dari sepertiga harta - berselisih pada JUMLAH nilai",
+     "saksi1": [
+      "benda hibah itu melebihi sepertiga seluruh harta #9793# menurut pengetahuan saya",
+      "saya mengetahui nilai benda hibah di atas sepertiga harta #9793#",
+      "hibah itu lebih dari sepertiga harta #9793# sebagaimana yang saya ketahui sendiri",
+      "bagian yang dihibahkan melampaui sepertiga harta #9793# menurut saya"
+     ],
+     "saksi2": [
+      "benda hibah itu kurang dari sepertiga seluruh harta #9793# menurut pengetahuan saya",
+      "saya mengetahui nilai benda hibah di bawah sepertiga harta #9793#",
+      "hibah itu kurang dari sepertiga harta #9793# sebagaimana yang saya ketahui sendiri",
+      "bagian yang dihibahkan tidak sampai sepertiga harta #9793# menurut saya"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "9793"
+   ]
+  },
+  {
+   "id": "q-hibah-sakit",
+   "pokok": "pp-hibah-sakit",
+   "urutan": 110,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": "E"
+   },
+   "teks": "Apakah ketika memberikan hibah #9793# sedang sakit yang dekat dengan kematian dan apakah ahli warisnya menyetujui ?",
+   "hal": "keadaan sakit penghibah dan persetujuan ahli waris",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "penghibah sedang sakit parah ketika menghibahkan dan ahli waris tidak menyetujui",
+     "saksi1": [
+      "ketika menghibahkan hartanya #9793# sedang sakit parah dan tidak lama kemudian meninggal serta ahli warisnya tidak menyetujui",
+      "saya melihat sendiri #9793# dalam keadaan sakit keras saat hibah itu diberikan dan ahli waris tidak setuju",
+      "saat hibah diberikan #9793# terbaring sakit dan dekat dengan ajalnya sedang ahli warisnya tidak menyetujui",
+      "hibah itu diberikan ketika #9793# sakit berat sebagaimana yang saya saksikan dan ahli warisnya menolaknya"
+     ],
+     "saksi2": [
+      "pada waktu hibah itu #9793# sakit parah dan tidak lama kemudian wafat dan ahli warisnya tidak menyetujui",
+      "saya menyaksikan keadaan #9793# yang sakit keras ketika memberikan hibah dan ahli warisnya tidak setuju",
+      "#9793# sedang sakit dekat dengan ajalnya saat memberikan hibah dan ahli warisnya tidak menyetujuinya",
+      "sewaktu hibah diberikan #9793# dalam keadaan sakit berat menurut penglihatan saya dan ahli warisnya menolak"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: penghibah sakit parah saat menghibahkan; versi B: penghibah dalam keadaan sehat saat menghibahkan - berselisih pada PERISTIWA keadaan",
+     "saksi1": [
+      "saya melihat sendiri #9793# sedang sakit parah ketika menghibahkan hartanya",
+      "saat hibah diberikan #9793# terbaring sakit keras sebagaimana yang saya saksikan",
+      "hibah itu diberikan ketika #9793# sakit berat menurut penglihatan saya",
+      "keadaan #9793# ketika menghibahkan adalah sakit parah dan saya mengetahuinya sendiri"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #9793# dalam keadaan sehat ketika menghibahkan hartanya",
+      "saat hibah diberikan #9793# segar bugar sebagaimana yang saya saksikan",
+      "hibah itu diberikan ketika #9793# sehat menurut penglihatan saya",
+      "keadaan #9793# ketika menghibahkan adalah sehat dan saya mengetahuinya sendiri"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "9793"
+   ]
+  },
+  {
+   "id": "q-tarik-hibah",
+   "pokok": "pp-tarik-hibah",
+   "urutan": 120,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": "A"
+   },
+   "teks": "Apakah hibah itu diberikan orang tua kepada anaknya dan apakah #9793# pernah meminta benda hibah dikembalikan serta apa sebabnya ?",
+   "hal": "permintaan penghibah agar hibah dikembalikan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "penghibah orang tua penerima hibah pernah meminta benda hibah dikembalikan karena sebab yang diterangkan saksi",
+     "saksi1": [
+      "#9793# adalah orang tua penerima hibah dan saya pernah mendengar sendiri ia meminta benda hibah dikembalikan",
+      "saya mengetahui #9793# meminta kembali benda yang dihibahkannya kepada anaknya dan saya hadir saat itu",
+      "di depan saya #9793# menyampaikan permintaan agar benda hibah dikembalikan oleh anaknya",
+      "sebagai orang tua #9793# pernah meminta anaknya mengembalikan benda hibah dan saya menyaksikannya"
+     ],
+     "saksi2": [
+      "permintaan #9793# kepada anaknya agar benda hibah dikembalikan saya dengar sendiri",
+      "saya hadir ketika #9793# selaku orang tua meminta kembali benda yang telah dihibahkannya",
+      "#9793# meminta anaknya sebagai penerima hibah mengembalikan benda itu dan saya melihatnya sendiri",
+      "saya menyaksikan sendiri orang tua penerima hibah yaitu #9793# menuntut benda hibah dikembalikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: penghibah pernah meminta benda hibah dikembalikan; versi B: penghibah tidak pernah memintanya - berselisih pada PERISTIWA permintaan",
+     "saksi1": [
+      "saya mendengar sendiri #9793# pernah meminta benda hibah dikembalikan",
+      "permintaan #9793# agar benda hibah dikembalikan pernah saya saksikan",
+      "di depan saya #9793# pernah meminta kembali benda yang dihibahkannya",
+      "saya mengetahui #9793# pernah menuntut kembali benda hibah itu"
+     ],
+     "saksi2": [
+      "saya tidak pernah mendengar #9793# meminta benda hibah dikembalikan",
+      "permintaan #9793# agar benda hibah dikembalikan tidak pernah saya saksikan",
+      "di depan saya #9793# tidak pernah meminta kembali benda yang dihibahkannya",
+      "saya mengetahui #9793# tidak pernah menuntut kembali benda hibah itu"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "9793"
+   ]
+  },
+  {
+   "id": "q-hibah-warisan",
+   "pokok": "pp-hibah-warisan",
+   "urutan": 130,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": "G"
+   },
+   "teks": "Apakah penerima hibah adalah anak #9793# dan apakah ada ahli waris lain yang akan menerima warisan dari #9793# ?",
+   "hal": "penerima hibah dan ahli waris lain penghibah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "penerima hibah adalah anak penghibah dan ada ahli waris lain yang masih hidup",
+     "saksi1": [
+      "penerima hibah adalah anak #9793# dan ada ahli waris lain yang masih hidup yang saya kenal",
+      "saya mengetahui selain penerima hibah #9793# masih mempunyai ahli waris lain yang masih hidup",
+      "anak #9793# yang menerima hibah itu bukan satu-satunya ahli waris dan yang lain masih hidup menurut penglihatan saya",
+      "ahli waris #9793# bukan hanya penerima hibah tetapi ada yang lain yang saya kenal"
+     ],
+     "saksi2": [
+      "ahli waris lain dari #9793# selain anak penerima hibah masih ada dan saya mengenalnya",
+      "saya tahu #9793# meninggalkan ahli waris lain di samping penerima hibah",
+      "penerima hibah itu anak #9793# dan saudara-saudaranya yang lain masih hidup sebagaimana yang saya lihat",
+      "selain penerima hibah masih ada ahli waris #9793# yang saya ketahui sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: ahli waris lain berjumlah dua orang; versi B: ahli waris lain berjumlah tiga orang - berselisih pada JUMLAH ahli waris",
+     "saksi1": [
+      "ahli waris lain dari #9793# menurut saya ada 2 orang",
+      "selain penerima hibah ahli waris #9793# yang saya ketahui berjumlah 2 orang",
+      "saya hitung ahli waris #9793# yang lain ada 2 orang",
+      "jumlah ahli waris lain #9793# sepengetahuan saya adalah 2 orang"
+     ],
+     "saksi2": [
+      "ahli waris lain dari #9793# menurut saya ada 3 orang",
+      "selain penerima hibah ahli waris #9793# yang saya ketahui berjumlah 3 orang",
+      "saya hitung ahli waris #9793# yang lain ada 3 orang",
+      "jumlah ahli waris lain #9793# sepengetahuan saya adalah 3 orang"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "9793"
+   ]
+  },
+  {
+   "id": "q-harta-ahli-waris",
+   "pokok": "pp-harta-ahli-waris",
+   "urutan": 140,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa saja harta #9793# dan siapa saja ahli warisnya yang masih hidup ?",
+   "hal": "harta penghibah dan ahli warisnya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui harta penghibah dan ahli warisnya yang masih hidup",
+     "saksi1": [
+      "harta #9793# yang saya ketahui cukup banyak dan ahli warisnya yang masih hidup saya kenal",
+      "saya mengetahui harta apa saja milik #9793# dan siapa ahli warisnya yang masih ada",
+      "setahu saya #9793# mempunyai beberapa harta dan ahli warisnya yang masih hidup saya kenal",
+      "harta dan ahli waris #9793# yang masih hidup saya ketahui sendiri"
+     ],
+     "saksi2": [
+      "kekayaan #9793# dan ahli warisnya yang masih hidup saya ketahui dengan baik",
+      "saya tahu apa saja harta #9793# dan siapa ahli warisnya yang masih hidup",
+      "#9793# meninggalkan beberapa harta dan ahli waris yang masih hidup sebagaimana yang saya kenal",
+      "sepanjang pengetahuan saya harta #9793# dan ahli warisnya yang masih hidup adalah yang saya kenal itu"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9793"
+   ]
+  },
+  {
+   "id": "q-keberadaan-lawan",
+   "pokok": "pp-keberadaan-lawan",
+   "urutan": 150,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "P"
+   ],
+   "keadaan": {
+    "kehadiran": [
+     "verstek",
+     "t-tidak-hadir-setelah-mediasi"
+    ],
+    "perkara": "gugatan"
+   },
+   "teks": "Apakah saksi mengetahui di mana #0047# bertempat tinggal sekarang ?",
+   "hal": "tempat tinggal pihak lawan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui tempat tinggal Tergugat sendiri",
+     "saksi1": [
+      "saya mengetahui #0047# bertempat tinggal di ... dan alamat itu masih ditempatinya sampai sekarang",
+      "#0047# tinggal di ... yang sering saya lewati dan ia masih menetap di sana",
+      "tempat tinggal #0047# saat ini ada di ... dan saya mengetahuinya sendiri",
+      "sampai sekarang #0047# menetap di ... sebagaimana yang saya lihat sendiri"
+     ],
+     "saksi2": [
+      "alamat #0047# yang saya ketahui adalah ... dan ia masih tinggal di situ",
+      "saya pernah datang ke rumah #0047# di ... dan ia masih menempatinya",
+      "#0047# masih berdomisili di ... sepanjang pengetahuan saya sendiri",
+      "rumah #0047# berada di ... dan ia masih berada di sana"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: Tergugat masih tinggal di alamat yang disebut; versi B: Tergugat sudah pindah - berselisih pada TEMPAT tinggal",
+     "saksi1": [
+      "saya melihat sendiri #0047# masih tinggal di alamatnya yang lama",
+      "#0047# masih menetap di alamat yang dahulu dan saya mengetahuinya sendiri",
+      "sampai sekarang #0047# berada di rumahnya yang semula sebagaimana saya saksikan",
+      "alamat #0047# tetap di tempat yang dahulu dan saya melihatnya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0047# sudah pindah ke tempat lain",
+      "#0047# sudah berpindah dari alamatnya yang dahulu dan saya mengetahuinya sendiri",
+      "sekarang #0047# berada di tempat yang baru sebagaimana saya saksikan",
+      "alamat #0047# telah berubah ke tempat lain dan saya melihatnya langsung"
+     ],
+     "bedaPada": "tempat"
+    }
+   },
+   "variabelAbt": [
+    "0047"
+   ]
+  },
+  {
+   "id": "q-bantahan",
+   "pokok": "pp-bantahan",
+   "urutan": 160,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "kehadiran": [
+     "kontradiktoir",
+     "t-tidak-hadir-setelah-mediasi"
+    ],
+    "perkara": "gugatan"
+   },
+   "teks": "Apakah saksi pernah melihat atau mengetahui #9793# menghibahkan #9795# kepada penerima hibah ?",
+   "hal": "adanya hibah dari penghibah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi tidak pernah melihat atau mengetahui adanya hibah dari penghibah",
+     "saksi1": [
+      "saya tidak pernah melihat #9793# menghibahkan #9795# kepada siapa pun",
+      "selama ini saya tidak pernah menyaksikan #9793# menghibahkan #9795#",
+      "tidak ada hibah #9793# atas #9795# yang pernah saya ketahui sendiri",
+      "setahu saya #9793# tidak pernah menyatakan hibah atas #9795#"
+     ],
+     "saksi2": [
+      "saya sendiri tidak pernah mengetahui #9793# menghibahkan #9795#",
+      "sepanjang saya mengenal #9793# tidak ada pernyataan hibah atas #9795# yang saya saksikan",
+      "hibah #9793# atas #9795# tidak pernah saya lihat maupun saya dengar",
+      "#9793# tidak pernah menghibahkan #9795# dalam penglihatan saya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: penghibah tidak pernah menghibahkan; versi B: penghibah pernah menghibahkan - berselisih pada PERISTIWA hibah",
+     "saksi1": [
+      "saya tidak pernah melihat #9793# menghibahkan hartanya",
+      "selama ini saya tidak pernah menyaksikan #9793# berhibah",
+      "tidak ada hibah #9793# yang pernah saya lihat",
+      "setahu saya #9793# tidak pernah menghibahkan hartanya"
+     ],
+     "saksi2": [
+      "saya pernah melihat #9793# menghibahkan hartanya",
+      "saya pernah menyaksikan #9793# berhibah",
+      "hibah #9793# pernah saya lihat",
+      "setahu saya #9793# pernah menghibahkan hartanya"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "9793",
+    "9795"
+   ]
+  },
+  {
+   "id": "q-tanpa-sengketa",
+   "pokok": "pp-tanpa-sengketa",
+   "urutan": 170,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "perkara": "permohonan"
+   },
+   "teks": "Apakah hibah itu diberikan secara sukarela tanpa imbalan dan apakah ada pihak yang keberatan atau menyengketakannya ?",
+   "hal": "kesukarelaan hibah dan tidak adanya sengketa",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "hibah diberikan sukarela tanpa imbalan dan tidak ada pihak yang keberatan",
+     "saksi1": [
+      "hibah itu diberikan #9793# secara sukarela tanpa imbalan dan sampai sekarang tidak ada pihak yang keberatan",
+      "saya mengetahui #9793# menghibahkan hartanya dengan ikhlas tanpa meminta imbalan dan tidak ada yang menyengketakan",
+      "tidak ada imbalan yang diminta #9793# atas hibah itu dan tidak seorang pun yang menyatakan keberatan",
+      "hibah #9793# diberikan dengan sukarela tanpa pamrih dan tidak ada sengketa mengenainya"
+     ],
+     "saksi2": [
+      "#9793# memberikan hibah itu atas kemauannya tanpa imbalan dan tidak ada pihak yang mempersoalkannya",
+      "saya menyaksikan sendiri hibah itu diberikan #9793# dengan ikhlas tanpa imbalan dan tidak ada yang keberatan",
+      "sampai sekarang tidak ada orang yang menyengketakan hibah #9793# yang diberikan tanpa imbalan itu",
+      "hibah dari #9793# itu bersifat sukarela tanpa imbalan dan tidak ada orang yang menentangnya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: tidak ada pihak yang keberatan; versi B: ada pihak yang keberatan - berselisih pada PERISTIWA keberatan",
+     "saksi1": [
+      "tidak ada pihak yang keberatan atas hibah #9793# menurut pengetahuan saya",
+      "saya tidak pernah mendengar ada yang menyatakan keberatan atas hibah #9793#",
+      "hibah #9793# tidak pernah dipersoalkan siapa pun sebagaimana yang saya ketahui",
+      "tidak seorang pun menyengketakan hibah #9793# menurut saya"
+     ],
+     "saksi2": [
+      "ada pihak yang keberatan atas hibah #9793# menurut pengetahuan saya",
+      "saya pernah mendengar ada yang menyatakan keberatan atas hibah #9793#",
+      "hibah #9793# pernah dipersoalkan orang lain sebagaimana yang saya ketahui",
+      "ada orang yang menyengketakan hibah #9793# menurut saya"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "9793"
+   ]
+  },
+  {
+   "id": "q-penutup",
+   "pokok": "pp-penutup",
+   "urutan": 200,
+   "tingkat": "inti",
+   "kelompok": "penutup",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+   "hal": "keterangan penutup",
+   "tidakBerlaku": [
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu",
+    "ragu",
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan keterangannya sudah cukup",
+     "saksi1": [
+      "keterangan yang saya berikan sudah cukup",
+      "sekian keterangan saya dan sudah cukup",
+      "bagi saya keterangan ini sudah cukup",
+      "sudah cukup yang dapat saya terangkan"
+     ],
+     "saksi2": [
+      "dengan ini keterangan saya sudah cukup",
+      "sudah cukup apa yang saya ketahui untuk diterangkan",
+      "hanya itu keterangan saya dan sudah cukup",
+      "saya anggap keterangan saya sudah cukup sampai di sini"
+     ]
+    }
+   },
+   "variabelAbt": []
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "variabelBaru": [
+  "9793",
+  "9795"
+ ],
+ "catatanPetugas": [
+  "Titik-titik (...) pada keterangan saksi wajib diganti dengan keterangan saksi yang sebenarnya; jangan dibiarkan kosong.",
+  "Hibah paling banyak 1/3 harta benda penghibah dan harus merupakan hak penghibah (Pasal 210 KHI); hibah orang tua kepada anaknya dapat ditarik kembali dan dapat diperhitungkan sebagai warisan (Pasal 211 dan 212 KHI).",
+  "Hibah ketika penghibah sakit yang dekat dengan kematian harus mendapat persetujuan ahli waris (Pasal 213 KHI).",
+  "Keterangan saksi yang ragu atau hanya cerita orang lain bukan keterangan yang dialami sendiri; pertimbangkan menghadirkan saksi tambahan untuk hal yang menentukan perkara."
+ ]
+}
