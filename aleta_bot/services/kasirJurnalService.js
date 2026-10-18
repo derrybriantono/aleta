@@ -2070,7 +2070,8 @@ function buatLayanan(deps = {}) {
     let dikirim = 0;
     for (const l of rencana.langkah) {
       try {
-        await jeda(dikirim ? "simpan" : "klik", { kering: false });
+        // Antarbaris satu perkara: pola kasir terukur (jedaManusiaService.hitungBarisKasir).
+        await jeda(dikirim ? "barisKasir" : "klik", { kering: false });
       } catch {
         /* jeda gagal - simpanan tetap berjalan */
       }

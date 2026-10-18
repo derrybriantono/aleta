@@ -1924,7 +1924,49 @@ async function rantaiPenetapan(usulan, data, kering) {
  * sidang tidak sah, usulan tidak tersusun), tidak ada yang dikirim - menulis
  * sebagian rantai justru yang hendak dihindari.
  */
-async function kirimRantaiUtuh(usulan, perkaraId, akunMasuk, hasil, antre) {
+/**
+ * Keputusan 104 (18 Okt 2026): menulis penetapan di luar jam kerja satker
+ * (Senin-Kamis 07.30-16.00, Jumat 07.30-16.30 WITA, atau hari libur) DITANYAKAN
+ * dulu - Antrekan (bawaan, dikerjakan sendiri pada jam kerja berikutnya) atau
+ * Tulis sekarang. Kotak kecil di atas halaman, bukan window.confirm, supaya
+ * kedua pilihannya bernama jelas.
+ */
+function tanyaJamKerjaPenetapan(pesan) {
+  return new Promise((selesai) => {
+    const kotak = document.createElement("div");
+    kotak.setAttribute("role", "alertdialog");
+    kotak.className = "aleta-tanya-jam-kerja";
+    kotak.style.cssText =
+      "position:fixed;z-index:2147483646;left:50%;top:18%;transform:translateX(-50%);max-width:440px;" +
+      "background:#fffbeb;color:#78350f;border:1px solid #f59e0b;border-radius:8px;padding:14px 16px;" +
+      "box-shadow:0 8px 24px rgba(0,0,0,.18);font:14px/1.45 system-ui,sans-serif";
+    const teks = document.createElement("p");
+    teks.style.margin = "0 0 10px";
+    teks.textContent = pesan || "Sekarang di luar jam kerja. Penetapan akan dikerjakan pada jam kerja berikutnya.";
+    const baris = document.createElement("div");
+    baris.style.cssText = "display:flex;gap:8px;flex-wrap:wrap";
+    const tombol = (label, nilai, utama) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = label;
+      b.style.cssText = utama
+        ? "background:#b45309;color:#fff;border:0;border-radius:6px;padding:6px 14px;cursor:pointer"
+        : "background:#fff;color:#78350f;border:1px solid #b45309;border-radius:6px;padding:6px 14px;cursor:pointer";
+      b.addEventListener("click", () => {
+        kotak.remove();
+        selesai(nilai);
+      });
+      return b;
+    };
+    const antre = tombol("Antrekan", "antrekan", true);
+    baris.append(antre, tombol("Tulis sekarang", "sekarang", false));
+    kotak.append(teks, baris);
+    document.body.appendChild(kotak);
+    antre.focus();
+  });
+}
+
+async function kirimRantaiUtuh(usulan, perkaraId, akunMasuk, hasil, antre, pilihJamKerja) {
   const jenisSebut = (j) => String(j || "").toUpperCase();
   const gagalPanel = hasil.find((x) => !x.ok && !x.sudahAda && !x.menungguRantai);
   const tandaiBatal = (tempat, sebab) => {
@@ -1956,6 +1998,8 @@ async function kirimRantaiUtuh(usulan, perkaraId, akunMasuk, hasil, antre) {
           tanggalPenetapan: usulan.tanggalPenetapan || "",
           olehUsername: akunMasuk,
           kering: false,
+          tanyaJamKerja: true,
+          ...(pilihJamKerja ? { jamKerja: pilihJamKerja } : {}),
         }),
       },
       "Menulis penetapan"
@@ -1974,6 +2018,24 @@ async function kirimRantaiUtuh(usulan, perkaraId, akunMasuk, hasil, antre) {
       luar = null;
     }
     const isi = luar && luar.data && luar.data.hasil ? luar.data : luar;
+    // Keputusan 104: di luar jam kerja - tanya, lalu kirim ulang dengan pilihannya.
+    if (!pilihJamKerja && isi && (isi.kode === "di_luar_jam_kerja" || isi.alasan === "di_luar_jam_kerja" || isi.perluPilihan)) {
+      const pilih = await tanyaJamKerjaPenetapan(String(isi.pesan || isi.alasan || ""));
+      return kirimRantaiUtuh(usulan, perkaraId, akunMasuk, hasil, antre, pilih);
+    }
+    if (isi && isi.diantrekan) {
+      // Belum tertulis - langkah sesudahnya (e-Doc penetapan) tidak dijalankan.
+      for (const a of antre) {
+        Object.assign(a.tempat, {
+          menungguRantai: false,
+          ok: false,
+          diantrekan: true,
+          alasan: "diantrekan",
+          bunyi: String(isi.pesan || "Di luar jam kerja - diantrekan, dikerjakan pada jam kerja berikutnya."),
+        });
+      }
+      return;
+    }
     const status = Number(respons && respons.status) || 0;
     const tanpaAlasan = status === 401 || status === 403 ? null : jawabanTulisTanpaAlasan(respons, isi, antre[0].tempat.jenis, false);
     jawab = tanpaAlasan

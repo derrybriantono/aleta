@@ -2410,20 +2410,40 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       gambar();
       gambarAksi();
       let ke = 0;
+      // Keputusan 104 (18 Okt 2026): di luar jam kerja bot bertanya sekali;
+      // pilihan petugas (Antrekan / Tulis sekarang) berlaku untuk seluruh daftar.
+      let pilihJamKerja = "";
       for (const p of daftarKirim) {
         if (henti) {
           laporan.set(p.perkaraId, { ok: false, pesan: "dihentikan petugas" });
           continue;
         }
-        if (ke > 0 && sungguh) await tidur(1800 + Math.round(Math.random() * 2400));
+        // Keputusan 106 (18 Okt 2026): jarak antarperkara Kasir massal = pola kasir
+        // sungguhan, 20-150 dtk log-seragam (sama dengan Kasir otomatis di bawah).
+        // Yang diantrekan tidak menulis sekarang - jedanya dijalani antrean di bot.
+        if (ke > 0 && sungguh && pilihJamKerja !== "antrekan") await tidur(Math.round(20000 * Math.pow(7.5, Math.random())));
         ke += 1;
         kabar(kotakKabar, `${sungguh ? "Menyimpan" : "Pratinjau"} ${ke}/${daftarKirim.length}: ${p.nomorPerkara}…`);
         try {
-          const isi = await ambil(API, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ perkaraId: String(p.perkaraId), akunSipp: akun.keadaan.username, baris: barisKirim(p.usulan), kering: !sungguh, massal: true }),
-          });
+          const kirimSatu = () =>
+            ambil(API, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                perkaraId: String(p.perkaraId),
+                akunSipp: akun.keadaan.username,
+                baris: barisKirim(p.usulan),
+                kering: !sungguh,
+                massal: true,
+                tanyaJamKerja: true,
+                ...(pilihJamKerja ? { jamKerja: pilihJamKerja } : {}),
+              }),
+            });
+          let isi = await kirimSatu();
+          if (sungguh && !pilihJamKerja && isi && (isi.perluPilihan || isi.kode === "di_luar_jam_kerja")) {
+            pilihJamKerja = await tanyaJamKerjaKasir(String(isi.pesan || isi.alasan || ""));
+            isi = await kirimSatu();
+          }
           const r = isi.ringkas || {};
           const ditolak = Array.isArray(isi.ditolak) ? isi.ditolak.length : 0;
           if (!sungguh) {
@@ -2674,6 +2694,41 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
    * bagian ini terbuka dan tiap 10 menit selama halaman ini terbuka. Yang
    * ditulis, saklar dan butirnya dibaca bot dari setelan - bukan dari sini.
    */
+  /** Kotak pilihan jam kerja (keputusan 104) - Antrekan bawaan, Tulis sekarang. */
+  function tanyaJamKerjaKasir(pesan) {
+    return new Promise((selesai) => {
+      const kotak = document.createElement("div");
+      kotak.setAttribute("role", "alertdialog");
+      kotak.style.cssText =
+        "position:fixed;z-index:2147483646;left:50%;top:18%;transform:translateX(-50%);max-width:440px;" +
+        "background:#fffbeb;color:#78350f;border:1px solid #f59e0b;border-radius:8px;padding:14px 16px;" +
+        "box-shadow:0 8px 24px rgba(0,0,0,.18);font:14px/1.45 system-ui,sans-serif";
+      const teks = document.createElement("p");
+      teks.style.margin = "0 0 10px";
+      teks.textContent = pesan || "Sekarang di luar jam kerja. Jurnal akan dikerjakan pada jam kerja berikutnya.";
+      const baris = document.createElement("div");
+      baris.style.cssText = "display:flex;gap:8px;flex-wrap:wrap";
+      const tombol = (label, nilai, utama) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = label;
+        b.style.cssText = utama
+          ? "background:#b45309;color:#fff;border:0;border-radius:6px;padding:6px 14px;cursor:pointer"
+          : "background:#fff;color:#78350f;border:1px solid #b45309;border-radius:6px;padding:6px 14px;cursor:pointer";
+        b.addEventListener("click", () => {
+          kotak.remove();
+          selesai(nilai);
+        });
+        return b;
+      };
+      const antre = tombol("Antrekan", "antrekan", true);
+      baris.append(antre, tombol("Tulis sekarang", "sekarang", false));
+      kotak.append(teks, baris);
+      document.body.appendChild(kotak);
+      antre.focus();
+    });
+  }
+
   const JUDUL_STATUS_BUTIR = { sudah: "sudah tercatat", akan: "akan diisi", dilewati: "dilewati", "tidak-berlaku": "tidak berlaku" };
   const SELANG_OTOMATIS_MS = 10 * 60 * 1000;
 

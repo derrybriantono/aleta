@@ -4173,6 +4173,9 @@ export async function kirimPenetapanTulisRantaiGateway(payload: {
     jamSidang?: string;
     pejabatUsername?: string;
   }>;
+  /** Keputusan 104: tanya dulu bila di luar jam kerja / pilihan petugas. */
+  tanyaJamKerja?: boolean;
+  jamKerja?: "antrekan" | "sekarang";
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/tulis-rantai", {
     method: "POST",

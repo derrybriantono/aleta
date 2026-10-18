@@ -75,10 +75,25 @@ function rentang(jenis) {
  * Lama jeda (ms) - condong ke pendek (hasil kali dua acakan), seperti orang
  * yang bekerja cepat; tidak pernah di luar rentangnya.
  */
+/**
+ * Jarak antarbaris jurnal Kasir dalam SATU perkara (keputusan 108, 18 Okt 2026).
+ * Terukur atas 5.771 pasang baris beruntun kasir 2026 pada perkara yang sama:
+ * 31% pada detik yang sama (satu simpanan berbaris banyak), selebihnya p50 11
+ * dtk, p75 16 dtk, p90 27 dtk. Ditiru: 30% di bawah satu detik, 70% 5-25 dtk
+ * log-seragam (median ~11 dtk).
+ */
+function hitungBarisKasir(acak = Math.random) {
+  const u = Math.min(Math.max(Number(acak()) || 0, 0), 1);
+  if (u < 0.3) return Math.round((u / 0.3) * 900);
+  const v = (u - 0.3) / 0.7;
+  return Math.round(5000 * Math.pow(25000 / 5000, v));
+}
+
 function hitung(jenis, { acak = Math.random } = {}) {
-  const [min, maks] = rentang(jenis);
   const s = skala();
   if (s <= 0) return 0;
+  if (String(jenis || "").toLowerCase() === "bariskasir") return Math.round(hitungBarisKasir(acak) * s);
+  const [min, maks] = rentang(jenis);
   const condong = acak() * acak();
   return Math.round((min + condong * (maks - min)) * s);
 }
@@ -95,4 +110,4 @@ function jeda(jenis = "simpan", { kering = false, acak } = {}) {
   return new Promise((selesai) => setTimeout(() => selesai(ms), ms));
 }
 
-module.exports = { RENTANG, rentang, hitung, jeda, setelSkala, skala };
+module.exports = { RENTANG, rentang, hitung, hitungBarisKasir, jeda, setelSkala, skala };

@@ -1107,6 +1107,40 @@ kelengkapanDataService.mulai();
 // ALETA_ANTRIAN_WAKTU_AKTIF=0; lihat antrianWaktuService.
 antrianWaktuService.mulai();
 
+// Antrean tulisan SIPP di luar jam kerja (keputusan 104, 18 Okt 2026): Kasir
+// otomatis dan tulisan manual yang dipilih "Antrekan" dikerjakan pada jam kerja
+// berikutnya (WITA), berurutan, dengan jeda petugas. Tahan restart - antreannya
+// di basis data ALETA. Dimatikan dengan ALETA_ANTREAN_TULIS_SIPP_AKTIF=0.
+{
+  const antreanTulisSipp = require("./services/antreanTulisSippService").layanan();
+  antreanTulisSipp.daftarkanPelaksana("kasir-otomatis", async (muatan) => {
+    const hasil = await require("./services/kasirOtomatisService").tulisMuatan(muatan, { kering: false });
+    try {
+      if (Array.isArray(hasil.langkahDatar) && hasil.langkahDatar.length) {
+        void require("./services/jejakAletaService").catat({
+          aksi: "tulis",
+          jenis: "kasir-otomatis",
+          perkaraId: muatan.perkaraId,
+          nomorPerkara: hasil.perkara ? hasil.perkara.nomorPerkara : "",
+          akunSipp: hasil.akunSipp ? hasil.akunSipp.username : String(muatan.akunSipp || ""),
+          namaPejabat: hasil.akunSipp ? hasil.akunSipp.namaLengkap : "",
+          operator: `${String(muatan.operator || "")} (antrean jam kerja)`,
+          ip: String(muatan.ip || ""),
+          berhasil: hasil.ok === true,
+          kering: false,
+          alasan: hasil.ok ? "" : String(hasil.alasan || hasil.pesan || "sebagian tidak tersimpan"),
+          langkah: hasil.langkahDatar,
+        });
+      }
+    } catch {
+      // jejak gagal tidak membatalkan tulisan yang sudah terjadi
+    }
+    const { langkahDatar: _abaikan, ...ringkas } = hasil;
+    return ringkas;
+  });
+  antreanTulisSipp.mulai();
+}
+
 // Penanda verifikasi majelis untuk perkara e-Litigasi yang bersidang hari ini
 // (butir 30, 5 Okt 2026): satu tarikan ringan (--tanpa-unduh) tiap 15 menit,
 // berhenti sendiri bila semuanya sudah diverifikasi. Hanya menarik bila

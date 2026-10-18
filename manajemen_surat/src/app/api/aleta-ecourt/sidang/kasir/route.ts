@@ -118,9 +118,13 @@ export async function POST(request: NextRequest) {
         kering,
         // 1.189.x butir 2: simpanan Kasir otomatis massal - jejak ALETA saja.
         massal: badan.massal === true,
+        // Keputusan 104 (18 Okt 2026): di luar jam kerja bot bertanya dulu
+        // (tanyaJamKerja) atau mengikuti pilihan petugas (antrekan | sekarang).
+        tanyaJamKerja: badan.tanyaJamKerja === true,
+        jamKerja: badan.jamKerja === "antrekan" || badan.jamKerja === "sekarang" ? badan.jamKerja : undefined,
       },
-      // Tiap baris didahului jeda manusia (sampai 2,2 detik) di bot.
-      timeoutMs: kering ? 25_000 : Math.min(150_000, 25_000 + baris.length * 4_000),
+      // Tiap baris didahului jeda kasir (sampai 25 detik, pola petugas) di bot.
+      timeoutMs: kering ? 25_000 : Math.min(600_000, 30_000 + baris.length * 26_000),
     });
     if (!hasil.ok) return ok({ available: false, ok: false, alasan: hasil.error });
     return ok({ available: true, ...hasil.data });

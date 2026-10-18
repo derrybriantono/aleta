@@ -140,6 +140,9 @@ export async function POST(request: NextRequest) {
       ip: alamatIpPeramban(request),
       // Kering kecuali disebut tegas sebaliknya.
       kering: badan.kering !== false,
+      // Keputusan 104 (18 Okt 2026): pilihan jam kerja diteruskan apa adanya ke bot.
+      tanyaJamKerja: badan.tanyaJamKerja === true,
+      jamKerja: badan.jamKerja === "antrekan" || badan.jamKerja === "sekarang" ? badan.jamKerja : undefined,
     });
 
     if (!hasil.ok) {

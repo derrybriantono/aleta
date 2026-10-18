@@ -3,6 +3,8 @@
 const express = require("express");
 const crypto = require("crypto");
 const router = express.Router();
+// Keputusan 104 (18 Okt 2026): tulisan manual di luar jam kerja ditanyakan dulu - lihat antreanTulisSippService.
+const { manualJamKerja } = require("../services/antreanTulisSippService");
 
 const { readRuntimeConfig, writeRuntimeConfig, getWhatsappSessionName } = require("../config/runtime-config");
 const whatsappStatusService = require("../services/whatsappStatusService");
@@ -911,7 +913,10 @@ router.get("/penetapan/ruangan", requireInternalToken, async (req, res) => {
  * uji kering tetap lewat /penetapan/tulis per langkah. Selalu 200 dengan ok di
  * badan (kecuali galat tak terduga), supaya rinciannya sampai ke panel utuh.
  */
-router.post("/penetapan/tulis-rantai", requireInternalToken, async (req, res) => {
+router.post(
+  "/penetapan/tulis-rantai",
+  requireInternalToken,
+  manualJamKerja("penetapan-rantai", (b) => String(b.perkaraId || ""), async (req, res) => {
   try {
     const badan = req.body || {};
     const operator = String(badan.operator || "").trim();
@@ -994,7 +999,8 @@ router.post("/penetapan/tulis-rantai", requireInternalToken, async (req, res) =>
   } catch (error) {
     res.status(500).json({ ok: false, alasan: "gagal_menulis", pesan: String(error.message || error).slice(0, 300) });
   }
-});
+  }, (b) => `Penetapan perkara ${b.perkaraId || ""}`)
+);
 
 router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
   try {
@@ -1162,7 +1168,10 @@ router.get("/sidang/keadaan", requireInternalToken, async (req, res) => {
  * hanya melaporkan bahwa antriannya tidak ikut bergerak, bukan membatalkan
  * yang sudah benar.
  */
-router.post("/sidang/tunda", requireInternalToken, async (req, res) => {
+router.post(
+  "/sidang/tunda",
+  requireInternalToken,
+  manualJamKerja("sidang-tunda", (b) => String(b.jadwalId || ""), async (req, res) => {
   try {
     // Alurnya di sidangHasilAlur (7 Okt 2026, kasus 273): rencana -> jeda ->
     // SATU transaksi -> antrian -> jejak jujur; penolakan membawa kalimat sebab.
@@ -1173,7 +1182,8 @@ router.post("/sidang/tunda", requireInternalToken, async (req, res) => {
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
-});
+  }, () => "Tunda sidang")
+);
 
 /**
  * Memutus satu sidang - panitera sidang mencatat bahwa hari ini perkaranya
@@ -1187,7 +1197,10 @@ router.post("/sidang/tunda", requireInternalToken, async (req, res) => {
  * ada untuk jalur hakim. Keduanya menulis ke tabel yang sama pada saat yang
  * berbeda, dan ON DUPLICATE KEY UPDATE membuat keduanya hidup berdampingan.
  */
-router.post("/sidang/putus-sidang", requireInternalToken, async (req, res) => {
+router.post(
+  "/sidang/putus-sidang",
+  requireInternalToken,
+  manualJamKerja("sidang-putus", (b) => String(b.jadwalId || ""), async (req, res) => {
   try {
     // Alur yang sama dengan tunda - sidangHasilAlur (7 Okt 2026).
     const { status, body } = await sidangHasilAlur.jalankanHasilSidang("putus", req.body || {}, {
@@ -1197,7 +1210,8 @@ router.post("/sidang/putus-sidang", requireInternalToken, async (req, res) => {
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
-});
+  }, () => "Putus sidang")
+);
 
 /**
  * Mengisi form "Penetapan Ikrar Talak" SIPP sesudah ikrar terlaksana (18 Okt 2026):
@@ -1205,14 +1219,18 @@ router.post("/sidang/putus-sidang", requireInternalToken, async (req, res) => {
  * Atas nama ketua majelis ikrar; ditolak bila keterangan jadwal sidang belum
  * menyatakan ikrar terlaksana. Kering sebagai bawaan.
  */
-router.post("/sidang/isi-ikrar", requireInternalToken, async (req, res) => {
+router.post(
+  "/sidang/isi-ikrar",
+  requireInternalToken,
+  manualJamKerja("isi-ikrar", (b) => String(b.jadwalId || ""), async (req, res) => {
   try {
     const { status, body } = await sidangHasilAlur.jalankanIsiIkrar(req.body || {}, { ip: alamatAudit(req) });
     res.status(status).json(body);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
   }
-});
+  }, () => "Form ikrar talak")
+);
 
 /**
  * Isian borang "Data Penetapan Ikrar Talak" SIPP untuk ekstensi (31, 18 Okt 2026): MEMBACA

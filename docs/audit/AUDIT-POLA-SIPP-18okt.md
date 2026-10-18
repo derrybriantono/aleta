@@ -177,17 +177,43 @@ Kasir otomatis berjalan di latar, jadi tidak ada orang yang menunggu jeda ini.
 | Kata "Aleta" di SIPP | Diperiksa agen AUDIT-JEJAK, bukan bagian audit ini. |
 | Penetapan kembali, Court Calendar, posita, BAS | Satu jam untuk seluruh baris satu simpanan, sama dengan satu tekan Simpan SIPP. Polanya tidak diukur lebih jauh. |
 
-## Keputusan untuk pengguna
+## 9. Zona waktu
 
-| No | Pertanyaan | Data | Usul bawaan |
+- **Cap waktu SIPP = WIB.** SIPP menulis `diinput_tanggal`, `diperbaharui_tanggal`, dan `sys_audittrail.datetime` dengan PHP
+  `Asia/Jakarta`. Buktinya ada di `application/controllers/date_info.php`, dan terukur di server 13 Okt 2026: baris audit yang
+  ditulis SIPP sesudah baris ALETA ber-NOW() tercatat satu jam lebih awal.
+- **Basis data dan container ALETA = WITA** (`Asia/Makassar`).
+- Seluruh jam petugas di laporan ini adalah jam SIPP (WIB). Dalam WITA tambahkan 1 jam. Contoh: PMH petugas p5-p95 = 07.54-15.42 WIB,
+  atau **08.54-16.42 WITA**.
+- Jam kerja antrean (keputusan 104) memakai **WITA**: Senin-Kamis 07.30-16.00, Jumat 07.30-16.30. Dalam jam SIPP itu
+  06.30-15.00 / 15.30 WIB (`jamKerjaService`).
+
+## 10. Antrean jam kerja (keputusan 104, 106, 108)
+
+| Bagian | Isi |
+|---|---|
+| `aleta_bot/services/jamKerjaService.js` | `hariKerja(tanggal)`, `dalamJamKerja(waktu)`, `jamKerjaBerikutnya(waktu)`, `kalimatDiantrekan`, semua dalam WITA. Sabtu/Minggu bawaan. Hari libur lewat penyedia yang **disuntikkan** (`setelPenyediaLibur`); bawaannya `hariLiburService` yang sudah ada, bukan daftar kedua. |
+| `aleta_bot/services/antreanTulisSippService.js` | Tabel `aleta_bot_antrean_tulis_sipp` di DB ALETA (CREATE IF NOT EXISTS, bukan migrasi Drizzle). `kunci` UNIK, jadi tidak dobel. Baris diambil dengan UPDATE bersyarat, sehingga berurutan dan tidak terambil dua pekerja. Baris "jalan" saat proses mati dikembalikan ke "menunggu" ketika mulai lagi. Baris pertama dikerjakan 5-45 menit sesudah 07.30 (penetapan 45-120 menit, sebab PMH petugas paling awal p5 08.54 WITA). Antarbaris: Kasir 20-150 dtk, lainnya 1-10 menit. Gagal dicoba lagi tiap 30 menit, paling banyak 3 kali. |
+| Otomatis: Kasir otomatis | Di luar jam kerja/libur baris yang sudah disusun diantrekan (`kasir-otomatis:<perkara>:<hari putus>`). Tanggal transaksi = tanggal peristiwa, tidak berubah. Pelaksananya menulis dengan `sekaliPerJenis`. Ekstensi menampilkan "Di luar jam kerja - diantrekan, dikerjakan Selasa, 20 Oktober 2026 pukul 07.44 WITA." |
+| Manual: Jadwal Sidang (tunda, putus, putus ikrar), isi form ikrar, penetapan PMH-PHS, Kasir (per perkara dan massal) | Rute bot dibungkus `manualJamKerja`. Klien yang mengirim `tanyaJamKerja` mendapat pertanyaan dengan dua pilihan, **Antrekan** (bawaan) dan **Tulis sekarang**. Pilihan itu ditampilkan di portal (`TanyaJamKerja`, `hasil-sidang.tsx`), di panel penetapan ekstensi (`konten.js`), dan di Kasir massal ekstensi (`basmassal.js`, sekali untuk seluruh daftar). Klien lama yang tidak mengirim tanda itu tetap menulis seperti dahulu (tidak diblok diam-diam). |
+| Tidak diantrekan | Form ikrar "otomatis" ekstensi hanya mengisi borang SIPP di layar; petugas yang menekan Simpan SIPP. e-Doc penetapan membawa passphrase TTE, jadi tidak boleh disimpan di antrean. Bila penetapannya diantrekan, e-Doc tidak dijalankan. |
+| 106 | Jeda Kasir massal manual 20-150 dtk antarperkara (tidak berlaku bila dipilih Antrekan). Tanggal transaksi tetap tanggal peristiwa. |
+| 108 | Jeda antarbaris kasir dalam satu perkara: 30% di bawah 1 dtk, 70% 5-25 dtk log-seragam (median ±11 dtk). Petugas: 31% sedetik, median 11 dtk. Batas waktu portal dinaikkan (otomatis 240 dtk, manual 30 dtk + 26 dtk per baris). |
+| Mati | `ALETA_ANTREAN_TULIS_SIPP_AKTIF=0`. Di bawah vitest antrean mati kecuali disetel `1`. |
+| TODO sambungan | Bila sumber tunggal hari libur dari `fitur/libur-penetapan` digabung, panggil `jamKerjaService.setelPenyediaLibur(fungsiLibur)` sekali saat bot mulai (fungsi `(tanggalIso) => truthy`). |
+| Belum ada | Layar daftar antrean untuk super admin (data tersedia lewat `daftarMenunggu()`). |
+
+## Keputusan pengguna (dijawab 18 Okt malam)
+
+| Usul | No | Jawaban | Tindakan |
 |---|---|---|---|
-| K1 | **Tulisan di luar jam kerja dan hari libur.** Petugas tidak pernah menginput penetapan sebelum 07.00, sesudah 16.30, atau pada Sabtu/Minggu (0/883; tunda 6 dari 1.176 sebelum 07.00). ALETA menulis pada jam tombol ditekan: jejak 14 Sep pukul 03.18 WITA, 5 Okt pukul 06.02 WITA. Jam input tidak dapat dimundurkan ke hari sebelumnya tanpa memalsukan tanggal. | a) **antrekan** tulisan di luar 07.30-16.00 WITA (Jumat 16.30) dan hari libur, lalu kerjakan otomatis pada jam kerja berikutnya; b) tolak dengan pesan; c) biarkan seperti sekarang | a |
-| K2 | Bentuk tunda/putus. 75% petugas lewat aplikasi antrian: tanpa sys_audittrail, jam WITA, sampai_jam = jam simpan. ALETA meniru borang SIPP (dengan audit, sesuai keputusan 7 Okt dan 18 Okt "tercatat di riwayat & sys_audittrail"). | a) tetap borang (sekarang); b) bentuk aplikasi antrian | a |
-| K3 | Kasir massal manual (tombol, ditonton petugas): jarak antarperkara masih 1,8-4,2 dtk, dan `tanggal_transaksi` = tanggal peristiwa (bisa beberapa hari mundur), padahal petugas 99,3% menulis hari input. | a) samakan jeda 20-150 dtk dan tanggal = hari input; b) biarkan | a untuk jeda; tanggal perlu keputusan |
-| K4 | Akun e-Doc penetapan. Petugas: hampir semua diunggah akun `fahri`. ALETA: akun pemicu. | a) akun pejabat penetapannya; b) akun pemicu (sekarang) | b sampai dipastikan siapa pemilik akun `fahri` |
-| K5 | Jeda baris dalam satu perkara (Kasir): ALETA 0,35-2,2 dtk, petugas median 11 dtk. Memperpanjangnya membuat satu permintaan bisa berjalan ±1 menit. | a) 6-25 dtk per baris; b) biarkan | b |
-| K6 | IP kosong bila portal tidak meneruskan IP, dan e-Doc penetapan ikrar belum diukur. | tolak tulis tanpa IP? | ya, tolak |
-| K7 | Tombol Putus kini memakai nama halaman `EDIT JADWAL SIDANG`, tetapi baru menulis satu baris audit. Borang Edit SIPP selalu menambah riwayat Persidangan (proses 200, tanggal sidang) dan perkara UPDATE beserta auditnya (854/854). Tahapannya dibaca ulang dari riwayat terbaru, jadi tidak pernah menjadi "Putusan". Ini bertentangan dengan keputusan 30 Sep butir 12. | a) tiru pasangannya (tahapan tetap Persidangan/yang sudah ada); b) tetap satu baris | a |
+| K1 antrean jam kerja | 104 | ya | dikerjakan, bagian 10 |
+| K2 bentuk tunda/putus | 105 | tetap borang SIPP | tidak diubah |
+| K3 Kasir massal manual | 106 | ya | jeda 20-150 dtk; tanggal transaksi tetap tanggal peristiwa |
+| K4 akun e-Doc penetapan | 107 | tetap (akun pejabat) | tidak diubah. Catatan: kode sekarang mencatat akun yang dikirim panel (`olehUsername`). Bila maksudnya selalu akun pejabat penetapan, perlu dipastikan sekali lagi. |
+| K5 jeda antarbaris kasir | 108 | ya | dikerjakan |
+| K6 IP kosong | 109 | ya, IP kosong tidak ditolak | tidak diubah |
+| K7 pasangan perkara UPDATE pada Putus | 110 | tetap keputusan 30 Sep | tidak diubah (satu baris audit EDIT JADWAL SIDANG) |
 
 ## Verifikasi
 
@@ -201,4 +227,5 @@ Kasir otomatis berjalan di latar, jadi tidak ada orang yang menunggu jeda ini.
   - jeda Kasir.
 - Uji sasaran lain yang disesuaikan: `hasil-sidang-layar`, `ikrar-talak-jadwal-sidang`, `checklist-milestone-aturan`,
   `eviden-skp-katalog`, `isi-sipp-abt-sipp-lanjutan`.
+- Antrean jam kerja: `manajemen_surat/src/test/antrean-jam-kerja-18okt.test.ts` mencakup jam kerja WITA, Selasa 03.00 -> 07.30, Jumat 17.00 -> Senin, libur dilewati, tanggal peristiwa utuh, tidak dobel sesudah restart, berurutan, coba ulang, pertanyaan manual, Kasir otomatis diantrekan, dan jeda antarbaris kasir.
 - Uji penuh tidak dijalankan.

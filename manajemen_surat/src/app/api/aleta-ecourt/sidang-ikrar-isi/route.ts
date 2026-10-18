@@ -41,6 +41,9 @@ export async function POST(request: NextRequest) {
       operatorAkunSipp: akunPenekan && akunPenekan.milik.length ? akunPenekan.milik.join(", ") : "",
       ip: alamatIpPeramban(request),
       kering: badan.kering !== false,
+      // Keputusan 104 (18 Okt 2026): pilihan jam kerja diteruskan apa adanya ke bot.
+      tanyaJamKerja: badan.tanyaJamKerja === true,
+      jamKerja: badan.jamKerja === "antrekan" || badan.jamKerja === "sekarang" ? badan.jamKerja : undefined,
     });
     if (!hasil.ok) {
       return ok({
