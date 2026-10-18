@@ -307,7 +307,7 @@ describe("lapisan Blangko Derry (blangko-derry-isian.js): isiElitigasiOtomatis",
   });
 
   it("dipasang sesudah isian dimuat dan keadaannya dibersihkan saat perkara berganti", () => {
-    expect(sumber).toContain("void muatSaranAbt(d);\n      void isiElitigasiOtomatis(d);");
+    expect(sumber).toContain("void muatSaranAbt(d);\n      void simpanBawaanAbtItsbat(d);\n      void isiElitigasiOtomatis(d);");
     expect(sumber.match(/S\.el7 = null;/g)!.length).toBeGreaterThanOrEqual(2);
   });
 });

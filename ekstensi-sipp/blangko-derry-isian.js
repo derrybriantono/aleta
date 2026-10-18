@@ -886,6 +886,7 @@
       renderCetak();
       laporKeKerangka();
       void muatSaranAbt(d);
+      void simpanBawaanAbtItsbat(d);
       void isiElitigasiOtomatis(d);
       void siapkanBukti();
     } catch (e) {
@@ -953,6 +954,36 @@
         })
       );
       if (S.susunan === d) renderIsian();
+    }
+  }
+  const BAWAAN_ABT_ITSBAT = Object.freeze(["5178", "5105", "1046", "1002", "0007"]);
+  /**
+   * BAWAAN ABT ITSBAT (18 Okt 2026, keputusan 25): isian popup itsbat nikah yang sumber terbaiknya BAWAAN ABT sendiri
+   * (kueri #101xx#: 5178 KUA, 5105 tempat, 1046 wali, 1002 status, 0007 anak - lihat GERBANG_ITSBAT di bot) hanya tersimpan
+   * bila petugas membuka kotaknya lalu menyimpan; kotak yang tak dibuka tercetak "...". Di sini bawaan itu DISIMPAN OTOMATIS
+   * ke isian yang masih kosong, tanpa petugas membuka popup. Isian manual menang (sudah terisi di ABT atau diketik selagi
+   * menunggu -> tidak ditulis); bawaan yang masih memuat penanda "#...#", garis bawah, atau titik-titik tidak disimpan.
+   */
+  async function simpanBawaanAbtItsbat(d) {
+    try {
+      if (!S.pk || !bolehTulis() || !/itsbat/i.test(String(S.pk.jenisPerkara || ""))) return;
+      const perlu = d.isian.filter((b) => BAWAAN_ABT_ITSBAT.includes(b.kode) && b.jenis === "teks" && !terisi(b));
+      if (!perlu.length) return;
+      const k = klienAbt();
+      for (const b of perlu) {
+        try {
+          const h = await k.bacaIsian(b.kode, perkaraId(), "", sidangUrutan());
+          const nilai = h && h.ok ? String(h.nilai || "").trim() : "";
+          if (!nilai || /#\d{4,5}#|(?:^|[\s(.,;:/])_+(?=$|[\s),.;:/])|^\.{2,}$|^…+$/.test(nilai)) continue;
+          if (S.susunan !== d || terisi(b)) return;
+          await jadwalkanSimpan(b.kode, nilai, true);
+        } catch {
+          /* satu isian gagal: tetap kosong, tanpa mengganggu yang lain */
+        }
+      }
+      if (S.susunan === d) renderIsian();
+    } catch {
+      /* tanpa penyimpanan otomatis: isian tetap kosong */
     }
   }
   /**
