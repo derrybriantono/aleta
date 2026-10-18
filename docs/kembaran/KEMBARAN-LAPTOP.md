@@ -75,8 +75,41 @@ internal bot-portal yang sama; SSH `ssh aleta` sudah berfungsi dari laptop ini.
 **Jangan pernah menyalakan sesi WhatsApp di laptop.** Mode kembaran menutupnya di dalam kode, tetapi jangan
 mengakalinya: sesi yang sama dari dua tempat memutus sesi server.
 
-Ekstensi Chrome yang menyimpan **lewat halaman SIPP/ABT lokal** (port 8056) menulis langsung ke basis data
-laptop dan **tidak** melewati antrean - lihat Batasan.
+### SIPP/ABT lokal HANYA-BACA (keputusan 18 Okt 2026, butir 23)
+
+Selama `ALETA_MODE=kembaran`, halaman SIPP/ABT lokal (port 8056) **tidak boleh menulis** ke basis data laptop
+(sebelumnya ekstensi yang menyimpan lewat halaman itu menulis langsung dan melewati antrean). `nyalakan.ps1`
+menjalankan `scripts\kembaran\kunci-sipp-abt.ps1`; `nyalakan.ps1 -Henti` menjalankan pembaliknya
+(`kunci-sipp-abt.ps1 -Balik`).
+
+Cara kerja (tanpa mengubah sandi satu akun pun, tanpa menyentuh berkas SIPP/ABT):
+
+1. SIPP (`config.ini`) dan ABT (`application/config/database.php`, folder ABT tidak boleh disunting) masuk ke MySQL
+   sebagai `root`. MySQL `read_only` global tidak dipakai: `root` punya hak SUPER dan lolos darinya, sementara bot
+   kembaran sendiri harus tetap menulis.
+2. Hak `root` (semua host) dibaca lewat `SHOW GRANTS` dan disimpan utuh di
+   `D:\Aplikasi\aleta\kembaran\kunci-sipp-abt\grants-asli.sql`.
+3. Akun `kembaran_penuh` dibuat dengan hak dan **hash sandi yang sama** (GRANT yang sama, nama akun saja diganti)
+   lalu dicoba masuk. Gagal = berhenti, `root` belum disentuh; `nyalakan.ps1` pun tidak menyalakan apa-apa.
+4. Lewat `kembaran_penuh`, hak `root` dicabut dan diganti **SELECT saja** pada `sipp_donggala`, `aps_badilag`,
+   `sipp_turunan_antrian`. SIPP/ABT yang masuk sebagai `root` kini hanya-baca (sandinya tetap, konfigurasi aplikasi
+   tidak berubah).
+5. `nyalakan.ps1` menjalankan bot kembaran sebagai `kembaran_penuh` (`ALETA_BOT_DB_USER`, `_SIPP_USER`, `_APS_USER`,
+   `_ANTRIAN_USER`) agar ALETA tetap menulis ke salinan lokal. Sandinya = sandi `root` (sudah ada di `aleta_bot\.env`).
+6. Membalik: hak asli `root` dipasang kembali PERSIS dari `grants-asli.sql`, memastikan `root` kembali `ALL PRIVILEGES`,
+   baru `kembaran_penuh` dihapus. Berkas hak asli dipindah ke `grants-asli.dipulihkan-<waktu>.sql`.
+
+Yang perlu diingat:
+- Selama terkunci, **alat lain yang masuk sebagai `root`** (Navicat, `tarik.mjs`) juga hanya-baca. Jalankan
+  `tarik.mjs` SEBELUM menyalakan kembaran atau sesudah `-Henti` (atau ubah `mysql.pengguna` di `konfigurasi.json`
+  menjadi `kembaran_penuh`).
+- Penyimpanan di halaman SIPP/ABT lokal yang menulis akan ditolak MySQL (galat tulis) - itu memang tujuannya;
+  petugas bekerja lewat ALETA (yang diantrekan ke server).
+- `powershell -File scripts\kembaran\kunci-sipp-abt.ps1 -Uji` hanya menampilkan SQL yang akan dijalankan.
+  `nyalakan.ps1 -TanpaKunci` melewati penguncian (hanya untuk perbaikan; skrip memberi peringatan).
+- Bila skrip mati di tengah jalan: `kunci-sipp-abt.ps1 -Balik` memulihkan dari `grants-asli.sql`; `keadaan.json`
+  di folder yang sama mencatat tahapnya. Belum diuji terhadap MySQL nyata di laptop (MySQL sedang dipakai proses lain
+  saat skrip ditulis) - uji pertama sebaiknya dengan `-Uji`.
 
 ## 3. Tarik data dari server
 
@@ -151,9 +184,9 @@ terjadi **saat tulisan dicatat** di laptop dan tidak diulang saat dikirim.
   lewat `ssh` belum pernah dijalankan; yang diuji: pengalihan dan antrean di MariaDB laptop, pemeriksaan bentrok,
   persetujuan, dan dorong ke basis data kedua di MariaDB yang sama (uji vitest `kembaran-laptop.test.ts` + uji manual).
 - **Tulisan lewat SIPP/ABT lokal langsung** (halaman SIPP di port 8056, ABT, ekstensi yang menekan Simpan di halaman itu)
-  menulis ke `sipp_donggala`/`aps_badilag` laptop **tanpa** melewati antrean. Itu tidak terlacak dan **tidak** akan terkirim ke
-  server; penarikan berikutnya menimpanya. Pakai ALETA (yang menulis lewat antrean) untuk pekerjaan yang harus sampai ke server,
-  atau catat manual perubahan di SIPP lokal.
+  **ditutup sejak 18 Okt 2026**: SIPP/ABT lokal hanya-baca selama mode kembaran (bagian 2, `kunci-sipp-abt.ps1`). Dulu tulisan itu
+  masuk ke `sipp_donggala`/`aps_badilag` laptop tanpa melewati antrean, tidak terlacak, dan tidak terkirim ke server. Pakai ALETA
+  (yang menulis lewat antrean) untuk pekerjaan yang harus sampai ke server.
 - **Pembacaan sesudah menulis**: laptop tidak menerapkan tulisan itu ke salinan lokal, jadi layar SIPP/ABT/ALETA tetap memperlihatkan
   nilai lama sampai data ditarik ulang. Alur yang membaca balik tulisannya sendiri (verifikasi) dapat melaporkan gagal.
   Pilihan penerapan lokal ditunda (lihat Rencana).
@@ -203,4 +236,5 @@ Rancangan yang sama bisa dijalankan di VPS (bukan laptop) sehingga kembaran sela
 | `manajemen_surat/src/app/api/admin/sinkron-kembaran/` | API layar (Super Admin) |
 | `manajemen_surat/src/components/portal/pita-kembaran.tsx`, `sinkron-kembaran-panel.tsx` | pita dan layar |
 | `scripts/kembaran/tarik.mjs`, `nyalakan.ps1`, `konfigurasi.contoh.json` | tarik, nyalakan, contoh konfigurasi |
+| `scripts/kembaran/kunci-sipp-abt.ps1` | SIPP/ABT lokal hanya-baca selama kembaran; `-Balik` membuka kembali |
 | `manajemen_surat/src/test/kembaran-laptop.test.ts` | uji pengalihan, bentrok, persetujuan, dorong |
