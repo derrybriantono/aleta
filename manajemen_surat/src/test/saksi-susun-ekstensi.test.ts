@@ -33,7 +33,7 @@ afterEach(() => {
   while (halaman.length) halaman.pop()!.window.close();
 });
 
-type Opsi = { isi?: Record<string, string>; mode?: string; fetch?: (alamat: string, o?: any) => Promise<any>; judul?: string; nomor?: string };
+type Opsi = { isi?: Record<string, string>; mode?: string; fetch?: (alamat: string, o?: any) => Promise<any>; judul?: string; nomor?: string; simpanan?: Record<string, unknown> };
 
 function buka(kode: string[], opsi: Opsi = {}) {
   const baris = kode
@@ -51,7 +51,7 @@ function buka(kode: string[], opsi: Opsi = {}) {
   );
   halaman.push(dom);
   const w = dom.window as any;
-  const simpanan: Record<string, unknown> = { ujiTampilan: opsi.mode ?? "baru" };
+  const simpanan: Record<string, unknown> = { ujiTampilan: opsi.mode ?? "baru", ...(opsi.simpanan || {}) };
   w.chrome = {
     runtime: { getManifest: () => ({ version: "uji" }), getURL: (p: string) => `chrome-extension://uji/${p}`, sendMessage: (_p: unknown, balik?: (x: unknown) => void) => balik && balik({ ok: true }), lastError: undefined },
     storage: {
@@ -132,6 +132,40 @@ describe("tombol Susun saksi menurut keadaan perkara - menurut jenis perkara", (
     expect(tombolDi(panel, TOMBOL).hidden).toBe(true);
     expect(tombolDi(panel, "Susun keterangan saksi 1 & 2")).toBeTruthy();
   });
+});
+
+describe("tombol Susun saksi di tampilan Baru dengan akun berperan (menu per peran)", () => {
+  // Regresi 18 Okt: tombol katalog disisipkan di antara "Susun keterangan saksi" dan "Riwayat", sehingga pemetaan
+  // tombol menurut urutan menggeser riwayat dan rapikan satu tempat; tombol katalog terhitung "tombol lama" dan
+  // disembunyikan (data-sore-tampak="tidak") bagi semua akun berperan - tidak terlihat sama sekali di layar.
+  const SIAPA = { data: { available: true, pengguna: { nama: "Pengguna Contoh", peran: "Super Admin" }, kapabilitas: {} } };
+  const fetchAkun = async (alamat: string, o?: any) => {
+    const jawab = (isi: unknown, status = 200) => new Response(JSON.stringify(isi), { status, headers: { "content-type": "application/json" } });
+    if (/aleta-bot\/abt\/usulan/.test(alamat)) {
+      let m: any = {};
+      try {
+        m = JSON.parse((o && o.body) || "{}");
+      } catch {
+        m = {};
+      }
+      return jawab(m.sumber === "siapa" ? SIAPA : { data: { available: true } });
+    }
+    return jawab({ ok: false }, 404);
+  };
+
+  for (const mode of ["baru", "ui"]) {
+    it(`tampilan ${mode}: tombol katalog tidak ikut disembunyikan sebagai tombol lama`, async () => {
+      const fitur = Object.fromEntries(Array.from({ length: 30 }, (_, i) => [`abt-${i + 1}`, true]));
+      const w = buka(KODE_BLANGKO_CERAI, { isi: { "0048": "Cerai Gugat" }, mode, fetch: fetchAkun, simpanan: { ujiFitur: fitur, ujiIzinkanNyata: true } });
+      const panel = await panelDari(w);
+      await tunggu(() => w.__uji.mode() === mode, `mode ${mode}`);
+      await tunggu(() => !tombolDi(panel, TOMBOL)?.hidden, "tombol katalog tampak");
+      // beri waktu penataan peran (akun datang menyusul) sebelum memeriksa
+      await new Promise((r) => setTimeout(r, 700));
+      const tombol = tombolDi(panel, TOMBOL);
+      expect(tombol.getAttribute("data-sore-tampak")).not.toBe("tidak");
+    });
+  }
 });
 
 describe("borang menyusun saksi", () => {

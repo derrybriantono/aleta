@@ -9926,7 +9926,10 @@ async function t6Tata(panel, jatiDiri) {
   if (!isi) return;
   const aksi = t6Anak(isi, "aleta-abt-aksi");
   const daftar = Array.from(isi.children).filter((c) => c.classList.contains("aleta-abt-daftar"));
-  const tombolAksi = aksi ? Array.from(aksi.children) : [];
+  // Tombol katalog "Susun saksi menurut keadaan perkara" (saksi-susun.js) disisipkan di antara "Susun
+  // keterangan saksi" dan "Riwayat"; ia dikeluarkan dari pemetaan menurut urutan ini supaya riwayat dan
+  // rapikan tidak bergeser satu tempat (tombolnya diatur terpisah di soreKelola).
+  const tombolAksi = aksi ? Array.from(aksi.children).filter((c) => !c.classList.contains("aleta-ssk-tombol")) : [];
   const objek = (x) => (x && typeof x === "object" && !Array.isArray(x) ? x : {});
   const nomor = nomorPerkaraAbt();
   const k = {
@@ -14780,7 +14783,7 @@ function soreHentikan() {
 function soreSusun(panel, jatiDiri, isi) {
   f15BuangCetakAwalLama(isi); // penataan ulang panel yang sama: Cetak sementara penataan lalu dibuang dulu
   const aksi = t6Anak(isi, "aleta-abt-aksi");
-  const lama = aksi ? Array.from(aksi.children).filter((c) => c.tagName === "BUTTON" && !c.classList.contains("aleta-t6")) : [];
+  const lama = aksi ? Array.from(aksi.children).filter((c) => c.tagName === "BUTTON" && !c.classList.contains("aleta-t6") && !c.classList.contains("aleta-ssk-tombol")) : [];
   const daftar = Array.from(isi.children).filter((c) => c.classList.contains("aleta-abt-daftar") && !c.classList.contains("aleta-t6-usulan-sipp"));
   // 16 Okt (F1.1): wadah penyunting keterangan saksi tersendiri - dibuat di sini
   // (lapisan sore, ikut dikupas uji "Lama identik"), dipakai borang Susun.
@@ -16002,6 +16005,9 @@ function soreKelola(k) {
   const mati = (kunci) => (menuTentu && (semua || k.menu.includes(kunci)) ? [] : menuTentu ? ["peran"] : ["mati"]);
   if (k.kerjaIsi) hasil.push([k.kerjaIsi, mati("isi-input")]);
   if (k.kerjaSusun) hasil.push([k.kerjaSusun, mati("susun-saksi")]);
+  // Tombol "Susun saksi menurut keadaan perkara": mengikuti menu peran "susun-saksi" (tanpa menu = tampak).
+  const tombolKatalog = k.aksi ? k.aksi.querySelector(".aleta-ssk-tombol") : null;
+  if (tombolKatalog) hasil.push([tombolKatalog, peranSalah(["susun-saksi"])]);
   if (k.bukanPenangan) hasil.push([k.bukanPenangan, menuTentu && k.menu.length === 0 ? [] : ["mati"]]);
   for (const el of [k.wadah.selisih, k.wadah.huruf]) if (el) hasil.push([el, isiInput]);
   if (k.wadah.sepihak) hasil.push([k.wadah.sepihak, [...isiInput, ...(k.adaRinci ? ["rinci"] : [])]]);

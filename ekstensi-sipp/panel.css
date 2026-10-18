@@ -11316,6 +11316,9 @@ html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-
 .aleta-ssk-merah { border-left-color: #b42318; }
 .aleta-ssk-sumber { width: 100%; box-sizing: border-box; }
 .aleta-ssk-beda summary { cursor: pointer; font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+/* Panel sempit (HP, laptop kecil): label keadaan yang panjang membungkus, tidak terpotong di tepi kanan. */
+.aleta-ssk .aleta-abt-label { white-space: normal; overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
+.aleta-ssk .aleta-sdg-ruas, .aleta-ssk .aleta-sdg-alasan { min-width: 0; max-width: 100%; }
 
 /* ==========================================================================
    V2 LAYAR (18 Okt 2026) - PANEL MENYESUAIKAN LAPTOP KECIL SAMPAI TV
