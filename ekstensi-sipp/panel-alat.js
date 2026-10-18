@@ -9172,7 +9172,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
     "Penetapan Ahli Waris",
     "",
     "[01] [Kabul] PAW - Ahli Waris Anak Kandung (Suami-Istri dan Orang Tua Pewaris Telah Meninggal)",
-    "satu susunan ahli waris (anak kandung) - susunan lain belum ada"
+    "varian: [01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis)" // I22 18 Okt: susunan lain kini ada ([01] = anak kandung saja)
   ),
   "penetapan ahli waris|tidak dapat diterima": alatBarisPutusanLain("paw", "Penetapan Ahli Waris", "Tidak Dapat Diterima", "[99] [NO] PAW - Permohonan Kabur (Obscuur Libel)"),
   "penetapan ahli waris|tidak dapat diterima|sema-1-2022": alatBarisPutusanLain(
@@ -9741,6 +9741,29 @@ Object.assign(ALAT_PETA_BAWAAN, {
 });
 for (const kunci of ["penguasaan anak", "penguasaan anak|dikabulkan"]) alatTambahVarianPeta(kunci, [ALAT_PGN_I20.dialihkan, ALAT_PGN_I20.kabulSebagian]);
 /* === AKHIR I20 === */
+
+/* === I22 18 Okt === */
+/**
+ * PUTUSAN JAWABAN B 18 Okt (paket ABT abt-putusan-jawaban-b-derry dan -b2-derry; peta: i22-putusan-jawaban-18okt-b/PEMETAAN-ALETA.md): PAW kabul dengan susunan ahli waris DINAMIS
+ * [01b] (pasangan, anak, ayah, ibu; isian 9701-9704, 9718; pencairan dana lewat 9700), itsbat kontensius kabul dengan pencairan dana (Taspen, BPJS, bank) [01c] (isian 9719),
+ * asal usul anak kabul anak sah dari perkawinan tercatat [01], dan cerai gugat kumulasi nafkah istri (madliyah, iddah, mut'ah): [02c] kontradiktoir / [01d] verstek.
+ * Keadaan baru (lib/keadaan-putusan.ts): susunan-ahli-waris, pencairan-dana, anak-sah-perkawinan-tercatat, kumulasi-nafkah-istri(-verstek). Pencairan dana dan nafkah istri
+ * dibaca bot dari petitum; susunan ahli waris dan anak sah perkawinan tercatat tidak tersimpan di SIPP (saklar, pilih manual). Kolom: [kunci, jenis blangko, jenisAsli, statusAsli, berkas, catatan].
+ */
+const ALAT_BARIS_I22 = [
+  ["penetapan ahli waris|dikabulkan|susunan-ahli-waris", "paw", "Penetapan Ahli Waris", "Dikabulkan", "[01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis)", "dipilih manual: susunan ahli waris dinamis (isian 9701-9704, 9718; pencairan dana lewat 9700); [01] = anak kandung saja"],
+  ["itsbat nikah|dikabulkan|pencairan-dana", "ink", "Itsbat Nikah Kontensius", "Dikabulkan", "[01c] [Kabul] IN Kontensius - Pasangan Meninggal, Pencairan Dana (Taspen, BPJS, Bank)", "keadaan: petitum memohon pencairan dana (BPJS, Taspen, bank, tabungan); isian 9719"],
+  ["asal usul anak|dikabulkan|anak-sah-perkawinan-tercatat", "aua", "Asal Usul Anak", "Dikabulkan", "[01] [Kabul] AUA - Anak Sah dari Perkawinan Tercatat, Belum Punya Akta Kelahiran", "dipilih manual: anak sah dari perkawinan tercatat yang belum punya akta kelahiran"],
+  ["cerai gugat|dikabulkan|kumulasi-nafkah-istri", "cg", "Cerai Gugat", "Dikabulkan", "[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir", "keadaan: petitum memuat nafkah madliyah / iddah / mut'ah, Tergugat hadir"],
+  ["cerai gugat|dikabulkan|kumulasi-nafkah-istri-verstek", "cg", "Cerai Gugat", "Dikabulkan", "[01d] [Kabul Verstek] Cerai (Format Lengkap) - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah)", "keadaan: petitum memuat nafkah madliyah / iddah / mut'ah, Tergugat tidak pernah hadir (verstek)"],
+];
+for (const [kunci, jenis, jenisAsli, statusAsli, berkas, catatan] of ALAT_BARIS_I22) {
+  if (jenis === "cg" || jenis === "ct") ALAT_PETA_BAWAAN[kunci] = alatBarisStatusCerai(jenisAsli, statusAsli, berkas, catatan);
+  else ALAT_PETA_BAWAAN[kunci] = alatBarisPutusanLain(jenis, jenisAsli, statusAsli, berkas, catatan);
+}
+alatTambahVarianPeta("cerai gugat|dikabulkan", ["[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir"]);
+/* === AKHIR I22 === */
+
 
 
 

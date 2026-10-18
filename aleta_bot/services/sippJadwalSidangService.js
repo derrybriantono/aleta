@@ -361,6 +361,8 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
   const petaTergugatPerempuan = bahanVarian.tergugatPerempuan || {};
   const petaAmarRekonvensi = bahanVarian.amarRekonvensi || {};
   const petaKabulSebagian = bahanVarian.kabulSebagian || {};
+  const petaPencairanDana = bahanVarian.pencairanDana || {};
+  const petaNafkahIstri = bahanVarian.kumulasiNafkahIstri || {};
   /* === AKHIR I7 === */
 
   /* === 12OKT-B === */
@@ -522,6 +524,9 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       amarRekonvensi: petaAmarRekonvensi[String(row.perkaraId)] || "",
       // I20 18 Okt: dikabulkan untuk sebagian menurut amar (true/false); null = bukan gugatan anak / amar belum ada / tidak terbaca.
       dikabulkanSebagian: petaKabulSebagian[String(row.perkaraId)] === undefined ? null : petaKabulSebagian[String(row.perkaraId)],
+      // I22 18 Okt: petitum memohon pencairan dana (PAW, itsbat kontensius) / nafkah istri (cerai gugat); null = bukan jenis itu / petitum tidak terbaca.
+      pencairanDana: petaPencairanDana[String(row.perkaraId)] === undefined ? null : petaPencairanDana[String(row.perkaraId)],
+      kumulasiNafkahIstri: petaNafkahIstri[String(row.perkaraId)] === undefined ? null : petaNafkahIstri[String(row.perkaraId)],
       varianPutusanTerbaca: !gagal.has("varian-putusan"),
       // Saksi yang DIAJUKAN tiap sisi - bukan yang sudah diperiksa. Dipakai
       // penanda "Saksi P / Saksi T" di daftar.
@@ -2253,9 +2258,11 @@ function caraRelaas(ketTemu) {
  *                      rekonvensi sebagai ruas tersendiri; portal menimbang "Mengabulkan" di potongan itu (lib/keadaan-putusan.ts).
  *   kabulSebagian      gugatan hak asuh / penguasaan anak / nafkah anak: true bila amar putusan memuat "untuk sebagian" atau "selebihnya" (I20 18 Okt: dikabulkan
  *                      untuk sebagian - SIPP tidak menyimpannya sebagai status); false bila amar terbaca tanpa kata itu; tidak ada bila amar kosong / belum putus.
- * Tiga kueri baca-saja berparameter, masing-masing hanya bila ada perkaranya; gagal salah satunya tidak menjatuhkan yang lain.
+ *   pencairanDana      penetapan ahli waris dan itsbat nikah kontensius: true bila petitum memuat BPJS / Taspen / bank / tabungan / pencairan (I22 18 Okt, ketepatan sedang).
+ *   kumulasiNafkahIstri cerai gugat: true bila petitum memuat nafkah madliyah / iddah / mut'ah (I22 18 Okt, ketepatan sedang). Kolom perkara.petitum kosong = false.
+ * Lima kueri baca-saja berparameter, masing-masing hanya bila ada perkaranya; gagal salah satunya tidak menjatuhkan yang lain.
  *
- * @returns {Promise<{tergugatPerempuan: Record<string, boolean>, amarRekonvensi: Record<string, string>, kabulSebagian: Record<string, boolean>}>}
+ * @returns {Promise<{tergugatPerempuan: Record<string, boolean>, amarRekonvensi: Record<string, string>, kabulSebagian: Record<string, boolean>, pencairanDana: Record<string, boolean>, kumulasiNafkahIstri: Record<string, boolean>}>}
  */
 async function bahanVarianPutusan(rows = []) {
   const daftar = Array.isArray(rows) ? rows : [];
@@ -2277,7 +2284,13 @@ async function bahanVarianPutusan(rows = []) {
     const j = String(r.jenisPerkara || "").toLowerCase();
     return j.includes("penguasaan anak") || j.includes("hak asuh") || j.includes("nafkah anak") || (j.includes("lain-lain") && /\/pdt\.g\//i.test(String(r.nomorPerkara || "")));
   });
-  const hasil = { tergugatPerempuan: {}, amarRekonvensi: {}, kabulSebagian: {} };
+  // I22 18 Okt: petitum pencairan dana (PAW, itsbat kontensius) dan nafkah istri (cerai gugat).
+  const dana = unik((r) => {
+    const j = String(r.jenisPerkara || "").toLowerCase();
+    return j.includes("ahli waris") || j.includes("p3hp") || ((j.includes("istbat") || j.includes("itsbat") || j.includes("pengesahan perkawinan")) && /\/pdt\.g\//i.test(String(r.nomorPerkara || "")));
+  });
+  const nafkahIstri = unik((r) => String(r.jenisPerkara || "").toLowerCase().includes("cerai gugat"));
+  const hasil = { tergugatPerempuan: {}, amarRekonvensi: {}, kabulSebagian: {}, pencairanDana: {}, kumulasiNafkahIstri: {} };
   const kerja = [];
   if (hakAsuh.length) {
     kerja.push(
@@ -2333,6 +2346,19 @@ async function bahanVarianPutusan(rows = []) {
       })()
     );
   }
+  const petitumBendera = (daftar, pola, simpan) =>
+    kerja.push(
+      (async () => {
+        const isian = daftar.map(() => "?").join(", ");
+        const baris = await runQuery(
+          `SELECT p.perkara_id AS perkaraId, (LOWER(p.petitum) REGEXP '${pola}') AS ya FROM perkara p WHERE p.perkara_id IN (${isian})`,
+          daftar
+        );
+        for (const b of Array.isArray(baris) ? baris : []) simpan[String(b.perkaraId)] = Number(b.ya) === 1;
+      })()
+    );
+  if (dana.length) petitumBendera(dana, "bpjs|taspen|bank|tabungan|pencairan", hasil.pencairanDana);
+  if (nafkahIstri.length) petitumBendera(nafkahIstri, "madliyah|madhiyah|iddah|mut.?ah", hasil.kumulasiNafkahIstri);
   const selesai = await Promise.allSettled(kerja);
   if (kerja.length && selesai.every((x) => x.status === "rejected")) throw selesai[0].reason;
   return hasil;

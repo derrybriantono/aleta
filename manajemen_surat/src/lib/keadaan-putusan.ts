@@ -42,6 +42,11 @@
  *   dikabulkan-sebagian              putusan dikabulkan UNTUK SEBAGIAN (amar "untuk sebagian" / "selain dan selebihnya", atau saklar `dikabulkanSebagian`) -> baris petanya
  *                                    "<jenis>|dikabulkan sebagian" (penguasaan anak [02]/[02b], nafkah anak [02]/[02b]); status SIPP tetap "Dikabulkan" (I20 18 Okt)
  *   dialihkan                        penguasaan anak dialihkan (pemindahan hak asuh) -> [01d]; hanya dari saklar `penguasaanDialihkan` (pilih manual) (I20)
+ *   susunan-ahli-waris               penetapan ahli waris kabul dengan susunan ahli waris dinamis (pasangan, anak, ayah, ibu) -> [01b] (I22 18 Okt); saklar `susunanAhliWaris`, pilih manual
+ *   pencairan-dana                   itsbat kontensius yang petitumnya juga memohon pencairan dana (BPJS, Taspen, bank, tabungan) -> [01c] (I22); bahan: `pencairanDana`
+ *                                    (bot membaca petitum) atau saklar
+ *   anak-sah-perkawinan-tercatat     asal usul anak kabul, anak sah dari perkawinan tercatat yang belum punya akta kelahiran -> [01] baru (I22); saklar, pilih manual
+ *   kumulasi-nafkah-istri(-verstek)  cerai gugat yang petitumnya memuat nafkah madliyah / iddah / mut'ah -> [02c] kontradiktoir / [01d] verstek (I22); bahan: `kumulasiNafkahIstri`
  *   nikah-sesudah-2019-tidak-dicatat / poligami-sirri-atau-terikat / terikat-perkawinan-lain
  *                                    itsbat nikah (Pdt.P): NO [99d] / NO [99c] / tolak alternatif [03c] (I19; saklar `alasanItsbat`, pilih manual)
  *
@@ -89,7 +94,13 @@ export type KodeKeadaanPutusan =
   | "terikat-perkawinan-lain"
   // I20 18 Okt (penguasaan anak 6b revisi, nafkah anak 6c): lihat daftar di kepala berkas.
   | "dikabulkan-sebagian"
-  | "dialihkan";
+  | "dialihkan"
+  // I22 18 Okt (paket abt-putusan-jawaban-b/-b2-derry): lihat daftar di kepala berkas.
+  | "susunan-ahli-waris"
+  | "pencairan-dana"
+  | "anak-sah-perkawinan-tercatat"
+  | "kumulasi-nafkah-istri"
+  | "kumulasi-nafkah-istri-verstek";
 
 export type MasukanKeadaanPutusan = {
   jenisPerkara?: unknown;
@@ -141,6 +152,12 @@ export type MasukanKeadaanPutusan = {
   dikabulkanSebagian?: unknown;
   /** I20: penguasaan anak dialihkan ([01d]) - saklar tegas (pilih manual). */
   penguasaanDialihkan?: unknown;
+  /** I22 18 Okt: PAW dengan susunan ahli waris dinamis (saklar), AUA anak sah dari perkawinan tercatat (saklar). */
+  susunanAhliWaris?: unknown;
+  anakSahPerkawinanTercatat?: unknown;
+  /** I22: petitum memohon pencairan dana (BPJS, Taspen, bank, tabungan) dan petitum cerai gugat memuat nafkah madliyah / iddah / mut'ah - bot membaca petitum; saklar boleh menimpa. */
+  pencairanDana?: unknown;
+  kumulasiNafkahIstri?: unknown;
 };
 
 const angka = (x: unknown): number | null => {
@@ -274,6 +291,8 @@ export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
   }
   // I17 18 Okt: itsbat kontensius yang diputus verstek didahulukan atas "kontensius" ([01b] / [03b] folder 2a).
   if (hasil.includes("kontensius") && verstekAkhir) hasil.splice(hasil.indexOf("kontensius"), 0, "kontensius-verstek");
+  // I22 18 Okt: itsbat kontensius dengan petitum pencairan dana -> [01c]; sesudah "kontensius-verstek" (verstek memakai [01b]) dan sebelum "kontensius".
+  if (hasil.includes("kontensius") && m.pencairanDana === true) hasil.splice(hasil.indexOf("kontensius"), 0, "pencairan-dana");
   // I17 18 Okt: keadaan gugatan (cabut sesudah jawaban, NO formil, alamat T tidak diketahui, kumulasi). Hanya untuk gugatan: cerai, HB, waris, hak asuh
   // (369 Pdt.G / 349), pembatalan, wasiat, itsbat kontensius - permohonan (Pdt.P) tidak punya jawaban Tergugat.
   const kumulasiKode = kodeKumulasiKeadaan(m.kumulasi);
@@ -300,6 +319,10 @@ export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
     if (m.dikabulkanSebagian === true || (m.dikabulkanSebagian === undefined && kabulSebagianDariAmar(m.amarPutusan))) awalan.push("dikabulkan-sebagian");
   }
   if (j.includes("penguasaan anak") && m.penguasaanDialihkan === true) awalan.push("dialihkan");
+  // I22 18 Okt: PAW susunan dinamis, AUA anak sah perkawinan tercatat, cerai gugat kumulasi nafkah istri; hanya dari penanda (bot membaca petitum / saklar).
+  if ((j.includes("ahli waris") || j.includes("p3hp")) && m.susunanAhliWaris === true) awalan.push("susunan-ahli-waris");
+  if ((j.includes("asal usul") || j.includes("asal-usul")) && m.anakSahPerkawinanTercatat === true) awalan.push("anak-sah-perkawinan-tercatat");
+  if (j.includes("cerai gugat") && m.kumulasiNafkahIstri === true) awalan.push(verstekAkhir ? "kumulasi-nafkah-istri-verstek" : "kumulasi-nafkah-istri");
   if (jenisItsbat(j) && !hasil.includes("kontensius")) {
     const alasan = kecil(m.alasanItsbat);
     if (alasan === "nikah-sesudah-2019-tidak-dicatat" || alasan === "poligami-sirri-atau-terikat" || alasan === "terikat-perkawinan-lain") awalan.push(alasan);

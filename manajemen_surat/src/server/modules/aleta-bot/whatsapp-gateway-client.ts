@@ -5301,6 +5301,9 @@ export type UnggahMassalPutusanBot = {
   amarRekonvensi?: string;
   /** I20 18 Okt: dikabulkan untuk sebagian menurut amar (hak asuh, penguasaan anak, nafkah anak); null = tidak diketahui. */
   dikabulkanSebagian?: boolean | null;
+  /** I22 18 Okt: petitum memohon pencairan dana (PAW, itsbat kontensius) / nafkah istri (cerai gugat); null = tidak diketahui. */
+  pencairanDana?: boolean | null;
+  kumulasiNafkahIstri?: boolean | null;
 };
 export type UnggahMassalTertahanBot = { perkaraId: string; nomorPerkara: string; tanggalSidang: string; majelis: string[] };
 export type UnggahMassalBasBot = {

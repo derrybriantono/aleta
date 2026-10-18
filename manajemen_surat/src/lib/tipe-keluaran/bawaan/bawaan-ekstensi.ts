@@ -107,7 +107,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "cerai gugat|dikabulkan",
       nilai: "[02] [Kabul] CG - F",
-      data: { jenisAsli: "Cerai Gugat", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "varian: [01c] [Kabul] Cerai (Format Lengkap) - T Tidak Hadir Setelah Mediasi; [02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F; [02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar); [02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban" },
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "varian: [01c] [Kabul] Cerai (Format Lengkap) - T Tidak Hadir Setelah Mediasi; [02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F; [02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar); [02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban; [02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir" },
       urutan: 8,
     },
     {
@@ -391,7 +391,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "penetapan ahli waris",
       nilai: "[01] [Kabul] PAW - Ahli Waris Anak Kandung (Suami-Istri dan Orang Tua Pewaris Telah Meninggal)",
-      data: { jenisAsli: "Penetapan Ahli Waris", blangko: "Putusan Penetapan Ahli Waris (P3HP)", blangkoLain: ["PAW/P3HP - Putusan"], catatan: "satu susunan ahli waris (anak kandung) - susunan lain belum ada" },
+      data: { jenisAsli: "Penetapan Ahli Waris", blangko: "Putusan Penetapan Ahli Waris (P3HP)", blangkoLain: ["PAW/P3HP - Putusan"], catatan: "varian: [01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis)" },
       urutan: 55,
     },
     {
@@ -1838,6 +1838,37 @@ export const CERMIN_EKSTENSI = {
       nilai: "[01d] [Kabul] Penguasaan Anak - Kontradiktoir - Penguasaan Dialihkan",
       data: { jenisAsli: "Penguasaan Anak", statusAsli: "Dikabulkan", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "dipilih manual: penguasaan anak dialihkan (pemindahan hak asuh)" },
       urutan: 294,
+    },
+    /* === I22 18 Okt === cermin blok I22 panel-alat.js (PAW susunan dinamis, itsbat kontensius pencairan dana, AUA anak sah, cerai gugat kumulasi nafkah istri) */
+    {
+      kunci: "penetapan ahli waris|dikabulkan|susunan-ahli-waris",
+      nilai: "[01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis)",
+      data: { jenisAsli: "Penetapan Ahli Waris", statusAsli: "Dikabulkan", blangko: "Putusan Penetapan Ahli Waris (P3HP)", blangkoLain: ["PAW/P3HP - Putusan"], catatan: "dipilih manual: susunan ahli waris dinamis (isian 9701-9704, 9718; pencairan dana lewat 9700); [01] = anak kandung saja" },
+      urutan: 295,
+    },
+    {
+      kunci: "itsbat nikah|dikabulkan|pencairan-dana",
+      nilai: "[01c] [Kabul] IN Kontensius - Pasangan Meninggal, Pencairan Dana (Taspen, BPJS, Bank)",
+      data: { jenisAsli: "Itsbat Nikah Kontensius", statusAsli: "Dikabulkan", blangko: "Putusan Itsbat Nikah Kontensius", blangkoLain: ["IN Kontensius - Putusan"], catatan: "keadaan: petitum memohon pencairan dana (BPJS, Taspen, bank, tabungan); isian 9719" },
+      urutan: 296,
+    },
+    {
+      kunci: "asal usul anak|dikabulkan|anak-sah-perkawinan-tercatat",
+      nilai: "[01] [Kabul] AUA - Anak Sah dari Perkawinan Tercatat, Belum Punya Akta Kelahiran",
+      data: { jenisAsli: "Asal Usul Anak", statusAsli: "Dikabulkan", blangko: "Putusan Asal Usul Anak", blangkoLain: ["Asal Usul Anak - Putusan"], catatan: "dipilih manual: anak sah dari perkawinan tercatat yang belum punya akta kelahiran" },
+      urutan: 297,
+    },
+    {
+      kunci: "cerai gugat|dikabulkan|kumulasi-nafkah-istri",
+      nilai: "[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "keadaan: petitum memuat nafkah madliyah / iddah / mut'ah, Tergugat hadir" },
+      urutan: 298,
+    },
+    {
+      kunci: "cerai gugat|dikabulkan|kumulasi-nafkah-istri-verstek",
+      nilai: "[01d] [Kabul Verstek] Cerai (Format Lengkap) - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah)",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "keadaan: petitum memuat nafkah madliyah / iddah / mut'ah, Tergugat tidak pernah hadir (verstek)" },
+      urutan: 299,
     },
   ],
   "putusan.padanan-jenis": [

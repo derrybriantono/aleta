@@ -229,6 +229,11 @@ function buatLayanan(depsMasuk) {
         // I20 18 Okt: dikabulkan untuk sebagian menurut amar (true/false); null = tidak diketahui.
         const sb = bahanVarian && bahanVarian.kabulSebagian ? bahanVarian.kabulSebagian[x.perkaraId] : undefined;
         x.dikabulkanSebagian = sb === undefined ? null : sb;
+        // I22 18 Okt: petitum pencairan dana / nafkah istri (true/false/null).
+        const pd = bahanVarian && bahanVarian.pencairanDana ? bahanVarian.pencairanDana[x.perkaraId] : undefined;
+        x.pencairanDana = pd === undefined ? null : pd;
+        const ni = bahanVarian && bahanVarian.kumulasiNafkahIstri ? bahanVarian.kumulasiNafkahIstri[x.perkaraId] : undefined;
+        x.kumulasiNafkahIstri = ni === undefined ? null : ni;
       }
     }
 

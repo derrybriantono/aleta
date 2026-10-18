@@ -156,6 +156,8 @@ function barisPutusan(x: UnggahMassalPutusanBot, namaAkun: string): BarisUnggahM
       amarPutusan: x.amarRekonvensi,
       kumulasi: x.kumulasi, // I17 18 Okt: kode keadaan kumulasi-itsbat / kumulasi-hak-asuh
       ...(typeof x.dikabulkanSebagian === "boolean" ? { dikabulkanSebagian: x.dikabulkanSebagian } : {}), // I20 18 Okt: dikabulkan untuk sebagian (amar)
+      ...(typeof x.pencairanDana === "boolean" ? { pencairanDana: x.pencairanDana } : {}), // I22 18 Okt: petitum pencairan dana / nafkah istri
+      ...(typeof x.kumulasiNafkahIstri === "boolean" ? { kumulasiNafkahIstri: x.kumulasiNafkahIstri } : {}),
     }),
   };
 }
