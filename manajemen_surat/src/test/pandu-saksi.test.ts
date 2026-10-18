@@ -265,6 +265,10 @@ describe("panduan pertanyaan saksi - tanpa contoh jawaban dan tanpa kode tampil"
     expect(teksPanduan("Berapa umur anak bernama #8602# sekarang ?", konteks)).toBe("Berapa umur anak yang dimaksud sekarang?");
     expect(teksPanduan("Apakah saksi mengetahui maksud {pihakSaksi} menghadirkan saksi ?", konteks)).toBe("Apakah saksi mengetahui maksud Penggugat menghadirkan saksi?");
     expect(teksPanduan("kode #9999# asing {tidakAda}", konteks)).not.toMatch(/#|\{/);
+    const waris = { katalogKunci: "kewarisan", satu: "Penggugat", dua: "Tergugat", pihak: "P" as const };
+    expect(teksPanduan("Apakah saksi kenal dengan #2026# #1025# yang disebut sebagai pewaris dalam perkara ini ?", waris)).toBe(
+      "Apakah saksi kenal dengan almarhum/almarhumah yang disebut sebagai pewaris dalam perkara ini?"
+    );
   });
 });
 

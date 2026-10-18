@@ -128,6 +128,13 @@ const KATA_KODE_KHUSUS: Readonly<Record<string, Readonly<Record<string, string>>
   "permohonan-umum": { "7036": "pihak yang dimohonkan" },
 };
 
+/** Kode yang dibuang (bersama spasi di depannya) pada jenis tertentu: nama pewaris tidak ada di panduan, "almarhum/almarhumah" sudah cukup. */
+const KODE_DIBUANG: Readonly<Record<string, readonly string[]>> = {
+  kewarisan: ["1025"],
+  "kewarisan-tergugat": ["1025"],
+  wasiat: ["1025"],
+};
+
 const KATA_CADANGAN = "yang bersangkutan";
 
 function rapikanTeks(teks: string): string {
@@ -143,7 +150,8 @@ export function teksPanduan(
   konteks: { katalogKunci: string; satu: string; dua: string; pihak: PihakSaksi | "*" }
 ): string {
   const khusus = KATA_KODE_KHUSUS[konteks.katalogKunci] ?? {};
-  const wajar = String(teks).replace(/\b(?:yang\s+)?bernama\s+#\d{4}#/gi, "yang dimaksud");
+  let wajar = String(teks).replace(/\b(?:yang\s+)?bernama\s+#\d{4}#/gi, "yang dimaksud");
+  for (const kode of KODE_DIBUANG[konteks.katalogKunci] ?? []) wajar = wajar.replace(new RegExp(`\\s*#${kode}#`, "g"), "");
   const { mesin } = muatDasar();
   const dihadirkan = konteks.pihak === "T" ? konteks.dua : konteks.satu;
   const lawan = konteks.pihak === "T" ? konteks.satu : konteks.dua;

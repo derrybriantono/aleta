@@ -318,7 +318,7 @@ export function PanduanPemeriksaanSaksiIsi({
     >
       {/* Kepala: apa yang dipandu, dan alat-alatnya */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-[1_1_18rem]">
           <p className="font-semibold">
             {tersedia.judul}
             <span className="font-normal text-muted-foreground"> · {tampilan.judul}</span>
@@ -549,7 +549,7 @@ export function PanduanPemeriksaanSaksiIsi({
         {kedudukan.map((k, urutanPokok) => (
           <section key={k.pokok.id} className="rounded-lg border bg-card" data-pokok={k.pokok.wajib ? "wajib" : "biasa"}>
             <header className="flex flex-wrap items-start gap-2 border-b px-3 py-2">
-              <h6 className="min-w-0 flex-1 font-semibold">
+              <h6 className="min-w-0 flex-[1_1_14rem] font-semibold">
                 {urutanPokok + 1}. {k.pokok.judul}
               </h6>
               {k.pokok.wajib ? (
