@@ -538,9 +538,11 @@
     }
 
     .aleta-cm {
-      width: 348px;
+      /* V2 (18 Okt): lebar dan tinggi ikut pengali layar (1 di laptop, naik di
+         2560/4K/TV). Batas 100vw/72vh menjaganya aman di 1280-1366. */
+      width: calc(348px * var(--aleta-v2-oto, 1));
       max-width: calc(100vw - 24px);
-      max-height: min(72vh, 580px);
+      max-height: min(72vh, calc(580px * var(--aleta-v2-oto, 1)));
       display: flex;
       flex-direction: column;
       background: var(--aleta-latar);
@@ -567,7 +569,7 @@
       row-gap: 2px;
     }
     .aleta-cm-menggeser .aleta-cm-kepala, .aleta-cm-menggeser .aleta-cm-pil { cursor: grabbing; }
-    .aleta-cm-ikon { width: 18px; height: 18px; flex: none; display: block; }
+    .aleta-cm-ikon { width: calc(18px * var(--aleta-v2-oto, 1)); height: calc(18px * var(--aleta-v2-oto, 1)); flex: none; display: block; }
     .aleta-cm-judul { font-weight: 700; white-space: nowrap; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .aleta-cm-peran {
       min-width: 0;
@@ -587,8 +589,8 @@
     select.aleta-cm-peran option { background: var(--aleta-latar); color: var(--aleta-tulisan); }
     .aleta-cm-alat { margin-left: auto; display: inline-flex; gap: 2px; flex: none; }
     .aleta-cm-alat button {
-      width: 26px;
-      height: 26px;
+      width: calc(26px * var(--aleta-v2-oto, 1));
+      height: calc(26px * var(--aleta-v2-oto, 1));
       padding: 0;
       border: 0;
       border-radius: 6px;
@@ -744,7 +746,7 @@
     .aleta-cm-pil:hover { border-color: var(--aleta-merek); }
 
     .aleta-cm-kabar-tutup {
-      max-width: 330px;
+      max-width: min(calc(330px * var(--aleta-v2-oto, 1)), calc(100vw - 24px));
       padding: 10px 12px;
       border: 1px solid var(--aleta-garis-kuat);
       border-radius: 10px;
@@ -762,14 +764,14 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 8px;
-      width: 348px;
+      width: calc(348px * var(--aleta-v2-oto, 1));
       max-width: calc(100vw - 24px);
     }
     .aleta-cmw-tumpuk {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      width: 348px;
+      width: calc(348px * var(--aleta-v2-oto, 1));
       max-width: calc(100vw - 24px);
       max-height: calc(100vh - 96px);
       overflow-y: auto;
@@ -781,12 +783,12 @@
        teratas terpotong di luar jangkauan. */
     .aleta-cmw-tumpuk-klasik {
       margin-bottom: 8px;
-      max-height: max(120px, calc(100vh - min(72vh, 580px) - 40px));
+      max-height: max(120px, calc(100vh - min(72vh, calc(580px * var(--aleta-v2-oto, 1))) - 40px));
     }
     .aleta-cmw-dok .aleta-cmw-tumpuk, .aleta-cmw-dok .aleta-cm, .aleta-cmw-dok .aleta-cmw-kotak { width: 100%; }
     .aleta-cmw-kotak {
       flex: none;
-      width: 348px;
+      width: calc(348px * var(--aleta-v2-oto, 1));
       max-width: calc(100vw - 24px);
       background: var(--aleta-latar);
       border: 1px solid var(--aleta-garis-kuat);
@@ -806,7 +808,7 @@
       user-select: none;
       touch-action: none;
     }
-    .aleta-cmw-kepala .aleta-cm-alat button { width: 26px; height: 26px; }
+    .aleta-cmw-kepala .aleta-cm-alat button { width: calc(26px * var(--aleta-v2-oto, 1)); height: calc(26px * var(--aleta-v2-oto, 1)); }
     .aleta-cmw-isi { display: flex; flex-direction: column; gap: 8px; padding: 9px 12px 10px; }
     .aleta-cmw-ket { color: var(--aleta-tulisan-lembut); font-size: calc(11px * var(--aleta-skala-huruf, 1)); }
     .aleta-cmw-baris { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -869,8 +871,8 @@
     .aleta-cmw-lencana {
       position: relative;
       flex: none;
-      width: 48px;
-      height: 48px;
+      width: calc(48px * var(--aleta-v2-oto, 1));
+      height: calc(48px * var(--aleta-v2-oto, 1));
       padding: 3px;
       border: 0;
       border-radius: 50%;
@@ -892,7 +894,7 @@
       background: var(--aleta-latar);
       overflow: hidden;
     }
-    .aleta-cmw-lencana-logo .aleta-cm-ikon { width: 24px; height: 24px; }
+    .aleta-cmw-lencana-logo .aleta-cm-ikon { width: calc(24px * var(--aleta-v2-oto, 1)); height: calc(24px * var(--aleta-v2-oto, 1)); }
     .aleta-cmw-lencana-angka {
       position: absolute;
       top: -4px;

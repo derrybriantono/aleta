@@ -18535,6 +18535,24 @@ function t7PilihTab(panel, kunci, simpan) {
   // R 11 Okt: baris atas (Langkah/Perkara berikutnya) milik tab utama saja.
   if (typeof r11SetelTabUtama === "function") r11SetelTabUtama(panel);
   if (simpan) t7Tulis({ [T7_KUNCI_TAB]: kunci });
+  t7GulirTabKeTampak(panel);
+}
+
+/**
+ * V2 (18 Okt, layar kecil): bilah tab dapat digulir ke samping di layar sempit.
+ * Tab yang baru dipilih digulir ke tengah bilah supaya tidak tersembunyi di
+ * luar tepi - hanya bilahnya yang digulir, halaman SIPP tidak ikut bergerak.
+ */
+function t7GulirTabKeTampak(panel) {
+  try {
+    const bilah = panel.querySelector(".aleta-t7-tabbar");
+    const tab = bilah && bilah.querySelector('.aleta-t7-tab[aria-selected="true"]');
+    if (!bilah || !tab || bilah.scrollWidth <= bilah.clientWidth + 1) return;
+    const tujuan = tab.offsetLeft - Math.max(0, (bilah.clientWidth - tab.offsetWidth) / 2);
+    bilah.scrollLeft = Math.max(0, tujuan);
+  } catch {
+    /* tanpa gulir otomatis, bilah tetap dapat digulir tangan */
+  }
 }
 
 // ─── sipp-2: daftar isi lengket (Baru) ───────────────────────────────────────
@@ -19704,7 +19722,7 @@ function t7SetelSembul() {
   if (!akar) return;
   const lebarLayar = Number(window.innerWidth) || 0;
   let kanan = 0;
-  if (akar.getAttribute(T7_ATRIBUT_LABUH) === "kanan" && lebarLayar >= 1100) {
+  if (akar.getAttribute(T7_ATRIBUT_LABUH) === "kanan" && lebarLayar >= 900) {
     const panel = document.getElementById(PENANDA);
     let lebarPanel = 0;
     try {
