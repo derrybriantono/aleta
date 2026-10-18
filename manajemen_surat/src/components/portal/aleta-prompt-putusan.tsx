@@ -356,8 +356,9 @@ function AletaPromptPutusanInti({ nomorPerkara }: { nomorPerkara: string }) {
         <p className="text-sm text-muted-foreground">
           Menyusun perintah AI yang lengkap - draf pertimbangan, amar, putusan, analisis pembuktian,
           ringkasan, dan lainnya. Jadwal sidang, mediasi, saksi, kuasa, dan nama berkas terisi sendiri
-          dari SIPP, dengan identitas pihak disamarkan menjadi inisial; arah putusan dan blangko diisi
-          sendiri.
+          dari SIPP; tujuan yang membuat putusan memuat nama dan alamat lengkap pihak (NIK dan telepon
+          tetap ditutup), tujuan lain menyamarkan nama menjadi inisial dan alamat sampai kabupaten/kota.
+          Arah putusan dan blangko diisi sendiri.
         </p>
         <Button type="button" onClick={ambil} disabled={keadaan === "muat"}>
           {keadaan === "muat" ? "Mengambil bahan…" : "Ambil bahan dari SIPP"}

@@ -264,10 +264,14 @@ describe("penyamaran identitas", () => {
     });
   }
 
-  it("alamat hanya sampai kabupaten/kota", () => {
-    const teks = susunPromptAi(bahan, pilihan, masukan({ pakaiProject: true, tujuan: "ringkasan" }), profilEfektif(null));
-    expect(teks).not.toContain("Jl. Mawar");
-    expect(teks).toContain("Kab. Donggala");
+  it("tujuan selain putusan: alamat hanya sampai kabupaten/kota", () => {
+    for (const pakai of [false, true]) {
+      for (const t of ["ringkasan", "analisa-sebelum", "cek-blangko"] as const) {
+        const teks = susunPromptAi(bahan, pilihan, masukan({ pakaiProject: pakai, tujuan: t }), profilEfektif(null));
+        expect(teks, `${t} ${pakai}`).not.toContain("Jl. Mawar");
+        expect(teks, `${t} ${pakai}`).toContain("Kab. Donggala");
+      }
+    }
   });
 
   it("inisialNama dan tutupDataPribadi", () => {
@@ -328,6 +332,22 @@ describe("tujuan membuat putusan: nama asli, NIK tertutup, instruksi hapus", () 
 
   for (const pakai of [false, true]) {
     for (const t of TUJUAN_PUTUSAN) {
+      it(`${t} (Project: ${pakai}) menulis alamat pihak LENGKAP, NIK/telepon pada alamat tetap tertutup`, () => {
+        const bahanAlamat: BahanPrompt = {
+          ...bahan,
+          pihak: {
+            penggugat: [{ nama: "Aminah binti Salim", alamat: `Jl. Mawar No. 5 RT 002 RW 003, Kab. Donggala, Sulawesi Tengah (NIK ${nik}, telp 0812-3456-7890)` }],
+            tergugat: [{ nama: "Hamid bin Yusuf", alamat: "Dusun II Desa Labuan, Kec. Banawa, Kab. Donggala" }],
+          },
+        };
+        const teks = susunPromptAi(bahanAlamat, pilihan, masukan({ pakaiProject: pakai, tujuan: t }), profilEfektif(null));
+        expect(teks).toContain("Jl. Mawar No. 5 RT 002 RW 003, Kab. Donggala, Sulawesi Tengah");
+        expect(teks).toContain("Dusun II Desa Labuan, Kec. Banawa, Kab. Donggala");
+        expect(teks).not.toContain(nik);
+        expect(teks).not.toMatch(/0812/);
+        expect(teks).toContain(INSTRUKSI_DATA_PRIBADI);
+      });
+
       it(`${t} (Project: ${pakai}) memuat nama asli, menutup NIK, dan menyertakan instruksi`, () => {
         const teks = susunPromptAi(
           bahanNik,

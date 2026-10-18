@@ -24,6 +24,8 @@
  *
  * Keputusan anonimisasi yang berlaku: nama pihak menjadi inisial, NIK dan
  * nomor telepon tidak pernah ikut, alamat paling jauh sampai kabupaten/kota.
+ * Pengecualian (keputusan 118): tujuan yang MEMBUAT PUTUSAN memakai nama asli
+ * dan alamat LENGKAP; NIK dan telepon tetap ditutup.
  * Penyamaran berlaku juga atas teks yang DITEMPEL petugas (gugatan, jawaban,
  * keterangan saksi) - nama pihak di dalamnya diganti inisial dan NIK
  * ditutup, tanpa menyentuh susunan kalimatnya.
@@ -567,16 +569,17 @@ export const CATATAN_HAPUS_DATA =
   "AI hanya bisa diminta; untuk menghapus data, hapus percakapan di aplikasi AI setelah selesai.";
 
 /**
- * Bahan untuk tujuan membuat putusan: nama asli dipertahankan, alamat hanya
- * sampai kabupaten/kota, NIK/telepon pada teks bebas ditutup.
+ * Bahan untuk tujuan membuat putusan: nama asli dan alamat LENGKAP
+ * dipertahankan (putusan memuat alamat pihak); NIK/telepon yang terselip pada
+ * alamat maupun teks bebas ditutup.
  */
 export function bahanTanpaPribadi(bahan: BahanPrompt): BahanPrompt {
   const tutup = (t: string) => tutupDataPribadi(t, "placeholder");
   return {
     ...bahan,
     pihak: {
-      penggugat: bahan.pihak.penggugat.map((x) => ({ ...x, alamat: kabupatenDari(x.alamat) })),
-      tergugat: bahan.pihak.tergugat.map((x) => ({ ...x, alamat: kabupatenDari(x.alamat) })),
+      penggugat: bahan.pihak.penggugat.map((x) => ({ ...x, alamat: tutup(String(x.alamat ?? "")) })),
+      tergugat: bahan.pihak.tergugat.map((x) => ({ ...x, alamat: tutup(String(x.alamat ?? "")) })),
     },
     sidang: bahan.sidang.map((s) => ({ ...s, agenda: tutup(s.agenda), alasanDitunda: tutup(s.alasanDitunda) })),
     mediasi: { ...bahan.mediasi, isiKesepakatan: tutup(bahan.mediasi.isiKesepakatan) },
