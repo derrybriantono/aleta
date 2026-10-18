@@ -61,6 +61,20 @@ function alasanJejak(hasil) {
   return `${kode}${nasib}${pada}${teknis ? `: ${teknis}` : ""}`.slice(0, 160);
 }
 
+/**
+ * e-Doc penetapan ikrar (ikrarEdocService) SESUDAH form ikrar terisi. Terpisah dari
+ * transaksi form (berkas tidak ikut transaksi basis data) dan tidak pernah membatalkan
+ * form yang sudah benar: gagalnya dilaporkan di `edocIkrar`, bukan sebagai galat alur.
+ */
+async function unggahEdocIkrar(deps, p) {
+  try {
+    const edoc = (deps && deps.edocIkrar) || require("./ikrarEdocService");
+    return await edoc.unggahPenetapanIkrar(p);
+  } catch (galat) {
+    return { ok: false, alasan: "galat_edoc_ikrar", pesan: bersih(galat && galat.message).slice(0, 160) };
+  }
+}
+
 function rencanaTerbaca(rencana, kering) {
   if (!kering) return undefined;
   return rencana.langkah.map((x) => ({
@@ -193,11 +207,28 @@ async function jalankanHasilSidang(jalan, badan = {}, konteks = {}, deps = layan
     langkah: rencana.langkah,
   });
 
+  // Putus ikrar: form ikrar sudah tertulis (satu transaksi) -> penetapan ikrar diunggah sebagai e-Doc.
+  let edocIkrar;
+  if (rencana.jenis === "putus-ikrar" && rencana.formIkrar && rencana.formIkrar.ok === true) {
+    edocIkrar = kering
+      ? { ok: true, kering: true, catatan: "Penetapan ikrar diunggah sebagai e-Doc sesudah form ikrar terisi." }
+      : hasil.ok
+        ? await unggahEdocIkrar(deps, {
+            jadwalId: badan.jadwalId,
+            perkaraId: rencana.perkara && rencana.perkara.perkaraId,
+            operator,
+            ip,
+            kering: false,
+          })
+        : undefined;
+  }
+
   const body = {
     ...hasil,
     jenis: rencana.jenis,
     hanyaJadwal: jalan === "putus" ? rencana.hanyaJadwal === true : undefined,
     formIkrar: rencana.formIkrar,
+    edocIkrar,
     perkara: rencana.perkara,
     atasNama: rencana.atasNama,
     operator,
@@ -236,6 +267,28 @@ async function jalankanIsiIkrar(badan = {}, konteks = {}, deps = layananBawaan()
   if (!kering && jeda && typeof jeda.jeda === "function") await jeda.jeda("simpan", { kering });
 
   const rencana = await ikrarLayanan.susunRencanaIsiIkrar({ jadwalId: badan.jadwalId, ip });
+  if (rencana && rencana.ok === false && rencana.alasan === "form_ikrar_sudah_terisi") {
+    // Form sudah terisi (mis. oleh petugas di SIPP): yang tersisa hanya e-Doc penetapan ikrar.
+    const edocIkrar = await unggahEdocIkrar(deps, {
+      jadwalId: badan.jadwalId,
+      perkaraId: badan.perkaraId,
+      operator,
+      ip,
+      kering,
+    });
+    const body = {
+      ok: edocIkrar.ok === true,
+      jenis: "edoc-ikrar",
+      formSudahTerisi: true,
+      edocIkrar,
+      andaian: [],
+    };
+    if (!body.ok) {
+      body.kode = edocIkrar.alasan;
+      body.error = edocIkrar.pesan || "e-Doc penetapan ikrar tidak dapat diunggah.";
+    }
+    return { status: body.ok ? 200 : 409, body };
+  }
   if (!rencana || !rencana.ok) {
     const tolak = rencana || { ok: false, alasan: "ditolak" };
     void jejak.catat({
@@ -269,11 +322,23 @@ async function jalankanIsiIkrar(badan = {}, konteks = {}, deps = layananBawaan()
     alasan: alasanJejak(hasil),
     langkah: rencana.langkah,
   });
+  const edocIkrar = hasil.ok
+    ? kering
+      ? { ok: true, kering: true, catatan: "Penetapan ikrar diunggah sebagai e-Doc sesudah form ikrar terisi." }
+      : await unggahEdocIkrar(deps, {
+          jadwalId: badan.jadwalId,
+          perkaraId: rencana.perkara && rencana.perkara.perkaraId,
+          operator,
+          ip,
+          kering: false,
+        })
+    : undefined;
   const body = {
     ...hasil,
     jenis: rencana.jenis,
     perkara: rencana.perkara,
     atasNama: rencana.atasNama,
+    edocIkrar,
     tanggalIkrar: rencana.tanggalIkrar,
     batasEnamBulan: rencana.batasEnamBulan,
     andaian: rencana.andaian || [],

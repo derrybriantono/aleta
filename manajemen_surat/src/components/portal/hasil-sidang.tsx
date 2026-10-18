@@ -152,6 +152,8 @@ type Hasil = {
   hanyaJadwal?: boolean;
   /** Pengisian form ikrar talak SIPP yang menyertai putus ikrar (18 Okt 2026). */
   formIkrar?: { ok: boolean; alasan?: string; atasNama?: { username: string; namaLengkap: string }; tanggalIkrar?: string };
+  /** e-Doc penetapan ikrar dari blangko Derry sesudah form ikrar terisi (18 Okt 2026). */
+  edocIkrar?: { ok: boolean; kering?: boolean; nama?: string; pesan?: string; alasan?: string };
 };
 
 type StatusPutusan = { id: number; nama: string; dipakai: number };
@@ -1471,6 +1473,13 @@ export function CatatHasilRingkas({
               {hasil.formIkrar.ok
                 ? `Form ikrar talak di SIPP terisi (tanggal ikrar ${hasil.formIkrar.tanggalIkrar ?? ""}).`
                 : "Form ikrar talak di SIPP belum terisi - lihat catatan di bawah, lalu isi dari baris sidang ini."}
+            </p>
+          ) : null}
+          {modeIkrarPutus && hasil?.edocIkrar && !hasil.edocIkrar.kering ? (
+            <p className="text-xs" data-edoc-ikrar="">
+              {hasil.edocIkrar.ok
+                ? `e-Doc penetapan ikrar terunggah (${hasil.edocIkrar.nama ?? "berkas"}).`
+                : `e-Doc penetapan ikrar BELUM terunggah: ${hasil.edocIkrar.pesan ?? hasil.edocIkrar.alasan ?? "sebab tidak dikenali"} Unggah lewat tombol Isi form ikrar di baris sidang ini.`}
             </p>
           ) : null}
           {hasil?.atasNama ? (
