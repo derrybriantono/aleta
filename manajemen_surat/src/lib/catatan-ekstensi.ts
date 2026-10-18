@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.5",
+    dirilis: "2026-10-18T14:30:00+08:00",
+    judul: "Penetapan ikrar talak dan e-Doc, form ikrar terisi saat perkara dibuka, riwayat login WhatsApp, dan blangko baru dikenali",
+    butir: [
+      "Penetapan ikrar talak kini disusun dari blangko Derry lalu diunggah sebagai e-Doc di SIPP atas akun ketua majelis, supaya penetapan tersimpan di perkara seperti unggahan lewat SIPP dan panitera tidak menyusunnya ulang.",
+      "Form Penetapan Ikrar Talak di SIPP terisi sendiri saat halaman perkara dibuka bila sidang ikrar sudah terlaksana dan form masih kosong, dan menyimpannya mengikuti saklar Penunjukan otomatis (bawaan mati), supaya tidak ada perkara ikrar yang terlewat tanpa form.",
+      "Biaya ikrar di amar penetapan diambil dari biaya perkara yang tercatat pada data satker, bukan lagi dikosongkan, supaya angkanya sama dengan yang diketik petugas dan amar tidak tercetak tanpa nominal.",
+      "Riwayat login e-Court lewat WhatsApp tampil di Sesi e-Court saya khusus bagi Super Admin dan Admin, supaya sesi yang tiba-tiba putus mudah ditelusuri tanpa membuka catatan server.",
+      "ALETA mengenali blangko baru: eksepsi kewenangan, cabut ditolak, itsbat nikah ditolak (NO), PAW dinamis, itsbat pencairan dana, AUA, nafkah istri dan nafkah anak, Penguasaan Anak revisi, BAS verstek, tunda dan NO, serta cabut sesudah jawaban, supaya blangko yang disarankan dan isiannya tepat untuk jenis perkara itu.",
+      "Saklar penyerahan anak pada Penguasaan Anak kini punya tiga pilihan: diminta dalam gugatan, tidak diminta, atau tidak diminta tetapi ditetapkan Hakim karena jabatannya (Buku II 2026); bawaannya tetap mengikuti petitum, supaya amar tidak melampaui tuntutan dan tetap dapat memuat penyerahan yang ditetapkan Hakim.",
+    ],
+  },
+  {
     versi: "1.205.4",
     dirilis: "2026-10-18T10:00:00+08:00",
     judul: "Isi dari SIPP dan Input ke ABT lebih lengkap, tunda dan putus ikrar talak, dan kembaran hanya-baca",
