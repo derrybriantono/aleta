@@ -361,7 +361,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "dispensasi kawin|ditolak",
       nilai: "[03] [Tolak] DK - (Anak P Cewek) Belum Hamil",
-      data: { jenisAsli: "Dispensasi Kawin", statusAsli: "Ditolak", blangko: "Putusan Dispensasi Kawin", blangkoLain: ["Diska/DK - Putusan"] },
+      data: { jenisAsli: "Dispensasi Kawin", statusAsli: "Ditolak", blangko: "Putusan Dispensasi Kawin", blangkoLain: ["Diska/DK - Putusan"], catatan: "varian: [03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran; [03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771); [03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771)" },
       urutan: 50,
     },
     {
@@ -391,7 +391,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "penetapan ahli waris",
       nilai: "[01] [Kabul] PAW - Ahli Waris Anak Kandung (Suami-Istri dan Orang Tua Pewaris Telah Meninggal)",
-      data: { jenisAsli: "Penetapan Ahli Waris", blangko: "Putusan Penetapan Ahli Waris (P3HP)", blangkoLain: ["PAW/P3HP - Putusan"], catatan: "varian: [01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis)" },
+      data: { jenisAsli: "Penetapan Ahli Waris", blangko: "Putusan Penetapan Ahli Waris (P3HP)", blangkoLain: ["PAW/P3HP - Putusan"], catatan: "varian: [01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis); [01c] [Kabul] PAW - Susunan Ahli Waris Lengkap (Cucu Pengganti, Kakek, Nenek, Saudara Seibu - Aul dan Radd Otomatis)" },
       urutan: 55,
     },
     {
@@ -1996,6 +1996,67 @@ export const CERMIN_EKSTENSI = {
       nilai: "[02b] [Kabul Verstek] Hak Asuh dan Nafkah Anak - Anak Belum Mumayyiz",
       data: { jenisAsli: "Lain-Lain", statusAsli: "Dikabulkan", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "keadaan: hak asuh + nafkah anak; Tergugat tidak pernah hadir (verstek)" },
       urutan: 320,
+    },
+    /* === I26 18 Okt === cermin blok I26 panel-alat.js (PAW susunan lengkap [01c], dispensasi kawin ditolak [03a]-[03c], cerai kumulasi itsbat ditolak [03b] / NO poligami sirri [99d]) */
+    {
+      kunci: "penetapan ahli waris|dikabulkan|susunan-ahli-waris-lengkap",
+      nilai: "[01c] [Kabul] PAW - Susunan Ahli Waris Lengkap (Cucu Pengganti, Kakek, Nenek, Saudara Seibu - Aul dan Radd Otomatis)",
+      data: { jenisAsli: "Penetapan Ahli Waris", statusAsli: "Dikabulkan", blangko: "Putusan Penetapan Ahli Waris (P3HP)", blangkoLain: ["PAW/P3HP - Putusan"], catatan: "dipilih manual: ada ahli waris pengganti, kakek, nenek, atau saudara seibu; pembagian 'aul dan radd otomatis" },
+      urutan: 321,
+    },
+    {
+      kunci: "dispensasi kawin|ditolak|anak-laki-laki-pacaran",
+      nilai: "[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran",
+      data: { jenisAsli: "Dispensasi Kawin", statusAsli: "Ditolak", blangko: "Putusan Dispensasi Kawin", blangkoLain: ["Diska/DK - Putusan"], catatan: "dipilih manual: anak laki-laki, calon istri belum hamil dan hanya berpacaran" },
+      urutan: 322,
+    },
+    {
+      kunci: "dispensasi kawin|ditolak|anak-perempuan-alasan-lain",
+      nilai: "[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771)",
+      data: { jenisAsli: "Dispensasi Kawin", statusAsli: "Ditolak", blangko: "Putusan Dispensasi Kawin", blangkoLain: ["Diska/DK - Putusan"], catatan: "dipilih manual: anak perempuan, alasan sangat mendesak selain kehamilan tidak terbukti" },
+      urutan: 323,
+    },
+    {
+      kunci: "dispensasi kawin|ditolak|anak-laki-laki-alasan-lain",
+      nilai: "[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771)",
+      data: { jenisAsli: "Dispensasi Kawin", statusAsli: "Ditolak", blangko: "Putusan Dispensasi Kawin", blangkoLain: ["Diska/DK - Putusan"], catatan: "dipilih manual: anak laki-laki, alasan sangat mendesak selain kehamilan tidak terbukti" },
+      urutan: 324,
+    },
+    {
+      kunci: "cerai gugat+itsbat-nikah|ditolak|itsbat-ditolak-cerai-no",
+      nilai: "[03b] [Tolak] Putusan CG Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO",
+      data: { jenisAsli: "Cerai Gugat Kumulasi Itsbat Nikah", statusAsli: "Ditolak", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"], catatan: "dipilih manual: itsbat ditolak (rukun dan syarat nikah tidak terbukti), cerai tidak dapat diterima" },
+      urutan: 325,
+    },
+    {
+      kunci: "cerai gugat+itsbat-nikah|tidak dapat diterima|itsbat-ditolak-cerai-no",
+      nilai: "[03b] [Tolak] Putusan CG Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO",
+      data: { jenisAsli: "Cerai Gugat Kumulasi Itsbat Nikah", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"], catatan: "dipilih manual: itsbat ditolak (rukun dan syarat nikah tidak terbukti), cerai tidak dapat diterima" },
+      urutan: 326,
+    },
+    {
+      kunci: "cerai gugat+itsbat-nikah|tidak dapat diterima|itsbat-no-poligami-sirri",
+      nilai: "[99d] [NO] Putusan CG Kumulasi Itsbat Nikah - Itsbat NO (Poligami Sirri), Cerai NO",
+      data: { jenisAsli: "Cerai Gugat Kumulasi Itsbat Nikah", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"], catatan: "dipilih manual: itsbat tidak dapat diterima karena poligami sirri, cerai tidak dapat diterima" },
+      urutan: 327,
+    },
+    {
+      kunci: "cerai talak+itsbat-nikah|ditolak|itsbat-ditolak-cerai-no",
+      nilai: "[03b] [Tolak] Putusan CT Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO",
+      data: { jenisAsli: "Cerai Talak Kumulasi Itsbat Nikah", statusAsli: "Ditolak", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"], catatan: "dipilih manual: itsbat ditolak (rukun dan syarat nikah tidak terbukti), cerai tidak dapat diterima" },
+      urutan: 328,
+    },
+    {
+      kunci: "cerai talak+itsbat-nikah|tidak dapat diterima|itsbat-ditolak-cerai-no",
+      nilai: "[03b] [Tolak] Putusan CT Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO",
+      data: { jenisAsli: "Cerai Talak Kumulasi Itsbat Nikah", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"], catatan: "dipilih manual: itsbat ditolak (rukun dan syarat nikah tidak terbukti), cerai tidak dapat diterima" },
+      urutan: 329,
+    },
+    {
+      kunci: "cerai talak+itsbat-nikah|tidak dapat diterima|itsbat-no-poligami-sirri",
+      nilai: "[99d] [NO] Putusan CT Kumulasi Itsbat Nikah - Itsbat NO (Poligami Sirri), Cerai NO",
+      data: { jenisAsli: "Cerai Talak Kumulasi Itsbat Nikah", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Kumulasi Itsbat Nikah", blangkoLain: ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"], catatan: "dipilih manual: itsbat tidak dapat diterima karena poligami sirri, cerai tidak dapat diterima" },
+      urutan: 330,
     },
   ],
   "putusan.padanan-jenis": [

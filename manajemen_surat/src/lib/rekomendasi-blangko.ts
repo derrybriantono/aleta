@@ -112,6 +112,11 @@ export type MasukanRekomendasi = {
   anakSahPerkawinanTercatat?: boolean;
   pencairanDana?: boolean;
   kumulasiNafkahIstri?: boolean;
+  /** I26 18 Okt (saklar tegas, pilih manual): PAW susunan lengkap; DK ditolak menurut jenis kelamin anak dan alasan; cerai kumulasi itsbat: itsbat ditolak / NO bersama cerai NO. */
+  susunanAhliWarisLengkap?: boolean;
+  anakDispensasi?: string;
+  alasanTolakDispensasi?: string;
+  amarKumulasiItsbat?: string;
   /** I23 18 Okt: hak asuh yang petitumnya juga memuat nafkah anak (bot membaca petitum; saklar). */
   plusNafkahAnak?: boolean;
   eksepsiKewenangan?: string;
@@ -443,6 +448,10 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
     anakSahPerkawinanTercatat: m.anakSahPerkawinanTercatat,
     pencairanDana: m.pencairanDana,
     kumulasiNafkahIstri: m.kumulasiNafkahIstri,
+    susunanAhliWarisLengkap: m.susunanAhliWarisLengkap,
+    anakDispensasi: m.anakDispensasi,
+    alasanTolakDispensasi: m.alasanTolakDispensasi,
+    amarKumulasiItsbat: m.amarKumulasiItsbat,
     plusNafkahAnak: m.plusNafkahAnak,
     eksepsiKewenangan: m.eksepsiKewenangan,
     putusanSela: m.putusanSela,
@@ -592,6 +601,11 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     ...(typeof b.anakSahPerkawinanTercatat === "boolean" ? { anakSahPerkawinanTercatat: b.anakSahPerkawinanTercatat } : {}),
     ...(typeof b.pencairanDana === "boolean" ? { pencairanDana: b.pencairanDana } : {}),
     ...(typeof b.kumulasiNafkahIstri === "boolean" ? { kumulasiNafkahIstri: b.kumulasiNafkahIstri } : {}),
+    // I26 18 Okt: saklar PAW susunan lengkap, DK ditolak (anak, alasan), cerai kumulasi itsbat ditolak / NO.
+    ...(typeof b.susunanAhliWarisLengkap === "boolean" ? { susunanAhliWarisLengkap: b.susunanAhliWarisLengkap } : {}),
+    ...(typeof b.anakDispensasi === "string" ? { anakDispensasi: b.anakDispensasi } : {}),
+    ...(typeof b.alasanTolakDispensasi === "string" ? { alasanTolakDispensasi: b.alasanTolakDispensasi } : {}),
+    ...(typeof b.amarKumulasiItsbat === "string" ? { amarKumulasiItsbat: b.amarKumulasiItsbat } : {}),
     ...(typeof b.plusNafkahAnak === "boolean" ? { plusNafkahAnak: b.plusNafkahAnak } : {}),
     ...(typeof b.sikapTergugatCabut === "string" ? { sikapTergugatCabut: b.sikapTergugatCabut } : {}),
     ...(typeof b.eksepsiKewenangan === "string" ? { eksepsiKewenangan: b.eksepsiKewenangan } : {}),

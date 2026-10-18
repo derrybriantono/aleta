@@ -47,6 +47,14 @@
  *                                    (bot membaca petitum) atau saklar
  *   anak-sah-perkawinan-tercatat     asal usul anak kabul, anak sah dari perkawinan tercatat yang belum punya akta kelahiran -> [01] baru (I22); saklar, pilih manual
  *   kumulasi-nafkah-istri(-verstek)  cerai gugat yang petitumnya memuat nafkah madliyah / iddah / mut'ah -> [02c] kontradiktoir / [01d] verstek (I22); bahan: `kumulasiNafkahIstri`
+ *   susunan-ahli-waris-lengkap       penetapan ahli waris kabul dengan susunan LENGKAP (cucu pengganti, kakek, nenek, saudara seibu; 'aul dan radd) -> [01c] (I26 18 Okt);
+ *                                    saklar `susunanAhliWarisLengkap` (pilih manual), didahulukan atas "susunan-ahli-waris" ([01b])
+ *   anak-laki-laki-pacaran / anak-perempuan-alasan-lain / anak-laki-laki-alasan-lain
+ *                                    dispensasi kawin ditolak menurut jenis kelamin anak dan alasan permohonan -> [03a] / [03b] / [03c] (I26); saklar `anakDispensasi`
+ *                                    ("laki-laki"|"perempuan") + `alasanTolakDispensasi` ("pacaran"|"lain"); anak perempuan + pacaran tetap [03] lama; SIPP tidak menyimpannya
+ *   itsbat-ditolak-cerai-no / itsbat-no-poligami-sirri
+ *                                    cerai kumulasi itsbat: itsbat ditolak (rukun syarat tidak terbukti) dan cerai NO -> [03b]; itsbat NO (poligami sirri) dan cerai NO -> [99d] (I26);
+ *                                    saklar `amarKumulasiItsbat`, pilih manual
  *   plus-nafkah-anak(-verstek|-setelah-mediasi)
  *                                    gugatan hak asuh (Lain-Lain Pdt.G) yang petitumnya juga memuat nafkah anak -> [02] / [02b] / [02a] folder 6a (I23 18 Okt); bahan: `plusNafkahAnak`
  *                                    (bot membaca petitum) atau kumulasi "nafkah-anak"; nafkah anak pasca perceraian (jenis 743) = folder 6c, jenisnya sendiri
@@ -104,6 +112,13 @@ export type KodeKeadaanPutusan =
   | "anak-sah-perkawinan-tercatat"
   | "kumulasi-nafkah-istri"
   | "kumulasi-nafkah-istri-verstek"
+  // I26 18 Okt (paket abt-paw-lanjutan/-dk-tolak/-itsbat-tolak-cerai-no-derry): lihat daftar di kepala berkas.
+  | "susunan-ahli-waris-lengkap"
+  | "anak-laki-laki-pacaran"
+  | "anak-perempuan-alasan-lain"
+  | "anak-laki-laki-alasan-lain"
+  | "itsbat-ditolak-cerai-no"
+  | "itsbat-no-poligami-sirri"
   // I23 18 Okt (paket abt-nafkah-anak-derry): hak asuh + nafkah anak di folder 6a.
   | "plus-nafkah-anak"
   | "plus-nafkah-anak-verstek"
@@ -165,6 +180,11 @@ export type MasukanKeadaanPutusan = {
   /** I22: petitum memohon pencairan dana (BPJS, Taspen, bank, tabungan) dan petitum cerai gugat memuat nafkah madliyah / iddah / mut'ah - bot membaca petitum; saklar boleh menimpa. */
   pencairanDana?: unknown;
   kumulasiNafkahIstri?: unknown;
+  /** I26 18 Okt: PAW susunan lengkap (saklar); DK ditolak menurut jenis kelamin anak ("laki-laki"|"perempuan") dan alasan ("pacaran"|"lain"); cerai kumulasi itsbat: "itsbat-ditolak-cerai-no"|"itsbat-no-poligami-sirri" - semua saklar tegas, pilih manual. */
+  susunanAhliWarisLengkap?: unknown;
+  anakDispensasi?: unknown;
+  alasanTolakDispensasi?: unknown;
+  amarKumulasiItsbat?: unknown;
   /** I23 18 Okt: gugatan hak asuh yang petitumnya juga memuat nafkah anak (bot membaca petitum; saklar menang; selain itu dari kumulasi "nafkah-anak"). */
   plusNafkahAnak?: unknown;
 };
@@ -334,9 +354,24 @@ export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
     awalan.push(verstekAkhir ? "plus-nafkah-anak-verstek" : hasil.includes("t-tidak-hadir-setelah-mediasi") ? "plus-nafkah-anak-setelah-mediasi" : "plus-nafkah-anak");
   }
   // I22 18 Okt: PAW susunan dinamis, AUA anak sah perkawinan tercatat, cerai gugat kumulasi nafkah istri; hanya dari penanda (bot membaca petitum / saklar).
-  if ((j.includes("ahli waris") || j.includes("p3hp")) && m.susunanAhliWaris === true) awalan.push("susunan-ahli-waris");
+  // I26 18 Okt: PAW susunan lengkap [01c] mencakup [01b] - didahulukan, lalu [01b] sebagai cadangan.
+  if ((j.includes("ahli waris") || j.includes("p3hp")) && m.susunanAhliWarisLengkap === true) awalan.push("susunan-ahli-waris-lengkap");
+  if ((j.includes("ahli waris") || j.includes("p3hp")) && (m.susunanAhliWaris === true || m.susunanAhliWarisLengkap === true)) awalan.push("susunan-ahli-waris");
   if ((j.includes("asal usul") || j.includes("asal-usul")) && m.anakSahPerkawinanTercatat === true) awalan.push("anak-sah-perkawinan-tercatat");
   if (j.includes("cerai gugat") && m.kumulasiNafkahIstri === true) awalan.push(verstekAkhir ? "kumulasi-nafkah-istri-verstek" : "kumulasi-nafkah-istri");
+  // I26 18 Okt: dispensasi kawin ditolak menurut jenis kelamin anak dan alasan permohonan (anak perempuan + pacaran = [03] lama, tanpa kode).
+  if (j.includes("dispensasi kawin")) {
+    const anak = kecil(m.anakDispensasi);
+    const alasanDk = kecil(m.alasanTolakDispensasi);
+    if (anak === "laki-laki" && alasanDk === "pacaran") awalan.push("anak-laki-laki-pacaran");
+    else if (anak === "perempuan" && alasanDk === "lain") awalan.push("anak-perempuan-alasan-lain");
+    else if (anak === "laki-laki" && alasanDk === "lain") awalan.push("anak-laki-laki-alasan-lain");
+  }
+  // I26 18 Okt: cerai kumulasi itsbat - itsbat ditolak / NO bersama cerai NO (hanya dari saklar tegas).
+  if (jenisCerai(j) && kumulasiKode.includes("itsbat-nikah")) {
+    const amar = kecil(m.amarKumulasiItsbat);
+    if (amar === "itsbat-ditolak-cerai-no" || amar === "itsbat-no-poligami-sirri") awalan.push(amar);
+  }
   if (jenisItsbat(j) && !hasil.includes("kontensius")) {
     const alasan = kecil(m.alasanItsbat);
     if (alasan === "nikah-sesudah-2019-tidak-dicatat" || alasan === "poligami-sirri-atau-terikat" || alasan === "terikat-perkawinan-lain") awalan.push(alasan);

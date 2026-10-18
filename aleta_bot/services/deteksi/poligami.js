@@ -35,9 +35,9 @@ const P = require("./pembantuKebendaan");
 const T = require("../tuntutanDeteksiService");
 
 const variabel = Object.freeze([
-  { kode: "8723", nama: "Nama calon istri kedua", sumber: "posita+petitum", blangko: ["putusan"] },
-  { kode: "8724", nama: "Status, umur, pekerjaan dan alamat calon istri kedua", sumber: "posita", blangko: ["putusan"] },
-  { kode: "8725", nama: "Penghasilan Pemohon setiap bulan", sumber: "sipp+posita", blangko: ["putusan"] },
+  { kode: "8723", nama: "Nama calon istri kedua", sumber: "posita+petitum", blangko: ["putusan", "bas"] },
+  { kode: "8724", nama: "Status, umur, pekerjaan dan alamat calon istri kedua", sumber: "posita", blangko: ["putusan", "bas"] },
+  { kode: "8725", nama: "Penghasilan Pemohon setiap bulan", sumber: "sipp+posita", blangko: ["putusan", "bas"] },
   { kode: "1152", nama: "Alasan poligami", sumber: "posita", blangko: ["putusan"] },
   { kode: "8720", nama: "Huruf alasan poligami (Pasal 4 ayat 2 UUP)", sumber: "sipp+posita", blangko: ["putusan"] },
   { kode: "8722", nama: "Harta bersama Pemohon dan Termohon", sumber: "posita", blangko: ["putusan"] },

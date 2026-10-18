@@ -508,7 +508,9 @@ const PETA_SUMBER = Object.freeze([
     catatan: "data_sql dari perkara_pihak5 SIPP - ABT menghitungnya sendiri; ALETA tidak menulis",
   })),
   // Blangko DK lama/pengguna lain - ikut terbaca dari blok identitas posita.
-  ...["0344", "0340", "0608", "0602", "0603", "0604", "0611", "0605"].map((kode) => ({ kode, nama: NAMA_VARIABEL[kode], sumber: "posita", blangko: ["lama"] })),
+  ...["0344", "0340", "0608", "0602", "0604", "0611", "0605"].map((kode) => ({ kode, nama: NAMA_VARIABEL[kode], sumber: "posita", blangko: ["lama"] })),
+  // 18 Okt (paket abt-dk-lama-perbaikan-derry): putusan [01]/[02] (Anak P Cowok) memakai 0603 (pendidikan calon suami) menggantikan 0609 (pendidikan calon istri).
+  { kode: "0603", nama: NAMA_VARIABEL["0603"], sumber: "posita", blangko: ["putusan", "lama"] },
 ]);
 
 /**

@@ -9861,6 +9861,39 @@ Object.assign(ALAT_PETA_BAWAAN, alatPetaNafkahAnak(), {
 });
 /* === AKHIR I23 === */
 
+/* === I26 18 Okt === */
+/**
+ * BLANGKO JARANG 18 Okt (tiga paket ABT abt-paw-lanjutan-derry, abt-dk-tolak-derry, abt-itsbat-tolak-cerai-no-derry; peta: i26-blangko-jarang/PEMETAAN-ALETA.md): penetapan ahli waris
+ * kabul dengan susunan LENGKAP [01c] (cucu pengganti, kakek, nenek, saudara seibu; 'aul dan radd), dispensasi kawin ditolak menurut jenis kelamin anak dan alasan permohonan
+ * [03a] / [03b] / [03c] (anak perempuan yang hanya berpacaran tetap [03] lama), serta cerai kumulasi itsbat nikah yang itsbatnya ditolak [03b] atau NO karena poligami sirri [99d]
+ * (CG dan CT, folder 1c). Keadaan baru (lib/keadaan-putusan.ts): susunan-ahli-waris-lengkap, anak-laki-laki-pacaran, anak-perempuan-alasan-lain, anak-laki-laki-alasan-lain,
+ * itsbat-ditolak-cerai-no, itsbat-no-poligami-sirri - semua tidak tersimpan di SIPP: hanya dari penanda tegas, dipilih manual. Berkas [03b] kumulasi dipetakan pada dua status
+ * (ditolak dan tidak dapat diterima) karena satu putusan satu status SIPP sedangkan amarnya campuran. Kolom: [kunci, jenis blangko, jenisAsli, statusAsli, berkas, catatan].
+ */
+const ALAT_BARIS_I26 = [
+  ["penetapan ahli waris|dikabulkan|susunan-ahli-waris-lengkap", "paw", "Penetapan Ahli Waris", "Dikabulkan", "[01c] [Kabul] PAW - Susunan Ahli Waris Lengkap (Cucu Pengganti, Kakek, Nenek, Saudara Seibu - Aul dan Radd Otomatis)", "dipilih manual: ada ahli waris pengganti, kakek, nenek, atau saudara seibu; pembagian 'aul dan radd otomatis"],
+  ["dispensasi kawin|ditolak|anak-laki-laki-pacaran", "dk", "Dispensasi Kawin", "Ditolak", "[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran", "dipilih manual: anak laki-laki, calon istri belum hamil dan hanya berpacaran"],
+  ["dispensasi kawin|ditolak|anak-perempuan-alasan-lain", "dk", "Dispensasi Kawin", "Ditolak", "[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771)", "dipilih manual: anak perempuan, alasan sangat mendesak selain kehamilan tidak terbukti"],
+  ["dispensasi kawin|ditolak|anak-laki-laki-alasan-lain", "dk", "Dispensasi Kawin", "Ditolak", "[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771)", "dipilih manual: anak laki-laki, alasan sangat mendesak selain kehamilan tidak terbukti"],
+  ["cerai gugat+itsbat-nikah|ditolak|itsbat-ditolak-cerai-no", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Ditolak", "[03b] [Tolak] Putusan CG Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO", "dipilih manual: itsbat ditolak (rukun dan syarat nikah tidak terbukti), cerai tidak dapat diterima"],
+  ["cerai gugat+itsbat-nikah|tidak dapat diterima|itsbat-ditolak-cerai-no", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Tidak Dapat Diterima", "[03b] [Tolak] Putusan CG Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO", "dipilih manual: itsbat ditolak (rukun dan syarat nikah tidak terbukti), cerai tidak dapat diterima"],
+  ["cerai gugat+itsbat-nikah|tidak dapat diterima|itsbat-no-poligami-sirri", "kit", "Cerai Gugat Kumulasi Itsbat Nikah", "Tidak Dapat Diterima", "[99d] [NO] Putusan CG Kumulasi Itsbat Nikah - Itsbat NO (Poligami Sirri), Cerai NO", "dipilih manual: itsbat tidak dapat diterima karena poligami sirri, cerai tidak dapat diterima"],
+  ["cerai talak+itsbat-nikah|ditolak|itsbat-ditolak-cerai-no", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Ditolak", "[03b] [Tolak] Putusan CT Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO", "dipilih manual: itsbat ditolak (rukun dan syarat nikah tidak terbukti), cerai tidak dapat diterima"],
+  ["cerai talak+itsbat-nikah|tidak dapat diterima|itsbat-ditolak-cerai-no", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Tidak Dapat Diterima", "[03b] [Tolak] Putusan CT Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO", "dipilih manual: itsbat ditolak (rukun dan syarat nikah tidak terbukti), cerai tidak dapat diterima"],
+  ["cerai talak+itsbat-nikah|tidak dapat diterima|itsbat-no-poligami-sirri", "kit", "Cerai Talak Kumulasi Itsbat Nikah", "Tidak Dapat Diterima", "[99d] [NO] Putusan CT Kumulasi Itsbat Nikah - Itsbat NO (Poligami Sirri), Cerai NO", "dipilih manual: itsbat tidak dapat diterima karena poligami sirri, cerai tidak dapat diterima"],
+];
+for (const [kunci, jenis, jenisAsli, statusAsli, berkas, catatan] of ALAT_BARIS_I26) {
+  if (jenis === "kit") ALAT_PETA_BAWAAN[kunci] = alatBarisKumulasi(jenisAsli, statusAsli, berkas, ALAT_KUMULASI_ITSBAT_MENU[0], ALAT_KUMULASI_ITSBAT_MENU[1], catatan);
+  else ALAT_PETA_BAWAAN[kunci] = alatBarisPutusanLain(jenis, jenisAsli, statusAsli, berkas, catatan);
+}
+alatTambahVarianPeta("penetapan ahli waris", ["[01c] [Kabul] PAW - Susunan Ahli Waris Lengkap (Cucu Pengganti, Kakek, Nenek, Saudara Seibu - Aul dan Radd Otomatis)"]);
+alatTambahVarianPeta("dispensasi kawin|ditolak", [
+  "[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran",
+  "[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771)",
+  "[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771)",
+]);
+/* === AKHIR I26 === */
+
 
 
 

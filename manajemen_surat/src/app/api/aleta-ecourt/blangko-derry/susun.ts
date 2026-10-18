@@ -277,6 +277,16 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "0654": { nm: "Nomor surat keterangan dari KUA (mis. surat keterangan nikah tidak tercatat)" },
   "0655": { nm: "Tanggal surat keterangan dari KUA (mis. surat keterangan nikah tidak tercatat)" },
   /* === AKHIR I25 === */
+  /* === I26 18 Okt: PAW susunan lengkap [01c] (9762-9767 isian tangan; 9768-9770 otomatis), DK ditolak alasan lain (9771), cerai kumulasi itsbat ditolak (9772) === */
+  "9762": { nm: "Ahli waris pengganti: satu anak Pewaris yang meninggal lebih dahulu (satu nama lengkap dengan bin atau binti; harus berpasangan dengan cucu Pewaris; kosong = tidak ada)" },
+  "9763": { nm: "Cucu Pewaris, anak dari ahli waris pengganti (nama lengkap dengan bin atau binti; beberapa nama dipisah titik koma; kosong = tidak ada)" },
+  "9764": { nm: "Kakek, ayah dari ayah Pewaris (nama lengkap dengan bin; kosong = tidak ada)" },
+  "9765": { nm: "Nenek dari pihak ibu Pewaris (nama lengkap dengan binti; kosong = tidak ada)" },
+  "9766": { nm: "Nenek dari pihak ayah Pewaris (nama lengkap dengan binti; kosong = tidak ada)" },
+  "9767": { nm: "Saudara seibu Pewaris (nama lengkap dengan bin atau binti; beberapa nama dipisah titik koma; kosong = tidak ada)" },
+  "9771": { nm: "Alasan yang dikemukakan {P} untuk mendesaknya perkawinan anak (satu frasa tanpa titik akhir, mis. khawatir terjadi pelanggaran norma agama)" },
+  "9772": { nm: "Rukun atau syarat nikah yang tidak terbukti (satu kalimat tanpa titik akhir, mis. wali nikah bukan wali yang berhak)" },
+  /* === AKHIR I26 === */
 };
 
 const PEMICU_TEKS: Record<string, string> = {

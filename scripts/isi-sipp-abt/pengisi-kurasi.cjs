@@ -257,6 +257,15 @@ const KURASI = {
   "1513": ["posita/bukti (akta kematian)", "Itsbat dengan suami meninggal."],
   "1514": ["posita/bukti (akta kematian)", ""],
   "1515": ["posita/bukti (akta kematian)", ""],
+  // 18 Okt (paket i26 blangko jarang): PAW susunan lengkap [01c], DK ditolak alasan lain [03b]/[03c], cerai kumulasi itsbat ditolak [03b].
+  "9762": ["bukti dan posita permohonan (susunan keluarga Pewaris; belum ada aturan baca - isian manual menang atas data keluarga yang dimiliki ALETA)", "PAW lanjutan: ahli waris pengganti harus berpasangan dengan cucu Pewaris (9763); sangat jarang."],
+  "9763": ["bukti dan posita permohonan (susunan keluarga Pewaris; belum ada aturan baca)", "Berpasangan dengan 9762; sangat jarang."],
+  "9764": ["bukti dan posita permohonan (susunan keluarga Pewaris; belum ada aturan baca)", "Kakek Pewaris; sangat jarang."],
+  "9765": ["bukti dan posita permohonan (susunan keluarga Pewaris; belum ada aturan baca)", "Nenek dari pihak ibu; sangat jarang."],
+  "9766": ["bukti dan posita permohonan (susunan keluarga Pewaris; belum ada aturan baca)", "Nenek dari pihak ayah; sangat jarang."],
+  "9767": ["bukti dan posita permohonan (susunan keluarga Pewaris; belum ada aturan baca)", "Saudara seibu Pewaris; sangat jarang."],
+  "9771": ["posita permohonan dispensasi (alasan mendesak yang dikemukakan Pemohon; belum ada aturan baca)", "Dispensasi kawin ditolak dengan alasan selain kehamilan atau pacaran; jarang."],
+  "9772": ["tidak ada (penilaian hakim atas rukun atau syarat nikah yang tidak terbukti)", "Cerai kumulasi itsbat yang itsbatnya ditolak; sangat jarang."],
 };
 const POLA_HAKIM = /pertimbangan|penilaian|fakta|kesimpulan|pokok|alasan (permohonan|pembatalan|pencegahan)|keadaan pengasuhan|mengapa|klausula|pihak yang menanggung|jumlah kewajiban|pilihan anak|kesepakatan|perdamaian/i;
 const POLA_BUKTI = /alat bukti|bukti (surat|elektronik)|nomor|tanggal surat/i;
