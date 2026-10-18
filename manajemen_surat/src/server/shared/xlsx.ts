@@ -15,7 +15,10 @@ export type XlsxSheet = {
 };
 
 export type XlsxWorkbookOptions = {
+  /** dc:creator / lastModifiedBy; bawaan "ALETA". "" = dikosongkan (berkas yang keluar dari ALETA). */
   creator?: string;
+  /** docProps/app.xml Application; bawaan "ALETA". "" = dikosongkan. */
+  aplikasi?: string;
   createdAt?: Date;
 };
 
@@ -575,7 +578,7 @@ function stylesXml() {
 
 function coreXml(options: XlsxWorkbookOptions) {
   const createdAt = (options.createdAt || new Date()).toISOString();
-  const creator = escapeXml(options.creator || "ALETA");
+  const creator = escapeXml(options.creator ?? "ALETA");
   return [
     XML_DECLARATION,
     '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">',
@@ -587,11 +590,11 @@ function coreXml(options: XlsxWorkbookOptions) {
   ].join("");
 }
 
-function appXml(sheets: XlsxAnySheet[]) {
+function appXml(sheets: XlsxAnySheet[], options: XlsxWorkbookOptions = {}) {
   return [
     XML_DECLARATION,
     '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">',
-    "<Application>ALETA</Application>",
+    `<Application>${escapeXml(options.aplikasi ?? "ALETA")}</Application>`,
     `<Worksheets>${sheets.length}</Worksheets>`,
     "</Properties>",
   ].join("");
@@ -761,7 +764,7 @@ export function createXlsxWorkbook(sheets: XlsxAnySheet[], options: XlsxWorkbook
     { name: "[Content_Types].xml", data: Buffer.from(contentTypesXml(safeSheets, drawingNumbers, media), "utf8") },
     { name: "_rels/.rels", data: Buffer.from(rootRelsXml(), "utf8") },
     { name: "docProps/core.xml", data: Buffer.from(coreXml(options), "utf8") },
-    { name: "docProps/app.xml", data: Buffer.from(appXml(safeSheets), "utf8") },
+    { name: "docProps/app.xml", data: Buffer.from(appXml(safeSheets, options), "utf8") },
     { name: "xl/workbook.xml", data: Buffer.from(workbookXml(safeSheets), "utf8") },
     { name: "xl/_rels/workbook.xml.rels", data: Buffer.from(workbookRelsXml(safeSheets), "utf8") },
     // Buku kerja tanpa gaya bebas memakai styles.xml lama apa adanya.

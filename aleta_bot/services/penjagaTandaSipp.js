@@ -48,6 +48,7 @@ const { tanpaTandaAletaMetadata, buangGrupTersembunyiRtf, grupTersembunyiMenyebu
 
 const KODE = "teks_menyebut_aleta";
 const KODE_BERKAS = "isi_berkas_menyebut_aleta";
+const KODE_STRUKTUR = "struktur_menyebut_aleta";
 
 const TAK_TAMPAK = /[­͏؜ᅟᅠ឴឵᠎​-‏‪-‮⁠-⁤⁪-⁯﻿]/g;
 const PEMISAH = "[\\s._\\-*·•/\\\\|,:;'\"`~+]*";
@@ -440,6 +441,18 @@ function namaBerkasBersih(nama, cadangan = "berkas") {
 }
 
 /** user-agent / nama klien yang tercatat di SIPP: token ALETA dibuang. */
+/**
+ * Kolom ipaddress sys_audittrail (varchar 15): HANYA alamat IPv4 peramban petugas,
+ * selain itu kosong - tidak pernah nama host/peti atau potongan teks lain
+ * (audit jejak 18 Okt 2026; dulu cukup dipotong 15 huruf). Sama dengan
+ * putusanUnggahService.ipAudit.
+ */
+function ipAuditSipp(ip) {
+  const bersih = String(ip == null ? "" : ip).trim().replace(/^::ffff:/i, "");
+  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(bersih)) return "";
+  return bersih.split(".").every((x) => Number(x) <= 255) ? bersih : "";
+}
+
 function agenKlienBersih(agen) {
   return bersihkanTeksSistem(agen);
 }
@@ -940,10 +953,117 @@ const PERINTAH_TULIS = /^\s*(?:\/\*[\s\S]*?\*\/\s*)?(INSERT|UPDATE|REPLACE|DELET
  */
 function tulisanBocor(sql, params) {
   const teks = typeof sql === "string" ? sql : sql && typeof sql === "object" ? String(sql.sql || "") : "";
-  if (!PERINTAH_TULIS.test(teks)) return false;
+  // Per pernyataan: "START TRANSACTION; INSERT ..." (multipleStatements) dulu lolos
+  // karena hanya awal teks yang diperiksa.
+  if (!buangLiteralSql(teks).split(";").some((satu) => PERINTAH_TULIS.test(satu))) return false;
   const nilai = Array.isArray(params) ? params : sql && typeof sql === "object" && Array.isArray(sql.values) ? sql.values : [];
   for (const [, t] of semuaTeks(nilai, "")) if (menyebutAleta(t)) return true;
   return menyebutAleta(teks);
+}
+
+// ============================================================================
+// Penolak STRUKTUR ALETA di basis data SIPP/ABT (audit jejak 18 Okt 2026)
+// ============================================================================
+//
+// Dulu (sebelum bot_db_config dijaga) tabel aleta_bot_* sempat terbentuk DI DALAM
+// basis data SIPP (masih terlihat di salinan PA Bungku: 13 tabel). Nama tabel,
+// kolom, indeks, pemicu, atau tampilan yang menyebut ALETA di basis data SIPP/ABT
+// terbaca oleh siapa pun yang memeriksa strukturnya (dan ikut tersinkron ke
+// pusat). Berbeda dengan nilai kolom, di sini TIDAK ADA data SIPP yang perlu
+// dikecualikan, jadi kolam SIPP/ABT MENOLAK (bukan sekadar mencatat):
+//   - INSERT/REPLACE/UPDATE ke tabel ber-nama ALETA yang tidak dikualifikasi
+//     basis data ALETA (tanpa kualifikasi = basis data kolam = SIPP/ABT);
+//   - CREATE/ALTER/RENAME apa pun yang menyebut ALETA di luar rujukan
+//     `aleta*.` (basis data milik ALETA sendiri).
+// DROP/TRUNCATE/DELETE tetap boleh: itu membersihkan sisa lama
+// (scripts/audit-sipp-tabel-aleta.js).
+
+const SASARAN_DML = /\b(INSERT\s+(?:LOW_PRIORITY\s+|DELAYED\s+|HIGH_PRIORITY\s+|IGNORE\s+)*INTO|REPLACE\s+(?:LOW_PRIORITY\s+|DELAYED\s+)*(?:INTO\s+)?|(?<!\bKEY\s+)UPDATE\s+(?:LOW_PRIORITY\s+|IGNORE\s+)*)\s*(`?[\w$]+`?(?:\s*\.\s*`?[\w$]+`?)?)/gi;
+const PERINTAH_DDL = /\b(CREATE|ALTER|RENAME)\b/i;
+const RUJUKAN_DB_ALETA = /`?\baleta[\w$]*`?\s*\.\s*`?[\w$]+`?/gi;
+
+function buangLiteralSql(sql) {
+  return String(sql || "").replace(/'(?:[^'\\]|\\.|'')*'|"(?:[^"\\]|\\.|"")*"/g, "''");
+}
+
+/**
+ * "" bila perintah aman; selain itu sebab singkat (untuk log & galat).
+ * Hanya memeriksa NAMA objek (tabel/kolom/indeks/pemicu), bukan nilai.
+ */
+function strukturAletaDiSipp(sql) {
+  const teks = buangLiteralSql(typeof sql === "string" ? sql : sql && typeof sql === "object" ? String(sql.sql || "") : "");
+  if (!teks || !/aleta/i.test(teks)) return "";
+  for (const m of teks.matchAll(SASARAN_DML)) {
+    const bagian = m[2].replace(/`/g, "").split(/\s*\.\s*/);
+    const [dbNama, tabel] = bagian.length === 2 ? bagian : ["", bagian[0]];
+    if (dbNama && /^aleta/i.test(dbNama)) continue;
+    if (menyebutAleta(tabel) || menyebutAleta(dbNama)) return `tulis ke tabel ${m[2].replace(/`/g, "")} di basis data SIPP/ABT`;
+  }
+  // Pernyataan per pernyataan (multipleStatements): DDL yang menyebut ALETA di luar
+  // rujukan basis data ALETA sendiri.
+  for (const satu of teks.split(";")) {
+    const awal = satu.replace(/^\s*(?:\/\*[\s\S]*?\*\/\s*)*/, "");
+    const kata = /^(\w+)/.exec(awal);
+    if (!kata || !PERINTAH_DDL.test(kata[1])) continue;
+    if (/^\s*(?:CREATE|ALTER|RENAME)\s+(?:DATABASE|SCHEMA|USER)\b/i.test(awal)) continue;
+    // Pemicu/tampilan/rutin/peristiwa hidup di basis data kolam (SIPP/ABT) kecuali
+    // namanya dikualifikasi basis data ALETA - isinya ikut terlihat, jadi rujukan
+    // ke basis data ALETA di dalamnya pun ditolak.
+    const objek = /^\w+\s+(?:OR\s+REPLACE\s+)?(?:(?:DEFINER\s*=\s*\S+|SQL\s+SECURITY\s+\w+|ALGORITHM\s*=\s*\w+|AGGREGATE)\s+)*(TRIGGER|VIEW|PROCEDURE|FUNCTION|EVENT)\s+(?:IF\s+NOT\s+EXISTS\s+)?(`?[\w$]+`?(?:\s*\.\s*`?[\w$]+`?)?)/i.exec(awal);
+    if (objek) {
+      const bagianObjek = objek[2].replace(/`/g, "").split(/\s*\.\s*/);
+      if (bagianObjek.length === 2 && /^aleta/i.test(bagianObjek[0])) continue;
+      if (menyebutAleta(awal)) return `perintah ${kata[1].toUpperCase()} ${objek[1].toUpperCase()} menyebut ALETA di basis data SIPP/ABT`;
+      continue;
+    }
+    if (menyebutAleta(awal.replace(RUJUKAN_DB_ALETA, " "))) return `perintah ${kata[1].toUpperCase()} menyebut ALETA di basis data SIPP/ABT`;
+  }
+  return "";
+}
+
+/** Galat siap-lempar (dan tercatat di log) bila strukturAletaDiSipp menolak; selain itu null. */
+function galatStrukturAleta(sql) {
+  let sebab = "";
+  try {
+    sebab = strukturAletaDiSipp(sql);
+  } catch {
+    sebab = "";
+  }
+  if (!sebab) return null;
+  console.error(`[penjagaTandaSipp] DITOLAK: ${sebab}.`);
+  const galat = new Error(`Ditolak: ${sebab} (nama ber-ALETA tidak boleh ada di basis data SIPP/ABT).`);
+  galat.code = KODE_STRUKTUR;
+  return galat;
+}
+
+/**
+ * Pasang jaring yang sama dengan db_config.js pada kolam lain ke SIPP/ABT/antrian
+ * (db_config4.js antrian, db_config5.js ABT): struktur ber-nama ALETA ditolak,
+ * tulisan bernilai ALETA dicatat. Idempoten.
+ */
+function pasangJaring(kolam, sumber) {
+  if (!kolam || typeof kolam.query !== "function" || kolam.query.__jaringTanda) return false;
+  const asli = kolam.query.bind(kolam);
+  const bungkus = function (sql, ...rest) {
+    const tolak = galatStrukturAleta(sql);
+    if (tolak) {
+      const cb = rest.length > 0 && typeof rest[rest.length - 1] === "function" ? rest[rest.length - 1] : null;
+      if (!cb) throw tolak;
+      setImmediate(() => cb(tolak, undefined, undefined));
+      return undefined;
+    }
+    try {
+      if (tulisanBocor(sql, Array.isArray(rest[0]) ? rest[0] : undefined)) {
+        console.error(`[penjagaTandaSipp] PERINGATAN: tulisan ke ${sumber || "SIPP/ABT"} memuat kata ALETA - periksa jalur tulis yang memanggilnya.`);
+      }
+    } catch {
+      /* jaring pengaman tidak boleh mengganggu kueri */
+    }
+    return asli(sql, ...rest);
+  };
+  bungkus.__jaringTanda = true;
+  kolam.query = bungkus;
+  return true;
 }
 
 // ============================================================================
@@ -1080,6 +1200,7 @@ module.exports = {
   bersihkanTeksSistem,
   namaBerkasBersih,
   agenKlienBersih,
+  ipAuditSipp,
   kenaliBentuk,
   bersihkanMetadataBerkas,
   periksaIsiBerkas,
@@ -1089,6 +1210,10 @@ module.exports = {
   teksPdf,
   teksDocx,
   tulisanBocor,
+  strukturAletaDiSipp,
+  galatStrukturAleta,
+  pasangJaring,
+  KODE_STRUKTUR,
   JALUR_TULIS_SIPP,
   JALUR_DIKECUALIKAN,
 };

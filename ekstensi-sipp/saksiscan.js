@@ -598,6 +598,12 @@ let saksiscanNomorPesan = 0;
 
 /** Satu permintaan ke jembatan.js (dunia halaman) -> jawabannya, atau gagal sesudah batas waktu. */
 function saksiscanJembatan(pesan, batasMs) {
+  // Penjaga batas (audit jejak 18 Okt 2026): isian KTP/saksi/keterangan hubungan yang
+  // memuat kata ALETA (selain data SIPP yang tampil di halaman) tidak diisikan.
+  if (pesan && pesan.jenis === "isi" && typeof pesan.nilai === "string" && typeof AletaPenjagaTanda !== "undefined") {
+    const tahan = AletaPenjagaTanda.periksaTeks(pesan.nilai, String(pesan.penunjuk || "isian"));
+    if (!tahan.ok) return Promise.resolve({ ok: false, alasan: tahan.pesan });
+  }
   saksiscanNomorPesan += 1;
   const id = `aleta-saksiscan-${Date.now()}-${saksiscanNomorPesan}`;
   return new Promise((selesai) => {

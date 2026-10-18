@@ -244,6 +244,23 @@ describe("E9 - verifikasi majelis lewat sesi hakim sendiri (tiruan e-Court)", ()
     expect(e.panggilan).toHaveLength(0);
   });
 
+  it("audit jejak 18 Okt: keterangan yang menyebut ALETA ditolak sebelum e-Court disentuh; yang bersih diketik apa adanya", async () => {
+    await sambung("usr-hakim", "hakim");
+    const e = tiruanEcourt();
+    const l = aksiModul.buatLayanan(depsUji(e).deps);
+    const dasar = { penggunaId: "usr-hakim", nama: "Hakim Uji", documentKey: "dk-1", keputusan: "tidak_valid", konfirmasi: true };
+    for (const keterangan of ["dicek lewat ALETA", "A L E T A", "Aleta", "ＡＬＥＴＡ"]) {
+      const h = await l.verifikasi({ ...dasar, keterangan });
+      expect(h, keterangan).toMatchObject({ ok: false, alasan: "teks_menyebut_aleta" });
+      expect(h.pesan).toBe(`Isian "Keterangan verifikasi" memuat kata 'ALETA'; hapus dulu sebelum dikirim ke e-Court.`);
+    }
+    expect(e.panggilan).toHaveLength(0);
+    expect(kalimatAlasan("teks_menyebut_aleta")).toContain("e-Court");
+    const h = await l.verifikasi({ ...dasar, keterangan: "Tanda tangan tidak terbaca" });
+    expect(h.ok).toBe(true);
+    expect(e.panggilan.find((p) => p.fungsi === "verifikasi")!.arg.keterangan).toBe("Tanda tangan tidak terbaca");
+  });
+
   it("berhasil: cookie milik hakim itu yang dipakai, keputusan dicatat, jejak jujur", async () => {
     await sambung("usr-hakim", "hakim");
     await sambung("usr-lain", "hakim", "Orang Lain");
@@ -402,6 +419,49 @@ describe("16b / K6 - akun pengunggah dan unggah salinan putusan (tiruan e-Court)
     expect(e.panggilan.find((p) => p.fungsi === "unggahSalinan")?.arg.adaBerkas).toBe(true);
     expect(readdirSync(path.join(SEMENTARA, "pengguna-tmp"))).toEqual([]);
     expect(disimpan).toHaveLength(1);
+  });
+
+  // Audit jejak 18 Okt 2026: salinan dulu sampai ke e-Court apa adanya (tanpa penjaga).
+  const tiruanPenangkap = () => {
+    const tangkap = { isi: "" };
+    const e = tiruanEcourt({
+      unggahSalinan: async (arg: any) => {
+        tangkap.isi = readFileSync(arg.jalurBerkas, "latin1");
+        return { ok: true, cookies: arg.cookies, putusanEcourt: { adaTab: true, adaBaris: true, dokumenSalinan: { ada: true } } };
+      },
+    });
+    return { e, tangkap };
+  };
+  const unggah = (deps: any, isi: Buffer) =>
+    aksiModul.buatLayanan(deps).unggahSalinan({ penggunaId: "usr-hakim", nama: "Hakim Uji", nomorPerkara: "3/Pdt.G/2026/PA.Dgl", isi, konfirmasi: true });
+
+  it("audit jejak 18 Okt: metadata ber-ALETA dibersihkan (panjang sama) sebelum berkas sampai ke e-Court", async () => {
+    await sambung("usr-hakim", "hakim");
+    const { e, tangkap } = tiruanPenangkap();
+    const pdf = Buffer.from("%PDF-1.4\n1 0 obj<</Title(Salinan Putusan)/Producer(ALETA Writer)/Author(aleta)>>endobj\nxref\n%%EOF", "latin1");
+    const h = await unggah(depsUji(e).deps, pdf);
+    expect(h.ok, JSON.stringify(h)).toBe(true);
+    expect(tangkap.isi.length).toBe(pdf.length);
+    expect(tangkap.isi).not.toMatch(/aleta/i);
+    expect(tangkap.isi).toContain("/Title(Salinan Putusan)");
+  });
+
+  it("audit jejak 18 Okt: teks tampak ber-ALETA menahan unggahan (e-Court tidak disentuh); nama pihak dari SIPP dikecualikan", async () => {
+    await sambung("usr-hakim", "hakim");
+    const naskah = (teks: string) =>
+      Buffer.from(`%PDF-1.4\n1 0 obj<</Producer(LibreOffice 7.4)>>endobj\n2 0 obj<</Length 50>>stream\nBT /F1 12 Tf (${teks}) Tj ET\nendstream endobj\nxref\n%%EOF`, "latin1");
+    const satu = tiruanPenangkap();
+    const h = await unggah(depsUji(satu.e).deps, naskah("Disusun ALETA"));
+    expect(h).toMatchObject({ ok: false, alasan: "isi_berkas_menyebut_aleta" });
+    expect(String(h.pesan)).toContain("e-Court");
+    expect(String(h.pesan)).not.toContain("SIPP");
+    expect(satu.e.panggilan).toHaveLength(0);
+    expect(kalimatAlasan("isi_berkas_menyebut_aleta")).toContain("e-Court");
+
+    const dua = tiruanPenangkap();
+    const h2 = await unggah(depsUji(dua.e, { pihakSippAleta: async () => ["ALETA SARI binti Hasan"] }).deps, naskah("Penggugat ALETA SARI binti Hasan"));
+    expect(h2.ok, JSON.stringify(h2)).toBe(true);
+    expect(dua.tangkap.isi).toContain("ALETA SARI binti Hasan");
   });
 });
 

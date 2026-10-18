@@ -12907,7 +12907,8 @@ function t6TeksMusyawarah(k) {
     if (terbuka.length) daftar("Komentar hakim yang belum selesai", terbuka.map((x) => `${t6LabelBagian(x.bagian)}: ${t6Pendek(x.isi, 160)}`));
   }
   baris.push("");
-  baris.push(`Disusun ALETA dari panel ABT, ${t6Jam(new Date().toISOString())}. Bahan musyawarah - bukan putusan; yang memutus majelis.`);
+  // Teks salinan dapat ditempel petugas ke SIPP/ABT: tanpa kata ALETA (audit jejak 18 Okt 2026).
+  baris.push(`Disusun dari panel ABT, ${t6Jam(new Date().toISOString())}. Bahan musyawarah - bukan putusan; yang memutus majelis.`);
   return baris.join("\n");
 }
 

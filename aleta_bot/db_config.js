@@ -81,6 +81,15 @@ db.query = function queryWithReferenceDate(sql, ...rest) {
   } catch {
     /* jaring pengaman tidak boleh mengganggu kueri */
   }
+  // STRUKTUR ber-nama ALETA (tabel/kolom/indeks) di basis data SIPP: DITOLAK, bukan
+  // dicatat - tidak ada data SIPP yang perlu dikecualikan (audit jejak 18 Okt 2026).
+  const tolakStruktur = penjagaTandaSipp.galatStrukturAleta(sql);
+  if (tolakStruktur) {
+    const cb = rest.length > 0 && typeof rest[rest.length - 1] === "function" ? rest[rest.length - 1] : null;
+    if (!cb) throw tolakStruktur;
+    setImmediate(() => cb(tolakStruktur, undefined, undefined));
+    return undefined;
+  }
 
   const referenceDate = getReferenceDate();
   if (referenceDate) {

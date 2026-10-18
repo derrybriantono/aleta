@@ -142,6 +142,9 @@ export const KALIMAT_ALASAN: Record<string, string> = {
   dokumen_tidak_ditemukan: "Dokumen itu tidak ditemukan di arsip ALETA.",
   passphrase_kosong: "Passphrase TTE belum diisi.",
   berkas_bukan_pdf: "Berkas salinan putusan harus PDF.",
+  // Audit jejak 18 Okt 2026: tidak satu kata ALETA yang dikirim ke e-Court.
+  teks_menyebut_aleta: "Isian \"Keterangan verifikasi\" memuat kata 'ALETA'; hapus dulu sebelum dikirim ke e-Court.",
+  isi_berkas_menyebut_aleta: "Berkas salinan putusan memuat kata 'ALETA' di dalam isinya; hapus dulu sebelum diunggah ke e-Court.",
   berkas_terlalu_besar: "Berkas terlalu besar (paling besar 20 MB).",
   batas_aksi_per_jam: "Batas aksi e-Court per jam untuk akun Anda tercapai. Coba lagi nanti.",
   aksi_lain_masih_berjalan: "Aksi e-Court Anda yang lain masih berjalan. Tunggu sampai selesai.",

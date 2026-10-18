@@ -7,6 +7,7 @@ import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 import { alamatIpPeramban } from "@/server/shared/request";
+import { menyebutAleta } from "@/lib/tanda-aleta";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
@@ -48,6 +49,8 @@ export async function POST(request: NextRequest) {
     };
     const keputusan = body.keputusan === "valid" || body.keputusan === "tidak_valid" ? body.keputusan : "";
     if (!keputusan) return ok({ ok: false, alasan: "keputusan_tidak_dikenali", pesan: "Pilih Valid atau Tidak Valid." });
+    // Audit jejak 18 Okt 2026: keterangan diketik ke e-Court - ditolak sebelum bot dipanggil.
+    if (menyebutAleta(body.keterangan)) return ok({ ok: false, alasan: "teks_menyebut_aleta", pesan: kalimatAlasan("teks_menyebut_aleta") });
 
     const hasil = await panggilBot<HasilVerifikasi>("/ecourt-aksi/verifikasi", {
       method: "POST",
