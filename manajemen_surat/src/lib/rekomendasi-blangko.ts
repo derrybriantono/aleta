@@ -117,6 +117,8 @@ export type MasukanRekomendasi = {
   anakDispensasi?: string;
   alasanTolakDispensasi?: string;
   amarKumulasiItsbat?: string;
+  /** I28 18 Okt: penetapan mafqud (Lain-Lain Pdt.P): bot membaca petitum/posita (mafqud, orang hilang); saklar boleh menimpa. */
+  mafqud?: boolean;
   /** I23 18 Okt: hak asuh yang petitumnya juga memuat nafkah anak (bot membaca petitum; saklar). */
   plusNafkahAnak?: boolean;
   eksepsiKewenangan?: string;
@@ -170,6 +172,7 @@ function rekomendasiBas(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
     penggugatPernahHadir: m.penggugatPernahHadir,
     sudahJawaban: m.sesudahJawaban === true || Number(m.penandaJawaban?.berkas) > 0,
     sikapTergugatCabut: m.sikapTergugatCabut ?? null,
+    mafqud: m.mafqud,
   };
   const hAlur = tentukanAlurBasKumulasi(masukan);
   const baru = tentukanBasBaru(masukan);
@@ -249,6 +252,10 @@ export const FOLDER_MENU_PUTUSAN: Record<string, string> = {
   "Putusan Pencegahan Perkawinan": "5b Pencegahan Perkawinan",
   "Putusan Wasiat": "4c Wasiat",
   "Putusan Ekonomi Syariah (Acara Biasa)": "10a Ekonomi Syariah Biasa",
+  // I28 18 Okt: paket ABT abt-hibah-derry (menu 180), abt-wakaf-derry (182), abt-mafqud-derry (184).
+  "Putusan Hibah": "4d Hibah",
+  "Putusan Wakaf": "4e Wakaf",
+  "Putusan Penetapan Mafqud": "9c Penetapan Mafqud",
 };
 
 /**
@@ -452,6 +459,7 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
     anakDispensasi: m.anakDispensasi,
     alasanTolakDispensasi: m.alasanTolakDispensasi,
     amarKumulasiItsbat: m.amarKumulasiItsbat,
+    mafqud: m.mafqud,
     plusNafkahAnak: m.plusNafkahAnak,
     eksepsiKewenangan: m.eksepsiKewenangan,
     putusanSela: m.putusanSela,
@@ -606,6 +614,8 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     ...(typeof b.anakDispensasi === "string" ? { anakDispensasi: b.anakDispensasi } : {}),
     ...(typeof b.alasanTolakDispensasi === "string" ? { alasanTolakDispensasi: b.alasanTolakDispensasi } : {}),
     ...(typeof b.amarKumulasiItsbat === "string" ? { amarKumulasiItsbat: b.amarKumulasiItsbat } : {}),
+    // I28 18 Okt: bot membaca petitum/posita (mafqud, orang hilang); null = bukan Lain-Lain Pdt.P / tidak terbaca (tidak ditebak).
+    ...(typeof b.mafqud === "boolean" ? { mafqud: b.mafqud } : {}),
     ...(typeof b.plusNafkahAnak === "boolean" ? { plusNafkahAnak: b.plusNafkahAnak } : {}),
     ...(typeof b.sikapTergugatCabut === "string" ? { sikapTergugatCabut: b.sikapTergugatCabut } : {}),
     ...(typeof b.eksepsiKewenangan === "string" ? { eksepsiKewenangan: b.eksepsiKewenangan } : {}),

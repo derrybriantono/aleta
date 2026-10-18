@@ -81,7 +81,7 @@ describe("A. tugas tiap berkas Derry menurut aturan nama", () => {
     // F22 17 Okt: + 58 salinan BAS ALUR 04-09 di "4c Wasiat - BAS" dan "10a Ekonomi Syariah Biasa - BAS".
     // I15 18 Okt: + 29 salinan di "6b Penguasaan Anak - BAS" (6 BAS ALUR 44 termasuk BAS baru, bukan salinan).
     // I23 18 Okt: + 29 salinan di "6c Nafkah Anak - BAS".
-    expect(salinan).toHaveLength(233 + 58 - 5 + 58 + 1 + 29 + 29);
+    expect(salinan).toHaveLength(233 + 58 - 5 + 58 + 1 + 29 + 29 + 58); // I28 18 Okt: + 29 salinan di "4d Hibah - BAS" dan 29 di "4e Wakaf - BAS"
     for (const b of salinan) {
       expect(folderDari(b), b).toMatch(/ - BAS$/);
       expect(jenisDokumenBlangko(b), b).toBe("bas");
@@ -90,7 +90,7 @@ describe("A. tugas tiap berkas Derry menurut aturan nama", () => {
       expect(berkasBasSalinan(b.split("/").pop()!)).toBe(true);
     }
     // 13 folder BAS menerima salinan (11 + 5a Pembatalan Perkawinan + 6a Hak Asuh, F21 17 Okt); folder putusan tetap hakim dan bersih dari BAS; HB Kabul tetap di 4a.
-    expect(new Set(salinan.map(folderDari)).size).toBe(17); // + 4c Wasiat - BAS dan 10a Ekonomi Syariah Biasa - BAS (F22 17 Okt), 6c Nafkah Anak - BAS (I23 18 Okt)
+    expect(new Set(salinan.map(folderDari)).size).toBe(19); // + 4c Wasiat - BAS dan 10a Ekonomi Syariah Biasa - BAS (F22 17 Okt), 6c Nafkah Anak - BAS (I23 18 Okt)
     const putusan = FIX.berkas.filter((b) => /^derry_briantono\/\d/.test(b) && !/ - BAS\//.test(b) && !/^derry_briantono\/(98 Relaas|99 PTSP)\//.test(b));
     expect(putusan.some((b) => /^BAS\b/.test(b.split("/").pop()!))).toBe(false);
     for (const f of new Set(putusan.map(folderDari))) expect(tugasBlangko(f), f).toBe("hakim");
@@ -161,8 +161,8 @@ describe("B. ABT dan ALETA sepakat tentang tugas tiap folder", () => {
     const putusan = jenis.filter((m) => !/ - BAS$/.test(m.direktori));
     // 15 (J3) + 7 Wali Adhal (I2 16 Okt) + 6a Hak Asuh, 5a Pembatalan Perkawinan, 10 Ekonomi Syariah (F21 17 Okt) + 5b Pencegahan, 4c Wasiat, 10a ES Biasa (F22 17 Okt)
     // + 6b Penguasaan Anak (I15 18 Okt) + 6c Nafkah Anak (I23 18 Okt)
-    expect(putusan).toHaveLength(24);
-    expect(bas).toHaveLength(24);
+    expect(putusan).toHaveLength(27); // I28 18 Okt: + menu 180, 182, 184
+    expect(bas).toHaveLength(27); // I28 18 Okt: + menu 181, 183, 185
     // pasangan: tiap folder putusan punya folder BAS; menu BAS tepat sesudah menu putusannya (ABT menampilkan menurut id)
     for (const m of putusan) {
       const p = bas.find((x) => x.direktori === `${m.direktori} - BAS`)!;
@@ -170,8 +170,14 @@ describe("B. ABT dan ALETA sepakat tentang tugas tiap folder", () => {
       expect(p.id, m.direktori).toBe(m.id + 1);
       // J3 15 Okt: menu putusan tetap bernama lama ("Putusan Cerai Gugat"); hanya aliasnya "<Singkatan> - Putusan".
       expect(m.nama, m.direktori).toMatch(/^Putusan /);
-      expect(m.nama_alias).toMatch(/ - Putusan$/);
-      expect(p.nama_alias.replace(/ - BAS$/, ""), m.direktori).toBe(m.nama_alias.replace(/ - Putusan$/, ""));
+      if (m.id === 184) {
+        // I28 18 Okt: paket abt-mafqud-derry memberi alias "Mafqud - Penetapan" (bukan "... - Putusan") karena hasilnya penetapan; BAS-nya "Mafqud - BAS".
+        expect(m.nama_alias).toBe("Mafqud - Penetapan");
+        expect(p.nama_alias).toBe("Mafqud - BAS");
+      } else {
+        expect(m.nama_alias).toMatch(/ - Putusan$/);
+        expect(p.nama_alias.replace(/ - BAS$/, ""), m.direktori).toBe(m.nama_alias.replace(/ - Putusan$/, ""));
+      }
       expect(p.nama).toMatch(/ - BAS$/);
       expect(p.nama_alias).toMatch(/ - BAS$/);
     }

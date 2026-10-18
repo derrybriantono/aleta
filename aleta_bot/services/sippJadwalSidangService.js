@@ -365,6 +365,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
   const petaPencairanDana = bahanVarian.pencairanDana || {};
   const petaNafkahIstri = bahanVarian.kumulasiNafkahIstri || {};
   const petaPlusNafkahAnak = bahanVarian.plusNafkahAnak || {};
+  const petaMafqud = bahanVarian.mafqud || {};
   /* === AKHIR I7 === */
 
   /* === 12OKT-B === */
@@ -533,6 +534,8 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       kumulasiNafkahIstri: petaNafkahIstri[String(row.perkaraId)] === undefined ? null : petaNafkahIstri[String(row.perkaraId)],
       // I23 18 Okt: petitum hak asuh juga memuat nafkah (anak); null = bukan hak asuh / tidak terbaca.
       plusNafkahAnak: petaPlusNafkahAnak[String(row.perkaraId)] === undefined ? null : petaPlusNafkahAnak[String(row.perkaraId)],
+      // I28 18 Okt: Lain-Lain Pdt.P yang petitum/posita-nya menyebut mafqud / orang hilang (penetapan mafqud, folder 9c); null = bukan jenis itu / tidak terbaca.
+      mafqud: petaMafqud[String(row.perkaraId)] === undefined ? null : petaMafqud[String(row.perkaraId)],
       varianPutusanTerbaca: !gagal.has("varian-putusan"),
       // Saksi yang DIAJUKAN tiap sisi - bukan yang sudah diperiksa. Dipakai
       // penanda "Saksi P / Saksi T" di daftar.
@@ -2265,6 +2268,7 @@ function caraRelaas(ketTemu) {
  *   kabulSebagian      gugatan hak asuh / penguasaan anak / nafkah anak: true bila amar putusan memuat "untuk sebagian" atau "selebihnya" (I20 18 Okt: dikabulkan
  *                      untuk sebagian - SIPP tidak menyimpannya sebagai status); false bila amar terbaca tanpa kata itu; tidak ada bila amar kosong / belum putus.
  *   pencairanDana      penetapan ahli waris dan itsbat nikah kontensius: true bila petitum memuat BPJS / Taspen / bank / tabungan / pencairan (I22 18 Okt, ketepatan sedang).
+ *   mafqud             Lain-Lain bernomor Pdt.P: true bila petitum atau posita memuat "mafqud" / "orang hilang" (I28 18 Okt: penetapan mafqud -> blangko 9c, BAS ALUR 49).
  *   plusNafkahAnak     gugatan hak asuh / penguasaan anak / Lain-Lain Pdt.G: true bila petitum memuat kata nafkah (I23 18 Okt: hak asuh + nafkah anak -> blangko 6a [02]/[02a]/[02b]).
  *   kumulasiNafkahIstri cerai gugat: true bila petitum memuat nafkah madliyah / iddah / mut'ah (I22 18 Okt, ketepatan sedang). Kolom perkara.petitum kosong = false.
  * Lima kueri baca-saja berparameter, masing-masing hanya bila ada perkaranya; gagal salah satunya tidak menjatuhkan yang lain.
@@ -2297,7 +2301,9 @@ async function bahanVarianPutusan(rows = []) {
     return j.includes("ahli waris") || j.includes("p3hp") || ((j.includes("istbat") || j.includes("itsbat") || j.includes("pengesahan perkawinan")) && /\/pdt\.g\//i.test(String(r.nomorPerkara || "")));
   });
   const nafkahIstri = unik((r) => String(r.jenisPerkara || "").toLowerCase().includes("cerai gugat"));
-  const hasil = { tergugatPerempuan: {}, amarRekonvensi: {}, kabulSebagian: {}, pencairanDana: {}, kumulasiNafkahIstri: {}, plusNafkahAnak: {} };
+  // I28 18 Okt: kandidat penetapan mafqud = Lain-Lain (369) bernomor Pdt.P (gugatan Pdt.G adalah hak asuh).
+  const mafqud = unik((r) => String(r.jenisPerkara || "").toLowerCase().includes("lain-lain") && /\/pdt\.p\//i.test(String(r.nomorPerkara || "")));
+  const hasil = { tergugatPerempuan: {}, amarRekonvensi: {}, kabulSebagian: {}, pencairanDana: {}, kumulasiNafkahIstri: {}, plusNafkahAnak: {}, mafqud: {} };
   const kerja = [];
   if (hakAsuh.length) {
     kerja.push(
@@ -2353,12 +2359,12 @@ async function bahanVarianPutusan(rows = []) {
       })()
     );
   }
-  const petitumBendera = (daftar, pola, simpan) =>
+  const petitumBendera = (daftar, pola, simpan, kolom = "p.petitum") =>
     kerja.push(
       (async () => {
         const isian = daftar.map(() => "?").join(", ");
         const baris = await runQuery(
-          `SELECT p.perkara_id AS perkaraId, (LOWER(p.petitum) REGEXP '${pola}') AS ya FROM perkara p WHERE p.perkara_id IN (${isian})`,
+          `SELECT p.perkara_id AS perkaraId, (LOWER(${kolom}) REGEXP '${pola}') AS ya FROM perkara p WHERE p.perkara_id IN (${isian})`,
           daftar
         );
         for (const b of Array.isArray(baris) ? baris : []) simpan[String(b.perkaraId)] = Number(b.ya) === 1;
@@ -2367,6 +2373,8 @@ async function bahanVarianPutusan(rows = []) {
   if (dana.length) petitumBendera(dana, "bpjs|taspen|bank|tabungan|pencairan", hasil.pencairanDana);
   if (nafkahIstri.length) petitumBendera(nafkahIstri, "madliyah|madhiyah|iddah|mut.?ah", hasil.kumulasiNafkahIstri);
   if (hakAsuh.length) petitumBendera(hakAsuh, "nafkah", hasil.plusNafkahAnak);
+  // I28 18 Okt: mafqud dikenali dari petitum ATAU posita (kata "mafqud" / "orang (yang) hilang"); "ghaib" tidak dipakai karena juga muncul pada panggilan ghaib perkara lain.
+  if (mafqud.length) petitumBendera(mafqud, "mafqud|orang +(yang +)?hilang", hasil.mafqud, "CONCAT(IFNULL(p.petitum, ''), ' ', IFNULL(p.posita, ''))");
   const selesai = await Promise.allSettled(kerja);
   if (kerja.length && selesai.every((x) => x.status === "rejected")) throw selesai[0].reason;
   return hasil;

@@ -1333,7 +1333,7 @@
     // (REPLACE ... lalu NOT REGEXP '[^A-H]' + INSTR per huruf), jadi uraian membuatnya "TIDAK BENAR QUERY NYA".
     // F22 17 Okt: 9463 (alasan pencegahan A-H) dan 9475 (pokok tuntutan wasiat A-G) ditulis hurufnya saja - kueri 9464/9476 membaca huruf pertama,
     // dan huruf itu pula yang dibaca popup ABT.
-    const sederhana = kode === "8503" || kode === "9463" || kode === "9475" ? nilaiSimpan8503(nilai) : nilai;
+    const sederhana = kode === "8503" || kode === "9463" || kode === "9475" || kode === "9790" || kode === "9820" || kode === "9865" ? nilaiSimpan8503(nilai) : nilai; // I28 18 Okt: + 9790 (pokok tuntutan hibah A-G), 9820 (wakaf A-F), 9865 (kepentingan mafqud A-C)
     if (sederhana !== nilai) {
       nilai = sederhana;
       S.isi[kode] = nilai;

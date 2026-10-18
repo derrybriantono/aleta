@@ -9894,6 +9894,84 @@ alatTambahVarianPeta("dispensasi kawin|ditolak", [
 ]);
 /* === AKHIR I26 === */
 
+/* === I28 18 Okt === */
+/**
+ * HIBAH (366), WAKAF (367) DAN PENETAPAN MAFQUD (369 Lain-Lain, Pdt.P) versi Derry - tiga paket ABT abt-hibah-derry, abt-wakaf-derry, abt-mafqud-derry (folder "4d Hibah",
+ * "4e Wakaf", "9c Penetapan Mafqud"; menu putusan 180 / 182 / 184 berpasangan dengan BAS 181 / 183 / 185; peta: i28-wakaf-hibah-mafqud/PEMETAAN-ALETA.md).
+ * Hibah dan wakaf: gugatan (Pdt.G) berpola wasiat - kabul kontradiktoir [01] / T tidak hadir setelah mediasi [01a] / verstek [01b], tolak [03] / [03b], perdamaian [97], cabut [98] /
+ * [98b], gugur [98a], coret [98c], NO SEMA [99], NO kurang pihak [99a] - dan PERMOHONAN (Pdt.P, keadaan "permohonan"): penetapan hibah / pengukuhan wakaf [01p], tolak [03p],
+ * NO formil [99p]; cabut, gugur dan NO SEMA 1/2022 permohonan memakai 9b Permohonan Umum. Mafqud: jenis Lain-Lain (369) bernomor Pdt.P dengan keadaan "mafqud" (dari petitum / posita /
+ * amar atau dipilih manual): kabul [01], tolak [03], NO formil [99]; cabut, gugur dan NO SEMA memakai 9b. Pokok tuntutan (huruf) adalah isian tangan Hakim / Panitera.
+ */
+Object.assign(ALAT_MENU_PUTUSAN, {
+  hi: { blangko: "Putusan Hibah", lain: ["Hibah - Putusan"] },
+  wk: { blangko: "Putusan Wakaf", lain: ["Wakaf - Putusan"] },
+  mq: { blangko: "Putusan Penetapan Mafqud", lain: ["Mafqud - Penetapan"] },
+});
+function alatBerkasHibahWakaf(nama) {
+  return {
+    kabul: `[01] [Kabul] ${nama} - Kontradiktoir`,
+    setelahMediasi: `[01a] [Kabul] ${nama} - T Tidak Hadir Setelah Mediasi`,
+    verstek: `[01b] [Kabul Verstek] ${nama}`,
+    tolak: `[03] [Tolak] ${nama} - Kontradiktoir - Dalil Tidak Terbukti`,
+    tolakVerstek: `[03b] [Tolak Verstek] ${nama} - Dalil Tidak Terbukti`,
+    damai: `[97] [Perdamaian] ${nama} - Akta Perdamaian`,
+    cabut: `[98] [Cabut] ${nama} - P & T Hadir Sebelum Jawaban`,
+    cabutSesudahJawaban: `[98b] [Cabut] ${nama} - Sesudah Jawaban dengan Persetujuan T`,
+    gugur: `[98a] [Gugur] ${nama} - P Tidak Hadir Sidang Pertama`,
+    coret: `[98c] [Coret] ${nama} - Dibatalkan dari Pendaftaran - Panjar Habis`,
+    noSema: `[99] [NO] ${nama} - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)`,
+    noFormil: `[99a] [NO] ${nama} - Kurang Pihak (Plurium Litis Consortium)`,
+    mohonKabul: `[01p] [Kabul] ${nama} - Permohonan Penetapan (Pemohon Hadir)`,
+    mohonTolak: `[03p] [Tolak] ${nama} - Dalil Permohonan Tidak Terbukti`,
+    mohonNo: `[99p] [NO] ${nama} - Permohonan Tidak Dapat Diterima (Formil)`,
+  };
+}
+const ALAT_BERKAS_HIBAH = alatBerkasHibahWakaf("Hibah");
+const ALAT_BERKAS_WAKAF = alatBerkasHibahWakaf("Wakaf");
+const ALAT_BERKAS_MAFQUD = {
+  kabul: "[01] [Kabul] Mafqud - Orang Hilang Ditetapkan Meninggal Secara Hukum",
+  tolak: "[03] [Tolak] Mafqud - Dalil Permohonan Tidak Terbukti",
+  noFormil: "[99] [NO] Mafqud - Permohonan Tidak Dapat Diterima (Formil)",
+};
+/** Baris hibah / wakaf: gugatan (pola wasiat) + permohonan (keadaan "permohonan") + dua baris berkeadaan yang ditulis tegas di peta (sesudah jawaban, kurang pihak). */
+function alatPetaHibahWakaf(kunci, jenisAsli, menu, B) {
+  const baris = alatPetaGugatanDua(kunci, jenisAsli, menu, B, {});
+  const kl = (status, tanda) => `${kunci}|${status}${tanda ? `|${tanda}` : ""}`;
+  const r = (status, berkas, catatan) => alatBarisPutusanLain(menu, jenisAsli, status, berkas, catatan);
+  const um = (status, catatan) => alatBarisPutusanLain("um", jenisAsli, status, status === "Tidak Dapat Diterima" ? ALAT_BERKAS_UMUM.no : status === "Dicabut" ? ALAT_BERKAS_UMUM.cabut : ALAT_BERKAS_UMUM.gugur, catatan);
+  baris[kl("dicabut", "sesudah-jawaban")] = r("Dicabut", B.cabutSesudahJawaban, "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)");
+  baris[kl("tidak dapat diterima", "kurang-pihak")] = r("Tidak Dapat Diterima", B.noFormil, "dipilih manual: kurang pihak (plurium litis consortium) - SIPP tidak menyimpan alasan NO terstruktur");
+  const mohon = "keadaan: permohonan (nomor perkara Pdt.P)";
+  baris[kl("dikabulkan", "permohonan")] = r("Dikabulkan", B.mohonKabul, mohon);
+  baris[kl("ditolak", "permohonan")] = r("Ditolak", B.mohonTolak, mohon);
+  baris[kl("tidak dapat diterima", "permohonan")] = r("Tidak Dapat Diterima", B.mohonNo, `${mohon}; NO formil (mengandung sengketa)`);
+  baris[kl("dicabut", "permohonan")] = um("Dicabut", `${mohon}; permohonan umum (9b)`);
+  baris[kl("digugurkan", "permohonan")] = um("Digugurkan", `${mohon}; permohonan umum (9b)`);
+  baris[kl("gugur", "permohonan")] = um("Gugur", `${mohon}; permohonan umum (9b)`);
+  baris[kl("tidak dapat diterima", "permohonan-sema-1-2022")] = um("Tidak Dapat Diterima", `${mohon}; permohonan umum (9b) - pola SEMA 1/2022`);
+  return baris;
+}
+/** Baris penetapan mafqud (Lain-Lain Pdt.P, keadaan "mafqud"). */
+function alatPetaMafqud() {
+  const B = ALAT_BERKAS_MAFQUD;
+  const k = (status, tanda) => `lain-lain|${status}|${tanda}`;
+  const r = (status, berkas, catatan) => alatBarisPutusanLain("mq", "Lain-Lain", status, berkas, catatan);
+  const um = (status, berkas, catatan) => alatBarisPutusanLain("um", "Lain-Lain", status, berkas, catatan);
+  const ket = "keadaan: penetapan mafqud (orang hilang; petitum atau posita menyebutnya)";
+  return {
+    [k("dikabulkan", "mafqud")]: r("Dikabulkan", B.kabul, ket),
+    [k("ditolak", "mafqud")]: r("Ditolak", B.tolak, ket),
+    [k("tidak dapat diterima", "mafqud")]: r("Tidak Dapat Diterima", B.noFormil, `${ket}; NO formil`),
+    [k("dicabut", "mafqud")]: um("Dicabut", ALAT_BERKAS_UMUM.cabut, `${ket}; permohonan umum (9b)`),
+    [k("digugurkan", "mafqud")]: um("Digugurkan", ALAT_BERKAS_UMUM.gugur, `${ket}; permohonan umum (9b)`),
+    [k("gugur", "mafqud")]: um("Gugur", ALAT_BERKAS_UMUM.gugur, `${ket}; permohonan umum (9b)`),
+    [k("tidak dapat diterima", "mafqud-sema-1-2022")]: um("Tidak Dapat Diterima", ALAT_BERKAS_UMUM.no, `${ket}; permohonan umum (9b) - pola SEMA 1/2022`),
+  };
+}
+Object.assign(ALAT_PETA_BAWAAN, alatPetaHibahWakaf("hibah", "Hibah", "hi", ALAT_BERKAS_HIBAH), alatPetaHibahWakaf("wakaf", "Wakaf", "wk", ALAT_BERKAS_WAKAF), alatPetaMafqud());
+/* === AKHIR I28 === */
+
 
 
 

@@ -236,6 +236,8 @@ function buatLayanan(depsMasuk) {
         x.kumulasiNafkahIstri = ni === undefined ? null : ni;
         const pn = bahanVarian && bahanVarian.plusNafkahAnak ? bahanVarian.plusNafkahAnak[x.perkaraId] : undefined;
         x.plusNafkahAnak = pn === undefined ? null : pn;
+        const mq = bahanVarian && bahanVarian.mafqud ? bahanVarian.mafqud[x.perkaraId] : undefined; // I28 18 Okt: penetapan mafqud
+        x.mafqud = mq === undefined ? null : mq;
       }
     }
 

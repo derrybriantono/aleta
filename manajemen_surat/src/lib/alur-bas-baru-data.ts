@@ -15,6 +15,8 @@
  * I20 18 Okt (abt-bas-perbaikan-derry 20, abt-bas-cabut-jawaban-derry 22, abt-penguasaan-anak-derry revisi): V1/V2 verstek di ALUR 33/34/35, [T]/[N] permohonan di ALUR 17/12l/16/19/13l/14/18,
  * CS/CM cabut sesudah jawaban di ALUR 31/33/35/36/37/38/39/40/44 dan dua alur baru "alur-08g"/"alur-08t" (cerai gugat / talak biasa, folder 1 / 1a - BAS, berkas "BAS ALUR 08 ..."),
  * V2S verstek kabul sebagian di ALUR 44; dari pemetaan-langkah-baru.json dan daftar-rtf.tsv paket itu.
+ * I28 18 Okt (abt-hibah-derry, abt-wakaf-derry, abt-mafqud-derry): ALUR 47 (hibah 366, folder 4d Hibah - BAS, menu 181), 48 (wakaf 367, 4e Wakaf - BAS, menu 183), 49 (penetapan mafqud, 369 Pdt.P,
+ * 9c Penetapan Mafqud - BAS, menu 185); hibah/wakaf: V1, AP, CB, V2, TP, NO (gugatan, pola wasiat) + permohonan 1, 1a, 1b, 1c, 2, 2a, 2b, 3, T, N; mafqud hanya permohonan; 29 salinan ALUR 04-09 di 4d / 4e.
  * I23 18 Okt (abt-nafkah-anak-derry): ALUR 46 (nafkah anak pasca perceraian, jenis 743, folder 6c - BAS, menu 166) 9 langkah: V1, V2, V2S, AP, GD, N, T, CS, CM; 29 salinan ALUR 04-09 di salinan-bas-jenis-data.ts.
  */
 export type MenuBasBaru = { id: number; nama: string; alias: string };
@@ -1584,6 +1586,262 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "kode": "CM",
         "berkas": "BAS ALUR 46 Nafkah Anak - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
         "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
+      }
+    ]
+  },
+  /* === I28 18 Okt === */
+  {
+    "id": "alur-47",
+    "nomor": 47,
+    "nama": "Hibah - Verstek, Perdamaian, Cabut, P Tidak Hadir, NO dan Permohonan",
+    "folder": "derry_briantono/4d Hibah - BAS",
+    "menu": {
+      "id": 181,
+      "nama": "Hibah - BAS",
+      "alias": "Hibah - BAS"
+    },
+    "jenisMin": 366,
+    "jenisMaks": 366,
+    "langkah": [
+      {
+        "kode": "V1",
+        "berkas": "BAS ALUR 47 Hibah - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T"
+      },
+      {
+        "kode": "AP",
+        "berkas": "BAS ALUR 47 Hibah - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Akta Perdamaian"
+      },
+      {
+        "kode": "CB",
+        "berkas": "BAS ALUR 47 Hibah - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Gugatan Dicabut"
+      },
+      {
+        "kode": "V2",
+        "berkas": "BAS ALUR 47 Hibah - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
+        "keterangan": "Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek"
+      },
+      {
+        "kode": "TP",
+        "berkas": "BAS ALUR 47 Hibah - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf",
+        "keterangan": "Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P"
+      },
+      {
+        "kode": "NO",
+        "berkas": "BAS ALUR 47 Hibah - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
+        "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      },
+      {
+        "kode": "1",
+        "berkas": "BAS ALUR 47 Hibah Mohon - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)"
+      },
+      {
+        "kode": "1a",
+        "berkas": "BAS ALUR 47 Hibah Mohon - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "1b",
+        "berkas": "BAS ALUR 47 Hibah Mohon - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf",
+        "keterangan": "Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi"
+      },
+      {
+        "kode": "1c",
+        "berkas": "BAS ALUR 47 Hibah Mohon - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf",
+        "keterangan": "Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan"
+      },
+      {
+        "kode": "2",
+        "berkas": "BAS ALUR 47 Hibah Mohon - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2a",
+        "berkas": "BAS ALUR 47 Hibah Mohon - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2b",
+        "berkas": "BAS ALUR 47 Hibah Mohon - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan"
+      },
+      {
+        "kode": "3",
+        "berkas": "BAS ALUR 47 Hibah Mohon - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Terakhir - Pembacaan Penetapan"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 47 Hibah Mohon - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon Tidak Hadir - Tunda Panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 47 Hibah Mohon - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022)"
+      }
+    ]
+  },
+  {
+    "id": "alur-48",
+    "nomor": 48,
+    "nama": "Wakaf - Verstek, Perdamaian, Cabut, P Tidak Hadir, NO dan Permohonan",
+    "folder": "derry_briantono/4e Wakaf - BAS",
+    "menu": {
+      "id": 183,
+      "nama": "Wakaf - BAS",
+      "alias": "Wakaf - BAS"
+    },
+    "jenisMin": 367,
+    "jenisMaks": 367,
+    "langkah": [
+      {
+        "kode": "V1",
+        "berkas": "BAS ALUR 48 Wakaf - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T"
+      },
+      {
+        "kode": "AP",
+        "berkas": "BAS ALUR 48 Wakaf - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Akta Perdamaian"
+      },
+      {
+        "kode": "CB",
+        "berkas": "BAS ALUR 48 Wakaf - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Gugatan Dicabut"
+      },
+      {
+        "kode": "V2",
+        "berkas": "BAS ALUR 48 Wakaf - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
+        "keterangan": "Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek"
+      },
+      {
+        "kode": "TP",
+        "berkas": "BAS ALUR 48 Wakaf - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf",
+        "keterangan": "Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P"
+      },
+      {
+        "kode": "NO",
+        "berkas": "BAS ALUR 48 Wakaf - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
+        "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      },
+      {
+        "kode": "1",
+        "berkas": "BAS ALUR 48 Wakaf Mohon - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)"
+      },
+      {
+        "kode": "1a",
+        "berkas": "BAS ALUR 48 Wakaf Mohon - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "1b",
+        "berkas": "BAS ALUR 48 Wakaf Mohon - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf",
+        "keterangan": "Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi"
+      },
+      {
+        "kode": "1c",
+        "berkas": "BAS ALUR 48 Wakaf Mohon - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf",
+        "keterangan": "Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan"
+      },
+      {
+        "kode": "2",
+        "berkas": "BAS ALUR 48 Wakaf Mohon - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2a",
+        "berkas": "BAS ALUR 48 Wakaf Mohon - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2b",
+        "berkas": "BAS ALUR 48 Wakaf Mohon - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan"
+      },
+      {
+        "kode": "3",
+        "berkas": "BAS ALUR 48 Wakaf Mohon - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Terakhir - Pembacaan Penetapan"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 48 Wakaf Mohon - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon Tidak Hadir - Tunda Panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 48 Wakaf Mohon - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022)"
+      }
+    ]
+  },
+  {
+    "id": "alur-49",
+    "nomor": 49,
+    "nama": "Penetapan Mafqud - Permohonan",
+    "folder": "derry_briantono/9c Penetapan Mafqud - BAS",
+    "menu": {
+      "id": 185,
+      "nama": "Penetapan Mafqud - BAS",
+      "alias": "Mafqud - BAS"
+    },
+    "jenisMin": 369,
+    "jenisMaks": 369,
+    "langkah": [
+      {
+        "kode": "1",
+        "berkas": "BAS ALUR 49 Mafqud - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)"
+      },
+      {
+        "kode": "1a",
+        "berkas": "BAS ALUR 49 Mafqud - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "1b",
+        "berkas": "BAS ALUR 49 Mafqud - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf",
+        "keterangan": "Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi"
+      },
+      {
+        "kode": "1c",
+        "berkas": "BAS ALUR 49 Mafqud - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf",
+        "keterangan": "Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan"
+      },
+      {
+        "kode": "2",
+        "berkas": "BAS ALUR 49 Mafqud - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2a",
+        "berkas": "BAS ALUR 49 Mafqud - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2b",
+        "berkas": "BAS ALUR 49 Mafqud - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan"
+      },
+      {
+        "kode": "3",
+        "berkas": "BAS ALUR 49 Mafqud - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Terakhir - Pembacaan Penetapan"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 49 Mafqud - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon Tidak Hadir - Tunda Panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 49 Mafqud - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022)"
       }
     ]
   }

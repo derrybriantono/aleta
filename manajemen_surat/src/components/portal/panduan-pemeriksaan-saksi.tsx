@@ -178,7 +178,7 @@ export function PanduanPemeriksaanSaksiIsi({
   const jenisId = jenisPerkaraIdPandu(perkara);
   const keadaanKirim = useMemo(() => ({ ...(keadaanAwal ?? {}), ...pilihan }), [keadaanAwal, pilihan]);
   const kunciKeadaan = JSON.stringify(keadaanKirim);
-  const kunciMuat = JSON.stringify([jenisId, perkara.alurPerkaraId ?? "", perkara.jenisPerkara ?? "", kunciKeadaan, sensitif, ulangMuat]);
+  const kunciMuat = JSON.stringify([jenisId, perkara.alurPerkaraId ?? "", perkara.jenisPerkara ?? "", perkara.mafqud === true, kunciKeadaan, sensitif, ulangMuat]);
 
   // ── Muat panduan menurut jenis dan keadaan ──
   // Panduan yang sudah ada tetap tampil selama yang baru dimuat; "memuat" diturunkan dari kunci, bukan disetel.
@@ -187,7 +187,9 @@ export function PanduanPemeriksaanSaksiIsi({
     const kueri = new URLSearchParams();
     if (jenisId) kueri.set("jenisPerkaraId", String(jenisId));
     if (perkara.alurPerkaraId) kueri.set("alurPerkaraId", String(perkara.alurPerkaraId));
-    if (perkara.jenisPerkara) kueri.set("jenisPerkara", perkara.jenisPerkara);
+    // I28 18 Okt: penetapan mafqud berbagi jenis 369 "Lain-Lain"; katalognya dikenali dari nama, jadi tandanya ditambahkan.
+    const namaJenis = [perkara.jenisPerkara, perkara.mafqud === true ? "mafqud" : ""].filter(Boolean).join(" ");
+    if (namaJenis) kueri.set("jenisPerkara", namaJenis);
     kueri.set("keadaan", kunciKeadaan);
     if (sensitif) kueri.set("sensitif", "1");
     muat(kueri).then(
@@ -203,7 +205,7 @@ export function PanduanPemeriksaanSaksiIsi({
     return () => {
       batal = true;
     };
-  }, [jenisId, perkara.alurPerkaraId, perkara.jenisPerkara, kunciKeadaan, kunciMuat, sensitif, muat]);
+  }, [jenisId, perkara.alurPerkaraId, perkara.jenisPerkara, perkara.mafqud, kunciKeadaan, kunciMuat, sensitif, muat]);
   const panduan: PanduanSaksi | null = hasilMuat?.panduan ?? null;
   const tahap: Tahap = hasilMuat?.kunci !== kunciMuat ? "memuat" : hasilMuat.pesan ? "gagal" : "siap";
   const pesan = hasilMuat?.pesan ?? "";

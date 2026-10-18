@@ -159,6 +159,7 @@ function barisPutusan(x: UnggahMassalPutusanBot, namaAkun: string): BarisUnggahM
       ...(typeof x.pencairanDana === "boolean" ? { pencairanDana: x.pencairanDana } : {}), // I22 18 Okt: petitum pencairan dana / nafkah istri
       ...(typeof x.kumulasiNafkahIstri === "boolean" ? { kumulasiNafkahIstri: x.kumulasiNafkahIstri } : {}),
       ...(typeof x.plusNafkahAnak === "boolean" ? { plusNafkahAnak: x.plusNafkahAnak } : {}), // I23 18 Okt: hak asuh + nafkah anak
+      ...(typeof x.mafqud === "boolean" ? { mafqud: x.mafqud } : {}), // I28 18 Okt: penetapan mafqud
     }),
   };
 }

@@ -183,6 +183,10 @@ const JENIS_FOLDER: Array<[RegExp, string, string[]]> = [
   // F22 17 Okt: pencegahan perkawinan (342) dan wasiat (365).
   [/pencegahan/i, "Pencegahan Perkawinan", ["pencegahan perkawinan", "pencegahan nikah"]],
   [/wasiat/i, "Wasiat", ["wasiat"]],
+  // I28 18 Okt: hibah (366), wakaf (367), penetapan mafqud (369 Lain-Lain Pdt.P; folder "9c Penetapan Mafqud").
+  [/hibah/i, "Hibah", ["hibah"]],
+  [/wakaf/i, "Wakaf", ["wakaf"]],
+  [/mafqud/i, "Penetapan Mafqud", ["mafqud", "lain-lain"]],
 ];
 
 export function jenisPerkaraDariFolder(folder: string): { label: string[]; untuk: string[] } {

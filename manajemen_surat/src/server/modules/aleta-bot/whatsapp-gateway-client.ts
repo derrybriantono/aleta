@@ -5320,6 +5320,8 @@ export type UnggahMassalPutusanBot = {
   kumulasiNafkahIstri?: boolean | null;
   /** I23 18 Okt: petitum hak asuh juga memuat nafkah (anak); null = tidak diketahui. */
   plusNafkahAnak?: boolean | null;
+  /** I28 18 Okt: Lain-Lain Pdt.P yang petitum/posita-nya menyebut mafqud / orang hilang (penetapan mafqud); null = tidak diketahui. */
+  mafqud?: boolean | null;
 };
 export type UnggahMassalTertahanBot = { perkaraId: string; nomorPerkara: string; tanggalSidang: string; majelis: string[] };
 export type UnggahMassalBasBot = {

@@ -383,6 +383,6 @@ describe("F. kunci baku Pemetaan blangko", () => {
       expect(kunciJenisPerkara(k)).toBe(k.toLowerCase());
       expect(KUNCI_BAKU.bas.some((b) => b.kunci === `${k}|1|semua-hadir`), k).toBe(true);
     }
-    expect(JENIS_BAS_BAKU).toHaveLength(18);
+    expect(JENIS_BAS_BAKU).toHaveLength(21); // I28 18 Okt: + Hibah, Wakaf, Penetapan Mafqud
   });
 });

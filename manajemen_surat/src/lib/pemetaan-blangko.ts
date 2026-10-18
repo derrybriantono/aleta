@@ -57,6 +57,9 @@ export const KUNCI_BAKU: Record<JenisPemetaan, { kunci: string; sebutan: string 
     { kunci: "Ekonomi Syariah", sebutan: "Ekonomi Syariah (gugatan sederhana dan acara biasa)" },
     { kunci: "Pencegahan Perkawinan", sebutan: "Pencegahan Perkawinan" },
     { kunci: "Wasiat", sebutan: "Wasiat" },
+    // I28 18 Okt (paket ABT abt-hibah-derry, abt-wakaf-derry): jenis SIPP 366 Hibah dan 367 Wakaf - folder 4d / 4e (menu 180 / 182).
+    { kunci: "Hibah", sebutan: "Hibah (gugatan dan permohonan)" },
+    { kunci: "Wakaf", sebutan: "Wakaf (gugatan dan permohonan pengukuhan)" },
     // I23 18 Okt (paket ABT abt-nafkah-anak-derry): jenis SIPP 743 "Nafkah Anak Pasca Perceraian" - folder 6c (menu 165/166).
     { kunci: "Nafkah Anak Pasca Perceraian", sebutan: "Nafkah Anak Pasca Perceraian (folder 6c, jenis 743)" },
   ],
@@ -818,6 +821,10 @@ export const JENIS_BAS_BAKU = [
   // F22 17 Okt: folder "5b Pencegahan Perkawinan - BAS" dan "4c Wasiat - BAS" ("10a Ekonomi Syariah Biasa - BAS" ikut jenis "Ekonomi Syariah").
   "Pencegahan Perkawinan",
   "Wasiat",
+  // I28 18 Okt: folder "4d Hibah - BAS", "4e Wakaf - BAS" dan "9c Penetapan Mafqud - BAS".
+  "Hibah",
+  "Wakaf",
+  "Penetapan Mafqud",
   // I23 18 Okt: folder "6c Nafkah Anak - BAS" (jenis 743).
   "Nafkah Anak Pasca Perceraian",
 ] as const;

@@ -276,6 +276,8 @@ type SidangBaris = {
   alurPerkaraId: number;
   /** Nomor jenis perkara SIPP (dikirim bot sejak 18 Okt 2026); dasar panduan pertanyaan saksi. */
   jenisPerkaraId?: number | null;
+  /** I28 18 Okt: penetapan mafqud (Lain-Lain Pdt.P; bot membaca petitum/posita); null = tidak diketahui. */
+  mafqud?: boolean | null;
   sudahPutus: boolean;
   tanggalPutusan: string;
   statusPutusan: string;
@@ -9008,6 +9010,7 @@ export function AletaEcourtSidang({
                                       jenisPerkaraId: baris.jenisPerkaraId,
                                       alurPerkaraId: baris.alurPerkaraId,
                                       jenisPerkara: baris.jenisPerkara,
+                                      mafqud: baris.mafqud,
                                     },
                                     sidangId: baris.sidangId,
                                     tanggalSidang: baris.tanggalSidang,

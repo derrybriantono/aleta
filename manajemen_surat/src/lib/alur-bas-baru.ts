@@ -17,6 +17,8 @@
  * F21 17 Okt: tiga paket jenis baru menambah ALUR 38 (hak asuh anak), 39 (pembatalan perkawinan), 40 (ekonomi syariah gugatan sederhana).
  * I15 18 Okt: ALUR 44 (penguasaan anak, jenis 349, folder 6b) menggantikan ALUR 38 untuk jenis 349; hak asuh/hadhanah (jenis 369) tetap ALUR 38.
  * F22 17 Okt: ALUR 41 (pencegahan perkawinan, permohonan Pdt.P), 42 (wasiat), 43 (ekonomi syariah ACARA BIASA, nomor Pdt.G; gugatan sederhana Pdt.G.S tetap ALUR 40).
+ * I28 18 Okt (abt-hibah-derry, abt-wakaf-derry, abt-mafqud-derry): ALUR 47 (hibah 366), 48 (wakaf 367) - gugatan Pdt.G berpola wasiat (V1, AP, CB, V2, TP, NO + 29 salinan ALUR 04-09) dan
+ * permohonan Pdt.P (1, 1a, 1b, 1c, 2, 2a, 2b, 3, T, N; cabut / gugur ke 9b); ALUR 49 (penetapan mafqud: Lain-Lain 369 Pdt.P yang ditandai mafqud, permohonan saja).
  * I23 18 Okt (abt-nafkah-anak-derry): ALUR 46 (nafkah anak pasca perceraian, jenis 743, folder 6c - BAS, menu 166): V1, V2, V2S, AP, GD, N, T, CS, CM + 29 salinan ALUR 04-09.
  * I20 18 Okt (abt-bas-perbaikan-derry, abt-bas-cabut-jawaban-derry): verstek V1/V2 untuk kewarisan (ALUR 33), poligami (34) dan itsbat kontensius (35); [T] tunda panggil
  * Pemohon dan [N] NO SEMA 1/2022 permohonan di folder jenisnya (itsbat 17, DK 12l, perwalian 16, wali adhal 19, AUA 13l, PAW 14, pengangkatan anak 18; dulu 9b);
@@ -46,6 +48,8 @@ export type MasukanBasBaru = MasukanAlurBasKumulasi & {
   sudahJawaban?: boolean;
   /** I20 18 Okt: sikap Tergugat atas pencabutan sesudah jawaban - "setuju" (CS) atau "menolak" (CM); kosong + akhir cabut + sudah jawaban = setuju. */
   sikapTergugatCabut?: "setuju" | "menolak" | string | null;
+  /** I28 18 Okt: penetapan mafqud (Lain-Lain Pdt.P) - penanda dari bot (petitum/posita menyebut mafqud / orang hilang) atau saklar. */
+  mafqud?: boolean;
 };
 
 export type AlurBasBaruRingkas = { id: string; nomor: number; nama: string; folder: string; menu: MenuBasBaru };
@@ -62,7 +66,7 @@ export type HasilBasBaru = {
 
 type JenisBaru =
   | "paw" | "perwalian" | "wali-adhal" | "angkat-anak" | "itsbat" | "itsbat-kontensius" | "dk" | "aua"
-  | "hb" | "waris" | "poligami" | "cerai-gugat" | "cerai-talak" | "hak-asuh" | "penguasaan-anak" | "nafkah-anak" | "pembatalan" | "es" | "pencegahan" | "wasiat" | "es-biasa" | "";
+  | "hb" | "waris" | "poligami" | "cerai-gugat" | "cerai-talak" | "hak-asuh" | "penguasaan-anak" | "nafkah-anak" | "pembatalan" | "es" | "pencegahan" | "wasiat" | "es-biasa" | "hibah" | "wakaf" | "hibah-mohon" | "wakaf-mohon" | "mafqud" | "";
 
 /** Jenis perkara SIPP -> jenis yang dikenal berkas ini. Itsbat dipilah menurut nomor (Pdt.G = kontensius). */
 export function jenisBasBaru(jenisPerkara: unknown, nomorPerkara?: unknown): JenisBaru {
@@ -92,6 +96,9 @@ export function jenisBasBaru(jenisPerkara: unknown, nomorPerkara?: unknown): Jen
   // F22 17 Okt: pencegahan perkawinan (342, Pdt.P) dan wasiat (365).
   if (j.includes("pencegahan")) return "pencegahan";
   if (/\bwasiat\b/.test(j)) return "wasiat";
+  // I28 18 Okt: hibah (366) dan wakaf (367): Pdt.G = gugatan (ALUR 47 / 48, pola wasiat), Pdt.P = permohonan penetapan / pengukuhan; nomor belum diketahui = gugatan.
+  if (/\bhibah\b/.test(j)) return /\/Pdt\.P\//i.test(String(nomorPerkara ?? "")) ? "hibah-mohon" : "hibah";
+  if (/\bwakaf\b/.test(j)) return /\/Pdt\.P\//i.test(String(nomorPerkara ?? "")) ? "wakaf-mohon" : "wakaf";
   // Gugatan hak asuh PA Donggala terdaftar sebagai "Lain-Lain" (369) bernomor Pdt.G; pengangkatan anak selalu permohonan (Pdt.P).
   if (j.includes("lain-lain") && /\/Pdt\.G\//i.test(String(nomorPerkara ?? ""))) return "hak-asuh";
   if (j.includes("lain-lain") || j.includes("pengangkatan anak")) return "angkat-anak";
@@ -136,6 +143,7 @@ const RX_DAMAI = /perdamaian|damai|mediasi\s+berhasil/i;
 const RX_SELA = /putusan\s+sela/i;
 const RX_SITA = /sita|insidentil/i;
 const RX_SETEMPAT = /setempat/i;
+const RX_MAFQUD = /mafqud|orang\s+(?:yang\s+)?hilang/i;
 
 /** Kode langkah keluarga permohonan "pemeriksaan - lanjutan - pembacaan penetapan" menurut urutan sidang dan agenda. */
 function kodeKeluarga(id: string, n: number, agenda: string): { kode: string; perkiraan: boolean } {
@@ -160,13 +168,15 @@ function kodeKeluarga(id: string, n: number, agenda: string): { kode: string; pe
 
 const ID_KELUARGA: Record<string, string> = {
   paw: "alur-14", perwalian: "alur-16", "wali-adhal": "alur-19", "angkat-anak": "alur-18", itsbat: "alur-17", dk: "alur-12l", aua: "alur-13l",
+  // I28 18 Okt: permohonan hibah / wakaf (Pdt.P) dan penetapan mafqud.
+  "hibah-mohon": "alur-47", "wakaf-mohon": "alur-48", mafqud: "alur-49",
 };
 
 function permohonan(jenis: JenisBaru, m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
   const akhir = m.akhir ?? (RX_CABUT.test(agenda) ? "cabut" : null);
   const h = m.dihadiriOleh;
   const id = ID_KELUARGA[jenis];
-  const namaJenis = jenis === "dk" ? "Dispensasi kawin" : jenis === "aua" ? "Asal usul anak" : jenis === "itsbat" ? "Itsbat nikah" : "Permohonan";
+  const namaJenis = ({ dk: "Dispensasi kawin", aua: "Asal usul anak", itsbat: "Itsbat nikah", "hibah-mohon": "Permohonan hibah", "wakaf-mohon": "Permohonan wakaf", mafqud: "Penetapan mafqud" } as Record<string, string>)[jenis] ?? "Permohonan";
 
   // Itsbat gugur/cabut sudah dilayani peta 946 (alur-bas-kumulasi): tidak diubah.
   if (jenis === "itsbat" && (akhir === "cabut" || akhir === "gugur")) return null;
@@ -284,10 +294,10 @@ function gugatanKebendaan(jenis: "hb" | "waris", m: MasukanBasBaru, n: number, a
  * kedua pihak memakai salinan BAS kontradiktoir ALUR 04-09 di folder jenisnya (seperti HB/waris); T tidak hadir, mediasi berhasil, cabut,
  * P tidak hadir, dan NO memakai BAS khusus ALUR 38/39. Perdamaian (akta) hanya hak asuh; pembatalan perkawinan tidak dapat didamaikan.
  */
-function gugatanKeluarga(jenis: "hak-asuh" | "penguasaan-anak" | "nafkah-anak" | "pembatalan" | "wasiat" | "es-biasa", m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
+function gugatanKeluarga(jenis: "hak-asuh" | "penguasaan-anak" | "nafkah-anak" | "pembatalan" | "wasiat" | "es-biasa" | "hibah" | "wakaf", m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
   // F22 17 Okt: wasiat (ALUR 42) dan ES acara biasa (ALUR 43) berpola sama dengan hak asuh: mediasi dan akta perdamaian ada; hanya pembatalan yang tidak.
   const asuh = jenis !== "pembatalan";
-  const id = { "hak-asuh": "alur-38", "penguasaan-anak": "alur-44", "nafkah-anak": "alur-46", pembatalan: "alur-39", wasiat: "alur-42", "es-biasa": "alur-43" }[jenis];
+  const id = { "hak-asuh": "alur-38", "penguasaan-anak": "alur-44", "nafkah-anak": "alur-46", pembatalan: "alur-39", wasiat: "alur-42", "es-biasa": "alur-43", hibah: "alur-47", wakaf: "alur-48" }[jenis];
   // ALUR 46 memakai kode langkah N (NO), T (tunda panggil P) dan GD (gugatan dicabut, mediasi berhasil); alur lain NO / TP / CB.
   const kd = (c: string) => (id === "alur-46" ? (({ NO: "N", TP: "T", CB: "GD" }) as Record<string, string>)[c] ?? c : c);
   const nama = {
@@ -297,6 +307,8 @@ function gugatanKeluarga(jenis: "hak-asuh" | "penguasaan-anak" | "nafkah-anak" |
     pembatalan: "Pembatalan perkawinan",
     wasiat: "Wasiat",
     "es-biasa": "Ekonomi syariah (acara biasa)",
+    hibah: "Hibah",
+    wakaf: "Wakaf",
   }[jenis];
   const h = m.dihadiriOleh;
   const akhir = m.akhir ?? (RX_CABUT.test(agenda) ? "cabut" : null);
@@ -544,10 +556,12 @@ function cabutSesudahJawaban(jenis: JenisBaru, m: MasukanBasBaru, agenda: string
  * pilihan katalog yang sudah ada).
  */
 export function tentukanBasBaru(m: MasukanBasBaru): HasilBasBaru | null {
-  const jenis = jenisBasBaru(m.jenisPerkara, m.nomorPerkara);
+  let jenis = jenisBasBaru(m.jenisPerkara, m.nomorPerkara);
   if (!jenis) return null;
   const n = Number.isFinite(m.urutanSidang) && m.urutanSidang > 0 ? Math.floor(m.urutanSidang) : 1;
   const agenda = String(m.agenda ?? "");
+  // I28 18 Okt: penetapan mafqud = Lain-Lain (369) Pdt.P yang ditandai mafqud (bot membaca petitum/posita) atau agendanya menyebutnya; tanpa penanda tetap pengangkatan anak / permohonan lain.
+  if (jenis === "angkat-anak" && /\/Pdt\.P\//i.test(String(m.nomorPerkara ?? "")) && (m.mafqud === true || (m.mafqud === undefined && RX_MAFQUD.test(agenda)))) jenis = "mafqud";
   // I20 18 Okt: cabut sesudah jawaban (CS / CM) didahulukan atas jalur biasa bila ditandai tegas.
   const cabut = cabutSesudahJawaban(jenis, m, agenda);
   if (cabut) return cabut;
@@ -566,6 +580,8 @@ export function tentukanBasBaru(m: MasukanBasBaru): HasilBasBaru | null {
     case "pembatalan":
     case "wasiat":
     case "es-biasa":
+    case "hibah":
+    case "wakaf":
       return gugatanKeluarga(jenis, m, n, agenda);
     case "pencegahan":
       return pencegahanPerkawinan(m, n, agenda);

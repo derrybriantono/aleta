@@ -3739,6 +3739,7 @@ const ID_JENIS_PERKARA_SIPP = Object.freeze({
   "wali adhol": "363",
   kewarisan: "364",
   wasiat: "365",
+  hibah: "366", // I28 18 Okt
   wakaf: "367",
   "lain-lain": "369",
   "lain-lain *)": "369",

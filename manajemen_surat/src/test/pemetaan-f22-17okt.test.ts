@@ -298,8 +298,8 @@ describe("D. set pohon dan kunci baku", () => {
     expect(kunci).toEqual(expect.arrayContaining(["Pencegahan Perkawinan", "Wasiat", "Ekonomi Syariah"]));
     expect(KUNCI_BAKU.putusan.find((k) => k.kunci === "Ekonomi Syariah")!.sebutan).toMatch(/gugatan sederhana dan acara biasa/);
     expect(JENIS_BAS_BAKU).toEqual(expect.arrayContaining(["Pencegahan Perkawinan", "Wasiat"]));
-    expect(JENIS_BAS_BAKU).toHaveLength(18); // I23 18 Okt: + Nafkah Anak Pasca Perceraian
-    expect(KUNCI_BAKU.bas).toHaveLength(18 * 11);
+    expect(JENIS_BAS_BAKU).toHaveLength(21); // I23 18 Okt: + Nafkah Anak Pasca Perceraian; I28 18 Okt: + Hibah, Wakaf, Penetapan Mafqud
+    expect(KUNCI_BAKU.bas).toHaveLength(21 * 11);
     expect(kunciJenisPerkara("Pencegahan Perkawinan")).toBe("pencegahan perkawinan");
     expect(kunciJenisPerkara("Wasiat")).toBe("wasiat");
   });
@@ -353,7 +353,7 @@ describe("E. label isian 9460-9493 dan huruf kunci", () => {
 
   it("ekstensi: 9463 dan 9475 ditulis ke ABT hanya hurufnya (pilihan 'A · uraian' -> 'A'); isian lain tidak diubah", () => {
     const sumber = readFileSync(path.resolve(__dirname, "../../../ekstensi-sipp/blangko-derry-isian.js"), "utf8");
-    expect(sumber).toContain('kode === "8503" || kode === "9463" || kode === "9475" ? nilaiSimpan8503(nilai) : nilai');
+    expect(sumber).toContain('kode === "8503" || kode === "9463" || kode === "9475" || kode === "9790" || kode === "9820" || kode === "9865" ? nilaiSimpan8503(nilai) : nilai'); // I28 18 Okt: + 9790, 9820, 9865
     const awal = sumber.indexOf("function nilaiSimpan8503(teks) {");
     const akhir = sumber.indexOf("const alasanHuruf = ", awal);
     const fn = vm.runInNewContext(`(${sumber.slice(awal, akhir).trim()})`) as (t: string) => string;

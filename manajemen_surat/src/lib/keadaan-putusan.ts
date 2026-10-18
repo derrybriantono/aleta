@@ -55,6 +55,11 @@
  *   itsbat-ditolak-cerai-no / itsbat-no-poligami-sirri
  *                                    cerai kumulasi itsbat: itsbat ditolak (rukun syarat tidak terbukti) dan cerai NO -> [03b]; itsbat NO (poligami sirri) dan cerai NO -> [99d] (I26);
  *                                    saklar `amarKumulasiItsbat`, pilih manual
+ *   permohonan / permohonan-sema-1-2022
+ *                                    hibah dan wakaf bernomor Pdt.P (alur 16, PERMOHONAN penetapan / pengukuhan wakaf) -> [01p] / [03p] / [99p] (I28 18 Okt); dari nomor perkara.
+ *                                    Cabut, gugur, coret dan NO SEMA 1/2022 permohonan memakai 9b Permohonan Umum. Hibah/wakaf Pdt.G = gugatan seperti wasiat.
+ *   mafqud / mafqud-sema-1-2022      penetapan mafqud (orang hilang; Lain-Lain 369, Pdt.P, folder 9c) -> [01] / [03] / [99] (I28); dari saklar `mafqud` atau amar yang menyebutnya
+ *                                    (bot membaca petitum/posita: mafqud, orang hilang)
  *   plus-nafkah-anak(-verstek|-setelah-mediasi)
  *                                    gugatan hak asuh (Lain-Lain Pdt.G) yang petitumnya juga memuat nafkah anak -> [02] / [02b] / [02a] folder 6a (I23 18 Okt); bahan: `plusNafkahAnak`
  *                                    (bot membaca petitum) atau kumulasi "nafkah-anak"; nafkah anak pasca perceraian (jenis 743) = folder 6c, jenisnya sendiri
@@ -119,6 +124,11 @@ export type KodeKeadaanPutusan =
   | "anak-laki-laki-alasan-lain"
   | "itsbat-ditolak-cerai-no"
   | "itsbat-no-poligami-sirri"
+  // I28 18 Okt (paket abt-hibah/-wakaf/-mafqud-derry): lihat daftar di kepala berkas.
+  | "permohonan"
+  | "permohonan-sema-1-2022"
+  | "mafqud"
+  | "mafqud-sema-1-2022"
   // I23 18 Okt (paket abt-nafkah-anak-derry): hak asuh + nafkah anak di folder 6a.
   | "plus-nafkah-anak"
   | "plus-nafkah-anak-verstek"
@@ -185,6 +195,8 @@ export type MasukanKeadaanPutusan = {
   anakDispensasi?: unknown;
   alasanTolakDispensasi?: unknown;
   amarKumulasiItsbat?: unknown;
+  /** I28 18 Okt: penetapan mafqud (Lain-Lain Pdt.P): saklar tegas atau terbaca bot dari petitum/posita (mafqud, orang hilang); selain itu dari amarPutusan. */
+  mafqud?: unknown;
   /** I23 18 Okt: gugatan hak asuh yang petitumnya juga memuat nafkah anak (bot membaca petitum; saklar menang; selain itu dari kumulasi "nafkah-anak"). */
   plusNafkahAnak?: unknown;
 };
@@ -219,9 +231,21 @@ function esAcaraBiasa(j: string, nomor: unknown) {
   return j.includes("ekonomi syariah") && /\/pdt\.g\//i.test(String(nomor ?? ""));
 }
 
-/** F22 17 Okt: wasiat (jenis 365) - gugatan yang mengenal mediasi dan verstek seperti cerai. */
-function jenisWasiat(j: string) {
-  return /\bwasiat\b/.test(j);
+/**
+ * F22 17 Okt: wasiat (jenis 365) - gugatan yang mengenal mediasi dan verstek seperti cerai.
+ * I28 18 Okt: hibah (366) dan wakaf (367) bernomor Pdt.G berpola sama (ALUR 47 / 48); bernomor Pdt.P = permohonan (lihat jenisHibahWakafPermohonan).
+ */
+function jenisWasiat(j: string, nomor: unknown = "") {
+  if (/\bwasiat\b/.test(j)) return true;
+  return /\b(?:hibah|wakaf)\b/.test(j) && !/\/pdt\.p\//i.test(String(nomor ?? ""));
+}
+/** I28 18 Okt: hibah / wakaf bernomor Pdt.P - permohonan penetapan (hibah) atau pengukuhan wakaf (PP 42/2006 Pasal 58); tanpa mediasi, verstek, atau jawaban. */
+function jenisHibahWakafPermohonan(j: string, nomor: unknown) {
+  return /\b(?:hibah|wakaf)\b/.test(j) && /\/pdt\.p\//i.test(String(nomor ?? ""));
+}
+/** I28 18 Okt: penetapan mafqud = Lain-Lain (369) bernomor Pdt.P yang ditandai mafqud (saklar / bot membaca petitum) atau amarnya menyebut mafqud / orang hilang. */
+function mafqudDariAmar(amar: unknown) {
+  return /mafqud|orang\s+(?:yang\s+)?hilang/i.test(String(amar ?? ""));
 }
 
 /**
@@ -290,7 +314,7 @@ export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
   const hasilMediasi = kecil(m.mediasi?.hasil).toUpperCase();
   const verstekBendera = m.verstekPutusan === true;
 
-  if (jenisCerai(j) || j.includes("harta bersama") || j.includes("kewarisan") || /\bwaris\b/.test(j) || j.includes("poligami") || jenisGugatanBaru(j) || jenisWasiat(j) || hakAsuhTerdaftarLainLain(j, m.nomorPerkara)) {
+  if (jenisCerai(j) || j.includes("harta bersama") || j.includes("kewarisan") || /\bwaris\b/.test(j) || j.includes("poligami") || jenisGugatanBaru(j) || jenisWasiat(j, m.nomorPerkara) || hakAsuhTerdaftarLainLain(j, m.nomorPerkara)) {
     if (pernahMediasi && hasilMediasi === "S") hasil.push("mediasi-sebagian");
     if (pernahMediasi && tPernah && hadir === 2) hasil.push("t-tidak-hadir-setelah-mediasi");
     if (tHadirKini) hasil.push("kontradiktoir");
@@ -327,7 +351,7 @@ export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
   // (369 Pdt.G / 349), pembatalan, wasiat, itsbat kontensius - permohonan (Pdt.P) tidak punya jawaban Tergugat.
   const kumulasiKode = kodeKumulasiKeadaan(m.kumulasi);
   const gugatan =
-    jenisCerai(j) || j.includes("harta bersama") || j.includes("kewarisan") || jenisGugatanBaru(j) || jenisWasiat(j) || hakAsuh || (jenisItsbat(j) && /\/pdt\.g\//i.test(String(m.nomorPerkara ?? "")));
+    jenisCerai(j) || j.includes("harta bersama") || j.includes("kewarisan") || jenisGugatanBaru(j) || jenisWasiat(j, m.nomorPerkara) || hakAsuh || (jenisItsbat(j) && /\/pdt\.g\//i.test(String(m.nomorPerkara ?? "")));
   const awalan: KodeKeadaanPutusan[] = [];
   if (gugatan) {
     // I19 18 Okt: eksepsi kewenangan (absolut / relatif) - dikabulkan (NO) atau ditolak dalam putusan sela; saklar tegas, tidak ditebak.
@@ -371,6 +395,11 @@ export function keadaanPutusan(m: MasukanKeadaanPutusan): KodeKeadaanPutusan[] {
   if (jenisCerai(j) && kumulasiKode.includes("itsbat-nikah")) {
     const amar = kecil(m.amarKumulasiItsbat);
     if (amar === "itsbat-ditolak-cerai-no" || amar === "itsbat-no-poligami-sirri") awalan.push(amar);
+  }
+  // I28 18 Okt: hibah / wakaf Pdt.P (permohonan) dan penetapan mafqud; kode gabungan "-sema-1-2022" agar NO SEMA memakai 9b Permohonan Umum, bukan NO formil.
+  if (jenisHibahWakafPermohonan(j, m.nomorPerkara)) awalan.push(hasil.includes("sema-1-2022") ? "permohonan-sema-1-2022" : "permohonan");
+  if (j.includes("lain-lain") && /\/pdt\.p\//i.test(String(m.nomorPerkara ?? "")) && (m.mafqud === true || (m.mafqud === undefined && mafqudDariAmar(m.amarPutusan)))) {
+    awalan.push(hasil.includes("sema-1-2022") ? "mafqud-sema-1-2022" : "mafqud");
   }
   if (jenisItsbat(j) && !hasil.includes("kontensius")) {
     const alasan = kecil(m.alasanItsbat);

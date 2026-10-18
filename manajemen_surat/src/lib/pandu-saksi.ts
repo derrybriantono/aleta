@@ -106,6 +106,8 @@ export type PerkaraPandu = {
   jenisPerkaraId?: number | string | null;
   alurPerkaraId?: number | string | null;
   jenisPerkara?: string | null;
+  /** I28 18 Okt: Lain-Lain Pdt.P yang petitum/posita-nya menyebut mafqud (bot); katalog mafqud dikenali lewat nama, jadi kata "mafqud" ditambahkan ke nama yang dikirim. */
+  mafqud?: boolean | null;
 };
 
 /**
@@ -133,6 +135,8 @@ export function jenisPerkaraIdDariNama(nama: string | null | undefined, alur?: n
   if (/p3hp|penetapan\s*ahli\s*waris/.test(t)) return 371;
   if (/kewarisan|waris/.test(t)) return 364;
   if (/wasiat/.test(t)) return 365;
+  if (/hibah/.test(t)) return 366; // I28 18 Okt
+  if (/wakaf/.test(t)) return 367;
   if (/istbat|itsbat|isbat|pengesahan\s*perkawinan/.test(t)) return 360;
   if (/hak\s*asuh|hadhanah|hadanah/.test(t)) return 369;
   if (/lain/.test(t) && alurAngka === 16) return 369;

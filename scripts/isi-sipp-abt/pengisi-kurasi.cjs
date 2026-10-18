@@ -266,6 +266,26 @@ const KURASI = {
   "9767": ["bukti dan posita permohonan (susunan keluarga Pewaris; belum ada aturan baca)", "Saudara seibu Pewaris; sangat jarang."],
   "9771": ["posita permohonan dispensasi (alasan mendesak yang dikemukakan Pemohon; belum ada aturan baca)", "Dispensasi kawin ditolak dengan alasan selain kehamilan atau pacaran; jarang."],
   "9772": ["tidak ada (penilaian hakim atas rukun atau syarat nikah yang tidak terbukti)", "Cerai kumulasi itsbat yang itsbatnya ditolak; sangat jarang."],
+  // 18 Okt (paket i28 hibah 366, wakaf 367, penetapan mafqud 369 Pdt.P): belum ada aturan baca; sumbernya gugatan / permohonan e-Court (posita, petitum) dan bukti.
+  "9790": ["petitum gugatan hibah (huruf pokok tuntutan A-G; belum ada aturan baca - pilih manual)", "Hibah: 0 perkara SIPP sejak 2023."],
+  "9793": ["posita gugatan hibah (nama penghibah; belum ada aturan baca)", "Hibah: 0 perkara SIPP sejak 2023."],
+  "9794": ["posita gugatan hibah (bentuk dan tanggal hibah; belum ada aturan baca)", ""],
+  "9795": ["posita / petitum gugatan hibah (objek hibah: letak, luas, batas; belum ada aturan baca)", ""],
+  "9820": ["petitum gugatan wakaf (huruf pokok tuntutan A-F; belum ada aturan baca - pilih manual)", "Wakaf: 0 perkara SIPP sejak 2023."],
+  "9823": ["posita gugatan wakaf (nama Wakif; belum ada aturan baca)", "Wakaf: 0 perkara SIPP sejak 2023."],
+  "9824": ["posita gugatan wakaf (nama Nazhir; belum ada aturan baca)", ""],
+  "9825": ["posita gugatan wakaf (akta ikrar wakaf: nomor dan tanggal; belum ada aturan baca)", ""],
+  "9826": ["posita / petitum gugatan wakaf (harta benda wakaf: letak, luas, batas; belum ada aturan baca)", ""],
+  "9827": ["posita gugatan wakaf (peruntukan wakaf; belum ada aturan baca)", ""],
+  "9860": ["identitas dan posita permohonan mafqud (nama orang yang hilang; belum ada aturan baca)", "Mafqud tidak punya jenis SIPP sendiri (369 Lain-Lain Pdt.P)."],
+  "9861": ["posita permohonan mafqud (kedudukan Pemohon; belum ada aturan baca)", ""],
+  "9862": ["posita permohonan mafqud (waktu dan tempat kepergian; belum ada aturan baca)", ""],
+  "9863": ["posita permohonan mafqud (upaya pencarian; belum ada aturan baca)", ""],
+  "9864": ["posita permohonan mafqud (lama tidak ada kabar; belum ada aturan baca)", ""],
+  "9865": ["posita permohonan mafqud (huruf kepentingan Pemohon A-C; belum ada aturan baca - pilih manual)", ""],
+  "9868": ["relaas / catatan pengumuman Panitera (cara dan jangka pengumuman; belum tercatat terstruktur)", "Bawaan papan pengumuman 14 hari."],
+  "9869": ["catatan Panitera (hasil pengumuman; belum tercatat terstruktur)", "Bawaan: tidak ada yang memberi kabar."],
+  "9875": ["tidak ada (opsional: tanggal berlaku mati secara hukum; kosong = sejak penetapan diucapkan)", ""],
 };
 const POLA_HAKIM = /pertimbangan|penilaian|fakta|kesimpulan|pokok|alasan (permohonan|pembatalan|pencegahan)|keadaan pengasuhan|mengapa|klausula|pihak yang menanggung|jumlah kewajiban|pilihan anak|kesepakatan|perdamaian/i;
 const POLA_BUKTI = /alat bukti|bukti (surat|elektronik)|nomor|tanggal surat/i;

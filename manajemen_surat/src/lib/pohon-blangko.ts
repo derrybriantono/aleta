@@ -268,6 +268,29 @@ export const SET_BLANGKO: SetBlangko[] = [
     jenis: "putusan",
     untuk: ["wasiat"],
   },
+  // I28 18 Okt 2026 (paket ABT abt-hibah-derry, abt-wakaf-derry, abt-mafqud-derry): hibah (366, menu 180/181), wakaf (367, 182/183) dan penetapan mafqud (369 Lain-Lain Pdt.P, 184/185).
+  // Mafqud berbagi jenis 369 dengan pengangkatan anak (9a) dan hak asuh (6a): ALETA memilih lewat keadaan "mafqud", bukan lewat jenis.
+  {
+    id: "putusan-hibah",
+    nama: "Putusan Hibah",
+    folder: `${AKAR}/4d Hibah`,
+    jenis: "putusan",
+    untuk: ["hibah"],
+  },
+  {
+    id: "putusan-wakaf",
+    nama: "Putusan Wakaf",
+    folder: `${AKAR}/4e Wakaf`,
+    jenis: "putusan",
+    untuk: ["wakaf"],
+  },
+  {
+    id: "putusan-mafqud",
+    nama: "Penetapan Mafqud",
+    folder: `${AKAR}/9c Penetapan Mafqud`,
+    jenis: "putusan",
+    untuk: ["mafqud", "lain-lain"],
+  },
   {
     // abt_menu hanya punya satu kolom acuan jenis (370): perkara ES melihat "10" DAN "10a"; ALETA memilih menurut nomor (Pdt.G -> set ini, Pdt.G.S -> "10").
     id: "putusan-ekonomi-syariah-biasa",

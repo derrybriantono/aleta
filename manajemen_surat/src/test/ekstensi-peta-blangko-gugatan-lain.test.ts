@@ -104,7 +104,7 @@ describe("peta blangko gugatan lain - pemilih panel-alat.js yang dijalankan", ()
   it("jenis yang tidak diberi bawaan tetap tanpa baris - tidak ditebak", () => {
     // F21 17 Okt: Ekonomi Syariah (gugatan sederhana), Pembatalan Perkawinan, dan Penguasaan Anak (hak asuh) kini punya bawaan;
     // F22 17 Okt: juga Wasiat, Pencegahan Perkawinan (dan Ekonomi Syariah acara biasa lewat keadaan "es-biasa").
-    expect(pilih("Hibah")).toBeNull();
+    expect(pilih("Zakat")).toBeNull(); // I28 18 Okt: Hibah kini punya bawaan (folder 4d)
     expect(pilih("Wasiat").baris.blangko).toBe("Putusan Wasiat");
     expect(pilih("Pencegahan Perkawinan").baris.blangko).toBe("Putusan Pencegahan Perkawinan");
     expect(pilih("Ekonomi Syariah").baris.blangko).toBe("Putusan Ekonomi Syariah");
