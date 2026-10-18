@@ -27,7 +27,8 @@
  * yang tidak dikabulkan, yang akta cerainya memang tidak akan pernah terbit.
  * Nol yang sungguhan.
  *
- * "Ikrar talak lewat enam bulan sejak BHT" menangkap 35. Yang berstatus
+ * "Ikrar talak lewat enam bulan sejak BHT" menangkap 35 (kini acuannya penetapan
+ * hari sidang ikrar, bukan BHT - Pasal 70 ayat (6); saringan statusnya tetap). Yang berstatus
  * Dikabulkan hanya 2; sisanya 33 sama sekali tidak menunggu ikrar.
  *
  * Dan 16 Cerai Talak yang tampak terlambat menerbitkan akta cerai ternyata
@@ -157,10 +158,13 @@ export const ATURAN_TENGGAT: Aturan[] = [
   {
     kode: "ikrar-talak",
     judul: "Ikrar talak belum diucapkan - penetapan gugur bila lewat 6 bulan",
-    dasar: "Pasal 70 ayat (6) UU 7 Tahun 1989",
+    dasar: "Pasal 70 ayat (6) UU 7 Tahun 1989 - 6 bulan sejak ditetapkan hari sidang ikrar (bukan BHT)",
+    // tanggalAcuan = penetapan hari sidang ikrar (keputusan pengguna no. 91, 18 Okt 2026).
+    // Mesin ini hanya mengenal hari: 180 hari lebih awal 1-4 hari daripada 6 bulan kalender
+    // (181-184 hari) - sedikit lebih hati-hati, tidak pernah terlambat.
     batasHari: 180,
     peringatanHari: 30,
-    // Diukur: tanpa saringan dikabulkan, 35 tertangkap dan hanya 2 sungguhan.
+    // Diukur (dasar BHT lama): tanpa saringan dikabulkan, 35 tertangkap dan hanya 2 sungguhan.
     // Sesudah disaring dan dibatasi cakrawala: 2 dari 2025, nol dari 2026.
     tindakan: "Panggil Pemohon untuk ikrar sebelum penetapannya gugur.",
     hanyaDikabulkan: true,

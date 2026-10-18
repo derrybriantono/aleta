@@ -558,23 +558,34 @@ describe("rekap per dokumen - pilihan perkara, realisasi, dasar", () => {
     expect(d.tabel.baris[0].tempat).toBe("08/05/2026 - Terpadu Sindue");
   });
 
-  it("Rekap Ikrar Talak: sesudah BHT, paling lama 180 hari, tidak mendahului PHS", () => {
+  it("Rekap Ikrar Talak: tidak mendahului PHS dan paling lambat PHS + 6 bulan; tanpa PHS belum dinilai", () => {
     const ik = (bht: string | null, phs: string | null, ikrar: string | null) =>
       baris({ hubungan: ["majelis-ikrar"], jenisPerkaraId: 346, tanggalBht: bht, ikrar: { tanggalIkrar: ikrar, tanggalPhsIkrar: phs } });
     const sesuai = ik("2026-04-01", "2026-04-05", "2026-04-20");
+    // PHS 20 Agt 2025 + 6 bulan = 20 Feb 2026; ikrar 3 Apr 2026 melewati batas (225 hari sesudah PHS).
     const lewat = ik("2025-08-19", "2025-08-20", "2026-04-03");
     const mendahuluiPhs = ik("2026-04-01", "2026-05-01", "2026-04-20");
+    // BHT tak tercatat TIDAK lagi menghalangi penilaian; PHS yang tak tercatat yang menghalangi.
     const tanpaBht = ik(null, "2026-04-01", "2026-04-10");
+    const tanpaPhs = ik("2026-04-01", null, "2026-04-10");
     const belum = ik("2026-06-01", "2026-06-10", null);
+    // Tepat pada tanggal batas masih sah; sehari sesudahnya lewat; 31 Agt + 6 bulan = 28 Feb.
+    expect(ikrarSesuai(ik(null, "2025-10-22", "2026-04-22"))).toBe(true);
+    expect(ikrarSesuai(ik(null, "2025-10-22", "2026-04-23"))).toBe(false);
+    expect(ikrarSesuai(ik(null, "2026-08-31", "2027-02-28"))).toBe(true);
+    expect(ikrarSesuai(ik(null, "2026-08-31", "2027-03-01"))).toBe(false);
     expect(ikrarSesuai(sesuai)).toBe(true);
     expect(ikrarSesuai(lewat)).toBe(false);
     expect(ikrarSesuai(mendahuluiPhs)).toBe(false);
-    expect(ikrarSesuai(tanpaBht)).toBe(null);
-    const d = dok(data(TW2, [sesuai, lewat, mendahuluiPhs, tanpaBht, belum]), "rekap-ikrar-talak");
-    expect(realisasi(d)).toEqual(["Kuantitas: 4 Perkara", "Kualitas: 33,3%", "Waktu: 3 Bulan"]);
-    expect(d.indikator[1].dasar).toMatch(/1 tanpa tanggal BHT, tidak dinilai/);
+    expect(ikrarSesuai(tanpaBht)).toBe(true);
+    expect(ikrarSesuai(tanpaPhs)).toBe(null);
+    const d = dok(data(TW2, [sesuai, lewat, mendahuluiPhs, tanpaBht, tanpaPhs, belum]), "rekap-ikrar-talak");
+    expect(realisasi(d)).toEqual(["Kuantitas: 5 Perkara", "Kualitas: 50%", "Waktu: 3 Bulan"]);
+    expect(d.indikator[1].dasar).toMatch(/1 tanpa penetapan hari sidang ikrar, belum dapat dinilai/);
     const ket = Object.fromEntries(d.tabel.baris.map((b) => [b.nomor, b.keterangan]));
-    expect(ket[lewat.nomorPerkara]).toBe("Lewat 180 hari sesudah BHT (227 hari)");
+    expect(ket[lewat.nomorPerkara]).toBe("Lewat 6 bulan sesudah penetapan hari sidang ikrar (226 hari)");
+    expect(ket[mendahuluiPhs.nomorPerkara]).toBe("Mendahului penetapan hari sidang ikrar");
+    expect(ket[tanpaPhs.nomorPerkara]).toMatch(/belum ditetapkan di SIPP - belum dapat dinilai/);
     expect(ket[belum.nomorPerkara]).toBe("Belum diucapkan dalam periode");
   });
 

@@ -684,7 +684,7 @@ async function koleksiIkrar(lingkup, { acuan, alat = ALAT_DIAM }) {
         AND pu.tanggal_bht BETWEEN ? AND ?
         AND (it.tgl_ikrar_talak IS NULL OR it.tgl_ikrar_talak >= ?)
         AND ${syarat.sql}
-      ORDER BY pu.tanggal_bht ASC
+      ORDER BY (it.tanggal_penetapan_sidang_ikrar IS NULL) DESC, it.tanggal_penetapan_sidang_ikrar ASC, pu.tanggal_bht ASC
       LIMIT ${BATAS_SEDANG + 1}`,
     [
       acuan,
@@ -696,7 +696,7 @@ async function koleksiIkrar(lingkup, { acuan, alat = ALAT_DIAM }) {
       ...syarat.nilai,
     ]
   );
-  const baris = potongBatas(mentah, BATAS_SEDANG, alat, "BHT terlama (paling dekat dengan batas 180 hari)");
+  const baris = potongBatas(mentah, BATAS_SEDANG, alat, "penetapan hari sidang ikrar terlama (paling dekat dengan batas 6 bulan)");
   return baris.map((b) => ({
     perkaraId: String(b.perkaraId),
     nomorPerkara: teks(b.nomorPerkara),

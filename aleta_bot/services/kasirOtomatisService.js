@@ -285,6 +285,10 @@ function rencanaOtomatis(k, opsi = {}) {
  */
 function buatLayanan(deps = {}) {
   const jurnal = deps.jurnal || kasir.layanan();
+  const jamKerjaService = deps.jamKerja || require("./jamKerjaService");
+  const sekarangSatker = deps.sekarang || (() => jamKerjaService.sekarangSatker());
+  const antrean = () => deps.antrean || require("./antreanTulisSippService").layanan();
+  const antreanAktif = () => (deps.antrean ? true : require("./antreanTulisSippService").aktif());
   const kueri =
     deps.kueri ||
     ((sql, params = []) =>
@@ -448,10 +452,41 @@ function buatLayanan(deps = {}) {
       const baca = await jurnal.bacaKeadaan(perkaraId);
       if (!baca.ok) return { ok: false, alasan: baca.alasan };
       const k = baca.keadaan;
-      const r = rencanaOtomatis(k, { hari: k.hariIni, butir: setelan.butir });
+      const r = (deps.rencanaOtomatis || rencanaOtomatis)(k, { hari: k.hariIni, butir: setelan.butir });
       if (!r.putusHariIni) return { ok: true, kosong: true, rencana: r, pesan: r.alasan || "Bukan perkara putus hari ini." };
       if (!r.kirim.length) return { ok: true, kosong: true, rencana: r, pesan: r.alasan };
-      const rencana = await jurnal.susunRencana({ perkaraId, baris: r.kirim.map(barisKirim), akunSipp: minta.akunSipp, operator, ip: minta.ip });
+      const muatan = { perkaraId, baris: r.kirim.map(barisKirim), akunSipp: minta.akunSipp, operator, ip: minta.ip };
+      // ======================================================================
+      // DI LUAR JAM KERJA: DIANTREKAN (keputusan 104, 18 Okt 2026)
+      // ======================================================================
+      // Kasir otomatis tidak sedang diklik siapa pun. Di luar jam kerja / hari
+      // libur barisnya (beserta tanggal transaksinya = tanggal peristiwa)
+      // disimpan di antrean ALETA dan ditulis pada jam kerja berikutnya. Kunci
+      // per perkara per hari putus: picuan 10 menit berikutnya tidak dobel.
+      if (minta.kering === false && antreanAktif() && !jamKerjaService.dalamJamKerja(sekarangSatker())) {
+        const a = await antrean().antrekan({
+          jenis: "kasir-otomatis",
+          kunci: `kasir-otomatis:${perkaraId}:${k.hariIni}`,
+          muatan,
+          keterangan: `Kasir otomatis ${r.kirim.length} baris`,
+        });
+        return { ok: a.ok === true, diantrekan: true, kering: false, rencana: r, dikerjakanPada: a.dikerjakanPada, pesan: a.kalimat || a.alasan };
+      }
+      return await tulisMuatan(muatan, { kering: minta.kering !== false, rencanaOtomatis: r });
+    } finally {
+      sedang.delete(perkaraId);
+    }
+  }
+
+  /**
+   * Menulis baris Kasir otomatis yang sudah disusun - dipanggil langsung atau
+   * oleh antrean jam kerja (muatan apa adanya: tanggal transaksi tidak berubah).
+   * sekaliPerJenis menjaga agar baris yang sudah tertulis tidak ditulis lagi.
+   */
+  async function tulisMuatan(muatan, { kering = false, rencanaOtomatis: r = null } = {}) {
+    {
+      const perkaraId = Number(muatan.perkaraId);
+      const rencana = await jurnal.susunRencana({ perkaraId, baris: muatan.baris, akunSipp: muatan.akunSipp, operator: muatan.operator, ip: muatan.ip });
       if (!rencana.ok) return { ...rencana, rencana: r };
       // Satu baris ditolak pagar SIPP = sisa panjar yang dihitung atasnya
       // tidak lagi benar: sisa ditahan.
@@ -462,8 +497,8 @@ function buatLayanan(deps = {}) {
           return false;
         });
       }
-      if (!rencana.langkah.length) return { ok: false, kering: minta.kering !== false, rencana: r, ditolak: rencana.ditolak, dilewati: rencana.dilewati, pesan: "Tidak ada baris yang lolos pagar SIPP." };
-      const hasil = await jurnal.jalankanRencana(rencana, { kering: minta.kering !== false, sekaliPerJenis: true, periksaSisa: true });
+      if (!rencana.langkah.length) return { ok: false, kering, rencana: r, ditolak: rencana.ditolak, dilewati: rencana.dilewati, pesan: "Tidak ada baris yang lolos pagar SIPP." };
+      const hasil = await jurnal.jalankanRencana(rencana, { kering, sekaliPerJenis: true, periksaSisa: true });
       return {
         ...hasil,
         rencana: r,
@@ -473,12 +508,10 @@ function buatLayanan(deps = {}) {
         dilewati: rencana.dilewati,
         langkahDatar: jurnal.langkahDatar(rencana),
       };
-    } finally {
-      sedang.delete(perkaraId);
     }
   }
 
-  return { bacaSetelan, simpanSetelan, daftar, jalankanPerkara };
+  return { bacaSetelan, simpanSetelan, daftar, jalankanPerkara, tulisMuatan };
 }
 
 let bawaan = null;
@@ -499,4 +532,5 @@ module.exports = {
   simpanSetelan: (minta) => layananBawaan().simpanSetelan(minta),
   daftar: (tanggal, opsi) => layananBawaan().daftar(tanggal, opsi),
   jalankanPerkara: (minta) => layananBawaan().jalankanPerkara(minta),
+  tulisMuatan: (muatan, opsi) => layananBawaan().tulisMuatan(muatan, opsi),
 };

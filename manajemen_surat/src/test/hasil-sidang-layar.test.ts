@@ -292,9 +292,10 @@ describe("10. bentuk tulisannya sama dengan aplikasi antrian", () => {
     // pengaturan ketat ia ditolak sama sekali. Tulisan kosong lebih buruk lagi:
     // ia masuk sebagai 00:00:00 tanpa satu pun galat berbunyi.
     expect(kodeLayanan).toContain("function jamDariCap(cap)");
-    // Jam sidang SETEMPAT (WITA), sama dengan NOW() aplikasi antrian.
-    expect(kodeLayanan).toContain("sampai_jam: jamDariCap(saatSetempat),");
-    expect(kodeLayanan).toContain('bersih(keadaan.sampaiJam) || jamDariCap(saatSetempat),');
+    // Jam sidang SETEMPAT (WITA), dalam bentuk jam borang SIPP (HH:mm, detik 00) -
+    // audit pola 18 Okt 2026; perilakunya diuji di audit-pola-sipp-18okt.test.ts.
+    expect(kodeLayanan).toContain("sampai_jam: jamSelesaiBorang(");
+    expect(kodeLayanan).toContain("bersih(keadaan.sampaiJam) || jamDariCap(saatSetempat)");
     expect(kodeLayanan).not.toContain("sampai_jam: saat,");
   });
 

@@ -54,7 +54,7 @@ const VARIABEL = Object.freeze([
   { kode: "8436", nama: "Kesimpulan Penggugat / 8437 Tergugat", sumber: "berkas-ecourt (kesimpulan)", oleh: "belum" },
   { kode: "7178", nama: "Status panggilan tidak patut", sumber: "relaas", oleh: "belum" },
   { kode: "0157", nama: "Kantor kuasa Tergugat / 0185 tgl kuasa Tergugat", sumber: "sipp", oleh: "belum (jarang: 1 perkara)" },
-  { kode: "1183", nama: "Tgl. batas waktu ikrar talak", sumber: "dihitung (BHT + 6 bulan)", oleh: "belum" },
+  { kode: "1183", nama: "Tgl. batas waktu ikrar talak", sumber: "dihitung (penetapan hari sidang ikrar + 6 bulan)", oleh: "belum" },
 ]);
 
 const POLA_NIKAH = /\b(menikah|pernikahan|perkawinan|akad\s+nikah|melangsungkan\s+(?:pernikahan|perkawinan))\b/i;

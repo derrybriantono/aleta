@@ -617,15 +617,28 @@ function jamRangkaianManusia({ urutan, sekarang, lantai = "", acak = Math.random
   if (ujung - jumlah(jeda) < lantaiEfektif) {
     let ruang = ujung - lantaiEfektif;
     if (ruang < k - 1) {
-      // Lepaskan jeda sesudah kejadian dan jam kerja; tetap SESUDAH kejadiannya.
-      lantaiEfektif = Number.isFinite(kejadian) ? kejadian + 1 : -Infinity;
-      ujung = kini;
+      // Lepaskan jeda sesudah kejadian dan jam kerja; tetap SESUDAH kejadiannya
+      // DAN tetap pada HARI INI (jam SIPP).
+      //
+      // Audit pola 18 Okt 2026: dahulu lantainya dilepas sampai kejadian
+      // terakhir saja. Ditekan pukul 05.02 atas perkara yang kejadian
+      // terakhirnya Jumat 09.20, "ruang" menjadi tiga hari - lalu jedanya
+      // DIREGANGKAN mengisi ruang itu: PMH Jumat 09.20, PPP Sabtu, PJS Senin
+      // dini hari (tersimulasi 4.000 kali, PMH>PPP median 44 jam). Tanggal
+      // input mendahului tanggal penetapannya dan jatuh di akhir pekan. Kini
+      // lantainya tidak pernah sebelum awal hari ini, dan jeda hanya
+      // DIRAPATKAN, tidak pernah diregangkan (lihat di bawah).
+      lantaiEfektif = Math.max(Number.isFinite(kejadian) ? kejadian + 1 : -Infinity, awalHari);
+      ujung = kini - Math.min(tarikLog(JEDA_UJUNG, acak), Math.max(0, Math.floor((kini - lantaiEfektif) / 4)));
       ruang = ujung - lantaiEfektif;
     }
-    if (ruang >= k - 1) {
+    if (ruang >= jumlah(jeda)) {
+      // Ruangnya cukup sesudah dilepas: jeda asli dipakai apa adanya.
+    } else if (ruang >= k - 1) {
       const sisa = ruang - (k - 1);
       const total = jumlah(jeda) || 1;
-      jeda = jeda.map((d) => 1 + Math.floor((d * sisa) / total));
+      // Hanya merapatkan: hasilnya tidak pernah melebihi jeda asli.
+      jeda = jeda.map((d) => Math.min(d, 1 + Math.floor((d * sisa) / total)));
       catatan.push("jeda_dirapatkan");
     } else {
       // Kejadian sebelumnya tercatat DI DEPAN jam SIPP. Tidak pernah menulis

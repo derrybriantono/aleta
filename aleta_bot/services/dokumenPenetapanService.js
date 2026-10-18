@@ -441,6 +441,29 @@ function samakanPemilikSipp(jalurPenuh, akar) {
 }
 
 /**
+ * ============================================================================
+ * diinput_tanggal perkara_dokumen_penetapan BERJAM DUA BELAS
+ * ============================================================================
+ *
+ * Audit pola 18 Okt 2026 atas sipp_donggala: 3.739 baris unggahan petugas
+ * 2026 seluruhnya berjam 01..12 - NOL baris berjam 0 atau 13 ke atas -
+ * padahal penetapannya diketik sepanjang siang. Modul unggah dokumen
+ * penetapan SIPP menuliskannya dengan date("Y-m-d h:i:s"), sama dengan modul
+ * putusan (putusanTulisService.waktuPutusan). Jam 24 yang dahulu ditulis
+ * ALETA membuat tiap unggahan sesudah pukul 13.00 menjadi satu-satunya baris
+ * berjam 13+ di tabel itu.
+ *
+ * Jam 12 tetap 12 dan jam 0 menjadi 12 (bukan sisa bagi dua belas).
+ */
+function jamDuaBelas(saat24) {
+  const teks = String(saat24 || "").trim();
+  const cocok = teks.match(/^(\d{4}-\d{2}-\d{2}) (\d{2}):(\d{2}):(\d{2})$/);
+  if (!cocok) return teks;
+  const jam = ((Number(cocok[2]) + 11) % 12) + 1;
+  return `${cocok[1]} ${String(jam).padStart(2, "0")}:${cocok[3]}:${cocok[4]}`;
+}
+
+/**
  * Menyimpan berkasnya dan mencatat barisnya di SIPP.
  *
  * Berkas DAHULU, baris sesudahnya. Baris yang menunjuk berkas yang tidak ada
@@ -522,7 +545,8 @@ async function simpanKeSipp({ perkaraId, nomorPerkara, jenis, pdf, olehUsername,
       String(olehUsername || "").slice(0, 30),
       // Jam SIPP (WIB), bukan jam container - SIPP menulis diinput_tanggal
       // dengan PHP Asia/Jakarta (13 Okt 2026). saatSipp hanya dari uji.
-      saatSipp || (await require("./penetapanTulisService").waktuSipp()),
+      // DAN berjam DUA BELAS - lihat jamDuaBelas.
+      jamDuaBelas(saatSipp || (await require("./penetapanTulisService").waktuSipp())),
     ]
   );
 
@@ -601,6 +625,7 @@ async function terbitkan({ perkaraId, nomorPerkara, jenis, namaPenandatangan, ol
 }
 
 module.exports = {
+  jamDuaBelas,
   JENIS_DOKUMEN_ID,
   TABEL_PENETAPAN,
   KUERI_BARIS_PETUGAS,

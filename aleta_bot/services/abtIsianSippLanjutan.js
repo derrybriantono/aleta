@@ -14,8 +14,8 @@
  *   8433  Alasan pencabutan perkara             hasil_mediasi Y2 = "Berhasil Dengan Pencabutan" (borang SIPP tab_mediasi_edit2)
  *   8899  Pokok kesepakatan perdamaian sebagian  isi_kesepakatan_perdamaian (hasil S): topik yang disebut - pengasuhan anak,
  *                                               nafkah anak, nafkah iddah, mut'ah, nafkah lampau, harta bersama
- *   1183  Tgl. batas waktu ikrar talak          perkara_ikrar_talak.tanggal_sidang_pertama + 6 bulan  (18 Okt: TERISI OTOMATIS; dulu ragu: 8 dari 12 isian
- *                                               petugas persis sama; sisanya sidang ikrar pertama diundur)
+ *   1183  Tgl. batas waktu ikrar talak          perkara_ikrar_talak.tanggal_penetapan_sidang_ikrar + 6 bulan  (18 Okt: TERISI OTOMATIS; keputusan 91:
+ *                                               tenggat dihitung sejak penetapan hari sidang ikrar, bukan sidang ikrar pertama / BHT)
  *   0303  Tgl. pengumuman itsbat                perkara.tanggal_pendaftaran (18 Okt: TERISI OTOMATIS; dulu ragu: 92% isian petugas jatuh 0-1 hari dari
  *                                               tanggal pendaftaran, tepatnya 45% hari-H dan 47% sehari sesudahnya)
  *   0185  Tgl. surat kuasa Tergugat             perkara_pengacara pihak 2 (18 Okt: TERISI OTOMATIS; dulu ragu: kolom itu sering tanggal register)
@@ -206,9 +206,13 @@ function usulanAlasanCabut(m) {
   ];
 }
 
-/** Batas waktu ikrar talak: 6 bulan sesudah sidang ikrar pertama (Pasal 70 ayat (6) UU 7/1989). */
+/**
+ * Batas waktu ikrar talak: 6 bulan sejak ditetapkan hari sidang penyaksian ikrar talak (Pasal 70 ayat (6) UU 7/1989;
+ * Buku II 2026 hlm. 654-656; keputusan pengguna no. 91, 18 Okt 2026). Tanpa penetapan hari sidang ikrar tenggat belum
+ * berjalan: tidak ada usulan (tidak ada cadangan sidang pertama / BHT).
+ */
 function usulanBatasIkrar(ikrar) {
-  const sp = String((ikrar && ikrar.sidangPertama) || "");
+  const sp = String((ikrar && ikrar.penetapanSidangIkrar) || "");
   const batas = tambahBulanIso(sp, 6);
   const tampil = isoKeTampil(batas);
   if (!tampil) return [];
@@ -218,8 +222,8 @@ function usulanBatasIkrar(ikrar) {
       "Tgl. batas waktu ikrar talak",
       tampil,
       "cukup",
-      `SIPP ikrar talak: sidang ikrar pertama ${isoKeTampil(sp)} + 6 bulan`,
-      "Dihitung 6 bulan sesudah sidang ikrar pertama; bila sidang ikrar pertama diundur atau dipanggil ulang, hitung dari tanggal yang berlaku.",
+      `SIPP ikrar talak: penetapan hari sidang ikrar ${isoKeTampil(sp)} + 6 bulan`,
+      "Dihitung 6 bulan sejak penetapan hari sidang ikrar (Pasal 70 ayat (6) UU 7/1989); bila hari sidang ikrar ditetapkan ulang, hitung dari tanggal yang berlaku.",
       "sipp-ikrar-batas-6-bulan"
     ),
   ];
@@ -296,7 +300,7 @@ async function usulanLanjutanSipp(perkaraId, runQuery) {
     ),
     diam(() =>
       runQuery(
-        "SELECT DATE_FORMAT(tanggal_sidang_pertama, '%Y-%m-%d') AS sidangPertama FROM perkara_ikrar_talak WHERE perkara_id = ? LIMIT 1",
+        "SELECT DATE_FORMAT(tanggal_penetapan_sidang_ikrar, '%Y-%m-%d') AS penetapanSidangIkrar FROM perkara_ikrar_talak WHERE perkara_id = ? LIMIT 1",
         [id]
       )
     ),

@@ -98,13 +98,28 @@ function tambahBulan(iso, bulan) {
 }
 
 /**
- * Batas ikrar 6 bulan (Pasal 70 ayat (6) UU 7/1989): sejak ditetapkan hari sidang
- * penyaksian ikrar talak. Tanpa tanggal penetapan hari sidang ikrar, batas
- * dihitung dari tanggal BHT. Mengembalikan "" bila keduanya tidak ada.
+ * Batas ikrar 6 bulan (Pasal 70 ayat (6) UU 7/1989; Buku II 2026 hlm. 654-656):
+ * SEJAK DITETAPKAN HARI SIDANG PENYAKSIAN IKRAR TALAK - kolom SIPP
+ * perkara_ikrar_talak.tanggal_penetapan_sidang_ikrar (keputusan pengguna no. 91,
+ * 18 Okt 2026, mengganti "6 bulan dari BHT"). Terukur di sipp_donggala: 172
+ * baris 2025+, kolom itu selalu terisi dan selalu mendahului sidang ikrar
+ * pertama (rata-rata 15 hari).
+ *
+ * TIDAK ADA cadangan BHT: tanpa penetapan hari sidang ikrar tenggatnya BELUM
+ * berjalan - dipulangkan "" (lihat keteranganBatasIkrar). Argumen lain (mis.
+ * tanggalBht dari pemanggil lama) diabaikan dengan sengaja.
  */
-function batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar, tanggalBht }) {
-  const dasar = bersih(tanggalPenetapanSidangIkrar) || bersih(tanggalBht);
-  return dasar ? tambahBulan(dasar, 6) : "";
+function batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar } = {}) {
+  const dasar = bersih(tanggalPenetapanSidangIkrar).slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(dasar) ? tambahBulan(dasar, 6) : "";
+}
+
+/** Kalimat tenggat ikrar untuk layar: tanggalnya, atau "belum berjalan". */
+function keteranganBatasIkrar(bahan = {}) {
+  const batas = batasEnamBulanIkrar(bahan);
+  return batas
+    ? `batas 6 bulan ikrar ${batas} (sejak penetapan hari sidang ikrar ${bersih(bahan.tanggalPenetapanSidangIkrar).slice(0, 10)})`
+    : "belum ditetapkan hari sidang ikrar - tenggat 6 bulan belum berjalan";
 }
 
 /** Keadaan ikrar satu jadwal sidang: jadwal, perkara, baris ikrar, putusan, akta cerai. */
@@ -290,7 +305,7 @@ async function siapkanIsianIkrar(minta, k) {
         : "Amar penetapan ikrar disusun otomatis (talak satu raj'i); jumlah biaya penetapan tidak disebut karena tidak terbaca dari biaya perkara - periksa di SIPP."
     );
   }
-  const batas = batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: k.tanggalPenetapanSidang, tanggalBht: k.tanggalBht });
+  const batas = batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: k.tanggalPenetapanSidang });
   if (batas && tanggalIkrar > batas) {
     andaian.push(`Tanggal ikrar ${tanggalIkrar} melewati batas 6 bulan ikrar (${batas}) - Pasal 70 ayat (6) UU 7/1989.`);
   }
@@ -459,6 +474,7 @@ module.exports = {
   ikrarTerlaksanaMenurutTeks,
   tambahBulan,
   batasEnamBulanIkrar,
+  keteranganBatasIkrar,
   keadaanIkrar,
   ketuaMajelisIkrar,
   bacaBiayaIkrar,

@@ -723,7 +723,7 @@ const SAMBUNGAN = {
     kunci: "ketaatanSidangIkrarTalak",
     sifat: "sebagian",
     catatan:
-      "Butir ini menghitung dari penetapan hari sidang ikrar sampai pelaksanaannya. Yang dinilai dari tanggal berkekuatan hukum tetap sampai ikrar - tenggang enam bulan menurut Pasal 70 ayat (6) UU 7 Tahun 1989.",
+      "Butir ini menghitung dari penetapan hari sidang ikrar sampai pelaksanaannya; sejak keputusan pengguna no. 91 (18 Okt 2026) penilaian di sini memakai acuan yang sama (penetapan hari sidang ikrar, bukan BHT) dengan tenggang enam bulan menurut Pasal 70 ayat (6) UU 7 Tahun 1989. Selisih yang tersisa: tenggang dihitung 180 hari (1-4 hari lebih awal daripada enam bulan kalender), dan perkara tanpa penetapan hari sidang ikrar dikeluarkan dari penyebut.",
   },
   KT18: {
     kunci: "ketaatanPengarsipanBerkas",

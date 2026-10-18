@@ -90,8 +90,10 @@ export async function POST(request: NextRequest) {
     const hasil = await panggilBotJadwalSidang("/kasir/otomatis", {
       method: "POST",
       body: { perkaraId, akunSipp: akun.username, operator, ip: alamatIpPeramban(request), kering },
-      // Tiap baris didahului jeda manusia di bot; hari putus paling banyak ~7 baris.
-      timeoutMs: kering ? 25_000 : 60_000,
+      // Tiap baris didahului jeda kasir di bot (sampai 25 dtk, pola petugas 18 Okt
+      // 2026); hari putus paling banyak ~7 baris. Di luar jam kerja bot hanya
+      // mengantrekan dan menjawab seketika.
+      timeoutMs: kering ? 25_000 : 240_000,
     });
     if (!hasil.ok) return ok({ available: false, ok: false, alasan: hasil.error });
     return ok({ available: true, ...hasil.data });

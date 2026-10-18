@@ -8,6 +8,7 @@ import type {
   PeriodeSkp,
   UpayaHukumEvidenSkp,
 } from "@/lib/eviden-skp-tipe";
+import { tambahBulanIso } from "@/lib/ikrar-talak";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 
 /**
@@ -199,8 +200,11 @@ export const DAFTAR_DOKUMEN_EVIDEN_SKP: ReadonlyArray<{ kunci: string; judul: st
 export const AMBANG_TEPAT_WAKTU_HARI = 150;
 /** PERMA 1/2016 Pasal 24: 30 hari + perpanjangan 30 - sama dengan BATAS_POTONG_MEDIASI_HARI bot. */
 export const BATAS_POTONG_MEDIASI_HARI = 60;
-/** Pasal 70 ayat (6) UU 7/1989: enam bulan sejak BHT - sama dengan KT16 penilaianTahapanService. */
-export const BATAS_IKRAR_HARI = 180;
+/**
+ * Pasal 70 ayat (6) UU 7/1989: enam bulan sejak ditetapkan hari sidang ikrar (BUKAN sejak BHT; keputusan
+ * pengguna no. 91, 18 Okt 2026) - acuan yang sama dengan KT16 penilaianTahapanService.
+ */
+export const BATAS_IKRAR_BULAN = 6;
 
 // ============================================================================
 // TANGGAL DAN ANGKA - MURNI
@@ -1183,14 +1187,15 @@ function susunRekapIsbatTerpadu(data: DataEvidenSkp, k: KonteksEviden): DokumenE
 
 // ---- 9. Ikrar talak (sebagai MAJELIS IKRAR) -----------------------------------------
 
-/** Ikrar sesuai: sesudah BHT, paling lama 180 hari sesudahnya, tidak mendahului PHS ikrar. */
+/**
+ * Ikrar sesuai: tidak mendahului penetapan hari sidang ikrar (PHS) dan paling lambat PHS + 6 bulan kalender
+ * (sidang tepat pada tanggal batas masih sah). Tanpa PHS ikrar tenggat belum berjalan: null = belum dapat dinilai.
+ */
 export function ikrarSesuai(b: BarisEvidenSkp): boolean | null {
   const ikrar = sahIso(b.ikrar?.tanggalIkrar);
-  const bht = sahIso(b.tanggalBht);
-  if (!ikrar || !bht) return null;
-  const jarak = selisihHari(bht, ikrar);
   const phs = sahIso(b.ikrar?.tanggalPhsIkrar);
-  return jarak !== null && jarak >= 0 && jarak <= BATAS_IKRAR_HARI && (!phs || ikrar >= phs);
+  if (!ikrar || !phs) return null;
+  return ikrar >= phs && ikrar <= tambahBulanIso(phs, BATAS_IKRAR_BULAN);
 }
 
 function susunRekapIkrar(data: DataEvidenSkp, k: KonteksEviden): DokumenEvidenSkp {
@@ -1225,10 +1230,11 @@ function susunRekapIkrar(data: DataEvidenSkp, k: KonteksEviden): DokumenEvidenSk
         teks: teks.kualitas,
         realisasi: persen(sesuai.length, dinilai.length),
         dasar:
-          `${sesuai.length} dari ${dinilai.length} ikrar talak diucapkan sesudah putusan berkekuatan hukum tetap, paling ` +
-          `lama ${BATAS_IKRAR_HARI} hari sesudahnya (Pasal 70 ayat (6) UU 7/1989), dan tidak mendahului penetapan hari ` +
-          `sidang ikrarnya` +
-          (selesai.length - dinilai.length > 0 ? `; ${selesai.length - dinilai.length} tanpa tanggal BHT, tidak dinilai.` : "."),
+          `${sesuai.length} dari ${dinilai.length} ikrar talak diucapkan tidak mendahului penetapan hari sidang ikrarnya ` +
+          `dan paling lambat ${BATAS_IKRAR_BULAN} bulan sesudah penetapan itu (Pasal 70 ayat (6) UU 7/1989)` +
+          (selesai.length - dinilai.length > 0
+            ? `; ${selesai.length - dinilai.length} tanpa penetapan hari sidang ikrar, belum dapat dinilai.`
+            : "."),
       },
       indikatorWaktu(
         teks.waktu,
@@ -1248,7 +1254,7 @@ function susunRekapIkrar(data: DataEvidenSkp, k: KonteksEviden): DokumenEvidenSk
     baris: baris.map((b) => {
       const diucapkan = dalamPeriode(b.ikrar?.tanggalIkrar, k);
       const nilai = diucapkan ? ikrarSesuai(b) : null;
-      const jarak = selisihHari(b.tanggalBht, b.ikrar?.tanggalIkrar);
+      const jarak = selisihHari(b.ikrar?.tanggalPhsIkrar, b.ikrar?.tanggalIkrar);
       return {
         no: "",
         nomor: b.nomorPerkara,
@@ -1261,12 +1267,12 @@ function susunRekapIkrar(data: DataEvidenSkp, k: KonteksEviden): DokumenEvidenSk
             ? "Diucapkan sebelum periode"
             : "Belum diucapkan dalam periode"
           : nilai === null
-            ? "Tanggal BHT tidak tercatat"
+            ? "Hari sidang ikrar belum ditetapkan di SIPP - belum dapat dinilai"
             : nilai
-              ? `Sesuai (${jarak} hari sesudah BHT)`
-              : jarak !== null && jarak > BATAS_IKRAR_HARI
-                ? `Lewat ${BATAS_IKRAR_HARI} hari sesudah BHT (${jarak} hari)`
-                : "Tidak sesuai urutan BHT/penetapan hari sidang",
+              ? `Sesuai (${jarak} hari sesudah penetapan hari sidang ikrar)`
+              : jarak !== null && jarak >= 0
+                ? `Lewat ${BATAS_IKRAR_BULAN} bulan sesudah penetapan hari sidang ikrar (${jarak} hari)`
+                : "Mendahului penetapan hari sidang ikrar",
       };
     }),
     catatan: [

@@ -210,12 +210,17 @@ const TAHAPAN = [
     kunci: "ketaatanSidangIkrarTalak",
     judul: "Ketaatan Pelaksanaan Sidang Ikrar Talak",
     keterangan:
-      "Sidang ikrar talak dilaksanakan dalam enam bulan sejak putusan berkekuatan hukum tetap; lewat dari itu, hak ikrar gugur.",
+      "Sidang ikrar talak dilaksanakan dalam enam bulan sejak ditetapkan hari sidang ikrar; lewat dari itu, kekuatan penetapan gugur.",
     tabel: "perkara_ikrar_talak",
     ruas: "tgl_ikrar_talak",
     hanyaJenisMengandung: "Talak",
-    dariRuas: "tanggal_bht",
-    dariTabel: "perkara_putusan",
+    // Keputusan pengguna no. 91 (18 Okt 2026): acuannya penetapan hari sidang ikrar (Pasal 70 ayat (6)),
+    // BUKAN BHT - sama dengan hitungan butir Badilag sendiri. Perkara tanpa baris ikrar / tanpa
+    // penetapan itu tidak punya acuan, jadi dikeluarkan dari penyebut (belum dapat dinilai).
+    dariRuas: "tanggal_penetapan_sidang_ikrar",
+    dariTabel: "perkara_ikrar_talak",
+    // Mesin ini hanya mengenal hari: 180 hari lebih awal 1-4 hari daripada 6 bulan kalender (181-184 hari),
+    // jadi sedikit lebih hati-hati; bukan pelanggaran Pasal 70 ayat (6) bila selisihnya hanya itu.
     batasHari: 180,
     dasar: "Pasal 70 ayat (6) UU 7 Tahun 1989",
   },

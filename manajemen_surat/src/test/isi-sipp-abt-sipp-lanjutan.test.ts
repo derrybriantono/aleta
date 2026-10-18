@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 /**
  * Isian popup blangko Derry yang datanya ada di SIPP (agen Z1, 18 Okt 2026) - aleta_bot/services/abtIsianSippLanjutan.js.
  * Baris SIPP di bawah disalin dari bentuk data sipp_donggala (nama diganti); aturan 1183 dan 0303 diukur atas isian petugas:
- * 1183 = sidang ikrar pertama + 6 bulan cocok persis pada 8 dari 12 isian; 0303 jatuh 0-1 hari dari pendaftaran pada 384 dari 416 (itsbat voluntair saja yang diusulkan).
+ * 1183 = penetapan hari sidang ikrar + 6 bulan (keputusan 91; dulu sidang ikrar pertama + 6 bulan); 0303 jatuh 0-1 hari dari pendaftaran pada 384 dari 416 (itsbat voluntair saja yang diusulkan).
  */
 
 type Usulan = { kode: string; nama: string; nilai: string; keyakinan: string; sumber: Array<{ asal: string; kalimat: string }>; catatan: string; jagaIsianLama?: boolean };
@@ -117,10 +117,15 @@ describe("usulan per isian", () => {
     for (const h of ["Y1", "Y2", "T", "D", ""]) expect(M.usulanPokokSebagian({ hasil: h, isi: asuh })).toEqual([]);
     expect(M.usulanPokokSebagian({ hasil: "S", isi: "<p>tidak menyebut apa pun</p>" })).toEqual([]);
   });
-  it("1183 = sidang ikrar pertama + 6 bulan, terisi otomatis (keyakinan cukup, bukan ragu)", () => {
-    const [u] = M.usulanBatasIkrar({ sidangPertama: "2026-06-22" });
+  it("1183 = penetapan hari sidang ikrar + 6 bulan, terisi otomatis (keyakinan cukup, bukan ragu)", () => {
+    const [u] = M.usulanBatasIkrar({ penetapanSidangIkrar: "2026-06-22" });
     expect(u).toMatchObject({ kode: "1183", nilai: "22/12/2026", keyakinan: "cukup", jagaIsianLama: true });
-    expect(M.usulanBatasIkrar({ sidangPertama: "" })).toEqual([]);
+    expect(u.sumber[0].kalimat).toContain("penetapan hari sidang ikrar 22/06/2026");
+    // 31 Agustus + 6 bulan jatuh ke hari terakhir Februari
+    expect(M.usulanBatasIkrar({ penetapanSidangIkrar: "2026-08-31" })[0].nilai).toBe("28/02/2027");
+    // sidang ikrar pertama TIDAK lagi dipakai; tanpa penetapan hari sidang = tidak ada usulan
+    expect(M.usulanBatasIkrar({ sidangPertama: "2026-06-22" })).toEqual([]);
+    expect(M.usulanBatasIkrar({ penetapanSidangIkrar: "" })).toEqual([]);
     expect(M.usulanBatasIkrar(null)).toEqual([]);
   });
   it("0303 hanya itsbat nikah voluntair (jenis 360, alur 16), terisi otomatis", () => {
@@ -141,7 +146,7 @@ describe("usulan per isian", () => {
     const semua = [
       ...M.usulanKesepakatan({ hasil: "Y1", tgl: "2026-09-22", isi: ISI_HB }),
       ...M.usulanAlasanCabut({ hasil: "Y2" }),
-      ...M.usulanBatasIkrar({ sidangPertama: "2026-06-22" }),
+      ...M.usulanBatasIkrar({ penetapanSidangIkrar: "2026-06-22" }),
       ...M.usulanPengumumanItsbat({ jenisPerkaraId: 360, alurPerkaraId: 16, tanggalDaftar: "2026-10-01" }),
       ...M.usulanKuasaTergugat([{ nama: "B", tanggalKuasa: "2026-04-10" }]),
     ];
@@ -154,7 +159,7 @@ describe("usulanLanjutanSipp", () => {
   const baris = (sql: string): unknown => {
     if (/FROM perkara p WHERE/.test(sql)) return [{ jenisPerkaraId: 360, alurPerkaraId: 16, tanggalDaftar: "2026-10-01" }];
     if (/FROM perkara_mediasi/.test(sql)) return [{ hasil: "Y1", tgl: "2026-09-22", isi: "<p>Pasal 1</p><p>Sepakat rukun.</p>" }];
-    if (/FROM perkara_ikrar_talak/.test(sql)) return [{ sidangPertama: "2026-06-22" }];
+    if (/FROM perkara_ikrar_talak/.test(sql)) return [{ penetapanSidangIkrar: "2026-06-22" }];
     if (/FROM perkara_pengacara/.test(sql)) return [{ nama: "Budi", nomorKuasa: "", tanggalKuasa: "2026-04-10" }];
     return [];
   };

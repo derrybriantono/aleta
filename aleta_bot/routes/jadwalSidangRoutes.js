@@ -62,6 +62,8 @@ const mediatorTulisService = require("../services/mediatorTulisService");
 const courtCalendarTulisService = require("../services/courtCalendarTulisService");
 
 const router = express.Router();
+// Keputusan 104 (18 Okt 2026): tulisan manual di luar jam kerja ditanyakan dulu - lihat antreanTulisSippService.
+const { manualJamKerja } = require("../services/antreanTulisSippService");
 
 function tokenTerpasang() {
   let dariBerkas = "";
@@ -505,7 +507,10 @@ router.get("/kasir", wajibToken, async (req, res) => {
   }
 });
 
-router.post("/kasir", wajibToken, async (req, res) => {
+router.post(
+  "/kasir",
+  wajibToken,
+  manualJamKerja("kasir-manual", (b) => `${b.perkaraId || ""}:${require("crypto").createHash("sha1").update(JSON.stringify(b.baris || [])).digest("hex").slice(0, 16)}`, async (req, res) => {
   let jejak = null;
   try {
     jejak = require("../services/jejakAletaService");
@@ -577,7 +582,8 @@ router.post("/kasir", wajibToken, async (req, res) => {
   } catch (galat) {
     galat500(res, galat);
   }
-});
+  }, (b) => `Jurnal kasir perkara ${b.perkaraId || ""}`)
+);
 
 /**
  * ============================================================================

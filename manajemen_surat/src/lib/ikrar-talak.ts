@@ -3,12 +3,19 @@
  * dipakai blangko tunda/putus dan diuji tanpa layar.
  *
  *   (a) Pemohon hadir tetapi belum siap membayar akibat perceraian:
- *       14 hari dari tanggal sidang, jam 09.00, ruang sama.
+ *       14 hari dari tanggal sidang, jam 09.00, ruang sama - dijepit ke batas
+ *       6 bulan bila melewatinya.
  *   (b) Pemohon tidak hadir di sidang ikrar:
- *       6 bulan dari tanggal BHT, jam 09.00, ruang sama.
+ *       sidang berikutnya = batas 6 bulan itu sendiri (penetapan hari sidang
+ *       ikrar + 6 bulan), jam 09.00, ruang sama; jatuh di akhir pekan MUNDUR ke
+ *       hari kerja (maju akan melewati tenggat).
  *
- * Batas ikrar 6 bulan: Pasal 70 ayat (6) UU 7/1989 - dihitung sejak ditetapkan
- * hari sidang penyaksian ikrar talak; tanpa tanggal itu, dari tanggal BHT.
+ * Batas ikrar 6 bulan: Pasal 70 ayat (6) UU 7/1989 (Buku II 2026 hlm. 654-656) -
+ * dihitung SEJAK DITETAPKAN HARI SIDANG PENYAKSIAN IKRAR TALAK (kolom SIPP
+ * perkara_ikrar_talak.tanggal_penetapan_sidang_ikrar), BUKAN dari BHT (keputusan
+ * pengguna no. 91, 18 Okt 2026, mengganti "6 bulan dari BHT"). Tanpa tanggal itu
+ * tenggatnya BELUM berjalan: batas = "" dan tidak ada cadangan BHT. Sidang tepat
+ * pada tanggal batas masih sah (<= batas).
  */
 
 export type JenisTundaIkrar = "belum-siap" | "tidak-hadir";
@@ -61,12 +68,26 @@ export function keHariKerja(iso: string): string {
   return keIso(d);
 }
 
+/** Sabtu/Minggu mundur ke Jumat (dipakai bila maju akan melewati tenggat). */
+export function mundurKeHariKerja(iso: string): string {
+  if (!POLA_ISO.test(iso)) return "";
+  const d = dariIso(iso);
+  const hari = d.getDay();
+  if (hari === 6) d.setDate(d.getDate() - 1);
+  if (hari === 0) d.setDate(d.getDate() - 2);
+  return keIso(d);
+}
+
+/**
+ * Batas 6 bulan ikrar = penetapan hari sidang ikrar + 6 bulan kalender; "" bila hari
+ * sidang ikrar belum ditetapkan. `tanggalBht` diterima agar pemanggil lama tetap
+ * tersusun, tetapi SENGAJA diabaikan.
+ */
 export function batasEnamBulanIkrar(bahan: {
   tanggalPenetapanSidangIkrar?: string | null;
   tanggalBht?: string | null;
 }): string {
-  const dasar =
-    String(bahan.tanggalPenetapanSidangIkrar || "").slice(0, 10) || String(bahan.tanggalBht || "").slice(0, 10);
+  const dasar = String(bahan.tanggalPenetapanSidangIkrar || "").slice(0, 10);
   return POLA_ISO.test(dasar) ? tambahBulanIso(dasar, 6) : "";
 }
 
@@ -77,43 +98,86 @@ export type BawaanTundaIkrar = {
   jam: string;
   /** Kalimat untuk layar: dari mana tanggalnya. */
   penjelasan: string;
-  /** true bila tanggal bergeser dari akhir pekan ke Senin. */
+  /** true bila tanggal bergeser dari akhir pekan ke hari kerja, atau dijepit ke batas. */
   digeser: boolean;
-  /** true bila tanggal dasar (BHT) tidak terbaca - tanggal harus diisi petugas. */
+  /** true bila tanggal bawaan tidak dapat disusun - tanggal harus diisi petugas. */
   perluDiisi: boolean;
 };
 
+/**
+ * Menjaga bawaan agar tidak melampaui batas 6 bulan. Memulangkan bawaan kosong
+ * (perluDiisi) bila tenggat sudah lewat dari tanggal sidang ini atau tidak ada
+ * hari kerja sesudah sidang ini yang masih dalam batas; selain itu null.
+ */
+function tenggatHabis(sidang: string, batas: string, tanggal: string): string | null {
+  if (!batas || !POLA_ISO.test(sidang)) return null;
+  if (batas < sidang) {
+    return `Tenggat 6 bulan ikrar (${batas}) sudah lewat dari tanggal sidang ini - kekuatan penetapan hari sidang ikrar gugur (Pasal 70 ayat (6) UU 7/1989); tidak ada sidang ikrar berikutnya yang sah. Periksa blangko [91].`;
+  }
+  if (tanggal && tanggal <= sidang) {
+    return `Tenggat 6 bulan ikrar (${batas}) jatuh pada/tepat sesudah tanggal sidang ini - tidak ada hari kerja berikutnya yang masih dalam batas (Pasal 70 ayat (6) UU 7/1989). Isi tanggal secara manual atau periksa blangko [91].`;
+  }
+  return null;
+}
+
 export function bawaanTundaIkrar(
   jenis: JenisTundaIkrar,
-  bahan: { tanggalSidang: string; tanggalBht?: string | null }
+  bahan: { tanggalSidang: string; tanggalBht?: string | null; tanggalPenetapanSidangIkrar?: string | null }
 ): BawaanTundaIkrar {
   const sidang = String(bahan.tanggalSidang || "").slice(0, 10);
+  const batas = batasEnamBulanIkrar(bahan);
+  const dasarBaku = { alasan: "", agenda: AGENDA_IKRAR, jam: JAM_IKRAR_TUNDA };
+
   if (jenis === "belum-siap") {
     const mentah = tambahHariIso(sidang, HARI_TUNDA_IKRAR_BELUM_SIAP);
-    const tanggal = keHariKerja(mentah);
+    let tanggal = keHariKerja(mentah);
+    let penjelasan = "14 hari dari tanggal sidang ini, pukul 09.00, ruang sama.";
+    let digeser = Boolean(mentah && tanggal !== mentah);
+    if (batas && tanggal > batas) {
+      const jepit = mundurKeHariKerja(batas);
+      const habis = tenggatHabis(sidang, batas, jepit);
+      if (habis) {
+        return { ...dasarBaku, alasan: ALASAN_IKRAR_BELUM_SIAP, tanggal: "", penjelasan: habis, digeser: false, perluDiisi: true };
+      }
+      penjelasan = `14 hari dari sidang ini (${tanggal}) melewati batas 6 bulan ikrar (${batas}); tanggal dijepit ke ${jepit}, hari kerja terakhir dalam batas, pukul 09.00, ruang sama.`;
+      tanggal = jepit;
+      digeser = true;
+    }
     return {
+      ...dasarBaku,
       alasan: ALASAN_IKRAR_BELUM_SIAP,
-      agenda: AGENDA_IKRAR,
       tanggal,
-      jam: JAM_IKRAR_TUNDA,
-      penjelasan: "14 hari dari tanggal sidang ini, pukul 09.00, ruang sama.",
-      digeser: Boolean(mentah && tanggal !== mentah),
+      penjelasan,
+      digeser,
       perluDiisi: !tanggal,
     };
   }
-  const bht = String(bahan.tanggalBht || "").slice(0, 10);
-  const mentah = bht ? tambahBulanIso(bht, BULAN_TUNDA_IKRAR_TIDAK_HADIR) : "";
-  const tanggal = keHariKerja(mentah);
+
+  if (!batas) {
+    return {
+      ...dasarBaku,
+      alasan: ALASAN_IKRAR_TIDAK_HADIR,
+      tanggal: "",
+      penjelasan: "Hari sidang ikrar belum ditetapkan - tenggat 6 bulan belum berjalan; isi tanggal sidang ikrar berikutnya.",
+      digeser: false,
+      perluDiisi: true,
+    };
+  }
+  const tanggal = mundurKeHariKerja(batas);
+  const habis = tenggatHabis(sidang, batas, tanggal);
+  if (habis) {
+    return { ...dasarBaku, alasan: ALASAN_IKRAR_TIDAK_HADIR, tanggal: "", penjelasan: habis, digeser: false, perluDiisi: true };
+  }
   return {
+    ...dasarBaku,
     alasan: ALASAN_IKRAR_TIDAK_HADIR,
-    agenda: AGENDA_IKRAR,
     tanggal,
-    jam: JAM_IKRAR_TUNDA,
-    penjelasan: bht
-      ? "6 bulan dari tanggal BHT, pukul 09.00, ruang sama."
-      : "Tanggal BHT tidak terbaca di SIPP - isi tanggal sidang ikrar berikutnya (bawaan: 6 bulan dari BHT).",
-    digeser: Boolean(mentah && tanggal !== mentah),
-    perluDiisi: !tanggal,
+    penjelasan:
+      tanggal === batas
+        ? `Batas 6 bulan sejak penetapan hari sidang ikrar (${batas}), pukul 09.00, ruang sama.`
+        : `Batas 6 bulan sejak penetapan hari sidang ikrar (${batas}) jatuh di akhir pekan - dimundurkan ke hari kerja ${tanggal} agar tidak melewati tenggat, pukul 09.00, ruang sama.`,
+    digeser: tanggal !== batas,
+    perluDiisi: false,
   };
 }
 
@@ -122,6 +186,7 @@ export function peringatanBatasIkrar(
   tanggalBerikut: string,
   bahan: { tanggalPenetapanSidangIkrar?: string | null; tanggalBht?: string | null }
 ): string {
+  // Tanpa hari sidang ikrar yang ditetapkan, tenggat belum berjalan: tidak ada peringatan.
   const batas = batasEnamBulanIkrar(bahan);
   if (!batas || !POLA_ISO.test(tanggalBerikut)) return "";
   if (tanggalBerikut <= batas) return "";

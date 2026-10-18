@@ -90,6 +90,8 @@ function pesanHasilSidang(hasil, jalan = "tunda") {
       return `Tanggal sidang berikutnya${bersih(h.diminta) ? ` (${bersih(h.diminta)})` : ""} harus sesudah hari ini.`;
     case "tanggal_berikut_akhir_pekan":
       return `Tanggal sidang berikutnya${bersih(h.diminta) ? ` (${bersih(h.diminta)})` : ""} jatuh pada Sabtu/Minggu - SIPP juga menolaknya. Pilih hari kerja.`;
+    case "tanggal_ikrar_melewati_batas_6_bulan":
+      return `Tanggal sidang ikrar berikutnya${bersih(h.diminta) ? ` (${bersih(h.diminta)})` : ""} melewati batas 6 bulan ikrar${bersih(h.batas) ? ` (${bersih(h.batas)})` : ""}, dihitung sejak penetapan hari sidang ikrar (Pasal 70 ayat (6) UU 7/1989). Tidak ada yang tersimpan di SIPP. Pilih tanggal paling lambat pada batas itu.`;
     case "tanggal_berikut_hari_libur":
       return `Tanggal sidang berikutnya hari libur${bersih(h.keterangan) ? ` (${bersih(h.keterangan)})` : ""}. Pilih hari kerja.`;
     case "ruangan_sidang_tidak_dikenal":

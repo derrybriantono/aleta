@@ -137,9 +137,15 @@ export async function POST(request: NextRequest) {
         operator,
         ip: alamatIpPeramban(request),
         langkah,
+        // Keputusan 104 (18 Okt 2026): pilihan jam kerja diteruskan apa adanya.
+        tanyaJamKerja: badan.tanyaJamKerja === true,
+        jamKerja: badan.jamKerja === "antrekan" || badan.jamKerja === "sekarang" ? (badan.jamKerja as "antrekan" | "sekarang") : undefined,
       });
       if (responsRantai?.ok === false) {
-        return Response.json({ ok: false, alasan: responsRantai.error ?? "ditolak", hasil: [] }, { status: 409 });
+        return Response.json(
+          { ok: false, alasan: responsRantai.error ?? "ditolak", kode: responsRantai.kode, hasil: [] },
+          { status: 409 }
+        );
       }
       const badanRantai = (responsRantai?.data ?? {}) as Record<string, unknown>;
       return Response.json(badanRantai, { status: badanRantai?.ok === false ? 409 : 200 });

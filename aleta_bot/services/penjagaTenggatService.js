@@ -104,28 +104,35 @@ async function umurPerkara(acuan) {
 /**
  * 2. Cerai talak yang ikrarnya belum diucapkan.
  *
+ * Acuan = PENETAPAN HARI SIDANG IKRAR (perkara_ikrar_talak.tanggal_penetapan_sidang_ikrar),
+ * bukan BHT: Pasal 70 ayat (6) UU 7/1989 menghitung 6 bulan sejak hari sidang ikrar ditetapkan
+ * (keputusan pengguna no. 91, 18 Okt 2026). Perkara tanpa penetapan itu TIDAK ikut - tenggatnya
+ * belum berjalan. Batasnya di mesin aturan 180 hari (mesin hanya mengenal hari): 1-4 hari lebih
+ * awal daripada 6 bulan kalender, jadi peringatan sedikit lebih hati-hati, tidak pernah terlambat.
+ *
  * Saringan status DIKABULKAN dikerjakan DI SINI, bukan diserahkan ke mesin
  * aturan, supaya perkara yang tidak pernah menunggu ikrar tidak ikut terbawa
  * melintasi jaringan. Mesin aturan menyaringnya sekali lagi - dua saringan
  * untuk satu kekeliruan yang pernah menghasilkan 33 tuduhan palsu.
  *
- * Diukur: tanpa saringan 35 tertangkap, 2 sungguhan.
+ * Diukur (dasar BHT lama): tanpa saringan 35 tertangkap, 2 sungguhan.
  */
 async function ikrarTalak(acuan) {
   const baris = await jalankan(
     `SELECT p.perkara_id AS perkaraId, p.nomor_perkara AS nomorPerkara,
-            p.jenis_perkara_nama AS jenisPerkara, pu.tanggal_bht AS tanggalAcuan,
+            p.jenis_perkara_nama AS jenisPerkara,
+            it.tanggal_penetapan_sidang_ikrar AS tanggalAcuan,
             pu.status_putusan_id AS statusPutusanId,
-            CONCAT('BHT ', DATE_FORMAT(pu.tanggal_bht, '%d-%m-%Y')) AS keterangan
-       FROM perkara_putusan pu
-       JOIN perkara p ON p.perkara_id = pu.perkara_id
-       LEFT JOIN perkara_ikrar_talak it ON it.perkara_id = pu.perkara_id
+            CONCAT('PHS ikrar ', DATE_FORMAT(it.tanggal_penetapan_sidang_ikrar, '%d-%m-%Y')) AS keterangan
+       FROM perkara_ikrar_talak it
+       JOIN perkara p ON p.perkara_id = it.perkara_id
+       JOIN perkara_putusan pu ON pu.perkara_id = it.perkara_id
       WHERE pu.status_putusan_id = ?
         AND p.jenis_perkara_nama = 'Cerai Talak'
-        AND pu.tanggal_bht IS NOT NULL
-        AND pu.tanggal_bht >= ?
+        AND it.tanggal_penetapan_sidang_ikrar IS NOT NULL
+        AND it.tanggal_penetapan_sidang_ikrar >= ?
         AND it.tgl_ikrar_talak IS NULL
-      ORDER BY pu.tanggal_bht ASC
+      ORDER BY it.tanggal_penetapan_sidang_ikrar ASC
       LIMIT 500`,
     [STATUS_DIKABULKAN, mundurBulan(acuan, CAKRAWALA_BULAN)]
   );

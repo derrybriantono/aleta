@@ -111,6 +111,9 @@ export async function POST(request: NextRequest) {
         // dulu mencatat alamat peti portal (172.18.0.2), penanda ALETA di audit SIPP.
         ip: alamatIpPeramban(request),
         kering: badan.kering !== false,
+        // Keputusan 104 (18 Okt 2026): pilihan jam kerja diteruskan apa adanya ke bot.
+        tanyaJamKerja: badan.tanyaJamKerja === true,
+        jamKerja: badan.jamKerja === "antrekan" || badan.jamKerja === "sekarang" ? badan.jamKerja : undefined,
       });
       if (!respons.ok) {
         return ok({
@@ -154,6 +157,9 @@ export async function POST(request: NextRequest) {
       ip: alamatIpPeramban(request), // butir 45: alamat peramban, bukan peti portal
       peranPenekan,
       kering: badan.kering !== false,
+      // Keputusan 104 (18 Okt 2026): pilihan jam kerja diteruskan apa adanya ke bot.
+      tanyaJamKerja: badan.tanyaJamKerja === true,
+      jamKerja: badan.jamKerja === "antrekan" || badan.jamKerja === "sekarang" ? badan.jamKerja : undefined,
     });
 
     if (!hasil.ok) {

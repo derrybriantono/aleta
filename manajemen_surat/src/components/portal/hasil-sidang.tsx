@@ -5,6 +5,7 @@ import { AlertTriangle, CheckCircle2, FileSearch, Gavel, Info, PauseCircle } fro
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { KabarDiantrekan, TanyaJamKerja, type PilihJamKerja } from "@/components/portal/pilihan-jam-kerja";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiPath } from "@/lib/base-path";
@@ -137,6 +138,11 @@ type LangkahRencana = { tabel: string; aksi: string; keterangan: string };
 type Hasil = {
   ok: boolean;
   alasan?: string;
+  /** Keputusan 104: di luar jam kerja bot menanyakan dulu, atau sudah mengantrekan. */
+  perluPilihan?: boolean;
+  diantrekan?: boolean;
+  dikerjakanPada?: string;
+  pesan?: string;
   /** Kode penolakan bot (7 Okt 2026); kalimatnya di `alasan`. */
   kode?: string;
   kering?: boolean;
@@ -363,6 +369,8 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
 
   const [hasil, setHasil] = useState<Hasil | null>(null);
   const [sibuk, setSibuk] = useState(false);
+  /** Pertanyaan jam kerja dari bot (keputusan 104) - null bila tidak ada. */
+  const [tanyaJam, setTanyaJam] = useState<string | null>(null);
   const [sudahTertulis, setSudahTertulis] = useState(false);
 
   const muat = useCallback(async () => {
@@ -487,7 +495,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
   );
 
   const kirim = useCallback(
-    async (kering: boolean) => {
+    async (kering: boolean, pilihJam?: PilihJamKerja) => {
       if (!keadaan || !jalan) return;
       setSibuk(true);
       try {
@@ -522,13 +530,18 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
         const balasan = await fetch(apiPath(alamat), {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify(muatan),
+          body: JSON.stringify(kering ? muatan : { ...muatan, tanyaJamKerja: true, ...(pilihJam ? { jamKerja: pilihJam } : {}) }),
         });
         const isi = await bukaBungkus<Hasil>(balasan);
+        if (isi.perluPilihan || isi.kode === "di_luar_jam_kerja") {
+          setTanyaJam(isi.pesan || isi.alasan || "");
+          return;
+        }
+        setTanyaJam(null);
         setHasil(isi);
         if (isi.ok && kering === false) {
           setSudahTertulis(true);
-          void muat();
+          if (!isi.diantrekan) void muat();
         }
       } catch (e) {
         setHasil({ ok: false, alasan: e instanceof Error ? e.message : "Permintaan gagal." });
@@ -915,6 +928,10 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                     Tulis ke SIPP
                   </Button>
                 </div>
+                {tanyaJam !== null ? (
+                  <TanyaJamKerja pesan={tanyaJam} sibuk={sibuk} onPilih={(p) => void kirim(false, p)} />
+                ) : null}
+                {hasil?.diantrekan ? <KabarDiantrekan pesan={hasil.pesan || ""} /> : null}
                 {!rencanaKering ? (
                   <p className="text-xs text-muted-foreground">
                     Tombol tulis baru terbuka sesudah rencananya dibaca — bukan supaya lebih lambat, melainkan
@@ -1196,6 +1213,8 @@ export function CatatHasilRingkas({
 
   const [hasil, setHasil] = useState<Hasil | null>(null);
   const [sibuk, setSibuk] = useState(false);
+  /** Pertanyaan jam kerja dari bot (keputusan 104) - null bila tidak ada. */
+  const [tanyaJam, setTanyaJam] = useState<string | null>(null);
   const [sudahTertulis, setSudahTertulis] = useState(false);
 
   // Butir 25 (5 Okt 2026): ruang sidang + sidang keliling - seperti blangko
@@ -1340,6 +1359,7 @@ export function CatatHasilRingkas({
       ? bawaanTundaIkrar(jenisIkrar, {
           tanggalSidang: String(keadaan.tanggalSidang || "").slice(0, 10),
           tanggalBht: keadaan.tanggalBht,
+          tanggalPenetapanSidangIkrar: keadaan.tanggalPenetapanSidangIkrar,
         })
       : null;
   const alasanTunda = bawaanIkrar && !alasanDisentuh ? bawaanIkrar.alasan : alasanTundaIsi;
@@ -1367,7 +1387,7 @@ export function CatatHasilRingkas({
 
   const pilihan = useMemo(() => pilihanTunda(keadaan ? sebutanDari(keadaan) : {}, ALASAN_LAZIM, AGENDA_LAZIM), [keadaan]);
 
-  const kirim = useCallback(async () => {
+  const kirim = useCallback(async (pilihJam?: PilihJamKerja) => {
     if (!keadaan || sibuk || sudahTertulis) return;
     setSibuk(true);
     try {
@@ -1403,13 +1423,19 @@ export function CatatHasilRingkas({
       const balasan = await fetch(apiPath(alamat), {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(muatan),
+        body: JSON.stringify({ ...muatan, tanyaJamKerja: true, ...(pilihJam ? { jamKerja: pilihJam } : {}) }),
       });
       const isi = await bukaBungkus<Hasil>(balasan);
+      if (isi.perluPilihan || isi.kode === "di_luar_jam_kerja") {
+        setTanyaJam(isi.pesan || isi.alasan || "");
+        return;
+      }
+      setTanyaJam(null);
       setHasil(isi);
       if (isi.ok && isi.kering !== true) {
         setSudahTertulis(true);
-        onSelesai();
+        // Diantrekan: blangko tetap terbuka supaya kabarnya terbaca.
+        if (!isi.diantrekan) onSelesai();
       }
     } catch (e) {
       setHasil({ ok: false, alasan: e instanceof Error ? e.message : "Permintaan gagal." });
@@ -1436,7 +1462,8 @@ export function CatatHasilRingkas({
 
   const lengkap =
     jalan === "tunda"
-      ? Boolean(alasanTunda.trim() && tanggalBerikut && jamBerikut && agendaBerikut.trim())
+      ? // Sidang ikrar yang melewati batas 6 bulan tidak boleh disimpan (bot juga menolak).
+        Boolean(alasanTunda.trim() && tanggalBerikut && jamBerikut && agendaBerikut.trim()) && !peringatanIkrar
       : modeIkrarPutus
         ? ikrarDilaksanakan
         : Boolean(statusId && tanggalPutus);
@@ -1588,7 +1615,7 @@ export function CatatHasilRingkas({
               className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100"
             >
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>{peringatanIkrar}</span>
+              <span>{peringatanIkrar} Penundaan tidak dapat disimpan - pilih tanggal paling lambat pada batas itu.</span>
             </p>
           ) : null}
         </div>
@@ -1851,6 +1878,8 @@ export function CatatHasilRingkas({
           <span>{hasil.alasan || "Permintaan ditolak server."}</span>
         </p>
       ) : null}
+      {tanyaJam !== null ? <TanyaJamKerja pesan={tanyaJam} sibuk={sibuk} onPilih={(p) => void kirim(p)} /> : null}
+      {hasil?.diantrekan ? <KabarDiantrekan pesan={hasil.pesan || ""} /> : null}
 
       <div className="flex flex-wrap items-center gap-2">
         <Button
@@ -1867,7 +1896,9 @@ export function CatatHasilRingkas({
         {!lengkap ? (
           <span className="text-xs text-muted-foreground">
             {jalan === "tunda"
-              ? "Alasan, agenda, tanggal, dan jam harus terisi."
+              ? peringatanIkrar
+                ? "Tanggal melewati batas 6 bulan ikrar - ubah tanggal berikutnya."
+                : "Alasan, agenda, tanggal, dan jam harus terisi."
               : modeIkrarPutus
                 ? "Centang konfirmasi ikrar dilaksanakan."
                 : "Status putusan dan tanggalnya harus terisi."}
