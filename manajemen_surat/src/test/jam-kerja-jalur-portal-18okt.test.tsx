@@ -160,7 +160,10 @@ describe("Kasir otomatis massal di luar jam kerja", () => {
       })
     );
     render(<BagianMassal onSunting={() => undefined} />);
-    fireEvent.click(await screen.findByRole("button", { name: /Pratinjau/ }, { timeout: 5000 }));
+    const pratinjau = (await screen.findByRole("button", { name: /Pratinjau/ }, { timeout: 5000 })) as HTMLButtonElement;
+    // Tombol ada sebelum daftar terbaca; baru aktif sesudah perkara dicentang.
+    await waitFor(() => expect(pratinjau.disabled).toBe(false), { timeout: 5000 });
+    fireEvent.click(pratinjau);
     await waitFor(() => expect(tulis).toHaveLength(1), { timeout: 5000 });
     expect(tulis[0]).toMatchObject({ kering: true });
     expect(tulis[0]).not.toHaveProperty("tanyaJamKerja");
