@@ -128,9 +128,27 @@ export async function jalankanMassal<T extends { perkaraId: number; nomorPerkara
   return hasil;
 }
 
-/** Jeda manusia di antara perkara massal: 1,8-4,2 detik (acak), dapat diskalakan untuk uji. */
+/**
+ * Jeda di antara dua perkara Kasir otomatis, dalam milidetik: 20-150 detik,
+ * log-seragam (median ~55 detik).
+ *
+ * Audit pola 18 Okt 2026 atas sipp_donggala: 3.233 pasang baris jurnal
+ * beruntun kasir 2026 pada perkara BERBEDA berjarak p10 20 dtk, p25 35 dtk,
+ * median 76 dtk; yang <= 5 dtk hanya 13 (0,4%). Dahulu 1,8-4,2 dtk - sepuluh
+ * perkara tercatat dalam satu menit atas akun kasir. Kasir otomatis berjalan
+ * sendiri di latar, jadi tidak ada orang yang menunggu jeda ini.
+ */
+export const JEDA_ANTAR_PERKARA_MS = { min: 20_000, maks: 150_000 } as const;
+
+export function lamaJedaAntarPerkara(acak: () => number = Math.random): number {
+  const u = Math.min(Math.max(Number(acak()) || 0, 0), 1);
+  const { min, maks } = JEDA_ANTAR_PERKARA_MS;
+  return Math.round(min * Math.pow(maks / min, u));
+}
+
+/** Menunggu satu jeda antarperkara; `skala` 0 untuk uji. */
 export function jedaAntarPerkara(skala = 1): Promise<void> {
-  const ms = Math.round((1800 + Math.random() * 2400) * Math.max(0, skala));
+  const ms = Math.round(lamaJedaAntarPerkara() * Math.max(0, skala));
   return new Promise((r) => setTimeout(r, ms));
 }
 

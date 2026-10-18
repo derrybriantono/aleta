@@ -64,6 +64,68 @@ const { keadaanDisidang, ruangDisidang } = require("./antrianDisidang");
 const NAMA_HALAMAN = "PENUNDAAN JADWAL SIDANG";
 
 /**
+ * ============================================================================
+ * PUTUS DICATAT SEPERTI BORANG "EDIT JADWAL SIDANG", BUKAN "PENUNDAAN"
+ * ============================================================================
+ *
+ * Audit pola 18 Okt 2026 atas sipp_donggala (sidang 1 Jan - 9 Okt 2026,
+ * baris ditunda='T' yang diperbarui pada hari sidangnya, 804 baris petugas):
+ *
+ *   borang EDIT JADWAL SIDANG (validateEdit)     278   jadwal UPDATE + perkara UPDATE
+ *   aplikasi antrian (tanpa sys_audittrail)     ~520
+ *   borang PENUNDAAN JADWAL SIDANG                 5   (0,6%)
+ *
+ * Tombol Putus dahulu menulis satu baris audit "PENUNDAAN JADWAL SIDANG" -
+ * bentuk yang hampir tidak pernah dipakai petugas untuk menutup sidang. Kini
+ * baris audit jadwalnya memakai nama halaman borang Edit.
+ *
+ * BELUM ditiru (keputusan pengguna 30 Sep butir 12: tombol Putus tidak
+ * menulis tahapan perkara): validateEdit SIPP sesudahnya memanggil
+ * riwayat_perkara_m::updateproses(200, tanggal sidang) - riwayat Persidangan
+ * + perkara UPDATE beserta auditnya (854 lawan 854 di 2026). Diajukan sebagai
+ * keputusan K7 di docs/audit/AUDIT-POLA-SIPP-18okt.md.
+ */
+const NAMA_HALAMAN_EDIT = "EDIT JADWAL SIDANG";
+
+/**
+ * ============================================================================
+ * JAM BORANG SIPP: JAM DAN MENIT SAJA, DETIK 00
+ * ============================================================================
+ *
+ * Borang tunda dan edit SIPP hanya menerima "HH:mm" (exact_length[5] pada
+ * jammulaisblm/jamselesaisblm/jammulai/jamselesai). Terukur 18 Okt 2026: 255
+ * dari 277 tundaan lewat borang (92%) berdetik 00 pada jam_sidang DAN
+ * sampai_jam. Yang berdetik lain (856 baris) seluruhnya tulisan aplikasi
+ * antrian, yang TIDAK menulis sys_audittrail dan yang sampai_jam-nya persis
+ * sama dengan diperbaharui_tanggal.
+ *
+ * ALETA menulis baris audit borang, jadi jamnya harus berbentuk jam borang.
+ * Dahulu jam masuk ruang antrian (detik nyata) dan NOW() setempat (WITA)
+ * dibawa apa adanya - satu-satunya bentuk yang tidak dibuat siapa pun: detik
+ * bukan 00 tetapi sampai_jam selalu tepat satu jam di depan
+ * diperbaharui_tanggal (WIB).
+ */
+function jamBorang(jam) {
+  const m = String(jam || "").match(/(\d{1,2}):(\d{2})/);
+  return m ? `${m[1].padStart(2, "0")}:${m[2]}:00` : "";
+}
+
+/**
+ * Jam selesai borang - validateTunda/validateEdit menolak jam selesai yang
+ * tidak lebih dari jam mulai (getSelisihJam < 1). Ditekan pada menit yang
+ * sama dengan jam masuk ruang, jam selesainya menjadi menit berikutnya.
+ */
+function jamSelesaiBorang(mulai, selesai) {
+  const a = jamBorang(mulai);
+  const b = jamBorang(selesai);
+  if (!a || !b) return b;
+  const menit = (j) => Number(j.slice(0, 2)) * 60 + Number(j.slice(3, 5));
+  if (menit(b) > menit(a)) return b;
+  const n = Math.min(menit(a) + 1, 23 * 60 + 59);
+  return `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}:00`;
+}
+
+/**
  * Proses yang dicatat riwayat perkara pada penundaan.
  *
  * Diambil dari validateTunda(): 200 pada keadaan biasa; 261 bila sidangnya
@@ -842,17 +904,27 @@ async function susunRencanaTunda(minta = {}) {
   }
 
   const andaian = [];
-  // Sidang ikrar talak: peringatan batas 6 bulan (Pasal 70 ayat (6) UU 7/1989) -
-  // peringatan, bukan penolakan: petugas yang memutuskan.
+  // Sidang ikrar talak: batas 6 bulan (Pasal 70 ayat (6) UU 7/1989) dihitung
+  // SEJAK PENETAPAN HARI SIDANG IKRAR, bukan BHT (keputusan pengguna no. 91,
+  // 18 Okt 2026). Sidang ikrar sesudah batas itu tidak ada gunanya - kekuatan
+  // penetapannya sudah gugur (blangko [91]) - jadi tundaan yang melewatinya
+  // DITOLAK, bukan sekadar diperingatkan. Tanpa penetapan hari sidang ikrar
+  // tenggatnya belum berjalan dan itu dikatakan.
   if (bersih(keadaan.ikrarTalak) === "Y") {
     const batas = ikrar.batasEnamBulanIkrar({
       tanggalPenetapanSidangIkrar: keadaan.tanggalPenetapanSidangIkrar,
-      tanggalBht: keadaan.tanggalBht,
     });
     if (batas && tanggalBerikut > batas) {
-      andaian.push(
-        `Tanggal sidang ikrar berikutnya ${tanggalBerikut} melewati batas 6 bulan ikrar (${batas}) - Pasal 70 ayat (6) UU 7/1989: penetapan gugur bila Pemohon tidak datang dalam tenggang itu.`
-      );
+      return {
+        ok: false,
+        alasan: "tanggal_ikrar_melewati_batas_6_bulan",
+        diminta: tanggalBerikut,
+        batas,
+        keterangan: `Tanggal sidang ikrar berikutnya ${tanggalBerikut} melewati batas 6 bulan ikrar (${batas}), dihitung sejak penetapan hari sidang ikrar ${keadaan.tanggalPenetapanSidangIkrar} - Pasal 70 ayat (6) UU 7/1989.`,
+      };
+    }
+    if (!batas) {
+      andaian.push("Hari sidang ikrar belum ditetapkan di SIPP - tenggat 6 bulan ikrar belum berjalan.");
     }
   }
   // hariLibur() memulangkan keterangan hari liburnya, atau null bila hari itu
@@ -892,7 +964,7 @@ async function susunRencanaTunda(minta = {}) {
   // Jam mulai sidang: jam masuk ruang di antrian sidang (seperti aplikasi
   // antrian), baru jam yang dikirim layar / jam jadwal bila antrian tidak
   // mencatatnya. Kehadiran: pilihan blangko, lalu antrian, lalu yang tercatat.
-  const jamMulai = (antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang);
+  const jamMulai = jamBorang((antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang));
   if (antrian && antrian.jamMasuk) {
     andaian.push(`Jam mulai sidang ${antrian.jamMasuk.slice(0, 5)} diambil dari antrian sidang (jam masuk ruang).`);
   }
@@ -900,7 +972,11 @@ async function susunRencanaTunda(minta = {}) {
     jam_sidang: jamMulai,
     // Jam selesainya sidang. Kosong bukan pilihan: "" masuk ke kolom TIME
     // sebagai 00:00:00 tanpa satu pun galat - lihat jamDariCap.
-    sampai_jam: bersih(minta.sampaiJamSekarang) || bersih(keadaan.sampaiJam) || jamDariCap(saatSetempat),
+    // Jam borang (HH:mm, detik 00) - lihat jamBorang.
+    sampai_jam: jamSelesaiBorang(
+      jamMulai,
+      bersih(minta.sampaiJamSekarang) || bersih(keadaan.sampaiJam) || jamDariCap(saatSetempat)
+    ),
     agenda: bersih(minta.agendaSekarang) || bersih(keadaan.agenda),
     // ------------------------------------------------------------------
     // KEHADIRAN PIHAK - ANGKANYA MILIK SIPP, DAN BUKAN 0..3
@@ -1210,7 +1286,9 @@ const PROSES_PUTUSAN = 210;
  * ============================================================================
  *
  * Tombol PUTUS di Jadwal Sidang / antrian sidang cukup mencatat HASIL
- * SIDANGNYA di perkara_jadwal_sidang (beserta baris audit jadwal itu).
+ * SIDANGNYA di perkara_jadwal_sidang (beserta baris audit jadwal itu, dengan
+ * nama halaman borang EDIT JADWAL SIDANG - audit pola 18 Okt 2026, lihat
+ * NAMA_HALAMAN_EDIT).
  * perkara_putusan, baris audit perkara_putusan, dan tahapan perkara TIDAK
  * ditulis dari sini - pengguna melihat rencana "perkara_putusan INSERT ...
  * atas nama Himawan, perkara UPDATE tahapan terakhir menjadi Putusan" dan
@@ -1292,10 +1370,14 @@ async function susunRencanaPutus(minta = {}) {
   const nilaiJadwal = {
     // Jam saja - kolomnya TIME. Cap waktu utuh "2026-09-18 05:15:21" dibaca
     // MySQL sebagai bentuk 'D HH:MM:SS' dan hasilnya bukan jam yang dimaksud.
-    sampai_jam: jamDariCap(saatSetempat),
+    // Jam borang (HH:mm, detik 00) - lihat jamBorang.
+    sampai_jam: jamSelesaiBorang(
+      (antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang),
+      jamDariCap(saatSetempat)
+    ),
     alasan_ditunda: `putus ${namaStatus}${verstek === "Y" ? " (verstek)" : ""}`,
-    // Jam masuk ruang di antrian sidang, seperti aplikasi antrian.
-    jam_sidang: (antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang),
+    // Jam masuk ruang di antrian sidang, dalam bentuk jam borang.
+    jam_sidang: jamBorang((antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang)),
     ditunda: "T",
     diperbaharui_oleh: akun.panitera.username,
     diperbaharui_tanggal: saat,
@@ -1358,7 +1440,7 @@ async function susunRencanaPutus(minta = {}) {
     penetapan.barisAudit({
       username: akun.panitera.username,
       tabel: "perkara_jadwal_sidang",
-      formulir: NAMA_HALAMAN,
+      formulir: NAMA_HALAMAN_EDIT,
       aksi: "UPDATE",
       nilai: nilaiJadwal,
       kunciSendiri: `id=${keadaan.jadwalId}`,
@@ -1542,10 +1624,13 @@ async function susunRencanaPutusIkrar(minta = {}) {
       : `${ada}; ${ikrar.KETERANGAN_IKRAR}`.slice(0, 500);
 
   const nilaiJadwal = {
-    sampai_jam: jamDariCap(saatSetempat),
+    sampai_jam: jamSelesaiBorang(
+      (antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang),
+      jamDariCap(saatSetempat)
+    ),
     alasan_ditunda: ikrar.HASIL_SIDANG_IKRAR,
     keterangan,
-    jam_sidang: (antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang),
+    jam_sidang: jamBorang((antrian && antrian.jamMasuk) || bersih(minta.jamSekarang) || bersih(keadaan.jamSidang)),
     ditunda: "T",
     ...(adaDihadiri ? { dihadiri_oleh: dihadiri } : {}),
     diperbaharui_oleh: akun.username,
@@ -1577,7 +1662,7 @@ async function susunRencanaPutusIkrar(minta = {}) {
     penetapan.barisAudit({
       username: akun.username,
       tabel: "perkara_jadwal_sidang",
-      formulir: NAMA_HALAMAN,
+      formulir: NAMA_HALAMAN_EDIT,
       aksi: "UPDATE",
       nilai: nilaiJadwal,
       kunciSendiri: `id=${keadaan.jadwalId}`,
@@ -1649,6 +1734,9 @@ async function setelAntrian({ perkaraId, tanggalSidang, ruangId, keadaan, kering
 
 module.exports = {
   NAMA_HALAMAN,
+  NAMA_HALAMAN_EDIT,
+  jamBorang,
+  jamSelesaiBorang,
   PROSES_PERSIDANGAN,
   PROSES_VERZET,
   PROSES_VERZET_JENIS3,

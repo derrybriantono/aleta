@@ -2873,7 +2873,13 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       let ke = 0;
       for (const p of antre) {
         if (!isi.isConnected) break;
-        if (ke > 0) await tidur(1800 + Math.round(Math.random() * 2400));
+        // Jarak antarperkara seperti kasir sungguhan (audit pola 18 Okt 2026, 3.233
+        // pasang baris beruntun kasir 2026 pada perkara berbeda: p10 20 dtk, median
+        // 76 dtk, <=5 dtk hanya 0,4%). Dahulu 1,8-4,2 dtk - sepuluh perkara dalam
+        // satu menit atas akun kasir. Berjalan sendiri di latar, jadi tidak ada
+        // yang menunggu: 20-150 dtk log-seragam (median ~55 dtk).
+        if (ke > 0) await tidur(Math.round(20000 * Math.pow(7.5, Math.random())));
+        if (!isi.isConnected) break;
         ke += 1;
         kabar(kotakKabar, `Kasir otomatis ${ke}/${antre.length}: ${p.nomorPerkara}…`);
         try {
