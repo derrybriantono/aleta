@@ -29,6 +29,10 @@ export type DokumenTerbaca = {
   baca: "teks" | "ocr";
   penuntutKode: "0046" | "0047" | "";
   halaman: number;
+  /** Jenis dokumen pilihan pengunggah di e-Court (Jawaban, Replik, Duplik, Rereplik, Kesimpulan, ...). */
+  jenis?: string;
+  /** Peran pengunggah di e-Court (Penggugat, Tergugat, Turut Tergugat, ...). */
+  pengunggah?: string;
 };
 
 const POLA_JAWAB = /jawab|replik|duplik|kesimpulan|rekon[pv]ensi|eksepsi/i;
@@ -41,7 +45,23 @@ export function pilihDokumenJawab(dokumen: DokumenArsip[]): DokumenArsip[] {
     .sort((a, b) => String(a.diunggahPada || "").localeCompare(String(b.diunggahPada || "")));
 }
 
+/** Peran menurut jenis dokumen e-Court bila dikenal (Rereplik = duplik rekonvensi); selain itu "" (judul yang menentukan). */
+function peranDariJenisEcourt(jenis: string): PeranDokumen | "" {
+  const s = String(jenis || "").trim().toLowerCase();
+  if (/^kesimpulan\b/.test(s)) return "kesimpulan";
+  if (/^(?:duplik|rereplik)\b/.test(s)) return "duplik";
+  if (/^replik\b/.test(s)) return "replik";
+  if (/^jawaban\b/.test(s)) return "jawaban";
+  return "";
+}
+
+/**
+ * Peran dokumen: jenis e-Court yang dipilih pengunggah lebih dulu (judulnya bisa memuat banyak kata peran:
+ * "Jawaban dari penggugat" berjenis Replik), baru judul. Isi surat menimbang ulang di bot (jawabMenjawabEcourtService).
+ */
 export function peranDokumen(d: DokumenArsip): PeranDokumen {
+  const dariJenis = peranDariJenisEcourt(d.jenisDokumen || "");
+  if (dariJenis) return dariJenis;
   const s = `${d.jenisDokumen || ""} ${d.judulDokumen || ""}`.toLowerCase();
   if (/kesimpulan/.test(s)) return "kesimpulan";
   if (/duplik/.test(s)) return "duplik";
@@ -50,20 +70,49 @@ export function peranDokumen(d: DokumenArsip): PeranDokumen {
   return "gugatan";
 }
 
-/** Pengunggah -> pihak yang menuntut: Penggugat/Pemohon = 0046, Tergugat/Termohon = 0047. */
+/** Pengunggah -> pihak yang menuntut: Penggugat/Pemohon = 0046, Tergugat/Termohon = 0047. Turut Tergugat bukan pihak utama (""). */
 export function penuntutDari(d: DokumenArsip): "0046" | "0047" | "" {
   const p = String(d.peranPengunggah || "").toLowerCase();
+  if (/\bturut\b/.test(p)) return "";
   if (/tergugat|termohon/.test(p)) return "0047";
   if (/penggugat|pemohon/.test(p)) return "0046";
   return "";
 }
 
+/** Berapa berkas jawab-menjawab yang dibaca sekali jalan (PDF berlapis teks murah; OCR tetap paling banyak sekali). */
+export const BATAS_JAWAB_BACA = 8;
+
+/**
+ * Memilih berkas jawab-menjawab yang dibaca bila lebih banyak dari batas: tiap (peran, pengunggah) diwakili berkas
+ * pertama dan terakhirnya (jawaban pertama, replik terakhir, kesimpulan terakhir) lalu diurut menurut waktu unggah -
+ * kesimpulan di ujung tidak terpotong oleh jawaban ganda.
+ */
+export function pilihJawabUntukDibaca(jawab: DokumenArsip[], batas = BATAS_JAWAB_BACA): DokumenArsip[] {
+  if (jawab.length <= batas) return jawab;
+  const kelompok = new Map<string, DokumenArsip[]>();
+  for (const d of jawab) {
+    const kunci = `${peranDokumen(d)}|${penuntutDari(d) || String(d.peranPengunggah || "").toLowerCase()}`;
+    kelompok.set(kunci, [...(kelompok.get(kunci) || []), d]);
+  }
+  // Prioritas: kesimpulan terakhir tiap pihak, jawaban/replik/duplik pertama tiap pihak, lalu berkas terakhir tiap kelompok, lalu sisanya.
+  const urutan: Array<{ d: DokumenArsip; nilai: number }> = [];
+  for (const [kunci, daftar] of kelompok) {
+    const peran = kunci.split("|")[0];
+    const dasar = peran === "kesimpulan" ? 0 : peran === "jawaban" ? 1 : peran === "replik" ? 2 : 3;
+    urutan.push({ d: peran === "kesimpulan" ? daftar[daftar.length - 1] : daftar[0], nilai: dasar });
+    if (daftar.length > 1) urutan.push({ d: peran === "kesimpulan" ? daftar[0] : daftar[daftar.length - 1], nilai: 10 + dasar });
+    for (const d of daftar.slice(1, -1)) urutan.push({ d, nilai: 20 + dasar });
+  }
+  const terpilih = new Set(urutan.sort((a, b) => a.nilai - b.nilai).slice(0, batas).map((x) => x.d));
+  return jawab.filter((d) => terpilih.has(d));
+}
+
 /** Dokumen yang dibaca: satu surat gugatan (calon cadangan bila tak terbaca) + jawab-menjawab. */
-export function rencanaBaca(dokumen: DokumenArsip[], batasJawab = 4) {
+export function rencanaBaca(dokumen: DokumenArsip[], batasJawab = BATAS_JAWAB_BACA) {
   // Perbaikan gugatan menggantikan gugatan asal - dibaca lebih dulu bila ada.
   const perbaikan = dokumen.filter((d) => /perbaikan\s+gugatan|perubahan\s+gugatan/i.test(d.judulDokumen || "") && (d.adaPdf || d.adaWord));
   const gugatan = [...perbaikan, ...pilihDokumenGugatan(dokumen)].slice(0, 3);
-  return { gugatan, jawab: pilihDokumenJawab(dokumen).slice(0, batasJawab) };
+  return { gugatan, jawab: pilihJawabUntukDibaca(pilihDokumenJawab(dokumen), batasJawab) };
 }
 
 export type DepsIsiGugatan = {
@@ -170,7 +219,7 @@ export async function bacaIsiGugatan(
     if (!h.teks) continue;
     const teks = h.teks.slice(0, sisa);
     sisa -= teks.length;
-    terbacaDok.push({ judul: d.judulDokumen, peran, teks, baca: h.baca, penuntutKode: penuntutDari(d), halaman: h.halaman });
+    terbacaDok.push({ judul: d.judulDokumen, peran, teks, baca: h.baca, penuntutKode: penuntutDari(d), halaman: h.halaman, jenis: d.jenisDokumen || "", pengunggah: d.peranPengunggah || "" });
   }
   for (const d of daftar) if (!d.terbaca) catatan.push(`${d.judul}: teks tidak terbaca (${d.sebab || "kosong"}).`);
   if (!terbacaDok.length) return { ...kosong(catatan), dokumen: daftar };
