@@ -16,8 +16,12 @@
 
 export type TampilanStatus = "kompleks" | "seamless";
 
-/** Bawaan sampai pengguna memilih sendiri: tampilan yang selama ini dipakai. */
-export const TAMPILAN_BAWAAN: TampilanStatus = "kompleks";
+/**
+ * Bawaan sampai pengguna memilih sendiri. Sejak 18 Okt 2026 (keputusan 99)
+ * Seamless; Kompleks tetap dapat dipilih lewat sakelar, dan pilihan pengguna
+ * yang sudah tersimpan selalu menang atas bawaan.
+ */
+export const TAMPILAN_BAWAAN: TampilanStatus = "seamless";
 
 export function kunciTampilanStatus(idPengguna: string | null | undefined): string {
   return `aleta.status-perkara.tampilan.${idPengguna || "tamu"}`;

@@ -1,16 +1,18 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   DaftarKelompok,
   KelompokKartu,
   LinimasaPerkara,
+  NavKelompok,
   SakelarTampilanStatus,
   useTampilanStatus,
 } from "@/components/portal/status-perkara-seamless";
+import { ringkasStatus } from "@/lib/ringkas-status";
 import {
   KATA_LAIN_BAGIAN,
   KELOMPOK_SEAMLESS,
@@ -148,25 +150,25 @@ describe("bilah aksi Seamless memuat semua aksi bilah alat Kompleks", () => {
 describe("pilihan tampilan diingat per pengguna", () => {
   beforeEach(() => window.localStorage.clear());
 
-  it("bawaannya Kompleks sampai pengguna memilih", () => {
-    expect(TAMPILAN_BAWAAN).toBe("kompleks");
+  it("bawaannya Seamless; yang belum memilih langsung melihatnya", () => {
+    expect(TAMPILAN_BAWAAN).toBe("seamless");
     const { result } = renderHook(() => useTampilanStatus("u1"));
-    expect(result.current[0]).toBe("kompleks");
+    expect(result.current[0]).toBe("seamless");
   });
 
-  it("pilihan disimpan per pengguna dan dibaca kembali", () => {
+  it("pilihan pengguna (termasuk Kompleks) diingat per pengguna dan menang atas bawaan", () => {
     const a = renderHook(() => useTampilanStatus("u1"));
-    act(() => a.result.current[1]("seamless"));
-    expect(window.localStorage.getItem(kunciTampilanStatus("u1"))).toBe("seamless");
+    act(() => a.result.current[1]("kompleks"));
+    expect(window.localStorage.getItem(kunciTampilanStatus("u1"))).toBe("kompleks");
     const lagi = renderHook(() => useTampilanStatus("u1"));
-    expect(lagi.result.current[0]).toBe("seamless");
+    expect(lagi.result.current[0]).toBe("kompleks");
     const lain = renderHook(() => useTampilanStatus("u2"));
-    expect(lain.result.current[0]).toBe("kompleks");
+    expect(lain.result.current[0]).toBe("seamless");
   });
 
   it("nilai simpanan yang rusak diabaikan", () => {
     window.localStorage.setItem(kunciTampilanStatus("u3"), "aneh");
-    expect(renderHook(() => useTampilanStatus("u3")).result.current[0]).toBe("kompleks");
+    expect(renderHook(() => useTampilanStatus("u3")).result.current[0]).toBe("seamless");
   });
 
   it("sakelar menandai pilihan dan memanggil onPilih", () => {
@@ -207,6 +209,38 @@ describe("KelompokKartu", () => {
     // dilipat = disembunyikan, bukan dilepas: bagian di dalamnya tetap terdaftar
     expect(container.querySelector("#bagian-sidang")).not.toBeNull();
     expect(window.localStorage.getItem("aleta.status-perkara.kelompok.B")).toBe("1");
+  });
+});
+
+describe("titik peringatan per kelompok", () => {
+  it("butir Perlu tindakan membawa kelompoknya", () => {
+    const r = ringkasStatus(
+      {
+        identitas: { nomorPerkara: "1/Pdt.G/2026/PA.Contoh", jenisPerkara: "Cerai Gugat", tanggalDaftar: "2026-01-02" },
+        umur: { hariBerjalan: 290, bulanBerjalan: 9, sudahPutus: false, hariMinutasi: null, hariMediasi: 0 },
+        majelis: [],
+        panitera: [],
+        jadwal: [],
+        putusan: null,
+      },
+      "2026-10-18"
+    );
+    const peta = Object.fromEntries(r.peringatan.map((p) => [p.pesan, p.kelompok]));
+    expect(peta["Majelis hakim belum ditetapkan"]).toBe("A");
+    expect(Object.values(peta).filter((k) => k === "B").length).toBeGreaterThan(0);
+    expect(r.peringatan.every((p) => p.kelompok)).toBe(true);
+  });
+
+  it("kartu kelompok dan deret pintasan menggambar titik bila ada butir", () => {
+    render(
+      <KelompokKartu id="A" seamless ringkas="x" perluTindakan={2}>
+        <p>isi</p>
+      </KelompokKartu>
+    );
+    expect(screen.getByText(/2 perlu tindakan/)).toBeTruthy();
+    cleanup();
+    render(<NavKelompok ringkasan={{}} perluTindakan={{ B: 1 }} />);
+    expect(screen.getAllByRole("img", { name: "Ada yang perlu tindakan" }).length).toBe(1);
   });
 });
 

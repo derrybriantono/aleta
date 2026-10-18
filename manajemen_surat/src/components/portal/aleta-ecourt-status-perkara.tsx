@@ -2999,6 +2999,11 @@ function IsiStatus({
       }),
     [status]
   );
+  const perluTindakanKelompok = useMemo(() => {
+    const hitung: Record<string, number> = {};
+    for (const p of ringkas.peringatan) if (p.kelompok) hitung[p.kelompok] = (hitung[p.kelompok] ?? 0) + 1;
+    return hitung;
+  }, [ringkas]);
   const ringkasKelompok: Record<string, string> = {
     A: [
       `${status.pihak.length} pihak`,
@@ -3339,7 +3344,7 @@ function IsiStatus({
 
   const blokA = (
     <>
-    <KelompokKartu id="A" seamless={seamless} ringkas={ringkasKelompok.A}>
+    <KelompokKartu id="A" seamless={seamless} ringkas={ringkasKelompok.A} perluTindakan={perluTindakanKelompok.A ?? 0}>
       <div className={seamless ? "contents" : "grid gap-3 lg:grid-cols-2"}>
         <Bagian judul="Majelis dan petugas" kunci="majelis">
           {/* Tiap nama membuka rekap orangnya di tab baru, lewat ID SIPP -
@@ -3587,7 +3592,7 @@ function IsiStatus({
 
   const blokB = (
     <>
-    <KelompokKartu id="B" seamless={seamless} ringkas={ringkasKelompok.B}>
+    <KelompokKartu id="B" seamless={seamless} ringkas={ringkasKelompok.B} perluTindakan={perluTindakanKelompok.B ?? 0}>
         {/* ==================================================================
           TAHAPAN PERKARA
           ==================================================================
@@ -4211,7 +4216,7 @@ function IsiStatus({
 
   const blokC = (
     <>
-    <KelompokKartu id="C" seamless={seamless} ringkas={ringkasKelompok.C}>
+    <KelompokKartu id="C" seamless={seamless} ringkas={ringkasKelompok.C} perluTindakan={perluTindakanKelompok.C ?? 0}>
       {/* ==================================================================
           PUTUSAN LENGKAP
           ==================================================================
@@ -4873,7 +4878,7 @@ function IsiStatus({
 
   const blokD = (
     <>
-    <KelompokKartu id="D" seamless={seamless} ringkas={ringkasKelompok.D}>
+    <KelompokKartu id="D" seamless={seamless} ringkas={ringkasKelompok.D} perluTindakan={perluTindakanKelompok.D ?? 0}>
       <Bagian
         judul="Arsip berkas"
         kunci="arsip"
@@ -5413,7 +5418,7 @@ function IsiStatus({
 
   const blokE = (
     <>
-    <KelompokKartu id="E" seamless={seamless} ringkas={ringkasKelompok.E}>
+    <KelompokKartu id="E" seamless={seamless} ringkas={ringkasKelompok.E} perluTindakan={perluTindakanKelompok.E ?? 0}>
       {/* --- Penilaian --- */}
       <Bagian judul="Penilaian kelengkapan perkara" kunci="rubrik" ciutBawaan>
         <div className="space-y-1.5">
@@ -5810,7 +5815,7 @@ function IsiStatus({
               <div className="[&>div]:!grid-cols-2">{blokAngka}</div>
             </>
           }
-          nav={<NavKelompok ringkasan={ringkasKelompok} />}
+          nav={<NavKelompok ringkasan={ringkasKelompok} perluTindakan={perluTindakanKelompok} />}
         >
           {blokA}
           {blokB}

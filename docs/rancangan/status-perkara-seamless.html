@@ -246,6 +246,8 @@ const P = {
   kini: "18 Okt 2026"
 };
 
+/* butir "Perlu tindakan" per kelompok (penanda kelompok ikut pada tiap butir) */
+const TINDAKAN = {A:0,B:2,C:0,D:0,E:0};
 const KELOMPOK = [
   {id:"A", nama:"Pihak dan majelis", ikon:"P", ringkas:"2 pihak, 1 kuasa, majelis 3 hakim", bagian:["majelis","pihak"], lebar:true},
   {id:"B", nama:"Jalannya perkara", ikon:"J", ringkas:"Sidang ke-3 berikutnya 21 Okt, 1 relaas belum kembali", bagian:["tahapan","sidang","kalender","relaas","mediasi","saksi"], lebar:true},
@@ -478,12 +480,12 @@ function renderSeamless(){
       <p class="catatan-rancangan">Di HP kolom ini turun tepat di bawah linimasa dan menjadi satu kolom.</p>
     </aside>
     <div class="rel-bawah">
-      <div class="nav-kelompok" id="nav-kelompok">${KELOMPOK.map((g,i)=>`<button type="button" data-g="${g.id}" aria-current="${i===0}">${g.nama}<span class="n">${g.bagian.length}</span></button>`).join("")}</div>
+      <div class="nav-kelompok" id="nav-kelompok">${KELOMPOK.map((g,i)=>`<button type="button" data-g="${g.id}" aria-current="${i===0}">${g.nama}<span class="n">${g.bagian.length}</span>${TINDAKAN[g.id]?'<span class="titik-w" title="Ada yang perlu tindakan"></span>':""}</button>`).join("")}</div>
       <div class="kelompok-daftar" id="kelompok-daftar" style="margin-top:6px">
         ${KELOMPOK.map(g=>{
           const c = sj("rancangan.kel."+g.id)==="1";
           return `<section class="kelompok ${c?"ciut":""} ${g.lebar?"lebar":""}" id="kel-${g.id}" data-g="${g.id}">
-            <button type="button" class="kk" aria-expanded="${!c}"><span class="ikon">${g.ikon}</span><span class="kt"><h4>${g.nama}</h4><p>${g.ringkas}</p></span><span class="kpanah"></span></button>
+            <button type="button" class="kk" aria-expanded="${!c}"><span class="ikon">${g.ikon}</span><span class="kt"><h4>${g.nama}${TINDAKAN[g.id]?` <span class="lencana warn" style="font-size:11px;padding:0 .45rem;vertical-align:middle">${TINDAKAN[g.id]} perlu tindakan</span>`:""}</h4><p>${g.ringkas}</p></span><span class="kpanah"></span></button>
             <div class="kisi">${g.bagian.map(k=>htmlBagian(byK[k])).join("")}</div></section>`}).join("")}
       </div>
     </div>
@@ -585,7 +587,7 @@ const FITUR = [
  ["Ringkasan",null,null],
  ["Angka: Lama perkara, Nilai kelengkapan, Sidang, Sisa panjar","Jajaran empat angka","Kolom ringkasan (kanan di laptop/TV, di bawah linimasa di HP)"],
  ["Kartu Keadaan, Sidang berikutnya, Majelis + panitera","Tiga kartu","Kolom ringkasan; Sidang berikutnya juga di kepala"],
- ["Perlu tindakan (semua butir beserta sebab)","Kotak kuning","Kolom ringkasan, terbuka bawaan"],
+ ["Perlu tindakan (semua butir beserta sebab)","Kotak kuning","Kolom ringkasan, terbuka bawaan; titik kuning dan lencana pada kelompok yang memuat butirnya"],
  ["Bilah alat",null,null],
  ["Salin ringkasan","Bilah alat","Kepala, tombol kedua"],
  ["Salin tautan SIPP / tautan ALETA (dengan cadangan salin tangan)","Bilah alat","Menu Lainnya"],

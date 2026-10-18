@@ -128,12 +128,15 @@ export function KelompokKartu({
   id,
   seamless,
   ringkas,
+  perluTindakan = 0,
   children,
 }: {
   id: KelompokSeamless["id"];
   seamless: boolean;
   /** Satu kalimat keadaan kelompok, disusun dari data yang sudah ada. */
   ringkas: string;
+  /** Jumlah butir "Perlu tindakan" yang menyangkut kelompok ini. */
+  perluTindakan?: number;
   children: ReactNode;
 }) {
   const def = KELOMPOK_SEAMLESS.find((g) => g.id === id);
@@ -192,7 +195,18 @@ export function KelompokKartu({
           {def.ikon}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[15px] font-semibold leading-tight">{def.nama}</span>
+          <span className="block text-[15px] font-semibold leading-tight">
+            {def.nama}
+            {perluTindakan > 0 ? (
+              <span
+                title={`${perluTindakan} butir perlu tindakan`}
+                className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 align-middle text-[11px] font-medium text-amber-800 dark:text-amber-300"
+              >
+                <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                {perluTindakan} perlu tindakan
+              </span>
+            ) : null}
+          </span>
           {ringkas ? (
             <span className="block text-xs text-muted-foreground sm:truncate">{ringkas}</span>
           ) : null}
@@ -224,7 +238,14 @@ export function DaftarKelompok({ children }: { children: ReactNode }) {
 }
 
 /** Deret pintasan kelompok; lekat di bawah kepala saat menggulir. */
-export function NavKelompok({ ringkasan }: { ringkasan: Record<string, string> }) {
+export function NavKelompok({
+  ringkasan,
+  perluTindakan = {},
+}: {
+  ringkasan: Record<string, string>;
+  /** Jumlah butir "Perlu tindakan" per kelompok. */
+  perluTindakan?: Record<string, number>;
+}) {
   const [aktif, setAktif] = useState<string>(KELOMPOK_SEAMLESS[0].id);
   // Jumlah bagian yang SEDANG hidup per kelompok - bagian bersyarat (ikrar, upaya
   // hukum, delegasi) yang tidak muncul pada perkara ini tidak ikut dihitung.
@@ -264,6 +285,14 @@ export function NavKelompok({ ringkasan }: { ringkasan: Record<string, string> }
         >
           {g.nama}
           <span className="text-[11px] opacity-75">{g.bagian.filter((k) => hidup.includes(k)).length}</span>
+          {perluTindakan[g.id] ? (
+            <span
+              role="img"
+              aria-label="Ada yang perlu tindakan"
+              title="Ada yang perlu tindakan"
+              className="h-1.5 w-1.5 rounded-full bg-amber-500"
+            />
+          ) : null}
         </button>
       ))}
     </nav>
