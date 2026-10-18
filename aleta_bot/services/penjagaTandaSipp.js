@@ -970,6 +970,11 @@ const JALUR_TULIS_SIPP = Object.freeze([
     sasaran: "tunda/putus sidang: alasan & agenda ditahan di susunRencanaTunda; rencananya lewat penjalan bersama",
   },
   {
+    berkas: "services/ikrarTalakService.js",
+    penjaga: ['require("./tandaAletaService")', "menyebutAleta(amar)"],
+    sasaran: "form Penetapan Ikrar Talak (tanggal ikrar, amar, keadaan istri) sesudah ikrar terlaksana; rencananya lewat penjalan bersama (sidangHasilAlur.jalankanIsiIkrar)",
+  },
+  {
     berkas: "services/putusanTulisService.js",
     penjaga: ["penjagaTandaSipp.periksaIsian(", "jalankanRencana: penetapan.jalankanRencana"],
     sasaran: "amar, pertimbangan hukum, catatan putusan (ketikan hakim); nama pihak dari SIPP dikecualikan",

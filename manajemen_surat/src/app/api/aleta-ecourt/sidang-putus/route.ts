@@ -99,6 +99,8 @@ export async function POST(request: NextRequest) {
         jamSekarang: String(badan.jamSekarang ?? ""),
         dihadiriOleh: badan.dihadiriOleh,
         ruangId: badan.ruangId,
+        // 18 Okt 2026: sidang ikrar talak - petugas mengonfirmasi "ikrar dilaksanakan".
+        ikrarDilaksanakan: badan.ikrarDilaksanakan === true,
         // Butir 25 (5 Okt 2026): ruang sidang + sidang keliling sidang ini.
         ruanganIdSidang: badan.ruanganIdSidang,
         sidangKelilingSidang: typeof badan.sidangKelilingSidang === "boolean" ? badan.sidangKelilingSidang : undefined,

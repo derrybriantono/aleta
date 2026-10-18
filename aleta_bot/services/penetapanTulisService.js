@@ -98,6 +98,10 @@ const DAFTAR_TABEL = new Set([
   // pada detik yang sama, sebagaimana SIPP menuliskannya.
   "perkara_putusan",
   "perkara_pertimbangan_hukum",
+  // Form "Penetapan Ikrar Talak" (ikrarTalakService, 18 Okt 2026): tanggal ikrar,
+  // status, amar; dan keadaan istri di perkara_akta_cerai - seperti borang SIPP.
+  "perkara_ikrar_talak",
+  "perkara_akta_cerai",
   "sys_audittrail",
 ]);
 
@@ -3200,6 +3204,8 @@ module.exports = {
   waktuSipp,
   sqlJamSipp,
   akunPejabatPasti,
+  // Akun hidup satu-satunya milik seorang hakim - dipakai ikrarTalakService (ketua majelis ikrar).
+  akunUntukHakim,
   majelisTetapUntuk,
   kompetensiMenurutPerkara,
   // Diekspor untuk diuji satuan.
