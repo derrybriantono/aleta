@@ -100,6 +100,23 @@ export type MasukanRekomendasi = {
   itsbatKabulCeraiDitolak?: boolean;
   /** I17: amar putusan penuh bila tersedia (dasar itsbat kabul / cerai ditolak). */
   amarPutusan?: string;
+  /** I19 18 Okt: penanda tegas hakim/konseptor - pencabutan ditolak Tergugat sesudah jawaban; eksepsi kewenangan ("absolut"|"relatif") dikabulkan atau ditolak dalam putusan sela; alasan itsbat. */
+  cabutDitolakT?: boolean;
+  /** I20 18 Okt: sikap Tergugat atas pencabutan sesudah jawaban ("setuju" | "menolak") - dasar BAS CS / CM. */
+  sikapTergugatCabut?: string;
+  /** I20 18 Okt: putusan dikabulkan untuk sebagian (bot: amar memuat "untuk sebagian"; atau saklar) dan penguasaan anak dialihkan (saklar). */
+  dikabulkanSebagian?: boolean;
+  penguasaanDialihkan?: boolean;
+  /** I22 18 Okt: PAW susunan dinamis, AUA anak sah perkawinan tercatat (saklar); petitum pencairan dana dan nafkah istri (bot membaca petitum). */
+  susunanAhliWaris?: boolean;
+  anakSahPerkawinanTercatat?: boolean;
+  pencairanDana?: boolean;
+  kumulasiNafkahIstri?: boolean;
+  /** I23 18 Okt: hak asuh yang petitumnya juga memuat nafkah anak (bot membaca petitum; saklar). */
+  plusNafkahAnak?: boolean;
+  eksepsiKewenangan?: string;
+  putusanSela?: boolean;
+  alasanItsbat?: string;
 };
 
 export type HasilRekomendasi = {
@@ -144,6 +161,10 @@ function rekomendasiBas(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
     kumulasi: m.kumulasi,
     nomorPerkara: m.nomorPerkara,
     akhir,
+    // I20 18 Okt: Pemohon pernah hadir (N vs G), cabut sesudah jawaban (CS / CM).
+    penggugatPernahHadir: m.penggugatPernahHadir,
+    sudahJawaban: m.sesudahJawaban === true || Number(m.penandaJawaban?.berkas) > 0,
+    sikapTergugatCabut: m.sikapTergugatCabut ?? null,
   };
   const hAlur = tentukanAlurBasKumulasi(masukan);
   const baru = tentukanBasBaru(masukan);
@@ -218,6 +239,8 @@ export const FOLDER_MENU_PUTUSAN: Record<string, string> = {
   // F22 17 Okt: paket ABT abt-pencegahan-nikah-derry (menu 139), abt-wasiat-derry (141), abt-es-biasa-derry (143).
   // I15 18 Okt: paket ABT abt-penguasaan-anak-derry (menu 153).
   "Putusan Penguasaan Anak": "6b Penguasaan Anak",
+  // I23 18 Okt: paket ABT abt-nafkah-anak-derry - menu 165 "Putusan Nafkah Anak" (alias "Nafkah Anak - Putusan"), folder baru "6c Nafkah Anak", jenis 743.
+  "Putusan Nafkah Anak": "6c Nafkah Anak",
   "Putusan Pencegahan Perkawinan": "5b Pencegahan Perkawinan",
   "Putusan Wasiat": "4c Wasiat",
   "Putusan Ekonomi Syariah (Acara Biasa)": "10a Ekonomi Syariah Biasa",
@@ -295,8 +318,10 @@ export function pilihPutusanBawaan(
 ): PilihanPutusanBawaan | null {
   const j = kunciJenisPerkara(jenis);
   if (!j) return null;
-  const s = kunciStatusPutusan(status);
+  let s = kunciStatusPutusan(status);
   const kodeKeadaan = [...new Set((keadaan ?? []).map((x) => String(x || "").trim().toLowerCase()).filter((x) => /^[a-z0-9-]{2,40}$/.test(x)))];
+  // I20 18 Okt: kabul sebagian - status tetap "Dikabulkan", baris petanya "<jenis>|dikabulkan sebagian[|verstek]" bila jenis itu punya (cermin alatPetaUntukPerkara).
+  if (s === "dikabulkan" && kodeKeadaan.includes("dikabulkan-sebagian") && Object.keys(peta).some((k) => k.startsWith(`${j}|dikabulkan sebagian`))) s = "dikabulkan sebagian";
   const v = Boolean(verstek) || /verstek/i.test(String(status || "")) || kodeKeadaan.includes("verstek-tanpa-bendera");
   const ada = (k: string) => Boolean(peta[k] && String(peta[k].berkas || "").trim());
   if (s) {
@@ -381,7 +406,10 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
   if (sela.length) return sela;
   let status = String(m.statusPutusan ?? "").trim();
   let perkiraan = false;
-  if (!status) {
+  if (!status && m.putusanSela === true && /^(?:absolut|relatif)$/i.test(String(m.eksepsiKewenangan ?? ""))) {
+    // I19 18 Okt: putusan sela atas eksepsi kewenangan bukan status akhir SIPP - baris petanya berstatus "Putusan Sela".
+    status = "Putusan Sela";
+  } else if (!status) {
     // Belum putus: hanya sidang yang agendanya memutus yang diberi blangko, dengan anggapan dikabulkan.
     if (!/putus|musyawarah|pembacaan\s+(?:putusan|penetapan)/i.test(teks)) return [];
     status = "Dikabulkan";
@@ -407,6 +435,18 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
     penandaPerkara: m.penandaPerkara ?? null,
     alamatTergugatTidakDiketahui: m.alamatTergugatTidakDiketahui,
     ...(m.itsbatKabulCeraiDitolak === undefined ? {} : { itsbatKabulCeraiDitolak: m.itsbatKabulCeraiDitolak }),
+    // I19 18 Okt: pencabutan ditolak T, eksepsi kewenangan (dikabulkan / putusan sela), alasan itsbat.
+    cabutDitolakT: m.cabutDitolakT,
+    dikabulkanSebagian: m.dikabulkanSebagian,
+    penguasaanDialihkan: m.penguasaanDialihkan,
+    susunanAhliWaris: m.susunanAhliWaris,
+    anakSahPerkawinanTercatat: m.anakSahPerkawinanTercatat,
+    pencairanDana: m.pencairanDana,
+    kumulasiNafkahIstri: m.kumulasiNafkahIstri,
+    plusNafkahAnak: m.plusNafkahAnak,
+    eksepsiKewenangan: m.eksepsiKewenangan,
+    putusanSela: m.putusanSela,
+    alasanItsbat: m.alasanItsbat,
   } as MasukanKeadaanPutusan);
   const p = pilihPutusanBawaan(PETA_PUTUSAN_BAWAAN, m.jenisPerkara, status, m.verstekPutusan === true, m.kumulasi, keadaan);
   if (!p) return [];
@@ -542,6 +582,21 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     ...(typeof b.kurangPihak === "boolean" ? { kurangPihak: b.kurangPihak } : {}),
     ...(typeof b.alamatTergugatTidakDiketahui === "boolean" ? { alamatTergugatTidakDiketahui: b.alamatTergugatTidakDiketahui } : {}),
     ...(typeof b.itsbatKabulCeraiDitolak === "boolean" ? { itsbatKabulCeraiDitolak: b.itsbatKabulCeraiDitolak } : {}),
+    // I19 18 Okt: penanda tegas (tidak ada = tidak ditebak).
+    ...(typeof b.cabutDitolakT === "boolean" ? { cabutDitolakT: b.cabutDitolakT } : {}),
+    // I20 18 Okt: kabul sebagian (bot), penguasaan anak dialihkan (saklar), sikap Tergugat atas pencabutan (saklar), sudah menjawab.
+    ...(typeof b.dikabulkanSebagian === "boolean" ? { dikabulkanSebagian: b.dikabulkanSebagian } : {}),
+    ...(typeof b.penguasaanDialihkan === "boolean" ? { penguasaanDialihkan: b.penguasaanDialihkan } : {}),
+    // I22 18 Okt: saklar PAW / AUA dan petitum (bot).
+    ...(typeof b.susunanAhliWaris === "boolean" ? { susunanAhliWaris: b.susunanAhliWaris } : {}),
+    ...(typeof b.anakSahPerkawinanTercatat === "boolean" ? { anakSahPerkawinanTercatat: b.anakSahPerkawinanTercatat } : {}),
+    ...(typeof b.pencairanDana === "boolean" ? { pencairanDana: b.pencairanDana } : {}),
+    ...(typeof b.kumulasiNafkahIstri === "boolean" ? { kumulasiNafkahIstri: b.kumulasiNafkahIstri } : {}),
+    ...(typeof b.plusNafkahAnak === "boolean" ? { plusNafkahAnak: b.plusNafkahAnak } : {}),
+    ...(typeof b.sikapTergugatCabut === "string" ? { sikapTergugatCabut: b.sikapTergugatCabut } : {}),
+    ...(typeof b.eksepsiKewenangan === "string" ? { eksepsiKewenangan: b.eksepsiKewenangan } : {}),
+    ...(typeof b.putusanSela === "boolean" ? { putusanSela: b.putusanSela } : {}),
+    ...(typeof b.alasanItsbat === "string" ? { alasanItsbat: b.alasanItsbat } : {}),
   };
 }
 export function rekomendasiBlangko(m: MasukanRekomendasi): HasilRekomendasi {

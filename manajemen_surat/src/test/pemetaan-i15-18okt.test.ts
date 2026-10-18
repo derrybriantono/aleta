@@ -40,10 +40,10 @@ const B03 = "[03] [Tolak] Penguasaan Anak - Kontradiktoir - Kepentingan Terbaik 
 const B03A = "[03a] [Tolak Verstek] Penguasaan Anak - T Tidak Hadir - Gugatan Tidak Beralasan Hukum";
 
 describe("A. pohon: berkas, menu 153/154, set", () => {
-  it("10 putusan di 6b dan 35 BAS di 6b - BAS ada di fixture; hak asuh 6a tidak berkurang", () => {
-    expect(FIX.berkas.filter((b) => b.startsWith(`${A}${PG}/`))).toHaveLength(10);
-    expect(FIX.berkas.filter((b) => b.startsWith(`${A}${PG_BAS}/`))).toHaveLength(35);
-    expect(FIX.berkas.filter((b) => b.startsWith(`${A}${PG_BAS}/BAS ALUR 44 `))).toHaveLength(6);
+  it("13 putusan di 6b (10 + [02] [02b] [01d] revisi I20) dan 36 BAS + 2 BAS cabut sesudah jawaban di 6b - BAS ada di fixture; hak asuh 6a tidak berkurang", () => {
+    expect(FIX.berkas.filter((b) => b.startsWith(`${A}${PG}/`))).toHaveLength(13);
+    expect(FIX.berkas.filter((b) => b.startsWith(`${A}${PG_BAS}/`))).toHaveLength(35 + 1 + 2);
+    expect(FIX.berkas.filter((b) => b.startsWith(`${A}${PG_BAS}/BAS ALUR 44 `))).toHaveLength(9); // + V2S verstek kabul sebagian, CS, CM (I20 18 Okt)
     expect(FIX.berkas.filter((b) => b.startsWith(`${A}${HA}/`)).length).toBeGreaterThanOrEqual(12);
     for (const b of [B01, B01A, B01B, B01C, B03, B03A]) expect(FIX.berkas, b).toContain(`${A}${PG}/${b}.rtf`);
   });
@@ -96,6 +96,9 @@ describe("B. putusan bawaan per keadaan (6b)", () => {
       [
         "penguasaan anak",
         "penguasaan anak|dikabulkan",
+        "penguasaan anak|dikabulkan sebagian", // I20 18 Okt
+        "penguasaan anak|dikabulkan sebagian|verstek",
+        "penguasaan anak|dikabulkan|dialihkan",
         "penguasaan anak|dikabulkan|t-tidak-hadir-setelah-mediasi",
         "penguasaan anak|dikabulkan|verstek",
         "penguasaan anak|dicabut",
@@ -147,7 +150,7 @@ describe("C. BAS: ALUR 44 dan 29 salinan ALUR 04-09 di 6b - BAS", () => {
   it("ALUR 44 = 6 berkas BAS ALUR 44 di folder 6b - BAS server (dua arah), menu 154, jenis 349", () => {
     const alur = ALUR_BAS_BARU.find((a) => a.id === "alur-44")!;
     expect(alur).toMatchObject({ nomor: 44, folder: `${A}${PG_BAS}`, jenisMin: 349, jenisMaks: 349, menu: { id: 154, nama: "Penguasaan Anak - BAS", alias: "Penguasaan Anak - BAS" } });
-    expect(alur.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO"]);
+    expect(alur.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO", "V2S", "CS", "CM"]); // + I20 18 Okt
     const diServer = FIX.berkas.filter((x) => x.startsWith(`${A}${PG_BAS}/BAS ALUR 44 `));
     expect(alur.langkah.map((l) => `${alur.folder}/${l.berkas}`).sort()).toEqual([...diServer].sort());
     // ALUR 38 (hak asuh) tidak berubah
@@ -203,7 +206,7 @@ describe("D. isian 9590 / 9592", () => {
     const s = susunIsian([...KATALOG.keys()], KATALOG);
     const peta = Object.fromEntries(s.isian.map((b) => [b.kode, b]));
     expect(Object.keys(peta).sort()).toEqual(["9590", "9592"]);
-    expect(peta["9590"].nama).toMatch(/^Keadaan penguasaan anak saat ini/);
+    expect(peta["9590"].nama).toMatch(/^Keadaan penguasaan anak yang sebenarnya saat ini/);
     expect(peta["9592"].nama).toMatch(/^Tempat tinggal anak senyatanya/);
     for (const b of Object.values(peta)) expect(b.nama, b.kode).not.toMatch(/\b9[0-9]{3}\b|OTOMATIS|ISIAN/);
     expect(s.otomatis.map((o) => o.kode).sort()).toEqual(["9591", "9593"]);

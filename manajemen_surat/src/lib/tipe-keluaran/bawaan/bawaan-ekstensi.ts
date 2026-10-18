@@ -87,7 +87,7 @@ export const CERMIN_EKSTENSI = {
     },
     {
       kunci: "kewarisan",
-      nilai: "[01] [Kabul] Kewarisan - Kontradiktur",
+      nilai: "[01] [Kabul] Kewarisan - Kontradiktoir",
       data: { jenisAsli: "Kewarisan", blangko: "Putusan Kewarisan", blangkoLain: ["Putusan Waris", "Waris - Putusan"], catatan: "paket ABT abt-blangko-gugatan-lain - varian: [97] [Perdamaian] Akta Perdamaian" },
       urutan: 5,
     },
@@ -107,7 +107,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "cerai gugat|dikabulkan",
       nilai: "[02] [Kabul] CG - F",
-      data: { jenisAsli: "Cerai Gugat", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "varian: [01c] [Kabul] Cerai (Format Lengkap) - T Tidak Hadir Setelah Mediasi; [02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F; [02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar)" },
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "varian: [01c] [Kabul] Cerai (Format Lengkap) - T Tidak Hadir Setelah Mediasi; [02a] [Kabul] CG - T Tidak Hadir Setelah Mediasi - F; [02b] [Kabul] CG - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar); [02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban; [02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir" },
       urutan: 8,
     },
     {
@@ -125,7 +125,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "cerai gugat|tidak dapat diterima",
       nilai: "[98] [NO] 4. Cerai P & T Tidak Hadir - Alamat T Tidak Diketahui",
-      data: { jenisAsli: "Cerai Gugat", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "varian: [98] [NO] 4a. Cerai P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022); [98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah; [98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Gugatan" },
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "varian: [98] [NO] 4a. Cerai P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022); [98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah; [98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Gugatan; [99c] [NO] CG - Eksepsi Kewenangan Absolut Dikabulkan; [99d] [NO] CG - Eksepsi Kewenangan Relatif Dikabulkan" },
       urutan: 11,
     },
     {
@@ -197,7 +197,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "cerai talak|dikabulkan",
       nilai: "[02] [Kabul] CT - F",
-      data: { jenisAsli: "Cerai Talak", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT", "CT - Putusan"], catatan: "varian: [01c] [Kabul] Cerai (Format Lengkap) - T Tidak Hadir Setelah Mediasi; [02a] [Kabul] CT - T Tidak Hadir Setelah Mediasi - F; [02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar); [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak)" },
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT", "CT - Putusan"], catatan: "varian: [01c] [Kabul] Cerai (Format Lengkap) - T Tidak Hadir Setelah Mediasi; [02a] [Kabul] CT - T Tidak Hadir Setelah Mediasi - F; [02b] [Kabul] CT - F - Mediasi Berhasil Sebagian (Kesepakatan Dimuat dalam Amar); [02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak); [02c] [Kabul] CT - F - Pencabutan Ditolak T Sesudah Jawaban" },
       urutan: 23,
     },
     {
@@ -215,7 +215,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "cerai talak|tidak dapat diterima",
       nilai: "[98] [NO] 4. Cerai P & T Tidak Hadir - Alamat T Tidak Diketahui",
-      data: { jenisAsli: "Cerai Talak", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT", "CT - Putusan"], catatan: "varian: [98] [NO] 4a. Cerai P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022); [98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah; [98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Permohonan" },
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT", "CT - Putusan"], catatan: "varian: [98] [NO] 4a. Cerai P Hadir Sidang Pertama Lalu 2x Tidak Hadir (SEMA 1 2022); [98] [NO] 4b. Cerai P Diwakili Kuasa Insidentil Tidak Sah; [98] [NO] 8. Cerai P & T Hadir - Kontradiktoir - Cacat Formil Permohonan; [99c] [NO] CT - Eksepsi Kewenangan Absolut Dikabulkan; [99d] [NO] CT - Eksepsi Kewenangan Relatif Dikabulkan" },
       urutan: 26,
     },
     {
@@ -325,13 +325,13 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "itsbat nikah|ditolak",
       nilai: "[03] [Tolak] IN - Rukun Tidak Terpenuhi (Wali Tidak Sah)",
-      data: { jenisAsli: "Itsbat Nikah", statusAsli: "Ditolak", blangko: "Putusan Itsbat Nikah", blangkoLain: ["Itsbat - Putusan"], catatan: "varian: [03a] [Tolak] IN - Rukun dan Syarat Nikah Tidak Terbukti; [03b] [Tolak] IN - Terdapat Halangan Perkawinan" },
+      data: { jenisAsli: "Itsbat Nikah", statusAsli: "Ditolak", blangko: "Putusan Itsbat Nikah", blangkoLain: ["Itsbat - Putusan"], catatan: "varian: [03a] [Tolak] IN - Rukun dan Syarat Nikah Tidak Terbukti; [03b] [Tolak] IN - Terdapat Halangan Perkawinan; [03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain" },
       urutan: 44,
     },
     {
       kunci: "itsbat nikah|tidak dapat diterima",
       nilai: "[99] [NO] IN - Dibawah Umur",
-      data: { jenisAsli: "Itsbat Nikah", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Itsbat Nikah", blangkoLain: ["Itsbat - Putusan"], catatan: "varian: [99] [NO] IN - Masih Terikat Nikah Sebelumnya (Belum Cerai)" },
+      data: { jenisAsli: "Itsbat Nikah", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Itsbat Nikah", blangkoLain: ["Itsbat - Putusan"], catatan: "varian: [99] [NO] IN - Masih Terikat Nikah Sebelumnya (Belum Cerai); [99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026); [99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk)" },
       urutan: 45,
     },
     {
@@ -391,7 +391,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "penetapan ahli waris",
       nilai: "[01] [Kabul] PAW - Ahli Waris Anak Kandung (Suami-Istri dan Orang Tua Pewaris Telah Meninggal)",
-      data: { jenisAsli: "Penetapan Ahli Waris", blangko: "Putusan Penetapan Ahli Waris (P3HP)", blangkoLain: ["PAW/P3HP - Putusan"], catatan: "satu susunan ahli waris (anak kandung) - susunan lain belum ada" },
+      data: { jenisAsli: "Penetapan Ahli Waris", blangko: "Putusan Penetapan Ahli Waris (P3HP)", blangkoLain: ["PAW/P3HP - Putusan"], catatan: "varian: [01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis)" },
       urutan: 55,
     },
     {
@@ -600,7 +600,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "penguasaan anak",
       nilai: "[01] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Belum Mumayyiz",
-      data: { jenisAsli: "Penguasaan Anak", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "varian: [01a] [Kabul] Penguasaan Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz; [01c] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Mumayyiz Memilih" },
+      data: { jenisAsli: "Penguasaan Anak", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "varian: [01a] [Kabul] Penguasaan Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz; [01c] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Mumayyiz Memilih; [01d] [Kabul] Penguasaan Anak - Kontradiktoir - Penguasaan Dialihkan; [02] [Kabul Sebagian] Penguasaan Anak - Kontradiktoir - Petitum Selebihnya Ditolak" },
       urutan: 89,
     },
     {
@@ -612,7 +612,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "penguasaan anak|dikabulkan",
       nilai: "[01] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Belum Mumayyiz",
-      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Dikabulkan", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "varian: [01a] [Kabul] Penguasaan Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz; [01c] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Mumayyiz Memilih" },
+      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Dikabulkan", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "varian: [01a] [Kabul] Penguasaan Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz; [01c] [Kabul] Penguasaan Anak - Kontradiktoir - Anak Mumayyiz Memilih; [01d] [Kabul] Penguasaan Anak - Kontradiktoir - Penguasaan Dialihkan; [02] [Kabul Sebagian] Penguasaan Anak - Kontradiktoir - Petitum Selebihnya Ditolak" },
       urutan: 91,
     },
     {
@@ -1672,7 +1672,7 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "harta bersama|tidak dapat diterima",
       nilai: "[99] [NO] HB - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
-      data: { jenisAsli: "Harta Bersama", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Harta Bersama", blangkoLain: ["Putusan HB", "HB - Putusan"], catatan: "varian: [99a] [NO] HB - Kurang Pihak (Plurium Litis Consortium); [99b] [NO] HB - Gugatan Kabur (Obscuur Libel)" },
+      data: { jenisAsli: "Harta Bersama", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Harta Bersama", blangkoLain: ["Putusan HB", "HB - Putusan"], catatan: "varian: [99a] [NO] HB - Kurang Pihak (Plurium Litis Consortium); [99b] [NO] HB - Gugatan Kabur (Obscuur Libel); [99c] [NO] HB - Eksepsi Kewenangan Absolut Dikabulkan; [99d] [NO] HB - Eksepsi Kewenangan Relatif Dikabulkan" },
       urutan: 267,
     },
     {
@@ -1684,8 +1684,318 @@ export const CERMIN_EKSTENSI = {
     {
       kunci: "kewarisan|tidak dapat diterima",
       nilai: "[99] [NO] Kewarisan - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
-      data: { jenisAsli: "Kewarisan", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Kewarisan", blangkoLain: ["Putusan Waris", "Waris - Putusan"], catatan: "varian: [99a] [NO] Kewarisan - Kurang Pihak (Plurium Litis Consortium); [99b] [NO] Kewarisan - Gugatan Kabur (Obscuur Libel)" },
+      data: { jenisAsli: "Kewarisan", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Kewarisan", blangkoLain: ["Putusan Waris", "Waris - Putusan"], catatan: "varian: [99a] [NO] Kewarisan - Kurang Pihak (Plurium Litis Consortium); [99b] [NO] Kewarisan - Gugatan Kabur (Obscuur Libel); [99c] [NO] Kewarisan - Eksepsi Kewenangan Absolut Dikabulkan; [99d] [NO] Kewarisan - Eksepsi Kewenangan Relatif Dikabulkan" },
       urutan: 269,
+    },
+    /* === I19 18 Okt === cermin blok I19 panel-alat.js (cabut ditolak T sesudah jawaban, NO eksepsi kewenangan, putusan sela eksepsi, itsbat NO / tolak alternatif) */
+    {
+      kunci: "cerai gugat|dikabulkan|cabut-ditolak-t",
+      nilai: "[02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "keadaan: Penggugat mencabut sesudah jawaban, Tergugat menolak (perkara dilanjutkan dan diputus) - dipilih manual dari BAS" },
+      urutan: 270,
+    },
+    {
+      kunci: "cerai gugat|tidak dapat diterima|eksepsi-absolut-dikabulkan",
+      nilai: "[99c] [NO] CG - Eksepsi Kewenangan Absolut Dikabulkan",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "dipilih manual: Tergugat mengajukan eksepsi kewenangan absolut dalam jawaban dan dikabulkan - SIPP tidak menyimpannya" },
+      urutan: 271,
+    },
+    {
+      kunci: "cerai gugat|tidak dapat diterima|eksepsi-relatif-dikabulkan",
+      nilai: "[99d] [NO] CG - Eksepsi Kewenangan Relatif Dikabulkan",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "dipilih manual: Tergugat mengajukan eksepsi kewenangan relatif dalam jawaban dan dikabulkan - SIPP tidak menyimpannya" },
+      urutan: 272,
+    },
+    {
+      kunci: "cerai gugat|putusan sela|eksepsi-absolut-ditolak-putusan-sela",
+      nilai: "[98e] [Sela] CG - Eksepsi Kewenangan Absolut Ditolak",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Putusan Sela", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (absolut ditolak)" },
+      urutan: 273,
+    },
+    {
+      kunci: "cerai gugat|putusan sela|eksepsi-relatif-ditolak-putusan-sela",
+      nilai: "[98f] [Sela] CG - Eksepsi Kewenangan Relatif Ditolak",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Putusan Sela", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (relatif ditolak)" },
+      urutan: 274,
+    },
+    {
+      kunci: "cerai talak|dikabulkan|cabut-ditolak-t",
+      nilai: "[02c] [Kabul] CT - F - Pencabutan Ditolak T Sesudah Jawaban",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT", "CT - Putusan"], catatan: "keadaan: Penggugat mencabut sesudah jawaban, Tergugat menolak (perkara dilanjutkan dan diputus) - dipilih manual dari BAS" },
+      urutan: 275,
+    },
+    {
+      kunci: "cerai talak|tidak dapat diterima|eksepsi-absolut-dikabulkan",
+      nilai: "[99c] [NO] CT - Eksepsi Kewenangan Absolut Dikabulkan",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT", "CT - Putusan"], catatan: "dipilih manual: Tergugat mengajukan eksepsi kewenangan absolut dalam jawaban dan dikabulkan - SIPP tidak menyimpannya" },
+      urutan: 276,
+    },
+    {
+      kunci: "cerai talak|tidak dapat diterima|eksepsi-relatif-dikabulkan",
+      nilai: "[99d] [NO] CT - Eksepsi Kewenangan Relatif Dikabulkan",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT", "CT - Putusan"], catatan: "dipilih manual: Tergugat mengajukan eksepsi kewenangan relatif dalam jawaban dan dikabulkan - SIPP tidak menyimpannya" },
+      urutan: 277,
+    },
+    {
+      kunci: "cerai talak|putusan sela|eksepsi-absolut-ditolak-putusan-sela",
+      nilai: "[98e] [Sela] CT - Eksepsi Kewenangan Absolut Ditolak",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Putusan Sela", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT", "CT - Putusan"], catatan: "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (absolut ditolak)" },
+      urutan: 278,
+    },
+    {
+      kunci: "cerai talak|putusan sela|eksepsi-relatif-ditolak-putusan-sela",
+      nilai: "[98f] [Sela] CT - Eksepsi Kewenangan Relatif Ditolak",
+      data: { jenisAsli: "Cerai Talak", statusAsli: "Putusan Sela", blangko: "Putusan Cerai Talak", blangkoLain: ["Putusan CT", "CT - Putusan"], catatan: "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (relatif ditolak)" },
+      urutan: 279,
+    },
+    {
+      kunci: "harta bersama|tidak dapat diterima|eksepsi-absolut-dikabulkan",
+      nilai: "[99c] [NO] HB - Eksepsi Kewenangan Absolut Dikabulkan",
+      data: { jenisAsli: "Harta Bersama", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Harta Bersama", blangkoLain: ["Putusan HB", "HB - Putusan"], catatan: "dipilih manual: Tergugat mengajukan eksepsi kewenangan absolut dalam jawaban dan dikabulkan - SIPP tidak menyimpannya" },
+      urutan: 280,
+    },
+    {
+      kunci: "harta bersama|tidak dapat diterima|eksepsi-relatif-dikabulkan",
+      nilai: "[99d] [NO] HB - Eksepsi Kewenangan Relatif Dikabulkan",
+      data: { jenisAsli: "Harta Bersama", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Harta Bersama", blangkoLain: ["Putusan HB", "HB - Putusan"], catatan: "dipilih manual: Tergugat mengajukan eksepsi kewenangan relatif dalam jawaban dan dikabulkan - SIPP tidak menyimpannya" },
+      urutan: 281,
+    },
+    {
+      kunci: "harta bersama|putusan sela|eksepsi-absolut-ditolak-putusan-sela",
+      nilai: "[98e] [Sela] HB - Eksepsi Kewenangan Absolut Ditolak",
+      data: { jenisAsli: "Harta Bersama", statusAsli: "Putusan Sela", blangko: "Putusan Harta Bersama", blangkoLain: ["Putusan HB", "HB - Putusan"], catatan: "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (absolut ditolak)" },
+      urutan: 282,
+    },
+    {
+      kunci: "harta bersama|putusan sela|eksepsi-relatif-ditolak-putusan-sela",
+      nilai: "[98f] [Sela] HB - Eksepsi Kewenangan Relatif Ditolak",
+      data: { jenisAsli: "Harta Bersama", statusAsli: "Putusan Sela", blangko: "Putusan Harta Bersama", blangkoLain: ["Putusan HB", "HB - Putusan"], catatan: "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (relatif ditolak)" },
+      urutan: 283,
+    },
+    {
+      kunci: "kewarisan|tidak dapat diterima|eksepsi-absolut-dikabulkan",
+      nilai: "[99c] [NO] Kewarisan - Eksepsi Kewenangan Absolut Dikabulkan",
+      data: { jenisAsli: "Kewarisan", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Kewarisan", blangkoLain: ["Putusan Waris", "Waris - Putusan"], catatan: "dipilih manual: Tergugat mengajukan eksepsi kewenangan absolut dalam jawaban dan dikabulkan - SIPP tidak menyimpannya" },
+      urutan: 284,
+    },
+    {
+      kunci: "kewarisan|tidak dapat diterima|eksepsi-relatif-dikabulkan",
+      nilai: "[99d] [NO] Kewarisan - Eksepsi Kewenangan Relatif Dikabulkan",
+      data: { jenisAsli: "Kewarisan", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Kewarisan", blangkoLain: ["Putusan Waris", "Waris - Putusan"], catatan: "dipilih manual: Tergugat mengajukan eksepsi kewenangan relatif dalam jawaban dan dikabulkan - SIPP tidak menyimpannya" },
+      urutan: 285,
+    },
+    {
+      kunci: "kewarisan|putusan sela|eksepsi-absolut-ditolak-putusan-sela",
+      nilai: "[98e] [Sela] Kewarisan - Eksepsi Kewenangan Absolut Ditolak",
+      data: { jenisAsli: "Kewarisan", statusAsli: "Putusan Sela", blangko: "Putusan Kewarisan", blangkoLain: ["Putusan Waris", "Waris - Putusan"], catatan: "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (absolut ditolak)" },
+      urutan: 286,
+    },
+    {
+      kunci: "kewarisan|putusan sela|eksepsi-relatif-ditolak-putusan-sela",
+      nilai: "[98f] [Sela] Kewarisan - Eksepsi Kewenangan Relatif Ditolak",
+      data: { jenisAsli: "Kewarisan", statusAsli: "Putusan Sela", blangko: "Putusan Kewarisan", blangkoLain: ["Putusan Waris", "Waris - Putusan"], catatan: "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (relatif ditolak)" },
+      urutan: 287,
+    },
+    {
+      kunci: "kewarisan|dikabulkan|cabut-ditolak-t",
+      nilai: "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban",
+      data: { jenisAsli: "Kewarisan", statusAsli: "Dikabulkan", blangko: "Putusan Kewarisan", blangkoLain: ["Putusan Waris", "Waris - Putusan"], catatan: "keadaan: Penggugat mencabut sesudah jawaban, Tergugat menolak (perkara dilanjutkan dan diputus) - dipilih manual dari BAS" },
+      urutan: 288,
+    },
+    {
+      kunci: "itsbat nikah|ditolak|terikat-perkawinan-lain",
+      nilai: "[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain",
+      data: { jenisAsli: "Itsbat Nikah", statusAsli: "Ditolak", blangko: "Putusan Itsbat Nikah", blangkoLain: ["Itsbat - Putusan"], catatan: "dipilih manual: alternatif tolak bila salah satu pihak terbukti masih terikat perkawinan lain" },
+      urutan: 289,
+    },
+    {
+      kunci: "itsbat nikah|tidak dapat diterima|poligami-sirri-atau-terikat",
+      nilai: "[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026)",
+      data: { jenisAsli: "Itsbat Nikah", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Itsbat Nikah", blangkoLain: ["Itsbat - Putusan"], catatan: "dipilih manual: itsbat poligami sirri / salah satu pihak masih terikat perkawinan lain (SEMA 3/2018, Buku II 2026)" },
+      urutan: 290,
+    },
+    {
+      kunci: "itsbat nikah|tidak dapat diterima|nikah-sesudah-2019-tidak-dicatat",
+      nilai: "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk)",
+      data: { jenisAsli: "Itsbat Nikah", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Itsbat Nikah", blangkoLain: ["Itsbat - Putusan"], catatan: "dipilih manual: nikah sesudah 2019 tidak dicatatkan tanpa alasan mendesak (UU Adminduk)" },
+      urutan: 291,
+    },
+    /* === I20 18 Okt === cermin blok I20 panel-alat.js (penguasaan anak 6b revisi: kabul sebagian [02]/[02b], dialihkan [01d]) */
+    {
+      kunci: "penguasaan anak|dikabulkan sebagian",
+      nilai: "[02] [Kabul Sebagian] Penguasaan Anak - Kontradiktoir - Petitum Selebihnya Ditolak",
+      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Dikabulkan Sebagian", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "keadaan: dikabulkan untuk sebagian (amar), Tergugat hadir" },
+      urutan: 292,
+    },
+    {
+      kunci: "penguasaan anak|dikabulkan sebagian|verstek",
+      nilai: "[02b] [Kabul Sebagian Verstek] Penguasaan Anak - T Tidak Hadir - Petitum Selebihnya Ditolak",
+      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Dikabulkan Sebagian", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "keadaan: dikabulkan untuk sebagian (amar), Tergugat tidak pernah hadir (verstek)" },
+      urutan: 293,
+    },
+    {
+      kunci: "penguasaan anak|dikabulkan|dialihkan",
+      nilai: "[01d] [Kabul] Penguasaan Anak - Kontradiktoir - Penguasaan Dialihkan",
+      data: { jenisAsli: "Penguasaan Anak", statusAsli: "Dikabulkan", blangko: "Putusan Penguasaan Anak", blangkoLain: ["Penguasaan Anak - Putusan"], catatan: "dipilih manual: penguasaan anak dialihkan (pemindahan hak asuh)" },
+      urutan: 294,
+    },
+    /* === I22 18 Okt === cermin blok I22 panel-alat.js (PAW susunan dinamis, itsbat kontensius pencairan dana, AUA anak sah, cerai gugat kumulasi nafkah istri) */
+    {
+      kunci: "penetapan ahli waris|dikabulkan|susunan-ahli-waris",
+      nilai: "[01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis)",
+      data: { jenisAsli: "Penetapan Ahli Waris", statusAsli: "Dikabulkan", blangko: "Putusan Penetapan Ahli Waris (P3HP)", blangkoLain: ["PAW/P3HP - Putusan"], catatan: "dipilih manual: susunan ahli waris dinamis (isian 9701-9704, 9718; pencairan dana lewat 9700); [01] = anak kandung saja" },
+      urutan: 295,
+    },
+    {
+      kunci: "itsbat nikah|dikabulkan|pencairan-dana",
+      nilai: "[01c] [Kabul] IN Kontensius - Pasangan Meninggal, Pencairan Dana (Taspen, BPJS, Bank)",
+      data: { jenisAsli: "Itsbat Nikah Kontensius", statusAsli: "Dikabulkan", blangko: "Putusan Itsbat Nikah Kontensius", blangkoLain: ["IN Kontensius - Putusan"], catatan: "keadaan: petitum memohon pencairan dana (BPJS, Taspen, bank, tabungan); isian 9719" },
+      urutan: 296,
+    },
+    {
+      kunci: "asal usul anak|dikabulkan|anak-sah-perkawinan-tercatat",
+      nilai: "[01] [Kabul] AUA - Anak Sah dari Perkawinan Tercatat, Belum Punya Akta Kelahiran",
+      data: { jenisAsli: "Asal Usul Anak", statusAsli: "Dikabulkan", blangko: "Putusan Asal Usul Anak", blangkoLain: ["Asal Usul Anak - Putusan"], catatan: "dipilih manual: anak sah dari perkawinan tercatat yang belum punya akta kelahiran" },
+      urutan: 297,
+    },
+    {
+      kunci: "cerai gugat|dikabulkan|kumulasi-nafkah-istri",
+      nilai: "[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "keadaan: petitum memuat nafkah madliyah / iddah / mut'ah, Tergugat hadir" },
+      urutan: 298,
+    },
+    {
+      kunci: "cerai gugat|dikabulkan|kumulasi-nafkah-istri-verstek",
+      nilai: "[01d] [Kabul Verstek] Cerai (Format Lengkap) - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah)",
+      data: { jenisAsli: "Cerai Gugat", statusAsli: "Dikabulkan", blangko: "Putusan Cerai Gugat", blangkoLain: ["Putusan CG", "CG - Putusan"], catatan: "keadaan: petitum memuat nafkah madliyah / iddah / mut'ah, Tergugat tidak pernah hadir (verstek)" },
+      urutan: 299,
+    },
+    /* === I23 18 Okt === cermin blok I23 panel-alat.js (nafkah anak pasca perceraian jenis 743 folder 6c; hak asuh + nafkah anak di 6a) */
+    {
+      kunci: "nafkah anak pasca perceraian",
+      nilai: "[01] [Kabul] Nafkah Anak - Kontradiktoir",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"], catatan: "varian: [01a] [Kabul] Nafkah Anak - T Tidak Hadir Setelah Mediasi; [02] [Kabul Sebagian] Nafkah Anak - Kontradiktoir - Petitum Selebihnya Ditolak" },
+      urutan: 300,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|dikabulkan|verstek",
+      nilai: "[01b] [Kabul Verstek] Nafkah Anak",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Dikabulkan", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"] },
+      urutan: 301,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|dikabulkan",
+      nilai: "[01] [Kabul] Nafkah Anak - Kontradiktoir",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Dikabulkan", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"], catatan: "varian: [01a] [Kabul] Nafkah Anak - T Tidak Hadir Setelah Mediasi; [02] [Kabul Sebagian] Nafkah Anak - Kontradiktoir - Petitum Selebihnya Ditolak" },
+      urutan: 302,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|dikabulkan|t-tidak-hadir-setelah-mediasi",
+      nilai: "[01a] [Kabul] Nafkah Anak - T Tidak Hadir Setelah Mediasi",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Dikabulkan", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"], catatan: "keadaan: T hadir mediasi lalu tidak hadir" },
+      urutan: 303,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|dikabulkan sebagian",
+      nilai: "[02] [Kabul Sebagian] Nafkah Anak - Kontradiktoir - Petitum Selebihnya Ditolak",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Dikabulkan Sebagian", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"], catatan: "keadaan: dikabulkan untuk sebagian (amar), Tergugat hadir" },
+      urutan: 304,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|dikabulkan sebagian|verstek",
+      nilai: "[02b] [Kabul Sebagian Verstek] Nafkah Anak - T Tidak Hadir - Petitum Selebihnya Ditolak",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Dikabulkan Sebagian", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"], catatan: "keadaan: dikabulkan untuk sebagian (amar), Tergugat tidak pernah hadir (verstek)" },
+      urutan: 305,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|ditolak",
+      nilai: "[03] [Tolak] Nafkah Anak - Kontradiktoir - Dalil Tidak Terbukti",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Ditolak", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"], catatan: "varian: [03b] [Tolak Verstek] Nafkah Anak - T Tidak Hadir - Dalil Tidak Terbukti" },
+      urutan: 306,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|ditolak|verstek",
+      nilai: "[03b] [Tolak Verstek] Nafkah Anak - T Tidak Hadir - Dalil Tidak Terbukti",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Ditolak", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"], catatan: "keadaan: Tergugat tidak pernah hadir (verstek)" },
+      urutan: 307,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|perdamaian",
+      nilai: "[97] [Perdamaian] Nafkah Anak - Akta Perdamaian",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Perdamaian", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"] },
+      urutan: 308,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|dicabut",
+      nilai: "[98] [Cabut] Nafkah Anak - P & T Hadir Sebelum Jawaban",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Dicabut", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"], catatan: "varian: [98b] [Cabut] Nafkah Anak - Sesudah Jawaban dengan Persetujuan T" },
+      urutan: 309,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|dicabut|sesudah-jawaban",
+      nilai: "[98b] [Cabut] Nafkah Anak - Sesudah Jawaban dengan Persetujuan T",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Dicabut", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"], catatan: "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)" },
+      urutan: 310,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|digugurkan",
+      nilai: "[98a] [Gugur] Nafkah Anak - P Tidak Hadir Sidang Pertama",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Digugurkan", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"] },
+      urutan: 311,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|gugur",
+      nilai: "[98a] [Gugur] Nafkah Anak - P Tidak Hadir Sidang Pertama",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Gugur", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"] },
+      urutan: 312,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|dicoret dari register",
+      nilai: "[98c] [Coret] Nafkah Anak - Dibatalkan dari Pendaftaran - Panjar Habis",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Dicoret dari Register", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"] },
+      urutan: 313,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|tidak dapat diterima",
+      nilai: "[99] [NO] Nafkah Anak - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"], catatan: "varian: [99a] [NO] Nafkah Anak - Kurang Pihak (Plurium Litis Consortium); [99b] [NO] Nafkah Anak - Gugatan Kabur (Obscuur Libel)" },
+      urutan: 314,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|tidak dapat diterima|sema-1-2022",
+      nilai: "[99] [NO] Nafkah Anak - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"], catatan: "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)" },
+      urutan: 315,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|tidak dapat diterima|kurang-pihak",
+      nilai: "[99a] [NO] Nafkah Anak - Kurang Pihak (Plurium Litis Consortium)",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"], catatan: "dipilih manual: kurang pihak (plurium litis consortium) - SIPP tidak menyimpan alasan NO terstruktur" },
+      urutan: 316,
+    },
+    {
+      kunci: "nafkah anak pasca perceraian|tidak dapat diterima|cacat-formil",
+      nilai: "[99b] [NO] Nafkah Anak - Gugatan Kabur (Obscuur Libel)",
+      data: { jenisAsli: "Nafkah Anak Pasca Perceraian", statusAsli: "Tidak Dapat Diterima", blangko: "Putusan Nafkah Anak", blangkoLain: ["Nafkah Anak - Putusan"], catatan: "dipilih manual: gugatan kabur (cacat formil) - SIPP tidak menyimpan alasan NO terstruktur" },
+      urutan: 317,
+    },
+    {
+      kunci: "lain-lain|dikabulkan|plus-nafkah-anak",
+      nilai: "[02] [Kabul] Hak Asuh dan Nafkah Anak - Kontradiktoir - Anak Belum Mumayyiz",
+      data: { jenisAsli: "Lain-Lain", statusAsli: "Dikabulkan", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "keadaan: gugatan hak asuh (Lain-Lain Pdt.G) yang petitumnya juga memuat nafkah anak" },
+      urutan: 318,
+    },
+    {
+      kunci: "lain-lain|dikabulkan|plus-nafkah-anak-setelah-mediasi",
+      nilai: "[02a] [Kabul] Hak Asuh dan Nafkah Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz",
+      data: { jenisAsli: "Lain-Lain", statusAsli: "Dikabulkan", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "keadaan: hak asuh + nafkah anak; T hadir mediasi lalu tidak hadir" },
+      urutan: 319,
+    },
+    {
+      kunci: "lain-lain|dikabulkan|plus-nafkah-anak-verstek",
+      nilai: "[02b] [Kabul Verstek] Hak Asuh dan Nafkah Anak - Anak Belum Mumayyiz",
+      data: { jenisAsli: "Lain-Lain", statusAsli: "Dikabulkan", blangko: "Putusan Hak Asuh Anak (Hadhanah)", blangkoLain: ["Hak Asuh - Putusan"], catatan: "keadaan: hak asuh + nafkah anak; Tergugat tidak pernah hadir (verstek)" },
+      urutan: 320,
     },
   ],
   "putusan.padanan-jenis": [

@@ -5313,6 +5313,13 @@ export type UnggahMassalPutusanBot = {
   /** I7 17 Okt: bahan varian blangko putusan (hak asuh: Tergugat ibu; HB: potongan amar "Dalam Rekonvensi"). */
   tergugatPerempuan?: boolean | null;
   amarRekonvensi?: string;
+  /** I20 18 Okt: dikabulkan untuk sebagian menurut amar (hak asuh, penguasaan anak, nafkah anak); null = tidak diketahui. */
+  dikabulkanSebagian?: boolean | null;
+  /** I22 18 Okt: petitum memohon pencairan dana (PAW, itsbat kontensius) / nafkah istri (cerai gugat); null = tidak diketahui. */
+  pencairanDana?: boolean | null;
+  kumulasiNafkahIstri?: boolean | null;
+  /** I23 18 Okt: petitum hak asuh juga memuat nafkah (anak); null = tidak diketahui. */
+  plusNafkahAnak?: boolean | null;
 };
 export type UnggahMassalTertahanBot = { perkaraId: string; nomorPerkara: string; tanggalSidang: string; majelis: string[] };
 export type UnggahMassalBasBot = {

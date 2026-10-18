@@ -1072,9 +1072,8 @@
     ghaib: "Tergugat/Termohon dipanggil secara ghaib",
     ecourt: "perkara ini terdaftar lewat e-Court",
     insidentil: "ada kuasa insidentil",
-    kuaKosong: "data KUA tempat perkawinan di SIPP kosong",
   };
-  const KEADAAN_SINGKAT = { kuasaP: "kuasa hukum", kuasaT: "kuasa hukum", prodeo: "prodeo", alasanC: "alasan C", alasanH: "alasan H", ghaib: "panggilan ghaib", ecourt: "e-Court", insidentil: "kuasa insidentil", kuaKosong: "KUA sudah di SIPP" };
+  const KEADAAN_SINGKAT = { kuasaP: "kuasa hukum", kuasaT: "kuasa hukum", prodeo: "prodeo", alasanC: "alasan C", alasanH: "alasan H", ghaib: "panggilan ghaib", ecourt: "e-Court", insidentil: "kuasa insidentil" };
   const perkaraSipp = () => (S.pk && S.pk.perkara) || null;
   const terisi = (b) => Boolean(String(S.isi[b.kode] || "").trim()) || Boolean(S.nilai[b.kode] && S.nilai[b.kode].status === "terisi" && String(S.nilai[b.kode].teks || "").trim());
   /**
@@ -1098,14 +1097,7 @@
     if (k === "ghaib") return Boolean(p && p.ghaib === true);
     if (k === "ecourt") return !p || p.lewatEcourt !== false;
     if (k === "insidentil") return Boolean(b.langsung) || terisi(b);
-    // I7 17 Okt: 9430 (KUA tempat perkawinan) hanya perlu bila variabel otomatis 9431 belum menemukan KUA di SIPP (masih titik-titik/kosong),
-    // atau sudah diisi petugas. Nilai 9431 belum terbaca = tetap tampil (tidak menebak).
-    if (k === "kuaKosong") {
-      if (terisi(b)) return true;
-      const v = ctx.nilai && ctx.nilai["9431"];
-      const teks9431 = v && v.status === "terisi" ? String(v.teks || "").trim() : "";
-      return !teks9431 || /(?:\.{2,}|…)\s*$/.test(teks9431);
-    }
+    // I7 18 Okt (revisi): isian 9430 (KUA tempat perkawinan) tidak dipakai lagi; keadaan "kuaKosong" dihapus bersama amar kirim salinan ke Pegawai Pencatat Nikah.
     if (k === "kuasaP" || k === "kuasaT" || k === "prodeo" || k === "alasanC" || k === "alasanH") return terisi(b);
     return true;
   }

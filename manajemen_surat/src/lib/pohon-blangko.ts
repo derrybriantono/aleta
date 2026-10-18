@@ -229,6 +229,14 @@ export const SET_BLANGKO: SetBlangko[] = [
     untuk: ["penguasaan anak"],
   },
   {
+    // I23 18 Okt (paket ABT abt-nafkah-anak-derry): nafkah anak pasca perceraian = jenis SIPP 743 (Pdt.G), folder 6c; menu 165 (hakim) / 166 (BAS).
+    id: "putusan-nafkah-anak",
+    nama: "Putusan Nafkah Anak",
+    folder: `${AKAR}/6c Nafkah Anak`,
+    jenis: "putusan",
+    untuk: ["nafkah anak pasca perceraian", "nafkah anak"],
+  },
+  {
     id: "putusan-pembatalan-perkawinan",
     nama: "Putusan Pembatalan Perkawinan",
     folder: `${AKAR}/5a Pembatalan Perkawinan`,

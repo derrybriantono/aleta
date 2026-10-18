@@ -8071,10 +8071,12 @@ function alatPetaUntukPerkara(peta, jenis, status, verstek, kumulasi, keadaan) {
   const p = peta && typeof peta === "object" ? peta : {};
   const j = alatKunciJenis(jenis);
   if (!j) return null;
-  const s = alatKunciStatusPutusan(status);
+  let s = alatKunciStatusPutusan(status);
   /* === Q3 16 Okt === */
   // Keadaan putusan (portal: lib/keadaan-putusan.ts, dikirim sebagai keadaanPutusan pada baris sidang): kode berurut dari yang paling khusus.
   const kodeKeadaan = alatKodeKeadaan(keadaan);
+  // I20 18 Okt: kabul sebagian (amar "untuk sebagian" / saklar) - status SIPP tetap "Dikabulkan", baris petanya "<jenis>|dikabulkan sebagian[|verstek]" bila jenis itu punya.
+  if (s === "dikabulkan" && kodeKeadaan.includes("dikabulkan-sebagian") && Object.keys(p).some((k) => k.startsWith(`${j}|dikabulkan sebagian`))) s = "dikabulkan sebagian";
   // Bendera verstek di SIPP kosong padahal T tak pernah hadir dan tak ada mediasi (56 perkara kabul, 2 tolak di PA Donggala): dianggap verstek.
   const v = Boolean(verstek) || /verstek/i.test(String(status || "")) || kodeKeadaan.includes("verstek-tanpa-bendera");
   /* === AKHIR Q3 === */
@@ -8868,7 +8870,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
   },
   kewarisan: {
     jenisAsli: "Kewarisan",
-    berkas: "[01] [Kabul] Kewarisan - Kontradiktur",
+    berkas: "[01] [Kabul] Kewarisan - Kontradiktoir", // I20 18 Okt: abt-cacat-lama-derry mengoreksi ejaan "Kontradiktur"
     blangko: "Putusan Kewarisan",
     blangkoLain: ["Putusan Waris", "Waris - Putusan"],
     bawaan: true,
@@ -9101,6 +9103,8 @@ const ALAT_MENU_PUTUSAN = {
   pc: { blangko: "Putusan Pencegahan Perkawinan", lain: ["Pencegahan Nikah - Putusan"] },
   ws: { blangko: "Putusan Wasiat", lain: ["Wasiat - Putusan"] },
   esb: { blangko: "Putusan Ekonomi Syariah (Acara Biasa)", lain: ["ES Acara Biasa - Putusan"] },
+  // I23 18 Okt: paket ABT abt-nafkah-anak-derry - menu 165 "Putusan Nafkah Anak" (alias "Nafkah Anak - Putusan"), folder derry_briantono/6c Nafkah Anak, jenis SIPP 743.
+  nfk: { blangko: "Putusan Nafkah Anak", lain: ["Nafkah Anak - Putusan"] },
 };
 function alatBarisPutusanLain(menu, jenisAsli, statusAsli, berkas, catatan) {
   const m = ALAT_MENU_PUTUSAN[menu];
@@ -9170,7 +9174,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
     "Penetapan Ahli Waris",
     "",
     "[01] [Kabul] PAW - Ahli Waris Anak Kandung (Suami-Istri dan Orang Tua Pewaris Telah Meninggal)",
-    "satu susunan ahli waris (anak kandung) - susunan lain belum ada"
+    "varian: [01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis)" // I22 18 Okt: susunan lain kini ada ([01] = anak kandung saja)
   ),
   "penetapan ahli waris|tidak dapat diterima": alatBarisPutusanLain("paw", "Penetapan Ahli Waris", "Tidak Dapat Diterima", "[99] [NO] PAW - Permohonan Kabur (Obscuur Libel)"),
   "penetapan ahli waris|tidak dapat diterima|sema-1-2022": alatBarisPutusanLain(
@@ -9668,6 +9672,165 @@ const ALAT_VARIAN_I17 = [
 ];
 for (const [kunci, berkas] of ALAT_VARIAN_I17) alatTambahVarianPeta(kunci, berkas);
 /* === AKHIR I17 === */
+
+/* === I19 18 Okt === */
+/**
+ * PUTUSAN JAWABAN & EKSEPSI 18 Okt (paket ABT abt-putusan-eksepsi-cabut-derry, abt-putusan-sela-eksepsi-derry, abt-putusan-itsbat-tolak-derry; peta:
+ * i19-putusan-jawaban-18okt/PEMETAAN-ALETA.md): pencabutan sesudah jawaban yang DITOLAK Tergugat ([02c] CG/CT, [01c] kewarisan), NO karena eksepsi kewenangan absolut
+ * [99c] / relatif [99d] (cerai, HB, kewarisan), PUTUSAN SELA eksepsi ditolak [98e] / [98f] (status "Putusan Sela"; bukan status akhir SIPP), serta itsbat nikah:
+ * alternatif tolak [03c] (masih terikat perkawinan lain), NO [99c] (poligami sirri) dan NO [99d] (nikah sesudah 2019 tidak dicatatkan). Keadaan baru (lib/keadaan-putusan.ts):
+ * cabut-ditolak-t, eksepsi-absolut-dikabulkan, eksepsi-relatif-dikabulkan, eksepsi-absolut-ditolak-putusan-sela, eksepsi-relatif-ditolak-putusan-sela,
+ * nikah-sesudah-2019-tidak-dicatat, poligami-sirri-atau-terikat, terikat-perkawinan-lain - semua tidak tersimpan di SIPP: hanya dari penanda tegas, dipilih manual.
+ * Kolom: [kunci, jenis blangko, jenisAsli, statusAsli, berkas, catatan].
+ */
+const ALAT_BARIS_I19 = [
+  ["cerai gugat|dikabulkan|cabut-ditolak-t", "cg", "Cerai Gugat", "Dikabulkan", "[02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban", "keadaan: Penggugat mencabut sesudah jawaban, Tergugat menolak (perkara dilanjutkan dan diputus) - dipilih manual dari BAS"],
+  ["cerai gugat|tidak dapat diterima|eksepsi-absolut-dikabulkan", "cg", "Cerai Gugat", "Tidak Dapat Diterima", "[99c] [NO] CG - Eksepsi Kewenangan Absolut Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan absolut dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["cerai gugat|tidak dapat diterima|eksepsi-relatif-dikabulkan", "cg", "Cerai Gugat", "Tidak Dapat Diterima", "[99d] [NO] CG - Eksepsi Kewenangan Relatif Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan relatif dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["cerai gugat|putusan sela|eksepsi-absolut-ditolak-putusan-sela", "cg", "Cerai Gugat", "Putusan Sela", "[98e] [Sela] CG - Eksepsi Kewenangan Absolut Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (absolut ditolak)"],
+  ["cerai gugat|putusan sela|eksepsi-relatif-ditolak-putusan-sela", "cg", "Cerai Gugat", "Putusan Sela", "[98f] [Sela] CG - Eksepsi Kewenangan Relatif Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (relatif ditolak)"],
+  ["cerai talak|dikabulkan|cabut-ditolak-t", "cg", "Cerai Talak", "Dikabulkan", "[02c] [Kabul] CT - F - Pencabutan Ditolak T Sesudah Jawaban", "keadaan: Penggugat mencabut sesudah jawaban, Tergugat menolak (perkara dilanjutkan dan diputus) - dipilih manual dari BAS"],
+  ["cerai talak|tidak dapat diterima|eksepsi-absolut-dikabulkan", "cg", "Cerai Talak", "Tidak Dapat Diterima", "[99c] [NO] CT - Eksepsi Kewenangan Absolut Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan absolut dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["cerai talak|tidak dapat diterima|eksepsi-relatif-dikabulkan", "cg", "Cerai Talak", "Tidak Dapat Diterima", "[99d] [NO] CT - Eksepsi Kewenangan Relatif Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan relatif dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["cerai talak|putusan sela|eksepsi-absolut-ditolak-putusan-sela", "cg", "Cerai Talak", "Putusan Sela", "[98e] [Sela] CT - Eksepsi Kewenangan Absolut Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (absolut ditolak)"],
+  ["cerai talak|putusan sela|eksepsi-relatif-ditolak-putusan-sela", "cg", "Cerai Talak", "Putusan Sela", "[98f] [Sela] CT - Eksepsi Kewenangan Relatif Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (relatif ditolak)"],
+  ["harta bersama|tidak dapat diterima|eksepsi-absolut-dikabulkan", "hb", "Harta Bersama", "Tidak Dapat Diterima", "[99c] [NO] HB - Eksepsi Kewenangan Absolut Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan absolut dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["harta bersama|tidak dapat diterima|eksepsi-relatif-dikabulkan", "hb", "Harta Bersama", "Tidak Dapat Diterima", "[99d] [NO] HB - Eksepsi Kewenangan Relatif Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan relatif dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["harta bersama|putusan sela|eksepsi-absolut-ditolak-putusan-sela", "hb", "Harta Bersama", "Putusan Sela", "[98e] [Sela] HB - Eksepsi Kewenangan Absolut Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (absolut ditolak)"],
+  ["harta bersama|putusan sela|eksepsi-relatif-ditolak-putusan-sela", "hb", "Harta Bersama", "Putusan Sela", "[98f] [Sela] HB - Eksepsi Kewenangan Relatif Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (relatif ditolak)"],
+  ["kewarisan|tidak dapat diterima|eksepsi-absolut-dikabulkan", "waris", "Kewarisan", "Tidak Dapat Diterima", "[99c] [NO] Kewarisan - Eksepsi Kewenangan Absolut Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan absolut dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["kewarisan|tidak dapat diterima|eksepsi-relatif-dikabulkan", "waris", "Kewarisan", "Tidak Dapat Diterima", "[99d] [NO] Kewarisan - Eksepsi Kewenangan Relatif Dikabulkan", "dipilih manual: Tergugat mengajukan eksepsi kewenangan relatif dalam jawaban dan dikabulkan - SIPP tidak menyimpannya"],
+  ["kewarisan|putusan sela|eksepsi-absolut-ditolak-putusan-sela", "waris", "Kewarisan", "Putusan Sela", "[98e] [Sela] Kewarisan - Eksepsi Kewenangan Absolut Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (absolut ditolak)"],
+  ["kewarisan|putusan sela|eksepsi-relatif-ditolak-putusan-sela", "waris", "Kewarisan", "Putusan Sela", "[98f] [Sela] Kewarisan - Eksepsi Kewenangan Relatif Ditolak", "dipilih manual: putusan sela atas eksepsi kewenangan (bukan status akhir SIPP, dicatat pada agenda sidang) - perkara dilanjutkan (relatif ditolak)"],
+  ["kewarisan|dikabulkan|cabut-ditolak-t", "waris", "Kewarisan", "Dikabulkan", "[01c] [Kabul] Kewarisan - Kontradiktoir - Pencabutan Ditolak T Sesudah Jawaban", "keadaan: Penggugat mencabut sesudah jawaban, Tergugat menolak (perkara dilanjutkan dan diputus) - dipilih manual dari BAS"],
+  ["itsbat nikah|ditolak|terikat-perkawinan-lain", "in", "Itsbat Nikah", "Ditolak", "[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain", "dipilih manual: alternatif tolak bila salah satu pihak terbukti masih terikat perkawinan lain"],
+  ["itsbat nikah|tidak dapat diterima|poligami-sirri-atau-terikat", "in", "Itsbat Nikah", "Tidak Dapat Diterima", "[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026)", "dipilih manual: itsbat poligami sirri / salah satu pihak masih terikat perkawinan lain (SEMA 3/2018, Buku II 2026)"],
+  ["itsbat nikah|tidak dapat diterima|nikah-sesudah-2019-tidak-dicatat", "in", "Itsbat Nikah", "Tidak Dapat Diterima", "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk)", "dipilih manual: nikah sesudah 2019 tidak dicatatkan tanpa alasan mendesak (UU Adminduk)"],
+];
+for (const [kunci, jenis, jenisAsli, statusAsli, berkas, catatan] of ALAT_BARIS_I19) {
+  if (jenis === "cg" || jenis === "ct") ALAT_PETA_BAWAAN[kunci] = alatBarisStatusCerai(jenisAsli, statusAsli, berkas, catatan);
+  else ALAT_PETA_BAWAAN[kunci] = alatBarisPutusanLain(jenis, jenisAsli, statusAsli, berkas, catatan);
+}
+const ALAT_VARIAN_I19 = [
+  ["cerai gugat|dikabulkan", ["[02c] [Kabul] CG - F - Pencabutan Ditolak T Sesudah Jawaban"]],
+  ["cerai talak|dikabulkan", ["[02c] [Kabul] CT - F - Pencabutan Ditolak T Sesudah Jawaban"]],
+  ["cerai gugat|tidak dapat diterima", ["[99c] [NO] CG - Eksepsi Kewenangan Absolut Dikabulkan", "[99d] [NO] CG - Eksepsi Kewenangan Relatif Dikabulkan"]],
+  ["cerai talak|tidak dapat diterima", ["[99c] [NO] CT - Eksepsi Kewenangan Absolut Dikabulkan", "[99d] [NO] CT - Eksepsi Kewenangan Relatif Dikabulkan"]],
+  ["harta bersama|tidak dapat diterima", ["[99c] [NO] HB - Eksepsi Kewenangan Absolut Dikabulkan", "[99d] [NO] HB - Eksepsi Kewenangan Relatif Dikabulkan"]],
+  ["kewarisan|tidak dapat diterima", ["[99c] [NO] Kewarisan - Eksepsi Kewenangan Absolut Dikabulkan", "[99d] [NO] Kewarisan - Eksepsi Kewenangan Relatif Dikabulkan"]],
+  ["itsbat nikah|ditolak", ["[03c] [Tolak] IN - Alternatif Tolak - Salah Satu Pihak Masih Terikat Perkawinan Lain"]],
+  ["itsbat nikah|tidak dapat diterima", ["[99c] [NO] IN - Poligami Sirri atau Masih Terikat Perkawinan Lain (SEMA 3 2018, Buku II 2026)", "[99d] [NO] IN - Pernikahan Sesudah 2019 Tidak Dicatatkan Tanpa Alasan Mendesak (UU Adminduk)"]],
+];
+for (const [kunci, berkas] of ALAT_VARIAN_I19) alatTambahVarianPeta(kunci, berkas);
+/* === AKHIR I19 === */
+
+/* === I20 18 Okt === */
+/**
+ * PENGUASAAN ANAK 6b REVISI 2 (paket ABT abt-penguasaan-anak-derry revisi, peta: i20-bas-perbaikan-18okt/PEMETAAN-ALETA.md bagian "6b Penguasaan Anak (revisi i20)"):
+ * varian BARU [02] kabul sebagian kontradiktoir, [02b] kabul sebagian verstek, [01d] penguasaan dialihkan. Penyerahan anak kini bersaklar #9720# (1 = diminta dalam petitum,
+ * 0/kosong = tidak, 2 = ditetapkan hakim) di dalam blangko yang sama - tidak ada berkas tambahan untuk saklar itu. Keadaan: "dikabulkan-sebagian" (portal: amar "untuk sebagian" /
+ * "selain dan selebihnya" atau saklar; status SIPP tetap "Dikabulkan" - lihat alatPetaUntukPerkara) dan "dialihkan" ([01d] hanya dipilih manual: pemindahan hak asuh).
+ */
+const ALAT_PGN_I20 = {
+  kabulSebagian: "[02] [Kabul Sebagian] Penguasaan Anak - Kontradiktoir - Petitum Selebihnya Ditolak",
+  kabulSebagianVerstek: "[02b] [Kabul Sebagian Verstek] Penguasaan Anak - T Tidak Hadir - Petitum Selebihnya Ditolak",
+  dialihkan: "[01d] [Kabul] Penguasaan Anak - Kontradiktoir - Penguasaan Dialihkan",
+};
+Object.assign(ALAT_PETA_BAWAAN, {
+  "penguasaan anak|dikabulkan sebagian": alatBarisPutusanLain("pgn", "Penguasaan Anak", "Dikabulkan Sebagian", ALAT_PGN_I20.kabulSebagian, "keadaan: dikabulkan untuk sebagian (amar), Tergugat hadir"),
+  "penguasaan anak|dikabulkan sebagian|verstek": alatBarisPutusanLain("pgn", "Penguasaan Anak", "Dikabulkan Sebagian", ALAT_PGN_I20.kabulSebagianVerstek, "keadaan: dikabulkan untuk sebagian (amar), Tergugat tidak pernah hadir (verstek)"),
+  "penguasaan anak|dikabulkan|dialihkan": alatBarisPutusanLain("pgn", "Penguasaan Anak", "Dikabulkan", ALAT_PGN_I20.dialihkan, "dipilih manual: penguasaan anak dialihkan (pemindahan hak asuh)"),
+});
+for (const kunci of ["penguasaan anak", "penguasaan anak|dikabulkan"]) alatTambahVarianPeta(kunci, [ALAT_PGN_I20.dialihkan, ALAT_PGN_I20.kabulSebagian]);
+/* === AKHIR I20 === */
+
+/* === I22 18 Okt === */
+/**
+ * PUTUSAN JAWABAN B 18 Okt (paket ABT abt-putusan-jawaban-b-derry dan -b2-derry; peta: i22-putusan-jawaban-18okt-b/PEMETAAN-ALETA.md): PAW kabul dengan susunan ahli waris DINAMIS
+ * [01b] (pasangan, anak, ayah, ibu; isian 9701-9704, 9718; pencairan dana lewat 9700), itsbat kontensius kabul dengan pencairan dana (Taspen, BPJS, bank) [01c] (isian 9719),
+ * asal usul anak kabul anak sah dari perkawinan tercatat [01], dan cerai gugat kumulasi nafkah istri (madliyah, iddah, mut'ah): [02c] kontradiktoir / [01d] verstek.
+ * Keadaan baru (lib/keadaan-putusan.ts): susunan-ahli-waris, pencairan-dana, anak-sah-perkawinan-tercatat, kumulasi-nafkah-istri(-verstek). Pencairan dana dan nafkah istri
+ * dibaca bot dari petitum; susunan ahli waris dan anak sah perkawinan tercatat tidak tersimpan di SIPP (saklar, pilih manual). Kolom: [kunci, jenis blangko, jenisAsli, statusAsli, berkas, catatan].
+ */
+const ALAT_BARIS_I22 = [
+  ["penetapan ahli waris|dikabulkan|susunan-ahli-waris", "paw", "Penetapan Ahli Waris", "Dikabulkan", "[01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis)", "dipilih manual: susunan ahli waris dinamis (isian 9701-9704, 9718; pencairan dana lewat 9700); [01] = anak kandung saja"],
+  ["itsbat nikah|dikabulkan|pencairan-dana", "ink", "Itsbat Nikah Kontensius", "Dikabulkan", "[01c] [Kabul] IN Kontensius - Pasangan Meninggal, Pencairan Dana (Taspen, BPJS, Bank)", "keadaan: petitum memohon pencairan dana (BPJS, Taspen, bank, tabungan); isian 9719"],
+  ["asal usul anak|dikabulkan|anak-sah-perkawinan-tercatat", "aua", "Asal Usul Anak", "Dikabulkan", "[01] [Kabul] AUA - Anak Sah dari Perkawinan Tercatat, Belum Punya Akta Kelahiran", "dipilih manual: anak sah dari perkawinan tercatat yang belum punya akta kelahiran"],
+  ["cerai gugat|dikabulkan|kumulasi-nafkah-istri", "cg", "Cerai Gugat", "Dikabulkan", "[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir", "keadaan: petitum memuat nafkah madliyah / iddah / mut'ah, Tergugat hadir"],
+  ["cerai gugat|dikabulkan|kumulasi-nafkah-istri-verstek", "cg", "Cerai Gugat", "Dikabulkan", "[01d] [Kabul Verstek] Cerai (Format Lengkap) - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah)", "keadaan: petitum memuat nafkah madliyah / iddah / mut'ah, Tergugat tidak pernah hadir (verstek)"],
+];
+for (const [kunci, jenis, jenisAsli, statusAsli, berkas, catatan] of ALAT_BARIS_I22) {
+  if (jenis === "cg" || jenis === "ct") ALAT_PETA_BAWAAN[kunci] = alatBarisStatusCerai(jenisAsli, statusAsli, berkas, catatan);
+  else ALAT_PETA_BAWAAN[kunci] = alatBarisPutusanLain(jenis, jenisAsli, statusAsli, berkas, catatan);
+}
+alatTambahVarianPeta("cerai gugat|dikabulkan", ["[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir"]);
+/* === AKHIR I22 === */
+
+/* === I23 18 Okt === */
+/**
+ * NAFKAH ANAK PASCA PERCERAIAN (jenis SIPP 743, gugatan Pdt.G) versi Derry - paket ABT abt-nafkah-anak-derry (folder "6c Nafkah Anak" + " - BAS", menu 165/166; peta:
+ * i23-nafkah-anak-2026/PEMETAAN-ALETA.md) dan abt-nafkah-anak-kumulasi-derry (menyunting 4 berkas 1d, nama tetap). Dipilih menurut JENIS 743, bukan menurut petitum
+ * (0 perkara jenis 743 di kedua salinan SIPP; bila PA mendaftarkannya sebagai 350, rentang menu 165/166 diubah dan kunci "<jenis>|..." mengikuti nama jenisnya).
+ * Kabul sebagian dibaca dari amar (keadaan "dikabulkan-sebagian"; status SIPP tetap "Dikabulkan"). Hak asuh (Lain-Lain Pdt.G) yang juga menuntut nafkah anak: tiga varian [02] / [02a] /
+ * [02b] di folder 6a lewat keadaan plus-nafkah-anak(-verstek|-setelah-mediasi). Isian KOSONG = bagian itu tidak tercetak (anti ultra petita, SEMA 3/2018).
+ */
+const ALAT_NFK_JENIS = "Nafkah Anak Pasca Perceraian";
+const ALAT_BERKAS_NAFKAH_ANAK = {
+  kabul: "[01] [Kabul] Nafkah Anak - Kontradiktoir",
+  setelahMediasi: "[01a] [Kabul] Nafkah Anak - T Tidak Hadir Setelah Mediasi",
+  verstek: "[01b] [Kabul Verstek] Nafkah Anak",
+  sebagian: "[02] [Kabul Sebagian] Nafkah Anak - Kontradiktoir - Petitum Selebihnya Ditolak",
+  sebagianVerstek: "[02b] [Kabul Sebagian Verstek] Nafkah Anak - T Tidak Hadir - Petitum Selebihnya Ditolak",
+  tolak: "[03] [Tolak] Nafkah Anak - Kontradiktoir - Dalil Tidak Terbukti",
+  tolakVerstek: "[03b] [Tolak Verstek] Nafkah Anak - T Tidak Hadir - Dalil Tidak Terbukti",
+  damai: "[97] [Perdamaian] Nafkah Anak - Akta Perdamaian",
+  cabut: "[98] [Cabut] Nafkah Anak - P & T Hadir Sebelum Jawaban",
+  cabutSesudahJawaban: "[98b] [Cabut] Nafkah Anak - Sesudah Jawaban dengan Persetujuan T",
+  gugur: "[98a] [Gugur] Nafkah Anak - P Tidak Hadir Sidang Pertama",
+  coret: "[98c] [Coret] Nafkah Anak - Dibatalkan dari Pendaftaran - Panjar Habis",
+  noSema: "[99] [NO] Nafkah Anak - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
+  noKurangPihak: "[99a] [NO] Nafkah Anak - Kurang Pihak (Plurium Litis Consortium)",
+  noKabur: "[99b] [NO] Nafkah Anak - Gugatan Kabur (Obscuur Libel)",
+};
+function alatPetaNafkahAnak() {
+  const B = ALAT_BERKAS_NAFKAH_ANAK;
+  const kunci = "nafkah anak pasca perceraian";
+  const k = (status, tanda) => `${kunci}|${status}${tanda ? `|${tanda}` : ""}`;
+  const baris = (status, berkas, catatan) => alatBarisPutusanLain("nfk", ALAT_NFK_JENIS, status, berkas, catatan);
+  const sebutKabul = `varian: ${B.setelahMediasi}; ${B.sebagian}`;
+  const catatanNo = `varian: ${B.noKurangPihak}; ${B.noKabur}`;
+  return {
+    [kunci]: baris("", B.kabul, sebutKabul),
+    [k("dikabulkan", "verstek")]: baris("Dikabulkan", B.verstek),
+    [k("dikabulkan")]: baris("Dikabulkan", B.kabul, sebutKabul),
+    [k("dikabulkan", "t-tidak-hadir-setelah-mediasi")]: baris("Dikabulkan", B.setelahMediasi, "keadaan: T hadir mediasi lalu tidak hadir"),
+    [k("dikabulkan sebagian")]: baris("Dikabulkan Sebagian", B.sebagian, "keadaan: dikabulkan untuk sebagian (amar), Tergugat hadir"),
+    [k("dikabulkan sebagian", "verstek")]: baris("Dikabulkan Sebagian", B.sebagianVerstek, "keadaan: dikabulkan untuk sebagian (amar), Tergugat tidak pernah hadir (verstek)"),
+    [k("ditolak")]: baris("Ditolak", B.tolak, `varian: ${B.tolakVerstek}`),
+    [k("ditolak", "verstek")]: baris("Ditolak", B.tolakVerstek, "keadaan: Tergugat tidak pernah hadir (verstek)"),
+    [k("perdamaian")]: baris("Perdamaian", B.damai),
+    [k("dicabut")]: baris("Dicabut", B.cabut, `varian: ${B.cabutSesudahJawaban}`),
+    [k("dicabut", "sesudah-jawaban")]: baris("Dicabut", B.cabutSesudahJawaban, "keadaan: dicabut sesudah Tergugat/Termohon menjawab (dengan persetujuannya)"),
+    [k("digugurkan")]: baris("Digugurkan", B.gugur),
+    [k("gugur")]: baris("Gugur", B.gugur),
+    [k("dicoret dari register")]: baris("Dicoret dari Register", B.coret),
+    [k("tidak dapat diterima")]: baris("Tidak Dapat Diterima", B.noSema, catatanNo),
+    [k("tidak dapat diterima", "sema-1-2022")]: baris("Tidak Dapat Diterima", B.noSema, "keadaan: P hadir lalu dua kali tidak hadir (SEMA 1/2022)"),
+    [k("tidak dapat diterima", "kurang-pihak")]: baris("Tidak Dapat Diterima", B.noKurangPihak, "dipilih manual: kurang pihak (plurium litis consortium) - SIPP tidak menyimpan alasan NO terstruktur"),
+    [k("tidak dapat diterima", "cacat-formil")]: baris("Tidak Dapat Diterima", B.noKabur, "dipilih manual: gugatan kabur (cacat formil) - SIPP tidak menyimpan alasan NO terstruktur"),
+  };
+}
+Object.assign(ALAT_PETA_BAWAAN, alatPetaNafkahAnak(), {
+  // Hak asuh (369 Lain-Lain Pdt.G) yang petitumnya juga memuat nafkah anak: [02] kontradiktoir, [02a] T tidak hadir setelah mediasi, [02b] verstek (folder 6a).
+  "lain-lain|dikabulkan|plus-nafkah-anak": alatBarisPutusanLain("ha", "Lain-Lain", "Dikabulkan", "[02] [Kabul] Hak Asuh dan Nafkah Anak - Kontradiktoir - Anak Belum Mumayyiz", "keadaan: gugatan hak asuh (Lain-Lain Pdt.G) yang petitumnya juga memuat nafkah anak"),
+  "lain-lain|dikabulkan|plus-nafkah-anak-setelah-mediasi": alatBarisPutusanLain("ha", "Lain-Lain", "Dikabulkan", "[02a] [Kabul] Hak Asuh dan Nafkah Anak - T Tidak Hadir Setelah Mediasi - Anak Belum Mumayyiz", "keadaan: hak asuh + nafkah anak; T hadir mediasi lalu tidak hadir"),
+  "lain-lain|dikabulkan|plus-nafkah-anak-verstek": alatBarisPutusanLain("ha", "Lain-Lain", "Dikabulkan", "[02b] [Kabul Verstek] Hak Asuh dan Nafkah Anak - Anak Belum Mumayyiz", "keadaan: hak asuh + nafkah anak; Tergugat tidak pernah hadir (verstek)"),
+});
+/* === AKHIR I23 === */
+
+
+
+
 
 /**
  * Pemetaan tersimpan, dilengkapi bawaannya untuk jenis yang belum pernah

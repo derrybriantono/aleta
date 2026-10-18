@@ -57,6 +57,8 @@ export const KUNCI_BAKU: Record<JenisPemetaan, { kunci: string; sebutan: string 
     { kunci: "Ekonomi Syariah", sebutan: "Ekonomi Syariah (gugatan sederhana dan acara biasa)" },
     { kunci: "Pencegahan Perkawinan", sebutan: "Pencegahan Perkawinan" },
     { kunci: "Wasiat", sebutan: "Wasiat" },
+    // I23 18 Okt (paket ABT abt-nafkah-anak-derry): jenis SIPP 743 "Nafkah Anak Pasca Perceraian" - folder 6c (menu 165/166).
+    { kunci: "Nafkah Anak Pasca Perceraian", sebutan: "Nafkah Anak Pasca Perceraian (folder 6c, jenis 743)" },
   ],
   relaas: [
     // 6 Okt (butir 10): sidang pertama PER PIHAK - kunci yang sama dengan yang
@@ -816,6 +818,8 @@ export const JENIS_BAS_BAKU = [
   // F22 17 Okt: folder "5b Pencegahan Perkawinan - BAS" dan "4c Wasiat - BAS" ("10a Ekonomi Syariah Biasa - BAS" ikut jenis "Ekonomi Syariah").
   "Pencegahan Perkawinan",
   "Wasiat",
+  // I23 18 Okt: folder "6c Nafkah Anak - BAS" (jenis 743).
+  "Nafkah Anak Pasca Perceraian",
 ] as const;
 
 function normalkanBagianSidang(x: string): string {

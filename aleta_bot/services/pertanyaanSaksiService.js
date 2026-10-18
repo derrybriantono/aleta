@@ -48,6 +48,7 @@ const ID_JENIS = Object.freeze({
   "lain-lain *)": "369",
   "ekonomi syariah": "370",
   "p3hp/penetapan ahli waris": "371",
+  "nafkah anak pasca perceraian": "743",
 });
 
 /** "Cerai Gugat" / 347 / "347" -> "347"; tidak dikenal -> "". */

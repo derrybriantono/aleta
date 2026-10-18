@@ -62,7 +62,8 @@ describe("A. pohon server 17 Okt: menu, folder, berkas", () => {
     // Lain-Lain Pdt.G (hak asuh) 8 + pembatalan 9 + ekonomi syariah 9 + 1 baris tolak "Tergugat ibu" (I7 17 Okt: [03a]) + 1 baris tolak verstek (I8 17 Okt: [03b]);
     // I15 18 Okt: 12 baris jenis 349 (10 + 2 variasi I7/I8) pindah ke blok penguasaan anak (6b) -> 28.
     // I17 18 Okt: + 4 baris hak asuh (98b, 98c, 99a, 99b) dan 5 baris pembatalan (03b, 98b, 98c, 99a, 99b) -> 37.
-    expect(baris).toHaveLength(37);
+    // I23 18 Okt: + 3 baris hak asuh + nafkah anak (plus-nafkah-anak, -setelah-mediasi, -verstek) -> 40.
+    expect(baris).toHaveLength(40);
     for (const [kunci, b] of baris) {
       const folder = FOLDER_MENU_PUTUSAN[String(b.blangko)];
       expect(FIX.berkas, `${kunci} -> ${b.berkas}`).toContain(`${A}${folder}/${b.berkas}.rtf`);
@@ -83,10 +84,10 @@ describe("A. pohon server 17 Okt: menu, folder, berkas", () => {
       expect(diServer.length, id).toBe(alur.langkah.length);
       expect(alur.langkah.map((l) => `${alur.folder}/${l.berkas}`).sort(), id).toEqual([...diServer].sort());
     }
-    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-38")!.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO"]);
+    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-38")!.langkah.map((l) => l.kode)).toEqual(["V1", "AP", "CB", "V2", "TP", "NO", "CS", "CM"]); // + CS/CM cabut sesudah jawaban (I20 18 Okt)
     // I7 17 Okt: langkah CB ("Mediasi Berhasil - Gugatan Dicabut") dipindah ke derry_briantono/terhapus (pembatalan perkawinan dikecualikan dari mediasi).
-    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-39")!.langkah.map((l) => l.kode)).toEqual(["V1", "V2", "TP", "NO"]);
-    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-40")!.langkah.map((l) => l.kode)).toEqual(["1", "1a", "1b", "1c", "1d", "2", "2a", "3", "C"]);
+    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-39")!.langkah.map((l) => l.kode)).toEqual(["V1", "V2", "TP", "NO", "CS", "CM"]);
+    expect(ALUR_BAS_BARU.find((a) => a.id === "alur-40")!.langkah.map((l) => l.kode)).toEqual(["1", "1a", "1b", "1c", "1d", "2", "2a", "3", "C", "CS", "CM"]);
   });
 
   it("29 BAS ALUR 04-09 disalin ke 5a dan 6a - BAS: tabel salinan = berkas server, menu bernama", () => {
@@ -374,7 +375,7 @@ describe("E. label isian baru di 'Perlu diisi'", () => {
 });
 
 describe("F. kunci baku Pemetaan blangko", () => {
-  it("putusan: Penguasaan Anak, Pembatalan Perkawinan, Ekonomi Syariah; BAS: 17 jenis (F22 17 Okt: + Pencegahan Perkawinan, Wasiat)", () => {
+  it("putusan: Penguasaan Anak, Pembatalan Perkawinan, Ekonomi Syariah; BAS: 18 jenis (F22 17 Okt: + Pencegahan Perkawinan, Wasiat; I23 18 Okt: + Nafkah Anak Pasca Perceraian)", () => {
     const putusan = KUNCI_BAKU.putusan.map((k) => k.kunci);
     for (const k of ["Penguasaan Anak", "Pembatalan Perkawinan", "Ekonomi Syariah"]) {
       expect(putusan).toContain(k);
@@ -382,6 +383,6 @@ describe("F. kunci baku Pemetaan blangko", () => {
       expect(kunciJenisPerkara(k)).toBe(k.toLowerCase());
       expect(KUNCI_BAKU.bas.some((b) => b.kunci === `${k}|1|semua-hadir`), k).toBe(true);
     }
-    expect(JENIS_BAS_BAKU).toHaveLength(17);
+    expect(JENIS_BAS_BAKU).toHaveLength(18);
   });
 });
