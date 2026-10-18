@@ -26,6 +26,7 @@ type Golongan = { kode: string; label: string };
 type Kelompok = { kode: KelompokPeta; label: string };
 type Kewenangan = { judul: string; isi: string };
 type Menunggu = { judul: string; keadaan: string; usul: string };
+type Disetujui = { nomor: number; judul: string; isi: string };
 type FolderAbt = { folder: string; tahap: string; grup: string[]; validator: string[] };
 type Peta = {
   teknis: boolean;
@@ -36,6 +37,7 @@ type Peta = {
   kewenangan: Kewenangan[];
   perubahan: PerubahanHak[];
   menunggu: Menunggu[];
+  disetujui: Disetujui[];
   hakMenuAbt: FolderAbt[];
 };
 
@@ -287,6 +289,25 @@ export function HakAksesPeran({ pengguna = [] }: { pengguna?: UserPersona[] }) {
           ))}
         </CardContent>
       </Card>
+
+      {peta.teknis && (peta.disetujui ?? []).length > 0 ? (
+        <Card data-hak-akses-disetujui>
+          <CardHeader>
+            <CardTitle>Keputusan yang sudah berlaku</CardTitle>
+            <CardDescription>Jawaban Anda atas usulan hak akses 18 Oktober 2026.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {peta.disetujui.map((d) => (
+              <div key={d.nomor} className="rounded-xl border border-border bg-muted/30 p-3 text-sm">
+                <p className="font-medium text-foreground">
+                  {d.nomor} - {d.judul}
+                </p>
+                <p className="text-muted-foreground">{d.isi}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {peta.teknis && peta.menunggu.length > 0 ? (
         <Card data-hak-akses-menunggu>

@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
           peranTambahan: dia.additionalRoleIds ?? [],
           golonganMenu: golonganMenuEkstensi(dia),
         },
-        kapabilitas: await kapabilitasPengguna(db, { id: dia.id, roleId: String(dia.roleId) }),
+        kapabilitas: await kapabilitasPengguna(db, { id: dia.id, roleId: String(dia.roleId), additionalRoleIds: dia.additionalRoleIds ?? [], positionId: dia.positionId, actingAssignment: dia.actingAssignment }),
         sipp: null,
         saksi: null,
         itsbat: null,

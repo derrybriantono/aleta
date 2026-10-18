@@ -222,6 +222,9 @@ SIPP_PERKARA.kasir = ["kasir", "perkara"];
 SIPP_PERKARA.ptsp = ["ptsp", "berkas", "perkara"];
 SIPP_DAFTAR.kasir = [];
 SIPP_DAFTAR.ptsp = ["penetapan-massal"];
+// Keputusan 112 (18 Okt 2026): PTSP di ABT hanya "Isi dari SIPP & input ke ABT".
+ABT_PERKARA.ptsp = ["isi-input"];
+ABT_DAFTAR.ptsp = [];
 ABT_PERKARA.kasir = [];
 ABT_DAFTAR.kasir = [];
 
@@ -308,11 +311,12 @@ describe("perkara yang TIDAK ditangani: membaca boleh, mengerjakan tidak", () =>
     }
   });
 
-  it("11 Okt: PTSP/operator dan Kasir bekerja atas semua perkara - 'ditangani' tidak mengurangi; ABT PTSP tetap susunan lama", () => {
+  it("11 Okt: PTSP/operator dan Kasir bekerja atas semua perkara - 'ditangani' tidak mengurangi; ABT PTSP hanya isi-input (112)", () => {
     const m = muat();
     expect(m.menu("sipp", "perkara", "Operator", { ditangani: false })).toEqual(SIPP_PERKARA.ptsp);
     expect(m.menu("sipp", "perkara", "Analis Keuangan", { ditangani: false })).toEqual(SIPP_PERKARA.kasir);
-    expect(m.menu("abt", "daftar", "Operator")).toBeNull();
+    expect(m.menu("abt", "daftar", "Operator")).toEqual([]);
+    expect(m.menu("abt", "perkara", "Operator")).toEqual(["isi-input"]);
     expect(m.menu("abt", "perkara", "Analis Keuangan")).toEqual([]);
   });
 

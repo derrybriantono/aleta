@@ -127,7 +127,7 @@ Catatan kewenangan:
 | Tab Jadwal Mediasi | L | L | L | L | L | L | L | - | - | L | L | - | L | - | - | - |
 | Tab Status Perkara | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L |
 | Tab Kendali Berkas | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L |
-| Tab Riwayat ALETA | L | L | L | L | L | - | - | - | - | L | - | - | - | - | - | - |
+| Tab Riwayat ALETA | L | L | L | - | - | - | - | - | - | L | - | - | - | - | - | - |
 | Tab Tanda tangan dan cap pejabat | L | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Tab Unduh ekstensi | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L |
 | Tunda / Putus sidang (tulis ke SIPP) | U | U | U | U | U | U | U | - | - | - | - | - | - | - | - | - |
@@ -209,7 +209,7 @@ Catatan kewenangan:
 - **Draf putusan H-7 (isi lengkap)**: Isi lengkap ikut aksi 'Simpan draf putusan' (18 Okt 2026: juru sita tidak lagi dapat membaca isi draf).
 - **Susun keterangan saksi menurut keadaan perkara (panel ABT)**: Menu panel ABT 'Susun keterangan saksi' hanya golongan kepaniteraan; hakim memakai Panduan pertanyaan saksi (baca). Katalog pertanyaannya dijaga aksi 'Set pertanyaan saksi'.
 - **Blangko Saya: pemakai selama tahap awal**: Tahap awal (keputusan 18 Okt 2026): ubin, menu, dan rute tertutup bagi selain Super Admin. Hak di kolom ini berlaku setelah Super Admin menyalakan saklar (status bawaan: Mati). Admin juga baru bisa setelah saklar menyala.
-- **Penetapan PMH, PPP, PJS, dan PHS di panel SIPP**: Panel ekstensi menyediakan tab Penetapan bagi Ketua/Wakil (dan Admin), serta Penetapan massal di daftar SIPP bagi Meja PTSP bila Super Admin memberinya kemampuan penunjukan. Dua kemampuan diatur Super Admin di Integrasi e-Court: papan penunjukan (bawaan Ketua, Wakil, hakim, Panitera) dan tombol otomatis (bawaan Ketua dan Panitera). Hakim (PHS) dan Panitera (PPP, PJS) memegang kemampuannya tetapi belum punya tab Penetapan di panel: menunggu keputusan. Penetapan tertulis ke SIPP atas akun pejabat yang berwenang, bukan akun penekan tombol.
+- **Penetapan PMH, PPP, PJS, dan PHS di panel SIPP**: Keputusan 111 (18 Okt 2026): yang boleh MENJALANKAN adalah Ketua, Wakil Ketua, Admin, Super Admin, dan pengguna dengan sub-peran Operator, Petugas Meja (Meja 1, 2, 3, informasi), atau PTSP. Hakim dan Panitera tidak mendapat tab sendiri. Sub-peran disimpan di akun (peran utama tidak berubah); Petugas Meja 2 dan 3 dikenali dari sub-perannya, bukan dari golongannya, sehingga analis perkara tanpa sub-peran itu tidak. Pencatatan di SIPP tetap atas akun pejabat pilihan (keputusan 13 Okt), bukan akun penekan tombol. Tombol otomatis tetap ikut pengaturan Admin, tetapi hanya untuk yang memenuhi syarat itu.
 - **Ikrar talak: tunda, putus, isi form, dan e-Doc penetapan**: Mengikuti aksi 'Tunda / Putus sidang'. Penyimpanan form saat halaman dibuka mengikuti saklar Penunjukan otomatis (bawaan mati).
 - **SKP: melihat SKP bawahan dan seluruh pegawai**: Atasan langsung (dari data kepegawaian) dapat melihat bawahannya walau golongannya tidak tercantum di kolom ini.
 - **SKP: mengubah target dan pemetaan akun-pegawai-jabatan**: Ketua mengubah; Wakil Ketua hanya melihat. Pemilik tidak menyetujui isiannya sendiri.
@@ -222,7 +222,7 @@ Catatan kewenangan:
 
 | Fitur | SA | Adm | Pim | Hak | Pan | Pmd | PP | JS | Ksr | PTS | Med | Sdg | Anl | Sek | TI | Plk |
 | :-- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| Panel SIPP: tab Penetapan | P | P | P | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Panel SIPP: tab Penetapan | P | P | P | - | - | - | - | - | - | P | - | - | - | - | - | - |
 | Panel SIPP: tab PTSP | P | P | P | - | P | P | - | - | - | P | - | - | - | - | - | - |
 | Panel SIPP: tab Putusan | P | P | P | P | - | - | - | - | - | - | - | - | - | - | - | - |
 | Panel SIPP: tab Juru Sita | P | P | - | - | - | - | - | P | - | - | - | - | - | - | - | - |
@@ -262,16 +262,10 @@ Catatan kewenangan:
 
 Catatan kewenangan:
 
+- **Panel SIPP: tab Penetapan**: Keputusan 111: Ketua, Wakil, Admin, PTSP, Operator, dan Petugas Meja (termasuk Meja 2 dan 3 lewat sub-peran) mendapat tab ini; hakim dan Panitera tidak.
 - **Panel SIPP: tab Kasir**: Panitera dan panmud: tab ditambahkan ekstensi sesuai aturan Kasir (hanya membaca bagi mereka).
-- **Panel ABT: seluruh bagian panel**: PTSP di ABT belum diputuskan pengguna: ekstensi masih menggambar susunan lama, tetapi server menolak BAS, saksi, relaas, dan unggah putusan baginya. Menunggu keputusan.
-- **Panel ABT: Isi dari SIPP dan input ke ABT**: PTSP di ABT belum diputuskan pengguna: ekstensi masih menggambar susunan lama, tetapi server menolak BAS, saksi, relaas, dan unggah putusan baginya. Menunggu keputusan.
-- **Panel ABT: unggah putusan**: PTSP di ABT belum diputuskan pengguna: ekstensi masih menggambar susunan lama, tetapi server menolak BAS, saksi, relaas, dan unggah putusan baginya. Menunggu keputusan.
-- **Panel ABT: susun keterangan saksi**: PTSP di ABT belum diputuskan pengguna: ekstensi masih menggambar susunan lama, tetapi server menolak BAS, saksi, relaas, dan unggah putusan baginya. Menunggu keputusan.
-- **Panel ABT: Isi dari SIPP untuk blangko BAS**: PTSP di ABT belum diputuskan pengguna: ekstensi masih menggambar susunan lama, tetapi server menolak BAS, saksi, relaas, dan unggah putusan baginya. Menunggu keputusan.
-- **Panel ABT: relaas dan PBT**: PTSP di ABT belum diputuskan pengguna: ekstensi masih menggambar susunan lama, tetapi server menolak BAS, saksi, relaas, dan unggah putusan baginya. Menunggu keputusan.
-- **Beranda ABT: putusan massal**: PTSP di ABT belum diputuskan pengguna: ekstensi masih menggambar susunan lama, tetapi server menolak BAS, saksi, relaas, dan unggah putusan baginya. Menunggu keputusan.
-- **Beranda ABT: BAS massal**: PTSP di ABT belum diputuskan pengguna: ekstensi masih menggambar susunan lama, tetapi server menolak BAS, saksi, relaas, dan unggah putusan baginya. Menunggu keputusan.
-- **Beranda ABT: relaas dan PBT massal**: PTSP di ABT belum diputuskan pengguna: ekstensi masih menggambar susunan lama, tetapi server menolak BAS, saksi, relaas, dan unggah putusan baginya. Menunggu keputusan.
+- **Daftar SIPP: penetapan massal**: Keputusan 111: Petugas Meja 2 dan 3 serta Operator (sub-peran) juga mendapat menu ini.
+- **Panel ABT: Isi dari SIPP dan input ke ABT**: Keputusan 112: PTSP di ABT hanya mendapat menu ini (untuk blangko PTSP).
 
 ## Blangko
 
@@ -420,42 +414,38 @@ Tanda: *sesuai keputusan* = sudah diputuskan pengguna; *pilihan baru* = dipilih 
    - Sebelum: Pemegang perkara termasuk juru sita.
    - Sesudah: Ketua/Wakil, hakim, panitera, panmud, PP (aksi 'Simpan draf putusan').
    - Alasan: Juru sita tidak menyusun putusan; lencana kesiapan tetap terlihat.
-8. **Ubin Audit Trail** (pilihan baru)
+8. **Ubin Audit Trail** (sesuai keputusan)
    - Sebelum: Tampil bagi Admin, tetapi halaman dan rutenya menolak Admin.
    - Sesudah: Hanya Super Admin.
-   - Alasan: Menu yang pasti ditolak tidak boleh tampil. Admin tidak kehilangan akses nyata.
-9. **Ubin dan menu Blangko Saya** (sesuai keputusan)
+   - Alasan: Menu yang pasti ditolak tidak boleh tampil. Admin tidak kehilangan akses nyata. Disetujui pengguna (keputusan 114).
+9. **Siapa menjalankan Penetapan PMH, PPP, PJS, dan PHS di panel** (sesuai keputusan)
+   - Sebelum: Kemampuan penunjukan bawaan Ketua, Wakil, hakim, dan Panitera; PTSP hanya bila diberi Admin.
+   - Sesudah: Ketua, Wakil, Admin, Super Admin, dan pengguna bersub-peran Operator, Petugas Meja, atau PTSP (otomatis, tanpa diatur per peran). Hakim dan Panitera tidak mendapat tab sendiri; tab Riwayat ALETA ikut hanya untuk yang menjalankan.
+   - Alasan: Keputusan 111: yang berubah hanya siapa yang menjalankan; pencatatan tetap atas akun pejabat pilihan (13 Okt).
+10. **PTSP di panel ABT** (sesuai keputusan)
+   - Sebelum: Susunan lama: seluruh panel digambar walau server menolak BAS, saksi, dan relaas.
+   - Sesudah: Hanya menu 'Isi dari SIPP dan input ke ABT' (untuk blangko PTSP); tanpa menu massal.
+   - Alasan: Keputusan 112: disetujui sesuai usulan.
+11. **Ubin dan menu Blangko Saya** (sesuai keputusan)
    - Sebelum: Tampil bagi hakim, panitera, panmud, PP, Ketua/Wakil, dan Admin walau server menolak selama tahap awal.
    - Sesudah: Hanya Super Admin selama saklar Fitur Satker 'Blangko Saya untuk semua peran' mati; otomatis tampil bagi yang berhak saat saklar menyala.
    - Alasan: Keputusan 18 Okt 2026 (butir 10): tahap awal hanya Super Admin. Sekarang tampilan sama dengan haknya.
-10. **Halaman Hak akses per peran** (sesuai keputusan)
+12. **Halaman Hak akses per peran** (sesuai keputusan)
    - Sebelum: Tidak ada; hak tersebar di kode.
    - Sesudah: Pengaturan > Hak akses per peran: Admin membaca, Super Admin lengkap dengan kunci dan daftar perubahan.
    - Alasan: Permintaan pengguna 18 Okt 2026.
 
+## Keputusan pengguna 18 Okt 2026 malam (sudah berlaku)
+
+- **111 Penetapan di panel**: Dijalankan Ketua, Wakil, Super Admin, Admin, dan sub-peran Operator, Petugas Meja, dan PTSP. Hakim dan Panitera tidak mendapat tab sendiri. Pencatatan tetap atas akun pejabat pilihan.
+- **112 PTSP di panel ABT**: Hanya 'Isi dari SIPP dan input ke ABT'.
+- **113 Eviden SKP unduhan lama**: Dibatasi sesuai usulan, menunggu pemetaan akun SIPP ke pegawai (Senin).
+- **114 Audit Trail**: Hanya Super Admin.
+- **115 Acc BAS oleh Super Admin dan penulisan BAS oleh analis perkara**: Tetap seperti sekarang.
+- **116 Ringkasan perkara terbuka dan Blangko Saya untuk Admin**: Tetap seperti sekarang.
+
 ## Hal yang menunggu keputusan pengguna
 
-1. **Penetapan PHS oleh hakim dan PPP/PJS oleh Panitera di panel SIPP**
-   - Keadaan: Kemampuan penunjukan bawaan mencakup hakim dan Panitera, tetapi matriks menu 30 Sep hanya memberi tab Penetapan kepada Ketua/Wakil; hakim dan Panitera tidak punya tabnya di panel.
-   - Usul: Tambahkan tab Penetapan bagi hakim (khusus PHS perkara majelisnya) dan bagi Panitera (PPP dan PJS), atau cabut kemampuan bawaan itu agar matriks dan kemampuan sama.
-2. **PTSP di panel ABT**
-   - Keadaan: Belum pernah diputuskan: PTSP masih memakai susunan lama (seluruh panel kecuali yang dikunci hak lain), sedangkan SIPP sudah dibatasi.
-   - Usul: Batasi PTSP di ABT ke 'Isi dari SIPP dan input ke ABT' saja (untuk blangko PTSP), tanpa susun saksi dan BAS.
-3. **Eviden SKP hakim, PP, juru sita, dan mediator (unduhan lama)**
+1. **Eviden SKP hakim, PP, juru sita, dan mediator (unduhan lama)**
    - Keadaan: Unduhan lama ini terbuka bagi semua pegawai berpanel sehingga eviden SKP orang lain dapat dipanggil bila tahu nomor SIPP-nya. SKP jabatan di menu SKP sudah dibatasi (sendiri, atasan, Ketua/Wakil/Panitera, Admin).
-   - Usul: Samakan dengan SKP jabatan: pemilik, atasan langsung, Ketua/Wakil, Panitera, dan Admin. Butuh pemetaan akun SIPP ke pegawai (sudah ada di Tautan SIPP).
-4. **Audit Trail untuk Admin**
-   - Keadaan: Halaman dan rute hanya Super Admin sejak awal; ubin untuk Admin kini disembunyikan agar tidak menolak setelah diklik.
-   - Usul: Tetap Super Admin saja. Bila Admin perlu melihat, buka lewat Akses Menu (Buka untuk peran Admin) atau minta agar halamannya dilonggarkan menjadi baca-saja.
-5. **Super Admin boleh meng-acc BAS**
-   - Keadaan: Dipilih karena 'Super Admin boleh semua' dan akun Super Admin satker ini dipegang hakim. Sebelumnya hanya Ketua, Wakil, dan hakim.
-   - Usul: Pertahankan; Admin tetap tidak boleh meng-acc.
-6. **Staf kepaniteraan meja 2/3 (analis perkara) menulis BAS**
-   - Keadaan: Mereka sudah memegang menu Isi BAS dan BAS massal di ekstensi; matriks kini menyamai itu dan rute BAS mengizinkan mereka menyimpan.
-   - Usul: Pertahankan. Bila hanya PP yang boleh menulis, cabut dari menu ekstensi dan dari aksi 'Menyusun dan menyimpan lembar BAS'.
-7. **Ringkasan perkara terbuka (Kotak penyatu, Rekap petugas, Status Perkara, Jadwal Sidang)**
-   - Keadaan: Tetap terbuka bagi semua pegawai berpanel (keputusan 9 Okt 2026 untuk Status Perkara dan arsip). Tidak memuat NIK atau kontak; data pribadi dipisah dan kini dijaga.
-   - Usul: Pertahankan. Bila ingin lebih ketat, batasi Kotak penyatu dan Rekap petugas ke pemegang perkara.
-8. **Blangko Saya untuk Admin**
-   - Keadaan: Tahap awal hanya Super Admin; setelah saklar menyala Admin ikut (sesuai jawaban 10 pada 18 Okt pagi).
-   - Usul: Pertahankan.
+   - Usul: Disetujui (keputusan 113): samakan dengan SKP jabatan - pemilik, atasan langsung, Ketua/Wakil, Panitera, dan Admin. Dikerjakan SETELAH pemetaan akun SIPP ke pegawai selesai (Senin); sementara belum dibatasi.

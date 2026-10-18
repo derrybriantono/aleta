@@ -207,6 +207,22 @@ export function golonganPengguna(pengguna: PenggunaGolongan | null | undefined):
   return hasil;
 }
 
+/**
+ * Keputusan 111 (18 Okt 2026): yang boleh MENJALANKAN penetapan PMH/PPP/PJS/PHS di panel adalah Ketua, Wakil Ketua,
+ * Super Admin, Admin, dan pengguna dengan sub-peran Operator, Petugas Meja (Meja 1, 2, 3, dan informasi), atau PTSP.
+ * Hakim dan Panitera TIDAK mendapat tab sendiri. Pencatatan di SIPP tetap atas akun pejabat pilihan (keputusan 13 Okt):
+ * yang berubah hanya siapa yang menekan tombol. Sub-peran disimpan di additionalRoleIds (peran utama tidak berubah).
+ * Golongan PTSP sudah memuat Operator, keluarga PTSP, dan Meja 1; Meja 2/3 jatuh ke golongan analis-perkara sehingga
+ * dikenali dari polanya di sini.
+ */
+export function bolehMenjalankanPenetapan(pengguna: PenggunaGolongan | null | undefined): boolean {
+  if (!pengguna) return false;
+  const g = golonganPengguna(pengguna);
+  if (g.includes("super-admin") || g.includes("admin") || g.includes("pimpinan") || g.includes("ptsp")) return true;
+  const tambahan = (pengguna.additionalRoleIds ?? []).map((x) => String(x).toLowerCase());
+  return tambahan.some((x) => POLA_SUB_PERAN_MEJA_KEPANITERAAN.test(x));
+}
+
 export function subPanmud(pengguna: PenggunaGolongan | null | undefined): SubPanmud | null {
   if (!pengguna) return null;
   const posisi = posisiBerlaku(pengguna);
@@ -570,8 +586,8 @@ export const TAB_ECOURT: Readonly<Record<TabEcourt, { golongan: readonly Golonga
   status: { golongan: "semua", alasan: "Penelusuran satu perkara & arsip e-Court - boleh semua (keputusan 9 Okt); data pribadi pihak dibatasi aksi status.data-pihak." },
   berkas: { golongan: "semua", alasan: "Kendali Berkas = arsip e-Court - boleh dilihat semua (keputusan 9 Okt); tarik & sinkron dibatasi aksi." },
   riwayat: {
-    golongan: ["pimpinan", "hakim", "panitera", "ptsp"],
-    alasan: "Riwayat penetapan yang dituliskan ALETA ke SIPP - rutenya menuntut kemampuan 'penunjukan' (bawaan ketua/wakil/hakim/panitera; PTSP bila diberi).",
+    golongan: ["pimpinan", "ptsp"],
+    alasan: "Riwayat penetapan yang dituliskan ALETA ke SIPP - rutenya menuntut kemampuan 'penunjukan', yang sejak keputusan 111 (18 Okt 2026) hanya Ketua/Wakil, Admin, Operator, Petugas Meja, dan PTSP; hakim dan panitera tidak lagi.",
   },
   ttd: { golongan: [], alasan: "Tanda tangan pejabat & cap berlaku untuk seluruh satker - hanya Admin/Super Admin." },
   ekstensi: { golongan: "semua", alasan: "Unduh & pasang ekstensi - semua pegawai." },

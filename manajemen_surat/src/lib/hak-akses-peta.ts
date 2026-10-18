@@ -401,10 +401,10 @@ const BUTIR_FITUR: readonly ButirPeta[] = [
     id: "fitur.penetapan-penunjukan",
     kelompok: "fitur",
     judul: "Penetapan PMH, PPP, PJS, dan PHS di panel SIPP",
-    keterangan: "Ketua menetapkan PMH, Panitera menetapkan PPP dan PJS, ketua majelis menetapkan PHS.",
+    keterangan: "Menjalankan penetapan majelis, penunjukan PP dan JS, serta hari sidang dari panel SIPP, satu per satu atau massal.",
     hak: gabung(dari(["pimpinan"], "U"), dari(["ptsp"], "P")),
     catatan:
-      "Panel ekstensi menyediakan tab Penetapan bagi Ketua/Wakil (dan Admin), serta Penetapan massal di daftar SIPP bagi Meja PTSP bila Super Admin memberinya kemampuan penunjukan. Dua kemampuan diatur Super Admin di Integrasi e-Court: papan penunjukan (bawaan Ketua, Wakil, hakim, Panitera) dan tombol otomatis (bawaan Ketua dan Panitera). Hakim (PHS) dan Panitera (PPP, PJS) memegang kemampuannya tetapi belum punya tab Penetapan di panel: menunggu keputusan. Penetapan tertulis ke SIPP atas akun pejabat yang berwenang, bukan akun penekan tombol.",
+      "Keputusan 111 (18 Okt 2026): yang boleh MENJALANKAN adalah Ketua, Wakil Ketua, Admin, Super Admin, dan pengguna dengan sub-peran Operator, Petugas Meja (Meja 1, 2, 3, informasi), atau PTSP. Hakim dan Panitera tidak mendapat tab sendiri. Sub-peran disimpan di akun (peran utama tidak berubah); Petugas Meja 2 dan 3 dikenali dari sub-perannya, bukan dari golongannya, sehingga analis perkara tanpa sub-peran itu tidak. Pencatatan di SIPP tetap atas akun pejabat pilihan (keputusan 13 Okt), bukan akun penekan tombol. Tombol otomatis tetap ikut pengaturan Admin, tetapi hanya untuk yang memenuhi syarat itu.",
     sumber: "kapabilitas.penunjukan / penunjukan-otomatis",
     rute: ["POST /api/aleta-ecourt/penetapan-edoc/unggah", "GET /api/aleta-ecourt/penetapan-edoc/peta"],
   }),
@@ -559,6 +559,7 @@ export const MENU_EKSTENSI: TabelMenuEkstensi = {
       panitera: ["susun-saksi", "isi-bas"],
       jurusita: ["jurusita"],
       kasir: [],
+      ptsp: ["isi-input"],
       pp: ["susun-saksi", "isi-bas"],
       "panitera-utama": ["susun-saksi", "isi-bas"],
       panmud: ["susun-saksi", "isi-bas"],
@@ -574,6 +575,7 @@ export const MENU_EKSTENSI: TabelMenuEkstensi = {
       panitera: ["bas-massal"],
       jurusita: ["relaas-pbt-massal"],
       kasir: [],
+      ptsp: [],
       pp: ["bas-massal"],
       "panitera-utama": ["bas-massal"],
       panmud: ["bas-massal"],
@@ -622,6 +624,15 @@ function kunciTabelEkstensi(g: GolonganPeran): string {
  */
 const TAMBAHAN_MENU_EKSTENSI: Readonly<Record<string, readonly GolonganPeran[]>> = {
   "sipp.perkara.kasir": ["panitera", "panmud"],
+  // Keputusan 111: konten.js menambahkan tab Penetapan bagi golongan PTSP (Operator, Meja 1, keluarga PTSP) bila kemampuan penunjukan ada.
+  "sipp.perkara.penetapan": ["ptsp"],
+};
+
+/** Catatan khusus butir menu ekstensi. */
+const CATATAN_MENU_EKSTENSI: Readonly<Record<string, string>> = {
+  "sipp.perkara.penetapan": "Keputusan 111: Ketua, Wakil, Admin, PTSP, Operator, dan Petugas Meja (termasuk Meja 2 dan 3 lewat sub-peran) mendapat tab ini; hakim dan Panitera tidak.",
+  "sipp.daftar.penetapan-massal": "Keputusan 111: Petugas Meja 2 dan 3 serta Operator (sub-peran) juga mendapat menu ini.",
+  "abt.perkara.isi-input": "Keputusan 112: PTSP di ABT hanya mendapat menu ini (untuk blangko PTSP).",
 };
 
 function butirMenuEkstensi(): ButirPeta[] {
@@ -637,13 +648,9 @@ function butirMenuEkstensi(): ButirPeta[] {
           if (g === "super-admin" || g === "admin") continue;
           const baris = tabel[kunciTabelEkstensi(g)];
           if (baris && baris.includes(menu)) hak[g] = "P";
-          // Tanpa baris = susunan lama (belum diputuskan): PTSP di ABT. Panel digambar, tetapi rute BAS, saksi, dan
-          // relaas menolaknya; yang berfungsi untuknya hanya "Isi dari SIPP dan input ke ABT" (blangko PTSP).
-          if (!baris && g === "ptsp" && situs === "abt" && halaman === "perkara" && menu === "isi-input") hak[g] = "P";
         }
         for (const g of TAMBAHAN_MENU_EKSTENSI[`${situs}.${halaman}.${menu}`] ?? []) hak[g] = "P";
         const label = LABEL_MENU_EKSTENSI[`${situs}.${halaman}.${menu}`];
-        const adaPtspLama = situs === "abt" && !tabel[kunciTabelEkstensi("ptsp")];
         hasil.push(
           buat({
             id: `ekstensi.${situs}.${halaman}.${menu}`,
@@ -653,11 +660,11 @@ function butirMenuEkstensi(): ButirPeta[] {
             hak,
             maks: "P",
             admin: "P",
-            catatan: adaPtspLama
-              ? "PTSP di ABT belum diputuskan pengguna: ekstensi masih menggambar susunan lama, tetapi server menolak BAS, saksi, relaas, dan unggah putusan baginya. Menunggu keputusan."
-              : TAMBAHAN_MENU_EKSTENSI[`${situs}.${halaman}.${menu}`]
+            catatan:
+              CATATAN_MENU_EKSTENSI[`${situs}.${halaman}.${menu}`] ??
+              (TAMBAHAN_MENU_EKSTENSI[`${situs}.${halaman}.${menu}`]
                 ? "Panitera dan panmud: tab ditambahkan ekstensi sesuai aturan Kasir (hanya membaca bagi mereka)."
-                : undefined,
+                : undefined),
             sumber: `ALAT_MENU_PERAN.${situs}.${halaman}.${menu}`,
           })
         );
@@ -999,8 +1006,22 @@ export const PERUBAHAN_18OKT: readonly PerubahanHak[] = [
     judul: "Ubin Audit Trail",
     sebelum: "Tampil bagi Admin, tetapi halaman dan rutenya menolak Admin.",
     sesudah: "Hanya Super Admin.",
-    alasan: "Menu yang pasti ditolak tidak boleh tampil. Admin tidak kehilangan akses nyata.",
-    keputusan: "baru",
+    alasan: "Menu yang pasti ditolak tidak boleh tampil. Admin tidak kehilangan akses nyata. Disetujui pengguna (keputusan 114).",
+    keputusan: "tegas",
+  },
+  {
+    judul: "Siapa menjalankan Penetapan PMH, PPP, PJS, dan PHS di panel",
+    sebelum: "Kemampuan penunjukan bawaan Ketua, Wakil, hakim, dan Panitera; PTSP hanya bila diberi Admin.",
+    sesudah: "Ketua, Wakil, Admin, Super Admin, dan pengguna bersub-peran Operator, Petugas Meja, atau PTSP (otomatis, tanpa diatur per peran). Hakim dan Panitera tidak mendapat tab sendiri; tab Riwayat ALETA ikut hanya untuk yang menjalankan.",
+    alasan: "Keputusan 111: yang berubah hanya siapa yang menjalankan; pencatatan tetap atas akun pejabat pilihan (13 Okt).",
+    keputusan: "tegas",
+  },
+  {
+    judul: "PTSP di panel ABT",
+    sebelum: "Susunan lama: seluruh panel digambar walau server menolak BAS, saksi, dan relaas.",
+    sesudah: "Hanya menu 'Isi dari SIPP dan input ke ABT' (untuk blangko PTSP); tanpa menu massal.",
+    alasan: "Keputusan 112: disetujui sesuai usulan.",
+    keputusan: "tegas",
   },
   {
     judul: "Ubin dan menu Blangko Saya",
@@ -1041,45 +1062,21 @@ export const KEWENANGAN_KHUSUS: readonly { judul: string; isi: string }[] = [
 
 export const KEPUTUSAN_MENUNGGU: readonly { judul: string; keadaan: string; usul: string }[] = [
   {
-    judul: "Penetapan PHS oleh hakim dan PPP/PJS oleh Panitera di panel SIPP",
-    keadaan: "Kemampuan penunjukan bawaan mencakup hakim dan Panitera, tetapi matriks menu 30 Sep hanya memberi tab Penetapan kepada Ketua/Wakil; hakim dan Panitera tidak punya tabnya di panel.",
-    usul: "Tambahkan tab Penetapan bagi hakim (khusus PHS perkara majelisnya) dan bagi Panitera (PPP dan PJS), atau cabut kemampuan bawaan itu agar matriks dan kemampuan sama.",
-  },
-  {
-    judul: "PTSP di panel ABT",
-    keadaan: "Belum pernah diputuskan: PTSP masih memakai susunan lama (seluruh panel kecuali yang dikunci hak lain), sedangkan SIPP sudah dibatasi.",
-    usul: "Batasi PTSP di ABT ke 'Isi dari SIPP dan input ke ABT' saja (untuk blangko PTSP), tanpa susun saksi dan BAS.",
-  },
-  {
     judul: "Eviden SKP hakim, PP, juru sita, dan mediator (unduhan lama)",
-    keadaan: "Unduhan lama ini terbuka bagi semua pegawai berpanel sehingga eviden SKP orang lain dapat dipanggil bila tahu nomor SIPP-nya. SKP jabatan di menu SKP sudah dibatasi (sendiri, atasan, Ketua/Wakil/Panitera, Admin).",
-    usul: "Samakan dengan SKP jabatan: pemilik, atasan langsung, Ketua/Wakil, Panitera, dan Admin. Butuh pemetaan akun SIPP ke pegawai (sudah ada di Tautan SIPP).",
+    keadaan:
+      "Unduhan lama ini terbuka bagi semua pegawai berpanel sehingga eviden SKP orang lain dapat dipanggil bila tahu nomor SIPP-nya. SKP jabatan di menu SKP sudah dibatasi (sendiri, atasan, Ketua/Wakil/Panitera, Admin).",
+    usul: "Disetujui (keputusan 113): samakan dengan SKP jabatan - pemilik, atasan langsung, Ketua/Wakil, Panitera, dan Admin. Dikerjakan SETELAH pemetaan akun SIPP ke pegawai selesai (Senin); sementara belum dibatasi.",
   },
-  {
-    judul: "Audit Trail untuk Admin",
-    keadaan: "Halaman dan rute hanya Super Admin sejak awal; ubin untuk Admin kini disembunyikan agar tidak menolak setelah diklik.",
-    usul: "Tetap Super Admin saja. Bila Admin perlu melihat, buka lewat Akses Menu (Buka untuk peran Admin) atau minta agar halamannya dilonggarkan menjadi baca-saja.",
-  },
-  {
-    judul: "Super Admin boleh meng-acc BAS",
-    keadaan: "Dipilih karena 'Super Admin boleh semua' dan akun Super Admin satker ini dipegang hakim. Sebelumnya hanya Ketua, Wakil, dan hakim.",
-    usul: "Pertahankan; Admin tetap tidak boleh meng-acc.",
-  },
-  {
-    judul: "Staf kepaniteraan meja 2/3 (analis perkara) menulis BAS",
-    keadaan: "Mereka sudah memegang menu Isi BAS dan BAS massal di ekstensi; matriks kini menyamai itu dan rute BAS mengizinkan mereka menyimpan.",
-    usul: "Pertahankan. Bila hanya PP yang boleh menulis, cabut dari menu ekstensi dan dari aksi 'Menyusun dan menyimpan lembar BAS'.",
-  },
-  {
-    judul: "Ringkasan perkara terbuka (Kotak penyatu, Rekap petugas, Status Perkara, Jadwal Sidang)",
-    keadaan: "Tetap terbuka bagi semua pegawai berpanel (keputusan 9 Okt 2026 untuk Status Perkara dan arsip). Tidak memuat NIK atau kontak; data pribadi dipisah dan kini dijaga.",
-    usul: "Pertahankan. Bila ingin lebih ketat, batasi Kotak penyatu dan Rekap petugas ke pemegang perkara.",
-  },
-  {
-    judul: "Blangko Saya untuk Admin",
-    keadaan: "Tahap awal hanya Super Admin; setelah saklar menyala Admin ikut (sesuai jawaban 10 pada 18 Okt pagi).",
-    usul: "Pertahankan.",
-  },
+];
+
+/** Keputusan pengguna 18 Okt 2026 malam atas usulan hak akses (nomor = daftar keputusan koordinator). */
+export const KEPUTUSAN_DISETUJUI: readonly { nomor: number; judul: string; isi: string }[] = [
+  { nomor: 111, judul: "Penetapan di panel", isi: "Dijalankan Ketua, Wakil, Super Admin, Admin, dan sub-peran Operator, Petugas Meja, dan PTSP. Hakim dan Panitera tidak mendapat tab sendiri. Pencatatan tetap atas akun pejabat pilihan." },
+  { nomor: 112, judul: "PTSP di panel ABT", isi: "Hanya 'Isi dari SIPP dan input ke ABT'." },
+  { nomor: 113, judul: "Eviden SKP unduhan lama", isi: "Dibatasi sesuai usulan, menunggu pemetaan akun SIPP ke pegawai (Senin)." },
+  { nomor: 114, judul: "Audit Trail", isi: "Hanya Super Admin." },
+  { nomor: 115, judul: "Acc BAS oleh Super Admin dan penulisan BAS oleh analis perkara", isi: "Tetap seperti sekarang." },
+  { nomor: 116, judul: "Ringkasan perkara terbuka dan Blangko Saya untuk Admin", isi: "Tetap seperti sekarang." },
 ];
 
 // ─── Hak menu ABT (folder Blangko Derry) menurut kelompok pengguna SIPP ──────

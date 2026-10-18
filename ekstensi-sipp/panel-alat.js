@@ -3055,7 +3055,23 @@ function alatMenuPeran(situs, halaman, peran, opsi) {
   if (situs === "sipp" && halaman === "perkara" && golongan === "ketua" && o.penunjukanLengkap === true) {
     menu = menu.filter((k) => k !== "penetapan");
   }
+  // Keputusan 111 (18 Okt 2026): Petugas Meja 2/3 dan Operator (sub-peran, bukan golongan) juga menjalankan Penetapan,
+  // di perkara mana pun - sama dengan PTSP. Hakim dan Panitera tidak mendapat tab sendiri.
+  if (situs === "sipp" && alatSubPeranPenetapan(peran)) {
+    const kunciPenetapan = halaman === "daftar" ? "penetapan-massal" : "penetapan";
+    if (!menu.includes(kunciPenetapan)) menu.push(kunciPenetapan);
+  }
   return menu;
+}
+
+/** Sub-peran (peranTambahan akun) yang menjalankan penetapan: Operator dan Petugas Meja (Meja 1, 2, 3, informasi). */
+function alatSubPeranPenetapan(pengguna) {
+  const objek = pengguna && typeof pengguna === "object" ? pengguna : null;
+  if (!objek || !Array.isArray(objek.peranTambahan)) return false;
+  return objek.peranTambahan.some((x) => {
+    const t = String(x || "").toLowerCase();
+    return t === "operator" || t === "operator_sipp" || t === "operator_edoc" || /^petugas_meja_/.test(t);
+  });
 }
 
 /* === R 11 Okt === */
@@ -3092,6 +3108,8 @@ const ALAT_POLA_PERAN_KASIR = /kasir|bendahara|analis keuangan|keuangan perkara/
 const ALAT_POLA_PERAN_PTSP = /ptsp|operator|meja informasi|pendaftaran|resepsionis|front office/;
 
 ALAT_MENU_PERAN.sipp.perkara.kasir = ["kasir", "perkara"];
+// Tab Penetapan bagi PTSP/Operator/Petugas Meja (keputusan 111, 18 Okt 2026) ditambahkan konten.js bila kemampuan
+// "penunjukan" ada - server kini memberikannya otomatis kepada mereka - bukan di tabel ini.
 ALAT_MENU_PERAN.sipp.perkara.ptsp = ["ptsp", "berkas", "perkara"];
 // Kasir massal/rekap/pengingat bukan menu daftar umum: tempatnya halaman
 // daftar jurnal keuangan (konten.js r11HalamanJurnalDaftar), bukan dashboard.
@@ -3099,10 +3117,12 @@ ALAT_MENU_PERAN.sipp.daftar.kasir = [];
 // Penetapan massal tetap ditawarkan: gerbang kemampuan "penunjukan" (diatur
 // Admin per peran) yang memutuskan di konten.js - matriks hanya mengurangi.
 ALAT_MENU_PERAN.sipp.daftar.ptsp = ["penetapan-massal"];
-// ABT: kasir tidak punya pekerjaan blangko. PTSP di ABT belum diputuskan
-// pengguna - tetap susunan lama (tanpa kunci).
+// ABT: kasir tidak punya pekerjaan blangko. PTSP di ABT (keputusan 112, 18 Okt 2026): HANYA "Isi dari SIPP & input ke
+// ABT" (untuk blangko PTSP) - tanpa susun saksi, BAS, relaas, unggah putusan, dan menu massal.
 ALAT_MENU_PERAN.abt.perkara.kasir = [];
 ALAT_MENU_PERAN.abt.daftar.kasir = [];
+ALAT_MENU_PERAN.abt.perkara.ptsp = ["isi-input"];
+ALAT_MENU_PERAN.abt.daftar.ptsp = [];
 
 /**
  * Golongan menu (satu atau lebih, urut) untuk nama peran ATAU objek pengguna

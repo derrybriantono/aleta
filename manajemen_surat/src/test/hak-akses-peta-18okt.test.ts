@@ -299,7 +299,7 @@ describe("5. dokumen dan teks", () => {
     expect(md).toMatch(/## Hal yang menunggu keputusan pengguna/);
     expect(PERUBAHAN_18OKT.length).toBeGreaterThanOrEqual(8);
     expect(KEWENANGAN_KHUSUS.length).toBeGreaterThanOrEqual(10);
-    expect(KEPUTUSAN_MENUNGGU.length).toBeGreaterThanOrEqual(5);
+    expect(KEPUTUSAN_MENUNGGU.length).toBeGreaterThanOrEqual(1);
   });
 
   it("teks yang dibaca pegawai tanpa label teknis (alamat rute, berkas, fungsi)", () => {

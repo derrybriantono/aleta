@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HakAksesPeran } from "@/components/portal/hak-akses-peran";
 import {
   HAK_MENU_ABT,
+  KEPUTUSAN_DISETUJUI,
   KEPUTUSAN_MENUNGGU,
   KEWENANGAN_KHUSUS,
   LABEL_KELOMPOK,
@@ -36,6 +37,7 @@ function jawabanPeta(teknis: boolean) {
       kewenangan: KEWENANGAN_KHUSUS,
       perubahan: teknis ? PERUBAHAN_18OKT : [],
       menunggu: teknis ? KEPUTUSAN_MENUNGGU : [],
+      disetujui: teknis ? KEPUTUSAN_DISETUJUI : [],
       hakMenuAbt: HAK_MENU_ABT.map((h) => ({
         folder: h.folder,
         tahap: h.tahap,
@@ -106,6 +108,7 @@ describe("layar Hak akses per peran", () => {
     const { container } = render(<HakAksesPeran />);
     await waitFor(() => expect(container.querySelector("[data-hak-akses-perubahan]")).toBeTruthy());
     expect(container.querySelector("[data-hak-akses-menunggu]")).toBeTruthy();
+    expect(container.querySelector("[data-hak-akses-disetujui]")).toBeTruthy();
     expect(container.querySelector("details")).toBeTruthy();
     expect(screen.getAllByText("Pilihan baru").length).toBeGreaterThan(0);
   });

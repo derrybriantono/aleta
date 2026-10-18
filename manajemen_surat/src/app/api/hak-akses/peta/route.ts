@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import {
   HAK_MENU_ABT,
+  KEPUTUSAN_DISETUJUI,
   KEPUTUSAN_MENUNGGU,
   KEWENANGAN_KHUSUS,
   NAMA_GRUP_SIPP,
@@ -48,6 +49,7 @@ export async function GET(request: NextRequest) {
       kewenangan: KEWENANGAN_KHUSUS,
       perubahan: teknis ? PERUBAHAN_18OKT : [],
       menunggu: teknis ? KEPUTUSAN_MENUNGGU : [],
+      disetujui: teknis ? KEPUTUSAN_DISETUJUI : [],
       hakMenuAbt: HAK_MENU_ABT.map((h) => ({
         folder: h.folder,
         tahap: h.tahap,

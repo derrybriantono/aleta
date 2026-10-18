@@ -10,6 +10,7 @@
 
 import {
   HAK_MENU_ABT,
+  KEPUTUSAN_DISETUJUI,
   KEPUTUSAN_MENUNGGU,
   KEWENANGAN_KHUSUS,
   NAMA_GRUP_SIPP,
@@ -173,6 +174,10 @@ export function susunMarkdownHakAkses(): string {
     k.push(`   - Sesudah: ${p.sesudah}`);
     k.push(`   - Alasan: ${p.alasan}`);
   });
+  k.push("");
+  k.push("## Keputusan pengguna 18 Okt 2026 malam (sudah berlaku)");
+  k.push("");
+  for (const d of KEPUTUSAN_DISETUJUI) k.push(`- **${d.nomor} ${d.judul}**: ${d.isi}`);
   k.push("");
   k.push("## Hal yang menunggu keputusan pengguna");
   k.push("");

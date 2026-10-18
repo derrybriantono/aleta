@@ -235,7 +235,8 @@
     ],
     "notes": [
       "Hanya yang Anda simpan yang tertulis ke SIPP. Periksa NIK, email, dan nomor HP sebelum menyimpan.",
-      "Data pribadi pihak hanya dibuka untuk petugas yang melayani perkara."
+      "Data pribadi pihak hanya dibuka untuk petugas yang melayani perkara.",
+      "Tab Penetapan di panel SIPP juga dijalankan petugas PTSP, Operator, dan Petugas Meja, atas akun pejabat yang dipilih. Di panel ABT, PTSP hanya memakai Isi dari SIPP dan input ke ABT untuk blangko PTSP."
     ],
     "troubleshooting": [
       "Berkas e-Court belum lengkap: tekan tombol tarik berkas pada perkara itu di Kendali Berkas.",

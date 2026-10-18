@@ -253,7 +253,7 @@ describe("3. e-Court: tab, aksi, saklar Jadwal Sidang", () => {
 
   it.each([
     ["admin", ["dasbor", "sidang", "mediasi", "status", "berkas", "riwayat", "ttd", "ekstensi"]],
-    ["hakim", ["dasbor", "sidang", "mediasi", "status", "berkas", "riwayat", "ekstensi"]],
+    ["hakim", ["dasbor", "sidang", "mediasi", "status", "berkas", "ekstensi"]],
     ["pp", ["dasbor", "sidang", "mediasi", "status", "berkas", "ekstensi"]],
     ["js", ["dasbor", "sidang", "status", "berkas", "ekstensi"]],
     ["kasir", ["dasbor", "sidang", "status", "berkas", "ekstensi"]],
@@ -470,9 +470,10 @@ describe("5. ekstensi: panel-alat.js memakai golonganMenu dari server", () => {
   it("ABT (memanggil dengan NAMA peran) memakai golongan server yang diingat", () => {
     const x = muat();
     expect(x.menu("abt", "perkara", "Pelaksana")).toBeNull();
-    // PTSP di ABT: susunan lama (keputusan R 11 Okt butir 5 belum dijawab) - null.
+    // PTSP di ABT (keputusan 112, 18 Okt 2026): hanya "Isi dari SIPP & input ke ABT".
     x.setel(golonganMenuEkstensi(AKUN.ptsp));
-    expect(x.menu("abt", "perkara", "Pelaksana", { ditangani: true })).toBeNull();
+    expect(x.menu("abt", "perkara", "Pelaksana", { ditangani: true })).toEqual(["isi-input"]);
+    expect(x.menu("abt", "daftar", "Pelaksana", { ditangani: true })).toEqual([]);
     x.setel(golonganMenuEkstensi(AKUN.sekretaris));
     expect(x.menu("abt", "perkara", "Sekretaris", { ditangani: true })).toEqual([]);
     x.setel(golonganMenuEkstensi(AKUN.pp));
@@ -498,7 +499,6 @@ describe("5. ekstensi: panel-alat.js memakai golonganMenu dari server", () => {
         ["abt", "perkara"],
         ["abt", "daftar"],
       ]) {
-        if (g === "ptsp" && situs === "abt") continue; // susunan lama (lihat di atas)
         expect(x.menu(situs, halaman, { peran: "x", golonganMenu: [g] }, { ditangani: true }), `${g} ${situs}/${halaman}`).not.toBeNull();
       }
     }

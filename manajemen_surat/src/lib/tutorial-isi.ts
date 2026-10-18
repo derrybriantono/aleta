@@ -461,10 +461,10 @@ export const TUTORIAL: readonly Tutorial[] = [
   {
     id: "penetapan-pmh-ppp-pjs-phs",
     judul: "Penetapan majelis, panitera pengganti, juru sita, dan hari sidang",
-    ringkas: "Ketua menetapkan empat penetapan awal perkara dari panel SIPP, satu per satu atau sekaligus, atas akun pejabat yang dipilih.",
+    ringkas: "Ketua, Wakil Ketua, dan petugas PTSP, Operator, atau Petugas Meja menjalankan empat penetapan awal perkara dari panel SIPP, satu per satu atau sekaligus, atas akun pejabat yang dipilih.",
     kelompok: "persidangan",
     mencakup: {},
-    untuk: ["pimpinan"],
+    untuk: ["pimpinan", "ptsp"],
     halaman: ["/aleta-ecourt"],
     tautan: { teks: "Buka ALETA e-Court", href: "/aleta-ecourt" },
     langkah: [
@@ -477,6 +477,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Periksa hasilnya di Riwayat ALETA.",
     ],
     peringatan: [
+      "Tab Penetapan hanya untuk Ketua, Wakil Ketua, Admin, dan pegawai bersub-peran Operator, Petugas Meja, atau PTSP. Hakim dan Panitera tidak mendapat tab sendiri.",
       "Akun SIPP yang dipilih harus akun pejabat (hakim atau panitera). Akun admin atau meja ditolak, supaya penetapan tidak tercatat atas akun yang salah.",
       "Setiap penetapan ditulis sekali jalan, jadi tidak pernah tertinggal setengah jadi.",
     ],
