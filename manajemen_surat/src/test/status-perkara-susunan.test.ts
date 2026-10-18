@@ -689,7 +689,8 @@ describe("jalan ke layar penilaian yang berdiri sendiri", () => {
     // satker mengubah Akses Menu - dan yang menyimpang justru tautan yang
     // berujung penolakan.
     const teks = isi();
-    expect(teks).toContain("const { accessibleModules } = usePortal();");
+    // Boleh membawa ruas lain (currentUser untuk panduan saksi) - yang dijaga: haknya dari accessibleModules.
+    expect(teks).toMatch(/const \{ accessibleModules[^}]*\} = usePortal\(\);/);
     expect(teks).toContain('accessibleModules.some((m) => m.id === "beban-konseptor")');
     expect(teks).not.toMatch(/roleIds\s*[:=]/);
   });
