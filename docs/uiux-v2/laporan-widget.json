@@ -1,0 +1,102 @@
+[
+ {
+  "nama": "widget-terlipat",
+  "lebar": 1280,
+  "w": 348,
+  "h": 48,
+  "x": 12,
+  "y": 660,
+  "tutupSimpan": true,
+  "hostStyle": "position: fixed; z-index: 2147482990; left: 12px; bottom: 12px; top: auto; right: auto;"
+ },
+ {
+  "nama": "widget-terlipat",
+  "lebar": 1366,
+  "w": 348,
+  "h": 48,
+  "x": 12,
+  "y": 708,
+  "tutupSimpan": false,
+  "hostStyle": "position: fixed; z-index: 2147482990; left: 12px; bottom: 12px; top: auto; right: auto;"
+ },
+ {
+  "nama": "widget-terlipat",
+  "lebar": 1920,
+  "w": 348,
+  "h": 48,
+  "x": 12,
+  "y": 1020,
+  "tutupSimpan": false,
+  "hostStyle": "position: fixed; z-index: 2147482990; left: 12px; bottom: 12px; top: auto; right: auto;"
+ },
+ {
+  "nama": "widget-terlipat",
+  "lebar": 2560,
+  "w": 414,
+  "h": 57,
+  "x": 12,
+  "y": 1371,
+  "tutupSimpan": false,
+  "hostStyle": "position: fixed; z-index: 2147482990; left: 12px; bottom: 12px; top: auto; right: auto;"
+ },
+ {
+  "nama": "widget-terlipat",
+  "lebar": 3840,
+  "w": 588,
+  "h": 81,
+  "x": 12,
+  "y": 2067,
+  "tutupSimpan": false,
+  "hostStyle": "position: fixed; z-index: 2147482990; left: 12px; bottom: 12px; top: auto; right: auto;"
+ },
+ {
+  "nama": "widget-terbuka",
+  "lebar": 1280,
+  "w": 348,
+  "h": 666,
+  "x": 12,
+  "y": 42,
+  "tutupSimpan": true,
+  "hostStyle": "position: fixed; z-index: 2147482990; left: 12px; bottom: 12px; top: auto; right: auto;"
+ },
+ {
+  "nama": "widget-terbuka",
+  "lebar": 1366,
+  "w": 348,
+  "h": 701,
+  "x": 12,
+  "y": 55,
+  "tutupSimpan": true,
+  "hostStyle": "position: fixed; z-index: 2147482990; left: 12px; bottom: 12px; top: auto; right: auto;"
+ },
+ {
+  "nama": "widget-terbuka",
+  "lebar": 1920,
+  "w": 348,
+  "h": 728,
+  "x": 12,
+  "y": 340,
+  "tutupSimpan": true,
+  "hostStyle": "position: fixed; z-index: 2147482990; left: 12px; bottom: 12px; top: auto; right: auto;"
+ },
+ {
+  "nama": "widget-terbuka",
+  "lebar": 2560,
+  "w": 414,
+  "h": 853,
+  "x": 12,
+  "y": 575,
+  "tutupSimpan": true,
+  "hostStyle": "position: fixed; z-index: 2147482990; left: 12px; bottom: 12px; top: auto; right: auto;"
+ },
+ {
+  "nama": "widget-terbuka",
+  "lebar": 3840,
+  "w": 588,
+  "h": 1150,
+  "x": 12,
+  "y": 998,
+  "tutupSimpan": false,
+  "hostStyle": "position: fixed; z-index: 2147482990; left: 12px; bottom: 12px; top: auto; right: auto;"
+ }
+]

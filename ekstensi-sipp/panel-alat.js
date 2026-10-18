@@ -204,13 +204,29 @@ const ALAT_AWAL_LEBAR_MIN = 520;
 const ALAT_AWAL_LEBAR_MAKS = 760;
 const ALAT_AWAL_TEPI = 12;
 
+// V2 (18 Okt, laptop kecil sampai TV): pengali layar yang SAMA dengan
+// --aleta-v2-oto di panel.css (1 di bawah 2200px; 1.19, 1.44, 1.69 di 2200,
+// 2800, 3400px). Dijaga uiux-v2-panel-ekstensi.test.ts.
+function alatPengaliLayar(lebarLayar) {
+  const w = Number(lebarLayar) || 0;
+  if (w >= 3400) return 1.69;
+  if (w >= 2800) return 1.44;
+  if (w >= 2200) return 1.19;
+  return 1;
+}
+/** Di bawah ini (laptop 1280/1366, atau 1920 dengan zoom 125-150%) lebar bawaan boleh lebih sempit dari 520px. */
+const ALAT_AWAL_LEBAR_MIN_SEMPIT = 420;
+const ALAT_AWAL_LAYAR_SEMPIT = 1500;
+
 function alatUkuranAwal() {
   const w = Number(window.innerWidth) || 0;
   const h = Number(window.innerHeight) || 0;
   if (w <= 0 || h <= 0) return null;
+  const oto = alatPengaliLayar(w);
   const lebarLayar = Math.max(w - ALAT_AWAL_TEPI * 2, 260);
   const tinggiLayar = Math.max(h - ALAT_AWAL_TEPI * 2, 160);
-  const lebar = Math.min(Math.max(Math.round(w * 0.33), ALAT_AWAL_LEBAR_MIN), ALAT_AWAL_LEBAR_MAKS, lebarLayar);
+  const lebarMin = w < ALAT_AWAL_LAYAR_SEMPIT ? ALAT_AWAL_LEBAR_MIN_SEMPIT : Math.round(ALAT_AWAL_LEBAR_MIN * oto);
+  const lebar = Math.min(Math.max(Math.round(w * 0.33), lebarMin), Math.round(ALAT_AWAL_LEBAR_MAKS * oto), lebarLayar);
   const tinggi = Math.min(Math.max(Math.round(h * 0.7), 420), tinggiLayar);
   return { lebar, tinggi };
 }
@@ -2485,6 +2501,8 @@ async function alatAmbil(alamat, opsi, yangDiminta) {
  * lengkap.
  */
 const ALAT_SKALA_KUNCI = "skalaHuruf";
+/** Pilihan terakhir (persen) - dipakai memasang ulang saat jendela berubah ukuran (zoom Windows, pindah monitor). */
+let alatSkalaTerakhir = 100;
 const ALAT_SKALA_BAWAAN = 100;
 /** Di bawah ini huruf panel tidak lagi terbaca pada layar mana pun. */
 const ALAT_SKALA_MIN = 80;
@@ -2510,7 +2528,14 @@ function alatRapikanSkala(nilai) {
 function alatTerapkanSkalaHuruf(persen) {
   const bersih = alatRapikanSkala(persen);
   try {
-    document.documentElement.style.setProperty("--aleta-skala-huruf", String(bersih / 100));
+    // V2 (18 Okt): pilihan petugas dikali pengali layar otomatis (--aleta-v2-oto di
+    // panel.css: 1 di laptop, membesar di layar 2560/4K/TV). Di bawah 2200px
+    // pengalinya 1 dan nilainya TETAP angka polos seperti sebelumnya (tampilan
+    // Lama identik sampai ke atribut <html>); hanya layar besar yang memakai
+    // ekspresi calc() dengan pengali dari panel.css.
+    const nilai = alatPengaliLayar(window.innerWidth) === 1 ? String(bersih / 100) : `calc(${bersih / 100} * var(--aleta-v2-oto, 1))`;
+    document.documentElement.style.setProperty("--aleta-skala-huruf", nilai);
+    alatSkalaTerakhir = bersih;
   } catch {
     /* halaman tanpa documentElement tidak mungkin ada - dan kalau ada,
        ukuran huruf bukan yang perlu dirisaukan */
@@ -2533,6 +2558,14 @@ async function alatMuatSkalaHuruf() {
 // Dipasang SEBELUM panel digambar, supaya tidak ada kedipan dari ukuran
 // bawaan ke ukuran pilihan petugas.
 void alatMuatSkalaHuruf();
+
+// V2: lebar jendela berubah (zoom Windows 125-150%, pindah ke TV) - pengali
+// layar dihitung ulang. Hanya menulis bila ekspresinya memang berganti.
+try {
+  window.addEventListener("resize", () => alatTerapkanSkalaHuruf(alatSkalaTerakhir));
+} catch {
+  /* tanpa window tidak ada layar yang perlu dipantau */
+}
 
 // Perubahan dari popup berlaku seketika di seluruh tab yang terbuka, tanpa
 // memuat ulang halaman dan tanpa izin "tabs".

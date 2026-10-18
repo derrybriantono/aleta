@@ -1,0 +1,227 @@
+[
+ {
+  "nama": "abt-awal",
+  "lebar": 1280,
+  "panel": {
+   "x": 0,
+   "y": 0,
+   "w": 463,
+   "h": 540
+  },
+  "tutupSimpan": false,
+  "fs": "14px",
+  "bodyMr": "0px",
+  "meluap": [],
+  "sw": 1280
+ },
+ {
+  "nama": "abt-awal",
+  "lebar": 1366,
+  "panel": {
+   "x": 0,
+   "y": 0,
+   "w": 494,
+   "h": 540
+  },
+  "tutupSimpan": false,
+  "fs": "14px",
+  "bodyMr": "0px",
+  "meluap": [],
+  "sw": 1366
+ },
+ {
+  "nama": "abt-awal",
+  "lebar": 1920,
+  "panel": {
+   "x": 0,
+   "y": 0,
+   "w": 562,
+   "h": 540
+  },
+  "tutupSimpan": false,
+  "fs": "14px",
+  "bodyMr": "0px",
+  "meluap": [],
+  "sw": 1920
+ },
+ {
+  "nama": "abt-awal",
+  "lebar": 2560,
+  "panel": {
+   "x": 0,
+   "y": 0,
+   "w": 668,
+   "h": 540
+  },
+  "tutupSimpan": false,
+  "fs": "16.66px",
+  "bodyMr": "0px",
+  "meluap": [],
+  "sw": 2560
+ },
+ {
+  "nama": "abt-awal",
+  "lebar": 3840,
+  "panel": {
+   "x": 0,
+   "y": 0,
+   "w": 948,
+   "h": 540
+  },
+  "tutupSimpan": false,
+  "fs": "23.66px",
+  "bodyMr": "0px",
+  "meluap": [
+   "aleta-bawaan"
+  ],
+  "sw": 3840
+ },
+ {
+  "tombol": [
+   "⋯",
+   "↶",
+   "↷",
+   "▤",
+   "☀",
+   "–",
+   "⛶",
+   "⟲",
+   "×",
+   "🔓Ringkas otomatis",
+   "ⓘ",
+   "Semua3",
+   "Ragu0",
+   "Bentrok1",
+   "Cukup1",
+   "Pasti1",
+   "Tampilkan yang tidak berlaku (0)",
+   "1Isi dari SIPP & input ke ABT●",
+   "–Susun saksi",
+   "–Kerjakan",
+   "lihat semua langkah (2)",
+   "⋯",
+   "Isi blangko dari SIPP",
+   "Input ke ABT",
+   "Isi dari posita permohonan",
+   "Isi dari posita permohonan",
+   "Susun keterangan saksi 1 & 2",
+   "Lihat riwayat perubahan",
+   "Rapikan posita & keterangan saksi",
+   "Pratinjau putusan",
+   "Periksa konsistensi",
+   "Perkara sebelumnya",
+   "Saran dasar hukum",
+   "Ringkasan musyawarah",
+   "Susun",
+   "Baca ulang",
+   "ⓘ",
+   "ⓘ",
+   "ⓘ",
+   "+ pertanyaan saksi",
+   "tandai ditolak + pertimbangan",
+   "ⓘ",
+   "ⓘ",
+   "ⓘaturan",
+   "ⓘkenapa",
+   "sumber (1) ▸",
+   "☆",
+   "⟲",
+   "Sunting",
+   "☆",
+   "⟲",
+   "Sunting",
+   "☆",
+   "⟲",
+   "Sunting",
+   "Input ke ABT (3)",
+   "Input semua yang pasti (0)",
+   "Cetak",
+   "ⓘ",
+   "Ini blangko putusan - buka",
+   "ⓘ",
+   "ⓘ",
+   "Kerjakan perkara ini",
+   "Opsi ▾",
+   "Kerjakan perkara ini",
+   "⌃",
+   "↻"
+  ]
+ },
+ {
+  "nama": "abt-kartu",
+  "lebar": 1280,
+  "panel": {
+   "x": 0,
+   "y": 0,
+   "w": 463,
+   "h": 540
+  },
+  "tutupSimpan": false,
+  "fs": "14px",
+  "bodyMr": "0px",
+  "meluap": [],
+  "sw": 1280
+ },
+ {
+  "nama": "abt-kartu",
+  "lebar": 1366,
+  "panel": {
+   "x": 0,
+   "y": 0,
+   "w": 494,
+   "h": 540
+  },
+  "tutupSimpan": false,
+  "fs": "14px",
+  "bodyMr": "0px",
+  "meluap": [],
+  "sw": 1366
+ },
+ {
+  "nama": "abt-kartu",
+  "lebar": 1920,
+  "panel": {
+   "x": 0,
+   "y": 0,
+   "w": 562,
+   "h": 540
+  },
+  "tutupSimpan": false,
+  "fs": "14px",
+  "bodyMr": "0px",
+  "meluap": [],
+  "sw": 1920
+ },
+ {
+  "nama": "abt-kartu",
+  "lebar": 2560,
+  "panel": {
+   "x": 0,
+   "y": 0,
+   "w": 668,
+   "h": 540
+  },
+  "tutupSimpan": false,
+  "fs": "16.66px",
+  "bodyMr": "0px",
+  "meluap": [],
+  "sw": 2560
+ },
+ {
+  "nama": "abt-kartu",
+  "lebar": 3840,
+  "panel": {
+   "x": 0,
+   "y": 0,
+   "w": 948,
+   "h": 540
+  },
+  "tutupSimpan": false,
+  "fs": "23.66px",
+  "bodyMr": "0px",
+  "meluap": [
+   "aleta-bawaan"
+  ],
+  "sw": 3840
+ }
+]
