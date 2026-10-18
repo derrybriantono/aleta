@@ -514,6 +514,33 @@ describe("butir 5: Langkah berikutnya mengenali sidang yang sudah putus", () => 
     expect(kartu.textContent).not.toContain("Tidak ada yang mendesak");
   });
 
+  // AUDIT-GALAT 18 Okt: dilaporkan dari tangkapan panel SIPP - kartu Langkah berikutnya
+  // berbunyi "Keadaan perkara tidak terbaca: Keadaan perkara tidak terbaca dari ALETA."
+  it("keadaan perkara tanpa status: kalimatnya tidak berulang 'X: X'", async () => {
+    const h = buka({
+      simpanan: UI,
+      jawab: (url) => (url.includes("/aleta-ecourt/status-perkara?") ? { isi: { ok: true, data: { available: true } } } : null),
+    });
+    const pn = await siapUi(h);
+    const kartu = pn.querySelector(".aleta-t7-langkah");
+    await sampai(() => /Keadaan perkara tidak terbaca/.test(kartu.textContent || ""), "gagal disebut");
+    const teks = String(kartu.textContent || "");
+    expect(teks).toContain("Keadaan perkara tidak terbaca dari ALETA.");
+    expect(teks.match(/Keadaan perkara tidak terbaca/g)!.length).toBe(1);
+  });
+
+  it("keadaan perkara dengan alasan: awalan tidak berulang, alasannya tetap disebut", async () => {
+    const h = buka({
+      simpanan: UI,
+      jawab: (url) =>
+        url.includes("/aleta-ecourt/status-perkara?") ? { isi: { ok: true, data: { available: true, alasan: "perkara_tidak_ada" } } } : null,
+    });
+    const pn = await siapUi(h);
+    const kartu = pn.querySelector(".aleta-t7-langkah");
+    await sampai(() => /perkara tidak ada/.test(kartu.textContent || ""), "alasan disebut");
+    expect(String(kartu.textContent).match(/Keadaan perkara tidak terbaca/g)!.length).toBe(1);
+  });
+
   it("sudah putus tanpa minutasi: Minutasi berkas perkara (tidak menanyakan jadwal sidang)", async () => {
     const h = buka({ simpanan: UI, putusan: { sudahPutus: true, tanggalPutusan: "2026-10-01", tanggalMinutasi: "", tanggalBht: "" } });
     const pn = await siapUi(h);
@@ -1133,6 +1160,8 @@ async function ukurSatu(mode: "baru" | "ui") {
         "a30PerluKeRtf",
         ...(/^async function s1BacaUsulanBorangCepat\(/m.test(konten) ? ["s1BacaUsulanBorangCepat", "s1TungguBerubah"] : []),
         ...(/^function s1SiapkanAnonimAwal\(/m.test(konten) ? ["s1SiapkanAnonimAwal"] : []),
+        // AUDIT-GALAT 18 Okt: kalimat galat tanpa awalan berulang.
+        ...(/^function sambungSebab\(/m.test(konten) ? ["sambungSebab"] : []),
         // 7 Okt 2026: penantian anonimisasi berbatas dan berkabar.
         ...(/^async function a30TungguAnonim\(/m.test(konten) ? ["a30TungguAnonim", "a30PilihSesudahBatas"] : []),
       ].map((nama) => potongFungsi(konten, nama)),

@@ -563,6 +563,25 @@ const STATUS_NOMOR = {
  * bukan teks. Memperlakukannya sebagai teks menghasilkan "[object Object]"
  * pada tombol, yang lebih tidak berguna daripada kata "gagal" saja.
  */
+/**
+ * AUDIT-GALAT 18 Okt 2026: "Awalan: sebab" TANPA mengulang awalan yang sudah dibawa
+ * sebabnya. Galat ambilStatusPerkara sudah berbunyi "Keadaan perkara tidak terbaca
+ * dari ALETA." - disambung buta menjadi "Keadaan perkara tidak terbaca: Keadaan
+ * perkara tidak terbaca dari ALETA." di kartu Langkah berikutnya.
+ *   galat  Error, teks, atau kosong.  titik  akhiri dengan tanda baca bila belum.
+ */
+function sambungSebab(awalan, galat, titik) {
+  const a = String(awalan || "").trim();
+  const pesan = String((galat && galat.message) || galat || "").trim();
+  const datar = (x) => x.toLowerCase().replace(/\s+/g, " ").replace(/[\s.:;,!-]+$/, "");
+  let hasil;
+  if (!pesan) hasil = a;
+  else if (a && datar(pesan).startsWith(datar(a))) hasil = pesan;
+  else hasil = a ? `${a}: ${pesan}` : pesan;
+  if (titik && !/[.!?]$/.test(hasil)) hasil += ".";
+  return hasil;
+}
+
 async function pesanGalat(respons) {
   try {
     const isi = await respons.json();
@@ -6614,7 +6633,7 @@ async function simpanPutusanLaluBuka(nomorPerkara, kabar, opsi) {
         try {
           lanjut = await o.sesudahTersimpan(kabar);
         } catch (galat) {
-          lanjut = { ok: false, bunyi: `Edoc tidak terunggah: ${String((galat && galat.message) || galat)}.` };
+          lanjut = { ok: false, bunyi: sambungSebab("Edoc tidak terunggah", galat, true) };
         }
         const bunyiLanjut = `${bunyi} ${(lanjut && lanjut.bunyi) || ""}`.trim();
         // Hasil edoc dipulangkan tersendiri supaya antrean massal dapat
@@ -18815,7 +18834,7 @@ function t7KartuTenggat(k) {
     })
     .catch((galat) => {
       isi.textContent = "";
-      isi.appendChild(t7BelumTersedia(`Keadaan perkara tidak terbaca: ${String((galat && galat.message) || galat)}`));
+      isi.appendChild(t7BelumTersedia(sambungSebab("Keadaan perkara tidak terbaca", galat)));
     });
   return kartu;
 }
@@ -21462,7 +21481,7 @@ async function a30SiapkanAnonimisasi(p) {
     if (!rtf) {
       lapor(`Anonimisasi 1/4: mengubah ${nama} menjadi RTF…`);
       const u = await a30KonversiNaskah(berkas, "rtf");
-      if (!u.ok) return { ok: false, pesan: `Anonimisasi tidak dibuat: ${u.pesan}` };
+      if (!u.ok) return { ok: false, pesan: sambungSebab("Anonimisasi tidak dibuat", u.pesan) };
       rtf = u.berkas;
     }
     lapor("Anonimisasi 2/4: meminta ABT menganonimkan…");
@@ -21556,7 +21575,7 @@ async function a30SiapkanAnonimisasi(p) {
     if (bentuk !== "rtf") {
       lapor(`Anonimisasi 4/4: mengubah kembali menjadi ${bentuk.toUpperCase()}…`);
       const k = await a30KonversiNaskah(hasil, bentuk);
-      if (!k.ok) return { ok: false, pesan: `Anonimisasi tidak dibuat: ${k.pesan}` };
+      if (!k.ok) return { ok: false, pesan: sambungSebab("Anonimisasi tidak dibuat", k.pesan) };
       hasil = new File([k.berkas], a30NamaAnonim(nama, bentuk), { type: k.berkas.type || A30_MIME[bentuk] });
     }
     lapor(`Anonimisasi siap: ${hasil.name}${disamarkan.length ? ` (${disamarkan.length} sisa disamarkan ALETA)` : ""}.`);
@@ -21572,7 +21591,7 @@ async function a30SiapkanAnonimisasi(p) {
       ...(namaDirelakan.length ? { tetapUnggah: { nama: namaDirelakan } } : {}),
     };
   } catch (galat) {
-    return { ok: false, pesan: `Anonimisasi tidak dibuat: ${String((galat && galat.message) || galat)}` };
+    return { ok: false, pesan: sambungSebab("Anonimisasi tidak dibuat", galat) };
   }
 }
 
@@ -21687,10 +21706,10 @@ async function a30UnggahEdoc(p) {
         bunyi: masuk
           ? `Edoc putusan terunggah; edoc anonimisasi TIDAK diunggah: ${String(galat.message || "ditolak")} ` +
             'Perbaiki anonimisasinya lalu unggah lewat bagian "Unggah putusan ke SIPP".'
-          : `Edoc tidak terunggah: ${(sendiri && (sendiri.sebab || sendiri.pesan)) || galat.message}.`,
+          : sambungSebab("Edoc tidak terunggah", (sendiri && (sendiri.sebab || sendiri.pesan)) || galat.message, true),
       };
     }
-    if (!jawab.ok) return { ok: false, bunyi: `Edoc tidak terunggah: ${jawab.sebab || jawab.pesan || jawab.alasan || "ditolak"}.` };
+    if (!jawab.ok) return { ok: false, bunyi: sambungSebab("Edoc tidak terunggah", jawab.sebab || jawab.pesan || jawab.alasan || "ditolak", true) };
     const semua = jawab.berkas || [];
     const gagal = semua.filter((b) => !b.ok);
     if (!semua.length || gagal.length) {
@@ -21718,7 +21737,7 @@ async function a30UnggahEdoc(p) {
       bunyi: `Edoc putusan${p.anonimisasi ? " dan edoc anonimisasi" : ""} terunggah${jawab.antrean ? ", dan perkara ini masuk antrean Direktori Putusan" : ""}.`,
     };
   } catch (galat) {
-    return { ok: false, bunyi: `Edoc tidak terunggah: ${String((galat && galat.message) || galat)}` };
+    return { ok: false, bunyi: sambungSebab("Edoc tidak terunggah", galat) };
   }
 }
 
@@ -21743,7 +21762,7 @@ async function a30UnggahEdoc(p) {
  */
 async function a30TungguAnonim(p) {
   const tangkap = (janji) =>
-    Promise.resolve(janji).catch((galat) => ({ ok: false, pesan: `Anonimisasi tidak dibuat: ${String((galat && galat.message) || galat)}` }));
+    Promise.resolve(janji).catch((galat) => ({ ok: false, pesan: sambungSebab("Anonimisasi tidak dibuat", galat) }));
   let janji = tangkap(p.janji);
   const batasMs = Math.max(1000, Number(p.batasMs) || (typeof A30_BATAS_TUNGGU_ANONIM_MS === "number" ? A30_BATAS_TUNGGU_ANONIM_MS : 75000));
   const detak = typeof A30_DETAK_TUNGGU_ANONIM_MS === "number" ? A30_DETAK_TUNGGU_ANONIM_MS : 250;
@@ -23020,7 +23039,7 @@ function s1KartuLangkah(k) {
     try {
       status = await ambilStatusPerkara(k.nomor);
     } catch (galat) {
-      kabar.textContent = `Keadaan perkara tidak terbaca: ${String((galat && galat.message) || galat)}`;
+      kabar.textContent = sambungSebab("Keadaan perkara tidak terbaca", galat);
       kabar.classList.add("aleta-s1-gagal");
       gambar(dariKonteks, false);
       return;
@@ -23055,7 +23074,7 @@ function s1KartuLangkah(k) {
           aksi: "buat-putusan",
         });
       }
-      if (!j.ok && j.pesan) kabar.textContent = `Hasil sidang tidak terbaca: ${j.pesan}`;
+      if (!j.ok && j.pesan) kabar.textContent = sambungSebab("Hasil sidang tidak terbaca", j.pesan);
       else kabar.textContent = "";
       const tahap = status && status.tahapan && status.tahapan.terbaca ? status.tahapan.tahap || [] : [];
       const berikut = tahap.find((x) => x.terbaca && !x.tanggal);
@@ -23265,7 +23284,7 @@ function s1SiapkanAnonimAwal(p) {
     .then(() =>
       a30SiapkanAnonimisasi({ berkas: p.naskahEdoc.asli, rtf: p.naskahEdoc.rtf, nomorPerkara: p.nomorPerkara, kabar, wadahTanya: tanya })
     )
-    .catch((galat) => ({ ok: false, pesan: `Anonimisasi tidak dibuat: ${String((galat && galat.message) || galat)}` }));
+    .catch((galat) => ({ ok: false, pesan: sambungSebab("Anonimisasi tidak dibuat", galat) }));
   // kabar & tanya dipulangkan supaya Isikan dapat MEMINDAHKANNYA ke dekat
   // kabar penantiannya (7 Okt 2026): dialog pemeriksa di puncak bagian tidak
   // terlihat dari tombol Isikan, dan penantiannya tampak macet.

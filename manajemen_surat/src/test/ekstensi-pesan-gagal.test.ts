@@ -153,6 +153,18 @@ describe("kalimat yang menggantikan bunyi mentah", () => {
   it("sebab yang tidak terbaca tidak menghasilkan kalimat kosong", () => {
     expect(alat.alatPesanGagal(null, 0, "Menyambung kata")).toContain("tidak terbaca");
   });
+
+  // AUDIT-GALAT 18 Okt: pola "X: X ..." dan ".." pada galat yang dibungkus ulang.
+  it("galat yang sudah berawalan nama pekerjaannya tidak diulang", () => {
+    const pesan = alat.alatPesanGagal(new Error("Membaca usulan gagal: data tidak lengkap."), 0, "Membaca usulan");
+    expect(pesan).toBe("Membaca usulan gagal: data tidak lengkap.");
+    expect(pesan.match(/Membaca usulan gagal/g)).toHaveLength(1);
+  });
+
+  it("sebab yang sudah bertitik tidak berakhir dengan dua titik", () => {
+    const pesan = alat.alatPesanGagal(new Error("berkas rusak."), 0, "Membuat PDF");
+    expect(pesan).toBe("Membuat PDF gagal: berkas rusak.");
+  });
 });
 
 describe("alatAmbil menyalin kalimat itu ke tiap pemanggil", () => {

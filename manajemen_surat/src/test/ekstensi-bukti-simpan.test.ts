@@ -379,6 +379,8 @@ function muatSimpan(opsi: {
       potongFungsi(isi, "tekanSimpanPutusan"),
       potongFungsi(isi, "bunyiSimpanTidakDitekan"),
       potongFungsi(isi, "simpanPutusanLaluBuka"),
+      // AUDIT-GALAT 18 Okt: kalimat galat "Awalan: sebab" tanpa awalan berulang.
+      potongFungsi(isi, "sambungSebab"),
       "this.simpan = simpanPutusanLaluBuka;",
     ].join("\n"),
     k
