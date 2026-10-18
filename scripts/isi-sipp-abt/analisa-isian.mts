@@ -15,7 +15,7 @@ const { indeksRtf } = await import(pathToFileURL(path.join(akar, "scripts", "isi
 const { susunIsian, rujukan } = await import(pathToFileURL(path.join(process.cwd(), "src/app/api/aleta-ecourt/blangko-derry/susun.ts")).href);
 
 const KELUAR = process.argv[2];
-const SKEMA_KATALOG = "aps_badilag_i18";
+const SKEMA_KATALOG = process.env.SKEMA_KATALOG || "aps_badilag_i18"; // 18 Okt: skema scratch aps_badilag_pm55 = i18 + variabel paket I19-I23
 
 function kueri(db: string, sql: string): Promise<any[]> {
   const kon = mysql.createConnection({ host: "127.0.0.1", user: "root", database: db, charset: "latin1", typeCast: (f: any) => f.string() });

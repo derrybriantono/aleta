@@ -15,6 +15,11 @@ export function indeksRtf(akarBatch = "D:/aleta-dev/kerja/batch-14okt-sore", xam
         if (!fs.statSync(xp).isDirectory()) continue;
         if (/^abt-/.test(x) && fs.existsSync(path.join(xp, "paket-satker"))) roots.push(path.join(xp, "paket-satker"));
         if (/^server-asal/.test(x)) roots.push(xp);
+        // 18 Okt: paket agen i20 bersarang satu tingkat lagi (i20-bas-perbaikan-18okt/a-bas/abt-.../paket-satker).
+        for (const y of fs.readdirSync(xp)) {
+          const yp = path.join(xp, y);
+          if (/^abt-/.test(y) && fs.existsSync(path.join(yp, "paket-satker")) && fs.statSync(yp).isDirectory()) roots.push(path.join(yp, "paket-satker"));
+        }
       }
     }
   }
@@ -40,6 +45,11 @@ export function indeksRtf(akarBatch = "D:/aleta-dev/kerja/batch-14okt-sore", xam
       /* akar tak terbaca */
     }
   }
+  // 18 Okt (abt-cacat-lama-derry): berkas yang berganti NAMA tanpa RTF baru (ejaan "Kontradiktur" -> "Kontradiktoir") memakai RTF namanya yang lama.
+  const GANTI_NAMA = {
+    "derry_briantono/4b Kewarisan/[01] [Kabul] Kewarisan - Kontradiktoir.rtf": "derry_briantono/4b Kewarisan/[01] [Kabul] Kewarisan - Kontradiktur.rtf",
+  };
+  for (const [baru, lama] of Object.entries(GANTI_NAMA)) if (!hasil.has(baru) && hasil.has(lama)) hasil.set(baru, hasil.get(lama));
   return hasil;
 }
 
