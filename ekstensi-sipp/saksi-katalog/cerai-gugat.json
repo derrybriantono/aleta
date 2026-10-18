@@ -124,10 +124,10 @@
   },
   {
    "id": "dh-sema-1-2022",
-   "rujukan": "SEMA Nomor 1 Tahun 2022",
-   "uraian": "perceraian atas alasan perselisihan terus-menerus dihubungkan dengan pisah tempat tinggal; rincian rumusan kamar agama belum dibaca dari naskah",
-   "status": "perlu-verifikasi",
-   "sumber": "judul blangko Derry [01ab] Kurang 6 Bulan SEMA 1 Tahun 2022; naskah SEMA belum diperiksa"
+   "rujukan": "SEMA Nomor 1 Tahun 2022 Rumusan Kamar Agama angka 1 huruf b poin 2, disempurnakan SEMA Nomor 3 Tahun 2023 angka 1",
+   "uraian": "perceraian atas alasan perselisihan dan pertengkaran terus menerus hanya dikabulkan jika terbukti terus menerus berselisih dan bertengkar, tidak ada harapan hidup rukun, dan diikuti pisah tempat tinggal paling singkat 6 bulan, kecuali ditemukan fakta hukum kekerasan dalam rumah tangga; rumusan SEMA 1/2022 semula memakai kata atau (berselisih terus menerus atau telah berpisah tempat tinggal minimal 6 bulan) lalu disempurnakan SEMA 3/2023",
+   "status": "terverifikasi",
+   "sumber": "bunyi SEMA 1/2022 dan penyempurnaan SEMA 3/2023 cocok dengan Kompilasi Rumusan Hasil Rapat Pleno Kamar Mahkamah Agung RI, cetakan ke-12 tahun 2026, terbitan Kepaniteraan Mahkamah Agung (kepaniteraan.mahkamahagung.go.id/images/artikel/2026_buku_kompilasi_rumusan_kamar.pdf); rincian di VERIFIKASI-HUKUM.md"
   },
   {
    "id": "dh-pasal-41-uu-1-1974",
@@ -247,7 +247,7 @@
   {
    "id": "pp-perselisihan",
    "judul": "Perselisihan dan pertengkaran terus-menerus",
-   "uraian": "saksi menerangkan sejak kapan, penyebab, dan cara ia mengetahuinya",
+   "uraian": "saksi menerangkan sejak kapan, penyebab, cara ia mengetahuinya, dan tidak adanya harapan rukun",
    "dasarHukum": [
     "dh-pp-9-1975-pasal-19",
     "dh-khi-116",
@@ -262,7 +262,7 @@
   {
    "id": "pp-pisah",
    "judul": "Pisah tempat tinggal dan akibatnya",
-   "uraian": "saksi menerangkan sejak kapan pisah, siapa yang meninggalkan, lamanya, dan nafkah",
+   "uraian": "saksi menerangkan sejak kapan pisah, siapa yang meninggalkan, lamanya (paling singkat 6 bulan kecuali ada kekerasan dalam rumah tangga), dan nafkah",
    "dasarHukum": [
     "dh-sema-1-2022",
     "dh-pp-9-1975-pasal-19"
@@ -1937,6 +1937,43 @@
      ]
     }
    }
+  },
+  {
+   "id": "q-harapan-rukun",
+   "pokok": "pp-perselisihan",
+   "urutan": 85,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah menurut saksi masih ada harapan #0046# dan #0047# untuk rukun kembali ?",
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "harapan mereka untuk rukun kembali",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sudah tidak ada harapan para pihak rukun kembali",
+     "saksi1": [
+      "sudah tidak ada harapan bagi #0046# dan #0047# untuk rukun kembali",
+      "menurut saya rumah tangga #0046# dan #0047# tidak dapat dirukunkan lagi",
+      "tidak ada lagi harapan keduanya hidup rukun seperti semula",
+      "saya melihat tidak ada harapan #0046# dan #0047# bersatu kembali"
+     ],
+     "saksi2": [
+      "harapan untuk mempersatukan kembali #0046# dengan #0047# sudah tidak ada",
+      "keduanya sudah sulit dirukunkan sebab tidak ada lagi harapan rukun",
+      "rumah tangga mereka tidak dapat diharapkan rukun lagi",
+      "setahu saya tidak tersisa harapan #0046# dan #0047# kembali berumah tangga dengan rukun"
+     ]
+    }
+   }
   }
  ],
  "jawabanUmum": {
@@ -2020,6 +2057,7 @@
   "Keterangan saksi harus menyebut sebab pengetahuannya; pendapat atau dugaan bukan kesaksian.",
   "Keterangan seorang saksi saja tidak cukup; periksa jumlah saksi dan kesesuaian keterangannya.",
   "Pilihan 'ragu' dan 'tahu sebagian' tidak dapat dijadikan dasar untuk mengisi tanggal atau lamanya pisah; isi sendiri bila perlu.",
-  "Jawaban bertanda kuning perlu diperiksa dulu sebelum disimpan."
+  "Jawaban bertanda kuning perlu diperiksa dulu sebelum disimpan.",
+  "Untuk alasan perselisihan terus-menerus, keterangan saksi perlu mencakup SEKALIGUS: perselisihan yang terus-menerus, tidak ada harapan rukun, dan pisah tempat tinggal paling singkat 6 bulan, kecuali ada kekerasan dalam rumah tangga."
  ]
 }

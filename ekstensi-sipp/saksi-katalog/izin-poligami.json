@@ -160,9 +160,9 @@
   {
    "id": "dh-poligami-persetujuan-cara",
    "rujukan": "Pasal 5 ayat (2) UU 1/1974, Pasal 41 huruf b PP 9/1975 dan Pasal 58 ayat (2) Kompilasi Hukum Islam",
-   "uraian": "persetujuan istri dapat lisan atau tertulis dan bila lisan diucapkan di depan sidang; persetujuan tidak diperlukan bila istri tidak mungkin dimintai persetujuan, tidak ada kabar sekurang-kurangnya dua tahun, atau sebab lain yang perlu penilaian Hakim",
-   "status": "perlu-verifikasi",
-   "sumber": "diingat pengisi dari teks UU 1/1974, PP 9/1975 dan KHI; blangko Derry hanya menyebut Pasal 58 ayat (1) dan (2) KHI tanpa uraian; belum dicocokkan dengan naskah resmi"
+   "uraian": "persetujuan istri dapat lisan atau tertulis dan bila lisan diucapkan di depan sidang; sekalipun sudah ada persetujuan tertulis, menurut Pasal 58 ayat (2) KHI persetujuan itu dipertegas dengan persetujuan lisan istri pada sidang Pengadilan Agama; persetujuan tidak diperlukan bila istri tidak mungkin dimintai persetujuan, tidak ada kabar sekurang-kurangnya dua tahun, atau sebab lain yang perlu penilaian Hakim",
+   "status": "terverifikasi",
+   "sumber": "Pasal 5 ayat (2) UU 1/1974 cocok dengan naskah UU 1/1974 di peraturan.bpk.go.id/Download/36382; Pasal 41 huruf b PP 9/1975 cocok dengan naskah PP 9/1975 di peraturan.bpk.go.id/Download/58020; Pasal 58 ayat (2) KHI cocok dengan naskah KHI lampiran Inpres 1/1991 terbitan Direktorat Pembinaan Badan Peradilan Agama Islam Departemen Agama (buku digital simbi.kemenag.go.id), dicocokkan dengan digitalisasi pasal.id; diperiksa 18 Okt 2026; uraian dilengkapi dengan penegasan lisan menurut Pasal 58 ayat (2) KHI; rincian di VERIFIKASI-HUKUM.md"
   },
   {
    "id": "dh-poligami-kemampuan",
@@ -182,8 +182,8 @@
    "id": "dh-poligami-pp41",
    "rujukan": "Pasal 41 PP 9/1975",
    "uraian": "Pengadilan memeriksa ada tidaknya alasan, persetujuan istri, kemampuan suami (surat keterangan penghasilan) dan jaminan berlaku adil",
-   "status": "perlu-verifikasi",
-   "sumber": "diingat pengisi dari teks PP 9/1975; huruf a sampai d dan Pasal 42 ayat (1) sesuai kutipan pada beberapa skripsi dan jurnal hukum (sumber sekunder); naskah resmi di JDIH belum diperiksa"
+   "status": "terverifikasi",
+   "sumber": "Pasal 41 huruf a sampai d dan Pasal 42 ayat (1) PP 9/1975 cocok dengan naskah PP 9/1975 di peraturan.bpk.go.id/Download/58020; rincian di VERIFIKASI-HUKUM.md"
   },
   {
    "id": "dh-poligami-atasan",
