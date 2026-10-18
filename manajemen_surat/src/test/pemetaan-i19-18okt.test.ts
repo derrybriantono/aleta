@@ -125,7 +125,7 @@ describe("C. pemilihan blangko dengan penanda", () => {
   });
 
   const folderDari: Record<string, string> = { CG: "1 Perceraian CG", CT: "1a Perceraian CT", HB: "4a Harta Bersama", Kewarisan: "4b Kewarisan" };
-  const dasar: Array<[string, Record<string, string>, string]> = [
+  const dasar: Array<[string, { jenisPerkara: string; nomorPerkara: string }, string]> = [
     ["CG", CG, "CG"],
     ["CT", CT, "CT"],
     ["HB", HB, "HB"],

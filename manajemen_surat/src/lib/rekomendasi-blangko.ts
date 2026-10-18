@@ -163,7 +163,7 @@ function rekomendasiBas(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
     akhir,
     // I20 18 Okt: Pemohon pernah hadir (N vs G), cabut sesudah jawaban (CS / CM).
     penggugatPernahHadir: m.penggugatPernahHadir,
-    sudahJawaban: m.sudahJawaban === true || Number(m.penandaJawaban?.berkas) > 0,
+    sudahJawaban: m.sesudahJawaban === true || Number(m.penandaJawaban?.berkas) > 0,
     sikapTergugatCabut: m.sikapTergugatCabut ?? null,
   };
   const hAlur = tentukanAlurBasKumulasi(masukan);
