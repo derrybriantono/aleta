@@ -427,8 +427,8 @@ describe("butir 1: menu panel perkara per peran (alatMenuPeran abt/perkara)", ()
     expect(usulanDiminta(h, "saksi-sdg")).toBe(0);
   });
 
-  it("peran lain (operator): susunan lama - tombol lama tampak, tidak ada pembacaan otomatis", async () => {
-    const h = buka({ simpanan: ui([]), peran: "Operator" });
+  it("peran lain (Staf Umum; Operator kini golongan PTSP): susunan lama - tombol lama tampak, tidak ada pembacaan otomatis", async () => {
+    const h = buka({ simpanan: ui([]), peran: "Staf Umum" });
     expect(await siapPeran(h)).toBe("lain");
     await tunggu(200);
     expect(tampak(tombol(h, "Isi blangko dari SIPP"))).toBe(true);

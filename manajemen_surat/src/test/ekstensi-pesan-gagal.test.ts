@@ -362,7 +362,9 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // pihak SIPP. Semuanya berbicara ke petugas dan gagalnya harus kalimat.
     // 47 sejak deteksi pekerjaan (PEKERJAAN, 11 Okt 2026): kategori pekerjaan
     // pihak (PNS/PPPK/TNI/POLRI/BUMN/BUMD) untuk usulan pilihan blangko pihak SIPP.
-    expect(lewatAlat).toBe(47);
+    // 48 sejak hari libur satu sumber (18 Okt 2026): panel membaca daftar libur lewat alatAmbil (petugas melihat
+    // kalimat, bukan kode, bila gagal).
+    expect(lewatAlat).toBe(48);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

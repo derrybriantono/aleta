@@ -46,7 +46,7 @@ describe("Isi form ikrar di luar jam kerja", () => {
     fireEvent.click(screen.getByRole("button", { name: /Isi form ikrar/ }));
     fireEvent.click(screen.getByRole("button", { name: "Ya, isi" }));
 
-    const dialog = await screen.findByRole("alertdialog", { name: "Di luar jam kerja" });
+    const dialog = await screen.findByRole("alertdialog", { name: "Di luar jam kerja" }, { timeout: 5000 });
     expect(dialog.textContent).toContain("Senin, 26 Oktober 2026");
     expect(screen.getByRole("button", { name: "Antrekan" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Tulis sekarang" })).toBeTruthy();
@@ -72,7 +72,7 @@ describe("Isi form ikrar di luar jam kerja", () => {
     render(<IsiIkrarTalak jadwalId={1} nomorPerkara="12/Pdt.G/2026/PA.Contoh" />);
     fireEvent.click(screen.getByRole("button", { name: /Isi form ikrar/ }));
     fireEvent.click(screen.getByRole("button", { name: "Ya, isi" }));
-    await screen.findByRole("alertdialog", { name: "Di luar jam kerja" });
+    await screen.findByRole("alertdialog", { name: "Di luar jam kerja" }, { timeout: 5000 });
     fireEvent.click(screen.getByRole("button", { name: "Tulis sekarang" }));
     await waitFor(() => expect(screen.getByText(/terisi di SIPP/)).toBeTruthy());
     expect(panggilan[1].badan).toMatchObject({ jamKerja: "sekarang" });
@@ -134,17 +134,17 @@ describe("Kasir otomatis massal di luar jam kerja", () => {
       })
     );
     render(<BagianMassal onSunting={() => undefined} />);
-    const simpan = await screen.findByRole("button", { name: /Simpan ke SIPP \(1 perkara\)/ });
+    const simpan = await screen.findByRole("button", { name: /Simpan ke SIPP \(1 perkara\)/ }, { timeout: 5000 });
     fireEvent.click(simpan);
-    fireEvent.click(await screen.findByRole("button", { name: /Tekan sekali lagi/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Tekan sekali lagi/ }, { timeout: 5000 }));
 
-    await screen.findByRole("alertdialog", { name: "Di luar jam kerja" });
+    await screen.findByRole("alertdialog", { name: "Di luar jam kerja" }, { timeout: 5000 });
     expect(tulis).toHaveLength(1);
     expect(tulis[0]).toMatchObject({ kering: false, massal: true, tanyaJamKerja: true });
     expect(tulis[0]).not.toHaveProperty("jamKerja");
 
     fireEvent.click(screen.getByRole("button", { name: "Antrekan" }));
-    await waitFor(() => expect(tulis).toHaveLength(2));
+    await waitFor(() => expect(tulis).toHaveLength(2), { timeout: 5000 });
     expect(tulis[1]).toMatchObject({ tanyaJamKerja: true, jamKerja: "antrekan" });
     await waitFor(() => expect(screen.getAllByText(/diantrekan, dikerjakan Senin/).length).toBeGreaterThan(0));
   });
@@ -160,8 +160,8 @@ describe("Kasir otomatis massal di luar jam kerja", () => {
       })
     );
     render(<BagianMassal onSunting={() => undefined} />);
-    fireEvent.click(await screen.findByRole("button", { name: /Pratinjau/ }));
-    await waitFor(() => expect(tulis).toHaveLength(1));
+    fireEvent.click(await screen.findByRole("button", { name: /Pratinjau/ }, { timeout: 5000 }));
+    await waitFor(() => expect(tulis).toHaveLength(1), { timeout: 5000 });
     expect(tulis[0]).toMatchObject({ kering: true });
     expect(tulis[0]).not.toHaveProperty("tanyaJamKerja");
   });

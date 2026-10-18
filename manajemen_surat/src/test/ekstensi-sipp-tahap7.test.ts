@@ -867,7 +867,10 @@ describe("panel.css: blok Tahap 7 seluruhnya bersyarat", () => {
   const a = GAYA.indexOf("PANEL SIPP - TAHAP 7 (MULAI)");
   const b = GAYA.indexOf("/* PANEL SIPP - TAHAP 7 (AKHIR) */");
   // Dipotong dari pembuka komentar judulnya, supaya komentar itu ikut terbuang.
-  const blok = GAYA.slice(GAYA.lastIndexOf("/*", a), b).replace(/\/\*[\s\S]*?\*\//g, "");
+  const blok = GAYA.slice(GAYA.lastIndexOf("/*", a), b)
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    // @keyframes bernama aleta-t7-* tak berpengaruh tanpa pemilih yang memakainya (penetapan satu klik, 18 Okt 2026).
+    .replace(/@keyframes\s+aleta-t7-[\w-]+\s*\{(?:[^{}]*\{[^{}]*\})+\s*\}/g, "");
 
   it("penandanya ada, satu kali, dan bloknya tidak kosong", () => {
     expect(a).toBeGreaterThan(0);

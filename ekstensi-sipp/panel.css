@@ -8399,7 +8399,7 @@ html[data-aleta-latihan="ya"] .aleta-latihan-tekan .aleta-latihan-sebutan { colo
   border-radius: 6px;
   background: var(--aleta-latar-naik);
   color: var(--aleta-tulisan-lembut);
-  font-size: calc(10.5px * var(--aleta-skala-huruf, 1));
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
   font-weight: 700;
   letter-spacing: 0.03em;
 }
