@@ -1224,6 +1224,8 @@ function buatLayanan(depsMasuk) {
     // dan sebelum dikirim ke SIPP; tidak diubah diam-diam - ditahan bila memuat kata
     // ALETA di luar nama pihak dari SIPP. (PDF unggahan manual diperiksa di simpanKeSipp.)
     if (rtf) {
+      // 18 Okt 2026 (butir 18): grup tersembunyi penanda asal dibuang sebelum diperiksa dan dibuat PDF.
+      rtf = penjagaTandaSipp.buangGrupTersembunyiRtf(rtf);
       const dariSipp = await penjagaTandaSipp.dataSippMemuatAleta(perkara.perkaraId, d.kueriSipp);
       const periksa = penjagaTandaSipp.periksaIsiBerkas(Buffer.from(rtf, "latin1"), { nama: `Penetapan ${String(jenis).toUpperCase()}`, dariSipp });
       if (!periksa.ok) return { ok: false, langkah: "isi", alasan: periksa.alasan, pesan: periksa.pesan };

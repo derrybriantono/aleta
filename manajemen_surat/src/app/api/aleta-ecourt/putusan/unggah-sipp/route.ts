@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
+import { buangGrupTersembunyiRtf } from "@/lib/buang-grup-tersembunyi-rtf";
 import { samarkanSisaBilaTersamar, type PenggantiSamaran } from "@/lib/samarkan-sisa-rtf";
 import { PERAN_PENGAWAS_PUTUSAN, pastikanMilikPerkara } from "@/server/modules/aleta-ecourt/hak-milik-perkara";
 import { pastikanBolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
@@ -141,7 +142,8 @@ export async function POST(request: NextRequest) {
           `Ukuran ${nama} melampaui ${Math.round(BATAS_SATU_BERKAS / 1024 / 1024)} MB. Putusan yang sebesar itu hampir pasti hasil pindaian, bukan PDF teks.`
         );
       }
-      return new Uint8Array(await berkas.arrayBuffer());
+      // 18 Okt 2026 (butir 18): grup RTF tersembunyi {*isianasal ...} tidak ikut ke SIPP.
+      return buangGrupTersembunyiRtf(new Uint8Array(await berkas.arrayBuffer()));
     };
 
     const berkas: Array<{ slot: SlotUnggahSipp; bita: Uint8Array }> = [];
