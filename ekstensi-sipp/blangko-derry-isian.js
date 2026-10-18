@@ -889,6 +889,7 @@
       void simpanBawaanAbtItsbat(d);
       void isiElitigasiOtomatis(d);
       void siapkanBukti();
+      void isiJawabMenjawabOtomatis(d);
     } catch (e) {
       if (S.blangko !== blangko) return;
       S.memuatSusunan = false;
@@ -1005,6 +1006,150 @@
       renderIsian();
     } catch {
       /* tanpa keputusan: isian tetap kosong */
+    }
+  }
+  /**
+   * JJ2-TANYAJAWAB (18 Okt 2026, keputusan 74): JAWABAN / REPLIK / DUPLIK TERTULIS dari e-Court ditulis OTOMATIS ke penyunting
+   * tanya-jawab ABT (6112 Jawaban Lisan, 6113 Replik Lisan, 6114 Duplik Lisan; 2018-2020 membaca baris yang sama) BILA berkasnya
+   * "rapi" (ukuran dihitung bot: tanyaJawabEcourtService - kop, tanda tangan, nomor halaman, karakter rusak, struktur dalil,
+   * panjang) dan sidang yang dipilih adalah sidang yang agendanya sesuai. Aturan yang dijaga:
+   *   - baris tanya-jawab yang sudah ada TIDAK PERNAH ditimpa atau dihapus: ditulis hanya bila bacaan ABT sukses DAN kosong
+   *     (tanya maupun jawab), dan tidak ada ketikan petugas yang belum disimpan di penyunting; bacaan gagal = tidak menulis;
+   *   - satu kali per (perkara, variabel, sidang): sesudah ditulis, penanda disimpan di peramban supaya baris yang kemudian
+   *     dihapus petugas tidak diisi lagi, dan menjalankannya dua kali tidak menggandakan baris;
+   *   - sidang tujuan = sidang PERTAMA yang agendanya memuat peran itu pada/sesudah tanggal unggah berkas (agenda "jawab
+   *     menjawab" berlaku untuk ketiganya); tanpa tanggal unggah hanya bila satu-satunya sidang beragenda itu;
+   *   - tidak rapi -> tidak ditulis; penyunting menampilkan "Format berkas tidak rapi, silakan salin dan periksa" + tombol Salin;
+   *   - saklar "Tanya-jawab jawab-menjawab otomatis" (bawaan NYALA) dapat dimatikan di Widget/popup; huruf di luar latin1 ditolak.
+   */
+  const TJ_JAWAB_MENJAWAB = Object.freeze({
+    "jawaban lisan 0047": Object.freeze({ peran: "jawaban", kode: "6112" }),
+    "replik lisan 0046": Object.freeze({ peran: "replik", kode: "6113" }),
+    "duplik lisan 0047": Object.freeze({ peran: "duplik", kode: "6114" }),
+  });
+  const API_ISI_GUGATAN_JM = "/aleta/api/aleta-ecourt/isi-gugatan";
+  const jmSedangDitulis = new Set();
+  function agendaMemuatPeran(peran, agenda) {
+    const t = String(agenda || "").toLowerCase();
+    if (!t) return false;
+    if (/jawab[\s-]*menjawab/.test(t)) return true;
+    if (peran === "jawaban") return /\bjawab(?:an)?\b/.test(t);
+    if (peran === "replik") return /\breplik\b/.test(t);
+    if (peran === "duplik") return /\bduplik\b/.test(t);
+    return false;
+  }
+  /** Sidang tujuan berkas jawab-menjawab: pertama yang agendanya memuat perannya pada/sesudah tanggal unggah; null bila tidak pasti. */
+  function sidangTujuanJm(peran, diunggah, sidang) {
+    const cocok = (Array.isArray(sidang) ? sidang : []).filter((s) => s && /^\d{4}-\d{2}-\d{2}/.test(String(s.tanggal || "")) && agendaMemuatPeran(peran, s.agenda));
+    if (!cocok.length) return null;
+    const unggah = /^\d{4}-\d{2}-\d{2}$/.test(String(diunggah || "")) ? String(diunggah) : "";
+    if (!unggah) return cocok.length === 1 ? cocok[0] : null;
+    const urut = cocok.slice().sort((x, y) => String(x.tanggal).localeCompare(String(y.tanggal)) || (Number(x.urutan) || 0) - (Number(y.urutan) || 0));
+    return urut.find((s) => String(s.tanggal).slice(0, 10) >= unggah) || null;
+  }
+  function sidangSamaJm(a, b) {
+    if (!a || !b) return false;
+    if (a.sidangId && b.sidangId) return String(a.sidangId) === String(b.sidangId);
+    return String(a.tanggal).slice(0, 10) === String(b.tanggal).slice(0, 10) && Number(a.urutan) === Number(b.urutan);
+  }
+  function salinTeksJm(teks) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(teks).then(() => true, () => false);
+    } catch {
+      /* jatuh ke cara lama */
+    }
+    const kotak = document.createElement("textarea");
+    kotak.value = teks;
+    kotak.setAttribute("readonly", "");
+    kotak.style.position = "fixed";
+    kotak.style.opacity = "0";
+    document.body.appendChild(kotak);
+    kotak.select();
+    let berhasil = false;
+    try {
+      berhasil = document.execCommand("copy");
+    } catch {
+      berhasil = false;
+    }
+    kotak.remove();
+    return Promise.resolve(berhasil);
+  }
+  async function isiJawabMenjawabOtomatis(d) {
+    try {
+      S.tjOto = {};
+      if (!S.pk || !S.blangko || !bolehTulis() || cfg().tjJawab === false) return;
+      // Penyunting harus tepat variabelnya (6112/6113/6114): kode lain tidak ditulis.
+      const butir = d.isian.filter((b) => b.jenis === "tj" && b.tj && TJ_JAWAB_MENJAWAB[b.tj.kunci] && b.tj.kodeSunting === TJ_JAWAB_MENJAWAB[b.tj.kunci].kode);
+      if (!butir.length) return;
+      const pilih = S.pk.sidangDipilih;
+      if (!pilih || !(Number(pilih.urutan) > 0)) return;
+      // Hemat bacaan: sidang yang agendanya tidak menyebut jawaban/replik/duplik (atau jawab-menjawab) bukan tujuan berkas mana pun.
+      if (!butir.some((b) => agendaMemuatPeran(TJ_JAWAB_MENJAWAB[b.tj.kunci].peran, pilih.agenda))) return;
+      const sb = sebutan();
+      const q = new URLSearchParams({ nomor: nomorPerkara(), lawan: sb.P, pelaku: sb.T });
+      const isi = await ambilPortal(`${API_ISI_GUGATAN_JM}?${q.toString()}`, {}, "Membaca jawab-menjawab dari e-Court");
+      if (S.susunan !== d || !S.pk || S.pk.sidangDipilih !== pilih) return;
+      const daftarTj = Array.isArray(isi && isi.tanyaJawab) ? isi.tanyaJawab : [];
+      const kalimat = Array.isArray(isi && isi.kalimat) ? isi.kalimat : [];
+      S.tjOto = S.tjOto || {};
+      for (const b of butir) {
+        const info = TJ_JAWAB_MENJAWAB[b.tj.kunci];
+        const kunci = b.tj.kunci;
+        const calon = daftarTj.filter((t) => t && t.kode === info.kode);
+        if (!calon.length) continue;
+        const t = calon.length === 1 ? calon[0] : null;
+        const sasaran = sidangTujuanJm(info.peran, t ? t.diunggah : "", S.pk.sidang);
+        if (!t || !sasaran || !sidangSamaJm(sasaran, pilih)) {
+          // Lebih dari satu berkas untuk peran yang sama: tidak jelas yang dipakai - hanya diberi tahu pada sidang yang agendanya cocok.
+          if (!t && agendaMemuatPeran(info.peran, pilih.agenda)) S.tjOto[kunci] = { status: "salin", pesan: "Ada lebih dari satu berkas untuk bagian ini di e-Court - format tidak dapat dipastikan, silakan salin dan periksa.", teks: "" };
+          continue;
+        }
+        const sal = kalimat.find((k) => k && k.kode === `jawab-tertulis-${t.peran}-${t.pihak || "x"}`);
+        if (!t.rapi || !Array.isArray(t.baris) || !t.baris.length) {
+          S.tjOto[kunci] = { status: "salin", pesan: "Format berkas tidak rapi, silakan salin dan periksa.", teks: sal ? String(sal.teks || "") : "" };
+          continue;
+        }
+        const sidangKe = sidangUrutan();
+        const tanda = `bdTjOto:${perkaraId()}:${info.kode}:${sidangKe}`;
+        if (jmSedangDitulis.has(tanda)) continue;
+        const muatan = t.baris.map((r) => ({ tanya: String((r && r.tanya) || ""), jawab: String((r && r.jawab) || "") }));
+        if (hurufDiLuarAbt(muatan.map((r) => `${r.tanya} ${r.jawab}`).join(" ")).length) {
+          S.tjOto[kunci] = { status: "salin", pesan: "Format berkas tidak rapi (ada huruf yang tidak dapat disimpan ABT), silakan salin dan periksa.", teks: sal ? String(sal.teks || "") : "" };
+          continue;
+        }
+        const sudah = (await bacaPenyimpanan(tanda))[tanda];
+        if (sudah) continue;
+        // Ketikan petugas yang belum disimpan di penyunting menang.
+        if (S.tj[kunci] && S.tj[kunci].berubah) continue;
+        jmSedangDitulis.add(tanda);
+        try {
+          const k = klienAbt();
+          const h = await k.bacaTanyaJawab({ kode: info.kode, perkaraId: perkaraId(), sidang: sidangKe, a: S.blangko.a, b: S.blangko.b });
+          if (!h || !h.ok) continue; // bacaan gagal = tidak menulis (menyimpan menghapus dulu seluruh baris sidang itu)
+          const ada = (Array.isArray(h.baris) ? h.baris : []).some((r) => String((r && r.tanya) || "").trim() || String((r && r.jawab) || "").trim());
+          if (ada) continue; // baris yang sudah ada tidak disentuh
+          if (S.susunan !== d || !S.pk || S.pk.sidangDipilih !== pilih || (S.tj[kunci] && S.tj[kunci].berubah)) continue;
+          const hasil = await k.simpanTanyaJawab({ kode: info.kode, perkaraId: perkaraId(), sidang: sidangKe, baris: muatan.map((r, i) => ({ no: String(i + 1), tanya: r.tanya, jawab: r.jawab })), a: S.blangko.a, b: S.blangko.b });
+          if (!hasil || !hasil.ok) {
+            S.tjOto[kunci] = { status: "salin", pesan: "Penulisan otomatis ke ABT tidak berhasil, silakan salin dan periksa.", teks: sal ? String(sal.teks || "") : "" };
+            continue;
+          }
+          void tulisPenyimpanan({ [tanda]: { saat: Date.now(), baris: muatan.length } });
+          const jam = jamSekarang();
+          S.tjOto[kunci] = { status: "ditulis", pesan: `Ditulis otomatis dari berkas e-Court (${muatan.length} baris) pukul ${jam}. Periksa sebelum dipakai.` };
+          S.nilai[b.kode] = { status: "terisi", teks: "" };
+          S.nilai[b.tj.kodeSunting] = { status: "terisi", teks: "" };
+          if (S.prat) S.prat.kotor = true;
+          if (S.tj[kunci] && S.tj[kunci].dimuat) await muatTj(kunci, true);
+          toast(`${b.tj.sebutan}: ${muatan.length} baris tanya-jawab ditulis otomatis dari berkas e-Court. Periksa dulu.`);
+        } finally {
+          // Kunci tetap dipasang bila berhasil (penanda penyimpanan menjaga antar-sesi); dilepas bila gagal supaya dapat dicoba lagi.
+          if (!S.tjOto[kunci] || S.tjOto[kunci].status !== "ditulis") jmSedangDitulis.delete(tanda);
+        }
+      }
+      renderTj();
+    } catch {
+      /* tanpa penulisan otomatis: penyunting dan tombol Salin tetap seperti semula */
     }
   }
   // F4.2: saran draf H-7 (agen ALETA) didahulukan - nilainya dari deteksi yang sama dengan panel ABT, tetap hanya SARAN.
@@ -2034,7 +2179,15 @@
       `<button type="button" class="bd-btn kecil" data-bd2="muattpl" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Muat</button><button type="button" class="bd-btn kecil" data-bd2="tambahtj" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Tambah baris</button>` +
       `<button type="button" class="bd-btn kecil utama" data-bd2="simpantj" data-kunci="${esc(kunciDaftar.join("|"))}" ${bolehTulis() && tjSiap(kunciDaftar) ? "" : "disabled"}>Simpan ke ABT</button><button type="button" class="bd-btn kecil" data-bd2="tutuptj">Selesai</button></div>` +
       ketSetSaksi();
-    const status = (k) => {
+    // JJ2: keterangan penulisan otomatis jawab-menjawab (ditulis / tidak rapi -> Salin).
+    const otoTeks = (k) => {
+      const o = S.tjOto && S.tjOto[k];
+      if (!o) return "";
+      if (o.status === "salin") return `<p class="bd-peringatan" role="status">${esc(o.pesan)}${o.teks ? ` <button type="button" class="bd-btn kecil" data-bd2="salinjm" data-kunci="${esc(k)}">Salin</button>` : ""}</p>`;
+      return `<p class="bd-catat" role="status">${esc(o.pesan)}</p>`;
+    };
+    const status = (k) => otoTeks(k) + statusDasar(k);
+    const statusDasar = (k) => {
       const x = S.tj[k];
       if (!x) return "";
       if (x.memuat) return `<p class="bd-catat" role="status">Membaca keterangan ${esc(tjItem(k).tj.sebutan)} dari ABT…</p>`;
@@ -3157,6 +3310,11 @@
       }
       return renderTj();
     }
+    if (kode === "salinjm") {
+      const o = S.tjOto && S.tjOto[String(aksi.getAttribute("data-kunci") || "")];
+      if (!o || !o.teks) return toast("Tidak ada teks untuk disalin.");
+      return void salinTeksJm(o.teks).then((ok) => toast(ok ? "Teks tersalin - tempel di penyunting lalu periksa." : "Gagal menyalin - pilih teks lalu Ctrl+C."));
+    }
     if (kode === "simpantj") return void simpanTj(String(aksi.getAttribute("data-kunci") || "").split("|").filter(Boolean));
     if (kode === "bukaprat") {
       S.prat.terbuka = !S.prat.terbuka;
@@ -3762,7 +3920,10 @@
       // Isian teks/tanggal berkunci perkara (tetap); keterangan saksi dan naskah ikut sidang.
       S.tj = {};
       S.tjBuka = null;
+      S.tjOto = {};
       S.prat.kotor = true;
+      // JJ2: sidang lain = tujuan penulisan lain; berkas yang rapi ditulis bila sidang ini agendanya sesuai dan barisnya kosong.
+      if (S.susunan) void isiJawabMenjawabOtomatis(S.susunan);
       if (S.blangko && S.blangko.jenis === "bas") toast(`Sidang diganti ke ke-${sidangUrutan()}: tanya jawab saksi dan naskah mengikuti sidang ini; isian ketikan tetap milik perkara.`);
     }
     renderRingkasBlangko();

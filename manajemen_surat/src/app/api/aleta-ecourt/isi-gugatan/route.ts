@@ -51,7 +51,9 @@ export async function GET(request: NextRequest) {
     const sebutan = { lawan: sebutanAman(q.get("lawan"), "Penggugat"), pelaku: sebutanAman(q.get("pelaku"), "Tergugat") };
     const majelisMasuk = String(q.get("majelis") || "");
     const majelis = /^(?:Majelis Hakim|Hakim|Hakim Tunggal)$/.test(majelisMasuk) ? majelisMasuk : undefined;
-    const kunci = `${nomor}|${sebutan.lawan}|${sebutan.pelaku}|${majelis || ""}`;
+    // JJ2: bukti=1 = baca juga berkas bukti (daftar bukti, surat keterangan KUA); hanya diminta panel bila halamannya memuat variabel bukti.
+    const denganBukti = q.get("bukti") === "1";
+    const kunci = `${nomor}|${sebutan.lawan}|${sebutan.pelaku}|${majelis || ""}|${denganBukti ? "bukti" : ""}`;
     const lama = singgah.get(kunci);
     if (q.get("ulang") !== "1" && lama && lama.sampai > Date.now()) return ok({ ...lama.hasil, dariSinggahan: true });
 
@@ -77,7 +79,8 @@ export async function GET(request: NextRequest) {
           return r.ok ? r.data : null;
         },
       },
-      majelis
+      majelis,
+      { denganBukti }
     );
     singgah.set(kunci, { sampai: Date.now() + SINGGAH_MS, hasil });
     if (singgah.size > 300) {

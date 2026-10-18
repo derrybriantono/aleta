@@ -18873,7 +18873,9 @@ function a3KartuKuasaKosong(tampil, sama, data) {
  *
  * Tidak ada yang ditulis sebelum petugas mencentang dan menekan Input ke ABT.
  */
-const P4_VAR_ECOURT = Object.freeze(["6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227"]);
+const P4_VAR_ECOURT = Object.freeze(["6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227", "8436", "8437", "9355", "9491", "9681", "9164", "9283", "9470", "9488", "9489", "9492", "9493", "9951", "9952", "0654", "0655"]);
+/** JJ2 (18 Okt): variabel bukti - halaman yang memuatnya meminta portal membaca juga berkas bukti (daftar bukti, surat keterangan KUA). */
+const P4_VAR_BUKTI = Object.freeze(["9470", "9488", "9489", "9492", "9493", "9951", "9952", "0654", "0655"]);
 const ALETA_API_ISI_GUGATAN = "/aleta/api/aleta-ecourt/isi-gugatan";
 
 /** Dibaca bersama bacaan Isi dari SIPP lainnya. Diam bila server lama belum punya rutenya. */
@@ -18887,6 +18889,7 @@ async function p4BacaGugatan(data) {
     const q = new URLSearchParams({ nomor, lawan: nilaiVariabel(VAR_PIHAK_LAWAN) || "", pelaku: nilaiVariabel(VAR_PIHAK_PELAKU) || "" });
     const majelis = String(nilaiVariabel("8554") || "").trim();
     if (/^(?:Majelis Hakim|Hakim|Hakim Tunggal)$/.test(majelis)) q.set("majelis", majelis);
+    if (P4_VAR_BUKTI.some((k) => peta.has(k))) q.set("bukti", "1");
     const respons = await fetch(`${ALETA_API_ISI_GUGATAN}?${q.toString()}`, { credentials: "include", cache: "no-store" });
     if (respons.status === 404) return;
     if (!respons.ok) throw new Error(`server ALETA menjawab ${respons.status}`);
@@ -19038,6 +19041,18 @@ function p4GambarEcourt(wadah, data) {
       });
       baris.appendChild(salin);
       if (Array.isArray(k.kosong) && k.kosong.length) baris.appendChild(buatElemen("div", "aleta-t6-lembut", `Lengkapi: ${k.kosong.map((x) => `{${x}}`).join(", ")}`));
+      // JJ2 (18 Okt): berkas jawaban/replik/duplik rapi ditulis otomatis ke tanya-jawab sidangnya (Blangko ABT); yang tidak rapi disalin dan diperiksa sendiri.
+      if (k.tanyaJawab) {
+        baris.appendChild(
+          buatElemen(
+            "div",
+            "aleta-t6-lembut",
+            k.tanyaJawab.rapi
+              ? "Berkas ini rapi: ditulis otomatis ke tanya-jawab sidang yang agendanya sesuai bila barisnya masih kosong (Blangko ABT)."
+              : `Format berkas tidak rapi, silakan salin dan periksa.${Array.isArray(k.tanyaJawab.alasan) && k.tanyaJawab.alasan.length ? ` (${k.tanyaJawab.alasan.slice(0, 3).join("; ")})` : ""}`
+          )
+        );
+      }
       kotak.appendChild(baris);
     }
   }

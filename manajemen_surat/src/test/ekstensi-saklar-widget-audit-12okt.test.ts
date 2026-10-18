@@ -342,6 +342,8 @@ describe("A. popup: tiap saklar menulis kunci dan nilai yang benar (dan membaca 
     { id: "derryTawar", kunci: "blangkoDerryTawar", bawaan: true },
     { id: "derrySaran", kunci: "blangkoDerrySaran", bawaan: true },
     { id: "derryIngat", kunci: "blangkoDerryIngat", bawaan: true },
+    // JJ2 (18 Okt): tanya-jawab jawab-menjawab otomatis dari berkas e-Court - bawaan menyala.
+    { id: "derryTjJawab", kunci: "blangkoDerryTjJawab", bawaan: true },
     // SIPP dengan Ide ALETA gelombang 1 (Tahap L2, 16 Okt) - popup-ide-l2.js.
     { id: "ideL2", kunci: "ideL2", bawaan: true },
     { id: "ideL2Sita", kunci: "ideL2Sita", bawaan: true },

@@ -20,7 +20,7 @@ import { pilihDokumenGugatan, type DokumenArsip } from "@/server/modules/aleta-e
  * Hanya membaca - penulis ABT tetap panel ekstensi sesudah petugas mencentang.
  */
 
-export type PeranDokumen = "gugatan" | "jawaban" | "replik" | "duplik" | "kesimpulan";
+export type PeranDokumen = "gugatan" | "jawaban" | "replik" | "duplik" | "kesimpulan" | "bukti";
 
 export type DokumenTerbaca = {
   judul: string;
@@ -33,6 +33,8 @@ export type DokumenTerbaca = {
   jenis?: string;
   /** Peran pengunggah di e-Court (Penggugat, Tergugat, Turut Tergugat, ...). */
   pengunggah?: string;
+  /** Tanggal unggah di e-Court (YYYY-MM-DD) - JJ2: mencocokkan jawaban/replik/duplik dengan sidangnya. */
+  diunggah?: string;
 };
 
 const POLA_JAWAB = /jawab|replik|duplik|kesimpulan|rekon[pv]ensi|eksepsi/i;
@@ -79,6 +81,25 @@ export function penuntutDari(d: DokumenArsip): "0046" | "0047" | "" {
   return "";
 }
 
+const POLA_BUKTI = /bukti|alat\s+bukti|daftar\s+bukti|surat\s+keterangan|keterangan\s+kua|akta\s+nikah|nikah\s+tidak\s+tercatat|\bkua\b|kantor\s+urusan\s+agama|(?:^|\s)[pt]\s*[-.]?\s*\d{1,2}(?:\s|$)/i;
+const POLA_BUKAN_BUKTI = /^\s*ktp\s*$|kartu\s+tanda\s+(?:penduduk|anggota)|berita\s+acara\s+penyumpahan|surat\s+kuasa|gugatan|permohonan|perbaikan|pencabutan/i;
+
+/**
+ * JJ2 (18 Okt): berkas bukti (daftar bukti, surat keterangan KUA / nikah tidak tercatat, akta) yang dibaca bila diminta.
+ * Berkas jawab-menjawab (termasuk daftar bukti yang diunggah sebagai "Kesimpulan") dan KTP/kartu tanda anggota tidak ikut.
+ * Judul yang menyebut daftar/alat bukti didahulukan; sisanya menurut waktu unggah.
+ */
+export function pilihDokumenBukti(dokumen: DokumenArsip[]): DokumenArsip[] {
+  const kunci = (d: DokumenArsip) => `${d.jenisDokumen || ""} ${d.judulDokumen || ""}`;
+  return dokumen
+    .filter((d) => POLA_BUKTI.test(kunci(d)) && !POLA_BUKAN_BUKTI.test(d.judulDokumen || "") && !POLA_JAWAB.test(kunci(d)))
+    .filter((d) => d.adaPdf || d.adaWord)
+    .sort((a, b) => Number(/daftar|alat/i.test(b.judulDokumen || "")) - Number(/daftar|alat/i.test(a.judulDokumen || "")) || String(a.diunggahPada || "").localeCompare(String(b.diunggahPada || "")));
+}
+
+/** Berapa berkas bukti yang dibaca sekali jalan (OCR tetap paling banyak sekali per permintaan, jawab-menjawab lebih dulu). */
+export const BATAS_BUKTI_BACA = 6;
+
 /** Berapa berkas jawab-menjawab yang dibaca sekali jalan (PDF berlapis teks murah; OCR tetap paling banyak sekali). */
 export const BATAS_JAWAB_BACA = 8;
 
@@ -112,7 +133,7 @@ export function rencanaBaca(dokumen: DokumenArsip[], batasJawab = BATAS_JAWAB_BA
   // Perbaikan gugatan menggantikan gugatan asal - dibaca lebih dulu bila ada.
   const perbaikan = dokumen.filter((d) => /perbaikan\s+gugatan|perubahan\s+gugatan/i.test(d.judulDokumen || "") && (d.adaPdf || d.adaWord));
   const gugatan = [...perbaikan, ...pilihDokumenGugatan(dokumen)].slice(0, 3);
-  return { gugatan, jawab: pilihJawabUntukDibaca(pilihDokumenJawab(dokumen), batasJawab) };
+  return { gugatan, jawab: pilihJawabUntukDibaca(pilihDokumenJawab(dokumen), batasJawab), bukti: pilihDokumenBukti(dokumen).slice(0, BATAS_BUKTI_BACA) };
 }
 
 export type DepsIsiGugatan = {
@@ -178,6 +199,11 @@ export type HasilIsiGugatan = {
   catatan: string[];
   /** KONTAK-EC 11 Okt: email/HP pihak & kuasa dari e-Court (bot kontakEcourtService) - null bila bot lama. */
   kontak?: Record<string, unknown> | null;
+  /** JJ2 18 Okt: jawaban/replik/duplik dengan baris tanya-jawab yang rapi (ditulis ekstensi bila sidangnya cocok). */
+  tanyaJawab?: unknown[];
+  /** JJ2 18 Okt: butir daftar bukti P.n/T.n terbaca, dan surat keterangan KUA (bukti P.3 itsbat). */
+  bukti?: unknown[];
+  suratKua?: Record<string, unknown> | null;
 };
 
 /** Baca berkas e-Court perkara -> usulan bot. OCR paling banyak sekali. */
@@ -185,14 +211,16 @@ export async function bacaIsiGugatan(
   nomor: string,
   sebutan: { lawan: string; pelaku: string },
   deps: DepsIsiGugatan,
-  majelis?: string
+  majelis?: string,
+  opsi: { denganBukti?: boolean } = {}
 ): Promise<HasilIsiGugatan> {
   const catatan: string[] = [];
   const kosong = (c: string[]): HasilIsiGugatan => ({ ada: false, tuntutan: [], anak: [], jawab: [], usulan: [], kalimat: [], diabaikan: [], dokumen: [], catatan: c });
   const rincian = await deps.rincian(nomor).catch(() => ({ ok: false, dokumen: [] as DokumenArsip[] }));
   if (!rincian.ok) return kosong(["Arsip e-Court perkara ini tidak terbaca dari ALETA Bot."]);
   const rencana = rencanaBaca(rincian.dokumen || []);
-  if (!rencana.gugatan.length && !rencana.jawab.length) return kosong(["Surat gugatan dan jawaban belum ada di arsip e-Court ALETA (perkara bukan e-Court, atau berkas belum ditarik)."]);
+  const bacaBukti = Boolean(opsi.denganBukti) && rencana.bukti.length > 0;
+  if (!rencana.gugatan.length && !rencana.jawab.length && !bacaBukti) return kosong(["Surat gugatan dan jawaban belum ada di arsip e-Court ALETA (perkara bukan e-Court, atau berkas belum ditarik)."]);
 
   let ocrDipakai = false;
   let sisa = BATAS_TOTAL;
@@ -219,7 +247,20 @@ export async function bacaIsiGugatan(
     if (!h.teks) continue;
     const teks = h.teks.slice(0, sisa);
     sisa -= teks.length;
-    terbacaDok.push({ judul: d.judulDokumen, peran, teks, baca: h.baca, penuntutKode: penuntutDari(d), halaman: h.halaman, jenis: d.jenisDokumen || "", pengunggah: d.peranPengunggah || "" });
+    terbacaDok.push({ judul: d.judulDokumen, peran, teks, baca: h.baca, penuntutKode: penuntutDari(d), halaman: h.halaman, jenis: d.jenisDokumen || "", pengunggah: d.peranPengunggah || "", diunggah: String(d.diunggahPada || "").slice(0, 10) });
+  }
+  // JJ2: berkas bukti dibaca terakhir (OCR hanya bila belum terpakai oleh gugatan/jawab-menjawab).
+  if (bacaBukti) {
+    for (const d of rencana.bukti) {
+      if (sisa <= 0) break;
+      const h = await bacaSatuDokumen(d, deps, !ocrDipakai);
+      if (h.baca === "ocr") ocrDipakai = true;
+      daftar.push({ judul: d.judulDokumen, peran: "bukti", baca: h.baca, halaman: h.halaman, terbaca: Boolean(h.teks), sebab: h.sebab });
+      if (!h.teks) continue;
+      const teks = h.teks.slice(0, Math.min(sisa, 20_000));
+      sisa -= teks.length;
+      terbacaDok.push({ judul: d.judulDokumen, peran: "bukti", teks, baca: h.baca, penuntutKode: penuntutDari(d), halaman: h.halaman, jenis: d.jenisDokumen || "", pengunggah: d.peranPengunggah || "", diunggah: String(d.diunggahPada || "").slice(0, 10) });
+    }
   }
   for (const d of daftar) if (!d.terbaca) catatan.push(`${d.judul}: teks tidak terbaca (${d.sebab || "kosong"}).`);
   if (!terbacaDok.length) return { ...kosong(catatan), dokumen: daftar };
@@ -248,6 +289,10 @@ export async function bacaIsiGugatan(
     catatan: [...catatan, ...larik("catatan").map(String)],
     // KONTAK-EC 11 Okt
     kontak: jawaban.kontak && typeof jawaban.kontak === "object" ? (jawaban.kontak as Record<string, unknown>) : null,
+    // JJ2 18 Okt
+    tanyaJawab: larik("tanyaJawab"),
+    bukti: larik("bukti"),
+    suratKua: jawaban.suratKua && typeof jawaban.suratKua === "object" ? (jawaban.suratKua as Record<string, unknown>) : null,
   };
 }
 

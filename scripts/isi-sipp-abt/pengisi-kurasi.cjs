@@ -74,6 +74,50 @@ const KELOMPOK = [
     syarat: "perkara e-Court dengan berkas jawab-menjawab berlapis teks (OCR bila pindaian); semua usulan ragu dan tidak menimpa isian petugas, belum diukur atas berkas sungguhan (ukur di server)",
   },
   {
+    // JJ2 18 Okt 2026 (keputusan 74): jawaban/replik/duplik tertulis yang RAPI ditulis otomatis ke tanya-jawab ABT per sidang.
+    id: "tanya-jawab-jawab-menjawab",
+    kode: ["6112", "6113", "6114", "2018", "2019", "2020"],
+    untuk: "semua",
+    berkas: "ekstensi-sipp/blangko-derry-isian.js",
+    sumber:
+      "jawaban/replik/duplik e-Court yang lolos ukuran rapi (aleta_bot/services/tanyaJawabEcourtService.js: struktur dalil, tanpa kop/tanda tangan/nomor halaman/karakter rusak, panjang wajar, bukan OCR, satu berkas per peran) ditulis ke penyunting tanya-jawab sidang yang agendanya sesuai",
+    tingkat: "otomatis",
+    sebagian: true,
+    syarat:
+      "hanya berkas rapi dan hanya bila baris tanya-jawab sidang itu masih kosong (baris yang ada tidak pernah ditimpa); saklar 'Tanya-jawab jawab-menjawab otomatis' bawaan menyala; yang tidak rapi tetap disalin dan diperiksa petugas",
+  },
+  {
+    // JJ2 18 Okt 2026 (keputusan 75a): daftar bukti P.n / T.n dari berkas daftar bukti e-Court (usulan ragu).
+    id: "bukti-daftar-ecourt",
+    kode: ["9470", "9488", "9489", "9492", "9493", "9951", "9952"],
+    untuk: "semua",
+    berkas: "aleta_bot/services/buktiEcourtService.js",
+    sumber:
+      "daftar bukti Penggugat P.n dan Tergugat T.n yang diunggah ke e-Court (judul Daftar Bukti, atau diunggah sebagai Kesimpulan): nama, jenis, nomor, tanggal; surat -> 9470/9488/9492 (P) dan 9489/9493 (T), bukti elektronik -> 9951/9952",
+    tingkat: "usulan",
+    syarat: "perkara e-Court dengan berkas daftar bukti berlapis teks; semua usulan ragu dan tidak menimpa isian petugas, belum diukur atas berkas sungguhan (ukur di server)",
+  },
+  {
+    // JJ2 18 Okt 2026 (keputusan 71): No./Tgl. Surat Keterangan KUA = bukti P.3 itsbat.
+    id: "surat-keterangan-kua-itsbat",
+    kode: ["0654", "0655"],
+    untuk: "semua",
+    berkas: "aleta_bot/services/buktiEcourtService.js",
+    sumber: "posita gugatan e-Court (nomor dan tanggal surat keterangan KUA / nikah tidak tercatat), lalu daftar bukti, lalu isi berkas bukti (OCR paling ragu)",
+    tingkat: "usulan",
+    syarat: "itsbat nikah; usulan ragu sampai diukur atas berkas sungguhan; tidak terbaca -> dikosongkan untuk diisi manual",
+  },
+  {
+    // JJ2 18 Okt 2026 (keputusan 75b dan 75c).
+    id: "jawaban-sita-hb-rekonvensi",
+    kode: ["9164", "9283"],
+    untuk: "semua",
+    berkas: "aleta_bot/services/jawabKhususEcourtService.js",
+    sumber: "jawaban Tergugat e-Court: dalil bersikap tentang sita (9164); daftar objek harta bersama di bagian rekonvensi (9283)",
+    tingkat: "usulan",
+    syarat: "jawaban tertulis berlapis teks; usulan ragu dan tidak menimpa isian petugas, belum diukur atas berkas sungguhan",
+  },
+  {
     id: "itsbat-pasangan-meninggal",
     kode: ["1025", "1246", "1247", "1509"],
     untuk: ["itsbat-nikah"],
@@ -150,20 +194,20 @@ const TANPA_SUMBER = {
 
 // Sumber data yang MUNGKIN bagi isian yang belum terisi (dipakai kolom "sumber yang mungkin" di daftar cek).
 const KURASI = {
-  "tj:jawaban lisan 0047": ["lisan: diketik panitera (tidak ada kolom terstruktur di SIPP). Tertulis: butir pokok dari berkas e-Court tersedia sebagai kalimat salin 'jawab-tertulis-jawaban' (isi-gugatan); tanya-jawab tidak ditulis otomatis", "Blangko putusan: 'COPY FILE JAWABAN APABILA TERTULIS' - kini butir pokoknya disiapkan; 9881 diisi 'tertulis' bila berkasnya ada."],
-  "tj:replik lisan 0046": ["lisan: diketik panitera. Tertulis: butir pokok replik e-Court sebagai kalimat salin 'jawab-tertulis-replik'; tanya-jawab tidak ditulis otomatis", ""],
-  "tj:duplik lisan 0047": ["lisan: diketik panitera. Tertulis: butir pokok duplik/rereplik e-Court sebagai kalimat salin 'jawab-tertulis-duplik'; tanya-jawab tidak ditulis otomatis", ""],
+  "tj:jawaban lisan 0047": ["lisan: diketik panitera (tidak ada kolom terstruktur di SIPP). Tertulis: berkas jawaban e-Court yang rapi ditulis otomatis ke tanya-jawab sidang beragenda jawaban bila barisnya kosong; yang tidak rapi disalin petugas (kalimat salin 'jawab-tertulis-jawaban')", "Blangko putusan: 'COPY FILE JAWABAN APABILA TERTULIS' - JJ2: ditulis otomatis bila rapi; 9881 diisi 'tertulis' bila berkasnya ada."],
+  "tj:replik lisan 0046": ["lisan: diketik panitera. Tertulis: replik e-Court yang rapi ditulis otomatis ke tanya-jawab sidang beragenda replik bila barisnya kosong; yang tidak rapi disalin (kalimat salin 'jawab-tertulis-replik')", ""],
+  "tj:duplik lisan 0047": ["lisan: diketik panitera. Tertulis: duplik e-Court yang rapi ditulis otomatis ke tanya-jawab sidang beragenda duplik bila barisnya kosong; yang tidak rapi disalin (kalimat salin 'jawab-tertulis-duplik'); rereplik tidak punya kolom sendiri", ""],
   "0711": ["posita/petitum hadhanah (belum ada aturan)", "Hanya 1 blangko."],
   "9220": ["keterangan Termohon di sidang ikrar (BAS ikrar)", "Hanya 1 blangko."],
   "8617": ["tidak ada (penilaian hakim atas cacat formil)", ""],
-  "9164": ["jawaban e-Court (paragraf tentang sita) bila Tergugat menjawab tertulis - belum dibangun; selebihnya diketik di sidang insidentil", "JJ 18 Okt: pengisi jawab-menjawab belum memilah dalil per topik sita."],
+  "9164": ["jawaban e-Court (dalil Tergugat tentang sita) - JJ2: diusulkan ragu; tanggapan yang hanya diucapkan di sidang insidentil diketik petugas", "JJ2 18 Okt: hanya dalil yang subjeknya Tergugat dan bersikap tegas; belum diukur atas berkas sungguhan."],
   "9165": ["tidak ada (hasil pemeriksaan setempat)", "Perkara kebendaan, sangat jarang."],
   "9166": ["tidak ada (hasil pemeriksaan setempat)", ""],
   "9167": ["tidak ada (hasil pemeriksaan setempat)", ""],
   "9168": ["tidak ada (hasil pemeriksaan setempat)", ""],
   "0889": ["posita itsbat (duplikat akta nikah; belum ada aturan)", "Jarang."],
   "1108": ["posita itsbat (duplikat akta nikah; belum ada aturan)", "Jarang."],
-  "9283": ["jawaban/gugatan rekonvensi e-Court", "Harta bersama dengan rekonvensi, sangat jarang."],
+  "9283": ["jawaban/gugatan rekonvensi e-Court - JJ2: objek dari daftar bernomor sesudah kalimat 'harta bersama berupa' di bagian rekonvensi (usulan ragu)", "Harta bersama dengan rekonvensi, sangat jarang; belum diukur atas berkas sungguhan."],
   "9460": ["gugatan e-Court pencegahan perkawinan", "Jenis 342: 0 perkara sejak 2023 (2 sejak 2018); belum ada modul jenisnya."],
   "9461": ["gugatan e-Court pencegahan perkawinan", "Jenis 342 sangat jarang."],
   "9462": ["gugatan e-Court pencegahan perkawinan", "Jenis 342 sangat jarang."],

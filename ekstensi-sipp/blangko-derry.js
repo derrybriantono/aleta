@@ -71,6 +71,8 @@
     tawar: "blangkoDerryTawar",
     saran: "blangkoDerrySaran",
     ingat: "blangkoDerryIngat",
+    // JJ2 (18 Okt): tanya-jawab jawab-menjawab otomatis dari berkas e-Court (bawaan NYALA).
+    tjJawab: "blangkoDerryTjJawab",
     // F1.5 (17 Okt): gembok panel ALETA di ABT biasa (sama dengan popup & tombol gembok panel).
     gembok: "gembokKepalaAbt",
     tema: "temaPanel",
@@ -434,7 +436,7 @@
   // Keadaan
   // ──────────────────────────────────────────────────────────────────────────
   const S = {
-    cfg: { bawaan: false, tawar: true, saran: true, ingat: true },
+    cfg: { bawaan: false, tawar: true, saran: true, ingat: true, tjJawab: true },
     tema: "gelap",
     siapa: null,
     siapaGalat: "",
@@ -575,13 +577,14 @@
       tawar: s[K.tawar] !== false,
       saran: s[K.saran] !== false,
       ingat: s[K.ingat] !== false,
+      tjJawab: s[K.tjJawab] !== false,
       gembok: s[K.gembok] === true,
     };
     S.tema = s[K.tema] === "terang" ? "terang" : "gelap";
     S.ukuran = Object.prototype.hasOwnProperty.call(UKURAN, s[K.ukuran]) ? s[K.ukuran] : "biasa";
   }
   async function muatSetelan() {
-    const s = await bacaPenyimpanan([K.bawaan, K.tawar, K.saran, K.ingat, K.gembok, K.tema, K.daftar, K.aktif, K.ukuran]);
+    const s = await bacaPenyimpanan([K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.gembok, K.tema, K.daftar, K.aktif, K.ukuran]);
     terapkanSetelan(s);
     const d = s[K.daftar];
     if (d && typeof d === "object") {
@@ -1325,6 +1328,7 @@
     ["tawar", "Tawarkan Blangko ABT by Derry Briantono di ABT biasa", "", ["hakim", "pp", "js"]],
     ["saran", "Saran isian (bayangan, tekan Tab)", "Usulan dari SIPP, gugatan dan riwayat", ["hakim", "pp"]],
     ["ingat", "Ingatkan isian yang masih kosong sebelum cetak", "juga tombol Cetak panel ALETA di ABT biasa", ["hakim", "pp", "js"]],
+    ["tjJawab", "Tanya-jawab jawab-menjawab otomatis", "jawaban, replik, duplik tertulis yang rapi ditulis ke sidang yang sesuai bila barisnya kosong", ["hakim", "pp"]],
     ["gembok", "Gembok panel ALETA di ABT biasa: selalu tampil penuh", "mati = Ringkas otomatis (panel tinggal kepalanya saat menutupi tabel)", ["hakim", "pp", "js"]],
   ];
   function saklarUntukPeran() {
@@ -1421,7 +1425,7 @@
 
   // ── Peristiwa ─────────────────────────────────────────────────────────────
   function ubahSaklar(kunciCfg, nilai) {
-    const peta = { bawaan: K.bawaan, tawar: K.tawar, saran: K.saran, ingat: K.ingat, gembok: K.gembok };
+    const peta = { bawaan: K.bawaan, tawar: K.tawar, saran: K.saran, ingat: K.ingat, tjJawab: K.tjJawab, gembok: K.gembok };
     if (!peta[kunciCfg]) return;
     S.cfg[kunciCfg] = Boolean(nilai);
     void tulisPenyimpanan({ [peta[kunciCfg]]: Boolean(nilai) });
@@ -1594,7 +1598,7 @@
     if (wilayah !== "local" || !ubah) return;
     const s = {};
     let berubah = false;
-    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.gembok, K.tema, K.ukuran]) {
+    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.gembok, K.tema, K.ukuran]) {
       if (ubah[k]) {
         berubah = true;
         s[k] = ubah[k].newValue;
@@ -1607,6 +1611,7 @@
         [K.tawar]: S.cfg.tawar,
         [K.saran]: S.cfg.saran,
         [K.ingat]: S.cfg.ingat,
+        [K.tjJawab]: S.cfg.tjJawab,
         [K.gembok]: S.cfg.gembok,
         [K.tema]: S.tema,
         [K.ukuran]: S.ukuran,

@@ -124,5 +124,135 @@
       }
     ],
     "catatan": "Bunyi bawaan ABT 8436: 'tetap pada gugatan semula untuk bercerai dengan <pihak>'. Isi surat kesimpulan belum dapat dibandingkan karena PDF-nya tidak ada di laptop."
+  },
+  "JJ2": {
+    "dibuat": "2026-10-18",
+    "sumber": "salinan lokal aleta_bot / aps_badilag / sipp_donggala (hanya SELECT); berkas PDF e-Court tidak ada di laptop",
+    "A_metadata": {
+      "perkaraDenganBerkasTanyaJawab": 23,
+      "perPeran": {
+        "jawaban": {
+          "perkara": 17,
+          "tepatSatuBerkas": 15,
+          "lebihDariSatu": 2,
+          "jenisJudulBertentangan": 0
+        },
+        "replik": {
+          "perkara": 18,
+          "tepatSatuBerkas": 18,
+          "lebihDariSatu": 0,
+          "jenisJudulBertentangan": 1
+        },
+        "duplik": {
+          "perkara": 13,
+          "tepatSatuBerkas": 13,
+          "lebihDariSatu": 0,
+          "jenisJudulBertentangan": 0
+        }
+      },
+      "agendaDokumenMemuatPeran": {
+        "jawaban": {
+          "cocok": 19,
+          "dari": 19,
+          "persen": 100
+        },
+        "replik": {
+          "cocok": 15,
+          "dari": 18,
+          "persen": 83.3
+        },
+        "duplik": {
+          "cocok": 13,
+          "dari": 13,
+          "persen": 100
+        }
+      },
+      "bukti": {
+        "berkasBerjudulDaftarAtauAlatBukti": 9,
+        "perkaraDenganBerkasDaftarBukti": 7,
+        "berkasBerjudulDokumenBukti": 482,
+        "berkasBukti_pengunggahKosong": 493,
+        "berkasKesimpulanBerjudulDaftarBukti": 3,
+        "catatan": "Berkas bukti di arsip hampir semuanya 'Dokumen Bukti' dengan pengunggah kosong (bukti yang menyertai pendaftaran): nomor P/T hanya dapat dibaca dari ISI berkas daftar bukti, bukan metadata."
+      }
+    },
+    "B_sidangTujuanAtasMetadata": {
+      "berkasDinilai": 46,
+      "tanpaJadwalSipp": 0,
+      "sidangTujuanDitemukan": 43,
+      "tanpaSidangBeragendaCocok": 2,
+      "tanggalUnggahMelewatiSidangTerakhir": 1,
+      "tujuanSamaDenganSidangDiaturDokumen": null,
+      "persenDitemukanDariDinilai": 93.5
+    },
+    "C_kebiasaanPetugasTanyaJawab": {
+      "kelompokPetugas": 118,
+      "bukanTanyaJawabPihak": 42,
+      "perPeran": {
+        "jawaban": {
+          "kelompok": 42,
+          "agendaSidangMemuatPeran": 2,
+          "tujuanTanpaTanggalSamaDenganPetugas": 2,
+          "agendaLain": [
+            "Upaya Damai ",
+            "pembacaan gugatan",
+            "Sidang kedua",
+            "Sidang Kedua",
+            "Mendengarkan hasil mediasi",
+            "Pembacaan gugatan Penggugat",
+            "Pembacaan Hasil Mediasi ",
+            "Pembuktian Lanjutan ",
+            "laporan mediasi ",
+            "Mendengar laporan mediator",
+            "Pembacaan Laporan Mediasi ",
+            "mendengarkan hasil mediasi"
+          ],
+          "persenAgendaMemuatPeran": 4.8
+        },
+        "replik": {
+          "kelompok": 0,
+          "agendaSidangMemuatPeran": 0,
+          "tujuanTanpaTanggalSamaDenganPetugas": 0,
+          "agendaLain": [],
+          "persenAgendaMemuatPeran": null
+        },
+        "duplik": {
+          "kelompok": 34,
+          "agendaSidangMemuatPeran": 2,
+          "tujuanTanpaTanggalSamaDenganPetugas": 2,
+          "agendaLain": [
+            "Upaya Damai ",
+            "Sidang kedua",
+            "Sidang Kedua",
+            "Pembacaan gugatan Penggugat",
+            "Pembacaan Hasil Mediasi ",
+            "Mendengar laporan mediator",
+            "Pembacaan Laporan Mediasi ",
+            "mendengarkan hasil mediasi",
+            "Pembacaan HAsil Mediasi",
+            "Sidang Kedua/Hasil Laporan Mediasi",
+            "Upaya Damai/Laporan Mediasi",
+            "Sidang kedua"
+          ],
+          "persenAgendaMemuatPeran": 5.9
+        }
+      },
+      "irisanArsipDanPetugas": [],
+      "irisanSama": 0,
+      "temuan": "Tanya-jawab LISAN yang diketik petugas hampir selalu pada sidang beragenda umum (Upaya Damai, Sidang kedua, laporan mediasi): agenda sidangnya memuat kata jawaban/replik/duplik hanya pada sebagian kecil kelompok. Karena itu aturan 'agenda memuat peran' HANYA dipakai untuk berkas TERTULIS di e-Court (agenda berkasnya memuat peran pada hampir semua berkas, bagian A); sidang beragenda umum tidak ditulis otomatis dan jatuh ke tombol Salin. Tidak ada perkara yang punya berkas tertulis di arsip DAN tanya-jawab ketikan petugas (irisan 0), sehingga sidang tujuan belum dapat dibandingkan langsung dengan pilihan petugas.",
+      "catatan": "Kelompok = (perkara, sidang, pihak) di abt_keterangan_terdakwa; pihak_id jawaban = perkara_pihak2.id, replik = '11'+id, duplik = '22'+id (Abt_model::GetIdPerkaraPihak). Agenda sidang dari perkara_jadwal_sidang SIPP lokal."
+    },
+    "D_isianPetugas": {
+      "barisDitemukan": [],
+      "catatan": "Kosong: variabel-variabel ini baru dibuat (paket 18 Okt) dan belum ada isian petugas di salinan lokal, sehingga bentuk nomor/tanggal KUA, daftar bukti, tanggapan sita, dan objek harta bersama tidak dapat dibandingkan dengan kebiasaan petugas di laptop."
+    },
+    "rencanaSenin": [
+      "1. Tanya-jawab (no. 74): jalankan isi-gugatan (bukti=1) atas 30 perkara e-Court yang SUDAH punya tanya-jawab jawaban/replik/duplik ketikan petugas di ABT; bandingkan tanyaJawab[].baris dengan baris petugas (mirip >= 0,8 per butir) dan catat: berapa berkas rapi, berapa tidak rapi + alasannya, berapa sidang tujuan sama dengan sidang yang diisi petugas.",
+      "2. Ukuran rapi: ambil 50 berkas jawaban/replik/duplik acak, nilai manual 'rapi' oleh satu hakim/panitera; hitung salah-rapi (dianggap rapi tapi kacau) - target 0 dari 50 sebelum saklar tetap menyala; salah-tidak-rapi boleh (jatuh ke Salin).",
+      "3. Bukti (no. 75a): untuk perkara berarsip daftar bukti, bandingkan butir P.n/T.n hasil baca dengan isian petugas di 9955/9957/9470/9488/9492 (jenis dan nomor/tanggal); catat butir yang tak terbaca dan yang salah jenis.",
+      "4. KUA (no. 71): atas perkara itsbat, bandingkan nomor/tanggal dari posita, dari daftar bukti, dan dari OCR dengan isian petugas 0654/0655 (cocok persis); bila posita >= 95% cocok persis atas >= 20 perkara, naikkan tingkatnya dari ragu ke cukup.",
+      "5. Sita/HB (75b, 75c): periksa 9164 dan 9283 atas semua perkara berjawaban yang menyebut sita atau rekonvensi harta bersama; bila ragu-nya tinggi, biarkan ragu.",
+      "6. Bila Senin ternyata ada tanya-jawab yang salah ditulis: matikan saklar 'Tanya-jawab jawab-menjawab otomatis' di popup ekstensi/Widget (per akun); baris yang sudah ditulis dapat disunting/dihapus petugas di penyunting tanya-jawab ABT biasa."
+    ]
   }
 }

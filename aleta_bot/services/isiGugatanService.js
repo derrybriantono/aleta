@@ -35,6 +35,9 @@ const T = require("./tuntutanDeteksiService");
 const K = require("./kalimatHakimService");
 const U = require("./abtUsulanService");
 const J = require("./jawabMenjawabEcourtService");
+const TJ = require("./tanyaJawabEcourtService");
+const KH = require("./jawabKhususEcourtService");
+const B = require("./buktiEcourtService");
 
 const VAR = Object.freeze({
   mutah: "6055",
@@ -56,14 +59,15 @@ const VAR = Object.freeze({
 });
 
 const BATAS_TEKS = 400000;
-const PERAN_SAH = new Set(["gugatan", "jawaban", "replik", "duplik", "kesimpulan", "rekonvensi"]);
+const PERAN_SAH = new Set(["gugatan", "jawaban", "replik", "duplik", "kesimpulan", "rekonvensi", "bukti"]);
 
 /** Masukan dari portal (sudah disaring portal; disaring sekali lagi di sini). */
 function saringDokumen(dokumen) {
   let sisa = BATAS_TEKS;
   const hasil = [];
-  // JJ 18 Okt: sampai 12 berkas (satu gugatan + jawaban, replik, duplik, rereplik, kesimpulan kedua pihak).
-  for (const d of Array.isArray(dokumen) ? dokumen.slice(0, 12) : []) {
+  // JJ 18 Okt: sampai 12 berkas (satu gugatan + jawaban, replik, duplik, rereplik, kesimpulan kedua pihak);
+  // JJ2 18 Okt: ditambah sampai 6 berkas bukti (daftar bukti, surat keterangan KUA) bila diminta portal.
+  for (const d of Array.isArray(dokumen) ? dokumen.slice(0, 18) : []) {
     if (!d || typeof d !== "object") continue;
     const peran = PERAN_SAH.has(String(d.peran)) ? String(d.peran) : "gugatan";
     const teks = String(d.teks || "").slice(0, Math.max(0, sisa));
@@ -79,6 +83,8 @@ function saringDokumen(dokumen) {
       // Jenis dokumen & pengunggah menurut e-Court: dasar pengenalan jawaban/replik/duplik/kesimpulan (jawabMenjawabEcourtService).
       jenis: String(d.jenis || "").replace(/[\r\n]+/g, " ").slice(0, 60),
       pengunggah: String(d.pengunggah || "").replace(/[\r\n]+/g, " ").slice(0, 60),
+      // JJ2: tanggal unggah di e-Court (YYYY-MM-DD) - dasar mencocokkan jawaban/replik/duplik dengan sidangnya.
+      diunggah: /^\d{4}-\d{2}-\d{2}/.test(String(d.diunggah || "")) ? String(d.diunggah).slice(0, 10) : "",
     });
   }
   return hasil;
@@ -145,9 +151,12 @@ function bunyiDikaruniai(nilai) {
 function susunIsiGugatan(masukan) {
   const m = masukan || {};
   const sebutan = { lawan: String((m.sebutan && m.sebutan.lawan) || "").slice(0, 40) || "Penggugat", pelaku: String((m.sebutan && m.sebutan.pelaku) || "").slice(0, 40) || "Tergugat" };
-  const dokumen = saringDokumen(m.dokumen);
+  const semuaBerkas = saringDokumen(m.dokumen);
+  // JJ2: berkas bukti (daftar bukti, surat keterangan KUA) dipisah - tidak ikut deteksi tuntutan/anak/jawab-menjawab.
+  const dokumen = semuaBerkas.filter((d) => d.peran !== "bukti");
+  const berkasBukti = semuaBerkas.filter((d) => d.peran === "bukti");
   const catatan = [];
-  if (!dokumen.length) return { ok: true, ada: false, tuntutan: [], anak: [], jawab: [], usulan: [], kalimat: [], diabaikan: [], catatan: ["Tidak ada teks berkas e-Court yang terbaca."] };
+  if (!semuaBerkas.length) return { ok: true, ada: false, tuntutan: [], anak: [], jawab: [], usulan: [], kalimat: [], diabaikan: [], tanyaJawab: [], bukti: [], catatan: ["Tidak ada teks berkas e-Court yang terbaca."] };
 
   // ── Tuntutan per dokumen, lalu digabung ──
   const semua = [];
@@ -191,6 +200,19 @@ function susunIsiGugatan(masukan) {
   // ── Jawab-menjawab (JJ 18 Okt: jenis dikenali dari jenis/judul e-Court DAN isi surat) ──
   const jm = J.susunJawabMenjawab({ dokumen, sebutan });
   const infoJm = new Map(jm.dokumen.map((x) => [dokumen[x.indeks], x]));
+
+  // ── JJ2 (18 Okt): jawaban/replik/duplik rapi -> baris tanya-jawab ABT (6112/6113/6114) ──
+  // Ditulis OLEH EKSTENSI (bukan di sini) bila baris ABT sidang yang sesuai masih kosong; ukuran "rapi" ada di tanyaJawabEcourtService.
+  const tanyaJawab = [];
+  const cacahPeran = new Map();
+  for (const x of jm.dokumen) if (x.dipakai && TJ.TUJUAN[x.peran]) cacahPeran.set(x.peran, (cacahPeran.get(x.peran) || 0) + 1);
+  for (const x of jm.dokumen) {
+    if (!x.dipakai || !TJ.TUJUAN[x.peran]) continue;
+    const dk = dokumen[x.indeks];
+    const h = TJ.tanyaJawabDariSurat({ teks: dk.teks, k: J.kenaliJenis(dk), baca: dk.baca, sebutan, banyakSePeran: cacahPeran.get(x.peran) || 1, diunggah: dk.diunggah });
+    tanyaJawab.push({ indeks: x.indeks, judul: dk.judul, ...h, keterangan: TJ.keteranganFormat(h) });
+  }
+  const tjDari = new Map(tanyaJawab.map((t) => [dokumen[t.indeks], t]));
   const jawab = dokumen
     .filter((d) => d.peran !== "gugatan")
     .filter((d) => {
@@ -217,6 +239,8 @@ function susunIsiGugatan(masukan) {
         dibantah: sikap.dibantah,
         rekonvensi: i && i.rekonvensi ? i.rekonvensi : d.rekonvensi || (T.bagianDokumen(T.datarkan(T.rapikanTeks(d.teks))).rekonvensi >= 0 ? "ada" : "tidak"),
         tuntutan: tuntutan.filter((t) => t.dok === d).length,
+        // JJ2: apakah berkas ini rapi untuk ditulis otomatis ke tanya-jawab ABT, dan bila tidak, kenapa.
+        tanyaJawab: tjDari.has(d) ? { rapi: tjDari.get(d).rapi, kode: tjDari.get(d).kode, alasan: tjDari.get(d).alasan, keterangan: tjDari.get(d).keterangan, butir: tjDari.get(d).ukuran.butir || 0 } : null,
       };
     });
 
@@ -302,6 +326,62 @@ function susunIsiGugatan(masukan) {
   usulan.push(...jm.usulan);
   catatan.push(...jm.catatan);
 
+  // JJ2: 9164 (tanggapan Tergugat atas sita) dan 9283 (objek harta bersama rekonvensi) dari jawaban; semuanya ragu, isian petugas menang.
+  {
+    const jawabanPelaku = jm.dokumen.filter((x) => x.dipakai && (x.peran === "jawaban" || x.peran === "duplik") && !x.turut && (x.pihak === "0047" || !x.pihak));
+    jawabanPelaku.sort((a, b) => (a.peran === b.peran ? a.indeks - b.indeks : a.peran === "jawaban" ? -1 : 1));
+    const sita = [];
+    for (const x of jawabanPelaku) {
+      const dk = dokumen[x.indeks];
+      const bersih = J.bersihkanSurat(dk.teks);
+      const penulis = J.sebutanPeran(x.peran, x.pihak, sebutan, false);
+      const t = KH.tanggapanSita(bersih, { sebutan, penulis });
+      if (t) sita.push({ t, dk });
+      if (x.peran === "jawaban" && x.rekonvensi === "ada" && !usulan.some((u) => u.kode === KH.KODE.hbRekonvensi)) {
+        const hb = KH.objekHartaBersamaRekonvensi(bersih);
+        if (hb) {
+          usulan.push({
+            kode: KH.KODE.hbRekonvensi,
+            nama: "Harta bersama rekonvensi: objek yang digugat",
+            nilai: hb.nilai,
+            keyakinan: "ragu",
+            bentrok: "",
+            jagaIsianLama: true,
+            sumber: sumberDari(dk, hb.kutipan, null),
+            kodePola: "jawaban-rekonvensi-harta-bersama",
+            catatan: `${hb.objek.length} objek harta bersama yang digugat dalam rekonvensi, satu per baris, dibaca dari ${dk.baca === "ocr" ? "hasil OCR" : "teks"} jawaban - periksa uraian dan ejaannya.`,
+          });
+        }
+      }
+    }
+    if (sita.length) {
+      const { t, dk } = sita[0];
+      usulan.push({
+        kode: KH.KODE.tanggapanSita,
+        nama: "Tanggapan Tergugat/Termohon atas permohonan sita",
+        nilai: t.nilai,
+        keyakinan: "ragu",
+        bentrok: "",
+        jagaIsianLama: true,
+        sumber: sumberDari(dk, t.kutipan, null),
+        kodePola: "jawaban-tanggapan-sita",
+        catatan: `Dalil jawaban tentang sita diambil apa adanya${t.kandidat > 1 ? ` (ada ${t.kandidat} dalil yang menyebut sita, dipakai yang pertama bersikap)` : ""}${t.orangPertamaDiganti ? "; kata saya/kami diganti sebutan pihak" : ""} - sunting bila tanggapan di sidang insidentil berbeda.`,
+      });
+    }
+  }
+
+  // JJ2: daftar bukti P.n/T.n, bukti elektronik, dan surat keterangan KUA (bukti P.3 itsbat) - semuanya ragu.
+  const daftarBukti = jm.dokumen.filter((x) => x.peran === "bukti").map((x) => dokumen[x.indeks]);
+  const berkasBuktiLain = [];
+  for (const d of berkasBukti) {
+    const u = B.uraiDaftarBukti(d.teks, `${d.judul} ${d.pengunggah}`);
+    if (u.butir.length >= 2 && (u.adaJudul || u.butir.some((b) => !b.kodeDariUrutan))) daftarBukti.push(d);
+    else berkasBuktiLain.push(d);
+  }
+  const bk = B.susunBukti({ daftar: daftarBukti, berkasBukti: berkasBuktiLain, posita, sebutan });
+  usulan.push(...bk.usulan);
+  catatan.push(...bk.catatan);
+
   // 5227 - bunyi pilihan dari dalil gugatan (templat hakim)
   const v5227 = ciri.length ? K.varian5227(ciri, sebutan) : { varian: [], tanpaFrasa: [] };
   // R2 14 Okt: sebab yang tidak tertangkap ciri lama (cerai talak: keluarga Termohon ikut campur,
@@ -362,7 +442,14 @@ function susunIsiGugatan(masukan) {
   kalimat.push(...K.kalimatBersesuaian(sebutan, "lawan"));
   if (jawab.length) kalimat.push(...K.kalimatBersesuaian(sebutan, "pelaku"), ...K.kalimatBersesuaian(sebutan, "keduanya"));
   // JJ 18 Okt: butir jawaban/replik/duplik dan klausa kesimpulan tertulis, siap disalin ke blangko putusan.
-  kalimat.push(...jm.kalimat);
+  // JJ2: tiap butir salin membawa keadaan formatnya - rapi (ditulis otomatis bila sidangnya cocok) atau "tidak rapi, salin dan periksa".
+  kalimat.push(
+    ...jm.kalimat.map((kl) => {
+      const t = tanyaJawab.find((x) => kl.kode === `jawab-tertulis-${x.peran}-${x.pihak || "x"}`);
+      return t ? { ...kl, tanyaJawab: { rapi: t.rapi, kode: t.kode, alasan: t.alasan, keterangan: t.keterangan } } : kl;
+    })
+  );
+  kalimat.push(...bk.kalimat);
   const ct = /pemohon/i.test(sebutan.lawan);
   if (ct) {
     const tidakAda = ["mutah", "iddah"].filter((j) => !tuntutan.some((t) => t.jenis === j));
@@ -397,6 +484,10 @@ function susunIsiGugatan(masukan) {
     usulan,
     kalimat,
     diabaikan,
+    // JJ2: baris tanya-jawab yang rapi (ditulis ekstensi bila sidangnya cocok dan barisnya kosong), daftar bukti terbaca, surat keterangan KUA.
+    tanyaJawab: tanyaJawab.map((t) => ({ indeks: t.indeks, judul: t.judul, peran: t.peran, kode: t.kode, rujukan: t.rujukan, kunci: t.kunci, pihak: t.pihak, rapi: t.rapi, alasan: t.alasan, keterangan: t.keterangan, diunggah: t.diunggah, ukuran: t.ukuran, baris: t.baris })),
+    bukti: bk.butir.map((b) => ({ kode: b.kode, pihak: b.pihak, jenis: b.jenis, nama: b.nama, nomor: b.nomor, tanggal: b.tanggal ? b.tanggal.tampil : "", elektronik: b.elektronik, uraian: b.uraian, sumber: b.sumber })),
+    suratKua: bk.kua ? { nomor: bk.kua.nomor, tanggal: bk.kua.tanggal ? bk.kua.tanggal.tampil : "", asal: bk.kua.asal, jelas: Boolean(bk.kua.jelas) } : null,
     catatan,
   };
 }
