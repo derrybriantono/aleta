@@ -3946,12 +3946,12 @@ function pwhIsianKosong(teks) {
  * (juga bila tombol itsbat tampil: blangko perwalian/asal usul memuat #5197#). Keyakinannya diputuskan bot.
  */
 const Y_VARIABEL_JENIS = Object.freeze({
-  349: Object.freeze(["0709", "0711", "2004", "8603"]),
+  349: Object.freeze(["0709", "0711", "2004", "8603", "9720"]),
   352: Object.freeze(["8603", "8618", "8619", "8622", "8623"]),
   354: Object.freeze(["0007", "0709", "0712", "1025", "1230", "5105", "5110", "5178", "5197", "8171"]),
   358: Object.freeze(["8603", "8605"]),
   363: Object.freeze(["1014", "1029", "1030", "1046", "1217", "3333", "6087"]),
-  369: Object.freeze(["0007", "0709", "0711", "0712", "1025", "1230", "2004", "5105", "5110", "5178", "5197", "8171", "8603", "8618", "8619", "8622", "8623"]),
+  369: Object.freeze(["0007", "0709", "0711", "0712", "1025", "1230", "2004", "5105", "5110", "5178", "5197", "8171", "8603", "8618", "8619", "8622", "8623", "9720"]),
 });
 
 /** Blangko memuat variabel modul deteksi agen Y untuk jenis perkara ini (nama atau id SIPP)? */

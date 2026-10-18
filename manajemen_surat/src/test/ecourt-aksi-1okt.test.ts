@@ -562,7 +562,11 @@ describe("0055 - jejak aksi e-Court: diklaim sekali, tiga tempat pendaftaran", (
 
   it("DDL berkas = DDL schema.ts; tabel ikut cadangan; pg-mem kosong membangunnya", () => {
     const dariBerkas = pernyataan(readFileSync(SQL, "utf8"));
-    const dariSkema = [...DDL_ECOURT_AKSI_JEJAK.tabel, ...DDL_ECOURT_AKSI_JEJAK.indeks].map((s) => pernyataan(s)[0]);
+    // 0074 menambah 'login_wa' ke daftar CHECK aksi (basis data baru langsung memakainya; yang lama lewat
+    // 0074_aleta_ecourt_aksi_login_wa.sql). Selain itu DDL schema.ts tetap persis berkas 0055.
+    const dariSkema = [...DDL_ECOURT_AKSI_JEJAK.tabel, ...DDL_ECOURT_AKSI_JEJAK.indeks].map((s) =>
+      pernyataan(s)[0].replace(", 'login_wa'", "")
+    );
     expect(dariBerkas).toEqual(dariSkema);
     expect(IN_MEMORY_TABLE_PERSISTENCE_ORDER).toContain("aleta_ecourt_aksi_jejak");
     const kosong = newDb();

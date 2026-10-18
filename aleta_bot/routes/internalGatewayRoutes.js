@@ -1215,6 +1215,24 @@ router.post("/sidang/isi-ikrar", requireInternalToken, async (req, res) => {
 });
 
 /**
+ * Isian borang "Data Penetapan Ikrar Talak" SIPP untuk ekstensi (31, 18 Okt 2026): MEMBACA
+ * saja, tidak menulis apa pun ke SIPP. `ok:false` + alasan = borang tidak perlu/belum boleh
+ * diisi (ekstensi diam): ikrar belum dinyatakan terlaksana, form sudah terisi, tanggal tak sah.
+ */
+router.post("/sidang/ikrar-borang", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const hasil = await require("../services/ikrarTalakService").susunIsianBorangIkrar({
+      nomorPerkara: badan.nomorPerkara,
+      perkaraId: badan.perkaraId,
+    });
+    res.json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
  * Status putusan yang dapat dipilih - dibaca dari tabel rujukan SIPP.
  *
  * Tidak disalin ke dalam kode: daftar yang disalin akan basi tanpa berbunyi,

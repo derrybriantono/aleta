@@ -42,11 +42,22 @@ export function IsiIkrarTalak({
         error?: string;
         tanggalIkrar?: string;
         andaian?: string[];
+        formSudahTerisi?: boolean;
+        edocIkrar?: { ok?: boolean; nama?: string; pesan?: string; alasan?: string };
       };
       if (isiBalasan.ok) {
         setTahap("selesai");
+        const edoc = isiBalasan.edocIkrar;
+        const kataEdoc = edoc
+          ? edoc.ok
+            ? ` e-Doc penetapan ikrar terunggah (${edoc.nama ?? "berkas"}).`
+            : ` e-Doc penetapan ikrar BELUM terunggah: ${edoc.pesan ?? edoc.alasan ?? "sebab tidak dikenali"}`
+          : "";
         setPesan(
-          `Form ikrar talak ${nomorPerkara} terisi di SIPP${isiBalasan.tanggalIkrar ? ` (tanggal ikrar ${isiBalasan.tanggalIkrar})` : ""}.` +
+          (isiBalasan.formSudahTerisi
+            ? `Form ikrar talak ${nomorPerkara} sudah terisi di SIPP.`
+            : `Form ikrar talak ${nomorPerkara} terisi di SIPP${isiBalasan.tanggalIkrar ? ` (tanggal ikrar ${isiBalasan.tanggalIkrar})` : ""}.`) +
+            kataEdoc +
             (isiBalasan.andaian && isiBalasan.andaian.length ? ` ${isiBalasan.andaian.join(" ")}` : "")
         );
         onSelesai?.();

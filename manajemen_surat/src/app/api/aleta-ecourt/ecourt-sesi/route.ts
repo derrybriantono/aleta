@@ -1,12 +1,15 @@
 import { type NextRequest } from "next/server";
 
+import { isPrivilegedAdmin } from "@/lib/permissions";
 import { getDatabase } from "@/server/db/client";
 import {
   BATAS_PERAMBAN_MS,
+  bacaJejakLoginWa,
   bacaJejakPengguna,
   catatJejakAksi,
   kalimatAlasan,
   panggilBot,
+  sinkronLoginWa,
 } from "@/server/modules/aleta-ecourt/ecourt-aksi";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -59,12 +62,28 @@ export async function GET(request: NextRequest) {
       peranTersedia: Array<{ kode: string; sebutan: string }>;
     }>(`/ecourt-pengguna/sesi?penggunaId=${encodeURIComponent(actor.id)}`);
     const jejak = await bacaJejakPengguna(db, actor.id, 20).catch(() => []);
+    // Riwayat login e-Court lewat WhatsApp (0074): HANYA Super Admin dan Admin. Disinkronkan dari
+    // jejak keamanan bot saat dibuka (idempoten); selain keduanya kuncinya tidak ikut dikirim.
+    let jejakWa: Awaited<ReturnType<typeof bacaJejakLoginWa>> | undefined;
+    if (isPrivilegedAdmin(actor)) {
+      await sinkronLoginWa(db).catch(() => null);
+      jejakWa = await bacaJejakLoginWa(db, 30).catch(() => []);
+    }
     if (!hasil.ok) {
-      return ok({ tersedia: false, pesan: kalimatAlasan(hasil.alasan), sesi: [], akun: [], peranTersedia: [], jejak });
+      return ok({
+        tersedia: false,
+        pesan: kalimatAlasan(hasil.alasan),
+        sesi: [],
+        akun: [],
+        peranTersedia: [],
+        jejak,
+        ...(jejakWa ? { jejakWa } : {}),
+      });
     }
     return ok({
       tersedia: true,
       pesan: "",
+      ...(jejakWa ? { jejakWa } : {}),
       pengguna: { id: actor.id, nama: actor.name },
       sesi: hasil.data.sesi ?? [],
       // Bot lama (sebelum butir 20) tidak mengirim `akun`: layar menyebut

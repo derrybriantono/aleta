@@ -15915,6 +15915,8 @@ async function segarkan() {
       void sisipkanPermintaan(panel, isi.konteks.nomorPerkara);
     }
     await terapkanTanda(isi.konteks);
+    // Form ikrar talak terisi otomatis bila sidang ikrar sudah terlaksana (18 Okt 2026, butir 31).
+    if (typeof ikrarOtomatis === "function") void ikrarOtomatis(isi.konteks);
   } catch {
     // Jaringan bermasalah, ALETA mati, jawaban bukan JSON. Dulu ketiganya
     // berakhir sama: tidak menampilkan apa pun, dan petugas menyimpulkan
@@ -23437,6 +23439,140 @@ function s1PasangPutusanOtomatis(p) {
     p.tombol.click();
   }, 700);
 }
+
+/* === IKRAR-OTOMATIS 18 Okt === */
+/**
+ * ============================================================================
+ * FORM IKRAR TALAK TERISI OTOMATIS SAAT HALAMAN PERKARA DIBUKA (18 Okt 2026, butir 31)
+ * ============================================================================
+ *
+ * Keputusan pengguna: form "Data Penetapan Ikrar Talak" SIPP diisi dari Jadwal Sidang
+ * (tombol, lewat bot) DAN otomatis bila halaman perkara SIPP dibuka - seperti Putusan
+ * otomatis. Syaratnya dijawab portal (GET ikrar-borang), bukan disimpulkan di sini:
+ *
+ *   - sidang ikrar sudah berketerangan ikrar terlaksana ("Ikrar Telah Dilaksanakan"),
+ *   - form ikrar SIPP masih kosong (belum diikrarkan / tanpa amar),
+ *   - tanggal ikrar sah (bukan akhir pekan / masa depan / mendahului putusan).
+ *
+ * Yang dikerjakan ekstensi hanya yang dikerjakan petugas dengan tangan, lewat jalan
+ * yang ditawarkan SIPP sendiri: tab "Ikrar Talak" -> "Edit Data Penetapan Ikrar" (tautan
+ * SIPP menjalankan popup_form miliknya; tidak ada alamat yang dirakit di sini) -> isi
+ * tanggal, status, keadaan istri, dan amar -> Simpan.
+ *
+ * ATURAN SIMPAN sama dengan borang penetapan lain (Penunjukan otomatis): saklar
+ * simpanOtomatis dari portal. Mati (bawaan) = borang terisi, petugas yang menekan Simpan.
+ * Nyala = ALETA menekan Simpan satu kali. Mode latihan/kering/coba menahannya seperti
+ * biasa (kirimKeJembatan). Tanpa kata ALETA di isian (AletaPenjagaTanda lewat isiBorang);
+ * tanggal substantif tidak diubah - nilainya dari tanggal sidang ikrar di SIPP.
+ *
+ * SEKALI per perkara per pemuatan halaman; akun SIPP yang tidak berwenang tidak melihat
+ * tautan Edit, jadi tidak ada yang terjadi. Akun yang tercatat di SIPP = akun yang
+ * sedang masuk (borang di layar), bukan ketua majelis - berbeda dari tombol Jadwal Sidang.
+ */
+const IKRAR_API_BORANG = "/aleta/api/aleta-ecourt/ikrar-borang";
+const IKRAR_BORANG = "#frm_verzet_putusan";
+const IKRAR_MEDAN = [
+  { medan: "tgl_ikrar", penunjuk: `${IKRAR_BORANG} input[name="tgl_ikrar"]`, jenis: "tanggal", wajib: true },
+  { medan: "status_penetapan", penunjuk: `${IKRAR_BORANG} select[name="status_penetapan"]`, jenis: "pilih", wajib: true },
+  { medan: "keadaan_istri", penunjuk: `${IKRAR_BORANG} select[name="keadaan_istri"]`, jenis: "pilih", wajib: true },
+  { medan: "amar", penunjuk: `${IKRAR_BORANG} textarea[name="amar"]`, jenis: "kaya", wajib: true },
+];
+const ikrarOtoDicoba = new Set();
+let ikrarOtoBerjalan = false;
+
+function ikrarCariTautanEdit() {
+  return document.querySelector('a[onclick*="edit_ikrar_talak_penetapan/"]');
+}
+
+function ikrarKabar(teks, gagal) {
+  const panel = document.getElementById(PENANDA);
+  const wadah = panel && panel.querySelector(".aleta-isi");
+  if (!wadah) return;
+  let k = wadah.querySelector("[data-aleta-ikrar-otomatis]");
+  if (!k) {
+    k = buatElemen("div", "aleta-kosong-lembut", "");
+    k.setAttribute("data-aleta-ikrar-otomatis", "1");
+    wadah.insertBefore(k, wadah.firstChild);
+  }
+  k.className = gagal ? "aleta-kosong-lembut aleta-abt-gagal" : "aleta-kosong-lembut";
+  k.textContent = teks;
+}
+
+/** Membuka borang lewat tautan SIPP. Pulang { ok:true } atau { ok:false, pesan }. Tidak pernah melempar. */
+async function ikrarBukaBorang() {
+  if (document.querySelector(IKRAR_BORANG)) return { ok: true, sudah: true };
+  let tautan = ikrarCariTautanEdit();
+  if (!tautan) {
+    const tab = document.querySelector('a[href="#tabs24"]');
+    if (!tab) return { ok: false, pesan: "Tab Ikrar Talak tidak ada di halaman ini." };
+    tab.click();
+    tautan = await s1Tunggu(() => ikrarCariTautanEdit(), 15000, 50);
+    if (!tautan) {
+      return { ok: false, pesan: "Tab Ikrar Talak terbuka, tetapi tautan Edit Data Penetapan Ikrar tidak ada - akun SIPP ini tidak berwenang mengisinya." };
+    }
+  }
+  tautan.click();
+  const borang = await s1Tunggu(() => document.querySelector(IKRAR_BORANG), 15000, 50);
+  if (!borang) return { ok: false, pesan: "Form ikrar tidak terbuka dalam 15 detik sesudah Edit Data Penetapan Ikrar ditekan." };
+  return { ok: true };
+}
+
+async function ikrarOtomatis(konteks) {
+  const nomor = String((konteks && konteks.nomorPerkara) || "").trim();
+  if (!nomor || ikrarOtoBerjalan || ikrarOtoDicoba.has(nomor)) return;
+  // Bukan halaman perkara cerai talak bersidang ikrar (tab Ikrar Talak tidak ada): diam.
+  if (!document.querySelector('a[href="#tabs24"]') && !document.querySelector(IKRAR_BORANG)) return;
+  ikrarOtoDicoba.add(nomor);
+  ikrarOtoBerjalan = true;
+  try {
+    const j = await t7AmbilJson(`${IKRAR_API_BORANG}?nomor=${encodeURIComponent(nomor)}`, "Membaca isian form ikrar");
+    if (!j.ok || !j.data || j.data.perlu !== true || !j.data.nilai) {
+      alatCatat("ikrar-otomatis", `${nomor}: tidak diisi`, (j.data && j.data.alasan) || j.pesan || "");
+      return;
+    }
+    const d = j.data;
+    ikrarKabar(`Form ikrar talak ${nomor} kosong sedangkan ikrar sudah dilaksanakan - ALETA mengisinya…`, false);
+    const buka = await ikrarBukaBorang();
+    if (!buka.ok) {
+      ikrarKabar(`${nomor}: ${buka.pesan}`, true);
+      alatCatat("ikrar-otomatis", `${nomor}: borang tidak terbuka`, buka.pesan);
+      return;
+    }
+    // Borang yang dibuka petugas sendiri dan sudah terisi tidak ditimpa.
+    const tglSekarang = document.querySelector(`${IKRAR_BORANG} input[name="tgl_ikrar"]`);
+    if (tglSekarang && String(tglSekarang.value || "").trim()) {
+      ikrarKabar(`Form ikrar talak ${nomor} sudah berisi tanggal ikrar - tidak ditimpa.`, false);
+      return;
+    }
+    const isi = await isiBorang(IKRAR_MEDAN, d.nilai);
+    if (!isi.ok) {
+      ikrarKabar(`Form ikrar talak ${nomor} terisi sebagian (${isi.alasan}) - periksa lalu tekan Simpan sendiri.`, true);
+      return;
+    }
+    const catatan = (Array.isArray(d.andaian) ? d.andaian : []).join(" ");
+    if (d.simpanOtomatis !== "nyala") {
+      ikrarKabar(`Form ikrar talak ${nomor} terisi (tanggal ikrar ${d.tanggalIkrar || ""}). Periksa, lalu tekan Simpan di SIPP. ${catatan}`.trim(), false);
+      return;
+    }
+    const simpan = await kirimKeJembatan({ jenis: "tekan", penunjuk: `${IKRAR_BORANG} #simpan` });
+    if (!simpan || !simpan.ok) {
+      ikrarKabar(`Form ikrar talak ${nomor} terisi, tetapi Simpan tidak dapat ditekan (${(simpan && simpan.alasan) || "gagal"}). Tekan sendiri.`, true);
+      return;
+    }
+    const tertutup = await s1Tunggu(() => !document.querySelector(IKRAR_BORANG), 8000, 100);
+    ikrarKabar(
+      tertutup
+        ? `Form ikrar talak ${nomor} terisi dan disimpan (tanggal ikrar ${d.tanggalIkrar || ""}). ${catatan}`.trim()
+        : `Form ikrar talak ${nomor} terisi dan Simpan ditekan, tetapi form belum tertutup - periksa pesan SIPP.`,
+      !tertutup
+    );
+  } catch (galat) {
+    ikrarKabar(`Form ikrar talak ${nomor} gagal diisi otomatis: ${String((galat && galat.message) || galat).slice(0, 120)}`, true);
+  } finally {
+    ikrarOtoBerjalan = false;
+  }
+}
+/* === AKHIR IKRAR-OTOMATIS === */
 
 // ─── Butir 16b: Upload putusan ke e-Court (K6) ───────────────────────────────
 
