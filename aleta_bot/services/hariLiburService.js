@@ -211,6 +211,46 @@ const TAHUN = {
       ["2026-12-25", "Kelahiran Yesus Kristus"],
     ],
   },
+  2027: {
+    // Ditetapkan 15 September 2026. Dicocokkan 18 Oktober 2026 terhadap tiga
+    // salinan resmi yang isinya sama (setneg.go.id, kemenkopmk.go.id/node/6444,
+    // hukumonline); tiap tanggal diperiksa harinya. Berkas SKB yang
+    // ditandatangani belum dibaca langsung.
+    disahkan: true,
+    skb: "Nomor 1205 Tahun 2026, Nomor 3 Tahun 2026, dan Nomor 2 Tahun 2026",
+    ditetapkan: "2026-09-15",
+    sumber:
+      "setneg.go.id (Inilah SKB 3 Menteri Libur Nasional dan Cuti Bersama 2027) dan kemenkopmk.go.id/node/6444.",
+    catatan: "18 hari libur nasional dan 8 cuti bersama, seluruhnya 26 tanggal.",
+    libur: [
+      ["2027-01-01", "Tahun Baru 2027 Masehi"],
+      ["2027-01-05", "Isra Mikraj Nabi Muhammad SAW 1448 Hijriah"],
+      ["2027-02-05", "Cuti Bersama Tahun Baru Imlek 2578 Kongzili"],
+      ["2027-02-06", "Tahun Baru Imlek 2578 Kongzili"],
+      ["2027-03-08", "Hari Suci Nyepi (Tahun Baru Saka 1949)"],
+      ["2027-03-09", "Cuti Bersama Idulfitri 1448 Hijriah"],
+      ["2027-03-10", "Idulfitri 1448 Hijriah"],
+      ["2027-03-11", "Idulfitri 1448 Hijriah"],
+      ["2027-03-12", "Cuti Bersama Idulfitri 1448 Hijriah"],
+      ["2027-03-15", "Cuti Bersama Idulfitri 1448 Hijriah"],
+      ["2027-03-25", "Cuti Bersama Wafat Yesus Kristus"],
+      ["2027-03-26", "Wafat Yesus Kristus"],
+      ["2027-03-28", "Kebangkitan Yesus Kristus (Paskah)"],
+      ["2027-05-01", "Hari Buruh Internasional"],
+      ["2027-05-06", "Kenaikan Yesus Kristus"],
+      ["2027-05-17", "Iduladha 1448 Hijriah"],
+      ["2027-05-18", "Cuti Bersama Iduladha 1448 Hijriah"],
+      ["2027-05-19", "Cuti Bersama Hari Raya Waisak 2571 BE"],
+      ["2027-05-20", "Hari Raya Waisak 2571 BE"],
+      ["2027-06-01", "Hari Lahir Pancasila"],
+      ["2027-06-06", "1 Muharam Tahun Baru Islam 1449 Hijriah"],
+      ["2027-08-15", "Maulid Nabi Muhammad SAW"],
+      ["2027-08-17", "Proklamasi Kemerdekaan"],
+      ["2027-12-24", "Cuti Bersama Kelahiran Yesus Kristus"],
+      ["2027-12-25", "Kelahiran Yesus Kristus"],
+      ["2027-12-26", "Isra Mikraj Nabi Muhammad SAW 1449 Hijriah"],
+    ],
+  },
 };
 
 const POLA_TANGGAL = /^(\d{4})-\d{2}-\d{2}$/;
@@ -252,10 +292,69 @@ function keadaanTahun(tahun) {
   };
 }
 
-/** Apakah sebuah tanggal hari libur nasional atau cuti bersama? */
+// ============================================================================
+// TAMBAHAN DARI PENGATURAN PORTAL (18 Okt 2026)
+// ============================================================================
+//
+// Super Admin/Admin menambah libur daerah atau cuti bersama tambahan - atau
+// membatalkan tanggal SKB - di Pengaturan portal. Portal mengirimkannya ke
+// sini setiap kali disimpan (POST /internal/hari-libur/tambahan), dan salinannya
+// ditulis ke folder data bot yang terpasang di luar container, supaya tidak
+// hilang tiap pembaruan. Sumber datanya tetap SATU: simpanan portal.
+const fs = require("fs");
+const path = require("path");
+
+let TAMBAHAN = Object.create(null);
+
+function berkasTambahan() {
+  const dasar = process.env.ALETA_BOT_DATA_DIR || path.join(__dirname, "..", "data");
+  return path.join(dasar, "hari-libur-tambahan.json");
+}
+
+function bersihkanTambahan(daftar) {
+  const hasil = Object.create(null);
+  for (const x of Array.isArray(daftar) ? daftar.slice(0, 400) : []) {
+    const tanggal = String((x && x.tanggal) || "").trim();
+    if (!POLA_TANGGAL.test(tanggal)) continue;
+    const aksi = x.aksi === "hapus" ? "hapus" : "tambah";
+    const nama = String(x.nama || "").replace(/\s+/g, " ").trim().slice(0, 120);
+    if (aksi === "tambah" && !nama) continue;
+    hasil[tanggal] = { aksi, nama, jenis: String(x.jenis || "lain") };
+  }
+  return hasil;
+}
+
+function pasangTambahan(daftar, opsi = {}) {
+  TAMBAHAN = bersihkanTambahan(daftar);
+  if (opsi.simpan !== false) {
+    try {
+      const berkas = berkasTambahan();
+      fs.mkdirSync(path.dirname(berkas), { recursive: true });
+      fs.writeFileSync(berkas, JSON.stringify(Array.isArray(daftar) ? daftar : [], null, 2));
+    } catch {
+      // Gagal menyimpan salinan tidak membatalkan yang sudah berlaku di memori.
+    }
+  }
+  return Object.keys(TAMBAHAN).length;
+}
+
+function muatTambahanTersimpan() {
+  try {
+    const isi = JSON.parse(fs.readFileSync(berkasTambahan(), "utf8"));
+    pasangTambahan(isi, { simpan: false });
+  } catch {
+    TAMBAHAN = Object.create(null);
+  }
+}
+muatTambahanTersimpan();
+
+/** Apakah sebuah tanggal hari libur nasional, cuti bersama, atau tambahan Pengaturan? */
 function hariLibur(tanggal) {
   const t = String(tanggal || "").trim();
   if (!POLA_TANGGAL.test(t)) return null;
+  const tambahan = TAMBAHAN[t];
+  if (tambahan && tambahan.aksi === "hapus") return null;
+  if (tambahan) return { nama: tambahan.nama, tahun: Number(t.slice(0, 4)), tambahan: true };
   return Object.prototype.hasOwnProperty.call(PETA, t) ? PETA[t] : null;
 }
 
@@ -314,4 +413,5 @@ module.exports = {
   keadaanRentang,
   hariLibur,
   daftarTahun,
+  pasangTambahan,
 };

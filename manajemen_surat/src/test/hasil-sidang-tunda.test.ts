@@ -151,8 +151,10 @@ describe("tanggal diperiksa sebelum satu baris pun ditulis", () => {
     // hariLibur() memulangkan null untuk hari kerja DAN untuk tahun yang
     // daftarnya belum dimuat. Menyamakan keduanya berarti diam-diam
     // menyetujui tanggal yang tidak pernah diperiksa.
-    expect(badan).toContain("hariLiburService.tahunTersedia(tahunBerikut)");
-    expect(badan).toContain("belum diperiksa terhadap hari libur");
+    // 18 Okt 2026: tahunTersedia() memulangkan daftar - dipakai .includes();
+    // tahun tanpa SKB tetap diperiksa terhadap libur tambahan Pengaturan.
+    expect(badan).toContain("hariLiburService.tahunTersedia().includes(tahunBerikut)");
+    expect(badan).toContain("hanya diperiksa terhadap Sabtu, Minggu, dan libur tambahan Pengaturan");
   });
 
   it("sidang yang sudah ditunda tidak ditunda dua kali", () => {

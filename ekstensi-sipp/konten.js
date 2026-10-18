@@ -1082,6 +1082,8 @@ function bagianMalas(judul, kunci, nomor, gambar) {
  * tiap perkara yang kebetulan dibuka.
  */
 async function ambilUsulanPenunjukan(nomor, pilihanMajelis, andaian) {
+  // Libur tambahan Pengaturan - dibaca sekali per halaman, tidak ditunggu.
+  if (typeof ccMuatLiburTambahan === "function") void ccMuatLiburTambahan();
   const majelis = Array.isArray(pilihanMajelis) && pilihanMajelis.length > 0
     ? `&majelis=${encodeURIComponent(pilihanMajelis.join(","))}`
     : "";
@@ -1220,7 +1222,14 @@ function tanggalSidangTerpilih(usulan, pilihanManual = {}) {
  */
 function masalahTanggalSidang(usulan, pilihanManual = {}) {
   const manual = String((pilihanManual && pilihanManual.phs) || "").trim();
-  if (!manual) return "";
+  if (!manual) {
+    // Usulan mesin yang jatuh pada hari libur (mis. libur tambahan Pengaturan
+    // yang belum dikenal bot) juga ditahan, dengan sebabnya (18 Okt 2026).
+    const usul = String((usulan && usulan.phs && usulan.phs.usulan) || "").slice(0, 10);
+    const jenisUsul = Number(((usulan && usulan.perkara) || {}).jenisPerkaraId || 0);
+    const awas = jenisUsul === 746 || typeof peringatanLiburPhs !== "function" ? "" : peringatanLiburPhs(usul);
+    return awas ? `Usulan hari sidang ${awas}` : "";
+  }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(manual)) {
     return `Tanggal sidang pilihan Anda (${manual}) tidak terbaca. Pilih ulang dari kalender.`;
   }
@@ -1235,7 +1244,21 @@ function masalahTanggalSidang(usulan, pilihanManual = {}) {
   if (libur) {
     return `Tanggal sidang pilihan Anda jatuh pada hari ${libur} (${sebutTanggal(manual)}) - SIPP menolak hari sidang di hari libur. Pilih tanggal lain - ALETA tidak menggantinya sendiri.`;
   }
+  // Libur nasional, cuti bersama, dan libur tambahan Pengaturan (18 Okt 2026).
+  // SIPP sendiri hanya menolak Sabtu/Minggu - yang ini dicegah ALETA.
+  const nasional = jenisPerkara === 746 || typeof ccBukanHariKerja !== "function" ? "" : ccBukanHariKerja(manual);
+  if (nasional) {
+    return `Tanggal sidang pilihan Anda (${sebutTanggal(manual)}) hari ${nasional.replace(/^libur: /, "libur ")}. Pilih hari kerja lain - ALETA tidak menggantinya sendiri.`;
+  }
   return "";
+}
+
+/** Peringatan bila tanggal sidang (usulan atau pilihan) jatuh pada hari libur. */
+function peringatanLiburPhs(iso) {
+  const t = String(iso || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(t) || typeof ccBukanHariKerja !== "function") return "";
+  const libur = ccBukanHariKerja(t);
+  return libur ? `${sebutTanggal(t)} hari ${libur.replace(/^libur: /, "libur ")} - pilih hari sidang lain sebelum menetapkan.` : "";
 }
 
 function idUntukTulis(jenis, usulan, pilihanManual = {}) {
@@ -1499,7 +1522,7 @@ const KALIMAT_ALASAN = [
   },
   {
     pola: /^tanggal_sidang_hari_libur$/,
-    kalimat: () => "Tanggal sidang jatuh pada hari Sabtu/Minggu - SIPP menolaknya. Pilih tanggal lain; ALETA tidak menggantinya sendiri.",
+    kalimat: () => "Tanggal sidang jatuh pada hari libur (Sabtu/Minggu, libur nasional, atau cuti bersama). Pilih hari kerja lain; ALETA tidak menggantinya sendiri.",
   },
   {
     pola: /^sidang_mendahului_penetapan$/,
@@ -1507,7 +1530,7 @@ const KALIMAT_ALASAN = [
   },
   {
     pola: /^tanggal_penetapan_hari_libur$/,
-    kalimat: () => "Tanggal penetapan jatuh pada hari Sabtu/Minggu - SIPP menolak penetapan di hari libur.",
+    kalimat: () => "Tanggal penetapan jatuh pada hari libur (Sabtu/Minggu, libur nasional, atau cuti bersama). Penetapan tidak dibuat pada hari libur.",
   },
   {
     pola: /^tanggal_penetapan_masa_depan$/,
@@ -2133,7 +2156,17 @@ async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering) 
   // dikerjakan tangan tidak pernah lulus uji kering - tombol "Tuliskan ke
   // SIPP" tidak pernah terbuka, dan PPP, PJS, PHS tidak dapat dikerjakan.
   const dikerjakan = hasil.filter((x) => x.ok).length;
-  return { ok: hasil.every((x) => x.ok || x.sudahAda === true), dikerjakan, hasil };
+  const ringkas = { ok: hasil.every((x) => x.ok || x.sudahAda === true), dikerjakan, hasil };
+  // Kartu Penetapan UI Baru (satu klik) membaca hasil per langkah dari sini -
+  // hanya pemberitahuan ke layar, tidak mengubah apa pun yang ditulis.
+  try {
+    if (tombol && typeof tombol.dispatchEvent === "function" && typeof CustomEvent === "function") {
+      tombol.dispatchEvent(new CustomEvent("aleta-hasil-penetapan", { bubbles: true, detail: { kering: Boolean(kering), ...ringkas } }));
+    }
+  } catch {
+    /* layar saja */
+  }
+  return ringkas;
 }
 
 /** Penulisan sungguhan yang gagal tanpa satu langkah pun tertulis (rantai dibatalkan utuh) - aman diulang. */
@@ -2900,6 +2933,8 @@ function pilihanOrang(label, daftar, terpilihId, onPilih) {
     const opsi = document.createElement("option");
     opsi.value = String(orang.id);
     opsi.textContent = orang.label;
+    // Hari libur tampil tetapi tidak dapat dipilih (18 Okt 2026).
+    if (orang.mati) opsi.disabled = true;
     if (String(orang.id) === String(terpilihId)) opsi.selected = true;
     kotak.appendChild(opsi);
   }
@@ -3561,7 +3596,7 @@ function gambarPenunjukan(isi, data) {
           "Penetapan Hari Sidang",
           phsTerbaca,
           phs.sebab + (phs.jarakHari ? ` · ${phs.jarakHari} hari sejak daftar` : "") + bebanTerpilih,
-          "",
+          peringatanLiburPhs(pilihanManual.phs || phs.usulan),
           penetapUntuk(data, "phs")
         )
   );
@@ -3651,12 +3686,18 @@ function gambarPenunjukan(isi, data) {
     // ATAS dan bertanda asalnya. Ia tidak menggantikan satu pun calon:
     // memilih kembali salah satu calon tetap dapat dilakukan dengan satu
     // gerakan yang sama.
-    const calonTampil = phs.calon.map((x) => ({
-      id: x.tanggal,
-      label:
-        `${x.sebut} — ${x.usulan ? "usulan" : `mundur ${x.pekan} pekan`}` +
-        ` · ${sebutBeban(x)}`,
-    }));
+    const calonTampil = phs.calon.map((x) => {
+      // Hari libur (nasional, cuti bersama, tambahan Pengaturan) tampil
+      // dengan namanya dan tidak dapat dipilih.
+      const libur = typeof ccBukanHariKerja === "function" ? ccBukanHariKerja(x.tanggal) : "";
+      return {
+        id: x.tanggal,
+        mati: Boolean(libur),
+        label: libur
+          ? `${x.sebut} — ${libur.replace(/^libur: /, "libur ")} · tidak dapat dipilih`
+          : `${x.sebut} — ${x.usulan ? "usulan" : `mundur ${x.pekan} pekan`}` + ` · ${sebutBeban(x)}`,
+      };
+    });
     const dariKalender = String(pilihanManual.phs || "");
     if (dariKalender && !calonTampil.some((c) => c.id === dariKalender)) {
       calonTampil.unshift({
@@ -3847,12 +3888,21 @@ function gambarPenunjukan(isi, data) {
       // sebagai peringatan yang dibaca, bukan sebagai pintu yang dikunci.
       kalender.min = new Date().toISOString().slice(0, 10);
       kalender.addEventListener("change", () => {
-        pilihanManual.phs = kalender.value;
+        // Hari libur tidak diterima kalender: pilihan lama dipertahankan dan
+        // sebabnya disebut (18 Okt 2026).
+        const libur = kalender.value && typeof ccBukanHariKerja === "function" ? ccBukanHariKerja(kalender.value) : "";
+        if (libur) {
+          data.phsDitolakLibur = `${sebutTanggal(kalender.value)} hari ${libur.replace(/^libur: /, "libur ")} - tidak dapat dipilih.`;
+        } else {
+          data.phsDitolakLibur = "";
+          pilihanManual.phs = kalender.value;
+        }
         isi.textContent = "";
         gambarPenunjukan(isi, data);
       });
       barisBebas.appendChild(kalender);
       isi.appendChild(barisBebas);
+      if (data.phsDitolakLibur) isi.appendChild(buatElemen("div", "aleta-tetap-awas", data.phsDitolakLibur));
 
       const dipilihBebas = pilihanManual.phs;
 
@@ -9253,8 +9303,68 @@ function setLencana(kotak, ringkas) {
  *                     "tersimpan" hanya disebut bila memang terbaca kembali.
  */
 
-/** Hari libur nasional & cuti bersama. 2026 cocok dengan hari kerja tanpa satu pun sidang di sipp_donggala. */
+/**
+ * Hari libur nasional & cuti bersama SKB 2024-2027 - SALINAN @/lib/hari-libur
+ * (manajemen_surat; uji court-calendar-sidang menuntut sama persis). Tambahan
+ * dari Pengaturan (libur daerah, cuti bersama tambahan) dibaca dari
+ * /api/hari-libur saat panel dimuat dan diterapkan ccTerapkanLiburTambahan.
+ */
 const CC_LIBUR = {
+  "2024-01-01": "Tahun Baru Masehi",
+  "2024-02-08": "Isra Mikraj",
+  "2024-02-09": "cuti bersama Tahun Baru Imlek",
+  "2024-02-10": "Tahun Baru Imlek",
+  "2024-03-11": "Hari Suci Nyepi",
+  "2024-03-12": "cuti bersama Nyepi",
+  "2024-03-29": "Wafat Isa Almasih",
+  "2024-03-31": "Paskah",
+  "2024-04-08": "cuti bersama Idul Fitri",
+  "2024-04-09": "cuti bersama Idul Fitri",
+  "2024-04-10": "Idul Fitri",
+  "2024-04-11": "Idul Fitri",
+  "2024-04-12": "cuti bersama Idul Fitri",
+  "2024-04-15": "cuti bersama Idul Fitri",
+  "2024-05-01": "Hari Buruh",
+  "2024-05-09": "Kenaikan Isa Almasih",
+  "2024-05-10": "cuti bersama Kenaikan Isa Almasih",
+  "2024-05-23": "Waisak",
+  "2024-05-24": "cuti bersama Waisak",
+  "2024-06-01": "Hari Lahir Pancasila",
+  "2024-06-17": "Idul Adha",
+  "2024-06-18": "cuti bersama Idul Adha",
+  "2024-07-07": "Tahun Baru Islam",
+  "2024-08-17": "Hari Kemerdekaan",
+  "2024-09-16": "Maulid Nabi",
+  "2024-12-25": "Natal",
+  "2024-12-26": "cuti bersama Natal",
+  "2025-01-01": "Tahun Baru Masehi",
+  "2025-01-27": "Isra Mikraj",
+  "2025-01-28": "cuti bersama Tahun Baru Imlek",
+  "2025-01-29": "Tahun Baru Imlek",
+  "2025-03-28": "cuti bersama Nyepi",
+  "2025-03-29": "Hari Suci Nyepi",
+  "2025-03-31": "Idul Fitri",
+  "2025-04-01": "Idul Fitri",
+  "2025-04-02": "cuti bersama Idul Fitri",
+  "2025-04-03": "cuti bersama Idul Fitri",
+  "2025-04-04": "cuti bersama Idul Fitri",
+  "2025-04-07": "cuti bersama Idul Fitri",
+  "2025-04-18": "Wafat Isa Almasih",
+  "2025-04-20": "Paskah",
+  "2025-05-01": "Hari Buruh",
+  "2025-05-12": "Waisak",
+  "2025-05-13": "cuti bersama Waisak",
+  "2025-05-29": "Kenaikan Isa Almasih",
+  "2025-05-30": "cuti bersama Kenaikan Isa Almasih",
+  "2025-06-01": "Hari Lahir Pancasila",
+  "2025-06-06": "Idul Adha",
+  "2025-06-09": "cuti bersama Idul Adha",
+  "2025-06-27": "Tahun Baru Islam",
+  "2025-08-17": "Hari Kemerdekaan",
+  "2025-08-18": "cuti bersama HUT Kemerdekaan",
+  "2025-09-05": "Maulid Nabi",
+  "2025-12-25": "Natal",
+  "2025-12-26": "cuti bersama Natal",
   "2026-01-01": "Tahun Baru Masehi",
   "2026-01-16": "Isra Mikraj",
   "2026-02-16": "cuti bersama Tahun Baru Imlek",
@@ -9267,6 +9377,7 @@ const CC_LIBUR = {
   "2026-03-23": "cuti bersama Idul Fitri",
   "2026-03-24": "cuti bersama Idul Fitri",
   "2026-04-03": "Wafat Isa Almasih",
+  "2026-04-05": "Paskah",
   "2026-05-01": "Hari Buruh",
   "2026-05-14": "Kenaikan Isa Almasih",
   "2026-05-15": "cuti bersama Kenaikan Isa Almasih",
@@ -9279,18 +9390,34 @@ const CC_LIBUR = {
   "2026-08-25": "Maulid Nabi",
   "2026-12-24": "cuti bersama Natal",
   "2026-12-25": "Natal",
-  // 2027: hanya yang tanggalnya pasti (tetap, atau dihitung dari Paskah).
-  // Libur Hijriah/Imlek/Saka 2027 belum dimuat - SKB-nya belum terbit ketika
-  // ini ditulis; layar menyebutnya supaya petugas memeriksa sendiri.
   "2027-01-01": "Tahun Baru Masehi",
+  "2027-01-05": "Isra Mikraj",
+  "2027-02-05": "cuti bersama Tahun Baru Imlek",
+  "2027-02-06": "Tahun Baru Imlek",
+  "2027-03-08": "Hari Suci Nyepi",
+  "2027-03-09": "cuti bersama Idul Fitri",
+  "2027-03-10": "Idul Fitri",
+  "2027-03-11": "Idul Fitri",
+  "2027-03-12": "cuti bersama Idul Fitri",
+  "2027-03-15": "cuti bersama Idul Fitri",
+  "2027-03-25": "cuti bersama Wafat Isa Almasih",
   "2027-03-26": "Wafat Isa Almasih",
+  "2027-03-28": "Paskah",
   "2027-05-01": "Hari Buruh",
   "2027-05-06": "Kenaikan Isa Almasih",
+  "2027-05-17": "Idul Adha",
+  "2027-05-18": "cuti bersama Idul Adha",
+  "2027-05-19": "cuti bersama Waisak",
+  "2027-05-20": "Waisak",
   "2027-06-01": "Hari Lahir Pancasila",
+  "2027-06-06": "Tahun Baru Islam",
+  "2027-08-15": "Maulid Nabi",
   "2027-08-17": "Hari Kemerdekaan",
+  "2027-12-24": "cuti bersama Natal",
   "2027-12-25": "Natal",
+  "2027-12-26": "Isra Mikraj",
 };
-const CC_LIBUR_TAHUN_LENGKAP = ["2026"];
+const CC_LIBUR_TAHUN_LENGKAP = ["2026", "2027"];
 
 /** Pendaftaran -> sidang pertama (median terukur, lihat di atas) bila PHS belum ada. */
 const CC_HARI_DAFTAR = {
@@ -9369,6 +9496,41 @@ function ccBukanHariKerja(iso) {
   const h = ccHariKe(iso);
   if (h === 0 || h === 6) return h === 0 ? "hari Minggu" : "hari Sabtu";
   return CC_LIBUR[iso] ? `libur: ${CC_LIBUR[iso]}` : "";
+}
+
+/**
+ * Libur tambahan dari Pengaturan portal (libur daerah, cuti bersama tambahan,
+ * tanggal SKB yang dibatalkan) - diterapkan ke CC_LIBUR yang sama, sehingga
+ * seluruh pemeriksaan libur di panel ikut. Gagal dibaca = tetap daftar SKB.
+ */
+const ALETA_API_HARI_LIBUR = "/aleta/api/hari-libur";
+let ccLiburTambahanDimuat = null;
+
+function ccTerapkanLiburTambahan(tambahan) {
+  for (const t of Array.isArray(tambahan) ? tambahan : []) {
+    const tanggal = String((t && t.tanggal) || "");
+    if (!ccIsoSah(tanggal)) continue;
+    if (t.aksi === "hapus") delete CC_LIBUR[tanggal];
+    else if (String(t.nama || "").trim()) CC_LIBUR[tanggal] = String(t.nama).trim();
+  }
+}
+
+function ccMuatLiburTambahan() {
+  if (ccLiburTambahanDimuat) return ccLiburTambahanDimuat;
+  ccLiburTambahanDimuat = (async () => {
+    try {
+      if (typeof alatAmbil !== "function") return false;
+      const respons = await alatAmbil(ALETA_API_HARI_LIBUR, { credentials: "include", cache: "no-store" }, "Membaca daftar hari libur");
+      if (!respons || !respons.ok) return false;
+      const luar = await respons.json();
+      const isi = (luar && luar.data) || luar || {};
+      ccTerapkanLiburTambahan(isi.tambahan);
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+  return ccLiburTambahanDimuat;
 }
 
 /** Maju ke hari kerja pertama pada atau sesudah iso. */
@@ -9829,6 +9991,9 @@ function ccPeriksaBaris(b, tanggalDaftar) {
   if (!ccJamSah(b.jam)) return "jam wajib diisi (JJ:MM)";
   const h = ccHariKe(b.tanggal);
   if (h === 0 || h === 6) return "SIPP menolak Sabtu dan Minggu";
+  // Libur nasional/cuti bersama/tambahan tidak ditolak SIPP - dicegah di sini.
+  const libur = ccBukanHariKerja(b.tanggal);
+  if (libur) return `${libur} - tanggal libur tidak dikirim`;
   if (ccIsoSah(tanggalDaftar) && b.tanggal < tanggalDaftar) return "sebelum tanggal pendaftaran - SIPP menolak";
   return "";
 }
@@ -9966,6 +10131,7 @@ function ccBolehTampil() {
 /** Bagian "Court Calendar otomatis" - null bila tidak berlaku untuk tampilan/peran ini. */
 function ccBagian(konteks) {
   if (!konteks || !konteks.nomorPerkara || !ccBolehTampil()) return null;
+  void ccMuatLiburTambahan();
   const kotak = bagianMalas("Court Calendar otomatis", "courtCalendarOtomatis", konteks.nomorPerkara, (isi, status) =>
     ccGambar(isi, status, konteks)
   );
@@ -10170,7 +10336,16 @@ function ccGambar(isi, status, konteks) {
         el.classList.toggle("aleta-cc-libur", Boolean(sebab));
       };
       tgl.addEventListener("change", () => {
-        b.tanggal = tgl.value;
+        // Hari libur tidak dapat dipilih (18 Okt 2026): tanggal lama kembali,
+        // sebabnya disebut di baris itu.
+        const libur = ccIsoSah(tgl.value) ? ccBukanHariKerja(tgl.value) : "";
+        if (libur) {
+          b.pesan = `${ccTeksTanggal(tgl.value)} ${libur} - tidak dapat dipilih`;
+          tgl.value = b.tanggal;
+        } else {
+          b.pesan = "";
+          b.tanggal = tgl.value;
+        }
         segarkanPeringatan();
       });
       jam.addEventListener("change", () => {
@@ -19251,81 +19426,377 @@ function t7TataPenetapan(k) {
   const p = new MutationObserver(() => {
     if (!jam) jam = setTimeout(segarkan, 60);
   });
-  p.observe(penunjukan, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["disabled", "class"] });
+  p.observe(penunjukan, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["disabled", "class", "data-t7-tinjau"] });
   k.pengamat.push(p);
   segarkan();
 }
 
-/** D5: ringkasan keputusan - baris "Usulan ALETA" bernilai tebal, ⓘ sebabnya, "Ubah". */
+/**
+ * ============================================================================
+ * PENETAPAN SATU KLIK (18 Okt 2026) - rancangan docs/rancangan/penetapan-satu-klik.html
+ * ============================================================================
+ *
+ * Kartu "Penetapan" di UI Baru: ringkasan perkara, empat baris PMH/PPP/PJS/PHS
+ * dengan statusnya, dan SATU tombol "Tetapkan semua".
+ *
+ * TIDAK ADA JALAN TULIS BARU. "Tetapkan semua" MENEKAN tombol Tetapkan asli
+ * yang sama, dua kali seperti alur lama: tekanan pertama menjalankan
+ * pemeriksaan (uji kering rantaiPenetapan), dan HANYA bila seluruhnya lulus
+ * tekanan kedua menulis (kirimRantaiUtuh - satu transaksi, utuh atau batal).
+ * Gagal di pemeriksaan = berhenti, tidak ada yang ditulis. Urutan, akun
+ * pejabat, aturan setanggal, hakim tunggal, isian manual, mode latihan, dan
+ * pemeriksaan hari libur seluruhnya milik alur lama itu.
+ *
+ * Hasil per langkah dibaca dari peristiwa "aleta-hasil-penetapan" yang dikirim
+ * tetapkanLewatAleta; rincian teknisnya (rapor pemeriksaan) tetap di bagian
+ * rinci yang dibuka lewat "Pilihan lain".
+ */
+const T7_KODE_PENETAPAN = {
+  "Penetapan Majelis Hakim": "pmh",
+  "Penunjukan Panitera Pengganti": "ppp",
+  "Penunjukan Juru Sita": "pjs",
+  "Penetapan Hari Sidang": "phs",
+};
+const T7_TOMBOL_ALETA = ["Tetapkan dan tuliskan ke SIPP", "Tuliskan ke SIPP"];
+/** Keadaan satu-klik per bagian penunjukan: {tahap, kering, tulis}. */
+const t7SatuKlik = new WeakMap();
+
+function t7KeadaanSatuKlik(penunjukan) {
+  let s = t7SatuKlik.get(penunjukan);
+  if (!s) {
+    s = { tahap: "siap", kering: null, tulis: null, pendengar: new Set() };
+    t7SatuKlik.set(penunjukan, s);
+    // Hasil per langkah dari tetapkanLewatAleta (tombol asli ada di dalam bagian ini).
+    penunjukan.addEventListener("aleta-hasil-penetapan", (e) => {
+      const d = (e && e.detail) || {};
+      if (d.kering) s.kering = d;
+      else s.tulis = d;
+      s.pendengar.forEach((f) => f());
+    });
+  }
+  return s;
+}
+
+/** Kalimat untuk orang - kode mesin tidak pernah tampil. */
+function t7KalimatAwam(teks) {
+  const t = String(teks || "").trim();
+  if (!t || /^[a-z0-9_:.-]+$/i.test(t)) return "Belum dapat ditetapkan - buka Pilihan lain › Lihat rincian pemeriksaan.";
+  // Pesan basis data/peladen dalam kurung (mis. "(ER_LOCK_WAIT_TIMEOUT: ...)")
+  // tetap ada di rincian pemeriksaan, tidak di kartu.
+  return t.replace(/\s*\([A-Z][A-Z0-9_]{3,}[^)]*\)/g, "");
+}
+
+function t7SebutJenis(daftar) {
+  const k = daftar.map((x) => String(x).toUpperCase());
+  if (k.length <= 1) return k.join("");
+  return `${k.slice(0, -1).join(", ")}, dan ${k[k.length - 1]}`;
+}
+
+/** Menunggu tombol asli selesai bekerja (bunyinya tidak lagi "…"). */
+async function t7TungguTombol(asli, batasMs) {
+  const mulai = Date.now();
+  await new Promise((r) => setTimeout(r, 0));
+  while (Date.now() - mulai < batasMs) {
+    const teks = String(asli.textContent || "");
+    if (!/…$/.test(teks)) return teks;
+    await new Promise((r) => setTimeout(r, 40));
+  }
+  return String(asli.textContent || "");
+}
+
+/**
+ * SATU KLIK. Menekan tombol asli: pemeriksaan dulu, lalu - hanya bila lulus -
+ * penulisan. Jalur formulir SIPP yang terbuka (Kerjakan/Teruskan) tetap satu
+ * tekanan seperti semula.
+ */
+async function t7TetapkanSemua(penunjukan) {
+  const s = t7KeadaanSatuKlik(penunjukan);
+  if (s.tahap === "periksa" || s.tahap === "tulis") return;
+  const asli = penunjukan.querySelector(".aleta-tombol-tetapkan");
+  if (!asli) {
+    t7BukaPenunjukan(penunjukan);
+    return;
+  }
+  if (asli.disabled) return;
+  const lapor = (tahap) => {
+    s.tahap = tahap;
+    s.pendengar.forEach((f) => f());
+  };
+  const teks = String(asli.textContent || "");
+  if (!T7_TOMBOL_ALETA.includes(teks)) {
+    asli.click();
+    return;
+  }
+  s.kering = null;
+  s.tulis = null;
+  if (teks === "Tetapkan dan tuliskan ke SIPP") {
+    lapor("periksa");
+    asli.click();
+    const sesudah = await t7TungguTombol(asli, 180000);
+    if (sesudah !== "Tuliskan ke SIPP") {
+      lapor(sesudah === "Keempat penetapan sudah ada" ? "semua-ada" : "berhenti");
+      return;
+    }
+  }
+  lapor("tulis");
+  asli.click();
+  const akhir = await t7TungguTombol(asli, 240000);
+  lapor(akhir === "Penetapan selesai" ? "selesai" : "gagal");
+}
+
+/** Status satu baris menurut keadaan satu-klik. null = tanpa status. */
+function t7StatusBaris(s, jenis, tercatat) {
+  if (!jenis) return null;
+  const cari = (d) => (d && Array.isArray(d.hasil) ? d.hasil.find((x) => x && x.jenis === jenis) : null);
+  if (s.tahap === "periksa") return tercatat ? { nada: "ok", teks: "Dilewati" } : { nada: "jalan", teks: "Memeriksa…" };
+  if (s.tahap === "tulis") {
+    const r = cari(s.kering);
+    if (tercatat || (r && r.sudahAda)) return { nada: "ok", teks: "Dilewati" };
+    return { nada: "jalan", teks: "Menulis…" };
+  }
+  const sumber = s.tahap === "berhenti" ? s.kering : s.tahap === "selesai" || s.tahap === "gagal" ? s.tulis || s.kering : null;
+  if (!sumber) return null;
+  const r = cari(sumber);
+  if (r && r.sudahAda) return { nada: "ok", teks: "Dilewati", sebab: tercatat ? "" : "Sudah ada di SIPP." };
+  if (r && r.ok) return { nada: "ok", teks: s.tahap === "berhenti" ? "✓ Siap" : "✓ Ditetapkan" };
+  if (r && r.alasan === "dibatalkan_rantai") return { nada: "ditahan", teks: "Ditahan", sebab: t7KalimatAwam(r.bunyi) };
+  if (r) return { nada: "gagal", teks: "✗ Gagal", sebab: t7KalimatAwam(r.bunyi || r.alasan) };
+  if (tercatat) return null;
+  const gagal = (sumber.hasil || []).find((x) => x && !x.ok && !x.sudahAda);
+  return gagal ? { nada: "ditahan", teks: "Ditahan", sebab: `Menunggu ${String(gagal.jenis || "").toUpperCase()} berhasil lebih dulu.` } : null;
+}
+
+/** Baris PHS yang membawa peringatan hari libur - tombol utama ditahan sampai diubah. */
+function t7AwasLiburPhs(daftar) {
+  const phs = daftar.querySelector('.aleta-t7-keputusan-baris[data-jenis="phs"] .aleta-t7-awas');
+  return phs && /hari libur|hari Sabtu|hari Minggu/.test(String(phs.textContent || "")) ? String(phs.textContent) : "";
+}
+
+/** D5 (dirombak 18 Okt 2026): kartu "Penetapan" satu klik. Kelas dan label lama dipertahankan. */
 function t7KartuKeputusan(k, penunjukan) {
-  const kartu = t7Kartu("Keputusan penetapan");
-  kartu.classList.add("aleta-t7-keputusan");
+  const kartu = buatElemen("section", "aleta-t7-kartu aleta-t7-keputusan aleta-t7-penetapan");
+  const kepala = buatElemen("div", "aleta-t7-penetapan-kepala");
+  kepala.appendChild(buatElemen("span", "aleta-t7-penetapan-judul", "Penetapan"));
+  const ringkasKepala = buatElemen("span", "aleta-t7-penetapan-ringkas");
+  kepala.appendChild(ringkasKepala);
+  const perkara = buatElemen("div", "aleta-t7-perkara");
   const daftar = buatElemen("div", "aleta-t7-keputusan-daftar");
-  const kaki = buatElemen("div", "aleta-t7-keputusan-kaki");
+  const pejabatBaris = buatElemen("div", "aleta-t7-pejabat");
+  const mode = buatElemen("div", "aleta-t7-mode");
+  const kaki = buatElemen("div", "aleta-t7-penetapan-kaki aleta-t7-keputusan-kaki");
+  const hasilKotak = buatElemen("div", "aleta-t7-hasil");
+  const utama = t7Tombol("Tetapkan semua", "", "aleta-t7-tetapkan-semua");
+  const petunjuk = buatElemen("div", "aleta-t7-tetapkan-petunjuk");
   const muat = t7Tombol("Muat usulan penetapan", "Menyusun usulan majelis, panitera, juru sita, dan hari sidang", "aleta-t7-kecil");
-  const tinjau = t7Tombol("Tinjau & ubah pilihan", "Buka seluruh pilihan: cara, majelis, panitera, juru sita, hari sidang, pejabat penetap", "aleta-t7-kecil");
+  const lain = buatElemen("details", "aleta-t7-lain");
+  lain.appendChild(buatElemen("summary", "", "Pilihan lain"));
+  const lainIsi = buatElemen("div", "aleta-t7-lain-isi");
+  const tinjau = t7Tombol("Ubah semua pilihan", "Buka seluruh pilihan: cara, majelis, panitera, juru sita, hari sidang, pejabat penetap", "aleta-t7-kecil");
+  const rincian = t7Tombol("Lihat rincian pemeriksaan", "Buka bagian rinci beserta hasil pemeriksaannya", "aleta-t7-kecil");
+  lainIsi.append(
+    tinjau,
+    rincian,
+    buatElemen(
+      "span",
+      "aleta-t7-lain-ket",
+      "Cara manual, susunan per orang, sidang keliling, dan pejabat penetap ada di Ubah semua pilihan. Membatalkan penetapan ada di menu ⋯ › Zona berbahaya."
+    )
+  );
+  lain.appendChild(lainIsi);
+  kaki.append(hasilKotak, utama, muat, petunjuk, lain);
+  kartu.append(kepala, perkara, daftar, pejabatBaris, mode, kaki);
+
+  const s = t7KeadaanSatuKlik(penunjukan);
   muat.addEventListener("click", () => t7BukaPenunjukan(penunjukan));
   tinjau.addEventListener("click", () => t7SetelTinjau(penunjukan, !penunjukan.hasAttribute("data-t7-tinjau")));
-  kaki.append(muat, tinjau);
-  kartu.append(daftar, kaki);
+  rincian.addEventListener("click", () => {
+    t7SetelTinjau(penunjukan, true);
+    const tujuan = penunjukan.querySelector(".aleta-tetap-kaki") || penunjukan;
+    if (typeof tujuan.scrollIntoView === "function") tujuan.scrollIntoView({ block: "center" });
+  });
+  utama.addEventListener("click", () => void t7TetapkanSemua(penunjukan));
 
   const segarkan = () => {
     daftar.textContent = "";
-    const baris = Array.from(penunjukan.querySelectorAll(".aleta-tetap"));
-    muat.hidden = baris.length > 0 || penunjukan.querySelector(".aleta-memuat") !== null;
-    tinjau.textContent = penunjukan.hasAttribute("data-t7-tinjau") ? "Sembunyikan pilihan" : "Tinjau & ubah pilihan";
-    if (baris.length === 0) {
-      daftar.appendChild(
-        t7Ket(penunjukan.querySelector(".aleta-memuat") ? "Menyusun usulan…" : "Usulan belum dimuat. Tekan “Muat usulan penetapan”.", "aleta-t7-lembut")
-      );
-      return;
+    const data = typeof usulanTerakhir !== "undefined" ? usulanTerakhir : null;
+    const usulan = (data && data.usulan) || {};
+    const pk = usulan.perkara || {};
+    const identitas = (k.konteks && k.konteks.identitas) || {};
+    const baris = Array.from(penunjukan.querySelectorAll(".aleta-tetap")).filter((b) => !b.closest(".aleta-tetap-pejabat-baris"));
+    const asli = penunjukan.querySelector(".aleta-tombol-tetapkan");
+    const memuat = penunjukan.querySelector(".aleta-memuat") !== null;
+    muat.hidden = baris.length > 0 || memuat;
+    tinjau.textContent = penunjukan.hasAttribute("data-t7-tinjau") ? "Sembunyikan pilihan" : "Ubah semua pilihan";
+
+    // Ringkasan perkara
+    perkara.textContent = "";
+    const judulPerkara = [k.nomor || pk.nomorPerkara || "", identitas.jenisPerkara || pk.jenisPerkara || ""].filter(Boolean).join(" · ");
+    perkara.appendChild(buatElemen("strong", "", judulPerkara));
+    const sisa = data && data.usulan ? langkahSisaPenetapan(usulan) : [];
+    const bagianKet = [];
+    if (pk.tanggalDaftar) bagianKet.push(`Didaftarkan ${sebutTanggal(String(pk.tanggalDaftar).slice(0, 10))}`);
+    if (usulan.tanggalPenetapan && sisa.length) {
+      const tp = sebutTanggal(String(usulan.tanggalPenetapan).slice(0, 10));
+      bagianKet.push(sisa.length === URUTAN_TULIS.length ? `keempatnya ditetapkan ${tp}` : `ditetapkan setanggal PMH yang sudah ada (${tp})`);
     }
+    if (bagianKet.length) perkara.appendChild(document.createTextNode(bagianKet.join(" · ")));
+    perkara.hidden = !judulPerkara && !bagianKet.length;
+
+    if (baris.length === 0) {
+      daftar.appendChild(t7Ket(memuat ? "Menyusun usulan…" : "Usulan belum dimuat. Tekan “Muat usulan penetapan”.", "aleta-t7-lembut"));
+    }
+    let tercatatJumlah = 0;
+    const sibuk = s.tahap === "periksa" || s.tahap === "tulis";
     for (const b of baris) {
       const label = b.querySelector(".aleta-tetap-label");
       const nilai = b.querySelector(".aleta-tetap-isi, .aleta-tetap-kosong");
       const sebab = b.querySelector(".aleta-tetap-sebab");
       const awas = b.querySelector(".aleta-tetap-awas");
+      const teksLabel = label ? String(label.textContent || "") : "";
+      const jenis = T7_KODE_PENETAPAN[teksLabel] || "";
+      const tercatatSipp = Boolean(nilai && nilai.classList.contains("aleta-tetap-tercatat"));
+      if (jenis && tercatatSipp) tercatatJumlah += 1;
+      const st = t7StatusBaris(s, jenis, tercatatSipp);
+      // Sesudah ditulis (sebelum halaman dimuat ulang) barisnya sudah di SIPP.
+      const tercatat = tercatatSipp || (s.tahap === "selesai" && Boolean(st) && st.nada === "ok");
       const r = buatElemen("div", `aleta-t7-keputusan-baris${awas ? " aleta-t7-nada-mendesak" : ""}`);
-      r.appendChild(buatElemen("span", "aleta-t7-keputusan-label", label ? label.textContent : ""));
+      if (jenis) r.setAttribute("data-jenis", jenis);
+      r.appendChild(buatElemen("span", "aleta-t7-kode", jenis ? jenis.toUpperCase() : "•"));
+      r.appendChild(buatElemen("span", "aleta-t7-keputusan-label", teksLabel));
       const kanan = buatElemen("span", "aleta-t7-keputusan-nilai");
       kanan.appendChild(buatElemen("strong", "", nilai ? nilai.textContent : "belum dapat diusulkan"));
       // Yang sudah tercatat di SIPP bukan usulan dan tidak dapat diubah dari
       // sini (barisPenetapanTercatat; uji rilis U1, 9 Okt 2026).
-      const tercatat = Boolean(nilai && nilai.classList.contains("aleta-tetap-tercatat"));
-      if (tercatat) kanan.appendChild(buatElemen("span", "aleta-t7-chip-kecil", "Sudah di SIPP"));
+      if (tercatat) kanan.appendChild(buatElemen("span", "aleta-t7-chip-kecil aleta-t7-chip-sudah", "Sudah di SIPP"));
       else if (nilai && nilai.classList.contains("aleta-tetap-isi")) kanan.appendChild(buatElemen("span", "aleta-t7-chip-kecil", "Usulan ALETA"));
-      if (sebab && sebab.textContent) {
+      if (sebab && sebab.textContent && !tercatat) {
         const info = buatElemen("span", "aleta-t7-info", "ⓘ");
         info.title = String(sebab.textContent);
         info.setAttribute("aria-label", `Sebab: ${sebab.textContent}`);
         kanan.appendChild(info);
       }
-      if (awas) kanan.appendChild(buatElemen("span", "aleta-t7-awas", awas.textContent));
-      if (!tercatat) {
+      if (!tercatat && !sibuk) {
         const ubah = t7Tombol("Ubah", "Buka pilihan untuk mengubahnya", "aleta-t7-tautan");
         ubah.addEventListener("click", () => {
           t7SetelTinjau(penunjukan, true);
+          b.classList.add("aleta-t7-sorot");
+          setTimeout(() => b.classList.remove("aleta-t7-sorot"), 2400);
           if (typeof b.scrollIntoView === "function") b.scrollIntoView({ block: "center" });
         });
         kanan.appendChild(ubah);
       }
       r.appendChild(kanan);
+      if (awas) r.appendChild(buatElemen("span", "aleta-t7-awas", awas.textContent));
+      if (st) {
+        const tanda = buatElemen("span", `aleta-t7-langkah-status aleta-t7-langkah-${st.nada}`);
+        if (st.nada === "jalan") tanda.appendChild(buatElemen("span", "aleta-t7-putar"));
+        tanda.appendChild(document.createTextNode(st.teks));
+        r.appendChild(tanda);
+        if (st.sebab) r.appendChild(buatElemen("span", `aleta-t7-langkah-sebab${st.nada === "ditahan" ? " aleta-t7-langkah-sebab-ditahan" : ""}`, st.sebab));
+      }
       daftar.appendChild(r);
     }
+
+    // Pejabat penetap (isi pilihan "Pejabat yang menetapkan" di bagian rinci).
     const pejabat = Array.from(penunjukan.querySelectorAll(".aleta-tetap-pejabat-baris"));
+    pejabatBaris.textContent = "";
     if (pejabat.length) {
-      const r = buatElemen("div", "aleta-t7-keputusan-baris");
-      r.appendChild(buatElemen("span", "aleta-t7-keputusan-label", "Pejabat penetap"));
+      pejabatBaris.appendChild(document.createTextNode("Ditetapkan atas nama "));
       const nama = pejabat.map((x) => {
-        const jenis = x.querySelector(".aleta-tetap-pejabat-jenis");
+        const jenisEl = x.querySelector(".aleta-tetap-pejabat-jenis");
         const pilih = x.querySelector("select");
         const opsi = pilih && pilih.selectedOptions && pilih.selectedOptions[0];
-        return `${jenis ? jenis.textContent : ""} ${opsi ? String(opsi.textContent || "").trim() : ""}`.trim();
+        const siapa = opsi ? String(opsi.textContent || "").trim().replace(/ \(pilihan ALETA\)$/, "") : "";
+        return `${jenisEl ? jenisEl.textContent : ""} ${siapa}`.trim();
       });
-      r.appendChild(buatElemen("strong", "aleta-t7-keputusan-nilai", nama.join(" · ")));
-      daftar.appendChild(r);
+      pejabatBaris.appendChild(buatElemen("strong", "", nama.join(" · ")));
     }
+    pejabatBaris.hidden = pejabat.length === 0;
+
+    // Mode latihan / uji: tidak ada yang tersimpan - dikatakan sebelum ditekan.
+    const latihan = typeof alatLatihanNyala === "function" && alatLatihanNyala();
+    const uji = typeof alatKeringNyala === "function" && alatKeringNyala();
+    mode.textContent = latihan ? "Mode latihan menyala - tidak ada yang tersimpan ke SIPP." : uji ? "Mode uji menyala - tidak ada yang tersimpan ke SIPP." : "";
+    mode.hidden = !mode.textContent;
+
+    // Ringkasan kepala
+    const adaBaris = daftar.querySelectorAll(".aleta-t7-keputusan-baris[data-jenis]").length > 0;
+    const semuaAda = adaBaris && tercatatJumlah === 4;
+    ringkasKepala.classList.toggle("aleta-t7-ringkas-aman", s.tahap === "selesai" || semuaAda);
+    ringkasKepala.textContent = sibuk
+      ? "Sedang menetapkan…"
+      : s.tahap === "selesai" || semuaAda
+        ? "Semua sudah ditetapkan"
+        : !adaBaris
+          ? ""
+          : tercatatJumlah
+            ? `${tercatatJumlah} sudah di SIPP · ${4 - tercatatJumlah} belum`
+            : "4 belum ditetapkan";
+    ringkasKepala.hidden = !ringkasKepala.textContent;
+
+    // Hasil
+    const sisaKode = sisa.length ? t7SebutJenis(sisa) : "";
+    hasilKotak.className = "aleta-t7-hasil";
+    hasilKotak.textContent = "";
+    if (s.tahap === "periksa") {
+      hasilKotak.classList.add("aleta-t7-hasil-jalan");
+      hasilKotak.textContent = "Memeriksa usulan…";
+    } else if (s.tahap === "tulis") {
+      hasilKotak.classList.add("aleta-t7-hasil-jalan");
+      hasilKotak.textContent = `Pemeriksaan lulus. Menuliskan ${sisaKode || "penetapan"} ke SIPP…`;
+    } else if (s.tahap === "selesai") {
+      hasilKotak.classList.add("aleta-t7-hasil-ok");
+      const ditulis = ((s.tulis && s.tulis.hasil) || []).filter((x) => x && x.ok).map((x) => x.jenis);
+      hasilKotak.textContent = `${ditulis.length === 4 ? "Keempat penetapan" : t7SebutJenis(ditulis) || "Penetapan"} tersimpan di SIPP. Halaman dimuat ulang sebentar lagi.`;
+    } else if (s.tahap === "berhenti") {
+      hasilKotak.classList.add("aleta-t7-hasil-gagal");
+      const g = ((s.kering && s.kering.hasil) || []).find((x) => x && !x.ok && !x.sudahAda);
+      hasilKotak.textContent = g
+        ? `Belum ada yang ditulis ke SIPP. Perbaiki ${String(g.jenis || "").toUpperCase()}, lalu tekan Tetapkan semua lagi.`
+        : "Belum ada yang ditulis ke SIPP. Periksa sebabnya di atas, lalu tekan Tetapkan semua lagi.";
+    } else if (s.tahap === "gagal") {
+      hasilKotak.classList.add("aleta-t7-hasil-gagal");
+      const hasilTulis = s.tulis || { ok: false, hasil: [] };
+      hasilKotak.textContent =
+        typeof rantaiDibatalkanUtuh === "function" && rantaiDibatalkanUtuh(hasilTulis)
+          ? "Tidak ada yang tertulis ke SIPP. Perbaiki sebabnya di atas, lalu tekan Tetapkan semua lagi."
+          : "Belum pasti tertulis atau tidak - periksa tab Penetapan SIPP sebelum mencoba lagi.";
+    } else if (s.tahap === "semua-ada") {
+      hasilKotak.classList.add("aleta-t7-hasil-ok");
+      hasilKotak.textContent = "Keempat penetapan sudah ada di SIPP.";
+    }
+    hasilKotak.hidden = !hasilKotak.textContent;
+
+    // Tombol utama
+    const teksAsli = asli ? String(asli.textContent || "") : "";
+    const jalurAleta = T7_TOMBOL_ALETA.includes(teksAsli) || /…$/.test(teksAsli);
+    const libur = t7AwasLiburPhs(daftar);
+    utama.hidden = !asli;
+    if (asli) {
+      if (sibuk) {
+        utama.textContent = "Menetapkan…";
+        utama.disabled = true;
+      } else if (jalurAleta) {
+        utama.textContent = s.tahap === "selesai" ? "Penetapan selesai" : "Tetapkan semua";
+        utama.disabled = asli.disabled || s.tahap === "selesai" || Boolean(libur);
+      } else {
+        // Formulir SIPP terbuka (Kerjakan/Teruskan) atau keempatnya sudah ada.
+        utama.textContent = teksAsli || "Tetapkan";
+        utama.disabled = asli.disabled;
+      }
+    }
+    petunjuk.textContent = !asli || sibuk || s.tahap === "selesai"
+      ? ""
+      : libur
+        ? "Tanggal sidang jatuh pada hari libur. Ubah hari sidangnya dulu."
+        : jalurAleta && sisa.length
+          ? sisa.length === URUTAN_TULIS.length
+            ? "Satu kali tekan: ALETA memeriksa lalu menuliskan PMH, PPP, PJS, dan PHS sesuai urutannya."
+            : `Satu kali tekan: ALETA memeriksa lalu menuliskan ${sisaKode}. ${t7SebutJenis(URUTAN_TULIS.filter((x) => !sisa.includes(x)))} sudah ada di SIPP.`
+          : "";
+    petunjuk.hidden = !petunjuk.textContent;
   };
+  s.pendengar.add(() => segarkan());
   return { kartu, segarkan };
 }
 
@@ -19336,11 +19807,22 @@ function t7BukaPenunjukan(penunjukan) {
   if (kepala && isi && isi.style.display === "none") kepala.click();
 }
 
-/** D6: seluruh pilihan disembunyikan di balik "Tinjau" dalam UI Baru; atributnya hanya di sana. */
+/** D6: seluruh pilihan disembunyikan di balik "Ubah" dalam UI Baru; atributnya hanya di sana. */
 function t7SetelTinjau(penunjukan, buka) {
   if (buka) {
     penunjukan.setAttribute("data-t7-tinjau", "ya");
     t7BukaPenunjukan(penunjukan);
+    // "Selesai mengubah" di kepala bagian rinci - menutupnya kembali.
+    const kepala = penunjukan.querySelector(":scope > .aleta-bagian-judul");
+    if (kepala && !kepala.querySelector(".aleta-t7-selesai-ubah")) {
+      const selesai = t7Tombol("Selesai mengubah", "Tutup pilihan; usulan yang diubah tetap dipakai", "aleta-t7-tautan aleta-t7-selesai-ubah");
+      selesai.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        t7SetelTinjau(penunjukan, false);
+      });
+      kepala.appendChild(selesai);
+    }
   } else {
     penunjukan.removeAttribute("data-t7-tinjau");
   }
@@ -19348,19 +19830,20 @@ function t7SetelTinjau(penunjukan, buka) {
 
 /**
  * D7 / sipp-5: bilah bawah lengket. Ringkasan yang akan ditulis + tombol
- * utama yang MENEKAN tombol Tetapkan asli - bunyinya ikut bunyi tombol asli
- * ("Tetapkan dan tuliskan ke SIPP", "Tuliskan ke SIPP", "Kerjakan PMH", ...),
- * matinya ikut matinya. Tekanan pertama tetap hanya menyusun rencana.
+ * utama yang menjalankan SATU KLIK yang sama dengan kartu Penetapan (lewat
+ * tombol Tetapkan asli). Pada jalur formulir SIPP bunyinya ikut tombol asli
+ * ("Kerjakan PMH", ...), matinya ikut matinya.
  */
 function t7PasangBilah(k, penunjukan) {
   const bilah = buatElemen("div", "aleta-t7-bilah");
   bilah.setAttribute("data-t7-fitur", "sipp-5");
   const ringkas = buatElemen("span", "aleta-t7-bilah-ringkas");
   const lihat = t7Tombol("Lihat perubahan", "Tampilkan seluruh pilihan dan rencana yang akan ditulis", "aleta-t7-tautan");
-  const utama = t7Tombol("Tetapkan", "", "aleta-t7-utama");
+  const utama = t7Tombol("Tetapkan semua", "", "aleta-t7-utama");
   bilah.append(ringkas, lihat, utama);
   const kaki = k.panel.querySelector(":scope > .aleta-kaki");
   k.panel.insertBefore(bilah, kaki || null);
+  const s = t7KeadaanSatuKlik(penunjukan);
 
   const lihatKe = () => {
     t7SetelTinjau(penunjukan, true);
@@ -19369,15 +19852,11 @@ function t7PasangBilah(k, penunjukan) {
   };
   lihat.addEventListener("click", lihatKe);
   utama.addEventListener("click", () => {
-    const asli = penunjukan.querySelector(".aleta-tombol-tetapkan");
-    if (!asli) {
+    if (!penunjukan.querySelector(".aleta-tombol-tetapkan")) {
       t7BukaPenunjukan(penunjukan);
       return;
     }
-    // Rencana dan hasilnya ditulis di sebelah tombol asli - dibuka dulu
-    // supaya yang menekan melihatnya.
-    lihatKe();
-    asli.click();
+    void t7TetapkanSemua(penunjukan);
   });
 
   const segarkan = () => {
@@ -19391,13 +19870,24 @@ function t7PasangBilah(k, penunjukan) {
       ringkas.textContent = "Penetapan belum dimuat";
       return;
     }
-    utama.textContent = String(asli.textContent || "Tetapkan");
-    utama.disabled = asli.disabled;
-    utama.title = asli.disabled ? "Tombol Tetapkan sedang mati - lihat sebabnya di bawah tombol aslinya." : "Menekan tombol Tetapkan yang sama; tekanan pertama menyusun rencananya lebih dulu.";
+    const teksAsli = String(asli.textContent || "Tetapkan");
+    const jalurAleta = T7_TOMBOL_ALETA.includes(teksAsli) || /…$/.test(teksAsli);
+    if (s.tahap === "periksa" || s.tahap === "tulis") {
+      utama.textContent = "Menetapkan…";
+      utama.disabled = true;
+    } else if (jalurAleta) {
+      utama.textContent = s.tahap === "selesai" ? "Penetapan selesai" : "Tetapkan semua";
+      utama.disabled = asli.disabled || s.tahap === "selesai";
+    } else {
+      utama.textContent = teksAsli;
+      utama.disabled = asli.disabled;
+    }
+    utama.title = asli.disabled ? "Tombol Tetapkan sedang mati - lihat sebabnya di kartu Penetapan." : "Satu kali tekan: memeriksa lalu menuliskan penetapan yang tersisa.";
     ringkas.textContent = pejabat.length
       ? `${pejabat.length} penetapan siap ditulis: ${pejabat.join(" · ")}`
       : `${baris} keputusan diusulkan`;
   };
+  s.pendengar.add(() => segarkan());
   return { bilah, segarkan };
 }
 
@@ -24278,6 +24768,8 @@ function s2PasangPeran(akar) {
 /** Kartu tambahan di DALAM tab (bukan kartu atas Langkah/Perkara berikutnya) tertutup sebagai bawaan. */
 function s2KartuTertutup(el) {
   if (!s2Aktif() || !el || !el.classList || !el.classList.contains("aleta-t7-kartu")) return false;
+  // Kartu Penetapan satu klik adalah tindakan utama tab ini - terbuka (18 Okt 2026).
+  if (el.classList.contains("aleta-t7-penetapan")) return false;
   return Boolean(el.closest(".aleta-kelompok"));
 }
 

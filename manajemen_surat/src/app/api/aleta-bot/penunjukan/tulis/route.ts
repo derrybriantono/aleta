@@ -7,6 +7,7 @@ import {
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { pastikanPejabatLangkah, pejabatSahUntukTanggal } from "@/server/modules/aleta-ecourt/rencana-penetapan";
+import { periksaLiburPenetapan } from "@/server/modules/hari-libur/penjaga";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { alamatIpPeramban } from "@/server/shared/request";
@@ -130,6 +131,14 @@ export async function POST(request: NextRequest) {
       }
       const tolak = await isiPejabatSah(db, String(badan.tanggalPenetapan || ""), langkah);
       if (tolak) return tolak;
+      // Hari libur nasional/cuti bersama/tambahan - SIPP menerimanya, ALETA tidak.
+      const libur = await periksaLiburPenetapan(db, badan.tanggalPenetapan, langkah);
+      if (libur) {
+        return Response.json(
+          { ok: false, alasan: libur.alasan, diminta: libur.diminta, jenisGagal: libur.alasan === "tanggal_sidang_hari_libur" ? "phs" : langkah[0].jenis, hasil: [], dipulihkan: true },
+          { status: 409 }
+        );
+      }
       const responsRantai = await kirimPenetapanTulisRantaiGateway({
         perkaraId: perkaraIdRantai,
         tanggalPenetapan: String(badan.tanggalPenetapan || ""),
@@ -178,6 +187,9 @@ export async function POST(request: NextRequest) {
     if (jenis !== "dataUmum") {
       const tolak = await isiPejabatSah(db, String(badan.tanggalPenetapan || ""), tunggal);
       if (tolak) return tolak;
+      // Hari libur nasional/cuti bersama/tambahan - SIPP menerimanya, ALETA tidak.
+      const libur = await periksaLiburPenetapan(db, badan.tanggalPenetapan, [{ jenis, tanggalSidang: badan.tanggalSidang }]);
+      if (libur) return Response.json({ ok: false, alasan: libur.alasan, diminta: libur.diminta }, { status: 409 });
     }
     const pejabatUsername = tunggal[0].pejabatUsername || "";
 

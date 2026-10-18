@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { masalahAlasan, JENIS_KEMBALI } from "@/lib/penetapan-kembali";
 import { getDatabase } from "@/server/db/client";
+import { periksaLiburPenetapan } from "@/server/modules/hari-libur/penjaga";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { akunSippPengguna } from "@/server/modules/aleta-ecourt/court-calendar-akun";
 import { calonPenetapKembali, panggilBotPenetapanKembali } from "@/server/modules/aleta-ecourt/penetapan-kembali";
@@ -106,6 +107,10 @@ export async function POST(request: NextRequest) {
 
     const akun = await akunSippPengguna(db, aktor.id, badan.akunSipp);
     if (!akun.ok) return ok({ ok: false, alasan: akun.alasan, pesan: akun.pesan, milik: akun.milik });
+
+    // Hari libur nasional/cuti bersama/tambahan - SIPP menerimanya, ALETA tidak.
+    const libur = await periksaLiburPenetapan(db, badan.tanggalPenetapan, [{ jenis, tanggalSidang: badan.tanggalSidang }]);
+    if (libur) return ok({ ok: false, alasan: libur.alasan, diminta: libur.diminta });
 
     // Menulis HARUS diminta tegas.
     const kering = badan.kering !== false;

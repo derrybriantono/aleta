@@ -52,6 +52,7 @@ import { UsulanKehadiranBlangko } from "@/components/portal/kehadiran-rinci-sida
 import { IsianMediator } from "@/components/portal/jadwal-sidang-1okt";
 import { PapanRuangSidang } from "@/components/portal/jadwal-sidang-2okt";
 import { KartuPanggil } from "@/components/portal/panggil-petugas";
+import { PemilihTanggalSidang } from "@/components/ui/pemilih-tanggal-sidang";
 import { sebabBerbauMediasi } from "@/lib/mediasi-sidang";
 import type { Ruangan } from "@/lib/ruangan-sidang";
 import {
@@ -773,13 +774,13 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                     <div className="flex flex-wrap gap-3">
                       <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-xs text-muted-foreground">
                         Tanggal sidang berikutnya
-                        <input
-                          type="date"
+                        <PemilihTanggalSidang
                           value={tanggalBerikut}
-                          onChange={(e) => {
+                          onChange={(v) => {
                             setTanggalDisentuh(true);
-                            setTanggalBerikut(e.target.value);
+                            setTanggalBerikut(v);
                           }}
+                          sebutan="Tanggal sidang berikutnya"
                           className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                         />
                         <span className="text-[0.7rem]" data-sumber-tanggal={tanggalDisentuh ? "manual" : sumberDasarTanggal.sumber}>
@@ -812,10 +813,10 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                     <div className="flex flex-wrap gap-3">
                       <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-xs text-muted-foreground">
                         Tanggal putusan
-                        <input
-                          type="date"
+                        <PemilihTanggalSidang
                           value={tanggalPutus}
-                          onChange={(e) => setTanggalPutus(e.target.value)}
+                          onChange={setTanggalPutus}
+                          sebutan="Tanggal putusan"
                           className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                         />
                       </label>
@@ -1650,13 +1651,13 @@ export function CatatHasilRingkas({
           </label>
           <label className="text-xs">
             <span className="mb-0.5 block font-medium text-muted-foreground">Tanggal berikutnya</span>
-            <input
-              type="date"
+            <PemilihTanggalSidang
               value={tanggalBerikut}
-              onChange={(e) => {
+              onChange={(v) => {
                 setTanggalDisentuh(true);
-                setTanggalBerikut(e.target.value);
+                setTanggalBerikut(v);
               }}
+              sebutan="Tanggal sidang berikutnya"
               className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             />
             {/* Dari mana tanggalnya - Court Calendar atau dua pekan. */}
@@ -1728,10 +1729,10 @@ export function CatatHasilRingkas({
           </label>
           <label className="text-xs">
             <span className="mb-0.5 block font-medium text-muted-foreground">Tanggal putusan</span>
-            <input
-              type="date"
+            <PemilihTanggalSidang
               value={tanggalPutus}
-              onChange={(e) => setTanggalPutus(e.target.value)}
+              onChange={setTanggalPutus}
+              sebutan="Tanggal putusan"
               className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             />
           </label>

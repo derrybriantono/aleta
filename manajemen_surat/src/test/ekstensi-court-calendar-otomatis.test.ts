@@ -707,21 +707,24 @@ describe("Input semua ke SIPP", () => {
     expect(barisUi(kotak2).map((b) => b.keadaan)).toEqual(["belum terbaca ulang", "belum terbaca ulang"]);
   });
 
-  it("baris Sabtu/Minggu tidak dikirim (SIPP menolaknya)", async () => {
+  it("tanggal Sabtu/Minggu tidak dapat dipilih (18 Okt 2026) dan tidak pernah dikirim", async () => {
     const pertama = selasaDepan(7);
     const h = buka({ simpanan: UI, status: statusBawaan(pertama) });
     const kotak = await bukaCc(h);
     const tgl = kotak.querySelectorAll(".aleta-cc-tanggal")[1];
     let sabtu = tambahHari(pertama, 14);
     while (hariKe(sabtu) !== 6) sabtu = tambahHari(sabtu, 1);
+    const semula = tgl.value;
     tgl.value = sabtu;
     tgl.dispatchEvent(new h.w.Event("change"));
-    expect(kotak.querySelectorAll(".aleta-cc-catatan")[1].textContent).toMatch(/hari Sabtu/);
+    // Ditolak saat dipilih: tanggal lama kembali, sebabnya disebut.
+    expect(tgl.value).toBe(semula);
+    expect(kotak.querySelectorAll(".aleta-cc-catatan")[1].textContent).toMatch(/hari Sabtu - tidak dapat dipilih/);
     kotak.querySelector(".aleta-cc-input").click();
     kotak.querySelector(".aleta-cc-input").click();
-    await sampai(() => /ditolak/.test(kotak.querySelector(".aleta-cc-kabar").textContent), "selesai");
-    expect(kirimanSimpan(h)).toHaveLength(1);
-    expect(barisUi(kotak).map((b) => b.keadaan)).toEqual(["tersimpan", "ditolak"]);
+    await sampai(() => barisUi(kotak).every((b) => b.keadaan === "tersimpan"), "selesai");
+    const sebutSabtu = sabtu.split("-").reverse().join("/");
+    expect(kirimanSimpan(h).some((k) => k.badan.includes(sebutSabtu) || k.badan.includes(encodeURIComponent(sebutSabtu)))).toBe(false);
   });
 
   it("mode coba (UI Baru tanpa izin tindakan nyata): tidak satu POST pun sampai ke SIPP", async () => {
