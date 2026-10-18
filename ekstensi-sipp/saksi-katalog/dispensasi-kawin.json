@@ -842,62 +842,62 @@
     "melihat": {
      "maksud": "saksi menerangkan umur anak yang dimohonkan dispensasi kawin sebagai hal yang dilihat atau dialaminya sendiri",
      "saksi1": [
-      "saya mengetahui sendiri bahwa anak yang bernama #0606# sekarang berumur #0607# tahun",
-      "saya tahu betul bahwa umur #0606# sebagai anak yang dimohonkan dispensasi itu sekarang #0607# tahun",
-      "#0606# saat ini berumur #0607# tahun, dan hal itu saya ketahui sendiri",
-      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa sampai hari ini anak yang bernama #0606# berumur #0607# tahun"
+      "saya mengetahui sendiri bahwa anak yang bernama #0606# sekarang berumur #0607#",
+      "saya tahu betul bahwa umur #0606# sebagai anak yang dimohonkan dispensasi itu sekarang #0607#",
+      "#0606# saat ini berumur #0607#, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa sampai hari ini anak yang bernama #0606# berumur #0607#"
      ],
      "saksi2": [
-      "yang saya ketahui secara langsung adalah bahwa anak yang bernama #0606# sekarang berumur #0607# tahun",
-      "umur #0606# sebagai anak yang dimohonkan dispensasi itu sekarang #0607# tahun, sebagaimana yang saya alami dalam pergaulan dengan mereka",
-      "karena sering bersama mereka saya paham bahwa #0606# saat ini berumur #0607# tahun",
-      "saya paham dengan baik bahwa sampai hari ini anak yang bernama #0606# berumur #0607# tahun"
+      "yang saya ketahui secara langsung adalah bahwa anak yang bernama #0606# sekarang berumur #0607#",
+      "umur #0606# sebagai anak yang dimohonkan dispensasi itu sekarang #0607#, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa #0606# saat ini berumur #0607#",
+      "saya paham dengan baik bahwa sampai hari ini anak yang bernama #0606# berumur #0607#"
      ]
     },
     "de-auditu": {
      "maksud": "saksi menerangkan umur anak yang dimohonkan dispensasi kawin hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
      "saksi1": [
-      "{sumber} bercerita kepada saya bahwa anak yang bernama #0606# sekarang berumur #0607# tahun",
-      "saya diberi tahu oleh {sumber} bahwa umur #0606# sebagai anak yang dimohonkan dispensasi itu sekarang #0607# tahun",
-      "#0606# saat ini berumur #0607# tahun, begitulah cerita {sumber} kepada saya",
-      "setahu saya berdasarkan cerita {sumber} bahwa sampai hari ini anak yang bernama #0606# berumur #0607# tahun"
+      "{sumber} bercerita kepada saya bahwa anak yang bernama #0606# sekarang berumur #0607#",
+      "saya diberi tahu oleh {sumber} bahwa umur #0606# sebagai anak yang dimohonkan dispensasi itu sekarang #0607#",
+      "#0606# saat ini berumur #0607#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa sampai hari ini anak yang bernama #0606# berumur #0607#"
      ],
      "saksi2": [
-      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa anak yang bernama #0606# sekarang berumur #0607# tahun",
-      "kabar dari {sumber} yang saya terima menyebutkan bahwa umur #0606# sebagai anak yang dimohonkan dispensasi itu sekarang #0607# tahun",
-      "#0606# saat ini berumur #0607# tahun, demikian yang diceritakan {sumber} kepada saya",
-      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa sampai hari ini anak yang bernama #0606# berumur #0607# tahun"
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa anak yang bernama #0606# sekarang berumur #0607#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa umur #0606# sebagai anak yang dimohonkan dispensasi itu sekarang #0607#",
+      "#0606# saat ini berumur #0607#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa sampai hari ini anak yang bernama #0606# berumur #0607#"
      ]
     },
     "sebagian": {
      "maksud": "saksi hanya mengetahui sebagian dari umur anak yang dimohonkan dispensasi kawin",
      "saksi1": [
-      "yang saya ketahui hanya sebagian saja yaitu bahwa anak yang bernama #0606# masih di bawah sembilan belas tahun yaitu sekitar #0607# tahun, sedangkan selebihnya kurang saya ketahui",
-      "saya hanya tahu sebagian yaitu bahwa #0606# masih di bawah umur sembilan belas tahun yaitu kira-kira #0607# tahun, dan selebihnya kurang saya ketahui",
-      "sebagian saja yang saya ketahui yakni bahwa anak yang bernama #0606# masih di bawah sembilan belas tahun yaitu sekitar #0607# tahun",
-      "hanya sebatas itu yang saya ketahui yaitu bahwa #0606# masih di bawah umur sembilan belas tahun yaitu kira-kira #0607# tahun"
+      "yang saya ketahui hanya sebagian saja yaitu bahwa anak yang bernama #0606# masih di bawah sembilan belas tahun yaitu sekitar #0607#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #0606# masih di bawah umur sembilan belas tahun yaitu kira-kira #0607#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa anak yang bernama #0606# masih di bawah sembilan belas tahun yaitu sekitar #0607#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #0606# masih di bawah umur sembilan belas tahun yaitu kira-kira #0607#"
      ],
      "saksi2": [
-      "pengetahuan saya terbatas pada satu hal bahwa anak yang bernama #0606# masih di bawah sembilan belas tahun yaitu sekitar #0607# tahun, adapun selebihnya kurang jelas bagi saya",
-      "sejauh yang saya tahu bahwa #0606# masih di bawah umur sembilan belas tahun yaitu kira-kira #0607# tahun, sedangkan sisanya kurang saya pahami",
-      "bagian yang saya kuasai hanyalah bahwa anak yang bernama #0606# masih di bawah sembilan belas tahun yaitu sekitar #0607# tahun, dan lainnya kurang saya pahami",
-      "yang bisa saya terangkan sebatas bahwa #0606# masih di bawah umur sembilan belas tahun yaitu kira-kira #0607# tahun, selebihnya kurang saya pahami"
+      "pengetahuan saya terbatas pada satu hal bahwa anak yang bernama #0606# masih di bawah sembilan belas tahun yaitu sekitar #0607#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa #0606# masih di bawah umur sembilan belas tahun yaitu kira-kira #0607#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa anak yang bernama #0606# masih di bawah sembilan belas tahun yaitu sekitar #0607#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa #0606# masih di bawah umur sembilan belas tahun yaitu kira-kira #0607#, selebihnya kurang saya pahami"
      ]
     },
     "berbeda": {
      "maksud": "versi A: umur sesuai isian perkara; versi B: umur lebih muda dari isian - berselisih pada JUMLAH (umur)",
      "bedaPada": "jumlah",
      "saksi1": [
-      "menurut yang saya ketahui sendiri bahwa anak yang bernama #0606# sekarang berumur #0607# tahun",
-      "keterangan saya adalah bahwa #0606# saat ini berumur #0607# tahun",
-      "anak yang bernama #0606# sekarang berumur #0607# tahun, itulah yang saya ketahui",
-      "yang saya terangkan di sini adalah bahwa #0606# saat ini berumur #0607# tahun"
+      "menurut yang saya ketahui sendiri bahwa anak yang bernama #0606# sekarang berumur #0607#",
+      "keterangan saya adalah bahwa #0606# saat ini berumur #0607#",
+      "anak yang bernama #0606# sekarang berumur #0607#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #0606# saat ini berumur #0607#"
      ],
      "saksi2": [
-      "sepengetahuan saya bahwa anak yang bernama #0606# sekarang berumur kurang dari #0607# tahun",
-      "umur #0606# sekarang lebih muda daripada #0607# tahun, begitulah yang saya alami",
-      "yang saya ingat dan saya sampaikan adalah bahwa anak yang bernama #0606# sekarang berumur kurang dari #0607# tahun",
-      "umur #0606# sekarang lebih muda daripada #0607# tahun, dan itulah keterangan saya"
+      "sepengetahuan saya bahwa anak yang bernama #0606# sekarang berumur kurang dari #0607#",
+      "umur #0606# sekarang lebih muda daripada #0607#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa anak yang bernama #0606# sekarang berumur kurang dari #0607#",
+      "umur #0606# sekarang lebih muda daripada #0607#, dan itulah keterangan saya"
      ]
     }
    },
@@ -929,62 +929,62 @@
     "melihat": {
      "maksud": "saksi menerangkan umur anak yang dimohonkan dispensasi kawin sebagai hal yang dilihat atau dialaminya sendiri",
      "saksi1": [
-      "saya mengetahui sendiri bahwa anak yang bernama #0600# sekarang berumur #0601# tahun",
-      "saya tahu betul bahwa umur #0600# sebagai anak yang dimohonkan dispensasi itu sekarang #0601# tahun",
-      "#0600# saat ini berumur #0601# tahun, dan hal itu saya ketahui sendiri",
-      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa sampai hari ini anak yang bernama #0600# berumur #0601# tahun"
+      "saya mengetahui sendiri bahwa anak yang bernama #0600# sekarang berumur #0601#",
+      "saya tahu betul bahwa umur #0600# sebagai anak yang dimohonkan dispensasi itu sekarang #0601#",
+      "#0600# saat ini berumur #0601#, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa sampai hari ini anak yang bernama #0600# berumur #0601#"
      ],
      "saksi2": [
-      "yang saya ketahui secara langsung adalah bahwa anak yang bernama #0600# sekarang berumur #0601# tahun",
-      "umur #0600# sebagai anak yang dimohonkan dispensasi itu sekarang #0601# tahun, sebagaimana yang saya alami dalam pergaulan dengan mereka",
-      "karena sering bersama mereka saya paham bahwa #0600# saat ini berumur #0601# tahun",
-      "saya paham dengan baik bahwa sampai hari ini anak yang bernama #0600# berumur #0601# tahun"
+      "yang saya ketahui secara langsung adalah bahwa anak yang bernama #0600# sekarang berumur #0601#",
+      "umur #0600# sebagai anak yang dimohonkan dispensasi itu sekarang #0601#, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa #0600# saat ini berumur #0601#",
+      "saya paham dengan baik bahwa sampai hari ini anak yang bernama #0600# berumur #0601#"
      ]
     },
     "de-auditu": {
      "maksud": "saksi menerangkan umur anak yang dimohonkan dispensasi kawin hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
      "saksi1": [
-      "{sumber} bercerita kepada saya bahwa anak yang bernama #0600# sekarang berumur #0601# tahun",
-      "saya diberi tahu oleh {sumber} bahwa umur #0600# sebagai anak yang dimohonkan dispensasi itu sekarang #0601# tahun",
-      "#0600# saat ini berumur #0601# tahun, begitulah cerita {sumber} kepada saya",
-      "setahu saya berdasarkan cerita {sumber} bahwa sampai hari ini anak yang bernama #0600# berumur #0601# tahun"
+      "{sumber} bercerita kepada saya bahwa anak yang bernama #0600# sekarang berumur #0601#",
+      "saya diberi tahu oleh {sumber} bahwa umur #0600# sebagai anak yang dimohonkan dispensasi itu sekarang #0601#",
+      "#0600# saat ini berumur #0601#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa sampai hari ini anak yang bernama #0600# berumur #0601#"
      ],
      "saksi2": [
-      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa anak yang bernama #0600# sekarang berumur #0601# tahun",
-      "kabar dari {sumber} yang saya terima menyebutkan bahwa umur #0600# sebagai anak yang dimohonkan dispensasi itu sekarang #0601# tahun",
-      "#0600# saat ini berumur #0601# tahun, demikian yang diceritakan {sumber} kepada saya",
-      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa sampai hari ini anak yang bernama #0600# berumur #0601# tahun"
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa anak yang bernama #0600# sekarang berumur #0601#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa umur #0600# sebagai anak yang dimohonkan dispensasi itu sekarang #0601#",
+      "#0600# saat ini berumur #0601#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa sampai hari ini anak yang bernama #0600# berumur #0601#"
      ]
     },
     "sebagian": {
      "maksud": "saksi hanya mengetahui sebagian dari umur anak yang dimohonkan dispensasi kawin",
      "saksi1": [
-      "yang saya ketahui hanya sebagian saja yaitu bahwa anak yang bernama #0600# masih di bawah sembilan belas tahun yaitu sekitar #0601# tahun, sedangkan selebihnya kurang saya ketahui",
-      "saya hanya tahu sebagian yaitu bahwa #0600# masih di bawah umur sembilan belas tahun yaitu kira-kira #0601# tahun, dan selebihnya kurang saya ketahui",
-      "sebagian saja yang saya ketahui yakni bahwa anak yang bernama #0600# masih di bawah sembilan belas tahun yaitu sekitar #0601# tahun",
-      "hanya sebatas itu yang saya ketahui yaitu bahwa #0600# masih di bawah umur sembilan belas tahun yaitu kira-kira #0601# tahun"
+      "yang saya ketahui hanya sebagian saja yaitu bahwa anak yang bernama #0600# masih di bawah sembilan belas tahun yaitu sekitar #0601#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #0600# masih di bawah umur sembilan belas tahun yaitu kira-kira #0601#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa anak yang bernama #0600# masih di bawah sembilan belas tahun yaitu sekitar #0601#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #0600# masih di bawah umur sembilan belas tahun yaitu kira-kira #0601#"
      ],
      "saksi2": [
-      "pengetahuan saya terbatas pada satu hal bahwa anak yang bernama #0600# masih di bawah sembilan belas tahun yaitu sekitar #0601# tahun, adapun selebihnya kurang jelas bagi saya",
-      "sejauh yang saya tahu bahwa #0600# masih di bawah umur sembilan belas tahun yaitu kira-kira #0601# tahun, sedangkan sisanya kurang saya pahami",
-      "bagian yang saya kuasai hanyalah bahwa anak yang bernama #0600# masih di bawah sembilan belas tahun yaitu sekitar #0601# tahun, dan lainnya kurang saya pahami",
-      "yang bisa saya terangkan sebatas bahwa #0600# masih di bawah umur sembilan belas tahun yaitu kira-kira #0601# tahun, selebihnya kurang saya pahami"
+      "pengetahuan saya terbatas pada satu hal bahwa anak yang bernama #0600# masih di bawah sembilan belas tahun yaitu sekitar #0601#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa #0600# masih di bawah umur sembilan belas tahun yaitu kira-kira #0601#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa anak yang bernama #0600# masih di bawah sembilan belas tahun yaitu sekitar #0601#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa #0600# masih di bawah umur sembilan belas tahun yaitu kira-kira #0601#, selebihnya kurang saya pahami"
      ]
     },
     "berbeda": {
      "maksud": "versi A: umur sesuai isian perkara; versi B: umur lebih muda dari isian - berselisih pada JUMLAH (umur)",
      "bedaPada": "jumlah",
      "saksi1": [
-      "menurut yang saya ketahui sendiri bahwa anak yang bernama #0600# sekarang berumur #0601# tahun",
-      "keterangan saya adalah bahwa #0600# saat ini berumur #0601# tahun",
-      "anak yang bernama #0600# sekarang berumur #0601# tahun, itulah yang saya ketahui",
-      "yang saya terangkan di sini adalah bahwa #0600# saat ini berumur #0601# tahun"
+      "menurut yang saya ketahui sendiri bahwa anak yang bernama #0600# sekarang berumur #0601#",
+      "keterangan saya adalah bahwa #0600# saat ini berumur #0601#",
+      "anak yang bernama #0600# sekarang berumur #0601#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #0600# saat ini berumur #0601#"
      ],
      "saksi2": [
-      "sepengetahuan saya bahwa anak yang bernama #0600# sekarang berumur kurang dari #0601# tahun",
-      "umur #0600# sekarang lebih muda daripada #0601# tahun, begitulah yang saya alami",
-      "yang saya ingat dan saya sampaikan adalah bahwa anak yang bernama #0600# sekarang berumur kurang dari #0601# tahun",
-      "umur #0600# sekarang lebih muda daripada #0601# tahun, dan itulah keterangan saya"
+      "sepengetahuan saya bahwa anak yang bernama #0600# sekarang berumur kurang dari #0601#",
+      "umur #0600# sekarang lebih muda daripada #0601#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa anak yang bernama #0600# sekarang berumur kurang dari #0601#",
+      "umur #0600# sekarang lebih muda daripada #0601#, dan itulah keterangan saya"
      ]
     }
    },
@@ -1132,62 +1132,62 @@
     "melihat": {
      "maksud": "saksi menerangkan umur calon suami anak yang dimohonkan dispensasi kawin sebagai hal yang dilihat atau dialaminya sendiri",
      "saksi1": [
-      "saya mengetahui sendiri bahwa calon suami yang bernama #0600# sekarang berumur #0601# tahun",
-      "saya tahu betul bahwa umur #0600# sebagai calon suami sekarang #0601# tahun",
-      "#0600# saat ini berumur #0601# tahun, dan hal itu saya ketahui sendiri",
-      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa sampai hari ini calon suami yang bernama #0600# berumur #0601# tahun"
+      "saya mengetahui sendiri bahwa calon suami yang bernama #0600# sekarang berumur #0601#",
+      "saya tahu betul bahwa umur #0600# sebagai calon suami sekarang #0601#",
+      "#0600# saat ini berumur #0601#, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa sampai hari ini calon suami yang bernama #0600# berumur #0601#"
      ],
      "saksi2": [
-      "yang saya ketahui secara langsung adalah bahwa calon suami yang bernama #0600# sekarang berumur #0601# tahun",
-      "umur #0600# sebagai calon suami sekarang #0601# tahun, sebagaimana yang saya alami dalam pergaulan dengan mereka",
-      "karena sering bersama mereka saya paham bahwa #0600# saat ini berumur #0601# tahun",
-      "saya paham dengan baik bahwa sampai hari ini calon suami yang bernama #0600# berumur #0601# tahun"
+      "yang saya ketahui secara langsung adalah bahwa calon suami yang bernama #0600# sekarang berumur #0601#",
+      "umur #0600# sebagai calon suami sekarang #0601#, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa #0600# saat ini berumur #0601#",
+      "saya paham dengan baik bahwa sampai hari ini calon suami yang bernama #0600# berumur #0601#"
      ]
     },
     "de-auditu": {
      "maksud": "saksi menerangkan umur calon suami anak yang dimohonkan dispensasi kawin hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
      "saksi1": [
-      "{sumber} bercerita kepada saya bahwa calon suami yang bernama #0600# sekarang berumur #0601# tahun",
-      "saya diberi tahu oleh {sumber} bahwa umur #0600# sebagai calon suami sekarang #0601# tahun",
-      "#0600# saat ini berumur #0601# tahun, begitulah cerita {sumber} kepada saya",
-      "setahu saya berdasarkan cerita {sumber} bahwa sampai hari ini calon suami yang bernama #0600# berumur #0601# tahun"
+      "{sumber} bercerita kepada saya bahwa calon suami yang bernama #0600# sekarang berumur #0601#",
+      "saya diberi tahu oleh {sumber} bahwa umur #0600# sebagai calon suami sekarang #0601#",
+      "#0600# saat ini berumur #0601#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa sampai hari ini calon suami yang bernama #0600# berumur #0601#"
      ],
      "saksi2": [
-      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa umur #0600# sebagai calon suami sekarang #0601# tahun",
-      "kabar dari {sumber} yang saya terima menyebutkan bahwa #0600# saat ini berumur #0601# tahun",
-      "sampai hari ini calon suami yang bernama #0600# berumur #0601# tahun, demikian yang diceritakan {sumber} kepada saya",
-      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa calon suami yang bernama #0600# sekarang berumur #0601# tahun"
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa umur #0600# sebagai calon suami sekarang #0601#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #0600# saat ini berumur #0601#",
+      "sampai hari ini calon suami yang bernama #0600# berumur #0601#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa calon suami yang bernama #0600# sekarang berumur #0601#"
      ]
     },
     "sebagian": {
      "maksud": "saksi hanya mengetahui sebagian dari umur calon suami anak yang dimohonkan dispensasi kawin",
      "saksi1": [
-      "yang saya ketahui hanya sebagian saja yaitu bahwa #0600# sudah dewasa dan umurnya sekitar #0601# tahun, sedangkan selebihnya kurang saya ketahui",
-      "saya hanya tahu sebagian yaitu bahwa umur #0600# kira-kira #0601# tahun, dan selebihnya kurang saya ketahui",
-      "sebagian saja yang saya ketahui yakni bahwa #0600# sudah dewasa dan umurnya sekitar #0601# tahun",
-      "hanya sebatas itu yang saya ketahui yaitu bahwa umur #0600# kira-kira #0601# tahun"
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #0600# sudah dewasa dan umurnya sekitar #0601#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa umur #0600# kira-kira #0601#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #0600# sudah dewasa dan umurnya sekitar #0601#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa umur #0600# kira-kira #0601#"
      ],
      "saksi2": [
-      "pengetahuan saya terbatas pada satu hal bahwa #0600# sudah dewasa dan umurnya sekitar #0601# tahun, adapun selebihnya kurang jelas bagi saya",
-      "sejauh yang saya tahu bahwa umur #0600# kira-kira #0601# tahun, sedangkan sisanya kurang saya pahami",
-      "bagian yang saya kuasai hanyalah bahwa #0600# sudah dewasa dan umurnya sekitar #0601# tahun, dan lainnya kurang saya pahami",
-      "yang bisa saya terangkan sebatas bahwa umur #0600# kira-kira #0601# tahun, selebihnya kurang saya pahami"
+      "pengetahuan saya terbatas pada satu hal bahwa #0600# sudah dewasa dan umurnya sekitar #0601#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa umur #0600# kira-kira #0601#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa #0600# sudah dewasa dan umurnya sekitar #0601#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa umur #0600# kira-kira #0601#, selebihnya kurang saya pahami"
      ]
     },
     "berbeda": {
      "maksud": "versi A: umur sesuai isian perkara; versi B: umur lebih tua dari isian - berselisih pada JUMLAH (umur)",
      "bedaPada": "jumlah",
      "saksi1": [
-      "menurut yang saya ketahui sendiri bahwa calon suami yang bernama #0600# sekarang berumur #0601# tahun",
-      "keterangan saya adalah bahwa #0600# saat ini berumur #0601# tahun",
-      "calon suami yang bernama #0600# sekarang berumur #0601# tahun, itulah yang saya ketahui",
-      "yang saya terangkan di sini adalah bahwa #0600# saat ini berumur #0601# tahun"
+      "menurut yang saya ketahui sendiri bahwa calon suami yang bernama #0600# sekarang berumur #0601#",
+      "keterangan saya adalah bahwa #0600# saat ini berumur #0601#",
+      "calon suami yang bernama #0600# sekarang berumur #0601#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #0600# saat ini berumur #0601#"
      ],
      "saksi2": [
-      "sepengetahuan saya bahwa #0600# sekarang berumur lebih dari #0601# tahun",
-      "umur #0600# sebagai calon suami sekarang lebih tua daripada #0601# tahun, begitulah yang saya alami",
-      "yang saya ingat dan saya sampaikan adalah bahwa #0600# sekarang berumur lebih dari #0601# tahun",
-      "umur #0600# sebagai calon suami sekarang lebih tua daripada #0601# tahun, dan itulah keterangan saya"
+      "sepengetahuan saya bahwa #0600# sekarang berumur lebih dari #0601#",
+      "umur #0600# sebagai calon suami sekarang lebih tua daripada #0601#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0600# sekarang berumur lebih dari #0601#",
+      "umur #0600# sebagai calon suami sekarang lebih tua daripada #0601#, dan itulah keterangan saya"
      ]
     }
    },
@@ -1219,62 +1219,62 @@
     "melihat": {
      "maksud": "saksi menerangkan umur calon isteri anak yang dimohonkan dispensasi kawin sebagai hal yang dilihat atau dialaminya sendiri",
      "saksi1": [
-      "saya mengetahui sendiri bahwa calon isteri yang bernama #0606# sekarang berumur #0607# tahun",
-      "saya tahu betul bahwa umur #0606# sebagai calon isteri sekarang #0607# tahun",
-      "#0606# saat ini berumur #0607# tahun, dan hal itu saya ketahui sendiri",
-      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa sampai hari ini calon isteri yang bernama #0606# berumur #0607# tahun"
+      "saya mengetahui sendiri bahwa calon isteri yang bernama #0606# sekarang berumur #0607#",
+      "saya tahu betul bahwa umur #0606# sebagai calon isteri sekarang #0607#",
+      "#0606# saat ini berumur #0607#, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa sampai hari ini calon isteri yang bernama #0606# berumur #0607#"
      ],
      "saksi2": [
-      "yang saya ketahui secara langsung adalah bahwa calon isteri yang bernama #0606# sekarang berumur #0607# tahun",
-      "umur #0606# sebagai calon isteri sekarang #0607# tahun, sebagaimana yang saya alami dalam pergaulan dengan mereka",
-      "karena sering bersama mereka saya paham bahwa #0606# saat ini berumur #0607# tahun",
-      "saya paham dengan baik bahwa sampai hari ini calon isteri yang bernama #0606# berumur #0607# tahun"
+      "yang saya ketahui secara langsung adalah bahwa calon isteri yang bernama #0606# sekarang berumur #0607#",
+      "umur #0606# sebagai calon isteri sekarang #0607#, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa #0606# saat ini berumur #0607#",
+      "saya paham dengan baik bahwa sampai hari ini calon isteri yang bernama #0606# berumur #0607#"
      ]
     },
     "de-auditu": {
      "maksud": "saksi menerangkan umur calon isteri anak yang dimohonkan dispensasi kawin hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
      "saksi1": [
-      "{sumber} bercerita kepada saya bahwa calon isteri yang bernama #0606# sekarang berumur #0607# tahun",
-      "saya diberi tahu oleh {sumber} bahwa umur #0606# sebagai calon isteri sekarang #0607# tahun",
-      "#0606# saat ini berumur #0607# tahun, begitulah cerita {sumber} kepada saya",
-      "setahu saya berdasarkan cerita {sumber} bahwa sampai hari ini calon isteri yang bernama #0606# berumur #0607# tahun"
+      "{sumber} bercerita kepada saya bahwa calon isteri yang bernama #0606# sekarang berumur #0607#",
+      "saya diberi tahu oleh {sumber} bahwa umur #0606# sebagai calon isteri sekarang #0607#",
+      "#0606# saat ini berumur #0607#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa sampai hari ini calon isteri yang bernama #0606# berumur #0607#"
      ],
      "saksi2": [
-      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa umur #0606# sebagai calon isteri sekarang #0607# tahun",
-      "kabar dari {sumber} yang saya terima menyebutkan bahwa #0606# saat ini berumur #0607# tahun",
-      "sampai hari ini calon isteri yang bernama #0606# berumur #0607# tahun, demikian yang diceritakan {sumber} kepada saya",
-      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa calon isteri yang bernama #0606# sekarang berumur #0607# tahun"
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa umur #0606# sebagai calon isteri sekarang #0607#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #0606# saat ini berumur #0607#",
+      "sampai hari ini calon isteri yang bernama #0606# berumur #0607#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa calon isteri yang bernama #0606# sekarang berumur #0607#"
      ]
     },
     "sebagian": {
      "maksud": "saksi hanya mengetahui sebagian dari umur calon isteri anak yang dimohonkan dispensasi kawin",
      "saksi1": [
-      "yang saya ketahui hanya sebagian saja yaitu bahwa #0606# sudah dewasa dan umurnya sekitar #0607# tahun, sedangkan selebihnya kurang saya ketahui",
-      "saya hanya tahu sebagian yaitu bahwa umur #0606# kira-kira #0607# tahun, dan selebihnya kurang saya ketahui",
-      "sebagian saja yang saya ketahui yakni bahwa #0606# sudah dewasa dan umurnya sekitar #0607# tahun",
-      "hanya sebatas itu yang saya ketahui yaitu bahwa umur #0606# kira-kira #0607# tahun"
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #0606# sudah dewasa dan umurnya sekitar #0607#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa umur #0606# kira-kira #0607#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #0606# sudah dewasa dan umurnya sekitar #0607#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa umur #0606# kira-kira #0607#"
      ],
      "saksi2": [
-      "pengetahuan saya terbatas pada satu hal bahwa #0606# sudah dewasa dan umurnya sekitar #0607# tahun, adapun selebihnya kurang jelas bagi saya",
-      "sejauh yang saya tahu bahwa umur #0606# kira-kira #0607# tahun, sedangkan sisanya kurang saya pahami",
-      "bagian yang saya kuasai hanyalah bahwa #0606# sudah dewasa dan umurnya sekitar #0607# tahun, dan lainnya kurang saya pahami",
-      "yang bisa saya terangkan sebatas bahwa umur #0606# kira-kira #0607# tahun, selebihnya kurang saya pahami"
+      "pengetahuan saya terbatas pada satu hal bahwa #0606# sudah dewasa dan umurnya sekitar #0607#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa umur #0606# kira-kira #0607#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa #0606# sudah dewasa dan umurnya sekitar #0607#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa umur #0606# kira-kira #0607#, selebihnya kurang saya pahami"
      ]
     },
     "berbeda": {
      "maksud": "versi A: umur sesuai isian perkara; versi B: umur lebih tua dari isian - berselisih pada JUMLAH (umur)",
      "bedaPada": "jumlah",
      "saksi1": [
-      "menurut yang saya ketahui sendiri bahwa calon isteri yang bernama #0606# sekarang berumur #0607# tahun",
-      "keterangan saya adalah bahwa #0606# saat ini berumur #0607# tahun",
-      "calon isteri yang bernama #0606# sekarang berumur #0607# tahun, itulah yang saya ketahui",
-      "yang saya terangkan di sini adalah bahwa #0606# saat ini berumur #0607# tahun"
+      "menurut yang saya ketahui sendiri bahwa calon isteri yang bernama #0606# sekarang berumur #0607#",
+      "keterangan saya adalah bahwa #0606# saat ini berumur #0607#",
+      "calon isteri yang bernama #0606# sekarang berumur #0607#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #0606# saat ini berumur #0607#"
      ],
      "saksi2": [
-      "sepengetahuan saya bahwa #0606# sekarang berumur lebih dari #0607# tahun",
-      "umur #0606# sebagai calon isteri sekarang lebih tua daripada #0607# tahun, begitulah yang saya alami",
-      "yang saya ingat dan saya sampaikan adalah bahwa #0606# sekarang berumur lebih dari #0607# tahun",
-      "umur #0606# sebagai calon isteri sekarang lebih tua daripada #0607# tahun, dan itulah keterangan saya"
+      "sepengetahuan saya bahwa #0606# sekarang berumur lebih dari #0607#",
+      "umur #0606# sebagai calon isteri sekarang lebih tua daripada #0607#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0606# sekarang berumur lebih dari #0607#",
+      "umur #0606# sebagai calon isteri sekarang lebih tua daripada #0607#, dan itulah keterangan saya"
      ]
     }
    },
