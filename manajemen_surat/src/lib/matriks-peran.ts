@@ -728,6 +728,16 @@ export const AKSI = {
     rute: ["POST /api/aleta-ecourt/hasil-mediasi"],
     alasan: "Rute menegakkan pastikanMediator (nama akun cocok dengan mediator perkara di SIPP, atau Super Admin) - lebih tepat daripada golongan, jadi rute TIDAK diberi pagar golongan.",
   },
+  // Panduan pertanyaan saksi (Jadwal Sidang & Status Perkara) - hanya membaca, tidak menulis ke SIPP/ABT
+  "pandu.saksi": {
+    label: "Panduan pemeriksaan saksi",
+    crud: "R",
+    golongan: PERSIDANGAN,
+    lingkup: "semua",
+    rute: ["GET /api/aleta-ecourt/pandu-saksi"],
+    alasan:
+      "Pertanyaan pemandu pemeriksaan saksi - majelis hakim, panitera, panitera muda, dan panitera pengganti yang mendampingi sidang. Hanya pertanyaan dan unsur pembuktian; tidak menulis apa pun ke SIPP maupun ABT.",
+  },
   // Status Perkara
   "status.data-pihak": {
     label: "Identitas & riwayat para pihak",

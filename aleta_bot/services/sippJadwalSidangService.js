@@ -150,6 +150,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
             p.nomor_perkara       AS nomorPerkara,
             p.jenis_perkara_nama  AS jenisPerkara,
             p.alur_perkara_id     AS alurPerkaraId,
+            p.jenis_perkara_id    AS jenisPerkaraId,
             j.tanggal_sidang      AS tanggalSidang,
             j.jam_sidang          AS jamSidang,
             j.agenda              AS agenda,
@@ -416,6 +417,8 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       nomorPerkara: cleanText(row.nomorPerkara),
       jenisPerkara: cleanText(row.jenisPerkara),
       alurPerkaraId: Number(row.alurPerkaraId) || 0,
+      // 18 Okt 2026: dasar panduan pertanyaan saksi (jenis dikenali dari jenis_perkara_id, bukan dari kata).
+      jenisPerkaraId: Number(row.jenisPerkaraId) || null,
       tanggalSidang: isoTanggal(row.tanggalSidang),
       jamSidang: jamRingkas(row.jamSidang),
       agenda: cleanText(row.agenda),
