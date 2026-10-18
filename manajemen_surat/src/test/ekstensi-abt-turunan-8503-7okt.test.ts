@@ -304,8 +304,8 @@ describe("1-2. deteksi semua turunan dan satu butir 8503", () => {
   it("8503 kosong + sembilan turunan berbunyi error: tidak ada daftar error per variabel, satu butir 'Isi huruf alasan perceraian (8503)' memuat SEMUA turunan", async () => {
     const h = buka();
     const p = await siapButir(h);
-    expect(p.querySelector(".aleta-t6-pita-judul").textContent).toBe("Isi huruf alasan perceraian (8503)");
-    expect(p.textContent).toContain("8503 masih kosong, sehingga 9 variabel turunannya");
+    expect(p.querySelector(".aleta-t6-pita-judul").textContent).toBe("Isi huruf alasan perceraian");
+    expect(p.textContent).toContain("Huruf alasan masih kosong, sehingga 9 variabel turunannya");
     const kode = Array.from(p.querySelectorAll(".aleta-t6-keping")).map((b: any) => b.textContent.split(" ")[0]);
     expect(kode.sort()).toEqual([...TURUNAN].sort());
     // Pita error (yang dulu berbunyi "2 variabel berbunyi pesan error (8531, 8532)") tidak tampil.
@@ -324,16 +324,16 @@ describe("1-2. deteksi semua turunan dan satu butir 8503", () => {
     const h = buka({ isi: { "0663": Q } });
     await siapButir(h);
     const pita = await sampai(() => (pitaBahaya(h) && !pitaBahaya(h).hidden ? pitaBahaya(h) : null), "pita error");
-    expect(pita.textContent).toContain("1 variabel berbunyi pesan error (0663)");
+    expect(pita.textContent).toContain("1 variabel berbunyi pesan error (satu isian)");
     expect(pita.textContent).not.toMatch(/8531|8532|4020/);
   });
 
   it("8503 berisi bentuk yang tidak dikenali ('A, F'): butir tetap muncul dan isian dirapatkan dari isi sekarang", async () => {
     const h = buka({ isi: { "8503": "A, F" } });
     const p = await siapButir(h);
-    expect(p.textContent).toContain('8503 berisi "A, F" - bentuk itu tidak dikenali kueri ABT');
+    expect(p.textContent).toContain('Huruf alasan berisi "A, F" - bentuk itu tidak dikenali kueri ABT');
     expect(kotakKetik(h).value).toBe("AF");
-    expect(p.textContent).toContain("Diambil dari isi 8503 sekarang");
+    expect(p.textContent).toContain("Diambil dari isi huruf alasan sekarang");
   });
 
   it("8503 sudah sah (F) dan turunan masih error sejak halaman dimuat: bukan butir 8503 (pita error lama yang berlaku)", async () => {
@@ -348,7 +348,9 @@ describe("1-2. deteksi semua turunan dan satu butir 8503", () => {
   it("Baru: tidak ada butir 8503; 8531/8532/8524 kini ikut 'akan terisi sesudah 8503', bukan pita error", async () => {
     const h = buka({ tampilan: "baru" });
     const t = await sampai(() => (q(h, ".aleta-t6-pita-tunggu:not([hidden])") ? q(h, ".aleta-t6-pita-tunggu") : null), "pita tunggu Baru");
-    for (const kode of ["8524", "8531", "8532"]) expect(t.textContent).toContain(kode);
+    expect(t.textContent).toContain("PERTIMBANGAN HUKUM PNS/BUMN/BUMD/POLRI/TNI");
+    expect(t.textContent).toContain("3 isian lain akan terisi sesudah huruf alasan perceraian diisi");
+    expect(t.textContent).not.toMatch(/\b(8524|8531|8532)\b/);
     expect(pitaBahaya(h).hidden).toBe(true);
     expect(pita8503(h)).toBeNull();
   });
@@ -365,7 +367,7 @@ describe("3. isi 8503 memicu simpan ke ABT lalu hitung ulang turunan", () => {
     expect(tulisAbt(h)).toEqual([]);
     simpan8503(h).click();
     const kabar = await sampai(
-      () => (/tidak ada lagi pesan error dari 8503/.test(pita8503(h)?.textContent || "") ? pita8503(h) : null),
+      () => (/tidak ada lagi pesan error dari huruf alasan/.test(pita8503(h)?.textContent || "") ? pita8503(h) : null),
       "kabar hitung ulang"
     );
     // Jalur tulis yang sama dengan Input ke ABT: satu POST edit_data untuk 8503.
@@ -394,7 +396,7 @@ describe("3. isi 8503 memicu simpan ke ABT lalu hitung ulang turunan", () => {
     await sampai(() => selNilai(h, "8532").textContent === SESUDAH_F["8532"], "8532 dihitung ulang");
     expect(h.minta.filter((m) => m.cara === "GET" && m.url === ALAMAT)).toHaveLength(1);
     expect(tulisAbt(h)).toEqual([]);
-    await sampai(() => /tidak ada lagi pesan error dari 8503/.test(pita8503(h)?.textContent || ""), "kabar");
+    await sampai(() => /tidak ada lagi pesan error dari huruf alasan/.test(pita8503(h)?.textContent || ""), "kabar");
   });
 
   it("tombol huruf: A lalu F menjadi 'AF'; Enter menyimpan", async () => {
@@ -490,7 +492,7 @@ describe("5. CETAK tetap dijaga selama turunan berbunyi error", () => {
     await siapButir(h);
     h.w.document.getElementById("cetak").click();
     const tirai = await sampai(() => h.w.document.querySelector(".aleta-t6-tirai"), "dialog CETAK");
-    expect(tirai.textContent).toContain("Huruf alasan perceraian (8503) belum diisi atau tidak dikenali ABT");
+    expect(tirai.textContent).toContain("Huruf alasan perceraian belum diisi atau tidak dikenali ABT");
     for (const kode of TURUNAN) expect(tirai.textContent).toContain(kode);
     expect(tirai.querySelector(".aleta-t6-dialog-periksa")).not.toBeNull();
     expect(tirai.textContent).toContain("Sudah saya periksa");
@@ -512,13 +514,13 @@ describe("6. kartu 'Isi huruf alasan perceraian (8503)' ciut bawaan dengan penan
     const kepala = kepala8503(h);
     expect(kepala.getAttribute("role")).toBe("button");
     expect(kepala.getAttribute("aria-expanded")).toBe("false");
-    expect(kepala.querySelector(".aleta-t6-pita-judul").textContent).toBe("Isi huruf alasan perceraian (8503)");
+    expect(kepala.querySelector(".aleta-t6-pita-judul").textContent).toBe("Isi huruf alasan perceraian");
     expect(kepala.querySelector(".aleta-t6-8503-tanda").textContent).toBe("!");
     expect(kepala.querySelector(".aleta-t6-8503-perlu").textContent).toBe("Perlu dikerjakan");
     const ringkas = kepala.querySelector(".aleta-t6-8503-ringkas");
     expect(ringkas.hidden).toBe(false);
     expect(ringkas.textContent).toContain("huruf alasan tidak terdeteksi dari gugatan maupun keterangan saksi - isi sendiri sesuai pertimbangan majelis");
-    expect(ringkas.textContent).toContain("8503 masih kosong, 9 variabel turunan");
+    expect(ringkas.textContent).toContain("Huruf alasan masih kosong, 9 variabel turunan");
     // Isian ada di badan yang tersembunyi.
     expect(badan8503(h).contains(kotakKetik(h))).toBe(true);
     await tunggu(100);

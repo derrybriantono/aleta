@@ -1060,7 +1060,7 @@
   }
   function keteranganPemicu(kode) {
     const p = S.susunan && S.susunan.pemicu.find((x) => x.kode === kode);
-    return p ? p.keterangan : `penanda ${kode} menyala`;
+    return p ? p.keterangan : "penanda keadaan perkara menyala";
   }
   /** Keterangan keadaan untuk layar (sama dengan KEADAAN_TEKS di susun.ts portal). */
   const KEADAAN_TEKS = {

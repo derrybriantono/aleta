@@ -619,7 +619,16 @@ describe("butir 5, 6, 7: satu daftar, huruf dengan sebabnya, satu tombol", () =>
     // 0222 diusulkan SIPP (ragu) dan saksi (pasti): tampil sekali, yang pasti.
     const k0222 = qs(h, ".aleta-abt-kartu").find((k) => k.querySelector(".aleta-abt-kode")?.textContent === "0222");
     expect(k0222.querySelector(".aleta-abt-isi-sunting").textContent).toBe("November 2022");
-    expect(q(h, ".aleta-sore-tak-tampil").textContent).toBe("Tidak ditampilkan: 4 tidak terdeteksi (0132, 0156, 0661, 0227); 1 sudah sama di blangko (9944).");
+    expect(q(h, ".aleta-sore-tak-tampil").textContent).toBe(
+      "Tidak ditampilkan: 4 tidak terdeteksi (Tgl. Kuasa Penggugat, Kantor Kuasa Penggugat, No. SK Prodeo, Tanggal Fasakh); 1 sudah sama di blangko (lama pisah)."
+    );
+    // 18 Okt (1.205.7): kodenya hanya di title.
+    expect(q(h, ".aleta-sore-tak-tampil").title).toBe("Kode isian: 0132, 0156, 0661, 0227; 9944");
+    // Ringkasan 'siap diperiksa' menyebut isian yang harus disunting dengan nama, tidak dengan kode.
+    const ringkasan = String(q(h, '[data-sore-kerja="isi"] .aleta-sore-status')?.textContent || "");
+    expect(ringkasan).toMatch(/isi lewat Sunting \(/);
+    expect(ringkasan).not.toMatch(/Sunting \([^)]*\b\d{4}\b/);
+    expect(ringkasan).toContain("Sunting (Alasan-Alasan Cerai");
     // Kuasa yang terdeteksi SIPP: centangnya muncul.
     const kuasa: Pengganti = (url, _c, badan) =>
       url.includes("/abt/usulan") && JSON.parse(badan || "{}").sumber === "sipp"

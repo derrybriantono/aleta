@@ -604,7 +604,10 @@ describe("SYARAT MUTLAK: tampilan Lama IDENTIK dengan abt.js sebelum Tahap 6 (fd
     it(`${nama}: DOM tiap langkah, atribut <html>, penyimpanan, dan permintaan sama persis`, async () => {
       const lama = buka({ sumber: SUMBER_ABT_LAMA, simpanan });
       const kini = buka({ simpanan });
-      const [a, b0] = await Promise.all([jalani(lama), jalani(kini)]);
+      const [a0, b0] = await Promise.all([jalani(lama), jalani(kini)]);
+      // 18 Okt (1.205.7): satu-satunya selisih yang disengaja - isian tidak lagi disebut dengan kode variabel
+      // (tulisan saja; letak, urutan, dan perilaku sama).
+      const a = a0.map((x) => x.replace(/ada alasan perceraian \(5227\);/g, "ada isian alasan perceraian;"));
       // 12 Okt (butir 16): satu-satunya selisih yang disengaja - petunjuk/label
       // teks usulan kini berbunyi "klik dua kali" (isi dan perilaku lain sama).
       const b = b0.map((x) =>
@@ -987,7 +990,7 @@ describe("abt-5: CETAK dengan kalimat error = peringatan dengan konfirmasi, buka
     const h = buka({ simpanan: baru(["abt-5"]) });
     const pita = await sampai(() => (q(h, ".aleta-t6-pita-bahaya:not([hidden])") ? q(h, ".aleta-t6-pita-bahaya") : null), "pita");
     expect(pita.textContent).toContain("Blangko ini belum punya cabang untuk huruf G");
-    expect(pita.textContent).toContain('4020, 8521 berbunyi "TIDAK BENAR QUERY NYA"');
+    expect(pita.textContent).toContain('Kalimat Alasan (OTOMATIS), Pertimbangan (OTOMATIS) berbunyi "TIDAK BENAR QUERY NYA"');
     expect(pita.textContent).toContain("enam baris huruf C/D/E/G");
     expect(pita.textContent).toContain("CETAK tidak ditahan");
     expect(panelDari(h).querySelector(".aleta-isi").firstElementChild.classList.contains("aleta-t6-atas")).toBe(true);
@@ -1000,7 +1003,7 @@ describe("abt-5: CETAK dengan kalimat error = peringatan dengan konfirmasi, buka
     cetak.click();
     const tirai = await sampai(() => h.w.document.querySelector(".aleta-t6-tirai"), "dialog");
     expect(tirai.textContent).toContain("4020 Kalimat Alasan (OTOMATIS)");
-    expect(tirai.textContent).toContain("8503 berisi huruf G");
+    expect(tirai.textContent).toContain("Huruf alasan berisi huruf G");
     const ya = tirai.querySelector(".aleta-t6-dialog-ya");
     expect(ya.disabled).toBe(true);
     tirai.querySelector(".aleta-t6-dialog-tidak").click();
@@ -1055,7 +1058,7 @@ describe("abt-26: pemeriksa anonimisasi = peringatan dengan konfirmasi, dan leta
     const tirai = await sampai(() => h.w.document.querySelector(".aleta-t6-tirai"), "dialog anonim");
     const teks = tirai.textContent;
     expect(teks).toContain("⚠ 1 NIK utuh");
-    expect(teks).toContain('nama pihak "Sarinah Wulandari" (dari 7047) - paragraf 3');
+    expect(teks).toContain('nama pihak "Sarinah Wulandari" (dari IDENTITAS Nama Penggugat (OTOMATIS)) - paragraf 3');
     expect(teks).toContain('alamat "Tanamea"');
     expect(tirai.querySelector(".aleta-t6-dialog-ya").disabled).toBe(true);
     tirai.querySelector(".aleta-t6-dialog-tidak").click();
@@ -1228,7 +1231,7 @@ describe("alat baca: konsistensi (abt-13), pratinjau (abt-12/24), perkara sebelu
     const bagian = await sampai(() => q(h, "[data-t6-alat='konsistensi']"), "bagian");
     expect(bagian.textContent).toContain("1 selisih · 4 cocok");
     expect(qs(h, ".aleta-t6-selisih").map((x) => x.textContent)).toEqual([
-      expect.stringContaining("Posita (5125) 2019, saksi 2 (2022) menjawab 2018"),
+      expect.stringContaining("Posita 2019, saksi 2 menjawab 2018"),
     ]);
   });
 

@@ -698,7 +698,7 @@ describe("butir 5: variabel yang menunggu 8503 tidak masuk pita error selama 850
       isi: { "8503": "DATA_TIDAK_ADA", "8522": G, "8528": G, "8529": G, "8530": G },
     });
     const tunggu8503 = await sampai(() => (q(h, ".aleta-t6-pita-tunggu:not([hidden])") ? q(h, ".aleta-t6-pita-tunggu") : null), "pita tunggu");
-    expect(tunggu8503.textContent).toContain("4020, 8521, 8522, 8528, 8529, 8530 akan terisi sesudah 8503 (huruf alasan) diisi");
+    expect(tunggu8503.textContent).toContain("Kalimat Alasan (OTOMATIS), Pertimbangan (OTOMATIS), 4 isian lain akan terisi sesudah huruf alasan perceraian diisi");
     expect(q(h, ".aleta-t6-pita-bahaya").hidden).toBe(true);
     const rinci = q(h, ".aleta-t6-kemajuan-rinci").textContent;
     expect(rinci).toContain("6 menunggu 8503");
@@ -709,15 +709,15 @@ describe("butir 5: variabel yang menunggu 8503 tidak masuk pita error selama 850
   it("8503 kosong tetapi variabel LAIN berbunyi error: hanya yang lain itu di pita error", async () => {
     const h = buka({ simpanan: baru(["abt-5"]), isi: { "8503": "DATA_TIDAK_ADA", "0663": G } });
     const pita = await sampai(() => (q(h, ".aleta-t6-pita-bahaya:not([hidden])") ? q(h, ".aleta-t6-pita-bahaya") : null), "pita");
-    expect(pita.textContent).toContain("1 variabel berbunyi pesan error (0663)");
-    expect(pita.textContent).not.toContain("4020");
+    expect(pita.textContent).toContain("1 variabel berbunyi pesan error (satu isian)");
+    expect(pita.textContent).not.toContain("Kalimat Alasan");
     expect(q(h, ".aleta-t6-pita-tunggu").hidden).toBe(false);
   });
 
   it("8503 sudah terisi dan 4020/8521 masih berbunyi error: barulah pita error", async () => {
     const h = buka({ simpanan: baru(["abt-5"]), isi: { "8503": "F" } });
     const pita = await sampai(() => (q(h, ".aleta-t6-pita-bahaya:not([hidden])") ? q(h, ".aleta-t6-pita-bahaya") : null), "pita");
-    expect(pita.textContent).toContain("2 variabel berbunyi pesan error (4020, 8521)");
+    expect(pita.textContent).toContain("2 variabel berbunyi pesan error (Kalimat Alasan (OTOMATIS), Pertimbangan (OTOMATIS))");
     expect(q(h, ".aleta-t6-pita-tunggu").hidden).toBe(true);
   });
 });

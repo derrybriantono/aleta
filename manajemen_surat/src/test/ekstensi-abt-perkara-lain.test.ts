@@ -363,7 +363,9 @@ describe("posita-lain lewat panel dan bot sungguhan", () => {
     for (const l of lencana) expect(["ragu — periksa dulu", "dari posita"]).toContain(l);
     expect(lencana.filter((l) => l === "dari posita").length).toBe(kode.length - ragu);
     const kabar = String(panelDari(w).querySelector(".aleta-abt-kabar").textContent);
-    for (const b of hasil.belumSiap) expect(kabar).toContain(`${b.kode} (${b.alasan})`);
+    for (const b of hasil.belumSiap) expect(kabar).toContain(`(${b.alasan})`);
+    // 18 Okt (1.205.7): isian disebut dengan nama (atau "N isian"), tidak dengan kode.
+    expect(kabar.slice(kabar.indexOf("Belum lulus gerbang ukur"))).not.toMatch(/\b\d{4}\b/);
     // 5178 (KUA yang menolak): ALETA terukur lebih tepat dari bawaan #10103#
     // pada perkara yang sama - kartunya ada, dan tidak ada "diisi otomatis".
     expect(DK[2].split(" ")).toContain("5178");
@@ -400,11 +402,12 @@ describe("posita-lain lewat panel dan bot sungguhan", () => {
     const BAS = BLANGKO.find((b) => b[0] === "- BAS ASAL USUL ANAK -")!;
     const kabar = String(w.__uji.kabarPositaLain(hasil, new Map(BAS[2].split(" ").map((k) => [k, {}]))));
     expect(kabar).toMatch(/^ABT menawarkan isian bawaan, tidak diusulkan ALETA - periksa sebelum menyimpan: /);
-    for (const b of hasil.bawaanAbt) expect(kabar).toContain(`${b.kode} dari kueri #${b.acuan}#`);
+    expect(kabar).toContain("periksa sebelum menyimpan: 7 isian.");
+    expect(kabar).not.toMatch(/#\d+#|\b\d{4}\b/);
     expect(kabar).not.toMatch(/otomatis/i);
     // Blangko yang hanya memuat 5197: hanya 5197 yang disebut.
     const sempit = String(w.__uji.kabarPositaLain(hasil, new Map([["5197", {}]])));
-    expect(sempit).toBe("ABT menawarkan isian bawaan, tidak diusulkan ALETA - periksa sebelum menyimpan: 5197 dari kueri #10101#.");
+    expect(sempit).toBe("ABT menawarkan isian bawaan, tidak diusulkan ALETA - periksa sebelum menyimpan: satu isian.");
     // Tidak satu pun ada di blangko: kabar kosong, bukan daftar yang menyesatkan.
     expect(w.__uji.kabarPositaLain(hasil, new Map([["0001", {}]]))).toBe("");
   });

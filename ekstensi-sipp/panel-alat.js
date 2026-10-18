@@ -9073,7 +9073,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
     "[01aa] [Kabul Verstek] Putusan CG Kumulasi Itsbat Nikah - Format Lengkap",
     "Putusan Cerai Kumulasi Itsbat Nikah",
     ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"],
-    "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian 8503 (pengganti [01aa] IN + CG - F / B & F)"
+    "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian huruf alasan (pengganti [01aa] IN + CG - F / B & F)"
   ),
   "cerai talak+itsbat-nikah|dikabulkan|verstek": alatBarisKumulasi(
     "Cerai Talak Kumulasi Itsbat Nikah",
@@ -9081,7 +9081,7 @@ Object.assign(ALAT_PETA_BAWAAN, {
     "[01aa] [Kabul Verstek] Putusan CT Kumulasi Itsbat Nikah - Format Lengkap",
     "Putusan Cerai Kumulasi Itsbat Nikah",
     ["Putusan Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat - Putusan"],
-    "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian 8503"
+    "paket ABT abt-putusan-bas-lengkap - alasan A-H lewat isian huruf alasan"
   ),
   "cerai gugat+hak-asuh-anak|dikabulkan|verstek": alatBarisKumulasi(
     "Cerai Gugat Kumulasi Hak Asuh Anak",
@@ -9786,8 +9786,8 @@ for (const kunci of ["penguasaan anak", "penguasaan anak|dikabulkan"]) alatTamba
  * dibaca bot dari petitum; susunan ahli waris dan anak sah perkawinan tercatat tidak tersimpan di SIPP (saklar, pilih manual). Kolom: [kunci, jenis blangko, jenisAsli, statusAsli, berkas, catatan].
  */
 const ALAT_BARIS_I22 = [
-  ["penetapan ahli waris|dikabulkan|susunan-ahli-waris", "paw", "Penetapan Ahli Waris", "Dikabulkan", "[01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis)", "dipilih manual: susunan ahli waris dinamis (isian 9701-9704, 9718; pencairan dana lewat 9700); [01] = anak kandung saja"],
-  ["itsbat nikah|dikabulkan|pencairan-dana", "ink", "Itsbat Nikah Kontensius", "Dikabulkan", "[01c] [Kabul] IN Kontensius - Pasangan Meninggal, Pencairan Dana (Taspen, BPJS, Bank)", "keadaan: petitum memohon pencairan dana (BPJS, Taspen, bank, tabungan); isian 9719"],
+  ["penetapan ahli waris|dikabulkan|susunan-ahli-waris", "paw", "Penetapan Ahli Waris", "Dikabulkan", "[01b] [Kabul] PAW - Susunan Ahli Waris Dinamis (Pasangan, Anak, Ayah, Ibu - Pertimbangan Bagian Otomatis)", "dipilih manual: susunan ahli waris dinamis (isian ahli waris dan pencairan dana); [01] = anak kandung saja"],
+  ["itsbat nikah|dikabulkan|pencairan-dana", "ink", "Itsbat Nikah Kontensius", "Dikabulkan", "[01c] [Kabul] IN Kontensius - Pasangan Meninggal, Pencairan Dana (Taspen, BPJS, Bank)", "keadaan: petitum memohon pencairan dana (BPJS, Taspen, bank, tabungan); isian pencairan dana"],
   ["asal usul anak|dikabulkan|anak-sah-perkawinan-tercatat", "aua", "Asal Usul Anak", "Dikabulkan", "[01] [Kabul] AUA - Anak Sah dari Perkawinan Tercatat, Belum Punya Akta Kelahiran", "dipilih manual: anak sah dari perkawinan tercatat yang belum punya akta kelahiran"],
   ["cerai gugat|dikabulkan|kumulasi-nafkah-istri", "cg", "Cerai Gugat", "Dikabulkan", "[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir", "keadaan: petitum memuat nafkah madliyah / iddah / mut'ah, Tergugat hadir"],
   ["cerai gugat|dikabulkan|kumulasi-nafkah-istri-verstek", "cg", "Cerai Gugat", "Dikabulkan", "[01d] [Kabul Verstek] Cerai (Format Lengkap) - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah)", "keadaan: petitum memuat nafkah madliyah / iddah / mut'ah, Tergugat tidak pernah hadir (verstek)"],
