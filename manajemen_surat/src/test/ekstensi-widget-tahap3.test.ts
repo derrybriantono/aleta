@@ -1010,7 +1010,9 @@ describe("batas yang tidak berubah: mode coba, akar, layar publik", () => {
           c.url.startsWith("/aleta/api/aleta-ecourt/sidang/skors?tanggal=") ||
           // Butir 41 (17 Okt): kehadiran & draf H-7 bawaan menyala di UI Baru (terlipat).
           c.url === "/aleta/api/aleta-ecourt/antrian/kehadiran-saya" ||
-          c.url === "/aleta/api/aleta-ecourt/agen-h7/saya"
+          c.url === "/aleta/api/aleta-ecourt/agen-h7/saya" ||
+          // Performa muat 19 Okt: denyut = sumber daya/kehadiran/checklist dalam satu GET.
+          c.url.startsWith("/aleta/api/aleta-ecourt/denyut?bagian=")
       )
     ).toBe(true);
     // Semuanya di dalam SATU akar - senyap 1 jam dan blok cetak panel.css

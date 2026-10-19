@@ -17,6 +17,7 @@ import { authClient } from "@/lib/auth-client";
 import { lupakanSandiDiEkstensi } from "@/lib/masuk-sipp-klien";
 import { mergeAIFeatureFlags, type PartialAIFeatureFlags } from "@/lib/ai-feature-flags";
 import { apiPath } from "@/lib/base-path";
+import { bolehTundaSusulan, tungguSenggang } from "@/lib/muat-susulan";
 import {
   DEFAULT_ASSISTANT_JUDGE_CONFIG,
   canAccessAssistantJudge,
@@ -1361,17 +1362,44 @@ export function PortalProvider({
     return result.status === "fulfilled" ? result.value : undefined;
   }
 
+  /**
+   * Muat susulan (performa muat 19 Okt 2026, K3). Di halaman aplikasi yang
+   * memuat datanya sendiri (lihat lib/muat-susulan.ts) data kerangka -
+   * identitas satker, setelan panel, hak Blangko Saya - diminta SEGERA, dan
+   * surat, disposisi, setelan AI, WhatsApp, asisten hakim menyusul sesudah
+   * peramban senggang, supaya tidak berebut sambungan dengan isi tab. Di
+   * halaman lain semuanya segera, persis seperti sebelumnya.
+   */
   async function syncSecondaryPortalData(actorUserId: string, syncGeneration: number) {
+    const tunda = typeof window !== "undefined" && bolehTundaSusulan(window.location.pathname);
+    if (!tunda) {
+      await syncSusulanPortal(actorUserId, syncGeneration, "semua");
+      return;
+    }
+    await syncSusulanPortal(actorUserId, syncGeneration, "kerangka");
+    await tungguSenggang();
+    if (syncGenerationRef.current !== syncGeneration) return;
+    await syncSusulanPortal(actorUserId, syncGeneration, "lain");
+  }
+
+  async function syncSusulanPortal(
+    actorUserId: string,
+    syncGeneration: number,
+    bagian: "semua" | "kerangka" | "lain"
+  ) {
+    const kerangka = bagian !== "lain";
+    const lain = bagian !== "kerangka";
+    const lewati = Promise.resolve(undefined);
     const results = await withSyncTimeout(
       Promise.allSettled([
-        requestBackendJson<{ items: LetterDetail[] }>("/api/surat?pageSize=100", undefined, actorUserId),
-        requestBackendJson<{ items: DispositionNode[] }>("/api/disposisi", undefined, actorUserId),
-        requestBackendJson<AIGlobalConfig>("/api/ai/settings", undefined, actorUserId),
-        requestBackendJson<WhatsAppWebConfig>("/api/settings/whatsapp", undefined, actorUserId),
-        requestBackendJson<InstitutionIdentity>("/api/settings/institution", undefined, actorUserId),
-        requestBackendJson<PanelSettings>("/api/settings/panel", undefined, actorUserId),
-        requestBackendJson<AssistantJudgeConfig>("/api/settings/assistant-judge", undefined, actorUserId),
-        requestBackendJson<{ blangkoSayaTerbuka?: boolean }>("/api/hak-akses/saya", undefined, actorUserId),
+        lain ? requestBackendJson<{ items: LetterDetail[] }>("/api/surat?pageSize=100", undefined, actorUserId) : lewati,
+        lain ? requestBackendJson<{ items: DispositionNode[] }>("/api/disposisi", undefined, actorUserId) : lewati,
+        lain ? requestBackendJson<AIGlobalConfig>("/api/ai/settings", undefined, actorUserId) : lewati,
+        lain ? requestBackendJson<WhatsAppWebConfig>("/api/settings/whatsapp", undefined, actorUserId) : lewati,
+        kerangka ? requestBackendJson<InstitutionIdentity>("/api/settings/institution", undefined, actorUserId) : lewati,
+        kerangka ? requestBackendJson<PanelSettings>("/api/settings/panel", undefined, actorUserId) : lewati,
+        lain ? requestBackendJson<AssistantJudgeConfig>("/api/settings/assistant-judge", undefined, actorUserId) : lewati,
+        kerangka ? requestBackendJson<{ blangkoSayaTerbuka?: boolean }>("/api/hak-akses/saya", undefined, actorUserId) : lewati,
       ]),
       30_000,
       "Sebagian data portal belum selesai dimuat. Data akan dicoba lagi saat halaman dimuat ulang."
@@ -1445,11 +1473,15 @@ export function PortalProvider({
       if (assistantJudgePayload) {
         dispatch({ type: "set-assistant-judge-config", payload: assistantJudgePayload });
       }
-      setHakBlangkoSaya(
-        typeof hakSayaPayload?.blangkoSayaTerbuka === "boolean"
-          ? { userId: actorUserId, terbuka: hakSayaPayload.blangkoSayaTerbuka }
-          : null
-      );
+      // Hak Blangko Saya termasuk kerangka: kelompok susulan "lain" tidak
+      // memintanya, jadi tidak boleh menimpanya dengan null.
+      if (kerangka) {
+        setHakBlangkoSaya(
+          typeof hakSayaPayload?.blangkoSayaTerbuka === "boolean"
+            ? { userId: actorUserId, terbuka: hakSayaPayload.blangkoSayaTerbuka }
+            : null
+        );
+      }
     });
   }
 

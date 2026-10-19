@@ -53,6 +53,16 @@ function urlPort(url: URL) {
   return "";
 }
 
+/** Port tambahan ALETA di Apache (bawaan "8008"); kosong = tidak ada. */
+export function portPortalTambahan(): string[] {
+  const mentah = process.env.ALETA_PORT_PORTAL_TAMBAHAN;
+  const teks = mentah === undefined ? "8008" : mentah;
+  return teks
+    .split(",")
+    .map((x) => x.trim())
+    .filter((x) => /^\d{2,5}$/.test(x) && x !== "80" && x !== "443");
+}
+
 export function buildTrustedOrigins(baseURL: string) {
   const configuredOrigins = (process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? "")
     .split(",")
@@ -77,6 +87,28 @@ export function buildTrustedOrigins(baseURL: string) {
       }
     } catch {
       // Ignore invalid URL parsing and rely on the configured values as-is.
+    }
+  }
+
+  // ==========================================================================
+  // PORT SENDIRI UNTUK ALETA (K1, 19 Okt 2026)
+  // ==========================================================================
+  //
+  // ALETA juga dilayani Apache di port tersendiri (bawaan 8008, lihat
+  // deploy/apache/aleta-8008.conf) supaya peramban memberinya sambungan
+  // sendiri, terpisah dari SIPP/ABT di port 80. Asal yang SAMA hostnya dengan
+  // asal tepercaya (bukan loopback) ikut dipercaya pada port itu. Kuki sesi
+  // tidak membedakan port, jadi sesi yang sama berlaku di keduanya.
+  // ALETA_PORT_PORTAL_TAMBAHAN="" mematikannya; boleh beberapa, dipisah koma.
+  for (const port of portPortalTambahan()) {
+    for (const candidate of originCandidates) {
+      try {
+        const url = new URL(candidate);
+        if (isLoopbackHostname(url.hostname) || url.protocol !== "http:") continue;
+        trustedOrigins.add(`${url.protocol}//${url.hostname}:${port}`);
+      } catch {
+        // bukan URL: dilewati
+      }
     }
   }
 

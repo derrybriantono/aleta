@@ -3,13 +3,13 @@ import { type NextRequest } from "next/server";
 import { isPrivilegedAdmin } from "@/lib/permissions";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { getDatabase } from "@/server/db/client";
-import { getGatewayJadwalSidang } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 
 import { susunKehadiranSaya, type BarisKehadiranSaya } from "./susun";
+import { getGatewayJadwalSidangSinggah } from "@/server/modules/aleta-bot/jadwal-sidang-singgah";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const actor = await pastikanKapabilitas(db, actorUserId, "panel");
     const hariIni = waktuPengadilan().tanggal;
 
-    const jadwal = await getGatewayJadwalSidang({ dari: hariIni, sampai: hariIni, cari: "", batas: 500, waktu: true });
+    const jadwal = await getGatewayJadwalSidangSinggah({ dari: hariIni, sampai: hariIni, cari: "", batas: 500, waktu: true });
     if (!jadwal.ok) {
       return ok({ available: false, ok: false, alasan: jadwal.error || "Jadwal sidang belum dapat dibaca.", perkara: [] });
     }

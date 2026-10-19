@@ -3,10 +3,10 @@ import { type NextRequest } from "next/server";
 import {
   catatKehadiranAntrian,
   getGatewayAntrianSidang,
-  getGatewayJadwalSidang,
   getGatewayPeranAntrian,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { ok } from "@/server/shared/http";
+import { getGatewayJadwalSidangSinggah } from "@/server/modules/aleta-bot/jadwal-sidang-singgah";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 
     const hari = tanggalHariIni();
     const [jadwal, antrian] = await Promise.all([
-      getGatewayJadwalSidang({ dari: hari, sampai: hari, cari, batas: 50 }),
+      getGatewayJadwalSidangSinggah({ dari: hari, sampai: hari, cari, batas: 50 }),
       getGatewayAntrianSidang(),
     ]);
 

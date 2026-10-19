@@ -4,7 +4,6 @@ import { golonganPengguna } from "@/lib/matriks-peran";
 import { isPrivilegedAdmin } from "@/lib/permissions";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { getDatabase } from "@/server/db/client";
-import { getGatewayJadwalSidang } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -17,6 +16,7 @@ import {
   tentukanRentang,
   type BarisSidangSaya,
 } from "./susun";
+import { getGatewayJadwalSidangSinggah } from "@/server/modules/aleta-bot/jadwal-sidang-singgah";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
     for (let i = 0; i < potongan.length; i += SERENTAK) {
       const kelompok = potongan.slice(i, i + SERENTAK);
       const jawaban = await Promise.all(
-        kelompok.map((p) => getGatewayJadwalSidang({ dari: p.dari, sampai: p.sampai, cari: "", batas: BATAS_BARIS_BOT }))
+        kelompok.map((p) => getGatewayJadwalSidangSinggah({ dari: p.dari, sampai: p.sampai, cari: "", batas: BATAS_BARIS_BOT }))
       );
       for (const j of jawaban) {
         if (!j.ok) {

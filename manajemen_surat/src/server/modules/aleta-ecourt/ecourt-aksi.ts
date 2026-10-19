@@ -24,6 +24,7 @@
 import { type AletaDatabase } from "@/server/db/client";
 import { appendAuditLog } from "@/server/shared/audit";
 import { nextPrefixedId } from "@/server/shared/ids";
+import { tandaiTulisan } from "@/server/shared/singgah-singkat";
 
 // ---------------------------------------------------------------------------
 // Gerbang ke bot - sengaja mandiri dari whatsapp-gateway-client.ts supaya
@@ -57,6 +58,10 @@ export async function panggilBot<T>(
 ): Promise<HasilBot<T>> {
   const pengendali = new AbortController();
   const waktu = setTimeout(() => pengendali.abort(), batasMs);
+  // Performa muat 19 Okt: aksi e-Court (verifikasi, TTE, unggah) membuang
+  // singgahan jadwal sebelum dan sesudahnya - lihat singgah-singkat.ts.
+  const menulis = String(method).toUpperCase() !== "GET";
+  if (menulis) tandaiTulisan();
   try {
     const kepala: Record<string, string> = { "Content-Type": "application/json" };
     const token = tokenBot();
@@ -95,6 +100,7 @@ export async function panggilBot<T>(
     };
   } finally {
     clearTimeout(waktu);
+    if (menulis) tandaiTulisan();
   }
 }
 

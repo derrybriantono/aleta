@@ -27,6 +27,8 @@ import {
 
 export type HasilBotKembali<T> = { ok: true; data: T } | { ok: false; error: string; status?: number };
 
+import { tandaiTulisan } from "@/server/shared/singgah-singkat";
+
 function alamatBot() {
   return (process.env.ALETA_BOT_BASE_URL || process.env.ALETA_BOT_RUNTIME_URL || "http://127.0.0.1:3003").replace(/\/$/, "");
 }
@@ -42,6 +44,9 @@ export async function panggilBotPenetapanKembali<T = Record<string, unknown>>(
 ): Promise<HasilBotKembali<T>> {
   const pengendali = new AbortController();
   const penunda = setTimeout(() => pengendali.abort(), timeoutMs);
+  // Performa muat 19 Okt: tulisan penetapan membuang singgahan jadwal.
+  const menulis = jalur === "/tulis";
+  if (menulis) tandaiTulisan();
   try {
     const kepala: Record<string, string> = { "Content-Type": "application/json" };
     const token = tokenBot();
@@ -84,6 +89,7 @@ export async function panggilBotPenetapanKembali<T = Record<string, unknown>>(
     };
   } finally {
     clearTimeout(penunda);
+    if (menulis) tandaiTulisan();
   }
 }
 

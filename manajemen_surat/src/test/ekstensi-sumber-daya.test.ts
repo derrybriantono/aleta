@@ -164,6 +164,8 @@ type Halaman = {
   simpanan: Record<string, unknown>;
   tulisan: string[];
   sd: string[];
+  /** Alamat denyut yang diminta (performa muat 19 Okt). */
+  denyut: string[];
   jam: Array<{ ms: number; f: () => void }>;
   setelJawabSd: (f: () => { status: number; isi: unknown }) => void;
 };
@@ -174,7 +176,7 @@ afterEach(async () => {
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function buka(simpananAwal: Record<string, unknown>): Halaman {
+function buka(simpananAwal: Record<string, unknown>, opsi: { denyut?: boolean } = {}): Halaman {
   const dom = new JSDOM(`<!doctype html><html><head></head><body></body></html>`, {
     url: `${ASAL}/SIPP/detil_perkara_agama`,
     runScripts: "outside-only",
@@ -199,9 +201,22 @@ function buka(simpananAwal: Record<string, unknown>): Halaman {
     storage,
   };
   const sd: string[] = [];
+  const denyut: string[] = [];
   let jawabSd = () => ({ status: 200, isi: jawabanSd() as unknown });
   w.fetch = (alamat: string) => {
     const url = String(alamat);
+    if (url.includes("/aleta/api/aleta-ecourt/denyut") && opsi.denyut) {
+      denyut.push(url);
+      const bagian = new URL(url, ASAL).searchParams.get("bagian") || "";
+      const isi: Record<string, unknown> = {};
+      if (bagian.includes("sumberDaya")) {
+        const j = jawabSd();
+        isi.sumberDaya = { status: j.status, isi: j.isi };
+      }
+      if (bagian.includes("kehadiran")) isi.kehadiran = { status: 200, isi: { ok: true, data: { available: true, ok: true, jumlah: 0, perkara: [] } } };
+      if (bagian.includes("checklist")) isi.checklist = { status: 200, isi: jawabanChecklist() };
+      return Promise.resolve(tanggapan(200, { ok: true, data: { denyut: 1, bagian: isi } }));
+    }
     if (url.includes(API_CHECKLIST)) return Promise.resolve(tanggapan(200, jawabanChecklist()));
     if (url.includes(API_SD)) {
       sd.push(url);
@@ -222,7 +237,7 @@ function buka(simpananAwal: Record<string, unknown>): Halaman {
   const ctx = dom.getInternalVMContext();
   vm.runInContext(SUMBER_ALAT, ctx, { filename: "panel-alat.js" });
   vm.runInContext(SUMBER_CHECKLIST, ctx, { filename: "checklist.js" });
-  return { dom, w, simpanan, tulisan, sd, jam, setelJawabSd: (f) => (jawabSd = f) };
+  return { dom, w, simpanan, tulisan, sd, denyut, jam, setelJawabSd: (f) => (jawabSd = f) };
 }
 
 const akarDari = (h: Halaman) => h.w.document.querySelector("aleta-cm-widget") as any;
@@ -238,7 +253,8 @@ const fiturDari = (kode: string[]) => Object.fromEntries(kode.map((k) => [k, tru
 const NYALA = { checklistMilestone: true };
 const titik = (h: Halaman, jenis: string) => q(h, `.aleta-cmw-sd-titik[data-sd="${jenis}"]`);
 const nilai = (h: Halaman, jenis: string) => String(titik(h, jenis)?.querySelector(".aleta-cmw-sd-nilai")?.textContent ?? "");
-const detakSd = (h: Halaman) => h.jam.filter((j) => j.ms === 5000).at(-1);
+// Performa muat 19 Okt: detak sumber daya 15 detik (dulu 5 detik).
+const detakSd = (h: Halaman) => h.jam.filter((j) => j.ms === 15000).at(-1);
 
 function setelTerlihat(h: Halaman, keadaan: "visible" | "hidden") {
   Object.defineProperty(h.w.document, "visibilityState", { value: keadaan, configurable: true });
@@ -365,7 +381,7 @@ describe("detak: berhenti saat tersembunyi, berhenti bila tidak berwenang", () =
   it("tab tersembunyi: detak tidak meminta; terlihat lagi: meminta", async () => {
     const h = buka({ ...NYALA, ujiTampilan: "ui" });
     await sampai(() => nilai(h, "ram") === "42%", "nilai RAM");
-    const detak = await sampai(() => detakSd(h), "detak 5 detik terpasang");
+    const detak = await sampai(() => detakSd(h), "detak 15 detik terpasang");
     const sebelum = h.sd.length;
     setelTerlihat(h, "hidden");
     detak.f();
@@ -397,7 +413,7 @@ describe("detak: berhenti saat tersembunyi, berhenti bila tidak berwenang", () =
     h.setelJawabSd(() => ({ status: 403, isi: { ok: false, error: "Peran Anda tidak diberi akses" } }));
     await sampai(() => h.sd.length === 1, "satu permintaan");
     await sampai(() => q(h, ".aleta-cm-kelompok") && !q(h, ".aleta-cmw-sd"), "strip hilang");
-    for (const j of h.jam.filter((x) => x.ms === 5000)) j.f();
+    for (const j of h.jam.filter((x) => x.ms === 15000)) j.f();
     await tunggu(30);
     expect(h.sd).toHaveLength(1);
   });
@@ -417,5 +433,60 @@ describe("detak: berhenti saat tersembunyi, berhenti bila tidak berwenang", () =
     await tunggu(30);
     expect(titik(h, "ram").title).toMatch(/tidak terbaca/);
     expect(q(h, ".aleta-cmw-sd")).not.toBeNull();
+  });
+});
+
+// ===========================================================================
+// Performa muat 19 Okt 2026: denyut - satu permintaan, cadangan rute lama
+// ===========================================================================
+describe("denyut widget (performa muat 19 Okt)", () => {
+  it("portal berdenyut: sumber daya dibaca LEWAT denyut, rute lamanya tidak diminta", async () => {
+    const h = buka({ ...NYALA, ujiTampilan: "ui" }, { denyut: true });
+    await sampai(() => nilai(h, "ram") === "42%", "nilai RAM dari denyut");
+    expect(h.denyut.length).toBeGreaterThan(0);
+    expect(h.denyut.some((u) => u.includes("sumberDaya"))).toBe(true);
+    expect(h.sd).toEqual([]);
+    const baru = jawabanSd();
+    baru.data.ringkas.aleta.ram = keping(77, "kuning");
+    h.setelJawabSd(() => ({ status: 200, isi: baru }));
+    (await sampai(() => detakSd(h), "detak")).f();
+    await sampai(() => nilai(h, "ram") === "77%", "angka baru lewat denyut");
+    expect(h.sd).toEqual([]);
+  });
+
+  it("403 di bagian sumber daya: strip hilang dan detak berhenti, sama dengan rute lama", async () => {
+    const h = buka({ ...NYALA, ujiTampilan: "ui" }, { denyut: true });
+    h.setelJawabSd(() => ({ status: 403, isi: { ok: false, error: "Peran Anda tidak diberi akses" } }));
+    await sampai(() => h.denyut.length >= 1, "satu denyut");
+    await sampai(() => q(h, ".aleta-cm-kelompok") && !q(h, ".aleta-cmw-sd"), "strip hilang");
+    const sebelum = h.denyut.length;
+    for (const j of h.jam.filter((x) => x.ms === 15000)) j.f();
+    await tunggu(30);
+    expect(h.denyut.length).toBe(sebelum);
+  });
+
+  it("portal lama (tanpa rute denyut): dikenali sekali, lalu rute lama seperti dulu", async () => {
+    const h = buka({ ...NYALA, ujiTampilan: "ui" });
+    await sampai(() => nilai(h, "ram") === "42%", "nilai RAM dari rute lama");
+    expect(h.sd.length).toBeGreaterThan(0);
+    const sebelum = h.sd.length;
+    (await sampai(() => detakSd(h), "detak")).f();
+    await sampai(() => h.sd.length > sebelum, "detak berikutnya langsung ke rute lama");
+  });
+
+  it("tab kembali terlihat sesudah lama tersembunyi: dibaca SEGERA sekali", async () => {
+    const h = buka({ ...NYALA, ujiTampilan: "ui" }, { denyut: true });
+    await sampai(() => nilai(h, "ram") === "42%", "nilai RAM");
+    setelTerlihat(h, "hidden");
+    const sebelum = h.denyut.length;
+    // Seolah bacaan terakhir sudah 20 detik lalu.
+    const asliNow = h.w.Date.now;
+    const geser = Date.now() + 20_000;
+    h.w.Date.now = () => geser;
+    setelTerlihat(h, "visible");
+    await sampai(() => h.denyut.length > sebelum, "denyut segera saat terlihat");
+    // Kehadiran (semenit) baru 20 detik - tetap ikut dibaca segera karena tab baru terlihat lagi.
+    expect(h.denyut.at(-1)).toContain("kehadiran");
+    h.w.Date.now = asliNow;
   });
 });
