@@ -1,0 +1,63 @@
+[
+  {
+    "nama": "sebelum",
+    "setelahGulirHalaman": {
+      "kelas": "pricing_inner_w3ls stickynav",
+      "posisi": "fixed",
+      "tinggiLayar": 768,
+      "menuTinggi": 1346,
+      "menuBawah": 1406,
+      "itemTerakhirBawah": 1455,
+      "itemTerakhirTerjangkau": false,
+      "gulirMenu": 0,
+      "menuBisaDigulir": false
+    },
+    "setelahCobaGulirMenu": {
+      "kelas": "pricing_inner_w3ls stickynav",
+      "posisi": "fixed",
+      "tinggiLayar": 768,
+      "menuTinggi": 1372,
+      "menuBawah": 1419,
+      "itemTerakhirBawah": 1469,
+      "itemTerakhirTerjangkau": false,
+      "gulirMenu": 0,
+      "menuBisaDigulir": false
+    }
+  },
+  {
+    "nama": "sesudah",
+    "setelahGulirHalaman": {
+      "kelas": "pricing_inner_w3ls stickynav",
+      "posisi": "fixed",
+      "tinggiLayar": 768,
+      "menuTinggi": 632,
+      "menuBawah": 692,
+      "itemTerakhirBawah": 1160,
+      "itemTerakhirTerjangkau": false,
+      "gulirMenu": 295,
+      "menuBisaDigulir": true
+    },
+    "setelahGulirMenu": {
+      "kelas": "pricing_inner_w3ls stickynav",
+      "posisi": "fixed",
+      "tinggiLayar": 768,
+      "menuTinggi": 645,
+      "menuBawah": 698,
+      "itemTerakhirBawah": 748,
+      "itemTerakhirTerjangkau": true,
+      "gulirMenu": 714,
+      "menuBisaDigulir": true
+    },
+    "setelahMuatUlang": {
+      "kelas": "pricing_inner_w3ls navbar",
+      "posisi": "static",
+      "tinggiLayar": 768,
+      "menuTinggi": 645,
+      "menuBawah": 808,
+      "itemTerakhirBawah": 858,
+      "itemTerakhirTerjangkau": false,
+      "gulirMenu": 714,
+      "menuBisaDigulir": true
+    }
+  }
+]
