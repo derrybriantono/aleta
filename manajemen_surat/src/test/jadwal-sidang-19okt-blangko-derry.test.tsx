@@ -18,6 +18,7 @@ import {
   muatanBlangkoDerry,
   saringJenisBlangko,
   tautanBlangkoDerry,
+  tautanBlangkoStatusPerkara,
 } from "@/lib/tautan-blangko-derry";
 import { SAKLAR_TAMPILAN, tampilanBawaan } from "@/lib/tampilan-antrian-sidang";
 
@@ -120,6 +121,76 @@ describe("keadaan sidang -> jenis blangko, dan hak peran", () => {
 
     const nol = render(createElement(TombolBlangkoDerry, { data: DATA, jenis: [] }));
     expect(nol.container.innerHTML).toBe("");
+  });
+});
+
+describe("Status Perkara: tautan blangko per sidang, putusan, ikrar", () => {
+  const jadwal = [
+    { sidangId: "s2", tanggalSidang: "2026-10-05", agenda: "Pembuktian", ditunda: true, alasanDitunda: "saksi", urutanSidang: 2 },
+    { sidangId: "s1", tanggalSidang: "2026-09-28", agenda: "Sidang Pertama", ditunda: true, alasanDitunda: "mediasi", urutanSidang: 1 },
+  ];
+  const bahan = { nomor: "633/Pdt.G/2026/PA.Dgl", perkaraId: 9633, jadwal, jumlahSaksi: 2 };
+  const SEMUA = ["putusan", "penetapan", "bas"] as const;
+
+  it("tiap sidang mendapat tautan BAS dengan sidangKe dan tundanya sendiri", () => {
+    const t = tautanBlangkoStatusPerkara({ ...bahan, boleh: [...SEMUA] });
+    expect(t.perSidang.s1.sidangKe).toBe(1);
+    expect(t.perSidang.s2.sidangKe).toBe(2);
+    expect(t.perSidang.s2.tunda).toBe("saksi");
+    const { isi } = bacaHash(tautanBlangkoDerry(t.perSidang.s1, "bas"));
+    expect(isi).toMatchObject({ jenis: "bas", sidangKe: 1, tanggalSidang: "2026-09-28", agenda: "Sidang Pertama", tunda: "mediasi" });
+  });
+
+  it("putusan hanya bila sudah putus atau sidang terakhir beragenda putusan", () => {
+    expect(tautanBlangkoStatusPerkara({ ...bahan, boleh: [...SEMUA] }).putusan).toBeNull();
+    const putus = tautanBlangkoStatusPerkara({
+      ...bahan,
+      putusan: { sudahPutus: true, statusPutusan: "Dikabulkan", verstek: true },
+      boleh: [...SEMUA],
+    }).putusan!;
+    expect(putus).toMatchObject({ sidangKe: 2, amar: "Dikabulkan", verstek: true, jumlahSaksiP: 2 });
+    const akan = tautanBlangkoStatusPerkara({
+      ...bahan,
+      jadwal: [...jadwal, { sidangId: "s3", tanggalSidang: "2026-10-12", agenda: "Pembacaan Putusan", ditunda: false, alasanDitunda: "", urutanSidang: 3 }],
+      boleh: [...SEMUA],
+    }).putusan!;
+    expect(akan).toMatchObject({ sidangKe: 3, amar: "", verstek: null });
+  });
+
+  it("ikrar hanya bila sudah sampai ikrar", () => {
+    expect(tautanBlangkoStatusPerkara({ ...bahan, boleh: [...SEMUA] }).ikrar).toBeNull();
+    expect(tautanBlangkoStatusPerkara({ ...bahan, adaIkrar: true, boleh: [...SEMUA] }).ikrar?.sidangKe).toBe(2);
+    const sidangIkrar = tautanBlangkoStatusPerkara({
+      ...bahan,
+      jadwal: [...jadwal, { sidangId: "s4", tanggalSidang: "2026-11-02", agenda: "Ikrar Talak", ditunda: false, alasanDitunda: "", urutanSidang: 4 }],
+      boleh: [...SEMUA],
+    });
+    expect(sidangIkrar.ikrar?.sidangKe).toBe(4);
+  });
+
+  it("hak peran: PP hanya BAS; tanpa hak tidak ada tautan", () => {
+    const pp = tautanBlangkoStatusPerkara({
+      ...bahan,
+      putusan: { sudahPutus: true, statusPutusan: "Dikabulkan", verstek: false },
+      adaIkrar: true,
+      boleh: jenisBlangkoBoleh({ roleId: "panitera-pengganti" }),
+    });
+    expect(Object.keys(pp.perSidang).sort()).toEqual(["s1", "s2"]);
+    expect(pp.putusan).toBeNull();
+    expect(pp.ikrar).toBeNull();
+    const js = tautanBlangkoStatusPerkara({ ...bahan, adaIkrar: true, boleh: jenisBlangkoBoleh({ roleId: "jurusita" }) });
+    expect(js.perSidang).toEqual({});
+    expect(js.ikrar).toBeNull();
+  });
+
+  it("layar Status Perkara memakai pembentuk tautan yang sama (tanpa salinan kedua)", () => {
+    const status = baca("components/portal/aleta-ecourt-status-perkara.tsx");
+    expect(status).toContain("tautanBlangkoStatusPerkara({");
+    expect(status).toContain("<TautanBlangkoDerry");
+    expect(status).toContain("label={`BAS sidang ke-${sidang.urutanSidang}`}");
+    expect(status).not.toContain("#bd=");
+    expect(LAYAR).not.toContain("#bd=");
+    expect(baca("components/portal/tombol-blangko-derry.tsx")).not.toContain("#bd=");
   });
 });
 

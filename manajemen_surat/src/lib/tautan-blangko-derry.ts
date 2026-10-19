@@ -17,6 +17,7 @@
  * aplikasi luar). Setelan bawaannya localhost - tidak berguna bagi petugas -
  * sehingga jatuh ke alamat ABT satker.
  */
+import { hariPutusan, sidangIkrar } from "@/lib/keadaan-sidang";
 import { golonganPengguna, type PenggunaGolongan } from "@/lib/matriks-peran";
 
 export type JenisBlangkoDerry = "putusan" | "bas" | "penetapan";
@@ -114,6 +115,72 @@ export function saringJenisBlangko(
   boleh: readonly JenisBlangkoDerry[]
 ): JenisBlangkoDerry[] {
   return relevan.filter((j) => boleh.includes(j));
+}
+
+type SidangStatus = {
+  sidangId: string;
+  tanggalSidang: string;
+  agenda: string;
+  ditunda: boolean;
+  alasanDitunda: string;
+  urutanSidang: number;
+};
+
+/**
+ * Tautan blangko untuk Status Perkara (tambahan 19 Okt 2026): BAS per sidang,
+ * putusan bila sudah putus atau sidang terakhir beragenda putusan, dan ikrar
+ * bila perkara sudah sampai sidang/penetapan ikrar. Disaring hak peran.
+ * Status Perkara hanya membawa JUMLAH saksi (tanpa pembagian sisi) - jumlah
+ * itu dikirim sebagai jumlahSaksiP, jumlahSaksiT 0.
+ */
+export function tautanBlangkoStatusPerkara(bahan: {
+  nomor: string;
+  perkaraId?: string | number | null;
+  jadwal: ReadonlyArray<SidangStatus>;
+  putusan?: { sudahPutus: boolean; statusPutusan: string; verstek: boolean } | null;
+  adaIkrar?: boolean;
+  jumlahSaksi?: number | null;
+  boleh: readonly JenisBlangkoDerry[];
+}): {
+  perSidang: Record<string, DataTautanBlangko>;
+  putusan: DataTautanBlangko | null;
+  ikrar: DataTautanBlangko | null;
+} {
+  const urut = [...bahan.jadwal].sort((a, b) => (Number(a.urutanSidang) || 0) - (Number(b.urutanSidang) || 0));
+  const dasar = (s: SidangStatus | undefined): DataTautanBlangko => ({
+    nomor: bahan.nomor,
+    perkaraId: bahan.perkaraId,
+    sidangKe: s ? Number(s.urutanSidang) || null : null,
+    tanggalSidang: s?.tanggalSidang ?? "",
+    agenda: s?.agenda ?? "",
+    tunda: s?.alasanDitunda ?? "",
+    keterangan: "",
+    amar: "",
+    verstek: null,
+    jumlahSaksiP: bahan.jumlahSaksi ?? 0,
+    jumlahSaksiT: 0,
+  });
+  const perSidang: Record<string, DataTautanBlangko> = {};
+  if (bahan.boleh.includes("bas")) for (const s of urut) perSidang[s.sidangId] = dasar(s);
+
+  const terakhir = urut[urut.length - 1];
+  const sudahPutus = Boolean(bahan.putusan?.sudahPutus);
+  const relevanPutusan = sudahPutus || Boolean(terakhir && hariPutusan(terakhir));
+  const putusan =
+    bahan.boleh.includes("putusan") && relevanPutusan
+      ? {
+          ...dasar(terakhir),
+          amar: sudahPutus ? bahan.putusan?.statusPutusan ?? "" : "",
+          verstek: sudahPutus ? Boolean(bahan.putusan?.verstek) : null,
+        }
+      : null;
+
+  const sidangIkrarTerakhir = [...urut].reverse().find((s) => sidangIkrar(s));
+  const ikrar =
+    bahan.boleh.includes("penetapan") && (bahan.adaIkrar || sidangIkrarTerakhir)
+      ? dasar(sidangIkrarTerakhir ?? terakhir)
+      : null;
+  return { perSidang, putusan, ikrar };
 }
 
 export const SEBUTAN_BLANGKO: Record<JenisBlangkoDerry, string> = {
