@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.13",
+    dirilis: "2026-10-19T16:30:00+08:00",
+    judul: "Draf putusan H-7 bertahap dalam satu jendela, kelompok Ikrar Talak di Blangko ABT by Derry, dan ikrar talak di Peta perkara",
+    butir: [
+      "Draf putusan H-7 di Jadwal Sidang kini satu tombol ringkas (mis. \"Draf putusan - 3 dari 11 siap\") yang membuka jendela besar dengan lima tahap yang dapat diklik: ringkasan dalam satu kalimat, isian otomatis beserta lencana yakin/ragu dan asal datanya, isian yang perlu diisi hakim dengan tombol Isi di Blangko, bahan perkara yang terlipat rapi, dan tombol Buka draf di Blangko ABT; isiannya memakai mesin yang sama dengan isi otomatis Blangko ABT by Derry, dan kotak draf di widget diringkas menjadi satu baris.",
+      "Blangko ABT by Derry mendapat kelompok \"Ikrar Talak\" yang mengumpulkan BAS sidang ikrar, penetapan ikrar talak dan penetapan gugur, serta relaas panggilan ikrar dari folder aslinya, dengan saran menurut kehadiran Pemohon dan Termohon dan isi otomatis dari SIPP.",
+      "Peta perkara memuat pilihan \"Ikrar talak\": sebaran cerai talak yang dikabulkan menurut keadaan ikrar per wilayah (sudah ikrar, menunggu, tenggat dekat, gugur, belum ada sidang ikrar, tidak jadi diikrarkan), dengan daftar perkara yang tenggatnya dekat atau sudah gugur; tenggat enam bulan dihitung sejak penetapan hari sidang ikrar.",
+    ],
+  },
+  {
     versi: "1.205.12",
     dirilis: "2026-10-19T15:30:00+08:00",
     judul: "Panel penetapan lebih mudah, isi otomatis dan tanya jawab saksi di Blangko ABT by Derry, nama menu lengkap, Jadwal Sidang lebih ringkas, kepatutan pos, dan halaman lebih ringan",
