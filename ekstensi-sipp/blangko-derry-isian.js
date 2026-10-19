@@ -298,6 +298,7 @@
     bunyi: {}, // kode -> [{ keadaan, nilai }] pilihan bunyi (mis. 5227) - dipilih petugas
     bahanSaksi: null, // posita + keterangan dua saksi yang dibaca dari ABT untuk sumber saksi
     tautan: null, // 19 Okt: tautan dari Jadwal Sidang portal (peristiwa aleta-bd-tautan): jenis, agenda, keterangan, amar, saksi
+    sorotan: null, // 19 Okt: kartu isian yang ditunjuk tautan Draf H-7 { kode, sampai, jam }: tersorot ±2 dtk walau digambar ulang
     dariSipp: new Set(), // kode yang diisi sendiri dari SIPP sejak blangko dibuka (status "terisi dari SIPP")
     janjiBukti: null, // janji pembacaan bukti (siapkanBukti) - isi otomatis menunggunya
     saranSipp: {}, // kode -> { nilai, keyakinan, asal }: bacaan SIPP/e-Court yang belum pasti (saran samar, tidak ditulis sendiri)
@@ -866,8 +867,118 @@
   function saatTautan(e) {
     const d = e && e.detail;
     if (!d || typeof d !== "object") return;
-    S.tautan = { ...d, dipakai: false };
-    void terapkanTautanBlangko();
+    const t = { ...d, dipakai: false };
+    S.tautan = t;
+    void jalankanTautan(t);
+  }
+  /** Tautan dari pop-up Draf H-7 membawa draf: pakai draf perkara itu; selain itu pemilihan blangko biasa. Lalu sorot isian yang ditunjuk. */
+  async function jalankanTautan(t) {
+    try {
+      if (t.draf === "h7") await terapkanTautanDraf(t);
+      else await terapkanTautanBlangko();
+      if (t.isian && S.tautan === t) await sorotIsian(t.isian);
+    } catch {
+      /* tautan hanya kemudahan */
+    }
+  }
+
+  // ── Draf H-7 dari tautan (19 Okt 2026) ────────────────────────────────────
+  // Pop-up Draf H-7 portal mengirim draf: "h7" (+ varian, isian). Drafnya dibaca dari rute yang sama dengan kartu checklist
+  // (konseptor-langkah GET drafH7) lalu dipasang lewat pakaiDrafH7: blangko draf terbuka dan isian agen menjadi SARAN
+  // (tidak ada yang tersimpan ke ABT selain isi otomatis yang memang berlaku). Draf tidak ada / tidak berblangko = jalur biasa.
+  const API_KONSEPTOR_LANGKAH = "/aleta/api/aleta-ecourt/konseptor-langkah";
+  async function bacaDrafTautan(pid) {
+    if (!/^\d+$/.test(String(pid || ""))) return null;
+    const h = await ambilPortal(`${API_KONSEPTOR_LANGKAH}?perkaraId=${encodeURIComponent(pid)}`, {}, "Membaca draf putusan");
+    const d = h && h.drafH7 && h.drafH7[pid];
+    return d && typeof d === "object" ? d : null;
+  }
+  /** Draf utama, atau varian yang diminta tautan (ditolak) bila blangkonya ada. */
+  function pilihVarianDraf(d, varian) {
+    if (!d) return null;
+    if (varian && varian !== "dikabulkan") {
+      const v = (Array.isArray(d.varian) ? d.varian : []).find((x) => x && x.status === varian && x.blangko && x.blangko.berkas);
+      if (v) return v;
+    }
+    return d.blangko && d.blangko.berkas ? d : null;
+  }
+  async function terapkanTautanDraf(t) {
+    if (!t || t.dipakai || !S.pk) return;
+    t.dipakai = true;
+    const pk = S.pk;
+    let draf = null;
+    try {
+      draf = pilihVarianDraf(await bacaDrafTautan(perkaraId()), t.varian);
+    } catch {
+      draf = null;
+    }
+    if (S.pk !== pk || S.blangko) return;
+    if (!draf) {
+      // Belum ada draf (atau tidak terbaca): jalur biasa, blangko putusan sidang ini.
+      t.dipakai = false;
+      return terapkanTautanBlangko();
+    }
+    const a = api();
+    if (a && typeof a.muatHak === "function") await Promise.resolve(a.muatHak()).catch(() => undefined);
+    if (S.pk !== pk || S.blangko) return;
+    if (!jenisBoleh().includes("put")) {
+      toast("Akun Anda tidak berhak membuka blangko putusan; pilih blangko yang sesuai dengan peran Anda.");
+      return;
+    }
+    await pakaiDrafH7(draf);
+  }
+
+  // ── Sorotan isian yang ditunjuk tautan ────────────────────────────────────
+  const SOROT_MS = 2000;
+  const KELAS_SOROT = "bd-sorot";
+  const longgar = (s) => String(s == null ? "" : s).toLowerCase().replace(/\s+/g, "");
+  /** Kode isian yang namanya paling cocok (sama persis, lalu saling memuat) di antara kartu yang tampil; "" bila tidak ada. */
+  function kodeIsianCocok(nama) {
+    const k = longgar(nama);
+    if (!k || !S.susunan) return "";
+    const kartu = daftarPerlu().filter((b) => b && b.kode && b.jenis !== "tj");
+    const sama = kartu.find((b) => longgar(b.nama) === k);
+    if (sama) return sama.kode;
+    if (k.length < 3) return "";
+    const muat = kartu.find((b) => longgar(b.nama).includes(k)) || kartu.find((b) => longgar(b.nama).length >= 3 && k.includes(longgar(b.nama)));
+    return muat ? muat.kode : "";
+  }
+  function pasangSorot(kode, pertama) {
+    const f = cari(`.bd-f[data-f="${kode}"]`, wadah.isian);
+    if (!f) return false;
+    f.classList.add(KELAS_SOROT);
+    if (pertama) {
+      try {
+        if (typeof f.scrollIntoView === "function") f.scrollIntoView({ behavior: "smooth", block: "center" });
+      } catch {
+        /* gulir hanya kemudahan */
+      }
+    }
+    const kotak = cari("textarea, input, select", f);
+    if (kotak && !kotak.disabled && typeof kotak.focus === "function" && (pertama || !document.activeElement || document.activeElement === document.body)) {
+      try {
+        kotak.focus({ preventScroll: true });
+      } catch {
+        /* fokus hanya kemudahan */
+      }
+    }
+    return true;
+  }
+  /** Gulirkan ke kartu isian bernama itu, fokuskan kotaknya, sorot ±2 detik. Tidak ketemu = diam. Kartu yang digambar ulang tetap tersorot selama jendela itu. */
+  async function sorotIsian(nama) {
+    // Kartu baru ada sesudah susunan terbaca; tunggu sebentar bila pemilihan blangko masih berjalan.
+    for (let i = 0; i < 40 && S.blangko && !S.susunan && !S.galatSusunan; i += 1) await jedaTautan(100);
+    const kode = kodeIsianCocok(nama);
+    if (!kode || !pasangSorot(kode, true)) return false;
+    if (S.sorotan && S.sorotan.jam) clearTimeout(S.sorotan.jam);
+    const so = { kode, sampai: Date.now() + SOROT_MS, jam: null };
+    so.jam = setTimeout(() => {
+      if (S.sorotan === so) S.sorotan = null;
+      const f = cari(`.bd-f[data-f="${kode}"]`, wadah.isian);
+      if (f) f.classList.remove(KELAS_SOROT);
+    }, SOROT_MS);
+    S.sorotan = so;
+    return true;
   }
 
   /** Satu saran: alasan diramahkan dan varian saksi dipilih (bila kelompoknya sudah termuat). */
@@ -3151,6 +3262,8 @@
     tumbuhkanSemua(w);
     if (S.semuaBuka) renderSemua();
     if (S.blangko.jenis === "bas") void muatSkorsBas();
+    // Digambar ulang (mis. isi otomatis selesai) di tengah jendela sorotan: kartu yang ditunjuk tautan tetap tersorot.
+    if (S.sorotan && Date.now() < S.sorotan.sampai) pasangSorot(S.sorotan.kode, false);
   }
 
   // F3.1 (17 Okt 2026): skors sidang ini dari Jadwal Sidang ALETA -> usulan

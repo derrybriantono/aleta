@@ -427,6 +427,10 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-f.bd-getar { animation: bd-getar .42s ease-in-out 1; }
 #aleta-bd-akar .bd-f.bd-kosongcetak.tambahan { border-style: dashed; box-shadow: none; }
 @keyframes bd-getar { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+/* Isian yang ditunjuk tautan Draf H-7: sorotan ±2 dtk, kelasnya dilepas skrip lalu transisi memudarkan */
+#aleta-bd-akar .bd-f { transition: box-shadow .5s ease, border-color .5s ease, background-color .5s ease; }
+#aleta-bd-akar .bd-f.bd-sorot { border-color: var(--accent); background: var(--accentbg); box-shadow: 0 0 0 3px var(--accentln); }
+@media (prefers-reduced-motion: reduce) { #aleta-bd-akar .bd-f { transition: none; } }
 #aleta-bd-akar .bd-ingat h4 { margin: 4px 0 2px; font-size: 14px; color: inherit; }
 #aleta-bd-akar .bd-ingat ul { margin: 0 0 4px; padding-left: 18px; }
 #aleta-bd-akar .bd-ingat .tidakwajib { color: var(--muted); }

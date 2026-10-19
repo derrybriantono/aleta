@@ -950,7 +950,8 @@
 
   // ── Tautan dari Jadwal Sidang portal (19 Okt 2026) ────────────────────────
   // ABT dibuka dengan http://.../aps_badilag/abt/#bd=<JSON ter-encode>: { v:1, nomor, perkaraId, sidangKe, tanggalSidang, jenis:
-  // "putusan"|"bas"|"penetapan", agenda, tunda, keterangan, amar, verstek, jumlahSaksiP, jumlahSaksiT }. Tampilan ini terbuka sendiri,
+  // "putusan"|"bas"|"penetapan", agenda, tunda, keterangan, amar, verstek, jumlahSaksiP, jumlahSaksiT }.
+  // Ruas opsional pop-up Draf H-7: draf: "h7" (pakai draf putusan agen), varian: "dikabulkan"|"ditolak", isian: nama isian yang ditunjuk. Tampilan ini terbuka sendiri,
   // memilih perkara dan sidang, lalu memberi tahu blangko-derry-isian.js (peristiwa "aleta-bd-tautan") untuk memilih blangko yang
   // paling cocok (mesin saran per jenis + peran + keadaan perkara + petunjuk dari tautan). Hash dihapus dari alamat sesudah dibaca;
   // hash rusak / versi tak dikenal diabaikan diam-diam.
@@ -984,6 +985,10 @@
         verstek: j.verstek === true,
         jumlahSaksiP: angkaTautan(j.jumlahSaksiP, 20),
         jumlahSaksiT: angkaTautan(j.jumlahSaksiT, 20),
+        // 19 Okt: ruas opsional dari pop-up Draf H-7 portal; hanya dibawa bila sah (tautan lama tetap sama bentuknya).
+        ...(j.draf === "h7" ? { draf: "h7" } : {}),
+        ...(j.varian === "dikabulkan" || j.varian === "ditolak" ? { varian: j.varian } : {}),
+        ...(teksTautan(j.isian, 120) ? { isian: teksTautan(j.isian, 120) } : {}),
       };
     } catch {
       return null;
