@@ -193,6 +193,7 @@ type Minta = { url: string; cara: string; badan: string };
 type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; latar: Array<Record<string, unknown>>; abt: Record<string, string>; tj: Record<string, Array<{ no: string; tanya: string; jawab: string }>>; pdfRtf: string[]; opsi: { hakTolak?: boolean } };
 const terbuka: JSDOM[] = [];
 const usulanMinta: any[] = [];
+const usulanAlasan: any[] = [];
 afterEach(async () => {
   await tunggu(20);
   while (terbuka.length) terbuka.pop()!.window.close();
@@ -237,6 +238,7 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
   };
   const minta: Minta[] = [];
   usulanMinta.length = 0;
+  usulanAlasan.length = 0;
   const abt: Record<string, string> = { "8503": "F", ...(p.abtAwal ?? {}) }; // isian tersimpan di ABT (data_teks/tanggal)
   const tj: Halaman["tj"] = { "5058": [], "5059": [] };
   const pdfRtf: string[] = [];
@@ -307,7 +309,9 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown>; hakTolak?
     }
     if (url.includes("/aleta-bot/abt/usulan")) {
       const b = JSON.parse(badan || "{}");
-      usulanMinta.push(b);
+      // Permintaan alasan dari posita (centang "sebagian") dicatat terpisah; usulanMinta hanya jawaban saksi.
+      if (b.sumber === "alasan-posita") usulanAlasan.push(b);
+      else usulanMinta.push(b);
       if (p.botMati) return json({ ok: false }, 503);
       const r = await penanganBot(b);
       return json(r.json, r.status);
@@ -405,6 +409,17 @@ async function pilihPutusan(h: Halaman) {
   await sampai(() => q(h, "#bd-perlu .bd-f"), "perlu diisi tergambar");
 }
 
+// 19 Okt (tahap 2): tanya jawab saksi hanya DISUNTING pada berita acara (BAS) oleh panitera pengganti; putusan dan peran
+// hakim hanya membaca. Uji penyuntingan karena itu membuka BAS sebagai PP.
+const bukaPP = (p: Parameters<typeof buka>[0] = {}) => buka({ orang: "pp", ...p });
+async function pilihBas(h: Halaman) {
+  await sampaiPerkara(h);
+  klik(h, '[data-bd2="bukamodal"]');
+  await sampai(() => q(h, `[data-bl="${BLANGKO_BAS}"]`), "berkas bas termuat");
+  klik(h, `[data-bl="${BLANGKO_BAS}"]`);
+  await sampai(() => q(h, "#bd-perlu .bd-f") || q(h, "[data-tj]"), "perlu diisi tergambar");
+}
+
 // ============================================================================
 // Pembantu uji
 // ============================================================================
@@ -418,7 +433,7 @@ const pilih = (h: Halaman, kunci: string, bidang: string, nilai: string) => {
   el.dispatchEvent(new h.w.Event("change", { bubbles: true }));
 };
 async function bukaSaksiDanMuat(h: Halaman, idSet = "cerai-F") {
-  await pilihPutusan(h);
+  await pilihBas(h);
   klik(h, '[data-tj="saksi 1 p"]');
   const sel = (await sampai(() => q(h, '#bd-muattpl optgroup[label^="Panduan"]') && q(h, "#bd-muattpl"), "panduan set")) as HTMLSelectElement;
   await sampai(() => q(h, '[data-skkartu="saksi 2 p"] select') && !(q(h, '[data-skkunci="saksi 1 p"][data-skfld="modus"]') as HTMLSelectElement).disabled, "panel pengetahuan siap");
@@ -538,7 +553,7 @@ const unik = <T,>(a: T[]) => Array.from(new Set(a));
 
 describe("Blangko Derry: jawaban saksi otomatis dan pilihan pengetahuan saksi", () => {
   it("pilihan pengetahuan tiap saksi tampil di atas tabel dengan daftar sama; jawaban terisi dari data SIPP rekaan, sisanya tetap titik-titik", async () => {
-    const h = buka();
+    const h = bukaPP();
     pasangPotonganAbt(h);
     await bukaSaksiDanMuat(h);
     // Panel: satu kartu per saksi, daftar & urutan sama dengan abt.js; bawaan sama persis dengan Susun saksi (pertama "sama", lainnya "sebagian").
@@ -590,7 +605,7 @@ describe("Blangko Derry: jawaban saksi otomatis dan pilihan pengetahuan saksi", 
   });
 
   it("mengubah pilihan pengetahuan menyusun ulang jawaban saksi itu saja, diingat per perkara dan saksi; sumber cerita dan alasan sebagian ikut dikirim", async () => {
-    const h = buka();
+    const h = bukaPP();
     pasangPotonganAbt(h);
     await bukaSaksiDanMuat(h);
     const sebab = barisKe(h, /penyebab perselisihan/);
@@ -605,8 +620,8 @@ describe("Blangko Derry: jawaban saksi otomatis dan pilihan pengetahuan saksi", 
     // Diingat per perkara + saksi (chrome.storage), pulih pada halaman baru.
     const simpan = h.simpanan["bdSaksiPil:10154"] as { pil: Record<string, { modus: string }> };
     expect(simpan.pil["saksi 2 p"].modus).toBe("tidak-tahu");
-    const h2 = buka({ simpanan: h.simpanan });
-    await pilihPutusan(h2);
+    const h2 = bukaPP({ simpanan: h.simpanan });
+    await pilihBas(h2);
     klik(h2, '[data-tj="saksi 1 p"]');
     await sampai(() => q(h2, '[data-skkunci="saksi 2 p"][data-skfld="modus"]'), "panel saksi");
     await sampai(() => (q(h2, '[data-skkunci="saksi 2 p"][data-skfld="modus"]') as HTMLSelectElement).value === "tidak-tahu", "pilihan pulih");
@@ -632,7 +647,7 @@ describe("Blangko Derry: jawaban saksi otomatis dan pilihan pengetahuan saksi", 
   });
 
   it("isian yang sudah diketik tidak ditimpa tanpa konfirmasi di halaman; Urungkan mengembalikannya", async () => {
-    const h = buka();
+    const h = bukaPP();
     await bukaSaksiDanMuat(h);
     const sebab = barisKe(h, /penyebab perselisihan/);
     const lain = barisKe(h, /masih sanggup merukunkan/);
@@ -664,7 +679,7 @@ describe("Blangko Derry: jawaban saksi otomatis dan pilihan pengetahuan saksi", 
   });
 
   it("Simpan ke ABT memakai jalur lama: muatan tanya jawab tanpa kata ALETA, jawaban otomatis ikut tersimpan", async () => {
-    const h = buka();
+    const h = bukaPP();
     await bukaSaksiDanMuat(h);
     klik(h, '[data-bd2="simpantj"]');
     await sampai(() => h.tj["5058"].length > 0 && h.tj["5059"].length > 0, "tersimpan");
@@ -687,9 +702,9 @@ describe("Blangko Derry: jawaban saksi otomatis dan pilihan pengetahuan saksi", 
   });
 
   it("jenis perkara selain cerai ikut: jenis dikirim sebagai id SIPP dan panel pilihan tampil", async () => {
-    const h = buka({ jenis: "Dispensasi Kawin" });
+    const h = bukaPP({ jenis: "Dispensasi Kawin" });
     pasangPotonganAbt(h);
-    await pilihPutusan(h);
+    await pilihBas(h);
     klik(h, '[data-tj="saksi 1 p"]');
     const sel = (await sampai(() => q(h, '#bd-muattpl optgroup[label^="Panduan"]') && q(h, "#bd-muattpl"), "panduan set")) as HTMLSelectElement;
     await sampai(() => !(q(h, '[data-skkunci="saksi 1 p"][data-skfld="modus"]') as HTMLSelectElement)?.disabled, "panel pengetahuan siap");
@@ -704,8 +719,8 @@ describe("Blangko Derry: jawaban saksi otomatis dan pilihan pengetahuan saksi", 
   });
 
   it("server tidak menjawab: set pertanyaan tetap termuat apa adanya, fitur lama tidak berkurang, tombol susun ulang memberi kabar", async () => {
-    const h = buka({ botMati: true });
-    await pilihPutusan(h);
+    const h = bukaPP({ botMati: true });
+    await pilihBas(h);
     klik(h, '[data-tj="saksi 1 p"]');
     const sel = (await sampai(() => q(h, '#bd-muattpl optgroup[label^="Panduan"]') && q(h, "#bd-muattpl"), "panduan set")) as HTMLSelectElement;
     sel.value = "aleta:cerai-F";
@@ -715,7 +730,7 @@ describe("Blangko Derry: jawaban saksi otomatis dan pilihan pengetahuan saksi", 
     klik(h, '[data-bd2="isioto"]');
     await sampai(() => /belum dapat disusun/.test(akar(h).textContent || ""), "kabar server");
     // Fitur lama tetap ada.
-    for (const s of ['[data-tjmode="sisi"]', '[data-tjmode="satu"]', '[data-sbaksi="urut"]', '[data-sbaksi="samakanq"]', '[data-sbaksi="salinsemua"]', '[data-sbaksi="bersih"]', '[data-sbaksi="urung"]', '[data-sbaksi="ulang"]', '[data-bd2="muattpl"]', '[data-bd2="tambahtj"]', '[data-bd2="simpantj"]', '[data-bd2="tutuptj"]', "#bd-muattpl"]) {
+    for (const s of ['[data-tjmode="sisi"]', '[data-tjmode="satu"]', '[data-sbaksi="urut"]', '[data-sbaksi="samakanq"]', '[data-sbaksi="salinsemua"]', '[data-sbaksi="rapikan"]', '[data-sbaksi="urung"]', '[data-sbaksi="ulang"]', '[data-bd2="muattpl"]', '[data-bd2="tambahtj"]', '[data-bd2="simpantj"]', "#bd-muattpl"]) {
       expect(q(h, s), s).not.toBeNull();
     }
     // Satu per satu: pilihan saksi itu saja.

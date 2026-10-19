@@ -3563,6 +3563,19 @@ function pitaIdentitasAbt(pengguna) {
  * petugas; urutannya ditambahkan di belakang agar urutan sembilan yang lama
  * tidak bergeser.
  */
+/**
+ * 19 Okt 2026: satu jawaban saksi = satu paragraf. Baris baru di tengah kalimat (posita yang disalin dari PDF) dilebur
+ * menjadi spasi - SIPP/ABT membuang <br> sehingga "rumah[baris baru]tangga" tercetak "rumahtangga". Dipakai saat jawaban
+ * dari server dimuat ke penyusun dan saat disimpan ke ABT. Cermin rapikanJawaban di blangko-derry-saksi.js.
+ */
+function satuParagrafSaksi(teks) {
+  return String(teks || "")
+    .replace(/\s*[\r\n]+\s*/g, " ")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\s+([,;])/g, "$1")
+    .trim();
+}
+
 const DAFTAR_ALASAN_SDG = [
   "perselisihan terus-menerus",
   "kekerasan dalam rumah tangga",
@@ -5790,7 +5803,7 @@ function susunPanelAbt(jatiDiri) {
         return {
           no: String(b.no),
           tanya: b.tanya,
-          jawab: b.jawab,
+          jawab: satuParagrafSaksi(b.jawab),
           pilihan: pilihan.length >= 2 ? pilihan : null,
           dipilih: false,
           habis: Boolean(varian && varian.habis),
@@ -6113,7 +6126,7 @@ function susunPanelAbt(jatiDiri) {
           continue;
         }
         const baris = kolomIsian[i]
-          .map((x, n) => ({ no: String(n + 1), tanya: x.tanya, jawab: x.jawab.value.trim() }))
+          .map((x, n) => ({ no: String(n + 1), tanya: x.tanya, jawab: satuParagrafSaksi(x.jawab.value) }))
           .filter((x) => x.jawab);
         hasilSimpan.textContent = `Menyimpan keterangan ${nama} (${i + 1} dari ${dataSaksi.length})…`;
         try {

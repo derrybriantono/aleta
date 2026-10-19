@@ -208,7 +208,8 @@
         if (adaTitik(r.jawab)) hasil.tetapTitik += 1;
         return;
       }
-      let usul = String(b.jawab || "").trim();
+      // 19 Okt: satu jawaban satu paragraf - baris baru di tengah kalimat tidak pernah ikut terpasang.
+      let usul = rapikanJawaban(b.jawab);
       if (!usul || b.belumTerisi || tandaBelumTerisi(usul)) {
         if (adaTitik(r.jawab)) hasil.tetapTitik += 1;
         return;
@@ -260,7 +261,162 @@
     return h;
   }
 
+  // ==========================================================================
+  // 19 Okt 2026 (tahap 2): satu jawaban satu paragraf, alasan sesuai posita, tombol per peran, tukar/pindah jawaban
+  // ==========================================================================
+
+  /**
+   * Satu jawaban = SATU paragraf. Baris baru di tengah kalimat (posita yang disalin dari PDF) dilebur menjadi spasi,
+   * karena SIPP/ABT membuang <br> sehingga "rumah[baris baru]tangga" tercetak "rumahtangga". Titik-titik isian tidak
+   * disentuh; spasi sebelum koma/titik koma dibuang dan koma tanpa spasi dilengkapi. Idempoten. Cermin
+   * rapikanKalimatSaksi di abtUsulanService (bot) dan satuParagrafSaksi di abt.js.
+   */
+  function rapikanJawaban(teks) {
+    return String(teks == null ? "" : teks)
+      .replace(/<br\s*\/?>/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/\s+([,;:])/g, "$1")
+      .replace(/([A-Za-z)])(,)(?=[A-Za-z(])/g, "$1$2 ")
+      .replace(/,(\s*,)+/g, ",")
+      .replace(/,\s*;/g, ";")
+      .replace(/;(\s*;)+/g, ";");
+  }
+
+  /** Baris dengan jawaban yang memuat baris baru (jumlah), untuk laporan "N jawaban digabung". */
+  const adaBarisBaru = (teks) => /[\r\n]/.test(String(teks || ""));
+
+  /** Menyalin satu baris beserta penanda dasar/otomatis; baris di luar batas dilengkapi baris kosong. */
+  function lengkapiBaris(rows, n) {
+    const keluar = (rows || []).map((r) => ({ ...r }));
+    while (keluar.length < n) keluar.push({ no: String(keluar.length + 1), tanya: "", jawab: "" });
+    return keluar;
+  }
+  /** Jawaban + penandanya berpindah bersama (supaya susunan otomatis tidak menimpa jawaban yang sudah dipindah). */
+  const BIDANG_JAWAB = ["jawab", "dasar", "otomatis"];
+  function tukarBidang(a, b) {
+    for (const f of BIDANG_JAWAB) {
+      const ada = f in a || f in b;
+      if (!ada) continue;
+      const x = a[f];
+      a[f] = b[f];
+      b[f] = x;
+      if (a[f] === undefined) delete a[f];
+      if (b[f] === undefined) delete b[f];
+    }
+  }
+
+  /**
+   * Menggeser JAWABAN saja (pertanyaan tetap) satu baris ke atas/bawah dalam satu saksi: jawaban baris i bertukar
+   * tempat dengan jawaban baris tetangganya. arah = -1 (naik) | 1 (turun).
+   * @returns {{rows: Array, ok: boolean}} salinan; ok=false di ujung daftar.
+   */
+  function geserJawaban(rows, i, arah) {
+    const j = i + (arah < 0 ? -1 : 1);
+    const keluar = (rows || []).map((r) => ({ ...r }));
+    if (i < 0 || i >= keluar.length || j < 0 || j >= keluar.length) return { rows: keluar, ok: false };
+    tukarBidang(keluar[i], keluar[j]);
+    return { rows: keluar, ok: true };
+  }
+
+  /**
+   * Menukar jawaban baris i antara dua saksi (pertanyaan tetap di tempatnya). Daftar yang lebih pendek dilengkapi baris
+   * kosong. @returns {{a: Array, b: Array}} salinan.
+   */
+  function tukarJawaban(rowsA, rowsB, i) {
+    const n = Math.max((rowsA || []).length, (rowsB || []).length, i + 1);
+    const a = lengkapiBaris(rowsA, n);
+    const b = lengkapiBaris(rowsB, n);
+    tukarBidang(a[i], b[i]);
+    return { a, b };
+  }
+
+  /**
+   * Menyalin jawaban baris i dari saksi `dari` ke saksi `ke`. Pertanyaan tujuan yang kosong diisi pertanyaan asal.
+   * @returns {{b: Array}} salinan daftar tujuan.
+   */
+  function salinJawaban(rowsDari, rowsKe, i) {
+    const n = Math.max((rowsDari || []).length, (rowsKe || []).length, i + 1);
+    const a = lengkapiBaris(rowsDari, n);
+    const b = lengkapiBaris(rowsKe, n);
+    b[i].jawab = a[i].jawab;
+    delete b[i].dasar;
+    delete b[i].otomatis;
+    if (!String(b[i].tanya || "").trim()) b[i].tanya = a[i].tanya;
+    return { b };
+  }
+
+  /**
+   * Alasan untuk centang "Hanya sebagian alasan yang ia ketahui": HANYA yang ada di posita perkara itu tampil langsung;
+   * sisanya dilipat di "Alasan lain". Yang sudah dicentang petugas selalu tampil langsung. Posita belum terbaca / tidak
+   * ada satu pun alasan cocok = semuanya tampil (tidak ada yang disembunyikan tanpa dasar).
+   * @param {Array<{kunci:string,label:string}>} alasan  semua pilihan
+   * @param {Set<string>|Array<string>|null} sesuai kunci alasan yang terbaca dari posita
+   * @param {Array<string>} terpilih kunci yang sudah dicentang
+   */
+  function bagiAlasan(alasan, sesuai, terpilih) {
+    const semua = Array.isArray(alasan) ? alasan : [];
+    const set = sesuai instanceof Set ? sesuai : new Set(Array.isArray(sesuai) ? sesuai.map(String) : []);
+    const dipilih = new Set((terpilih || []).map(String));
+    const adaCocok = semua.some((a) => set.has(String(a.kunci)));
+    if (!set.size || !adaCocok) return { utama: semua.slice(), lain: [], dariPosita: false };
+    return {
+      utama: semua.filter((a) => set.has(String(a.kunci)) || dipilih.has(String(a.kunci))),
+      lain: semua.filter((a) => !set.has(String(a.kunci)) && !dipilih.has(String(a.kunci))),
+      dariPosita: true,
+    };
+  }
+
+  /** Isi menu "Lainnya" tanya jawab saksi: label berupa kalimat jelas + penjelasan singkat (title). */
+  const MENU_LAINNYA = {
+    urut: {
+      label: "Sejajarkan pertanyaan yang sama",
+      title: "Mengurutkan ulang daftar saksi kedua supaya pertanyaan yang sama berada di baris yang sama dengan saksi pertama. Berguna bila dua saksi memakai set pertanyaan berbeda.",
+    },
+    samakanq: {
+      label: "Samakan bunyi pertanyaan dengan saksi pertama",
+      title: "Mengganti bunyi pertanyaan saksi kedua menjadi sama dengan saksi pertama di setiap baris. Jawaban tidak berubah.",
+    },
+    salinsemua: {
+      label: "Isi jawaban saksi kedua dari saksi pertama (kata diganti)",
+      title: "Menyalin jawaban saksi pertama ke baris yang kosong atau sama pada saksi kedua, dengan beberapa kata diganti agar tidak persis sama. Jawaban saksi kedua yang sudah berbeda tidak diubah. Periksa hasilnya: keterangan tiap saksi harus tetap sesuai yang ia sampaikan.",
+    },
+    rapikan: {
+      label: "Gabungkan baris yang terputus",
+      title: "Menggabungkan baris baru di tengah kalimat menjadi satu paragraf per jawaban, supaya tulisan tidak menempel saat dicetak.",
+    },
+  };
+
+  /**
+   * Deret tombol tanya jawab saksi menurut jenis blangko dan peran.
+   *   - Hanya penyusun berita acara (PP/admin) pada blangko BAS yang boleh menyunting;
+   *   - putusan/penetapan dan peran hakim: hanya baca (tanpa satu pun tombol tanya jawab);
+   *   - "Simpan ke ABT" di BAWAH tabel; tidak ada "Selesai"; "Bersihkan kalimat penutup" tidak ditampilkan di BAS
+   *     (itu bawaan putusan); "Urungkan"/"Ulangi" tetap.
+   * @param {{jenis: string, bolehTulis: boolean, hakimSaja?: boolean, berpasangan?: boolean}} o
+   */
+  function deretTombol(o) {
+    const r = o && typeof o === "object" ? o : {};
+    const hanyaBaca = !(r.jenis === "bas" && r.bolehTulis === true && r.hakimSaja !== true);
+    if (hanyaBaca) return { hanyaBaca: true, atas: [], urungUlang: false, lainnya: [], bawah: [] };
+    return {
+      hanyaBaca: false,
+      atas: ["set", "muat", "tambah"],
+      urungUlang: true,
+      lainnya: (r.berpasangan ? ["urut", "samakanq", "salinsemua"] : []).concat(["rapikan"]).map((k) => ({ kunci: k, ...MENU_LAINNYA[k] })),
+      bawah: ["simpan"],
+    };
+  }
+
   const api = {
+    rapikanJawaban,
+    adaBarisBaru,
+    geserJawaban,
+    tukarJawaban,
+    salinJawaban,
+    bagiAlasan,
+    deretTombol,
+    MENU_LAINNYA,
     DAFTAR_MODUS,
     DAFTAR_SUMBER,
     BATAS_SAKSI,

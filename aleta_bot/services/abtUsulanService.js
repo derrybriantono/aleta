@@ -2131,6 +2131,39 @@ function kalimatPosita(html) {
 }
 
 /**
+ * Posita yang disalin dari PDF terpotong di tengah kalimat ("...kebutuhan rumah" / "tangga hanya dibantu oleh
+ * Penggugat, Tergugat" / "sering mengungkit ..."). Baris berikut dirangkai ke baris sebelumnya bila jelas masih satu
+ * kalimat: baris sebelumnya tidak berakhir . ; : ! ? dan (berakhir koma, atau baris ini diawali huruf kecil, atau baris
+ * sebelumnya diakhiri kata sambung/depan). Penanda daftar (1. / a) / -) dan "Bahwa" selalu awal butir baru.
+ */
+const POLA_PENANDA_BARIS = /^(?:\(?\d{1,2}[.)]|\(?[a-z][.)]|[-–•*])\s|^\d{1,2}\s+[A-Z]|^bahwa\b/i;
+const KATA_SAMBUNG_AKHIR =
+  /\b(?:dan|atau|yang|serta|sehingga|karena|dengan|di|ke|dari|untuk|kepada|pada|oleh|bahwa|hingga|sampai|namun|tetapi|dalam|akibat|sebab)\s*$/i;
+function barisLanjutan(sebelum, baris) {
+  if (!sebelum || /[.;:!?]\s*$/.test(sebelum)) return false;
+  if (POLA_PENANDA_BARIS.test(baris)) return false;
+  if (/,\s*$/.test(sebelum)) return true;
+  if (/^[a-z]/.test(baris)) return true;
+  return KATA_SAMBUNG_AKHIR.test(sebelum);
+}
+
+/** Seperti kalimatPosita, tetapi baris yang terpotong di tengah kalimat dirangkai dahulu (khusus pembacaan penyebab). */
+function kalimatPositaSambung(html) {
+  const baris = [];
+  for (const b of polosPosita(html).split("\n")) {
+    const t = b.trim();
+    if (!t) continue;
+    if (baris.length && barisLanjutan(baris[baris.length - 1], t)) baris[baris.length - 1] = `${baris[baris.length - 1]} ${t}`;
+    else baris.push(t);
+  }
+  return baris
+    .join("\n")
+    .split(/\n|;\s+/)
+    .map((k) => k.replace(/^\s*(?:\d+[.)]\s*)?(?:bahwa\s+)?/i, "").trim())
+    .filter((k) => k.length > 8);
+}
+
+/**
  * ============================================================================
  * NAMA SESUDAH PEMICU - KAPITAL MAUPUN HURUF BESAR-KECIL
  * ============================================================================
@@ -2645,8 +2678,26 @@ function tanpaAkhiran(teks) {
   }
 }
 
+/**
+ * 19 Okt 2026 - satu jawaban saksi = SATU paragraf. Baris baru di tengah kalimat (posita yang disalin dari PDF memotong
+ * kalimat di mana saja) dilebur menjadi spasi: SIPP/ABT membuang <br>, jadi "rumah[baris baru]tangga" tercetak "rumahtangga".
+ * Spasi sebelum koma/titik koma dibuang, koma tanpa spasi dilengkapi, dan tanda ganda dirapatkan. Titik-titik isian
+ * ("........") tidak disentuh. Idempoten.
+ */
+function rapikanKalimatSaksi(teks) {
+  return String(teks || "")
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s+([,;:])/g, "$1")
+    .replace(/([A-Za-z)])(,)(?=[A-Za-z(])/g, "$1$2 ")
+    .replace(/,(\s*,)+/g, ",")
+    .replace(/,\s*;/g, ";")
+    .replace(/;(\s*;)+/g, ";");
+}
+
 function akhiriJawaban(teks) {
-  const t = tanpaAkhiran(teks);
+  const t = tanpaAkhiran(rapikanKalimatSaksi(teks));
   return t ? `${t};` : "";
 }
 
@@ -3367,6 +3418,36 @@ function butirDaftarSebab(butir, i) {
 }
 
 /**
+ * Merangkai butir penyebab. Butir pendek tanpa koma ("berjudi", "mabuk") tetap "A, B dan C". Butir berupa klausa utuh
+ * (panjang, bersubjek, memuat koma) dirangkai dengan penyambung wajar supaya terbaca sebagai satu kalimat:
+ * "A, selain itu B, dan C" (19 Okt 2026) - dahulu hanya ditempel koma sehingga klausa saling menempel.
+ */
+function gabungPenyebab(daftar) {
+  const xs = (daftar || [])
+    .flatMap((x) => String(x || "").split(/,\s+(?=(?:Penggugat|Tergugat|Pemohon|Termohon)\b)/))
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (xs.length <= 1) return xs[0] || "";
+  const klausa = xs.some((x) => x.length > 60 || /,/.test(x) || /\s(?:sehingga|karena|yang|hingga|sedangkan)\s/i.test(x));
+  if (!klausa) return `${xs.slice(0, -1).join(", ")} dan ${xs[xs.length - 1]}`;
+  // Dua butir tanpa koma sendiri cukup "A dan B"; koma di dalam salah satunya membuat "dan" tidak jelas batasnya.
+  if (xs.length === 2) return xs.some((x) => /,/.test(x)) ?`${xs[0]}, selain itu ${xs[1]}` : `${xs[0]} dan ${xs[1]}`;
+  return `${xs[0]}, selain itu ${xs.slice(1, -1).join(", ")}, dan ${xs[xs.length - 1]}`;
+}
+
+/** "A, Tergugat B, Tergugat C" (klausa yang masing-masing bersubjek) -> "A, selain itu Tergugat B, dan Tergugat C". */
+function hubungkanKlausa(teks) {
+  const bagian = String(teks || "")
+    .split(/,\s+(?=(?:Penggugat|Tergugat|Pemohon|Termohon)\b)/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (bagian.length < 2) return String(teks || "");
+  // Dua klausa yang salah satunya sudah memuat "dan": "A dan B dan C" kabur batasnya - dirangkai dengan "selain itu".
+  if (bagian.length === 2 && bagian.some((x) => /\sdan\s/.test(x))) return `${bagian[0]}, selain itu ${bagian[1]}`;
+  return gabungPenyebab(bagian);
+}
+
+/**
  * Penyebab perselisihan menurut posita: sisa kalimat sesudah "disebabkan/
  * karena" pada kalimat perselisihan, atau butir daftar sesudahnya. Tanpa
  * kalimat perselisihan yang menyebut sebabnya, kosong - penyebab tidak
@@ -3381,7 +3462,7 @@ function penyebabPosita(butir) {
     if (POLA_KEPALA_DAFTAR_SEBAB.test(b)) {
       const daftar = butirDaftarSebab(butir, i);
       if (daftar.length) {
-        const nilai = daftar.length === 1 ? daftar[0] : `${daftar.slice(0, -1).join(", ")} dan ${daftar[daftar.length - 1]}`;
+        const nilai = gabungPenyebab(daftar);
         return { nilai, kalimat: [b, ...butir.slice(i + 1, i + 1 + daftar.length)].join(" | ") };
       }
     }
@@ -3400,12 +3481,12 @@ function penyebabPosita(butir) {
       if (t.length > 220) {
         t = rapikanPenyebab(t.split(/\s+(?:hingga|sampai|namun|tetapi|akan\s+tetapi)\s+|,\s*(?:akibat|sehingga|namun|lalu|kemudian|dan\s+kemudian|hingga)\b/i)[0]);
       }
-      if (t.length >= 10 && t.length <= 220) return { nilai: t, kalimat: b };
+      if (t.length >= 10 && t.length <= 220) return { nilai: hubungkanKlausa(t), kalimat: b };
     }
     // "disebabkan karena :" - daftar di butir-butir berikutnya.
     const daftar = butirDaftarSebab(butir, i);
     if (!daftar.length) continue;
-    const nilai = daftar.length === 1 ? daftar[0] : `${daftar.slice(0, -1).join(", ")} dan ${daftar[daftar.length - 1]}`;
+    const nilai = gabungPenyebab(daftar);
     return { nilai, kalimat: [b, ...butir.slice(i + 1, i + 1 + daftar.length)].join(" | ") };
   }
   return { nilai: "", kalimat: "" };
@@ -3976,7 +4057,8 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
   // bila tidak ada yang bertanggal.
   const awalBertanggal = awalKonflikPosita(butir);
   const awal = awalBertanggal.nilai ? awalBertanggal : awalKonflikTanpaTanggal(butir);
-  const sebab = penyebabPosita(butir);
+  // 19 Okt: baris posita yang terpotong di tengah kalimat dirangkai dahulu - hanya untuk pembacaan penyebab.
+  const sebab = penyebabPosita(kalimatPositaSambung(posita));
   const sejak = pisahSejakPosita(butir);
   const lama = lamaPisahPosita(butir);
   const pergi = siapaPergiPosita(butir);
@@ -5322,6 +5404,9 @@ module.exports = {
   waktuPosita,
   awalKonflikPosita,
   penyebabPosita,
+  kalimatPositaSambung,
+  gabungPenyebab,
+  rapikanKalimatSaksi,
   pisahSejakPosita,
   lamaPisahPosita,
   siapaPergiPosita,
