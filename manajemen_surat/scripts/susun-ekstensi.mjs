@@ -121,6 +121,10 @@ const BERKAS = [
   // blangko, BAS belum diunggah, tugas, selisih 3 sumber) dan penyembunyi
   // tombol ALETA yang dobel penuh (saklar sippTampilDobel memunculkannya).
   "sipp-ide-m2.js",
+  // Isi otomatis di borang penetapan SIPP (19 Okt 2026) - skrip konten SIPP
+  // paling belakang (memakai ambilUsulanPenunjukan/idUntukTulis konten.js):
+  // tombol "Isi otomatis" di borang PMH/PPP/PJS/PHS, hanya mengisi kolom.
+  "penetapan-borang.js",
   "blangko-derry.css",
   // Penjaga batas (17 Okt 2026): tidak ada kata ALETA yang ditulis ekstensi ke
   // SIPP/ABT. Dimuat document_start, SEBELUM tema-awal.js, supaya fetch sudah

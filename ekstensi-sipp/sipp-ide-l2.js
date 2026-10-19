@@ -189,6 +189,9 @@
    tetap berwarna (diredupkan) di tema gelap. Kotak "Penanda ALETA" = rupa kotak penyatu M2 (audit 17 Okt). */
 .aleta-sisip.aleta-l2{margin:3px 0 0;padding:0;border:0;background:none;font-size:inherit;line-height:1.6}
 .aleta-l2-wadah{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+td[data-aleta-l2-lama]{font-size:0!important;line-height:0}
+td[data-aleta-l2-lama]>:not(.aleta-sisip){display:none!important}
+td[data-aleta-l2-lama]>.aleta-l2-lama{margin:0;font-size:13px;line-height:1.6;justify-content:flex-end;flex-wrap:nowrap;white-space:nowrap}
 .aleta-sisip.aleta-l2-detil{margin:6px 5px 10px;padding:6px 10px;border:0;border-left:3px solid #16a34a;border-radius:3px;background:rgba(22,163,74,.09);color:#333;font-family:inherit;font-size:13px;line-height:1.7;text-align:left}
 .aleta-l2-judul{font-weight:700;margin-right:4px}
 button.aleta-l2-pil{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;white-space:nowrap}
@@ -318,6 +321,42 @@ html[data-aleta-tema-sipp="gelap"] .aleta-sisip.aleta-l2-lima[data-nol]{backgrou
   function bersihkan() {
     tutupJelas();
     for (const el of Array.from(document.querySelectorAll(`[${ATR}]`))) el.remove();
+    for (const sel of Array.from(document.querySelectorAll(`[${ATR_LAMA}]`))) sel.removeAttribute(ATR_LAMA);
+  }
+
+  // ── lencana umur di kolom "Lama Proses" (19 Okt 2026) ─────────────────────
+  //
+  // Permintaan pengguna: lencana umur perkara ("4 hari", di luar mediasi)
+  // berdiri di kolom Lama Proses SIPP, menggantikan tampilan "4 Hari" bawaan.
+  // Teks SIPP TIDAK dihapus atau dibungkus: selnya hanya diberi atribut, dan
+  // CSS menyembunyikan isi SIPP-nya (font-size 0 + anak non-ALETA display
+  // none). textContent sel tetap utuh untuk SIPP (pengurutan, cetak). Daftar
+  // tanpa kolom Lama Proses: lencana tetap di kolom Nomor Perkara.
+  const ATR_LAMA = "data-aleta-l2-lama";
+  const LABEL_LAMA = /^lama\s+proses$/i;
+  function selLamaProses(baris) {
+    const tabel = baris && baris.closest ? baris.closest("table") : null;
+    if (!tabel) return null;
+    if (!tabel.__aletaL2Lama || !tabel.__aletaL2Lama.kepala || !tabel.__aletaL2Lama.kepala.isConnected) {
+      let indeks = -1;
+      let kepala = null;
+      for (const tr of Array.from(tabel.rows || [])) {
+        if (tr.closest("table") !== tabel) continue;
+        const cells = Array.from(tr.cells || []);
+        const i = cells.findIndex((c) => LABEL_LAMA.test(teksSipp(c).replace(/\s+/g, " ").trim()));
+        if (i >= 0) {
+          indeks = i;
+          kepala = tr;
+          break;
+        }
+      }
+      tabel.__aletaL2Lama = { indeks, kepala, lebar: kepala ? (kepala.cells || []).length : 0 };
+    }
+    const k = tabel.__aletaL2Lama;
+    if (k.indeks < 0 || baris === k.kepala) return null;
+    // Baris berjumlah sel lain (colspan, baris rincian) tidak ditebak.
+    if ((baris.cells || []).length !== k.lebar) return null;
+    return baris.cells[k.indeks] || null;
   }
 
   function penandaUntuk(nomor, detil) {
@@ -334,12 +373,29 @@ html[data-aleta-tema-sipp="gelap"] .aleta-sisip.aleta-l2-lima[data-nol]{backgrou
       if (!sel || !sel.isConnected) continue;
       const lama = sel.querySelector(`:scope > [${ATR}="baris"]`);
       if (lama) lama.remove();
+      const selLama = selLamaProses(sel.parentElement);
+      if (selLama) {
+        const l = selLama.querySelector(`:scope > [${ATR}="lama"]`);
+        if (l) l.remove();
+        selLama.removeAttribute(ATR_LAMA);
+      }
       const daftar = penandaUntuk(nomor, false);
       if (!daftar.length) continue;
+      const umur = selLama ? daftar.filter((p) => p.kode === "umur-perkara") : [];
+      const sisa = umur.length ? daftar.filter((p) => p.kode !== "umur-perkara") : daftar;
+      if (umur.length) {
+        const w = document.createElement("div");
+        w.className = "aleta-sisip aleta-l2 aleta-l2-wadah aleta-l2-lama";
+        w.setAttribute(ATR, "lama");
+        for (const p of umur) w.appendChild(pil(p));
+        selLama.setAttribute(ATR_LAMA, "1");
+        selLama.appendChild(w);
+      }
+      if (!sisa.length) continue;
       const wadah = document.createElement("div");
       wadah.className = "aleta-sisip aleta-l2 aleta-l2-wadah";
       wadah.setAttribute(ATR, "baris");
-      for (const p of daftar) wadah.appendChild(pil(p));
+      for (const p of sisa) wadah.appendChild(pil(p));
       sel.appendChild(wadah);
     }
   }
