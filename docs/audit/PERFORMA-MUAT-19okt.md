@@ -148,7 +148,82 @@ Hasil 19 Okt (laptop, uji sasaran saja - bukan uji penuh):
 - `perkara-saya-16okt` + `jadwal-sidang-waktu-pilihan` + `sidang-keadaan-rekomendasi-q3`: 3 berkas, 27 uji hijau.
 - `eslint` atas berkas yang disentuh: bersih. `node --check` rute bot: bersih.
 
-## 7. Keputusan untuk pengguna
+## 7. Lanjutan 19 Okt siang (K1-K5 diputuskan)
+
+Commit terpisah di cabang yang sama: `d9c8f203` (singgahan + transaksi),
+`1518dcb2` (K2 denyut + K3 muat susulan), `ca83fd61` (K1 port 8008).
+
+### K5 - disetujui
+Jadwal 4 dtk, hitungan tag 30 dtk, daftar hakim 60 dtk (bawaan kode).
+
+### K2 - denyut widget (`ekstensi-sipp/checklist.js`, rute baru `/api/aleta-ecourt/denyut`)
+- Satu GET `denyut?bagian=sumberDaya,kehadiran,checklist[,disidang]`; tiap bagian dijawab
+  pengendali GET rute lamanya sendiri di dalam proses (kuki, kewenangan, singgahan, dan bentuk
+  jawaban sama persis), bagian dijalankan bersamaan, gagal sendiri-sendiri (`{status, isi}`).
+- Rute lama tetap hidup. Ekstensi mengenali portal lama (404 / tanpa tanda `denyut: 1`) sekali,
+  lalu memakai rute lama seperti dulu.
+- Sumber daya 5 dtk -> 15 dtk; kehadiran (semenit) dan checklist berkala (5 menit) menumpang
+  denyut berikutnya; tindakan pengguna (ganti peran, fokus jendela) tetap meminta segera.
+- Tab tersembunyi: semua detak berhenti (sudah begitu, dipertahankan). Kembali terlihat: bacaan
+  yang lebih tua dari 15 dtk (draf H-7: 60 dtk) dibaca segera sekali.
+- Layar publik antrian dan polling `disidang` layar Jadwal Sidang (5 dtk, wilayah JADWAL-3)
+  tidak diubah.
+
+Permintaan berkala per menit per komputer (satu tab SIPP/ABT/portal terlihat, UI Baru):
+
+| Peran | Sebelum | Sesudah |
+| :--- | ---: | ---: |
+| Super Admin (strip sumber daya tampil) | 12 sumber daya + 1 kehadiran + 0,2 checklist + 0,2 draf H-7 = **13,4** | 4 denyut (kehadiran & checklist di dalamnya) + 0,2 draf H-7 = **4,2** |
+| Peran lain (tanpa strip) | 1 kehadiran + 0,2 checklist + 0,2 draf H-7 = **1,4** | 1 denyut (checklist di dalamnya) + 0,2 = **1,2** |
+| Tab tersembunyi | 0 | 0 |
+
+### K3 - muat susulan portal (`src/lib/muat-susulan.ts`, `app-state.tsx`)
+Di `/aleta-ecourt*` dan `/aleta-sipp*`: identitas satker, setelan panel, dan hak Blangko Saya
+tetap segera (kerangka halaman); surat, disposisi, setelan AI, WhatsApp, asisten hakim
+menyusul saat peramban senggang (paling cepat 1,2 dtk, paling lambat 4 dtk). Halaman lain
+tidak berubah. Muat awal tab ALETA e-Court: 8 permintaan susulan -> 3 di depan, 5 menyusul.
+
+### K4 - usulan pemangkasan ruas jadwal (BELUM dikerjakan, menunggu JADWAL-3)
+Rata-rata per baris sepekan (89 sidang, tanpa `waktu=1`): `panggilan` 452 B, `putusanEcourt`
+420 B, `durasi` 374 B, `pihak` 194 B, `courtCalendar` 115 B, `majelisNama` 82 B. Calon aman
+(tidak terbaca layar/ekstensi menurut pencarian kode, perlu dikonfirmasi JADWAL-3):
+- `putusanEcourt.ecourt` (325 B/baris; layar hanya membaca `perluTindakan`, `keterangan`, `sebutan`);
+- `durasi.mediasi` rinci (32 B) bila layar cukup `hariMediasi`;
+- `courtCalendar` daftar lengkap (115 B) -> cukup penanda sinkron + rencana berikutnya;
+- ruas `...Terbaca` (17 ruas x 4 B) dapat dilebur menjadi satu daftar `tidakTerbaca`.
+Perkiraan: -20-25% ukuran jawaban jadwal.
+
+### K1 - port 8008 (`deploy/apache/aleta-8008.conf`, `docs/pasang/PORT-8008.md`)
+Berkas Apache siap pasang (`Listen 8008`, VirtualHost dengan proxy `/aleta` yang sama, pengecualian
+uploads/prefix/logo, `X-Forwarded-Host 192.168.10.10:8008`, log dengan `%D`); port 80 tidak berubah.
+Portal mempercayai `http://192.168.10.10:8008` (env `ALETA_PORT_PORTAL_TAMBAHAN`, bawaan 8008).
+Ekstensi: `alamat-portal.js` memilih 8008 bila terjangkau, cadangan port 80 (diingat di
+`chrome.storage.session` 5 mnt hidup / 2 mnt mati), dipakai popup dan pekerja latar; izin host
+`:8008` ditambahkan. Pengalihan otomatis 80 -> 8008 hanya opsi tertulis (dikomentari).
+Keterbatasan: widget di halaman SIPP/ABT tetap memanggil `/aleta/api` di port 80 (relatif; lintas
+port butuh CORS) - bebannya sudah diturunkan K2.
+
+## 8. Uji tambahan (siang)
+
+- `tsc --noEmit` bersih.
+- `performa-denyut-susulan-19okt` (baru), `ekstensi-sumber-daya` (+4 uji denyut), `kehadiran-widget-f32`,
+  `widget-kotak-sidang-17okt`, `audit-sipp-ide-17okt`, `ekstensi-checklist-milestone`, `ekstensi-widget-tahap3`,
+  `draf-h7-widget-f42`, `ekstensi-halaman-aleta`, `ekstensi-saklar-widget-audit-12okt`: hijau.
+- `port-8008-19okt` (baru), `ekstensi-unduh-universal-17okt`, `ekstensi-popup-tahap2`, `ekstensi-perbaikan-d`,
+  `ekstensi-tampilan-server`, `auth-session`, `ekstensi-sipp-tahap7`, `ekstensi-penanda-tampilan`,
+  `tarik-ecourt-widget-12okt`: hijau.
+- **Merah sampai rilis ekstensi**: `aleta-ecourt-zip` dan `ekstensi-versi-tanam` (isi tanam berbeda dari folder
+  ekstensi). `susun-ekstensi.mjs` menolak menanam tanpa kenaikan versi, dan versi tidak boleh dinaikkan agen ini -
+  hijau sesudah skill `rilis-ekstensi`.
+
+## 9. Keputusan untuk pengguna (sisa)
+
+- K1: pasang berkas Apache (sesi utama) dan buka firewall 8008 (pengguna sendiri) - lihat `docs/pasang/PORT-8008.md`.
+- K4: setujui pemangkasan ruas di atas bersama JADWAL-3.
+- Rilis ekstensi untuk membawa denyut dan alamat 8008 ke Chrome petugas.
+
+## Lampiran: keputusan awal (pagi)
+
 
 - **K1** Pisahkan host ALETA dari SIPP di peramban (mis. nama `aleta.<satker>` atau port lain)
   supaya ALETA punya 6 sambungan sendiri, atau pasang HTTPS + HTTP/2 di Apache (satu sambungan
