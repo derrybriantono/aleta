@@ -456,20 +456,21 @@ describe("C. saklar mati: tidak mengisi sendiri, tombol manual tetap bekerja", (
     await sampaiPerkara(h);
     await pilih(h, BLANGKO_PUT);
     await tunggu(200);
-    expect(mintaKe(h, /aleta-bot\/abt\/usulan/)).toEqual([]);
+    // Saklar mati: bacaan SIPP hanya dianalisis (lencana, saran, tombol Input), tidak ada yang ditulis sendiri.
+    await sampai(() => (q(h, "#bd-i0007") as HTMLInputElement | null)?.placeholder === "telah dikaruniai 2 orang anak", "saran dari SIPP tampil");
     expect(mintaKe(h, /edit_data\?/, "POST")).toEqual([]);
     expect(nilaiKotak(h, "0007")).toBe("");
     // Manual: mengisi yang kosong.
     klik(h, '[data-bd2="isisipp"]');
     await sampai(() => h.abt["0007"] === "telah dikaruniai 2 orang anak", "manual mengisi 0007");
     await sampai(() => h.abt["0364"] === "15/01/2020", "manual mengisi tanggal");
-    expect(mintaKe(h, /aleta-bot\/abt\/usulan/, "POST")).toHaveLength(1);
+    expect(mintaKe(h, /aleta-bot\/abt\/usulan/, "POST")).toHaveLength(2);
     // Yang sudah ada isinya tetap; dijalankan ulang pun tidak menimpa dan tidak menulis ulang yang sama.
     expect(h.abt["1006"]).toBe("di rumah sendiri");
     const jumlah = mintaKe(h, /edit_data\?/, "POST").length;
     await sampai(() => !h.w.aletaBlangkoDerryIsian.keadaan().isiSipp.jalan, "selesai");
     klik(h, '[data-bd2="isisipp"]');
-    await sampai(() => mintaKe(h, /aleta-bot\/abt\/usulan/, "POST").length === 2, "bacaan kedua");
+    await sampai(() => mintaKe(h, /aleta-bot\/abt\/usulan/, "POST").length === 3, "bacaan kedua");
     await tunggu(150);
     expect(mintaKe(h, /edit_data\?/, "POST").length).toBe(jumlah);
     expect(h.abt["1006"]).toBe("di rumah sendiri");
@@ -481,9 +482,9 @@ describe("C. saklar mati: tidak mengisi sendiri, tombol manual tetap bekerja", (
     await pilih(h, BLANGKO_PUT);
     await sampai(() => h.abt["7139"] === "1", "7139 terisi walau saklar mati");
     await tunggu(150);
-    // Mesin bersama tidak jalan: tidak ada bacaan SIPP dan isian lain tetap kosong.
-    expect(mintaKe(h, /aleta-bot\/abt\/usulan/)).toEqual([]);
+    // Mesin bersama tidak menulis: isian lain tetap kosong (hanya saran).
     expect(h.abt["0007"]).toBeUndefined();
+    expect(mintaKe(h, /edit_data\?no_var=0007/, "POST")).toEqual([]);
     expect(mintaKe(h, /edit_data\?no_var=7139/, "POST")).toHaveLength(1);
   });
 
@@ -976,5 +977,122 @@ describe("I. mutu deteksi = mesin panel ABT: periode baku, HTML dibuang, bawaan 
     expect(m.jelasMentah("8500", "<li>x")).toBe(false);
     // Label bunyi.
     expect(m.labelBunyi("templat hakim - sebab + akibat (bentuk baku ALETA)")).toBe("bunyi hakim - sebab + akibat");
+  });
+});
+
+// ============================================================================
+describe("J. kelengkapan kartu usulan di tiap isian (lencana, sumber, bintang, riwayat, sekarang vs usulan, Input ke ABT)", () => {
+  const SAKSI: Usulan[] = [
+    { kode: "0222", nama: "Awal Konflik", nilai: "bulan Januari 2023", keyakinan: "cukup", tingkat: "pasti", kesepakatan: "sama", sumber: [{ saksi: 1, kalimat: "Bahwa sejak Januari 2023 sering bertengkar" }, { saksi: 2, kalimat: "Bahwa mulai bulan Januari 2023 tidak rukun" }] },
+    { kode: "0246", nama: "Pisah Rumah", nilai: "bulan Agustus 2023", keyakinan: "cukup", sumber: [{ asal: "posita", kalimat: "Bahwa sejak Agustus 2023 berpisah rumah" }], catatan: "Kedua saksi tidak menyebut kapan perselisihan mulai" },
+    { kode: "9944", nama: "Lama Pisah", nilai: "3 tahun 3 bulan", keyakinan: "pasti", sumber: [], catatan: "Dihitung dari tanggal pisah rumah sampai sidang." },
+  ];
+  const label = (h: Halaman, kode: string) => qq(h, `.bd-f[data-f="${kode}"] .bd-ket .bd-tanda`).map((x) => x.textContent);
+
+  it("lencana keyakinan dan asal sesuai usulan, juga pada isian yang sudah terisi otomatis; catatan dan lencana kesepakatan ikut", async () => {
+    const h = buka({ usulan: SIPP_PUTUSAN, usulanSaksi: SAKSI, saksiRows: { "2021": [{ no: "1", tanya: "t", jawab: "Jawaban satu" }], "2022": [{ no: "1", tanya: "t", jawab: "Jawaban dua" }] }, abtAwal: { "5125": "Bahwa Penggugat dan Tergugat menikah" } });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await sampai(() => h.abt["0222"] === "bulan Januari 2023" && h.abt["0007"], "terisi otomatis");
+    // 0222: pasti (tingkat ukur), dari keterangan saksi, kedua saksi sama.
+    expect(label(h, "0222")).toEqual(["yakin: pasti", "dari keterangan saksi", "kedua saksi sama"]);
+    // 0246: dari posita saja -> kuning, belum dikuatkan saksi; catatan tampil dengan (i).
+    expect(label(h, "0246")).toEqual(["yakin: cukup", "dari posita — belum dikuatkan saksi"]);
+    expect(q(h, '.bd-f[data-f="0246"] .bd-ketcatatan')!.textContent).toContain("ⓘ Kedua saksi tidak menyebut kapan perselisihan mulai");
+    expect(q(h, '.bd-f[data-f="9944"] .bd-ketcatatan')!.textContent).toContain("Dihitung dari tanggal pisah rumah");
+    // Isian dari SIPP yang terisi otomatis tetap berlencana; yang ragu berlencana abu-abu "periksa".
+    expect(label(h, "0007")).toEqual(["yakin: cukup", "dari SIPP"]);
+    expect(label(h, "2004")).toEqual(["yakin: ragu — periksa", "dari SIPP"]);
+    expect(q(h, '.bd-f[data-f="2004"] .bd-tanda.abu')).not.toBeNull();
+    expect(q(h, '.bd-f[data-f="0222"] .bd-tanda.hijau')).not.toBeNull();
+    expect(q(h, '.bd-f[data-f="0246"] .bd-tanda.kuning')).not.toBeNull();
+  });
+
+  it("sumber (N) dapat dibuka dan ditutup; bintang menyematkan dengan kunci yang sama dengan panel", async () => {
+    const h = buka({ usulan: [], usulanSaksi: SAKSI, saksiRows: { "2021": [{ no: "1", tanya: "t", jawab: "Jawaban satu" }] }, abtAwal: { "5125": "Bahwa menikah" } });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await sampai(() => label(h, "0222").length > 0, "lencana 0222");
+    const tombolSumber = q(h, '.bd-f[data-f="0222"] [data-bd2="ketsumber"]')!;
+    expect(tombolSumber.textContent).toBe("sumber (2) ▸");
+    expect(q(h, '.bd-f[data-f="0222"] .bd-sumberlist')).toBeNull();
+    tombolSumber.click();
+    const daftar = q(h, '.bd-f[data-f="0222"] .bd-sumberlist')!;
+    expect(daftar.textContent).toContain("Saksi 1");
+    expect(daftar.textContent).toContain("Bahwa sejak Januari 2023 sering bertengkar");
+    expect(daftar.textContent).toContain("Saksi 2");
+    expect(q(h, '.bd-f[data-f="0222"] [data-bd2="ketsumber"]')!.textContent).toBe("sumber (2) ▾");
+    q(h, '.bd-f[data-f="0222"] [data-bd2="ketsumber"]')!.click();
+    expect(q(h, '.bd-f[data-f="0222"] .bd-sumberlist')).toBeNull();
+    // Bintang.
+    const bintang = q(h, '.bd-f[data-f="0222"] [data-bd2="ketsemat"]')!;
+    expect(bintang.textContent).toBe("☆");
+    bintang.click();
+    await sampai(() => Array.isArray(h.simpanan.abtVariabelSematan) && (h.simpanan.abtVariabelSematan as string[]).includes("0222"), "tersemat tersimpan");
+    expect(q(h, '.bd-f[data-f="0222"] [data-bd2="ketsemat"]')!.textContent).toBe("★");
+  });
+
+  it("riwayat per isian dengan kembalikan ↺; penggantian otomatis dapat diurungkan", async () => {
+    const MENTAH_PANJANG = `Januari 2023 ${"keadaan rumah tangga tidak harmonis ".repeat(8)}<br /><div>a. Tergugat</div>`;
+    const riwayat = [{ perkaraId: "10154", kode: "0222", sebelum: MENTAH_PANJANG, sesudah: "bulan Januari 2023", cara: "bawaan kueri ABT yang mentah diganti otomatis", pada: "2026-10-19T01:02:00Z" }];
+    const h = buka({ usulan: [], usulanSaksi: SAKSI, saksiRows: { "2021": [{ no: "1", tanya: "t", jawab: "Jawaban satu" }] }, abtAwal: { "5125": "Bahwa menikah", "0222": "bulan Maret 2022" }, riwayat });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await sampai(() => label(h, "0222").length > 0, "lencana");
+    q(h, '.bd-f[data-f="0222"] [data-bd2="ketriwayat"]')!.click();
+    const baris = await sampai(() => q(h, '.bd-f[data-f="0222"] .bd-ketriw-baris'), "riwayat termuat");
+    expect(baris.textContent).toContain("bulan Januari 2023");
+    q(h, '.bd-f[data-f="0222"] [data-bd2="ketpulih"]')!.click();
+    await sampai(() => h.abt["0222"] === MENTAH_PANJANG.replace(/\s+/g, " "), "isi sebelumnya dikembalikan").catch(() => undefined);
+    await sampai(() => mintaKe(h, /edit_data\?no_var=0222/, "POST").length > 0, "pengembalian ditulis lewat jalur simpan");
+    expect(h.riwayatCatat.some((c) => c.kode === "0222" && /dikembalikan dari riwayat/.test(String(c.cara)))).toBe(true);
+  });
+
+  it("sekarang vs usulan bila berbeda (isian tidak ditimpa), dan Pakai usulan menuliskannya", async () => {
+    const h = buka({ usulan: SIPP_PUTUSAN, abtAwal: { "0007": "memiliki 1 orang anak" } });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    const sanding = await sampai(() => q(h, '.bd-f[data-f="0007"] .bd-sanding'), "perbandingan");
+    expect(sanding.textContent).toContain("sekarang");
+    expect(sanding.textContent).toContain("memiliki 1 orang anak");
+    expect(sanding.textContent).toContain("usulan");
+    expect(sanding.textContent).toContain("telah dikaruniai 2 orang anak");
+    expect(h.abt["0007"]).toBe("memiliki 1 orang anak");
+    q(h, '.bd-f[data-f="0007"] [data-bd2="ketpakai"]')!.click();
+    await sampai(() => h.abt["0007"] === "telah dikaruniai 2 orang anak", "usulan dipakai");
+    await sampai(() => !q(h, '.bd-f[data-f="0007"] .bd-sanding'), "perbandingan hilang");
+  });
+
+  it("Input ke ABT (N) dan Input semua yang pasti (N) hanya menulis yang kosong; yang pasti saja untuk tombol kedua; saklar mati tidak menulis sendiri", async () => {
+    const usulan: Usulan[] = [
+      { kode: "0007", nama: "Anak", nilai: "telah dikaruniai 2 orang anak", keyakinan: "cukup", sumber: [] },
+      { kode: "1006", nama: "Tempat", nilai: "di rumah bersama", keyakinan: "pasti", sumber: [] },
+      { kode: "0364", nama: "Tgl KTP", nilai: "15 Januari 2020", keyakinan: "pasti", sumber: [] },
+      { kode: "2004", nama: "Pekerjaan", nilai: "petani", keyakinan: "ragu", sumber: [] },
+      { kode: "8503", nama: "Huruf", nilai: "F", keyakinan: "pasti", sumber: [] },
+    ];
+    const h = buka({ simpanan: { blangkoDerryIsiOto: false }, usulan, abtAwal: { "1006": "di rumah sendiri" } });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await sampai(() => q(h, '[data-bd2="inputyakin"]'), "tombol Input ke ABT");
+    await tunggu(100);
+    expect(mintaKe(h, /edit_data\?/, "POST")).toEqual([]);
+    // 0007 cukup + 0364 pasti = 2 (1006 sudah ada isinya; 2004 ragu; 8503 keputusan hakim).
+    expect(q(h, '[data-bd2="inputyakin"]')!.textContent).toBe("Input ke ABT (2)");
+    expect(q(h, '[data-bd2="inputpasti"]')!.textContent).toBe("Input semua yang pasti (1)");
+    klik(h, '[data-bd2="inputpasti"]');
+    await sampai(() => h.abt["0364"] === "15/01/2020", "yang pasti ditulis");
+    await tunggu(100);
+    expect(h.abt["0007"]).toBeUndefined();
+    expect(h.abt["2004"]).toBeUndefined();
+    expect(h.abt["8503"]).toBeUndefined();
+    expect(h.abt["1006"]).toBe("di rumah sendiri");
+    // Sisanya: Input ke ABT (1) -> 0007.
+    await sampai(() => q(h, '[data-bd2="inputyakin"]')?.textContent === "Input ke ABT (1)", "tinggal satu");
+    expect(q(h, '[data-bd2="inputpasti"]')).toBeNull();
+    klik(h, '[data-bd2="inputyakin"]');
+    await sampai(() => h.abt["0007"] === "telah dikaruniai 2 orang anak", "yang cukup ditulis");
+    expect(h.abt["2004"]).toBeUndefined();
+    for (const m of mintaKe(h, /edit_data\?/, "POST")) expect(m.badan).not.toMatch(/aleta/i);
   });
 });

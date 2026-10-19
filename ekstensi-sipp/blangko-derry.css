@@ -441,3 +441,19 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
   #aleta-bd-akar { padding: 0 0 40px; }
   #aleta-bd-akar .bd-layar { border-radius: 0; border-inline: 0; }
 }
+
+/* 19 Okt: kelengkapan kartu usulan di tiap isian (lencana keyakinan/asal, sumber terlipat, sematan, riwayat, sekarang vs usulan, pilih bunyi). */
+#aleta-bd-akar .bd-ket { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 11.5px; }
+#aleta-bd-akar .bd-tanda { display: inline-block; padding: 0 7px; border-radius: 999px; font-size: 11.2px; line-height: 1.65; color: #ffffff; border: 1px solid transparent; white-space: nowrap; }
+#aleta-bd-akar .bd-tanda.hijau { background: #16704a; border-color: #0f5334; }
+#aleta-bd-akar .bd-tanda.kuning { background: #9a5b06; border-color: #74440a; }
+#aleta-bd-akar .bd-tanda.merah { background: #b42318; border-color: #8a1c13; }
+#aleta-bd-akar .bd-tanda.abu { background: #5d6b64; border-color: #4a5651; }
+#aleta-bd-akar .bd-ket .bd-ikon { padding: 0 6px; line-height: 1.5; }
+#aleta-bd-akar .bd-ketcatatan { margin: 0; }
+#aleta-bd-akar .bd-sumberlist { margin: 0; padding: 4px 8px; list-style: none; font-size: 12px; border-left: 3px solid var(--line); color: var(--muted); }
+#aleta-bd-akar .bd-sumberlist li + li { margin-top: 3px; }
+#aleta-bd-akar .bd-sanding { display: grid; gap: 2px; font-size: 12px; border: 1px dashed var(--accentln); border-radius: 8px; padding: 4px 8px; background: var(--accentbg); }
+#aleta-bd-akar .bd-ketriw { border-left: 3px solid var(--line); padding: 2px 8px; display: grid; gap: 2px; }
+#aleta-bd-akar .bd-bunyi { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
+#aleta-bd-akar .bd-bunyi select { width: 100%; }
