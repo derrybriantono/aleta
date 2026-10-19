@@ -204,14 +204,26 @@ async function utama() {
     process.exit(4);
   }
   const data = await bacaMasukan();
-  if (mode === "gambar") {
+  if (/^putar(?:90|180|270)$/.test(mode)) {
+    // OCR-ECOURT 19 Okt: PNG halaman -> diputar searah jarum jam (halaman lampiran yang dipindai melintang).
+    const derajat = Number(mode.slice(5));
+    const img = await k.loadImage(data);
+    const tegak = derajat !== 180;
+    const kanvas = k.createCanvas(tegak ? img.height : img.width, tegak ? img.width : img.height);
+    const ctx = kanvas.getContext("2d");
+    ctx.translate(kanvas.width / 2, kanvas.height / 2);
+    ctx.rotate((derajat * Math.PI) / 180);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    tulis("putar", kanvas.toBuffer("image/png"));
+  } else if (mode === "gambar") {
     const img = await k.loadImage(data);
     const r = praproses(k, img, img.width, img.height);
     if (!r) process.exit(3);
     tulis("abu", r.abu);
     tulis("biner", r.biner);
   } else if (mode === "pdf") {
-    const maks = Math.max(1, Math.min(5, Number(process.argv[3]) || 2));
+    // Lampiran e-Court (OCR-ECOURT 19 Okt): dokumen bukti gabungan rata-rata 4-5 halaman, sampai 12 dibaca.
+    const maks = Math.max(1, Math.min(12, Number(process.argv[3]) || 2));
     const halaman = await gambarPdf(k, data, maks);
     if (!halaman.length) process.exit(3);
     halaman.forEach((kanvas, i) => {

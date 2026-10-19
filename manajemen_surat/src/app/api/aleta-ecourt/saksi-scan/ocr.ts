@@ -122,6 +122,21 @@ export type OpsiOcr = {
   batasMs?: number;
 };
 
+/**
+ * OCR-ECOURT 19 Okt: arah halaman lewat OSD tesseract (--psm 0, data "osd"). Mengembalikan derajat putar searah jarum
+ * jam yang membuat teks tegak (0/90/180/270), atau null bila OSD tidak tersedia/tidak yakin (teks terlalu sedikit).
+ */
+export async function orientasiGambar(gambar: Buffer, spawn: Spawn = spawnAsli as unknown as Spawn, batasMs = 8000): Promise<0 | 90 | 180 | 270 | null> {
+  if (!(await mesinOcrAda(spawn))) return null;
+  const r = await jalankan(spawn, binTesseract(), ["stdin", "stdout", "--psm", "0"], gambar, Math.min(batasMs, BATAS_WAKTU_MS));
+  if (r.habisWaktu || r.tidakAda || r.kode !== 0) return null;
+  const putar = /Rotate:\s*(\d+)/i.exec(r.keluar);
+  const yakin = /Orientation confidence:\s*([\d.]+)/i.exec(r.keluar);
+  if (!putar || (yakin && Number(yakin[1]) < 1.5)) return null;
+  const d = Number(putar[1]);
+  return d === 90 || d === 180 || d === 270 ? d : 0;
+}
+
 export async function bacaGambar(
   gambar: Buffer,
   spawn: Spawn = spawnAsli as unknown as Spawn,

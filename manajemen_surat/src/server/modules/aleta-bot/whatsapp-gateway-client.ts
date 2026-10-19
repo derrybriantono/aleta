@@ -5261,6 +5261,44 @@ export async function getGatewayKtpPerkara(nomorPerkara: string) {
 }
 /* === AKHIR KTP-PIHAK === */
 
+/* === OCR-ECOURT 19 Okt === lampiran e-Court (KK, akta, surat keterangan, surat kuasa) - lihat modules/aleta-ecourt/lampiran-ecourt.ts */
+export type BerkasLampiranAntri = { fileId: string; format: string; ukuran: number; nomorPerkara: string; judul: string };
+
+export type HasilBacaLampiran = {
+  fileId: string;
+  status: "terbaca" | "tidak_terbaca";
+  sebab: string;
+  versi: number;
+  /** Teks per halaman; bot mengurai medannya lalu membuang teksnya (tidak disimpan). */
+  halaman: Array<{ teks: string; sumber: "teks-pdf" | "ocr" }>;
+  lamaMs: number;
+};
+
+export async function getGatewayAntrianLampiran(params: { nomor: string[]; batas: number }) {
+  const kueri = new URLSearchParams({ nomor: params.nomor.join("|"), batas: String(params.batas) });
+  return gatewayFetch<{ ok: boolean; berkas: BerkasLampiranAntri[]; versi: number }>(`/internal/aleta-bot/sipp/lampiran-ecourt/antrian?${kueri.toString()}`, {
+    timeoutMs: 20_000,
+  });
+}
+
+export async function ambilBerkasLampiranGateway(fileId: string, signal?: AbortSignal): Promise<Response> {
+  const token = getGatewayToken();
+  return fetch(`${getGatewayBaseUrl()}/internal/aleta-bot/sipp/lampiran-ecourt/berkas?${new URLSearchParams({ fileId }).toString()}`, {
+    headers: token ? { "x-aleta-internal-token": token } : {},
+    cache: "no-store",
+    signal: signal ?? AbortSignal.timeout(30_000),
+  });
+}
+
+export async function kirimHasilLampiranGateway(hasil: HasilBacaLampiran[]) {
+  return gatewayFetch<{ ok: boolean; tersimpan: number; halamanBermedan: number }>("/internal/aleta-bot/sipp/lampiran-ecourt", {
+    method: "POST",
+    body: JSON.stringify({ hasil }),
+    timeoutMs: 60_000,
+  });
+}
+/* === AKHIR OCR-ECOURT === */
+
 /* === TAHAP L2 16 Okt: SIPP DENGAN IDE ALETA - SEPULUH PENANDA === */
 /** Satu penanda dari bot (aleta_bot/services/sippIdeL2Service.js) - teks dan dasarnya dari bot. */
 export type PenandaIdeL2 = {

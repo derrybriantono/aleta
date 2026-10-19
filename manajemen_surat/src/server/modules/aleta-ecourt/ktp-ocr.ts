@@ -134,8 +134,13 @@ export function halamanBercirKtp(teks: string): boolean {
   return CIRI_KTP.test(t) && !CIRI_BUKAN_KTP.test(t);
 }
 
-/** mode "gambar" -> {abu, biner}; mode "pdf" -> {hal1-abu, hal1-biner, ...}; null = gagal. */
-export type PembantuGambar = (mode: "gambar" | "pdf", data: Buffer, batasMs: number) => Promise<Map<string, Buffer> | null>;
+/**
+ * mode "gambar" -> {abu, biner}; mode "pdf" -> {hal1-abu, hal1-biner, ...}; null = gagal.
+ * OCR-ECOURT 19 Okt: mode "putar90" | "putar180" | "putar270" -> {putar} (PNG diputar searah jarum jam; halaman
+ * lampiran e-Court yang dipindai miring, mis. kartu keluarga melintang).
+ */
+export type ModePembantu = "gambar" | "pdf" | "putar90" | "putar180" | "putar270";
+export type PembantuGambar = (mode: ModePembantu, data: Buffer, batasMs: number) => Promise<Map<string, Buffer> | null>;
 
 const BATAS_BAWAAN_MS = 45_000;
 /** Skor urai yang dianggap lengkap - lintasan berikutnya tidak perlu dijalankan. */
@@ -190,8 +195,8 @@ export function uraiBingkai(b: Buffer): Map<string, Buffer> {
   return hasil;
 }
 
-/** Pembantu sungguhan: node scripts/ktp-gambar.mjs <mode> lewat stdin/stdout. */
-function buatPembantuAnak(maksHalaman: number): PembantuGambar {
+/** Pembantu sungguhan: node scripts/ktp-gambar.mjs <mode> lewat stdin/stdout. Diekspor untuk pembaca lampiran e-Court. */
+export function buatPembantuAnak(maksHalaman: number): PembantuGambar {
   return (mode, data, batasMs) =>
   new Promise((selesai) => {
     const skrip = skripAnak();
