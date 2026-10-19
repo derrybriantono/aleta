@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.11",
+    dirilis: "2026-10-19T11:00:00+08:00",
+    judul: "OCR lampiran e-Court untuk isian ABT dan rujukan PERMA di blangko dispensasi ditolak",
+    butir: [
+      "Lampiran e-Court hasil pindai dibaca di latar dengan OCR (satu berkas per putaran, hasil disimpan sehingga tidak dibaca ulang): kartu keluarga, akta kelahiran, kematian, nikah, dan cerai, surat keterangan desa dan KUA, surat kuasa khusus dan insidentil, serta slip gaji; jenisnya dikenali dari isi halaman dan dokumen dicocokkan ke pihak perkara, sedangkan NIK hanya dipakai untuk mencocokkan dan tidak pernah disimpan atau ditampilkan.",
+      "Hasilnya diusulkan (bercentang, tidak menimpa isian petugas) ke isian ABT: tanggal surat kuasa dan kantor advokat Tergugat, penerima kuasa insidentil, penghasilan, nomor/tanggal surat penolakan KUA, duplikat akta nikah, tempat dan tanggal lahir anak, serta kalimat salin alat bukti untuk daftar bukti; isian baru naik menjadi otomatis hanya bila terukur cocok sedikitnya 95% atas isian petugas.",
+      "Blangko dispensasi kawin ditolak kini merujuk Pasal 12 ayat (2) huruf a dan b PERMA 5/2019 untuk keberlanjutan pendidikan anak (paket blangko susulan sudah terpasang di server).",
+    ],
+  },
+  {
     versi: "1.205.10",
     dirilis: "2026-10-19T06:20:00+08:00",
     judul: "Rujukan PERMA 5/2019 dan KHES dicocokkan ke naskah resmi, alamat lengkap di prompt putusan",
