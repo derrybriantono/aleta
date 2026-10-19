@@ -79,6 +79,13 @@ export function formatPeriode(nilai: unknown): string {
     const baku = kecil === "pebruari" ? "februari" : kecil === "nopember" ? "november" : kecil;
     return `bulan ${NAMA_BULAN.find((b) => b.toLowerCase() === baku)} ${m[2]}`;
   }
+  // "awal bulan Agustus 2025" bukan salah satu bentuk isian (bulan _ / tahun _ / awal tahun / akhir tahun): menjadi "bulan Agustus 2025".
+  m = t.match(new RegExp(`^(?:awal|akhir|pertengahan)\\s+(?:bulan\\s+)+(${NAMA_BULAN.join("|")}|Pebruari|Nopember)\\s*,?\\s+(?:tahun\\s+)?(\\d{4})$`, "i"));
+  if (m) {
+    const kecil = m[1].toLowerCase();
+    const baku = kecil === "pebruari" ? "februari" : kecil === "nopember" ? "november" : kecil;
+    return `bulan ${NAMA_BULAN.find((b) => b.toLowerCase() === baku)} ${m[2]}`;
+  }
   m = t.match(/^(awal|akhir|pertengahan)\s+(?:tahun\s+)*(\d{4})$/i);
   if (m) return `${m[1].toLowerCase()} tahun ${m[2]}`;
   m = t.match(/^(?:tahun\s+)*(\d{4})$/i);
@@ -86,12 +93,72 @@ export function formatPeriode(nilai: unknown): string {
   return t;
 }
 
+// ---------------------------------------------------------------------------
+// Bentuk nilai menurut MAKNA isian (19 Okt, isian 2) - cermin BENTUK_KODE / sahBentuk / rapikanBentuk mesin bersama ekstensi.
+// ---------------------------------------------------------------------------
+/** Jenis makna isian yang bentuk nilainya dijaga (kode variabel ABT -> jenis). */
+export const BENTUK_KODE: Readonly<Record<string, string>> = {
+  "0222": "periode",
+  "0246": "periode",
+  "9944": "lama",
+  "7035": "pihak",
+  "1268": "kalimat",
+  "0007": "anak",
+  "5178": "tempat",
+  "5197": "tanggalNikah",
+};
+const POLA_BULAN_ID = `(?:${NAMA_BULAN.join("|")}|Pebruari|Nopember)`;
+const POLA_PERIODE = new RegExp(
+  `^(?:bulan ${POLA_BULAN_ID} [0-9]{4}|tahun [0-9]{4}|(?:awal|akhir|pertengahan) (?:tahun [0-9]{4}|bulan ${POLA_BULAN_ID} [0-9]{4})|awal (?:pernikahan|perkawinan|menikah|berumah tangga))$`,
+  "i"
+);
+const POLA_LAMA = /^(?:(?:kurang lebih|sekitar|±|lebih dari)\s+)?\d{1,3}\s*(?:\([^)]{1,25}\)\s*)?(?:tahun|bulan|minggu|hari)(?:\s+(?:dan\s+)?\d{1,3}\s*(?:\([^)]{1,25}\)\s*)?(?:bulan|minggu|hari))?$/i;
+const POLA_PIHAK = /^(?:penggugat|tergugat|pemohon|termohon)(?:\s+(?:i|ii|iii|iv))?$/i;
+const POLA_TANGGAL_NIKAH = new RegExp(`^[0-9]{1,2} ${POLA_BULAN_ID} (?:19|20)[0-9]{2}$`, "i");
+const POLA_KALIMAT_MENTAH = /sebagaimana|bahwa\b|nomor|nomer|tertanggal|melangsungkan|kutipan|akta|surat\s+keterangan|ghoib|ghaib|meninggalkan|\bpergi\b|\btelah\b|\bsudah\b|\byang\b|\bdan\b.*\bdan\b|\d{2,3}\/\d{1,3}\/[IVX]+\//i;
+const POLA_KALIMAT_MENTAH_ANAK = /sebagaimana|nomor|tertanggal|melangsungkan|kutipan|akta|surat\s+keterangan|ghoib|ghaib/i;
+const satuBaris = (t: unknown): string => teks(t).replace(/[\r\n\t]+/g, " ").replace(/\s{2,}/g, " ").trim();
+
+/** Jenis makna isian ini ("" = tidak dijaga). Kode dari katalog, atau nama isian untuk periode. */
+export function bentukIsian(kode: string, nama = ""): string {
+  const k = BENTUK_KODE[teks(kode)];
+  if (k) return k;
+  return /(awal konflik|awal perselisihan|puncak|pisah rumah sejak)/i.test(teks(nama)) ? "periode" : "";
+}
+
+/** Nilai ini sesuai makna isian? true bila isiannya tidak dijaga. Periode diterima setelah dibakukan (formatPeriode). */
+export function sahBentuk(kode: string, nilai: unknown, nama = ""): boolean {
+  const jenis = bentukIsian(kode, nama);
+  if (!jenis) return true;
+  const t = satuBaris(nilai);
+  if (!t) return false;
+  if (jenis === "periode") return POLA_PERIODE.test(formatPeriode(t));
+  if (jenis === "lama") return POLA_LAMA.test(t);
+  if (jenis === "pihak") return POLA_PIHAK.test(t);
+  if (jenis === "tanggalNikah") return POLA_TANGGAL_NIKAH.test(t);
+  if (jenis === "kalimat") return t.length <= 400 && /(damai|rukun|nasihat|nasehat|musyawarah|mediasi|upaya|usaha|berusaha)/i.test(t) && !/[<>#]/.test(t);
+  if (jenis === "anak") return t.length <= 250 && /anak/i.test(t) && /(dikaruniai|mempunyai|memiliki|punya|keturunan)/i.test(t) && !POLA_KALIMAT_MENTAH_ANAK.test(t);
+  if (jenis === "tempat") return t.length <= 90 && !POLA_KALIMAT_MENTAH.test(t) && !/[<>#;]/.test(t);
+  return true;
+}
+
+/** Nilai yang sudah sah dirapikan ke bentuk tulisnya: periode baku, satu baris untuk isian kalimat/anak/tempat/lama/pihak/tanggal. */
+export function rapikanBentuk(kode: string, nilai: unknown, nama = ""): string {
+  const jenis = bentukIsian(kode, nama);
+  if (jenis === "periode") return formatPeriode(satuBaris(nilai));
+  if (["kalimat", "anak", "tempat", "lama", "pihak", "tanggalNikah"].includes(jenis)) return satuBaris(nilai);
+  return teks(nilai);
+}
+
 /**
  * Nilai usulan sebagaimana ditulis mesin bersama: HTML dibuang (kecuali variabel ber-HTML), dipangkas, lalu periode
- * dibakukan untuk variabel periode. Draf putusan memakai fungsi ini apa adanya.
+ * dibakukan untuk variabel periode. Draf putusan memakai fungsi ini apa adanya. Nilai yang bentuknya BUKAN isiannya
+ * (mis. kalimat ghaib di awal perselisihan) dikembalikan KOSONG - lebih baik tanpa usulan daripada salah isi.
  */
 export function bersihkanNilaiUsulan(kode: string, nilai: unknown): string {
   const k = teks(kode).trim();
   const bersih = bersihkanNilai(k, nilai).trim();
-  return VARIABEL_PERIODE.includes(k) ? formatPeriode(bersih) : bersih;
+  const baku = VARIABEL_PERIODE.includes(k) ? formatPeriode(bersih) : bersih;
+  if (!baku || VARIABEL_BERHTML.includes(k)) return baku;
+  return sahBentuk(k, baku) ? rapikanBentuk(k, baku) : "";
 }

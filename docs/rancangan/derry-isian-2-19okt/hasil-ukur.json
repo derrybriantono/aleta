@@ -1,0 +1,182 @@
+{
+  "putusan-sebelum-1366-zoom100": {
+    "lebarDokumen": 1366,
+    "gulirMendatar": false,
+    "jumlahKartu": 15,
+    "kartuTumpangTindih": 0,
+    "kartuTerlaluRapat": 0,
+    "teksMeluap": 0,
+    "tinggiKartuPendek": {
+      "min": 94,
+      "maks": 234
+    },
+    "kartuPanjang": [
+      {
+        "kode": "1268",
+        "lebar": 1226,
+        "tinggi": 168
+      },
+      {
+        "kode": "5178",
+        "lebar": 1226,
+        "tinggi": 137
+      },
+      {
+        "kode": "1214",
+        "lebar": 1226,
+        "tinggi": 745
+      }
+    ],
+    "lebarGrid": 1226
+  },
+  "putusan-sebelum-1366-zoom125": {
+    "lebarDokumen": 1093,
+    "gulirMendatar": false,
+    "jumlahKartu": 15,
+    "kartuTumpangTindih": 0,
+    "kartuTerlaluRapat": 0,
+    "teksMeluap": 0,
+    "tinggiKartuPendek": {
+      "min": 94,
+      "maks": 209
+    },
+    "kartuPanjang": [
+      {
+        "kode": "1268",
+        "lebar": 1007,
+        "tinggi": 168
+      },
+      {
+        "kode": "5178",
+        "lebar": 1007,
+        "tinggi": 137
+      },
+      {
+        "kode": "1214",
+        "lebar": 1007,
+        "tinggi": 895
+      }
+    ],
+    "lebarGrid": 1007
+  },
+  "putusan-sebelum-1366-zoom150": {
+    "lebarDokumen": 911,
+    "gulirMendatar": false,
+    "jumlahKartu": 15,
+    "kartuTumpangTindih": 0,
+    "kartuTerlaluRapat": 0,
+    "teksMeluap": 0,
+    "tinggiKartuPendek": {
+      "min": 94,
+      "maks": 259
+    },
+    "kartuPanjang": [
+      {
+        "kode": "1268",
+        "lebar": 825,
+        "tinggi": 168
+      },
+      {
+        "kode": "5178",
+        "lebar": 825,
+        "tinggi": 137
+      },
+      {
+        "kode": "1214",
+        "lebar": 825,
+        "tinggi": 895
+      }
+    ],
+    "lebarGrid": 825
+  },
+  "putusan-sesudah-1366-zoom100": {
+    "lebarDokumen": 1366,
+    "gulirMendatar": false,
+    "jumlahKartu": 15,
+    "kartuTumpangTindih": 0,
+    "kartuTerlaluRapat": 0,
+    "teksMeluap": 0,
+    "tinggiKartuPendek": {
+      "min": 94,
+      "maks": 194
+    },
+    "kartuPanjang": [
+      {
+        "kode": "5227",
+        "lebar": 1226,
+        "tinggi": 228
+      },
+      {
+        "kode": "1268",
+        "lebar": 1226,
+        "tinggi": 168
+      },
+      {
+        "kode": "1214",
+        "lebar": 1226,
+        "tinggi": 745
+      }
+    ],
+    "lebarGrid": 1226
+  },
+  "putusan-sesudah-1366-zoom125": {
+    "lebarDokumen": 1093,
+    "gulirMendatar": false,
+    "jumlahKartu": 15,
+    "kartuTumpangTindih": 0,
+    "kartuTerlaluRapat": 0,
+    "teksMeluap": 0,
+    "tinggiKartuPendek": {
+      "min": 94,
+      "maks": 193
+    },
+    "kartuPanjang": [
+      {
+        "kode": "5227",
+        "lebar": 1007,
+        "tinggi": 228
+      },
+      {
+        "kode": "1268",
+        "lebar": 1007,
+        "tinggi": 168
+      },
+      {
+        "kode": "1214",
+        "lebar": 1007,
+        "tinggi": 895
+      }
+    ],
+    "lebarGrid": 1007
+  },
+  "putusan-sesudah-1366-zoom150": {
+    "lebarDokumen": 911,
+    "gulirMendatar": false,
+    "jumlahKartu": 15,
+    "kartuTumpangTindih": 0,
+    "kartuTerlaluRapat": 0,
+    "teksMeluap": 0,
+    "tinggiKartuPendek": {
+      "min": 94,
+      "maks": 194
+    },
+    "kartuPanjang": [
+      {
+        "kode": "5227",
+        "lebar": 825,
+        "tinggi": 228
+      },
+      {
+        "kode": "1268",
+        "lebar": 825,
+        "tinggi": 168
+      },
+      {
+        "kode": "1214",
+        "lebar": 825,
+        "tinggi": 895
+      }
+    ],
+    "lebarGrid": 825
+  }
+}

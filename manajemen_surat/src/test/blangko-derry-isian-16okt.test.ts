@@ -544,7 +544,8 @@ describe("F. perlu diisi", () => {
     expect(baca.length).toBe(2);
     expect(baca[0].url).toContain("&c=10154&d=2");
     expect(qq(h, ".bd-sbrow").length).toBe(2);
-    expect((q(h, '[data-sba="1"][data-sk="0"]') as HTMLTextAreaElement).value).toContain("Bahwa cukup sekian");
+    // 19 Okt (isian 2): di blangko PUTUSAN kalimat penutup dibuang SENDIRI begitu editor terbaca; tombol tetap ada dan tidak merusak (idempoten).
+    expect((q(h, '[data-sba="1"][data-sk="0"]') as HTMLTextAreaElement).value).toBe("Mereka sering bertengkar;");
     klik(h, '[data-sbaksi="bersih"]');
     expect((q(h, '[data-sba="1"][data-sk="0"]') as HTMLTextAreaElement).value).toBe("Mereka sering bertengkar;");
     klik(h, '[data-sbaksi="salinsemua"]');

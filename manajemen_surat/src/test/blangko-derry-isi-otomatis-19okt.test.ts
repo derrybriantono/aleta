@@ -503,13 +503,15 @@ describe("C. saklar mati: tidak mengisi sendiri, tombol manual tetap bekerja", (
     expect(iGerbang).toBeGreaterThan(i7139);
   });
 
-  it("tombol manual berada sejajar Isi dari gugatan (posita)", async () => {
+  it("19 Okt (isian 2): satu tombol Isi otomatis menggantikan deret Isi dari SIPP / Isi dari gugatan (posita) / Ambil tanggal KTP dari bukti", async () => {
     const h = buka({ usulan: [] });
     await sampaiPerkara(h);
     await pilih(h, BLANGKO_PUT);
     const alat = qq(h, "#bd-alatisi button").map((b) => b.textContent);
-    expect(alat).toContain("Isi dari SIPP");
-    expect(alat).toContain("Isi dari gugatan (posita)");
+    expect(alat).toContain("Isi otomatis");
+    expect(alat).not.toContain("Isi dari SIPP");
+    expect(alat).not.toContain("Isi dari gugatan (posita)");
+    expect(alat).not.toContain("Ambil tanggal KTP dari bukti");
   });
 });
 
@@ -694,19 +696,19 @@ describe("F. mesin bersama sama dengan abt.js", () => {
   it("keputusan menulis: pasti/cukup + kosong = tulis; ragu, pilihan, huruf alasan = saran; ada isinya, dihitung ABT, memuat ALETA = lewati", () => {
     const m = mesin();
     const ctx = { kosong: true, jenis: "teks" };
-    expect(m.putuskan({ kode: "0007", nilai: "x", keyakinan: "pasti" }, ctx).golongan).toBe("tulis");
-    expect(m.putuskan({ kode: "0007", nilai: "x", keyakinan: "cukup" }, ctx).golongan).toBe("tulis");
-    expect(m.putuskan({ kode: "0007", nilai: "x", keyakinan: "cukup", bentrok: "y" }, ctx).golongan).toBe("saran");
-    expect(m.putuskan({ kode: "0007", nilai: "x", keyakinan: "ragu" }, ctx).golongan).toBe("saran");
-    expect(m.putuskan({ kode: "0007", nilai: "x", keyakinan: "ocr" }, ctx).golongan).toBe("saran");
-    expect(m.putuskan({ kode: "0007", nilai: "", pilihan: ["a", "b"], keyakinan: "pasti" }, ctx).golongan).toBe("pilihan");
+    expect(m.putuskan({ kode: "8537", nilai: "x", keyakinan: "pasti" }, ctx).golongan).toBe("tulis");
+    expect(m.putuskan({ kode: "8537", nilai: "x", keyakinan: "cukup" }, ctx).golongan).toBe("tulis");
+    expect(m.putuskan({ kode: "8537", nilai: "x", keyakinan: "cukup", bentrok: "y" }, ctx).golongan).toBe("saran");
+    expect(m.putuskan({ kode: "8537", nilai: "x", keyakinan: "ragu" }, ctx).golongan).toBe("saran");
+    expect(m.putuskan({ kode: "8537", nilai: "x", keyakinan: "ocr" }, ctx).golongan).toBe("saran");
+    expect(m.putuskan({ kode: "8537", nilai: "", pilihan: ["a", "b"], keyakinan: "pasti" }, ctx).golongan).toBe("pilihan");
     expect(m.putuskan({ kode: "8503", nilai: "F", keyakinan: "pasti" }, ctx).golongan).toBe("saran");
     expect(m.putuskan({ kode: "5227", nilai: "x", keyakinan: "pasti" }, ctx).golongan).toBe("saran");
-    expect(m.putuskan({ kode: "0007", nilai: "x", keyakinan: "pasti" }, { ...ctx, kosong: false }).golongan).toBe("lewati");
-    expect(m.putuskan({ kode: "0007", nilai: "x", keyakinan: "pasti", dihitung: true }, ctx).golongan).toBe("lewati");
-    expect(m.putuskan({ kode: "0007", nilai: "ditulis A L E T A", keyakinan: "pasti" }, ctx).golongan).toBe("lewati");
-    expect(m.putuskan({ kode: "0007", nilai: "dari Aleta", keyakinan: "pasti" }, ctx).golongan).toBe("lewati");
-    expect(m.putuskan({ kode: "0007", nilai: "", keyakinan: "pasti" }, ctx).golongan).toBe("lewati");
+    expect(m.putuskan({ kode: "8537", nilai: "x", keyakinan: "pasti" }, { ...ctx, kosong: false }).golongan).toBe("lewati");
+    expect(m.putuskan({ kode: "8537", nilai: "x", keyakinan: "pasti", dihitung: true }, ctx).golongan).toBe("lewati");
+    expect(m.putuskan({ kode: "8537", nilai: "ditulis A L E T A", keyakinan: "pasti" }, ctx).golongan).toBe("lewati");
+    expect(m.putuskan({ kode: "8537", nilai: "dari Aleta", keyakinan: "pasti" }, ctx).golongan).toBe("lewati");
+    expect(m.putuskan({ kode: "8537", nilai: "", keyakinan: "pasti" }, ctx).golongan).toBe("lewati");
   });
 
   it("berkas baru terdaftar di manifest (ABT, sebelum abt.js) dan di penyusun ekstensi", () => {
@@ -1108,10 +1110,10 @@ describe("L. tautan Draf H-7: draf, varian dan isian yang ditunjuk", () => {
     ringkas: { tingkat: "hampir", persen: 80 },
     blangko: blangkoDraf(BLANGKO_PUT),
     alasanBlangko: "",
-    saran: { "0007": { nilai: "saran draf dikabulkan", golongan: "usulan", sumber: "" } },
+    saran: { "0007": { nilai: "telah dikaruniai dua orang anak (draf dikabulkan)", golongan: "usulan", sumber: "" } },
     perlu: [],
     laporan: [],
-    varian: [{ status: "ditolak", judul: "Varian ditolak", blangko: blangkoDraf(BLANGKO_PUT_3), alasanBlangko: "", saran: { "0007": { nilai: "saran draf ditolak", golongan: "usulan", sumber: "" } }, tingkat: "belum", persen: 40, jumlahPerlu: 3 }],
+    varian: [{ status: "ditolak", judul: "Varian ditolak", blangko: blangkoDraf(BLANGKO_PUT_3), alasanBlangko: "", saran: { "0007": { nilai: "telah dikaruniai satu orang anak (draf ditolak)", golongan: "usulan", sumber: "" } }, tingkat: "belum", persen: 40, jumlahPerlu: 3 }],
   };
   const MENU_DUA = [BLANGKO_PUT, BLANGKO_PUT_3];
   const terpilih = (h: Halaman) => isian(h).keadaan().blangko?.berkas as string | undefined;
@@ -1145,7 +1147,7 @@ describe("L. tautan Draf H-7: draf, varian dan isian yang ditunjuk", () => {
   it("draf h7 tanpa varian: draf perkara dibaca dari portal, blangko draf terbuka, isian agen hanya SARAN (tidak ada tulisan ke ABT)", async () => {
     const h = buka({ hash: tautan({ draf: "h7" }), drafH7: { "10154": DRAF }, menuPut: MENU_DUA, usulan: [] });
     await sampai(() => terpilih(h) === BLANGKO_PUT, "blangko draf terpilih");
-    await sampai(() => saran0007(h) === "saran draf dikabulkan", "saran agen terpasang");
+    await sampai(() => saran0007(h) === "telah dikaruniai dua orang anak (draf dikabulkan)", "saran agen terpasang");
     expect(mintaKe(h, /konseptor-langkah\?perkaraId=10154/).length).toBe(1);
     expect(nilaiKotak(h, "0007")).toBe("");
     expect(mintaKe(h, /edit_data\?/, "POST")).toEqual([]);
@@ -1155,13 +1157,13 @@ describe("L. tautan Draf H-7: draf, varian dan isian yang ditunjuk", () => {
   it("varian ditolak: blangko dan saran varian itu yang dipakai", async () => {
     const h = buka({ hash: tautan({ draf: "h7", varian: "ditolak" }), drafH7: { "10154": DRAF }, menuPut: MENU_DUA, usulan: [] });
     await sampai(() => terpilih(h) === BLANGKO_PUT_3, "blangko varian ditolak terpilih");
-    await sampai(() => saran0007(h) === "saran draf ditolak", "saran varian terpasang");
+    await sampai(() => saran0007(h) === "telah dikaruniai satu orang anak (draf ditolak)", "saran varian terpasang");
   });
 
   it("varian ditolak yang tidak ada di draf: draf utama dipakai (bukan galat)", async () => {
     const h = buka({ hash: tautan({ draf: "h7", varian: "ditolak" }), drafH7: { "10154": { ...DRAF, varian: [] } }, menuPut: MENU_DUA, usulan: [] });
     await sampai(() => terpilih(h) === BLANGKO_PUT, "blangko draf utama terpilih");
-    await sampai(() => saran0007(h) === "saran draf dikabulkan", "saran utama terpasang");
+    await sampai(() => saran0007(h) === "telah dikaruniai dua orang anak (draf dikabulkan)", "saran utama terpasang");
   });
 
   it("isian yang sudah ada isinya di ABT tidak ditimpa saran draf", async () => {
@@ -1190,7 +1192,7 @@ describe("L. tautan Draf H-7: draf, varian dan isian yang ditunjuk", () => {
   it("nama isian yang tidak ketemu: diam (tanpa sorotan, tanpa pesan)", async () => {
     const h = buka({ hash: tautan({ draf: "h7", isian: "Isian yang tidak pernah ada" }), drafH7: { "10154": DRAF }, menuPut: MENU_DUA, usulan: [] });
     const a = alat(h);
-    await sampai(() => saran0007(h) === "saran draf dikabulkan", "saran terpasang");
+    await sampai(() => saran0007(h) === "telah dikaruniai dua orang anak (draf dikabulkan)", "saran terpasang");
     await tunggu(200);
     expect(qq(h, ".bd-sorot")).toEqual([]);
     expect(a.gulir).toEqual([]);

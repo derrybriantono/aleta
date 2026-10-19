@@ -441,6 +441,7 @@ describe("mesin sama dengan Isi dari SIPP (Blangko Derry): format periode dan bu
     const mesin = g.AletaIsiSipp as {
       KODE_HTML: string[]; KODE_PERIODE: string[]; HANYA_SARAN: string[]; VAR_BUKTI: string[]; VAR_ECOURT: string[]; VAR_KUASA: string[];
       formatPeriode(x: string): string; htmlKeTeks(x: string): string; bersihkanNilai(k: string, x: string): string;
+      sahBentuk(k: string, x: string, nama?: string): boolean; rapikanBentuk(k: string, x: string, nama?: string): string;
     };
     expect(mesin).toBeTruthy();
     expect([...VARIABEL_BERHTML]).toEqual([...mesin.KODE_HTML]);
@@ -460,7 +461,10 @@ describe("mesin sama dengan Isi dari SIPP (Blangko Derry): format periode dan bu
       for (const kode of ["0222", "8500", "2021"]) expect(bersihkanNilaiUsulan(kode, x), `${kode}: ${x}`).toBe(
         (() => {
           const bersih = mesin.bersihkanNilai(kode, x).trim();
-          return mesin.KODE_PERIODE.includes(kode) ? mesin.formatPeriode(bersih) : bersih;
+          const baku = mesin.KODE_PERIODE.includes(kode) ? mesin.formatPeriode(bersih) : bersih;
+          // 19 Okt (isian 2): nilai yang bentuknya BUKAN isiannya (mis. "28 Agustus 2025" di awal perselisihan) tidak ditulis/diusulkan.
+          if (!baku || mesin.KODE_HTML.includes(kode)) return baku;
+          return mesin.sahBentuk(kode, baku) ? mesin.rapikanBentuk(kode, baku) : "";
         })()
       );
     }

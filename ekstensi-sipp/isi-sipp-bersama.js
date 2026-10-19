@@ -126,6 +126,13 @@
       const baku = kecil === "pebruari" ? "februari" : kecil === "nopember" ? "november" : kecil;
       return `bulan ${NAMA_BULAN.find((b) => b.toLowerCase() === baku)} ${m[2]}`;
     }
+    // "awal bulan Agustus 2025" bukan salah satu bentuk isian (bulan _ / tahun _ / awal tahun / akhir tahun): menjadi "bulan Agustus 2025".
+    m = t.match(new RegExp(`^(?:awal|akhir|pertengahan)\\s+(?:bulan\\s+)+(${NAMA_BULAN.join("|")}|Pebruari|Nopember)\\s*,?\\s+(?:tahun\\s+)?(\\d{4})$`, "i"));
+    if (m) {
+      const kecil = m[1].toLowerCase();
+      const baku = kecil === "pebruari" ? "februari" : kecil === "nopember" ? "november" : kecil;
+      return `bulan ${NAMA_BULAN.find((b) => b.toLowerCase() === baku)} ${m[2]}`;
+    }
     m = t.match(/^(awal|akhir|pertengahan)\s+(?:tahun\s+)*(\d{4})$/i);
     if (m) return `${m[1].toLowerCase()} tahun ${m[2]}`;
     m = t.match(/^(?:tahun\s+)*(\d{4})$/i);
@@ -136,7 +143,94 @@
   function jelasMentah(kode, nilai) {
     const t = teks(nilai);
     if (!t.trim() || KODE_HTML.includes(teks(kode))) return false;
-    return adaHtml(t) || (ISIAN_PENDEK.includes(teks(kode)) && t.length > BATAS_PENDEK);
+    return adaHtml(t) || (ISIAN_PENDEK.includes(teks(kode)) && t.length > BATAS_PENDEK) || jelasSalahBentuk(kode, t);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Bentuk nilai menurut MAKNA isian (19 Okt, isian 2)
+  // ──────────────────────────────────────────────────────────────────────────
+  /**
+   * Jenis makna tiap isian yang bentuk nilainya dijaga. Kunci = kode variabel ABT.
+   *   periode       awal konflik / pisah rumah sejak       -> "bulan Juni 2020", "tahun 2020", "awal tahun 2020", "awal pernikahan"
+   *   lama          lama pisah                              -> "1 tahun 4 bulan"
+   *   pihak         yang meninggalkan rumah                 -> "Tergugat" / "Penggugat" (sebutan pihak saja)
+   *   kalimat       upaya damai keluarga                    -> satu kalimat, tanpa baris baru
+   *   anak          telah dikaruniai anak                   -> "telah dikaruniai 2 orang anak" / "belum dikaruniai anak"
+   *   tempat        KUA tempat menikah (nama tempat)        -> "Kecamatan Palolo, Kabupaten Sigi" (bukan potongan posita)
+   *   tanggalNikah  tanggal nikah                           -> "04 Juli 2011"
+   */
+  const BENTUK_KODE = Object.freeze({
+    "0222": "periode",
+    "0246": "periode",
+    9944: "lama",
+    7035: "pihak",
+    1268: "kalimat",
+    "0007": "anak",
+    5178: "tempat",
+    5197: "tanggalNikah",
+  });
+  const NAMA_BULAN_BAKU = NAMA_BULAN.join("|");
+  const POLA_BULAN_ID = `(?:${NAMA_BULAN_BAKU}|Pebruari|Nopember)`;
+  const ANGKA4 = /[0-9]{4}/.source;
+  const POLA_PERIODE = new RegExp(
+    "^(?:bulan " + POLA_BULAN_ID + " " + ANGKA4 + "|tahun " + ANGKA4 + "|(?:awal|akhir|pertengahan) (?:tahun " + ANGKA4 + "|bulan " + POLA_BULAN_ID + " " + ANGKA4 + ")|awal (?:pernikahan|perkawinan|menikah|berumah tangga))$",
+    "i"
+  );
+  const POLA_LAMA = /^(?:(?:kurang lebih|sekitar|±|lebih dari)\s+)?\d{1,3}\s*(?:\([^)]{1,25}\)\s*)?(?:tahun|bulan|minggu|hari)(?:\s+(?:dan\s+)?\d{1,3}\s*(?:\([^)]{1,25}\)\s*)?(?:bulan|minggu|hari))?$/i;
+  const POLA_PIHAK = /^(?:penggugat|tergugat|pemohon|termohon)(?:\s+(?:i|ii|iii|iv))?$/i;
+  const POLA_TANGGAL_NIKAH = new RegExp("^[0-9]{1,2} " + POLA_BULAN_ID + " (?:19|20)[0-9]{2}$", "i");
+  /** Kata yang menandakan potongan kalimat/dokumen, bukan nama tempat atau periode. */
+  const POLA_KALIMAT_MENTAH = /sebagaimana|bahwa\b|nomor|nomer|tertanggal|melangsungkan|kutipan|akta|surat\s+keterangan|ghoib|ghaib|meninggalkan|\bpergi\b|\btelah\b|\bsudah\b|\byang\b|\bdan\b.*\bdan\b|\d{2,3}\/\d{1,3}\/[IVX]+\//i;
+  const BARIS_BARU = /[\r\n]+/;
+  /** Teks rapat: baris baru dan spasi ganda menjadi satu spasi. */
+  const satuBaris = (t) => teks(t).replace(/[\r\n\t]+/g, " ").replace(/\s{2,}/g, " ").trim();
+  /** Jenis makna isian ini ("" = tidak dijaga). Kode dari katalog, atau nama isian untuk periode. */
+  function bentukIsian(kode, nama) {
+    const k = BENTUK_KODE[teks(kode)];
+    if (k) return k;
+    return /(awal konflik|awal perselisihan|puncak|pisah rumah sejak)/i.test(teks(nama)) ? "periode" : "";
+  }
+  /**
+   * Nilai ini sesuai makna isian? true bila isiannya tidak dijaga. Murni. `nilai` sudah dibersihkan dari HTML.
+   * Periode diterima setelah dibakukan (formatPeriode), jadi "Juni 2020" sah.
+   */
+  function sahBentuk(kode, nilai, nama) {
+    const jenis = bentukIsian(kode, nama);
+    if (!jenis) return true;
+    const t = satuBaris(nilai);
+    if (!t) return false;
+    if (jenis === "periode") return POLA_PERIODE.test(formatPeriode(t));
+    if (jenis === "lama") return POLA_LAMA.test(t);
+    if (jenis === "pihak") return POLA_PIHAK.test(t);
+    if (jenis === "tanggalNikah") return POLA_TANGGAL_NIKAH.test(t);
+    if (jenis === "kalimat") return t.length <= 400 && /(damai|rukun|nasihat|nasehat|musyawarah|mediasi|upaya|usaha|berusaha)/i.test(t) && !/[<>#]/.test(t);
+    if (jenis === "anak") return t.length <= 250 && /anak/i.test(t) && /(dikaruniai|mempunyai|memiliki|punya|keturunan)/i.test(t) && !POLA_KALIMAT_MENTAH_ANAK.test(t);
+    if (jenis === "tempat") return t.length <= 90 && !POLA_KALIMAT_MENTAH.test(t) && !/[<>#;]/.test(t);
+    return true;
+  }
+  /** Anak: kalimat ghaib / dokumen ikut menolak, tetapi "dan" lazim ("anak A dan anak B"). */
+  const POLA_KALIMAT_MENTAH_ANAK = /sebagaimana|nomor|tertanggal|melangsungkan|kutipan|akta|surat\s+keterangan|ghoib|ghaib/i;
+  /**
+   * Nilai yang sudah SAH dirapikan ke bentuk tulisnya: periode baku, satu baris untuk isian kalimat/anak. Selain itu apa adanya.
+   */
+  function rapikanBentuk(kode, nilai, nama) {
+    const jenis = bentukIsian(kode, nama);
+    if (jenis === "periode") return formatPeriode(satuBaris(nilai));
+    if (jenis === "kalimat" || jenis === "anak" || jenis === "tempat" || jenis === "lama" || jenis === "pihak" || jenis === "tanggalNikah") return satuBaris(nilai);
+    return teks(nilai);
+  }
+  /**
+   * Nilai isian yang TERISI tetapi jelas bukan bentuk isiannya (kalimat ghaib di "Awal perselisihan", potongan posita di "KUA"):
+   * boleh diganti hasil mesin yang pasti/cukup bila belum pernah disunting petugas. Lebih ketat daripada sahBentuk supaya ketikan
+   * petugas yang sekadar tidak baku ("sejak lebaran 2020") TIDAK dianggap mentah: hanya yang panjang atau bernada kalimat peristiwa.
+   */
+  function jelasSalahBentuk(kode, nilai) {
+    const jenis = bentukIsian(kode, "");
+    if (!jenis || jenis === "kalimat") return false;
+    const t = satuBaris(nilai);
+    if (!t || sahBentuk(kode, t, "")) return false;
+    if (jenis === "anak") return false;
+    return t.length > 60 || POLA_KALIMAT_MENTAH.test(t) || BARIS_BARU.test(teks(nilai));
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -224,6 +318,9 @@
     if (a === "ktp-ecourt") return "berkas KTP e-Court";
     if (a === "gugatan-ecourt") return "surat gugatan e-Court";
     if (a === "elitigasi") return "data pihak";
+    if (a === "data-nikah") return "data pernikahan di SIPP";
+    if (a === "posita-gugatan") return "posita gugatan";
+    if (a === "bukti-akta") return "bukti akta nikah";
     if (sumber.some((s) => s && s.saksi)) return "keterangan saksi";
     if (sumber.length && sumber.every((s) => s && s.asal === "posita")) return "posita";
     return "SIPP";
@@ -254,6 +351,9 @@
     if (a === "ktp-ecourt") asal = { kelas: "hijau", teks: "dari berkas KTP e-Court" };
     else if (a === "gugatan-ecourt") asal = { kelas: "kuning", teks: "dari berkas e-Court" };
     else if (a === "elitigasi") asal = { kelas: "hijau", teks: "dari data pihak" };
+    else if (a === "data-nikah") asal = { kelas: "hijau", teks: "dari data pernikahan SIPP" };
+    else if (a === "posita-gugatan") asal = { kelas: "kuning", teks: "dari posita gugatan" };
+    else if (a === "bukti-akta") asal = { kelas: "kuning", teks: "dari bukti akta nikah" };
     else if (hanyaPosita) asal = { kelas: "kuning", teks: "dari posita — belum dikuatkan saksi" };
     else if (sumber.some((s) => s && s.saksi)) asal = { kelas: "abu", teks: "dari keterangan saksi" };
     else asal = { kelas: "abu", teks: "dari SIPP" };
@@ -267,7 +367,7 @@
     return (Array.isArray(u && u.sumber) ? u.sumber : [])
       .filter(Boolean)
       .map((s) => ({
-        label: s.asal === "posita" ? "Posita" : s.asal === "gugatan-ecourt" ? "Gugatan e-Court" : s.asal === "ktp-ecourt" ? "KTP e-Court" : s.asal === "elitigasi" ? "Data pihak" : s.saksi ? `Saksi ${s.saksi}` : "SIPP",
+        label: s.asal === "posita" ? "Posita" : s.asal === "gugatan-ecourt" ? "Gugatan e-Court" : s.asal === "ktp-ecourt" ? "KTP e-Court" : s.asal === "elitigasi" ? "Data pihak" : s.asal === "data-nikah" ? "Data pernikahan SIPP" : s.asal === "posita-gugatan" ? "Posita gugatan" : s.asal === "bukti-akta" ? "Bukti akta nikah" : s.saksi ? `Saksi ${s.saksi}` : "SIPP",
         kalimat: htmlKeTeks(s.kalimat || s.keterangan || "").slice(0, 400),
       }))
       .filter((s) => s.kalimat);
@@ -294,6 +394,11 @@
     if (!nilai) return { golongan: "lewati", nilai: "", sebab: "kosong", ganti: false };
     if (KODE_PERIODE.includes(kode) || c.periode === true) nilai = formatPeriode(nilai);
     if (menyebutAleta(nilai)) return { golongan: "lewati", nilai: "", sebab: "memuat nama aplikasi", ganti: false };
+    // 19 Okt (isian 2): nilai harus sesuai MAKNA isiannya; yang salah bentuk tidak ditulis dan tidak disarankan.
+    if (c.jenis !== "tanggal") {
+      if (!sahBentuk(kode, nilai, c.nama)) return { golongan: "lewati", nilai: "", sebab: "bentuk tidak sesuai isian", ganti: false };
+      nilai = rapikanBentuk(kode, nilai, c.nama);
+    }
     if (c.jenis === "tanggal") {
       const iso = typeof c.keIso === "function" ? c.keIso(nilai) : "";
       if (!iso) return { golongan: "lewati", nilai: "", sebab: "tanggal tidak terbaca", ganti: false };
@@ -326,7 +431,7 @@
       const u = usulan.get(kode);
       if (!u) continue;
       const periode = /(awal konflik|puncak|pisah rumah|sejak)/i.test(teks(b.nama)) && b.jenis === "teks";
-      const h = putuskan(u, { kosong: b.kosong !== false, bolehGanti: b.bolehGanti === true, jenis: b.jenis, opsi: b.opsi, keIso, periode });
+      const h = putuskan(u, { kosong: b.kosong !== false, bolehGanti: b.bolehGanti === true, jenis: b.jenis, opsi: b.opsi, keIso, periode, nama: b.nama });
       const butir = { kode, nilai: h.nilai, keyakinan: teks(u.keyakinan), asal: asalUsulan(u), ganti: h.ganti };
       if (h.golongan === "tulis") hasil.tulis.push(butir);
       else if (h.golongan === "saran") hasil.saran.push(butir);
@@ -350,6 +455,39 @@
       }
     }
     return hasil;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Beracara secara elektronik (7139): SARAN bila belum cukup pasti untuk ditulis (19 Okt, isian 2)
+  // ──────────────────────────────────────────────────────────────────────────
+  const POLA_EMAIL = /^[^\s@,;:<>()]+@[^\s@,;:<>()]+\.[A-Za-z]{2,}$/;
+  const EMAIL_INSTANSI = /@(?:pa-[\w-]+|[\w-]+\.mahkamahagung|mahkamahagung|badilag\.mahkamahagung)\.go\.id$/i;
+  const emailPihak = (t) => {
+    const x = teks(t).replace(/\s+/g, "").replace(/[.,;]+$/, "");
+    return POLA_EMAIL.test(x) && !EMAIL_INSTANSI.test(x) ? x.toLowerCase() : "";
+  };
+  /**
+   * Saran #7139 dari kontak perkara (bentuk kontak-pihak): perkara e-Court yang TERBUKTI (kontak.elitigasi.lewatEcourt) lalu
+   *   - Tergugat/kuasanya punya email           -> "1" (e-litigasi penuh);
+   *   - tidak ada email yang terbaca            -> "2" (hybrid: diunggah Panitera Sidang).
+   * Yang bukan perkara e-Court tidak disarankan apa pun. Keputusan yang cukup pasti untuk ditulis tetap milik el7Putuskan di abt.js
+   * (email pasti / hadir tanpa email); fungsi ini hanya mengisi kekosongan itu dengan SARAN. -> { nilai, keterangan } | null
+   */
+  function saranElitigasi(kontak) {
+    if (!kontak || typeof kontak !== "object" || kontak.ada === false) return null;
+    const f = kontak.elitigasi && typeof kontak.elitigasi === "object" ? kontak.elitigasi : null;
+    if (!f || f.lewatEcourt !== true) return null;
+    let email = "";
+    const dom = kontak.domisili && typeof kontak.domisili === "object" ? kontak.domisili[2] : null;
+    if (dom) email = emailPihak(dom.email);
+    for (const o of Array.isArray(kontak.orang) ? kontak.orang : []) {
+      if (email) break;
+      if (!o || Number(o.pihakKe) !== 2) continue;
+      email = emailPihak(o.sipp && o.sipp.email) || emailPihak(o.usulan && o.usulan.email && o.usulan.email.nilai);
+    }
+    return email
+      ? { nilai: "1", keterangan: "Perkara e-Court dan Tergugat (atau kuasanya) memiliki email di data perkara." }
+      : { nilai: "2", keterangan: "Perkara e-Court, tetapi tidak ada email Tergugat yang terbaca; berkas Tergugat diunggah Panitera Sidang." };
   }
 
   /** Usulan tanggal KTP per variabel dari pihak e-Court (ktp-pihak). Yang "ragu" menjadi saran; selain itu "cukup". */
@@ -466,6 +604,11 @@
     htmlKeTeks,
     bersihkanNilai,
     formatPeriode,
+    BENTUK_KODE,
+    bentukIsian,
+    sahBentuk,
+    rapikanBentuk,
+    jelasSalahBentuk,
     jelasMentah,
     terdeteksi,
     bobot,
@@ -480,6 +623,7 @@
     putuskan,
     rencanakan,
     usulanTanggalKtp,
+    saranElitigasi,
     kumpulkan,
   });
 })(typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : null);
