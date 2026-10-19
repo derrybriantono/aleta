@@ -3835,11 +3835,55 @@ function jumlahAnakPosita(butir) {
 function anakIkutPosita(butir) {
   const pola =
     /\banak[^.;]{0,160}?\b(?:tinggal|berada|ikut|diasuh|dirawat|dipelihara|dalam\s+(?:asuhan|pengasuhan|pemeliharaan|perawatan))\s+(?:(?:bersama|dalam\s+(?:asuhan|pengasuhan|pemeliharaan|perawatan))\s+)?(?:dengan\s*|oleh\s+)?(penggugat|tergugat|pemohon|termohon)\b/gi;
+  // 19 Okt 2026 - bentuk lain yang sama jelasnya: "Penggugat yang mengasuh/merawat anak", "hak asuh anak ... berada pada
+  // Penggugat", "anak ... berada di bawah asuhan Penggugat". Hanya bila tepat SATU pihak yang disebut.
+  const polaPengasuh =
+    /\b(penggugat|tergugat|pemohon|termohon)\b\s+(?:yang\s+)?(?:selama\s+ini\s+|kini\s+|sekarang\s+)?(?:telah\s+|sudah\s+)?(?:mengasuh|merawat|memelihara|membesarkan|membawa)\s+(?:kedua\s+|ketiga\s+|semua\s+)?(?:anak|anak-anak)\b/gi;
+  const polaHakAsuh =
+    /\b(?:hak\s+)?(?:asuh|hadhanah|hadlanah|pengasuhan|pemeliharaan)\s+(?:atas\s+|terhadap\s+)?(?:kedua\s+|ketiga\s+|semua\s+)?anak(?:-anak)?[^.;]{0,80}?\b(?:kepada|pada|oleh|berada\s+(?:pada|di\s+tangan)|jatuh\s+(?:kepada|pada))\s+(penggugat|tergugat|pemohon|termohon)\b/gi;
   const sisi = new Set();
   for (const b of butir) {
     for (const m of b.matchAll(pola)) sisi.add(/tergugat|termohon/i.test(m[1]) ? "pelaku" : "lawan");
+    for (const m of b.matchAll(polaPengasuh)) sisi.add(/tergugat|termohon/i.test(m[1]) ? "pelaku" : "lawan");
+    for (const m of b.matchAll(polaHakAsuh)) sisi.add(/tergugat|termohon/i.test(m[1]) ? "pelaku" : "lawan");
   }
   return sisi.size === 1 ? [...sisi][0] : "";
+}
+
+/**
+ * Tempat tinggal SEKARANG tiap pihak (sesudah berpisah), dari kalimat posita yang jelas menyebutnya:
+ * "Tergugat pergi dan tinggal di rumah orang tuanya di Desa X", "Penggugat pulang ke rumah orang tua di Kota Y".
+ * Hanya bila tepat SATU tempat untuk pihak itu; "orang tuanya" dituliskan "orang tua <pihak>". Tidak ada yang dikarang.
+ * @returns {{lawan: string, pelaku: string}} lawan = 0046 (Penggugat/Pemohon), pelaku = 0047 (Tergugat/Termohon)
+ */
+function tempatKiniPosita(butir, pelaku, lawan) {
+  const hasil = { lawan: new Set(), pelaku: new Set() };
+  const pola =
+    /\b(penggugat|tergugat|pemohon|termohon)\b((?:(?!\b(?:penggugat|tergugat|pemohon|termohon)\b)[^.;]){0,100}?)\b(?:tinggal|bertempat\s+tinggal|berdomisili|menetap|pulang|kembali|pindah|mengungsi|menumpang|pergi|meninggalkan\s+(?:rumah|tempat\s+tinggal|kediaman)[^,.;:()]{0,50}?)(?:\s+(?:bersama|lagi|kembali|sendiri))*\s+(?:di|ke)\s+([^,.;:()]{3,120}?)(?=\s+(?:selama|hingga|sampai|kemudian|lalu|setelah|sesudah|namun|tetapi|sedangkan|sementara|karena|sehingga|sejak|dan\s+(?:sejak|hingga|sampai|tidak|telah|sudah|belum))\b|\s*[,.;:(]|$)/gi;
+  for (const b of butir) {
+    const teks = String(b || "").replace(/\b(di|ke)(rumah)\b/gi, "$1 $2");
+    for (const m of teks.matchAll(pola)) {
+      const antara = `${m[2]} ${teks.slice(m.index + m[0].length - m[3].length - 12, m.index + m[0].length - m[3].length)}`;
+      // Hanya tempat SESUDAH berpisah: ada penanda "kini/sekarang/pulang/kembali/pindah" atau kalimat membicarakan pisahnya.
+      const adaPenanda = /\b(?:kini|sekarang|saat\s+ini|pulang|kembali|pindah|mengungsi|menumpang)\b/i.test(antara);
+      const riwayat = /\b(?:setelah|sesudah)\s+(?:menikah|pernikahan|perkawinan)\b/i.test(teks);
+      if (!adaPenanda && (riwayat || !/\b(?:berpisah|pisah|meninggalkan|pergi)\b/i.test(teks))) continue;
+      // Subjek tidak jelas: "Pemohon ... izin kepada Termohon untuk kembali ke ...", "Penggugat dan Tergugat pindah ke ...".
+      if (/\b(?:penggugat|tergugat|pemohon|termohon|kepada|izin|dengan|oleh)\b/i.test(m[2])) continue;
+      if (/\b(?:penggugat|tergugat|pemohon|termohon)\s+(?:dan|dengan|serta)\s*$/i.test(teks.slice(Math.max(0, m.index - 24), m.index))) continue;
+      let tempat = m[3].replace(/\s+/g, " ").trim().replace(/\s+(?:untuk|guna|agar|supaya)\b.*$/i, "");
+      // Tempat milik pihak lawan (kunjungan, ambil barang) bukan tempat tinggalnya.
+      const lawanSisi = /tergugat|termohon/i.test(m[1]) ? /\b(?:penggugat|pemohon)\b/i : /\b(?:tergugat|termohon)\b/i;
+      if (lawanSisi.test(tempat)) continue;
+      if (!POLA_KATA_TEMPAT.test(tempat) && !/\b(?:orang\s*tua|mertua|saudara|kakak|adik|keluarga|kerabat|nenek|kakek|paman|bibi|kos|kost)\b/i.test(tempat)) continue;
+      const sisi = /tergugat|termohon/i.test(m[1]) ? "pelaku" : "lawan";
+      const sebut = sisi === "pelaku" ? String(pelaku || "").trim() || "Tergugat" : String(lawan || "").trim() || "Penggugat";
+      tempat = tempat.replace(/\b(orang\s*tua|mertua|kakak|adik|saudara|keluarga|kerabat|nenek|kakek|paman|bibi)nya\b/gi, `$1 ${sebut}`);
+      hasil[sisi].add(tempat);
+    }
+  }
+  const satu = (s) => (s.size === 1 ? [...s][0] : "");
+  return { lawan: satu(hasil.lawan), pelaku: satu(hasil.pelaku) };
 }
 
 // Tempat tinggal sesudah menikah: "tinggal (bersama) di <tempat> (selama N)",
@@ -4035,6 +4079,16 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
     return ambilBulanTahun(kalimatNikah).nilai || "";
   })();
 
+  // 19 Okt 2026: tempat menikah (wilayah KUA) dari posita cerai - untuk jawaban "menikah pada ... di ...".
+  // Gagal membaca = kosong; tidak pernah menggagalkan fakta lain.
+  const tempatNikah = (() => {
+    try {
+      return require("./deteksi/cerai").tempatNikahCerai(butir).nilai || "";
+    } catch (_galat) {
+      return "";
+    }
+  })();
+
   // "dikaruniai 2 orang anak", "dikaruniai dua orang anak", "mempunyai 3 anak".
   // Butir 14: kalimat KARUNIA lebih dahulu ("di karuniai seorang anak",
   // "1 ( satu) orang anak", "tidak dikaruniai keturunan"); kalimat pertama
@@ -4065,6 +4119,17 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
   })();
   const sisiAnak = anakIkutPosita(butir);
   const anakIkut = sisiAnak === "pelaku" ? pelaku || "Tergugat" : sisiAnak === "lawan" ? lawan || "Penggugat" : "";
+  // 19 Okt 2026: tempat tinggal sekarang tiap pihak - dari posita; bila posita tidak menyebut, alamat pihak di SIPP
+  // (o.alamatPihak, dibaca rute dengan batas waktu). Posita menang atas SIPP.
+  const tempatKiniPosisi = tempatKiniPosita(butir, pelaku, lawan);
+  const alamatSipp = o.alamatPihak && typeof o.alamatPihak === "object" ? o.alamatPihak : {};
+  const bersihAlamat = (a) => String(a || "").replace(/\s+/g, " ").replace(/[\s,;.]+$/, "").trim();
+  const tempatKini = {
+    lawan: tempatKiniPosisi.lawan || bersihAlamat(alamatSipp.lawan),
+    pelaku: tempatKiniPosisi.pelaku || bersihAlamat(alamatSipp.pelaku),
+    asalLawan: tempatKiniPosisi.lawan ? "posita" : bersihAlamat(alamatSipp.lawan) ? "sipp" : "",
+    asalPelaku: tempatKiniPosisi.pelaku ? "posita" : bersihAlamat(alamatSipp.pelaku) ? "sipp" : "",
+  };
 
   // Butir 27 - "puncak ... terjadi (pada) <waktu>": hanya waktu yang langsung
   // menyusul kata 'terjadi' di kalimat puncak itu sendiri.
@@ -4089,6 +4154,7 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
     lamaPisahDihitung,
     siapaPergi,
     tanggalNikah,
+    tempatNikah,
     jumlahAnak,
     kediaman,
     // Butir 14 - fakta tambahan untuk melengkapi jawaban yang dahulu tertinggal.
@@ -4097,6 +4163,7 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
     tidakPernahSerumah: riwayat.tidakPernahSerumah,
     // Pada siapa anak tinggal sekarang (sebutan), atau "".
     anakIkut,
+    tempatKini,
     // Posita memang menceritakan perpisahan tempat tinggal - dasar kalimat
     // "sejak sebelum perkara ini diajukan" bila tanggal dan lamanya tidak ada.
     adaPisah: butirPisah(butir).length > 0,
@@ -4155,6 +4222,23 @@ function lengkapiJawabanTemplat({ tanya, jawab, fakta }) {
   };
   const depanKosong = () => hasil.slice(0, Math.max(0, hasil.search(/\.{3,}|_+/)));
 
+  // 19 Okt 2026: "suami isteri yang sah, menikah pada ... di ..." (pertanyaan hubungan pihak) - tanggal dan tempat menikah dari
+  // posita. Pertanyaan "kapan menikah" tetap lewat cabang khususnya di bawah (titik-titik pertamanya = tanggal).
+  if (!/kapan.*(menikah|nikah|kawin)|(menikah|perkawinan).*kapan|tanggal.*nikah/i.test(tanya)) {
+    if (fakta.tanggalNikah) hasil = hasil.replace(/(\b(?:menikah|nikah|kawin)\s+pada\s+(?:tanggal\s+)?)(?:\.{3,}|_+)/i, (_m, depan) => `${depan}${fakta.tanggalNikah}`);
+    if (fakta.awalKonflik) hasil = hasil.replace(/(\bsejak\s+)(?:\.{3,}|_+)(?=[^;]{0,40}\btidak\s+rukun\b)/i, (_m, depan) => `${depan}${fakta.awalKonflik}`);
+    if (fakta.tempatNikah) hasil = hasil.replace(/(\b(?:menikah|nikah|kawin)\s+pada\s+(?:tanggal\s+)?[^;.]{0,40}?\s+di\s+)(?:\.{3,}|_+)/i, (_m, depan) => `${depan}${fakta.tempatNikah}`);
+  }
+
+  // 19 Okt 2026: "sekarang P tinggal di ... dan T tinggal di ..." - tempat tinggal sekarang dari posita (atau alamat pihak di SIPP).
+  // Pihak yang tempatnya tidak terbaca tetap bertitik-titik.
+  if (fakta.tempatKini && /masing-masing\s+tinggal|tinggal\s+di\s+mana/i.test(tanya)) {
+    hasil = hasil.replace(/\b(penggugat|pemohon|tergugat|termohon)(\s+(?:kini\s+|sekarang\s+)?tinggal\s+di\s+)(?:\.{3,}|_+)/gi, (m, pihak, tengah) => {
+      const tempat = /tergugat|termohon/i.test(pihak) ? fakta.tempatKini.pelaku : fakta.tempatKini.lawan;
+      return tempat ? `${pihak}${tengah}${tempat}` : m;
+    });
+  }
+
   // Butir 27: "puncak perselisihan ... terjadi pada ..." (templat A1/A3) dan
   // "sering terjadi perselisihan ..., dan kapan mulai terjadi?" - bentuk
   // yang dahulu tidak dikenali sehingga titik-titiknya selalu tertinggal.
@@ -4170,10 +4254,10 @@ function lengkapiJawabanTemplat({ tanya, jawab, fakta }) {
       ganti(fakta.pisahSejak);
       // "... sejak ....., kira-kira sampai sekarang sudah sekitar ........
       // tahun/bulan" (A1/A3) - satuan pilihan diganti lama pisahnya.
-      if (fakta.lamaPisah) hasil = hasil.replace(/(?:\.{3,}|_+)\s*tahun\s*\/\s*bulan/i, fakta.lamaPisah);
-    } else if (fakta.lamaPisah && /(?:\.{3,}|_+)\s*tahun\s*\/\s*bulan/i.test(hasil)) {
+      if (fakta.lamaPisah) hasil = hasil.replace(/(?:\.{3,}|_+)\s*(?:tahun\s*\/\s*bulan|bulan\s*\/\s*tahun)/i, fakta.lamaPisah);
+    } else if (fakta.lamaPisah && /(?:\.{3,}|_+)\s*(?:tahun\s*\/\s*bulan|bulan\s*\/\s*tahun)/i.test(hasil)) {
       // Templat punya tempat lamanya sendiri: "sejak ....." tetap menunggu.
-      hasil = hasil.replace(/(?:\.{3,}|_+)\s*tahun\s*\/\s*bulan/i, fakta.lamaPisah);
+      hasil = hasil.replace(/(?:\.{3,}|_+)\s*(?:tahun\s*\/\s*bulan|bulan\s*\/\s*tahun)/i, fakta.lamaPisah);
     } else if (fakta.lamaPisah && /\bsejak\s*(?:\.{3,}|_+)/i.test(hasil)) {
       // Hanya lamanya yang diketahui: "sejak 2 tahun" bukan kalimat -
       // "sejak ..." menjadi "selama kurang lebih 2 tahun".
@@ -4372,6 +4456,12 @@ function rapikanSisaIsian({ tanya, jawab, fakta, pelaku, lawan, daftar }) {
     if (f.anakIkut) ubah(polaAnakIkut, `$1${f.anakIkut}`, "turun");
     else ubah(polaAnakIkut, "", "buang");
   }
+  // 19 Okt 2026: "anak tersebut tinggal bersama ..." - diisi hanya bila posita jelas menyebut pada siapa anak tinggal/diasuh.
+  const polaAnakTitik = rxSisa(`(\\banak(?:-anak)?\\s+(?:tersebut\\s+)?(?:saat\\s+ini\\s+|sekarang\\s+)?(?:tinggal|ikut|berada)\\s+(?:bersama\\s+)?(?:dengan\\s+)?)${SLOT}`, "i");
+  if (f.jumlahAnak === "belum mempunyai anak") {
+    // Belum punya anak: tidak ada "anak tersebut tinggal bersama ..." yang perlu diisi.
+    ubah(rxSisa(`\\s*,?\\s*(?:dan\\s+)?(?:sekarang\\s+|saat\\s+ini\\s+)?anak(?:-anak)?\\s+tersebut\\s+[^;.]*${SLOT}`, "i"), "", "buang");
+  } else if (f.anakIkut && polaAnakTitik.test(t)) ubah(polaAnakTitik, `$1${f.anakIkut}`, "turun");
   // "bahkan telah dikaruniai ..... orang anak" (A2#3).
   const polaBahkanAnak = rxSisa(`\\s*,?\\s*bahkan\\s+(?:telah|sudah)\\s+dikaruniai\\s+${SLOT}\\s*(?:orang\\s+)?anak`, "i");
   if (polaBahkanAnak.test(t)) {
@@ -4414,7 +4504,7 @@ function rapikanSisaIsian({ tanya, jawab, fakta, pelaku, lawan, daftar }) {
   }
 
   // --- Tempat tinggal -------------------------------------------------------
-  if (/tinggal|kediaman|berdiam|alamat/i.test(q) && !/pisah|serumah|satu rumah|masih tinggal/i.test(q)) {
+  if (/tinggal|kediaman|berdiam|alamat/i.test(q) && !/pisah|serumah|satu rumah|masih tinggal/i.test(q) && !/siapa.*(meninggalkan|pergi)/i.test(q)) {
     ubah(rxSisa(`\\s*,?\\s*(?:juga\\s+)?pernah\\s+juga\\s+tinggal\\s+bersama\\s+di\\s+${SLOT}(?:\\s*,?\\s*selama\\s+${SLOT})?`, "i"), "", "buang");
     ubah(rxSisa(`\\s*,?\\s*dan\\s+terakhir\\s+(?:mereka\\s+)?tinggal\\s+bersama\\s+di\\s+${SLOT}(?:\\s*,?\\s*selama\\s+${SLOT})?`, "i"), "", "buang");
     ubah(rxSisa(`\\s*,?\\s*selama\\s+${SLOT}`, "gi"), "", "buang");
@@ -4454,9 +4544,16 @@ function rapikanSisaIsian({ tanya, jawab, fakta, pelaku, lawan, daftar }) {
 
   // --- Siapa yang pergi -----------------------------------------------------
   if (/siapa.*(meninggalkan|pergi)/i.test(q)) {
-    const polaPilihanPihak = rxSisa(`\\b${sebutan}\\s*\\/\\s*${sebutan}\\b|${SLOT}`, "i");
-    if (polaPilihanPihak.test(t)) {
-      keluar.pilihan = [t.replace(polaPilihanPihak, P1), t.replace(polaPilihanPihak, P2)];
+    // 19 Okt 2026: hanya slot pelakunya ("adalah ..." / "adalah P/T"); slot lain pada kalimat yang sama (mis. "P tinggal di ...")
+    // bukan pilihan pihak, jadi tidak lagi diisi nama pihak ("tinggal di Penggugat"). Templat lama tanpa kata "adalah" dan
+    // dengan satu slot saja tetap memakai bentuk lama.
+    const polaAdalah = rxSisa(`(\\badalah\\s+)(?:\\b${sebutan}\\s*\\/\\s*${sebutan}\\b|${SLOT})`, "i");
+    const polaLamaPihak = new RegExp(`\\b${sebutan}\\s*\\/\\s*${sebutan}\\b|${SLOT}`, "i");
+    const banyakSlot = (t.match(new RegExp(SLOT, "g")) || []).length;
+    const polaPilihanPihak = polaAdalah.test(t) ? polaAdalah : banyakSlot <= 1 && polaLamaPihak.test(t) ? polaLamaPihak : null;
+    if (polaPilihanPihak) {
+      const isi = (nama) => t.replace(polaPilihanPihak, (_m, depan) => `${depan || ""}${nama}`);
+      keluar.pilihan = [isi(P1), isi(P2)];
       t = keluar.pilihan[0];
       keluar.dibuang = true;
     }
@@ -4468,13 +4565,17 @@ function rapikanSisaIsian({ tanya, jawab, fakta, pelaku, lawan, daftar }) {
     // tahun/bulan" dibuang lebih dahulu. Lalu "sejak ....., kira-kira sampai
     // sekarang sudah sekitar 1 tahun" - lama tertulis, sejaknya tidak:
     // "sejak ....." dibuang.
-    ubah(rxSisa(`\\s*,?\\s*kira-kira\\s+sampai\\s+sekarang\\s+sudah\\s+sekitar\\s+${SLOT}\\s*(?:tahun\\s*\\/\\s*bulan)?`, "i"), "", "buang");
+    ubah(rxSisa(`\\s*,?\\s*kira-kira\\s+sampai\\s+sekarang\\s+sudah\\s+sekitar\\s+${SLOT}\\s*(?:tahun\\s*\\/\\s*bulan|bulan\\s*\\/\\s*tahun)?`, "i"), "", "buang");
     ubah(rxSisa(`\\s*sejak\\s+${SLOT}\\s*(,\\s*kira-kira)`, "i"), "$1", "buang");
     const sejakSebelum = f.adaPisah ? " sejak sebelum perkara ini diajukan" : "";
     if (ubah(rxSisa(`\\s*sejak\\s+${SLOT}`, "i"), sejakSebelum, sejakSebelum ? "turun" : "buang") && sejakSebelum) keluar.dibuang = true;
-    const polaLama = rxSisa(`\\s*(?:sudah\\s+)?(?:selama\\s+)?(?:kurang\\s+lebih|lebih\\s+kurang|sekitar|kira-kira)?\\s*${SLOT}\\s*(?:tahun\\s*\\/\\s*bulan)?(?:\\s*lamanya)?`, "i");
+    const polaLama = rxSisa(`\\s*(?:sudah\\s+)?(?:selama\\s+)?(?:kurang\\s+lebih|lebih\\s+kurang|sekitar|kira-kira)?\\s*${SLOT}\\s*(?:tahun\\s*\\/\\s*bulan|bulan\\s*\\/\\s*tahun)?(?:\\s*lamanya)?`, "i");
     if (polaLama.test(t)) {
-      if (ubah(polaLama, sejakSebelum, sejakSebelum ? "turun" : "buang") && sejakSebelum) keluar.dibuang = true;
+      // 19 Okt 2026: "sejak sebelum perkara ini diajukan" cukup sekali (slot sejak dan slot lama bersama-sama bertitik-titik
+      // dahulu menghasilkan kalimat ganda).
+      const sudahSejak = /sejak\s+sebelum\s+perkara\s+ini\s+diajukan/i.test(t);
+      const gantiLama = sudahSejak ? "" : sejakSebelum;
+      if (ubah(polaLama, gantiLama, gantiLama ? "turun" : "buang") && gantiLama) keluar.dibuang = true;
     }
   }
 
@@ -4486,6 +4587,15 @@ function rapikanSisaIsian({ tanya, jawab, fakta, pelaku, lawan, daftar }) {
       : "";
   if (/puncak/i.test(q)) {
     const polaPuncak = rxSisa(`(terjadi)\\s+(?:pada\\s+)?${SLOT}`, "i");
+    // 19 Okt 2026: templat "terjadi pada ... ketika ..." - slot "ketika" ikut diisi/dibuang bersama slot waktunya (dahulu
+    // tertinggal "..., ketika Tergugat pergi ... ketika ...").
+    const polaPuncakKetika = rxSisa(`(terjadi)\\s+(?:pada\\s+)?${SLOT}\\s*,?\\s*ketika\\s+${SLOT}`, "i");
+    if (polaPuncakKetika.test(t) && (f.pisahSejak || f.adaPisah)) {
+      if (f.pisahSejak) {
+        const siapa = f.siapaPergi ? `, ketika ${f.siapaPergi} pergi meninggalkan tempat tinggal bersama` : ", hingga mereka berpisah tempat tinggal";
+        ubah(polaPuncakKetika, `$1 pada ${f.pisahSejak}${siapa}`, "turun");
+      } else ubah(polaPuncakKetika, "$1 ketika mereka akhirnya berpisah tempat tinggal", "turun");
+    }
     if (polaPuncak.test(t)) {
       if (f.pisahSejak) {
         const siapa = f.siapaPergi ? `, ketika ${f.siapaPergi} pergi meninggalkan tempat tinggal bersama` : ", hingga mereka berpisah tempat tinggal";
@@ -4517,6 +4627,11 @@ function rapikanSisaIsian({ tanya, jawab, fakta, pelaku, lawan, daftar }) {
     }
   }
 
+  // 19 Okt 2026: sisa penanda satuan yang tidak ikut diisi ("bulan/tahun", "tahun/bulan", "tanggal/bulan/tahun") dibuang;
+  // kalimat tidak pernah memuat penanda mentah. Kata yang menempel tanpa spasi dipisahkan lagi.
+  t = t
+    .replace(/(^|\s)(?:bulan\s*\/\s*tahun|tahun\s*\/\s*bulan|tanggal\s*\/\s*bulan(?:\s*\/\s*tahun)?|hari\s*\/\s*bulan)(?=[\s;.,]|$)/gi, "$1")
+    .replace(/\b(diajukan)(?=bulan|tahun|tanggal)/gi, "$1 ");
   // Tanda baca yang tertinggal sesudah bagian dibuang.
   t = t
     .replace(/\s+([,;])/g, "$1")
@@ -4852,7 +4967,7 @@ function susunKeteranganSaksiSdg(opsi) {
   // Fakta gugatan - dipakai mengisi titik-titik templat. Dibaca sekali.
   // tanggalSidang (butir 24): acuan lama pisah bila posita hanya menyebut
   // sejak kapan - dari ekstensi bila dikirim, selain itu jadwal SIPP.
-  const fakta = faktaDariPosita(o.posita, o.pelaku, o.lawan, { tanggalSidang: o.tanggalSidang });
+  const fakta = faktaDariPosita(o.posita, o.pelaku, o.lawan, { tanggalSidang: o.tanggalSidang, alamatPihak: o.alamatPihak });
   // Upaya rukun (butir 28): variabel 1268 -> posita -> mediasi.
   const upaya = sumberUpayaDamai({
     nilai1268: o.upayaDamai,
@@ -5137,6 +5252,27 @@ async function mediasiPerkara(nomorPerkara) {
  * - acuan menghitung lama pisah bila posita hanya menyebut sejak kapan.
  * Dibatasi 2,5 detik; null bila tidak ada / tidak terbaca.
  */
+/**
+ * Alamat pihak pertama (Penggugat/Pemohon = lawan) dan kedua (Tergugat/Termohon = pelaku) di SIPP - hanya SELECT,
+ * 2,5 detik. Dipakai sebagai cadangan tempat tinggal sekarang bila posita tidak menyebutnya (19 Okt 2026).
+ * @returns {Promise<{lawan: string, pelaku: string}|null>}
+ */
+async function alamatPihakPerkara(nomorPerkara) {
+  const nomor = String(nomorPerkara || "").trim();
+  if (!nomor) return null;
+  const satu = (tabel) =>
+    runQuery(
+      `SELECT pp.alamat AS alamat FROM ${tabel} pp JOIN perkara p ON p.perkara_id = pp.perkara_id
+        WHERE p.nomor_perkara = ? ORDER BY pp.urutan ASC LIMIT 1`,
+      [nomor]
+    ).catch(() => null);
+  const batas = new Promise((selesai) => setTimeout(() => selesai(null), 2500));
+  const [a, b] = await Promise.race([Promise.all([satu("perkara_pihak1"), satu("perkara_pihak2")]), batas.then(() => [null, null])]);
+  const ambil = (x) => (Array.isArray(x) && x[0] && x[0].alamat ? String(x[0].alamat).trim() : "");
+  const hasil = { lawan: ambil(a), pelaku: ambil(b) };
+  return hasil.lawan || hasil.pelaku ? hasil : null;
+}
+
 async function konteksPerkaraSaksi(nomorPerkara) {
   const nomor = String(nomorPerkara || "").trim();
   if (!nomor) return null;
@@ -5181,6 +5317,8 @@ module.exports = {
   mediasiPerkara,
   // Butir 24 (5 Okt 2026) - fakta posita per peristiwa, diuji langsung.
   konteksPerkaraSaksi,
+  alamatPihakPerkara,
+  tempatKiniPosita,
   waktuPosita,
   awalKonflikPosita,
   penyebabPosita,

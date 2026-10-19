@@ -40,6 +40,7 @@
   /** F3.1: riwayat skors satu sidang + usulan kalimat BAS (hanya baca). */
   const API_SKORS_SIDANG = "/aleta/api/aleta-ecourt/sidang/skors";
   const API_PDF = "/aleta/api/aleta-bot/abt/pdf";
+  const API_USULAN = "/aleta/api/aleta-bot/abt/usulan";
   const API_TTD = "/aleta/api/aleta-ecourt/tanda-tangan";
   const API_UNGGAH_SIPP = "/aleta/api/aleta-ecourt/putusan/unggah-sipp";
   const API_KTP_PIHAK = "/aleta/api/aleta-ecourt/ktp-pihak";
@@ -296,6 +297,8 @@
     tjBuka: null,
     tjSisi: true,
     tjRiw: { u: [], r: [] },
+    // Jawaban saksi otomatis & pilihan pengetahuan saksi (blangko-derry-saksi.js): pil = kunci saksi -> {modus, sumber, alasan[]}.
+    sk: { pil: {}, perkara: "", alasan: null, status: {}, tertahan: {}, konfirmasi: {}, sig: {}, rantai: Promise.resolve() },
     semua: null, // "Lihat semua isi data"
     semuaBuka: false,
     prat: { terbuka: false, memuat: false, rtf: null, html: "", galat: "", suntingPenuh: false, kotor: true, penanda: [] },
@@ -1633,8 +1636,9 @@
     S.tjRiw = { u: [], r: [] };
     const pas = S.tjSisi ? tjPasangan(kunci) : null;
     renderTj();
-    await Promise.all([...(pas || [kunci]).map((k) => muatTj(k)), muatSetSaksi()]);
+    await Promise.all([...(pas || [kunci]).map((k) => muatTj(k)), muatSetSaksi(), muatPilSaksi(), muatAlasanSaksi()]);
     renderTj();
+    void isiOtomatis(pas || [kunci], {});
   }
   async function muatTj(kunci, paksa) {
     const it = tjItem(kunci);
@@ -1650,7 +1654,7 @@
       if (!t || t.sidang !== d) return;
       if (!h.ok) t.galat = h.pesan || "Tanya jawab tidak terbaca.";
       else {
-        if (!t.berubah) t.rows = h.baris.map((r) => ({ no: r.no, tanya: r.tanya, jawab: r.jawab }));
+        if (!t.berubah) t.rows = tandaiDasarBaris(h.baris.map((r) => ({ no: r.no, tanya: r.tanya, jawab: r.jawab })), false);
         t.templates = h.templates;
         t.keterangan = h.keterangan;
         t.dimuat = true;
@@ -1671,7 +1675,9 @@
     if (!t) return;
     const h = await klienAbt().muatTemplat({ kode: t.kode, perkaraId: perkaraId(), sidang: t.sidang, templat, a: S.blangko.a, b: S.blangko.b });
     if (!h.ok) return toast(`Set pertanyaan tidak termuat: ${h.pesan || "ABT tidak menjawab"}`);
-    t.rows = h.baris.map((r, i) => ({ no: String(i + 1), tanya: r.tanya, jawab: r.jawab }));
+    t.rows = tandaiDasarBaris(h.baris.map((r, i) => ({ no: String(i + 1), tanya: r.tanya, jawab: r.jawab })), true);
+    const tp = (t.templates || []).find((x) => x.nilai === templat);
+    t.kodeKumpulan = tp && tp.kode && tp.kode !== "#" ? tp.kode : String(templat || "");
     t.berubah = true;
   }
   // Set pertanyaan saksi ALETA (F3.3): panduan per jenis perkara & huruf alasan dari portal
@@ -1705,9 +1711,223 @@
       const akhir = lama.length && /masih ada (yang|keterangan|hal)/i.test(lama[lama.length - 1].tanya) ? lama.length - 1 : lama.length;
       rows = [...lama.slice(0, akhir), ...baru, ...lama.slice(akhir)];
     }
-    t.rows = rows.map((r, i) => ({ no: String(i + 1), tanya: r.tanya, jawab: r.jawab }));
+    // Baris set menjadi dasar jawaban otomatis; baris lama (yang disisipi) tetap membawa tanda aslinya.
+    const barisBaru = new Set(baru);
+    t.rows = rows.map((r, i) => ({ ...r, ...(barisBaru.has(r) ? { dasar: String(r.jawab || "") } : {}), no: String(i + 1) }));
+    t.kodeKumpulan = s.tambahan ? t.kodeKumpulan || "" : `ALETA:${id}`;
     t.berubah = true;
     return s;
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+  // Jawaban saksi otomatis + pilihan pengetahuan saksi (blangko-derry-saksi.js)
+  // Sumbernya SAMA dengan "Susun keterangan saksi" di panel ABT: permintaan 'saksi-sdg' ke server.
+  // Isian yang sudah diketik petugas tidak pernah ditimpa tanpa konfirmasi di halaman.
+  // ──────────────────────────────────────────────────────────────────────────
+  const SK = () => (typeof globalThis !== "undefined" && globalThis.AletaBdSaksi) || null;
+  const tandaiDasarBaris = (rows, semua) => (SK() ? SK().tandaiDasar(rows, semua) : rows);
+  const kunciSaksiSemua = () => daftarPerlu().filter((x) => x.jenis === "tj").map((x) => x.tj.kunci);
+  const urutSaksi = (kunci) => Math.max(0, kunciSaksiSemua().indexOf(kunci));
+  const grupSaksi = (kunci) => tjPasangan(kunci) || [kunci];
+  async function muatPilSaksi() {
+    const id = perkaraId();
+    if (!id || S.sk.perkara === id) return;
+    S.sk.perkara = id;
+    S.sk.pil = {};
+    const kunci = `bdSaksiPil:${id}`;
+    const v = (await bacaPenyimpanan(kunci))[kunci];
+    if (v && typeof v === "object" && v.pil && typeof v.pil === "object" && S.sk.perkara === id) S.sk.pil = v.pil;
+  }
+  function simpanPilSaksi() {
+    if (!perkaraId()) return;
+    void tulisPenyimpanan({ [`bdSaksiPil:${perkaraId()}`]: { pil: S.sk.pil, saat: Date.now() } });
+  }
+  async function muatAlasanSaksi() {
+    const m = SK();
+    if (!m || S.sk.alasan) return;
+    S.sk.alasan = m.alasanBawaan();
+    if (typeof muatAlasanSdg === "function") {
+      try {
+        const d = await muatAlasanSdg();
+        if (d && Array.isArray(d.pilihan) && d.pilihan.length) S.sk.alasan = d.pilihan;
+      } catch {
+        /* pilihan alasan baku sudah terpasang */
+      }
+    }
+  }
+  const ambilUsulan = (muatan) => ambilPortal(API_USULAN, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(muatan) }, "Menyusun jawaban saksi");
+  const idJenisSipp = () => (typeof idJenisPerkaraSipp === "function" ? idJenisPerkaraSipp((S.pk && S.pk.jenisPerkara) || "") : String((S.pk && S.pk.jenisPerkara) || ""));
+  /** alur_perkara_id SIPP: dari data perkara bila ada, selain itu dari nomor perkara (15 gugatan, 16 permohonan, 17 gugatan sederhana). */
+  const alurSipp = () => {
+    if (S.pk && S.pk.alurPerkaraId) return String(S.pk.alurPerkaraId);
+    if (typeof idAlurPerkaraSipp === "function") return idAlurPerkaraSipp(nomorPerkara());
+    const n = nomorPerkara();
+    return /Pdt\.G\.S\b/i.test(n) ? "17" : /Pdt\.G\b/i.test(n) ? "15" : /Pdt\.P\b/i.test(n) ? "16" : "";
+  };
+  const tanggalSidangIso = () => {
+    const d = S.pk && S.pk.sidangDipilih && S.pk.sidangDipilih.tanggal;
+    return /^\d{4}-\d{2}-\d{2}/.test(String(d || "")) ? String(d).slice(0, 10) : "";
+  };
+  /**
+   * Menyusun jawaban otomatis untuk saksi `targets`. Hanya baris yang boleh diganti (kosong, contoh set, atau hasil otomatis
+   * sebelumnya) yang berubah; sisanya dilaporkan sebagai tertahan. `opsi.lapor` = atas permintaan petugas (pilihan diubah,
+   * tombol susun ulang): hasil selalu dilaporkan. Tanpa itu (pemuatan otomatis) hanya yang benar-benar berubah yang dilaporkan.
+   */
+  function isiOtomatis(targets, opsi) {
+    const m = SK();
+    if (!m || !S.blangko || !S.pk) return Promise.resolve();
+    const kerja = async () => {
+      const o = opsi || {};
+      const sah = targets.filter((k) => S.tj[k] && S.tj[k].dimuat && !S.tj[k].memuat && tjItem(k));
+      const kelompok = new Map();
+      for (const k of sah) {
+        const g = grupSaksi(k);
+        const kk = `${g.join("|")}#${m.tandaTanya(S.tj[k].rows)}`;
+        if (!kelompok.has(kk)) kelompok.set(kk, { grup: g, tg: [] });
+        kelompok.get(kk).tg.push(k);
+      }
+      for (const { grup, tg } of kelompok.values()) {
+        const sumber = S.tj[tg[0]].rows;
+        if (!sumber.some((r) => String(r.tanya || "").trim())) continue;
+        if (!o.lapor && !tg.some((k) => S.tj[k].rows.some((r) => String(r.jawab || r.dasar || "").trim() && m.dapatDiganti(r)))) continue;
+        const templat = m.templatDariBaris(sumber);
+        const saksi = grup.map((k) => {
+          const n = Number((String(k).match(/^saksi (\d+)/) || [])[1]) || 1;
+          const p = m.bakukanPilihan(S.sk.pil[k], urutSaksi(k));
+          const pihak = / t$/.test(k) ? "T" : "P";
+          return { pihak, ke: Math.min(n, m.BATAS_SAKSI[pihak]), modus: p.modus, sumber: p.sumber, alasan: p.alasan };
+        });
+        const tanda = JSON.stringify([saksi, templat, tg]);
+        const kunciSig = grup.join("|");
+        if (!o.lapor && S.sk.sig[kunciSig] === tanda) continue;
+        S.sk.sig[kunciSig] = tanda;
+        const sb = sebutan();
+        const muatan = m.susunMuatan({
+          nomorPerkara: nomorPerkara(),
+          templat,
+          kodeKumpulan: S.tj[tg[0]].kodeKumpulan || "",
+          jenisPerkara: idJenisSipp(),
+          alur: alurSipp(),
+          pelaku: sb.T,
+          lawan: sb.P,
+          saksi,
+        });
+        const tgl = tanggalSidangIso();
+        if (tgl) muatan.tanggalSidang = tgl;
+        const tandaTanyaKirim = m.tandaTanya(sumber);
+        for (const k of tg) S.sk.status[k] = { teks: "Menyusun jawaban dari data perkara…" };
+        renderTj();
+        let h;
+        try {
+          h = await m.minta(ambilUsulan, muatan);
+        } catch (e) {
+          for (const k of tg) S.sk.status[k] = o.lapor ? { galat: `Jawaban otomatis belum dapat disusun: ${String((e && e.message) || e)}` } : null;
+          renderTj();
+          continue;
+        }
+        const hasil = tg.map((k) => {
+          const idx = grup.indexOf(k);
+          const sj = Array.isArray(h.saksi) && h.saksi[idx] ? h.saksi[idx].jawaban : idx === 0 ? h.saksi1 : idx === 1 ? h.saksi2 : [];
+          const para = Array.isArray(h.paragrafSaksi) ? h.paragrafSaksi[idx] : null;
+          const t = S.tj[k];
+          if (!t || m.tandaTanya(t.rows) !== tandaTanyaKirim) return { k, lewat: true };
+          return { k, res: m.pasangJawaban(t.rows, sj, { hubungan: para && para.hubungan, timpa: o.timpa === true }) };
+        });
+        if (hasil.some((x) => x.res && x.res.terisi)) tjCatat(grup);
+        for (const x of hasil) {
+          const t = S.tj[x.k];
+          if (x.lewat || !t) {
+            S.sk.status[x.k] = o.lapor ? { galat: "Daftar pertanyaan berubah selagi disusun; tekan Susun ulang jawaban." } : null;
+            continue;
+          }
+          if (x.res.terisi) {
+            t.rows = x.res.rows;
+            t.berubah = true;
+          }
+          S.sk.tertahan[x.k] = o.lapor ? x.res.tertahan : [];
+          S.sk.konfirmasi[x.k] = false;
+          S.sk.status[x.k] = o.lapor || x.res.terisi ? { teks: m.ringkasan(x.res) } : null;
+        }
+        renderTj();
+      }
+      laporKeKerangka();
+    };
+    S.sk.rantai = S.sk.rantai.then(kerja, kerja).catch(() => {});
+    return S.sk.rantai;
+  }
+  /** Menimpa jawaban yang sudah diketik dengan susunan otomatis: dua langkah, konfirmasi di halaman. */
+  function timpaOtomatis(kunci) {
+    const t = S.tj[kunci];
+    const tt = S.sk.tertahan[kunci] || [];
+    if (!t || !tt.length) return;
+    if (!S.sk.konfirmasi[kunci]) {
+      S.sk.konfirmasi[kunci] = true;
+      return renderTj();
+    }
+    tjCatat(grupSaksi(kunci));
+    for (const { i, usul } of tt) {
+      const r = t.rows[i];
+      if (!r) continue;
+      if (r.dasar === undefined) r.dasar = r.jawab;
+      r.jawab = usul;
+      r.otomatis = usul;
+    }
+    t.berubah = true;
+    S.sk.tertahan[kunci] = [];
+    S.sk.konfirmasi[kunci] = false;
+    S.sk.status[kunci] = { teks: `${tt.length} jawaban yang diketik diganti dengan susunan otomatis. Tekan Urungkan bila tidak jadi.` };
+    renderTj();
+    laporKeKerangka();
+  }
+  function ubahPilSaksi(kunci, bidang, el) {
+    const m = SK();
+    if (!m || !tjItem(kunci)) return;
+    const p = m.bakukanPilihan(S.sk.pil[kunci], urutSaksi(kunci));
+    if (bidang === "modus") p.modus = el.value;
+    else if (bidang === "sumber") p.sumber = el.value;
+    else if (bidang === "alasan") {
+      const kartu = el.closest ? el.closest("[data-skkartu]") : null;
+      p.alasan = Array.from(kartu ? kartu.querySelectorAll('[data-skfld="alasan"]') : []).filter((x) => x.checked).map((x) => x.value);
+    }
+    S.sk.pil[kunci] = m.bakukanPilihan(p, urutSaksi(kunci));
+    simpanPilSaksi();
+    renderTj();
+    if (tjSiap([kunci])) void isiOtomatis([kunci], { lapor: true });
+  }
+  /** Panel "Pengetahuan saksi" di atas tabel tanya jawab: pilihan sama dengan Susun keterangan saksi di panel ABT. */
+  function panelPengetahuan(keys) {
+    const m = SK();
+    if (!m) return "";
+    const alasan = S.sk.alasan || m.alasanBawaan();
+    const kartu = keys
+      .map((k) => {
+        const it = tjItem(k);
+        if (!it) return "";
+        const p = m.bakukanPilihan(S.sk.pil[k], urutSaksi(k));
+        const mati = tjSiap([k]) ? "" : " disabled";
+        const modus = m.DAFTAR_MODUS.map(([n, nama]) => `<option value="${esc(n)}"${n === p.modus ? " selected" : ""}>${esc(nama)}</option>`).join("");
+        const sumber = m.DAFTAR_SUMBER.map(([n, nama]) => `<option value="${esc(n)}"${n === p.sumber ? " selected" : ""}>cerita dari ${esc(nama)}</option>`).join("");
+        const centang = alasan.map((a) => `<label class="bd-skcentang"><input type="checkbox" data-skkunci="${esc(k)}" data-skfld="alasan" value="${esc(a.kunci)}"${p.alasan.includes(a.kunci) ? " checked" : ""}${mati}> ${esc(a.label)}</label>`).join("");
+        const st = S.sk.status[k];
+        const tt = S.sk.tertahan[k] || [];
+        const konf = S.sk.konfirmasi[k];
+        return (
+          `<div class="bd-skkartu" data-skkartu="${esc(k)}"><b class="bd-sknama">${esc(it.tj.sebutan)}</b>` +
+          `<label class="bd-sklbl">Yang diketahui saksi<select data-skkunci="${esc(k)}" data-skfld="modus"${mati}>${modus}</select></label>` +
+          (p.modus === "dari-cerita" ? `<label class="bd-sklbl">Siapa yang bercerita<select data-skkunci="${esc(k)}" data-skfld="sumber"${mati}>${sumber}</select></label>` : "") +
+          (p.modus === "sebagian" ? `<fieldset class="bd-skalasan"><legend>Alasan yang ia ketahui</legend>${centang}</fieldset>` : "") +
+          (st && st.teks ? `<p class="bd-catat" role="status">${esc(st.teks)}</p>` : "") +
+          (st && st.galat ? `<p class="bd-peringatan">${esc(st.galat)}</p>` : "") +
+          (tt.length
+            ? `<p class="bd-peringatan" role="status">${tt.length} jawaban yang sudah Anda ketik tidak diubah. ` +
+              `<button type="button" class="bd-btn kecil${konf ? " kuning" : ""}" data-bd2="timpaoto" data-kunci="${esc(k)}">${konf ? `Klik sekali lagi untuk mengganti ${tt.length} jawaban` : "Ganti dengan susunan otomatis"}</button>` +
+              `${konf ? ` <button type="button" class="bd-btn kecil" data-bd2="batalimpa" data-kunci="${esc(k)}">Batal</button>` : ""}</p>`
+            : "") +
+          `</div>`
+        );
+      })
+      .join("");
+    if (!kartu) return "";
+    return `<div class="bd-skpanel" role="group" aria-label="Pengetahuan saksi"><div class="bd-skhead"><span class="bd-lbl">Pengetahuan saksi</span><button type="button" class="bd-btn kecil" data-bd2="isioto" data-kunci="${esc(keys.join("|"))}" ${tjSiap(keys) ? "" : "disabled"}>Susun ulang jawaban</button></div><div class="bd-skgrid">${kartu}</div></div>`;
   }
   // Simpan ke ABT = HAPUS lalu isi ulang seluruh keterangan sidang itu. Sebelum keterangan
   // yang sudah ada di ABT terbaca, menyimpan (atau mengganti daftar) akan menghapusnya tanpa
@@ -1758,7 +1978,7 @@
         if (!h.ok) t.galat = h.pesan || "ABT tidak mengatakan tersimpan.";
         else {
           t.berubah = false;
-          t.rows = rows.map((r, i) => ({ no: String(i + 1), tanya: r.tanya, jawab: r.jawab }));
+          t.rows = rows.map((r, i) => ({ ...r, no: String(i + 1) }));
           t.tersimpanJam = jamSekarang();
           S.prat.kotor = true;
           S.peringat = false;
@@ -1905,6 +2125,33 @@
     return S.susunan.isian.find((b) => b.kode === id || (b.tj && `tj:${b.tj.kunci}` === id) || (b.khusus === "bukti" && `bukti:${b.pihak}` === id)) || null;
   }
 
+  /** Isian panjang (kalimat/paragraf) memakai textarea; selebihnya satu baris. Menilai isi, bukan nama kotak. */
+  function isianPanjang(v, saran) {
+    const teks = String(v || "").replace(/\s+$/, "");
+    if (teks) return /\n/.test(teks) || teks.length > 90;
+    return String(saran || "").length > 90;
+  }
+  /** Tinggi awal textarea (baris): perkiraan lipatan pada ±60 huruf per baris, min 2 maks 8; kemudian tumbuh sesuai isi. */
+  function barisIsian(teks) {
+    const t = String(teks || "").replace(/\s+$/, "");
+    const n = t ? t.split("\n").reduce((a, l) => a + Math.max(1, Math.ceil(l.length / 60)), 0) : 2;
+    return Math.max(2, Math.min(8, n));
+  }
+  /** Menyesuaikan tinggi textarea dengan isinya (tanpa kotak besar yang kosong). */
+  function tumbuhkan(el) {
+    try {
+      if (!el || el.tagName !== "TEXTAREA") return;
+      el.style.height = "auto";
+      const h = el.scrollHeight;
+      if (h > 0) el.style.height = `${h + 2}px`;
+    } catch {
+      /* tinggi hanya kenyamanan */
+    }
+  }
+  function tumbuhkanSemua(akar) {
+    for (const el of cariSemua("textarea.bd-auto, textarea.bd-ed, textarea.bd-bmanual", akar || wadah.isian)) tumbuhkan(el);
+  }
+
   function kotakIsian(b) {
     const v = S.isi[b.kode] !== undefined ? String(S.isi[b.kode]) : "";
     const sr = cfg().saran ? saranUntuk(b) : "";
@@ -1917,6 +2164,7 @@
     const tanda = S.tandaKosong.has(b.kode) && !v.trim() ? ` bd-kosongcetak${b.tingkat === "tambahan" ? " tambahan" : ""}` : "";
     const ro = bolehTulis() ? "" : "disabled";
     let isian;
+    let panjang = false;
     if (opsi.length) {
       // Pilihan bernilai (mis. beracara elektronik: ABT menyimpan 1/2) - petugas hanya melihat kalimatnya.
       const ada = opsi.some((o) => o.nilai === v);
@@ -1928,17 +2176,19 @@
     } else {
       // Nilai ABT bergaris baru (mis. beberapa paragraf): <input type=text> membuang \n dari nilainya,
       // jadi kotaknya textarea supaya tampil & tersimpan utuh.
-      const kotak =
-        b.jenis !== "tanggal" && /\n/.test(v)
-          ? `<textarea id="bd-i${b.kode}" data-k="${b.kode}" rows="${Math.min(8, v.split("\n").length + 1)}" placeholder="${esc(sr || "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>${esc(v)}</textarea>`
-          : `<input id="bd-i${b.kode}" data-k="${b.kode}" type="${b.jenis === "tanggal" ? "date" : "text"}" value="${esc(v)}" placeholder="${esc(sr && b.jenis !== "tanggal" ? sr : b.jenis === "tanggal" ? "" : "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>`;
+      // 19 Okt 2026 (tata letak): jenis kotak mengikuti ISINYA. Tanggal, nama, nomor, huruf = satu baris (input, tinggi seragam);
+      // textarea hanya untuk kalimat/paragraf, tingginya menyesuaikan isi (bd-auto), bukan kotak besar yang kosong.
+      panjang = b.jenis !== "tanggal" && isianPanjang(v, sr);
+      const kotak = panjang
+        ? `<textarea id="bd-i${b.kode}" class="bd-auto" data-k="${b.kode}" rows="${barisIsian(v || sr)}" placeholder="${esc(sr || "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>${esc(v)}</textarea>`
+        : `<input id="bd-i${b.kode}" data-k="${b.kode}" type="${b.jenis === "tanggal" ? "date" : "text"}" value="${esc(v)}" placeholder="${esc(sr && b.jenis !== "tanggal" ? sr : b.jenis === "tanggal" ? "" : "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>`;
       isian =
         `<div class="bd-isiwadah">${kotak}` +
         `${pil.length ? `<button type="button" class="bd-ikon" data-menu="${b.kode}" aria-label="Pilihan lain untuk ${esc(b.nama)}" tabindex="-1">▾</button>` : ""}</div>` +
         `${S.menuSaran === b.kode && pil.length ? `<div class="bd-saranmenu" role="listbox">${pil.map((o) => `<button type="button" role="option" data-ambil="${b.kode}" data-nilai="${esc(o)}">${esc(o)}</button>`).join("")}</div>` : ""}`;
     }
     return (
-      `<div class="bd-f${v.trim() ? " beres" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(b.nama)}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama)}</div>${muncul}` +
+      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(b.nama)}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama)}</div>${muncul}` +
       isian +
       (b.kode === "7139" && S.el7 && v === S.el7.nilai ? `<span class="bd-catat bd-el7">${esc(S.el7.keterangan)}</span>` : "") +
       `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st, b.kode))}</span>` +
@@ -1985,7 +2235,7 @@
           return (
             `<div class="bd-bukti">${kepala}` +
             `<div class="bd-bgrid"><label>Atas nama<input data-bk="${id}" data-isi="an" value="${esc(r.an || "")}" placeholder="boleh kosong"></label><label>${lblNo}<input data-bk="${id}" data-isi="no" value="${esc(r.no)}" placeholder="${esc(phNo)}"></label><label>Tanggal<input type="date" data-bk="${id}" data-isi="tgl" value="${esc(r.tgl)}"></label><label class="dua2">Dikeluarkan oleh<input data-bk="${id}" data-isi="oleh" value="${esc(r.oleh)}" placeholder="boleh kosong"></label></div>` +
-            `<div class="bd-bgrid"><label>Meterai<select data-bk="${id}" data-isi="meterai">${PIL_METERAI.map((o, j) => `<option value="${j}" ${Number(r.meterai) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label><label class="dua2">Dicocokkan dengan aslinya<select data-bk="${id}" data-isi="cocok">${PIL_COCOK.map((o, j) => `<option value="${j}" ${Number(r.cocok) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label></div>` +
+            `<div class="bd-bgrid bd-bpilih"><label>Meterai<select data-bk="${id}" data-isi="meterai">${PIL_METERAI.map((o, j) => `<option value="${j}" ${Number(r.meterai) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label><label class="dua2">Dicocokkan dengan aslinya<select data-bk="${id}" data-isi="cocok">${PIL_COCOK.map((o, j) => `<option value="${j}" ${Number(r.cocok) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label></div>` +
             `<p class="bd-catat">Kode ${kode}, tanggal dan paraf Ketua Majelis ditulis otomatis. Bagian yang kosong tidak ikut ditulis.</p></div>`
           );
         })
@@ -2036,6 +2286,7 @@
     cari("#bd-alatisi", w).innerHTML = alat.join("");
     renderTj();
     renderProgres();
+    tumbuhkanSemua(w);
     if (S.semuaBuka) renderSemua();
     if (S.blangko.jenis === "bas") void muatSkorsBas();
   }
@@ -2231,14 +2482,15 @@
       wad.innerHTML =
         `<div class="bd-tjwadah bd-sbs">${alatAtas(`${na} dan ${nb}`, ps)}` +
         `<div class="bd-tjalat bd-sbalat" role="toolbar" aria-label="Susun keterangan saksi"><button type="button" class="bd-btn kecil" data-sbaksi="urut">Susun urutan</button><button type="button" class="bd-btn kecil" data-sbaksi="samakanq">Samakan pertanyaan</button><button type="button" class="bd-btn kecil" data-sbaksi="salinsemua">Salin jawaban ke saksi 2 (kalimat diganti)</button><button type="button" class="bd-btn kecil" data-sbaksi="bersih">Bersihkan kalimat penutup</button><button type="button" class="bd-btn kecil" data-sbaksi="urung" ${S.tjRiw.u.length ? "" : "disabled"}>↶ Urungkan</button><button type="button" class="bd-btn kecil" data-sbaksi="ulang" ${S.tjRiw.r.length ? "" : "disabled"}>↷ Ulangi</button><span class="bd-catat" id="bd-sbstat" role="status"></span></div>` +
-        `${status(ps[0])}${status(ps[1])}<div class="bd-sbhead" aria-hidden="true"><span>No</span><span>Pertanyaan</span><span>${esc(na)}</span><span>${esc(nb)}</span></div><div class="bd-sblist">${baris || `<p class="bd-catat" style="padding:10px">Belum ada pertanyaan. Muat set pertanyaan atau tambah baris.</p>`}</div></div>`;
+        `${panelPengetahuan(ps)}${status(ps[0])}${status(ps[1])}<div class="bd-sbhead" aria-hidden="true"><span>No</span><span>Pertanyaan</span><span>${esc(na)}</span><span>${esc(nb)}</span></div><div class="bd-sblist">${baris || `<p class="bd-catat" style="padding:10px">Belum ada pertanyaan. Muat set pertanyaan atau tambah baris.</p>`}</div></div>`;
+      tumbuhkanSemua(wad);
       return;
     }
     const rows = (t && t.rows) || [];
     wad.innerHTML =
       `<div class="bd-tjwadah">${alatAtas(it.tj.sebutan, [S.tjBuka])}${status(S.tjBuka)}` +
       `<div class="bd-tjalat" role="toolbar" aria-label="Susun keterangan saksi"><button type="button" class="bd-btn kecil" data-sbaksi="bersih1">Bersihkan kalimat penutup</button></div>` +
-      `<div class="bd-tjtabel"><table><thead><tr><th class="no-u">No</th><th>Pertanyaan</th><th>Jawaban</th><th></th></tr></thead><tbody>${
+      `${panelPengetahuan([S.tjBuka])}<div class="bd-tjtabel"><table><thead><tr><th class="no-u">No</th><th>Pertanyaan</th><th>Jawaban</th><th></th></tr></thead><tbody>${
         rows
           .map(
             (r, i) =>
@@ -2246,6 +2498,7 @@
           )
           .join("") || `<tr><td colspan="4" class="bd-catat">${t && t.memuat ? "Membaca dari ABT…" : "Belum ada pertanyaan. Muat set pertanyaan atau tambah baris."}</td></tr>`
       }</tbody></table></div></div>`;
+    tumbuhkanSemua(wad);
   }
 
   function renderSemua() {
@@ -3295,6 +3548,16 @@
       S.tjBuka = null;
       return renderTj();
     }
+    if (kode === "isioto") {
+      const kunci = String(aksi.getAttribute("data-kunci") || "").split("|").filter(Boolean);
+      if (!tjSiap(kunci)) return toast(PESAN_TJ_BELUM_TERBACA);
+      return void isiOtomatis(kunci, { lapor: true });
+    }
+    if (kode === "timpaoto") return timpaOtomatis(String(aksi.getAttribute("data-kunci") || ""));
+    if (kode === "batalimpa") {
+      S.sk.konfirmasi[String(aksi.getAttribute("data-kunci") || "")] = false;
+      return renderTj();
+    }
     if (kode === "muattpl") {
       const sel = cari("#bd-muattpl", wadah.isian);
       const kunci = String(aksi.getAttribute("data-kunci") || "").split("|").filter(Boolean);
@@ -3304,10 +3567,12 @@
       if (sel.value.startsWith("aleta:")) {
         const dipakai = kunci.map((k) => pakaiSetSaksi(k, sel.value.slice(6))).filter(Boolean);
         renderTj();
+        void isiOtomatis(kunci, {});
         return toast(dipakai.length ? `"${dipakai[0].judul}" dimuat (belum disimpan). Lengkapi titik-titik pada jawaban, lalu tekan Simpan ke ABT.` : "Set pertanyaan tidak ditemukan.");
       }
       return void Promise.all(kunci.map((k) => muatTemplatTj(k, sel.value))).then(() => {
         renderTj();
+        void isiOtomatis(kunci, {});
         toast("Set pertanyaan dimuat (belum disimpan - tekan Simpan ke ABT).");
       });
     }
@@ -3466,7 +3731,7 @@
       S.tjSisi = mode.getAttribute("data-tjmode") === "sisi";
       const ps = S.tjSisi && S.tjBuka ? tjPasangan(S.tjBuka) : null;
       renderTj();
-      if (ps) void Promise.all(ps.map((k) => muatTj(k))).then(renderTj);
+      if (ps) void Promise.all(ps.map((k) => muatTj(k))).then(() => (renderTj(), isiOtomatis(ps, {})));
       return;
     }
     if (sbKlik(c, t)) return;
@@ -3669,6 +3934,7 @@
   }
   function saatMasuk(e) {
     const t = e.target;
+    if (t.tagName === "TEXTAREA" && t.matches && t.matches("textarea.bd-auto, textarea.bd-ed, textarea.bd-bmanual")) tumbuhkan(t);
     if (t.id === "bd-caribl" && S.modal) {
       S.modal.cari = t.value;
       S.modal.fokusCari = true;
@@ -3749,6 +4015,8 @@
   }
   function saatUbah(e) {
     const t = e.target;
+    const skKunci = t.getAttribute && t.getAttribute("data-skkunci");
+    if (skKunci) return ubahPilSaksi(skKunci, t.getAttribute("data-skfld"), t);
     const k = t.getAttribute && t.getAttribute("data-k");
     if (k) {
       if (t.type === "date" || t.tagName === "SELECT" || t.closest("#bd-vdaftar")) {
