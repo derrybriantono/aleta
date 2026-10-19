@@ -194,7 +194,7 @@ describe("A. saran portal Tahap E di jendela pilih blangko F-G", () => {
     const h = buka();
     await bukaJendela(h);
     // Jawaban portal tiba di latar; jendela digambar ulang dengan alasan portal.
-    const alasan = await sampai(() => qq(h, ".bd-alasanrek").find((x) => /dari keterangan sidang ke-2/.test(x.textContent || "")), "alasan saran portal");
+    const alasan = await sampai(() => qq(h, ".bd-alasanrek").find((x) => /keterangan "putus DIKABULKAN \(verstek\)"/.test(x.textContent || "")), "alasan saran portal");
     expect(alasan.textContent).toContain('"putus DIKABULKAN (verstek)"');
     expect(alasan.textContent).toContain(HASIL_PORTAL.putusan[0].alasan.replace(/\.$/, ""));
     // Kelompok tampil dengan judul halaman kelompoknya; kuncinya (data-kel) tetap nama menu di bilah ABT.
@@ -203,7 +203,7 @@ describe("A. saran portal Tahap E di jendela pilih blangko F-G", () => {
     expect(tombol.getAttribute("data-kel")).toBe("CG - Putusan");
     expect(tombol.querySelector(".bd-lencana")!.textContent).toBe("disarankan");
     // Ringkasan tahap 2 menyebut saran yang sama.
-    expect(q(h, "#bd-saranblangko")!.textContent).toContain("dari keterangan sidang ke-2");
+    expect(q(h, "#bd-saranblangko")!.textContent).toContain("Saran untuk sidang ke-2");
     // Satu permintaan jadwal sidang tanggal itu, berparameter rekomendasi=1 dan nomor perkara.
     const permintaan = h.minta.filter((u) => u.includes("/aleta-ecourt/sidang?dari="));
     expect(permintaan).toHaveLength(1);
@@ -229,7 +229,7 @@ describe("A. saran portal Tahap E di jendela pilih blangko F-G", () => {
     await sampai(() => h.minta.some((u) => u.includes("/aleta-ecourt/sidang?dari=")), "permintaan saran");
     await tunggu(30);
     const rek = h.w.aletaBlangkoDerryIsian.rekomendasi();
-    expect(rek[0].alasan).toContain("dari keterangan sidang ke-2");
+    expect(rek[0].alasan).toContain('keterangan "putus DIKABULKAN (verstek)"');
     expect(rek[0].jenis).toBe("put");
     expect(h.minta.filter((u) => u.includes("/aleta-ecourt/sidang?dari="))).toHaveLength(1);
   });

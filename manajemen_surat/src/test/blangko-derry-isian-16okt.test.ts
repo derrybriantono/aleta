@@ -418,7 +418,9 @@ describe("F. perlu diisi", () => {
     expect(kode).toEqual(["8503", "0007", "1214"]);
     expect((q(h, "#bd-i8503") as HTMLInputElement).value).toBe("F");
     expect(q(h, '.bd-f[data-f="8503"]')!.classList.contains("beres")).toBe(true);
-    expect(akar(h).textContent).toContain("disembunyikan");
+    // 19 Okt: keterangan teknis tentang isian yang disembunyikan tidak tampil lagi (hanya ke konsol).
+    expect(akar(h).textContent).not.toContain("disembunyikan");
+    expect(akar(h).textContent).not.toContain("Tampilkan juga");
     // Saran 0007 dari jendela ABT (bawaan #8492# dihitung) menjadi bayangan.
     const i0007 = await sampai(() => {
       const i = q(h, "#bd-i0007") as HTMLInputElement;

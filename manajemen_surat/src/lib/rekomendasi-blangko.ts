@@ -78,6 +78,8 @@ export type MasukanRekomendasi = {
   verstekPutusan?: boolean;
   mediasi?: { hasil?: unknown } | null;
   mediasiTerbaca?: boolean;
+  /** 19 Okt: banyaknya saksi yang tercatat/diajukan pada perkara (SIPP); dipakai memilih varian "(N Saksi)" blangko putusan. Kosong = tidak diketahui. */
+  jumlahSaksi?: number | null;
   lewatEcourt?: boolean | null;
   /** I14 18 Okt: jenis_perkara_id (bot); 342 = pencegahan perkawinan -> relaas Pemohon [JS] 11.1. Kosong: dikenali dari nama jenis. */
   jenisPerkaraId?: number | null;
@@ -130,6 +132,8 @@ export type MasukanRekomendasi = {
 export type HasilRekomendasi = {
   sumberTeks: "alasan-tunda" | "agenda" | "kosong";
   teksDasar: string;
+  /** 19 Okt: banyaknya saksi perkara (bila diketahui) - ekstensi memilih varian "(N Saksi)" putusan. */
+  jumlahSaksi?: number;
   bas: Rekomendasi[];
   putusan: Rekomendasi[];
   relaas: Rekomendasi[];
@@ -587,6 +591,13 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     verstekPutusan: b.verstekPutusan === true,
     mediasi: b.mediasi && typeof b.mediasi === "object" ? (b.mediasi as { hasil?: unknown }) : null,
     mediasiTerbaca: b.mediasiTerbaca === false ? false : true,
+    // 19 Okt: saksi yang TERCATAT diperiksa (bot: saksiDiperiksa, perkara_keterangan_saksi) bila ada; cadangannya saksi yang diajukan
+    // kedua sisi (saksiPihak1/2). Tidak ada keduanya = tidak diketahui (bukan nol).
+    ...(typeof b.saksiDiperiksa === "number" && b.saksiDiperiksa > 0
+      ? { jumlahSaksi: b.saksiDiperiksa }
+      : typeof b.saksiPihak1 === "number" || typeof b.saksiPihak2 === "number"
+        ? { jumlahSaksi: (Number(b.saksiPihak1) || 0) + (Number(b.saksiPihak2) || 0) }
+        : {}),
     lewatEcourt: typeof b.lewatEcourt === "boolean" ? b.lewatEcourt : null,
     jenisPerkaraId: angka(b.jenisPerkaraId),
     bersita: Boolean(b.sita) && typeof b.sita === "object",
@@ -627,6 +638,7 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
 export function rekomendasiBlangko(m: MasukanRekomendasi): HasilRekomendasi {
   const { sumber, teks } = teksDasarSidang(m);
   const hasil: HasilRekomendasi = { sumberTeks: sumber, teksDasar: teks, bas: [], putusan: [], relaas: [] };
+  if (typeof m.jumlahSaksi === "number" && Number.isFinite(m.jumlahSaksi) && m.jumlahSaksi > 0) hasil.jumlahSaksi = m.jumlahSaksi;
   if (!String(m.jenisPerkara ?? "").trim()) return hasil;
   hasil.bas = rekomendasiBas(m, teks);
   hasil.putusan = rekomendasiPutusan(m, teks);

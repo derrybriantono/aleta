@@ -359,17 +359,18 @@ describe("C. Widget ALETA: saklar yang sama dengan popup, tema ikut temaPanel", 
     tekan(h, "#bd-widget-btn");
     // F1.5 (17 Okt): + gembok panel ALETA di ABT biasa (kunci gembokKepalaAbt, sama dengan popup).
     // JJ2 (18 Okt): + tanya-jawab jawab-menjawab otomatis (hakim dan panitera pengganti; juru sita tidak).
-    expect(saklarWidget(h)).toEqual(["bawaan", "tawar", "saran", "ingat", "tjJawab", "gembok"]);
+    // 19 Okt: + isi otomatis dari SIPP (hakim, panitera pengganti, dan juru sita).
+    expect(saklarWidget(h)).toEqual(["bawaan", "tawar", "saran", "ingat", "isiOto", "tjJawab", "gembok"]);
 
     const j = buka({ orang: "js" });
     await bukaTampilan(j);
     tekan(j, "#bd-widget-btn");
-    expect(saklarWidget(j)).toEqual(["bawaan", "tawar", "ingat", "gembok"]);
+    expect(saklarWidget(j)).toEqual(["bawaan", "tawar", "ingat", "isiOto", "gembok"]);
 
     const a = buka({ orang: "admin" });
     await bukaTampilan(a);
     tekan(a, "#bd-widget-btn");
-    expect(saklarWidget(a)).toEqual(["bawaan", "tawar", "saran", "ingat", "tjJawab", "gembok"]);
+    expect(saklarWidget(a)).toEqual(["bawaan", "tawar", "saran", "ingat", "isiOto", "tjJawab", "gembok"]);
     expect(widget(a).textContent).toContain("Super Admin dan Admin melihat semua pengaturan");
   });
 

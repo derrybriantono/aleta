@@ -3484,6 +3484,7 @@ const KUNCI_SETELAN_AKUN = [
   "blangkoDerrySaran",
   "blangkoDerryIngat",
   "blangkoDerryTjJawab",
+  "blangkoDerryIsiOto",
   "sippPenyatu",
   "sippTampilDobel",
   "widgetKehadiran",

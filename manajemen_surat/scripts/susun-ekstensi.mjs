@@ -91,6 +91,10 @@ const BERKAS = [
   "saksi-katalog.js",
   "saksi-katalog-data.js",
   "saksi-susun.js",
+  // Isi dari SIPP - mesin bersama (19 Okt 2026): pembobotan usulan, keputusan tulis/saran, dan
+  // pembacaan sumber untuk "Isi otomatis dari SIPP" di Blangko Derry. Murni (tanpa DOM), dimuat di ABT
+  // sebelum abt.js dan blangko-derry-isian.js.
+  "isi-sipp-bersama.js",
   // Blangko ABT by Derry Briantono (tahap C-D, 16 Okt 2026) - skrip konten ABT
   // dan gayanya, dimuat sesudah checklist.js. abt-klien.js (klien rute ABT,
   // tahap A) dimuat sebelumnya; blangko-derry-isian.js (tahap F-G: perlu

@@ -455,6 +455,22 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-skcentang { display: flex; gap: 6px; align-items: flex-start; font-size: 13.4px; color: var(--fg); min-width: 0; }
 #aleta-bd-akar .bd-skkartu p { margin: 0; }
 
+/* 19 Okt: kelengkapan kartu usulan di tiap isian (lencana keyakinan/asal, sumber terlipat, sematan, riwayat, sekarang vs usulan, pilih bunyi). */
+#aleta-bd-akar .bd-ket { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 11.5px; }
+#aleta-bd-akar .bd-tanda { display: inline-block; padding: 0 7px; border-radius: 999px; font-size: 11.2px; line-height: 1.65; color: #ffffff; border: 1px solid transparent; white-space: nowrap; }
+#aleta-bd-akar .bd-tanda.hijau { background: #16704a; border-color: #0f5334; }
+#aleta-bd-akar .bd-tanda.kuning { background: #9a5b06; border-color: #74440a; }
+#aleta-bd-akar .bd-tanda.merah { background: #b42318; border-color: #8a1c13; }
+#aleta-bd-akar .bd-tanda.abu { background: #5d6b64; border-color: #4a5651; }
+#aleta-bd-akar .bd-ket .bd-ikon { padding: 0 6px; line-height: 1.5; }
+#aleta-bd-akar .bd-ketcatatan { margin: 0; }
+#aleta-bd-akar .bd-sumberlist { margin: 0; padding: 4px 8px; list-style: none; font-size: 12px; border-left: 3px solid var(--line); color: var(--muted); }
+#aleta-bd-akar .bd-sumberlist li + li { margin-top: 3px; }
+#aleta-bd-akar .bd-sanding { display: grid; gap: 2px; font-size: 12px; border: 1px dashed var(--accentln); border-radius: 8px; padding: 4px 8px; background: var(--accentbg); }
+#aleta-bd-akar .bd-ketriw { border-left: 3px solid var(--line); padding: 2px 8px; display: grid; gap: 2px; }
+#aleta-bd-akar .bd-bunyi { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
+#aleta-bd-akar .bd-bunyi select { width: 100%; }
+
 /* ===== Tata letak kartu isian ("Perlu diisi") dan alat bukti surat (19 Okt 2026) =====
    Tujuan: kartu tidak ada yang besar-kecil tanpa sebab, tidak berdempetan, tidak ada teks terpotong.
    - kolom mengisi lebar penuh (auto-fill +-260px), tinggi kartu mengikuti isi (bukan diregangkan sejajar tetangga);
@@ -490,3 +506,4 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
   #aleta-bd-akar .bd-pgrid { gap: 12px; }
   #aleta-bd-akar .bd-f, #aleta-bd-akar .bd-bukti { padding: 10px 12px; }
 }
+

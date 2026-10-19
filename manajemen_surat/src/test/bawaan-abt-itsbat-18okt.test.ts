@@ -106,7 +106,9 @@ describe("butir 25: bawaan ABT itsbat disimpan otomatis", () => {
   });
 
   it("kabel: dipanggil sesudah susunan dimuat, tanpa kata aleta pada nilai yang ditulis", () => {
-    expect(sumber).toContain("void simpanBawaanAbtItsbat(d);");
+    // 19 Okt: dipanggil lewat orkestrasi isi otomatis (saklar "Isi otomatis dari SIPP"), yang dipanggil sesudah susunan dimuat.
+    expect(sumber).toContain("await simpanBawaanAbtItsbat(d);");
+    expect(sumber).toContain("void isiOtomatisBlangko(d);");
     expect(blok).not.toMatch(/jadwalkanSimpan\([^)]*aleta/i);
   });
 });
