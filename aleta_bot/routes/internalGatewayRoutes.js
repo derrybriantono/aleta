@@ -2761,10 +2761,16 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         ? require("../services/saksiBantuService").identitasSaksiBerbatas(nomorPerkara, 2500)
         : Promise.resolve(null);
       /* === AKHIR P5P6 === */
-      const [mediasiSipp, konteksSipp] = await Promise.all([
+      // 19 Okt 2026: alamat pihak di SIPP (cadangan "sekarang Penggugat tinggal di ...") dibaca hanya bila templatnya
+      // menanyakan tempat tinggal masing-masing pihak sekarang; SELECT saja, 2,5 detik.
+      const tanyaTempatKini = templatMasuk.some((b) => /masing-masing\s+tinggal|tinggal\s+di\s+mana/i.test(String((b && (b.tanya || b.pertanyaan)) || "")));
+      const [mediasiSipp, konteksSipp, alamatPihakSipp] = await Promise.all([
         !mediasiMasuk && tanyaUpaya && nomorPerkara ? abtUsulanService.mediasiPerkara(nomorPerkara).catch(() => null) : null,
         nomorPerkara && (positaKurang || !tanggalSidangMasuk)
           ? abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null)
+          : null,
+        tanyaTempatKini && nomorPerkara && typeof abtUsulanService.alamatPihakPerkara === "function"
+          ? abtUsulanService.alamatPihakPerkara(nomorPerkara).catch(() => null)
           : null,
       ]);
       const mediasi = mediasiMasuk || mediasiSipp;
@@ -2795,6 +2801,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         alasan: Array.isArray(req.body?.alasan) ? req.body.alasan.map((x) => String(x).slice(0, 80)).slice(0, 12) : [],
         posita: positaDipakai,
         tanggalSidang: tanggalSidangMasuk || (konteksSipp && konteksSipp.tanggalSidang) || "",
+        ...(alamatPihakSipp ? { alamatPihak: alamatPihakSipp } : {}),
         pelaku,
         lawan,
         // Nomor perkara dan kode kumpulan templat menentukan varian kalimat
