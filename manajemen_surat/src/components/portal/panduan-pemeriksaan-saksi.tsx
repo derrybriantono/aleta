@@ -388,8 +388,8 @@ export function PanduanPemeriksaanSaksiIsi({
   // ── Tampilan ──
   if (tahap === "memuat" && !panduan) {
     return (
-      <p className="text-sm text-muted-foreground" data-pandu-status="memuat">
-        Memuat panduan pertanyaan…
+      <p className="text-sm" data-pandu-status="memuat" aria-busy="true">
+        {"\u00a0"}
       </p>
     );
   }

@@ -164,7 +164,7 @@ export function ChecklistKonseptor({ perkaraId, nomorPerkara, kemajuan, konsepto
 
       {terbuka ? (
         <div className="mt-1 rounded-lg border border-border bg-card p-2 text-[11px] leading-snug shadow-sm">
-          {memuat && !rinci ? <p className="text-muted-foreground">Memuat checklist…</p> : null}
+          {memuat && !rinci ? <div className="min-h-[1.25rem]" aria-busy="true" /> : null}
 
           {rinci ? (
             <>

@@ -442,7 +442,7 @@ export function KontakPihakRincian({ perkaraId, nomorPerkara }: { perkaraId: str
       className="flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-muted/30 px-2 py-1 text-xs text-muted-foreground"
     >
       <span className="font-medium text-foreground">Panggilan elektronik</span>
-      <span>{siap ? kalimatKontak(hasil.kontak, sebutan.dua, sebutan.satu) : "Membaca email dan persetujuan e-Court…"}</span>
+      <span>{siap ? kalimatKontak(hasil.kontak, sebutan.dua, sebutan.satu) : "\u00a0"}</span>
     </p>
   );
 }
@@ -917,8 +917,8 @@ export function PapanRuangSidang({
   }
   if (!data || !susun) {
     return (
-      <p className="rounded-md border px-3 py-2 text-xs text-muted-foreground" data-papan-ruang-sidang="">
-        Membaca keadaan ruang sidang…
+      <p className="rounded-md border px-3 py-2 text-xs" data-papan-ruang-sidang="" aria-busy="true">
+        {"\u00a0"}
       </p>
     );
   }
@@ -1102,8 +1102,8 @@ export function PanelRuangPapanPanggil({ tanggal, className }: { tanggal?: strin
   }
   if (!data || !susun) {
     return (
-      <p className={cn("rounded-md border px-3 py-2 text-xs text-muted-foreground", className)} data-panel-ruang-papan="">
-        Membaca keadaan ruang sidang…
+      <p className={cn("rounded-md border px-3 py-2 text-xs", className)} data-panel-ruang-papan="" aria-busy="true">
+        {"\u00a0"}
       </p>
     );
   }

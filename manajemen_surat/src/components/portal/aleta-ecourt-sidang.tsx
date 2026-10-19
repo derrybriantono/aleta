@@ -3002,7 +3002,7 @@ function TombolMediator({
       // bg-card, BUKAN token popover: token itu tidak ada pada tema ini dan
       // menu yang memakainya tembus pandang.
       kelasPanel="bg-card"
-      catatan="Yang ditulis ALETA hanya penetapan mediator. Jadwal pertemuan berikutnya, laporan mediator, dan hasil mediasi masih ditulis di SIPP. ALETA baru membacanya - belum ada jalur yang menuliskannya."
+      catatan="Jadwal pertemuan, laporan mediator, dan hasil mediasi masih ditulis di SIPP."
     />
   );
 }
@@ -3195,7 +3195,9 @@ function BorangKeteranganPerkara({
       </div>
 
       {memuat ? (
-        <p className="mt-1 text-[11px] text-muted-foreground">Membaca keterangan…</p>
+        <p className="mt-1 text-[11px]" aria-busy="true">
+          {"\u00a0"}
+        </p>
       ) : terkini ? (
         <div className="mt-1 rounded border bg-card p-1.5">
           <p className="whitespace-pre-line text-xs">{terkini.isi}</p>
@@ -4326,7 +4328,8 @@ function KalenderSidang({
 
         <div className="mt-3 flex items-center justify-between gap-2">
           <p className="text-sm text-muted-foreground">
-            {memuat ? "Memuat kalender…" : "Angka pada tanggal adalah jumlah sidang."}
+            {/* Tanpa tulisan memuat (JADWAL-3 butir 5) - kalimatnya sama sebelum dan sesudah angka datang. */}
+            Angka pada tanggal adalah jumlah sidang.
           </p>
           <Button size="sm" variant="outline" onClick={onTutup}>
             Tutup
@@ -6008,32 +6011,6 @@ export function AletaEcourtSidang({
             membacanya akan menyimpulkan perkaranya bersih. */}
         {tampil(tampilan, "tombol-layar-penuh") || layarPenuh ? <TombolLayarPenuh penuh={layarPenuh} onUbah={setLayarPenuh} /> : null}
 
-        <button
-          type="button"
-          onClick={() => setPanelTampilan((n) => !n)}
-          aria-expanded={panelTampilan}
-          title="Memilih penanda, keterangan, dan tombol mana yang digambar di layar ini."
-          className={cn(
-            "flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs transition",
-            panelTampilan
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          )}
-        >
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          Tampilan
-          {dimatikan > 0 ? (
-            <span
-              className={cn(
-                "rounded-full px-1.5 text-[10px] font-semibold tabular-nums",
-                panelTampilan ? "bg-primary-foreground/20" : "bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100"
-              )}
-            >
-              {dimatikan}
-            </span>
-          ) : null}
-        </button>
-
         {/* Pemilih tampilan berdiri di kepala, bukan di antara saringan:
             ia menjawab "seberapa padat saya mau melihatnya", satu keluarga
             dengan tombol ciutkan - dan justru paling dibutuhkan ketika
@@ -6069,6 +6046,34 @@ export function AletaEcourtSidang({
         >
           {kendaliCiut ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
           {kendaliCiut ? "Kendali" : "Ciutkan"}
+        </button>
+        {/* 19 Okt 2026 (JADWAL-3 butir 2): Tampilan di SUDUT KANAN - paling
+            kanan di deret tombol kepala, sama dengan Jadwal Mediasi. */}
+        <button
+          type="button"
+          data-tombol-tampilan-sidang=""
+          onClick={() => setPanelTampilan((n) => !n)}
+          aria-expanded={panelTampilan}
+          title="Memilih penanda, keterangan, dan tombol mana yang digambar di layar ini."
+          className={cn(
+            "flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs transition",
+            panelTampilan
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          Tampilan
+          {dimatikan > 0 ? (
+            <span
+              className={cn(
+                "rounded-full px-1.5 text-[10px] font-semibold tabular-nums",
+                panelTampilan ? "bg-primary-foreground/20" : "bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100"
+              )}
+            >
+              {dimatikan}
+            </span>
+          ) : null}
         </button>
         </div>
         {/* ==================================================================
@@ -6378,8 +6383,11 @@ export function AletaEcourtSidang({
               </button>
             </div>
 
-            <Button size="sm" disabled={memuat} onClick={() => void muat()}>
-              {memuat ? "Memuat…" : "Tampilkan"}
+            {/* JADWAL-3 butir 5: tulisan dan keadaannya TETAP selama memuat -
+                penyegaran latar (antrian, 45 detik) tidak boleh menggambar apa
+                pun. Tekanan ganda ditolak muatTanggal sendiri (memuatRef). */}
+            <Button size="sm" onClick={() => void muat()}>
+              Tampilkan
             </Button>
 
             {/* Tanggal terbacanya, bukan angka - "Senin" adalah yang dicari
@@ -6387,8 +6395,8 @@ export function AletaEcourtSidang({
             <div className="ml-auto text-right">
               <p className="text-sm font-semibold leading-tight">{tanggalHariPanjang(dari)}</p>
               <p className="text-sm text-muted-foreground">
-                {memuat
-                  ? "memuat…"
+                {pertamaMuat && memuat
+                  ? "\u00a0"
                   : sidang.length === 0
                     ? "tidak ada sidang"
                     : `${sidang.length} sidang${dari !== sampai ? " pada rentang ini" : ""}`}
@@ -6494,7 +6502,7 @@ export function AletaEcourtSidang({
                 <button
                   type="button"
                   onClick={lepasCariSipp}
-                  disabled={memuat}
+                  disabled={pertamaMuat && memuat}
                   className="rounded border px-1.5 py-0.5 transition hover:bg-muted hover:text-foreground disabled:opacity-50"
                 >
                   lepaskan
@@ -6546,7 +6554,7 @@ export function AletaEcourtSidang({
               <Button
                 size="sm"
                 variant={nilaiKesiapan ? "default" : "outline"}
-                disabled={memuat}
+                disabled={pertamaMuat && memuat}
                 onClick={() => {
                   // Menyalakan skor HARUS memuat ulang. Sebelumnya tombolnya
                   // hanya membalik penanda, sehingga tulisannya berubah jadi
@@ -6560,7 +6568,7 @@ export function AletaEcourtSidang({
                 title="Menghitung kesiapan tiap sidang dari SIPP dan arsip e-Court: relaas, berkas, identitas pihak. Perlu beberapa detik."
               >
                 <Gauge className="mr-1.5 h-4 w-4" />
-                {memuat && nilaiKesiapan ? "Menghitung…" : nilaiKesiapan ? "Skor: nyala" : "Hitung skor"}
+                {nilaiKesiapan ? "Skor: nyala" : "Hitung skor"}
               </Button>
               ) : null}
 
@@ -7421,10 +7429,10 @@ export function AletaEcourtSidang({
                   membiarkan barisnya terpasang, dan posisi gulir pembacanya
                   tidak bergerak. */}
               {pertamaMuat && memuat ? (
-                <tr>
-                  <td className="px-3 py-6 text-center text-muted-foreground" colSpan={kolomTabel}>
-                    Memuat jadwal…
-                  </td>
+                // JADWAL-3 butir 5: tanpa tulisan memuat - ruangnya saja yang
+                // dipesan, supaya baris sidang tidak membuat halaman melompat.
+                <tr aria-busy="true" data-tabel-menunggu="">
+                  <td className="h-40 px-3 py-6" colSpan={kolomTabel} />
                 </tr>
               ) : sidangTampil.length === 0 && sidang.length > 0 ? (
                 <tr>
@@ -9042,7 +9050,7 @@ export function AletaEcourtSidang({
                               }
                             >
                               {memuatRincian ? (
-                                <p className="text-sm text-muted-foreground">Memuat keterangan sidang…</p>
+                                <div className="min-h-[6rem]" aria-busy="true" />
                               ) : (
                                 <RincianSidang
                                   rincian={rincian}

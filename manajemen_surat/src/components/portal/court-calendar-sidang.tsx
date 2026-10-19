@@ -487,7 +487,7 @@ function DialogCourtCalendar({
           </Button>
         </div>
 
-        {memuat ? <p className="text-sm text-muted-foreground">Membaca Court Calendar SIPP perkara ini…</p> : null}
+        {memuat ? <div className="min-h-[1.25rem]" aria-busy="true" /> : null}
         {galat ? (
           <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">{galat}</p>
         ) : null}

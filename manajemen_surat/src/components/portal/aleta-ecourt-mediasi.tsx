@@ -432,7 +432,7 @@ function RincianMediasi({ baris, bolehCatat = true }: { baris: Mediasi; bolehCat
             {galat}
           </p>
         ) : !kehadiran ? (
-          <p className="text-xs text-muted-foreground">Memuat kehadiran…</p>
+          <div className="min-h-[1.25rem]" aria-busy="true" />
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -996,14 +996,11 @@ export function AletaEcourtMediasi({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Jadwal mediasi</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Pertemuan mediasi tersimpan terpisah dari jadwal sidang di SIPP, sehingga tidak muncul di
-          layar Jadwal Sidang. Tenggangnya 30 hari sejak mediator ditetapkan &mdash; PERMA 1/2016
-          Pasal 24.
-        </p>
-        <PengaturanPanggil />
-        <div className="mt-1">
+        {/* 19 Okt 2026 (JADWAL-3 butir 2): satu baris kepala - judul di kiri,
+            tombol di kanan, dan Tampilan PALING KANAN, sama dengan Jadwal Sidang. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <CardTitle className="mr-auto">Jadwal mediasi</CardTitle>
+          <PengaturanPanggil />
           <Button
             size="sm"
             variant={panelTampilan ? "default" : "outline"}
@@ -1014,33 +1011,38 @@ export function AletaEcourtMediasi({
             <SlidersHorizontal className="mr-1.5 h-4 w-4" />
             Tampilan
           </Button>
-          {panelTampilan ? (
-            <div className="mt-2 rounded-lg border bg-card p-2">
-              <p className="mb-1.5 text-xs text-muted-foreground">
-                Tersimpan di peramban ini saja dan tidak mengubah data apa pun - yang dimatikan hanya tidak digambar.
-              </p>
-              <ul className="space-y-1">
-                {SAKLAR_TAMPILAN_MEDIASI.map((saklar) => (
-                  <li key={saklar.kunci}>
-                    <label className="flex cursor-pointer items-start gap-2 text-sm" title={saklar.keterangan}>
-                      <input
-                        type="checkbox"
-                        className="mt-0.5 h-3.5 w-3.5 accent-primary"
-                        checked={tampilMediasi(tampilan, saklar.kunci)}
-                        onChange={(e) => ubahTampilan(saklar.kunci, e.target.checked)}
-                        data-saklar-mediasi={saklar.kunci}
-                      />
-                      <span className="leading-tight">
-                        {saklar.label}
-                        <span className="block text-xs text-muted-foreground">{saklar.keterangan}</span>
-                      </span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
         </div>
+        <p className="text-sm text-muted-foreground">
+          Pertemuan mediasi tersimpan terpisah dari jadwal sidang di SIPP, sehingga tidak muncul di
+          layar Jadwal Sidang. Tenggangnya 30 hari sejak mediator ditetapkan &mdash; PERMA 1/2016
+          Pasal 24.
+        </p>
+        {panelTampilan ? (
+          <div className="mt-2 rounded-lg border bg-card p-2">
+            <p className="mb-1.5 text-xs text-muted-foreground">
+              Tersimpan di peramban ini saja dan tidak mengubah data apa pun - yang dimatikan hanya tidak digambar.
+            </p>
+            <ul className="space-y-1">
+              {SAKLAR_TAMPILAN_MEDIASI.map((saklar) => (
+                <li key={saklar.kunci}>
+                  <label className="flex cursor-pointer items-start gap-2 text-sm" title={saklar.keterangan}>
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-3.5 w-3.5 accent-primary"
+                      checked={tampilMediasi(tampilan, saklar.kunci)}
+                      onChange={(e) => ubahTampilan(saklar.kunci, e.target.checked)}
+                      data-saklar-mediasi={saklar.kunci}
+                    />
+                    <span className="leading-tight">
+                      {saklar.label}
+                      <span className="block text-xs text-muted-foreground">{saklar.keterangan}</span>
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -1091,8 +1093,9 @@ export function AletaEcourtMediasi({
               className="w-56"
             />
           </label>
-          <Button size="sm" onClick={() => void muatRentang(dari, sampai, cari)} disabled={memuat}>
-            {memuat ? "Memuat…" : "Tampilkan"}
+          {/* JADWAL-3 butir 5: tanpa "Memuat…" - tekanan ganda ditolak sedangMuat. */}
+          <Button size="sm" onClick={() => void muatRentang(dari, sampai, cari)}>
+            Tampilkan
           </Button>
         </div>
 
@@ -1223,7 +1226,8 @@ export function AletaEcourtMediasi({
         {/* --- Daftar --- */}
         {mediasi.length === 0 ? (
           <p className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
-            {memuat ? "Memuat…" : "Tidak ada pertemuan mediasi pada rentang tanggal ini."}
+            {/* JADWAL-3 butir 5: selama memuat kotaknya tetap (tanpa tulisan), supaya tidak melompat. */}
+            {memuat ? "\u00a0" : "Tidak ada pertemuan mediasi pada rentang tanggal ini."}
           </p>
         ) : mediasiTampil.length === 0 ? (
           /* Dibedakan dari rentang yang memang kosong: yang satu menyuruh

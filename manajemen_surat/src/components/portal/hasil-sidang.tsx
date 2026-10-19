@@ -1482,7 +1482,7 @@ export function CatatHasilRingkas({
   }
 
   if (!keadaan) {
-    return <p className="text-sm text-muted-foreground">Memuat keadaan sidang {nomorPerkara}…</p>;
+    return <div className="min-h-[3rem]" aria-busy="true" />;
   }
 
   if (sudahTertulis) {

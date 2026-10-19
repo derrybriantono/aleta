@@ -235,7 +235,7 @@ export function BagianMassal({ onSunting }: { onSunting: (perkaraId: string) => 
           )}
         </div>
       ) : null}
-      {memuat ? <p className="text-sm text-muted-foreground">Membaca perkara hari itu dan keadaannya dari SIPP…</p> : null}
+      {memuat ? <div className="min-h-[1.25rem]" aria-busy="true" /> : null}
       {galat ? <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">{galat}</p> : null}
       {data && !memuat ? (
         <ul className="grid gap-2">
@@ -367,7 +367,7 @@ function IsiRekap({ periode, tanggal }: { periode: PeriodeRekap; tanggal: string
   }
 
   if (galat) return <p className="text-sm text-rose-700 dark:text-rose-300">{galat}</p>;
-  if (!rekap) return <p className="text-sm text-muted-foreground">Membaca rekap…</p>;
+  if (!rekap) return <div className="min-h-[1.25rem]" aria-busy="true" />;
   return (
     <div className="grid gap-2 text-sm">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -534,7 +534,7 @@ export function BagianPengingatKasir({ onSunting, hanyaBaca = false }: { onSunti
   }
 
   if (galat) return <p className="text-sm text-rose-700 dark:text-rose-300">{galat}</p>;
-  if (!data) return <p className="text-sm text-muted-foreground">Membaca pengingat kasir…</p>;
+  if (!data) return <div className="min-h-[1.25rem]" aria-busy="true" />;
   const kelompok = (["sisa-panjar", "belum-dijurnal", "panjar-kurang", "pnbp-belum-setor"] as const).map((j) => ({ jenis: j, butir: data.butir.filter((b) => b.jenis === j) }));
   return (
     <div className="grid gap-3 text-sm">

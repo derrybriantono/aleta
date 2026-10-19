@@ -153,7 +153,10 @@ export function PengaturanPanggil() {
         <Settings2 className="h-3.5 w-3.5" />
         Pengaturan panggil
       </button>
-      {terbuka ? <SaklarPanggil className="mt-2 max-w-md" /> : null}
+      {/* Melayang di bawah tombol (19 Okt 2026): tombolnya kini duduk di baris
+          kepala Jadwal Mediasi, dan panel yang ikut mengalir akan melebarkan
+          baris itu. bg-card dari SaklarPanggil - bukan token popover. */}
+      {terbuka ? <SaklarPanggil className="absolute right-0 top-full z-30 mt-1 w-[22rem] max-w-[90vw] shadow-lg" /> : null}
     </div>
   );
 }
@@ -355,7 +358,7 @@ function PopupPanggil({
       </div>
 
       {galat ? <p className="text-xs text-rose-700 dark:text-rose-300">{galat}</p> : null}
-      {!data && !galat ? <p className="text-xs text-muted-foreground">Membaca petugas dan nomornya…</p> : null}
+      {!data && !galat ? <div className="min-h-[1.25rem]" aria-busy="true" /> : null}
 
       {data && !data.whatsapp.dapatKirim ? (
         <p
