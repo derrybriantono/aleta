@@ -3356,6 +3356,8 @@ function gambarPenunjukan(isi, data) {
   // menetapkan" hanya di tampilan Lama/Baru.
   const uiBaru = typeof t7Modern === "function" && t7Modern();
   const pasangPenetap = (baris, jenis) => {
+    const keterangan = baris.querySelector(".aleta-tetap-penetap");
+    if (uiBaru && keterangan && typeof t7TanpaAkun === "function") keterangan.textContent = t7TanpaAkun(keterangan.textContent);
     if (uiBaru && !sudahDiSipp[jenis] && typeof t7PenetapDapatDiklik === "function") {
       t7PenetapDapatDiklik(baris.querySelector(".aleta-tetap-penetap"), data, jenis, () => {
         isi.textContent = "";
@@ -19458,7 +19460,10 @@ function t7TataPenetapan(k) {
 
   if (!penunjukan) return;
   const pakaiRingkas = k.ui;
-  const pakaiBilah = k.ui || t7Nyala("sipp-5");
+  // 19 Okt 2026: di UI Baru cukup SATU "Tetapkan semua" - tombol besar di kartu.
+  // Pita bawah (sipp-5) tetap untuk tampilan Baru; "Lihat perubahan"-nya sama
+  // dengan "Ubah semua pilihan" di bawah tombol besar kartu.
+  const pakaiBilah = !k.ui && t7Nyala("sipp-5");
   if (!pakaiRingkas && !pakaiBilah) return;
 
   let ringkas = null;
@@ -19722,6 +19727,15 @@ function t7MenuPejabat(data, jenis, onPilih, tutup) {
   }
   menu.appendChild(t7KakiPilih(tutup));
   return menu;
+}
+
+/**
+ * UI Baru: keterangan penetap menyebut nama + jabatan saja. Nama akun SIPP
+ * ("(akun fahri)") bersifat teknis dan tidak ditampilkan; akun yang belum
+ * siap tetap disebut dengan kalimat biasa oleh penetapUntuk.
+ */
+function t7TanpaAkun(teks) {
+  return String(teks || "").replace(/ \(akun [^)]*\)/g, "");
 }
 
 /** Baris "Ditetapkan ..." yang dapat diklik. */
@@ -20213,7 +20227,7 @@ function t7KartuKeputusan(k, penunjukan) {
 
       // Butir 2: pejabat penetap dipilih dengan mengeklik baris "Ditetapkan ...".
       if (jenis && !tercatat && data) {
-        const teksPenetap = penetapUntuk(data, jenis);
+        const teksPenetap = t7TanpaAkun(penetapUntuk(data, jenis));
         if (teksPenetap) {
           const terbukaPejabat = Boolean(buka && buka.jenis === jenis && buka.macam === "pejabat");
           if (t7CalonPejabat(data, jenis).calon.length > 1 && !sibuk) {

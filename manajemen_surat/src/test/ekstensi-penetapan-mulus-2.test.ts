@@ -400,7 +400,11 @@ describe("Ubah di tiap baris: menu pilihan langsung", () => {
     const judul = kepala.querySelector(".aleta-t7-penetapan-judul")!;
     expect(judul.textContent).toBe("Penetapan");
     expect(tag[0].nextElementSibling, kepala.outerHTML).toBe(judul);
-    expect(tombolSemua(k).nextElementSibling!.textContent).toBe("Ubah semua pilihan");
+    const ubahSemua = tombolSemua(k).nextElementSibling as HTMLButtonElement;
+    expect(ubahSemua.textContent).toBe("Ubah semua pilihan");
+    expect(ubahSemua.hidden).toBe(false);
+    // Satu "Tetapkan semua" saja: pita bawah lama tidak ada di UI Baru.
+    expect(h.d.querySelector(".aleta-t7-bilah")).toBeNull();
   });
 
   it("Ubah majelis: majelis menurut SK dan tanpa kode, berbeban; memilih Majelis C menghitung ulang dan PP terpaut ikut berganti", async () => {
@@ -477,8 +481,10 @@ describe("pejabat penetap lewat baris 'Ditetapkan ...'", () => {
     const h = buka(kosong(), "ui");
     await kartuSiap(h);
     const penetap = (j: Jenis) => barisJenis(kartuDari(h)!, j).querySelector("button.aleta-t7-penetap") as HTMLButtonElement;
-    expect(penetap("pmh").textContent).toContain("Ditetapkan Ketua Pengadilan — Pejabat PMH Satu (akun pmh-1)");
-    expect(penetap("ppp").textContent).toContain("Ditetapkan Panitera — Pejabat PPP Satu (akun ppp-1)");
+    // Nama + jabatan saja - nama akun SIPP tidak ditampilkan.
+    expect(penetap("pmh").textContent).toBe("Ditetapkan Ketua Pengadilan — Pejabat PMH Satu▾");
+    expect(penetap("ppp").textContent).toBe("Ditetapkan Panitera — Pejabat PPP Satu▾");
+    expect(kartuDari(h)!.textContent).not.toContain("(akun");
     penetap("ppp").click();
     const menu = await sampai(() => barisJenis(kartuDari(h)!, "ppp").querySelector(".aleta-t7-pilih-pejabat"), "menu pejabat PPP");
     expect(menu.querySelector(".aleta-t7-pilih-judul")!.textContent).toBe("Yang menetapkan PPP");
@@ -503,6 +509,7 @@ describe("pejabat penetap lewat baris 'Ditetapkan ...'", () => {
     await sampai(() => kotak.querySelector('button.aleta-tetap-penetap[data-jenis="pjs"]'), "penetap rinci dapat diklik");
     expect(kotak.querySelector(".aleta-tetap-pejabat")).toBeNull();
     expect(kotak.textContent).not.toContain("Pejabat yang menetapkan");
+    expect(kotak.textContent).not.toContain("(akun");
     (kotak.querySelector('button.aleta-tetap-penetap[data-jenis="pjs"]') as HTMLButtonElement).click();
     (kotak.querySelector('.aleta-t7-pilih-pejabat [data-t7-pejabat="pjs-2"]') as HTMLButtonElement).click();
     await sampai(() => /Pejabat PJS Dua/.test(String(kotak.querySelector('button.aleta-tetap-penetap[data-jenis="pjs"]')?.textContent || "")), "rinci berganti");
