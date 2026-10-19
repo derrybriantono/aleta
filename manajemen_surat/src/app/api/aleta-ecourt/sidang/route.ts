@@ -11,7 +11,6 @@ import { picuPindaiJawaban } from "@/server/modules/aleta-ecourt/penanda-jawaban
 import { bacaRekamAntrian, rekamAntrian } from "@/server/modules/aleta-ecourt/rekam-antrian";
 import {
   getGatewayArsipRincian,
-  getGatewayJadwalSidang,
   getGatewayKalenderSidang,
   getGatewayKesiapanBanyak,
   getGatewayKesiapanSatu,
@@ -21,6 +20,7 @@ import {
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
+import { getGatewayJadwalSidangSinggah } from "@/server/modules/aleta-bot/jadwal-sidang-singgah";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const hasil = await getGatewayJadwalSidang({
+    const hasil = await getGatewayJadwalSidangSinggah({
       dari: String(request.nextUrl.searchParams.get("dari") || ""),
       sampai: String(request.nextUrl.searchParams.get("sampai") || ""),
       cari: String(request.nextUrl.searchParams.get("cari") || ""),

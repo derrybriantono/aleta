@@ -8,6 +8,8 @@
  * seperti sinkron/bot-dump.ts.
  */
 
+import { tandaiTulisan } from "@/server/shared/singgah-singkat";
+
 export type HasilBot<T> = { ok: true; data: T } | { ok: false; error: string; status?: number };
 
 function alamatBot() {
@@ -31,6 +33,10 @@ export async function panggilBotJadwalSidang<T = Record<string, unknown>>(
 ): Promise<HasilBot<T>> {
   const pengendali = new AbortController();
   const penunda = setTimeout(() => pengendali.abort(), pilihan.timeoutMs ?? batasWaktu());
+  // Performa muat 19 Okt: tulisan (skors, selesai, mediator, ...) membuang
+  // singgahan jadwal sebelum dan sesudahnya - lihat singgah-singkat.ts.
+  const menulis = (pilihan.method ?? "GET") !== "GET";
+  if (menulis) tandaiTulisan();
   try {
     const kepala: Record<string, string> = { "Content-Type": "application/json" };
     const token = tokenBot();
@@ -80,5 +86,6 @@ export async function panggilBotJadwalSidang<T = Record<string, unknown>>(
     };
   } finally {
     clearTimeout(penunda);
+    if (menulis) tandaiTulisan();
   }
 }

@@ -22,6 +22,7 @@ import type { PermintaanRekap, RekapPetugas } from "@/lib/rekap-petugas";
 import type { WaktuAntrian } from "@/lib/tiga-jarak-sidang";
 import type { PembebananIkrar } from "@/lib/pembebanan-ikrar";
 import { sanitizePublicErrorMessage } from "@/server/shared/error-sanitizer";
+import { singgahSingkat, tandaiTulisan, ttlDariEnv } from "@/server/shared/singgah-singkat";
 
 export type WhatsappRuntimeMode = "aleta_bot" | "legacy_portal" | "disabled";
 
@@ -156,6 +157,21 @@ export type GatewayResult<T> =
       kode?: string;
     };
 
+/**
+ * POST ke bot yang HANYA membaca - tidak membatalkan singgahan singkat. Daftar
+ * sengaja pendek: POST lain dianggap tulisan, sebab membatalkan tanpa perlu
+ * hanya membuang satu singgahan berumur detik, sedangkan tidak membatalkan
+ * tulisan yang sungguhan membuat petugas melihat data basi.
+ */
+const POST_BACA_SAJA = new Set(["/internal/aleta-bot/sipp/jadwal-sidang/kesiapan"]);
+
+/** Permintaan ke bot ini tulisan? (bukan GET/HEAD dan bukan POST baca-saja) */
+export function permintaanMenulis(path: string, method: string | undefined) {
+  const m = String(method || "GET").toUpperCase();
+  if (m === "GET" || m === "HEAD") return false;
+  return !POST_BACA_SAJA.has(path.split("?")[0]);
+}
+
 async function gatewayFetch<T>(
   path: string,
   options: GatewayOptions = {}
@@ -164,6 +180,11 @@ async function gatewayFetch<T>(
   const batas = timeoutMs ?? getGatewayTimeoutMs();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), batas);
+  // Performa muat 19 Okt: tulisan lewat bot (tunda, putus, kehadiran, ...)
+  // membuang singgahan jadwal SEBELUM dikirim dan SESUDAH dijawab - bacaan
+  // yang berjalan di antaranya tidak disimpan (lihat singgah-singkat.ts).
+  const menulis = permintaanMenulis(path, permintaan.method);
+  if (menulis) tandaiTulisan();
 
   try {
     const url = `${getGatewayBaseUrl()}${path}`;
@@ -265,6 +286,7 @@ async function gatewayFetch<T>(
     };
   } finally {
     clearTimeout(timeout);
+    if (menulis) tandaiTulisan();
   }
 }
 
@@ -2168,9 +2190,32 @@ export async function getGatewayTagPerkara(params: {
     const teks = String(nilai ?? "").trim();
     if (teks) kueri.set(nama, teks);
   }
-  return gatewayFetch(`/internal/aleta-bot/sipp/status-perkara/tag?${kueri.toString()}`, {
-    timeoutMs: TIMEOUT_PERAMBAN_MS,
-  });
+  // Performa muat 19 Okt 2026: menghitung jumlah tag = ±19 kueri penyisir
+  // (terukur di server 1,2-2,3 detik). Hitungan yang sama disinggahkan 30
+  // detik (ALETA_SINGGAH_TAG_MS; mati di lingkungan uji) dan dibuang seketika
+  // oleh tulisan apa pun lewat bot. Katalog saja tidak menyentuh SIPP - tidak
+  // perlu disinggahkan.
+  const jalur = `/internal/aleta-bot/sipp/status-perkara/tag?${kueri.toString()}`;
+  const ttl = kueri.get("katalogSaja") === "1" ? 0 : ttlDariEnv("ALETA_SINGGAH_TAG_MS", process.env.NODE_ENV === "test" ? 0 : 30_000);
+  return singgahSingkat(
+    "tag-perkara",
+    kueri.toString(),
+    ttl,
+    () =>
+      gatewayFetch<{
+        ok: boolean;
+        katalogSaja?: boolean;
+        jumlah: Record<string, number> | null;
+        lingkup: { dari: string; sampai: string; perkara: number } | null;
+        tag: Array<{ kunci: string; label: string; kelompok: string; nada: string; judul: string }>;
+        kelompok: Array<{ kunci: string; label: string }>;
+        dasar: Array<{ kunci: string; label: string }>;
+        batasId?: number;
+      }>(jalur, {
+        timeoutMs: TIMEOUT_PERAMBAN_MS,
+      }),
+    { simpanBila: (hasil) => hasil.ok === true }
+  );
 }
 
 /**
@@ -3966,15 +4011,29 @@ export type PegawaiPenunjukan = {
  * Ruasnya dibaca dari sumbernya, penunjukanService.pegawaiPenunjukan:
  *   return { ok: true, hakim: rapikan(hakim), panitera: rapikan(panitera) };
  */
+/**
+ * Daftar hakim, panitera, dan SK tetap - jarang berubah, dibaca tiap kali
+ * layar Jadwal Sidang dan SK Majelis dibuka. Disinggahkan 60 detik
+ * (ALETA_SINGGAH_PEGAWAI_MS; mati di lingkungan uji) dan dibuang seketika oleh
+ * tulisan apa pun lewat bot - termasuk penyimpanan SK/penunjukan.
+ */
 export async function gatewayPegawaiPenunjukan() {
-  return gatewayFetch<{
-    ok?: boolean;
-    hakim?: PegawaiPenunjukan[];
-    panitera?: PegawaiPenunjukan[];
-    skTetap?: Array<{ nomor: string; tanggal: string }>;
-  }>("/internal/aleta-bot/penunjukan/pegawai", {
-    method: "GET",
-  });
+  const ttl = ttlDariEnv("ALETA_SINGGAH_PEGAWAI_MS", process.env.NODE_ENV === "test" ? 0 : 60_000);
+  return singgahSingkat(
+    "pegawai-penunjukan",
+    "semua",
+    ttl,
+    () =>
+      gatewayFetch<{
+        ok?: boolean;
+        hakim?: PegawaiPenunjukan[];
+        panitera?: PegawaiPenunjukan[];
+        skTetap?: Array<{ nomor: string; tanggal: string }>;
+      }>("/internal/aleta-bot/penunjukan/pegawai", {
+        method: "GET",
+      }),
+    { simpanBila: (hasil) => hasil.ok === true }
+  );
 }
 
 export async function gatewayDaftarRuangan(): Promise<

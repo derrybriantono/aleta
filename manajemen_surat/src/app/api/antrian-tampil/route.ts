@@ -3,12 +3,12 @@ import { type NextRequest } from "next/server";
 import { bawaanTampilAntrianPublik } from "@/lib/antrian-publik";
 import {
   getGatewayAntrianSidang,
-  getGatewayJadwalSidang,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { bacaPengaturanAntrianPublik, pengaturanTertutup } from "@/server/modules/antrian-publik/service";
 import { bacaSkorsBerlakuHariIni, keteranganSkorsPublik } from "@/server/modules/aleta-ecourt/skors-publik";
 import { getDatabase } from "@/server/db/client";
 import { ok } from "@/server/shared/http";
+import { getGatewayJadwalSidangSinggah } from "@/server/modules/aleta-bot/jadwal-sidang-singgah";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
       { nomorPerkara: string; pihak: string; agenda: string; majelis: string }
     >();
     if (perluJadwal) {
-      const jadwal = await getGatewayJadwalSidang({
+      const jadwal = await getGatewayJadwalSidangSinggah({
         dari: tanggalHariIni(),
         sampai: tanggalHariIni(),
         cari: "",

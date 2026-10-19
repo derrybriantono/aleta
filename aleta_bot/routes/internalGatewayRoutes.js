@@ -3332,12 +3332,23 @@ router.post("/sipp/ktp-pihak/baca-ulang", requireInternalToken, async (req, res)
 /** Daftar sidang pada rentang tanggal. */
 router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
   try {
-    const hasil = await sippJadwalSidangService.daftarSidang({
-      dari: String(req.query.dari || ""),
-      sampai: String(req.query.sampai || ""),
-      cari: String(req.query.cari || ""),
-      batas: Number(req.query.batas) || 200,
-    });
+    // Performa muat 19 Okt 2026: jadwal (SIPP) dan peta antrian (basis data
+    // antrian) tidak saling bergantung - dibaca BERSAMAAN, tidak berurutan.
+    // Gagalnya peta antrian tetap ditelan seperti semula.
+    const [hasil, petaPenuh] = await Promise.all([
+      sippJadwalSidangService.daftarSidang({
+        dari: String(req.query.dari || ""),
+        sampai: String(req.query.sampai || ""),
+        cari: String(req.query.cari || ""),
+        batas: Number(req.query.batas) || 200,
+      }),
+      antrianSidangService.petaAntrian().catch((galat) => ({
+        terbaca: false,
+        alasan: String(galat.message || galat).slice(0, 200),
+        peta: {},
+        tanggal: [],
+      })),
+    ]);
 
     // ======================================================================
     // ANTRIAN DITEMPELKAN DI SINI, BUKAN DI DALAM LAYANAN JADWAL
@@ -3355,12 +3366,6 @@ router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
     // layar (bentuk yang sama seperti sebelumnya), dan utuh untuk buku waktu
     // antrian di bawah - yang memerlukan nomor seluruh perkara hari itu.
     const idPerkara = (hasil.sidang || []).map((baris) => baris.perkaraId);
-    const petaPenuh = await antrianSidangService.petaAntrian().catch((galat) => ({
-      terbaca: false,
-      alasan: String(galat.message || galat).slice(0, 200),
-      peta: {},
-      tanggal: [],
-    }));
     const antrian = antrianSidangService.saringUntukPerkara(petaPenuh, idPerkara);
 
     // ======================================================================
@@ -3385,7 +3390,8 @@ router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
       res.json({ ok: true, ...hasil, antrian });
       return;
     }
-    const waktuAntrian = await antrianWaktuService
+    // Waktu antrian dan kehadiran rinci juga dibaca bersamaan (19 Okt 2026).
+    const janjiWaktuAntrian = antrianWaktuService
       .waktuUntukJadwal({
         tanggal: (hasil.sidang || []).map((baris) => baris.tanggalSidang),
         petaNomor: petaPenuh && petaPenuh.terbaca ? petaPenuh.peta : null,
@@ -3416,13 +3422,21 @@ router.get("/sipp/jadwal-sidang", requireInternalToken, async (req, res) => {
         if (!perTanggal.has(hari)) perTanggal.set(hari, new Set());
         perTanggal.get(hari).add(String(baris.perkaraId || ""));
       }
-      for (const [hari, kumpulan] of perTanggal) {
-        const peta = await kehadiranAntrianService.daftarKehadiran([...kumpulan], hari);
-        for (const [perkaraId, isi] of Object.entries(peta || {})) kehadiranRinci[`${perkaraId}|${hari}`] = isi;
-      }
+      // Per tanggal BERSAMAAN (19 Okt 2026), bukan satu tanggal menunggu yang
+      // lain. Tanggal yang gagal dibaca dilewati - tanggal lain tetap terisi.
+      const daftarHari = [...perTanggal.entries()];
+      const hasilHari = await Promise.allSettled(
+        daftarHari.map(([hari, kumpulan]) => kehadiranAntrianService.daftarKehadiran([...kumpulan], hari))
+      );
+      daftarHari.forEach(([hari], i) => {
+        const satu = hasilHari[i];
+        if (satu.status !== "fulfilled") return;
+        for (const [perkaraId, isi] of Object.entries(satu.value || {})) kehadiranRinci[`${perkaraId}|${hari}`] = isi;
+      });
     } catch {
       // Tabel kehadiran tidak terbaca: kolom antrian tetap seperti semula.
     }
+    const waktuAntrian = await janjiWaktuAntrian;
 
     res.json({ ok: true, ...hasil, antrian: { ...antrian, kehadiran: kehadiranRinci }, waktuAntrian });
   } catch (error) {

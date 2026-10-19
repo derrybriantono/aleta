@@ -2,10 +2,10 @@ import { type NextRequest } from "next/server";
 
 import {
   getGatewayAntrianSidang,
-  getGatewayJadwalSidang,
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { bacaSkorsBerlakuHariIni, keteranganSkorsPublik } from "@/server/modules/aleta-ecourt/skors-publik";
 import { ok } from "@/server/shared/http";
+import { getGatewayJadwalSidangSinggah } from "@/server/modules/aleta-bot/jadwal-sidang-singgah";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
 
     const hari = tanggalHariIni();
     const [jadwal, antrian, skorsBerlaku] = await Promise.all([
-      getGatewayJadwalSidang({ dari: hari, sampai: hari, cari: "", batas: 200 }),
+      getGatewayJadwalSidangSinggah({ dari: hari, sampai: hari, cari: "", batas: 200 }),
       getGatewayAntrianSidang(),
       bacaSkorsBerlakuHariIni(hari),
     ]);
