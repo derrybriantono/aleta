@@ -1032,7 +1032,8 @@ function basmassalTokenUntuk(peta, folder, namaBerkas, padanan, salinan) {
     if (berkas && kelompok) break;
     if (!s || !s.berkas || !s.menu) continue;
     const kBer = basmassalKunciNama(s.berkas);
-    for (const namaMenu of [s.menu, s.alias]) {
+    for (const namaMenu of [s.menu, s.alias, typeof alatNamaMenuLengkap === "function" ? alatNamaMenuLengkap(s.alias) : ""]) {
+      // 19 Okt 2026: alias menu ditulis lengkap ("CG - BAS" -> "Cerai Gugat - BAS"); nama lama dan lengkap sama-sama dicoba.
       const kKel = basmassalKunciNama(namaMenu);
       if (!kKel) continue;
       if (!berkas && peta.berkas[`${kKel}|${kBer}`]) berkas = peta.berkas[`${kKel}|${kBer}`];

@@ -57,6 +57,15 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.12",
+    dirilis: "2026-10-19T11:04:00+08:00",
+    judul: "Nama menu Blangko Derry ditulis lengkap: \"CG - BAS\" menjadi \"Cerai Gugat - BAS\"",
+    butir: [
+      "Kotak Pilih blangko tidak lagi menampilkan singkatan pada nama kelompok: \"CG - BAS\" tampil \"Cerai Gugat - BAS\" seperti \"Cerai Talak - BAS\", \"Diska/DK\" menjadi \"Dispensasi Kawin\", \"HB\" menjadi \"Harta Bersama\", \"Waris\" menjadi \"Kewarisan\", \"PAW/P3HP\" ditulis lengkap, \"Relaas dan PBT\" menjadi \"Relaas dan Pemberitahuan Putusan\", dan seterusnya (32 nama). Nama ini berasal dari alias menu ABT; folder di disk tidak berganti.",
+      "Nama LAMA dan nama lengkap dianggap satu kelompok di seluruh ekstensi (hak menu per folder, saran blangko, token BAS massal, pencarian putusan), sehingga ekstensi bekerja sama baik sebelum maupun sesudah paket ABT abt-nama-menu-lengkap-derry dipasang, dan tetap bekerja bila paket ABT lama dipasang ulang dan menulis nama lama lagi.",
+    ],
+  },
+  {
     versi: "1.205.11",
     dirilis: "2026-10-19T11:00:00+08:00",
     judul: "OCR lampiran e-Court untuk isian ABT dan rujukan PERMA di blangko dispensasi ditolak",

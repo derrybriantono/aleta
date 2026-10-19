@@ -10331,9 +10331,53 @@ function alatHalamanPublikPortal(jalur) {
   return ALAT_POLA_HALAMAN_PUBLIK.test(String(isi || ""));
 }
 
-/** Nama kelompok dirapikan untuk dibandingkan - besar-kecil dan spasi saja. */
+/**
+ * NAMA MENU DERRY DI ABT TIDAK BOLEH SINGKATAN (19 Okt 2026, permintaan pengguna): "CG - BAS" menjadi "Cerai Gugat - BAS",
+ * "Diska/DK - Putusan" menjadi "Dispensasi Kawin - Putusan", dan seterusnya (paket ABT abt-nama-menu-lengkap-derry mengganti
+ * abt_menu.nama_alias; folder di disk TIDAK berganti). ABT yang belum dipasangi paket itu masih menyebut nama lama, jadi kedua
+ * sebutan diterima: tiap perbandingan nama kelompok lewat alatKunciKelompok, yang memetakan nama LAMA ke kunci nama BARU.
+ * Pasangan lama -> baru ini dijaga src/test/nama-menu-lengkap-19okt.test.ts terhadap manajemen_surat/src/lib/alias-menu-derry.ts.
+ */
+const ALAT_ALIAS_MENU_DERRY_AWALAN = [
+  ["CG", "Cerai Gugat"],
+  ["CT", "Cerai Talak"],
+  ["Cerai Kumulasi Itsbat", "Cerai Kumulasi Itsbat Nikah"],
+  ["Itsbat", "Itsbat Nikah"],
+  ["Diska/DK", "Dispensasi Kawin"],
+  ["PAW/P3HP", "Penetapan Ahli Waris/Pertolongan Pembagian Harta Peninggalan"],
+  ["HB", "Harta Bersama"],
+  ["Waris", "Kewarisan"],
+  ["IN Kontensius", "Itsbat Nikah Kontensius"],
+  ["Poligami", "Izin Poligami"],
+  ["CG Kumulasi Hak Asuh", "Cerai Gugat Kumulasi Hak Asuh Anak"],
+  ["Hak Asuh", "Hak Asuh Anak (Hadhanah)"],
+  ["Pembatalan Nikah", "Pembatalan Perkawinan"],
+  ["Pencegahan Nikah", "Pencegahan Perkawinan"],
+  ["ES Acara Biasa", "Ekonomi Syariah Acara Biasa"],
+];
+/** nama lama (rapi, huruf kecil) -> nama baru lengkap (tulisan asli) */
+const ALAT_ALIAS_MENU_DERRY_BARU = (() => {
+  const peta = Object.create(null);
+  for (const [lama, baru] of ALAT_ALIAS_MENU_DERRY_AWALAN) {
+    for (const jenis of ["Putusan", "BAS"]) peta[`${lama} - ${jenis}`.toLowerCase()] = `${baru} - ${jenis}`;
+  }
+  peta["relaas dan pbt"] = "Relaas dan Pemberitahuan Putusan";
+  peta["form ptsp"] = "Form Pelayanan Terpadu Satu Pintu (PTSP)";
+  return peta;
+})();
+
+/** Nama menu Derry untuk DITAMPILKAN: nama lama dipulangkan sebagai nama lengkap; nama lain apa adanya. */
+function alatNamaMenuLengkap(nama) {
+  const asli = String(nama || "");
+  const rapi = asli.replace(/\s+/g, " ").trim();
+  return ALAT_ALIAS_MENU_DERRY_BARU[rapi.toLowerCase()] || rapi;
+}
+
+/** Nama kelompok dirapikan untuk dibandingkan - besar-kecil dan spasi saja; nama lama dan nama barunya SAMA kuncinya. */
 function alatKunciKelompok(nama) {
-  return String(nama || "").replace(/\s+/g, " ").trim().toLowerCase();
+  const rapi = String(nama || "").replace(/\s+/g, " ").trim().toLowerCase();
+  const baru = ALAT_ALIAS_MENU_DERRY_BARU[rapi];
+  return baru ? baru.toLowerCase() : rapi;
 }
 
 /** Nama-nama kelompok yang boleh diterima, dirapikan - satu nama atau daftar. */
