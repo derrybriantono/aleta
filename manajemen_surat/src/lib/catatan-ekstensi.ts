@@ -58,11 +58,18 @@ export type CatatanEkstensi = {
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
     versi: "1.205.12",
-    dirilis: "2026-10-19T11:04:00+08:00",
-    judul: "Nama menu Blangko Derry ditulis lengkap: \"CG - BAS\" menjadi \"Cerai Gugat - BAS\"",
+    dirilis: "2026-10-19T15:30:00+08:00",
+    judul: "Panel penetapan lebih mudah, isi otomatis dan tanya jawab saksi di Blangko ABT by Derry, nama menu lengkap, Jadwal Sidang lebih ringkas, kepatutan pos, dan halaman lebih ringan",
     butir: [
-      "Kotak Pilih blangko tidak lagi menampilkan singkatan pada nama kelompok: \"CG - BAS\" tampil \"Cerai Gugat - BAS\" seperti \"Cerai Talak - BAS\", \"Diska/DK\" menjadi \"Dispensasi Kawin\", \"HB\" menjadi \"Harta Bersama\", \"Waris\" menjadi \"Kewarisan\", \"PAW/P3HP\" ditulis lengkap, \"Relaas dan PBT\" menjadi \"Relaas dan Pemberitahuan Putusan\", dan seterusnya (32 nama). Nama ini berasal dari alias menu ABT; folder di disk tidak berganti.",
-      "Nama LAMA dan nama lengkap dianggap satu kelompok di seluruh ekstensi (hak menu per folder, saran blangko, token BAS massal, pencarian putusan), sehingga ekstensi bekerja sama baik sebelum maupun sesudah paket ABT abt-nama-menu-lengkap-derry dipasang, dan tetap bekerja bila paket ABT lama dipasang ulang dan menulis nama lama lagi.",
+      "Panel Penetapan lebih mudah: pejabat dipilih langsung di baris \"Ditetapkan\", tombol Ubah di tiap baris (majelis menurut SK beserta beban, PP ikut majelis, PHS bawaan pukul 09.00 Ruang Sidang 1), tombol e-Doc di tiap baris dan bagian e-Doc penetapan manual; \"Pilihan lain\", \"Lihat rincian pemeriksaan\", kotak Pejabat yang menetapkan, dan isian passphrase dihapus dari panel; pilihan pejabat petugas tidak lagi tertimpa kembali ke usulan saat panel digambar ulang.",
+      "Formulir penetapan SIPP (Majelis Hakim, Panitera Pengganti, Juru Sita, Hari Sidang) mendapat tombol \"Isi otomatis\" dengan saran yang sama dengan panel; PP dan JS mengikuti majelis, semua dapat diganti, hari libur tidak dapat dipilih, dan tombol hanya mengisi kolom tanpa menekan Simpan. Lencana umur perkara di daftar SIPP pindah ke kolom Lama Proses.",
+      "Tanda tangan pejabat yang bernama ditautkan ke akunnya, dan halaman Tanda tangan pejabat memuat pengaturan TTE BSrE (passphrase tidak pernah disimpan).",
+      "Blangko ABT by Derry: pencarian perkara per nomor, jenis, alur, pihak, agenda, prioritas, dokumen, tanggal sidang, dan majelis/PP/JS; nama menu ditulis lengkap tanpa singkatan (\"CG - BAS\" menjadi \"Cerai Gugat - BAS\", \"CT\" menjadi \"Cerai Talak\", \"Diska/DK\" menjadi \"Dispensasi Kawin\", dan seterusnya, 32 nama) dengan nama lama tetap dikenali.",
+      "Tanya jawab saksi Blangko Derry terisi otomatis memakai penyusun yang sama dengan Susun saksi, dengan pilihan pengetahuan tiap saksi (tahu seluruh alasan, sebagian, tidak tahu sebabnya, tidak menyaksikan, dari cerita, hanya tahu sudah pisah); jawaban yang diketik petugas tidak ditimpa; kartu isian dan alat bukti dirapikan agar tidak berdempetan dan tidak terpotong.",
+      "Menu kiri ABT dapat digulir sampai menu terakhir saat ekstensi menyala, dan posisi gulirnya diingat saat pindah halaman.",
+      "Jadwal Sidang: pencarian mengenali kata seperti konseptor, ghaib, verstek, belum BAS, nama saksi dan mediator; tombol Tampilan di kanan; ruang sidang menjadi satu pita ringkas; nama saksi dapat dilipat; tulisan memuat dihapus; PP dan JS di baris sendiri; tombol Blangko membuka Blangko ABT by Derry dengan perkara dan jenis blangko yang sesuai. Status Perkara mendapat tautan BAS tiap sidang, blangko putusan, dan blangko ikrar.",
+      "Kepatutan panggilan surat tercatat dihitung dari tanggal diterima, bukan tanggal dikirim, dan panggilan yang tidak patut menyebut jalurnya: tidak patut (pos), tidak patut (jurusita), atau tidak patut (elektronik).",
+      "Halaman ALETA lebih ringan: pemeriksaan berkala ekstensi digabung dan berhenti saat tab tidak dilihat, hasil yang baru dimuat disimpan sebentar di server, muatan susulan ditunda, dan ALETA siap dibuka di port 8008 dengan ekstensi kembali sendiri ke alamat lama bila port itu belum hidup.",
     ],
   },
   {
