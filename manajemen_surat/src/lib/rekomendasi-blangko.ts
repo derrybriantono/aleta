@@ -26,6 +26,7 @@
  * Tidak menulis apa pun ke mana pun, tanpa jaringan dan tanpa basis data.
  */
 import { gabungSemuaBas, type PilihanBlangkoBas } from "@/app/api/aleta-ecourt/bas-massal/susun";
+import { perluasAliasMenu } from "@/lib/alias-menu-derry";
 import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
 import { tentukanBasBaru } from "@/lib/alur-bas-baru";
 import { keadaanPutusan, type MasukanKeadaanPutusan } from "@/lib/keadaan-putusan";
@@ -192,7 +193,7 @@ function rekomendasiBas(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
       folder,
       berkas,
       menu: s.menu,
-      alias: s.alias ? [s.alias] : [],
+      alias: perluasAliasMenu(s.alias ? [s.alias] : []),
       label: p.label,
       alasan: utama ? g.sebab || "Langkah BAS menurut keadaan sidang." : "Alternatif pada keadaan sidang yang sama.",
       utama,
@@ -366,7 +367,7 @@ function rekomendasiPenetapanIkrar(m: MasukanRekomendasi, teks: string): Rekomen
     folder: i.folder,
     berkas,
     menu: i.menu,
-    alias: [...i.alias],
+    alias: perluasAliasMenu(i.alias),
     label,
     alasan,
     utama,
@@ -398,7 +399,7 @@ function rekomendasiPutusanSelaSita(m: MasukanRekomendasi, teks: string): Rekome
     folder: i.folder,
     berkas,
     menu: i.menu,
-    alias: [...i.alias],
+    alias: perluasAliasMenu(i.alias),
     label,
     alasan,
     utama,
@@ -477,7 +478,7 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
       folder,
       berkas: `${p.baris.berkas.replace(/\.rtf$/i, "")}.rtf`,
       menu,
-      alias: p.baris.blangkoLain ?? [],
+      alias: perluasAliasMenu(p.baris.blangkoLain ?? []),
       label: p.baris.berkas,
       alasan:
         `Putusan ${status.toLowerCase()}${p.tingkat === "keadaan" || p.tingkat === "kumulasi-keadaan" ? ` (${p.kunci.split("|")[2].replace(/-/g, " ")})` : p.tingkat.includes("verstek") ? " (verstek)" : ""}` +
@@ -494,7 +495,7 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
       folder,
       berkas: `${v.replace(/\.rtf$/i, "")}.rtf`,
       menu,
-      alias: p.baris.blangkoLain ?? [],
+      alias: perluasAliasMenu(p.baris.blangkoLain ?? []),
       label: v,
       alasan: "Varian pada status yang sama.",
       utama: false,

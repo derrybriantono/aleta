@@ -457,7 +457,7 @@
       const h = await klienAbt().daftarBerkas(k.a);
       if (!h.ok) throw new Error(h.pesan || "Kelompok tidak terbaca.");
       k.berkas = h.berkas.map((b) => ({ berkas: b.berkas, a: b.a, b: b.b }));
-      k.judul = h.kelompok || k.nama;
+      k.judul = namaMenuTampil(h.kelompok || k.nama);
       void tulisPenyimpanan({ [K_BERKAS]: { asal: asalAbtDerry(), saat: Date.now(), kelompok: S.menu.kelompok.map((x) => ({ nama: x.nama, berkas: x.berkas, judul: x.judul || "" })) } });
     } catch (e) {
       k.galat = String((e && e.message) || e);
@@ -557,7 +557,9 @@
   const BATAS_ALTERNATIF_SARAN = 3;
   const ULANG_GAGAL_MS = 60 * 1000;
   const rekPortal = new Map(); // kunci sidang -> { status: "memuat"|"siap"|"galat", hasil, saat }
-  const rapiNama = (s) => String(s || "").replace(/\s+/g, " ").trim().toLowerCase();
+  // 19 Okt 2026: nama lama ("CG - BAS") dan nama lengkapnya ("Cerai Gugat - BAS") satu kunci; tampilan memakai nama lengkap.
+  const rapiNama = (s) => (typeof alatKunciKelompok === "function" ? alatKunciKelompok(s) : String(s || "").replace(/\s+/g, " ").trim().toLowerCase());
+  const namaMenuTampil = (s) => (typeof alatNamaMenuLengkap === "function" ? alatNamaMenuLengkap(s) : String(s || ""));
 
   /** Kelompok (nama menu Derry di ABT) untuk satu rekomendasi portal: nama menu, alias, atau nama folder (dengan/tanpa nomor urut). */
   function kelompokUntukSaran(menu, r) {
@@ -712,7 +714,7 @@
     }
     for (const k of semua) {
       const f = FREK_ALUR[alurDari(k.nama)];
-      daftar.push({ id: `k:${k.nama}`, nama: k.judul || k.nama, sub: f ? `dipakai ${f.toLocaleString("id-ID")} perkara` : k.jumlah ? `${k.jumlah} blangko` : "", berkas: (k.berkas || []).map((b) => ({ ...b, kelompok: k.nama })), memuat: !k.berkas && !k.galat, galat: k.galat || "" });
+      daftar.push({ id: `k:${k.nama}`, nama: k.judul || namaMenuTampil(k.nama), sub: f ? `dipakai ${f.toLocaleString("id-ID")} perkara` : k.jumlah ? `${k.jumlah} blangko` : "", berkas: (k.berkas || []).map((b) => ({ ...b, kelompok: k.nama })), memuat: !k.berkas && !k.galat, galat: k.galat || "" });
     }
     return daftar;
   }
@@ -808,9 +810,9 @@
     const k = S.menu && S.menu.kelompok.find((x) => x.nama === kelompokNama);
     const b = k && k.berkas ? k.berkas.find((x) => x.berkas === nama) : null;
     if (!b) return toast("Blangko itu belum terbaca dari ABT.");
-    if (!kelompokBoleh(k)) return toast(`${NAMA_JENIS[k.jenis] || "Blangko"} di menu ${k.nama} bukan untuk peran ${adm() ? "akun yang sedang dilihat" : "akun Anda"}.`);
+    if (!kelompokBoleh(k)) return toast(`${NAMA_JENIS[k.jenis] || "Blangko"} di menu ${namaMenuTampil(k.nama)} bukan untuk peran ${adm() ? "akun yang sedang dilihat" : "akun Anda"}.`);
     tutupModal();
-    const blangko = { berkas: b.berkas, kelompok: k.nama, judul: k.judul || k.nama, a: b.a, b: b.b, jenis: k.jenis, folder: folderUntuk(k) };
+    const blangko = { berkas: b.berkas, kelompok: k.nama, judul: k.judul || namaMenuTampil(k.nama), a: b.a, b: b.b, jenis: k.jenis, folder: folderUntuk(k) };
     S.blangko = blangko;
     S.susunan = null;
     S.galatSusunan = "";
@@ -1841,7 +1843,7 @@
     w.innerHTML =
       `<div class="bd-tk"><div class="bd-ringkas" id="bd-blringkas">${
         b
-          ? `<span class="bd-chip">${esc(b.judul || b.kelompok || NAMA_JENIS[b.jenis] || b.jenis)}</span><span class="bd-potong" title="${esc(namaTampil(b.berkas, b.jenis))} (klik dua kali untuk mengganti blangko)">${esc(namaTampil(b.berkas, b.jenis))}</span>${disaran ? `<span class="bd-chip sebagian">disarankan</span>` : ""}`
+          ? `<span class="bd-chip">${esc(b.judul || namaMenuTampil(b.kelompok) || NAMA_JENIS[b.jenis] || b.jenis)}</span><span class="bd-potong" title="${esc(namaTampil(b.berkas, b.jenis))} (klik dua kali untuk mengganti blangko)">${esc(namaTampil(b.berkas, b.jenis))}</span>${disaran ? `<span class="bd-chip sebagian">disarankan</span>` : ""}`
           : `<span class="bd-catat">Belum ada blangko dipilih</span>`
       }</div><button type="button" class="bd-btn kecil${b ? "" : " utama"}" data-bd2="bukamodal">${b ? "Ganti blangko" : "Pilih blangko"}</button></div>` +
       (S.pk

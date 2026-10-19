@@ -218,7 +218,10 @@
   /** Grup SIPP yang ditiru per peran tampilan: hakim = Hakim + Ketua/Wakil, PP, Juru Sita. */
   const GRUP_ABT_PERAN = { hakim: ["20", "10"], pp: ["500"], js: ["600"] };
   const pecahGrup = (s) => String(s == null ? "" : s).split("|").map((x) => x.trim()).filter(Boolean);
-  const samaNamaMenu = (a, b) => String(a || "").replace(/\s+/g, " ").trim().toLowerCase() === String(b || "").replace(/\s+/g, " ").trim().toLowerCase();
+  // 19 Okt 2026: nama menu Derry ditulis lengkap ("CG - BAS" -> "Cerai Gugat - BAS"); nama lama dan baru dianggap SAMA
+  // (kunci dari alatKunciKelompok di panel-alat.js bila ada; tanpa itu - uji tersendiri - hanya dirapikan).
+  const kunciNamaMenu = (s) => (typeof alatKunciKelompok === "function" ? alatKunciKelompok(s) : String(s || "").replace(/\s+/g, " ").trim().toLowerCase());
+  const samaNamaMenu = (a, b) => kunciNamaMenu(a) === kunciNamaMenu(b);
 
   /** Folder ABT terbuka untuk salah satu grup? Cermin Abt_model::menu_cek (CONCAT dengan NULL = semua). */
   function folderTerbukaUntuk(f, grup) {
