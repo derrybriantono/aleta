@@ -8,12 +8,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
-import { apiPath } from "@/lib/base-path";
+import { apiPath, withBasePath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 
 import { JENIS_GRAFIK, type JenisGrafik } from "@/components/portal/statistics-chart";
 import type { TitikPerkara } from "@/components/portal/peta-titik-perkara";
-import { pilihanUntukKelompok, simpanPilihan, type KelasPeta, type SisaKecamatan } from "@/lib/peta-perkara-ukur";
+import {
+  KEADAAN_IKRAR,
+  KUNCI_KELOMPOK_IKRAR,
+  KUNCI_LAPISAN_IKRAR,
+  kalimatSisaIkrar,
+  pilihanUntukKelompok,
+  simpanPilihan,
+  type KelasPeta,
+  type SisaKecamatan,
+} from "@/lib/peta-perkara-ukur";
 
 const LazyStatisticsChart = dynamic(
   () => import("@/components/portal/statistics-chart").then((m) => m.StatisticsChart),
@@ -75,12 +84,34 @@ type Tempat = {
   jenis: Record<string, number>;
 };
 
+/** Satu perkara cerai talak yang tenggat ikrarnya dekat atau sudah gugur. */
+type PerkaraIkrar = {
+  nomorPerkara: string;
+  tempat: string;
+  tanggalSidangIkrar: string;
+  batas: string;
+  sisaHari: number | null;
+  ditetapkanGugur: boolean;
+};
+
+type DaftarIkrar = { jumlah: number; batas: number; daftar: PerkaraIkrar[] };
+
+/** Keadaan ikrar talak - hanya ada ketika kelompok "Ikrar talak" dipilih. */
+type RingkasIkrar = {
+  hariIni: string;
+  ambangDekatHari: number;
+  jumlah: Record<string, number>;
+  dekat: DaftarIkrar;
+  gugur: DaftarIkrar;
+};
+
 type HasilPeta = {
   ok: boolean;
   alasan?: string;
   kelompok: string;
   kelompokNama: string;
   perceraian: boolean;
+  ikrar?: RingkasIkrar;
   penanda: Record<string, string>;
   jenisMuncul: Record<string, number>;
   tingkat: string;
@@ -120,6 +151,8 @@ type MenuJenis = {
   nama: string;
   perkara: number;
   gabungan: boolean;
+  /** Kelompok "Ikrar talak": keadaan ikrar, bukan jenis perkara. */
+  ikrar?: boolean;
   /** Golongan bulatan peta untuk pilihan ini - lewat jenis_perkara_id di bot. */
   golongan?: string;
 };
@@ -150,6 +183,11 @@ const PERIODE = [
 const WARNA_PENANDA: Record<string, string> = {
   merah: "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-300",
   biru: "border-blue-500/50 bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  // Penanda keadaan ikrar talak (kelompok "Ikrar talak").
+  hijau: "border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  kuning: "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  kelabu: "border-slate-400/50 bg-slate-400/10 text-slate-700 dark:text-slate-300",
+  ungu: "border-purple-500/50 bg-purple-500/10 text-purple-700 dark:text-purple-300",
 };
 
 const angka = (n: number) => n.toLocaleString("id-ID");
@@ -291,7 +329,7 @@ export function PetaPerkara() {
                   // golongan sementara tabel di bawahnya hanya Kewarisan.
                   const m = menu.find((x) => x.kunci === e.target.value);
                   const gabungan = m ? m.gabungan : e.target.value === "perceraian";
-                  simpanPilihan(pilihanUntukKelompok(!gabungan, m?.golongan));
+                  simpanPilihan(pilihanUntukKelompok(!(gabungan || m?.ikrar), m?.golongan));
                   setKelompok(e.target.value);
                   setJejak([]);
                   setTingkat("kabupaten");
@@ -389,13 +427,20 @@ export function PetaPerkara() {
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { label: "Perkara diputus", nilai: angka(hasil.ringkas.diputus) },
+              {
+                label: hasil.ikrar ? "Cerai talak dikabulkan" : "Perkara diputus",
+                nilai: angka(hasil.ringkas.diputus),
+              },
               {
                 label: "Beralamat",
                 nilai: `${angka(hasil.ringkas.beralamat)} (${hasil.ringkas.persenBeralamat}%)`,
               },
-              { label: "Perempuan mengajukan", nilai: `${hasil.ringkas.persenPerempuan}%` },
-              { label: "Tempat terdaftar", nilai: angka(hasil.wilayah.length) },
+              hasil.ikrar
+                ? { label: "Tenggat dekat", nilai: angka(hasil.ikrar.jumlah.dekat ?? 0) }
+                : { label: "Perempuan mengajukan", nilai: `${hasil.ringkas.persenPerempuan}%` },
+              hasil.ikrar
+                ? { label: "Gugur", nilai: angka(hasil.ikrar.jumlah.gugur ?? 0) }
+                : { label: "Tempat terdaftar", nilai: angka(hasil.wilayah.length) },
             ].map((k) => (
               <Card key={k.label}>
                 <CardContent className="py-4">
@@ -429,6 +474,8 @@ export function PetaPerkara() {
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             <span>{hasil.alasanTanpaPeta}</span>
           </p>
+
+          {hasil.ikrar ? <KeadaanIkrar ikrar={hasil.ikrar} penanda={hasil.penanda} /> : null}
 
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -496,6 +543,10 @@ export function PetaPerkara() {
               </CardHeader>
               <CardContent>
                 <LazyPetaTitik
+                  // Berganti ke/dari Ikrar talak melahirkan peta baru, supaya
+                  // lapisan awalnya (Keadaan ikrar talak) benar-benar terbuka.
+                  key={hasil.ikrar ? "ikrar" : "umum"}
+                  lapisanAwal={hasil.ikrar ? KUNCI_LAPISAN_IKRAR : undefined}
                   titik={hasil.titik ?? TANPA_TITIK}
                   tanpaKode={hasil.titikTanpaKode ?? 0}
                   tanpaKodeKelas={hasil.titikTanpaKodeKelas}
@@ -504,10 +555,12 @@ export function PetaPerkara() {
                   // Jenis TUNGGAL halaman - bulatan dapat menghitung tepat
                   // jenis itu, sama dengan tabel di bawahnya. Kosong untuk
                   // kelompok gabungan (Perceraian).
-                  jenisTerpilih={hasil.perceraian ? "" : hasil.kelompok}
+                  jenisTerpilih={hasil.perceraian || hasil.ikrar ? "" : hasil.kelompok}
                   golonganJenis={menu.find((m) => m.kunci === hasil.kelompok)?.golongan}
                   saringan={{
-                    kelompok,
+                    // Ikrar talak bukan jenis perkara: desa yang diketuk
+                    // dibuka sebagai daftar perceraian (golongan cerai).
+                    kelompok: kelompok === KUNCI_KELOMPOK_IKRAR ? "perceraian" : kelompok,
                     periode,
                     acuan,
                     dari: hasil.rentang.dari,
@@ -554,9 +607,13 @@ export function PetaPerkara() {
                     <tr>
                       <th className="px-4 py-2 font-medium">{lihat === "faktor" ? "Faktor" : "Tempat"}</th>
                       <th className="px-3 py-2 text-right font-medium">Perkara</th>
-                      <th className="px-3 py-2 text-right font-medium">Perempuan</th>
-                      <th className="px-3 py-2 text-right font-medium">Laki-laki</th>
-                      {hasil.perceraian ? <th className="px-3 py-2 font-medium">Rincian</th> : null}
+                      {hasil.ikrar ? null : (
+                        <>
+                          <th className="px-3 py-2 text-right font-medium">Perempuan</th>
+                          <th className="px-3 py-2 text-right font-medium">Laki-laki</th>
+                        </>
+                      )}
+                      {hasil.perceraian || hasil.ikrar ? <th className="px-3 py-2 font-medium">Rincian</th> : null}
                     </tr>
                   </thead>
                   <tbody>
@@ -578,9 +635,13 @@ export function PetaPerkara() {
                           </span>
                         </td>
                         <td className="px-3 py-2 text-right font-medium tabular-nums">{angka(t.perkara)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{angka(t.perempuan)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{angka(t.lelaki)}</td>
-                        {hasil.perceraian ? (
+                        {hasil.ikrar ? null : (
+                          <>
+                            <td className="px-3 py-2 text-right tabular-nums">{angka(t.perempuan)}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{angka(t.lelaki)}</td>
+                          </>
+                        )}
+                        {hasil.perceraian || hasil.ikrar ? (
                           <td className="px-3 py-2">
                             <span className="flex flex-wrap gap-1">
                               {Object.entries(t.jenis)
@@ -607,5 +668,126 @@ export function PetaPerkara() {
         </>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Keadaan ikrar talak: arti tiap warna (dengan jumlahnya), lalu dua daftar
+ * ringkas - tenggat dekat dan gugur - yang nomor perkaranya membuka Status
+ * Perkara. Dibaca dari perkara cerai talak yang dikabulkan pada rentang
+ * peta; batas enam bulan dihitung sejak hari sidang ikrar ditetapkan.
+ */
+function KeadaanIkrar({ ikrar, penanda }: { ikrar: RingkasIkrar; penanda: Record<string, string> }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Keadaan ikrar talak</CardTitle>
+          <CardDescription>
+            Perkara cerai talak yang dikabulkan pada periode ini. Ikrar talak harus diucapkan paling lambat
+            enam bulan sejak hari sidang ikrar ditetapkan; keadaan dihitung per hari ini.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {KEADAAN_IKRAR.map((k) => (
+              <li key={k.kunci} className="flex items-start gap-2 text-sm">
+                <span
+                  aria-hidden
+                  className="mt-1 h-3 w-3 shrink-0 rounded-full border border-black/10"
+                  style={{ backgroundColor: k.warna }}
+                />
+                <span>
+                  <span
+                    className={cn(
+                      "mr-1.5 rounded-full border px-2 py-0.5 text-xs font-medium",
+                      WARNA_PENANDA[penanda[k.label]] ?? ""
+                    )}
+                  >
+                    {k.label} · {angka(ikrar.jumlah[k.kunci] ?? 0)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{k.kalimat}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <DaftarPerhatianIkrar
+          judul="Tenggat dekat"
+          kosong={`Tidak ada perkara yang batas ikrarnya tinggal ${ikrar.ambangDekatHari} hari atau kurang.`}
+          data={ikrar.dekat}
+        />
+        <DaftarPerhatianIkrar
+          judul="Gugur"
+          kosong="Tidak ada perkara yang gugur pada periode ini."
+          data={ikrar.gugur}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Kedua daftar memuat semua perkara pada periode, termasuk yang alamatnya belum tercatat. Ketuk nomor
+        perkara untuk membuka Status Perkara.
+      </p>
+    </div>
+  );
+}
+
+function DaftarPerhatianIkrar({ judul, kosong, data }: { judul: string; kosong: string; data: DaftarIkrar }) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">
+          {judul} · {angka(data.jumlah)}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {data.daftar.length === 0 ? (
+          <p className="px-4 pb-4 text-sm text-muted-foreground">{kosong}</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[22rem] text-sm">
+              <thead className="border-b border-border text-left text-xs text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-2 font-medium">Perkara</th>
+                  <th className="px-3 py-2 font-medium">Batas ikrar</th>
+                  <th className="px-3 py-2 font-medium">Sisa waktu</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.daftar.map((p) => (
+                  <tr key={p.nomorPerkara} className="border-b border-border/60 last:border-0">
+                    <td className="px-4 py-2">
+                      <a
+                        href={withBasePath(`/aleta-ecourt?perkara=${encodeURIComponent(p.nomorPerkara)}`)}
+                        className="font-medium text-primary underline-offset-2 hover:underline"
+                      >
+                        {p.nomorPerkara}
+                      </a>
+                      <span className="block text-xs text-muted-foreground">
+                        {p.tempat || "alamat belum tercatat"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 tabular-nums">{p.batas || "—"}</td>
+                    <td className="px-3 py-2">
+                      {kalimatSisaIkrar(p.sisaHari)}
+                      {p.ditetapkanGugur ? (
+                        <span className="block text-xs text-muted-foreground">penetapan gugur sudah terbit</span>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {data.jumlah > data.daftar.length ? (
+              <p className="px-4 py-2 text-xs text-muted-foreground">
+                Menampilkan {angka(data.daftar.length)} dari {angka(data.jumlah)}.
+              </p>
+            ) : null}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

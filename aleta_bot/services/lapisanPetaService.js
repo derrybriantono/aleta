@@ -457,7 +457,18 @@ async function desaKosong(indukKabupaten) {
   };
 }
 
+/**
+ * Keadaan ikrar talak per desa (permintaan hakim 19 Okt 2026). Hitungannya
+ * milik petaPerkaraService - satu aturan keadaan untuk halaman dan peta - dan
+ * dibaca LAZY di sini: petaPerkaraService tidak boleh tergantung balik pada
+ * berkas ini.
+ */
+function keadaanIkrarTalak(dari, sampai) {
+  return require("./petaPerkaraService").lapisanIkrar(dari, sampai);
+}
+
 const LAPISAN = Object.assign(Object.create(null), {
+  ikrar: keadaanIkrarTalak,
   biaya: biayaPanggilan,
   faktor: faktorDominan,
   kehadiran,

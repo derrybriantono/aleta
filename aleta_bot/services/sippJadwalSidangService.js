@@ -237,6 +237,24 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     }
   };
 
+  /* === 19 Okt: tanggal penetapan hari sidang ikrar (PHS ikrar) cerai talak === */
+  // Bahan aturan saran blangko [91] (penetapan kekuatan putusan gugur: Pemohon tidak
+  // mengikrarkan dalam 6 bulan). Satu kueri IN untuk seluruh halaman jadwal, hanya
+  // perkara cerai talak (jenis 346). Gagal-terbuka dan dicatat: ruasnya kosong dan
+  // tanggalPenetapanSidangIkrarTerbaca false - kosong BUKAN "belum ditetapkan".
+  const janjiPhsIkrar = aman(async () => {
+    const idTalak = rows
+      .filter((row) => Number(row.jenisPerkaraId) === JENIS_CERAI_TALAK_ID)
+      .map((row) => row.perkaraId);
+    const peta = await phsIkrarBanyakPerkara(idTalak);
+    if (peta === null) {
+      gagal.add("phs-ikrar");
+      return {};
+    }
+    return peta;
+  }, "phs-ikrar");
+  /* === AKHIR PHS ikrar === */
+
   /* === I7 17 Okt: bahan pilihan varian blangko putusan (hak asuh: Tergugat ibu; HB: amar rekonvensi) === */
   // Dimulai bersamaan, ditunggu sesudah peta lain. Gagal-terbuka dan dicatat (varianPutusanTerbaca false): tanpa bahan ini portal tetap
   // memilih blangko bawaan ([03] / [01]); varian [03a] / [01a] hanya ditawarkan sebagai pilihan tangan.
@@ -399,6 +417,8 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
     }
   })();
 
+  const petaPhsIkrar = await janjiPhsIkrar;
+
   /* === 12OKT-A: kumulasi perkara === */
   const petaKumulasi = await janjiKumulasi;
   /* === AKHIR 12OKT-A === */
@@ -447,6 +467,13 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       // menandai merah, sebab ketiadaan hasilnya tidak terbukti.
       putusanTerbaca: !gagal.has("putusan"),
       ikrarTerbaca: !gagal.has("ikrar"),
+      // Tanggal penetapan hari sidang ikrar (PHS ikrar) perkara cerai talak -
+      // titik awal batas enam bulan ikrar (Pasal 70 ayat (6) UU 7/1989).
+      // YYYY-MM-DD, atau "" bila belum ditetapkan / bukan cerai talak /
+      // tidak terbaca (lihat ...Terbaca). Sumber dan aturan sama dengan lapis
+      // peta Ikrar talak (petaPerkaraService.golongkanIkrar).
+      tanggalPenetapanSidangIkrar: petaPhsIkrar[String(row.perkaraId)] || "",
+      tanggalPenetapanSidangIkrarTerbaca: !gagal.has("phs-ikrar"),
       // ====================================================================
       // PEMBEBANAN SAAT IKRAR TALAK - HANYA PADA SIDANG IKRAR
       // ====================================================================
@@ -1108,6 +1135,42 @@ async function ikrarBanyakPerkara(daftarPerkaraId = []) {
     // perkara_id kunci utama tabel itu - satu baris per perkara. Bila suatu
     // pemasangan berbeda, yang pertama bertanggal dipakai.
     if (tanggal && !hasil[String(b.perkaraId)]) hasil[String(b.perkaraId)] = tanggal;
+  }
+  return hasil;
+}
+
+/** Jenis perkara cerai talak (petaPerkaraService.KELAS_JENIS.ceraiTalak). */
+const JENIS_CERAI_TALAK_ID = 346;
+
+/**
+ * Tanggal penetapan hari sidang ikrar (perkara_ikrar_talak.tanggal_penetapan_sidang_ikrar)
+ * untuk sejumlah perkara cerai talak - SATU kueri SELECT IN. Kolom yang sama
+ * dengan penjagaTenggat/analisaLanjut/petaPerkara; tanggal kosong, rusak, atau
+ * "0000-00-00" dianggap belum ditetapkan (tidak masuk peta).
+ *
+ * @returns {Promise<Record<string, string> | null>} perkaraId -> YYYY-MM-DD; null = tabel tidak terbaca
+ */
+async function phsIkrarBanyakPerkara(daftarPerkaraId = []) {
+  const id = [...new Set(daftarPerkaraId.map((x) => Number(x)).filter((x) => Number.isFinite(x) && x > 0))];
+  if (id.length === 0) return {};
+  if (!(await sippSkemaService.tabelAda("perkara_ikrar_talak"))) return null;
+
+  const dipakai = id.slice(0, 500);
+  const baris = await runQuery(
+    `SELECT phs.perkara_id AS perkaraId,
+            phs.tanggal_penetapan_sidang_ikrar AS tanggalPhs
+       FROM perkara_ikrar_talak phs
+      WHERE phs.perkara_id IN (${dipakai.map(() => "?").join(", ")})
+        AND phs.tanggal_penetapan_sidang_ikrar IS NOT NULL`,
+    dipakai
+  );
+
+  const hasil = {};
+  for (const b of Array.isArray(baris) ? baris : []) {
+    const tanggal = isoTanggal(b.tanggalPhs);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(tanggal) && !tanggal.startsWith("0000") && !hasil[String(b.perkaraId)]) {
+      hasil[String(b.perkaraId)] = tanggal;
+    }
   }
   return hasil;
 }
@@ -3655,6 +3718,7 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
 module.exports = {
   durasiBanyakPerkara,
   ikrarBanyakPerkara,
+  phsIkrarBanyakPerkara,
   pembebananBanyakPerkara,
   mediasiBanyakPerkara,
   bahanVarianPutusan,

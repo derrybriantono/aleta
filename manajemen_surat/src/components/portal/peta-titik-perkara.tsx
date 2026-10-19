@@ -27,6 +27,8 @@ import {
 import {
   GOLONGAN_PETA,
   JARAK_SELIMUT_KM,
+  KEADAAN_IKRAR,
+  KUNCI_LAPISAN_IKRAR,
   KELAS_PETA,
   LABEL_KELAS,
   PILIHAN_JENIS,
@@ -56,6 +58,7 @@ import {
   skalaBulatan,
   tambahKelas,
   tanggaUkuran,
+  warnaKeadaanIkrar,
   titikBerat,
   type AnakTangga,
   type BerkasBatasKecamatan,
@@ -254,6 +257,9 @@ const LAPISAN: Array<{ kunci: string; apa: string; label: string; naikBaik: bool
   { kunci: "perubahan", apa: "perubahan", label: "Perubahan antar tahun", naikBaik: false },
   { kunci: "faktor", apa: "faktor", label: "Faktor perceraian", naikBaik: false },
   { kunci: "jurusita", apa: "jurusita", label: "Jurusita yang melayani", naikBaik: false },
+  // Keadaan ikrar cerai talak yang dikabulkan (permintaan hakim 19 Okt 2026).
+  // Warnanya TETAP per keadaan, bukan slot palet - lihat warnaLapisan.
+  { kunci: KUNCI_LAPISAN_IKRAR, apa: "ikrar", label: "Keadaan ikrar talak", naikBaik: false },
 ];
 
 /**
@@ -339,6 +345,10 @@ function warnaLapisan(
   if (!d || !d.cukup) return WARNA_TAK_CUKUP;
 
   if (satuan === "kategori") {
+    // Keadaan ikrar talak: warna TETAP per keadaan (hijau selesai, merah
+    // gugur, ...), bukan menurut urutan banyaknya seperti faktor/jurusita.
+    const tetap = warnaKeadaanIkrar(d.label || "");
+    if (tetap) return tetap;
     const ke = urut.indexOf(d.label || String(d.nilai));
     return ke >= 0 && ke < WARNA_KATEGORI.length ? WARNA_KATEGORI[ke] : WARNA_TAK_CUKUP;
   }
@@ -517,6 +527,7 @@ export function PetaTitikPerkara({
   kecamatanTanpaDesa,
   jenisTerpilih,
   golonganJenis,
+  lapisanAwal,
   saringan,
 }: {
   /**
@@ -539,6 +550,11 @@ export function PetaTitikPerkara({
   jenisTerpilih?: string;
   /** Golongan jenis terpilih menurut bot (lewat jenis_perkara_id) - penentu warnanya. */
   golonganJenis?: string;
+  /**
+   * Lapisan yang terbuka ketika peta lahir (mis. "ikrar" saat halaman memilih
+   * kelompok Ikrar talak). Kunci yang tidak dikenal diabaikan.
+   */
+  lapisanAwal?: string;
   /** Saringan halaman - diteruskan apa adanya ke lapisan yang dibaca terpisah. */
   saringan: { kelompok: string; periode: string; acuan: string; dari: string; sampai: string };
 }) {
@@ -567,7 +583,9 @@ export function PetaTitikPerkara({
   const [gelap, setGelap] = useState(false);
 
   /** Lapisan yang sedang digambar - lihat daftar LAPISAN. */
-  const [lapisan, setLapisan] = useState("perkara");
+  const [lapisan, setLapisan] = useState(() =>
+    LAPISAN.some((l) => l.kunci === lapisanAwal) ? String(lapisanAwal) : "perkara"
+  );
 
   /**
    * ====================================================================
@@ -2528,6 +2546,26 @@ export function PetaTitikPerkara({
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
           <span>{galatLapis || lapis[lapisan]?.keterangan}</span>
         </p>
+      ) : null}
+
+      {lapisan === KUNCI_LAPISAN_IKRAR ? (
+        <ul
+          aria-label="Arti warna keadaan ikrar talak"
+          className="grid gap-1.5 rounded-lg border border-border bg-muted/20 px-3 py-2 text-xs sm:grid-cols-2"
+        >
+          {KEADAAN_IKRAR.map((k) => (
+            <li key={k.kunci} className="flex items-start gap-2">
+              <span
+                aria-hidden
+                className="mt-0.5 h-3 w-3 shrink-0 rounded-full border border-black/10"
+                style={{ backgroundColor: k.warna }}
+              />
+              <span>
+                <strong>{k.label}</strong> — {k.kalimat}
+              </span>
+            </li>
+          ))}
+        </ul>
       ) : null}
 
       {lapisan === "relaas" ? (

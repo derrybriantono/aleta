@@ -82,6 +82,9 @@
  */
 
 const db = require("../db_config");
+const skema = require("./sippSkemaService");
+const ikrarTalakService = require("./ikrarTalakService");
+const { STATUS_DIKABULKAN } = require("./penjagaTenggatService");
 
 /** Tingkat wilayah yang dapat dipilih, dari yang terluas. */
 const TINGKAT = ["provinsi", "kabupaten", "kecamatan", "kelurahan"];
@@ -278,6 +281,26 @@ function saringJenis(kelompok, alias = "pk") {
   return { sql: `${alias}.jenis_perkara_text = ?`, params: [String(kelompok || "")] };
 }
 
+/**
+ * Cerai talak yang dikabulkan - angka di menu "Ikrar talak". 0 bila tabel
+ * ikrarnya tidak terbaca (menunya lalu tidak ditawarkan) atau kuerinya gagal.
+ */
+async function jumlahTalakDikabulkan() {
+  try {
+    if (!(await skema.tabelAda("perkara_ikrar_talak"))) return 0;
+    const baris = await kueri(
+      `SELECT COUNT(*) AS n
+         FROM perkara pk
+         JOIN perkara_putusan pu ON pu.perkara_id = pk.perkara_id
+        WHERE pk.jenis_perkara_id = ? AND pu.status_putusan_id = ?`,
+      [KELAS_JENIS.ceraiTalak[0], STATUS_DIKABULKAN]
+    );
+    return Number((baris && baris[0] && baris[0].n) || 0) || 0;
+  } catch {
+    return 0;
+  }
+}
+
 /** Jenis perkara yang sungguh diputus - untuk menyusun menunya. */
 async function daftarJenis() {
   // MIN(jenis_perkara_id) menyertakan NOMOR jenisnya - satu nama selalu satu
@@ -304,6 +327,19 @@ async function daftarJenis() {
       nama: KELOMPOK.perceraian.nama,
       perkara: jumlahCerai,
       gabungan: true,
+      golongan: "cerai",
+    });
+  }
+  // Ikrar talak: kelompok tersendiri di sebelah Perceraian - bukan jenis
+  // perkara, melainkan KEADAAN ikrar cerai talak yang dikabulkan.
+  const jumlahIkrar = await jumlahTalakDikabulkan();
+  if (jumlahIkrar > 0) {
+    menu.push({
+      kunci: KELOMPOK_IKRAR,
+      nama: "Ikrar talak",
+      perkara: jumlahIkrar,
+      gabungan: false,
+      ikrar: true,
       golongan: "cerai",
     });
   }
@@ -671,6 +707,312 @@ function kelompokkanFaktor(baris) {
   return [...peta.values()].sort((a, b) => b.perkara - a.perkara);
 }
 
+/**
+ * ============================================================================
+ * IKRAR TALAK - KEADAAN IKRAR PERKARA CERAI TALAK YANG DIKABULKAN
+ * ============================================================================
+ *
+ * Permintaan hakim 19 Okt 2026: "petakan juga ke peta perkara mengenai ikrar
+ * talak". Yang dipetakan perkara cerai talak (jenis 346) yang diputus
+ * DIKABULKAN (status putusan 62) pada rentang peta - dasar rentang sama dengan
+ * lapis lain: tanggal putusan.
+ *
+ * SUMBER KOLOM - sama dengan fitur ikrar ALETA yang sudah ada (penjagaTenggat,
+ * checklistMilestone, analisaLanjut, ikrarTalakService), bukan dikarang:
+ *
+ *   perkara_ikrar_talak.tanggal_penetapan_sidang_ikrar   PHS ikrar - TITIK AWAL
+ *        enam bulan (Pasal 70 ayat (6) UU 7/1989; keputusan pengguna no. 91,
+ *        18 Okt 2026: dari PHS ikrar, bukan dari BHT). Batasnya dihitung
+ *        ikrarTalakService.batasEnamBulanIkrar - satu rumus, tidak disalin.
+ *   perkara_ikrar_talak.tgl_ikrar_talak                  tanggal ikrar diucapkan
+ *   perkara_ikrar_talak.status_penetapan_ikrar_talak_id  1 diikrarkan,
+ *        2 penetapan GUGUR demi hukum, 3 tidak jadi diikrarkan (rukun kembali /
+ *        perkara dicabut). Arti 2 dan 3 dibaca dari amar penetapannya di SIPP
+ *        satker (diukur 19 Okt 2026), bukan ditebak dari angkanya.
+ *
+ * Tabelnya sudah terdaftar di sippSkemaService (pola tabelAda): tanpa itu
+ * jawabannya "tidak ada" tanpa galat dan petanya diam-diam kosong.
+ *
+ * KEADAAN, menurut urutan pemeriksaannya:
+ *
+ *   batal      status 3
+ *   gugur      status 2 (sudah ditetapkan gugur), ATAU belum ikrar dan hari ini
+ *              sudah melewati batas enam bulan dari PHS ikrar
+ *   sudah      tgl_ikrar_talak terisi (atau status 1)
+ *   belumPhs   belum ada PHS ikrar - tenggat enam bulan BELUM berjalan
+ *   dekat      belum ikrar, sisa waktu 0 sampai 30 hari (hari batas masih sah)
+ *   menunggu   belum ikrar, sisa waktu lebih dari 30 hari
+ *
+ * Status 2/3 didahulukan daripada tanggal ikrar karena SIPP mengisi
+ * tgl_ikrar_talak dengan tanggal penetapan gugur/batal itu juga - dibaca
+ * sebagai "sudah ikrar" ia menghitung perkara yang gugur sebagai perkara yang
+ * selesai (diukur: 17 baris bersandi 2/3 semuanya bertanggal).
+ */
+const KELOMPOK_IKRAR = "ikrar-talak";
+const JENIS_CERAI_TALAK = KELAS_JENIS.ceraiTalak[0];
+const AMBANG_TENGGAT_DEKAT_HARI = 30;
+const BATAS_DAFTAR_PERHATIAN = 100;
+
+/** Urutan keadaan di layar, dari yang selesai sampai yang paling mendesak. */
+const KEADAAN_IKRAR = Object.freeze(["sudah", "menunggu", "dekat", "gugur", "belumPhs", "batal"]);
+
+/**
+ * Nama keadaan di layar. Dikirim sebagai kunci rincian `jenis` tiap wilayah
+ * dan sebagai label lapisan peta, jadi layar mewarnainya menurut NAMA ini
+ * (lib/peta-perkara-ukur.ts KEADAAN_IKRAR) - kesamaannya dijaga uji.
+ */
+const LABEL_KEADAAN_IKRAR = Object.freeze({
+  sudah: "Sudah ikrar",
+  menunggu: "Menunggu ikrar",
+  dekat: "Tenggat dekat",
+  gugur: "Gugur",
+  belumPhs: "Belum ada sidang ikrar",
+  batal: "Tidak jadi diikrarkan",
+});
+
+const WARNA_PENANDA_IKRAR = Object.freeze({
+  sudah: "hijau",
+  menunggu: "biru",
+  dekat: "kuning",
+  gugur: "merah",
+  belumPhs: "kelabu",
+  batal: "ungu",
+});
+
+/** Tanggal kolom DATE sebagai yyyy-mm-dd; "0000-00-00" SIPP dan tanggal rusak jadi kosong. */
+function tanggalIkrarIso(nilai) {
+  const iso = tanggalIsoPeta(nilai);
+  return !iso || iso.startsWith("0000") ? "" : iso;
+}
+
+function selisihHariIso(dariIso, keIso) {
+  const a = String(dariIso).split("-").map(Number);
+  const b = String(keIso).split("-").map(Number);
+  return Math.round((Date.UTC(b[0], b[1] - 1, b[2]) - Date.UTC(a[0], a[1] - 1, a[2])) / 86400000);
+}
+
+/** Hari ini menurut zona pengadilan (bukan zona mesin) sebagai yyyy-mm-dd. */
+function hariIniPengadilan() {
+  const zona = String(process.env.ALETA_ZONA_WAKTU || "Asia/Makassar").trim() || "Asia/Makassar";
+  return new Date().toLocaleDateString("sv-SE", { timeZone: zona });
+}
+
+/**
+ * Keadaan ikrar satu perkara.
+ *
+ * @param {object} b { tglIkrar, tanggalPhs, statusIkrar, hariIni }
+ * @returns {{keadaan: string, batas: string, sisaHari: (number|null), ditetapkanGugur: boolean}}
+ *   `sisaHari` negatif = sudah lewat sekian hari dari batas enam bulan.
+ */
+function golongkanIkrar({ tglIkrar, tanggalPhs, statusIkrar, hariIni } = {}) {
+  const status = Number(statusIkrar);
+  const phs = tanggalIkrarIso(tanggalPhs);
+  const ikrar = tanggalIkrarIso(tglIkrar);
+  const batas = ikrarTalakService.batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: phs });
+  const hari = /^\d{4}-\d{2}-\d{2}$/.test(String(hariIni || "")) ? String(hariIni) : hariIniPengadilan();
+  const sisaHari = batas ? selisihHariIso(hari, batas) : null;
+  const hasil = (keadaan, ditetapkanGugur = false) => ({ keadaan, batas, sisaHari, ditetapkanGugur });
+
+  if (status === 3) return hasil("batal");
+  if (status === 2) return hasil("gugur", true);
+  if (ikrar || status === 1) return hasil("sudah");
+  if (!phs || sisaHari === null) return hasil("belumPhs");
+  if (sisaHari < 0) return hasil("gugur");
+  if (sisaHari <= AMBANG_TENGGAT_DEKAT_HARI) return hasil("dekat");
+  return hasil("menunggu");
+}
+
+/**
+ * Satu baris per PERKARA cerai talak yang dikabulkan pada rentang, dengan
+ * wilayah pihak yang sama seperti `barisWilayah` dan tiga kolom ikrarnya.
+ * LEFT JOIN: perkara tanpa baris ikrar sama sekali (15 perkara, 19 Okt 2026)
+ * tetap terhitung - sebagai "belum ada sidang ikrar".
+ */
+async function barisIkrar(dari, sampai) {
+  return kueri(
+    `SELECT pk.perkara_id         AS perkaraId,
+            pk.nomor_perkara      AS nomorPerkara,
+            pk.jenis_perkara_text AS jenisPerkara,
+            pk.jenis_perkara_id   AS jenisPerkaraId,
+            p.jenis_kelamin       AS kelamin,
+            p.propinsi            AS kodeProvinsi,
+            p.kabupaten           AS kodeKabupaten,
+            p.kecamatan           AS kodeKecamatan,
+            p.kelurahan           AS kodeKelurahan,
+            pr.provinsi_nama      AS namaProvinsi,
+            kb.kabupaten_nama     AS namaKabupaten,
+            kc.kecamatan_nama     AS namaKecamatan,
+            kl.kelurahan_nama     AS namaKelurahan,
+            it.tgl_ikrar_talak                  AS tglIkrar,
+            it.tanggal_penetapan_sidang_ikrar   AS tanggalPhs,
+            it.status_penetapan_ikrar_talak_id  AS statusIkrar
+       FROM ${SATU_PIHAK} satu
+       JOIN pihak p ON p.id = satu.pihak_id
+       JOIN perkara pk ON pk.perkara_id = satu.perkara_id
+       JOIN perkara_putusan pu ON pu.perkara_id = satu.perkara_id
+       LEFT JOIN perkara_ikrar_talak it ON it.perkara_id = satu.perkara_id
+       LEFT JOIN ref_provinsi_new  pr ON pr.provinsi_kode  = p.propinsi
+       LEFT JOIN ref_kabupaten_new kb ON kb.kabupaten_kode = p.kabupaten
+       LEFT JOIN ref_kecamatan_new kc ON kc.kecamatan_kode = p.kecamatan
+       LEFT JOIN ref_kelurahan_new kl ON kl.kelurahan_kode = p.kelurahan
+      WHERE pk.jenis_perkara_id = ?
+        AND pu.status_putusan_id = ?`,
+    [dari, sampai, JENIS_CERAI_TALAK, STATUS_DIKABULKAN]
+  );
+}
+
+/** Menempelkan keadaan ikrar pada tiap baris. */
+function tandaiIkrar(baris, hariIni) {
+  return baris.map((b) => ({ ...b, ...golongkanIkrar({ ...b, hariIni }) }));
+}
+
+function nolKeadaan() {
+  return Object.fromEntries(KEADAAN_IKRAR.map((k) => [k, 0]));
+}
+
+function ringkasPerhatian(baris, keadaan) {
+  const pilih = baris.filter((b) => b.keadaan === keadaan);
+  if (keadaan === "dekat") pilih.sort((a, b) => a.sisaHari - b.sisaHari);
+  // Gugur yang BELUM ditetapkan di depan: itulah yang masih menunggu
+  // penetapan, sedangkan yang sudah ditetapkan hanya catatan.
+  else pilih.sort((a, b) => Number(a.ditetapkanGugur) - Number(b.ditetapkanGugur) || (b.sisaHari ?? -1e9) - (a.sisaHari ?? -1e9));
+  return {
+    jumlah: pilih.length,
+    batas: BATAS_DAFTAR_PERHATIAN,
+    daftar: pilih.slice(0, BATAS_DAFTAR_PERHATIAN).map((b) => ({
+      nomorPerkara: String(b.nomorPerkara || ""),
+      tempat: String(b.namaKelurahan || b.namaKecamatan || "").trim(),
+      tanggalSidangIkrar: tanggalIkrarIso(b.tanggalPhs),
+      batas: b.batas,
+      sisaHari: b.sisaHari,
+      ditetapkanGugur: b.ditetapkanGugur,
+    })),
+  };
+}
+
+/** Keadaan paling mendesak di satu desa - warna lapisan peta. */
+const URUTAN_MENDESAK = Object.freeze(["gugur", "dekat", "menunggu", "belumPhs", "batal", "sudah"]);
+
+/**
+ * Lapisan peta "Keadaan ikrar talak": satu kategori per desa - keadaan yang
+ * PALING MENDESAK di desa itu; rincian seluruh keadaannya di keterangan.
+ */
+async function lapisanIkrar(dari, sampai, hariIni) {
+  if (!(await skema.tabelAda("perkara_ikrar_talak"))) {
+    return {
+      satuan: "kategori",
+      judul: "Keadaan ikrar talak",
+      keterangan: "Data ikrar talak tidak terbaca dari SIPP.",
+      desa: [],
+    };
+  }
+  const baris = tandaiIkrar(await barisIkrar(dari, sampai), hariIni);
+  const peta = new Map();
+  for (const b of baris) {
+    const kode = String(b.kodeKelurahan || "").trim();
+    if (!kode) continue;
+    if (!peta.has(kode)) peta.set(kode, { kode, jumlah: nolKeadaan() });
+    peta.get(kode).jumlah[b.keadaan] += 1;
+  }
+  return {
+    satuan: "kategori",
+    judul: "Keadaan ikrar talak",
+    keterangan:
+      "Warna desa = keadaan ikrar yang paling perlu perhatian di desa itu, dari perkara cerai talak yang " +
+      "dikabulkan pada rentang ini. Hanya perkara yang alamatnya tercatat sampai desa yang tergambar.",
+    desa: [...peta.values()].map((t) => {
+      const juara = URUTAN_MENDESAK.find((k) => t.jumlah[k] > 0) || "sudah";
+      return {
+        kode: t.kode,
+        nilai: URUTAN_MENDESAK.indexOf(juara),
+        label: LABEL_KEADAAN_IKRAR[juara],
+        keterangan: KEADAAN_IKRAR.filter((k) => t.jumlah[k] > 0)
+          .map((k) => `${t.jumlah[k]} ${LABEL_KEADAAN_IKRAR[k].toLowerCase()}`)
+          .join(", "),
+        cukup: true,
+      };
+    }),
+  };
+}
+
+/** Peta perkara untuk kelompok "Ikrar talak" - lihat kepala bagian ini. */
+async function hitungIkrar(minta, { tingkat, induk, periode, dari, sampai }) {
+  const hariIni = /^\d{4}-\d{2}-\d{2}$/.test(String(minta.hariIni || "")) ? String(minta.hariIni) : hariIniPengadilan();
+
+  let mentah = [];
+  try {
+    if (!(await skema.tabelAda("perkara_ikrar_talak"))) {
+      return { ok: false, alasan: "tabel_ikrar_talak_tidak_terbaca" };
+    }
+    mentah = await barisIkrar(dari, sampai);
+  } catch (e) {
+    return { ok: false, alasan: "gagal_membaca_sipp", pesan: String((e && e.message) || e) };
+  }
+
+  const baris = tandaiIkrar(mentah, hariIni);
+  // Wilayah dikelompokkan menurut keadaan: kunci `jenis` tiap tempat diisi NAMA
+  // keadaan, sehingga rincian per tempat dan penandanya memakai jalur lama.
+  const barisKeadaan = baris.map((b) => ({ ...b, jenisPerkara: LABEL_KEADAAN_IKRAR[b.keadaan] }));
+  const daftarWilayah = kelompokkan(barisKeadaan, tingkat, induk);
+  const sebaranTitik = titikDesa(baris);
+  const sisaKecamatan = kecamatanTanpaDesa(baris);
+
+  const jumlah = nolKeadaan();
+  for (const b of baris) jumlah[b.keadaan] += 1;
+  const jenisMuncul = {};
+  for (const k of KEADAAN_IKRAR) if (jumlah[k] > 0) jenisMuncul[LABEL_KEADAAN_IKRAR[k]] = jumlah[k];
+
+  // Daftar perhatian mengikuti penelusuran turun yang sama dengan tabelnya.
+  const barisScope = induk ? baris.filter((b) => indukBaris(b, tingkat) === induk) : baris;
+
+  const diputus = baris.length;
+  const beralamat = baris.filter((b) => String(b.kodeKecamatan || "").trim() !== "").length;
+  const lelaki = daftarWilayah.reduce((n, x) => n + x.lelaki, 0);
+  const perempuan = daftarWilayah.reduce((n, x) => n + x.perempuan, 0);
+
+  return {
+    ok: true,
+    kelompok: KELOMPOK_IKRAR,
+    kelompokNama: "Ikrar talak",
+    perceraian: false,
+    ikrar: {
+      hariIni,
+      ambangDekatHari: AMBANG_TENGGAT_DEKAT_HARI,
+      jumlah,
+      dekat: ringkasPerhatian(barisScope, "dekat"),
+      gugur: ringkasPerhatian(barisScope, "gugur"),
+    },
+    penanda: Object.fromEntries(KEADAAN_IKRAR.map((k) => [LABEL_KEADAAN_IKRAR[k], WARNA_PENANDA_IKRAR[k]])),
+    jenisMuncul,
+    tingkat,
+    induk,
+    periode,
+    rentang: { dari, sampai },
+    petaGeografis: false,
+    alasanTanpaPeta:
+      "Titik peta diambil dari OpenStreetMap dan dijodohkan lebih dahulu di luar portal; desa yang tidak " +
+      "berjodoh tidak digambar, bukan digeser ke tempat terdekat.",
+    titikSeluruhJenis: true,
+    kelasPeta: KELAS_PETA,
+    titik: sebaranTitik.titik,
+    titikTanpaKode: sebaranTitik.tanpaKode,
+    titikTanpaKodeKelas: sebaranTitik.tanpaKodeKelas,
+    titikTanpaKodeJenis: sebaranTitik.tanpaKodeJenis,
+    kecamatanTanpaDesa: sisaKecamatan,
+    ringkas: {
+      diputus,
+      beralamat,
+      larutNama: baris.filter((b) => b.namaKecamatan).length,
+      persenBeralamat: diputus > 0 ? Math.round((beralamat / diputus) * 100) : 0,
+      terpetakan: daftarWilayah.reduce((n, x) => n + x.perkara, 0),
+      lelaki,
+      perempuan,
+      persenPerempuan: lelaki + perempuan > 0 ? Math.round((perempuan / (lelaki + perempuan)) * 100) : 0,
+    },
+    wilayah: daftarWilayah,
+    faktor: [],
+  };
+}
 
 /**
  * ============================================================================
@@ -848,6 +1190,10 @@ async function hitung(minta = {}) {
   }
   if (dari > sampai) return { ok: false, alasan: "tanggal_awal_melewati_akhir" };
 
+  if (kelompok === KELOMPOK_IKRAR) {
+    return hitungIkrar(minta, { tingkat, induk, periode, dari, sampai });
+  }
+
   const perceraian = Object.prototype.hasOwnProperty.call(KELOMPOK, kelompok);
 
   let baris = [];
@@ -979,5 +1325,15 @@ module.exports = {
   perkaraDesa,
   AMBANG_RELAAS,
   kelompokkanFaktor,
+  // Ikrar talak
+  KELOMPOK_IKRAR,
+  KEADAAN_IKRAR,
+  LABEL_KEADAAN_IKRAR,
+  AMBANG_TENGGAT_DEKAT_HARI,
+  golongkanIkrar,
+  tanggalIkrarIso,
+  barisIkrar,
+  lapisanIkrar,
+  hariIniPengadilan,
   hitung,
 };
