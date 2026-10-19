@@ -1502,8 +1502,9 @@
   //   - posita (5125): butir yang menempel dipisah lewat mintaPositaRapi (abt.js; bot menjaga teks tanpa ruang kosong persis sama, uji kering
   //     lebih dulu). Hanya bila hasilnya memang berbeda; satu kali per perkara per muatan halaman; dicatat di riwayat perubahan (dapat
   //     dikembalikan lewat "Lihat riwayat perubahan" di panel ABT);
-  //   - keterangan saksi: begitu editor tanya jawab terbaca, kalimat penutup ("Bahwa cukup sekian", dst.) di jawaban dibuang; ↶ Urungkan
-  //     di editor mengembalikannya. Yang disentuh hanya baris yang berubah; ketikan petugas yang belum disimpan tidak dibaca ulang.
+  //   - keterangan saksi: di PUTUSAN tampilannya hanya-baca dan kalimat penutup ("Bahwa cukup sekian", dst.) tidak ditampilkan; pada keluaran
+  //     CETAK (RTF dan turunannya) paragraf yang seluruhnya kalimat penutup dibuang (bersihkanPenutupSaksiRtf). Tidak ada yang ditulis ke
+  //     ABT/SIPP; isi di ABT dan BAS tidak berubah.
   const rapiPositaSudah = new Set();
   async function rapikanPositaOtomatis(d) {
     try {
@@ -1531,34 +1532,6 @@
       toast("Posita dirapikan otomatis (butir yang menempel dipisah). Dapat dikembalikan lewat riwayat perubahan di panel ABT.");
     } catch (e) {
       catatTeknis("rapikan posita otomatis gagal:", String((e && e.message) || e));
-    }
-  }
-  /** Editor tanya jawab putusan baru terbaca: buang kalimat penutup di jawaban (satu snapshot urung untuk seluruh pasangan). */
-  function bersihkanPenutupOtomatis(kunciDaftar) {
-    try {
-      if (!S.blangko || S.blangko.jenis !== "put" || !bolehTulis()) return 0;
-      const ps = (kunciDaftar || []).filter((k) => S.tj[k] && S.tj[k].dimuat && !S.tj[k].berubah && S.tj[k].penutupOto !== S.tj[k].sidang);
-      let n = 0;
-      const rencana = [];
-      for (const k of ps) {
-        S.tj[k].penutupOto = S.tj[k].sidang;
-        for (const r of S.tj[k].rows || []) {
-          const h = bersihkanPenutup(r.jawab, r.tanya);
-          if (h !== r.jawab) rencana.push([k, r, h]);
-        }
-      }
-      if (!rencana.length) return 0;
-      tjCatat(ps);
-      for (const [k, r, h] of rencana) {
-        r.jawab = h;
-        S.tj[k].berubah = true;
-        n += 1;
-      }
-      toast(`${n} kalimat penutup keterangan saksi dibuang otomatis (mis. “Bahwa cukup sekian”). Tekan ↶ Urungkan untuk mengembalikan; Simpan ke ABT untuk menyimpan.`);
-      return n;
-    } catch (e) {
-      catatTeknis("bersihkan penutup otomatis gagal:", String((e && e.message) || e));
-      return 0;
     }
   }
   const BAWAAN_ABT_ITSBAT = Object.freeze(["5178", "5105", "1046", "1002", "0007"]);
@@ -2663,7 +2636,6 @@
     renderTj();
     void muatAlasanPosita(); // berjalan sendiri: daftar alasan menyesuaikan diri begitu posita terbaca
     await Promise.all([...(pas || [kunci]).map((k) => muatTj(k)), muatSetSaksi(), muatPilSaksi(), muatAlasanSaksi()]);
-    bersihkanPenutupOtomatis(pas || [kunci]);
     renderTj();
     void isiOtomatis(pas || [kunci], {});
   }
@@ -3728,7 +3700,7 @@
         (t && t.memuat ? `<p class="bd-catat" role="status">Membaca keterangan ${esc(it.tj.sebutan)} dari ABT…</p>` : "") +
         (t && t.galat ? `<p class="bd-peringatan">${esc(t.galat)}</p>` : "") +
         `<div class="bd-tjtabel"><table><thead><tr><th class="no-u">No</th><th>Pertanyaan</th><th>Jawaban</th></tr></thead><tbody>${
-          rows.map((r, i) => `<tr><td class="no-u">${i + 1}</td><td>${esc(r.tanya)}</td><td>${esc(r.jawab)}</td></tr>`).join("") ||
+          rows.map((r, i) => ({ r, i, j: bersihkanPenutup(r.jawab, r.tanya) })).filter((x) => x.j !== "" || !String(x.r.jawab || "").trim()).map((x) => `<tr><td class="no-u">${x.i + 1}</td><td>${esc(x.r.tanya)}</td><td>${esc(x.j)}</td></tr>`).join("") ||
           `<tr><td colspan="3" class="bd-catat">${t && t.memuat ? "Membaca dari ABT…" : "Belum ada keterangan saksi di ABT."}</td></tr>`
         }</tbody></table></div></div>`;
       return;
@@ -4266,6 +4238,57 @@
     const baru = hasil + sumber.slice(akhir);
     return { rtf: asalString ? baru : bufDariLatin1(baru), jumlah };
   }
+  /**
+   * Membuang PARAGRAF kalimat penutup keterangan saksi ("Bahwa cukup sekian", "sudah cukup", "tidak ada lagi, terima kasih") dari RTF cetak
+   * putusan - pola pembersih yang sama dengan editor saksi (bersihkanPenutup -> abt.js). Hanya paragraf yang SELURUHNYA kalimat penutup;
+   * ekor kalimat di tengah/akhir paragraf lain, sel tabel, dan paragraf yang memuat grup/kolom/gambar/bidang TIDAK disentuh (tidak aman
+   * dipotong dari RTF). Brace tiap paragraf yang dibuang harus seimbang sehingga RTF tetap sah. Murni: tanpa tulisan ke ABT/SIPP.
+   */
+  function bersihkanPenutupSaksiRtf(rtf) {
+    const asalString = typeof rtf === "string";
+    const sumber = latin1(rtf);
+    const polaPar = /\\par(?![a-zA-Z])/g;
+    const terlarang = /\\(?:cell|row|trowd|intbl|sect|page|pict|field|fldinst|bkmkstart|shp|object)(?![a-zA-Z])|\\\*/;
+    let hasil = "";
+    let awal = 0; // awal paragraf berjalan
+    let akhirSalin = 0;
+    let jumlah = 0;
+    let m;
+    while ((m = polaPar.exec(sumber))) {
+      const ujung = m.index + m[0].length;
+      const isi = sumber.slice(awal, m.index);
+      let ok = isi.length < 400 && !terlarang.test(isi);
+      if (ok) {
+        let dalam = 0;
+        for (let i = 0; i < isi.length && ok; i += 1) {
+          const c = isi[i];
+          if (c === "\\") i += 1;
+          else if (c === "{") dalam += 1;
+          else if (c === "}" && --dalam < 0) ok = false;
+        }
+        if (dalam !== 0) ok = false;
+      }
+      if (ok) {
+        const polos = isi
+          .replace(/\\'([0-9a-fA-F]{2})/g, (_x, h) => String.fromCharCode(parseInt(h, 16)))
+          .replace(/\\(?:~|tab)(?![a-zA-Z])/g, " ")
+          .replace(/\\[a-zA-Z]+-?\d* ?/g, "")
+          .replace(/[{}\\]/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .replace(/^\(?\d{1,2}\s*[.)]\s*/, "");
+        if (polos && polos.length < 160 && bersihkanPenutup(polos, "") === "") {
+          hasil += sumber.slice(akhirSalin, awal);
+          akhirSalin = ujung;
+          jumlah += 1;
+        }
+      }
+      awal = ujung;
+    }
+    if (!jumlah) return { rtf, jumlah: 0 };
+    const baru = hasil + sumber.slice(akhirSalin);
+    return { rtf: asalString ? baru : bufDariLatin1(baru), jumlah };
+  }
   async function ambilRtf(paksa) {
     if (!S.blangko || !S.pk) throw new Error("Pilih perkara dan blangko dulu.");
     if (S.blangko.hak !== "ok") throw new Error(S.blangko.hak === "periksa" ? "Hak buka blangko ini masih diperiksa ke ABT; tunggu sebentar." : "ABT tidak mengizinkan blangko ini untuk perkara ini.");
@@ -4276,6 +4299,13 @@
     const bersih = bersihkanHeaderPenanda(h.rtf);
     h.rtf = bersih.rtf;
     S.prat.headerDibuang = bersih.jumlah;
+    // Putusan: paragraf kalimat penutup keterangan saksi dibuang dari keluaran cetak saja (ABT/SIPP dan BAS tidak disentuh).
+    S.prat.penutupDibuang = 0;
+    if (S.blangko.jenis === "put") {
+      const tutup = bersihkanPenutupSaksiRtf(h.rtf);
+      h.rtf = tutup.rtf;
+      S.prat.penutupDibuang = tutup.jumlah;
+    }
     S.prat.rtf = h.rtf;
     S.prat.kotor = false;
     S.prat.penanda = cekPenandaRtf(h.rtf);
@@ -6025,7 +6055,7 @@
       takBerlaku: daftarTakBerlaku().map((b) => b.kode),
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { bersihkanHeaderPenanda, perkiraanSidang, keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
+    murni: { bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, perkiraanSidang, keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {

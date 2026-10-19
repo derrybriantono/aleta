@@ -774,7 +774,7 @@ describe("9. blangko PUTUSAN: perapian posita dan kalimat penutup keterangan sak
     expect(polos(rapi.w.__rapi)).toEqual([["10154", true]]);
   });
 
-  it("editor keterangan saksi putusan: kalimat penutup dibuang sendiri begitu terbaca", async () => {
+  it("keterangan saksi putusan hanya-baca: kalimat penutup tidak tampil, tidak ada editor/tombol, dan tidak ada tulisan ke ABT", async () => {
     const baris = [
       { no: "1", tanya: "Apakah saksi kenal Penggugat?", jawab: "Bahwa saya kenal Penggugat sebagai tetangga." },
       { no: "2", tanya: "Ada lagi?", jawab: "Bahwa cukup sekian" },
@@ -782,12 +782,58 @@ describe("9. blangko PUTUSAN: perapian posita dan kalimat penutup keterangan sak
     const h = buka({ saksiRows: { "2021": baris, "5058": baris }, usulan: [] });
     await sampaiPerkara(h);
     await pilih(h, BLANGKO_PUT);
-    klik(h, '[data-tj="saksi 1 p"]');
-    await sampai(() => qq(h, "[data-sba]").length >= 2, "editor terbuka");
-    const jawab = qq(h, "[data-sba]").map((e) => (e as HTMLTextAreaElement).value);
-    expect(jawab[0]).toContain("kenal Penggugat");
-    expect(jawab.join("|")).not.toMatch(/cukup sekian/i);
-    await sampai(() => /kalimat penutup keterangan saksi dibuang otomatis/.test(q(h, "#bd-toast")?.textContent || ""), "pemberitahuan");
+    klik(h, '[data-bd2="lipattj"]');
+    await sampai(() => qq(h, ".bd-tjbaca tbody tr").length >= 1 && /kenal Penggugat/.test(q(h, ".bd-tjbaca")?.textContent || ""), "tampilan hanya-baca");
+    const teksTabel = q(h, ".bd-tjbaca")!.textContent || "";
+    expect(teksTabel).toContain("kenal Penggugat");
+    expect(teksTabel).not.toMatch(/cukup sekian/i);
+    expect(q(h, "[data-sba]")).toBeNull();
+    expect(q(h, '[data-sbaksi="bersih1"]')).toBeNull();
+    expect(mintaKe(h, /tanyajawab_perkara_edit\?aksi=simpan/, "POST")).toEqual([]);
+    expect(mintaKe(h, /edit_data\?no_var=20(21|22)/, "POST")).toEqual([]);
+  });
+
+  it("RTF cetak putusan: paragraf kalimat penutup saksi dibuang; ekor kalimat, tabel, dan paragraf lain tidak disentuh; RTF tetap seimbang", () => {
+    const h = buka();
+    const fn = h.w.aletaBlangkoDerryIsian.murni.bersihkanPenutupSaksiRtf as (r: string | Uint8Array) => { rtf: string | Uint8Array; jumlah: number };
+    const BS = String.fromCharCode(92); // "@" di bawah = garis miring terbalik RTF
+    const rtf = (
+      "{@rtf1@ansi{@fonttbl{@f0 Times;}}" +
+      "@pard@qj Menimbang bahwa saksi pertama menerangkan sebagai berikut;@par" +
+      "@pard@qj Bahwa saya kenal Penggugat sebagai tetangga;@par" +
+      "@pard@qj Bahwa cukup sekian@par" +
+      "@pard@qj 2. Bahwa sudah cukup;@par" +
+      "@pard@qj Bahwa Tergugat sering pergi, cukup sekian@par" +
+      "@pard@intbl Bahwa cukup sekian@cell@row" +
+      "@pard@qj {@b Bahwa cukup sekian}@par" +
+      "@pard@qj Menimbang bahwa cukup alasan untuk bercerai;@par}"
+    ).replace(/@/g, BS);
+    const r = fn(rtf);
+    // dua paragraf utuh dibuang; paragraf bergrup yang menempel pada baris tabel dilewati (tidak aman dipotong)
+    expect(r.jumlah).toBe(2);
+    const t = r.rtf as string;
+    expect(t).toContain("Menimbang bahwa saksi pertama");
+    expect(t).toContain("kenal Penggugat sebagai tetangga");
+    expect(t).toContain("Tergugat sering pergi, cukup sekian"); // ekor di paragraf lain: tidak aman, dibiarkan
+    expect(t).toContain(`${BS}intbl Bahwa cukup sekian${BS}cell`); // sel tabel: dibiarkan
+    expect(t).toContain("Menimbang bahwa cukup alasan untuk bercerai");
+    expect((t.match(/Bahwa cukup sekian/g) || []).length).toBe(2); // sel tabel dan paragraf bergrup sesudah tabel dibiarkan
+    expect(t.split("{").length).toBe(t.split("}").length);
+    // keluaran tanpa penutup apa pun: persis sama
+    expect(fn(`{${BS}rtf1 ${BS}pard Isi biasa${BS}par}`).jumlah).toBe(0);
+    // masukan Uint8Array dikembalikan sebagai Uint8Array
+    const bita = fn(new TextEncoder().encode(rtf));
+    expect(typeof bita.rtf).toBe("object");
+    expect(bita.jumlah).toBe(2);
+  });
+
+  it("ambilRtf hanya membersihkan penutup untuk PUTUSAN, sesudah header penanda, tanpa memanggil simpan", () => {
+    const sumber = baca("blangko-derry-isian.js");
+    const a = sumber.indexOf("async function ambilRtf(");
+    const fungsi = sumber.slice(a, sumber.indexOf("async function muatPratinjau(", a));
+    expect(fungsi.indexOf("bersihkanHeaderPenanda")).toBeLessThan(fungsi.indexOf("bersihkanPenutupSaksiRtf"));
+    expect(fungsi).toMatch(/S\.blangko\.jenis === "put"[\s\S]*bersihkanPenutupSaksiRtf/);
+    expect(fungsi).not.toMatch(/jadwalkanSimpan|simpanIsian|simpanTj|edit_data/);
   });
 });
 
