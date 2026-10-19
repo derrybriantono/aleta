@@ -433,6 +433,11 @@ function normalizeStatus(value, { perluVerifikasi = true } = {}) {
   if (!teks) return "belum";
   if (VERIFICATION_STATUSES.has(teks)) return teks;
   if (/tidak\s*valid|ditolak/.test(teks)) return "tidak_valid";
+  // "Belum diverifikasi Majelis/Hakim" memuat kata "diverifikasi": tanpa
+  // pemeriksaan ini ia terbaca valid, dan Jadwal Sidang menandai perkara
+  // 497/Pdt.G/2026 "Sudah diverifikasi" padahal duplik belum diperiksa
+  // majelis (19 Oktober 2026).
+  if (/belum|menunggu/.test(teks)) return "belum";
   // "Sudah diverifikasi Majelis/Hakim (Dokumen Valid)" pada halaman e-Court.
   if (/valid|terverifikasi|diverifikasi/.test(teks)) return "valid";
   return "belum";
