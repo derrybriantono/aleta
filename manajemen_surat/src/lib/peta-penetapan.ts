@@ -99,13 +99,15 @@ export const BATAS_UKURAN_MM: Record<
 export type KunciUkuran = keyof typeof BATAS_UKURAN_MM;
 
 const UKURAN_BAWAAN: Pick<AturPenetapan, KunciUkuran> = {
-  lebarTtdMm: 40,
-  tinggiTtdMaksMm: 22,
+  // 19 Okt 2026: ttd ~1,6x dan menimpa +-1/3 atas baris nama; cap berdiameter
+  // tetap 36 mm (sama dengan UKURAN_TTD_CAP di aleta_bot penetapanEdocService).
+  lebarTtdMm: 64,
+  tinggiTtdMaksMm: 35,
   ttdGeserKananMm: 0,
-  ttdTurunMm: 2,
-  lebarCapMm: 30,
-  capGeserKiriMm: 16,
-  capGeserAtasMm: 6,
+  ttdTurunMm: 3,
+  lebarCapMm: 36,
+  capGeserKiriMm: 13,
+  capGeserAtasMm: 4,
 };
 
 /** Blangko gabungan PTSP di folder derry_briantono/99 PTSP (dulu "PTSP", paket abt-ganti-nama-relaas-ptsp): bagian 1 PMH, 2 PPP, 3 PJS, 4 PHS (cermin PETA_PTSP.berkasGabungan di bot). */

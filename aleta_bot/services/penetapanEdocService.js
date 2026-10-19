@@ -135,6 +135,27 @@ const PENANDATANGAN = Object.freeze({
 });
 
 /**
+ * UKURAN TANDA TANGAN DAN CAP (19 Okt 2026, permintaan hakim/super admin).
+ * Tanda tangan ~1,6x dari semula (40x22 mm -> 64x35 mm) dan turun sehingga
+ * bawahnya menimpa +- sepertiga atas baris NAMA (nama tetap terbaca). Cap
+ * berdiameter TETAP (36 mm = 3,6 cm) di kotak persegi: gambar cap diskalakan
+ * muat ke kotak itu dengan perbandingan aslinya dan dipusatkan, jadi ukuran
+ * cap tidak lagi mengikuti ukuran gambar sumber. Pusat cap di sepertiga kiri
+ * tanda tangan, bawah cap sedikit di atas bawah tanda tangan. Nilai yang sama
+ * dipakai bawaan Peta penetapan portal (lib/peta-penetapan.ts).
+ */
+const UKURAN_TTD_CAP = Object.freeze({
+  lebarTtdMm: 64,
+  tinggiTtdMaksMm: 35,
+  ttdTurunMm: 3,
+  diameterCapMm: 36,
+  capGeserKiriMm: 13,
+  capGeserAtasMm: 4,
+  /** Keburaman cap: tanda tangan di bawahnya tetap terlihat. */
+  opasitasCap: 0.88,
+});
+
+/**
  * Pengaturan bawaan per jenis (ditimpa pengaturan "Peta penetapan" di
  * Integrasi e-Court portal, yang dikirim portal per permintaan).
  * Ukuran dan geser dalam milimeter, relatif terhadap tanda tangan.
@@ -146,13 +167,13 @@ const ATUR_BAWAAN = Object.freeze({
   labelPenandatangan: "",
   gantiGambarBawaan: true,
   tahanBilaTanpaTtd: false,
-  lebarTtdMm: 40,
-  tinggiTtdMaksMm: 22,
+  lebarTtdMm: UKURAN_TTD_CAP.lebarTtdMm,
+  tinggiTtdMaksMm: UKURAN_TTD_CAP.tinggiTtdMaksMm,
   ttdGeserKananMm: 0,
-  ttdTurunMm: 2,
-  lebarCapMm: 30,
-  capGeserKiriMm: 16,
-  capGeserAtasMm: 6,
+  ttdTurunMm: UKURAN_TTD_CAP.ttdTurunMm,
+  lebarCapMm: UKURAN_TTD_CAP.diameterCapMm,
+  capGeserKiriMm: UKURAN_TTD_CAP.capGeserKiriMm,
+  capGeserAtasMm: UKURAN_TTD_CAP.capGeserAtasMm,
 });
 
 const ATUR_JENIS = Object.freeze({
@@ -468,6 +489,94 @@ function adaTransparansi(isi) {
   return b.indexOf(Buffer.from("tRNS", "latin1")) > 0;
 }
 
+/**
+ * Menurunkan keburaman PNG bersaluran alfa (RGBA 8-bit tanpa interlace) ke
+ * `opasitas` (0-1) dengan mengalikan alfa tiap piksel. Gambar lain (JPG, PNG
+ * tanpa alfa, palet, interlace) dikembalikan apa adanya.
+ */
+function redamkanAlfaPng(isi, opasitas) {
+  const b = Buffer.from(isi || []);
+  try {
+    if (jenisGambar(b) !== "png" || !(opasitas > 0 && opasitas < 1)) return b;
+    let pos = 8;
+    let ihdr = null;
+    const idat = [];
+    while (pos + 12 <= b.length) {
+      const n = b.readUInt32BE(pos);
+      const tipe = b.toString("latin1", pos + 4, pos + 8);
+      const data = b.subarray(pos + 8, pos + 8 + n);
+      if (tipe === "IHDR") ihdr = data;
+      else if (tipe === "IDAT") idat.push(data);
+      pos += 12 + n;
+    }
+    if (!ihdr || ihdr[8] !== 8 || ihdr[9] !== 6 || ihdr[12] !== 0 || !idat.length) return b;
+    const w = ihdr.readUInt32BE(0);
+    const h = ihdr.readUInt32BE(4);
+    if (w * h > 16_000_000) return b;
+    const zlib = require("zlib");
+    const mentah = zlib.inflateSync(Buffer.concat(idat));
+    const baris = w * 4;
+    if (mentah.length !== (baris + 1) * h) return b;
+    const px = Buffer.alloc(baris * h);
+    for (let y = 0; y < h; y++) {
+      const f = mentah[y * (baris + 1)];
+      for (let x = 0; x < baris; x++) {
+        const v = mentah[y * (baris + 1) + 1 + x];
+        const kiri = x >= 4 ? px[y * baris + x - 4] : 0;
+        const atas = y > 0 ? px[(y - 1) * baris + x] : 0;
+        const kirAtas = x >= 4 && y > 0 ? px[(y - 1) * baris + x - 4] : 0;
+        let r;
+        if (f === 0) r = v;
+        else if (f === 1) r = v + kiri;
+        else if (f === 2) r = v + atas;
+        else if (f === 3) r = v + ((kiri + atas) >> 1);
+        else if (f === 4) {
+          const p = kiri + atas - kirAtas;
+          const pa = Math.abs(p - kiri);
+          const pb = Math.abs(p - atas);
+          const pc = Math.abs(p - kirAtas);
+          r = v + (pa <= pb && pa <= pc ? kiri : pb <= pc ? atas : kirAtas);
+        } else return b;
+        px[y * baris + x] = r & 255;
+      }
+    }
+    const keluar = Buffer.alloc((baris + 1) * h);
+    for (let y = 0; y < h; y++) {
+      keluar[y * (baris + 1)] = 0;
+      for (let x = 0; x < baris; x++) {
+        const v = px[y * baris + x];
+        keluar[y * (baris + 1) + 1 + x] = x % 4 === 3 ? Math.round(v * opasitas) : v;
+      }
+    }
+    const potong = (tipe, data) => {
+      const k = Buffer.alloc(12 + data.length);
+      k.writeUInt32BE(data.length, 0);
+      k.write(tipe, 4, "latin1");
+      data.copy(k, 8);
+      k.writeUInt32BE(zlib.crc32 ? zlib.crc32(k.subarray(4, 8 + data.length)) >>> 0 : crc32(k.subarray(4, 8 + data.length)), 8 + data.length);
+      return k;
+    };
+    return Buffer.concat([b.subarray(0, 8), potong("IHDR", Buffer.from(ihdr)), potong("IDAT", zlib.deflateSync(keluar)), potong("IEND", Buffer.alloc(0))]);
+  } catch {
+    return b;
+  }
+}
+
+let tabelCrc = null;
+function crc32(buf) {
+  if (!tabelCrc) {
+    tabelCrc = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      tabelCrc[n] = c >>> 0;
+    }
+  }
+  let c = 0xffffffff;
+  for (let i = 0; i < buf.length; i++) c = tabelCrc[(c ^ buf[i]) & 255] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
 /** Akhir kelompok RTF yang dibuka di `awal` (indeks "{"), -1 bila tidak seimbang. */
 function akhirKelompok(rtf, awal) {
   let d = 0;
@@ -772,6 +881,8 @@ function bubuhkanTtdCap(rtf, { mulaiNama, ttd, cap, atur }) {
   else if (tata.rata === "r") ttdKiri = tata.lebarBidang - tata.ri - ttdL;
   else ttdKiri = x0;
   ttdKiri += mm(a.ttdGeserKananMm);
+  // Tetap di dalam kolom penanda tangan: tidak melewati tepi kanan bidang tulis.
+  ttdKiri = Math.max(0, Math.min(ttdKiri, tata.lebarBidang - tata.ri - ttdL));
   const ttdAtas = -ttdT + mm(a.ttdTurunMm);
 
   let sisipan = "";
@@ -786,14 +897,23 @@ function bubuhkanTtdCap(rtf, { mulaiNama, ttd, cap, atur }) {
   if (cap && cap.isi) {
     const jenisCap = jenisGambar(cap.isi, cap.jenis);
     if (!jenisCap) return { ok: false, alasan: "cap_bukan_png_jpg" };
-    const capL = mm(a.lebarCapMm);
+    // Diameter cap TETAP: gambar muat ke kotak persegi lebarCapMm x lebarCapMm
+    // dengan perbandingan aslinya, dipusatkan di kotak itu.
+    const kotak = mm(a.lebarCapMm);
     const u = ukuranGambar(cap.isi);
-    const capT = u ? (capL * u.tinggi) / u.lebar : capL;
-    const pusatX = ttdKiri + ttdL / 2 - mm(a.capGeserKiriMm);
+    let capL = kotak;
+    let capT = kotak;
+    if (u) {
+      if (u.lebar >= u.tinggi) capT = (kotak * u.tinggi) / u.lebar;
+      else capL = (kotak * u.lebar) / u.tinggi;
+    }
+    let pusatX = ttdKiri + ttdL / 2 - mm(a.capGeserKiriMm);
     const pusatY = ttdAtas + ttdT / 2 - mm(a.capGeserAtasMm);
+    // Kotak cap tidak keluar dari kolom (kiri >= 0, kanan <= tepi kanan bidang tulis).
+    pusatX = Math.max(kotak / 2, Math.min(pusatX, tata.lebarBidang - tata.ri - kotak / 2));
     capDiBelakang = !adaTransparansi(cap.isi);
     sisipan += bentukGambar({
-      isi: cap.isi,
+      isi: jenisCap === "png" ? redamkanAlfaPng(cap.isi, UKURAN_TTD_CAP.opasitasCap) : cap.isi,
       jenis: jenisCap,
       kiri: pusatX - capL / 2,
       atas: pusatY - capT / 2,
@@ -1292,6 +1412,8 @@ module.exports = {
   PETA_PTSP,
   PENANDATANGAN,
   ATUR_BAWAAN,
+  UKURAN_TTD_CAP,
+  redamkanAlfaPng,
   ATUR_JENIS,
   CIRI,
   aturBerlaku,

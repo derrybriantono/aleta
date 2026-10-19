@@ -133,7 +133,7 @@ describe("salinanPutusanService - RTF salinan", () => {
     expect(pict).toBeLessThan(rtf.indexOf("Nama Panitera Tiruan"));
     expect(rtf.slice(pict, pict + 80 + PNG.length * 2)).toContain(PNG.toString("hex"));
     // Lebar mengikuti perbandingan gambar 4:2 -> 1800 x 900 twip.
-    expect(rtf).toContain("\\picwgoal1800\\pichgoal900");
+    expect(rtf).toContain("\\picwgoal2880\\pichgoal1440");
     const t = salinan.teksTampak(rtf);
     expect(t.indexOf("Untuk Salinan")).toBeGreaterThan(t.indexOf("J u m l a h"));
     const blok = rtf.slice(rtf.lastIndexOf("\\trowd", rtf.indexOf("Untuk Salinan")));

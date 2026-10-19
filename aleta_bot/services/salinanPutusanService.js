@@ -342,7 +342,7 @@ function ukuranGambar(isi) {
  * ruang tanda tangan yang memang disediakan blangko. Tanpa paragraf kosong,
  * gambar ditaruh di awal paragraf nama disusul pindah baris.
  */
-function sisipkanTtdPanitera(rtf, ttd, { tinggiTwip = 900, lebarMaks = 2800 } = {}) {
+function sisipkanTtdPanitera(rtf, ttd, { tinggiTwip = 1440, lebarMaks = 4480 } = {}) {
   const s = String(rtf || "");
   if (!ttd || !ttd.isi || !Buffer.from(ttd.isi).length) return { rtf: s, ok: false, alasan: "ttd_tidak_ada" };
   const blok = blokUntukSalinan(s);

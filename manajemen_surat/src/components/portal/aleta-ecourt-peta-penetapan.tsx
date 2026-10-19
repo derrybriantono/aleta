@@ -84,7 +84,7 @@ function PratinjauLetak({ a }: { a: AturPenetapan }) {
   const ttdL = a.lebarTtdMm * s;
   const ttdT = Math.min(a.lebarTtdMm / 2, a.tinggiTtdMaksMm) * s;
   const capL = a.lebarCapMm * s;
-  const capT = capL * 1.2;
+  const capT = capL;
   const ox = 70;
   const namaY = 110;
   const ttdX = ox + a.ttdGeserKananMm * s;

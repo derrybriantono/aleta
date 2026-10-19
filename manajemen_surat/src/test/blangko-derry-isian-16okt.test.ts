@@ -810,7 +810,7 @@ describe("G. pratinjau dan cetak", () => {
     klik(h, '[data-bd2="tetapcetak"]');
     await sampai(() => h.pdfRtf.length === 1, "pdf diminta", 8000);
     const rtf = h.pdfRtf[0];
-    const idxPict = rtf.indexOf("{\\pict\\pngblip\\picw1\\pich1\\picwgoal1701\\pichgoal1701 89504e47");
+    const idxPict = rtf.indexOf("{\\pict\\pngblip\\picw1\\pich1\\picwgoal2722\\pichgoal2722 89504e47");
     const idxNama = rtf.indexOf("Hakim Satu, S.H.");
     expect(idxPict).toBeGreaterThan(0);
     expect(idxPict).toBeLessThan(idxNama);
@@ -1061,7 +1061,7 @@ describe("murni", () => {
     const h = x.sisipkanTtdRtf("{\\rtf1 \\pard\\qr Hakim Satu, S.H.\\par\\pard PP Satu\\par}", [{ nama: "Hakim Satu, S.H.", png }, { nama: "Tidak Ada", png }]);
     expect(h.dipasang).toEqual(["Hakim Satu, S.H."]);
     expect(h.tidakDitemukan).toEqual(["Tidak Ada"]);
-    expect(h.rtf).toMatch(/\\pard\\qr \{\\pict\\pngblip\\picw1\\pich1\\picwgoal1701\\pichgoal1701 89504e47[0-9a-f]+\}\\par Hakim Satu, S\.H\./);
+    expect(h.rtf).toMatch(/\\pard\\qr \{\\pict\\pngblip\\picw1\\pich1\\picwgoal2722\\pichgoal2722 89504e47[0-9a-f]+\}\\par Hakim Satu, S\.H\./);
     expect(x.ukuranPng(png)).toEqual({ w: 1, h: 1 });
     expect(x.hurufDiLuarAbt("Assa’ – “oke” €")).toEqual([]);
     expect(x.hurufDiLuarAbt("ok ☺ ع")).toEqual(["☺", "ع"]);

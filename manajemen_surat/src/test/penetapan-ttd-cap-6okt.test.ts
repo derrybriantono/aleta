@@ -78,6 +78,8 @@ type Edoc = {
   sapuRtf: (r: string) => { kedalamanAkhir: number; baris: Array<{ teks: string }> };
   ambilBagian: (r: string, j: string) => { ok: boolean };
   aturBerlaku: (j: string, k?: unknown) => Record<string, unknown>;
+  redamkanAlfaPng: (b: Buffer, o: number) => Buffer;
+  UKURAN_TTD_CAP: Record<string, number>;
   buatLayanan: (d: Record<string, unknown>) => { unggah: (m: Record<string, unknown>) => Promise<any> };
 };
 function modulEdoc(): Edoc {
@@ -313,7 +315,7 @@ describe("A. PMH: tanda tangan sesuai nama di bawah 'Ketua,' + cap DI ATAS tanda
     const h = await bubuh(rtfPmh(), "pmh", { atur: { lebarCapMm: 20, capGeserKiriMm: 0, capGeserAtasMm: 0, lebarTtdMm: 30 } });
     const [ttd, cap] = bentukDi(h.rtf);
     expect(Math.round(ttd.lebar / (1440 / 25.4))).toBe(30);
-    expect(Math.round(cap.lebar / (1440 / 25.4))).toBe(20);
+    expect(Math.round(Math.max(cap.lebar, cap.tinggi) / (1440 / 25.4))).toBe(20); // kotak cap persegi 20 mm (19 Okt: diameter tetap)
     expect(Math.abs(cap.kiri + cap.lebar / 2 - (ttd.kiri + ttd.lebar / 2))).toBeLessThan(2);
     const m = modulEdoc();
     expect(m.aturBerlaku("pmh", { lebarCapMm: 9999, penandatangan: "siapa-saja", pakaiCap: "ya" })).toMatchObject({ lebarCapMm: 60, penandatangan: "ketua", pakaiCap: true });
@@ -456,7 +458,7 @@ describe("B. unggah edoc penetapan dari RTF ABT ekstensi (abt[])", () => {
       ["pmh", "ptsp1", "%PDF-"],
       ["phs", "ptsp1", "%PDF-"],
     ]);
-    expect(catatan.pdf[0]).toContain(heks(CAP_PNG));
+    expect(catatan.pdf[0]).toContain(heks(m.redamkanAlfaPng(CAP_PNG, m.UKURAN_TTD_CAP.opasitasCap))); // cap dibubuhkan semi-transparan (19 Okt)
     expect(catatan.pdf[1]).not.toContain(heks(CAP_PNG));
     expect(catatan.pdf.join("")).not.toMatch(/aleta/i);
   });

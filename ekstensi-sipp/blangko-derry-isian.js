@@ -4597,7 +4597,7 @@
   const hexDari = (bita) => Array.from(new Uint8Array(bita), (b) => b.toString(16).padStart(2, "0")).join("");
   /**
    * Menyisipkan gambar tanda tangan (PNG) ke RTF tepat di atas nama penandatangan.
-   * Pulang { rtf, dipasang:[nama], tidakDitemukan:[nama] }. Lebar 3 cm (1701 twip).
+   * Pulang { rtf, dipasang:[nama], tidakDitemukan:[nama] }. Lebar 4,8 cm (2722 twip; 19 Okt 2026: 1,6x dari 3 cm).
    *
    * Nama hakim/PP juga tertulis LEBIH DULU di paragraf "Demikian ... oleh <nama> ..." (dan di kepala BAS); blok tanda tangan
    * selalu di ujung naskah. Jadi yang dipakai kemunculan TERAKHIR sebelum kotak "Untuk Salinan" dan sebelum penanda asal
@@ -4623,7 +4623,7 @@
         tidakDitemukan.push(d.nama);
         continue;
       }
-      const goalW = d.lebarTwip || 1701;
+      const goalW = d.lebarTwip || 2722; // 19 Okt 2026: 4,8 cm = 1,6x dari 3 cm (1701) - tanda tangan lebih besar agar terlihat asli
       const goalH = Math.round((goalW * ukuran.h) / ukuran.w);
       const pict = `{\\pict\\pngblip\\picw${ukuran.w}\\pich${ukuran.h}\\picwgoal${goalW}\\pichgoal${goalH} ${d.hex || hexDari(d.png)}}\\par `;
       const calon = [d.nama, d.nama.toUpperCase(), d.nama.replace(/\s*\(Ketua\)/i, "")].filter(Boolean);
