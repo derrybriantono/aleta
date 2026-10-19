@@ -276,7 +276,7 @@ describe("golongan isian", () => {
     expect(bandingkanDenganAkhir([{ kode: "0364", golongan: "pasti", nilai: "03/05/2021" } as IsianDraf], { "0364": "3 Mei 2021" }).sama).toBe(1);
   });
 
-  it("tanggal KTP e-Court: pasti -> pasti, cukup -> usulan, ragu dibuang; cermin kode pihak ekstensi", () => {
+  it("tanggal KTP e-Court: pasti -> pasti, cukup -> usulan, ragu -> usulan berlencana ragu (19 Okt, seperti mesin bersama); cermin kode pihak ekstensi", () => {
     const u = usulanDariKtp([
       { cabang: 1, urutan: 1, tanggalKtp: "03/05/2021", yakin: "pasti", cocok: "nik" },
       { cabang: 2, urutan: 1, tanggalKtp: "10/01/2019", yakin: "cukup" },
@@ -286,6 +286,7 @@ describe("golongan isian", () => {
       ["0364", "pasti"],
       ["2222", "pasti"],
       ["0365", "cukup"],
+      ["0366", "ragu"],
     ]);
     expect(usulanPasti(u[0])).toBe(true);
     expect(usulanPasti(u[2])).toBe(false);
@@ -310,7 +311,7 @@ describe("ringkasan dari data yang ada", () => {
       sebutan: { P: "Penggugat", T: "Tergugat" },
     });
     expect(r.map((b) => b.kode)).toEqual(["duduk", "jawab", "bukti", "saksi", "kesimpulan"]);
-    expect(r[0]).toMatchObject({ ada: true, sumber: "Posita gugatan/permohonan di SIPP" });
+    expect(r[0]).toMatchObject({ ada: true, sumber: "Gugatan/permohonan yang tercatat di SIPP" });
     expect(r[0].isi[0]).toBe("Posita memuat 3 butir.");
     expect(r[1].isi[0]).toBe("Sidang ke-3 1 Oktober 2026: Pembuktian (hanya pihak pertama hadir).");
     expect(r[2].isi[0]).toBe("Penggugat: 2 baris bukti.");
@@ -449,7 +450,7 @@ describe("jalan agen (sumber tiruan, pg-mem berbenih)", () => {
     expect(Object.keys(r).sort()).toEqual(["512", "600"]);
     expect(r["512"]).toMatchObject({ tanggalSidang: "2026-10-24", tingkat: "hampir" });
     // 1 usulan (alasan perceraian - hukum) + 1 manusia (bukti); 0222 disiapkan agen.
-    expect(teksLencanaH7(r["512"])).toBe("Draf H-7 33% - 2 perlu diisi");
+    expect(teksLencanaH7(r["512"])).toBe("Draf putusan · 1 dari 3 siap");
 
     const kedua = await jalankanAgenH7(db!, { pemicu: "tangan", hariIni: "2026-10-17", sumber: sumberTiruan([], "ragu") });
     expect(kedua).toMatchObject({ dibuat: 0, diperbarui: 2 });
@@ -464,7 +465,7 @@ describe("jalan agen (sumber tiruan, pg-mem berbenih)", () => {
       ["600/Pdt.G/2026/PA.Dgl", 3, "hakim"],
       ["512/Pdt.G/2026/PA.Dgl", 7, "hakim"],
     ]);
-    expect(hakim.perkara[1]).toMatchObject({ lencana: "Draf H-7 33% - 2 perlu diisi", tingkat: "hampir" });
+    expect(hakim.perkara[1]).toMatchObject({ lencana: "Draf putusan · 1 dari 3 siap", tingkat: "hampir" });
     expect(hakim.perkara[1].checklist.saran["0222"].golongan).toBe("pasti");
     expect((await bacaDrafSaya(db!, { nama: "Orang Lain", lihatSemua: false, hariIni: "2026-10-17" })).jumlah).toBe(0);
     expect((await bacaDrafSaya(db!, { nama: "Admin", lihatSemua: true, hariIni: "2026-10-17" })).jumlah).toBe(2);
@@ -576,7 +577,7 @@ describe("ekstensi: draf H-7 di kartu checklist konseptor", () => {
     await vi.advanceTimersByTimeAsync(0);
     const kartu = document.getElementById("bd-konseptor")!;
     const blok = kartu.querySelector("[data-kl-h7]")!;
-    expect(blok.textContent).toContain("Draf H-7 67% - 2 perlu diisi");
+    expect(blok.textContent).toContain("Draf putusan · 67% siap");
     expect(blok.textContent).toContain("belum disimpan ke ABT maupun SIPP");
     expect(blok.textContent).toContain("Hari Putusan 24 Oktober 2026");
     (kartu.querySelector("[data-kl-pakai-h7]") as HTMLButtonElement).click();

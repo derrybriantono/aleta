@@ -4017,7 +4017,7 @@
 
   function susunDrafH7Widget() {
     // Butir 41 (17 Okt): terlipat bawaan - jumlahnya tetap terbaca di kepala.
-    const w = kotakWidget("drafH7", "Draf putusan H-7", { terbuka: false });
+    const w = kotakWidget("drafH7", "Draf putusan", { terbuka: false });
     w.kotak.setAttribute("data-draf-h7-widget", "");
     if (!h7.data) {
       const sebab =
@@ -4048,16 +4048,21 @@
       if (p.perlu.length) c.title = `Perlu perhatian: ${p.perlu.join(", ")}.`;
       chips.appendChild(c);
       li.appendChild(chips);
-      // 17 Okt: varian draf (dikabulkan + ditolak) - sama dengan Jadwal Sidang
-      // ("Varian draf: Dikabulkan (75%) Ditolak (40%)") dan kartu checklist
-      // konseptor ("Buka draf varian dikabulkan" / "Buka draf varian ditolak (40%)").
+      // 19 Okt (draf putusan mulus): satu baris ringkas + tombol. Rincian bertahap ada di pop-up Jadwal Sidang
+      // (tautan "Lihat tahapan"), bukan tembok teks di widget. Varian ditolak tetap dapat dibuka dari sini.
       const varian = h7Varian(p.checklist);
-      if (varian.length) {
-        const v = el("span", "aleta-cmw-kh-ket", `Varian draf: Dikabulkan (${p.persen}%), ${varian.map((x) => `${x.teks} (${x.persen}%)`).join(", ")}`);
-        v.setAttribute("data-h7-varian-ket", "");
-        li.appendChild(v);
-      }
       const bd = p.checklist && p.checklist.blangko ? blangkoDerryUntuk(p.perkaraId) : null;
+      const aksi = el("div", "aleta-cmw-h7-varian");
+      const hrefTahap = alamatPortal(`/aleta-ecourt?drafH7=${encodeURIComponent(p.perkaraId)}`);
+      if (hrefTahap) {
+        const a = el("a", "aleta-cmw-h7-aksi", "Lihat tahapan");
+        a.href = hrefTahap;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.setAttribute("data-h7-tahapan", p.perkaraId);
+        a.title = "Membuka pop-up tahapan draf putusan di Jadwal Sidang ALETA (ringkasan, isian otomatis, yang perlu diisi hakim).";
+        aksi.appendChild(a);
+      }
       if (bd) {
         const judulTombol = "Membuka blangko putusan draf di Blangko Derry; isian agen menjadi saran, belum tersimpan ke ABT.";
         const tombolH7 = (teks, status, draf, ket) => {
@@ -4069,24 +4074,13 @@
           t.addEventListener("click", () => void bd.pakaiDrafH7(draf));
           return t;
         };
-        if (!varian.length) li.appendChild(tombolH7("Buka blangko draf & pasang saran", "dikabulkan", p.checklist, ""));
+        if (!varian.length) aksi.appendChild(tombolH7("Buka blangko draf", "dikabulkan", p.checklist, ""));
         else {
-          const kotakVarian = el("div", "aleta-cmw-h7-varian");
-          kotakVarian.appendChild(tombolH7("Buka draf varian dikabulkan", "dikabulkan", p.checklist, String(p.checklist.alasanBlangko || "")));
-          for (const x of varian) kotakVarian.appendChild(tombolH7(`Buka draf varian ${x.teks.toLowerCase()} (${x.persen}%)`, x.status, x.draf, x.alasan));
-          li.appendChild(kotakVarian);
-        }
-      } else {
-        const href = alamatPortal("/aleta-ecourt");
-        if (href) {
-          const a = el("a", "aleta-cmw-h7-aksi", "Lihat di Jadwal Sidang");
-          a.href = href;
-          a.target = "_blank";
-          a.rel = "noopener";
-          a.title = "Rincian draf (blangko, isian yang perlu diisi, ringkasan) di Jadwal Sidang ALETA.";
-          li.appendChild(a);
+          aksi.appendChild(tombolH7("Buka draf varian dikabulkan", "dikabulkan", p.checklist, String(p.checklist.alasanBlangko || "")));
+          for (const x of varian) aksi.appendChild(tombolH7(`Buka draf varian ${x.teks.toLowerCase()} (${x.persen}%)`, x.status, x.draf, x.alasan));
         }
       }
+      if (aksi.childNodes.length) li.appendChild(aksi);
       daftar.appendChild(li);
     }
     w.isi.appendChild(daftar);

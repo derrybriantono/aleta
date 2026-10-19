@@ -174,9 +174,10 @@
    */
   function teksLencanaH7(r) {
     if (!r) return "";
-    if (!r.blangko) return "Draf H-7: blangko belum ada";
-    if (r.tingkat === "siap") return "Draf H-7 siap";
-    return `Draf H-7 ${r.persen}% - ${r.jumlahPerlu} perlu diisi`;
+    if (!r.blangko) return "Draf putusan · blangko belum ada";
+    if (r.tingkat === "siap") return "Draf putusan siap";
+    if (typeof r.siap === "number" && typeof r.jumlah === "number" && r.jumlah > 0) return `Draf putusan · ${r.siap} dari ${r.jumlah} siap`;
+    return `Draf putusan · ${r.persen}% siap`;
   }
   function isiDrafH7(h) {
     if (!h || !h.ringkas) return "";
@@ -184,12 +185,13 @@
     let s = `<div data-kl-h7 style="margin-top:8px;padding-top:6px;border-top:1px solid var(--line, #ddd)">`;
     s += `<b style="color:${warna}">${esc(teksLencanaH7(h.ringkas))}</b>`;
     s += `<div style="font-size:.78rem;color:var(--muted)">Disiapkan agen ALETA ${esc(waktuSingkat(h.ringkas.dibuatPada))} - belum disimpan ke ABT maupun SIPP.</div>`;
-    s += `<ul style="margin:4px 0 0 16px;padding:0;font-size:.8rem">${(h.laporan || []).slice(0, 5).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
+    // 19 Okt: ringkas - satu kalimat; rincian bertahap ada di pop-up Jadwal Sidang (portal), bukan tembok teks di sini.
+    s += `<div style="margin-top:4px;font-size:.85rem">${esc((h.laporan || [])[0] || "")}</div>`;
     const bd = globalThis.aletaBlangkoDerryIsian;
     // 17 Okt: varian draf (dikabulkan + ditolak) - hakim memilih; ringkasan sama, blangko & saran per varian.
     const varian = Array.isArray(h.varian) ? h.varian.filter((v) => v && v.blangko) : [];
     if (h.blangko && bd && typeof bd.pakaiDrafH7 === "function") {
-      s += `<button type="button" data-kl-pakai-h7="" class="bd-btn" style="margin-top:6px">${varian.length ? "Buka draf varian dikabulkan" : "Buka blangko draf &amp; pasang saran agen"}</button>`;
+      s += `<button type="button" data-kl-pakai-h7="" class="bd-btn" style="margin-top:6px">${varian.length ? "Buka draf varian dikabulkan" : "Buka blangko draf"}</button>`;
       varian.forEach((v, i) => {
         s += ` <button type="button" data-kl-pakai-h7="${i}" class="bd-btn" style="margin-top:6px" title="${esc(v.alasanBlangko || "")}">Buka draf ${esc(String(v.judul || "varian").toLowerCase())} (${Number(v.persen) || 0}%)</button>`;
       });
@@ -205,7 +207,7 @@
     try {
       await bd.pakaiDrafH7(d);
     } catch (e) {
-      S.galat = `Draf H-7 tidak dapat dibuka: ${String((e && e.message) || e)}`;
+      S.galat = `Draf putusan tidak dapat dibuka: ${String((e && e.message) || e)}`;
       render();
     }
   }

@@ -3,15 +3,8 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
-import { bacaPdfDariBita } from "@/server/modules/aleta-ecourt/baca-pdf";
-import { bacaIsiGugatan, sebutanAman, type HasilIsiGugatan } from "@/server/modules/aleta-ecourt/isi-gugatan";
-import type { DokumenArsip } from "@/server/modules/aleta-ecourt/kuasa-gugatan";
-import { bacaTeksJawaban } from "@/server/modules/aleta-ecourt/penanda-jawaban";
-import {
-  ambilBerkasGateway,
-  getGatewayArsipRincian,
-  postGatewayIsiGugatan,
-} from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { sebutanAman, type HasilIsiGugatan } from "@/server/modules/aleta-ecourt/isi-gugatan";
+import { bacaGugatanEcourt } from "@/server/modules/aleta-ecourt/isi-sipp-sumber";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -36,8 +29,6 @@ export const dynamic = "force-dynamic";
 const SINGGAH_MS = 30 * 60 * 1000;
 const singgah = new Map<string, { sampai: number; hasil: HasilIsiGugatan }>();
 
-const tanpaOcr = { ocrAda: async () => false, ocrGambar: async () => "", halamanPdf: async () => [] as Buffer[] };
-
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
   let actorUserId: string | null = null;
@@ -59,31 +50,8 @@ export async function GET(request: NextRequest) {
     const lama = singgah.get(kunci);
     if (q.get("ulang") !== "1" && lama && lama.sampai > Date.now()) return ok({ ...lama.hasil, dariSinggahan: true });
 
-    const hasil = await bacaIsiGugatan(
-      nomor,
-      sebutan,
-      {
-        rincian: async (n) => {
-          const r = await getGatewayArsipRincian(n);
-          return { ok: r.ok, dokumen: r.ok ? ((r.data.dokumen || []) as DokumenArsip[]) : [] };
-        },
-        ambilBerkas: async (key, format) => {
-          const r = await ambilBerkasGateway(key, format);
-          return r.ok ? Buffer.from(await r.arrayBuffer()) : null;
-        },
-        halamanPdf: async (data) => {
-          const isi = await bacaPdfDariBita(new Uint8Array(data), "berkas.pdf", 80);
-          return isi.ada ? isi.halaman.map((h) => h.teks) : [];
-        },
-        bacaTeks: (data, bolehOcr) => (bolehOcr ? bacaTeksJawaban(data) : bacaTeksJawaban(data, tanpaOcr)),
-        kirimBot: async (muatan) => {
-          const r = await postGatewayIsiGugatan(muatan);
-          return r.ok ? r.data : null;
-        },
-      },
-      majelis,
-      { denganBukti }
-    );
+    // 19 Okt: pembaca yang sama dengan agen draf putusan (isi-sipp-sumber.ts).
+    const hasil = await bacaGugatanEcourt(nomor, sebutan, majelis, { denganBukti });
     singgah.set(kunci, { sampai: Date.now() + SINGGAH_MS, hasil });
     if (singgah.size > 300) {
       for (const [k, v] of singgah) if (v.sampai <= Date.now()) singgah.delete(k);

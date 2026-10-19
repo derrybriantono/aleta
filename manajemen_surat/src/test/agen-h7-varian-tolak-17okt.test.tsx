@@ -147,7 +147,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe("laporan, checklist konseptor, panel Jadwal Sidang", () => {
   it("laporan menyebut varian; checklist membawa { blangko, saran } per varian; draf lama tanpa varian = []", async () => {
     const d = await drafContoh();
-    expect(teksLaporanH7(d).join(" ")).toMatch(/Varian ditolak juga disiapkan: \[03\] \[Tolak\].*Majelis memilih varian sesudah musyawarah/);
+    expect(teksLaporanH7(d).join(" ")).toMatch(/Varian ditolak juga disiapkan: Tolak .*Majelis memilih varian sesudah musyawarah/);
     const c = untukChecklistH7(d);
     expect(c.varian).toHaveLength(1);
     expect(c.varian[0]).toMatchObject({ status: "ditolak", judul: "Varian ditolak", blangko: { label: expect.stringMatching(/Tolak/) } });
@@ -158,27 +158,36 @@ describe("laporan, checklist konseptor, panel Jadwal Sidang", () => {
     expect(daftarVarianH7(lama)).toHaveLength(1);
   });
 
-  it("panel: tombol varian; memilih Ditolak menampilkan blangko & isian varian itu, ringkasan tetap", async () => {
+  it("pop-up: varian dikabulkan dan ditolak tetap dapat dipilih; blangko & isian mengikuti varian, ringkasan perkara tetap (19 Okt: dialog bertahap)", async () => {
     const d = await drafContoh();
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ ok: true, data: { peta: { "231": { ...d, laporan: teksLaporanH7(d) } } } }), { status: 200 })));
-    const { container } = render(<PanelDrafH7 perkaraId="231" ringkas={ringkasDrafH7(d)} />);
+    render(<PanelDrafH7 perkaraId="231" ringkas={ringkasDrafH7(d)} />);
     await act(async () => {
       fireEvent.click(screen.getAllByRole("button")[0]);
     });
+    const dialog = document.body.querySelector("[data-dialog-draf-h7]") as HTMLElement;
+    expect(dialog).not.toBeNull();
     const namaTolak = d.varian![0].isian.find((i) => i.kode === "8902")!.nama;
-    const tolak = container.querySelector('[data-varian-h7="ditolak"]') as HTMLButtonElement;
+    const tolak = dialog.querySelector('[data-varian-h7="ditolak"]') as HTMLButtonElement;
     expect(tolak).not.toBeNull();
-    expect(container.querySelector('[data-varian-h7="dikabulkan"]')?.getAttribute("aria-pressed")).toBe("true");
-    expect(container.querySelector("[data-blangko-varian-h7]")?.textContent).toMatch(/Blangko varian dikabulkan: \[02\] \[Kabul\]/);
-    expect(container.textContent).not.toContain(namaTolak);
+    expect(dialog.querySelector('[data-varian-h7="dikabulkan"]')?.getAttribute("aria-pressed")).toBe("true");
+    expect(dialog.querySelector("[data-nama-blangko]")?.textContent).toMatch(/^Kabul/);
+    const kalimatKabul = dialog.querySelector("[data-kalimat-ringkasan]")?.textContent;
+    await act(async () => {
+      fireEvent.click(dialog.querySelector('[data-tahap="perlu"]') as HTMLElement);
+    });
+    expect(dialog.textContent).not.toContain(namaTolak);
     await act(async () => {
       fireEvent.click(tolak);
     });
     expect(tolak.getAttribute("aria-pressed")).toBe("true");
-    expect(container.querySelector("[data-blangko-varian-h7]")?.textContent).toMatch(/Blangko varian ditolak: \[03\] \[Tolak\]/);
-    expect(container.textContent).toContain(namaTolak);
-    expect(container.textContent).toContain("Duduk perkara - sumber:");
-    expect(container.textContent).not.toMatch(/\b8902\b/);
+    expect(dialog.textContent).toContain(namaTolak);
+    await act(async () => {
+      fireEvent.click(dialog.querySelector('[data-tahap="ringkasan"]') as HTMLElement);
+    });
+    expect(dialog.querySelector("[data-nama-blangko]")?.textContent).toMatch(/^Tolak/);
+    expect(dialog.querySelector("[data-kalimat-ringkasan]")?.textContent).toBe(kalimatKabul);
+    expect(dialog.textContent).not.toMatch(/8902/);
   });
 });
 

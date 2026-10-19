@@ -26,6 +26,7 @@ import {
   type SaksiDiperiksa,
   type UsulanDeteksi,
 } from "@/lib/agen-h7-putusan";
+import { VAR_BUKTI, VAR_ECOURT, VAR_KUASA } from "@/lib/isi-sipp-format";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { sebutanPihak, susunIsian, type Definisi, type Susunan } from "@/app/api/aleta-ecourt/blangko-derry/susun";
@@ -34,6 +35,7 @@ import { getGatewayAbtUsulan, getGatewayJadwalSidang, getGatewayKtpPerkara } fro
 import { callAletaBotSippBridge } from "@/server/modules/aleta-sipp/aleta-sipp-datasource";
 import { untukBot } from "@/server/modules/aleta-ecourt/tipe-keluaran";
 import { bacaKonseptorSementara } from "@/server/modules/aleta-ecourt/konseptor-sementara";
+import { bacaGugatanEcourt, bacaKuasaEcourt } from "@/server/modules/aleta-ecourt/isi-sipp-sumber";
 
 /**
  * ============================================================================
@@ -75,6 +77,13 @@ export type SumberAgenH7 = {
   dokumen(perkaraId: string): Promise<DokumenEcourt[]>;
   /** Tanggal KTP pihak yang sudah dibaca ALETA dari berkas KTP e-Court (tidak memicu pembacaan baru). */
   ktp(nomorPerkara: string): Promise<KtpPihak[]>;
+  /**
+   * 19 Okt: usulan dari surat gugatan di arsip e-Court (rute isi-gugatan yang sama dengan Isi dari SIPP di Blangko Derry).
+   * Opsional: sumber suntikan uji lama tidak memilikinya.
+   */
+  gugatan?(nomorPerkara: string, sebutan: { lawan: string; pelaku: string }, denganBukti: boolean): Promise<UsulanDeteksi[]>;
+  /** 19 Okt: usulan kuasa dari surat gugatan (rute kuasa-gugatan yang sama). */
+  kuasa?(nomorPerkara: string): Promise<UsulanDeteksi[]>;
 };
 
 let singgahKatalog: { saat: number; peta: Map<string, Definisi> } | null = null;
@@ -184,6 +193,14 @@ export const SUMBER_BAWAAN: SumberAgenH7 = {
       return [];
     }
   },
+  async gugatan(nomorPerkara, sebutan, denganBukti) {
+    const h = await bacaGugatanEcourt(nomorPerkara, sebutan, undefined, { denganBukti });
+    return Array.isArray(h.usulan) ? (h.usulan as unknown as UsulanDeteksi[]) : [];
+  },
+  async kuasa(nomorPerkara) {
+    const h = await bacaKuasaEcourt(nomorPerkara);
+    return Array.isArray(h.usulan) ? (h.usulan as unknown as UsulanDeteksi[]) : [];
+  },
 };
 
 // ============================================================================
@@ -270,6 +287,23 @@ export async function susunDrafSatu(
     };
     tambah(await sumber.usulan(db, { nomorPerkara, sumber: "sipp" }));
     for (const u of usulanDariKtp(await sumber.ktp(nomorPerkara))) usulan.push({ jalur: "ktp", usulan: u });
+    // Berkas e-Court (gugatan dan kuasa): sama dengan mesin bersama Isi dari SIPP - hanya dibaca bila blangko memuat variabelnya.
+    const kodeAda = new Set([...susunan.isian, ...susunanTolak.isian].map((i) => i.kode).concat([...susunan.pemicu, ...susunanTolak.pemicu].map((p) => p.kode)));
+    if (baris.lewatEcourt !== false && sumber.gugatan && VAR_ECOURT.some((k) => kodeAda.has(k))) {
+      try {
+        const daftar = await sumber.gugatan(nomorPerkara, { lawan: sebutan.P, pelaku: sebutan.T }, VAR_BUKTI.some((k) => kodeAda.has(k)));
+        for (const u of daftar) usulan.push({ jalur: "gugatan", usulan: u });
+      } catch (e) {
+        kendala.push(`berkas e-Court (${teks((e as Error)?.message).slice(0, 80) || "tidak terbaca"})`);
+      }
+    }
+    if (baris.lewatEcourt !== false && sumber.kuasa && VAR_KUASA.some((k) => kodeAda.has(k))) {
+      try {
+        for (const u of await sumber.kuasa(nomorPerkara)) usulan.push({ jalur: "kuasa", usulan: u });
+      } catch (e) {
+        kendala.push(`kuasa dari gugatan (${teks((e as Error)?.message).slice(0, 80) || "tidak terbaca"})`);
+      }
+    }
     if (jenisCerai(jenisPerkara)) {
       const saksi1 = polosTeks(v("2021"));
       const saksi2 = polosTeks(v("2022"));

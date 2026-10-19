@@ -58,7 +58,7 @@ describe("susunDrafSaya: draf milik akun untuk widget", () => {
       ["12", 1, "konseptor"],
       ["11", 7, "hakim"],
     ]);
-    expect(h.perkara[1]).toMatchObject({ lencana: "Draf H-7 75% - 1 perlu diisi", tingkat: "hampir", perlu: ["Alasan perceraian"] });
+    expect(h.perkara[1]).toMatchObject({ lencana: "Draf putusan · 3 dari 4 siap", tingkat: "hampir", perlu: ["Alasan perceraian"] });
     expect(h.perkara[1].checklist.blangko).toMatchObject({ menu: "Putusan Cerai Gugat" });
   });
 
@@ -227,15 +227,17 @@ describe("widget ALETA: kotak Draf putusan H-7", () => {
     const h = buka({ ujiTampilan: "ui" });
     await sampai(() => qs(h, "[data-draf-h7-widget] .aleta-cmw-kh-chip").length === 2, "dua lencana draf");
     const kotak = q(h, "[data-draf-h7-widget]");
-    expect(kotak.textContent).toContain("Draf putusan H-7");
+    expect(kotak.textContent).toContain("Draf putusan");
     expect(qs(h, "[data-draf-h7-widget] .aleta-cmw-kh-ket").map((x) => x.textContent)).toEqual(["Hari Putusan besok", "Perkiraan putusan verstek 5 hari lagi"]);
     expect(qs(h, "[data-draf-h7-widget] .aleta-cmw-kh-chip").map((c) => [c.textContent, c.getAttribute("data-nada")])).toEqual([
-      ["Draf H-7 75% - 1 perlu diisi", "kuning"],
-      ["Draf H-7 siap", "hijau"],
+      ["Draf putusan · 3 dari 4 siap", "kuning"],
+      ["Draf putusan siap", "hijau"],
     ]);
     const tautan = qs(h, "[data-draf-h7-widget] a.aleta-cmw-h7-aksi");
     expect(tautan).toHaveLength(2);
-    expect(tautan[0].getAttribute("href")).toBe("http://192.168.10.10/aleta/aleta-ecourt");
+    // 19 Okt: tautan "Lihat tahapan" membuka pop-up draf di Jadwal Sidang (?drafH7=<perkara>) - satu per perkara.
+    expect(tautan.map((a) => a.getAttribute("href"))).toEqual(["http://192.168.10.10/aleta/aleta-ecourt?drafH7=12", "http://192.168.10.10/aleta/aleta-ecourt?drafH7=15"]);
+    expect(tautan[0].textContent).toBe("Lihat tahapan");
     expect(h.minta).toEqual([API_H7]);
     expect(kotak.textContent).not.toMatch(/undefined|null|#\d{4}#/);
   });
@@ -268,7 +270,7 @@ describe("widget ALETA: kotak Draf putusan H-7", () => {
     // Posisi widget disimpan per aplikasi; tanpa posisi ABT widget tampil mengecil.
     const h = buka({ ujiTampilan: "ui", posisiChecklistAbt: { kecil: false } }, { url: "http://192.168.10.10/aps_badilag/abt/main", blangkoDerryPk: "12" });
     const tombol = await sampai(() => q(h, '[data-h7-pakai="12"]'), "tombol pakai draf");
-    expect(tombol.textContent).toBe("Buka blangko draf & pasang saran");
+    expect(tombol.textContent).toBe("Buka blangko draf");
     tombol.click();
     await sampai(() => h.dipakai.length === 1, "pakaiDrafH7 dipanggil");
     expect(h.dipakai[0]).toMatchObject({ blangko: { menu: "Putusan Cerai Gugat" } });
@@ -293,9 +295,9 @@ describe("widget ALETA: kotak Draf putusan H-7", () => {
     const jawaban = { ok: true, data: { ok: true, jumlah: 1, perkara } };
     // Tanpa Blangko Derry: ringkasan varian + tautan Jadwal Sidang.
     const tanpa = buka({ ujiTampilan: "ui" }, { jawabanH7: jawaban });
-    const ket = await sampai(() => q(tanpa, '[data-h7-perkara="12"] [data-h7-varian-ket]'), "ringkasan varian");
-    expect(ket.textContent).toBe("Varian draf: Dikabulkan (75%), Ditolak (40%)");
-    expect(q(tanpa, '[data-h7-perkara="12"] a.aleta-cmw-h7-aksi')).not.toBeNull();
+    // 19 Okt: kalimat "Varian draf: ..." dibuang dari widget (tembok teks); varian ada di tombol dan di pop-up portal.
+    await sampai(() => q(tanpa, '[data-h7-perkara="12"] a.aleta-cmw-h7-aksi'), "tautan tahapan");
+    expect(q(tanpa, '[data-h7-perkara="12"] [data-h7-varian-ket]')).toBeNull();
     // ABT dengan Blangko Derry pada perkara yang sama: dua tombol, masing-masing memasang varian sendiri.
     const h = buka({ ujiTampilan: "ui", posisiChecklistAbt: { kecil: false } }, { url: "http://192.168.10.10/aps_badilag/abt/main", blangkoDerryPk: "12", jawabanH7: jawaban });
     await sampai(() => qs(h, '[data-h7-pakai="12"]').length === 2, "dua tombol varian");
