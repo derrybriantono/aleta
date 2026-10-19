@@ -342,6 +342,37 @@ async function keadaanSatu(nomorPerkara, sipp) {
 }
 
 /** Perkara yang menuntut tindakan, untuk layar kendali berkas. */
+/**
+ * Nomor perkara yang SUDAH diputus menurut SIPP, dari daftar nomor.
+ *
+ * Daftar kerja kendali berkas dahulu hanya membaca catatan e-Court: perkara
+ * yang tab Putusannya kosong karena memang BELUM diputus (676-678/Pdt.G/2026,
+ * baru terdaftar) ikut tertulis "Menu Putusan E-Court Error" - 153 baris pada
+ * 19 Oktober 2026. Galat SIPP dikembalikan null: tidak tahu bukan tidak putus.
+ */
+function nomorSudahPutus(daftarNomor) {
+  const nomor = [...new Set((daftarNomor || []).filter(Boolean))];
+  if (nomor.length === 0) return Promise.resolve(new Set());
+  // Dimuat saat dipakai: memuat modul ini (uji, skrip verifikasi) tidak membuka sambungan SIPP.
+  // eslint-disable-next-line global-require
+  const sippDb = require("../db_config");
+  return new Promise((resolve) => {
+    sippDb.query(
+      `SELECT p.nomor_perkara AS nomorPerkara
+         FROM perkara p
+         JOIN perkara_putusan pu ON pu.perkara_id = p.perkara_id
+        WHERE p.nomor_perkara IN (${nomor.map(() => "?").join(",")})
+          AND pu.tanggal_putusan IS NOT NULL
+        GROUP BY p.nomor_perkara`,
+      nomor,
+      (error, rows) => {
+        if (error) return resolve(null);
+        resolve(new Set((Array.isArray(rows) ? rows : []).map((r) => normalizeCaseNumber(r.nomorPerkara))));
+      }
+    );
+  });
+}
+
 async function daftarPerluTindakan({ batas = 100 } = {}) {
   await ensureSchema();
 
@@ -357,10 +388,15 @@ async function daftarPerluTindakan({ batas = 100 } = {}) {
        FROM aleta_bot_ecourt_putusan
       WHERE ada_baris = 0 OR dokumen_ada = 0 OR panitera_tte = 0
       ORDER BY ada_baris ASC, dokumen_ada ASC, panitera_tte ASC, diperiksa_pada DESC
-      LIMIT ${maksBaris}`
+      LIMIT 2000`
   );
 
-  return (Array.isArray(rows) ? rows : []).map((row) => ({
+  const semua = Array.isArray(rows) ? rows : [];
+  const putus = await nomorSudahPutus(semua.map((row) => normalizeCaseNumber(row.nomorPerkara)));
+  // SIPP tidak terbaca: daftar lama dipertahankan (lebih baik tertagih daripada hilang).
+  const tersaring = putus ? semua.filter((row) => putus.has(normalizeCaseNumber(row.nomorPerkara))) : semua;
+
+  return tersaring.slice(0, maksBaris).map((row) => ({
     nomorPerkara: String(row.nomorPerkara || ""),
     adaBaris: Number(row.adaBaris) === 1,
     dokumenAda: Number(row.dokumenAda) === 1,
@@ -380,6 +416,7 @@ module.exports = {
   catatanBanyak,
   daftarPerluTindakan,
   ensureSchema,
+  nomorSudahPutus,
   keadaanBanyak,
   keadaanSatu,
   lupakan,
