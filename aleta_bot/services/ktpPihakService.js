@@ -906,4 +906,8 @@ module.exports = {
   salinKembaran,
   perkaraKtp,
   ringkasan,
+  // OCR-ECOURT 19 Okt: konteks SIPP yang sama dipakai pembaca lampiran (lampiranEcourtStoreService).
+  cariPerkara,
+  pihakPerkara,
+  sebutanPerkara,
 };

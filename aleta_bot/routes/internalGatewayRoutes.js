@@ -3234,6 +3234,56 @@ router.get("/sipp/ktp-pihak/perkara", requireInternalToken, async (req, res) => 
 });
 /* === AKHIR KTP-PIHAK === */
 
+/* === OCR-ECOURT 19 Okt === */
+// Lampiran e-Court (KK, akta, surat keterangan, surat kuasa, slip gaji) -> medan per halaman. Portal yang membaca
+// (lapisan teks/OCR); bot mengenali jenis, mengurai medan, mencocokkan ke pihak SIPP, dan menyimpan medan TANPA NIK
+// dan tanpa teks halaman. Lihat services/lampiranEcourtStoreService.js.
+const lampiranEcourtStore = require("../services/lampiranEcourtStoreService");
+
+router.get("/sipp/lampiran-ecourt/antrian", requireInternalToken, async (req, res) => {
+  try {
+    const nomor = String(req.query.nomor || "").split("|").map((x) => x.trim()).filter(Boolean);
+    const versi = require("../services/lampiranEcourtService").VERSI_LAMPIRAN;
+    const berkas = await lampiranEcourtStore.antrian({ nomor, batas: Number(req.query.batas) || 1, versi: Number(req.query.versi) || versi });
+    res.json({ ok: true, berkas, versi });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.get("/sipp/lampiran-ecourt/berkas", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await lampiranEcourtStore.berkas(String(req.query.fileId || ""));
+    if (!hasil.ok) {
+      res.status(404).json({ ok: false, alasan: hasil.alasan });
+      return;
+    }
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Content-Length", String(hasil.isi.length));
+    res.send(hasil.isi);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/sipp/lampiran-ecourt", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await lampiranEcourtStore.simpan(Array.isArray(req.body?.hasil) ? req.body.hasil : []);
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.get("/sipp/lampiran-ecourt/ringkasan", requireInternalToken, async (_req, res) => {
+  try {
+    res.json({ ok: true, ...(await lampiranEcourtStore.ringkasan()) });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+/* === AKHIR OCR-ECOURT === */
+
 /* === KTP-RIWAYAT 12 Okt === */
 // Histori penarikan tanggal KTP per nomor perkara + bacaan ulang satu perkara (butir 11).
 // Hanya membaca tabel bot; NIK tidak pernah keluar. Lihat services/ktpPihakRiwayatService.js.
@@ -7302,6 +7352,26 @@ router.post("/abt/isi-gugatan", requireInternalToken, async (req, res) => {
     });
     // KONTAK-EC 11 Okt: kontak pihak/kuasa dari teks yang sama + ringkasan untuk variabel ABT.
     hasil.kontak = await kontakDariIsiGugatan(req.body, hasil);
+    // OCR-ECOURT 19 Okt: usulan dari lampiran e-Court yang sudah dibaca penyapu latar (cache per berkas). Kode yang
+    // sudah diusulkan dari surat gugatan/jawaban tidak diulang; galat lampiran tidak pernah menggagalkan isi gugatan.
+    try {
+      const sebutanLampiran = {
+        lawan: String(sebutanMasuk.lawan || "").replace(/[^A-Za-z /]/g, "").slice(0, 40),
+        pelaku: String(sebutanMasuk.pelaku || "").replace(/[^A-Za-z /]/g, "").slice(0, 40),
+      };
+      const lampiran = await lampiranEcourtStore.usulanPerkara({ nomorPerkara: String(req.body?.nomorPerkara || ""), sebutan: sebutanLampiran });
+      const ada = new Set((hasil.usulan || []).map((u) => u.kode));
+      const baru = lampiran.usulan.filter((u) => !ada.has(u.kode));
+      if (baru.length || lampiran.kalimat.length) {
+        hasil.usulan = [...(hasil.usulan || []), ...baru];
+        hasil.kalimat = [...(hasil.kalimat || []), ...lampiran.kalimat];
+        hasil.catatan = [...(hasil.catatan || []), ...lampiran.catatan];
+        hasil.ada = true;
+      }
+      hasil.lampiran = lampiran.ringkasan;
+    } catch (_) {
+      hasil.lampiran = null;
+    }
     res.json({ ...hasil, nomorPerkara: String(req.body?.nomorPerkara || "").slice(0, 80) });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });

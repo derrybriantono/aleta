@@ -291,6 +291,8 @@ export function mulaiPindaiKtpBerkala(deps: DepsKtp = depsKtpAsli, env: NodeJS.P
     if (!p.aktif) return;
     // Toleransi 1 detik: detak 30 detik tidak boleh melompati jeda 30 detik karena jitter.
     if (Date.now() - w.terakhirJalan < p.jedaMs - 1000) return;
+    // OCR-ECOURT 19 Okt: penyapu lampiran sedang meng-OCR - tunggu detak berikutnya (dua OCR latar tidak bertumpuk).
+    if ((globalThis as unknown as { __aletaLampiranEcourt?: { jalan?: boolean } }).__aletaLampiranEcourt?.jalan) return;
     w.terakhirJalan = Date.now();
     await putaranKtpPihak([], deps, { batas: p.batas, pemicu: "latar" });
   };
