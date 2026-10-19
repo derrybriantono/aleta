@@ -206,8 +206,14 @@ function angkaKata(teks) {
 }
 
 const KATA_ANGKA = "(?:nol|satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|seratus|seribu|belas|puluh|ratus|ribu)";
+const NAMA_BULAN = "(?:januari|februari|pebruari|maret|april|mei|juni|juli|agustus|september|oktober|nopember|november|desember)";
+/**
+ * Akta catatan sipil dwibahasa: "pada tanggal DUA PULUH TUJUH | that in on date THE TWENTY-SEVENTH OF | MARET tahun -
+ * DUA RIBU DUA PULUH DUA". Bulan boleh terpisah oleh baris bahasa Inggris; "tanggal"/"tahun" sering salah baca OCR
+ * ("tnnagal", "Iahun").
+ */
 const RE_TANGGAL_KATA = new RegExp(
-  `tanggal\\s+((?:${KATA_ANGKA}\\s*){1,3})[\\s.,]*([A-Za-z]{3,10})[\\s\\S]{0,60}?tahun\\s+((?:${KATA_ANGKA}\\s*){1,7})`,
+  `(?:t[a-z]{3,6}l|tgl\\.?)\\s*[:.\\-]*\\s*((?:${KATA_ANGKA}[\\s.,]*){1,3})[\\s\\S]{0,90}?\\b(${NAMA_BULAN})\\b[\\s\\S]{0,40}?[tTIl1]ahun\\s*[-:.]*\\s*((?:${KATA_ANGKA}\\s*){1,7})`,
   "gi"
 );
 
@@ -223,13 +229,18 @@ function semuaTanggalKata(teks) {
   return hasil;
 }
 
-/** Tanggal surat di kaki surat: "Donggala, 12 Mei 2026" - kemunculan TERAKHIR. */
+/**
+ * Tanggal surat di kaki surat: "Donggala, 12 Mei 2026" - kemunculan TERAKHIR. "Tempat/Tanggal Lahir : Palu, 1 Mei 1980"
+ * (diukur 19 Okt: sumber utama salah baca tanggal surat keterangan/kuasa/akta nikah) dilewati.
+ */
 function tanggalKaki(teks) {
   const re = new RegExp(`([A-Z][A-Za-z.' ]{2,30}),\\s*${POLA_TGL}`, "g");
   let terakhir = null;
   let m;
   while ((m = re.exec(teks))) {
     const t = uraiTanggal(m[2]);
+    const depan = teks.slice(Math.max(0, m.index - 30), m.index + m[1].length);
+    if (/lah[iu]r|\bTTL\b|tgl\.?\s*lhr/i.test(depan)) continue;
     if (t) terakhir = { ...t, kota: bersih(m[1], 40), indeks: m.index };
   }
   return terakhir;
@@ -265,10 +276,17 @@ function kenaliJenis(teks, judul = "") {
   if (t.replace(/\s/g, "").length < 40) return { jenis: "lain", skor: 0, alasan: "teks_terlalu_sedikit" };
   const skor = ATURAN_JENIS.map((a) => {
     let n = 0;
-    for (const p of a.judul) if (p.test(t)) n += 3;
+    let berjudul = false;
+    // berjudul = judulnya ada di kepala halaman (400 huruf pertama): halaman baru, bukan sambungan surat sebelumnya
+    // ("Demikian Surat Kuasa ini ..." di halaman kedua tidak membuat surat baru).
+    for (const p of a.judul)
+      if (p.test(t)) {
+        n += 3;
+        if (p.test(t.slice(0, 400))) berjudul = true;
+      }
     for (const p of a.ciri) if (p.test(t)) n += 1;
     if (judul && a.dariJudul.test(judul)) n += 2;
-    return { jenis: a.jenis, n };
+    return { jenis: a.jenis, n, berjudul };
   });
   // Surat keterangan KUA mengalahkan surat keterangan desa; surat kuasa insidentil mengalahkan surat kuasa biasa.
   const ambil = (j) => skor.find((s) => s.jenis === j);
@@ -277,9 +295,9 @@ function kenaliJenis(teks, judul = "") {
   // Surat kuasa sering menyebut "akta cerai"/"akta kelahiran" sebagai urusan yang dikuasakan: judul aktanya harus di awal.
   skor.sort((a, b) => b.n - a.n);
   const [satu, dua] = skor;
-  if (satu.n < 3) return { jenis: "lain", skor: satu.n, alasan: "ciri_kurang" };
-  if (dua && dua.n === satu.n) return { jenis: "lain", skor: satu.n, alasan: `seri_${satu.jenis}_${dua.jenis}` };
-  return { jenis: satu.jenis, skor: satu.n, alasan: "" };
+  if (satu.n < 3) return { jenis: "lain", skor: satu.n, alasan: "ciri_kurang", berjudul: false };
+  if (dua && dua.n === satu.n) return { jenis: "lain", skor: satu.n, alasan: `seri_${satu.jenis}_${dua.jenis}`, berjudul: false };
+  return { jenis: satu.jenis, skor: satu.n, alasan: "", berjudul: satu.berjudul };
 }
 
 // ---------------------------------------------------------------------------
@@ -357,12 +375,14 @@ function perbaikiRomawi(nomor) {
 function nomorBerlabel(teks, { setelah = "" } = {}) {
   const t = rapikan(teks);
   const awal = setelah ? Math.max(0, t.search(setelah)) : 0;
-  const re = /\b(?:Nomor|No(?:mor)?\.?)\s*[:.]?\s*([A-Za-z0-9][A-Za-z0-9./\- ]{1,48})/gi;
+  // "Nomor ......470/12/..." (titik-titik isian) - label tidak boleh diikuti huruf ("Nomor" bukan "No" + "mor").
+  const re = /\b(?:Nomor|No\.?)(?![A-Za-z])[\s:.…]*([A-Za-z0-9][A-Za-z0-9./\- ]{1,48})/gi;
   re.lastIndex = awal;
   let m;
   while ((m = re.exec(t))) {
     let n = m[1].split(/\n/)[0].replace(/\s{2,}.*$/, "").trim();
-    n = n.replace(/\s+(?:Tanggal|Tgl|Tahun|Lampiran|Perihal|Hal|Sifat)\b.*$/i, "").replace(/[\s.,;:\-]+$/, "");
+    n = n.replace(/\s+(?:Tanggal|Tgl|Tahun|Lampiran|Perihal|Hal|Sifat|By|Number)\b.*$/i, "").replace(/[\s.,;:\-]+$/, "");
+    n = n.replace(/(\d)[.\-\s]+[A-Za-z]{1,3}$/, "$1");
     n = n.replace(/\s*([/.\-])\s*/g, "$1");
     // Deret 16 angka (NIK/KK) bukan nomor surat.
     if (/\d/.test(n) && n.length >= 3 && !/^\d{16}$/.test(n.replace(/[\s.\-]/g, "")) && /[/.\-]/.test(n)) return perbaikiRomawi(n).slice(0, 60);
@@ -433,20 +453,26 @@ function uraiMedan(jenis, teksAsli) {
     const kata = semuaTanggalKata(d);
     const angka = semuaTanggal(d);
     // Tanggal peristiwa = tanggal pertama sesudah "bahwa di"; tanggal kutipan = sesudah "dikeluarkan".
-    const iBahwa = d.search(/bahwa\s+di\b/i);
+    const iBahwa = d.search(/bahwa\s*di\b/i);
     const iKeluar = d.search(/dikeluarkan/i);
     const semua = [...kata, ...angka].sort((a, b) => a.indeks - b.indeks);
     const peristiwa = semua.find((x) => iBahwa >= 0 && x.indeks > iBahwa && (iKeluar < 0 || x.indeks < iKeluar));
     if (peristiwa) isi(jenis === "akta_lahir" ? "tanggalLahir" : "tanggalMeninggal", { iso: peristiwa.iso, tampil: peristiwa.tampil, indo: peristiwa.indo });
     const kutipan = iKeluar >= 0 ? semua.find((x) => x.indeks > iKeluar) : null;
     if (kutipan) isi("tanggal", { iso: kutipan.iso, tampil: kutipan.tampil, indo: kutipan.indo });
-    const tempat = /bahwa\s+di\s+([A-Z][A-Za-z .']{2,40}?)\s+(?:in\s+|pada\s+tanggal|\|)/i.exec(d);
+    const tempat = /bahwa\s*di\s*[:.]?\s*([A-Z][A-Za-z .']{2,40}?)\s*[:,]?\s+(?:in\s+|pada\b|that\b)/i.exec(d);
     isi("tempat", tempat ? judulKata(tempat[1]) : "");
     if (jenis === "akta_lahir") {
-      const nama = /telah\s+lahir\s+(?:seorang\s+)?(?:anak\s+)?(?:laki-?\s?laki|perempuan)?\s*(?:bernama|yang\s+diberi\s+nama)?\s*([A-Z][A-Z.' ]{2,50}?)(?=\s+(?:has|anak\s+ke|\||$))/i.exec(d);
-      isi("nama", nama ? namaBersih(nama[1]) : "");
+      // Nama anak: huruf kapital tepat sebelum "anak ke" (OCR: "anakke", "angk ke", "apak ke"), sesudah "was born"/"telah lahir".
+      const iAnak = d.search(/\b[a-z]{2,4}k\s*ke\b/i);
+      if (iAnak > 0) {
+        const sebelum = d.slice(Math.max(0, iAnak - 120), iAnak);
+        const potong = sebelum.split(/was\s+bo[rm]n|telah\s+lah[iu]r/i).pop() || "";
+        const nm = /([A-Z][A-Z.' ]{2,50})\s*$/.exec(potong.replace(/[^A-Za-z.' ]+/g, " ").replace(/\s+/g, " ").trim());
+        isi("nama", nm ? namaBersih(nm[1], { denganBin: true }) : "");
+      }
       // Tanpa bendera i: nama orang tua ditulis huruf kapital; kata sambung boleh kecil/kapital.
-      const ortu = /[Aa][Nn][Aa][Kk]\s+[Kk][Ee]\s*[-:]?\s*([A-Za-z0-9]+)\s+(?:[Dd][Aa][Rr][Ii]\s+)?(?:[Aa][Yy][Aa][Hh]\s+)?([A-Z][A-Z.' ]{2,40}?)\s+[Dd][Aa][Nn]\s+(?:[Ii][Bb][Uu]\s+)?([A-Z][A-Z.' ]{2,40})/.exec(d);
+      const ortu = /\b[A-Za-z]{2,4}[Kk]\s*[Kk][Ee]\s*[-:]?\s*([A-Za-z0-9]+)\s*[,.]?\s*(?:LAKI\s*-?\s*LAKI|PEREMPUAN|Laki\s*-?\s*laki|Perempuan)?\s*(?:[Dd][Aa][Rr][Ii]\s*:?\s*)?(?:[Ss]uami\s+[Ii]ster?i\s*:?\s*)?(?:[Aa][Yy][Aa][Hh]\s+)?([A-Z][A-Z.' ]{2,40}?)\s+[Dd][Aa][Nn]\s+(?:[Ii][Bb][Uu]\s+)?([A-Z][A-Z.' ]{2,40})/.exec(d.replace(/["“”]/g, " "));
       if (ortu) {
         isi("anakKe", bersih(ortu[1], 20).toLowerCase());
         isi("ayah", namaBersih(ortu[2]));
@@ -491,7 +517,11 @@ function uraiMedan(jenis, teksAsli) {
     const kantor = /(?:pada|dari|berkantor\s+(?:di|pada))\s+(Kantor\s+(?:Hukum|Advokat|Pengacara)[A-Za-z&.,' ]{2,60}?|Lembaga\s+Bantuan\s+Hukum[A-Za-z&.,' ]{2,60}?|LBH\s+[A-Za-z&.,' ]{2,60}?|Law\s+(?:Firm|Office)\s+[A-Za-z&.,' ]{2,60}?|Pos\s+Bantuan\s+Hukum[A-Za-z&.,' ]{2,60}?)(?=\s*(?:,|beralamat|yang\s+beralamat|berkedudukan|di\s+Jl|Jalan|Jl\.|alamat|\(|$))/i.exec(d);
     isi("kantor", kantor ? bersih(kantor[1].replace(/[,.]+$/, ""), 120) : "");
     // Pihak yang diwakili: "selaku Tergugat", "sebagai Penggugat/Pemohon".
-    const selaku = /(?:selaku|sebagai|dalam\s+kedudukan(?:nya)?\s+sebagai)\s+(Penggugat|Tergugat|Pemohon|Termohon|Turut\s+Tergugat)/i.exec(d);
+    // Kedudukan PEMBERI kuasa disebut sebelum "memberi kuasa kepada"; sesudahnya biasanya pihak lawan ("melawan X
+    // selaku Termohon") - jadi yang dicari lebih dulu bagian sebelum frasa pemberian kuasa.
+    const iBeri = d.search(/memberi(?:kan)?\s+kuasa|dengan\s+ini\s+(?:memberi|menunjuk)/i);
+    const reSelaku = /(?:selaku|sebagai|dalam\s+kedudukan(?:nya)?\s+sebagai)\s+(Penggugat|Tergugat|Pemohon|Termohon|Turut\s+Tergugat)/i;
+    const selaku = (iBeri > 0 ? reSelaku.exec(d.slice(0, iBeri)) : null) || (iBeri > 0 ? null : reSelaku.exec(d));
     isi("selaku", selaku ? judulKata(selaku[1]) : "");
     if (jenis === "kuasa_insidentil") {
       // "Yang bertanda tangan di bawah ini saya : Nama : X ... Sebagai penerima kuasa"
@@ -509,6 +539,7 @@ function uraiMedan(jenis, teksAsli) {
     } else {
       const pemberi = /bertanda\s+tangan\s+di\s+bawah\s+ini\s*[:.,]?\s*(?:saya\s*)?[:.,]?\s*(?:Nama\s*[:.]?\s*)?([A-Z][A-Za-z.' ]{2,50})/i.exec(d);
       isi("pemberi", pemberi ? namaBersih(pemberi[1]) : "");
+      if (!m.pemberi && iBeri > 0) isi("pemberi", namaSesudah(d.slice(0, iBeri), "Nama"));
     }
   } else if (jenis === "slip_gaji") {
     const bersihGaji = /(?:GAJI\s+BERSIH|PENGHASILAN\s+BERSIH|JUMLAH\s+(?:BERSIH|DITERIMA|YANG\s+DITERIMA)|TAKE\s+HOME\s+PAY|THP)\s*[:.]?\s*(?:Rp\.?\s*)?([0-9OoIlSB][0-9OoIlSB.,]{3,14})/i.exec(d);
@@ -531,21 +562,49 @@ function uraiMedan(jenis, teksAsli) {
  * halaman: [{ teks, sumber: "teks-pdf" | "ocr", conf? }]. Mengembalikan bacaan per halaman beserta calon NIK (deret)
  * dan nama yang dipakai mencocokkan pihak. Calon NIK HANYA dipakai cocokkanPihak lalu dibuang pemanggil.
  */
+/** Surat yang lazim berlanjut ke halaman berikutnya (tanggal dan tanda tangan di halaman terakhir). */
+const JENIS_BERSAMBUNG = new Set(["surat_kuasa", "kuasa_insidentil", "sk_desa", "sk_kua", "akta_cerai", "slip_gaji"]);
+const TANPA_MEDAN = new Set(["lain", "ktp", "kartu_advokat", "ba_sumpah"]);
+
+function susunBacaan(nomorHalaman, jenis, skor, sumber, teks) {
+  const medan = TANPA_MEDAN.has(jenis) ? {} : uraiMedan(jenis, teks);
+  return {
+    halaman: nomorHalaman,
+    jenis,
+    skor,
+    sumber,
+    medan,
+    _teks: teks,
+    _nik: jenis === "lain" ? [] : deretNik(teks),
+    _nama: namaUntukCocok(jenis, medan, teks),
+  };
+}
+
+/**
+ * Halaman sambungan (tanpa judul sendiri, sesudah surat kuasa/surat keterangan) digabung ke surat sebelumnya lalu
+ * diurai sebagai satu surat - tanggal kaki di halaman kedua surat kuasa ikut terbaca bersama "selaku Tergugat"-nya.
+ */
 function bacaBerkas({ judul = "", halaman = [] } = {}) {
   const keluar = [];
   (Array.isArray(halaman) ? halaman : []).slice(0, BATAS_HALAMAN).forEach((h, i) => {
     const teks = rapikan(h && h.teks);
+    const sumber = h && h.sumber === "teks-pdf" ? "teks-pdf" : "ocr";
     const k = kenaliJenis(teks, judul);
-    const medan = ["lain", "ktp", "kartu_advokat", "ba_sumpah"].includes(k.jenis) ? {} : uraiMedan(k.jenis, teks);
-    keluar.push({
-      halaman: i + 1,
-      jenis: k.jenis,
-      skor: k.skor,
-      sumber: h && h.sumber === "teks-pdf" ? "teks-pdf" : "ocr",
-      medan,
-      _nik: k.jenis === "lain" ? [] : deretNik(teks),
-      _nama: namaUntukCocok(k.jenis, medan, teks),
-    });
+    const sebelum = keluar[keluar.length - 1];
+    const huruf = teks.replace(/[^A-Za-z]/g, "").length;
+    const sambungan =
+      sebelum &&
+      sebelum.halaman + (sebelum.sambungan || 0) === i &&
+      JENIS_BERSAMBUNG.has(sebelum.jenis) &&
+      huruf >= 150 &&
+      ((k.jenis === "lain" && k.skor < 3) || (k.jenis === sebelum.jenis && !k.berjudul));
+    if (sambungan) {
+      const gabung = susunBacaan(sebelum.halaman, sebelum.jenis, sebelum.skor, sebelum.sumber === "ocr" || sumber === "ocr" ? "ocr" : "teks-pdf", `${sebelum._teks}\n${teks}`);
+      gabung.sambungan = (sebelum.sambungan || 0) + 1;
+      keluar[keluar.length - 1] = gabung;
+      return;
+    }
+    keluar.push(susunBacaan(i + 1, k.jenis, k.skor, sumber, teks));
   });
   return keluar;
 }
@@ -621,7 +680,7 @@ function cocokkanPihak(bacaan, pihak) {
  * "KK" yang ternyata sama dengan NIK salah satu pihak (OCR membaca baris anggota sebagai nomor KK) juga dibuang.
  */
 function tanpaRahasia(b, pihak) {
-  const { _nik, _nama, ...sisa } = b || {};
+  const { _nik, _nama, _teks, ...sisa } = b || {};
   if (sisa.medan && sisa.medan.nomor && Array.isArray(pihak)) {
     const nikPihak = new Set(pihak.map((p) => String(p.nik || "").replace(/\D/g, "")).filter((x) => x.length === 16));
     if (nikPihak.has(String(sisa.medan.nomor).replace(/\D/g, ""))) {
@@ -652,6 +711,7 @@ const KODE = Object.freeze({
   noDuplikatNikah: "1108",
   tglDuplikatNikah: "0889",
   ttlAnakAua: "9709",
+  namaAnak: "5110",
 });
 
 /** Isian petugas yang sudah ada (bukan kosong dan bukan garis bawah/titik-titik) - selalu menang. */
@@ -783,7 +843,10 @@ function susunUsulan({ bacaan = [], sebutan = {}, isianLama = {}, jenisPerkara =
     // Akta kematian dan akta cerai menyebut orang yang bukan pihak (pewaris, suami terdahulu) - ikut bila perkara ini
     // satu-satunya pemilik berkasnya (berkas e-Court perkara ini sendiri), ditandai lewat sumbernya.
     const bolehTanpaPihak = ["sk_kua", "akta_kematian", "akta_cerai"].includes(b.jenis);
-    if (["kk", "akta_lahir", "akta_kematian", "akta_cerai", "akta_nikah", "sk_desa", "sk_kua"].includes(b.jenis) && (milikPerkara(b) || bolehTanpaPihak) && (m.nomor || m.tanggal)) {
+    // Kutipan akta nikah biasa tidak diusulkan: nomor/tanggal/KUA-nya sudah dari SIPP (#1004#/#1012#/#1005#) dan OCR
+    // buku nikah terukur paling lemah (UKURAN-OCR-ECOURT.json); hanya duplikatnya.
+    const jenisKalimat = ["kk", "akta_lahir", "akta_kematian", "akta_cerai", "sk_desa", "sk_kua"].includes(b.jenis) || (b.jenis === "akta_nikah" && m.duplikat);
+    if (jenisKalimat && (milikPerkara(b) || bolehTanpaPihak) && (m.nomor || m.tanggal)) {
       const teks = buangNik(kalimatBukti(b)).replace("\u0000NOMOR\u0000", String(m.nomor || ""));
       if (teks && !kalimat.some((k) => k.teks === teks)) {
         kalimat.push({
@@ -795,6 +858,18 @@ function susunUsulan({ bacaan = [], sebutan = {}, isianLama = {}, jenisPerkara =
         });
       }
     }
+  }
+  // Nama anak (5110) dari kutipan akta kelahiran yang ayah/ibunya pihak perkara ini - hanya bila surat gugatan tidak
+  // memberinya (rute isi-gugatan mendahulukan usulan gugatan untuk kode yang sama).
+  const anak = [];
+  for (const b of urut) {
+    if (b.jenis !== "akta_lahir" || !milikPerkara(b) || !b.medan.nama) continue;
+    if (!anak.some((a) => K.namaSerupa(a.nama, b.medan.nama))) anak.push({ nama: b.medan.nama, b });
+  }
+  if (anak.length) {
+    const daftar = anak.map((a) => a.nama);
+    const nilai = daftar.length === 1 ? daftar[0] : `${daftar.slice(0, -1).join(", ")} dan ${daftar[daftar.length - 1]}`;
+    tambah(KODE.namaAnak, "Nama anak", nilai, anak[0].b, "akta_lahir.nama", `${anak.length} kutipan akta kelahiran di lampiran e-Court yang orang tuanya pihak perkara ini - periksa ejaannya.`);
   }
   const ocr = urut.filter((b) => b.sumber === "ocr").length;
   if (usulan.length || kalimat.length) catatan.push(`Dari lampiran e-Court${ocr ? " hasil pindai (OCR)" : ""}: ejaan nama dan angka dapat meleset - periksa dengan aslinya.`);

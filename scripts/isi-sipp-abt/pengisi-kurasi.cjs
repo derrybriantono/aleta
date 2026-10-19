@@ -108,6 +108,18 @@ const KELOMPOK = [
     syarat: "itsbat nikah; usulan ragu sampai diukur atas berkas sungguhan; tidak terbaca -> dikosongkan untuk diisi manual",
   },
   {
+    // OCR-ECOURT 19 Okt 2026: lampiran e-Court hasil pindai (Dokumen Bukti 96% pindaian) dibaca OCR di latar.
+    id: "lampiran-ecourt-ocr",
+    kode: ["0185", "0157", "8894", "8895", "5171", "5271", "0652", "0653", "1108", "0889", "9709", "5110"],
+    untuk: "semua",
+    berkas: "aleta_bot/services/lampiranEcourtService.js",
+    sumber:
+      "lampiran e-Court (Dokumen Bukti, surat kuasa, surat keterangan): halaman dikenali dari isinya (KK, akta kelahiran/kematian/nikah/cerai, surat keterangan desa/KUA, surat kuasa khusus/insidentil, slip gaji), medan diurai, dicocokkan ke pihak SIPP lewat NIK/nama (NIK tidak pernah ditampilkan atau disimpan); 0185/0157 surat kuasa Tergugat, 8894/8895 kuasa insidentil, 5171/5271 slip gaji, 0652/0653 penolakan KUA, 1108/0889 duplikat akta nikah, 9709 TTL anak (asal-usul), 5110 nama anak dari akta kelahiran; kalimat salin alat bukti (KK, akta, surat keterangan) untuk 1214/9958/0378/9955",
+    tingkat: "usulan",
+    syarat:
+      "perkara e-Court yang lampirannya sudah dibaca penyapu latar (satu berkas per 3 menit); semua ragu (terukur di bawah ambang 95%/20 perkara - UKURAN-OCR-ECOURT.json) dan tidak menimpa isian petugas",
+  },
+  {
     // JJ2 18 Okt 2026 (keputusan 75b dan 75c).
     id: "jawaban-sita-hb-rekonvensi",
     kode: ["9164", "9283"],
