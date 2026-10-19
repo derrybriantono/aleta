@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.14",
+    dirilis: "2026-10-19T18:45:00+08:00",
+    judul: "Blangko ABT by Derry: isian otomatis lebih tepat, tanya jawab saksi rapi, perkiraan sidang di pemilih, cetak bersih dan bertanda tangan",
+    butir: [
+      "Isian Blangko ABT by Derry lebih tepat: satu tombol \"Isi otomatis\" menggantikan Isi dari SIPP, Isi dari gugatan, dan Ambil tanggal KTP; Tanggal Nikah terisi dari data pernikahan SIPP atau gugatan; Awal perselisihan, Pisah rumah, Lama pisah, Yang meninggalkan rumah, dan Upaya damai dijaga bentuknya sehingga kalimat yang salah tempat (mis. kalimat ghaib) tidak lagi masuk; Beracara secara elektronik disarankan dari data e-Court; nomor di depan nama alat bukti dibuang; rincian alasan cerai selebar penuh dan kartu isian lebih rapi.",
+      "Tanya jawab saksi: jawaban menjadi satu paragraf utuh tanpa baris baru di tengah kalimat dan dengan kalimat penyambung sehingga tidak menempel saat dicetak; Simpan ke ABT pindah ke bawah tabel, Selesai dihapus, tombol yang membingungkan dipindah ke menu Lainnya dengan nama yang jelas; tiap jawaban dapat ditukar ke saksi lain dan dipindah naik/turun; pilihan 'hanya sebagian alasan' hanya menampilkan alasan yang ada di posita; di blangko putusan dan untuk hakim keterangan saksi hanya dapat dibaca, dan kalimat penutup serta posita dirapikan otomatis.",
+      "Pemilih blangko menampilkan perkiraan cocok untuk sidang ke-berapa di kiri nama blangko; teks penanda kecil di kepala halaman blangko dibuang saat dicetak; pilihan cetak bawaan hanya RTF; dan Tambah tanda tangan ke PDF kini memakai tanda tangan pejabat yang disahkan dan tertaut, tercentang otomatis.",
+    ],
+  },
+  {
     versi: "1.205.13",
     dirilis: "2026-10-19T16:30:00+08:00",
     judul: "Draf putusan H-7 bertahap dalam satu jendela, kelompok Ikrar Talak di Blangko ABT by Derry, dan ikrar talak di Peta perkara",
