@@ -752,6 +752,7 @@ describe("G. pratinjau dan cetak", () => {
     expect(q(h, '[data-bd2="isidulu"]')).not.toBeNull();
     expect(h.latar.filter((m) => m.jenis === "unduh")).toEqual([]);
     expect(mintaKe(h, /abt\/preview\?/).length).toBe(1);
+    (q(h, '[data-fmt="pdf"]') as HTMLInputElement).click(); // 19 Okt: bawaan hanya RTF, PDF dicentang tangan
     (q(h, '[data-fmt="anon"]') as HTMLInputElement).click();
     (q(h, '[data-fmt="edoc"]') as HTMLInputElement).click();
     klik(h, '[data-bd2="tetapcetak"]');
@@ -794,6 +795,7 @@ describe("G. pratinjau dan cetak", () => {
     kotak[0].dispatchEvent(new h.w.Event("change", { bubbles: true }));
     expect(q(h, "#bd-btnttd")!.textContent).toContain("(1)");
     (q(h, '[data-fmt="rtf"]') as HTMLInputElement).click();
+    (q(h, '[data-fmt="pdf"]') as HTMLInputElement).click(); // 19 Okt: PDF bukan bawaan lagi
     klik(h, '[data-bd2="cetak"]');
     await sampai(() => q(h, "#bd-ingat") && !q(h, "#bd-ingat")!.hidden, "pengingat");
     klik(h, '[data-bd2="tetapcetak"]');
@@ -985,6 +987,7 @@ describe("audit 17 Okt: E8 byte 0x80-0x9F RTF ke PDF", () => {
     const h = buka({ rtfBytes: bita });
     await pilihPutusan(h);
     await sampai(() => q(h, '[data-bk="P.1"][data-isi="no"]'), "bukti");
+    (q(h, '[data-fmt="pdf"]') as HTMLInputElement).click(); // 19 Okt: PDF bukan bawaan lagi
     klik(h, '[data-bd2="cetak"]');
     await sampai(() => {
       const e = q(h, "#bd-ingat");

@@ -315,7 +315,7 @@
     semua: null, // "Lihat semua isi data"
     semuaBuka: false,
     prat: { terbuka: false, memuat: false, rtf: null, html: "", galat: "", suntingPenuh: false, kotor: true, penanda: [] },
-    fmt: { rtf: true, pdf: true, salinan: false, anon: false, edoc: false },
+    fmt: { rtf: true, pdf: false, salinan: false, anon: false, edoc: false },
     ttdPilih: new Set(),
     ttdSumber: null, // { aleta: [{id,nama}]|null, sendiri: {nama,png}|null }
     peringat: false,
@@ -3818,12 +3818,129 @@
   async function ambilRtf(paksa) {
     if (!S.blangko || !S.pk) throw new Error("Pilih perkara dan blangko dulu.");
     if (S.blangko.hak !== "ok") throw new Error(S.blangko.hak === "periksa" ? "Hak buka blangko ini masih diperiksa ke ABT; tunggu sebentar." : "ABT tidak mengizinkan blangko ini untuk perkara ini.");
+  /**
+   * HEADER PENANDA (19 Okt 2026). Blangko Derry menyimpan di HEADER halaman sebuah tabel kecil berisi variabel ABT
+   * (mis. "#0184# #0185# #0156# #0157#") dengan huruf 1 pt, superskrip: dipakai menyusun blangko supaya ABT ikut menghitung variabel itu.
+   * Sesudah ABT mengisinya, header memuat teks sangat kecil yang tampak sebagai kotak abu di atas halaman. Pada KELUARAN CETAK
+   * (RTF, PDF, PDF salinan, PDF anonim, e-Doc) grup header itu diganti header kosong; berkas .rtf di ABT/server tidak disentuh.
+   * Hanya dibuang bila SEMUA teks tampak di grup header berukuran <= 3 pt (\fs6) dan tidak ada kolom (nomor halaman) atau gambar:
+   * kop/judul header bermuka normal, nomor halaman, dan footer "Putusan Nomor ..." tidak pernah terkena.
+   * Terima ArrayBuffer/Uint8Array atau teks biner; pulang jenis yang sama + jumlah header yang dibersihkan.
+   */
+  const UKURAN_PENANDA_MAKS = 6; // setengah poin: \fs6 = 3 pt
+  function headerPenandaKecil(grup) {
+    let fs = 24;
+    const tumpuk = [];
+    let lewat = 0; // kedalaman grup tujuan {\* ...} yang diabaikan
+    let teks = 0;
+    let terbesar = 0;
+    let terlarang = false;
+    let kecilAda = false; // ada pengaturan huruf <= 3 pt
+    let adaTabel = false; // header berbentuk tabel (kotak penanda)
+    const n = grup.length;
+    for (let i = 0; i < n; i += 1) {
+      const c = grup[i];
+      if (c === "{") {
+        tumpuk.push(fs);
+        if (lewat) lewat += 1;
+        else if (grup[i + 1] === "\\" && grup[i + 2] === "*") lewat = 1;
+      } else if (c === "}") {
+        if (tumpuk.length) fs = tumpuk.pop();
+        if (lewat) lewat -= 1;
+      } else if (c === "\\") {
+        const d = grup[i + 1];
+        if (d === "\\" || d === "{" || d === "}") {
+          if (!lewat) {
+            teks += 1;
+            terbesar = Math.max(terbesar, fs);
+          }
+          i += 1;
+        } else if (d === "'") {
+          if (!lewat) {
+            teks += 1;
+            terbesar = Math.max(terbesar, fs);
+          }
+          i += 3;
+        } else if (/[a-zA-Z]/.test(d || "")) {
+          let j = i + 1;
+          while (j < n && /[a-zA-Z]/.test(grup[j])) j += 1;
+          const kata = grup.slice(i + 1, j);
+          let k = j;
+          if (grup[k] === "-") k += 1;
+          while (k < n && /[0-9]/.test(grup[k])) k += 1;
+          const angka = grup.slice(j, k);
+          if (grup[k] === " ") k += 1;
+          if (!lewat) {
+            if (kata === "fs") {
+              fs = Number(angka) || fs;
+              if (fs <= UKURAN_PENANDA_MAKS) kecilAda = true;
+            } else if (kata === "trowd") adaTabel = true;
+            else if (kata === "plain") fs = 24;
+            else if (kata === "field" || kata === "pict" || kata === "shp" || kata === "shpinst" || kata === "nonshppict" || kata === "do") terlarang = true;
+            else if (kata === "u") {
+              teks += 1;
+              terbesar = Math.max(terbesar, fs);
+              if (grup[k] === "\\" && grup[k + 1] === "'") k += 4;
+              else k += 1;
+            }
+          }
+          i = k - 1;
+        } else if (d === "*") {
+          i += 1;
+        } else {
+          i += 1;
+        }
+      } else if (!lewat && c !== "\r" && c !== "\n" && c !== " " && c !== "\t") {
+        teks += 1;
+        terbesar = Math.max(terbesar, fs);
+      }
+    }
+    if (terlarang) return false;
+    // Ada teks: semuanya harus sangat kecil. Tanpa teks (variabel kosong): hanya kotak tabel berhuruf kecil yang dibuang.
+    return teks > 0 ? terbesar <= UKURAN_PENANDA_MAKS : adaTabel && kecilAda;
+  }
+  function bersihkanHeaderPenanda(rtf) {
+    const asalString = typeof rtf === "string";
+    const sumber = latin1(rtf);
+    const pola = /\{\\header([lrf]?)(?![a-zA-Z])/g;
+    let hasil = "";
+    let akhir = 0;
+    let jumlah = 0;
+    let m;
+    while ((m = pola.exec(sumber))) {
+      let dalam = 0;
+      let j = m.index;
+      for (; j < sumber.length; j += 1) {
+        const c = sumber[j];
+        if (c === "\\") j += 1;
+        else if (c === "{") dalam += 1;
+        else if (c === "}") {
+          dalam -= 1;
+          if (dalam === 0) break;
+        }
+      }
+      if (dalam !== 0) break; // grup tidak seimbang: biarkan apa adanya
+      const grup = sumber.slice(m.index, j + 1);
+      pola.lastIndex = j + 1;
+      if (!headerPenandaKecil(grup)) continue;
+      hasil += `${sumber.slice(akhir, m.index)}{\\header${m[1]}\\pard\\plain\\fs2\\par}`;
+      akhir = j + 1;
+      jumlah += 1;
+    }
+    if (!jumlah) return { rtf, jumlah: 0 };
+    const baru = hasil + sumber.slice(akhir);
+    return { rtf: asalString ? baru : bufDariLatin1(baru), jumlah };
+  }
     if (S.prat.rtf && !S.prat.kotor && !paksa) return S.prat.rtf;
     const h = await klienAbt().cetak({ a: S.blangko.a, b: S.blangko.b, perkaraId: perkaraId(), sidang: sidangUrutan() });
     if (!h.ok) throw new Error(h.pesan || "ABT tidak mengembalikan naskah.");
     S.prat.rtf = h.rtf;
     S.prat.kotor = false;
     S.prat.penanda = cekPenandaRtf(h.rtf);
+    // Header penanda kecil buang dari semua keluaran cetak (RTF, PDF, salinan, anonim, e-Doc); berkas di ABT tidak diubah.
+    const bersih = bersihkanHeaderPenanda(h.rtf);
+    h.rtf = bersih.rtf;
+    S.prat.headerDibuang = bersih.jumlah;
     S.prat.titikTiga = h.periksa ? h.periksa.jumlahTitikTiga : 0;
     return h.rtf;
   }
@@ -5368,7 +5485,7 @@
       takBerlaku: daftarTakBerlaku().map((b) => b.kode),
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { perkiraanSidang, keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
+    murni: { bersihkanHeaderPenanda, perkiraanSidang, keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {
