@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
     const peran = daftarPeran.find((x) => x.id === roleId);
 
     return ok({
+      id: actor.id,
       nama: actor.name,
       peran: peran ? peran.name : roleId,
       roleId,

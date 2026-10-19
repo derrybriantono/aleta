@@ -568,3 +568,101 @@ describe("17. bawaan pilihan cetak hanya RTF", () => {
     expect(h.pdfRtf).toEqual([]);
   });
 });
+
+// ============================================================================
+// 18. Menu "Tambah tanda tangan ke PDF" membaca tanda tangan SAH dari ALETA
+// ============================================================================
+describe("18. tanda tangan sah dari ALETA tercentang otomatis dan dibubuhkan", () => {
+  const BARIS = [
+    { id: 11, namaPejabat: "Hakim Satu, S.H.", disahkan: true, penggunaId: "u-hs", disahkanPada: "2026-10-19T01:00:00.000Z" },
+    { id: 14, namaPejabat: "Hakim Satu", disahkan: true, penggunaId: "", disahkanPada: "2026-10-19T03:00:00.000Z" }, // lebih baru tetapi belum tertaut
+    { id: 12, namaPejabat: "Hakim Dua, M.H.", disahkan: true, penggunaId: "u-hd", disahkanPada: "2026-10-19T01:30:00.000Z" },
+    { id: 13, namaPejabat: "PP Satu", disahkan: false, penggunaId: "u-pp" }, // belum disahkan
+  ];
+  const kotakTtd = async (h: Halaman) => {
+    klik(h, '[data-bd2="popttd"]');
+    const pop = await sampai(() => {
+      const p = q(h, "#bd-popttd");
+      return p && !p.hidden && p.querySelector("[data-ttd]") ? p : null;
+    }, "popover ttd");
+    return Array.from(pop.querySelectorAll("[data-ttd]")) as HTMLInputElement[];
+  };
+
+  it("hakim: miliknya yang sah OTOMATIS tercentang (tautan akun didahulukan dari nama); milik orang lain tidak bisa; yang tak punya tidak tercentang", async () => {
+    const h = buka({ ttd: { baris: BARIS, akunId: "u-hs" } });
+    await pilihPutusan(h);
+    await sampai(() => /\(1\)/.test(q(h, "#bd-btnttd")!.textContent || ""), "tercentang otomatis");
+    const kotak = await kotakTtd(h);
+    expect(kotak.map((k) => [k.getAttribute("data-ttd"), k.checked, k.disabled])).toEqual([["ketua", true, false], ["anggota1", false, true], ["pp", false, true]]);
+    const pop = q(h, "#bd-popttd")!;
+    expect(pop.textContent).toContain("tanda tangan tersimpan di ALETA (sudah disahkan)");
+    expect(pop.textContent).toContain("hanya dapat dipasang oleh yang bersangkutan");
+    expect(pop.textContent).not.toContain("belum ada tanda tangan tersimpan");
+  });
+
+  it("PDF dan PDF salinan benar-benar membubuhkan gambar di atas nama penanda tangan (baris tertaut akun: id 11)", async () => {
+    const h = buka({ ttd: { baris: BARIS, akunId: "u-hs" } });
+    await pilihPutusan(h);
+    await sampai(() => /\(1\)/.test(q(h, "#bd-btnttd")!.textContent || ""), "tercentang otomatis");
+    (q(h, '[data-fmt="pdf"]') as HTMLInputElement).click();
+    (q(h, '[data-fmt="salinan"]') as HTMLInputElement).click();
+    klik(h, '[data-bd2="cetak"]');
+    await sampai(() => q(h, "#bd-ingat") && !q(h, "#bd-ingat")!.hidden, "pengingat");
+    klik(h, '[data-bd2="tetapcetak"]');
+    await sampai(() => h.pdfRtf.length === 2, "pdf diminta", 8000);
+    for (const rtf of h.pdfRtf) {
+      const idxPict = rtf.indexOf("{\\pict\\pngblip");
+      expect(idxPict).toBeGreaterThan(0);
+      expect(idxPict).toBeLessThan(rtf.indexOf("Hakim Satu, S.H."));
+      expect(rtf.indexOf("\\pict", idxPict + 5)).toBe(-1);
+    }
+    expect(mintaKe(h, /tanda-tangan\/11\/gambar/).length).toBe(2);
+    expect(mintaKe(h, /tanda-tangan\/14\/gambar/)).toEqual([]);
+    await sampai(() => /tanda tangan: Hakim Satu/.test(akar(h).textContent || ""), "log ttd");
+  });
+
+  it("pengguna yang mencabut centang tidak dicentang ulang otomatis dan PDF tidak dibubuhi", async () => {
+    const h = buka({ ttd: { baris: BARIS, akunId: "u-hs" } });
+    await pilihPutusan(h);
+    await sampai(() => /\(1\)/.test(q(h, "#bd-btnttd")!.textContent || ""), "tercentang otomatis");
+    const kotak = await kotakTtd(h);
+    kotak[0].click();
+    kotak[0].dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    expect(q(h, "#bd-btnttd")!.textContent).not.toContain("(1)");
+    (q(h, '[data-fmt="pdf"]') as HTMLInputElement).click();
+    klik(h, '[data-bd2="cetak"]');
+    await sampai(() => q(h, "#bd-ingat") && !q(h, "#bd-ingat")!.hidden, "pengingat");
+    klik(h, '[data-bd2="tetapcetak"]');
+    await sampai(() => h.pdfRtf.length === 1, "pdf diminta", 8000);
+    expect(h.pdfRtf[0]).not.toContain("\\pict");
+  });
+
+  it("tanpa gambar yang disahkan (belum ada baris, atau baris belum sah): tidak tercentang, kalimat 'belum ada gambar tanda tangan yang disahkan'", async () => {
+    const h = buka({ ttd: { baris: [{ id: 13, namaPejabat: "Hakim Satu, S.H.", disahkan: false, penggunaId: "u-hs" }], akunId: "u-hs" } });
+    await pilihPutusan(h);
+    await tunggu(80);
+    expect(q(h, "#bd-btnttd")!.textContent).not.toContain("(1)");
+    const kotak = await kotakTtd(h);
+    expect(kotak.every((k) => !k.checked)).toBe(true);
+    expect(q(h, "#bd-popttd")!.textContent).toContain("belum ada gambar tanda tangan yang disahkan");
+  });
+
+  it("Admin/Super Admin: semua penanda tangan yang punya tanda tangan sah tercentang; yang tak punya tidak", async () => {
+    const h = buka({ orang: "admin", ttd: { baris: BARIS, akunId: "u-admin" } });
+    await pilihPutusan(h);
+    await sampai(() => /\(2\)/.test(q(h, "#bd-btnttd")!.textContent || ""), "dua tercentang otomatis");
+    const kotak = await kotakTtd(h);
+    expect(kotak.map((k) => [k.getAttribute("data-ttd"), k.checked, k.disabled])).toEqual([["ketua", true, false], ["anggota1", true, false], ["pp", false, true]]);
+    expect(q(h, "#bd-popttd")!.textContent).toContain("belum ada gambar tanda tangan yang disahkan");
+  });
+
+  it("bot menjawab bentuk asli { ok, baris } diterima; 403 menampilkan sebab dan tidak ada yang tercentang", async () => {
+    const h = buka(); // tanpa ttd -> rute menjawab 403
+    await pilihPutusan(h);
+    await tunggu(80);
+    expect(q(h, "#bd-btnttd")!.textContent).not.toContain("(");
+    const kotak = await kotakTtd(h);
+    expect(kotak.every((k) => !k.checked)).toBe(true);
+    expect(q(h, "#bd-popttd")!.textContent).toContain("akun Anda tidak berwenang membaca berkas tanda tangan ALETA");
+  });
+});

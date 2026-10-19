@@ -317,6 +317,7 @@
     prat: { terbuka: false, memuat: false, rtf: null, html: "", galat: "", suntingPenuh: false, kotor: true, penanda: [] },
     fmt: { rtf: true, pdf: false, salinan: false, anon: false, edoc: false },
     ttdPilih: new Set(),
+    ttdManual: false, // pengguna sudah mengubah centang tanda tangan pada blangko ini -> tidak dicentang otomatis lagi
     ttdSumber: null, // { aleta: [{id,nama}]|null, sendiri: {nama,png}|null }
     peringat: false,
     sibuk: false,
@@ -1116,7 +1117,6 @@
     if (jenis === "put") return t.replace(/^\[[^\]]+\] /, "");
     return t.replace(/^BAS ALUR \d\d \[[^\]]+\] /, "").replace(/^BAS KUASA INSIDENTIL - /, "").replace(/^\[JS\] /, "");
   };
-  function bukaModal() {
   /**
    * Perkiraan "cocok untuk sidang ke-berapa" (19 Okt 2026), HANYA dari tulisan nama blangko Derry (pohon alur BAS):
    * "BAS 1/2/3 ..." atau "Sidang 1/2 ..." = sidang itu, "Sidang/BAS Pertama" = 1, "BAS Lanjutan" = lanjutan,
@@ -1150,6 +1150,7 @@
     const cocok = k.tipe === "n" ? a.urutan === k.n : k.tipe === "lanjut" ? a.urutan >= 2 : k.tipe === "putus" ? /putus|pembacaan|pengucapan/i.test(a.agenda) : /ikrar/i.test(a.agenda);
     return `<span class="sd${cocok ? " cocok" : ""}" title="Perkiraan: ${esc(k.teks)}${cocok ? " (sesuai sidang yang dipilih)" : ""}">${esc(k.teks)}</span>`;
   }
+  function bukaModal() {
     if (!S.pk) return toast("Pilih perkara dulu.");
     const jenisAda = jenisBoleh();
     if (!jenisAda.length) return toast("Peran akun Anda tidak punya blangko di tampilan ini.");
@@ -1351,12 +1352,14 @@
     S.prat = { terbuka: false, memuat: false, rtf: null, html: "", galat: "", suntingPenuh: false, kotor: true, penanda: [] };
     S.peringat = false;
     S.ttdPilih = new Set();
+    S.ttdManual = false;
     S.tampilTakBerlaku = false;
     S.tandaKosong = new Set();
     renderRingkasBlangko();
     renderIsian();
     renderPratinjau();
     renderCetak();
+    void autoCentangTtd();
     await periksaHakBlangko(blangko, kelompokNama);
     if (S.blangko !== blangko || blangko.hak !== "ok") return;
     await muatSusunan();
@@ -3815,9 +3818,6 @@
       return potongan.join("");
     };
   }
-  async function ambilRtf(paksa) {
-    if (!S.blangko || !S.pk) throw new Error("Pilih perkara dan blangko dulu.");
-    if (S.blangko.hak !== "ok") throw new Error(S.blangko.hak === "periksa" ? "Hak buka blangko ini masih diperiksa ke ABT; tunggu sebentar." : "ABT tidak mengizinkan blangko ini untuk perkara ini.");
   /**
    * HEADER PENANDA (19 Okt 2026). Blangko Derry menyimpan di HEADER halaman sebuah tabel kecil berisi variabel ABT
    * (mis. "#0184# #0185# #0156# #0157#") dengan huruf 1 pt, superskrip: dipakai menyusun blangko supaya ABT ikut menghitung variabel itu.
@@ -3931,16 +3931,19 @@
     const baru = hasil + sumber.slice(akhir);
     return { rtf: asalString ? baru : bufDariLatin1(baru), jumlah };
   }
+  async function ambilRtf(paksa) {
+    if (!S.blangko || !S.pk) throw new Error("Pilih perkara dan blangko dulu.");
+    if (S.blangko.hak !== "ok") throw new Error(S.blangko.hak === "periksa" ? "Hak buka blangko ini masih diperiksa ke ABT; tunggu sebentar." : "ABT tidak mengizinkan blangko ini untuk perkara ini.");
     if (S.prat.rtf && !S.prat.kotor && !paksa) return S.prat.rtf;
     const h = await klienAbt().cetak({ a: S.blangko.a, b: S.blangko.b, perkaraId: perkaraId(), sidang: sidangUrutan() });
     if (!h.ok) throw new Error(h.pesan || "ABT tidak mengembalikan naskah.");
-    S.prat.rtf = h.rtf;
-    S.prat.kotor = false;
-    S.prat.penanda = cekPenandaRtf(h.rtf);
     // Header penanda kecil buang dari semua keluaran cetak (RTF, PDF, salinan, anonim, e-Doc); berkas di ABT tidak diubah.
     const bersih = bersihkanHeaderPenanda(h.rtf);
     h.rtf = bersih.rtf;
     S.prat.headerDibuang = bersih.jumlah;
+    S.prat.rtf = h.rtf;
+    S.prat.kotor = false;
+    S.prat.penanda = cekPenandaRtf(h.rtf);
     S.prat.titikTiga = h.periksa ? h.periksa.jumlahTitikTiga : 0;
     return h.rtf;
   }
@@ -4090,8 +4093,17 @@
       const r = typeof alatAmbil === "function" ? await alatAmbil(`${API_TTD}?hanyaSah=1`, { credentials: "include", cache: "no-store" }, "Membaca tanda tangan") : await fetch(`${API_TTD}?hanyaSah=1`, { credentials: "include", cache: "no-store" });
       const j = await r.json().catch(() => null);
       if (r.ok && j) {
-        const daftar = [j.tandaTangan, j.daftar, j.data && j.data.tandaTangan, j.data, j.items].find((x) => Array.isArray(x)) || [];
-        sumber.aleta = daftar.map((x) => ({ id: x.id, nama: String(x.namaPejabat || x.nama || ""), sah: x.sah !== false })).filter((x) => x.nama);
+        // Bot menjawab { ok, baris: [{ id, namaPejabat, disahkan, penggunaId, disahkanPada }] } (rute portal meneruskannya apa adanya).
+        const daftar = [j.baris, j.data && j.data.baris, j.tandaTangan, j.daftar, j.data && j.data.tandaTangan, j.data, j.items].find((x) => Array.isArray(x)) || [];
+        sumber.aleta = daftar
+          .map((x) => ({
+            id: x.id,
+            nama: String(x.namaPejabat || x.nama || ""),
+            sah: x.disahkan === undefined ? x.sah !== false : x.disahkan === true || x.disahkan === 1,
+            penggunaId: String(x.penggunaId || ""),
+            sejak: String(x.disahkanPada || ""),
+          }))
+          .filter((x) => x.nama && x.sah);
       } else sumber.alasanAleta = r.status === 403 || r.status === 401 ? "akun Anda tidak berwenang membaca berkas tanda tangan ALETA" : (j && (j.alasan || j.sebab)) || `ALETA menjawab ${r.status}`;
     } catch (e) {
       sumber.alasanAleta = String((e && e.message) || e);
@@ -4101,14 +4113,56 @@
     S.ttdSumber = sumber;
     return sumber;
   }
+  // Pencocokan nama penanda tangan ke baris tanda tangan SAH ALETA: sama dengan penetapanEdocService.cocokkanTandaTangan
+  // (nama penuh bersih tanda baca dulu; bila tidak ada, nama tanpa gelar yang menunjuk satu orang saja).
+  const bakuTtd = (n) => String(n || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const intiTtd = (n) => bakuTtd(String(n || "").split(",")[0].replace(/^\s*(?:(?:prof|dr|drs|dra|ir|h|hj|kh|kgs|tgk)\.?\s+)+/i, ""));
+  function cocokkanBarisTtd(nama, daftar, akun) {
+    const semua = (daftar || []).filter((b) => b && b.sah !== false && b.nama);
+    // Tautan akun didahulukan (baris ditautkan ke akun pemiliknya), baru yang terbaru disahkan.
+    const urut = (xs) => xs.slice().sort((a, b) => (b.penggunaId ? 1 : 0) - (a.penggunaId ? 1 : 0) || String(b.sejak || "").localeCompare(String(a.sejak || "")) || Number(b.id) - Number(a.id))[0];
+    if (akun && akun.id && namaSama(akun.nama, nama)) {
+      const sendiri = semua.filter((b) => b.penggunaId === String(akun.id));
+      if (sendiri.length) return urut(sendiri);
+    }
+    const penuh = semua.filter((b) => bakuTtd(b.nama) && bakuTtd(b.nama) === bakuTtd(nama));
+    if (penuh.length) return urut(penuh);
+    const inti = intiTtd(nama);
+    if (inti.length < 5) return null;
+    const sebagian = semua.filter((b) => intiTtd(b.nama) === inti);
+    if (!sebagian.length) return null;
+    if (new Set(sebagian.map((b) => bakuTtd(b.nama))).size > 1) return null; // dua orang berbeda: tidak ditebak
+    return urut(sebagian);
+  }
   function gambarTtdUntuk(t) {
     const s = S.ttdSumber || {};
     const akun = api() && typeof api().siapa === "function" ? api().siapa() : null;
     const milikSendiri = akun && namaSama(akun.nama, t.nama);
     if (s.sendiri && (milikSendiri || adm()) && namaSama(s.sendiri.nama || (akun && akun.nama), t.nama)) return { sumber: "ekstensi", png: s.sendiri.png };
-    const a = (s.aleta || []).find((x) => namaSama(x.nama, t.nama));
+    const a = cocokkanBarisTtd(t.nama, s.aleta, akun);
     if (a && (milikSendiri || adm())) return { sumber: "aleta", id: a.id };
     return null;
+  }
+  /**
+   * Penanda tangan yang punya tanda tangan SAH (dan boleh dipasang akun ini) OTOMATIS tercentang di menu "Tambah tanda tangan ke PDF",
+   * kecuali pengguna sudah mengubah pilihan sendiri pada blangko ini (S.ttdManual). Yang tidak punya tidak tercentang.
+   */
+  async function autoCentangTtd() {
+    if (S.ttdManual || !S.blangko || !S.pk) return;
+    const blangko = S.blangko;
+    try {
+      await muatSumberTtd();
+    } catch {
+      return;
+    }
+    if (S.ttdManual || S.blangko !== blangko) return;
+    const akun = api() && typeof api().siapa === "function" ? api().siapa() : null;
+    for (const t of penandatangan()) {
+      const bol = adm() || Boolean(akun && namaSama(akun.nama, t.nama));
+      const g = gambarTtdUntuk(t);
+      if (bol && g && g.sumber === "aleta") S.ttdPilih.add(t.id); // hanya yang SAH di ALETA; gambar simpanan ekstensi tetap dicentang tangan
+    }
+    renderCetak();
   }
   function isiPopTtd() {
     const l = penandatangan();
@@ -4122,7 +4176,7 @@
           const milik = akun && namaSama(akun.nama, t.nama);
           const bol = adm() || milik;
           const aktif = Boolean(g) && bol;
-          const ket = !bol ? "hanya dapat dipasang oleh yang bersangkutan" : g ? (g.sumber === "aleta" ? "tanda tangan tersimpan di ALETA (sudah disahkan)" : "tanda tangan tersimpan di ekstensi ini") : "belum ada tanda tangan tersimpan";
+          const ket = !bol ? "hanya dapat dipasang oleh yang bersangkutan" : g ? (g.sumber === "aleta" ? "tanda tangan tersimpan di ALETA (sudah disahkan)" : "tanda tangan tersimpan di ekstensi ini") : "belum ada gambar tanda tangan yang disahkan";
           return `<label class="${aktif ? "" : "mati"}"><input type="checkbox" data-ttd="${t.id}" ${S.ttdPilih.has(t.id) ? "checked" : ""} ${aktif ? "" : "disabled"}><span>${esc(t.jabatan)}<small>${esc(t.nama)} · ${esc(ket)}</small></span></label>`;
         })
         .join("")}</div>` +
@@ -4409,6 +4463,7 @@
     }
     let anonimRtf = null;
     let anonimAleta = null; // 16OKT-F43
+    if (S.fmt.pdf || S.fmt.salinan) await autoCentangTtd(); // tanda tangan sah otomatis ikut bila pengguna belum memilih sendiri
     if (S.fmt.rtf) {
       const nama = namaUnduhan(nomor, berkas, "rtf");
       const u = await unduh(new Blob([rtfBuf], { type: "application/rtf" }), nama);
@@ -4433,9 +4488,13 @@
     if (S.fmt.salinan) {
       try {
         catatLog("membuat PDF SALINAN…");
-        const { blob, keterangan } = await pdfDari(latin1(rtfBuf), true);
+        const t = await rtfDenganTtd(rtfBuf);
+        const { blob, keterangan } = await pdfDari(t.rtf, true);
         const nama = namaUnduhan(nomor, `${berkas} - SALINAN`, "pdf");
-        const ket = keterangan && keterangan.gambarTtdPanitera ? ` (tanda tangan Panitera ${keterangan.namaPanitera || ""} tertempel)` : keterangan && keterangan.namaPanitera ? " (tanpa tanda tangan Panitera yang disahkan)" : "";
+        const ket =
+          (keterangan && keterangan.gambarTtdPanitera ? ` (tanda tangan Panitera ${keterangan.namaPanitera || ""} tertempel)` : keterangan && keterangan.namaPanitera ? " (tanpa tanda tangan Panitera yang disahkan)" : "") +
+          (t.dipasang.length ? ` · tanda tangan: ${t.dipasang.join(", ")}` : "") +
+          (t.gagal.length ? ` · gambar tidak terbaca: ${t.gagal.join(", ")}` : "");
         const jawab = await kirimLatar({ jenis: "tampilkan-pdf", nama, alamat: await blobKeData(blob), pesan: "", awas: !(keterangan && keterangan.gambarTtdPanitera) });
         if (jawab && jawab.ok) hasil.push(`PDF SALINAN dibuka di tab baru${ket}`);
         else {
@@ -5190,6 +5249,7 @@
       return;
     }
     if (t.getAttribute && t.getAttribute("data-ttd")) {
+      S.ttdManual = true;
       if (t.checked) S.ttdPilih.add(t.getAttribute("data-ttd"));
       else S.ttdPilih.delete(t.getAttribute("data-ttd"));
       const b = cari("#bd-btnttd", wadah.cetak);

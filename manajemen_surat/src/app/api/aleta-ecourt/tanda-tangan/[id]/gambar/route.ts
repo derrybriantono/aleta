@@ -5,6 +5,10 @@ import { ambilGambarTandaTangan } from "@/server/modules/aleta-bot/whatsapp-gate
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
+import { ApiError } from "@/server/shared/errors";
+import { getGatewayTandaTangan } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
+import { getUserByIdFromDb } from "@/server/modules/organization/service";
+import { barisTtdMilik, type BarisTtd } from "@/lib/ttd-milik-sendiri";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,10 +33,18 @@ export async function GET(
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
-    await pastikanKapabilitas(db, actorUserId, "blangko-abt");
-
     const { id } = await params;
     const nomor = Number(id);
+    try {
+      await pastikanKapabilitas(db, actorUserId, "blangko-abt");
+    } catch (galat) {
+      // Akun tanpa kapabilitas hanya boleh mengambil gambar tanda tangan SAH miliknya sendiri (cetak PDF Blangko Derry).
+      if (!(galat instanceof ApiError) || galat.status !== 403 || !Number.isFinite(nomor) || nomor <= 0) throw galat;
+      const aktor = actorUserId ? await getUserByIdFromDb(db, actorUserId) : null;
+      const daftar = (await getGatewayTandaTangan(true)) as { ok?: boolean; baris?: BarisTtd[] } | null;
+      const milik = aktor && daftar && daftar.ok !== false ? barisTtdMilik(daftar.baris ?? [], { id: String(aktor.id), name: String(aktor.name ?? "") }) : [];
+      if (!milik.some((b) => Number(b.id) === nomor)) throw galat;
+    }
     if (!Number.isFinite(nomor) || nomor <= 0) {
       return Response.json({ ok: false, alasan: "id_tidak_sah" }, { status: 400 });
     }

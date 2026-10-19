@@ -15,6 +15,8 @@ import { nextPrefixedId } from "@/server/shared/ids";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
+import { ApiError } from "@/server/shared/errors";
+import { barisTtdMilik, type BarisTtd } from "@/lib/ttd-milik-sendiri";
 import { getPositionsFromDb, getUserByIdFromDb } from "@/server/modules/organization/service";
 import { listUsersFromDb } from "@/server/modules/users/service";
 import { getRoleLabel } from "@/lib/permissions";
@@ -93,11 +95,42 @@ function statusUbah(respons: { ok: boolean; status?: number } | null | undefined
   return s >= 400 && s < 500 ? 400 : 502;
 }
 
+/**
+ * Akun TANPA kapabilitas "blangko-abt" (hakim, panitera pengganti biasa) yang meminta daftar tanda tangan SAH
+ * (hanyaSah=1, dipakai panel Blangko Derry untuk membubuhkan tanda tangan di PDF) hanya menerima baris MILIKNYA:
+ * tertaut ke akunnya, atau belum tertaut dan namanya sama. Tanpa gambar, tanpa daftar pengguna.
+ */
+async function daftarSahMilikSendiri(request: NextRequest) {
+  const db = await getDatabase();
+  const actorUserId = await resolveActorUserId(request);
+  const aktor = actorUserId ? await getUserByIdFromDb(db, actorUserId) : null;
+  if (!aktor) throw new ApiError(401, "Akun tidak dikenali.");
+  const respons = (await getGatewayTandaTangan(true)) as { ok?: boolean; baris?: BarisTtd[] } | null;
+  if (!respons || respons.ok === false) return Response.json(respons ?? { ok: false }, { status: 502 });
+  const baris = barisTtdMilik(respons.baris ?? [], { id: String(aktor.id), name: String(aktor.name ?? "") }).map((b) => ({
+    id: b.id,
+    namaPejabat: b.namaPejabat,
+    jabatan: b.jabatan,
+    disahkan: true,
+    penggunaId: b.penggunaId ?? "",
+    disahkanPada: b.disahkanPada ?? "",
+  }));
+  return Response.json({ ok: true, baris, pembatasan: "milik-sendiri", pengguna: [], penggunaAlasan: "" });
+}
+
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
   let actorUserId: string | null = null;
   try {
-    const sesi = await pengesah(request);
+    let sesi: Awaited<ReturnType<typeof pengesah>>;
+    try {
+      sesi = await pengesah(request);
+    } catch (galat) {
+      if (galat instanceof ApiError && galat.status === 403 && request.nextUrl.searchParams.get("hanyaSah") === "1") {
+        return await daftarSahMilikSendiri(request);
+      }
+      throw galat;
+    }
     db = sesi.db;
     actorUserId = sesi.actorUserId;
 
