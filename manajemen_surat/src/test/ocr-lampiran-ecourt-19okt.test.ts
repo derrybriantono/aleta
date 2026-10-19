@@ -1,8 +1,11 @@
 import path from "node:path";
 import { createRequire } from "node:module";
 import fs from "node:fs";
+import { EventEmitter } from "node:events";
 
 import { describe, expect, it } from "vitest";
+
+import { lupakanMesinOcr } from "@/app/api/aleta-ecourt/saksi-scan/ocr";
 
 import {
   BATAS_BITA_LAMPIRAN,
@@ -182,8 +185,8 @@ describe("batas antrean OCR", () => {
           { fileId: "c", format: "pdf", ukuran: 1000, nomorPerkara: "3/Pdt.G/2026/PA.Xyz", judul: "Surat Kuasa" },
         ],
       }),
-      ambil: async (id) => (dibaca.push(id), Buffer.from("%PDF-1.4 rekaan")),
-      kirim: async (h) => (dikirim.push(...h), true),
+      ambil: async (id: string) => (dibaca.push(id), Buffer.from("%PDF-1.4 rekaan")),
+      kirim: async (h: Apa[]) => (dikirim.push(...h), true),
       baca: async () => ({ status: "terbaca", sebab: "", halaman: [{ teks: F.SK_DESA, sumber: "ocr" }], halamanOcr: 1 }),
       sekarang: () => Date.now(),
       ocrLainSibuk: () => false,
@@ -235,6 +238,50 @@ describe("batas antrean OCR", () => {
     expect(pengaturanLampiran({} as Apa)).toMatchObject({ batas: 1, jedaMs: 180_000 });
     expect(BATAS_HALAMAN_LAMPIRAN).toBe(12);
     expect(BATAS_HALAMAN_KUASA).toBeLessThan(BATAS_HALAMAN_LAMPIRAN);
+  });
+  it("bacaLampiran: halaman miring dicek arahnya (OSD) dan dibaca ulang setelah diputar; tesseract dimatikan bila lewat batas", async () => {
+    const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
+    const panggilan: string[][] = [];
+    const palsu = (macet = false) =>
+      ((bin: string, args: string[]) => {
+        panggilan.push(args);
+        const p = new EventEmitter() as Apa;
+        p.stdout = new EventEmitter();
+        p.stderr = new EventEmitter();
+        p.kill = () => setImmediate(() => p.emit("close", null));
+        p.stdin = {
+          on: () => undefined,
+          end: (masuk?: Buffer) =>
+            setImmediate(() => {
+              if (macet && !args.includes("--version")) return; // tidak pernah selesai -> habis waktu
+              const isi = String(masuk || "");
+              const keluar = args.includes("--version")
+                ? "tesseract 5.3.0"
+                : args.includes("0") && args.includes("--psm") && args[args.indexOf("--psm") + 1] === "0"
+                  ? "Rotate: 90\nOrientation confidence: 6.2\n"
+                  : isi === "PUTARputar90"
+                    ? F.SK_DESA
+                    : F.SAMPAH;
+              p.stdout.emit("data", Buffer.from(keluar));
+              p.emit("close", 0);
+            }),
+        };
+        return p;
+      }) as Apa;
+    const pembantu = (async (mode: string) =>
+      mode === "gambar" ? new Map([["abu", Buffer.from("ABU")]]) : mode.startsWith("putar") ? new Map([["putar", Buffer.from(`PUTAR${mode}`)]]) : null) as Apa;
+    lupakanMesinOcr();
+    const r = await bacaLampiran(PNG, { spawn: palsu(), pembantu });
+    expect(r.status).toBe("terbaca");
+    expect(r.halaman[0].teks).toContain("SURAT KETERANGAN DOMISILI");
+    expect(panggilan.some((a) => a[a.indexOf("--psm") + 1] === "0")).toBe(true);
+    // Lintasan OCR yang macet dimatikan pada batasnya - berkas berakhir "habis waktu", bukan menggantung.
+    lupakanMesinOcr();
+    const t0 = Date.now();
+    const macet = await bacaLampiran(PNG, { spawn: palsu(true), pembantu, batasMs: 4000 });
+    expect(macet).toMatchObject({ status: "tidak_terbaca" });
+    expect(Date.now() - t0).toBeLessThan(8000);
+    lupakanMesinOcr();
   });
   it("bacaLampiran: berkas bukan PDF/gambar ditolak tanpa OCR; skorTeks membedakan teks wajar dari derau", async () => {
     expect(await bacaLampiran(Buffer.from("bukan berkas"))).toMatchObject({ status: "tidak_terbaca", sebab: "format_tidak_dikenal" });

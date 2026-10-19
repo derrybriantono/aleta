@@ -809,7 +809,7 @@ function susunUsulan({ bacaan = [], sebutan = {}, isianLama = {}, jenisPerkara =
         if (m.tanggal) tambah(KODE.tglKuasaT, `Tanggal surat kuasa ${pelaku}`, m.tanggal.iso, b, "surat_kuasa.tanggal", `Tanggal di kaki surat kuasa yang diunggah ke e-Court (${m.tanggal.indo}) - periksa dengan surat kuasa yang didaftarkan.`, "tanggal");
         if (m.kantor) tambah(KODE.kantorT, `Nama kantor advokat ${pelaku}`, m.kantor, b, "surat_kuasa.kantor", "Nama kantor dari surat kuasa e-Court - periksa ejaannya.");
       }
-    } else if (b.jenis === "surat_kuasa" && !milikPerkara(b) && cabangKuasa(b) === 2) {
+    } else if (b.jenis === "surat_kuasa" && !milikPerkara(b) && !m.pemberi && cabangKuasa(b) === 2) {
       // Surat kuasa yang menyebut "selaku Tergugat" tetapi pemberinya tidak terbaca: tetap boleh, ditandai.
       if (m.tanggal) tambah(KODE.tglKuasaT, `Tanggal surat kuasa ${pelaku}`, m.tanggal.iso, b, "surat_kuasa.tanggal", `Tanggal di kaki surat kuasa e-Court (${m.tanggal.indo}); nama pemberi kuasa tidak terbaca - periksa.`, "tanggal");
       if (m.kantor) tambah(KODE.kantorT, `Nama kantor advokat ${pelaku}`, m.kantor, b, "surat_kuasa.kantor", "Nama kantor dari surat kuasa e-Court; nama pemberi kuasa tidak terbaca - periksa.");

@@ -1,5 +1,395 @@
 {
   "dibuat": "2026-10-19",
-  "status": "sementara - pengukuran berjalan",
-  "medan": {}
+  "agen": "OCR-ECOURT (Isi SIPP & Input ABT tahap 2)",
+  "ambang": "otomatis hanya bila cocok >= 95% dengan isian petugas pada >= 20 perkara terbaca; selain itu ragu (usulan bercentang, tidak menimpa isian petugas)",
+  "cara": [
+    "Server hanya dibaca (SELECT + salin berkas sampel lewat tar berprioritas rendah). Berkas disalin ke laptop, dibaca, lalu salinannya DIHAPUS.",
+    "OCR di laptop dengan mesin yang sama dengan server: tesseract 5 (tesseract.js 5.1.1) + data bahasa ind.traineddata yang DISALIN dari citra portal server, halaman digambar dan dipraproses dengan scripts/ktp-gambar.mjs (sama dengan portal), psm 3; halaman berkeyakinan rendah dicoba diputar 90/270 derajat (server: OSD tesseract lalu putar).",
+    "Hasil OCR diurai dengan aleta_bot/services/lampiranEcourtService.js (kode yang sama dengan bot), dicocokkan ke pihak SIPP perkara itu, lalu dibandingkan dengan isian petugas di ABT/SIPP server untuk perkara yang SAMA.",
+    "Satu perkara dihitung sekali per medan: cocok bila salah satu bacaan sama dengan salah satu isian petugas (nomor: huruf/angka saja; tanggal: hari yang sama).",
+    "Tanpa data pribadi di berkas ini: hanya hitungan dan persen."
+  ],
+  "sumberServer": {
+    "perkara2026DenganDokumenBukti": 850,
+    "berkasDokumenBukti2026": 850,
+    "ukuranDokumenBuktiMB": 527,
+    "surat_kuasa": {
+      "surat kuasa": 28,
+      "surat kuasa isidentil/insidentil": 8,
+      "surat kuasa khusus": 5
+    },
+    "ktp": 51,
+    "kartuAdvokat": 25,
+    "baSumpahAdvokat": 20,
+    "isianPetugas2026": {
+      "1214": 502,
+      "5171": 0,
+      "5271": 0,
+      "8894": 0,
+      "9955": 30,
+      "9958": 180,
+      "0378": 61,
+      "0156": 20,
+      "0184": 8,
+      "0185": 0,
+      "0157": 0,
+      "0652": 0,
+      "0653": 0
+    },
+    "butirAlatBuktiPetugas2026": {
+      "kk": 42,
+      "akta_lahir": 21,
+      "sk_desa": 29,
+      "akta_kematian": 10,
+      "akta_cerai": 5,
+      "akta_nikah": 505
+    }
+  },
+  "sampel": {
+    "perkara": 189,
+    "berkas": 345,
+    "berkasDiOcr": 242,
+    "halamanDiOcr": 797,
+    "lapisanTeks": {
+      "dokumen_bukti": {
+        "berkas": 164,
+        "pindaian": 157,
+        "berteks": 3,
+        "campuran": 4,
+        "gambar": 0
+      },
+      "lain": {
+        "berkas": 30,
+        "pindaian": 22,
+        "berteks": 7,
+        "campuran": 1,
+        "gambar": 0
+      },
+      "surat_kuasa": {
+        "berkas": 57,
+        "pindaian": 51,
+        "berteks": 2,
+        "campuran": 4,
+        "gambar": 0
+      },
+      "ba_sumpah": {
+        "berkas": 20,
+        "pindaian": 19,
+        "berteks": 1,
+        "campuran": 0,
+        "gambar": 0
+      },
+      "kartu_advokat": {
+        "berkas": 25,
+        "pindaian": 25,
+        "berteks": 0,
+        "campuran": 0,
+        "gambar": 0
+      },
+      "ktp": {
+        "berkas": 49,
+        "pindaian": 19,
+        "berteks": 0,
+        "campuran": 0,
+        "gambar": 30
+      }
+    },
+    "persenPindaianDokumenBukti": 95.7,
+    "halamanPerluDiputar": 98
+  },
+  "jenisHalaman": {
+    "lain": {
+      "halaman": 316,
+      "cocokPihak": 0,
+      "adaNomor": 0,
+      "adaTanggal": 0
+    },
+    "ktp": {
+      "halaman": 47,
+      "cocokPihak": 3,
+      "adaNomor": 0,
+      "adaTanggal": 0
+    },
+    "kk": {
+      "halaman": 25,
+      "cocokPihak": 15,
+      "adaNomor": 1,
+      "adaTanggal": 8
+    },
+    "akta_kematian": {
+      "halaman": 12,
+      "cocokPihak": 0,
+      "adaNomor": 11,
+      "adaTanggal": 6
+    },
+    "akta_nikah": {
+      "halaman": 115,
+      "cocokPihak": 16,
+      "adaNomor": 10,
+      "adaTanggal": 35
+    },
+    "sk_desa": {
+      "halaman": 60,
+      "cocokPihak": 28,
+      "adaNomor": 49,
+      "adaTanggal": 37
+    },
+    "surat_kuasa": {
+      "halaman": 60,
+      "cocokPihak": 42,
+      "adaNomor": 0,
+      "adaTanggal": 37
+    },
+    "kuasa_insidentil": {
+      "halaman": 29,
+      "cocokPihak": 11,
+      "adaNomor": 0,
+      "adaTanggal": 18
+    },
+    "kartu_advokat": {
+      "halaman": 7,
+      "cocokPihak": 0,
+      "adaNomor": 0,
+      "adaTanggal": 0
+    },
+    "sk_kua": {
+      "halaman": 20,
+      "cocokPihak": 1,
+      "adaNomor": 10,
+      "adaTanggal": 11
+    },
+    "akta_cerai": {
+      "halaman": 5,
+      "cocokPihak": 0,
+      "adaNomor": 4,
+      "adaTanggal": 2
+    },
+    "akta_lahir": {
+      "halaman": 19,
+      "cocokPihak": 9,
+      "adaNomor": 12,
+      "adaTanggal": 8
+    }
+  },
+  "medan": {
+    "sk_desa.tanggal": {
+      "perkaraBerisianPetugas": 34,
+      "perkara": 18,
+      "cocok": 15,
+      "beda": 3,
+      "tidakTerbaca": 16,
+      "persen": 83.3,
+      "persenDariSemuaIsianPetugas": 44.1,
+      "selisihTanggalBeda": {
+        ">366": 2,
+        "<=31": 1
+      },
+      "tingkat": "ragu"
+    },
+    "akta_nikah.nomor.sipp": {
+      "perkaraBerisianPetugas": 120,
+      "perkara": 9,
+      "cocok": 2,
+      "beda": 7,
+      "tidakTerbaca": 111,
+      "persen": 22.2,
+      "persenDariSemuaIsianPetugas": 1.7,
+      "tingkat": "ragu"
+    },
+    "akta_nikah.tanggal.sipp": {
+      "perkaraBerisianPetugas": 126,
+      "perkara": 32,
+      "cocok": 16,
+      "beda": 16,
+      "tidakTerbaca": 94,
+      "persen": 50,
+      "persenDariSemuaIsianPetugas": 12.7,
+      "selisihTanggalBeda": {
+        ">366": 14,
+        "<=366": 1,
+        "<=31": 1
+      },
+      "tingkat": "ragu"
+    },
+    "sk_desa.nomor": {
+      "perkaraBerisianPetugas": 29,
+      "perkara": 22,
+      "cocok": 14,
+      "beda": 8,
+      "tidakTerbaca": 7,
+      "persen": 63.6,
+      "persenDariSemuaIsianPetugas": 48.3,
+      "tingkat": "ragu"
+    },
+    "kk.nomor": {
+      "perkaraBerisianPetugas": 32,
+      "perkara": 1,
+      "cocok": 1,
+      "beda": 0,
+      "tidakTerbaca": 31,
+      "persen": 100,
+      "persenDariSemuaIsianPetugas": 3.1,
+      "tingkat": "ragu"
+    },
+    "kk.tanggal": {
+      "perkaraBerisianPetugas": 36,
+      "perkara": 1,
+      "cocok": 1,
+      "beda": 0,
+      "tidakTerbaca": 35,
+      "persen": 100,
+      "persenDariSemuaIsianPetugas": 2.8,
+      "tingkat": "ragu"
+    },
+    "akta_kematian.nomor": {
+      "perkaraBerisianPetugas": 7,
+      "perkara": 7,
+      "cocok": 5,
+      "beda": 2,
+      "tidakTerbaca": 0,
+      "persen": 71.4,
+      "persenDariSemuaIsianPetugas": 71.4,
+      "tingkat": "ragu"
+    },
+    "akta_kematian.tanggal": {
+      "perkaraBerisianPetugas": 7,
+      "perkara": 4,
+      "cocok": 4,
+      "beda": 0,
+      "tidakTerbaca": 3,
+      "persen": 100,
+      "persenDariSemuaIsianPetugas": 57.1,
+      "tingkat": "ragu"
+    },
+    "akta_lahir.nomor": {
+      "perkaraBerisianPetugas": 16,
+      "perkara": 4,
+      "cocok": 2,
+      "beda": 2,
+      "tidakTerbaca": 12,
+      "persen": 50,
+      "persenDariSemuaIsianPetugas": 12.5,
+      "tingkat": "ragu"
+    },
+    "akta_lahir.tanggal": {
+      "perkaraBerisianPetugas": 15,
+      "perkara": 4,
+      "cocok": 4,
+      "beda": 0,
+      "tidakTerbaca": 11,
+      "persen": 100,
+      "persenDariSemuaIsianPetugas": 26.7,
+      "tingkat": "ragu"
+    },
+    "surat_kuasa.tanggal.pihak1": {
+      "perkaraBerisianPetugas": 33,
+      "perkara": 16,
+      "cocok": 11,
+      "beda": 5,
+      "tidakTerbaca": 17,
+      "persen": 68.8,
+      "persenDariSemuaIsianPetugas": 33.3,
+      "selisihTanggalBeda": {
+        "<=31": 3,
+        "<=366": 2
+      },
+      "tingkat": "ragu"
+    },
+    "surat_kuasa.kantor.pihak1": {
+      "perkaraBerisianPetugas": 20,
+      "perkara": 4,
+      "cocok": 1,
+      "beda": 3,
+      "tidakTerbaca": 16,
+      "persen": 25,
+      "persenDariSemuaIsianPetugas": 5,
+      "tingkat": "ragu"
+    },
+    "akta_cerai.nomor": {
+      "perkaraBerisianPetugas": 5,
+      "perkara": 2,
+      "cocok": 1,
+      "beda": 1,
+      "tidakTerbaca": 3,
+      "persen": 50,
+      "persenDariSemuaIsianPetugas": 20,
+      "tingkat": "ragu"
+    },
+    "akta_cerai.tanggal": {
+      "perkaraBerisianPetugas": 5,
+      "perkara": 1,
+      "cocok": 1,
+      "beda": 0,
+      "tidakTerbaca": 4,
+      "persen": 100,
+      "persenDariSemuaIsianPetugas": 20,
+      "tingkat": "ragu"
+    },
+    "surat_kuasa.tanggal.pihak1.abt": {
+      "perkaraBerisianPetugas": 8,
+      "perkara": 4,
+      "cocok": 2,
+      "beda": 2,
+      "tidakTerbaca": 4,
+      "persen": 50,
+      "persenDariSemuaIsianPetugas": 25,
+      "selisihTanggalBeda": {
+        "<=31": 1,
+        "<=366": 1
+      },
+      "tingkat": "ragu"
+    },
+    "surat_kuasa.tanggal.pihak2": {
+      "perkaraBerisianPetugas": 8,
+      "perkara": 0,
+      "cocok": 0,
+      "beda": 0,
+      "tidakTerbaca": 8,
+      "persen": null,
+      "persenDariSemuaIsianPetugas": 0,
+      "tingkat": "ragu"
+    }
+  },
+  "usulanDariSampel": {
+    "usulan": {
+      "5110": 6,
+      "8894": 1,
+      "8895": 3,
+      "0889": 2
+    },
+    "kalimat": {
+      "lampiran-bukti-akta_kematian": 11,
+      "lampiran-bukti-sk_desa": 26,
+      "lampiran-bukti-kk": 6,
+      "lampiran-bukti-sk_kua": 12,
+      "lampiran-bukti-akta_cerai": 5,
+      "lampiran-bukti-akta_lahir": 7,
+      "lampiran-bukti-akta_nikah": 2
+    },
+    "perkaraDinilai": 187,
+    "perkaraBerusulan": 59
+  },
+  "beban": {
+    "waktuOcrPerBerkasMedianMs_laptop6Pekerja": 81343,
+    "halamanPerBerkasMedian": 3,
+    "catatan": "Server: satu berkas per putaran, jeda 180 detik, satu proses tesseract sekaligus, berhenti bila penyapu KTP membaca; 850 Dokumen Bukti 2026 habis dibaca dalam +-2 hari latar, berkas baru dibaca saat terunduh."
+  },
+  "keputusan": {
+    "sk_desa.tanggal": "ragu",
+    "akta_nikah.nomor.sipp": "ragu",
+    "akta_nikah.tanggal.sipp": "ragu",
+    "sk_desa.nomor": "ragu",
+    "kk.nomor": "ragu",
+    "kk.tanggal": "ragu",
+    "akta_kematian.nomor": "ragu",
+    "akta_kematian.tanggal": "ragu",
+    "akta_lahir.nomor": "ragu",
+    "akta_lahir.tanggal": "ragu",
+    "surat_kuasa.tanggal.pihak1": "ragu",
+    "surat_kuasa.kantor.pihak1": "ragu",
+    "akta_cerai.nomor": "ragu",
+    "akta_cerai.tanggal": "ragu",
+    "surat_kuasa.tanggal.pihak1.abt": "ragu",
+    "surat_kuasa.tanggal.pihak2": "ragu"
+  }
 }
