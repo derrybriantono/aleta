@@ -30,11 +30,13 @@ const K_03B_CG = "1c Perceraian Kumulasi Itsbat Nikah/[03b] [Tolak] Putusan CG K
 const K_03B_CT = "1c Perceraian Kumulasi Itsbat Nikah/[03b] [Tolak] Putusan CT Kumulasi Itsbat Nikah - Itsbat Ditolak (Rukun Syarat Tidak Terbukti), Cerai NO.rtf";
 const K_99D_CG = "1c Perceraian Kumulasi Itsbat Nikah/[99d] [NO] Putusan CG Kumulasi Itsbat Nikah - Itsbat NO (Poligami Sirri), Cerai NO.rtf";
 const K_99D_CT = "1c Perceraian Kumulasi Itsbat Nikah/[99d] [NO] Putusan CT Kumulasi Itsbat Nikah - Itsbat NO (Poligami Sirri), Cerai NO.rtf";
-const MD5: Record<string, string> = {
+// md5 sah per berkas: satu (hasil paket i26) atau dua (LAMA hasil i26, BARU sesudah paket susulan abt-dk-tolak-perma-susulan, rilis 1.205.11).
+// Pemetaan hanya memakai NAMA berkas, jadi blangko dikenali baik sebelum maupun sesudah susulan dipasang.
+const MD5: Record<string, string | string[]> = {
   [PAW]: "80930f5537a2ccffb82ae8ceae44c35f",
-  [DK_A]: "f202e3c4865c69be1dd99ce5a6acd03f",
-  [DK_B]: "bb9033bbf95d2f737492ed4dea3859a7",
-  [DK_C]: "6c1c4d40fba29a9656ac4164081cd1b1",
+  [DK_A]: ["f202e3c4865c69be1dd99ce5a6acd03f", "1058706a6e91c79509020f5626392642"],
+  [DK_B]: ["bb9033bbf95d2f737492ed4dea3859a7", "3aba0271badcb8e4dad1aa6ebf731c6e"],
+  [DK_C]: ["6c1c4d40fba29a9656ac4164081cd1b1", "90f747f4a3321c0cf3a5116b07d69d1e"],
   [K_03B_CG]: "3ed07c6165cdaec1b6b54b26074b1896",
   [K_03B_CT]: "1d83a1f0f22a514bcb56b9e247034717",
   [K_99D_CG]: "75adc18d9b78b2d2d650789e6efc1ce3",
@@ -72,7 +74,8 @@ describe("A. pohon", () => {
     for (const [berkas, md5] of Object.entries(MD5)) {
       const dir = `${akar}/${paket[berkas.slice(0, 2)]}/paket-satker/rtf/${A}`;
       if (!existsSync(dir)) continue;
-      expect(createHash("md5").update(readFileSync(path.join(dir, berkas))).digest("hex"), berkas).toBe(md5);
+      const sah = Array.isArray(md5) ? md5 : [md5];
+      expect(sah, berkas).toContain(createHash("md5").update(readFileSync(path.join(dir, berkas))).digest("hex"));
     }
   });
 });
