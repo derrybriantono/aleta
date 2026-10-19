@@ -27,6 +27,12 @@ import { masukanRekomendasiDariBaris, rekomendasiBlangko } from "@/lib/rekomenda
 const AKAR = path.resolve(process.cwd(), "..");
 const EKSTENSI = path.join(AKAR, "ekstensi-sipp");
 const baca = (berkas: string) => readFileSync(path.join(EKSTENSI, berkas), "utf8").replace(/\r\n/g, "\n");
+const irisanAbt = (mulai: string, selesai: string) => {
+  const sumberAbt = baca("abt.js");
+  const a = sumberAbt.indexOf(mulai);
+  if (a < 0) throw new Error(`tidak ditemukan di abt.js: ${mulai}`);
+  return sumberAbt.slice(a, sumberAbt.indexOf(selesai, a));
+};
 const SUMBER = ["panel-alat.js", "abt-klien.js", "blangko-derry.js", "isi-sipp-bersama.js", "blangko-derry-isian.js"].map(baca).join("\n;\n");
 
 const ASAL = "http://192.168.10.10";
@@ -75,8 +81,12 @@ const KATALOG = new Map<string, Definisi>([
   D("0050", "Sidang Ke-", "multi_sidang"),
   D("9101", "Alamat tempat panggilan", "data_teks"),
   D("7139", "Beracara secara elektronik", "data_teks"),
+  D("0222", "Awal Konflik : bulan _ / tahun _ / awal tahun / akhir tahun / tanggal _", "data_teks", "", "#8493#"),
+  D("0246", "Pisah Rumah : bulan _ / tahun _ / awal tahun / akhir tahun / tanggal _", "data_teks", "", "#8494#"),
+  D("9944", "lama pisah : _ (_) tahun _ (_) bulan", "data_teks", "", "#8496#"),
+  D("5227", "Alasan-Alasan Cerai (#0053# #0046#)", "data_teks", "", "#8499#"),
 ]);
-const PENANDA_PUT = ["0001", "0046", "4001", "0007", "1006", "2004", "0364", "0156", "11111", "0033", "7139"];
+const PENANDA_PUT = ["0001", "0046", "4001", "0007", "1006", "2004", "0364", "0156", "11111", "0033", "7139", "0222", "0246", "9944", "5227"];
 const PENANDA_BAS = ["0001", "0033", "0050", "0007", "1006", "8503"];
 const PENANDA_REL = ["0001", "0046", "9101", "1006"];
 const PENANDA_OLEH = (berkas: string, indeks: number) => (berkas.startsWith("[01]") ? PENANDA_PUT : berkas.startsWith("[JS]") ? PENANDA_REL : indeks >= 0 ? PENANDA_BAS : PENANDA_BAS);
@@ -124,8 +134,14 @@ type Opsi = {
   saran?: unknown[];
   /** Keputusan e-litigasi #7139# dari abt.js (el7Ambil7139) - ditiru sebagai fungsi global. */
   el7?: { nilai: string; keterangan: string };
+  /** Usulan dari sumber "saksi" bot (0222, 0246, 9944, 5227, ...). */
+  usulanSaksi?: Usulan[];
+  /** Keterangan saksi per kode penyunting ("2021"/"2022") pada sidang berapa pun: baris tanya-jawab ABT. */
+  saksiRows?: Record<string, Array<{ no: string; tanya: string; jawab: string }>>;
+  /** Riwayat perubahan panel (bacaRiwayat). */
+  riwayat?: Array<Record<string, unknown>>;
 };
-type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; abt: Record<string, string>; opsi: Opsi };
+type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; abt: Record<string, string>; opsi: Opsi; riwayatCatat: Array<Record<string, unknown>> };
 const terbuka: JSDOM[] = [];
 afterEach(async () => {
   await tunggu(20);
@@ -206,6 +222,15 @@ function buka(p: Opsi = {}): Halaman {
     // Bot / portal: sumber isi dari SIPP
     if (url.includes("/aleta-bot/abt/usulan")) {
       if (p.tahanUsulan) await p.tahanUsulan;
+      const sumber = (() => {
+        try {
+          return String(JSON.parse(badan).sumber || "");
+        } catch {
+          return "";
+        }
+      })();
+      if (sumber === "saksi") return json({ ok: true, data: { available: true, saksi: { usulan: polos(p.usulanSaksi ?? []), huruf: [] } } });
+      if (sumber === "itsbat" || sumber === "posita-lain") return json({ ok: true, data: { available: true, itsbat: { ok: false }, positaLain: { ok: false, alasan: "jenis_perkara_tidak_dilayani" } } });
       return json({ ok: true, data: { available: true, sipp: { ok: true, usulan: polos(p.usulan ?? []), jumlahKuasa: 0, prodeo: false } } });
     }
     if (url.includes("/aleta-ecourt/isi-gugatan")) return json({ ok: true, data: { usulan: polos(p.usulanGugatan ?? []), tanyaJawab: [], kalimat: [], kontak: null } });
@@ -230,7 +255,11 @@ function buka(p: Opsi = {}): Halaman {
       if (kode === "0050") return html(POPUP(kode, "multi_sidang", "2"));
       return html(POPUP(kode, tipe, abt[kode] || ""));
     }
-    if (url.startsWith(`${ABT}/tanyajawab_perkara_edit?`)) return html(`<script>var ajax_data = []\n</script>`);
+    if (url.startsWith(`${ABT}/tanyajawab_perkara_edit?`)) {
+      const kodeTj = new URL(url).searchParams.get("no_var") || "";
+      const rows = (p.saksiRows?.[kodeTj] ?? []).map((r) => ({ urutan_pertanyaan: r.no, pertanyaan: r.tanya, jawaban: r.jawab }));
+      return html(`<div class="panel-heading"><b><big>${NOMOR}</big></b> - TanyaJwb Saksi : <b>Nama Saksi</b></div><select><option value='A1a'>(A1a) Pertanyaan</option></select><script>var ajax_data = ${JSON.stringify(rows)}\n</script>`);
+    }
     return json({ ok: false }, 404);
   };
   w.Response = Response;
@@ -241,9 +270,17 @@ function buka(p: Opsi = {}): Halaman {
   w.Element.prototype.scrollIntoView = function () {};
   w.HTMLElement.prototype.focus = function () {};
   w.eval(SUMBER);
+  // Pembantu abt.js yang dipanggil Blangko Derry sebagai fungsi global (di sini: sumber aslinya dari abt.js, bukan salinan).
+  const riwayatCatat: Array<Record<string, unknown>> = [];
+  w.eval(irisanAbt("function teksSaksiMentah(baris)", "/** Banyaknya butir"));
+  w.catatRiwayat = (c: Record<string, unknown>) => {
+    riwayatCatat.push(polos(c));
+    return Promise.resolve();
+  };
+  w.bacaRiwayat = async () => polos(p.riwayat ?? []);
   if (p.saran) w.aletaBlangkoDerryIsian.pasangRekomendasi(() => p.saran);
   if (p.el7) w.el7Ambil7139 = async () => p.el7;
-  return { dom, w, simpanan, minta, abt, opsi: p };
+  return { dom, w, simpanan, minta, abt, opsi: p, riwayatCatat };
 }
 
 const D_ = (h: Halaman) => h.w.document as Document;
@@ -658,7 +695,7 @@ describe("F. mesin bersama sama dengan abt.js", () => {
     expect(m.putuskan({ kode: "0007", nilai: "x", keyakinan: "cukup", bentrok: "y" }, ctx).golongan).toBe("saran");
     expect(m.putuskan({ kode: "0007", nilai: "x", keyakinan: "ragu" }, ctx).golongan).toBe("saran");
     expect(m.putuskan({ kode: "0007", nilai: "x", keyakinan: "ocr" }, ctx).golongan).toBe("saran");
-    expect(m.putuskan({ kode: "0007", nilai: "", pilihan: ["a", "b"], keyakinan: "pasti" }, ctx).golongan).toBe("saran");
+    expect(m.putuskan({ kode: "0007", nilai: "", pilihan: ["a", "b"], keyakinan: "pasti" }, ctx).golongan).toBe("pilihan");
     expect(m.putuskan({ kode: "8503", nilai: "F", keyakinan: "pasti" }, ctx).golongan).toBe("saran");
     expect(m.putuskan({ kode: "5227", nilai: "x", keyakinan: "pasti" }, ctx).golongan).toBe("saran");
     expect(m.putuskan({ kode: "0007", nilai: "x", keyakinan: "pasti" }, { ...ctx, kosong: false }).golongan).toBe("lewati");
@@ -810,5 +847,134 @@ describe("H. kotak blangko di langkah 2 dapat dibuka dengan klik dua kali, Enter
     const hasil = ramah(asli);
     expect(hasil).toBe('keterangan "putus verstek" - Putus di sidang pertama. (perkiraan, periksa kembali)');
     expect(hasil).not.toMatch(/folder|alur|ALETA/i);
+  });
+});
+
+// ============================================================================
+describe("I. mutu deteksi = mesin panel ABT: periode baku, HTML dibuang, bawaan mentah diganti, pilih bunyi 5227", () => {
+  const MENTAH =
+    "Januari 2023 keadaan rumah tangga Penggugat dan Tergugat tidak harmonis karena sering terjadi perselisihan dan pertengkaran terus menerus sehingga sulit untuk didamaikan lagi oleh keluarga kedua belah pihak, </div><br /><br /><div>a. Tergugat sering marah-marah tanpa sebab yang jelas;</div><div>b. Tergugat tidak memberi nafkah;</div>";
+  const SAKSI_USULAN: Usulan[] = [
+    { kode: "0222", nama: "Awal Konflik", nilai: "bulan Januari 2023", keyakinan: "cukup", tingkat: "pasti", kesepakatan: "sama", sumber: [{ saksi: 1, kalimat: "Bahwa sejak Januari 2023 sering bertengkar" }] },
+    { kode: "0246", nama: "Pisah Rumah", nilai: "Agustus 2023", keyakinan: "cukup", sumber: [{ saksi: 2, kalimat: "Bahwa pisah rumah sejak Agustus 2023" }] },
+    { kode: "9944", nama: "Lama Pisah", nilai: "3 tahun 3 bulan", keyakinan: "pasti", sumber: [{ saksi: 1, kalimat: "pisah 3 tahun" }], catatan: "Dihitung dari tanggal pisah rumah sampai sidang." },
+    {
+      kode: "5227",
+      nama: "Alasan-Alasan Cerai",
+      nilai: "",
+      keyakinan: "ragu",
+      pilihan: [
+        { keadaan: "templat hakim - sebab saja", nilai: "Bahwa antara Penggugat dan Tergugat terus menerus berselisih" },
+        { keadaan: "templat hakim - sebab + akibat (bentuk baku ALETA)", nilai: "Bahwa antara Penggugat dan Tergugat terus menerus berselisih sehingga rumah tangga pecah" },
+        { keadaan: "bunyi bermasalah", nilai: "dibuat oleh ALETA" },
+      ],
+      sumber: [],
+    },
+  ];
+  const ROWS = {
+    "2021": [{ no: "1", tanya: "Apa yang saudara tahu?", jawab: "Penggugat dan Tergugat sering bertengkar sejak Januari 2023" }],
+    "2022": [{ no: "1", tanya: "Apa yang saudara tahu?", jawab: "Mereka pisah rumah sejak Agustus 2023" }],
+  };
+  const dasar = { usulan: [], usulanSaksi: SAKSI_USULAN, saksiRows: ROWS, abtAwal: { "5125": "Bahwa pada tahun 2020 <b>Penggugat</b> menikah<br />dengan Tergugat", "0222": MENTAH } };
+
+  it("bawaan mentah (HTML + potongan posita panjang) diganti hasil mesin saksi; periode baku; lama pisah dengan penghitungnya; riwayat mencatat sebelum", async () => {
+    const h = buka(dasar);
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await sampai(() => h.abt["0222"] === "bulan Januari 2023", "0222 diganti hasil mesin");
+    await sampai(() => h.abt["0246"] === "bulan Agustus 2023", "0246 berformat periode baku");
+    await sampai(() => h.abt["9944"] === "3 tahun 3 bulan", "9944 dari mesin");
+    // Muatan ke bot sama dengan panel: keterangan dua saksi, tanggal sidang, posita tanpa tag.
+    const bot = mintaKe(h, /aleta-bot\/abt\/usulan/, "POST").map((m) => JSON.parse(m.badan)).find((b) => b.sumber === "saksi");
+    expect(bot).toBeTruthy();
+    expect(bot.saksi1).toContain("Bahwa penggugat dan Tergugat sering bertengkar");
+    expect(bot.saksi2).toContain("Bahwa mereka pisah rumah");
+    expect(bot.tanggalSidang).toBe("15 Oktober 2026");
+    expect(bot.posita).toBe("Bahwa pada tahun 2020 Penggugat menikah\ndengan Tergugat");
+    // Penggantian dicatat agar dapat diurungkan: nilai mentah ada di "sebelum".
+    const catatan = h.riwayatCatat.find((c) => c.kode === "0222");
+    expect(catatan).toMatchObject({ sebelum: MENTAH, sesudah: "bulan Januari 2023" });
+    expect(String(catatan!.cara)).toMatch(/mentah diganti/);
+    // Tak satu pun muatan simpan memuat HTML atau kata ALETA.
+    for (const m of mintaKe(h, /edit_data\?/, "POST")) {
+      expect(m.badan).not.toMatch(/aleta|%3C|<div|<br/i);
+    }
+  });
+
+  it("bawaan mentah yang pernah disunting petugas (jejak riwayat) tidak diganti; yang pendek dan bersih juga tidak", async () => {
+    const h = buka({ ...dasar, riwayat: [{ perkaraId: "10154", kode: "0222", cara: "diketik petugas di panel ALETA", pada: "2026-10-14T01:00:00Z" }] });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await sampai(() => h.abt["0246"] === "bulan Agustus 2023", "isian lain tetap terisi");
+    await tunggu(100);
+    expect(h.abt["0222"]).toBe(MENTAH);
+    expect(mintaKe(h, /edit_data\?no_var=0222/, "POST")).toEqual([]);
+    const pendek = buka({ ...dasar, abtAwal: { ...dasar.abtAwal, "0222": "bulan Maret 2022" } });
+    await sampaiPerkara(pendek);
+    await pilih(pendek, BLANGKO_PUT);
+    await sampai(() => pendek.abt["0246"] === "bulan Agustus 2023", "0246 terisi");
+    await tunggu(100);
+    expect(pendek.abt["0222"]).toBe("bulan Maret 2022");
+  });
+
+  it("5227: pilih bunyi dari varian mesin yang sama; label tanpa istilah teknis; wajib dipilih petugas (tidak terisi sendiri); varian ber-ALETA dibuang", async () => {
+    const h = buka(dasar);
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    const pilihan = (await sampai(() => q(h, 'select[data-bunyi="5227"]'), "pilihan bunyi 5227")) as HTMLSelectElement;
+    const opsi = Array.from(pilihan.options).map((o) => o.textContent || "");
+    expect(opsi[0]).toBe("— wajib dipilih petugas —");
+    expect(opsi).toHaveLength(3);
+    expect(opsi[1]).toContain("bunyi hakim - sebab saja");
+    expect(opsi[2]).toContain("bunyi hakim - sebab + akibat");
+    expect(opsi.join(" ")).not.toMatch(/templat|bentuk baku|ALETA/i);
+    // Tidak terisi sendiri.
+    expect(pilihan.value).toBe("");
+    await tunggu(100);
+    expect(h.abt["5227"]).toBeUndefined();
+    expect(mintaKe(h, /edit_data\?no_var=5227/, "POST")).toEqual([]);
+    // Petugas memilih -> tersimpan lewat jalur simpan yang sama.
+    pilihan.value = "1";
+    pilihan.dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    await sampai(() => h.abt["5227"] === "Bahwa antara Penggugat dan Tergugat terus menerus berselisih sehingga rumah tangga pecah", "bunyi pilihan tersimpan");
+    expect(h.abt["5227"]).not.toMatch(/aleta/i);
+  });
+
+  it("murni: periode baku tanpa penggandaan, HTML dibuang kecuali variabel ber-HTML (8500), daftar pengecualian = katalog kueri ABT", () => {
+    const m = buka().w.AletaIsiSipp;
+    const f = (x: string) => m.formatPeriode(x);
+    expect(f("Januari 2023")).toBe("bulan Januari 2023");
+    expect(f("bulan Januari 2023")).toBe("bulan Januari 2023");
+    expect(f("bulan bulan Januari 2023")).toBe("bulan Januari 2023");
+    expect(f("bulan Januari tahun 2023")).toBe("bulan Januari 2023");
+    expect(f("Pebruari 2023")).toBe("bulan Februari 2023");
+    expect(f("2023")).toBe("tahun 2023");
+    expect(f("tahun 2023")).toBe("tahun 2023");
+    expect(f("tahun tahun 2023")).toBe("tahun 2023");
+    expect(f("awal tahun 2023")).toBe("awal tahun 2023");
+    expect(f("Januari 2023 keadaan rumah tangga")).toBe("Januari 2023 keadaan rumah tangga");
+    // Semua kode periode mengikuti aturan lewat putuskan (awal konflik, pisah rumah).
+    for (const kode of ["0222", "0246"]) {
+      expect(m.putuskan({ kode, nilai: "Januari 2023", keyakinan: "cukup" }, { kosong: true, jenis: "teks" })).toMatchObject({ golongan: "tulis", nilai: "bulan Januari 2023" });
+      expect(m.putuskan({ kode, nilai: "2023", keyakinan: "cukup" }, { kosong: true, jenis: "teks" })).toMatchObject({ nilai: "tahun 2023" });
+    }
+    // HTML -> teks rapi.
+    expect(m.htmlKeTeks("a&nbsp;b<br />c</div><br /><br /><div>d &amp; e</div>")).toBe("a b\nc\nd & e");
+    expect(m.bersihkanNilai("0222", "<div>satu</div><div>dua</div>")).toBe("satu\ndua");
+    // Variabel yang kuerinya memang menghasilkan HTML (8500: majelis TTD putusan) tidak dibersihkan.
+    expect(m.KODE_HTML).toContain("8500");
+    expect(m.bersihkanNilai("8500", "<li>Ketua,<br><strong>Hakim</strong>")).toBe("<li>Ketua,<br><strong>Hakim</strong>");
+    // Daftar eksplisit = variabel yang kuerinya bertag HTML di katalog ABT.
+    const katalog = JSON.parse(readFileSync(path.join(process.cwd(), "src/server/modules/aleta-ecourt/kamus-variabel-awal.json"), "utf8")) as { variabel: Array<Record<string, unknown>> };
+    const pola = /<\s*\/?\s*(br|li|ul|ol|div|table|tr|td|th|p|strong|b|u|i|em|span|font|center|h\d)\b/i;
+    const dariKatalog = katalog.variabel.filter((x) => ["q", "d", "r", "u"].some((f) => typeof x[f] === "string" && pola.test(x[f] as string))).map((x) => String(x.k)).sort();
+    expect(polos(m.KODE_HTML).slice().sort()).toEqual(dariKatalog);
+    // Bawaan jelas mentah: bertag, atau panjang pada isian pendek.
+    expect(m.jelasMentah("0222", MENTAH)).toBe(true);
+    expect(m.jelasMentah("0222", "bulan Januari 2023")).toBe(false);
+    expect(m.jelasMentah("5227", "x".repeat(400))).toBe(false);
+    expect(m.jelasMentah("8500", "<li>x")).toBe(false);
+    // Label bunyi.
+    expect(m.labelBunyi("templat hakim - sebab + akibat (bentuk baku ALETA)")).toBe("bunyi hakim - sebab + akibat");
   });
 });
