@@ -541,6 +541,8 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       // penanda "Saksi P / Saksi T" di daftar.
       saksiPihak1: Number((petaSaksi[String(row.perkaraId)] || {}).diajukanPihak1) || 0,
       saksiPihak2: Number((petaSaksi[String(row.perkaraId)] || {}).diajukanPihak2) || 0,
+      // 19 Okt: saksi yang TERCATAT diperiksa (perkara_keterangan_saksi); null = tidak terbaca (pakai yang diajukan).
+      saksiDiperiksa: (petaSaksi[String(row.perkaraId)] || {}).diperiksa === undefined ? null : Number((petaSaksi[String(row.perkaraId)] || {}).diperiksa) || 0,
       // Namanya ikut supaya layar dapat menyebut SIAPA, bukan hanya berapa.
       saksiNamaPihak1: (petaSaksi[String(row.perkaraId)] || {}).namaPihak1 || [],
       saksiNamaPihak2: (petaSaksi[String(row.perkaraId)] || {}).namaPihak2 || [],
@@ -3243,6 +3245,28 @@ async function saksiBanyakPerkara(daftarPerkaraId = []) {
       namaPihak1: pecah(baris.nama1),
       namaPihak2: pecah(baris.nama2),
     };
+  }
+
+  // 19 Okt 2026: saksi yang sudah TERCATAT diperiksa (keterangannya ada di perkara_keterangan_saksi) - sumber yang sama dengan
+  // "Saksi N saksi" di Status Perkara. Dipakai memilih varian blangko putusan "(N Saksi)". Hanya SELECT; gagal-terbuka:
+  // tabel tidak ada / kueri gagal -> `diperiksa` tidak diisi (pemakai jatuh ke saksi yang diajukan).
+  try {
+    if (await sippSkemaService.tabelAda("perkara_keterangan_saksi")) {
+      const diperiksa = await runQuery(
+        `SELECT s.perkara_id AS perkaraId, COUNT(DISTINCT s.saksi_id) AS jumlah
+           FROM perkara_keterangan_saksi s
+          WHERE s.perkara_id IN (${isian})
+          GROUP BY s.perkara_id`,
+        dipakai
+      );
+      for (const baris of Array.isArray(diperiksa) ? diperiksa : []) {
+        const kunci = String(baris.perkaraId);
+        if (!hasil[kunci]) hasil[kunci] = { diajukanPihak1: 0, diajukanPihak2: 0, namaPihak1: [], namaPihak2: [] };
+        hasil[kunci].diperiksa = Number(baris.jumlah) || 0;
+      }
+    }
+  } catch {
+    /* saksi yang diajukan tetap tersedia */
   }
   return hasil;
 }

@@ -74,8 +74,9 @@ const KATALOG = new Map<string, Definisi>([
   D("0033", "Tgl Sidang", "multi_sidang"),
   D("0050", "Sidang Ke-", "multi_sidang"),
   D("9101", "Alamat tempat panggilan", "data_teks"),
+  D("7139", "Beracara secara elektronik", "data_teks"),
 ]);
-const PENANDA_PUT = ["0001", "0046", "4001", "0007", "1006", "2004", "0364", "0156", "11111", "0033"];
+const PENANDA_PUT = ["0001", "0046", "4001", "0007", "1006", "2004", "0364", "0156", "11111", "0033", "7139"];
 const PENANDA_BAS = ["0001", "0033", "0050", "0007", "1006", "8503"];
 const PENANDA_REL = ["0001", "0046", "9101", "1006"];
 const PENANDA_OLEH = (berkas: string, indeks: number) => (berkas.startsWith("[01]") ? PENANDA_PUT : berkas.startsWith("[JS]") ? PENANDA_REL : indeks >= 0 ? PENANDA_BAS : PENANDA_BAS);
@@ -121,6 +122,8 @@ type Opsi = {
   hash?: string;
   /** Saran yang dipasang segera sesudah skrip termuat (sebelum tautan diproses). */
   saran?: unknown[];
+  /** Keputusan e-litigasi #7139# dari abt.js (el7Ambil7139) - ditiru sebagai fungsi global. */
+  el7?: { nilai: string; keterangan: string };
 };
 type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; abt: Record<string, string>; opsi: Opsi };
 const terbuka: JSDOM[] = [];
@@ -239,6 +242,7 @@ function buka(p: Opsi = {}): Halaman {
   w.HTMLElement.prototype.focus = function () {};
   w.eval(SUMBER);
   if (p.saran) w.aletaBlangkoDerryIsian.pasangRekomendasi(() => p.saran);
+  if (p.el7) w.el7Ambil7139 = async () => p.el7;
   return { dom, w, simpanan, minta, abt, opsi: p };
 }
 
@@ -432,6 +436,30 @@ describe("C. saklar mati: tidak mengisi sendiri, tombol manual tetap bekerja", (
     await tunggu(150);
     expect(mintaKe(h, /edit_data\?/, "POST").length).toBe(jumlah);
     expect(h.abt["1006"]).toBe("di rumah sendiri");
+  });
+
+  it("REGRESI fitur lama: e-litigasi #7139# tetap terisi sendiri walau saklar mati; saklar hanya mengatur mesin bersama", async () => {
+    const h = buka({ simpanan: { blangkoDerryIsiOto: false }, usulan: SIPP_PUTUSAN, el7: { nilai: "1", keterangan: "E-Litigasi: penuh (Tergugat ber-email)" } });
+    await sampaiPerkara(h);
+    await pilih(h, BLANGKO_PUT);
+    await sampai(() => h.abt["7139"] === "1", "7139 terisi walau saklar mati");
+    await tunggu(150);
+    // Mesin bersama tidak jalan: tidak ada bacaan SIPP dan isian lain tetap kosong.
+    expect(mintaKe(h, /aleta-bot\/abt\/usulan/)).toEqual([]);
+    expect(h.abt["0007"]).toBeUndefined();
+    expect(mintaKe(h, /edit_data\?no_var=7139/, "POST")).toHaveLength(1);
+  });
+
+  it("REGRESI fitur lama: kabel bawaan itsbat dan 7139 mendahului gerbang saklar di sumber", () => {
+    const sumber = baca("blangko-derry-isian.js");
+    const a = sumber.indexOf("async function isiOtomatisBlangko(");
+    const blok = sumber.slice(a, sumber.indexOf("\n  }\n", a));
+    const iItsbat = blok.indexOf("await simpanBawaanAbtItsbat(d);");
+    const i7139 = blok.indexOf("await isiElitigasiOtomatis(d);");
+    const iGerbang = blok.indexOf("cfg().isiOto === false");
+    expect(iItsbat).toBeGreaterThan(0);
+    expect(i7139).toBeGreaterThan(iItsbat);
+    expect(iGerbang).toBeGreaterThan(i7139);
   });
 
   it("tombol manual berada sejajar Isi dari gugatan (posita)", async () => {

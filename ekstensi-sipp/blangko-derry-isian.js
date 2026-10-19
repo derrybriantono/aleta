@@ -1391,23 +1391,26 @@
     return n;
   }
   /**
-   * Orkestrasi isi otomatis begitu susunan blangko terbaca (dan tombol manual): bawaan ABT itsbat, e-litigasi 7139, lalu bacaan
-   * SIPP/gugatan/e-Court. `manual: true` = tombol "Isi dari SIPP" (selalu jalan, tidak bergantung saklar, dan melapor).
+   * Orkestrasi isi otomatis begitu susunan blangko terbaca (dan tombol manual): bawaan ABT itsbat dan e-litigasi 7139 (selalu jalan,
+   * fitur lama), lalu bacaan SIPP/gugatan/e-Court (hanya bila saklar menyala). `manual: true` = tombol "Isi dari SIPP" (selalu jalan,
+   * tidak bergantung saklar, dan melapor).
    * `sidang: true` = ganti sidang (yang berlaku per perkara tidak diulang dari awal).
    */
   async function isiOtomatisBlangko(d, opsi) {
     const o = opsi || {};
     try {
       if (!S.pk || !S.blangko || S.susunan !== d) return;
-      if (!o.manual && cfg().isiOto === false) return;
       if (!bolehTulis()) {
         if (o.manual) await isiDariSipp({ otomatis: false });
         return;
       }
+      // Fitur lama TETAP jalan walau saklar mati (keputusan pengguna 19 Okt): bawaan ABT itsbat dan e-litigasi 7139.
       if (!o.sidang) {
         await simpanBawaanAbtItsbat(d);
         await isiElitigasiOtomatis(d);
       }
+      // Saklar "Isi otomatis dari SIPP" hanya mengatur pengisian BARU dari mesin bersama.
+      if (!o.manual && cfg().isiOto === false) return;
       await isiDariSipp({ otomatis: !o.manual });
     } catch (e) {
       catatTeknis("isi otomatis gagal:", String((e && e.message) || e));

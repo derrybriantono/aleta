@@ -590,8 +590,13 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     verstekPutusan: b.verstekPutusan === true,
     mediasi: b.mediasi && typeof b.mediasi === "object" ? (b.mediasi as { hasil?: unknown }) : null,
     mediasiTerbaca: b.mediasiTerbaca === false ? false : true,
-    // 19 Okt: saksi yang diajukan kedua sisi (bot: saksiPihak1/2); tidak ada = tidak diketahui (bukan nol).
-    ...(typeof b.saksiPihak1 === "number" || typeof b.saksiPihak2 === "number" ? { jumlahSaksi: (Number(b.saksiPihak1) || 0) + (Number(b.saksiPihak2) || 0) } : {}),
+    // 19 Okt: saksi yang TERCATAT diperiksa (bot: saksiDiperiksa, perkara_keterangan_saksi) bila ada; cadangannya saksi yang diajukan
+    // kedua sisi (saksiPihak1/2). Tidak ada keduanya = tidak diketahui (bukan nol).
+    ...(typeof b.saksiDiperiksa === "number" && b.saksiDiperiksa > 0
+      ? { jumlahSaksi: b.saksiDiperiksa }
+      : typeof b.saksiPihak1 === "number" || typeof b.saksiPihak2 === "number"
+        ? { jumlahSaksi: (Number(b.saksiPihak1) || 0) + (Number(b.saksiPihak2) || 0) }
+        : {}),
     lewatEcourt: typeof b.lewatEcourt === "boolean" ? b.lewatEcourt : null,
     jenisPerkaraId: angka(b.jenisPerkaraId),
     bersita: Boolean(b.sita) && typeof b.sita === "object",
