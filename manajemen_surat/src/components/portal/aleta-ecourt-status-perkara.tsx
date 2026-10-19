@@ -101,6 +101,8 @@ import {
   useTampilanStatus,
 } from "@/components/portal/status-perkara-seamless";
 import { susunLinimasa } from "@/lib/status-perkara-seamless";
+import { TautanBlangkoDerry } from "@/components/portal/tombol-blangko-derry";
+import { SEBUTAN_BLANGKO, jenisBlangkoBoleh, tautanBlangkoStatusPerkara } from "@/lib/tautan-blangko-derry";
 import { apiPath, withBasePath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { GalatJawaban, bacaJsonAman, botTakTerjangkau, useCobaLagiOtomatis } from "@/lib/coba-lagi-otomatis";
@@ -2945,7 +2947,9 @@ function IsiStatus({
    * daripada tidak ada tautan: ia menyalahkan orangnya atas pintu yang memang
    * bukan untuk dia.
    */
-  const { accessibleModules, currentUser, institutionIdentity } = usePortal();
+  const { accessibleModules, currentUser, institutionIdentity, panelSettings } = usePortal();
+  // Tautan Blangko ABT by Derry (19 Okt 2026) - pembentuk tautan yang SAMA dengan tombol Blangko Jadwal Sidang.
+  const setelanAps = panelSettings?.externalApps?.["aps-badilag"]?.baseUrl ?? "";
   /* === 12OKT-A: kumulasi perkara === */
   // Saklar "Kumulasi perkara" panel Tampilan Jadwal Sidang; hanya bila bot
   // sudah mengirim ruasnya (kumulasiTerbaca) - selain itu tampilan lama.
@@ -3032,6 +3036,21 @@ function IsiStatus({
   // keduanya. sidangBerikut/sidangTerakhir di bawah sengaja tetap membaca
   // status.jadwal: "berikut" adalah pertanyaan tanggal, bukan nomor.
   const jadwalUrut = useMemo(() => urutkanMenurutNomorSidang(status.jadwal), [status.jadwal]);
+  const blangkoDerry = useMemo(
+    () =>
+      tautanBlangkoStatusPerkara({
+        nomor: status.identitas.nomorPerkara,
+        perkaraId: status.identitas.perkaraId,
+        jadwal: status.jadwal,
+        putusan: status.putusan
+          ? { sudahPutus: status.putusan.sudahPutus, statusPutusan: status.putusan.statusPutusan, verstek: status.putusan.verstek }
+          : null,
+        adaIkrar: Boolean(status.ikrar),
+        jumlahSaksi: status.saksi?.jumlahSaksi ?? 0,
+        boleh: jenisBlangkoBoleh(currentUser),
+      }),
+    [status.identitas.nomorPerkara, status.identitas.perkaraId, status.jadwal, status.putusan, status.ikrar, status.saksi, currentUser]
+  );
 
   // "Hari ini" menurut jam PERAMBAN, sama dengan grafik Umur perkara pada tiap
   // sidang dan Kalender perkara. Dulu toISOString() - tanggal UTC - sehingga
@@ -3766,7 +3785,14 @@ function IsiStatus({
           <p className="text-sm text-muted-foreground">Belum ada jadwal sidang tercatat.</p>
         ) : (
           <>
-            <div className="mb-2 flex flex-wrap gap-2 text-sm">
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+              {/* Blangko putusan / ikrar - hanya bila relevan dan sesuai peran. */}
+              {blangkoDerry.putusan ? (
+                <TautanBlangkoDerry data={blangkoDerry.putusan} jenis="putusan" label={SEBUTAN_BLANGKO.putusan} setelanAps={setelanAps} />
+              ) : null}
+              {blangkoDerry.ikrar ? (
+                <TautanBlangkoDerry data={blangkoDerry.ikrar} jenis="penetapan" label={SEBUTAN_BLANGKO.penetapan} setelanAps={setelanAps} />
+              ) : null}
               {sidangBerikut ? (
                 <Badge variant="default">
                   Sidang berikut: {tanggalHariPendek(sidangBerikut.tanggalSidang, sidangBerikut.tanggalSidang)}{" "}
@@ -3813,6 +3839,14 @@ function IsiStatus({
                       )}`}
                       label="BAS"
                       namaCadangan={`bas-${status.identitas.nomorPerkara}-${sidang.tanggalSidang}.pdf`}
+                    />
+                  ) : null}
+                  {blangkoDerry.perSidang[sidang.sidangId] ? (
+                    <TautanBlangkoDerry
+                      data={blangkoDerry.perSidang[sidang.sidangId]}
+                      jenis="bas"
+                      label={`BAS sidang ke-${sidang.urutanSidang}`}
+                      setelanAps={setelanAps}
                     />
                   ) : null}
                 </li>

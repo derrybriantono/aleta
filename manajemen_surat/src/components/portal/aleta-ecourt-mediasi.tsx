@@ -44,6 +44,15 @@ import {
 import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
 import { NamaDapatDipanggil, PengaturanPanggil, golonganSisi } from "@/components/portal/panggil-petugas";
 import { LencanaStatusMediasi, TombolStatusMediasi, kelasBarisMediasi, useStatusMediasi } from "@/components/portal/status-mediasi";
+import { PetunjukCariPintar } from "@/components/portal/petunjuk-cari-pintar";
+import {
+  CONTOH_MEDAN_MEDIASI,
+  KATA_KUNCI_MEDIASI,
+  MEDAN_MEDIASI,
+  cocokCariPintar,
+  uraiCariPintar,
+  uraianKosong,
+} from "@/lib/cari-pintar-jadwal";
 import { ChevronDown, ChevronUp, FileText, Filter, SlidersHorizontal, X } from "lucide-react";
 import { HasilMediasiDialog } from "@/components/portal/hasil-mediasi-dialog";
 import { bolehBuatHasilMediasi, type PenggunaHasilMediasi } from "@/lib/hasil-mediasi";
@@ -432,7 +441,7 @@ function RincianMediasi({ baris, bolehCatat = true }: { baris: Mediasi; bolehCat
             {galat}
           </p>
         ) : !kehadiran ? (
-          <p className="text-xs text-muted-foreground">Memuat kehadiran…</p>
+          <div className="min-h-[1.25rem]" aria-busy="true" />
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -740,10 +749,13 @@ function cocokCariLanjutMediasi(baris: Mediasi, isian: Record<string, string>) {
   );
 }
 
-/** Pencarian cepat: satu kotak yang menyapu seluruh kolom sekaligus. */
-function cocokCariCepatMediasi(baris: Mediasi, kata: string) {
-  if (!kata.trim()) return true;
-  const semua = [
+/**
+ * Pencarian cepat: satu kotak yang menyapu seluruh kolom sekaligus. Sejak
+ * pencarian pintar (JADWAL-3 butir 1, 19 Okt 2026) ini teks kata bebasnya;
+ * kata kunci dan medan diurai lebih dahulu - lihat @/lib/cari-pintar-jadwal.
+ */
+function teksCariMediasi(baris: Mediasi) {
+  return [
     baris.nomorPerkara,
     baris.jenisPerkara,
     /* === 12OKT-A: kumulasi perkara === */
@@ -755,9 +767,42 @@ function cocokCariCepatMediasi(baris: Mediasi, kata: string) {
     baris.hasilTeks,
     baris.nomorSk,
     baris.jam,
+    baris.dihadiri,
     ...namaPihakSemua(baris),
   ].join(" ");
-  return cocokTeks(semua, kata);
+}
+
+/** Predikat kata kunci + nilai medan pencarian pintar mediasi. */
+function opsiCariMediasi(status: Record<string, { keadaan: "berjalan" | "selesai" } | undefined>) {
+  const keadaan = (kunci: string) => {
+    const k = KEADAAN_MEDIASI.find((x) => x.kunci === kunci);
+    return (b: Mediasi) => (k ? k.cocok(b) : true);
+  };
+  const st = (b: Mediasi) => status[`${b.mediasiId}|${b.tanggal}`]?.keadaan;
+  return {
+    predikat: {
+      "lewat-tenggang": keadaan("lewat"),
+      "belum-mediator": keadaan("tanpa-mediator"),
+      "mediator-hakim": keadaan("hakim-mediator"),
+      "mediator-non-hakim": keadaan("mediator-non-hakim"),
+      "belum-laporan": keadaan("belum-hasil"),
+      "tidak-berhasil": keadaan("tidak-berhasil"),
+      berhasil: keadaan("berhasil"),
+      ditunda: keadaan("ditunda"),
+      sedang: (b: Mediasi) => st(b) === "berjalan",
+      selesai: (b: Mediasi) => b.selesai || st(b) === "selesai",
+    },
+    nilaiMedan: {
+      nomor: (b: Mediasi) => b.nomorPerkara,
+      pihak: (b: Mediasi) => namaPihakSemua(b).join(" "),
+      mediator: (b: Mediasi) =>
+        `${namaTiapMediator(b.mediator).join(" ")} ${b.mediator || b.statusMediator ? sebutanMediator(b.statusMediator) : ""}`,
+      jenis: (b: Mediasi) => [b.jenisPerkara, ...(b.kumulasi?.daftar ?? []).map((x) => x.nama)].join(" "),
+      tempat: (b: Mediasi) => b.tempat,
+      hasil: (b: Mediasi) => b.hasilTeks,
+    },
+    teksBebas: teksCariMediasi,
+  };
 }
 
 export function AletaEcourtMediasi({
@@ -800,6 +845,8 @@ export function AletaEcourtMediasi({
   const { urutan: urutTabel, tekan: tekanUrut } = useUrutan(null);
   const [keadaanTerpilih, setKeadaanTerpilih] = useState<string[]>([]);
   const [cariCepat, setCariCepat] = useState("");
+  const [fokusCari, setFokusCari] = useState(false);
+  const uraiCari = useMemo(() => uraiCariPintar(cariCepat, KATA_KUNCI_MEDIASI, MEDAN_MEDIASI), [cariCepat]);
   const [lanjutTerbuka, setLanjutTerbuka] = useState(false);
   const cariLanjut = useCariLanjut();
 
@@ -972,8 +1019,9 @@ export function AletaEcourtMediasi({
       hasil = hasil.filter((baris) => dipilih.some((keadaan) => keadaan.cocok(baris)));
     }
 
-    if (pencarianTampil && cariCepat.trim()) {
-      hasil = hasil.filter((baris) => cocokCariCepatMediasi(baris, cariCepat));
+    if (pencarianTampil && !uraianKosong(uraiCari)) {
+      const opsi = opsiCariMediasi(statusMediasi.peta);
+      hasil = hasil.filter((baris) => cocokCariPintar(baris, uraiCari, opsi));
     }
 
     if (pencarianTampil && cariLanjut.jumlahAktif > 0) {
@@ -981,7 +1029,7 @@ export function AletaEcourtMediasi({
     }
 
     return urutkan(hasil, urutTabel, nilaiUrutMediasi);
-  }, [mediasi, keadaanTerpilih, cariCepat, cariLanjut.isian, cariLanjut.jumlahAktif, urutTabel, saringKeadaanTampil, pencarianTampil]);
+  }, [mediasi, keadaanTerpilih, uraiCari, statusMediasi.peta, cariLanjut.isian, cariLanjut.jumlahAktif, urutTabel, saringKeadaanTampil, pencarianTampil]);
 
   const adaPenyaringTabel =
     (saringKeadaanTampil && keadaanTerpilih.length > 0) ||
@@ -996,14 +1044,11 @@ export function AletaEcourtMediasi({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Jadwal mediasi</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Pertemuan mediasi tersimpan terpisah dari jadwal sidang di SIPP, sehingga tidak muncul di
-          layar Jadwal Sidang. Tenggangnya 30 hari sejak mediator ditetapkan &mdash; PERMA 1/2016
-          Pasal 24.
-        </p>
-        <PengaturanPanggil />
-        <div className="mt-1">
+        {/* 19 Okt 2026 (JADWAL-3 butir 2): satu baris kepala - judul di kiri,
+            tombol di kanan, dan Tampilan PALING KANAN, sama dengan Jadwal Sidang. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <CardTitle className="mr-auto">Jadwal mediasi</CardTitle>
+          <PengaturanPanggil />
           <Button
             size="sm"
             variant={panelTampilan ? "default" : "outline"}
@@ -1014,33 +1059,38 @@ export function AletaEcourtMediasi({
             <SlidersHorizontal className="mr-1.5 h-4 w-4" />
             Tampilan
           </Button>
-          {panelTampilan ? (
-            <div className="mt-2 rounded-lg border bg-card p-2">
-              <p className="mb-1.5 text-xs text-muted-foreground">
-                Tersimpan di peramban ini saja dan tidak mengubah data apa pun - yang dimatikan hanya tidak digambar.
-              </p>
-              <ul className="space-y-1">
-                {SAKLAR_TAMPILAN_MEDIASI.map((saklar) => (
-                  <li key={saklar.kunci}>
-                    <label className="flex cursor-pointer items-start gap-2 text-sm" title={saklar.keterangan}>
-                      <input
-                        type="checkbox"
-                        className="mt-0.5 h-3.5 w-3.5 accent-primary"
-                        checked={tampilMediasi(tampilan, saklar.kunci)}
-                        onChange={(e) => ubahTampilan(saklar.kunci, e.target.checked)}
-                        data-saklar-mediasi={saklar.kunci}
-                      />
-                      <span className="leading-tight">
-                        {saklar.label}
-                        <span className="block text-xs text-muted-foreground">{saklar.keterangan}</span>
-                      </span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
         </div>
+        <p className="text-sm text-muted-foreground">
+          Pertemuan mediasi tersimpan terpisah dari jadwal sidang di SIPP, sehingga tidak muncul di
+          layar Jadwal Sidang. Tenggangnya 30 hari sejak mediator ditetapkan &mdash; PERMA 1/2016
+          Pasal 24.
+        </p>
+        {panelTampilan ? (
+          <div className="mt-2 rounded-lg border bg-card p-2">
+            <p className="mb-1.5 text-xs text-muted-foreground">
+              Tersimpan di peramban ini saja dan tidak mengubah data apa pun - yang dimatikan hanya tidak digambar.
+            </p>
+            <ul className="space-y-1">
+              {SAKLAR_TAMPILAN_MEDIASI.map((saklar) => (
+                <li key={saklar.kunci}>
+                  <label className="flex cursor-pointer items-start gap-2 text-sm" title={saklar.keterangan}>
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-3.5 w-3.5 accent-primary"
+                      checked={tampilMediasi(tampilan, saklar.kunci)}
+                      onChange={(e) => ubahTampilan(saklar.kunci, e.target.checked)}
+                      data-saklar-mediasi={saklar.kunci}
+                    />
+                    <span className="leading-tight">
+                      {saklar.label}
+                      <span className="block text-xs text-muted-foreground">{saklar.keterangan}</span>
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -1087,12 +1137,17 @@ export function AletaEcourtMediasi({
             <Input
               value={cari}
               onChange={(e) => setCari(e.target.value)}
-              placeholder="Nomor perkara atau jenis"
+              onKeyDown={(e) => {
+                // JADWAL-3 butir 1: Enter mencari ke SIPP, sama dengan Jadwal Sidang.
+                if (e.key === "Enter") void muatRentang(dari, sampai, cari);
+              }}
+              placeholder="Nomor perkara atau jenis — Enter"
               className="w-56"
             />
           </label>
-          <Button size="sm" onClick={() => void muatRentang(dari, sampai, cari)} disabled={memuat}>
-            {memuat ? "Memuat…" : "Tampilkan"}
+          {/* JADWAL-3 butir 5: tanpa "Memuat…" - tekanan ganda ditolak sedangMuat. */}
+          <Button size="sm" onClick={() => void muatRentang(dari, sampai, cari)}>
+            Tampilkan
           </Button>
         </div>
 
@@ -1180,12 +1235,28 @@ export function AletaEcourtMediasi({
             sudah termuat, seketika, tanpa satu pun kueri. */}
         {pencarianTampil && mediasi.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
-            <Input
-              value={cariCepat}
-              onChange={(e) => setCariCepat(e.target.value)}
-              placeholder="Saring di dalam hasil: nomor, pihak, mediator, tempat, hasil…"
-              className="h-8 max-w-md flex-1 text-sm"
-            />
+            <div className="relative min-w-[14rem] max-w-md flex-1" data-cari-pintar-mediasi="">
+              <Input
+                value={cariCepat}
+                onChange={(e) => setCariCepat(e.target.value)}
+                onFocus={() => setFokusCari(true)}
+                onBlur={() => setFokusCari(false)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setFokusCari(false);
+                }}
+                placeholder="Saring di dalam hasil: nomor, pihak, mediator, lewat tenggang…"
+                aria-label="Saring pertemuan yang tampil. Mengenali kata kunci seperti lewat tenggang, belum ada mediator, berhasil, dan nama mediator."
+                className="h-8 text-sm"
+              />
+              <PetunjukCariPintar
+                terbuka={fokusCari}
+                kataKunci={KATA_KUNCI_MEDIASI}
+                medan={MEDAN_MEDIASI}
+                contohMedan={CONTOH_MEDAN_MEDIASI}
+                urai={uraiCari}
+                onPilih={(kata) => setCariCepat((lama) => `${lama.trim()} ${kata}`.trim() + " ")}
+              />
+            </div>
             <Button
               size="sm"
               variant={lanjutTerbuka || cariLanjut.jumlahAktif > 0 ? "default" : "outline"}
@@ -1223,7 +1294,8 @@ export function AletaEcourtMediasi({
         {/* --- Daftar --- */}
         {mediasi.length === 0 ? (
           <p className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
-            {memuat ? "Memuat…" : "Tidak ada pertemuan mediasi pada rentang tanggal ini."}
+            {/* JADWAL-3 butir 5: selama memuat kotaknya tetap (tanpa tulisan), supaya tidak melompat. */}
+            {memuat ? "\u00a0" : "Tidak ada pertemuan mediasi pada rentang tanggal ini."}
           </p>
         ) : mediasiTampil.length === 0 ? (
           /* Dibedakan dari rentang yang memang kosong: yang satu menyuruh

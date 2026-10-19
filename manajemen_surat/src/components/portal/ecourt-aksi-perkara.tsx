@@ -251,7 +251,7 @@ export function EcourtAksiPerkara({ nomorPerkara, tanggalSidang, konteks }: Ecou
 
   if (!nomor) return null;
   if (memuat && !ringkasan) {
-    return <p className="text-sm text-muted-foreground" data-ecourt-aksi="memuat">Memuat keadaan e-Court...</p>;
+    return <div className="min-h-[1.25rem]" data-ecourt-aksi="memuat" aria-busy="true" />;
   }
   if (!ringkasan) {
     return pesan ? (

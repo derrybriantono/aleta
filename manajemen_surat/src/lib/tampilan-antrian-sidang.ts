@@ -468,6 +468,21 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     keterangan: "Jumlah dan nama saksi yang diajukan tiap sisi.",
     kelompok: "keterangan",
   },
+  // JADWAL-3 butir 4 (19 Okt 2026): nama saksi bawaannya terlipat.
+  {
+    kunci: "tombol-blangko",
+    label: "Tombol Blangko",
+    keterangan:
+      "Tombol kecil di kanan baris yang membuka Blangko ABT by Derry dengan perkara itu sudah terpilih: blangko putusan bila diputus atau akan diputus, blangko ikrar pada sidang ikrar talak, selain itu blangko BAS. Hakim melihat putusan dan BAS, panitera pengganti melihat BAS.",
+    kelompok: "alat",
+  },
+  {
+    kunci: "saksi-lipat",
+    label: "Nama saksi dilipat",
+    keterangan:
+      "Bila dicentang (bawaan), yang tampak hanya jumlah saksi (Saksi P (2)) dan namanya dibuka dengan menekannya. Bila tidak, nama saksi langsung terbentang. Tiap baris tetap dapat dibuka atau dilipat sendiri, dan pilihan itu diingat untuk akun Anda.",
+    kelompok: "keterangan",
+  },
   {
     kunci: "jarak-sidang",
     label: "Tiga jarak waktu",
@@ -734,14 +749,14 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kunci: "kartu-ruang",
     label: "Kartu ruang sidang",
     keterangan:
-      "Di bawah deretan tombol (Hitung skor dan lainnya): satu kartu berwarna per ruang sidang yang dipakai, berisi nama ruang, jumlah perkara, dan jumlah yang perlu diperiksa. Bawaannya diciutkan; ditekan = buka.",
+      "Pada pita ruang sidang di atas tabel: jumlah ruang dan perkara, angka merah perlu diperiksa per ruang, dan rincian tiap ruang (tanda ▾) beserta tombol saring ruang.",
     kelompok: "atas",
   },
   {
     kunci: "ringkasan-ruang",
     label: "Ringkasan ruang sidang",
     keterangan:
-      "Deretan di atas tabel yang menyebut perkara apa yang sedang disidangkan di tiap ruang dan yang diskors; ditekan = menggulung ke barisnya. Tombol ruang dan kartu ruang punya saklarnya sendiri.",
+      "Pada pita ruang sidang di atas tabel: perkara yang sedang disidangkan di tiap ruang (antrian ke berapa dan sudah berapa lama) dan yang diskors; ditekan = menggulung ke barisnya. Tombol ruang dan kartu ruang punya saklarnya sendiri.",
     kelompok: "atas",
   },
   {

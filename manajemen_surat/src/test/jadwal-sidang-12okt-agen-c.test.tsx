@@ -203,7 +203,8 @@ describe("butir 3: warna dan kartu ruang", () => {
     expect(layar).toContain('tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang")');
     expect(layar).toContain('tampil(tampilan, "saring-ruang") && ruangAktif.length > 0');
     // Tombol ruang yang lama tidak dihapus dan kartu berdiri di luar baris alat yang bisa terciut.
-    expect(layar.indexOf("<KartuRuangSidang")).toBeGreaterThan(layar.indexOf('data-saring-ruang=""'));
+    // 19 Okt 2026 (JADWAL-3 butir 3): kartu ruang menyatu dalam pita di atas tabel.
+    expect(layar.indexOf("<PitaRuangSidang")).toBeGreaterThan(layar.indexOf('data-saring-ruang=""'));
   });
 
   it("saklar kartu-ruang menyala bawaan", () => {
@@ -263,7 +264,9 @@ describe("butir 6: mediator di Majelis & Petugas", () => {
     expect(iMedRingkas).toBeGreaterThan(iJsRingkas);
     expect(iRuangRingkas).toBeGreaterThan(iMedRingkas);
     // Mode Lengkap: blok mediator berdiri antara baris PP/JS dan baris ruang.
-    const iJsLengkap = layar.indexOf('<span className="text-muted-foreground"> · JS </span>');
+    // 19 Okt 2026 (JADWAL-3 tambahan A): JS di baris sendiri.
+    const iJsLengkap = layar.indexOf('<span className="text-muted-foreground">JS </span>');
+    expect(iJsLengkap).toBeGreaterThan(0);
     const iMedLengkap = layar.indexOf('<span className="text-muted-foreground">Mediator </span>');
     expect(iMedLengkap).toBeGreaterThan(iJsLengkap);
     expect(layar.indexOf("{baris.ruangan ? (", iMedLengkap)).toBeGreaterThan(iMedLengkap);

@@ -138,7 +138,7 @@ export function PanelDrafH7({ perkaraId, ringkas }: { perkaraId: string; ringkas
 
       {terbuka ? (
         <div className="mt-1 rounded-lg border border-border bg-card p-2 text-[11px] leading-snug shadow-sm">
-          {memuat && !draf ? <p className="text-muted-foreground">Memuat draf…</p> : null}
+          {memuat && !draf ? <div className="min-h-[1.25rem]" aria-busy="true" /> : null}
           {draf ? (
             <>
               <ul className="space-y-0.5">

@@ -252,7 +252,7 @@ function PopupSaksi({
       </div>
 
       {galat ? <p className="text-xs text-rose-700 dark:text-rose-300">{galat}</p> : null}
-      {!data && !galat ? <p className="text-xs text-muted-foreground">Membaca daftar saksi…</p> : null}
+      {!data && !galat ? <div className="min-h-[1.25rem]" aria-busy="true" /> : null}
 
       {data && !data.whatsappBisa ? (
         <p className="mb-2 rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">

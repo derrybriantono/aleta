@@ -465,7 +465,7 @@ export function HasilMediasiDialog({
           </Button>
         </div>
 
-        {memuat ? <p className="text-sm text-muted-foreground">Membaca data mediasi perkara ini dari SIPP…</p> : null}
+        {memuat ? <div className="min-h-[1.25rem]" aria-busy="true" /> : null}
         {kesalahan ? (
           <p className="rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">{kesalahan}</p>
         ) : null}

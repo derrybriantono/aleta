@@ -912,7 +912,9 @@ describe("butir 1f - keterangan di Rincian Jadwal Sidang", () => {
     const ambil = vi.fn(async () => new Response(JSON.stringify({ data: { available: true, ok: true, kontak: kontak({ persetujuan: "belum" }) } })));
     vi.stubGlobal("fetch", ambil);
     const { container } = render(createElement(KontakPihakRincian, { perkaraId: "9459", nomorPerkara: "459/Pdt.G/2026/PA.Dgl" }));
-    expect(container.textContent).toContain("Membaca email dan persetujuan e-Court");
+    // JADWAL-3 butir 5 (19 Okt 2026): tanpa tulisan memuat selama kontak dibaca.
+    expect(container.textContent).not.toContain("Membaca");
+    expect(container.querySelector("[data-kontak-pihak-rincian]")).not.toBeNull();
     await waitFor(() => expect(container.textContent).toContain("Email tergugat: ada · persetujuan e-Court: belum membuat persetujuan"));
     expect(ambil).toHaveBeenCalledTimes(1);
     expect(String((ambil.mock.calls as unknown[][])[0][0])).toContain("/api/aleta-ecourt/sidang/pihak-elektronik?perkaraId=9459");

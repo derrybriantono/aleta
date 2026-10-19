@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bagian } from "@/components/portal/bagian-ciut";
 import { apiPath } from "@/lib/base-path";
-import { langkahUntukPetugas, ringkasTabel, sebutanTabel } from "@/lib/ringkasan-langkah-sipp";
+import { ringkasTabel, sebutanTabel } from "@/lib/ringkasan-langkah-sipp";
 import {
   bawaanPenetapanMediator,
   JENIS_PENETAPAN_MEDIATOR,
@@ -406,7 +406,8 @@ export function IsianMediator({
     }
   };
 
-  if (memuat && !data) return <p className="text-xs text-muted-foreground">Membaca data mediasi dari SIPP…</p>;
+  // Tanpa tulisan memuat (JADWAL-3 butir 5): ruangnya dipesan supaya panel tidak melompat.
+  if (memuat && !data) return <div className="min-h-[4rem]" aria-busy="true" />;
   if (data?.available === false) {
     return <p className="text-xs text-amber-700 dark:text-amber-300">{data.alasan || "Data mediasi belum dapat dibaca."}</p>;
   }
@@ -536,7 +537,7 @@ export function IsianMediator({
         </select>
       </label>
 
-      <p className="text-muted-foreground">Tgl Mulai Mediasi: {tanggal || "—"} (mengikuti tanggal penetapan, seperti SIPP)</p>
+      <p className="text-muted-foreground">Tgl Mulai Mediasi: {tanggal || "—"}</p>
 
       {salah.length > 0 ? (
         <ul className="list-disc pl-4 text-amber-700 dark:text-amber-300">
@@ -553,9 +554,7 @@ export function IsianMediator({
             {String((rencana.mediator as { nama?: string })?.nama || "")} · {String((rencana.penetapan as { tanggal?: string })?.tanggal || "")} ·
             atas nama {String((rencana.atasNama as { namaLengkap?: string; username?: string })?.namaLengkap || (rencana.atasNama as { username?: string })?.username || "")}
           </p>
-          <p className="text-muted-foreground">
-            {langkahUntukPetugas(langkah).length} langkah akan ditulis ke SIPP: {ringkasTabel(langkah).toLowerCase()}.
-          </p>
+          <p className="text-muted-foreground">Akan ditulis ke SIPP: {ringkasTabel(langkah).toLowerCase()}.</p>
           <div className="mt-1.5 flex gap-2">
             <Button size="sm" disabled={sibuk} onClick={() => void kirim(false)}>
               {sibuk ? "Menulis…" : "Ya, tulis ke SIPP"}
@@ -587,7 +586,6 @@ export function IsianMediator({
  */
 export function TombolPilihMediator({
   baris,
-  sebab,
   onBukaStatus,
   kelasPanel = "bg-card",
   catatan,
@@ -625,7 +623,10 @@ export function TombolPilihMediator({
         type="button"
         onClick={() => setTerbuka((buka) => !buka)}
         aria-expanded={terbuka}
-        title={`Pilih mediator - sidang ini berurusan dengan mediasi (${sebab || "menurut agenda atau alasan tundanya"}).`}
+        // 19 Okt 2026 (JADWAL-3 butir 6): sebab munculnya tombol (jam antrian,
+        // catatan SIPP) TIDAK lagi ditampilkan - keterangan teknis, bukan kalimat
+        // yang dibutuhkan petugas. Prop `sebab` tetap diterima pemanggil lama.
+        title="Pilih mediator untuk perkara ini"
         className={cn(
           "rounded-md border px-1.5 py-0.5 text-[11px] font-semibold transition",
           terbuka
@@ -646,7 +647,7 @@ export function TombolPilihMediator({
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Penetapan mediator · {baris.nomorPerkara}
           </p>
-          {sebab ? <p className="mb-1 mt-0.5 text-xs text-muted-foreground">Muncul karena {sebab}.</p> : null}
+          <p className="mb-1 mt-0.5 text-xs text-muted-foreground">Pilih mediator yang ditunjuk untuk perkara ini.</p>
           <IsianMediator perkaraId={baris.perkaraId} nomorPerkara={baris.nomorPerkara} tanggalSidang={baris.tanggalSidang} />
           {onBukaStatus ? (
             <button
@@ -665,7 +666,7 @@ export function TombolPilihMediator({
           ) : null}
           <p className="mt-2 border-t pt-2 text-[11px] leading-snug text-muted-foreground">
             {catatan ||
-              "Yang ditulis ALETA: penetapan mediator (blangko Penetapan Mediasi SIPP). Jadwal pertemuan berikutnya, laporan, dan hasil mediasi tetap diisi di SIPP."}
+              "Jadwal pertemuan, laporan, dan hasil mediasi masih ditulis di SIPP."}
           </p>
         </div>
       ) : null}
