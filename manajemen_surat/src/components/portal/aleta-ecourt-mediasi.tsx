@@ -44,6 +44,15 @@ import {
 import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
 import { NamaDapatDipanggil, PengaturanPanggil, golonganSisi } from "@/components/portal/panggil-petugas";
 import { LencanaStatusMediasi, TombolStatusMediasi, kelasBarisMediasi, useStatusMediasi } from "@/components/portal/status-mediasi";
+import { PetunjukCariPintar } from "@/components/portal/petunjuk-cari-pintar";
+import {
+  CONTOH_MEDAN_MEDIASI,
+  KATA_KUNCI_MEDIASI,
+  MEDAN_MEDIASI,
+  cocokCariPintar,
+  uraiCariPintar,
+  uraianKosong,
+} from "@/lib/cari-pintar-jadwal";
 import { ChevronDown, ChevronUp, FileText, Filter, SlidersHorizontal, X } from "lucide-react";
 import { HasilMediasiDialog } from "@/components/portal/hasil-mediasi-dialog";
 import { bolehBuatHasilMediasi, type PenggunaHasilMediasi } from "@/lib/hasil-mediasi";
@@ -740,10 +749,13 @@ function cocokCariLanjutMediasi(baris: Mediasi, isian: Record<string, string>) {
   );
 }
 
-/** Pencarian cepat: satu kotak yang menyapu seluruh kolom sekaligus. */
-function cocokCariCepatMediasi(baris: Mediasi, kata: string) {
-  if (!kata.trim()) return true;
-  const semua = [
+/**
+ * Pencarian cepat: satu kotak yang menyapu seluruh kolom sekaligus. Sejak
+ * pencarian pintar (JADWAL-3 butir 1, 19 Okt 2026) ini teks kata bebasnya;
+ * kata kunci dan medan diurai lebih dahulu - lihat @/lib/cari-pintar-jadwal.
+ */
+function teksCariMediasi(baris: Mediasi) {
+  return [
     baris.nomorPerkara,
     baris.jenisPerkara,
     /* === 12OKT-A: kumulasi perkara === */
@@ -755,9 +767,42 @@ function cocokCariCepatMediasi(baris: Mediasi, kata: string) {
     baris.hasilTeks,
     baris.nomorSk,
     baris.jam,
+    baris.dihadiri,
     ...namaPihakSemua(baris),
   ].join(" ");
-  return cocokTeks(semua, kata);
+}
+
+/** Predikat kata kunci + nilai medan pencarian pintar mediasi. */
+function opsiCariMediasi(status: Record<string, { keadaan: "berjalan" | "selesai" } | undefined>) {
+  const keadaan = (kunci: string) => {
+    const k = KEADAAN_MEDIASI.find((x) => x.kunci === kunci);
+    return (b: Mediasi) => (k ? k.cocok(b) : true);
+  };
+  const st = (b: Mediasi) => status[`${b.mediasiId}|${b.tanggal}`]?.keadaan;
+  return {
+    predikat: {
+      "lewat-tenggang": keadaan("lewat"),
+      "belum-mediator": keadaan("tanpa-mediator"),
+      "mediator-hakim": keadaan("hakim-mediator"),
+      "mediator-non-hakim": keadaan("mediator-non-hakim"),
+      "belum-laporan": keadaan("belum-hasil"),
+      "tidak-berhasil": keadaan("tidak-berhasil"),
+      berhasil: keadaan("berhasil"),
+      ditunda: keadaan("ditunda"),
+      sedang: (b: Mediasi) => st(b) === "berjalan",
+      selesai: (b: Mediasi) => b.selesai || st(b) === "selesai",
+    },
+    nilaiMedan: {
+      nomor: (b: Mediasi) => b.nomorPerkara,
+      pihak: (b: Mediasi) => namaPihakSemua(b).join(" "),
+      mediator: (b: Mediasi) =>
+        `${namaTiapMediator(b.mediator).join(" ")} ${b.mediator || b.statusMediator ? sebutanMediator(b.statusMediator) : ""}`,
+      jenis: (b: Mediasi) => [b.jenisPerkara, ...(b.kumulasi?.daftar ?? []).map((x) => x.nama)].join(" "),
+      tempat: (b: Mediasi) => b.tempat,
+      hasil: (b: Mediasi) => b.hasilTeks,
+    },
+    teksBebas: teksCariMediasi,
+  };
 }
 
 export function AletaEcourtMediasi({
@@ -800,6 +845,8 @@ export function AletaEcourtMediasi({
   const { urutan: urutTabel, tekan: tekanUrut } = useUrutan(null);
   const [keadaanTerpilih, setKeadaanTerpilih] = useState<string[]>([]);
   const [cariCepat, setCariCepat] = useState("");
+  const [fokusCari, setFokusCari] = useState(false);
+  const uraiCari = useMemo(() => uraiCariPintar(cariCepat, KATA_KUNCI_MEDIASI, MEDAN_MEDIASI), [cariCepat]);
   const [lanjutTerbuka, setLanjutTerbuka] = useState(false);
   const cariLanjut = useCariLanjut();
 
@@ -972,8 +1019,9 @@ export function AletaEcourtMediasi({
       hasil = hasil.filter((baris) => dipilih.some((keadaan) => keadaan.cocok(baris)));
     }
 
-    if (pencarianTampil && cariCepat.trim()) {
-      hasil = hasil.filter((baris) => cocokCariCepatMediasi(baris, cariCepat));
+    if (pencarianTampil && !uraianKosong(uraiCari)) {
+      const opsi = opsiCariMediasi(statusMediasi.peta);
+      hasil = hasil.filter((baris) => cocokCariPintar(baris, uraiCari, opsi));
     }
 
     if (pencarianTampil && cariLanjut.jumlahAktif > 0) {
@@ -981,7 +1029,7 @@ export function AletaEcourtMediasi({
     }
 
     return urutkan(hasil, urutTabel, nilaiUrutMediasi);
-  }, [mediasi, keadaanTerpilih, cariCepat, cariLanjut.isian, cariLanjut.jumlahAktif, urutTabel, saringKeadaanTampil, pencarianTampil]);
+  }, [mediasi, keadaanTerpilih, uraiCari, statusMediasi.peta, cariLanjut.isian, cariLanjut.jumlahAktif, urutTabel, saringKeadaanTampil, pencarianTampil]);
 
   const adaPenyaringTabel =
     (saringKeadaanTampil && keadaanTerpilih.length > 0) ||
@@ -1089,7 +1137,11 @@ export function AletaEcourtMediasi({
             <Input
               value={cari}
               onChange={(e) => setCari(e.target.value)}
-              placeholder="Nomor perkara atau jenis"
+              onKeyDown={(e) => {
+                // JADWAL-3 butir 1: Enter mencari ke SIPP, sama dengan Jadwal Sidang.
+                if (e.key === "Enter") void muatRentang(dari, sampai, cari);
+              }}
+              placeholder="Nomor perkara atau jenis — Enter"
               className="w-56"
             />
           </label>
@@ -1183,12 +1235,28 @@ export function AletaEcourtMediasi({
             sudah termuat, seketika, tanpa satu pun kueri. */}
         {pencarianTampil && mediasi.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
-            <Input
-              value={cariCepat}
-              onChange={(e) => setCariCepat(e.target.value)}
-              placeholder="Saring di dalam hasil: nomor, pihak, mediator, tempat, hasil…"
-              className="h-8 max-w-md flex-1 text-sm"
-            />
+            <div className="relative min-w-[14rem] max-w-md flex-1" data-cari-pintar-mediasi="">
+              <Input
+                value={cariCepat}
+                onChange={(e) => setCariCepat(e.target.value)}
+                onFocus={() => setFokusCari(true)}
+                onBlur={() => setFokusCari(false)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setFokusCari(false);
+                }}
+                placeholder="Saring di dalam hasil: nomor, pihak, mediator, lewat tenggang…"
+                aria-label="Saring pertemuan yang tampil. Mengenali kata kunci seperti lewat tenggang, belum ada mediator, berhasil, dan nama mediator."
+                className="h-8 text-sm"
+              />
+              <PetunjukCariPintar
+                terbuka={fokusCari}
+                kataKunci={KATA_KUNCI_MEDIASI}
+                medan={MEDAN_MEDIASI}
+                contohMedan={CONTOH_MEDAN_MEDIASI}
+                urai={uraiCari}
+                onPilih={(kata) => setCariCepat((lama) => `${lama.trim()} ${kata}`.trim() + " ")}
+              />
+            </div>
             <Button
               size="sm"
               variant={lanjutTerbuka || cariLanjut.jumlahAktif > 0 ? "default" : "outline"}

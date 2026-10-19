@@ -42,6 +42,17 @@ import { AletaEcourtCetakJadwal } from "@/components/portal/aleta-ecourt-cetak-j
 import { daftarRuangAktif, ruangPilihanBerlaku, saringKeRuang } from "@/lib/ruang-sidang-saring";
 /* === 12OKT-C: kartu ruang sidang & mediator === */
 import { KartuRuangSidang } from "@/components/portal/kartu-ruang-sidang";
+import { SaksiLipat, useSaksiLipat } from "@/components/portal/saksi-lipat";
+import { PetunjukCariPintar } from "@/components/portal/petunjuk-cari-pintar";
+import {
+  CONTOH_MEDAN_SIDANG,
+  KATA_KUNCI_SIDANG,
+  MEDAN_SIDANG,
+  cocokCariPintar,
+  uraiCariPintar,
+  uraianKosong,
+} from "@/lib/cari-pintar-jadwal";
+import { kunciBarisSaksi } from "@/lib/saksi-lipat";
 import { keteranganPerluDiperiksa, susunKartuRuang } from "@/lib/kartu-ruang-sidang";
 import { mediatorBaris } from "@/lib/mediator-jadwal";
 /* === AKHIR 12OKT-C === */
@@ -1546,6 +1557,8 @@ const MEDAN_CARI_SIDANG = [
   { kunci: "agenda", label: "Agenda", petunjuk: "Pemeriksaan Pokok Perkara" },
   { kunci: "majelis", label: "Majelis", petunjuk: "B-C2-C3 atau nama hakim" },
   { kunci: "petugas", label: "Panitera / juru sita", petunjuk: "nama petugas" },
+  { kunci: "saksi", label: "Nama saksi", petunjuk: "nama saksi" },
+  { kunci: "mediator", label: "Mediator", petunjuk: "nama mediator" },
   { kunci: "ruang", label: "Ruang sidang", petunjuk: "Ruang Sidang 1" },
   { kunci: "jam", label: "Jam", petunjuk: "09:" },
   { kunci: "antrian", label: "Nomor antrian", jenis: "angka" as const },
@@ -1574,6 +1587,8 @@ function cocokCariLanjutSidang(
     cocokTeks(baris.agenda, isian.agenda ?? "") &&
     cocokTeks(majelis, isian.majelis ?? "") &&
     cocokTeks(petugas, isian.petugas ?? "") &&
+    cocokTeks([...(baris.saksiNamaPihak1 ?? []), ...(baris.saksiNamaPihak2 ?? []), ...(baris.pihak.saksi ?? [])].join(" "), isian.saksi ?? "") &&
+    cocokTeks(baris.mediasi?.mediator ?? "", isian.mediator ?? "") &&
     cocokTeks(baris.ruangan, isian.ruang ?? "") &&
     cocokTeks(baris.jamSidang, isian.jam ?? "") &&
     dalamRentang(nomorAntrian, isian.antrianDari ?? "", isian.antrianSampai ?? "")
@@ -1581,20 +1596,18 @@ function cocokCariLanjutSidang(
 }
 
 /**
- * Pencarian cepat: satu kotak yang menyapu seluruh kolom sekaligus.
+ * Pencarian cepat (kini pintar) bekerja atas baris yang SUDAH termuat, seketika,
+ * tanpa satu pun kueri - dan karena itu boleh berjalan pada tiap ketikan.
  *
- * Berbeda dari kotak Cari di atas, yang dikirim ke SIPP dan menuntut tombol
- * Tampilkan. Yang ini bekerja atas baris yang SUDAH termuat, seketika, tanpa
- * satu pun kueri - dan karena itu boleh berjalan pada tiap ketikan.
+ * Seluruh teks yang disapu kata bebas pencarian pintar (JADWAL-3 butir 1):
+ * kolom pencarian cepat lama DITAMBAH saksi, kuasa/pihak lain, turut tergugat,
+ * intervensi, mediator, dan konseptor.
  */
-function cocokCariCepat(baris: SidangBaris, kata: string) {
-  if (!kata.trim()) return true;
-  const semua = [
+function teksCariSidang(baris: SidangBaris, konseptor: string): string {
+  return [
     baris.nomorPerkara,
     baris.jenisPerkara,
-    /* === 12OKT-A: kumulasi perkara === */
     ...(baris.kumulasi?.daftar ?? []).map((x) => x.nama),
-    /* === AKHIR 12OKT-A === */
     baris.agenda,
     baris.majelisKode,
     baris.majelisNama,
@@ -1604,8 +1617,15 @@ function cocokCariCepat(baris: SidangBaris, kata: string) {
     baris.jamSidang,
     ...baris.pihak.penggugat,
     ...baris.pihak.tergugat,
+    ...(baris.pihak.turutTergugat ?? []),
+    ...(baris.pihak.intervensi ?? []),
+    ...(baris.pihak.lain ?? []),
+    ...(baris.pihak.saksi ?? []),
+    ...(baris.saksiNamaPihak1 ?? []),
+    ...(baris.saksiNamaPihak2 ?? []),
+    baris.mediasi?.mediator ?? "",
+    konseptor,
   ].join(" ");
-  return cocokTeks(semua, kata);
 }
 
 function ringkasAlur(sidang: SidangBaris[]) {
@@ -4785,6 +4805,8 @@ export function AletaEcourtSidang({
   const aktifPenandaPerkara = tampil(tampilan, "penanda-perkara");
   const aktifPenandaPekerjaan = tampil(tampilan, "penanda-pekerjaan");
   const aktifPanggilSaksi = tampil(tampilan, "panggil-saksi");
+  // JADWAL-3 butir 4: nama saksi terlipat bawaan; pilihan per baris diingat per akun.
+  const saksiLipat = useSaksiLipat(currentUser?.id, !tampil(tampilan, "saksi-lipat"));
   /* === AKHIR 12OKT-B === */
   /* === 12OKT-H: pihak yang sudah hadir hari ini (hijau + "(hadir)") === */
   const aktifPihakHadir = tampil(tampilan, "pihak-hadir");
@@ -5146,9 +5168,9 @@ export function AletaEcourtSidang({
       );
     }
 
-    if (cariCepat.trim()) {
-      hasil = hasil.filter((baris) => cocokCariCepat(baris, cariCepat));
-    }
+    // Kotak cari (cariCepat) TIDAK lagi menyaring di sini: sejak pencarian
+    // pintar (JADWAL-3 butir 1) ia membaca keadaan antrian dan ruang sidang
+    // yang baru dihitung di bawah - lihat sidangTampil.
 
     if (cariLanjut.jumlahAktif > 0) {
       hasil = hasil.filter((baris) =>
@@ -5195,7 +5217,6 @@ export function AletaEcourtSidang({
   }, [
     sidangSealur,
     keadaanTerpilih,
-    cariCepat,
     cariLanjut.isian,
     cariLanjut.jumlahAktif,
     urutTabel,
@@ -5281,10 +5302,10 @@ export function AletaEcourtSidang({
     [sidang, tandaSelesai.peta]
   );
   const ciutkanSelesai = tampil(tampilan, "ciutkan-selesai");
-  const sidangTampil = ciutkanSelesai
+  const sidangTampilDasar = ciutkanSelesai
     ? sidangSesudahRuang.filter((b) => !petaSelesaiCiut[kunciWaktu(b.tanggalSidang, b.perkaraId)])
     : sidangSesudahRuang;
-  const jumlahDiciutkan = sidangSesudahRuang.length - sidangTampil.length;
+  const jumlahDiciutkan = sidangSesudahRuang.length - sidangTampilDasar.length;
 
   /**
    * ==========================================================================
@@ -5404,6 +5425,85 @@ export function AletaEcourtSidang({
     for (const b of waktuAntrianHidup.baris) peta[kunciWaktu(b.tanggalSidang, b.perkaraId)] = b.disidang;
     return peta;
   }, [waktuAntrianHidup]);
+
+  /* === JADWAL-3 butir 1: PENCARIAN PINTAR ===
+     Kata kunci keadaan + medan nama, atas baris yang sudah termuat. Predikat
+     keadaan memakai aturan kotak keadaan yang SAMA (KEADAAN_SIDANG), supaya
+     "belum bas" di kotak cari dan kotak "Belum ada BAS" tidak pernah berbeda. */
+  const uraiCari = useMemo(() => uraiCariPintar(cariCepat, KATA_KUNCI_SIDANG, MEDAN_SIDANG), [cariCepat]);
+  const opsiCari = useMemo(() => {
+    const keadaan = (kunci: string) => {
+      const k = KEADAAN_SIDANG.find((x) => x.kunci === kunci);
+      return (b: SidangBaris) => (k ? k.cocok(b, antrian.peta, saat) : true);
+    };
+    const pid = (b: SidangBaris) => String(b.perkaraId);
+    const kw = (b: SidangBaris) => kunciWaktu(b.tanggalSidang, b.perkaraId);
+    const namaKonseptor = (b: SidangBaris) =>
+      [tunjukan[pid(b)]?.nama ?? "", ...(checklistTanpaTunjukan[pid(b)]?.konseptorSipp ?? [])].filter(Boolean).join(" ");
+    const berjalan = new Set(Object.values(ruangSidang.perRuang).map((x) => x.kunci));
+    const selesai = (b: SidangBaris) => Boolean(petaSelesaiCiut[kw(b)]) || disidangPerKunci[kw(b)] === 10;
+    const sedang = (b: SidangBaris) => {
+      const d = disidangPerKunci[kw(b)];
+      return !selesai(b) && (berjalan.has(kw(b)) || (typeof d === "number" && d >= 1 && d <= 9));
+    };
+    const diskors = (b: SidangBaris) => !selesai(b) && Boolean(tandaSelesai.skors[kunciSelesai(b.perkaraId, b.tanggalSidang)]);
+    const hadir = (b: SidangBaris) => {
+      const h = pihakHadirHariIni(antrianUntuk(antrian.peta, b), b.tanggalSidang, hariIni());
+      return h.pihak1 || h.pihak2 || [1, 2, 3].includes(Number(b.dihadiriOleh));
+    };
+    return {
+      predikat: {
+        "belum-konseptor": (b: SidangBaris) => !namaKonseptor(b),
+        "konseptor-sementara": (b: SidangBaris) => Boolean(tunjukan[pid(b)]?.nama),
+        konseptor: (b: SidangBaris) => Boolean(namaKonseptor(b)),
+        ghaib: (b: SidangBaris) => Boolean(b.penandaPerkara?.ghaib || b.mafqud),
+        "potensi-verstek": keadaan("potensi-verstek"),
+        verstek: (b: SidangBaris) => Boolean(b.verstekPutusan) || keadaan("potensi-verstek")(b),
+        "e-litigasi": keadaan("e-litigasi"),
+        "sidang-pertama": keadaan("sidang-pertama"),
+        "belum-bas": keadaan("belum-bas"),
+        "belum-tunda": keadaan("belum-tunda"),
+        "belum-minutasi": keadaan("belum-minutasi"),
+        "hari-putusan": keadaan("hari-putusan"),
+        "ikrar-talak": keadaan("ikrar-talak"),
+        "belum-putus": keadaan("belum-putus"),
+        "sudah-putus": keadaan("sudah-putus"),
+        ditunda: keadaan("ditunda"),
+        kuasa: (b: SidangBaris) => Boolean(b.adaKuasa || b.kuasaPihak1 || b.kuasaPihak2),
+        prodeo: (b: SidangBaris) => Boolean(b.penandaPerkara?.prodeo),
+        "belum-antri": keadaan("belum-antri"),
+        sedang,
+        diskors,
+        menunggu: (b: SidangBaris) =>
+          antrianUntuk(antrian.peta, b)?.keadaan === "menunggu" && !sedang(b) && !selesai(b) && !diskors(b),
+        selesai,
+        hadir,
+        "tidak-hadir": (b: SidangBaris) => !hadir(b),
+      },
+      nilaiMedan: {
+        nomor: (b: SidangBaris) => b.nomorPerkara,
+        pihak: (b: SidangBaris) =>
+          [...b.pihak.penggugat, ...b.pihak.tergugat, ...(b.pihak.turutTergugat ?? []), ...(b.pihak.intervensi ?? [])].join(" "),
+        kuasa: (b: SidangBaris) => (b.pihak.lain ?? []).join(" "),
+        saksi: (b: SidangBaris) => [...(b.saksiNamaPihak1 ?? []), ...(b.saksiNamaPihak2 ?? []), ...(b.pihak.saksi ?? [])].join(" "),
+        hakim: (b: SidangBaris) => `${b.majelisKode} ${b.majelisNama}`,
+        pp: (b: SidangBaris) => b.paniteraNama,
+        js: (b: SidangBaris) => b.jurusitaNama,
+        mediator: (b: SidangBaris) => b.mediasi?.mediator ?? "",
+        konseptor: namaKonseptor,
+        jenis: (b: SidangBaris) => [b.jenisPerkara, ...(b.kumulasi?.daftar ?? []).map((x) => x.nama)].join(" "),
+        agenda: (b: SidangBaris) => b.agenda,
+        ruang: (b: SidangBaris) => b.ruangan,
+      },
+      teksBebas: (b: SidangBaris) => teksCariSidang(b, namaKonseptor(b)),
+    };
+  }, [antrian.peta, saat, tunjukan, checklistTanpaTunjukan, ruangSidang, petaSelesaiCiut, disidangPerKunci, tandaSelesai]);
+  const sidangTampil = useMemo(
+    () => (uraianKosong(uraiCari) ? sidangTampilDasar : sidangTampilDasar.filter((b) => cocokCariPintar(b, uraiCari, opsiCari))),
+    [sidangTampilDasar, uraiCari, opsiCari]
+  );
+  const [fokusCari, setFokusCari] = useState(false);
+  /* === AKHIR JADWAL-3 butir 1 === */
 
   /**
    * Sebutan tetangga untuk title: nomor antriannya DAN nomor perkaranya.
@@ -5705,9 +5805,14 @@ export function AletaEcourtSidang({
    */
   const kirimCariKeSipp = useCallback(() => {
     if (memuatRef.current) return;
-    setCari(cariCepat);
-    void muatTanggal(dari, sampai, undefined, cariCepat);
-  }, [cariCepat, dari, sampai, muatTanggal]);
+    // JADWAL-3 butir 1: kata kunci keadaan ("ghaib", "belum bas") dan medan
+    // ("hakim: ...") tidak dikenal SIPP - yang dikirim hanya sisanya. Tanpa
+    // sisa, Enter tidak memuat ulang apa pun kecuali melepas kata SIPP lama.
+    const kirim = uraiCariPintar(cariCepat, KATA_KUNCI_SIDANG, MEDAN_SIDANG).sisa;
+    if (!kirim && !cari) return;
+    setCari(kirim);
+    void muatTanggal(dari, sampai, undefined, kirim);
+  }, [cariCepat, cari, dari, sampai, muatTanggal]);
 
   const lepasCariSipp = useCallback(() => {
     setCari("");
@@ -6440,7 +6545,7 @@ export function AletaEcourtSidang({
                 tempatnya memang di sebelah kotak saringnya. Yang tinggal di
                 baris tindakan hanya yang MENGERJAKAN sesuatu. */}
             <div className="flex flex-wrap items-center gap-2">
-              <div className="relative min-w-[15rem] flex-1 sm:max-w-xl">
+              <div className="relative min-w-[15rem] flex-1 sm:max-w-xl" data-cari-pintar-sidang="">
                 <FileSearch
                   aria-hidden="true"
                   className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -6448,12 +6553,24 @@ export function AletaEcourtSidang({
                 <Input
                   value={cariCepat}
                   onChange={(e) => setCariCepat(e.target.value)}
+                  onFocus={() => setFokusCari(true)}
+                  onBlur={() => setFokusCari(false)}
                   onKeyDown={(peristiwa) => {
                     if (peristiwa.key === "Enter") kirimCariKeSipp();
+                    if (peristiwa.key === "Escape") setFokusCari(false);
                   }}
-                  placeholder="Cari perkara, pihak, agenda… — Enter untuk mencari ke SIPP"
-                  aria-label="Cari perkara. Mengetik menyaring daftar yang tampil; menekan Enter mencari ke SIPP."
+                  placeholder="Cari perkara, pihak, saksi, hakim, ghaib, konseptor… — Enter ke SIPP"
+                  aria-label="Cari perkara. Mengetik menyaring daftar yang tampil, termasuk kata kunci seperti ghaib, verstek, konseptor, belum BAS; menekan Enter mencari ke SIPP."
                   className="h-9 pl-8 text-sm"
+                />
+                <PetunjukCariPintar
+                  terbuka={fokusCari}
+                  kataKunci={KATA_KUNCI_SIDANG}
+                  medan={MEDAN_SIDANG}
+                  contohMedan={CONTOH_MEDAN_SIDANG}
+                  urai={uraiCari}
+                  enterKeSipp
+                  onPilih={(kata) => setCariCepat((lama) => `${lama.trim()} ${kata}`.trim() + " ")}
                 />
               </div>
 
@@ -8262,27 +8379,31 @@ export function AletaEcourtSidang({
                             <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
                               {/* Melipat, bukan truncate - sebabnya sama dengan
                                   nama pihak di atas. */}
+                              {/* JADWAL-3 butir 4: bawaan terlipat ("Saksi P (2) ▸"),
+                                  dibuka per baris; saklar "saksi-lipat" dimatikan = terbentang. */}
                               {(baris.saksiPihak1 ?? 0) > 0 ? (
-                                <div className="break-words">
-                                  <span className="font-medium text-foreground/75">
-                                    Saksi P ({baris.saksiPihak1}):
-                                  </span>{" "}
-                                  <span title={(baris.saksiNamaPihak1 ?? []).join(", ")}>
-                                    {/* 12OKT-B: nama saksi dapat diklik untuk memanggil (saklar panggil-saksi) */}
-                                    <DaftarNamaSaksi aktif={aktifPanggilSaksi} golongan="saksi1" nama={baris.saksiNamaPihak1 ?? []} konteks={konteksPanggil} />
-                                  </span>
-                                </div>
+                                <SaksiLipat
+                                  label="Saksi P"
+                                  jumlah={baris.saksiPihak1 ?? 0}
+                                  terbuka={saksiLipat.terbuka(kunciBarisSaksi(baris.perkaraId, "P"))}
+                                  onAlih={() => saksiLipat.alih(kunciBarisSaksi(baris.perkaraId, "P"))}
+                                  namaRingkas={(baris.saksiNamaPihak1 ?? []).join(", ")}
+                                >
+                                  {/* 12OKT-B: nama saksi dapat diklik untuk memanggil (saklar panggil-saksi) */}
+                                  <DaftarNamaSaksi aktif={aktifPanggilSaksi} golongan="saksi1" nama={baris.saksiNamaPihak1 ?? []} konteks={konteksPanggil} />
+                                </SaksiLipat>
                               ) : null}
                               {(baris.saksiPihak2 ?? 0) > 0 ? (
-                                <div className="break-words">
-                                  <span className="font-medium text-foreground/75">
-                                    Saksi T ({baris.saksiPihak2}):
-                                  </span>{" "}
-                                  <span title={(baris.saksiNamaPihak2 ?? []).join(", ")}>
-                                    {/* 12OKT-B */}
-                                    <DaftarNamaSaksi aktif={aktifPanggilSaksi} golongan="saksi2" nama={baris.saksiNamaPihak2 ?? []} konteks={konteksPanggil} />
-                                  </span>
-                                </div>
+                                <SaksiLipat
+                                  label="Saksi T"
+                                  jumlah={baris.saksiPihak2 ?? 0}
+                                  terbuka={saksiLipat.terbuka(kunciBarisSaksi(baris.perkaraId, "T"))}
+                                  onAlih={() => saksiLipat.alih(kunciBarisSaksi(baris.perkaraId, "T"))}
+                                  namaRingkas={(baris.saksiNamaPihak2 ?? []).join(", ")}
+                                >
+                                  {/* 12OKT-B */}
+                                  <DaftarNamaSaksi aktif={aktifPanggilSaksi} golongan="saksi2" nama={baris.saksiNamaPihak2 ?? []} konteks={konteksPanggil} />
+                                </SaksiLipat>
                               ) : null}
                             </div>
                           ) : null}

@@ -128,6 +128,7 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
   petugas: { letak: "di bawah nomor perkara (mode Ringkas)", contoh: redup("Majelis B-C2-C3 · PP Munifa · JS Mustini") },
   kuasa: { letak: "kolom Perkara", contoh: lencana("bg-indigo-100 text-indigo-900", "kuasa P") },
   saksi: { letak: "kolom Perkara, di bawah pihak", contoh: redup("Saksi P (2): Wawan, Setiawan") },
+  "saksi-lipat": { letak: "kolom Perkara, di bawah pihak", contoh: redup("Saksi P (2) ▸") },
   "jarak-sidang": { letak: "kolom Antrian / Jam", contoh: lencana("bg-muted text-foreground", "Tunggu ● 32:51") },
   "urutan-sidang": { letak: "kolom Agenda", contoh: redup("sidang ke-2") },
   "hasil-tundaan": { letak: "kolom Perkara, di bawah pihak", contoh: lencana("bg-amber-100 text-amber-900", "Ditunda sampai 13-10-2026") },

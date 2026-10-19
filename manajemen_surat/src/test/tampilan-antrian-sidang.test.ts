@@ -290,7 +290,8 @@ describe("24 Sep - saklar untuk yang baru, dan Sembunyikan semua", () => {
     // punya baris di panel: pertanyaan-saksi, tombol-isi-ikrar, ikrar-selesai, kesiapan-putusan,
     // draf-putusan-agen, checklist-konseptor, sedang-berjalan, ringkasan-ruang, tombol-layar-penuh
     // (dijaga checklist-tampilan-18okt.test.ts, yang juga menjaga bahwa tiap fitur di layar punya baris).
-    expect(SAKLAR_TAMPILAN.length).toBe(74);
+    // 75 sejak 19 Okt 2026 (JADWAL-3 butir 4): + saksi-lipat (nama saksi terlipat bawaan).
+    expect(SAKLAR_TAMPILAN.length).toBe(75);
   });
 
   it("saklar yang hanya hidup di satu mode MENYEBUT modenya", () => {

@@ -468,6 +468,14 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     keterangan: "Jumlah dan nama saksi yang diajukan tiap sisi.",
     kelompok: "keterangan",
   },
+  // JADWAL-3 butir 4 (19 Okt 2026): nama saksi bawaannya terlipat.
+  {
+    kunci: "saksi-lipat",
+    label: "Nama saksi dilipat",
+    keterangan:
+      "Bila dicentang (bawaan), yang tampak hanya jumlah saksi (Saksi P (2)) dan namanya dibuka dengan menekannya. Bila tidak, nama saksi langsung terbentang. Tiap baris tetap dapat dibuka atau dilipat sendiri, dan pilihan itu diingat untuk akun Anda.",
+    kelompok: "keterangan",
+  },
   {
     kunci: "jarak-sidang",
     label: "Tiga jarak waktu",
