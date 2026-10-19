@@ -25,6 +25,8 @@ const SAKLAR_DERRY = {
   derryIngat: ["blangkoDerryIngat", true],
   /* JJ2 (18 Okt): tanya-jawab jawab-menjawab otomatis dari berkas e-Court, bawaan NYALA (keputusan 74). */
   derryTjJawab: ["blangkoDerryTjJawab", true],
+  /* 19 Okt: isi otomatis dari SIPP di Blangko Derry, bawaan NYALA. */
+  derryIsiOto: ["blangkoDerryIsiOto", true],
 };
 /* SIPP dengan Ide ALETA gelombang 2 (tahap M2): penyatu SIPP-ABT-ALETA dan tombol ALETA yang dobel. */
 const SAKLAR_SIPP_IDE = {
@@ -120,6 +122,7 @@ const KUNCI_SETELAN_AKUN = [
   "blangkoDerrySaran",
   "blangkoDerryIngat",
   "blangkoDerryTjJawab",
+  "blangkoDerryIsiOto",
   "sippPenyatu",
   "sippTampilDobel",
   "widgetKehadiran",
@@ -165,6 +168,7 @@ const BAWAAN_AKUN = {
   blangkoDerrySaran: true,
   blangkoDerryIngat: true,
   blangkoDerryTjJawab: true,
+  blangkoDerryIsiOto: true,
   sippPenyatu: true,
   sippTampilDobel: false,
   widgetKehadiran: true,

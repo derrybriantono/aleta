@@ -73,6 +73,8 @@
     ingat: "blangkoDerryIngat",
     // JJ2 (18 Okt): tanya-jawab jawab-menjawab otomatis dari berkas e-Court (bawaan NYALA).
     tjJawab: "blangkoDerryTjJawab",
+    // 19 Okt: isi otomatis dari SIPP (bawaan NYALA), diingat per pengguna seperti saklar lain.
+    isiOto: "blangkoDerryIsiOto",
     // F1.5 (17 Okt): gembok panel ALETA di ABT biasa (sama dengan popup & tombol gembok panel).
     gembok: "gembokKepalaAbt",
     tema: "temaPanel",
@@ -436,7 +438,9 @@
   // Keadaan
   // ──────────────────────────────────────────────────────────────────────────
   const S = {
-    cfg: { bawaan: false, tawar: true, saran: true, ingat: true, tjJawab: true },
+    cfg: { bawaan: false, tawar: true, saran: true, ingat: true, tjJawab: true, isiOto: true },
+    /** 19 Okt: tautan dari Jadwal Sidang portal (ABT dibuka dengan #bd=...): perkara, sidang, jenis, petunjuk. Null bila tidak ada/rusak. */
+    tautan: null,
     tema: "gelap",
     siapa: null,
     siapaGalat: "",
@@ -580,13 +584,14 @@
       saran: s[K.saran] !== false,
       ingat: s[K.ingat] !== false,
       tjJawab: s[K.tjJawab] !== false,
+      isiOto: s[K.isiOto] !== false,
       gembok: s[K.gembok] === true,
     };
     S.tema = s[K.tema] === "terang" ? "terang" : "gelap";
     S.ukuran = Object.prototype.hasOwnProperty.call(UKURAN, s[K.ukuran]) ? s[K.ukuran] : "biasa";
   }
   async function muatSetelan() {
-    const s = await bacaPenyimpanan([K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.gembok, K.tema, K.daftar, K.aktif, K.ukuran]);
+    const s = await bacaPenyimpanan([K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.gembok, K.tema, K.daftar, K.aktif, K.ukuran]);
     terapkanSetelan(s);
     const d = s[K.daftar];
     if (d && typeof d === "object") {
@@ -903,6 +908,7 @@
       S.galat = "";
       S.memuat = false;
       renderSemua();
+      void lanjutTautan();
       return;
     }
     const nomor = ++nomorMuat;
@@ -922,6 +928,77 @@
     }
     S.memuat = false;
     renderSemua();
+    void lanjutTautan();
+  }
+
+  // ── Tautan dari Jadwal Sidang portal (19 Okt 2026) ────────────────────────
+  // ABT dibuka dengan http://.../aps_badilag/abt/#bd=<JSON ter-encode>: { v:1, nomor, perkaraId, sidangKe, tanggalSidang, jenis:
+  // "putusan"|"bas"|"penetapan", agenda, tunda, keterangan, amar, verstek, jumlahSaksiP, jumlahSaksiT }. Tampilan ini terbuka sendiri,
+  // memilih perkara dan sidang, lalu memberi tahu blangko-derry-isian.js (peristiwa "aleta-bd-tautan") untuk memilih blangko yang
+  // paling cocok (mesin saran per jenis + peran + keadaan perkara + petunjuk dari tautan). Hash dihapus dari alamat sesudah dibaca;
+  // hash rusak / versi tak dikenal diabaikan diam-diam.
+  const JENIS_TAUTAN = ["putusan", "bas", "penetapan"];
+  const teksTautan = (v, maks) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, maks || 400) : "");
+  const angkaTautan = (v, maks) => {
+    const n = Number(v);
+    return Number.isInteger(n) && n >= 0 && n <= maks ? n : 0;
+  };
+  /** Hash "#bd=..." -> tautan ternormalkan, atau null (kosong, rusak, bukan versi 1, tanpa nomor/perkara). Murni (diuji). */
+  function bacaTautanBd(hash) {
+    try {
+      const h = String(hash || "");
+      if (!/^#bd=/i.test(h)) return null;
+      const j = JSON.parse(decodeURIComponent(h.slice(4)));
+      if (!j || typeof j !== "object" || Array.isArray(j) || j.v !== 1) return null;
+      const nomor = teksTautan(j.nomor, 80);
+      const perkaraId = /^\d{1,12}$/.test(String(j.perkaraId == null ? "" : j.perkaraId)) ? String(j.perkaraId) : "";
+      if (!nomor && !perkaraId) return null;
+      const tanggal = /^\d{4}-\d{2}-\d{2}$/.test(String(j.tanggalSidang || "")) ? String(j.tanggalSidang) : "";
+      return {
+        nomor,
+        perkaraId,
+        sidangKe: angkaTautan(j.sidangKe, 99),
+        tanggalSidang: tanggal,
+        jenis: JENIS_TAUTAN.includes(j.jenis) ? j.jenis : "",
+        agenda: teksTautan(j.agenda, 200),
+        tunda: j.tunda === true,
+        keterangan: teksTautan(j.keterangan, 400),
+        amar: teksTautan(j.amar, 600),
+        verstek: j.verstek === true,
+        jumlahSaksiP: angkaTautan(j.jumlahSaksiP, 20),
+        jumlahSaksiT: angkaTautan(j.jumlahSaksiT, 20),
+      };
+    } catch {
+      return null;
+    }
+  }
+  /** Daftar perkara sudah termuat: pilih perkara + sidang dari tautan lalu umumkan ke tahap pilih blangko. Sekali jalan. */
+  async function lanjutTautan() {
+    const t = S.tautan;
+    if (!t || t.jalan || !S.data) return;
+    t.jalan = true;
+    try {
+      const p = S.data.perkara.find((x) => (t.perkaraId && String(x.perkaraId) === t.perkaraId) || (t.nomor && x.nomorPerkara === t.nomor));
+      if (!p) {
+        S.tautan = null;
+        return toast(`Perkara ${t.nomor || t.perkaraId} tidak ada di daftar perkara Anda; pilih perkara dari daftar.`);
+      }
+      await muatRiwayatSidang(p);
+      if (S.tautan !== t) return;
+      pilihPerkara(p.nomorPerkara);
+      const sid = riwayatPerkara(p);
+      let i = t.tanggalSidang ? sid.findIndex((x) => x.tanggal === t.tanggalSidang) : -1;
+      if (i < 0 && t.sidangKe) i = sid.findIndex((x) => Number(x.urutan) === t.sidangKe);
+      if (i < 0 && t.sidangKe && t.sidangKe <= sid.length) i = t.sidangKe - 1;
+      if (i >= 0 && i !== S.sidIdx) {
+        S.sidIdx = i;
+        renderSemua();
+        umumkanPerkara();
+      }
+      document.dispatchEvent(new CustomEvent("aleta-bd-tautan", { detail: { ...t } }));
+    } catch {
+      /* tautan hanya kemudahan: gagal = petugas memilih sendiri */
+    }
   }
 
   // ── Pencarian pintar di kotak cari (19 Okt 2026) ─────────────────────────
@@ -1435,6 +1512,7 @@
     ["tawar", "Tawarkan Blangko ABT by Derry Briantono di ABT biasa", "", ["hakim", "pp", "js"]],
     ["saran", "Saran isian (bayangan, tekan Tab)", "Usulan dari SIPP, gugatan dan riwayat", ["hakim", "pp"]],
     ["ingat", "Ingatkan isian yang masih kosong sebelum cetak", "juga tombol Cetak panel ALETA di ABT biasa", ["hakim", "pp", "js"]],
+    ["isiOto", "Isi otomatis dari SIPP", "begitu perkara dan blangko dipilih, isian kosong yang datanya ada di SIPP, gugatan dan e-Court terisi dan tersimpan ke ABT; yang sudah ada isinya tidak ditimpa", ["hakim", "pp", "js"]],
     ["tjJawab", "Tanya-jawab jawab-menjawab otomatis", "jawaban, replik, duplik tertulis yang rapi ditulis ke sidang yang sesuai bila barisnya kosong", ["hakim", "pp"]],
     ["gembok", "Gembok panel ALETA di ABT biasa: selalu tampil penuh", "mati = Ringkas otomatis (panel tinggal kepalanya saat menutupi tabel)", ["hakim", "pp", "js"]],
   ];
@@ -1505,7 +1583,12 @@
     const grup = peranAlat();
     if (!grup.length) return `<p class="bd-catat">Peran Anda belum punya alat di tampilan ini.</p>`;
     const sebagai = adm() && S.sebagai.nama ? ` · ${esc(S.sebagai.nama)}` : !adm() && S.siapa ? ` · ${esc(S.siapa.nama || "")}` : "";
+    // 19 Okt: saklar "Isi otomatis dari SIPP" ada di Alat saya (bawaan menyala; diingat per pengguna di setelan ekstensi).
+    const saklarIsi = grup.some((g) => ["hakim", "pp", "js", "ptsp", "admin"].includes(g))
+      ? `<label class="bd-wbaris bd-saklaralat"><span>Isi otomatis dari SIPP<small>isian kosong terisi sendiri dari SIPP, gugatan dan e-Court; yang sudah ada isinya tidak ditimpa</small></span><input type="checkbox" data-cfg="isiOto" aria-label="Isi otomatis dari SIPP" ${S.cfg.isiOto !== false ? "checked" : ""}></label>`
+      : "";
     return (
+      saklarIsi +
       grup
         .map(
           (g) =>
@@ -1532,7 +1615,7 @@
 
   // ── Peristiwa ─────────────────────────────────────────────────────────────
   function ubahSaklar(kunciCfg, nilai) {
-    const peta = { bawaan: K.bawaan, tawar: K.tawar, saran: K.saran, ingat: K.ingat, tjJawab: K.tjJawab, gembok: K.gembok };
+    const peta = { bawaan: K.bawaan, tawar: K.tawar, saran: K.saran, ingat: K.ingat, tjJawab: K.tjJawab, isiOto: K.isiOto, gembok: K.gembok };
     if (!peta[kunciCfg]) return;
     S.cfg[kunciCfg] = Boolean(nilai);
     void tulisPenyimpanan({ [peta[kunciCfg]]: Boolean(nilai) });
@@ -1709,7 +1792,7 @@
     if (wilayah !== "local" || !ubah) return;
     const s = {};
     let berubah = false;
-    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.gembok, K.tema, K.ukuran]) {
+    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.gembok, K.tema, K.ukuran]) {
       if (ubah[k]) {
         berubah = true;
         s[k] = ubah[k].newValue;
@@ -1723,6 +1806,7 @@
         [K.saran]: S.cfg.saran,
         [K.ingat]: S.cfg.ingat,
         [K.tjJawab]: S.cfg.tjJawab,
+        [K.isiOto]: S.cfg.isiOto,
         [K.gembok]: S.cfg.gembok,
         [K.tema]: S.tema,
         [K.ukuran]: S.ukuran,
@@ -1756,6 +1840,16 @@
 
   async function siap() {
     await muatSiapa();
+    if (S.tautan) {
+      if (berhakDaftar() && tombolDerry()) {
+        // Tautan Jadwal Sidang: tampilan terbuka sendiri dan daftar mencakup rentang lebar (sidang lampau/mendatang terjangkau).
+        S.mode = "semua";
+        if (ptspCari()) S.cariNomor = S.tautan.nomor;
+        buka();
+        return;
+      }
+      S.tautan = null;
+    }
     if (otomatisBuka()) buka();
     else segarkanTawar();
   }
@@ -1766,6 +1860,15 @@
       const nyala = await muatSetelan();
       if (!nyala) return;
       S.nyala = true;
+      if (/^#bd=/i.test(String(location.hash || ""))) {
+        S.tautan = bacaTautanBd(location.hash);
+        // Dihapus dari alamat supaya muat ulang tidak mengulang (rusak atau tidak, tanpa pesan teknis).
+        try {
+          history.replaceState(history.state, "", `${location.pathname}${location.search}`);
+        } catch {
+          /* alamat tidak dapat diubah: tautan tetap dibaca sekali */
+        }
+      }
       document.addEventListener("click", saatKlikDokumen, true);
       try {
         chrome.storage.onChanged.addListener(saatPenyimpananBerubah);
@@ -1875,7 +1978,7 @@
       tema: S.tema,
       cfg: { ...S.cfg },
     }),
-    murni: { ringkasan, cocokCari, JENIS_CARI, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk, perkiraanZoom },
+    murni: { bacaTautanBd, ringkasan, cocokCari, JENIS_CARI, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk, perkiraanZoom },
   };
   globalThis.aletaBlangkoDerry = api;
   void mulai();
