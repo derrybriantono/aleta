@@ -264,7 +264,9 @@ describe("butir 6: mediator di Majelis & Petugas", () => {
     expect(iMedRingkas).toBeGreaterThan(iJsRingkas);
     expect(iRuangRingkas).toBeGreaterThan(iMedRingkas);
     // Mode Lengkap: blok mediator berdiri antara baris PP/JS dan baris ruang.
-    const iJsLengkap = layar.indexOf('<span className="text-muted-foreground"> · JS </span>');
+    // 19 Okt 2026 (JADWAL-3 tambahan A): JS di baris sendiri.
+    const iJsLengkap = layar.indexOf('<span className="text-muted-foreground">JS </span>');
+    expect(iJsLengkap).toBeGreaterThan(0);
     const iMedLengkap = layar.indexOf('<span className="text-muted-foreground">Mediator </span>');
     expect(iMedLengkap).toBeGreaterThan(iJsLengkap);
     expect(layar.indexOf("{baris.ruangan ? (", iMedLengkap)).toBeGreaterThan(iMedLengkap);

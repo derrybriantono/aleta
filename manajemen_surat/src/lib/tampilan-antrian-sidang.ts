@@ -470,6 +470,13 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
   },
   // JADWAL-3 butir 4 (19 Okt 2026): nama saksi bawaannya terlipat.
   {
+    kunci: "tombol-blangko",
+    label: "Tombol Blangko",
+    keterangan:
+      "Tombol kecil di kanan baris yang membuka Blangko ABT by Derry dengan perkara itu sudah terpilih: blangko putusan bila diputus atau akan diputus, blangko ikrar pada sidang ikrar talak, selain itu blangko BAS. Hakim melihat putusan dan BAS, panitera pengganti melihat BAS.",
+    kelompok: "alat",
+  },
+  {
     kunci: "saksi-lipat",
     label: "Nama saksi dilipat",
     keterangan:

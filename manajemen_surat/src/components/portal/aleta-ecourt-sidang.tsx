@@ -42,6 +42,8 @@ import { AletaEcourtCetakJadwal } from "@/components/portal/aleta-ecourt-cetak-j
 import { daftarRuangAktif, ruangPilihanBerlaku, saringKeRuang } from "@/lib/ruang-sidang-saring";
 /* === 12OKT-C: kartu ruang sidang & mediator === */
 import { PitaRuangSidang } from "@/components/portal/pita-ruang-sidang";
+import { TombolBlangkoDerry } from "@/components/portal/tombol-blangko-derry";
+import { jenisBlangkoBoleh, jenisBlangkoMenurutKeadaan, saringJenisBlangko } from "@/lib/tautan-blangko-derry";
 import { susunPitaRuang } from "@/lib/pita-ruang-sidang";
 import { SaksiLipat, useSaksiLipat } from "@/components/portal/saksi-lipat";
 import { PetunjukCariPintar } from "@/components/portal/petunjuk-cari-pintar";
@@ -4614,7 +4616,10 @@ export function AletaEcourtSidang({
 
   // Nama pengadilan dari identitas lembaga, bukan dipatok mati - ALETA dapat
   // dipasang di satker lain.
-  const { institutionIdentity, currentUser, positions } = usePortal();
+  const { institutionIdentity, currentUser, positions, panelSettings } = usePortal();
+  // JADWAL-3 tambahan B: alamat ABT dari setelan aplikasi luar "APS Badilag", dan jenis blangko menurut peran.
+  const setelanAps = panelSettings?.externalApps?.["aps-badilag"]?.baseUrl ?? "";
+  const jenisBlangkoPeran = useMemo(() => jenisBlangkoBoleh(currentUser), [currentUser]);
   const [memuat, setMemuat] = useState(true);
   /**
    * ==========================================================================
@@ -8742,10 +8747,17 @@ export function AletaEcourtSidang({
                             ) : null}
                           </div>
 
-                          <div className="mt-0.5">
+                          {/* JADWAL-3 tambahan A (19 Okt 2026): PP dan JS
+                              masing-masing di BARIS SENDIRI - disambung dengan
+                              " · " keduanya terbungkus acak di kolom sempit
+                              (1366 px, zoom 125-150%). Urutan: kode, nama
+                              majelis, PP, JS, mediator, ruang. */}
+                          <div className="mt-0.5 break-words" data-petugas-pp="">
                             <span className="text-muted-foreground">PP </span>
                             {baris.paniteraNama ? <NamaDapatDipanggil golongan="pp" {...konteksPanggil}>{baris.paniteraNama}</NamaDapatDipanggil> : "—"}
-                            <span className="text-muted-foreground"> · JS </span>
+                          </div>
+                          <div className="mt-0.5 break-words" data-petugas-js="">
+                            <span className="text-muted-foreground">JS </span>
                             {baris.jurusitaNama ? <NamaDapatDipanggil golongan="js" {...konteksPanggil}>{baris.jurusitaNama}</NamaDapatDipanggil> : "—"}
                           </div>
 
@@ -9041,6 +9053,37 @@ export function AletaEcourtSidang({
                                 <FileSearch className="h-3.5 w-3.5" />
                                 Status
                               </button>
+                            ) : null}
+
+                            {/* JADWAL-3 tambahan B (19 Okt 2026): Blangko ABT by Derry
+                                dengan perkara + jenis blangko sesuai keadaan sidang -
+                                ikrar = blangko ikrar/BAS, putus/akan putus = putusan/BAS,
+                                selain itu BAS. Disaring hak peran; tidak menulis apa pun. */}
+                            {tampil(tampilan, "tombol-blangko") ? (
+                              <TombolBlangkoDerry
+                                data={{
+                                  nomor: baris.nomorPerkara,
+                                  perkaraId: baris.perkaraId,
+                                  sidangKe: baris.urutanSidang,
+                                  tanggalSidang: baris.tanggalSidang,
+                                  agenda: baris.agenda,
+                                  tunda: baris.alasanDitunda,
+                                  keterangan: keterangan[String(baris.perkaraId)]?.terkini?.isi ?? "",
+                                  amar: baris.sudahPutus ? baris.statusPutusan : "",
+                                  verstek: baris.sudahPutus ? Boolean(baris.verstekPutusan) : null,
+                                  jumlahSaksiP: baris.saksiPihak1 ?? 0,
+                                  jumlahSaksiT: baris.saksiPihak2 ?? 0,
+                                }}
+                                jenis={saringJenisBlangko(
+                                  jenisBlangkoMenurutKeadaan({
+                                    ikrarTalak: Boolean(baris.sidangIkrarTalak),
+                                    sudahPutus: baris.sudahPutus,
+                                    akanPutus: hariPutusan(baris),
+                                  }),
+                                  jenisBlangkoPeran
+                                )}
+                                setelanAps={setelanAps}
+                              />
                             ) : null}
 
                             {/* ============================================

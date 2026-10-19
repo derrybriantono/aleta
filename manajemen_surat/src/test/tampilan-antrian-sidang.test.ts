@@ -291,7 +291,8 @@ describe("24 Sep - saklar untuk yang baru, dan Sembunyikan semua", () => {
     // draf-putusan-agen, checklist-konseptor, sedang-berjalan, ringkasan-ruang, tombol-layar-penuh
     // (dijaga checklist-tampilan-18okt.test.ts, yang juga menjaga bahwa tiap fitur di layar punya baris).
     // 75 sejak 19 Okt 2026 (JADWAL-3 butir 4): + saksi-lipat (nama saksi terlipat bawaan).
-    expect(SAKLAR_TAMPILAN.length).toBe(75);
+    // 76 sejak 19 Okt 2026 (JADWAL-3 tambahan B): + tombol-blangko.
+    expect(SAKLAR_TAMPILAN.length).toBe(76);
   });
 
   it("saklar yang hanya hidup di satu mode MENYEBUT modenya", () => {
