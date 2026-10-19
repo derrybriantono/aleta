@@ -1117,6 +1117,39 @@
     return t.replace(/^BAS ALUR \d\d \[[^\]]+\] /, "").replace(/^BAS KUASA INSIDENTIL - /, "").replace(/^\[JS\] /, "");
   };
   function bukaModal() {
+  /**
+   * Perkiraan "cocok untuk sidang ke-berapa" (19 Okt 2026), HANYA dari tulisan nama blangko Derry (pohon alur BAS):
+   * "BAS 1/2/3 ..." atau "Sidang 1/2 ..." = sidang itu, "Sidang/BAS Pertama" = 1, "BAS Lanjutan" = lanjutan,
+   * "BAS Terakhir"/"BAS Putus"/"Pembacaan Putusan" = putusan, "Ikrar" = ikrar. Tanpa petunjuk di nama -> null (lencana kosong, tidak menebak).
+   * Frasa "Tunda Putusan/Penetapan" tidak dihitung sebagai putusan; pemberitahuan/salinan/akta bukan sidang.
+   */
+  function perkiraanSidang(nama, jenis) {
+    if (jenis === "ptsp") return null;
+    const t = String(nama || "")
+      .replace(/\.rtf$/i, "")
+      .replace(/^BAS ALUR \d\d \[[^\]]+\] /, "")
+      .replace(/^\[[^\]]+\]\s*/, "")
+      .replace(/\btunda\s+(?:pembacaan\s+|pengucapan\s+|penyampaian\s+)?(?:putusan|penetapan)\b/gi, " ");
+    if (/\bikrar\b/i.test(t)) return { teks: "ikrar", tipe: "ikrar" };
+    const n = t.match(/\b(?:BAS|Sidang)\s+(\d{1,2})(?![\d.])(?!\s*saksi)/i);
+    if (n && Number(n[1]) > 0) return { teks: `sidang ${Number(n[1])}`, tipe: "n", n: Number(n[1]) };
+    if (/\b(?:BAS|Sidang)\s+Pertama\b/i.test(t)) return { teks: "sidang 1", tipe: "n", n: 1 };
+    if (/\blanjutan\b/i.test(t)) return { teks: "lanjutan", tipe: "lanjut" };
+    if (!/pemberitahuan|salinan|\bakta\b|\bamar\b/i.test(t) && /\bterakhir\b|\bBAS\s+Putus\b|\bputusan\b|\bputus\b/i.test(t)) return { teks: "putusan", tipe: "putus" };
+    return null;
+  }
+  /** Sidang yang sedang dipilih di langkah 1: urutan + teks agenda/keterangan (untuk menyorot lencana yang cocok). */
+  function sidangAktifUntukLencana() {
+    const s = (S.pk && S.pk.sidangDipilih) || {};
+    return { urutan: Number(sidangUrutan()) || 0, agenda: `${s.agenda || ""} ${s.ket || ""}` };
+  }
+  function lencanaSidang(nama, jenis, paksaIkrar) {
+    const k = perkiraanSidang(nama, jenis) || (paksaIkrar ? { teks: "ikrar", tipe: "ikrar" } : null);
+    if (!k) return `<span class="sd" aria-hidden="true"></span>`;
+    const a = sidangAktifUntukLencana();
+    const cocok = k.tipe === "n" ? a.urutan === k.n : k.tipe === "lanjut" ? a.urutan >= 2 : k.tipe === "putus" ? /putus|pembacaan|pengucapan/i.test(a.agenda) : /ikrar/i.test(a.agenda);
+    return `<span class="sd${cocok ? " cocok" : ""}" title="Perkiraan: ${esc(k.teks)}${cocok ? " (sesuai sidang yang dipilih)" : ""}">${esc(k.teks)}</span>`;
+  }
     if (!S.pk) return toast("Pilih perkara dulu.");
     const jenisAda = jenisBoleh();
     if (!jenisAda.length) return toast("Peran akun Anda tidak punya blangko di tampilan ini.");
@@ -1189,7 +1222,7 @@
     const disaran = rek.some((r) => r.berkas === nama);
     return (
       `<button type="button" class="bd-bl${aktif ? " aktif" : ""}" data-bl="${esc(nama)}" data-kel="${esc(b.kelompok)}" ${b.belum ? "disabled" : ""}>` +
-      `<span class="kd">${esc(kodeDari(jenis === "put" ? nama : nama.replace(/^BAS ALUR \d\d /, "")))}</span><span class="nm">${esc(namaTampil(nama, jenis))}</span>` +
+      `<span class="kd">${esc(kodeDari(jenis === "put" ? nama : nama.replace(/^BAS ALUR \d\d /, "")))}</span>${lencanaSidang(nama, jenis, false)}<span class="nm">${esc(namaTampil(nama, jenis))}</span>` +
       `${disaran ? `<span class="bd-lencana">disarankan</span>` : ""}${aktif ? `<span class="tanda" aria-label="dipakai sekarang">&#10003;</span>` : ""}</button>`
     );
   }
@@ -1199,7 +1232,7 @@
     const disaran = rek.some((r) => r.berkas === b.berkas);
     return (
       `<button type="button" class="bd-bl${aktif ? " aktif" : ""}" data-bl="${esc(b.berkas)}" data-kel="${esc(b.kelompok)}" data-ikrar="1">` +
-      `<span class="kd">${esc(b.kode)}</span><span class="nm">${esc(b.kalimat)}</span>` +
+      `<span class="kd">${esc(b.kode)}</span>${lencanaSidang(b.berkas, "", true)}<span class="nm">${esc(b.kalimat)}</span>` +
       `${disaran ? `<span class="bd-lencana">disarankan</span>` : ""}${aktif ? `<span class="tanda" aria-label="dipakai sekarang">&#10003;</span>` : ""}</button>`
     );
   }
@@ -5335,7 +5368,7 @@
       takBerlaku: daftarTakBerlaku().map((b) => b.kode),
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
+    murni: { perkiraanSidang, keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {

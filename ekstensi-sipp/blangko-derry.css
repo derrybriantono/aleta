@@ -319,12 +319,16 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-mkanan { flex: 1; min-width: 0; overflow: auto; padding: 8px 12px; }
 #aleta-bd-akar .bd-mkanan h5 { margin: 12px 0 4px; font-size: 12.5px; color: var(--muted); font-weight: 600; }
 #aleta-bd-akar .bd-ksub { margin: 2px 0 8px; font-size: 12.5px; color: var(--muted); }
-#aleta-bd-akar .bd-bl { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: auto 1fr auto auto; gap: 8px; align-items: center; width: 100%; padding: 5px 10px; font-size: 13.6px; border-radius: 8px; color: var(--fg); }
+#aleta-bd-akar .bd-bl { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: auto 5.2em 1fr auto auto; gap: 8px; align-items: center; width: 100%; padding: 5px 10px; font-size: 13.6px; border-radius: 8px; color: var(--fg); }
 #aleta-bd-akar .bd-bl:hover { background: var(--panel2); }
 #aleta-bd-akar .bd-bl:focus-visible { outline: 2px solid var(--accent); }
 #aleta-bd-akar .bd-bl[disabled] { opacity: .5; cursor: default; }
 #aleta-bd-akar .bd-bl .kd { font-family: var(--mono); font-size: 11.2px; color: var(--accent); min-width: 2.6em; }
 #aleta-bd-akar .bd-bl .nm { overflow-wrap: anywhere; }
+/* Perkiraan "cocok untuk sidang ke-berapa": lajur tetap di kiri nama (kosong bila nama tidak memberi petunjuk), tidak menggeser nama. */
+#aleta-bd-akar .bd-bl .sd { justify-self: start; max-width: 100%; box-sizing: border-box; font-size: 10.4px; line-height: 1.5; padding: 0 6px; border-radius: 99px; border: 1px solid var(--line, rgba(128,128,128,.4)); color: var(--muted, inherit); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#aleta-bd-akar .bd-bl .sd:empty { border: 0; padding: 0; }
+#aleta-bd-akar .bd-bl .sd.cocok { border-color: var(--accent); background: var(--okbg); color: var(--accent); font-weight: 700; }
 #aleta-bd-akar .bd-bl.aktif { background: var(--okbg); }
 #aleta-bd-akar .bd-bl .tanda { color: var(--accent); font-weight: 700; }
 #aleta-bd-akar .bd-lencana { font-size: 10.9px; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--accent); color: var(--accent); }
