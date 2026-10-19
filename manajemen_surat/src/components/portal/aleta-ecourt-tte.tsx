@@ -67,7 +67,12 @@ export function AletaEcourtTte({ mode = "semua" }: { mode?: "semua" | "saya" }) 
       setData({
         admin: bungkus.admin === true,
         statusBsre: bungkus.statusBsre === "tersambung" || bungkus.statusBsre === "belum" ? bungkus.statusBsre : "tidak-terbaca",
-        baris: Array.isArray(bungkus.baris) ? bungkus.baris : [],
+        // Baris yang bentuknya bukan baris TTE (mis. jawaban rute lain) dibuang, bukan dibiarkan menjatuhkan layar induknya.
+        baris: Array.isArray(bungkus.baris)
+          ? bungkus.baris
+              .filter((b) => b && typeof b.id === "number" && typeof b.namaPejabat === "string")
+              .map((b) => ({ ...b, caraTtd: b.caraTtd === "tte" ? "tte" : "gambar", nikBsre: String(b.nikBsre ?? ""), jabatan: String(b.jabatan ?? "") }))
+          : [],
       });
       setSuntingan({});
     } catch (e) {

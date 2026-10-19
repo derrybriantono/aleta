@@ -438,6 +438,8 @@ function pasangFetchTtd(get: () => Response, post: (badan: Record<string, unknow
     vi.fn(async (alamat: string, opsi?: RequestInit) => {
       const url = String(alamat);
       if (url.includes("/penetapan-edoc/cap")) return jawabanJson({ ok: true, data: { ok: true, baris: [], peruntukan: [] } });
+      // Kartu TTE BSrE (19 Okt) memanggil rutenya sendiri; jawabannya berbungkus ok() dengan bentuknya sendiri.
+      if (url.includes("/tanda-tangan/tte") && opsi?.method !== "POST") return jawabanJson({ ok: true, data: { admin: true, statusBsre: "belum", baris: [] } });
       if (url.includes("/tanda-tangan") && opsi?.method === "POST") {
         const badan = JSON.parse(String(opsi.body)) as Record<string, unknown>;
         kiriman.push(badan);
