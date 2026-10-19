@@ -655,8 +655,17 @@ function intiNama(nama, bakuNama) {
  */
 function cocokkanTandaTangan(nama, daftar, bakuNama) {
   const semua = (Array.isArray(daftar) ? daftar : []).filter((b) => b && b.namaPejabat);
+  // TAUTAN AKUN (19 Okt 2026): dua berkas sah untuk orang yang sama - yang
+  // ditautkan ke akun pemiliknya didahulukan (nama-nya sudah dipastikan
+  // manusia/alat tautan), baru yang terbaru disahkan.
+  const tertaut = (b) => (String(b.penggunaId || "").trim() ? 1 : 0);
   const terbaru = (xs) =>
-    xs.slice().sort((a, b) => String(b.disahkanPada || "").localeCompare(String(a.disahkanPada || "")) || Number(b.id) - Number(a.id))[0];
+    xs.slice().sort(
+      (a, b) =>
+        tertaut(b) - tertaut(a) ||
+        String(b.disahkanPada || "").localeCompare(String(a.disahkanPada || "")) ||
+        Number(b.id) - Number(a.id)
+    )[0];
   const penuh = semua.filter((b) => bakuNama(b.namaPejabat) && bakuNama(b.namaPejabat) === bakuNama(nama));
   if (penuh.length) return { baris: terbaru(penuh), cara: "nama_lengkap" };
   const inti = intiNama(nama, bakuNama);

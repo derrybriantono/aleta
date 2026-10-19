@@ -4283,6 +4283,22 @@ export async function kirimTandaTanganTautkanAkun(id: number, payload: {
   });
 }
 
+/** Status sambungan TTE BSrE di bot (19 Okt 2026): hanya {tersambung}; tanpa alamat/rahasia penyedia. */
+export async function getGatewayTteStatus() {
+  return gatewayFetch<Record<string, unknown>>(`/internal/aleta-bot/tanda-tangan-tte/status`, { method: "GET" });
+}
+
+/**
+ * Cara tanda tangan + identitas sertifikat (NIK/ID BSrE) satu pejabat.
+ * SENGAJA tanpa passphrase di tipe ini: passphrase tidak pernah disimpan atau dikirim.
+ */
+export async function kirimTandaTanganTte(id: number, payload: { caraTtd: string; nikBsre: string }) {
+  return gatewayFetch<Record<string, unknown>>(`/internal/aleta-bot/tanda-tangan/${id}/tte`, {
+    method: "POST",
+    body: JSON.stringify({ caraTtd: payload.caraTtd, nikBsre: payload.nikBsre }),
+  });
+}
+
 export async function kirimTandaTanganSahkan(id: number, oleh: string) {
   return gatewayFetch<Record<string, unknown>>(`/internal/aleta-bot/tanda-tangan/${id}/sahkan`, {
     method: "POST",

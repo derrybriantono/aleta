@@ -456,6 +456,8 @@
     depan: true,
     ket: { jenis: true, sidang: true, pihak: true, isian: false, cetak: true, alasan: false, majelis: false, petugas: false },
     cariNomor: "",
+    /** Jenis pencarian di kotak cari (19 Okt 2026): "semua" = saringan kata kunci otomatis. */
+    cariJenis: "semua",
     data: null,
     memuat: false,
     galat: "",
@@ -922,12 +924,104 @@
     renderSemua();
   }
 
+  // ── Pencarian pintar di kotak cari (19 Okt 2026) ─────────────────────────
+  // Memakai data yang SUDAH dimuat tabel (tanpa permintaan server baru). Beberapa
+  // kata kunci dipisah spasi: SEMUANYA harus cocok (dalam jenis yang dipilih;
+  // pada "Semua" boleh di bidang mana pun).
+  const JENIS_CARI = [
+    ["semua", "Semua (otomatis)", "nomor, jenis, pihak, agenda, tanggal…"],
+    ["nomor", "Nomor perkara", "mis. 581 atau 581/Pdt.G/2026"],
+    ["jenis", "Jenis perkara", "mis. Cerai Gugat, Kewarisan"],
+    ["alur", "Alur perkara", "Pdt.G atau Pdt.P"],
+    ["pihak", "Nama pihak", "nama Penggugat/Tergugat/Pemohon/Termohon"],
+    ["kegiatan", "Kegiatan sidang / agenda", "mis. Mediasi, Pembuktian, putus"],
+    ["prioritas", "Prioritas", "Perlu segera, Menyusul, Selesai"],
+    ["dokumen", "Dokumen di SIPP", "mis. belum diunggah, sudah minutasi"],
+    ["tanggal", "Tanggal sidang", "mis. 15/10/2026, 15 Okt 2026, 2026-10-15"],
+    ["majelis", "Majelis / PP / JS", "nama hakim, panitera pengganti, juru sita"],
+  ];
+  const ketik = (v) => String(v == null ? "" : v).toLowerCase();
+  /** Kode alur dari nomor: "581/Pdt.G/2026/PA.Dgl" -> "pdt.g". */
+  const alurDariNomor = (n) => {
+    const m = /\/(pdt\.[a-z.]+?)\//i.exec(String(n || ""));
+    return m ? m[1].toLowerCase() : "";
+  };
+  /** Tanggal ISO dari ketikan "15/10/2026", "15-10-2026", "2026-10-15"; "" bila bukan tanggal penuh. */
+  function tanggalIsoDariKetikan(q) {
+    const t = String(q || "").trim();
+    let m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t);
+    if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+    m = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(t);
+    return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : "";
+  }
+  /** Cocok tanggal: ISO penuh, atau potongan teks tanggal ("15 okt", "oktober 2026", "2026-10"). */
+  function cocokTanggal(p, q) {
+    const iso = tanggalIsoDariKetikan(q);
+    const kunci = ketik(q).replace(/\s+/g, " ").trim();
+    return (Array.isArray(p.sidang) ? p.sidang : []).some((s) => {
+      const t = String(s.tanggal || "");
+      if (!t) return false;
+      if (iso) return t === iso;
+      const [y, m, d] = t.split("-");
+      const bentuk = [t, `${+d} ${BULAN[+m - 1] || ""} ${y}`, `${+d} ${(BULAN[+m - 1] || "").slice(0, 3)} ${y}`, `${d}/${m}/${y}`].map(ketik);
+      return bentuk.some((b) => b.includes(kunci));
+    });
+  }
+  /** Satu kata kunci cocok pada jenis tertentu? */
+  function cocokJenis(r, jenis, kata) {
+    const p = r.p;
+    const k = ketik(kata);
+    switch (jenis) {
+      case "nomor":
+        return ketik(p.nomorPerkara).includes(k);
+      case "jenis":
+        return ketik(p.jenisPerkara).includes(k);
+      case "alur": {
+        const kode = alurDariNomor(p.nomorPerkara);
+        const x = k.replace(/\s+/g, "").replace(/^pdt\.?/, "");
+        if (!kode || !x) return false;
+        if (/gugat/.test(x)) return kode === "pdt.g";
+        if (/mohon/.test(x)) return kode === "pdt.p";
+        return kode === `pdt.${x}` || (x.length > 1 && kode.includes(x));
+      }
+      case "pihak": {
+        const ph = p.pihak || {};
+        return [].concat(ph.penggugat || [], ph.tergugat || []).some((n) => ketik(n).includes(k));
+      }
+      case "kegiatan":
+        return (Array.isArray(p.sidang) ? p.sidang : []).some((s) => ketik(s.agenda).includes(k) || ketik(s.ket).includes(k));
+      case "prioritas":
+        return ketik(TEKS_TINGKAT[r.tingkat]).includes(k) || r.tingkat === k || (r.alasan || []).some((a) => ketik(a).includes(k));
+      case "dokumen":
+        return ketik(r.dokTxt).includes(k);
+      case "tanggal":
+        return cocokTanggal(p, kata);
+      case "majelis":
+        return [p.majelisNama, p.paniteraNama, p.jurusitaNama].some((n) => ketik(n).includes(k));
+      default:
+        return false;
+    }
+  }
+  /** Perkara (hasil ringkasan) cocok dengan ketikan? Kosong = cocok semua. */
+  function cocokCari(r, jenis, q) {
+    const teks = String(q || "").trim();
+    if (!teks) return true;
+    if (jenis === "tanggal") return cocokTanggal(r.p, teks);
+    const kata = teks.split(/\s+/).filter(Boolean);
+    const semuaJenis = JENIS_CARI.slice(1).map((x) => x[0]);
+    // "Semua": tanggal yang diketik utuh ("15 Okt 2026" / "15/10/2026") dikenali sebagai satu kesatuan.
+    if (jenis === "semua" && (tanggalIsoDariKetikan(teks) || kata.length > 1) && cocokTanggal(r.p, teks)) return true;
+    return kata.every((w) => (jenis === "semua" ? semuaJenis.some((j) => cocokJenis(r, j, w)) : cocokJenis(r, jenis, w)));
+  }
+
   function daftarUrut() {
     const data = S.data;
     if (!data) return [];
-    const q = S.cariNomor.trim().toLowerCase();
+    const q = S.cariNomor.trim();
     const ctx = { hariIni: hariIni(), lapor: S.lapor };
-    const l = data.perkara.filter((p) => !q || String(p.nomorPerkara).toLowerCase().includes(q)).map((p) => ringkasan(p, ctx));
+    // PTSP: kotak ini mencari nomor di server; jenis lain tidak berlaku.
+    const jenis = ptspCari() ? "nomor" : S.cariJenis;
+    const l = data.perkara.map((p) => ringkasan(p, ctx)).filter((r) => cocokCari(r, jenis, q));
     return urutkan(l, S.urut, S.arah, S.depan);
   }
 
@@ -1030,6 +1124,19 @@
     return "Tidak ada perkara pada rentang ini.";
   }
 
+  /** Kotak cari pintar: pemilih jenis + kotak ketik (PTSP: hanya nomor, dicari di server). */
+  function kotakCari() {
+    if (ptspCari()) {
+      return `<input class="bd-cari" id="bd-cari" placeholder="cari nomor perkara" aria-label="Cari nomor perkara" value="${esc(S.cariNomor)}">`;
+    }
+    const aktif = JENIS_CARI.find((x) => x[0] === S.cariJenis) || JENIS_CARI[0];
+    return (
+      `<select id="bd-carijenis" aria-label="Cari berdasarkan">` +
+      JENIS_CARI.map(([k, t]) => `<option value="${k}"${k === aktif[0] ? " selected" : ""}>${esc(t)}</option>`).join("") +
+      `</select><input class="bd-cari" id="bd-cari" placeholder="${esc(`cari: ${aktif[2]}`)}" aria-label="Cari perkara" title="Beberapa kata kunci dipisah spasi: semuanya harus cocok." value="${esc(S.cariNomor)}">`
+    );
+  }
+
   function renderPerkara() {
     const ringkas = cari("#bd-pkringkas", akar);
     const ganti = cari("#bd-ganti", akar);
@@ -1057,7 +1164,7 @@
       ]
         .map(([m, t]) => `<button type="button" role="tab" data-mode="${m}" aria-selected="${S.mode === m}">${t}</button>`)
         .join("") +
-      `</div><input class="bd-cari" id="bd-cari" placeholder="cari nomor perkara" aria-label="Cari nomor perkara" value="${esc(S.cariNomor)}"></div>`;
+      `</div>${kotakCari()}</div>`;
     if (S.mode === "rentang") {
       isi +=
         `<div class="bd-kontrol"><label class="bd-lbl" for="bd-dari">Dari</label><input type="date" id="bd-dari" value="${esc(S.dari)}">` +
@@ -1518,6 +1625,10 @@
       simpanPref();
       return renderPerkara();
     }
+    if (t.id === "bd-carijenis") {
+      S.cariJenis = JENIS_CARI.some((x) => x[0] === t.value) ? t.value : "semua";
+      return renderPerkara();
+    }
     if (t.id === "bd-depan") {
       S.depan = t.checked;
       simpanPref();
@@ -1764,7 +1875,7 @@
       tema: S.tema,
       cfg: { ...S.cfg },
     }),
-    murni: { ringkasan, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk, perkiraanZoom },
+    murni: { ringkasan, cocokCari, JENIS_CARI, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk, perkiraanZoom },
   };
   globalThis.aletaBlangkoDerry = api;
   void mulai();

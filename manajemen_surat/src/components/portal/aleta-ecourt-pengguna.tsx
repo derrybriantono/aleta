@@ -29,6 +29,7 @@ import {
 
 import { CatatanEkstensiDaftar } from "@/components/portal/catatan-ekstensi-daftar";
 import { EcourtStatusPenarikan } from "@/components/portal/ecourt-status-penarikan";
+import { AletaEcourtTte } from "@/components/portal/aleta-ecourt-tte";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1135,6 +1136,8 @@ export function AletaEcourtPengguna() {
       {/* Butir 12 (13 Okt 2026): status penarikan data e-Court - paling atas,
           sebab tanpa penarikan seluruh angka di bawah tidak bertambah. */}
       <EcourtStatusPenarikan />
+      {/* 19 Okt 2026: pejabat yang tanda tangannya tertaut ke akunnya melihat pengaturan TTE-nya sendiri. */}
+      {!bolehMengatur ? <AletaEcourtTte mode="saya" /> : null}
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
           <div>

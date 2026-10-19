@@ -2136,13 +2136,23 @@
     const abt = (t && t.templates ? t.templates : []).map((x) => `<option value="${esc(x.nilai)}">${esc(x.kode === "#" ? `Salin dari ${x.nama}` : `${x.nama} (${x.kode})`)}</option>`).join("");
     const aleta = S.setSaksi && S.setSaksi.daftar.length ? S.setSaksi.daftar : [];
     if (!aleta.length) return abt;
-    const opsi = aleta.map((x) => `<option value="aleta:${esc(x.id)}" title="${esc(x.untuk || "")}">${esc(x.judul)}${x.utama ? " - disarankan" : ""}</option>`).join("");
+    // 19 Okt 2026: saran TERPILIH otomatis di dropdown; alasannya hanya `title` (bukan paragraf di layar).
+    const idUtama = (aleta.find((x) => x.utama) || {}).id;
+    const opsi = aleta.map((x) => `<option value="aleta:${esc(x.id)}" title="${esc([x.untuk, x.utama ? x.sebab : ""].filter(Boolean).join(" - "))}"${idUtama && x.id === idUtama ? " selected" : ""}>${esc(x.judul)}${x.utama ? " - disarankan" : ""}</option>`).join("");
     return `<optgroup label="Panduan ALETA sesuai jenis perkara">${opsi}</optgroup>${abt ? `<optgroup label="Set yang tersimpan di ABT">${abt}</optgroup>` : ""}`;
   }
+  /**
+   * 19 Okt 2026: TIDAK ada lagi paragraf penjelasan di bawah tombol (permintaan pengguna).
+   * Saran set tetap terpilih otomatis di dropdown "Set pertanyaan"; alasannya hanya `title`.
+   */
   function ketSetSaksi() {
+    return "";
+  }
+  /** Alasan saran untuk `title` dropdown (tooltip), bukan teks tampil. */
+  function alasanSetSaksi() {
     const utama = S.setSaksi && S.setSaksi.daftar.filter((x) => x.utama);
     if (!utama || !utama.length) return "";
-    return `<p class="bd-catat bd-setsaksi">Disarankan untuk perkara ini: <b>${esc(utama.map((x) => x.judul).join(" + "))}</b> (${esc(utama[0].sebab || "")}). Jawaban berisi titik-titik untuk dilengkapi menurut keterangan saksi; semua pertanyaan dapat diubah sebelum disimpan.</p>`;
+    return `Disarankan: ${utama.map((x) => x.judul).join(" + ")}${utama[0].sebab ? ` (${utama[0].sebab})` : ""}`;
   }
   function renderTj() {
     const tombol = cari("#bd-tjtombol", wadah.isian);
@@ -2177,7 +2187,7 @@
     const alatAtas = (judul, kunciDaftar) =>
       `<div class="bd-tjalat"><b>${esc(judul)}</b><span class="bd-chip">${esc(sidangTeks)}</span>` +
       (tjPasangan(S.tjBuka) ? `<span class="bd-seg" role="tablist" aria-label="Cara menampilkan saksi"><button type="button" role="tab" data-tjmode="sisi" aria-selected="${S.tjSisi}">Berdampingan</button><button type="button" role="tab" data-tjmode="satu" aria-selected="${!S.tjSisi}">Satu per satu</button></span>` : "") +
-      `<label class="bd-lbl" for="bd-muattpl">Set pertanyaan</label><select id="bd-muattpl">${pilihanSetSaksi(t)}</select>` +
+      `<label class="bd-lbl" for="bd-muattpl">Set pertanyaan</label><select id="bd-muattpl" title="${esc(alasanSetSaksi())}">${pilihanSetSaksi(t)}</select>` +
       `<button type="button" class="bd-btn kecil" data-bd2="muattpl" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Muat</button><button type="button" class="bd-btn kecil" data-bd2="tambahtj" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Tambah baris</button>` +
       `<button type="button" class="bd-btn kecil utama" data-bd2="simpantj" data-kunci="${esc(kunciDaftar.join("|"))}" ${bolehTulis() && tjSiap(kunciDaftar) ? "" : "disabled"}>Simpan ke ABT</button><button type="button" class="bd-btn kecil" data-bd2="tutuptj">Selesai</button></div>` +
       ketSetSaksi();

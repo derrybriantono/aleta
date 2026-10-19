@@ -38,6 +38,7 @@ import { apiPath } from "@/lib/base-path";
 import type { HasilTtd, ringkasTtd } from "@/lib/tautan-ttd-akun";
 
 import { AletaEcourtCap } from "./aleta-ecourt-cap";
+import { AletaEcourtTte } from "./aleta-ecourt-tte";
 
 /** Pengguna portal yang dapat ditautkan ke sebuah tanda tangan. */
 type PenggunaTaut = {
@@ -745,6 +746,8 @@ export function AletaEcourtTandaTangan() {
       </CardContent>
       </Card>
       <AletaEcourtCap />
+      {/* 19 Okt 2026: TTE BSrE per pejabat - menggantikan tombol Passphrase TTE di panel ekstensi. */}
+      <AletaEcourtTte />
     </div>
   );
 }

@@ -623,7 +623,14 @@ describe("F. perlu diisi", () => {
     expect(sel.value).toMatch(/^aleta:cerai-/);
     expect(sel.options[0].textContent).toMatch(/disarankan$/);
     expect(Array.from(sel.querySelectorAll('optgroup[label="Set yang tersimpan di ABT"] option')).map((o) => (o as HTMLOptionElement).value)).toEqual(["A1a"]);
-    expect(q(h, ".bd-setsaksi")!.textContent).toMatch(/Disarankan untuk perkara ini: Cerai - /);
+    // 19 Okt 2026: tanpa paragraf penjelasan di bagian tanya jawab saksi; alasan saran hanya `title`.
+    expect(q(h, ".bd-setsaksi")).toBeNull();
+    const bagianTj = q(h, "#bd-tjwadah")!.textContent || "";
+    expect(bagianTj).not.toContain("Disarankan untuk perkara ini");
+    expect(bagianTj).not.toContain("paling sering di PA Donggala");
+    expect(bagianTj).not.toContain("Jawaban berisi titik-titik untuk dilengkapi");
+    expect(sel.options[0].selected).toBe(true);
+    expect(sel.getAttribute("title") || "").toMatch(/^Disarankan: Cerai - /);
     // Muat: kedua saksi berisi set ALETA, belum tersimpan, tanpa load_template ke ABT.
     const tersimpan = JSON.stringify(h.tj["5058"]);
     sel.value = "aleta:cerai-F";
