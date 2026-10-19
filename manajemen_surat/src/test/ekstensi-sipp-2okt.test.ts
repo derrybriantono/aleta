@@ -22,8 +22,8 @@ import { afterEach, describe, expect, it } from "vitest";
  *             yang ditahan tidak menunggu; tidak ada jalur tulis SIPP baru
  *   butir 15  Perkara berikutnya menurut peran; Direktori Putusan gagal dst.
  *             hanya Super Admin & Admin
- *   butir 17  Upload edoc penetapan: otomatis (peta + unggah rute E) + manual,
- *             sumber TTE & cap, passphrase tidak disimpan, 404 jujur
+ *   butir 17  (19 Okt) Edoc penetapan manual per jenis, tanpa passphrase, 404 jujur;
+ *             unggah otomatis per baris dijaga ekstensi-penetapan-mulus-2
  *   butir 19  bawaan buka/tutup: satu bagian utama per tab, kartu tab tertutup,
  *             pilihan tersimpan menang
  *   butir 2   relaas massal daftar SIPP tetap dipasang lewat aletaJurusitaPasangMassal
@@ -46,7 +46,6 @@ const ADA_BARIS_BLANGKO_R = /function aletaMassalBarisBlangko\s*\(/.test(BASMASS
 
 const ASAL = "http://192.168.10.10";
 const NOMOR = "450/Pdt.G/2026/PA.Dgl";
-const SANDI = "rahasia-uji-123";
 
 const polos = <T>(x: T): T => (x === undefined ? x : JSON.parse(JSON.stringify(x)));
 const tunggu = (ms = 0) => new Promise((r) => setTimeout(r, ms));
@@ -270,10 +269,6 @@ function pilihBerkas(w: any, input: HTMLInputElement, berkas: File[]) {
   Object.defineProperty(input, "files", { configurable: true, value: berkas });
   input.dispatchEvent(new w.Event("change", { bubbles: true }));
 }
-function ketik(w: any, input: HTMLInputElement, nilai: string) {
-  input.value = nilai;
-  input.dispatchEvent(new w.Event("input", { bubbles: true }));
-}
 /** Menyetujui konfirmasi a30Tanya di dalam panel (centang lalu tombol ya). */
 async function setujui(w: any, wadah: ParentNode, ya = true) {
   const kartu = await sampai(() => wadah.querySelector(".aleta-a30-tanya"), "konfirmasi tampil");
@@ -309,7 +304,7 @@ describe("butir 7: tag peran di kepala lipatan (UI Baru)", () => {
     const pn = await siapUi(h);
     await sampai(() => tagDi(bagianDi(pn, "penunjukan")), "tag penunjukan");
     expect(tagDi(bagianDi(pn, "penunjukan"))).toBe("Ketua");
-    expect(tagDi(bagianDi(pn, "s2EdocPenetapan"))).toBe("Ketua");
+    expect(tagDi(bagianDi(pn, "s2EdocPenetapanManual"))).toBe("Ketua");
     expect(tagDi(bagianDi(pn, "isiPutusan"))).toBe("Hakim");
     expect(tagDi(bagianDi(pn, "dataUmum"))).toBe("PTSP");
     // Tag di KEPALA (tombol lipat), di kiri judul - bukan di isi.
@@ -398,7 +393,7 @@ describe("butir 19: bawaan buka/tutup - satu bagian utama per tab", () => {
     }
     expect(pn.querySelector('.aleta-kelompok[data-kunci="kerjakan"]').getAttribute("data-s2-utama")).toBe("penunjukan");
     expect(terbukaBagian(bagianDi(pn, "penunjukan"))).toBe(true);
-    expect(terbukaBagian(bagianDi(pn, "s2EdocPenetapan"))).toBe(false);
+    expect(terbukaBagian(bagianDi(pn, "s2EdocPenetapanManual"))).toBe(false);
     // Perbaikan 5 Okt (butir 11): Data Umum pindah ke tab PTSP dan menjadi
     // bagian utamanya - di Penetapan tinggal tautan, bukan bagian.
     expect(bagianDi(pn, "dataUmum").closest(".aleta-kelompok").dataset.kunci).toBe("ptspKel");
@@ -496,101 +491,78 @@ describe("butir 15: Perkara berikutnya menurut peran", () => {
 });
 
 // ============================================================================
-describe("butir 17: Upload edoc penetapan (PMH/PPP/PJS/PHS)", () => {
+// 19 Okt 2026 (panel penetapan 2, butir 7-8 dan 10): bagian "Upload edoc
+// penetapan" DIHAPUS. Unggah otomatis dari ABT pindah ke tombol "e-Doc" di tiap
+// baris kartu Penetapan (dijaga ekstensi-penetapan-mulus-2); yang tersisa di
+// sini bagian BARU "Edoc penetapan (PMH/PPP/PJS/PHS) manual". Passphrase TTE
+// dihapus dari panel dan tidak dikirim. Uji lama atas centang + passphrase
+// diganti uji atas bagian manual tanpa passphrase.
+describe("butir 17 (19 Okt): Edoc penetapan (PMH/PPP/PJS/PHS) manual", () => {
   const PETA = {
     jenis: [
-      { jenis: "PMH", tersedia: true, nama: "PMH form PTSP", penandatangan: "Ketua PA" },
-      { jenis: "PPP", tersedia: true },
-      { jenis: "PJS", tersedia: false, sebab: "blangko PJS tidak ada di ABT" },
-      { jenis: "PHS", tersedia: true, sudahDiunggah: true },
+      { jenis: "PMH", tersedia: true },
+      { jenis: "PHS", tersedia: true, sudahDiunggah: true, terakhirDiunggah: "2026-10-05 09:12:00" },
     ],
-    tte: { nama: "Munifa, S.H.", sumber: "akun ALETA" },
-    cap: { ada: true, nama: "Cap PA Donggala", sumber: "berkas tanda tangan" },
   };
   const jawabEdoc = (unggah?: (badan: unknown) => Jawab) => (url: string, cara: string, badan: unknown): Jawab => {
     if (url.includes("/penetapan-edoc/peta?")) return { isi: { ok: true, data: PETA } };
     if (url.includes("/penetapan-edoc/unggah") && cara === "POST") {
-      return unggah ? unggah(badan) : { isi: { ok: true, data: { ok: true, berkas: [{ jenis: "PMH", ok: true }, { jenis: "PPP", ok: true }] } } };
+      return unggah ? unggah(badan) : { isi: { ok: true, data: { ok: true, berkas: [{ jenis: "PMH", ok: true }] } } };
     }
     return null;
   };
   const bukaBagian = async (h: Halaman) => {
     const pn = await siapUi(h);
-    const kotak = bagianDi(pn, "s2EdocPenetapan");
+    const kotak = bagianDi(pn, "s2EdocPenetapanManual");
     expect(kotak).not.toBeNull();
     (kotak.querySelector(".aleta-bagian-judul") as HTMLButtonElement).click();
     return { pn, kotak };
   };
 
-  it("di tab Penetapan; peta dari ABT: tersedia dapat dicentang, yang tidak ada mati beserta sebabnya; sumber TTE & cap disebut", async () => {
+  it("di tab Penetapan; bagian lama 'Upload edoc penetapan' tidak ada; empat slot berkas; tanpa passphrase; keterangan tanda tangan bertaut", async () => {
     const h = buka({ simpanan: UI, jawab: jawabEdoc() });
-    const { kotak } = await bukaBagian(h);
+    const { pn, kotak } = await bukaBagian(h);
     expect(kotak.closest(".aleta-kelompok").dataset.kunci).toBe("kerjakan");
-    await sampai(() => kotak.querySelector('[data-s2-jenis="PJS"]'), "peta tergambar");
-    const c = (j: string) => kotak.querySelector(`[data-s2-jenis="${j}"] input`) as HTMLInputElement;
-    expect(c("PMH").disabled).toBe(false);
-    expect(c("PJS").disabled).toBe(true);
-    expect(kotak.querySelector('[data-s2-jenis="PJS"]').textContent).toContain("blangko PJS tidak ada di ABT");
-    // Butir 7 (1.189.x): "sudah terupload" + menimpa yang lama.
-    expect(kotak.querySelector('[data-s2-jenis="PHS"]').textContent).toContain("sudah terupload - mengunggah lagi menimpa yang lama");
-    // Nama resmi di depan, kode SIPP hanya di kurung (penjaga ekstensi-pita-identitas).
-    expect(kotak.querySelector('[data-s2-jenis="PMH"] .aleta-massal-nomor').textContent).toBe("Penetapan Majelis Hakim");
-    expect(kotak.querySelector('[data-s2-jenis="PJS"]').textContent).toContain("Penunjukan Juru Sita(PJS)");
-    const sumber = kotak.querySelector('[data-s2-edoc="sumber"]').textContent;
-    expect(sumber).toContain("TTE: Munifa, S.H. (sumber: akun ALETA)");
-    expect(sumber).toContain("Cap: Cap PA Donggala - ditempel otomatis di atas tanda tangan");
-    // Upload manual: lipatan TERPISAH, tertutup sebagai bawaan.
-    const manual = kotak.querySelector('[data-s2-fitur="edoc-penetapan-manual"]');
-    expect(manual).not.toBeNull();
-    expect(manual.getAttribute("data-terbuka") === "tidak" || manual.open === false).toBe(true);
+    expect(bagianDi(pn, "s2EdocPenetapan")).toBeNull();
+    expect(Array.from(kotak.querySelectorAll("[data-s2-slot]")).map((x: any) => x.getAttribute("data-s2-slot"))).toEqual(["PMH", "PPP", "PJS", "PHS"]);
+    expect(kotak.querySelector('[data-s2-slot="PJS"]').textContent).toContain("Penunjukan Juru Sita (PJS)");
+    expect(kotak.querySelector('input[type="password"]')).toBeNull();
+    expect(pn.textContent).not.toMatch(/passphrase/i);
+    expect(kotak.querySelector(".aleta-t7-ttd-ket").textContent).toContain("Tanda tangan memakai gambar tanda tangan pejabat yang disahkan");
+    expect(kotak.querySelector(".aleta-t7-ttd-ket a").getAttribute("href")).toContain("/aleta/admin/aleta-ecourt#ttd");
+    // Bukan lagi lipatan yang disembunyikan saklar dobel 16 Okt - bagian yang diminta 19 Okt.
+    expect(pn.querySelector('[data-s2-fitur="edoc-penetapan-manual"]')).toBeNull();
   });
 
-  it("otomatis: tombol hidup hanya dengan centang + passphrase; batal = tidak ada POST; ya = POST jenis terpilih, passphrase dikosongkan dan tidak disimpan", async () => {
-    const h = buka({ simpanan: UI, jawab: jawabEdoc() });
+  it("manual: berkas per jenis dikirim sebagai FormData (sumber manual) tanpa passphrase; batal = tidak ada POST", async () => {
+    const h = buka({ simpanan: UI, jawab: jawabEdoc(() => ({ isi: { ok: true, data: { ok: true, berkas: [{ jenis: "PMH", ok: true }] } } })) });
     const { kotak } = await bukaBagian(h);
-    await sampai(() => kotak.querySelector('[data-s2-jenis="PMH"]'), "peta");
-    const tombol = kotak.querySelector('[data-s2-edoc="otomatis"]') as HTMLButtonElement;
-    const sandi = kotak.querySelector(".aleta-s2-sandi-isian") as HTMLInputElement;
-    expect(sandi.type).toBe("password");
-    for (const j of ["PMH", "PPP"]) {
-      const c = kotak.querySelector(`[data-s2-jenis="${j}"] input`) as HTMLInputElement;
-      c.checked = true;
-      c.dispatchEvent(new h.w.Event("change"));
-    }
+    h.w.alatSetelJedaSkala(0);
+    const tombol = kotak.querySelector('[data-s2-edoc="manual"]') as HTMLButtonElement;
     expect(tombol.disabled).toBe(true);
-    ketik(h.w, sandi, SANDI);
+    pilihBerkas(h.w, kotak.querySelector('[data-s2-slot="PMH"] input[type=file]'), [new h.w.File(["%PDF-1.7 pmh"], "PMH 450.pdf", { type: "application/pdf" })]);
     expect(tombol.disabled).toBe(false);
-    // Batal.
     tombol.click();
     await setujui(h.w, kotak, false);
     await tunggu(50);
     expect(h.minta.some((m) => m.url.includes("/penetapan-edoc/unggah"))).toBe(false);
     expect(kotak.textContent).toContain("Dibatalkan - tidak ada yang dikirim.");
-    // Ya.
-    ketik(h.w, sandi, SANDI);
-    h.w.alatSetelJedaSkala(0);
     tombol.click();
     await setujui(h.w, kotak, true);
-    const kirim = await sampai(() => h.minta.find((m) => m.url.includes("/penetapan-edoc/unggah") && m.cara === "POST"), "POST unggah");
-    const badan = JSON.parse(String(kirim.badan));
-    // olehUsername (akun SIPP yang login, permintaan agen E): harness tanpa pengguna SIPP -> "".
-    expect(badan).toEqual({ nomorPerkara: NOMOR, jenis: ["PMH", "PPP"], sumber: "abt", passphrase: SANDI, konfirmasi: true, olehUsername: "" });
-    expect(sandi.value).toBe("");
-    await sampai(() => /Penetapan Majelis Hakim: terunggah · Penunjukan Panitera Pengganti: terunggah/.test(kotak.textContent || ""), "hasil disebut");
-    // Tidak tersimpan di mana pun.
-    expect(JSON.stringify(h.simpanan)).not.toContain(SANDI);
-    expect(kotak.outerHTML).not.toContain(SANDI);
+    const kirim = await sampai(() => h.minta.find((m) => m.url.includes("/penetapan-edoc/unggah") && m.cara === "POST"), "POST manual");
+    const fd = kirim.badan as FormData;
+    expect(fd.get("sumber")).toBe("manual");
+    expect(fd.getAll("jenis")).toEqual(["PMH"]);
+    expect((fd.get("berkas_PMH") as File).name).toBe("PMH 450.pdf");
+    expect(fd.has("passphrase")).toBe(false);
+    await sampai(() => /Penetapan Majelis Hakim: terunggah/.test(kotak.textContent || ""), "hasil manual");
   });
 
-  it("butir 7: PHS sudah terupload - dialog berkata 'sudah terupload' dan 'yakin menimpa yang lama?'; batal = tidak ada POST", async () => {
+  it("butir 7: PHS sudah terupload - dialog berkata 'sudah terupload' dan 'yakin menimpa yang lama?'", async () => {
     const h = buka({ simpanan: UI, jawab: jawabEdoc() });
     const { kotak } = await bukaBagian(h);
-    await sampai(() => kotak.querySelector('[data-s2-jenis="PHS"]'), "peta");
-    const c = kotak.querySelector('[data-s2-jenis="PHS"] input') as HTMLInputElement;
-    c.checked = true;
-    c.dispatchEvent(new h.w.Event("change"));
-    ketik(h.w, kotak.querySelector(".aleta-s2-sandi-isian") as HTMLInputElement, SANDI);
-    (kotak.querySelector('[data-s2-edoc="otomatis"]') as HTMLButtonElement).click();
+    pilihBerkas(h.w, kotak.querySelector('[data-s2-slot="PHS"] input[type=file]'), [new h.w.File(["x"], "PHS.pdf")]);
+    (kotak.querySelector('[data-s2-edoc="manual"]') as HTMLButtonElement).click();
     const kartu = await sampai(() => kotak.querySelector(".aleta-a30-tanya"), "konfirmasi tampil");
     expect(kartu.textContent).toContain("Penetapan Hari Sidang (PHS) sudah terupload di e-Doc SIPP");
     expect(kartu.textContent).toContain("yakin menimpa yang lama?");
@@ -600,72 +572,26 @@ describe("butir 17: Upload edoc penetapan (PMH/PPP/PJS/PHS)", () => {
     expect(h.minta.some((m) => m.url.includes("/penetapan-edoc/unggah"))).toBe(false);
   });
 
-  it("mode coba (tanpa izin tulis nyata): tidak ada POST sama sekali, passphrase tidak berangkat", async () => {
-    const h = buka({ simpanan: { ujiTampilan: "ui" }, jawab: jawabEdoc() });
-    const { kotak } = await bukaBagian(h);
-    await sampai(() => kotak.querySelector('[data-s2-jenis="PMH"]'), "peta");
-    const c = kotak.querySelector('[data-s2-jenis="PMH"] input') as HTMLInputElement;
-    c.checked = true;
-    c.dispatchEvent(new h.w.Event("change"));
-    ketik(h.w, kotak.querySelector(".aleta-s2-sandi-isian") as HTMLInputElement, SANDI);
-    (kotak.querySelector('[data-s2-edoc="otomatis"]') as HTMLButtonElement).click();
-    await setujui(h.w, kotak, true);
-    await sampai(() => /ditahan mode coba - tidak ada yang dikirim/.test(kotak.textContent || ""), "ditahan disebut");
-    expect(h.minta.some((m) => m.url.includes("/penetapan-edoc/unggah"))).toBe(false);
-    expect(h.minta.some((m) => String(m.badan || "").includes(SANDI))).toBe(false);
+  it("mode coba (tanpa izin tulis nyata) dan mode latihan: tidak ada POST sama sekali", async () => {
+    for (const simpanan of [{ ujiTampilan: "ui" }, { ...UI, modeLatihan: true }]) {
+      const h = buka({ simpanan, jawab: jawabEdoc() });
+      const { kotak } = await bukaBagian(h);
+      pilihBerkas(h.w, kotak.querySelector('[data-s2-slot="PMH"] input[type=file]'), [new h.w.File(["x"], "PMH.pdf")]);
+      (kotak.querySelector('[data-s2-edoc="manual"]') as HTMLButtonElement).click();
+      await setujui(h.w, kotak, true);
+      await sampai(() => /ditahan mode (coba|latihan) - tidak ada yang dikirim/.test(kotak.textContent || ""), "ditahan disebut");
+      expect(h.minta.some((m) => m.url.includes("/penetapan-edoc/unggah"))).toBe(false);
+    }
   });
 
-  it("mode latihan: passphrase tidak berangkat dan TIDAK masuk catatan latihan", async () => {
-    const h = buka({ simpanan: { ...UI, modeLatihan: true }, jawab: jawabEdoc() });
-    const tertahan: string[] = [];
-    h.d.addEventListener("aleta-latihan-tertahan", (e: any) => tertahan.push(JSON.stringify(e.detail || {})));
-    const { kotak } = await bukaBagian(h);
-    await sampai(() => kotak.querySelector('[data-s2-jenis="PMH"]'), "peta");
-    const c = kotak.querySelector('[data-s2-jenis="PMH"] input') as HTMLInputElement;
-    c.checked = true;
-    c.dispatchEvent(new h.w.Event("change"));
-    ketik(h.w, kotak.querySelector(".aleta-s2-sandi-isian") as HTMLInputElement, SANDI);
-    (kotak.querySelector('[data-s2-edoc="otomatis"]') as HTMLButtonElement).click();
-    await setujui(h.w, kotak, true);
-    await sampai(() => /ditahan mode latihan - tidak ada yang dikirim/.test(kotak.textContent || ""), "ditahan disebut");
-    await tunggu(30);
-    expect(h.minta.some((m) => m.url.includes("/penetapan-edoc/unggah"))).toBe(false);
-    expect(tertahan.join(" ")).not.toContain(SANDI);
-  });
-
-  it("manual: berkas per jenis dikirim sebagai FormData (sumber manual) ke rute yang sama", async () => {
-    const h = buka({ simpanan: UI, jawab: jawabEdoc(() => ({ isi: { ok: true, data: { ok: true, berkas: [{ jenis: "PHS", ok: true }] } } })) });
-    const { kotak } = await bukaBagian(h);
-    h.w.alatSetelJedaSkala(0);
-    const manual = kotak.querySelector('[data-s2-fitur="edoc-penetapan-manual"]');
-    const slot = manual.querySelector('[data-s2-slot="PHS"] input[type=file]') as HTMLInputElement;
-    pilihBerkas(h.w, slot, [new h.w.File(["%PDF-1.7 phs"], "PHS 450.pdf", { type: "application/pdf" })]);
-    const tombol = manual.querySelector('[data-s2-edoc="manual"]') as HTMLButtonElement;
-    expect(tombol.disabled).toBe(true);
-    ketik(h.w, manual.querySelector(".aleta-s2-sandi-isian") as HTMLInputElement, SANDI);
-    expect(tombol.disabled).toBe(false);
-    tombol.click();
-    await setujui(h.w, manual, true);
-    const kirim = await sampai(() => h.minta.find((m) => m.url.includes("/penetapan-edoc/unggah") && m.cara === "POST"), "POST manual");
-    const fd = kirim.badan as FormData;
-    expect(fd.get("sumber")).toBe("manual");
-    expect(fd.getAll("jenis")).toEqual(["PHS"]);
-    expect((fd.get("berkas_PHS") as File).name).toBe("PHS 450.pdf");
-    expect((manual.querySelector(".aleta-s2-sandi-isian") as HTMLInputElement).value).toBe("");
-    await sampai(() => /Penetapan Hari Sidang: terunggah/.test(manual.textContent || ""), "hasil manual");
-  });
-
-  it("rute belum ada (404): peta dan unggah berkata 'belum tersedia di server'", async () => {
+  it("rute belum ada (404): unggah berkata 'belum tersedia di server'", async () => {
     const h = buka({ simpanan: UI });
     const { kotak } = await bukaBagian(h);
-    await sampai(() => /Upload edoc penetapan otomatis belum tersedia di server/.test(kotak.textContent || ""), "404 peta");
     h.w.alatSetelJedaSkala(0);
-    const manual = kotak.querySelector('[data-s2-fitur="edoc-penetapan-manual"]');
-    pilihBerkas(h.w, manual.querySelector('[data-s2-slot="PMH"] input[type=file]'), [new h.w.File(["x"], "PMH.pdf")]);
-    ketik(h.w, manual.querySelector(".aleta-s2-sandi-isian") as HTMLInputElement, SANDI);
-    (manual.querySelector('[data-s2-edoc="manual"]') as HTMLButtonElement).click();
-    await setujui(h.w, manual, true);
-    await sampai(() => /belum tersedia di server - tidak ada yang dikirim/.test(manual.textContent || ""), "404 unggah");
+    pilihBerkas(h.w, kotak.querySelector('[data-s2-slot="PMH"] input[type=file]'), [new h.w.File(["x"], "PMH.pdf")]);
+    (kotak.querySelector('[data-s2-edoc="manual"]') as HTMLButtonElement).click();
+    await setujui(h.w, kotak, true);
+    await sampai(() => /belum tersedia di server - tidak ada yang dikirim/.test(kotak.textContent || ""), "404 unggah");
   });
 });
 

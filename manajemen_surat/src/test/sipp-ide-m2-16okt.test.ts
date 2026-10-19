@@ -564,7 +564,10 @@ describe("D. dobel penuh: disembunyikan di UI Baru, dapat dimunculkan lagi, Tamp
     expect(d.filter((x) => x.pilih === "sembunyi").every((x) => x.selektor)).toBe(true);
     // Rute/fungsi lama tetap ada di konten.js (disembunyikan, bukan dihapus).
     const konten = baca("konten.js");
-    expect(konten).toContain('manual.akar.setAttribute("data-s2-fitur", "edoc-penetapan-manual")');
+    // 19 Okt 2026: lipatan manual pindah ke bagian tersendiri "Edoc penetapan
+    // (PMH/PPP/PJS/PHS) manual" atas permintaan pengguna - fungsinya tetap ada,
+    // dengan penanda baru supaya saklar dobel 16 Okt tidak menyembunyikannya.
+    expect(konten).toContain('kotak.setAttribute("data-s2-fitur", "edoc-penetapan-manual-bagian")');
     expect(konten).toContain('a.setAttribute("data-t7-fitur", "sipp-16")');
   });
 });
