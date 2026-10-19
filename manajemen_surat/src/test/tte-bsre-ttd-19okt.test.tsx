@@ -92,9 +92,11 @@ function pasangFetch(get: () => Response, post?: (badan: Record<string, unknown>
 const GET_ADMIN = (statusBsre = "belum") => () =>
   jawab({
     ok: true,
-    admin: true,
-    statusBsre,
-    baris: [7, 33, 12].map((id) => bentukBarisTte(BARIS.find((b) => b.id === id)!, { admin: true, penggunaId: "usr-super" })),
+    data: {
+      admin: true,
+      statusBsre,
+      baris: [7, 33, 12].map((id) => bentukBarisTte(BARIS.find((b) => b.id === id)!, { admin: true, penggunaId: "usr-super" })),
+    },
   });
 
 describe("layar - admin", () => {
@@ -178,9 +180,11 @@ describe("layar - pejabat (mode saya)", () => {
   const GET_SAYA = () =>
     jawab({
       ok: true,
-      admin: false,
-      statusBsre: "belum",
-      baris: [bentukBarisTte(BARIS[1], { admin: false, penggunaId: "usr-munifa" })],
+      data: {
+        admin: false,
+        statusBsre: "belum",
+        baris: [bentukBarisTte(BARIS[1], { admin: false, penggunaId: "usr-munifa" })],
+      },
     });
 
   it("melihat pengaturan sendiri, tanpa bisa mengubah", async () => {
@@ -195,7 +199,7 @@ describe("layar - pejabat (mode saya)", () => {
   });
 
   it("pejabat tanpa tanda tangan tertaut tidak melihat kartu apa pun", async () => {
-    pasangFetch(() => jawab({ ok: true, admin: false, statusBsre: "belum", baris: [] }));
+    pasangFetch(() => jawab({ ok: true, data: { admin: false, statusBsre: "belum", baris: [] } }));
     const { container } = render(<AletaEcourtTte mode="saya" />);
     await waitFor(() => expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(1));
     await new Promise((r) => setTimeout(r, 20));

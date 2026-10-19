@@ -220,7 +220,7 @@
     st.buka = true;
     if (!st.nomor) st.nomor = nomorDariBorang(st.form);
     if (!st.nomor) {
-      st.galat = "Nomor perkara tidak terbaca di borang ini.";
+      st.galat = "Nomor perkara tidak terbaca di formulir ini.";
       gambar(st);
       return;
     }
@@ -422,11 +422,11 @@
     }
     st.menerapkan = false;
     const kalimat = [];
-    kalimat.push(`${terisi} kolom terisi. Periksa borang, lalu tekan Simpan SIPP sendiri.`);
+    kalimat.push(`${terisi} kolom terisi. Periksa formulir, lalu tekan Simpan SIPP sendiri.`);
     if (terkunci.length) {
       const ism = st.form.querySelector("#ism");
       kalimat.push(
-        `${terkunci.join(", ")} dikunci SIPP${ism && String(ism.value) === "1" ? " (rekomendasi Smart Majelis)" : ""} - tekan Tinjau di borang bila hendak mengganti, isi Keterangan, lalu Terapkan lagi.`
+        `${terkunci.join(", ")} dikunci SIPP${ism && String(ism.value) === "1" ? " (rekomendasi Smart Majelis)" : ""} - tekan Tinjau di formulir bila hendak mengganti, isi Keterangan, lalu Terapkan lagi.`
       );
     }
     if (gagal.length) kalimat.push(`Tidak terisi: ${gagal.join(", ")}.`);
@@ -556,8 +556,8 @@
     if (pmh.perluNilai) isi.appendChild(el("div", "aleta-pb-awas", "Nilai sengketa belum diisi di SIPP - isi dulu di Data Umum."));
     // PP dan JS terpaut pada majelis: ditampilkan di sini, diisikan di borang
     // masing-masing (pilihan diingat untuk perkara ini).
-    gambarPp(st, isi, " (borang Penunjukan PP)");
-    gambarJs(st, isi, " (borang Penunjukan JS)");
+    gambarPp(st, isi, " (formulir Penunjukan PP)");
+    gambarJs(st, isi, " (formulir Penunjukan JS)");
   }
 
   function gambarPp(st, isi, akhiran = "") {
@@ -788,7 +788,7 @@
     if (st.tolak) isi.appendChild(el("div", "aleta-pb-awas", st.tolak));
 
     const kaki = el("div", "aleta-pb-kaki");
-    const tTerap = tombol(st.menerapkan ? "Mengisi…" : "Terapkan ke borang", "aleta-pb-utama");
+    const tTerap = tombol(st.menerapkan ? "Mengisi…" : "Terapkan ke formulir", "aleta-pb-utama");
     tTerap.setAttribute("data-pb-terapkan", "1");
     tTerap.disabled = Boolean(st.menerapkan);
     tTerap.addEventListener("click", () => void terapkan(st));

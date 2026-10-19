@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { getGatewayTandaTangan, getGatewayTteStatus, kirimTandaTanganTte } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { appendAuditLog } from "@/server/shared/audit";
+import { ok } from "@/server/shared/http";
 import { nextPrefixedId } from "@/server/shared/ids";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
     const semua = r?.data?.baris ?? r?.baris ?? [];
     const baris = petaTteSaya(semua, { admin, penggunaId: String(aktor.id) }).map((b) => bentukBarisTte(b, { admin, penggunaId: String(aktor.id) }));
 
-    return Response.json({ ok: true, admin, statusBsre, baris });
+    return ok({ admin, statusBsre, baris });
   } catch (error) {
     return handleAdminRouteError(error, request, { db, actorUserId, action: "TTE_PEJABAT_BACA_FAILED", feature: "aleta_ecourt" });
   }
@@ -93,7 +94,13 @@ export async function POST(request: NextRequest) {
       });
     }
     const status = respons?.ok === false ? (Number((respons as { status?: number }).status ?? 0) >= 400 && Number((respons as { status?: number }).status ?? 0) < 500 ? 400 : 502) : 200;
-    return Response.json(respons, { status });
+    // Berhasil lewat ok() (bungkus {ok, data}); penolakan membawa kodenya di error supaya layar
+    // membacanya tanpa menyentuh ruas isi (penjaga jawaban-portal-dibuka).
+    if (respons?.ok === false) {
+      const r = respons as { alasan?: string; error?: string };
+      return Response.json({ ok: false, error: String(r.alasan || r.error || "Pengaturan TTE tidak tersimpan.") }, { status });
+    }
+    return ok(respons);
   } catch (error) {
     return handleAdminRouteError(error, request, { db, actorUserId, action: "TTE_PEJABAT_UBAH_FAILED", feature: "aleta_ecourt" });
   }

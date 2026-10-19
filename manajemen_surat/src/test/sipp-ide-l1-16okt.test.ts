@@ -608,9 +608,11 @@ describe("F. Tampilan Lama tetap persis, tanpa jaringan, manifest & penyusun", (
     const portal = m.content_scripts.find((x) => (x.js || []).includes("aleta.js"))!.js!;
     // Gelombang 2 (sipp-ide-m1.js, ...) dimuat SESUDAH L1 - ia memakai penghitung kolom L1.
     const sesudahL1 = sipp.slice(sipp.indexOf("sipp-ide-l1.js") + 1);
-    expect(sesudahL1.every((x) => /^sipp-ide-[a-z0-9]+\.js$/.test(x))).toBe(true);
+    // 19 Okt: penetapan-borang.js (isi otomatis formulir penetapan SIPP) dimuat paling akhir; tidak memakai penghitung kolom L1.
+    expect(sesudahL1.filter((x) => x !== "penetapan-borang.js").every((x) => /^sipp-ide-[a-z0-9]+\.js$/.test(x))).toBe(true);
     expect(sipp.indexOf("sipp-ide-l1.js")).toBeGreaterThan(sipp.indexOf("konten.js"));
-    expect(abt[abt.length - 1]).toBe("sipp-ide-l1.js");
+    // 19 Okt: abt-gulir.js (gaya gulir menu kiri ABT) boleh sesudahnya - tidak memakai penghitung kolom L1.
+    expect(abt.filter((x) => x !== "abt-gulir.js").at(-1)).toBe("sipp-ide-l1.js");
     expect(abt.indexOf("sipp-ide-l1.js")).toBeGreaterThan(abt.indexOf("blangko-derry.js"));
     expect(portal).not.toContain("sipp-ide-l1.js");
     const susun = readFileSync(path.resolve(process.cwd(), "scripts/susun-ekstensi.mjs"), "utf8");

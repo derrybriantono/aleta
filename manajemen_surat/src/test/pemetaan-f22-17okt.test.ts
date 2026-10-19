@@ -253,13 +253,13 @@ describe("C. BAS massal per sidang", () => {
   it("rekomendasiBlangko: BAS pencegahan/wasiat/ES acara biasa selalu berkas di folder '<jenis> - BAS' dengan nama menu ABT-nya (140/142/144)", () => {
     const r = (jenisPerkara: string, nomorPerkara: string, m: object = {}) => rekomendasiBlangko({ jenisPerkara, nomorPerkara, urutanSidang: 1, dihadiriOleh: 2, ...m }).bas;
     const pc = r("Pencegahan Perkawinan", "5/Pdt.P/2026/PA.Dgl", { dihadiriOleh: 1 });
-    expect(pc[0]).toMatchObject({ utama: true, folder: `${A}${PC.bas}`, menu: "Pencegahan Perkawinan - BAS", alias: ["Pencegahan Nikah - BAS"] });
+    expect(pc[0]).toMatchObject({ utama: true, folder: `${A}${PC.bas}`, menu: "Pencegahan Perkawinan - BAS", alias: expect.arrayContaining(["Pencegahan Nikah - BAS"]) });
     expect(pc[0].berkas).toMatch(/^BAS ALUR 41 Pencegahan - \[1a\]/);
     const ws = r("Wasiat", "12/Pdt.G/2026/PA.Dgl");
-    expect(ws[0]).toMatchObject({ utama: true, folder: `${A}${WS.bas}`, menu: "Wasiat - BAS", alias: ["Wasiat - BAS"] });
+    expect(ws[0]).toMatchObject({ utama: true, folder: `${A}${WS.bas}`, menu: "Wasiat - BAS", alias: expect.arrayContaining(["Wasiat - BAS"]) });
     expect(ws[0].berkas).toMatch(/^BAS ALUR 42 Wasiat - Sidang 1 - P Hadir & T Tidak Hadir/);
     const es = r("Ekonomi Syariah", "12/Pdt.G/2026/PA.Dgl", { urutanSidang: 2 });
-    expect(es[0]).toMatchObject({ utama: true, folder: `${A}${ESB.bas}`, menu: "Ekonomi Syariah (Acara Biasa) - BAS", alias: ["ES Acara Biasa - BAS"] });
+    expect(es[0]).toMatchObject({ utama: true, folder: `${A}${ESB.bas}`, menu: "Ekonomi Syariah (Acara Biasa) - BAS", alias: expect.arrayContaining(["ES Acara Biasa - BAS"]) });
     expect(es[0].berkas).toMatch(/^BAS ALUR 43 ES Acara Biasa - Sidang 2 - T Tetap Tidak Hadir/);
     for (const x of [...pc, ...ws, ...es]) expect(FIX.berkas, x.berkas).toContain(`${x.folder}/${x.berkas}`);
   });

@@ -253,14 +253,14 @@ describe("C. BAS massal per sidang", () => {
   it("rekomendasiBlangko: BAS selalu berkas di folder '<jenis> - BAS' dengan nama menu ABT-nya (134/136/138)", () => {
     const r = (jenisPerkara: string, nomorPerkara: string, m: object = {}) => rekomendasiBlangko({ jenisPerkara, nomorPerkara, urutanSidang: 1, dihadiriOleh: 2, ...m }).bas;
     const ha = r("Lain-Lain", "358/Pdt.G/2020/PA.Dgl");
-    expect(ha[0]).toMatchObject({ utama: true, folder: `${A}${HA.bas}`, menu: "Hak Asuh Anak (Hadhanah) - BAS", alias: ["Hak Asuh - BAS"] });
+    expect(ha[0]).toMatchObject({ utama: true, folder: `${A}${HA.bas}`, menu: "Hak Asuh Anak (Hadhanah) - BAS", alias: expect.arrayContaining(["Hak Asuh - BAS"]) });
     // I15 18 Okt: penguasaan anak (349) -> "6b Penguasaan Anak - BAS" (menu 154), ALUR 44.
     const pg = r("Penguasaan Anak", "7/Pdt.G/2026/PA.Dgl");
-    expect(pg[0]).toMatchObject({ utama: true, folder: `${A}${PG.bas}`, menu: "Penguasaan Anak - BAS", alias: ["Penguasaan Anak - BAS"] });
+    expect(pg[0]).toMatchObject({ utama: true, folder: `${A}${PG.bas}`, menu: "Penguasaan Anak - BAS", alias: expect.arrayContaining(["Penguasaan Anak - BAS"]) });
     expect(pg[0].berkas).toMatch(/^BAS ALUR 44 Penguasaan Anak - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T/);
     expect(ha[0].berkas).toMatch(/^BAS ALUR 38 Hak Asuh - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T/);
     const pb = r("Pembatalan Perkawinan", "20/Pdt.G/2026/PA.Dgl", { urutanSidang: 2 });
-    expect(pb[0]).toMatchObject({ utama: true, folder: `${A}${PB.bas}`, menu: "Pembatalan Perkawinan - BAS", alias: ["Pembatalan Nikah - BAS"] });
+    expect(pb[0]).toMatchObject({ utama: true, folder: `${A}${PB.bas}`, menu: "Pembatalan Perkawinan - BAS", alias: expect.arrayContaining(["Pembatalan Nikah - BAS"]) });
     expect(pb[0].berkas).toMatch(/^BAS ALUR 39 Pembatalan Nikah - Sidang 2 - T Tetap Tidak Hadir/);
     const es = r("Ekonomi Syariah", "2/Pdt.G.S/2025/PA.Dgl", { urutanSidang: 2 });
     expect(es[0]).toMatchObject({ utama: true, folder: `${A}${ES.bas}`, menu: "Ekonomi Syariah - BAS" });

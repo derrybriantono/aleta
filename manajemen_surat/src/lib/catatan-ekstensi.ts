@@ -71,6 +71,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
       "Menu kiri ABT dapat digulir sampai menu terakhir saat ekstensi menyala, dan posisi gulirnya diingat saat pindah halaman.",
       "Jadwal Sidang: pencarian mengenali kata seperti konseptor, ghaib, verstek, belum BAS, nama saksi dan mediator; tombol Tampilan di kanan; ruang sidang menjadi satu pita ringkas; nama saksi dapat dilipat; tulisan memuat dihapus; PP dan JS di baris sendiri; tombol Blangko membuka Blangko ABT by Derry dengan perkara dan jenis blangko yang sesuai. Status Perkara mendapat tautan BAS tiap sidang, blangko putusan, dan blangko ikrar.",
       "Kepatutan panggilan surat tercatat dihitung dari tanggal diterima, bukan tanggal dikirim, dan panggilan yang tidak patut menyebut jalurnya: tidak patut (pos), tidak patut (jurusita), atau tidak patut (elektronik).",
+      "Dokumen e-Court berstatus \"Belum diverifikasi Majelis/Hakim\" tidak lagi terbaca sudah diverifikasi di Jadwal Sidang, dan daftar Kendali Berkas \"Putusan yang belum terbit di e-Court\" hanya memuat perkara yang sudah diputus di SIPP (126 perkara yang belum diputus sebelumnya keliru tertulis Menu Putusan E-Court Error).",
       "Halaman ALETA lebih ringan: pemeriksaan berkala ekstensi digabung dan berhenti saat tab tidak dilihat, hasil yang baru dimuat disimpan sebentar di server, muatan susulan ditunda, dan ALETA siap dibuka di port 8008 dengan ekstensi kembali sendiri ke alamat lama bila port itu belum hidup.",
     ],
   },

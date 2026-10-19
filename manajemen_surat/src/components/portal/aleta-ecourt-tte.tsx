@@ -63,7 +63,7 @@ export function AletaEcourtTte({ mode = "semua" }: { mode?: "semua" | "saya" }) 
         const sebab = typeof badan?.error === "string" ? badan.error : badan?.error?.message || "";
         throw new Error(sebab ? kalimatTte(sebab) : `ALETA menjawab ${respons.status}.`);
       }
-      const bungkus = (await respons.json()) as Partial<Jawaban>;
+      const bungkus = ((await respons.json())?.data ?? {}) as Partial<Jawaban>;
       setData({
         admin: bungkus.admin === true,
         statusBsre: bungkus.statusBsre === "tersambung" || bungkus.statusBsre === "belum" ? bungkus.statusBsre : "tidak-terbaca",
@@ -94,9 +94,9 @@ export function AletaEcourtTte({ mode = "semua" }: { mode?: "semua" | "saya" }) 
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: b.id, caraTtd: cara, nikBsre: nik.trim() }),
         });
-        const badan = (await respons.json().catch(() => null)) as { ok?: boolean; alasan?: string; error?: string } | null;
+        const badan = (await respons.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
         if (!respons.ok || badan?.ok === false) {
-          throw new Error(kalimatTte(String(badan?.alasan || badan?.error || `ALETA menjawab ${respons.status}.`)));
+          throw new Error(kalimatTte(String(badan?.error || `ALETA menjawab ${respons.status}.`)));
         }
         setPesan(`Pengaturan TTE ${b.namaPejabat} tersimpan.`);
         await muat();

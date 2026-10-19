@@ -277,7 +277,7 @@ describe("J. jendela pilih blangko per peran (jsdom)", () => {
     await siapPerkara(h);
     const j = await jendela(h);
     expect(j.tab).toEqual(["put", "bas", "rel"]);
-    expect(j.kel).toEqual({ put: ["CG - Putusan"], bas: ["CG - BAS"], rel: ["Relaas dan PBT"] });
+    expect(j.kel).toEqual({ put: ["Cerai Gugat - Putusan"], bas: ["Cerai Gugat - BAS"], rel: ["Relaas dan Pemberitahuan Putusan"] });
   });
 
   it("Super Admin 'Lihat sebagai' hakim: hanya Putusan; BAS tidak dapat dipilih (tanpa POST main/cari)", async () => {
@@ -286,7 +286,7 @@ describe("J. jendela pilih blangko per peran (jsdom)", () => {
     await lihatSebagai(h, "hakim|Hakim Satu");
     const j = await jendela(h);
     expect(j.tab).toEqual(["put"]);
-    expect(j.kel).toEqual({ put: ["CG - Putusan"] });
+    expect(j.kel).toEqual({ put: ["Cerai Gugat - Putusan"] });
     klik(h, '[data-bd2="tutupmodal"]');
     const sebelum = mainCari(h);
     await h.w.aletaBlangkoDerryIsian.muatKelompok("CG - BAS");
@@ -315,7 +315,7 @@ describe("J. jendela pilih blangko per peran (jsdom)", () => {
     expect((await jendela(h)).tab).toEqual(["put"]);
     const p = buka({ orang: "pp", hak: hakDari(FOLDER_SERVER), kelompok: ["CG - BAS"] });
     await siapPerkara(p);
-    expect(await jendela(p)).toEqual({ tab: ["bas"], kel: { bas: ["CG - BAS"] } });
+    expect(await jendela(p)).toEqual({ tab: ["bas"], kel: { bas: ["Cerai Gugat - BAS"] } });
     klik(p, '[data-bd2="tutupmodal"]');
     await p.w.aletaBlangkoDerryIsian.muatKelompok("CG - BAS");
     await p.w.aletaBlangkoDerryIsian.pilihBlangko(BAS, "CG - BAS");
@@ -329,7 +329,7 @@ describe("J. jendela pilih blangko per peran (jsdom)", () => {
     await siapPerkara(h);
     const j = await jendela(h);
     expect(j.tab).toEqual(["put", "bas"]);
-    expect(j.kel.bas).toEqual(["CG - BAS"]);
+    expect(j.kel.bas).toEqual(["Cerai Gugat - BAS"]);
   });
 
   it("Admin ABT (kepala 'Super Administrator') dengan akun ALETA hakim tetap admin: tiga jenis", async () => {
