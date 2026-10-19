@@ -1,5 +1,6 @@
 "use client";
 
+import { labelTidakPatut } from "@/lib/label-kepatutan";
 import type { CaraRelaas } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 
 import dynamic from "next/dynamic";
@@ -2693,6 +2694,13 @@ function sebabTenggang(panggilan: NonNullable<SidangBaris["panggilan"]>) {
       `Jarak panggilan ke hari sidang ${t.selisih ?? "?"} hari${t.hariKerja ? " kerja" : ""}, ` +
         `sedangkan yang berlaku untuk jalur ini ${t.ambang ?? "?"} hari.`
     );
+  } else if (t?.alasan === "diterima_kurang_dari_ambang") {
+    bagian.push(
+      `Surat tercatat baru diterima ${t.selisih ?? "?"} hari sebelum sidang, ` +
+        `sedangkan yang berlaku ${t.ambang ?? "?"} hari sejak diterima.`
+    );
+  } else if (t?.alasan === "diterima_setelah_hari_sidang") {
+    bagian.push("Surat tercatat baru diterima SESUDAH hari sidang.");
   } else if (t?.alasan === "dikirim_setelah_hari_sidang") {
     bagian.push("Panggilannya dikirim SESUDAH hari sidang.");
   } else {
@@ -10700,8 +10708,10 @@ export function RincianSidang({
                         ) : pihak.kepatutan.patut === false ? (
                           <Badge variant="danger">
                             {pihak.kepatutan.alasan === "dikirim_setelah_hari_sidang"
-                              ? "dikirim setelah sidang"
-                              : "tidak patut · " + pihak.kepatutan.selisih + " hari"}
+                              ? labelTidakPatut(pihak.terlaksana || pihak.seharusnya) + " · dikirim setelah sidang"
+                              : pihak.kepatutan.alasan === "diterima_setelah_hari_sidang"
+                                ? labelTidakPatut(pihak.terlaksana || pihak.seharusnya) + " · diterima setelah sidang"
+                                : labelTidakPatut(pihak.terlaksana || pihak.seharusnya) + " · " + pihak.kepatutan.selisih + " hari"}
                           </Badge>
                         ) : pihak.kepatutan.alasan === "belum_dikirim" ? (
                           <Badge variant="danger">belum dapat dinilai</Badge>

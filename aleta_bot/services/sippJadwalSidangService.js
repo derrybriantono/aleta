@@ -2685,8 +2685,9 @@ function nilaiTenggangSidang(relaas, tanggalSidang, sisiWajib = []) {
       // dan bukti penerimaan. Menyangkut 21% relaas di satker ini.
       jalur: ecourtPanggilanService.jalurAturan(dibaca.jalur),
       diterima: dibaca.diterima,
+      tanggalDiterima: dibaca.tanggalDiterima || null,
     });
-    if (nilai.dinilai && nilai.patut === false && nilai.alasan === "tenggang_kurang_dari_ambang") {
+    if (nilai.dinilai && nilai.patut === false && (nilai.alasan === "tenggang_kurang_dari_ambang" || nilai.alasan === "diterima_kurang_dari_ambang")) {
       mepet = true;
     }
     if (

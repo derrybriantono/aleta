@@ -1,5 +1,6 @@
 "use client";
 
+import { labelTidakPatut } from "@/lib/label-kepatutan";
 import type { CaraRelaas } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -6554,6 +6555,8 @@ function CourtCalendarSipp({ status }: { status: Status }) {
 function bunyiAlasanKepatutan(alasan: string) {
   if (alasan === "dikirim_setelah_hari_sidang") return "dikirim setelah hari sidang";
   if (alasan === "tenggang_kurang_dari_ambang") return "tenggangnya kurang dari ambang";
+  if (alasan === "diterima_kurang_dari_ambang") return "diterima kurang dari ambang";
+  if (alasan === "diterima_setelah_hari_sidang") return "diterima setelah hari sidang";
   if (alasan === "belum_dikirim") return "belum dikirim";
   if (alasan === "tidak_wajib_dipanggil") return "tidak dinilai - hadir pada sidang sebelumnya";
   if (alasan === "belum_diterima") return "belum diterima";
@@ -6842,6 +6845,7 @@ export function RelaasPanggilan({ status }: { status: Status }) {
                         <Badge variant="success">patut · {pihak.kepatutan.selisih} hari</Badge>
                       ) : pihak.kepatutan.patut === false ? (
                         <Badge variant="danger">
+                          {labelTidakPatut(pihak.terlaksana || pihak.seharusnya)} ·{" "}
                           {bunyiAlasanKepatutan(pihak.kepatutan.alasan)}
                           {pihak.kepatutan.selisih === null ? "" : ` · ${pihak.kepatutan.selisih} hari`}
                         </Badge>
