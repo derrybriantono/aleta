@@ -84,6 +84,12 @@ function pastikanTabel() {
       pengguna_id VARCHAR(64) NOT NULL DEFAULT '',
       peran VARCHAR(64) NOT NULL DEFAULT '',
       sub_peran VARCHAR(255) NOT NULL DEFAULT '',
+      -- Cara menandatangani (19 Okt 2026): 'gambar' = gambar tanda tangan yang
+      -- disahkan (bawaan); 'tte' = TTE tersertifikasi BSrE. nik_bsre = identitas
+      -- sertifikat (NIK/ID pengguna BSrE). PASSPHRASE TIDAK PERNAH DISIMPAN di
+      -- sini atau di mana pun: diminta kepada pejabat tiap kali menandatangani.
+      cara_ttd VARCHAR(8) NOT NULL DEFAULT 'gambar',
+      nik_bsre VARCHAR(32) NOT NULL DEFAULT '',
       diinput_oleh VARCHAR(120) NOT NULL DEFAULT '',
       diinput_tanggal DATETIME NOT NULL,
       PRIMARY KEY (id),
@@ -101,6 +107,8 @@ function pastikanTabel() {
         ["pengguna_id", "VARCHAR(64) NOT NULL DEFAULT ''"],
         ["peran", "VARCHAR(64) NOT NULL DEFAULT ''"],
         ["sub_peran", "VARCHAR(255) NOT NULL DEFAULT ''"],
+        ["cara_ttd", "VARCHAR(8) NOT NULL DEFAULT 'gambar'"],
+        ["nik_bsre", "VARCHAR(32) NOT NULL DEFAULT ''"],
       ]) {
         const ada = await kueri(
           `SELECT COUNT(*) AS n FROM information_schema.COLUMNS
@@ -365,7 +373,7 @@ async function daftar({ hanyaSah = false } = {}) {
   const baris = await kueri(
     `SELECT id, sidik, nama_pejabat, jabatan, jenis_berkas, ukuran, disahkan,
             disahkan_oleh, disahkan_pada, asal, diinput_oleh, diinput_tanggal,
-            pengguna_id, peran, sub_peran
+            pengguna_id, peran, sub_peran, cara_ttd, nik_bsre
        FROM ${TABEL}
       ${hanyaSah ? "WHERE disahkan = 1" : ""}
       ORDER BY disahkan DESC, nama_pejabat, id`
@@ -386,6 +394,8 @@ async function daftar({ hanyaSah = false } = {}) {
       penggunaId: String(b.pengguna_id || ""),
       peran: String(b.peran || ""),
       subPeran: String(b.sub_peran || ""),
+      caraTtd: String(b.cara_ttd || "gambar") === "tte" ? "tte" : "gambar",
+      nikBsre: String(b.nik_bsre || ""),
     })),
   };
 }
@@ -493,6 +503,32 @@ async function tautkanAkun(id, { penggunaId = "", peran = "", subPeran = "", nam
   return { ok: true, id: nomor, penggunaId: idAkun };
 }
 
+/**
+ * Cara tanda tangan satu pejabat + identitas sertifikatnya (19 Okt 2026).
+ *
+ * 'tte' hanya diterima bila penyedia TTE BSrE tersambung (disuntik supaya
+ * dapat diuji) dan NIK/ID pengguna BSrE terisi. PASSPHRASE tidak dikenal
+ * fungsi ini: kolomnya tidak ada, dan kiriman bernama passphrase DITOLAK
+ * (bukan diabaikan) supaya pemanggil yang keliru ketahuan.
+ */
+async function aturTte(id, { caraTtd = "gambar", nikBsre = "", passphrase, tteTersedia = () => false } = {}) {
+  await pastikanTabel();
+  if (passphrase !== undefined) return { ok: false, alasan: "passphrase_tidak_disimpan" };
+  const nomor = Number(id);
+  if (!Number.isFinite(nomor) || nomor <= 0) return { ok: false, alasan: "id_tidak_sah" };
+  const cara = String(caraTtd || "gambar").trim().toLowerCase();
+  if (cara !== "gambar" && cara !== "tte") return { ok: false, alasan: "cara_ttd_tidak_dikenal" };
+  const nik = potong(nikBsre, 32).trim();
+  if (nik && !/^[A-Za-z0-9._-]{5,32}$/.test(nik)) return { ok: false, alasan: "nik_bsre_tidak_sah" };
+  if (cara === "tte") {
+    if (!tteTersedia()) return { ok: false, alasan: "tte_belum_tersambung" };
+    if (!nik) return { ok: false, alasan: "nik_bsre_kosong" };
+  }
+  const hasil = await kueri(`UPDATE ${TABEL} SET cara_ttd = ?, nik_bsre = ? WHERE id = ?`, [cara, nik, nomor]);
+  if ((Number(hasil && hasil.affectedRows) || 0) === 0) return { ok: false, alasan: "tanda_tangan_tidak_ketemu" };
+  return { ok: true, id: nomor, caraTtd: cara };
+}
+
 /** Mengesahkan - sesudah ini, dan hanya sesudah ini, ia boleh dipakai. */
 async function sahkan(id, { oleh = "" } = {}) {
   await pastikanTabel();
@@ -587,6 +623,7 @@ module.exports = {
   gambar,
   namai,
   tautkanAkun,
+  aturTte,
   sahkan,
   hapus,
   untukPejabat,

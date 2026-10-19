@@ -68,7 +68,7 @@ function lepasSemua() {
   for (const j of dipasang.splice(0)) delete (require_.cache as Record<string, unknown>)[j];
 }
 
-type BarisTtd = { id: number; namaPejabat: string; disahkanPada?: string };
+type BarisTtd = { id: number; namaPejabat: string; disahkanPada?: string; penggunaId?: string };
 type Edoc = {
   bubuhkanPenetapan: (p: Record<string, unknown>) => Promise<any>;
   bubuhkanTtdCap: (r: string, o: Record<string, unknown>) => any;
@@ -285,6 +285,18 @@ describe("A. PMH: tanda tangan sesuai nama di bawah 'Ketua,' + cap DI ATAS tanda
     expect(m.cocokkanTandaTangan("Sudarmin H.I.M. Tang", d, bakuNama)).toMatchObject({ baris: { id: 8 }, cara: "nama_tanpa_gelar" });
     expect(m.cocokkanTandaTangan("H. Abdul Salam, S.H.I.", d, bakuNama)).toMatchObject({ baris: null, alasan: "tanda_tangan_ganda_untuk_nama" });
     expect(m.cocokkanTandaTangan("Orang Lain, S.H.", d, bakuNama)).toMatchObject({ baris: null, alasan: "tanda_tangan_tidak_ada_untuk_nama" });
+  });
+
+  it("berkas sah ganda untuk SATU orang: yang ditautkan ke akun didahulukan, baru yang terbaru disahkan (19 Okt)", () => {
+    const m = modulEdoc();
+    const d: BarisTtd[] = [
+      { id: 21, namaPejabat: "Idris, S.H.I., M.H.", disahkanPada: "2026-10-18T00:00:00Z" },
+      { id: 22, namaPejabat: "Idris, S.H.I., M.H.", disahkanPada: "2026-10-01T00:00:00Z", penggunaId: "usr-idris" },
+    ];
+    expect(m.cocokkanTandaTangan("Idris, S.H.I., M.H.", d, bakuNama)).toMatchObject({ baris: { id: 22 }, cara: "nama_lengkap" });
+    // tanpa tautan sama sekali: tetap yang terbaru disahkan (perilaku lama)
+    const tanpa: BarisTtd[] = d.map((b) => ({ ...b, penggunaId: "" }));
+    expect(m.cocokkanTandaTangan("Idris, S.H.I., M.H.", tanpa, bakuNama)).toMatchObject({ baris: { id: 21 } });
   });
 
   it("cap JPG / PNG tanpa alfa: ditaruh DI BELAKANG (tidak menutupi tanda tangan) dan disebut", async () => {

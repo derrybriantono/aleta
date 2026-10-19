@@ -1776,6 +1776,33 @@ router.post("/tanda-tangan/:id/tautkan-akun", requireInternalToken, async (req, 
   }
 });
 
+/** Status sambungan TTE BSrE (19 Okt 2026) - hanya membaca; tidak menyebut alamat/rahasia penyedia. */
+router.get("/tanda-tangan-tte/status", requireInternalToken, (req, res) => {
+  let tersambung = false;
+  try {
+    tersambung = Boolean(require("../services/tteProviderService").tersedia());
+  } catch {
+    tersambung = false;
+  }
+  res.json({ ok: true, tersambung });
+});
+
+/** Cara tanda tangan + identitas sertifikat satu pejabat. Passphrase DITOLAK, tidak disimpan. */
+router.post("/tanda-tangan/:id/tte", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const hasil = await tandaTanganService.aturTte(req.params.id, {
+      caraTtd: String(badan.caraTtd || "gambar"),
+      nikBsre: String(badan.nikBsre || ""),
+      passphrase: badan.passphrase === undefined ? undefined : "ada",
+      tteTersedia: () => require("../services/tteProviderService").tersedia(),
+    });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 router.post("/tanda-tangan/:id/sahkan", requireInternalToken, async (req, res) => {
   try {
     const hasil = await tandaTanganService.sahkan(req.params.id, { oleh: String((req.body || {}).oleh || "") });
