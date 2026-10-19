@@ -1424,6 +1424,8 @@
     diterima: 0,
     terakhirMinta: 0,
     perluSegar: false,
+    /** Checklist berkala menumpang denyut berikutnya (performa muat 19 Okt). */
+    perluSegarDenyut: false,
     kabar: "",
     kakiTerbuka: {},
     // ── Tahap 3 - tidak dibaca apa pun dalam tampilan Lama ──
@@ -3286,6 +3288,133 @@
     return t;
   }
 
+  // ─── Performa muat 19 Okt 2026: denyut widget ─────────────────────────────
+  //
+  // SATU permintaan untuk bacaan berkala yang jatuh tempo bersamaan - sumber
+  // daya (15 detik), kehadiran (semenit), checklist berkala (5 menit) - ke
+  // /aleta/api/aleta-ecourt/denyut?bagian=... . Isi tiap bagian = jawaban rute
+  // lamanya persis, dengan status HTTP-nya, sehingga penerapannya memakai
+  // fungsi yang sama dengan rute lama (terapkanSd, terapkanKh, segarkan).
+  //
+  // Portal lama yang belum punya rute denyut (404, atau jawaban tanpa tanda
+  // denyut) dikenali SEKALI; sesudahnya halaman ini kembali ke rute lama.
+  // Gangguan jaringan bukan tanda portal lama - bacaan berikutnya mencoba lagi.
+
+  const ALAMAT_DENYUT = "/aleta/api/aleta-ecourt/denyut";
+  const BATAS_TUNGGU_DENYUT_MS = 8000;
+  /** Saat tab kembali terlihat: dibaca segera bila bacaan terakhir lebih tua dari ini. */
+  const JEDA_SEGAR_TERLIHAT_MS = 15000;
+
+  const denyut = { tidakAda: false, jalan: false };
+
+  /**
+   * Meminta bagian yang diminta dalam satu denyut. true = sudah ditangani
+   * (berhasil, gagal jaringan, atau sudah dialihkan ke rute lama);
+   * false = denyut tidak tersedia, pemanggil memakai rute lamanya sendiri.
+   */
+  async function mintaDenyut(minta) {
+    // Satu denyut sedang berjalan: pemanggil ini memakai rute lamanya sendiri
+    // (jarang - dua detak bertemu), bukan menunggu detak berikutnya.
+    if (denyut.tidakAda || denyut.jalan) return false;
+    const nama = [];
+    if (minta.sumberDaya && !sd.jalan) nama.push("sumberDaya");
+    if (minta.kehadiran && !kh.jalan) nama.push("kehadiran");
+    if (minta.checklist) nama.push("checklist");
+    if (!nama.length) return true;
+    denyut.jalan = true;
+    const ikutSd = nama.includes("sumberDaya");
+    const ikutKh = nama.includes("kehadiran");
+    const ikutCk = nama.includes("checklist");
+    const kini = Date.now();
+    if (ikutSd) {
+      sd.jalan = true;
+      sd.terakhir = kini;
+    }
+    if (ikutKh) {
+      kh.jalan = true;
+      kh.terakhir = kini;
+    }
+    if (ikutCk) keadaan.perluSegarDenyut = false;
+    const pengendali = typeof AbortController === "function" ? new AbortController() : null;
+    const tunda = pengendali ? setTimeout(() => pengendali.abort(), BATAS_TUNGGU_DENYUT_MS) : null;
+    let bagian = null;
+    let jaringan = false;
+    try {
+      const q = new URLSearchParams({ bagian: nama.join(",") });
+      if (ikutCk && keadaan.peran) q.set("peran", keadaan.peran);
+      const r = await fetch(`${ALAMAT_DENYUT}?${q.toString()}`, {
+        credentials: "include",
+        cache: "no-store",
+        ...(pengendali ? { signal: pengendali.signal } : {}),
+      });
+      if (r.ok) {
+        const luar = await r.json();
+        const d = luar && typeof luar === "object" ? luar.data : null;
+        if (d && d.denyut === 1 && d.bagian && typeof d.bagian === "object") bagian = d.bagian;
+      }
+      if (!bagian) denyut.tidakAda = true;
+    } catch {
+      jaringan = true;
+    } finally {
+      if (tunda) clearTimeout(tunda);
+      denyut.jalan = false;
+      if (ikutSd) sd.jalan = false;
+      if (ikutKh) kh.jalan = false;
+    }
+    if (jaringan) {
+      if (ikutSd) terapkanSd(0, null);
+      if (ikutKh) terapkanKh(0, null);
+      if (ikutCk) keadaan.perluSegarDenyut = true;
+      return true;
+    }
+    if (!bagian) {
+      // Portal lama: bagian yang tadi diminta dibaca lewat rute lamanya, sekarang.
+      if (ikutSd) void mintaSumberDayaLama();
+      if (ikutKh) void mintaKehadiranLama();
+      if (ikutCk) void segarkan();
+      return true;
+    }
+    const satu = (n) => {
+      const b = bagian[n] && typeof bagian[n] === "object" ? bagian[n] : null;
+      return b ? { status: Number(b.status) || 0, isi: b.isi === undefined ? null : b.isi } : { status: 0, isi: null };
+    };
+    if (ikutSd) {
+      const b = satu("sumberDaya");
+      terapkanSd(b.status, b.status ? b.isi || {} : null);
+    }
+    if (ikutKh) {
+      const b = satu("kehadiran");
+      terapkanKh(b.status, b.status ? b.isi || {} : null);
+    }
+    if (ikutCk) {
+      const b = satu("checklist");
+      void segarkan({ status: b.status, ok: b.status >= 200 && b.status < 300, json: async () => b.isi });
+    }
+    return true;
+  }
+
+  /**
+   * Checklist berkala: menumpang denyut berikutnya bila ada detak yang hidup
+   * (sumber daya 15 dtk / kehadiran semenit), selain itu diminta langsung.
+   */
+  function segarkanBerkala() {
+    const adaDetak = !denyut.tidakAda && (sd.jam || kh.jam);
+    if (!adaDetak) {
+      void segarkan();
+      return;
+    }
+    keadaan.perluSegarDenyut = true;
+  }
+
+  /** Tab kembali terlihat: bacaan yang sudah tua dibaca SEGERA sekali, lalu detak berjalan lagi. */
+  function segarSaatTerlihat() {
+    if (document.visibilityState === "hidden") return;
+    const kini = Date.now();
+    if (sd.terakhir && kini - sd.terakhir >= JEDA_SEGAR_TERLIHAT_MS) sd.terakhir = 0;
+    if (kh.terakhir && kini - kh.terakhir >= JEDA_SEGAR_TERLIHAT_MS) kh.terakhir = 0;
+    if (h7.terakhir && kini - h7.terakhir >= 60000) h7.terakhir = 0;
+  }
+
   // ─── Butir 3 (6 Okt 2026): indikator sumber daya server ────────────────────
   //
   // Empat titik berwarna - RAM, CPU, Disk, GPU - di samping lencana dok (UI Baru)
@@ -3297,15 +3426,17 @@
   //   "Rincian ›"    membuka Admin > Sumber daya server di tab baru (hanya
   //                  bila portal menyebut pemanggilnya Admin)
   //
-  // Diminta tiap 5 detik selama tab terlihat dan widget terpasang; berhenti
-  // saat tab disembunyikan. Satu GET, bersinggah 3 detik di portal dan bot.
+  // Diminta tiap 15 detik selama tab terlihat dan widget terpasang (performa
+  // muat 19 Okt: dulu 5 detik); berhenti saat tab disembunyikan dan segera
+  // dibaca sekali saat kembali terlihat. Kehadiran dan checklist yang jatuh
+  // tempo ikut dalam SATU permintaan denyut - lihat mintaDenyut.
   // Isi titik diperbarui DI TEMPAT - widget tidak digambar ulang tiap detak.
 
   const ALAMAT_SUMBER_DAYA = "/aleta/api/aleta-ecourt/sumber-daya";
   const KUNCI_LINGKUP_SD = "lingkupSumberDaya";
   const KODE_SD = "portal-7";
-  const DETAK_SD_MS = 5000;
-  const BATAS_TUNGGU_SD_MS = 4500;
+  const DETAK_SD_MS = 15000;
+  const BATAS_TUNGGU_SD_MS = 8000;
   const LINGKUP_SD = { aleta: "ALETA", server: "Server" };
   const NAMA_SD = { ram: "RAM", cpu: "CPU", disk: "Disk", gpu: "GPU" };
   /* 12OKT-N: urutan titik di strip - RAM, CPU, Disk, GPU. */
@@ -3463,39 +3594,59 @@
     perbaruiIndikatorSd();
   }
 
+  /** Satu detak sumber daya: lewat denyut (membawa kehadiran/checklist yang jatuh tempo), atau rute lamanya. */
   async function mintaSumberDaya() {
+    if (sd.jalan) return;
+    if (await mintaDenyut({ sumberDaya: true, kehadiran: khJatuhTempo(), checklist: keadaan.perluSegarDenyut === true })) return;
+    await mintaSumberDayaLama();
+  }
+
+  /** Jawaban sumber daya (rute lama atau bagian denyut) -> keadaan. luar null = jaringan. */
+  function terapkanSd(status, luar) {
+    // 403 = tanpa kewenangan panel: tidak ada yang perlu ditanyakan lagi di halaman ini.
+    if (luar === null) sd.galat = "jaringan";
+    else if (status === 401) sd.galat = "masuk";
+    else if (status === 403) sd.galat = "akses";
+    else if (!(status >= 200 && status < 300)) sd.galat = "jawaban";
+    else {
+      const isi = sdBersihkan(luar && typeof luar === "object" && luar.data ? luar.data : luar);
+      if (isi) {
+        sd.data = isi;
+        sd.galat = "";
+      } else sd.galat = "jawaban";
+    }
+    // Pemantau waktu nyata: angka yang tidak dapat diperbarui tidak dibiarkan
+    // tampak hidup. Titiknya kelabu dengan sebabnya sampai bacaan berikutnya.
+    if (sd.galat) sd.data = null;
+    selesaiSd();
+  }
+
+  async function mintaSumberDayaLama() {
     if (sd.jalan) return;
     sd.jalan = true;
     sd.terakhir = Date.now();
     const pengendali = typeof AbortController === "function" ? new AbortController() : null;
     const tunda = pengendali ? setTimeout(() => pengendali.abort(), BATAS_TUNGGU_SD_MS) : null;
+    let status = 0;
+    let luar = null;
     try {
       const r = await fetch(ALAMAT_SUMBER_DAYA, {
         credentials: "include",
         cache: "no-store",
         ...(pengendali ? { signal: pengendali.signal } : {}),
       });
-      // 403 = tanpa kewenangan panel: tidak ada yang perlu ditanyakan lagi di halaman ini.
-      if (r.status === 401) sd.galat = "masuk";
-      else if (r.status === 403) sd.galat = "akses";
-      else if (!r.ok) sd.galat = "jawaban";
-      else {
-        const luar = await r.json();
-        const isi = sdBersihkan(luar && typeof luar === "object" && luar.data ? luar.data : luar);
-        if (isi) {
-          sd.data = isi;
-          sd.galat = "";
-        } else sd.galat = "jawaban";
-      }
+      status = r.status;
+      luar = r.ok ? await r.json() : {};
     } catch {
-      sd.galat = "jaringan";
+      luar = null;
     } finally {
-      // Pemantau waktu nyata: angka yang tidak dapat diperbarui tidak dibiarkan
-      // tampak hidup. Titiknya kelabu dengan sebabnya sampai bacaan berikutnya.
-      if (sd.galat) sd.data = null;
       if (tunda) clearTimeout(tunda);
       sd.jalan = false;
     }
+    terapkanSd(status, luar);
+  }
+
+  function selesaiSd() {
     if (sd.galat === "akses") {
       hentikanJamSd();
       if (bayang) for (const s of Array.from(bayang.querySelectorAll(".aleta-cmw-sd"))) s.remove();
@@ -3615,37 +3766,57 @@
     };
   }
 
+  /** Kehadiran berlaku, berwenang, tidak sedang diminta, dan sudah semenit tidak dibaca? */
+  function khJatuhTempo() {
+    return khBerlaku() && kh.galat !== "akses" && !kh.jalan && Date.now() - kh.terakhir >= DETAK_KH_MS - 500;
+  }
+
   async function mintaKehadiran() {
+    if (kh.jalan) return;
+    if (await mintaDenyut({ kehadiran: true, checklist: keadaan.perluSegarDenyut === true })) return;
+    await mintaKehadiranLama();
+  }
+
+  /** Jawaban kehadiran (rute lama atau bagian denyut) -> keadaan. luar null = jaringan. */
+  function terapkanKh(status, luar) {
+    if (luar === null) kh.galat = "jaringan";
+    else if (status === 401) kh.galat = "masuk";
+    else if (status === 403) kh.galat = "akses";
+    else if (!(status >= 200 && status < 300)) kh.galat = "jawaban";
+    else {
+      const isi = khBersihkan(luar && typeof luar === "object" && luar.data ? luar.data : luar);
+      if (isi) {
+        kh.data = isi;
+        kh.galat = "";
+      } else kh.galat = "jawaban";
+    }
+    if (kh.galat === "akses") hentikanJamKh();
+    if (akar && akar.isConnected) gambar();
+  }
+
+  async function mintaKehadiranLama() {
     if (kh.jalan) return;
     kh.jalan = true;
     kh.terakhir = Date.now();
     const pengendali = typeof AbortController === "function" ? new AbortController() : null;
     const tunda = pengendali ? setTimeout(() => pengendali.abort(), BATAS_TUNGGU_KH_MS) : null;
+    let status = 0;
+    let luar = null;
     try {
       const r = await fetch(ALAMAT_KEHADIRAN, {
         credentials: "include",
         cache: "no-store",
         ...(pengendali ? { signal: pengendali.signal } : {}),
       });
-      if (r.status === 401) kh.galat = "masuk";
-      else if (r.status === 403) kh.galat = "akses";
-      else if (!r.ok) kh.galat = "jawaban";
-      else {
-        const luar = await r.json();
-        const isi = khBersihkan(luar && typeof luar === "object" && luar.data ? luar.data : luar);
-        if (isi) {
-          kh.data = isi;
-          kh.galat = "";
-        } else kh.galat = "jawaban";
-      }
+      status = r.status;
+      luar = r.ok ? await r.json() : {};
     } catch {
-      kh.galat = "jaringan";
+      luar = null;
     } finally {
       if (tunda) clearTimeout(tunda);
       kh.jalan = false;
     }
-    if (kh.galat === "akses") hentikanJamKh();
-    if (akar && akar.isConnected) gambar();
+    terapkanKh(status, luar);
   }
 
   function hentikanJamKh() {
@@ -3661,6 +3832,9 @@
       return;
     }
     if (!kh.jam) kh.jam = setInterval(() => aturJamKh(), DETAK_KH_MS);
+    // Detak sumber daya yang hidup membawa kehadiran dalam denyutnya - tidak
+    // ada permintaan kedua. Tanpa detak itu (bukan Super Admin): jam sendiri.
+    if (sd.jam && !denyut.tidakAda) return;
     if (!kh.jalan && Date.now() - kh.terakhir >= DETAK_KH_MS - 500) void mintaKehadiran();
   }
 
@@ -6102,7 +6276,7 @@
    * jawaban peran baru tergambar. Keadaan baru diubah sesudah pemeriksaan
    * terakhir.
    */
-  async function segarkan() {
+  async function segarkan(jawabanSiap) {
     // Hanya kotak sidang (checklist mati, butir 41): checklist tidak diminta.
     if (!akar || !akar.isConnected || !keadaan.nyala) return;
     const nomor = ++nomorMinta;
@@ -6116,11 +6290,14 @@
     // ada yang membacanya.
     const mulaiMinta = Date.now();
     try {
-      const respons = await ambil(
-        alamatPermintaan(),
-        { credentials: "include", cache: "no-store" },
-        "Membaca checklist milestone"
-      );
+      // Dari denyut (performa muat 19 Okt): jawabannya sudah ada, tidak diminta lagi.
+      const respons = jawabanSiap
+        ? jawabanSiap
+        : await ambil(
+            alamatPermintaan(),
+            { credentials: "include", cache: "no-store" },
+            "Membaca checklist milestone"
+          );
       if (nomor !== nomorMinta) return;
       catatSambungan(respons.status, Date.now() - mulaiMinta);
       if (respons.status === 401) {
@@ -6198,7 +6375,7 @@
         keadaan.perluSegar = true;
         return;
       }
-      void segarkan();
+      segarkanBerkala();
     }, SEGAR_BERKALA_MS);
   }
 
@@ -6398,6 +6575,8 @@
   });
   // Butir 3 (6 Okt): detak sumber daya berhenti saat tab disembunyikan dan
   // menyala lagi saat terlihat. Dalam Lama aturJamSd tidak menyalakan apa pun.
+  // Performa muat 19 Okt: kembali terlihat = bacaan yang sudah tua dibaca segera sekali.
+  document.addEventListener("visibilitychange", () => segarSaatTerlihat());
   document.addEventListener("visibilitychange", () => aturJamSd());
   document.addEventListener("visibilitychange", () => aturJamKh());
   document.addEventListener("visibilitychange", () => aturJamH7());
