@@ -10,6 +10,7 @@ import {
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,6 +73,9 @@ export async function GET(request: NextRequest) {
     // jurusita, sidang keliling yang ada, dan desa tanpa perkara. Masing-masing
     // dibaca HANYA ketika lapisannya dipilih.
     const apa = String(cari.get("apa") || "");
+    // Keadaan ikrar talak membuka nomor dan tenggat perkara - hak yang sama
+    // dengan halaman Peta perkara (analitik.peta-beban).
+    if (apa === "ikrar") await pastikanAksi(db, actorUserId, "analitik.peta-beban");
     if (apa && apa !== "relaas") {
       const lapis = await getGatewayLapisanPeta({
         apa,

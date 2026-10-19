@@ -915,3 +915,73 @@ export function simpanPilihan(pilihan: string) {
     // Penyimpanan ditolak - pilihannya hanya berlaku sampai halaman ditutup.
   }
 }
+
+/* ==========================================================================
+ * 9. IKRAR TALAK - KEADAAN, WARNA, DAN KALIMAT LEGENDANYA
+ * ==========================================================================
+ *
+ * Dihitung di bot (petaPerkaraService.golongkanIkrar); di sini hanya NAMA,
+ * warna, dan kalimat penjelasnya. Label harus sama persis dengan
+ * LABEL_KEADAAN_IKRAR di bot, sebab itulah kunci rincian wilayah dan label
+ * lapisan peta - kesamaannya dijaga uji peta-perkara-ikrar-19okt.
+ *
+ * Warnanya semantik, bukan slot palet: hijau selesai, biru menunggu, kuning
+ * tenggat dekat, merah gugur, kelabu belum berjalan, ungu tidak dilanjutkan.
+ */
+export const KUNCI_KELOMPOK_IKRAR = "ikrar-talak";
+export const KUNCI_LAPISAN_IKRAR = "ikrar";
+
+export const KEADAAN_IKRAR = [
+  {
+    kunci: "sudah",
+    label: "Sudah ikrar",
+    warna: "#10b981",
+    kalimat: "Ikrar talaknya sudah diucapkan.",
+  },
+  {
+    kunci: "menunggu",
+    label: "Menunggu ikrar",
+    warna: "#3b82f6",
+    kalimat: "Hari sidang ikrar sudah ditetapkan dan batas enam bulannya masih lebih dari 30 hari lagi.",
+  },
+  {
+    kunci: "dekat",
+    label: "Tenggat dekat",
+    warna: "#f59e0b",
+    kalimat: "Batas enam bulan sejak hari sidang ikrar ditetapkan tinggal 30 hari atau kurang.",
+  },
+  {
+    kunci: "gugur",
+    label: "Gugur",
+    warna: "#ef4444",
+    kalimat:
+      "Sudah lewat enam bulan sejak hari sidang ikrar ditetapkan tanpa ikrar, atau penetapan gugurnya sudah terbit.",
+  },
+  {
+    kunci: "belumPhs",
+    label: "Belum ada sidang ikrar",
+    warna: "#94a3b8",
+    kalimat: "Perkara dikabulkan tetapi hari sidang ikrar belum ditetapkan, jadi batas enam bulan belum berjalan.",
+  },
+  {
+    kunci: "batal",
+    label: "Tidak jadi diikrarkan",
+    warna: "#a855f7",
+    kalimat: "Penetapan menyatakan ikrar tidak dilanjutkan, misalnya karena rukun kembali atau perkara dicabut.",
+  },
+] as const;
+
+export type KunciKeadaanIkrar = (typeof KEADAAN_IKRAR)[number]["kunci"];
+
+/** Warna keadaan menurut LABEL-nya; undefined bila bukan label keadaan ikrar. */
+export function warnaKeadaanIkrar(label: string): string | undefined {
+  return KEADAAN_IKRAR.find((k) => k.label === label)?.warna;
+}
+
+/** Sisa waktu tenggat dalam kalimat biasa: "sisa 12 hari", "lewat 5 hari", "hari terakhir". */
+export function kalimatSisaIkrar(sisaHari: number | null | undefined): string {
+  if (sisaHari === null || sisaHari === undefined || !Number.isFinite(sisaHari)) return "batas belum berjalan";
+  if (sisaHari === 0) return "hari terakhir";
+  if (sisaHari > 0) return `sisa ${sisaHari} hari`;
+  return `lewat ${Math.abs(sisaHari)} hari`;
+}
