@@ -304,6 +304,7 @@
     saranSipp: {}, // kode -> { nilai, keyakinan, asal }: bacaan SIPP/e-Court yang belum pasti (saran samar, tidak ditulis sendiri)
     isiSipp: { jalan: false, ulang: false, kunci: "", hasil: null }, // 19 Okt: isi otomatis dari SIPP
     el7: null, // ELITIGASI-7139: keputusan 1/2 yang diisi otomatis ke #7139# perkara ini
+    el7Saran: null, // 19 Okt (isian 2): saran 1/2 bila belum cukup pasti untuk ditulis
     menuSaran: null,
     bukti: { P: null, T: null },
     tj: {}, // kunci -> { kode, rows:[{no,tanya,jawab}], templates:[], dimuat, berubah, sidang }
@@ -1348,6 +1349,7 @@
     S.ketRiwayatBuka = new Set();
     S.dariSipp = new Set();
     S.el7 = null;
+    S.el7Saran = null;
     S.bukti = { P: null, T: null };
     S.tj = {};
     S.tjBuka = null;
@@ -1478,13 +1480,85 @@
         perlu.slice(i, i + 3).map(async (b) => {
           try {
             const h = await k.bacaIsian(b.kode, perkaraId(), "", sidangUrutan());
-            if (h.ok && String(h.nilai || "").trim() && !S.isi[b.kode]) S.saran[b.kode] = String(h.nilai).trim();
+            const bawaan = h.ok ? String(h.nilai || "").trim() : "";
+            if (bawaan && !S.isi[b.kode]) {
+              // 19 Okt (isian 2): bawaan kueri ABT yang bentuknya bukan isiannya (mis. kalimat ghaib untuk Awal perselisihan) dibuang.
+              const m = mesinIsi();
+              if (m && !m.sahBentuk(b.kode, m.bersihkanNilai(b.kode, bawaan), b.nama)) catatTeknis("bawaan ABT bentuknya tidak sesuai isian, tidak dipakai:", b.kode);
+              else S.saran[b.kode] = bawaan;
+            }
           } catch {
             /* tanpa saran */
           }
         })
       );
       if (S.susunan === d) renderIsian();
+    }
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+  // Blangko PUTUSAN: perapian posita dan kalimat penutup keterangan saksi berjalan SENDIRI (19 Okt 2026, isian 2)
+  // ──────────────────────────────────────────────────────────────────────────
+  // Dahulu petugas menekan "Rapikan posita & keterangan saksi" (abt.js) dan "Bersihkan kalimat penutup" (editor tanya jawab) tiap putusan.
+  //   - posita (5125): butir yang menempel dipisah lewat mintaPositaRapi (abt.js; bot menjaga teks tanpa ruang kosong persis sama, uji kering
+  //     lebih dulu). Hanya bila hasilnya memang berbeda; satu kali per perkara per muatan halaman; dicatat di riwayat perubahan (dapat
+  //     dikembalikan lewat "Lihat riwayat perubahan" di panel ABT);
+  //   - keterangan saksi: begitu editor tanya jawab terbaca, kalimat penutup ("Bahwa cukup sekian", dst.) di jawaban dibuang; ↶ Urungkan
+  //     di editor mengembalikannya. Yang disentuh hanya baris yang berubah; ketikan petugas yang belum disimpan tidak dibaca ulang.
+  const rapiPositaSudah = new Set();
+  async function rapikanPositaOtomatis(d) {
+    try {
+      if (!S.pk || !S.blangko || S.blangko.jenis !== "put" || !bolehTulis() || typeof mintaPositaRapi !== "function") return;
+      const id = perkaraId();
+      if (!/^\d+$/.test(String(id)) || rapiPositaSudah.has(id)) return;
+      const memuatPosita = (d.penanda || []).includes("5125") || (d.otomatis || []).some((o) => o && o.kode === "5125") || (d.isian || []).some((b) => b.kode === "5125");
+      if (!memuatPosita) return;
+      rapiPositaSudah.add(id);
+      const uji = await mintaPositaRapi(id, true);
+      if (!uji || !uji.ok || !uji.berubah || S.susunan !== d) return;
+      const hasil = await mintaPositaRapi(id, false);
+      if (!hasil || !hasil.ok) {
+        catatTeknis("posita tidak dirapikan otomatis:", String((hasil && hasil.pesan) || "ditolak"));
+        return;
+      }
+      S.bahanSaksi = null;
+      try {
+        if (typeof catatRiwayat === "function") {
+          void catatRiwayat({ perkaraId: id, kode: "5125", nama: "Posita lengkap", sebelum: String(hasil.sebelum || uji.sebelum || ""), sesudah: String(uji.sesudah || ""), cara: "dirapikan otomatis di Blangko Derry", pada: new Date().toISOString() });
+        }
+      } catch {
+        /* jejak tidak tersedia: posita tetap rapi */
+      }
+      toast("Posita dirapikan otomatis (butir yang menempel dipisah). Dapat dikembalikan lewat riwayat perubahan di panel ABT.");
+    } catch (e) {
+      catatTeknis("rapikan posita otomatis gagal:", String((e && e.message) || e));
+    }
+  }
+  /** Editor tanya jawab putusan baru terbaca: buang kalimat penutup di jawaban (satu snapshot urung untuk seluruh pasangan). */
+  function bersihkanPenutupOtomatis(kunciDaftar) {
+    try {
+      if (!S.blangko || S.blangko.jenis !== "put" || !bolehTulis()) return 0;
+      const ps = (kunciDaftar || []).filter((k) => S.tj[k] && S.tj[k].dimuat && !S.tj[k].berubah && S.tj[k].penutupOto !== S.tj[k].sidang);
+      let n = 0;
+      const rencana = [];
+      for (const k of ps) {
+        S.tj[k].penutupOto = S.tj[k].sidang;
+        for (const r of S.tj[k].rows || []) {
+          const h = bersihkanPenutup(r.jawab, r.tanya);
+          if (h !== r.jawab) rencana.push([k, r, h]);
+        }
+      }
+      if (!rencana.length) return 0;
+      tjCatat(ps);
+      for (const [k, r, h] of rencana) {
+        r.jawab = h;
+        S.tj[k].berubah = true;
+        n += 1;
+      }
+      toast(`${n} kalimat penutup keterangan saksi dibuang otomatis (mis. “Bahwa cukup sekian”). Tekan ↶ Urungkan untuk mengembalikan; Simpan ke ABT untuk menyimpan.`);
+      return n;
+    } catch (e) {
+      catatTeknis("bersihkan penutup otomatis gagal:", String((e && e.message) || e));
+      return 0;
     }
   }
   const BAWAAN_ABT_ITSBAT = Object.freeze(["5178", "5105", "1046", "1002", "0007"]);
@@ -1530,7 +1604,20 @@
       const ada = () => String(S.isi["7139"] || "").trim() || (S.nilai["7139"] && S.nilai["7139"].status === "terisi");
       if (ada()) return;
       const keputusan = await el7Ambil7139(nomorPerkara(), null);
-      if (!keputusan || S.susunan !== d || ada()) return;
+      if (!keputusan) {
+        // 19 Okt (isian 2): belum cukup pasti untuk ditulis (email Tergugat belum pasti, atau Tergugat belum/tidak hadir) -> SARAN dari
+        // data e-Court/SIPP: perkara e-Court + Tergugat ber-email = penuh ("1"); perkara e-Court tanpa email Tergugat = hybrid ("2").
+        const m = mesinIsi();
+        const kontak = m && typeof el7AmbilKontak === "function" ? await el7AmbilKontak(nomorPerkara()) : null;
+        const saran = m && kontak ? m.saranElitigasi(kontak) : null;
+        if (saran && S.susunan === d && !ada() && !S.saranSipp["7139"]) {
+          S.saranSipp["7139"] = { nilai: saran.nilai, keyakinan: "ragu", asal: "data e-Court dan SIPP" };
+          S.el7Saran = saran;
+          renderIsian();
+        }
+        return;
+      }
+      if (S.susunan !== d || ada()) return;
       S.el7 = keputusan;
       await jadwalkanSimpan("7139", keputusan.nilai, true);
       renderIsian();
@@ -1669,8 +1756,10 @@
     const o = opsi || {};
     const manual = o.otomatis !== true;
     const bacaSaja = o.bacaSaja === true;
+    // senyap: ringkasan dilaporkan pemanggil (tombol "Isi otomatis" menggabung tiga langkah dalam satu pesan).
+    const senyap = o.senyap === true;
     const lapor = (t) => {
-      if (manual) toast(t);
+      if (manual && !senyap) toast(t);
       return null;
     };
     const d = S.susunan;
@@ -1753,8 +1842,11 @@
       if (S.susunan !== d || S.pk !== pk) return null;
       renderIsian();
       laporKeKerangka();
+      // Tgl Nikah dari bukti P (akta nikah): hanya SARAN - tanggal akta tidak selalu tanggal nikah.
+      ringkas.saran += saranTanggalNikahDariBukti(perlu());
+      renderIsian();
       S.isiSipp.hasil = { ...ringkas, saat: Date.now() };
-      if (manual) {
+      if (manual && !senyap) {
         toast(
           ringkas.ditulis
             ? `${ringkas.ditulis} isian diisi dari SIPP dan tersimpan ke ABT.${ringkas.saran ? ` ${ringkas.saran} lainnya diberi saran samar (tekan Tab untuk memakainya).` : ""}`
@@ -1768,7 +1860,7 @@
       return ringkas;
     } catch (e) {
       catatTeknis("isi dari SIPP gagal:", String((e && e.message) || e));
-      return lapor(`Isi dari SIPP belum berhasil: ${String((e && e.message) || e)}`);
+      return lapor(`Isi otomatis belum berhasil: ${String((e && e.message) || e)}`);
     } finally {
       S.isiSipp.jalan = false;
       if (S.isiSipp.ulang) {
@@ -1776,6 +1868,33 @@
         if (S.susunan === d && cfg().isiOto !== false && !manual) void isiDariSipp({ otomatis: true });
       }
     }
+  }
+  const tglNikahTampil = (iso) => {
+    const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m && BULAN[+m[2] - 1] ? `${m[3]} ${BULAN[+m[2] - 1]} ${m[1]}` : "";
+  };
+  const POLA_BUKTI_AKTA_NIKAH = /akta\s+nikah|buku\s+nikah|kutipan\s+akta\s+(?:perkawinan|nikah)/i;
+  /**
+   * Tgl Nikah (5197) kosong: tanggal pada bukti P "Kutipan Akta Nikah" dijadikan SARAN (bukan tulisan). Tanggal akta dapat berbeda dari
+   * tanggal nikah, jadi tidak pernah ditulis sendiri; sumber yang lebih pasti (data pernikahan SIPP, posita) sudah ditulis lebih dulu
+   * oleh mesin dan membuat kotak ini tidak lagi kosong. Mengembalikan 1 bila saran baru dipasang.
+   */
+  function saranTanggalNikahDariBukti(daftar) {
+    const b = (daftar || []).find((x) => x.kode === "5197" && x.jenis === "teks");
+    if (!b || !sedangKosong(b) || (S.saranSipp["5197"] && S.saranSipp["5197"].nilai) || (S.saranH7 && S.saranH7["5197"])) return 0;
+    for (const r of S.bukti.P || []) {
+      let iso = "";
+      if (typeof r.manual === "string") {
+        const k = POLA_BUKTI_AKTA_NIKAH.test(r.manual) ? r.manual.match(/(?:ter)?tanggal\s+([0-9]{1,2}\s+[A-Za-z]+\s+[0-9]{4})/i) : null;
+        iso = k ? keIso(k[1]) : "";
+      } else if (POLA_BUKTI_AKTA_NIKAH.test(String(r.nm || ""))) iso = r.tgl || keIso(r.tglTeks || "");
+      const nilai = tglNikahTampil(iso);
+      if (nilai) {
+        S.saranSipp["5197"] = { nilai, keyakinan: "ragu", asal: "bukti akta nikah" };
+        return 1;
+      }
+    }
+    return 0;
   }
   /**
    * Tanggal KTP pada bukti terstruktur: hanya baris KTP yang tanggalnya KOSONG diisi (tidak menimpa). Menyimpan lewat jalur bukti yang sama.
@@ -1816,22 +1935,51 @@
   async function isiOtomatisBlangko(d, opsi) {
     const o = opsi || {};
     try {
-      if (!S.pk || !S.blangko || S.susunan !== d) return;
+      if (!S.pk || !S.blangko || S.susunan !== d) return null;
       if (!bolehTulis()) {
         if (o.manual) await isiDariSipp({ otomatis: false });
-        return;
+        return null;
       }
       // Fitur lama TETAP jalan walau saklar mati (keputusan pengguna 19 Okt): bawaan ABT itsbat dan e-litigasi 7139.
       if (!o.sidang) {
         await simpanBawaanAbtItsbat(d);
         await isiElitigasiOtomatis(d);
+        await rapikanPositaOtomatis(d);
       }
       // Saklar "Isi otomatis dari SIPP" hanya mengatur pengisian BARU dari mesin bersama. Saklar mati: bacaan SIPP tetap dianalisis untuk
       // lencana, sumber, dan tombol Input ke ABT, tetapi TIDAK ada yang ditulis sendiri.
-      await isiDariSipp({ otomatis: !o.manual, bacaSaja: !o.manual && cfg().isiOto === false });
+      return await isiDariSipp({ otomatis: !o.manual, bacaSaja: !o.manual && cfg().isiOto === false, senyap: o.senyap === true });
     } catch (e) {
       catatTeknis("isi otomatis gagal:", String((e && e.message) || e));
+      return null;
     }
+  }
+  /**
+   * Tombol "Isi otomatis" (menggantikan deret "Isi dari SIPP", "Isi dari gugatan (posita)" dan "Ambil tanggal KTP dari bukti"):
+   * satu tekan menjalankan ketiganya berurutan - (1) bacaan SIPP, gugatan, e-Court dan KTP ke isian kosong, (2) saran dari
+   * gugatan/posita untuk kotak yang masih kosong, (3) tanggal KTP pada bukti (sudah termasuk langkah 1, tidak menimpa tanggal yang
+   * ada). Isian yang sudah ada isinya tidak ditimpa. Tetap berjalan sendiri saat saklar "Isi otomatis dari SIPP" menyala
+   * (isiOtomatisBlangko); tombol ini untuk menjalankannya sesuai kemauan petugas.
+   */
+  async function isiSemuaOtomatis() {
+    const d = S.susunan;
+    if (!S.pk || !S.blangko || !d) return toast("Pilih perkara dan blangko dulu.");
+    const r = await isiOtomatisBlangko(d, { manual: true, senyap: true });
+    if (S.susunan !== d) return undefined;
+    const dariSaran = bolehTulis() && S.blangko.jenis !== "rel" ? pakaiSemuaSaran({ senyap: true }) : 0;
+    renderIsian();
+    laporKeKerangka();
+    const ditulis = (r ? r.ditulis : 0) + dariSaran;
+    const saran = r ? r.saran : 0;
+    return toast(
+      ditulis
+        ? `${ditulis} isian diisi dan tersimpan ke ABT. Periksa sebelum cetak.${saran ? ` ${saran} lainnya hanya saran samar (tekan Tab untuk memakainya).` : ""}`
+        : saran
+          ? `Tidak ada isian yang pasti; ${saran} diberi saran samar (tekan Tab untuk memakainya).`
+          : r && r.sudahAda
+            ? "Semua isian yang datanya ada sudah terisi."
+            : "Belum ada isian kosong yang datanya ditemukan."
+    );
   }
   /**
    * JJ2-TANYAJAWAB (18 Okt 2026, keputusan 74): JAWABAN / REPLIK / DUPLIK TERTULIS dari e-Court ditulis OTOMATIS ke penyunting
@@ -1984,13 +2132,22 @@
    * Saran untuk isian kosong: draf H-7, lalu hasil mesin SIPP/saksi (didahulukan), lalu bawaan kueri popup ABT. HTML dibuang; bawaan popup
    * yang jelas mentah (potongan posita panjang, bertag) tidak disarankan sama sekali.
    */
-  const saranUntuk = (b) => {
+  const saranUntuk = (b, opsi) => {
     const m = mesinIsi();
     const bersih = (v) => (m ? m.bersihkanNilai(b.kode, v) : String(v || ""));
     const h7 = S.saranH7 && S.saranH7[b.kode] ? S.saranH7[b.kode].nilai : "";
     const sipp = S.saranSipp[b.kode] && b.jenis !== "tanggal" ? S.saranSipp[b.kode].nilai : "";
     const popup = S.saran[b.kode] && !(m && m.jelasMentah(b.kode, S.saran[b.kode])) ? S.saran[b.kode] : "";
-    return bersih(h7 || sipp || popup || b.saran || "");
+    // 19 Okt (isian 2): saran harus sesuai MAKNA isiannya - kalimat ghaib di "Awal perselisihan" atau potongan posita di "KUA" tidak
+    // pernah ditawarkan; lebih baik kotak kosong daripada saran yang salah.
+    const sesuai = (v) => !m || m.sahBentuk(b.kode, v, b.nama);
+    const calon = [h7, sipp, popup]
+      .map((v) => bersih(v).trim())
+      .filter((v) => v && sesuai(v))
+      .map((v) => (m ? m.rapikanBentuk(b.kode, v, b.nama) : v));
+    if (calon.length) return calon[0];
+    // Contoh umum per isian ("belum dikaruniai anak", tanggal pengumuman contoh): hanya samar di kotak, TIDAK untuk pengisian massal.
+    return opsi && opsi.tanpaUmum ? "" : bersih(b.saran || "");
   };
   /**
    * Huruf alasan A-H dari isian 8503, dibaca seperti kueri ABT (REPLACE 'DAN', '&', ',', spasi, '+', '/', '.', '-' lalu INSTR
@@ -2215,7 +2372,13 @@
   // ──────────────────────────────────────────────────────────────────────────
   // Alat bukti surat: baris terstruktur <-> kalimat ABT (variabel 1214 / 9911)
   // ──────────────────────────────────────────────────────────────────────────
-  const buktiBaru = (nm, oleh) => ({ nm: nm || "", an: "", no: "", tgl: "", oleh: oleh || "", meterai: 0, cocok: 0, manual: null });
+  /**
+   * 19 Okt (isian 2): jenis bukti yang diawali nomor ("1. Fotokopi Kartu Tanda Penduduk ...", "2) Fotokopi Kutipan Akta Nikah") dibuang
+   * penomoran awalnya - kode P.1/P.2 sudah ditulis otomatis di kalimat, nomor ganda membingungkan.
+   */
+  const buangNomorAwal = (t) => String(t == null ? "" : t).replace(/^\s*\(?\d{1,2}\s*[.)]\s*(?=\S)/, "").replace(/^\s+/, "");
+  const POLA_BUKTI_BERNOMOR = /^\s*\(?\d{1,2}\s*[.)]\s+\S/m;
+  const buktiBaru = (nm, oleh) => ({ nm: buangNomorAwal(nm), an: "", no: "", tgl: "", oleh: oleh || "", meterai: 0, cocok: 0, manual: null });
   /** Jenis bukti dari namanya: KTP -> kolom NIK, Kartu Keluarga -> Nomor KK, selainnya Nomor surat. */
   function jenisBukti(nm) {
     const n = String(nm || "");
@@ -2234,14 +2397,14 @@
   function kalimatBukti(r, pihak, i) {
     const kode = `${pihak}.${i + 1}`;
     if (typeof r.manual === "string" && r.manual.trim()) {
-      let t = r.manual.trim().replace(/\s+/g, " ");
+      let t = buangNomorAwal(r.manual).trim().replace(/\s+/g, " ");
       const adaKode = new RegExp(POLA_KODE_BUKTI.source, "i").test(t);
       if (adaKode) t = t.replace(POLA_KODE_BUKTI, `$1${kode}`);
       else t = `${t.replace(/[;.,\s]+$/, "")}, lalu diberi tanda ${kode} serta diberi tanggal dan paraf oleh Ketua Majelis`;
       // Kalimat manual yang sudah ditutup titik/titik koma dibiarkan ("T.3." tidak menjadi "T.3.;"); selainnya ditutup ';'.
       return /[;.]$/.test(t) ? t : `${t.replace(/\s+$/, "")};`;
     }
-    const nm = String(r.nm || "").trim();
+    const nm = buangNomorAwal(r.nm).trim();
     const an = String(r.an || "").trim();
     const no = String(r.no || "").trim();
     let k = nm;
@@ -2274,7 +2437,8 @@
       .split(/\n+|(?<=;)\s+(?=Fotokopi|Fotocopy|Asli|Surat|Kutipan|Akta|Buku|Foto|Salinan)/)
       .map((x) => x.trim())
       .filter(Boolean);
-    for (const p of potongan) {
+    for (const p0 of potongan) {
+      const p = buangNomorAwal(p0);
       let s = p.replace(/\s+/g, " ").replace(/;$/, "");
       const r = buktiBaru("", "");
       if (!/bukti surat tersebut|,\s*lalu diberi tanda\s+[PT]\.\s?\d+\s+serta diberi tanggal/i.test(s)) {
@@ -2364,14 +2528,21 @@
       const s = await bacaPenyimpanan(`bdBukti:${perkaraId()}:${pihak}`);
       const simpanan = s[`bdBukti:${perkaraId()}:${pihak}`];
       let rows = null;
+      let teksAsal = "";
       const v = S.nilai[b.kode];
       if (simpanan && Array.isArray(simpanan.rows) && v && v.status === "terisi" && susunKalimatBukti(simpanan.rows, pihak) === String(v.teks || "").replace(/\r\n/g, "\n")) rows = simpanan.rows;
-      else if (v && v.status === "terisi" && String(v.teks || "").trim()) rows = uraiBukti(v.teks);
+      else if (v && v.status === "terisi" && String(v.teks || "").trim()) {
+        teksAsal = String(v.teks);
+        rows = uraiBukti(v.teks);
+      }
       else {
         // Bawaan blangko dihitung ABT (nama pihak, NIK dari SIPP) - dibaca dari jendela sembulnya.
         try {
           const h = await klienAbt().bacaIsian(b.kode, perkaraId(), "", sidangUrutan());
-          if (h.ok && String(h.nilai || "").trim()) rows = uraiBukti(h.nilai);
+          if (h.ok && String(h.nilai || "").trim()) {
+            teksAsal = String(h.nilai);
+            rows = uraiBukti(h.nilai);
+          }
         } catch {
           /* tanpa bawaan */
         }
@@ -2380,7 +2551,22 @@
           rows = pihak === "P" ? [buktiBaru(`Fotokopi Kartu Tanda Penduduk Elektronik (KTP-el) atas nama ${sb.P}`, "Pemerintah Kabupaten"), buktiBaru("Fotokopi Kutipan Akta Nikah", "Kantor Urusan Agama Kecamatan")] : [buktiBaru(`Fotokopi Kartu Tanda Penduduk Elektronik (KTP-el) atas nama ${sb.T}`, "Pemerintah Kabupaten")];
         }
       }
+      // Baris lama (simpanan peramban atau kalimat ABT) yang masih memuat penomoran awal dibersihkan, dan hasilnya disimpan.
+      // Kalimat asal (tersimpan di ABT atau bawaannya) yang masih bernomor ikut ditulis ulang tanpa penomoran.
+      let berubahNomor = POLA_BUKTI_BERNOMOR.test(teksAsal);
+      for (const r of rows) {
+        const nmBersih = buangNomorAwal(r.nm);
+        if (nmBersih !== String(r.nm || "")) {
+          r.nm = nmBersih;
+          berubahNomor = true;
+        }
+        if (typeof r.manual === "string" && buangNomorAwal(r.manual) !== r.manual) {
+          r.manual = buangNomorAwal(r.manual);
+          berubahNomor = true;
+        }
+      }
       S.bukti[pihak] = rows;
+      if (berubahNomor && bolehTulis()) simpanBukti(pihak, false);
     }
     renderIsian();
     laporKeKerangka();
@@ -2477,6 +2663,7 @@
     renderTj();
     void muatAlasanPosita(); // berjalan sendiri: daftar alasan menyesuaikan diri begitu posita terbaca
     await Promise.all([...(pas || [kunci]).map((k) => muatTj(k)), muatSetSaksi(), muatPilSaksi(), muatAlasanSaksi()]);
+    bersihkanPenutupOtomatis(pas || [kunci]);
     renderTj();
     void isiOtomatis(pas || [kunci], {});
   }
@@ -3019,6 +3206,11 @@
     if (teks) return /\n/.test(teks) || teks.length > 90;
     return String(saran || "").length > 90;
   }
+  // 19 Okt (isian 2): isian yang kalimatnya PANJANG per sifatnya (rincian alasan cerai, uraian, pertimbangan) selalu selebar penuh dan berkotak
+  // textarea yang tumbuh sesuai isi - walau masih kosong - supaya tidak sempit lalu melonjak setelah terisi.
+  const KODE_LEBAR = new Set(["5227", "8729", "8433", "7178", "8899", "8901", "8902", "9162", "9163", "9164", "9305", "9309", "9310", "9329", "9330", "9345", "9346", "9352", "9432", "9434", "9501"]);
+  const POLA_NAMA_LEBAR = /(rincian|uraian|pertimbangan|penilaian|isi kesepakatan|pokok kesepakatan|amar kesepakatan|alasan pencabutan|alasan permohonan|alasan panggilan)/i;
+  const isianLebar = (b) => b.jenis === "teks" && !(b.opsi && b.opsi.length) && (KODE_LEBAR.has(b.kode) || POLA_NAMA_LEBAR.test(String(b.nama || "")));
   /** Tinggi awal textarea (baris): perkiraan lipatan pada ±60 huruf per baris, min 2 maks 8; kemudian tumbuh sesuai isi. */
   function barisIsian(teks) {
     const t = String(teks || "").replace(/\s+$/, "");
@@ -3084,10 +3276,10 @@
     const semat = S.sematan.includes(b.kode);
     const riw = S.ketRiwayatBuka.has(b.kode);
     let h =
-      `<div class="bd-ket">${tanda(i.lencana.yakin)}${tanda(i.lencana.asal)}${tanda(i.lencana.sepakat)}` +
+      `<div class="bd-ket"><span class="bd-tandabaris">${tanda(i.lencana.yakin)}${tanda(i.lencana.asal)}${tanda(i.lencana.sepakat)}</span><span class="bd-ketaksi">` +
       (n ? `<button type="button" class="bd-tautankecil" data-bd2="ketsumber" data-ket="${kode}" aria-expanded="${buka}">sumber (${n}) ${buka ? "▾" : "▸"}</button>` : "") +
       `<button type="button" class="bd-ikon" data-bd2="ketsemat" data-ket="${kode}" aria-pressed="${semat}" title="${semat ? "Lepas sematan isian ini" : "Sematkan isian ini (sama dengan bintang di panel ABT)"}">${semat ? "★" : "☆"}</button>` +
-      `<button type="button" class="bd-ikon" data-bd2="ketriwayat" data-ket="${kode}" aria-expanded="${riw}" title="Riwayat isian ini - dengan tombol kembalikan">⟲</button></div>`;
+      `<button type="button" class="bd-ikon" data-bd2="ketriwayat" data-ket="${kode}" aria-expanded="${riw}" title="Riwayat isian ini - dengan tombol kembalikan">⟲</button></span></div>`;
     if (i.catatan) h += `<p class="bd-catat bd-ketcatatan" title="${esc(i.catatan)}">ⓘ ${esc(i.catatan)}</p>`;
     if (i.bentrok) h += `<p class="bd-catat bd-ketcatatan">ⓘ Saksi kedua mengatakan "${esc(i.bentrok)}". Selisih ini soal pembuktian, bukan soal pengisian.</p>`;
     if (buka && n) h += `<ul class="bd-sumberlist">${i.sumber.map((s) => `<li><b>${esc(s.label)}</b> ${esc(s.kalimat)}</li>`).join("")}</ul>`;
@@ -3212,11 +3404,12 @@
     const ro = bolehTulis() ? "" : "disabled";
     let isian;
     let panjang = false;
+    let lebarSelalu = false;
     if (opsi.length) {
       // Pilihan bernilai (mis. beracara elektronik: ABT menyimpan 1/2) - petugas hanya melihat kalimatnya.
       const ada = opsi.some((o) => o.nilai === v);
       isian =
-        `<div class="bd-isiwadah"><select id="bd-i${b.kode}" class="bd-opsi" data-k="${b.kode}" ${ro}><option value="" ${v ? "" : "selected"}>${esc(sr && !ada ? sr : "pilih…")}</option>` +
+        `<div class="bd-isiwadah"><select id="bd-i${b.kode}" class="bd-opsi" data-k="${b.kode}" ${ro}><option value="" ${v ? "" : "selected"}>${esc(sr && !ada ? (() => { const o = opsi.find((x) => x.nilai === sr); return o ? `saran: ${o.label}` : sr; })() : "pilih…")}</option>` +
         opsi.map((o) => `<option value="${esc(o.nilai)}" ${o.nilai === v ? "selected" : ""}>${esc(o.label)}</option>`).join("") +
         (v && !ada ? `<option value="${esc(v)}" selected>${esc(v)}</option>` : "") +
         `</select></div>`;
@@ -3225,9 +3418,10 @@
       // jadi kotaknya textarea supaya tampil & tersimpan utuh.
       // 19 Okt 2026 (tata letak): jenis kotak mengikuti ISINYA. Tanggal, nama, nomor, huruf = satu baris (input, tinggi seragam);
       // textarea hanya untuk kalimat/paragraf, tingginya menyesuaikan isi (bd-auto), bukan kotak besar yang kosong.
-      panjang = b.jenis !== "tanggal" && isianPanjang(v, sr);
+      lebarSelalu = isianLebar(b);
+      panjang = b.jenis !== "tanggal" && (lebarSelalu || isianPanjang(v, sr));
       const kotak = panjang
-        ? `<textarea id="bd-i${b.kode}" class="bd-auto" data-k="${b.kode}" rows="${barisIsian(v || sr)}" placeholder="${esc(sr || "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>${esc(v)}</textarea>`
+        ? `<textarea id="bd-i${b.kode}" class="bd-auto" data-k="${b.kode}" rows="${lebarSelalu ? Math.max(3, barisIsian(v || sr)) : barisIsian(v || sr)}" placeholder="${esc(sr || "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>${esc(v)}</textarea>`
         : `<input id="bd-i${b.kode}" data-k="${b.kode}" type="${b.jenis === "tanggal" ? "date" : "text"}" value="${esc(v)}" placeholder="${esc(sr && b.jenis !== "tanggal" ? sr : b.jenis === "tanggal" ? "" : "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>`;
       isian =
         `<div class="bd-isiwadah">${kotak}` +
@@ -3247,6 +3441,7 @@
       sandingKet(b) +
       pilihBunyi +
       (b.kode === "7139" && S.el7 && v === S.el7.nilai ? `<span class="bd-catat bd-el7">${esc(S.el7.keterangan)}</span>` : "") +
+      (b.kode === "7139" && S.el7Saran && !v.trim() ? `<span class="bd-catat bd-el7">Saran: ${esc(S.el7Saran.keterangan)}</span>` : "") +
       `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st, b.kode))}</span>` +
       (b.kode === "8503" ? (() => { const w = peringatan8503(); return `<span class="bd-peringatan" data-peringatan="8503" role="alert" ${w ? "" : "hidden"}>${esc(w)}</span>`; })() : "") +
       `</div>`
@@ -3336,18 +3531,16 @@
       `<div class="bd-vdaftar" id="bd-vdaftar" ${S.semuaBuka ? "" : "hidden"}></div>`;
     // Rancangan v12: tiga alat ekstensi lama berjajar di atas kotak isian.
     const alat = [];
-    // 19 Okt: "Isi dari SIPP" ada di SEMUA jenis blangko (juga relaas dan PTSP) yang boleh ditulis akun ini.
-    if (bolehTulis()) alat.push(`<button type="button" class="bd-btn kecil" data-bd2="isisipp" title="Isi isian kosong dengan data dari SIPP, gugatan dan e-Court, lalu simpan ke ABT. Isian yang sudah ada isinya tidak ditimpa.">Isi dari SIPP</button>`);
+    // 19 Okt (isian 2): SATU tombol "Isi otomatis" menggantikan deret "Isi dari SIPP", "Isi dari gugatan (posita)" dan "Ambil tanggal KTP
+    // dari bukti". Ada di SEMUA jenis blangko (juga relaas dan PTSP) yang boleh ditulis akun ini.
+    if (bolehTulis()) alat.push(`<button type="button" class="bd-btn kecil" data-bd2="isisipp" title="Mengisi isian kosong dari SIPP, gugatan, e-Court, bukti dan saran, lalu menyimpannya ke ABT. Isian yang sudah ada isinya tidak ditimpa.">Isi otomatis</button>`);
     if (bolehTulis()) {
       const calon = calonInput();
       if (calon.yakin.length) alat.push(`<button type="button" class="bd-btn kecil" data-bd2="inputyakin" title="Menyimpan ke ABT usulan yang pasti atau cukup yakin untuk isian yang masih kosong">Input ke ABT (${calon.yakin.length})</button>`);
       if (calon.pasti.length) alat.push(`<button type="button" class="bd-btn kecil" data-bd2="inputpasti" title="Menyimpan ke ABT hanya usulan yang pasti untuk isian yang masih kosong">Input semua yang pasti (${calon.pasti.length})</button>`);
     }
     if (S.blangko.jenis !== "rel" && bolehTulis()) {
-      alat.push(`<button type="button" class="bd-btn kecil" data-bd2="pakaisaran" title="Isi kotak yang masih kosong dengan saran dari gugatan dan data perkara">Isi dari gugatan (posita)</button>`);
-      // 19 Okt (tahap 2): "Set pertanyaan saksi" tidak lagi di deret ini - fungsinya sudah ada lewat tombol saksi
-      // ("✓ Saksi 1 Penggugat · 15 baris") di bagian tanya jawab saksi, yang membuka daftar pertanyaan + pilihan set.
-      if (grid.some((b) => b.khusus === "bukti")) alat.push(`<button type="button" class="bd-btn kecil" data-bd2="ktpbukti" title="Tanggal KTP pihak dibaca dari berkas KTP e-Court">Ambil tanggal KTP dari bukti</button>`);
+      // 19 Okt: deret isi diganti satu tombol "Isi otomatis" (di atas); "Set pertanyaan saksi" pindah ke tombol saksi di tanya jawab.
     }
     cari("#bd-alatisi", w).innerHTML = alat.join("");
     renderTj();
@@ -4778,18 +4971,31 @@
   // ──────────────────────────────────────────────────────────────────────────
   // Peristiwa
   // ──────────────────────────────────────────────────────────────────────────
-  function pakaiSemuaSaran() {
+  /**
+   * Mengisi kotak yang masih kosong dengan saran yang SESUAI MAKNA isiannya (dari gugatan/posita, SIPP, draf H-7 yang pasti, bawaan ABT).
+   * Contoh umum ("belum dikaruniai anak", tanggal pengumuman contoh) tidak ikut. Tidak pernah menimpa. `senyap`: tanpa toast
+   * (dipakai tombol "Isi otomatis"). Mengembalikan banyaknya isian yang diisi.
+   */
+  function pakaiSemuaSaran(opsi) {
+    const senyap = Boolean(opsi && opsi.senyap);
     let n = 0;
     for (const b of daftarPerlu()) {
-      if (b.jenis !== "teks" || (b.opsi && b.opsi.length) || String(S.isi[b.kode] || "").trim()) continue;
+      if (b.jenis !== "teks" || (b.opsi && b.opsi.length) || String(S.isi[b.kode] || "").trim() || S.diketik.has(b.kode)) continue;
+      // Tanggal akta nikah pada bukti belum tentu tanggal nikah: hanya saran samar (Tab), tidak ikut pengisian massal.
+      if (S.saranSipp[b.kode] && S.saranSipp[b.kode].asal === "bukti akta nikah" && !(S.saranH7 && S.saranH7[b.kode])) continue;
       // F4.2: usulan draf H-7 yang BELUM pasti tidak ikut diisi sekaligus - dipakai satu per satu (Tab) sesudah diperiksa.
-      const sr = S.saranH7 && S.saranH7[b.kode] && S.saranH7[b.kode].golongan !== "pasti" ? S.saran[b.kode] || b.saran || "" : saranUntuk(b);
+      const m = mesinIsi();
+      const mentahH7 = S.saranH7 && S.saranH7[b.kode] && S.saranH7[b.kode].golongan !== "pasti" ? S.saran[b.kode] || "" : "";
+      const sr = S.saranH7 && S.saranH7[b.kode] && S.saranH7[b.kode].golongan !== "pasti" ? (m && mentahH7 && !m.sahBentuk(b.kode, m.bersihkanNilai(b.kode, mentahH7), b.nama) ? "" : mentahH7) : saranUntuk(b, { tanpaUmum: true });
       if (!sr) continue;
       jadwalkanSimpan(b.kode, sr);
       n += 1;
     }
-    renderIsian();
-    toast(n ? `${n} isian diisi dari saran. Periksa sebelum cetak; semuanya tersimpan ke ABT.` : "Tidak ada isian kosong yang punya saran.");
+    if (!senyap) {
+      renderIsian();
+      toast(n ? `${n} isian diisi dari saran. Periksa sebelum cetak; semuanya tersimpan ke ABT.` : "Tidak ada isian kosong yang punya saran.");
+    }
+    return n;
   }
   /**
    * F4.2: membuka blangko putusan draf H-7 agen ALETA dan memasang isiannya sebagai SARAN (tidak tersimpan ke ABT).
@@ -4861,7 +5067,7 @@
       return void periksaHakBlangko(bl).then(() => (S.blangko === bl && bl.hak === "ok" ? muatSusunan() : undefined));
     }
     if (kode === "salinskors") return void salinKalimatSkors();
-    if (kode === "isisipp") return void isiOtomatisBlangko(S.susunan, { manual: true });
+    if (kode === "isisipp") return void isiSemuaOtomatis();
     if (kode === "inputyakin") return void masukkanCalon(calonInput().yakin);
     if (kode === "inputpasti") return void masukkanCalon(calonInput().pasti);
     if (kode && kode.startsWith("ket") && aksi.getAttribute("data-ket")) return void aksiKet(aksi.getAttribute("data-ket"), kode, Number(aksi.getAttribute("data-idx")));
@@ -5670,6 +5876,7 @@
       S.tautan = null;
       S.isiSipp = { jalan: false, ulang: false, kunci: "", hasil: null };
       S.el7 = null;
+      S.el7Saran = null;
       S.saranH7 = {}; // F4.2: saran draf H-7 milik perkara sebelumnya tidak terbawa.
       S.bukti = { P: null, T: null };
       S.tj = {};

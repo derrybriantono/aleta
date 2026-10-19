@@ -1276,6 +1276,24 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
     }
   }
 
+  // 19 Okt (isian 2): kedua saksi diam soal upaya damai, posita menyebutnya -> kalimat baku sesuai posita. "Berhasil/gagal" dan
+  // "keluarga tidak pernah mendamaikan" ditulis menurut apa yang didalilkan (keyakinan "cukup"; sumbernya posita dan
+  // tertulis demikian di lencana). Posita yang diam tetap kosong.
+  let sumberDamai = [...sumberDari(damai1.kalimat, 1), ...sumberDari(damai2.kalimat, 2)];
+  if (!damai1.keadaan && !damai2.keadaan && butirPosita.length) {
+    const dp = upayaDamaiPosita(butirPosita);
+    const bunyiPosita = dp.keadaan ? kalimatBaku.kalimatUpayaDamai(dp.keadaan, pihak, opsi) : "";
+    if (bunyiPosita) {
+      upaya = {
+        nilai: bunyiPosita,
+        keyakinan: "cukup",
+        bentrok: "",
+        catatan: "Kedua saksi tidak menyebut upaya damai; diambil dari posita - dalil yang belum dikuatkan saksi.",
+      };
+      sumberDamai = [{ saksi: 0, asal: "posita", kalimat: dp.kalimat }];
+    }
+  }
+
   // ==========================================================================
   // 5227 - HANYA ALASAN YANG BERSESUAIAN ANTARA KEDUA SAKSI
   // ==========================================================================
@@ -1587,7 +1605,7 @@ function dariKeteranganSaksi(teksSaksi1, teksSaksi2, tanggalSidang, pihak, posit
         "1268",
         "Upaya Damai Keluarga",
         upaya,
-        [...sumberDari(damai1.kalimat, 1), ...sumberDari(damai2.kalimat, 2)]
+        sumberDamai
       ),
     ],
   };
@@ -1830,6 +1848,13 @@ async function dariSipp(nomorPerkara) {
       catatan: "SIPP tidak punya kolom untuk tanggal ini. Hanya dapat diisi tangan.",
     },
   ];
+
+  // 19 Okt (isian 2): Tgl Nikah (5197) dari data pernikahan perkara atau kalimat pernikahan pada posita.
+  try {
+    for (const u of await usulanTanggalNikahSipp(perkaraId)) if (!hasil.some((x) => x.kode === u.kode)) hasil.push(u);
+  } catch {
+    /* tanggal nikah bersifat tambahan: gagal membaca tidak menggagalkan usulan SIPP lain */
+  }
 
   // Z1 18 Okt: isian popup yang datanya ada di SIPP (kesepakatan perdamaian, alasan cabut karena mediasi, batas ikrar,
   // pengumuman itsbat, kuasa Tergugat) - lihat abtIsianSippLanjutan.js dan docs/isi-sipp-abt/DAFTAR-CEK.md.
@@ -2240,6 +2265,148 @@ function namaSesudah(kalimat, pemicu) {
   const cocok = new RegExp(`${pemicu}\\s*:?\\s+`, "i").exec(String(kalimat || ""));
   if (!cocok) return "";
   return namaDiAwal(String(kalimat).slice(cocok.index + cocok[0].length));
+}
+
+/**
+ * ============================================================================
+ * TANGGAL NIKAH UNTUK PERKARA CERAI (19 Okt 2026, isian 2) - variabel 5197 "Tgl Nikah"
+ * ============================================================================
+ *
+ * Isian ini kosong ("ketik di sini") padahal tanggalnya ada di tiga tempat:
+ *   1. data pernikahan perkara di SIPP (perkara_data_pernikahan.tgl_nikah)        -> pasti;
+ *   2. posita/gugatan: "pada tanggal 04 Juli 2011, Penggugat dan Tergugat telah melangsungkan pernikahan"  -> cukup;
+ *   3. bukti P akta nikah (tanggal pada bukti) - tanggal AKTA tidak selalu tanggal nikah, jadi hanya saran (di ekstensi).
+ * Bentuk tulisnya mengikuti isian ABT: dua angka hari + nama bulan + tahun ("04 Juli 2011").
+ *
+ * Posita dibaca ketat: kalimat harus menyebut pernikahan (melangsungkan pernikahan, menikah secara sah, akad nikah), tanggalnya
+ * harus lengkap dengan hari, dan tanggal yang didahului "tertanggal"/"diterbitkan"/"dikeluarkan"/"lahir" (tanggal akta, kutipan,
+ * kelahiran anak) dilewati. Kalimat riwayat ("setelah menikah ... tinggal", "dikaruniai anak") tidak dipakai.
+ */
+const POLA_TANGGAL_PANJANG = new RegExp(
+  "\\b(\\d{1,2})\\s+(Januari|Februari|Pebruari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Nopember|Desember)\\s*,?\\s+((?:19|20)\\d{2})\\b",
+  "gi"
+);
+const POLA_KALIMAT_NIKAH = /(melangsungkan\s+(?:akad\s+)?(?:pernikahan|perkawinan|nikah)|menikah\s+(?:secara\s+)?(?:sah|di\s)|akad\s+nikah|pernikahan\s+(?:yang\s+)?(?:sah|dilangsungkan)|perkawinan\s+(?:yang\s+)?(?:sah|dilangsungkan))/i;
+const POLA_BUKAN_KALIMAT_NIKAH = /dikaruniai|setelah\s+(?:menikah|pernikahan|perkawinan)|tinggal\s+bersama|pisah\s+rumah|perselisihan|pertengkaran/i;
+const POLA_DEPAN_TANGGAL_LAIN = /(?:tertanggal|diterbitkan|dikeluarkan|diterbitkan\s+pada|terbit|lahir|dilahirkan|kelahiran|tanggal\s+kutipan|kutipan\s+akta[^,;]{0,40})\W*(?:pada\s+)?(?:tanggal\s+|tgl\.?\s+)?$/i;
+
+/** "04 Juli 2011" - hari dua angka, nama bulan baku. */
+function tampilTanggalNikah(hari, namaBulan, tahun) {
+  const kecil = String(namaBulan || "").toLowerCase();
+  const baku = kecil === "pebruari" ? "Februari" : kecil === "nopember" ? "November" : BULAN.find((b) => b.toLowerCase() === kecil);
+  if (!baku) return "";
+  const h = Number(hari);
+  if (!(h >= 1 && h <= 31)) return "";
+  return `${String(h).padStart(2, "0")} ${baku} ${tahun}`;
+}
+
+/** "2011-07-04" (atau "2011-07-04 00:00:00") -> "04 Juli 2011"; "" bila bukan tanggal sah. */
+function tanggalNikahDariIso(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
+  if (!m || m[1] === "0000" || m[2] === "00" || m[3] === "00") return "";
+  const bulan = Number(m[2]);
+  if (bulan < 1 || bulan > 12 || Number(m[1]) < 1900) return "";
+  return tampilTanggalNikah(Number(m[3]), BULAN[bulan - 1], m[1]);
+}
+
+/**
+ * Tanggal nikah dari butir posita (hasil kalimatPosita). -> { nilai: "04 Juli 2011", kalimat } atau { nilai: "", kalimat: "" }.
+ * Lebih baik kosong daripada salah: kalimat tanpa hari, atau yang hanya memuat tanggal akta/kelahiran, tidak menghasilkan apa-apa.
+ */
+function tanggalNikahDariPosita(butir) {
+  for (const b of Array.isArray(butir) ? butir : []) {
+    const k = String(b || "");
+    if (!POLA_KALIMAT_NIKAH.test(k) || (POLA_BUKAN_KALIMAT_NIKAH.test(k) && !/melangsungkan|akad\s+nikah/i.test(k))) continue;
+    for (const m of k.matchAll(POLA_TANGGAL_PANJANG)) {
+      if (POLA_DEPAN_TANGGAL_LAIN.test(k.slice(Math.max(0, m.index - 60), m.index))) continue;
+      const nilai = tampilTanggalNikah(m[1], m[2], m[3]);
+      if (nilai) return { nilai, kalimat: k };
+    }
+  }
+  return { nilai: "", kalimat: "" };
+}
+
+/**
+ * KUA tempat menikah dari kalimat pernikahan posita cerai, dalam bentuk nama wilayah ("Kecamatan Sindue Tobata, Kabupaten Donggala,
+ * Provinsi Sulawesi Tengah"): potongan dari sebutan KUA sampai sebelum "sebagaimana/Kutipan/Nomor/tertanggal" - TIDAK pernah ikut
+ * kalimat akta. Hanya SARAN (keyakinan ragu): bentuk tulis isian "KUA Kec." di blangko cerai belum pernah dipastikan petugas.
+ */
+function kuaDariPosita(butir) {
+  const wilayah = require("./deteksi/wilayah");
+  for (const b of Array.isArray(butir) ? butir : []) {
+    const k = String(b || "");
+    const m = /\b(?:Kantor\s+Urusan\s+Agama|KUA)\b/i.exec(k);
+    if (!m || !/pernikahan|perkawinan|menikah|dicatat|dicatatkan/i.test(k)) continue;
+    const seg = k.slice(m.index).split(/\b(?:sebagaimana|sesuai|dengan\s+kutipan|kutipan|nomor|tertanggal|yang\s+menikahkan)\b|;/i)[0];
+    const komp = wilayah.komponenWilayah(seg);
+    if (!komp.kecamatan) continue;
+    const nilai = [`Kecamatan ${komp.kecamatan}`, komp.kabupaten, komp.provinsi].filter(Boolean).join(", ");
+    return { nilai, kalimat: k };
+  }
+  return { nilai: "", kalimat: "" };
+}
+
+/**
+ * Usulan dari data pernikahan perkara dan posita (5197 tanggal nikah, 5178 KUA) untuk perkara cerai.
+ * 5197: data pernikahan SIPP (pasti) lebih dulu, lalu kalimat pernikahan pada posita (cukup). 5178: dari posita, hanya saran.
+ * Hanya MEMBACA; kegagalan satu kueri (tabel tak ada) tidak menggagalkan yang lain. -> daftar usulan (boleh kosong).
+ */
+async function usulanTanggalNikahSipp(perkaraId) {
+  const hasil = [];
+  let nikah = [];
+  try {
+    nikah = await runQuery("SELECT DATE_FORMAT(tgl_nikah, '%Y-%m-%d') AS tglNikah FROM perkara_data_pernikahan WHERE perkara_id = ? LIMIT 1", [perkaraId]);
+  } catch {
+    nikah = [];
+  }
+  const dariData = tanggalNikahDariIso(Array.isArray(nikah) && nikah[0] ? nikah[0].tglNikah : "");
+  let posita = [];
+  try {
+    posita = await runQuery("SELECT posita FROM perkara WHERE perkara_id = ? LIMIT 1", [perkaraId]);
+  } catch {
+    posita = [];
+  }
+  const butir = kalimatPosita(Array.isArray(posita) && posita[0] ? posita[0].posita : "");
+  if (dariData) {
+    hasil.push({
+      kode: "5197",
+      nama: "Tgl Nikah",
+      nilai: dariData,
+      keyakinan: "pasti",
+      bentrok: "",
+      catatan: "Dari data pernikahan perkara di SIPP (Tanggal Menikah).",
+      dihitung: false,
+      sumber: [{ asal: "data-nikah", keterangan: `Data pernikahan perkara di SIPP: ${dariData}` }],
+    });
+  } else {
+    const h = tanggalNikahDariPosita(butir);
+    if (h.nilai) {
+      hasil.push({
+        kode: "5197",
+        nama: "Tgl Nikah",
+        nilai: h.nilai,
+        keyakinan: "cukup",
+        bentrok: "",
+        catatan: "Dari kalimat pernikahan pada posita perkara; data pernikahan di SIPP belum diisi.",
+        dihitung: false,
+        sumber: [{ asal: "posita-gugatan", kalimat: h.kalimat }],
+      });
+    }
+  }
+  const kua = kuaDariPosita(butir);
+  if (kua.nilai) {
+    hasil.push({
+      kode: "5178",
+      nama: "KUA Kec.",
+      nilai: kua.nilai,
+      keyakinan: "ragu",
+      bentrok: "",
+      catatan: "Nama wilayah KUA tempat menikah dari posita (tanpa kalimat akta nikah); periksa bentuk tulisnya.",
+      dihitung: false,
+      sumber: [{ asal: "posita-gugatan", kalimat: kua.kalimat }],
+    });
+  }
+  return hasil;
 }
 
 function hasilItsbat(nilai, kalimat, catatan) {
@@ -5421,6 +5588,12 @@ module.exports = {
   TANDA_BELUM_TERISI,
   POLA_TANYA_UPAYA_RUKUN,
   alasanDariPosita,
+  // 19 Okt (isian 2): tanggal nikah perkara cerai - diuji langsung.
+  tanggalNikahDariPosita,
+  kuaDariPosita,
+  tanggalNikahDariIso,
+  tampilTanggalNikah,
+  usulanTanggalNikahSipp,
   // Ragam keterangan saksi (t2-ragam-bas-bot) - diuji langsung.
   periksaInvarian,
   tiruanReplaceKetSaksi,

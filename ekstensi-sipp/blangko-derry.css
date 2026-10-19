@@ -529,3 +529,17 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-skalasan .bd-skalasanlain { grid-column: 1 / -1; justify-self: start; }
 #aleta-bd-akar .bd-skalasan > .bd-catat { grid-column: 1 / -1; margin: 0; }
 #aleta-bd-akar .bd-tjbaca .bd-tjtabel td { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ===== Isian 2 (19 Okt 2026): kartu rapi di 1366 zoom 100/125/150% =====
+   - isian panjang (rincian alasan cerai, uraian) selalu selebar penuh; kotak textarea tumbuh sesuai isi;
+   - lencana (yakin, asal, kesepakatan) dalam SATU baris yang membungkus rapi; tombol sumber/sematan/riwayat di ujung kanan baris itu;
+   - kartu tidak menjulang karena lencana: tiap lencana satu garis (tidak patah di tengah), terpotong titik-titik bila lebih lebar dari kartu. */
+#aleta-bd-akar .bd-ket { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+#aleta-bd-akar .bd-tandabaris { display: flex; flex-wrap: wrap; gap: 4px 6px; min-width: 0; flex: 1 1 auto; }
+#aleta-bd-akar .bd-ketaksi { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; flex: 0 0 auto; }
+#aleta-bd-akar .bd-tanda { max-width: 100%; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
+#aleta-bd-akar .bd-f.panjang textarea, #aleta-bd-akar .bd-f.panjang .bd-isiwadah { width: 100%; }
+#aleta-bd-akar .bd-f.panjang .bd-bunyi select { max-width: 100%; text-overflow: ellipsis; }
+#aleta-bd-akar .bd-ketcatatan { overflow-wrap: anywhere; }
+#aleta-bd-akar .bd-sanding > div { overflow-wrap: anywhere; }
+#aleta-bd-akar .bd-fh label { overflow-wrap: anywhere; }

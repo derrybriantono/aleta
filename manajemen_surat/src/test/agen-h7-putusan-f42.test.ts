@@ -602,7 +602,7 @@ describe("penjaga: agen hanya membaca SIPP/ABT, tanpa AI luar", () => {
     expect(fungsi).toContain("S.saranH7[kode]");
     expect(fungsi).not.toMatch(/jadwalkanSimpan|simpanVariabel|edit_data/);
     expect(isi).toContain("pakaiDrafH7,");
-    const pakaiSemua = isi.slice(isi.indexOf("function pakaiSemuaSaran()"), isi.indexOf("async function pakaiDrafH7("));
+    const pakaiSemua = isi.slice(isi.indexOf("function pakaiSemuaSaran("), isi.indexOf("async function pakaiDrafH7("));
     expect(pakaiSemua).toContain('S.saranH7[b.kode].golongan !== "pasti"');
   });
 });

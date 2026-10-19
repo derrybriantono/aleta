@@ -481,7 +481,9 @@ export function golongkanIsian(m: MasukanGolongkan): IsianDraf[] {
       hasil.push({ ...dasar, golongan: "terisi", nilai: potong(bersihkanNilai(b.kode, teks(m.nilai[b.kode]?.teks)).trim(), 600), sumber: "ABT", catatan: "", keyakinan: "pasti", asal: "abt" });
       continue;
     }
-    const u = b.jenis === "tj" ? undefined : usulanPerKode.get(b.kode);
+    const u0 = b.jenis === "tj" ? undefined : usulanPerKode.get(b.kode);
+    // 19 Okt (isian 2): usulan bernilai yang bentuknya bukan isiannya (mis. kalimat ghaib di awal perselisihan) tidak diusulkan sama sekali.
+    const u = u0 && teks(u0.usulan.nilai).trim() && !bersihkanNilaiUsulan(b.kode, teks(u0.usulan.nilai)) ? undefined : u0;
     if (u) {
       const pasti = usulanPasti(u.usulan) && !hukum;
       hasil.push({
