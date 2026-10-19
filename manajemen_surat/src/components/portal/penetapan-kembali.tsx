@@ -586,12 +586,9 @@ export function PopupPenetapanKembali({
               ))}
             </div>
           ) : null}
-          {memuat && !Object.keys(keadaan).length ? (
-            <p className="text-sm text-muted-foreground">
-              <Loader2 className="mr-1 inline h-3.5 w-3.5 animate-spin" />
-              Membaca penetapan perkara di SIPP…
-            </p>
-          ) : null}
+          {/* 19 Okt 2026: tanpa tulisan memuat (permintaan pengguna no. 5 Jadwal);
+              ruang tetap agar tata letak tidak melompat. */}
+          {memuat && !Object.keys(keadaan).length ? <div className="h-5" aria-hidden="true" /> : null}
           <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
             {daftarTampil.map((p) => (
               <label key={p.perkaraId} className={cn("inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs", dipilih[p.perkaraId] && "border-primary bg-primary/10")}>
