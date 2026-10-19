@@ -140,6 +140,8 @@ type Opsi = {
   saksiRows?: Record<string, Array<{ no: string; tanya: string; jawab: string }>>;
   /** Riwayat perubahan panel (bacaRiwayat). */
   riwayat?: Array<Record<string, unknown>>;
+  /** konseptor-langkah GET drafH7: perkaraId -> draf (kartu checklist). Kosong = belum ada draf. */
+  drafH7?: Record<string, unknown>;
 };
 type Halaman = { dom: JSDOM; w: any; simpanan: Record<string, unknown>; minta: Minta[]; abt: Record<string, string>; opsi: Opsi; riwayatCatat: Array<Record<string, unknown>> };
 const terbuka: JSDOM[] = [];
@@ -207,6 +209,7 @@ function buka(p: Opsi = {}): Halaman {
       return json({ ok: false }, 404);
     }
     if (url.includes("/aleta-ecourt/sidang/skors?")) return json({ ok: true, data: { available: true, ok: true, riwayat: [], kalimatBas: "" } });
+    if (url.includes("/aleta-ecourt/konseptor-langkah")) return json({ ok: true, data: { ada: true, peta: {}, drafH7: polos(p.drafH7 ?? {}), keadaanTerbaca: true } });
     if (url.includes("/aleta-ecourt/blangko-derry/set-saksi")) return json({ ok: true, data: { ada: false } });
     if (url.includes("/aleta-ecourt/blangko-derry?hak=1")) return json({ ok: true, data: { saklar: { hakimBas: false, ppPutusan: false }, folder: [] } });
     if (url.includes("/aleta-ecourt/blangko-derry")) {
@@ -1094,5 +1097,111 @@ describe("J. kelengkapan kartu usulan di tiap isian (lencana, sumber, bintang, r
     await sampai(() => h.abt["0007"] === "telah dikaruniai 2 orang anak", "yang cukup ditulis");
     expect(h.abt["2004"]).toBeUndefined();
     for (const m of mintaKe(h, /edit_data\?/, "POST")) expect(m.badan).not.toMatch(/aleta/i);
+  });
+});
+
+// ============================================================================
+describe("L. tautan Draf H-7: draf, varian dan isian yang ditunjuk", () => {
+  const tautan = (o: Record<string, unknown>) => `#bd=${encodeURIComponent(JSON.stringify({ v: 1, nomor: NOMOR, perkaraId: "10154", sidangKe: 2, tanggalSidang: HARI_INI, jenis: "putusan", agenda: "Pemeriksaan pokok perkara", tunda: false, keterangan: "putus DIKABULKAN (verstek)", amar: "", verstek: true, jumlahSaksiP: 0, jumlahSaksiT: 0, ...o }))}`;
+  const blangkoDraf = (berkas: string) => ({ folder: "1 Perceraian CG", berkas, menu: "Putusan CG", alias: [], label: berkas });
+  const DRAF = {
+    ringkas: { tingkat: "hampir", persen: 80 },
+    blangko: blangkoDraf(BLANGKO_PUT),
+    alasanBlangko: "",
+    saran: { "0007": { nilai: "saran draf dikabulkan", golongan: "usulan", sumber: "" } },
+    perlu: [],
+    laporan: [],
+    varian: [{ status: "ditolak", judul: "Varian ditolak", blangko: blangkoDraf(BLANGKO_PUT_3), alasanBlangko: "", saran: { "0007": { nilai: "saran draf ditolak", golongan: "usulan", sumber: "" } }, tingkat: "belum", persen: 40, jumlahPerlu: 3 }],
+  };
+  const MENU_DUA = [BLANGKO_PUT, BLANGKO_PUT_3];
+  const terpilih = (h: Halaman) => isian(h).keadaan().blangko?.berkas as string | undefined;
+  const alat = (h: Halaman) => {
+    const gulir: string[] = [];
+    const fokus: string[] = [];
+    h.w.Element.prototype.scrollIntoView = function (this: Element) {
+      gulir.push(this.getAttribute("data-f") || this.id);
+    };
+    h.w.HTMLElement.prototype.focus = function (this: HTMLElement) {
+      fokus.push(this.id);
+    };
+    return { gulir, fokus };
+  };
+  const saran0007 = (h: Halaman) => (q(h, "#bd-i0007") as HTMLInputElement | HTMLTextAreaElement | null)?.getAttribute("placeholder");
+
+  it("pembaca hash murni: draf, varian dan isian dibaca; nilai tak sah dibuang; tautan lama tidak membawa ruas baru", () => {
+    const h = buka();
+    const baca = h.w.aletaBlangkoDerry.murni.bacaTautanBd as (x: string) => Record<string, unknown> | null;
+    expect(polos(baca(tautan({ draf: "h7", varian: "ditolak", isian: "  Anak   dari Pernikahan ini " })))).toMatchObject({ draf: "h7", varian: "ditolak", isian: "Anak dari Pernikahan ini", jenis: "putusan" });
+    expect(polos(baca(tautan({ draf: "h7", varian: "dikabulkan" })))).toMatchObject({ draf: "h7", varian: "dikabulkan" });
+    const tak = polos(baca(tautan({ draf: "h8", varian: "lain", isian: 5 }))) as Record<string, unknown>;
+    expect(tak).not.toBeNull();
+    for (const r of ["draf", "varian", "isian"]) expect(tak, r).not.toHaveProperty(r);
+    expect(String((polos(baca(tautan({ isian: "x".repeat(300) }))) as Record<string, unknown>).isian)).toHaveLength(120);
+    const lama = polos(baca(tautan({}))) as Record<string, unknown>;
+    for (const r of ["draf", "varian", "isian"]) expect(lama, r).not.toHaveProperty(r);
+    expect(baca(tautan({ v: 2, draf: "h7" }))).toBeNull();
+  });
+
+  it("draf h7 tanpa varian: draf perkara dibaca dari portal, blangko draf terbuka, isian agen hanya SARAN (tidak ada tulisan ke ABT)", async () => {
+    const h = buka({ hash: tautan({ draf: "h7" }), drafH7: { "10154": DRAF }, menuPut: MENU_DUA, usulan: [] });
+    await sampai(() => terpilih(h) === BLANGKO_PUT, "blangko draf terpilih");
+    await sampai(() => saran0007(h) === "saran draf dikabulkan", "saran agen terpasang");
+    expect(mintaKe(h, /konseptor-langkah\?perkaraId=10154/).length).toBe(1);
+    expect(nilaiKotak(h, "0007")).toBe("");
+    expect(mintaKe(h, /edit_data\?/, "POST")).toEqual([]);
+    expect(h.w.location.hash).toBe("");
+  });
+
+  it("varian ditolak: blangko dan saran varian itu yang dipakai", async () => {
+    const h = buka({ hash: tautan({ draf: "h7", varian: "ditolak" }), drafH7: { "10154": DRAF }, menuPut: MENU_DUA, usulan: [] });
+    await sampai(() => terpilih(h) === BLANGKO_PUT_3, "blangko varian ditolak terpilih");
+    await sampai(() => saran0007(h) === "saran draf ditolak", "saran varian terpasang");
+  });
+
+  it("varian ditolak yang tidak ada di draf: draf utama dipakai (bukan galat)", async () => {
+    const h = buka({ hash: tautan({ draf: "h7", varian: "ditolak" }), drafH7: { "10154": { ...DRAF, varian: [] } }, menuPut: MENU_DUA, usulan: [] });
+    await sampai(() => terpilih(h) === BLANGKO_PUT, "blangko draf utama terpilih");
+    await sampai(() => saran0007(h) === "saran draf dikabulkan", "saran utama terpasang");
+  });
+
+  it("isian yang sudah ada isinya di ABT tidak ditimpa saran draf", async () => {
+    const h = buka({ hash: tautan({ draf: "h7" }), drafH7: { "10154": DRAF }, menuPut: MENU_DUA, usulan: [], abtAwal: { "0007": "isi petugas" } });
+    await sampai(() => terpilih(h) === BLANGKO_PUT, "blangko draf terpilih");
+    await sampai(() => q(h, "#bd-i0007"), "kartu tergambar");
+    await tunggu(150);
+    expect(nilaiKotak(h, "0007")).toBe("isi petugas");
+    expect(h.abt["0007"]).toBe("isi petugas");
+    expect(mintaKe(h, /edit_data\?/, "POST")).toEqual([]);
+  });
+
+  it("isian yang ditunjuk: digulir, kotaknya difokus, disorot lalu sorotan hilang sendiri (cocok longgar huruf besar/spasi)", async () => {
+    const h = buka({ hash: tautan({ draf: "h7", isian: "  ANAK dari   Pernikahan ini " }), drafH7: { "10154": DRAF }, menuPut: MENU_DUA, usulan: [] });
+    const a = alat(h);
+    await sampai(() => q(h, '#bd-perlu .bd-f[data-f="0007"].bd-sorot'), "kartu tersorot");
+    expect(a.gulir).toContain("0007");
+    expect(a.fokus).toContain("bd-i0007");
+    // Hanya satu kartu yang tersorot.
+    expect(qq(h, ".bd-sorot").length).toBe(1);
+    await sampai(() => !q(h, ".bd-sorot"), "sorotan hilang", 4000);
+    // Isian masih utuh, tidak ada pesan teknis.
+    expect(q(h, '#bd-perlu .bd-f[data-f="0007"]')).not.toBeNull();
+  });
+
+  it("nama isian yang tidak ketemu: diam (tanpa sorotan, tanpa pesan)", async () => {
+    const h = buka({ hash: tautan({ draf: "h7", isian: "Isian yang tidak pernah ada" }), drafH7: { "10154": DRAF }, menuPut: MENU_DUA, usulan: [] });
+    const a = alat(h);
+    await sampai(() => saran0007(h) === "saran draf dikabulkan", "saran terpasang");
+    await tunggu(200);
+    expect(qq(h, ".bd-sorot")).toEqual([]);
+    expect(a.gulir).toEqual([]);
+    expect(q(h, "#bd-toast")?.textContent || "").not.toMatch(/isian yang tidak pernah ada|galat|error|undefined/i);
+  });
+
+  it("belum ada draf untuk perkara itu: jalur biasa (blangko putusan dari saran sidang), isian tetap disorot", async () => {
+    const SARAN = [{ berkas: BLANGKO_PUT, kelompok: "Putusan CG", jenis: "put", alasan: "dari keadaan perkara" }];
+    const h = buka({ hash: tautan({ draf: "h7", isian: "anak dari pernikahan" }), drafH7: {}, saran: SARAN, menuPut: MENU_DUA, usulan: [] });
+    alat(h);
+    await sampai(() => terpilih(h) === BLANGKO_PUT, "blangko putusan dari saran");
+    await sampai(() => q(h, '#bd-perlu .bd-f[data-f="0007"].bd-sorot'), "kartu tersorot");
   });
 });
