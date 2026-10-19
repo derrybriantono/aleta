@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Penetapan Mulus 2</title>
+<!--
+  Rancangan panel Penetapan di ekstensi (UI Baru), 19 Okt 2026 - lanjutan
+  penetapan-satu-klik.html. Data rekaan. Keadaan dipilih dengan tombol di atas
+  atau alamat:
+    #keadaan=awal|majelis|pp|pejabat|phs|edoc|rinci|manual  &lebar=hp|laptop
+  Kelas dan teks di sini SAMA dengan yang dibangun t7KartuKeputusan (kartu
+  mulus) dan gambarPenunjukan (tampilan rinci) di ekstensi-sipp/konten.js.
+
+  Perubahan dari 1.205.10:
+    2  rinci dan mulus tidak tampil bersamaan; pejabat dipilih dengan mengeklik
+       baris "Ditetapkan ..." di tiap penetapan (PPP dan PJS terpisah)
+    3  bagian "Pejabat yang menetapkan" dihapus
+    4  kartu "Penetapan" = "Penetapan dan Penunjukan Perkara" versi mulus;
+       "Ubah" di tiap baris membuka menu pilihan langsung
+    5  "Pilihan lain" dihapus; "Ubah semua pilihan" di bawah "Tetapkan semua"
+    6  label "Ketua" di kiri judul kartu
+    7  tombol "e-Doc" di samping "Ubah" (ambil dari ABT + unggah)
+    8  bagian baru "Edoc penetapan (PMH/PPP/PJS/PHS) manual"
+    10 passphrase TTE tidak ada di panel - satu baris keterangan + tautan
+    11 "Lihat rincian pemeriksaan" dihapus
+-->
+<style>
+  :root {
+    --latar: #ffffff; --latar-naik: #f3f5f9; --garis: #e2e7ef; --garis-kuat: #cdd5e1;
+    --tulisan: #111827; --lembut: #4b5565; --merek: #0b89a8; --aman: #047857;
+    --mendesak: #b45309; --lewat: #b91c1c;
+    --merek-latar: #e2f4f8; --aman-latar: #e7f6ef; --mendesak-latar: #fdf3e3; --lewat-latar: #fdecec;
+    --halaman: #e9edf3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --latar: #111a2b; --latar-naik: #162238; --garis: #24324b; --garis-kuat: #344560;
+      --tulisan: #e8eef7; --lembut: #aab6c8; --merek: #3ec6e6; --aman: #34d399;
+      --mendesak: #f5b83d; --lewat: #f87171;
+      --merek-latar: #10324a; --aman-latar: #0f3328; --mendesak-latar: #3a2c10; --lewat-latar: #3b1717;
+      --halaman: #0b1220;
+    }
+  }
+  :root[data-theme="dark"] {
+    --latar: #111a2b; --latar-naik: #162238; --garis: #24324b; --garis-kuat: #344560;
+    --tulisan: #e8eef7; --lembut: #aab6c8; --merek: #3ec6e6; --aman: #34d399;
+    --mendesak: #f5b83d; --lewat: #f87171;
+    --merek-latar: #10324a; --aman-latar: #0f3328; --mendesak-latar: #3a2c10; --lewat-latar: #3b1717;
+    --halaman: #0b1220;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--halaman); color: var(--tulisan);
+    font: 14px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  }
+  [hidden] { display: none !important; }
+  .pengatur { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 10px 16px; background: var(--latar); border-bottom: 1px solid var(--garis); }
+  .pengatur b { margin-right: 4px; font-size: 12px; color: var(--lembut); }
+  .pengatur button { font: inherit; font-size: 12.5px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--garis-kuat); background: var(--latar); color: var(--tulisan); cursor: pointer; }
+  .pengatur button[aria-pressed="true"] { background: var(--merek); border-color: var(--merek); color: var(--latar); }
+  .pengatur .jarak { width: 14px; }
+
+  .layar { display: flex; min-height: calc(100vh - 46px); }
+  .sipp { flex: 1; padding: 16px; min-width: 0; }
+  .sipp .bilah-sipp { height: 34px; border-radius: 6px; background: #2f5f8f; opacity: .85; margin-bottom: 12px; }
+  .sipp .tab-sipp { display: flex; gap: 4px; margin-bottom: 10px; }
+  .sipp .tab-sipp span { padding: 5px 10px; border-radius: 4px 4px 0 0; background: #d7dee8; color: #374151; font-size: 12px; }
+  .sipp .tabel-sipp { background: #fff; border: 1px solid #cfd6df; border-radius: 4px; padding: 10px; color: #374151; font-size: 12.5px; }
+  .sipp .tabel-sipp div { display: grid; grid-template-columns: 170px 1fr; padding: 4px 0; border-bottom: 1px solid #edf0f4; }
+  [data-lebar="hp"] .sipp { display: none; }
+  .panel {
+    width: 480px; flex: none; background: var(--latar); border-left: 1px solid var(--garis);
+    display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 12px 30px rgba(16,24,40,.14);
+  }
+  [data-lebar="hp"] .layar { justify-content: center; }
+  [data-lebar="hp"] .panel { width: 100%; max-width: 390px; border-left: 0; }
+  .kepala { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--garis); }
+  .kepala .nomor { font-weight: 700; font-size: 14px; }
+  .kepala .ket { display: block; font-size: 12px; color: var(--lembut); font-weight: 500; }
+  .kepala .titik { margin-left: auto; color: var(--lembut); font-size: 18px; letter-spacing: 2px; }
+  .tab { display: flex; gap: 2px; padding: 0 8px; border-bottom: 1px solid var(--garis); overflow-x: auto; }
+  .tab span { padding: 8px 10px; font-size: 12.5px; color: var(--lembut); white-space: nowrap; border-bottom: 2px solid transparent; }
+  .tab span.aktif { color: var(--tulisan); border-color: var(--merek); font-weight: 700; }
+  .isi { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* Label peran rounded (aleta-lipat-peran, sama dengan kepala lipatan lain) */
+  .aleta-lipat-peran { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; background: var(--merek-latar); color: var(--merek); font-size: 11px; font-weight: 700; letter-spacing: .02em; }
+
+  /* ── Kartu Penetapan mulus (aleta-t7-penetapan) ─────────────────────── */
+  .aleta-t7-penetapan { border: 1px solid var(--garis); border-radius: 12px; background: var(--latar); overflow: hidden; }
+  .aleta-t7-penetapan-kepala { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px; }
+  .aleta-t7-penetapan-judul { font-weight: 700; font-size: 15px; }
+  .aleta-t7-penetapan-ringkas { margin-left: auto; font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--merek-latar); color: var(--merek); font-weight: 600; white-space: nowrap; }
+  .aleta-t7-perkara { margin: 0 12px 8px; padding: 8px 10px; border-radius: 8px; background: var(--latar-naik); font-size: 12.5px; color: var(--lembut); }
+  .aleta-t7-perkara strong { display: block; color: var(--tulisan); font-size: 13px; }
+  .aleta-t7-keputusan-daftar { border-top: 1px solid var(--garis); }
+  .aleta-t7-keputusan-baris { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 2px 8px; align-items: start; padding: 9px 12px; border-top: 1px solid var(--garis); }
+  .aleta-t7-keputusan-baris:first-child { border-top: 0; }
+  .aleta-t7-kode { grid-row: 1 / span 3; display: inline-flex; align-items: center; justify-content: center; height: 22px; border-radius: 6px; background: var(--latar-naik); color: var(--lembut); font-size: 11px; font-weight: 700; letter-spacing: .03em; margin-top: 1px; }
+  .aleta-t7-keputusan-label { grid-column: 2; font-size: 12px; color: var(--lembut); }
+  .aleta-t7-keputusan-nilai { grid-column: 2; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; font-size: 13px; }
+  .aleta-t7-keputusan-nilai strong { font-weight: 650; }
+  .aleta-t7-chip-kecil { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--merek-latar); color: var(--merek); font-size: 11px; font-weight: 600; }
+  .aleta-t7-chip-kecil.aleta-t7-chip-sudah { color: var(--aman); }
+  .aleta-t7-info { color: var(--merek); cursor: help; font-size: 12px; }
+  .aleta-t7-baris-aksi { grid-column: 3; grid-row: 2; display: inline-flex; gap: 10px; align-items: center; white-space: nowrap; }
+  .aleta-t7-tautan { border: 0; background: none; padding: 0; color: var(--merek); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .aleta-t7-edoc { padding: 1px 8px; border: 1px solid var(--garis-kuat); border-radius: 6px; background: var(--latar-naik); color: var(--tulisan); font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer; }
+  .aleta-t7-edoc[disabled] { opacity: .5; cursor: default; }
+  .aleta-t7-penetap { grid-column: 2 / -1; justify-self: start; display: inline-flex; gap: 4px; align-items: baseline; max-width: 100%; padding: 1px 6px; margin-left: -6px; border: 1px dashed transparent; border-radius: 6px; background: none; color: var(--lembut); font: inherit; font-size: 12px; text-align: left; }
+  button.aleta-t7-penetap { cursor: pointer; }
+  button.aleta-t7-penetap:hover, button.aleta-t7-penetap[aria-expanded="true"] { border-color: var(--merek); color: var(--tulisan); }
+  .aleta-t7-penetap-panah { color: var(--merek); font-weight: 700; }
+  .aleta-t7-awas { grid-column: 2 / -1; color: var(--mendesak); font-size: 12px; }
+  .aleta-t7-langkah-status { grid-row: 1; grid-column: 3; font-size: 11.5px; font-weight: 600; white-space: nowrap; color: var(--lembut); }
+
+  /* Menu pilihan "Ubah" / pejabat (aleta-t7-pilih) */
+  .aleta-t7-pilih { grid-column: 1 / -1; margin-top: 6px; padding: 8px; border: 1px solid var(--merek); border-radius: 10px; background: var(--latar); box-shadow: 0 6px 18px rgba(16,24,40,.12); display: flex; flex-direction: column; gap: 4px; }
+  .aleta-t7-pilih-judul { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--lembut); padding: 4px 4px 0; }
+  .aleta-t7-pilih-opsi { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 8px; width: 100%; padding: 6px 8px; border: 1px solid transparent; border-radius: 8px; background: none; color: var(--tulisan); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
+  .aleta-t7-pilih-opsi:hover { background: var(--latar-naik); }
+  .aleta-t7-pilih-opsi[aria-checked="true"] { border-color: var(--merek); background: var(--merek-latar); }
+  .aleta-t7-pilih-opsi[disabled] { opacity: .5; cursor: not-allowed; }
+  .aleta-t7-pilih-beban { color: var(--lembut); font-size: 11.5px; white-space: nowrap; }
+  .aleta-t7-pilih-ket { grid-column: 1 / -1; color: var(--lembut); font-size: 11.5px; }
+  .aleta-t7-pilih-medan { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 6px; align-items: center; font-size: 12.5px; padding: 2px 4px; }
+  .aleta-t7-pilih-medan > span { color: var(--lembut); }
+  .aleta-t7-pilih-medan input, .aleta-t7-pilih-medan select { font: inherit; font-size: 12.5px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--garis-kuat); background: var(--latar); color: var(--tulisan); min-width: 0; }
+  .aleta-t7-pilih-kaki { display: flex; justify-content: space-between; gap: 8px; padding: 4px 4px 0; border-top: 1px solid var(--garis); margin-top: 2px; }
+
+  .aleta-t7-edoc-kabar { grid-column: 2 / -1; font-size: 12px; color: var(--lembut); }
+  .aleta-a30-tanya { grid-column: 1 / -1; margin-top: 6px; padding: 8px 10px; border: 1px solid var(--mendesak); border-radius: 8px; background: var(--mendesak-latar); font-size: 12.5px; }
+  .aleta-a30-tanya b { display: block; margin-bottom: 2px; }
+  .aleta-a30-tanya label { display: flex; gap: 6px; margin: 6px 0; }
+  .aleta-a30-tanya .tombol { display: flex; gap: 6px; }
+
+  .aleta-t7-penetapan-kaki { padding: 10px 12px 12px; border-top: 1px solid var(--garis); display: flex; flex-direction: column; gap: 8px; }
+  .aleta-t7-tetapkan-semua { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--merek); background: var(--merek); color: #fff; font: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; }
+  .aleta-t7-ubah-semua { align-self: center; }
+  .aleta-t7-tetapkan-petunjuk { font-size: 12px; color: var(--lembut); text-align: center; }
+  .aleta-t7-kecil { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--garis-kuat); background: var(--latar-naik); color: var(--tulisan); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .aleta-t7-ttd-ket { font-size: 11.5px; color: var(--lembut); text-align: center; }
+  .aleta-t7-ttd-ket a { color: var(--merek); font-weight: 600; }
+
+  /* Tampilan rinci (bagian penunjukan) */
+  .rinci { border: 1px solid var(--garis); border-radius: 10px; background: var(--latar); }
+  .rinci-judul { padding: 8px 12px; font-weight: 700; font-size: 13px; border-bottom: 1px solid var(--garis); display: flex; align-items: center; gap: 8px; }
+  .rinci-judul .aleta-t7-tautan { margin-left: auto; }
+  .rinci-isi { padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .saklar { display: flex; gap: 8px; align-items: center; font-size: 12px; }
+  .saklar > span:first-child { color: var(--lembut); width: 100px; }
+  .saklar .pil { display: inline-flex; border: 1px solid var(--garis-kuat); border-radius: 8px; overflow: hidden; }
+  .saklar .pil span { padding: 3px 10px; }
+  .saklar .pil span.aktif { background: var(--merek); color: #fff; }
+  .pilih { display: grid; grid-template-columns: 100px 1fr; gap: 6px; align-items: center; font-size: 12.5px; }
+  .pilih > span { color: var(--lembut); }
+  .pilih select { font: inherit; font-size: 12.5px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--garis-kuat); background: var(--latar); color: var(--tulisan); min-width: 0; }
+  .tetap { display: grid; grid-template-columns: minmax(104px, 32%) 1fr; gap: 6px; padding: 6px 0; border-top: 1px solid var(--garis); font-size: 12.5px; }
+  .tetap-label { color: var(--lembut); font-weight: 600; }
+  .tetap-nilai { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+  .tetap-sebab { color: var(--lembut); font-size: 11.5px; }
+  .rinci-ket { color: var(--lembut); font-size: 12px; }
+  .tombol-asli { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--merek); background: var(--merek); color: #fff; font: inherit; font-size: 12.5px; font-weight: 700; align-self: flex-start; }
+
+  /* Bagian e-Doc manual */
+  .bagian { border: 1px solid var(--garis); border-radius: 10px; background: var(--latar); }
+  .bagian-judul { padding: 8px 12px; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--garis); }
+  .bagian-isi { padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; }
+  .slot { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--garis); border-radius: 8px; }
+  .slot .nama { font-weight: 600; }
+  .slot .ket { grid-column: 1 / -1; color: var(--lembut); font-size: 11.5px; }
+
+  .aleta-t7-bilah { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 12px; border-top: 1px solid var(--garis); background: var(--latar-naik); position: sticky; bottom: 0; }
+  .aleta-t7-bilah-ringkas { flex: 1 1 160px; font-size: 12.5px; font-weight: 600; }
+  .aleta-t7-utama { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--merek); background: var(--merek); color: #fff; font: inherit; font-size: 13px; font-weight: 700; }
+  .keterangan-rancangan { max-width: 980px; margin: 14px auto 28px; padding: 0 16px; color: var(--lembut); font-size: 12.5px; }
+  .keterangan-rancangan table { border-collapse: collapse; width: 100%; background: var(--latar); }
+  .keterangan-rancangan td, .keterangan-rancangan th { border: 1px solid var(--garis); padding: 5px 8px; text-align: left; vertical-align: top; }
+</style>
+</head>
+<body>
+<div class="pengatur" role="toolbar" aria-label="Pilih keadaan">
+  <b>Keadaan</b>
+  <button data-k="awal">Awal</button>
+  <button data-k="majelis">Ubah majelis</button>
+  <button data-k="pp">Ubah PP</button>
+  <button data-k="pejabat">Pilih pejabat</button>
+  <button data-k="phs">PHS tanggal/jam/ruang</button>
+  <button data-k="edoc">e-Doc per baris</button>
+  <button data-k="rinci">Ubah semua pilihan</button>
+  <button data-k="manual">e-Doc manual</button>
+  <span class="jarak"></span><b>Lebar</b>
+  <button data-l="hp">HP 390</button>
+  <button data-l="laptop">Laptop 1366</button>
+</div>
+
+<div class="layar" id="layar">
+  <div class="sipp" aria-hidden="true">
+    <div class="bilah-sipp"></div>
+    <div class="tab-sipp"><span>Data Umum</span><span>Pihak</span><span>Penetapan</span><span>Jadwal Sidang</span><span>Riwayat Perkara</span></div>
+    <div class="tabel-sipp">
+      <div><b>Nomor Perkara</b><span>712/Pdt.G/2026/PA.Dgl</span></div>
+      <div><b>Tanggal Pendaftaran</b><span>Senin, 19 Oktober 2026</span></div>
+      <div><b>Jenis Perkara</b><span>Cerai Gugat</span></div>
+    </div>
+  </div>
+  <aside class="panel" aria-label="Panel">
+    <div class="kepala">
+      <span><span class="nomor">712/Pdt.G/2026</span><span class="ket">Cerai Gugat</span></span>
+      <span class="titik">⋯</span>
+    </div>
+    <div class="tab"><span class="aktif">Penetapan</span><span>PTSP</span><span>Berkas</span><span>Perkara</span><span>Putusan</span><span>Juru Sita</span></div>
+    <div class="isi" id="isi"></div>
+    <div class="aleta-t7-bilah" id="bilah"></div>
+  </aside>
+</div>
+
+<div class="keterangan-rancangan">
+  <table>
+    <tr><th>No.</th><th>Sebelum (1.205.10)</th><th>Sesudah</th></tr>
+    <tr><td>2</td><td>Kartu ringkas dan bagian lengkap tampil bersamaan</td><td>Salah satu saja. "Ubah semua pilihan" membuka rinci dan menutup kartu; "Selesai mengubah" kembali.</td></tr>
+    <tr><td>2-3</td><td>Pejabat dipilih di kotak "Pejabat yang menetapkan"</td><td>Klik baris "Ditetapkan …" di tiap penetapan (kartu dan rinci). PPP dan PJS dipilih terpisah. Kotak lama dihapus di UI Baru.</td></tr>
+    <tr><td>4</td><td>"Ubah" membuka bagian lengkap</td><td>"Ubah" membuka menu pilihan di baris itu: majelis (SK / tanpa kode), PP (terpaut majelis), JS, PHS (tanggal, jam, ruang), masing-masing dengan beban.</td></tr>
+    <tr><td>5, 11</td><td>"Pilihan lain" › Ubah semua pilihan / Lihat rincian pemeriksaan</td><td>Keduanya dihapus; "Ubah semua pilihan" di bawah "Tetapkan semua".</td></tr>
+    <tr><td>6</td><td>Judul tanpa label peran</td><td>Label rounded "Ketua" di kiri judul.</td></tr>
+    <tr><td>7-8</td><td>Bagian "Upload edoc penetapan" terpisah + lipatan manual</td><td>Tombol "e-Doc" di tiap baris; bagian baru "Edoc penetapan (PMH/PPP/PJS/PHS) manual".</td></tr>
+    <tr><td>10</td><td>Kolom Passphrase TTE</td><td>Dihapus dari panel; satu baris keterangan dengan tautan ke Tanda tangan pejabat.</td></tr>
+  </table>
+</div>
+
+<script>
+const K = { PMH: "Penetapan Majelis Hakim", PPP: "Penunjukan Panitera Pengganti", PJS: "Penunjukan Juru Sita", PHS: "Penetapan Hari Sidang" };
+function el(tag, kelas, teks) { const e = document.createElement(tag); if (kelas) e.className = kelas; if (teks !== undefined) e.textContent = teks; return e; }
+function tombol(teks, kelas) { const b = el("button", kelas, teks); b.type = "button"; return b; }
+
+function opsi(teks, beban, terpilih, mati, ket) {
+  const b = tombol("", "aleta-t7-pilih-opsi");
+  b.setAttribute("role", "menuitemradio");
+  b.setAttribute("aria-checked", terpilih ? "true" : "false");
+  if (mati) b.disabled = true;
+  b.appendChild(el("span", "", teks));
+  b.appendChild(el("span", "aleta-t7-pilih-beban", beban));
+  if (ket) b.appendChild(el("span", "aleta-t7-pilih-ket", ket));
+  return b;
+}
+function menu(isi) {
+  const m = el("div", "aleta-t7-pilih");
+  m.setAttribute("role", "menu");
+  isi.forEach((x) => m.appendChild(x));
+  return m;
+}
+function kakiMenu(kiri) {
+  const k = el("div", "aleta-t7-pilih-kaki");
+  k.appendChild(kiri ? tombol(kiri, "aleta-t7-tautan") : el("span"));
+  k.appendChild(tombol("Tutup", "aleta-t7-tautan"));
+  return k;
+}
+
+function baris(k, kode, nilai, penetap, o = {}) {
+  const r = el("div", "aleta-t7-keputusan-baris");
+  r.appendChild(el("span", "aleta-t7-kode", kode));
+  r.appendChild(el("span", "aleta-t7-keputusan-label", K[kode]));
+  const n = el("span", "aleta-t7-keputusan-nilai");
+  n.appendChild(el("strong", "", nilai));
+  n.appendChild(el("span", "aleta-t7-chip-kecil" + (o.sudah ? " aleta-t7-chip-sudah" : ""), o.sudah ? "Sudah di SIPP" : "Usulan ALETA"));
+  r.appendChild(n);
+  const aksi = el("span", "aleta-t7-baris-aksi");
+  if (!o.sudah) { const u = tombol("Ubah", "aleta-t7-tautan aleta-t7-ubah"); if (o.ubahBuka) u.setAttribute("aria-expanded", "true"); aksi.appendChild(u); }
+  const e = tombol("e-Doc", "aleta-t7-edoc");
+  e.title = o.sudah ? "Ambil dari ABT lalu unggah e-Doc penetapan ini" : "Tersedia sesudah penetapan ini tercatat di SIPP";
+  if (!o.sudah) e.disabled = true;
+  aksi.appendChild(e);
+  r.appendChild(aksi);
+  const p = tombol("", "aleta-t7-penetap");
+  if (o.pejabatBuka) p.setAttribute("aria-expanded", "true");
+  p.appendChild(el("span", "", penetap));
+  p.appendChild(el("span", "aleta-t7-penetap-panah", "▾"));
+  r.appendChild(p);
+  if (o.menu) r.appendChild(o.menu);
+  if (o.ekor) r.appendChild(o.ekor);
+  return r;
+}
+
+function kartu(k) {
+  const c = el("section", "aleta-t7-penetapan");
+  const kp = el("div", "aleta-t7-penetapan-kepala");
+  kp.appendChild(el("span", "aleta-lipat-peran", "Ketua"));
+  kp.appendChild(el("span", "aleta-t7-penetapan-judul", "Penetapan"));
+  kp.appendChild(el("span", "aleta-t7-penetapan-ringkas", k === "edoc" ? "4 sudah di SIPP" : "4 belum ditetapkan"));
+  c.appendChild(kp);
+  const pk = el("div", "aleta-t7-perkara");
+  pk.appendChild(el("strong", "", "712/Pdt.G/2026/PA.Dgl · Cerai Gugat"));
+  pk.appendChild(document.createTextNode("Didaftarkan Senin, 19-10-2026 · keempatnya ditetapkan Senin, 19-10-2026"));
+  c.appendChild(pk);
+  const d = el("div", "aleta-t7-keputusan-daftar");
+  const sudah = k === "edoc";
+  const majelis = k === "pp" ? "B — Himawan Tatura Wijaya · Idris · Derry Briantono" : "A — Fahri Saifuddin · Muh. Arif · Nur Aisyah";
+  const pp = k === "pp" ? "PP2 — Rahmawati" : "PP1 — Sri Susilowati";
+
+  const menuMajelis = k === "majelis" ? menu([
+    el("div", "aleta-t7-pilih-judul", "Menurut SK"),
+    opsi("A — Fahri Saifuddin · Muh. Arif · Nur Aisyah", "beban 3", true),
+    opsi("B — Himawan Tatura Wijaya · Idris · Derry Briantono", "beban 5", false),
+    opsi("C — Abdul Rahman · Muh. Arif · Idris", "beban 6", false),
+    el("div", "aleta-t7-pilih-judul", "Tanpa kode"),
+    opsi("Fahri Saifuddin · Idris · Nur Aisyah", "beban 2", false, false, "di luar SK"),
+    kakiMenu("Per orang, hakim tunggal, sidang keliling: Ubah semua pilihan"),
+  ]) : null;
+  const menuPp = k === "pp" ? menu([
+    el("div", "aleta-t7-pilih-judul", "Panitera sidang majelis ini"),
+    opsi("PP2 — Rahmawati", "beban 9", true, false, "terpaut ke Majelis B menurut SK"),
+    el("div", "aleta-t7-pilih-judul", "Panitera pengganti lain"),
+    opsi("PP1 — Sri Susilowati", "beban 12", false),
+    opsi("PP3 — Hasnah", "beban 7", false),
+    kakiMenu(""),
+  ]) : null;
+  const menuPejabat = k === "pejabat" ? menu([
+    el("div", "aleta-t7-pilih-judul", "Yang menetapkan PPP"),
+    opsi("Sri Susilowati, S.H. — Panitera", "usulan ALETA", false),
+    opsi("Hasanuddin, S.H. — Plh. Panitera", "", true, false, "Panitera cuti - Plh menurut penugasan yang berlaku"),
+    kakiMenu(""),
+  ]) : null;
+  const menuPhs = k === "phs" ? (() => {
+    const m = menu([el("div", "aleta-t7-pilih-judul", "Hari sidang Majelis A")]);
+    m.appendChild(opsi("Rabu, 04-11-2026", "usulan · 3 sidang", true));
+    m.appendChild(opsi("Rabu, 11-11-2026", "mundur 1 pekan · 1 sidang", false));
+    m.appendChild(opsi("Rabu, 18-11-2026", "libur", false, true, "HUT Kabupaten Donggala · tidak dapat dipilih"));
+    m.appendChild(opsi("Rabu, 25-11-2026", "mundur 3 pekan · belum ada sidang", false));
+    const tgl = el("label", "aleta-t7-pilih-medan"); tgl.appendChild(el("span", "", "Tanggal lain")); const it = el("input"); it.type = "date"; tgl.appendChild(it); m.appendChild(tgl);
+    const jam = el("label", "aleta-t7-pilih-medan"); jam.appendChild(el("span", "", "Jam")); const ij = el("input"); ij.type = "time"; ij.value = "09:00"; jam.appendChild(ij); m.appendChild(jam);
+    const ru = el("label", "aleta-t7-pilih-medan"); ru.appendChild(el("span", "", "Ruang")); const s = el("select");
+    ["Ruang Sidang 1 Dalam Gedung", "Ruang Sidang 2 Dalam Gedung", "Sidang Keliling Sigi Biromaru"].forEach((x) => { const o = el("option", "", x); s.appendChild(o); });
+    ru.appendChild(s); m.appendChild(ru);
+    m.appendChild(kakiMenu(""));
+    return m;
+  })() : null;
+  const tanya = k === "edoc" ? (() => {
+    const t = el("div", "aleta-a30-tanya");
+    t.appendChild(el("b", "", "Unggah e-Doc Penetapan Majelis Hakim"));
+    t.appendChild(el("div", "", "712/Pdt.G/2026/PA.Dgl: blangko PMH diambil dari ABT, ditandatangani dengan gambar tanda tangan pejabat yang disahkan, diberi cap, lalu diunggah ke e-Doc SIPP. Ini menulis ke SIPP atas nama akun Anda."));
+    const l = el("label"); const c = el("input"); c.type = "checkbox"; l.appendChild(c); l.appendChild(el("span", "", "Sudah saya periksa")); t.appendChild(l);
+    const tb = el("div", "tombol"); tb.appendChild(tombol("Unggah", "aleta-t7-kecil")); tb.appendChild(tombol("Batal", "aleta-t7-kecil")); t.appendChild(tb);
+    return t;
+  })() : null;
+
+  d.appendChild(baris(k, "PMH", majelis, "Ditetapkan Ketua Pengadilan — Fahri Saifuddin, S.H.I., M.H. (akun fahri)", { sudah, menu: menuMajelis, ubahBuka: k === "majelis", ekor: tanya }));
+  d.appendChild(baris(k, "PPP", pp, k === "pejabat" ? "Ditetapkan Plh. Panitera — Hasanuddin, S.H. (akun hasanuddin)" : "Ditetapkan Panitera — Sri Susilowati, S.H. (akun Sri Susilowati)", { sudah, menu: menuPp || menuPejabat, ubahBuka: k === "pp", pejabatBuka: k === "pejabat" }));
+  d.appendChild(baris(k, "PJS", "Tanty", "Ditetapkan Panitera — Sri Susilowati, S.H. (akun Sri Susilowati)", { sudah }));
+  d.appendChild(baris(k, "PHS", "Rabu, 04-11-2026 · 09.00 · Ruang Sidang 1 Dalam Gedung", "Ditetapkan Ketua Majelis — Fahri Saifuddin, S.H.I., M.H. (akun fahri)", { sudah, menu: menuPhs, ubahBuka: k === "phs" }));
+  if (k === "edoc") {
+    const kb = el("div", "aleta-t7-edoc-kabar", "PHS: e-Doc sudah ada (19-10-2026 10.12) - mengunggah lagi menimpa yang lama.");
+    d.lastChild.appendChild(kb);
+  }
+  c.appendChild(d);
+  const kaki = el("div", "aleta-t7-penetapan-kaki");
+  const utama = tombol(sudah ? "Keempat penetapan sudah ada" : "Tetapkan semua", "aleta-t7-tetapkan-semua");
+  if (sudah) utama.disabled = true;
+  kaki.appendChild(utama);
+  kaki.appendChild(tombol("Ubah semua pilihan", "aleta-t7-kecil aleta-t7-ubah-semua"));
+  if (!sudah) kaki.appendChild(el("div", "aleta-t7-tetapkan-petunjuk", "Satu kali tekan: ALETA memeriksa lalu menuliskan PMH, PPP, PJS, dan PHS sesuai urutannya."));
+  const ttd = el("div", "aleta-t7-ttd-ket", "Tanda tangan memakai gambar tanda tangan pejabat yang disahkan — atur di ");
+  const a = el("a", "", "Tanda tangan pejabat"); a.href = "#"; ttd.appendChild(a);
+  kaki.appendChild(ttd);
+  c.appendChild(kaki);
+  return c;
+}
+
+function rinci() {
+  const r = el("section", "rinci");
+  const j = el("div", "rinci-judul");
+  j.appendChild(el("span", "aleta-lipat-peran", "Ketua"));
+  j.appendChild(el("span", "", "Penetapan dan Penunjukan Perkara"));
+  j.appendChild(tombol("Selesai mengubah", "aleta-t7-tautan"));
+  r.appendChild(j);
+  const i = el("div", "rinci-isi");
+  const saklar = (nama, a, b, aktif) => { const s = el("div", "saklar"); s.appendChild(el("span", "", nama)); const p = el("span", "pil"); p.appendChild(el("span", aktif === 0 ? "aktif" : "", a)); p.appendChild(el("span", aktif === 1 ? "aktif" : "", b)); s.appendChild(p); return s; };
+  const tetap = (label, isi, sebab, penetap) => { const t = el("div", "tetap"); t.appendChild(el("span", "tetap-label", label)); const n = el("span", "tetap-nilai"); n.appendChild(el("span", "", isi)); n.appendChild(el("span", "tetap-sebab", sebab)); const p = tombol("", "aleta-t7-penetap"); p.appendChild(el("span", "", penetap)); p.appendChild(el("span", "aleta-t7-penetap-panah", "▾")); n.appendChild(p); t.appendChild(n); return t; };
+  const pilih = (label, opsi) => { const p = el("label", "pilih"); p.appendChild(el("span", "", label)); const s = el("select"); opsi.forEach((x) => s.appendChild(el("option", "", x))); p.appendChild(s); return p; };
+  i.appendChild(saklar("Cara", "Manual", "Otomatis", 0));
+  i.appendChild(tetap("Penetapan Majelis Hakim", "A — Fahri Saifuddin, Muh. Arif, Nur Aisyah", "beban perkara paling ringan", "Ditetapkan Ketua Pengadilan — Fahri Saifuddin, S.H.I., M.H. (akun fahri)"));
+  i.appendChild(saklar("Pilih", "Per majelis", "Per orang", 0));
+  i.appendChild(pilih("Majelis", ["A — Fahri Saifuddin · Muh. Arif · Nur Aisyah — beban 3", "B — Himawan Tatura Wijaya · Idris · Derry Briantono — beban 5"]));
+  i.appendChild(tetap("Penunjukan Panitera Pengganti", "PP1 — Sri Susilowati", "panitera sidang Majelis A menurut SK", "Ditetapkan Panitera — Sri Susilowati, S.H. (akun Sri Susilowati)"));
+  i.appendChild(pilih("Panitera pengganti", ["PP1 — Sri Susilowati — beban 12 · panitera sidang majelis ini", "Hasnah — beban 7"]));
+  i.appendChild(tetap("Penunjukan Juru Sita", "Tanty", "giliran juru sita", "Ditetapkan Panitera — Sri Susilowati, S.H. (akun Sri Susilowati)"));
+  i.appendChild(pilih("Juru sita", ["Tanty — beban 21", "Rusli — beban 24"]));
+  i.appendChild(tetap("Penetapan Hari Sidang", "Rabu, 04-11-2026", "hari sidang Majelis A, sekurangnya 14 hari sesudah pendaftaran", "Ditetapkan Ketua Majelis — Fahri Saifuddin, S.H.I., M.H. (akun fahri)"));
+  i.appendChild(pilih("Hari sidang", ["Rabu, 04-11-2026 — usulan · 3 sidang", "Rabu, 11-11-2026 — mundur 1 pekan · 1 sidang"]));
+  i.appendChild(pilih("Ruang sidang", ["Ruang Sidang 1 Dalam Gedung — Dalam gedung · 812 sidang 2 tahun terakhir"]));
+  i.appendChild(el("div", "rinci-ket", "Tanggal penetapan keempatnya: 2026-10-19"));
+  i.appendChild(tombol("Tetapkan dan tuliskan ke SIPP", "tombol-asli"));
+  i.appendChild(tombol("Batalkan penetapan terakhir", "aleta-t7-tautan"));
+  r.appendChild(i);
+  return r;
+}
+
+function manual() {
+  const b = el("section", "bagian");
+  const j = el("div", "bagian-judul");
+  j.appendChild(el("span", "aleta-lipat-peran", "Ketua"));
+  j.appendChild(el("span", "", "Edoc penetapan (PMH/PPP/PJS/PHS) manual"));
+  b.appendChild(j);
+  const i = el("div", "bagian-isi");
+  i.appendChild(el("div", "rinci-ket", "Berkas penetapan yang sudah ada di komputer (PDF/DOC/DOCX/RTF), satu per penetapan. Tanda tangan dan cap dibubuhkan sebelum diunggah ke e-Doc SIPP."));
+  for (const [kode, nama] of Object.entries(K)) {
+    const s = el("div", "slot");
+    s.appendChild(el("span", "nama", `${nama} (${kode})`));
+    s.appendChild(tombol(kode === "PHS" ? "Ganti berkas" : "Pilih berkas", "aleta-t7-kecil"));
+    if (kode === "PHS") s.appendChild(el("span", "ket", "PHS 712.pdf · 184 KB"));
+    i.appendChild(s);
+  }
+  i.appendChild(el("div", "aleta-t7-ttd-ket", "Tanda tangan memakai gambar tanda tangan pejabat yang disahkan — atur di Tanda tangan pejabat"));
+  const t = tombol("Upload manual", "aleta-t7-kecil");
+  i.appendChild(t);
+  b.appendChild(i);
+  return b;
+}
+
+function gambar() {
+  const p = new URLSearchParams(location.hash.slice(1));
+  const k = p.get("keadaan") || "awal";
+  const l = p.get("lebar") || "laptop";
+  document.body.setAttribute("data-lebar", l);
+  document.querySelectorAll("[data-k]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.k === k)));
+  document.querySelectorAll("[data-l]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.l === l)));
+  const isi = document.getElementById("isi");
+  isi.textContent = "";
+  if (k === "rinci") isi.appendChild(rinci());
+  else if (k === "manual") isi.appendChild(manual());
+  else isi.appendChild(kartu(k));
+  const bilah = document.getElementById("bilah");
+  bilah.textContent = "";
+  bilah.hidden = k === "manual";
+  bilah.appendChild(el("span", "aleta-t7-bilah-ringkas", k === "edoc" ? "Keempat penetapan sudah di SIPP" : "4 penetapan siap ditulis: PMH · PPP · PJS · PHS"));
+  bilah.appendChild(tombol("Lihat perubahan", "aleta-t7-tautan"));
+  bilah.appendChild(tombol("Tetapkan semua", "aleta-t7-utama"));
+}
+document.querySelectorAll("[data-k]").forEach((b) => b.addEventListener("click", () => { const p = new URLSearchParams(location.hash.slice(1)); p.set("keadaan", b.dataset.k); location.hash = p.toString(); }));
+document.querySelectorAll("[data-l]").forEach((b) => b.addEventListener("click", () => { const p = new URLSearchParams(location.hash.slice(1)); p.set("lebar", b.dataset.l); location.hash = p.toString(); }));
+addEventListener("hashchange", gambar);
+gambar();
+</script>
+</body>
+</html>
