@@ -128,7 +128,7 @@ afterEach(async () => {
 type Tulis = { jenis: Jenis; kering: boolean };
 
 type Opsi = { gagalKering?: Jenis; tanggalPhs?: string };
-function buka(keadaan: Keadaan, tampilan: "lama" | "ui", statusTulis: { nilai: number } = { nilai: 200 }, pilihan: Opsi = {}) {
+function buka(keadaan: Keadaan, tampilan: "lama" | "ui" | "baru", statusTulis: { nilai: number } = { nilai: 200 }, pilihan: Opsi = {}) {
   const kepala =
     `<table class="badge"><tr><td>Selamat Datang <font color='red'>${AKUN}</font>` +
     `<br> Anda Login Sebagai <font color='red'>Administrator</font></td></tr></table>`;
@@ -152,6 +152,8 @@ function buka(keadaan: Keadaan, tampilan: "lama" | "ui", statusTulis: { nilai: n
     ujiTampilan: tampilan,
     ujiIzinkanNyata: true,
     lipatanBagian: { penunjukan: false, kerjakan: false },
+    // Tampilan Baru: pita bawah (sipp-5) dinyalakan lewat saklarnya.
+    ...(tampilan === "baru" ? { ujiFitur: { "sipp-5": true } } : {}),
   };
   w.chrome = {
     runtime: { id: "aleta-uji", getManifest: () => ({ version: "1.188.0" }), getURL: (x: string) => `chrome-extension://aleta-uji/${x}`, sendMessage: async () => ({}) },
@@ -348,13 +350,25 @@ describe("satu klik = urutan alur lama", () => {
     expect(tombolSemua(k).disabled).toBe(true);
   });
 
-  it("bilah bawah menjalankan satu klik yang sama", async () => {
+  // 19 Okt 2026 (panel penetapan 2): di UI Baru cukup SATU "Tetapkan semua" -
+  // tombol besar kartu; pita bawah hanya di tampilan Baru (saklar sipp-5).
+  // Uji pita dipindah ke tampilan Baru; UI Baru dijaga tanpa pita.
+  it("UI Baru: satu tombol Tetapkan semua saja (tanpa pita bawah)", async () => {
     const h = buka({ ...kosong(), pmh: HARI }, "ui");
-    const k = await kartuSiap(h);
-    const bilah = h.d.querySelector(".aleta-t7-bilah .aleta-t7-utama") as HTMLButtonElement;
-    expect(bilah.textContent).toBe("Tetapkan semua");
+    await kartuSiap(h);
+    expect(h.d.querySelector(".aleta-t7-bilah")).toBeNull();
+    const semua = Array.from(h.d.querySelectorAll("#aleta-panel-sipp button")).filter((b) => b.textContent === "Tetapkan semua");
+    expect(semua.length).toBe(1);
+  });
+
+  it("tampilan Baru: pita bawah menjalankan satu klik yang sama", async () => {
+    const h = buka({ ...kosong(), pmh: HARI }, "baru");
+    const kotak = await papan(h);
+    const bilah = await sampai(() => h.d.querySelector(".aleta-t7-bilah .aleta-t7-utama") as HTMLButtonElement | null, "pita bawah");
+    await sampai(() => bilah.textContent === "Tetapkan semua" && !bilah.disabled, () => `pita "${bilah.textContent}"`);
     bilah.click();
-    await sampai(() => /tersimpan di SIPP/.test(String(k.querySelector(".aleta-t7-hasil")?.textContent || "")), "hasil bilah");
+    const asli = kotak.querySelector(".aleta-tombol-tetapkan") as HTMLButtonElement;
+    await sampai(() => asli.textContent === "Penetapan selesai", () => `tombol asli "${asli.textContent}"`);
     expect(h.tulis.filter((x) => !x.kering).map((x) => x.jenis)).toEqual(["ppp", "pjs", "phs"]);
   });
 });

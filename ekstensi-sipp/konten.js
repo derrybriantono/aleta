@@ -1340,9 +1340,12 @@ function idUntukTulis(jenis, usulan, pilihanManual = {}) {
     // Dikirim HANYA bila petugas memilihnya. Tanpa pilihan, mesin tulis
     // memakai bawaannya sendiri - perilaku lama, utuh.
     const ruanganId = Number(pilihanManual.ruangan);
-    return Number.isFinite(ruanganId) && ruanganId > 0
-      ? { tanggalSidang, ruanganId }
-      : { tanggalSidang };
+    const hasil = Number.isFinite(ruanganId) && ruanganId > 0 ? { tanggalSidang, ruanganId } : { tanggalSidang };
+    // Jam sidang pilihan petugas (kartu Penetapan UI Baru, 19 Okt 2026). Tanpa
+    // pilihan tidak dikirim: mesin tulis memakai bawaannya sendiri (09:00).
+    const jam = String(pilihanManual.jam || "");
+    if (/^\d{2}:\d{2}$/.test(jam) && jam !== "09:00") hasil.jamSidang = jam;
+    return hasil;
   }
 
   return null;
@@ -3329,6 +3332,41 @@ function gambarPenunjukan(isi, data) {
   // pilihan (barisPenetapanTercatat; uji rilis U1, 9 Okt 2026).
   const sudahDiSipp = keadaanPenetapanUsulan(usulan);
 
+  // ==========================================================================
+  // PEJABAT PENETAP: BAWAANNYA PILIHAN MESIN, PILIHAN PETUGAS TIDAK DITIMPA
+  // ==========================================================================
+  //
+  // Bawaan disimpan sejak awal (tanpa itu yang tidak menyentuh pilihan akan
+  // mengirim nama kosong). Dahulu bawaan ini ditulis ULANG tiap papan
+  // digambar - termasuk gambar ulang sesudah petugas mengganti pejabatnya -
+  // sehingga baris keterangannya menyebut pilihan petugas sementara yang
+  // terkirim kembali pilihan mesin. Kini hanya diisi bila belum ada.
+  const langkahBercalon = ((data && data.rencana && data.rencana.langkah) || []).filter(
+    (x) => Array.isArray(x.calon) && x.calon.length > 1 && !sudahDiSipp[x.jenis]
+  );
+  if (langkahBercalon.length > 0 && !data.pejabatDipilih) data.pejabatDipilih = {};
+  for (const langkah of langkahBercalon) {
+    const otomatis = langkah.calon.find((x) => x.otomatis);
+    const masihCalon = langkah.calon.some((x) => x.username === data.pejabatDipilih[langkah.jenis]);
+    if (otomatis && !masihCalon) data.pejabatDipilih[langkah.jenis] = otomatis.username;
+  }
+
+  // UI Baru (19 Okt 2026, butir 2-3): pejabat penetap dipilih dengan mengeklik
+  // baris "Ditetapkan ..." pada tiap penetapan; kotak "Pejabat yang
+  // menetapkan" hanya di tampilan Lama/Baru.
+  const uiBaru = typeof t7Modern === "function" && t7Modern();
+  const pasangPenetap = (baris, jenis) => {
+    const keterangan = baris.querySelector(".aleta-tetap-penetap");
+    if (uiBaru && keterangan && typeof t7TanpaAkun === "function") keterangan.textContent = t7TanpaAkun(keterangan.textContent);
+    if (uiBaru && !sudahDiSipp[jenis] && typeof t7PenetapDapatDiklik === "function") {
+      t7PenetapDapatDiklik(baris.querySelector(".aleta-tetap-penetap"), data, jenis, () => {
+        isi.textContent = "";
+        gambarPenunjukan(isi, data);
+      });
+    }
+    return baris;
+  };
+
   // Saklar "Hakim tunggal" hanya di mode otomatis: ia menampilkan PENGATURAN,
   // bukan pilihan - menekannya tidak mengubah apa pun, dan di sebelah saklar
   // Manual/Otomatis yang bekerja ia terbaca seolah ikut bekerja.
@@ -3360,7 +3398,7 @@ function gambarPenunjukan(isi, data) {
   // dropdown lain punya kepalanya; pembaca lalu mengira tiap dropdown milik
   // kepala di BAWAHNYA, dan seluruh susunan terbaca bergeser satu.
   const namaMajelis = (pmh.anggota || []).map((x) => x.nama).join(", ");
-  isi.appendChild(
+  isi.appendChild(pasangPenetap(
     sudahDiSipp.pmh
       ? barisPenetapanTercatat("Penetapan Majelis Hakim", "pmh", usulan)
       : barisPenetapan(
@@ -3369,8 +3407,9 @@ function gambarPenunjukan(isi, data) {
           pmh.sebab,
           pmh.perluNilai ? "Nilai sengketa belum diisi di SIPP - isi dulu di Data Umum." : "",
           penetapUntuk(data, "pmh")
-        )
-  );
+        ),
+    "pmh"
+  ));
 
   if (!manual && !sudahDiSipp.pmh) {
     // Hitungan hakim tunggal ditampilkan terbuka: angka inilah yang membuat
@@ -3525,7 +3564,7 @@ function gambarPenunjukan(isi, data) {
   // --- PPP ---------------------------------------------------------------
   const ppp = usulan.ppp || {};
   const pppTerpilih = pilihanDari(ppp.calon, pilihanManual.ppp) || ppp.usulan;
-  isi.appendChild(
+  isi.appendChild(pasangPenetap(
     sudahDiSipp.ppp
       ? barisPenetapanTercatat("Penunjukan Panitera Pengganti", "ppp", usulan)
       : barisPenetapan(
@@ -3534,8 +3573,9 @@ function gambarPenunjukan(isi, data) {
           ppp.sebab,
           "",
           penetapUntuk(data, "ppp")
-        )
-  );
+        ),
+    "ppp"
+  ));
   if (!sudahDiSipp.ppp && data.caraPapan === "manual" && (ppp.calon || []).length > 1) {
     isi.appendChild(
       pilihanOrang(
@@ -3563,7 +3603,7 @@ function gambarPenunjukan(isi, data) {
   // --- PJS ---------------------------------------------------------------
   const pjs = usulan.pjs || {};
   const pjsTerpilih = pilihanDari(pjs.calon, pilihanManual.pjs) || pjs.usulan;
-  isi.appendChild(
+  isi.appendChild(pasangPenetap(
     sudahDiSipp.pjs
       ? barisPenetapanTercatat("Penunjukan Juru Sita", "pjs", usulan)
       : barisPenetapan(
@@ -3572,8 +3612,9 @@ function gambarPenunjukan(isi, data) {
           pjs.sebab,
           pjs.peringatan,
           penetapUntuk(data, "pjs")
-        )
-  );
+        ),
+    "pjs"
+  ));
   if (!sudahDiSipp.pjs && data.caraPapan === "manual" && (pjs.calon || []).length > 1) {
     isi.appendChild(
       pilihanOrang(
@@ -3608,7 +3649,7 @@ function gambarPenunjukan(isi, data) {
     phsDipilih && phsDipilih.jumlahSidang !== null && phsDipilih.jumlahSidang !== undefined
       ? ` · ${phsDipilih.jumlahSidang} sidang pada hari itu`
       : "";
-  isi.appendChild(
+  isi.appendChild(pasangPenetap(
     sudahDiSipp.phs
       ? barisPenetapanTercatat("Penetapan Hari Sidang", "phs", usulan)
       : barisPenetapan(
@@ -3617,8 +3658,9 @@ function gambarPenunjukan(isi, data) {
           phs.sebab + (phs.jarakHari ? ` · ${phs.jarakHari} hari sejak daftar` : "") + bebanTerpilih,
           peringatanLiburPhs(pilihanManual.phs || phs.usulan),
           penetapUntuk(data, "phs")
-        )
-  );
+        ),
+    "phs"
+  ));
 
   // PHS-lah yang paling sering perlu digeser - majelisnya berhalangan, atau
   // hari itu sudah terlalu penuh - dan sampai sekarang ia satu-satunya
@@ -4046,11 +4088,7 @@ function gambarPenunjukan(isi, data) {
   // sebelumnya - jadi tidak ada yang perlu dipilih.
   // Langkah yang sudah ada di SIPP tidak ditulis, jadi tidak dipilihkan
   // pejabatnya (uji rilis U1, 9 Okt 2026).
-  const langkahBercalon = ((data && data.rencana && data.rencana.langkah) || []).filter(
-    (x) => Array.isArray(x.calon) && x.calon.length > 1 && !sudahDiSipp[x.jenis]
-  );
-
-  if (langkahBercalon.length > 0) {
+  if (langkahBercalon.length > 0 && !uiBaru) {
     if (!data.pejabatDipilih) data.pejabatDipilih = {};
 
     const kotakPejabat = buatElemen("div", "aleta-tetap-pejabat");
@@ -4072,15 +4110,11 @@ function gambarPenunjukan(isi, data) {
           `${calon.namaLengkap}${calon.sebutan ? ` — ${calon.sebutan}` : ""}` +
           (calon.otomatis ? " (pilihan ALETA)" : "") +
           (calon.siap === false ? " — akunnya belum siap" : "");
-        if (calon.otomatis) opsi.selected = true;
+        // Yang terpilih = yang tersimpan (bawaannya pilihan mesin, diisi di
+        // awal papan) - bukan selalu pilihan mesin.
+        if (calon.username === data.pejabatDipilih[langkah.jenis]) opsi.selected = true;
         pilih.appendChild(opsi);
       }
-
-      // Bawaannya disimpan sejak awal, bukan hanya ketika diubah. Kalau tidak,
-      // yang tidak menyentuh pilihan ini akan mengirim nama kosong - dan yang
-      // kosong ditolak rutenya dengan sebab yang tidak menunjuk ke sini.
-      const otomatis = langkah.calon.find((x) => x.otomatis);
-      if (otomatis) data.pejabatDipilih[langkah.jenis] = otomatis.username;
 
       pilih.addEventListener("change", () => {
         data.pejabatDipilih[langkah.jenis] = pilih.value;
@@ -12849,8 +12883,11 @@ function susunPanel(konteks) {
     // Perbaikan 2 Okt (S, butir 17 - UI Baru saja): upload edoc penetapan
     // PMH/PPP/PJS/PHS, otomatis dari ABT + manual. Menulis ke SIPP, jadi
     // kewenangannya sama dengan menuliskan penetapan.
-    if (boleh("penunjukan") && typeof s2BagianEdocPenetapan === "function" && s1Aktif()) {
-      kelKerja.isi.appendChild(s2BagianEdocPenetapan(konteks.nomorPerkara));
+    // 19 Okt 2026 (butir 7-8): unggah otomatis pindah ke tombol "e-Doc" di
+    // tiap baris kartu Penetapan; yang tersisa di sini unggah MANUAL per
+    // penetapan, sebagai bagian tersendiri.
+    if (boleh("penunjukan") && typeof s2BagianEdocPenetapanManual === "function" && s1Aktif()) {
+      kelKerja.isi.appendChild(s2BagianEdocPenetapanManual(konteks.nomorPerkara));
     }
     if (boleh("data-umum") && !pakaiPtsp) kelKerja.isi.appendChild(bagianDataUmum(konteks));
     if (boleh("data-umum") && pakaiPtsp) kelKerja.isi.appendChild(p5TautanPtsp());
@@ -19423,7 +19460,10 @@ function t7TataPenetapan(k) {
 
   if (!penunjukan) return;
   const pakaiRingkas = k.ui;
-  const pakaiBilah = k.ui || t7Nyala("sipp-5");
+  // 19 Okt 2026: di UI Baru cukup SATU "Tetapkan semua" - tombol besar di kartu.
+  // Pita bawah (sipp-5) tetap untuk tampilan Baru; "Lihat perubahan"-nya sama
+  // dengan "Ubah semua pilihan" di bawah tombol besar kartu.
+  const pakaiBilah = !k.ui && t7Nyala("sipp-5");
   if (!pakaiRingkas && !pakaiBilah) return;
 
   let ringkas = null;
@@ -19468,7 +19508,7 @@ function t7TataPenetapan(k) {
  *
  * Hasil per langkah dibaca dari peristiwa "aleta-hasil-penetapan" yang dikirim
  * tetapkanLewatAleta; rincian teknisnya (rapor pemeriksaan) tetap di bagian
- * rinci yang dibuka lewat "Pilihan lain".
+ * rinci yang dibuka lewat "Ubah semua pilihan".
  */
 const T7_KODE_PENETAPAN = {
   "Penetapan Majelis Hakim": "pmh",
@@ -19499,7 +19539,7 @@ function t7KeadaanSatuKlik(penunjukan) {
 /** Kalimat untuk orang - kode mesin tidak pernah tampil. */
 function t7KalimatAwam(teks) {
   const t = String(teks || "").trim();
-  if (!t || /^[a-z0-9_:.-]+$/i.test(t)) return "Belum dapat ditetapkan - buka Pilihan lain › Lihat rincian pemeriksaan.";
+  if (!t || /^[a-z0-9_:.-]+$/i.test(t)) return "Belum dapat ditetapkan - buka Ubah semua pilihan untuk melihat sebabnya.";
   // Pesan basis data/peladen dalam kurung (mis. "(ER_LOCK_WAIT_TIMEOUT: ...)")
   // tetap ada di rincian pemeriksaan, tidak di kartu.
   return t.replace(/\s*\([A-Z][A-Z0-9_]{3,}[^)]*\)/g, "");
@@ -19591,67 +19631,520 @@ function t7AwasLiburPhs(daftar) {
   return phs && /hari libur|hari Sabtu|hari Minggu/.test(String(phs.textContent || "")) ? String(phs.textContent) : "";
 }
 
-/** D5 (dirombak 18 Okt 2026): kartu "Penetapan" satu klik. Kelas dan label lama dipertahankan. */
+/**
+ * ============================================================================
+ * PENETAPAN MULUS 2 (19 Okt 2026) - rancangan docs/rancangan/penetapan-mulus-2.html
+ * ============================================================================
+ *
+ * Kartu "Penetapan" = "Penetapan dan Penunjukan Perkara" versi mulus. Tiap
+ * baris punya "Ubah" yang langsung membuka menu pilihan (majelis menurut SK
+ * dan tanpa kode, PP, JS, PHS tanggal/jam/ruang - masing-masing dengan
+ * bebannya), baris "Ditetapkan ..." yang diklik untuk memilih pejabat penetap
+ * (PPP dan PJS terpisah), dan tombol "e-Doc" untuk mengambil penetapan itu
+ * dari ABT lalu mengunggahnya.
+ *
+ * TIDAK ADA JALAN TULIS BARU. Semua pilihan ditulis ke objek data papan yang
+ * SAMA (usulanTerakhir: pilihanManual, pejabatDipilih) yang dibaca tombol
+ * Tetapkan asli, lalu bagian rinci digambar ulang (gambarPenunjukan) - persis
+ * seperti memilih di dropdown bagian rinci. Mengganti majelis memakai
+ * muatUlangUsulan yang sama; PP terpaut majelis itu ikut berganti karena
+ * pilihan PP tangan dilepas sebelum usulan dihitung ulang.
+ *
+ * Rinci dan mulus tidak pernah tampil bersamaan: kartu disembunyikan selama
+ * bagian rinci terbuka (data-t7-tinjau), dan "Selesai mengubah" kembali.
+ */
+/** Data papan penunjukan yang sedang tergambar - objek yang SAMA dengan yang dibaca tombol Tetapkan. */
+function t7DataPenunjukan() {
+  const d = typeof usulanTerakhir !== "undefined" ? usulanTerakhir : null;
+  return d && d.usulan && d.usulan.ok !== false ? d : null;
+}
+
+/** Menggambar ulang bagian rinci atas data yang sama (seperti dropdown-nya sendiri). */
+function t7GambarUlangPenunjukan(penunjukan, data) {
+  const isi = penunjukan && penunjukan.querySelector(":scope > .aleta-bagian-isi");
+  if (!isi || !data) return;
+  isi.textContent = "";
+  gambarPenunjukan(isi, data);
+}
+
+/** Calon pejabat penetap satu langkah (rencana bot) dan yang sedang dipilih. */
+function t7CalonPejabat(data, jenis) {
+  const langkah = ((data && data.rencana && data.rencana.langkah) || []).find((x) => x && x.jenis === jenis);
+  const calon = langkah && Array.isArray(langkah.calon) ? langkah.calon.filter((x) => x && x.username) : [];
+  const dipilih = (data && data.pejabatDipilih && data.pejabatDipilih[jenis]) || (langkah && langkah.akun ? langkah.akun.username : "") || "";
+  return { calon, dipilih };
+}
+
+/** Satu pilihan di menu: teks, beban di kanan, keterangan di bawah. */
+function t7OpsiPilih(teks, beban, terpilih, mati, ket) {
+  const b = t7Tombol("", "", "aleta-t7-pilih-opsi");
+  b.setAttribute("role", "menuitemradio");
+  b.setAttribute("aria-checked", terpilih ? "true" : "false");
+  if (mati) b.disabled = true;
+  b.appendChild(buatElemen("span", "aleta-t7-pilih-teks", teks));
+  b.appendChild(buatElemen("span", "aleta-t7-pilih-beban", beban || ""));
+  if (ket) b.appendChild(buatElemen("span", "aleta-t7-pilih-ket", ket));
+  return b;
+}
+
+function t7MenuKosong(judul) {
+  const m = buatElemen("div", "aleta-t7-pilih");
+  m.setAttribute("role", "menu");
+  if (judul) m.appendChild(buatElemen("div", "aleta-t7-pilih-judul", judul));
+  return m;
+}
+
+/** Kaki menu: tautan kiri (boleh kosong) dan "Tutup". */
+function t7KakiPilih(tutup, kiriTeks, kiriKerja) {
+  const kaki = buatElemen("div", "aleta-t7-pilih-kaki");
+  if (kiriTeks) {
+    const kiri = t7Tombol(kiriTeks, "", "aleta-t7-tautan");
+    kiri.addEventListener("click", kiriKerja);
+    kaki.appendChild(kiri);
+  } else kaki.appendChild(buatElemen("span"));
+  const t = t7Tombol("Tutup", "", "aleta-t7-tautan aleta-t7-pilih-tutup");
+  t.addEventListener("click", tutup);
+  kaki.appendChild(t);
+  return kaki;
+}
+
+/** Menu pejabat penetap - dipakai kartu mulus DAN tampilan rinci. */
+function t7MenuPejabat(data, jenis, onPilih, tutup) {
+  const { calon, dipilih } = t7CalonPejabat(data, jenis);
+  const menu = t7MenuKosong(`Yang menetapkan ${String(jenis).toUpperCase()}`);
+  menu.classList.add("aleta-t7-pilih-pejabat");
+  for (const c of calon) {
+    const o = t7OpsiPilih(
+      `${c.namaLengkap || c.username}${c.sebutan ? ` — ${c.sebutan}` : ""}`,
+      c.otomatis ? "usulan ALETA" : "",
+      c.username === dipilih,
+      false,
+      c.siap === false ? "akunnya belum siap" : ""
+    );
+    o.setAttribute("data-t7-pejabat", c.username);
+    o.addEventListener("click", () => onPilih(c.username));
+    menu.appendChild(o);
+  }
+  menu.appendChild(t7KakiPilih(tutup));
+  return menu;
+}
+
+/**
+ * UI Baru: keterangan penetap menyebut nama + jabatan saja. Nama akun SIPP
+ * ("(akun fahri)") bersifat teknis dan tidak ditampilkan; akun yang belum
+ * siap tetap disebut dengan kalimat biasa oleh penetapUntuk.
+ */
+function t7TanpaAkun(teks) {
+  return String(teks || "").replace(/ \(akun [^)]*\)/g, "");
+}
+
+/** Baris "Ditetapkan ..." yang dapat diklik. */
+function t7TombolPenetap(teks) {
+  const t = t7Tombol("", "Klik untuk memilih pejabat yang menetapkan", "aleta-t7-penetap");
+  t.appendChild(buatElemen("span", "aleta-t7-penetap-teks", teks));
+  t.appendChild(buatElemen("span", "aleta-t7-penetap-panah", "▾"));
+  t.setAttribute("aria-haspopup", "menu");
+  t.setAttribute("aria-expanded", "false");
+  return t;
+}
+
+/**
+ * Tampilan rinci UI Baru: keterangan penetap pada baris penetapan menjadi
+ * tombol yang membuka pilihan pejabatnya (menggantikan kotak "Pejabat yang
+ * menetapkan"). Yang calonnya satu tetap teks biasa.
+ */
+function t7PenetapDapatDiklik(span, data, jenis, gambarUlang) {
+  if (!span || !data) return;
+  if (t7CalonPejabat(data, jenis).calon.length <= 1) return;
+  const tombol = t7TombolPenetap(String(span.textContent || ""));
+  tombol.classList.add("aleta-tetap-penetap");
+  tombol.setAttribute("data-jenis", jenis);
+  span.replaceWith(tombol);
+  let menu = null;
+  const tutup = () => {
+    if (menu) menu.remove();
+    menu = null;
+    tombol.setAttribute("aria-expanded", "false");
+  };
+  tombol.addEventListener("click", () => {
+    if (menu) return tutup();
+    menu = t7MenuPejabat(
+      data,
+      jenis,
+      (username) => {
+        if (!data.pejabatDipilih) data.pejabatDipilih = {};
+        data.pejabatDipilih[jenis] = username;
+        gambarUlang();
+      },
+      tutup
+    );
+    tombol.after(menu);
+    tombol.setAttribute("aria-expanded", "true");
+  });
+}
+
+/** Nama ruang sidang terpilih; kosong = bawaan mesin tulis (ruang 1 dalam gedung). */
+function t7NamaRuang(id) {
+  const daftar = typeof ruanganTersimpan !== "undefined" && Array.isArray(ruanganTersimpan) ? ruanganTersimpan : [];
+  const cari = (x) => daftar.find((r) => String(r.id) === String(x));
+  const r = id ? cari(id) : cari(1);
+  return r ? String(r.nama || "") : id ? "" : "Ruang Sidang 1 Dalam Gedung";
+}
+
+/** Jam sidang terpilih untuk ditampilkan ("09.00"). */
+function t7JamTampil(jam) {
+  return String(jam || "09:00").slice(0, 5).replace(":", ".");
+}
+
+/** Kartu Penetapan mulus (UI Baru). Kelas dan label lama dipertahankan. */
 function t7KartuKeputusan(k, penunjukan) {
   const kartu = buatElemen("section", "aleta-t7-kartu aleta-t7-keputusan aleta-t7-penetapan");
   const kepala = buatElemen("div", "aleta-t7-penetapan-kepala");
+  const tag = buatElemen("span", "aleta-lipat-peran aleta-t7-penetapan-peran", "Ketua");
+  tag.title = "Bagian ini untuk: Ketua";
+  kepala.appendChild(tag);
   kepala.appendChild(buatElemen("span", "aleta-t7-penetapan-judul", "Penetapan"));
   const ringkasKepala = buatElemen("span", "aleta-t7-penetapan-ringkas");
   kepala.appendChild(ringkasKepala);
   const perkara = buatElemen("div", "aleta-t7-perkara");
   const daftar = buatElemen("div", "aleta-t7-keputusan-daftar");
-  const pejabatBaris = buatElemen("div", "aleta-t7-pejabat");
   const mode = buatElemen("div", "aleta-t7-mode");
   const kaki = buatElemen("div", "aleta-t7-penetapan-kaki aleta-t7-keputusan-kaki");
   const hasilKotak = buatElemen("div", "aleta-t7-hasil");
   const utama = t7Tombol("Tetapkan semua", "", "aleta-t7-tetapkan-semua");
+  const tinjau = t7Tombol(
+    "Ubah semua pilihan",
+    "Buka tampilan rinci: cara, majelis per orang, panitera, juru sita, hari sidang, sidang keliling - beserta beban tiap pilihan",
+    "aleta-t7-kecil aleta-t7-ubah-semua"
+  );
   const petunjuk = buatElemen("div", "aleta-t7-tetapkan-petunjuk");
   const muat = t7Tombol("Muat usulan penetapan", "Menyusun usulan majelis, panitera, juru sita, dan hari sidang", "aleta-t7-kecil");
-  const lain = buatElemen("details", "aleta-t7-lain");
-  lain.appendChild(buatElemen("summary", "", "Pilihan lain"));
-  const lainIsi = buatElemen("div", "aleta-t7-lain-isi");
-  const tinjau = t7Tombol("Ubah semua pilihan", "Buka seluruh pilihan: cara, majelis, panitera, juru sita, hari sidang, pejabat penetap", "aleta-t7-kecil");
-  const rincian = t7Tombol("Lihat rincian pemeriksaan", "Buka bagian rinci beserta hasil pemeriksaannya", "aleta-t7-kecil");
-  lainIsi.append(
-    tinjau,
-    rincian,
-    buatElemen(
-      "span",
-      "aleta-t7-lain-ket",
-      "Cara manual, susunan per orang, sidang keliling, dan pejabat penetap ada di Ubah semua pilihan. Membatalkan penetapan ada di menu ⋯ › Zona berbahaya."
-    )
-  );
-  lain.appendChild(lainIsi);
-  kaki.append(hasilKotak, utama, muat, petunjuk, lain);
-  kartu.append(kepala, perkara, daftar, pejabatBaris, mode, kaki);
+  // Butir 10 (19 Okt 2026): passphrase TTE tidak ada di panel. Tanda tangan
+  // diatur di halaman Tanda tangan pejabat portal.
+  const ttd = buatElemen("div", "aleta-t7-ttd-ket", "Tanda tangan memakai gambar tanda tangan pejabat yang disahkan — atur di ");
+  const ttdTautan = buatElemen("a", "aleta-t7-tautan", "Tanda tangan pejabat");
+  ttdTautan.href = `${location.origin}/aleta/admin/aleta-ecourt#ttd`;
+  ttdTautan.target = "_blank";
+  ttdTautan.rel = "noopener";
+  ttd.appendChild(ttdTautan);
+  kaki.append(hasilKotak, utama, tinjau, muat, petunjuk, ttd);
+  kartu.append(kepala, perkara, daftar, mode, kaki);
 
   const s = t7KeadaanSatuKlik(penunjukan);
-  muat.addEventListener("click", () => t7BukaPenunjukan(penunjukan));
-  tinjau.addEventListener("click", () => t7SetelTinjau(penunjukan, !penunjukan.hasAttribute("data-t7-tinjau")));
-  rincian.addEventListener("click", () => {
+  /** Menu yang sedang terbuka: { jenis, macam: "ubah" | "pejabat" } atau null. */
+  let buka = null;
+  /** Peta e-Doc penetapan (sudah terupload); dibaca sekali bila ada yang tercatat. */
+  let edocPeta = null;
+  let edocDimuat = false;
+  /** Wadah konfirmasi + kabar e-Doc per jenis - elemen tetap, dipindah ke baris yang digambar ulang. */
+  const wadahEdoc = new Map();
+  const edocJalan = new Set();
+  let tolakLibur = "";
+  let ruangDiminta = false;
+
+  const bukaRinci = () => {
+    buka = null;
+    const data = t7DataPenunjukan();
+    // Tampilan rinci dibuka dalam cara Manual supaya SEMUA pilihan beserta
+    // bebannya tampil. Nilai yang belum diubah tetap usulan - manual hanya
+    // membuka dropdown-nya.
+    if (data && data.caraPapan !== "manual") {
+      data.caraPapan = "manual";
+      t7GambarUlangPenunjukan(penunjukan, data);
+    }
     t7SetelTinjau(penunjukan, true);
-    const tujuan = penunjukan.querySelector(".aleta-tetap-kaki") || penunjukan;
-    if (typeof tujuan.scrollIntoView === "function") tujuan.scrollIntoView({ block: "center" });
+    kartu.hidden = true;
+    if (typeof penunjukan.scrollIntoView === "function") penunjukan.scrollIntoView({ block: "start" });
+  };
+
+  /** Menulis satu pilihan ke data papan lalu menggambar ulang bagian rinci. */
+  const terapkan = (ubah, tetapBuka) => {
+    const data = t7DataPenunjukan();
+    if (!data) return;
+    if (!data.pilihanManual) data.pilihanManual = {};
+    ubah(data.pilihanManual, data);
+    // Pilihan tangan = cara Manual (bagian rinci menyebutnya apa adanya).
+    data.caraPapan = "manual";
+    if (!tetapBuka) buka = null;
+    t7GambarUlangPenunjukan(penunjukan, data);
+    segarkan();
+  };
+
+  const menuUbah = (data, jenis) => {
+    const usulan = data.usulan || {};
+    const pm = data.pilihanManual || {};
+    const tutup = () => {
+      buka = null;
+      segarkan();
+    };
+    if (jenis === "pmh") {
+      const pmh = usulan.pmh || {};
+      const susunan = Array.isArray(pmh.susunanTerpakai) ? pmh.susunanTerpakai : [];
+      const sekarang =
+        pm.majelis ||
+        (data.majelisDipilih ? kunciSusunan(data.majelisDipilih) : kunciSusunan((pmh.anggota || []).map((a) => a.hakimId ?? a.id)));
+      const menu = t7MenuKosong("");
+      const kelompok = [
+        ["Menurut SK", susunan.filter((x) => x && x.majelisKode)],
+        ["Tanpa kode", susunan.filter((x) => x && !x.majelisKode)],
+      ];
+      for (const [judul, isi] of kelompok) {
+        if (!isi.length) continue;
+        menu.appendChild(buatElemen("div", "aleta-t7-pilih-judul", judul));
+        for (const x of isi) {
+          const o = t7OpsiPilih(
+            `${x.majelisKode ? `${x.majelisKode} — ` : ""}${(x.anggota || []).map((a) => a.nama).join(" · ")}`,
+            sebutBeban(x.perkara),
+            String(x.kunci) === String(sekarang),
+            false,
+            x.majelisKode ? "" : "di luar SK"
+          );
+          o.setAttribute("data-t7-majelis", String(x.kunci));
+          o.addEventListener("click", () => {
+            const isiRinci = penunjukan.querySelector(":scope > .aleta-bagian-isi");
+            if (!isiRinci) return;
+            if (!data.pilihanManual) data.pilihanManual = {};
+            const p = data.pilihanManual;
+            p.majelis = String(x.kunci);
+            p.caraHakim = "majelis";
+            p.pmhKursi = [];
+            // PP mengikuti majelis yang dipilih (panitera sidang menurut SK):
+            // pilihan PP tangan dilepas, usulan PP dihitung ulang untuk majelis itu.
+            delete p.ppp;
+            data.caraPapan = "manual";
+            buka = null;
+            void muatUlangUsulan(isiRinci, data, x.hakimId);
+          });
+          menu.appendChild(o);
+        }
+      }
+      if (!susunan.length) menu.appendChild(buatElemen("div", "aleta-t7-pilih-ket", "Belum ada susunan majelis yang dapat dipilih di sini."));
+      menu.appendChild(t7KakiPilih(tutup, "Per orang, hakim tunggal, sidang keliling: Ubah semua pilihan", bukaRinci));
+      return menu;
+    }
+    if (jenis === "ppp" || jenis === "pjs") {
+      const u = usulan[jenis] || {};
+      const idDari = (x) => String(x.id ?? (jenis === "ppp" ? x.paniteraId : x.jurusitaId) ?? x.nama);
+      const calon = Array.isArray(u.calon) && u.calon.length ? u.calon : u.usulan ? [u.usulan] : [];
+      const sekarang = String(pm[jenis] ?? (u.usulan ? idDari(u.usulan) : ""));
+      const menu = t7MenuKosong("");
+      const kelompok =
+        jenis === "ppp"
+          ? [
+              ["Panitera sidang majelis ini", calon.filter((x) => x && x.dariSk)],
+              [calon.some((x) => x && x.dariSk) ? "Panitera pengganti lain" : "Panitera pengganti", calon.filter((x) => x && !x.dariSk)],
+            ]
+          : [["Juru sita", calon]];
+      for (const [judul, isi] of kelompok) {
+        if (!isi.length) continue;
+        menu.appendChild(buatElemen("div", "aleta-t7-pilih-judul", judul));
+        for (const x of isi) {
+          const kode = jenis === "ppp" ? x.kodeSk || x.kode || "" : "";
+          const o = t7OpsiPilih(
+            `${kode ? `${kode} — ` : ""}${x.nama}`,
+            x.jumlah !== undefined ? sebutBeban(x.jumlah) : "",
+            idDari(x) === sekarang,
+            false,
+            jenis === "ppp" && x.dariSk ? "terpaut ke majelis ini menurut SK" : ""
+          );
+          o.setAttribute("data-t7-orang", idDari(x));
+          o.addEventListener("click", () =>
+            terapkan((p) => {
+              p[jenis] = idDari(x);
+            })
+          );
+          menu.appendChild(o);
+        }
+      }
+      if (calon.length <= 1) menu.appendChild(buatElemen("div", "aleta-t7-pilih-ket", "Tidak ada pilihan lain saat ini."));
+      menu.appendChild(t7KakiPilih(tutup));
+      return menu;
+    }
+    // PHS: tanggal (hari sidang majelis; hari libur tidak dapat dipilih), jam, ruang.
+    const phs = usulan.phs || {};
+    const terpilih = String(pm.phs || phs.usulan || "");
+    const menu = t7MenuKosong(phs.calon && phs.calon.length ? "Hari sidang majelis" : "");
+    for (const x of phs.calon || []) {
+      const libur = x.libur || (typeof ccBukanHariKerja === "function" ? String(ccBukanHariKerja(x.tanggal) || "").replace(/^libur: /, "") : "");
+      const beban =
+        x.jumlahSidang === null || x.jumlahSidang === undefined
+          ? ""
+          : x.jumlahSidang === 0
+            ? "belum ada sidang"
+            : `${x.jumlahSidang} sidang`;
+      const o = t7OpsiPilih(
+        x.sebut || sebutTanggal(x.tanggal),
+        libur ? "libur" : [x.usulan ? "usulan" : `mundur ${x.pekan} pekan`, beban].filter(Boolean).join(" · "),
+        x.tanggal === terpilih,
+        Boolean(libur),
+        libur ? `${libur} · tidak dapat dipilih` : ""
+      );
+      o.setAttribute("data-t7-tanggal", x.tanggal);
+      o.addEventListener("click", () => {
+        tolakLibur = "";
+        terapkan((p) => {
+          p.phs = x.tanggal;
+          p.phsBebas = false;
+        }, true);
+      });
+      menu.appendChild(o);
+    }
+    const medan = (label, el) => {
+      const m = buatElemen("label", "aleta-t7-pilih-medan");
+      m.appendChild(buatElemen("span", "", label));
+      m.appendChild(el);
+      menu.appendChild(m);
+    };
+    const tanggal = document.createElement("input");
+    tanggal.type = "date";
+    tanggal.className = "aleta-t7-phs-tanggal";
+    tanggal.min = new Date().toISOString().slice(0, 10);
+    tanggal.value = pm.phsBebas ? String(pm.phs || "") : "";
+    tanggal.addEventListener("change", () => {
+      const v = tanggal.value;
+      if (!v) return;
+      const libur = typeof ccBukanHariKerja === "function" ? ccBukanHariKerja(v) : "";
+      if (libur || hariAkhirPekan(v)) {
+        tolakLibur = `${sebutTanggal(v)} hari ${String(libur || hariAkhirPekan(v)).replace(/^libur: /, "libur ")} - tidak dapat dipilih.`;
+        segarkan();
+        return;
+      }
+      tolakLibur = "";
+      terapkan((p) => {
+        p.phs = v;
+        p.phsBebas = !(phs.calon || []).some((x) => x.tanggal === v);
+      }, true);
+    });
+    medan("Tanggal lain", tanggal);
+    if (tolakLibur) menu.appendChild(buatElemen("div", "aleta-t7-awas", tolakLibur));
+    const jam = document.createElement("input");
+    jam.type = "time";
+    jam.className = "aleta-t7-phs-jam";
+    jam.value = String(pm.jam || "09:00").slice(0, 5);
+    jam.addEventListener("change", () => {
+      const v = String(jam.value || "").slice(0, 5);
+      terapkan((p) => {
+        if (!/^\d{2}:\d{2}$/.test(v) || v === "09:00") delete p.jam;
+        else p.jam = v;
+      }, true);
+    });
+    medan("Jam", jam);
+    const ruang = document.createElement("select");
+    ruang.className = "aleta-t7-phs-ruang";
+    const daftarRuang = typeof ruanganTersimpan !== "undefined" && Array.isArray(ruanganTersimpan) ? ruanganTersimpan : [];
+    // Daftar ruang dibaca SEKALI per kartu - gagal dibaca tidak diulang terus.
+    if (!ruangDiminta && typeof ruanganTersimpan !== "undefined" && ruanganTersimpan === null && typeof muatRuangan === "function") {
+      ruangDiminta = true;
+      void muatRuangan().then(() => segarkan());
+    }
+    const adaSatu = daftarRuang.some((r) => String(r.id) === "1");
+    if (!adaSatu) {
+      const o = document.createElement("option");
+      o.value = "";
+      o.textContent = "Ruang Sidang 1 Dalam Gedung";
+      ruang.appendChild(o);
+    }
+    for (const r of daftarRuang) {
+      const o = document.createElement("option");
+      o.value = String(r.id);
+      o.textContent = String(r.nama || "");
+      ruang.appendChild(o);
+    }
+    ruang.value = String(pm.ruangan || (adaSatu ? "1" : ""));
+    ruang.addEventListener("change", () =>
+      terapkan((p) => {
+        p.ruangan = ruang.value;
+      }, true)
+    );
+    medan("Ruang", ruang);
+    menu.appendChild(t7KakiPilih(tutup));
+    return menu;
+  };
+
+  /** Butir 7: ambil penetapan ini dari ABT lalu unggah ke e-Doc SIPP (mesin e6 yang sama). */
+  const jalankanEdoc = async (jenis) => {
+    if (edocJalan.has(jenis)) return;
+    let wadah = wadahEdoc.get(jenis);
+    if (!wadah) {
+      wadah = buatElemen("div", "aleta-t7-edoc-wadah");
+      wadah.setAttribute("data-jenis", jenis);
+      wadahEdoc.set(jenis, wadah);
+    }
+    wadah.textContent = "";
+    const wadahTanya = buatElemen("div", "aleta-t7-edoc-tanya");
+    const kabar = buatElemen("div", "aleta-t7-edoc-kabar");
+    wadah.append(wadahTanya, kabar);
+    edocJalan.add(jenis);
+    segarkan();
+    try {
+      const data = t7DataPenunjukan();
+      const pk = (data && data.usulan && data.usulan.perkara) || {};
+      const nomor = String(k.nomor || pk.nomorPerkara || "");
+      const kode = jenis.toUpperCase();
+      const nama = (typeof S2_NAMA_PENETAPAN !== "undefined" && S2_NAMA_PENETAPAN[kode]) || kode;
+      const sudah = edocPeta ? b7SudahDariPeta(edocPeta, [kode]) : (await b7BacaSudahTerunggah(nomor, [kode])) || [];
+      const baris = [
+        `${nomor}: blangko ${nama} diambil dari ABT, ditandatangani dengan gambar tanda tangan pejabat yang disahkan, diberi cap, lalu diunggah ke e-Doc SIPP.`,
+        "Ini menulis ke SIPP atas nama akun Anda.",
+      ];
+      if (sudah.length) baris.unshift(`${b7KalimatSudah(sudah)}. Mengunggah lagi akan MENIMPA e-Doc yang lama - yakin menimpa yang lama?`);
+      const o = { judul: `Unggah e-Doc ${nama}`, baris, centang: "Sudah saya periksa", ya: sudah.length ? "Ya, timpa yang lama" : "Unggah", tidak: "Batal" };
+      const ya = typeof a30Tanya === "function" ? await a30Tanya(wadahTanya, o) : window.confirm(`${baris.join("\n")}\n\nLanjutkan?`) === true;
+      if (!ya) {
+        kabar.textContent = "Dibatalkan - tidak ada yang dikirim.";
+        return;
+      }
+      const hasil = await e6UnggahEdocPenetapan({
+        nomorPerkara: nomor,
+        perkaraId: String(pk.perkaraId || ""),
+        jenis: [jenis],
+        otomatis: false,
+        kering: false,
+        timpaDisetujui: true,
+        kabar,
+      });
+      if (hasil && hasil.alasan === "tidak_ada_jenis") {
+        kabar.textContent = `${nama} belum dinyalakan di Peta penetapan. `;
+        const a = buatElemen("a", "aleta-t7-tautan", "Buka Peta penetapan ↗");
+        a.href = `${location.origin}/aleta/admin/aleta-ecourt#peta-penetapan`;
+        a.target = "_blank";
+        a.rel = "noopener";
+        kabar.appendChild(a);
+      }
+      if (hasil && hasil.ok) edocDimuat = false;
+    } finally {
+      edocJalan.delete(jenis);
+      segarkan();
+    }
+  };
+
+  muat.addEventListener("click", () => t7BukaPenunjukan(penunjukan));
+  tinjau.addEventListener("click", bukaRinci);
+  utama.addEventListener("click", () => {
+    buka = null;
+    void t7TetapkanSemua(penunjukan);
   });
-  utama.addEventListener("click", () => void t7TetapkanSemua(penunjukan));
 
   const segarkan = () => {
+    // Rinci dan mulus tidak pernah tampil bersamaan.
+    kartu.hidden = penunjukan.hasAttribute("data-t7-tinjau");
     daftar.textContent = "";
-    const data = typeof usulanTerakhir !== "undefined" ? usulanTerakhir : null;
+    const data = t7DataPenunjukan();
     const usulan = (data && data.usulan) || {};
     const pk = usulan.perkara || {};
+    const pm = (data && data.pilihanManual) || {};
     const identitas = (k.konteks && k.konteks.identitas) || {};
     const baris = Array.from(penunjukan.querySelectorAll(".aleta-tetap")).filter((b) => !b.closest(".aleta-tetap-pejabat-baris"));
     const asli = penunjukan.querySelector(".aleta-tombol-tetapkan");
     const memuat = penunjukan.querySelector(".aleta-memuat") !== null;
     muat.hidden = baris.length > 0 || memuat;
-    tinjau.textContent = penunjukan.hasAttribute("data-t7-tinjau") ? "Sembunyikan pilihan" : "Ubah semua pilihan";
+    tinjau.hidden = baris.length === 0;
 
     // Ringkasan perkara
     perkara.textContent = "";
     const judulPerkara = [k.nomor || pk.nomorPerkara || "", identitas.jenisPerkara || pk.jenisPerkara || ""].filter(Boolean).join(" · ");
     perkara.appendChild(buatElemen("strong", "", judulPerkara));
-    const sisa = data && data.usulan ? langkahSisaPenetapan(usulan) : [];
+    const sisa = data ? langkahSisaPenetapan(usulan) : [];
     const bagianKet = [];
     if (pk.tanggalDaftar) bagianKet.push(`Didaftarkan ${sebutTanggal(String(pk.tanggalDaftar).slice(0, 10))}`);
     if (usulan.tanggalPenetapan && sisa.length) {
@@ -19666,6 +20159,7 @@ function t7KartuKeputusan(k, penunjukan) {
     }
     let tercatatJumlah = 0;
     const sibuk = s.tahap === "periksa" || s.tahap === "tulis";
+    if (sibuk) buka = null;
     for (const b of baris) {
       const label = b.querySelector(".aleta-tetap-label");
       const nilai = b.querySelector(".aleta-tetap-isi, .aleta-tetap-kosong");
@@ -19683,28 +20177,72 @@ function t7KartuKeputusan(k, penunjukan) {
       r.appendChild(buatElemen("span", "aleta-t7-kode", jenis ? jenis.toUpperCase() : "•"));
       r.appendChild(buatElemen("span", "aleta-t7-keputusan-label", teksLabel));
       const kanan = buatElemen("span", "aleta-t7-keputusan-nilai");
-      kanan.appendChild(buatElemen("strong", "", nilai ? nilai.textContent : "belum dapat diusulkan"));
+      let teksNilai = nilai ? String(nilai.textContent || "") : "belum dapat diusulkan";
+      // PHS: jam dan ruangnya ikut disebut (bawaan 09.00, ruang 1 dalam gedung).
+      if (jenis === "phs" && !tercatat && nilai && nilai.classList.contains("aleta-tetap-isi")) {
+        teksNilai = [teksNilai, t7JamTampil(pm.jam), t7NamaRuang(pm.ruangan)].filter(Boolean).join(" · ");
+      }
+      kanan.appendChild(buatElemen("strong", "", teksNilai));
       // Yang sudah tercatat di SIPP bukan usulan dan tidak dapat diubah dari
       // sini (barisPenetapanTercatat; uji rilis U1, 9 Okt 2026).
       if (tercatat) kanan.appendChild(buatElemen("span", "aleta-t7-chip-kecil aleta-t7-chip-sudah", "Sudah di SIPP"));
       else if (nilai && nilai.classList.contains("aleta-tetap-isi")) kanan.appendChild(buatElemen("span", "aleta-t7-chip-kecil", "Usulan ALETA"));
+      const sudahEdoc = tercatat && edocPeta ? b7SudahDariPeta(edocPeta, [jenis.toUpperCase()]) : [];
+      if (sudahEdoc.length) {
+        const chip = buatElemen("span", "aleta-t7-chip-kecil aleta-t7-chip-edoc", "e-Doc sudah ada");
+        if (sudahEdoc[0].terakhir) chip.title = `Terakhir diunggah ${b7TanggalSingkat(sudahEdoc[0].terakhir)} - mengunggah lagi menimpa yang lama.`;
+        kanan.appendChild(chip);
+      }
       if (sebab && sebab.textContent && !tercatat) {
         const info = buatElemen("span", "aleta-t7-info", "ⓘ");
         info.title = String(sebab.textContent);
         info.setAttribute("aria-label", `Sebab: ${sebab.textContent}`);
         kanan.appendChild(info);
       }
-      if (!tercatat && !sibuk) {
-        const ubah = t7Tombol("Ubah", "Buka pilihan untuk mengubahnya", "aleta-t7-tautan");
-        ubah.addEventListener("click", () => {
-          t7SetelTinjau(penunjukan, true);
-          b.classList.add("aleta-t7-sorot");
-          setTimeout(() => b.classList.remove("aleta-t7-sorot"), 2400);
-          if (typeof b.scrollIntoView === "function") b.scrollIntoView({ block: "center" });
-        });
-        kanan.appendChild(ubah);
-      }
       r.appendChild(kanan);
+
+      const aksi = buatElemen("span", "aleta-t7-baris-aksi");
+      const terbukaUbah = Boolean(buka && buka.jenis === jenis && buka.macam === "ubah");
+      if (jenis && !tercatat && !sibuk && data) {
+        const ubah = t7Tombol("Ubah", "Pilih yang lain untuk penetapan ini", "aleta-t7-tautan aleta-t7-ubah");
+        ubah.setAttribute("aria-haspopup", "menu");
+        ubah.setAttribute("aria-expanded", terbukaUbah ? "true" : "false");
+        ubah.addEventListener("click", () => {
+          buka = terbukaUbah ? null : { jenis, macam: "ubah" };
+          segarkan();
+        });
+        aksi.appendChild(ubah);
+      }
+      if (jenis) {
+        const edoc = t7Tombol(
+          "e-Doc",
+          tercatat ? "Ambil penetapan ini dari ABT lalu unggah ke e-Doc SIPP" : "Tersedia sesudah penetapan ini tercatat di SIPP",
+          "aleta-t7-edoc"
+        );
+        edoc.disabled = !tercatat || sibuk || edocJalan.has(jenis);
+        edoc.addEventListener("click", () => void jalankanEdoc(jenis));
+        aksi.appendChild(edoc);
+      }
+      if (aksi.childElementCount) r.appendChild(aksi);
+
+      // Butir 2: pejabat penetap dipilih dengan mengeklik baris "Ditetapkan ...".
+      if (jenis && !tercatat && data) {
+        const teksPenetap = t7TanpaAkun(penetapUntuk(data, jenis));
+        if (teksPenetap) {
+          const terbukaPejabat = Boolean(buka && buka.jenis === jenis && buka.macam === "pejabat");
+          if (t7CalonPejabat(data, jenis).calon.length > 1 && !sibuk) {
+            const tp = t7TombolPenetap(teksPenetap);
+            tp.setAttribute("aria-expanded", terbukaPejabat ? "true" : "false");
+            tp.addEventListener("click", () => {
+              buka = terbukaPejabat ? null : { jenis, macam: "pejabat" };
+              segarkan();
+            });
+            r.appendChild(tp);
+          } else {
+            r.appendChild(buatElemen("span", "aleta-t7-penetap", teksPenetap));
+          }
+        }
+      }
       if (awas) r.appendChild(buatElemen("span", "aleta-t7-awas", awas.textContent));
       if (st) {
         const tanda = buatElemen("span", `aleta-t7-langkah-status aleta-t7-langkah-${st.nada}`);
@@ -19713,24 +20251,41 @@ function t7KartuKeputusan(k, penunjukan) {
         r.appendChild(tanda);
         if (st.sebab) r.appendChild(buatElemen("span", `aleta-t7-langkah-sebab${st.nada === "ditahan" ? " aleta-t7-langkah-sebab-ditahan" : ""}`, st.sebab));
       }
+      if (buka && buka.jenis === jenis && !tercatat && !sibuk && data) {
+        r.appendChild(
+          buka.macam === "pejabat"
+            ? t7MenuPejabat(
+                data,
+                jenis,
+                (username) => {
+                  if (!data.pejabatDipilih) data.pejabatDipilih = {};
+                  data.pejabatDipilih[jenis] = username;
+                  buka = null;
+                  t7GambarUlangPenunjukan(penunjukan, data);
+                  segarkan();
+                },
+                () => {
+                  buka = null;
+                  segarkan();
+                }
+              )
+            : menuUbah(data, jenis)
+        );
+      }
+      if (wadahEdoc.has(jenis)) r.appendChild(wadahEdoc.get(jenis));
       daftar.appendChild(r);
     }
 
-    // Pejabat penetap (isi pilihan "Pejabat yang menetapkan" di bagian rinci).
-    const pejabat = Array.from(penunjukan.querySelectorAll(".aleta-tetap-pejabat-baris"));
-    pejabatBaris.textContent = "";
-    if (pejabat.length) {
-      pejabatBaris.appendChild(document.createTextNode("Ditetapkan atas nama "));
-      const nama = pejabat.map((x) => {
-        const jenisEl = x.querySelector(".aleta-tetap-pejabat-jenis");
-        const pilih = x.querySelector("select");
-        const opsi = pilih && pilih.selectedOptions && pilih.selectedOptions[0];
-        const siapa = opsi ? String(opsi.textContent || "").trim().replace(/ \(pilihan ALETA\)$/, "") : "";
-        return `${jenisEl ? jenisEl.textContent : ""} ${siapa}`.trim();
+    // e-Doc yang sudah terupload - dibaca sekali begitu ada penetapan yang tercatat.
+    if (tercatatJumlah > 0 && !edocDimuat && (k.nomor || pk.nomorPerkara) && typeof S2_API_EDOC_PETA !== "undefined") {
+      edocDimuat = true;
+      void t7AmbilJson(`${S2_API_EDOC_PETA}?nomor=${encodeURIComponent(String(k.nomor || pk.nomorPerkara))}`, "Membaca e-Doc penetapan").then((j) => {
+        if (j && j.ok) {
+          edocPeta = s2BacaPetaEdoc(j.data);
+          segarkan();
+        }
       });
-      pejabatBaris.appendChild(buatElemen("strong", "", nama.join(" · ")));
     }
-    pejabatBaris.hidden = pejabat.length === 0;
 
     // Mode latihan / uji: tidak ada yang tersimpan - dikatakan sebelum ditekan.
     const latihan = typeof alatLatihanNyala === "function" && alatLatihanNyala();
@@ -19902,9 +20457,17 @@ function t7PasangBilah(k, penunjukan) {
       utama.disabled = asli.disabled;
     }
     utama.title = asli.disabled ? "Tombol Tetapkan sedang mati - lihat sebabnya di kartu Penetapan." : "Satu kali tekan: memeriksa lalu menuliskan penetapan yang tersisa.";
-    ringkas.textContent = pejabat.length
-      ? `${pejabat.length} penetapan siap ditulis: ${pejabat.join(" · ")}`
-      : `${baris} keputusan diusulkan`;
+    // UI Baru (19 Okt 2026): kotak "Pejabat yang menetapkan" tidak ada lagi -
+    // yang tersisa dibaca dari langkah yang belum ada di SIPP.
+    const dataUi = k.ui ? t7DataPenunjukan() : null;
+    const sisaUi = dataUi ? langkahSisaPenetapan(dataUi.usulan).map((x) => x.toUpperCase()) : [];
+    ringkas.textContent = dataUi
+      ? sisaUi.length
+        ? `${sisaUi.length} penetapan siap ditulis: ${sisaUi.join(" · ")}`
+        : "Keempat penetapan sudah di SIPP"
+      : pejabat.length
+        ? `${pejabat.length} penetapan siap ditulis: ${pejabat.join(" · ")}`
+        : `${baris} keputusan diusulkan`;
   };
   s.pendengar.add(() => segarkan());
   return { bilah, segarkan };
@@ -24576,11 +25139,12 @@ function s1GambarDaftarMassal(daftar, sidang, gambarBaris, lain) {
  *   butir 17  Penetapan: "Upload edoc penetapan (PMH/PPP/PJS/PHS)" - otomatis
  *             dari ABT (GET penetapan-edoc/peta, POST penetapan-edoc/unggah,
  *             rute E) + bagian lipat terpisah untuk upload manual. Sumber TTE
- *             dan cap disebut sebelum tombol. Passphrase diketik tiap kali,
- *             tidak disimpan di mana pun, dikosongkan sesudah dikirim, dan
- *             TIDAK dikirim sama sekali selama mode latihan/kering/coba
- *             (supaya tidak masuk catatan latihan). 404 = "belum tersedia di
- *             server".
+ *             dan cap disebut sebelum tombol. 404 = "belum tersedia di
+ *             server". DIROMBAK 19 Okt 2026: unggah otomatis pindah ke tombol
+ *             "e-Doc" per baris kartu Penetapan; yang manual menjadi bagian
+ *             "Edoc penetapan (PMH/PPP/PJS/PHS) manual"; passphrase TTE
+ *             dihapus dari panel dan tidak dikirim (atur di Tanda tangan
+ *             pejabat portal).
  *   butir 19  bawaan buka/tutup: di tiap tab hanya bagian UTAMA yang terbuka,
  *             sisanya tertutup; kartu tambahan di dalam tab tertutup. Pilihan
  *             petugas yang tersimpan selalu menang.
@@ -24609,6 +25173,7 @@ const S2_BLANGKO_MAKS = 300;
 const S2_PERAN_BAGIAN = {
   penunjukan: "Ketua",
   s2EdocPenetapan: "Ketua",
+  s2EdocPenetapanManual: "Ketua",
   penetapanMassal: "Ketua",
   dataUmum: "PTSP",
   isiAlasanPerkara: "PTSP",
@@ -25275,20 +25840,6 @@ function s2ModeMenahan(alamat) {
   return "";
 }
 
-function s2IsianSandi(label) {
-  const baris = buatElemen("label", "aleta-s2-sandi");
-  baris.appendChild(buatElemen("span", "aleta-s2-sandi-judul", label));
-  const input = document.createElement("input");
-  input.type = "password";
-  input.className = "aleta-s2-sandi-isian";
-  input.autocomplete = "off";
-  input.setAttribute("autocomplete", "off");
-  input.setAttribute("data-lpignore", "true");
-  input.placeholder = "diketik tiap kali - tidak disimpan";
-  baris.appendChild(input);
-  return { baris, input };
-}
-
 function s2KalimatGagal(respons, luar, d, apa) {
   return (
     (d && (d.sebab || d.pesan || d.alasan)) ||
@@ -25388,256 +25939,109 @@ function b7KonfirmasiTimpaEdoc(nomorPerkara, sudah) {
   }
 }
 
-function s2BagianEdocPenetapan(nomorPerkara) {
+/**
+ * Butir 8 (19 Okt 2026): bagian "Edoc penetapan (PMH/PPP/PJS/PHS) manual" -
+ * pindahan lipatan "Upload manual edoc penetapan" dari bagian "Upload edoc
+ * penetapan" yang dihapus. Unggah OTOMATIS dari ABT pindah ke tombol "e-Doc"
+ * di tiap baris kartu Penetapan (t7KartuKeputusan -> e6UnggahEdocPenetapan).
+ *
+ * Butir 10: passphrase TTE tidak ada lagi di panel dan TIDAK dikirim; tanda
+ * tangan memakai gambar tanda tangan pejabat yang disahkan (halaman Tanda
+ * tangan pejabat portal). Rute unggah tetap menerima passphrase dari jalan
+ * lain - panel saja yang tidak mengirimnya.
+ */
+function s2BagianEdocPenetapanManual(nomorPerkara) {
   const nomor = String(nomorPerkara || "");
-  const kotak = bagian("Upload edoc penetapan (PMH/PPP/PJS/PHS)", "s2EdocPenetapan", true);
-  kotak.setAttribute("data-s2-fitur", "edoc-penetapan");
+  const kotak = bagian("Edoc penetapan (PMH/PPP/PJS/PHS) manual", "s2EdocPenetapanManual", true);
+  kotak.setAttribute("data-s2-fitur", "edoc-penetapan-manual-bagian");
   const isi = kotak.isi;
   isi.appendChild(
     buatElemen(
       "div",
       "aleta-tetap-sebab aleta-remeh",
-      "Otomatis: edoc diambil dari blangko penetapan ABT (form PTSP), ditandatangani elektronik (TTE) sesuai pejabatnya, " +
-        "cap dinas ditempel di atas tanda tangan, lalu diunggah ke e-Doc SIPP perkara ini. Boleh sebagian - hanya yang tersedia dapat dipilih."
-    )
-  );
-  const sumber = buatElemen("div", "aleta-s2-edoc-sumber", "Membaca peta penetapan dari ABT…");
-  sumber.setAttribute("data-s2-edoc", "sumber");
-  const daftar = buatElemen("div", "aleta-s2-edoc-daftar");
-  const sandi = s2IsianSandi("Passphrase TTE");
-  const tombol = buatElemen("button", "aleta-permintaan-tombol aleta-s2-edoc-tombol", "Ambil dari ABT & upload");
-  tombol.type = "button";
-  tombol.disabled = true;
-  tombol.setAttribute("data-s2-edoc", "otomatis");
-  const wadahTanya = buatElemen("div", "aleta-s2-edoc-tanya");
-  const kabar = buatElemen("div", "aleta-abt-kabar");
-  isi.append(sumber, daftar, sandi.baris, tombol, wadahTanya, kabar);
-
-  // Upload manual: lipatan TERPISAH, tertutup sebagai bawaan.
-  const manual = s1Lipat("Upload manual edoc penetapan", { kunci: "s2-edoc-penetapan-manual", terbuka: false });
-  manual.akar.setAttribute("data-s2-fitur", "edoc-penetapan-manual");
-  manual.isi.appendChild(
-    buatElemen(
-      "div",
-      "aleta-tetap-sebab aleta-remeh",
-      "Berkas penetapan yang sudah ada di komputer (PDF/DOC/DOCX/RTF). TTE dan cap tetap dibubuhkan ALETA sebelum diunggah ke e-Doc SIPP."
+      "Berkas penetapan yang sudah ada di komputer (PDF/DOC/DOCX/RTF), satu per penetapan. Tanda tangan dan cap dibubuhkan sebelum diunggah ke e-Doc SIPP."
     )
   );
   const slot = {};
   for (const j of S2_JENIS_PENETAPAN) {
     slot[j] = s1SlotBerkas(`${S2_NAMA_PENETAPAN[j]} (${j})`, ".pdf,.doc,.docx,.rtf,application/pdf", `aleta-s2-slot-${j.toLowerCase()}`);
     slot[j].baris.setAttribute("data-s2-slot", j);
-    manual.isi.appendChild(slot[j].baris);
+    isi.appendChild(slot[j].baris);
   }
-  const sandiManual = s2IsianSandi("Passphrase TTE");
-  const tombolManual = buatElemen("button", "aleta-permintaan-tombol aleta-s2-edoc-tombol", "Upload manual");
-  tombolManual.type = "button";
-  tombolManual.disabled = true;
-  tombolManual.setAttribute("data-s2-edoc", "manual");
-  const tanyaManual = buatElemen("div", "aleta-s2-edoc-tanya");
-  const kabarManual = buatElemen("div", "aleta-abt-kabar");
-  manual.isi.append(sandiManual.baris, tombolManual, tanyaManual, kabarManual);
-  isi.appendChild(manual.akar);
+  const ttd = buatElemen("div", "aleta-t7-ttd-ket", "Tanda tangan memakai gambar tanda tangan pejabat yang disahkan — atur di ");
+  const ttdTautan = buatElemen("a", "aleta-t7-tautan", "Tanda tangan pejabat");
+  ttdTautan.href = `${location.origin}/aleta/admin/aleta-ecourt#ttd`;
+  ttdTautan.target = "_blank";
+  ttdTautan.rel = "noopener";
+  ttd.appendChild(ttdTautan);
+  const tombol = buatElemen("button", "aleta-permintaan-tombol aleta-s2-edoc-tombol", "Upload manual");
+  tombol.type = "button";
+  tombol.disabled = true;
+  tombol.setAttribute("data-s2-edoc", "manual");
+  const wadahTanya = buatElemen("div", "aleta-s2-edoc-tanya");
+  const kabar = buatElemen("div", "aleta-abt-kabar");
+  isi.append(ttd, tombol, wadahTanya, kabar);
 
-  let peta = null;
-  let sudahMuat = false;
-  const centang = new Map();
-  const dipilih = () => S2_JENIS_PENETAPAN.filter((j) => centang.get(j) && centang.get(j).checked && !centang.get(j).disabled);
   const berkasManual = () => S2_JENIS_PENETAPAN.filter((j) => slot[j].berkas());
   const segarkan = () => {
-    tombol.disabled = !(peta && dipilih().length && sandi.input.value);
-    tombolManual.disabled = !(berkasManual().length && sandiManual.input.value);
+    tombol.disabled = !berkasManual().length;
   };
-  const sebutTte = () => {
-    const t = peta && peta.tte;
-    return t && t.nama ? `${t.nama}${t.sumber ? ` (sumber: ${t.sumber})` : ""}` : "pejabat penandatangan tiap penetapan (sumber disebut server)";
-  };
-
-  const gambarPeta = () => {
-    sumber.textContent = "";
-    sumber.className = "aleta-s2-edoc-sumber";
-    sumber.appendChild(buatElemen("div", "aleta-s2-edoc-tte", `TTE: ${sebutTte()}.`));
-    const cap = peta.cap;
-    const barisCap = buatElemen(
-      "div",
-      `aleta-s2-edoc-cap${cap && cap.ada ? "" : " aleta-lencana-mendesak"}`,
-      cap && cap.ada
-        ? `Cap: ${cap.nama || "cap dinas"} - ditempel otomatis di atas tanda tangan${cap.sumber ? ` (sumber: ${cap.sumber})` : ""}.`
-        : "Cap: belum ada - unggah berkas cap di ALETA e-Court › Berkas tanda tangan. "
-    );
-    if (!(cap && cap.ada)) {
-      const a = buatElemen("a", "aleta-t7-tautan", "Buka berkas tanda tangan ↗");
-      a.href = `${location.origin}${peta.tautanCap || "/aleta/admin/aleta-ecourt#tanda-tangan"}`;
-      a.target = "_blank";
-      a.rel = "noopener";
-      barisCap.appendChild(a);
-    }
-    sumber.appendChild(barisCap);
-    daftar.textContent = "";
-    centang.clear();
-    for (const x of peta.jenis) {
-      const baris = buatElemen("label", "aleta-massal-baris aleta-s2-edoc-baris");
-      baris.setAttribute("data-s2-jenis", x.jenis);
-      const c = document.createElement("input");
-      c.type = "checkbox";
-      c.className = "aleta-massal-centang";
-      c.disabled = !x.ada;
-      c.checked = false;
-      c.addEventListener("change", segarkan);
-      centang.set(x.jenis, c);
-      baris.appendChild(c);
-      baris.appendChild(buatElemen("span", "aleta-massal-nomor", S2_NAMA_PENETAPAN[x.jenis]));
-      baris.appendChild(buatElemen("span", "aleta-massal-keadaan", `(${x.jenis})`));
-      const tanda = buatElemen(
-        "span",
-        `aleta-massal-keadaan ${x.ada ? "aleta-lencana-aman" : "aleta-lencana-mendesak"}`,
-        x.ada ? `tersedia di ABT${x.nama ? `: ${x.nama}` : ""}` : `tidak tersedia: ${x.sebab}`
-      );
-      baris.appendChild(tanda);
-      if (x.penandatangan) baris.appendChild(buatElemen("span", "aleta-massal-keadaan aleta-s1-sebab", `ditandatangani ${x.penandatangan}`));
-      if (x.sudah) {
-        const tandaSudah = buatElemen(
-          "span",
-          "aleta-massal-keadaan aleta-lencana-lewat aleta-b7-sudah",
-          `sudah terupload${x.terakhir ? ` (${b7TanggalSingkat(x.terakhir)})` : ""} - mengunggah lagi menimpa yang lama`
-        );
-        tandaSudah.setAttribute("data-b7-sudah", x.jenis);
-        baris.appendChild(tandaSudah);
-      }
-      daftar.appendChild(baris);
-    }
-    segarkan();
-  };
-
-  const muat = async () => {
-    sudahMuat = true;
-    sumber.className = "aleta-s2-edoc-sumber";
-    sumber.textContent = "Membaca peta penetapan dari ABT…";
-    const j = await t7AmbilJson(`${S2_API_EDOC_PETA}?nomor=${encodeURIComponent(nomor)}`, "Membaca peta edoc penetapan");
-    if (!j.ok) {
-      sumber.textContent = "";
-      if (j.status === 404) {
-        sumber.appendChild(t7BelumTersedia("Upload edoc penetapan otomatis belum tersedia di server."));
-      } else {
-        sumber.className = "aleta-s2-edoc-sumber aleta-abt-gagal";
-        sumber.textContent = j.pesan;
-        sudahMuat = false;
-      }
-      return;
-    }
-    peta = s2BacaPetaEdoc(j.data);
-    gambarPeta();
-  };
-
-  const tanya = async (wadah, judul, baris, ya) => {
-    const o = { judul, baris, centang: "Sudah saya periksa", ya, tidak: "Batal" };
-    return typeof a30Tanya === "function" ? a30Tanya(wadah, o) : window.confirm(`${baris.join("\n")}\n\nLanjutkan?`);
-  };
-
-  /** Pekerjaan bersama tombol otomatis dan manual. */
-  const jalankan = async ({ tombolIni, isianSandi, wadahTanyaIni, kabarIni, jenis, buatBadan, apa, sumberTeks }) => {
-    if (tombolIni.disabled || !jenis.length) return;
-    tombolIni.disabled = true;
-    // Butir 7 (1.189.x): yang sudah terupload disebut, dan pertanyaannya
-    // menjadi "yakin menimpa yang lama?". Peta belum dimuat (upload manual)
-    // = dibaca sekarang.
-    const sudah = peta ? b7SudahDariPeta(peta, jenis) : (await b7BacaSudahTerunggah(nomor, jenis)) || [];
-    const barisTanya = [
-      `${nomor}: ${s2SebutPenetapan(jenis)} ${sumberTeks}, ditandatangani elektronik atas nama ${sebutTte()}, diberi cap di atas tanda tangan, lalu diunggah ke e-Doc SIPP.`,
-      "Ini menulis ke SIPP atas nama akun Anda.",
-    ];
-    if (sudah.length) barisTanya.unshift(`${b7KalimatSudah(sudah)}. Mengunggah lagi akan MENIMPA e-Doc yang lama - yakin menimpa yang lama?`);
-    const ya = await tanya(
-      wadahTanyaIni,
-      sudah.length ? "e-Doc penetapan sudah terupload - timpa?" : "Upload edoc penetapan ke SIPP",
-      barisTanya,
-      sudah.length ? "Ya, timpa yang lama" : "Upload"
-    );
-    if (!ya) {
-      kabarIni.className = "aleta-abt-kabar";
-      kabarIni.textContent = "Dibatalkan - tidak ada yang dikirim.";
-      segarkan();
-      return;
-    }
-    const passphrase = isianSandi.value;
-    // Dikosongkan SEKARANG: apa pun hasilnya, passphrase tidak tinggal di layar.
-    isianSandi.value = "";
-    const ditahan = s2ModeMenahan(S2_API_EDOC_UNGGAH);
-    if (ditahan) {
-      kabarIni.className = "aleta-abt-kabar";
-      kabarIni.textContent = `${apa} ditahan ${ditahan} - tidak ada yang dikirim.`;
-      segarkan();
-      return;
-    }
-    kabarIni.className = "aleta-abt-kabar";
-    kabarIni.textContent = `Mengunggah ${s2SebutPenetapan(jenis)}…`;
-    await s2JedaTulis("unggah", S2_API_EDOC_UNGGAH);
-    const hasil = await s2KirimEdoc(buatBadan(passphrase, jenis), apa);
-    if (hasil.ok) {
-      kabarIni.className = "aleta-abt-kabar";
-      kabarIni.textContent = s2RingkasHasil(hasil, `${s2SebutPenetapan(jenis)} terunggah ke e-Doc SIPP.`);
-    } else {
-      kabarIni.className = hasil.status === 404 ? "aleta-abt-kabar" : "aleta-abt-kabar aleta-abt-gagal";
-      kabarIni.textContent = hasil.pesan;
-    }
-    segarkan();
-  };
-
-  tombol.addEventListener("click", () =>
-    void jalankan({
-      tombolIni: tombol,
-      isianSandi: sandi.input,
-      wadahTanyaIni: wadahTanya,
-      kabarIni: kabar,
-      jenis: dipilih(),
-      apa: "Upload edoc penetapan",
-      sumberTeks: "akan diambil dari ABT",
-      // olehUsername: akun SIPP yang login - pelaku yang dicatat bot di SIPP (butir 14). Tanpa itu bot
-      // hanya dapat mencocokkan nama pengguna ALETA ke sys_users.
-      buatBadan: (passphrase, jenis) =>
-        JSON.stringify({ nomorPerkara: nomor, jenis, sumber: "abt", passphrase, konfirmasi: true, olehUsername: namaPenggunaSipp() || "" }),
-    })
-  );
-  tombolManual.addEventListener("click", () =>
-    void jalankan({
-      tombolIni: tombolManual,
-      isianSandi: sandiManual.input,
-      wadahTanyaIni: tanyaManual,
-      kabarIni: kabarManual,
-      jenis: berkasManual(),
-      apa: "Upload manual edoc penetapan",
-      sumberTeks: "dari berkas yang dipilih",
-      buatBadan: (passphrase, jenis) => {
-        const badan = new FormData();
-        badan.append("nomorPerkara", nomor);
-        badan.append("sumber", "manual");
-        badan.append("konfirmasi", "true");
-        badan.append("passphrase", passphrase);
-        badan.append("olehUsername", namaPenggunaSipp() || "");
-        for (const j of jenis) {
-          const f = slot[j].berkas();
-          if (!f) continue;
-          badan.append("jenis", j);
-          badan.append(`berkas_${j}`, f, f.name);
-        }
-        return badan;
-      },
-    })
-  );
-  for (const input of [sandi.input, sandiManual.input]) input.addEventListener("input", segarkan);
   for (const j of S2_JENIS_PENETAPAN) slot[j].pemilih.addEventListener("change", segarkan);
 
-  // Dimuat saat dibuka, seperti bagian malas lainnya.
-  const kepala = kotak.querySelector(".aleta-bagian-judul");
-  if (kepala) {
-    kepala.addEventListener("click", () => {
-      if (!sudahMuat && kotak.isi.style.display !== "none") void muat();
-    });
-  }
-  if (kotak.isi.style.display !== "none") setTimeout(() => void muat(), 0);
-  kotak.muat = () => {
-    if (!sudahMuat) void muat();
-  };
+  tombol.addEventListener("click", async () => {
+    const jenis = berkasManual();
+    if (tombol.disabled || !jenis.length) return;
+    tombol.disabled = true;
+    // Yang sudah terupload disebut, dan pertanyaannya "yakin menimpa yang lama?".
+    const sudah = (await b7BacaSudahTerunggah(nomor, jenis)) || [];
+    const baris = [
+      `${nomor}: ${s2SebutPenetapan(jenis)} dari berkas yang dipilih, ditandatangani dengan gambar tanda tangan pejabat yang disahkan, diberi cap di atas tanda tangan, lalu diunggah ke e-Doc SIPP.`,
+      "Ini menulis ke SIPP atas nama akun Anda.",
+    ];
+    if (sudah.length) baris.unshift(`${b7KalimatSudah(sudah)}. Mengunggah lagi akan MENIMPA e-Doc yang lama - yakin menimpa yang lama?`);
+    const o = {
+      judul: sudah.length ? "e-Doc penetapan sudah terupload - timpa?" : "Upload edoc penetapan ke SIPP",
+      baris,
+      centang: "Sudah saya periksa",
+      ya: sudah.length ? "Ya, timpa yang lama" : "Upload",
+      tidak: "Batal",
+    };
+    const ya = typeof a30Tanya === "function" ? await a30Tanya(wadahTanya, o) : window.confirm(`${baris.join("\n")}\n\nLanjutkan?`) === true;
+    kabar.className = "aleta-abt-kabar";
+    if (!ya) {
+      kabar.textContent = "Dibatalkan - tidak ada yang dikirim.";
+      segarkan();
+      return;
+    }
+    const ditahan = s2ModeMenahan(S2_API_EDOC_UNGGAH);
+    if (ditahan) {
+      kabar.textContent = `Upload manual edoc penetapan ditahan ${ditahan} - tidak ada yang dikirim.`;
+      segarkan();
+      return;
+    }
+    kabar.textContent = `Mengunggah ${s2SebutPenetapan(jenis)}…`;
+    await s2JedaTulis("unggah", S2_API_EDOC_UNGGAH);
+    const badan = new FormData();
+    badan.append("nomorPerkara", nomor);
+    badan.append("sumber", "manual");
+    badan.append("konfirmasi", "true");
+    // olehUsername: akun SIPP yang login - pelaku yang dicatat bot di SIPP (butir 14).
+    badan.append("olehUsername", namaPenggunaSipp() || "");
+    for (const j of jenis) {
+      const f = slot[j].berkas();
+      if (!f) continue;
+      badan.append("jenis", j);
+      badan.append(`berkas_${j}`, f, f.name);
+    }
+    const hasil = await s2KirimEdoc(badan, "Upload manual edoc penetapan");
+    if (hasil.ok) {
+      kabar.textContent = s2RingkasHasil(hasil, `${s2SebutPenetapan(jenis)} terunggah ke e-Doc SIPP.`);
+    } else {
+      kabar.className = hasil.status === 404 ? "aleta-abt-kabar" : "aleta-abt-kabar aleta-abt-gagal";
+      kabar.textContent = hasil.pesan;
+    }
+    segarkan();
+  });
   return kotak;
 }
 
@@ -26199,7 +26603,9 @@ async function e6UnggahEdocPenetapan(p) {
           tulis(dilewati);
           return { ok: false, alasan: "sudah_terunggah", dilewati: kodeSudah };
         }
-      } else if (!b7KonfirmasiTimpaEdoc(p.nomorPerkara, sudah)) {
+      } else if (!p.timpaDisetujui && !b7KonfirmasiTimpaEdoc(p.nomorPerkara, sudah)) {
+        // timpaDisetujui: tombol e-Doc per baris kartu Penetapan sudah menanyakan
+        // "yakin menimpa yang lama?" sendiri - tidak ditanya dua kali.
         tulis("Dibatalkan - e-Doc lama di SIPP tidak diubah, tidak ada yang dikirim.");
         return { ok: false, dibatalkan: true };
       }

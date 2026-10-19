@@ -215,7 +215,10 @@ describe("toggle pejabat penetap", () => {
   it("bawaannya disimpan sejak awal, bukan hanya ketika diubah", () => {
     // Yang tidak menyentuh pilihan ini akan mengirim nama kosong, dan yang
     // kosong ditolak rutenya dengan sebab yang tidak menunjuk ke sini.
-    expect(konten).toContain("if (otomatis) data.pejabatDipilih[langkah.jenis] = otomatis.username;");
+    // 19 Okt 2026: bawaan diisi di awal papan dan HANYA bila belum ada pilihan
+    // yang sah - dahulu ditulis ulang tiap gambar ulang, sehingga pejabat yang
+    // diganti petugas kembali ke pilihan mesin saat dikirim.
+    expect(konten).toContain("if (otomatis && !masihCalon) data.pejabatDipilih[langkah.jenis] = otomatis.username;");
   });
 
   it("hanya digambar bila calonnya memang lebih dari satu", () => {

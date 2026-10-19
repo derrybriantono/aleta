@@ -8484,6 +8484,117 @@ html[data-aleta-latihan="ya"] .aleta-latihan-tekan .aleta-latihan-sebutan { colo
 @media (max-width: 520px) {
   #aleta-panel-sipp[data-t7] .aleta-t7-penetapan .aleta-t7-keputusan-baris { grid-template-columns: 30px minmax(0, 1fr) auto; padding: 9px 10px; }
 }
+/* Penetapan mulus 2 (19 Okt 2026) - rancangan docs/rancangan/penetapan-mulus-2.html */
+#aleta-panel-sipp[data-t7] .aleta-t7-penetapan[hidden] { display: none !important; }
+/* Rinci dan mulus tidak tampil bersamaan (JS juga menyembunyikan kartunya). */
+html[data-aleta-kulit="modern"] #aleta-panel-sipp .aleta-kelompok-isi:has(> .aleta-bagian[data-kunci="penunjukan"][data-t7-tinjau]) > .aleta-t7-penetapan { display: none !important; }
+#aleta-panel-sipp[data-t7] .aleta-t7-penetapan-kepala .aleta-lipat-peran { order: 0; }
+#aleta-panel-sipp[data-t7] .aleta-t7-penetapan .aleta-t7-kode { grid-row: 1 / span 3; }
+#aleta-panel-sipp[data-t7] .aleta-t7-penetapan .aleta-t7-keputusan-label { grid-column: 2; grid-row: 1; }
+#aleta-panel-sipp[data-t7] .aleta-t7-penetapan .aleta-t7-keputusan-nilai { grid-column: 2; grid-row: 2; }
+#aleta-panel-sipp[data-t7] .aleta-t7-baris-aksi { grid-column: 3; grid-row: 2; display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
+#aleta-panel-sipp[data-t7] .aleta-t7-baris-aksi .aleta-t7-tautan { font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+#aleta-panel-sipp[data-t7] .aleta-t7-edoc {
+  padding: 1px 8px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 6px;
+  background: var(--aleta-latar-naik);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+}
+#aleta-panel-sipp[data-t7] .aleta-t7-chip-kecil.aleta-t7-chip-edoc { color: var(--aleta-aman); }
+#aleta-panel-sipp[data-t7] .aleta-t7-penetap {
+  grid-column: 2 / -1;
+  justify-self: start;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  max-width: 100%;
+  margin-left: -6px;
+  padding: 1px 6px;
+  border: 1px dashed transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(12px * var(--aleta-skala-huruf, 1));
+  font-weight: 400;
+  text-align: left;
+  white-space: normal;
+}
+#aleta-panel-sipp[data-t7] .aleta-t7-penetapan .aleta-t7-penetap { grid-row: 3; }
+#aleta-panel-sipp[data-t7] button.aleta-t7-penetap { cursor: pointer; }
+#aleta-panel-sipp[data-t7] button.aleta-t7-penetap:hover,
+#aleta-panel-sipp[data-t7] button.aleta-t7-penetap[aria-expanded="true"] { border-color: var(--aleta-merek); background: none; color: var(--aleta-tulisan); }
+#aleta-panel-sipp[data-t7] .aleta-t7-penetap-panah { color: var(--aleta-merek); font-weight: 700; }
+#aleta-panel-sipp[data-t7] .aleta-tetap-nilai > .aleta-t7-penetap { margin-left: -6px; }
+#aleta-panel-sipp[data-t7] .aleta-t7-pilih {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 8px;
+  border: 1px solid var(--aleta-merek);
+  border-radius: 10px;
+  background: var(--aleta-latar);
+  box-shadow: 0 6px 18px rgba(16, 24, 40, 0.12);
+}
+#aleta-panel-sipp[data-t7] .aleta-t7-pilih-judul {
+  padding: 4px 4px 0;
+  color: var(--aleta-tulisan-lembut);
+  font-size: calc(11.5px * var(--aleta-skala-huruf, 1));
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+#aleta-panel-sipp[data-t7] .aleta-t7-pilih-opsi {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  font-weight: 400;
+  text-align: left;
+}
+#aleta-panel-sipp[data-t7] .aleta-t7-pilih-opsi:hover { background: var(--aleta-latar-naik); }
+#aleta-panel-sipp[data-t7] .aleta-t7-pilih-opsi[aria-checked="true"] { border-color: var(--aleta-merek); background: var(--aleta-merek-latar); }
+#aleta-panel-sipp[data-t7] .aleta-t7-pilih-beban { color: var(--aleta-tulisan-lembut); font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); white-space: nowrap; }
+#aleta-panel-sipp[data-t7] .aleta-t7-pilih-ket { grid-column: 1 / -1; color: var(--aleta-tulisan-lembut); font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); }
+#aleta-panel-sipp[data-t7] .aleta-t7-pilih-medan {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+  padding: 2px 4px;
+  font-size: calc(12.5px * var(--aleta-skala-huruf, 1));
+}
+#aleta-panel-sipp[data-t7] .aleta-t7-pilih-medan > span { color: var(--aleta-tulisan-lembut); }
+#aleta-panel-sipp[data-t7] .aleta-t7-pilih-medan input,
+#aleta-panel-sipp[data-t7] .aleta-t7-pilih-medan select {
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--aleta-garis-kuat);
+  border-radius: 6px;
+  background: var(--aleta-latar);
+  color: var(--aleta-tulisan);
+  font: inherit;
+}
+#aleta-panel-sipp[data-t7] .aleta-t7-pilih-kaki {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 4px 4px 0;
+  border-top: 1px solid var(--aleta-garis);
+}
+#aleta-panel-sipp[data-t7] .aleta-t7-edoc-wadah { grid-column: 1 / -1; }
+#aleta-panel-sipp[data-t7] .aleta-t7-edoc-kabar:empty { display: none; }
+#aleta-panel-sipp[data-t7] .aleta-t7-edoc-kabar { margin-top: 4px; color: var(--aleta-tulisan-lembut); font-size: calc(12px * var(--aleta-skala-huruf, 1)); }
+#aleta-panel-sipp[data-t7] .aleta-t7-ubah-semua { align-self: center; }
+#aleta-panel-sipp[data-t7] .aleta-t7-ttd-ket { color: var(--aleta-tulisan-lembut); font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); text-align: center; }
+#aleta-panel-sipp[data-t7] .aleta-t7-ttd-ket .aleta-t7-tautan { padding: 0; font-size: inherit; text-decoration: underline; }
 #aleta-panel-sipp[data-t7] .aleta-t7-bilah {
   display: flex;
   flex: none;
