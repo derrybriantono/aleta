@@ -67,6 +67,7 @@
 
 import { kelompokkanIsian, langkahUntukIsian, type BlangkoPerLangkah, type KodeLangkah } from "@/lib/konseptor-langkah";
 import { agendaMusyawarah, sidangIkrar } from "@/lib/keadaan-sidang";
+import { VARIABEL_HANYA_SARAN, bersihkanNilai, bersihkanNilaiUsulan } from "@/lib/isi-sipp-format";
 import { hurufAlasan as hurufAlasanAbt } from "@/lib/set-pertanyaan-saksi";
 import { masukanRekomendasiDariBaris, rekomendasiBlangko, type Rekomendasi } from "@/lib/rekomendasi-blangko";
 import type { ButirIsian, Keadaan, Susunan } from "@/app/api/aleta-ecourt/blangko-derry/susun";
@@ -283,7 +284,7 @@ export function samaIsi(a: unknown, b: unknown): boolean {
 }
 
 /** Kode isian HUKUM: tidak pernah diisi agen sebagai "pasti" (kelas C). */
-const KODE_HUKUM = new Set(["8503", "8729", "8901", "8902", "4001", "8719"]);
+const KODE_HUKUM = new Set(["8503", "8729", "8901", "8902", "4001", "8719", ...VARIABEL_HANYA_SARAN]);
 const LANGKAH_HUKUM = new Set<KodeLangkah>(["pertimbangan", "amar"]);
 
 export function isianHukum(b: Pick<ButirIsian, "kode" | "nama" | "jenis" | "khusus">): boolean {
@@ -318,10 +319,10 @@ export function isianBerlaku(
 export type GolonganIsian = "terisi" | "pasti" | "usulan" | "manusia";
 
 export const GOLONGAN_TEKS: Record<GolonganIsian, string> = {
-  terisi: "Sudah terisi di ABT",
+  terisi: "Sudah dicatat petugas",
   pasti: "Disiapkan agen (pasti)",
   usulan: "Usulan agen - perlu diperiksa",
-  manusia: "Perlu diisi manusia",
+  manusia: "Perlu diisi hakim",
 };
 
 export type IsianDraf = {
@@ -338,7 +339,17 @@ export type IsianDraf = {
   catatan: string;
   penting: boolean;
   hukum: boolean;
+  /**
+   * 19 Okt 2026 (draf H-7 mulus): tingkat keyakinan untuk lencana "pasti / cukup / ragu - periksa" dan
+   * asal terbaca ("dari SIPP", "dari gugatan - belum dikuatkan saksi", ...). Draf lama tidak memilikinya:
+   * layar menurunkannya dari `golongan` dan `sumber` (lihat keyakinanIsian / asalIsian).
+   */
+  keyakinan?: KeyakinanIsian;
+  asal?: AsalIsian;
 };
+
+export type KeyakinanIsian = "pasti" | "cukup" | "ragu";
+export type AsalIsian = "abt" | "sipp" | "gugatan" | "berkas" | "saksi" | "lain";
 
 /** Pihak KTP e-Court yang sudah dibaca ALETA (bot aleta_bot_ktp_pihak) - bentuk KtpPihakPerkara.pihak. */
 export type KtpPihak = { cabang?: unknown; urutan?: unknown; tanggalKtp?: unknown; yakin?: unknown; cocok?: unknown };
@@ -346,7 +357,7 @@ export type KtpPihak = { cabang?: unknown; urutan?: unknown; tanggalKtp?: unknow
 /**
  * Tanggal KTP tiap pihak -> usulan variabel tanggal KTP ABT (cermin KTP_KODE_PIHAK ekstensi-sipp/abt.js):
  * 0364 & 2222 Penggugat/Pemohon, 0365 Tergugat/Termohon, 0366 Pemohon II. Bacaan "pasti" (keputusan 12 Okt:
- * bacaan pasti menimpa) = pasti; "cukup" = usulan; "ragu" tidak dipakai.
+ * bacaan pasti menimpa) = pasti; "cukup" = usulan; "ragu" = usulan berlencana "ragu - periksa" (19 Okt, seperti mesin bersama).
  */
 export function usulanDariKtp(pihak: KtpPihak[]): UsulanDeteksi[] {
   const peta: Array<[string, number, number]> = [
@@ -359,8 +370,10 @@ export function usulanDariKtp(pihak: KtpPihak[]): UsulanDeteksi[] {
   for (const [kode, cabang, urutan] of peta) {
     const p = pihak.find((x) => Number(x.cabang) === cabang && Number(x.urutan) === urutan);
     const tanggal = teks(p?.tanggalKtp);
-    if (!p || !/^\d{2}\/\d{2}\/\d{4}$/.test(tanggal) || (p.yakin !== "pasti" && p.yakin !== "cukup")) continue;
-    out.push({ kode, nilai: tanggal, keyakinan: p.yakin, sumber: [{ asal: "ktp-pihak" }], catatan: teks(p.cocok) ? `KTP dicocokkan: ${teks(p.cocok)}` : "" });
+    if (!p || !/^\d{2}\/\d{2}\/\d{4}$/.test(tanggal)) continue;
+    // Sama dengan usulanTanggalKtp mesin bersama: pasti = pasti, ragu = ragu (tampil "ragu - periksa"), selain itu cukup.
+    const keyakinan = p.yakin === "pasti" ? "pasti" : p.yakin === "ragu" ? "ragu" : "cukup";
+    out.push({ kode, nilai: tanggal, keyakinan, sumber: [{ asal: "ktp-pihak" }], catatan: teks(p.cocok) ? `KTP dicocokkan: ${teks(p.cocok)}` : "" });
   }
   return out;
 }
@@ -381,6 +394,35 @@ function asalUsulan(u: UsulanDeteksi, jalur: string): string {
   return ASAL_USULAN[jalur] || "deteksi ALETA";
 }
 
+/** Asal usulan sebagai kode (19 Okt): saksi, gugatan (posita belum dikuatkan saksi), berkas e-Court, atau SIPP. */
+export function kodeAsalUsulan(u: UsulanDeteksi, jalur: string): AsalIsian {
+  const sumber = Array.isArray(u.sumber) ? (u.sumber as Array<Record<string, unknown>>) : [];
+  if (jalur === "saksi" || sumber.some((x) => x && x.saksi)) return "saksi";
+  if (sumber.some((x) => x && (x.asal === "ktp-ecourt" || x.asal === "ktp-pihak" || x.asal === "gugatan-ecourt")) || jalur === "ktp" || jalur === "gugatan" || jalur === "kuasa") return "berkas";
+  if (jalur === "itsbat" || jalur === "posita-lain" || sumber.some((x) => x && x.asal === "posita")) return "gugatan";
+  if (jalur === "sipp") return "sipp";
+  return "lain";
+}
+
+/**
+ * Keyakinan usulan untuk lencana. Bertingkat (tingkat "pasti"/"cukup"/lain) memakai tingkatnya; selainnya
+ * keyakinan bot ("pasti", "cukup", sisanya ragu). Yang tidak lolos usulanPasti (dari posita, saksi, KTP,
+ * isian hukum) paling tinggi "cukup" - "pasti" hanya untuk yang boleh diisi agen sendiri.
+ */
+export function keyakinanUsulan(u: UsulanDeteksi, bolehPasti: boolean): KeyakinanIsian {
+  const mentah = typeof u.tingkat === "string" && u.tingkat ? u.tingkat : teks(u.keyakinan);
+  const k: KeyakinanIsian = mentah === "pasti" ? "pasti" : mentah === "cukup" ? "cukup" : "ragu";
+  if (teks(u.bentrok)) return k === "pasti" ? "cukup" : "ragu";
+  return k === "pasti" && !bolehPasti ? "cukup" : k;
+}
+
+const PANGKAT_YAKIN: Record<string, number> = { pasti: 5, cukup: 4, ragu: 2, bentrok: 2, kosong: 0, tidak_ada_sumber: 0 };
+
+/** CERMIN bobot() mesin bersama: terdeteksi 10 + pangkat keyakinan (pasti 5, cukup 4, ragu/bentrok 2, lainnya 1). */
+export function bobotUsulan(u: UsulanDeteksi): number {
+  return (teks(u.nilai) ? 10 : 0) + (PANGKAT_YAKIN[teks(u.keyakinan)] || 1);
+}
+
 export type MasukanGolongkan = {
   susunan: Pick<Susunan, "isian">;
   nilai: NilaiPenanda;
@@ -398,8 +440,12 @@ export function golongkanIsian(m: MasukanGolongkan): IsianDraf[] {
     const kode = teks(x.usulan?.kode);
     if (!kode || !teks(x.usulan?.nilai)) continue;
     const lama = usulanPerKode.get(kode);
-    // Usulan pasti mengalahkan yang ragu; selebihnya yang pertama.
-    if (!lama || (!usulanPasti(lama.usulan) && usulanPasti(x.usulan))) usulanPerKode.set(kode, x);
+    // 19 Okt: pembobotan yang sama dengan mesin bersama Isi dari SIPP (bobotUsulan); seri -> yang pasti, lalu yang pertama.
+    if (!lama) usulanPerKode.set(kode, x);
+    else {
+      const selisih = bobotUsulan(x.usulan) - bobotUsulan(lama.usulan);
+      if (selisih > 0 || (selisih === 0 && !usulanPasti(lama.usulan) && usulanPasti(x.usulan))) usulanPerKode.set(kode, x);
+    }
   }
   const terisiAbt = (kode: string) => {
     const v = m.nilai[kode];
@@ -432,7 +478,7 @@ export function golongkanIsian(m: MasukanGolongkan): IsianDraf[] {
       hukum,
     };
     if (terisi) {
-      hasil.push({ ...dasar, golongan: "terisi", nilai: potong(teks(m.nilai[b.kode]?.teks), 600), sumber: "ABT", catatan: "" });
+      hasil.push({ ...dasar, golongan: "terisi", nilai: potong(bersihkanNilai(b.kode, teks(m.nilai[b.kode]?.teks)).trim(), 600), sumber: "ABT", catatan: "", keyakinan: "pasti", asal: "abt" });
       continue;
     }
     const u = b.jenis === "tj" ? undefined : usulanPerKode.get(b.kode);
@@ -441,7 +487,9 @@ export function golongkanIsian(m: MasukanGolongkan): IsianDraf[] {
       hasil.push({
         ...dasar,
         golongan: pasti ? "pasti" : "usulan",
-        nilai: potong(teks(u.usulan.nilai), 600),
+        keyakinan: keyakinanUsulan(u.usulan, pasti),
+        asal: kodeAsalUsulan(u.usulan, u.jalur),
+        nilai: potong(bersihkanNilaiUsulan(b.kode, teks(u.usulan.nilai)), 600),
         sumber: asalUsulan(u.usulan, u.jalur),
         catatan: hukum
           ? "Isian hukum - agen hanya mengusulkan, majelis yang menentukan."
@@ -516,6 +564,10 @@ export type BagianRingkasan = {
   sumber: string;
   /** Bahan bagian ini sudah ada (bukan "belum ada"). */
   ada: boolean;
+  /** 19 Okt: banyaknya butir/baris/saksi untuk judul kartu terlipat. Draf lama tanpa ruas ini. */
+  jumlah?: number;
+  /** 19 Okt: butir-butir posita utuh (paling banyak 8, 400 huruf) agar kartu dapat dilipat per butir. Hanya bagian "duduk". */
+  butir?: string[];
 };
 
 const HADIR_TEKS: Record<number, string> = {
@@ -571,8 +623,10 @@ export function susunRingkasan(m: {
   const duduk: BagianRingkasan = {
     kode: "duduk",
     judul: "Duduk perkara",
-    sumber: "Posita gugatan/permohonan di SIPP",
+    sumber: "Gugatan/permohonan yang tercatat di SIPP",
     ada: butir.length > 0,
+    jumlah: butir.length,
+    butir: butir.slice(0, 8).map((b) => potong(b, 400)),
     isi: butir.length
       ? [`Posita memuat ${butir.length} butir.`, ...butir.slice(0, 3).map((b) => potong(b, 260)), ...(butir.length > 3 ? [`… ${butir.length - 3} butir lainnya.`] : [])]
       : ["Posita belum terbaca dari SIPP."],
@@ -598,8 +652,9 @@ export function susunRingkasan(m: {
   const jawab: BagianRingkasan = {
     kode: "jawab",
     judul: "Jawab-menjawab dan jalannya sidang",
-    sumber: "Jadwal sidang SIPP dan dokumen e-Court",
+    sumber: "Jadwal sidang di SIPP dan berkas e-Court",
     ada: sidang.length + dok.length > 0,
+    jumlah: sidang.length + dok.length,
     isi:
       sidang.length + dok.length
         ? [...sidang.slice(-8), ...dok.slice(0, 6)]
@@ -617,8 +672,9 @@ export function susunRingkasan(m: {
   const bukti: BagianRingkasan = {
     kode: "bukti",
     judul: "Bukti surat",
-    sumber: "Isian bukti di ABT",
+    sumber: "Bukti yang sudah dicatat petugas",
     ada: Boolean(buktiP || buktiT),
+    jumlah: barisBukti(buktiP).length + barisBukti(buktiT).length,
     isi: [
       buktiP ? `${m.sebutan.P}: ${barisBukti(buktiP).length} baris bukti.` : `${m.sebutan.P}: bukti surat belum diisi di ABT.`,
       ...barisBukti(buktiP).slice(0, 5).map((s) => potong(s, 200)),
@@ -638,8 +694,9 @@ export function susunRingkasan(m: {
   const saksi: BagianRingkasan = {
     kode: "saksi",
     judul: "Keterangan saksi",
-    sumber: "Pemeriksaan saksi di ABT, nama saksi di SIPP",
+    sumber: "Pemeriksaan saksi yang dicatat petugas, nama saksi dari SIPP",
     ada: diperiksa.P + diperiksa.T > 0 || Boolean(ket1 || ket2),
+    jumlah: diperiksa.P + diperiksa.T,
     isi: [
       `Saksi ${m.sebutan.P}: ${m.namaSaksi.P.length} diajukan${m.namaSaksi.P.length ? ` (${m.namaSaksi.P.slice(0, 4).join(", ")})` : ""}, ${diperiksa.P} sudah diperiksa.`,
       `Saksi ${m.sebutan.T}: ${m.namaSaksi.T.length} diajukan${m.namaSaksi.T.length ? ` (${m.namaSaksi.T.slice(0, 4).join(", ")})` : ""}, ${diperiksa.T} sudah diperiksa.`,
@@ -655,8 +712,9 @@ export function susunRingkasan(m: {
   const kesimpulan: BagianRingkasan = {
     kode: "kesimpulan",
     judul: "Kesimpulan para pihak",
-    sumber: "Isian kesimpulan di ABT, jadwal sidang SIPP",
+    sumber: "Kesimpulan yang sudah dicatat petugas, jadwal sidang di SIPP",
     ada: Boolean(kesP || kesT),
+    jumlah: (kesP ? 1 : 0) + (kesT ? 1 : 0),
     isi: [
       kesP ? `${m.sebutan.P}: ${potong(kesP.replace(/\n/g, " "), 240)}` : `${m.sebutan.P}: kesimpulan belum diisi di ABT.`,
       ...(kesT ? [`${m.sebutan.T}: ${potong(kesT.replace(/\n/g, " "), 240)}`] : []),
@@ -762,6 +820,9 @@ export type RingkasDrafH7 = {
   perlu: string[];
   jumlahPerlu: number;
   dibuatPada: string;
+  /** 19 Okt: isian siap (terisi + pasti) dari seluruh isian blangko - untuk "3 dari 11 siap". Ringkasan lama tidak punya. */
+  siap?: number;
+  jumlah?: number;
 };
 
 export function ringkasDrafH7(d: Pick<DrafH7, "tanggalSidang" | "blangko" | "kesiapan" | "dibuatPada">): RingkasDrafH7 {
@@ -773,6 +834,8 @@ export function ringkasDrafH7(d: Pick<DrafH7, "tanggalSidang" | "blangko" | "kes
     perlu: d.kesiapan.perlu.slice(0, 6),
     jumlahPerlu: d.kesiapan.usulan + d.kesiapan.manusia + d.kesiapan.dataSippKosong,
     dibuatPada: d.dibuatPada,
+    siap: d.kesiapan.terisi + d.kesiapan.pasti,
+    jumlah: d.kesiapan.jumlah,
   };
 }
 
@@ -904,12 +967,23 @@ export function susunDrafSaya(
   return { jumlah: hasil.length, perkara: hasil.slice(0, BATAS_DRAF_WIDGET) };
 }
 
-/** Lencana singkat: "Draf H-7 siap" / "Draf H-7 85% - 3 perlu diisi". */
+/**
+ * Lencana singkat dalam bahasa awam (19 Okt 2026): "Draf putusan siap" / "Draf putusan · 3 dari 11 siap".
+ * Ringkasan lama (sebelum 19 Okt) tanpa hitungan isian: "Draf putusan · 85% siap".
+ */
 export function teksLencanaH7(r: RingkasDrafH7 | null | undefined): string {
   if (!r) return "";
-  if (!r.blangko) return "Draf H-7: blangko belum ada";
-  if (r.tingkat === "siap") return "Draf H-7 siap";
-  return `Draf H-7 ${r.persen}% - ${r.jumlahPerlu} perlu diisi`;
+  if (!r.blangko) return "Draf putusan · blangko belum ada";
+  if (r.tingkat === "siap") return "Draf putusan siap";
+  if (typeof r.siap === "number" && typeof r.jumlah === "number" && r.jumlah > 0) return `Draf putusan · ${r.siap} dari ${r.jumlah} siap`;
+  return `Draf putusan · ${r.persen}% siap`;
+}
+
+/** "[01] [Kabul Verstek] Cerai (Format Lengkap)" -> "Kabul Verstek · Cerai (Format Lengkap)": tanpa kode teknis. */
+export function namaBlangkoAwam(label: string | null | undefined): string {
+  const t = String(label ?? "").trim().replace(/^\[\d+[a-z]*\]\s*/i, "");
+  const m = /^\[([^\]]+)\]\s*(.*)$/.exec(t);
+  return (m ? (m[2] ? `${m[1]} · ${m[2]}` : m[1]) : t).replace(/\s+/g, " ").trim();
 }
 
 /** Laporan dalam kalimat untuk majelis dan konseptor. */
@@ -919,11 +993,11 @@ export function teksLaporanH7(d: DrafH7): string[] {
     d.alasan === "verstek"
       ? `Perkiraan Hari Putusan ${tanggalPanjang(d.tanggalSidang)} - ${ALASAN_H7_TEKS.verstek}; agenda: ${d.agenda || "belum ditulis"}.`
       : `Hari Putusan ${tanggalPanjang(d.tanggalSidang)} (${d.agenda || "agenda belum ditulis"}).`,
-    d.blangko.utama ? `Blangko yang disiapkan: ${d.blangko.utama.label} - ${d.blangko.alasan}` : d.blangko.alasan,
+    d.blangko.utama ? `Blangko yang disiapkan: ${namaBlangkoAwam(d.blangko.utama.label)} - ${d.blangko.alasan}` : d.blangko.alasan,
   ];
   if (d.blangko.utama) {
     baris.push(
-      `${k.terisi + k.pasti} dari ${k.jumlah} isian siap (${k.terisi} sudah di ABT, ${k.pasti} disiapkan agen); ${k.usulan} usulan perlu diperiksa, ${k.manusia} perlu diisi manusia.`
+      `${k.terisi + k.pasti} dari ${k.jumlah} isian siap (${k.terisi} sudah dicatat petugas, ${k.pasti} disiapkan agen); ${k.usulan} usulan perlu diperiksa, ${k.manusia} perlu diisi hakim.`
     );
     if (k.dataSippKosong) baris.push(`${k.dataSippKosong} data SIPP yang dipakai naskah masih kosong - lengkapi di SIPP.`);
     if (k.perlu.length) baris.push(`Perlu perhatian: ${k.perlu.join(", ")}.`);
@@ -932,11 +1006,11 @@ export function teksLaporanH7(d: DrafH7): string[] {
     if (!v.blangko.utama) continue;
     const kv = v.kesiapan;
     baris.push(
-      `Varian ${STATUS_VARIAN_TEKS[v.status].toLowerCase()} juga disiapkan: ${v.blangko.utama.label} - ${kv.terisi + kv.pasti} dari ${kv.jumlah} isian siap. Majelis memilih varian sesudah musyawarah; ringkasan perkara sama.`
+      `Varian ${STATUS_VARIAN_TEKS[v.status].toLowerCase()} juga disiapkan: ${namaBlangkoAwam(v.blangko.utama.label)} - ${kv.terisi + kv.pasti} dari ${kv.jumlah} isian siap. Majelis memilih varian sesudah musyawarah; ringkasan perkara sama.`
     );
   }
   if (d.kendala.length) baris.push(`Belum terbaca: ${d.kendala.join("; ")}.`);
-  baris.push("Draf ini belum disimpan ke ABT maupun SIPP - isian dipakai lewat Blangko ABT by Derry Briantono oleh petugas.");
+  baris.push("Draf ini belum disimpan ke ABT maupun SIPP - baru tersimpan ketika petugas menyimpannya lewat Blangko ABT by Derry Briantono.");
   return baris;
 }
 

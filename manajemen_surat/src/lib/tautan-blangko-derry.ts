@@ -13,6 +13,11 @@
  *     jenis: "putusan" | "bas" | "penetapan", agenda, tunda, keterangan,
  *     amar, verstek: true | false | null, jumlahSaksiP, jumlahSaksiT }))>
  *
+ * RUAS TAMBAHAN OPSIONAL (19 Okt 2026, draf putusan): `draf: "h7"` (buka draf
+ * putusan agen ALETA), `varian: "dikabulkan" | "ditolak"`, dan `isian` (nama
+ * isian yang ditunjuk, tanpa kode). Hanya ditambahkan bila diisi; pembaca
+ * lama mengabaikannya, jadi kontrak v:1 tidak berubah bagi yang sudah ada.
+ *
  * Alamat ABT diambil dari setelan "APS Badilag" panel (Pengaturan Panel >
  * aplikasi luar). Setelan bawaannya localhost - tidak berguna bagi petugas -
  * sehingga jatuh ke alamat ABT satker.
@@ -37,6 +42,10 @@ export type DataTautanBlangko = {
   verstek?: boolean | null;
   jumlahSaksiP?: number | null;
   jumlahSaksiT?: number | null;
+  /** Opsional: "h7" = buka draf putusan agen; varian dan isian yang ditunjuk. */
+  draf?: "h7" | null;
+  varian?: "dikabulkan" | "ditolak" | null;
+  isian?: string | null;
 };
 
 /** Alamat dasar APS Badilag dari setelan panel; localhost/kosong = alamat satker. */
@@ -60,6 +69,10 @@ function angkaAtauNull(n: unknown): number | null {
 /** Badan JSON tautan - urutan ruasnya mengikuti kontrak. */
 export function muatanBlangkoDerry(data: DataTautanBlangko, jenis: JenisBlangkoDerry) {
   const id = String(data.perkaraId ?? "").trim();
+  const tambahan: { draf?: "h7"; varian?: "dikabulkan" | "ditolak"; isian?: string } = {};
+  if (data.draf === "h7") tambahan.draf = "h7";
+  if (data.varian === "dikabulkan" || data.varian === "ditolak") tambahan.varian = data.varian;
+  if (String(data.isian ?? "").trim()) tambahan.isian = String(data.isian).trim().slice(0, 120);
   return {
     v: 1,
     nomor: String(data.nomor ?? "").trim(),
@@ -74,6 +87,7 @@ export function muatanBlangkoDerry(data: DataTautanBlangko, jenis: JenisBlangkoD
     verstek: typeof data.verstek === "boolean" ? data.verstek : null,
     jumlahSaksiP: angkaAtauNull(data.jumlahSaksiP) ?? 0,
     jumlahSaksiT: angkaAtauNull(data.jumlahSaksiT) ?? 0,
+    ...tambahan,
   };
 }
 

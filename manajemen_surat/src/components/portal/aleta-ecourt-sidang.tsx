@@ -8941,7 +8941,17 @@ export function AletaEcourtSidang({
                           />
                           {/* F4.2: rincian draf H-7 agen - untuk majelis dan konseptor, ditunjuk atau belum. */}
                           {tampil(tampilan, "draf-putusan-agen") && drafH7[String(baris.perkaraId)]?.tanggalSidang === String(baris.tanggalSidang).slice(0, 10) ? (
-                            <PanelDrafH7 perkaraId={String(baris.perkaraId)} ringkas={drafH7[String(baris.perkaraId)]} />
+                            <PanelDrafH7
+                              perkaraId={String(baris.perkaraId)}
+                              ringkas={drafH7[String(baris.perkaraId)]}
+                              tautan={{
+                                sidangKe: baris.urutanSidang,
+                                jumlahSaksiP: baris.saksiPihak1 ?? 0,
+                                jumlahSaksiT: baris.saksiPihak2 ?? 0,
+                                setelanAps,
+                                boleh: jenisBlangkoPeran.includes("putusan"),
+                              }}
+                            />
                           ) : null}
                           {/* F1.6: checklist draf putusan - bila konseptornya sudah ditunjuk, ATAU
                               (butir 38, 17 Okt) sudah tercatat di SIPP tanpa tunjukan sementara. */}

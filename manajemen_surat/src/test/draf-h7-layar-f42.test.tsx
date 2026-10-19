@@ -61,34 +61,36 @@ const DRAF: DrafH7 = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("draf H-7 di layar", () => {
-  it("lencana: persen dan jumlah yang perlu diisi; kosong tanpa draf", () => {
+  it("lencana: isian siap dari seluruh isian (19 Okt, bahasa awam); kosong tanpa draf", () => {
     const { container, rerender } = render(<LencanaDrafH7 />);
     expect(container.textContent).toBe("");
     rerender(<LencanaDrafH7 ringkas={ringkasDrafH7(DRAF)} />);
-    const l = screen.getByText("Draf H-7 50% - 2 perlu diisi");
+    const l = screen.getByText("Draf putusan · 2 dari 4 siap");
     expect(l.getAttribute("data-draf-h7")).toBe("hampir");
     expect(l.getAttribute("title")).toContain("Alasan perceraian");
   });
 
-  it("panel: dibuka memuat draf lengkap - laporan, perlu manusia, disiapkan agen, ringkasan bersumber", async () => {
+  it("panel: SATU tombol ringkas di baris; dibuka menjadi pop-up dengan laporan, perlu diisi hakim, ringkasan (19 Okt: menggantikan panel panjang)", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ ok: true, data: { peta: { "512": { ...DRAF, laporan: teksLaporanH7(DRAF) } } } }), { status: 200 })));
     const { container } = render(<PanelDrafH7 perkaraId="512" ringkas={ringkasDrafH7(DRAF)} />);
+    // Di baris hanya tombol ringkas - tidak ada tembok teks.
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    expect(container.textContent).toBe("Draf putusan · 2 dari 4 siap");
     await act(async () => {
       fireEvent.click(screen.getByRole("button"));
     });
-    const teks = container.textContent || "";
-    expect(teks).toContain("Hari Putusan 24 Oktober 2026 (Musyawarah Majelis).");
-    expect(teks).toContain("Blangko yang disiapkan: [01] [Kabul Verstek] Cerai (Format Lengkap)");
-    expect(teks).toContain("Perlu manusia (2)");
-    expect(teks).toContain("Alasan perceraian - usulan agen - perlu diperiksa");
-    expect(teks).toContain("Disiapkan agen (1): Awal perselisihan.");
-    expect(teks).toContain("Duduk perkara - sumber: Posita gugatan/permohonan di SIPP");
-    expect(teks).toContain("belum disimpan ke ABT maupun SIPP");
-    // Bahasa awam: tidak ada kode variabel #NNNN# atau kode empat angka telanjang di layar.
-    expect(teks).not.toMatch(/#\d{4}#|\b(0222|8503|1214|8436)\b/);
+    const dialog = document.body.querySelector("[data-dialog-draf-h7]") as HTMLElement;
+    expect(container.textContent).toBe("Draf putusan · 2 dari 4 siap");
+    const teks = dialog.textContent || "";
+    expect(teks).toContain("Sabtu 24 Oktober 2026");
+    expect(teks).toContain("2 dari 4");
+    await act(async () => {
+      fireEvent.click(dialog.querySelector('[data-tahap="perlu"]') as HTMLElement);
+    });
+    expect(dialog.textContent).toContain("Alasan perceraian");
+    expect(dialog.textContent).not.toMatch(/#\d{4}#|(0222|8503|1214|8436)/);
     if (process.env.PRATINJAU_H7) {
-      const html = `<!doctype html><html><head><meta charset="utf-8"><script src="https://cdn.tailwindcss.com/3.4.1"></script>
-<style>:root{--muted-foreground:#64748b}.text-muted-foreground{color:#64748b}.bg-card{background:#fff}.border-border{border-color:#e2e8f0}</style></head>
+      const html = `<!doctype html><html><head><meta charset="utf-8"><script src="https://cdn.tailwindcss.com/3.4.1"></script></head>
 <body class="bg-slate-50 p-6"><div class="max-w-md space-y-2"><div class="flex flex-wrap gap-1"><span class="rounded bg-amber-700 px-1.5 py-0.5 text-xs font-medium text-amber-50">Hari Putusan</span>${render(<LencanaDrafH7 ringkas={ringkasDrafH7(DRAF)} />).container.innerHTML}</div>${container.innerHTML}<div class="rounded-lg border bg-white p-2 text-[11px]">${render(<BagianDrafH7 h7={untukChecklistH7(DRAF)} />).container.innerHTML}</div></div></body></html>`;
       writeFileSync(process.env.PRATINJAU_H7, html);
     }
@@ -96,7 +98,7 @@ describe("draf H-7 di layar", () => {
 
   it("bagian di checklist konseptor: lencana + laporan singkat", () => {
     const { container } = render(<BagianDrafH7 h7={untukChecklistH7(DRAF)} />);
-    expect(container.textContent).toContain("Draf H-7 50% - 2 perlu diisi");
+    expect(container.textContent).toContain("Draf putusan · 2 dari 4 siap");
     expect(container.textContent).toContain("2 dari 4 isian siap");
     render(<BagianDrafH7 h7={null} />);
   });
