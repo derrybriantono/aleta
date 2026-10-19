@@ -358,6 +358,9 @@ type SidangBaris = {
    */
   putusanTerbaca?: boolean;
   ikrarTerbaca?: boolean;
+  /** Tanggal penetapan hari sidang ikrar cerai talak (YYYY-MM-DD, kosong bila belum/tidak terbaca) - lihat ...Terbaca. */
+  tanggalPenetapanSidangIkrar?: string;
+  tanggalPenetapanSidangIkrarTerbaca?: boolean;
   /**
    * Pembebanan yang dibayar saat ikrar talak (mut'ah, nafkah iddah,
    * madliyah, nafkah anak, ...) - diurai bot dari amar putusan, hanya pada

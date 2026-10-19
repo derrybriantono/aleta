@@ -1657,6 +1657,14 @@ export type SidangBaris = {
   putusanTerbaca?: boolean;
   ikrarTerbaca?: boolean;
   /**
+   * Tanggal penetapan hari sidang ikrar (PHS ikrar) perkara cerai talak,
+   * YYYY-MM-DD, atau kosong bila belum ditetapkan / bukan cerai talak /
+   * tidak terbaca. Titik awal batas enam bulan ikrar (Pasal 70 ayat (6) UU 7/1989).
+   */
+  tanggalPenetapanSidangIkrar?: string;
+  /** false = kueri PHS ikrar gagal: kosongnya ruas di atas BUKAN "belum ditetapkan". */
+  tanggalPenetapanSidangIkrarTerbaca?: boolean;
+  /**
    * Pembebanan yang dibayar saat ikrar talak, diurai bot dari amar putusan
    * (pembebananIkrarService) - HANYA pada sidang ikrar; null bila tidak ada.
    * Bentuknya di lib/pembebanan-ikrar. pembebananTerbaca false = kuerinya

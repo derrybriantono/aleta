@@ -1331,6 +1331,7 @@ module.exports = {
   LABEL_KEADAAN_IKRAR,
   AMBANG_TENGGAT_DEKAT_HARI,
   golongkanIkrar,
+  tanggalIkrarIso,
   barisIkrar,
   lapisanIkrar,
   hariIniPengadilan,
