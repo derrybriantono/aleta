@@ -203,7 +203,8 @@ describe("butir 3: warna dan kartu ruang", () => {
     expect(layar).toContain('tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang")');
     expect(layar).toContain('tampil(tampilan, "saring-ruang") && ruangAktif.length > 0');
     // Tombol ruang yang lama tidak dihapus dan kartu berdiri di luar baris alat yang bisa terciut.
-    expect(layar.indexOf("<KartuRuangSidang")).toBeGreaterThan(layar.indexOf('data-saring-ruang=""'));
+    // 19 Okt 2026 (JADWAL-3 butir 3): kartu ruang menyatu dalam pita di atas tabel.
+    expect(layar.indexOf("<PitaRuangSidang")).toBeGreaterThan(layar.indexOf('data-saring-ruang=""'));
   });
 
   it("saklar kartu-ruang menyala bawaan", () => {

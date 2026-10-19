@@ -41,7 +41,8 @@ import {
 import { AletaEcourtCetakJadwal } from "@/components/portal/aleta-ecourt-cetak-jadwal";
 import { daftarRuangAktif, ruangPilihanBerlaku, saringKeRuang } from "@/lib/ruang-sidang-saring";
 /* === 12OKT-C: kartu ruang sidang & mediator === */
-import { KartuRuangSidang } from "@/components/portal/kartu-ruang-sidang";
+import { PitaRuangSidang } from "@/components/portal/pita-ruang-sidang";
+import { susunPitaRuang } from "@/lib/pita-ruang-sidang";
 import { SaksiLipat, useSaksiLipat } from "@/components/portal/saksi-lipat";
 import { PetunjukCariPintar } from "@/components/portal/petunjuk-cari-pintar";
 import {
@@ -177,7 +178,6 @@ import {
   LencanaDiskors,
   LencanaSedangBerjalan,
   KontakPihakRincian,
-  RingkasRuangSidang,
   TandaAntrianOnline,
   TandaAntrianOnlineRincian,
   TombolRuangSidang,
@@ -5389,6 +5389,18 @@ export function AletaEcourtSidang({
     [sidang, tandaSelesai.skors, tandaSelesai.peta, ruangSidang]
   );
 
+  /** JADWAL-3 butir 3: pil per ruang - kartu ruang + yang sedang disidang. */
+  const pitaRuang = useMemo(
+    () =>
+      susunPitaRuang({
+        kartu: kartuRuang,
+        perRuang: ruangSidang.perRuang,
+        ruangSipp: bahanTigaJarak.ruangSipp,
+        nomorPerkara: bahanTigaJarak.nomorPerkara,
+      }),
+    [kartuRuang, ruangSidang, bahanTigaJarak]
+  );
+
   /** Keterangan perkara untuk tombol skors/lompat - nomor perkara, nomor antrian, ruang. */
   const infoRuangSidang = useCallback(
     (perkaraId: string) => {
@@ -6780,20 +6792,10 @@ export function AletaEcourtSidang({
           </div>
 
           {/* === 12OKT-C: kartu ruang sidang (butir 3) ===
-              Di BAWAH deretan Hitung skor dst., bawaan diciutkan. Tidak ikut
-              disembunyikan oleh alatCiut (deretan alat bawaannya sudah
-              terciut - panel ini justru harus tetap terlihat sebagai satu
-              baris ringkas); hanya Kendali yang diciutkan yang
-              menyembunyikannya. */}
-          {tampil(tampilan, "kartu-ruang") && !kendaliCiut && kartuRuang.length > 0 ? (
-            <KartuRuangSidang
-              kartu={kartuRuang}
-              ruangPilihan={ruangSaring}
-              onPilih={setRuangDipilih}
-              keteranganPerlu={keteranganPerluKartu}
-            />
-          ) : null}
-          {/* === AKHIR 12OKT-C === */}
+              Sejak 19 Okt 2026 (JADWAL-3 butir 3) kartu ruang tidak lagi
+              memakai baris sendiri di sini: ia menyatu dengan ringkasan ruang
+              sidang menjadi SATU pita di atas tabel - lihat PitaRuangSidang.
+              Saklar "kartu-ruang" tetap mengatur bagian jumlah/perlu diperiksa. */}
         </div>
 
 
@@ -7419,11 +7421,22 @@ export function AletaEcourtSidang({
             </button>
           </p>
         ) : null}
-        {tampil(tampilan, "ringkasan-ruang") ? (
-          <RingkasRuangSidang
-            perRuang={ruangSidang.perRuang}
-            nomorPerkara={(k) => bahanTigaJarak.nomorPerkara[k] ?? ""}
+        {/* JADWAL-3 butir 3 (19 Okt 2026): SATU pita ruang sidang - kartu
+            ruang ("kartu-ruang": jumlah, perlu diperiksa, saring) dan
+            ringkasan ruang ("ringkasan-ruang": yang sedang disidang, diskors)
+            menyatu dalam satu baris setinggi ±36 px. Rancangan dan alasannya:
+            docs/rancangan/ruang-sidang-ringkas.html (pilihan A). */}
+        {tampil(tampilan, "ringkasan-ruang") || tampil(tampilan, "kartu-ruang") ? (
+          <PitaRuangSidang
+            pil={pitaRuang}
+            tampilJumlah={tampil(tampilan, "kartu-ruang")}
+            tampilBerjalan={tampil(tampilan, "ringkasan-ruang")}
             diskors={diskorsHariIni}
+            nomorPerkara={(k) => bahanTigaJarak.nomorPerkara[k] ?? ""}
+            ruangPilihan={ruangSaring}
+            onPilih={tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang") ? setRuangDipilih : undefined}
+            keteranganPerlu={keteranganPerluKartu}
+            sekarangMs={() => (patokanWaktu ? patokanWaktu.sekarangMs + (Date.now() - patokanWaktu.diterimaMs) : Date.now())}
             onLihat={(k) => {
               const el = Array.from(document.querySelectorAll<HTMLElement>("[data-kunci-waktu]")).find(
                 (x) => x.dataset.kunciWaktu === k

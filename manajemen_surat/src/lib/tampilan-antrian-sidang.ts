@@ -742,14 +742,14 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     kunci: "kartu-ruang",
     label: "Kartu ruang sidang",
     keterangan:
-      "Di bawah deretan tombol (Hitung skor dan lainnya): satu kartu berwarna per ruang sidang yang dipakai, berisi nama ruang, jumlah perkara, dan jumlah yang perlu diperiksa. Bawaannya diciutkan; ditekan = buka.",
+      "Pada pita ruang sidang di atas tabel: jumlah ruang dan perkara, angka merah perlu diperiksa per ruang, dan rincian tiap ruang (tanda ▾) beserta tombol saring ruang.",
     kelompok: "atas",
   },
   {
     kunci: "ringkasan-ruang",
     label: "Ringkasan ruang sidang",
     keterangan:
-      "Deretan di atas tabel yang menyebut perkara apa yang sedang disidangkan di tiap ruang dan yang diskors; ditekan = menggulung ke barisnya. Tombol ruang dan kartu ruang punya saklarnya sendiri.",
+      "Pada pita ruang sidang di atas tabel: perkara yang sedang disidangkan di tiap ruang (antrian ke berapa dan sudah berapa lama) dan yang diskors; ditekan = menggulung ke barisnya. Tombol ruang dan kartu ruang punya saklarnya sendiri.",
     kelompok: "atas",
   },
   {

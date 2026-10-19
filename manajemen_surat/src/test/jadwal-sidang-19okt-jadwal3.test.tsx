@@ -3,7 +3,7 @@
  * saksi terlipat, tanpa tulisan memuat, dialog mediator tanpa keterangan teknis.
  * Nomor perkara dan nama di sini karangan.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { fireEvent, render } from "@testing-library/react";
@@ -11,7 +11,10 @@ import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { PetunjukCariPintar } from "@/components/portal/petunjuk-cari-pintar";
+import { PitaRuangSidang } from "@/components/portal/pita-ruang-sidang";
 import { SaksiLipat } from "@/components/portal/saksi-lipat";
+import { susunKartuRuang } from "@/lib/kartu-ruang-sidang";
+import { menitBerjalan, ringkasPita, sebutLama, susunPitaRuang } from "@/lib/pita-ruang-sidang";
 import {
   KATA_KUNCI_MEDIASI,
   KATA_KUNCI_SIDANG,
@@ -278,5 +281,111 @@ describe("butir 6: dialog pilih mediator tanpa keterangan teknis", () => {
   it("catatan kaki satu kalimat awam", () => {
     expect(LAYAR_SIDANG).toContain('catatan="Jadwal pertemuan, laporan mediator, dan hasil mediasi masih ditulis di SIPP."');
     expect(LAYAR_SIDANG).not.toContain("belum ada jalur yang menuliskannya");
+  });
+});
+
+describe("butir 3: pita ruang sidang satu baris", () => {
+  const kartu = susunKartuRuang(
+    [{ ruangan: "Ruang Sidang 1 Dalam Gedung" }, { ruangan: "Ruang Sidang 1 Dalam Gedung" }, { ruangan: "Ruang Sidang 2" }],
+    () => true
+  );
+  const berjalan = (kunci: string, perkaraId: string, sejak: string, nomorAntrian: number | null) => ({
+    kunci,
+    perkaraId,
+    tanggalSidang: "2026-10-19",
+    ruang: "Ruang 1",
+    sejak,
+    nomorAntrian,
+  });
+
+  it("yang sedang disidang dicocokkan ke kartu lewat ruang SIPP perkaranya; ruang tanpa kartu tetap dapat pil", () => {
+    const pil = susunPitaRuang({
+      kartu,
+      perRuang: {
+        "Ruang 1": berjalan("2026-10-19|631", "631", "2026-10-19 10:13:00", 4),
+        "Ruang 9": berjalan("2026-10-19|700", "700", "10:40", null),
+      },
+      ruangSipp: { "2026-10-19|631": "Ruang Sidang 1 Dalam Gedung", "2026-10-19|700": "" },
+      nomorPerkara: { "2026-10-19|631": "631/Pdt.G/2026/PA.Dgl", "2026-10-19|700": "700/Pdt.G/2026/PA.Dgl" },
+    });
+    expect(pil.map((p) => p.nama)).toEqual(["Ruang Sidang 1 Dalam Gedung", "Ruang Sidang 2", "Ruang 9"]);
+    expect(pil[0].berjalan?.nomorPerkara).toBe("631/Pdt.G/2026/PA.Dgl");
+    expect(pil[0].jumlah).toBe(2);
+    expect(pil[1].berjalan).toBeNull();
+    expect(pil[2].jumlah).toBeNull();
+    expect(ringkasPita(pil)).toEqual({ ruang: 2, perkara: 3, perlu: 3 });
+  });
+
+  it("lama berjalan dalam menit dan jam", () => {
+    const kini = new Date(2026, 9, 19, 10, 35, 0).getTime();
+    expect(menitBerjalan("2026-10-19 10:13:00", kini)).toBe(22);
+    expect(menitBerjalan("09:05", kini)).toBe(90);
+    expect(menitBerjalan("", kini)).toBeNull();
+    expect(menitBerjalan("11:00", kini)).toBeNull();
+    expect(sebutLama(22)).toBe("22 mnt");
+    expect(sebutLama(90)).toBe("1 j 30 mnt");
+  });
+
+  it("satu baris: pil per ruang, ditekan = loncat; ▾ = rincian melayang dengan saring ruang", () => {
+    const pil = susunPitaRuang({
+      kartu,
+      perRuang: { "Ruang 1": berjalan("2026-10-19|631", "631", "2026-10-19 10:13:00", 4) },
+      ruangSipp: { "2026-10-19|631": "Ruang Sidang 1 Dalam Gedung" },
+      nomorPerkara: { "2026-10-19|631": "631/Pdt.G/2026/PA.Dgl" },
+    });
+    const lihat = vi.fn();
+    const pilih = vi.fn();
+    const props = {
+      pil,
+      tampilJumlah: true,
+      tampilBerjalan: true,
+      diskors: [
+        { kunci: "2026-10-19|640", perkaraId: "640", tanggalSidang: "2026-10-19", ruang: "Ruang 1", jam: "10:20", oleh: "", perkiraanLanjut: "11:30" },
+      ],
+      nomorPerkara: (k: string) => (k.endsWith("640") ? "640/Pdt.G/2026/PA.Dgl" : ""),
+      ruangPilihan: null,
+      onPilih: pilih,
+      onLihat: lihat,
+      keteranganPerlu: "ket",
+      sekarangMs: () => new Date(2026, 9, 19, 10, 35, 0).getTime(),
+    };
+    const { container } = render(createElement(PitaRuangSidang, props));
+    const pita = container.querySelector("[data-pita-ruang-sidang]")!;
+    expect(pita.textContent).toContain("2 ruang · 3 perkara");
+    expect(pita.textContent).toContain("3 perlu diperiksa");
+    const r1 = pita.querySelector('[data-pil-ruang="Ruang Sidang 1 Dalam Gedung"]')!;
+    expect(r1.textContent).toContain("631/Pdt.G/2026/PA.Dgl · antrian 4 · 22 mnt");
+    expect(pita.querySelector("[data-pita-diskors]")?.textContent).toContain("640/Pdt.G/2026/PA.Dgl");
+    expect(pita.querySelector("[data-pita-diskors]")?.textContent).toContain("lanjut ±11.30");
+    // satu baris: tidak melipat, digeser di dalam pita
+    const baris = pita.firstElementChild as HTMLElement;
+    expect(baris.className).toContain("overflow-x-auto");
+    expect(baris.className).toContain("whitespace-nowrap");
+    expect(baris.className).not.toContain("flex-wrap");
+    fireEvent.click(r1.querySelector("button")!);
+    expect(lihat).toHaveBeenCalledWith("2026-10-19|631");
+    const r2 = pita.querySelector('[data-pil-ruang="Ruang Sidang 2"]')!;
+    fireEvent.click(r2.querySelectorAll("button")[1]);
+    const rinci = container.querySelector('[data-pita-rincian="Ruang Sidang 2"]')!;
+    expect(rinci.textContent).toContain("Belum ada yang sedang disidang.");
+    expect(rinci.textContent).toContain("1 perkara · 1 perlu diperiksa");
+    if (process.env.PRATINJAU_PITA) {
+      const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><script src="https://cdn.tailwindcss.com/3.4.1"></script>
+<style>.text-muted-foreground{color:#64748b}.bg-card{background:#fff}.bg-muted\\/20{background:rgba(241,245,249,.6)}</style></head>
+<body class="bg-slate-50 p-4"><div class="mx-auto max-w-6xl space-y-2"><div class="flex flex-wrap gap-1 text-xs"><span class="rounded-full border px-2 py-0.5">Gugatan 14</span><span class="rounded-full bg-red-100 px-2 py-0.5 text-red-800">Perlu diperiksa 7</span><span class="rounded-full border px-2 py-0.5">Panggilan</span><span class="rounded-full border px-2 py-0.5">Jalannya sidang</span></div>${container.innerHTML}<div class="rounded-xl border bg-white p-3 text-xs">No · Perkara · Antrian · Agenda …</div></div></body></html>`;
+      writeFileSync(process.env.PRATINJAU_PITA, html);
+    }
+    fireEvent.click(Array.from(rinci.querySelectorAll("button")).find((b) => b.textContent === "Saring ruang ini")!);
+    expect(pilih).toHaveBeenCalledWith("Ruang Sidang 2");
+  });
+
+  it("layar: pita menggantikan dua baris lama dan duduk di atas tabel; komponen lama tetap ada untuk layar lain", () => {
+    expect(LAYAR_SIDANG).toContain("<PitaRuangSidang");
+    expect(LAYAR_SIDANG).not.toContain("<KartuRuangSidang");
+    expect(LAYAR_SIDANG).not.toContain("<RingkasRuangSidang");
+    expect(LAYAR_SIDANG.indexOf("<PitaRuangSidang")).toBeLessThan(LAYAR_SIDANG.indexOf("ref={kotakTabel}"));
+    expect(LAYAR_SIDANG).toContain('tampil(tampilan, "ringkasan-ruang") || tampil(tampilan, "kartu-ruang")');
+    expect(baca("components/portal/jadwal-sidang-2okt.tsx")).toContain("export function RingkasRuangSidang(");
+    expect(baca("components/portal/kartu-ruang-sidang.tsx")).toContain("export function KartuRuangSidang(");
   });
 });

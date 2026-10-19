@@ -63,7 +63,8 @@ describe("butir 2 - kotak pencarian dan temannya", () => {
 
   it("Pencarian lanjutan, x dari y, dan Reset ADA di baris pencarian", () => {
     const i = layar.indexOf("LEBARNYA DIBATASI, DAN TEMANNYA DI SEBELAHNYA");
-    const blok = layar.slice(i, i + 3000);
+    // 4500 sejak 19 Okt 2026: kotak cari memuat petunjuk kata kunci (JADWAL-3 butir 1).
+    const blok = layar.slice(i, i + 4500);
     expect(blok).toContain("Pencarian lanjutan");
     expect(blok).toContain("dari {sidang.length} perkara");
     expect(blok).toContain("resetSemuaSaringan");

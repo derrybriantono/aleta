@@ -361,7 +361,8 @@ describe("butir 10 - Jadwal Sidang dan Hasil Sidang", () => {
     expect(SIDANG).toMatch(/berjalanIni &&\s+"border-l-4 border-l-sky-500/);
     // 18 Okt 2026: lencana dapat dimatikan lewat saklar tampilan "sedang-berjalan" (checklist Jadwal Sidang).
     expect(SIDANG).toContain('{tampil(tampilan, "sedang-berjalan") && berjalanIni ? <LencanaSedangBerjalan berjalan={berjalanIni} /> : null}');
-    expect(SIDANG).toContain("<RingkasRuangSidang");
+    // 19 Okt 2026 (JADWAL-3 butir 3): ringkasan ruang menyatu dalam pita ruang sidang.
+    expect(SIDANG).toContain("<PitaRuangSidang");
     expect(SIDANG).toContain("data-kunci-waktu={kunciTiga}");
     // 2 Okt 2026 malam (butir 4): kolom kanan = Rincian, Status, lalu tombol
     // ruang sidang, dan Selesai PALING BAWAH - bukan lagi di atas keduanya.

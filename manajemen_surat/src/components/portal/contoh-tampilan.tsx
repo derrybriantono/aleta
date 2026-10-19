@@ -223,7 +223,7 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
   "saring-ruang": { letak: "ujung kanan deretan tombol", contoh: tombol("Ruang Sidang 1 · 17") },
   // === 12OKT-C: contoh untuk saklar kartu ruang, mediator, dan hasil audit butir 7 ===
   "kartu-ruang": {
-    letak: "di bawah deretan tombol (bawaan diciutkan)",
+    letak: "pita ruang sidang di atas tabel",
     contoh: (
       <span className="inline-flex flex-wrap items-center gap-1.5">
         <span className="inline-flex items-center gap-1 rounded-3xl border border-sky-300 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-950 dark:border-sky-700 dark:bg-sky-950/50 dark:text-sky-50">
