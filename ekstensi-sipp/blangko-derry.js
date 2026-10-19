@@ -260,7 +260,21 @@
     ptsp: ["1000", "1001", "1002", "1003", "1010", "1011", "1012", "1013", "1020", "1022", "1023", "1030", "1031", "1032", "1033", "1034"],
   };
 
-  /** Kelompok (menu) Blangko Derry boleh tampil/dibuka? k = { nama (nama_alias ABT), jenis }. */
+  /**
+   * 19 Okt 2026 - blangko IKRAR TALAK (BAS sidang ikrar, penetapan ikrar/gugur, relaas panggilan ikrar) tersebar di tiga folder.
+   * Hak folder asalnya (menu ABT ikrar: hakim 20, PP 500, juru sita 600) lebih luas daripada jenis dokumen satu peran:
+   * hakim = penetapan + BAS, PP = BAS, juru sita = relaas. Berlaku HANYA bila pemanggil menandai k.ikrar === true.
+   */
+  const IKRAR_JENIS_PERAN = { hakim: ["put", "bas"], pp: ["bas"], js: ["rel"] };
+  function ikrarJenisBoleh(o) {
+    if (o.admin && !o.sebagaiPeran) return ["put", "bas", "rel"];
+    const peran = o.admin ? [o.sebagaiPeran] : o.peran || [];
+    const boleh = new Set();
+    for (const p of peran) for (const j of IKRAR_JENIS_PERAN[p] || []) boleh.add(j);
+    return ["put", "bas", "rel"].filter((j) => boleh.has(j));
+  }
+
+  /** Kelompok (menu) Blangko Derry boleh tampil/dibuka? k = { nama (nama_alias ABT), jenis, ikrar? }. */
   function kelompokBoleh(k, o) {
     if (!k) return false;
     if (o.admin && !o.sebagaiPeran) return true;
@@ -274,7 +288,7 @@
       const grup = [...(GRUP_ABT_PERAN[o.sebagaiPeran] || []), ...(GRUP_ABT_PERAN_LAIN[o.sebagaiPeran] || [])];
       return f ? folderTerbukaUntuk(f, grup) : o.sebagaiPeran === "pp" || o.sebagaiPeran === "ptsp";
     }
-    if (!jenisDokumenBoleh(o).includes(k.jenis)) return false;
+    if (!jenisDokumenBoleh(o).includes(k.jenis) && !(k.ikrar === true && ikrarJenisBoleh(o).includes(k.jenis))) return false;
     // Akun biasa: menunya sudah disaring ABT menurut grup akun ABT-nya sendiri.
     if (!o.admin) return true;
     return f ? folderTerbukaUntuk(f, GRUP_ABT_PERAN[o.sebagaiPeran] || []) : true;
@@ -1981,7 +1995,7 @@
       tema: S.tema,
       cfg: { ...S.cfg },
     }),
-    murni: { bacaTautanBd, ringkasan, cocokCari, JENIS_CARI, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk, perkiraanZoom },
+    murni: { bacaTautanBd, ringkasan, cocokCari, JENIS_CARI, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk, perkiraanZoom, ikrarJenisBoleh },
   };
   globalThis.aletaBlangkoDerry = api;
   void mulai();

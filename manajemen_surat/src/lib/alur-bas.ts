@@ -224,8 +224,10 @@ export function tentukanAlurBas(m: MasukanAlurBas): HasilAlurBas {
   // --- Cerai gugat / cerai talak ---
   if (grup === "cerai-talak" && m.sidangIkrarTalak) {
     // I2 16 Okt (paket abt-ikrar-derry): kehadiran 4 (P & T tidak hadir) -> [4] tunda tenggang waktu 6 bulan, bukan tebakan [1].
-    const kode = h === 1 ? "2" : h === 3 ? "3" : h === 4 ? "4" : "1";
-    return hasil("alur-10", kode, h === null, "Sidang ikrar talak.", ["1", "2", "2a", "3", "4"].filter((k) => k !== kode));
+    // 19 Okt: keduanya hadir dan keterangan sidang menyebut beban (mut'ah, nafkah iddah, kewajiban yang belum dipenuhi) -> [2a].
+    const beban = h === 1 && /beban|mut.?ah|nafkah|iddah|madliyah|kewajiban/i.test(agenda);
+    const kode = h === 1 ? (beban ? "2a" : "2") : h === 3 ? "3" : h === 4 ? "4" : "1";
+    return hasil("alur-10", kode, h === null, beban ? "Sidang ikrar talak, keduanya hadir dan ada beban." : "Sidang ikrar talak.", ["1", "2", "2a", "3", "4"].filter((k) => k !== kode));
   }
   if (m.akhir === "gugur") return hasil("alur-07", n >= 2 ? "3" : "1", false, "Cerai gugur.", ["1", "2", "3"].filter((k) => k !== (n >= 2 ? "3" : "1")));
   if (m.akhir === "cabut") return hasil("alur-08", n >= 2 ? "B" : "A", false, "Cerai dicabut.", ["A", "B", "C1", "C2"].filter((k) => k !== (n >= 2 ? "B" : "A")));

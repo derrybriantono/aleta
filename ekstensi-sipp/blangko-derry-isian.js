@@ -370,7 +370,7 @@
     return Boolean(k) && (k.jenis === "ptsp" || jenisPeran().includes(k.jenis));
   };
   /** Boleh MENULIS untuk blangko ini? Hanya bila kelompoknya boleh untuk akun (atau akun yang ditiru) ini. */
-  const bolehTulis = () => Boolean(S.blangko) && kelompokBoleh({ nama: S.blangko.kelompok, jenis: S.blangko.jenis });
+  const bolehTulis = () => Boolean(S.blangko) && kelompokBoleh({ nama: S.blangko.kelompok, jenis: S.blangko.jenis, ikrar: adalahBlangkoIkrar(S.blangko.jenis, S.blangko.berkas) });
 
   function asalAbtDerry() {
     if (typeof asalAbt === "function") return asalAbt();
@@ -421,6 +421,126 @@
     const fb = FREK_ALUR[alurDari(b.nama)] || 0;
     if (fa !== fb) return fb - fa;
     return a.urut - b.urut;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Kelompok maya "Ikrar Talak" (19 Okt 2026)
+  // ──────────────────────────────────────────────────────────────────────────
+  // Blangko ikrar talak ada tetapi tersebar di tiga folder: berita acara sidang ikrar (menu "Cerai Talak - BAS"), penetapan ikrar dan
+  // penetapan putusan gugur (menu "Cerai Talak - Putusan"), serta relaas/amplop panggilan ikrar (menu Relaas). Kelompok maya ini hanya
+  // MENYAJIKAN ulang butir-butir itu dalam satu daftar: tidak ada berkas ABT yang dipindah, digandakan, atau dibuat. Butir dikenali dari
+  // namanya, diambil dari kelompok aslinya (nama kelompok asli tetap dipakai membuka, memeriksa hak, dan mencetak).
+  const NAMA_IKRAR = "Ikrar Talak";
+  const POLA_IKRAR = Object.freeze({
+    put: /^\s*\[[^\]]+\]\s*\[ikrar(?:\s+gugur)?\]/i,
+    bas: /\bBAS\s+Ikrar\s+Talak\b/i,
+    rel: /ikrar\s+talak/i,
+  });
+  const URUT_JENIS_IKRAR = Object.freeze({ bas: 0, put: 1, rel: 2 });
+  const NAMA_JENIS_IKRAR = Object.freeze({ bas: "Berita acara sidang", put: "Penetapan", rel: "Relaas" });
+  /** Blangko ini termasuk ikrar talak? (jenis = jenis kelompok aslinya: put | bas | rel) */
+  const adalahBlangkoIkrar = (jenis, berkas) => Boolean(POLA_IKRAR[jenis] && POLA_IKRAR[jenis].test(String(berkas || "")));
+  const menuCeraiTalak = (k) => /cerai\s*talak|\bCT\b/i.test(`${namaMenuTampil(k.nama)} ${k.nama}`);
+  /** Kelompok yang layak dibaca untuk mencari butir ikrar: menu cerai talak, menu ikrar, alur 10, dan semua menu relaas. */
+  const penghuniIkrar = (k) => Boolean(k) && k.jenis !== "ptsp" && (k.jenis === "rel" || menuCeraiTalak(k) || /ikrar|alur\s*10/i.test(`${namaMenuTampil(k.nama)} ${k.nama}`));
+  /** "P Hadir & T Tidak Hadir" -> "Pemohon hadir dan Termohon tidak hadir" (kalimat biasa, tanpa kode). */
+  function kalimatKehadiranIkrar(sisa) {
+    let t = String(sisa || "").replace(/\.rtf$/i, "").trim();
+    const tunda = t.match(/,?\s*Tunda\s+Tenggang\s+Waktu\s+(\d+)\s*Bulan/i);
+    t = t.replace(/,?\s*Tunda\s+Tenggang\s+Waktu\s+\d+\s*Bulan/i, "");
+    const beban = /,?\s*Ada\s+Beban/i.test(t);
+    t = t.replace(/,?\s*Ada\s+Beban/i, "");
+    t = t
+      .replace(/\bP\b/g, "Pemohon")
+      .replace(/\bT\b/g, "Termohon")
+      .replace(/\s*&\s*/g, " dan ")
+      .replace(/\bTidak Hadir\b/gi, "tidak hadir")
+      .replace(/\bHadir\b/g, "hadir")
+      .replace(/\s+/g, " ")
+      .trim();
+    return `${t}${beban ? ", ada beban yang harus dipenuhi" : ""}${tunda ? `; sidang ditunda, tenggang waktu ${tunda[1]} bulan` : ""}`;
+  }
+  /**
+   * Uraian satu blangko ikrar dalam kalimat biasa: { jenis (nama jenis), kalimat, kode, urut }. Murni (diuji).
+   * jenis = jenis kelompok aslinya (put | bas | rel).
+   */
+  function uraikanIkrar(jenis, berkas) {
+    const nama = String(berkas || "").replace(/\.rtf$/i, "").trim();
+    let kalimat = "";
+    if (jenis === "bas") {
+      kalimat = `Berita acara sidang ikrar talak: ${kalimatKehadiranIkrar(nama.replace(/^.*?Ikrar\s+Talak\s*-\s*/i, ""))}`;
+    } else if (jenis === "put") {
+      kalimat = /gugur/i.test(nama)
+        ? "Penetapan putusan gugur: Pemohon tidak mengikrarkan talak dalam 6 bulan"
+        : `Penetapan sidang ikrar talak: ${kalimatKehadiranIkrar(nama.replace(/^.*?Penetapan\s+Ikrar\s+Talak\s*-\s*/i, ""))}`;
+    } else {
+      const sisa = nama.replace(/^.*?Ikrar\s+Talak/i, "");
+      const ec = /e-?court/i.test(sisa);
+      const pihak = /\bP\s+dan\s+T\b/i.test(sisa) ? "Pemohon dan Termohon" : /\bP\b/.test(sisa) ? "Pemohon" : /\bT\b/.test(sisa) || ec ? "Termohon" : "";
+      const amplop = /amplop/i.test(nama);
+      kalimat = `${amplop ? "Amplop panggilan sidang ikrar talak" : "Relaas panggilan sidang ikrar talak"}${pihak ? (amplop ? " untuk " : " kepada ") + pihak : ""}${ec ? " (perkara e-Court)" : ""}`;
+    }
+    const m = nama.match(/\[(\d+)([a-z]?)\]/i) || nama.match(/\]\s*(\d+(?:\.\d+)*)\.?\s/);
+    const angka = m ? parseFloat(m[1]) || 0 : 0;
+    const huruf = m && m[2] ? m[2] : "";
+    return { jenis: NAMA_JENIS_IKRAR[jenis] || "", kalimat, kode: m ? `${m[1]}${huruf}` : kodeDari(nama), urut: (URUT_JENIS_IKRAR[jenis] === undefined ? 9 : URUT_JENIS_IKRAR[jenis]) * 1000 + angka * 10 + (huruf ? 5 : 0) };
+  }
+  /**
+   * Butir ikrar dari kelompok-kelompok yang SUDAH termuat dan boleh dibuka akun ini (hak folder asal). Murni terhadap masukannya (diuji):
+   *   kelompok: [{ nama, jenis, berkas: [{berkas,a,b}]|null, galat?, memuat? }], boleh: (k) => boolean.
+   * Hasil: { berkas: [{ berkas, a, b, kelompok, jenis, jenisNama, kalimat, kode, urut }], memuat }.
+   * Butir bernama sama di dua kelompok diambil sekali - dari kelompok menu cerai talak lebih dulu.
+   */
+  function kumpulkanIkrar(kelompok, boleh) {
+    const calon = (Array.isArray(kelompok) ? kelompok : []).filter((k) => penghuniIkrar(k) && boleh({ ...k, ikrar: true }));
+    calon.sort((x, y) => Number(menuCeraiTalak(y)) - Number(menuCeraiTalak(x)));
+    const berkas = [];
+    const lihat = new Set();
+    let memuat = false;
+    for (const k of calon) {
+      if (!k.berkas) {
+        if (!k.galat) memuat = true;
+        continue;
+      }
+      for (const b of k.berkas) {
+        if (!adalahBlangkoIkrar(k.jenis, b.berkas)) continue;
+        const kunci = String(b.berkas).replace(/\.rtf$/i, "").trim().toLowerCase();
+        if (lihat.has(kunci)) continue;
+        lihat.add(kunci);
+        const u = uraikanIkrar(k.jenis, b.berkas);
+        berkas.push({ ...b, kelompok: k.nama, jenis: k.jenis, jenisNama: u.jenis, kalimat: u.kalimat, kode: u.kode, urut: u.urut });
+      }
+    }
+    berkas.sort((x, y) => x.urut - y.urut || String(x.berkas).localeCompare(String(y.berkas)));
+    return { berkas, memuat };
+  }
+  /** Memuat daftar berkas kelompok-kelompok yang mungkin memuat butir ikrar (tiga sekaligus). */
+  async function muatKelompokIkrar() {
+    if (!S.menu) return;
+    const antre = S.menu.kelompok.filter((k) => penghuniIkrar(k) && kelompokBoleh({ ...k, ikrar: true }) && !k.berkas && !k.memuat);
+    for (let i = 0; i < antre.length; i += 3) await Promise.all(antre.slice(i, i + 3).map((k) => muatBerkasKelompok(k)));
+  }
+  /**
+   * Saran blangko sidang ikrar talak bila saran portal belum tiba (cadangan; aturan yang sama dengan rekomendasi-blangko.ts):
+   *   hadir = sandi dihadiri_oleh (1 semua, 2 Pemohon saja, 3 Termohon saja, 4 tidak ada, null belum tercatat); teks = agenda + keterangan.
+   * Hasil: [{ jenis: "bas"|"put", pola: RegExp nama berkas, utama }]. Pemohon tidak hadir = belum ada penetapan ikrar (BAS tunda 6 bulan);
+   * penetapan gugur [91] hanya bila teks sidang menyebut gugur / 6 bulan / tidak mengikrarkan.
+   */
+  function saranIkrarCadangan(hadir, teks) {
+    const hasil = [];
+    const gugur = /gugur|6\s*bulan|enam\s+bulan|tidak\s+(?:meng)?ikrar/i.test(String(teks || ""));
+    const h = Number(hadir) || null;
+    if (gugur) hasil.push({ jenis: "put", pola: /^\[91\]/, utama: true });
+    if (h === 3) hasil.push({ jenis: "bas", pola: /^\[3\]\s*BAS\s+Ikrar/i, utama: !gugur });
+    else if (h === 4) hasil.push({ jenis: "bas", pola: /^\[4\]\s*BAS\s+Ikrar/i, utama: !gugur });
+    else if (h === 1) {
+      hasil.push({ jenis: "bas", pola: /^\[2\]\s*BAS\s+Ikrar/i, utama: !gugur }, { jenis: "bas", pola: /^\[2a\]\s*BAS\s+Ikrar/i, utama: false });
+      hasil.push({ jenis: "put", pola: /^\[90a\]/, utama: !gugur });
+    } else {
+      hasil.push({ jenis: "bas", pola: /^\[1\]\s*BAS\s+Ikrar/i, utama: !gugur });
+      hasil.push({ jenis: "put", pola: /^\[90\]\s/, utama: !gugur });
+    }
+    return hasil;
   }
 
   let janjiMenu = null;
@@ -529,7 +649,10 @@
       return null;
     };
     const putusVerstek = /putus|dikabul|verstek/.test(t) && !/panggil/.test(t);
-    if (/tolak/.test(t) && /putus/.test(t)) hasil.push(cariBerkas("put", /^\[01ab\]/), cariBerkas("bas", n <= 2 ? /ALUR 02 \[2\]/ : /ALUR 03 \[3\]/));
+    // Sidang ikrar talak didahulukan: petunjuk tautan "penetapan" menambahkan kata "putus" yang bukan putusan akhir.
+    if (/ikrar/.test(t) && /talak/i.test(String((S.pk && S.pk.jenisPerkara) || ""))) {
+      for (const x of saranIkrarCadangan(s.hadir, t)) hasil.push(cariBerkas(x.jenis, x.pola));
+    } else if (/tolak/.test(t) && /putus/.test(t)) hasil.push(cariBerkas("put", /^\[01ab\]/), cariBerkas("bas", n <= 2 ? /ALUR 02 \[2\]/ : /ALUR 03 \[3\]/));
     else if (putusVerstek) hasil.push(cariBerkas("put", /^\[01\] \[Kabul Verstek\] Cerai \(Format Lengkap\)\.?r?t?f?$/) || cariBerkas("put", /^\[01\]/), cariBerkas("bas", n === 1 ? /ALUR 01 \[1a\]/ : n === 2 ? /ALUR 02 \[2\]/ : /ALUR 03 \[3\]/), cariBerkas("rel", /Pemberitahuan Putusan T/));
     else if (/gugur/.test(t)) hasil.push(cariBerkas("put", /\[Gugur\] 3\./), cariBerkas("bas", /ALUR 07 \[3\]/));
     else if (/cabut/.test(t)) hasil.push(cariBerkas("put", /\[Cabut\] 1\./), cariBerkas("bas", n === 1 ? /ALUR 08 \[A\]/ : /ALUR 08 \[B\]/));
@@ -899,7 +1022,7 @@
       const k = S.menu.kelompok.filter((x) => x.jenis === S.modal.jenis && kelompokBoleh(x));
       // Kelompok yang disarankan dan yang paling sering dipakai dimuat lebih dulu, lalu sisanya di belakang.
       const dulu = k.filter((x) => rek.some((r) => r.kelompok === x.nama)).concat(k.slice().sort(urutKelompok).slice(0, 2));
-      Promise.all([...new Set(dulu)].map((x) => muatBerkasKelompok(x))).then(() => muatSemuaKelompok(S.modal ? S.modal.jenis : jenis));
+      Promise.all([...new Set(dulu)].map((x) => muatBerkasKelompok(x))).then(() => muatSemuaKelompok(S.modal ? S.modal.jenis : jenis)).then(() => muatKelompokIkrar());
     });
     void muatIndeks();
   }
@@ -925,9 +1048,27 @@
       }
       if (berkas.length) daftar.push({ id: "saran", nama: "Disarankan", sub: `untuk sidang ke-${(Number(S.pk.sidangKe) || 0) + 1}`, saran: true, berkas });
     }
+    const ikrar = kumpulkanIkrar(S.menu.kelompok, kelompokBoleh);
     for (const k of semua) {
       const f = FREK_ALUR[alurDari(k.nama)];
       daftar.push({ id: `k:${k.nama}`, nama: k.judul || namaMenuTampil(k.nama), sub: f ? `dipakai ${f.toLocaleString("id-ID")} perkara` : k.jumlah ? `${k.jumlah} blangko` : "", berkas: (k.berkas || []).map((b) => ({ ...b, kelompok: k.nama })), memuat: !k.berkas && !k.galat, galat: k.galat || "" });
+    }
+    // Kelompok maya "Ikrar Talak": tepat di bawah menu cerai talak (atau di bawah Disarankan bila tidak ada), berisi butir dari tiga folder.
+    if (ikrar.berkas.length || ikrar.memuat) {
+      const disaran = ikrar.berkas.filter((b) => rek.some((r) => r.berkas === b.berkas));
+      const berkas = disaran.concat(ikrar.berkas.filter((b) => !disaran.includes(b)));
+      const grup = {
+        id: "ikrar",
+        nama: NAMA_IKRAR,
+        sub: disaran.length ? "ada yang disarankan untuk sidang ini" : "berita acara, penetapan, dan relaas",
+        ikrar: true,
+        berkas,
+        memuat: ikrar.memuat && !berkas.length,
+        galat: "",
+      };
+      let pos = daftar.findIndex((x) => !x.saran && /cerai\s*talak|CT/i.test(x.nama));
+      pos = pos >= 0 ? pos + 1 : daftar.length && daftar[0].saran ? 1 : 0;
+      daftar.splice(pos, 0, grup);
     }
     return daftar;
   }
@@ -938,6 +1079,16 @@
     return (
       `<button type="button" class="bd-bl${aktif ? " aktif" : ""}" data-bl="${esc(nama)}" data-kel="${esc(b.kelompok)}" ${b.belum ? "disabled" : ""}>` +
       `<span class="kd">${esc(kodeDari(jenis === "put" ? nama : nama.replace(/^BAS ALUR \d\d /, "")))}</span><span class="nm">${esc(namaTampil(nama, jenis))}</span>` +
+      `${disaran ? `<span class="bd-lencana">disarankan</span>` : ""}${aktif ? `<span class="tanda" aria-label="dipakai sekarang">&#10003;</span>` : ""}</button>`
+    );
+  }
+  /** Satu butir kelompok maya Ikrar Talak: kalimat biasa, bukan nama berkas. */
+  function tombolIkrar(b, rek) {
+    const aktif = S.blangko && S.blangko.berkas === b.berkas && S.blangko.kelompok === b.kelompok;
+    const disaran = rek.some((r) => r.berkas === b.berkas);
+    return (
+      `<button type="button" class="bd-bl${aktif ? " aktif" : ""}" data-bl="${esc(b.berkas)}" data-kel="${esc(b.kelompok)}" data-ikrar="1">` +
+      `<span class="kd">${esc(b.kode)}</span><span class="nm">${esc(b.kalimat)}</span>` +
       `${disaran ? `<span class="bd-lencana">disarankan</span>` : ""}${aktif ? `<span class="tanda" aria-label="dipakai sekarang">&#10003;</span>` : ""}</button>`
     );
   }
@@ -955,11 +1106,16 @@
     const rek = rekomendasi();
     const daftar = kelompokModal();
     if (!daftar.some((k) => k.id === S.modal.kelompok)) S.modal.kelompok = daftar.length ? daftar[0].id : "";
-    const cocok = (b) => !q || b.berkas.toLowerCase().includes(q) || namaTampil(b.berkas, S.modal.jenis).toLowerCase().includes(q);
+    const cocokBiasa = (b) => !q || b.berkas.toLowerCase().includes(q) || namaTampil(b.berkas, S.modal.jenis).toLowerCase().includes(q);
+    // Kelompok maya Ikrar Talak: cocok bila namanya, jenisnya, kalimatnya, atau nama berkasnya memuat kata yang dicari.
+    const butirIkrar = (b) => b.kalimat !== undefined && b.jenisNama !== undefined;
+    const cocokIkrar = (b) => !q || NAMA_IKRAR.toLowerCase().includes(q) || b.berkas.toLowerCase().includes(q) || b.kalimat.toLowerCase().includes(q) || String(b.jenisNama || "").toLowerCase().includes(q);
+    const cocok = (b) => (butirIkrar(b) ? cocokIkrar(b) : cocokBiasa(b));
+    const tombol = (b) => (butirIkrar(b) ? tombolIkrar(b, rek) : tombolBlangko(b, S.modal.jenis, rek));
     const kiri = daftar
       .map((k) => {
         const n = k.berkas.filter(cocok).length;
-        return `<button type="button" class="bd-kel${k.saran ? " saran" : ""}${k.id === S.modal.kelompok && !q ? " aktif" : ""}${q && n ? " ada" : ""}${q && !n ? " kosong" : ""}" data-kelmodal="${esc(k.id)}"><span class="kn">${esc(k.nama)}</span><span class="kj">${k.memuat ? "…" : q ? n : k.berkas.length}</span>${k.sub ? `<span class="ks">${esc(k.sub)}</span>` : ""}</button>`;
+        return `<button type="button" class="bd-kel${k.saran ? " saran" : ""}${k.ikrar ? " ikrar" : ""}${k.id === S.modal.kelompok && !q ? " aktif" : ""}${q && n ? " ada" : ""}${q && !n ? " kosong" : ""}" data-kelmodal="${esc(k.id)}"><span class="kn">${esc(k.nama)}</span><span class="kj">${k.memuat ? "…" : q ? n : k.berkas.length}</span>${k.sub ? `<span class="ks">${esc(k.sub)}</span>` : ""}</button>`;
       })
       .join("");
     let kanan = "";
@@ -967,7 +1123,7 @@
       for (const k of daftar) {
         if (k.saran) continue;
         const ns = k.berkas.filter(cocok);
-        if (ns.length) kanan += `<h5>${esc(k.nama)}</h5>${ns.map((b) => tombolBlangko(b, S.modal.jenis, rek)).join("")}`;
+        if (ns.length) kanan += `<h5>${esc(k.nama)}</h5>${ns.map(tombol).join("")}`;
       }
       if (!kanan) kanan = `<p class="bd-catat">${S.menu && S.menu.kelompok.some((k) => k.jenis === S.modal.jenis && !k.berkas) ? "Belum ada yang cocok; kelompok lain masih dimuat…" : "Tidak ada blangko yang cocok."}</p>`;
     } else {
@@ -975,7 +1131,7 @@
       if (!k) kanan = `<p class="bd-catat">${S.memuatMenu ? "Membaca menu Blangko Derry dari ABT…" : esc(S.galatMenu || "Tidak ada kelompok untuk jenis ini.")}</p>`;
       else if (k.memuat) kanan = `<p class="bd-catat" role="status">Membaca daftar blangko ${esc(k.nama)} dari ABT…</p>`;
       else if (k.galat) kanan = `<p class="bd-peringatan">${esc(k.galat)} <button type="button" class="bd-btn kecil" data-bd2="ulangkel" data-kel="${esc(k.id.replace(/^k:/, ""))}">Coba lagi</button></p>`;
-      else kanan = (k.sub ? `<p class="bd-ksub">${esc(k.nama)} · ${esc(k.sub)}</p>` : "") + (k.saran ? k.berkas.map((b) => `${tombolBlangko(b, S.modal.jenis, rek)}<p class="bd-catat bd-alasanrek">${esc(b.alasan || "")}</p>`).join("") : k.berkas.map((b) => tombolBlangko(b, S.modal.jenis, rek)).join("") || `<p class="bd-catat">Kelompok ini kosong.</p>`);
+      else kanan = (k.sub ? `<p class="bd-ksub">${esc(k.nama)} · ${esc(k.sub)}</p>` : "") + (k.saran ? k.berkas.map((b) => `${tombolBlangko(b, S.modal.jenis, rek)}<p class="bd-catat bd-alasanrek">${esc(b.alasan || "")}</p>`).join("") : k.berkas.map(tombol).join("") || `<p class="bd-catat">Kelompok ini kosong.</p>`);
     }
     m.innerHTML =
       `<div class="bd-mkotak" role="document"><div class="bd-mkepala"><b>Pilih blangko</b>` +
@@ -1023,7 +1179,7 @@
     const k = S.menu && S.menu.kelompok.find((x) => x.nama === kelompokNama);
     const b = k && k.berkas ? k.berkas.find((x) => x.berkas === nama) : null;
     if (!b) return toast("Blangko itu belum terbaca dari ABT.");
-    if (!kelompokBoleh(k)) return toast(`${NAMA_JENIS[k.jenis] || "Blangko"} di menu ${namaMenuTampil(k.nama)} bukan untuk peran ${adm() ? "akun yang sedang dilihat" : "akun Anda"}.`);
+    if (!kelompokBoleh({ ...k, ikrar: adalahBlangkoIkrar(k.jenis, b.berkas) })) return toast(`${NAMA_JENIS[k.jenis] || "Blangko"} di menu ${namaMenuTampil(k.nama)} bukan untuk peran ${adm() ? "akun yang sedang dilihat" : "akun Anda"}.`);
     tutupModal();
     const blangko = { berkas: b.berkas, kelompok: k.nama, judul: k.judul || namaMenuTampil(k.nama), a: b.a, b: b.b, jenis: k.jenis, folder: folderUntuk(k) };
     S.blangko = blangko;
@@ -4389,6 +4545,7 @@
       renderModal();
       const k = S.menu && S.menu.kelompok.find((x) => `k:${x.nama}` === S.modal.kelompok);
       if (k && !k.berkas) void muatBerkasKelompok(k);
+      if (S.modal.kelompok === "ikrar") void muatKelompokIkrar();
       return;
     }
     const bl = c("[data-bl]");
@@ -5065,7 +5222,7 @@
       takBerlaku: daftarTakBerlaku().map((b) => b.kode),
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
+    murni: { keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {
