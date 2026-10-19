@@ -95,3 +95,9 @@ aleta_bot/resources/
 
 # Dump crash Git Bash (bash.exe.stackdump) - bukan bagian proyek
 *.stackdump
+
+# 19 Okt 2026: folder KODE bernama "export.pdf"/"reports" di src/app tidak boleh ikut terabaikan (dulu tidak pernah masuk git).
+!manajemen_surat/src/app/**/export.pdf/
+!manajemen_surat/src/app/**/export.pdf/**
+!manajemen_surat/src/app/**/reports/
+!manajemen_surat/src/app/**/reports/**
