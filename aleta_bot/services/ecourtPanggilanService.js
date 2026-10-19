@@ -267,10 +267,22 @@ function jalurSeharusnya({ peran = "", persetujuan = "belum", lewatEcourt = fals
  *
  * @param {{
  *   tanggalPanggilan: any, tanggalSidang: any, jalur: string,
- *   diterima?: boolean|null,
+ *   diterima?: boolean|null, tanggalDiterima?: any,
  * }} opsi
+ *
+ * ============================================================================
+ * SURAT TERCATAT DIHITUNG DARI TANGGAL DITERIMA, BUKAN TANGGAL DIKIRIM
+ * ============================================================================
+ *
+ * Sampai 1.205.11 tenggang surat tercatat diukur dari tanggal surat
+ * diserahkan ke kantor pos. Perkara 632/Pdt.G/2026/PA.Dgl: dikirim pos
+ * 9 Oktober, relaasnya (tanggal diterima) 19 Oktober = hari sidang, tetapi
+ * dinilai "patut 10 hari". Panggilan yang baru sampai pada hari sidang tidak
+ * patut (keputusan hakim pengguna, 19 Oktober 2026). Bila tanggal diterima
+ * diketahui, tenggangnya diukur dari tanggal itu; tanggal kirim tetap
+ * dilaporkan sebagai selisihKirim.
  */
-function nilaiKepatutan({ tanggalPanggilan, tanggalSidang, jalur = "biasa", diterima = null } = {}) {
+function nilaiKepatutan({ tanggalPanggilan, tanggalSidang, jalur = "biasa", diterima = null, tanggalDiterima = null } = {}) {
   const ambang = ambangJalur(jalur);
 
   const dasar = {
@@ -301,6 +313,22 @@ function nilaiKepatutan({ tanggalPanggilan, tanggalSidang, jalur = "biasa", dite
 
   if (!tepatWaktu) {
     return { ...dasar, dinilai: true, patut: false, selisih, alasan: "tenggang_kurang_dari_ambang" };
+  }
+
+  // Surat tercatat yang tanggal diterimanya diketahui: tenggang sungguhan
+  // adalah jarak dari tanggal diterima ke hari sidang.
+  if (ambang.perluDiterima && diterima === true && tanggalDiterima) {
+    const selisihTerima = selisihHari(tanggalDiterima, tanggalSidang, { hariKerja: ambang.hariKerja });
+    if (selisihTerima !== null) {
+      const tambahan = { selisihKirim: selisih, tanggalDiterima: teksTanggal(tanggalDiterima) };
+      if (selisihTerima < 0) {
+        return { ...dasar, ...tambahan, dinilai: true, patut: false, selisih: selisihTerima, alasan: "diterima_setelah_hari_sidang" };
+      }
+      if (selisihTerima < ambang.hari) {
+        return { ...dasar, ...tambahan, dinilai: true, patut: false, selisih: selisihTerima, alasan: "diterima_kurang_dari_ambang" };
+      }
+      return { ...dasar, ...tambahan, dinilai: true, patut: true, selisih: selisihTerima, alasan: "" };
+    }
   }
 
   // Tenggangnya cukup. Untuk surat tercatat masih ada syarat kedua.
@@ -443,6 +471,9 @@ function bacaRelaas(relaas) {
     // Diterima bila lacak kiriman berhasil ATAU jurusita sudah mencatat
     // pelaksanaan relaasnya - keduanya bukti penerimaan yang sah.
     diterima: statusBerhasil || adaPelaksanaan ? true : relaas.statusPos === null ? null : false,
+    // Tanggal relaas surat tercatat adalah tanggal DITERIMANYA (lihat di
+    // atas). Lacak kiriman tanpa relaas tidak membawa tanggal terima.
+    tanggalDiterima: adaPelaksanaan ? relaas.tanggalRelaas : null,
     bukti: statusBerhasil ? "lacak kiriman" : adaPelaksanaan ? "relaas jurusita" : "",
   };
 }
@@ -624,6 +655,7 @@ function susunKeadaanPanggilan({
     let tanggalPanggilan = null;
     let diterima = null;
     let buktiPenerimaan = "";
+    let tanggalDiterima = null;
 
     if (jejakRelaas.tanggalKirim) {
       // ==================================================================
@@ -659,6 +691,7 @@ function susunKeadaanPanggilan({
                 : "biasa";
       tanggalPanggilan = jejakRelaas.tanggalKirim;
       diterima = jejakRelaas.diterima;
+      tanggalDiterima = jejakRelaas.tanggalDiterima || null;
       buktiPenerimaan = jejakRelaas.bukti;
     }
 
@@ -757,6 +790,7 @@ function susunKeadaanPanggilan({
       // kelirunya kebetulan berambang lebih longgar.
       jalur: seharusnya,
       diterima,
+      tanggalDiterima,
     });
 
     // ====================================================================
