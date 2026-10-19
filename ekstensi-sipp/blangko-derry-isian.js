@@ -310,8 +310,12 @@
     tjBuka: null,
     tjSisi: true,
     tjRiw: { u: [], r: [] },
+    tjMenu: false, // 19 Okt (tahap 2): menu "Lainnya" tanya jawab saksi terbuka
+    tjLipat: false, // 19 Okt (tahap 2): lipatan "Lihat keterangan saksi" (putusan / peran hakim, hanya baca) terbuka
+    tjTujuan: null, // 19 Okt (tahap 2): { kunci, i, aksi: "tukar"|"salin" } - memilih saksi tujuan bila saksinya lebih dari dua
     // Jawaban saksi otomatis & pilihan pengetahuan saksi (blangko-derry-saksi.js): pil = kunci saksi -> {modus, sumber, alasan[]}.
-    sk: { pil: {}, perkara: "", alasan: null, status: {}, tertahan: {}, konfirmasi: {}, sig: {}, rantai: Promise.resolve() },
+    // alasanPosita: alasan yang terbaca dari posita perkara ini (centang "sebagian"); lainBuka: kunci saksi -> "Alasan lain" terbuka.
+    sk: { pil: {}, perkara: "", alasan: null, alasanPosita: { perkara: "", keadaan: "", sesuai: null }, lainBuka: {}, status: {}, tertahan: {}, konfirmasi: {}, sig: {}, rantai: Promise.resolve() },
     semua: null, // "Lihat semua isi data"
     semuaBuka: false,
     prat: { terbuka: false, memuat: false, rtf: null, html: "", galat: "", suntingPenuh: false, kotor: true, penanda: [] },
@@ -2424,8 +2428,18 @@
     }
     S.tjBuka = kunci;
     S.tjRiw = { u: [], r: [] };
+    S.tjMenu = false;
+    S.tjTujuan = null;
+    // 19 Okt (tahap 2): putusan / peran hakim hanya MEMBACA - satu saksi, tanpa set pertanyaan dan tanpa jawaban otomatis.
+    if (deretTj().hanyaBaca) {
+      renderTj();
+      await muatTj(kunci);
+      renderTj();
+      return;
+    }
     const pas = S.tjSisi ? tjPasangan(kunci) : null;
     renderTj();
+    void muatAlasanPosita(); // berjalan sendiri: daftar alasan menyesuaikan diri begitu posita terbaca
     await Promise.all([...(pas || [kunci]).map((k) => muatTj(k)), muatSetSaksi(), muatPilSaksi(), muatAlasanSaksi()]);
     renderTj();
     void isiOtomatis(pas || [kunci], {});
@@ -2544,7 +2558,35 @@
       }
     }
   }
-  const ambilUsulan = (muatan) => ambilPortal(API_USULAN, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(muatan) }, "Menyusun jawaban saksi");
+  /**
+   * Alasan yang terbaca dari POSITA perkara ini (rute 'alasan-posita' bot - sumber yang sama dengan "Susun saksi" di panel
+   * ABT). Dipakai centang "Hanya sebagian alasan yang ia ketahui": hanya alasan yang ada di posita tampil langsung, sisanya
+   * dilipat di "Alasan lain". Gagal/belum terbaca = semua alasan tampil seperti dahulu.
+   */
+  async function muatAlasanPosita() {
+    const id = perkaraId();
+    if (!id || S.sk.alasanPosita.perkara === id) return;
+    S.sk.alasanPosita = { perkara: id, keadaan: "memuat", sesuai: null };
+    let posita = "";
+    try {
+      const b = await bacaBahanSaksi(false);
+      posita = (b && b.posita) || "";
+    } catch {
+      /* posita tidak terbaca dari ABT: server membaca posita dari SIPP */
+    }
+    let hasil = { perkara: id, keadaan: "gagal", sesuai: null };
+    try {
+      const d = await ambilUsulan({ nomorPerkara: nomorPerkara(), sumber: "alasan-posita", posita });
+      const ap = d && d.alasanPosita;
+      if (ap && ap.ok && Array.isArray(ap.alasan)) hasil = { perkara: id, keadaan: "siap", sesuai: new Set(ap.alasan.map(String)) };
+    } catch {
+      /* semua alasan tampil */
+    }
+    if (S.sk.alasanPosita.perkara !== id) return;
+    S.sk.alasanPosita = hasil;
+    renderTj();
+  }
+  const ambilUsulan = (muatan) => ambilPortal(API_USULAN,{ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(muatan) }, "Menyusun jawaban saksi");
   const idJenisSipp = () => (typeof idJenisPerkaraSipp === "function" ? idJenisPerkaraSipp((S.pk && S.pk.jenisPerkara) || "") : String((S.pk && S.pk.jenisPerkara) || ""));
   /** alur_perkara_id SIPP: dari data perkara bila ada, selain itu dari nomor perkara (15 gugatan, 16 permohonan, 17 gugatan sederhana). */
   const alurSipp = () => {
@@ -2696,7 +2738,18 @@
         const mati = tjSiap([k]) ? "" : " disabled";
         const modus = m.DAFTAR_MODUS.map(([n, nama]) => `<option value="${esc(n)}"${n === p.modus ? " selected" : ""}>${esc(nama)}</option>`).join("");
         const sumber = m.DAFTAR_SUMBER.map(([n, nama]) => `<option value="${esc(n)}"${n === p.sumber ? " selected" : ""}>cerita dari ${esc(nama)}</option>`).join("");
-        const centang = alasan.map((a) => `<label class="bd-skcentang"><input type="checkbox" data-skkunci="${esc(k)}" data-skfld="alasan" value="${esc(a.kunci)}"${p.alasan.includes(a.kunci) ? " checked" : ""}${mati}> ${esc(a.label)}</label>`).join("");
+        // 19 Okt (tahap 2): hanya alasan yang ada di posita perkara ini tampil langsung; sisanya di "Alasan lain" (dapat dibuka).
+        // Semua kotak tetap ada di halaman (yang terlipat hanya disembunyikan) supaya pilihan tidak hilang saat menyimpan.
+        const bagi = m.bagiAlasan(alasan, S.sk.alasanPosita.sesuai, p.alasan);
+        const satuCentang = (a) => `<label class="bd-skcentang"><input type="checkbox" data-skkunci="${esc(k)}" data-skfld="alasan" value="${esc(a.kunci)}"${p.alasan.includes(a.kunci) ? " checked" : ""}${mati}> ${esc(a.label)}</label>`;
+        const lainBuka = Boolean(S.sk.lainBuka[k]);
+        const centang =
+          bagi.utama.map(satuCentang).join("") +
+          (bagi.lain.length
+            ? `<button type="button" class="bd-btn kecil bd-skalasanlain" data-bd2="alasanlain" data-kunci="${esc(k)}" aria-expanded="${lainBuka}" title="Alasan yang tidak disebut di gugatan perkara ini">Alasan lain ${lainBuka ? "▾" : "▸"} (${bagi.lain.length})</button>` +
+              `<span class="bd-skalasanisi" data-skalasanlain="${esc(k)}"${lainBuka ? "" : " hidden"}>${bagi.lain.map(satuCentang).join("")}</span>`
+            : "");
+        const ketPosita = bagi.dariPosita ? `<p class="bd-catat">Yang tampil adalah alasan yang disebut di gugatan perkara ini.</p>` : "";
         const st = S.sk.status[k];
         const tt = S.sk.tertahan[k] || [];
         const konf = S.sk.konfirmasi[k];
@@ -2704,7 +2757,7 @@
           `<div class="bd-skkartu" data-skkartu="${esc(k)}"><b class="bd-sknama">${esc(it.tj.sebutan)}</b>` +
           `<label class="bd-sklbl">Yang diketahui saksi<select data-skkunci="${esc(k)}" data-skfld="modus"${mati}>${modus}</select></label>` +
           (p.modus === "dari-cerita" ? `<label class="bd-sklbl">Siapa yang bercerita<select data-skkunci="${esc(k)}" data-skfld="sumber"${mati}>${sumber}</select></label>` : "") +
-          (p.modus === "sebagian" ? `<fieldset class="bd-skalasan"><legend>Alasan yang ia ketahui</legend>${centang}</fieldset>` : "") +
+          (p.modus === "sebagian" ? `<fieldset class="bd-skalasan"><legend>Alasan yang ia ketahui</legend>${ketPosita}${centang}</fieldset>` : "") +
           (st && st.teks ? `<p class="bd-catat" role="status">${esc(st.teks)}</p>` : "") +
           (st && st.galat ? `<p class="bd-peringatan">${esc(st.galat)}</p>` : "") +
           (tt.length
@@ -2736,7 +2789,8 @@
         renderTj();
         continue;
       }
-      let rows = t.rows.filter((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim());
+      // 19 Okt (tahap 2): satu jawaban satu paragraf - baris baru di tengah kalimat dilebur (SIPP/ABT membuang <br>).
+      let rows = t.rows.filter((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim()).map((r) => ({ ...r, jawab: rapikanJawabSaksi(r.jawab) }));
       const gantiTj = [];
       rows = rows.map((r) => {
         const a = normalAbt(r.tanya);
@@ -2783,17 +2837,19 @@
     }
     laporKeKerangka();
   }
-  const salinTj = (ps) => JSON.stringify(ps.map((k) => (S.tj[k] ? S.tj[k].rows : [])));
+  // 19 Okt (tahap 2): riwayat menyimpan kunci saksinya juga, supaya satu langkah yang menyentuh saksi mana pun (tukar jawaban
+  // dengan saksi lain) dapat diurungkan dari tampilan berdampingan maupun satu per satu.
+  const salinTj = (ps) => JSON.stringify({ k: ps, d: ps.map((k) => (S.tj[k] ? S.tj[k].rows : [])) });
   function tjCatat(ps) {
     S.tjRiw.u.push(salinTj(ps));
     if (S.tjRiw.u.length > 50) S.tjRiw.u.shift();
     S.tjRiw.r = [];
   }
-  function tjPulih(ps, teks) {
-    const d = JSON.parse(teks);
-    ps.forEach((k, i) => {
+  function tjPulih(teks) {
+    const o = JSON.parse(teks);
+    o.k.forEach((k, i) => {
       if (S.tj[k]) {
-        S.tj[k].rows = d[i];
+        S.tj[k].rows = o.d[i];
         S.tj[k].berubah = true;
       }
     });
@@ -3253,7 +3309,8 @@
     }
     if (S.blangko.jenis !== "rel" && bolehTulis()) {
       alat.push(`<button type="button" class="bd-btn kecil" data-bd2="pakaisaran" title="Isi kotak yang masih kosong dengan saran dari gugatan dan data perkara">Isi dari gugatan (posita)</button>`);
-      if (tj.length) alat.push(`<button type="button" class="bd-btn kecil" data-bd2="bukatj">Set pertanyaan saksi</button>`);
+      // 19 Okt (tahap 2): "Set pertanyaan saksi" tidak lagi di deret ini - fungsinya sudah ada lewat tombol saksi
+      // ("✓ Saksi 1 Penggugat · 15 baris") di bagian tanya jawab saksi, yang membuka daftar pertanyaan + pilihan set.
       if (grid.some((b) => b.khusus === "bukti")) alat.push(`<button type="button" class="bd-btn kecil" data-bd2="ktpbukti" title="Tanggal KTP pihak dibaca dari berkas KTP e-Court">Ambil tanggal KTP dari bukti</button>`);
     }
     cari("#bd-alatisi", w).innerHTML = alat.join("");
@@ -3382,25 +3439,74 @@
     if (!utama || !utama.length) return "";
     return `Disarankan: ${utama.map((x) => x.judul).join(" + ")}${utama[0].sebab ? ` (${utama[0].sebab})` : ""}`;
   }
+  // ──────────────────────────────────────────────────────────────────────────
+  // 19 Okt (tahap 2): tombol tanya jawab saksi menurut jenis blangko & peran
+  // ──────────────────────────────────────────────────────────────────────────
+  /** Peran hakim tanpa peran panitera pengganti: hanya membaca tanya jawab saksi (berita acara disusun PP). */
+  const hakimSaja = () => {
+    const p = peranAkun();
+    return p.includes("hakim") && !p.includes("pp");
+  };
+  /**
+   * Deret tombol tanya jawab (lihat deretTombol di blangko-derry-saksi.js): hanya penyusun berita acara (PP/admin) pada
+   * blangko BAS yang menyunting; putusan/penetapan dan peran hakim hanya membaca, tanpa satu pun tombol tanya jawab.
+   */
+  function deretTj() {
+    const m = SK();
+    const berpasangan = Boolean(S.tjBuka && S.tjSisi && tjPasangan(S.tjBuka));
+    const o = { jenis: S.blangko ? S.blangko.jenis : "", bolehTulis: bolehTulis(), hakimSaja: hakimSaja(), berpasangan };
+    if (m && typeof m.deretTombol === "function") return m.deretTombol(o);
+    const baca = !(o.jenis === "bas" && o.bolehTulis && !o.hakimSaja);
+    return { hanyaBaca: baca, atas: [], urungUlang: !baca, lainnya: [], bawah: baca ? [] : ["simpan"] };
+  }
+  /** Saksi lain (selain `kunci`) yang dapat menjadi tujuan tukar/salin jawaban. */
+  const tujuanLain = (kunci) => kunciSaksiSemua().filter((x) => x !== kunci && tjItem(x));
+  const namaSaksiTj = (kunci) => (tjItem(kunci) ? tjItem(kunci).tj.sebutan : kunci);
+
   function renderTj() {
     const tombol = cari("#bd-tjtombol", wadah.isian);
     const wad = cari("#bd-tjwadah", wadah.isian);
     if (!tombol || !wad) return;
     const items = daftarPerlu().filter((x) => x.jenis === "tj");
-    const ps = S.tjBuka && S.tjSisi ? tjPasangan(S.tjBuka) : null;
-    tombol.innerHTML = items.length
-      ? `<span class="bd-lbl">Tanya jawab saksi</span>${ikonSumber(`tj:${items[0].tj.kunci}`, "Tanya jawab saksi")}` +
-        items
-          .map((it) => {
-            const k = it.tj.kunci;
-            const t = S.tj[k];
-            const n = t && t.rows ? t.rows.filter((r) => String(r.jawab || "").trim()).length : 0;
-            const terisiAbt = !t && S.nilai[it.kode] && S.nilai[it.kode].status === "terisi";
-            const aktif = S.tjBuka === k || (ps && ps.includes(k));
-            return `<button type="button" class="bd-btn kecil${aktif ? " kuning" : ""}" data-tj="${esc(k)}" aria-expanded="${aktif}">${n || terisiAbt ? "✓ " : ""}${esc(it.tj.sebutan)}${n ? ` · ${n} baris` : terisiAbt ? " · tersimpan di ABT" : " · belum diisi"}${t && t.berubah ? " · belum disimpan" : ""}</button>`;
-          })
-          .join("")
-      : "";
+    const deret = deretTj();
+    const ps = !deret.hanyaBaca && S.tjBuka && S.tjSisi ? tjPasangan(S.tjBuka) : null;
+    const tombolSaksi = (it) => {
+      const k = it.tj.kunci;
+      const t = S.tj[k];
+      const n = t && t.rows ? t.rows.filter((r) => String(r.jawab || "").trim()).length : 0;
+      const terisiAbt = !t && S.nilai[it.kode] && S.nilai[it.kode].status === "terisi";
+      const aktif = S.tjBuka === k || (ps && ps.includes(k));
+      return `<button type="button" class="bd-btn kecil${aktif ? " kuning" : ""}" data-tj="${esc(k)}" aria-expanded="${aktif}">${n || terisiAbt ? "✓ " : ""}${esc(it.tj.sebutan)}${n ? ` · ${n} baris` : terisiAbt ? " · tersimpan di ABT" : " · belum diisi"}${t && t.berubah ? " · belum disimpan" : ""}</button>`;
+    };
+    const judulBagian = items.length ? `<span class="bd-lbl">Tanya jawab saksi</span>${ikonSumber(`tj:${items[0].tj.kunci}`, "Tanya jawab saksi")}` : "";
+    const sidangTeks = `sidang ke-${sidangUrutan()}${S.pk && S.pk.sidangDipilih ? ` (${tglIndo(S.pk.sidangDipilih.tanggal)})` : ""}`;
+
+    // ── Hanya baca (putusan/penetapan, peran hakim): ringkas, terlipat, tanpa tombol sunting ──
+    if (deret.hanyaBaca) {
+      tombol.innerHTML = items.length
+        ? `${judulBagian}<button type="button" class="bd-btn kecil" data-bd2="lipattj" aria-expanded="${S.tjLipat}">${S.tjLipat ? "▾" : "▸"} Lihat keterangan saksi</button>${S.tjLipat ? items.map(tombolSaksi).join("") : ""}`
+        : "";
+      const it = S.tjLipat && S.tjBuka ? tjItem(S.tjBuka) : null;
+      if (!it) {
+        wad.innerHTML = "";
+        return;
+      }
+      const t = S.tj[S.tjBuka];
+      const rows = (t && t.rows) || [];
+      wad.innerHTML =
+        `<div class="bd-tjwadah bd-tjbaca"><div class="bd-tjalat"><b>${esc(it.tj.sebutan)}</b><span class="bd-chip">${esc(sidangTeks)}</span></div>` +
+        `<p class="bd-catat">Hanya dibaca. Tanya jawab saksi disusun di berita acara sidang.</p>` +
+        (t && t.memuat ? `<p class="bd-catat" role="status">Membaca keterangan ${esc(it.tj.sebutan)} dari ABT…</p>` : "") +
+        (t && t.galat ? `<p class="bd-peringatan">${esc(t.galat)}</p>` : "") +
+        `<div class="bd-tjtabel"><table><thead><tr><th class="no-u">No</th><th>Pertanyaan</th><th>Jawaban</th></tr></thead><tbody>${
+          rows.map((r, i) => `<tr><td class="no-u">${i + 1}</td><td>${esc(r.tanya)}</td><td>${esc(r.jawab)}</td></tr>`).join("") ||
+          `<tr><td colspan="3" class="bd-catat">${t && t.memuat ? "Membaca dari ABT…" : "Belum ada keterangan saksi di ABT."}</td></tr>`
+        }</tbody></table></div></div>`;
+      return;
+    }
+
+    // ── Penyusun berita acara (PP/admin) pada BAS ──
+    tombol.innerHTML = items.length ? `${judulBagian}${items.map(tombolSaksi).join("")}` : "";
     if (!S.tjBuka) {
       wad.innerHTML = "";
       return;
@@ -3411,14 +3517,24 @@
       return;
     }
     const t = S.tj[S.tjBuka];
-    const sidangTeks = `sidang ke-${sidangUrutan()}${S.pk && S.pk.sidangDipilih ? ` (${tglIndo(S.pk.sidangDipilih.tanggal)})` : ""}`;
     const alatAtas = (judul, kunciDaftar) =>
       `<div class="bd-tjalat"><b>${esc(judul)}</b><span class="bd-chip">${esc(sidangTeks)}</span>` +
       (tjPasangan(S.tjBuka) ? `<span class="bd-seg" role="tablist" aria-label="Cara menampilkan saksi"><button type="button" role="tab" data-tjmode="sisi" aria-selected="${S.tjSisi}">Berdampingan</button><button type="button" role="tab" data-tjmode="satu" aria-selected="${!S.tjSisi}">Satu per satu</button></span>` : "") +
       `<label class="bd-lbl" for="bd-muattpl">Set pertanyaan</label><select id="bd-muattpl" title="${esc(alasanSetSaksi())}">${pilihanSetSaksi(t)}</select>` +
-      `<button type="button" class="bd-btn kecil" data-bd2="muattpl" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Muat</button><button type="button" class="bd-btn kecil" data-bd2="tambahtj" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Tambah baris</button>` +
-      `<button type="button" class="bd-btn kecil utama" data-bd2="simpantj" data-kunci="${esc(kunciDaftar.join("|"))}" ${bolehTulis() && tjSiap(kunciDaftar) ? "" : "disabled"}>Simpan ke ABT</button><button type="button" class="bd-btn kecil" data-bd2="tutuptj">Selesai</button></div>` +
+      `<button type="button" class="bd-btn kecil" data-bd2="muattpl" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Muat</button><button type="button" class="bd-btn kecil" data-bd2="tambahtj" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Tambah baris</button></div>` +
       ketSetSaksi();
+    // Urungkan/Ulangi + menu "Lainnya" (fungsi yang jarang dipakai, dengan kalimat yang jelas).
+    const alatKedua = () =>
+      `<div class="bd-tjalat bd-sbalat" role="toolbar" aria-label="Susun keterangan saksi">` +
+      `<button type="button" class="bd-btn kecil" data-sbaksi="urung" ${S.tjRiw.u.length ? "" : "disabled"}>↶ Urungkan</button><button type="button" class="bd-btn kecil" data-sbaksi="ulang" ${S.tjRiw.r.length ? "" : "disabled"}>↷ Ulangi</button>` +
+      (deret.lainnya.length
+        ? `<span class="bd-lainnya"><button type="button" class="bd-btn kecil" data-bd2="lainnya" aria-haspopup="menu" aria-expanded="${S.tjMenu}">Lainnya ▾</button>` +
+          `<span class="bd-lainnyamenu" role="menu" aria-label="Lainnya"${S.tjMenu ? "" : " hidden"}>${deret.lainnya.map((x) => `<button type="button" role="menuitem" class="bd-btn kecil" data-sbaksi="${esc(x.kunci)}" title="${esc(x.title)}">${esc(x.label)}</button>`).join("")}</span></span>`
+        : "") +
+      `<span class="bd-catat" id="bd-sbstat" role="status"></span></div>`;
+    // "Simpan ke ABT" di BAWAH tabel keterangan saksi (sesudah baris terakhir).
+    const kaki = (kunciDaftar) =>
+      `<div class="bd-tjalat bd-tjkaki"><button type="button" class="bd-btn kecil utama" data-bd2="simpantj" data-kunci="${esc(kunciDaftar.join("|"))}" ${bolehTulis() && tjSiap(kunciDaftar) ? "" : "disabled"}>Simpan ke ABT</button></div>`;
     // JJ2: keterangan penulisan otomatis jawab-menjawab (ditulis / tidak rapi -> Salin).
     const otoTeks = (k) => {
       const o = S.tjOto && S.tjOto[k];
@@ -3436,43 +3552,69 @@
       if (x.tersimpanJam && !x.berubah) return `<p class="bd-catat">✓ tersimpan di ABT ${esc(x.tersimpanJam)}${x.ganti ? ` (huruf ${esc(x.ganti)} diganti ke bentuk aman ABT)` : ""}</p>`;
       return "";
     };
+    // Pilihan saksi tujuan (tukar/salin) bila saksinya lebih dari dua.
+    const pilihTujuan = (kunci, i) => {
+      const x = S.tjTujuan;
+      if (!x || x.kunci !== kunci || x.i !== i) return "";
+      const daftar = tujuanLain(kunci);
+      return (
+        `<span class="bd-tujuan" role="group" aria-label="Pilih saksi tujuan">${x.aksi === "salin" ? "Salin ke" : "Tukar dengan"}: ` +
+        daftar.map((d) => `<button type="button" class="bd-chip bd-tombolchip" data-jaksi="${x.aksi}|${esc(kunci)}|${i}|${esc(d)}">${esc(namaSaksiTj(d))}</button>`).join("") +
+        `<button type="button" class="bd-chip bd-tombolchip" data-jaksi="batal|${esc(kunci)}|${i}">Batal</button></span>`
+      );
+    };
+    const banyakSaksi = kunciSaksiSemua().length;
+    const judulTukar = (lain) => (banyakSaksi > 2 ? "Tukar jawaban ini dengan jawaban saksi lain (pilih saksinya)" : `Tukar jawaban ini dengan jawaban ${lain} di baris yang sama (pertanyaan tetap)`);
     if (ps) {
       const A = (S.tj[ps[0]] && S.tj[ps[0]].rows) || [];
       const B = (S.tj[ps[1]] && S.tj[ps[1]].rows) || [];
       const n = Math.max(A.length, B.length);
       const na = tjItem(ps[0]).tj.sebutan;
       const nb = tjItem(ps[1]).tj.sebutan;
+      const mini = (i, k, nama, lain, simbolSalin) =>
+        `<span class="bd-sbmini"><button type="button" class="bd-ikon" data-sbganti="${i}.${k}" title="Ganti kalimat, artinya sama" aria-label="Ganti kalimat jawaban ${esc(nama)}">⟳</button>` +
+        `<button type="button" class="bd-ikon" data-sbsalin="${i}.${k}" title="Salin ke ${esc(lain)}" aria-label="Salin jawaban ke ${esc(lain)}">${simbolSalin}</button>` +
+        `<button type="button" class="bd-ikon" data-jaksi="pilihtukar|${esc(ps[k])}|${i}" title="${esc(judulTukar(lain))}" aria-label="Tukar jawaban ${esc(nama)} nomor ${i + 1}">⇄</button>` +
+        `<button type="button" class="bd-ikon" data-jaksi="naik|${esc(ps[k])}|${i}" title="Naikkan jawaban ini satu baris (pertanyaan tetap di tempatnya)" aria-label="Naikkan jawaban ${esc(nama)} nomor ${i + 1}" ${i > 0 ? "" : "disabled"}>⇧</button>` +
+        `<button type="button" class="bd-ikon" data-jaksi="turun|${esc(ps[k])}|${i}" title="Turunkan jawaban ini satu baris (pertanyaan tetap di tempatnya)" aria-label="Turunkan jawaban ${esc(nama)} nomor ${i + 1}" ${i < n - 1 ? "" : "disabled"}>⇩</button></span>${pilihTujuan(ps[k], i)}`;
       const baris = Array.from({ length: n }, (_, i) => {
         const a = A[i] || { tanya: "", jawab: "" };
         const b = B[i] || { tanya: "", jawab: "" };
         const st = !a.jawab.trim() || !b.jawab.trim() ? ["belum diisi", ""] : norm(a.jawab) === norm(b.jawab) ? ["jawaban sama persis", "sebagian"] : ["kalimat berbeda", "ok"];
         const qBeda = norm(a.tanya) !== norm(b.tanya) && b.tanya.trim();
         return (
-          `<div class="bd-sbrow"><div class="bd-sbno"><b>${i + 1}</b><span class="bd-sbgerak"><button type="button" class="bd-ikon" data-sbnaik="${i}" aria-label="Naikkan baris ${i + 1}">↑</button><button type="button" class="bd-ikon" data-sbturun="${i}" aria-label="Turunkan baris ${i + 1}">↓</button><button type="button" class="bd-ikon" data-sbhapus="${i}" aria-label="Hapus baris ${i + 1}">✕</button></span></div>` +
+          `<div class="bd-sbrow"><div class="bd-sbno"><b>${i + 1}</b><span class="bd-sbgerak"><button type="button" class="bd-ikon" data-sbnaik="${i}" title="Naikkan baris tanya jawab ini (pertanyaan dan kedua jawaban)" aria-label="Naikkan baris ${i + 1}">↑</button><button type="button" class="bd-ikon" data-sbturun="${i}" title="Turunkan baris tanya jawab ini (pertanyaan dan kedua jawaban)" aria-label="Turunkan baris ${i + 1}">↓</button><button type="button" class="bd-ikon" data-sbhapus="${i}" title="Hapus baris ini untuk kedua saksi" aria-label="Hapus baris ${i + 1}">✕</button></span></div>` +
           `<div class="bd-sbq"><textarea class="bd-ed" rows="2" data-sbq="${i}" aria-label="Pertanyaan ${i + 1}">${esc(a.tanya)}</textarea>${qBeda ? `<p class="bd-sbbeda">Pertanyaan ${esc(nb)} berbeda: “${esc(b.tanya)}” <button type="button" class="bd-chip bd-tombolchip" data-sbaksi="qsama:${i}">Samakan</button></p>` : ""}<span class="bd-chip ${st[1]}">${st[0]}</span></div>` +
-          `<div class="bd-sba"><span class="bd-sblabel">${esc(na)}</span><textarea class="bd-ed" rows="3" data-sba="${i}" data-sk="0" aria-label="Jawaban ${esc(na)} nomor ${i + 1}">${esc(a.jawab)}</textarea><span class="bd-sbmini"><button type="button" class="bd-ikon" data-sbganti="${i}.0" title="Ganti kalimat, artinya sama" aria-label="Ganti kalimat jawaban ${esc(na)}">⟳</button><button type="button" class="bd-ikon" data-sbsalin="${i}.0" title="Salin ke ${esc(nb)}" aria-label="Salin jawaban ke ${esc(nb)}">→</button></span></div>` +
-          `<div class="bd-sba"><span class="bd-sblabel">${esc(nb)}</span><textarea class="bd-ed" rows="3" data-sba="${i}" data-sk="1" aria-label="Jawaban ${esc(nb)} nomor ${i + 1}">${esc(b.jawab)}</textarea><span class="bd-sbmini"><button type="button" class="bd-ikon" data-sbganti="${i}.1" title="Ganti kalimat, artinya sama" aria-label="Ganti kalimat jawaban ${esc(nb)}">⟳</button><button type="button" class="bd-ikon" data-sbsalin="${i}.1" title="Salin ke ${esc(na)}" aria-label="Salin jawaban ke ${esc(na)}">←</button></span></div></div>`
+          `<div class="bd-sba"><span class="bd-sblabel">${esc(na)}</span><textarea class="bd-ed" rows="3" data-sba="${i}" data-sk="0" aria-label="Jawaban ${esc(na)} nomor ${i + 1}">${esc(a.jawab)}</textarea>${mini(i, 0, na, nb, "→")}</div>` +
+          `<div class="bd-sba"><span class="bd-sblabel">${esc(nb)}</span><textarea class="bd-ed" rows="3" data-sba="${i}" data-sk="1" aria-label="Jawaban ${esc(nb)} nomor ${i + 1}">${esc(b.jawab)}</textarea>${mini(i, 1, nb, na, "←")}</div></div>`
         );
       }).join("");
       wad.innerHTML =
         `<div class="bd-tjwadah bd-sbs">${alatAtas(`${na} dan ${nb}`, ps)}` +
-        `<div class="bd-tjalat bd-sbalat" role="toolbar" aria-label="Susun keterangan saksi"><button type="button" class="bd-btn kecil" data-sbaksi="urut">Susun urutan</button><button type="button" class="bd-btn kecil" data-sbaksi="samakanq">Samakan pertanyaan</button><button type="button" class="bd-btn kecil" data-sbaksi="salinsemua">Salin jawaban ke saksi 2 (kalimat diganti)</button><button type="button" class="bd-btn kecil" data-sbaksi="bersih">Bersihkan kalimat penutup</button><button type="button" class="bd-btn kecil" data-sbaksi="urung" ${S.tjRiw.u.length ? "" : "disabled"}>↶ Urungkan</button><button type="button" class="bd-btn kecil" data-sbaksi="ulang" ${S.tjRiw.r.length ? "" : "disabled"}>↷ Ulangi</button><span class="bd-catat" id="bd-sbstat" role="status"></span></div>` +
-        `${panelPengetahuan(ps)}${status(ps[0])}${status(ps[1])}<div class="bd-sbhead" aria-hidden="true"><span>No</span><span>Pertanyaan</span><span>${esc(na)}</span><span>${esc(nb)}</span></div><div class="bd-sblist">${baris || `<p class="bd-catat" style="padding:10px">Belum ada pertanyaan. Muat set pertanyaan atau tambah baris.</p>`}</div></div>`;
+        `${alatKedua()}` +
+        `${panelPengetahuan(ps)}${status(ps[0])}${status(ps[1])}<div class="bd-sbhead" aria-hidden="true"><span>No</span><span>Pertanyaan</span><span>${esc(na)}</span><span>${esc(nb)}</span></div><div class="bd-sblist">${baris || `<p class="bd-catat" style="padding:10px">Belum ada pertanyaan. Muat set pertanyaan atau tambah baris.</p>`}</div>${kaki(ps)}</div>`;
       tumbuhkanSemua(wad);
       return;
     }
     const rows = (t && t.rows) || [];
+    const kk = S.tjBuka;
+    const miniSatu = (i) =>
+      `<span class="bd-sbmini"><button type="button" class="bd-ikon" data-jaksi="ganti|${esc(kk)}|${i}" title="Ganti kalimat, artinya sama" aria-label="Ganti kalimat jawaban nomor ${i + 1}">⟳</button>` +
+      `<button type="button" class="bd-ikon" data-jaksi="pilihsalin|${esc(kk)}|${i}" title="Salin jawaban ini ke saksi lain" aria-label="Salin jawaban nomor ${i + 1} ke saksi lain" ${tujuanLain(kk).length ? "" : "disabled"}>⧉</button>` +
+      `<button type="button" class="bd-ikon" data-jaksi="pilihtukar|${esc(kk)}|${i}" title="${esc(judulTukar("saksi lain"))}" aria-label="Tukar jawaban nomor ${i + 1} dengan saksi lain" ${tujuanLain(kk).length ? "" : "disabled"}>⇄</button>` +
+      `<button type="button" class="bd-ikon" data-jaksi="naik|${esc(kk)}|${i}" title="Naikkan jawaban ini satu baris (pertanyaan tetap di tempatnya)" aria-label="Naikkan jawaban nomor ${i + 1}" ${i > 0 ? "" : "disabled"}>⇧</button>` +
+      `<button type="button" class="bd-ikon" data-jaksi="turun|${esc(kk)}|${i}" title="Turunkan jawaban ini satu baris (pertanyaan tetap di tempatnya)" aria-label="Turunkan jawaban nomor ${i + 1}" ${i < rows.length - 1 ? "" : "disabled"}>⇩</button></span>${pilihTujuan(kk, i)}`;
     wad.innerHTML =
       `<div class="bd-tjwadah">${alatAtas(it.tj.sebutan, [S.tjBuka])}${status(S.tjBuka)}` +
-      `<div class="bd-tjalat" role="toolbar" aria-label="Susun keterangan saksi"><button type="button" class="bd-btn kecil" data-sbaksi="bersih1">Bersihkan kalimat penutup</button></div>` +
+      `${alatKedua()}` +
       `${panelPengetahuan([S.tjBuka])}<div class="bd-tjtabel"><table><thead><tr><th class="no-u">No</th><th>Pertanyaan</th><th>Jawaban</th><th></th></tr></thead><tbody>${
         rows
           .map(
             (r, i) =>
-              `<tr><td class="no-u">${i + 1}</td><td><textarea class="bd-ed" rows="2" data-tjb="${i}" data-sisi="tanya" aria-label="Pertanyaan ${i + 1}">${esc(r.tanya)}</textarea></td><td><textarea class="bd-ed" rows="2" data-tjb="${i}" data-sisi="jawab" aria-label="Jawaban ${i + 1}">${esc(r.jawab)}</textarea></td><td style="white-space:nowrap"><button type="button" class="bd-ikon" data-naik="${i}" aria-label="Naik">↑</button> <button type="button" class="bd-ikon" data-turun="${i}" aria-label="Turun">↓</button> <button type="button" class="bd-ikon" data-hapus="${i}" aria-label="Hapus">✕</button></td></tr>`
+              `<tr><td class="no-u">${i + 1}</td><td><textarea class="bd-ed" rows="2" data-tjb="${i}" data-sisi="tanya" aria-label="Pertanyaan ${i + 1}">${esc(r.tanya)}</textarea></td><td><textarea class="bd-ed" rows="2" data-tjb="${i}" data-sisi="jawab" aria-label="Jawaban ${i + 1}">${esc(r.jawab)}</textarea>${miniSatu(i)}</td><td style="white-space:nowrap"><button type="button" class="bd-ikon" data-naik="${i}" title="Naikkan baris tanya jawab ini" aria-label="Naik">↑</button> <button type="button" class="bd-ikon" data-turun="${i}" title="Turunkan baris tanya jawab ini" aria-label="Turun">↓</button> <button type="button" class="bd-ikon" data-hapus="${i}" title="Hapus baris ini" aria-label="Hapus">✕</button></td></tr>`
           )
           .join("") || `<tr><td colspan="4" class="bd-catat">${t && t.memuat ? "Membaca dari ABT…" : "Belum ada pertanyaan. Muat set pertanyaan atau tambah baris."}</td></tr>`
-      }</tbody></table></div></div>`;
+      }</tbody></table></div>${kaki([S.tjBuka])}</div>`;
     tumbuhkanSemua(wad);
   }
 
@@ -4469,6 +4611,10 @@
     const c = (s) => t.closest && t.closest(s);
     if (!c("#bd-popsumber,.bd-sumber")) tutupSumber();
     if (!c("#bd-popttd,#bd-btnttd")) tutupPopTtd();
+    if (S.tjMenu && !c(".bd-lainnya")) {
+      S.tjMenu = false;
+      renderTj();
+    }
     if (S.menuSaran && !c("[data-menu],.bd-saranmenu")) {
       S.menuSaran = null;
       renderIsian();
@@ -4530,6 +4676,24 @@
     if (kode === "tutupsumber") return tutupSumber();
     if (kode === "tutuptj") {
       S.tjBuka = null;
+      return renderTj();
+    }
+    if (kode === "lainnya") {
+      S.tjMenu = !S.tjMenu;
+      return renderTj();
+    }
+    if (kode === "lipattj") {
+      S.tjLipat = !S.tjLipat;
+      if (!S.tjLipat) S.tjBuka = null;
+      else if (!S.tjBuka) {
+        const pertama = daftarPerlu().find((x) => x.jenis === "tj");
+        if (pertama) return void bukaTj(pertama.tj.kunci);
+      }
+      return renderTj();
+    }
+    if (kode === "alasanlain") {
+      const k = String(aksi.getAttribute("data-kunci") || "");
+      S.sk.lainBuka[k] = !S.sk.lainBuka[k];
       return renderTj();
     }
     if (kode === "isioto") {
@@ -4719,6 +4883,7 @@
       if (ps) void Promise.all(ps.map((k) => muatTj(k))).then(() => (renderTj(), isiOtomatis(ps, {})));
       return;
     }
+    if (aksiUmumTj(c)) return;
     if (sbKlik(c, t)) return;
     for (const a of ["naik", "turun", "hapus"]) {
       const b = c(`[data-${a}]`);
@@ -4749,11 +4914,128 @@
       return toast(u ? `${u} kalimat penutup dibuang.` : "Tidak ada kalimat penutup yang perlu dibuang.");
     }
   }
+  /** Merapikan jawaban saksi menjadi satu paragraf (baris baru di tengah kalimat dilebur); dipakai tombol dan Simpan ke ABT. */
+  const rapikanJawabSaksi = (x) => {
+    const m = SK();
+    return m && typeof m.rapikanJawaban === "function" ? m.rapikanJawaban(x) : String(x == null ? "" : x).replace(/\s*[\r\n]+\s*/g, " ").trim();
+  };
+  /** Kunci saksi yang sedang tampil (berdampingan: kedua saksi; satu per satu: satu saksi). */
+  function kunciTampilTj() {
+    const ps = S.tjBuka && S.tjSisi ? tjPasangan(S.tjBuka) : null;
+    return (ps || (S.tjBuka ? [S.tjBuka] : [])).filter((k) => S.tj[k]);
+  }
+  /**
+   * Aksi satu jawaban (19 Okt, tahap 2): ganti kalimat, naik/turun (jawaban saja, pertanyaan tetap), tukar dengan saksi lain
+   * (memilih saksi tujuan bila saksinya lebih dari dua), dan salin ke saksi lain. Semuanya dapat diurungkan.
+   */
+  async function aksiJawaban(aksi, kunci, i, tujuan) {
+    const m = SK();
+    const t = S.tj[kunci];
+    if (!m || !t) return;
+    if (aksi === "batal") {
+      S.tjTujuan = null;
+      return renderTj();
+    }
+    if (!tjSiap([kunci])) return toast(PESAN_TJ_BELUM_TERBACA);
+    if (aksi === "ganti") {
+      if (!t.rows[i]) return;
+      tjCatat([kunci]);
+      const g = gantiKalimat(t.rows[i].jawab);
+      const sama = g === t.rows[i].jawab;
+      t.rows[i].jawab = g;
+      t.berubah = true;
+      renderTj();
+      return toast(sama ? "Tidak ada kata yang bisa diganti di jawaban ini." : "Kalimat diganti, artinya sama.");
+    }
+    if (aksi === "naik" || aksi === "turun") {
+      const g = m.geserJawaban(t.rows, i, aksi === "naik" ? -1 : 1);
+      if (!g.ok) return toast("Jawaban ini sudah di ujung daftar.");
+      tjCatat([kunci]);
+      t.rows = g.rows;
+      t.berubah = true;
+      renderTj();
+      return toast(aksi === "naik" ? "Jawaban dinaikkan satu baris; pertanyaan tetap." : "Jawaban diturunkan satu baris; pertanyaan tetap.");
+    }
+    if (aksi === "pilihtukar" || aksi === "pilihsalin") {
+      const daftar = tujuanLain(kunci);
+      if (!daftar.length) return toast("Tidak ada saksi lain.");
+      if (daftar.length === 1) return aksiJawaban(aksi === "pilihtukar" ? "tukar" : "salin", kunci, i, daftar[0]);
+      S.tjTujuan = { kunci, i, aksi: aksi === "pilihtukar" ? "tukar" : "salin" };
+      return renderTj();
+    }
+    if (aksi === "tukar" || aksi === "salin") {
+      S.tjTujuan = null;
+      if (!tujuan || tujuan === kunci || !tjItem(tujuan)) return;
+      if (!S.tj[tujuan] || !S.tj[tujuan].dimuat) await muatTj(tujuan);
+      if (!tjSiap([tujuan])) return toast("Keterangan " + namaSaksiTj(tujuan) + " belum terbaca dari ABT.");
+      tjCatat([kunci, tujuan]);
+      if (aksi === "tukar") {
+        const r = m.tukarJawaban(t.rows, S.tj[tujuan].rows, i);
+        t.rows = r.a;
+        S.tj[tujuan].rows = r.b;
+        t.berubah = true;
+        S.tj[tujuan].berubah = true;
+        renderTj();
+        return toast("Jawaban nomor " + (i + 1) + " ditukar antara " + namaSaksiTj(kunci) + " dan " + namaSaksiTj(tujuan) + ".");
+      }
+      S.tj[tujuan].rows = m.salinJawaban(t.rows, S.tj[tujuan].rows, i).b;
+      S.tj[tujuan].berubah = true;
+      renderTj();
+      return toast("Jawaban nomor " + (i + 1) + " disalin ke " + namaSaksiTj(tujuan) + ".");
+    }
+  }
+  /** Aksi tanya jawab saksi yang sama di tampilan berdampingan maupun satu per satu: Urungkan, Ulangi, Gabungkan baris. */
+  function aksiUmumTj(c) {
+    const tb = c("[data-sbaksi]");
+    const a = tb ? tb.getAttribute("data-sbaksi") : "";
+    if (tb && (a === "urung" || a === "ulang" || a === "rapikan")) {
+      S.tjMenu = false;
+      if (tb.disabled) return true;
+      if (a === "rapikan") {
+        const kunci = kunciTampilTj();
+        if (!kunci.length) return true;
+        tjCatat(kunci);
+        let u = 0;
+        for (const k of kunci) {
+          for (const r of S.tj[k].rows || []) {
+            const asli = String(r.jawab || "");
+            const h = rapikanJawabSaksi(asli);
+            if (h !== asli) {
+              u += 1;
+              r.jawab = h;
+            }
+          }
+          S.tj[k].berubah = true;
+        }
+        renderTj();
+        toast(u ? u + " jawaban digabung menjadi satu paragraf." : "Semua jawaban sudah satu paragraf.");
+        return true;
+      }
+      const dari = a === "urung" ? S.tjRiw.u : S.tjRiw.r;
+      const ke = a === "urung" ? S.tjRiw.r : S.tjRiw.u;
+      if (!dari.length) return true;
+      const isi = dari.pop();
+      ke.push(salinTj(JSON.parse(isi).k));
+      tjPulih(isi);
+      renderTj();
+      toast(a === "urung" ? "Dikembalikan ke keadaan sebelumnya." : "Diulangi.");
+      return true;
+    }
+    const j = c("[data-jaksi]");
+    if (j) {
+      const [aksi, kunci, i, tujuan] = j.getAttribute("data-jaksi").split("|");
+      if (j.disabled) return true;
+      void aksiJawaban(aksi, kunci, Number(i), tujuan);
+      return true;
+    }
+    return false;
+  }
   /** Alat "Susun keterangan saksi" pada tampilan berdampingan. */
   function sbKlik(c, t) {
     const ps = S.tjBuka && S.tjSisi ? tjPasangan(S.tjBuka) : null;
     if (!ps || !S.tj[ps[0]] || !S.tj[ps[1]]) return false;
     const aksi = c("[data-sbaksi]");
+    if (aksi) S.tjMenu = false;
     const sesudah = (pesan) => {
       tjUbah(ps);
       renderTj();
@@ -4762,15 +5044,6 @@
     if (aksi) {
       const a = aksi.getAttribute("data-sbaksi");
       if (aksi.disabled) return true;
-      if (a === "urung" || a === "ulang") {
-        const dari = a === "urung" ? S.tjRiw.u : S.tjRiw.r;
-        const ke = a === "urung" ? S.tjRiw.r : S.tjRiw.u;
-        if (!dari.length) return true;
-        ke.push(salinTj(ps));
-        tjPulih(ps, dari.pop());
-        sesudah(a === "urung" ? "Dikembalikan ke keadaan sebelumnya." : "Diulangi.");
-        return true;
-      }
       if (a === "urut") {
         tjCatat(ps);
         const [A, B] = tjSama(ps);

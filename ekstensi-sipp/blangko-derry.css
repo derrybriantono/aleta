@@ -511,3 +511,17 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
   #aleta-bd-akar .bd-f, #aleta-bd-akar .bd-bukti { padding: 10px 12px; }
 }
 
+
+/* ===== 19 Okt 2026 (tahap 2): tanya jawab saksi - menu Lainnya, aksi per jawaban, alasan lain, hanya baca ===== */
+#aleta-bd-akar .bd-lainnya { position: relative; display: inline-block; }
+#aleta-bd-akar .bd-lainnyamenu { position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 260px; max-width: min(380px, 86vw); padding: 8px; background: var(--card, var(--bg)); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, .18); }
+#aleta-bd-akar .bd-lainnyamenu[hidden] { display: none; }
+#aleta-bd-akar .bd-lainnyamenu .bd-btn { text-align: left; white-space: normal; justify-content: flex-start; }
+#aleta-bd-akar .bd-sbmini { flex-wrap: wrap; align-items: center; }
+#aleta-bd-akar .bd-tujuan { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px; font-size: 12.5px; color: var(--muted); }
+#aleta-bd-akar .bd-tjkaki { justify-content: flex-start; border-top: 1px solid var(--line); margin-top: 4px; }
+#aleta-bd-akar .bd-skalasanisi { display: contents; }
+#aleta-bd-akar .bd-skalasanisi[hidden] { display: none; }
+#aleta-bd-akar .bd-skalasan .bd-skalasanlain { grid-column: 1 / -1; justify-self: start; }
+#aleta-bd-akar .bd-skalasan > .bd-catat { grid-column: 1 / -1; margin: 0; }
+#aleta-bd-akar .bd-tjbaca .bd-tjtabel td { white-space: pre-wrap; overflow-wrap: anywhere; }

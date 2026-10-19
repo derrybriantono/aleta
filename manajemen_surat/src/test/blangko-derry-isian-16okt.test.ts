@@ -34,7 +34,7 @@ import { hurufAlasan, tawarkanSetSaksi } from "@/lib/set-pertanyaan-saksi";
 
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (berkas: string) => readFileSync(path.join(EKSTENSI, berkas), "utf8").replace(/\r\n/g, "\n");
-const SUMBER = ["panel-alat.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-isian.js"].map(baca).join("\n;\n");
+const SUMBER = ["panel-alat.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-saksi.js", "blangko-derry-isian.js"].map(baca).join("\n;\n");
 
 const ASAL = "http://192.168.10.10";
 const ABT = `${ASAL}/aps_badilag/index.php/abt`;
@@ -318,6 +318,15 @@ async function sampaiPerkara(h: Halaman) {
   klik(h, '[data-pk="581/Pdt.G/2026/PA.Dgl"]');
   await sampai(() => q(h, '[data-bd2="bukamodal"]'), "tombol pilih blangko");
 }
+// 19 Okt (tahap 2): tanya jawab saksi hanya DISUNTING pada berita acara (BAS) oleh panitera pengganti; putusan dan peran
+// hakim hanya membaca. Uji penyuntingan membuka BAS sebagai PP.
+async function pilihBas(h: Halaman) {
+  await sampaiPerkara(h);
+  klik(h, '[data-bd2="bukamodal"]');
+  await sampai(() => q(h, `[data-bl="${BLANGKO_BAS}"]`), "berkas bas");
+  klik(h, `[data-bl="${BLANGKO_BAS}"]`);
+  await sampai(() => q(h, "#bd-perlu .bd-f") || q(h, "[data-tj]"), "perlu diisi");
+}
 async function pilihPutusan(h: Halaman) {
   await sampaiPerkara(h);
   klik(h, '[data-bd2="bukamodal"]');
@@ -533,9 +542,9 @@ describe("F. perlu diisi", () => {
     expect((q(h, '[data-bk="P.1"][data-isi="no"]')!.closest("label") as HTMLElement).textContent).toBe("Nomor surat");
   });
 
-  it("tanya jawab: dua saksi berdampingan dari ABT per sidang, bersihkan penutup, muat templat, simpan lewat tanyajawab_perkara_edit?aksi=simpan (sidang diperiksa dulu)", async () => {
-    const h = buka();
-    await pilihPutusan(h);
+  it("tanya jawab: dua saksi berdampingan dari ABT per sidang, muat templat, simpan lewat tanyajawab_perkara_edit?aksi=simpan (sidang diperiksa dulu)", async () => {
+    const h = buka({ orang: "pp" });
+    await pilihBas(h);
     const tombolTj = qq(h, "[data-tj]");
     expect(tombolTj.map((b) => b.getAttribute("data-tj"))).toEqual(["saksi 1 p", "saksi 2 p"]);
     klik(h, '[data-tj="saksi 1 p"]');
@@ -545,8 +554,8 @@ describe("F. perlu diisi", () => {
     expect(baca[0].url).toContain("&c=10154&d=2");
     expect(qq(h, ".bd-sbrow").length).toBe(2);
     expect((q(h, '[data-sba="1"][data-sk="0"]') as HTMLTextAreaElement).value).toContain("Bahwa cukup sekian");
-    klik(h, '[data-sbaksi="bersih"]');
-    expect((q(h, '[data-sba="1"][data-sk="0"]') as HTMLTextAreaElement).value).toBe("Mereka sering bertengkar;");
+    // "Bersihkan kalimat penutup" tidak ditampilkan di BAS (itu bawaan putusan).
+    expect(q(h, '[data-sbaksi="bersih"]')).toBeNull();
     klik(h, '[data-sbaksi="salinsemua"]');
     expect((q(h, '[data-sba="0"][data-sk="1"]') as HTMLTextAreaElement).value).toBe("Mengenal, saya kakaknya;".replace("Mengenal", "Kenal"));
     // Muat set pertanyaan (POST load_template, belum tersimpan).
@@ -590,8 +599,8 @@ describe("F. perlu diisi", () => {
   });
 
   it("audit 17 Okt: bacaan ABT gagal -> Muat/Tambah baris/Simpan mati dan simpan ditolak, keterangan lama di ABT tidak terhapus", async () => {
-    const h = buka({ tjGagal: true });
-    await pilihPutusan(h);
+    const h = buka({ tjGagal: true, orang: "pp" });
+    await pilihBas(h);
     (q(h, '[data-tj="saksi 1 p"]') as HTMLElement).click();
     await sampai(() => /ABT menjawab 500/.test(akar(h).textContent || ""), "bacaan gagal tampil");
     for (const k of ["muattpl", "tambahtj", "simpantj"]) expect((q(h, `[data-bd2="${k}"]`) as HTMLButtonElement).disabled).toBe(true);
@@ -613,8 +622,8 @@ describe("F. perlu diisi", () => {
   });
 
   it("F3.3 set pertanyaan saksi ALETA: disarankan menurut jenis perkara, dimuat ke dua saksi tanpa menulis ke ABT, tambahan disisipkan sebelum penutup", async () => {
-    const h = buka();
-    await pilihPutusan(h);
+    const h = buka({ orang: "pp" });
+    await pilihBas(h);
     klik(h, '[data-tj="saksi 1 p"]');
     const sel = (await sampai(() => q(h, '#bd-muattpl optgroup[label^="Panduan ALETA"]') && q(h, "#bd-muattpl"), "panduan ALETA")) as HTMLSelectElement;
     const minta = mintaKe(h, /blangko-derry\/set-saksi\?/);
@@ -893,7 +902,11 @@ describe("audit 17 Okt: E5 huruf cp1252 yang tercetak rusak", () => {
     expect(q(h, '[data-status="0007"]')!.textContent).toContain("diganti");
     expect(q(h, '[data-status="0007"]')!.textContent).toContain("–");
     expect(i.value).toBe("dua anak - laki-laki ... \"baik\"");
+  });
 
+  it("E5 tanya jawab (BAS, PP): yang tersimpan ke ABT sudah bentuk aman dan petugas diberi tahu apa yang diganti", async () => {
+    const h = buka({ orang: "pp" });
+    await pilihBas(h);
     klik(h, '[data-tj="saksi 1 p"]');
     await sampai(() => q(h, ".bd-sbs .bd-sbrow"), "berdampingan");
     const ta = q(h, '[data-sba="0"][data-sk="0"]') as HTMLTextAreaElement;
