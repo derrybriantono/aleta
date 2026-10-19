@@ -58,7 +58,7 @@ export type CatatanEkstensi = {
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
     versi: "1.205.15",
-    dirilis: "2026-10-19T18:30:00+08:00",
+    dirilis: "2026-10-19T18:45:00+08:00",
     judul: "Tanda tangan pejabat lebih besar dan ditindis cap berukuran tetap",
     butir: [
       "Tanda tangan pejabat di e-Doc penetapan (PMH, PPP, PJS, PHS) dibuat sekitar 1,6 kali lebih besar dan bagian bawahnya menimpa sedikit nama penanda tangan, lalu ditindis cap di sisi kirinya dengan diameter cap yang selalu sama (36 mm) berapa pun ukuran gambar capnya, sehingga tampak seperti tanda tangan dan cap basah; tanda tangan pada Tambah tanda tangan ke PDF dan salinan putusan juga diperbesar.",
@@ -66,7 +66,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   },
   {
     versi: "1.205.14",
-    dirilis: "2026-10-19T18:45:00+08:00",
+    dirilis: "2026-10-19T17:15:00+08:00",
     judul: "Blangko ABT by Derry: isian otomatis lebih tepat, tanya jawab saksi rapi, perkiraan sidang di pemilih, cetak bersih dan bertanda tangan",
     butir: [
       "Isian Blangko ABT by Derry lebih tepat: satu tombol \"Isi otomatis\" menggantikan Isi dari SIPP, Isi dari gugatan, dan Ambil tanggal KTP; Tanggal Nikah terisi dari data pernikahan SIPP atau gugatan; Awal perselisihan, Pisah rumah, Lama pisah, Yang meninggalkan rumah, dan Upaya damai dijaga bentuknya sehingga kalimat yang salah tempat (mis. kalimat ghaib) tidak lagi masuk; Beracara secara elektronik disarankan dari data e-Court; nomor di depan nama alat bukti dibuang; rincian alasan cerai selebar penuh dan kartu isian lebih rapi.",
