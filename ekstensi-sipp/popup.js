@@ -310,6 +310,10 @@ function pasangNilai(simpan) {
   if (!tautan) return;
   if (simpan.asalPortal) {
     tautan.href = simpan.asalPortal;
+    // K1 (19 Okt 2026): tautan memakai alamat yang hidup (8008 atau port 80).
+    void asalPortalHidup(simpan.asalPortal).then((asal) => {
+      if (asal) tautan.href = asal;
+    });
   } else {
     // Belum pernah membuka halaman SIPP, jadi alamatnya belum diketahui.
     // Menebak alamatnya lebih buruk daripada mengatakannya apa adanya.
@@ -869,12 +873,27 @@ function tampilkanAkunSipp(simpan) {
   tulisKeadaan(kolomSipp, nama);
 }
 
+/**
+ * Alamat portal yang dipakai popup (K1, 19 Okt 2026): port 8008 bila
+ * terjangkau, cadangan port 80 - lihat alamat-portal.js. Asal yang bukan
+ * alamat bawaan satker dipakai apa adanya; tanpa pemilih: alamat tersimpan.
+ */
+async function asalPortalHidup(asalTersimpan) {
+  const asal = String(asalTersimpan || "");
+  try {
+    if (typeof AletaAlamatPortal !== "undefined") return String(await AletaAlamatPortal.pilihAsal(asal));
+  } catch {
+    /* pemilih tidak tersedia: alamat tersimpan */
+  }
+  return asal;
+}
+
 if (penyimpanan) {
   penyimpanan
     .get(["asalPortal", "akunSipp"])
     .then((simpan) => {
       tampilkanAkunSipp(simpan || {});
-      return periksaAkunAleta(String((simpan && simpan.asalPortal) || ""));
+      return asalPortalHidup(simpan && simpan.asalPortal).then((asal) => periksaAkunAleta(asal));
     })
     .catch(() => {
       tampilkanAkunSipp({});
@@ -1700,7 +1719,7 @@ async function muatTahap2() {
   try {
     const s = await penyimpanan.get(["asalPortal", "akunSipp", KUNCI_SENYAP, KUNCI_TANDA_BARU, KUNCI_TEKNIS]);
     tahap2.teknis = !(s && s[KUNCI_TEKNIS] === false);
-    tahap2.asalPortal = String((s && s.asalPortal) || "");
+    tahap2.asalPortal = await asalPortalHidup(s && s.asalPortal);
     tahap2.akunSipp = String((s && s.akunSipp) || "");
     tahap2.senyapSampai = Number(s && s[KUNCI_SENYAP]) || 0;
     const t = s && s[KUNCI_TANDA_BARU];
@@ -3340,7 +3359,7 @@ async function simpanBawaanPanel(nilai) {
   if (s.modeLatihan === true || s.modeKering === true) {
     return `${s.modeLatihan === true ? "Mode latihan" : "Mode kering"}: tersimpan di peramban ini saja.`;
   }
-  const asal = String(s.asalPortal || "");
+  const asal = await asalPortalHidup(s.asalPortal);
   if (!asal) return "Tersimpan di peramban ini; akun menyusul sesudah portal ALETA dibuka.";
   try {
     const r = await fetch(`${asal}/api/aleta-ecourt/ekstensi/setelan`, {

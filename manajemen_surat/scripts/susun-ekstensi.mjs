@@ -143,6 +143,9 @@ const BERKAS = [
   "panel.css",
   "popup.html",
   "popup.js",
+  // Alamat portal yang hidup (K1, 19 Okt 2026): port 8008 dengan cadangan
+  // port 80 - dimuat latar.js (importScripts) dan popup.html.
+  "alamat-portal.js",
   // Daftar 120 saklar fitur ide (tahap 1, 1.172.0) - dimuat popup.html
   // sebelum popup.js. Disusun dari berkas ide, bukan disunting tangan.
   "daftar-fitur.js",

@@ -4,6 +4,8 @@
 // boleh mengganggu pekerja latar - relaas tetap tercetak tanpa pemeriksaan.
 try {
   if (typeof importScripts === "function") importScripts("deteksi-sisa-blangko.js");
+  // K1 (19 Okt 2026): alamat portal yang hidup - port 8008 atau cadangan port 80.
+  if (typeof importScripts === "function") importScripts("alamat-portal.js");
 } catch {
   /* tanpa pemeriksaan */
 }
@@ -3148,7 +3150,7 @@ async function sinkronTandaSekali(alasan) {
   if (s.modeLatihan === true) return;
   const b = tampilanBerlakuLatar(s);
   if (b.mode === "lama" || b.fitur["popup-7"] !== true) return;
-  const asal = String(s.asalPortal || "").replace(/\/+$/, "");
+  const asal = (await asalPortalHidup(s.asalPortal)).replace(/\/+$/, "");
   if (!/^https?:\/\//.test(asal)) return;
   const alamat = `${asal}/api/aleta-ecourt/ekstensi/setelan`;
 
@@ -3611,6 +3613,21 @@ async function periksaSesudahMasuk(opsi) {
   }
 }
 
+/**
+ * Alamat portal yang dipakai pekerja latar (K1, 19 Okt 2026): port 8008 bila
+ * terjangkau, cadangan port 80 - lihat alamat-portal.js. Asal yang bukan
+ * alamat bawaan satker dipakai apa adanya.
+ */
+async function asalPortalHidup(asalTersimpan) {
+  const asal = String(asalTersimpan || "");
+  try {
+    if (typeof AletaAlamatPortal !== "undefined") return String(await AletaAlamatPortal.pilihAsal(asal));
+  } catch {
+    /* pemilih tidak tersedia: alamat tersimpan */
+  }
+  return asal;
+}
+
 async function periksaSesudahMasukInti(opsi) {
   const paksa = Boolean(opsi && (opsi.paksa || opsi.unduh));
   let s;
@@ -3619,7 +3636,7 @@ async function periksaSesudahMasukInti(opsi) {
   } catch {
     return { ok: false, keadaan: "penyimpanan" };
   }
-  const asal = String((s && s.asalPortal) || "");
+  const asal = await asalPortalHidup(s && s.asalPortal);
   if (!asal) return { ok: false, keadaan: "tanpa-portal" };
   const catatan = s[KUNCI_PEMBARUAN_OTOMATIS] && typeof s[KUNCI_PEMBARUAN_OTOMATIS] === "object" ? { ...s[KUNCI_PEMBARUAN_OTOMATIS] } : {};
   const kini = Date.now();
