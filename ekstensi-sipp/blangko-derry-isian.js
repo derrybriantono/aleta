@@ -2123,6 +2123,33 @@
     return S.susunan.isian.find((b) => b.kode === id || (b.tj && `tj:${b.tj.kunci}` === id) || (b.khusus === "bukti" && `bukti:${b.pihak}` === id)) || null;
   }
 
+  /** Isian panjang (kalimat/paragraf) memakai textarea; selebihnya satu baris. Menilai isi, bukan nama kotak. */
+  function isianPanjang(v, saran) {
+    const teks = String(v || "").replace(/\s+$/, "");
+    if (teks) return /\n/.test(teks) || teks.length > 90;
+    return String(saran || "").length > 90;
+  }
+  /** Tinggi awal textarea (baris): perkiraan lipatan pada ±60 huruf per baris, min 2 maks 8; kemudian tumbuh sesuai isi. */
+  function barisIsian(teks) {
+    const t = String(teks || "").replace(/\s+$/, "");
+    const n = t ? t.split("\n").reduce((a, l) => a + Math.max(1, Math.ceil(l.length / 60)), 0) : 2;
+    return Math.max(2, Math.min(8, n));
+  }
+  /** Menyesuaikan tinggi textarea dengan isinya (tanpa kotak besar yang kosong). */
+  function tumbuhkan(el) {
+    try {
+      if (!el || el.tagName !== "TEXTAREA") return;
+      el.style.height = "auto";
+      const h = el.scrollHeight;
+      if (h > 0) el.style.height = `${h + 2}px`;
+    } catch {
+      /* tinggi hanya kenyamanan */
+    }
+  }
+  function tumbuhkanSemua(akar) {
+    for (const el of cariSemua("textarea.bd-auto, textarea.bd-ed, textarea.bd-bmanual", akar || wadah.isian)) tumbuhkan(el);
+  }
+
   function kotakIsian(b) {
     const v = S.isi[b.kode] !== undefined ? String(S.isi[b.kode]) : "";
     const sr = cfg().saran ? saranUntuk(b) : "";
@@ -2135,6 +2162,7 @@
     const tanda = S.tandaKosong.has(b.kode) && !v.trim() ? ` bd-kosongcetak${b.tingkat === "tambahan" ? " tambahan" : ""}` : "";
     const ro = bolehTulis() ? "" : "disabled";
     let isian;
+    let panjang = false;
     if (opsi.length) {
       // Pilihan bernilai (mis. beracara elektronik: ABT menyimpan 1/2) - petugas hanya melihat kalimatnya.
       const ada = opsi.some((o) => o.nilai === v);
@@ -2146,17 +2174,19 @@
     } else {
       // Nilai ABT bergaris baru (mis. beberapa paragraf): <input type=text> membuang \n dari nilainya,
       // jadi kotaknya textarea supaya tampil & tersimpan utuh.
-      const kotak =
-        b.jenis !== "tanggal" && /\n/.test(v)
-          ? `<textarea id="bd-i${b.kode}" data-k="${b.kode}" rows="${Math.min(8, v.split("\n").length + 1)}" placeholder="${esc(sr || "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>${esc(v)}</textarea>`
-          : `<input id="bd-i${b.kode}" data-k="${b.kode}" type="${b.jenis === "tanggal" ? "date" : "text"}" value="${esc(v)}" placeholder="${esc(sr && b.jenis !== "tanggal" ? sr : b.jenis === "tanggal" ? "" : "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>`;
+      // 19 Okt 2026 (tata letak): jenis kotak mengikuti ISINYA. Tanggal, nama, nomor, huruf = satu baris (input, tinggi seragam);
+      // textarea hanya untuk kalimat/paragraf, tingginya menyesuaikan isi (bd-auto), bukan kotak besar yang kosong.
+      panjang = b.jenis !== "tanggal" && isianPanjang(v, sr);
+      const kotak = panjang
+        ? `<textarea id="bd-i${b.kode}" class="bd-auto" data-k="${b.kode}" rows="${barisIsian(v || sr)}" placeholder="${esc(sr || "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>${esc(v)}</textarea>`
+        : `<input id="bd-i${b.kode}" data-k="${b.kode}" type="${b.jenis === "tanggal" ? "date" : "text"}" value="${esc(v)}" placeholder="${esc(sr && b.jenis !== "tanggal" ? sr : b.jenis === "tanggal" ? "" : "ketik di sini")}" autocomplete="off" ${bolehTulis() ? "" : "readonly"}>`;
       isian =
         `<div class="bd-isiwadah">${kotak}` +
         `${pil.length ? `<button type="button" class="bd-ikon" data-menu="${b.kode}" aria-label="Pilihan lain untuk ${esc(b.nama)}" tabindex="-1">▾</button>` : ""}</div>` +
         `${S.menuSaran === b.kode && pil.length ? `<div class="bd-saranmenu" role="listbox">${pil.map((o) => `<button type="button" role="option" data-ambil="${b.kode}" data-nilai="${esc(o)}">${esc(o)}</button>`).join("")}</div>` : ""}`;
     }
     return (
-      `<div class="bd-f${v.trim() ? " beres" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(b.nama)}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama)}</div>${muncul}` +
+      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(b.nama)}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama)}</div>${muncul}` +
       isian +
       (b.kode === "7139" && S.el7 && v === S.el7.nilai ? `<span class="bd-catat bd-el7">${esc(S.el7.keterangan)}</span>` : "") +
       `<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(st, b.kode))}</span>` +
@@ -2203,7 +2233,7 @@
           return (
             `<div class="bd-bukti">${kepala}` +
             `<div class="bd-bgrid"><label>Atas nama<input data-bk="${id}" data-isi="an" value="${esc(r.an || "")}" placeholder="boleh kosong"></label><label>${lblNo}<input data-bk="${id}" data-isi="no" value="${esc(r.no)}" placeholder="${esc(phNo)}"></label><label>Tanggal<input type="date" data-bk="${id}" data-isi="tgl" value="${esc(r.tgl)}"></label><label class="dua2">Dikeluarkan oleh<input data-bk="${id}" data-isi="oleh" value="${esc(r.oleh)}" placeholder="boleh kosong"></label></div>` +
-            `<div class="bd-bgrid"><label>Meterai<select data-bk="${id}" data-isi="meterai">${PIL_METERAI.map((o, j) => `<option value="${j}" ${Number(r.meterai) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label><label class="dua2">Dicocokkan dengan aslinya<select data-bk="${id}" data-isi="cocok">${PIL_COCOK.map((o, j) => `<option value="${j}" ${Number(r.cocok) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label></div>` +
+            `<div class="bd-bgrid bd-bpilih"><label>Meterai<select data-bk="${id}" data-isi="meterai">${PIL_METERAI.map((o, j) => `<option value="${j}" ${Number(r.meterai) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label><label class="dua2">Dicocokkan dengan aslinya<select data-bk="${id}" data-isi="cocok">${PIL_COCOK.map((o, j) => `<option value="${j}" ${Number(r.cocok) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label></div>` +
             `<p class="bd-catat">Kode ${kode}, tanggal dan paraf Ketua Majelis ditulis otomatis. Bagian yang kosong tidak ikut ditulis.</p></div>`
           );
         })
@@ -2254,6 +2284,7 @@
     cari("#bd-alatisi", w).innerHTML = alat.join("");
     renderTj();
     renderProgres();
+    tumbuhkanSemua(w);
     if (S.semuaBuka) renderSemua();
     if (S.blangko.jenis === "bas") void muatSkorsBas();
   }
@@ -2450,6 +2481,7 @@
         `<div class="bd-tjwadah bd-sbs">${alatAtas(`${na} dan ${nb}`, ps)}` +
         `<div class="bd-tjalat bd-sbalat" role="toolbar" aria-label="Susun keterangan saksi"><button type="button" class="bd-btn kecil" data-sbaksi="urut">Susun urutan</button><button type="button" class="bd-btn kecil" data-sbaksi="samakanq">Samakan pertanyaan</button><button type="button" class="bd-btn kecil" data-sbaksi="salinsemua">Salin jawaban ke saksi 2 (kalimat diganti)</button><button type="button" class="bd-btn kecil" data-sbaksi="bersih">Bersihkan kalimat penutup</button><button type="button" class="bd-btn kecil" data-sbaksi="urung" ${S.tjRiw.u.length ? "" : "disabled"}>↶ Urungkan</button><button type="button" class="bd-btn kecil" data-sbaksi="ulang" ${S.tjRiw.r.length ? "" : "disabled"}>↷ Ulangi</button><span class="bd-catat" id="bd-sbstat" role="status"></span></div>` +
         `${panelPengetahuan(ps)}${status(ps[0])}${status(ps[1])}<div class="bd-sbhead" aria-hidden="true"><span>No</span><span>Pertanyaan</span><span>${esc(na)}</span><span>${esc(nb)}</span></div><div class="bd-sblist">${baris || `<p class="bd-catat" style="padding:10px">Belum ada pertanyaan. Muat set pertanyaan atau tambah baris.</p>`}</div></div>`;
+      tumbuhkanSemua(wad);
       return;
     }
     const rows = (t && t.rows) || [];
@@ -2464,6 +2496,7 @@
           )
           .join("") || `<tr><td colspan="4" class="bd-catat">${t && t.memuat ? "Membaca dari ABT…" : "Belum ada pertanyaan. Muat set pertanyaan atau tambah baris."}</td></tr>`
       }</tbody></table></div></div>`;
+    tumbuhkanSemua(wad);
   }
 
   function renderSemua() {
@@ -3899,6 +3932,7 @@
   }
   function saatMasuk(e) {
     const t = e.target;
+    if (t.tagName === "TEXTAREA" && t.matches && t.matches("textarea.bd-auto, textarea.bd-ed, textarea.bd-bmanual")) tumbuhkan(t);
     if (t.id === "bd-caribl" && S.modal) {
       S.modal.cari = t.value;
       S.modal.fokusCari = true;

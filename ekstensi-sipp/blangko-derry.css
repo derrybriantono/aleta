@@ -454,3 +454,39 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-skalasan legend { font-size: 12.5px; color: var(--muted); padding: 0 4px; }
 #aleta-bd-akar .bd-skcentang { display: flex; gap: 6px; align-items: flex-start; font-size: 13.4px; color: var(--fg); min-width: 0; }
 #aleta-bd-akar .bd-skkartu p { margin: 0; }
+
+/* ===== Tata letak kartu isian ("Perlu diisi") dan alat bukti surat (19 Okt 2026) =====
+   Tujuan: kartu tidak ada yang besar-kecil tanpa sebab, tidak berdempetan, tidak ada teks terpotong.
+   - kolom mengisi lebar penuh (auto-fill +-260px), tinggi kartu mengikuti isi (bukan diregangkan sejajar tetangga);
+   - isian pendek = input satu baris bertinggi seragam; isian panjang (textarea) membentang selebar penuh dan tumbuh sesuai isi;
+   - jarak antar kartu 14-16px, padding dalam 12-14px, label ke kotak 6px, huruf kotak seragam. */
+#aleta-bd-akar .bd-pgrid { grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); grid-auto-flow: row dense; gap: 14px 16px; align-items: start; }
+#aleta-bd-akar .bd-f { gap: 6px; padding: 12px 14px; }
+#aleta-bd-akar .bd-f.panjang, #aleta-bd-akar .bd-f.lebar { grid-column: 1 / -1; }
+#aleta-bd-akar .bd-f.lebar { gap: 12px; }
+#aleta-bd-akar .bd-fh { gap: 6px 8px; min-height: 24px; }
+#aleta-bd-akar .bd-f input, #aleta-bd-akar .bd-f select, #aleta-bd-akar .bd-f textarea,
+#aleta-bd-akar .bd-bukti input, #aleta-bd-akar .bd-bukti select, #aleta-bd-akar .bd-bukti textarea { font-size: 14.5px; line-height: 1.4; box-sizing: border-box; }
+#aleta-bd-akar .bd-f input:not([type="checkbox"]), #aleta-bd-akar .bd-f select,
+#aleta-bd-akar .bd-bukti input:not([type="checkbox"]), #aleta-bd-akar .bd-bukti select { height: 38px; padding: 0 10px; }
+#aleta-bd-akar .bd-f textarea, #aleta-bd-akar .bd-bukti textarea { padding: 8px 10px; line-height: 1.45; min-height: 62px; resize: vertical; overflow: hidden; }
+#aleta-bd-akar .bd-isiwadah { gap: 8px; align-items: flex-start; }
+#aleta-bd-akar .bd-isiwadah .bd-ikon { height: 38px; flex: none; }
+#aleta-bd-akar .bd-status:empty, #aleta-bd-akar .bd-peringatan[hidden] { display: none; }
+#aleta-bd-akar .bd-muncul { margin: 0; }
+/* alat bukti: baris-baris yang lega, tidak ada kolom yang memotong teks */
+#aleta-bd-akar .bd-bukti { padding: 12px 14px; gap: 12px; }
+#aleta-bd-akar .bd-bkepala { flex-wrap: wrap; gap: 8px 10px; }
+#aleta-bd-akar .bd-bkepala .bd-bnama { flex: 1 1 220px; width: auto; min-width: 0; }
+#aleta-bd-akar .bd-bgrid { grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px 14px; }
+#aleta-bd-akar .bd-bgrid label { gap: 6px; font-size: 13px; }
+#aleta-bd-akar .bd-bgrid .dua2 { grid-column: 1 / -1; } /* "Dikeluarkan oleh": satu baris penuh, tidak terpotong */
+/* Meterai dan pencocokan: berdampingan hanya bila tiap pilihan muat utuh (pilihan terpanjang +-56 huruf); selain itu satu baris penuh. */
+#aleta-bd-akar .bd-bgrid.bd-bpilih { grid-template-columns: repeat(auto-fit, minmax(min(100%, 500px), 1fr)); }
+#aleta-bd-akar .bd-bgrid.bd-bpilih .dua2 { grid-column: auto; }
+#aleta-bd-akar .bd-bukti .bd-bmanual { width: 100%; }
+#aleta-bd-akar .bd-f.lebar > .bd-baris { gap: 8px 10px; padding-top: 2px; }
+@media (max-width: 760px) {
+  #aleta-bd-akar .bd-pgrid { gap: 12px; }
+  #aleta-bd-akar .bd-f, #aleta-bd-akar .bd-bukti { padding: 10px 12px; }
+}
