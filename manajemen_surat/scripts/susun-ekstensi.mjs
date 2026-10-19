@@ -126,6 +126,9 @@ const BERKAS = [
   // tombol "Isi otomatis" di borang PMH/PPP/PJS/PHS, hanya mengisi kolom.
   "penetapan-borang.js",
   "blangko-derry.css",
+  // Menu kiri ABT bisa digulir (19 Okt 2026) - skrip konten ABT: #navbar diberi
+  // max-height + overflow-y supaya submenu Blangko Derry terjangkau; gaya saja.
+  "abt-gulir.js",
   // Penjaga batas (17 Okt 2026): tidak ada kata ALETA yang ditulis ekstensi ke
   // SIPP/ABT. Dimuat document_start, SEBELUM tema-awal.js, supaya fetch sudah
   // terbungkus saat skrip konten lain berjalan.
