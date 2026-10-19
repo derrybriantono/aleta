@@ -4035,6 +4035,16 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
     return ambilBulanTahun(kalimatNikah).nilai || "";
   })();
 
+  // 19 Okt 2026: tempat menikah (wilayah KUA) dari posita cerai - untuk jawaban "menikah pada ... di ...".
+  // Gagal membaca = kosong; tidak pernah menggagalkan fakta lain.
+  const tempatNikah = (() => {
+    try {
+      return require("./deteksi/cerai").tempatNikahCerai(butir).nilai || "";
+    } catch (_galat) {
+      return "";
+    }
+  })();
+
   // "dikaruniai 2 orang anak", "dikaruniai dua orang anak", "mempunyai 3 anak".
   // Butir 14: kalimat KARUNIA lebih dahulu ("di karuniai seorang anak",
   // "1 ( satu) orang anak", "tidak dikaruniai keturunan"); kalimat pertama
@@ -4089,6 +4099,7 @@ function faktaDariPosita(posita, pelaku, lawan, opsi) {
     lamaPisahDihitung,
     siapaPergi,
     tanggalNikah,
+    tempatNikah,
     jumlahAnak,
     kediaman,
     // Butir 14 - fakta tambahan untuk melengkapi jawaban yang dahulu tertinggal.
@@ -4154,6 +4165,13 @@ function lengkapiJawabanTemplat({ tanya, jawab, fakta }) {
     return fakta.lamaPisah;
   };
   const depanKosong = () => hasil.slice(0, Math.max(0, hasil.search(/\.{3,}|_+/)));
+
+  // 19 Okt 2026: "suami isteri yang sah, menikah pada ... di ..." (pertanyaan hubungan pihak) - tanggal dan tempat menikah dari
+  // posita. Pertanyaan "kapan menikah" tetap lewat cabang khususnya di bawah (titik-titik pertamanya = tanggal).
+  if (!/kapan.*(menikah|nikah|kawin)|(menikah|perkawinan).*kapan|tanggal.*nikah/i.test(tanya)) {
+    if (fakta.tanggalNikah) hasil = hasil.replace(/(\b(?:menikah|nikah|kawin)\s+pada\s+(?:tanggal\s+)?)(?:\.{3,}|_+)/i, (_m, depan) => `${depan}${fakta.tanggalNikah}`);
+    if (fakta.tempatNikah) hasil = hasil.replace(/(\b(?:menikah|nikah|kawin)\s+pada\s+(?:tanggal\s+)?[^;.]{0,40}?\s+di\s+)(?:\.{3,}|_+)/i, (_m, depan) => `${depan}${fakta.tempatNikah}`);
+  }
 
   // Butir 27: "puncak perselisihan ... terjadi pada ..." (templat A1/A3) dan
   // "sering terjadi perselisihan ..., dan kapan mulai terjadi?" - bentuk

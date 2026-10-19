@@ -97,6 +97,9 @@ const BERKAS = [
   // diisi, bukti, tanya jawab, pratinjau, cetak) sesudahnya.
   "abt-klien.js",
   "blangko-derry.js",
+  // Jawaban saksi otomatis + pilihan pengetahuan saksi di Blangko Derry (19 Okt 2026): pembantu murni,
+  // dimuat sebelum blangko-derry-isian.js yang memakainya.
+  "blangko-derry-saksi.js",
   "blangko-derry-isian.js",
   // Checklist konseptor sementara (F1.6, 17 Okt 2026) - skrip konten ABT
   // sesudah blangko-derry-isian.js: lapor isian blangko putusan ke portal dan

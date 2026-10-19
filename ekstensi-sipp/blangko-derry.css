@@ -441,3 +441,16 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
   #aleta-bd-akar { padding: 0 0 40px; }
   #aleta-bd-akar .bd-layar { border-radius: 0; border-inline: 0; }
 }
+
+/* ===== Pengetahuan saksi di tanya jawab (19 Okt 2026) ===== */
+#aleta-bd-akar .bd-skpanel { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; background: var(--deep); }
+#aleta-bd-akar .bd-skhead { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+#aleta-bd-akar .bd-skgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 12px; align-items: start; }
+#aleta-bd-akar .bd-skkartu { display: flex; flex-direction: column; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+#aleta-bd-akar .bd-sknama { color: var(--accent); }
+#aleta-bd-akar .bd-sklbl { display: flex; flex-direction: column; gap: 4px; font-size: 12.8px; color: var(--muted); min-width: 0; }
+#aleta-bd-akar .bd-skkartu select { background: var(--deep); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-size: 14.4px; width: 100%; min-width: 0; max-width: 100%; }
+#aleta-bd-akar .bd-skalasan { border: 1px solid var(--line); border-radius: 8px; margin: 0; padding: 6px 10px 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 4px 12px; min-width: 0; }
+#aleta-bd-akar .bd-skalasan legend { font-size: 12.5px; color: var(--muted); padding: 0 4px; }
+#aleta-bd-akar .bd-skcentang { display: flex; gap: 6px; align-items: flex-start; font-size: 13.4px; color: var(--fg); min-width: 0; }
+#aleta-bd-akar .bd-skkartu p { margin: 0; }
