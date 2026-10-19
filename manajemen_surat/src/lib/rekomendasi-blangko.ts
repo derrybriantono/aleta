@@ -29,6 +29,7 @@ import { gabungSemuaBas, type PilihanBlangkoBas } from "@/app/api/aleta-ecourt/b
 import { perluasAliasMenu } from "@/lib/alias-menu-derry";
 import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
 import { tentukanBasBaru } from "@/lib/alur-bas-baru";
+import { batasEnamBulanIkrar } from "@/lib/ikrar-talak";
 import { keadaanPutusan, type MasukanKeadaanPutusan } from "@/lib/keadaan-putusan";
 import { kunciJenisPerkara, kunciStatusPutusan } from "@/lib/pemetaan-blangko";
 import { JENIS_PENCEGAHAN_PERKAWINAN, blangkoAmplopPendamping, blangkoRelaas, pihakDipanggil, type BlangkoRelaas, type KeadaanRelaas, type PihakDipanggil } from "@/lib/pohon-blangko";
@@ -71,6 +72,9 @@ export type MasukanRekomendasi = {
   penggugatPernahHadir?: boolean | null;
   hadirSebelumnya?: number | null;
   sidangIkrarTalak?: boolean;
+  /** 19 Okt: tanggal sidang ini (YYYY-MM-DD) dan penetapan hari sidang ikrar (SIPP, bila terkirim) - dasar penetapan gugur [91] sesudah lewat 6 bulan. */
+  tanggalSidang?: string;
+  tanggalPenetapanSidangIkrar?: string | null;
   kumulasi?: unknown;
   ditunda?: boolean;
   sudahPutus?: boolean;
@@ -379,8 +383,13 @@ function rekomendasiPenetapanIkrar(m: MasukanRekomendasi, teks: string): Rekomen
   });
   const h = m.dihadiriOleh ?? null;
   const hasil: Rekomendasi[] = [];
-  if (/gugur|6\s*bulan|enam\s+bulan|tidak\s+(?:meng)?ikrar/i.test(teks)) {
-    hasil.push(r(i.gugur, "Penetapan putusan gugur (tidak ikrar 6 bulan)", "Sidang ikrar talak: Pemohon tidak mengikrarkan talak dalam 6 bulan.", true, true));
+  // Tenggat 6 bulan dihitung sejak penetapan hari sidang ikrar (Pasal 70 ayat (6) UU 7/1989); sidang tepat pada batas masih sah.
+  const batas = batasEnamBulanIkrar({ tanggalPenetapanSidangIkrar: m.tanggalPenetapanSidangIkrar });
+  const lewatBatas = Boolean(batas) && /^\d{4}-\d{2}-\d{2}/.test(String(m.tanggalSidang ?? "")) && String(m.tanggalSidang).slice(0, 10) > batas;
+  if (lewatBatas || /gugur|6\s*bulan|enam\s+bulan|tidak\s+(?:meng)?ikrar/i.test(teks)) {
+    hasil.push(
+      r(i.gugur, "Penetapan putusan gugur (tidak ikrar 6 bulan)", lewatBatas ? `Sidang ikrar talak sesudah batas 6 bulan sejak hari sidang ikrar ditetapkan (${batas}): Pemohon tidak mengikrarkan talak.` : "Sidang ikrar talak: Pemohon tidak mengikrarkan talak dalam 6 bulan.", true, !lewatBatas)
+    );
   }
   if (h === 3 || h === 4) return hasil; // Pemohon tidak hadir: ikrar belum diucapkan (BAS tunda ALUR 10 [3]/[4])
   const keduanya = h === 1;
@@ -584,6 +593,8 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
     penggugatPernahHadir: panggilan.penggugatPernahHadir === true ? true : panggilan.penggugatPernahHadir === false ? false : null,
     hadirSebelumnya: angka(panggilan.hadirSebelumnya),
     sidangIkrarTalak: b.sidangIkrarTalak === true,
+    tanggalSidang: String(b.tanggalSidang ?? "").slice(0, 10),
+    tanggalPenetapanSidangIkrar: typeof b.tanggalPenetapanSidangIkrar === "string" ? b.tanggalPenetapanSidangIkrar.slice(0, 10) : null,
     kumulasi: b.kumulasi,
     ditunda: b.ditunda === true,
     sudahPutus: b.sudahPutus === true,
