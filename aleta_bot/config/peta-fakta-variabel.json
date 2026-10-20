@@ -429,7 +429,8 @@
       "label": "Tujuan perkara",
       "tipe": "teks",
       "kode": [
-        "8171"
+        "8171",
+        "4500"
       ],
       "kunciSaksi": "tujuan"
     },
@@ -584,6 +585,99 @@
         "8730"
       ],
       "kunciSaksi": "bendaHarta"
+    },
+    "anak.mumayyiz": {
+      "label": "Keadaan anak (belum atau sudah mumayyiz)",
+      "tipe": "pilihan",
+      "kode": [
+        "4106"
+      ]
+    },
+    "waris.anakAngkat": {
+      "label": "Anak angkat pewaris",
+      "tipe": "nama",
+      "kode": [
+        "4502"
+      ],
+      "kunciSaksi": "anakAngkat"
+    },
+    "waris.wasiat": {
+      "label": "Wasiat pewaris",
+      "tipe": "teks",
+      "kode": [
+        "4507"
+      ],
+      "kunciSaksi": "wasiatPewaris"
+    },
+    "waris.kerabatTakIslam": {
+      "label": "Kerabat pewaris yang tidak beragama Islam",
+      "tipe": "teks",
+      "kode": [
+        "4510"
+      ],
+      "kunciSaksi": "kerabatTakIslam"
+    },
+    "waris.keadaanPerkawinan": {
+      "label": "Keadaan perkawinan pewaris saat meninggal (1 berpisah, 2 bercerai)",
+      "tipe": "pilihan",
+      "kode": [
+        "4513"
+      ],
+      "hanyaSaran": true
+    },
+    "waris.bagian": {
+      "label": "Bagian masing-masing ahli waris (usulan hitungan KHI)",
+      "tipe": "teks",
+      "kode": [
+        "4515"
+      ],
+      "hanyaSaran": true
+    },
+    "waris.hartaBersama": {
+      "label": "Harta peninggalan yang diperoleh selama perkawinan",
+      "tipe": "teks",
+      "kode": [
+        "4520"
+      ]
+    },
+    "waris.sikapAnakAngkat": {
+      "label": "Sikap terhadap anak angkat (1 = wasiat wajibah dalam amar)",
+      "tipe": "pilihan",
+      "kode": [
+        "4505"
+      ],
+      "hanyaSaran": true
+    },
+    "waris.batasPenggunaan": {
+      "label": "Pembatasan penggunaan penetapan (1 = hanya untuk tujuan permohonan)",
+      "tipe": "pilihan",
+      "kode": [
+        "4534"
+      ],
+      "hanyaSaran": true
+    },
+    "waris.penggantiSaudara": {
+      "label": "Saudara pewaris yang meninggal lebih dahulu (diganti anaknya)",
+      "tipe": "nama",
+      "kode": [
+        "4540"
+      ],
+      "kunciSaksi": "saudaraPengganti"
+    },
+    "waris.penggantiKeponakan": {
+      "label": "Anak dari saudara pewaris yang meninggal lebih dahulu (ahli waris pengganti)",
+      "tipe": "daftar",
+      "kode": [
+        "4541"
+      ],
+      "kunciSaksi": "keponakanPengganti"
+    },
+    "waris.pasanganWafat": {
+      "label": "Kematian suami/istri pewaris (pada tanggal ... di ... karena ...)",
+      "tipe": "teks",
+      "kode": [
+        "8613"
+      ]
     }
   },
   "pokokBas": [
