@@ -2469,12 +2469,53 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       tipeKeluaranDiterima: Boolean(tipe.tipeKeluaran),
     };
 
+    /* === U6 20 Okt === */
+    // Fakta bersama satu perkara (faktaPerkara): tanya jawab saksi/BAS membaca nilai yang SAMA dengan Blangko Derry dan putusan.
+    // Dihitung sekali per permintaan, hanya bila dibutuhkan; memakai usulan dariSipp yang sudah ada (tanpa bacaan ulang) dan
+    // data SIPP saksi yang sudah dibaca. Gagal = null (jawaban saksi tetap dari sumber sendiri).
+    let janjiFaktaBersama = null;
+    const faktaBersama = (sippSaksiAda) => {
+      if (!janjiFaktaBersama) {
+        janjiFaktaBersama = nomorPerkara
+          ? Promise.race([
+              require("../services/faktaPerkara").faktaPerkara(nomorPerkara, {
+                usulan: jawaban.sipp && Array.isArray(jawaban.sipp.usulan) ? jawaban.sipp.usulan : undefined,
+                tanpaDariSipp: !(jawaban.sipp && Array.isArray(jawaban.sipp.usulan)),
+                tanpaBas: true,
+                pelaku,
+                lawan,
+                isian: req.body?.isian,
+                ...(sippSaksiAda ? { sippSaksi: sippSaksiAda } : {}),
+              }),
+              new Promise((selesai) => setTimeout(() => selesai(null), 4000)),
+            ]).catch(() => null)
+          : Promise.resolve(null);
+      }
+      return janjiFaktaBersama;
+    };
+    /* === AKHIR U6 === */
     if (sumber === "semua" || sumber === "sipp") {
       jawaban.sipp = await abtUsulanService.dariSipp(nomorPerkara).catch((galat) => ({
         ok: false,
         alasan: String(galat.message || galat).slice(0, 200),
         usulan: [],
       }));
+      /* === U6 20 Okt === */
+      // Kode setara: koreksi petugas di satu blangko diteruskan ke kode lain yang menyimpan fakta yang sama (hanya mengisi yang
+      // kosong - jagaIsianLama). Gerbang keyakinan (gerbangIsian) diterapkan sesudahnya pada seluruh usulan.
+      if (jawaban.sipp && jawaban.sipp.ok && Array.isArray(jawaban.sipp.usulan)) {
+        try {
+          const fb = await faktaBersama();
+          for (const u of (fb && fb.usulanSetara) || []) {
+            const i = jawaban.sipp.usulan.findIndex((x) => x && x.kode === u.kode);
+            if (i < 0) jawaban.sipp.usulan.push(u);
+            else if (!String(jawaban.sipp.usulan[i].nilai || "").trim()) jawaban.sipp.usulan[i] = u;
+          }
+        } catch (_galat) {
+          /* kode setara bersifat tambahan */
+        }
+      }
+      /* === AKHIR U6 === */
     }
     // Itsbat nikah - fakta pernikahan dari posita permohonan. Positanya
     // dikirim ekstensi dari halaman ABT (variabel 5125), bukan dibaca dari
@@ -2697,6 +2738,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         ...(alamatPihakSipp ? { alamatPihak: alamatPihakSipp } : {}),
         isian: req.body?.isian,
         sipp: sippSaksi,
+        faktaBersama: await faktaBersama(sippSaksi),
         saksiIsi: Array.isArray(req.body?.saksiIsi) ? req.body.saksiIsi.slice(0, 12) : [],
       });
     }
@@ -2865,6 +2907,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
             ...(alamatPihakSipp ? { alamatPihak: alamatPihakSipp } : {}),
             isian: req.body?.isian,
             sipp: sippSaksi,
+            faktaBersama: await faktaBersama(sippSaksi),
             saksi: saksiMasuk.saksi,
           });
           if (ringkasIsi && ringkasIsi.terisi) jawaban.saksiSdg.terisiDariSumber = { jawaban: ringkasIsi.terisi, ragu: ringkasIsi.ragu };
@@ -2981,6 +3024,17 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
     if (tipe.ditolak.length || ditolakLayanan.length) {
       jawaban.tipeKeluaranDitolak = [...tipe.ditolak, ...ditolakLayanan];
     }
+
+    /* === U6 20 Okt === */
+    // GERBANG OTOMATIS BERDASAR: usulan pasti/cukup hanya tetap bila kode+asalnya terukur ketepatannya (config/gerbang-isian.json);
+    // selain itu menjadi saran "ragu". Satu tempat untuk semua sumber usulan (sipp, saksi, itsbat, posita-lain).
+    try {
+      const gerbang = require("../services/gerbangIsian");
+      for (const bag of [jawaban.sipp, jawaban.saksi, jawaban.itsbat, jawaban.positaLain]) if (bag && Array.isArray(bag.usulan)) gerbang.terapkan(bag.usulan);
+    } catch (galatGerbang) {
+      jawaban.gerbangGalat = String((galatGerbang && galatGerbang.message) || galatGerbang).slice(0, 160);
+    }
+    /* === AKHIR U6 === */
 
     res.json(jawaban);
   } catch (error) {

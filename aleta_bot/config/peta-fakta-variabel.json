@@ -1,0 +1,701 @@
+{
+  "skema": "peta-fakta-variabel/1",
+  "versi": 1,
+  "diubah": "2026-10-20",
+  "catatan": "Peta BERSAMA fakta perkara -> kode variabel ABT. Satu fakta dapat tersimpan di beberapa kode (blangko berbeda memakai kode berbeda untuk hal yang sama); tanya jawab saksi, BAS, putusan dan Blangko Derry membaca nilai yang SAMA lewat faktaPerkara() (bot, services/faktaPerkara.js). Berkas ini boleh DITAMBAH (agen U1-U5 menambah fakta/kode jenisnya); jangan menghapus atau mengubah arti yang sudah ada. Tiap kode hanya boleh tercantum pada SATU fakta (dijaga uji fakta-perkara-u6.test.ts).",
+  "tipe": {
+    "teks": "teks bebas, dibandingkan dengan 'saling memuat'",
+    "tanggal": "tanggal; dibandingkan sebagai tanggal ISO bila lengkap, selain itu 'bulan Mei 1997' / 'tahun 1956' sebagai teks",
+    "angka": "bilangan (umur, jumlah)",
+    "rupiah": "nominal uang; dibandingkan sebagai bilangan",
+    "nama": "nama orang; dibandingkan sebagai himpunan nama baku",
+    "daftar": "beberapa nama/butir dipisah ';'",
+    "jumlahAnak": "jumlah anak; dari kalimat 'telah dikaruniai ... anak'",
+    "pilihan": "salah satu dari beberapa nilai tetap (huruf, ya/tidak, P/T)"
+  },
+  "bentuk": {
+    "asal": "ditulis sama persis dengan nilai fakta",
+    "indo": "17 November 2025",
+    "slash": "17/11/2025",
+    "iso": "2025-11-17",
+    "kalimatAnak": "kalimat jumlah anak: 'telah dikaruniai seorang anak' / 'belum dikaruniai anak' (variabel 0007)"
+  },
+  "fakta": {
+    "nikah.tanggal": {
+      "label": "Tanggal nikah",
+      "tipe": "tanggal",
+      "kode": [
+        "5197"
+      ],
+      "kunciSaksi": "tglNikah"
+    },
+    "nikah.tempat": {
+      "label": "Tempat/alamat menikah",
+      "tipe": "teks",
+      "kode": [
+        "5105"
+      ],
+      "kunciSaksi": "tempatNikah"
+    },
+    "nikah.kua": {
+      "label": "KUA tempat menikah",
+      "tipe": "teks",
+      "kode": [
+        "5178"
+      ],
+      "kunciSaksi": "kua"
+    },
+    "nikah.mahar": {
+      "label": "Mahar",
+      "tipe": "teks",
+      "kode": [
+        "1001"
+      ],
+      "kunciSaksi": "mahar"
+    },
+    "nikah.penikah": {
+      "label": "Yang menikahkan",
+      "tipe": "teks",
+      "kode": [
+        "8087"
+      ],
+      "kunciSaksi": "penikah"
+    },
+    "nikah.saksi1": {
+      "label": "Saksi nikah 1",
+      "tipe": "nama",
+      "kode": [
+        "0650"
+      ],
+      "kunciSaksi": "saksiNikah1"
+    },
+    "nikah.saksi2": {
+      "label": "Saksi nikah 2",
+      "tipe": "nama",
+      "kode": [
+        "0651"
+      ],
+      "kunciSaksi": "saksiNikah2"
+    },
+    "nikah.wali.nama": {
+      "label": "Nama wali nikah",
+      "tipe": "nama",
+      "kode": [
+        "1217"
+      ],
+      "kunciSaksi": "waliNama"
+    },
+    "nikah.wali.hubungan": {
+      "label": "Hubungan wali nikah",
+      "tipe": "teks",
+      "kode": [
+        "1046"
+      ],
+      "kunciSaksi": "waliHubungan"
+    },
+    "nikah.wali.sebabBukanAyah": {
+      "label": "Sebab wali bukan ayah",
+      "tipe": "teks",
+      "kode": [
+        "1357"
+      ],
+      "kunciSaksi": "sebabWaliBukanAyah"
+    },
+    "pihak.p1.statusSebelumNikah": {
+      "label": "Status pihak pertama sebelum menikah",
+      "tipe": "teks",
+      "kode": [
+        "1002"
+      ],
+      "kunciSaksi": "statusP1"
+    },
+    "pihak.p2.statusSebelumNikah": {
+      "label": "Status pihak kedua sebelum menikah",
+      "tipe": "teks",
+      "kode": [
+        "1003"
+      ],
+      "kunciSaksi": "statusP2"
+    },
+    "pihak.p1.umurSaatNikah": {
+      "label": "Umur pihak pertama saat menikah",
+      "tipe": "angka",
+      "kode": [
+        "7211"
+      ],
+      "kunciSaksi": "umurP1"
+    },
+    "pihak.p2.umurSaatNikah": {
+      "label": "Umur pihak kedua saat menikah",
+      "tipe": "angka",
+      "kode": [
+        "7212"
+      ],
+      "kunciSaksi": "umurP2"
+    },
+    "pihak.p1.alamat": {
+      "label": "Alamat pihak pertama",
+      "tipe": "teks",
+      "kode": [],
+      "kunciSaksi": "alamatP"
+    },
+    "pihak.p2.alamat": {
+      "label": "Alamat pihak kedua",
+      "tipe": "teks",
+      "kode": [],
+      "kunciSaksi": "alamatT"
+    },
+    "pihak.p1.pekerjaan": {
+      "label": "Pekerjaan Pemohon/Penggugat",
+      "tipe": "teks",
+      "kode": [
+        "6331"
+      ]
+    },
+    "kediaman.bersama": {
+      "label": "Tempat tinggal bersama",
+      "tipe": "teks",
+      "kode": [],
+      "kunciSaksi": "kediaman"
+    },
+    "anak.jumlah": {
+      "label": "Jumlah anak",
+      "tipe": "jumlahAnak",
+      "kode": [
+        "0007"
+      ],
+      "kunciSaksi": "jumlahAnak",
+      "bentukKode": {
+        "0007": "kalimatAnak"
+      }
+    },
+    "anak.nama": {
+      "label": "Nama anak",
+      "tipe": "daftar",
+      "kode": [
+        "5110",
+        "8603"
+      ],
+      "kunciSaksi": "anakNama"
+    },
+    "anak.umur": {
+      "label": "Umur anak",
+      "tipe": "teks",
+      "kode": [
+        "5111"
+      ]
+    },
+    "anak.diasuhOleh": {
+      "label": "Anak kini diasuh oleh",
+      "tipe": "pilihan",
+      "kode": [
+        "2004"
+      ],
+      "kunciSaksi": "anakIkutPihak"
+    },
+    "anak.hubunganPenggugat": {
+      "label": "Hubungan Penggugat/Pemohon dengan anak",
+      "tipe": "teks",
+      "kode": [
+        "0709"
+      ]
+    },
+    "anak.hubunganTergugat": {
+      "label": "Hubungan Tergugat/Termohon dengan anak",
+      "tipe": "teks",
+      "kode": [
+        "0711"
+      ]
+    },
+    "anak.tempatTanggalLahir": {
+      "label": "Tempat dan tanggal lahir anak",
+      "tipe": "teks",
+      "kode": [
+        "9709"
+      ]
+    },
+    "konflik.awal": {
+      "label": "Awal perselisihan",
+      "tipe": "teks",
+      "kode": [
+        "0222"
+      ],
+      "kunciSaksi": "awalKonflik"
+    },
+    "konflik.puncak": {
+      "label": "Puncak perselisihan",
+      "tipe": "teks",
+      "kode": [],
+      "kunciSaksi": "puncak"
+    },
+    "konflik.pisahSejak": {
+      "label": "Pisah rumah sejak",
+      "tipe": "teks",
+      "kode": [
+        "0246"
+      ],
+      "kunciSaksi": "pisahSejak"
+    },
+    "konflik.lamaPisah": {
+      "label": "Lama pisah rumah",
+      "tipe": "teks",
+      "kode": [
+        "9944"
+      ],
+      "kunciSaksi": "lamaPisah"
+    },
+    "konflik.pergi": {
+      "label": "Yang meninggalkan rumah bersama",
+      "tipe": "pilihan",
+      "kode": [
+        "7035"
+      ],
+      "kunciSaksi": "siapaPergi"
+    },
+    "konflik.hurufAlasan": {
+      "label": "Huruf alasan perceraian (usulan; keputusan hakim)",
+      "tipe": "pilihan",
+      "kode": [
+        "8503"
+      ],
+      "hanyaSaran": true
+    },
+    "tuntutan.nafkahMadliyah.nominal": {
+      "label": "Nafkah madliyah yang dituntut",
+      "tipe": "rupiah",
+      "kode": [
+        "9711"
+      ]
+    },
+    "tuntutan.nafkahIddah.nominal": {
+      "label": "Nafkah iddah yang dituntut",
+      "tipe": "rupiah",
+      "kode": [
+        "9712"
+      ]
+    },
+    "tuntutan.mutah.nominal": {
+      "label": "Mut'ah yang dituntut",
+      "tipe": "rupiah",
+      "kode": [
+        "9713"
+      ]
+    },
+    "tuntutan.bayarSebelumAktaCerai": {
+      "label": "Nafkah dibayar sebelum Tergugat mengambil akta cerai",
+      "tipe": "pilihan",
+      "kode": [
+        "9715"
+      ]
+    },
+    "tuntutan.nafkahAnak.kenaikanPerTahun": {
+      "label": "Kenaikan nafkah anak per tahun menurut petitum",
+      "tipe": "teks",
+      "kode": [
+        "9050"
+      ]
+    },
+    "tuntutan.nafkahIddah.kalimat": {
+      "label": "Nafkah iddah menurut petitum (kalimat)",
+      "tipe": "teks",
+      "kode": [
+        "6054"
+      ]
+    },
+    "tuntutan.mutah.kalimat": {
+      "label": "Mut'ah menurut petitum (kalimat)",
+      "tipe": "teks",
+      "kode": [
+        "6055"
+      ]
+    },
+    "tuntutan.nafkahAnak.kalimat": {
+      "label": "Nafkah anak menurut petitum (kalimat)",
+      "tipe": "teks",
+      "kode": [
+        "6071"
+      ]
+    },
+    "tuntutan.nafkahMadliyah.kalimat": {
+      "label": "Nafkah madliyah menurut petitum (kalimat)",
+      "tipe": "teks",
+      "kode": [
+        "7120"
+      ]
+    },
+    "tuntutan.hadhanah": {
+      "label": "Tuntutan hak asuh anak (hadhanah)",
+      "tipe": "pilihan",
+      "kode": [
+        "7778"
+      ]
+    },
+    "itsbat.alasanTidakDicatat": {
+      "label": "Alasan pernikahan tidak dicatatkan",
+      "tipe": "teks",
+      "kode": [
+        "9686"
+      ]
+    },
+    "itsbat.tglPengumuman": {
+      "label": "Tanggal pengumuman itsbat",
+      "tipe": "tanggal",
+      "kode": [
+        "0303"
+      ]
+    },
+    "mediasi.kesepakatan.tanggal": {
+      "label": "Tanggal kesepakatan perdamaian",
+      "tipe": "tanggal",
+      "kode": [
+        "8705"
+      ]
+    },
+    "mediasi.kesepakatan.isi": {
+      "label": "Isi kesepakatan perdamaian",
+      "tipe": "teks",
+      "kode": [
+        "8704"
+      ]
+    },
+    "mediasi.kesepakatan.pokokSebagian": {
+      "label": "Pokok kesepakatan perdamaian sebagian",
+      "tipe": "teks",
+      "kode": [
+        "8899"
+      ]
+    },
+    "perkara.alasanCabut": {
+      "label": "Alasan pencabutan perkara",
+      "tipe": "teks",
+      "kode": [
+        "8433"
+      ]
+    },
+    "ikrar.batasWaktu": {
+      "label": "Batas waktu ikrar talak",
+      "tipe": "tanggal",
+      "kode": [
+        "1183"
+      ],
+      "bentukKode": {
+        "1183": "slash"
+      }
+    },
+    "ikrar.phsBaru": {
+      "label": "Tanggal PHS baru ikrar talak",
+      "tipe": "tanggal",
+      "kode": [
+        "1081"
+      ]
+    },
+    "delegasi.nomorSurat": {
+      "label": "Nomor surat permintaan bantuan panggilan",
+      "tipe": "teks",
+      "kode": [
+        "1154"
+      ]
+    },
+    "delegasi.tanggalSurat": {
+      "label": "Tanggal surat permintaan bantuan panggilan",
+      "tipe": "tanggal",
+      "kode": [
+        "1232"
+      ]
+    },
+    "delegasi.biaya": {
+      "label": "Ongkos panggilan permintaan bantuan",
+      "tipe": "rupiah",
+      "kode": [
+        "5230"
+      ]
+    },
+    "kuasa.tergugat.tanggal": {
+      "label": "Tanggal surat kuasa Tergugat/Termohon",
+      "tipe": "tanggal",
+      "kode": [
+        "0185"
+      ]
+    },
+    "wali.hubunganErat": {
+      "label": "Hubungan erat wali/pemohon dengan calon",
+      "tipe": "teks",
+      "kode": [
+        "1014"
+      ],
+      "kunciSaksi": "hubunganErat"
+    },
+    "perkara.tujuan": {
+      "label": "Tujuan perkara",
+      "tipe": "teks",
+      "kode": [
+        "8171"
+      ],
+      "kunciSaksi": "tujuan"
+    },
+    "calon.pria.nama": {
+      "label": "Nama calon mempelai pria",
+      "tipe": "nama",
+      "kode": [
+        "0600"
+      ]
+    },
+    "calon.pria.umur": {
+      "label": "Umur calon mempelai pria",
+      "tipe": "teks",
+      "kode": [
+        "0601"
+      ]
+    },
+    "calon.pria.status": {
+      "label": "Status calon mempelai pria",
+      "tipe": "teks",
+      "kode": [
+        "2029"
+      ]
+    },
+    "calon.wanita.nama": {
+      "label": "Nama calon mempelai wanita",
+      "tipe": "nama",
+      "kode": [
+        "0606",
+        "8723"
+      ],
+      "kunciSaksi": "calonNama"
+    },
+    "calon.wanita.umur": {
+      "label": "Umur calon mempelai wanita",
+      "tipe": "teks",
+      "kode": [
+        "0607"
+      ]
+    },
+    "calon.wanita.status": {
+      "label": "Status calon mempelai wanita",
+      "tipe": "teks",
+      "kode": [
+        "2030"
+      ]
+    },
+    "calon.wanita.tanggalLahir": {
+      "label": "Tanggal lahir calon mempelai wanita",
+      "tipe": "tanggal",
+      "kode": [
+        "0349"
+      ]
+    },
+    "calon.wanita.pendidikan": {
+      "label": "Pendidikan calon mempelai wanita",
+      "tipe": "teks",
+      "kode": [
+        "0609"
+      ]
+    },
+    "calon.wanita.pekerjaan": {
+      "label": "Pekerjaan calon mempelai wanita",
+      "tipe": "teks",
+      "kode": [
+        "0610"
+      ]
+    },
+    "pewaris.nama": {
+      "label": "Nama pewaris",
+      "tipe": "nama",
+      "kode": [
+        "1025"
+      ],
+      "kunciSaksi": "pewarisNama"
+    },
+    "pewaris.wafatTanggal": {
+      "label": "Tanggal wafat pewaris",
+      "tipe": "tanggal",
+      "kode": [
+        "1246"
+      ],
+      "kunciSaksi": "wafatTgl"
+    },
+    "pewaris.wafatSebab": {
+      "label": "Sebab wafat pewaris",
+      "tipe": "teks",
+      "kode": [
+        "1247"
+      ],
+      "kunciSaksi": "wafatSebab"
+    },
+    "pewaris.wafatTempat": {
+      "label": "Tempat wafat pewaris",
+      "tipe": "teks",
+      "kode": [
+        "1509"
+      ],
+      "kunciSaksi": "wafatTempat"
+    },
+    "waris.pasangan": {
+      "label": "Pasangan pewaris",
+      "tipe": "daftar",
+      "kode": [
+        "8610",
+        "9701"
+      ],
+      "kunciSaksi": "pewarisPasangan"
+    },
+    "waris.anakKandung": {
+      "label": "Anak kandung pewaris",
+      "tipe": "daftar",
+      "kode": [
+        "8608",
+        "9702"
+      ],
+      "kunciSaksi": "anakPewaris"
+    },
+    "waris.ibuKandung": {
+      "label": "Ibu kandung pewaris",
+      "tipe": "daftar",
+      "kode": [
+        "9704"
+      ]
+    },
+    "waris.saudara": {
+      "label": "Saudara kandung/seayah pewaris",
+      "tipe": "daftar",
+      "kode": [
+        "9718"
+      ]
+    },
+    "waris.hartaPeninggalan": {
+      "label": "Harta peninggalan pewaris",
+      "tipe": "teks",
+      "kode": [
+        "8614"
+      ],
+      "kunciSaksi": "hartaPeninggalan"
+    },
+    "waris.pencairanDana": {
+      "label": "Pencairan dana",
+      "tipe": "teks",
+      "kode": [
+        "9700"
+      ]
+    },
+    "harta.benda": {
+      "label": "Benda/harta yang disengketakan",
+      "tipe": "teks",
+      "kode": [
+        "8730"
+      ],
+      "kunciSaksi": "bendaHarta"
+    }
+  },
+  "pokokBas": [
+    {
+      "id": "hubungan",
+      "label": "Hubungan saksi dengan pihak",
+      "pola": "kenal|hubungan|sebagai apa|keluarga|saudara",
+      "fakta": []
+    },
+    {
+      "id": "pernikahan",
+      "label": "Pernikahan para pihak",
+      "pola": "menikah|nikah|perkawinan|akta nikah|buku nikah|dinikahkan|wali",
+      "fakta": [
+        "nikah.tanggal",
+        "nikah.tempat",
+        "nikah.kua",
+        "nikah.wali.nama",
+        "nikah.mahar"
+      ]
+    },
+    {
+      "id": "kediaman",
+      "label": "Tempat tinggal bersama",
+      "pola": "tinggal bersama|tempat tinggal|kediaman|serumah|rumah",
+      "fakta": [
+        "kediaman.bersama",
+        "pihak.p1.alamat",
+        "pihak.p2.alamat"
+      ]
+    },
+    {
+      "id": "anak",
+      "label": "Anak para pihak",
+      "pola": "anak|dikaruniai|dikarunia|diasuh|hak asuh|nafkah anak",
+      "fakta": [
+        "anak.jumlah",
+        "anak.nama",
+        "anak.diasuhOleh"
+      ]
+    },
+    {
+      "id": "penyebab",
+      "label": "Penyebab perselisihan dan pertengkaran",
+      "pola": "penyebab|sebab|mengapa|kenapa|alasan|perselisihan|pertengkaran|cekcok|bertengkar",
+      "fakta": [
+        "konflik.awal",
+        "konflik.puncak"
+      ]
+    },
+    {
+      "id": "pisah",
+      "label": "Pisah rumah",
+      "pola": "pisah|berpisah|meninggalkan|pergi|kembali",
+      "fakta": [
+        "konflik.pisahSejak",
+        "konflik.lamaPisah",
+        "konflik.pergi"
+      ]
+    },
+    {
+      "id": "nafkah",
+      "label": "Nafkah dan kewajiban",
+      "pola": "nafkah|memberi nafkah|menafkahi|mut'?ah|iddah|biaya hidup",
+      "fakta": [
+        "tuntutan.nafkahIddah.nominal",
+        "tuntutan.mutah.nominal",
+        "tuntutan.nafkahMadliyah.nominal"
+      ]
+    },
+    {
+      "id": "damai",
+      "label": "Upaya damai",
+      "pola": "damai|mendamaikan|rukun kembali|menasehati|menasihati|upaya",
+      "fakta": []
+    },
+    {
+      "id": "harta",
+      "label": "Harta bersama / benda sengketa",
+      "pola": "harta|barang|tanah|rumah|kendaraan|motor|mobil|kebun|sertifikat",
+      "fakta": [
+        "harta.benda"
+      ]
+    },
+    {
+      "id": "kematian",
+      "label": "Kematian dan ahli waris",
+      "pola": "meninggal(?!kan)|wafat|ahli waris|warisan|hutang|utang|peninggalan",
+      "fakta": [
+        "pewaris.nama",
+        "pewaris.wafatTanggal",
+        "waris.anakKandung",
+        "waris.pasangan"
+      ]
+    },
+    {
+      "id": "identitas-calon",
+      "label": "Calon mempelai dan alasan mendesak",
+      "pola": "calon|umur|usia|hamil|mendesak|dispensasi|lamar|pacaran",
+      "fakta": [
+        "calon.pria.nama",
+        "calon.wanita.nama",
+        "calon.wanita.umur"
+      ]
+    },
+    {
+      "id": "kemampuan",
+      "label": "Kemampuan dan kesanggupan",
+      "pola": "mampu|sanggup|penghasilan|pekerjaan|bertanggung jawab",
+      "fakta": [
+        "pihak.p1.pekerjaan"
+      ]
+    }
+  ]
+}
