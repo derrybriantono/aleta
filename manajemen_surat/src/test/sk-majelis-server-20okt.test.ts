@@ -205,9 +205,7 @@ describe("peringatan pegawai SK", () => {
 });
 
 describe("migrasi 0079 (kolom aktif)", () => {
-  const baca = (p: string) => readFileSync(path.join(path.resolve(process.cwd()), p), "utf8").replace(/
-/g, "
-");
+  const baca = (p: string) => readFileSync(path.join(path.resolve(process.cwd()), p), "utf8").replace(/\r\n/g, "\n");
 
   it("terdaftar di jurnal dengan idx unik, DDL schema.ts dan migrasi sama, data lama aktif bawaan", () => {
     const jurnal = JSON.parse(baca("drizzle/meta/_journal.json")) as { entries: Array<{ idx: number; tag: string }> };
@@ -215,8 +213,7 @@ describe("migrasi 0079 (kolom aktif)", () => {
     expect(new Set(nomor).size).toBe(nomor.length);
     expect(jurnal.entries.find((e) => e.tag === "0079_aleta_sk_majelis_aktif")?.idx).toBe(72);
     expect(baca("drizzle/0079_aleta_sk_majelis_aktif.sql")).toContain("ADD COLUMN IF NOT EXISTS aktif SMALLINT NOT NULL DEFAULT 1");
-    expect(baca("src/server/db/schema.ts")).toContain("aktif SMALLINT NOT NULL DEFAULT 1,
-    updated_at TEXT NOT NULL");
+    expect(baca("src/server/db/schema.ts")).toContain("aktif SMALLINT NOT NULL DEFAULT 1,\n    updated_at TEXT NOT NULL");
     expect(baca("src/server/db/drizzle-schema.ts")).toContain('aktif: integer("aktif").notNull().default(1)');
   });
 });
