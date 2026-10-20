@@ -3765,6 +3765,8 @@ export async function getGatewayAbtUsulan(muatan: {
   /** Isian blangko perkara itu (kode -> {nilai, keyakinan}) dan baris yang diisi (sumber isi-jawaban), 20 Okt 2026. */
   isian?: Record<string, { nilai: string; keyakinan?: string }>;
   saksiIsi?: Array<{ kunci: string; ke: number; modus: string; sumberNama: string; baris: Array<{ kunci: string; tanya: string; jawab: string }> }>;
+  /** Minta fakta perkara apa adanya (isi-jawaban), 20 Okt 2026. */
+  mintaFakta?: boolean;
   /** Sumber 'pertanyaan-saksi' (12 Okt 2026): aksi daftar/ambil set pertanyaan saksi baku, huruf alasan, tambahan. */
   pertanyaanSaksi?: { aksi?: "daftar" | "ambil"; namaSet?: string; pihak?: string; huruf?: string[]; tambahan?: string[] };
   saksi1?: string;
@@ -3823,6 +3825,8 @@ export async function getGatewayAbtUsulan(muatan: {
     saksiSdg: Record<string, unknown> | null;
     /** Jawaban yang diisi dari data (sumber 'isi-jawaban'): kunci -> {teks, yakin, sumber, ket}. */
     isiJawaban?: Record<string, { teks: string; yakin: string; sumber: string; ket: string }> | null;
+    /** Fakta perkara apa adanya (hanya bila mintaFakta): kunci -> {nilai, yakin, sumber, ket}. */
+    faktaPerkara?: Record<string, { nilai: string; yakin: string; sumber: string; ket: string }> | null;
     /** Usulan perkara lain dari posita (sumber 'posita-lain'). */
     positaLain?: Record<string, unknown> | null;
     /**

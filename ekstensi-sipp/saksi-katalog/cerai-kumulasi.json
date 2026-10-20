@@ -2667,18 +2667,18 @@
    ],
    "jawaban": {
     "melihat": {
-     "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+     "maksud": "saksi mengetahui hal itu dari pengamatannya sendiri",
      "saksi1": [
-      "saya melihat sendiri bahwa #9302# bersekolah dan biaya sekolahnya ditanggung oleh {isi}",
-      "saya menyaksikan langsung bahwa sekolah #9302# berjalan dengan biaya dari {isi}",
-      "#9302# masih bersekolah sedangkan biayanya dipikul {isi} dan hal itu saya lihat sendiri",
-      "saya berada di tempat kejadian dan melihat bahwa pendidikan #9302# dibiayai oleh {isi}"
+      "#9302# bersekolah dan biaya sekolahnya ditanggung oleh {isi}",
+      "sekolah #9302# berjalan dengan biaya dari {isi}",
+      "#9302# masih bersekolah sedangkan biayanya dipikul {isi}",
+      "pendidikan #9302# dibiayai oleh {isi}"
      ],
      "saksi2": [
-      "yang saya saksikan sendiri adalah bahwa yang membiayai sekolah #9302# adalah {isi}",
-      "dengan mata kepala saya sendiri saya melihat bahwa #9302# bersekolah dengan biaya yang berasal dari {isi}",
-      "saya mengalami dan melihat langsung bahwa biaya pendidikan #9302# dibayar oleh {isi}",
-      "#9302# tetap sekolah berkat biaya dari {isi} sebagaimana yang saya saksikan sendiri"
+      "yang membiayai sekolah #9302# adalah {isi}",
+      "#9302# bersekolah dengan biaya yang berasal dari {isi}",
+      "biaya pendidikan #9302# dibayar oleh {isi}",
+      "#9302# tetap sekolah berkat biaya dari {isi}"
      ]
     },
     "mendengar": {
@@ -2750,18 +2750,18 @@
    ],
    "jawaban": {
     "melihat": {
-     "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+     "maksud": "saksi mengetahui hal itu dari pengamatannya sendiri",
      "saksi1": [
-      "saya melihat sendiri bahwa biaya sekolah #9302# setiap bulan berkisar {isi}",
-      "saya menyaksikan langsung bahwa untuk sekolah #9302# diperlukan dana sekitar {isi} tiap bulan",
-      "pengeluaran pendidikan #9302# sebulan kurang lebih {isi} dan hal itu saya lihat sendiri",
-      "saya berada di tempat kejadian dan melihat bahwa sebulan biaya sekolah #9302# mencapai sekitar {isi}"
+      "biaya sekolah #9302# setiap bulan berkisar {isi}",
+      "untuk sekolah #9302# diperlukan dana sekitar {isi} tiap bulan",
+      "pengeluaran pendidikan #9302# sebulan kurang lebih {isi}",
+      "sebulan biaya sekolah #9302# mencapai sekitar {isi}"
      ],
      "saksi2": [
-      "yang saya saksikan sendiri adalah bahwa kebutuhan sekolah #9302# per bulan sekitar {isi}",
-      "dengan mata kepala saya sendiri saya melihat bahwa setiap bulan pendidikan #9302# memerlukan sekitar {isi}",
-      "saya mengalami dan melihat langsung bahwa biaya pendidikan #9302# tiap bulannya lebih kurang {isi}",
-      "dana yang dikeluarkan untuk sekolah #9302# sebulan sekitar {isi} sebagaimana yang saya saksikan sendiri"
+      "kebutuhan sekolah #9302# per bulan sekitar {isi}",
+      "setiap bulan pendidikan #9302# memerlukan sekitar {isi}",
+      "biaya pendidikan #9302# tiap bulannya lebih kurang {isi}",
+      "dana yang dikeluarkan untuk sekolah #9302# sebulan sekitar {isi}"
      ]
     },
     "mendengar": {
@@ -3363,18 +3363,18 @@
    ],
    "jawaban": {
     "melihat": {
-     "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+     "maksud": "saksi mengetahui hal itu dari pengamatannya sendiri",
      "saksi1": [
-      "saya melihat sendiri bahwa bukti kepemilikan harta itu tercatat atas nama {isi}",
-      "saya menyaksikan langsung bahwa surat kepemilikan harta tersebut dibuat atas nama {isi}",
-      "harta itu tercatat milik {isi} dalam bukti kepemilikannya dan hal itu saya lihat sendiri",
-      "saya berada di tempat kejadian dan melihat bahwa nama yang tertera pada bukti kepemilikan harta itu adalah {isi}"
+      "bukti kepemilikan harta itu tercatat atas nama {isi}",
+      "surat kepemilikan harta tersebut dibuat atas nama {isi}",
+      "harta itu tercatat milik {isi} dalam bukti kepemilikannya",
+      "nama yang tertera pada bukti kepemilikan harta itu adalah {isi}"
      ],
      "saksi2": [
-      "yang saya saksikan sendiri adalah bahwa atas nama {isi} bukti kepemilikan harta itu diterbitkan",
-      "dengan mata kepala saya sendiri saya melihat bahwa pada surat harta tersebut tertulis nama {isi}",
-      "saya mengalami dan melihat langsung bahwa harta itu terdaftar atas nama {isi}",
-      "kepemilikan harta itu dicatat atas nama {isi} sebagaimana yang saya saksikan sendiri"
+      "atas nama {isi} bukti kepemilikan harta itu diterbitkan",
+      "pada surat harta tersebut tertulis nama {isi}",
+      "harta itu terdaftar atas nama {isi}",
+      "kepemilikan harta itu dicatat atas nama {isi}"
      ]
     },
     "mendengar": {
@@ -3444,18 +3444,18 @@
    ],
    "jawaban": {
     "melihat": {
-     "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+     "maksud": "saksi mengetahui hal itu dari pengamatannya sendiri",
      "saksi1": [
-      "saya melihat sendiri bahwa nilai harta itu sekarang sekitar {isi}",
-      "saya menyaksikan langsung bahwa harga harta tersebut saat ini berkisar {isi}",
-      "harta itu bernilai kurang lebih {isi} pada waktu sekarang dan hal itu saya lihat sendiri",
-      "saya berada di tempat kejadian dan melihat bahwa perkiraan harga harta itu hari ini adalah {isi}"
+      "nilai harta itu sekarang sekitar {isi}",
+      "harga harta tersebut saat ini berkisar {isi}",
+      "harta itu bernilai kurang lebih {isi} pada waktu sekarang",
+      "perkiraan harga harta itu hari ini adalah {isi}"
      ],
      "saksi2": [
-      "yang saya saksikan sendiri adalah bahwa taksiran nilai harta itu sekarang {isi}",
-      "dengan mata kepala saya sendiri saya melihat bahwa jika dijual harta itu bernilai sekitar {isi}",
-      "saya mengalami dan melihat langsung bahwa nilai pasar harta tersebut saat ini lebih kurang {isi}",
-      "harta itu dihargai orang sekitar {isi} sekarang sebagaimana yang saya saksikan sendiri"
+      "taksiran nilai harta itu sekarang {isi}",
+      "jika dijual harta itu bernilai sekitar {isi}",
+      "nilai pasar harta tersebut saat ini lebih kurang {isi}",
+      "harta itu dihargai orang sekitar {isi} sekarang"
      ]
     },
     "mendengar": {

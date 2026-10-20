@@ -97,6 +97,17 @@
       const nilai = huruf && huruf.nilai ? String(huruf.nilai).toUpperCase().replace(/[^A-H]/g, "") : "";
       if (nilai) hasil.alasan = Array.from(new Set(nilai.split("")));
     }
+    // anak dari perkawinan: dari kalimat jumlah anak di ABT (8535/8515/8492); "belum/tidak" = tidak ada, uraian jumlah = ada, selain itu tidak ditebak
+    if (peta && dipakai.has("anak")) {
+      for (const kode of ["8535", "8492", "8515"]) {
+        const it = peta.get(kode);
+        const t = it && it.nilai ? String(it.nilai).toLowerCase() : "";
+        if (!t || /data_tidak_ada|^#\d{4}#$/.test(t.trim())) continue;
+        if (/\b(belum|tidak)\b/.test(t)) hasil.anak = "tidak";
+        else if (/\d|\b(satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|dikaruniai)\b/.test(t)) hasil.anak = "ada";
+        if (hasil.anak) break;
+      }
+    }
     if (peta && dipakai.has("kumulasi")) {
       const kumulasi = [];
       if (peta.has("5197") || peta.has("8087")) kumulasi.push("itsbat-nikah");
@@ -228,6 +239,9 @@
       hasil: null,
       sudahAda: [],
       urutan: "1",
+      // fakta perkara dari gugatan, data SIPP, dan isian blangko (hanya perceraian): {kunci: {nilai, yakin, sumber, ket}}
+      fakta: {},
+      faktaStatus: "",
       // keterangan anak, calon, dan orang tua (hanya jenis perkara yang punya katalog keterangan, mis. dispensasi kawin)
       ket: null,
       tab: "saksi",
@@ -304,6 +318,8 @@
     function atur(kat) {
       S.kat = kat;
       S.hasil = null;
+      S.fakta = {};
+      S.faktaStatus = "";
       S.perButir = {};
       const turun = turunkanKeadaan(kat, { teks: teksHalaman(), peta: peta() });
       S.keadaan = m.keadaanBawaan(kat, turun);
@@ -1035,6 +1051,64 @@
       return Boolean(S.kat && (S.kat.pertanyaan || []).some((q) => Array.isArray(q.menggantikan) && q.menggantikan.length && (q.pihakSaksi || []).includes("T")));
     }
 
+    /** Nama fakta yang manusiawi untuk keterangan sumber di bawah jawaban. */
+    const NAMA_FAKTA = {
+      tglNikah: "tanggal nikah",
+      tempatNikah: "tempat nikah",
+      kua: "KUA",
+      kediaman: "tempat tinggal bersama",
+      awalKonflik: "awal perselisihan",
+      puncak: "waktu puncak pertengkaran",
+      puncakPeristiwa: "peristiwa puncak pertengkaran",
+      penyebab: "sebab perselisihan",
+      pisahSejak: "pisah rumah sejak",
+      lamaPisah: "lama pisah",
+      siapaPergi: "yang meninggalkan rumah",
+      jumlahAnak: "jumlah anak",
+      alamatP: "alamat Penggugat/Pemohon",
+      alamatT: "alamat Tergugat/Termohon",
+      pekerjaanP: "pekerjaan Penggugat/Pemohon",
+      pekerjaanT: "pekerjaan Tergugat/Termohon",
+    };
+
+    /** Katalog ini memakai fakta perkara dari server: untuk sekarang perkara perceraian saja (346/347). */
+    function pakaiFakta() {
+      const idJenis = ((S.kat && S.kat.syarat && S.kat.syarat.jenisPerkaraId) || []).map(String);
+      return idJenis.includes("346") || idJenis.includes("347");
+    }
+
+    /** Memuat fakta perkara sekali per pembukaan (atau paksa). Gagal = tanpa fakta; isian petugas dan variabel ABT tetap dipakai. */
+    async function pastikanFakta(paksa) {
+      if (!pakaiFakta()) return;
+      if (!paksa && (S.faktaStatus === "ada" || S.faktaStatus === "kosong")) return;
+      const api = globalThis.AletaBdJawabanKatalog;
+      if (!api || typeof api.ambilFakta !== "function") {
+        S.faktaStatus = "tak-tersedia";
+        return;
+      }
+      S.faktaStatus = "memuat";
+      try {
+        const v = bacaVar();
+        const variabel = {};
+        for (const kode of Object.keys(m.KODE_KE_FAKTA)) {
+          const x = v(kode);
+          if (x && !m.tidakTerisi(x)) variabel[kode] = x;
+        }
+        const { alur, id } = kenali();
+        S.fakta = await api.ambilFakta({
+          perkara: { nomorPerkara: nomor(), jenisPerkaraId: id, alurPerkaraId: alur },
+          sebutan: { P: sebutan("0046", ""), T: sebutan("0047", "") },
+          posita: v("5125"),
+          tanggalSidang: v("0033"),
+          variabel,
+        });
+        S.faktaStatus = Object.keys(S.fakta || {}).length ? "ada" : "kosong";
+      } catch {
+        S.fakta = {};
+        S.faktaStatus = "kosong";
+      }
+    }
+
     /** Menjalankan mesin atas pilihan sekarang. */
     function susun() {
       const kodeVar = bacaVar();
@@ -1061,6 +1135,7 @@
         benih: nomor(),
         saksi: saksiMasuk,
         variabel: kodeVar,
+        fakta: S.fakta,
         slot,
         slotSaksi,
         tingkat: ["inti", "pilihan", "tambahan"],
@@ -1107,6 +1182,16 @@
           });
           baris.appendChild(tanya);
           baris.appendChild(jawab);
+          if (Array.isArray(b.dariGugatan) && b.dariGugatan.length) {
+            const rendah = b.dariGugatan.some((x) => x.yakin === "ragu");
+            const sumber = Array.from(new Set(b.dariGugatan.flatMap((x) => String(x.sumber || "").split(" + ").filter(Boolean)))).join(" dan ") || "data perkara";
+            const apa = Array.from(new Set(b.dariGugatan.map((x) => NAMA_FAKTA[x.kunci] || x.kunci))).join(", ");
+            const ket = buat("div", rendah ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar", `Diisi dari ${sumber} (${apa}), keyakinan ${rendah ? "ragu - periksa dulu" : b.dariGugatan.every((x) => x.yakin === "yakin") ? "yakin" : "cukup"}.`);
+            ket.setAttribute("data-sumber-fakta", "1");
+            const rinciKet = b.dariGugatan.map((x) => x.ket).filter(Boolean).join(" ");
+            if (rinciKet) ket.title = rinciKet;
+            baris.appendChild(ket);
+          }
           const butirAsli = S.kat.pertanyaan.find((q) => q.id === b.butir);
           const jenisBoleh = butirAsli ? m.jenisKeteranganButir(butirAsli).filter((j) => j !== "berbeda") : [];
           if (jenisBoleh.length > 1) {
@@ -1224,6 +1309,7 @@
         kabarBorang.className = "aleta-abt-kabar";
         kabarBorang.textContent = "Menyusun…";
         try {
+          await pastikanFakta(false);
           S.hasil = susun();
           await periksaSudahAda();
           gambarHasil(wadahHasil);

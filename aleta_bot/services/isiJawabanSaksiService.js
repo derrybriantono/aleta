@@ -201,4 +201,40 @@ function isiBaris(o) {
   return hasil;
 }
 
-module.exports = { lengkapi, isiBaris, bacaSippSaksi, deteksiPosita, saringIsian, kodeJenis };
+/**
+ * Fakta perkara apa adanya (sumber 'isi-jawaban' dengan mintaFakta): kunci -> {nilai, yakin, sumber, ket}. Dipakai penyusun saksi
+ * katalog di panel untuk mengisi {slot} dan variabel ABT yang masih kosong dari isian blangko > data SIPP > gugatan. Tidak pernah
+ * menebak: kunci yang tidak ada di ketiga sumber tidak muncul.
+ */
+const KUNCI_FAKTA_PUBLIK = ["tglNikah", "tempatNikah", "kua", "kediaman", "awalKonflik", "puncak", "puncakPeristiwa", "penyebab", "pisahSejak", "lamaPisah", "siapaPergi", "jumlahAnak", "anakNama", "anakIkutPihak", "alamatP", "alamatT", "pekerjaanP", "pekerjaanT", "upayaDamai"];
+function faktaPerkara(o) {
+  const k = o && typeof o === "object" ? o : {};
+  const hasil = {};
+  try {
+    const jenis = kodeJenis(k.jenisPerkara, k.alur);
+    const dp = deteksiPosita({ ...k, jenis });
+    const fakta = isi.bangunFakta({
+      isian: saringIsian(k.isian),
+      sipp: k.sipp,
+      usulan: dp.usulan,
+      cerai: dp.cerai,
+      tambahan: positaTambahan(k.posita, jenis),
+      sebutan: { P: k.lawan, T: k.pelaku },
+    });
+    for (const kunci of KUNCI_FAKTA_PUBLIK) {
+      const f = fakta.ambil(kunci);
+      if (f && f.nilai) hasil[kunci] = { nilai: String(f.nilai).slice(0, 400), yakin: f.yakin, sumber: f.sumber, ket: String(f.ket || "").slice(0, 300) };
+    }
+    // upaya damai keluarga dari gugatan (bukan dari mediasi: mediasi baru diketahui sesudah sidang)
+    if ((jenis === "cg" || jenis === "ct") && String(k.posita || "").replace(/<[^>]*>/g, " ").trim()) {
+      const A = require("./abtUsulanService");
+      const u = A.sumberUpayaDamai({ nilai1268: "", posita: k.posita, mediasi: null, pelaku: k.pelaku, lawan: k.lawan });
+      if (u && u.kalimat) hasil.upayaDamai = { nilai: String(u.kalimat).slice(0, 400), yakin: "cukup", sumber: "gugatan", ket: "Dibaca dari kalimat upaya damai pada gugatan; periksa dengan keterangan saksi." };
+    }
+  } catch (_galat) {
+    /* kosong = tidak ada fakta; penyusun memakai isian petugas */
+  }
+  return hasil;
+}
+
+module.exports = { lengkapi, isiBaris, faktaPerkara, KUNCI_FAKTA_PUBLIK, bacaSippSaksi, deteksiPosita, saringIsian, kodeJenis };

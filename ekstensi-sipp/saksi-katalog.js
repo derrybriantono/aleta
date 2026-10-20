@@ -428,6 +428,15 @@
         if (typeof tv !== "string" || !tv.trim()) g(`${lok}: teksVarian[${j}] kosong`);
         else if (JSON.stringify(penandaDi(tv)) !== JSON.stringify(penandaDi(q.teks || ""))) g(`${lok}: teksVarian[${j}] himpunan penanda berbeda dari teks`);
       }
+      if (q.slotDari !== undefined) {
+        if (!laRaya(q.slotDari) || !Object.keys(q.slotDari).length) g(`${lok}: slotDari harus objek {slot: kunciFakta}`);
+        else {
+          for (const [namaSlot, kunciFakta] of Object.entries(q.slotDari)) {
+            if (!SLOT_BAKU.includes(namaSlot)) g(`${lok}: slotDari memuat slot tidak baku {${namaSlot}}`);
+            if (typeof kunciFakta !== "string" || !/^[a-zA-Z]+$/.test(kunciFakta)) g(`${lok}: slotDari.${namaSlot} harus kunci fakta`);
+          }
+        }
+      }
       if (q.menggantikan !== undefined) {
         if (!Array.isArray(q.menggantikan) || !q.menggantikan.length || !q.menggantikan.every((x) => typeof x === "string" && /^q-[a-z0-9-]+$/.test(x) && x !== q.id)) g(`${lok}: menggantikan harus daftar id butir lain (q-...)`);
       }
@@ -813,6 +822,72 @@
     return !t || /^[._\s-]+$/.test(t);
   }
 
+  /**
+   * Variabel ABT yang dapat diisi dari FAKTA PERKARA (gugatan, data SIPP, isian blangko) bila nilainya di ABT kosong. Kode -> {kunci fakta,
+   * format}. Hanya cadangan: nilai di ABT selalu menang, dan fakta tidak pernah menimpa isian petugas.
+   */
+  const KODE_KE_FAKTA = Object.freeze({
+    "0222": { kunci: "awalKonflik" },
+    "0246": { kunci: "pisahSejak" },
+    "9944": { kunci: "lamaPisah" },
+    "7035": { kunci: "siapaPergi" },
+    "8491": { kunci: "kediaman" },
+    "5197": { kunci: "tglNikah" },
+    "5105": { kunci: "tempatNikah" },
+    "0101": { kunci: "alamatP" },
+    "0105": { kunci: "alamatT" },
+    "0100": { kunci: "pekerjaanP" },
+    "0104": { kunci: "pekerjaanT" },
+    "5227": { kunci: "penyebab" },
+    "8535": { kunci: "jumlahAnak", format: "anak" },
+    "9302": { kunci: "jumlahAnak", format: "sebutanAnak" },
+    "7777": { kunci: "tglNikah", format: "lamaNikah" },
+    "8570": { kunci: "kediaman" },
+    "1268": { kunci: "upayaDamai" },
+  });
+
+  const BULAN_ID = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember", "pebruari", "nopember"];
+
+  /** "12 Mei 2015" / "Mei 2015" -> {tahun, bulan(1-12)}; selain itu null. */
+  function uraiTanggalNikah(teks) {
+    const t = String(teks || "").toLowerCase();
+    const m = /(?:(\d{1,2})\s+)?([a-z]+)\s+((?:19|20)\d{2})/.exec(t);
+    if (!m) return null;
+    let b = BULAN_ID.indexOf(m[2]);
+    if (b < 0) return null;
+    if (b > 11) b = b === 12 ? 1 : 10;
+    return { tahun: Number(m[3]), bulan: b + 1 };
+  }
+
+  function lamaSejakNikah(teks, acuan) {
+    const u = uraiTanggalNikah(teks);
+    if (!u) return "";
+    const a = acuan instanceof Date ? acuan : new Date();
+    let bulan = (a.getFullYear() - u.tahun) * 12 + (a.getMonth() + 1 - u.bulan);
+    if (bulan < 1) return "";
+    const th = Math.floor(bulan / 12);
+    const bl = bulan % 12;
+    return th && bl ? `${th} tahun ${bl} bulan` : th ? `${th} tahun` : `${bl} bulan`;
+  }
+
+  function formatFaktaUntukKode(kode, nilai, acuan) {
+    const info = KODE_KE_FAKTA[kode];
+    const t = String(nilai === undefined || nilai === null ? "" : nilai).trim();
+    if (!info || !t) return "";
+    if (info.format === "lamaNikah") return lamaSejakNikah(t, acuan);
+    if (info.format === "sebutanAnak") {
+      if (/(belum|tidak)/i.test(t)) return "";
+      const n = Number((/\d+/.exec(t) || ["0"])[0]);
+      return n > 1 ? "anak-anak" : n === 1 ? "anak" : "";
+    }
+    if (info.format === "anak") {
+      if (/\b(belum|tidak)\b/i.test(t)) return "belum dikaruniai anak";
+      const n = (/\d+/.exec(t) || [""])[0];
+      return n && n !== "0" ? `telah dikaruniai ${n} orang anak` : "";
+    }
+    return t;
+  }
+
   function tidakTerisi(nilai) {
     const s = String(nilai === undefined || nilai === null ? "" : nilai).trim();
     if (!s) return true;
@@ -968,8 +1043,33 @@
         terpakaiPerButir.set(q.id + "|" + jenis, terpakai);
 
         const slotButir = Object.assign({}, slotSaksi, { hal: q.hal || slotSaksi.hal });
-        const tanya = isiPenanda(pilihTeksPertanyaan(q, ke, benih), { variabel: m.variabel, slot: slotButir });
-        const jawab = isiPenanda(pilih.teks, { variabel: m.variabel, slot: slotButir });
+        // fakta perkara (gugatan > data SIPP) hanya mengisi yang KOSONG: variabel ABT yang belum terisi dan slot yang dipetakan butir (slotDari)
+        const dariGugatan = [];
+        const faktaPerkara = laRaya(m.fakta) ? m.fakta : {};
+        const catatFakta = (nama, kunciFakta, f) => {
+          if (!dariGugatan.some((x) => x.nama === nama)) dariGugatan.push({ nama, kunci: kunciFakta, sumber: String(f.sumber || ""), yakin: String(f.yakin || "cukup"), ket: String(f.ket || "") });
+        };
+        if (laRaya(q.slotDari) && jenis !== "ragu" && jenis !== "tidak-tahu") {
+          for (const [namaSlot, kunciFakta] of Object.entries(q.slotDari)) {
+            const f = faktaPerkara[kunciFakta];
+            if (f && String(f.nilai || "").trim() && slotKosong(slotButir[namaSlot])) {
+              slotButir[namaSlot] = String(f.nilai).trim();
+              catatFakta(`{${namaSlot}}`, kunciFakta, f);
+            }
+          }
+        }
+        const variabelButir = (kode) => {
+          const v = typeof m.variabel === "function" ? m.variabel(kode) : undefined;
+          if (!tidakTerisi(v) || jenis === "ragu" || jenis === "tidak-tahu") return v;
+          const info = KODE_KE_FAKTA[kode];
+          const f = info && faktaPerkara[info.kunci];
+          const teks = f ? formatFaktaUntukKode(kode, f.nilai, m.acuan) : "";
+          if (!teks) return v;
+          catatFakta(`#${kode}#`, info.kunci, f);
+          return teks;
+        };
+        const tanya = isiPenanda(pilihTeksPertanyaan(q, ke, benih), { variabel: variabelButir, slot: slotButir });
+        const jawab = isiPenanda(pilih.teks, { variabel: variabelButir, slot: slotButir });
         jawab.teks = amankanKeAbt(jawab.teks);
         tanya.teks = amankanKeAbt(tanya.teks);
         const kosong = tanpaKosongGanda([...tanya.kosong, ...jawab.kosong]);
@@ -981,7 +1081,8 @@
           tanya: tanya.teks,
           jawab: jawab.teks,
           kosong,
-          tandaKuning: jenis === "ragu" || jenis === "sebagian" || jenis === "berbeda",
+          dariGugatan,
+          tandaKuning: jenis === "ragu" || jenis === "sebagian" || jenis === "berbeda" || dariGugatan.some((x) => x.yakin === "ragu"),
         });
         if (jenis === "ragu" || jenis === "tidak-tahu") {
           ragu.set(q.id, (ragu.get(q.id) || 0) + 1);
@@ -1380,5 +1481,7 @@
     ringkasKatalog,
     ISIAN_PETUGAS,
     KEADAAN_TURUNAN,
+    KODE_KE_FAKTA,
+    formatFaktaUntukKode,
   });
 });

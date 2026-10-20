@@ -109,6 +109,11 @@ const PEMBUKA_CERAI: ButirSaksi[] = [
 const INTI_F: ButirSaksi[] = [
   B("Apakah antara {P} dan {T} sering terjadi perselisihan dan pertengkaran, dan sejak kapan?", "Ya, antara {P} dan {T} sering terjadi perselisihan dan pertengkaran sejak ...;", "perselisihan dan pertengkaran terus-menerus"),
   B("Apa yang menjadi penyebab perselisihan dan pertengkaran tersebut?", "Penyebabnya karena ...;", "sebab perselisihan"),
+  B(
+    "Bagaimana bentuk perselisihan dan pertengkaran tersebut, dan apakah terjadi berulang kali?",
+    "Perselisihan dan pertengkaran itu berbentuk adu mulut dan saling mengucapkan kata-kata kasar, dan terjadi berulang kali;",
+    "bentuk dan keberulangan perselisihan (terus-menerus)"
+  ),
   B("Apakah Saudara pernah melihat atau mendengar sendiri {P} dan {T} bertengkar? Berapa kali dan di mana?", "Saya pernah melihat dan mendengar sendiri {P} dan {T} bertengkar sebanyak ... kali, di ...;", "pengetahuan langsung saksi"),
   B("Apakah ada kejadian yang menjadi puncak perselisihan dan pertengkaran tersebut? Kapan?", "Puncaknya terjadi pada ... ketika ...;", "puncak perselisihan"),
   B(
@@ -159,6 +164,7 @@ const INTI_HURUF: Record<string, ButirSaksi[]> = {
     B("Berapa lama hukuman penjara yang dijatuhkan kepada {T}?", "{T} dihukum penjara selama ... tahun;", "lima tahun atau lebih"),
     B("Kapan {T} dihukum? Apakah sesudah {P} dan {T} menikah?", "{T} dihukum pada tahun ..., sesudah {P} dan {T} menikah;", "setelah perkawinan berlangsung"),
     B("Di mana {T} menjalani hukuman dan sejak kapan?", "{T} menjalani hukuman di ... sejak ...;", "keadaan sekarang"),
+    B("Apakah perkara pidana {T} sudah diputus pengadilan dan putusannya sudah berkekuatan hukum tetap?", "Perkara pidana {T} sudah diputus pengadilan dan putusannya sudah berkekuatan hukum tetap;", "putusan pidana berkekuatan hukum tetap (KHI Pasal 135)"),
     B("Bagaimana keadaan rumah tangga {P} dan {T} selama {T} menjalani hukuman?", "Selama {T} menjalani hukuman ...;", "akibat terhadap rumah tangga"),
   ],
   D: [
@@ -343,6 +349,9 @@ const SET_HADHANAH: SetSaksi = {
     B("Bagaimana perilaku {P} sehari-hari? Apakah ada kebiasaan buruk yang dapat membahayakan anak?", "{P} berperilaku baik, ... dan tidak mempunyai kebiasaan buruk;", "kelayakan pemegang hak asuh"),
     B("Bagaimana hubungan anak tersebut dengan {T}? Apakah {T} masih menjenguk anak?", "{T} ... menjenguk anak tersebut;", "hubungan anak dengan orang tua lain"),
     B("Apakah {P} sanggup mengasuh anak tersebut dan tetap memberi kesempatan {T} bertemu anak?", "Ya, {P} sanggup mengasuh dan tidak akan menghalangi {T} bertemu anak;", "akses orang tua lain"),
+    B("Apakah {P} beragama Islam dan menanamkan nilai agama kepada anak tersebut?", "{P} beragama Islam dan membimbing anak tersebut menjalankan ibadah;", "kelayakan pengasuh: agama"),
+    B("Apa pekerjaan {P}, dan apakah masih ada waktu untuk mengasuh anak tersebut?", "{P} bekerja sebagai ... dan masih mempunyai waktu untuk mengasuh anak;", "kelayakan pengasuh: waktu dan penghasilan"),
+    B("Apakah anak tersebut bersekolah, di mana, dan siapa yang membiayai sekolahnya?", "Anak tersebut bersekolah di ... dengan biaya dari ...;", "pendidikan anak"),
   ],
   penutup: PENUTUP_UMUM,
 };
@@ -372,6 +381,96 @@ const SET_NAFKAH: SetSaksi = {
     B("Apakah {isteri} pernah meninggalkan rumah atau menolak hidup bersama tanpa alasan yang sah?", "{isteri} tidak pernah ... / {isteri} pergi karena ...;", "nusyuz atau tidak (KHI Pasal 152)"),
     B("Berapa lama {P} dan {T} hidup bersama sebagai suami isteri?", "{P} dan {T} hidup bersama sekitar ... tahun;", "kepatutan mut'ah"),
     B("Berapa kira-kira kebutuhan hidup anak setiap bulan?", "Kebutuhan anak kira-kira Rp... setiap bulan untuk ...;", "nafkah anak"),
+    B("Apakah {suami} mempunyai usaha, harta, atau penghasilan lain di luar pekerjaannya?", "{suami} juga mempunyai ... sebagai tambahan penghasilan;", "kemampuan suami"),
+    B("Sejak berpisah, apakah {suami} masih memberikan nafkah untuk anak, dan berapa?", "Sejak berpisah {suami} ... memberikan nafkah untuk anak sebesar Rp...;", "nafkah anak sejak berpisah"),
+    B("Berapa kira-kira biaya sekolah anak setiap bulan?", "Biaya sekolah anak kira-kira Rp... setiap bulan;", "biaya pendidikan anak"),
+  ],
+  penutup: PENUTUP_UMUM,
+};
+
+
+/**
+ * Set tambahan perceraian (20 Okt 2026, agen U1): sebab perselisihan menurut pilihan petugas, keadaan Tergugat/Termohon yang
+ * tidak hadir (verstek) atau yang hadir (kontradiktoir), dan para pihak yang masih serumah. Ditambahkan di bawah pertanyaan yang
+ * sudah ada seperti set tambahan hak asuh dan nafkah; yang tidak relevan tidak dipilih petugas.
+ */
+const DASAR_VERSTEK = "Pasal 125 ayat (1) HIR / Pasal 149 ayat (1) RBg: putusan di luar hadir tergugat (verstek) bila gugatan beralasan hukum";
+
+const SET_SEBAB: SetSaksi = {
+  id: "tambah-sebab",
+  judul: "Tambahan - sebab perselisihan (ekonomi, cemburu, keluarga, tanggung jawab, perbedaan prinsip)",
+  untuk: "Perselisihan terus-menerus yang sebabnya perlu diperinci: nafkah dan ekonomi, kecemburuan, campur tangan keluarga, tanggung jawab, atau perbedaan prinsip.",
+  jenis: ["cg", "ct"],
+  tambahan: true,
+  dasar: ["PP 9/1975 Pasal 19 huruf f; KHI Pasal 116 huruf f", DASAR_PISAH_6_BULAN, DASAR_KELUARGA, DASAR_SAKSI],
+  perluDicek: [],
+  ukur: "ABT server: pertanyaan penyebab hampir selalu satu butir ('Penyebabnya karena ...'); sebab yang diperinci (nafkah, cemburu, keluarga) jarang ditanyakan sehingga keterangan saksi mudah dipatahkan.",
+  pembuka: [],
+  inti: [
+    B("Apakah nafkah yang diberikan {suami} kepada {isteri} mencukupi kebutuhan rumah tangga, dan apa kaitannya dengan pertengkaran mereka?", "Nafkah yang diberikan {suami} tidak mencukupi kebutuhan rumah tangga sehingga sering menjadi pangkal pertengkaran;", "sebab ekonomi dan nafkah"),
+    B("Apa pekerjaan {suami} dan berapa kira-kira penghasilannya setiap bulan?", "{suami} bekerja sebagai ..., penghasilannya kira-kira Rp... setiap bulan;", "pekerjaan dan penghasilan suami"),
+    B("Apakah ada kecemburuan atau hubungan salah satu pihak dengan orang lain yang menjadi sebab pertengkaran?", "Ya, pertengkaran dipicu kecemburuan karena ... dekat dengan orang lain;", "sebab cemburu dan pihak lain"),
+    B("Apakah ada campur tangan keluarga atau pihak lain dalam rumah tangga {P} dan {T} yang memperbesar pertengkaran?", "Ya, ... ikut campur dalam urusan rumah tangga mereka sehingga pertengkaran bertambah;", "campur tangan keluarga"),
+    B("Apakah {P} dan {T} menjalankan tanggung jawab masing-masing dalam rumah tangga, dan apa kaitannya dengan pertengkaran mereka?", "... kurang bertanggung jawab terhadap urusan rumah tangga dan anak sehingga sering terjadi pertengkaran;", "tanggung jawab dalam rumah tangga"),
+    B("Apakah antara {P} dan {T} terdapat perbedaan pendapat yang terus-menerus dan sulit diselesaikan?", "Ya, antara {P} dan {T} sering terjadi perbedaan pendapat yang tidak pernah menemukan titik temu;", "perbedaan prinsip yang tidak selesai"),
+    B("Bila ada anak, apakah anak pernah menyaksikan pertengkaran {P} dan {T}, dan bagaimana dampaknya?", "Anak mereka beberapa kali menyaksikan pertengkaran tersebut dan terdampak olehnya;", "dampak pertengkaran bagi anak"),
+  ],
+  penutup: PENUTUP_UMUM,
+};
+
+const SET_VERSTEK: SetSaksi = {
+  id: "tambah-verstek",
+  judul: "Tambahan - Tergugat/Termohon tidak hadir (verstek)",
+  untuk: "Perkara cerai yang diputus verstek: keberadaan dan kabar pihak yang tidak hadir, sebagai pelengkap pembuktian karena tidak ada jawaban.",
+  jenis: ["cg", "ct"],
+  tambahan: true,
+  dasar: [DASAR_VERSTEK, DASAR_SAKSI, DASAR_KELUARGA],
+  perluDicek: ["Pemanggilan yang patut dibuktikan lewat relaas, bukan lewat saksi; pertanyaan di sini hanya melengkapi keadaan pihak yang tidak hadir."],
+  ukur: "ABT server: pada perkara verstek pertanyaan saksi sama dengan perkara kontradiktoir; keberadaan pihak yang tidak hadir hampir tidak ditanyakan.",
+  pembuka: [],
+  inti: [
+    B("Apakah Saudara mengetahui di mana {T} tinggal sekarang?", "Sekarang {T} tinggal di ... / tidak diketahui keberadaannya;", "keberadaan pihak yang tidak hadir"),
+    B("Sejak berpisah, apakah {T} pernah memberi kabar atau menemui {P} dan keluarganya?", "Sejak berpisah {T} tidak pernah memberi kabar maupun menemui {P} dan keluarganya;", "tidak ada itikad kembali"),
+    B("Apakah Saudara atau keluarga pernah menyampaikan kepada {T} bahwa {P} akan mengajukan perkara ini? Bagaimana tanggapannya?", "Pernah disampaikan oleh ..., tanggapan {T} ...;", "pengetahuan pihak yang tidak hadir"),
+    B("Apakah ada hal yang menghalangi {T} hadir di persidangan menurut yang Saudara ketahui?", "Setahu saya tidak ada halangan yang sah bagi {T} untuk hadir;", "tidak hadir tanpa alasan yang sah"),
+  ],
+  penutup: PENUTUP_UMUM,
+};
+
+const SET_KONTRA: SetSaksi = {
+  id: "tambah-kontra",
+  judul: "Tambahan - Tergugat/Termohon hadir (kontradiktoir)",
+  untuk: "Perkara cerai yang dijawab: sikap pihak lawan, tanggapannya atas nasihat, dan mediasi, supaya dalil yang dibantah terbukti dengan keterangan saksi.",
+  jenis: ["cg", "ct"],
+  tambahan: true,
+  dasar: ["UU 7/1989 jo. UU 3/2006 jo. UU 50/2009 Pasal 82: hakim berusaha mendamaikan para pihak pada setiap persidangan", DASAR_SAKSI, DASAR_KELUARGA],
+  perluDicek: [],
+  ukur: "ABT server: sikap pihak lawan terhadap perceraian tidak ditanyakan kepada saksi pada perkara yang dijawab; saksi hanya ditanya kenal, rumah tangga, dan pisah rumah.",
+  pembuka: [],
+  inti: [
+    B("Bagaimana sikap {T} terhadap rumah tangganya dengan {P} menurut yang Saudara ketahui, apakah masih ingin mempertahankannya?", "{T} ... (membantah adanya pertengkaran / tidak keberatan bercerai / masih ingin mempertahankan rumah tangga);", "sikap pihak lawan"),
+    B("Bagaimana tanggapan {P} dan {T} ketika dinasihati untuk rukun kembali?", "Ketika dinasihati, {P} ... dan {T} ...;", "tanggapan atas nasihat"),
+    B("Apakah Saudara mengetahui {P} dan {T} sudah mengikuti mediasi di pengadilan, dan bagaimana hasilnya?", "Mediasi di pengadilan sudah ditempuh dan tidak berhasil mendamaikan mereka;", "mediasi tidak berhasil"),
+    B("Apakah Saudara pernah mendengar {T} membantah atau membenarkan adanya pertengkaran tersebut?", "Saya pernah mendengar {T} ... (membantah/membenarkan) adanya pertengkaran itu;", "pengakuan atau bantahan pihak lawan"),
+  ],
+  penutup: PENUTUP_UMUM,
+};
+
+const SET_SERUMAH: SetSaksi = {
+  id: "tambah-serumah",
+  judul: "Tambahan - para pihak masih serumah",
+  untuk: "Perselisihan terus-menerus bila para pihak belum berpisah tempat tinggal: keadaan di dalam rumah dan alasan masih serumah.",
+  jenis: ["cg", "ct"],
+  tambahan: true,
+  dasar: ["PP 9/1975 Pasal 19 huruf f; KHI Pasal 116 huruf f", DASAR_PISAH_6_BULAN, DASAR_SAKSI],
+  perluDicek: ["Syarat pisah tempat tinggal enam bulan (SEMA 1/2022 jo. SEMA 3/2023) tidak terpenuhi bila masih serumah, kecuali ada fakta KDRT; periksa pertimbangannya."],
+  ukur: "ABT server: pertanyaan pisah rumah 89% mengasumsikan sudah berpisah; keadaan masih serumah tidak punya pertanyaan khusus.",
+  pembuka: [],
+  inti: [
+    B("Apakah {P} dan {T} masih tinggal serumah sampai sekarang, dan bagaimana hubungan mereka sehari-hari?", "Ya, mereka masih serumah tetapi hubungan keduanya sudah tidak seperti suami istri pada umumnya;", "keadaan serumah"),
+    B("Apakah mereka masih saling berbicara dan tidur sekamar?", "Mereka jarang bertegur sapa dan sudah tidak tidur sekamar;", "pisah ranjang dan komunikasi"),
+    B("Mengapa {P} dan {T} masih tinggal serumah padahal rumah tangga mereka tidak harmonis?", "Mereka masih serumah karena ...;", "alasan masih serumah"),
+    B("Apakah ada rencana atau upaya salah satu pihak untuk tinggal terpisah?", "Salah satu pihak berencana tinggal terpisah / belum ada rencana ...;", "kemungkinan pisah tempat tinggal"),
   ],
   penutup: PENUTUP_UMUM,
 };
@@ -730,6 +829,10 @@ export function semuaSetSaksi(): SetSaksi[] {
     setCerai("G", { tahunNikah: TAHUN_SIGHAT_SEKARANG - 1 }),
     SET_HADHANAH,
     SET_NAFKAH,
+    SET_SEBAB,
+    SET_VERSTEK,
+    SET_KONTRA,
+    SET_SERUMAH,
     SET_ITSBAT,
     setDispensasi(true),
     setDispensasi(false),
@@ -866,6 +969,13 @@ export function tawarkanSetSaksi(
     for (const h of ["A", "B", "C", "D", "E", "G", "H"]) if (h !== "G" || jenis === "cg") tawar(setCerai(h, opsi), false, `alasan huruf ${h}`);
     // Huruf G untuk nikah sebelum 1990 (bunyi sighat lama) - ditawarkan bila tahun nikah belum diketahui.
     if (jenis === "cg" && !tahun) tawar(setCerai("G", { jenis, tahunNikah: TAHUN_SIGHAT_SEKARANG - 1 }), false, "alasan huruf G, perkawinan sebelum 1990 (bunyi sighat lama)");
+    // kehadiran Tergugat/Termohon dibaca dari nama folder blangko BAS ("Verstek", "T Tidak Hadir" / "P & T Hadir", "Kontra")
+    const verstek = /verstek|\bt\s+tidak\s+hadir/.test(folder);
+    const kontra = !verstek && /kontra|\bp\s*&\s*t\s+hadir|tertulis/.test(folder);
+    tawar(SET_VERSTEK, verstek, verstek ? "blangko BAS perkara verstek (Tergugat/Termohon tidak hadir)" : "bila Tergugat/Termohon tidak hadir");
+    tawar(SET_KONTRA, kontra, kontra ? "blangko BAS perkara dijawab (Tergugat/Termohon hadir)" : "bila Tergugat/Termohon hadir dan menjawab");
+    tawar(SET_SEBAB, false, "bila sebab perselisihan perlu diperinci");
+    tawar(SET_SERUMAH, false, "bila para pihak masih serumah");
     tawar(SET_HADHANAH, false, "bila ada tuntutan hak asuh anak");
     tawar(SET_NAFKAH, false, "bila ada tuntutan nafkah");
     tawar({ ...SET_ITSBAT, id: "tambah-itsbat", judul: "Tambahan - itsbat nikah", tambahan: true }, false, "bila digabung dengan itsbat nikah", "itsbat");

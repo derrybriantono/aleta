@@ -1601,13 +1601,21 @@
       "upaya merukunkan itu sudah ada karena #1268#",
       "sudah ada usaha mendamaikan mereka sebab #1268#",
       "benar sudah pernah diupayakan perdamaian karena #1268#",
-      "perdamaian pernah diusahakan karena #1268#"
+      "perdamaian pernah diusahakan karena #1268#",
+      "yang saya ketahui tentang upaya merukunkan mereka adalah #1268#",
+      "upaya keluarga untuk merukunkan mereka dapat saya terangkan sebagai berikut #1268#",
+      "berkenaan dengan upaya damai dari keluarga #1268#",
+      "soal usaha mendamaikan keduanya #1268#"
      ],
      "saksi2": [
       "upaya damai itu pernah ditempuh karena #1268#",
       "usaha merukunkan mereka memang ada sebab #1268#",
       "betul ada upaya mendamaikan keduanya karena #1268#",
-      "mereka sudah pernah diupayakan rukun karena #1268#"
+      "mereka sudah pernah diupayakan rukun karena #1268#",
+      "upaya damai dari keluarga yang saya ketahui yaitu #1268#",
+      "tentang usaha merukunkan keduanya #1268#",
+      "terkait upaya mendamaikan mereka #1268#",
+      "perihal perdamaian yang diupayakan keluarga #1268#"
      ]
     }
    }
@@ -1639,13 +1647,21 @@
       "upaya merukunkan itu sudah ada karena #1268#",
       "sudah ada usaha mendamaikan mereka sebab #1268#",
       "benar sudah pernah diupayakan perdamaian karena #1268#",
-      "perdamaian pernah diusahakan karena #1268#"
+      "perdamaian pernah diusahakan karena #1268#",
+      "yang saya ketahui tentang upaya merukunkan mereka adalah #1268#",
+      "upaya keluarga untuk merukunkan mereka dapat saya terangkan sebagai berikut #1268#",
+      "berkenaan dengan upaya damai dari keluarga #1268#",
+      "soal usaha mendamaikan keduanya #1268#"
      ],
      "saksi2": [
       "upaya damai itu pernah ditempuh karena #1268#",
       "usaha merukunkan mereka memang ada sebab #1268#",
       "betul ada upaya mendamaikan keduanya karena #1268#",
-      "mereka sudah pernah diupayakan rukun karena #1268#"
+      "mereka sudah pernah diupayakan rukun karena #1268#",
+      "upaya damai dari keluarga yang saya ketahui yaitu #1268#",
+      "tentang usaha merukunkan keduanya #1268#",
+      "terkait upaya mendamaikan mereka #1268#",
+      "perihal perdamaian yang diupayakan keluarga #1268#"
      ]
     },
     "berbeda": {
@@ -2956,6 +2972,10 @@
     "0046",
     "0047"
    ],
+   "slotDari": {
+    "waktu": "puncak",
+    "peristiwa": "puncakPeristiwa"
+   },
    "hal": "puncak perselisihan mereka",
    "tidakBerlaku": [
     "berbeda"
@@ -3388,18 +3408,18 @@
    ],
    "jawaban": {
     "melihat": {
-     "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+     "maksud": "saksi mengetahui hal itu dari pengamatannya sendiri",
      "saksi1": [
-      "saya melihat sendiri bahwa sekarang #0046# tinggal di #0101# sedangkan #0047# tinggal di #0105#",
-      "saya menyaksikan langsung bahwa tempat tinggal #0046# saat ini ada di #0101# dan tempat tinggal #0047# ada di #0105#",
-      "#0046# berdiam di #0101# adapun #0047# berdiam di #0105# dan hal itu saya lihat sendiri",
-      "saya berada di tempat kejadian dan melihat bahwa kini #0046# bertempat tinggal di #0101# dan #0047# bertempat tinggal di #0105#"
+      "sekarang #0046# tinggal di #0101# sedangkan #0047# tinggal di #0105#",
+      "tempat tinggal #0046# saat ini ada di #0101# dan tempat tinggal #0047# ada di #0105#",
+      "#0046# berdiam di #0101# adapun #0047# berdiam di #0105#",
+      "kini #0046# bertempat tinggal di #0101# dan #0047# bertempat tinggal di #0105#"
      ],
      "saksi2": [
-      "yang saya saksikan sendiri adalah bahwa saat ini #0047# tinggal di #0105# dan #0046# tinggal di #0101#",
-      "dengan mata kepala saya sendiri saya melihat bahwa alamat #0046# sekarang di #0101# serta alamat #0047# di #0105#",
-      "saya mengalami dan melihat langsung bahwa masing-masing tinggal berjauhan yaitu #0046# di #0101# dan #0047# di #0105#",
-      "sekarang keduanya menetap di tempat berbeda yaitu #0046# di #0101# dan #0047# di #0105# sebagaimana yang saya saksikan sendiri"
+      "saat ini #0047# tinggal di #0105# dan #0046# tinggal di #0101#",
+      "alamat #0046# sekarang di #0101# serta alamat #0047# di #0105#",
+      "masing-masing tinggal berjauhan yaitu #0046# di #0101# dan #0047# di #0105#",
+      "sekarang keduanya menetap di tempat berbeda yaitu #0046# di #0101# dan #0047# di #0105#"
      ]
     },
     "mendengar": {
@@ -3471,18 +3491,18 @@
    ],
    "jawaban": {
     "melihat": {
-     "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+     "maksud": "saksi mengetahui hal itu dari pengamatannya sendiri",
      "saksi1": [
-      "saya melihat sendiri bahwa terakhir kali mereka tinggal bersama di #8570# sebelum akhirnya berpisah",
-      "saya menyaksikan langsung bahwa sebelum berpisah mereka terakhir tinggal serumah di #8570#",
-      "kediaman bersama mereka yang terakhir berada di #8570# dan hal itu saya lihat sendiri",
-      "saya berada di tempat kejadian dan melihat bahwa tempat tinggal bersama mereka yang terakhir adalah #8570# sebelum salah satu pergi"
+      "terakhir kali mereka tinggal bersama di #8570# sebelum akhirnya berpisah",
+      "sebelum berpisah mereka terakhir tinggal serumah di #8570#",
+      "kediaman bersama mereka yang terakhir berada di #8570#",
+      "tempat tinggal bersama mereka yang terakhir adalah #8570# sebelum salah satu pergi"
      ],
      "saksi2": [
-      "yang saya saksikan sendiri adalah bahwa mereka terakhir menetap bersama di #8570# sebelum pisah rumah",
-      "dengan mata kepala saya sendiri saya melihat bahwa rumah tempat #0046# dan #0047# terakhir tinggal bersama adalah #8570#",
-      "saya mengalami dan melihat langsung bahwa sebelum berpisah keduanya masih serumah di #8570#",
-      "kediaman terakhir mereka sebagai suami istri berada di #8570# sebagaimana yang saya saksikan sendiri"
+      "mereka terakhir menetap bersama di #8570# sebelum pisah rumah",
+      "rumah tempat #0046# dan #0047# terakhir tinggal bersama adalah #8570#",
+      "sebelum berpisah keduanya masih serumah di #8570#",
+      "kediaman terakhir mereka sebagai suami istri berada di #8570#"
      ]
     },
     "mendengar": {
@@ -3884,18 +3904,18 @@
    ],
    "jawaban": {
     "melihat": {
-     "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+     "maksud": "saksi mengetahui hal itu dari pengamatannya sendiri",
      "saksi1": [
-      "saya melihat sendiri bahwa mereka masih serumah karena {isi}",
-      "saya menyaksikan langsung bahwa alasan keduanya masih bersama dalam satu rumah adalah {isi}",
-      "keduanya bertahan serumah disebabkan {isi} dan hal itu saya lihat sendiri",
-      "saya berada di tempat kejadian dan melihat bahwa yang membuat mereka masih satu rumah adalah {isi}"
+      "mereka masih serumah karena {isi}",
+      "alasan keduanya masih bersama dalam satu rumah adalah {isi}",
+      "keduanya bertahan serumah disebabkan {isi}",
+      "yang membuat mereka masih satu rumah adalah {isi}"
      ],
      "saksi2": [
-      "yang saya saksikan sendiri adalah bahwa mereka masih satu rumah sebab {isi}",
-      "dengan mata kepala saya sendiri saya melihat bahwa sampai sekarang keduanya serumah karena {isi}",
-      "saya mengalami dan melihat langsung bahwa penyebab mereka masih tinggal bersama ialah {isi}",
-      "keduanya tetap satu atap dikarenakan {isi} sebagaimana yang saya saksikan sendiri"
+      "mereka masih satu rumah sebab {isi}",
+      "sampai sekarang keduanya serumah karena {isi}",
+      "penyebab mereka masih tinggal bersama ialah {isi}",
+      "keduanya tetap satu atap dikarenakan {isi}"
      ]
     },
     "mendengar": {
@@ -4392,36 +4412,36 @@
       "keadaan": {
        "alamatLawan": "diketahui"
       },
-      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "maksud": "saksi mengetahui hal itu dari pengamatannya sendiri",
       "saksi1": [
-       "saya melihat sendiri bahwa #0047# sekarang tinggal di #0105#",
-       "saya menyaksikan langsung bahwa tempat tinggal #0047# saat ini berada di #0105#",
-       "#0047# berdiam di #0105# sampai sekarang dan hal itu saya lihat sendiri",
-       "saya berada di tempat kejadian dan melihat bahwa alamat #0047# yang terakhir adalah #0105#"
+       "#0047# sekarang tinggal di #0105#",
+       "tempat tinggal #0047# saat ini berada di #0105#",
+       "#0047# berdiam di #0105# sampai sekarang",
+       "alamat #0047# yang terakhir adalah #0105#"
       ],
       "saksi2": [
-       "yang saya saksikan sendiri adalah bahwa saat ini #0047# menetap di #0105#",
-       "dengan mata kepala saya sendiri saya melihat bahwa sekarang #0047# bertempat tinggal di #0105#",
-       "saya mengalami dan melihat langsung bahwa #0047# kini berada di #0105#",
-       "keberadaan #0047# sekarang adalah di #0105# sebagaimana yang saya saksikan sendiri"
+       "saat ini #0047# menetap di #0105#",
+       "sekarang #0047# bertempat tinggal di #0105#",
+       "#0047# kini berada di #0105#",
+       "keberadaan #0047# sekarang adalah di #0105#"
       ]
      },
      {
       "keadaan": {
        "alamatLawan": "tidak-diketahui"
       },
-      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "maksud": "saksi mengetahui hal itu dari pengamatannya sendiri",
       "saksi1": [
-       "saya melihat sendiri bahwa keberadaan #0047# sekarang tidak diketahui oleh keluarga maupun orang dekatnya",
-       "saya menyaksikan langsung bahwa tempat tinggal #0047# saat ini tidak diketahui oleh siapa pun di sekitar kami",
-       "#0047# pergi dan alamatnya sekarang tidak diketahui dan hal itu saya lihat sendiri",
-       "saya berada di tempat kejadian dan melihat bahwa sampai sekarang alamat #0047# yang pasti tidak diketahui oleh keluarganya"
+       "keberadaan #0047# sekarang tidak diketahui oleh keluarga maupun orang dekatnya",
+       "tempat tinggal #0047# saat ini tidak diketahui oleh siapa pun di sekitar kami",
+       "#0047# pergi dan alamatnya sekarang tidak diketahui",
+       "sampai sekarang alamat #0047# yang pasti tidak diketahui oleh keluarganya"
       ],
       "saksi2": [
-       "yang saya saksikan sendiri adalah bahwa saat ini tidak ada yang mengetahui di mana #0047# berada",
-       "dengan mata kepala saya sendiri saya melihat bahwa sekarang alamat #0047# tidak diketahui oleh orang-orang dekatnya",
-       "saya mengalami dan melihat langsung bahwa #0047# tidak diketahui lagi tempat tinggalnya sejak pergi",
-       "keberadaan #0047# kini tidak diketahui oleh keluarga sebagaimana yang saya saksikan sendiri"
+       "saat ini tidak ada yang mengetahui di mana #0047# berada",
+       "sekarang alamat #0047# tidak diketahui oleh orang-orang dekatnya",
+       "#0047# tidak diketahui lagi tempat tinggalnya sejak pergi",
+       "keberadaan #0047# kini tidak diketahui oleh keluarga"
       ]
      }
     ],

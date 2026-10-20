@@ -2697,6 +2697,20 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         sipp: sippSaksi,
         saksiIsi: Array.isArray(req.body?.saksiIsi) ? req.body.saksiIsi.slice(0, 12) : [],
       });
+      // 20 Okt 2026 (U1): fakta perkara apa adanya untuk penyusun saksi katalog di panel (hanya bila diminta).
+      if (req.body?.mintaFakta === true) {
+        jawaban.faktaPerkara = isiSumber.faktaPerkara({
+          posita: positaKurang && konteksSipp && konteksSipp.posita ? konteksSipp.posita : positaMasuk,
+          jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+          alur: String(req.body?.alur || "").slice(0, 20),
+          pelaku,
+          lawan,
+          tanggalSidang: String(req.body?.tanggalSidang || "").slice(0, 40) || (konteksSipp && konteksSipp.tanggalSidang) || "",
+          ...(alamatPihakSipp ? { alamatPihak: alamatPihakSipp } : {}),
+          isian: req.body?.isian,
+          sipp: sippSaksi,
+        });
+      }
     }
     // Keterangan saksi SDG - disusun dari templat pertanyaan yang ekstensi
     // ambil lewat halaman penyunting ABT sendiri (load_template). Dua saksi,
