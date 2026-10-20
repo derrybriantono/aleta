@@ -498,6 +498,13 @@
       "when": 1792202400001,
       "tag": "0077_aleta_tautan_jadwal",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1792206000001,
+      "tag": "0078_aleta_ai",
+      "breakpoints": true
     }
   ]
 }

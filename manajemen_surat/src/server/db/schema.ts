@@ -690,6 +690,172 @@ export const DDL_TAUTAN_JADWAL = {
 } as const;
 
 /**
+ * ALETA Ai tahap 1 (0078, 20 Okt 2026): proyek V4.5 berversi, percakapan, pesan
+ * (isi terenkripsi), pemakaian per panggilan, saldo + buku mutasi, tarif model,
+ * kurs harian, pengaturan, tabel rute model, dan jejak audit. Cermin PERSIS dari
+ * drizzle/0078_aleta_ai.sql; penjaga aleta-ai-server-20okt.test.ts membandingkan
+ * keduanya. Tanpa kunci asing dan tanpa CHECK: nilai sah dijaga modul
+ * (src/server/modules/aleta-ai/*).
+ */
+export const DDL_ALETA_AI = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ai_proyek (
+  id TEXT PRIMARY KEY,
+  versi INTEGER NOT NULL,
+  nama TEXT NOT NULL DEFAULT '',
+  core_prompt TEXT NOT NULL DEFAULT '',
+  modul_json TEXT NOT NULL DEFAULT '[]',
+  menu_json TEXT NOT NULL DEFAULT '[]',
+  lampiran_json TEXT NOT NULL DEFAULT '[]',
+  sumber_nama TEXT NOT NULL DEFAULT '',
+  sumber_sha TEXT NOT NULL DEFAULT '',
+  aktif INTEGER NOT NULL DEFAULT 0,
+  diunggah_oleh TEXT NOT NULL DEFAULT '',
+  diunggah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_obrolan (
+  id TEXT PRIMARY KEY,
+  pemilik_id TEXT NOT NULL,
+  judul TEXT NOT NULL DEFAULT '',
+  perkara_ref TEXT NOT NULL DEFAULT '',
+  tersembunyi INTEGER NOT NULL DEFAULT 0,
+  proyek_versi INTEGER NOT NULL DEFAULT 0,
+  jumlah_pesan INTEGER NOT NULL DEFAULT 0,
+  dibuat_at TEXT NOT NULL,
+  diperbarui_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_obrolan_pesan (
+  id TEXT PRIMARY KEY,
+  percakapan_id TEXT NOT NULL,
+  pemilik_id TEXT NOT NULL,
+  peran TEXT NOT NULL,
+  isi TEXT NOT NULL DEFAULT '',
+  pemicu TEXT NOT NULL DEFAULT '',
+  kelompok TEXT NOT NULL DEFAULT '',
+  model TEXT NOT NULL DEFAULT '',
+  effort TEXT NOT NULL DEFAULT '',
+  mode_label TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'selesai',
+  token_masuk INTEGER NOT NULL DEFAULT 0,
+  token_keluar INTEGER NOT NULL DEFAULT 0,
+  token_cache_tulis INTEGER NOT NULL DEFAULT 0,
+  token_cache_baca INTEGER NOT NULL DEFAULT 0,
+  biaya_usd DOUBLE PRECISION NOT NULL DEFAULT 0,
+  kurs_dasar DOUBLE PRECISION NOT NULL DEFAULT 0,
+  kurs DOUBLE PRECISION NOT NULL DEFAULT 0,
+  biaya_api_rp DOUBLE PRECISION NOT NULL DEFAULT 0,
+  biaya_rp INTEGER NOT NULL DEFAULT 0,
+  perkiraan_rp INTEGER NOT NULL DEFAULT 0,
+  gratis INTEGER NOT NULL DEFAULT 0,
+  dibuat_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_penggunaan (
+  id TEXT PRIMARY KEY,
+  pesan_id TEXT NOT NULL DEFAULT '',
+  percakapan_id TEXT NOT NULL DEFAULT '',
+  pengguna_id TEXT NOT NULL,
+  peran_id TEXT NOT NULL DEFAULT '',
+  jenis TEXT NOT NULL DEFAULT 'jawaban',
+  model TEXT NOT NULL DEFAULT '',
+  effort TEXT NOT NULL DEFAULT '',
+  kelompok TEXT NOT NULL DEFAULT '',
+  token_masuk INTEGER NOT NULL DEFAULT 0,
+  token_keluar INTEGER NOT NULL DEFAULT 0,
+  token_cache_tulis INTEGER NOT NULL DEFAULT 0,
+  token_cache_baca INTEGER NOT NULL DEFAULT 0,
+  biaya_usd DOUBLE PRECISION NOT NULL DEFAULT 0,
+  kurs_dasar DOUBLE PRECISION NOT NULL DEFAULT 0,
+  biaya_api_rp DOUBLE PRECISION NOT NULL DEFAULT 0,
+  dibuat_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_saldo (
+  pengguna_id TEXT PRIMARY KEY,
+  saldo_rp INTEGER NOT NULL DEFAULT 0,
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_mutasi (
+  id TEXT PRIMARY KEY,
+  pengguna_id TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  jumlah_rp INTEGER NOT NULL,
+  saldo_setelah INTEGER NOT NULL,
+  rujukan_id TEXT NOT NULL DEFAULT '',
+  catatan TEXT NOT NULL DEFAULT '',
+  oleh_id TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_harga (
+  model TEXT PRIMARY KEY,
+  masuk_per_juta DOUBLE PRECISION NOT NULL DEFAULT 0,
+  keluar_per_juta DOUBLE PRECISION NOT NULL DEFAULT 0,
+  cache_tulis_per_juta DOUBLE PRECISION NOT NULL DEFAULT 0,
+  cache_baca_per_juta DOUBLE PRECISION NOT NULL DEFAULT 0,
+  ambang_token INTEGER NOT NULL DEFAULT 0,
+  masuk_atas DOUBLE PRECISION NOT NULL DEFAULT 0,
+  keluar_atas DOUBLE PRECISION NOT NULL DEFAULT 0,
+  cache_tulis_atas DOUBLE PRECISION NOT NULL DEFAULT 0,
+  cache_baca_atas DOUBLE PRECISION NOT NULL DEFAULT 0,
+  fallback INTEGER NOT NULL DEFAULT 0,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_kurs (
+  id TEXT PRIMARY KEY,
+  tanggal TEXT NOT NULL,
+  kurs DOUBLE PRECISION NOT NULL,
+  sumber TEXT NOT NULL DEFAULT '',
+  diambil_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_pengaturan (
+  kunci TEXT PRIMARY KEY,
+  nilai TEXT NOT NULL DEFAULT '',
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_rute (
+  kelompok TEXT PRIMARY KEY,
+  judul TEXT NOT NULL DEFAULT '',
+  model TEXT NOT NULL,
+  effort TEXT NOT NULL DEFAULT 'medium',
+  label TEXT NOT NULL DEFAULT 'Cepat',
+  peran_json TEXT NOT NULL DEFAULT '[]',
+  urutan INTEGER NOT NULL DEFAULT 0,
+  perkiraan_keluaran INTEGER NOT NULL DEFAULT 1000,
+  max_tokens INTEGER NOT NULL DEFAULT 8000,
+  naik_ke TEXT NOT NULL DEFAULT '',
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_jejak (
+  id TEXT PRIMARY KEY,
+  waktu TEXT NOT NULL,
+  pengguna_id TEXT NOT NULL DEFAULT '',
+  peran_id TEXT NOT NULL DEFAULT '',
+  aksi TEXT NOT NULL,
+  percakapan_id TEXT NOT NULL DEFAULT '',
+  pesan_id TEXT NOT NULL DEFAULT '',
+  model TEXT NOT NULL DEFAULT '',
+  token_total INTEGER NOT NULL DEFAULT 0,
+  biaya_usd DOUBLE PRECISION NOT NULL DEFAULT 0,
+  biaya_rp INTEGER NOT NULL DEFAULT 0,
+  hasil TEXT NOT NULL DEFAULT '',
+  ringkas TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_ai_proyek_versi ON aleta_ai_proyek(versi)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_obrolan_pemilik ON aleta_ai_obrolan(pemilik_id, diperbarui_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_obrolan_pesan_obrolan ON aleta_ai_obrolan_pesan(percakapan_id, dibuat_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_obrolan_pesan_pemilik ON aleta_ai_obrolan_pesan(pemilik_id, dibuat_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_penggunaan_waktu ON aleta_ai_penggunaan(dibuat_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_penggunaan_pengguna ON aleta_ai_penggunaan(pengguna_id, dibuat_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_mutasi_pengguna ON aleta_ai_mutasi(pengguna_id, dibuat_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_kurs_tanggal ON aleta_ai_kurs(tanggal)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_jejak_waktu ON aleta_ai_jejak(waktu)`,
+  ],
+} as const;
+
+/**
  * SKP jabatan perkara (0070, 17 Okt 2026, rancangan disetujui pengguna):
  * pemetaan akun SIPP ke pegawai (bertanggal), target, isian manual, dan
  * tangkapan realisasi yang dikunci. Cermin PERSIS dari
@@ -1787,6 +1953,8 @@ const schemaStatements = [
   ...DDL_BLANGKO_PRIBADI.tabel,
   // Tautan Jadwal Sidang tanpa akun: tautan, jejak, saklar (0077).
   ...DDL_TAUTAN_JADWAL.tabel,
+  // ALETA Ai tahap 1: proyek V4.5, percakapan, saldo, tarif, rute (0078).
+  ...DDL_ALETA_AI.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -3735,6 +3903,7 @@ const indexStatements = [
   ...DDL_ABT_SUNTINGAN.indeks,
   ...DDL_BLANGKO_PRIBADI.indeks,
   ...DDL_TAUTAN_JADWAL.indeks,
+  ...DDL_ALETA_AI.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.
