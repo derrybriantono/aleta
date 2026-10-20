@@ -66,12 +66,15 @@ Isian (data_teks): 4884, 4886, 4888, 4890, 4896, 4899, 4901, 4902, 4905. Semua k
 
 ## Yang diuji
 
-- SQL: 30 variabel dijalankan di SIPP server (MariaDB 5.5.68, baca saja) atas perkara cerai yang punya tab Anak bertanggal lahir (10135, 9963, 10090, 1) tanpa galat;
-  cabang isian diuji di MariaDB lokal (`sipp_donggala`, isian uji ditulis lalu dihapus). Alat: `alat/anak_ujisql.py`.
-- Render nyata: renderer php56 ABT (salinan aplikasi + basis sementara `aps_badilag_w2banak`, definisi variabel diambil dari server) untuk 25 blangko ditambal, 8 baru, 3 BAS: semua `OK`,
-  tanpa penanda tersisa; `[PERIKSA]` hanya muncul pada kasus yang memang tidak cocok. Alat: `alat/anak_render.py`. Batas: variabel yang memakai fungsi basis server
-  (posita/petitum rapi, keterangan saksi) diganti teks pengganti di rig lokal.
-- Paket: `python sumber/bangun_paket.py` membangun; PRASYARAT `0|0|<n>|0|0`, PASANG, PERIKSA `SEMUA COCOK`, PASANG ulang, PULIH `PULIH COCOK` diuji di MariaDB lokal.
+- SQL: seluruh variabel data_sql dijalankan di SIPP server (MariaDB 5.5.68, baca saja) atas perkara cerai yang punya tab Anak bertanggal lahir (10135, 9963, 10090, 9306) dan perkara tanpa anak: tanpa galat;
+  cabang isian (4885-4909) diuji di MariaDB lokal (`sipp_donggala`, isian uji ditulis lalu dihapus), termasuk perbandingan nafkah (sama, lebih rendah, lebih tinggi, angka tak terbaca). Alat: `alat/anak_ujisql.py`.
+- Render nyata (php56, aplikasi ABT salinan, basis sementara dengan definisi variabel dari server, perkara 10135): 28 blangko ditambal + 8 blangko baru = 36 berkas, semua `OK`, tanpa penanda tersisa;
+  `[PERIKSA]` hanya muncul pada kasus yang memang tidak cocok (anak di bawah 12 tahun pada blangko mumayyiz memilih; isian 4905 kosong pada [01g]). Perbandingan keadaan isian kosong:
+  blangko asli dan blangko ditambal berbeda hanya oleh kalimat umur anak dan kewenangan relatif (hak asuh). Tanpa perubahan lain pada teks asli (diperiksa per paragraf: buang penanda baru = teks asli).
+  Alat: `alat/anak_render.py`. Batas: variabel yang memakai fungsi basis server (posita/petitum rapi, keterangan saksi) diganti teks pengganti di rig lokal.
+- Paket: `python sumber/bangun_paket.py` membangun (30 variabel, 8 baru, 28 timpa, 165 variabel lama dirujuk, semuanya ada di server); PRASYARAT `0|0|165|0|0`, PASANG, PERIKSA `SEMUA COCOK`, PASANG ulang `0|30|165|0|0`,
+  PULIH `PULIH COCOK` diuji di MariaDB lokal. `alat/anak_periksa_paket.py` memeriksa nama <= 200, hanya SELECT, tanpa kata aplikasi, penanda tidak terpecah, md5 daftar timpa.
+- `alat/anak_cekmd5.py`: md5 LAMA 28 berkas di daftar-timpa-anak.tsv sama dengan md5 berkas di server pada 21 Okt 2026 pukul 00.50 (BACA SAJA).
 
 ## Batas data (jujur)
 
