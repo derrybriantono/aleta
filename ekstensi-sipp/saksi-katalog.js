@@ -758,7 +758,7 @@
   function kerabatDariHubungan(teks) {
     const t = rapikan(String(teks || "").replace(POLA_PENANDA, " "));
     if (!t) return "";
-    if (/\b(tetangga|teman|sahabat|rekan|kenalan|warga|kawan|majikan|atasan|bawahan|pembantu|ketua rt|ketua rw|kepala dusun|kepala desa|tokoh|jiran)\b/.test(t)) return "bukan-keluarga";
+    if (/\b(tetangga|teman|sahabat|rekan|kenalan|warga|kawan|majikan|atasan|bawahan|pembantu|ketua rt|ketua rw|kepala dusun|kepala desa|tokoh|jiran|karyawan|pekerja|buruh|aparat|adat)\b/.test(t)) return "bukan-keluarga";
     if (/\b(ayah|bapak|ibu|mama|papa|kakak|abang|adik|saudara|paman|om|bibi|tante|kakek|nenek|sepupu|keponakan|ipar|mertua|menantu|orang tua|ortu|kerabat|keluarga|anak|cucu|besan|kandung|tiri)\b/.test(t)) return "keluarga";
     return "";
   }

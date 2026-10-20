@@ -219,6 +219,8 @@ cue("pisah-sejak", new RegExp(`berpisah\\s+tempat\\s+tinggal\\s+sejak\\s+${T},\\
 }, { jenis: ["cg", "ct"] });
 cue("meninggalkan", new RegExp(`yang\\s+meninggalkan\\s+[^;.]{0,50}?adalah\\s+${T}`, "gi"), ({ m, h }) => h.isi(m, [h.nilai("siapaPergi")]), { jenis: ["cg", "ct"] });
 cue("tinggal-di", new RegExp(`(${RE_SEBUTAN})\\s+tinggal\\s+di\\s+${T}`, "gi"), ({ m, g, h }) => h.isi(m, [h.alamat(pihakKe(g[0]))]), { jenis: ["cg", "ct"] });
+// 20 Okt 2026 (U1): pekerjaan pihak dari data SIPP ("Tergugat bekerja sebagai ..." pada set sebab/nafkah/hak asuh).
+cue("bekerja-sebagai", new RegExp(`(${RE_SEBUTAN})\\s+bekerja\\s+sebagai\\s+${T}`, "gi"), ({ m, g, h }) => h.isi(m, [h.nilai(pihakKe(g[0]) === 1 ? "pekerjaanP" : "pekerjaanT")]), { jenis: ["cg", "ct"] });
 
 // ---- dispensasi kawin -----------------------------------------------------------
 
@@ -515,6 +517,8 @@ function isiPlaceholder(teks, tanya, h, ctx) {
     korban: () => ctx.P,
     pihakSaksi: () => ctx.P,
     lawanSaksi: () => ctx.T,
+    waktu: () => (/puncak/.test(q) ? h.nilai("puncak") : null),
+    peristiwa: () => (/puncak/.test(q) ? h.nilai("puncakPeristiwa") : null),
     sejak: () => (/pisah|meninggalkan|pergi/.test(q) ? h.nilai("pisahSejak") : /rukun|selisih|tengkar|konflik/.test(q) ? h.nilai("awalKonflik") : null),
     lama: () => (/pisah|meninggalkan|pergi/.test(q) ? h.nilai("lamaPisah") : null),
   };

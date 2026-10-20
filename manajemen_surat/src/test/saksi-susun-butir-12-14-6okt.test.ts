@@ -448,19 +448,19 @@ describe("butir 13 - urutan dropdown modus saksi", () => {
   it("UI Baru: 'hanya tahu sudah pisah' tepat sesudah 'tidak tahu sebabnya'; pilihan yang sudah dibuat tetap", async () => {
     const h = buka({ simpanan: { ujiTampilan: "ui" }, alasanPosita: { ok: true, alasan: SESUAI, asalPosita: "ekstensi" } });
     const form = await bukaFormSdg(h);
-    await sampai(() => urutanModus(form)[3] === "tahu-pisah", "diurutkan");
-    expect(urutanModus(form)).toEqual(["sama", "sebagian", "tidak-tahu", "tahu-pisah", "tidak-melihat", "dari-cerita"]);
+    await sampai(() => urutanModus(form)[4] === "tahu-pisah", "diurutkan");
+    expect(urutanModus(form)).toEqual(["sama", "mendengar", "sebagian", "tidak-tahu", "tahu-pisah", "tidak-melihat", "dari-cerita", "ragu"]);
     const pilih = form.querySelector(".aleta-sdg-modus select");
     expect(pilih.value).toBe("sama");
-    expect(pilih.options[3].textContent).toBe("Tidak tahu pertengkarannya, hanya tahu sudah pisah");
-    expect(pilih.options[2].textContent).toBe("Tahu berselisih & berpisah, tidak tahu sebabnya");
+    expect(pilih.options[4].textContent).toBe("Tidak tahu pertengkarannya, hanya tahu sudah pisah");
+    expect(pilih.options[3].textContent).toBe("Tahu berselisih & berpisah, tidak tahu sebabnya");
   });
 
   it("Lama: urutan semula, tidak ada permintaan alasan-posita", async () => {
     const h = buka({ simpanan: { ujiTampilan: "lama" }, alasanPosita: { ok: true, alasan: SESUAI, asalPosita: "ekstensi" } });
     const form = await bukaFormSdg(h);
     await tunggu(80);
-    expect(urutanModus(form)).toEqual(["sama", "sebagian", "tidak-tahu", "tidak-melihat", "dari-cerita", "tahu-pisah"]);
+    expect(urutanModus(form)).toEqual(["sama", "mendengar", "sebagian", "tidak-tahu", "tidak-melihat", "dari-cerita", "tahu-pisah", "ragu"]);
     expect(h.minta.some((m) => m.badan.includes("alasan-posita"))).toBe(false);
   });
 });

@@ -6366,11 +6366,13 @@ function susunPanelAbt(jatiDiri) {
     // pilihannya.
     const DAFTAR_MODUS = [
       ["sama", "Tahu seluruh alasan, melihat sendiri"],
+      ["mendengar", "Mendengar sendiri pertengkaran, tidak melihat"],
       ["sebagian", "Hanya sebagian alasan yang ia ketahui"],
       ["tidak-tahu", "Tahu berselisih & berpisah, tidak tahu sebabnya"],
       ["tidak-melihat", "Tidak pernah menyaksikan pertengkaran"],
       ["dari-cerita", "Tahu dari cerita salah satu pihak"],
       ["tahu-pisah", "Tidak tahu pertengkarannya, hanya tahu sudah pisah"],
+      ["ragu", "Ragu dan kurang ingat"],
     ];
     // ======================================================================
     // KODENYA MENYEBUT PIHAKNYA, BUKAN NAMA RUAS MUATAN

@@ -435,3 +435,83 @@ describe("borang: profil pengetahuan, kedudukan saksi, centang alasan, dan fakta
     expect(wadah.querySelector("[data-sumber-fakta]")).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Jalur cerai lama: dua pilihan "Yang diketahui saksi" baru
+// ---------------------------------------------------------------------------
+describe("jalur lama: 'mendengar sendiri' dan 'ragu' pada penyusun keterangan saksi", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const bot = require(path.resolve(REPO, "aleta_bot/services/abtUsulanService.js")) as any;
+  const TEMPLAT = [
+    { no: "1", tanya: "Apakah saksi kenal dengan Penggugat dan Tergugat?", jawab: "Ya, saya kenal dengan Penggugat dan Tergugat karena saya adalah tetangga Penggugat;" },
+    { no: "2", tanya: "Bagaimana kehidupan rumah tangga Penggugat dan Tergugat?", jawab: "Pada awalnya rumah tangga mereka rukun dan harmonis, namun sekarang tidak harmonis lagi karena sering terjadi perselisihan dan pertengkaran;" },
+    { no: "3", tanya: "Kapan mulai terjadi perselisihan dan pertengkaran antara Penggugat dan Tergugat?", jawab: "Perselisihan dan pertengkaran mereka terjadi sejak bulan Maret 2023;" },
+    { no: "4", tanya: "Apakah saksi tahu penyebab perselisihan dan pertengkaran Penggugat dan Tergugat?", jawab: "Ya, penyebab mereka berselisih dan bertengkar, yang saya tahu yaitu xxx;" },
+    { no: "5", tanya: "Bagaimana saksi bisa mengetahui penyebab perselisihan dan pertengkaran tersebut?", jawab: "Saya mengetahui karena saya melihat dan mendengar pertengkaran mereka;" },
+    { no: "6", tanya: "Apakah saksi pernah melihat atau mendengar Penggugat dan Tergugat bertengkar? Berapa kali?", jawab: "Saya melihat dan mendengar mereka bertengkar sebanyak 3 kali;" },
+    { no: "7", tanya: "Apakah saat ini Penggugat dan Tergugat masih tinggal serumah?", jawab: "Penggugat dan Tergugat sudah pisah tempat tinggal sejak bulan Januari 2025;" },
+  ];
+  const POSITA = "Bahwa sejak bulan Maret 2023 sering terjadi perselisihan dan pertengkaran disebabkan Tergugat tidak memberi nafkah kepada Penggugat dan Tergugat sering berjudi.";
+  const susunLama = (modus: string, nomor = "1/Pdt.G/2026/PA.Dgl") =>
+    bot.susunKeteranganSaksiSdg({ templat: TEMPLAT, posita: POSITA, alasan: ["tidak memberi nafkah", "judi"], pelaku: "Tergugat", lawan: "Penggugat", nomorPerkara: nomor, kodeKumpulan: "", jenisPerkara: "347", alur: "15", modus: { saksi1: { modus, sumber: "penggugat", alasan: [] }, saksi2: { modus: "sama", sumber: "penggugat", alasan: [] } } });
+  const j = (h: any, ke: number, no: string) => h.saksi[ke].jawaban.find((x: any) => x.no === no).jawab as string;
+
+  it("mendengar: sebab dan cara tahu bersumber pendengaran sendiri, tidak mengaku melihat; kenal dan pisah rumah tetap dari templat", () => {
+    const h = susunLama("mendengar");
+    expect(h.ok).toBe(true);
+    expect(j(h, 0, "4")).toMatch(/dengar|pendengaran/i);
+    expect(j(h, 0, "5")).toMatch(/dengar|pendengaran/i);
+    expect(j(h, 0, "5")).not.toMatch(/melihat dan mendengar|melihat sendiri/i);
+    expect(j(h, 0, "6")).toMatch(/dengar/i);
+    expect(j(h, 0, "6")).toMatch(/tidak|belum|bukan|tanpa/i);
+    expect(j(h, 0, "7")).toMatch(/pisah/i);
+    // saksi 2 bermodus "sama" tidak berubah
+    expect(j(h, 1, "5")).not.toMatch(/tidak|bukan/i);
+    expect(JSON.stringify(h)).not.toMatch(/aleta/i);
+  });
+
+  it("ragu: sebab, cara tahu, waktu, dan keadaan rumah tangga dijawab ragu tanpa angka dan tanggal", () => {
+    const h = susunLama("ragu");
+    for (const no of ["2", "3", "4", "5", "6"]) {
+      const t = j(h, 0, no);
+      expect(t, no).toMatch(/ragu|lupa|kurang (yakin|jelas|ingat|pasti)|tidak (terlalu )?(yakin|ingat)|samar|kabur|mengira-ngira/i);
+      expect(t, no).not.toMatch(/\d/);
+    }
+    expect(j(h, 0, "3")).not.toContain("Maret 2023");
+    expect(j(h, 1, "3")).toContain("Maret 2023");
+  });
+
+  it("dua saksi bermodus sama tidak berbunyi sama (ragam), dan hasil deterministik", () => {
+    const h = bot.susunKeteranganSaksiSdg({ templat: TEMPLAT, posita: POSITA, alasan: ["judi"], pelaku: "Tergugat", lawan: "Penggugat", nomorPerkara: "5/Pdt.G/2026/PA.Dgl", kodeKumpulan: "", jenisPerkara: "347", alur: "15", modus: { saksi1: { modus: "mendengar", sumber: "penggugat", alasan: [] }, saksi2: { modus: "mendengar", sumber: "penggugat", alasan: [] } } });
+    expect(j(h, 0, "5")).not.toBe(j(h, 1, "5"));
+    expect(JSON.stringify(susunLama("ragu"))).toBe(JSON.stringify(susunLama("ragu")));
+  });
+});
+
+describe("pengisi jawaban bersumber: pekerjaan pihak dan puncak perselisihan", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const isi = require(path.resolve(REPO, "aleta_bot/services/isiJawabanSaksi.js")) as any;
+  const fakta = () =>
+    isi.bangunFakta({
+      sipp: { pihak1: [{ pekerjaan: "Mengurus Rumah Tangga", alamat: "Desa A" }], pihak2: [{ pekerjaan: "Buruh Harian Lepas", alamat: "Desa B" }] },
+      cerai: { puncak: "akhir Februari 2025", puncakPeristiwa: "Penggugat pergi meninggalkan kediaman bersama" },
+      sebutan: { P: "Penggugat", T: "Tergugat" },
+    });
+  const ctx = { jenis: "cg", P: "Penggugat", T: "Tergugat", ke: 1 };
+
+  it("'X bekerja sebagai ...' diisi dari pekerjaan di SIPP menurut pihaknya, dengan sumber dan keyakinan", () => {
+    const r = isi.isiJawaban({ tanya: "Apa pekerjaan Tergugat?", jawab: "Tergugat bekerja sebagai ..., penghasilannya kira-kira Rp... setiap bulan;" }, fakta(), ctx);
+    expect(r.teks).toContain("Tergugat bekerja sebagai buruh harian lepas");
+    expect(r.sumber).toBe("data SIPP");
+    expect(r.yakin).toBe("cukup");
+    const p = isi.isiJawaban({ tanya: "Apa pekerjaan Penggugat?", jawab: "Penggugat bekerja sebagai ... dan masih mempunyai waktu untuk mengasuh anak;" }, fakta(), ctx);
+    expect(p.teks).toContain("Penggugat bekerja sebagai mengurus rumah tangga");
+  });
+
+  it("slot {waktu} dan {peristiwa} pada pertanyaan puncak diisi dari gugatan; pada pertanyaan lain dibiarkan", () => {
+    const r = isi.isiPlaceholder("puncak pertengkaran terjadi pada {waktu} ketika {peristiwa}", "Apakah ada kejadian yang menjadi puncak perselisihan?", { nilai: (k: string) => ({ puncak: "akhir Februari 2025", puncakPeristiwa: "Penggugat pergi" } as any)[k] ?? null }, ctx);
+    expect(r).toBe("puncak pertengkaran terjadi pada akhir Februari 2025 ketika Penggugat pergi");
+    const lain = isi.isiPlaceholder("terjadi pada {waktu}", "Sejak kapan kekerasan itu terjadi?", { nilai: () => "x" }, ctx);
+    expect(lain).toBe("terjadi pada {waktu}");
+  });
+});

@@ -81,10 +81,10 @@ function matriks(): Map<string, Set<string>> {
 }
 
 describe("butir 9 - jumlah varian per jenis perkara x keadaan", () => {
-  it("20 bank, masing-masing >= lama + 10 bentuk", () => {
-    expect(Object.keys(BANK)).toHaveLength(20);
+  it("28 bank (20 + 8 dari U1 20 Okt), masing-masing >= lama + 10 bentuk", () => {
+    expect(Object.keys(BANK)).toHaveLength(28);
     for (const [kunci, isi] of Object.entries(BANK)) expect(isi.length, kunci).toBeGreaterThanOrEqual(LAMA + TAMBAH);
-    expect(baru).toHaveLength(20 * TAMBAH);
+    expect(baru).toHaveLength(28 * TAMBAH);
   });
 
   it("tiap jenis perkara x keadaan di kamus hanya menjangkau bank >= lama + 10; cerai talak & gugat x 6 keadaan terjangkau", () => {
@@ -162,7 +162,28 @@ describe("butir 9 - bunyi sesuai keadaan pengetahuan saksi", () => {
     "waktu|dari-cerita": (s) => expect(s).toMatch(/cerita|menceritakan|penuturan/),
     "kehidupan|tidak-melihat": (s) => expect(s).toMatch(/cerita|dengar/),
     "kehidupan|dari-cerita": (s) => expect(s).toContain("{sumber}"),
+    // 20 Okt 2026 (U1): "mendengar sendiri" dan "ragu".
+    "cara-tahu|mendengar": (s) => expect(s).toMatch(/dengar|pendengaran|terdengar/),
+    "menyaksikan|mendengar": (s) => {
+      expect(s).toMatch(/dengar|terdengar/);
+      expect(s).toMatch(/\b(tidak|belum|bukan|tanpa)\b/);
+    },
+    "penyebab|mendengar": (s) => {
+      expect(s).toContain("{daftar}");
+      expect(s).toMatch(/dengar|pendengaran/);
+    },
+    "penyebab|ragu": (s) => RAGU(s),
+    "menyaksikan|ragu": (s) => RAGU(s),
+    "cara-tahu|ragu": (s) => RAGU(s),
+    "waktu|ragu": (s) => RAGU(s),
+    "kehidupan|ragu": (s) => RAGU(s),
   };
+  /** Jawaban ragu: memuat kata ragu/lupa/tidak yakin, tanpa angka dan tanpa penegas. */
+  function RAGU(s: string) {
+    expect(s).toMatch(/ragu|lupa|kurang (yakin|jelas|ingat|pasti)|tidak (terlalu )?(yakin|ingat)|samar|kabur|mengira-ngira/);
+    expect(s).not.toMatch(/\d/);
+    expect(s.replace(/\b(kurang|tidak) (begitu )?(pasti|jelas|yakin)\b/g, " ")).not.toMatch(/\b(pasti|memang|sungguh|jelas)\b/);
+  }
   for (const kunci of ["cara-tahu|tahu-pisah", "kehidupan|tahu-pisah", "waktu|tahu-pisah"]) {
     aturan[kunci] = (s) => {
       expect(s).toMatch(TAK_TAHU);

@@ -3257,6 +3257,9 @@ const MODUS_SAKSI = new Set([
   "tidak-melihat",
   "dari-cerita",
   "tahu-pisah",
+  // 20 Okt 2026 (U1): mendengar sendiri pertengkaran tanpa melihat, dan ragu/kurang ingat.
+  "mendengar",
+  "ragu",
 ]);
 
 /**
@@ -3384,6 +3387,8 @@ function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi, urutan, d
     // mengaku tahu penyebab yang menurut modusnya tidak diketahui.
     if (modus === "tidak-tahu") return pilih("cara-tahu|tidak-tahu");
     if (modus === "tahu-pisah") return pilih("cara-tahu|tahu-pisah");
+    if (modus === "mendengar") return pilih("cara-tahu|mendengar");
+    if (modus === "ragu") return pilih("cara-tahu|ragu");
     return pilih("cara-tahu|sama");
   }
 
@@ -3397,8 +3402,8 @@ function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi, urutan, d
     /(keadaan|kehidupan|kondisi) rumah tangga|bagaimana rumah tangga/i.test(tanya) && !/setelah menikah/i.test(tanya);
   if (tanyaWaktu || tanyaKehidupan) {
     const kelompok = tanyaWaktu ? "waktu" : "kehidupan";
-    if (modus === "tidak-melihat" || modus === "dari-cerita" || modus === "tahu-pisah") return pilih(`${kelompok}|${modus}`);
-    return null; // sama / sebagian / tidak-tahu: saksi menyaksikannya, templat tepat
+    if (modus === "tidak-melihat" || modus === "dari-cerita" || modus === "tahu-pisah" || modus === "ragu") return pilih(`${kelompok}|${modus}`);
+    return null; // sama / mendengar / sebagian / tidak-tahu: saksi mengalaminya, templat tepat
   }
 
   // Saksi yang hanya tahu pisahnya: tidak satu pun pertanyaan tentang
@@ -3425,10 +3430,12 @@ function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi, urutan, d
   if (/penyebab|sebab|alasan/i.test(tanya)) {
     if (modus === "tidak-tahu" || modus === "tidak-melihat") return pilih("penyebab|tidak-tahu");
     if (modus === "dari-cerita") return pilih("penyebab|dari-cerita");
+    if (modus === "ragu") return pilih("penyebab|ragu");
     // Tanpa satu pun alasan yang dapat diucapkan (mis. hanya "perselisihan",
     // yang akibat, bukan penyebab) kalimat "penyebabnya adalah " tidak boleh
     // terbit kosong - templat yang bicara, dan titik-titiknya tetap terlihat.
     if (!daftar) return null;
+    if (modus === "mendengar") return pilih("penyebab|mendengar");
     if (modus === "sebagian") return pilih("penyebab|sebagian");
     return pilih("penyebab|sama");
   }
@@ -3436,6 +3443,8 @@ function jawabMenurutModus({ tanya, modus, alasan, sumber, nomorSaksi, urutan, d
   if (/melihat|mendengar|menyaksikan|berapa kali/i.test(tanya)) {
     if (modus === "tidak-melihat" || modus === "dari-cerita") return pilih("menyaksikan|tidak-melihat");
     if (modus === "tidak-tahu") return pilih("menyaksikan|tidak-tahu");
+    if (modus === "mendengar") return pilih("menyaksikan|mendengar");
+    if (modus === "ragu") return pilih("menyaksikan|ragu");
     return null; // sama / sebagian: jawaban templat sudah tepat
   }
 
