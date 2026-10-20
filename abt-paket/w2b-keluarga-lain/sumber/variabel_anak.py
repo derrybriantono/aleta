@@ -12,7 +12,8 @@ Pembagian:
   4899-4900  nafkah anak: jumlah yang dimohon dan perbandingannya
   4901-4904  nafkah anak yang dipikul ibu karena ayah tidak mampu
   4905-4907  hak asuh anak-anak dengan status mumayyiz berbeda
-  4908-4909  cadangan
+  4908       amar penyerahan anak pada putusan verstek (butir 4)
+  4909       umur anak untuk nafkah (batas dewasa 21 tahun)
 """
 import re
 
@@ -63,6 +64,10 @@ BULAN = "ELT(MONTH(a.tanggal_lahir), 'Januari', 'Februari', 'Maret', 'April', 'M
 UMUR_ANAK = ("CONCAT(TRIM(CONVERT(a.nama_anak USING utf8)), ' (lahir tanggal ', DAY(a.tanggal_lahir), ' ', " + BULAN + ", ' ', YEAR(a.tanggal_lahir), ', berumur ', "
              "TIMESTAMPDIFF(YEAR, a.tanggal_lahir, " + TGL_REF + "), ' tahun ', MOD(TIMESTAMPDIFF(MONTH, a.tanggal_lahir, " + TGL_REF + "), 12), ' bulan, ', "
              "IF(TIMESTAMPDIFF(YEAR, a.tanggal_lahir, " + TGL_REF + ") < 12, 'belum mencapai 12 (dua belas) tahun', 'telah mencapai 12 (dua belas) tahun'), ')')")
+
+UMUR_ANAK_NAFKAH = ("CONCAT(TRIM(CONVERT(a.nama_anak USING utf8)), ' (lahir tanggal ', DAY(a.tanggal_lahir), ' ', " + BULAN + ", ' ', YEAR(a.tanggal_lahir), ', berumur ', "
+                    "TIMESTAMPDIFF(YEAR, a.tanggal_lahir, " + TGL_REF + "), ' tahun ', MOD(TIMESTAMPDIFF(MONTH, a.tanggal_lahir, " + TGL_REF + "), 12), ' bulan, ', "
+                    "IF(TIMESTAMPDIFF(YEAR, a.tanggal_lahir, " + TGL_REF + ") < 21, 'belum mencapai 21 (dua puluh satu) tahun', 'telah mencapai 21 (dua puluh satu) tahun'), ')')")
 
 v(4880, 'ANAK: UMUR ANAK PADA SAAT PUTUSAN (OTOMATIS: tanggal lahir anak di SIPP; tiap anak ditulis umurnya dan belum atau telah 12 tahun; kosong bila tanggal lahir belum ada; diawali satu baris baru)', 'data_sql',
   "SELECT IF(s.n = 0, '', CONCAT('<br>Menimbang, bahwa berdasarkan data kelahiran yang tercatat dalam perkara ini, ', s.daftar, '; umur tersebut dihitung sampai dengan tanggal putusan ini dijatuhkan dan menjadi bahan #8554# menilai keadaan mumayyiz atau belum mumayyiz anak tersebut sesuai Pasal 105 Kompilasi Hukum Islam;')) AS data "
@@ -172,3 +177,12 @@ v(4906, 'HAK ASUH ANAK-ANAK DENGAN STATUS MUMAYYIZ BERBEDA: AMAR PER ANAK (OTOMA
 v(4907, 'HAK ASUH ANAK-ANAK DENGAN STATUS MUMAYYIZ BERBEDA: PERTIMBANGAN PER ANAK (OTOMATIS: isian 4905, satu baris per anak; kosong = kalimat [PERIKSA])', 'data_sql',
   "SELECT IF(" + SK(4905) + " = '', " + lit('<br>[PERIKSA: isi penetapan per anak pada isian 4905, satu anak per baris]') + ", CONCAT('<br>Menimbang, bahwa oleh karena anak-anak tersebut berada dalam keadaan yang berbeda, ada yang belum mumayyiz dan ada yang telah mumayyiz, maka #8554# menilai kepentingan terbaik bagi masing-masing anak secara tersendiri dengan hasil sebagai berikut:', "
   "'<br>    - ', REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CONVERT(" + SK(4905) + " USING utf8), CHAR(13), ''), '\\\\', '/'), '\"', '&quot;'), '''', '&#39;'), CHAR(10), CONCAT(';<br>    - ')), ';')) AS data")
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Tambahan: penyerahan anak pada putusan verstek dan umur anak untuk nafkah
+# ---------------------------------------------------------------------------------------------------------------------
+v(4908, 'HAK ASUH: AMAR MENGHUKUM MENYERAHKAN ANAK, PUTUSAN VERSTEK (OTOMATIS: hanya bila saklar 4890 = 1 atau 2; kosong = tidak tercetak; menjadi butir 4)', 'data_sql',
+  "SELECT IF(" + SK(4890) + " IN ('1', '2'), " + lit('<br>4.   Menghukum #0047# (<strong>#0102#</strong>) untuk menyerahkan #9302# tersebut yang bernama <strong>#9304#</strong> kepada #0046# (<strong>#0098#</strong>) selaku #9300#nya;') + ", '') AS data")
+v(4909, 'ANAK: UMUR ANAK UNTUK NAFKAH (OTOMATIS: tanggal lahir anak di SIPP; tiap anak ditulis umurnya terhadap batas dewasa 21 tahun; kosong bila tanggal lahir belum ada; diawali satu baris baru)', 'data_sql',
+  "SELECT IF(s.n = 0, '', CONCAT('<br>Menimbang, bahwa berdasarkan data kelahiran yang tercatat dalam perkara ini, ', s.daftar, '; umur tersebut dihitung sampai dengan tanggal putusan ini dijatuhkan dan menjadi bahan #8554# menilai lamanya nafkah dapat dibebankan, yaitu sampai anak tersebut dewasa atau mampu berdiri sendiri (berumur 21 (dua puluh satu) tahun) sebagaimana Pasal 156 huruf d Kompilasi Hukum Islam;')) AS data "
+  "FROM (SELECT COUNT(*) AS n, GROUP_CONCAT(" + UMUR_ANAK_NAFKAH + " ORDER BY a.anak_ke, a.id SEPARATOR ';') AS daftar FROM " + ANAK + ") s")
