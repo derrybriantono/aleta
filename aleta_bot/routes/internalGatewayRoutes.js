@@ -825,7 +825,6 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
       },
       hariSidang,
       paniteraMajelis,
-      susunanSk,
       // SK yang berlaku (nomor + tanggal) - untuk papan dan pemeriksaan kesesuaian.
       sk: {
         nomor: String((kirim.sk && kirim.sk.nomor) || "").replace(/\s+/g, " ").trim().slice(0, 120),
@@ -838,6 +837,7 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
           alasan: String((x && x.alasan) || "").slice(0, 160),
         })),
       },
+      susunanSk,
       andaian,
       pilihanMajelis,
     });
