@@ -10,7 +10,7 @@ Pembagian:
   4890-4895  penyerahan anak (hak asuh), nomor amar biaya
   4896-4898  kabul sebagian hak asuh, kewenangan relatif tempat tinggal anak
   4899-4900  nafkah anak: jumlah yang dimohon dan perbandingannya
-  4901-4904  nafkah anak yang dipikul ibu karena ayah tidak mampu
+  4901-4903  nafkah anak: ayah hanya mampu sebagian, ibu ikut memikul sisanya (pertimbangan Kabul Sebagian); 4904 cadangan
   4905-4907  hak asuh anak-anak dengan status mumayyiz berbeda
   4908       amar penyerahan anak pada putusan verstek (butir 4)
   4909       umur anak untuk nafkah (batas dewasa 21 tahun)
@@ -31,8 +31,8 @@ def lit(s):
 
 def T(n):
     """Isian data_teks bersih: garis miring terbalik -> /, kutip ganda -> entitas, kutip tunggal -> entitas, pangkas titik koma ujung."""
-    return ("TRIM(TRAILING ';' FROM TRIM(IFNULL(REPLACE(REPLACE(REPLACE(CONVERT((SELECT data FROM %s.abt_data_teks WHERE no_var = %d AND perkara_id = '#perkara_id#' LIMIT 1) "
-            "USING utf8), '\\\\', '/'), '\"', '&quot;'), '''', '&#39;'), '')))") % (DB, n)
+    return ("TRIM(TRAILING ';' FROM TRIM(REPLACE(IFNULL(REPLACE(REPLACE(REPLACE(CONVERT((SELECT data FROM %s.abt_data_teks WHERE no_var = %d AND perkara_id = '#perkara_id#' LIMIT 1) "
+            "USING utf8), '\\\\', '/'), '\"', '&quot;'), '''', '&#39;'), ''), '; ', ';')))") % (DB, n)
 
 
 def SK(n):
@@ -95,17 +95,17 @@ v(4883, 'ANAK: PERINGATAN ANAK SUDAH DEWASA (OTOMATIS: kalimat [PERIKSA] hanya b
 # ---------------------------------------------------------------------------------------------------------------------
 # Kelayakan pemegang hadhanah, pendapat ahli, akses bertemu
 # ---------------------------------------------------------------------------------------------------------------------
-v(4884, 'HAK ASUH: KELAYAKAN PIHAK YANG DIMOHONKAN SEBAGAI PEMEGANG HADHANAH - ISIAN fakta hasil pembuktian tentang jasmani, rohani, waktu mengasuh, tempat tinggal, ekonomi, akhlak dan agama, kalimat sesudah kata "diperoleh fakta bahwa" tanpa titik akhir; kosong = tidak tercetak', 'data_teks')
+v(4884, 'HAK ASUH: KELAYAKAN CALON PEMEGANG HADHANAH - ISIAN fakta jasmani, rohani, waktu, tempat tinggal, ekonomi, akhlak, agama; sesudah kata "fakta bahwa", tanpa titik akhir; kosong = tidak tercetak', 'data_teks')
 v(4885, 'HAK ASUH: PERTIMBANGAN KELAYAKAN PEMEGANG HADHANAH (OTOMATIS: isian 4884; kosong = tidak tercetak; diawali satu baris baru)', 'data_sql',
   "SELECT IF(" + T(4884) + " = '', '', CONCAT('<br>Menimbang, bahwa untuk menilai kemampuan dan kelayakan pihak yang dimohonkan sebagai pemegang hak hadhanah, #8554# menilai keadaan jasmani, rohani, waktu mengasuh, tempat tinggal, kemampuan ekonomi, akhlak dan agama, dan dari alat-alat bukti yang diajukan diperoleh fakta bahwa ', "
   + T(4884) + ", ';')) AS data")
 
-v(4886, 'ANAK: PENDAPAT AHLI ATAU LAPORAN LEMBAGA (psikolog, pekerja sosial, pembimbing kemasyarakatan, KPAD atau P2TP2A, bila ada) - ISIAN nama lembaga atau ahli dan kesimpulan singkat, tanpa titik akhir; kosong = tidak tercetak', 'data_teks')
+v(4886, 'ANAK: PENDAPAT AHLI ATAU LAPORAN LEMBAGA (psikolog, pekerja sosial, KPAD, P2TP2A) - ISIAN nama dan kesimpulan singkat, tanpa titik akhir; kosong = tidak tercetak', 'data_teks')
 v(4887, 'ANAK: PERTIMBANGAN PENDAPAT AHLI ATAU LAPORAN LEMBAGA (OTOMATIS: isian 4886; kosong = tidak tercetak; diawali satu baris baru)', 'data_sql',
   "SELECT IF(" + T(4886) + " = '', '', CONCAT('<br>Menimbang, bahwa dalam pemeriksaan perkara ini #8554# juga memperoleh masukan dari ', " + T(4886)
   + ", ', yang dijadikan bahan pertimbangan bersama-sama dengan keterangan para pihak dan saksi demi kepentingan terbaik bagi anak, tanpa mengikat #8554# dalam menentukan pemegang hak hadhanah;')) AS data")
 
-v(4888, 'ANAK: AKSES BERTEMU - RINCIAN WAKTU DAN CARA bagi orang tua yang tidak memegang hak asuh - ISIAN, mis. setiap akhir pekan di rumah pemegang hak asuh atau di tempat lain yang disepakati; kosong = tidak ada rincian', 'data_teks')
+v(4888, 'ANAK: AKSES BERTEMU - RINCIAN WAKTU DAN CARA bagi orang tua yang tidak memegang hak asuh - ISIAN, mis. setiap akhir pekan di rumah pemegang hak asuh; kosong = tanpa rincian', 'data_teks')
 v(4889, 'ANAK: KALIMAT RINCIAN AKSES BERTEMU DI AMAR DAN PERTIMBANGAN (OTOMATIS: isian 4888; kosong = tidak tercetak)', 'data_sql',
   "SELECT IF(" + T(4888) + " = '', '', CONCAT(', dengan ketentuan ', " + T(4888) + ")) AS data")
 
@@ -139,7 +139,7 @@ v(4898, 'HAK ASUH: PERTIMBANGAN KEWENANGAN RELATIF TEMPAT TINGGAL ANAK SENYATANY
 # ---------------------------------------------------------------------------------------------------------------------
 # Nafkah anak
 # ---------------------------------------------------------------------------------------------------------------------
-v(4899, 'NAFKAH ANAK: JUMLAH NAFKAH YANG DIMOHON DALAM PETITUM - ISIAN, mis. Rp1.500.000,00 (satu juta lima ratus ribu rupiah) setiap bulan; dipakai membandingkan dengan jumlah yang ditetapkan pada isian 9740; kosong = tidak dibandingkan', 'data_teks')
+v(4899, 'NAFKAH ANAK: JUMLAH YANG DIMOHON DALAM PETITUM - ISIAN, mis. Rp1.500.000,00 (satu juta lima ratus ribu rupiah); dibandingkan dengan isian 9740; kosong = tidak dibandingkan', 'data_teks')
 
 
 def _angka(n):
@@ -147,7 +147,7 @@ def _angka(n):
     return "CAST(SUBSTRING_INDEX(REPLACE(REPLACE(REPLACE(LOWER(" + SK(n) + "), 'rp', ''), '.', ''), ' ', ''), ',', 1) AS UNSIGNED)"
 
 
-v(4900, 'NAFKAH ANAK: PERTIMBANGAN PERBANDINGAN JUMLAH DIMOHON DAN DITETAPKAN (OTOMATIS: isian 4899 dan 9740; sama = sesuai permohonan; lebih rendah = selebihnya ditolak; lebih tinggi = kalimat [PERIKSA]; kosong bila salah satu tidak diisi)', 'data_sql',
+v(4900, 'NAFKAH ANAK: PERTIMBANGAN JUMLAH DIMOHON DAN DITETAPKAN (OTOMATIS: isian 4899 dan 9740; sama = sesuai; rendah = selebihnya ditolak; tinggi = [PERIKSA]; kosong = tidak tercetak)', 'data_sql',
   "SELECT CASE WHEN " + T(4899) + " = '' OR " + T(9740) + " = '' THEN '' "
   "WHEN " + _angka(4899) + " > 0 AND " + _angka(9740) + " > " + _angka(4899) + " THEN " + lit('<br>[PERIKSA: jumlah nafkah anak yang ditetapkan pada isian 9740 lebih besar dari jumlah yang dimohon pada isian 4899; periksa kedua isian karena putusan tidak boleh melebihi tuntutan kecuali ada dasar hukumnya]') + " "
   "WHEN LOWER(" + T(4899) + ") = LOWER(" + T(9740) + ") OR (" + _angka(4899) + " > 0 AND " + _angka(9740) + " = " + _angka(4899) + ") THEN CONCAT(" + lit('<br>Menimbang, bahwa jumlah nafkah #9302# tersebut yang dimohon #0046# adalah ') + ", " + T(4899)
@@ -156,22 +156,19 @@ v(4900, 'NAFKAH ANAK: PERTIMBANGAN PERBANDINGAN JUMLAH DIMOHON DAN DITETAPKAN (O
   + ", " + lit(', sedangkan setelah #8554# mempertimbangkan kebutuhan dasar hidup #9302# tersebut serta kemampuan #0047# sebagaimana fakta hukum di atas, jumlah yang patut dan layak ditetapkan adalah ') + ", " + T(9740)
   + ", " + lit(' setiap bulan, sehingga permohonan mengenai jumlah selebihnya patut ditolak;') + ") END AS data")
 
-# Nafkah anak yang dipikul ibu karena ayah tidak mampu (jenis perkara 350)
-v(4901, 'NAFKAH ANAK (AYAH TIDAK MAMPU): FAKTA KETIDAKMAMPUAN AYAH MEMENUHI KEWAJIBAN - ISIAN kalimat sesudah kata "Bahwa" (mis. ayah tidak memiliki penghasilan tetap, sakit atau terkena pemutusan hubungan kerja), tanpa titik akhir; kosong = tidak tercetak', 'data_teks')
-v(4902, 'NAFKAH ANAK (AYAH TIDAK MAMPU): BAGIAN BIAYA YANG DIPIKUL IBU - ISIAN jumlah atau bagian setiap bulan, mis. Rp1.000.000,00 (satu juta rupiah) setiap bulan atau seluruh kebutuhan sehari-hari; kosong = belum ditetapkan', 'data_teks')
-v(4903, 'NAFKAH ANAK (AYAH TIDAK MAMPU): PERTIMBANGAN IBU IKUT MEMIKUL BIAYA (OTOMATIS: isian 4901 dan 4902; kosong = tidak tercetak; diawali satu baris baru)', 'data_sql',
+# Nafkah anak: ayah hanya mampu sebagian, ibu ikut memikul sisanya (Pasal 41 huruf b UU 1/1974) - dipakai di pertimbangan Kabul Sebagian
+v(4901, 'NAFKAH ANAK (KABUL SEBAGIAN): FAKTA AYAH HANYA MAMPU SEBAGIAN - ISIAN sesudah "fakta bahwa" (mis. ayah tidak berpenghasilan tetap atau sakit), tanpa titik akhir; kosong = tidak tercetak', 'data_teks')
+v(4902, 'NAFKAH ANAK (KABUL SEBAGIAN): BAGIAN BIAYA YANG DIPIKUL IBU - ISIAN, mis. Rp1.000.000,00 (satu juta rupiah) setiap bulan; kosong = belum ditetapkan', 'data_teks')
+v(4903, 'NAFKAH ANAK (KABUL SEBAGIAN): PERTIMBANGAN IBU IKUT MEMIKUL BIAYA (OTOMATIS: isian 4901 dan 4902; kosong = tidak tercetak; diawali satu baris baru)', 'data_sql',
   "SELECT IF(" + T(4902) + " = '', '', CONCAT(" + lit('<br>Menimbang, bahwa Pasal 41 huruf b Undang-Undang Nomor 1 Tahun 1974 tentang Perkawinan menentukan bahwa bapak yang bertanggung jawab atas semua biaya pemeliharaan dan pendidikan yang diperlukan anak itu, dan bilamana bapak dalam kenyataan tidak dapat memenuhi kewajiban tersebut, Pengadilan dapat menentukan bahwa ibu ikut memikul biaya tersebut;')
-  + ", IF(" + T(4901) + " = '', '', CONCAT(" + lit('<br>Menimbang, bahwa berdasarkan alat-alat bukti yang diajukan, diperoleh fakta bahwa ') + ", " + T(4901) + ", " + lit(', sehingga #0047# dalam kenyataan tidak dapat memenuhi kewajibannya memberi nafkah #9302# tersebut;') + ")), "
+  + ", IF(" + T(4901) + " = '', '', CONCAT(" + lit('<br>Menimbang, bahwa berdasarkan alat-alat bukti yang diajukan, diperoleh fakta bahwa ') + ", " + T(4901) + ", " + lit(', sehingga #0047# dalam kenyataan tidak dapat memenuhi seluruh kewajibannya memberi nafkah #9302# tersebut;') + ")), "
   + lit('<br>Menimbang, bahwa oleh karena itu dan demi kepentingan terbaik bagi #9302# tersebut, #8554# berpendapat patut dan layak ibu ikut memikul biaya pemeliharaan dan pendidikan #9302# tersebut sebesar atau berupa ') + ", " + T(4902)
   + ", " + lit(', sampai #9302# tersebut dewasa atau mampu berdiri sendiri (berumur 21 (dua puluh satu) tahun) sebagaimana Pasal 156 huruf d Kompilasi Hukum Islam;') + ")) AS data")
-v(4904, 'NAFKAH ANAK (AYAH TIDAK MAMPU): AMAR IBU IKUT MEMIKUL BIAYA (OTOMATIS: isian 4902; kosong = kalimat [PERIKSA])', 'data_sql',
-  "SELECT IF(" + T(4902) + " = '', " + lit('[PERIKSA: isi bagian biaya yang dipikul ibu pada isian 4902]') + ", CONCAT(" + lit('<br>    - ibu ikut memikul biaya pemeliharaan dan pendidikan #9302# tersebut sebesar atau berupa ') + ", " + T(4902)
-  + ", " + lit(', sampai #9302# tersebut dewasa atau mampu berdiri sendiri (berumur 21 (dua puluh satu) tahun);') + ")) AS data")
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Hak asuh anak-anak dengan status mumayyiz berbeda
 # ---------------------------------------------------------------------------------------------------------------------
-v(4905, 'HAK ASUH ANAK-ANAK DENGAN STATUS MUMAYYIZ BERBEDA: PENETAPAN PER ANAK - ISIAN satu anak per baris: nama anak - belum mumayyiz atau mumayyiz memilih - pemegang hadhanah (ibu kandung atau ayah kandung)', 'data_teks')
+v(4905, 'HAK ASUH ANAK DENGAN STATUS MUMAYYIZ BERBEDA: PENETAPAN PER ANAK - ISIAN satu anak per baris: nama - belum mumayyiz atau mumayyiz memilih - pemegang hadhanah (ibu atau ayah kandung)', 'data_teks')
 v(4906, 'HAK ASUH ANAK-ANAK DENGAN STATUS MUMAYYIZ BERBEDA: AMAR PER ANAK (OTOMATIS: isian 4905, satu butir per anak; kosong = kalimat [PERIKSA])', 'data_sql',
   "SELECT IF(" + SK(4905) + " = '', " + lit('[PERIKSA: isi penetapan per anak pada isian 4905, satu anak per baris]') + ", CONCAT('<br>    - ', REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CONVERT(" + SK(4905) + " USING utf8), CHAR(13), ''), '\\\\', '/'), '\"', '&quot;'), '''', '&#39;'), CHAR(10), CONCAT(';<br>    - ')), ';')) AS data")
 v(4907, 'HAK ASUH ANAK-ANAK DENGAN STATUS MUMAYYIZ BERBEDA: PERTIMBANGAN PER ANAK (OTOMATIS: isian 4905, satu baris per anak; kosong = kalimat [PERIKSA])', 'data_sql',
@@ -186,3 +183,9 @@ v(4908, 'HAK ASUH: AMAR MENGHUKUM MENYERAHKAN ANAK, PUTUSAN VERSTEK (OTOMATIS: h
 v(4909, 'ANAK: UMUR ANAK UNTUK NAFKAH (OTOMATIS: tanggal lahir anak di SIPP; tiap anak ditulis umurnya terhadap batas dewasa 21 tahun; kosong bila tanggal lahir belum ada; diawali satu baris baru)', 'data_sql',
   "SELECT IF(s.n = 0, '', CONCAT('<br>Menimbang, bahwa berdasarkan data kelahiran yang tercatat dalam perkara ini, ', s.daftar, '; umur tersebut dihitung sampai dengan tanggal putusan ini dijatuhkan dan menjadi bahan #8554# menilai lamanya nafkah dapat dibebankan, yaitu sampai anak tersebut dewasa atau mampu berdiri sendiri (berumur 21 (dua puluh satu) tahun) sebagaimana Pasal 156 huruf d Kompilasi Hukum Islam;')) AS data "
   "FROM (SELECT COUNT(*) AS n, GROUP_CONCAT(" + UMUR_ANAK_NAFKAH + " ORDER BY a.anak_ke, a.id SEPARATOR ';') AS daftar FROM " + ANAK + ") s")
+
+for _x in __import__('variabel_def').VAR:
+    if _x['no'] >= 4880 and _x['no'] <= 4909:
+        if _x['sql']:  # ABT menambah satu spasi sesudah tiap titik koma: buang spasi yang kita tulis sendiri
+            _x['sql'] = re.sub(r';[ ]+(?=[A-Za-z0-9<#(])', ';', _x['sql'])
+        assert len(_x['nama']) <= 195, (_x['no'], len(_x['nama']))

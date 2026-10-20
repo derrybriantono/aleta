@@ -7,7 +7,7 @@ import sys
 
 
 def ambil(nomor):
-    sql = ("SELECT no_var, nama, data_type, IFNULL(data_tabel,''), IFNULL(data_kolom,''), IFNULL(sql_query,''), IFNULL(default_data,'') FROM aps_badilag.abt_variabel WHERE no_var IN (%s) ORDER BY no_var"
+    sql = ("SELECT no_var, nama, data_type, IFNULL(data_tabel,''), IFNULL(data_kolom,''), IFNULL(sql_query,''), IFNULL(default_data,''), IFNULL(referensi,''), IFNULL(urutan_data,''), IFNULL(multi_sidang,'') FROM aps_badilag.abt_variabel WHERE no_var IN (%s) ORDER BY no_var"
            % ','.join(str(int(n)) for n in nomor))
     r = subprocess.run(['ssh', '-o', 'ConnectTimeout=25', 'aleta', 'bash /root/lihat-jejak.sh "$(cat)"'], input=sql.encode(), capture_output=True, timeout=180)
     hasil = {}
@@ -15,9 +15,9 @@ def ambil(nomor):
         if not b.strip():
             continue
         k = b.split('\t')
-        k += [''] * (7 - len(k))
+        k += [''] * (10 - len(k))
         sq = k[5].replace('\\n', '\n').replace('\\t', '\t').replace('\\\\', '\\')
-        hasil[k[0].zfill(4)] = dict(no_var=k[0].zfill(4), nama=k[1], data_type=k[2], data_tabel=k[3], data_kolom=k[4], sql_query=sq, default_data=k[6])
+        hasil[k[0].zfill(4)] = dict(no_var=k[0].zfill(4), nama=k[1], data_type=k[2], data_tabel=k[3], data_kolom=k[4], sql_query=sq, default_data=k[6], referensi=k[7], urutan_data=k[8], multi_sidang=k[9])
     return hasil
 
 

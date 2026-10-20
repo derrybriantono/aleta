@@ -42,6 +42,8 @@ class Edit:
         self.isi = [self.d.isi(i) for i in range(len(self.d.par))]
         self.baru = {}
         self.sisip_sesudah = {}
+        self.sisip_sebelum = {}
+        self.hapus = set()
         self.catat = []
 
     def cari(self, awalan, wajib=True):
@@ -79,20 +81,58 @@ class Edit:
         self.catat.append(nama or baru)
         return True
 
-    def simpan_timpa(self, ket):
+    def ganti_penuh(self, awalan, teks, nama=None):
+        i = self.cari(awalan)
+        if i is None:
+            return False
+        self.baru[i] = teks
+        self.catat.append(nama or 'ganti-penuh')
+        return True
+
+    def buang(self, awalan, nama=None):
+        i = self.cari(awalan)
+        if i is None:
+            return False
+        self.hapus.add(i)
+        self.catat.append(nama or 'buang')
+        return True
+
+    def sisip(self, awalan_acuan, teks, gaya_awalan=None, sebelum=False):
+        """Paragraf BARU `teks` disisipkan sesudah (atau sebelum) paragraf acuan; gayanya meniru paragraf berawalan gaya_awalan (default: acuan)."""
+        i = self.cari(awalan_acuan)
+        g = self.cari(gaya_awalan) if gaya_awalan else i
+        if i is None or g is None:
+            return False
+        (self.sisip_sebelum if sebelum else self.sisip_sesudah).setdefault(i, []).append(self.d.ganti_teks(g, teks))
+        self.catat.append('paragraf-baru')
+        return True
+
+    def _rakit(self):
         out = []
         for i in range(len(self.d.par)):
-            out.append(self.d.ganti_teks(i, self.baru[i]) if i in self.baru else self.d.par[i])
-            for t in self.sisip_sesudah.get(i, []):
-                out.append(t)
+            out.extend(self.sisip_sebelum.get(i, []))
+            if i not in self.hapus:
+                out.append(self.d.ganti_teks(i, self.baru[i]) if i in self.baru else self.d.par[i])
+            out.extend(self.sisip_sesudah.get(i, []))
         isi = self.d.rakit(out)
         pecah = periksa_token(isi)
         if pecah:
             raise SystemExit('token terpecah di %s: %r' % (self.berkas, pecah))
+        return isi
+
+    def simpan_timpa(self, ket):
+        isi = self._rakit()
         simpan(os.path.join(TIMPA, PREFIKS + self.folder, self.berkas), isi)
         lama = md5b(open(os.path.join(ASLI, self.folder, self.berkas), 'rb').read())
         DAFTAR.append((PREFIKS + self.folder, self.berkas, lama, md5b(isi.encode('latin1')), ket))
         print('timpa', self.folder[:2], self.berkas[:70], '|', ket)
+
+    def simpan_baru(self, folder, berkas, ket):
+        """Simpan sebagai blangko BARU (folder/berkas baru di bawah rtf/derry_briantono)."""
+        isi = self._rakit()
+        simpan(os.path.join(BARU, PREFIKS + folder, berkas), isi)
+        BARU_LOG.append((PREFIKS + folder, berkas, md5b(isi.encode('latin1')), ket))
+        print('BARU ', folder[:2], berkas[:70], '|', ket)
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -195,7 +235,120 @@ def tambal_nafkah(folder, berkas):
         else:
             e.baru[i] = t.replace('#4900#', '#4909##4883##4900#', 1)
         e.catat.append('umur-anak-nafkah')
+    # putusan kabul sebagian: ibu ikut memikul sisa biaya bila ayah hanya mampu sebagian (isian 4901 dan 4902)
+    e.akhir('Menimbang, bahwa terhadap petitum #0053# #0046# selebihnya', '#4903#', wajib=False, nama='ibu-ikut-memikul')
     return e
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# BLANGKO BARU
+# ---------------------------------------------------------------------------------------------------------------------
+B6A_01 = '[01] [Kabul] Hak Asuh - Kontradiktoir - Anak Belum Mumayyiz.rtf'
+B6A_01B = '[01b] [Kabul Verstek] Hak Asuh - Anak Belum Mumayyiz.rtf'
+PET_SELEBIHNYA = 'Menimbang, bahwa terhadap petitum #0053# #0046# selebihnya, #4897#, sehingga petitum selebihnya tersebut tidak beralasan hukum dan harus ditolak;'
+
+
+def baru_kabul_sebagian():
+    # [01e] kontradiktoir
+    e = tambal_hak_asuh(F6A, B6A_01, penyerahan=True, relatif=True, kabul=True)
+    e.sisip(A_SEMA, PET_SELEBIHNYA)
+    e.ganti(A_KAB, 'patut dikabulkan dengan menetapkan', 'patut dikabulkan untuk sebagian dengan menetapkan', nama='kabul-sebagian')
+    e.ganti(A_KAB, '#4893#;', '#4893#, sedangkan petitum selebihnya harus ditolak;', nama='selebihnya-ditolak')
+    e.ganti('1.\tMengabulkan', '#0046#;', '#0046# untuk sebagian;', nama='amar-sebagian')
+    nb, ib = amar_biaya(e)
+    e.baru[ib] = e.teks(ib).replace('#4894#', '#4895#')
+    e.sisip('%d.\t#8505#' % nb, '#4894#.\tMenolak #0053# #0046# selain dan selebihnya;', sebelum=True)
+    e.simpan_baru(F6A, '[01e] [Kabul Sebagian] Hak Asuh - Kontradiktoir - Petitum Selebihnya Ditolak.rtf', 'hak asuh dikabulkan sebagian, petitum selebihnya ditolak (alasan isian 4896)')
+    # [01f] verstek
+    e = tambal_hak_asuh(F6A, B6A_01B, penyerahan=False, relatif=True, kabul=True)
+    e.sisip(A_SEMA, PET_SELEBIHNYA)
+    e.ganti(A_KAB, 'patut dikabulkan dengan menetapkan', 'patut dikabulkan untuk sebagian dengan menetapkan', nama='kabul-sebagian')
+    e.ganti(A_KAB, '#4889#;', '#4889#, sedangkan petitum selebihnya harus ditolak;', nama='selebihnya-ditolak')
+    e.ganti('2.\tMengabulkan', 'dengan verstek;', 'untuk sebagian dengan verstek;', nama='amar-sebagian')
+    e.ganti('4.\t#8505#', '4.\t#8505#', '5.\t#8505#', nama='nomor-biaya')
+    e.sisip('4.\t#8505#', '4.\tMenolak #0053# #0046# selain dan selebihnya;', sebelum=True)
+    e.simpan_baru(F6A, '[01f] [Kabul Sebagian Verstek] Hak Asuh - T Tidak Hadir - Petitum Selebihnya Ditolak.rtf', 'hak asuh dikabulkan sebagian dengan verstek (alasan isian 4896)')
+
+
+def baru_campuran():
+    e = tambal_hak_asuh(F6A, B6A_01, penyerahan=False, relatif=True, kabul=True)
+    e.ganti('1.\tApakah #9302# #0046# dan #0047# yang bernama #9304# masih belum mumayyiz', 'Apakah #9302# #0046# dan #0047# yang bernama #9304# masih belum mumayyiz (belum berumur 12 tahun)?',
+            'Apakah di antara #9302# #0046# dan #0047# yang bernama #9304# ada yang telah mumayyiz (telah berumur 12 tahun) dan ada yang belum mumayyiz?', nama='isu-1')
+    e.ganti('2.\tSiapakah di antara #0046# dan #0047# yang lebih dapat menjamin', 'bagi #9302# tersebut?',
+            'bagi masing-masing anak tersebut, dan siapakah yang dipilih oleh anak yang telah mumayyiz?', nama='isu-2')
+    e.ganti('2.\tBahwa dari perkawinan tersebut lahir', 'yang hingga kini belum berumur 12 (dua belas) tahun atau belum mumayyiz;',
+            'yang sebagian telah berumur 12 (dua belas) tahun atau lebih (mumayyiz) dan sebagian lainnya belum berumur 12 (dua belas) tahun (belum mumayyiz);', nama='fakta-2')
+    e.ganti_penuh(A105A, 'Menimbang, bahwa Pasal 105 Kompilasi Hukum Islam menentukan bahwa pemeliharaan anak yang belum mumayyiz atau belum berumur 12 tahun adalah hak ibunya (huruf a), '
+                  'sedangkan pemeliharaan anak yang sudah mumayyiz diserahkan kepada anak untuk memilih di antara ayah atau ibunya sebagai pemegang hak pemeliharaannya (huruf b), dan Pasal 156 huruf a '
+                  'dan huruf b Kompilasi Hukum Islam menentukan bahwa anak yang belum mumayyiz berhak mendapatkan hadhanah dari ibunya, sedangkan anak yang sudah mumayyiz berhak memilih untuk mendapatkan '
+                  'hadhanah dari ayah atau ibunya;#4880##4883##4885##4887#', nama='dasar-105-campuran')
+    e.ganti_penuh(A_APP, 'Menimbang, bahwa berdasarkan fakta hukum tersebut di atas, #9302# #0046# dan #0047# berada dalam keadaan yang berbeda, ada yang belum mumayyiz dan ada yang telah mumayyiz, '
+                  'sehingga terhadap anak yang belum mumayyiz berlaku Pasal 105 huruf a dan Pasal 156 huruf a Kompilasi Hukum Islam, sedangkan anak yang telah mumayyiz diberi kesempatan memilih '
+                  'sesuai Pasal 105 huruf b dan Pasal 156 huruf b Kompilasi Hukum Islam, dengan tetap mengutamakan kepentingan terbaik bagi masing-masing anak;#4907#', nama='penerapan-campuran')
+    e.buang('Menimbang, bahwa pertimbangan tersebut sejalan dengan abstraksi hukum Yurisprudensi', nama='buang-yurisprudensi-ibu')
+    e.ganti_penuh(A_KAB, 'Menimbang, bahwa berdasarkan pertimbangan-pertimbangan tersebut di atas, #0053# #0046# beralasan hukum dan patut dikabulkan dengan menetapkan hak pemeliharaan (hadhanah) atas masing-masing anak '
+                  'sebagaimana tersebut dalam amar putusan ini, dengan kewajiban masing-masing pemegang hak pemeliharaan memberikan akses kepada orang tua yang tidak memegang hak pemeliharaan atas anak yang bersangkutan '
+                  'untuk bertemu, mencurahkan kasih sayang, dan ikut serta dalam pengasuhan anak-anak tersebut#4889#;', nama='kabul-campuran')
+    e.ganti_penuh('2.\tMenetapkan', '2.\tMenetapkan hak pemeliharaan (hadhanah) atas anak-anak #0046# dan #0047# sebagai berikut:#4906#', nama='amar-per-anak')
+    e.sisip('3.\t#8505#', '3.\tMenetapkan kewajiban kepada masing-masing pemegang hak pemeliharaan (hadhanah) untuk memberikan akses kepada orang tua yang tidak memegang hak pemeliharaan atas anak yang bersangkutan '
+            'untuk bertemu, mencurahkan kasih sayang, dan ikut serta dalam pengasuhan anak-anak tersebut#4889#;', gaya_awalan='2.\tMenetapkan', sebelum=True)
+    e.ganti('3.\t#8505#', '3.\t#8505#', '4.\t#8505#', nama='nomor-biaya')
+    e.simpan_baru(F6A, '[01g] [Kabul] Hak Asuh - Kontradiktoir - Anak Sebagian Mumayyiz (Penetapan per Anak).rtf', 'hak asuh anak yang sebagian mumayyiz sebagian belum: penetapan per anak (isian 4905)')
+
+
+def baru_tolak_mumayyiz_memilih_t():
+    """[03c] hak asuh ditolak karena anak yang sudah mumayyiz memilih Tergugat; hak asuh ditetapkan kepada T (kerangka [03a] untuk anak belum mumayyiz)."""
+    berkas = '[03a] [Tolak] Hak Asuh - Kontradiktoir - Hadhanah Ditetapkan kepada T (Ibu, Anak Belum Mumayyiz).rtf'
+    e = tambal_hak_asuh(F6A, berkas, penyerahan=False, relatif=True, kabul=False)
+    e.ganti_penuh('1.\tApakah #9302# #0046# dan #0047# yang bernama #9304# masih belum mumayyiz',
+                  '1.\tApakah #9302# #0046# dan #0047# yang bernama #9304# telah mumayyiz (telah berumur 12 tahun) sehingga berhak memilih?', nama='isu-1')
+    e.ganti_penuh('2.\tSiapakah di antara #0046# dan #0047# yang lebih dapat menjamin',
+                  '2.\tSiapakah yang dipilih oleh #9302# tersebut dan apakah pilihan itu sejalan dengan kepentingan terbaiknya?', nama='isu-2')
+    e.ganti('2.\tBahwa dari perkawinan tersebut lahir', 'yang hingga kini belum berumur 12 (dua belas) tahun atau belum mumayyiz;',
+            'yang telah berumur 12 (dua belas) tahun atau lebih (telah mumayyiz);', nama='fakta-2')
+    e.sisip('4.\tBahwa #9433#', '5.\tBahwa #9302# tersebut telah didengar keterangannya di persidangan, dan #9307#;')
+    e.ganti_penuh(A105A, 'Menimbang, bahwa Pasal 105 huruf b Kompilasi Hukum Islam menentukan pemeliharaan anak yang sudah mumayyiz diserahkan kepada anak untuk memilih di antara ayah atau ibunya sebagai pemegang '
+                  'hak pemeliharaannya, dan Pasal 156 huruf b Kompilasi Hukum Islam menentukan anak yang sudah mumayyiz berhak memilih untuk mendapatkan hadhanah dari ayah atau ibunya;#4880##4882##4883##4885##4887#', nama='dasar-105b')
+    e.ganti_penuh(A_APP, 'Menimbang, bahwa berdasarkan fakta hukum tersebut di atas, #9302# #0046# dan #0047# telah mumayyiz dan telah menyatakan pilihannya secara bebas di persidangan, yaitu #9307#, '
+                  'sedangkan #0047# adalah #9301#nya dan #9433#, dan #9310#, sehingga pilihan tersebut sejalan dengan kepentingan terbaik bagi #9302# tersebut dan #0046# tidak berhasil membuktikan bahwa '
+                  '#0047# tidak dapat menjamin keselamatan jasmani dan rohani #9302# tersebut;', nama='penerapan-memilih-T')
+    e.buang('Menimbang, bahwa pertimbangan tersebut sejalan dengan abstraksi hukum Yurisprudensi', nama='buang-yurisprudensi-ibu')
+    e.simpan_baru(F6A, '[03c] [Tolak] Hak Asuh - Kontradiktoir - Anak Mumayyiz Memilih Tergugat.rtf', 'hak asuh ditolak karena anak mumayyiz memilih T; hak asuh ditetapkan kepada T')
+
+
+def baru_6b_dari_6a():
+    """6b Penguasaan Anak belum punya blangko cabut sesudah jawaban, coret, NO kurang pihak, NO gugatan kabur; susunannya sama dengan 6a, hanya sebutan perkara."""
+    for berkas in ('[98b] [Cabut] Gugatan - Sesudah Jawaban dengan Persetujuan T.rtf', '[98c] [Coret] Gugatan - Dibatalkan dari Pendaftaran - Panjar Habis.rtf',
+                   '[99a] [NO] Gugatan - Kurang Pihak (Plurium Litis Consortium).rtf', '[99b] [NO] Gugatan - Gugatan Kabur (Obscuur Libel).rtf'):
+        e = Edit(F6A, berkas)
+        for i, x in enumerate(e.isi):
+            if 'penguasaan anak (hadhanah)' in x:
+                e.baru[i] = x.replace('penguasaan anak (hadhanah)', 'penguasaan anak')
+        e.catat.append('sebutan-penguasaan-anak')
+        e.simpan_baru(F6B, berkas, 'disalin dari 6a (susunan sama), sebutan perkara penguasaan anak')
+
+
+def tambal_bas_verstek():
+    """BAS sidang putusan verstek memuat amar yang sama dengan putusan: samakan rincian akses (4889) dan, di 6a, butir penyerahan anak (4908) serta nomor biaya (4895)."""
+    for folder, penyerahan in ((F6A + ' - BAS', True), (F6B + ' - BAS', False)):
+        for berkas in sorted(os.listdir(os.path.join(ASLI, folder))):
+            if not berkas.endswith('.rtf') or 'Pembuktian dan Putusan Verstek' not in berkas:
+                continue
+            e = Edit(folder, berkas)
+            i_m, ip = nomor_awal(e, 'Menetapkan')
+            if i_m is None:
+                GALAT.append('%s/%s: tidak ada amar Menetapkan' % (folder, berkas))
+                continue
+            if penyerahan:
+                e.ganti('%d.\tMenetapkan' % i_m, AKSES + ';', AKSES + '#4889#;#4908#', nama='amar-akses+penyerahan')
+                nb, ib = amar_biaya(e)
+                if nb == 4:
+                    e.ganti('4.\t#8505#', '4.\t#8505#', '#4895#.\t#8505#', nama='nomor-biaya-verstek')
+                else:
+                    GALAT.append('%s/%s: nomor amar biaya %r tidak dikenal' % (folder, berkas, nb))
+            else:
+                e.ganti('%d.\tMenetapkan' % i_m, AKSES, AKSES + '#4889#', nama='amar-akses')
+            e.simpan_timpa('BAS putusan verstek: ' + ', '.join(sorted(set(e.catat))))
 
 
 def main():
@@ -232,6 +385,11 @@ def main():
             continue
         e = tambal_nafkah(F6C, berkas)
         e.simpan_timpa('nafkah anak: ' + ', '.join(sorted(set(e.catat))))
+    tambal_bas_verstek()
+    baru_kabul_sebagian()
+    baru_campuran()
+    baru_tolak_mumayyiz_memilih_t()
+    baru_6b_dari_6a()
     if GALAT:
         print('\nGALAT JANGKAR:')
         for g in GALAT:
