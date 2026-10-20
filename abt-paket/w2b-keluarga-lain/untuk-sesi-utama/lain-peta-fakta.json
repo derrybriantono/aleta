@@ -1,0 +1,119 @@
+{
+  "skema": "peta-fakta-variabel/1",
+  "catatan": "TAMBAHAN W2b-C (pengangkatan anak, mafqud, permohonan umum) untuk aleta_bot/config/peta-fakta-variabel.json. Satu kode satu fakta; semua hanyaSaran karena kode baru belum terukur. Gabungkan saat merge ('fakta' = entri baru).",
+  "tambahKode": {},
+  "fakta": {
+    "angkat.sejakDiasuh": {
+      "label": "Sejak kapan anak diasuh Pemohon",
+      "tipe": "teks",
+      "kode": [
+        "4910"
+      ],
+      "hanyaSaran": true
+    },
+    "angkat.alasanPenyerahan": {
+      "label": "Alasan orang tua kandung menyerahkan anak",
+      "tipe": "teks",
+      "kode": [
+        "4911"
+      ],
+      "hanyaSaran": true
+    },
+    "angkat.riwayatPerkawinan": {
+      "label": "Riwayat perkawinan dan anak kandung Pemohon",
+      "tipe": "teks",
+      "kode": [
+        "4912"
+      ],
+      "hanyaSaran": true
+    },
+    "angkat.izinInstansiSosial": {
+      "label": "Izin atau rekomendasi instansi sosial",
+      "tipe": "teks",
+      "kode": [
+        "4913"
+      ],
+      "hanyaSaran": true
+    },
+    "angkat.penghasilan": {
+      "label": "Penghasilan Pemohon",
+      "tipe": "teks",
+      "kode": [
+        "4914"
+      ],
+      "hanyaSaran": true
+    },
+    "angkat.tujuan": {
+      "label": "Tujuan pengangkatan anak",
+      "tipe": "teks",
+      "kode": [
+        "4915"
+      ],
+      "hanyaSaran": true
+    },
+    "mafqud.identitasHilang": {
+      "label": "Umur, pekerjaan, dan alamat terakhir orang yang hilang",
+      "tipe": "teks",
+      "kode": [
+        "4920"
+      ],
+      "hanyaSaran": true
+    },
+    "mafqud.keluargaDitinggal": {
+      "label": "Keluarga yang ditinggalkan orang yang hilang",
+      "tipe": "teks",
+      "kode": [
+        "4921"
+      ],
+      "hanyaSaran": true
+    },
+    "mafqud.hartaDitinggal": {
+      "label": "Harta yang ditinggalkan orang yang hilang",
+      "tipe": "teks",
+      "kode": [
+        "4922"
+      ],
+      "hanyaSaran": true
+    },
+    "mafqud.sebabKepergian": {
+      "label": "Sebab dan tujuan kepergian orang yang hilang",
+      "tipe": "teks",
+      "kode": [
+        "4923"
+      ],
+      "hanyaSaran": true
+    },
+    "umum.halDimohonkan": {
+      "label": "Hal yang dimohonkan ditetapkan",
+      "tipe": "teks",
+      "kode": [
+        "4930"
+      ],
+      "hanyaSaran": true
+    },
+    "umum.waktuTempat": {
+      "label": "Waktu dan tempat peristiwa",
+      "tipe": "teks",
+      "kode": [
+        "4931"
+      ],
+      "hanyaSaran": true
+    },
+    "umum.keperluan": {
+      "label": "Keperluan dan instansi tujuan penetapan",
+      "tipe": "teks",
+      "kode": [
+        "4933"
+      ],
+      "hanyaSaran": true
+    },
+    "umum.sebabMeninggalMakam": {
+      "label": "Sebab meninggal dan tempat dimakamkan",
+      "tipe": "teks",
+      "kode": [
+        "4934"
+      ],
+      "hanyaSaran": true
+    }
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "skema": "gerbang-isian/1",
+  "catatan": "USULAN W2b-C untuk aleta_bot/config/gerbang-isian.json (kode -> ukuran). SEMUA berstatus saran: pembanding hanya 1-6 perkara hasil pelabelan manual dan belum ada isian petugas untuk kode 4910-4939. Jangan dinaikkan sebelum >= 20 perkara dengan isian petugas. Data ukur mentah: docs/gelombang2/UKURAN-W2b-lain.json.",
+  "kode": {
+    "4910": {
+      "nama": "Sejak kapan anak diasuh Pemohon",
+      "asal": {
+        "posita": {
+          "n": 6,
+          "banding": 6,
+          "cocok": 6,
+          "persen": 100,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "pelabelan manual agen W2b-C atas posita (bukan isian petugas)"
+        }
+      }
+    },
+    "4911": {
+      "nama": "Alasan orang tua kandung menyerahkan anak",
+      "asal": {
+        "posita": {
+          "n": 2,
+          "banding": 2,
+          "cocok": 2,
+          "persen": 100,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "pelabelan manual agen W2b-C atas posita (bukan isian petugas)"
+        }
+      }
+    },
+    "4912": {
+      "nama": "Riwayat perkawinan dan anak kandung Pemohon",
+      "asal": {
+        "posita": {
+          "n": 6,
+          "banding": 6,
+          "cocok": 6,
+          "persen": 100,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "pelabelan manual agen W2b-C atas posita (bukan isian petugas)"
+        }
+      }
+    },
+    "4913": {
+      "nama": "Izin atau rekomendasi instansi sosial",
+      "asal": {
+        "posita": {
+          "n": 4,
+          "banding": 4,
+          "cocok": 4,
+          "persen": 100,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "pelabelan manual agen W2b-C atas posita (bukan isian petugas)"
+        }
+      }
+    },
+    "4914": {
+      "nama": "Penghasilan Pemohon",
+      "asal": {
+        "posita": {
+          "n": 2,
+          "banding": 2,
+          "cocok": 2,
+          "persen": 100,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "pelabelan manual agen W2b-C atas posita (bukan isian petugas)"
+        }
+      }
+    },
+    "4915": {
+      "nama": "Tujuan pengangkatan anak",
+      "asal": {
+        "posita": {
+          "n": 6,
+          "banding": 6,
+          "cocok": 6,
+          "persen": 100,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "pelabelan manual agen W2b-C atas posita (bukan isian petugas)"
+        }
+      }
+    },
+    "4930": {
+      "nama": "Hal yang dimohonkan ditetapkan",
+      "asal": {
+        "posita": {
+          "n": 1,
+          "banding": 1,
+          "cocok": 1,
+          "persen": 100,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "pelabelan manual agen W2b-C atas posita (bukan isian petugas)"
+        }
+      }
+    },
+    "4931": {
+      "nama": "Waktu dan tempat peristiwa",
+      "asal": {
+        "posita": {
+          "n": 1,
+          "banding": 1,
+          "cocok": 1,
+          "persen": 100,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "pelabelan manual agen W2b-C atas posita (bukan isian petugas)"
+        }
+      }
+    },
+    "4933": {
+      "nama": "Keperluan dan instansi tujuan penetapan",
+      "asal": {
+        "posita": {
+          "n": 1,
+          "banding": 1,
+          "cocok": 1,
+          "persen": 100,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "pelabelan manual agen W2b-C atas posita (bukan isian petugas)"
+        }
+      }
+    },
+    "4934": {
+      "nama": "Sebab meninggal dan tempat dimakamkan",
+      "asal": {
+        "posita": {
+          "n": 1,
+          "banding": 1,
+          "cocok": 1,
+          "persen": 100,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "pelabelan manual agen W2b-C atas posita (bukan isian petugas)"
+        }
+      }
+    }
+  },
+  "belumTerukur": {
+    "4920": "mafqud: tidak ada perkara nyata; hanya diuji dengan fixture",
+    "4921": "mafqud: tidak ada perkara nyata; hanya diuji dengan fixture",
+    "4922": "mafqud: tidak ada perkara nyata; hanya diuji dengan fixture",
+    "4923": "mafqud: tidak ada perkara nyata; hanya diuji dengan fixture"
+  }
+}
