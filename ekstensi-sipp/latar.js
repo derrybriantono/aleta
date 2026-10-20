@@ -3491,6 +3491,9 @@ const KUNCI_SETELAN_AKUN = [
   "widgetDrafH7",
   "pratinjauBasRelaas",
   "gembokKepalaAbt",
+  "panelRingkas",
+  "gembokKepalaSipp",
+  "gembokKepalaAleta",
   /* Saklar penanda SIPP (popup-ide-l2.js) - per akun seperti saklar lain (audit 17 Okt). */
   "ideL2",
   "ideL2Sita",
