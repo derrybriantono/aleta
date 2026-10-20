@@ -53,6 +53,7 @@ const db = require("../db_config");
 const sippSkemaService = require("./sippSkemaService");
 const { cleanText } = require("./ecourtTextService");
 const penjagaTandaSipp = require("./penjagaTandaSipp");
+const penetapanKeadaanService = require("./penetapanKeadaanService");
 
 /** Tahapan penunjukan tingkat pertama - sama dengan penunjukanService. */
 const TAHAPAN_TINGKAT_PERTAMA = 10;
@@ -1642,6 +1643,16 @@ async function susunRencanaTulis(minta) {
   // Langkah yang sudah ada dijawab LEBIH DAHULU - tulisRantaiUtuh melewatinya
   // lewat akhiran _sudah_ada, dan itu tidak boleh tertutup penolakan akun.
   if (penetapan && perkara[jenis]) return { ok: false, alasan: `${jenis}_sudah_ada` };
+  // SATU DEFINISI "ADA" untuk semua pembaca (penetapanKeadaanService): tanggal
+  // yang kosong tetapi barisnya sudah ada (keadaan separuh) TETAP dianggap ada -
+  // tidak pernah ditulis di atasnya. Keadaan yang tidak terbaca bukan "belum ada".
+  if (penetapan) {
+    const bersama = await penetapanKeadaanService.keadaanSatu(perkara.perkaraId, { kueri: runQuery });
+    if (!bersama.ok) return { ok: false, alasan: "keadaan_tidak_terbaca", jenis };
+    if (bersama.langkah[jenis] && bersama.langkah[jenis].ada) {
+      return { ok: false, alasan: `${jenis}_sudah_ada`, tidakSelaras: bersama.tidakSelaras.includes(jenis) };
+    }
+  }
 
   // ==========================================================================
   // AKUN YANG DICATAT DI SIPP: PEJABATNYA (butir 17, 13 Okt 2026)
@@ -3121,6 +3132,15 @@ async function tulisRantaiUtuh(minta, alat = {}) {
   let gagal = null;
   try {
     await lewat("START TRANSACTION");
+    // PAGAR DI TINGKAT BASIS DATA (20 Okt 2026): baris perkara dikunci sebelum
+    // keadaan penetapan dibaca. Penulis lain atas perkara yang sama - rantai
+    // ALETA kedua, atau borang SIPP yang sedang disimpan peramban (SIPP juga
+    // memperbarui baris perkara pada tiap penetapan) - menunggu sampai rantai
+    // ini COMMIT/ROLLBACK, lalu membaca keadaan yang SUDAH berubah. Tanpa ini
+    // dua pembacaan "belum ada" yang berdekatan sama-sama lolos ke penulisan.
+    // Kegagalan mengunci (batas tunggu habis) membatalkan rantai utuh: tidak
+    // ada yang tertulis, dan dapat diulang.
+    await lewat("SELECT perkara_id FROM perkara WHERE perkara_id = ? FOR UPDATE", [Number(umum.perkaraId) || 0]);
     await kueriTransaksi.run(lewat, async () => {
       // Jam SIPP seluruh langkah yang BELUM ada disusun SEKALI di awal (butir
       // 17): berurutan, berjeda seperti orang bekerja, langkah terakhir tidak
