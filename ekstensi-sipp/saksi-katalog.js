@@ -36,7 +36,7 @@
   const KELOMPOK = Object.freeze(["identitas", "hubungan", "pokok", "akibat", "upaya", "penutup"]);
   const KELOMPOK_TETAP = Object.freeze(["identitas", "hubungan", "penutup"]);
   const BEDA_PADA = Object.freeze(["waktu", "lama", "jumlah", "penyebab", "pelaku", "tempat", "peristiwa"]);
-  const SLOT_BAKU = Object.freeze(["pengaju", "lawan", "sumber", "hal", "daftar", "isi", "lama", "sejak", "hubungan", "pihakSaksi", "lawanSaksi", "pelaku", "korban", "pekerjaan", "penghasilan"]);
+  const SLOT_BAKU = Object.freeze(["pengaju", "lawan", "sumber", "hal", "daftar", "isi", "lama", "sejak", "hubungan", "pihakSaksi", "lawanSaksi", "pelaku", "korban", "pekerjaan", "penghasilan", "waktu", "peristiwa"]);
   /** Variabel ABT "Hbgn. Saksi n dg. Pihak" - menurut pihak dan urutan saksi (abt-variabel.json). */
   const VARIABEL_HUBUNGAN = Object.freeze({
     P: Object.freeze([["1241"], ["1242"], ["6149"], ["8923", "6150"], ["8930"]]),
@@ -207,6 +207,42 @@
 
     if (kat.tanpaLawan !== undefined && typeof kat.tanpaLawan !== "boolean") g("tanpaLawan harus boolean");
 
+    // ── profil pengetahuan saksi (opsional): satu pilihan per saksi yang menentukan jenis keterangan tiap butir ──
+    if (kat.profilSaksi !== undefined) {
+      if (!laRaya(kat.profilSaksi) || !Object.keys(kat.profilSaksi).length) g("profilSaksi harus objek berisi sedikitnya satu profil");
+      else {
+        for (const [kp, prof] of Object.entries(kat.profilSaksi)) {
+          if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(kp)) g(`profilSaksi.${kp}: kunci harus kebab-case`);
+          if (!laRaya(prof)) {
+            g(`profilSaksi.${kp} bukan objek`);
+            continue;
+          }
+          if (typeof prof.label !== "string" || !prof.label.trim()) g(`profilSaksi.${kp}.label kosong`);
+          if (prof.sumber !== undefined && typeof prof.sumber !== "boolean") g(`profilSaksi.${kp}.sumber harus boolean`);
+          if (!laRaya(prof.peta) || !Object.keys(prof.peta).length) g(`profilSaksi.${kp}.peta kosong`);
+          else {
+            for (const [kunciPeta, jenisPeta] of Object.entries(prof.peta)) {
+              if (!JENIS_KETERANGAN.includes(jenisPeta) || jenisPeta === "berbeda") g(`profilSaksi.${kp}.peta.${kunciPeta}: jenis "${jenisPeta}" tidak sah`);
+            }
+            if (!("*" in prof.peta)) g(`profilSaksi.${kp}.peta wajib memuat "*" (jenis bawaan)`);
+          }
+        }
+      }
+    }
+    if (kat.pilihanDaftar !== undefined) {
+      if (!Array.isArray(kat.pilihanDaftar) || !kat.pilihanDaftar.length || kat.pilihanDaftar.length > 40) g("pilihanDaftar harus daftar 1 sampai 40 frasa");
+      else {
+        const lihatDaftar = new Set();
+        kat.pilihanDaftar.forEach((x, i) => {
+          if (typeof x !== "string" || !x.trim() || x.length > 80 || x !== x.trim()) g(`pilihanDaftar[${i}] harus teks 1-80 huruf tanpa spasi tepi`);
+          else if (/[,;{}#<\r\n]/.test(x)) g(`pilihanDaftar[${i}] memuat tanda yang tidak boleh ( , ; { } # < )`);
+          else if (/ya,|sayang/i.test(x)) g(`pilihanDaftar[${i}] memuat "ya," atau "sayang"`);
+          else if (lihatDaftar.has(x.toLowerCase())) g(`pilihanDaftar[${i}] kembar`);
+          lihatDaftar.add(String(x).toLowerCase());
+        });
+      }
+    }
+
     // ── dasar hukum ──
     const idDasar = new Set();
     daftar(kat.dasarHukum).forEach((d, i) => {
@@ -229,6 +265,8 @@
       if (!["otomatis", "borang"].includes(v.sumber)) g(`keadaan.${k}.sumber harus salah satu nilai sumber keadaan yang dikenal`);
       if (!daftar(v.nilai).length) g(`keadaan.${k}.nilai kosong`);
       if (typeof v.label !== "string" || !v.label.trim()) g(`keadaan.${k}.label kosong`);
+      if (v.perSaksi !== undefined && typeof v.perSaksi !== "boolean") g(`keadaan.${k}.perSaksi harus boolean`);
+      if (v.perSaksi === true && v.sumber !== "borang") g(`keadaan.${k}: perSaksi hanya untuk sumber borang`);
       if (v.sumber === "otomatis" && !KEADAAN_BAKU[k]) g(`keadaan.${k}: sumber otomatis hanya untuk kunci baku (${Object.keys(KEADAAN_BAKU).join(", ")})`);
       nilaiSah[k] = new Set(daftar(v.nilai).map(String));
     }
@@ -295,7 +333,7 @@
         for (const m of kal.matchAll(POLA_SLOT)) {
           if (!SLOT_BAKU.includes(m[1])) g(`${tempat}: slot tidak baku {${m[1]}}`);
         }
-        if (/\{(hal|daftar|isi|lama|sejak|pekerjaan|penghasilan)\}\s*,/.test(kal)) g(`${tempat}: slot teks bebas langsung sebelum koma (isi slot yang berakhir "ya" dimakan ABT)`);
+        if (/\{(hal|daftar|isi|lama|sejak|pekerjaan|penghasilan|waktu|peristiwa)\}\s*,/.test(kal)) g(`${tempat}: slot teks bebas langsung sebelum koma (isi slot yang berakhir "ya" dimakan ABT)`);
         if (/#/.test(kal.replace(POLA_PENANDA, ""))) g(`${tempat}: penanda # rusak`);
         const norm = rapikan(kal);
         if (lihat.has(norm)) g(`${tempat}: kembar dengan #${lihat.get(norm) + 1}`);
@@ -673,6 +711,49 @@
     return JENIS_KETERANGAN.filter((j) => j === "melihat" || (!tetap && !tb.includes(j)));
   }
 
+  /** Awalan nilai jenis saksi yang menunjuk profil pengetahuan katalog ("profil:tahu-pisah"). */
+  const AWALAN_PROFIL = "profil:";
+
+  /**
+   * Jenis keterangan butir ini menurut PROFIL pengetahuan saksi (katalog.profilSaksi), atau "" bila `jenisSaksi` bukan profil.
+   * Peta profil dicari menurut id butir, pokoknya, kelompoknya, lalu "*" (jenis bawaan profil). Butir yang tidak memungkinkan
+   * jenis itu (tidakBerlaku, kelompok tetap) jatuh ke "melihat" oleh pemanggil.
+   */
+  function jenisDariProfil(kat, jenisSaksi, q) {
+    const kode = typeof jenisSaksi === "string" && jenisSaksi.startsWith(AWALAN_PROFIL) ? jenisSaksi.slice(AWALAN_PROFIL.length) : "";
+    if (!kode) return "";
+    const prof = laRaya(kat && kat.profilSaksi) ? kat.profilSaksi[kode] : null;
+    if (!laRaya(prof) || !laRaya(prof.peta)) return "";
+    const peta = prof.peta;
+    for (const kunci of [q && q.id, q && q.pokok, q && q.kelompok, "*"]) {
+      if (kunci && typeof peta[kunci] === "string" && peta[kunci] !== "berbeda") return peta[kunci];
+    }
+    return "";
+  }
+
+  /** Profil pengetahuan saksi katalog untuk pilihan di borang: [{nilai: "profil:<kunci>", label, sumber}]. */
+  function profilUntukBorang(kat) {
+    const hasil = [];
+    if (!laRaya(kat && kat.profilSaksi)) return hasil;
+    for (const [kunci, prof] of Object.entries(kat.profilSaksi)) {
+      if (!laRaya(prof)) continue;
+      hasil.push({ nilai: AWALAN_PROFIL + kunci, label: String(prof.label || kunci), sumber: prof.sumber === true });
+    }
+    return hasil;
+  }
+
+  /**
+   * Saksi keluarga atau bukan dari uraian hubungannya dengan pihak ("ibu kandung Penggugat", "tetangga"). "" bila tidak terbaca:
+   * hubungan yang tidak dikenal tidak pernah ditebak. Dasar: UU 7/1989 Pasal 76 ayat (1) membedakan keluarga dan orang dekat.
+   */
+  function kerabatDariHubungan(teks) {
+    const t = rapikan(String(teks || "").replace(POLA_PENANDA, " "));
+    if (!t) return "";
+    if (/\b(tetangga|teman|sahabat|rekan|kenalan|warga|kawan|majikan|atasan|bawahan|pembantu|ketua rt|ketua rw|kepala dusun|kepala desa|tokoh|jiran)\b/.test(t)) return "bukan-keluarga";
+    if (/\b(ayah|bapak|ibu|mama|papa|kakak|abang|adik|saudara|paman|om|bibi|tante|kakek|nenek|sepupu|keponakan|ipar|mertua|menantu|orang tua|ortu|kerabat|keluarga|anak|cucu|besan|kandung|tiri)\b/.test(t)) return "keluarga";
+    return "";
+  }
+
   /** Pilih objek Jawaban yang berlaku menurut keadaan (yang paling spesifik). */
   function pilihObjekJawaban(kat, q, jenis, keadaan) {
     let sumber = bentukJawaban(q.jawaban && q.jawaban[jenis]);
@@ -844,7 +925,6 @@
       const pihak = s.pihak === "T" ? "T" : "P";
       // keadaan khusus saksi ini (mis. peran saksi pada pernikahan di itsbat nikah) menimpa keadaan perkara
       const keadaan = Object.assign({}, keadaanDasar, laRaya(s.keadaan) ? s.keadaan : {}, { pihakSaksi: pihak });
-      const butir = pertanyaanAktif(kat, keadaan, pihak, { tingkat: m.tingkat });
       const slotSaksi = Object.assign({}, m.slot || {}, (m.slotSaksi && m.slotSaksi[indeks]) || {});
       if (slotKosong(slotSaksi.sumber)) slotSaksi.sumber = pihak === "T" ? "#0047#" : "#0046#";
       if (slotKosong(slotSaksi.pihakSaksi)) slotSaksi.pihakSaksi = pihak === "T" ? "#0047#" : "#0046#";
@@ -861,11 +941,19 @@
           }
         }
       }
+      // saksi keluarga atau bukan: dipilih petugas; bila belum dipilih dan katalog memuat keadaan itu, dibaca dari uraian hubungannya
+      const dekKerabat = laRaya(kat && kat.keadaan) ? kat.keadaan.kerabat : null;
+      if (laRaya(dekKerabat) && !(laRaya(s.keadaan) && s.keadaan.kerabat !== undefined)) {
+        const turunan = tidakTerisi(slotSaksi.hubungan) ? "" : kerabatDariHubungan(slotSaksi.hubungan);
+        if (turunan && daftar(dekKerabat.nilai).map(String).includes(turunan)) keadaan.kerabat = turunan;
+      }
+      const butir = pertanyaanAktif(kat, keadaan, pihak, { tingkat: m.tingkat });
       const baris = [];
       const ragaman = [];
       butir.forEach((q) => {
         const masuk = jenisKeteranganButir(q);
-        let jenis = (s.perButir && s.perButir[q.id]) || s.jenis || "melihat";
+        // urutan: pilihan per butir > profil pengetahuan saksi ("profil:<kunci>") > jenis saksi > melihat
+        let jenis = (s.perButir && s.perButir[q.id]) || jenisDariProfil(kat, s.jenis, q) || s.jenis || "melihat";
         if (!JENIS_KETERANGAN.includes(jenis)) jenis = "melihat";
         if (!masuk.includes(jenis)) jenis = "melihat";
         // saksi "berbeda": hanya pada butir yang dipilih dan bila butir mendukungnya
@@ -1136,6 +1224,7 @@
         jamak: Boolean(v.jamak) || KEADAAN_BAKU_JAMAK.includes(kunci),
         bawaan: v.bawaan,
         sumber: String(v.sumber),
+        perSaksi: v.perSaksi === true,
       });
     }
     const sebut = (syarat) => {
@@ -1162,7 +1251,7 @@
   }
 
   /** Slot yang diisi petugas di borang (teks bebas). */
-  const ISIAN_PETUGAS = Object.freeze(["daftar", "isi", "lama", "sejak", "pekerjaan", "penghasilan"]);
+  const ISIAN_PETUGAS = Object.freeze(["daftar", "isi", "lama", "sejak", "pekerjaan", "penghasilan", "waktu", "peristiwa"]);
 
   /** Slot isian petugas yang benar-benar dipakai butir-butir ini. */
   function slotIsianDipakai(butir) {
@@ -1283,6 +1372,10 @@
     LABEL_KEADAAN_BAKU,
     LABEL_NILAI_BAKU,
     keadaanUntukBorang,
+    jenisDariProfil,
+    profilUntukBorang,
+    kerabatDariHubungan,
+    AWALAN_PROFIL,
     slotIsianDipakai,
     ringkasKatalog,
     ISIAN_PETUGAS,

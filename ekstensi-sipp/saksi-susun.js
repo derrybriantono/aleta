@@ -250,6 +250,8 @@
       lama: "lama kejadian",
       sejak: "waktu mulai kejadian",
       penghasilan: "penghasilan",
+      waktu: "waktu kejadian",
+      peristiwa: "peristiwa yang diterangkan",
     };
     /**
      * Penanda yang belum terisi (#nnnn# atau {slot}) -> nama isian yang dapat dibaca petugas. Kode variabel TIDAK
@@ -307,8 +309,8 @@
       S.keadaan = m.keadaanBawaan(kat, turun);
       S.isian = {};
       S.saksi = [
-        { pihak: "P", jenis: "melihat", sumber: "", berbeda: [] },
-        { pihak: "P", jenis: "melihat", sumber: "", berbeda: [] },
+        { pihak: "P", jenis: "melihat", sumber: "", berbeda: [], keadaan: {}, daftar: [] },
+        { pihak: "P", jenis: "melihat", sumber: "", berbeda: [], keadaan: {}, daftar: [] },
       ];
       aturKeterangan(kat);
     }
@@ -434,6 +436,7 @@
       kotak.appendChild(buat("div", "aleta-abt-label", "Keadaan perkara"));
       for (const f of m.keadaanUntukBorang(sumberKat)) {
         if (tanpa.includes(f.kunci)) continue;
+        if (f.perSaksi) continue; // digambar pada baris tiap saksi
         if (!keadaanRelevan(f.kunci, sumberKat)) continue;
         const nilaiSekarang = S.keadaan[f.kunci];
         const labelNilai = (n) =>
@@ -475,6 +478,25 @@
       form.appendChild(kotak);
     }
 
+    /** Tulisan jenis keterangan saksi: jenis baku atau profil pengetahuan katalog. */
+    function labelJenisSaksi(jenis) {
+      const pf = m.profilUntukBorang(S.kat).find((x) => x.nilai === jenis);
+      return pf ? pf.label : LABEL_JENIS[jenis] || jenis;
+    }
+
+    /** Jenis ini memerlukan sumber cerita: de auditu, atau profil katalog yang bertanda sumber. */
+    function perluSumber(jenis) {
+      if (jenis === "de-auditu") return true;
+      return m.profilUntukBorang(S.kat).some((pf) => pf.nilai === jenis && pf.sumber);
+    }
+
+    /** "a", "a dan b", "a, b dan c". */
+    function gabungDaftar(daftarFrasa) {
+      const d = daftarFrasa.slice();
+      if (d.length < 2) return d.join("");
+      return `${d.slice(0, -1).join(", ")} dan ${d[d.length - 1]}`;
+    }
+
     function gambarSaksi(form) {
       const kotak = buat("div", "aleta-sdg-alasan");
       kotak.appendChild(buat("div", "aleta-abt-label", "Saksi dan jenis keterangannya"));
@@ -483,7 +505,7 @@
         String(S.saksi.length),
         (v) => {
           const n = Number(v);
-          while (S.saksi.length < n) S.saksi.push({ pihak: "P", jenis: "melihat", sumber: "", berbeda: [] });
+          while (S.saksi.length < n) S.saksi.push({ pihak: "P", jenis: "melihat", sumber: "", berbeda: [], keadaan: {}, daftar: [] });
           S.saksi.length = n;
           S.hasil = null;
           gambarUlang();
@@ -512,12 +534,12 @@
         }
         baris.appendChild(
           pilihan(
-            JENIS_PILIHAN.map((j) => [j, LABEL_JENIS[j]]),
+            [...JENIS_PILIHAN.map((j) => [j, LABEL_JENIS[j]]), ...m.profilUntukBorang(S.kat).map((pf) => [pf.nilai, pf.label])],
             s.jenis,
             (v) => {
               s.jenis = v;
               S.hasil = null;
-              sumberKotak.hidden = s.jenis !== "de-auditu";
+              sumberKotak.hidden = !perluSumber(s.jenis);
             }
           )
         );
@@ -526,11 +548,49 @@
         sumberKotak.className = "aleta-sdg-pilih aleta-ssk-sumber";
         sumberKotak.placeholder = "Sumber cerita, mis. ibu kandung (kosong = pihak yang menghadirkan)";
         sumberKotak.value = s.sumber;
-        sumberKotak.hidden = s.jenis !== "de-auditu";
+        sumberKotak.hidden = !perluSumber(s.jenis);
         sumberKotak.addEventListener("input", () => {
           s.sumber = sumberKotak.value;
         });
         baris.appendChild(sumberKotak);
+        // keadaan khusus saksi (mis. keluarga atau bukan): pilihan petugas; kosong = dibaca dari uraian hubungan saksi
+        for (const f of m.keadaanUntukBorang(S.kat).filter((x) => x.perSaksi)) {
+          const labelNilai = (n) => (S.kat.keadaan[f.kunci].labelNilai && S.kat.keadaan[f.kunci].labelNilai[n]) || n.replace(/-/g, " ");
+          const opsi = [["", `${f.label}: dibaca dari hubungan saksi`], ...f.nilai.map((n) => [n, labelNilai(n)])];
+          const sel = pilihan(opsi, s.keadaan && s.keadaan[f.kunci] !== undefined ? String(s.keadaan[f.kunci]) : "", (v) => {
+            if (!s.keadaan) s.keadaan = {};
+            if (v) s.keadaan[f.kunci] = v;
+            else delete s.keadaan[f.kunci];
+            S.hasil = null;
+          });
+          sel.setAttribute("data-keadaan-saksi", f.kunci);
+          sel.title = f.label;
+          baris.appendChild(sel);
+        }
+        // alasan/unsur yang diketahui saksi ini (centang) -> {daftar}
+        if (Array.isArray(S.kat.pilihanDaftar) && S.kat.pilihanDaftar.length) {
+          const rinciDaftar = document.createElement("details");
+          rinciDaftar.className = "aleta-ssk-daftar";
+          const ringkasDaftar = document.createElement("summary");
+          ringkasDaftar.textContent = "Alasan yang diketahui saksi ini (kosong = isian bersama)";
+          rinciDaftar.appendChild(ringkasDaftar);
+          if (!Array.isArray(s.daftar)) s.daftar = [];
+          for (const frasa of S.kat.pilihanDaftar) {
+            const c = buat("label", "aleta-sdg-centang");
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.value = frasa;
+            cb.checked = s.daftar.includes(frasa);
+            cb.addEventListener("change", () => {
+              s.daftar = cb.checked ? Array.from(new Set([...s.daftar, frasa])) : s.daftar.filter((x) => x !== frasa);
+              S.hasil = null;
+            });
+            c.appendChild(cb);
+            c.appendChild(buat("span", "", frasa));
+            rinciDaftar.appendChild(c);
+          }
+          baris.appendChild(rinciDaftar);
+        }
         if (butirBeda.length) {
           const rinci = document.createElement("details");
           rinci.className = "aleta-ssk-beda";
@@ -565,7 +625,7 @@
       if (!slot.length && !pakaiPelaku) return;
       const kotak = buat("div", "aleta-sdg-alasan");
       kotak.appendChild(buat("div", "aleta-abt-label", "Isian dari petugas (kosong = titik-titik)"));
-      const NAMA = { daftar: "Daftar alasan/unsur", isi: "Isi/uraian", lama: "Lama", sejak: "Sejak kapan", pekerjaan: "Pekerjaan", penghasilan: "Penghasilan" };
+      const NAMA = { daftar: "Daftar alasan/unsur", isi: "Isi/uraian", lama: "Lama", sejak: "Sejak kapan", pekerjaan: "Pekerjaan", penghasilan: "Penghasilan", waktu: "Waktu kejadian", peristiwa: "Peristiwa yang terjadi" };
       for (const nama of slot) {
         const kotakTeks = document.createElement("input");
         kotakTeks.type = "text";
@@ -988,8 +1048,14 @@
         jenis: s.jenis,
         perButir: S.perButir[i] || {},
         berbeda: s.berbeda,
+        keadaan: s.keadaan && Object.keys(s.keadaan).length ? Object.assign({}, s.keadaan) : undefined,
       }));
-      const slotSaksi = S.saksi.map((s) => (s.jenis === "de-auditu" && String(s.sumber || "").trim() ? { sumber: s.sumber.trim() } : {}));
+      const slotSaksi = S.saksi.map((s) => {
+        const isi = {};
+        if (perluSumber(s.jenis) && String(s.sumber || "").trim()) isi.sumber = s.sumber.trim();
+        if (Array.isArray(s.daftar) && s.daftar.length) isi.daftar = gabungDaftar(s.daftar);
+        return isi;
+      });
       const hasilSusun = m.susunSaksi(S.kat, {
         keadaan,
         benih: nomor(),
@@ -1021,7 +1087,7 @@
       const semuaKosong = new Set();
       h.saksi.forEach((sk, i) => {
         const kolom = buat("div", "aleta-ssk-saksi");
-        const kepala = buat("div", "aleta-abt-label", `Saksi ${sk.ke} - ${LABEL_JENIS[S.saksi[i].jenis]} (diajukan oleh ${sk.pihak === "T" ? sebutan("0047", TULISAN_PIHAK.T) : sebutan("0046", TULISAN_PIHAK.P)})`);
+        const kepala = buat("div", "aleta-abt-label", `Saksi ${sk.ke} - ${labelJenisSaksi(S.saksi[i].jenis)} (diajukan oleh ${sk.pihak === "T" ? sebutan("0047", TULISAN_PIHAK.T) : sebutan("0046", TULISAN_PIHAK.P)})`);
         kolom.appendChild(kepala);
         if (!variabelSimpan(i)) kolom.appendChild(buat("div", "aleta-abt-kabar aleta-abt-gagal", "Tidak ada variabel tanya-jawab di ABT untuk saksi ini (batas 5 saksi Penggugat dan 4 saksi Tergugat)."));
         for (const b of sk.baris) {
@@ -1266,7 +1332,7 @@
               nama: `Keterangan ${nama}`,
               sebelum,
               sesudah: `${baris.length} tanya-jawab dari katalog ${S.kat.judul}`,
-              cara: `disusun dari katalog ${S.kat.judul} (${LABEL_JENIS[S.saksi[i].jenis]}), diperiksa dan disimpan petugas`,
+              cara: `disusun dari katalog ${S.kat.judul} (${labelJenisSaksi(S.saksi[i].jenis)}), diperiksa dan disimpan petugas`,
               pada: new Date().toISOString(),
             });
           }
