@@ -164,6 +164,29 @@ async function periksaMesin() {
 }
 
 /**
+ * BAHASA RTF YANG MEMECAH KATA DI PDF (20 Okt 2026, butir 7).
+ *
+ * Blangko Derry (Word) menandai sebagian isi dengan \lang2052 (Mandarin
+ * Tiongkok) - mis. variabel isi penetapan #7044#/#7046# pada PMH dan paragraf
+ * PHS. Teks Latin berbahasa Mandarin dipenggal LibreOffice dengan aturan
+ * pemenggalan/perataan bahasa CJK (boleh di tengah kata), sehingga baris rata
+ * kiri-kanan menampilkan "p erlu", "terkai t", "Unda ng-Undang", "Sec ara".
+ * Semua bahasa tanda dalam RTF yang tergolong CJK/Thai dipulangkan ke
+ * Indonesia (1057) sebelum diubah ke PDF; pemenggalan kembali di batas kata.
+ * Bahasa lain (Inggris, Arab, dst.) tidak disentuh. RTF dengan data biner
+ * mentah (\binN) tidak disapu.
+ */
+const BAHASA_PEMENGGAL_HURUF = new Set([2052, 1028, 3076, 4100, 5124, 1041, 1042, 1054, 1107, 1108, 1109]);
+
+function normalkanBahasaRtf(isi) {
+  if (!Buffer.isBuffer(isi) || isi.length < 6 || isi.subarray(0, 5).toString("latin1") !== "{\\rtf") return isi;
+  const teks = isi.toString("latin1");
+  if (/\\bin\d/.test(teks)) return isi;
+  const baru = teks.replace(/\\(lang|langnp|deflang)(\d+)(?!\d)/g, (m, kata, n) => (BAHASA_PEMENGGAL_HURUF.has(Number(n)) ? `\\${kata}1057` : m));
+  return baru === teks ? isi : Buffer.from(baru, "latin1");
+}
+
+/**
  * Mengubah satu RTF menjadi PDF.
  *
  * @param {Buffer} isiRtf isi berkas RTF apa adanya
@@ -194,7 +217,7 @@ async function rtfKePdf(isiRtf) {
 
   try {
     // Properti naskah ({\info}) tanpa tanda ALETA - Title PDF disalin dari sana.
-    await fs.writeFile(berkasRtf, tanpaTandaAletaMetadata(isiRtf));
+    await fs.writeFile(berkasRtf, tanpaTandaAletaMetadata(normalkanBahasaRtf(isiRtf)));
 
     // -env:UserInstallation memberi soffice profil tersendiri. Tanpa itu, dua
     // konversi yang berjalan bersamaan bertengkar atas profil yang sama dan
@@ -317,7 +340,7 @@ async function dokumenKePdf(isi) {
   const berkasPdf = path.join(folder, "naskah.pdf");
 
   try {
-    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(isi));
+    await fs.writeFile(berkasAsal, tanpaTandaAletaMetadata(jenis === "rtf" ? normalkanBahasaRtf(isi) : isi));
     await jalankan(
       SOFFICE,
       [
@@ -475,6 +498,8 @@ async function dokumenKeBentuk(isi, ke, opsi = {}) {
 
 module.exports = {
   rtfKePdf,
+  normalkanBahasaRtf,
+  BAHASA_PEMENGGAL_HURUF,
   dokumenKePdf,
   dokumenKeBentuk,
   argumenKonversi,

@@ -216,3 +216,53 @@ export async function capBerlatarTransparan(masukan: Buffer): Promise<HasilCapTr
     sudahBening: hasil.sudahBening,
   };
 }
+
+/**
+ * PASTIKAN CAP BERLATAR BENING SAAT DIPAKAI (20 Okt 2026, butir 5).
+ *
+ * Cap yang tersimpan tanpa "buang latar" (JPG, WEBP, atau PNG yang latarnya
+ * putih pekat) dibubuhkan bot DI BELAKANG teks dan tanda tangan; tanda tangan
+ * pejabat (mis. Ketua pada PMH) yang berlatar pekat lalu MENUTUPI seluruh cap
+ * - cap "hilang" padahal tersedia. Karena itu cap dibersihkan di sini sebelum
+ * dikirim ke bot: yang sudah bening (pinggiran >= 90% alfa rendah) dipakai
+ * apa adanya, yang bukan diolah seperti unggahan "buang latar". Gagal diolah
+ * (tanpa tinta, sharp tidak ada) = dipakai apa adanya, tanpa galat.
+ */
+export async function capPerluDibersihkan(isi: Buffer): Promise<boolean> {
+  const sharp = (await import("sharp")).default;
+  const meta = await sharp(isi).metadata();
+  if (meta.format !== "png") return true;
+  if (!meta.hasAlpha) return true;
+  const kecil = await sharp(isi)
+    .resize({ width: 200, height: 200, fit: "inside", withoutEnlargement: true })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const { width: l, height: t } = kecil.info;
+  const d = kecil.data;
+  let pinggir = 0;
+  let bening = 0;
+  for (let y = 0; y < t; y++) {
+    for (let x = 0; x < l; x++) {
+      if (y !== 0 && y !== t - 1 && x !== 0 && x !== l - 1) continue;
+      pinggir += 1;
+      if (d[(y * l + x) * 4 + 3] < 24) bening += 1;
+    }
+  }
+  return pinggir > 0 && bening / pinggir < 0.9;
+}
+
+export async function pastikanCapBening(isi: Buffer): Promise<{ isi: Buffer; jenis: "png" | "jpg"; diolah: boolean }> {
+  const apaAdanya = (): { isi: Buffer; jenis: "png" | "jpg"; diolah: boolean } => ({
+    isi,
+    jenis: isi.length > 3 && isi[0] === 0x89 ? "png" : "jpg",
+    diolah: false,
+  });
+  try {
+    if (!(await capPerluDibersihkan(isi))) return apaAdanya();
+    const olah = await capBerlatarTransparan(isi);
+    return { isi: olah.buffer, jenis: "png", diolah: true };
+  } catch {
+    return apaAdanya();
+  }
+}

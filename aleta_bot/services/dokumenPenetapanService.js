@@ -582,8 +582,8 @@ async function terbitkan({ perkaraId, nomorPerkara, jenis, namaPenandatangan, ol
   // Mode tanda tangan elektronik (17 Okt 2026): gambar cap/TTD statis di blok
   // tanda tangan blangko tidak ikut ke dokumen yang diterbitkan lewat ALETA.
   // Dimuat saat dipanggil - penetapanEdocService memuat berkas ini secara malas.
-  const { buangGambarBlokTtd } = require("./penetapanEdocService");
-  const dibubuhi = sisipkanTandaTangan(buangGambarBlokTtd(blangko.rtf).rtf, {
+  const { buangGambarBlokTtd, rapikanLogoKotakElektronik } = require("./penetapanEdocService");
+  const dibubuhi = sisipkanTandaTangan(rapikanLogoKotakElektronik(buangGambarBlokTtd(blangko.rtf).rtf).rtf, {
     isi: ttd.isi,
     jenis: ttd.jenis,
     namaPejabat: ttd.namaPejabat,

@@ -348,7 +348,14 @@ describe("mode tanda tangan elektronik (penetapan lewat ALETA)", () => {
     });
     expect(h).toMatchObject({ ok: true, modeTtd: "kotak_elektronik", tandaTangan: null });
     expect(h.peringatan.map((p) => p.kode)).toEqual(["kotak_ttd_elektronik"]);
-    expect(h.rtf).toBe(rtf);
+    // 20 Okt (butir 6): satu-satunya perubahan di kotak elektronik = logo dimuat di dalam kotak (geometri bentuk), tanpa gambar ttd/cap.
+    expect(h.rtf).not.toContain("Tanda tangan}");
+    const tanpaGeometri = (r: string) =>
+      r
+        .replace(/\\shpleft-?\d+ ?\\shptop-?\d+ ?\\shpright-?\d+ ?\\shpbottom-?\d+/g, "")
+        .replace(/\\pic(?:w|h)goal\d+/g, "")
+        .replace(/\\picscale[xy]\d+/g, "");
+    expect(tanpaGeometri(String(h.rtf))).toBe(tanpaGeometri(rtf));
   });
 
   it("gambar cap/TTD statis di blok tanda tangan PMH tetap dibuang (bukan kotak elektronik)", () => {
