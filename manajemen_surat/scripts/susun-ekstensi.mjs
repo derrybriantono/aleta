@@ -161,6 +161,13 @@ const BERKAS = [
   // alur Putusan otomatis panel ekstensi dan e-Doc-nya; tepat di sebelah Penetapan Otomatis.
   "putusan-sipp.js",
   "putusan-sipp.css",
+  // Unggah Putusan Terjadwal (21 Okt 2026, agen B3): tombol "Jadwalkan Putusan" di sebelah Putusan Otomatis (halaman perkara)
+  // dan melayang di dashboard/daftar/jurnal; pemasangan berkas ke perkara (murni, dapat diuji); pelaksana peramban yang
+  // mengisi & menyimpan Putusan Akhir pada waktunya lewat alur Putusan Otomatis. e-Doc dikerjakan server.
+  "putusan-terjadwal-pasangan.js",
+  "putusan-terjadwal.js",
+  "putusan-terjadwal-peramban.js",
+  "putusan-terjadwal.css",
   "penetapan-sipp.css",
   "blangko-derry.css",
   // Menu kiri ABT bisa digulir (19 Okt 2026) - skrip konten ABT: #navbar diberi

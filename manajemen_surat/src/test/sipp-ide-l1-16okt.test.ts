@@ -610,8 +610,9 @@ describe("F. Tampilan Lama tetap persis, tanpa jaringan, manifest & penyusun", (
     const sesudahL1 = sipp.slice(sipp.indexOf("sipp-ide-l1.js") + 1);
     // 19 Okt: penetapan-borang.js (isi otomatis formulir penetapan SIPP) dimuat paling akhir; tidak memakai penghitung kolom L1.
     // 20 Okt: penetapan-sipp.js (tombol/panel Penetapan Otomatis) juga paling akhir; begitu pula (agen B2)
-    // abt-klien.js, putusan-edoc-sekaligus.js, dan putusan-sipp.js (tombol/panel Putusan Otomatis).
-    expect(sesudahL1.filter((x) => x !== "penetapan-borang.js" && x !== "penetapan-kerja.js" && x !== "penetapan-sipp.js" && x !== "muat-ulang-sipp.js" && !["abt-klien.js", "putusan-edoc-sekaligus.js", "putusan-sipp.js"].includes(x)).every((x) => /^sipp-ide-[a-z0-9]+\.js$/.test(x))).toBe(true);
+    // abt-klien.js, putusan-edoc-sekaligus.js, dan putusan-sipp.js (tombol/panel Putusan Otomatis);
+    // 21 Okt (agen B3): putusan-terjadwal-pasangan.js, putusan-terjadwal.js, putusan-terjadwal-peramban.js (Jadwalkan Putusan).
+    expect(sesudahL1.filter((x) => x !== "penetapan-borang.js" && x !== "penetapan-kerja.js" && x !== "penetapan-sipp.js" && x !== "muat-ulang-sipp.js" && !["abt-klien.js", "putusan-edoc-sekaligus.js", "putusan-sipp.js", "putusan-terjadwal-pasangan.js", "putusan-terjadwal.js", "putusan-terjadwal-peramban.js"].includes(x)).every((x) => /^sipp-ide-[a-z0-9]+\.js$/.test(x))).toBe(true);
     expect(sipp.indexOf("sipp-ide-l1.js")).toBeGreaterThan(sipp.indexOf("konten.js"));
     // 19 Okt: abt-gulir.js (gaya gulir menu kiri ABT) boleh sesudahnya - tidak memakai penghitung kolom L1.
     expect(abt.filter((x) => x !== "abt-gulir.js").at(-1)).toBe("sipp-ide-l1.js");

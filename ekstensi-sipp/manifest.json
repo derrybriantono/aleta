@@ -70,12 +70,16 @@
         "penetapan-sipp.js",
         "abt-klien.js",
         "putusan-edoc-sekaligus.js",
-        "putusan-sipp.js"
+        "putusan-sipp.js",
+        "putusan-terjadwal-pasangan.js",
+        "putusan-terjadwal.js",
+        "putusan-terjadwal-peramban.js"
       ],
       "css": [
         "panel.css",
         "penetapan-sipp.css",
-        "putusan-sipp.css"
+        "putusan-sipp.css",
+        "putusan-terjadwal.css"
       ],
       "run_at": "document_idle"
     },
