@@ -438,3 +438,7 @@ Pengisi di bot tidak berguna bila tombolnya tidak muncul di blangko itu. `script
 ## Penanda tak dikenal (bukan isian popup)
 
 3121(651), 3122(641), 3123(641), 3124(641), 3125(641), 3127(641), 3128(641), 3129(641), 3131(10), 3510(21), 3511(21), 3512(21), 3513(21), 3514(21), 3515(21), 5078(443), 5079(443), 5080(443), 5081(443), 5082(443), 5083(443), 5084(443), 5085(443), 5086(443), 5087(443), 5088(443), 5089(443), 5090(443), 5091(443), 5092(443), 5093(443), 5094(443), 5095(443), 5096(443), 5097(443), 5098(443), 5099(433), 5102(433), 5103(433), 5104(433), 5106(433), 5107(433), 5117(433), 7064(651), 9650(6), 9651(6), 9652(6), 9653(5), 9654(6), 0243(613), 03517(21)
+
+## Tambahan 21 Okt 2026 (gelombang 3 W3b)
+
+274 blangko Derry baru W3b (6d-6h, 96 Eksekusi, 96a Verzet, beserta BAS-nya) ditambahkan ke DAFTAR-CEK.json tanpa menyusun ulang daftar lama (penyusunan ulang memakai katalog ABT lokal yang belum memuat variabel paket terpasang). Isian popup lama yang dipakai blangko itu (43) sudah tercantum; variabel baru 3800-3999 belum dinilai di daftar ini. Ringkasan JSON: 1528 blangko, 62 tanpa isian popup, 325 seluruhnya otomatis, 240 masih punya isian manual tanpa syarat.

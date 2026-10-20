@@ -2,6 +2,7 @@
 // Dipakai bangun-daftar-cek.mjs. Hanya baca.
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 export function indeksRtf(akarBatch = "D:/aleta-dev/kerja/batch-14okt-sore", xampp = "D:/satker asal/website pa bungku/xampp/htdocs/aps_badilag/_blangko_abt") {
   const roots = [];
@@ -21,6 +22,14 @@ export function indeksRtf(akarBatch = "D:/aleta-dev/kerja/batch-14okt-sore", xam
           if (/^abt-/.test(y) && fs.existsSync(path.join(yp, "paket-satker")) && fs.statSync(yp).isDirectory()) roots.push(path.join(yp, "paket-satker"));
         }
       }
+    }
+  }
+  // 21 Okt: paket gelombang di repo (abt-paket/<paket>/paket-satker), mis. blangko baru W3b yang ikut pohon server.
+  const repoPaket = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "abt-paket");
+  if (fs.existsSync(repoPaket)) {
+    for (const x of fs.readdirSync(repoPaket)) {
+      const xp = path.join(repoPaket, x, "paket-satker");
+      if (fs.existsSync(xp) && fs.statSync(xp).isDirectory()) roots.push(xp);
     }
   }
   const hasil = new Map();
