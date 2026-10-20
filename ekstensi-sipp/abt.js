@@ -6366,13 +6366,11 @@ function susunPanelAbt(jatiDiri) {
     // pilihannya.
     const DAFTAR_MODUS = [
       ["sama", "Tahu seluruh alasan, melihat sendiri"],
-      ["mendengar", "Mendengar sendiri pertengkaran, tidak melihat"],
       ["sebagian", "Hanya sebagian alasan yang ia ketahui"],
       ["tidak-tahu", "Tahu berselisih & berpisah, tidak tahu sebabnya"],
       ["tidak-melihat", "Tidak pernah menyaksikan pertengkaran"],
       ["dari-cerita", "Tahu dari cerita salah satu pihak"],
       ["tahu-pisah", "Tidak tahu pertengkarannya, hanya tahu sudah pisah"],
-      ["ragu", "Ragu dan kurang ingat"],
     ];
     // ======================================================================
     // KODENYA MENYEBUT PIHAKNYA, BUKAN NAMA RUAS MUATAN
@@ -13777,6 +13775,32 @@ function t6MuatAlasanPosita(k) {
  * saksi yang tahu pisahnya, dan berdampingan supaya bedanya terbaca sekilas.
  * Hanya urutan opsinya yang berubah; nilai dan pilihan yang sudah dibuat tetap.
  */
+/**
+ * 20 Okt 2026 (U1): dua pilihan "Yang diketahui saksi" tambahan - "mendengar sendiri" dan "ragu" - HANYA pada tampilan Baru / UI Baru.
+ * Tampilan Lama harus identik dengan abt.js sebelum Tahap 6, jadi DAFTAR_MODUS di atas tidak diubah; opsinya disisipkan di sini.
+ * Nilai yang sudah dipilih tidak berubah.
+ */
+const T6_MODUS_TAMBAHAN = [
+  ["mendengar", "Mendengar sendiri pertengkaran, tidak melihat", "sama"],
+  ["ragu", "Ragu dan kurang ingat", ""],
+];
+function t6TambahModusSdg(form) {
+  for (const pilih of Array.from(form.querySelectorAll(".aleta-sdg-modus select"))) {
+    if (!pilih.querySelector('option[value="sama"]') || !pilih.querySelector('option[value="tahu-pisah"]')) continue;
+    const nilaiSebelum = pilih.value;
+    for (const [nilai, nama, setelah] of T6_MODUS_TAMBAHAN) {
+      if (pilih.querySelector(`option[value="${nilai}"]`)) continue;
+      const o = document.createElement("option");
+      o.value = nilai;
+      o.textContent = nama;
+      const acuan = setelah ? pilih.querySelector(`option[value="${setelah}"]`) : null;
+      if (acuan) pilih.insertBefore(o, acuan.nextElementSibling);
+      else pilih.appendChild(o);
+    }
+    pilih.value = nilaiSebelum;
+  }
+}
+
 function t6UrutkanModusSdg(form) {
   for (const pilih of Array.from(form.querySelectorAll(".aleta-sdg-modus select"))) {
     const tahuPisah = pilih.querySelector('option[value="tahu-pisah"]');
@@ -13789,6 +13813,7 @@ function t6UrutkanModusSdg(form) {
 }
 
 function t6HiasFormSdg(k, form) {
+  t6TambahModusSdg(form);
   if (t6Pakai(k, "abt-8")) {
     const posita = t6TeksVariabel(barisVariabel(), VAR_POSITA);
     t6UrutkanModusSdg(form);

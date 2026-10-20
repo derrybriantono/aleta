@@ -118,7 +118,8 @@ describe("panduan pertanyaan saksi - pemilihan katalog per jenis perkara", () =>
   it("harta bersama dan kewarisan: saksi tergugat punya daftar sendiri yang berbeda", () => {
     expect(ada(susunPanduan({ jenisPerkaraId: 348, alurPerkaraId: 15 })).tergugatBerbeda).toBe(true);
     expect(ada(susunPanduan({ jenisPerkaraId: 364, alurPerkaraId: 15 })).tergugatBerbeda).toBe(true);
-    expect(ada(susunPanduan({ jenisPerkaraId: 347, alurPerkaraId: 15 })).tergugatBerbeda).toBe(false);
+    // 20 Okt 2026 (U1): cerai gugat/talak kini punya butir versi Tergugat/Termohon (katalog tambahan cerai-*-tergugat)
+    expect(ada(susunPanduan({ jenisPerkaraId: 347, alurPerkaraId: 15 })).tergugatBerbeda).toBe(true);
     const hb = ada(susunPanduan({ jenisPerkaraId: 348, alurPerkaraId: 15, keadaan: { bantahan: ["sudah-dibagi"] } }));
     const idP = hb.saksi.P.pokok.flatMap((p) => p.tanya.map((t) => t.id));
     const idT = hb.saksi.T.pokok.flatMap((p) => p.tanya.map((t) => t.id));

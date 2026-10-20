@@ -460,7 +460,7 @@ describe("butir 13 - urutan dropdown modus saksi", () => {
     const h = buka({ simpanan: { ujiTampilan: "lama" }, alasanPosita: { ok: true, alasan: SESUAI, asalPosita: "ekstensi" } });
     const form = await bukaFormSdg(h);
     await tunggu(80);
-    expect(urutanModus(form)).toEqual(["sama", "mendengar", "sebagian", "tidak-tahu", "tidak-melihat", "dari-cerita", "tahu-pisah", "ragu"]);
+    expect(urutanModus(form)).toEqual(["sama", "sebagian", "tidak-tahu", "tidak-melihat", "dari-cerita", "tahu-pisah"]);
     expect(h.minta.some((m) => m.badan.includes("alasan-posita"))).toBe(false);
   });
 });

@@ -673,7 +673,7 @@ describe("Blangko Derry: panel Pengetahuan saksi menurut katalog jenis perkara",
     const gugat = await bukaSaksi({ jenis: "Cerai Gugat", alur: 15 }, false);
     expect(q(gugat, ".bd-skkatalog")).toBeNull();
     expect(opsiDari(gugat, "saksi 1 p", "modus").map((o) => o.label)).toContain("Tahu seluruh alasan, melihat sendiri");
-    expect(opsiDari(gugat, "saksi 1 p", "modus").map((o) => o.nilai)).toEqual(["sama", "sebagian", "tidak-tahu", "tidak-melihat", "dari-cerita", "tahu-pisah"]);
+    expect(opsiDari(gugat, "saksi 1 p", "modus").map((o) => o.nilai)).toEqual(["sama", "mendengar", "sebagian", "tidak-tahu", "tidak-melihat", "dari-cerita", "tahu-pisah", "ragu"]);
     expect(qd(gugat, '[data-tj="saksi 1 p"]')[0].textContent).toMatch(/Saksi 1 Penggugat/);
     // pilihan set di dropdown tidak memuat katalog untuk cerai
     expect(Array.from((q(gugat, "#bd-muattpl") as HTMLSelectElement).options).some((o) => o.value.startsWith("katalog:"))).toBe(false);
