@@ -567,7 +567,8 @@
       "label": "Harta peninggalan pewaris",
       "tipe": "teks",
       "kode": [
-        "8614"
+        "8614",
+        "8718"
       ],
       "kunciSaksi": "hartaPeninggalan"
     },
@@ -678,6 +679,83 @@
       "kode": [
         "8613"
       ]
+    },
+    "hb.putusanCerai": {
+      "label": "Putusan cerai para pihak yang dikutip gugatan harta bersama (Nomor ... tanggal ...)",
+      "tipe": "teks",
+      "kode": [
+        "9280"
+      ],
+      "kunciSaksi": "putusanCerai"
+    },
+    "hb.aktaCerai": {
+      "label": "Akta cerai para pihak yang dikutip gugatan harta bersama",
+      "tipe": "teks",
+      "kode": [],
+      "kunciSaksi": "aktaCerai"
+    },
+    "hb.nilaiTotalHarta": {
+      "label": "Nilai total harta bersama menurut gugatan (dalil Penggugat, bukan penilaian)",
+      "tipe": "teks",
+      "kode": [],
+      "kunciSaksi": "nilaiTotalHarta",
+      "hanyaSaran": true
+    },
+    "hb.jumlahObjek": {
+      "label": "Jumlah baris objek pada daftar harta bersama gugatan",
+      "tipe": "teks",
+      "kode": [],
+      "kunciSaksi": "jumlahObjek",
+      "hanyaSaran": true
+    },
+    "waris.ahliWaris": {
+      "label": "Ahli waris menurut petitum gugatan kewarisan (nama dan hubungan)",
+      "tipe": "daftar",
+      "kode": [
+        "8717"
+      ],
+      "kunciSaksi": "ahliWaris",
+      "hanyaSaran": true
+    },
+    "waris.penguasaHarta": {
+      "label": "Pihak yang menguasai harta peninggalan (kalimat posita)",
+      "tipe": "teks",
+      "kode": [
+        "4817"
+      ],
+      "hanyaSaran": true
+    },
+    "waris.hartaBersamaPewaris": {
+      "label": "Harta bersama pewaris dengan pasangannya (kalimat posita)",
+      "tipe": "teks",
+      "kode": [
+        "4818"
+      ],
+      "hanyaSaran": true
+    },
+    "waris.utangWasiatJenazah": {
+      "label": "Utang, wasiat dan biaya pengurusan jenazah pewaris (kalimat posita)",
+      "tipe": "teks",
+      "kode": [
+        "4819"
+      ],
+      "hanyaSaran": true
+    },
+    "waris.bagianHitungan": {
+      "label": "Bagian masing-masing ahli waris (usulan hitungan KHI atas susunan yang terbaca penuh)",
+      "tipe": "teks",
+      "kode": [
+        "8719"
+      ],
+      "hanyaSaran": true
+    },
+    "hb.utangBersama": {
+      "label": "Utang bersama para pihak (kalimat posita)",
+      "tipe": "teks",
+      "kode": [
+        "4786"
+      ],
+      "hanyaSaran": true
     }
   },
   "pokokBas": [
