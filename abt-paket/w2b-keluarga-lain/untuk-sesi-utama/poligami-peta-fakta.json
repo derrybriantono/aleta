@@ -1,0 +1,52 @@
+{
+  "skema": "peta-fakta-variabel/1",
+  "catatan": "TAMBAHAN W2b-A (izin poligami) untuk aleta_bot/config/peta-fakta-variabel.json. Satu kode satu fakta; tidak mengubah entri yang ada. 'fakta' = entri baru; kode 4850-4856 dari paket abt-w2b-keluarga-lain.",
+  "tambahKode": {},
+  "fakta": {
+    "poligami.statusCalon": {
+      "label": "Status calon istri kedua (perawan, janda cerai, janda ditinggal mati suami)",
+      "tipe": "pilihan",
+      "kode": [
+        "4854"
+      ],
+      "hanyaSaran": true
+    },
+    "poligami.buktiStatusCalon": {
+      "label": "Bukti status janda calon istri kedua (akta cerai atau surat keterangan kematian)",
+      "tipe": "teks",
+      "kode": [
+        "4855"
+      ]
+    },
+    "poligami.jumlahIstri": {
+      "label": "Jumlah istri Pemohon saat ini",
+      "tipe": "teks",
+      "kode": [
+        "4856"
+      ]
+    },
+    "poligami.suratSetujuIstri": {
+      "label": "Surat persetujuan tertulis istri",
+      "tipe": "teks",
+      "kode": [
+        "4850"
+      ]
+    },
+    "poligami.alasanKeberatanIstri": {
+      "label": "Alasan keberatan istri atas rencana poligami",
+      "tipe": "teks",
+      "kode": [
+        "4851"
+      ],
+      "hanyaSaran": true
+    },
+    "poligami.istriTidakMungkin": {
+      "label": "Keadaan istri yang membuatnya tidak mungkin dimintai persetujuan",
+      "tipe": "teks",
+      "kode": [
+        "4852"
+      ],
+      "hanyaSaran": true
+    }
+  }
+}

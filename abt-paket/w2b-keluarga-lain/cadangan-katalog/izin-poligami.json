@@ -1,0 +1,1518 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "izin-poligami",
+ "judul": "Izin poligami",
+ "versi": 1,
+ "penulis": "SAKSI-D",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "341"
+  ]
+ },
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [
+  {
+   "folder": "5 Izin Poligami - BAS",
+   "berkas": "BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5 Izin Poligami - BAS",
+   "berkas": "BAS ALUR 04 [6a] BAS 6 P & T Hadir - Pembuktian P (3 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5 Izin Poligami - BAS",
+   "berkas": "BAS ALUR 04 [6b] BAS 6 P & T Hadir - Pembuktian P (4 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060",
+    "6124"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5 Izin Poligami - BAS",
+   "berkas": "BAS ALUR 04 [6c] BAS 6 P & T Hadir - Pembuktian P (5 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060",
+    "6124",
+    "8931"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5 Izin Poligami - BAS",
+   "berkas": "BAS ALUR 04 [7] BAS 7 P & T Hadir - Pembuktian T",
+   "variabelSaksi": [
+    "6120",
+    "6121"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5 Izin Poligami - BAS",
+   "berkas": "BAS ALUR 04 [7a] BAS 7 P & T Hadir - Pembuktian T (3 Saksi)",
+   "variabelSaksi": [
+    "6120",
+    "6121",
+    "8921"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5 Izin Poligami - BAS",
+   "berkas": "BAS ALUR 04 [7b] BAS 7 P & T Hadir - Pembuktian T (4 Saksi)",
+   "variabelSaksi": [
+    "6120",
+    "6121",
+    "8921",
+    "8941"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5 Izin Poligami - BAS",
+   "berkas": "BAS ALUR 34 Poligami - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "5 Izin Poligami - BAS",
+   "berkas": "BAS ALUR 34 Poligami - Sidang 3 - Pembuktian dan Pengucapan Putusan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  }
+ ],
+ "dasarHukum": [
+  {
+   "id": "dh-sebab-pengetahuan",
+   "rujukan": "Pasal 171 ayat (1) dan (2) HIR / Pasal 308 ayat (1) dan (2) RBg",
+   "uraian": "saksi harus menyebut alasan dan cara ia mengetahui hal yang diterangkan; pendapat atau dugaan bukan kesaksian",
+   "status": "terverifikasi",
+   "sumber": "Pasal 171 ayat (1)-(2) HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 308 ayat (1)-(2) RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); sejalan dengan Pasal 1907 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-unus-testis",
+   "rujukan": "Pasal 169 HIR / Pasal 306 RBg / Pasal 1905 KUHPerdata",
+   "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak dapat dipercaya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 169 HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 306 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); Pasal 1905 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-saksi-syarat",
+   "rujukan": "Pasal 171, 172, 175, 307, 308 dan 309 RBg",
+   "uraian": "syarat formil saksi (bukan orang yang dilarang didengar menurut Pasal 172, antara lain anak yang belum berumur lima belas tahun; dipanggil dan diperiksa satu per satu; disumpah menurut agamanya) dan syarat materiil (kesaksian disertai alasan pengetahuan, yaitu peristiwa yang dialami, didengar dan dilihat sendiri; kesaksian yang berdiri sendiri saling bersesuaian)",
+   "status": "terverifikasi",
+   "sumber": "Pasal 171 (saksi dipanggil satu per satu, ditanya identitas dan hubungan dengan pihak), 172 (orang yang tidak boleh didengar), 175 (sumpah), 307, 308, 309 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); syarat materiil \"dialami, didengar dan dilihat sendiri\" juga pada Buku II Edisi Revisi 2013 (Ditjen Badilag MA RI), salinan PDF PA Rumbia (pa-rumbia.go.id/images/Pedoman_Organisasi/1-Buku-II-edisi-Rev_2013_Pedoman-Tugas-dan-Adm.pdf), bagian Bukti Saksi. Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: pertimbangan hukum blangko putusan Derry 4c Wasiat [01], 5a Pembatalan [01], 5b Pencegahan [01], 5 Izin Poligami [01]"
+  },
+  {
+   "id": "dh-beban-bukti",
+   "rujukan": "Pasal 283 RBg jo. Pasal 1865 KUHPerdata",
+   "uraian": "siapa yang mendalilkan suatu peristiwa wajib membuktikannya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 283 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (memuat padanan KUHperd. 1865 dan IR. 163); Pasal 1865 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: pertimbangan hukum blangko putusan Derry 4c Wasiat [01] dan 5a Pembatalan [01]"
+  },
+  {
+   "id": "dh-poligami-izin",
+   "rujukan": "Pasal 3 ayat (2), Pasal 4 dan Pasal 5 UU 1/1974 jo. Pasal 55 ayat (1) Kompilasi Hukum Islam",
+   "uraian": "suami hanya dapat diberi izin Pengadilan untuk beristri lebih dari seorang bila ada alasan dan terpenuhi syarat Pasal 4 dan 5, terbatas sampai empat orang istri",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 5 Izin Poligami [01] Kabul"
+  },
+  {
+   "id": "dh-poligami-alasan",
+   "rujukan": "Pasal 4 ayat (2) huruf a, b dan c UU 1/1974 jo. Pasal 57 huruf a, b dan c Kompilasi Hukum Islam",
+   "uraian": "alasan alternatif: istri tidak dapat menjalankan kewajibannya sebagai istri; istri mendapat cacat badan atau penyakit yang tidak dapat disembuhkan; istri tidak dapat melahirkan keturunan",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 8721 dan pertimbangan blangko putusan Derry 5 Izin Poligami [01]"
+  },
+  {
+   "id": "dh-poligami-persetujuan",
+   "rujukan": "Pasal 5 ayat (1) huruf a UU 1/1974 jo. Pasal 58 ayat (1) huruf a Kompilasi Hukum Islam",
+   "uraian": "syarat adanya persetujuan istri",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 5 Izin Poligami [01]"
+  },
+  {
+   "id": "dh-poligami-persetujuan-cara",
+   "rujukan": "Pasal 5 ayat (2) UU 1/1974, Pasal 41 huruf b PP 9/1975 dan Pasal 58 ayat (2) Kompilasi Hukum Islam",
+   "uraian": "persetujuan istri dapat lisan atau tertulis dan bila lisan diucapkan di depan sidang; sekalipun sudah ada persetujuan tertulis, menurut Pasal 58 ayat (2) KHI persetujuan itu dipertegas dengan persetujuan lisan istri pada sidang Pengadilan Agama; persetujuan tidak diperlukan bila istri tidak mungkin dimintai persetujuan, tidak ada kabar sekurang-kurangnya dua tahun, atau sebab lain yang perlu penilaian Hakim",
+   "status": "terverifikasi",
+   "sumber": "Pasal 5 ayat (2) UU 1/1974 cocok dengan naskah UU 1/1974 di peraturan.bpk.go.id/Download/36382; Pasal 41 huruf b PP 9/1975 cocok dengan naskah PP 9/1975 di peraturan.bpk.go.id/Download/58020; Pasal 58 ayat (2) KHI cocok dengan naskah KHI lampiran Inpres 1/1991 terbitan Direktorat Pembinaan Badan Peradilan Agama Islam Departemen Agama (buku digital simbi.kemenag.go.id), dicocokkan dengan digitalisasi pasal.id; diperiksa 18 Okt 2026; uraian dilengkapi dengan penegasan lisan menurut Pasal 58 ayat (2) KHI; rincian di VERIFIKASI-HUKUM.md"
+  },
+  {
+   "id": "dh-poligami-kemampuan",
+   "rujukan": "Pasal 5 ayat (1) huruf b UU 1/1974 jo. Pasal 58 ayat (1) huruf b Kompilasi Hukum Islam",
+   "uraian": "syarat adanya kepastian suami mampu menjamin keperluan hidup istri-istri dan anak-anak",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 5 Izin Poligami [01]"
+  },
+  {
+   "id": "dh-poligami-adil",
+   "rujukan": "Pasal 5 ayat (1) huruf c UU 1/1974 jo. Pasal 55 ayat (2) Kompilasi Hukum Islam",
+   "uraian": "syarat adanya jaminan suami berlaku adil terhadap istri-istri dan anak-anak mereka",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 5 Izin Poligami [01]"
+  },
+  {
+   "id": "dh-poligami-pp41",
+   "rujukan": "Pasal 41 PP 9/1975",
+   "uraian": "Pengadilan memeriksa ada tidaknya alasan, persetujuan istri, kemampuan suami (surat keterangan penghasilan) dan jaminan berlaku adil",
+   "status": "terverifikasi",
+   "sumber": "Pasal 41 huruf a sampai d dan Pasal 42 ayat (1) PP 9/1975 cocok dengan naskah PP 9/1975 di peraturan.bpk.go.id/Download/58020; rincian di VERIFIKASI-HUKUM.md"
+  },
+  {
+   "id": "dh-poligami-atasan",
+   "rujukan": "Pasal 4 ayat (1) PP 10/1983 jo. Pasal 4 ayat (1) PP 45/1990",
+   "uraian": "pegawai negeri sipil yang akan beristri lebih dari seorang wajib lebih dahulu mendapat izin pejabat atasannya",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 8727 (pertimbangan izin atasan PNS)"
+  },
+  {
+   "id": "dh-poligami-harta",
+   "rujukan": "Buku II Revisi 2013 dan Buku II Tahun 2026 aspek 33 (ringkasan PTA Pontianak)",
+   "uraian": "penetapan harta bersama dikumulasikan dengan izin poligami; pengecualian harta untuk istri berikutnya terbatas sepertiga dari harta pribadi suami menurut edisi 2026",
+   "status": "perlu-verifikasi",
+   "sumber": "memori rujukan Buku II 2026: ringkasan sekunder, naskah resmi belum dibaca; amar blangko Derry 5 Izin Poligami menetapkan harta bersama"
+  }
+ ],
+ "keadaan": {
+  "kehadiran": {
+   "sumber": "otomatis",
+   "nilai": [
+    "verstek",
+    "kontradiktoir",
+    "t-tidak-hadir-setelah-mediasi"
+   ],
+   "bawaan": "kontradiktoir",
+   "label": "Kehadiran Termohon (istri)"
+  },
+  "alasanPoligami": {
+   "sumber": "borang",
+   "nilai": [
+    "a",
+    "b",
+    "c"
+   ],
+   "bawaan": [
+    "a"
+   ],
+   "label": "Alasan poligami (huruf a, b atau c)",
+   "jamak": true
+  },
+  "sikapIstri": {
+   "sumber": "borang",
+   "nilai": [
+    "setuju",
+    "keberatan",
+    "tidak-mungkin"
+   ],
+   "bawaan": "setuju",
+   "label": "Sikap istri atas rencana poligami"
+  },
+  "pekerjaanSuami": {
+   "sumber": "borang",
+   "nilai": [
+    "asn-tni-polri",
+    "lainnya"
+   ],
+   "bawaan": "lainnya",
+   "label": "Pekerjaan suami"
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-hubungan-saksi",
+   "judul": "Hubungan saksi dengan para pihak dan calon istri",
+   "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal para pihak dan calon istri kedua",
+   "dasarHukum": [
+    "dh-sebab-pengetahuan",
+    "dh-saksi-syarat"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-perkawinan-sah",
+   "judul": "Perkawinan suami istri",
+   "uraian": "suami dan istri terikat perkawinan yang sah dan keadaan anak mereka",
+   "dasarHukum": [
+    "dh-poligami-izin"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-alasan",
+   "judul": "Alasan beristri lebih dari seorang",
+   "uraian": "salah satu alasan Pasal 4 ayat (2) UU 1/1974 dan keadaannya",
+   "dasarHukum": [
+    "dh-poligami-alasan",
+    "dh-poligami-izin"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-persetujuan-istri",
+   "judul": "Persetujuan istri",
+   "uraian": "istri menyetujui rencana suami beristri lagi; bila tidak hadir, ada tidaknya pemberitahuan dan sikapnya",
+   "dasarHukum": [
+    "dh-poligami-persetujuan",
+    "dh-poligami-persetujuan-cara",
+    "dh-poligami-pp41"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-kemampuan-nafkah",
+   "judul": "Kemampuan suami menjamin keperluan hidup",
+   "uraian": "pekerjaan dan penghasilan suami serta kecukupannya bagi dua istri dan anak-anak",
+   "dasarHukum": [
+    "dh-poligami-kemampuan",
+    "dh-poligami-pp41"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-keadilan",
+   "judul": "Sikap suami dan kesanggupan berlaku adil",
+   "uraian": "perlakuan suami kepada istri dan anak-anak selama ini dan kesanggupannya berlaku adil",
+   "dasarHukum": [
+    "dh-poligami-adil",
+    "dh-poligami-pp41"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-calon-istri",
+   "judul": "Calon istri kedua",
+   "uraian": "identitas dan status calon istri kedua, tidak ada halangan perkawinan, dan kesediaannya",
+   "dasarHukum": [
+    "dh-poligami-izin"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-izin-atasan",
+   "judul": "Izin atasan bagi pegawai negeri",
+   "uraian": "izin atasan untuk beristri lebih dari seorang",
+   "dasarHukum": [
+    "dh-poligami-atasan"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-harta-bersama",
+   "judul": "Harta bersama suami istri",
+   "uraian": "harta bersama yang perlu ditetapkan bersama izin poligami",
+   "dasarHukum": [
+    "dh-poligami-harta"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-penutup",
+   "judul": "Penutup keterangan",
+   "uraian": "saksi menyatakan keterangannya telah cukup",
+   "dasarHukum": [],
+   "wajib": false
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-kenal",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 10,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi kenal dengan #0046# dan #0047# ?",
+   "teksVarian": [
+    "Apakah saksi mengenal #0046# dan #0047# ?",
+    "Apakah Saudara saksi kenal dengan #0046# serta #0047# ?"
+   ],
+   "hal": "hubungan saksi dengan para pihak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal kedua pihak dan menyebut hubungannya dengan pihak",
+     "saksi1": [
+      "saya kenal dengan #0046# dan #0047# karena saya adalah {hubungan}",
+      "saya mengenal #0046# maupun #0047# sebab saya adalah {hubungan}",
+      "#0046# dan #0047# saya kenal baik karena kedudukan saya sebagai {hubungan}",
+      "saya sudah lama mengenal #0046# dan #0047# karena saya adalah {hubungan}"
+     ],
+     "saksi2": [
+      "kedua pihak yaitu #0046# dan #0047# saya kenal karena saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya kenal dengan #0046# serta #0047#",
+      "saya tahu dan kenal #0046# juga #0047# karena saya adalah {hubungan}",
+      "perkenalan saya dengan #0046# dan #0047# terjadi karena saya adalah {hubungan}"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-kenal-calon",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 20,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi kenal dengan calon istri kedua #0046# yang bernama #8723# ?",
+   "hal": "perkenalan saksi dengan calon istri kedua",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal calon istri kedua pengaju",
+     "saksi1": [
+      "saya kenal dengan #8723# yang merupakan calon istri kedua #0046#",
+      "calon istri kedua #0046# yaitu #8723# saya kenal dengan baik",
+      "saya mengenal #8723# yang akan dinikahi #0046# sebagai istri kedua",
+      "#8723# calon istri kedua #0046# adalah orang yang saya kenal"
+     ],
+     "saksi2": [
+      "saya tahu dan kenal #8723# yang hendak menjadi istri kedua #0046#",
+      "perempuan yang akan menjadi istri kedua #0046# yaitu #8723# sudah saya kenal",
+      "calon istri kedua #0046# bernama #8723# sudah saya kenal dengan baik",
+      "saya sudah mengenal #8723# yang direncanakan menjadi istri kedua #0046#"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "8723"
+   ]
+  },
+  {
+   "id": "q-suami-istri",
+   "pokok": "pp-perkawinan-sah",
+   "urutan": 30,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah #0046# dan #0047# suami istri yang sah dan apakah mereka sudah dikaruniai anak ?",
+   "hal": "status perkawinan dan keturunan mereka",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "anak": "ada"
+      },
+      "maksud": "mereka suami istri yang sah dan sudah mempunyai anak",
+      "saksi1": [
+       "#0046# dan #0047# adalah suami istri yang sah dan sudah dikaruniai anak",
+       "saya mengetahui sendiri bahwa #0046# dan #0047# menikah secara sah dan telah memiliki anak",
+       "keduanya terikat perkawinan yang sah dan dari perkawinan itu telah lahir anak yang saya kenal",
+       "antara #0046# dan #0047# ada perkawinan yang sah dan mereka sudah dikaruniai anak"
+      ],
+      "saksi2": [
+       "sepengetahuan saya #0046# dan #0047# adalah pasangan suami istri sah yang sudah mempunyai anak",
+       "perkawinan #0046# dengan #0047# sah menurut hukum dan keduanya telah dikaruniai anak",
+       "saya tahu sendiri #0046# dan #0047# suami istri yang sah serta sudah punya anak",
+       "#0046# dan #0047# menikah secara sah dan dari pernikahan itu mereka sudah memperoleh anak"
+      ]
+     },
+     {
+      "keadaan": {
+       "anak": "tidak"
+      },
+      "maksud": "mereka suami istri yang sah dan belum mempunyai anak",
+      "saksi1": [
+       "#0046# dan #0047# adalah suami istri yang sah dan belum dikaruniai anak",
+       "saya mengetahui sendiri bahwa #0046# dan #0047# menikah secara sah dan belum memiliki anak",
+       "keduanya terikat perkawinan yang sah dan dari perkawinan itu belum lahir anak",
+       "antara #0046# dan #0047# ada perkawinan yang sah dan mereka belum dikaruniai keturunan"
+      ],
+      "saksi2": [
+       "sepengetahuan saya #0046# dan #0047# adalah pasangan suami istri sah yang belum mempunyai anak",
+       "perkawinan #0046# dengan #0047# sah menurut hukum dan keduanya belum dikaruniai anak",
+       "saya tahu sendiri #0046# dan #0047# suami istri yang sah tetapi belum punya anak",
+       "#0046# dan #0047# menikah secara sah dan dari pernikahan itu mereka belum memperoleh anak"
+      ]
+     },
+     {
+      "maksud": "mereka suami istri yang sah",
+      "saksi1": [
+       "#0046# dan #0047# adalah suami istri yang sah dan hal itu saya ketahui sendiri",
+       "saya mengetahui sendiri bahwa #0046# dan #0047# terikat perkawinan yang sah",
+       "antara #0046# dan #0047# ada perkawinan yang sah sebagaimana saya saksikan",
+       "keduanya menikah secara sah dan saya mengenal mereka sebagai suami istri #0046# dan #0047#"
+      ],
+      "saksi2": [
+       "sepengetahuan saya #0046# dan #0047# adalah pasangan suami istri sah",
+       "perkawinan #0046# dengan #0047# sah menurut hukum yang saya ketahui langsung",
+       "saya tahu sendiri #0046# dan #0047# suami istri yang sah",
+       "#0046# dan #0047# menikah secara sah dan saya menyaksikan kehidupan mereka sebagai suami istri"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: mereka mempunyai beberapa orang anak; versi B: mereka baru mempunyai seorang anak - berselisih pada JUMLAH anak",
+     "saksi1": [
+      "dari perkawinan #0046# dan #0047# sudah lahir beberapa orang anak yang saya lihat sendiri",
+      "saya melihat sendiri #0046# dan #0047# memiliki beberapa orang anak",
+      "anak #0046# dan #0047# lebih dari satu orang dan saya mengenal mereka",
+      "beberapa orang anak telah dikaruniakan kepada #0046# dan #0047# sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "dari perkawinan #0046# dan #0047# baru lahir seorang anak yang saya lihat sendiri",
+      "saya melihat sendiri #0046# dan #0047# baru memiliki seorang anak",
+      "anak #0046# dan #0047# satu orang saja dan saya mengenalnya",
+      "seorang anak yang telah dikaruniakan kepada #0046# dan #0047# sebagaimana saya saksikan"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-rumah-tangga",
+   "pokok": "pp-keadilan",
+   "urutan": 40,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana keadaan rumah tangga #0046# dan #0047# selama ini ?",
+   "hal": "keadaan rumah tangga mereka selama ini",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "rumah tangga mereka berjalan baik dan rukun",
+     "saksi1": [
+      "rumah tangga #0046# dan #0047# selama ini berjalan baik dan rukun",
+      "saya melihat sendiri #0046# dan #0047# hidup rukun dan harmonis selama ini",
+      "keadaan rumah tangga mereka #0046# dan #0047# baik dan rukun sepanjang yang saya ketahui",
+      "selama ini #0046# dan #0047# membina rumah tangga dengan rukun dan damai"
+     ],
+     "saksi2": [
+      "hubungan suami istri #0046# dan #0047# sampai sekarang terjaga baik dan rukun",
+      "#0046# dan #0047# saya lihat hidup bersama dengan tenang dan rukun",
+      "kehidupan rumah tangga #0046# bersama #0047# harmonis dan saling menghormati",
+      "dalam penglihatan saya rumah tangga #0046# dan #0047# damai dan baik-baik saja"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: rumah tangga rukun; versi B: sering terjadi pertengkaran - berselisih pada PERISTIWA (keadaan rumah tangga)",
+     "saksi1": [
+      "rumah tangga #0046# dan #0047# yang saya lihat sendiri berjalan rukun",
+      "saya melihat sendiri #0046# dan #0047# hidup rukun selama ini",
+      "keadaan rumah tangga #0046# dan #0047# rukun sebagaimana saya saksikan",
+      "selama ini #0046# dan #0047# saya lihat membina rumah tangga dengan rukun"
+     ],
+     "saksi2": [
+      "rumah tangga #0046# dan #0047# yang saya lihat sendiri sering terjadi pertengkaran",
+      "saya melihat sendiri #0046# dan #0047# kerap bertengkar selama ini",
+      "keadaan rumah tangga #0046# dan #0047# kerap diwarnai pertengkaran sebagaimana saya saksikan",
+      "selama ini #0046# dan #0047# saya lihat sering berselisih dalam rumah tangga"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-maksud",
+   "pokok": "pp-alasan",
+   "urutan": 50,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi mengetahui maksud #0046# datang ke pengadilan ?",
+   "hal": "maksud pengaju datang ke pengadilan",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui pengaju memohon izin menikah lagi dengan calon istri kedua",
+     "saksi1": [
+      "#0046# datang ke pengadilan untuk memohon izin berpoligami dengan seorang perempuan bernama #8723#",
+      "saya mengetahui sendiri bahwa maksud #0046# ke pengadilan adalah meminta izin menikah lagi dengan #8723#",
+      "tujuan #0046# mengajukan perkara ini ialah mendapat izin beristri lagi dengan #8723#",
+      "#0046# mengurus izin poligami ke pengadilan karena hendak menikah dengan perempuan bernama #8723#"
+     ],
+     "saksi2": [
+      "maksud #0046# datang ke pengadilan ialah memohon izin untuk menikah lagi dengan #8723# dan saya mengetahuinya",
+      "saya tahu #0046# mengajukan permohonan izin poligami agar dapat menikahi #8723#",
+      "kedatangan #0046# ke pengadilan adalah untuk meminta izin beristri kedua dengan #8723#",
+      "yang dikehendaki #0046# di pengadilan adalah izin menikah lagi dengan seorang perempuan bernama #8723#"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "8723"
+   ]
+  },
+  {
+   "id": "q-alasan",
+   "pokok": "pp-alasan",
+   "urutan": 60,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa alasan #0046# ingin menikah lagi dan bagaimana saksi mengetahuinya ?",
+   "hal": "alasan pengaju ingin menikah lagi",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "alasanPoligami": "a"
+      },
+      "maksud": "alasan a: istri tidak dapat menjalankan kewajibannya sebagai istri",
+      "saksi1": [
+       "alasan #0046# ingin menikah lagi karena #0047# tidak dapat menjalankan kewajibannya sebagai istri dan itu saya lihat sendiri",
+       "saya menyaksikan sendiri #0047# tidak mampu melayani kebutuhan #0046# sebagai seorang istri sehingga #0046# ingin beristri lagi",
+       "kewajiban sebagai istri tidak dapat dijalankan oleh #0047# lagi dan itulah sebab #0046# ingin menikah lagi",
+       "#0046# ingin beristri lagi sebab #0047# tidak sanggup menunaikan kewajibannya sebagai istri sebagaimana saya ketahui sendiri"
+      ],
+      "saksi2": [
+       "#0047# tidak lagi dapat menjalankan tugasnya sebagai istri dan karena itu #0046# berkehendak menikah lagi yang saya ketahui langsung",
+       "alasan #0046# berpoligami adalah #0047# tidak mampu menjalankan kewajiban sebagai istri dan saya menyaksikannya",
+       "saya sendiri melihat #0047# tidak bisa memenuhi kewajiban sebagai istri sehingga #0046# hendak beristri lagi",
+       "karena #0047# tidak dapat melaksanakan kewajibannya sebagai istri maka #0046# memohon izin menikah lagi dan saya mengetahuinya sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "alasanPoligami": "b"
+      },
+      "maksud": "alasan b: istri mendapat cacat badan atau penyakit yang tidak dapat disembuhkan",
+      "saksi1": [
+       "alasan #0046# ingin menikah lagi karena #0047# menderita cacat badan atau penyakit yang tidak dapat disembuhkan dan itu saya lihat sendiri",
+       "saya menyaksikan sendiri #0047# mengidap penyakit yang tidak bisa disembuhkan sehingga #0046# ingin beristri lagi",
+       "#0047# sakit menahun yang tidak dapat disembuhkan dan itulah sebab #0046# ingin menikah lagi",
+       "#0046# ingin beristri lagi sebab #0047# cacat badan dan penyakitnya tidak dapat sembuh sebagaimana saya ketahui sendiri"
+      ],
+      "saksi2": [
+       "#0047# menderita penyakit yang tidak lagi dapat disembuhkan dan karena itu #0046# berkehendak menikah lagi yang saya ketahui langsung",
+       "alasan #0046# berpoligami adalah #0047# mengalami cacat badan dan sakit yang tidak akan sembuh dan saya menyaksikannya",
+       "saya sendiri melihat #0047# sakit parah yang tidak bisa disembuhkan sehingga #0046# hendak beristri lagi",
+       "karena #0047# menderita penyakit yang tidak dapat diobati lagi maka #0046# memohon izin menikah lagi dan saya mengetahuinya sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "alasanPoligami": "c"
+      },
+      "maksud": "alasan c: istri tidak dapat melahirkan keturunan",
+      "saksi1": [
+       "alasan #0046# ingin menikah lagi karena #0047# tidak dapat melahirkan keturunan dan itu saya ketahui sendiri",
+       "saya mengetahui sendiri #0047# tidak bisa memberikan anak sehingga #0046# ingin beristri lagi",
+       "#0047# tidak dapat melahirkan keturunan dan itulah sebab #0046# ingin menikah lagi",
+       "#0046# ingin beristri lagi sebab #0047# tidak mampu memberikan keturunan sebagaimana saya saksikan sendiri"
+      ],
+      "saksi2": [
+       "#0047# tidak bisa mempunyai anak dan karena itu #0046# berkehendak menikah lagi yang saya ketahui langsung",
+       "alasan #0046# berpoligami adalah #0047# tidak dapat hamil dan melahirkan dan saya menyaksikannya",
+       "saya sendiri melihat #0047# tidak kunjung memiliki keturunan sehingga #0046# hendak beristri lagi",
+       "karena #0047# tidak dapat memberikan keturunan maka #0046# memohon izin menikah lagi dan saya mengetahuinya sendiri"
+      ]
+     },
+     {
+      "maksud": "alasan poligami sebagaimana diisi pada perkara",
+      "saksi1": [
+       "#0046# ingin menikah lagi #1152# dan itu saya ketahui sendiri",
+       "saya mengetahui sendiri bahwa #0046# hendak beristri lagi #1152#",
+       "sepengetahuan saya #0046# berkehendak berpoligami #1152# dan saya menyaksikannya",
+       "#0046# berniat menambah istri #1152# sebagaimana saya lihat sendiri"
+      ],
+      "saksi2": [
+       "saya tahu langsung bahwa #0046# ingin menikah lagi #1152#",
+       "#0046# mengajukan izin poligami #1152# dan hal itu saya ketahui",
+       "kehendak #0046# untuk beristri lagi #1152# yang saya saksikan sendiri",
+       "dalam penglihatan saya sendiri #0046# hendak menikah lagi #1152#"
+      ]
+     }
+    ],
+    "mendengar": {
+     "maksud": "saksi mendengar sendiri pengaju menyampaikan alasannya",
+     "saksi1": [
+      "saya mendengar sendiri #0046# menyampaikan alasannya ingin menikah lagi di hadapan saya",
+      "alasan #0046# ingin beristri lagi saya dengar langsung dari ucapannya sendiri",
+      "#0046# mengucapkan sendiri alasan poligaminya dan saya mendengarnya",
+      "secara langsung saya mendengar #0046# mengutarakan sebab ia ingin menikah lagi"
+     ],
+     "saksi2": [
+      "saya ikut mendengar #0046# berkata bahwa ia hendak menikah lagi dengan alasan tertentu",
+      "dari mulut #0046# sendiri saya mendengar alasan ia ingin beristri lagi",
+      "perkataan #0046# tentang sebab ia hendak berpoligami terdengar langsung oleh saya",
+      "ketika #0046# menerangkan alasan poligaminya saya mendengarnya sendiri"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi mengetahui alasan dari cerita orang lain",
+     "saksi1": [
+      "alasan #0046# ingin menikah lagi saya ketahui dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+      "{sumber} menceritakan kepada saya sebab #0046# hendak beristri lagi dan saya sendiri tidak melihatnya",
+      "perihal alasan poligami #0046# saya diberi tahu oleh {sumber} dan saya tidak mengalaminya langsung",
+      "sebab #0046# ingin menikah lagi hanya saya dengar dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+     ],
+     "saksi2": [
+      "kabar mengenai alasan #0046# berpoligami saya terima dari {sumber} dan saya tidak berada di sana",
+      "saya mendengar dari {sumber} bahwa #0046# ingin menikah lagi dan saya tidak mengalaminya sendiri",
+      "{sumber} bercerita kepada saya tentang sebab #0046# hendak beristri lagi dan saya tidak menyaksikannya",
+      "soal alasan #0046# menikah lagi saya dikabari oleh {sumber} dan bukan dari yang saya lihat"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian alasan",
+     "saksi1": [
+      "saya hanya mengetahui sebagian alasan #0046# ingin menikah lagi dan selebihnya saya tidak tahu",
+      "alasan #0046# berpoligami baru sebagian saya ketahui dan sisanya tidak saya ketahui",
+      "sebagian sebab #0046# hendak beristri lagi saya lihat sendiri dan selebihnya tidak saya saksikan",
+      "alasan #0046# hanya sebagian yang saya ketahui dan sisanya tidak"
+     ],
+     "saksi2": [
+      "pengetahuan saya tentang alasan #0046# berpoligami terbatas pada sebagian dan selebihnya saya tidak dapat menerangkan",
+      "saya hanya tahu sebagian dari alasan #0046# menikah lagi sementara bagian lainnya tidak saya ketahui",
+      "mengenai sebab #0046# beristri lagi sebatas yang saya saksikan saja dan selebihnya saya tidak tahu",
+      "sebagian alasan #0046# berpoligami pernah saya dengar sendiri tetapi selebihnya tidak saya ketahui"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: alasan karena istri tidak dapat melahirkan keturunan; versi B: alasan karena istri menderita sakit yang tidak kunjung sembuh - berselisih pada PENYEBAB",
+     "saksi1": [
+      "setahu saya #0046# ingin menikah lagi karena #0047# tidak dapat melahirkan keturunan",
+      "saya melihat sendiri #0046# hendak beristri lagi sebab #0047# tidak bisa memberikan anak",
+      "alasan #0046# berpoligami menurut penglihatan saya karena #0047# tidak mampu melahirkan keturunan",
+      "penyebab #0046# ingin menikah lagi yang saya ketahui sendiri adalah #0047# tidak dapat punya anak"
+     ],
+     "saksi2": [
+      "setahu saya #0046# ingin menikah lagi karena #0047# menderita sakit yang tidak kunjung sembuh",
+      "saya melihat sendiri #0046# hendak beristri lagi sebab #0047# sakit dan tidak sembuh-sembuh",
+      "alasan #0046# berpoligami menurut penglihatan saya karena #0047# sakit berkepanjangan yang tidak ada kemajuan",
+      "penyebab #0046# ingin menikah lagi yang saya ketahui sendiri adalah #0047# jatuh sakit dan tidak pulih"
+     ],
+     "bedaPada": "penyebab"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "1152"
+   ]
+  },
+  {
+   "id": "q-keadaan-alasan",
+   "pokok": "pp-alasan",
+   "urutan": 70,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Sejak kapan keadaan itu terjadi dan upaya apa yang sudah dilakukan keluarga ?",
+   "hal": "sejak kapan alasan itu terjadi dan upaya yang telah dilakukan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "keadaan sudah berlangsung sejak waktu tertentu dan upaya keluarga tidak membawa perubahan",
+     "saksi1": [
+      "keadaan itu sudah berlangsung sejak ... dan keluarga sudah berusaha mencari jalan keluar namun tidak ada perubahan",
+      "sejak ... keadaan #0047# demikian dan upaya keluarga untuk memperbaikinya tidak membuahkan hasil",
+      "hal itu terjadi sejak ... dan segala usaha untuk mengatasinya tidak berhasil",
+      "dimulai sejak ... keadaan itu berlangsung dan berbagai upaya keluarga tidak mengubahnya"
+     ],
+     "saksi2": [
+      "sudah sejak ... keadaan tersebut berlangsung dan keluarga telah berupaya tetapi tidak ada hasilnya",
+      "sejak ... #0047# berada dalam keadaan itu dan usaha untuk memperbaikinya tidak berhasil",
+      "keadaan demikian dimulai sejak ... dan segala daya upaya yang ditempuh keluarga tidak membawa perubahan",
+      "semenjak ... hal itu terjadi dan ikhtiar keluarga untuk mengatasinya tidak membuahkan hasil"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: keadaan itu sudah berlangsung lama; versi B: keadaan itu baru terjadi belum lama - berselisih pada LAMA",
+     "saksi1": [
+      "keadaan itu sudah berlangsung lama sekali dan saya melihatnya sendiri",
+      "sudah lama keadaan #0047# demikian sebagaimana saya saksikan sendiri",
+      "saya melihat sendiri keadaan itu berlangsung bertahun-tahun",
+      "keadaan itu berjalan sejak lama dan saya menyaksikannya langsung"
+     ],
+     "saksi2": [
+      "keadaan itu baru terjadi belum lama dan saya melihatnya sendiri",
+      "belum lama keadaan #0047# demikian sebagaimana saya saksikan sendiri",
+      "saya melihat sendiri keadaan itu berlangsung belum lama",
+      "keadaan itu timbul belum lama ini dan saya menyaksikannya langsung"
+     ],
+     "bedaPada": "lama"
+    }
+   },
+   "variabelAbt": [
+    "0047"
+   ]
+  },
+  {
+   "id": "q-persetujuan",
+   "pokok": "pp-persetujuan-istri",
+   "urutan": 80,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana sikap #0047# atas keinginan #0046# untuk menikah lagi, apakah ia menyetujui secara lisan atau tertulis ?",
+   "hal": "sikap istri atas keinginan suami menikah lagi",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "sikapIstri": "setuju"
+      },
+      "maksud": "istri menyetujui suaminya menikah lagi",
+      "saksi1": [
+       "#0047# menyetujui #0046# untuk menikah lagi dan menyatakannya secara lisan maupun tertulis yang saya ketahui sendiri",
+       "saya mengetahui sendiri bahwa #0047# rela dan setuju #0046# beristri lagi dan telah membuat pernyataan persetujuan",
+       "persetujuan #0047# atas rencana #0046# menikah lagi saya dengar dan saya lihat sendiri baik lisan maupun tertulis",
+       "#0047# merestui #0046# berpoligami dan menyatakan persetujuannya sebagaimana saya saksikan sendiri"
+      ],
+      "saksi2": [
+       "sepengetahuan saya #0047# ikhlas dan setuju suaminya menikah lagi serta telah menyampaikan persetujuan itu",
+       "#0047# telah menyatakan persetujuannya agar #0046# menikah lagi baik secara lisan maupun tertulis dan saya menyaksikannya",
+       "saya hadir ketika #0047# menyetujui rencana #0046# beristri lagi",
+       "kesediaan #0047# untuk dimadu telah ia sampaikan sendiri dan saya mengetahuinya"
+      ]
+     },
+     {
+      "keadaan": {
+       "sikapIstri": "keberatan"
+      },
+      "maksud": "istri keberatan dan tidak menyetujui suaminya menikah lagi",
+      "saksi1": [
+       "#0047# tidak menyetujui #0046# menikah lagi dan menyatakan keberatannya yang saya ketahui sendiri",
+       "saya mengetahui sendiri bahwa #0047# tidak rela #0046# beristri lagi",
+       "keberatan #0047# atas rencana #0046# menikah lagi saya dengar langsung dan ia tidak pernah memberikan persetujuan",
+       "#0047# tidak merestui #0046# berpoligami sebagaimana saya saksikan sendiri"
+      ],
+      "saksi2": [
+       "sepengetahuan saya #0047# tidak setuju suaminya menikah lagi dan sudah menyampaikan keberatan itu",
+       "#0047# telah menyatakan tidak bersedia dimadu oleh #0046# dan saya menyaksikannya",
+       "saya hadir ketika #0047# tidak menyetujui rencana #0046# beristri lagi",
+       "#0047# tidak mau dimadu dan hal itu ia sampaikan sendiri yang saya ketahui"
+      ]
+     },
+     {
+      "keadaan": {
+       "sikapIstri": "tidak-mungkin"
+      },
+      "maksud": "istri tidak mungkin dimintai persetujuan karena keadaan tertentu",
+      "saksi1": [
+       "#0047# tidak dapat dimintai persetujuan karena ... sebagaimana saya ketahui sendiri",
+       "saya mengetahui sendiri bahwa #0047# tidak dapat dimintai persetujuannya sebab ... yang saya lihat langsung",
+       "persetujuan #0047# tidak dapat diperoleh karena keadaan ... dan itu saya lihat sendiri",
+       "keadaan ... membuat #0047# tidak dapat dimintai persetujuan atas rencana #0046# menikah lagi"
+      ],
+      "saksi2": [
+       "sepengetahuan saya #0047# tidak bisa dimintai persetujuan oleh #0046# dikarenakan ... yang saya ketahui",
+       "#0047# tidak bisa menyatakan persetujuan karena ... dan saya menyaksikan keadaannya",
+       "saya melihat sendiri bahwa karena ... #0047# tidak dapat dimintai pendapat soal rencana #0046# menikah lagi",
+       "sebab ... #0047# tidak berada dalam keadaan yang memungkinkan dimintai persetujuan oleh #0046#"
+      ]
+     }
+    ],
+    "mendengar": {
+     "maksud": "saksi mendengar sendiri istri menyatakan sikapnya",
+     "saksi1": [
+      "saya mendengar sendiri #0047# menyatakan sikapnya atas rencana #0046# menikah lagi",
+      "dengan telinga saya sendiri saya mendengar #0047# berbicara tentang rencana #0046# beristri lagi",
+      "ucapan #0047# mengenai rencana #0046# berpoligami terdengar langsung oleh saya",
+      "saya ikut mendengar #0047# mengutarakan pendapatnya tentang rencana #0046# menikah lagi"
+     ],
+     "saksi2": [
+      "saya turut mendengar langsung #0047# menjawab soal rencana #0046# menikah lagi",
+      "pendapat #0047# tentang poligami #0046# keluar dari mulutnya sendiri dan saya mendengarnya",
+      "perkataan #0047# mengenai rencana #0046# beristri lagi saya dengar sendiri",
+      "ketika #0047# menyampaikan sikapnya atas rencana #0046# menikah lagi saya mendengarnya secara langsung"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi mengetahui sikap istri dari cerita orang lain",
+     "saksi1": [
+      "sikap #0047# atas rencana #0046# menikah lagi saya ketahui dari cerita {sumber} dan saya tidak mendengarnya sendiri",
+      "{sumber} menceritakan kepada saya pendirian #0047# tentang rencana #0046# beristri lagi dan saya sendiri tidak hadir",
+      "perihal persetujuan #0047# saya diberi tahu oleh {sumber} dan saya tidak menyaksikannya langsung",
+      "sikap #0047# terhadap poligami #0046# hanya saya ketahui dari penuturan {sumber} dan tidak saya dengar sendiri"
+     ],
+     "saksi2": [
+      "kabar tentang sikap #0047# atas rencana #0046# menikah lagi saya terima dari {sumber} dan saya tidak berada di sana",
+      "saya mendengar dari {sumber} bahwa #0047# sudah menyatakan sikapnya terhadap rencana #0046# dan saya tidak mengalaminya sendiri",
+      "{sumber} bercerita kepada saya tentang pendirian #0047# dan saya tidak menyaksikannya",
+      "soal sikap #0047# terhadap rencana #0046# beristri lagi saya dikabari oleh {sumber} dan bukan dari yang saya lihat"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian sikap istri",
+     "saksi1": [
+      "saya hanya mengetahui sebagian sikap #0047# atas rencana #0046# menikah lagi dan selebihnya saya tidak tahu",
+      "tentang sikap #0047# terhadap poligami #0046# baru sebagian saya ketahui dan sisanya tidak saya ketahui",
+      "sebagian pernyataan #0047# mengenai rencana #0046# saya dengar sendiri dan selebihnya tidak saya ketahui",
+      "sikap #0047# hanya sebagian yang saya ketahui dan sisanya tidak"
+     ],
+     "saksi2": [
+      "pengetahuan saya tentang pendirian #0047# atas rencana #0046# terbatas pada sebagian dan selebihnya saya tidak dapat menerangkan",
+      "saya hanya tahu sebagian dari sikap #0047# terhadap rencana #0046# beristri lagi sementara bagian lainnya tidak saya ketahui",
+      "mengenai persetujuan #0047# sebatas yang saya saksikan saja dan selebihnya saya tidak tahu",
+      "sebagian ucapan #0047# soal rencana #0046# pernah saya dengar sendiri tetapi selebihnya tidak saya ketahui"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: istri menyatakan setuju; versi B: istri menyatakan tidak setuju - berselisih pada PERISTIWA (sikap istri)",
+     "saksi1": [
+      "saya melihat sendiri #0047# menyatakan setuju #0046# menikah lagi",
+      "saya menyaksikan sendiri #0047# merestui rencana #0046# beristri lagi",
+      "#0047# menyetujui rencana #0046# berpoligami dan itu saya lihat langsung",
+      "sikap #0047# adalah setuju dengan rencana #0046# menikah lagi sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0047# menyatakan tidak setuju #0046# menikah lagi",
+      "saya menyaksikan sendiri #0047# tidak merestui rencana #0046# beristri lagi",
+      "#0047# menolak rencana #0046# berpoligami dengan kata tidak dan itu saya lihat langsung",
+      "sikap #0047# adalah tidak setuju dengan rencana #0046# menikah lagi sebagaimana saya saksikan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-pemberitahuan-istri",
+   "pokok": "pp-persetujuan-istri",
+   "urutan": 90,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "P"
+   ],
+   "keadaan": {
+    "kehadiran": [
+     "verstek",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   },
+   "teks": "Apakah #0047# sudah mengetahui rencana #0046# menikah lagi dan apakah #0046# sendiri yang memberitahukannya ?",
+   "hal": "apakah pihak istri sudah mengetahui rencana suami menikah lagi",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "istri sudah mengetahui rencana karena suami sendiri yang memberitahukannya",
+     "saksi1": [
+      "#0047# sudah mengetahui rencana #0046# menikah lagi karena #0046# menyampaikannya sendiri kepadanya dan saya mengetahuinya",
+      "saya tahu #0046# telah memberitahukan rencana beristri lagi kepada #0047# secara langsung",
+      "rencana #0046# untuk menikah lagi telah diketahui #0047# dari mulut #0046# sendiri sebagaimana saya lihat",
+      "sebelum perkara ini diajukan #0047# sudah diberi tahu #0046# tentang rencana poligami itu"
+     ],
+     "saksi2": [
+      "sepengetahuan saya #0047# telah mengetahui rencana suaminya menikah lagi dan #0046# sendiri yang menyampaikannya",
+      "#0046# sudah menyampaikan niatnya beristri lagi kepada #0047# dan saya menyaksikannya",
+      "saya melihat sendiri #0046# memberitahu #0047# soal rencana poligami itu",
+      "pemberitahuan rencana menikah lagi dari #0046# kepada #0047# telah dilakukan dan saya mengetahuinya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: istri sudah diberi tahu suaminya; versi B: istri tidak diberi tahu - berselisih pada PERISTIWA (pemberitahuan)",
+     "saksi1": [
+      "saya melihat sendiri #0046# memberitahu #0047# tentang rencana menikah lagi",
+      "saya menyaksikan sendiri #0046# menyampaikan rencana beristri lagi kepada #0047#",
+      "#0046# memberi tahu #0047# soal rencana poligami dan itu saya lihat langsung",
+      "pemberitahuan #0046# kepada #0047# tentang rencana menikah lagi saya saksikan sendiri"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0046# tidak memberitahu #0047# tentang rencana menikah lagi",
+      "saya menyaksikan sendiri #0046# tidak menyampaikan rencana beristri lagi kepada #0047#",
+      "#0046# tidak memberi tahu #0047# soal rencana poligami dan itu saya lihat langsung",
+      "pemberitahuan #0046# kepada #0047# tentang rencana menikah lagi tidak pernah saya saksikan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-penghasilan",
+   "pokok": "pp-kemampuan-nafkah",
+   "urutan": 100,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa pekerjaan #0046# dan berapa penghasilannya setiap bulan ?",
+   "hal": "pekerjaan dan penghasilan pengaju setiap bulan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pekerjaan dan penghasilan pengaju",
+     "saksi1": [
+      "#0046# bekerja sebagai #1031# dengan penghasilan #8725# setiap bulan dan saya mengetahuinya sendiri",
+      "saya mengetahui sendiri bahwa pekerjaan #0046# adalah #1031# yang penghasilannya #8725# setiap bulan",
+      "penghasilan #0046# dari pekerjaannya sebagai #1031# adalah #8725# setiap bulan sebagaimana saya ketahui",
+      "setiap bulan #0046# memperoleh #8725# dari pekerjaannya sebagai #1031# yang saya lihat sendiri"
+     ],
+     "saksi2": [
+      "mata pencaharian #0046# ialah #1031# dengan pendapatan #8725# tiap bulan yang saya ketahui langsung",
+      "saya tahu #0046# bekerja sebagai #1031# dan hasilnya #8725# setiap bulannya",
+      "dari pekerjaan sebagai #1031# #0046# mendapat penghasilan #8725# per bulan sebagaimana saya saksikan",
+      "#0046# berpenghasilan #8725# sebulan dari pekerjaannya sebagai #1031# dan hal itu saya ketahui sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: penghasilan pengaju tergolong besar; versi B: penghasilan pengaju tergolong kecil - berselisih pada JUMLAH penghasilan",
+     "saksi1": [
+      "penghasilan #0046# tergolong besar dan saya melihatnya sendiri",
+      "saya mengetahui sendiri penghasilan #0046# setiap bulan cukup besar",
+      "pendapatan #0046# dari pekerjaannya besar sebagaimana saya saksikan",
+      "hasil kerja #0046# lumayan banyak dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "penghasilan #0046# tergolong kecil dan saya melihatnya sendiri",
+      "saya mengetahui sendiri penghasilan #0046# setiap bulan hanya sedikit",
+      "pendapatan #0046# dari pekerjaannya kecil sebagaimana saya saksikan",
+      "hasil kerja #0046# pas-pasan dan saya mengetahuinya langsung"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "1031",
+    "8725"
+   ]
+  },
+  {
+   "id": "q-kemampuan",
+   "pokok": "pp-kemampuan-nafkah",
+   "urutan": 110,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah penghasilan itu cukup untuk menjamin kebutuhan hidup dua orang istri dan anak-anak ?",
+   "hal": "kecukupan penghasilan untuk dua orang istri dan anak-anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "penghasilan pengaju mencukupi kebutuhan dua istri dan anak-anak",
+     "saksi1": [
+      "penghasilan #0046# cukup untuk menjamin kebutuhan hidup kedua istri dan anak-anaknya sebagaimana saya ketahui",
+      "saya melihat sendiri #0046# mampu menafkahi dua orang istri berikut anak-anaknya",
+      "kemampuan #0046# untuk membiayai kebutuhan dua orang istri dan anak-anak sudah saya lihat sendiri",
+      "dari penghasilannya #0046# sanggup memenuhi kebutuhan kedua istri dan anak-anaknya yang saya saksikan"
+     ],
+     "saksi2": [
+      "menurut pengamatan saya penghasilan #0046# mencukupi untuk menghidupi dua istri beserta anak-anaknya",
+      "#0046# sanggup menanggung biaya hidup kedua istrinya dan anak-anaknya yang saya ketahui langsung",
+      "saya tahu #0046# mampu mencukupi nafkah dua orang istri dan anak-anaknya",
+      "nafkah untuk kedua istri dan anak-anak dapat dipenuhi #0046# dari penghasilannya sebagaimana saya lihat"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pengaju mampu menafkahi dua istri; versi B: pengaju tidak mampu - berselisih pada PERISTIWA (kemampuan nafkah)",
+     "saksi1": [
+      "saya melihat sendiri #0046# mampu menafkahi dua orang istri dan anak-anaknya",
+      "saya menyaksikan sendiri #0046# sanggup menanggung dua orang istri dan anak-anaknya",
+      "kemampuan #0046# menafkahi dua orang istri dan anak-anaknya saya lihat langsung",
+      "#0046# cukup mampu menghidupi dua orang istri dan anak-anaknya sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0046# tidak mampu menafkahi dua orang istri dan anak-anaknya",
+      "saya menyaksikan sendiri #0046# tidak sanggup menanggung dua orang istri dan anak-anaknya",
+      "#0046# tidak sanggup menopang kebutuhan dua orang istri dan anak-anaknya sebagaimana saya saksikan",
+      "#0046# tidak cukup mampu menghidupi dua orang istri dan anak-anaknya yang saya ketahui langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-izin-atasan",
+   "pokok": "pp-izin-atasan",
+   "urutan": 120,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pekerjaanSuami": "asn-tni-polri"
+   },
+   "teks": "Apakah #0046# sudah mendapat izin dari atasannya untuk beristri lebih dari seorang ?",
+   "hal": "izin atasan pengaju untuk beristri lebih dari seorang",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "pengaju sudah memperoleh izin atasan untuk berpoligami",
+     "saksi1": [
+      "#0046# sudah memperoleh izin dari atasannya untuk beristri lebih dari seorang dengan surat #8726# yang saya lihat sendiri",
+      "saya melihat sendiri surat izin atasan #0046# untuk berpoligami yaitu #8726#",
+      "atasan #0046# telah memberikan izin beristri lagi sebagaimana surat #8726# yang saya ketahui",
+      "izin dari atasan untuk #0046# menikah lagi sudah ada yaitu surat #8726# dan saya menyaksikannya"
+     ],
+     "saksi2": [
+      "sepengetahuan saya #0046# telah mengantongi izin atasan untuk beristri lebih dari seorang berupa surat #8726#",
+      "surat izin poligami dari atasan #0046# yaitu #8726# saya lihat sendiri",
+      "saya tahu #0046# sudah dapat izin atasannya untuk menikah lagi dengan surat #8726#",
+      "atasan #0046# mengizinkan ia beristri lagi dan suratnya yaitu #8726# pernah saya lihat"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: atasan sudah memberi izin; versi B: atasan belum memberi izin - berselisih pada PERISTIWA (izin atasan)",
+     "saksi1": [
+      "saya melihat sendiri atasan #0046# memberikan izin beristri lebih dari seorang",
+      "saya menyaksikan sendiri atasan #0046# mengizinkan ia menikah lagi",
+      "izin atasan untuk #0046# berpoligami sudah diberikan dan saya melihatnya langsung",
+      "atasan #0046# telah memberi izin beristri lagi sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "saya melihat sendiri atasan #0046# belum memberikan izin beristri lebih dari seorang",
+      "saya menyaksikan sendiri atasan #0046# belum mengizinkan ia menikah lagi",
+      "izin atasan untuk #0046# berpoligami belum diberikan dan saya melihatnya langsung",
+      "atasan #0046# belum memberi izin beristri lagi sebagaimana saya saksikan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "8726"
+   ]
+  },
+  {
+   "id": "q-keadilan",
+   "pokok": "pp-keadilan",
+   "urutan": 130,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana sikap #0046# terhadap #0047# dan anak-anaknya selama ini dan apakah ia sanggup berlaku adil ?",
+   "hal": "sikap pengaju terhadap istri dan anak-anak serta kesanggupannya berlaku adil",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "pengaju bersikap baik dan sanggup berlaku adil",
+     "saksi1": [
+      "selama ini #0046# memenuhi kebutuhan #0047# dan anak-anaknya dengan baik dan menyatakan sanggup berlaku adil",
+      "saya melihat sendiri #0046# bersikap adil kepada #0047# dan anak-anaknya serta berjanji akan adil kepada kedua istrinya",
+      "#0046# memperlakukan #0047# dan anak-anak dengan baik selama ini dan telah menyatakan kesanggupannya berlaku adil",
+      "sikap #0046# kepada #0047# dan anak-anaknya baik dan adil dan ia bersedia berlaku adil kepada para istrinya"
+     ],
+     "saksi2": [
+      "sepanjang yang saya ketahui #0046# menafkahi dan memperhatikan #0047# beserta anak-anaknya dan sanggup berlaku adil",
+      "perlakuan #0046# kepada #0047# dan anak-anaknya selama ini baik dan ia menyatakan akan berlaku adil",
+      "saya menyaksikan sendiri #0046# bersikap baik kepada #0047# dan anaknya dan berkomitmen berlaku adil kepada istri-istrinya",
+      "kesanggupan #0046# berlaku adil kepada istri-istri dan anak-anaknya ia sampaikan sendiri dan sikapnya selama ini baik kepada #0047#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pengaju bersikap adil; versi B: pengaju tidak adil - berselisih pada PERISTIWA (sikap adil)",
+     "saksi1": [
+      "saya melihat sendiri #0046# bersikap adil kepada #0047# dan anak-anaknya",
+      "selama ini #0046# adil dalam memperlakukan #0047# dan anak-anaknya sebagaimana saya saksikan",
+      "#0046# memperlakukan #0047# dan anak-anaknya secara adil dan itu saya lihat langsung",
+      "sikap #0046# kepada #0047# dan anak-anaknya adil menurut penglihatan saya sendiri"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0046# tidak adil kepada #0047# dan anak-anaknya",
+      "selama ini #0046# tidak adil dalam memperlakukan #0047# dan anak-anaknya sebagaimana saya saksikan",
+      "#0046# memperlakukan #0047# dan anak-anaknya secara tidak adil dan itu saya lihat langsung",
+      "sikap #0046# kepada #0047# dan anak-anaknya tidak adil menurut penglihatan saya sendiri"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-status-calon",
+   "pokok": "pp-calon-istri",
+   "urutan": 140,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa status calon istri kedua #0046# dan di mana tempat tinggalnya ?",
+   "hal": "status dan tempat tinggal calon istri kedua",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan status dan tempat tinggal calon istri kedua",
+     "saksi1": [
+      "calon istri kedua #0046# adalah seorang perempuan #8724# sebagaimana saya ketahui sendiri",
+      "saya mengenal calon istri kedua #0046# yang keadaannya #8724#",
+      "keadaan calon istri kedua #0046# yang saya ketahui adalah #8724#",
+      "calon istri kedua #0046# menurut yang saya lihat sendiri adalah perempuan #8724#"
+     ],
+     "saksi2": [
+      "setahu saya calon istri kedua #0046# adalah perempuan #8724#",
+      "calon yang hendak dinikahi #0046# adalah seorang perempuan #8724# dan saya mengenalnya",
+      "saya tahu langsung bahwa calon istri kedua #0046# merupakan perempuan #8724#",
+      "mengenai calon istri kedua #0046# saya mengetahui bahwa ia perempuan #8724#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: calon istri kedua berstatus gadis; versi B: calon istri kedua berstatus janda - berselisih pada PERISTIWA (status calon istri)",
+     "saksi1": [
+      "calon istri kedua #0046# berstatus gadis sebagaimana saya ketahui sendiri",
+      "saya mengenal calon istri kedua #0046# sebagai perempuan yang masih gadis",
+      "status calon istri kedua #0046# adalah gadis menurut yang saya lihat sendiri",
+      "setahu saya calon istri kedua #0046# seorang gadis"
+     ],
+     "saksi2": [
+      "calon istri kedua #0046# berstatus janda sebagaimana saya ketahui sendiri",
+      "saya mengenal calon istri kedua #0046# sebagai perempuan yang berstatus janda",
+      "status calon istri kedua #0046# adalah janda menurut yang saya lihat sendiri",
+      "setahu saya calon istri kedua #0046# seorang janda"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "8724"
+   ]
+  },
+  {
+   "id": "q-halangan-calon",
+   "pokok": "pp-calon-istri",
+   "urutan": 150,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah ada hubungan nasab, semenda atau sesusuan antara #0046#, #0047# dan calon istri kedua ?",
+   "hal": "ada tidaknya hubungan nasab, semenda atau sesusuan dengan calon istri kedua",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "tidak ada hubungan nasab, semenda atau sesusuan yang menghalangi pernikahan",
+     "saksi1": [
+      "tidak ada hubungan nasab semenda maupun sesusuan antara #0046# #0047# dan calon istri kedua",
+      "saya mengetahui sendiri antara #0046# dengan calon istri kedua tidak terdapat hubungan darah semenda atau sesusuan",
+      "calon istri kedua dengan #0046# dan #0047# tidak ada pertalian nasab semenda ataupun sesusuan",
+      "setahu saya mereka bertiga tidak memiliki hubungan keluarga sedarah semenda dan sesusuan yang menghalangi pernikahan"
+     ],
+     "saksi2": [
+      "antara calon istri kedua dan #0046# serta #0047# tidak ada hubungan darah semenda atau susuan yang saya ketahui",
+      "saya tahu tidak ada halangan berupa hubungan nasab semenda atau sesusuan di antara #0046# #0047# dan calon istri kedua",
+      "tidak terdapat pertalian keluarga maupun sesusuan antara calon istri kedua dengan #0046# dan #0047#",
+      "calon istri kedua bukan saudara sedarah semenda ataupun sesusuan dengan #0046# maupun #0047# sepengetahuan saya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: tidak ada hubungan keluarga; versi B: ada hubungan keluarga - berselisih pada PERISTIWA (hubungan keluarga dengan calon istri)",
+     "saksi1": [
+      "saya melihat sendiri tidak ada hubungan keluarga antara calon istri kedua dan #0046# serta #0047#",
+      "saya mengetahui sendiri antara calon istri kedua dengan #0046# tidak terdapat pertalian keluarga",
+      "tidak ada hubungan kekerabatan antara calon istri kedua dan #0046# sebagaimana saya saksikan",
+      "sepengetahuan saya calon istri kedua tidak ada hubungan keluarga dengan #0046# dan #0047#"
+     ],
+     "saksi2": [
+      "saya mengetahui sendiri ada hubungan keluarga antara calon istri kedua dan #0046# atau #0047#",
+      "saya melihat sendiri antara calon istri kedua dengan #0046# terdapat pertalian keluarga",
+      "ada hubungan kekerabatan antara calon istri kedua dan #0046# sebagaimana saya saksikan",
+      "sepengetahuan saya calon istri kedua masih berkerabat dengan #0046# atau #0047#"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-bersedia-calon",
+   "pokok": "pp-calon-istri",
+   "urutan": 160,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah calon istri kedua mengetahui bahwa #0046# sudah beristri dan bersedia menjadi istri kedua ?",
+   "hal": "kesediaan calon istri kedua menjadi istri kedua",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "calon istri kedua mengetahui pengaju sudah beristri dan bersedia menjadi istri kedua",
+     "saksi1": [
+      "calon istri kedua mengetahui bahwa #0046# sudah beristri dan ia bersedia menjadi istri kedua",
+      "saya tahu sendiri calon istri kedua sudah mengetahui status #0046# yang beristri dan menyatakan bersedia dimadu",
+      "dengan mengetahui #0046# telah memiliki istri calon istri kedua tetap bersedia dinikahi sebagai istri kedua",
+      "calon istri kedua sadar bahwa #0046# sudah beristri dan siap menjadi istri kedua"
+     ],
+     "saksi2": [
+      "sepengetahuan saya calon istri kedua paham bahwa #0046# sudah menikah dan ia rela menjadi istri kedua",
+      "calon istri kedua mengerti #0046# telah beristri dan menyatakan kesediaannya menjadi istri kedua di depan saya",
+      "saya menyaksikan sendiri calon istri kedua menyatakan bersedia menjadi istri kedua padahal ia tahu #0046# sudah beristri",
+      "calon istri kedua sudah diberi tahu bahwa #0046# beristri dan ia menerimanya sebagai istri kedua"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: calon istri kedua bersedia; versi B: calon istri kedua belum bersedia - berselisih pada PERISTIWA (kesediaan calon istri)",
+     "saksi1": [
+      "saya melihat sendiri calon istri kedua menyatakan bersedia menjadi istri kedua #0046#",
+      "saya menyaksikan sendiri calon istri kedua rela dimadu oleh #0046#",
+      "calon istri kedua menyatakan siap menjadi istri kedua #0046# dan itu saya lihat langsung",
+      "kesediaan calon istri kedua untuk dinikahi #0046# saya saksikan sendiri"
+     ],
+     "saksi2": [
+      "saya melihat sendiri calon istri kedua belum bersedia menjadi istri kedua #0046#",
+      "saya menyaksikan sendiri calon istri kedua belum rela dimadu oleh #0046#",
+      "calon istri kedua belum menyatakan siap menjadi istri kedua #0046# dan itu saya lihat langsung",
+      "kesediaan calon istri kedua untuk dinikahi #0046# belum saya saksikan sendiri"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-harta-bersama",
+   "pokok": "pp-harta-bersama",
+   "urutan": 170,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa saja harta bersama #0046# dan #0047# sampai saat ini ?",
+   "hal": "harta bersama pengaju dan istrinya sampai saat ini",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan harta bersama suami istri",
+     "saksi1": [
+      "harta bersama #0046# dan #0047# berupa #8722# sebagaimana saya ketahui sendiri",
+      "saya mengetahui sendiri bahwa #0046# dan #0047# mempunyai harta bersama yaitu #8722#",
+      "selama menikah #0046# dan #0047# memperoleh harta bersama berupa #8722# yang saya lihat",
+      "yang menjadi harta bersama #0046# dan #0047# adalah #8722# dan saya mengetahuinya"
+     ],
+     "saksi2": [
+      "sepengetahuan saya harta bersama #0046# bersama #0047# terdiri dari #8722#",
+      "harta yang diperoleh #0046# dan #0047# selama perkawinan yaitu #8722# saya ketahui langsung",
+      "saya tahu harta bersama mereka #0046# dan #0047# meliputi #8722#",
+      "#0046# dan #0047# memiliki harta bersama berwujud #8722# yang saya saksikan sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: ada harta bersama; versi B: tidak ada harta bersama - berselisih pada PERISTIWA (adanya harta bersama)",
+     "saksi1": [
+      "saya melihat sendiri #0046# dan #0047# memiliki harta bersama selama perkawinan",
+      "saya mengetahui sendiri ada harta bersama antara #0046# dan #0047#",
+      "selama menikah #0046# dan #0047# memperoleh harta bersama sebagaimana saya saksikan",
+      "harta bersama #0046# dan #0047# ada dan saya mengetahuinya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0046# dan #0047# tidak memiliki harta bersama selama perkawinan",
+      "saya mengetahui sendiri tidak ada harta bersama antara #0046# dan #0047#",
+      "selama menikah #0046# dan #0047# tidak memperoleh harta bersama sebagaimana saya saksikan",
+      "harta bersama #0046# dan #0047# tidak ada dan saya mengetahuinya langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8722"
+   ]
+  },
+  {
+   "id": "q-penutup",
+   "pokok": "pp-penutup",
+   "urutan": 200,
+   "tingkat": "inti",
+   "kelompok": "penutup",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+   "hal": "keterangan penutup",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan keterangannya sudah cukup",
+     "saksi1": [
+      "keterangan yang saya berikan sudah cukup",
+      "sekian keterangan saya dan sudah cukup",
+      "bagi saya keterangan ini sudah cukup",
+      "sudah cukup yang dapat saya terangkan"
+     ],
+     "saksi2": [
+      "dengan ini keterangan saya sudah cukup",
+      "sudah cukup apa yang saya ketahui untuk diterangkan",
+      "hanya itu keterangan saya dan sudah cukup",
+      "saya anggap keterangan saya sudah cukup sampai di sini"
+     ]
+    }
+   },
+   "variabelAbt": []
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Titik-titik (...) pada keterangan saksi wajib diganti dengan keterangan saksi yang sebenarnya; jangan dibiarkan kosong.",
+  "Izin poligami hanya dapat diberikan bila ada alasan (Pasal 4 ayat (2) UU 1/1974) dan terpenuhi syarat persetujuan istri, kemampuan menjamin keperluan hidup, dan jaminan berlaku adil (Pasal 5 ayat (1) UU 1/1974).",
+  "Bila istri tidak hadir, persetujuan istri tidak boleh dianggap ada begitu saja; periksa apakah ada persetujuan tertulis atau keadaan yang dikecualikan menurut ketentuan yang berlaku.",
+  "Keterangan saksi yang ragu atau hanya cerita orang lain bukan keterangan yang dialami sendiri; pertimbangkan menghadirkan saksi tambahan untuk persetujuan istri, kemampuan nafkah, dan keadilan.",
+  "Rujukan Buku II Tahun 2026 (harta dalam perkawinan poligami) berasal dari ringkasan sekunder dan belum diperiksa pada naskah resminya."
+ ]
+}

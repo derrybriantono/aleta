@@ -1,0 +1,235 @@
+# -*- coding: utf-8 -*-
+"""Butir izin poligami bagian C: kemampuan menjamin keperluan hidup, izin atasan, jaminan berlaku adil. Agen W2b-A."""
+from isi_poligami import S
+
+# ------------------------------------------------------------------ kemampuan menjamin keperluan hidup (urutan 101-109)
+S(id='sumber-penghasilan', pokok='pp-pg-tanggungan', urut_abs=101, tingkat='inti',
+  teks='Dari pekerjaan apa #0046# memperoleh penghasilan dan sudah berapa lama ia menekuni pekerjaan itu?',
+  varian=['Apa mata pencaharian #0046# dan sejak kapan ia menjalani pekerjaan tersebut?'],
+  hal='sumber penghasilan #0046# dan lamanya menekuni pekerjaan', m='sumber penghasilan #0046# dan lamanya menekuni pekerjaan', fam='tahu',
+  K=(['#0046# bekerja sebagai #1031# dan sudah lama menekuni pekerjaan itu sebagai sumber penghasilannya',
+      'sumber penghasilan #0046# adalah pekerjaannya sebagai #1031# yang telah ia jalani sejak lama'],
+     ['pekerjaan #0046# sebagai #1031# sudah lama ia tekuni dan dari situlah penghasilannya berasal',
+      'mata pencaharian #0046# ialah #1031# yang telah ia kerjakan dalam waktu yang lama']),
+  P=(['#0046# bekerja sebagai #1031# sebagai sumber penghasilannya', 'sumber penghasilan #0046# adalah pekerjaannya sebagai #1031#'],
+     ['pekerjaan #0046# sebagai #1031# adalah tempat penghasilannya berasal', 'mata pencaharian #0046# ialah #1031#']),
+  A=['#0046# sudah bekerja sebagai #1031# selama bertahun-tahun', 'pekerjaan #0046# sebagai #1031# sudah ia jalani bertahun-tahun'],
+  B=['#0046# baru beberapa tahun terakhir bekerja sebagai #1031#', 'pekerjaan #0046# sebagai #1031# baru ia jalani beberapa tahun belakangan'],
+  beda_pada='lama', beda_maksud='versi A: bertahun-tahun; versi B: baru beberapa tahun terakhir - berselisih pada LAMA bekerja')
+
+S(id='penghasilan-tetap', pokok='pp-pg-tanggungan', urut_abs=102, tingkat='pilihan',
+  teks='Apakah penghasilan #0046# sebesar #8725# itu diterima secara tetap setiap bulan?',
+  varian=['Apakah #0046# menerima penghasilan #8725# itu dengan teratur setiap bulannya?'],
+  hal='ketetapan penghasilan #0046# setiap bulan', m='ketetapan penghasilan #0046# setiap bulan', fam='tahu',
+  K=(['penghasilan #0046# sebesar #8725# diterima secara tetap setiap bulan',
+      '#0046# menerima penghasilan #8725# dengan teratur tiap bulan'],
+     ['setiap bulan #0046# menerima penghasilan #8725# secara teratur',
+      'penghasilan #8725# milik #0046# datang tiap bulan dalam jumlah yang tetap']),
+  A=['penghasilan #0046# diterima secara tetap setiap bulan', 'setiap bulan #0046# menerima penghasilan dalam jumlah yang sama'],
+  B=['penghasilan #0046# berubah-ubah menurut hasil usahanya setiap bulan', 'jumlah penghasilan #0046# setiap bulan naik turun mengikuti hasil usahanya'],
+  beda_pada='jumlah', beda_maksud='versi A: penghasilan tetap tiap bulan; versi B: berubah-ubah mengikuti hasil usaha - berselisih pada JUMLAH penghasilan')
+
+S(id='bukti-penghasilan', pokok='pp-pg-tanggungan', urut_abs=103, tingkat='pilihan',
+  teks='Apakah saksi pernah melihat bukti penghasilan #0046# seperti slip gaji atau surat keterangan penghasilan?',
+  varian=['Apakah #0046# pernah memperlihatkan slip gaji atau surat keterangan penghasilannya kepada saksi?'],
+  hal='bukti penghasilan #0046#', m='bukti penghasilan #0046#', fam='hadir',
+  K=(['#0046# memiliki slip gaji atau surat keterangan penghasilan yang menunjukkan penghasilannya #8725# setiap bulan',
+      'bukti penghasilan #0046# berupa slip gaji atau surat keterangan menunjukkan penghasilan #8725# tiap bulan'],
+     ['saya pernah melihat surat keterangan penghasilan #0046# yang mencantumkan penghasilan #8725# setiap bulan',
+      'dokumen penghasilan #0046# yang pernah diperlihatkan kepada saya mencantumkan jumlah #8725# tiap bulan']),
+  P=(['#0046# memiliki surat keterangan penghasilan', 'bukti penghasilan #0046# berupa surat keterangan memang ada'],
+     ['saya pernah melihat dokumen penghasilan #0046#', 'dokumen penghasilan #0046# pernah diperlihatkan kepada saya']))
+
+S(id='tanggungan', pokok='pp-pg-tanggungan', urut_abs=104, tingkat='pilihan',
+  teks='Siapa saja yang sekarang menjadi tanggungan nafkah #0046# selain dirinya sendiri?',
+  varian=['Siapa saja yang sehari-hari ditanggung kebutuhan hidupnya oleh #0046# sekarang?'],
+  hal='orang-orang yang menjadi tanggungan nafkah #0046#', m='orang-orang yang menjadi tanggungan nafkah #0046#', fam='tahu',
+  K=(['yang menjadi tanggungan #0046# adalah #0047# dan anak-anak mereka yang masih menjadi beban nafkahnya',
+      'kebutuhan hidup #0047# dan anak-anak mereka ditanggung oleh #0046# sampai sekarang'],
+     ['#0046# menanggung kebutuhan hidup #0047# serta anak-anak yang masih membutuhkan nafkah',
+      'tanggungan nafkah #0046# meliputi #0047# dan anak-anak mereka']),
+  A=['tanggungan #0046# hanya #0047# dan anak-anak mereka', '#0046# hanya menanggung #0047# dan anak-anak mereka'],
+  B=['selain #0047# dan anak-anak #0046# juga menanggung orang tuanya', '#0046# menanggung #0047# anak-anaknya dan juga orang tuanya'],
+  beda_pada='jumlah', beda_maksud='versi A: hanya istri dan anak; versi B: ditambah orang tua - berselisih pada JUMLAH tanggungan')
+
+S(id='pengeluaran-bulanan', pokok='pp-pg-tanggungan', urut_abs=105, tingkat='tambahan',
+  teks='Apakah penghasilan #0046# setiap bulan setelah kebutuhan rumah tangga #0046# dan #0047# terpenuhi masih menyisakan kelebihan?',
+  varian=['Apakah setelah kebutuhan rumah tangga #0046# dan #0047# terpenuhi masih ada sisa penghasilan #0046# setiap bulan?'],
+  hal='sisa penghasilan #0046# setelah kebutuhan rumah tangga terpenuhi', m='sisa penghasilan #0046# setelah kebutuhan rumah tangga terpenuhi', fam='tahu',
+  K=(['penghasilan #0046# cukup untuk kebutuhan rumah tangganya dengan #0047# dan masih ada sisa setiap bulan',
+      'setelah kebutuhan rumah tangga terpenuhi masih ada kelebihan penghasilan #0046# tiap bulan'],
+     ['kebutuhan rumah tangga #0046# dan #0047# tercukupi dari penghasilan #0046# dan masih tersisa',
+      'sisa penghasilan #0046# setelah belanja rumah tangga masih ada setiap bulannya']),
+  A=['sisa penghasilan #0046# setiap bulan cukup banyak', 'setiap bulan penghasilan #0046# menyisakan jumlah yang lumayan'],
+  B=['sisa penghasilan #0046# setiap bulan hanya sedikit', 'setiap bulan penghasilan #0046# hanya menyisakan jumlah yang kecil'],
+  beda_pada='jumlah', beda_maksud='versi A: sisa cukup banyak; versi B: sisa hanya sedikit - berselisih pada JUMLAH sisa penghasilan')
+
+S(id='nafkah-selama-ini', pokok='pp-kemampuan-nafkah', urut_abs=106, tingkat='inti',
+  teks='Apakah selama ini #0046# mencukupi nafkah lahir #0047# dan anak-anaknya dan pernah menelantarkan mereka?',
+  varian=['Bagaimana pemenuhan nafkah #0047# dan anak-anaknya oleh #0046# selama ini dan apakah pernah ditelantarkan?'],
+  hal='pemenuhan nafkah #0047# dan anak-anak oleh #0046# selama ini', m='pemenuhan nafkah #0047# dan anak-anak oleh #0046# selama ini', fam='tahu',
+  K=(['selama ini #0046# mencukupi nafkah #0047# dan anak-anaknya dan #0047# tidak pernah ditelantarkan',
+      '#0047# beserta anak-anaknya selalu dicukupi nafkahnya oleh #0046# dan tidak pernah ditelantarkan'],
+     ['nafkah lahir #0047# dan anak-anak dipenuhi #0046# secara baik dan mereka tidak pernah ditelantarkan',
+      '#0046# senantiasa memenuhi nafkah #0047# dan anak-anaknya dan tidak pernah membiarkan mereka telantar']),
+  M='K',
+  A=['nafkah #0047# dan anak-anak selalu dicukupi #0046# dengan baik', '#0046# selalu memenuhi nafkah #0047# dan anak-anaknya'],
+  B=['nafkah #0047# dan anak-anak kadang terlambat diberikan #0046#', '#0046# kadang terlambat memberi nafkah kepada #0047# dan anak-anaknya'],
+  beda_pada='peristiwa', beda_maksud='versi A: nafkah selalu dicukupi; versi B: kadang terlambat - berselisih pada PERISTIWA')
+
+S(id='tempat-tinggal-baru', pokok='pp-pg-tanggungan', urut_abs=107, tingkat='pilihan',
+  teks='Di mana rencananya calon istri kedua #8723# akan tinggal setelah menikah dengan #0046# dan apakah tempat tinggalnya sudah disiapkan?',
+  varian=['Apakah #0046# sudah menyiapkan tempat tinggal bagi #8723# setelah mereka menikah dan di mana tempatnya?'],
+  hal='tempat tinggal calon istri kedua setelah menikah', m='tempat tinggal calon istri kedua setelah menikah', fam='tahu',
+  K=(['#8723# akan tinggal di tempat tinggal tersendiri yang sudah disiapkan #0046# setelah mereka menikah',
+      '#0046# sudah menyiapkan tempat tinggal tersendiri bagi #8723# yang terpisah dari rumah #0047#'],
+     ['setelah menikah #8723# akan menempati rumah tersendiri yang disediakan #0046#',
+      'rumah untuk #8723# sudah dipersiapkan #0046# terpisah dari tempat tinggal #0047#']),
+  A=['tempat tinggal #8723# sudah disiapkan #0046# berupa rumah sendiri', 'rumah milik sendiri sudah disiapkan #0046# bagi #8723#'],
+  B=['tempat tinggal #8723# disiapkan #0046# berupa rumah kontrakan', 'rumah kontrakan yang disiapkan #0046# bagi #8723#'],
+  beda_pada='tempat', beda_maksud='versi A: rumah sendiri; versi B: rumah kontrakan - berselisih pada TEMPAT tinggal calon istri')
+
+S(id='utang-tanggungan-lain', pokok='pp-pg-tanggungan', urut_abs=108, tingkat='tambahan',
+  teks='Apakah #0046# memiliki utang atau tanggungan lain yang membebani penghasilannya?',
+  varian=['Apakah penghasilan #0046# terbebani utang atau kewajiban lain di luar kebutuhan rumah tangga?'],
+  hal='utang dan tanggungan lain #0046#', m='ada tidaknya utang atau tanggungan lain #0046#', fam='tahu',
+  K=(['#0046# tidak memiliki utang besar yang membebani penghasilannya',
+      'penghasilan #0046# tidak terbebani utang yang besar'],
+     ['tidak ada utang besar yang menjadi beban penghasilan #0046#',
+      'utang yang membebani penghasilan #0046# tidak ada']),
+  A=['#0046# tidak punya utang yang berarti', 'tidak ada utang yang berarti pada #0046#'],
+  B=['#0046# masih punya cicilan kecil yang tidak memberatkannya', 'masih ada cicilan kecil pada #0046# yang tidak memberatkannya'],
+  beda_pada='jumlah', beda_maksud='versi A: tidak ada utang berarti; versi B: ada cicilan kecil - berselisih pada JUMLAH utang')
+
+S(id='kemampuan-dua-rumah', pokok='pp-kemampuan-nafkah', urut_abs=109, tingkat='pilihan',
+  teks='Menurut pengetahuan saksi apakah #0046# mampu membiayai dua rumah tangga sekaligus yaitu rumah tangga dengan #0047# dan dengan #8723#?',
+  varian=['Apakah #0046# sanggup memenuhi kebutuhan #0047# dan #8723# sekaligus berikut anak-anak mereka?'],
+  hal='kesanggupan #0046# membiayai dua rumah tangga', m='kesanggupan #0046# membiayai dua rumah tangga', fam='tahu',
+  K=(['#0046# mampu membiayai dua rumah tangga yaitu bersama #0047# dan bersama #8723# dari penghasilannya #8725# setiap bulan',
+      'penghasilan #8725# setiap bulan memadai bagi #0046# untuk menanggung kebutuhan #0047# dan #8723# beserta anak-anak'],
+     ['dengan penghasilan #8725# setiap bulan #0046# sanggup menafkahi #0047# dan #8723# sekaligus',
+      'kebutuhan dua rumah tangga yaitu #0047# dan #8723# dapat ditanggung #0046# dari penghasilan #8725# tiap bulan']),
+  A=['penghasilan #0046# lebih dari cukup untuk dua rumah tangga', '#0046# sanggup dengan mudah menanggung dua rumah tangga'],
+  B=['penghasilan #0046# cukup untuk dua rumah tangga asalkan ia berhemat', '#0046# sanggup menanggung dua rumah tangga bila pengeluaran dijaga'],
+  beda_pada='jumlah', beda_maksud='versi A: lebih dari cukup; versi B: cukup asal berhemat - berselisih pada JUMLAH kecukupan penghasilan')
+
+# ------------------------------------------------------------------ izin atasan (urutan 121-123) - hanya bila pekerjaan suami ASN/TNI/Polri
+ASN = {'pekerjaanSuami': 'asn-tni-polri'}
+
+S(id='atasan-surat', pokok='pp-izin-atasan', urut_abs=121, tingkat='pilihan', keadaan=ASN,
+  teks='Apakah #0046# sudah memperoleh surat izin dari atasannya dan apa nomor serta tanggal surat izin itu?',
+  varian=['Bagaimana bunyi surat izin atasan #0046# untuk beristri lebih dari seorang dan kapan surat itu dibuat?'],
+  hal='surat izin atasan #0046# untuk beristri lebih dari seorang', m='surat izin atasan #0046# untuk beristri lebih dari seorang', fam='hadir',
+  K=(['#0046# sudah memperoleh surat izin dari atasannya untuk beristri lebih dari seorang dengan #8726#',
+      'atasan #0046# telah menerbitkan surat izin beristri lebih dari seorang dengan #8726#'],
+     ['surat izin dari atasan #0046# untuk beristri lebih dari seorang sudah ada dengan #8726#',
+      'izin atasan #0046# untuk menikah lagi telah dikeluarkan dengan #8726#']),
+  P=(['#0046# sudah memperoleh surat izin dari atasannya', 'atasan #0046# telah menerbitkan surat izin'],
+     ['surat izin dari atasan #0046# sudah ada', 'izin atasan #0046# telah dikeluarkan']))
+
+S(id='atasan-status', pokok='pp-izin-atasan', urut_abs=122, tingkat='pilihan', keadaan=ASN,
+  teks='Apa status kepegawaian dan jabatan #0046# dan apakah ia tahu kewajiban meminta izin atasan lebih dulu?',
+  varian=['Apakah #0046# sebagai aparatur negara menyadari kewajiban meminta izin atasan sebelum beristri lebih dari seorang?'],
+  hal='status kepegawaian #0046# dan kewajiban izin atasan', m='status kepegawaian #0046# dan kewajiban izin atasan', fam='tahu',
+  K=(['#0046# adalah aparatur negara dengan pekerjaan #1031# dan ia mengerti wajib meminta izin atasan lebih dahulu',
+      'sebagai aparatur negara yang bekerja sebagai #1031# #0046# paham harus meminta izin atasan sebelum menikah lagi'],
+     ['status #0046# sebagai aparatur negara dengan pekerjaan #1031# membuatnya sadar wajib mengurus izin atasan lebih dahulu',
+      '#0046# bekerja sebagai #1031# di instansi pemerintah dan mengetahui izin atasan harus ia urus lebih dahulu']),
+  P=(['#0046# adalah aparatur negara dengan pekerjaan #1031#', 'status #0046# sebagai aparatur negara bekerja sebagai #1031#'],
+     ['#0046# bekerja sebagai #1031# di instansi pemerintah', 'pekerjaan #0046# adalah #1031# sebagai aparatur negara']))
+
+S(id='atasan-pengurusan', pokok='pp-izin-atasan', urut_abs=123, tingkat='tambahan', keadaan=ASN,
+  teks='Siapa yang mengurus surat izin atasan itu dan kapan #0046# mengajukannya kepada atasan?',
+  varian=['Kapan dan bagaimana #0046# mengajukan permintaan izin kepada atasannya untuk beristri lebih dari seorang?'],
+  hal='pengurusan surat izin atasan oleh #0046#', m='pengurusan surat izin atasan oleh #0046#', fam='hadir',
+  K=(['#0046# mengurus sendiri surat izin atasan itu dengan mengajukan permintaan secara tertulis kepada atasannya',
+      'permintaan izin kepada atasan diajukan #0046# sendiri secara tertulis'],
+     ['surat izin atasan itu diurus sendiri oleh #0046# lewat permintaan tertulis kepada atasannya',
+      '#0046# sendiri yang mengajukan permintaan tertulis kepada atasannya untuk memperoleh izin']),
+  A=['#0046# mengurus surat izin atasan sendiri', 'surat izin atasan diurus langsung oleh #0046#'],
+  B=['surat izin atasan diurus bagian kepegawaian untuk #0046#', 'bagian kepegawaian yang mengurus surat izin atasan bagi #0046#'],
+  beda_pada='pelaku', beda_maksud='versi A: diurus sendiri oleh suami; versi B: diurus bagian kepegawaian - berselisih pada PELAKU pengurus')
+
+# ------------------------------------------------------------------ jaminan berlaku adil (urutan 131-137)
+S(id='adil-giliran', pokok='pp-pg-adil-rinci', urut_abs=131, tingkat='inti',
+  teks='Bagaimana rencana #0046# membagi waktu giliran bermalam dan perhatian antara #0047# dan #8723#?',
+  varian=['Bagaimana #0046# akan membagi waktu dan perhatian secara adil antara #0047# dan #8723# bila izin diberikan?'],
+  hal='rencana pembagian waktu giliran #0046# kepada istri-istrinya', m='rencana pembagian waktu giliran #0046# kepada istri-istrinya', fam='tahu',
+  K=(['#0046# sudah merencanakan pembagian waktu giliran bermalam yang sama antara #0047# dan #8723#',
+      '#0046# akan membagi hari dan perhatiannya secara sama rata kepada #0047# dan #8723#'],
+     ['giliran bermalam antara #0047# dan #8723# sudah #0046# rencanakan dibagi sama banyaknya',
+      'waktu dan perhatian #0046# akan dibaginya sama rata untuk #0047# dan #8723#']),
+  M='K',
+  A=['#0046# berencana membagi giliran bermalam seminggu bergantian', 'giliran bermalam #0046# akan dibagi seminggu sekali bergantian'],
+  B=['#0046# berencana membagi giliran bermalam dua hari bergantian', 'giliran bermalam #0046# akan dibagi dua hari sekali bergantian'],
+  beda_pada='jumlah', beda_maksud='versi A: giliran seminggu sekali; versi B: dua hari sekali - berselisih pada JUMLAH hari giliran')
+
+S(id='adil-tempat', pokok='pp-pg-adil-rinci', urut_abs=132, tingkat='pilihan',
+  teks='Apakah #0047# dan #8723# nantinya akan tinggal di tempat yang terpisah dan layak sehingga keduanya diperlakukan setara?',
+  varian=['Apakah tempat tinggal #0047# dan #8723# dipisahkan dan sama layaknya sesudah suaminya menikah lagi?'],
+  hal='tempat tinggal terpisah yang layak bagi istri-istri', m='tempat tinggal terpisah yang layak bagi istri-istri', fam='tahu',
+  K=(['#0047# dan #8723# akan tinggal di tempat yang terpisah dan sama layaknya',
+      'rumah #0047# dan rumah #8723# terpisah serta sama-sama layak huni'],
+     ['tempat tinggal #0047# dan #8723# dipisah dan keduanya sama baiknya',
+      'rumah terpisah yang setara kelayakannya diberikan #0046# kepada #0047# dan #8723#']),
+  P=(['#0047# dan #8723# akan tinggal di tempat yang terpisah', 'rumah #0047# dan rumah #8723# terpisah'],
+     ['tempat tinggal #0047# dan #8723# dipisah', 'rumah terpisah diberikan #0046# kepada #0047# dan #8723#']))
+
+S(id='adil-surat', pokok='pp-pg-adil-rinci', urut_abs=133, tingkat='pilihan',
+  teks='Apakah #0046# membuat surat pernyataan bersedia berlaku adil terhadap istri-istri dan anak-anaknya, dan apakah saksi mengetahuinya?',
+  varian=['Apakah ada surat pernyataan kesanggupan berlaku adil yang dibuat dan ditandatangani oleh #0046#?'],
+  hal='surat pernyataan kesanggupan berlaku adil #0046#', m='surat pernyataan kesanggupan berlaku adil #0046#', fam='hadir',
+  K=(['#0046# membuat surat pernyataan sanggup berlaku adil terhadap istri-istri dan anak-anaknya dan menandatanganinya sendiri',
+      'surat pernyataan kesanggupan berlaku adil ditulis dan ditandatangani oleh #0046# sendiri'],
+     ['kesanggupan berlaku adil #0046# kepada istri-istri dan anak-anaknya dituangkan dalam surat yang ia tandatangani sendiri',
+      '#0046# menandatangani sendiri surat pernyataan yang berisi kesanggupan berlaku adil']),
+  M='K',
+  P=(['#0046# membuat surat pernyataan sanggup berlaku adil', 'surat pernyataan kesanggupan berlaku adil memang dibuat #0046#'],
+     ['kesanggupan berlaku adil #0046# dituangkan dalam sebuah surat', '#0046# menandatangani surat pernyataan kesanggupan berlaku adil']))
+
+S(id='adil-riwayat', pokok='pp-keadilan', urut_abs=134, tingkat='pilihan',
+  teks='Selama ini apakah #0046# adil dan tidak pilih kasih kepada anak-anaknya dan bersikap baik kepada #0047#?',
+  varian=['Bagaimana perlakuan #0046# kepada #0047# dan anak-anaknya selama ini apakah ia dikenal adil dan tidak pilih kasih?'],
+  hal='keadilan sikap #0046# kepada #0047# dan anak-anak selama ini', m='keadilan sikap #0046# kepada #0047# dan anak-anak selama ini', fam='tahu',
+  K=(['#0046# bersikap baik kepada #0047# dan tidak pernah pilih kasih terhadap anak-anaknya',
+      'perlakuan #0046# kepada #0047# dan anak-anaknya baik dan tidak pernah membeda-bedakan'],
+     ['#0046# dikenal adil kepada anak-anaknya dan baik terhadap #0047# tanpa pernah pilih kasih',
+      'sikap #0046# kepada #0047# dan anak-anaknya selalu baik tanpa pernah membeda-bedakan']),
+  M='K',
+  A=['#0046# memperlakukan #0047# dan anak-anaknya dengan adil', 'sikap #0046# kepada #0047# dan anak-anaknya adil'],
+  B=['#0046# lebih dekat kepada anak yang paling kecil dibanding yang lain', 'perhatian #0046# lebih banyak tercurah kepada anak bungsu'],
+  beda_pada='peristiwa', beda_maksud='versi A: adil kepada semua; versi B: lebih dekat kepada anak bungsu - berselisih pada PERISTIWA')
+
+S(id='adil-pendidikan-anak', pokok='pp-pg-adil-rinci', urut_abs=135, tingkat='pilihan',
+  teks='Apakah #0046# menyatakan akan tetap membiayai sekolah dan kebutuhan anak-anaknya dengan #0047# setelah menikah lagi?',
+  varian=['Bagaimana kepastian biaya sekolah dan kebutuhan anak-anak dengan #0047# sesudah #0046# beristri dua?'],
+  hal='kepastian biaya sekolah dan kebutuhan anak-anak sesudah poligami', m='kepastian biaya sekolah dan kebutuhan anak-anak sesudah poligami', fam='tahu',
+  K=(['#0046# menyatakan akan tetap membiayai sekolah dan kebutuhan anak-anaknya dengan #0047# setelah menikah lagi',
+      'biaya sekolah dan kebutuhan anak-anak #0046# dan #0047# tetap akan ditanggung #0046# setelah ia menikah lagi'],
+     ['setelah menikah lagi #0046# tetap bertanggung jawab atas sekolah dan kebutuhan anak-anaknya dengan #0047#',
+      '#0046# berjanji sekolah dan kebutuhan anak-anaknya dengan #0047# tetap menjadi tanggungannya']),
+  M='K')
+
+S(id='adil-kekerasan', pokok='pp-keadilan', urut_abs=136, tingkat='tambahan',
+  teks='Apakah #0046# pernah berlaku kasar atau melakukan kekerasan kepada #0047# atau anak-anaknya?',
+  varian=['Apakah pernah terjadi kekerasan dalam rumah tangga yang dilakukan #0046# terhadap #0047# atau anak-anak mereka?'],
+  hal='kekerasan dalam rumah tangga #0046# dan #0047#', m='ada tidaknya kekerasan dalam rumah tangga #0046# dan #0047#', fam='tahu',
+  K=(['#0046# tidak pernah berlaku kasar atau melakukan kekerasan kepada #0047# maupun anak-anaknya',
+      'tidak pernah ada kekerasan yang dilakukan #0046# terhadap #0047# atau anak-anak mereka'],
+     ['kekerasan terhadap #0047# dan anak-anak tidak pernah dilakukan #0046#',
+      '#0046# tidak pernah memukul atau menyakiti #0047# maupun anak-anaknya']),
+  A=['tidak pernah ada kekerasan di rumah tangga #0046# dan #0047#', 'rumah tangga #0046# dan #0047# tidak pernah diwarnai kekerasan'],
+  B=['pernah ada adu mulut keras di rumah tangga #0046# dan #0047# namun tanpa kekerasan fisik', 'pernah terjadi cekcok keras di rumah tangga #0046# dan #0047# tetapi tidak sampai main tangan'],
+  beda_pada='peristiwa', beda_maksud='versi A: tidak pernah ada kekerasan sama sekali; versi B: pernah cekcok keras tanpa kekerasan fisik - berselisih pada PERISTIWA')
+
+S(id='adil-ibadah', pokok='pp-keadilan', urut_abs=137, tingkat='tambahan',
+  teks='Bagaimana kehidupan beragama dan budi pekerti #0046# sehari-hari menurut pengetahuan saksi?',
+  varian=['Apakah #0046# dikenal taat beribadah dan berakhlak baik di lingkungannya?'],
+  hal='kehidupan beragama dan budi pekerti #0046#', m='kehidupan beragama dan budi pekerti #0046#', fam='tahu',
+  K=(['#0046# taat menjalankan ibadah dan dikenal berakhlak baik di lingkungannya',
+      '#0046# rajin beribadah serta bersikap baik terhadap tetangga dan keluarganya'],
+     ['di lingkungannya #0046# dikenal taat beribadah dan baik budi pekertinya',
+      'ibadah #0046# terjaga dan perilakunya baik di mata keluarga dan tetangga']),
+  A=['#0046# rajin salat berjamaah di masjid dekat rumah', '#0046# sering ikut salat berjamaah di masjid dekat rumahnya'],
+  B=['#0046# lebih sering salat di rumah daripada di masjid', 'salat #0046# lebih banyak dikerjakan di rumah'],
+  beda_pada='tempat', beda_maksud='versi A: sering ke masjid; versi B: lebih sering salat di rumah - berselisih pada TEMPAT ibadah')

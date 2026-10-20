@@ -126,6 +126,9 @@ export const ISIAN_MANUAL: Record<string, string> = {
   "4311": "Nama laki-laki yang diakui sebagai ayah biologis anak tidak tertulis di posita; isi dari keterangan Pemohon dan saksi (blangko Anak Luar Perkawinan).",
   "4314": "Hubungan perdata anak luar perkawinan adalah pilihan majelis; pilih salah satu pada blangko Anak Luar Perkawinan.",
   "4315": "Status anak yang lahir kurang dari enam bulan setelah akad adalah pilihan majelis; pilih salah satu pada blangko Anak Lahir Kurang dari Enam Bulan.",
+  // Izin poligami (paket abt-w2b-keluarga-lain, 21 Okt 2026): sikap istri disampaikan di sidang, tidak tercatat di SIPP
+  "4851": "Alasan keberatan istri disampaikan Termohon di sidang atau dalam jawabannya; tidak tercatat di SIPP (blangko Termohon Keberatan).",
+  "4852": "Keadaan istri yang tidak mungkin dimintai persetujuan adalah penilaian majelis atas bukti dan saksi (blangko Termohon Tidak Hadir).",
 };
 
 export const ISIAN_OPSIONAL: Record<string, string> = {
@@ -141,4 +144,10 @@ export const ISIAN_OPSIONAL: Record<string, string> = {
   "4102": "Keputusan nafkah iddah (bila ada tuntutan atau diberikan ex officio)",
   "4103": "Keputusan mut'ah (bila ada tuntutan atau diberikan ex officio)",
   "4109": "Waktu pembayaran akibat cerai (bila ada nafkah iddah, mut'ah atau nafkah lampau)",
+  // Izin poligami (paket abt-w2b-keluarga-lain, 21 Okt 2026): isian tambahan, kosong berarti kalimat bawaan dipakai
+  "4850": "Surat persetujuan tertulis istri (tanggal dan keterangan; hanya bila ada)",
+  "4853": "Bentuk persetujuan istri (kosong = tertulis maupun lisan di persidangan)",
+  "4854": "Status calon istri kedua: perawan, janda cerai atau janda ditinggal mati suami",
+  "4855": "Bukti status janda calon istri kedua (akta cerai atau surat keterangan kematian)",
+  "4856": "Jumlah istri Pemohon saat ini (kosong = seorang yaitu Termohon)",
 };
