@@ -25,6 +25,8 @@ const mentahBerkas = arg("--mentah", "");
 const tulis = process.argv.includes("--tulis");
 const dariMentah = arg("--dari-mentah", "");
 const khusus = Number(arg("--khusus", "0"));
+// --jenis 362,371,...: batasi sampel pada jenis perkara tertentu (gelombang 1: jenis kecil yang jarang tertangkap sampel acak)
+const jenisBatas = arg("--jenis", "").split(",").map((x) => Number(x)).filter((x) => x > 0);
 
 process.env.ALETA_BOT_DB_SIPP_NAME = process.env.ALETA_BOT_DB_SIPP_NAME || "sipp_donggala";
 process.env.ALETA_BOT_DB_USER = process.env.ALETA_BOT_DB_USER || "root";
@@ -222,6 +224,7 @@ function aturan(a) {
          FROM sipp_donggala.perkara p
         WHERE p.tanggal_pendaftaran >= '2023-01-01' AND p.posita IS NOT NULL AND LENGTH(p.posita) > 150
           AND p.perkara_id IN (SELECT perkara_id FROM aps_badilag.abt_data_teks GROUP BY perkara_id HAVING COUNT(*) >= 6)
+          ${jenisBatas.length ? `AND p.jenis_perkara_id IN (${jenisBatas.join(",")})` : ""}
         ORDER BY RAND() LIMIT ${maks}`
     );
     for (const s of sampel) sampelInfo[s.j] = (sampelInfo[s.j] || 0) + 1;
