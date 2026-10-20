@@ -140,7 +140,8 @@ export function depsAsli(): DepsPelaksana {
       await pastikanMajelisPutusan(actor as { name?: string | null }, peran as Parameters<typeof pastikanMajelisPutusan>[1], perkaraId);
     },
     ambilKunci: async (p) => {
-      const r = await ambilKunciPenetapanGateway(p);
+      // Masa pegang 5 menit: konversi + penyamaran + unggah dapat lebih dari bawaan 3 menit.
+      const r = await ambilKunciPenetapanGateway({ ...p, ttlDetik: 300 });
       if (r.ok) {
         const d = r.data as { ok?: boolean; token?: string };
         if (d.ok !== false && d.token) return { ok: true, token: String(d.token) };
@@ -281,7 +282,7 @@ export async function jalankanEdocButir(db: AletaDatabase, deps: DepsPelaksana, 
       await deps.lepasKunci(Number(b.perkara_id), kunci.token);
     }
   } catch (galat) {
-    return semuaGagal(`Galat tak terduga: ${sebaris((galat as Error)?.message ?? galat, 200)}`);
+    return semuaGagal(`Error tak terduga: ${sebaris((galat as Error)?.message ?? galat, 200)}`);
   }
 }
 
@@ -468,6 +469,34 @@ export async function pulihkanMacet(db: AletaDatabase, kini: Date): Promise<numb
   return n;
 }
 
+/**
+ * Butir yang jam rencananya sudah lewat BATAS.kedaluwarsaHari hari tetapi belum dikerjakan (peramban penjadwal tidak
+ * membuka SIPP, server mati lama): langkah yang masih menunggu dinyatakan gagal beserta sebabnya. Pekerjaan setua itu
+ * tidak boleh tiba-tiba berjalan sendiri pada hari yang tidak diduga penjadwalnya; "Ulangi" menjadwalkannya kembali.
+ */
+export async function kedaluwarsakan(db: AletaDatabase, kini: Date, pengaturan: PengaturanTerjadwal): Promise<number> {
+  const batas = new Date(kini.getTime() - BATAS.kedaluwarsaHari * 24 * 3600_000).toISOString();
+  const lama = await db.queryAll<BarisButir>("SELECT * FROM aleta_putusan_jadwal_butir WHERE status = 'menunggu' AND waktu_rencana < ? LIMIT 25", [batas]);
+  let n = 0;
+  for (const b of lama) {
+    const perubahan: PerubahanButir = { lain: { klaim_oleh: "", klaim_sampai: "" } };
+    const langkah = langkahDariBaris(b);
+    for (const k of LANGKAH_TERJADWAL) {
+      if (langkah[k] === "menunggu") {
+        perubahan[k] = {
+          status: "gagal",
+          catatan: `Tidak dikerjakan dalam ${BATAS.kedaluwarsaHari} hari sesudah jam rencana (${k === "isi" ? "SIPP tidak dibuka di peramban penjadwal" : "pelaksana server tidak berjalan atau menunggu pengisian Putusan Akhir"}). Tekan Ulangi bila masih perlu.`,
+        };
+      }
+    }
+    const baru = await ubahButir(db, b.id, perubahan, { kini, syaratStatus: ["menunggu"] });
+    if (!baru) continue;
+    n += 1;
+    await akhiriBilaSelesai(db, baru, { kini, pelaku: "pelaksana server", pengaturan });
+  }
+  return n;
+}
+
 /** Berkas yang waktunya habis (butir selesai + N hari, atau dibatalkan) dan berkas tahap yang tak pernah dipasang. */
 export async function bersihkanBerkas(db: AletaDatabase, deps: DepsPelaksana, kini: Date): Promise<number> {
   const iso = kini.toISOString();
@@ -642,6 +671,7 @@ export async function detakPelaksana(db: AletaDatabase, deps: DepsPelaksana = de
     const pengaturan = await bacaPengaturan(db);
     if (!pengaturan.pelaksanaNyala) return { jalan: false, alasan: "dimatikan" };
     await pulihkanMacet(db, kini);
+    await kedaluwarsakan(db, kini, pengaturan);
     await bersihkanBerkas(db, deps, kini);
     const b = await pilihButirServer(db, deps, kini);
     if (!b) return { jalan: false, alasan: "tidak_ada" };

@@ -73,6 +73,8 @@ export const BATAS = {
   masaPegangDetik: 600,
   /** Berapa kali butir yang tertahan sebab sementara diulang sebelum dinyatakan gagal. */
   percobaanMaks: 4,
+  /** Butir yang belum dikerjakan sampai sekian hari sesudah jam rencananya dinyatakan kedaluwarsa (tidak dikerjakan diam-diam). */
+  kedaluwarsaHari: 3,
 } as const;
 
 // ──────────────────────────────────────────────────────────────────────────

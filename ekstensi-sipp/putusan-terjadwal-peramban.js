@@ -153,6 +153,8 @@
   // ──────────────────────────────────────────────────────────────────────────
   let keadaan = { status: "diam", pesan: "", butir: null, terakhir: 0 };
   let bekerja = false;
+  /** Pindah halaman; dapat diganti (uji) lewat setelBuka. */
+  let bukaAlamat = (alamat) => location.assign(alamat);
   let terakhirAktivitas = Date.now();
   let setelan = { bukaOtomatis: true };
 
@@ -497,7 +499,7 @@
       await tulisPenyimpanan({ [KUNCI_AKTIF]: { ...rec, tahap: "menuju", pemegang: "", pada: Date.now() } });
       setKeadaan("menuju", `Membuka halaman ${butir.nomorPerkara}…`, butir);
       spanduk(`Putusan terjadwal: membuka halaman perkara ${butir.nomorPerkara}…`, { nada: "kerja" });
-      location.assign(alamat);
+      bukaAlamat(alamat);
       return { diam: false, alasan: "menuju", butir: butir.nomorPerkara };
     } catch (galat) {
       setKeadaan("diam", sebaris((galat && galat.message) || galat), null);
@@ -548,6 +550,10 @@
     simpanSetelan,
     keadaan: () => keadaan,
     sedangBekerja: () => bekerja,
+    setelBuka: (f) => {
+      bukaAlamat = typeof f === "function" ? f : (alamat) => location.assign(alamat);
+    },
+    idHalaman: () => ID_HALAMAN,
     murni: { halamanAman, sedangDipakai, POLA_BAKU },
   };
   void mulai();

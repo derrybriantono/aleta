@@ -1465,6 +1465,23 @@
     segar.setAttribute("data-ptj", "segarkan");
     segar.addEventListener("click", () => void muatAntrean());
     aksiAtas.appendChild(segar);
+    const periksa = tombol("Periksa jatuh tempo sekarang", "aleta-ptj-sekunder", "Menanyakan ke server apakah ada Putusan Akhir yang sudah waktunya diisi di peramban ini");
+    periksa.setAttribute("data-ptj", "periksa-sekarang");
+    periksa.addEventListener("click", () => {
+      void Promise.resolve(tanyaPeramban()).then(() => muatAntrean());
+    });
+    aksiAtas.appendChild(periksa);
+    const modulPeramban = globalThis.aletaPutusanTerjadwalPeramban;
+    if (modulPeramban && typeof modulPeramban.bacaSetelan === "function") {
+      const cek = masukan("checkbox");
+      cek.checked = true;
+      cek.setAttribute("data-ptj", "buka-otomatis");
+      void modulPeramban.bacaSetelan().then((st) => {
+        cek.checked = st.bukaOtomatis !== false;
+      });
+      cek.addEventListener("change", () => void modulPeramban.simpanSetelan({ bukaOtomatis: cek.checked }));
+      aksiAtas.appendChild(berlabel("", (() => { const x = el("span"); x.append(cek, " Buka halaman perkara sendiri saat jatuh tempo (hanya bila saya sedang tidak mengetik)"); return x; })()));
+    }
     if (a && a.ringkasan) {
       const r = a.ringkasan;
       aksiAtas.appendChild(el("span", "aleta-ptj-ket", `${r.menunggu || 0} menunggu · ${r.jalan || 0} berjalan · ${r.selesai || 0} selesai · ${r.sebagian || 0} sebagian · ${r.gagal || 0} perlu perhatian · ${r.dibatalkan || 0} dibatalkan`));

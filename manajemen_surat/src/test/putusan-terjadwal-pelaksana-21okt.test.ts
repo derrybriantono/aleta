@@ -37,6 +37,7 @@ import {
   bersihkanBerkas,
   detakPelaksana,
   jalankanEdocButir,
+  kedaluwarsakan,
   pulihkanMacet,
   type DepsPelaksana,
 } from "@/server/modules/putusan-terjadwal/pelaksana";
@@ -352,7 +353,7 @@ describe("pelaksana e-Doc dan sisi peramban (pg-mem)", () => {
     expect(dunia.rekam.urut.at(-1)).toBe("lepas");
     const b = await butir(j.butirId);
     expect(b).toMatchObject({ status: "gagal", status_putusan: "gagal", klaim_oleh: "" });
-    expect(String(b.catatan_putusan)).toMatch(/Galat tak terduga: jaringan putus/);
+    expect(String(b.catatan_putusan)).toMatch(/Error tak terduga: jaringan putus/);
   });
 
   // ── Hak ──
@@ -534,6 +535,29 @@ describe("pelaksana e-Doc dan sisi peramban (pg-mem)", () => {
     // Yang masa pegangnya belum habis tidak disentuh.
     await db.run("UPDATE aleta_putusan_jadwal_butir SET status = 'jalan', status_putusan = 'jalan', klaim_sampai = ? WHERE id = ?", [new Date(JAM.getTime() + 60_000).toISOString(), j.butirId]);
     expect(await pulihkanMacet(db, JAM)).toBe(0);
+  });
+
+  it("kedaluwarsa: butir yang tak sempat dikerjakan 3 hari sesudah jam rencana dinyatakan gagal dengan sebab - tidak berjalan sendiri pada hari yang tidak diduga", async () => {
+    const dunia = buatDunia();
+    const j = await jadwalkan(dunia, { langkah: { isi: true, putusan: true } });
+    const baru = await jadwalkan(dunia, { langkah: { putusan: true }, mulai: "2026-10-21 08:30" });
+    // Dua hari lewat: belum kedaluwarsa. Empat hari lewat: kedaluwarsa.
+    const dua = new Date(Date.parse(String((await butir(j.butirId)).waktu_rencana)) + 2 * 24 * 3600_000);
+    expect(await kedaluwarsakan(db, dua, await bacaPengaturan(db))).toBe(0);
+    const empat = new Date(Date.parse(String((await butir(j.butirId)).waktu_rencana)) + 4 * 24 * 3600_000);
+    expect(await kedaluwarsakan(db, empat, await bacaPengaturan(db))).toBe(2);
+    const b = await butir(j.butirId);
+    expect(b).toMatchObject({ status: "gagal", status_isi: "gagal", status_putusan: "gagal" });
+    expect(String(b.catatan_isi)).toMatch(/Tidak dikerjakan dalam 3 hari.*SIPP tidak dibuka di peramban penjadwal.*Ulangi/);
+    expect(b.selesai_pada).not.toBe("");
+    expect((await butir(baru.butirId)).status).toBe("gagal");
+    // Pelaksana tidak lagi memilihnya, juga sesudah jendela kerja datang.
+    JAM = empat;
+    expect(await detakPelaksana(db, dunia.deps)).toMatchObject({ jalan: false });
+    expect(dunia.rekam.unggah).toHaveLength(0);
+    // "Ulangi" menjadwalkannya kembali (berkas masih ada).
+    await kelola(db, HAKIM, { aksi: "ulang", id: baru.butirId }, { sekarang: () => empat, muatLibur: async () => () => false });
+    expect((await butir(baru.butirId)).status).toBe("menunggu");
   });
 
   it("pembersihan: berkas butir selesai dihapus sesudah N hari; berkas tahap yang tak pernah dipasang dibuang sesudah 24 jam; yang aktif tidak disentuh", async () => {
