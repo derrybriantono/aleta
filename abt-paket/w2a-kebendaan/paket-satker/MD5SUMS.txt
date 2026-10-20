@@ -1,4 +1,4 @@
-0c88c2e059c3dd6978d1ccebd4e31f7c  DAFTAR-BLANGKO.tsv
+f49d19266ee430ecc9a59d52550aab1f  DAFTAR-BLANGKO.tsv
 62fcd4cdb224c56d23e81acfdbd24855  abt-w2a-PASANG.sql
 d390727d1db02a73f8d556cb8a3f96d8  abt-w2a-PERIKSA.sql
 9d48c3917eb7364cc58754d77e9b0a4d  abt-w2a-PULIH-HAPUS-BARU.sql
@@ -26,3 +26,16 @@ c96893f3a7177313f0c58dcf76050978  rtf/09.rtf
 56342932c4f0e47f893fb5d6a0eea5d6  rtf/20.rtf
 f4fd5e74318a4ba5fd79ee12dcee8a3e  rtf/21.rtf
 e3939518c7faa099d21e67aa071bdb2e  rtf/22.rtf
+350d0ce5b9106e94ae41ce54acb54fc7  rtf/23.rtf
+21748cc6f88236439e14aafc06625eeb  rtf/24.rtf
+94ec194995a6cbb3a749cd6f249a212f  rtf/25.rtf
+ed35ffd67f462684c06fc002f60a4f8c  rtf/26.rtf
+c999ff410e205bbfbd9824ac9fba1b11  rtf/27.rtf
+f4d4046fa730e71c1256609e62f07ece  rtf/28.rtf
+5350a2ae1f12a3a1d6166c73e40cbdbf  rtf/29.rtf
+0c9a641ab357c90cc7f69c77e48f85ee  rtf/30.rtf
+ee20ae4cc2814ebae274d90b564865b5  rtf/31.rtf
+a9c1c5e2dde6440bde46db6be4cec1d7  rtf/32.rtf
+889d009369ae1b4e04d2bd9dfab64fe3  rtf/33.rtf
+43a250cb3a0cb832273d04239cdb76fa  rtf/34.rtf
+8958da81898c3500b5380bcaa33cddde  rtf/35.rtf

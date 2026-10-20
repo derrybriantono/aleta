@@ -1,15 +1,1 @@
---- sebelum
-+++ sesudah
--2. Bahwa pewaris meninggalkan ahli waris sebagai berikut: ...;
-+2. Bahwa pewaris meninggalkan ahli waris sebagai berikut: 1. _ binti/bin _ (istri/suami pewaris);
-+2. _ binti/bin _ (anak kandung pewaris);;
--3. Menetapkan Almarhum ... telah meninggal dunia pada tanggal ... di ...;
--4. Menetapkan ahli waris dari Almarhum ... adalah: ...;
--5. Menetapkan harta peninggalan (tirkah) Almarhum ... berupa: ...;
--6. Menetapkan bagian masing-masing ahli waris atas harta peninggalan tersebut: ...;
-+3. Menetapkan Almarhum telah meninggal dunia pada tanggal di ;
-+4. Menetapkan ahli waris dari Almarhum adalah: 1. _ binti/bin _ (istri/suami pewaris);
-+2. _ binti/bin _ (anak kandung pewaris); ;
-+5. Menetapkan harta peninggalan (tirkah) Almarhum berupa: 1. Sebidang tanah ... Sertifikat Hak Milik Nomor _, seluas _ m2, terletak di _, dengan batas-batas: Utara _; Timur _; Selatan _; Barat _; ;
-+6. Menetapkan bagian masing-masing ahli waris atas harta peninggalan tersebut: 1. _ (istri) mendapat 1/8 bagian;
-+2. _ (anak) mendapat ...;
+

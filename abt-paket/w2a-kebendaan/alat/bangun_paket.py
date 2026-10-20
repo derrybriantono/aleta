@@ -15,7 +15,7 @@ import hashlib, os, re, shutil, sys
 AKAR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import variabel as kumpulan
-import tambal_hb, tambal_waris, tambal_lain
+import tambal_hb, tambal_waris, tambal_lain, tambal_tolak
 from rtfkit import GagalTambal
 
 PAKET = os.path.join(AKAR, "paket-satker")
@@ -44,6 +44,11 @@ def daftar_blangko():
         for berkas in sorted(os.listdir(os.path.join(ASLI, folder))):
             if berkas.startswith(("[01] ", "[01a]", "[01b]")):
                 hasil.append((folder, berkas, (lambda k: (lambda n, d: tambal_lain.tambal(k, n, d)))(kode)))
+    # putusan TOLAK ([03], [03b]; permohonan [03p] tidak): analisis bukti surat
+    for folder, kode in (("4a Harta Bersama", "4a"), ("4b Kewarisan", "4b"), ("4c Wasiat", "4c"), ("4d Hibah", "4d"), ("4e Wakaf", "4e"), ("10 Ekonomi Syariah", "10"), ("10a Ekonomi Syariah Biasa", "10a")):
+        for berkas in sorted(os.listdir(os.path.join(ASLI, folder))):
+            if berkas.startswith(("[03] ", "[03b]")):
+                hasil.append((folder, berkas, (lambda k: (lambda n, d: tambal_tolak.tambal(k, n, d)))(kode)))
     return hasil
 
 

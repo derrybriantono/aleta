@@ -25,7 +25,7 @@ Keputusan majelis TIDAK diputus mesin: tiap tuntutan terbaca dari petitum SIPP l
 | amar bernomor per petitum | angka diketik dalam RTF; rujukan "diktum nomor N" diketik | **4800/4801** (verstek), **4802/4803** (kontradiktoir), **4804** (dalam konvensi); nomor dan rujukan dihitung dari butir yang aktif; nomor butir biaya dari 4801/4803 |
 | rekonvensi | [01]/[01a] ada; keterangan merah per objek rekonvensi | tidak diubah (penilaian per objek rekonvensi tetap tangan; batasan di bagian 7) |
 
-Berkas diubah: `[01]`, `[01a]`, `[01b]`, `[02a]`. `[03]/[03b]` (tolak), `[97]`, `[98*]`, `[99*]` tidak memerlukan tambahan (tanpa pokok perkara dikabulkan).
+Berkas diubah: `[01]`, `[01a]`, `[01b]`, `[02a]` (kabul) dan `[03]`, `[03b]` (tolak: hanya analisis bukti surat dan kutipan saksi BAS). `[97]`, `[98*]`, `[99*]` tidak memerlukan tambahan (tanpa pokok perkara yang dipertimbangkan).
 
 ## 2. Kewarisan (4b)
 
@@ -41,7 +41,7 @@ Berkas diubah: `[01]`, `[01a]`, `[01b]`, `[02a]`. `[03]/[03b]` (tolak), `[97]`, 
 | bukti surat | satu paragraf umum | **4829/4830** (akta kematian, KK, silsilah, akta nikah, kelahiran, hak atas tanah, keuangan/jaminan sosial) |
 | amar | "untuk sebagian" dan "Menolak selebihnya" selalu, butir diketik | **4825/4826** (verstek), **4827/4828** (kontradiktoir); seluruhnya bila **4815** = dikabulkan seluruhnya |
 
-Berkas diubah: `[01]`, `[01a]`, `[01b]`, `[01c]`.
+Berkas diubah: `[01]`, `[01a]`, `[01b]`, `[01c]` (kabul) dan `[03]`, `[03b]` (tolak: analisis bukti dan kutipan saksi).
 
 ## 3. Wasiat (4c), Hibah (4d), Wakaf (4e)
 

@@ -60,8 +60,8 @@ describe("A. paket ABT w2a-kebendaan utuh", () => {
     }
   });
 
-  it("22 blangko: md5 sebelum = RTF asli server 21 Okt, md5 sesudah = RTF di paket, dan berkas berubah", () => {
-    expect(daftar.length).toBe(22);
+  it("35 blangko: md5 sebelum = RTF asli server 21 Okt, md5 sesudah = RTF di paket, dan berkas berubah", () => {
+    expect(daftar.length).toBe(35);
     for (const d of daftar) {
       const asli = readFileSync(path.join(PAKET, "asli-server-21okt", d.folder, d.berkas));
       const baru = readFileSync(path.join(SATKER, "rtf", `${d.nn}.rtf`));
@@ -152,7 +152,7 @@ describe("A. paket ABT w2a-kebendaan utuh", () => {
     const r = spawnSync("python", [path.join(ALAT, "periksa_selisih.py")], { encoding: "utf8", timeout: 120_000, maxBuffer: 20_000_000 });
     expect(r.status, r.stderr).toBe(0);
     const sel: Record<string, { berkas: string; hilang: string[]; tambah: string[] }> = JSON.parse(r.stdout);
-    expect(Object.keys(sel).length).toBe(22);
+    expect(Object.keys(sel).length).toBe(35);
     const sah = [
       /^\d+\. (Mengabulkan|Menyatakan|Menetapkan|Menghukum|Menolak|#\d{4}#)/,
       /^Menimbang, bahwa (terhadap akta otentik|bukti-bukti surat yang diajukan|bukti surat yang dikeluarkan|bukti elektronik|berdasarkan fakta hukum tersebut|terhadap tuntutan pembayaran|terhadap harta peninggalan sebagaimana fakta|terhadap petitum yang bersifat menghukum|tentang obyek barang tidak bergerak|berdasarkan segala pertimbangan)/,
