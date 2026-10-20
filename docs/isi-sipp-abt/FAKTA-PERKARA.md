@@ -90,4 +90,31 @@ Pakai untuk: satu butir amar dan satu pertimbangan per butir petitum (`butir.fil
 2. Pengisi baru cukup memberi usulan lewat jalur `dariSipp` seperti biasa; panggil `faktaPerkara` bila butuh nilai gabungan (mis. tanya jawab saksi: `isiJawabanSaksiService.lengkapi/isiBaris` menerima `faktaBersama`).
 3. Setiap usulan `pasti/cukup` yang diisi sendiri wajib punya ukuran di `aleta_bot/config/gerbang-isian.json` (lihat bagian gerbang di bawah). Tanpa ukuran, uji `gerbang-isian-u6.test.ts` gagal dan saat berjalan usulan diturunkan menjadi saran "ragu".
 
-(Bagian BAS dan gerbang diisi pada dorongan berikutnya.)
+## BAS -> putusan (keterangan saksi dan bukti yang sudah tersimpan)
+
+`aleta_bot/services/basPerkara.js` (`bacaBas(perkaraId, runAbt, runQuery)`) membaca `abt_keterangan_saksi` (+ identitas saksi di SIPP `perkara_pihak5`, `saksi_id = perkara_pihak5.id`, `saksi_pihak_ke` 1 = pihak Penggugat/Pemohon, 2 = Tergugat/Termohon) dan isian alat bukti 1214 (bukti P.n), 9911 dan 1262 (bukti T.n). Keluaran di `faktaPerkara().bas`:
+
+```jsonc
+{ "ada": true, "jumlahSaksi": {"P": 2, "T": 0},
+  "saksi": [ { "id": 17557, "pihak": "P", "urutan": 1, "nama": "...", "hubungan": "Adik Kandung Penggugat", "sidang": [20272],
+               "tanyaJawab": [ { "no": 1, "tanya": "...", "jawab": "...", "pokok": ["hubungan"] } ] } ],
+  "pokok": { "pernikahan": [ { "saksi": 1, "pihak": "P", "nama": "...", "tanya": "...", "jawab": "..." } ], "penyebab": [...], ... },
+  "bukti": [ { "sisi": "P", "tanda": "P.2", "jenisKode": "aktaNikah", "nomor": "63/19/II/2010", "tanggal": "01 Maret 2010", "penerbit": "KUA ...", "teks": "..." } ],
+  "jumlahBukti": {"P": 2, "T": 0}, "adaJenisBukti": {"ktp": true, "aktaNikah": true} }
+```
+
+Pokok pembuktian (`pernikahan, kediaman, anak, penyebab, pisah, nafkah, damai, harta, kematian, identitas-calon, kemampuan, hubungan`) dikenali dari bunyi pertanyaan (pola di `peta-fakta-variabel.json` -> `pokokBas`, boleh ditambah). Jawaban saksi dikutip apa adanya, tidak ada yang dikarang. `bas` hanya dibaca bila pembaca ABT tersedia (`runAbt`).
+
+**Sisi ABT (putusan)**: paket `abt-paket/u6-fakta-sinkron/` menambah 29 variabel kueri 4600-4629 (jumlah/nama/hubungan saksi, kutipan ringkas per pokok 4610-4618, jumlah dan tanda bukti 4620-4623, jenis bukti 4624-4629) yang membaca BAS yang sama, untuk jenis perkara apa pun. Isi dan cara pasang: `abt-paket/u6-fakta-sinkron/PASANG.md`. Duduk perkara cerai sudah membaca keterangan saksi lewat `#2021#`/`#2022#`; variabel baru ini untuk jenis lain dan untuk pertimbangan per dalil.
+
+**Sisi tanya jawab saksi/BAS**: `isiJawabanSaksiService.lengkapi/isiBaris` menerima `faktaBersama` (hasil `faktaPerkara`); rute `/abt/usulan` memasangnya otomatis. Hasil: jawaban saksi memakai nilai yang sama dengan Blangko Derry dan putusan, termasuk koreksi petugas.
+
+## Gerbang otomatis berdasar
+
+`aleta_bot/config/gerbang-isian.json` + `aleta_bot/services/gerbangIsian.js`. Satu tempat yang memutuskan "terisi sendiri" (pasti/cukup) atau "saran ragu":
+
+- tiap (kode, asal: sipp | posita | berkas) membawa ukuran `n` (muncul), `banding` (ada isian petugas pembanding), `cocok`, `persen`, `status`, `pangkatMaks`, `dasar`;
+- `otomatis`: pembanding >= 20 dan >= 90% cocok (pasti bila >= 97%); `terstruktur`: dibaca langsung dari kolom SIPP, contoh >= 15, tak ada selisih besar dengan pembanding; selainnya `saran`;
+- saat berjalan, rute `/abt/usulan` menerapkan gerbang pada semua usulan (sipp, saksi, itsbat, posita-lain): kode+asal TANPA ukuran atau berstatus saran diturunkan menjadi "ragu" (`keyakinanSemula` dicatat), pasti dibatasi `pangkatMaks`; kalimat ketepatan masuk `catatan` (ikon i) dan objek `gerbang` {status, n, banding, cocok, persen}; isian petugas dan keyakinan non-otomatis tidak disentuh;
+- membangun ulang (setelah menambah pengisi): `ALETA_BOT_DB5_NAME=tidak_ada node scripts/isi-sipp-abt/ukur-gerbang-u6.cjs --maks 900 --kerja 5 --mentah <acak.json>` lalu `--khusus 45 --mentah <terstruktur.json>` lalu `--dari-mentah acak.json,terstruktur.json --tulis` (butuh XAMPP lokal `sipp_donggala` + `aps_badilag`; set `ALETA_GERBANG_ISIAN=mati` bila mengukur lewat rute agar penurunan tidak mengacaukan ukuran);
+- penjaga: uji `gerbang-isian-u6.test.ts` memindai berkas pengisi (`abtIsian*.js`, `isiOtomatis*.js`, `isiOtomatisS5/*`, termasuk berkas BARU) dan GAGAL bila ada kode yang ditulis dengan pasti/cukup tanpa entri terukur atau tanpa catatan `belumTerukur`; juga menghitung ulang seluruh entri dari data ukur mentah (`UKURAN-GERBANG-U6-*.json`) sehingga tidak ada yang dilonggarkan dengan tangan.

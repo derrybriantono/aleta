@@ -258,6 +258,11 @@ function aturan(a) {
       ...(a.contohSalah.length ? { contohSalah: a.contohSalah } : {}),
     };
   }
+  // kode yang ditulis pengisi dengan pasti/cukup tetapi tidak muncul di sampel: diakui BELUM TERUKUR (diperlakukan sebagai saran)
+  const belumTerukur = {};
+  for (const [k, lokasi] of Object.entries(require(path.join(akar, "aleta_bot", "services", "gerbangIsian.js")).pindaiPengisi())) {
+    if (!kode[k]) belumTerukur[k] = `ditulis ${[...new Set(lokasi)].slice(0, 2).join(", ")} dengan pasti/cukup, tetapi tidak muncul pada ${diukur} perkara sampel; sampai terukur hanya saran`;
+  }
   const out = {
     skema: "gerbang-isian/1",
     versi: 1,
@@ -271,6 +276,7 @@ function aturan(a) {
       tanpaUkuran: "kode/asal yang tidak tercatat di sini diturunkan menjadi saran 'ragu' saat berjalan",
     },
     kode,
+    belumTerukur,
   };
   if (tulis) fs.writeFileSync(path.join(akar, "aleta_bot", "config", "gerbang-isian.json"), JSON.stringify(out, null, 1) + "\n");
   const ringkas = Object.values(kode).reduce((acc, e) => {

@@ -103,6 +103,37 @@ function terapkan(usulan, opsi) {
   return usulan;
 }
 
+
+/**
+ * Pemindai statis pengisi: kode 4 angka yang tertulis berdekatan (+-6 baris) dengan keyakinan "pasti"/"cukup" di berkas pengisi
+ * (abtIsian*.js, isiOtomatis*.js, isiOtomatisS5/*). Dipakai uji dan pembangun gerbang: setiap kode yang ditemukan harus
+ * tercatat di gerbang (kode) atau di `belumTerukur` bersama alasannya. Berkas pengisi BARU otomatis ikut terpindai.
+ * @returns {Record<string, string[]>} kode -> lokasi "berkas:baris"
+ */
+function pindaiPengisi() {
+  const dir = __dirname;
+  const berkas = [];
+  for (const nama of fs.readdirSync(dir)) if (/^(?:abtIsian|isiOtomatis)[A-Za-z0-9]*\.js$/.test(nama)) berkas.push(nama);
+  for (const nama of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (nama.isDirectory() && /^isiOtomatis/.test(nama.name)) for (const f of fs.readdirSync(path.join(dir, nama.name))) if (/\.js$/.test(f)) berkas.push(`${nama.name}/${f}`);
+  }
+  const hasil = {};
+  for (const b of berkas) {
+    const baris = fs.readFileSync(path.join(dir, b), "utf8").split(/\r?\n/);
+    baris.forEach((l, i) => {
+      if (!/["'`](?:pasti|cukup)["'`]/.test(l)) return;
+      for (const m of baris.slice(Math.max(0, i - 6), i + 7).join("\n").matchAll(/["'`](\d{4})["'`]/g)) (hasil[m[1]] = hasil[m[1]] || []).push(`${b}:${i + 1}`);
+    });
+  }
+  return hasil;
+}
+
+/** Kode yang tercatat terukur ATAU diakui belum terukur (diperlakukan sebagai saran). */
+function kodeTercatat(gerbangLuar) {
+  const G = muat(gerbangLuar);
+  return new Set([...Object.keys(G.kode || {}), ...Object.keys(G.belumTerukur || {})]);
+}
+
 /** Ringkasan entri gerbang untuk dokumen/uji. */
 function ringkas(gerbangLuar) {
   const G = muat(gerbangLuar);
@@ -111,4 +142,4 @@ function ringkas(gerbangLuar) {
   return hasil;
 }
 
-module.exports = { terapkan, putuskan, muat, ringkas, asalDari, BERKAS, PANGKAT };
+module.exports = { terapkan, putuskan, muat, ringkas, asalDari, pindaiPengisi, kodeTercatat, BERKAS, PANGKAT };

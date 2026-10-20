@@ -143,3 +143,84 @@ describe("C. faktaPerkara dengan data tiruan", () => {
     expect(Object.keys(FP.muatPeta().fakta).some((k) => k.startsWith("saksi."))).toBe(false);
   }, 30000);
 });
+
+// ============================================================================
+describe("E. tanya jawab saksi/BAS membaca fakta bersama; koreksi petugas tidak menimpa", () => {
+  const servis = require_(path.join(AKAR, "aleta_bot", "services", "isiJawabanSaksiService.js")) as { isiBaris: (o: any) => Record<string, any>; sertakanFaktaBersama: (f: any, b: any) => any };
+  const baris = [
+    { kunci: "itsbat-nikah/q-waktu-tempat/melihat", tanya: "Kapan dan di mana Pemohon I dan Pemohon II menikah?", jawab: "pada waktu itu saya berada di tempat kejadian dan melihat bahwa Pemohon I dan Pemohon II melangsungkan pernikahan di ... yaitu pada tanggal ..." },
+    { kunci: "itsbat-nikah/q-saksi/melihat", tanya: "Siapa saja yang menjadi saksi nikah ketika akad nikah itu berlangsung?", jawab: "akad nikah itu disaksikan oleh dua orang saksi yaitu ... dan ..., dan hal itu saya lihat dengan mata kepala saya sendiri" },
+  ];
+  const dasarSaksi = { jenisPerkara: "360", alur: "16", pelaku: "Termohon", lawan: "Pemohon", saksiIsi: [{ kunci: "saksi 1 p", ke: 1, modus: "melihat", baris }] };
+  const fakta = (kunci: string, nilai: string) => ({ label: kunci, tipe: "teks", nilai, yakin: "pasti", sumber: "isian petugas", kutipan: "Isian petugas", kode: [], kodeAsal: [], bertentangan: [], catatan: "", hanyaSaran: false });
+
+  it("fakta bersama (satu sumber) menghasilkan jawaban yang SAMA dengan isian blangko yang bernilai sama", async () => {
+    const bersama = await FP.faktaPerkara(777, {
+      ...dasar,
+      perkara: perkara({ jenis: 360, alur: 16 }),
+      usulan: [
+        { kode: "5197", nama: "Tgl nikah", nilai: "17 November 2025", keyakinan: "pasti", sumber: [{ saksi: 0, asal: "sipp", kalimat: "SIPP" }] },
+        { kode: "5105", nama: "Tempat", nilai: "Desa Lembantongoa, Kecamatan Palolo, Kabupaten Sigi, Provinsi Sulawesi Tengah", keyakinan: "cukup", sumber: [{ saksi: 0, asal: "sipp", kalimat: "SIPP" }] },
+        { kode: "0650", nama: "Saksi nikah 1", nilai: "Azumar", keyakinan: "cukup", sumber: [{ saksi: 0, asal: "sipp", kalimat: "SIPP" }] },
+        { kode: "0651", nama: "Saksi nikah 2", nilai: "Luthfi Hakim", keyakinan: "cukup", sumber: [{ saksi: 0, asal: "sipp", kalimat: "SIPP" }] },
+      ],
+    });
+    const lewatBersama = servis.isiBaris({ ...dasarSaksi, faktaBersama: bersama });
+    const lewatIsian = servis.isiBaris({
+      ...dasarSaksi,
+      isian: { "5197": { nilai: "17 November 2025", keyakinan: "pasti" }, "5105": { nilai: "Desa Lembantongoa, Kecamatan Palolo, Kabupaten Sigi, Provinsi Sulawesi Tengah", keyakinan: "cukup" }, "0650": { nilai: "Azumar" }, "0651": { nilai: "Luthfi Hakim" } },
+    });
+    expect(lewatBersama["itsbat-nikah/q-waktu-tempat/melihat"].teks).toContain("pada tanggal 17 November 2025");
+    expect(lewatBersama["itsbat-nikah/q-saksi/melihat"].teks).toContain("yaitu Azumar dan Luthfi Hakim");
+    expect(lewatBersama["itsbat-nikah/q-waktu-tempat/melihat"].teks).toBe(lewatIsian["itsbat-nikah/q-waktu-tempat/melihat"].teks);
+    expect(lewatBersama["itsbat-nikah/q-saksi/melihat"].teks).toBe(lewatIsian["itsbat-nikah/q-saksi/melihat"].teks);
+  });
+  it("koreksi petugas pada fakta bersama menang atas SIPP dalam jawaban saksi", async () => {
+    const f = await FP.faktaPerkara(777, {
+      ...dasar,
+      perkara: perkara({ jenis: 360, alur: 16 }),
+      usulan: [{ kode: "5197", nama: "Tgl nikah", nilai: "17 November 2025", keyakinan: "pasti", sumber: [{ saksi: 0, asal: "sipp", kalimat: "SIPP" }] }],
+      isian: { "5197": "3 Desember 2025" },
+    });
+    expect(f.fakta["nikah.tanggal"].nilai).toBe("2025-12-03");
+    const j = servis.isiBaris({ ...dasarSaksi, faktaBersama: f });
+    expect(j["itsbat-nikah/q-waktu-tempat/melihat"].teks).toContain("3 Desember 2025");
+    expect(j["itsbat-nikah/q-waktu-tempat/melihat"].teks).not.toContain("17 November 2025");
+  });
+  it("tanpa fakta bersama, jawaban sama seperti sebelumnya (pengisi lama tidak berubah)", () => {
+    const a = servis.isiBaris({ ...dasarSaksi });
+    const b = servis.isiBaris({ ...dasarSaksi, faktaBersama: null });
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    expect(servis.sertakanFaktaBersama(null, fakta("x", "y"))).toBeNull();
+  });
+});
+
+describe("F. Blangko Derry: usulan kode setara hanya mengisi yang kosong", () => {
+  const mesin = (() => {
+    const g = globalThis as Record<string, unknown>;
+    new Function(readFileSync(path.join(AKAR, "ekstensi-sipp", "isi-sipp-bersama.js"), "utf8"))();
+    return g.AletaIsiSipp as {
+      pilihPerKode: (s: any[][], boleh?: Set<string>) => Map<string, any>;
+      rencanakan: (u: Map<string, any>, katalog: any[], keIso: (t: string) => string, semua: any[][]) => { tulis: Array<{ kode: string; nilai: string }>; saran: Array<{ kode: string }>; lewati: Array<{ kode: string; sebab: string }> };
+    };
+  })();
+  const setara = async () =>
+    (
+      await FP.faktaPerkara(777, {
+        ...dasar,
+        perkara: perkara(),
+        usulan: [{ kode: "5110", nama: "Nama anak", nilai: "Aisilah", keyakinan: "ragu", sumber: [{ saksi: 0, asal: "sipp", kalimat: "SIPP" }] }],
+        isian: { "5110": "Aisilah Putri Ramadhani" },
+      })
+    ).usulanSetara;
+  const katalog = (kosong: boolean) => [{ kode: "8603", nama: "Nama anak yang dimohonkan", jenis: "teks", opsi: [], kosong }];
+  it("kode setara kosong -> ditulis dengan nilai koreksi petugas; sudah ada isinya -> tidak ditimpa", async () => {
+    const u = await setara();
+    expect(u).toHaveLength(1);
+    const kosong = mesin.rencanakan(mesin.pilihPerKode([u]), katalog(true), (t) => t, [u]);
+    expect(kosong.tulis).toEqual([expect.objectContaining({ kode: "8603", nilai: "Aisilah Putri Ramadhani" })]);
+    const terisi = mesin.rencanakan(mesin.pilihPerKode([u]), katalog(false), (t) => t, [u]);
+    expect(terisi.tulis).toEqual([]);
+    expect(terisi.lewati).toContainEqual({ kode: "8603", sebab: "sudah ada isinya" });
+  });
+});

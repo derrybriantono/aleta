@@ -1990,5 +1990,14 @@
     }
    }
   }
+ },
+ "belumTerukur": {
+  "7084": "ditulis isiOtomatisJenisS6.js:226 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran",
+  "8706": "ditulis isiOtomatisJenisS6.js:270, isiOtomatisJenisS6.js:280 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran",
+  "9050": "ditulis abtIsianLengkap20okt.js:539 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran",
+  "9352": "ditulis isiOtomatisJenisS6.js:333 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran",
+  "9353": "ditulis isiOtomatisJenisS6.js:319 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran",
+  "9700": "ditulis isiOtomatisS5/ahliWaris.js:343 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran",
+  "9715": "ditulis abtIsianLengkap20okt.js:527 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran"
  }
 }
