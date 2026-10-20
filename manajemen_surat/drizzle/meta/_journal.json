@@ -491,6 +491,13 @@
       "when": 1792198800001,
       "tag": "0074_aleta_ecourt_aksi_login_wa",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1792202400001,
+      "tag": "0078_aleta_ai",
+      "breakpoints": true
     }
   ]
 }

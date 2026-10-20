@@ -32,6 +32,7 @@
   "license": "ISC",
   "description": "Portal Terpadu Pengadilan Agama frontend mock built with Next.js, Tailwind CSS, and shadcn-style UI.",
   "dependencies": {
+    "@anthropic-ai/sdk": "0.135.0",
     "@aws-sdk/client-s3": "^3.1045.0",
     "@better-auth/drizzle-adapter": "^1.6.2",
     "@fontsource/public-sans": "^5.2.7",
