@@ -724,7 +724,8 @@
       `<button type="button" class="bd-btn kecil" data-bd="keabt">Tampilan ABT lama</button></div></div>` +
       `<div class="bd-isi">` +
       `<section class="bd-tahap" id="bd-t1"><div class="bd-tk"><span class="bd-tno">1</span><span class="bd-tj">Perkara</span>` +
-      `<div class="bd-ringkas" id="bd-pkringkas" hidden></div><button type="button" class="bd-btn kecil" id="bd-ganti" data-bd="ganti" hidden>Ganti perkara</button></div>` +
+      `<div class="bd-ringkas" id="bd-pkringkas" hidden></div><button type="button" class="bd-btn kecil" id="bd-ganti" data-bd="ganti" hidden>Ganti perkara</button>` +
+      `<button type="button" class="bd-btn kecil bd-massalbtn" id="bd-massal" data-bd="massal" title="Mencetak banyak perkara sekaligus menurut peran Anda" hidden>Cetak massal</button></div>` +
       `<div id="bd-pkpilih"></div></section>` +
       `<div id="bd-setelah" class="bd-kolom" hidden>` +
       `<section class="bd-tahap bd-sebaris menyusul" id="bd-w-pilih-blangko" data-tahap="E"><div class="bd-tk"><span class="bd-tno">2</span><span class="bd-tj">Blangko</span><span class="bd-chip">menyusul · tahap E</span></div>` +
@@ -893,6 +894,8 @@
     renderAtas();
     renderPerkara();
     renderMenuDerry();
+    const tombolMassal = cari("#bd-massal", akar);
+    if (tombolMassal) tombolMassal.hidden = !berhakDaftar();
     const ada = Boolean(S.pk);
     cari("#bd-setelah", akar).hidden = !ada;
   }
@@ -1379,6 +1382,11 @@
     umumkanPerkara();
     void muatRiwayatSidang(p);
   }
+  /** Cetak massal (blangko-derry-massal.js memasang fungsinya lewat api.pasangMassal); belum terpasang = kabar singkat. */
+  function bukaMassal() {
+    if (typeof S.massal === "function") return S.massal();
+    return toast("Cetak massal belum siap. Muat ulang halaman ABT.");
+  }
   function gantiPerkara() {
     S.pk = null;
     sembunyiTip();
@@ -1655,6 +1663,7 @@
     if (kode === "widget") return alihkanFloat("widget");
     if (kode === "alat") return alihkanFloat("alat");
     if (kode === "ganti") return gantiPerkara();
+    if (kode === "massal") return bukaMassal();
     if (kode === "coba") return void muatDaftar(true);
     if (kode === "arah") {
       S.arah = -S.arah;
@@ -1951,6 +1960,15 @@
       }
       return true;
     },
+    /** Cetak massal: blangko-derry-massal.js mendaftarkan fungsi pembukanya di sini; tombol "Cetak massal" memanggilnya. */
+    pasangMassal(fn) {
+      S.massal = typeof fn === "function" ? fn : null;
+    },
+    bukaMassal,
+    /** Akar tampilan (untuk jendela besar Cetak massal); null bila belum dibangun. */
+    akar: () => akar,
+    /** Peran akun (himpunan peran tampilan: hakim, pp, js, kasir, ptsp, admin). */
+    peranAkun: () => Array.from(S.peranSet),
     /** Titik sambung tahap E: fn(ctx) -> [{ berkas, kelompok, jenis, alasan }]. */
     pasangRekomendasi(fn) {
       S.rekomendasi = typeof fn === "function" ? fn : null;

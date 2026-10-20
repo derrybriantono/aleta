@@ -399,6 +399,8 @@
   /** Urutan sidang ABT (d): urutan SIPP bila ada, bila tidak nomor urut daftar. */
   const sidangUrutan = () => {
     if (!S.pk) return "";
+    // Cetak massal relaas: urutan sidang yang DIPANGGIL ditetapkan dokumennya (pemberitahuan putusan = 0 = tanpa d), bukan indeks daftar.
+    if (S.pk.urutanPaksa !== undefined) return Number(S.pk.urutanPaksa) > 0 ? String(Number(S.pk.urutanPaksa)) : "";
     const s = S.pk.sidangDipilih;
     if (s && Number(s.urutan) > 0) return String(s.urutan);
     return String((Number(S.pk.sidangKe) || 0) + 1);
@@ -1390,6 +1392,13 @@
     if (adm() && kd && kd.sebagai && kd.sebagai.nama && kd.sebagai.peran) q.set("sebagaiPeran", kd.sebagai.peran);
     return `${API_BLANGKO}?${q.toString()}`;
   }
+  const kerjaOto = new Set();
+  function lacakOto(janji) {
+    kerjaOto.add(janji);
+    const lepas = () => kerjaOto.delete(janji);
+    Promise.resolve(janji).then(lepas, lepas);
+    return janji;
+  }
   async function muatSusunan() {
     const blangko = S.blangko;
     if (!blangko || !S.pk) return;
@@ -1420,8 +1429,9 @@
       S.janjiBukti = siapkanBukti();
       void muatSematan();
       // 19 Okt: bawaan itsbat, e-litigasi 7139 dan bacaan SIPP/gugatan/e-Court berjalan sendiri bila saklar "Isi otomatis dari SIPP" menyala.
-      void isiOtomatisBlangko(d);
-      void isiJawabMenjawabOtomatis(d);
+      // Cetak massal menunggu pekerjaan otomatis ini selesai sebelum berpindah ke perkara berikutnya (kerjaOto).
+      void lacakOto(isiOtomatisBlangko(d));
+      void lacakOto(isiJawabMenjawabOtomatis(d));
     } catch (e) {
       if (S.blangko !== blangko) return;
       S.memuatSusunan = false;
@@ -4797,7 +4807,7 @@
     const d = await ambilPortal(API_PDF, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rtfBase64: base64DariBuffer(buf), ...(salinan ? { salinan: true } : {}) }), batasMs: BATAS_LAMA_MS }, salinan ? "Membuat PDF salinan" : "Membuat PDF");
     if (!d || !d.available) throw new Error((d && d.message) || "pengubah PDF tidak tersedia");
     const biner = Uint8Array.from(atob(d.pdfBase64), (c) => c.charCodeAt(0));
-    return { blob: new Blob([biner], { type: "application/pdf" }), keterangan: d.salinan || null };
+    return { blob: new Blob([biner], { type: "application/pdf" }), bita: biner, keterangan: d.salinan || null };
   }
   async function lakukanCetak(rtfBuf) {
     const nomor = nomorPerkara();
@@ -6006,6 +6016,191 @@
     return true;
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // CETAK MASSAL - pengemudi (20 Okt 2026)
+  // ──────────────────────────────────────────────────────────────────────────
+  // blangko-derry-massal.js memakai mesin satu-perkara ini BERULANG, satu perkara sekali: perkara dibuka seperti dipilih di langkah 1,
+  // blangko dipilih lewat pilihBlangko (hak buka diperiksa ke ABT lebih dulu), isian terisi otomatis lewat jalur yang sama dengan ketikan
+  // (tidak menimpa yang sudah ada isinya), lalu naskah diambil lewat ambilRtf (header penanda dan penutup putusan dibersihkan) dan
+  // PDF dibuat lewat pdfDari/rtfDenganTtd - jalur yang SAMA dengan langkah 5 Cetak. Tidak ada jalur tulis baru: isian ke ABT hanya
+  // lewat simpanIsian; tidak ada yang ditulis ke SIPP.
+  const massal = (() => {
+    const BATAS_SIAP_MS = 150000;
+    const tanpaRtf = (s) => String(s || "").replace(/\.rtf$/i, "").trim();
+    const biner = (naskah) => (typeof naskah === "string" ? new Uint8Array(bufDariLatin1(naskah)) : new Uint8Array(naskah));
+    const tungguMaks = (janji, ms, pesan) => {
+      let jam;
+      return Promise.race([janji, new Promise((_, tolak) => (jam = setTimeout(() => tolak(new Error(pesan)), ms)))]).finally(() => clearTimeout(jam));
+    };
+    /** Item daftar massal -> detail perkara seperti peristiwa aleta-bd-perkara (kerangka). Sidang yang dipilih ditambahkan bila belum ada. */
+    function pkDariItem(it) {
+      const p = it.perkara || {};
+      const sid = Array.isArray(p.sidang) ? p.sidang.slice() : [];
+      const dipilih = it.sidang || sid[0] || null;
+      let idx = dipilih ? sid.findIndex((x) => (dipilih.sidangId && x.sidangId === dipilih.sidangId) || (!dipilih.sidangId && x.tanggal === dipilih.tanggal)) : -1;
+      if (idx < 0) {
+        idx = sid.length;
+        if (dipilih) sid.push(dipilih);
+      }
+      return {
+        nomorPerkara: String(it.nomor || p.nomorPerkara || ""),
+        perkaraId: String(it.perkaraId || p.perkaraId || ""),
+        jenisPerkara: String(p.jenisPerkara || it.jenisPerkara || ""),
+        sidang: sid,
+        sidangKe: Math.max(0, idx),
+        sidangDipilih: dipilih,
+        perkara: p,
+        ...(it.urutanPaksa !== undefined && it.urutanPaksa !== null ? { urutanPaksa: Number(it.urutanPaksa) || 0 } : {}),
+      };
+    }
+    /** Ketikan yang belum tersimpan (perkara yang sedang dibuka petugas) dituntaskan sebelum perkara diganti. */
+    async function siramSimpan() {
+      if (!S.blangko || !S.pk) return;
+      for (const kode of Array.from(S.diketik)) {
+        try {
+          await simpanIsian(kode, S.isi[kode]);
+        } catch {
+          /* gagal tersimpan: ketikan itu tetap dilaporkan lewat status isian */
+        }
+        S.diketik.delete(kode);
+      }
+    }
+    async function menu(jenis) {
+      await muatMenu();
+      await muatIndeks();
+      if (jenis) await muatSemuaKelompok(jenis);
+      return (S.menu ? S.menu.kelompok : [])
+        .filter((k) => (!jenis || k.jenis === jenis) && kelompokBoleh(k))
+        .map((k) => ({ nama: k.nama, judul: k.judul || namaMenuTampil(k.nama), jenis: k.jenis, berkas: (k.berkas || []).map((b) => b.berkas) }));
+    }
+    /** Satu kali baca jadwal sidang sehari (rute portal yang sama dengan saran di langkah 2) mengisi singgahan saran untuk semua perkara. */
+    async function muatSaranTanggal(tanggal) {
+      try {
+        const d = await ambilPortal(`${API_SIDANG_PORTAL}?dari=${tanggal}&sampai=${tanggal}&cari=&batas=400&rekomendasi=1`, {}, "Membaca saran blangko");
+        for (const b of (d && d.sidang) || []) {
+          const nomor = String((b && b.nomorPerkara) || "").trim();
+          if (!nomor) continue;
+          rekPortal.set(`${nomor}|${String(b.tanggalSidang || tanggal).slice(0, 10)}|${String(b.sidangId || "")}`, { status: "siap", hasil: b.rekomendasiBlangko || null, saat: Date.now() });
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    /** Saran blangko mesin Derry untuk satu item menurut jenisnya: [{ berkas, kelompok, jenis, alasan }]. */
+    function saran(it, jenis) {
+      const lama = S.pk;
+      S.pk = pkDariItem(it);
+      try {
+        return rekomendasiJenis(jenis).map((r) => ({ berkas: tanpaRtf(r.berkas), kelompok: r.kelompok, jenis: r.jenis, alasan: r.alasan }));
+      } finally {
+        S.pk = lama;
+      }
+    }
+    function keadaan() {
+      const kos = kosongRinci();
+      const penting = kos.filter((x) => x.tingkat !== "tambahan");
+      const ragu = Object.keys(S.saranSipp).filter((k) => !String(S.isi[k] || "").trim() && daftarPerlu().some((b) => b.kode === k)).length;
+      const gagalSimpan = Object.values(S.tersimpan).filter((v) => String(v).startsWith("gagal")).length;
+      const h = S.susunan ? hitung() : { a: 0, t: 0 };
+      return { terisi: h.a, total: h.t, kosongPenting: penting.map((x) => x.nama), kosongTambahan: kos.length - penting.length, ragu, gagalSimpan, penandaSisa: S.prat.penanda ? S.prat.penanda.length : 0 };
+    }
+    /** Membuka perkara + blangko item dan menunggu isiannya siap; isiOto = jalankan "Isi otomatis semua" (tidak menimpa). */
+    async function siapkan(it, opsi) {
+      const o = opsi || {};
+      const jalan = async () => {
+        saatPerkara({ detail: pkDariItem(it) });
+        if (!S.pk) throw new Error("Perkara tidak dapat dibuka.");
+        await muatMenu();
+        await muatIndeks();
+        const k = S.menu && S.menu.kelompok.find((x) => x.nama === it.kelompok);
+        if (!k) throw new Error(`Menu blangko "${it.kelompok}" tidak ada di ABT akun ini.`);
+        if (!k.berkas) await muatBerkasKelompok(k);
+        const b = k.berkas && k.berkas.find((x) => tanpaRtf(x.berkas) === tanpaRtf(it.berkas));
+        if (!b) throw new Error(`Blangko "${tanpaRtf(it.berkas)}" tidak ditemukan di menu ${namaMenuTampil(k.nama)}.`);
+        await pilihBlangko(b.berkas, k.nama);
+        if (!S.blangko || S.blangko.berkas !== b.berkas) throw new Error("Blangko tidak dapat dibuka untuk akun ini.");
+        if (S.blangko.hak !== "ok") throw new Error(S.galatSusunan || "ABT tidak mengizinkan blangko ini untuk perkara ini.");
+        if (!S.susunan) throw new Error(S.galatSusunan || "Isian blangko tidak terbaca.");
+        // Pekerjaan otomatis yang dimulai pilihBlangko (bawaan itsbat, e-litigasi, bacaan SIPP, jawab menjawab, bukti) dituntaskan dulu.
+        for (let putaran = 0; putaran < 6; putaran += 1) {
+          await Promise.allSettled([S.janjiBukti, ...Array.from(kerjaOto)]);
+          if (!kerjaOto.size && !S.isiSipp.jalan) break;
+          if (S.isiSipp.jalan) await new Promise((r) => setTimeout(r, 120));
+        }
+        // "Isi otomatis semua": hanya bacaan SIPP/e-Court yang pasti atau cukup (isian kosong; tidak menimpa). Saran yang masih ragu TIDAK
+        // ditulis massal - perkara itu ditandai "Perlu dicek" supaya petugas memeriksanya sendiri.
+        if (o.isiOto) await isiOtomatisBlangko(S.susunan, { manual: true, senyap: true });
+        return keadaan();
+      };
+      return tungguMaks(jalan(), BATAS_SIAP_MS, "Waktu habis saat menyiapkan perkara ini.");
+    }
+    /**
+     * Menyiapkan lalu mengambil naskah satu item. opsi: { pdf, ttd, isiOto }. Pulang { rtf: Uint8Array, pdf: Uint8Array|null,
+     * namaRtf, namaPdf, keadaan, ttd:{ dipasang, tidakDitemukan, gagal } }. Melempar bila perkara/blangko/naskah tidak dapat diambil.
+     */
+    async function cetakSatu(it, opsi) {
+      const o = opsi || {};
+      const k0 = await siapkan(it, { isiOto: o.isiOto });
+      const rtf = await tungguMaks(ambilRtf(true), BATAS_LAMA_MS, "Waktu habis saat meminta naskah dari ABT.");
+      const keadaanAkhir = { ...k0, ...keadaan() };
+      const nomor = nomorPerkara();
+      const berkas = S.blangko.berkas;
+      const hasil = { rtf: biner(rtf), pdf: null, namaRtf: namaUnduhan(nomor, berkas, "rtf"), namaPdf: namaUnduhan(nomor, berkas, "pdf"), keadaan: keadaanAkhir, ttd: { dipasang: [], tidakDitemukan: [], gagal: [] } };
+      if (o.pdf) {
+        if (o.ttd) {
+          S.ttdManual = false;
+          await autoCentangTtd();
+        } else S.ttdPilih = new Set();
+        const t = await rtfDenganTtd(rtf);
+        const { bita } = await pdfDari(t.rtf, false);
+        hasil.pdf = bita;
+        hasil.ttd = { dipasang: t.dipasang || [], tidakDitemukan: t.tidakDitemukan || [], gagal: t.gagal || [] };
+      }
+      const jam = jamSekarang();
+      S.cetakTercatat[`${nomor}|${S.blangko.jenis}`] = jam;
+      void tulisPenyimpanan({ [`${K_CETAK}:${nomor}|${S.blangko.jenis}`]: jam });
+      return hasil;
+    }
+    /** Keadaan layar petugas sebelum massal, dipulihkan sesudahnya (perkara + blangko yang tadi terbuka). */
+    function potret() {
+      return { pk: S.pk, blangko: S.blangko ? { berkas: S.blangko.berkas, kelompok: S.blangko.kelompok } : null };
+    }
+    async function pulihkan(p) {
+      if (!p) return;
+      try {
+        saatPerkara({ detail: p.pk || null });
+        if (p.pk && p.blangko) {
+          await muatMenu();
+          await pilihBlangko(p.blangko.berkas, p.blangko.kelompok);
+        }
+      } catch {
+        /* pemulihan gagal: petugas memilih ulang perkara dari langkah 1 */
+      }
+    }
+    return {
+      jenisBoleh: () => jenisBoleh().slice(),
+      adm,
+      namaPeran: (j) => NAMA_PERAN[JENIS_PERAN[j]] || "",
+      namaJenis: (j) => NAMA_JENIS[j] || "",
+      peranAkun: () => peranAkun().slice(),
+      menu,
+      muatSaranTanggal,
+      saran,
+      siapkan,
+      cetakSatu,
+      siramSimpan,
+      potret,
+      pulihkan,
+      pdfDari,
+      unduh,
+      namaUnduhan,
+      ambilPortal,
+      tanpaRtf,
+      namaTampil,
+    };
+  })();
+
   const apiIsian = {
     versi: "tahap-F-G",
     mulai,
@@ -6016,6 +6211,8 @@
     /** Fungsi yang dipasang ke aletaBlangkoDerry.pasangRekomendasi (saran portal Tahap E). */
     rekomendasiPortal,
     pilihBlangko,
+    /** Cetak massal (20 Okt): pengemudi satu-per-satu yang dipakai blangko-derry-massal.js. */
+    massal,
     /** F4.2: buka blangko draf H-7 + pasang saran agen (tanpa menyimpan ke ABT). */
     pakaiDrafH7,
     bukaModal,

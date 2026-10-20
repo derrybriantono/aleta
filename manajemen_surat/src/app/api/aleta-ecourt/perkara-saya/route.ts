@@ -1,6 +1,6 @@
 import { type NextRequest } from "next/server";
 
-import { golonganPengguna } from "@/lib/matriks-peran";
+import { bolehBasMassal, golonganPengguna } from "@/lib/matriks-peran";
 import { isPrivilegedAdmin } from "@/lib/permissions";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { getDatabase } from "@/server/db/client";
@@ -86,12 +86,17 @@ export async function GET(request: NextRequest) {
     const golongan = golonganPengguna(actor as Parameters<typeof golonganPengguna>[0]);
     // Ketua/Wakil Ketua: semua perkara satker untuk putusan (keputusan 9 Okt), tetapi bukan admin: tanpa "Lihat sebagai".
     const pimpinan = !admin && golongan.includes("pimpinan");
-    const lihatSemua = admin || pimpinan;
+    // Cetak massal Blangko Derry (20 Okt 2026): ?massal=bas -> Panitera/Panmud melihat semua perkara satker (peran PP, bukan "Lihat
+    // sebagai"); ?massal=ptsp -> PTSP melihat seluruh perkara satker (baca saja) tanpa kata kunci nomor. Tanpa parameter: aturan lama.
+    const massal = (cari.get("massal") || "").trim();
+    const paniteraSemua = massal === "bas" && !admin && !pimpinan && bolehBasMassal(actor as Parameters<typeof bolehBasMassal>[0]);
+    const lihatSemua = admin || pimpinan || paniteraSemua;
     // PTSP: mencari nomor perkara satker (baca saja; tanpa hak tulis putusan/BAS/relaas) agar folder "99 PTSP" terjangkau.
     const ptsp = !admin && !pimpinan && golongan.includes("ptsp");
     const nomorCari = ptsp ? (cari.get("nomor") || "").trim() : "";
     const punyaPeranPerkara = golongan.some((g) => g === "hakim" || g === "pp" || g === "jurusita");
-    const cariNomorSatker = ptsp && (nomorCari !== "" || !punyaPeranPerkara);
+    const semuaSatkerPtsp = ptsp && massal === "ptsp" && nomorCari === "";
+    const cariNomorSatker = ptsp && (nomorCari !== "" || !punyaPeranPerkara || semuaSatkerPtsp);
     // "Lihat sebagai" hanya berlaku bagi admin; bagi yang lain parameternya diabaikan.
     const sebagaiNama = admin ? (cari.get("sebagai") || "").trim() : "";
     const sebagaiPeran = admin ? peranDerryValid(cari.get("peranSebagai")) : null;
@@ -124,8 +129,9 @@ export async function GET(request: NextRequest) {
       sebagaiNama,
       sebagaiPeran,
       bolehLihatSebagai: admin,
-      peranSemua: pimpinan ? ["hakim"] : undefined,
+      peranSemua: pimpinan ? ["hakim"] : paniteraSemua ? ["pp"] : undefined,
       cariNomorSatker,
+      semuaSatker: semuaSatkerPtsp,
       cariNomor: nomorCari,
     });
 
