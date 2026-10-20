@@ -172,4 +172,14 @@ export const ISIAN_OPSIONAL: Record<string, string> = {
   "4931": "Waktu dan tempat peristiwa yang dimohonkan penetapan",
   "4933": "Keperluan dan instansi tujuan penetapan",
   "4934": "Sebab meninggal dan tempat dimakamkan (penetapan kematian)",
+  // Keluarga anak (paket abt-w2b-keluarga-lain, 21 Okt 2026): hak asuh, penguasaan anak, nafkah anak - isian pilihan majelis, kosong = bagian itu tidak tercetak
+  "4884": "Fakta kelayakan calon pemegang hak asuh (jasmani, rohani, waktu, tempat tinggal, ekonomi, akhlak, agama); kosong = tidak tercetak",
+  "4886": "Pendapat ahli atau laporan lembaga (psikolog, pekerja sosial, lembaga perlindungan anak); kosong = tidak tercetak",
+  "4888": "Rincian waktu dan cara orang tua yang tidak memegang hak asuh bertemu anak (mis. setiap akhir pekan); kosong = tanpa rincian",
+  "4890": "Penyerahan anak: 1 = dimohonkan dalam petitum, 2 = ditetapkan majelis meskipun tidak dimohonkan; kosong = tidak ada penyerahan",
+  "4896": "Alasan petitum selebihnya ditolak pada putusan kabul sebagian hak asuh; kosong = kalimat bawaan",
+  "4899": "Jumlah nafkah anak yang dimohon dalam petitum (dibandingkan dengan yang ditetapkan majelis); kosong = tidak dibandingkan",
+  "4901": "Fakta ketidakmampuan ayah memberi nafkah anak (hanya pada gugatan ibu ikut memikul biaya); kosong = tidak tercetak",
+  "4902": "Bagian biaya anak yang dipikul ibu (hanya bila ayah dinyatakan tidak mampu penuh); kosong = belum ditetapkan",
+  "4905": "Penetapan hak asuh per anak bila status mumayyiz anak-anak berbeda (satu anak per baris: nama - status - pemegang)",
 };

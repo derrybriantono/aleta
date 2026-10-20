@@ -1,0 +1,15 @@
+{
+  "skema": "gerbang-isian/1",
+  "catatan": "USULAN W2b-B untuk aleta_bot/config/gerbang-isian.json. TIDAK ADA kode yang diusulkan naik ke 'cukup' atau 'pasti': pembanding isian petugas di ABT lokal kurang dari 20 untuk setiap kode (6071: 5 perkara, 7778: 7 perkara) dan jenis anak mandiri 349/350/351/743 berjumlah 0 di SIPP lokal maupun server. Semua kode tetap 'ragu' (saran). Gabungkan 'belumTerukur' ke gerbang-isian.json bila pemindai pengisi menuntut pencatatan.",
+  "diukur": "21 Okt 2026, SIPP lokal sipp_donggala (117 perkara cerai/Lain-Lain yang petitumnya memuat hak asuh, nafkah anak atau menyerahkan anak) dan ABT lokal aps_badilag",
+  "kode": {},
+  "belumTerukur": {
+    "4884": "saran dari posita; muncul pada 0 dari 117 perkara setelah subjek dibatasi pada Penggugat; tanpa pembanding isian petugas",
+    "4888": "saran dari petitum rekonvensi; muncul pada 2 dari 117 perkara; tanpa pembanding isian petugas",
+    "4890": "saran dari petitum; muncul pada 2 dari 117 perkara (penyerahan anak, bukan penyerahan nafkah); pembanding isian petugas 0",
+    "4899": "saran dari petitum berbutir; muncul pada 25 dari 117 perkara; pembanding isian petugas 6071 hanya 5 perkara (kurang dari 20)",
+    "4901": "saran dari posita; muncul pada 2 dari 117 perkara; tanpa pembanding isian petugas",
+    "4905": "saran dari posita (umur anak saat gugatan); muncul pada 6 dari 117 perkara; pemegang hak asuh anak mumayyiz diputus majelis"
+  },
+  "dataUkur": "docs/gelombang2/UKURAN-W2b-anak.json (skrip abt-paket/w2b-keluarga-lain/alat/ukur_anak_isian.cjs)"
+}
