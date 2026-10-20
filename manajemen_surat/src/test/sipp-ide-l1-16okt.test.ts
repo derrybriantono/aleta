@@ -609,7 +609,8 @@ describe("F. Tampilan Lama tetap persis, tanpa jaringan, manifest & penyusun", (
     // Gelombang 2 (sipp-ide-m1.js, ...) dimuat SESUDAH L1 - ia memakai penghitung kolom L1.
     const sesudahL1 = sipp.slice(sipp.indexOf("sipp-ide-l1.js") + 1);
     // 19 Okt: penetapan-borang.js (isi otomatis formulir penetapan SIPP) dimuat paling akhir; tidak memakai penghitung kolom L1.
-    expect(sesudahL1.filter((x) => x !== "penetapan-borang.js").every((x) => /^sipp-ide-[a-z0-9]+\.js$/.test(x))).toBe(true);
+    // 20 Okt: penetapan-sipp.js (tombol/panel Penetapan Otomatis) juga paling akhir.
+    expect(sesudahL1.filter((x) => x !== "penetapan-borang.js" && x !== "penetapan-sipp.js").every((x) => /^sipp-ide-[a-z0-9]+\.js$/.test(x))).toBe(true);
     expect(sipp.indexOf("sipp-ide-l1.js")).toBeGreaterThan(sipp.indexOf("konten.js"));
     // 19 Okt: abt-gulir.js (gaya gulir menu kiri ABT) boleh sesudahnya - tidak memakai penghitung kolom L1.
     expect(abt.filter((x) => x !== "abt-gulir.js").at(-1)).toBe("sipp-ide-l1.js");

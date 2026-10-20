@@ -788,12 +788,89 @@ describe("gagal dilaporkan, tidak ada tulis ganda", () => {
     const usulan = api(h).keadaan().data.usulan;
     const data = api(h).keadaan().data;
     const panelJalan = api(h).jalankan();
-    await tunggu(0);
+    // Seketika (tanpa menunggu): semua jawaban tiruan selesai dalam satu putaran mikro.
     const lain = await h.w.tetapkanLewatAleta(null, h.d.createElement("div"), usulan, data, {}, false);
     await panelJalan;
     const rantai = tulisPost(h).filter((x) => Array.isArray(x.rantai));
     expect(rantai.length).toBeLessThanOrEqual(1);
-    if (!lain.ok) expect(JSON.stringify(lain.hasil)).toMatch(/sedang_ditulis|sedang ditulis|sudah ada/i);
+    expect(lain.ok).toBe(false);
+    expect(JSON.stringify(lain.hasil)).toMatch(/sedang_ditulis/);
+  });
+});
+
+describe("satu pintu bersama (aletaPenetapanKerja dari agen P1)", () => {
+  type Panggilan = Record<string, any>;
+  function pasangKerja(h: Halaman, laporan: unknown[], ekstra: Record<string, unknown> = {}) {
+    const panggilan: Panggilan[] = [];
+    h.w.aletaPenetapanKerja = {
+      kerjakan: async (arg: Panggilan) => {
+        panggilan.push(JSON.parse(JSON.stringify({ ...arg, pada: undefined })));
+        arg.pada?.({ tahap: "tulis", jenis: "pmh", teks: "menulis" });
+        await tunggu(5);
+        return { ok: true, laporan, pesan: "", ...ekstra };
+      },
+    };
+    return panggilan;
+  }
+  const lapor = (jenis: string, status: string, o: Record<string, unknown> = {}) => ({ jenis, status, sebab: "", bunyi: "", ...o });
+
+  it("meneruskan mode, langkah, dan centang e-Doc; tidak menulis/mengunggah sendiri", async () => {
+    const h = buka(kosong());
+    await panelSiap(h);
+    const panggilan = pasangKerja(h, JENIS.map((j) => lapor(j, "tercatat", { edoc: { status: "terunggah" } })));
+    edocCek(h, "ppp").checked = false;
+    edocCek(h, "ppp").dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    await klikSatuKali(h);
+    const lap = await tungguLaporan(h);
+    expect(panggilan.length).toBe(1);
+    expect(panggilan[0].nomorPerkara).toBe(NOMOR);
+    expect(panggilan[0].perkaraId).toBe(10260);
+    expect(panggilan[0].mode).toBe("otomatis");
+    expect(panggilan[0].pilihan).toEqual({});
+    expect(panggilan[0].langkah).toEqual({ pmh: true, ppp: true, pjs: true, phs: true });
+    expect(panggilan[0].unggahEdoc).toEqual({ pmh: true, ppp: false, pjs: true, phs: true });
+    expect(panggilan[0].kering).toBe(false);
+    expect(tulisPost(h)).toEqual([]);
+    expect(unggahPost(h)).toEqual([]);
+    expect(lap.textContent).toContain("Selesai: 4 penetapan ditulis");
+  });
+
+  it("mode manual membawa pilihan (PP, pejabat) ke satu pintu", async () => {
+    const h = buka(kosong());
+    const p = await panelSiap(h);
+    (p.querySelector('[data-pensipp-mode="manual"]') as HTMLButtonElement).click();
+    await sampai(() => panel(h)!.querySelector(".aleta-pensipp-rinci .aleta-pilih"), "dropdown manual");
+    const kotakPp = Array.from(panel(h)!.querySelectorAll(".aleta-pilih")).find((x) => /Panitera pengganti/.test(x.textContent || ""))!;
+    const sel = kotakPp.querySelector("select") as HTMLSelectElement;
+    sel.value = Array.from(sel.options).find((x) => /Mannaria/.test(x.textContent || ""))!.value;
+    sel.dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    await sampai(() => /Mannaria/.test(langkah(h, "ppp").textContent || ""), "ppp Mannaria");
+    const panggilan = pasangKerja(h, JENIS.map((j) => lapor(j, "tercatat")));
+    await klikSatuKali(h);
+    await tungguLaporan(h);
+    expect(panggilan[0].mode).toBe("manual");
+    expect(String(panggilan[0].pilihan.ppp)).toBe("31");
+  });
+
+  it("laporan satu pintu dipetakan: tercatat+e-Doc, sudah ada, gagal bersebab, sedang dikerjakan, e-Doc gagal", async () => {
+    const h = buka(kosong());
+    await panelSiap(h);
+    pasangKerja(h, [
+      lapor("pmh", "tercatat", { edoc: { status: "terunggah" } }),
+      lapor("ppp", "dilewati", { sebab: "sudah_ada", edoc: { status: "gagal", bunyi: "tanda tangan belum disahkan" } }),
+      lapor("pjs", "gagal", { sebab: "jurusita_tidak_aktif", bunyi: "Juru sita tidak aktif." }),
+      lapor("phs", "dilewati", { sebab: "sedang_dikerjakan", bunyi: "Sedang dikerjakan dari tab lain." }),
+    ]);
+    await klikSatuKali(h);
+    const lap = await tungguLaporan(h);
+    expect(statusTeks(h, "pmh")).toBe("tercatat · e-Doc terunggah");
+    expect(statusTeks(h, "ppp")).toBe("tercatat · e-Doc gagal");
+    expect(statusTeks(h, "pjs")).toBe("gagal");
+    expect(statusTeks(h, "phs")).toBe("ditahan");
+    expect(lap.querySelector('[data-jenis="pjs"]')!.textContent).toContain("Juru sita tidak aktif.");
+    expect(lap.querySelector('[data-jenis="phs"]')!.textContent).toContain("Sedang dikerjakan dari tab lain.");
+    expect(lap.querySelector('[data-jenis="ppp"]')!.textContent).toContain("tanda tangan belum disahkan");
+    expect(teksTampak(h)).not.toMatch(/jurusita_tidak_aktif|sedang_dikerjakan|sudah_ada/);
   });
 });
 

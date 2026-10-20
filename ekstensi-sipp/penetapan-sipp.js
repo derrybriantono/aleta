@@ -542,7 +542,14 @@
       kotak.appendChild(el("b", "", kalimat));
       const rinciKonf = [];
       if (k.tulis > 0) rinciKonf.push(`Ditulis: ${k.sisa.map((j) => j.toUpperCase()).join(", ")}.`);
-      if (k.menimpa > 0) rinciKonf.push(`${k.menimpa} di antaranya menimpa e-Doc yang sudah ada di SIPP.`);
+      if (k.menimpa > 0) {
+        const satuPintu = globalThis.aletaPenetapanKerja && typeof globalThis.aletaPenetapanKerja.kerjakan === "function";
+        rinciKonf.push(
+          satuPintu
+            ? `${k.menimpa} di antaranya sudah ada di e-Doc SIPP dan dilewati (tidak ditimpa).`
+            : `${k.menimpa} di antaranya menimpa e-Doc yang sudah ada di SIPP.`
+        );
+      }
       rinciKonf.push("Yang sudah tercatat dilewati. Lanjutkan?");
       kotak.appendChild(el("span", "aleta-pensipp-catatan", rinciKonf.join(" ")));
       const baris = el("div", "aleta-pensipp-baris-tombol");
@@ -741,6 +748,88 @@
     return isi;
   }
 
+  /**
+   * Jalan satu pintu agen P1 (docs/penetapan/KERJAKAN-PENETAPAN.md):
+   * aletaPenetapanKerja.kerjakan menulis sisa PMH->PHS di bawah kunci per
+   * perkara dan mengunggah e-Doc yang dicentang. Panel ini hanya meneruskan
+   * pilihan dan membaca laporannya.
+   */
+  function pilihanUntukKerja() {
+    const d = ctx.data || {};
+    const pm = d.pilihanManual || {};
+    if (caraSekarang() !== "manual") return {};
+    const hasil = {};
+    for (const k of ["majelis", "pmhKursi", "ppp", "pjs", "phs", "ruangan", "jam"]) {
+      const v = pm[k];
+      if (v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0)) hasil[k] = v;
+    }
+    if (d.pejabatDipilih && Object.keys(d.pejabatDipilih).length) hasil.pejabat = { ...d.pejabatDipilih };
+    return hasil;
+  }
+
+  function kodeDariLaporan(l) {
+    if (l.status === "tercatat") return { kode: "ok", sebab: "" };
+    if (l.status === "dilewati") {
+      if (l.sebab === "sudah_ada") return { kode: "lewat", sebab: "" };
+      if (l.sebab === "sedang_dikerjakan") return { kode: "ditahan", sebab: awam(l.bunyi) || "Sedang dikerjakan dari tempat lain - tidak ditulis dua kali." };
+      return { kode: "lewat", sebab: "" };
+    }
+    return { kode: "gagal", sebab: awam(l.bunyi || l.sebab) };
+  }
+
+  async function kerjakanLewatSatuPintu(kerja, sebelum, catat) {
+    const pk = (ctx.data.usulan && ctx.data.usulan.perkara) || {};
+    const langkahDicentang = {};
+    for (const j of URUTAN) langkahDicentang[j] = true;
+    const hasil = await kerja.kerjakan({
+      nomorPerkara: ctx.nomor,
+      perkaraId: pk.perkaraId,
+      mode: caraSekarang(),
+      pilihan: pilihanUntukKerja(),
+      langkah: langkahDicentang,
+      unggahEdoc: { ...ctx.edoc },
+      kering: false,
+      pada: (k) => {
+        if (!k || !k.jenis || !URUTAN.includes(k.jenis)) return;
+        const kode = k.tahap === "edoc" || k.tahap === "unggah" ? "unggah" : k.tahap === "periksa" ? "periksa" : "tulis";
+        if (sebelum[k.jenis] && kode !== "unggah") return;
+        catat(k.jenis, kode);
+        jadwalRender();
+      },
+    });
+    const out = { edocSukses: [], edocGagal: [], edocTidak: [], adaTertulis: false, penulisanGagal: false, diantrekan: false };
+    const daftar = (hasil && hasil.laporan) || [];
+    if (!hasil || !daftar.length) {
+      out.penulisanGagal = true;
+      for (const j of URUTAN) if (!sebelum[j]) catat(j, "gagal", awam(hasil && (hasil.pesan || hasil.bunyi)));
+      return out;
+    }
+    if (hasil.perluPilihanJamKerja) out.diantrekan = true;
+    for (const l of daftar) {
+      if (!URUTAN.includes(l.jenis)) continue;
+      const j = l.jenis;
+      const { kode, sebab } = kodeDariLaporan(l);
+      if (kode === "ok") out.adaTertulis = true;
+      if (kode === "gagal" || kode === "ditahan") out.penulisanGagal = true;
+      const e = l.edoc || null;
+      if (e && e.status === "terunggah") {
+        out.edocSukses.push(j);
+        catat(j, "selesai");
+      } else if (e && e.status === "gagal") {
+        out.edocGagal.push(j);
+        catat(j, "edoc-gagal", awam(e.bunyi || e.sebab));
+      } else if (e && e.status === "dilewati") {
+        // Sudah terunggah: tidak ditimpa oleh satu pintu bersama.
+        out.edocSukses.push(j);
+        catat(j, kode === "ok" ? "selesai" : kode, sebab);
+      } else {
+        if (ctx.edoc[j] && kode !== "ok" && kode !== "lewat") out.edocTidak.push(j);
+        catat(j, kode, sebab);
+      }
+    }
+    return out;
+  }
+
   async function jalankan() {
     if (!ctx || ctx.sibuk || !ctx.data || !ctx.data.usulan) return;
     const rencana = rencanaKerja();
@@ -783,101 +872,122 @@
       for (const j of sisa) catat(j, "periksa");
       render();
 
-      // ── 1. Tulis penetapan yang belum ada ──────────────────────────────
-      let tulis = null;
-      if (sisa.length) {
-        let kering = null;
-        try {
-          const h = await tulisKePenetapan();
-          kering = h.kering;
-          tulis = h.tulis;
-        } catch (galat) {
-          kering = { ok: false, hasil: sisa.map((j) => ({ jenis: j, ok: false, bunyi: String((galat && galat.message) || galat) })) };
-        }
-        if (!tulis) {
-          penulisanGagal = true;
-          const daftar = (kering && kering.hasil) || [];
-          const gagalPertama = daftar.find((x) => x && !x.ok && !x.sudahAda);
-          for (const j of sisa) {
-            const r = daftar.find((x) => x && x.jenis === j);
-            if (r && r.sudahAda) catat(j, "lewat");
-            else if (r && !r.ok && r.alasan !== "dibatalkan_rantai") catat(j, "gagal", awam(r.bunyi || r.alasan));
-            else catat(j, "ditahan", gagalPertama ? `Menunggu ${String(gagalPertama.jenis || "").toUpperCase()} berhasil lebih dulu.` : "Belum ada yang ditulis.");
+      let edocSukses = [];
+      let edocGagal = [];
+      let edocTidak = [];
+      const kerja = globalThis.aletaPenetapanKerja;
+      if (kerja && typeof kerja.kerjakan === "function") {
+        // ── Satu pintu bersama (agen P1): tulis + e-Doc + kunci server ────
+        const h = await kerjakanLewatSatuPintu(kerja, sebelum, catat);
+        edocSukses = h.edocSukses;
+        edocGagal = h.edocGagal;
+        edocTidak = h.edocTidak;
+        adaTertulis = h.adaTertulis;
+        penulisanGagal = h.penulisanGagal;
+        diantrekan = h.diantrekan;
+        if (h.adaTertulis) {
+          try {
+            await muatUlangData();
+            ctx.edocPetaDimuat = false;
+          } catch {
+            /* keadaan akan terbaca ulang saat halaman dimuat ulang */
           }
-        } else {
-          const daftar = tulis.hasil || [];
-          for (const j of sisa) {
-            const r = daftar.find((x) => x && x.jenis === j);
-            if (!r) catat(j, "gagal", "Tidak ada jawaban untuk langkah ini.");
-            else if (r.diantrekan) {
-              diantrekan = true;
-              catat(j, "antre", awam(r.bunyi) || "Di luar jam kerja - dikerjakan pada jam kerja berikutnya.");
-            } else if (r.ok) {
-              adaTertulis = true;
-              catat(j, "ok");
-            } else if (r.sudahAda) catat(j, "lewat");
-            else {
-              penulisanGagal = true;
-              catat(j, r.alasan === "dibatalkan_rantai" ? "ditahan" : "gagal", awam(r.bunyi || r.alasan));
+        }
+      } else {
+        // ── 1. Tulis penetapan yang belum ada ──────────────────────────────
+        let tulis = null;
+        if (sisa.length) {
+          let kering = null;
+          try {
+            const h = await tulisKePenetapan();
+            kering = h.kering;
+            tulis = h.tulis;
+          } catch (galat) {
+            kering = { ok: false, hasil: sisa.map((j) => ({ jenis: j, ok: false, bunyi: String((galat && galat.message) || galat) })) };
+          }
+          if (!tulis) {
+            penulisanGagal = true;
+            const daftar = (kering && kering.hasil) || [];
+            const gagalPertama = daftar.find((x) => x && !x.ok && !x.sudahAda);
+            for (const j of sisa) {
+              const r = daftar.find((x) => x && x.jenis === j);
+              if (r && r.sudahAda) catat(j, "lewat");
+              else if (r && !r.ok && r.alasan !== "dibatalkan_rantai") catat(j, "gagal", awam(r.bunyi || r.alasan));
+              else catat(j, "ditahan", gagalPertama ? `Menunggu ${String(gagalPertama.jenis || "").toUpperCase()} berhasil lebih dulu.` : "Belum ada yang ditulis.");
+            }
+          } else {
+            const daftar = tulis.hasil || [];
+            for (const j of sisa) {
+              const r = daftar.find((x) => x && x.jenis === j);
+              if (!r) catat(j, "gagal", "Tidak ada jawaban untuk langkah ini.");
+              else if (r.diantrekan) {
+                diantrekan = true;
+                catat(j, "antre", awam(r.bunyi) || "Di luar jam kerja - dikerjakan pada jam kerja berikutnya.");
+              } else if (r.ok) {
+                adaTertulis = true;
+                catat(j, "ok");
+              } else if (r.sudahAda) catat(j, "lewat");
+              else {
+                penulisanGagal = true;
+                catat(j, r.alasan === "dibatalkan_rantai" ? "ditahan" : "gagal", awam(r.bunyi || r.alasan));
+              }
             }
           }
+          render();
         }
-        render();
-      }
 
-      // ── 2. Keadaan terbaru, lalu e-Doc yang dicentang ──────────────────
-      let sekarang = sebelum;
-      if (adaTertulis) {
-        try {
-          await muatUlangData();
-          sekarang = tercatatDi(ctx.data);
-          ctx.edocPetaDimuat = false;
-        } catch {
-          sekarang = { ...sebelum };
-          for (const j of URUTAN) if (ctx.hasil[j] && ctx.hasil[j].kode === "ok") sekarang[j] = "ok";
+        // ── 2. Keadaan terbaru, lalu e-Doc yang dicentang ──────────────────
+        let sekarang = sebelum;
+        if (adaTertulis) {
+          try {
+            await muatUlangData();
+            sekarang = tercatatDi(ctx.data);
+            ctx.edocPetaDimuat = false;
+          } catch {
+            sekarang = { ...sebelum };
+            for (const j of URUTAN) if (ctx.hasil[j] && ctx.hasil[j].kode === "ok") sekarang[j] = "ok";
+          }
         }
-      }
-      const edocSukses = [];
-      const edocGagal = [];
-      const edocTidak = [];
-      for (const j of URUTAN) {
-        if (!ctx.edoc[j]) continue;
-        if (!sekarang[j]) {
-          edocTidak.push(j);
-          continue;
+        for (const j of URUTAN) {
+          if (!ctx.edoc[j]) continue;
+          if (!sekarang[j]) {
+            edocTidak.push(j);
+            continue;
+          }
+          const kabarEdoc = wadahKabarEdoc(j);
+          catat(j, "unggah", ctx.hasil[j] && ctx.hasil[j].sebab);
+          render();
+          let r = null;
+          try {
+            r = await panggil("e6UnggahEdocPenetapan", {
+              nomorPerkara: ctx.nomor,
+              perkaraId: String((ctx.data.usulan.perkara && ctx.data.usulan.perkara.perkaraId) || ""),
+              jenis: [j],
+              otomatis: false,
+              kering: false,
+              timpaDisetujui: true,
+              kabar: kabarEdoc,
+            });
+          } catch (galat) {
+            r = { ok: false, galat: String((galat && galat.message) || galat) };
+            kabarEdoc.textContent = `e-Doc ${j.toUpperCase()} belum terunggah: ${r.galat}`;
+          }
+          const berkas = r && r.hasil && r.hasil.d && Array.isArray(r.hasil.d.berkas) ? r.hasil.d.berkas : [];
+          const salahBerkas = berkas.some((x) => x && x.ok === false);
+          if (r && r.ditahan) {
+            edocTidak.push(j);
+            catat(j, "edoc-ditahan", `e-Doc tidak dikirim: ${r.ditahan} menyala.`);
+          } else if (r && r.ok && !salahBerkas) {
+            edocSukses.push(j);
+            catat(j, "selesai");
+          } else {
+            edocGagal.push(j);
+            const sebab = salahBerkas ? sebaris(berkas.filter((x) => x && x.ok === false).map((x) => x.sebab).join("; ")) : sebaris(kabarEdoc.textContent);
+            catat(j, "edoc-gagal", sebab || "e-Doc tidak terunggah.");
+          }
+          render();
         }
-        const kabarEdoc = wadahKabarEdoc(j);
-        catat(j, "unggah", ctx.hasil[j] && ctx.hasil[j].sebab);
-        render();
-        let r = null;
-        try {
-          r = await panggil("e6UnggahEdocPenetapan", {
-            nomorPerkara: ctx.nomor,
-            perkaraId: String((ctx.data.usulan.perkara && ctx.data.usulan.perkara.perkaraId) || ""),
-            jenis: [j],
-            otomatis: false,
-            kering: false,
-            timpaDisetujui: true,
-            kabar: kabarEdoc,
-          });
-        } catch (galat) {
-          r = { ok: false, galat: String((galat && galat.message) || galat) };
-          kabarEdoc.textContent = `e-Doc ${j.toUpperCase()} belum terunggah: ${r.galat}`;
-        }
-        const berkas = r && r.hasil && r.hasil.d && Array.isArray(r.hasil.d.berkas) ? r.hasil.d.berkas : [];
-        const salahBerkas = berkas.some((x) => x && x.ok === false);
-        if (r && r.ditahan) {
-          edocTidak.push(j);
-          catat(j, "edoc-ditahan", `e-Doc tidak dikirim: ${r.ditahan} menyala.`);
-        } else if (r && r.ok && !salahBerkas) {
-          edocSukses.push(j);
-          catat(j, "selesai");
-        } else {
-          edocGagal.push(j);
-          const sebab = salahBerkas ? sebaris(berkas.filter((x) => x && x.ok === false).map((x) => x.sebab).join("; ")) : sebaris(kabarEdoc.textContent);
-          catat(j, "edoc-gagal", sebab || "e-Doc tidak terunggah.");
-        }
-        render();
+
       }
 
       // ── 3. Laporan akhir per langkah ───────────────────────────────────
