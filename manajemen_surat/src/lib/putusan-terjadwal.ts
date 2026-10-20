@@ -433,3 +433,41 @@ export function ringkasPilihanForm(p: PilihanForm): string {
   bagian.push(`Verstek: ${p.verstek === "Y" ? "ya" : p.verstek === "T" ? "tidak" : "dipilih ALETA dari kehadiran para pihak"}`);
   return bagian.join(" · ");
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// Acak berbenih - pratinjau dan jadwal sesungguhnya memakai benih yang SAMA
+// ──────────────────────────────────────────────────────────────────────────
+
+/** Pembangkit acak deterministik (mulberry32) dari benih bilangan bulat. */
+export function acakBenih(benih: number): () => number {
+  let a = (Math.floor(Number(benih)) || 1) >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Benih baru untuk satu pratinjau (bilangan bulat positif 31 bit). */
+export function benihBaru(acak: () => number = Math.random): number {
+  return Math.floor(acak() * 2147483646) + 1;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Kalimat untuk petugas
+// ──────────────────────────────────────────────────────────────────────────
+
+const NAMA_STATUS_LANGKAH: Record<StatusLangkah, string> = {
+  tidak: "tidak dipilih",
+  menunggu: "menunggu",
+  jalan: "mengerjakan",
+  selesai: "selesai",
+  dilewati: "sudah ada, dilewati",
+  tertahan: "tertahan",
+  gagal: "gagal",
+  batal: "dibatalkan",
+};
+
+export const sebutStatusLangkah = (s: StatusLangkah) => NAMA_STATUS_LANGKAH[s] ?? s;
