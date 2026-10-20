@@ -161,9 +161,11 @@ function buka(o: Opsi = {}) {
       cekSlot: async () => (o.cekGagal ? { ok: false, sebab: "portal tidak menjawab" } : { ok: true, adaBaris: true, adaPutusan: Boolean(o.adaPutusan), adaAnonim: Boolean(o.adaAnonim) }),
       ambilKunci: async () => {
         urut.push("kunci:ambil");
+        const lepasSibuk = async (): Promise<void> => undefined;
+        const lepasOk = async (): Promise<void> => void urut.push("kunci:lepas");
         return o.kunciSibuk
-          ? { ok: false, pesan: "Perkara ini sedang dikerjakan oleh Derry (kerjakan-penetapan) - tunggu selesai supaya tidak tertulis ganda, lalu ulangi.", lepas: async () => undefined }
-          : { ok: true, lepas: async () => void urut.push("kunci:lepas") };
+          ? { ok: false, pesan: "Perkara ini sedang dikerjakan oleh Derry (kerjakan-penetapan) - tunggu selesai supaya tidak tertulis ganda, lalu ulangi.", lepas: lepasSibuk }
+          : { ok: true, lepas: lepasOk };
       },
       jalankan: async (p: Record<string, unknown>) => {
         urut.push("edoc:jalankan");

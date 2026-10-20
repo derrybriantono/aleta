@@ -23699,6 +23699,18 @@ async function a30OpsiEdocMassal(p) {
   const dasar = p.opsi || {};
   const naskah = await a30AmbilNaskahEdoc(p.nomorPerkara);
   if (!naskah) {
+    // Agen B2 (20 Okt): tanpa naskah di peramban ini, edoc putusan + anonimisasi dicetak dari Blangko Derry
+    // di ABT sesudah Simpan terbukti (putusan-edoc-sekaligus.js) - selama saklarnya menyala. Antrean tidak
+    // berhenti karena edoc; hasilnya tercatat per perkara. Tanpa modul/saklar mati: jalan keluar lama.
+    const mod = typeof globalThis !== "undefined" ? globalThis.aletaPutusanEdoc : null;
+    if (mod && typeof mod.jalankan === "function" && typeof mod.bacaSaklar === "function" && (await mod.bacaSaklar())) {
+      return {
+        ...dasar,
+        lanjutWalauEdocGagal: true,
+        sesudahTersimpan: (kabarLangkah) =>
+          mod.jalankan({ nomorPerkara: p.nomorPerkara, kabar: p.kabar || kabarLangkah || null, wadah: p.wadahTanya || null }),
+      };
+    }
     return {
       ...dasar,
       lanjutWalauEdocGagal: true,

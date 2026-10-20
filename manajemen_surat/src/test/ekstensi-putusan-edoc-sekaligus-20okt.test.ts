@@ -633,10 +633,50 @@ describe("simpanPutusanLaluBuka: laporan per langkah dan muat ulang tetap di per
   });
 });
 
+describe("antrean putusan massal tanpa naskah di peramban: e-Doc dicetak dari ABT (selama saklar menyala)", () => {
+  function muatMassal(modul: Record<string, unknown> | null) {
+    const fn = new Function(
+      "a30AmbilNaskahEdoc",
+      "a30OpsiSimpanPutusan",
+      "globalThis",
+      `${potongFungsi(KONTEN, "a30OpsiEdocMassal")}
+return a30OpsiEdocMassal;`
+    )(async () => null, async () => ({}), modul ? { aletaPutusanEdoc: modul } : {}) as (p: Record<string, unknown>) => Promise<Record<string, any>>;
+    return fn;
+  }
+
+  it("saklar menyala: sesudahTersimpan memanggil modul e-Doc untuk perkara itu; antrean tidak berhenti karena e-Doc", async () => {
+    const panggilan: unknown[] = [];
+    const fn = muatMassal({ bacaSaklar: async () => true, jalankan: async (p: unknown) => (panggilan.push(p), { ok: true, bunyi: "e-Doc putusan: terunggah.", langkah: [] }) });
+    const kabar = { textContent: "" };
+    const opsi = await fn({ opsi: { sebelum: null, jajakCepat: true }, nomorPerkara: NOMOR, kabar, wadahTanya: null });
+    expect(opsi.lanjutWalauEdocGagal).toBe(true);
+    expect(opsi.jajakCepat).toBe(true);
+    const h = await opsi.sesudahTersimpan(kabar);
+    expect(h.ok).toBe(true);
+    expect(panggilan).toEqual([{ nomorPerkara: NOMOR, kabar, wadah: null }]);
+  });
+
+  it("saklar mati: jalan keluar lama (TIDAK diunggah beserta alasannya), modul tidak dipanggil", async () => {
+    let dipanggil = 0;
+    const fn = muatMassal({ bacaSaklar: async () => false, jalankan: async () => void (dipanggil += 1) });
+    const opsi = await fn({ opsi: {}, nomorPerkara: NOMOR, kabar: null, wadahTanya: null });
+    const h = await opsi.sesudahTersimpan();
+    expect(h.ok).toBe(false);
+    expect(h.bunyi).toContain("naskah aslinya tidak tersimpan di peramban ini");
+    expect(dipanggil).toBe(0);
+  });
+
+  it("tanpa modul e-Doc: persis semula", async () => {
+    const opsi = await muatMassal(null)({ opsi: {}, nomorPerkara: NOMOR, kabar: null, wadahTanya: null });
+    expect((await opsi.sesudahTersimpan()).bunyi).toContain("Unggah lewat bagian");
+  });
+});
+
 describe("terpasang di ekstensi", () => {
   it("manifest memuat abt-klien.js dan putusan-edoc-sekaligus.js di blok SIPP, dan skrip penyusun ikut menanamnya", () => {
     const manifest = JSON.parse(readFileSync(path.join(AKAR, "manifest.json"), "utf8"));
-    const sipp = manifest.content_scripts.find((c: { matches: string[] }) => c.matches.some((m) => m.includes("/SIPP/")) && c.js.includes("konten.js"));
+    const sipp = manifest.content_scripts.find((c: { matches: string[]; js: string[] }) => c.matches.some((m: string) => m.includes("/SIPP/")) && c.js.includes("konten.js"));
     expect(sipp.js).toEqual(expect.arrayContaining(["abt-klien.js", "putusan-edoc-sekaligus.js"]));
     expect(sipp.js.indexOf("putusan-edoc-sekaligus.js")).toBeGreaterThan(sipp.js.indexOf("konten.js"));
     const susun = readFileSync(path.resolve(process.cwd(), "scripts/susun-ekstensi.mjs"), "utf8");
