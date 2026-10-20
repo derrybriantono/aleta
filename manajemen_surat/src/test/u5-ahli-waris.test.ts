@@ -370,8 +370,11 @@ describe("C. pengisi lanjutan penetapan ahli waris atas bunyi nyata PA Donggala"
     const u6 = path.join(REPO, "aleta_bot", "config", "peta-fakta-variabel.json");
     if (existsSync(u6)) {
       const peta = JSON.parse(readFileSync(u6, "utf8"));
-      const ada = new Set(Object.values(peta.fakta).flatMap((f: any) => f.kode.map((c: any) => (typeof c === "string" ? c : c.kode))));
-      for (const f of Object.values(tambah.fakta) as any[]) for (const k of f.kode) expect(ada.has(k), k).toBe(false);
+      // Sudah digabung (G1, 20 Okt 2026): tiap kode tambahan berada tepat di satu fakta peta, yaitu fakta yang disebut tambahan U5.
+      const pemilik = new Map<string, string[]>();
+      for (const [nama, f] of Object.entries<any>(peta.fakta)) for (const c of f.kode) (pemilik.get(typeof c === "string" ? c : c.kode) || pemilik.set(typeof c === "string" ? c : c.kode, []).get(typeof c === "string" ? c : c.kode)!).push(nama);
+      for (const [nama, f] of Object.entries<any>(tambah.fakta)) for (const k of f.kode) expect(pemilik.get(k), k).toEqual([nama]);
+      for (const [nama, kodeBaru] of Object.entries<any>(tambah.tambahKode)) for (const k of kodeBaru) expect(pemilik.get(k), k).toEqual([nama]);
     }
   });
 
