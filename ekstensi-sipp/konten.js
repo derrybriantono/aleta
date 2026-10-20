@@ -6930,6 +6930,13 @@ function b2LaporkanEdoc(nomorPerkara, wadah, edoc, judulTersimpan) {
   return Boolean(hasil);
 }
 
+/** Kunci perkara bersama penetapan (putusan-edoc-sekaligus.js). Tanpa modul: tanpa kunci. */
+async function b2AmbilKunci(nomorPerkara) {
+  const mod = globalThis.aletaPutusanEdoc;
+  if (!mod || typeof mod.ambilKunci !== "function") return { ok: true, lepas: async () => undefined };
+  return mod.ambilKunci(nomorPerkara);
+}
+
 /** Dua tempat tetap di bawah kabar hasil: laporan/kotak muat ulang, dan tombol ulang (jadwalkan mengosongkan tempat pertama). */
 function b2SiapkanTempat(kabar) {
   const induk = kabar && kabar.parentNode;
@@ -7865,6 +7872,17 @@ function bagianIsiPutusan(nomorPerkara) {
   // ditekan: yang menahan MENAHAN sampai orang menyatakan sudah membacanya.
   let raporAgen = null;
 
+  // Agen B2 (20 Okt): tombol "Putusan Otomatis" di halaman perkara SIPP (putusan-sipp.js) menjalankan
+  // alur panel ini JUGA - ambil usulan, isikan yang dicentang, Simpan, lalu e-Doc - tanpa salinan kode:
+  // kotak.otomatis() hanya menekan tombol yang sama dan menunggu hasilnya.
+  let otoMenunggu = null;
+  const selesaiOto = (hasil) => {
+    if (!otoMenunggu) return;
+    const { resolve } = otoMenunggu;
+    otoMenunggu = null;
+    resolve(hasil);
+  };
+
   tombol.addEventListener("click", async () => {
     tombol.disabled = true;
     // Daftar medan dibaca ulang tiap tekan - tanpa permintaan bila versinya
@@ -7889,6 +7907,7 @@ function bagianIsiPutusan(nomorPerkara) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
       kabar.textContent = String((galat && galat.message) || galat);
       tombol.disabled = false;
+      selesaiOto({ ok: false, tahap: "usulan", pesan: kabar.textContent });
       return;
     }
 
@@ -7896,6 +7915,7 @@ function bagianIsiPutusan(nomorPerkara) {
       kabar.className = "aleta-abt-kabar";
       kabar.textContent = (jawab && jawab.sebab) || "Belum ada draf putusan untuk perkara ini.";
       tombol.disabled = false;
+      selesaiOto({ ok: false, tahap: "usulan", pesan: kabar.textContent });
       return;
     }
 
@@ -8356,7 +8376,7 @@ function bagianIsiPutusan(nomorPerkara) {
     wadah.appendChild(terap);
     wadah.appendChild(hasilTerap);
 
-    terap.addEventListener("click", async () => {
+    const isiDanSimpan = async () => {
       const dipilih = daftar.filter((x) => x.centang.checked && x.teks);
       const medanDipilih = pilihanTerap.filter((x) => x.centang.checked);
       if (dipilih.length === 0 && medanDipilih.length === 0) {
@@ -8383,8 +8403,11 @@ function bagianIsiPutusan(nomorPerkara) {
       // bila ada. Anonimisasi yang harus DIBUAT disiapkan BERSAMAAN dengan
       // pengisian blangko (persiapan itu tidak menulis ke SIPP), bukan sesudah
       // seluruh isian selesai - pemeriksanya tetap berjalan sebelum Simpan.
+      const opsiOto = otoMenunggu ? otoMenunggu.opsi || {} : null;
       const edocA30 =
-        sekaligus && sekaligus.dipakai() && naskahEdoc
+        opsiOto && opsiOto.edoc === false
+          ? null
+          : sekaligus && sekaligus.dipakai() && naskahEdoc
           ? s1Cepat && anonimPilihan
             ? { ...naskahEdoc, anonim: anonimPilihan }
             : naskahEdoc
@@ -8484,7 +8507,7 @@ function bagianIsiPutusan(nomorPerkara) {
           `${tampakSesudah - medanTampak.length} pilihan baru - dibacakan ulang…`;
         if (kabarAnon) kabarAnon.remove();
         tombol.click();
-        return;
+        return "lanjut";
       }
       // UI Baru: Simpan tidak ditekan = anonimisasi yang sedang disiapkan
       // tidak dipakai; kabarnya dilepas supaya tidak terbaca sebagai unggahan.
@@ -8562,10 +8585,19 @@ function bagianIsiPutusan(nomorPerkara) {
       }
       // Agen B2 (20 Okt): tanpa berkas pilihan, edoc putusan + anonimisasi dicetak/dibuat SESUDAH
       // Putusan Akhir terbukti tersimpan (blangko ABT memuat tanggal putusan yang baru tersimpan).
-      const edocAbt = Boolean(a30Nyala && sekaligusAbt && sekaligusAbt.dipakai() && !edocA30 && !(sekaligus && sekaligus.ada()));
+      const edocAbt = Boolean(
+        a30Nyala &&
+          !edocA30 &&
+          !(sekaligus && sekaligus.ada()) &&
+          (opsiOto && opsiOto.edoc != null ? opsiOto.edoc === true : sekaligusAbt && sekaligusAbt.dipakai())
+      );
       const tempatB2 = b2SiapkanTempat(hasilTerap);
+      if (opsiOto && opsiOto.wadahLaporan) tempatB2.laporan = opsiOto.wadahLaporan;
+      // Dari tombol "Putusan Otomatis" di halaman SIPP: kotak muat ulang melayang di halaman (panel tombol itu
+      // dapat tergambar ulang saat SIPP menyegarkan isinya), bukan di dalam panel ekstensi.
+      const laporanMelayang = Boolean(opsiOto && opsiOto.melayang);
       if (a30Nyala && (edocAbt || edocA30)) {
-        opsiSimpanA30 = { sebelum: sebelumA30, jajakCepat: true, ...(opsiSimpanA30 || {}), wadahLaporan: tempatB2.laporan };
+        opsiSimpanA30 = { sebelum: sebelumA30, jajakCepat: true, ...(opsiSimpanA30 || {}), wadahLaporan: laporanMelayang ? null : tempatB2.laporan };
         if (edocAbt && globalThis.aletaPutusanEdoc) {
           opsiSimpanA30.sesudahTersimpan = (kabarLangkah) =>
             globalThis.aletaPutusanEdoc.jalankan({
@@ -8573,6 +8605,8 @@ function bagianIsiPutusan(nomorPerkara) {
               kabar: kabarLangkah || hasilTerap,
               wadah,
               anonim: anonimPilihan || null,
+              denganPutusan: !(opsiOto && opsiOto.denganPutusan === false),
+              denganAnonim: !(opsiOto && opsiOto.denganAnonim === false),
             });
         }
       }
@@ -8597,10 +8631,61 @@ function bagianIsiPutusan(nomorPerkara) {
           perluBerkas: Boolean(hasilSimpan.edoc.perluBerkas),
         });
       }
+      return { ok: Boolean(hasilSimpan.ok), tersimpan: Boolean(hasilSimpan.ok), bunyi: hasilSimpan.bunyi, edoc: hasilSimpan.edoc || null };
+    };
+
+    // Satu kunci per perkara dipakai bersama penetapan dan tombol "Putusan Otomatis" di halaman SIPP:
+    // dua pekerjaan atas perkara yang sama tidak berjalan bersamaan (tidak ganda).
+    terap.addEventListener("click", async () => {
+      const kunci = await b2AmbilKunci(nomorPerkara);
+      if (!kunci.ok) {
+        hasilTerap.className = "aleta-abt-kabar aleta-abt-gagal";
+        hasilTerap.textContent = kunci.pesan;
+        selesaiOto({ ok: false, tahap: "kunci", pesan: kunci.pesan });
+        return;
+      }
+      let h;
+      try {
+        h = await isiDanSimpan();
+      } catch (galat) {
+        h = { ok: false, tahap: "isi", pesan: String((galat && galat.message) || galat) };
+      } finally {
+        await kunci.lepas();
+      }
+      if (h === "lanjut") return;
+      terap.disabled = false;
+      selesaiOto(h && typeof h === "object" ? h : { ok: false, tahap: "isi", pesan: String(hasilTerap.textContent || "Pengisian berhenti sebelum Simpan.") });
     });
+
+    // Tombol "Putusan Otomatis": usulan sudah terbaca -> Isikan ditekan sendiri (yang menahan tetap menahan).
+    if (otoMenunggu) {
+      if (terap.disabled) {
+        selesaiOto({
+          ok: false,
+          tahap: "praperiksa",
+          pesan: `Praperiksa menahan: ${ringkasHentikan(raporAgen) || "ada pertentangan dengan fakta SIPP"}. Periksa di bagian Putusan otomatis panel, lalu tekan Isikan sendiri.`,
+        });
+      } else {
+        setTimeout(() => terap.click(), 0);
+      }
+    }
 
     tombol.disabled = false;
   });
+
+  // Pintu untuk putusan-sipp.js: menjalankan alur yang SAMA dengan menekan tombol-tombol di atas.
+  kotak.otomatis = async (opsi) => {
+    if (otoMenunggu) return { ok: false, tahap: "sibuk", pesan: "Putusan otomatis perkara ini sedang berjalan." };
+    // Draf yang dimuat sendiri saat blangko dibuka (s1PasangPutusanOtomatis) selesai dulu.
+    const mulai = Date.now();
+    while (tombol.disabled && Date.now() - mulai < 20000) await new Promise((r) => setTimeout(r, 100));
+    if (tombol.disabled) return { ok: false, tahap: "sibuk", pesan: "Bagian Putusan otomatis masih bekerja - tunggu sampai selesai, lalu ulangi." };
+    if (otoMenunggu) return { ok: false, tahap: "sibuk", pesan: "Putusan otomatis perkara ini sedang berjalan." };
+    return new Promise((resolve) => {
+      otoMenunggu = { resolve, opsi: opsi || {} };
+      tombol.click();
+    });
+  };
 
   // Perbaikan 1 Okt (S, butir 2/3/4) - UI Baru saja; Lama dan Baru tidak
   // memanggilnya (s1PasangPutusanOtomatis memeriksa tampilannya sendiri).

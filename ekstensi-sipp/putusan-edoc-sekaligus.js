@@ -429,6 +429,8 @@
         return selesai(true);
       }
       const denganAnonim = arg.denganAnonim !== false;
+      const denganPutusan = arg.denganPutusan !== false;
+      if (!denganPutusan && !denganAnonim) return selesai(true);
 
       let perkaraId = String(arg.perkaraId || "");
       if (!perkaraId) {
@@ -436,7 +438,7 @@
         perkaraId = cari ? String((await cari(arg.nomorPerkara)) || "") : "";
       }
       if (!/^\d+$/.test(perkaraId)) {
-        hasil.push(langkah("putusan", "gagal - nomor induk perkara tidak terbaca, jadi e-Doc yang sudah ada tidak dapat diperiksa", "salah"));
+        if (denganPutusan) hasil.push(langkah("putusan", "gagal - nomor induk perkara tidak terbaca, jadi e-Doc yang sudah ada tidak dapat diperiksa", "salah"));
         if (denganAnonim) hasil.push(langkah("anonimisasi", "tidak dikerjakan - nomor induk perkara tidak terbaca", "salah"));
         return selesai(false);
       }
@@ -447,18 +449,18 @@
       const c = await (arg.deps.cek || cekSlot)(perkaraId);
       if (!c.ok) {
         const sebab = `gagal - e-Doc yang sudah ada tidak dapat diperiksa (${c.sebab}); tidak ada yang diunggah supaya tidak menimpa`;
-        hasil.push(langkah("putusan", sebab, "salah"));
-        if (denganAnonim) hasil.push(langkah("anonimisasi", "tidak dikerjakan - e-Doc yang sudah ada belum dapat diperiksa", "salah"));
+        if (denganPutusan) hasil.push(langkah("putusan", sebab, "salah"));
+        if (denganAnonim) hasil.push(langkah("anonimisasi", denganPutusan ? "tidak dikerjakan - e-Doc yang sudah ada belum dapat diperiksa" : sebab, "salah"));
         return selesai(false);
       }
       if (c.adaBaris === false) {
-        hasil.push(langkah("putusan", "gagal - Putusan Akhir belum terbaca di SIPP, jadi e-Doc belum dapat diunggah", "salah"));
-        if (denganAnonim) hasil.push(langkah("anonimisasi", "tidak dikerjakan - Putusan Akhir belum terbaca di SIPP", "salah"));
+        if (denganPutusan) hasil.push(langkah("putusan", "gagal - Putusan Akhir belum terbaca di SIPP, jadi e-Doc belum dapat diunggah", "salah"));
+        if (denganAnonim) hasil.push(langkah("anonimisasi", denganPutusan ? "tidak dikerjakan - Putusan Akhir belum terbaca di SIPP" : "gagal - Putusan Akhir belum terbaca di SIPP, jadi e-Doc belum dapat diunggah", "salah"));
         return selesai(false);
       }
-      const perluPutusan = !c.adaPutusan;
+      const perluPutusan = denganPutusan && !c.adaPutusan;
       const perluAnonim = denganAnonim && !c.adaAnonim;
-      if (!perluPutusan) hasil.push(langkah("putusan", `sudah ada di SIPP${c.jalurPutusan ? ` (${c.jalurPutusan})` : ""}, dilewati - tidak diganti`, "lewat"));
+      if (denganPutusan && !perluPutusan) hasil.push(langkah("putusan", `sudah ada di SIPP${c.jalurPutusan ? ` (${c.jalurPutusan})` : ""}, dilewati - tidak diganti`, "lewat"));
       if (denganAnonim && !perluAnonim) {
         hasil.push(langkah("anonimisasi", `sudah ada di SIPP${c.jalurAnonim ? ` (${c.jalurAnonim})` : ""}, dilewati - tidak diganti`, "lewat"));
       }
@@ -471,7 +473,7 @@
         const a = await (arg.deps.putusanDariAbt || putusanDariAbt)(arg);
         if (!a.ok) {
           if (perluPutusan) hasil.push(langkah("putusan", `berkas putusan belum tersedia - ${a.sebab}`, "salah"));
-          if (perluAnonim) hasil.push(langkah("anonimisasi", "tidak dikerjakan - berkas putusan belum tersedia", "salah"));
+          if (perluAnonim) hasil.push(langkah("anonimisasi", perluPutusan ? "tidak dikerjakan - berkas putusan belum tersedia" : `berkas putusan (bahan anonimisasi) belum tersedia - ${a.sebab}`, "salah"));
           return selesai(false, { perluBerkas: true });
         }
         sumber = a.berkas;
@@ -517,6 +519,47 @@
       hasil.push(langkah("putusan", `gagal - ${sebaris((galat && galat.message) || galat)}`, "salah"));
       return selesai(false);
     }
+  }
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Kunci per perkara (dibagi dengan penetapan dan tombol "Putusan Otomatis" di halaman SIPP)
+  // ───────────────────────────────────────────────────────────────────────
+  const KUNCI_TUJUAN = "putusan-otomatis";
+  const TANPA_KUNCI = { ok: true, tanpaKunci: true, lepas: async () => undefined };
+
+  /**
+   * Mengambil kunci perkara yang SAMA dengan penetapan (penetapan-kerja.js -> rute penunjukan/kunci).
+   * Pulang { ok, lepas() }. ok:false HANYA bila pekerjaan lain memegang perkara ini (sedang_dikerjakan) -
+   * kunci yang tidak dapat diminta karena sebab lain (rute belum ada, akses) tidak menahan pekerjaan,
+   * sebab kuncinya pagar tambahan; Putusan Akhir tetap dijaga bukti simpan dan cek e-Doc.
+   */
+  async function ambilKunci(nomorPerkara, perkaraIdTahu) {
+    const k = globalThis.aletaPenetapanKerja;
+    if (!k || typeof k.ambilKunci !== "function") return TANPA_KUNCI;
+    try {
+      let perkaraId = String(perkaraIdTahu || "");
+      if (!/^\d+$/.test(perkaraId)) {
+        const cari = fungsi("a30PerkaraIdUntukAbt");
+        perkaraId = cari ? String((await cari(nomorPerkara)) || "") : "";
+      }
+      if (!/^\d+$/.test(perkaraId)) return TANPA_KUNCI;
+      const r = await k.ambilKunci(Number(perkaraId), KUNCI_TUJUAN);
+      if (r && r.ok === true && r.token) {
+        const token = String(r.token);
+        return { ok: true, token, lepas: async () => { try { await k.lepasKunci(Number(perkaraId), token); } catch { /* kunci kedaluwarsa sendiri */ } } };
+      }
+      if (r && r.alasan === "sedang_dikerjakan") {
+        const oleh = sebaris(r.oleh);
+        return {
+          ok: false,
+          pesan: `Perkara ini sedang dikerjakan${oleh ? ` oleh ${oleh}` : ""}${r.tujuan ? ` (${sebaris(r.tujuan)})` : ""} - tunggu selesai supaya tidak tertulis ganda, lalu ulangi.`,
+          lepas: async () => undefined,
+        };
+      }
+    } catch {
+      /* kunci hanya pagar tambahan */
+    }
+    return TANPA_KUNCI;
   }
 
   // ───────────────────────────────────────────────────────────────────────
@@ -577,6 +620,7 @@
     barisSaklar,
     bacaSaklar,
     jalankan,
+    ambilKunci,
     cekSlot,
     putusanDariAbt,
     siapkanAnonim,

@@ -154,6 +154,10 @@ const BERKAS = [
   // skrip konten SIPP paling belakang; memakai abt-klien.js (kini juga dimuat di SIPP) untuk mencetak
   // Blangko Derry putusan dari ABT sesudah Putusan Akhir tersimpan.
   "putusan-edoc-sekaligus.js",
+  // Tombol + panel "Putusan Otomatis" di halaman perkara SIPP (20 Okt 2026, agen B2): menjalankan
+  // alur Putusan otomatis panel ekstensi dan e-Doc-nya; tepat di sebelah Penetapan Otomatis.
+  "putusan-sipp.js",
+  "putusan-sipp.css",
   "penetapan-sipp.css",
   "blangko-derry.css",
   // Menu kiri ABT bisa digulir (19 Okt 2026) - skrip konten ABT: #navbar diberi

@@ -68,11 +68,13 @@
         "muat-ulang-sipp.js",
         "penetapan-sipp.js",
         "abt-klien.js",
-        "putusan-edoc-sekaligus.js"
+        "putusan-edoc-sekaligus.js",
+        "putusan-sipp.js"
       ],
       "css": [
         "panel.css",
-        "penetapan-sipp.css"
+        "penetapan-sipp.css",
+        "putusan-sipp.css"
       ],
       "run_at": "document_idle"
     },
