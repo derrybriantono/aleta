@@ -59,10 +59,16 @@ function gabungGerbang() {
   let belum = 0;
   for (const nama of berkas.filter((n) => n.endsWith("-gerbang.json"))) {
     const t = baca(path.join(SUMBER, nama));
+    // Entri "kode" W2b semuanya berstatus saran dan TANPA data mentah isian petugas (berkas gerbang hanya boleh memuat entri yang bisa
+    // dihitung ulang dari UKURAN-GERBANG-U6-*.json). Maka dicatat sebagai belumTerukur (diperlakukan sebagai saran "ragu") beserta
+    // ringkasan ukur agen; kode yang bukan saran tidak digabung otomatis (perlu data mentah dan ukur ulang oleh sesi utama).
     for (const [k, e] of Object.entries(t.kode || {})) {
-      if (g.kode[k]) continue;
-      g.kode[k] = e;
-      if (g.belumTerukur && g.belumTerukur[k]) delete g.belumTerukur[k];
+      if (g.kode[k] || (g.belumTerukur && g.belumTerukur[k])) continue;
+      const asal = Object.values(e.asal || {});
+      if (asal.some((a) => a.status !== "saran")) throw new Error(`${nama}: kode ${k} bukan saran; ukur ulang lewat ukur-gerbang-u6`);
+      const ringkas = asal.map((a) => `n=${a.n}${a.banding ? `, banding=${a.banding}, cocok=${a.cocok}` : ""}: ${a.dasar}`).join("; ");
+      g.belumTerukur = g.belumTerukur || {};
+      g.belumTerukur[k] = `${e.nama}: hanya saran; ${ringkas}`;
       kode++;
     }
     for (const [k, alasan] of Object.entries(t.belumTerukur || {})) {
