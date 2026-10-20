@@ -1,3 +1,4 @@
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import { type NextRequest } from "next/server";
 
 import { BATAS } from "@/lib/putusan-terjadwal";
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
+    await pastikanAksi(db, actorUserId, "putusan.unggah");
     const pelaku = await pastikanBolehUnggahPutusan(db, actorUserId);
     const formulir = await request.formData();
     const berkas = formulir.get("berkas");
@@ -55,6 +57,7 @@ export async function DELETE(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
+    await pastikanAksi(db, actorUserId, "putusan.unggah");
     const pelaku = await pastikanBolehUnggahPutusan(db, actorUserId);
     const id = String(request.nextUrl.searchParams.get("id") ?? "").trim();
     if (!id) return ok({ ok: false, sebab: "Berkas belum disebut." });

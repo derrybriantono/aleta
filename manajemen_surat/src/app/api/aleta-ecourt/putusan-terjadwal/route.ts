@@ -1,3 +1,4 @@
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
+    await pastikanAksi(db, actorUserId, "putusan.unggah");
     const pelaku = await pastikanBolehUnggahPutusan(db, actorUserId);
     const q = request.nextUrl.searchParams;
     const daftar = await daftarJadwal(db, pelaku, { semua: q.get("semua") === "1", hanyaAktif: q.get("aktif") === "1", batas: Number(q.get("batas")) || undefined });
@@ -55,6 +57,7 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
+    await pastikanAksi(db, actorUserId, "putusan.unggah");
     const pelaku = await pastikanBolehUnggahPutusan(db, actorUserId);
     const badan = await readJsonBody<MasukanJadwalBaru>(request);
     const hasil = await buatJadwal(db, pelaku, alamatIpPeramban(request), badan);
@@ -76,6 +79,7 @@ export async function PATCH(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
+    await pastikanAksi(db, actorUserId, "putusan.unggah");
     const pelaku = await pastikanBolehUnggahPutusan(db, actorUserId);
     const badan = await readJsonBody<{ aksi?: string; id?: string; menit?: number; wita?: string }>(request);
     const hasil = await kelola(db, pelaku, {
