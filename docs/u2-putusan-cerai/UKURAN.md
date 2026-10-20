@@ -50,7 +50,8 @@ Entri gerbang (format U6) dan peta fakta siap digabung: `integrasi-u6/gerbang-u2
 
 ## 5. Render nyata (jalur cetak ABT asli, PHP 5.6) sebelum / sesudah tambal
 
-- CT [01] Format Lengkap (perkara 10078) dan CG [01] (10064): teks hasil render **sama persis** kecuali paragraf yang memang ditambahkan (izin ikrar + Pasal 70 ayat (6) pada CT; SEMA 1/2022 + fakta pada alasan F; tidak ada baris lain berubah, tidak ada "..." atau penanda sisa).
+- Regresi tanpa tuntutan dan tanpa isian: CT [01] Format Lengkap (perkara 10078) berbeda dari sebelumnya HANYA oleh satu paragraf tambahan (izin ikrar + Pasal 70 ayat (6)); CG [01] (10064) **identik byte demi byte** (165.211 = 165.211). Tidak ada "..." atau penanda sisa baru.
+- Skenario berisi isian (jalur cetak ABT asli): CG 9089 sebelum majelis memilih = empat baris `[PERIKSA ...]`; sesudah memilih = pertimbangan hak/nafkah lengkap + butir amar (nafkah anak berkenaikan, "Menghukum ... sebelum Tergugat mengambil akta cerai:" dengan rincian berbaris, "Menolak ... selain dan selebihnya"). CT 10078 varian Mut'ah Iddah: amar lama berhenti di butir 3, kini ada butir "Menghukum Pemohon ... sesaat sebelum Pemohon mengucapkan ikrar talak: nafkah iddah, mut'ah". BAS Ikrar "Ada Beban": titik-titik bawaan diganti angka dari putusan.
 - Ditemukan dan diperbaiki saat render: nilai variabel yang berakhir pemisah paragraf kehilangan kata pertama paragraf berikutnya (ABT memangkas spasi sesudah perintah RTF paragraf); keluaran kini berakhir grup RTF kosong `{}` (diuji `putusan-cerai-u2-20okt.test.ts`).
 - Skenario berisi keputusan: lihat `contoh/` (CG 9089 sebelum dan sesudah majelis memilih; CT 10078 varian Mut'ah Iddah sebelum dan sesudah, amar kini memuat mut'ah dan nafkah iddah).
 
