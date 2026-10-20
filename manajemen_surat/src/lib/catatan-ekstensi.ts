@@ -57,8 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.17",
+    dirilis: "2026-10-20T11:15:00+08:00",
+    judul: "Lihat sebagai tanpa nama kembar, peran tidak bertabrakan, saran blangko semua jenis perkara",
+    butir: [
+      "Blangko ABT by Derry Briantono: pemilih Lihat sebagai tidak lagi berisi nama kembar (nama tanpa gelar dan bergelar disatukan menjadi satu orang) dan pegawai yang sudah mutasi tidak ditampilkan.",
+      "Pilihan blangko dikunci menurut peran: hakim mendapat putusan atau penetapan, panitera pengganti mendapat berita acara sidang; berganti Lihat sebagai atau perkara tidak lagi membawa pilihan berita acara ke hakim.",
+      "Saran blangko kini muncul untuk semua jenis perkara (itsbat nikah, dispensasi kawin, perwalian, wali adhal, asal usul anak, ahli waris, dan lainnya) di putusan atau penetapan, berita acara sidang, relaas, dan PTSP.",
+      "Keterangan teknis di kartu isian dipindah ke ikon ⓘ: tampil saat kursor di atasnya dan terbuka saat diklik.",
+      "Portal tidak lagi terus gagal bila migrasi basis data bertabrakan saat dinyalakan ulang.",
+    ],
+  },
+  {
     versi: "1.205.16",
-    dirilis: "2026-10-20T13:00:00+08:00",
+    dirilis: "2026-10-20T10:28:00+08:00",
     judul: "Cetak massal per peran, cetak relaas sinkron peta, eviden SKP semua peran, Jadwal Sidang lewat tautan, dan ALETA Ai tahap 1",
     butir: [
       "Cetak massal di Blangko ABT by Derry Briantono menurut peran: hakim mencetak putusan, panitera dan panitera pengganti mencetak BAS, juru sita mencetak relaas, petugas PTSP mencetak penetapan; blangko dipilih dan diisi otomatis per perkara, ada daftar periksa siap/perlu dicek sebelum dicetak.",
