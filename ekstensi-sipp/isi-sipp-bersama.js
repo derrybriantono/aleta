@@ -417,6 +417,8 @@
     return { golongan: "tulis", nilai, sebab: yakin, ganti };
   }
 
+  /** Sebab usulan tidak menghasilkan nilai yang dapat dipakai (tidak ada nilai, atau nilainya bukan bentuk isian ini). */
+  const SEBAB_TAK_BERNILAI = Object.freeze(["tidak terdeteksi", "kosong", "bentuk tidak sesuai isian", "tanggal tidak terbaca", "bukan salah satu pilihan isian"]);
   /** Bahan tampilan isian yang "diisi manual": lencana abu "diisi manual", tanpa sumber, alasan di catatan (ikon ⓘ). */
   function infoManual(kode, alasan) {
     return {
@@ -456,7 +458,7 @@
       const h = putuskan(u, { kosong: b.kosong !== false, bolehGanti: b.bolehGanti === true, jenis: b.jenis, opsi: b.opsi, keIso, periode, nama: b.nama });
       // Pengisi menyatakan terus terang "tidak ada sumber" (mis. nomor SK prodeo, surat bantuan panggilan) atau isian ditandai manual
       // dan tak ada nilai yang terbaca: tanda "diisi manual" + alasan (alasan dari pengisi didahulukan, lalu alasan tetap isian itu).
-      if (h.golongan === "lewati" && h.sebab === "tidak terdeteksi" && b.kosong !== false) {
+      if (h.golongan === "lewati" && SEBAB_TAK_BERNILAI.includes(h.sebab) && b.kosong !== false) {
         const dinamis = teks(u.keyakinan) === "tidak_ada_sumber" ? htmlKeTeks(teks(u.catatan)).trim() : "";
         const statik = b.manual === true ? teks(b.alasanManual).trim() : "";
         if (dinamis || statik) {

@@ -402,11 +402,11 @@ describe("F - susunIsian: opsional dan manual", () => {
   const katalog = new Map<string, Definisi>([
     ["9134", { kode: "9134", nama: 'BAS PERMOHONAN: PETUNJUK PERBAIKAN PERMOHONAN - ISIAN (mis. "melengkapi nama"; kosong = titik-titik)', jenis: "data_teks", sql: "", bawaan: "" }],
     ["2557", { kode: "2557", nama: "(Saksi I) Berapa Kali Melihat dan Mendengar Pertengkaran (CUKUP ANGKA SAJA)", jenis: "data_teks", sql: "", bawaan: "1" }],
-    ["0007", { kode: "0007", nama: "Telah Dikarunai Anak ", jenis: "data_teks", sql: "", bawaan: "#8492#" }],
+    ["1006", { kode: "1006", nama: "Tempat tinggal setelah menikah", jenis: "data_teks", sql: "", bawaan: "" }],
   ]);
 
   it("#9134# opsional dengan label pengguna; #2557# manual dengan alasan; isian lain tidak berubah", () => {
-    const s = susunIsian(["9134", "2557", "0007"], katalog);
+    const s = susunIsian(["9134", "2557", "1006"], katalog);
     const per = Object.fromEntries(s.isian.map((b) => [b.kode, b]));
     expect(per["9134"].opsional).toBe(true);
     expect(per["9134"].labelPengguna).toBe("Petunjuk perbaikan permohonan (bila majelis memberi petunjuk)");
@@ -415,8 +415,8 @@ describe("F - susunIsian: opsional dan manual", () => {
     expect(per["2557"].manual).toBe(true);
     expect(per["2557"].alasanManual).toBe(ISIAN_MANUAL["2557"]);
     expect(per["2557"].opsional).toBeUndefined();
-    expect("opsional" in per["0007"]).toBe(false);
-    expect("manual" in per["0007"]).toBe(false);
+    expect("opsional" in per["1006"]).toBe(false);
+    expect("manual" in per["1006"]).toBe(false);
   });
 
   it("metadata: kunci empat-lima angka, teks bahasa pengguna tanpa kata aplikasi, tak ada kode di kedua daftar", () => {
