@@ -143,6 +143,14 @@ const BERKAS = [
   // aletaPenetapanKerja.kerjakan/keadaan/ambilKunci untuk tombol halaman SIPP
   // dan penanda halaman; satu sumber keadaan + satu kunci per perkara.
   "penetapan-kerja.js",
+  // Penetapan Otomatis di halaman perkara SIPP (20 Okt 2026): tombol tebal paling
+  // kiri + panel terbentang (mode, empat langkah, centang e-Doc, satu klik
+  // tulis lalu unggah). Skrip konten SIPP paling belakang; gayanya sendiri.
+  // Muat ulang otomatis sesudah penetapan, tetap di perkaranya (20 Okt 2026): ringkasan,
+  // hitung mundur, kembali dari dasbor sekali, ringkasan tampil lagi sesudah memuat.
+  "muat-ulang-sipp.js",
+  "penetapan-sipp.js",
+  "penetapan-sipp.css",
   "blangko-derry.css",
   // Menu kiri ABT bisa digulir (19 Okt 2026) - skrip konten ABT: #navbar diberi
   // max-height + overflow-y supaya submenu Blangko Derry terjangkau; gaya saja.
