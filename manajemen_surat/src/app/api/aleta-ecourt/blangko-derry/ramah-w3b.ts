@@ -5,7 +5,7 @@ export const RAMAH_W3B: Record<string, { nm: string; pil?: string[]; saran?: str
     "nm": "Hubungan {P} dengan anak"
   },
   "3802": {
-    "nm": "Alasan pencabutan pasal 49 ayat (1) uu 1/1974"
+    "nm": "Alasan pencabutan (huruf, boleh keduanya: A sangat melalaikan kewajiban terhadap anak, B berkelakuan buruk sekali)"
   },
   "3805": {
     "nm": "Fakta kelalaian atau kelakuan buruk yang terbukti"
@@ -26,7 +26,7 @@ export const RAMAH_W3B: Record<string, { nm: string; pil?: string[]; saran?: str
     "nm": "Alat bukti surat {P}"
   },
   "3815": {
-    "nm": "Alasan ditolak"
+    "nm": "Alasan ditolak (kalimat sesudah kata \"Menimbang, bahwa\")"
   },
   "3816": {
     "nm": "Sebab tidak dapat diterima"
@@ -44,7 +44,7 @@ export const RAMAH_W3B: Record<string, { nm: string; pil?: string[]; saran?: str
     "nm": "Dasar penunjukan wali yang dimohonkan dicabut"
   },
   "3834": {
-    "nm": "Alasan pencabutan"
+    "nm": "Alasan pencabutan (huruf, boleh lebih dari satu: A lalai; B berkelakuan buruk; C pemabuk/penjudi/pemboros/gila; D salah guna wewenang; E kekerasan; F orang tua mampu; G tidak cakap)"
   },
   "3838": {
     "nm": "Fakta yang terbukti"
@@ -71,7 +71,7 @@ export const RAMAH_W3B: Record<string, { nm: string; pil?: string[]; saran?: str
     "nm": "Alat bukti surat {P}"
   },
   "3855": {
-    "nm": "Alasan ditolak"
+    "nm": "Alasan ditolak (kalimat sesudah kata \"Menimbang, bahwa\")"
   },
   "3856": {
     "nm": "Sebab tidak dapat diterima"
@@ -80,13 +80,19 @@ export const RAMAH_W3B: Record<string, { nm: string; pil?: string[]; saran?: str
     "nm": "Sifat wali yang terbukti"
   },
   "3860": {
-    "nm": "Kategori calon wali"
+    "nm": "Kategori calon wali",
+    "pil": [
+      "A · Keluarga anak (mis. kakek, nenek)",
+      "B · Saudara (mis. kakak, paman, bibi)",
+      "C · Orang lain",
+      "D · Badan hukum (yayasan/lembaga)"
+    ]
   },
   "3861": {
     "nm": "Hubungan calon wali dengan anak"
   },
   "3862": {
-    "nm": "Sebab anak butuh wali"
+    "nm": "Sebab anak butuh wali (huruf, boleh lebih dari satu: A orang tua meninggal; B orang tua tidak diketahui; C orang tua tidak mampu; D kuasa wali dicabut; E wali berakhir)"
   },
   "3863": {
     "nm": "Keterangan sebab"
@@ -110,7 +116,7 @@ export const RAMAH_W3B: Record<string, { nm: string; pil?: string[]; saran?: str
     "nm": "Alat bukti surat pemohon"
   },
   "3870": {
-    "nm": "Alasan ditolak"
+    "nm": "Alasan ditolak (kalimat sesudah kata \"Menimbang, bahwa\")"
   },
   "3871": {
     "nm": "Sebab tidak dapat diterima"
@@ -137,7 +143,7 @@ export const RAMAH_W3B: Record<string, { nm: string; pil?: string[]; saran?: str
     "nm": "Jumlah kerugian yang ditetapkan hakim"
   },
   "3902": {
-    "nm": "Bentuk ganti rugi"
+    "nm": "Bentuk ganti rugi (huruf, boleh keduanya: A uang, B pengembalian harta atau barang; kosong = ikut isian jumlah dan harta)"
   },
   "3903": {
     "nm": "Harta atau barang yang harus dikembalikan"
@@ -153,10 +159,10 @@ export const RAMAH_W3B: Record<string, { nm: string; pil?: string[]; saran?: str
     "nm": "Fakta kesalahan atau kelalaian yang terbukti"
   },
   "3908": {
-    "nm": "Alasan ditolak"
+    "nm": "Alasan ditolak (kalimat sesudah kata \"Menimbang, bahwa\")"
   },
   "3909": {
-    "nm": "No - cacat formil gugatan"
+    "nm": "Tidak dapat diterima: cacat formil gugatan (satu kalimat tanpa titik akhir)"
   },
   "3910": {
     "nm": "Alat bukti surat {P}"
@@ -177,7 +183,7 @@ export const RAMAH_W3B: Record<string, { nm: string; pil?: string[]; saran?: str
     "nm": "Daftar harta dan pembukuan wali"
   },
   "3920": {
-    "nm": "Alasan ayah tidak mampu"
+    "nm": "Alasan ayah tidak mampu (huruf, boleh beberapa: A sakit/cacat/lanjut usia, B tidak bekerja, C penghasilan kurang, D dipenjara, E tidak diketahui tempatnya, F sebab lain)"
   },
   "3921": {
     "nm": "Fakta keadaan ayah"
@@ -204,7 +210,7 @@ export const RAMAH_W3B: Record<string, { nm: string; pil?: string[]; saran?: str
     "nm": "Dasar penilaian kebutuhan dasar anak dan standar biaya hidup minimal setempat"
   },
   "3936": {
-    "nm": "Alasan ditolak"
+    "nm": "Alasan ditolak (kalimat sesudah kata \"Menimbang, bahwa\")"
   },
   "3937": {
     "nm": "Cacat formil gugatan"
@@ -234,10 +240,65 @@ export const RAMAH_W3B: Record<string, { nm: string; pil?: string[]; saran?: str
     "nm": "Uraian hasil pelaksanaan"
   },
   "3968": {
-    "nm": "Alasan"
+    "nm": "Alasan (non-eksekutabel, pencabutan oleh Pemohon, atau sebab eksekusi riil tidak berhasil atau ditunda)"
   },
   "3969": {
     "nm": "Pernyataan termohon eksekusi"
+  },
+  "3977": {
+    "nm": "Tenggang perlawanan",
+    "pil": [
+      "A · diberitahukan ke Pelawan sendiri",
+      "B · tidak ke Pelawan sendiri",
+      "C · diperpanjang Pengadilan"
+    ]
+  },
+  "3978": {
+    "nm": "Tanggal teguran atau perintah tertulis"
+  },
+  "3979": {
+    "nm": "Tenggang diperpanjang sampai tanggal"
+  },
+  "3980": {
+    "nm": "Dalil perlawanan pelawan"
+  },
+  "3981": {
+    "nm": "Petitum perlawanan pelawan"
+  },
+  "3982": {
+    "nm": "Jawaban terlawan"
+  },
+  "3983": {
+    "nm": "Bukti surat pelawan"
+  },
+  "3984": {
+    "nm": "Bukti surat terlawan"
+  },
+  "3985": {
+    "nm": "Pertimbangan utama perlawanan"
+  },
+  "3986": {
+    "nm": "Sebab perlawanan tidak dapat diterima"
+  },
+  "3987": {
+    "nm": "Hasil pokok perkara sesudah verstek dibatalkan",
+    "pil": [
+      "A · gugatan asal ditolak",
+      "B · gugatan asal tidak dapat diterima",
+      "C · amar bebas dari isian 3989"
+    ]
+  },
+  "3988": {
+    "nm": "Pertimbangan pokok perkara sesudah verstek dibatalkan"
+  },
+  "3989": {
+    "nm": "Amar pokok perkara bebas"
+  },
+  "3991": {
+    "nm": "Biaya perkara perlawanan"
+  },
+  "3999": {
+    "nm": "Fakta hukum perlawanan"
   }
 };
 

@@ -41,8 +41,8 @@ export const JENIS_W3B: JenisW3b[] = [
       "alias": "Pencabutan Kuasa Orang Tua - BAS"
     },
     "alur": {
-      "id": "alur-60",
-      "nomor": 60,
+      "id": "alur-70",
+      "nomor": 70,
       "namaPendek": "Pencabutan Kuasa Asuh"
     },
     "gugatan": true,
@@ -86,8 +86,8 @@ export const JENIS_W3B: JenisW3b[] = [
       "alias": "Pencabutan Kuasa Wali - BAS"
     },
     "alur": {
-      "id": "alur-61",
-      "nomor": 61,
+      "id": "alur-71",
+      "nomor": 71,
       "namaPendek": "Pencabutan Perwalian"
     },
     "gugatan": true,
@@ -131,8 +131,8 @@ export const JENIS_W3B: JenisW3b[] = [
       "alias": "Penunjukan Wali - BAS"
     },
     "alur": {
-      "id": "alur-62",
-      "nomor": 62,
+      "id": "alur-72",
+      "nomor": 72,
       "namaPendek": "Penunjukan Wali"
     },
     "gugatan": false,
@@ -164,8 +164,8 @@ export const JENIS_W3B: JenisW3b[] = [
       "alias": "Ganti Rugi Wali - BAS"
     },
     "alur": {
-      "id": "alur-63",
-      "nomor": 63,
+      "id": "alur-73",
+      "nomor": 73,
       "namaPendek": "Ganti Rugi Wali"
     },
     "gugatan": true,
@@ -207,8 +207,8 @@ export const JENIS_W3B: JenisW3b[] = [
       "alias": "Nafkah Anak Ibu - BAS"
     },
     "alur": {
-      "id": "alur-64",
-      "nomor": 64,
+      "id": "alur-74",
+      "nomor": 74,
       "namaPendek": "Nafkah Anak Ibu"
     },
     "gugatan": true,
@@ -250,8 +250,8 @@ export const JENIS_W3B: JenisW3b[] = [
       "alias": "Eksekusi - BAS"
     },
     "alur": {
-      "id": "alur-65",
-      "nomor": 65,
+      "id": "alur-75",
+      "nomor": 75,
       "namaPendek": "Eksekusi"
     },
     "gugatan": false,
@@ -259,6 +259,35 @@ export const JENIS_W3B: JenisW3b[] = [
     "perdamaian": false,
     "berkas": {},
     "kodeMenuEkstensi": "ek"
+  },
+  {
+    "kunci": "verzet",
+    "idJenis": null,
+    "kunciPeta": "verzet",
+    "namaSipp": "Verzet",
+    "label": "perlawanan (verzet) atas putusan verstek",
+    "folder": "96a Verzet",
+    "folderBas": "96a Verzet - BAS",
+    "menuPutusan": {
+      "id": 252,
+      "nama": "Putusan Verzet (Perlawanan atas Putusan Verstek)",
+      "alias": "Verzet - Putusan"
+    },
+    "menuBas": {
+      "id": 253,
+      "nama": "Verzet (Perlawanan atas Putusan Verstek) - BAS",
+      "alias": "Verzet - BAS"
+    },
+    "alur": {
+      "id": "alur-76",
+      "nomor": 76,
+      "namaPendek": "Verzet"
+    },
+    "gugatan": false,
+    "permohonan": false,
+    "perdamaian": false,
+    "berkas": {},
+    "kodeMenuEkstensi": "vz"
   }
 ];
 
@@ -269,5 +298,6 @@ export const FOLDER_MENU_W3B: Record<string, string> = {
   "Putusan Penunjukan Wali oleh Pengadilan": "6f Penunjukan Wali oleh Pengadilan",
   "Putusan Ganti Rugi terhadap Wali": "6g Ganti Rugi terhadap Wali",
   "Putusan Nafkah Anak oleh Ibu karena Ayah Tidak Mampu": "6h Nafkah Anak oleh Ibu",
-  "Putusan Eksekusi": "96 Eksekusi"
+  "Putusan Eksekusi": "96 Eksekusi",
+  "Putusan Verzet (Perlawanan atas Putusan Verstek)": "96a Verzet"
 };

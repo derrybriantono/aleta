@@ -19,7 +19,7 @@ dua catatan kehati-hatian ada di bagian akhir.
 | 10 | Pasal 14 ayat (1) huruf d PP 29/2019 | "mengelola harta milik Anak untuk keperluan Anak" | terverifikasi: `ekstra/pp29-2019.txt` Pasal 14 | tercetak (hukum inti 3); katalog `dh-pp29-2019-14` |
 | 11 | Pasal 49 huruf a dan penjelasan angka 18 UU 7/1989 jo. UU 3/2006 jo. UU 50/2009 | "pembebanan kewajiban ganti kerugian atas harta benda anak" | terverifikasi dengan teks penjelasan di `aleta_bot/query.js` baris ~175-215 (butir 18; sumber yang ditunjuk panduan W3b) | tercetak (kewenangan absolut, semua putusan); katalog `dh-penjelasan-49-18` |
 | 12 | Pasal 283 RBg | "harus membuktikan hak atau keadaan itu" | terverifikasi: `hir-rbg-bw/rbg-unnes.txt` | tercetak (putusan tolak: beban bukti Penggugat; juga paragraf beban pembuktian bawaan); katalog `dh-rbg-283` |
-| 13 | Pasal 149 ayat (1) RBg | verstek (panduan W3b: 149 = verstek) | terverifikasi pada panduan W3b (`rbg-unnes.txt`) | tercetak (putusan tolak verstek, kalimat akhir, pola jenis 353) |
+| 13 | Pasal 149 ayat (1) RBg | "gugatannya tidak mempunyai dasar hukum atau tidak beralasan" (pengecualian verstek) | terverifikasi: `hir-rbg-bw/rbg-unnes.txt` Pasal 149 ayat (1), dibaca 21 Okt 2026 | tercetak (putusan tolak verstek, kalimat akhir, pola jenis 353) |
 
 Rujukan KATALOG saja yang disalin dari `nafkah-anak.json` (`dh-sebab-pengetahuan`, `dh-de-auditu`, `dh-unus-testis`, `dh-larangan-saksi`, `dh-kesesuaian-saksi`: Buku II 2013 dan
 Pasal 172, 308, 309 RBg) berstatus terverifikasi di berkas asalnya; tidak saya baca ulang naskahnya (tidak ada penambahan nomor pasal baru).

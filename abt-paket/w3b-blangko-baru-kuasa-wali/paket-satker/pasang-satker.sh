@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # PASANG paket ABT "abt-w3b-blangko-baru-kuasa-wali" (21 Okt 2026, agen W3b). Dijalankan DI SERVER sebagai root, dari folder paket.
-# Isi: 151 variabel baru, 12 menu baru, 251 blangko RTF baru. Hanya MENAMBAH: berkas, folder, variabel dan menu lama tidak diubah; tidak ada berkas yang ditimpa.
+# Isi: 181 variabel baru, 14 menu baru, 274 blangko RTF baru. Hanya MENAMBAH: berkas, folder, variabel dan menu lama tidak diubah; tidak ada berkas yang ditimpa.
 # Paket yang harus terpasang lebih dulu: paket gelombang 1 (variabel 4406/4407 U4 dan 9250-9260). PRASYARAT memeriksa semua variabel lama yang dirujuk blangko.
 # Urutan: md5 -> PRASYARAT SQL + BERKAS (baca saja) -> CADANGAN (sesudah prasyarat lolos; tidak pernah menimpa cadangan lama)
 #         -> PASANG SQL (satu transaksi) -> PERIKSA -> UJI kueri baru atas perkara nyata (baca saja) -> BERKAS (baru + sunting potongan)
@@ -12,8 +12,8 @@ set -u
 cd "$(dirname "$0")" || exit 1
 SINI=$(pwd)
 N=abt-w3b-blangko-baru-kuasa-wali
-HARAP='0|0|274|0|0'
-ULANG='0|151|274|0|12'
+HARAP='0|0|275|0|0'
+ULANG='0|181|275|0|14'
 CAD="$SINI/cadangan"
 B="${ABT_BLANGKO:-/var/www/html/aps_badilag/_blangko_abt}"
 SDB="${SIPP_DB:-SIPP}"
@@ -50,7 +50,7 @@ c=$($PY berkas_rtf.py cek "$B"); echo "$c"
 mkdir -p "$CAD" || gagal "tidak bisa membuat $CAD"
 for T in abt_variabel abt_data_teks abt_data_tanggal abt_menu; do
   [ -f "$CAD/$T-sebelum.sql" ] && mv "$CAD/$T-sebelum.sql" "$CAD/$T-sebelum.$(date +%Y%m%d%H%M%S).sql"
-  if [ "$T" = abt_menu ]; then W="id IN (240,241,242,243,244,245,246,247,248,249,250,251)"; else W="no_var IN (3800,3801,3802,3803,3804,3805,3806,3807,3808,3809,3810,3811,3812,3813,3814,3815,3816,3817,3818,3819,3830,3831,3832,3833,3834,3835,3836,3837,3838,3839,3840,3841,3842,3843,3844,3845,3846,3847,3848,3849,3850,3851,3852,3853,3854,3855,3856,3857,3860,3861,3862,3863,3864,3865,3866,3867,3868,3869,3870,3871,3872,3873,3874,3875,3876,3877,3878,3879,3880,3881,3882,3883,3890,3891,3892,3893,3894,3895,3896,3897,3898,3899,3900,3901,3902,3903,3904,3905,3906,3907,3908,3909,3910,3911,3912,3913,3914,3915,3916,3917,3918,3919,3920,3921,3922,3923,3924,3925,3926,3927,3928,3929,3931,3932,3933,3934,3935,3936,3937,3938,3939,3940,3941,3942,3943,3944,3945,3946,3947,3948,3949,3950,3951,3952,3953,3954,3955,3956,3957,3958,3959,3960,3961,3962,3963,3964,3965,3966,3967,3968,3969)"; fi
+  if [ "$T" = abt_menu ]; then W="id IN (240,241,242,243,244,245,246,247,248,249,250,251,252,253)"; else W="no_var IN (3800,3801,3802,3803,3804,3805,3806,3807,3808,3809,3810,3811,3812,3813,3814,3815,3816,3817,3818,3819,3830,3831,3832,3833,3834,3835,3836,3837,3838,3839,3840,3841,3842,3843,3844,3845,3846,3847,3848,3849,3850,3851,3852,3853,3854,3855,3856,3857,3860,3861,3862,3863,3864,3865,3866,3867,3868,3869,3870,3871,3872,3873,3874,3875,3876,3877,3878,3879,3880,3881,3882,3883,3890,3891,3892,3893,3894,3895,3896,3897,3898,3899,3900,3901,3902,3903,3904,3905,3906,3907,3908,3909,3910,3911,3912,3913,3914,3915,3916,3917,3918,3919,3920,3921,3922,3923,3924,3925,3926,3927,3928,3929,3931,3932,3933,3934,3935,3936,3937,3938,3939,3940,3941,3942,3943,3944,3945,3946,3947,3948,3949,3950,3951,3952,3953,3954,3955,3956,3957,3958,3959,3960,3961,3962,3963,3964,3965,3966,3967,3968,3969,3970,3971,3972,3973,3974,3975,3976,3977,3978,3979,3980,3981,3982,3983,3984,3985,3986,3987,3988,3989,3990,3991,3992,3993,3994,3995,3996,3997,3998,3999)"; fi
   mysqldump -h "$H" -u root --default-character-set=latin1 --skip-tz-utc --no-create-info --replace --skip-extended-insert \
     --complete-insert --skip-comments --hex-blob --where="$W" "$ADB" "$T" > "$CAD/$T-sebelum.sql" \
     || gagal "mysqldump $T gagal - TIDAK ada yang diubah"

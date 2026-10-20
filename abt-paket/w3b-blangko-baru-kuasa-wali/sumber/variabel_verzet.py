@@ -15,9 +15,10 @@ Dasar hukum yang dicetak (naskah di D:/aleta-dev/kerja/referensi/_unduhan/hir-rb
 Pembagian nomor:
   OTOMATIS : 3970 Pelawan  3971 Terlawan  3972 putusan verstek  3973 tanggal surat  3974 tanggal daftar  3975 tanggal pemberitahuan  3976 pertimbangan tenggang
              3990 amar pokok perkara  3992 angka murni biaya  3993 biaya bertitik  3994 terbilang biaya  3995-3997 kaki putusan dan tanda tangan majelis VERZET
+             3998 amar putusan verzet (SIPP, untuk BAS)
   ISIAN    : 3977 cara pemberitahuan (huruf)  3978 tanggal teguran/perintah  3979 tenggang diperpanjang  3980 dalil  3981 petitum  3982 jawaban  3983/3984 bukti surat
              3985 pertimbangan utama  3986 sebab tidak dapat diterima  3987 pilihan hasil pokok  3988 pertimbangan pokok  3989 amar pokok bebas  3991 biaya (angka)
-             3998 mediasi/upaya damai tambahan  3999 fakta hukum
+             3999 fakta hukum
 Tanggal isian (3978, 3979) ditulis angka: hh-bb-tttt (mis. 05-01-2026) supaya kueri dapat menghitung hari.
 """
 from variabel_def import v, isi
@@ -78,9 +79,9 @@ v(3975, P + 'TANGGAL PEMBERITAHUAN PUTUSAN VERSTEK KEPADA TERGUGAT/TERMOHON (OTO
 # ---------------------------------------------------------------------------------------------------------------------------------
 # Tenggang waktu perlawanan - Pasal 153 ayat (2) dan (3) RBg
 # ---------------------------------------------------------------------------------------------------------------------------------
-v(3977, P + 'TENGGANG PERLAWANAN - PILIH HURUF: A diberitahukan ke Pelawan sendiri (14 hari), B tidak ke Pelawan sendiri (hari ke-8 sesudah teguran; isi 3978), C diperpanjang (isi 3979)', 'data_teks')
-v(3978, P + 'TANGGAL TEGURAN (PASAL 207 RBg) ATAU PERINTAH TERTULIS (PASAL 208 RBg) - ISIAN angka hh-bb-tttt, mis. 05-01-2026 (hanya untuk pilihan B; batas perlawanan = hari kedelapan sesudahnya)', 'data_teks')
-v(3979, P + 'TENGGANG DIPERPANJANG SAMPAI TANGGAL - ISIAN angka hh-bb-tttt, mis. 20-01-2026 (hanya untuk pilihan C; Pasal 153 ayat (3) RBg)', 'data_teks')
+v(3977, P + 'TENGGANG PERLAWANAN - PILIH HURUF: A diberitahukan ke Pelawan sendiri, B tidak ke Pelawan sendiri, C diperpanjang Pengadilan (B perlu isian 3978, C perlu isian 3979)', 'data_teks')
+v(3978, P + 'TANGGAL TEGURAN ATAU PERINTAH TERTULIS - ISIAN angka hh-bb-tttt, mis. 05-01-2026 (pilihan B 3977: teguran Pasal 207 atau perintah Pasal 208 RBg; batas perlawanan = hari kedelapan sesudahnya)', 'data_teks')
+v(3979, P + 'TENGGANG DIPERPANJANG SAMPAI TANGGAL - ISIAN angka hh-bb-tttt, mis. 20-01-2026 (untuk pilihan C pada 3977; Pasal 153 ayat (3) RBg)', 'data_teks')
 
 _Z3976 = (
     "(SELECT %s AS tg, %s AS dz, %s AS d3, %s AS d4, UPPER(%s) AS h) z" % (
@@ -91,13 +92,13 @@ _AWAL = "Menimbang, bahwa menurut Pasal 153 ayat (2) RBg, "
 v(3976, P + 'PERTIMBANGAN TENGGANG WAKTU PERLAWANAN (OTOMATIS: tanggal pemberitahuan dan pendaftaran dari SIPP + pilihan 3977; menghitung dalam atau lewat tenggang; huruf C > B > A; kosong = titik-titik)', 'data_sql',
   "SELECT CASE "
   # C - diperpanjang
-  "WHEN z.h LIKE '%%C%%' THEN CONCAT('Menimbang, bahwa menurut Pasal 153 ayat (3) RBg, Pengadilan berwenang dalam putusannya memperpanjang tenggang waktu pengajuan perlawanan menurut keadaan; dalam perkara ini tenggang waktu perlawanan diperpanjang sampai dengan tanggal ', IF(z.d4 IS NOT NULL, %s, %s), ', sedangkan perlawanan didaftarkan pada tanggal ', %s, ', sehingga perlawanan ', "
+  "WHEN z.h REGEXP '(^|[^A-Z])C([^A-Z]|$)' THEN CONCAT('Menimbang, bahwa menurut Pasal 153 ayat (3) RBg, Pengadilan berwenang dalam putusannya memperpanjang tenggang waktu pengajuan perlawanan menurut keadaan; dalam perkara ini tenggang waktu perlawanan diperpanjang sampai dengan tanggal ', IF(z.d4 IS NOT NULL, %s, %s), ', sedangkan perlawanan didaftarkan pada tanggal ', %s, ', sehingga perlawanan ', "
   "IF(z.d4 IS NULL OR z.dz IS NULL, '........', IF(z.dz <= z.d4, 'diajukan dalam tenggang waktu yang diperpanjang tersebut', 'diajukan setelah lewat tenggang waktu yang diperpanjang tersebut')), ';') "
   # B - tidak diterima sendiri
-  "WHEN z.h LIKE '%%B%%' THEN CONCAT('%s', 'apabila putusan verstek tidak disampaikan kepada orang yang dikalahkan sendiri, perlawanan dapat diajukan sampai dengan hari kedelapan setelah teguran menurut Pasal 207 RBg atau, apabila ia tidak datang menghadap untuk diberitahu meskipun telah dipanggil dengan patut, sampai dengan hari kedelapan setelah perintah tertulis menurut Pasal 208 RBg dilaksanakan; dalam perkara ini putusan verstek tersebut tidak diterima oleh Pelawan sendiri, sedangkan teguran atau perintah tertulis tersebut dilaksanakan pada tanggal ', IF(z.d3 IS NOT NULL, %s, %s), ', sehingga batas akhir pengajuan perlawanan adalah tanggal ', IF(z.d3 IS NOT NULL, %s, %s), ', sedangkan perlawanan didaftarkan pada tanggal ', %s, ', sehingga perlawanan ', "
+  "WHEN z.h REGEXP '(^|[^A-Z])B([^A-Z]|$)' THEN CONCAT('%s', 'apabila putusan verstek tidak disampaikan kepada orang yang dikalahkan sendiri, perlawanan dapat diajukan sampai dengan hari kedelapan setelah teguran menurut Pasal 207 RBg atau, apabila ia tidak datang menghadap untuk diberitahu meskipun telah dipanggil dengan patut, sampai dengan hari kedelapan setelah perintah tertulis menurut Pasal 208 RBg dilaksanakan; dalam perkara ini putusan verstek tersebut tidak diterima oleh Pelawan sendiri, sedangkan teguran atau perintah tertulis tersebut dilaksanakan pada tanggal ', IF(z.d3 IS NOT NULL, %s, %s), ', sehingga batas akhir pengajuan perlawanan adalah tanggal ', IF(z.d3 IS NOT NULL, %s, %s), ', sedangkan perlawanan didaftarkan pada tanggal ', %s, ', sehingga perlawanan ', "
   "IF(z.d3 IS NULL OR z.dz IS NULL, '........', IF(z.dz <= DATE_ADD(z.d3, INTERVAL 8 DAY), 'diajukan dalam tenggang waktu yang ditentukan undang-undang', 'diajukan setelah lewat tenggang waktu yang ditentukan undang-undang')), ';') "
   # A - diterima sendiri
-  "WHEN z.h LIKE '%%A%%' THEN CONCAT('%s', 'apabila pemberitahuan putusan verstek telah diterima oleh orang yang dikalahkan sendiri, perlawanan dapat dilakukan dalam tenggang waktu 14 (empat belas) hari setelah pemberitahuan itu; dalam perkara ini putusan verstek tersebut telah diberitahukan kepada Pelawan sendiri pada tanggal ', %s, ', sedangkan perlawanan didaftarkan pada tanggal ', %s, ', yaitu ', IF(z.tg IS NULL OR z.dz IS NULL, '........', DATEDIFF(z.dz, z.tg)), ' hari setelah pemberitahuan tersebut, sehingga perlawanan ', "
+  "WHEN z.h REGEXP '(^|[^A-Z])A([^A-Z]|$)' THEN CONCAT('%s', 'apabila pemberitahuan putusan verstek telah diterima oleh orang yang dikalahkan sendiri, perlawanan dapat dilakukan dalam tenggang waktu 14 (empat belas) hari setelah pemberitahuan itu; dalam perkara ini putusan verstek tersebut telah diberitahukan kepada Pelawan sendiri pada tanggal ', %s, ', sedangkan perlawanan didaftarkan pada tanggal ', %s, ', yaitu ', IF(z.tg IS NULL OR z.dz IS NULL, '........', DATEDIFF(z.dz, z.tg)), ' hari setelah pemberitahuan tersebut, sehingga perlawanan ', "
   "IF(z.tg IS NULL OR z.dz IS NULL, '........', IF(DATEDIFF(z.dz, z.tg) <= 14, 'diajukan dalam tenggang waktu yang ditentukan undang-undang', 'diajukan setelah lewat tenggang waktu yang ditentukan undang-undang')), ';') "
   # kosong
   "ELSE CONCAT('Menimbang, bahwa putusan verstek tersebut diberitahukan kepada Pelawan pada tanggal ', %s, ', sedangkan perlawanan didaftarkan pada tanggal ', %s, '; mengenai tenggang waktu pengajuan perlawanan menurut Pasal 153 ayat (2) RBg, ........;') END AS data "
@@ -122,15 +123,15 @@ v(3984, P + 'BUKTI SURAT TERLAWAN - ISIAN daftar bukti dengan tanda T.1 dst. (Te
            '2. ...'))
 v(3985, P + 'PERTIMBANGAN UTAMA PERLAWANAN - ISIAN sesudah "Menimbang, bahwa" (kabul: mengapa verstek tak dapat dipertahankan; tolak: mengapa dalil tidak terbukti; boleh beberapa paragraf)', 'data_teks', default='........')
 v(3986, P + 'SEBAB PERLAWANAN TIDAK DAPAT DITERIMA - ISIAN kalimat sesudah "Menimbang, bahwa" (mis. diajukan oleh yang tidak berhak, bukan Tergugat yang diputus verstek, atau cacat formil lain)', 'data_teks', default='........')
-v(3987, P + 'HASIL POKOK PERKARA SESUDAH VERSTEK DIBATALKAN - PILIH HURUF: A gugatan asal ditolak, B gugatan asal tidak dapat diterima, C amar bebas (isi 3989); keduanya kosong = titik-titik', 'data_teks')
+v(3987, P + 'HASIL POKOK PERKARA SESUDAH VERSTEK DIBATALKAN - PILIH HURUF: A gugatan asal ditolak, B gugatan asal tidak dapat diterima, C amar bebas dari isian 3989; kosong dan 3989 kosong = titik-titik', 'data_teks')
 v(3988, P + 'PERTIMBANGAN POKOK PERKARA SESUDAH VERSTEK DIBATALKAN - ISIAN paragraf "Menimbang, bahwa ..." tentang gugatan asal (Pasal 153 ayat (4) RBg); dipisah <br>', 'data_teks', default='........')
 v(3989, P + 'AMAR POKOK PERKARA BEBAS - ISIAN butir amar atas gugatan/permohonan asal (untuk pilihan C pada 3987); beberapa butir dipisah <br>; tanpa nomor, nomor dibuat oleh susunan putusan', 'data_teks')
 
 _H87 = "UPPER(%s)" % isi(3987)
 v(3990, P + 'AMAR POKOK PERKARA SESUDAH VERSTEK DIBATALKAN (OTOMATIS: pilihan 3987 dan isian 3989; A menolak, B tidak dapat diterima, C isian bebas; titik-titik bila belum dipilih)', 'data_sql',
-  "SELECT CASE WHEN %s LIKE '%%C%%' OR (%s = '' AND %s <> '') THEN %s "
-  "WHEN %s LIKE '%%B%%' THEN 'Menyatakan #0053# Terlawan tidak dapat diterima (niet ontvankelijk verklaard);' "
-  "WHEN %s LIKE '%%A%%' THEN 'Menolak #0053# Terlawan;' "
+  "SELECT CASE WHEN %s REGEXP '(^|[^A-Z])C([^A-Z]|$)' OR (%s = '' AND %s <> '') THEN %s "
+  "WHEN %s REGEXP '(^|[^A-Z])B([^A-Z]|$)' THEN 'Menyatakan #0053# Terlawan tidak dapat diterima (niet ontvankelijk verklaard);' "
+  "WHEN %s REGEXP '(^|[^A-Z])A([^A-Z]|$)' THEN 'Menolak #0053# Terlawan;' "
   "ELSE '........;' END AS data" % (_H87, _H87, isi(3989), isi(3989), _H87, _H87))
 
 # ---------------------------------------------------------------------------------------------------------------------------------
@@ -170,5 +171,6 @@ v(3997, P + 'TANDA TANGAN MAJELIS VERZET (OTOMATIS, RTF: Ketua dan Anggota sampi
   "CONCAT('~trowd~trqc~trgaph85~trleft0~trkeep~cellx8400~pard~intbl~qc~sl360~slmult1 Hakim Ketua,~par~par~par~par ~b ', m.k, '~b0~cell~row~trowd~trqc~trgaph85~trleft0~trkeep~cellx4200~cellx8400~pard~intbl~qc~sl360~slmult1 Hakim Anggota,~par~par~par~par ~b ', IFNULL(m.a1, '........'), '~b0~cell~pard~intbl~qc~sl360~slmult1 Hakim Anggota,~par~par~par~par ~b ', IFNULL(m.a2, '........'), '~b0~cell~row~trowd~trqc~trgaph85~trleft0~trkeep~cellx8400~pard~intbl~qc~sl360~slmult1 ', IF(IFNULL(%s, \"#8553#\") = \"#8004#\", 'Panitera', 'Panitera Sidang'), ',~par~par~par~par ~b ', IFNULL(%s, \"#8553#\"), '~b0~cell~row~pard '), "
   "CONCAT('~trowd~trqc~trgaph85~trleft0~trkeep~cellx8400~pard~intbl~qc~sl360~slmult1 Hakim Tunggal,~par~par~par~par ~b ', m.k, '~b0~cell~row~trowd~trqc~trgaph85~trleft0~trkeep~cellx8400~pard~intbl~qc~sl360~slmult1 ', IF(IFNULL(%s, \"#8553#\") = \"#8004#\", 'Panitera', 'Panitera Sidang'), ',~par~par~par~par ~b ', IFNULL(%s, \"#8553#\"), '~b0~cell~row~pard '))), '~', CHAR(92)) AS data FROM %s" % (_PP, _PP, _PP, _PP, _HAKIM))
 
-v(3998, P + 'UPAYA DAMAI/MEDIASI TAMBAHAN PADA PERLAWANAN - ISIAN OPSIONAL kalimat lengkap (mis. mediasi dengan mediator ... tidak berhasil); kosong = hanya upaya damai Pasal 154 RBg', 'data_teks')
+v(3998, P + 'AMAR PUTUSAN VERZET (OTOMATIS SIPP perkara_verzet.amar_putusan_verzet, dicetak pada BAS pembacaan putusan; belum diinput di SIPP = titik-titik)', 'data_sql',
+  "SELECT IFNULL((SELECT NULLIF(TRIM(vz.amar_putusan_verzet), '') FROM perkara_verzet vz WHERE vz.perkara_id = '#perkara_id#' LIMIT 1), '........') AS data")
 v(3999, P + 'FAKTA HUKUM PERLAWANAN - ISIAN kalimat sesudah "Bahwa" dari alat bukti kedua pihak (dipisah <br> tiap butir, tanpa nomor), mis. cara pemanggilan Pelawan, alasan tidak hadir', 'data_teks', default='........')

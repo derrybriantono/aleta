@@ -26,7 +26,7 @@
     "6124",
     "8931"
    ],
-   "catatan": "gugatan; saksi P lewat variabel tanya_jawab; [6a] 3 saksi, [6b] 4 saksi, [6c] 5 saksi sama; paket w3b-blangko-baru-kuasa-wali (menu 242/243, ALUR 61)"
+   "catatan": "gugatan; saksi P lewat variabel tanya_jawab; [6a] 3 saksi, [6b] 4 saksi, [6c] 5 saksi sama; paket w3b-blangko-baru-kuasa-wali (menu 242/243, ALUR 71)"
   },
   {
    "folder": "6e Pencabutan Kekuasaan Wali - BAS",
@@ -41,7 +41,7 @@
   },
   {
    "folder": "6e Pencabutan Kekuasaan Wali - BAS",
-   "berkas": "BAS ALUR 61 Pencabutan Perwalian - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek",
+   "berkas": "BAS ALUR 71 Pencabutan Perwalian - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek",
    "variabelSaksi": [
     "5058",
     "5059"
@@ -50,7 +50,7 @@
   },
   {
    "folder": "6e Pencabutan Kekuasaan Wali - BAS",
-   "berkas": "BAS ALUR 61 Pencabutan Perwalian Mohon - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)",
+   "berkas": "BAS ALUR 71 Pencabutan Perwalian Mohon - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)",
    "variabelSaksi": [
     "5058",
     "5059"
@@ -59,7 +59,7 @@
   },
   {
    "folder": "6e Pencabutan Kekuasaan Wali - BAS",
-   "berkas": "BAS ALUR 61 Pencabutan Perwalian Mohon - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
+   "berkas": "BAS ALUR 71 Pencabutan Perwalian Mohon - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
    "variabelSaksi": [
     "5058",
     "5059"
@@ -68,7 +68,7 @@
   },
   {
    "folder": "6e Pencabutan Kekuasaan Wali - BAS",
-   "berkas": "BAS ALUR 61 Pencabutan Perwalian Mohon - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan",
+   "berkas": "BAS ALUR 71 Pencabutan Perwalian Mohon - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan",
    "variabelSaksi": [
     "5058",
     "5059"
@@ -77,7 +77,7 @@
   },
   {
    "folder": "6e Pencabutan Kekuasaan Wali - BAS",
-   "berkas": "BAS ALUR 61 Pencabutan Perwalian Mohon - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
+   "berkas": "BAS ALUR 71 Pencabutan Perwalian Mohon - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
    "variabelSaksi": [
     "5058",
     "5059"
@@ -86,7 +86,7 @@
   },
   {
    "folder": "6e Pencabutan Kekuasaan Wali - BAS",
-   "berkas": "BAS ALUR 61 Pencabutan Perwalian Mohon - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan",
+   "berkas": "BAS ALUR 71 Pencabutan Perwalian Mohon - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan",
    "variabelSaksi": [
     "5058",
     "5059"

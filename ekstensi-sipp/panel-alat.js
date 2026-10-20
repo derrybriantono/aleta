@@ -10058,6 +10058,12 @@ Object.assign(ALAT_MENU_PUTUSAN, {
     "lain": [
       "Eksekusi - Putusan"
     ]
+  },
+  "vz": {
+    "blangko": "Putusan Verzet (Perlawanan atas Putusan Verstek)",
+    "lain": [
+      "Verzet - Putusan"
+    ]
   }
 });
 function alatPetaW3b(kunci, jenisAsli, menu, B, punyaGugatan, punyaPermohonan) {

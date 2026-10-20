@@ -1,17 +1,17 @@
-ea3e5168665988fe0a8eb75634b68627  abt-w3b-blangko-baru-kuasa-wali-PASANG.sql
-111c03d9bef11dab5b51f69c0bbcc0b2  abt-w3b-blangko-baru-kuasa-wali-PERIKSA.sql
-206727ecc3958913c15615a8953827a7  abt-w3b-blangko-baru-kuasa-wali-PRASYARAT.sql
-1ca4b6003ff1f71e5810b14fe0c91408  abt-w3b-blangko-baru-kuasa-wali-PULIH.sql
+12b8210fdd9b651c2a0ab63cee3b60e7  abt-w3b-blangko-baru-kuasa-wali-PASANG.sql
+efe53047c6f57c2cfe72d1420ef3c5c9  abt-w3b-blangko-baru-kuasa-wali-PERIKSA.sql
+1c34f95de7feec5bfc3808b2d802eed4  abt-w3b-blangko-baru-kuasa-wali-PRASYARAT.sql
+bcd95d81c80d98e01d69948475c9e744  abt-w3b-blangko-baru-kuasa-wali-PULIH.sql
 8e29b8993a04f5dfa7ece3a6bc3ded0d  berkas_rtf.py
 99e5e9479fbd6748f97d11a00470990b  daftar-dasar.tsv
 99e5e9479fbd6748f97d11a00470990b  daftar-pindah.tsv
-1fdd32ef39b04e213fd457c39780c7a2  daftar-rtf.tsv
+b33f796471dd3bc42cc201a0a242a7c6  daftar-rtf.tsv
 99e5e9479fbd6748f97d11a00470990b  daftar-sunting.tsv
 99e5e9479fbd6748f97d11a00470990b  daftar-timpa.tsv
 6c06734d37f58b947921e129c2a9e844  folder-ada.txt
-7aed273c9cbf65c127ffc6f086e0bcd2  folder-baru.txt
-3568edaf31abb3a61626022cf2dafe71  pasang-satker.sh
-22fae0149baebb76732119af45615b4d  pulih-satker.sh
+6b8e40985133f1c310fe2a453661e8ef  folder-baru.txt
+082c6d64a8ff916ad1073a6ae8203db7  pasang-satker.sh
+e70e8a6c900545a7b46444827fd4f081  pulih-satker.sh
 04feea6df36b5e1a15de44307e9cc52b  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 04 [1] BAS 1 P & T Hadir - Mediasi.rtf
 bf84efdaa5dc29b3c4b91d36cb866c7f  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 04 [2] BAS 2 P & T Hadir - Laporan Mediasi dan Pemeriksaan Pokok Perkara.rtf
 d5e01ba8802b9da7475e9a7a24d7cf2f  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 04 [3] BAS 3 P & T Hadir - Jawaban (dan Gugatan Rekonvensi bila ada).rtf
@@ -41,23 +41,23 @@ ad5164a381eb780427bab18765e5c2e3  rtf/derry_briantono/6d Pencabutan Kekuasaan Or
 4ab84626409a8631fc1824d67f690a77  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 08 [C2] BAS Putus P & T Hadir - Cabut Perkara Damai dari Mediasi.rtf
 65812fc8017fe44623dc8c61a5936460  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 09 [1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T (Alamat Tidak Jelas).rtf
 761b1c7a2404a405794bfe4fa416a838  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
-4943aed8409d8bb114666b6cf68895f8  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh - Cabut sesudah Jawaban - Tergugat Menolak.rtf
-821255ba561845094ca9018ae3a02315  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh - Cabut sesudah Jawaban - Tergugat Setuju.rtf
-d5bb1a4981cd91690e6a4a273cfff4ab  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf
-837cd69077f3ceb0c1715903f31221cb  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf
-f68adc16b111f1603f3ac5983aa03d85  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf
-b0b0e627642bfaf0e05ca3d062043f69  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf
-f99a119d9f8dbd82ddf4cfa37b863cd7  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf
-af0096bbfae5b01ab658f5f660feafbc  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh Mohon - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf
-6bf894fb4c869117fbfe389d3c88df44  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh Mohon - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf
-f64216e76e29921e3a8057d3ea469985  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh Mohon - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf
-4d55c0f5c9877dc70369de99d0397c38  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh Mohon - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf
-4181706249d9b8a00bf1f8f598344741  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh Mohon - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf
-9a5034a21033b8784ddb2e63c5ca65c2  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh Mohon - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf
-5ef64fa74b69178ef8149161ce80381f  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh Mohon - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf
-e304faa249618e504c4731e08ba51d05  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh Mohon - [3] Sidang Terakhir - Pembacaan Penetapan.rtf
-4f5780947d96edf165d97be82b63c7e3  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh Mohon - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf
-b5cf576583c5ff769a2e8cd126ef52aa  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 60 Pencabutan Kuasa Asuh Mohon - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf
+4943aed8409d8bb114666b6cf68895f8  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh - Cabut sesudah Jawaban - Tergugat Menolak.rtf
+821255ba561845094ca9018ae3a02315  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh - Cabut sesudah Jawaban - Tergugat Setuju.rtf
+d5bb1a4981cd91690e6a4a273cfff4ab  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf
+837cd69077f3ceb0c1715903f31221cb  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf
+f68adc16b111f1603f3ac5983aa03d85  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf
+b0b0e627642bfaf0e05ca3d062043f69  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf
+f99a119d9f8dbd82ddf4cfa37b863cd7  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf
+af0096bbfae5b01ab658f5f660feafbc  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh Mohon - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf
+6bf894fb4c869117fbfe389d3c88df44  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh Mohon - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf
+f64216e76e29921e3a8057d3ea469985  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh Mohon - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf
+4d55c0f5c9877dc70369de99d0397c38  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh Mohon - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf
+4181706249d9b8a00bf1f8f598344741  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh Mohon - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf
+9a5034a21033b8784ddb2e63c5ca65c2  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh Mohon - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf
+5ef64fa74b69178ef8149161ce80381f  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh Mohon - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf
+e304faa249618e504c4731e08ba51d05  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh Mohon - [3] Sidang Terakhir - Pembacaan Penetapan.rtf
+4f5780947d96edf165d97be82b63c7e3  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh Mohon - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf
+b5cf576583c5ff769a2e8cd126ef52aa  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS/BAS ALUR 70 Pencabutan Kuasa Asuh Mohon - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf
 c3ed9c68b4a6d1bbd5632fe1bffb992d  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua/[01] [Kabul] Pencabutan Kekuasaan Orang Tua - Kontradiktoir.rtf
 0f62f873c8b7c0a95f37b9e5798379d6  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua/[01a] [Kabul] Pencabutan Kekuasaan Orang Tua - T Tidak Hadir Setelah Mediasi.rtf
 8fc8624c5ecc5fa50a2ded45b51c2361  rtf/derry_briantono/6d Pencabutan Kekuasaan Orang Tua/[01b] [Kabul Verstek] Pencabutan Kekuasaan Orang Tua.rtf
@@ -102,23 +102,23 @@ cb6e1c3d93ea0ae99e549f1a176de906  rtf/derry_briantono/6e Pencabutan Kekuasaan Wa
 c351f4ecd47c5ab73992e7b54ad43dae  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 08 [C2] BAS Putus P & T Hadir - Cabut Perkara Damai dari Mediasi.rtf
 36bbb5c8b6078373dd376b24069c985b  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 09 [1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T (Alamat Tidak Jelas).rtf
 5bc1eb8808944c5c064f2b55559264da  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
-4943aed8409d8bb114666b6cf68895f8  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian - Cabut sesudah Jawaban - Tergugat Menolak.rtf
-821255ba561845094ca9018ae3a02315  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian - Cabut sesudah Jawaban - Tergugat Setuju.rtf
-dbe51248b0780ad46d3ba662ba6e8f63  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf
-6faecabff17e17d19349f46170d34f36  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf
-2f9ae84cbb9492caeab84b4ca09e3643  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf
-40fd88302aba4913b0ca83aa14fd2611  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf
-e8296a5cbfd83f040a7c45d2112d27d7  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf
-c6ff4353829ce37641ccfade6f3059d3  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian Mohon - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf
-601ec7641c5467d5e98f0be627ea3255  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian Mohon - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf
-1e265784e0bedc4132cd85ae75d7d913  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian Mohon - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf
-8c19d7d17bb3baa742aef193bf559668  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian Mohon - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf
-ebdaf0d33054f7f429bd10c8c7d9bc73  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian Mohon - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf
-fbc116bd7d851289ad04d4e39589fabb  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian Mohon - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf
-c612910553cb1f464d5a33caf05a2fa9  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian Mohon - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf
-f99a88e3a331ba867ff224e8c2478349  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian Mohon - [3] Sidang Terakhir - Pembacaan Penetapan.rtf
-4f5780947d96edf165d97be82b63c7e3  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian Mohon - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf
-b5cf576583c5ff769a2e8cd126ef52aa  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 61 Pencabutan Perwalian Mohon - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf
+4943aed8409d8bb114666b6cf68895f8  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian - Cabut sesudah Jawaban - Tergugat Menolak.rtf
+821255ba561845094ca9018ae3a02315  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian - Cabut sesudah Jawaban - Tergugat Setuju.rtf
+dbe51248b0780ad46d3ba662ba6e8f63  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf
+6faecabff17e17d19349f46170d34f36  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf
+2f9ae84cbb9492caeab84b4ca09e3643  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf
+40fd88302aba4913b0ca83aa14fd2611  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf
+e8296a5cbfd83f040a7c45d2112d27d7  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf
+c6ff4353829ce37641ccfade6f3059d3  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian Mohon - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf
+601ec7641c5467d5e98f0be627ea3255  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian Mohon - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf
+1e265784e0bedc4132cd85ae75d7d913  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian Mohon - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf
+8c19d7d17bb3baa742aef193bf559668  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian Mohon - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf
+ebdaf0d33054f7f429bd10c8c7d9bc73  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian Mohon - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf
+fbc116bd7d851289ad04d4e39589fabb  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian Mohon - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf
+c612910553cb1f464d5a33caf05a2fa9  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian Mohon - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf
+f99a88e3a331ba867ff224e8c2478349  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian Mohon - [3] Sidang Terakhir - Pembacaan Penetapan.rtf
+4f5780947d96edf165d97be82b63c7e3  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian Mohon - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf
+b5cf576583c5ff769a2e8cd126ef52aa  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali - BAS/BAS ALUR 71 Pencabutan Perwalian Mohon - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf
 8f36e710385d87aa68c041f805b0f330  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali/[01] [Kabul] Pencabutan Kekuasaan Wali - Kontradiktoir.rtf
 33126a8e4c9818d4df343d5c79a1ab88  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali/[01a] [Kabul] Pencabutan Kekuasaan Wali - T Tidak Hadir Setelah Mediasi.rtf
 617cd5f90eec41bc1c66317d21fdd888  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali/[01b] [Kabul Verstek] Pencabutan Kekuasaan Wali.rtf
@@ -134,16 +134,16 @@ cc9ec61389f8e89a32f96dc6e87de648  rtf/derry_briantono/6e Pencabutan Kekuasaan Wa
 66505c4abe32948572adf22ab0cc22a1  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali/[99a] [NO] Pencabutan Kekuasaan Wali - Kurang Pihak (Plurium Litis Consortium).rtf
 fdf69e071031837337ab3465474c036f  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali/[99b] [NO] Pencabutan Kekuasaan Wali - Gugatan Kabur (Obscuur Libel).rtf
 88d77caeddd1134bfda25a41e8264306  rtf/derry_briantono/6e Pencabutan Kekuasaan Wali/[99p] [NO] Pencabutan Kekuasaan Wali - Permohonan Tidak Dapat Diterima (Formil).rtf
-4e6678a54405a18d5492f2c4b1b00012  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 62 Penunjukan Wali - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf
-d0121947612ff472d32f51b09b63c63d  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 62 Penunjukan Wali - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf
-bf20a05e91448316fe1e25c1044264ed  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 62 Penunjukan Wali - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf
-79d8a95a40825b0d35d1fe04d4867e5b  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 62 Penunjukan Wali - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf
-11e30e1431b837028e1d1499e22bcba1  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 62 Penunjukan Wali - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf
-e909712269459dce09ecdd32ea9c0452  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 62 Penunjukan Wali - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf
-f80a347f66740cb32d793b38a1b0fe8c  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 62 Penunjukan Wali - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf
-e3189c996b4b526201419b6460d7b717  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 62 Penunjukan Wali - [3] Sidang Terakhir - Pembacaan Penetapan.rtf
-4f5780947d96edf165d97be82b63c7e3  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 62 Penunjukan Wali - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf
-b5cf576583c5ff769a2e8cd126ef52aa  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 62 Penunjukan Wali - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf
+4e6678a54405a18d5492f2c4b1b00012  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 72 Penunjukan Wali - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf
+d0121947612ff472d32f51b09b63c63d  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 72 Penunjukan Wali - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf
+bf20a05e91448316fe1e25c1044264ed  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 72 Penunjukan Wali - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf
+79d8a95a40825b0d35d1fe04d4867e5b  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 72 Penunjukan Wali - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf
+11e30e1431b837028e1d1499e22bcba1  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 72 Penunjukan Wali - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf
+e909712269459dce09ecdd32ea9c0452  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 72 Penunjukan Wali - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf
+f80a347f66740cb32d793b38a1b0fe8c  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 72 Penunjukan Wali - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf
+e3189c996b4b526201419b6460d7b717  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 72 Penunjukan Wali - [3] Sidang Terakhir - Pembacaan Penetapan.rtf
+4f5780947d96edf165d97be82b63c7e3  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 72 Penunjukan Wali - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf
+b5cf576583c5ff769a2e8cd126ef52aa  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS/BAS ALUR 72 Penunjukan Wali - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf
 237042fc4b2b7d73691128020f0f29c3  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan/[01p] [Kabul] Penunjukan Wali oleh Pengadilan - Permohonan (Pemohon Hadir).rtf
 2e7d3cede8caebe0d26a415634364d66  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan/[03p] [Tolak] Penunjukan Wali oleh Pengadilan - Dalil Permohonan Tidak Terbukti.rtf
 ff31d1d394f8a8e86309652d4bfe9a1b  rtf/derry_briantono/6f Penunjukan Wali oleh Pengadilan/[99p] [NO] Penunjukan Wali oleh Pengadilan - Permohonan Tidak Dapat Diterima (Formil).rtf
@@ -176,14 +176,14 @@ bcbd8e6227a54bc1a19dd6d68a298b4b  rtf/derry_briantono/6g Ganti Rugi terhadap Wal
 6bc91de5050dd8063913af8252f63d23  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 08 [C2] BAS Putus P & T Hadir - Cabut Perkara Damai dari Mediasi.rtf
 65db9c38c42eedcf1aae624e87042017  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 09 [1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T (Alamat Tidak Jelas).rtf
 916cadfbf2e2a868ec2820768085811f  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
-4943aed8409d8bb114666b6cf68895f8  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 63 Ganti Rugi Wali - Cabut sesudah Jawaban - Tergugat Menolak.rtf
-821255ba561845094ca9018ae3a02315  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 63 Ganti Rugi Wali - Cabut sesudah Jawaban - Tergugat Setuju.rtf
-6ac94603c2d62cfa8ec0e88d9dfeef04  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 63 Ganti Rugi Wali - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf
-8e7a0c5a5c96cf8073b799eeda981984  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 63 Ganti Rugi Wali - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf
-205159c1ca74f442665c760bb3b4dec7  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 63 Ganti Rugi Wali - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf
-c40750ebe5be5dabbcf8a085a9b9f19f  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 63 Ganti Rugi Wali - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf
-2376741e7785f04bf557e9b70ac36b18  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 63 Ganti Rugi Wali - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf
-7a93032679c1570ce29837448f6c1ce7  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 63 Ganti Rugi Wali - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf
+4943aed8409d8bb114666b6cf68895f8  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 73 Ganti Rugi Wali - Cabut sesudah Jawaban - Tergugat Menolak.rtf
+821255ba561845094ca9018ae3a02315  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 73 Ganti Rugi Wali - Cabut sesudah Jawaban - Tergugat Setuju.rtf
+6ac94603c2d62cfa8ec0e88d9dfeef04  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 73 Ganti Rugi Wali - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf
+8e7a0c5a5c96cf8073b799eeda981984  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 73 Ganti Rugi Wali - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf
+205159c1ca74f442665c760bb3b4dec7  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 73 Ganti Rugi Wali - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf
+c40750ebe5be5dabbcf8a085a9b9f19f  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 73 Ganti Rugi Wali - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf
+2376741e7785f04bf557e9b70ac36b18  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 73 Ganti Rugi Wali - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf
+7a93032679c1570ce29837448f6c1ce7  rtf/derry_briantono/6g Ganti Rugi terhadap Wali - BAS/BAS ALUR 73 Ganti Rugi Wali - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf
 191281c887bb36576f8f444bffb79a50  rtf/derry_briantono/6g Ganti Rugi terhadap Wali/[01] [Kabul] Ganti Rugi terhadap Wali - Kontradiktoir.rtf
 149f5b1c9cc17d6a03dae48f4093a6a3  rtf/derry_briantono/6g Ganti Rugi terhadap Wali/[01a] [Kabul] Ganti Rugi terhadap Wali - T Tidak Hadir Setelah Mediasi.rtf
 1176384b9eb62ee01d62395a40ceec6e  rtf/derry_briantono/6g Ganti Rugi terhadap Wali/[01b] [Kabul Verstek] Ganti Rugi terhadap Wali.rtf
@@ -203,13 +203,13 @@ bc020538229b792ee1cf8f507fa6b943  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - 
 637c699282575da59f22083a8e171d0f  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [4] BAS 4 P & T Hadir - Replik (dan Jawaban Rekonvensi bila ada).rtf
 d4e0e4bc2291d9fd03283e015ebbbea5  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [5] BAS 5 P & T Hadir - Duplik (dan Replik Rekonvensi bila ada).rtf
 937f9bec50619c963137b7a0a71bc02b  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [5a] BAS 5a P & T Hadir - Duplik Rekonvensi.rtf
-6c0bd37eca349fc40efde2edf67e8a5f  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P.rtf
-0b7c799a1d3fe5622d9633a8de96765e  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [6a] BAS 6 P & T Hadir - Pembuktian P (3 Saksi).rtf
-cb4b95e1e505c392af22d5bd701f3a89  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [6b] BAS 6 P & T Hadir - Pembuktian P (4 Saksi).rtf
-c9e1949b08671fc322949d0c38486eae  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [6c] BAS 6 P & T Hadir - Pembuktian P (5 Saksi).rtf
-0b3105bc5e3b2123299b5837a503596f  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [7] BAS 7 P & T Hadir - Pembuktian T.rtf
-7ae661d2eaf0b05740e46c9842e69755  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [7a] BAS 7 P & T Hadir - Pembuktian T (3 Saksi).rtf
-d408dda0b760ef06ca15da78b5358805  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [7b] BAS 7 P & T Hadir - Pembuktian T (4 Saksi).rtf
+f2bffd29a487b5402fb4427db8228b53  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P.rtf
+1a0793c2ea470d4ee70840665883159a  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [6a] BAS 6 P & T Hadir - Pembuktian P (3 Saksi).rtf
+ac67cbfdfdc0d550baa51db560862755  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [6b] BAS 6 P & T Hadir - Pembuktian P (4 Saksi).rtf
+4fac1d220ef82ddbdb298d59f8669d9a  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [6c] BAS 6 P & T Hadir - Pembuktian P (5 Saksi).rtf
+ae0aecb134b10424ef0c8fa9e579457b  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [7] BAS 7 P & T Hadir - Pembuktian T.rtf
+a183766dd1327f41ce974313c445fbe4  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [7a] BAS 7 P & T Hadir - Pembuktian T (3 Saksi).rtf
+d7b3eb788430aa2e0d08b8913bbad6cf  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [7b] BAS 7 P & T Hadir - Pembuktian T (4 Saksi).rtf
 f37b56ebf9b6fcdd2f7a3b470fafe016  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [8] BAS 8 P & T Hadir - Kesimpulan.rtf
 9f18c6a82dfa1f55e0e505fc94278faa  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [9] BAS 9 P & T Hadir - Penyampaian Putusan.rtf
 501a7452f68493a309dbdea19a8fd588  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 04 [T] BAS P & T Tidak Hadir - Tunda Panggil P & T (kapan saja).rtf
@@ -226,14 +226,14 @@ f05a8a6a64753fa8b806c63a12c7583e  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - 
 93dba8ec0047051a46821ae1572f35ce  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 08 [C2] BAS Putus P & T Hadir - Cabut Perkara Damai dari Mediasi.rtf
 a7da07946cd7762385a970f11564002d  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 09 [1] BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T (Alamat Tidak Jelas).rtf
 61db2a0c842033d7a6be9a639fb77c69  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 09 [2] BAS Putus P Hadir & T Tidak Hadir - NO (Alamat T Salah).rtf
-4943aed8409d8bb114666b6cf68895f8  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 64 Nafkah Anak Ibu - Cabut sesudah Jawaban - Tergugat Menolak.rtf
-821255ba561845094ca9018ae3a02315  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 64 Nafkah Anak Ibu - Cabut sesudah Jawaban - Tergugat Setuju.rtf
-48758f45402e1974f90c2a02f10d90d7  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 64 Nafkah Anak Ibu - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf
-d4e85fc62df5ae789ea40357bc7ef293  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 64 Nafkah Anak Ibu - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf
-b8befb188df26c64b42400728c24581f  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 64 Nafkah Anak Ibu - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf
-2f0fa45f925bdd5769a19214266a58e4  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 64 Nafkah Anak Ibu - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf
-f9258bdf7291163b3319d69d61491c6c  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 64 Nafkah Anak Ibu - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf
-317e3aaf8facd305941928e8fa72443b  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 64 Nafkah Anak Ibu - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf
+4943aed8409d8bb114666b6cf68895f8  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 74 Nafkah Anak Ibu - Cabut sesudah Jawaban - Tergugat Menolak.rtf
+821255ba561845094ca9018ae3a02315  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 74 Nafkah Anak Ibu - Cabut sesudah Jawaban - Tergugat Setuju.rtf
+48758f45402e1974f90c2a02f10d90d7  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 74 Nafkah Anak Ibu - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf
+d4e85fc62df5ae789ea40357bc7ef293  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 74 Nafkah Anak Ibu - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf
+b8befb188df26c64b42400728c24581f  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 74 Nafkah Anak Ibu - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf
+2f0fa45f925bdd5769a19214266a58e4  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 74 Nafkah Anak Ibu - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf
+f9258bdf7291163b3319d69d61491c6c  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 74 Nafkah Anak Ibu - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf
+317e3aaf8facd305941928e8fa72443b  rtf/derry_briantono/6h Nafkah Anak oleh Ibu - BAS/BAS ALUR 74 Nafkah Anak Ibu - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf
 8cfc06e8470704a7a7a2cea22227a633  rtf/derry_briantono/6h Nafkah Anak oleh Ibu/[01] [Kabul] Nafkah Anak oleh Ibu - Kontradiktoir.rtf
 ce83ad4e60415602dff47ae9dcd60508  rtf/derry_briantono/6h Nafkah Anak oleh Ibu/[01a] [Kabul] Nafkah Anak oleh Ibu - T Tidak Hadir Setelah Mediasi.rtf
 5e9d6211a9b50105eaaa5dcd44a31cf7  rtf/derry_briantono/6h Nafkah Anak oleh Ibu/[01b] [Kabul Verstek] Nafkah Anak oleh Ibu.rtf
@@ -247,20 +247,43 @@ db1e36e57d749e5ecebd3dfc5ed9825a  rtf/derry_briantono/6h Nafkah Anak oleh Ibu/[9
 aabcdbc8095095467c8ba2bd0673b9e5  rtf/derry_briantono/6h Nafkah Anak oleh Ibu/[99] [NO] Nafkah Anak oleh Ibu - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022).rtf
 13dbcc22781f5c9bd772ccea281adf1a  rtf/derry_briantono/6h Nafkah Anak oleh Ibu/[99a] [NO] Nafkah Anak oleh Ibu - Kurang Pihak (Plurium Litis Consortium).rtf
 b63b760c666027a7d093ca670d5db6a2  rtf/derry_briantono/6h Nafkah Anak oleh Ibu/[99b] [NO] Nafkah Anak oleh Ibu - Gugatan Kabur (Obscuur Libel).rtf
-6d2fa469ea0a832a8b44fcea061a37ad  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 65 Eksekusi - [1] Sidang Teguran (Aanmaning) - Termohon Eksekusi Hadir dan Ditegur.rtf
-67ae0da6f06206e4bbe9046c44764b7c  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 65 Eksekusi - [1a] Sidang Teguran (Aanmaning) - Termohon Eksekusi Tidak Hadir Setelah Dipanggil Patut.rtf
-9e8fd3cc423240474c90478c5541892e  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 65 Eksekusi - [1b] Sidang Teguran (Aanmaning) - Termohon Eksekusi Bersedia Melaksanakan Secara Sukarela.rtf
-d26a1737b7a6e5262f96a81e6f8314c1  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 65 Eksekusi - [2] Pelaksanaan Sita Eksekusi - Dibantu Dua Saksi (Pasal 210 RBg).rtf
-0f9a4d0d067569e8cfc287839f9fadb6  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 65 Eksekusi - [3] Pelaksanaan Konstatering - Pencocokan Objek Eksekusi.rtf
-fb5fb8e781589caaee73f0ccd55d2fcf  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 65 Eksekusi - [4] Pelaksanaan Eksekusi Riil - Berhasil.rtf
-afbf6ebe5f61f42eff36f20aa03ff384  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 65 Eksekusi - [4a] Pelaksanaan Eksekusi Riil - Tidak Berhasil atau Ditunda.rtf
-638dcac55c4ffc18a2073df57bf42888  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 65 Eksekusi - [5] Penyerahan Hasil Lelang kepada Pihak yang Berhak.rtf
-95669904735c92541389d43e932413e9  rtf/derry_briantono/96 Eksekusi/[01] [Aanmaning] Eksekusi - Penetapan Teguran dan Panggilan Termohon Eksekusi.rtf
-986f653e30fe383c5172c2aad3a3ce1e  rtf/derry_briantono/96 Eksekusi/[02] [Sita] Eksekusi - Penetapan Sita Eksekusi.rtf
-5874a2dfc38fdc4ea46d2510dd12e572  rtf/derry_briantono/96 Eksekusi/[03] [Riil] Eksekusi - Penetapan Perintah Eksekusi Riil (Pengosongan atau Penyerahan).rtf
-1240246f0d0c25b6714d366cc5f53899  rtf/derry_briantono/96 Eksekusi/[04] [Lelang] Eksekusi - Penetapan Perintah Penjualan Lelang.rtf
-93d01109d0149804f1a2c0ac432c9e4f  rtf/derry_briantono/96 Eksekusi/[05] [Non-Eksekutabel] Eksekusi - Putusan Tidak Dapat Dilaksanakan.rtf
-432878a398e4dd48fbafbd5ae776e1c2  rtf/derry_briantono/96 Eksekusi/[06] [Konstatering] Eksekusi - Penetapan Pencocokan Objek Eksekusi.rtf
-a032d53c3a4c26fc41828b8a99b9b175  rtf/derry_briantono/96 Eksekusi/[97] [Sukarela] Eksekusi - Putusan Dilaksanakan Secara Sukarela.rtf
-52720492632d246643ee8712b252e803  rtf/derry_briantono/96 Eksekusi/[98] [Cabut] Eksekusi - Pencabutan Permohonan Eksekusi.rtf
-5099311e0c473195e84a1a9456a91b04  uji-kueri.tsv
+c0fd1281ef5d2554aab37fdc064b237f  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 75 Eksekusi - [1] Sidang Teguran (Aanmaning) - Termohon Eksekusi Hadir dan Ditegur.rtf
+01e25949f7ab5067073cc7fae2ea6a81  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 75 Eksekusi - [1a] Sidang Teguran (Aanmaning) - Termohon Eksekusi Tidak Hadir Setelah Dipanggil Patut.rtf
+4a31d39b09330e8c0b62d23dffb68845  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 75 Eksekusi - [1b] Sidang Teguran (Aanmaning) - Termohon Eksekusi Bersedia Melaksanakan Secara Sukarela.rtf
+e4138f88b311e384210d30a0b6915bc6  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 75 Eksekusi - [2] Pelaksanaan Sita Eksekusi - Dibantu Dua Saksi (Pasal 210 RBg).rtf
+c0559c866c098a4f626ce316bfeb0790  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 75 Eksekusi - [3] Pelaksanaan Konstatering - Pencocokan Objek Eksekusi.rtf
+e0e118458ed927a4ab6a85808ed55a8c  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 75 Eksekusi - [4] Pelaksanaan Eksekusi Riil - Berhasil.rtf
+0b097f9c78bcb16ea64e9fa94f022b04  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 75 Eksekusi - [4a] Pelaksanaan Eksekusi Riil - Tidak Berhasil atau Ditunda.rtf
+98dedb44a62e84bd34e05c9eb3d819b2  rtf/derry_briantono/96 Eksekusi - BAS/BAS ALUR 75 Eksekusi - [5] Penyerahan Hasil Lelang kepada Pihak yang Berhak.rtf
+8493b39689ac716547bc7b64caaf0bf4  rtf/derry_briantono/96 Eksekusi/[01] [Aanmaning] Eksekusi - Penetapan Teguran dan Panggilan Termohon Eksekusi.rtf
+d71b68c7b8056bf3e7eb242cab9ad72a  rtf/derry_briantono/96 Eksekusi/[02] [Sita] Eksekusi - Penetapan Sita Eksekusi.rtf
+ce04c498acd738f0ce47409eb5c28c4e  rtf/derry_briantono/96 Eksekusi/[03] [Riil] Eksekusi - Penetapan Perintah Eksekusi Riil (Pengosongan atau Penyerahan).rtf
+b631a7b5eb5bc3397a03e585cc7805e0  rtf/derry_briantono/96 Eksekusi/[04] [Lelang] Eksekusi - Penetapan Perintah Penjualan Lelang.rtf
+427519cea9b3d6fcb1dd2461c1bdb5d8  rtf/derry_briantono/96 Eksekusi/[05] [Non-Eksekutabel] Eksekusi - Putusan Tidak Dapat Dilaksanakan.rtf
+87316a09212a9d942ee14eadbbe75208  rtf/derry_briantono/96 Eksekusi/[06] [Konstatering] Eksekusi - Penetapan Pencocokan Objek Eksekusi.rtf
+3e697e040356660648aa185acb8546fe  rtf/derry_briantono/96 Eksekusi/[97] [Sukarela] Eksekusi - Putusan Dilaksanakan Secara Sukarela.rtf
+82cc171bafeb0881a07fd6065f98eea0  rtf/derry_briantono/96 Eksekusi/[98] [Cabut] Eksekusi - Pencabutan Permohonan Eksekusi.rtf
+1dad406a6310de4670615cc602da2f13  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [1] Sidang 1 - Pelawan & Terlawan Hadir - Pembacaan Perlawanan dan Jawaban Terlawan.rtf
+27597b97bed1dadec06e54b79e462ba1  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [1a] Sidang 1 - Pelawan Hadir & Terlawan Tidak Hadir - Tunda Panggil Terlawan.rtf
+71e07cb4d35735e99ce83ac3a4c78507  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [1b] Sidang 1 - Pelawan & Terlawan Tidak Hadir - Tunda Panggil Pelawan dan Terlawan.rtf
+936c4e27e15ac4125101d26a4e97207e  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [1c] Sidang 1 - Pelawan Tidak Hadir & Terlawan Hadir - Tunda Panggil Pelawan.rtf
+5bacc10407821990238100a892859d31  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [2] Pelawan & Terlawan Hadir - Replik Pelawan dan Duplik Terlawan.rtf
+b35ee53697f48eaf5e7e5ac4caaa4d65  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [3] Pembuktian Pelawan (2 Saksi).rtf
+c915d0dca2340ba34eec0339f532da98  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [3a] Pembuktian Pelawan (3 Saksi).rtf
+a58a703f9d49d8abd035c0b4504cd740  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [4] Pembuktian Terlawan (2 Saksi).rtf
+382d8fc847a2960c8b8b944e1ab1677f  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [4a] Pembuktian Terlawan (3 Saksi).rtf
+8d8639c0d66ec6f05eecb170718ea49b  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [5] Pelawan & Terlawan Hadir - Kesimpulan.rtf
+37e7a54cb18b9cf4dd482f7093794b1e  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [6] Pelawan & Terlawan Hadir - Musyawarah Majelis dan Pembacaan Putusan.rtf
+e74c0215ee9183620022e19ba339d27e  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [7] Pelawan Tidak Hadir Lagi - Perlawanan Gugur.rtf
+51f01fa92ddc232a798943bfff443641  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [8] Pencabutan Perlawanan sebelum Jawaban Terlawan.rtf
+628b297fdd8bb510f622819ef72812d6  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [9] Pencabutan Perlawanan sesudah Jawaban - Terlawan Setuju.rtf
+3e538c5a0e4c9f2aa772c25f9f6cdc9a  rtf/derry_briantono/96a Verzet - BAS/BAS ALUR 76 Verzet - [9a] Pencabutan Perlawanan sesudah Jawaban - Terlawan Menolak.rtf
+d3ae8eaaf774861c89bec5d895e5928f  rtf/derry_briantono/96a Verzet/[01] [Kabul] Verzet - Perlawanan Dikabulkan - Putusan Verstek Dibatalkan.rtf
+473ab036ec3bfd285cba8099cdcbbf7e  rtf/derry_briantono/96a Verzet/[02] [Tolak] Verzet - Perlawanan Ditolak - Putusan Verstek Dikuatkan.rtf
+99a18e914de829687177e6e33d357a0a  rtf/derry_briantono/96a Verzet/[98] [Cabut] Verzet - Pelawan Mencabut Perlawanan Sebelum Jawaban.rtf
+23c5a20749f607c92e371062851370a5  rtf/derry_briantono/96a Verzet/[98a] [Gugur] Verzet - Pelawan Tidak Hadir.rtf
+2bb81b9842919f1d4fb697eb99f9afdc  rtf/derry_briantono/96a Verzet/[98b] [Cabut] Verzet - Pelawan Mencabut Perlawanan Sesudah Jawaban dengan Persetujuan Terlawan.rtf
+907161426c0e2f5c9f0290859864da48  rtf/derry_briantono/96a Verzet/[99] [NO] Verzet - Perlawanan Lewat Tenggang Waktu.rtf
+d663fa96cf9164852af534143d8db735  rtf/derry_briantono/96a Verzet/[99a] [NO] Verzet - Cacat Formil atau Bukan Pihak yang Berhak.rtf
+9d4704dcb94782e99b409180706f9283  rtf/derry_briantono/96a Verzet/[99b] [NO] Verzet - Pelawan Diputus Verstek Lagi (Pasal 153 Ayat 6 RBg).rtf
+15f371701456702b9c2c68320eb98ea9  uji-kueri.tsv

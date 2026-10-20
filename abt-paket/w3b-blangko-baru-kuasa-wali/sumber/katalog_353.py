@@ -77,8 +77,8 @@ def susun():
         'syarat': {'jenisPerkaraId': ['353']}, 'pihak': {'pengaju': '#0046#', 'lawan': '#0047#'},
         'blangkoBas': [
             {'folder': '6d Pencabutan Kekuasaan Orang Tua - BAS', 'berkas': 'BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P', 'variabelSaksi': ['5058', '5059'], 'catatan': ''},
-            {'folder': '6d Pencabutan Kekuasaan Orang Tua - BAS', 'berkas': 'BAS ALUR 60 Pencabutan Kuasa Asuh - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek', 'variabelSaksi': ['5058', '5059'], 'catatan': ''},
-            {'folder': '6d Pencabutan Kekuasaan Orang Tua - BAS', 'berkas': 'BAS ALUR 60 Pencabutan Kuasa Asuh Mohon - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan', 'variabelSaksi': ['5058', '5059'], 'catatan': ''},
+            {'folder': '6d Pencabutan Kekuasaan Orang Tua - BAS', 'berkas': 'BAS ALUR 70 Pencabutan Kuasa Asuh - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek', 'variabelSaksi': ['5058', '5059'], 'catatan': ''},
+            {'folder': '6d Pencabutan Kekuasaan Orang Tua - BAS', 'berkas': 'BAS ALUR 70 Pencabutan Kuasa Asuh Mohon - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan', 'variabelSaksi': ['5058', '5059'], 'catatan': ''},
         ],
         'dasarHukum': dasar,
         'keadaan': {

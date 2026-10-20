@@ -313,7 +313,7 @@ SAKSI_TTD = ('Saksi I', TITIK_NAMA, 'Saksi II', TITIK_NAMA)
 
 BAS = [
     dict(
-        berkas='BAS ALUR 65 Eksekusi - [1] Sidang Teguran (Aanmaning) - Termohon Eksekusi Hadir dan Ditegur.rtf',
+        berkas='BAS ALUR 75 Eksekusi - [1] Sidang Teguran (Aanmaning) - Termohon Eksekusi Hadir dan Ditegur.rtf',
         judul='BERITA ACARA TEGURAN (AANMANING)',
         badan=[
             PEMBUKA_ANMN, PIHAK,
@@ -327,7 +327,7 @@ BAS = [
         tabel=TTD_ANMN,
     ),
     dict(
-        berkas='BAS ALUR 65 Eksekusi - [1a] Sidang Teguran (Aanmaning) - Termohon Eksekusi Tidak Hadir Setelah Dipanggil Patut.rtf',
+        berkas='BAS ALUR 75 Eksekusi - [1a] Sidang Teguran (Aanmaning) - Termohon Eksekusi Tidak Hadir Setelah Dipanggil Patut.rtf',
         judul='BERITA ACARA TEGURAN (AANMANING)',
         badan=[
             PEMBUKA_ANMN, PIHAK,
@@ -343,7 +343,7 @@ BAS = [
         tabel=TTD_ANMN,
     ),
     dict(
-        berkas='BAS ALUR 65 Eksekusi - [1b] Sidang Teguran (Aanmaning) - Termohon Eksekusi Bersedia Melaksanakan Secara Sukarela.rtf',
+        berkas='BAS ALUR 75 Eksekusi - [1b] Sidang Teguran (Aanmaning) - Termohon Eksekusi Bersedia Melaksanakan Secara Sukarela.rtf',
         judul='BERITA ACARA TEGURAN (AANMANING)',
         badan=[
             PEMBUKA_ANMN, PIHAK,
@@ -357,7 +357,7 @@ BAS = [
         tabel=TTD_ANMN,
     ),
     dict(
-        berkas='BAS ALUR 65 Eksekusi - [2] Pelaksanaan Sita Eksekusi - Dibantu Dua Saksi (Pasal 210 RBg).rtf',
+        berkas='BAS ALUR 75 Eksekusi - [2] Pelaksanaan Sita Eksekusi - Dibantu Dua Saksi (Pasal 210 RBg).rtf',
         judul='BERITA ACARA SITA EKSEKUSI',
         badan=[
             'Pada hari/tanggal #3958#, bertempat di lokasi objek sita, kami, #3945# selaku Jurusita atau Jurusita Pengganti #8008# yang ditunjuk oleh Ketua untuk melakukan penyitaan '
@@ -381,7 +381,7 @@ BAS = [
         tabel=[('Jurusita', '#3945#', 'Termohon Eksekusi', TITIK_NAMA), SAKSI_TTD],
     ),
     dict(
-        berkas='BAS ALUR 65 Eksekusi - [3] Pelaksanaan Konstatering - Pencocokan Objek Eksekusi.rtf',
+        berkas='BAS ALUR 75 Eksekusi - [3] Pelaksanaan Konstatering - Pencocokan Objek Eksekusi.rtf',
         judul='BERITA ACARA KONSTATERING',
         badan=[
             'Pada hari/tanggal #3959#, bertempat di lokasi objek eksekusi, kami, #3945# selaku Jurusita atau Jurusita Pengganti #8008#, berdasarkan Penetapan Ketua #8008# Nomor #3940# '
@@ -398,21 +398,21 @@ BAS = [
         tabel=[('Jurusita', '#3945#', 'Pemohon Eksekusi', TITIK_NAMA), SAKSI_TTD],
     ),
     dict(
-        berkas='BAS ALUR 65 Eksekusi - [4] Pelaksanaan Eksekusi Riil - Berhasil.rtf',
+        berkas='BAS ALUR 75 Eksekusi - [4] Pelaksanaan Eksekusi Riil - Berhasil.rtf',
         judul='BERITA ACARA PELAKSANAAN EKSEKUSI RIIL',
         badan=None,   # diisi _bas_riil(True)
         tabel=[('Jurusita', '#3945#', 'Pemohon Eksekusi', TITIK_NAMA), SAKSI_TTD],
         riil=True,
     ),
     dict(
-        berkas='BAS ALUR 65 Eksekusi - [4a] Pelaksanaan Eksekusi Riil - Tidak Berhasil atau Ditunda.rtf',
+        berkas='BAS ALUR 75 Eksekusi - [4a] Pelaksanaan Eksekusi Riil - Tidak Berhasil atau Ditunda.rtf',
         judul='BERITA ACARA PELAKSANAAN EKSEKUSI RIIL',
         badan=None,
         tabel=[('Jurusita', '#3945#', 'Pemohon Eksekusi', TITIK_NAMA), SAKSI_TTD],
         riil=False,
     ),
     dict(
-        berkas='BAS ALUR 65 Eksekusi - [5] Penyerahan Hasil Lelang kepada Pihak yang Berhak.rtf',
+        berkas='BAS ALUR 75 Eksekusi - [5] Penyerahan Hasil Lelang kepada Pihak yang Berhak.rtf',
         judul='BERITA ACARA PENYERAHAN HASIL LELANG',
         badan=[
             'Pada hari/tanggal #3961#, bertempat di #8008#, kami, Panitera #8004#, berdasarkan Penetapan Ketua #8008# Nomor #3940# tanggal #3952# tentang Perintah Penjualan Lelang, '

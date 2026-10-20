@@ -7,7 +7,19 @@ import re
 import variabel_def as V
 
 # penimpaan tangan: no -> dict(nm=, pil=[...], saran=, manual="alasan", opsional="label")
-META = {}
+META = {
+    # isian huruf berdaftar: legenda ikut di label supaya pengguna tahu arti tiap huruf (daftar bebas diketik "A, D")
+    3802: dict(nm='Alasan pencabutan (huruf, boleh keduanya: A sangat melalaikan kewajiban terhadap anak, B berkelakuan buruk sekali)'),
+    3834: dict(nm='Alasan pencabutan (huruf, boleh lebih dari satu: A lalai; B berkelakuan buruk; C pemabuk/penjudi/pemboros/gila; D salah guna wewenang; E kekerasan; F orang tua mampu; G tidak cakap)'),
+    3860: dict(nm='Kategori calon wali', pil=['A · Keluarga anak (mis. kakek, nenek)', 'B · Saudara (mis. kakak, paman, bibi)', 'C · Orang lain', 'D · Badan hukum (yayasan/lembaga)']),
+    3862: dict(nm='Sebab anak butuh wali (huruf, boleh lebih dari satu: A orang tua meninggal; B orang tua tidak diketahui; C orang tua tidak mampu; D kuasa wali dicabut; E wali berakhir)'),
+    3902: dict(nm='Bentuk ganti rugi (huruf, boleh keduanya: A uang, B pengembalian harta atau barang; kosong = ikut isian jumlah dan harta)'),
+    3920: dict(nm='Alasan ayah tidak mampu (huruf, boleh beberapa: A sakit/cacat/lanjut usia, B tidak bekerja, C penghasilan kurang, D dipenjara, E tidak diketahui tempatnya, F sebab lain)'),
+    3909: dict(nm='Tidak dapat diterima: cacat formil gugatan (satu kalimat tanpa titik akhir)'),
+    3968: dict(nm='Alasan (non-eksekutabel, pencabutan oleh Pemohon, atau sebab eksekusi riil tidak berhasil atau ditunda)'),
+}
+for _no in (3815, 3855, 3870, 3908, 3936):
+    META[_no] = dict(nm='Alasan ditolak (kalimat sesudah kata "Menimbang, bahwa")')
 
 HURUF = re.compile(r'(?:PILIH HURUF|ISIAN HURUF|HURUF)\s*:?\s*(.*)$', re.S)
 

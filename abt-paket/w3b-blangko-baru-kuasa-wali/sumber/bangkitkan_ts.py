@@ -152,7 +152,7 @@ def bangkit():
             salinan_penerima.append(S['folder'] + ' - BAS')
     b2 = ['/* DIBANGKITKAN oleh abt-paket/w3b-blangko-baru-kuasa-wali/sumber/bangkitkan_ts.py - jangan disunting tangan. */',
           'import type { AlurBasBaru } from "@/lib/alur-bas-baru-data";', '',
-          '/** BAS gelombang 3 (ALUR 60-66): ditambahkan ke ALUR_BAS_BARU oleh alur-bas-baru-data.ts. */',
+          '/** BAS gelombang 3 (ALUR 70-76): ditambahkan ke ALUR_BAS_BARU oleh alur-bas-baru-data.ts. */',
           'export const ALUR_BAS_W3B: AlurBasBaru[] = ' + json.dumps(alur_list, ensure_ascii=False, indent=2) + ';', '',
           '/** Folder BAS jenis gugatan yang menerima 29 salinan BAS ALUR 04-09 (sama dengan 6c Nafkah Anak - BAS). */',
           'export const SALINAN_PENERIMA_W3B: string[] = ' + json.dumps(salinan_penerima, ensure_ascii=False, indent=2) + ';', '']

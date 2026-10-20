@@ -383,6 +383,6 @@ describe("F. kunci baku Pemetaan blangko", () => {
       expect(kunciJenisPerkara(k)).toBe(k.toLowerCase());
       expect(KUNCI_BAKU.bas.some((b) => b.kunci === `${k}|1|semua-hadir`), k).toBe(true);
     }
-    expect(JENIS_BAS_BAKU).toHaveLength(21); // I28 18 Okt: + Hibah, Wakaf, Penetapan Mafqud
+    expect(JENIS_BAS_BAKU).toHaveLength(26); // W3b 21 Okt: + Pencabutan Kekuasaan Orang Tua, Pencabutan Kekuasaan Wali, Penunjukan Wali, Ganti Rugi Wali, Nafkah Anak Oleh Ibu; I28 18 Okt: + Hibah, Wakaf, Penetapan Mafqud
   });
 });

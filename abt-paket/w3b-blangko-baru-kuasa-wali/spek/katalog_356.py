@@ -459,7 +459,7 @@ def susun():
     return {
         'skema': 'saksi-katalog/1', 'kunci': 'penunjukan-wali', 'judul': 'Penunjukan wali oleh pengadilan', 'versi': 1, 'penulis': 'W3b-356', 'tahap': 2, 'contoh': False,
         'syarat': {'jenisPerkaraId': ['356']}, 'pihak': {'pengaju': '#0046#', 'lawan': '#0047#'}, 'tanpaLawan': True,
-        'blangkoBas': [{'folder': FOLDER_BAS, 'berkas': 'BAS ALUR 62 Penunjukan Wali - ' + b, 'variabelSaksi': ['5058', '5059'], 'catatan': 'dua saksi Pemohon'} for b in BAS],
+        'blangkoBas': [{'folder': FOLDER_BAS, 'berkas': 'BAS ALUR 72 Penunjukan Wali - ' + b, 'variabelSaksi': ['5058', '5059'], 'catatan': 'dua saksi Pemohon'} for b in BAS],
         'dasarHukum': DASAR, 'keadaan': KEADAAN, 'pokokPembuktian': POKOK, 'pertanyaan': Q, 'jawabanUmum': JAWABAN_UMUM,
         'variabelBaru': baru,
         'catatanPetugas': [

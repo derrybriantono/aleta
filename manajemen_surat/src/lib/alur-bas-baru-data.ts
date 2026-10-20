@@ -1851,6 +1851,6 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
 /* === AKHIR G3 === */
 
 /* === W3b 21 Okt === */
-/** ALUR 60-66 (blangko Derry baru gelombang 3) dibangkitkan ke alur-bas-w3b-data.ts oleh abt-paket/w3b-blangko-baru-kuasa-wali/sumber/bangkitkan_ts.py. */
+/** ALUR 70-76 (blangko Derry baru gelombang 3) dibangkitkan ke alur-bas-w3b-data.ts oleh abt-paket/w3b-blangko-baru-kuasa-wali/sumber/bangkitkan_ts.py. */
 ALUR_BAS_BARU.push(...ALUR_BAS_W3B);
 /* === AKHIR W3b === */

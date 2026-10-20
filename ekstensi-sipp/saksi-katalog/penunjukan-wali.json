@@ -19,7 +19,7 @@
  "blangkoBas": [
   {
    "folder": "6f Penunjukan Wali oleh Pengadilan - BAS",
-   "berkas": "BAS ALUR 62 Penunjukan Wali - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)",
+   "berkas": "BAS ALUR 72 Penunjukan Wali - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)",
    "variabelSaksi": [
     "5058",
     "5059"
@@ -28,7 +28,7 @@
   },
   {
    "folder": "6f Penunjukan Wali oleh Pengadilan - BAS",
-   "berkas": "BAS ALUR 62 Penunjukan Wali - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
+   "berkas": "BAS ALUR 72 Penunjukan Wali - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
    "variabelSaksi": [
     "5058",
     "5059"
@@ -37,7 +37,7 @@
   },
   {
    "folder": "6f Penunjukan Wali oleh Pengadilan - BAS",
-   "berkas": "BAS ALUR 62 Penunjukan Wali - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan",
+   "berkas": "BAS ALUR 72 Penunjukan Wali - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan",
    "variabelSaksi": [
     "5058",
     "5059"
@@ -46,7 +46,7 @@
   },
   {
    "folder": "6f Penunjukan Wali oleh Pengadilan - BAS",
-   "berkas": "BAS ALUR 62 Penunjukan Wali - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
+   "berkas": "BAS ALUR 72 Penunjukan Wali - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
    "variabelSaksi": [
     "5058",
     "5059"
@@ -55,7 +55,7 @@
   },
   {
    "folder": "6f Penunjukan Wali oleh Pengadilan - BAS",
-   "berkas": "BAS ALUR 62 Penunjukan Wali - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan",
+   "berkas": "BAS ALUR 72 Penunjukan Wali - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan",
    "variabelSaksi": [
     "5058",
     "5059"

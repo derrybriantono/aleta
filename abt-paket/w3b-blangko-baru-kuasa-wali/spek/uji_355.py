@@ -45,7 +45,7 @@ gug = [f for f in putusan if not f.startswith(('[01p]', '[03p]', '[99p]'))]
 per = [f for f in putusan if f.startswith(('[01p]', '[03p]', '[99p]'))]
 cek('(a) 12 putusan gugatan (tanpa [97] karena perdamaian=False)', len(gug) == 12 and not any(f.startswith('[97]') for f in gug), gug)
 cek('(a) 3 penetapan permohonan [01p] [03p] [99p]', len(per) == 3, per)
-cek('(a) BAS gugatan 7 (ALUR 61) + 29 salinan ALUR 04-09 + 10 BAS permohonan = 46', len(bas) == 46, len(bas))
+cek('(a) BAS gugatan 7 (ALUR 71) + 29 salinan ALUR 04-09 + 10 BAS permohonan = 46', len(bas) == 46, len(bas))
 
 # (b) penanda ----------------------------------------------------------------------------------------------------------
 server = pickle.load(open('D:/aleta-dev/kerja/w3b-var-server.pkl', 'rb'))

@@ -132,7 +132,7 @@ def main():
                 if re.search(r'nafkah', q, re.I):
                     sisa.append((os.path.basename(f)[:40], i, p[:80]))
     cek('(d) tanpa sisa kata jenis lama dan tanpa kata aleta', not sisa, sisa[:5])
-    cek('(d) nama berkas BAS memakai ALUR 64 (selain salinan umum ALUR 04-09)', all(('ALUR 64' in os.path.basename(f)) or re.match(r'BAS ALUR 0[4-9] ', os.path.basename(f)) for f in bas))
+    cek('(d) nama berkas BAS memakai ALUR 74 (selain salinan umum ALUR 04-09)', all(('ALUR 74' in os.path.basename(f)) or re.match(r'BAS ALUR 0[4-9] ', os.path.basename(f)) for f in bas))
 
     if tanpa_server:
         print('\nHASIL (tanpa server): %s' % ('LULUS' if not GAGAL else 'GAGAL: %s' % GAGAL))
