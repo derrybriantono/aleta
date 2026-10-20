@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.21",
+    dirilis: "2026-10-21T02:38:00+08:00",
+    judul: "Kerangka universal gelombang 2 dan 3: semua jenis perkara",
+    butir: [
+      "Gelombang 2: tanya jawab saksi, isi otomatis, dan blangko putusan diperluas untuk harta bersama, kewarisan, wasiat, hibah, wakaf, ekonomi syariah, izin poligami, pencegahan dan pembatalan perkawinan, hak asuh, penguasaan anak, nafkah anak, pengangkatan anak, mafqud, dan permohonan umum.",
+      "Gelombang 3: blangko Derry baru (putusan/penetapan dan BAS) untuk penolakan perkawinan, perkawinan campuran, izin kawin, pengesahan anak, kelalaian kewajiban suami istri, hak bekas istri, pencabutan kekuasaan orang tua dan wali, penunjukan wali, ganti rugi terhadap wali, nafkah anak oleh ibu, eksekusi, dan verzet; Blangko Derry menyarankannya otomatis menurut jenis perkara.",
+      "Isian baru yang belum terukur ketepatannya tampil sebagai saran bertanda ragu; keputusan majelis tetap pilihan hakim.",
+    ],
+  },
+  {
     versi: "1.205.20",
     dirilis: "2026-10-21T01:06:00+08:00",
     judul: "Putusan Otomatis dengan e-Doc sekaligus, Jadwalkan Putusan, SK Majelis dan beban penetapan, pratinjau BAS/relaas",
