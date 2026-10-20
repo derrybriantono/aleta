@@ -371,7 +371,9 @@ describe("F. jendela pilih blangko", () => {
     await sampai(() => q(h, "#bd-perlu .bd-f"), "perlu diisi");
     expect((q(h, '[data-fmt="anon"]') as HTMLInputElement).disabled).toBe(true);
     expect((q(h, '[data-fmt="edoc"]') as HTMLInputElement).disabled).toBe(true);
-    expect(q(h, ".bd-ingatsidang")!.textContent).toContain("bukan per sidang");
+    // 20 Okt: catatan "per perkara, bukan per sidang" pindah ke ikon ⓘ (title), tidak lagi paragraf di langkah 1.
+    expect(q(h, "p.bd-ingatsidang")).toBeNull();
+    expect(q(h, "button.bd-ingatsidang")!.getAttribute("title")).toContain("bukan per sidang");
   });
 
   it("F3.1 BAS: sidang yang pernah diskors memunculkan usulan kalimat skors (hanya dibaca dari portal, tidak ditulis ke ABT)", async () => {

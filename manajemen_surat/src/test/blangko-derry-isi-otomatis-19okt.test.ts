@@ -1003,8 +1003,10 @@ describe("J. kelengkapan kartu usulan di tiap isian (lencana, sumber, bintang, r
     expect(label(h, "0222")).toEqual(["yakin: pasti", "dari keterangan saksi", "kedua saksi sama"]);
     // 0246: dari posita saja -> kuning, belum dikuatkan saksi; catatan tampil dengan (i).
     expect(label(h, "0246")).toEqual(["yakin: cukup", "dari posita — belum dikuatkan saksi"]);
-    expect(q(h, '.bd-f[data-f="0246"] .bd-ketcatatan')!.textContent).toContain("ⓘ Kedua saksi tidak menyebut kapan perselisihan mulai");
-    expect(q(h, '.bd-f[data-f="9944"] .bd-ketcatatan')!.textContent).toContain("Dihitung dari tanggal pisah rumah");
+    // 20 Okt: catatan tidak lagi tampil sebagai teks di kartu; ia ada di title ikon ⓘ (keterangan-info-20okt.test.ts menjaga selebihnya).
+    expect(q(h, '.bd-f[data-f="0246"] .bd-ketcatatan')).toBeNull();
+    expect(q(h, '.bd-f[data-f="0246"] .bd-sumber')!.getAttribute("title")).toContain("Kedua saksi tidak menyebut kapan perselisihan mulai");
+    expect(q(h, '.bd-f[data-f="9944"] .bd-sumber')!.getAttribute("title")).toContain("Dihitung dari tanggal pisah rumah");
     // Isian dari SIPP yang terisi otomatis tetap berlencana; yang ragu berlencana abu-abu "periksa".
     expect(label(h, "0007")).toEqual(["yakin: cukup", "dari SIPP"]);
     expect(label(h, "2004")).toEqual(["yakin: ragu — periksa", "dari SIPP"]);
