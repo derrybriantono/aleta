@@ -2,7 +2,7 @@
  "skema": "saksi-katalog/1",
  "kunci": "perwalian",
  "judul": "Perwalian",
- "versi": 1,
+ "versi": 2,
  "penulis": "SAKSI-B",
  "tahap": 1,
  "contoh": false,
@@ -2374,6 +2374,500 @@
    ]
   },
   {
+   "id": "q-pw-hubungan-kerabat",
+   "pokok": "pp-pw-kedudukan-pemohon",
+   "urutan": 1410,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohonWali": "keluarga-lain"
+   },
+   "teks": "Apa hubungan #7036# dengan anak yang dimohonkan perwalian?",
+   "teksVarian": [],
+   "hal": "hubungan keluarga calon wali dengan anak",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan hubungan keluarga calon wali dengan anak sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #7036# adalah #4400# anak itu",
+      "saya mengetahui sendiri bahwa #7036# adalah #4400# anak itu",
+      "saya menyaksikan langsung bahwa #7036# adalah #4400# anak itu",
+      "saya tahu betul bahwa #7036# adalah #4400# anak itu"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa kedudukan #7036# bagi anak itu adalah #4400#",
+      "yang saya ketahui secara langsung adalah bahwa kedudukan #7036# bagi anak itu adalah #4400#",
+      "kedudukan #7036# bagi anak itu adalah #4400#, demikian yang tampak oleh saya waktu itu",
+      "kedudukan #7036# bagi anak itu adalah #4400#, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan hubungan keluarga calon wali dengan anak hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #7036# adalah #4400# anak itu",
+      "saya diberi tahu oleh {sumber} bahwa #7036# adalah #4400# anak itu",
+      "#7036# adalah #4400# anak itu, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #7036# adalah #4400# anak itu"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa kedudukan #7036# bagi anak itu adalah #4400#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa kedudukan #7036# bagi anak itu adalah #4400#",
+      "kedudukan #7036# bagi anak itu adalah #4400#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa kedudukan #7036# bagi anak itu adalah #4400#"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari hubungan keluarga calon wali dengan anak",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #7036# adalah #4400# anak itu, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #7036# adalah #4400# anak itu, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #7036# adalah #4400# anak itu",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #7036# adalah #4400# anak itu"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa kedudukan #7036# bagi anak itu adalah #4400#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa kedudukan #7036# bagi anak itu adalah #4400#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa kedudukan #7036# bagi anak itu adalah #4400#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa kedudukan #7036# bagi anak itu adalah #4400#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "4400",
+    "7036"
+   ],
+   "menggantikan": [
+    "q-pw-hubungan-kl"
+   ]
+  },
+  {
+   "id": "q-pw-orangtua-kerabat",
+   "pokok": "pp-pw-orang-tua",
+   "urutan": 1420,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohonWali": "keluarga-lain"
+   },
+   "teks": "Siapa ayah dan ibu kandung anak itu, dan apakah keduanya sudah meninggal dunia?",
+   "teksVarian": [],
+   "hal": "orang tua kandung anak dan kematian keduanya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan orang tua kandung anak dan kematian keduanya sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #4409#, sehingga anak itu sudah tidak berada di bawah kekuasaan orang tua",
+      "saya mengetahui sendiri bahwa #4409#, sehingga anak itu sudah tidak berada di bawah kekuasaan orang tua",
+      "saya menyaksikan langsung bahwa #4409#, sehingga anak itu sudah tidak berada di bawah kekuasaan orang tua",
+      "saya tahu betul bahwa #4409#, sehingga anak itu sudah tidak berada di bawah kekuasaan orang tua"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa kedua orang tua anak itu sudah wafat, yaitu #4409#, sehingga anak itu tidak lagi di bawah kekuasaan orang tua",
+      "yang saya ketahui secara langsung adalah bahwa kedua orang tua anak itu sudah wafat, yaitu #4409#, sehingga anak itu tidak lagi di bawah kekuasaan orang tua",
+      "kedua orang tua anak itu sudah wafat, yaitu #4409#, sehingga anak itu tidak lagi di bawah kekuasaan orang tua, demikian yang tampak oleh saya waktu itu",
+      "kedua orang tua anak itu sudah wafat, yaitu #4409#, sehingga anak itu tidak lagi di bawah kekuasaan orang tua, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan orang tua kandung anak dan kematian keduanya hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #4409#, sehingga anak itu sudah tidak berada di bawah kekuasaan orang tua",
+      "saya diberi tahu oleh {sumber} bahwa #4409#, sehingga anak itu sudah tidak berada di bawah kekuasaan orang tua",
+      "#4409#, sehingga anak itu sudah tidak berada di bawah kekuasaan orang tua, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #4409#, sehingga anak itu sudah tidak berada di bawah kekuasaan orang tua"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa kedua orang tua anak itu sudah wafat, yaitu #4409#, sehingga anak itu tidak lagi di bawah kekuasaan orang tua",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa kedua orang tua anak itu sudah wafat, yaitu #4409#, sehingga anak itu tidak lagi di bawah kekuasaan orang tua",
+      "kedua orang tua anak itu sudah wafat, yaitu #4409#, sehingga anak itu tidak lagi di bawah kekuasaan orang tua, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa kedua orang tua anak itu sudah wafat, yaitu #4409#, sehingga anak itu tidak lagi di bawah kekuasaan orang tua"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari orang tua kandung anak dan kematian keduanya",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #4409#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #4409#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #4409#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #4409#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa orang tua anak itu sudah wafat, yaitu #4409#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa orang tua anak itu sudah wafat, yaitu #4409#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa orang tua anak itu sudah wafat, yaitu #4409#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa orang tua anak itu sudah wafat, yaitu #4409#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "4409"
+   ],
+   "menggantikan": [
+    "q-pw-orangtua-kl"
+   ]
+  },
+  {
+   "id": "q-pw-pidana-sehat",
+   "pokok": "pp-pw-kepatutan",
+   "urutan": 1430,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohonWali": "keluarga-lain"
+   },
+   "teks": "Apakah #7036# pernah dihukum karena suatu tindak pidana, dan bagaimana kesehatan jasmani dan rohaninya?",
+   "teksVarian": [],
+   "hal": "riwayat hukuman dan kesehatan calon wali",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan riwayat hukuman dan kesehatan calon wali sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #7036# tidak pernah dihukum karena tindak pidana dan sehat jasmani maupun rohani sehingga mampu mengurus anak itu",
+      "saya mengetahui sendiri bahwa #7036# tidak pernah dihukum karena tindak pidana dan sehat jasmani maupun rohani sehingga mampu mengurus anak itu",
+      "saya menyaksikan langsung bahwa #7036# tidak pernah dihukum karena tindak pidana dan sehat jasmani maupun rohani sehingga mampu mengurus anak itu",
+      "saya tahu betul bahwa #7036# tidak pernah dihukum karena tindak pidana dan sehat jasmani maupun rohani sehingga mampu mengurus anak itu"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa belum pernah ada catatan hukuman pada #7036# dan keadaan jasmani serta rohaninya baik sehingga mampu mengurus anak itu",
+      "yang saya ketahui secara langsung adalah bahwa belum pernah ada catatan hukuman pada #7036# dan keadaan jasmani serta rohaninya baik sehingga mampu mengurus anak itu",
+      "belum pernah ada catatan hukuman pada #7036# dan keadaan jasmani serta rohaninya baik sehingga mampu mengurus anak itu, demikian yang tampak oleh saya waktu itu",
+      "belum pernah ada catatan hukuman pada #7036# dan keadaan jasmani serta rohaninya baik sehingga mampu mengurus anak itu, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan riwayat hukuman dan kesehatan calon wali hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #7036# tidak pernah dihukum karena tindak pidana dan sehat jasmani maupun rohani sehingga mampu mengurus anak itu",
+      "saya diberi tahu oleh {sumber} bahwa #7036# tidak pernah dihukum karena tindak pidana dan sehat jasmani maupun rohani sehingga mampu mengurus anak itu",
+      "#7036# tidak pernah dihukum karena tindak pidana dan sehat jasmani maupun rohani sehingga mampu mengurus anak itu, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #7036# tidak pernah dihukum karena tindak pidana dan sehat jasmani maupun rohani sehingga mampu mengurus anak itu"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa belum pernah ada catatan hukuman pada #7036# dan keadaan jasmani serta rohaninya baik sehingga mampu mengurus anak itu",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa belum pernah ada catatan hukuman pada #7036# dan keadaan jasmani serta rohaninya baik sehingga mampu mengurus anak itu",
+      "belum pernah ada catatan hukuman pada #7036# dan keadaan jasmani serta rohaninya baik sehingga mampu mengurus anak itu, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa belum pernah ada catatan hukuman pada #7036# dan keadaan jasmani serta rohaninya baik sehingga mampu mengurus anak itu"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari riwayat hukuman dan kesehatan calon wali",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #7036# tidak pernah dihukum karena tindak pidana, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #7036# tidak pernah dihukum karena tindak pidana, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #7036# tidak pernah dihukum karena tindak pidana",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #7036# tidak pernah dihukum karena tindak pidana"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa belum pernah ada catatan hukuman pada #7036#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa belum pernah ada catatan hukuman pada #7036#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa belum pernah ada catatan hukuman pada #7036#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa belum pernah ada catatan hukuman pada #7036#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "7036"
+   ]
+  },
+  {
+   "id": "q-pw-penghasilan",
+   "pokok": "pp-pw-kepatutan",
+   "urutan": 1440,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohonWali": "keluarga-lain"
+   },
+   "teks": "Apa pekerjaan #7036# dan apakah penghasilannya cukup untuk membiayai kebutuhan anak itu?",
+   "teksVarian": [],
+   "hal": "pekerjaan dan penghasilan calon wali",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pekerjaan dan penghasilan calon wali sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #7036# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan anak itu",
+      "saya mengetahui sendiri bahwa #7036# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan anak itu",
+      "saya menyaksikan langsung bahwa #7036# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan anak itu",
+      "saya tahu betul bahwa #7036# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan anak itu"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa mata pencaharian #7036# adalah #6331#, hasilnya mencukupi untuk kebutuhan anak itu",
+      "yang saya ketahui secara langsung adalah bahwa mata pencaharian #7036# adalah #6331#, hasilnya mencukupi untuk kebutuhan anak itu",
+      "mata pencaharian #7036# adalah #6331#, hasilnya mencukupi untuk kebutuhan anak itu, demikian yang tampak oleh saya waktu itu",
+      "mata pencaharian #7036# adalah #6331#, hasilnya mencukupi untuk kebutuhan anak itu, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan pekerjaan dan penghasilan calon wali hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #7036# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan anak itu",
+      "saya diberi tahu oleh {sumber} bahwa #7036# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan anak itu",
+      "#7036# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan anak itu, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #7036# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan anak itu"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa mata pencaharian #7036# adalah #6331#, hasilnya mencukupi untuk kebutuhan anak itu",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa mata pencaharian #7036# adalah #6331#, hasilnya mencukupi untuk kebutuhan anak itu",
+      "mata pencaharian #7036# adalah #6331#, hasilnya mencukupi untuk kebutuhan anak itu, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa mata pencaharian #7036# adalah #6331#, hasilnya mencukupi untuk kebutuhan anak itu"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari pekerjaan dan penghasilan calon wali",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #7036# bekerja sebagai #6331#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #7036# bekerja sebagai #6331#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #7036# bekerja sebagai #6331#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #7036# bekerja sebagai #6331#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa mata pencaharian #7036# adalah #6331#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa mata pencaharian #7036# adalah #6331#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa mata pencaharian #7036# adalah #6331#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa mata pencaharian #7036# adalah #6331#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "6331",
+    "7036"
+   ]
+  },
+  {
+   "id": "q-pw-tinggal-anak",
+   "pokok": "pp-pw-pemeliharaan",
+   "urutan": 1450,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohonWali": "keluarga-lain"
+   },
+   "teks": "Di mana anak itu tinggal sekarang dan bersama siapa?",
+   "teksVarian": [],
+   "hal": "tempat tinggal anak dan pengasuhnya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan tempat tinggal anak dan pengasuhnya sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #5110# sekarang tinggal serumah dengan #7036# dan diasuh olehnya sehari-hari",
+      "saya mengetahui sendiri bahwa #5110# sekarang tinggal serumah dengan #7036# dan diasuh olehnya sehari-hari",
+      "saya menyaksikan langsung bahwa #5110# sekarang tinggal serumah dengan #7036# dan diasuh olehnya sehari-hari",
+      "saya tahu betul bahwa #5110# sekarang tinggal serumah dengan #7036# dan diasuh olehnya sehari-hari"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa sehari-hari #5110# tinggal bersama #7036# yang mengasuh anak itu",
+      "yang saya ketahui secara langsung adalah bahwa sehari-hari #5110# tinggal bersama #7036# yang mengasuh anak itu",
+      "sehari-hari #5110# tinggal bersama #7036# yang mengasuh anak itu, demikian yang tampak oleh saya waktu itu",
+      "sehari-hari #5110# tinggal bersama #7036# yang mengasuh anak itu, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan tempat tinggal anak dan pengasuhnya hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #5110# sekarang tinggal serumah dengan #7036# dan diasuh olehnya sehari-hari",
+      "saya diberi tahu oleh {sumber} bahwa #5110# sekarang tinggal serumah dengan #7036# dan diasuh olehnya sehari-hari",
+      "#5110# sekarang tinggal serumah dengan #7036# dan diasuh olehnya sehari-hari, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #5110# sekarang tinggal serumah dengan #7036# dan diasuh olehnya sehari-hari"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa sehari-hari #5110# tinggal bersama #7036# yang mengasuh anak itu",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sehari-hari #5110# tinggal bersama #7036# yang mengasuh anak itu",
+      "sehari-hari #5110# tinggal bersama #7036# yang mengasuh anak itu, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa sehari-hari #5110# tinggal bersama #7036# yang mengasuh anak itu"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari tempat tinggal anak dan pengasuhnya",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #5110# sekarang tinggal serumah dengan #7036#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #5110# sekarang tinggal serumah dengan #7036#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #5110# sekarang tinggal serumah dengan #7036#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #5110# sekarang tinggal serumah dengan #7036#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa sehari-hari #5110# tinggal bersama #7036#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa sehari-hari #5110# tinggal bersama #7036#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa sehari-hari #5110# tinggal bersama #7036#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa sehari-hari #5110# tinggal bersama #7036#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "5110",
+    "7036"
+   ]
+  },
+  {
+   "id": "q-pw-pendidikan-anak",
+   "pokok": "pp-pw-anak-keadaan",
+   "urutan": 1460,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pemohonWali": "keluarga-lain"
+   },
+   "teks": "Bagaimana pendidikan dan kesehatan anak itu selama berada dalam asuhan #7036#?",
+   "teksVarian": [],
+   "hal": "pendidikan dan kesehatan anak selama diasuh calon wali",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pendidikan dan kesehatan anak selama diasuh calon wali sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #5110# tetap bersekolah dan sehat selama diasuh oleh #7036#",
+      "saya mengetahui sendiri bahwa #5110# tetap bersekolah dan sehat selama diasuh oleh #7036#",
+      "saya menyaksikan langsung bahwa #5110# tetap bersekolah dan sehat selama diasuh oleh #7036#",
+      "saya tahu betul bahwa #5110# tetap bersekolah dan sehat selama diasuh oleh #7036#"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa selama berada dalam asuhan #7036#, #5110# terus bersekolah dan dalam keadaan sehat",
+      "yang saya ketahui secara langsung adalah bahwa selama berada dalam asuhan #7036#, #5110# terus bersekolah dan dalam keadaan sehat",
+      "selama berada dalam asuhan #7036#, #5110# terus bersekolah dan dalam keadaan sehat, demikian yang tampak oleh saya waktu itu",
+      "selama berada dalam asuhan #7036#, #5110# terus bersekolah dan dalam keadaan sehat, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan pendidikan dan kesehatan anak selama diasuh calon wali hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #5110# tetap bersekolah dan sehat selama diasuh oleh #7036#",
+      "saya diberi tahu oleh {sumber} bahwa #5110# tetap bersekolah dan sehat selama diasuh oleh #7036#",
+      "#5110# tetap bersekolah dan sehat selama diasuh oleh #7036#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #5110# tetap bersekolah dan sehat selama diasuh oleh #7036#"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa selama berada dalam asuhan #7036#, #5110# terus bersekolah dan dalam keadaan sehat",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa selama berada dalam asuhan #7036#, #5110# terus bersekolah dan dalam keadaan sehat",
+      "selama berada dalam asuhan #7036#, #5110# terus bersekolah dan dalam keadaan sehat, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa selama berada dalam asuhan #7036#, #5110# terus bersekolah dan dalam keadaan sehat"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari pendidikan dan kesehatan anak selama diasuh calon wali",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #5110# tetap bersekolah selama diasuh oleh #7036#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #5110# tetap bersekolah selama diasuh oleh #7036#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #5110# tetap bersekolah selama diasuh oleh #7036#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #5110# tetap bersekolah selama diasuh oleh #7036#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa selama diasuh #7036#, #5110# terus bersekolah, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa selama diasuh #7036#, #5110# terus bersekolah, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa selama diasuh #7036#, #5110# terus bersekolah, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa selama diasuh #7036#, #5110# terus bersekolah, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "5110",
+    "7036"
+   ]
+  },
+  {
+   "id": "q-pw-kesanggupan-harta",
+   "pokok": "pp-pw-harta",
+   "urutan": 1470,
+   "tingkat": "pilihan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "hartaAnak": "ada",
+    "pemohonWali": "keluarga-lain"
+   },
+   "teks": "Apakah #7036# sanggup mengurus harta anak itu dengan baik, mencatat harta dan perubahannya, serta tidak memindahtangankannya kecuali untuk kepentingan anak?",
+   "teksVarian": [],
+   "hal": "kesanggupan wali mengurus dan menjaga harta anak",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kesanggupan wali mengurus dan menjaga harta anak sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #7036# sanggup mengurus harta anak itu dengan baik, mencatat harta beserta setiap perubahan, dan tidak memindahtangankan harta anak kecuali untuk kepentingan anak",
+      "saya mengetahui sendiri bahwa #7036# sanggup mengurus harta anak itu dengan baik, mencatat harta beserta setiap perubahan, dan tidak memindahtangankan harta anak kecuali untuk kepentingan anak",
+      "saya menyaksikan langsung bahwa #7036# sanggup mengurus harta anak itu dengan baik, mencatat harta beserta setiap perubahan, dan tidak memindahtangankan harta anak kecuali untuk kepentingan anak",
+      "saya tahu betul bahwa #7036# sanggup mengurus harta anak itu dengan baik, mencatat harta beserta setiap perubahan, dan tidak memindahtangankan harta anak kecuali untuk kepentingan anak"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa saya yakin #7036# akan menjaga harta anak itu, mencatat setiap perubahan, dan tidak menjual atau mengalihkan harta itu kecuali untuk kepentingan anak",
+      "yang saya ketahui secara langsung adalah bahwa saya yakin #7036# akan menjaga harta anak itu, mencatat setiap perubahan, dan tidak menjual atau mengalihkan harta itu kecuali untuk kepentingan anak",
+      "saya yakin #7036# akan menjaga harta anak itu, mencatat setiap perubahan, dan tidak menjual atau mengalihkan harta itu kecuali untuk kepentingan anak, demikian yang tampak oleh saya waktu itu",
+      "saya yakin #7036# akan menjaga harta anak itu, mencatat setiap perubahan, dan tidak menjual atau mengalihkan harta itu kecuali untuk kepentingan anak, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan kesanggupan wali mengurus dan menjaga harta anak hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #7036# sanggup mengurus harta anak itu dengan baik, mencatat harta beserta setiap perubahan, dan tidak memindahtangankan harta anak kecuali untuk kepentingan anak",
+      "saya diberi tahu oleh {sumber} bahwa #7036# sanggup mengurus harta anak itu dengan baik, mencatat harta beserta setiap perubahan, dan tidak memindahtangankan harta anak kecuali untuk kepentingan anak",
+      "#7036# sanggup mengurus harta anak itu dengan baik, mencatat harta beserta setiap perubahan, dan tidak memindahtangankan harta anak kecuali untuk kepentingan anak, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #7036# sanggup mengurus harta anak itu dengan baik, mencatat harta beserta setiap perubahan, dan tidak memindahtangankan harta anak kecuali untuk kepentingan anak"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa saya yakin #7036# akan menjaga harta anak itu, mencatat setiap perubahan, dan tidak menjual atau mengalihkan harta itu kecuali untuk kepentingan anak",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa saya yakin #7036# akan menjaga harta anak itu, mencatat setiap perubahan, dan tidak menjual atau mengalihkan harta itu kecuali untuk kepentingan anak",
+      "saya yakin #7036# akan menjaga harta anak itu, mencatat setiap perubahan, dan tidak menjual atau mengalihkan harta itu kecuali untuk kepentingan anak, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa saya yakin #7036# akan menjaga harta anak itu, mencatat setiap perubahan, dan tidak menjual atau mengalihkan harta itu kecuali untuk kepentingan anak"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari kesanggupan wali mengurus dan menjaga harta anak",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #7036# sanggup mengurus harta anak itu dengan baik, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #7036# sanggup mengurus harta anak itu dengan baik, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #7036# sanggup mengurus harta anak itu dengan baik",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #7036# sanggup mengurus harta anak itu dengan baik"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa saya yakin #7036# akan menjaga harta anak itu, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa saya yakin #7036# akan menjaga harta anak itu, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa saya yakin #7036# akan menjaga harta anak itu, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa saya yakin #7036# akan menjaga harta anak itu, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "7036"
+   ]
+  },
+  {
    "id": "q-pw-penutup-ok",
    "pokok": "pp-pw-penutup",
    "urutan": 2001,
@@ -2530,5 +3024,9 @@
   "Keterangan saksi harus menyebut bagaimana saksi mengetahuinya; pendapat atau dugaan bukan kesaksian.",
   "Batas umur anak dewasa mengikuti keputusan yang berlaku di satuan kerja (18 tahun menurut UU 1/1974; KHI menyebut 21 tahun).",
   "Jawaban bertanda berselisih hanya kerangka: sesuaikan dengan keterangan saksi yang sesungguhnya."
+ ],
+ "variabelBaru": [
+  "4400",
+  "4409"
  ]
 }

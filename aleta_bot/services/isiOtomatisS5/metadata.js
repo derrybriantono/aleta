@@ -69,6 +69,12 @@ const SYARAT = Object.freeze({
   "0709": (d) => perwalian.pemohonOrangTua(d.perkara.posita) !== false,
   "0712": (d) => perwalian.pemohonOrangTua(d.perkara.posita) !== false,
   "1230": (d) => perwalian.pemohonOrangTua(d.perkara.posita) !== false,
+  // Perwalian oleh KERABAT (bibi, paman, kakak, nenek): hubungan dengan anak dan data kematian kedua orang tua anak (blangko [01b]).
+  "4400": (d) => perwalian.pemohonOrangTua(d.perkara.posita) === false,
+  "4401": (d) => perwalian.pemohonOrangTua(d.perkara.posita) === false,
+  "4402": (d) => perwalian.pemohonOrangTua(d.perkara.posita) === false,
+  "4403": (d) => perwalian.pemohonOrangTua(d.perkara.posita) === false,
+  "4404": (d) => perwalian.pemohonOrangTua(d.perkara.posita) === false,
   // Dispensasi kawin karena kehamilan: puskesmas dan umur kandungan.
   "0997": (d) => hamil(d),
   "0999": (d) => hamil(d),

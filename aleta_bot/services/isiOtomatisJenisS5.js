@@ -27,6 +27,8 @@ const PAW = require("./isiOtomatisS5/ahliWaris");
 const PW = require("./isiOtomatisS5/perwalian");
 const WA = require("./isiOtomatisS5/waliAdhal");
 const META = require("./isiOtomatisS5/metadata");
+const U4DK = require("./isiOtomatisU4/dk");
+const U4PW = require("./isiOtomatisU4/perwalian");
 
 const JENIS = Object.freeze({ DK: 362, PERWALIAN: 354, ASAL_USUL: 358, WALI_ADHAL: 363, AHLI_WARIS: 371 });
 const JENIS_S5 = new Set(Object.values(JENIS));
@@ -136,9 +138,9 @@ function usulanDariData(d) {
   const jenis = d.perkara.jenisId;
   if (!JENIS_S5.has(jenis)) return [];
   const hasil = [];
-  if (jenis === JENIS.PERWALIAN) hasil.push(...PW.usulanPerwalian(d));
+  if (jenis === JENIS.PERWALIAN) hasil.push(...PW.usulanPerwalian(d), ...U4PW.usulanU4Perwalian(d));
   if (jenis === JENIS.WALI_ADHAL) hasil.push(...WA.usulanWaliAdhal(d));
-  if (jenis === JENIS.DK) hasil.push(...DK.usulanDk(d, { bacaPosita: bacaPositaDk }));
+  if (jenis === JENIS.DK) hasil.push(...DK.usulanDk(d, { bacaPosita: bacaPositaDk }), ...U4DK.usulanU4Dk(d));
   if (jenis === JENIS.AHLI_WARIS) hasil.push(...PAW.usulanAhliWaris(d, { pewaris: pewarisDariModul(d.perkara.posita, d.perkara.petitum) }));
   if (jenis === JENIS.ASAL_USUL) hasil.push(...AUA.usulanAsalUsul(d, { urai: uraiItsbat, bacaPetitum: bacaPetitumAsalUsul }));
   return hasil;

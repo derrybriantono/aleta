@@ -2,7 +2,7 @@
  "skema": "saksi-katalog/1",
  "kunci": "wali-adhal",
  "judul": "Wali adhal",
- "versi": 1,
+ "versi": 2,
  "penulis": "SAKSI-C",
  "tahap": 1,
  "contoh": false,
@@ -271,6 +271,15 @@
    "judul": "Penutup keterangan saksi",
    "uraian": "saksi menyatakan keterangannya telah cukup",
    "dasarHukum": [],
+   "wajib": false
+  },
+  {
+   "id": "pp-lamaran-restu",
+   "judul": "Lamaran dan restu keluarga lain",
+   "uraian": "lamaran calon suami sudah disampaikan dan keluarga lain (selain wali nasab) merestui",
+   "dasarHukum": [
+    "dh-uup-7-khi-16"
+   ],
    "wajib": false
   }
  ],
@@ -1209,6 +1218,389 @@
    ],
    "variabelAbt": [
     "0046"
+   ]
+  },
+  {
+   "id": "q-lamaran",
+   "pokok": "pp-maksud-calon",
+   "urutan": 215,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah calon suami #0046# sudah melamar #0046# kepada keluarganya, dan sudah diketahui oleh wali nasabnya?",
+   "teksVarian": [],
+   "hal": "lamaran calon suami kepada keluarga dan sepengetahuan wali",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan lamaran calon suami kepada keluarga dan sepengetahuan wali sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #1029# sudah datang melamar #0046# kepada keluarganya dan lamaran itu sudah diketahui oleh wali nasab",
+      "saya mengetahui sendiri bahwa #1029# sudah datang melamar #0046# kepada keluarganya dan lamaran itu sudah diketahui oleh wali nasab",
+      "saya menyaksikan langsung bahwa #1029# sudah datang melamar #0046# kepada keluarganya dan lamaran itu sudah diketahui oleh wali nasab",
+      "saya tahu betul bahwa #1029# sudah datang melamar #0046# kepada keluarganya dan lamaran itu sudah diketahui oleh wali nasab"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #1029# telah menyampaikan lamaran untuk #0046# kepada pihak keluarga termasuk kepada wali nasab",
+      "yang saya ketahui secara langsung adalah bahwa #1029# telah menyampaikan lamaran untuk #0046# kepada pihak keluarga termasuk kepada wali nasab",
+      "#1029# telah menyampaikan lamaran untuk #0046# kepada pihak keluarga termasuk kepada wali nasab, demikian yang tampak oleh saya waktu itu",
+      "#1029# telah menyampaikan lamaran untuk #0046# kepada pihak keluarga termasuk kepada wali nasab, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "mendengar": {
+     "maksud": "saksi menerangkan lamaran calon suami kepada keluarga dan sepengetahuan wali dari ucapan yang didengarnya langsung, bukan dari penglihatan",
+     "saksi1": [
+      "saya mendengar sendiri ucapan mereka bahwa #1029# menyampaikan lamaran untuk #0046# kepada keluarga dan hal itu diketahui oleh wali nasab",
+      "saya mendengar langsung perkataan mereka bahwa #1029# menyampaikan lamaran untuk #0046# kepada keluarga dan hal itu diketahui oleh wali nasab",
+      "dari ucapan mereka yang saya dengar sendiri diketahui bahwa #1029# menyampaikan lamaran untuk #0046# kepada keluarga dan hal itu diketahui oleh wali nasab",
+      "saya sendiri mendengar mereka mengatakan bahwa #1029# menyampaikan lamaran untuk #0046# kepada keluarga dan hal itu diketahui oleh wali nasab"
+     ],
+     "saksi2": [
+      "saya turut mendengar langsung pembicaraan mereka bahwa lamaran #1029# untuk #0046# disampaikan kepada keluarga dan sampai kepada wali nasab",
+      "perkataan mereka yang terdengar langsung oleh saya menerangkan bahwa lamaran #1029# untuk #0046# disampaikan kepada keluarga dan sampai kepada wali nasab",
+      "lamaran #1029# untuk #0046# disampaikan kepada keluarga dan sampai kepada wali nasab, itulah ucapan mereka yang saya dengar sendiri",
+      "saya mendengar dengan telinga saya sendiri bahwa lamaran #1029# untuk #0046# disampaikan kepada keluarga dan sampai kepada wali nasab"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan lamaran calon suami kepada keluarga dan sepengetahuan wali hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #1029# sudah datang melamar #0046# kepada keluarganya dan lamaran itu sudah diketahui oleh wali nasab",
+      "saya diberi tahu oleh {sumber} bahwa #1029# sudah datang melamar #0046# kepada keluarganya dan lamaran itu sudah diketahui oleh wali nasab",
+      "#1029# sudah datang melamar #0046# kepada keluarganya dan lamaran itu sudah diketahui oleh wali nasab, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #1029# sudah datang melamar #0046# kepada keluarganya dan lamaran itu sudah diketahui oleh wali nasab"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa #1029# telah menyampaikan lamaran untuk #0046# kepada pihak keluarga termasuk kepada wali nasab",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #1029# telah menyampaikan lamaran untuk #0046# kepada pihak keluarga termasuk kepada wali nasab",
+      "#1029# telah menyampaikan lamaran untuk #0046# kepada pihak keluarga termasuk kepada wali nasab, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #1029# telah menyampaikan lamaran untuk #0046# kepada pihak keluarga termasuk kepada wali nasab"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari lamaran calon suami kepada keluarga dan sepengetahuan wali",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #1029# sudah datang melamar #0046# kepada keluarga, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #1029# sudah datang melamar #0046# kepada keluarga, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #1029# sudah datang melamar #0046# kepada keluarga",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #1029# sudah datang melamar #0046# kepada keluarga"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa #1029# telah menyampaikan lamaran untuk #0046# kepada pihak keluarga, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa #1029# telah menyampaikan lamaran untuk #0046# kepada pihak keluarga, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa #1029# telah menyampaikan lamaran untuk #0046# kepada pihak keluarga, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa #1029# telah menyampaikan lamaran untuk #0046# kepada pihak keluarga, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "1029"
+   ]
+  },
+  {
+   "id": "q-restu-keluarga-lain",
+   "pokok": "pp-upaya-wali",
+   "urutan": 225,
+   "tingkat": "pilihan",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah keluarga #0046# yang lain, seperti ibu atau saudara, menyetujui pernikahan #0046# dengan calon suaminya?",
+   "teksVarian": [],
+   "hal": "sikap keluarga lain terhadap pernikahan",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sikap keluarga lain terhadap pernikahan sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa keluarga #0046# yang lain sudah menyetujui pernikahan #0046# dengan #1029# dan hanya wali nasabnya yang enggan menikahkan",
+      "saya mengetahui sendiri bahwa keluarga #0046# yang lain sudah menyetujui pernikahan #0046# dengan #1029# dan hanya wali nasabnya yang enggan menikahkan",
+      "saya menyaksikan langsung bahwa keluarga #0046# yang lain sudah menyetujui pernikahan #0046# dengan #1029# dan hanya wali nasabnya yang enggan menikahkan",
+      "saya tahu betul bahwa keluarga #0046# yang lain sudah menyetujui pernikahan #0046# dengan #1029# dan hanya wali nasabnya yang enggan menikahkan"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa selain wali nasab, keluarga #0046# yang lain merestui pernikahan #0046# dengan #1029#",
+      "yang saya ketahui secara langsung adalah bahwa selain wali nasab, keluarga #0046# yang lain merestui pernikahan #0046# dengan #1029#",
+      "selain wali nasab, keluarga #0046# yang lain merestui pernikahan #0046# dengan #1029#, demikian yang tampak oleh saya waktu itu",
+      "selain wali nasab, keluarga #0046# yang lain merestui pernikahan #0046# dengan #1029#, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan sikap keluarga lain terhadap pernikahan hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa keluarga #0046# yang lain sudah menyetujui pernikahan #0046# dengan #1029# dan hanya wali nasabnya yang enggan menikahkan",
+      "saya diberi tahu oleh {sumber} bahwa keluarga #0046# yang lain sudah menyetujui pernikahan #0046# dengan #1029# dan hanya wali nasabnya yang enggan menikahkan",
+      "keluarga #0046# yang lain sudah menyetujui pernikahan #0046# dengan #1029# dan hanya wali nasabnya yang enggan menikahkan, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa keluarga #0046# yang lain sudah menyetujui pernikahan #0046# dengan #1029# dan hanya wali nasabnya yang enggan menikahkan"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa selain wali nasab, keluarga #0046# yang lain merestui pernikahan #0046# dengan #1029#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa selain wali nasab, keluarga #0046# yang lain merestui pernikahan #0046# dengan #1029#",
+      "selain wali nasab, keluarga #0046# yang lain merestui pernikahan #0046# dengan #1029#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa selain wali nasab, keluarga #0046# yang lain merestui pernikahan #0046# dengan #1029#"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari sikap keluarga lain terhadap pernikahan",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa keluarga #0046# yang lain sudah menyetujui pernikahannya dengan #1029#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa keluarga #0046# yang lain sudah menyetujui pernikahannya dengan #1029#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa keluarga #0046# yang lain sudah menyetujui pernikahannya dengan #1029#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa keluarga #0046# yang lain sudah menyetujui pernikahannya dengan #1029#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa keluarga #0046# yang lain merestui pernikahan dengan #1029#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa keluarga #0046# yang lain merestui pernikahan dengan #1029#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa keluarga #0046# yang lain merestui pernikahan dengan #1029#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa keluarga #0046# yang lain merestui pernikahan dengan #1029#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "1029"
+   ]
+  },
+  {
+   "id": "q-sejak-kapan-menolak",
+   "pokok": "pp-penolakan-wali",
+   "urutan": 235,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Sejak kapan wali tersebut menyatakan tidak mau menjadi wali nikah #0046#, dan sudah berapa kali ia menyatakannya?",
+   "teksVarian": [],
+   "hal": "waktu dan berapa kali wali menyatakan penolakan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan waktu dan berapa kali wali menyatakan penolakan sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa wali #0046# sudah beberapa kali menyatakan tidak mau menikahkan #0046# sejak rencana pernikahan itu disampaikan kepada wali tersebut",
+      "saya mengetahui sendiri bahwa wali #0046# sudah beberapa kali menyatakan tidak mau menikahkan #0046# sejak rencana pernikahan itu disampaikan kepada wali tersebut",
+      "saya menyaksikan langsung bahwa wali #0046# sudah beberapa kali menyatakan tidak mau menikahkan #0046# sejak rencana pernikahan itu disampaikan kepada wali tersebut",
+      "saya tahu betul bahwa wali #0046# sudah beberapa kali menyatakan tidak mau menikahkan #0046# sejak rencana pernikahan itu disampaikan kepada wali tersebut"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa sejak rencana pernikahan disampaikan, wali #0046# berkali-kali menyatakan tidak bersedia menikahkan #0046#",
+      "yang saya ketahui secara langsung adalah bahwa sejak rencana pernikahan disampaikan, wali #0046# berkali-kali menyatakan tidak bersedia menikahkan #0046#",
+      "sejak rencana pernikahan disampaikan, wali #0046# berkali-kali menyatakan tidak bersedia menikahkan #0046#, demikian yang tampak oleh saya waktu itu",
+      "sejak rencana pernikahan disampaikan, wali #0046# berkali-kali menyatakan tidak bersedia menikahkan #0046#, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "mendengar": {
+     "maksud": "saksi menerangkan waktu dan berapa kali wali menyatakan penolakan dari ucapan yang didengarnya langsung, bukan dari penglihatan",
+     "saksi1": [
+      "saya mendengar sendiri ucapan mereka bahwa wali #0046# berulang kali berkata tidak mau menikahkan #0046#",
+      "saya mendengar langsung perkataan mereka bahwa wali #0046# berulang kali berkata tidak mau menikahkan #0046#",
+      "dari ucapan mereka yang saya dengar sendiri diketahui bahwa wali #0046# berulang kali berkata tidak mau menikahkan #0046#",
+      "saya sendiri mendengar mereka mengatakan bahwa wali #0046# berulang kali berkata tidak mau menikahkan #0046#"
+     ],
+     "saksi2": [
+      "saya turut mendengar langsung pembicaraan mereka bahwa saya mendengar wali #0046# menyatakan tidak bersedia menjadi wali nikah #0046# berkali-kali",
+      "perkataan mereka yang terdengar langsung oleh saya menerangkan bahwa saya mendengar wali #0046# menyatakan tidak bersedia menjadi wali nikah #0046# berkali-kali",
+      "saya mendengar wali #0046# menyatakan tidak bersedia menjadi wali nikah #0046# berkali-kali, itulah ucapan mereka yang saya dengar sendiri",
+      "saya mendengar dengan telinga saya sendiri bahwa saya mendengar wali #0046# menyatakan tidak bersedia menjadi wali nikah #0046# berkali-kali"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan waktu dan berapa kali wali menyatakan penolakan hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa wali #0046# sudah beberapa kali menyatakan tidak mau menikahkan #0046# sejak rencana pernikahan itu disampaikan kepada wali tersebut",
+      "saya diberi tahu oleh {sumber} bahwa wali #0046# sudah beberapa kali menyatakan tidak mau menikahkan #0046# sejak rencana pernikahan itu disampaikan kepada wali tersebut",
+      "wali #0046# sudah beberapa kali menyatakan tidak mau menikahkan #0046# sejak rencana pernikahan itu disampaikan kepada wali tersebut, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa wali #0046# sudah beberapa kali menyatakan tidak mau menikahkan #0046# sejak rencana pernikahan itu disampaikan kepada wali tersebut"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa sejak rencana pernikahan disampaikan, wali #0046# berkali-kali menyatakan tidak bersedia menikahkan #0046#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sejak rencana pernikahan disampaikan, wali #0046# berkali-kali menyatakan tidak bersedia menikahkan #0046#",
+      "sejak rencana pernikahan disampaikan, wali #0046# berkali-kali menyatakan tidak bersedia menikahkan #0046#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa sejak rencana pernikahan disampaikan, wali #0046# berkali-kali menyatakan tidak bersedia menikahkan #0046#"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari waktu dan berapa kali wali menyatakan penolakan",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa wali #0046# pernah menyatakan tidak mau menikahkan #0046#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa wali #0046# pernah menyatakan tidak mau menikahkan #0046#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa wali #0046# pernah menyatakan tidak mau menikahkan #0046#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa wali #0046# pernah menyatakan tidak mau menikahkan #0046#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa wali #0046# pernah menyatakan tidak bersedia menikahkan #0046#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa wali #0046# pernah menyatakan tidak bersedia menikahkan #0046#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa wali #0046# pernah menyatakan tidak bersedia menikahkan #0046#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa wali #0046# pernah menyatakan tidak bersedia menikahkan #0046#, selebihnya kurang saya pahami"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: wali menolak sejak rencana disampaikan; versi B: wali baru menolak belakangan - berselisih pada LAMA",
+     "bedaPada": "lama",
+     "saksi1": [
+      "wali #0046# menyatakan tidak mau menikahkan #0046# sejak rencana pernikahan pertama kali disampaikan",
+      "saya menyaksikan sendiri wali #0046# tidak mau menikahkan #0046# sejak awal rencana pernikahan dibicarakan",
+      "sejak awal wali #0046# sudah tidak mau menjadi wali nikah, dan saya mengetahuinya langsung",
+      "penolakan wali #0046# sudah ada sejak awal rencana dan saya lihat sendiri bahwa ia tidak mau"
+     ],
+     "saksi2": [
+      "wali #0046# baru menyatakan tidak mau menikahkan #0046# beberapa waktu sesudah rencana pernikahan disampaikan",
+      "sepengetahuan saya wali #0046# tidak menolak sejak awal, ia baru menolak belakangan",
+      "saya baru mendengar wali #0046# tidak mau menikahkan setelah beberapa waktu rencana itu dibicarakan",
+      "wali #0046# tidak langsung menolak, ia baru menolak sesudah beberapa waktu"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-bersedia-wali-hakim",
+   "pokok": "pp-persetujuan-umur",
+   "urutan": 245,
+   "tingkat": "pilihan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah #0046# bersedia dinikahkan dengan wali hakim dari Kantor Urusan Agama apabila Pengadilan menetapkan wali nasabnya adhal?",
+   "teksVarian": [],
+   "hal": "kesediaan dinikahkan dengan wali hakim bila wali ditetapkan adhal",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kesediaan dinikahkan dengan wali hakim bila wali ditetapkan adhal sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0046# bersedia dinikahkan dengan wali hakim dari Kantor Urusan Agama apabila Pengadilan menetapkan walinya adhal",
+      "saya mengetahui sendiri bahwa #0046# bersedia dinikahkan dengan wali hakim dari Kantor Urusan Agama apabila Pengadilan menetapkan walinya adhal",
+      "saya menyaksikan langsung bahwa #0046# bersedia dinikahkan dengan wali hakim dari Kantor Urusan Agama apabila Pengadilan menetapkan walinya adhal",
+      "saya tahu betul bahwa #0046# bersedia dinikahkan dengan wali hakim dari Kantor Urusan Agama apabila Pengadilan menetapkan walinya adhal"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa bila Pengadilan menetapkan walinya adhal, #0046# menyatakan bersedia dinikahkan oleh wali hakim dari Kantor Urusan Agama",
+      "yang saya ketahui secara langsung adalah bahwa bila Pengadilan menetapkan walinya adhal, #0046# menyatakan bersedia dinikahkan oleh wali hakim dari Kantor Urusan Agama",
+      "bila Pengadilan menetapkan walinya adhal, #0046# menyatakan bersedia dinikahkan oleh wali hakim dari Kantor Urusan Agama, demikian yang tampak oleh saya waktu itu",
+      "bila Pengadilan menetapkan walinya adhal, #0046# menyatakan bersedia dinikahkan oleh wali hakim dari Kantor Urusan Agama, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan kesediaan dinikahkan dengan wali hakim bila wali ditetapkan adhal hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #0046# bersedia dinikahkan dengan wali hakim dari Kantor Urusan Agama apabila Pengadilan menetapkan walinya adhal",
+      "saya diberi tahu oleh {sumber} bahwa #0046# bersedia dinikahkan dengan wali hakim dari Kantor Urusan Agama apabila Pengadilan menetapkan walinya adhal",
+      "#0046# bersedia dinikahkan dengan wali hakim dari Kantor Urusan Agama apabila Pengadilan menetapkan walinya adhal, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #0046# bersedia dinikahkan dengan wali hakim dari Kantor Urusan Agama apabila Pengadilan menetapkan walinya adhal"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa bila Pengadilan menetapkan walinya adhal, #0046# menyatakan bersedia dinikahkan oleh wali hakim dari Kantor Urusan Agama",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa bila Pengadilan menetapkan walinya adhal, #0046# menyatakan bersedia dinikahkan oleh wali hakim dari Kantor Urusan Agama",
+      "bila Pengadilan menetapkan walinya adhal, #0046# menyatakan bersedia dinikahkan oleh wali hakim dari Kantor Urusan Agama, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa bila Pengadilan menetapkan walinya adhal, #0046# menyatakan bersedia dinikahkan oleh wali hakim dari Kantor Urusan Agama"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari kesediaan dinikahkan dengan wali hakim bila wali ditetapkan adhal",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #0046# bersedia dinikahkan dengan wali hakim, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #0046# bersedia dinikahkan dengan wali hakim, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #0046# bersedia dinikahkan dengan wali hakim",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #0046# bersedia dinikahkan dengan wali hakim"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa bila walinya ditetapkan adhal, #0046# menyatakan bersedia dinikahkan oleh wali hakim, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa bila walinya ditetapkan adhal, #0046# menyatakan bersedia dinikahkan oleh wali hakim, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa bila walinya ditetapkan adhal, #0046# menyatakan bersedia dinikahkan oleh wali hakim, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa bila walinya ditetapkan adhal, #0046# menyatakan bersedia dinikahkan oleh wali hakim, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-rencana-nikah",
+   "pokok": "pp-maksud-calon",
+   "urutan": 255,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Di mana pernikahan #0046# dengan calon suaminya direncanakan akan dilangsungkan?",
+   "teksVarian": [],
+   "hal": "tempat rencana pernikahan akan dilangsungkan",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan tempat rencana pernikahan akan dilangsungkan sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa pernikahan #0046# dengan #1029# direncanakan dilangsungkan di wilayah #9205# secepatnya setelah ada penetapan Pengadilan",
+      "saya mengetahui sendiri bahwa pernikahan #0046# dengan #1029# direncanakan dilangsungkan di wilayah #9205# secepatnya setelah ada penetapan Pengadilan",
+      "saya menyaksikan langsung bahwa pernikahan #0046# dengan #1029# direncanakan dilangsungkan di wilayah #9205# secepatnya setelah ada penetapan Pengadilan",
+      "saya tahu betul bahwa pernikahan #0046# dengan #1029# direncanakan dilangsungkan di wilayah #9205# secepatnya setelah ada penetapan Pengadilan"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa setelah ada penetapan Pengadilan, #0046# dan #1029# berencana menikah di wilayah #9205#",
+      "yang saya ketahui secara langsung adalah bahwa setelah ada penetapan Pengadilan, #0046# dan #1029# berencana menikah di wilayah #9205#",
+      "setelah ada penetapan Pengadilan, #0046# dan #1029# berencana menikah di wilayah #9205#, demikian yang tampak oleh saya waktu itu",
+      "setelah ada penetapan Pengadilan, #0046# dan #1029# berencana menikah di wilayah #9205#, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan tempat rencana pernikahan akan dilangsungkan hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa pernikahan #0046# dengan #1029# direncanakan dilangsungkan di wilayah #9205# secepatnya setelah ada penetapan Pengadilan",
+      "saya diberi tahu oleh {sumber} bahwa pernikahan #0046# dengan #1029# direncanakan dilangsungkan di wilayah #9205# secepatnya setelah ada penetapan Pengadilan",
+      "pernikahan #0046# dengan #1029# direncanakan dilangsungkan di wilayah #9205# secepatnya setelah ada penetapan Pengadilan, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa pernikahan #0046# dengan #1029# direncanakan dilangsungkan di wilayah #9205# secepatnya setelah ada penetapan Pengadilan"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa setelah ada penetapan Pengadilan, #0046# dan #1029# berencana menikah di wilayah #9205#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa setelah ada penetapan Pengadilan, #0046# dan #1029# berencana menikah di wilayah #9205#",
+      "setelah ada penetapan Pengadilan, #0046# dan #1029# berencana menikah di wilayah #9205#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa setelah ada penetapan Pengadilan, #0046# dan #1029# berencana menikah di wilayah #9205#"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari tempat rencana pernikahan akan dilangsungkan",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa pernikahan #0046# dengan #1029# direncanakan di wilayah #9205#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa pernikahan #0046# dengan #1029# direncanakan di wilayah #9205#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa pernikahan #0046# dengan #1029# direncanakan di wilayah #9205#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa pernikahan #0046# dengan #1029# direncanakan di wilayah #9205#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa rencana pernikahan #0046# dan #1029# di wilayah #9205#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa rencana pernikahan #0046# dan #1029# di wilayah #9205#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa rencana pernikahan #0046# dan #1029# di wilayah #9205#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa rencana pernikahan #0046# dan #1029# di wilayah #9205#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "1029",
+    "9205"
    ]
   },
   {
