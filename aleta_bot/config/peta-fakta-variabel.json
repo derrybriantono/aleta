@@ -835,6 +835,51 @@
         "4852"
       ],
       "hanyaSaran": true
+    },
+    "anak.penyerahanDipetitumkan": {
+      "label": "Petitum meminta anak diserahkan (1 = dimohonkan)",
+      "tipe": "pilihan",
+      "kode": [
+        "4890"
+      ],
+      "hanyaSaran": true
+    },
+    "tuntutan.nafkahAnak.jumlahDimohon": {
+      "label": "Jumlah nafkah anak yang dimohon dalam petitum",
+      "tipe": "rupiah",
+      "kode": [
+        "4899"
+      ]
+    },
+    "anak.aksesBertemu": {
+      "label": "Rincian waktu atau cara orang tua lainnya bertemu anak",
+      "tipe": "teks",
+      "kode": [
+        "4888"
+      ]
+    },
+    "anak.kelayakanPemegang": {
+      "label": "Fakta kelayakan calon pemegang hak asuh menurut posita",
+      "tipe": "teks",
+      "kode": [
+        "4884"
+      ],
+      "hanyaSaran": true
+    },
+    "anak.ayahTakMampu": {
+      "label": "Fakta ketidakmampuan ayah memberi nafkah anak menurut posita",
+      "tipe": "teks",
+      "kode": [
+        "4901"
+      ]
+    },
+    "anak.mumayyizPerAnak": {
+      "label": "Status mumayyiz tiap anak (umur dari posita; pemegang hak asuh diputus majelis)",
+      "tipe": "daftar",
+      "kode": [
+        "4905"
+      ],
+      "hanyaSaran": true
     }
   },
   "pokokBas": [
