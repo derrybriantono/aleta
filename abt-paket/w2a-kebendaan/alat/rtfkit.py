@@ -141,3 +141,13 @@ def tambah_isianasal(d, kode, berkas):
 def seimbang(d, berkas):
     if d.count("{") - d.count("\\{") != d.count("}") - d.count("\\}"):
         raise GagalTambal("%s: kurung kurawal tak seimbang" % berkas)
+
+
+def tambah_akhir(d, jangkar, teks, berkas, urut=None):
+    """Tambahkan `teks` di ujung paragraf berjangkar, tepat sebelum \\par penutupnya (dipakai untuk blok opsional yang diawali <br>: kosong = tanpa baris kosong)."""
+    s, e = batas_paragraf(d, jangkar, berkas, urut)
+    par = d[s:e]
+    i = par.rfind("\\par")
+    if i < 0:
+        raise GagalTambal("%s: paragraf tanpa \\par: %s" % (berkas, jangkar[:80]))
+    return d[:s] + par[:i] + teks + par[i:] + d[e:]

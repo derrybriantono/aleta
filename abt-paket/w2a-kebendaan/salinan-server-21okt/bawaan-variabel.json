@@ -108,5 +108,25 @@
   "nama": "WAKAF: PERUNTUKAN WAKAF - ISIAN (mis. sarana ibadah (masjid), sarana pendidikan, pemakaman)",
   "default": "sarana ibadah (masjid)",
   "tipe": "data_teks"
+ },
+ "1025": {
+  "nama": "Nama Almarhum / Almarhumah",
+  "default": "NULL",
+  "tipe": "data_teks"
+ },
+ "1246": {
+  "nama": "Tanggal meninggalnya #2026#",
+  "default": "NULL",
+  "tipe": "data_tanggal"
+ },
+ "1509": {
+  "nama": "Tempat Meninggal Dunia",
+  "default": "Lingkungan _, Kelurahan _, Kecamatan _, Kabupaten ...",
+  "tipe": "data_teks"
+ },
+ "1247": {
+  "nama": "Sebab meninggalnya #2026#",
+  "default": "sakit",
+  "tipe": "data_teks"
  }
 }

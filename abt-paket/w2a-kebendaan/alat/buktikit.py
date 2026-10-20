@@ -16,7 +16,7 @@ def pecah_baris(isian_no, maks=60):
     )
 
 
-def analisis_bukti(isian_no, kelas, kalimat, awalan, ujung_kalimat=";"):
+def analisis_bukti(isian_no, kelas, kalimat, awalan, ujung_kalimat=";", br=False):
     """kelas: daftar (nomor_kelas, [kata kunci huruf kecil]) berurutan menurut prioritas; kelas lain = 99.
     kalimat: {nomor_kelas: 'teks dengan {L}'}; {L} diganti daftar label ('P.1 dan P.3' / 'P.1, P.2 dan P.5')."""
     nomor = sorted(set([k for k, _ in kelas] + [99]))
@@ -47,7 +47,7 @@ def analisis_bukti(isian_no, kelas, kalimat, awalan, ujung_kalimat=";"):
         awal, akhir = kalimat[k].split("{L}")
         butir.append("IF(p.k%d IS NULL, NULL, CONCAT(%s, %s, %s))" % (k, lit("Menimbang, bahwa " + awal), rapi(k), lit(akhir + ujung_kalimat)))
     ungkapan = "IF(p.jml = 0, '', CONCAT_WS('<br>', %s))" % ", ".join(butir)
-    return "SELECT IF(IFNULL(%s, '') = '', '', CONCAT(%s, '{}')) AS data FROM (%s) p" % (ungkapan, ungkapan, pivot)
+    return "SELECT IF(IFNULL(%s, '') = '', '', CONCAT(%s%s, '{}')) AS data FROM (%s) p" % (ungkapan, "'<br>', " if br else "", ungkapan, pivot)
 
 
 def baris_ke_kalimat(isian_no, ekspresi_baris, maks=24, pemisah="<br>"):

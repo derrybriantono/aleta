@@ -78,17 +78,19 @@ def pemicu(nama_kol):
 
 
 # ------------------------------------------------------------------ pertimbangan
-def p_tidak_terbukti():
+def p_tidak_terbukti(kata="harta bersama #0046# dan #7037#", petitum="penetapan dan pembagian harta bersama", kol="i4781", flag="ada_tidak_terbukti"):
     return (
-        "IF(c.ada_tidak_terbukti = 0, '', CONCAT(%s, c.i4781, %s))"
+        "IF(c.%s = 0, '', CONCAT(%s, c.%s, %s))"
         % (
+            flag,
             L("Menimbang, bahwa terhadap objek yang didalilkan berupa: "),
-            L(", tidak terbukti sebagai harta bersama #0046# dan #7037#, sehingga petitum penetapan dan pembagian harta bersama sepanjang mengenai objek tersebut tidak beralasan hukum dan patut ditolak;"),
+            kol,
+            L(", tidak terbukti sebagai %s, sehingga petitum %s sepanjang mengenai objek tersebut tidak beralasan hukum dan patut ditolak;" % (kata, petitum)),
         )
     )
 
 
-def p_sita(mode="K"):
+def p_sita(mode="K", kata="harta bersama #0046# dan #7037#"):
     sela = "IF(c.sela > 0, CONCAT(%s, '#0218#'), '')" % L(" berdasarkan Putusan Sela tanggal ")
     marital = "IF(c.pet REGEXP 'marital', %s, %s)" % (L("sita marital (maritale beslag)"), L("sita jaminan (conservatoir beslag)"))
     if mode == "KK":
@@ -117,8 +119,8 @@ def p_sita(mode="K"):
             L("Menimbang, bahwa terhadap objek sengketa telah diletakkan "),
             marital,
             sela,
-            L(" sesuai ketentuan Pasal 261 ayat (1) RBg jo. Pasal 95 Kompilasi Hukum Islam, dan oleh karena objek tersebut terbukti sebagai harta bersama "),
-            L("#0046# dan #7037#, maka "),
+            L(" sesuai ketentuan Pasal 261 ayat (1) RBg jo. Pasal 95 Kompilasi Hukum Islam, dan oleh karena objek tersebut terbukti sebagai "),
+            L("%s, maka " % kata),
             kalimat(L("sita tersebut patut dinyatakan sah dan berharga;")),
         )
     )
@@ -162,18 +164,18 @@ def p_utang():
     )
 
 
-def p_turut():
+def p_turut(kata="harta bersama"):
     return (
         "IF(c.ttt = 0, '', CONCAT(%s, IF(c.ntt > 1, 'Para Turut', 'Turut'), %s, IF(c.ntt > 1, 'Para Turut', 'Turut'), %s))"
         % (
             L("Menimbang, bahwa "),
-            L(" #0047# ditarik sebagai pihak dalam perkara ini agar tunduk dan patuh pada putusan mengenai status harta bersama; oleh karena itu "),
+            L(" #0047# ditarik sebagai pihak dalam perkara ini agar tunduk dan patuh pada putusan mengenai status %s; oleh karena itu " % kata),
             L(" #0047# patut dihukum untuk tunduk dan patuh pada putusan ini;"),
         )
     )
 
 
-def p_uang_paksa():
+def p_uang_paksa(kata="harta bersama"):
     return (
         "CASE WHEN c.tuang = 0 THEN '' "
         "WHEN c.duang = 'K' THEN %s "
@@ -182,7 +184,7 @@ def p_uang_paksa():
         % (
             L(periksa("petitum menuntut uang paksa (dwangsom); pilih keputusan majelis pada isian keputusan uang paksa")),
             L("Menimbang, bahwa terhadap tuntutan uang paksa (dwangsom), berdasarkan putusan Mahkamah Agung No. 307K/Sip/1976, tertanggal 7 Desember 1976, tuntutan uang paksa harus ditolak dalam hal putusan dapat dilaksanakan dengan eksekusi riil jika putusan tersebut mempunyai kekuatan yang pasti; "
-              "oleh karena putusan mengenai harta bersama dalam perkara a quo dapat dilaksanakan dengan eksekusi riil, maka tuntutan uang paksa (dwangsom) tidak beralasan hukum dan patut ditolak;"),
+              "oleh karena putusan mengenai %s dalam perkara a quo dapat dilaksanakan dengan eksekusi riil, maka tuntutan uang paksa (dwangsom) tidak beralasan hukum dan patut ditolak;" % kata),
             L("Menimbang, bahwa terhadap tuntutan uang paksa (dwangsom), #8554# berpendapat tuntutan tersebut beralasan hukum, yaitu sejumlah "),
             alasan("c.i4784"),
             L(periksa("tulis jumlah uang paksa setelah titik dua pada isian keputusan uang paksa")),
@@ -417,17 +419,23 @@ KALIMAT_BUKTI = {
 
 
 def analisis_p():
-    return analisis_bukti(9955, KELAS_BUKTI, KALIMAT_BUKTI, "P.")
+    return analisis_bukti(9955, KELAS_BUKTI, KALIMAT_BUKTI, "P.", br=True)
 
 
 def analisis_t():
-    return analisis_bukti(9911, KELAS_BUKTI, KALIMAT_BUKTI, "T.")
+    return analisis_bukti(9911, KELAS_BUKTI, KALIMAT_BUKTI, "T.", br=True)
 
 
 
-def fakta_tidak_terbukti():
-    luar, gabung_l = baris_ke_kalimat(4781, lit("-   Bahwa objek ") and "CONCAT(%s, b.t, %s)" % (lit("-   Bahwa objek "), lit(" tidak terbukti sebagai harta bersama #0046# dan #0047#;")))
-    return "SELECT IF(IFNULL(CONCAT_WS('<br>', %s), '') = '', '', CONCAT(CONCAT_WS('<br>', %s), '{}')) AS data FROM (%s) p" % (gabung_l, gabung_l, luar)
+def fakta_tidak_terbukti(kata="harta bersama #0046# dan #0047#", isian=4781):
+    luar, gabung_l = baris_ke_kalimat(isian, "CONCAT(%s, b.t, %s)" % (lit("-   Bahwa objek "), lit(" tidak terbukti sebagai %s;" % kata)))
+    return "SELECT IF(IFNULL(CONCAT_WS('<br>', %s), '') = '', '', CONCAT('<br>', CONCAT_WS('<br>', %s), '{}')) AS data FROM (%s) p" % (gabung_l, gabung_l, luar)
+
+
+def opsional(kueri):
+    """Blok opsional: bila ada isinya diawali <br> (disambung ke ujung paragraf di depannya), bila kosong tidak meninggalkan baris kosong."""
+    assert "CONCAT(t.d, '{}')" in kueri
+    return kueri.replace("CONCAT(t.d, '{}')", "CONCAT('<br>', t.d, '{}')")
 
 
 def dengan_judul(judul, ekspresi):
@@ -474,7 +482,7 @@ def semua():
     sql(4796, "HARTA BERSAMA: PERTIMBANGAN TURUT TERGUGAT (OTOMATIS: hanya bila petitum atau SIPP mencatat Turut Tergugat)", bungkus_ctx(p_turut()))
     sql(4797, "HARTA BERSAMA: PERTIMBANGAN UANG PAKSA (OTOMATIS dari petitum dan keputusan isian 4784)", bungkus_ctx(p_uang_paksa()))
     sql(4798, "HARTA BERSAMA: PERTIMBANGAN PUTUSAN SERTA MERTA (OTOMATIS dari petitum dan keputusan isian 4785)", bungkus_ctx(p_serta_merta()))
-    sql(4799, "HARTA BERSAMA: PERTIMBANGAN TUNTUTAN LAIN LENGKAP (OTOMATIS: gabungan 4792, 4793, 4795, 4796, 4797 dan 4798 menurut petitum dan keputusan; kosong bila tidak ada)", bungkus_ctx(p_lain_lengkap()))
+    sql(4799, "HARTA BERSAMA: PERTIMBANGAN TUNTUTAN LAIN LENGKAP (OTOMATIS: gabungan 4792, 4793, 4795, 4796, 4797 dan 4798 menurut petitum dan keputusan; kosong bila tidak ada)", opsional(bungkus_ctx(p_lain_lengkap())))
     sql(4800, "HARTA BERSAMA: AMAR PUTUSAN VERSTEK (OTOMATIS: dari tuntutan dan keputusan isian 4780 s.d. 4786; satu baris bernomor per butir)", amar_variabel("V"))
     sql(4801, "HARTA BERSAMA: NOMOR BUTIR AMAR BIAYA PERKARA PADA PUTUSAN VERSTEK (OTOMATIS: nomor sesudah butir amar 4800)", nomor_variabel("V"))
     sql(4802, "HARTA BERSAMA: AMAR PUTUSAN KONTRADIKTOIR (OTOMATIS: dari tuntutan dan keputusan isian 4780 s.d. 4786; satu baris bernomor per butir)", amar_variabel("K"))
@@ -485,11 +493,11 @@ def semua():
 
     sql(4809, "HARTA BERSAMA: FAKTA OBJEK YANG TIDAK TERBUKTI (OTOMATIS dari isian 4781: satu butir per objek; kosong bila semua objek terbukti)", fakta_tidak_terbukti())
     sql(4810, "HARTA BERSAMA: PERTIMBANGAN PETITUM UANG PAKSA DENGAN JUDUL (OTOMATIS: hanya bila petitum menuntut uang paksa; untuk blangko Konvensi Rekonvensi)",
-        bungkus_kk("IF(%s = '', '', CONCAT('<strong>Tentang Petitum Uang Paksa (Dwangsom)</strong><br>', %s))" % (p_uang_paksa(), p_uang_paksa())))
+        opsional(bungkus_kk("IF(%s = '', '', CONCAT('<strong>Tentang Petitum Uang Paksa (Dwangsom)</strong><br>', %s))" % (p_uang_paksa(), p_uang_paksa()))))
     sql(4811, "HARTA BERSAMA: PERTIMBANGAN PETITUM SERTA MERTA DENGAN JUDUL (OTOMATIS: hanya bila petitum menuntut putusan serta merta; untuk blangko Konvensi Rekonvensi)",
-        bungkus_kk("IF(%s = '', '', CONCAT('<strong>Tentang Petitum Putusan Serta Merta (Uitvoerbaar bij Voorraad)</strong><br>', %s))" % (p_serta_merta(), p_serta_merta())))
+        opsional(bungkus_kk("IF(%s = '', '', CONCAT('<strong>Tentang Petitum Putusan Serta Merta (Uitvoerbaar bij Voorraad)</strong><br>', %s))" % (p_serta_merta(), p_serta_merta()))))
     sql(4812, "HARTA BERSAMA: PERTIMBANGAN LAIN PADA KONVENSI (OTOMATIS: objek tidak terbukti, utang bersama, Turut Tergugat; untuk blangko Konvensi Rekonvensi)",
-        bungkus_kk(gabung(p_tidak_terbukti(), p_utang(), p_turut())))
+        opsional(bungkus_kk(gabung(p_tidak_terbukti(), p_utang(), p_turut()))))
     sql(4813, "HARTA BERSAMA: PERTIMBANGAN BAGIAN PARA PIHAK PADA KONVENSI (OTOMATIS: seperdua menurut bunyi blangko Konvensi Rekonvensi bila isian 4782 kosong)", bungkus_kk(p_bagian("KK")))
     sql(4814, "HARTA BERSAMA: PERTIMBANGAN SITA JAMINAN PADA KONVENSI (OTOMATIS: sah dan berharga bila isian 4783 kosong atau sah; ditolak bila dipilih)", bungkus_kk(p_sita("KK")))
     sql(4805, "HARTA BERSAMA: JAWAB-MENJAWAB PER OBJEK (OTOMATIS dari isian 4787: satu butir per objek, diakui murni / berklausul / dibantah)", jawab_per_objek())
