@@ -4550,7 +4550,7 @@ export async function getGatewayPenunjukanUsulan(payload: {
      */
     susunanSk?: Record<string, unknown>[];
     /** SK majelis yang berlaku (nomor + tanggal ISO) - tampil di papan dan dipakai memeriksa kesesuaian. */
-    sk?: { nomor: string; tanggal: string; peringatan?: Array<{ majelisKode: string; kode: string; nama: string; alasan: string }> };
+    sk?: { nomor: string; tanggal: string; berlaku?: string; peringatan?: Array<{ majelisKode: string; kode: string; nama: string; alasan: string }> };
     /** Majelis yang dipilih petugas di papan - id hakim_pn, ketua di depan. */
     pilihanMajelis?: number[];
     /**

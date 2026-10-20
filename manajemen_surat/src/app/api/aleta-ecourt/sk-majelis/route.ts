@@ -3,9 +3,15 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { gatewayPegawaiPenunjukan } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import {
+  bacaAkunUntukPeringatan,
+  bacaBerlakuMulai,
   bacaHariSidang,
+  bacaJejakSk,
+  hapusMajelis,
   NAMA_HARI,
+  simpanBerlakuMulai,
   simpanHariSidang,
+  susunPeringatanSk,
 } from "@/server/modules/aleta-ecourt/penunjukan-pengaturan";
 import { bacaSkMajelis } from "@/server/modules/pengaturan-abt/nomor-sk-sumber";
 import { getPositionsFromDb } from "@/server/modules/organization/service";
@@ -94,6 +100,17 @@ export async function GET(request: NextRequest) {
       akunAlasan,
       namaHari: NAMA_HARI,
       skBerlaku: await bacaSkMajelis(db),
+      // Tanggal SK mulai berlaku (kosong = tanggal SK sendiri), jejak perubahan, dan
+      // peringatan: hakim/panitera di SK yang sudah tidak aktif, bermutasi, atau berganti jabatan.
+      berlakuMulai: await bacaBerlakuMulai(db),
+      jejak: await bacaJejakSk(db, 20),
+      peringatan: susunPeringatanSk({
+        majelis,
+        hakimAktif: (pegawai.ok ? ((pegawai.data?.hakim ?? []) as Array<{ id: number; kode: string; nama: string }>) : []),
+        paniteraAktif: (pegawai.ok ? ((pegawai.data?.panitera ?? []) as Array<{ id: number; kode: string; nama: string }>) : []),
+        akun: await bacaAkunUntukPeringatan(db),
+        pegawaiTerbaca: pegawai.ok === true,
+      }),
       // Gagalnya bot TIDAK menggagalkan layar: susunan yang sudah tersimpan
       // tetap terbaca dan tetap dapat disunting hari/kodenya. Yang hilang
       // hanya kemampuan mengikat ke orang, dan itu disebutkan apa adanya.
@@ -129,6 +146,23 @@ export async function POST(request: NextRequest) {
     actorUserId = await resolveActorUserId(request);
 
     const badan = (await request.json()) as Record<string, unknown>;
+
+    // Tindakan lain di layar yang sama: hapus majelis dari SK, dan tanggal SK berlaku.
+    // Tanpa "tindakan" = simpan satu majelis (bentuk lama, tidak berubah).
+    if (badan.tindakan === "hapus") {
+      const hasilHapus = await hapusMajelis(db, {
+        actorUserId: String(actorUserId ?? ""),
+        majelisKode: String(badan.majelisKode ?? ""),
+      });
+      return ok({ majelis: hasilHapus });
+    }
+    if (badan.tindakan === "berlaku-mulai") {
+      const berlaku = await simpanBerlakuMulai(db, {
+        actorUserId: String(actorUserId ?? ""),
+        tanggal: String(badan.tanggal ?? ""),
+      });
+      return ok({ berlakuMulai: berlaku });
+    }
 
     const hasil = await simpanHariSidang(db, {
       actorUserId: String(actorUserId ?? ""),

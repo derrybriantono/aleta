@@ -1459,6 +1459,7 @@ const schemaStatements = [
     sk_nomor TEXT NOT NULL DEFAULT '',
     sk_tanggal TEXT NOT NULL DEFAULT '',
     keterangan TEXT NOT NULL DEFAULT '',
+    aktif SMALLINT NOT NULL DEFAULT 1,
     updated_at TEXT NOT NULL,
     updated_by TEXT
   )`,

@@ -505,6 +505,13 @@
       "when": 1792206000001,
       "tag": "0078_aleta_ai",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1792209600001,
+      "tag": "0079_aleta_sk_majelis_aktif",
+      "breakpoints": true
     }
   ]
 }

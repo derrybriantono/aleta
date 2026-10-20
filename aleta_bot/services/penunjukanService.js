@@ -1874,7 +1874,7 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
         andaian,
         bobotAndaian,
         susunanSk,
-        skTanggal: pengaturan.sk && pengaturan.sk.tanggal,
+        skTanggal: (pengaturan.sk && (pengaturan.sk.berlaku || pengaturan.sk.tanggal)) || "",
         sekarang: sekarangBeban,
       })
     : null;
@@ -2242,6 +2242,7 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   const skDipakai = susunanSk.length > 0;
   const skNomor = cleanText(skMasuk.nomor) || skDariSipp.nomor;
   const skTanggal = isoTanggal(skMasuk.tanggal) || skDariSipp.tanggal;
+  const skBerlaku = isoTanggal(skMasuk.berlaku) || skTanggal;
   // Pegawai di SK yang perlu diperbarui: dari portal (akun nonaktif/jabatan
   // berganti) ditambah pemeriksaan SIPP (tidak aktif, akun terblokir, belum terikat).
   const peringatanSk = [];
@@ -2268,10 +2269,11 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   const skUsulan = {
     nomor: skNomor,
     tanggal: skTanggal,
+    berlaku: skBerlaku,
     dipakai: skDipakai,
     peringatan: [...new Set(peringatanSk)],
     bunyi: skDipakai
-      ? `SK ${skNomor || "(nomor belum diisi)"}${skTanggal ? ` tanggal ${sebutTanggal(skTanggal)}` : ""}`
+      ? `SK ${skNomor || "(nomor belum diisi)"}${skTanggal ? ` tanggal ${sebutTanggal(skTanggal)}` : ""}${skBerlaku && skBerlaku !== skTanggal ? `, berlaku mulai ${sebutTanggal(skBerlaku)}` : ""}`
       : "Belum memakai SK - isi di Pengaturan SK Majelis (susunan memakai majelis yang terpakai tahun ini)",
   };
   let paniteraCatat = 0;
@@ -2283,7 +2285,7 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
       paniteraId: acuan.dariTercatat ? paniteraCatat : Number((ppp.usulan && (ppp.usulan.id ?? ppp.usulan.paniteraId)) || 0),
       tanggal: tanggalPenetapan,
       susunanSk,
-      sk: skUsulan,
+      sk: { ...skUsulan, tanggal: skBerlaku },
     }),
     untuk: acuan.dariTercatat ? "tercatat" : "usulan",
   };

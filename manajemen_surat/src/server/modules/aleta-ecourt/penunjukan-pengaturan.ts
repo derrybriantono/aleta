@@ -3,7 +3,9 @@ import { type AletaDatabase, withTransaction } from "@/server/db/client";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { bacaSkMajelis } from "@/server/modules/pengaturan-abt/nomor-sk-sumber";
 import { tanggalSah } from "@/lib/tanggal-indonesia";
+import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
+import { nextPrefixedId } from "@/server/shared/ids";
 
 /**
  * Setelan yang dipakai menyusun usulan penunjukan PMH, PPP, PJS, dan PHS.
@@ -253,6 +255,8 @@ type BarisHari = {
   sk_nomor: string;
   sk_tanggal: string;
   keterangan: string;
+  /** 0 = dihapus dari SK (drizzle/0079); tidak ada pada basis data yang belum bermigrasi. */
+  aktif?: number;
 };
 
 type BarisAturan = { kunci: string; nilai: string };
@@ -346,15 +350,26 @@ function skBerlaku(item: BarisHari | undefined, bawaan: { nomor: string; tanggal
 
 /** Hari sidang tiap majelis, lengkap dengan yang masih memakai bawaan. */
 export async function bacaHariSidang(db: AletaDatabase): Promise<HariSidangMajelis[]> {
-  const baris = await db
-    .prepare(
-      "SELECT majelis_kode, hari, panitera_kode, hakim_kode, panitera_id, akun_id, " +
-        "sk_nomor, sk_tanggal, keterangan FROM aleta_sipp_hari_sidang"
-    )
-    .all<BarisHari>();
+  const kolom =
+    "majelis_kode, hari, panitera_kode, hakim_kode, panitera_id, akun_id, sk_nomor, sk_tanggal, keterangan";
+  let baris: BarisHari[];
+  try {
+    baris = await db.prepare(`SELECT ${kolom}, aktif FROM aleta_sipp_hari_sidang`).all<BarisHari>();
+  } catch {
+    // Basis data yang belum bermigrasi 0079: tanpa kolom aktif, semua baris dianggap aktif.
+    baris = await db.prepare(`SELECT ${kolom} FROM aleta_sipp_hari_sidang`).all<BarisHari>();
+  }
 
   const tersimpan = new Map<string, BarisHari>();
-  for (const item of baris) tersimpan.set(String(item.majelis_kode), item);
+  // Majelis yang dihapus dari SK (aktif = 0) tidak tampil, termasuk dari nilai awal di kode.
+  const dihapus = new Set<string>();
+  for (const item of baris) {
+    if (item.aktif !== undefined && item.aktif !== null && Number(item.aktif) === 0) {
+      dihapus.add(String(item.majelis_kode));
+      continue;
+    }
+    tersimpan.set(String(item.majelis_kode), item);
+  }
   // SK bawaan; kolom sk_* per baris hanya dipakai bila terisi (pengecualian per majelis).
   const sk = await bacaSkMajelis(db);
 
@@ -362,6 +377,7 @@ export async function bacaHariSidang(db: AletaDatabase): Promise<HariSidangMajel
   // majelis baru memang ditambahkan lewat menu, dan menyembunyikannya akan
   // membuat yang baru ditambahkan seolah tidak tersimpan.
   const kode = new Set<string>([...Object.keys(MAJELIS_BAWAAN), ...tersimpan.keys()]);
+  for (const k of dihapus) kode.delete(k);
 
   return [...kode]
     .sort((a, b) => a.localeCompare(b))
@@ -495,6 +511,7 @@ export async function bacaPengaturanPenunjukan(db: AletaDatabase) {
     bacaSkMajelis(db),
   ]);
   const peringatanSk = await periksaAkunSk(db, hariSidang);
+  const berlaku = await bacaBerlakuMulai(db);
 
   return {
     aturan,
@@ -519,7 +536,7 @@ export async function bacaPengaturanPenunjukan(db: AletaDatabase) {
       })),
     // SK bawaan (Pengaturan > SK majelis): nomor dan tanggal yang tampil di papan dan
     // dipakai memeriksa kesesuaian penetapan.
-    sk: { nomor: skBawaan.nomor, tanggal: skBawaan.tanggal, peringatan: peringatanSk },
+    sk: { nomor: skBawaan.nomor, tanggal: skBawaan.tanggal, berlaku: berlaku.tanggal, peringatan: peringatanSk },
     hariSidangRinci: hariSidang,
   };
 }
@@ -566,8 +583,29 @@ export async function simpanHariSidang(
     throw new ApiError(400, "Kode majelis tidak boleh kosong.");
   }
 
+  if (!/^[A-Z0-9]{1,8}$/.test(kode)) {
+    throw new ApiError(400, "Kode majelis hanya huruf dan angka, paling banyak 8 (mis. A, B, C1).");
+  }
+
   if (!Number.isInteger(hari) || hari < 0 || hari > 6) {
     throw new ApiError(400, "Hari sidang harus antara 0 (Minggu) dan 6 (Sabtu).");
+  }
+
+  // Kode hakim dan panitera: bentuk yang sama dengan yang disaring bot, tanpa kembar.
+  for (const [label, teks] of [
+    ["hakim", hakimKode],
+    ["panitera", paniteraKode],
+  ] as const) {
+    const daftar = String(teks ?? "")
+      .split(",")
+      .map((x) => x.trim().toUpperCase())
+      .filter(Boolean);
+    if (daftar.some((x) => !/^[A-Z0-9]{1,8}$/.test(x))) {
+      throw new ApiError(400, `Kode ${label} hanya huruf dan angka, paling banyak 8.`);
+    }
+    if (new Set(daftar).size !== daftar.length) {
+      throw new ApiError(400, `Kode ${label} tidak boleh kembar dalam satu majelis.`);
+    }
   }
 
   const sekarang = new Date().toISOString();
@@ -585,66 +623,369 @@ export async function simpanHariSidang(
   }
 
   return withTransaction(db, async (tx) => {
-    await tx
-      .prepare(
-        "INSERT INTO aleta_sipp_hari_sidang " +
-          "(majelis_kode, hari, panitera_kode, hakim_kode, panitera_id, akun_id, " +
-          "sk_nomor, sk_tanggal, keterangan, updated_at, updated_by) " +
-          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-          "ON CONFLICT(majelis_kode) DO UPDATE SET " +
-          "hari = excluded.hari, " +
-          "panitera_kode = excluded.panitera_kode, " +
-          "hakim_kode = excluded.hakim_kode, " +
-          "panitera_id = excluded.panitera_id, " +
-          "akun_id = excluded.akun_id, " +
-          "sk_nomor = excluded.sk_nomor, " +
-          "sk_tanggal = excluded.sk_tanggal, " +
-          "keterangan = excluded.keterangan, " +
-          "updated_at = excluded.updated_at, " +
-          "updated_by = excluded.updated_by"
-      )
-      .run(
-        kode,
-        hari,
-        String(paniteraKode ?? "").trim().toUpperCase(),
-        String(hakimKode ?? "").trim().toUpperCase(),
-        // Pasangan "KODE=ID". Yang tidak berbentuk pasangan dibuang di sini,
-        // bukan dibiarkan sampai ke berkas perkara.
-        String(paniteraId ?? "")
-          .split(",")
-          .map((potong) => {
-            const [kode, id] = potong.split("=");
-            const bersih = String(kode ?? "").trim().toUpperCase();
-            const nomor = Number(String(id ?? "").trim());
-            if (!bersih) return "";
-            return `${bersih}=${Number.isInteger(nomor) && nomor > 0 ? nomor : 0}`;
-          })
-          .filter(Boolean)
-          .join(","),
-        // Pasangan "KODE=ID AKUN". Berbeda dari panitera_id, id akun portal
-        // BUKAN bilangan - ia teks - jadi yang diperiksa keberadaannya, bukan
-        // kebilangannya.
-        String(akunId ?? "")
-          .split(",")
-          .map((potong) => {
-            const [kodeMentah, idMentah] = potong.split("=");
-            const bersih = String(kodeMentah ?? "").trim().toUpperCase();
-            const akun = String(idMentah ?? "").trim();
-            if (!bersih || !akun) return "";
-            return `${bersih}=${akun}`;
-          })
-          .filter(Boolean)
-          .join(","),
-        sk.nomor,
-        sk.tanggal,
-        String(keterangan ?? ""),
-        sekarang,
-        actor.id
-      );
+    const sebelum = (await bacaHariSidang(tx)).find((x) => x.majelisKode === kode) ?? null;
+    const nilai = [
+      kode,
+      hari,
+      String(paniteraKode ?? "").trim().toUpperCase(),
+      String(hakimKode ?? "").trim().toUpperCase(),
+      // Pasangan "KODE=ID". Yang tidak berbentuk pasangan dibuang di sini,
+      // bukan dibiarkan sampai ke berkas perkara.
+      String(paniteraId ?? "")
+        .split(",")
+        .map((potong) => {
+          const [kode, id] = potong.split("=");
+          const bersih = String(kode ?? "").trim().toUpperCase();
+          const nomor = Number(String(id ?? "").trim());
+          if (!bersih) return "";
+          return `${bersih}=${Number.isInteger(nomor) && nomor > 0 ? nomor : 0}`;
+        })
+        .filter(Boolean)
+        .join(","),
+      // Pasangan "KODE=ID AKUN". Berbeda dari panitera_id, id akun portal
+      // BUKAN bilangan - ia teks - jadi yang diperiksa keberadaannya, bukan
+      // kebilangannya.
+      String(akunId ?? "")
+        .split(",")
+        .map((potong) => {
+          const [kodeMentah, idMentah] = potong.split("=");
+          const bersih = String(kodeMentah ?? "").trim().toUpperCase();
+          const akun = String(idMentah ?? "").trim();
+          if (!bersih || !akun) return "";
+          return `${bersih}=${akun}`;
+        })
+        .filter(Boolean)
+        .join(","),
+      sk.nomor,
+      sk.tanggal,
+      String(keterangan ?? ""),
+      sekarang,
+      actor.id,
+    ];
+    const kolomUmum =
+      "majelis_kode, hari, panitera_kode, hakim_kode, panitera_id, akun_id, sk_nomor, sk_tanggal, keterangan, updated_at, updated_by";
+    const perbarui =
+      "hari = excluded.hari, panitera_kode = excluded.panitera_kode, hakim_kode = excluded.hakim_kode, " +
+      "panitera_id = excluded.panitera_id, akun_id = excluded.akun_id, sk_nomor = excluded.sk_nomor, " +
+      "sk_tanggal = excluded.sk_tanggal, keterangan = excluded.keterangan, " +
+      "updated_at = excluded.updated_at, updated_by = excluded.updated_by";
+    try {
+      // Menyimpan menghidupkan kembali majelis yang pernah dihapus (aktif = 1).
+      await tx
+        .prepare(
+          `INSERT INTO aleta_sipp_hari_sidang (${kolomUmum}, aktif) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1) ` +
+            `ON CONFLICT(majelis_kode) DO UPDATE SET ${perbarui}, aktif = 1`
+        )
+        .run(...nilai);
+    } catch (galat) {
+      // Basis data yang belum bermigrasi 0079 (tanpa kolom aktif): perilaku lama.
+      if (!/aktif/i.test(String((galat as Error)?.message ?? galat))) throw galat;
+      await tx
+        .prepare(
+          `INSERT INTO aleta_sipp_hari_sidang (${kolomUmum}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ` +
+            `ON CONFLICT(majelis_kode) DO UPDATE SET ${perbarui}`
+        )
+        .run(...nilai);
+    }
 
+    const sesudahDaftar = await bacaHariSidang(tx);
+    const sesudah = sesudahDaftar.find((x) => x.majelisKode === kode) ?? null;
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: sebelum ? "SIMPAN_SK_MAJELIS" : "TAMBAH_SK_MAJELIS",
+      entityType: "sk_majelis",
+      entityId: kode,
+      payload: { sebelum: ringkasMajelis(sebelum), sesudah: ringkasMajelis(sesudah) },
+      createdAt: sekarang,
+    });
+
+    return sesudahDaftar;
+  });
+}
+
+/** Ringkasan satu majelis untuk jejak perubahan (tanpa akun portal). */
+export function ringkasMajelis(m: HariSidangMajelis | null) {
+  if (!m) return null;
+  return {
+    hari: m.namaHari,
+    hakim: m.hakimKode.join(","),
+    panitera: m.panitera.map((p) => `${p.kode}=${p.id}`).join(","),
+    skNomor: m.skIkutBawaan ? "" : m.skNomor,
+    skTanggal: m.skIkutBawaan ? "" : m.skTanggal,
+  };
+}
+
+/**
+ * Menghapus satu majelis dari SK (soft: aktif = 0). Majelis bawaan yang belum
+ * pernah disimpan ikut ditandai agar tidak muncul lagi dari nilai awal di kode.
+ * Menyimpan majelis itu lagi menghidupkannya kembali.
+ */
+export async function hapusMajelis(
+  db: AletaDatabase,
+  { actorUserId, majelisKode }: { actorUserId: string; majelisKode: string }
+) {
+  const actor = await requireActorUser(db, actorUserId);
+  if (!isPrivilegedAdmin(actor)) {
+    throw new ApiError(403, "Hanya Super Admin dan Admin yang dapat menghapus majelis dari SK.");
+  }
+  const kode = String(majelisKode ?? "").trim().toUpperCase();
+  if (!kode) throw new ApiError(400, "Kode majelis tidak boleh kosong.");
+
+  const sekarang = new Date().toISOString();
+  return withTransaction(db, async (tx) => {
+    const sebelum = (await bacaHariSidang(tx)).find((x) => x.majelisKode === kode) ?? null;
+    if (!sebelum) throw new ApiError(404, `Majelis ${kode} tidak ada di SK.`);
+    try {
+      await tx
+        .prepare(
+          "INSERT INTO aleta_sipp_hari_sidang (majelis_kode, hari, panitera_kode, hakim_kode, panitera_id, akun_id, " +
+            "sk_nomor, sk_tanggal, keterangan, aktif, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?) " +
+            "ON CONFLICT(majelis_kode) DO UPDATE SET aktif = 0, updated_at = excluded.updated_at, updated_by = excluded.updated_by"
+        )
+        .run(
+          kode,
+          sebelum.hari,
+          sebelum.paniteraKode.join(","),
+          sebelum.hakimKode.join(","),
+          sebelum.panitera.map((p) => `${p.kode}=${p.id}`).join(","),
+          sebelum.akun.map((a) => `${a.kode}=${a.akunId}`).join(","),
+          sebelum.skIkutBawaan ? "" : sebelum.skNomor,
+          sebelum.skIkutBawaan ? "" : sebelum.skTanggal,
+          sebelum.keterangan,
+          sekarang,
+          actor.id
+        );
+    } catch (galat) {
+      if (/aktif/i.test(String((galat as Error)?.message ?? galat))) {
+        throw new ApiError(
+          409,
+          "Penghapusan majelis butuh migrasi 0079 (kolom aktif). Jalankan migrasi di server lebih dahulu."
+        );
+      }
+      throw galat;
+    }
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: "HAPUS_SK_MAJELIS",
+      entityType: "sk_majelis",
+      entityId: kode,
+      payload: { sebelum: ringkasMajelis(sebelum), sesudah: null },
+      createdAt: sekarang,
+    });
     return bacaHariSidang(tx);
   });
 }
+
+// ---------------------------------------------------------------------------
+// "Berlaku mulai" SK
+// ---------------------------------------------------------------------------
+
+const KUNCI_BERLAKU_MULAI = "skBerlakuMulai";
+
+/**
+ * Tanggal SK mulai berlaku (yyyy-mm-dd). Belum diisi = tanggal SK-nya sendiri.
+ * Dipakai bot: majelis SK dinilai bebannya sejak tanggal ini, dan penetapan
+ * sebelum tanggal ini tidak dinilai terhadap SK.
+ */
+export async function bacaBerlakuMulai(db: AletaDatabase): Promise<{ tanggal: string; diisi: boolean }> {
+  try {
+    const b = await db
+      .prepare("SELECT nilai FROM aleta_sipp_aturan_penunjukan WHERE kunci = ?")
+      .get<{ nilai: string }>(KUNCI_BERLAKU_MULAI);
+    const tanggal = String(b?.nilai ?? "").trim();
+    if (tanggal && tanggalSah(tanggal)) return { tanggal, diisi: true };
+  } catch {
+    /* tidak terbaca = belum diisi */
+  }
+  const sk = await bacaSkMajelis(db);
+  return { tanggal: sk.tanggal, diisi: false };
+}
+
+export async function simpanBerlakuMulai(
+  db: AletaDatabase,
+  { actorUserId, tanggal }: { actorUserId: string; tanggal: string }
+) {
+  const actor = await requireActorUser(db, actorUserId);
+  if (!isPrivilegedAdmin(actor)) {
+    throw new ApiError(403, "Hanya Super Admin dan Admin yang dapat mengubah tanggal SK berlaku.");
+  }
+  const nilai = String(tanggal ?? "").trim();
+  if (nilai && !tanggalSah(nilai)) throw new ApiError(400, "Tanggal berlaku mulai tidak sah.");
+  const sekarang = new Date().toISOString();
+  const sebelum = await bacaBerlakuMulai(db);
+  await withTransaction(db, async (tx) => {
+    await tx
+      .prepare(
+        "INSERT INTO aleta_sipp_aturan_penunjukan (kunci, nilai, keterangan, updated_at, updated_by) VALUES (?, ?, ?, ?, ?) " +
+          "ON CONFLICT(kunci) DO UPDATE SET nilai = excluded.nilai, updated_at = excluded.updated_at, updated_by = excluded.updated_by"
+      )
+      .run(KUNCI_BERLAKU_MULAI, nilai, "Tanggal SK susunan majelis mulai berlaku (kosong = tanggal SK).", sekarang, actor.id);
+    await appendAuditLog(tx, {
+      id: await nextPrefixedId(tx, "audit_logs", "adt"),
+      actorUserId: actor.id,
+      action: "UBAH_SK_BERLAKU_MULAI",
+      entityType: "sk_majelis",
+      entityId: "*berlaku-mulai*",
+      payload: { sebelum: sebelum.diisi ? sebelum.tanggal : "", sesudah: nilai },
+      createdAt: sekarang,
+    });
+  });
+  return bacaBerlakuMulai(db);
+}
+
+// ---------------------------------------------------------------------------
+// Jejak perubahan
+// ---------------------------------------------------------------------------
+
+export type JejakSk = {
+  id: string;
+  aksi: string;
+  majelisKode: string;
+  oleh: string;
+  pada: string;
+  sebelum: unknown;
+  sesudah: unknown;
+};
+
+/** Perubahan SK terbaru (audit_logs entity 'sk_majelis'), paling baru di depan. */
+export async function bacaJejakSk(db: AletaDatabase, batas = 20): Promise<JejakSk[]> {
+  try {
+    const baris = await db
+      .prepare(
+        "SELECT a.id, a.action, a.entity_id, a.payload_json, a.created_at, u.name AS nama FROM audit_logs a " +
+          "LEFT JOIN users u ON u.id = a.actor_user_id WHERE a.entity_type = 'sk_majelis' " +
+          "ORDER BY a.created_at DESC, a.id DESC LIMIT ?"
+      )
+      .all<{
+        id: string;
+        action: string;
+        entity_id: string;
+        payload_json: string | null;
+        created_at: string;
+        nama: string | null;
+      }>(Math.max(1, Math.min(100, batas)));
+    return baris.map((b) => {
+      let isi: { sebelum?: unknown; sesudah?: unknown } = {};
+      try {
+        isi = JSON.parse(String(b.payload_json ?? "{}"));
+      } catch {
+        isi = {};
+      }
+      return {
+        id: String(b.id),
+        aksi: String(b.action),
+        majelisKode: String(b.entity_id),
+        oleh: String(b.nama ?? "-"),
+        pada: String(b.created_at),
+        sebelum: isi.sebelum ?? null,
+        sesudah: isi.sesudah ?? null,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Peringatan: pegawai di SK yang sudah tidak aktif / jabatannya berubah
+// ---------------------------------------------------------------------------
+
+export type PeringatanSkRinci = PeringatanSk & { jenis: "hakim" | "panitera" };
+
+const GELAR = /\b(s\.?\s?h\.?i?|m\.?\s?h\.?i?|s\.?\s?ag|dr|drs|hj?|s\.?\s?kom)\b\.?/gi;
+function namaBersih(teks: string) {
+  return String(teks ?? "")
+    .toLowerCase()
+    .replace(/,.*$/, "")
+    .replace(GELAR, " ")
+    .replace(/[^a-z\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Peringatan dari SK terhadap daftar pegawai SIPP yang aktif dan akun portal:
+ *   - kode hakim di SK tidak ada di hakim_pn aktif;
+ *   - panitera yang diikat sudah tidak aktif di SIPP;
+ *   - panitera yang diikat punya akun portal (dicocokkan lewat nama) yang
+ *     nonaktif (mutasi) atau berjabatan bukan lagi panitera pengganti.
+ * Murni terhadap masukannya (diuji).
+ */
+export function susunPeringatanSk(input: {
+  majelis: HariSidangMajelis[];
+  hakimAktif: Array<{ id: number; kode: string; nama: string }>;
+  paniteraAktif: Array<{ id: number; kode: string; nama: string }>;
+  akun: Array<{ id: string; nama: string; roleId: string; tambahan: string[]; aktif: boolean }>;
+  pegawaiTerbaca: boolean;
+}): PeringatanSkRinci[] {
+  const hasil: PeringatanSkRinci[] = [];
+  const { majelis, hakimAktif, paniteraAktif, akun, pegawaiTerbaca } = input;
+  const kodeHakim = new Set(hakimAktif.map((h) => String(h.kode || "").toUpperCase()).filter(Boolean));
+  const idPanitera = new Map(paniteraAktif.map((p) => [p.id, p]));
+  for (const m of majelis) {
+    if (pegawaiTerbaca) {
+      for (const k of m.hakimKode) {
+        if (!kodeHakim.has(k)) {
+          hasil.push({ majelisKode: m.majelisKode, kode: k, nama: "", alasan: "hakim dengan kode ini sudah tidak aktif di SIPP", jenis: "hakim" });
+        }
+      }
+    }
+    for (const p of m.panitera) {
+      if (!(p.id > 0)) continue;
+      const orang = idPanitera.get(p.id);
+      if (pegawaiTerbaca && !orang) {
+        hasil.push({ majelisKode: m.majelisKode, kode: p.kode, nama: "", alasan: "panitera yang diikat sudah tidak aktif di SIPP", jenis: "panitera" });
+        continue;
+      }
+      if (!orang) continue;
+      const sama = akun.filter((a) => namaBersih(a.nama) === namaBersih(orang.nama));
+      if (sama.length === 0) continue;
+      const aktif = sama.filter((a) => a.aktif);
+      if (aktif.length === 0) {
+        hasil.push({ majelisKode: m.majelisKode, kode: p.kode, nama: orang.nama, alasan: "akun portalnya sudah tidak aktif (mutasi)", jenis: "panitera" });
+      } else if (!aktif.some((a) => a.roleId === "panitera-pengganti" || a.tambahan.includes("panitera-pengganti"))) {
+        hasil.push({ majelisKode: m.majelisKode, kode: p.kode, nama: orang.nama, alasan: "jabatannya sekarang bukan lagi panitera pengganti", jenis: "panitera" });
+      }
+    }
+  }
+  return hasil;
+}
+
+/** Daftar akun portal untuk pencocokan nama (tanpa kata sandi). */
+export async function bacaAkunUntukPeringatan(db: AletaDatabase) {
+  try {
+    const baris = await db
+      .prepare("SELECT id, name, role_id, additional_role_ids_json, is_active, deleted_at FROM users")
+      .all<{
+        id: string;
+        name: string;
+        role_id: string;
+        additional_role_ids_json: string;
+        is_active: number;
+        deleted_at: string | null;
+      }>();
+    return baris.map((u) => {
+      let tambahan: string[] = [];
+      try {
+        tambahan = JSON.parse(String(u.additional_role_ids_json || "[]")) as string[];
+      } catch {
+        tambahan = [];
+      }
+      return {
+        id: String(u.id),
+        nama: String(u.name ?? ""),
+        roleId: String(u.role_id ?? ""),
+        tambahan,
+        aktif: Number(u.is_active) === 1 && !u.deleted_at,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
 
 /** Menyimpan satu aturan hitungan. */
 export async function simpanAturanPenunjukan(
