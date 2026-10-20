@@ -65,6 +65,9 @@ import path from "node:path";
 
 const BERKAS = [
   "manifest.json",
+  // Statistik beban penetapan (20 Okt 2026, B1): tampilan saja, dipakai papan konten.js
+  // dan panel penetapan-sipp.js dari objek usulan.statistik yang sama.
+  "penunjukan-statistik.js",
   "konten.js",
   "abt.js",
   "aleta.js",

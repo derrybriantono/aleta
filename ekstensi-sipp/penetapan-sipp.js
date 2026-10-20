@@ -428,7 +428,11 @@
     const rinci = el("div", "aleta-pensipp-rinci");
     rinci.setAttribute("data-aleta-tanpa-kaki", "1");
     rinciKotak.append(ringkasRinci, rinci);
-    badan.append(info, konfirm, daftar, rinciKotak);
+    // Beban penetapan & SK (B1): blok yang sama dengan papan ekstensi, dari
+    // usulan.statistik (penunjukan-statistik.js). Terbentang bawaannya.
+    const beban = el("div", "aleta-pensipp-beban");
+    beban.setAttribute("data-pensipp", "beban");
+    badan.append(info, konfirm, daftar, beban, rinciKotak);
 
     const kaki = el("div", "aleta-pensipp-kaki");
     const ringkas = el("div", "aleta-pensipp-ringkas");
@@ -463,6 +467,7 @@
     ctx.wadahMuatUlang = wadahMuatUlang;
     ctx.akar = akar;
     ctx.rinci = rinci;
+    ctx.beban = beban;
     ctx.rinciKotak = rinciKotak;
     ctx.kabarRinci = kabarRinci;
     new MutationObserver(() => jadwalRender()).observe(rinci, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "disabled"] });
@@ -494,6 +499,27 @@
       q(".aleta-pensipp-rinci-ringkas").textContent = sedangManual ? "Pilihan manual: majelis, panitera, juru sita, hari sidang" : "Ubah pilihan: majelis, sidang keliling";
     }
     rk.hidden = !ctx.data;
+
+    // Beban penetapan & SK: digambar ulang hanya bila usulannya (statistik)
+    // berganti, supaya lipatan yang dibuka petugas tidak menutup sendiri.
+    if (ctx.beban) {
+      const stat = ctx.data && ctx.data.usulan ? ctx.data.usulan.statistik : null;
+      const kes = ctx.data && ctx.data.usulan ? ctx.data.usulan.kesesuaianSk : null;
+      if (ctx.bebanTanda !== stat || ctx.bebanKes !== kes) {
+        const bukaLama = ctx.beban.querySelector("[data-bebanstat]");
+        const terbuka = bukaLama ? bukaLama.open : true;
+        ctx.bebanTanda = stat;
+        ctx.bebanKes = kes;
+        ctx.beban.textContent = "";
+        if (stat && globalThis.aletaPenunjukanStatistik) {
+          try {
+            globalThis.aletaPenunjukanStatistik.tempelDi(ctx.beban, ctx.data.usulan, { terbuka });
+          } catch {
+            /* tambahan saja */
+          }
+        }
+      }
+    }
 
     // Info / galat / mode latihan
     const info = q(".aleta-pensipp-info");

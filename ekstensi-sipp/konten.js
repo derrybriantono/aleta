@@ -4254,7 +4254,21 @@ function gambarPenunjukan(isi, data) {
   // Panel "Penetapan Otomatis" di halaman SIPP memakai bagian rinci ini hanya
   // untuk PILIHAN (cara, majelis, panitera, juru sita, hari sidang); tombol
   // menulisnya milik panel itu sendiri (penetapan-sipp.js).
-  if (isi.hasAttribute && isi.hasAttribute("data-aleta-tanpa-kaki")) return;
+  const untukPanelSipp = Boolean(isi.hasAttribute && isi.hasAttribute("data-aleta-tanpa-kaki"));
+
+  // Beban penetapan dan SK (20 Okt 2026, B1): blok yang SAMA dengan kotak
+  // "Beban & SK" di panel halaman SIPP - angkanya dari usulan.statistik yang
+  // disusun server (penunjukan-statistik.js tidak menghitung apa pun). Panel
+  // SIPP menggambarnya sendiri di luar bagian rinci, jadi tidak ditambah dua kali.
+  if (!untukPanelSipp && globalThis.aletaPenunjukanStatistik) {
+    try {
+      globalThis.aletaPenunjukanStatistik.tempelDi(isi, usulan, { terbuka: false });
+    } catch {
+      /* statistik hanya tambahan - papan tetap jalan */
+    }
+  }
+
+  if (untukPanelSipp) return;
 
   // --- tombol Kerjakan ----------------------------------------------------
   // ==========================================================================
