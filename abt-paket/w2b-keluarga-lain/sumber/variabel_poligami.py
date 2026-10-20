@@ -8,7 +8,7 @@ Izin poligami (4850-4864):
     4856 jumlah istri pemohon saat ini
   otomatis (data_sql, hanya SELECT, MariaDB 5.5; baca isian lewat aps_badilag.abt_data_teks):
     4857 bentuk persetujuan (kosong = tertulis maupun lisan)    4858 alasan keberatan (kosong = [PERIKSA])
-    4859 keadaan tidak mungkin (kosong = [PERIKSA])             4860 pertimbangan calon istri (status, iddah, halangan)
+    4860 pertimbangan calon istri (status, iddah, halangan)
     4861 pertimbangan jumlah istri dan izin Pengadilan           4862 fakta persetujuan istri tidak hadir
     4863 pertimbangan persetujuan istri tidak hadir              4864 amar/izin: kalimat penutup keberatan (Pasal 59 KHI)
 Tanpa kata aplikasi; tanpa garis miring terbalik (CHAR(92) bila perlu); teks ASCII (cp1252).
@@ -46,10 +46,6 @@ v(4857, 'IZIN POLIGAMI: BENTUK PERSETUJUAN ISTRI (OTOMATIS dari isian 4853; koso
 
 v(4858, 'IZIN POLIGAMI: ALASAN KEBERATAN ISTRI (OTOMATIS dari isian 4851; kosong = [PERIKSA])', 'data_sql',
   "SELECT IFNULL(NULLIF(%s,''),'[PERIKSA: isi alasan keberatan istri pada isian 4851]') AS data" % isi(4851))
-
-v(4859, 'IZIN POLIGAMI: KEADAAN ISTRI TIDAK MUNGKIN DIMINTAI PERSETUJUAN (OTOMATIS dari isian 4852; kosong = [PERIKSA])', 'data_sql',
-  "SELECT IFNULL(NULLIF(%s,''),'[PERIKSA: isi keadaan istri tidak mungkin dimintai persetujuan pada isian 4852]') AS data" % isi(4852))
-
 
 def _calon_istri():
     s = "LOWER(%s)" % isi(4854)

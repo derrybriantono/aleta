@@ -34,10 +34,10 @@ DASAR_BARU = (
     + [
         _baru('dh-pg-khi-56', 'Pasal 56 Kompilasi Hukum Islam',
               'suami yang hendak beristri lebih dari satu orang harus mendapat izin dari Pengadilan Agama dan perkawinan dengan istri kedua, ketiga atau keempat tanpa izin Pengadilan Agama tidak mempunyai kekuatan hukum',
-              'pengetahuan hukum penyusun (KHI lampiran Inpres 1/1991), belum dicocokkan dengan naskah resmi; lihat PERIKSA-PASAL-W2b-poligami.md'),
+              'pengetahuan hukum penyusun (KHI lampiran Inpres 1/1991); isinya sejalan dengan uraian sekunder hukumonline.com/klinik/a/dasar-hukum-poligami-di-indonesia-dan-prosedurnya-lt5136cbfaaeef9 (diperiksa 21 Okt 2026) tetapi BELUM dicocokkan dengan naskah resmi; lihat PERIKSA-PASAL-W2b-poligami.md'),
         _baru('dh-pg-khi-59', 'Pasal 59 Kompilasi Hukum Islam',
               'bila istri tidak mau memberikan persetujuan dan permohonan didasarkan pada salah satu alasan Pasal 55 ayat (2) dan Pasal 57, Pengadilan Agama dapat menetapkan pemberian izin setelah memeriksa dan mendengar istri di persidangan; atas penetapan itu istri atau suami dapat mengajukan banding atau kasasi',
-              'pengetahuan hukum penyusun (KHI lampiran Inpres 1/1991), belum dicocokkan dengan naskah resmi; lihat PERIKSA-PASAL-W2b-poligami.md'),
+              'pengetahuan hukum penyusun (KHI lampiran Inpres 1/1991); isinya sejalan dengan uraian sekunder hukumonline.com/klinik/a/dasar-hukum-poligami-di-indonesia-dan-prosedurnya-lt5136cbfaaeef9 (diperiksa 21 Okt 2026) tetapi BELUM dicocokkan dengan naskah resmi; lihat PERIKSA-PASAL-W2b-poligami.md'),
         _baru('dh-pg-pp9-40-43', 'Pasal 40, Pasal 42 dan Pasal 43 PP 9/1975',
               'permohonan izin beristri lebih dari seorang diajukan tertulis kepada Pengadilan; Pengadilan wajib memanggil dan mendengar istri yang bersangkutan; bila cukup alasan Pengadilan memberi putusan berupa izin',
               'pengetahuan hukum penyusun (PP 9/1975), belum dicocokkan dengan naskah resmi; Pasal 41 PP 9/1975 sudah terverifikasi pada dh-poligami-pp41'),
