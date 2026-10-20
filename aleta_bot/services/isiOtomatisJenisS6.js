@@ -28,6 +28,8 @@
  *   (3) tuntutan nafkah anak/mut'ah/madliyah dari petitum (isiGugatanService, mesin yang sama dengan berkas e-Court);
  *   (4) tabel isian yang memang tidak mungkin otomatis (penilaian hakim, hasil sidang, surat yang tidak tercatat di SIPP).
  *
+ *   (5) relaas bantuan panggilan (1154, 1232, 5230) dari tab Delegasi SIPP - untuk SEMUA jenis perkara (relaas lintas jenis).
+ *
  * Aturan: tidak ada kata "ALETA" di nilai; jagaIsianLama pada semua usulan (isian petugas tidak ditimpa); satu pembacaan
  * yang gagal tidak menggagalkan yang lain.
  */
@@ -98,6 +100,9 @@ const NAMA = Object.freeze({
   "6054": "Nafkah iddah",
   "6055": "Mut'ah",
   "7120": "Nafkah lampau (madliyah)",
+  "1154": "Nomor surat permintaan bantuan panggilan",
+  "1232": "Tanggal surat permintaan bantuan panggilan",
+  "5230": "Ongkos panggilan permintaan bantuan",
 });
 
 /**
@@ -383,6 +388,36 @@ function usulanTuntutan(posita, petitum) {
     );
 }
 
+/**
+ * Relaas "Permohonan Bantuan Panggilan" (1154 nomor surat, 1232 tanggal surat, 5230 ongkos): tabel delegasi_keluar SIPP.
+ * Berlaku untuk SEMUA jenis perkara (relaas lintas jenis). Satu permintaan panggilan = pasti; lebih dari satu = ragu
+ * (yang terbaru dipakai; blangko relaas menyebut satu pengadilan tujuan).
+ * @param {Array<{nomor, tgl, biaya, jenis, tujuan}>} baris urut terbaru dulu
+ */
+function usulanBantuanPanggilan(baris) {
+  const panggilan = (Array.isArray(baris) ? baris : []).filter((b) => b && /panggilan/i.test(String(b.jenis || "")));
+  if (!panggilan.length) return [];
+  const b = panggilan[0];
+  const yakin = panggilan.length === 1 ? "pasti" : "ragu";
+  const tujuan = String(b.tujuan || "").trim();
+  const catatan =
+    panggilan.length === 1
+      ? `Permintaan bantuan panggilan ke ${tujuan || "pengadilan lain"} tercatat di tab Delegasi SIPP.`
+      : `Ada ${panggilan.length} permintaan bantuan panggilan di SIPP; yang terbaru (ke ${tujuan || "pengadilan lain"}) dipakai - cocokkan dengan relaas ini.`;
+  const keluar = [];
+  const nomor = String(b.nomor || "").trim();
+  if (nomor && nomor !== "-") {
+    keluar.push(butir({ kode: "1154", nilai: nomor, keyakinan: yakin, kalimat: `SIPP delegasi keluar: surat nomor ${nomor}${tujuan ? ` ke ${tujuan}` : ""}`, catatan, kodePola: "s6-bantuan-panggilan-nomor", asal: "sipp" }));
+  }
+  const tgl = lanjutan.isoKeTampil(b.tgl);
+  if (tgl) keluar.push(butir({ kode: "1232", nilai: tgl, keyakinan: yakin, kalimat: `SIPP delegasi keluar: surat tanggal ${tgl}${tujuan ? ` ke ${tujuan}` : ""}`, catatan, kodePola: "s6-bantuan-panggilan-tanggal", asal: "sipp" }));
+  const biaya = Math.round(Number(b.biaya));
+  if (Number.isFinite(biaya) && biaya > 0) {
+    keluar.push(butir({ kode: "5230", nilai: isiS6.bunyiRupiah(biaya), keyakinan: yakin, kalimat: `SIPP delegasi keluar: biaya panggilan ${isiS6.bunyiRupiah(biaya)}${tujuan ? ` ke ${tujuan}` : ""}`, catatan: `${catatan} Ongkos dari kolom biaya delegasi.`, kodePola: "s6-bantuan-panggilan-ongkos", asal: "sipp" }));
+  }
+  return keluar;
+}
+
 /* ---------------------------------------------------------------------------
  * Menyusun usulan dari konteks (murni) dan dari SIPP (SELECT)
  * ------------------------------------------------------------------------- */
@@ -542,9 +577,20 @@ async function bacaKonteks(perkaraId, runQuery) {
  * Perkara di luar jenis S6 dijawab [] sesudah SATU pembacaan kecil.
  */
 async function usulanJenisS6(perkaraId, runQuery) {
-  const k = await bacaKonteks(perkaraId, runQuery);
-  if (!k) return [];
-  return usulanDariKonteks(k);
+  const id = Number(perkaraId);
+  const [k, delegasi] = await Promise.all([
+    bacaKonteks(perkaraId, runQuery),
+    Number.isFinite(id) && id > 0 && typeof runQuery === "function"
+      ? diam(() =>
+          runQuery(
+            `SELECT nomor_surat AS nomor, DATE_FORMAT(tgl_surat, '%Y-%m-%d') AS tgl, biaya AS biaya, jenis_delegasi_text AS jenis, pn_tujuan_text AS tujuan
+               FROM delegasi_keluar WHERE perkara_id = ? ORDER BY tgl_delegasi DESC, id DESC LIMIT 5`,
+            [id]
+          )
+        )
+      : null,
+  ]);
+  return [...(k ? usulanDariKonteks(k) : []), ...usulanBantuanPanggilan(delegasi)];
 }
 
 module.exports = {
@@ -559,6 +605,7 @@ module.exports = {
   usulanDamaiEs,
   usulanTuntutan,
   usulanManual,
+  usulanBantuanPanggilan,
   usulanDariKonteks,
   bacaKonteks,
   usulanJenisS6,

@@ -82,4 +82,30 @@ module.exports = [
     petitum: "Menetapkan hak asuh anak kepada Penggugat; Menghukum Tergugat untuk membayar nafkah anak sebesar Rp. 2.500.000 setiap bulan sampai anak dewasa",
     ...dasar,
   },
+  {
+    nama: "Wakaf permohonan (Nazhir memohon penetapan, ikrar lisan sebelum 2006)",
+    jenisPerkaraId: 367,
+    posita:
+      "Bahwa Pemohon adalah Nazhir tanah wakaf; Bahwa Wakif almarhum H. Yusuf bin Daeng telah mewakafkan sebidang tanah seluas 15 x 20 meter di Desa Kaleke untuk pemakaman secara lisan pada tanggal 3 Mei 1998 di hadapan 2 (dua) orang saksi; Bahwa tanah tersebut dikuasai oleh ahli waris Wakif",
+    petitum: "Menetapkan sah wakaf tanah tersebut",
+    ...dasar,
+    pihak1: ["Pemohon bin Ayah"],
+    pihak2: [],
+  },
+  {
+    nama: "Wakaf gugatan (Penggugat Nazhir, Tergugat ahli waris Wakif)",
+    jenisPerkaraId: 367,
+    posita:
+      "Bahwa Penggugat adalah Nazhir wakaf; Bahwa Tergugat adalah ahli waris Wakif yang menguasai objek wakaf; Bahwa Wakif bernama Abdul Rahman bin Said mewakafkan sebidang tanah di Desa Bora untuk madrasah",
+    petitum: "Menyatakan sah wakaf dan menghukum Tergugat menyerahkan objek wakaf kepada Nazhir",
+    ...dasar,
+  },
+  {
+    nama: "Ekonomi syariah dengan klausula arbitrase",
+    jenisPerkaraId: 370,
+    posita:
+      "Bahwa dalam Akad Musyarakah Nomor: 12/MSY/2022 tanggal 5 Mei 2022 Pasal 20 para pihak sepakat menyelesaikan sengketa melalui Badan Arbitrase Syariah Nasional (Basyarnas); Bahwa TERGUGAT melakukan wanprestasi tidak membayar kewajiban",
+    petitum: "Menghukum TERGUGAT membayar sebesar Rp. 100.000.000",
+    ...dasar,
+  },
 ];

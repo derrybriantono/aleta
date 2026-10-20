@@ -1,0 +1,1282 @@
+{
+ "dibuat": "2026-10-20",
+ "mode": "sebelum (pengisi S6 dimatikan)",
+ "sumber": "sipp_donggala lokal (semua tahun): jalur dariSipp + posita-lain; jenis tanpa perkara nyata = fixture-s6.cjs",
+ "jenis": {
+  "341": {
+   "nama": "Izin Poligami",
+   "nyata": 12,
+   "fixture": 0,
+   "kode": {
+    "1152": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 6,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "5178": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 7,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "5197": {
+     "nyata": {
+      "otomatis": 8,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8720": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 6,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8722": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 7,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8723": {
+     "nyata": {
+      "otomatis": 11,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8724": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 8,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8725": {
+     "nyata": {
+      "otomatis": 2,
+      "ragu": 5,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0661": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 12
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0663": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 12
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0227": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 12
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    }
+   }
+  },
+  "342": {
+   "nama": "Pencegahan Perkawinan",
+   "nyata": 2,
+   "fixture": 1,
+   "kode": {
+    "5178": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 2,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "5197": {
+     "nyata": {
+      "otomatis": 1,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0661": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 2
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0663": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 2
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0227": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 2
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    }
+   }
+  },
+  "343": {
+   "nama": "Penolakan Perkawinan",
+   "nyata": 1,
+   "fixture": 0,
+   "kode": {
+    "5178": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0661": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 1
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0663": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 1
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0227": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 1
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    }
+   }
+  },
+  "344": {
+   "nama": "Pembatalan Perkawinan",
+   "nyata": 1,
+   "fixture": 1,
+   "kode": {
+    "5178": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "5197": {
+     "nyata": {
+      "otomatis": 1,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0661": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 1
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0663": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 1
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0227": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 1
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    }
+   }
+  },
+  "348": {
+   "nama": "Harta Bersama",
+   "nyata": 13,
+   "fixture": 0,
+   "kode": {
+    "5032": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 11,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "5178": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 6,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "5197": {
+     "nyata": {
+      "otomatis": 9,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8433": {
+     "nyata": {
+      "otomatis": 1,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8539": {
+     "nyata": {
+      "otomatis": 6,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8704": {
+     "nyata": {
+      "otomatis": 3,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8705": {
+     "nyata": {
+      "otomatis": 3,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8706": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 7,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8730": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 11,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8899": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "9161": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 7,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "9162": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 7,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "9163": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 6,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0661": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 13
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0663": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 13
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0227": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 13
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0132": {
+     "nyata": {
+      "otomatis": 5,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0185": {
+     "nyata": {
+      "otomatis": 7,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    }
+   }
+  },
+  "364": {
+   "nama": "Kewarisan",
+   "nyata": 23,
+   "fixture": 0,
+   "kode": {
+    "1025": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 19,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "1246": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 10,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "1247": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 7,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "1509": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 4,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "5178": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 3,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "5197": {
+     "nyata": {
+      "otomatis": 1,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8171": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8433": {
+     "nyata": {
+      "otomatis": 2,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8539": {
+     "nyata": {
+      "otomatis": 15,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8704": {
+     "nyata": {
+      "otomatis": 3,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8705": {
+     "nyata": {
+      "otomatis": 5,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8717": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8718": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 22,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8719": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "9161": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 16,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "9162": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 15,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "9163": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 11,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0661": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 23
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0663": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 23
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0227": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 23
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0185": {
+     "nyata": {
+      "otomatis": 6,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0132": {
+     "nyata": {
+      "otomatis": 14,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    }
+   }
+  },
+  "365": {
+   "nama": "Wasiat",
+   "nyata": 1,
+   "fixture": 1,
+   "kode": {
+    "1025": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "1509": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8539": {
+     "nyata": {
+      "otomatis": 1,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8718": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     }
+    },
+    "9161": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "9162": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "9163": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0132": {
+     "nyata": {
+      "otomatis": 1,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0661": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 1
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0663": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 1
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0227": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 1
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    }
+   }
+  },
+  "366": {
+   "nama": "Hibah",
+   "nyata": 0,
+   "fixture": 2,
+   "kode": {}
+  },
+  "367": {
+   "nama": "Wakaf",
+   "nyata": 0,
+   "fixture": 1,
+   "kode": {}
+  },
+  "369": {
+   "nama": "Lain-Lain",
+   "nyata": 19,
+   "fixture": 2,
+   "kode": {
+    "1025": {
+     "nyata": {
+      "otomatis": 1,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "1230": {
+     "nyata": {
+      "otomatis": 1,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "2004": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 5,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     }
+    },
+    "5105": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 2,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "5110": {
+     "nyata": {
+      "otomatis": 3,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "5178": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 14,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "5197": {
+     "nyata": {
+      "otomatis": 9,
+      "ragu": 1,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8539": {
+     "nyata": {
+      "otomatis": 3,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8603": {
+     "nyata": {
+      "otomatis": 6,
+      "ragu": 5,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8619": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 5,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8622": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 6,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8704": {
+     "nyata": {
+      "otomatis": 1,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "8705": {
+     "nyata": {
+      "otomatis": 1,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0661": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 19
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0663": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 19
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0227": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 19
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0709": {
+     "nyata": {
+      "otomatis": 1,
+      "ragu": 6,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0711": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 6,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0007": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 3,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0712": {
+     "nyata": {
+      "otomatis": 1,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0132": {
+     "nyata": {
+      "otomatis": 3,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    }
+   }
+  },
+  "370": {
+   "nama": "Ekonomi Syariah",
+   "nyata": 2,
+   "fixture": 1,
+   "kode": {
+    "0661": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 2
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0663": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 2
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "0227": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 2
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    }
+   }
+  }
+ }
+}

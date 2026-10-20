@@ -154,6 +154,24 @@ describe("A. pembaca posita/petitum jenis S6", () => {
     expect(h["9841"].nilai).toBe("Tergugat");
   });
 
+  it("wakaf gugatan: kedudukan Penggugat/Tergugat terisi, kedudukan Pemohon (permohonan) TIDAK; wakaf permohonan sebaliknya", () => {
+    const gugat = S6.deteksi(367, "Bahwa Penggugat adalah Nazhir wakaf; Bahwa Tergugat adalah ahli waris Wakif yang menguasai objek wakaf; Bahwa Wakif bernama Abdul Rahman bin Said mewakafkan sebidang tanah di Desa Bora untuk madrasah", {});
+    expect(gugat["9832"].nilai).toBe("nazhir wakaf");
+    expect(gugat["9833"].nilai).toBe("ahli waris Wakif");
+    expect(gugat["9836"]).toBeUndefined();
+    expect(gugat["9827"].nilai).toBe("sarana pendidikan (madrasah)");
+    const mohon = S6.deteksi(367, "Bahwa Pemohon adalah Nazhir tanah wakaf; Bahwa Wakif almarhum H. Yusuf bin Daeng telah mewakafkan sebidang tanah seluas 15 x 20 meter di Desa Kaleke untuk pemakaman secara lisan pada tanggal 3 Mei 1998 di hadapan 2 (dua) orang saksi", {});
+    expect(mohon["9836"].nilai).toBe("nazhir tanah wakaf");
+    expect(mohon["9825"].nilai).toBe("secara lisan pada tanggal 3 Mei 1998 di hadapan 2 (dua) orang saksi");
+    expect(mohon["9827"].nilai).toBe("pemakaman");
+  });
+
+  it("mafqud: nama orang hilang diambil dari kalimat kepergian, bukan dari judul perihal; tanpa kalimat kepergian dari 'istri dari X'", () => {
+    const a = S6.deteksi(369, "Perihal: Permohonan Penetapan Mafqud. Bahwa Pemohon adalah suami sah dari Siti binti Umar; Bahwa sejak tahun 2012 Pemohon tidak mengetahui keberadaan Siti binti Umar", { petitum: "Menetapkan Siti binti Umar mafqud" });
+    expect(a["9860"].nilai).toBe("Siti binti Umar");
+    expect(a["9861"].nilai).toBe("suami");
+  });
+
   it("wasiat: bentuk+tanggal surat wasiat, objek, kedudukan Penggugat, pokok tuntutan huruf", () => {
     const h = S6.deteksi(365, WASIAT_POSITA, { petitum: "Menyatakan Surat Wasiat tertanggal 27 Juli 2011 melebihi sepertiga harta peninggalan" });
     expect(h["9478"].nilai).toBe("secara tertulis tertanggal 27 Juli 2011");
@@ -394,7 +412,7 @@ describe("C. pembacaan SIPP (pembaca tiruan)", () => {
   };
   function pembaca(cadangan: Record<string, unknown>, catat: string[] = []) {
     return async (sql: string) => {
-      catat.push(sql.replace(/\s+/g, " ").slice(0, 60));
+      catat.push(sql.replace(/\s+/g, " ").slice(0, 400));
       for (const [kunci, nilai] of Object.entries(cadangan)) if (sql.includes(kunci)) {
         if (nilai instanceof Error) throw nilai;
         return nilai;
@@ -403,11 +421,44 @@ describe("C. pembacaan SIPP (pembaca tiruan)", () => {
     };
   }
 
-  it("perkara di luar S6: HANYA satu pembacaan, hasil kosong", async () => {
+  it("perkara di luar S6 (mis. cerai): hanya dua pembacaan kecil (jenis perkara dan bantuan panggilan), hasil kosong", async () => {
     const catat: string[] = [];
     const q = pembaca({ "FROM perkara p WHERE": [{ ...BARIS_HB, jenis: "347" }] }, catat);
     expect(await J6.usulanJenisS6(10, q)).toEqual([]);
-    expect(catat).toHaveLength(1);
+    expect(catat).toHaveLength(2);
+    expect(catat.some((c) => /delegasi_keluar/.test(c))).toBe(true);
+  });
+
+  it("bantuan panggilan (relaas lintas jenis): nomor surat, tanggal dan ongkos dari delegasi keluar SIPP - untuk jenis APA PUN", async () => {
+    const q = pembaca({
+      "FROM perkara p WHERE": [{ ...BARIS_HB, jenis: "347" }],
+      delegasi_keluar: [{ nomor: "62/PAN.PA.W19-A5/HK.2.6/XII/2024", tgl: "2024-12-11", biaya: "1280000.00", jenis: "Panggilan Sidang", tujuan: "PENGADILAN AGAMA PALU" }],
+    });
+    const u = await J6.usulanJenisS6(10, q);
+    const oleh = new Map(u.map((x) => [x.kode, x]));
+    expect(oleh.get("1154")?.nilai).toBe("62/PAN.PA.W19-A5/HK.2.6/XII/2024");
+    expect(oleh.get("1154")?.keyakinan).toBe("pasti");
+    expect(oleh.get("1232")?.nilai).toBe("11/12/2024");
+    expect(oleh.get("5230")?.nilai).toBe("Rp1.280.000,00 (satu juta dua ratus delapan puluh ribu rupiah)");
+    expect(oleh.get("1154")?.sumber[0].asal).toBe("sipp");
+    // lebih dari satu permintaan = ragu; delegasi bukan panggilan (pemberitahuan putusan) tidak dipakai
+    const dua = await J6.usulanJenisS6(
+      10,
+      pembaca({
+        "FROM perkara p WHERE": [{ ...BARIS_HB, jenis: "347" }],
+        delegasi_keluar: [
+          { nomor: "2/X", tgl: "2024-12-12", biaya: "100000", jenis: "Panggilan Sidang", tujuan: "PA PALU" },
+          { nomor: "1/X", tgl: "2024-11-01", biaya: "200000", jenis: "Panggilan Sidang", tujuan: "PA POSO" },
+        ],
+      })
+    );
+    expect(dua.find((x) => x.kode === "1154")?.keyakinan).toBe("ragu");
+    expect(dua.find((x) => x.kode === "1154")?.nilai).toBe("2/X");
+    const bukanPanggilan = await J6.usulanJenisS6(10, pembaca({ "FROM perkara p WHERE": [{ ...BARIS_HB, jenis: "347" }], delegasi_keluar: [{ nomor: "9/X", tgl: "2024-12-12", biaya: "100000", jenis: "Pemberitahuan Putusan", tujuan: "PA PALU" }] }));
+    expect(bukanPanggilan).toEqual([]);
+    // nomor "-" dan biaya kosong tidak menghasilkan nilai
+    const kosong = await J6.usulanJenisS6(10, pembaca({ "FROM perkara p WHERE": [{ ...BARIS_HB, jenis: "347" }], delegasi_keluar: [{ nomor: "-", tgl: "", biaya: "0.00", jenis: "Panggilan Sidang", tujuan: "" }] }));
+    expect(kosong).toEqual([]);
   });
 
   it("harta bersama: konteks lengkap -> usulan dari semua sumber, termasuk perkara cerai terdahulu", async () => {

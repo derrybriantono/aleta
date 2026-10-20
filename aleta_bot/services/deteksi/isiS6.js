@@ -101,7 +101,7 @@ function bakuNama(mentah) {
   while (kata.length > 2 && KATA_PEMBUKA.has(kata[0].toLowerCase().replace(/[^a-z]/g, ""))) kata.shift();
   n = kata.join(" ");
   if (alm) {
-    const perempuan = alm === "almarhumah" || /binti/i.test(n);
+    const perempuan = alm === "almarhumah" || /\bbinti\b/i.test(n);
     n = `${perempuan ? "almarhumah" : "almarhum"} ${n}`;
   }
   return n;
@@ -387,7 +387,7 @@ function deteksiWakaf(posita, opsi = {}) {
   const kPm = kedudukan(gabung, "Pemohon", kedWakaf);
   if (kPg) taruh(hasil, "9832", fakta(kPg.nilai, kPg.kalimat, "ragu", "wakaf-kedudukan-penggugat", ""));
   if (kTg) taruh(hasil, "9833", fakta(kTg.nilai, kTg.kalimat, "ragu", "wakaf-kedudukan-tergugat", ""));
-  if (kPm || kPg) {
+  if (kPm || (!/\bPenggugat\b/.test(satu) && kPg)) {
     const k = kPm || kPg;
     taruh(hasil, "9836", fakta(k.nilai, k.kalimat, "ragu", "wakaf-kedudukan-pemohon", ""));
   }
@@ -494,7 +494,7 @@ function deteksiMafqud(posita, opsi = {}) {
   let nama = "";
   let sumber = "";
   const AKSI_HILANG = /(?:menghilang|hilang\s+(?:tanpa|sejak)|pergi\s+meninggalkan|meninggalkan\s+(?:rumah|tempat)|tidak\s+diketahui\s+keberadaan|tidak\s+ada\s+kabar)/i;
-  const kHilang = kal.find((k) => AKSI_HILANG.test(k) && !/^\s*Perihal/i.test(k));
+  const kHilang = kal.find((k) => AKSI_HILANG.test(k) && !/^\s*Perihal\b/i.test(k));
   if (kHilang) {
     const idx = kHilang.search(AKSI_HILANG);
     nama = namaSebelum(kHilang, idx, 120) || namaSesudah(kHilang, 0, 160);
@@ -502,7 +502,7 @@ function deteksiMafqud(posita, opsi = {}) {
   }
   if (!nama) {
     // "Pemohon adalah istri sah dari X" - nama orang yang hilang sebagai pasangan/keluarga Pemohon.
-    const dari = /Pemohon(?:\s+(?:I|II))?\s+(?:adalah|merupakan)\s+(?:istri|isteri|suami|anak|ibu|ayah|bapak|saudara|kakak|adik|menantu|cucu)[^;]{0,40}?\s+dari\s+/i.exec(satu);
+    const dari = /\bPemohon(?:\s+(?:I|II))?\s+(?:adalah|merupakan)\s+(?:istri|isteri|suami|anak|ibu|ayah|bapak|saudara|kakak|adik|menantu|cucu)[^;]{0,40}?\s+dari\s+/i.exec(satu);
     if (dari) {
       nama = namaSesudah(satu, dari.index + dari[0].length, 80);
       sumber = P.kalimatDi(satu, dari.index, dari[0].length);
@@ -719,9 +719,9 @@ function deteksiDuplikatAktaNikah(posita) {
   const k = kal.find((x) => /duplikat/i.test(x) && /(?:akta|buku|kutipan|surat)\s+nikah|kutipan\s+akta/i.test(x));
   if (!k) return hasil;
   const dup = /duplikat[^;]{0,120}?(?:Nomor|No\.?)\s*[:.]?\s*([A-Za-z0-9][A-Za-z0-9./\-]{2,50})/i.exec(k);
-  if (dup) taruh(hasil, "1108", fakta(dup[1].replace(/[,.;]+$/, ""), k, "ragu", "duplikat-nomor", "Nomor duplikat kutipan akta nikah dari posita."));
+  if (dup) taruh(hasil, "1108", fakta(dup[1].replace(/[,.;]+$/, ""), k, "cukup", "duplikat-nomor", "Nomor duplikat kutipan akta nikah disalin dari posita (tertulis dengan kata \"Duplikat ... Nomor\")."));
   const tg = /duplikat[^;]{0,200}?(?:tanggal|tgl\.?|tertanggal)\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})/i.exec(k);
-  if (tg) taruh(hasil, "0889", fakta(tanggalDi(tg[1]), k, "ragu", "duplikat-tanggal", "Tanggal duplikat kutipan akta nikah dari posita."));
+  if (tg) taruh(hasil, "0889", fakta(tanggalDi(tg[1]), k, "cukup", "duplikat-tanggal", "Tanggal duplikat kutipan akta nikah disalin dari posita (tertulis dengan kata \"Duplikat ... tanggal\")."));
   return hasil;
 }
 
