@@ -422,7 +422,7 @@ export const ID_JENIS_PERKARA_SIPP: Readonly<Record<string, string>> = Object.fr
   "harta bersama": "348",
   "penguasaan anak": "349",
   "pengesahan anak": "352",
-  "kelalaian atas kewajiban suami / istri": "345", // W3a 21 Okt
+  "kelalaian atas kewajiban suami / istri": "345",
   "hak - hak bekas istri/kewajiban bekas suami": "351",
   "perkawinan campuran": "359",
   "izin kawin": "361",
@@ -434,7 +434,6 @@ export const ID_JENIS_PERKARA_SIPP: Readonly<Record<string, string>> = Object.fr
   "wali adhol": "363",
   kewarisan: "364",
   wasiat: "365",
-  hibah: "366", // I28 18 Okt (cermin abt.js)
   wakaf: "367",
   "lain-lain": "369",
   "lain-lain *)": "369",

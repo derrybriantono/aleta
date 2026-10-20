@@ -107,7 +107,7 @@
     "harta bersama": "348",
     "penguasaan anak": "349",
     "pengesahan anak": "352",
-    "kelalaian atas kewajiban suami / istri": "345", // W3a 21 Okt
+    "kelalaian atas kewajiban suami / istri": "345",
     "hak - hak bekas istri/kewajiban bekas suami": "351",
     "perkawinan campuran": "359",
     "izin kawin": "361",
