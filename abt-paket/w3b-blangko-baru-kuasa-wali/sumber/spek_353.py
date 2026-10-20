@@ -43,6 +43,7 @@ HUKUM_INTI = [
 
 GUGATAN = dict(
     judul_inti='Pencabutan Kekuasaan Orang Tua',
+    ganti=[('#9955#', '#3814#'), ('#9911#', '#3819#'), ('#9651#', '#3816#'), ('#9652#', '#3818#')],
     kewenangan=(
         'Menimbang, bahwa #0053# #0046# yang beragama Islam diajukan terhadap #0047# yang juga beragama Islam dan pada pokoknya memohon agar kekuasaan #0047# sebagai #9301# terhadap #4407# yang bernama '
         '#4406# dicabut; oleh karena perkara ini mengenai pencabutan kekuasaan orang tua yang termasuk bidang perkawinan, maka berdasarkan Pasal 49 huruf a beserta penjelasannya angka 15 Undang-Undang '

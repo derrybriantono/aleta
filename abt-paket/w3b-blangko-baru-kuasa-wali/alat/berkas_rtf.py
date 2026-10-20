@@ -66,6 +66,7 @@ def main():
     aksi, akar = sys.argv[1], sys.argv[2]
     baru = baca('daftar-rtf.tsv')
     timpa = baca('daftar-timpa.tsv')
+    folder_baru = set(b[0] for b in baca('folder-baru.txt'))   # folder yang dibuat pasang-satker.sh sesudah pemeriksaan ini
     n = {}
 
     def hitung(k, pesan=''):
@@ -87,7 +88,7 @@ def main():
                 hitung('GAGAL', 'berkas lain bernama sama sudah ada %s/%s' % (folder, berkas))
             elif os.path.exists(dst):
                 hitung('SUDAH_BARU')
-            elif not os.path.isdir(os.path.join(akar, folder)):
+            elif not os.path.isdir(os.path.join(akar, folder)) and folder not in folder_baru:
                 hitung('GAGAL', 'folder tidak ada %s' % folder)
         for folder, berkas, ml, mb, _k in timpa:
             dst = jalur(folder, berkas)

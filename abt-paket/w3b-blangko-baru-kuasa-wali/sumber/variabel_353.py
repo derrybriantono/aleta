@@ -50,3 +50,5 @@ v(3815, P + 'ALASAN DITOLAK - ISIAN kalimat sesudah kata "Menimbang, bahwa" (men
 v(3816, P + 'SEBAB TIDAK DAPAT DITERIMA - ISIAN kalimat sesudah kata "Menimbang, bahwa" (mis. Penggugat bukan pihak yang berhak mengajukan menurut Pasal 49 ayat (1) UU 1/1974)', 'data_teks')
 v(3817, P + 'ORANG TUA YANG DICABUT (OTOMATIS: isian 3808 pada permohonan; pada gugatan memakai kedudukan Tergugat di SIPP dan sebutan Tergugat)', 'data_sql',
   "SELECT IF(%s <> '', %s, CONCAT('#9301# (', '#0047#', ')')) AS data" % (isi(3808), isi(3808)))
+v(3818, P + 'PIHAK YANG SEHARUSNYA IKUT DITARIK SEBAGAI PIHAK - ISIAN (untuk putusan tidak dapat diterima karena kurang pihak, mis. orang tua lain atau wali anak; nama dan kedudukannya)', 'data_teks')
+v(3819, P + 'ALAT BUKTI SURAT TERGUGAT - ISIAN (daftar bukti T.1 dst.; kosong = tanpa daftar)', 'data_teks')

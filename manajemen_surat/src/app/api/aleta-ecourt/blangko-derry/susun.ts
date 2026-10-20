@@ -17,6 +17,11 @@
  */
 
 import { ISIAN_MANUAL, ISIAN_OPSIONAL } from "./isian-metadata";
+import { ISIAN_MANUAL_W3B, ISIAN_OPSIONAL_W3B, RAMAH_W3B } from "./ramah-w3b";
+
+// W3b 21 Okt: isian manual / opsional blangko Derry baru gelombang 3 (dibangkitkan ke ramah-w3b.ts) digabung ke tabel metadata bersama.
+Object.assign(ISIAN_MANUAL, ISIAN_MANUAL_W3B);
+Object.assign(ISIAN_OPSIONAL, ISIAN_OPSIONAL_W3B);
 
 export type Definisi = { kode: string; nama: string; jenis: string; sql: string; bawaan: string };
 export type JenisIsian = "teks" | "tanggal" | "tj";
@@ -409,6 +414,8 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "9873": { nm: "Alat bukti surat Pemohon (daftar bukti P.1 dst.; mis. surat keterangan hilang dari kepolisian atau desa; kosong = tanpa daftar)" },
   "9875": { nm: "Tanggal berlaku mati secara hukum (opsional; kosong = sejak penetapan diucapkan)" },
   /* === AKHIR I28 === */
+  // W3b 21 Okt: label dan pilihan isian blangko Derry baru gelombang 3 (3800-3999).
+  ...RAMAH_W3B,
   /* === U2 20 Okt: keputusan majelis atas tuntutan akibat perceraian (nafkah anak, hak asuh, iddah, mut'ah, madliyah, harta bersama) === */
   "4100": { nm: "Keputusan atas tuntutan hak asuh anak (hadhanah)", pil: ["dikabulkan seluruhnya", "dikabulkan sebagian", "ditolak", "tidak dapat diterima", "diberikan secara ex officio (tidak dituntut)"] },
   "4101": { nm: "Keputusan atas tuntutan nafkah anak", pil: ["dikabulkan seluruhnya", "dikabulkan sebagian", "ditolak", "tidak dapat diterima", "diberikan secara ex officio (tidak dituntut)"] },

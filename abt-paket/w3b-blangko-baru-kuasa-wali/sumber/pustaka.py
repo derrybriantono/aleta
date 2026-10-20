@@ -118,6 +118,7 @@ SISA_JENIS_LAMA = re.compile(r'nafkah|9300|9301|9302|9304|9759|974\d|975\d|hadha
 # ------------------------------------------------------------------------------------------------------------------
 _ASAL = chr(92) + '*' + chr(92) + 'isianasal '
 RX_ASAL = re.compile(re.escape('{' + _ASAL) + r'([^}]*)\}')
+SAKSI_TANYA_JAWAB = ('5058', '5059', '5060', '6124', '8931', '6120', '6121', '8921', '8941')
 LAMA_KHUSUS = set(range(9740, 9760)) | set(range(9300, 9310))
 
 
@@ -146,6 +147,12 @@ def isian_diperlukan(isi_rtf):
 def perbaiki_isianasal(isi, tokens_asal=None):
     m = RX_ASAL.search(isi)
     if not m:
+        # BAS gugatan ALUR 04-09 dari 6c tidak membawa kelompok isian-asal; bila berkas memuat variabel tanya-jawab saksi dan ada isian bahan jawaban,
+        # kelompok itu ditambahkan di akhir berkas (letak yang sama dengan BAS ALUR 46 verstek) supaya ABT menanyakan isian itu pada sidang pembuktian.
+        if tokens_asal and any(('#%s#' % t) in isi for t in SAKSI_TANYA_JAWAB):
+            akhir = isi.rstrip()
+            if akhir.endswith('}'):
+                return akhir[:-1] + '{' + _ASAL + ' '.join('#%04d#' % int(n) for n in tokens_asal) + '}}'
         return isi
     lama = [int(t) for t in re.findall(r'#(\d{4})#', m.group(1))]
     baru = [n for n in lama if n not in LAMA_KHUSUS]

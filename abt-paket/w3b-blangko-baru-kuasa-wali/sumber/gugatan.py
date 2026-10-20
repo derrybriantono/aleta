@@ -55,6 +55,7 @@ def susun(kode, nama_dasar, nama_keluar, peran, S, folder_keluar):
     r = Rakit(b)
     label = S['label']
     aturan = [] if S.get('sita') else [('#9755#', ''), ('#9756#', '')]
+    aturan = aturan + list(G.get('ganti', []))   # penggantian penanda umum 6c (mis. #9955# bukti surat perceraian) dengan isian jenis ini
     verstek = peran in ('kabul-verstek', 'tolak-verstek')
     t = b.t
 

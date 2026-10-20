@@ -23,9 +23,11 @@ import jenis as J  # noqa: E402
 import gugatan  # noqa: E402
 import permohonan  # noqa: E402
 import bas  # noqa: E402
+import ramah_w3b  # noqa: E402
 
 KELUAR = os.path.join(AKAR, 'rtf', 'derry_briantono')
 LIB = os.path.join(REPO, 'manajemen_surat', 'src', 'lib')
+BLANGKO_DERRY = os.path.join(REPO, 'manajemen_surat', 'src', 'app', 'api', 'aleta-ecourt', 'blangko-derry')
 PANEL = os.path.join(REPO, 'ekstensi-sipp', 'panel-alat.js')
 
 NAMA_SIPP = {'353': 'Pencabutan Kekuasaan Orang Tua', '355': 'Pencabutan Kekuasaan Wali', '356': 'Penunjukan orang lain sebagai Wali oleh Pengadilan',
@@ -168,6 +170,7 @@ def bangkit():
     js.append('''function alatPetaW3b(kunci, jenisAsli, menu, B, punyaGugatan, punyaPermohonan) {
   const baris = punyaGugatan ? alatPetaGugatanDua(kunci, jenisAsli, menu, B, {}) : {};
   const kl = (status, tanda) => `${kunci}|${status}${tanda ? `|${tanda}` : ""}`;
+  if (punyaGugatan && !B.damai) delete baris[kl("perdamaian", "")]; // pencabutan kekuasaan orang tua / wali: tanpa akta perdamaian
   const r = (status, berkas, catatan) => alatBarisPutusanLain(menu, jenisAsli, status, berkas, catatan);
   const um = (status, catatan) => alatBarisPutusanLain("um", jenisAsli, status, status === "Tidak Dapat Diterima" ? ALAT_BERKAS_UMUM.no : status === "Dicabut" ? ALAT_BERKAS_UMUM.cabut : ALAT_BERKAS_UMUM.gugur, catatan);
   if (punyaGugatan) {
@@ -216,5 +219,17 @@ def bangkit():
     print('dibangkitkan: %d jenis; BAS ALUR: %s; panel-alat.js diperbarui' % (len(semua), ', '.join('%d(%d)' % (a['nomor'], len(a['langkah'])) for a in alur_list)))
 
 
+def bangkit_ramah():
+    ramah, manual, opsional = ramah_w3b.bangun()
+    baris = ['/* DIBANGKITKAN oleh abt-paket/w3b-blangko-baru-kuasa-wali/sumber/bangkitkan_ts.py (label dari nama variabel + sumber/ramah_w3b.py META) - jangan disunting tangan. */',
+             '/** Label pengguna, pilihan huruf, penanda "diisi manual" dan "opsional" untuk isian blangko Derry baru gelombang 3 (variabel ABT 3800-3999). */',
+             'export const RAMAH_W3B: Record<string, { nm: string; pil?: string[]; saran?: string }> = ' + json.dumps(ramah, ensure_ascii=False, indent=2) + ';', '',
+             'export const ISIAN_MANUAL_W3B: Record<string, string> = ' + json.dumps(manual, ensure_ascii=False, indent=2) + ';', '',
+             'export const ISIAN_OPSIONAL_W3B: Record<string, string> = ' + json.dumps(opsional, ensure_ascii=False, indent=2) + ';', '']
+    tulis(os.path.join(BLANGKO_DERRY, 'ramah-w3b.ts'), chr(10).join(baris))
+    return len(ramah)
+
+
 if __name__ == '__main__':
     bangkit()
+    print('ramah: %d isian' % bangkit_ramah())

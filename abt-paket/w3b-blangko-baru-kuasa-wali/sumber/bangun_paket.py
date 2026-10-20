@@ -103,7 +103,7 @@ def kumpul_menu():
 
 def main():
     if os.path.isdir(PAKET):
-        shutil.rmtree(PAKET)
+        shutil.rmtree(lp(PAKET))
     os.makedirs(PAKET)
     assert not V.PANJANG, 'nama variabel > 200 huruf: %s' % V.PANJANG
     var = sorted(V.VAR, key=lambda x: x['no'])

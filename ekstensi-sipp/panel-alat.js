@@ -10028,11 +10028,42 @@ Object.assign(ALAT_MENU_PUTUSAN, {
     "lain": [
       "Pencabutan Kuasa Orang Tua - Putusan"
     ]
+  },
+  "kw": {
+    "blangko": "Putusan Pencabutan Kekuasaan Wali",
+    "lain": [
+      "Pencabutan Kuasa Wali - Putusan"
+    ]
+  },
+  "pw": {
+    "blangko": "Putusan Penunjukan Wali oleh Pengadilan",
+    "lain": [
+      "Penunjukan Wali - Putusan"
+    ]
+  },
+  "gr": {
+    "blangko": "Putusan Ganti Rugi terhadap Wali",
+    "lain": [
+      "Ganti Rugi Wali - Putusan"
+    ]
+  },
+  "ni": {
+    "blangko": "Putusan Nafkah Anak oleh Ibu karena Ayah Tidak Mampu",
+    "lain": [
+      "Nafkah Anak Ibu - Putusan"
+    ]
+  },
+  "ek": {
+    "blangko": "Putusan Eksekusi",
+    "lain": [
+      "Eksekusi - Putusan"
+    ]
   }
 });
 function alatPetaW3b(kunci, jenisAsli, menu, B, punyaGugatan, punyaPermohonan) {
   const baris = punyaGugatan ? alatPetaGugatanDua(kunci, jenisAsli, menu, B, {}) : {};
   const kl = (status, tanda) => `${kunci}|${status}${tanda ? `|${tanda}` : ""}`;
+  if (punyaGugatan && !B.damai) delete baris[kl("perdamaian", "")]; // pencabutan kekuasaan orang tua / wali: tanpa akta perdamaian
   const r = (status, berkas, catatan) => alatBarisPutusanLain(menu, jenisAsli, status, berkas, catatan);
   const um = (status, catatan) => alatBarisPutusanLain("um", jenisAsli, status, status === "Tidak Dapat Diterima" ? ALAT_BERKAS_UMUM.no : status === "Dicabut" ? ALAT_BERKAS_UMUM.cabut : ALAT_BERKAS_UMUM.gugur, catatan);
   if (punyaGugatan) {
@@ -10070,8 +10101,65 @@ const ALAT_BERKAS_W3B_353 = {
   "mohonTolak": "[03p] [Tolak] Pencabutan Kekuasaan Orang Tua - Dalil Permohonan Tidak Terbukti",
   "mohonNo": "[99p] [NO] Pencabutan Kekuasaan Orang Tua - Permohonan Tidak Dapat Diterima (Formil)"
 };
+const ALAT_BERKAS_W3B_355 = {
+  "kabul": "[01] [Kabul] Pencabutan Kekuasaan Wali - Kontradiktoir",
+  "setelahMediasi": "[01a] [Kabul] Pencabutan Kekuasaan Wali - T Tidak Hadir Setelah Mediasi",
+  "verstek": "[01b] [Kabul Verstek] Pencabutan Kekuasaan Wali",
+  "tolak": "[03] [Tolak] Pencabutan Kekuasaan Wali - Kontradiktoir - Dalil Tidak Terbukti",
+  "tolakVerstek": "[03b] [Tolak Verstek] Pencabutan Kekuasaan Wali - Dalil Tidak Terbukti",
+  "gugur": "[98a] [Gugur] Pencabutan Kekuasaan Wali - P Tidak Hadir Sidang Pertama",
+  "cabutSesudahJawaban": "[98b] [Cabut] Pencabutan Kekuasaan Wali - Sesudah Jawaban dengan Persetujuan T",
+  "cabut": "[98] [Cabut] Pencabutan Kekuasaan Wali - P & T Hadir Sebelum Jawaban",
+  "coret": "[98c] [Coret] Pencabutan Kekuasaan Wali - Dibatalkan dari Pendaftaran - Panjar Habis",
+  "noFormil": "[99a] [NO] Pencabutan Kekuasaan Wali - Kurang Pihak (Plurium Litis Consortium)",
+  "noKabur": "[99b] [NO] Pencabutan Kekuasaan Wali - Gugatan Kabur (Obscuur Libel)",
+  "noSema": "[99] [NO] Pencabutan Kekuasaan Wali - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
+  "mohonKabul": "[01p] [Kabul] Pencabutan Kekuasaan Wali - Permohonan (Pemohon Hadir)",
+  "mohonTolak": "[03p] [Tolak] Pencabutan Kekuasaan Wali - Dalil Permohonan Tidak Terbukti",
+  "mohonNo": "[99p] [NO] Pencabutan Kekuasaan Wali - Permohonan Tidak Dapat Diterima (Formil)"
+};
+const ALAT_BERKAS_W3B_356 = {
+  "mohonKabul": "[01p] [Kabul] Penunjukan Wali oleh Pengadilan - Permohonan (Pemohon Hadir)",
+  "mohonTolak": "[03p] [Tolak] Penunjukan Wali oleh Pengadilan - Dalil Permohonan Tidak Terbukti",
+  "mohonNo": "[99p] [NO] Penunjukan Wali oleh Pengadilan - Permohonan Tidak Dapat Diterima (Formil)",
+  "noKabur": ""
+};
+const ALAT_BERKAS_W3B_357 = {
+  "kabul": "[01] [Kabul] Ganti Rugi terhadap Wali - Kontradiktoir",
+  "setelahMediasi": "[01a] [Kabul] Ganti Rugi terhadap Wali - T Tidak Hadir Setelah Mediasi",
+  "verstek": "[01b] [Kabul Verstek] Ganti Rugi terhadap Wali",
+  "tolak": "[03] [Tolak] Ganti Rugi terhadap Wali - Kontradiktoir - Dalil Tidak Terbukti",
+  "tolakVerstek": "[03b] [Tolak Verstek] Ganti Rugi terhadap Wali - Dalil Tidak Terbukti",
+  "damai": "[97] [Perdamaian] Ganti Rugi terhadap Wali - Akta Perdamaian",
+  "gugur": "[98a] [Gugur] Ganti Rugi terhadap Wali - P Tidak Hadir Sidang Pertama",
+  "cabutSesudahJawaban": "[98b] [Cabut] Ganti Rugi terhadap Wali - Sesudah Jawaban dengan Persetujuan T",
+  "cabut": "[98] [Cabut] Ganti Rugi terhadap Wali - P & T Hadir Sebelum Jawaban",
+  "coret": "[98c] [Coret] Ganti Rugi terhadap Wali - Dibatalkan dari Pendaftaran - Panjar Habis",
+  "noFormil": "[99a] [NO] Ganti Rugi terhadap Wali - Kurang Pihak (Plurium Litis Consortium)",
+  "noKabur": "[99b] [NO] Ganti Rugi terhadap Wali - Gugatan Kabur (Obscuur Libel)",
+  "noSema": "[99] [NO] Ganti Rugi terhadap Wali - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)"
+};
+const ALAT_BERKAS_W3B_350 = {
+  "kabul": "[01] [Kabul] Nafkah Anak oleh Ibu - Kontradiktoir",
+  "setelahMediasi": "[01a] [Kabul] Nafkah Anak oleh Ibu - T Tidak Hadir Setelah Mediasi",
+  "verstek": "[01b] [Kabul Verstek] Nafkah Anak oleh Ibu",
+  "tolak": "[03] [Tolak] Nafkah Anak oleh Ibu - Kontradiktoir - Dalil Tidak Terbukti",
+  "tolakVerstek": "[03b] [Tolak Verstek] Nafkah Anak oleh Ibu - Dalil Tidak Terbukti",
+  "damai": "[97] [Perdamaian] Nafkah Anak oleh Ibu - Akta Perdamaian",
+  "gugur": "[98a] [Gugur] Nafkah Anak oleh Ibu - P Tidak Hadir Sidang Pertama",
+  "cabutSesudahJawaban": "[98b] [Cabut] Nafkah Anak oleh Ibu - Sesudah Jawaban dengan Persetujuan T",
+  "cabut": "[98] [Cabut] Nafkah Anak oleh Ibu - P & T Hadir Sebelum Jawaban",
+  "coret": "[98c] [Coret] Nafkah Anak oleh Ibu - Dibatalkan dari Pendaftaran - Panjar Habis",
+  "noFormil": "[99a] [NO] Nafkah Anak oleh Ibu - Kurang Pihak (Plurium Litis Consortium)",
+  "noKabur": "[99b] [NO] Nafkah Anak oleh Ibu - Gugatan Kabur (Obscuur Libel)",
+  "noSema": "[99] [NO] Nafkah Anak oleh Ibu - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)"
+};
 Object.assign(ALAT_PETA_BAWAAN
   , alatPetaW3b("pencabutan kekuasaan orang tua", "Pencabutan Kekuasaan Orang Tua", "kk", ALAT_BERKAS_W3B_353, true, true)
+  , alatPetaW3b("pencabutan kekuasaan wali", "Pencabutan Kekuasaan Wali", "kw", ALAT_BERKAS_W3B_355, true, true)
+  , alatPetaW3b("penunjukan orang lain sebagai wali oleh pengadilan", "Penunjukan orang lain sebagai Wali oleh Pengadilan", "pw", ALAT_BERKAS_W3B_356, false, true)
+  , alatPetaW3b("ganti rugi terhadap wali", "Ganti Rugi terhadap Wali", "gr", ALAT_BERKAS_W3B_357, true, false)
+  , alatPetaW3b("nafkah anak oleh ibu karena ayah tidak mampu", "Nafkah Anak Oleh Ibu karena Ayah tidak mampu", "ni", ALAT_BERKAS_W3B_350, true, false)
 );
 /* === AKHIR W3b === */
 
