@@ -303,7 +303,7 @@ const POKOK = [
   {
     id: "umur",
     jenis: ["itsbat", "aua"],
-    tanya: /umur.*(?:menikah|nikah)|usia.*(?:menikah|nikah)/,
+    tanya: /(?:umur|usia).*(?:menikah|nikah)|(?:menikah|nikah).*(?:umur|usia)/,
     slot: [
       { kiri: new RegExp(`dan\\s+${SEB}\\s+sekitar\\s*$|dan\\s+${SEB}\\s*$`, "i"), isi: ({ h, kanan }) => h.nilai("umurP2", (n) => satuanTahun(n, kanan)) },
       { kiri: new RegExp(`umur\\s+${SEB}\\s+sekitar\\s*$|umur\\s+${SEB}\\s*$`, "i"), isi: ({ h, kanan }) => h.nilai("umurP1", (n) => satuanTahun(n, kanan)) },

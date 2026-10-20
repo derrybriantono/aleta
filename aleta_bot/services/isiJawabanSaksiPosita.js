@@ -164,7 +164,7 @@ function dispensasi(butir) {
     }
   }
   for (const b of butir) {
-    const m = /saling\s+(?:mengenal|kenal)\s+(?:selama|sejak|sudah|sekitar)\s+([^,.;(]{2,40}?)(?:,|\.|;|\(|$|\s+dan\s+hubungan)/i.exec(b);
+    const m = /saling\s+(?:mengenal|kenal)\s+(?:dengan\s+[^,]{0,40}?\s+)?(?:selama|sejak|sudah|sekitar)\s+([^,.;(]{2,40}?)(?:,|\.|;|\(|$|\s+dan\s+hubungan)/i.exec(b);
     if (m) {
       hasil.push({ kunci: "lamaKenal", nilai: bersihNilai(m[1]).replace(/^selama\s+/i, ""), yakin: "cukup" });
       const h = /hubungan\s+mereka\s+(?:telah|sudah)\s+(sedemikian\s+erat(?:nya)?)/i.exec(b);
