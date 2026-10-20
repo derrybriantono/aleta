@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.20",
+    dirilis: "2026-10-21T01:06:00+08:00",
+    judul: "Putusan Otomatis dengan e-Doc sekaligus, Jadwalkan Putusan, SK Majelis dan beban penetapan, pratinjau BAS/relaas",
+    butir: [
+      "Putusan Otomatis kini langsung mengunggah e-Doc putusan dan e-Doc anonimisasi sesudah Putusan Akhir tersimpan, dan tersedia sebagai tombol \"Putusan Otomatis\" di halaman perkara SIPP.",
+      "Jadwalkan Putusan: pilih perkara atau tanggal, seret banyak berkas putusan sekaligus, lalu tentukan jam unggah dengan jeda wajar; e-Doc diunggah server pada waktunya, form Putusan Akhir diisi saat SIPP terbuka.",
+      "Penetapan: halaman SK Majelis di Admin dapat diatur sendiri (nomor, tanggal, berlaku mulai, susunan majelis dan panitera pendamping, peringatan pegawai mutasi), dan papan penetapan menampilkan beban tiap hakim, panitera pengganti, dan juru sita (30 hari, kebendaan 6 bulan) dengan urutan rekomendasi yang paling ringan lebih dulu.",
+      "Tombol unduh BAS dan relaas di SIPP menampilkan pratinjau dokumen lebih dulu; dari sana dapat diunduh atau dicetak (dapat dimatikan di Alat saya).",
+      "Widget ALETA di bilah ekstensi ditata ulang: setiap saklar berada di bagian yang sesuai fungsinya, label di kiri dan saklar di kanan, dan bagian dapat dilipat.",
+    ],
+  },
+  {
     versi: "1.205.19",
     dirilis: "2026-10-20T22:01:00+08:00",
     judul: "Penetapan Otomatis di halaman SIPP, penetapan tanpa ganda, dan muat ulang otomatis",
