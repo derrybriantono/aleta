@@ -18,9 +18,22 @@ const djp = bot("services/deteksiJenisPerkaraService.js");
 const dsaksi = bot("services/deteksiSaksiService.js");
 const pemilih = bot("services/pemilihRagam.js");
 const BD = req("../../ekstensi-sipp/blangko-derry-saksi.js");
+// mode --katalog: jalur susunan katalog jenis perkara (blangko-derry-katalog.js) + pengisi 'isi-jawaban'
+const KATALOG = args0().includes("--katalog");
+function args0() {
+  return process.argv.slice(2);
+}
+let KT: any = null;
+let KATJ: any = null;
+if (KATALOG) {
+  (globalThis as any).AletaSaksiKatalog = req("../../ekstensi-sipp/saksi-katalog.js");
+  req("../../ekstensi-sipp/saksi-katalog-data.js");
+  KT = req("../../ekstensi-sipp/blangko-derry-katalog.js");
+  KATJ = req("../../ekstensi-sipp/blangko-derry-jawab-katalog.js");
+}
 
 const args = process.argv.slice(2);
-const DIR = (args.find((a) => !a.startsWith("--")) || "D:/Aplikasi/aleta/tmp/s2/data") + "/";
+const DIR = (args.find((a) => !a.startsWith("--")) || "D:/Aplikasi/aleta/tmp/s7/data") + "/";
 const PAKAI_ISI = args.includes("--isi");
 const RINCI = (args.find((a) => a.startsWith("--rinci=")) || "").slice(8);
 const CONTOH = (args.find((a) => a.startsWith("--contoh=")) || "").slice(9);
@@ -37,6 +50,8 @@ const per = (f: string) => {
   for (const r of tsv(f)) (m[r.perkara_id] = m[r.perkara_id] || []).push(r);
   return m;
 };
+// saksi.tsv (perkara_pihak5: pihak, urutan, keterangan = hubungan saksi di SIPP) - opsional
+const saksiSipp = fs.existsSync(DIR + "saksi.tsv") ? per("saksi") : {};
 const nikah = per("nikah"), itsbat = per("itsbat"), anak = per("anak"), pihak1 = per("pihak1"), pihak2 = per("pihak2"), sidang = per("sidang");
 
 const NAMA: Record<string, string> = { "346": "Cerai Talak", "347": "Cerai Gugat", "360": "Itsbat Nikah", "362": "Dispensasi Kawin", "363": "Wali Adhal", "354": "Perwalian", "358": "Asal Usul Anak", "371": "Penetapan Ahli Waris", "364": "Kewarisan", "348": "Harta Bersama" };
@@ -44,7 +59,17 @@ const LABEL: Record<string, string> = { "346": "cerai talak", "347": "cerai guga
 const AKTIF = new Set(["Sidang pertama", "Persidangan", "Putusan", "Pendaftaran Perkara"]);
 const adaTitik = (t: string) => /\.{3,}|…|_{2,}|#\d{3,5}#|\{[a-zA-Z0-9_]+\}/.test(String(t || ""));
 
+/** Identitas saksi dari SIPP seperti identitasSaksiPerkara: [{pihak 'P'|'T', urutPihak, keterangan}] (nama dsb. tidak ditarik). */
+const identitasDari = (p: any) => {
+  const hitung: Record<string, number> = { P: 0, T: 0 };
+  return (saksiSipp[p.perkara_id] || []).map((b: any) => {
+    const pihak = Number(b.pihak) === 2 ? "T" : "P";
+    hitung[pihak] += 1;
+    return { pihak, urutPihak: hitung[pihak], nama: "", umur: null, agama: "", pendidikan: "", pekerjaan: "", alamat: "", keterangan: b.keterangan || "" };
+  });
+};
 const sippDari = (p: any) => ({
+  saksi: identitasDari(p),
   nikah: (nikah[p.perkara_id] || [])[0] || null,
   itsbat: (itsbat[p.perkara_id] || [])[0] || null,
   anak: anak[p.perkara_id] || [],
@@ -55,7 +80,7 @@ const sippDari = (p: any) => ({
 
 type Hasil = { jenis: string; aktif: boolean; baris: number; titik: number; ragu: number; terisiOleh: number; sisa: Record<string, number>; nomor: string };
 const hasil: Hasil[] = [];
-for (const p of perkara) {
+for (const p of KATALOG ? [] : perkara) {
   if (!NAMA[p.j]) continue;
   const sebP = p.j === "347" || p.j === "364" || p.j === "348" || (p.j === "360" && p.a === "15") ? "Penggugat" : "Pemohon";
   const sebT = sebP === "Penggugat" ? "Tergugat" : "Termohon";
@@ -89,7 +114,7 @@ for (const p of perkara) {
     terisiOleh = r.terisi;
   }
   try {
-    Object.assign(h, dsaksi.lengkapiSusunan(h, { identitas: null, lawan: sebP, pelaku: sebT, kelompokTanya: pemilih.kelompokTanya, penutup: "" }));
+    Object.assign(h, dsaksi.lengkapiSusunan(h, { identitas: identitasDari(p), lawan: sebP, pelaku: sebT, kelompokTanya: pemilih.kelompokTanya, penutup: "" }));
   } catch {
     /* */
   }
@@ -104,7 +129,7 @@ for (const p of perkara) {
   const sisa: Record<string, number> = {};
   const jum = [0, 1].map((ke) => {
     const sj = h.saksi && h.saksi[ke] ? h.saksi[ke].jawaban : [];
-    const res = BD.pasangJawaban(rows.map((r: any) => ({ ...r, dasar: r.jawab })), sj, {});
+    const res = BD.pasangJawaban(rows.map((r: any) => ({ ...r, dasar: r.jawab })), sj, { hubungan: h.paragrafSaksi && h.paragrafSaksi[ke] ? h.paragrafSaksi[ke].hubungan : undefined });
     res.rows.forEach((r: any, i: number) => {
       if (CONTOH && p.nomor_perkara === CONTOH) console.log(`[saksi ${ke + 1}] ${String(i + 1).padStart(2)} ${r.jawab}${r.usulan ? `   <${r.usulan.yakin} | ${r.usulan.sumber}>` : ""}`);
       if (adaTitik(r.jawab)) {
@@ -116,6 +141,55 @@ for (const p of perkara) {
     return res.rows.length;
   });
   hasil.push({ jenis: p.j, aktif: AKTIF.has(p.proses), baris: jum[0] + jum[1], titik, ragu, terisiOleh, sisa, nomor: p.nomor_perkara });
+}
+
+// ----------------------------------------------------------------------------
+// Mode --katalog: susunan katalog jenis perkara (jalur panel Blangko Derry untuk jenis non-cerai) + pengisi 'isi-jawaban'
+// ----------------------------------------------------------------------------
+if (KATALOG) {
+  const ISI2 = bot("services/isiJawabanSaksiService.js");
+  const mesin = (globalThis as any).AletaSaksiKatalog;
+  for (const p of perkara) {
+    if (!NAMA[p.j] || p.j === "346" || p.j === "347") continue;
+    const kn = KT.kenali({ jenisPerkaraId: p.j, alurPerkaraId: p.a, nomorPerkara: p.nomor_perkara });
+    if (kn.mode !== "katalog") continue;
+    const sipp = sippDari(p);
+    const data = KT.keadaanDariData(kn.kat, { alurId: p.a, jumlahPemohon: sipp.pihak1.length, hadir: null });
+    const ker = KT.lengkapiBawaan(kn.kat, Object.assign({}, mesin.keadaanBawaan(kn.kat, {}), data.keadaan));
+    const saksiMasuk = [
+      { kunci: "saksi 1 p", pihak: "P" },
+      { kunci: "saksi 2 p", pihak: "P" },
+    ];
+    const sus = KT.susun({ kat: kn.kat, sebutan: kn.sebutan, benih: p.nomor_perkara, keadaan: ker, saksi: saksiMasuk });
+    if (!sus.ada) continue;
+    let usulan: any = {};
+    let ragu = 0;
+    let terisiOleh = 0;
+    if (ISI) {
+      const muatan = KATJ.susunMuatan({ perkara: { nomorPerkara: p.nomor_perkara, jenisPerkaraId: p.j, alurPerkaraId: p.a }, kenal: kn, keadaan: ker, saksi: sus.saksi, variabel: {} });
+      const alamatPihak = { lawan: (sipp.pihak1[0] || {}).alamat || "", pelaku: (sipp.pihak2[0] || {}).alamat || "" };
+      usulan = ISI2.isiBaris({ posita: p.posita, jenisPerkara: p.j, alur: p.a, pelaku: kn.sebutan.T, lawan: kn.sebutan.P, tanggalSidang: "", alamatPihak, isian: {}, sipp, saksiIsi: muatan.saksiIsi });
+    }
+    let titik = 0;
+    let baris = 0;
+    const sisa: Record<string, number> = {};
+    sus.saksi.forEach((sk: any, ke: number) => {
+      const g = KT.gabung([], sk.baris);
+      const ter = KT.terapkanUsulan(g.rows, usulan, sk.kunci);
+      terisiOleh += ter.terisi;
+      ragu += ter.ragu;
+      ter.rows.forEach((r: any, i: number) => {
+        baris++;
+        if (CONTOH && p.nomor_perkara === CONTOH) console.log(`[saksi ${ke + 1}] ${String(i + 1).padStart(2)} ${r.jawab}${r.usulan ? `   <${r.usulan.yakin} | ${r.usulan.sumber}>` : ""}`);
+        if (adaTitik(r.jawab)) {
+          titik++;
+          const k = String(r.tanya).slice(0, 70);
+          sisa[k] = (sisa[k] || 0) + 1;
+        }
+      });
+    });
+    hasil.push({ jenis: p.j, aktif: AKTIF.has(p.proses), baris, titik, ragu, terisiOleh, sisa, nomor: p.nomor_perkara });
+  }
 }
 const kelompok = (f: (h: Hasil) => boolean) => {
   const out: Record<string, { perkara: number; baris: number; titik: number; ragu: number; isi: number }> = {};
