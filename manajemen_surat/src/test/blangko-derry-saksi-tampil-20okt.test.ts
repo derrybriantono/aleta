@@ -19,8 +19,14 @@ import { tawarkanSetSaksi } from "@/lib/set-pertanyaan-saksi";
 
 const require_ = createRequire(path.resolve(process.cwd(), "../ekstensi-sipp/x.js"));
 
-const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
-const baca = (berkas: string) => readFileSync(path.join(EKSTENSI, berkas), "utf8").replace(/\r\n/g, "\n");
+const EKSTENSI = process.env.ALETA_EKSTENSI_DIR || path.resolve(process.cwd(), "../ekstensi-sipp"); // ALETA_EKSTENSI_DIR: versi lama untuk foto "sebelum"
+const baca = (berkas: string) => {
+  try {
+    return readFileSync(path.join(EKSTENSI, berkas), "utf8").replace(/\r\n/g, "\n");
+  } catch {
+    return ""; // berkas belum ada pada versi lama
+  }
+};
 const SUMBER = ["panel-alat.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-saksi.js", "blangko-derry-saksi-tampil.js", "blangko-derry-isian.js"].map(baca).join("\n;\n");
 
 const ASAL = "http://192.168.10.10";
@@ -810,7 +816,6 @@ describe("Blangko Derry (20 Okt): kepala panel menempel saat digulir", () => {
     it(`tema ${tema}: sticky, latar padat (bukan transparan, bukan gradasi), bayangan bawah tipis, z-index di atas kartu, ramping`, async () => {
       const { gs } = await gayaHitung(tema);
       expect(gs.position).toBe("sticky");
-      expect(gs.top).toBe("0px");
       expect(Number(gs.zIndex)).toBeGreaterThanOrEqual(30);
       expect(gs.backgroundImage).toBe("none");
       expect(gs.backgroundColor).toMatch(/^(#[0-9a-f]{6}|rgb\(\d+, \d+, \d+\))$/i); // tanpa alfa
@@ -821,6 +826,16 @@ describe("Blangko Derry (20 Okt): kepala panel menempel saat digulir", () => {
     });
   }
 
+  it("kepala menempel di tepi layar, bukan di bawah padding akar (isi yang digulir tidak bocor di atas kepala)", () => {
+    // Akar punya padding atas 12px (layar lebar) dan 0 (<=760px); kepala sticky memakai top negatif sebesar itu.
+    const padAkar = css.match(/#aleta-bd-akar \{ padding: (\d+)px \d+px \d+px; \}/)![1];
+    const pad = css.match(/--bd-pad-atas: (\d+)px;/)![1];
+    expect(pad).toBe(padAkar);
+    expect(css).toMatch(/\.bd-layar > \.bd-atas \{\s*position: sticky; top: calc\(var\(--bd-pad-atas\) \* -1\);/);
+    expect(css).toMatch(/@media \(max-width: 760px\) \{ #aleta-bd-akar \{ --bd-pad-atas: 0px; \} \}/);
+    expect(css).toMatch(/@media \(max-width: 760px\) \{\s*#aleta-bd-akar \{ padding: 0 0 40px; \}/);
+  });
+
   it("kartu isian, kotak jawaban dan bagian tahap punya scroll-margin supaya tidak tertutup kepala; media sempit tidak memakai baris yang melebar", () => {
     expect(css).toMatch(/\.bd-tahap, #aleta-bd-akar \.bd-f, #aleta-bd-akar textarea\.bd-ed \{ scroll-margin-top: calc\(var\(--bd-tinggi-atas\)/);
     expect(css).toMatch(/scroll-padding-top: calc\(var\(--bd-tinggi-atas\)/);
@@ -828,7 +843,7 @@ describe("Blangko Derry (20 Okt): kepala panel menempel saat digulir", () => {
     expect(sempit).toMatch(/flex-direction: column/);
     expect(sempit).toMatch(/overflow-x: auto/); // deretan tombol tergulir ke samping, tidak menambah tinggi kepala
     // z-index kepala lebih besar dari semua lapisan non-overlay di dalam panel (menu Lainnya z-index 30, tahap/kartu tanpa z-index)
-    const zKepala = Number(css.match(/\.bd-layar > \.bd-atas \{\s*position: sticky; top: 0; z-index: (\d+)/)![1]);
+    const zKepala = Number(css.match(/\.bd-layar > \.bd-atas \{\s*position: sticky; top: calc\(var\(--bd-pad-atas\) \* -1\); z-index: (\d+)/)![1]);
     const menu = Number(css.match(/\.bd-lainnyamenu \{[^}]*z-index: (\d+)/)![1]);
     expect(zKepala).toBeGreaterThan(menu);
   });
@@ -896,3 +911,51 @@ describe("Blangko Derry (20 Okt): peringatan daftar kosong", () => {
 });
 
 void hitungAsalDom;
+
+// ============================================================================
+// Tangkapan layar (hanya bila ALETA_TANGKAP diisi): replika HTML hasil render jsdom, difoto lewat skrip Playwright terpisah.
+// ALETA_EKSTENSI_DIR menunjuk folder ekstensi-sipp versi LAMA untuk foto "sebelum". Jalankan dengan -t "tangkapan".
+// ============================================================================
+describe.skipIf(!process.env.ALETA_TANGKAP)("tangkapan layar tanya jawab saksi", () => {
+  const simpanDuaTema = (h: Halaman, nama: string) => {
+    for (const tema of ["gelap", "terang"]) {
+      akar(h).setAttribute("data-tema", tema);
+      simpanReplika(h, `${nama}-${tema}`);
+    }
+  };
+  it("saksi berdampingan (warna asal, ringkasan, Tambah baris di bawah)", async () => {
+    const h = bukaPP();
+    pasangBot();
+    await bukaSaksiDanMuat(h);
+    simpanDuaTema(h, "1-saksi-berdampingan");
+  });
+  it("Isi ulang dari data perkara", async () => {
+    const h = bukaPP();
+    pasangBot();
+    await bukaSaksiDanMuat(h);
+    pasangBotVersiDua("dengan data terbaru");
+    klik(h, '[data-bd2="isioto"]');
+    await sampai(() => q(h, "[data-skkonfirm]") || (/dengan data terbaru/.test(akar(h).innerHTML) && !/Menyusun jawaban dari data perkara/.test(akar(h).textContent || "")), "konfirmasi (baru) atau hasil terpasang (lama)");
+    simpanDuaTema(h, "2-isi-ulang");
+  });
+  it("bagian Perlu diisi pada BAS (isian #9134)", async () => {
+    const h = bukaPP({ opsionalKode: ["9134"] });
+    await pilihBas(h);
+    simpanDuaTema(h, "3-perlu-diisi");
+  });
+  it("peringatan daftar kosong sesudah daftar terisi", async () => {
+    const h = bukaPP();
+    pasangBot();
+    await pilihBas(h);
+    klik(h, '[data-tj="saksi 1 p"]');
+    await sampai(() => q(h, '[data-bd2="simpantj"]') && !(q(h, '[data-bd2="simpantj"]') as HTMLButtonElement).disabled, "daftar terbaca");
+    klik(h, '[data-bd2="simpantj"]');
+    await sampai(() => /Daftar kosong tidak disimpan/.test(akar(h).textContent || ""), "peringatan");
+    const sel = (await sampai(() => q(h, '#bd-muattpl optgroup[label^="Panduan"]') && q(h, "#bd-muattpl"), "panduan set")) as HTMLSelectElement;
+    sel.value = "aleta:cerai-F";
+    klik(h, '[data-bd2="muattpl"]');
+    await sampai(() => qq(h, "[data-sba]").length >= 15, "daftar terisi");
+    await tunggu(100);
+    simpanDuaTema(h, "5-peringatan-kosong");
+  });
+});
