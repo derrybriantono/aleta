@@ -26,6 +26,7 @@ import { type AletaDatabase, withTransaction } from "@/server/db/client";
 import { akunSippPengguna } from "@/server/modules/aleta-ecourt/court-calendar-akun";
 import { PERAN_PENGAWAS_PUTUSAN } from "@/server/modules/aleta-ecourt/hak-milik-perkara";
 import { pastikanBolehUnggahPutusan, pastikanMajelisPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
+import { getGatewayStatusPutusan } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { bacaHariLibur } from "@/server/modules/hari-libur/sumber";
 import { ApiError } from "@/server/shared/errors";
 import { nextPrefixedId } from "@/server/shared/ids";
@@ -42,7 +43,8 @@ import {
   type BarisButir,
   type BarisJadwal,
 } from "./dasar";
-import { akarPenyimpanan, hapusBerkas, isiCocokPerkara, periksaBerkas, simpanBerkas } from "./berkas";
+import { akarPenyimpanan, bacaBerkas, hapusBerkas, isiCocokPerkara, periksaBerkas, simpanBerkas, teksBerkas } from "./berkas";
+import { susunRingkasanForm, type RingkasanForm } from "./ringkasan-form";
 
 /**
  * ============================================================================
@@ -159,6 +161,48 @@ export async function buangBerkasTahap(
   await hapusBerkas(b.jalur, deps.akar ?? akarPenyimpanan());
   await db.run("UPDATE aleta_putusan_jadwal_berkas SET dihapus_pada = ?, jalur = '' WHERE id = ?", [((deps.sekarang ?? SEKARANG)()).toISOString(), id]);
   return { ok: true };
+}
+
+/**
+ * Ringkasan pilihan form Putusan Akhir untuk berkas-berkas yang sudah diunggah (belum dijadwalkan) -
+ * aturan yang sama dengan Putusan Otomatis, lihat ringkasan-form.ts. Berkas milik orang lain tidak dibaca.
+ */
+export async function ringkasanFormBerkas(
+  db: AletaDatabase,
+  pelaku: Pelaku,
+  daftar: Array<{ berkasId: string; jenisPerkara?: string }>,
+  deps: { akar?: string; statusNama?: () => Promise<string[]> } = {}
+): Promise<{ statusTersedia: string[]; ringkasan: Record<string, RingkasanForm> }> {
+  const statusNama = await (deps.statusNama ?? statusPutusanSatker)().catch(() => [] as string[]);
+  const ringkasan: Record<string, RingkasanForm> = {};
+  for (const m of (Array.isArray(daftar) ? daftar : []).slice(0, BATAS.butirPerJadwal)) {
+    const id = String(m?.berkasId ?? "");
+    const b = id ? await db.queryOne<BarisBerkas>("SELECT * FROM aleta_putusan_jadwal_berkas WHERE id = ?", [id]) : undefined;
+    if (!b || b.dihapus_pada || !b.jalur) {
+      ringkasan[id] = { ada: false, sebab: "Berkas tidak ditemukan.", status: null, verstek: null };
+      continue;
+    }
+    if (b.pemilik_id !== pelaku.actor.id && !isPrivilegedAdmin(pelaku.actor)) {
+      ringkasan[id] = { ada: false, sebab: "Berkas ini bukan milik Anda.", status: null, verstek: null };
+      continue;
+    }
+    const bita = await bacaBerkas(b.jalur, deps.akar ?? akarPenyimpanan());
+    if (!bita) {
+      ringkasan[id] = { ada: false, sebab: "Berkas tidak ada lagi di penyimpanan.", status: null, verstek: null };
+      continue;
+    }
+    const { teks } = await teksBerkas(bita, b.bentuk, b.nama);
+    ringkasan[id] = susunRingkasanForm(teks, sebaris(m.jenisPerkara, 120), statusNama);
+  }
+  return { statusTersedia: statusNama, ringkasan };
+}
+
+/** Status putusan yang sungguh dipakai satker (dibaca bot dari data SIPP), paling sering dipakai lebih dulu. */
+async function statusPutusanSatker(): Promise<string[]> {
+  const r = await getGatewayStatusPutusan();
+  if (!r.ok) return [];
+  const daftar = (r.data as { daftar?: Array<{ nama?: string }> }).daftar;
+  return Array.isArray(daftar) ? daftar.map((x) => String(x?.nama ?? "").trim()).filter(Boolean) : [];
 }
 
 // ──────────────────────────────────────────────────────────────────────────

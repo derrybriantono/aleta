@@ -195,6 +195,24 @@ const PERINGATAN_BENTUK: Record<string, string> = {
   pdf: "PDF diubah lewat ekstraksi teks saat dijalankan; tata letak (tabel, kolom, kop) dapat berubah - lebih aman memakai RTF atau DOCX.",
 };
 
+/** Teks naskah dari bita berkas (RTF, DOCX, PDF halaman awal); DOC lama tidak terbaca. TIDAK PERNAH melempar. */
+export async function teksBerkas(bita: Uint8Array, bentuk: string, nama = "putusan"): Promise<{ teks: string; pindaian: boolean }> {
+  let teks = "";
+  let pindaian = false;
+  try {
+    if (bentuk === "rtf") teks = bacaRtfDariBita(bita);
+    else if (bentuk === "docx") teks = teksDariDocx(bita);
+    else if (bentuk === "pdf") {
+      const isi = await bacaPdfDariBita(bita, String(nama || "putusan.pdf"), 6);
+      if (isi.ada) teks = isi.halaman.map((h) => h.teks).join("\n");
+      if (isi.ada && isi.halaman.every((h) => !h.teks.trim())) pindaian = true;
+    }
+  } catch {
+    teks = "";
+  }
+  return { teks: teks.replace(/\u0000/g, ""), pindaian };
+}
+
 /**
  * Memeriksa satu berkas yang diseret. TIDAK PERNAH melempar. Tidak menyentuh
  * SIPP, basis data, maupun cakram.
@@ -224,21 +242,9 @@ export async function periksaBerkas(bita: Uint8Array, nama: string): Promise<Per
   if (PERINGATAN_BENTUK[bentuk]) peringatan.push(PERINGATAN_BENTUK[bentuk]);
   if (/^~\$/.test(String(nama ?? ""))) return { ...dasar, tolak: "Berkas kunci sementara Word (~$), bukan naskah." };
 
-  let teks = "";
-  try {
-    if (bentuk === "rtf") teks = bacaRtfDariBita(bita);
-    else if (bentuk === "docx") teks = teksDariDocx(bita);
-    else if (bentuk === "pdf") {
-      const isi = await bacaPdfDariBita(bita, String(nama || "putusan.pdf"), 6);
-      if (isi.ada) teks = isi.halaman.map((h) => h.teks).join("\n");
-      if (isi.ada && isi.halaman.every((h) => !h.teks.trim())) {
-        return { ...dasar, tolak: "PDF ini tidak memuat teks (kemungkinan hasil pindaian) - tidak ada yang dapat dibaca sebagai naskah." };
-      }
-    }
-  } catch {
-    teks = "";
-  }
-  teks = teks.replace(/\u0000/g, "");
+  const baca = await teksBerkas(bita, bentuk, nama);
+  if (baca.pindaian) return { ...dasar, tolak: "PDF ini tidak memuat teks (kemungkinan hasil pindaian) - tidak ada yang dapat dibaca sebagai naskah." };
+  const teks = baca.teks;
 
   if (!teks.trim()) {
     if (bentuk !== "doc") peringatan.push("Isi berkas tidak terbaca sekarang; nomor perkara dan bagian putusan diperiksa saat dijalankan.");

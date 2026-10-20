@@ -846,6 +846,7 @@ export const AKSI = {
       "GET|POST|PATCH /api/aleta-ecourt/putusan-terjadwal",
       "POST|DELETE /api/aleta-ecourt/putusan-terjadwal/berkas",
       "POST /api/aleta-ecourt/putusan-terjadwal/pratinjau",
+      "POST /api/aleta-ecourt/putusan-terjadwal/ringkasan-form",
       "GET|POST /api/aleta-ecourt/putusan-terjadwal/peramban",
       "GET|POST /api/aleta-ecourt/putusan-terjadwal/pengaturan",
     ],

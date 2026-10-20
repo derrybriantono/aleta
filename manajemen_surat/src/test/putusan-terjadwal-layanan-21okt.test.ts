@@ -174,6 +174,7 @@ import {
   daftarJadwal,
   kelola,
   pratinjauJadwal,
+  ringkasanFormBerkas,
   simpanPengaturan,
   tahapkanBerkas,
   type Pelaku,
@@ -369,6 +370,35 @@ describe("layanan jadwal atas basis data", () => {
     const [bt] = await baris("SELECT pilihan_json FROM aleta_putusan_jadwal_butir WHERE id = ?", [h.butir[0].id]);
     expect(JSON.parse(String(bt.pilihan_json))).toEqual({ statusPutusan: "Dikabulkan", verstek: "Y" });
   });
+
+  it("ringkasan pilihan form: status putusan dan verstek diperkirakan dari AMAR dengan aturan Putusan Otomatis; berkas orang lain tidak dibaca", async () => {
+    const naskah = (amar: string[]) => [
+      ...barisPutusan(`${900}/Pdt.G/2026/PA.Dgl`).slice(0, 13),
+      "MENGADILI:",
+      ...amar,
+      "Demikian diputuskan dalam rapat musyawarah Majelis Hakim pada hari Selasa tanggal 1 September 2026;",
+    ];
+    const verstek = await tahap(HAKIM, naskah(["1. Mengabulkan gugatan Penggugat secara verstek;", "2. Menjatuhkan talak satu ba'in sughra Tergugat terhadap Penggugat;"]), "verstek.rtf");
+    const tolak = await tahap(HAKIM, naskah(["1. Menolak gugatan Penggugat seluruhnya;"]), "tolak.rtf");
+    const r = await ringkasanFormBerkas(db, HAKIM, [{ berkasId: verstek.id, jenisPerkara: "Cerai Gugat" }, { berkasId: tolak.id, jenisPerkara: "Cerai Gugat" }], {
+      akar,
+      statusNama: async () => ["Dikabulkan", "Ditolak", "Tidak Diterima", "Dicabut"],
+    });
+    expect(r.statusTersedia).toEqual(["Dikabulkan", "Ditolak", "Tidak Diterima", "Dicabut"]);
+    expect(r.ringkasan[verstek.id]).toMatchObject({ ada: true, status: { label: "Dikabulkan" }, verstek: { label: "Ya" } });
+    expect(r.ringkasan[tolak.id]).toMatchObject({ ada: true, status: { label: "Ditolak" } });
+    expect(r.ringkasan[tolak.id].verstek?.label).not.toBe("Ya");
+    // Milik orang lain dan berkas yang tidak ada: tidak dibaca, sebabnya disebut.
+    const lain = await r2(HAKIM_LAIN);
+    const orang = await ringkasanFormBerkas(db, HAKIM, [{ berkasId: lain.id }, { berkasId: "tidak-ada" }], { akar, statusNama: async () => [] });
+    expect(orang.ringkasan[lain.id]).toMatchObject({ ada: false, sebab: expect.stringMatching(/bukan milik Anda/) });
+    expect(orang.ringkasan["tidak-ada"]).toMatchObject({ ada: false, sebab: expect.stringMatching(/tidak ditemukan/) });
+    // Status putusan satker tak terbaca (bot mati): ringkasan tetap tersusun, status kosong dan jujur.
+    const tanpaDaftar = await ringkasanFormBerkas(db, HAKIM, [{ berkasId: verstek.id }], { akar, statusNama: async () => { throw new Error("bot mati"); } });
+    expect(tanpaDaftar.statusTersedia).toEqual([]);
+    expect(tanpaDaftar.ringkasan[verstek.id].ada).toBe(true);
+  });
+  const r2 = (pelaku: Pelaku) => tahap(pelaku, barisPutusan("902/Pdt.G/2026/PA.Dgl"), "lain.rtf");
 
   // ── Berkas tahap ──
   it("berkas tahap: hanya pemiliknya yang dapat membuang; yang sudah dipasang tidak dapat dibuang; berkas ditolak tidak tersimpan", async () => {
