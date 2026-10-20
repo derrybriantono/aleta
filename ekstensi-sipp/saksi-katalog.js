@@ -266,7 +266,7 @@
       if (!daftar(v.nilai).length) g(`keadaan.${k}.nilai kosong`);
       if (typeof v.label !== "string" || !v.label.trim()) g(`keadaan.${k}.label kosong`);
       if (v.perSaksi !== undefined && typeof v.perSaksi !== "boolean") g(`keadaan.${k}.perSaksi harus boolean`);
-      if (v.perSaksi === true && v.sumber !== "borang") g(`keadaan.${k}: perSaksi hanya untuk sumber borang`);
+      if (v.perSaksi === true && v.sumber !== "borang") g(`keadaan.${k}: perSaksi hanya untuk keadaan yang dipilih petugas`);
       if (v.sumber === "otomatis" && !KEADAAN_BAKU[k]) g(`keadaan.${k}: sumber otomatis hanya untuk kunci baku (${Object.keys(KEADAAN_BAKU).join(", ")})`);
       nilaiSah[k] = new Set(daftar(v.nilai).map(String));
     }
