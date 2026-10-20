@@ -440,9 +440,10 @@ export async function bacaAturanPenunjukan(
  * tempat yang harus disunting tiap SK berganti - dan yang kedua pasti terlupa.
  */
 export async function bacaPengaturanPenunjukan(db: AletaDatabase) {
-  const [hariSidang, aturan] = await Promise.all([
+  const [hariSidang, aturan, skBawaan] = await Promise.all([
     bacaHariSidang(db),
     bacaAturanPenunjukan(db),
+    bacaSkMajelis(db),
   ]);
 
   return {
@@ -462,7 +463,13 @@ export async function bacaPengaturanPenunjukan(db: AletaDatabase) {
         // tidak dapat dipakai menunjuk siapa pun.
         panitera: x.panitera.filter((p) => p.id > 0),
         hari: x.hari,
+        // SK yang berlaku bagi majelis ini (bawaan atau pengecualian) - ditampilkan di papan.
+        skNomor: x.skNomor,
+        skTanggal: x.skTanggal,
       })),
+    // SK bawaan (Pengaturan > SK majelis): nomor dan tanggal yang tampil di papan dan
+    // dipakai memeriksa kesesuaian penetapan.
+    sk: { nomor: skBawaan.nomor, tanggal: skBawaan.tanggal },
     hariSidangRinci: hariSidang,
   };
 }

@@ -779,7 +779,14 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
         }))
         .filter((p) => p.kode && Number.isInteger(p.id) && p.id > 0);
 
-      susunanSk.push({ majelisKode: kode, hakimKode: hakim, panitera });
+      susunanSk.push({
+        majelisKode: kode,
+        hakimKode: hakim,
+        panitera,
+        // SK per majelis (pengecualian) - hanya untuk ditampilkan di papan.
+        skNomor: String((satu && satu.skNomor) || "").replace(/\s+/g, " ").trim().slice(0, 120),
+        skTanggal: /^\d{4}-\d{2}-\d{2}$/.test(String((satu && satu.skTanggal) || "")) ? String(satu.skTanggal) : "",
+      });
     }
 
     // Majelis yang dipilih petugas di papan - id hakim_pn, ketua di depan.
@@ -819,6 +826,11 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
       hariSidang,
       paniteraMajelis,
       susunanSk,
+      // SK yang berlaku (nomor + tanggal) - untuk papan dan pemeriksaan kesesuaian.
+      sk: {
+        nomor: String((kirim.sk && kirim.sk.nomor) || "").replace(/\s+/g, " ").trim().slice(0, 120),
+        tanggal: /^\d{4}-\d{2}-\d{2}$/.test(String((kirim.sk && kirim.sk.tanggal) || "")) ? String(kirim.sk.tanggal) : "",
+      },
       andaian,
       pilihanMajelis,
     });

@@ -48,6 +48,7 @@ const db = require("../db_config");
 const { cleanText } = require("./ecourtTextService");
 const sippSkemaService = require("./sippSkemaService");
 const hariLiburService = require("./hariLiburService");
+const bebanService = require("./bebanPenetapanService");
 
 function runQuery(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -285,6 +286,7 @@ async function identitasPerkara(nomorPerkara) {
   const pilihan = [
     "p.perkara_id AS perkaraId",
     "p.nomor_perkara AS nomorPerkara",
+    "p.jenis_perkara_id AS jenisPerkaraId",
     "p.jenis_perkara_nama AS jenisPerkara",
     "p.jenis_perkara_text AS jenisPerkaraLengkap",
     "p.tanggal_pendaftaran AS tanggalDaftar",
@@ -307,6 +309,7 @@ async function identitasPerkara(nomorPerkara) {
   return {
     perkaraId: Number(baris.perkaraId) || 0,
     nomorPerkara: cleanText(baris.nomorPerkara),
+    jenisPerkaraId: Number(baris.jenisPerkaraId) || 0,
     jenisPerkara: cleanText(baris.jenisPerkara),
     jenisPerkaraLengkap: cleanText(baris.jenisPerkaraLengkap),
     tanggalDaftar: isoTanggal(baris.tanggalDaftar),
@@ -1455,6 +1458,15 @@ function bobotJenis(jenisPerkaraId) {
   return bobot === undefined ? BOBOT_BAWAAN : bobot;
 }
 
+/**
+ * Perkara KEBENDAAN = jenis yang berbobot 2,0 (harta bersama, kewarisan,
+ * P3HP/penetapan ahli waris, wasiat, ekonomi syariah). Definisinya satu:
+ * BOBOT_JENIS di atas. Dipakai statistik beban (bebanPenetapanService).
+ */
+function adalahKebendaan(jenisPerkaraId) {
+  return bobotJenis(jenisPerkaraId) >= 2;
+}
+
 /** Bobot tiap perkara andaian, dibaca dari jenis perkaranya di SIPP. */
 async function bobotAndaianPerkara(andaian) {
   const peta = new Map();
@@ -1528,6 +1540,153 @@ function terapkanAndaianBeban(bebanTunggal, bebanMajelis, andaian, bobotAndaian)
       for (const id of satu.hakimId) bebanMajelis.set(id, (bebanMajelis.get(id) || 0) + bobot);
     }
   }
+}
+
+/** Pembanding giliran majelis: skor beban bila ada, kalau tidak jumlah perkara (perilaku lama). */
+function bandingGiliranMajelis(a, b) {
+  const sa = a.skorBeban;
+  const sb = b.skorBeban;
+  if (Number.isFinite(sa) && Number.isFinite(sb) && sa !== sb) return sa - sb;
+  return a.perkara - b.perkara || String(a.kunci).localeCompare(String(b.kunci));
+}
+
+/**
+ * Statistik beban untuk satu usulan: dihitung SEKALI di sini, dibawa ke papan
+ * ekstensi dan panel SIPP lewat objek usulan yang sama. Gagal membaca =
+ * null dan usulan memakai urutan lama (tidak pernah menggagalkan usulan).
+ */
+async function susunStatistikBeban({ baris, hakimAktif, jurusitaSemua, paniteraSemua, paniteraAktifSemua, rasioPanitera, andaian, bobotAndaian, susunanSk, sekarang }) {
+  try {
+    const kini = bebanService.jendelaWaktu(sekarang).sekarang;
+    const mulaiDariHari = (x) => (x && x.baruBertugas && Number(x.hariBertugas) > 0 ? geserHari(kini, -Number(x.hariBertugas)) : "");
+    const orang = {
+      hakim: hakimAktif.map((h) => ({ id: h.hakimId, kode: h.kode, nama: h.nama, mulai: h.mulai, rasio: h.rasio })),
+      panitera: (paniteraSemua && paniteraSemua.terbaca && (paniteraSemua.daftar || []).length > 0
+        ? paniteraSemua.daftar.map((x) => ({ id: x.paniteraId, kode: x.kode, nama: x.nama, rasio: porsiPanitera(rasioPanitera, x.nama), mulai: mulaiDariHari(x) }))
+        : paniteraAktifSemua.map((x) => ({ id: x.paniteraId, kode: x.kode, nama: x.nama, rasio: porsiPanitera(rasioPanitera, x.nama), mulai: "" }))),
+      jurusita: ((jurusitaSemua && jurusitaSemua.daftar) || []).map((x) => ({ id: x.jurusitaId, kode: x.kode, nama: x.nama, rasio: 100, mulai: mulaiDariHari(x) })),
+    };
+    if (orang.hakim.length + orang.panitera.length + orang.jurusita.length === 0) return null;
+    // Tidak ada satu penetapan pun yang terbaca: jangan berpura-pura menilai beban.
+    if (baris.hakim.length + baris.panitera.length + baris.jurusita.length === 0 && (!andaian || andaian.length === 0)) return null;
+
+    // Andaian antrean massal: dianggap tertulis hari ini, seberat jenisnya.
+    const salinan = { hakim: [...baris.hakim], panitera: [...baris.panitera], jurusita: [...baris.jurusita] };
+    let nomor = -1;
+    for (const a of andaian || []) {
+      const w = (bobotAndaian && bobotAndaian.get(a.perkaraId)) || BOBOT_BAWAAN;
+      const jenisId = w >= 2 ? 348 : w <= 1 ? 347 : 0;
+      const pid = a.perkaraId > 0 ? a.perkaraId : nomor--;
+      const dasar = { perkaraId: pid, tanggal: kini, jenisId, berjalan: true };
+      for (const id of a.hakimId || []) salinan.hakim.push({ ...dasar, orangId: id });
+      if (a.paniteraId) salinan.panitera.push({ ...dasar, orangId: a.paniteraId });
+      if (a.jurusitaId) salinan.jurusita.push({ ...dasar, orangId: a.jurusitaId });
+    }
+
+    const stat = bebanService.hitungStatistik({
+      sekarang,
+      baris: salinan,
+      orang,
+      susunanSk,
+      bobot: bobotJenis,
+      kebendaan: adalahKebendaan,
+    });
+    if (!stat.terbaca) return null;
+    return {
+      stat,
+      petaHakim: new Map(stat.hakim.orang.map((e) => [e.id, e])),
+      petaPanitera: new Map(stat.panitera.orang.map((e) => [e.id, e])),
+      petaJurusita: new Map(stat.jurusita.orang.map((e) => [e.id, e])),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Menempelkan angka dan alasan beban ke daftar orang (tanpa mengubah urutan). */
+function tempelBeban(daftar, peta, kunciId, kebendaan) {
+  return (daftar || []).map((x) => {
+    const e = peta && peta.get(Number(x[kunciId]));
+    if (!e) return x;
+    return {
+      ...x,
+      statistik: bebanService.ringkasEntri(e),
+      skorBeban: bebanService.skorKandidat(e, { kebendaan }),
+      alasanBeban: bebanService.alasanSingkat(e, { kebendaan }),
+    };
+  });
+}
+
+/**
+ * Muatan statistik pada objek usulan: yang dibaca papan DAN panel SIPP.
+ * Daftar terurut menurut skor beban (terkecil = paling layak lebih dulu).
+ */
+function bangunStatistikUsulan({ statBeban, kebendaanPerkara, pmh, ppp, pjs, susunanBerkode, sk }) {
+  if (!statBeban) return null;
+  const { stat } = statBeban;
+  const opsi = { kebendaan: kebendaanPerkara };
+  const idUsul = {
+    hakim: new Set((pmh.anggota || []).map((x) => Number(x.hakimId))),
+    panitera: Number((ppp.usulan && (ppp.usulan.id ?? ppp.usulan.paniteraId)) || 0),
+    jurusita: Number((pjs.usulan && (pjs.usulan.id ?? pjs.usulan.jurusitaId)) || 0),
+  };
+  const isiOrang = (e, usul) => ({
+    id: e.id,
+    kode: e.kode,
+    nama: e.nama,
+    ...bebanService.ringkasEntri(e),
+    bobotTahun: e.tahunBobot,
+    semestinya: e.semestinya,
+    skor: bebanService.skorKandidat(e, opsi),
+    alasan: bebanService.alasanSingkat(e, opsi),
+    diusulkan: usul,
+  });
+  const urutSkor = (a, b) => a.skor - b.skor || a.nama.localeCompare(b.nama);
+  const rankingkan = (arr) => arr.sort(urutSkor).map((x, i) => ({ ...x, urutan: i + 1 }));
+
+  const majelisSk = stat.majelis.majelis.map((m) => {
+    const skor = bebanService.skorMajelis(m, statBeban.petaHakim, opsi);
+    return {
+      kode: m.kode,
+      dariSk: m.dariSk,
+      anggotaKode: m.anggotaKode,
+      skNomor: m.skNomor,
+      skTanggal: m.skTanggal,
+      ...bebanService.ringkasEntri(m),
+      skor,
+      alasan: bebanService.alasanSingkat(m, opsi),
+      diusulkan: Boolean(pmh.majelisKode) && pmh.majelisKode === m.kode,
+    };
+  });
+  rankingkan(majelisSk);
+  const ranked = majelisSk.map((x, i) => ({ ...x, urutan: i + 1 }));
+
+  const hakim = rankingkan(stat.hakim.orang.map((e) => isiOrang(e, idUsul.hakim.has(e.id))));
+  const panitera = rankingkan(stat.panitera.orang.map((e) => isiOrang(e, e.id === idUsul.panitera)));
+  const jurusita = rankingkan(stat.jurusita.orang.map((e) => isiOrang(e, e.id === idUsul.jurusita)));
+
+  const terbaik = (arr) => (arr[0] ? { kode: arr[0].kode, nama: arr[0].nama, id: arr[0].id, skor: arr[0].skor, alasan: arr[0].alasan } : null);
+  const mj = ranked.find((x) => x.dariSk) || null;
+  return {
+    terbaca: true,
+    jendela: stat.jendela,
+    kebendaanPerkara,
+    sk,
+    majelis: ranked,
+    luarSk: stat.majelis.luarSk,
+    tunggal: stat.majelis.tunggal,
+    hakim,
+    panitera,
+    jurusita,
+    totalKebendaan6: { hakim: stat.hakim.total.kebendaan6, panitera: stat.panitera.total.kebendaan6, jurusita: stat.jurusita.total.kebendaan6, majelis: stat.majelis.totalKebendaan6 },
+    rekomendasi: {
+      majelis: mj ? { kode: mj.kode, anggotaKode: mj.anggotaKode, skor: mj.skor, alasan: mj.alasan } : null,
+      hakim: terbaik(hakim),
+      panitera: terbaik(panitera),
+      jurusita: terbaik(jurusita),
+    },
+    catatan: stat.catatan,
+  };
 }
 
 /**
@@ -1685,6 +1844,58 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
 
   const bentuk = tentukanSusunan(identitas, aturan);
 
+  // ==========================================================================
+  // BEBAN PENETAPAN (20 Okt 2026): SATU SUMBER UNTUK PAPAN DAN PANEL SIPP
+  // ==========================================================================
+  //
+  // Angka beban (berjalan, tahun ini, 30 hari, kebendaan 6 bulan, bagian %)
+  // dan skor urutan dihitung di bebanPenetapanService dan dibawa pada objek
+  // usulan ini. Papan di ekstensi dan panel "Penetapan Otomatis" di halaman
+  // SIPP membaca objek yang sama - tidak ada rumus di peramban.
+  // Skor terkecil = paling layak diusulkan lebih dulu. Gagal membaca = null
+  // dan semua urutan di bawah memakai aturan lama.
+  const kebendaanPerkara = adalahKebendaan(identitas.jenisPerkaraId);
+  const sekarangBeban = new Date();
+  let barisBeban = null;
+  try {
+    barisBeban = await bebanService.bacaBarisBersimpan(sekarangBeban, { tabelAda: (t) => sippSkemaService.tabelAda(t) });
+  } catch {
+    barisBeban = null;
+  }
+  const statBeban = barisBeban
+    ? await susunStatistikBeban({
+        baris: barisBeban,
+        hakimAktif,
+        jurusitaSemua,
+        paniteraSemua,
+        paniteraAktifSemua,
+        rasioPanitera,
+        andaian,
+        bobotAndaian,
+        susunanSk,
+        sekarang: sekarangBeban,
+      })
+    : null;
+  if (statBeban) {
+    statBeban.kebendaan = kebendaanPerkara;
+    const tampung = new Map(statBeban.stat.majelis.majelis.map((m) => [m.kunciIdUrut, m]));
+    for (const m of susunanBerkode) {
+      const ent = tampung.get(bebanService.kunciIdUrut(m.hakimId || []));
+      const semu = ent || { anggotaId: (m.hakimId || []).map(Number) };
+      const skor = bebanService.skorMajelis(semu, statBeban.petaHakim, { kebendaan: kebendaanPerkara });
+      if (ent) {
+        ent.skorMajelis = skor;
+        m.statistik = bebanService.ringkasEntri(ent);
+        m.alasanBeban = bebanService.alasanSingkat(ent, { kebendaan: kebendaanPerkara });
+      }
+      m.skorBeban = skor;
+    }
+    susunanBerkode.sort((a, b) => {
+      if (a.dariSk !== b.dariSk) return a.dariSk ? -1 : 1;
+      return bandingGiliranMajelis(a, b);
+    });
+  }
+
   // --- PMH ----------------------------------------------------------------
   const namaHakim = new Map(hakimAktif.map((x) => [x.hakimId, x]));
   const pmh = susunPmh({
@@ -1699,7 +1910,18 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     susunanSk,
     pilihanMajelis,
     aturan,
+    statBeban,
   });
+  if (statBeban) {
+    const tempelAnggota = (a) => {
+      const e = statBeban.petaHakim.get(Number(a.hakimId));
+      return e ? { ...a, statistik: bebanService.ringkasEntri(e), alasanBeban: bebanService.alasanSingkat(e, { kebendaan: kebendaanPerkara }) } : a;
+    };
+    pmh.anggota = (pmh.anggota || []).map(tempelAnggota);
+    if (!(pmh.bentuk === "tunggal")) {
+      pmh.hitungan = tempelBeban(pmh.hitungan, statBeban.petaHakim, "hakimId", kebendaanPerkara);
+    }
+  }
 
   // ==========================================================================
   // PMH SUDAH ADA (TANGAN ATAU SEBELUMNYA): SISANYA MENGIKUTI YANG TERCATAT
@@ -1768,7 +1990,7 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   // menurut beban: SK menyebut panitera sidang majelis itu, dan yang pertama
   // disebut memang yang utama.
   const urutanSk = new Map(pasanganPp.map((p, i) => [Number(p.id), i]));
-  const calonPp = [...denganKode].sort((a, b) => {
+  let calonPp = [...denganKode].sort((a, b) => {
     if (a.dariSk !== b.dariSk) return a.dariSk ? -1 : 1;
     if (a.dariSk && b.dariSk) {
       return (urutanSk.get(Number(a.id ?? a.paniteraId)) ?? 99) -
@@ -1776,6 +1998,23 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
     }
     return 0;
   });
+  // Skor beban: pendamping SK didahulukan, di antara sesamanya (dan di antara
+  // yang di luar SK) yang paling ringan bebannya di depan. Seri jatuh ke urutan
+  // SK/giliran semula. Tanpa statistik, urutan SK di atas tetap berlaku.
+  if (statBeban && statBeban.petaPanitera.size > 0) {
+    calonPp = bebanService
+      .urutkanKandidat(calonPp, statBeban.petaPanitera, {
+        kebendaan: kebendaanPerkara,
+        ambilId: (x) => x.id ?? x.paniteraId,
+        kelompok: (x) => (x.dariSk ? 0 : 1),
+      })
+      .map((x) => {
+        const e = statBeban.petaPanitera.get(Number(x.id ?? x.paniteraId));
+        return e
+          ? { ...x, statistik: bebanService.ringkasEntri(e), alasanBeban: bebanService.alasanSingkat(e, { kebendaan: kebendaanPerkara }) }
+          : x;
+      });
+  }
 
   const usulanSk = calonPp.find((x) => x.dariSk) || null;
   const ppp = usulanSk
@@ -1784,18 +2023,20 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
         calon: calonPp,
         sebab:
           `panitera sidang Majelis ${acuan.majelisKode} menurut SK` +
-          (usulanSk.kodeSk ? ` - ${usulanSk.kodeSk}` : ""),
+          (usulanSk.kodeSk ? ` - ${usulanSk.kodeSk}` : "") +
+          (usulanSk.alasanBeban ? ` (${usulanSk.alasanBeban})` : ""),
         terbaca: true,
       }
     : {
-        usulan: panitera.usulan,
+        usulan: statBeban && statBeban.petaPanitera.size > 0 ? calonPp[0] || panitera.usulan : panitera.usulan,
         calon: calonPp,
         // Alasan pemilihan SELALU disebut lebih dulu. Sebelumnya peringatan
         // berhalangan menggantikannya sama sekali - dan itu justru menimpa
         // orang yang dipilih KARENA kurang bebannya, sehingga yang terbaca
         // hanya kecurigaan tanpa alasan pilihannya.
         sebab: panitera.terbaca
-          ? `giliran panitera pengganti - ${sebutKeadilan(panitera.usulan)}`
+          ? `giliran panitera pengganti - ${sebutKeadilan(panitera.usulan)}` +
+            (statBeban && calonPp[0] && calonPp[0].alasanBeban ? ` (${calonPp[0].alasanBeban})` : "")
           : "seluruh panitera aktif ditampilkan",
         peringatan:
           panitera.usulan && panitera.usulan.dugaanBerhalangan
@@ -1805,10 +2046,29 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
       };
 
   // --- PJS ----------------------------------------------------------------
+  // Juru sita: giliran menurut skor beban (kebendaan dibagi tersendiri bila
+  // perkaranya kebendaan); tanpa statistik tetap urutan selisih dari bagiannya.
+  if (statBeban && statBeban.petaJurusita.size > 0 && jurusita.daftar.length > 0) {
+    jurusita.daftar = bebanService
+      .urutkanKandidat(jurusita.daftar, statBeban.petaJurusita, {
+        kebendaan: kebendaanPerkara,
+        ambilId: (x) => x.id ?? x.jurusitaId,
+      })
+      .map((x) => {
+        const e = statBeban.petaJurusita.get(Number(x.id ?? x.jurusitaId));
+        return e
+          ? { ...x, statistik: bebanService.ringkasEntri(e), alasanBeban: bebanService.alasanSingkat(e, { kebendaan: kebendaanPerkara }) }
+          : x;
+      });
+    jurusita.usulan = jurusita.daftar[0] || null;
+  }
   const pjs = {
     usulan: jurusita.usulan,
     calon: jurusita.daftar,
-    sebab: jurusita.terbaca ? `giliran juru sita - ${sebutKeadilan(jurusita.usulan)}` : "",
+    sebab: jurusita.terbaca
+      ? `giliran juru sita - ${sebutKeadilan(jurusita.usulan)}` +
+        (jurusita.usulan && jurusita.usulan.alasanBeban ? ` (${jurusita.usulan.alasanBeban})` : "")
+      : "",
     peringatan:
       jurusita.usulan && jurusita.usulan.dugaanBerhalangan
         ? `${jurusita.usulan.nama} sudah lama tidak menerima panggilan - pastikan tidak sedang berhalangan.`
@@ -1963,6 +2223,52 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
    */
   const ketuaTercatat = ketuaMajelisTercatat(tercatat);
 
+  // ==========================================================================
+  // SK MAJELIS: YANG DIPAKAI, DAN APAKAH PENETAPAN SESUAI
+  // ==========================================================================
+  //
+  // Susunan SK disimpan di Pengaturan ALETA (layar SK majelis) dan dikirim
+  // portal sebagai pengaturan.sk + susunanSk. Belum diisi = usulan tetap
+  // memakai susunan yang terpakai tahun ini, dan papan memberi tanda.
+  const skMasuk = pengaturan.sk && typeof pengaturan.sk === "object" ? pengaturan.sk : {};
+  const skDariSipp = susunan.terbaca
+    ? {
+        nomor: susunan.majelis.find((x) => x.nomorSk)?.nomorSk || "",
+        tanggal: susunan.majelis.find((x) => x.tanggalSk)?.tanggalSk || "",
+      }
+    : { nomor: "", tanggal: "" };
+  const skDipakai = susunanSk.length > 0;
+  const skNomor = cleanText(skMasuk.nomor) || skDariSipp.nomor;
+  const skTanggal = isoTanggal(skMasuk.tanggal) || skDariSipp.tanggal;
+  const skUsulan = {
+    nomor: skNomor,
+    tanggal: skTanggal,
+    dipakai: skDipakai,
+    bunyi: skDipakai
+      ? `SK ${skNomor || "(nomor belum diisi)"}${skTanggal ? ` tanggal ${sebutTanggal(skTanggal)}` : ""}`
+      : "Belum memakai SK - isi di Pengaturan (susunan memakai majelis yang terpakai tahun ini)",
+  };
+  let paniteraCatat = 0;
+  if (tercatat.length > 0) paniteraCatat = await bebanService.paniteraTercatat(identitas.perkaraId);
+  const kesesuaianSk = {
+    ...bebanService.periksaKesesuaianSk({
+      hakimKode: (acuan.anggota || []).map((x) => x.kode),
+      hakimId: (acuan.anggota || []).map((x) => x.hakimId),
+      paniteraId: acuan.dariTercatat ? paniteraCatat : Number((ppp.usulan && (ppp.usulan.id ?? ppp.usulan.paniteraId)) || 0),
+      tanggal: tanggalPenetapan,
+      susunanSk,
+      sk: skUsulan,
+    }),
+    untuk: acuan.dariTercatat ? "tercatat" : "usulan",
+  };
+
+  const statistikUsulan = bangunStatistikUsulan({ statBeban, kebendaanPerkara, pmh, ppp, pjs, susunanBerkode, sk: skUsulan });
+  if (statistikUsulan && pmh.bentuk === "majelis") {
+    const rek = statistikUsulan.rekomendasi.majelis;
+    pmh.rekomendasiBeban = rek;
+    pmh.berbedaDariRekomendasi = Boolean(rek && pmh.majelisKode && rek.kode !== pmh.majelisKode);
+  }
+
   return {
     ok: true,
     perkara: identitas,
@@ -1981,12 +2287,9 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
       ketuaNama: ketuaTercatat ? ketuaTercatat.nama : "",
       hakim: tercatat,
     },
-    sk: susunan.terbaca
-      ? {
-          nomor: susunan.majelis.find((x) => x.nomorSk)?.nomorSk || "",
-          tanggal: susunan.majelis.find((x) => x.tanggalSk)?.tanggalSk || "",
-        }
-      : { nomor: "", tanggal: "" },
+    sk: skUsulan,
+    kesesuaianSk,
+    statistik: statistikUsulan,
   };
 }
 
@@ -2032,6 +2335,7 @@ function susunPmh({
   susunanSk = [],
   pilihanMajelis = [],
   aturan,
+  statBeban = null,
 }) {
   const dasar = {
     bentuk: bentuk.bentuk,
@@ -2156,7 +2460,7 @@ function susunPmh({
       const lengkap = [...(susunanTerpakai || [])].filter(
         (x) => Array.isArray(x.anggota) && x.anggota.length >= 3
       );
-      const urutGiliran = (a, b) => a.perkara - b.perkara || String(a.kunci).localeCompare(String(b.kunci));
+      const urutGiliran = bandingGiliranMajelis;
       const majelisSk = lengkap.filter((x) => x.dariSk).sort(urutGiliran);
       const giliranMajelis = majelisSk.length > 0 ? majelisSk : lengkap.sort(urutGiliran);
 
@@ -2222,9 +2526,7 @@ function susunPmh({
       (x) => x.dariSk && Array.isArray(x.anggota) && x.anggota.length >= 3
     );
     if (susunanSk.length > 0 && kodeSmart === "" && majelisSkTersedia.length > 0) {
-      const pilihan = [...majelisSkTersedia].sort(
-        (a, b) => a.perkara - b.perkara || String(a.kunci).localeCompare(String(b.kunci))
-      )[0];
+      const pilihan = [...majelisSkTersedia].sort(bandingGiliranMajelis)[0];
       return {
         ...dasar,
         majelisKode: pilihan.majelisKode,
@@ -2351,6 +2653,24 @@ function susunPmh({
     })
     .sort((a, b) => a._selisih - b._selisih || a.hakimId - b.hakimId);
 
+  // Skor beban (30 hari, kebendaan 6 bulan, berjalan) menggantikan urutan
+  // selisih saja bila statistiknya terbaca; selisih tahunan ikut sebagai komponen.
+  if (statBeban && statBeban.petaHakim && statBeban.petaHakim.size > 0) {
+    const urut = bebanService.urutkanKandidat(hitungan, statBeban.petaHakim, {
+      kebendaan: Boolean(statBeban.kebendaan),
+      ambilId: (x) => x.hakimId,
+    });
+    hitungan.length = 0;
+    for (const x of urut) {
+      const e = statBeban.petaHakim.get(Number(x.hakimId));
+      hitungan.push({
+        ...x,
+        statistik: bebanService.ringkasEntri(e),
+        alasanBeban: bebanService.alasanSingkat(e, { kebendaan: Boolean(statBeban.kebendaan) }),
+      });
+    }
+  }
+
   const terpilih = hitungan[0] || null;
 
   return {
@@ -2363,7 +2683,8 @@ function susunPmh({
     sebab:
       hitungan.length === 1
         ? `${bentuk.sebab} - satu-satunya hakim yang berwenang`
-        : `${bentuk.sebab} - ${sebutKeadilan(terpilih)}`,
+        : `${bentuk.sebab} - ${sebutKeadilan(terpilih)}` +
+          (terpilih && terpilih.alasanBeban ? ` (${terpilih.alasanBeban})` : ""),
   };
 }
 
@@ -2575,6 +2896,8 @@ module.exports = {
   giliranPanitera,
   normalkanAndaian,
   bobotJenis,
+  adalahKebendaan,
+  bandingGiliranMajelis,
   terapkanAndaianPetugas,
   terapkanAndaianSusunan,
   terapkanAndaianBeban,

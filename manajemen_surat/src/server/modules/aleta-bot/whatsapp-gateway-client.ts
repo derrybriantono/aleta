@@ -4549,6 +4549,8 @@ export async function getGatewayPenunjukanUsulan(payload: {
      * menunjuk siapa pun. Lihat migrasi 0044.
      */
     susunanSk?: Record<string, unknown>[];
+    /** SK majelis yang berlaku (nomor + tanggal ISO) - tampil di papan dan dipakai memeriksa kesesuaian. */
+    sk?: { nomor: string; tanggal: string };
     /** Majelis yang dipilih petugas di papan - id hakim_pn, ketua di depan. */
     pilihanMajelis?: number[];
     /**

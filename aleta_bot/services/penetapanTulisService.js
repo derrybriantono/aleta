@@ -3047,6 +3047,8 @@ async function jalankanRencana(rencana, opsi = {}) {
     }
   }
 
+  // Angka beban (simpanan 10 detik) basi begitu ada yang tertulis.
+  require("./bebanPenetapanService").lupakanSimpanan();
   return { ok: true, kering: false, jumlahLangkah: selesai.length, selesai };
 }
 
@@ -3193,6 +3195,7 @@ async function tulisRantaiUtuh(minta, alat = {}) {
       const dipulihkan = await batalkan();
       return { ok: false, alasan: "gagal_menyimpan", pesan: pesanTeknisRantai(galat), dipulihkan, hasil };
     }
+    require("./bebanPenetapanService").lupakanSimpanan();
     return { ok: true, utuh: true, dipulihkan: false, hasil };
   } catch (galat) {
     const dipulihkan = await batalkan();
