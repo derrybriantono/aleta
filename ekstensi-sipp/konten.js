@@ -6923,6 +6923,93 @@ function samaPutusan(a, b) {
 }
 
 /**
+ * Laporan e-Doc sesudah Putusan Akhir tersimpan (agen B2, 20 Okt 2026): satu baris per langkah
+ * dan muat ulang tetap di halaman perkara lewat modul bersama (muat-ulang-sipp.js). Pulang true
+ * bila laporan + muat ulang sudah ditangani di sini; false = pemanggil memakai jalur lama
+ * (tanpa rincian langkah, atau modul muat ulang tidak ada).
+ */
+function b2LaporkanEdoc(nomorPerkara, wadah, edoc, judulTersimpan) {
+  const langkah = edoc && Array.isArray(edoc.langkah) ? edoc.langkah : [];
+  if (!langkah.length || typeof muatUlangSesudahTulis !== "function") return false;
+  const baris = [{ jenis: "Putusan Akhir", teks: "tersimpan di SIPP", ok: true }].concat(
+    langkah.map((l) => ({ jenis: l.judul, teks: l.teks, ok: l.nada !== "salah" }))
+  );
+  const hasil = muatUlangSesudahTulis({
+    nomor: nomorPerkara,
+    judulOk: `${judulTersimpan} e-Doc selesai.`,
+    judulGagal: `${judulTersimpan} e-Doc belum selesai seluruhnya.`,
+    baris,
+    wadah: wadah || undefined,
+  });
+  return Boolean(hasil);
+}
+
+/** Kunci perkara bersama penetapan (putusan-edoc-sekaligus.js). Tanpa modul: tanpa kunci. */
+async function b2AmbilKunci(nomorPerkara) {
+  const mod = globalThis.aletaPutusanEdoc;
+  if (!mod || typeof mod.ambilKunci !== "function") return { ok: true, lepas: async () => undefined };
+  return mod.ambilKunci(nomorPerkara);
+}
+
+/** Dua tempat tetap di bawah kabar hasil: laporan/kotak muat ulang, dan tombol ulang (jadwalkan mengosongkan tempat pertama). */
+function b2SiapkanTempat(kabar) {
+  const induk = kabar && kabar.parentNode;
+  const ambil = (tanda) => {
+    let e = induk ? induk.querySelector(`[data-b2-tempat="${tanda}"]`) : null;
+    if (!e) {
+      e = buatElemen("div", `aleta-b2-tempat aleta-b2-${tanda}`);
+      e.setAttribute("data-b2-tempat", tanda);
+      if (induk) induk.insertBefore(e, kabar.nextSibling);
+    }
+    return e;
+  };
+  const ulang = ambil("ulang");
+  const laporan = ambil("laporan");
+  // urutan di layar: kabar, laporan, tombol ulang
+  if (induk && laporan.nextSibling !== ulang) induk.insertBefore(ulang, laporan.nextSibling);
+  return { laporan, ulang };
+}
+
+/**
+ * Tombol "Ulangi unggah e-Doc saja" sesudah Putusan Akhir tersimpan tetapi e-Doc belum seluruhnya
+ * (agen B2). Hanya langkah e-Doc yang diulang; Putusan Akhir tidak disentuh, e-Doc yang sudah ada
+ * tidak diganti (cek di putusan-edoc-sekaligus.js).
+ */
+function b2PasangUlangEdoc(p) {
+  const mod = globalThis.aletaPutusanEdoc;
+  if (!mod || typeof mod.pasangUlang !== "function" || !p || !p.tempat) return null;
+  p.tempat.ulang.textContent = "";
+  if (p.perluBerkas) {
+    p.tempat.ulang.appendChild(
+      buatElemen(
+        "div",
+        "aleta-tetap-sebab aleta-remeh",
+        "Berkas putusan belum tersedia dari ABT. Perbaiki sebabnya (mis. masuk ABT di tab lain) lalu ulangi, atau unggah berkas putusan sendiri lewat bagian “Unggah putusan ke SIPP”."
+      )
+    );
+  }
+  return mod.pasangUlang({
+    induk: p.tempat.ulang,
+    ulangi: async () => {
+      const h = await mod.jalankan({
+        nomorPerkara: p.nomorPerkara,
+        kabar: p.kabar,
+        wadah: p.wadah,
+        putusan: p.putusan || null,
+        putusanRtf: p.putusanRtf || null,
+        anonim: p.anonim || null,
+      });
+      if (!b2LaporkanEdoc(p.nomorPerkara, p.tempat.laporan, h, "Putusan Akhir tersimpan di SIPP.")) {
+        mod.gambarLangkah(p.tempat.laporan, "Hasil unggah ulang", h.langkah || []);
+      }
+      p.kabar.className = h.ok ? "aleta-abt-kabar" : "aleta-abt-kabar aleta-abt-gagal";
+      p.kabar.textContent = h.bunyi || (h.ok ? "e-Doc selesai." : "e-Doc belum selesai.");
+      return h;
+    },
+  });
+}
+
+/**
  * Menekan Simpan, menunggu SIPP benar-benar mencatatnya, lalu membuka kembali
  * halaman perkaranya.
  *
@@ -6989,7 +7076,17 @@ async function simpanPutusanLaluBuka(nomorPerkara, kabar, opsi) {
         const bunyiLanjut = `${bunyi} ${(lanjut && lanjut.bunyi) || ""}`.trim();
         // Hasil edoc dipulangkan tersendiri supaya antrean massal dapat
         // mencatatnya per perkara (butir 6, 6 Okt 2026).
-        const edoc = { ok: Boolean(lanjut && lanjut.ok), bunyi: String((lanjut && lanjut.bunyi) || "Edoc tidak terunggah.") };
+        const edoc = {
+          ok: Boolean(lanjut && lanjut.ok),
+          bunyi: String((lanjut && lanjut.bunyi) || "Edoc tidak terunggah."),
+          ...(lanjut && Array.isArray(lanjut.langkah) ? { langkah: lanjut.langkah, perluBerkas: Boolean(lanjut.perluBerkas) } : {}),
+        };
+        // Agen B2: e-Doc yang dikerjakan putusan-edoc-sekaligus.js melapor per langkah (tercatat / sudah ada /
+        // gagal+sebab). Laporan dan muat ulang tetap di perkara ini lewat modul bersama; ada yang gagal =
+        // tidak dimuat ulang sendiri, hanya tombol. Antrean massal tetap memakai jalur lama di bawah.
+        if (o.lanjutWalauEdocGagal !== true && typeof b2LaporkanEdoc === "function" && b2LaporkanEdoc(nomorPerkara, o.wadahLaporan || null, edoc, "Putusan Akhir tersimpan di SIPP.")) {
+          return { ok: true, bunyi: `${bunyi} ${edoc.bunyi}`.trim(), pesanSipp: jawaban ? jawaban.pesan : "", edoc };
+        }
         if (!lanjut || !lanjut.ok) {
           // Antrean massal: edoc yang gagal TIDAK menghentikan antrean -
           // putusannya sudah tersimpan, sebabnya tercatat di butir antrean,
@@ -7374,6 +7471,18 @@ function bagianIsiPutusan(nomorPerkara) {
   let naskahEdoc = null;
   const sekaligus = a30Nyala && typeof a30BarisSekaligus === "function" ? a30BarisSekaligus() : null;
   if (sekaligus) kotakUnggah.appendChild(sekaligus.baris);
+  // Agen B2 (20 Okt): Putusan otomatis yang berangkat dari DRAF (tanpa berkas yang dipilih) juga
+  // mengunggah edoc putusan + anonimisasi sesudah tersimpan - berkasnya dicetak dari Blangko Derry
+  // di ABT. Bawaan menyala, dapat dimatikan; baris ini hanya tampak bila tidak ada berkas pilihan.
+  const sekaligusAbt =
+    a30Nyala && globalThis.aletaPutusanEdoc && typeof globalThis.aletaPutusanEdoc.barisSaklar === "function"
+      ? globalThis.aletaPutusanEdoc.barisSaklar()
+      : null;
+  if (sekaligusAbt) kotakUnggah.appendChild(sekaligusAbt.baris);
+  const segarkanBarisAbt = () => {
+    if (sekaligusAbt) sekaligusAbt.tampilkan(!(sekaligus && sekaligus.ada()));
+  };
+  segarkanBarisAbt();
   // Butir 6 (6 Okt): drafnya dari naskah yang dikirim SEBELUMNYA di peramban
   // ini (antrean dari berkas, atau halaman ini sebelum dimuat ulang) - naskah
   // itu tetap menjadi edoc putusan + anonimisasinya. Barisnya tampil dengan
@@ -7383,6 +7492,7 @@ function bagianIsiPutusan(nomorPerkara) {
       if (!tersimpan || naskahEdoc) return;
       naskahEdoc = tersimpan;
       sekaligus.setelNaskah(naskahEdoc);
+      segarkanBarisAbt();
     });
   }
   // Ringkasan panjang tiap bagian punya wadahnya SENDIRI, bukan wadah usulan.
@@ -7493,6 +7603,7 @@ function bagianIsiPutusan(nomorPerkara) {
     // Peringatan konversi (butir 8) - PDF: tata letaknya dapat berubah.
     for (const p of peringatanBentuk) wadahUnggah.appendChild(buatElemen("div", "aleta-tetap-awas", String(p)));
     if (sekaligus) sekaligus.setelNaskah(naskahEdoc);
+    segarkanBarisAbt();
     // Butir 6 (6 Okt): naskah yang sama disimpan di peramban ini, supaya
     // "Putusan massal - SIPP" atas draf ini pun dapat mengunggah edocnya
     // (a30OpsiEdocMassal). Tidak ditunggu, dan gagalnya tidak berbunyi.
@@ -7775,6 +7886,17 @@ function bagianIsiPutusan(nomorPerkara) {
   // ditekan: yang menahan MENAHAN sampai orang menyatakan sudah membacanya.
   let raporAgen = null;
 
+  // Agen B2 (20 Okt): tombol "Putusan Otomatis" di halaman perkara SIPP (putusan-sipp.js) menjalankan
+  // alur panel ini JUGA - ambil usulan, isikan yang dicentang, Simpan, lalu e-Doc - tanpa salinan kode:
+  // kotak.otomatis() hanya menekan tombol yang sama dan menunggu hasilnya.
+  let otoMenunggu = null;
+  const selesaiOto = (hasil) => {
+    if (!otoMenunggu) return;
+    const { resolve } = otoMenunggu;
+    otoMenunggu = null;
+    resolve(hasil);
+  };
+
   tombol.addEventListener("click", async () => {
     tombol.disabled = true;
     // Daftar medan dibaca ulang tiap tekan - tanpa permintaan bila versinya
@@ -7799,6 +7921,7 @@ function bagianIsiPutusan(nomorPerkara) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
       kabar.textContent = String((galat && galat.message) || galat);
       tombol.disabled = false;
+      selesaiOto({ ok: false, tahap: "usulan", pesan: kabar.textContent });
       return;
     }
 
@@ -7806,6 +7929,7 @@ function bagianIsiPutusan(nomorPerkara) {
       kabar.className = "aleta-abt-kabar";
       kabar.textContent = (jawab && jawab.sebab) || "Belum ada draf putusan untuk perkara ini.";
       tombol.disabled = false;
+      selesaiOto({ ok: false, tahap: "usulan", pesan: kabar.textContent });
       return;
     }
 
@@ -8266,7 +8390,19 @@ function bagianIsiPutusan(nomorPerkara) {
     wadah.appendChild(terap);
     wadah.appendChild(hasilTerap);
 
+    // Satu kunci per perkara dipakai bersama penetapan dan tombol "Putusan Otomatis" di halaman SIPP:
+    // dua pekerjaan atas perkara yang sama tidak berjalan bersamaan (tidak ganda).
     terap.addEventListener("click", async () => {
+      const kunci = typeof b2AmbilKunci === "function" ? await b2AmbilKunci(nomorPerkara) : { ok: true, lepas: async () => undefined };
+      if (!kunci.ok) {
+        hasilTerap.className = "aleta-abt-kabar aleta-abt-gagal";
+        hasilTerap.textContent = kunci.pesan;
+        selesaiOto({ ok: false, tahap: "kunci", pesan: kunci.pesan });
+        return;
+      }
+      let h;
+      try {
+        h = await (async () => {
       const dipilih = daftar.filter((x) => x.centang.checked && x.teks);
       const medanDipilih = pilihanTerap.filter((x) => x.centang.checked);
       if (dipilih.length === 0 && medanDipilih.length === 0) {
@@ -8293,8 +8429,11 @@ function bagianIsiPutusan(nomorPerkara) {
       // bila ada. Anonimisasi yang harus DIBUAT disiapkan BERSAMAAN dengan
       // pengisian blangko (persiapan itu tidak menulis ke SIPP), bukan sesudah
       // seluruh isian selesai - pemeriksanya tetap berjalan sebelum Simpan.
+      const opsiOto = otoMenunggu ? otoMenunggu.opsi || {} : null;
       const edocA30 =
-        sekaligus && sekaligus.dipakai() && naskahEdoc
+        opsiOto && opsiOto.edoc === false
+          ? null
+          : sekaligus && sekaligus.dipakai() && naskahEdoc
           ? s1Cepat && anonimPilihan
             ? { ...naskahEdoc, anonim: anonimPilihan }
             : naskahEdoc
@@ -8394,7 +8533,7 @@ function bagianIsiPutusan(nomorPerkara) {
           `${tampakSesudah - medanTampak.length} pilihan baru - dibacakan ulang…`;
         if (kabarAnon) kabarAnon.remove();
         tombol.click();
-        return;
+        return "lanjut";
       }
       // UI Baru: Simpan tidak ditekan = anonimisasi yang sedang disiapkan
       // tidak dipakai; kabarnya dilepas supaya tidak terbaca sebagai unggahan.
@@ -8470,6 +8609,33 @@ function bagianIsiPutusan(nomorPerkara) {
           edoc: edocA30,
         });
       }
+      // Agen B2 (20 Okt): tanpa berkas pilihan, edoc putusan + anonimisasi dicetak/dibuat SESUDAH
+      // Putusan Akhir terbukti tersimpan (blangko ABT memuat tanggal putusan yang baru tersimpan).
+      const edocAbt = Boolean(
+        a30Nyala &&
+          !edocA30 &&
+          !(sekaligus && sekaligus.ada()) &&
+          (opsiOto && opsiOto.edoc != null ? opsiOto.edoc === true : sekaligusAbt && sekaligusAbt.dipakai())
+      );
+      const tempatB2 = typeof b2SiapkanTempat === "function" ? b2SiapkanTempat(hasilTerap) : { laporan: null, ulang: null };
+      if (opsiOto && opsiOto.wadahLaporan) tempatB2.laporan = opsiOto.wadahLaporan;
+      // Dari tombol "Putusan Otomatis" di halaman SIPP: kotak muat ulang melayang di halaman (panel tombol itu
+      // dapat tergambar ulang saat SIPP menyegarkan isinya), bukan di dalam panel ekstensi.
+      const laporanMelayang = Boolean(opsiOto && opsiOto.melayang);
+      if (a30Nyala && (edocAbt || edocA30)) {
+        opsiSimpanA30 = { sebelum: sebelumA30, jajakCepat: true, ...(opsiSimpanA30 || {}), wadahLaporan: laporanMelayang ? null : tempatB2.laporan };
+        if (edocAbt && globalThis.aletaPutusanEdoc) {
+          opsiSimpanA30.sesudahTersimpan = (kabarLangkah) =>
+            globalThis.aletaPutusanEdoc.jalankan({
+              nomorPerkara,
+              kabar: kabarLangkah || hasilTerap,
+              wadah,
+              anonim: anonimPilihan || null,
+              denganPutusan: !(opsiOto && opsiOto.denganPutusan === false),
+              denganAnonim: !(opsiOto && opsiOto.denganAnonim === false),
+            });
+        }
+      }
       const hasilSimpan = opsiSimpanA30
         ? await simpanPutusanLaluBuka(nomorPerkara, hasilTerap, opsiSimpanA30)
         : await simpanPutusanLaluBuka(nomorPerkara, hasilTerap);
@@ -8478,10 +8644,60 @@ function bagianIsiPutusan(nomorPerkara) {
         ? "aleta-abt-kabar"
         : "aleta-abt-kabar aleta-abt-gagal";
       hasilTerap.textContent = `${berhasil} isian terisi. ${hasilSimpan.bunyi}`;
+      // Putusan Akhir sudah tersimpan tetapi edoc belum seluruhnya: ulangi unggah edoc SAJA, satu klik.
+      if (a30Nyala && typeof b2PasangUlangEdoc === "function" && hasilSimpan.ok && hasilSimpan.edoc && hasilSimpan.edoc.ok === false) {
+        b2PasangUlangEdoc({
+          nomorPerkara,
+          kabar: hasilTerap,
+          wadah,
+          tempat: tempatB2,
+          putusan: sekaligus && sekaligus.dipakai() && naskahEdoc ? naskahEdoc.asli : null,
+          putusanRtf: sekaligus && sekaligus.dipakai() && naskahEdoc ? naskahEdoc.rtf : null,
+          anonim: anonimPilihan || null,
+          perluBerkas: Boolean(hasilSimpan.edoc.perluBerkas),
+        });
+      }
+      return { ok: Boolean(hasilSimpan.ok), tersimpan: Boolean(hasilSimpan.ok), bunyi: hasilSimpan.bunyi, edoc: hasilSimpan.edoc || null };
+        })();
+      } catch (galat) {
+        h = { ok: false, tahap: "isi", pesan: String((galat && galat.message) || galat) };
+      } finally {
+        await kunci.lepas();
+      }
+      if (h === "lanjut") return;
+      terap.disabled = false;
+      selesaiOto(h && typeof h === "object" ? h : { ok: false, tahap: "isi", pesan: String(hasilTerap.textContent || "Pengisian berhenti sebelum Simpan.") });
     });
+
+    // Tombol "Putusan Otomatis": usulan sudah terbaca -> Isikan ditekan sendiri (yang menahan tetap menahan).
+    if (otoMenunggu) {
+      if (terap.disabled) {
+        selesaiOto({
+          ok: false,
+          tahap: "praperiksa",
+          pesan: `Praperiksa menahan: ${(typeof ringkasHentikan === "function" && ringkasHentikan(raporAgen)) || "ada pertentangan dengan fakta SIPP"}. Periksa di bagian Putusan otomatis panel, lalu tekan Isikan sendiri.`,
+        });
+      } else {
+        setTimeout(() => terap.click(), 0);
+      }
+    }
 
     tombol.disabled = false;
   });
+
+  // Pintu untuk putusan-sipp.js: menjalankan alur yang SAMA dengan menekan tombol-tombol di atas.
+  kotak.otomatis = async (opsi) => {
+    if (otoMenunggu) return { ok: false, tahap: "sibuk", pesan: "Putusan otomatis perkara ini sedang berjalan." };
+    // Draf yang dimuat sendiri saat blangko dibuka (s1PasangPutusanOtomatis) selesai dulu.
+    const mulai = Date.now();
+    while (tombol.disabled && Date.now() - mulai < 20000) await new Promise((r) => setTimeout(r, 100));
+    if (tombol.disabled) return { ok: false, tahap: "sibuk", pesan: "Bagian Putusan otomatis masih bekerja - tunggu sampai selesai, lalu ulangi." };
+    if (otoMenunggu) return { ok: false, tahap: "sibuk", pesan: "Putusan otomatis perkara ini sedang berjalan." };
+    return new Promise((resolve) => {
+      otoMenunggu = { resolve, opsi: opsi || {} };
+      tombol.click();
+    });
+  };
 
   // Perbaikan 1 Okt (S, butir 2/3/4) - UI Baru saja; Lama dan Baru tidak
   // memanggilnya (s1PasangPutusanOtomatis memeriksa tampilannya sendiri).
@@ -23018,20 +23234,37 @@ function a30BarisSekaligus() {
       }
     },
     dipakai: () => Boolean(naskah) && cek.checked,
+    /** Ada naskah yang dapat diunggah sebagai edoc (baris ini tampak) - lawannya: putusan dicetak dari ABT (B2). */
+    ada: () => Boolean(naskah),
   };
 }
 
 /** Kiriman edoc sesudah putusan tersimpan (butir 19) - rute unggah-sipp yang sudah ada. */
 async function a30UnggahEdoc(p) {
+  // Rincian per langkah (tercatat / gagal + sebab) untuk laporan dan kotak muat ulang bersama
+  // (putusan-edoc-sekaligus.js, agen B2). Tanpa modul itu hasilnya persis semula.
+  const akhiri = (x) => {
+    const m = typeof globalThis !== "undefined" ? globalThis.aletaPutusanEdoc : null;
+    return m && typeof m.langkahDariUnggah === "function"
+      ? { ...x, langkah: m.langkahDariUnggah(x, { putusan: Boolean(p.putusan), anonimisasi: Boolean(p.anonimisasi) }) }
+      : x;
+  };
   if (p.kabar) {
-    p.kabar.textContent = `Tersimpan di SIPP. Mengunggah edoc putusan${p.anonimisasi ? " dan edoc anonimisasi sekaligus" : ""}…`;
+    p.kabar.textContent = p.putusan
+      ? `Tersimpan di SIPP. Mengunggah edoc putusan${p.anonimisasi ? " dan edoc anonimisasi sekaligus" : ""}…`
+      : "Tersimpan di SIPP. Mengunggah edoc anonimisasi…";
   }
   const badan = new FormData();
   badan.append("perkaraId", perkaraIdDariHalaman());
   badan.append("nomorPerkara", p.nomorPerkara || "");
   badan.append("olehUsername", namaPenggunaSipp() || "");
-  badan.append("putusan", p.putusan);
+  // Putusan boleh kosong (agen B2): e-Doc putusannya sudah ada di SIPP dan tidak diganti,
+  // hanya anonimisasinya yang menyusul.
+  if (p.putusan) badan.append("putusan", p.putusan);
   if (p.anonimisasi) badan.append("anonimisasi", p.anonimisasi);
+  // Anonimisasi buatan penyamar: sisa nama pihak/NIK yang masih lolos disamarkan lagi di rute
+  // pada salinan anonimisasi (putusan asli tidak diubah) - sama dengan unggah massal di ABT.
+  if (p.samarkanSisa && p.anonimisasi) badan.append("samarkanSisa", "1");
   try {
     // 12OKT-I: keputusan "Tetap unggah" dari dialog pemeriksa ikut; penolakan
     // server yang membolehkan ditawarkan di wadah pemanggil (bila ada). Hanya
@@ -23059,7 +23292,7 @@ async function a30UnggahEdoc(p) {
       // pun ke SIPP, jadi putusan dikirim ulang SENDIRIAN (setara
       // unggahBerkasAbt di abt.js); anonimisasinya menyusul.
       const tolak = galat && galat.tolak;
-      if (!p.anonimisasi || !tolak || tolak.slot !== "anonimisasi") throw galat;
+      if (!p.anonimisasi || !p.putusan || !tolak || tolak.slot !== "anonimisasi") throw galat;
       try {
         alatCatat("a30-anonim", "anonimisasi ditolak server - edoc putusan dikirim sendirian", String(tolak.alasan || ""));
       } catch {
@@ -23071,25 +23304,29 @@ async function a30UnggahEdoc(p) {
       badan.delete("tetapUnggahNama");
       const sendiri = await kirimBadanUnggahSipp(badan, BATAS_UNGGAH_SIPP_MS);
       const masuk = Boolean(sendiri && sendiri.ok) && (sendiri.berkas || []).some((b) => b.ok);
-      return {
+      return akhiri({
         ok: false,
+        // Rincian per berkas untuk laporan per langkah (putusan-edoc-sekaligus.js).
+        berkas: (sendiri && sendiri.berkas) || [],
+        anonimDitolak: String(galat.message || tolak.alasan || "ditolak"),
         bunyi: masuk
           ? `Edoc putusan terunggah; edoc anonimisasi TIDAK diunggah: ${String(galat.message || "ditolak")} ` +
             'Perbaiki anonimisasinya lalu unggah lewat bagian "Unggah putusan ke SIPP".'
           : sambungSebab("Edoc tidak terunggah", (sendiri && (sendiri.sebab || sendiri.pesan)) || galat.message, true),
-      };
+      });
     }
-    if (!jawab.ok) return { ok: false, bunyi: sambungSebab("Edoc tidak terunggah", jawab.sebab || jawab.pesan || jawab.alasan || "ditolak", true) };
+    if (!jawab.ok) return akhiri({ ok: false, bunyi: sambungSebab("Edoc tidak terunggah", jawab.sebab || jawab.pesan || jawab.alasan || "ditolak", true) });
     const semua = jawab.berkas || [];
     const gagal = semua.filter((b) => !b.ok);
     if (!semua.length || gagal.length) {
       const masuk = semua.filter((b) => b.ok).map((b) => (b.jenis === "anonimisasi" ? "anonimisasi" : "putusan"));
-      return {
+      return akhiri({
         ok: false,
+        berkas: semua,
         bunyi: `Edoc terunggah: ${masuk.join(" dan ") || "tidak ada"}; gagal: ${gagal
           .map((b) => `${b.jenis === "anonimisasi" ? "anonimisasi" : "putusan"} - ${pesanGagalUnggah(b)}`)
           .join("; ") || "tidak ada jawaban per berkas"}.`,
-      };
+      });
     }
     // Butir 6 (6 Okt): naskah yang disimpan di peramban untuk edoc antrean
     // tidak disimpan lebih lama dari perlunya - edocnya sudah masuk.
@@ -23102,12 +23339,13 @@ async function a30UnggahEdoc(p) {
         /* simpanan peramban hanya pembantu */
       }
     }
-    return {
+    return akhiri({
       ok: true,
-      bunyi: `Edoc putusan${p.anonimisasi ? " dan edoc anonimisasi" : ""} terunggah${jawab.antrean ? ", dan perkara ini masuk antrean Direktori Putusan" : ""}.`,
-    };
+      berkas: semua,
+      bunyi: `${p.putusan ? `Edoc putusan${p.anonimisasi ? " dan edoc anonimisasi" : ""}` : "Edoc anonimisasi"} terunggah${jawab.antrean ? ", dan perkara ini masuk antrean Direktori Putusan" : ""}.`,
+    });
   } catch (galat) {
-    return { ok: false, bunyi: sambungSebab("Edoc tidak terunggah", galat) };
+    return akhiri({ ok: false, bunyi: sambungSebab("Edoc tidak terunggah", galat) });
   }
 }
 
@@ -23279,6 +23517,19 @@ async function a30OpsiSimpanPutusan(p) {
       const unggah = await a30UnggahEdoc({ nomorPerkara: p.nomorPerkara, putusan: p.edoc.asli, anonimisasi: null, kabar });
       return {
         ok: false,
+        // Laporan per langkah: putusan menurut hasil unggah, anonimisasi menurut sebab di bawah.
+        ...(Array.isArray(unggah.langkah)
+          ? {
+              langkah: unggah.langkah.concat([
+                {
+                  kunci: "anonimisasi",
+                  judul: "e-Doc anonimisasi",
+                  teks: `${anon.dilewati ? "dilewati atas pilihan Anda" : "belum diunggah"} - ${String(anon.pesan || "anonimisasi tidak siap").replace(/\s+/g, " ").trim()}`,
+                  nada: anon.dilewati ? "lewat" : "salah",
+                },
+              ]),
+            }
+          : {}),
         bunyi:
           `${unggah.bunyi} Edoc anonimisasi BELUM diunggah (${anon.pesan}) - unggah lewat bagian ` +
           '"Unggah putusan ke SIPP" sesudah anonimisasinya siap.',
@@ -23462,6 +23713,18 @@ async function a30OpsiEdocMassal(p) {
   const dasar = p.opsi || {};
   const naskah = await a30AmbilNaskahEdoc(p.nomorPerkara);
   if (!naskah) {
+    // Agen B2 (20 Okt): tanpa naskah di peramban ini, edoc putusan + anonimisasi dicetak dari Blangko Derry
+    // di ABT sesudah Simpan terbukti (putusan-edoc-sekaligus.js) - selama saklarnya menyala. Antrean tidak
+    // berhenti karena edoc; hasilnya tercatat per perkara. Tanpa modul/saklar mati: jalan keluar lama.
+    const mod = typeof globalThis !== "undefined" ? globalThis.aletaPutusanEdoc : null;
+    if (mod && typeof mod.jalankan === "function" && typeof mod.bacaSaklar === "function" && (await mod.bacaSaklar())) {
+      return {
+        ...dasar,
+        lanjutWalauEdocGagal: true,
+        sesudahTersimpan: (kabarLangkah) =>
+          mod.jalankan({ nomorPerkara: p.nomorPerkara, kabar: p.kabar || kabarLangkah || null, wadah: p.wadahTanya || null }),
+      };
+    }
     return {
       ...dasar,
       lanjutWalauEdocGagal: true,

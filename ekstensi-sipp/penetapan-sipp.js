@@ -1115,7 +1115,10 @@
     // PALING KIRI di antara tombol sisipan ALETA: sebelum "Buka di ABT"/"Buka di ALETA".
     const l1 = tr.querySelector(":scope > .aleta-l1-submenu");
     if (l1) {
-      if (td.nextElementSibling !== l1 || td.parentElement !== tr) tr.insertBefore(td, l1);
+      // Tombol "Putusan Otomatis" (putusan-sipp.js) boleh duduk tepat di antara tombol ini dan tombol L1.
+      const sebelah = td.nextElementSibling;
+      const wajar = sebelah === l1 || (sebelah && sebelah.classList.contains("aleta-pusipp-sel") && sebelah.nextElementSibling === l1);
+      if (!wajar || td.parentElement !== tr) tr.insertBefore(td, l1);
     } else if (td.parentElement !== tr) {
       tr.appendChild(td);
     }
