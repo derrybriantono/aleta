@@ -49,11 +49,16 @@ describe("satu sumber untuk satu pertanyaan", () => {
     // Dua pihak yang membaca tabel berbeda untuk pertanyaan yang sama pasti
     // berselisih suatu saat - dan mereka berselisih tepat di perkara yang
     // penetapannya ada tetapi PDF-nya belum pernah dicetak.
-    expect(sippKonteks).toContain("FROM perkara_penetapan");
-    expect(sippKonteks).toContain("penetapan_majelis_hakim AS pmh");
-    expect(sippKonteks).toContain("penetapan_panitera_pengganti AS ppp");
-    expect(sippKonteks).toContain("penetapan_jurusita AS pjs");
-    expect(sippKonteks).toContain("penetapan_hari_sidang AS phs");
+    // 20 Okt 2026: bukan lagi kueri sendiri di sippKonteksService - penanda
+    // baris, usulan papan, dan penulis memakai SATU modul keadaan, yang
+    // membaca keempat kolom itu dari perkara_penetapan.
+    expect(sippKonteks).toContain("penetapanKeadaanService");
+    const keadaanService = readFileSync(path.join(akar, "aleta_bot/services/penetapanKeadaanService.js"), "utf8");
+    expect(keadaanService).toContain("LEFT JOIN perkara_penetapan pen");
+    expect(keadaanService).toContain("pen.penetapan_majelis_hakim AS pmh");
+    expect(keadaanService).toContain("pen.penetapan_panitera_pengganti AS ppp");
+    expect(keadaanService).toContain("pen.penetapan_jurusita AS pjs");
+    expect(keadaanService).toContain("pen.penetapan_hari_sidang AS phs");
   });
 
   it("tabel dokumen TIDAK lagi dipakai menilai keadaan penetapan", () => {
