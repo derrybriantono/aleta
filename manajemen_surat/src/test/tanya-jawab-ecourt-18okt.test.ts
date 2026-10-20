@@ -415,7 +415,7 @@ describe("JJ2 - penulis tanya-jawab di ekstensi (isiJawabMenjawabOtomatis)", () 
   });
 
   it("kabel: dipanggil sesudah susunan dimuat dan saat sidang diganti; saklar ada di widget, popup, dan penyimpanan akun", () => {
-    expect(sumber).toContain("void isiJawabMenjawabOtomatis(d);");
+    expect(sumber).toContain("void lacakOto(isiJawabMenjawabOtomatis(d));");
     expect(sumber).toContain("if (S.susunan) void isiJawabMenjawabOtomatis(S.susunan);");
     expect(sumber).toContain('data-bd2="salinjm"');
     const baca = (n: string) => readFileSync(path.join(AKAR, "ekstensi-sipp", n), "utf8");

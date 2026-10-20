@@ -1467,7 +1467,7 @@ describe("layar yang menghadap masyarakat", () => {
    */
   const APP = path.resolve(process.cwd(), "src/app");
   /** Rute tingkat atas di luar (portal) yang memuat halaman publik. */
-  const PUBLIK = ["antrian", "antrian-layar", "antrian-tampil", "antrian-ruang", "sidang-ruang", "public", "judicia"];
+  const PUBLIK = ["antrian", "antrian-layar", "antrian-tampil", "antrian-ruang", "sidang-ruang", "jadwal", "public", "judicia"];
   /** Rute tingkat atas lain: halaman kerja petugas, halaman masuk, atau bukan halaman. */
   const BUKAN_PUBLIK = ["(portal)", "api", "login", "pdf-viewer", "setup"];
   /** Satu alamat nyata untuk tiap rute publik, ditambah verifikasi dokumen. */
@@ -1477,6 +1477,7 @@ describe("layar yang menghadap masyarakat", () => {
     "/aleta/antrian-tampil?ruang=1",
     "/aleta/antrian-ruang",
     "/aleta/sidang-ruang",
+    "/aleta/jadwal/contohRahasiaTautanJadwal",
     "/aleta/public/e-kepegawaian",
     "/aleta/public/e-kepegawaian/cuti",
     "/aleta/judicia/legal-form/verify/abc123",

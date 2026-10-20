@@ -58,11 +58,11 @@ describe("butir 5: tombol ruang sidang", () => {
   });
 
   it("tersambung ke tabel, di ujung kanan deretan alat, dan punya saklar tampilan (menyala bawaan)", () => {
-    expect(layar).toContain("const sidangSesudahRuang = saringKeRuang(milikSaya.baris, ruangSaring);");
+    expect(layar).toContain("const sidangSesudahRuang = saringKeRuang(milikSaya.baris, ruangSaring)");
     // 12 Okt 2026 (agen C, butir 3): kartu ruang memakai saringan yang sama, jadi
     // saringannya hidup bila SALAH SATU saklar (tombol ruang / kartu ruang) menyala.
     expect(layar).toContain('tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang")');
-    expect(layar).toContain("? ruangPilihanBerlaku(ruangDipilih, ruangAktif)");
+    expect(layar).toContain("? ruangPilihanBerlaku(ruangDipilih ?? (ruangAlamat ? cocokkanRuang(ruangAlamat, ruangAktif) : null), ruangAktif)");
     // Jumlahnya dari SELURUH sidang, bukan yang tersaring.
     expect(layar).toContain("const ruangAktif = useMemo(() => daftarRuangAktif(sidang), [sidang]);");
     // Sesudah tombol Daftarkan ke antrian, rata kanan.

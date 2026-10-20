@@ -309,7 +309,7 @@ describe("lapisan Blangko Derry (blangko-derry-isian.js): isiElitigasiOtomatis",
   it("dipasang sesudah isian dimuat dan keadaannya dibersihkan saat perkara berganti", () => {
     // 19 Okt: lewat orkestrasi isi otomatis (saklar "Isi otomatis dari SIPP"): itsbat, lalu e-litigasi, lalu bacaan SIPP.
     expect(sumber).toContain("void muatSaranAbt(d);\n      S.janjiBukti = siapkanBukti();");
-    expect(sumber).toContain("void isiOtomatisBlangko(d);");
+    expect(sumber).toContain("void lacakOto(isiOtomatisBlangko(d));");
     expect(sumber).toContain("await simpanBawaanAbtItsbat(d);\n        await isiElitigasiOtomatis(d);");
     expect(sumber.match(/S\.el7 = null;/g)!.length).toBeGreaterThanOrEqual(2);
   });

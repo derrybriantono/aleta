@@ -203,7 +203,7 @@ describe("terpasang di layar antrian", () => {
     // kepala kartu tidak memuat kalimat sepanjang itu di samping judul.
     // Yang DIJAGA tetap sama: keadaan awalnya menyaring, dan tombolnya
     // menawarkan kebalikannya.
-    expect(layar).toContain("const [hanyaMilikSaya, setHanyaMilikSaya] = useState(true);");
+    expect(layar).toContain("const [hanyaMilikSaya, setHanyaMilikSaya] = useState(!modeUrl);");
     expect(layar).toContain('hanyaMilikSaya ? "Perkara saya" : "Semua perkara"');
   });
 
@@ -214,7 +214,7 @@ describe("terpasang di layar antrian", () => {
     const iMilik = layar.indexOf("const milikSaya = saringPerkaraSendiri(");
     expect(iKartu).toBeGreaterThan(-1);
     expect(iMilik).toBeGreaterThan(iKartu);
-    expect(layar).toContain("const sidangSesudahRuang = saringKeRuang(milikSaya.baris, ruangSaring);");
+    expect(layar).toContain("const sidangSesudahRuang = saringKeRuang(milikSaya.baris, ruangSaring)");
   });
 
   it("keadaan berlaku-tanpa-cocok punya keterangannya sendiri di layar", () => {

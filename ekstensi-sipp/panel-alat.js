@@ -10323,7 +10323,7 @@ function alatCatatAsalPortal() {
  * pertamanya lain.
  */
 const ALAT_POLA_HALAMAN_PUBLIK =
-  /^(?:\/aleta)?\/(antrian|antrian-layar|antrian-tampil|antrian-ruang|sidang-ruang|public|judicia\/legal-form\/verify)(\/|$)/i;
+  /^(?:\/aleta)?\/(antrian|antrian-layar|antrian-tampil|antrian-ruang|sidang-ruang|jadwal|public|judicia\/legal-form\/verify)(\/|$)/i;
 
 /** Apakah jalur ini - bawaannya halaman ini - layar portal yang menghadap masyarakat? */
 function alatHalamanPublikPortal(jalur) {

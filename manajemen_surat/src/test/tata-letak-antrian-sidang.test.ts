@@ -121,7 +121,7 @@ describe("butir 8 - baris tombol tindakan dapat diciutkan", () => {
     const i = layar.indexOf("JALAN KEMBALI KE TOMBOL TINDAKAN YANG DICIUTKAN");
     expect(i, "ikon pembentang tidak ditemukan").toBeGreaterThan(-1);
     const blok = layar.slice(i, i + 1400);
-    expect(blok).toContain("{alatCiut ? (");
+    expect(blok).toContain("{alatCiut && !modeUrl ? (");
     expect(blok).toContain("setAlatCiut(false)");
     expect(blok).toContain("aria-label=\"Tampilkan tombol tindakan\"");
   });

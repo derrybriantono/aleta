@@ -283,10 +283,10 @@ const jenisUrut = (e: EventAi[]) => e.map((x) => x.jenis);
 describe("migrasi 0078 - berkas = DDL schema.ts, jurnal tanpa lubang, ikut cadangan", () => {
   const SQL = path.join(process.cwd(), "drizzle", "0078_aleta_ai.sql");
 
-  it("jurnal: 0078 di idx 70 sekali, tanpa lubang, when naik", () => {
+  it("jurnal: 0078 di idx 71 sekali (sesudah 0077), tanpa lubang, when naik", () => {
     const j = JSON.parse(readFileSync(path.join(process.cwd(), "drizzle/meta/_journal.json"), "utf8")) as { entries: Array<{ idx: number; tag: string; when: number }> };
     j.entries.forEach((e, i) => expect(e.idx).toBe(i));
-    expect(j.entries.filter((e) => e.tag.startsWith("0078_"))).toEqual([expect.objectContaining({ idx: 70, tag: "0078_aleta_ai" })]);
+    expect(j.entries.filter((e) => e.tag.startsWith("0078_"))).toEqual([expect.objectContaining({ idx: 71, tag: "0078_aleta_ai" })]);
     for (let i = 1; i < j.entries.length; i += 1) expect(j.entries[i]?.when).toBeGreaterThan(j.entries[i - 1]?.when ?? 0);
     expect(existsSync(SQL)).toBe(true);
   });

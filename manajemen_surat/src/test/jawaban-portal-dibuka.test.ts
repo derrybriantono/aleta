@@ -119,6 +119,9 @@ function sapu(): Pelanggaran[] {
     const baris = isi.split(/\r?\n/);
     for (let i = 0; i < baris.length; i += 1) {
       if (!baris[i].includes(".json()")) continue;
+      // Rute yang membaca BADAN PERMINTAANNYA sendiri (request.json()) tidak membaca jawaban portal,
+      // jadi tidak punya bungkus { ok, data } (20 Okt: rute ALETA Ai yang menyebut alamatnya di komentar).
+      if (/(?:request|req)\.json\(\)/.test(baris[i])) continue;
 
       const nama = baris[i].match(/(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*\(?await\s/)?.[1];
       if (!nama) continue;

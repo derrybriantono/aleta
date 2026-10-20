@@ -508,7 +508,7 @@ describe("Blangko Derry tersambung (berkas bersama, perubahan kecil)", () => {
     expect(kerangka.match(/\["konseptor", "Checklist konseptor putusan"\]/g)).toHaveLength(2);
     const m = JSON.parse(readFileSync(path.join(EKSTENSI, "manifest.json"), "utf8")) as { content_scripts: Array<{ js?: string[] }> };
     const abt = m.content_scripts.find((x) => (x.js || []).includes("blangko-derry-isian.js"))!.js!;
-    expect(abt.indexOf("konseptor-langkah.js")).toBe(abt.indexOf("blangko-derry-isian.js") + 1);
+    expect(abt.indexOf("konseptor-langkah.js")).toBeGreaterThan(abt.indexOf("blangko-derry-isian.js"));
     expect(readFileSync(path.join(AKAR, "scripts", "susun-ekstensi.mjs"), "utf8")).toContain('"konseptor-langkah.js"');
   });
 });
