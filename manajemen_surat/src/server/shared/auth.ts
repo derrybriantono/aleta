@@ -42,6 +42,18 @@ export function extractActorUserId(request: NextRequest, fallbackUserId?: string
  * basis data adalah akibat yang jauh lebih besar daripada sebabnya.
  */
 export async function resolveActorUserId(request: NextRequest, fallbackUserId?: string | null) {
+  // TAUTAN JADWAL SIDANG (20 Okt 2026): permintaan yang membawa rahasia tautan
+  // diperiksa DI SINI dan tidak pernah jatuh ke sesi akun - di luar blok try
+  // di bawah, supaya penolakannya (jaringan luar, dicabut, rute tak diizinkan,
+  // batas laju) tidak ditelan menjadi "tanpa pengguna" lalu dicoba cara lain.
+  // Lihat server/modules/tautan-jadwal/service.ts.
+  const rahasiaTautan = request.headers.get("x-tautan-jadwal");
+  if (rahasiaTautan) {
+    const { periksaTautan } = await import("@/server/modules/tautan-jadwal/service");
+    const hasil = await periksaTautan(await getDatabase(), request, rahasiaTautan);
+    return hasil.aktor.id;
+  }
+
   try {
     const auth = await getAuth();
     const session = await auth.api.getSession({

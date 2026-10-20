@@ -640,6 +640,56 @@ export const DDL_BLANGKO_PRIBADI = {
 } as const;
 
 /**
+ * Tautan Jadwal Sidang (0077, 20 Okt 2026): tampilan Jadwal Sidang tanpa akun
+ * lewat rahasia - tautan (hanya HASH rahasianya), jejak tiap tindakan menulis,
+ * dan saklar matikan-semua. Cermin PERSIS dari
+ * drizzle/0077_aleta_tautan_jadwal.sql; penjaga tautan-jadwal-20okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing.
+ */
+export const DDL_TAUTAN_JADWAL = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_tautan_jadwal (
+  id TEXT PRIMARY KEY,
+  nama TEXT NOT NULL,
+  hash_rahasia TEXT NOT NULL,
+  bertindak_sebagai TEXT NOT NULL,
+  bertindak_nama TEXT NOT NULL DEFAULT '',
+  berlaku_sampai TEXT NOT NULL DEFAULT '',
+  dicabut_pada TEXT NOT NULL DEFAULT '',
+  dicabut_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_oleh TEXT NOT NULL,
+  dibuat_nama TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  terakhir_dipakai TEXT NOT NULL DEFAULT '',
+  terakhir_ip TEXT NOT NULL DEFAULT '',
+  jumlah_pakai INTEGER NOT NULL DEFAULT 0
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_tautan_jadwal_jejak (
+  id TEXT PRIMARY KEY,
+  tautan_id TEXT NOT NULL,
+  tautan_nama TEXT NOT NULL DEFAULT '',
+  bertindak_sebagai TEXT NOT NULL DEFAULT '',
+  ip TEXT NOT NULL DEFAULT '',
+  waktu TEXT NOT NULL,
+  metode TEXT NOT NULL DEFAULT '',
+  jalur TEXT NOT NULL DEFAULT '',
+  aksi TEXT NOT NULL DEFAULT '',
+  perkara TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_tautan_jadwal_saklar (
+  id INTEGER PRIMARY KEY,
+  mati INTEGER NOT NULL DEFAULT 0,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_pada TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_tautan_jadwal_hash ON aleta_tautan_jadwal(hash_rahasia)`,
+    `CREATE INDEX IF NOT EXISTS idx_tautan_jadwal_jejak ON aleta_tautan_jadwal_jejak(tautan_id, waktu)`,
+  ],
+} as const;
+
+/**
  * SKP jabatan perkara (0070, 17 Okt 2026, rancangan disetujui pengguna):
  * pemetaan akun SIPP ke pegawai (bertanggal), target, isian manual, dan
  * tangkapan realisasi yang dikunci. Cermin PERSIS dari
@@ -1735,6 +1785,8 @@ const schemaStatements = [
   ...DDL_SKP_JABATAN.tabel,
   // Buat blangko sendiri: blangko pribadi & riwayatnya (0073).
   ...DDL_BLANGKO_PRIBADI.tabel,
+  // Tautan Jadwal Sidang tanpa akun: tautan, jejak, saklar (0077).
+  ...DDL_TAUTAN_JADWAL.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -3682,6 +3734,7 @@ const indexStatements = [
   ...DDL_KAMUS_DETEKSI.indeks,
   ...DDL_ABT_SUNTINGAN.indeks,
   ...DDL_BLANGKO_PRIBADI.indeks,
+  ...DDL_TAUTAN_JADWAL.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.

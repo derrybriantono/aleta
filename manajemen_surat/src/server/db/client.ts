@@ -386,6 +386,11 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // Tanpa kunci asing - urutannya bebas.
   "aleta_blangko_pribadi",
   "aleta_blangko_pribadi_riwayat",
+  // 20 Oktober 2026 (0077): tautan Jadwal Sidang tanpa akun, jejaknya, dan saklarnya.
+  // Tanpa kunci asing - urutannya bebas.
+  "aleta_tautan_jadwal",
+  "aleta_tautan_jadwal_jejak",
+  "aleta_tautan_jadwal_saklar",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",
