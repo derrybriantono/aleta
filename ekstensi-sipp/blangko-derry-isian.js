@@ -710,7 +710,8 @@
         const j = PERAN_JENIS[p];
         if (j && boleh.includes(j)) return j;
       }
-      return boleh.find((j) => j !== "ptsp") || "";
+      // 20 Okt: akun PTSP saja (tanpa peran hakim/PP/juru sita) mengikuti saran PTSP.
+      return boleh.find((j) => j !== "ptsp") || (boleh.includes("ptsp") ? "ptsp" : "");
     }
     const pk = S.pk && S.pk.perkara;
     if (boleh.includes("put") && pk && pk.sudahPutus) return "put";
@@ -845,7 +846,7 @@
         if (S.pk !== pk || S.blangko) return;
         r = rekomendasiJenis(jenis)[0];
       }
-      const cariKelompok = (x) => S.menu && S.menu.kelompok.find((k) => k.nama === x.kelompok || (k.berkas && k.berkas.some((b) => b.berkas === x.berkas)));
+      const cariKelompok = (x) => S.menu && S.menu.kelompok.find((k) => k.nama === x.kelompok || (k.berkas && k.berkas.some((b) => samaBerkasSaran(b.berkas, x.berkas))));
       let k = r ? cariKelompok(r) : null;
       if (r && k && !k.berkas) {
         await muatBerkasKelompok(k);
@@ -860,7 +861,8 @@
           toast(`Akun Anda tidak berhak membuka blangko ${NAMA_SARAN_JENIS[jenis] || "jenis itu"}.`);
           return;
         }
-        await pilihBlangko(r.berkas, k.nama);
+        const asli = k.berkas.find((b) => samaBerkasSaran(b.berkas, r.berkas));
+        await pilihBlangko(asli ? asli.berkas : r.berkas, k.nama);
         return;
       }
       bukaModal();
@@ -1009,7 +1011,8 @@
   // Fungsi titik sambung serempak, maka jawabannya disinggahkan per sidang: permintaan pertama dimulai di latar dan mengembalikan [] (cadangan
   // sederhana di atas yang tampil), lalu jendela dan ringkasan digambar ulang begitu jawaban portal tiba.
   const API_SIDANG_PORTAL = "/aleta/api/aleta-ecourt/sidang";
-  const JENIS_DARI_PORTAL = { putusan: "put", bas: "bas", relaas: "rel" };
+  // 20 Okt: ptsp ikut (saran penetapan PMH/PPP/PJS/PHS dari portal); portal lama tanpa ruas ptsp = tidak ada saran PTSP.
+  const JENIS_DARI_PORTAL = { putusan: "put", bas: "bas", relaas: "rel", ptsp: "ptsp" };
   const BATAS_ALTERNATIF_SARAN = 3;
   const ULANG_GAGAL_MS = 60 * 1000;
   const rekPortal = new Map(); // kunci sidang -> { status: "memuat"|"siap"|"galat", hasil, saat }
@@ -1017,6 +1020,11 @@
   const rapiNama = (s) => (typeof alatKunciKelompok === "function" ? alatKunciKelompok(s) : String(s || "").replace(/\s+/g, " ").trim().toLowerCase());
   const namaMenuTampil = (s) => (typeof alatNamaMenuLengkap === "function" ? alatNamaMenuLengkap(s) : String(s || ""));
 
+  /** Nama berkas saran sama dengan nama berkas di kelompok? Tanpa .rtf, spasi ganda, dan huruf besar-kecil tidak dibedakan. */
+  const samaBerkasSaran = (a, b) => {
+    const rapi = (x) => String(x || "").replace(/\.rtf$/i, "").replace(/\s+/g, " ").trim().toLowerCase();
+    return Boolean(rapi(a)) && rapi(a) === rapi(b);
+  };
   /** Kelompok (nama menu Derry di ABT) untuk satu rekomendasi portal: nama menu, alias, atau nama folder (dengan/tanpa nomor urut). */
   function kelompokUntukSaran(menu, r) {
     const calon = new Set([r.menu, ...(Array.isArray(r.alias) ? r.alias : [])].map(rapiNama).filter(Boolean));
@@ -1194,8 +1202,8 @@
     if (rekDiJenis.length) {
       const berkas = [];
       for (const r of rekDiJenis) {
-        const k = semua.find((x) => x.nama === r.kelompok) || semua.find((x) => x.berkas && x.berkas.some((b) => b.berkas === r.berkas));
-        const b = k && k.berkas ? k.berkas.find((x) => x.berkas === r.berkas) : null;
+        const k = semua.find((x) => x.nama === r.kelompok) || semua.find((x) => x.berkas && x.berkas.some((b) => samaBerkasSaran(b.berkas, r.berkas)));
+        const b = k && k.berkas ? k.berkas.find((x) => samaBerkasSaran(x.berkas, r.berkas)) : null;
         if (b) berkas.push({ ...b, kelompok: k.nama, alasan: r.alasan });
         else if (!k || !k.berkas) berkas.push({ berkas: r.berkas, kelompok: r.kelompok, a: "", b: "", alasan: r.alasan, belum: true });
       }
@@ -1204,11 +1212,13 @@
     const ikrar = kumpulkanIkrar(S.menu.kelompok, kelompokBoleh);
     for (const k of semua) {
       const f = FREK_ALUR[alurDari(k.nama)];
-      daftar.push({ id: `k:${k.nama}`, nama: k.judul || namaMenuTampil(k.nama), sub: f ? `dipakai ${f.toLocaleString("id-ID")} perkara` : k.jumlah ? `${k.jumlah} blangko` : "", berkas: (k.berkas || []).map((b) => ({ ...b, kelompok: k.nama })), memuat: !k.berkas && !k.galat, galat: k.galat || "" });
+      // 20 Okt: kelompok yang memuat blangko disarankan ikut ditandai (nama menebal berwarna), walau kelompok lain berisi lebih banyak blangko.
+      const adaSaran = rekDiJenis.some((r) => r.kelompok === k.nama || (k.berkas || []).some((b) => samaBerkasSaran(b.berkas, r.berkas)));
+      daftar.push({ id: `k:${k.nama}`, nama: k.judul || namaMenuTampil(k.nama), sub: adaSaran ? "ada yang disarankan untuk sidang ini" : f ? `dipakai ${f.toLocaleString("id-ID")} perkara` : k.jumlah ? `${k.jumlah} blangko` : "", adaSaran, berkas: (k.berkas || []).map((b) => ({ ...b, kelompok: k.nama })), memuat: !k.berkas && !k.galat, galat: k.galat || "" });
     }
     // Kelompok maya "Ikrar Talak": tepat di bawah menu cerai talak (atau di bawah Disarankan bila tidak ada), berisi butir dari tiga folder.
     if (ikrar.berkas.length || ikrar.memuat) {
-      const disaran = ikrar.berkas.filter((b) => rek.some((r) => r.berkas === b.berkas));
+      const disaran = ikrar.berkas.filter((b) => rek.some((r) => samaBerkasSaran(r.berkas, b.berkas)));
       const berkas = disaran.concat(ikrar.berkas.filter((b) => !disaran.includes(b)));
       const grup = {
         id: "ikrar",
@@ -1228,7 +1238,7 @@
   function tombolBlangko(b, jenis, rek) {
     const nama = b.berkas;
     const aktif = S.blangko && S.blangko.berkas === nama && S.blangko.kelompok === b.kelompok;
-    const disaran = rek.some((r) => r.berkas === nama);
+    const disaran = rek.some((r) => samaBerkasSaran(r.berkas, nama));
     return (
       `<button type="button" class="bd-bl${aktif ? " aktif" : ""}" data-bl="${esc(nama)}" data-kel="${esc(b.kelompok)}" ${b.belum ? "disabled" : ""}>` +
       `<span class="kd">${esc(kodeDari(jenis === "put" ? nama : nama.replace(/^BAS ALUR \d\d /, "")))}</span>${lencanaSidang(nama, jenis, false)}<span class="nm">${esc(namaTampil(nama, jenis))}</span>` +
@@ -1238,7 +1248,7 @@
   /** Satu butir kelompok maya Ikrar Talak: kalimat biasa, bukan nama berkas. */
   function tombolIkrar(b, rek) {
     const aktif = S.blangko && S.blangko.berkas === b.berkas && S.blangko.kelompok === b.kelompok;
-    const disaran = rek.some((r) => r.berkas === b.berkas);
+    const disaran = rek.some((r) => samaBerkasSaran(r.berkas, b.berkas));
     return (
       `<button type="button" class="bd-bl${aktif ? " aktif" : ""}" data-bl="${esc(b.berkas)}" data-kel="${esc(b.kelompok)}" data-ikrar="1">` +
       `<span class="kd">${esc(b.kode)}</span>${lencanaSidang(b.berkas, "", true)}<span class="nm">${esc(b.kalimat)}</span>` +
@@ -1268,7 +1278,7 @@
     const kiri = daftar
       .map((k) => {
         const n = k.berkas.filter(cocok).length;
-        return `<button type="button" class="bd-kel${k.saran ? " saran" : ""}${k.ikrar ? " ikrar" : ""}${k.id === S.modal.kelompok && !q ? " aktif" : ""}${q && n ? " ada" : ""}${q && !n ? " kosong" : ""}" data-kelmodal="${esc(k.id)}"><span class="kn">${esc(k.nama)}</span><span class="kj">${k.memuat ? "…" : q ? n : k.berkas.length}</span>${k.sub ? `<span class="ks">${esc(k.sub)}</span>` : ""}</button>`;
+        return `<button type="button" class="bd-kel${k.saran ? " saran" : ""}${k.adaSaran ? " adasaran" : ""}${k.ikrar ? " ikrar" : ""}${k.id === S.modal.kelompok && !q ? " aktif" : ""}${q && n ? " ada" : ""}${q && !n ? " kosong" : ""}" data-kelmodal="${esc(k.id)}"><span class="kn">${esc(k.nama)}</span><span class="kj">${k.memuat ? "…" : q ? n : k.berkas.length}</span>${k.sub ? `<span class="ks">${esc(k.sub)}</span>` : ""}</button>`;
       })
       .join("");
     let kanan = "";
@@ -3107,7 +3117,7 @@
     const b = S.blangko;
     const jenisSaran = S.pk ? jenisSaranAktif() : "";
     const rek = jenisSaran ? rekomendasiJenis(jenisSaran) : [];
-    const disaran = b && rek.some((r) => r.berkas === b.berkas);
+    const disaran = b && rek.some((r) => samaBerkasSaran(r.berkas, b.berkas));
     const saranPertama = rek[0];
     const urutanSaran = S.pk ? sidangUrutan() : "";
     const peringatanSidang = b && b.jenis === "bas" && S.susunan && S.susunan.isian.some((x) => x.jenis !== "tj" && x.wajib)
@@ -5237,8 +5247,9 @@
     if (kode === "pakairek") {
       const r = rekomendasiJenis(jenisSaranAktif())[0];
       if (!r) return;
-      const k = S.menu && S.menu.kelompok.find((x) => x.nama === r.kelompok || (x.berkas && x.berkas.some((b) => b.berkas === r.berkas)));
-      if (k && k.berkas) return void pilihBlangko(r.berkas, k.nama);
+      const k = S.menu && S.menu.kelompok.find((x) => x.nama === r.kelompok || (x.berkas && x.berkas.some((b) => samaBerkasSaran(b.berkas, r.berkas))));
+      const asli = k && k.berkas ? k.berkas.find((b) => samaBerkasSaran(b.berkas, r.berkas)) : null; // nama berkas sebenarnya di ABT
+      if (k && asli) return void pilihBlangko(asli.berkas, k.nama);
       return bukaModal();
     }
     if (kode === "ulangkel") {

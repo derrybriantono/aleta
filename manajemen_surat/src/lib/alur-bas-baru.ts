@@ -160,9 +160,12 @@ function kodeKeluarga(id: string, n: number, agenda: string): { kode: string; pe
     if (RX_PERBAIKAN.test(agenda)) return { kode: pilih("2a", "2"), perkiraan: false };
     if (putus && !RX_SAKSI.test(agenda)) return { kode: "3", perkiraan: false };
     if (RX_SAKSI.test(agenda) && !putus) return { kode: "2", perkiraan: false };
+    // 20 Okt: agenda pembuktian tanpa kata saksi/putusan = pemeriksaan saksi sidang lanjutan (bukan pembacaan penetapan); [3] tinggal alternatif.
+    if (RX_BUKTI.test(agenda) && !putus && ada("2")) return { kode: "2", perkiraan: true };
     return { kode: "3", perkiraan: true };
   }
   if (RX_SAKSI.test(agenda) && !putus) return { kode: "2", perkiraan: false };
+  if (RX_BUKTI.test(agenda) && !putus && ada("2")) return { kode: "2", perkiraan: true };
   return { kode: "3", perkiraan: !putus };
 }
 
@@ -217,7 +220,14 @@ function permohonan(jenis: JenisBaru, m: MasukanBasBaru, n: number, agenda: stri
   if (!id) return null;
 
   const { kode, perkiraan } = kodeKeluarga(id, n, agenda);
-  const lain = SEMUA_KODE(id).filter((k) => k !== kode);
+  // 20 Okt: sidang ke-2 dst. - alternatif langkah sidang lanjutan/penetapan didahulukan dari varian sidang 1 (urutan pilihan petugas).
+  const URUT_LANJUTAN = ["2", "2a", "2b", "3", "T", "N", "G", "C"];
+  const peringkat = (k: string) => (n >= 2 && URUT_LANJUTAN.includes(k) ? URUT_LANJUTAN.indexOf(k) : 99);
+  const lain = SEMUA_KODE(id)
+    .filter((k) => k !== kode)
+    .map((k, i) => ({ k, i }))
+    .sort((a, b) => peringkat(a.k) - peringkat(b.k) || a.i - b.i)
+    .map((x) => x.k);
   if (jenis === "dk") {
     // Sidang 1 DK sudah dilayani ALUR 12 (putus di sidang 1); varian TUNDA (1t...) hanya ditawarkan. Sidang 2 dst. = pembacaan penetapan.
     if (n <= 1) {

@@ -1,7 +1,8 @@
 import { type NextRequest } from "next/server";
 
 import { keadaanPutusan, type MasukanKeadaanPutusan } from "@/lib/keadaan-putusan";
-import { masukanRekomendasiDariBaris, rekomendasiBlangko } from "@/lib/rekomendasi-blangko";
+import { masukanRekomendasiDariBaris } from "@/lib/rekomendasi-blangko";
+import { saranBlangkoLengkap } from "@/lib/saran-blangko-semua";
 import { lengkapiPetaDariRekam, susunRekamAntrian } from "@/lib/rekam-antrian";
 import { hitungTigaJarak, kunciWaktu, WAKTU_ANTRIAN_KOSONG } from "@/lib/tiga-jarak-sidang";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
@@ -304,7 +305,7 @@ export async function GET(request: NextRequest) {
       sidang: sidang.map((baris) => ({
         ...baris,
         keadaanPutusan: keadaanPutusan(baris as unknown as MasukanKeadaanPutusan),
-        ...(rekomendasiMinta ? { rekomendasiBlangko: rekomendasiBlangko(masukanRekomendasiDariBaris(baris as unknown as Record<string, unknown>)) } : {}),
+        ...(rekomendasiMinta ? { rekomendasiBlangko: saranBlangkoLengkap(masukanRekomendasiDariBaris(baris as unknown as Record<string, unknown>)) } : {}),
       })),
       kesiapan,
       kesiapanDinilai,
