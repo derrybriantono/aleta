@@ -1555,7 +1555,7 @@ function bandingGiliranMajelis(a, b) {
  * ekstensi dan panel SIPP lewat objek usulan yang sama. Gagal membaca =
  * null dan usulan memakai urutan lama (tidak pernah menggagalkan usulan).
  */
-async function susunStatistikBeban({ baris, hakimAktif, jurusitaSemua, paniteraSemua, paniteraAktifSemua, rasioPanitera, andaian, bobotAndaian, susunanSk, sekarang }) {
+async function susunStatistikBeban({ baris, hakimAktif, jurusitaSemua, paniteraSemua, paniteraAktifSemua, rasioPanitera, andaian, bobotAndaian, susunanSk, skTanggal, sekarang }) {
   try {
     const kini = bebanService.jendelaWaktu(sekarang).sekarang;
     const mulaiDariHari = (x) => (x && x.baruBertugas && Number(x.hariBertugas) > 0 ? geserHari(kini, -Number(x.hariBertugas)) : "");
@@ -1588,6 +1588,7 @@ async function susunStatistikBeban({ baris, hakimAktif, jurusitaSemua, paniteraS
       baris: salinan,
       orang,
       susunanSk,
+      skTanggal: isoTanggal(skTanggal) || "",
       bobot: bobotJenis,
       kebendaan: adalahKebendaan,
     });
@@ -1873,6 +1874,7 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
         andaian,
         bobotAndaian,
         susunanSk,
+        skTanggal: pengaturan.sk && pengaturan.sk.tanggal,
         sekarang: sekarangBeban,
       })
     : null;
@@ -2240,13 +2242,37 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   const skDipakai = susunanSk.length > 0;
   const skNomor = cleanText(skMasuk.nomor) || skDariSipp.nomor;
   const skTanggal = isoTanggal(skMasuk.tanggal) || skDariSipp.tanggal;
+  // Pegawai di SK yang perlu diperbarui: dari portal (akun nonaktif/jabatan
+  // berganti) ditambah pemeriksaan SIPP (tidak aktif, akun terblokir, belum terikat).
+  const peringatanSk = [];
+  for (const x of Array.isArray(skMasuk.peringatan) ? skMasuk.peringatan : []) {
+    peringatanSk.push(`Majelis ${x.majelisKode}: ${x.kode}${x.nama ? ` (${x.nama})` : ""} - ${x.alasan}`);
+  }
+  if (skDipakai) {
+    const hakimPerKode = new Map(hakimAktifSemua.map((h) => [String(h.kode || "").toUpperCase(), h]));
+    const idPanitera = new Set(paniteraAktifSemua.map((p) => Number(p.paniteraId)));
+    for (const m of susunanSk) {
+      for (const kode of m.hakimKode || []) {
+        const h = hakimPerKode.get(String(kode).toUpperCase());
+        if (!h) peringatanSk.push(`Majelis ${m.majelisKode}: hakim berkode ${kode} tidak aktif di SIPP`);
+        else if (diblokir.hakim.has(Number(h.hakimId))) peringatanSk.push(`Majelis ${m.majelisKode}: akun SIPP ${h.nama} terblokir`);
+      }
+      const pp = (m.panitera || []).filter((p) => Number(p.id) > 0);
+      if (pp.length === 0) peringatanSk.push(`Majelis ${m.majelisKode}: belum ada panitera pengganti pendamping yang terikat`);
+      for (const p of pp) {
+        if (!idPanitera.has(Number(p.id))) peringatanSk.push(`Majelis ${m.majelisKode}: panitera ${p.kode} tidak aktif di SIPP`);
+        else if (diblokir.panitera.has(Number(p.id))) peringatanSk.push(`Majelis ${m.majelisKode}: akun SIPP panitera ${p.kode} terblokir`);
+      }
+    }
+  }
   const skUsulan = {
     nomor: skNomor,
     tanggal: skTanggal,
     dipakai: skDipakai,
+    peringatan: [...new Set(peringatanSk)],
     bunyi: skDipakai
       ? `SK ${skNomor || "(nomor belum diisi)"}${skTanggal ? ` tanggal ${sebutTanggal(skTanggal)}` : ""}`
-      : "Belum memakai SK - isi di Pengaturan (susunan memakai majelis yang terpakai tahun ini)",
+      : "Belum memakai SK - isi di Pengaturan SK Majelis (susunan memakai majelis yang terpakai tahun ini)",
   };
   let paniteraCatat = 0;
   if (tercatat.length > 0) paniteraCatat = await bebanService.paniteraTercatat(identitas.perkaraId);

@@ -433,6 +433,55 @@ export async function bacaAturanPenunjukan(
 }
 
 /**
+ * Pegawai di SK yang perlu diperbarui (20 Okt 2026): akun portal yang ditautkan
+ * ke kode SK sudah tidak aktif (mutasi) atau jabatannya berganti sehingga bukan
+ * lagi panitera pengganti. Hanya MEMBACA; SK tetap disunting di halaman SK Majelis.
+ * Pemeriksaan sisi SIPP (hakim/panitera tidak aktif, akun terblokir) dilakukan bot.
+ */
+export type PeringatanSk = { majelisKode: string; kode: string; nama: string; alasan: string };
+
+export async function periksaAkunSk(db: AletaDatabase, hariSidang: HariSidangMajelis[]): Promise<PeringatanSk[]> {
+  const hasil: PeringatanSk[] = [];
+  for (const m of hariSidang) {
+    for (const t of m.akun ?? []) {
+      let baris:
+        | { name: string; role_id: string; additional_role_ids_json: string; is_active: number; deleted_at: string | null }
+        | undefined;
+      try {
+        baris = await db
+          .prepare("SELECT name, role_id, additional_role_ids_json, is_active, deleted_at FROM users WHERE id = ?")
+          .get(t.akunId);
+      } catch {
+        continue; // tidak terbaca = tidak tahu, bukan peringatan
+      }
+      if (!baris) {
+        hasil.push({ majelisKode: m.majelisKode, kode: t.kode, nama: "", alasan: "akun portal yang ditautkan sudah tidak ada" });
+        continue;
+      }
+      const nama = String(baris.name ?? "");
+      if (Number(baris.is_active) !== 1 || baris.deleted_at) {
+        hasil.push({ majelisKode: m.majelisKode, kode: t.kode, nama, alasan: "akun sudah tidak aktif (mutasi)" });
+        continue;
+      }
+      const adalahPanitera = m.panitera.some((p) => p.kode === t.kode) || m.paniteraKode.includes(t.kode);
+      if (adalahPanitera) {
+        let tambahan: string[] = [];
+        try {
+          tambahan = JSON.parse(String(baris.additional_role_ids_json || "[]")) as string[];
+        } catch {
+          tambahan = [];
+        }
+        const peran = [String(baris.role_id ?? ""), ...tambahan];
+        if (!peran.includes("panitera-pengganti")) {
+          hasil.push({ majelisKode: m.majelisKode, kode: t.kode, nama, alasan: "jabatannya sekarang bukan lagi panitera pengganti" });
+        }
+      }
+    }
+  }
+  return hasil;
+}
+
+/**
  * Keduanya sekaligus - inilah yang dikirim ke bot bersama nomor perkaranya.
  *
  * Bot tidak menyimpan setelan apa pun sendiri. Ia hanya tahu SIPP, dan
@@ -445,6 +494,7 @@ export async function bacaPengaturanPenunjukan(db: AletaDatabase) {
     bacaAturanPenunjukan(db),
     bacaSkMajelis(db),
   ]);
+  const peringatanSk = await periksaAkunSk(db, hariSidang);
 
   return {
     aturan,
@@ -469,7 +519,7 @@ export async function bacaPengaturanPenunjukan(db: AletaDatabase) {
       })),
     // SK bawaan (Pengaturan > SK majelis): nomor dan tanggal yang tampil di papan dan
     // dipakai memeriksa kesesuaian penetapan.
-    sk: { nomor: skBawaan.nomor, tanggal: skBawaan.tanggal },
+    sk: { nomor: skBawaan.nomor, tanggal: skBawaan.tanggal, peringatan: peringatanSk },
     hariSidangRinci: hariSidang,
   };
 }

@@ -830,6 +830,13 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
       sk: {
         nomor: String((kirim.sk && kirim.sk.nomor) || "").replace(/\s+/g, " ").trim().slice(0, 120),
         tanggal: /^\d{4}-\d{2}-\d{2}$/.test(String((kirim.sk && kirim.sk.tanggal) || "")) ? String(kirim.sk.tanggal) : "",
+        // Pegawai di SK yang perlu diperbarui menurut portal (akun nonaktif/jabatan berganti).
+        peringatan: (Array.isArray(kirim.sk && kirim.sk.peringatan) ? kirim.sk.peringatan : []).slice(0, 30).map((x) => ({
+          majelisKode: String((x && x.majelisKode) || "").toUpperCase().slice(0, 8),
+          kode: String((x && x.kode) || "").toUpperCase().slice(0, 8),
+          nama: String((x && x.nama) || "").slice(0, 80),
+          alasan: String((x && x.alasan) || "").slice(0, 160),
+        })),
       },
       andaian,
       pilihanMajelis,

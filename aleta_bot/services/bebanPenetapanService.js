@@ -54,9 +54,29 @@ const TTL_SIMPANAN_MS = 10 * 1000;
  * kebendaan 6 bulan, sebab kebendaan berat dan jarang - dibagi rata tersendiri.
  */
 const BOBOT_SKOR = {
-  biasa: { aktif: 0.35, tahun: 0.25, hari30: 0.3, kebendaan: 0.1 },
-  kebendaan: { aktif: 0.25, tahun: 0.15, hari30: 0.1, kebendaan: 0.5 },
+  biasa: { aktif: 0.2, tahun: 0.4, hari30: 0.3, kebendaan: 0.1 },
+  kebendaan: { aktif: 0.1, tahun: 0.2, hari30: 0, kebendaan: 0.7 },
 };
+
+/**
+ * Bobot khusus per peran (bila ada) menggantikan BOBOT_SKOR. Diatur dari hasil
+ * ukur atas data nyata (docs/penetapan/PENILAIAN-BEBAN.md).
+ */
+const BOBOT_SKOR_PERAN = {
+  // Juru sita: satuan kerjanya panggilan/relaas, bukan perkara berjalan - berjalan tidak dihitung.
+  jurusita: {
+    biasa: { aktif: 0, tahun: 0.6, hari30: 0.3, kebendaan: 0.1 },
+    kebendaan: { aktif: 0, tahun: 0.2, hari30: 0.1, kebendaan: 0.7 },
+  },
+  // Panitera pengganti: menghadiri sidang selama perkara berjalan, jadi berjalan ikut sedikit.
+  panitera: {
+    biasa: { aktif: 0.1, tahun: 0.5, hari30: 0.3, kebendaan: 0.1 },
+    kebendaan: { aktif: 0.1, tahun: 0.2, hari30: 0, kebendaan: 0.7 },
+  },
+};
+
+/** Bobot rata-rata skor anggota pada skor majelis (sisanya beban majelis sendiri). */
+const BOBOT_ANGGOTA_MAJELIS = { nilai: 0.2 };
 
 /** Penghalus: orang yang belum menerima apa pun tidak berskor nol mutlak. */
 const PENGHALUS = 0.5;
@@ -143,7 +163,7 @@ function paparan(orang, mulaiJendela, sekarang) {
  * @param {Array<{id,kode,nama,mulai?,rasio?}>} p.orang   orang aktif di peran ini
  * @param {Array<{perkaraId,orangId,tanggal,jenisId,berjalan}>} p.baris penetapan
  */
-function statistikPeran({ orang, baris, jendela, bobot, kebendaan }) {
+function statistikPeran({ orang, baris, jendela, bobot, kebendaan, peran = "" }) {
   const unik = new Map();
   for (const b of Array.isArray(baris) ? baris : []) {
     if (!b || !(Number(b.orangId) > 0) || !(Number(b.perkaraId) > 0)) continue;
@@ -155,6 +175,7 @@ function statistikPeran({ orang, baris, jendela, bobot, kebendaan }) {
   for (const o of orang) {
     per.set(Number(o.id), {
       id: Number(o.id),
+      peran,
       kode: o.kode || "",
       nama: o.nama || "",
       rasio: o.rasio || 100,
@@ -251,7 +272,9 @@ function statistikPeran({ orang, baris, jendela, bobot, kebendaan }) {
 /** Skor beban satu entri (makin kecil makin layak dapat penetapan baru). */
 function skorKandidat(entri, { kebendaan = false } = {}) {
   if (!entri || !entri.nisbah) return null;
-  const w = kebendaan ? BOBOT_SKOR.kebendaan : BOBOT_SKOR.biasa;
+  const jenis = kebendaan ? "kebendaan" : "biasa";
+  const khusus = entri.peran && BOBOT_SKOR_PERAN[entri.peran];
+  const w = (khusus && khusus[jenis]) || BOBOT_SKOR[jenis];
   const n = entri.nisbah;
   return bulat1(100 * (w.aktif * n.aktif + w.tahun * n.tahun + w.hari30 * n.hari30 + w.kebendaan * n.kebendaan));
 }
@@ -264,12 +287,17 @@ const kunciIdUrut = (ids) => [...(ids || [])].map(Number).sort((a, b) => a - b).
  * hakimnya sama dengan salah satu susunan SK (urutan tidak diperhitungkan -
  * alasan yang sama dengan penunjukanService.kodeSkUntuk).
  */
-function statistikMajelis({ barisHakim, hakimAktif, susunanSk, jendela, bobot, kebendaan }) {
+function statistikMajelis({ barisHakim, hakimAktif, susunanSk, jendela, bobot, kebendaan, skTanggal = "" }) {
+  // Majelis SK dinilai sejak SK berlaku: susunan sebelum SK bukan majelis yang
+  // sama, dan membandingkannya membuat majelis "tertinggal" yang lalu dibanjiri
+  // perkara (terukur: 70 dari 136 perkara jatuh ke satu majelis).
+  const mulaiMajelis = iso(skTanggal) && iso(skTanggal) > jendela.awalTahun ? iso(skTanggal) : jendela.awalTahun;
   const kodeDariId = new Map(hakimAktif.map((h) => [Number(h.id), String(h.kode || "").toUpperCase()]));
   const idDariKode = new Map(hakimAktif.map((h) => [String(h.kode || "").toUpperCase(), Number(h.id)]));
   const perPerkara = new Map();
   for (const b of barisHakim) {
     if (!(Number(b.orangId) > 0)) continue;
+    if (!(iso(b.tanggal) >= mulaiMajelis)) continue;
     const p = perPerkara.get(b.perkaraId) || { ids: new Set(), tanggal: iso(b.tanggal), jenisId: b.jenisId, berjalan: b.berjalan };
     p.ids.add(Number(b.orangId));
     perPerkara.set(b.perkaraId, p);
@@ -404,7 +432,8 @@ function skorMajelis(entri, statHakim, opsi) {
   const lain = skorAnggota.slice(1);
   const rataLain = lain.length ? lain.reduce((s, x) => s + x, 0) / lain.length : ketua;
   const anggota = 0.5 * ketua + 0.5 * rataLain;
-  return bulat1(sendiri === null ? anggota : 0.5 * sendiri + 0.5 * anggota);
+  const b = BOBOT_ANGGOTA_MAJELIS.nilai;
+  return bulat1(sendiri === null ? anggota : (1 - b) * sendiri + b * anggota);
 }
 
 /**
@@ -418,10 +447,11 @@ function skorMajelis(entri, statHakim, opsi) {
  * @param {(jenisId:number)=>number} p.bobot
  * @param {(jenisId:number)=>boolean} p.kebendaan
  */
-function hitungStatistik({ sekarang, baris, orang, susunanSk = [], bobot, kebendaan }) {
+function hitungStatistik({ sekarang, baris, orang, susunanSk = [], bobot, kebendaan, skTanggal = "" }) {
   const jendela = jendelaWaktu(sekarang);
   const peran = (nama) =>
     statistikPeran({
+      peran: nama,
       orang: (orang && orang[nama]) || [],
       baris: (baris && baris[nama]) || [],
       jendela,
@@ -440,6 +470,7 @@ function hitungStatistik({ sekarang, baris, orang, susunanSk = [], bobot, kebend
     jendela,
     bobot,
     kebendaan,
+    skTanggal,
   });
 
   const terbaca = hakim.orang.length + panitera.orang.length + jurusita.orang.length > 0;
@@ -541,7 +572,7 @@ function periksaKesesuaianSk({ hakimKode = [], hakimId = [], paniteraId = 0, tan
   const daftar = (Array.isArray(susunanSk) ? susunanSk : []).filter((s) => Array.isArray(s.hakimKode) && s.hakimKode.length >= 2);
   const sebutSk = sk && sk.nomor ? `SK ${sk.nomor}` : "SK majelis";
   if (daftar.length === 0) {
-    return { status: "belum_ada_sk", majelisKode: "", bunyi: "Belum memakai SK - isi di Pengaturan.", rinci: [] };
+    return { status: "belum_ada_sk", majelisKode: "", bunyi: "Belum memakai SK - isi di Pengaturan SK Majelis.", rinci: [] };
   }
   const kode = (hakimKode || []).map((x) => String(x || "").toUpperCase()).filter(Boolean);
   if (kode.length === 0) {
@@ -679,6 +710,8 @@ async function paniteraTercatat(perkaraId, { db = require("../db_config") } = {}
 
 module.exports = {
   BOBOT_SKOR,
+  BOBOT_SKOR_PERAN,
+  BOBOT_ANGGOTA_MAJELIS,
   HARI_JENDELA,
   BULAN_KEBENDAAN,
   TAHAPAN_PUTUSAN,

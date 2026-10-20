@@ -17,7 +17,7 @@
  *   - konten.js        gambarPenunjukan (papan)
  *   - penetapan-sipp.js render() (panel halaman SIPP, kotak "Beban & SK")
  *
- * Hanya textContent; tidak ada innerHTML. Kelas berawalan `aleta-sisip` supaya
+ * Hanya textContent; tidak ada penyisipan HTML mentah. Kelas berawalan `aleta-sisip` supaya
  * diabaikan pengamat perubahan halaman SIPP. Tidak menulis apa pun ke SIPP.
  */
 (function penunjukanStatistikModul() {
@@ -141,6 +141,16 @@
     ringkas.append(el(doc, "span", "aleta-bebanstat-ringkas-judul", "Beban penetapan"));
     ringkas.append(el(doc, "span", sk.dipakai ? "aleta-bebanstat-sk" : "aleta-bebanstat-sk aleta-bebanstat-awas", kalimatSk(stat)));
     kotak.append(ringkas);
+
+    if ((sk.peringatan || []).length > 0) {
+      const w = el(doc, "div", "aleta-bebanstat-kesesuaian aleta-bebanstat-awas");
+      w.setAttribute("data-bebanstat-sk-perlu", "1");
+      w.append(el(doc, "strong", "", "SK perlu diperbarui: "), doc.createTextNode("pegawai berikut sudah tidak sesuai - perbarui di halaman SK Majelis."));
+      const ul = el(doc, "ul", "aleta-bebanstat-rekomendasi");
+      for (const p of sk.peringatan) ul.append(el(doc, "li", "", p));
+      w.append(ul);
+      kotak.append(w);
+    }
 
     const kes = usulan.kesesuaianSk;
     if (kes && kes.bunyi) {
