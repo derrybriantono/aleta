@@ -284,7 +284,7 @@ describe("rute GET relaas-massal/cetak memakai fungsi yang sama dengan dialog", 
     expect(baca("components/portal/aleta-ecourt-cetak-relaas.tsx")).not.toMatch(/Pihak Kedua \(T\)/);
     // Sebutan sama dengan panel juru sita ekstensi (jurusitaSebutanItsbat).
     const ekstensi = readFileSync(path.resolve(akar, "../../ekstensi-sipp/jurusita.js"), "utf8");
-    expect(ekstensi).toMatch(/"Pemohon I"/);
-    expect(ekstensi).toMatch(/"Pemohon II"/);
+    // (kesamaan keluarannya dijaga cetak-relaas-sinkron-ekstensi-20okt.test.ts).
+    expect(ekstensi).toMatch(/function jurusitaStrukturPihak/);
   });
 });

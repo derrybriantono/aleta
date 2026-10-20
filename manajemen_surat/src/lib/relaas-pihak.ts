@@ -103,8 +103,8 @@ export function strukturPihakRelaas(dok: DokumenPihakRelaas): StrukturPihakRelaa
   const dasar = sebutanDasar(dok);
   const n1 = bilangan(dok.jumlahPihak?.pertama);
   const voluntairAlur = relaasVoluntair(dok);
-  // Ruas "kedua" yang tak dikirim pada permohonan voluntair dibaca 0 (aturan itsbat satu Pemohon 14 Okt memang begitu).
-  const n2 = bilangan(dok.jumlahPihak?.kedua) ?? (voluntairAlur ? 0 : null);
+  // Ruas "kedua" yang tak dikirim dibaca 0 hanya untuk itsbat (360; aturan satu Pemohon 14 Okt) - sama dengan jurusitaStrukturPihak di ekstensi.
+  const n2 = bilangan(dok.jumlahPihak?.kedua) ?? (voluntairAlur && Number(dok.jenisPerkaraId) === 360 ? 0 : null);
   const jumlahTerbaca = n1 !== null && n2 !== null;
 
   if (!relaasVoluntair(dok) || !jumlahTerbaca) {

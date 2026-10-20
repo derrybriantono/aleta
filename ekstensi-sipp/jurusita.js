@@ -586,15 +586,54 @@ function jurusitaJumlahPemohon(x) {
   return Number.isInteger(n) && n > 0 ? n : 0;
 }
 
-/** Itsbat voluntair yang Pemohonnya terbaca SATU orang (dokumen rute atau rincian). */
+/**
+ * 20 Okt: struktur pihak relaas - CERMIN lib/relaas-pihak.ts (strukturPihakRelaas), diuji sama keluaran
+ * (cetak-relaas-sinkron-ekstensi-20okt.test.ts). Permohonan voluntair (alur 16): pihak kedua ada bila SIPP
+ * punya baris perkara_pihak2 (Termohon); bila tidak, sisi kedua = Pemohon II hanya jika Pemohon dua orang
+ * atau lebih; satu Pemohon = tanpa sisi kedua. Alur lain, atau jumlah tak terbaca: aturan lama (pihak kedua ada).
+ * Ruas "kedua" yang tak dikirim dibaca 0 hanya untuk itsbat (360, aturan 14 Okt); bot lama lain = tak terbaca.
+ */
+function jurusitaBilanganPihak(nilai) {
+  if (nilai === null || nilai === undefined || String(nilai).trim() === "") return null;
+  const n = Number(nilai);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : null;
+}
+
+function jurusitaStrukturPihak(x, sebutanDasar) {
+  const dasar = sebutanDasar || { pertama: "Pemohon", kedua: "Termohon" };
+  const voluntair = Boolean(x) && Number(x.alurPerkaraId) === 16;
+  const n1 = jurusitaBilanganPihak(x && (x.jumlahPihakPertama !== undefined ? x.jumlahPihakPertama : x.jumlahPihak && x.jumlahPihak.pertama));
+  let n2 = jurusitaBilanganPihak(x && (x.jumlahPihakKedua !== undefined ? x.jumlahPihakKedua : x.jumlahPihak && x.jumlahPihak.kedua));
+  if (n2 === null && voluntair && Number(x.jenisPerkaraId) === 360) n2 = 0;
+  const terbaca = n1 !== null && n2 !== null;
+  if (!voluntair || !terbaca) {
+    return { bentuk: voluntair ? "voluntair" : "gugatan", sebutan: { pertama: dasar.pertama, kedua: dasar.kedua }, kedua: "lawan", adaPihakKedua: true, jumlahTerbaca: terbaca };
+  }
+  if (n2 > 0) return { bentuk: "voluntair", sebutan: { pertama: dasar.pertama, kedua: dasar.kedua }, kedua: "lawan", adaPihakKedua: true, jumlahTerbaca: true };
+  if (n1 >= 2) {
+    return { bentuk: "voluntair", sebutan: { pertama: `${dasar.pertama} I`, kedua: `${dasar.pertama} II` }, kedua: "pemohon-ii", adaPihakKedua: true, jumlahTerbaca: true };
+  }
+  return { bentuk: "voluntair", sebutan: { pertama: dasar.pertama, kedua: "" }, kedua: "tidak-ada", adaPihakKedua: false, jumlahTerbaca: true };
+}
+
+/** Permohonan voluntair tanpa sisi kedua (satu Pemohon, tanpa Termohon) - dokumen rute atau rincian. */
+function jurusitaTanpaPihakKedua(x) {
+  return !jurusitaStrukturPihak(x).adaPihakKedua;
+}
+
+/** Itsbat voluntair yang Pemohonnya terbaca SATU orang (dokumen rute atau rincian) - dasar pengumuman 1 Pemohon. */
 function jurusitaSatuPemohonItsbat(x) {
   return jurusitaItsbatVoluntair(x) && jurusitaJumlahPemohon(x) === 1;
 }
 
-/** Sebutan sisi untuk itsbat voluntair: Pemohon I / Pemohon II (satu Pemohon: "Pemohon"). Lainnya apa adanya. */
+/**
+ * Sebutan sisi untuk permohonan voluntair (20 Okt: semua alur 16, bukan hanya itsbat): Pemohon I / Pemohon II;
+ * satu Pemohon "Pemohon" (sisi kedua tetap bersebutan dasar - hanya dimatikan, bukan dikosongkan). Lainnya apa adanya.
+ */
 function jurusitaSebutanItsbat(sebutan, x) {
-  if (!jurusitaItsbatVoluntair(x)) return sebutan;
-  return { ...sebutan, pertama: jurusitaJumlahPemohon(x) === 1 ? "Pemohon" : "Pemohon I", kedua: "Pemohon II" };
+  const st = jurusitaStrukturPihak(x, sebutan);
+  if (st.bentuk !== "voluntair" || !st.jumlahTerbaca) return sebutan;
+  return { ...sebutan, pertama: st.sebutan.pertama, kedua: st.sebutan.kedua || sebutan.kedua };
 }
 
 /** Permintaan blangko pengumuman: 1 Pemohon -> kunci ...-1p, selainnya (termasuk tak terbaca) 2 Pemohon. */
@@ -749,14 +788,14 @@ function jurusitaCentangBawaan(jadwal, urutan, rincian) {
   if (tujuan) {
     const gol = jurusitaGolonganSidang(tujuan, rincian);
     if (gol === "sidang-pertama" && jurusitaItsbatVoluntair(rincian)) {
-      hasil.panggilan = jurusitaJumlahPemohon(rincian) === 1 ? [1] : [1, 2];
+      hasil.panggilan = jurusitaTanpaPihakKedua(rincian) ? [1] : [1, 2];
       hasil.pengumuman = true;
-    } else if (gol === "sidang-pertama" || gol === "ikrar-talak") hasil.panggilan = [1, 2];
+    } else if (gol === "sidang-pertama" || gol === "ikrar-talak") hasil.panggilan = jurusitaTanpaPihakKedua(rincian) ? [1] : [1, 2];
     else {
       const sebelum = daftar
         .filter((s) => Number(s.urutanSidang) < Number(urutan))
         .sort((a, b) => Number(b.urutanSidang) - Number(a.urutanSidang))[0];
-      if (sebelum) hasil.panggilan = jurusitaSisiTidakHadir(sebelum.dihadiriOleh);
+      if (sebelum) hasil.panggilan = jurusitaSisiTidakHadir(sebelum.dihadiriOleh).filter((x) => !(x === 2 && jurusitaTanpaPihakKedua(rincian)));
     }
   }
   const putusan = rincian && rincian.putusan;
@@ -765,7 +804,7 @@ function jurusitaCentangBawaan(jadwal, urutan, rincian) {
     const sidangPutus = daftar
       .filter((s) => !jurusitaSidangIkrar(s, rincian) && (!tgl || String(s.tanggalSidang || "").slice(0, 10) <= tgl))
       .sort((a, b) => Number(b.urutanSidang) - Number(a.urutanSidang))[0];
-    if (sidangPutus) hasil.pbt = jurusitaSisiTidakHadir(sidangPutus.dihadiriOleh);
+    if (sidangPutus) hasil.pbt = jurusitaSisiTidakHadir(sidangPutus.dihadiriOleh).filter((x) => !(x === 2 && jurusitaTanpaPihakKedua(rincian)));
   }
   return hasil;
 }
@@ -1593,10 +1632,10 @@ function jurusitaGambarPerkara(bagian, konteksAwal, kotakPutaran, pantau) {
     const kotakCentang = jurusitaEl("div", "aleta-jurusita-centang-kotak");
     const pP1 = jurusitaCentang(`Panggilan ${sebutan.pertama}`, "p1", Boolean(tanpaSidang), tanpaSidang);
     // Itsbat voluntair satu Pemohon (14 Okt): tidak ada Pemohon II untuk dipanggil.
-    const hanyaSatu = satuPemohon ? "Perkara ini hanya punya satu Pemohon." : "";
+    const hanyaSatu = jurusitaTanpaPihakKedua(rincian) ? "Perkara ini hanya punya satu Pemohon dan tidak punya Termohon." : "";
     const pP2 = jurusitaCentang(`Panggilan ${sebutan.kedua}`, "p2", Boolean(tanpaSidang || hanyaSatu), tanpaSidang || hanyaSatu);
     const pB1 = jurusitaCentang(`PBT ${sebutan.pertama}`, "b1", !sudahPutus, belumPutus);
-    const pB2 = jurusitaCentang(`PBT ${sebutan.kedua}`, "b2", !sudahPutus, belumPutus);
+    const pB2 = jurusitaCentang(`PBT ${sebutan.kedua}`, "b2", !sudahPutus || Boolean(hanyaSatu), belumPutus || hanyaSatu);
     // Pengumuman itsbat nikah (14 Okt): hanya perkara itsbat voluntair, hanya sidang pertama.
     const pPi = itsbatVoluntair
       ? jurusitaCentang(
@@ -2056,7 +2095,7 @@ function jurusitaDokumenBarisMassal(baris, pilih, peta) {
   const tanpaBlangko = [];
   const pg = baris.panggilan;
   const kp = jurusitaKeadaanDok(pg, baris.kelompok);
-  const sisiP = [1, 2].filter((s) => pilih && pilih[`p${s}`] && !(s === 2 && jurusitaSatuPemohonItsbat(pg)));
+  const sisiP = [1, 2].filter((s) => pilih && pilih[`p${s}`] && !(s === 2 && jurusitaTanpaPihakKedua(pg)));
   if (pg && kp && kp.boleh && sisiP.length > 0) {
     const golongan = String(pg.golongan || "");
     const lanjutan = golongan === "sidang-ditunda" || golongan === "sidang-lanjutan";
@@ -2206,8 +2245,8 @@ function jurusitaGambarBarisMassal(baris, pilih, tampilJurusita, ubah) {
   if (kp) {
     pasangCentang("p1", `Panggilan ${seb.pertama}`, kp);
     // Itsbat voluntair satu Pemohon (14 Okt): tidak ada Pemohon II.
-    const satu = jurusitaSatuPemohonItsbat(baris.panggilan);
-    pasangCentang("p2", `Panggilan ${seb.kedua}`, satu ? { ...kp, boleh: false, sebab: "Perkara ini hanya punya satu Pemohon." } : kp);
+    const satu = jurusitaTanpaPihakKedua(baris.panggilan);
+    pasangCentang("p2", `Panggilan ${seb.kedua}`, satu ? { ...kp, boleh: false, sebab: "Perkara ini hanya punya satu Pemohon dan tidak punya Termohon." } : kp);
     if (kp.sebab) pesan.push({ teks: `Panggilan: ${kp.sebab}`, salah: true });
     for (const c of kp.catatan) pesan.push({ teks: `Panggilan: ${c}`, salah: false });
   }

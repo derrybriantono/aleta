@@ -3559,6 +3559,7 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
     // Pemohon II bila hanya ada satu Pemohon.
     `SELECT p.perkara_id AS perkaraId, p.alur_perkara_id AS alurPerkaraId, p.jenis_perkara_id AS jenisPerkaraId,
             (SELECT COUNT(*) FROM perkara_pihak1 pp WHERE pp.perkara_id = p.perkara_id) AS jumlahPihakPertama,
+            (SELECT COUNT(*) FROM perkara_pihak2 pp2 WHERE pp2.perkara_id = p.perkara_id) AS jumlahPihakKedua,
             p.jenis_perkara_nama AS jenisPerkara
        FROM perkara p WHERE p.nomor_perkara = ? ORDER BY p.perkara_id DESC LIMIT 1`,
     [nomorPerkara]
@@ -3683,6 +3684,8 @@ async function rincianSidang(nomorPerkaraMentah, sidangIdMentah) {
     jenisPerkaraId: Number(perkara.jenisPerkaraId) || null,
     // Baris perkara_pihak1 (Penggugat/Pemohon); null bila tak terbaca.
     jumlahPihakPertama: Number(perkara.jumlahPihakPertama) || null,
+    // 20 Okt: baris perkara_pihak2 (Termohon); 0 = tanpa Termohon (permohonan voluntair), dibedakan dari null (tak terbaca).
+    jumlahPihakKedua: Number.isFinite(Number(perkara.jumlahPihakKedua)) && perkara.jumlahPihakKedua !== null && perkara.jumlahPihakKedua !== undefined ? Number(perkara.jumlahPihakKedua) : null,
     majelis,
     panitera: petugas.panitera,
     jurusita: petugas.jurusita,
