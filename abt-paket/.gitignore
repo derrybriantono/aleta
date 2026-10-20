@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+hasil_lokal.json
+hasil_server.json

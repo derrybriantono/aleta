@@ -1,0 +1,3 @@
+# RTF blangko: bita apa adanya (md5 dicocokkan skrip pasang di server); jangan dinormalkan
+*.rtf -text
+*.rtf binary
