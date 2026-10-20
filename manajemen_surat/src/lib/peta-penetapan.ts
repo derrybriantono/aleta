@@ -30,6 +30,8 @@
  * lain berarti berkas yang tidak pernah terlihat petugas.
  */
 
+import { TINGGI_TTD_MAKS_BAWAAN_MM, UKURAN_TTD_CAP_BAWAAN } from "@/lib/ukuran-ttd-cap";
+
 export const JENIS_PETA_PENETAPAN = ["pmh", "phs", "ppp", "pjs"] as const;
 export type JenisPetaPenetapan = (typeof JENIS_PETA_PENETAPAN)[number];
 
@@ -100,14 +102,15 @@ export type KunciUkuran = keyof typeof BATAS_UKURAN_MM;
 
 const UKURAN_BAWAAN: Pick<AturPenetapan, KunciUkuran> = {
   // 19 Okt 2026: ttd ~1,6x dan menimpa +-1/3 atas baris nama; cap berdiameter
-  // tetap 36 mm (sama dengan UKURAN_TTD_CAP di aleta_bot penetapanEdocService).
-  lebarTtdMm: 64,
-  tinggiTtdMaksMm: 35,
+  // tetap 36 mm. SATU sumber: UKURAN_TTD_CAP_BAWAAN (lib/ukuran-ttd-cap.ts),
+  // cermin UKURAN_TTD_CAP di aleta_bot penetapanEdocService dan ekstensi.
+  lebarTtdMm: UKURAN_TTD_CAP_BAWAAN.lebarTtdMm,
+  tinggiTtdMaksMm: TINGGI_TTD_MAKS_BAWAAN_MM,
   ttdGeserKananMm: 0,
-  ttdTurunMm: 3,
-  lebarCapMm: 36,
-  capGeserKiriMm: 13,
-  capGeserAtasMm: 4,
+  ttdTurunMm: UKURAN_TTD_CAP_BAWAAN.ttdTurunMm,
+  lebarCapMm: UKURAN_TTD_CAP_BAWAAN.diameterCapMm,
+  capGeserKiriMm: UKURAN_TTD_CAP_BAWAAN.capGeserKiriMm,
+  capGeserAtasMm: UKURAN_TTD_CAP_BAWAAN.capGeserAtasMm,
 };
 
 /** Blangko gabungan PTSP di folder derry_briantono/99 PTSP (dulu "PTSP", paket abt-ganti-nama-relaas-ptsp): bagian 1 PMH, 2 PPP, 3 PJS, 4 PHS (cermin PETA_PTSP.berkasGabungan di bot). */

@@ -174,6 +174,7 @@ const ATUR_BAWAAN = Object.freeze({
   lebarCapMm: UKURAN_TTD_CAP.diameterCapMm,
   capGeserKiriMm: UKURAN_TTD_CAP.capGeserKiriMm,
   capGeserAtasMm: UKURAN_TTD_CAP.capGeserAtasMm,
+  opasitasCap: UKURAN_TTD_CAP.opasitasCap,
 });
 
 const ATUR_JENIS = Object.freeze({
@@ -191,6 +192,7 @@ const BATAS_ANGKA = {
   lebarCapMm: [10, 60],
   capGeserKiriMm: [-60, 60],
   capGeserAtasMm: [-60, 60],
+  opasitasCap: [0.3, 1],
 };
 
 /** Pengaturan berlaku untuk satu jenis: bawaan <- bawaan jenis <- kiriman portal (disaring). */
@@ -913,7 +915,7 @@ function bubuhkanTtdCap(rtf, { mulaiNama, ttd, cap, atur }) {
     pusatX = Math.max(kotak / 2, Math.min(pusatX, tata.lebarBidang - tata.ri - kotak / 2));
     capDiBelakang = !adaTransparansi(cap.isi);
     sisipan += bentukGambar({
-      isi: jenisCap === "png" ? redamkanAlfaPng(cap.isi, UKURAN_TTD_CAP.opasitasCap) : cap.isi,
+      isi: jenisCap === "png" ? redamkanAlfaPng(cap.isi, a.opasitasCap) : cap.isi,
       jenis: jenisCap,
       kiri: pusatX - capL / 2,
       atas: pusatY - capT / 2,

@@ -3,6 +3,9 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { getGatewayAbtPdf } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pilihCap } from "@/server/modules/aleta-ecourt/penetapan-edoc";
+import { ukuranTtdCapBerlaku } from "@/server/modules/aleta-ecourt/ukuran-ttd-cap";
+import { ukuranUntukBot } from "@/lib/ukuran-ttd-cap";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -63,7 +66,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const hasil = await getGatewayAbtPdf(rtfBase64, { salinan });
+    // 20 Okt: salinan memakai ukuran tanda tangan/cap yang sama dengan e-Doc penetapan dan
+    // ekstensi, dan Panitera (pengesah salinan) berhak CAP - cap peruntukan Panitera
+    // (cadangan: cap Umum) dibubuhkan bot di sisi kiri tanda tangan. Cap tidak ada = tanpa cap.
+    let salinanOpsi: { salinan: true; atur: ReturnType<typeof ukuranUntukBot>; cap: { jenis: string; isiBase64: string } | null } | null = null;
+    if (salinan) {
+      const atur = ukuranUntukBot(await ukuranTtdCapBerlaku(db));
+      const c = await pilihCap(db, "ppp", null).catch(() => null);
+      salinanOpsi = { salinan: true, atur, cap: c ? { jenis: c.jenisBerkas, isiBase64: c.isi.toString("base64") } : null };
+    }
+    const hasil = await getGatewayAbtPdf(rtfBase64, salinanOpsi ?? { salinan });
     if (!hasil.ok) {
       return ok({
         available: false,

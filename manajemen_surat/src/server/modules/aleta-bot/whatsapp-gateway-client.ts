@@ -3874,12 +3874,17 @@ export type KeteranganSalinanPdf = {
   galatTtd: string;
 };
 
-export async function getGatewayAbtPdf(rtfBase64: string, opsi: { salinan?: boolean } = {}) {
+export async function getGatewayAbtPdf(
+  rtfBase64: string,
+  opsi: { salinan?: boolean; atur?: Record<string, number>; cap?: { jenis: string; isiBase64: string } | null } = {}
+) {
   return gatewayFetch<{ pdfBase64: string; byte: number; versiMesin: string; salinan?: KeteranganSalinanPdf }>(
     "/internal/aleta-bot/abt/pdf",
     {
       method: "POST",
-      body: JSON.stringify(opsi.salinan ? { rtfBase64, salinan: true } : { rtfBase64 }),
+      body: JSON.stringify(
+        opsi.salinan ? { rtfBase64, salinan: true, ...(opsi.atur ? { atur: opsi.atur } : {}), ...(opsi.cap ? { cap: opsi.cap } : {}) } : { rtfBase64 }
+      ),
       // ======================================================================
       // BATAS 8 DETIK TERLALU PENDEK UNTUK MENJALANKAN LibreOffice
       // ======================================================================

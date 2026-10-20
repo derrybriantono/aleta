@@ -810,7 +810,9 @@ describe("G. pratinjau dan cetak", () => {
     klik(h, '[data-bd2="tetapcetak"]');
     await sampai(() => h.pdfRtf.length === 1, "pdf diminta", 8000);
     const rtf = h.pdfRtf[0];
-    const idxPict = rtf.indexOf("{\\pict\\pngblip\\picw1\\pich1\\picwgoal2722\\pichgoal2722 89504e47");
+    // 20 Okt: TTD mengambang (bentuk) - gambar 1x1 dijepit tinggi maks 35 mm (1984 twip), menimpa nama.
+    expect(rtf).toContain("\\shpbypara");
+    const idxPict = rtf.indexOf("{\\pict\\pngblip\\picw1\\pich1\\picwgoal1984\\pichgoal1984 89504e47");
     const idxNama = rtf.indexOf("Hakim Satu, S.H.");
     expect(idxPict).toBeGreaterThan(0);
     expect(idxPict).toBeLessThan(idxNama);
@@ -1061,7 +1063,9 @@ describe("murni", () => {
     const h = x.sisipkanTtdRtf("{\\rtf1 \\pard\\qr Hakim Satu, S.H.\\par\\pard PP Satu\\par}", [{ nama: "Hakim Satu, S.H.", png }, { nama: "Tidak Ada", png }]);
     expect(h.dipasang).toEqual(["Hakim Satu, S.H."]);
     expect(h.tidakDitemukan).toEqual(["Tidak Ada"]);
-    expect(h.rtf).toMatch(/\\pard\\qr \{\\pict\\pngblip\\picw1\\pich1\\picwgoal2722\\pichgoal2722 89504e47[0-9a-f]+\}\\par Hakim Satu, S\.H\./);
+    // 20 Okt: TTD MENGAMBANG - bentuk tertambat di depan nama (bukan gambar sebaris + \par); ruang kosong ditambah dulu.
+    expect(h.rtf).toMatch(/\\pard\\qr (?:\\par )*\{\\shp\{\\\*\\shpinst[^]*?\\pict\\pngblip\\picw1\\pich1\\picwgoal1984\\pichgoal1984 89504e47[0-9a-f]+\}[^]*?Hakim Satu, S\.H\./);
+    expect(h.rtf).not.toMatch(/\}\\par Hakim Satu, S\.H\./);
     expect(x.ukuranPng(png)).toEqual({ w: 1, h: 1 });
     expect(x.hurufDiLuarAbt("Assa’ – “oke” €")).toEqual([]);
     expect(x.hurufDiLuarAbt("ok ☺ ع")).toEqual(["☺", "ع"]);
@@ -1086,10 +1090,27 @@ describe("murni", () => {
       `\\pard Untuk Salinan\\par Panitera,\\par PP Satu\\par{\\*\\${penanda} Hakim Satu, S.H.}}`;
     const h = x.sisipkanTtdRtf(rtf, [{ nama: "Hakim Satu, S.H.", png }, { nama: "PP Satu", png }]);
     expect(h.dipasang).toEqual(["Hakim Satu, S.H.", "PP Satu"]);
-    const gambar = /\{\\pict\\pngblip[^}]*\}\\par /g;
-    expect(h.rtf.match(gambar)).toHaveLength(2);
-    expect(h.rtf).toContain("\\par\\par\\par\\par \\b {\\pict\\pngblip");
-    expect(h.rtf.replace(gambar, "")).toBe(rtf);
+    // 20 Okt: bentuk MENGAMBANG (bukan sebaris) tertambat di depan tiap nama, sesudah baris kosong tambahan.
+    expect(h.rtf.match(/\{\\shp\{\\\*\\shpinst/g)).toHaveLength(2);
+    expect(h.rtf).toMatch(/\\par\\par\\par\\par \\b (?:\\par )*\{\\shp\{/);
+    // Buang bentuk dan baris kosong tambahan -> naskah asli utuh.
+    let sisa = "";
+    for (let i = 0; i < h.rtf.length; ) {
+      if (h.rtf.startsWith("{\\shp{", i)) {
+        let d = 0;
+        let j = i;
+        for (; j < h.rtf.length; j += 1) {
+          if (h.rtf[j] === "\\") j += 1;
+          else if (h.rtf[j] === "{") d += 1;
+          else if (h.rtf[j] === "}" && (d -= 1) === 0) break;
+        }
+        i = j + 1;
+      } else {
+        sisa += h.rtf[i];
+        i += 1;
+      }
+    }
+    expect(sisa.replace(/\\b (?:\\par )+(?=Hakim Satu|PP Satu)/g, "\\b ")).toBe(rtf);
     const tanpaSalinan = h.rtf.slice(0, h.rtf.indexOf("Untuk Salinan"));
     expect(tanpaSalinan.indexOf("{\\pict")).toBeGreaterThan(tanpaSalinan.indexOf("\\trowd"));
     expect(h.rtf.slice(h.rtf.indexOf("Untuk Salinan"))).not.toContain("\\pict");
