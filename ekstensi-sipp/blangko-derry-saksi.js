@@ -391,7 +391,7 @@
    * Deret tombol tanya jawab saksi menurut jenis blangko dan peran.
    *   - Hanya penyusun berita acara (PP/admin) pada blangko BAS yang boleh menyunting;
    *   - putusan/penetapan dan peran hakim: hanya baca (tanpa satu pun tombol tanya jawab);
-   *   - "Simpan ke ABT" di BAWAH tabel; tidak ada "Selesai"; "Bersihkan kalimat penutup" tidak ditampilkan di BAS
+   *   - "Tambah baris" dan "Simpan ke ABT" di BAWAH tabel; tidak ada "Selesai"; "Bersihkan kalimat penutup" tidak ditampilkan di BAS
    *     (itu bawaan putusan); "Urungkan"/"Ulangi" tetap.
    * @param {{jenis: string, bolehTulis: boolean, hakimSaja?: boolean, berpasangan?: boolean}} o
    */
@@ -401,10 +401,10 @@
     if (hanyaBaca) return { hanyaBaca: true, atas: [], urungUlang: false, lainnya: [], bawah: [] };
     return {
       hanyaBaca: false,
-      atas: ["set", "muat", "tambah"],
+      atas: ["set", "muat"],
       urungUlang: true,
       lainnya: (r.berpasangan ? ["urut", "samakanq", "salinsemua"] : []).concat(["rapikan"]).map((k) => ({ kunci: k, ...MENU_LAINNYA[k] })),
-      bawah: ["simpan"],
+      bawah: ["tambah", "simpan"], // 20 Okt: "Tambah baris" di bawah tabel, bersama Simpan ke ABT
     };
   }
 

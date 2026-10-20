@@ -317,7 +317,8 @@
     tjTujuan: null, // 19 Okt (tahap 2): { kunci, i, aksi: "tukar"|"salin" } - memilih saksi tujuan bila saksinya lebih dari dua
     // Jawaban saksi otomatis & pilihan pengetahuan saksi (blangko-derry-saksi.js): pil = kunci saksi -> {modus, sumber, alasan[]}.
     // alasanPosita: alasan yang terbaca dari posita perkara ini (centang "sebagian"); lainBuka: kunci saksi -> "Alasan lain" terbuka.
-    sk: { pil: {}, perkara: "", alasan: null, alasanPosita: { perkara: "", keadaan: "", sesuai: null }, lainBuka: {}, status: {}, tertahan: {}, konfirmasi: {}, sig: {}, rantai: Promise.resolve() },
+    sk: { pil: {}, perkara: "", alasan: null, alasanPosita: { perkara: "", keadaan: "", sesuai: null }, lainBuka: {}, status: {}, tertahan: {}, konfirmasi: {}, sig: {}, rantai: Promise.resolve(), tinjau: null },
+    tambahanBuka: false, // 20 Okt: bagian "Isian tambahan (bila ada)" terbuka
     semua: null, // "Lihat semua isi data"
     semuaBuka: false,
     prat: { terbuka: false, memuat: false, rtf: null, html: "", galat: "", suntingPenuh: false, kotor: true, penanda: [] },
@@ -2240,15 +2241,24 @@
   }
   const keadaanBerlaku = (b) => keadaanBerlakuMurni(b, { perkara: perkaraSipp(), menyala: pemicuMenyala, terisi, nilai: S.nilai });
   const keteranganKeadaan = (b) => (b.keadaan && KEADAAN_TEKS[b.keadaan]) || (b.pemicu ? keteranganPemicu(b.pemicu).replace(/ \(terbaca dari SIPP\)/, "") : "");
+  // 20 Okt: isian OPSIONAL (mis. #9134 petunjuk perbaikan permohonan dari majelis) tidak ikut "Perlu diisi N dari M";
+  // tampil di bagian tertutup "Isian tambahan (bila ada)". Penandanya `opsional: true` dari portal; #9134 juga dikenali langsung.
+  const TP = () => (typeof globalThis !== "undefined" && globalThis.AletaBdSaksiTampil) || null;
+  const isianOpsional = (b) => (TP() ? TP().opsional(b) : false);
   /** Isian wajib yang keadaannya tidak berlaku untuk perkara ini (disembunyikan; dapat ditampilkan). */
   function daftarTakBerlaku() {
     if (!S.susunan) return [];
-    return S.susunan.isian.filter((b) => b.wajib && !keadaanBerlaku(b));
+    return S.susunan.isian.filter((b) => b.wajib && !isianOpsional(b) && !keadaanBerlaku(b));
   }
   /** Isian yang tampil: wajib, keadaannya berlaku (atau petugas memilih "tampilkan juga"). */
   function daftarPerlu() {
     if (!S.susunan) return [];
-    return S.susunan.isian.filter((b) => b.wajib && (S.tampilTakBerlaku || keadaanBerlaku(b)));
+    return S.susunan.isian.filter((b) => b.wajib && !isianOpsional(b) && (S.tampilTakBerlaku || keadaanBerlaku(b)));
+  }
+  /** Isian tambahan: tidak dihitung "Perlu diisi", tampil di bagian tertutup di bawah kartu wajib. */
+  function daftarOpsional() {
+    if (!S.susunan) return [];
+    return S.susunan.isian.filter((b) => b.wajib && isianOpsional(b) && b.jenis !== "tj" && !b.khusus);
   }
   function nilaiTerisi(b) {
     if (b.khusus === "bukti") {
@@ -2648,6 +2658,7 @@
     }
     S.tjBuka = kunci;
     S.tjRiw = { u: [], r: [] };
+    S.sk.tinjau = null;
     S.tjMenu = false;
     S.tjTujuan = null;
     // 19 Okt (tahap 2): putusan / peran hakim hanya MEMBACA - satu saksi, tanpa set pertanyaan dan tanpa jawaban otomatis.
@@ -2681,6 +2692,7 @@
         if (!t.berubah) t.rows = tandaiDasarBaris(h.baris.map((r) => ({ no: r.no, tanya: r.tanya, jawab: r.jawab })), false);
         t.templates = h.templates;
         t.keterangan = h.keterangan;
+        t.galat = ""; // peringatan "belum terbaca" dari percobaan simpan sebelum bacaan selesai tidak boleh tertinggal
         t.dimuat = true;
       }
       t.memuat = false;
@@ -2819,16 +2831,72 @@
     const d = S.pk && S.pk.sidangDipilih && S.pk.sidangDipilih.tanggal;
     return /^\d{4}-\d{2}-\d{2}/.test(String(d || "")) ? String(d).slice(0, 10) : "";
   };
+  /** Menempelkan keyakinan/sumber usulan ke baris yang baru diisi (modul tampilan); tanpa modul, hasil apa adanya. */
+  const tandaiUsulanRes = (rows, res, sj) => (TP() ? TP().tandaiUsulan(rows, res, sj) : res);
+  const jawabanSaksiDari = (h, grup, k) => {
+    const idx = grup.indexOf(k);
+    const sj = Array.isArray(h.saksi) && h.saksi[idx] ? h.saksi[idx].jawaban : idx === 0 ? h.saksi1 : idx === 1 ? h.saksi2 : [];
+    const para = Array.isArray(h.paragrafSaksi) ? h.paragrafSaksi[idx] : null;
+    return { sj, hubungan: para && para.hubungan };
+  };
+  /** Hasil server ditampung untuk ditinjau: berapa jawaban berubah, berapa tertahan (sudah diketik), berapa bila yang diketik ikut diganti. */
+  function tampungTinjau(tg, grup, h, tandaKirim) {
+    const m = SK();
+    const tj = S.sk.tinjau;
+    if (!m || !tj) return;
+    for (const k of tg) {
+      S.sk.status[k] = null;
+      const t = S.tj[k];
+      if (!t || m.tandaTanya(t.rows) !== tandaKirim) {
+        S.sk.status[k] = { galat: "Daftar pertanyaan berubah selagi disusun; tekan Isi ulang dari data perkara sekali lagi." };
+        continue;
+      }
+      const { sj, hubungan } = jawabanSaksiDari(h, grup, k);
+      const biasa = m.pasangJawaban(t.rows, sj, { hubungan });
+      tj.item.push({ k, sj, hubungan, tanda: tandaKirim, ubah: biasa.terisi, tahan: biasa.tertahan.length });
+    }
+  }
+  /** Lanjutkan: memasang hasil yang sudah ditinjau. Jawaban ketikan petugas tetap dijaga kecuali dicentang "termasuk yang sudah diketik". */
+  function terapkanTinjau() {
+    const tj = S.sk.tinjau;
+    const m = SK();
+    if (!tj || !m) return;
+    const timpa = tj.termasuk === true;
+    S.sk.tinjau = null;
+    const hasil = [];
+    for (const x of tj.item) {
+      const t = S.tj[x.k];
+      if (!t || m.tandaTanya(t.rows) !== x.tanda) {
+        S.sk.status[x.k] = { galat: "Daftar pertanyaan berubah selagi ditinjau; tekan Isi ulang dari data perkara sekali lagi." };
+        continue;
+      }
+      hasil.push({ k: x.k, t, res: tandaiUsulanRes(t.rows, m.pasangJawaban(t.rows, x.sj, { hubungan: x.hubungan, timpa }), x.sj) });
+    }
+    if (hasil.some((x) => x.res.terisi)) tjCatat(hasil.map((x) => x.k));
+    for (const x of hasil) {
+      if (x.res.terisi) {
+        x.t.rows = x.res.rows;
+        x.t.berubah = true;
+      }
+      S.sk.tertahan[x.k] = timpa ? [] : x.res.tertahan;
+      S.sk.konfirmasi[x.k] = false;
+      S.sk.status[x.k] = { teks: m.ringkasan(x.res) };
+    }
+    renderTj();
+    laporKeKerangka();
+  }
   /**
    * Menyusun jawaban otomatis untuk saksi `targets`. Hanya baris yang boleh diganti (kosong, contoh set, atau hasil otomatis
    * sebelumnya) yang berubah; sisanya dilaporkan sebagai tertahan. `opsi.lapor` = atas permintaan petugas (pilihan diubah,
-   * tombol susun ulang): hasil selalu dilaporkan. Tanpa itu (pemuatan otomatis) hanya yang benar-benar berubah yang dilaporkan.
+   * tombol Isi ulang dari data perkara): hasil selalu dilaporkan. Tanpa itu (pemuatan otomatis) hanya yang benar-benar berubah yang dilaporkan.
    */
   function isiOtomatis(targets, opsi) {
     const m = SK();
     if (!m || !S.blangko || !S.pk) return Promise.resolve();
     const kerja = async () => {
       const o = opsi || {};
+      // 20 Okt: "Isi ulang dari data perkara" - hasil server DITINJAU dulu (jumlah berubah/tertahan), baru dipasang atas persetujuan.
+      if (o.tinjau) S.sk.tinjau = { kunci: targets.slice(), item: [], termasuk: false, siap: false };
       const sah = targets.filter((k) => S.tj[k] && S.tj[k].dimuat && !S.tj[k].memuat && tjItem(k));
       const kelompok = new Map();
       for (const k of sah) {
@@ -2876,19 +2944,24 @@
           renderTj();
           continue;
         }
+        if (o.tinjau) {
+          tampungTinjau(tg, grup, h, tandaTanyaKirim);
+          renderTj();
+          continue;
+        }
         const hasil = tg.map((k) => {
           const idx = grup.indexOf(k);
           const sj = Array.isArray(h.saksi) && h.saksi[idx] ? h.saksi[idx].jawaban : idx === 0 ? h.saksi1 : idx === 1 ? h.saksi2 : [];
           const para = Array.isArray(h.paragrafSaksi) ? h.paragrafSaksi[idx] : null;
           const t = S.tj[k];
           if (!t || m.tandaTanya(t.rows) !== tandaTanyaKirim) return { k, lewat: true };
-          return { k, res: m.pasangJawaban(t.rows, sj, { hubungan: para && para.hubungan, timpa: o.timpa === true }) };
+          return { k, res: tandaiUsulanRes(t.rows, m.pasangJawaban(t.rows, sj, { hubungan: para && para.hubungan, timpa: o.timpa === true }), sj) };
         });
         if (hasil.some((x) => x.res && x.res.terisi)) tjCatat(grup);
         for (const x of hasil) {
           const t = S.tj[x.k];
           if (x.lewat || !t) {
-            S.sk.status[x.k] = o.lapor ? { galat: "Daftar pertanyaan berubah selagi disusun; tekan Susun ulang jawaban." } : null;
+            S.sk.status[x.k] = o.lapor ? { galat: "Daftar pertanyaan berubah selagi disusun; tekan Isi ulang dari data perkara." } : null;
             continue;
           }
           if (x.res.terisi) {
@@ -2899,6 +2972,11 @@
           S.sk.konfirmasi[x.k] = false;
           S.sk.status[x.k] = o.lapor || x.res.terisi ? { teks: m.ringkasan(x.res) } : null;
         }
+        renderTj();
+      }
+      if (o.tinjau && S.sk.tinjau) {
+        if (S.sk.tinjau.item.length) S.sk.tinjau.siap = true;
+        else S.sk.tinjau = null;
         renderTj();
       }
       laporKeKerangka();
@@ -2941,6 +3019,7 @@
       p.alasan = Array.from(kartu ? kartu.querySelectorAll('[data-skfld="alasan"]') : []).filter((x) => x.checked).map((x) => x.value);
     }
     S.sk.pil[kunci] = m.bakukanPilihan(p, urutSaksi(kunci));
+    S.sk.tinjau = null;
     simpanPilSaksi();
     renderTj();
     if (tjSiap([kunci])) void isiOtomatis([kunci], { lapor: true });
@@ -2990,7 +3069,27 @@
       })
       .join("");
     if (!kartu) return "";
-    return `<div class="bd-skpanel" role="group" aria-label="Pengetahuan saksi"><div class="bd-skhead"><span class="bd-lbl">Pengetahuan saksi</span><button type="button" class="bd-btn kecil" data-bd2="isioto" data-kunci="${esc(keys.join("|"))}" ${tjSiap(keys) ? "" : "disabled"}>Susun ulang jawaban</button></div><div class="bd-skgrid">${kartu}</div></div>`;
+    return `<div class="bd-skpanel" role="group" aria-label="Pengetahuan saksi"><div class="bd-skhead"><span class="bd-lbl">Pengetahuan saksi</span><button type="button" class="bd-btn kecil" data-bd2="isioto" data-kunci="${esc(keys.join("|"))}" ${tjSiap(keys) ? "" : "disabled"} title="Menyusun ulang jawaban dari data perkara. Sebelum dipasang, Anda melihat dulu berapa jawaban yang berubah.">Isi ulang dari data perkara</button></div>${htmlKonfirmasiIsiUlang(keys)}<div class="bd-skgrid">${kartu}</div></div>`;
+  }
+  /** Konfirmasi di halaman (bukan kotak dialog peramban) sebelum jawaban diisi ulang: jumlah yang berubah dan yang tertahan. */
+  function htmlKonfirmasiIsiUlang(keys) {
+    const tj = S.sk.tinjau;
+    const m = TP();
+    if (!tj || !tj.siap || !m || tj.kunci.join("|") !== keys.join("|")) return "";
+    const butir = tj.item.map((x) => ({ ubah: x.ubah, tahan: x.tahan }));
+    const tahanSemua = butir.reduce((n, x) => n + x.tahan, 0);
+    const kal = m.kalimatKonfirmasi(butir, tj.termasuk);
+    const tanpaUbah = kal.ubah === 0;
+    return (
+      `<div class="bd-skkonfirm" role="alertdialog" aria-label="Isi ulang dari data perkara" data-skkonfirm>` +
+      `<p><b>Isi ulang jawaban dari data perkara?</b> <span data-skkal>${esc(kal.kalimat)}</span></p>` +
+      (tahanSemua
+        ? `<label class="bd-skcentang"><input type="checkbox" data-bd2="tinjautimpa"${tj.termasuk ? " checked" : ""}> termasuk yang sudah diketik (${tahanSemua} jawaban)</label>`
+        : "") +
+      (tanpaUbah ? `<p class="bd-catat">Tidak ada jawaban yang perlu berubah.</p>` : "") +
+      `<div class="bd-baris"><button type="button" class="bd-btn kecil utama" data-bd2="isiulangya"${tanpaUbah ? " disabled" : ""}>Lanjutkan</button><button type="button" class="bd-btn kecil" data-bd2="isiulangbatal">Batal</button></div>` +
+      `</div>`
+    );
   }
   // Simpan ke ABT = HAPUS lalu isi ulang seluruh keterangan sidang itu. Sebelum keterangan
   // yang sudah ada di ABT terbaca, menyimpan (atau mengganti daftar) akan menghapusnya tanpa
@@ -3029,10 +3128,16 @@
         continue;
       }
       if (!rows.length) {
-        t.galat = "Daftar kosong tidak disimpan (akan menghapus keterangan saksi di ABT). Hapus di ABT bila memang mau dikosongkan.";
+        // 20 Okt: peringatan "daftar kosong" diturunkan dari keadaan daftar SAAT INI (lihat statusDasar) - bukan teks tersimpan yang
+        // tertinggal sesudah daftar terisi dan muncul dobel (satu per saksi) padahal daftarnya sudah 19 baris.
+        if (TP()) {
+          t.kosongSimpan = true;
+          t.galat = "";
+        } else t.galat = "Daftar kosong tidak disimpan (akan menghapus keterangan saksi di ABT). Hapus di ABT bila memang mau dikosongkan.";
         renderTj();
         continue;
       }
+      t.kosongSimpan = false;
       t.menyimpan = `menyimpan ${rows.length} baris ke ABT… (ABT menulis satu per satu, bisa ${Math.max(5, rows.length * 4)} detik)`;
       t.galat = "";
       renderTj();
@@ -3434,6 +3539,8 @@
     return undefined;
   }
 
+  /** Nama isian untuk petugas; isian tambahan tertentu (#9134) memakai label yang menjelaskan fungsinya. */
+  const namaIsian = (b) => (TP() ? TP().namaTampil(b) : b.nama);
   function kotakIsian(b) {
     const v = S.isi[b.kode] !== undefined ? String(S.isi[b.kode]) : "";
     const sr = cfg().saran ? saranUntuk(b) : "";
@@ -3479,7 +3586,7 @@
           .join("")}</select></label>`
       : "";
     return (
-      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(b.nama)}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama, ketItem(b))}</div>${muncul}${kepingKet(b)}` +
+      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(namaIsian(b))}">${esc(namaIsian(b))}</label>${ikonSumber(b.kode, b.nama, ketItem(b))}</div>${muncul}${kepingKet(b)}` +
       isian +
       sandingKet(b) +
       pilihBunyi +
@@ -3537,6 +3644,17 @@
       `<div class="bd-baris"><span class="bd-lbl">Tambah bukti</span>${BUKTI_CEPAT.map(([n, o]) => `<button type="button" class="bd-chip bd-tombolchip" data-bktambah="${w}" data-nama="${esc(n)}" data-oleh="${esc(o)}">+ ${esc(n)}</button>`).join("")}<button type="button" class="bd-chip bd-tombolchip" data-bktambah="${w}" data-nama="" data-oleh="">+ Bukti lain</button></div></div>`
     );
   }
+  /** Bagian tertutup "Isian tambahan (bila ada)" di bawah kartu wajib; terbuka sendiri bila salah satunya sudah berisi. */
+  function htmlIsianTambahan() {
+    const l = daftarOpsional();
+    if (!l.length) return "";
+    const adaIsi = l.some((b) => String(S.isi[b.kode] || "").trim());
+    const buka = S.tambahanBuka || adaIsi;
+    return (
+      `<details class="bd-tambahan" id="bd-tambahan"${buka ? " open" : ""}><summary data-bd2="tambahan" aria-expanded="${buka}">Isian tambahan (bila ada)<span class="bd-catat"> · tidak dihitung pada Perlu diisi</span></summary>` +
+      `<div class="bd-pgrid">${l.map((b) => kotakIsian(b)).join("")}</div></details>`
+    );
+  }
   function renderIsian() {
     const w = wadah.isian;
     if (!w) return;
@@ -3568,6 +3686,7 @@
       `<p class="bd-petunjuk">Tulisan samar di kotak adalah saran. Tekan <kbd>Tab</kbd> untuk memakainya, atau <kbd>↓</kbd> untuk pilihan lain. Data lain sudah terisi sendiri.${bolehTulis() ? "" : ` <b>Akun Anda hanya dapat melihat; ${esc(NAMA_JENIS[S.blangko.jenis].toLowerCase())} ditulis ${esc(NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]] || "pejabat perkara")}.</b>`}</p>` +
       `<div class="bd-bar"><span id="bd-barisi"></span></div><div class="bd-alatkecil" id="bd-alatisi"></div>` +
       `<div class="bd-pgrid" id="bd-perlu">${grid.length ? grid.map((b) => (b.khusus === "bukti" ? kotakBukti(b) : kotakIsian(b))).join("") : tj.length ? "" : `<p class="bd-ok">Blangko ini tidak perlu diisi tangan; semua terisi sendiri dari SIPP dan aturan ABT.</p>`}</div>` +
+      htmlIsianTambahan() +
       `<div id="bd-tjtombol" class="bd-baris"></div><div id="bd-tjwadah"></div>` +
       (S.blangko.jenis === "bas" ? `<div id="bd-skorsbas"></div>` : "") +
       `<div class="bd-baris"><button type="button" class="bd-btn kecil" data-bd2="semua" aria-expanded="${S.semuaBuka}">Lihat semua isi data (${S.susunan.otomatis.length + pilihan.length})</button></div>` +
@@ -3735,6 +3854,76 @@
   const tujuanLain = (kunci) => kunciSaksiSemua().filter((x) => x !== kunci && tjItem(x));
   const namaSaksiTj = (kunci) => (tjItem(kunci) ? tjItem(kunci).tj.sebutan : kunci);
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // 20 Okt: warna kotak jawaban saksi menurut asalnya + ringkasan "N terisi · N ragu · N perlu dilengkapi"
+  // (fungsi murninya di blangko-derry-saksi-tampil.js; di sini hanya HTML dan perilaku halaman).
+  // ──────────────────────────────────────────────────────────────────────────
+  /** Lencana kecil di bawah kotak jawaban: "ragu ⓘ" (alasannya di ikon) atau "perlu dilengkapi"; yang lain tanpa lencana. */
+  function isiCapAsal(r) {
+    const m = TP();
+    if (!m) return "";
+    const a = m.asalBaris(r);
+    if (a === "ragu") {
+      const alasan = m.alasanRagu(r);
+      return `<span class="bd-asallencana ragu">ragu <button type="button" class="bd-ikon bd-asalinfo" data-bd2="infoasal" title="${esc(alasan)}" aria-label="Mengapa ragu: ${esc(alasan)}">ⓘ</button></span>`;
+    }
+    if (a === "kosong") return `<span class="bd-asallencana kosong">perlu dilengkapi</span>`;
+    return "";
+  }
+  const htmlCapAsal = (r) => (TP() ? `<span class="bd-asalcap" data-asalcap>${isiCapAsal(r)}</span>` : "");
+  function htmlRingkasAsal(daftar) {
+    const m = TP();
+    if (!m) return "";
+    const h = m.hitungAsal(daftar);
+    if (!h.total) return "";
+    const tombolAtauTeks = (n, label, jenis) =>
+      n ? `<button type="button" class="bd-asalbtn ${jenis}" data-bd2="lompat" data-jenis="${jenis}" title="Lompat ke kotak ${label} berikutnya">${n} ${label}</button>` : `<span class="bd-asalbag ${jenis}">${n} ${label}</span>`;
+    return `<div class="bd-asalringkas" id="bd-asalringkas" role="status" aria-live="polite"><span class="bd-asalbag data">${h.terisi} terisi</span> · ${tombolAtauTeks(h.ragu, "ragu", "ragu")} · ${tombolAtauTeks(h.kosong, "perlu dilengkapi", "kosong")}</div>`;
+  }
+  /** Daftar baris yang sedang tampil (dua saksi berdampingan, atau satu saksi). */
+  function daftarJawabTampil() {
+    if (!S.tjBuka) return [];
+    const ps = S.tjSisi && !deretTj().hanyaBaca ? tjPasangan(S.tjBuka) : null;
+    return (ps || [S.tjBuka]).map((k) => (S.tj[k] && S.tj[k].rows) || []);
+  }
+  /** Warna, lencana, dan ringkasan diperbarui di tempat saat petugas mengetik (tanpa menggambar ulang, fokus tetap). */
+  function segarAsalTampil() {
+    const m = TP();
+    const wad = cari("#bd-tjwadah", wadah.isian);
+    if (!m || !wad || !S.tjBuka) return;
+    const ps = S.tjSisi ? tjPasangan(S.tjBuka) : null;
+    for (const el of cariSemua("textarea[data-asal]", wad)) {
+      let r = null;
+      if (el.hasAttribute("data-sba") && ps) {
+        const rows = S.tj[ps[Number(el.getAttribute("data-sk"))]];
+        r = rows && rows.rows[Number(el.getAttribute("data-sba"))];
+      } else if (el.hasAttribute("data-tjb") && S.tj[S.tjBuka]) r = S.tj[S.tjBuka].rows[Number(el.getAttribute("data-tjb"))];
+      if (!r) continue;
+      const a = m.asalBaris(r);
+      for (const j of ["kosong", "ragu", "data", "manual"]) el.classList.toggle(`bd-asal-${j}`, j === a);
+      el.setAttribute("data-asal", a);
+      const cap = el.nextElementSibling;
+      if (cap && cap.hasAttribute("data-asalcap")) cap.innerHTML = isiCapAsal(r);
+    }
+    const ring = cari("#bd-asalringkas", wad);
+    const baru = htmlRingkasAsal(daftarJawabTampil());
+    if (ring && baru) ring.outerHTML = baru;
+    else if (ring) ring.remove();
+  }
+  /** Lompat ke kotak jawaban "ragu"/"kosong" BERIKUTNYA (urutan di halaman), lalu beri fokus. */
+  function lompatAsal(jenis) {
+    const wad = cari("#bd-tjwadah", wadah.isian);
+    if (!wad || (jenis !== "ragu" && jenis !== "kosong")) return;
+    const semuaKotak = cariSemua("textarea[data-asal]", wad);
+    const sasaranAda = semuaKotak.filter((el) => el.getAttribute("data-asal") === jenis);
+    if (!sasaranAda.length) return toast(jenis === "ragu" ? "Tidak ada jawaban yang ragu." : "Semua jawaban sudah terisi.");
+    const akhir = S.sk.lompat && S.sk.lompat.jenis === jenis ? S.sk.lompat.urut : -1;
+    const sasaran = sasaranAda.find((el) => semuaKotak.indexOf(el) > akhir) || sasaranAda[0];
+    S.sk.lompat = { jenis, urut: semuaKotak.indexOf(sasaran) };
+    if (typeof sasaran.scrollIntoView === "function") sasaran.scrollIntoView({ block: "center" });
+    sasaran.focus();
+  }
+
   function renderTj() {
     const tombol = cari("#bd-tjtombol", wadah.isian);
     const wad = cari("#bd-tjwadah", wadah.isian);
@@ -3793,7 +3982,7 @@
       `<div class="bd-tjalat"><b>${esc(judul)}</b><span class="bd-chip">${esc(sidangTeks)}</span>` +
       (tjPasangan(S.tjBuka) ? `<span class="bd-seg" role="tablist" aria-label="Cara menampilkan saksi"><button type="button" role="tab" data-tjmode="sisi" aria-selected="${S.tjSisi}">Berdampingan</button><button type="button" role="tab" data-tjmode="satu" aria-selected="${!S.tjSisi}">Satu per satu</button></span>` : "") +
       `<label class="bd-lbl" for="bd-muattpl">Set pertanyaan</label><select id="bd-muattpl" title="${esc(alasanSetSaksi())}">${pilihanSetSaksi(t)}</select>` +
-      `<button type="button" class="bd-btn kecil" data-bd2="muattpl" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Muat</button><button type="button" class="bd-btn kecil" data-bd2="tambahtj" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Tambah baris</button></div>` +
+      `<button type="button" class="bd-btn kecil" data-bd2="muattpl" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>Muat</button></div>` +
       ketSetSaksi();
     // Urungkan/Ulangi + menu "Lainnya" (fungsi yang jarang dipakai, dengan kalimat yang jelas).
     const alatKedua = () =>
@@ -3805,8 +3994,9 @@
         : "") +
       `<span class="bd-catat" id="bd-sbstat" role="status"></span></div>`;
     // "Simpan ke ABT" di BAWAH tabel keterangan saksi (sesudah baris terakhir).
+    // 20 Okt: "Tambah baris" juga di bawah tabel (sesudah baris terakhir), bukan di bilah atas.
     const kaki = (kunciDaftar) =>
-      `<div class="bd-tjalat bd-tjkaki"><button type="button" class="bd-btn kecil utama" data-bd2="simpantj" data-kunci="${esc(kunciDaftar.join("|"))}" ${bolehTulis() && tjSiap(kunciDaftar) ? "" : "disabled"}>Simpan ke ABT</button></div>`;
+      `<div class="bd-tjalat bd-tjkaki"><button type="button" class="bd-btn kecil" data-bd2="tambahtj" data-kunci="${esc(kunciDaftar.join("|"))}" ${tjSiap(kunciDaftar) ? "" : "disabled"}>+ Tambah baris</button><button type="button" class="bd-btn kecil utama" data-bd2="simpantj" data-kunci="${esc(kunciDaftar.join("|"))}" ${bolehTulis() && tjSiap(kunciDaftar) ? "" : "disabled"}>Simpan ke ABT</button></div>`;
     // JJ2: keterangan penulisan otomatis jawab-menjawab (ditulis / tidak rapi -> Salin).
     const otoTeks = (k) => {
       const o = S.tjOto && S.tjOto[k];
@@ -3821,6 +4011,8 @@
       if (x.memuat) return `<p class="bd-catat" role="status">Membaca keterangan ${esc(tjItem(k).tj.sebutan)} dari ABT…</p>`;
       if (x.menyimpan) return `<p class="bd-catat" role="status">${esc(x.menyimpan)}</p>`;
       if (x.galat) return `<p class="bd-peringatan">${esc(x.galat)}</p>`;
+      const kosong = TP() ? TP().peringatanDaftarKosong(tjItem(k) ? tjItem(k).tj.sebutan : "", x.rows, x.kosongSimpan) : "";
+      if (kosong) return `<p class="bd-peringatan" data-kosongsimpan="${esc(k)}" role="alert">${esc(kosong)}</p>`;
       if (x.tersimpanJam && !x.berubah) return `<p class="bd-catat">✓ tersimpan di ABT ${esc(x.tersimpanJam)}${x.ganti ? ` (huruf ${esc(x.ganti)} diganti ke bentuk aman ABT)` : ""}</p>`;
       return "";
     };
@@ -3835,6 +4027,11 @@
         `<button type="button" class="bd-chip bd-tombolchip" data-jaksi="batal|${esc(kunci)}|${i}">Batal</button></span>`
       );
     };
+    // 20 Okt: warna kotak jawaban menurut asalnya (kosong / ragu / data / manual) - dihitung saat tampil.
+    const asalDari = (r) => (TP() ? TP().asalBaris(r) : "manual");
+    const kelasAsal = (r) => (TP() ? ` bd-asal bd-asal-${asalDari(r)}` : "");
+    const atrAsal = (r) => (TP() ? ` data-asal="${asalDari(r)}"` : "");
+    const ringkasAsal = (daftar) => htmlRingkasAsal(daftar);
     const banyakSaksi = kunciSaksiSemua().length;
     const judulTukar = (lain) => (banyakSaksi > 2 ? "Tukar jawaban ini dengan jawaban saksi lain (pilih saksinya)" : `Tukar jawaban ini dengan jawaban ${lain} di baris yang sama (pertanyaan tetap)`);
     if (ps) {
@@ -3857,14 +4054,14 @@
         return (
           `<div class="bd-sbrow"><div class="bd-sbno"><b>${i + 1}</b><span class="bd-sbgerak"><button type="button" class="bd-ikon" data-sbnaik="${i}" title="Naikkan baris tanya jawab ini (pertanyaan dan kedua jawaban)" aria-label="Naikkan baris ${i + 1}">↑</button><button type="button" class="bd-ikon" data-sbturun="${i}" title="Turunkan baris tanya jawab ini (pertanyaan dan kedua jawaban)" aria-label="Turunkan baris ${i + 1}">↓</button><button type="button" class="bd-ikon" data-sbhapus="${i}" title="Hapus baris ini untuk kedua saksi" aria-label="Hapus baris ${i + 1}">✕</button></span></div>` +
           `<div class="bd-sbq"><textarea class="bd-ed" rows="2" data-sbq="${i}" aria-label="Pertanyaan ${i + 1}">${esc(a.tanya)}</textarea>${qBeda ? `<p class="bd-sbbeda">Pertanyaan ${esc(nb)} berbeda: “${esc(b.tanya)}” <button type="button" class="bd-chip bd-tombolchip" data-sbaksi="qsama:${i}">Samakan</button></p>` : ""}<span class="bd-chip ${st[1]}">${st[0]}</span></div>` +
-          `<div class="bd-sba"><span class="bd-sblabel">${esc(na)}</span><textarea class="bd-ed" rows="3" data-sba="${i}" data-sk="0" aria-label="Jawaban ${esc(na)} nomor ${i + 1}">${esc(a.jawab)}</textarea>${mini(i, 0, na, nb, "→")}</div>` +
-          `<div class="bd-sba"><span class="bd-sblabel">${esc(nb)}</span><textarea class="bd-ed" rows="3" data-sba="${i}" data-sk="1" aria-label="Jawaban ${esc(nb)} nomor ${i + 1}">${esc(b.jawab)}</textarea>${mini(i, 1, nb, na, "←")}</div></div>`
+          `<div class="bd-sba"><span class="bd-sblabel">${esc(na)}</span><textarea class="bd-ed${kelasAsal(a)}" rows="3" data-sba="${i}" data-sk="0"${atrAsal(a)} aria-label="Jawaban ${esc(na)} nomor ${i + 1}">${esc(a.jawab)}</textarea>${htmlCapAsal(a)}${mini(i, 0, na, nb, "→")}</div>` +
+          `<div class="bd-sba"><span class="bd-sblabel">${esc(nb)}</span><textarea class="bd-ed${kelasAsal(b)}" rows="3" data-sba="${i}" data-sk="1"${atrAsal(b)} aria-label="Jawaban ${esc(nb)} nomor ${i + 1}">${esc(b.jawab)}</textarea>${htmlCapAsal(b)}${mini(i, 1, nb, na, "←")}</div></div>`
         );
       }).join("");
       wad.innerHTML =
         `<div class="bd-tjwadah bd-sbs">${alatAtas(`${na} dan ${nb}`, ps)}` +
         `${alatKedua()}` +
-        `${panelPengetahuan(ps)}${status(ps[0])}${status(ps[1])}<div class="bd-sbhead" aria-hidden="true"><span>No</span><span>Pertanyaan</span><span>${esc(na)}</span><span>${esc(nb)}</span></div><div class="bd-sblist">${baris || `<p class="bd-catat" style="padding:10px">Belum ada pertanyaan. Muat set pertanyaan atau tambah baris.</p>`}</div>${kaki(ps)}</div>`;
+        `${panelPengetahuan(ps)}${status(ps[0])}${status(ps[1])}${ringkasAsal([A, B])}<div class="bd-sbhead" aria-hidden="true"><span>No</span><span>Pertanyaan</span><span>${esc(na)}</span><span>${esc(nb)}</span></div><div class="bd-sblist">${baris || `<p class="bd-catat" style="padding:10px">Belum ada pertanyaan. Muat set pertanyaan atau tambah baris.</p>`}</div>${kaki(ps)}</div>`;
       tumbuhkanSemua(wad);
       return;
     }
@@ -3879,11 +4076,11 @@
     wad.innerHTML =
       `<div class="bd-tjwadah">${alatAtas(it.tj.sebutan, [S.tjBuka])}${status(S.tjBuka)}` +
       `${alatKedua()}` +
-      `${panelPengetahuan([S.tjBuka])}<div class="bd-tjtabel"><table><thead><tr><th class="no-u">No</th><th>Pertanyaan</th><th>Jawaban</th><th></th></tr></thead><tbody>${
+      `${panelPengetahuan([S.tjBuka])}${ringkasAsal([rows])}<div class="bd-tjtabel"><table><thead><tr><th class="no-u">No</th><th>Pertanyaan</th><th>Jawaban</th><th></th></tr></thead><tbody>${
         rows
           .map(
             (r, i) =>
-              `<tr><td class="no-u">${i + 1}</td><td><textarea class="bd-ed" rows="2" data-tjb="${i}" data-sisi="tanya" aria-label="Pertanyaan ${i + 1}">${esc(r.tanya)}</textarea></td><td><textarea class="bd-ed" rows="2" data-tjb="${i}" data-sisi="jawab" aria-label="Jawaban ${i + 1}">${esc(r.jawab)}</textarea>${miniSatu(i)}</td><td style="white-space:nowrap"><button type="button" class="bd-ikon" data-naik="${i}" title="Naikkan baris tanya jawab ini" aria-label="Naik">↑</button> <button type="button" class="bd-ikon" data-turun="${i}" title="Turunkan baris tanya jawab ini" aria-label="Turun">↓</button> <button type="button" class="bd-ikon" data-hapus="${i}" title="Hapus baris ini" aria-label="Hapus">✕</button></td></tr>`
+              `<tr><td class="no-u">${i + 1}</td><td><textarea class="bd-ed" rows="2" data-tjb="${i}" data-sisi="tanya" aria-label="Pertanyaan ${i + 1}">${esc(r.tanya)}</textarea></td><td><textarea class="bd-ed${kelasAsal(r)}" rows="2" data-tjb="${i}" data-sisi="jawab"${atrAsal(r)} aria-label="Jawaban ${i + 1}">${esc(r.jawab)}</textarea>${htmlCapAsal(r)}${miniSatu(i)}</td><td style="white-space:nowrap"><button type="button" class="bd-ikon" data-naik="${i}" title="Naikkan baris tanya jawab ini" aria-label="Naik">↑</button> <button type="button" class="bd-ikon" data-turun="${i}" title="Turunkan baris tanya jawab ini" aria-label="Turun">↓</button> <button type="button" class="bd-ikon" data-hapus="${i}" title="Hapus baris ini" aria-label="Hapus">✕</button></td></tr>`
           )
           .join("") || `<tr><td colspan="4" class="bd-catat">${t && t.memuat ? "Membaca dari ABT…" : "Belum ada pertanyaan. Muat set pertanyaan atau tambah baris."}</td></tr>`
       }</tbody></table></div>${kaki([S.tjBuka])}</div>`;
@@ -5372,7 +5569,24 @@
     if (kode === "isioto") {
       const kunci = String(aksi.getAttribute("data-kunci") || "").split("|").filter(Boolean);
       if (!tjSiap(kunci)) return toast(PESAN_TJ_BELUM_TERBACA);
-      return void isiOtomatis(kunci, { lapor: true });
+      // 20 Okt: tiap klik meminta persetujuan dulu (jumlah jawaban yang berubah dan yang tertahan).
+      return void isiOtomatis(kunci, TP() ? { lapor: true, tinjau: true } : { lapor: true });
+    }
+    if (kode === "isiulangya") return terapkanTinjau();
+    if (kode === "isiulangbatal") {
+      S.sk.tinjau = null;
+      return renderTj();
+    }
+    if (kode === "tinjautimpa") {
+      if (S.sk.tinjau) S.sk.tinjau.termasuk = Boolean(aksi.checked);
+      return renderTj();
+    }
+    if (kode === "lompat") return lompatAsal(String(aksi.getAttribute("data-jenis") || ""));
+    if (kode === "infoasal") return toast(aksi.getAttribute("title") || "");
+    if (kode === "tambahan") {
+      const d = aksi.closest("details");
+      S.tambahanBuka = d ? !d.open : !S.tambahanBuka;
+      return;
     }
     if (kode === "timpaoto") return timpaOtomatis(String(aksi.getAttribute("data-kunci") || ""));
     if (kode === "batalimpa") {
@@ -5919,6 +6133,7 @@
       if (r) {
         r[t.getAttribute("data-sisi")] = t.value;
         S.tj[S.tjBuka].berubah = true;
+        segarAsalTampil();
       }
     }
   }
@@ -5940,6 +6155,7 @@
       const [A, B] = tjSama(ps);
       (Number(t.getAttribute("data-sk")) ? B : A)[i].jawab = t.value;
       tjUbah(ps);
+      segarAsalTampil();
       return true;
     }
     return false;

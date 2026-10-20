@@ -639,9 +639,9 @@ describe("modul jawaban saksi (murni): tukar, geser, salin, alasan sesuai posita
   it("deretTombol per peran: PP pada BAS menyunting; putusan/penetapan dan hakim hanya baca tanpa tombol", () => {
     const pp = m().deretTombol({ jenis: "bas", bolehTulis: true, hakimSaja: false, berpasangan: true });
     expect(pp.hanyaBaca).toBe(false);
-    expect(pp.atas).toEqual(["set", "muat", "tambah"]);
+    expect(pp.atas).toEqual(["set", "muat"]); // 20 Okt: Tambah baris pindah ke bawah tabel
     expect(pp.urungUlang).toBe(true);
-    expect(pp.bawah).toEqual(["simpan"]);
+    expect(pp.bawah).toEqual(["tambah", "simpan"]);
     expect(JSON.stringify(pp)).not.toMatch(/selesai|bersih/i);
     expect(pp.lainnya.map((x: { kunci: string }) => x.kunci)).toEqual(["urut", "samakanq", "salinsemua", "rapikan"]);
     for (const x of pp.lainnya) {
@@ -713,7 +713,7 @@ describe("Blangko Derry (tahap 2): tombol tanya jawab saksi menurut peran", () =
     expect(q(h, '[data-sbaksi="bersih"]')).toBeNull();
     expect(q(h, '[data-sbaksi="bersih1"]')).toBeNull();
     expect(akar(h).textContent).not.toMatch(/Bersihkan kalimat penutup|Susun urutan|Samakan pertanyaan|Selesai/);
-    // Tambah baris, Muat, Urungkan, Ulangi, Lainnya tetap ada di atas.
+    // Tambah baris (kini di bawah tabel), Muat, Urungkan, Ulangi, Lainnya tetap ada.
     for (const s of ['[data-bd2="tambahtj"]', '[data-bd2="muattpl"]', '[data-sbaksi="urung"]', '[data-sbaksi="ulang"]', '[data-bd2="lainnya"]']) expect(q(h, s), s).not.toBeNull();
     // Simpan ke ABT sesudah baris terakhir (berdampingan)...
     const simpan = q(h, '[data-bd2="simpantj"]')!;

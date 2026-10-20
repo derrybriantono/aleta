@@ -790,6 +790,13 @@
       `<div class="bd-tip" id="bd-tip" hidden role="tooltip"></div>` +
       `<div class="bd-toast" id="bd-toast" hidden role="status"></div>`;
     document.body.appendChild(akar);
+    // 20 Okt: tinggi kepala panel (yang menempel) dipakai CSS sebagai ruang lompat, supaya kotak yang difokuskan tidak tertutup.
+    try {
+      const atas = akar.querySelector(".bd-atas");
+      if (atas && typeof ResizeObserver === "function") new ResizeObserver(() => akar.style.setProperty("--bd-tinggi-atas", `${atas.offsetHeight}px`)).observe(atas);
+    } catch {
+      /* tanpa pengamat ukuran: nilai bawaan di CSS dipakai */
+    }
     pasangHuruf();
     terapkanSkala();
     akar.addEventListener("click", saatKlik);
