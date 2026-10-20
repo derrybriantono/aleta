@@ -1,3 +1,4 @@
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest) {
   try {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
+    await pastikanAksi(db, actorUserId, "putusan.unggah");
     await pastikanBolehUnggahPutusan(db, actorUserId);
     const badan = await readJsonBody<Partial<MasukanJamKerja> & { jumlah?: number; benih?: number }>(request);
     const hasil = await pratinjauJadwal(db, {

@@ -142,6 +142,10 @@ function sisirIso(isi: string): string[] {
       const mulai = cocok.index ?? 0;
       if (!/\.(tanggal|tgl)[A-Za-z0-9]*/.test(satu)) continue;
 
+      // Objek data, bukan ungkapan JSX: `{ nomor: x, tanggal: y.tanggal }` (status, muatan kiriman). Ungkapan JSX
+      // tidak pernah diawali `nama:`; yang digambar ke layar tetap tersisir (21 Okt, halaman SK Majelis).
+      if (/^\{\s*(?:\.\.\.[\w$.]+\s*,\s*)?[A-Za-z_$][\w$]*\s*:/.test(satu)) continue;
+
       // Ruas berakhiran Teks adalah teks bebas hasil kerukan, bukan ISO.
       if (/\.(tanggal|tgl)[A-Za-z0-9]*Teks\b/.test(satu)) continue;
 
@@ -180,6 +184,12 @@ function sisirIso(isi: string): string[] {
 }
 
 describe("penyisir ISO - ujilah penjaganya sendiri lebih dahulu", () => {
+  it("objek data satu baris tidak dituduh, ungkapan JSX di sebelahnya tetap tersisir", () => {
+    expect(sisirIso("const nilai = { nomor: sk.nomor, tanggal: sk.tanggal };")).toEqual([]);
+    expect(sisirIso("setSk((s) => ({ ...s, nomor: p.nomor, tanggal: p.tanggal || s.tanggal }));")).toEqual([]);
+    expect(sisirIso("<p>{sk.tanggal}</p>")).toHaveLength(1);
+  });
+
   it("menangkap ruas tanggal yang tidak dibungkus", () => {
     const salah = `
       <dd className="inline">{baris.tanggalPenetapan || "—"}</dd>
