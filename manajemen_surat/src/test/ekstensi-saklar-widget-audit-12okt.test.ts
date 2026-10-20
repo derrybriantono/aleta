@@ -369,6 +369,8 @@ describe("A. popup: tiap saklar menulis kunci dan nilai yang benar (dan membaca 
     { id: "widgetDrafH7", kunci: "widgetDrafH7", bawaan: true },
     // F1.5 (17 Okt): gembok panel ALETA di ABT biasa - menyala = terkunci (tampil penuh).
     { id: "gembokAbt", kunci: "gembokKepalaAbt", bawaan: false },
+    // X1 (21 Okt): ringkas keterangan panel - kunci sama dengan tombol panah di kaki panel.
+    { id: "panelRingkas", kunci: "panelRingkas", bawaan: false },
   ];
 
   it.each(STATIS)("$id: kunci tak ada = bawaan ($bawaan); dibalik menulis $kunci, dibalik lagi kembali", async ({ id, kunci, bawaan }) => {

@@ -42,6 +42,14 @@ const SAKLAR_SIPP_IDE = {
 const SAKLAR_ABT = {
   gembokAbt: ["gembokKepalaAbt", false],
 };
+/* X1 (21 Okt): "Ringkas keterangan di panel" - kunci yang sama dengan tombol panah di kaki panel (panel-alat.js). */
+const SAKLAR_PANEL = {
+  panelRingkas: ["panelRingkas", false],
+  /* Gembok panel di SIPP dan portal - kunci yang sama dengan tombol gembok di panel (panel-alat.js ALAT_GEMBOK_KUNCI). */
+  gembokSipp: ["gembokKepalaSipp", false],
+  gembokAleta: ["gembokKepalaAleta", false],
+};
+const SEMUA_SAKLAR_POPUP = { ...SAKLAR_DERRY, ...SAKLAR_SIPP_IDE, ...SAKLAR_ABT, ...SAKLAR_PANEL };
 /**
  * Butir 41 (17 Okt, audit): centang "Kehadiran sidang" dan "Draf putusan H-7"
  * = kotak yang BENAR-BENAR tampil. UI Baru: bawaan menyala, tampil walau
@@ -128,6 +136,9 @@ const KUNCI_SETELAN_AKUN = [
   "widgetKehadiran",
   "widgetDrafH7",
   "gembokKepalaAbt",
+  "panelRingkas",
+  "gembokKepalaSipp",
+  "gembokKepalaAleta",
   /* Saklar penanda SIPP (popup-ide-l2.js) - per akun seperti saklar lain (audit 17 Okt). */
   "ideL2",
   "ideL2Sita",
@@ -174,6 +185,9 @@ const BAWAAN_AKUN = {
   widgetKehadiran: true,
   widgetDrafH7: true,
   gembokKepalaAbt: false,
+  panelRingkas: false,
+  gembokKepalaSipp: false,
+  gembokKepalaAleta: false,
   skalaHuruf: 100,
   temaPopup: "ikut",
   temaPanel: "gelap",
@@ -299,7 +313,7 @@ function pasangNilai(simpan) {
   if (kotakChecklist) kotakChecklist.checked = simpan.checklistMilestone === true;
   // Bawaan MATI (tampilan baru dipilih orangnya); tawaran, saran Tab, dan
   // pengingat isian kosong bawaannya MENYALA.
-  for (const [id, [kunci, bawaan]] of Object.entries({ ...SAKLAR_DERRY, ...SAKLAR_SIPP_IDE, ...SAKLAR_ABT })) {
+  for (const [id, [kunci, bawaan]] of Object.entries(SEMUA_SAKLAR_POPUP)) {
     const k = document.getElementById(id);
     if (k) k.checked = bawaan ? simpan[kunci] !== false : simpan[kunci] === true;
   }
@@ -328,7 +342,7 @@ function pasangNilai(simpan) {
 
 if (penyimpanan) {
   penyimpanan
-    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "checklistMilestone", "asalPortal", SKALA_KUNCI, ...Object.values(SAKLAR_DERRY).map((x) => x[0]), ...Object.values(SAKLAR_SIPP_IDE).map((x) => x[0]), ...Object.values(SAKLAR_ABT).map((x) => x[0])])
+    .get(["aktif", "tandaiHalaman", "sisipJadwal", "cetakTigaBerkas", "suntingLangsungAbt", "checklistMilestone", "asalPortal", SKALA_KUNCI, ...Object.values(SEMUA_SAKLAR_POPUP).map((x) => x[0])])
     .then(pasangNilai)
     .catch(() => pasangNilai({}));
 } else {
@@ -549,7 +563,7 @@ if (kotakCetak) {
     kotakSunting.addEventListener("change", () => simpan("suntingLangsungAbt", kotakSunting.checked, kotakSunting));
   }
 }
-for (const [id, [kunci]] of Object.entries({ ...SAKLAR_DERRY, ...SAKLAR_SIPP_IDE, ...SAKLAR_ABT })) {
+for (const [id, [kunci]] of Object.entries(SEMUA_SAKLAR_POPUP)) {
   const k = document.getElementById(id);
   if (k) k.addEventListener("change", () => simpan(kunci, k.checked, k));
 }
@@ -558,7 +572,7 @@ try {
   chrome.storage.onChanged.addListener((ubah, tempat) => {
     // Popup yang sudah ditutup tidak lagi punya document - kabar yang datang sesudahnya diabaikan.
     if (tempat !== "local" || typeof document === "undefined" || !document) return;
-    for (const [id, [kunci]] of Object.entries(SAKLAR_ABT)) {
+    for (const [id, [kunci]] of Object.entries({ ...SAKLAR_ABT, ...SAKLAR_PANEL })) {
       const k = document.getElementById(id);
       if (k && ubah[kunci]) k.checked = ubah[kunci].newValue === true;
     }
@@ -1706,7 +1720,7 @@ function komponenProfilPeran() {
 }
 
 /** Keadaan yang hanya dibaca bagian ini - dimuat sekali, lalu diikuti lewat onChanged. */
-const tahap2 = { asalPortal: "", akunSipp: "", senyapSampai: 0, tandaBaru: {}, teknis: true };
+const tahap2 = { asalPortal: "", akunSipp: "", senyapSampai: 0, tandaBaru: {}, teknis: true, lipat: {} };
 const tandaBaruSesiIni = new Set();
 
 /**
@@ -1721,7 +1735,9 @@ const KUNCI_TEKNIS = "sembunyikanTeknis";
 async function muatTahap2() {
   if (!penyimpanan) return;
   try {
-    const s = await penyimpanan.get(["asalPortal", "akunSipp", KUNCI_SENYAP, KUNCI_TANDA_BARU, KUNCI_TEKNIS]);
+    const s = await penyimpanan.get(["asalPortal", "akunSipp", KUNCI_SENYAP, KUNCI_TANDA_BARU, KUNCI_TEKNIS, "popupLipat"]);
+    const lp = s && s.popupLipat;
+    tahap2.lipat = lp && typeof lp === "object" && !Array.isArray(lp) ? { ...lp } : {};
     tahap2.teknis = !(s && s[KUNCI_TEKNIS] === false);
     tahap2.asalPortal = await asalPortalHidup(s && s.asalPortal);
     tahap2.akunSipp = String((s && s.akunSipp) || "");
@@ -2117,12 +2133,29 @@ function pasangRingkas(gayaUi) {
 
 // ── popup-3 / D1: kelompok berjudul ──────────────────────────────────────────
 
+/**
+ * X1 (21 Okt 2026): SEMUA saklar punya bagian yang benar menurut fungsinya -
+ * tidak ada yang tertinggal di luar kelompok. Urutan bagian = urutan tampil:
+ * Tampilan, (Panel saat halaman dibuka), SIPP, ABT, Blangko Derry, Widget,
+ * lalu bagian Admin (latihan dan e-Court). `isi` = id kotak centang;
+ * `unsur` = elemen lain yang ikut (kotak penanda SIPP).
+ */
 const KELOMPOK_SAKLAR = [
-  { kode: "tampilan", judul: "Tampilan", isi: [] },
-  { kode: "sipp", judul: "SIPP", isi: ["tandaiHalaman", "sisipJadwal"] },
+  { kode: "tampilan", judul: "Tampilan", isi: ["panelRingkas"] },
+  { kode: "sipp", judul: "SIPP", isi: ["tandaiHalaman", "sisipJadwal", "sippPenyatu", "sippTampilDobel", "gembokSipp"], unsur: ["ideL2Kotak"] },
   { kode: "abt", judul: "ABT", isi: ["suntingLangsungAbt", "cetakTigaBerkas", "gembokAbt"] },
-  { kode: "portal", judul: "Portal", isi: ["checklistMilestone", "widgetKehadiran", "widgetDrafH7"] },
+  {
+    kode: "derry",
+    judul: "Blangko ABT by Derry Briantono",
+    pendek: "Derry",
+    isi: ["derryBawaan", "derryTawar", "derrySaran", "derryIngat", "derryIsiOto", "derryTjJawab"],
+  },
+  { kode: "aleta", judul: "Portal ALETA", isi: ["gembokAleta"] },
+  { kode: "portal", judul: "Widget", isi: ["checklistMilestone", "widgetKehadiran", "widgetDrafH7"] },
 ];
+
+/** Bagian yang dilipat pengguna (kode -> true), diingat di PC ini: kunci "popupLipat". */
+const KUNCI_LIPAT_POPUP = "popupLipat";
 
 function kartuSkalaHuruf() {
   const n = document.getElementById("skalaNilai");
@@ -2134,26 +2167,70 @@ function kartuPembaruan() {
   return t ? t.closest(".skala") : null;
 }
 
-/** Menyusun kelompok di .isi, sebelum kartu pembaruan. Mengembalikan wadah per kode. */
-function kelompokkanSaklar() {
+/** Satu bagian yang dapat dilipat: <details> berjudul + hitungan saklar yang menyala. */
+function buatBagian(kode, judul) {
+  const sek = buat("details", "tb-kelompok");
+  sek.id = `kelompok-${kode}`;
+  sek.dataset.kelompok = kode;
+  sek.open = tahap2.lipat[kode] !== true;
+  const kepala = buat("summary", "tb-kelompok-judul");
+  kepala.appendChild(buat("span", "tb-judul-teks", judul));
+  kepala.appendChild(buat("span", "tb-hitung"));
+  kepala.addEventListener("click", () => {
+    // Sesudah peramban membalik open; yang disimpan hanya pilihan pengguna.
+    setTimeout(() => {
+      if (sek.open) delete tahap2.lipat[kode];
+      else tahap2.lipat[kode] = true;
+      if (penyimpanan) void Promise.resolve(penyimpanan.set({ [KUNCI_LIPAT_POPUP]: { ...tahap2.lipat } })).catch(() => {});
+    }, 0);
+  });
+  sek.appendChild(kepala);
+  const hitung = () => {
+    const kotak = Array.from(sek.querySelectorAll("label.saklar > input[type=checkbox]")).filter(
+      (k) => !k.closest("#ideL2Rinci") && !k.closest("[data-peran-sembunyi]") && !k.closest("[hidden]")
+    );
+    const el = kepala.querySelector(".tb-hitung");
+    if (!kotak.length) {
+      el.hidden = true;
+      return;
+    }
+    el.hidden = false;
+    el.textContent = `${kotak.filter((k) => k.checked).length}/${kotak.length} nyala`;
+  };
+  dengarSementara(sek, "change", hitung);
+  susunan.penyegar.push(hitung);
+  return sek;
+}
+
+/** Menyusun bagian di .isi, sebelum kartu pembaruan. Mengembalikan wadah per kode. */
+function kelompokkanSaklar(denganAdmin) {
   const isi = document.querySelector(".isi");
   const wadah = {};
   if (!isi) return wadah;
   const acuan = kartuPembaruan();
+  // Judul statis tampilan Lama digantikan judul bagian yang dapat dilipat.
+  for (const h of Array.from(document.querySelectorAll(".isi .bag-judul"))) ubahSementara(h, "hidden", true);
   for (const k of KELOMPOK_SAKLAR) {
-    const sek = buat("section", "tb-kelompok");
-    sek.id = `kelompok-${k.kode}`;
-    sek.dataset.kelompok = k.kode;
-    sek.appendChild(buat("h3", "tb-kelompok-judul", k.judul));
+    const sek = buatBagian(k.kode, k.judul);
     sisipkan(sek, isi, acuan && acuan.parentNode === isi ? acuan : null);
     wadah[k.kode] = sek;
+    // Ukuran huruf lebih dulu: tema dan warna naik ke atasnya, penjelasan teknis menyusul di bawahnya.
+    if (k.kode === "tampilan") pindahkan(kartuSkalaHuruf(), sek, null);
     for (const id of k.isi) {
       const kotak = document.getElementById(id);
       const label = kotak ? kotak.closest("label.saklar") : null;
       if (label) pindahkan(label, sek, null);
     }
+    for (const id of k.unsur || []) pindahkan(document.getElementById(id), sek, null);
   }
-  pindahkan(kartuSkalaHuruf(), wadah.tampilan, null);
+  if (denganAdmin) {
+    // Latihan dan Tarik data e-Court hanya untuk Admin/Super Admin; dua blok ini DIPINDAH, bukan disalin.
+    const adm = buatBagian("admin", "Admin: latihan dan e-Court");
+    sisipkan(adm, isi, acuan && acuan.parentNode === isi ? acuan : null);
+    wadah.admin = adm;
+    pindahkan(document.getElementById("bagianLatihan"), adm, null);
+    pindahkan(document.getElementById("bagianTarikEcourt"), adm, null);
+  }
   return wadah;
 }
 
@@ -2164,7 +2241,7 @@ function komponenLompat() {
   baris.setAttribute("role", "navigation");
   baris.setAttribute("aria-label", "Lompat ke kelompok saklar");
   for (const k of KELOMPOK_SAKLAR) {
-    const b = buat("button", "tb-chip", k.judul);
+    const b = buat("button", "tb-chip", k.pendek || k.judul);
     b.type = "button";
     b.addEventListener("click", () => {
       const sasaran = document.getElementById(`kelompok-${k.kode}`);
@@ -3087,7 +3164,7 @@ function susunBaru() {
   }
   if (fiturPopupNyala("popup-1")) pasangRingkas(false);
   if (fiturPopupNyala("popup-3") && isi) {
-    kelompokkanSaklar();
+    kelompokkanSaklar(false);
     const aktif = document.getElementById("aktif");
     const labelAktif = aktif ? aktif.closest("label.saklar") : null;
     sisipkan(komponenLompat(), isi, labelAktif ? labelAktif.nextSibling : isi.firstChild);
@@ -3392,10 +3469,8 @@ async function simpanBawaanPanel(nilai) {
 }
 
 function komponenBawaanPanel() {
-  const sek = buat("section", "tb-kelompok tb-bawaan-panel");
-  sek.id = "kelompok-bawaan-panel";
-  sek.dataset.kelompok = "bawaan-panel";
-  sek.appendChild(buat("h3", "tb-kelompok-judul", "Panel saat halaman dibuka"));
+  const sek = buatBagian("bawaan-panel", "Panel saat halaman dibuka");
+  sek.classList.add("tb-bawaan-panel");
   // POPUP-PERAN 12 Okt: penjelasan teknis hanya untuk Super Admin.
   if (popupSuperAdmin()) {
     sek.appendChild(
@@ -3474,7 +3549,7 @@ function susunUiBaru() {
   const isi = document.querySelector(".isi");
   if (!isi) return;
   // D1 + D2: kelompok berjudul, keterangan satu baris + ⓘ.
-  const wadah = kelompokkanSaklar();
+  const wadah = kelompokkanSaklar(true);
   pasangRingkas(true);
   // D13 (+ contoh warna bila popup-5 menyala) dan warna gelap Super Admin
   // di kelompok Tampilan; D5 ukuran huruf A− A A+ (+ penggeser popup-4).
@@ -3611,7 +3686,7 @@ function relevanPopup() {
     for (const s of p.relevan) saklar.add(s);
     for (const s of SITUS_PANEL_ID) if (p.panel[s]) panel.add(s);
   }
-  return { saklar, panel };
+  return { saklar, panel, golongan: identitasPopup.golongan.semua };
 }
 
 /** UIBARU-WAJIB 12 Okt: selain Super Admin popup selalu UI Baru (identitas, atau yang terakhir tersimpan). */
@@ -3783,6 +3858,8 @@ async function bacaUlangSetelanPopup() {
       SKALA_KUNCI,
       KUNCI_TEMA_POPUP,
       KUNCI_TEMA_PANEL,
+      // X1: saklar Derry, SIPP, widget, gembok, dan ringkas ikut dibaca ulang saat akun berganti.
+      ...Object.values(SEMUA_SAKLAR_POPUP).map((x) => x[0]),
     ]);
     pasangNilai(s || {});
     const t = String((s && s[KUNCI_TEMA_POPUP]) || "");
@@ -3811,6 +3888,30 @@ async function prosesIdentitasPopup(data) {
   segarkanSusunan();
 }
 
+/**
+ * X1 (21 Okt 2026): golongan yang melihat saklar tertentu (Super Admin dan Admin
+ * melihat semuanya). Sama dengan hak di tempat fiturnya bekerja: Blangko Derry
+ * (WIDGET di blangko-derry.js: hakim, panitera pengganti, juru sita; saran dan
+ * tanya-jawab hanya hakim dan panitera pengganti) dan widget (checklist.js:
+ * kehadiran = majelis/PP/JS, draf H-7 = majelis/PP). Saklar yang tidak tercatat
+ * di sini tampil bagi semua golongan. Nilainya tetap tersimpan walau tersembunyi.
+ */
+const G_HAKIM = ["ketua", "hakim"];
+const G_PP = ["panitera-pengganti"];
+const G_JS = ["juru-sita"];
+const PERAN_SAKLAR = {
+  derryBawaan: [...G_HAKIM, ...G_PP, ...G_JS],
+  derryTawar: [...G_HAKIM, ...G_PP, ...G_JS],
+  derrySaran: [...G_HAKIM, ...G_PP],
+  derryIngat: [...G_HAKIM, ...G_PP, ...G_JS],
+  derryIsiOto: [...G_HAKIM, ...G_PP, ...G_JS],
+  derryTjJawab: [...G_HAKIM, ...G_PP],
+  widgetKehadiran: [...G_HAKIM, ...G_PP, ...G_JS],
+  widgetDrafH7: [...G_HAKIM, ...G_PP],
+};
+/** Saklar yang hanya berarti bila golongan itu memakai panel ABT (PROFIL_GOLONGAN.panel.abt). */
+const SAKLAR_BUTUH_PANEL_ABT = ["gembokAbt"];
+
 /** Menyembunyikan (bukan menghapus) yang tidak relevan; nilai tetap tersimpan. */
 function terapkanPeranPopup() {
   const r = relevanPopup();
@@ -3827,9 +3928,19 @@ function terapkanPeranPopup() {
     const k = document.getElementById(`bawaanPanel-${situs}`);
     sembunyi(k && k.closest("label.saklar"), Boolean(r) && !r.panel.has(situs));
   }
+  // X1: saklar yang hanya berguna bagi peran tertentu (tabel PERAN_SAKLAR) dan yang butuh panel ABT.
+  for (const [id, daftar] of Object.entries(PERAN_SAKLAR)) {
+    const k = document.getElementById(id);
+    sembunyi(k && k.closest("label.saklar"), Boolean(r) && !r.golongan.some((g) => daftar.includes(g)));
+  }
+  for (const id of SAKLAR_BUTUH_PANEL_ABT) {
+    const k = document.getElementById(id);
+    sembunyi(k && k.closest("label.saklar"), Boolean(r) && !r.panel.has("abt"));
+  }
   for (const g of Array.from(document.querySelectorAll(".tb-kelompok"))) {
     const kode = g.getAttribute("data-kelompok");
-    if (!["sipp", "abt", "portal", "bawaan-panel"].includes(kode)) continue;
+    if (kode === "admin") sembunyi(g, !popupAdmin());
+    if (!["sipp", "abt", "derry", "aleta", "portal", "bawaan-panel"].includes(kode)) continue;
     const label = Array.from(g.querySelectorAll("label.saklar"));
     sembunyi(g, Boolean(r) && label.length > 0 && label.every((l) => l.hasAttribute("data-peran-sembunyi")));
   }

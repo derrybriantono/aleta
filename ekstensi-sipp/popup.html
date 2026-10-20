@@ -550,7 +550,7 @@
   :root[data-kulit="modern"] .saklar-nama { font-size: 14px; }
   /* Kata tebal di dalam uraian memakai kelas yang sama dengan nama saklar
      (display:block); di UI Baru ia kembali sebaris dengan kalimatnya. */
-  :root[data-kulit="modern"] .saklar-ket .saklar-nama { display: inline; font-size: inherit; }
+  .saklar-ket .saklar-nama { display: inline; font-size: inherit; }
   :root[data-kulit="modern"] .keadaan { font-size: 12.5px; }
   :root[data-kulit="modern"] .kaki { margin-top: 8px; font-size: 12px; }
   :root[data-kulit="modern"] .kepala { padding: 12px 14px; }
@@ -572,7 +572,8 @@
   .tb-induk { display: flex; align-items: center; gap: 8px; margin-left: auto; font-size: 12.5px; font-weight: 700; cursor: pointer; }
   .tb-induk[data-nyala="ya"] .tb-induk-teks { color: #2e9d62; }
   .tb-induk input,
-  :root[data-kulit="modern"] .tb-kelompok label.saklar > input {
+  .isi label.saklar > input[type="checkbox"],
+  .bagian-uji label.uji-nyata > input[type="checkbox"] {
     -webkit-appearance: none;
     appearance: none;
     position: relative;
@@ -584,9 +585,11 @@
     transition: background 0.15s;
   }
   .tb-induk input { width: 48px; height: 28px; }
-  :root[data-kulit="modern"] .tb-kelompok label.saklar > input { width: 36px; height: 20px; margin-top: 2px; }
+  .isi label.saklar > input[type="checkbox"],
+  .bagian-uji label.uji-nyata > input[type="checkbox"] { width: 36px; height: 20px; margin-top: 2px; }
   .tb-induk input::before,
-  :root[data-kulit="modern"] .tb-kelompok label.saklar > input::before {
+  .isi label.saklar > input[type="checkbox"]::before,
+  .bagian-uji label.uji-nyata > input[type="checkbox"]::before {
     content: "";
     position: absolute;
     top: 3px;
@@ -597,13 +600,17 @@
     transition: left 0.15s;
   }
   .tb-induk input::before { width: 22px; height: 22px; }
-  :root[data-kulit="modern"] .tb-kelompok label.saklar > input::before { width: 14px; height: 14px; }
+  .isi label.saklar > input[type="checkbox"]::before,
+  .bagian-uji label.uji-nyata > input[type="checkbox"]::before { width: 14px; height: 14px; }
   .tb-induk input:checked,
-  :root[data-kulit="modern"] .tb-kelompok label.saklar > input:checked { background: var(--merek); }
+  .isi label.saklar > input[type="checkbox"]:checked,
+  .bagian-uji label.uji-nyata > input[type="checkbox"]:checked { background: var(--merek); }
   .tb-induk input:checked::before { left: 23px; }
-  :root[data-kulit="modern"] .tb-kelompok label.saklar > input:checked::before { left: 19px; }
+  .isi label.saklar > input[type="checkbox"]:checked::before,
+  .bagian-uji label.uji-nyata > input[type="checkbox"]:checked::before { left: 19px; }
   .tb-induk input:focus-visible,
-  :root[data-kulit="modern"] .tb-kelompok label.saklar > input:focus-visible { outline: 2px solid var(--merek); outline-offset: 2px; }
+  .isi label.saklar > input[type="checkbox"]:focus-visible,
+  .bagian-uji label.uji-nyata > input[type="checkbox"]:focus-visible { outline: 2px solid var(--merek); outline-offset: 2px; }
   .tb-info-panel { padding: 8px 14px; border-bottom: 1px solid var(--garis); background: var(--latar-lembut); }
   .tb-info-panel .pengantar { margin: 0 0 6px; }
   .tb-info-panel .saklar-ket { margin: 0; }
@@ -625,22 +632,61 @@
   :root[data-kulit="modern"] .tb-batas { margin: 0 14px 8px; }
 
   /* D1: kelompok berjudul, saklar di kanan */
-  :root[data-kulit="modern"] .tb-kelompok { margin: 10px 0; padding: 4px 12px; border: 1px solid var(--garis); border-radius: 12px; background: var(--latar); }
-  :root[data-kulit="modern"] .tb-kelompok-judul { margin: 6px 0 2px; }
-  :root[data-kulit="modern"] .tb-kelompok label.saklar {
-    flex-direction: row-reverse;
-    justify-content: space-between;
+  .tb-kelompok { margin: 10px 0; padding: 4px 12px; border: 1px solid var(--garis); border-radius: 12px; background: var(--latar); }
+  .tb-kelompok-judul { margin: 6px 0 2px; }
+  .tb-kelompok label.saklar {
     margin: 0;
     padding: 8px 0;
     border: 0;
     border-top: 1px solid var(--garis);
     border-radius: 0;
   }
-  :root[data-kulit="modern"] .tb-kelompok label.saklar:hover { background: none; }
-  :root[data-kulit="modern"] .tb-kelompok .skala,
-  :root[data-kulit="modern"] .tb-kelompok .baris-warna,
-  :root[data-kulit="modern"] .tb-kelompok .tb-baris-set { margin: 0; padding: 8px 0; border: 0; border-top: 1px solid var(--garis); border-radius: 0; background: none; }
-  :root[data-kulit="modern"] .tb-kelompok-judul + * { border-top: 0; }
+  .tb-kelompok label.saklar:hover { background: none; }
+  .tb-kelompok .skala,
+  .tb-kelompok .baris-warna,
+  .tb-kelompok .tb-baris-set { margin: 0; padding: 8px 0; border: 0; border-top: 1px solid var(--garis); border-radius: 0; background: none; }
+  .tb-kelompok-judul + * { border-top: 0; }
+
+  /* ── X1 (21 Okt 2026): saklar rapi di SEMUA tampilan ────────────────────
+     Nama dan keterangan di kiri, saklar geser di kanan, sebaris dengan
+     judulnya - sama di Lama, Baru, dan UI Baru. Kotak centang yang SAMA
+     (id dan pendengar tetap), hanya rupanya yang disamakan. */
+  .isi label.saklar,
+  .bagian-uji label.uji-nyata {
+    flex-direction: row-reverse;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .isi label.saklar > span,
+  .bagian-uji label.uji-nyata > span { flex: 1 1 auto; min-width: 0; }
+  .isi label.saklar > input[type="checkbox"],
+  .bagian-uji label.uji-nyata > input[type="checkbox"] { width: 36px; height: 20px; margin: 1px 0 0; }
+  .isi label.saklar > input[type="checkbox"]:disabled,
+  .bagian-uji label.uji-nyata > input[type="checkbox"]:disabled { opacity: 0.4; cursor: not-allowed; }
+  .bagian-uji label.uji-nyata { align-items: center; margin-top: 2px; font-size: 12px; }
+  .bag-judul { margin: 14px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tulisan-lembut); }
+  /* Bagian yang dapat dilipat (UI Baru dan Baru): judul = tombol buka/tutup. */
+  .tb-kelompok > summary.tb-kelompok-judul {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 8px 0 6px;
+    cursor: pointer;
+    list-style: none;
+  }
+  .tb-kelompok > summary.tb-kelompok-judul::-webkit-details-marker { display: none; }
+  .tb-kelompok > summary.tb-kelompok-judul::after { content: "▾"; margin-left: auto; font-size: 12px; letter-spacing: 0; }
+  .tb-kelompok:not([open]) > summary.tb-kelompok-judul::after { content: "▸"; }
+  .tb-kelompok > summary.tb-kelompok-judul:focus-visible { outline: 2px solid var(--merek); outline-offset: 2px; border-radius: 6px; }
+  .tb-judul-teks { flex: 1 1 auto; min-width: 0; }
+  .tb-hitung { flex: none; white-space: nowrap; font-size: 10.5px; font-weight: 600; letter-spacing: 0; text-transform: none; padding: 0 7px; border-radius: 999px; background: var(--latar-lembut); border: 1px solid var(--garis); }
+  .tb-kelompok .bagian-uji { padding: 8px 0; border: 0; border-top: 1px solid var(--garis); background: none; }
+  .tb-kelompok .bagian-uji label.uji-nyata { font-size: 13.5px; font-weight: 600; }
+  .tb-kelompok .bagian-uji.tarik-ecourt { padding-left: 10px; }
+  .tb-kelompok .bagian-uji[hidden] { display: none; }
+  .tb-kelompok .keadaan-kosong-admin { margin: 0; }
 
   /* D5: ukuran huruf A− A A+ - tombol yang sama, bentuk segmen */
   :root[data-kulit="modern"] .skala-atur[data-ui="seg"] { gap: 0; }
@@ -898,6 +944,8 @@
     </span>
   </label>
 
+  <h3 class="bag-judul" data-bag="sipp">SIPP</h3>
+
   <label class="saklar">
     <input type="checkbox" id="tandaiHalaman" checked>
     <span>
@@ -906,164 +954,6 @@
         Menempelkan penanda di bawah nomor perkara pada daftar, dan di sebelah judul pada halaman
         perkara: pihak ghaib, perlu izin atasan, verzet, prodeo, panjar menipis. Hanya menambah
         keterangan &mdash; data SIPP tidak diubah.
-      </span>
-    </span>
-  </label>
-
-  <!-- Widget TERSENDIRI, bukan bagian panel ALETA - lihat checklist.js.
-       Bawaannya MATI: ia menambah satu kotak melayang di tiap halaman SIPP,
-       ABT, dan portal, dan itu keputusan petugas. Tetap tunduk pada saklar
-       induk di atas. -->
-  <label class="saklar">
-    <input type="checkbox" id="checklistMilestone">
-    <span>
-      <span class="saklar-nama">Checklist milestone</span>
-      <span class="saklar-ket">
-        Widget tersendiri di kiri bawah: pekerjaan penting peran Anda, dengan tombol Kerjakan ke
-        ABT, SIPP, atau ALETA.
-      </span>
-    </span>
-  </label>
-
-  <!-- F3.2 (17 Okt 2026): kotak di widget yang sama. Keputusan 17 Okt butir 41: bawaannya MENYALA,
-       tampil terlipat di kiri bawah; di UI Baru tampil sendiri walau Checklist milestone mati, di Baru hanya bersama Checklist milestone. -->
-  <label class="saklar">
-    <input type="checkbox" id="widgetKehadiran">
-    <span>
-      <span class="saklar-nama">Kehadiran sidang hari ini di widget</span>
-      <span class="saklar-ket">
-        Kotak di widget kiri bawah: perkara sidang Anda hari ini - siapa yang sudah hadir dan jamnya,
-        saksi yang datang dari yang diajukan, dan yang sedang disidang. Sama dengan Jadwal Sidang ALETA.
-        Tampil terlipat - tekan judulnya untuk membuka. Hanya membaca. Di UI Baru tampil walau Checklist milestone mati; di tampilan Baru hanya bersama Checklist milestone.
-      </span>
-    </span>
-  </label>
-
-  <!-- F4.2 (17 Okt 2026): kotak draf putusan H-7 di widget yang sama. Butir 41: bawaan MENYALA, terlipat. -->
-  <label class="saklar">
-    <input type="checkbox" id="widgetDrafH7">
-    <span>
-      <span class="saklar-nama">Draf putusan H-7 di widget</span>
-      <span class="saklar-ket">
-        Kotak di widget kiri bawah: perkara Anda (majelis, PP, konseptor) yang Hari Putusan-nya tujuh hari ke depan,
-        dan kesiapan draf yang disiapkan agen ALETA. Di ABT dapat membuka blangko draf sebagai saran - tidak ada yang
-        tersimpan sebelum Anda memakainya. Tampil terlipat - tekan judulnya untuk membuka. Di UI Baru tampil walau Checklist milestone mati; di tampilan Baru hanya bersama Checklist milestone.
-      </span>
-    </span>
-  </label>
-
-  <!-- Menyunting dengan satu klik cepat bagi yang memang hendak menyunting,
-       dan berbahaya bagi yang tidak: satu klik salah sasaran membuka kotak
-       isian di atas nilai yang benar. Halaman ABT tempat naskah putusan
-       disusun; bawaannya MATI. -->
-  <label class="saklar">
-    <input type="checkbox" id="suntingLangsungAbt">
-    <span>
-      <span class="saklar-nama">Sunting langsung (klik dua kali)</span>
-      <span class="saklar-ket">
-        Saat <strong class="saklar-nama">mati</strong>, sel isi tabel ABT tidak dapat disunting sama
-        sekali, dan teks usulan di panel hanya disunting lewat tombol
-        <strong class="saklar-nama">Sunting</strong> pada barisnya. Saat
-        <strong class="saklar-nama">menyala</strong>, sel ABT dan teks usulan disunting dengan
-        <strong class="saklar-nama">klik dua kali</strong>; klik di luar kotak = batal otomatis
-        (tanpa simpan), Esc = batal, dan hanya tombol Simpan yang menyimpan.
-      </span>
-    </span>
-  </label>
-
-  <!-- Blangko ABT by Derry Briantono (tahap C). Saklar yang sama dengan "Widget
-       ALETA" di tampilan itu; keduanya menulis kunci blangkoDerry* yang sama. -->
-  <label class="saklar">
-    <input type="checkbox" id="derryBawaan">
-    <span>
-      <span class="saklar-nama">Blangko ABT by Derry Briantono sebagai tampilan bawaan</span>
-      <span class="saklar-ket">
-        Saat <strong class="saklar-nama">menyala</strong>, halaman depan ABT langsung membuka
-        Blangko ABT by Derry Briantono. Grup blangko lain di ABT tetap tampil biasa. Bawaannya mati.
-      </span>
-    </span>
-  </label>
-  <label class="saklar">
-    <input type="checkbox" id="derryTawar" checked>
-    <span>
-      <span class="saklar-nama">Tawarkan Blangko ABT by Derry Briantono di ABT biasa</span>
-      <span class="saklar-ket">Kartu kecil di pojok kanan bawah ABT: Aktifkan, Nanti saja, atau Jangan tawarkan lagi.</span>
-    </span>
-  </label>
-  <label class="saklar">
-    <input type="checkbox" id="derrySaran" checked>
-    <span>
-      <span class="saklar-nama">Saran isian samar (tekan Tab)</span>
-      <span class="saklar-ket">Usulan dari SIPP dan gugatan tampil samar di kotak isian; Tab memakainya.</span>
-    </span>
-  </label>
-  <label class="saklar">
-    <input type="checkbox" id="derryIngat" checked>
-    <span>
-      <span class="saklar-nama">Ingatkan isian yang masih kosong sebelum cetak</span>
-      <span class="saklar-ket">Sebelum mencetak, isian yang masih kosong disebut satu per satu. Berlaku juga untuk tombol Cetak di panel ALETA pada ABT biasa.</span>
-    </span>
-  </label>
-  <label class="saklar">
-    <input type="checkbox" id="derryIsiOto" checked>
-    <span>
-      <span class="saklar-nama">Isi otomatis dari SIPP</span>
-      <span class="saklar-ket">Begitu perkara dan blangko dipilih, isian kosong yang datanya ada di SIPP, gugatan dan e-Court terisi sendiri dan tersimpan ke ABT. Yang sudah ada isinya tidak ditimpa. Tombol Isi dari SIPP tetap dapat dipakai kapan saja.</span>
-    </span>
-  </label>
-  <label class="saklar">
-    <input type="checkbox" id="derryTjJawab" checked>
-    <span>
-      <span class="saklar-nama">Tanya-jawab jawab-menjawab otomatis</span>
-      <span class="saklar-ket">Jawaban, replik, dan duplik tertulis dari e-Court yang rapi ditulis ke tanya-jawab sidang yang agendanya sesuai, hanya bila barisnya masih kosong. Yang tidak rapi tetap disalin dan diperiksa sendiri.</span>
-    </span>
-  </label>
-
-  <!-- SIPP dengan Ide ALETA gelombang 2 (tahap M2). Hanya berlaku di UI Baru;
-       Tampilan Lama tidak berubah. -->
-  <label class="saklar">
-    <input type="checkbox" id="sippPenyatu" checked>
-    <span>
-      <span class="saklar-nama">Penyatu SIPP-ABT-ALETA di halaman perkara SIPP</span>
-      <span class="saklar-ket">Kotak di atas tab perkara: status blangko, BAS yang belum diunggah, tugas Anda, dan selisih data SIPP, ABT, dan ALETA/e-Court. Hanya membaca.</span>
-    </span>
-  </label>
-  <label class="saklar">
-    <input type="checkbox" id="sippTampilDobel">
-    <span>
-      <span class="saklar-nama">Tampilkan tombol ALETA yang dobel</span>
-      <span class="saklar-ket">Tombol ALETA yang fungsinya sama persis dengan tombol lain (mis. unggah manual e-Doc penetapan = tombol Unggah di tab Penetapan SIPP) disembunyikan. Nyalakan untuk memunculkannya lagi. Bawaannya mati.</span>
-    </span>
-  </label>
-
-  <!-- Saklar ini mengubah arti tombol milik aplikasi lain, jadi bawaannya MATI
-       dan keterangannya menyebutkan ketiga berkasnya satu per satu. -->
-  <label class="saklar">
-    <input type="checkbox" id="cetakTigaBerkas">
-    <span>
-      <span class="saklar-nama">Tekan CETAK di ABT &rarr; terbit 3 berkas</span>
-      <span class="saklar-ket">
-        Satu tekanan menghasilkan <strong class="saklar-nama">putusan .rtf</strong> dari ABT,
-        <strong class="saklar-nama">PDF</strong> hasil konversi ALETA dari berkas yang sama, dan
-        <strong class="saklar-nama">anonim .rtf</strong> dari menu anonimisasi ABT sendiri. Bila
-        dimatikan, tombol CETAK berperilaku persis seperti semula.
-        Tombol <strong class="saklar-nama">Cetak</strong> di panel ALETA (samping "Input semua yang pasti") mengikuti saklar ini.
-      </span>
-    </span>
-  </label>
-
-  <!-- F1.5 (17 Okt): gembok panel ALETA di ABT biasa - kunci yang sama dengan
-       tombol gembok di bawah kepala panel dan Widget ALETA (gembokKepalaAbt). -->
-  <label class="saklar">
-    <input type="checkbox" id="gembokAbt">
-    <span>
-      <span class="saklar-nama">Gembok panel ALETA di ABT: selalu tampil penuh</span>
-      <span class="saklar-ket">
-        Saat <strong class="saklar-nama">mati</strong> (bawaan, "Ringkas otomatis"), panel yang menutupi
-        tabel ABT tinggal kepalanya selama tidak ditunjuk, lalu terbuka lagi saat ditunjuk. Saat
-        <strong class="saklar-nama">menyala</strong> (terkunci), panel selalu terbuka penuh. Berlaku juga untuk
-        panel massal di halaman depan ABT (putusan massal, BAS massal). Sama dengan tombol gembok di bawah
-        kepala panel; tersimpan untuk akun Anda.
       </span>
     </span>
   </label>
@@ -1079,6 +969,38 @@
     </span>
   </label>
 
+  <!-- SIPP dengan Ide ALETA gelombang 2 (tahap M2). Hanya berlaku di UI Baru;
+       Tampilan Lama tidak berubah. -->
+  <label class="saklar">
+    <input type="checkbox" id="sippPenyatu" checked>
+    <span>
+      <span class="saklar-nama">Kotak ringkasan di halaman perkara SIPP</span>
+      <span class="saklar-ket">Kotak di atas tab perkara: status blangko, BAS yang belum diunggah, tugas Anda, dan selisih data SIPP, ABT, dan ALETA/e-Court. Hanya membaca.</span>
+    </span>
+  </label>
+
+  <label class="saklar">
+    <input type="checkbox" id="sippTampilDobel">
+    <span>
+      <span class="saklar-nama">Tampilkan tombol ALETA yang dobel</span>
+      <span class="saklar-ket">Tombol ALETA yang fungsinya sama persis dengan tombol lain (mis. unggah manual e-Doc penetapan = tombol Unggah di tab Penetapan SIPP) disembunyikan. Nyalakan untuk memunculkannya lagi. Bawaannya mati.</span>
+    </span>
+  </label>
+
+  <!-- X1 (21 Okt): gembok panel ALETA di halaman SIPP - kunci gembokKepalaSipp, sama dengan tombol gembok di panel. -->
+  <label class="saklar">
+    <input type="checkbox" id="gembokSipp">
+    <span>
+      <span class="saklar-nama">Gembok panel ALETA di SIPP: selalu tampil penuh</span>
+      <span class="saklar-ket">
+        Saat <strong class="saklar-nama">mati</strong> (bawaan, "Ringkas otomatis"), panel yang menutupi tabel
+        halaman tinggal kepalanya selama tidak ditunjuk, lalu terbuka lagi saat ditunjuk. Saat
+        <strong class="saklar-nama">menyala</strong> (terkunci), panel selalu terbuka penuh. Sama dengan tombol
+        gembok di bawah kepala panel; tersimpan untuk akun Anda.
+      </span>
+    </span>
+  </label>
+
   <!-- SIPP dengan Ide ALETA, gelombang 1 (Tahap L2, 16 Okt 2026) - popup-ide-l2.js.
        Bawaan MENYALA (hanya menambah keterangan). Saklar yang tidak berguna bagi
        peran yang masuk disembunyikan; portal juga menyaring menurut peran. -->
@@ -1086,7 +1008,7 @@
     <label class="saklar">
       <input type="checkbox" id="ideL2" checked>
       <span>
-        <span class="saklar-nama">Penanda perkara di SIPP (Ide ALETA)</span>
+        <span class="saklar-nama">Penanda perkara di SIPP</span>
         <span class="saklar-ket">
           Penanda kecil di daftar perkara, Jadwal Sidang, dan halaman perkara SIPP. Klik penanda
           untuk penjelasan, sumber data, dan dasar hukumnya. SIPP tidak diubah.
@@ -1157,6 +1079,188 @@
       </label>
     </details>
   </div>
+
+  <h3 class="bag-judul" data-bag="abt">ABT</h3>
+
+  <!-- Menyunting dengan satu klik cepat bagi yang memang hendak menyunting,
+       dan berbahaya bagi yang tidak: satu klik salah sasaran membuka kotak
+       isian di atas nilai yang benar. Halaman ABT tempat naskah putusan
+       disusun; bawaannya MATI. -->
+  <label class="saklar">
+    <input type="checkbox" id="suntingLangsungAbt">
+    <span>
+      <span class="saklar-nama">Sunting langsung (klik dua kali)</span>
+      <span class="saklar-ket">
+        Saat <strong class="saklar-nama">mati</strong>, sel isi tabel ABT tidak dapat disunting sama
+        sekali, dan teks usulan di panel hanya disunting lewat tombol
+        <strong class="saklar-nama">Sunting</strong> pada barisnya. Saat
+        <strong class="saklar-nama">menyala</strong>, sel ABT dan teks usulan disunting dengan
+        <strong class="saklar-nama">klik dua kali</strong>; klik di luar kotak = batal otomatis
+        (tanpa simpan), Esc = batal, dan hanya tombol Simpan yang menyimpan.
+      </span>
+    </span>
+  </label>
+
+  <!-- Saklar ini mengubah arti tombol milik aplikasi lain, jadi bawaannya MATI
+       dan keterangannya menyebutkan ketiga berkasnya satu per satu. -->
+  <label class="saklar">
+    <input type="checkbox" id="cetakTigaBerkas">
+    <span>
+      <span class="saklar-nama">Tekan CETAK di ABT &rarr; terbit 3 berkas</span>
+      <span class="saklar-ket">
+        Satu tekanan menghasilkan <strong class="saklar-nama">putusan .rtf</strong> dari ABT,
+        <strong class="saklar-nama">PDF</strong> hasil konversi ALETA dari berkas yang sama, dan
+        <strong class="saklar-nama">anonim .rtf</strong> dari menu anonimisasi ABT sendiri. Bila
+        dimatikan, tombol CETAK berperilaku persis seperti semula.
+        Tombol <strong class="saklar-nama">Cetak</strong> di panel ALETA (samping "Input semua yang pasti") mengikuti saklar ini.
+      </span>
+    </span>
+  </label>
+
+  <!-- F1.5 (17 Okt): gembok panel ALETA di ABT biasa - kunci yang sama dengan
+       tombol gembok di bawah kepala panel dan Widget ALETA (gembokKepalaAbt). -->
+  <label class="saklar">
+    <input type="checkbox" id="gembokAbt">
+    <span>
+      <span class="saklar-nama">Gembok panel ALETA di ABT: selalu tampil penuh</span>
+      <span class="saklar-ket">
+        Saat <strong class="saklar-nama">mati</strong> (bawaan, "Ringkas otomatis"), panel yang menutupi
+        tabel ABT tinggal kepalanya selama tidak ditunjuk, lalu terbuka lagi saat ditunjuk. Saat
+        <strong class="saklar-nama">menyala</strong> (terkunci), panel selalu terbuka penuh. Berlaku juga untuk
+        panel massal di halaman depan ABT (putusan massal, BAS massal). Sama dengan tombol gembok di bawah
+        kepala panel; tersimpan untuk akun Anda.
+      </span>
+    </span>
+  </label>
+
+  <h3 class="bag-judul" data-bag="derry">Blangko ABT by Derry Briantono</h3>
+
+  <!-- Blangko ABT by Derry Briantono (tahap C). Saklar yang sama dengan "Widget
+       ALETA" di tampilan itu; keduanya menulis kunci blangkoDerry* yang sama. -->
+  <label class="saklar">
+    <input type="checkbox" id="derryBawaan">
+    <span>
+      <span class="saklar-nama">Blangko ABT by Derry Briantono sebagai tampilan bawaan</span>
+      <span class="saklar-ket">
+        Saat <strong class="saklar-nama">menyala</strong>, halaman depan ABT langsung membuka
+        Blangko ABT by Derry Briantono. Grup blangko lain di ABT tetap tampil biasa. Bawaannya mati.
+      </span>
+    </span>
+  </label>
+
+  <label class="saklar">
+    <input type="checkbox" id="derryTawar" checked>
+    <span>
+      <span class="saklar-nama">Tawarkan Blangko ABT by Derry Briantono di ABT biasa</span>
+      <span class="saklar-ket">Kartu kecil di pojok kanan bawah ABT: Aktifkan, Nanti saja, atau Jangan tawarkan lagi.</span>
+    </span>
+  </label>
+
+  <label class="saklar">
+    <input type="checkbox" id="derrySaran" checked>
+    <span>
+      <span class="saklar-nama">Saran isian samar (tekan Tab)</span>
+      <span class="saklar-ket">Usulan dari SIPP dan gugatan tampil samar di kotak isian; Tab memakainya.</span>
+    </span>
+  </label>
+
+  <label class="saklar">
+    <input type="checkbox" id="derryIngat" checked>
+    <span>
+      <span class="saklar-nama">Ingatkan isian yang masih kosong sebelum cetak</span>
+      <span class="saklar-ket">Sebelum mencetak, isian yang masih kosong disebut satu per satu. Berlaku juga untuk tombol Cetak di panel ALETA pada ABT biasa.</span>
+    </span>
+  </label>
+
+  <label class="saklar">
+    <input type="checkbox" id="derryIsiOto" checked>
+    <span>
+      <span class="saklar-nama">Isi otomatis dari SIPP</span>
+      <span class="saklar-ket">Begitu perkara dan blangko dipilih, isian kosong yang datanya ada di SIPP, gugatan dan e-Court terisi sendiri dan tersimpan ke ABT. Yang sudah ada isinya tidak ditimpa. Tombol Isi dari SIPP tetap dapat dipakai kapan saja.</span>
+    </span>
+  </label>
+
+  <label class="saklar">
+    <input type="checkbox" id="derryTjJawab" checked>
+    <span>
+      <span class="saklar-nama">Tanya-jawab jawab-menjawab otomatis</span>
+      <span class="saklar-ket">Jawaban, replik, dan duplik tertulis dari e-Court yang rapi ditulis ke tanya-jawab sidang yang agendanya sesuai, hanya bila barisnya masih kosong. Yang tidak rapi tetap disalin dan diperiksa sendiri.</span>
+    </span>
+  </label>
+
+  <h3 class="bag-judul" data-bag="aleta">Portal ALETA</h3>
+
+  <!-- X1 (21 Okt): gembok panel ALETA di portal - kunci gembokKepalaAleta. -->
+  <label class="saklar">
+    <input type="checkbox" id="gembokAleta">
+    <span>
+      <span class="saklar-nama">Gembok panel ALETA di portal: selalu tampil penuh</span>
+      <span class="saklar-ket">
+        Saat <strong class="saklar-nama">mati</strong> (bawaan, "Ringkas otomatis"), panel yang menutupi tabel
+        halaman tinggal kepalanya selama tidak ditunjuk, lalu terbuka lagi saat ditunjuk. Saat
+        <strong class="saklar-nama">menyala</strong> (terkunci), panel selalu terbuka penuh. Sama dengan tombol
+        gembok di bawah kepala panel; tersimpan untuk akun Anda.
+      </span>
+    </span>
+  </label>
+
+  <h3 class="bag-judul" data-bag="portal">Widget</h3>
+
+  <!-- Widget TERSENDIRI, bukan bagian panel ALETA - lihat checklist.js.
+       Bawaannya MATI: ia menambah satu kotak melayang di tiap halaman SIPP,
+       ABT, dan portal, dan itu keputusan petugas. Tetap tunduk pada saklar
+       induk di atas. -->
+  <label class="saklar">
+    <input type="checkbox" id="checklistMilestone">
+    <span>
+      <span class="saklar-nama">Checklist milestone</span>
+      <span class="saklar-ket">
+        Widget tersendiri di kiri bawah: pekerjaan penting peran Anda, dengan tombol Kerjakan ke
+        ABT, SIPP, atau ALETA.
+      </span>
+    </span>
+  </label>
+
+  <!-- F3.2 (17 Okt 2026): kotak di widget yang sama. Keputusan 17 Okt butir 41: bawaannya MENYALA,
+       tampil terlipat di kiri bawah; di UI Baru tampil sendiri walau Checklist milestone mati, di Baru hanya bersama Checklist milestone. -->
+  <label class="saklar">
+    <input type="checkbox" id="widgetKehadiran">
+    <span>
+      <span class="saklar-nama">Kehadiran sidang hari ini di widget</span>
+      <span class="saklar-ket">
+        Kotak di widget kiri bawah: perkara sidang Anda hari ini - siapa yang sudah hadir dan jamnya,
+        saksi yang datang dari yang diajukan, dan yang sedang disidang. Sama dengan Jadwal Sidang ALETA.
+        Tampil terlipat - tekan judulnya untuk membuka. Hanya membaca. Di UI Baru tampil walau Checklist milestone mati; di tampilan Baru hanya bersama Checklist milestone.
+      </span>
+    </span>
+  </label>
+
+  <!-- F4.2 (17 Okt 2026): kotak draf putusan H-7 di widget yang sama. Butir 41: bawaan MENYALA, terlipat. -->
+  <label class="saklar">
+    <input type="checkbox" id="widgetDrafH7">
+    <span>
+      <span class="saklar-nama">Draf putusan H-7 di widget</span>
+      <span class="saklar-ket">
+        Kotak di widget kiri bawah: perkara Anda (majelis, PP, konseptor) yang Hari Putusan-nya tujuh hari ke depan,
+        dan kesiapan draf yang disiapkan agen ALETA. Di ABT dapat membuka blangko draf sebagai saran - tidak ada yang
+        tersimpan sebelum Anda memakainya. Tampil terlipat - tekan judulnya untuk membuka. Di UI Baru tampil walau Checklist milestone mati; di tampilan Baru hanya bersama Checklist milestone.
+      </span>
+    </span>
+  </label>
+
+  <h3 class="bag-judul" data-bag="tampilan">Tampilan</h3>
+
+  <!-- X1 (21 Okt 2026): panelRingkas - kunci yang sama dengan tombol "Ringkas" di kaki panel ALETA. -->
+  <label class="saklar">
+    <input type="checkbox" id="panelRingkas">
+    <span>
+      <span class="saklar-nama">Ringkas keterangan di panel</span>
+      <span class="saklar-ket">
+        Menyembunyikan keterangan panjang di panel ALETA (SIPP, ABT, portal). Tombol, isian, dan pesan galat tetap
+        tampil. Sama dengan tombol panah di kaki panel; bawaannya mati.
+      </span>
+    </span>
+  </label>
 
   <div class="skala">
     <span class="saklar-nama">Ukuran huruf panel</span>
