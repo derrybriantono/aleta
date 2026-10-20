@@ -261,6 +261,35 @@ describe("B. butir baru hanya tampil pada keadaannya", () => {
   });
 });
 
+describe("B2. keadaan yang diturunkan sendiri oleh ekstensi (huruf pokok tuntutan dan alur perkara)", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require(path.join(REPO, "ekstensi-sipp", "saksi-susun.js"));
+  const turun = (kunci: string, peta: [string, string][], alur: string) => (globalThis as any).AletaSaksiSusun.turunkanKeadaan(v2(kunci), { teks: "", peta: new Map(peta.map(([k, n]) => [k, { nilai: n }])), alur });
+
+  it("huruf pokok tuntutan yang diisi petugas pada variabel ABT menjadi pilihan borang; huruf tidak sah atau ganda diabaikan", () => {
+    expect(turun("wasiat", [["9475", "C"]], "15").pokokTuntutan).toBe("C");
+    expect(turun("hibah", [["9790", "a"]], "15").pokokTuntutan).toBe("A");
+    expect(turun("wakaf", [["9820", "D"]], "15").pokokTuntutan).toBe("D");
+    expect(turun("wasiat", [["9475", "H"]], "15").pokokTuntutan).toBeUndefined();
+    expect(turun("wasiat", [["9475", "AB"]], "15").pokokTuntutan).toBeUndefined();
+    expect(turun("wasiat", [], "15").pokokTuntutan).toBeUndefined();
+    // wakaf tidak membaca variabel hibah
+    expect(turun("wakaf", [["9790", "B"]], "15").pokokTuntutan).toBeUndefined();
+  });
+
+  it("alur perkara SIPP menentukan gugatan atau permohonan (hibah, wakaf) dan gugatan sederhana atau acara biasa (ekonomi syariah)", () => {
+    expect(turun("hibah", [], "16").perkara).toBe("permohonan");
+    expect(turun("hibah", [], "15").perkara).toBe("gugatan");
+    expect(turun("wakaf", [], "16").perkara).toBe("permohonan");
+    expect(turun("ekonomi-syariah", [], "17").acara).toBe("gugatan-sederhana");
+    expect(turun("ekonomi-syariah", [], "15").acara).toBe("acara-biasa");
+    // tanpa alur tidak ada tebakan; wasiat tidak punya kunci perkara/acara
+    expect(turun("hibah", [], "").perkara).toBeUndefined();
+    expect(turun("ekonomi-syariah", [], "").acara).toBeUndefined();
+    expect(turun("wasiat", [], "16").perkara).toBeUndefined();
+  });
+});
+
 // ---------------------------------------------------------------------------------------------------------------------
 describe("C. susunan 2-5 saksi tanpa jawaban kembar", () => {
   const KEADAAN: Record<string, Record<string, unknown>[]> = {
@@ -500,6 +529,14 @@ describe("E. pendeteksi posita wasiat, hibah, wakaf dan ekonomi syariah (fixture
     expect(ada(eks, "jenisJaminan", "tanah-bangunan")).toBe(true);
     expect(ada(eks, "teguran", "surat-peringatan")).toBe(true);
     for (const n of ["sita-jaminan", "lelang-agunan", "pengosongan", "uang-paksa", "serta-merta", "denda-ganti-rugi"]) expect(ada(eks, "tuntutanTambahan", n), n).toBe(true);
+    // konsisten dengan pembaca petitum berbutir milik U6: jenis tuntutan yang dikenalnya ada pula pada saran
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const PB = require(path.join(REPO, "aleta_bot", "services", "petitumBerbutir.js")) as any;
+    const jenisAda = PB.petitumBerbutir(ES_PETITUM, { jenis: "eksyar" }).jenisAda as Record<string, number>;
+    expect(jenisAda.sita).toBeGreaterThan(0);
+    expect(jenisAda["serta-merta"]).toBeGreaterThan(0);
+    expect(ada(eks, "tuntutanTambahan", "sita-jaminan")).toBe(true);
+    expect(ada(eks, "tuntutanTambahan", "serta-merta")).toBe(true);
     expect(ada(eks, "klausulaArbitrase", "ada")).toBe(false);
     expect(ada(eks, "jenisJaminan", "kendaraan-fidusia")).toBe(false);
     const was = KB.saranKeadaan(WASIAT, WASIAT_PETITUM, "wasiat");
