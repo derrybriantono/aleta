@@ -4011,6 +4011,8 @@
       if (x.memuat) return `<p class="bd-catat" role="status">Membaca keterangan ${esc(tjItem(k).tj.sebutan)} dari ABT…</p>`;
       if (x.menyimpan) return `<p class="bd-catat" role="status">${esc(x.menyimpan)}</p>`;
       if (x.galat) return `<p class="bd-peringatan">${esc(x.galat)}</p>`;
+      // Daftar sudah terisi lagi -> catatan percobaan simpan kosong dihapus, jadi tidak muncul kembali bila daftar dikosongkan belakangan.
+      if (x.kosongSimpan && x.rows.some((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim())) x.kosongSimpan = false;
       const kosong = TP() ? TP().peringatanDaftarKosong(tjItem(k) ? tjItem(k).tj.sebutan : "", x.rows, x.kosongSimpan) : "";
       if (kosong) return `<p class="bd-peringatan" data-kosongsimpan="${esc(k)}" role="alert">${esc(kosong)}</p>`;
       if (x.tersimpanJam && !x.berubah) return `<p class="bd-catat">✓ tersimpan di ABT ${esc(x.tersimpanJam)}${x.ganti ? ` (huruf ${esc(x.ganti)} diganti ke bentuk aman ABT)` : ""}</p>`;

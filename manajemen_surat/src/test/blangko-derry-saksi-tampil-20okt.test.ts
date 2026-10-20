@@ -381,3 +381,518 @@ function simpanReplika(h: Halaman, nama: string) {
 }
 void readFileSync;
 void simpanReplika;
+
+const hitungAsalDom = (h: Halaman) => {
+  const n: Record<string, number> = { data: 0, ragu: 0, kosong: 0, manual: 0 };
+  for (const el of qq(h, "textarea[data-asal]")) n[el.getAttribute("data-asal") || ""] += 1;
+  return n;
+};
+const teksRingkas = (h: Halaman) => (q(h, "#bd-asalringkas")?.textContent || "").replace(/\s+/g, " ").trim();
+const angkaRingkas = (h: Halaman) => {
+  const m = teksRingkas(h).match(/^(\d+) terisi · (\d+) ragu · (\d+) perlu dilengkapi$/);
+  return m ? { terisi: Number(m[1]), ragu: Number(m[2]), kosong: Number(m[3]) } : null;
+};
+/** Versi dua dari bot: semua jawaban yang sudah terisi diberi akhiran, supaya jumlah yang berubah terukur. */
+function pasangBotVersiDua(akhiran: string) {
+  const dasar = usulanKe.fungsi;
+  usulanKe.fungsi = (b: any) => {
+    const r = dasar(b);
+    const v2 = (daftar: any[]) => daftar.map((x) => (x.belumTerisi ? x : { ...x, jawab: `${x.jawab.replace(/;$/, "")} ${akhiran};` }));
+    return { ...r, saksi1: v2(r.saksi1), saksi2: v2(r.saksi2) };
+  };
+}
+const jumlahBerubah = (h: Halaman) => Number((q(h, "[data-skkal]")!.textContent || "").match(/^(\d+) jawaban akan berubah/)![1]);
+
+// ============================================================================
+// Fungsi murni (modul tampilan)
+// ============================================================================
+describe("modul tampilan saksi (murni): asal jawaban, hitungan, isian opsional, peringatan kosong, kalimat konfirmasi", () => {
+  const T = () => require_("./blangko-derry-saksi-tampil.js") as any;
+
+  it("asal baris mengikuti kontrak: kosong / ragu / data / manual", () => {
+    const m = T();
+    expect(m.asalBaris({ tanya: "a", jawab: "" })).toBe("kosong");
+    expect(m.asalBaris({ tanya: "a", jawab: "   " })).toBe("kosong");
+    expect(m.asalBaris({ tanya: "a", jawab: "Menikah pada ... di KUA" })).toBe("kosong");
+    expect(m.asalBaris({ tanya: "a", jawab: "Menikah di …" })).toBe("kosong");
+    expect(m.asalBaris({ tanya: "a", jawab: "Menikah di Palolo", otomatis: "Menikah di Palolo", usulan: { yakin: "ragu", sumber: "akta" } })).toBe("ragu");
+    expect(m.asalBaris({ tanya: "a", jawab: "Menikah di Palolo", otomatis: "Menikah di Palolo", usulan: { yakin: "yakin", sumber: "SIPP" } })).toBe("data");
+    expect(m.asalBaris({ tanya: "a", jawab: "Menikah di Palolo", otomatis: "Menikah di Palolo" })).toBe("data");
+    // diubah petugas sesudah diusulkan -> manual, juga bila usulannya ragu
+    expect(m.asalBaris({ tanya: "a", jawab: "Menikah di Sigi", otomatis: "Menikah di Palolo", usulan: { yakin: "ragu", sumber: "akta" } })).toBe("manual");
+    // jawaban yang sudah ada di ABT (tanpa jejak otomatis) -> manual
+    expect(m.asalBaris({ tanya: "a", jawab: "Ya, kenal" })).toBe("manual");
+  });
+
+  it("hitungan ringkasan menjumlahkan beberapa daftar dan mengabaikan baris yang sama sekali kosong", () => {
+    const m = T();
+    const a = [
+      { tanya: "1", jawab: "x", otomatis: "x", usulan: { yakin: "yakin", sumber: "SIPP" } },
+      { tanya: "2", jawab: "y", otomatis: "y", usulan: { yakin: "ragu", sumber: "akta" } },
+      { tanya: "3", jawab: "..." },
+      { tanya: "", jawab: "" },
+    ];
+    const b = [{ tanya: "1", jawab: "diketik" }, { tanya: "2", jawab: "" }];
+    const h = m.hitungAsal([a, b]);
+    expect(h).toMatchObject({ data: 1, ragu: 1, kosong: 2, manual: 1, terisi: 2, total: 5 });
+    expect(m.ringkasAsal(h)).toBe("2 terisi · 1 ragu · 2 perlu dilengkapi");
+  });
+
+  it("tandaiUsulan menempelkan keyakinan hanya pada baris yang baru terisi", () => {
+    const m = T();
+    const sebelum = [{ tanya: "1", jawab: "..." }, { tanya: "2", jawab: "tetap" }];
+    const res = { rows: [{ tanya: "1", jawab: "baru", otomatis: "baru" }, { tanya: "2", jawab: "tetap" }], terisi: 1 };
+    const keluar = m.tandaiUsulan(sebelum, res, [{ jawab: "baru", yakin: "ragu", sumber: "dari akta" }, { jawab: "tetap", yakin: "yakin", sumber: "SIPP" }]);
+    expect(keluar.rows[0].usulan).toEqual({ yakin: "ragu", sumber: "dari akta" });
+    expect(keluar.rows[1].usulan).toBeUndefined();
+  });
+
+  it("isian opsional: penanda dari portal ATAU kode #9134; label #9134 menjelaskan fungsinya", () => {
+    const m = T();
+    expect(m.opsional({ kode: "9134", nama: "Bas permohonan" })).toBe(true);
+    expect(m.opsional({ kode: "7777", nama: "x", opsional: true })).toBe(true);
+    expect(m.opsional({ kode: "7777", nama: "x" })).toBe(false);
+    expect(m.namaTampil({ kode: "9134", nama: "Bas permohonan" })).toBe("Petunjuk perbaikan permohonan (bila majelis memberi petunjuk)");
+    expect(m.namaTampil({ kode: "7777", nama: "Nama Biasa" })).toBe("Nama Biasa");
+  });
+
+  it("peringatan daftar kosong: hanya bila sudah dicoba simpan DAN daftar masih kosong sekarang", () => {
+    const m = T();
+    expect(m.peringatanDaftarKosong("Saksi 1 Pemohon", [], false)).toBe("");
+    expect(m.peringatanDaftarKosong("Saksi 1 Pemohon", [], true)).toMatch(/^Saksi 1 Pemohon: Daftar kosong tidak disimpan/);
+    expect(m.peringatanDaftarKosong("Saksi 1 Pemohon", [{ tanya: "", jawab: "" }], true)).toMatch(/Daftar kosong/);
+    expect(m.peringatanDaftarKosong("Saksi 1 Pemohon", Array.from({ length: 19 }, (_, i) => ({ tanya: `q${i}`, jawab: "" })), true)).toBe("");
+  });
+
+  it("kalimat konfirmasi: jumlah berubah dan tertahan; centang 'termasuk yang diketik' memindahkan tertahan ke berubah", () => {
+    const m = T();
+    const butir = [{ ubah: 7, tahan: 2 }, { ubah: 5, tahan: 1 }];
+    expect(m.kalimatKonfirmasi(butir, false)).toMatchObject({ ubah: 12, tahan: 3 });
+    expect(m.kalimatKonfirmasi(butir, false).kalimat).toBe("12 jawaban akan berubah; 3 jawaban yang sudah Anda ketik tertahan (tidak diubah).");
+    expect(m.kalimatKonfirmasi(butir, true)).toMatchObject({ ubah: 15, tahan: 0, kalimat: "15 jawaban akan berubah." });
+  });
+});
+
+// ============================================================================
+// Butir 2: Tambah baris di bawah tabel
+// ============================================================================
+describe("Blangko Derry (20 Okt): Tambah baris di BAWAH tabel tanya jawab saksi", () => {
+  it("Berdampingan dan Satu per satu: tombol ada sesudah baris terakhir, bukan di bilah atas; klik menambah satu baris", async () => {
+    const h = bukaPP();
+    pasangBot();
+    await bukaSaksiDanMuat(h);
+    const sesudah = (a: Element, b: Element) => Boolean(a.compareDocumentPosition(b) & 4); // b sesudah a
+    // Berdampingan
+    let tambah = q(h, '[data-bd2="tambahtj"]')!;
+    expect(tambah, "tombol Tambah baris").not.toBeNull();
+    expect(tambah.closest(".bd-tjkaki"), "di kaki tabel").not.toBeNull();
+    expect(q(h, '.bd-tjalat:not(.bd-tjkaki) [data-bd2="tambahtj"]')).toBeNull();
+    expect(sesudah(qq(h, ".bd-sbrow").pop()!, tambah)).toBe(true);
+    expect(qq(h, '[data-bd2="tambahtj"]').length).toBe(1);
+    const sebelum = qq(h, ".bd-sbrow").length;
+    tambah.click();
+    await sampai(() => qq(h, ".bd-sbrow").length === sebelum + 1, "baris bertambah");
+    // Satu per satu
+    klik(h, '[data-tjmode="satu"]');
+    await sampai(() => q(h, ".bd-tjtabel table"), "tabel satu saksi");
+    tambah = q(h, '[data-bd2="tambahtj"]')!;
+    expect(tambah.closest(".bd-tjkaki")).not.toBeNull();
+    expect(q(h, '.bd-tjalat:not(.bd-tjkaki) [data-bd2="tambahtj"]')).toBeNull();
+    expect(sesudah(q(h, ".bd-tjtabel")!, tambah)).toBe(true);
+    const baris = qq(h, ".bd-tjtabel tbody tr").length;
+    tambah.click();
+    await sampai(() => qq(h, ".bd-tjtabel tbody tr").length === baris + 1, "baris bertambah (satu per satu)");
+    expect(q(h, '.bd-tjkaki [data-bd2="simpantj"]')).not.toBeNull();
+  });
+});
+
+// ============================================================================
+// Butir 3: Isi ulang dari data perkara + konfirmasi di halaman
+// ============================================================================
+describe("Blangko Derry (20 Okt): Isi ulang dari data perkara meminta persetujuan di halaman", () => {
+  it("nama baru; tiap klik menampilkan konfirmasi (bukan confirm peramban) berisi jumlah berubah/tertahan; Batal tidak mengubah apa pun; ketikan dijaga", async () => {
+    const h = bukaPP();
+    let dialog = 0;
+    h.w.confirm = () => {
+      dialog += 1;
+      return true;
+    };
+    pasangBot();
+    await bukaSaksiDanMuat(h);
+    const btn = q(h, '[data-bd2="isioto"]')!;
+    expect(btn.textContent!.trim()).toBe("Isi ulang dari data perkara");
+    expect(akar(h).textContent).not.toMatch(/Susun ulang jawaban/);
+    const diketik = "Ketikan petugas sendiri tentang rumah tangga;";
+    ketikJawab(h, jawabEl(h, 0, 5), diketik);
+    const semua = () => [...semuaJawab(h, 0), ...semuaJawab(h, 1)].map((e) => e.value);
+    const awal = semua();
+    pasangBotVersiDua("versi dua");
+    const minta0 = usulanMinta.length;
+    btn.click();
+    await sampai(() => q(h, "[data-skkonfirm]"), "konfirmasi tampil");
+    expect(usulanMinta.length).toBe(minta0 + 1);
+    expect(dialog, "tanpa confirm() peramban").toBe(0);
+    expect(semua(), "belum ada yang berubah sebelum Lanjutkan").toEqual(awal);
+    const kal = q(h, "[data-skkal]")!.textContent!;
+    const m = kal.match(/^(\d+) jawaban akan berubah; (\d+) jawaban yang sudah Anda ketik tertahan/);
+    expect(m, kal).not.toBeNull();
+    expect(Number(m![1])).toBeGreaterThan(10);
+    expect(Number(m![2])).toBe(1);
+    expect((q(h, '[data-bd2="tinjautimpa"]') as HTMLInputElement).checked).toBe(false);
+    expect(q(h, "[data-skkonfirm]")!.textContent).toMatch(/termasuk yang sudah diketik \(1 jawaban\)/);
+    // Batal
+    klik(h, '[data-bd2="isiulangbatal"]');
+    expect(q(h, "[data-skkonfirm]")).toBeNull();
+    expect(semua()).toEqual(awal);
+    // Klik lagi -> konfirmasi muncul LAGI (tiap klik); Lanjutkan tanpa centang: yang diketik tetap
+    klik(h, '[data-bd2="isioto"]');
+    await sampai(() => q(h, "[data-skkonfirm]"), "konfirmasi tampil lagi");
+    klik(h, '[data-bd2="isiulangya"]');
+    await sampai(() => !q(h, "[data-skkonfirm]") && /versi dua/.test(jawabEl(h, 0, 0).value), "jawaban diisi ulang");
+    expect(jawabEl(h, 0, 5).value, "ketikan petugas dijaga").toBe(diketik);
+    expect(dialog).toBe(0);
+  });
+
+  it("centang 'termasuk yang sudah diketik' menimpa ketikan petugas, dan hanya bila dicentang", async () => {
+    const h = bukaPP();
+    pasangBot();
+    await bukaSaksiDanMuat(h);
+    const diketik = "Ketikan petugas;";
+    ketikJawab(h, jawabEl(h, 0, 4), diketik);
+    pasangBotVersiDua("baru");
+    klik(h, '[data-bd2="isioto"]');
+    await sampai(() => q(h, "[data-skkonfirm]"), "konfirmasi");
+    const tanpa = jumlahBerubah(h);
+    klik(h, '[data-bd2="tinjautimpa"]');
+    await sampai(() => (q(h, '[data-bd2="tinjautimpa"]') as HTMLInputElement)?.checked, "centang aktif");
+    expect(jumlahBerubah(h)).toBe(tanpa + 1);
+    expect(q(h, "[data-skkal]")!.textContent).not.toMatch(/tertahan/);
+    klik(h, '[data-bd2="isiulangya"]');
+    await sampai(() => !q(h, "[data-skkonfirm]") && / baru;$/.test(jawabEl(h, 0, 4).value), "ketikan ikut diganti");
+    expect(jawabEl(h, 0, 4).value).not.toBe(diketik);
+  });
+
+  it("tanpa perubahan: konfirmasi memberi tahu dan Lanjutkan dinonaktifkan; server mati memberi kabar (bukan konfirmasi)", async () => {
+    const h = bukaPP();
+    pasangBot();
+    await bukaSaksiDanMuat(h);
+    klik(h, '[data-bd2="isioto"]'); // data sama dengan yang sudah terpasang
+    await sampai(() => q(h, "[data-skkonfirm]"), "konfirmasi");
+    expect(q(h, "[data-skkal]")!.textContent).toMatch(/^0 jawaban akan berubah/);
+    expect(q(h, "[data-skkonfirm]")!.textContent).toMatch(/Tidak ada jawaban yang perlu berubah/);
+    expect((q(h, '[data-bd2="isiulangya"]') as HTMLButtonElement).disabled).toBe(true);
+    klik(h, '[data-bd2="isiulangbatal"]');
+    usulanKe.fungsi = () => {
+      throw new Error("bot mati");
+    };
+    klik(h, '[data-bd2="isioto"]');
+    await sampai(() => /belum dapat disusun/.test(akar(h).textContent || ""), "kabar galat");
+    expect(q(h, "[data-skkonfirm]")).toBeNull();
+  });
+});
+
+// ============================================================================
+// Butir 5: warna kotak jawaban menurut asal + ringkasan yang bisa diklik
+// ============================================================================
+describe("Blangko Derry (20 Okt): warna kotak jawaban saksi menurut asalnya", () => {
+  it("kosong = kuning, ragu = oranye + lencana 'ragu' dengan alasan, data = tepi hijau, manual = netral; ringkasan cocok dengan kotak", async () => {
+    const h = bukaPP();
+    pasangBot();
+    await bukaSaksiDanMuat(h);
+    // baris 0 data, 1 ragu, 2 belum ada datanya, 3 cukup (data)
+    for (const sisi of [0, 1]) {
+      expect(jawabEl(h, sisi, 0).getAttribute("data-asal")).toBe("data");
+      expect(jawabEl(h, sisi, 1).getAttribute("data-asal")).toBe("ragu");
+      expect(jawabEl(h, sisi, 3).getAttribute("data-asal")).toBe("data");
+      expect(jawabEl(h, sisi, 0).classList.contains("bd-asal-data")).toBe(true);
+      expect(jawabEl(h, sisi, 1).classList.contains("bd-asal-ragu")).toBe(true);
+      // baris 2: bot tidak punya datanya -> tetap titik-titik dari set pertanyaan -> kosong (kuning)
+      expect(jawabEl(h, sisi, 2).value).toMatch(/\.\.\.|…|^$/);
+      expect(jawabEl(h, sisi, 2).getAttribute("data-asal")).toBe("kosong");
+      expect(jawabEl(h, sisi, 2).classList.contains("bd-asal-kosong")).toBe(true);
+    }
+    // Lencana 'ragu' + ⓘ dengan sumber usulan
+    const ragu = jawabEl(h, 0, 1).nextElementSibling as HTMLElement;
+    expect(ragu.hasAttribute("data-asalcap")).toBe(true);
+    expect(ragu.textContent).toMatch(/^ragu/);
+    const info = ragu.querySelector(".bd-asalinfo") as HTMLElement;
+    expect(info.textContent).toBe("ⓘ");
+    expect(info.getAttribute("title")).toBe("tanggal nikah dibaca dari bukti akta, tidak tertulis jelas di gugatan");
+    // Lencana 'perlu dilengkapi' pada kosong; data tanpa lencana
+    expect((jawabEl(h, 0, 2).nextElementSibling as HTMLElement).textContent).toBe("perlu dilengkapi");
+    expect((jawabEl(h, 0, 0).nextElementSibling as HTMLElement).textContent).toBe("");
+    // Ringkasan sama dengan hitungan kotak
+    const n = hitungAsalDom(h);
+    expect(n.ragu).toBeGreaterThanOrEqual(2);
+    expect(n.kosong).toBeGreaterThanOrEqual(2);
+    expect(angkaRingkas(h)).toEqual({ terisi: n.data + n.manual, ragu: n.ragu, kosong: n.kosong });
+    // Manual: petugas mengetik pada kotak kosong -> netral, ringkasan ikut berubah tanpa menggambar ulang (fokus tetap)
+    const kotak = jawabEl(h, 0, 2);
+    kotak.focus();
+    ketikJawab(h, kotak, "Tidak tahu persis, kira-kira dua tahun lalu;");
+    expect(kotak.getAttribute("data-asal")).toBe("manual");
+    expect(kotak.classList.contains("bd-asal-manual")).toBe(true);
+    expect(kotak.classList.contains("bd-asal-kosong")).toBe(false);
+    expect((kotak.nextElementSibling as HTMLElement).textContent).toBe("");
+    expect(D_(h).activeElement).toBe(kotak);
+    const n2 = hitungAsalDom(h);
+    expect(n2.kosong).toBe(n.kosong - 1);
+    expect(angkaRingkas(h)).toEqual({ terisi: n.data + n.manual + 1, ragu: n.ragu, kosong: n.kosong - 1 });
+    // Mengetik titik-titik kembali -> kosong lagi; mengubah jawaban ragu -> manual (tidak ragu lagi)
+    ketikJawab(h, kotak, "sekitar ... tahun");
+    expect(kotak.getAttribute("data-asal")).toBe("kosong");
+    ketikJawab(h, jawabEl(h, 0, 1), "Menikah 17 November 2025;");
+    expect(jawabEl(h, 0, 1).getAttribute("data-asal")).toBe("manual");
+    expect(hitungAsalDom(h).ragu).toBe(n.ragu - 1);
+  });
+
+  it("'perlu dilengkapi' dan 'ragu' pada ringkasan dapat diklik: melompat dan memfokuskan kotak BERIKUTNYA, lalu berputar", async () => {
+    const h = bukaPP();
+    pasangBot();
+    await bukaSaksiDanMuat(h);
+    const kosong = qq(h, 'textarea[data-asal="kosong"]');
+    expect(kosong.length).toBeGreaterThanOrEqual(2);
+    const lompat = q(h, '[data-bd2="lompat"][data-jenis="kosong"]')!;
+    expect(lompat.textContent).toMatch(/^\d+ perlu dilengkapi$/);
+    lompat.click();
+    expect(D_(h).activeElement).toBe(kosong[0]);
+    q(h, '[data-bd2="lompat"][data-jenis="kosong"]')!.click();
+    expect(D_(h).activeElement).toBe(kosong[1]);
+    for (let i = 2; i < kosong.length; i++) q(h, '[data-bd2="lompat"][data-jenis="kosong"]')!.click();
+    q(h, '[data-bd2="lompat"][data-jenis="kosong"]')!.click(); // lewat yang terakhir -> kembali ke yang pertama
+    expect(D_(h).activeElement).toBe(kosong[0]);
+    // ragu
+    const ragu = qq(h, 'textarea[data-asal="ragu"]');
+    q(h, '[data-bd2="lompat"][data-jenis="ragu"]')!.click();
+    expect(D_(h).activeElement).toBe(ragu[0]);
+    q(h, '[data-bd2="lompat"][data-jenis="ragu"]')!.click();
+    expect(D_(h).activeElement).toBe(ragu[1]);
+    // Bila semua kosong sudah dilengkapi, bagian itu bukan tombol lagi
+    for (const el of qq(h, 'textarea[data-asal="kosong"]')) ketikJawab(h, el as HTMLTextAreaElement, "diisi petugas;");
+    expect(q(h, '[data-bd2="lompat"][data-jenis="kosong"]')).toBeNull();
+    expect(teksRingkas(h)).toMatch(/ · 0 perlu dilengkapi$/);
+  });
+
+  it("Satu per satu: kotak jawaban juga berwarna dan ringkasan hanya menghitung saksi yang tampil", async () => {
+    const h = bukaPP();
+    pasangBot();
+    await bukaSaksiDanMuat(h);
+    const berdampingan = angkaRingkas(h)!;
+    klik(h, '[data-tjmode="satu"]');
+    await sampai(() => q(h, ".bd-tjtabel table"), "tabel satu saksi");
+    const kotak = qq(h, ".bd-tjtabel textarea[data-sisi='jawab']");
+    expect(kotak.length).toBeGreaterThan(10);
+    expect(kotak.every((k) => ["data", "ragu", "kosong", "manual"].includes(k.getAttribute("data-asal") || ""))).toBe(true);
+    expect(kotak[1].classList.contains("bd-asal-ragu")).toBe(true);
+    expect(kotak[2].classList.contains("bd-asal-kosong")).toBe(true);
+    const satu = angkaRingkas(h)!;
+    expect(satu.ragu * 2).toBe(berdampingan.ragu);
+    expect(satu.kosong * 2).toBe(berdampingan.kosong);
+    // tekan ringkasan -> fokus ke kotak di tabel
+    q(h, '[data-bd2="lompat"][data-jenis="ragu"]')!.click();
+    expect(D_(h).activeElement).toBe(kotak[1]);
+  });
+
+  it("tema gelap dan terang: warna asal ada di kedua tema dan terang berbeda dari gelap; kosong memakai kuning, ragu oranye", () => {
+    const css = readFileSync(path.join(EKSTENSI, "blangko-derry.css"), "utf8");
+    const gelap = css.match(/#aleta-bd-akar \{\s*--asal-kosong-bg: ([^;]+); --asal-kosong-ln: ([^;]+); --asal-ragu-bg: ([^;]+); --asal-ragu-ln: ([^;]+); --asal-data-ln: ([^;]+);/);
+    const terang = css.match(/\[data-tema="terang"\] \{\s*--asal-kosong-bg: ([^;]+); --asal-kosong-ln: ([^;]+); --asal-ragu-bg: ([^;]+); --asal-ragu-ln: ([^;]+); --asal-data-ln: ([^;]+);/);
+    expect(gelap, "token gelap").not.toBeNull();
+    expect(terang, "token terang").not.toBeNull();
+    expect(gelap!.slice(1)).not.toEqual(terang!.slice(1));
+    const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.trim().slice(i, i + 2), 16));
+    for (const t of [gelap!, terang!]) {
+      const [r, g, b] = rgb(t[2]); // garis kuning: merah & hijau tinggi, biru rendah
+      expect(r).toBeGreaterThan(180);
+      expect(g).toBeGreaterThan(120);
+      expect(b).toBeLessThan(110);
+      const [r2, g2, b2] = rgb(t[4]); // garis oranye: merah tinggi, hijau di tengah, biru rendah
+      expect(r2).toBeGreaterThan(200);
+      expect(g2).toBeLessThan(g + 1);
+      expect(b2).toBeLessThan(110);
+    }
+  });
+});
+
+// ============================================================================
+// Butir 6: isian opsional (#9134) di bagian tertutup "Isian tambahan (bila ada)"
+// ============================================================================
+describe("Blangko Derry (20 Okt): isian opsional keluar dari 'Perlu diisi'", () => {
+  const dalamPerlu = (h: Halaman) => qq(h, "#bd-perlu > [data-f]").map((e) => e.getAttribute("data-f"));
+  const hitunganPerlu = (h: Halaman) => {
+    const teks = q(h, "#bd-progres")?.textContent || "";
+    const m = teks.match(/(\d+) dari (\d+) terisi/);
+    return m ? { terisi: Number(m[1]), dari: Number(m[2]) } : teks.startsWith("Semua terisi") ? { terisi: -1, dari: -1 } : null;
+  };
+
+  for (const mode of ["penanda opsional dari portal", "cadangan: kode 9134 tanpa penanda"]) {
+    it(`#9134 (${mode}) tidak ada di 'Perlu diisi', ada di 'Isian tambahan (bila ada)' tertutup dengan label jelas, dan tidak ikut hitungan`, async () => {
+      const h = bukaPP({ opsionalKode: mode.startsWith("penanda") ? ["9134"] : [] });
+      await pilihBas(h);
+      expect(dalamPerlu(h)).not.toContain("9134");
+      const bagian = q(h, "details#bd-tambahan") as HTMLDetailsElement;
+      expect(bagian, "bagian Isian tambahan").not.toBeNull();
+      expect(bagian.open).toBe(false);
+      expect(bagian.querySelector("summary")!.textContent).toMatch(/^Isian tambahan \(bila ada\)/);
+      const kotak = bagian.querySelector('[data-f="9134"]') as HTMLElement;
+      expect(kotak, "kotak 9134 di bagian tambahan").not.toBeNull();
+      expect(kotak.querySelector("label")!.textContent).toBe("Petunjuk perbaikan permohonan (bila majelis memberi petunjuk)");
+      expect(akar(h).textContent).not.toMatch(/Bas permohonan/);
+      // Hitungan: pembagi = jumlah kartu yang benar-benar wajib (9134 tidak ikut)
+      // Pembanding: blangko yang sama TANPA penanda 9134 sama sekali harus memberi hitungan yang sama.
+      const hit = hitunganPerlu(h);
+      expect(hit, q(h, "#bd-progres")?.textContent || "").not.toBeNull();
+      const i9134 = PENANDA_BAS.indexOf("9134");
+      PENANDA_BAS.splice(i9134, 1);
+      try {
+        const h0 = bukaPP();
+        await pilihBas(h0);
+        expect(q(h0, '[data-f="9134"]')).toBeNull();
+        expect(hitunganPerlu(h0)).toEqual(hit);
+        expect(dalamPerlu(h0)).toEqual(dalamPerlu(h));
+      } finally {
+        PENANDA_BAS.splice(i9134, 0, "9134");
+      }
+    });
+  }
+
+  it("hitungan 'N dari M' sama dengan blangko yang tidak punya #9134 sama sekali: mengisi #9134 tidak mengubah hitungan; bagian terbuka sendiri bila sudah berisi", async () => {
+    const h = bukaPP();
+    await pilihBas(h);
+    const sebelum = hitunganPerlu(h)!;
+    const bagian = q(h, "details#bd-tambahan") as HTMLDetailsElement;
+    expect(bagian.open).toBe(false);
+    const isianPerlu = dalamPerlu(h);
+    // petugas mengisi 9134
+    bagian.open = true;
+    const ta = bagian.querySelector('[data-f="9134"] textarea, [data-f="9134"] input') as HTMLInputElement;
+    expect(ta).not.toBeNull();
+    ketik(h, ta, "Majelis memberi petunjuk: lengkapi identitas pemohon.");
+    await tunggu(30);
+    expect(hitunganPerlu(h)).toEqual(sebelum);
+    expect(dalamPerlu(h)).toEqual(isianPerlu);
+    // dibuka ulang dari awal dengan 9134 sudah berisi di ABT -> bagian terbuka sendiri
+    const h2 = bukaPP({ abtAwal: { "9134": "Petunjuk majelis yang sudah ada." } });
+    await pilihBas(h2);
+    expect((q(h2, "details#bd-tambahan") as HTMLDetailsElement).open).toBe(true);
+    expect(dalamPerlu(h2)).not.toContain("9134");
+  });
+
+  it("bagian tertutup dapat dibuka dan ditutup petugas lewat judulnya", async () => {
+    const h = bukaPP();
+    await pilihBas(h);
+    const bagian = q(h, "details#bd-tambahan") as HTMLDetailsElement;
+    klik(h, "#bd-tambahan > summary");
+    expect((q(h, "details#bd-tambahan") as HTMLDetailsElement).open).toBe(true);
+    klik(h, "#bd-tambahan > summary");
+    expect((q(h, "details#bd-tambahan") as HTMLDetailsElement).open).toBe(false);
+    expect(bagian.isConnected).toBe(true);
+  });
+});
+
+// ============================================================================
+// Butir 7: kepala panel menempel (padat, ramping, bayangan, di atas kartu)
+// ============================================================================
+describe("Blangko Derry (20 Okt): kepala panel menempel saat digulir", () => {
+  const css = readFileSync(path.join(EKSTENSI, "blangko-derry.css"), "utf8");
+  const gayaHitung = async (tema: "gelap" | "terang") => {
+    const h = bukaPP();
+    await sampaiPerkara(h);
+    akar(h).setAttribute("data-tema", tema);
+    const gaya = D_(h).createElement("style");
+    gaya.textContent = css;
+    D_(h).head.appendChild(gaya);
+    const atas = q(h, ".bd-layar > .bd-atas")!;
+    return { h, gs: h.w.getComputedStyle(atas) as CSSStyleDeclaration, atas };
+  };
+
+  for (const tema of ["gelap", "terang"] as const) {
+    it(`tema ${tema}: sticky, latar padat (bukan transparan, bukan gradasi), bayangan bawah tipis, z-index di atas kartu, ramping`, async () => {
+      const { gs } = await gayaHitung(tema);
+      expect(gs.position).toBe("sticky");
+      expect(gs.top).toBe("0px");
+      expect(Number(gs.zIndex)).toBeGreaterThanOrEqual(30);
+      expect(gs.backgroundImage).toBe("none");
+      expect(gs.backgroundColor).toMatch(/^(#[0-9a-f]{6}|rgb\(\d+, \d+, \d+\))$/i); // tanpa alfa
+      expect(gs.boxShadow).toMatch(/\d+px/);
+      expect(gs.boxShadow).toMatch(/0 2px 6px|0px 2px 6px/);
+      const pad = parseFloat(gs.paddingTop);
+      expect(pad).toBeLessThanOrEqual(6); // ramping
+    });
+  }
+
+  it("kartu isian, kotak jawaban dan bagian tahap punya scroll-margin supaya tidak tertutup kepala; media sempit tidak memakai baris yang melebar", () => {
+    expect(css).toMatch(/\.bd-tahap, #aleta-bd-akar \.bd-f, #aleta-bd-akar textarea\.bd-ed \{ scroll-margin-top: calc\(var\(--bd-tinggi-atas\)/);
+    expect(css).toMatch(/scroll-padding-top: calc\(var\(--bd-tinggi-atas\)/);
+    const sempit = css.slice(css.indexOf("@media (max-width: 640px) {\n  #aleta-bd-akar .bd-layar > .bd-atas"));
+    expect(sempit).toMatch(/flex-direction: column/);
+    expect(sempit).toMatch(/overflow-x: auto/); // deretan tombol tergulir ke samping, tidak menambah tinggi kepala
+    // z-index kepala lebih besar dari semua lapisan non-overlay di dalam panel (menu Lainnya z-index 30, tahap/kartu tanpa z-index)
+    const zKepala = Number(css.match(/\.bd-layar > \.bd-atas \{\s*position: sticky; top: 0; z-index: (\d+)/)![1]);
+    const menu = Number(css.match(/\.bd-lainnyamenu \{[^}]*z-index: (\d+)/)![1]);
+    expect(zKepala).toBeGreaterThan(menu);
+  });
+
+  it("tinggi kepala dilaporkan ke CSS (--bd-tinggi-atas) lewat pengamat ukuran bila ada", async () => {
+    const h = bukaPP();
+    const w = h.w as any;
+    let diamati = 0;
+    w.ResizeObserver = class {
+      constructor(public f: () => void) {}
+      observe() {
+        diamati += 1;
+        this.f();
+      }
+    };
+    await sampaiPerkara(h);
+    expect(diamati).toBe(1);
+    expect(akar(h).style.getPropertyValue("--bd-tinggi-atas")).toMatch(/^\d+(\.\d+)?px$/);
+  });
+});
+
+// ============================================================================
+// Butir 9: peringatan 'Daftar kosong tidak disimpan' tidak dobel / tidak tertinggal
+// ============================================================================
+describe("Blangko Derry (20 Okt): peringatan daftar kosong", () => {
+  const peringatan = (h: Halaman) => qq(h, "[data-kosongsimpan]");
+
+  it("muncul hanya saat disimpan dalam keadaan kosong, satu per saksi; hilang begitu daftar terisi dan tidak kembali sendiri", async () => {
+    const h = bukaPP();
+    pasangBot();
+    await pilihBas(h);
+    klik(h, '[data-tj="saksi 1 p"]');
+    await sampai(() => q(h, '[data-bd2="simpantj"]') && !(q(h, '[data-bd2="simpantj"]') as HTMLButtonElement).disabled, "daftar saksi terbaca");
+    expect(qq(h, "[data-sba]").length).toBe(0);
+    expect(peringatan(h).length).toBe(0); // belum dicoba simpan -> tidak ada peringatan
+    expect(akar(h).textContent).not.toMatch(/Daftar kosong tidak disimpan/);
+    klik(h, '[data-bd2="simpantj"]');
+    await sampai(() => peringatan(h).length > 0, "peringatan setelah simpan kosong");
+    // Berdampingan = dua saksi, masing-masing SATU peringatan, dengan nama saksinya
+    expect(peringatan(h).length).toBe(2);
+    expect(new Set(peringatan(h).map((e) => e.getAttribute("data-kosongsimpan"))).size).toBe(2);
+    expect(peringatan(h).every((e) => /^Saksi [12] .+: Daftar kosong tidak disimpan/.test(e.textContent || ""))).toBe(true);
+    expect((akar(h).textContent!.match(/Daftar kosong tidak disimpan/g) || []).length).toBe(2);
+    expect(h.minta.filter((m) => /tanyajawab_perkara_edit\?.*aksi=simpan/.test(m.url)).length).toBe(0); // tidak menulis ke ABT
+    // Klik simpan lagi: tetap satu per saksi (tidak bertambah)
+    klik(h, '[data-bd2="simpantj"]');
+    await tunggu(30);
+    expect(peringatan(h).length).toBe(2);
+    // Muat set pertanyaan -> daftar terisi -> peringatan hilang
+    const sel = (await sampai(() => q(h, '#bd-muattpl optgroup[label^="Panduan"]') && q(h, "#bd-muattpl"), "panduan set")) as HTMLSelectElement;
+    sel.value = "aleta:cerai-F";
+    klik(h, '[data-bd2="muattpl"]');
+    await sampai(() => qq(h, "[data-sba]").length >= 15, "daftar terisi");
+    expect(peringatan(h).length).toBe(0);
+    expect(akar(h).textContent).not.toMatch(/Daftar kosong tidak disimpan/);
+    // Mengosongkan daftar sesudahnya TIDAK memunculkan peringatan lama; hanya percobaan simpan baru
+    let sisa = qq(h, "[data-sbhapus]").length;
+    while (sisa-- > 0 && q(h, '[data-sbhapus="0"]')) klik(h, '[data-sbhapus="0"]');
+    await tunggu(30);
+    expect(qq(h, "[data-sba]").length).toBe(0);
+    expect(peringatan(h).length).toBe(0);
+    klik(h, '[data-bd2="simpantj"]');
+    await sampai(() => peringatan(h).length === 2, "peringatan baru setelah simpan kosong lagi");
+  });
+});
+
+void hitungAsalDom;
