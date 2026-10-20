@@ -34,7 +34,7 @@ const BASMASSAL = baca("basmassal.js");
 const KONTEN = baca("konten.js");
 const L1 = baca("sipp-ide-l1.js");
 const PENSIPP = baca("penetapan-sipp.js");
-const MUATULANG = baca("penetapan-muat-ulang.js");
+const MUATULANG = baca("muat-ulang-sipp.js");
 const CSS = baca("penetapan-sipp.css");
 
 const ASAL = "http://192.168.10.10";
@@ -278,7 +278,7 @@ function buka(keadaan: Keadaan, o: Opsi = {}) {
     } else if (url.includes("/aleta-bot/penunjukan/tulis") && cara === "POST") {
       const badan = JSON.parse(String(opsi?.body || "{}"));
       if (Array.isArray(badan.rantai)) {
-        alamatSaatTulis.push(polos((simpanan as any).penetapanMuatUlang));
+        alamatSaatTulis.push(polos((simpanan as any).muatUlangSipp));
         for (const s of badan.rantai) keadaan[s.jenis as Jenis] = HARI;
         isi = { ok: true, utuh: true, hasil: badan.rantai.map((s: { jenis: string }) => ({ jenis: s.jenis, ok: true, langkah: [{ tabel: "perkara_penetapan" }] })) };
       } else if (keadaan[badan.jenis as Jenis]) {
@@ -338,8 +338,8 @@ function buka(keadaan: Keadaan, o: Opsi = {}) {
   vm.runInContext("alatSetelJedaSkala(0)", ctx);
   vm.runInContext(BASMASSAL, ctx, { filename: "basmassal.js" });
   vm.runInContext(KONTEN, ctx, { filename: "konten.js" });
-  vm.runInContext(MUATULANG, ctx, { filename: "penetapan-muat-ulang.js" });
-  if (o.jedaMuatUlang !== undefined) w.aletaMuatUlangPen.konf.jeda = o.jedaMuatUlang;
+  vm.runInContext(MUATULANG, ctx, { filename: "muat-ulang-sipp.js" });
+  if (o.jedaMuatUlang !== undefined) w.aletaMuatUlangSipp.konf.jeda = o.jedaMuatUlang;
   if ((o.urutL1 || "sebelum") === "sebelum") {
     vm.runInContext(L1, ctx, { filename: "sipp-ide-l1.js" });
     vm.runInContext(PENSIPP, ctx, { filename: "penetapan-sipp.js" });
@@ -654,7 +654,7 @@ describe("satu klik: konfirmasi di halaman, tulis lalu unggah", () => {
     for (const j of JENIS) expect(statusTeks(h, j)).toBe("tercatat · e-Doc terunggah");
     expect(lap.textContent).toContain("Selesai: 4 penetapan ditulis, 4 e-Doc terunggah.");
     for (const j of JENIS) expect(lap.querySelector(`[data-jenis="${j}"]`)!.textContent).toMatch(/tercatat\. e-Doc terunggah\./);
-    expect(panel(h)!.querySelector('[data-pen="muat-ulang"]')).not.toBeNull();
+    expect(panel(h)!.querySelector('[data-mu="muat-ulang"]')).not.toBeNull();
     expect(h.konfirmDipanggil()).toBe(0);
     simpanTangkapan(h, "4-selesai");
   });
@@ -766,7 +766,7 @@ describe("gagal dilaporkan, tidak ada tulis ganda", () => {
     expect(statusTeks(h, "phs")).toBe("ditahan");
     expect(langkah(h, "phs").textContent).toContain("Menunggu PJS berhasil lebih dulu.");
     expect(lap.textContent).toContain("Penetapan belum selesai");
-    expect(panel(h)!.querySelector('[data-pen="muat-ulang"]')).toBeNull();
+    expect(panel(h)!.querySelector('[data-mu="muat-ulang"]')).toBeNull();
     expect(h.navigasi).toEqual([]);
     expect(teksTampak(h)).not.toMatch(/jurusita_tidak_aktif|ER_LOCK|undefined|\[object|Ubah semua pilihan/);
     // dapat ditekan lagi
@@ -948,9 +948,9 @@ describe("batas aman", () => {
 
 // ============================================================================
 describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
-  const rekaman = (h: Halaman) => (h.simpanan as any).penetapanMuatUlang || {};
+  const rekaman = (h: Halaman) => (h.simpanan as any).muatUlangSipp || {};
   const KUNCI_NOMOR = NOMOR.toUpperCase();
-  const notis = (h: Halaman) => panel(h)!.querySelector('[data-pen="muat-ulang"]') as HTMLElement | null;
+  const notis = (h: Halaman) => panel(h)!.querySelector('[data-mu="muat-ulang"]') as HTMLElement | null;
 
   it("alamat perkara disimpan SEBELUM menulis; sesudah selesai tampil ringkasan + hitung mundur + dua tombol", async () => {
     const h = buka(kosong(), { jedaMuatUlang: 60000 });
@@ -965,7 +965,7 @@ describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
     expect(n.textContent).toContain("Selesai: 4 penetapan ditulis, 4 e-Doc terunggah.");
     for (const j of JENIS) expect(n.querySelector(`[data-jenis="${j}"]`)!.textContent).toMatch(/tercatat/);
     expect(n.textContent).toMatch(/dimuat ulang dalam \d+ detik/);
-    expect(n.textContent).toContain("tetap di perkara ini");
+    expect(n.textContent).toContain("tetap di halaman ini");
     expect(Array.from(n.querySelectorAll("button")).map((b) => b.textContent)).toEqual(["Muat ulang sekarang", "Jangan muat ulang"]);
     expect(h.navigasi).toEqual([]); // belum memuat ulang: ringkasan sempat terbaca
     simpanTangkapan(h, "7-muat-ulang");
@@ -989,7 +989,7 @@ describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
     const h = buka(kosong(), { jedaMuatUlang: 400 });
     await panelSiap(h);
     await klikSatuKali(h);
-    const n = await sampai(() => notis(h)?.querySelector('[data-pen="sekarang"]'), "tombol sekarang");
+    const n = await sampai(() => notis(h)?.querySelector('[data-mu="sekarang"]'), "tombol sekarang");
     (n as HTMLButtonElement).click();
     await sampai(() => h.navigasi.length === 1, "memuat ulang");
     await tunggu(800);
@@ -1000,12 +1000,12 @@ describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
     const h = buka(kosong(), { jedaMuatUlang: 300 });
     await panelSiap(h);
     await klikSatuKali(h);
-    const jangan = await sampai(() => notis(h)?.querySelector('[data-pen="jangan"]') as HTMLButtonElement | null, "tombol jangan");
+    const jangan = await sampai(() => notis(h)?.querySelector('[data-mu="jangan"]') as HTMLButtonElement | null, "tombol jangan");
     jangan.click();
     await tunggu(700);
     expect(h.navigasi).toEqual([]);
     expect(notis(h)!.textContent).toContain("Tidak dimuat ulang");
-    expect(notis(h)!.querySelector('[data-pen="sekarang"]')!.textContent).toBe("Muat ulang halaman");
+    expect(notis(h)!.querySelector('[data-mu="sekarang"]')!.textContent).toBe("Muat ulang halaman");
   });
 
   it("ada yang gagal (e-Doc PPP gagal): TIDAK dimuat ulang sendiri, hanya tombol, sebab terbaca", async () => {
@@ -1016,11 +1016,11 @@ describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
     const n = await sampai(() => notis(h), "kotak muat ulang");
     await tunggu(600);
     expect(h.navigasi).toEqual([]);
-    expect(n.querySelector('[data-pen="jangan"]')).toBeNull();
+    expect(n.querySelector('[data-mu="jangan"]')).toBeNull();
     expect(n.textContent).toContain("tidak dimuat ulang sendiri karena ada yang gagal");
     expect(n.textContent).toContain("tanda tangan pejabat belum disahkan");
     // tombol manual tetap memuat ulang, sekali, di perkara yang sama
-    (n.querySelector('[data-pen="sekarang"]') as HTMLButtonElement).click();
+    (n.querySelector('[data-mu="sekarang"]') as HTMLButtonElement).click();
     await sampai(() => h.navigasi.length === 1, "tombol manual");
     expect(h.navigasi).toEqual([ALAMAT_MASUK]);
     simpanTangkapan(h, "9-muat-ulang-gagal");
@@ -1040,7 +1040,7 @@ describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
     const h = buka(kosong(), { jedaMuatUlang: 200 });
     await panelSiap(h);
     // Tab lain memulai muat ulang SESUDAH halaman ini terbuka (penandanya menyala, belum tiba).
-    (h.simpanan as any).penetapanMuatUlang = { [KUNCI_NOMOR]: { nomor: NOMOR, alamat: ALAMAT_MASUK, menunggu: true, tab: "tab-lain", saatMuat: Date.now(), waktu: Date.now() } };
+    (h.simpanan as any).muatUlangSipp = { [KUNCI_NOMOR]: { nomor: NOMOR, alamat: ALAMAT_MASUK, menunggu: true, tab: "tab-lain", saatMuat: Date.now(), waktu: Date.now() } };
     await klikSatuKali(h);
     await tungguLaporan(h);
     await tunggu(700);
@@ -1050,46 +1050,46 @@ describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
   it("sesudah dimuat ulang: ringkasan hasil tampil lagi di perkara yang sama, sekali, lalu bersih", async () => {
     const ringkasan = { judul: "Penetapan selesai dan tercatat di SIPP.", baris: JENIS.map((j) => ({ jenis: j, teks: "tercatat. e-Doc terunggah.", nada: "ok" })), adaGagal: false };
     const h = buka({ pmh: HARI, ppp: HARI, pjs: HARI, phs: HARI }, {
-      simpananAwal: { penetapanMuatUlang: { [KUNCI_NOMOR]: { nomor: NOMOR, alamat: ALAMAT_MASUK, ringkasan, tampilkan: true, menunggu: true, tab: "x", saatMuat: Date.now(), waktu: Date.now() } } },
+      simpananAwal: { muatUlangSipp: { [KUNCI_NOMOR]: { nomor: NOMOR, alamat: ALAMAT_MASUK, ringkasan, tampilkan: true, menunggu: true, tab: "x", saatMuat: Date.now(), waktu: Date.now() } } },
     });
-    const kotak = await sampai(() => h.d.querySelector(".aleta-pen-notis-sesudah") as HTMLElement | null, "ringkasan sesudah memuat");
-    expect(kotak.textContent).toContain("Hasil penetapan tadi");
+    const kotak = await sampai(() => h.d.querySelector(".aleta-mu-sesudah") as HTMLElement | null, "ringkasan sesudah memuat");
+    expect(kotak.textContent).toContain("Hasil tadi");
     expect(kotak.textContent).toContain(NOMOR);
     for (const j of JENIS) expect(kotak.querySelector(`[data-jenis="${j}"]`)!.textContent).toContain("e-Doc terunggah");
     expect(h.navigasi).toEqual([]); // di halaman perkara: tidak berpindah
     await sampai(() => rekaman(h)[KUNCI_NOMOR]?.tampilkan === false && rekaman(h)[KUNCI_NOMOR]?.menunggu === false, () => JSON.stringify(rekaman(h)));
     expect(rekaman(h)[KUNCI_NOMOR].ringkasan).toBeUndefined();
     simpanTangkapan(h, "8-sesudah-muat-ulang");
-    (kotak.querySelector('[data-pen="tutup"]') as HTMLButtonElement).click();
-    expect(h.d.querySelector(".aleta-pen-notis-sesudah")).toBeNull();
+    (kotak.querySelector('[data-mu="tutup"]') as HTMLButtonElement).click();
+    expect(h.d.querySelector(".aleta-mu-sesudah")).toBeNull();
   });
 
   it("ringkasan perkara lain tidak tampil di perkara ini", async () => {
     const lain = "999/Pdt.G/2026/PA.Dgl";
     const h = buka(kosong(), {
       jedaMuatUlang: 200,
-      simpananAwal: { penetapanMuatUlang: { [lain.toUpperCase()]: { nomor: lain, alamat: ALAMAT_MASUK, ringkasan: { judul: "x", baris: [] }, tampilkan: true, saatMuat: Date.now(), waktu: Date.now() } } },
+      simpananAwal: { muatUlangSipp: { [lain.toUpperCase()]: { nomor: lain, alamat: ALAMAT_MASUK, ringkasan: { judul: "x", baris: [] }, tampilkan: true, saatMuat: Date.now(), waktu: Date.now() } } },
     });
     await tunggu(900);
-    expect(h.d.querySelector(".aleta-pen-notis-sesudah")).toBeNull();
+    expect(h.d.querySelector(".aleta-mu-sesudah")).toBeNull();
   });
 
   it("SIPP menjatuhkan ke dasbor: dikembalikan ke alamat perkara SEKALI; dasbor lagi sesudahnya = tidak berulang", async () => {
     const rec = { nomor: NOMOR, alamat: ALAMAT_MASUK, ringkasan: { judul: "x", baris: [] }, tampilkan: true, menunggu: true, tab: "x", saatMuat: Date.now(), waktu: Date.now() };
-    const h = buka(kosong(), { url: `${ASAL}/SIPP/main`, dasbor: true, simpananAwal: { penetapanMuatUlang: { [KUNCI_NOMOR]: rec } } });
+    const h = buka(kosong(), { url: `${ASAL}/SIPP/main`, dasbor: true, simpananAwal: { muatUlangSipp: { [KUNCI_NOMOR]: rec } } });
     await sampai(() => h.navigasi.length === 1, "kembali ke perkara");
     expect(h.navigasi).toEqual([ALAMAT_MASUK]);
     await sampai(() => rekaman(h)[KUNCI_NOMOR]?.menunggu === false, () => JSON.stringify(rekaman(h)));
     expect(rekaman(h)[KUNCI_NOMOR].tampilkan).toBe(true); // ringkasan masih menunggu halaman perkara
     // Dasbor lagi (mis. SIPP menolak pintu masuk): penanda sudah dicabut, tidak ada perulangan.
-    const h2 = buka(kosong(), { url: `${ASAL}/SIPP/main`, dasbor: true, simpananAwal: { penetapanMuatUlang: polos(rekaman(h)) } });
+    const h2 = buka(kosong(), { url: `${ASAL}/SIPP/main`, dasbor: true, simpananAwal: { muatUlangSipp: polos(rekaman(h)) } });
     await tunggu(700);
     expect(h2.navigasi).toEqual([]);
   });
 
   it("penanda yang sudah basi (> 1 menit) tidak membajak halaman dasbor", async () => {
     const lama = Date.now() - 5 * 60 * 1000;
-    const h = buka(kosong(), { url: `${ASAL}/SIPP/main`, dasbor: true, simpananAwal: { penetapanMuatUlang: { [KUNCI_NOMOR]: { nomor: NOMOR, alamat: ALAMAT_MASUK, menunggu: true, tampilkan: true, ringkasan: { judul: "x", baris: [] }, saatMuat: lama, waktu: lama } } } });
+    const h = buka(kosong(), { url: `${ASAL}/SIPP/main`, dasbor: true, simpananAwal: { muatUlangSipp: { [KUNCI_NOMOR]: { nomor: NOMOR, alamat: ALAMAT_MASUK, menunggu: true, tampilkan: true, ringkasan: { judul: "x", baris: [] }, saatMuat: lama, waktu: lama } } } });
     await tunggu(700);
     expect(h.navigasi).toEqual([]);
   });
@@ -1105,7 +1105,7 @@ describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
     await sampai(() => asli.textContent === "Tuliskan ke SIPP" && !asli.disabled, "pemeriksaan lulus");
     asli.click();
     await sampai(() => asli.textContent === "Penetapan selesai", "selesai");
-    const n = await sampai(() => kotak.querySelector('[data-pen="muat-ulang"]') as HTMLElement | null, "kotak muat ulang");
+    const n = await sampai(() => kotak.querySelector('[data-mu="muat-ulang"]') as HTMLElement | null, "kotak muat ulang");
     for (const j of JENIS) expect(n.querySelector(`[data-jenis="${j}"]`)).not.toBeNull();
     expect(h.navigasi).toEqual([]);
     await sampai(() => h.navigasi.length === 1, "memuat ulang");

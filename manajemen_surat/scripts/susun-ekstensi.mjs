@@ -144,7 +144,7 @@ const BERKAS = [
   // tulis lalu unggah). Skrip konten SIPP paling belakang; gayanya sendiri.
   // Muat ulang otomatis sesudah penetapan, tetap di perkaranya (20 Okt 2026): ringkasan,
   // hitung mundur, kembali dari dasbor sekali, ringkasan tampil lagi sesudah memuat.
-  "penetapan-muat-ulang.js",
+  "muat-ulang-sipp.js",
   "penetapan-sipp.js",
   "penetapan-sipp.css",
   "blangko-derry.css",

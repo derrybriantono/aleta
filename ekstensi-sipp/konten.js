@@ -258,6 +258,15 @@ function alamatMasukPerkara() {
  * perkara memang tidak punya masalah sesi ini.
  */
 function muatUlangHalamanPerkara() {
+  // Modul bersama (muat-ulang-sipp.js): ditahan selama antrean massal berjalan
+  // (sekali di akhir), alamat disimpan, dan petugas dikembalikan ke alamat ini
+  // bila SIPP menjatuhkan halaman ke dasbor. Tanpa modul: perilaku lama.
+  const bersama = globalThis.aletaMuatUlangSipp;
+  if (bersama) {
+    if (bersama.tahanLegacy("")) return;
+    void bersama.muatUlangSekarang("", null);
+    return;
+  }
   const alamat = alamatMasukPerkara();
   if (alamat) location.assign(alamat);
   else location.reload();
@@ -2174,10 +2183,10 @@ async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering, 
     kunciTulisPenetapan.add(nomorKunci);
   }
   // Sebelum menulis: simpan alamat perkara ini supaya sesudah memuat ulang
-  // halaman TETAP di perkara yang sama (penetapan-muat-ulang.js).
-  if (!kering && globalThis.aletaMuatUlangPen) {
+  // halaman TETAP di perkara yang sama (muat-ulang-sipp.js).
+  if (!kering && globalThis.aletaMuatUlangSipp) {
     try {
-      await globalThis.aletaMuatUlangPen.catatAlamat(String((usulan && usulan.perkara && usulan.perkara.nomorPerkara) || ""));
+      await globalThis.aletaMuatUlangSipp.catatAlamat(String((usulan && usulan.perkara && usulan.perkara.nomorPerkara) || ""));
     } catch {
       /* alamat hanya kemudahan */
     }
@@ -4447,7 +4456,7 @@ async function siapkanKerjakan(tombol, kabar, usulan, data) {
       if (hasil.ok) {
         // Sesudah penetapan (dan e-Doc otomatisnya) selesai: ringkasan tampil,
         // lalu halaman dimuat ulang SENDIRI dan tetap di perkara ini
-        // (penetapan-muat-ulang.js; ada yang gagal = hanya tombol).
+        // (muat-ulang-sipp.js; ada yang gagal = hanya tombol).
         const nomorPerkaraIni = String((usulan.perkara && usulan.perkara.nomorPerkara) || "");
         void (async () => {
           let edocPesan = null;
@@ -4457,7 +4466,7 @@ async function siapkanKerjakan(tombol, kabar, usulan, data) {
               edocPesan = { teks: "e-Doc belum terunggah - periksa di tombol e-Doc.", gagal: true };
             } else if (e && e.ok) edocPesan = { teks: "e-Doc terunggah.", gagal: false };
           }
-          const pm = globalThis.aletaMuatUlangPen;
+          const pm = globalThis.aletaMuatUlangSipp;
           if (pm) {
             pm.jadwalkan({ nomor: nomorPerkaraIni, ringkasan: pm.ringkasanDariHasil(hasil, edocPesan), wadah: kabar });
           } else {

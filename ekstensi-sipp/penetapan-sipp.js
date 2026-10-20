@@ -456,7 +456,7 @@
     const kabarRinci = el("div", "aleta-pensipp-tersembunyi");
     kabarRinci.hidden = true;
 
-    // Kotak hitung mundur muat ulang (penetapan-muat-ulang.js): di luar render(), tidak ikut terhapus.
+    // Kotak hitung mundur muat ulang (muat-ulang-sipp.js): di luar render(), tidak ikut terhapus.
     const wadahMuatUlang = el("div", "aleta-pensipp-muatulang");
     wadahMuatUlang.setAttribute("data-pensipp", "muat-ulang");
     akar.append(kepala, badan, kaki, laporan, wadahMuatUlang, kabarRinci);
@@ -843,12 +843,12 @@
     if (kunciBersama && nomorKunci) kunciBersama.add(nomorKunci);
     ctx.sibuk = true;
     ctx.laporan = null;
-    if (globalThis.aletaMuatUlangPen) {
-      globalThis.aletaMuatUlangPen.batal();
+    if (globalThis.aletaMuatUlangSipp) {
+      globalThis.aletaMuatUlangSipp.batal();
       if (ctx.wadahMuatUlang) ctx.wadahMuatUlang.textContent = "";
       // Alamat perkara disimpan SEBELUM menulis; sesudah selesai halaman dimuat ulang di situ juga.
       try {
-        await globalThis.aletaMuatUlangPen.catatAlamat(ctx.nomor);
+        await globalThis.aletaMuatUlangSipp.catatAlamat(ctx.nomor);
       } catch {
         /* alamat hanya kemudahan */
       }
@@ -1039,8 +1039,8 @@
       };
       // Sesudah SELESAI (penetapan dan e-Doc): ringkasan + muat ulang otomatis, tetap di perkara ini.
       // Ada yang gagal = hanya tombol (sebabnya terbaca dulu). Tidak ada yang berubah = tidak dimuat ulang.
-      if ((adaTertulis || edocSukses.length) && globalThis.aletaMuatUlangPen && ctx.wadahMuatUlang) {
-        globalThis.aletaMuatUlangPen.jadwalkan({
+      if ((adaTertulis || edocSukses.length) && globalThis.aletaMuatUlangSipp && ctx.wadahMuatUlang) {
+        globalThis.aletaMuatUlangSipp.jadwalkan({
           nomor: ctx.nomor,
           ringkasan: {
             judul: ctx.laporan.ringkas,

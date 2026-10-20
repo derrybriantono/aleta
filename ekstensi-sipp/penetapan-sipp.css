@@ -555,40 +555,40 @@ li.aleta-pensipp-laporan-salah {
   }
 }
 
-/* ── Ringkasan dan muat ulang otomatis sesudah penetapan (penetapan-muat-ulang.js) ── */
-.aleta-pen-notis {
-  --pn-latar: #ffffff;
-  --pn-tinta: #16231b;
-  --pn-redup: #4d5d53;
-  --pn-garis: #0f5f4f;
-  --pn-ok: #1b6e38;
-  --pn-salah: #b42318;
-  --pn-tombol: #0f5f4f;
-  --pn-tombol-teks: #ffffff;
+/* ── Ringkasan dan muat ulang otomatis sesudah penetapan (muat-ulang-sipp.js) ── */
+.aleta-mu {
+  --mu-latar: #ffffff;
+  --mu-tinta: #16231b;
+  --mu-redup: #4d5d53;
+  --mu-garis: #0f5f4f;
+  --mu-ok: #1b6e38;
+  --mu-salah: #b42318;
+  --mu-tombol: #0f5f4f;
+  --mu-tombol-teks: #ffffff;
   box-sizing: border-box;
   display: grid;
   gap: 6px;
   margin: 8px 0 0;
   padding: 10px 14px;
-  border: 2px solid var(--pn-garis);
+  border: 2px solid var(--mu-garis);
   border-left-width: 2px;
   border-radius: 8px;
-  background: var(--pn-latar);
-  color: var(--pn-tinta);
+  background: var(--mu-latar);
+  color: var(--mu-tinta);
   font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   text-align: left;
 }
-html[data-aleta-tema-sipp="gelap"] .aleta-pen-notis {
-  --pn-latar: #17231d;
-  --pn-tinta: #e6efe9;
-  --pn-redup: #a9bbb0;
-  --pn-garis: #7fd0a6;
-  --pn-ok: #7fd9a1;
-  --pn-salah: #ff9b92;
-  --pn-tombol: #7fd0a6;
-  --pn-tombol-teks: #05261a;
+html[data-aleta-tema-sipp="gelap"] .aleta-mu {
+  --mu-latar: #17231d;
+  --mu-tinta: #e6efe9;
+  --mu-redup: #a9bbb0;
+  --mu-garis: #7fd0a6;
+  --mu-ok: #7fd9a1;
+  --mu-salah: #ff9b92;
+  --mu-tombol: #7fd0a6;
+  --mu-tombol-teks: #05261a;
 }
-.aleta-pen-notis-melayang {
+.aleta-mu-melayang {
   position: fixed;
   left: 50%;
   bottom: 16px;
@@ -599,47 +599,47 @@ html[data-aleta-tema-sipp="gelap"] .aleta-pen-notis {
   overflow: auto;
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.35);
 }
-.aleta-pen-notis-daftar {
+.aleta-mu-daftar {
   margin: 0;
   padding-left: 18px;
 }
-.aleta-pen-notis-salah {
-  color: var(--pn-salah);
+.aleta-mu-salah {
+  color: var(--mu-salah);
 }
-.aleta-pen-notis-ket {
+.aleta-mu-ket {
   margin: 0;
-  color: var(--pn-redup);
+  color: var(--mu-redup);
   font-size: 13.5px;
 }
-.aleta-pen-notis-aksi {
+.aleta-mu-aksi {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-.aleta-pen-notis-tombol {
-  border: 1px solid var(--pn-garis);
+.aleta-mu-tombol {
+  border: 1px solid var(--mu-garis);
   border-radius: 7px;
   background: transparent;
-  color: var(--pn-tinta);
+  color: var(--mu-tinta);
   padding: 6px 12px;
   font-family: inherit;
   font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
 }
-.aleta-pen-notis-utama {
-  background: var(--pn-tombol);
-  border-color: var(--pn-tombol);
-  color: var(--pn-tombol-teks);
+.aleta-mu-utama {
+  background: var(--mu-tombol);
+  border-color: var(--mu-tombol);
+  color: var(--mu-tombol-teks);
 }
-.aleta-pen-notis-tombol:focus-visible {
+.aleta-mu-tombol:focus-visible {
   outline: 3px solid #e0a800;
   outline-offset: 2px;
 }
 .aleta-pensipp-muatulang:empty {
   display: none;
 }
-.aleta-pensipp-muatulang .aleta-pen-notis {
+.aleta-pensipp-muatulang .aleta-mu {
   margin: 0;
   border-width: 0;
   border-top: 1px solid var(--ps-garis);
