@@ -313,9 +313,11 @@ function positaTambahan(posita, jenis) {
       dasar = [];
   }
   // 20 Okt (S7): pola tambahan; kunci yang sudah terbaca pola lama tidak ditimpa
-  const ada = new Set(dasar.map((x) => x.kunci));
-  const lain = positaLain(butir, jenis).filter((x) => !ada.has(x.kunci));
-  return [...dasar, ...lain];
+  const tambahan = positaLain(butir, jenis);
+  // daftar nama anak pewaris dari pola baru lebih rapi dan lengkap daripada pola lama: yang baru menggantikan
+  const gantiLama = new Set(tambahan.filter((x) => x.kunci === "anakPewaris").map((x) => x.kunci));
+  const ada = new Set(dasar.filter((x) => !gantiLama.has(x.kunci)).map((x) => x.kunci));
+  return [...dasar.filter((x) => !gantiLama.has(x.kunci)), ...tambahan.filter((x) => !ada.has(x.kunci))];
 }
 
 module.exports = { positaTambahan, polosPosita, butirPosita, potongPeristiwa };

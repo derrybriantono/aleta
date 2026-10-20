@@ -227,6 +227,15 @@ function isiBaris(o) {
       tambahan: positaTambahan(k.posita, jenis),
       sebutan: { P: k.lawan, T: k.pelaku },
     });
+    // Variabel ABT yang belum terbaca di ekstensi (mis. nama anak di PERTANYAAN) dihitung dari fakta yang sama.
+    const variabel = {};
+    const ctxVar = { jenis, P: k.lawan || "Pemohon", T: k.pelaku || "Termohon", jumlahP: k.sipp && Array.isArray(k.sipp.pihak1) ? k.sipp.pihak1.length : 0 };
+    for (const kode of (Array.isArray(k.kodeVariabel) ? k.kodeVariabel : []).slice(0, 60)) {
+      if (!/^\d{4}$/.test(String(kode))) continue;
+      const nv = isi.nilaiVariabel(String(kode), fakta, ctxVar);
+      if (nv) variabel[String(kode)] = nv;
+    }
+    if (Object.keys(variabel).length) hasil["__variabel"] = variabel;
     for (const s of Array.isArray(k.saksiIsi) ? k.saksiIsi.slice(0, 12) : []) {
       const ctx = { jenis, P: k.lawan || "Pemohon", T: k.pelaku || "Termohon", ke: Number(s.ke) || 1, modus: String(s.modus || ""), sumberNama: String(s.sumberNama || ""), hubungan: hubunganDariSipp(k.sipp, s.kunci, k.lawan, k.pelaku), jumlahP: k.sipp && Array.isArray(k.sipp.pihak1) ? k.sipp.pihak1.length : 0 };
       for (const b of Array.isArray(s.baris) ? s.baris.slice(0, 80) : []) {

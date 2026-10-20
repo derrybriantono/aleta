@@ -3320,7 +3320,14 @@
         const pengisi = typeof globalThis !== "undefined" ? globalThis.AletaBdJawabanKatalog : null;
         if (pengisi && typeof pengisi.usulkan === "function") {
           try {
-            usulan = await pengisi.usulkan({ perkara: ktPerkaraObj(), kenal, keadaan: ker.keadaan, saksi: hasil.saksi, variabel: nilaiVar });
+            usulan = await pengisi.usulkan({ perkara: ktPerkaraObj(), kenal, keadaan: ker.keadaan, saksi: hasil.saksi, variabel: nilaiVar, kodeBelum: (hasil.variabelAbt || []).filter((kd) => !(kd in nilaiVar)) });
+            // variabel ABT yang belum terbaca (nama anak, almarhum, ...) dihitung bot dari data perkara: pertanyaan disusun ulang memakainya
+            const dariBot = usulan && usulan.variabel;
+            if (dariBot && Object.keys(dariBot).length) {
+              const gabungVar = Object.assign({}, nilaiVar);
+              for (const [kd, v] of Object.entries(dariBot)) if (!gabungVar[kd]) gabungVar[kd] = v.teks;
+              hasil = susun((kode) => gabungVar[kode]);
+            }
           } catch {
             usulan = null; // pengisi jawaban gagal: jawaban dasar katalog tetap terpasang
           }

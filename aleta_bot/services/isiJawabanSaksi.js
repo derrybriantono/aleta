@@ -110,7 +110,8 @@ function penolong(fakta, ctx, pakai) {
       const x = ctx && ctx.hubungan;
       if (!x || !x.teks) return null;
       pakai.push({ kunci: "hubunganSaksi", sumber: x.sumber || "data SIPP", yakin: x.yakin || "yakin", ket: x.ket || "" });
-      return kecilAwal(x.teks);
+      // "Adik Kandung Pemohon" -> "adik kandung Pemohon": kata hubungan huruf kecil, sebutan pihak tetap berhuruf besar
+      return x.teks.replace(/\b[A-Z][a-z-]+\b/g, (k) => (/^(?:Pemohon|Termohon|Penggugat|Tergugat|Para)$/.test(k) ? (k === "Para" ? "para" : k) : k.toLowerCase()));
     },
   };
   return h;
@@ -209,6 +210,19 @@ cue(
   }
 );
 cue("tidak-tercatat", new RegExp(`tidak\\s+tercatat\\s+karena\\s+${T};\\s*itsbat\\s+nikah\\s+diperlukan\\s+untuk\\s+${T}`, "gi"), ({ m, h }) => h.isi(m, [h.nilai("sebabTidakTercatat"), h.nilai("tujuan")]), { jenis: ["itsbat"] });
+
+// ---- perwalian (set pertanyaan portal) ------------------------------------------------
+cue(
+  "pw-orang-tua",
+  new RegExp(`Ayah\\s+kandungnya\\s+${T}\\s+dan\\s+ibu\\s+kandungnya\\s+${T};\\s*${T}\\s+telah\\s+meninggal\\s+dunia\\s+pada\\s+${T}\\s+karena\\s+${T}`, "gi"),
+  ({ m, h }) => h.isi(m, [h.nilai("ayahAnak"), h.nilai("ibuAnak"), h.nilai("pewarisNama"), h.nilai("wafatTgl"), h.nilai("wafatSebab", kecilNilai)]),
+  { jenis: ["perwalian"] }
+);
+cue("pw-hubungan", new RegExp(`Pemohon\\s+adalah\\s+${T}\\s+anak\\s+tersebut`, "gi"), ({ m, h }) => h.isi(m, [h.nilai("hubunganPemohonAnak", kecilNilai)]), { jenis: ["perwalian"] });
+cue("pw-keperluan", new RegExp(`Untuk\\s+keperluan\\s+${T}\\s*\\([^)]*\\)`, "gi"), ({ h }) => {
+  const t = h.nilai("tujuan");
+  return t ? `Untuk keperluan ${t}` : null;
+}, { jenis: ["perwalian"] });
 
 // ---- hubungan saksi dengan pihak (kolom Keterangan saksi di SIPP) -----------------------
 // Cerai ("... Penggugat" sesudah titik-titik) diisi pasangJawaban di ekstensi; di sini bentuk tanpa sebutan di ujungnya.
@@ -623,6 +637,7 @@ function isiJawaban(baris, fakta, ctx) {
     });
   }
   if (adaTitik(teks)) teks = isiPokok(teks, q, h, ctx);
+  if (adaTitik(teks)) teks = V.isiTitikKiri(teks, h, ctx);
   const terisi = total - hitungTitik(teks);
   if (teks === asal || terisi <= 0) return null;
   teks = teks.replace(/\s{2,}/g, " ").replace(/\s+([,;])/g, "$1");
@@ -644,6 +659,29 @@ function isiJawaban(baris, fakta, ctx) {
   return { teks, terisi, total, yakin, sumber, ket: sisaTitik > 0 ? `${ket} Sisanya belum ada datanya; lengkapi dari keterangan saksi.` : ket };
 }
 const RE_ALETA_JAWAB = /aleta/i;
+
+/**
+ * Nilai satu variabel ABT (#kode#) dari fakta, untuk mengisi PERTANYAAN/jawaban katalog yang variabelnya belum terbaca di ABT.
+ * @returns {{teks: string, yakin: string, sumber: string, ket: string}|null}
+ */
+function nilaiVariabel(kode, fakta, ctx) {
+  const pengisi = V.KODE[String(kode)];
+  if (!pengisi) return null;
+  const pakai = [];
+  const h = penolong(fakta, ctx || {}, pakai);
+  let v = null;
+  try {
+    v = pengisi({ h, ctx: ctx || {}, kiri: "", kanan: "" });
+  } catch (_galat) {
+    v = null;
+  }
+  const teks = v == null ? "" : String(v).trim();
+  if (!teks || RE_ALETA_JAWAB.test(teks)) return null;
+  let yakin = "yakin";
+  for (const f of pakai) yakin = minYakin(yakin, f.yakin);
+  const { sumber, ket } = susunKet(pakai, yakin === "ragu");
+  return { teks, yakin, sumber, ket };
+}
 
 // ============================================================================
 // Memasang ke hasil rute 'saksi-sdg' (susunKeteranganSaksiSdg)
@@ -728,6 +766,7 @@ function lengkapiSusunan(hasil, opsi) {
 
 module.exports = {
   isiJawaban,
+  nilaiVariabel,
   lengkapiSusunan,
   isiPlaceholder,
   pihakKe,

@@ -36,6 +36,7 @@ const args = process.argv.slice(2);
 const DIR = (args.find((a) => !a.startsWith("--")) || "D:/Aplikasi/aleta/tmp/s7/data") + "/";
 const PAKAI_ISI = args.includes("--isi");
 const RINCI = (args.find((a) => a.startsWith("--rinci=")) || "").slice(8);
+const CONTOH_TANYA = args.includes("--tanya");
 const CONTOH = (args.find((a) => a.startsWith("--contoh=")) || "").slice(9);
 const ISI = PAKAI_ISI ? bot("services/isiJawabanSaksiService.js") : null;
 
@@ -80,6 +81,7 @@ const sippDari = (p: any) => ({
 
 type Hasil = { jenis: string; aktif: boolean; baris: number; titik: number; ragu: number; terisiOleh: number; sisa: Record<string, number>; nomor: string };
 const hasil: Hasil[] = [];
+const CONTOH_SISA: Record<string, string> = {};
 for (const p of KATALOG ? [] : perkara) {
   if (!NAMA[p.j]) continue;
   const sebP = p.j === "347" || p.j === "364" || p.j === "348" || (p.j === "360" && p.a === "15") ? "Penggugat" : "Pemohon";
@@ -131,7 +133,7 @@ for (const p of KATALOG ? [] : perkara) {
     const sj = h.saksi && h.saksi[ke] ? h.saksi[ke].jawaban : [];
     const res = BD.pasangJawaban(rows.map((r: any) => ({ ...r, dasar: r.jawab })), sj, { hubungan: h.paragrafSaksi && h.paragrafSaksi[ke] ? h.paragrafSaksi[ke].hubungan : undefined });
     res.rows.forEach((r: any, i: number) => {
-      if (CONTOH && p.nomor_perkara === CONTOH) console.log(`[saksi ${ke + 1}] ${String(i + 1).padStart(2)} ${r.jawab}${r.usulan ? `   <${r.usulan.yakin} | ${r.usulan.sumber}>` : ""}`);
+      if (CONTOH && p.nomor_perkara === CONTOH) console.log(`[saksi ${ke + 1}] ${String(i + 1).padStart(2)}${CONTOH_TANYA ? "Q: " + r.tanya + " | A: " : ""}${r.jawab}${r.usulan ? `   <${r.usulan.yakin} | ${r.usulan.sumber}>` : ""}`);
       if (adaTitik(r.jawab)) {
         titik++;
         const k = rows[i].tanya.slice(0, 70);
@@ -160,15 +162,17 @@ if (KATALOG) {
       { kunci: "saksi 1 p", pihak: "P" },
       { kunci: "saksi 2 p", pihak: "P" },
     ];
-    const sus = KT.susun({ kat: kn.kat, sebutan: kn.sebutan, benih: p.nomor_perkara, keadaan: ker, saksi: saksiMasuk });
+    let sus = KT.susun({ kat: kn.kat, sebutan: kn.sebutan, benih: p.nomor_perkara, keadaan: ker, saksi: saksiMasuk });
     if (!sus.ada) continue;
     let usulan: any = {};
     let ragu = 0;
     let terisiOleh = 0;
     if (ISI) {
-      const muatan = KATJ.susunMuatan({ perkara: { nomorPerkara: p.nomor_perkara, jenisPerkaraId: p.j, alurPerkaraId: p.a }, kenal: kn, keadaan: ker, saksi: sus.saksi, variabel: {} });
+      const muatan = KATJ.susunMuatan({ perkara: { nomorPerkara: p.nomor_perkara, jenisPerkaraId: p.j, alurPerkaraId: p.a }, kenal: kn, keadaan: ker, saksi: sus.saksi, variabel: {}, kodeBelum: sus.variabelAbt });
       const alamatPihak = { lawan: (sipp.pihak1[0] || {}).alamat || "", pelaku: (sipp.pihak2[0] || {}).alamat || "" };
-      usulan = ISI2.isiBaris({ posita: p.posita, jenisPerkara: p.j, alur: p.a, pelaku: kn.sebutan.T, lawan: kn.sebutan.P, tanggalSidang: "", alamatPihak, isian: {}, sipp, saksiIsi: muatan.saksiIsi });
+      usulan = ISI2.isiBaris({ posita: p.posita, jenisPerkara: p.j, alur: p.a, kunciKatalog: kn.kunci, pelaku: kn.sebutan.T, lawan: kn.sebutan.P, tanggalSidang: "", alamatPihak, isian: {}, sipp, saksiIsi: muatan.saksiIsi, kodeVariabel: muatan.kodeVariabel });
+      const vb = KATJ.petakan(usulan).variabel || {};
+      if (Object.keys(vb).length) sus = KT.susun({ kat: kn.kat, sebutan: kn.sebutan, benih: p.nomor_perkara, keadaan: ker, saksi: saksiMasuk, variabel: (kode: string) => (vb[kode] ? vb[kode].teks : undefined) });
     }
     let titik = 0;
     let baris = 0;
@@ -180,7 +184,7 @@ if (KATALOG) {
       ragu += ter.ragu;
       ter.rows.forEach((r: any, i: number) => {
         baris++;
-        if (CONTOH && p.nomor_perkara === CONTOH) console.log(`[saksi ${ke + 1}] ${String(i + 1).padStart(2)} ${r.jawab}${r.usulan ? `   <${r.usulan.yakin} | ${r.usulan.sumber}>` : ""}`);
+        if (CONTOH && p.nomor_perkara === CONTOH) console.log(`[saksi ${ke + 1}] ${String(i + 1).padStart(2)}${CONTOH_TANYA ? "Q: " + r.tanya + " | A: " : ""}${r.jawab}${r.usulan ? `   <${r.usulan.yakin} | ${r.usulan.sumber}>` : ""}`);
         if (adaTitik(r.jawab)) {
           titik++;
           const k = String(r.tanya).slice(0, 70);
@@ -219,5 +223,6 @@ if (RINCI) {
   const sisa: Record<string, number> = {};
   for (const h of hasil.filter((x) => x.jenis === RINCI)) for (const [k, v] of Object.entries(h.sisa)) sisa[k] = (sisa[k] || 0) + v;
   console.log(`\n== pertanyaan yang masih "..." (jenis ${RINCI})`);
-  for (const [k, v] of Object.entries(sisa).sort((a, b) => b[1] - a[1])) console.log(String(v).padStart(5), k);
+  for (const [k, v] of Object.entries(sisa).sort((a, b) => b[1] - a[1])) console.log(String(v).padStart(5), k, CONTOH_SISA[k] ? `
+        > ${CONTOH_SISA[k]}` : "");
 }

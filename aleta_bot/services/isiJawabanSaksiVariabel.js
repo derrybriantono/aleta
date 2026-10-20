@@ -189,6 +189,56 @@ function substitusi(kode, h, ctx, tanyaNorm) {
   return { teks, total, sisa };
 }
 
+
+/**
+ * Titik-titik yang ditulis langsung di jawaban katalog (bukan variabel): nilainya ditentukan oleh KATA DI KIRI titik-titik,
+ * tidak bergantung pada bunyi pertanyaan. Tiap aturan: jenis (kosong = semua), kiri (pola atas teks sebelum titik-titik),
+ * isi ({h, kanan}) -> string | null. Yang tidak cocok dibiarkan.
+ */
+const kiriRe = (s) => new RegExp(`${s}\\s*$`, "i");
+const TITIK_KIRI = [
+  { jenis: ["perwalian", "angkat", "asuh", "nafkahAnak"], kiri: kiriRe("\\b(?:berumur|berusia|umur|usia)"), isi: ({ h, kanan }) => h.nilai("anakUmur", (n) => (/^\s*tahun/i.test(kanan) ? n : `${n} tahun`)) },
+  { jenis: ["perwalian"], kiri: kiriRe("\\bhubungan\\b[^.;]{0,80}\\badalah\\s+sebagai"), isi: ({ h }) => h.nilai("hubunganPemohonAnak", kecil) },
+  { jenis: ["perwalian"], kiri: kiriRe("\\b(?:meninggal|wafat)[^.;]{0,60}?\\b(?:karena|disebabkan(?:\\s+oleh)?|akibat)"), isi: ({ h }) => h.nilai("wafatSebab", kecil) },
+  { jenis: ["perwalian"], kiri: kiriRe("\\bpermohonan\\s+perwalian\\s+untuk"), isi: ({ h }) => h.nilai("tujuan", kecil) },
+  { jenis: ["perwalian"], kiri: kiriRe("\\bmeninggal\\s+dunia\\s+pada(?:\\s+tanggal)?"), isi: ({ h }) => h.nilai("wafatTgl") },
+  { jenis: ["aua"], kiri: kiriRe("\\blahir\\s+pada(?:\\s+tanggal)?"), isi: ({ h }) => h.nilai("anakLahirTgl") },
+  { jenis: ["aua"], kiri: kiriRe("\\blahir\\b[^.;]{0,50}\\bdi"), isi: ({ h }) => h.nilai("anakLahirTempat") },
+  { jenis: ["paw", "waris", "wasiat"], kiri: kiriRe("\\b(?:memperoleh|memiliki|mempunyai|dikaruniai)"), isi: ({ h, kanan }) => (/^\s*orang\s+anak/i.test(kanan) ? h.nilai("jumlahAnakPewaris") : null) },
+  { jenis: ["paw", "waris", "wasiat"], kiri: kiriRe("\\b(?:meninggal|wafat)\\s+(?:dunia\\s+)?(?:pada(?:\\s+tanggal)?|tanggal)"), isi: ({ h }) => h.nilai("wafatTgl") },
+  { jenis: ["paw", "waris", "wasiat"], kiri: kiriRe("\\b(?:meninggal|wafat)\\b[^.;]{0,50}?\\bdi"), isi: ({ h }) => h.nilai("wafatTempat") },
+  { jenis: ["paw", "waris", "wasiat"], kiri: kiriRe("\\b(?:meninggal|wafat)\\b[^.;]{0,80}?\\b(?:karena|disebabkan(?:\\s+oleh)?|akibat)"), isi: ({ h }) => h.nilai("wafatSebab", kecil) },
+  { jenis: ["dk"], kiri: kiriRe("\\b(?:KUA|Kantor Urusan Agama)(?:\\s+Kecamatan)?"), isi: ({ h }) => h.nilai("kuaPenolak") },
+];
+
+/** Mengisi titik-titik literal menurut kata di kirinya; kembali teks baru (titik-titik yang tak dikenal dibiarkan). */
+function isiTitikKiri(teks, h, ctx) {
+  const src = String(teks || "");
+  const re = /\.{3,}|…/g;
+  let keluar = "";
+  let pos = 0;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    const sebelum = keluar + src.slice(pos, m.index);
+    const kanan = src.slice(m.index + m[0].length, m.index + m[0].length + 30);
+    let nilai = null;
+    for (const a of TITIK_KIRI) {
+      if (a.jenis && !a.jenis.includes(ctx.jenis)) continue;
+      if (!a.kiri.test(sebelum.slice(-90))) continue;
+      try {
+        nilai = a.isi({ h, kanan, ctx });
+      } catch (_galat) {
+        nilai = null;
+      }
+      if (nilai != null && String(nilai).trim() !== "") break;
+      nilai = null;
+    }
+    keluar = sebelum + (nilai == null ? m[0] : String(nilai));
+    pos = m.index + m[0].length;
+  }
+  return keluar + src.slice(pos);
+}
+
 const adaTanda = (t) => new RegExp(TANDA_BUKA).test(String(t || ""));
 
-module.exports = { substitusi, KODE, SLOT, adaTanda, almarhum, TANDA_BUKA, TANDA_TUTUP };
+module.exports = { isiTitikKiri, TITIK_KIRI, substitusi, KODE, SLOT, adaTanda, almarhum, TANDA_BUKA, TANDA_TUTUP };

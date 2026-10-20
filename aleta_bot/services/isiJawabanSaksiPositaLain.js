@@ -26,12 +26,21 @@ const potongBatas = (t, maks = 170) => {
   return p.slice(0, Math.max(p.lastIndexOf(","), p.lastIndexOf(" "))).trim();
 };
 
-const bersihNama = (t) =>
-  bersihNilai(t)
+const bersihNama = (t) => {
+  const bersih = bersihNilai(t)
     .replace(/\s*\((?:alm|almh|almarhum\w*)\.?\)\s*/gi, " ")
     .replace(/^(?:Almarhum(?:ah)?|Alm\.?|Almh\.?|bapak|ibu|Bapak|Ibu)\s+/i, "")
     .replace(/\s+/g, " ")
     .trim();
+  // pola dicocokkan tanpa membedakan huruf besar/kecil: nama berhenti di kata berhuruf kecil yang bukan bin/binti/alias
+  const kata = bersih.split(" ");
+  const keluar = [];
+  for (const k of kata) {
+    if (/^[a-z]/.test(k) && !/^(?:bin|binti|alias|van|der|de|al|el)$/i.test(k)) break;
+    keluar.push(k);
+  }
+  return keluar.join(" ");
+};
 
 /** Nama + "bin/binti" saja ("Fritdzilya Vensima binti Ferdyk F. Kindangen"), atau "" bila tidak ada. */
 function namaBinBinti(t) {
@@ -84,6 +93,9 @@ function perwalian(butir) {
     const nama = namaBinBinti(m[1].slice(0, 90));
     if (!nama) continue;
     hasil.push({ kunci: "anakNama", nilai: nama, yakin: "cukup", ket: "Dari kalimat 'ditetapkan sebagai wali anak ...' pada permohonan." });
+    // nama ayah kandung = nama setelah "bin/binti" pada nama anak (nasab)
+    const nasab = /\b(?:bin|binti)\s+(.+)$/i.exec(nama);
+    if (nasab && nasab[1].length > 2) hasil.push({ kunci: "ayahAnak", nilai: nasab[1].trim(), yakin: "cukup", ket: "Nama ayah dibaca dari 'bin/binti' pada nama anak." });
     const u = /(?:umur|usia|berumur|berusia)\s+(\d{1,2})\s*tahun/i.exec(m[1].slice(nama.length, nama.length + 60));
     if (u) hasil.push({ kunci: "anakUmur", nilai: u[1], yakin: "cukup" });
     break;
@@ -96,20 +108,28 @@ function perwalian(butir) {
     const orangTua = mati.peran === "ayah" ? "ayah kandung" : mati.peran === "ibu" ? "ibu kandung" : mati.peran === "suami" ? "ayah kandung" : anak;
     if (orangTua) hasil.push({ kunci: "orangTuaMeninggal", nilai: orangTua, yakin: mati.peran ? "cukup" : "ragu", ket: mati.peran ? "" : "Ayah atau ibu dipastikan dari 'bin/binti' pada nama yang meninggal; periksa." });
   }
+  // ibu kandung yang meninggal: "Almh. Mardiya binti Basri Ibu dari anak tersebut"
+  for (const b of butir) {
+    const m = new RegExp(`(?:Almh\\.?|Almarhumah)\\s+(${NAMA})\\s*(?:\\([^)]*\\)\\s*)?Ibu\\b`, "i").exec(b);
+    if (m) {
+      hasil.push({ kunci: "ibuAnak", nilai: bersihNama(m[1]), yakin: "cukup", ket: "Dari kalimat tentang ibu anak yang meninggal pada permohonan." });
+      break;
+    }
+  }
   // hubungan Pemohon dengan anak
   let hub = /\bPemohon\s+(?:adalah|merupakan|sebagai)\s+(Ibu\s+Kandung|Ayah\s+Kandung|Kakek|Nenek|Tante|Bibi|Paman|Om|Kakak\s+Kandung|Saudara\s+Kandung|Ibu|Ayah|Bapak)\b/i.exec(gabung);
   if (hub) hasil.push({ kunci: "hubunganPemohonAnak", nilai: hub[1].toLowerCase(), yakin: "cukup", ket: "Dari kalimat 'Pemohon adalah ... dari anak' pada permohonan." });
   else {
     hub = /\bPemohon\s*\(\s*(Ibu\s+Kandung|Ayah\s+Kandung|Ibu|Ayah)\s*\)/i.exec(gabung);
     if (hub) hasil.push({ kunci: "hubunganPemohonAnak", nilai: hub[1].toLowerCase(), yakin: "cukup" });
-    else if (/\b(?:suami|isteri|istri)\s+Pemohon\b[^;]{0,200}\banak\s+Pemohon\b/i.test(gabung) || /\banak\s+Pemohon\b[^;]{0,200}\b(?:suami|isteri|istri)\s+Pemohon\b/i.test(gabung)) {
+    else if (/\b(?:suami|isteri|istri)\s+Pemohon\b[\s\S]{0,500}\banak\s+Pemohon\b/i.test(gabung) || /\banak\s+Pemohon\b[\s\S]{0,500}\b(?:suami|isteri|istri)\s+Pemohon\b/i.test(gabung)) {
       const suami = /\bsuami\s+Pemohon\b/i.test(gabung);
       hasil.push({ kunci: "hubunganPemohonAnak", nilai: suami ? "ibu kandung" : "ayah kandung", yakin: "ragu", ket: `Disimpulkan dari 'anak Pemohon' dan '${suami ? "suami" : "isteri"} Pemohon' pada permohonan; periksa.` });
     }
   }
   // keperluan
   for (const b of butir) {
-    const m = /\b(?:Pemohon\s+)?(?:ingin|bermaksud|berniat|hendak|bertujuan|memerlukan)\s+((?:mengurus|mencairkan|mengambil|menarik|menjual|mengelola|mengajukan)\s+[^;]{5,260}?)(?:\s+maka\b|\s+sehingga\b|\s+oleh\s+karena\b|\s+dan\s+memerlukan\b|;|\.\s|$)/i.exec(b);
+    const m = /\b(?:Pemohon\s+)?(?:ingin|bermaksud|berniat|hendak|bertujuan|memerlukan)\s+((?:mengurus|mencairkan|mengambil|menarik|menjual|mengelola|mengajukan)\s+[^;]{5,260}?)(?:\s+maka\b|\s+sehingga\b|\s+oleh\s+karena\b|\s+dan\s+memerlukan\b|;|$)/i.exec(b);
     if (m) {
       hasil.push({ kunci: "tujuan", nilai: potongBatas(m[1]), yakin: "ragu", ket: "Dari kalimat tentang maksud Pemohon pada permohonan; bunyinya bebas, periksa." });
       break;
@@ -136,12 +156,25 @@ function waris(butir) {
       break;
     }
   }
-  for (const b of butir) {
+  for (let i = 0; i < butir.length; i += 1) {
+    const b = butir[i];
     const m = /\bsebanyak\s+(\d+|[a-z]+)\s*(?:\([^)]*\)\s*)?orang\s+anak|\b(?:memiliki|mempunyai|meninggalkan|dikaruniai|dikaruniakan|memperoleh\s+keturunan)\s+(\d+|[a-z]+)\s*(?:\([^)]*\)\s*)?orang\s+anak/i.exec(b);
     if (m) {
       const n = jumlahAnakDariTeks(`${m[1] || m[2]} orang anak`);
       if (n !== null) {
         hasil.push({ kunci: "jumlahAnakPewaris", nilai: String(n), yakin: "cukup" });
+        // nama-nama anak: baris berikutnya yang diawali "-", "1)" atau "a."
+        const nama = [];
+        for (let k = i + 1; k < butir.length && nama.length < 12; k += 1) {
+          const x = /^\s*(?:[-•*]|\d{1,2}[.)]|[a-z][.)])\s*(.+)$/i.exec(butir[k]);
+          if (!x) break;
+          let bersih = bersihNilai(x[1]).replace(/,\s*(bin|binti)\b/i, " $1").replace(/\b(bin|binti)\s*,\s*/i, "$1 ").replace(/\s*\([^)]*\)\s*$/, "");
+          if (!/^[A-Za-z]/.test(bersih)) break;
+          // "SADUDIN Bin M.Tang" -> "Sadudin bin M.Tang"
+          if (bersih === bersih.toUpperCase() || /\b(?:Bin|Binti)\b/.test(bersih)) bersih = bersih.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()).replace(/\b(Bin|Binti)\b/g, (c) => c.toLowerCase());
+          nama.push(bersih);
+        }
+        if (nama.length) hasil.push({ kunci: "anakPewaris", nilai: nama.join(", ").replace(/, ([^,]+)$/, " dan $1"), yakin: "cukup", ket: "Daftar nama anak yang tertulis di bawah kalimat jumlah anak pada posita." });
         break;
       }
     }
