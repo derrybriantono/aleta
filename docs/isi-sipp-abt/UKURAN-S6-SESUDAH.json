@@ -188,6 +188,18 @@
       "manual": 0
      }
     },
+    "8726": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 12
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
     "8894": {
      "nyata": {
       "otomatis": 0,
@@ -261,6 +273,18 @@
      }
     },
     "9134": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 12
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     }
+    },
+    "9170": {
      "nyata": {
       "otomatis": 0,
       "ragu": 0,
@@ -1358,8 +1382,8 @@
    "kode": {
     "1108": {
      "nyata": {
-      "otomatis": 0,
-      "ragu": 2,
+      "otomatis": 2,
+      "ragu": 0,
       "manual": 0
      },
      "fixture": {
@@ -3314,7 +3338,7 @@
   "367": {
    "nama": "Wakaf",
    "nyata": 0,
-   "fixture": 1,
+   "fixture": 3,
    "kode": {
     "7178": {
      "nyata": {
@@ -3325,7 +3349,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "8433": {
@@ -3337,7 +3361,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "8436": {
@@ -3349,7 +3373,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "8437": {
@@ -3361,7 +3385,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "8712": {
@@ -3373,7 +3397,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "8713": {
@@ -3385,7 +3409,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "8714": {
@@ -3397,7 +3421,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "8894": {
@@ -3409,7 +3433,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "8895": {
@@ -3421,7 +3445,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "8896": {
@@ -3433,7 +3457,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "9120": {
@@ -3445,7 +3469,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "9123": {
@@ -3457,7 +3481,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "9125": {
@@ -3469,7 +3493,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "9134": {
@@ -3481,7 +3505,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "9820": {
@@ -3492,7 +3516,7 @@
      },
      "fixture": {
       "otomatis": 0,
-      "ragu": 1,
+      "ragu": 3,
       "manual": 0
      }
     },
@@ -3504,7 +3528,7 @@
      },
      "fixture": {
       "otomatis": 0,
-      "ragu": 1,
+      "ragu": 3,
       "manual": 0
      }
     },
@@ -3528,7 +3552,7 @@
      },
      "fixture": {
       "otomatis": 1,
-      "ragu": 0,
+      "ragu": 1,
       "manual": 0
      }
     },
@@ -3540,7 +3564,7 @@
      },
      "fixture": {
       "otomatis": 0,
-      "ragu": 1,
+      "ragu": 3,
       "manual": 0
      }
     },
@@ -3552,7 +3576,7 @@
      },
      "fixture": {
       "otomatis": 0,
-      "ragu": 1,
+      "ragu": 3,
       "manual": 0
      }
     },
@@ -3565,7 +3589,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "9829": {
@@ -3577,7 +3601,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "9831": {
@@ -3589,7 +3613,43 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
+     }
+    },
+    "9832": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     }
+    },
+    "9833": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
+     }
+    },
+    "9836": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
      }
     },
     "9837": {
@@ -3601,7 +3661,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "9838": {
@@ -3613,7 +3673,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "9839": {
@@ -3625,7 +3685,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "9841": {
@@ -3636,7 +3696,7 @@
      },
      "fixture": {
       "otomatis": 0,
-      "ragu": 1,
+      "ragu": 2,
       "manual": 0
      }
     },
@@ -3649,7 +3709,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "0182": {
@@ -3661,7 +3721,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "0183": {
@@ -3673,7 +3733,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     },
     "0663": {
@@ -3685,7 +3745,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 3
      }
     }
    }
@@ -4420,7 +4480,7 @@
   "370": {
    "nama": "Ekonomi Syariah",
    "nyata": 2,
-   "fixture": 1,
+   "fixture": 2,
    "kode": {
     "7178": {
      "nyata": {
@@ -4431,7 +4491,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "8433": {
@@ -4443,7 +4503,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "8436": {
@@ -4455,7 +4515,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "8437": {
@@ -4467,7 +4527,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "8712": {
@@ -4479,7 +4539,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "8713": {
@@ -4491,7 +4551,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "8714": {
@@ -4503,7 +4563,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "8894": {
@@ -4515,7 +4575,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "8895": {
@@ -4527,7 +4587,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "8896": {
@@ -4539,7 +4599,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "9120": {
@@ -4551,7 +4611,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "9123": {
@@ -4563,7 +4623,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "9125": {
@@ -4575,7 +4635,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "9134": {
@@ -4587,7 +4647,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "9340": {
@@ -4597,7 +4657,7 @@
       "manual": 0
      },
      "fixture": {
-      "otomatis": 1,
+      "otomatis": 2,
       "ragu": 0,
       "manual": 0
      }
@@ -4610,7 +4670,7 @@
      },
      "fixture": {
       "otomatis": 0,
-      "ragu": 1,
+      "ragu": 2,
       "manual": 0
      }
     },
@@ -4622,7 +4682,7 @@
      },
      "fixture": {
       "otomatis": 0,
-      "ragu": 1,
+      "ragu": 2,
       "manual": 0
      }
     },
@@ -4635,7 +4695,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "9352": {
@@ -4683,7 +4743,19 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
+     }
+    },
+    "9490": {
+     "nyata": {
+      "otomatis": 0,
+      "ragu": 0,
+      "manual": 0
+     },
+     "fixture": {
+      "otomatis": 0,
+      "ragu": 1,
+      "manual": 0
      }
     },
     "9491": {
@@ -4695,7 +4767,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "9881": {
@@ -4707,7 +4779,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "0661": {
@@ -4731,7 +4803,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "0227": {
@@ -4755,7 +4827,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     },
     "0183": {
@@ -4767,7 +4839,7 @@
      "fixture": {
       "otomatis": 0,
       "ragu": 0,
-      "manual": 1
+      "manual": 2
      }
     }
    }

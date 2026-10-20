@@ -334,9 +334,6 @@
     cukup: Object.freeze({ kelas: "kuning", teks: "yakin: cukup" }),
     ragu: Object.freeze({ kelas: "abu", teks: "yakin: ragu — periksa" }),
   });
-  /** Isian yang tidak mungkin otomatis (S6): lencana "diisi manual"; `opsional` menambah "opsional - boleh kosong". */
-  const NADA_MANUAL = Object.freeze({ kelas: "abu", teks: "diisi manual" });
-  const NADA_OPSIONAL = Object.freeze({ kelas: "abu", teks: "opsional - boleh kosong" });
   const NADA_KESEPAKATAN = Object.freeze({
     sama: Object.freeze({ kelas: "hijau", teks: "kedua saksi sama" }),
     berbeda: Object.freeze({ kelas: "merah", teks: "saksi berbeda" }),
@@ -433,33 +430,7 @@
       const kode = teks(b.kode);
       const u = usulan.get(kode);
       if (!u) continue;
-      // Isian yang tidak mungkin otomatis (penilaian hakim, hasil sidang, surat yang tidak tercatat di SIPP): lencana
-      // "diisi manual" + alasan di ikon keterangan; `opsional` + `labelPengguna` bagi isian yang boleh dikosongkan.
-      if (u.manual === true || teks(u.keyakinan) === "tidak_ada_sumber") {
-        if (!terdeteksi(u) && teks(u.catatan).trim()) {
-          hasil.lewati.push({ kode, sebab: "diisi manual" });
-          const opsional = u.opsional === true;
-          const label = htmlKeTeks(teks(u.labelPengguna)).slice(0, 160);
-          hasil.info[kode] = {
-            kode,
-            nilai: "",
-            golongan: "manual",
-            sebab: "diisi manual",
-            keyakinan: "tidak_ada_sumber",
-            asal: "",
-            lencana: { yakin: NADA_MANUAL, asal: opsional ? NADA_OPSIONAL : null, sepakat: null },
-            sumber: [],
-            catatan: htmlKeTeks([opsional && label ? `Opsional: ${label}.` : "", teks(u.catatan)].filter(Boolean).join(" ")).slice(0, 500),
-            bentrok: "",
-            pilihan: [],
-            ganti: false,
-            opsional,
-            labelPengguna: label,
-          };
-        }
-        continue;
-      }
-      const periode =/(awal konflik|puncak|pisah rumah|sejak)/i.test(teks(b.nama)) && b.jenis === "teks";
+      const periode = /(awal konflik|puncak|pisah rumah|sejak)/i.test(teks(b.nama)) && b.jenis === "teks";
       const h = putuskan(u, { kosong: b.kosong !== false, bolehGanti: b.bolehGanti === true, jenis: b.jenis, opsi: b.opsi, keIso, periode, nama: b.nama });
       const butir = { kode, nilai: h.nilai, keyakinan: teks(u.keyakinan), asal: asalUsulan(u), ganti: h.ganti };
       if (h.golongan === "tulis") hasil.tulis.push(butir);
@@ -628,8 +599,6 @@
     KODE_PERIODE,
     ISIAN_PENDEK,
     NADA_TINGKAT,
-    NADA_MANUAL,
-    NADA_OPSIONAL,
     NADA_KESEPAKATAN,
     adaHtml,
     htmlKeTeks,

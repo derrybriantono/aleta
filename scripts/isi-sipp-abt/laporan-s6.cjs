@@ -148,6 +148,17 @@ J("- Angka dalam tabel: **sebelum → sesudah** pekerjaan S6.");
 J("- **otomatis** = pengisi memberi nilai pasti/cukup (ditulis sendiri hanya bila isian kosong dan saklar \"Isi otomatis\" menyala; tidak pernah menimpa isian petugas). **ragu** = saran (kotak samar, tombol Tab) dengan lencana \"yakin: ragu - periksa\", \"dari posita gugatan\" dan kalimat sumber. **manual** = tidak mungkin otomatis; lencana \"diisi manual\" dan alasan di ikon keterangan (ada yang `opsional` + `labelPengguna`). **belum** = celah: tidak ada pengisi dan tidak ada alasan. **dasar** = sudah ada pengisi lama yang membaca berkas e-Court, kuasa, KTP, bukti atau data ALETA - tidak dapat diukur ulang di laptop (data e-Court tidak ada di salinan lokal), dihitung apa adanya dari DAFTAR-CEK.json.");
 J("- **Kelas diukur**, bukan diklaim: otomatis/ragu/manual berarti pengisi BENAR-BENAR memberi hasil itu atas sekurang-kurangnya satu perkara nyata di salinan lokal SIPP (sipp_donggala, semua tahun) atau, bila jenis itu tidak punya perkara nyata (hibah, wakaf, mafqud), atas perkara contoh realistis (`scripts/isi-sipp-abt/fixture-s6.cjs`, ditandai).");
 J("");
+J("## Sambungan, pembagian dengan agen lain, dan batas");
+J("");
+J("- **Titik sambung (sempit)**: satu blok bertanda `S6 20 Okt` di akhir `dariSipp` (`aleta_bot/services/abtUsulanService.js`) memanggil `aleta_bot/services/isiOtomatisJenisS6.js`. `dariSipp` (sumber \"sipp\") SELALU diminta Blangko Derry untuk SEMUA kategori (putusan/penetapan, BAS tiap sidang, relaas, PTSP, sita), jadi satu sambungan menjangkau semuanya. Perkara di luar jenis S6 dijawab kosong sesudah SATU pembacaan kecil.");
+J("- **Berkas baru**: `aleta_bot/services/deteksi/isiS6.js` (pembaca posita/petitum murni), `aleta_bot/services/isiOtomatisJenisS6.js` (data terstruktur SIPP + tabel isian manual), `manajemen_surat/src/app/api/aleta-ecourt/blangko-derry/petunjuk-s6.ts` (salinan portal tabel manual/opsional; dua baris di `route.ts`), skrip ukur `scripts/isi-sipp-abt/{ukur-s6,laporan-s6,bangun-petunjuk-s6,fixture-s6}.cjs`.");
+J("- **Bentuk data manual/opsional**: pengisi mengirim usulan `keyakinan: \"tidak_ada_sumber\"` + `catatan` (alasan, bahasa petugas) dan, di sisi portal, `manual`/`alasanManual`/`opsional`/`labelPengguna` pada isian susunan blangko (`petunjuk-s6.ts`) - bentuk yang sama dengan agen S3 (`isian-metadata.ts`) dan S5 (`petunjuk-s5.ts`). Lencana \"diisi manual\" di kartu adalah milik tampilan bersama (agen S3 `infoManual`, agen S5 `kepingKet`); pengisi otomatis yang menemukan nilai selalu menang.");
+J("- **Tumpang tindih yang disengaja**: beberapa kode (0663, 8433, 8706, 8712-8714, 9134) juga ada di tabel S3/S5; isinya konsisten (manual bila tak ada sumber). 8706 (dasar putusnya perkawinan) kini dapat TERISI dari perkara cerai terdahulu pasangan yang sama di SIPP (cukup bila akta cerainya sudah terbit), sehingga bagi harta bersama/hak asuh ia bukan lagi manual.");
+J("- **Relaas bantuan panggilan** (1154 nomor surat, 1232 tanggal, 5230 ongkos): datanya ada di tabel delegasi keluar SIPP; pengisinya dikerjakan agen S3 (semua jenis) dan TIDAK diduplikasi di sini - di tabel relaas di bawah ketiganya masih \"belum\" sampai cabang S3 digabung. Begitu pula 1081 (PHS baru ikrar talak) milik S3.");
+J("- **Daftar bukti e-Court** hibah/wakaf/mafqud (9804/9805/9810/9834/9835/9840/9873): `buktiEcourtService.js` kini mengisi juga kode-kode itu dari daftar bukti P.n/T.n di e-Court (ragu); daftar kode di ekstensi (`isi-sipp-bersama.js`, `abt.js`) dan cermin portal (`isi-sipp-format.ts`) disamakan. Bergantung berkas e-Court, jadi tidak terukur di laptop.");
+J("- **Keyakinan**: pasti/cukup hanya untuk salinan eksplisit atau data terstruktur SIPP (rekonvensi, perkara cerai terdahulu + akta cerai, akad bernomor dan bertanggal, akta ikrar wakaf/hibah, duplikat akta nikah, kesepakatan damai Y1). Semua bacaan bebas dari posita/petitum \"ragu\": belum ada isian petugas untuk jenis-jenis ini sebagai pembanding (gerbang terukur >= 95% dan n >= 10 tidak dapat dipenuhi), jadi hanya menjadi saran dengan kalimat sumber.");
+J("- **Batas**: jumlah perkara nyata sangat kecil (lihat tabel), sehingga \"terukur\" berarti pengisi BENAR-BENAR menghasilkan nilai atas perkara itu, bukan bahwa nilainya sudah dibandingkan dengan ketikan petugas. Hibah dan wakaf diukur atas fixture; ketepatannya baru dapat dinilai begitu perkara pertama muncul.");
+J("");
 J("## Perkara nyata per jenis (salinan lokal)");
 J("");
 J("| jenis SIPP | perkara nyata | perkara contoh (fixture) |\n| --- | ---: | ---: |");
@@ -228,7 +239,7 @@ J("");
 J("## Ringkasan per kategori (gabungan semua jenis S6)");
 J("");
 J(KEPALA);
-for (const [kat, r] of Object.entries(ringkasanKategori)) J(baris(kat === "BAS" ? "BAS (tiap sidang)" : kat === "putusan/penetapan" ? "Putusan/penetapan" : kat, r.n, r.a, r.b));
+for (const [kat, r] of Object.entries(ringkasanKategori)) J(baris(kat === "BAS" ? "BAS (tiap sidang)" : kat === "putusan/penetapan" ? "Putusan/penetapan" : { relaas: "Relaas", ptsp: "PTSP (termasuk mediator)", sita: "Sita" }[kat] || kat, r.n, r.a, r.b));
 J("");
 J("(Jumlah per kategori menjumlah isian per keluarga blangko; satu isian yang dipakai beberapa jenis dihitung per jenis.)");
 J("");
@@ -268,8 +279,8 @@ for (const [kode, m] of Object.entries(S6.MANUAL)) {
   const t = `${kode} ${nama.slice(0, 50)}`;
   if (m.opsional) kelompok["opsional (boleh kosong)"].push(t);
   else if (/e-Court/i.test(a)) kelompok["bacaan utama berkas e-Court"].push(t);
-  else if (/penilaian|pertimbangan|diputus/i.test(a)) kelompok["penilaian/pertimbangan hakim"].push(t);
-  else if (/sidang|persidangan|pemeriksaan setempat|diketik/i.test(a)) kelompok["fakta/keterangan di persidangan"].push(t);
+  else if (/penilaian|pertimbangan|diputus|alasan hakim/i.test(a)) kelompok["penilaian/pertimbangan hakim"].push(t);
+  else if (/sidang|persidangan|pemeriksaan setempat|diketik|dicatat panitera|lokasi/i.test(a)) kelompok["fakta/keterangan di persidangan"].push(t);
   else kelompok["surat/izin yang tidak tercatat terstruktur di SIPP"].push(t);
 }
 for (const [sebab, isi] of Object.entries(kelompok)) {

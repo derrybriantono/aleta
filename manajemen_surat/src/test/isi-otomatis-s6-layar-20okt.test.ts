@@ -10,7 +10,8 @@
  *   A  usulan cukup/pasti dari SIPP ditulis ke ABT bila isian KOSONG lewat jalur simpan yang sama dengan ketikan;
  *   B  usulan ragu hanya menjadi saran samar (tidak ditulis) dengan lencana "yakin: ragu - periksa" dan "dari posita gugatan";
  *   C  isian yang sudah ada isinya di ABT TIDAK ditimpa;
- *   D  isian yang memang manual: lencana "diisi manual", alasan di ikon keterangan, opsional diberi tanda, dan tidak ada tulisan ke ABT;
+ *   D  isian yang memang manual (usulan 'tidak_ada_sumber') tidak pernah ditulis atau disarankan; tampilan lencana "diisi manual" milik UI bersama
+ *      (agen S3/S5) dan diberi data lewat petunjuk-s6.ts + usulan tidak_ada_sumber;
  *   E  saklar "Isi otomatis" mati: tidak ada yang ditulis sendiri.
  */
 import { readFileSync } from "node:fs";
@@ -75,11 +76,9 @@ const KATALOG = new Map<string, Definisi>([
   D("9283", "HARTA BERSAMA REKONVENSI: OBJEK YANG DIGUGAT DALAM REKONVENSI (salin dari jawaban; satu objek per baris)", "data_teks"),
   D("9165", "PEMERIKSAAN SETEMPAT: LETAK OBJEK SENGKETA YANG DIPERIKSA (desa/kelurahan, kecamatan, kabupaten)", "data_teks"),
   D("8712", "CORET: NOMOR DAN TANGGAL SURAT TEGURAN PANITERA untuk menambah panjar (contoh: Nomor 123/PAN.PA/IX/2026 tanggal 1 September 2026)", "data_teks"),
-  D("1154", "Nomor surat permintaan bantuan panggilan", "data_teks"),
-  D("5230", "Ongkos panggilan permintaan bantuan", "data_teks"),
   D("9682", "Eksepsi kewenangan dikabulkan - fakta/alasan perkara di luar kewenangan (isian: satu kalimat tanpa titik akhir)", "data_teks"),
 ]);
-const PENANDA_PUT = ["0001", "0046", "0033", "8706", "1108", "9283", "9165", "8712", "1154", "5230", "9682"];
+const PENANDA_PUT = ["0001", "0046", "0033", "8706", "1108", "9283", "9165", "8712", "9682"];
 const PENANDA_BAS = ["0001", "0033", "0050", "0007", "1006", "8503"];
 const PENANDA_REL = ["0001", "0046", "9101", "1006"];
 const PENANDA_OLEH = (berkas: string, indeks: number) => (berkas.startsWith("[01]") ? PENANDA_PUT : berkas.startsWith("[JS]") ? PENANDA_REL : indeks >= 0 ? PENANDA_BAS : PENANDA_BAS);
@@ -328,11 +327,10 @@ const nilaiKotak = (h: Halaman, kode: string) => (q(h, `#bd-i${kode}`) as HTMLIn
 // Usulan dari pengisi S6 sungguhan
 // ----------------------------------------------------------------------------
 const req_ = createRequire(path.join(AKAR, "aleta_bot", "package.json"));
-const J6 = req_(path.join(AKAR, "aleta_bot", "services", "isiOtomatisJenisS6.js")) as { usulanDariKonteks: (k: Record<string, unknown>) => Usulan[]; usulanBantuanPanggilan: (b: unknown[]) => Usulan[] };
+const J6 = req_(path.join(AKAR, "aleta_bot", "services", "isiOtomatisJenisS6.js")) as { usulanDariKonteks: (k: Record<string, unknown>) => Usulan[] };
 const POSITA_HB =
   "Bahwa Penggugat dan Tergugat menikah pada 27 Agustus 2014 sebagaimana tercatat dalam Duplikat Kutipan Akta Nikah Nomor: 365/Kua.22.10.04/PW.01/07/2025 tanggal 4 Februari 2020.";
-const BANTUAN = J6.usulanBantuanPanggilan([{ nomor: "62/PAN.PA.W19-A5/HK.2.6/XII/2024", tgl: "2024-12-11", biaya: "1280000", jenis: "Panggilan Sidang", tujuan: "PENGADILAN AGAMA PALU" }]);
-const USULAN_S6 = [...BANTUAN, ...J6.usulanDariKonteks({
+const USULAN_S6 = [...J6.usulanDariKonteks({
   jenisPerkaraId: 348,
   posita: POSITA_HB,
   petitum: "",
@@ -344,12 +342,13 @@ const USULAN_S6 = [...BANTUAN, ...J6.usulanDariKonteks({
 })];
 const kartu = (h: Halaman, kode: string) => q(h, `.bd-f[data-f="${kode}"]`) as HTMLElement;
 const ketKartu = (h: Halaman, kode: string) => (kartu(h, kode)?.textContent || "") + " " + Array.from(kartu(h, kode)?.querySelectorAll("[title]") || []).map((e) => e.getAttribute("title")).join(" ");
+void ketKartu;
 
 describe("A-D. pengisi S6 sampai ke kartu isian", () => {
   it("fixture usulan S6 memuat cukup, pasti, ragu, dan manual untuk kode-kode yang diuji", () => {
     const oleh = new Map(USULAN_S6.map((u) => [String(u.kode), u]));
-    expect(oleh.get("1154")?.keyakinan).toBe("pasti");
     expect(oleh.get("1108")?.keyakinan).toBe("cukup");
+    expect((oleh.get("1108")?.sumber as Array<{ asal: string }>)[0].asal).toBe("posita-gugatan");
     expect(oleh.get("8706")?.keyakinan).toBe("ragu");
     expect(oleh.get("9283")?.keyakinan).toBe("ragu");
     expect(oleh.get("9165")?.keyakinan).toBe("tidak_ada_sumber");
@@ -362,8 +361,6 @@ describe("A-D. pengisi S6 sampai ke kartu isian", () => {
     await sampaiPerkara(h);
     await pilih(h, BLANGKO_PUT);
     await sampai(() => h.abt["1108"] === "365/Kua.22.10.04/PW.01/07/2025", "1108 (cukup) tersimpan di ABT");
-    await sampai(() => h.abt["1154"] === "62/PAN.PA.W19-A5/HK.2.6/XII/2024", "1154 (pasti, dari tab Delegasi SIPP) tersimpan di ABT");
-    await sampai(() => h.abt["5230"] === "Rp1.280.000,00 (satu juta dua ratus delapan puluh ribu rupiah)", "5230 (pasti) tersimpan di ABT");
     // ragu: hanya saran samar
     const ragu = (await sampai(() => {
       const i = q(h, "#bd-i8706") as HTMLInputElement | HTMLTextAreaElement | null;
@@ -382,17 +379,16 @@ describe("A-D. pengisi S6 sampai ke kartu isian", () => {
     for (const m of h.minta.filter((x) => x.cara === "POST" && /edit_data\?/.test(x.url))) expect(`${m.url} ${m.badan}`).not.toMatch(/aleta/i);
   });
 
-  it("isian manual: lencana 'diisi manual' dan alasan di ikon keterangan, tanpa tulisan ke ABT; opsional diberi tanda", async () => {
+  it("isian manual (penilaian hakim, hasil sidang, surat yang tidak tercatat): tidak ada yang ditulis atau disarankan ke ABT", async () => {
     const h = buka({ usulan: USULAN_S6 });
     await sampaiPerkara(h);
     await pilih(h, BLANGKO_PUT);
-    await sampai(() => (kartu(h, "9682")?.textContent || "").includes("diisi manual"), "lencana manual 9682");
-    expect(kartu(h, "9682").textContent).toContain("diisi manual");
-    expect(ketKartu(h, "9682")).toMatch(/Alasan hakim bahwa perkara di luar kewenangan/);
-    await sampai(() => (kartu(h, "8712")?.textContent || "").includes("opsional"), "tanda opsional 8712");
-    expect(ketKartu(h, "8712")).toMatch(/Opsional: Surat teguran panjar/);
-    expect(h.abt["9682"]).toBeUndefined();
-    expect(h.abt["8712"]).toBeUndefined();
+    await sampai(() => h.abt["1108"] === "365/Kua.22.10.04/PW.01/07/2025", "isian cukup tersimpan (bukti layar sudah jalan)");
+    for (const kode of ["9682", "8712", "9165"]) {
+      expect(h.abt[kode], kode).toBeUndefined();
+      expect(nilaiKotak(h, kode), kode).toBe("");
+      expect(((q(h, `#bd-i${kode}`) as HTMLInputElement | null)?.placeholder || "").replace("ketik di sini", ""), kode).toBe("");
+    }
     expect(mintaKe(h, /edit_data\?no_var=(9682|8712|9165)/, "POST")).toEqual([]);
   });
 
@@ -401,7 +397,7 @@ describe("A-D. pengisi S6 sampai ke kartu isian", () => {
     await sampaiPerkara(h);
     await pilih(h, BLANGKO_PUT);
     await tunggu(150);
-    expect(mintaKe(h, /edit_data\?no_var=(1108|1154|8706|9283)/, "POST")).toEqual([]);
+    expect(mintaKe(h, /edit_data\?no_var=(1108|8706|9283)/, "POST")).toEqual([]);
     expect(h.abt["1108"]).toBeUndefined();
   });
 });

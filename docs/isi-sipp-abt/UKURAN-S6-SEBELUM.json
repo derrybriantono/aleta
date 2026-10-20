@@ -973,7 +973,7 @@
   "367": {
    "nama": "Wakaf",
    "nyata": 0,
-   "fixture": 1,
+   "fixture": 3,
    "kode": {}
   },
   "369": {
@@ -1238,7 +1238,7 @@
   "370": {
    "nama": "Ekonomi Syariah",
    "nyata": 2,
-   "fixture": 1,
+   "fixture": 2,
    "kode": {
     "0661": {
      "nyata": {

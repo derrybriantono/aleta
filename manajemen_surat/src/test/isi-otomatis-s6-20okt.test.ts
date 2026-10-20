@@ -23,6 +23,9 @@ import vm from "node:vm";
 
 import { describe, expect, it } from "vitest";
 
+import { PETUNJUK_ISIAN_S6, terapkanPetunjukS6 } from "@/app/api/aleta-ecourt/blangko-derry/petunjuk-s6";
+import { susunIsian, type Definisi } from "@/app/api/aleta-ecourt/blangko-derry/susun";
+
 type Fakta = { nilai: string; kalimat: string; yakin: string; kodePola: string; asal: string; catatan: string };
 type Usulan = {
   kode: string;
@@ -421,44 +424,11 @@ describe("C. pembacaan SIPP (pembaca tiruan)", () => {
     };
   }
 
-  it("perkara di luar S6 (mis. cerai): hanya dua pembacaan kecil (jenis perkara dan bantuan panggilan), hasil kosong", async () => {
+  it("perkara di luar S6 (mis. cerai): HANYA satu pembacaan kecil, hasil kosong (tidak membebani panel perkara lain)", async () => {
     const catat: string[] = [];
     const q = pembaca({ "FROM perkara p WHERE": [{ ...BARIS_HB, jenis: "347" }] }, catat);
     expect(await J6.usulanJenisS6(10, q)).toEqual([]);
-    expect(catat).toHaveLength(2);
-    expect(catat.some((c) => /delegasi_keluar/.test(c))).toBe(true);
-  });
-
-  it("bantuan panggilan (relaas lintas jenis): nomor surat, tanggal dan ongkos dari delegasi keluar SIPP - untuk jenis APA PUN", async () => {
-    const q = pembaca({
-      "FROM perkara p WHERE": [{ ...BARIS_HB, jenis: "347" }],
-      delegasi_keluar: [{ nomor: "62/PAN.PA.W19-A5/HK.2.6/XII/2024", tgl: "2024-12-11", biaya: "1280000.00", jenis: "Panggilan Sidang", tujuan: "PENGADILAN AGAMA PALU" }],
-    });
-    const u = await J6.usulanJenisS6(10, q);
-    const oleh = new Map(u.map((x) => [x.kode, x]));
-    expect(oleh.get("1154")?.nilai).toBe("62/PAN.PA.W19-A5/HK.2.6/XII/2024");
-    expect(oleh.get("1154")?.keyakinan).toBe("pasti");
-    expect(oleh.get("1232")?.nilai).toBe("11/12/2024");
-    expect(oleh.get("5230")?.nilai).toBe("Rp1.280.000,00 (satu juta dua ratus delapan puluh ribu rupiah)");
-    expect(oleh.get("1154")?.sumber[0].asal).toBe("sipp");
-    // lebih dari satu permintaan = ragu; delegasi bukan panggilan (pemberitahuan putusan) tidak dipakai
-    const dua = await J6.usulanJenisS6(
-      10,
-      pembaca({
-        "FROM perkara p WHERE": [{ ...BARIS_HB, jenis: "347" }],
-        delegasi_keluar: [
-          { nomor: "2/X", tgl: "2024-12-12", biaya: "100000", jenis: "Panggilan Sidang", tujuan: "PA PALU" },
-          { nomor: "1/X", tgl: "2024-11-01", biaya: "200000", jenis: "Panggilan Sidang", tujuan: "PA POSO" },
-        ],
-      })
-    );
-    expect(dua.find((x) => x.kode === "1154")?.keyakinan).toBe("ragu");
-    expect(dua.find((x) => x.kode === "1154")?.nilai).toBe("2/X");
-    const bukanPanggilan = await J6.usulanJenisS6(10, pembaca({ "FROM perkara p WHERE": [{ ...BARIS_HB, jenis: "347" }], delegasi_keluar: [{ nomor: "9/X", tgl: "2024-12-12", biaya: "100000", jenis: "Pemberitahuan Putusan", tujuan: "PA PALU" }] }));
-    expect(bukanPanggilan).toEqual([]);
-    // nomor "-" dan biaya kosong tidak menghasilkan nilai
-    const kosong = await J6.usulanJenisS6(10, pembaca({ "FROM perkara p WHERE": [{ ...BARIS_HB, jenis: "347" }], delegasi_keluar: [{ nomor: "-", tgl: "", biaya: "0.00", jenis: "Panggilan Sidang", tujuan: "" }] }));
-    expect(kosong).toEqual([]);
+    expect(catat).toHaveLength(1);
   });
 
   it("harta bersama: konteks lengkap -> usulan dari semua sumber, termasuk perkara cerai terdahulu", async () => {
@@ -518,39 +488,35 @@ describe("C. pembacaan SIPP (pembaca tiruan)", () => {
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
-describe("D. mesin ekstensi: tulis hanya yang pasti/cukup dan kosong, ragu = saran, manual = lencana + alasan", () => {
+describe("D. mesin ekstensi: tulis hanya yang pasti/cukup dan kosong, ragu = saran, tidak menimpa", () => {
   const katalog = (kode: string, kosong = true, jenis = "teks") => ({ kode, nama: `isian ${kode}`, jenis, kosong });
 
-  it("cukup+kosong ditulis; ragu menjadi saran; manual mendapat lencana 'diisi manual' dan alasan di keterangan", () => {
+  it("cukup+kosong ditulis; ragu menjadi saran dengan lencana ragu + 'dari posita gugatan'; manual tidak ditulis", () => {
     const usulan = J6.usulanDariKonteks({ jenisPerkaraId: 370, posita: ES_POSITA, petitum: ES_PETITUM, ...KONTEKS_DASAR });
     const peta = MESIN.pilihPerKode([usulan]);
     const r = MESIN.rencanakan(peta, ["9340", "9341", "9345", "9346", "8712"].map((k) => katalog(k)), keIso, [usulan]);
     expect(r.tulis.map((x) => x.kode)).toEqual(["9340"]);
     expect(r.saran.map((x) => x.kode).sort()).toEqual(["9341", "9345"]);
-    expect(r.info["9346"].golongan).toBe("manual");
-    expect(r.info["9346"].lencana.yakin?.teks).toBe("diisi manual");
-    expect(r.info["9346"].catatan).toMatch(/bukan data perkara/);
-    expect(r.info["9346"].sumber).toEqual([]);
-    expect(r.info["8712"].opsional).toBe(true);
-    expect(r.info["8712"].lencana.asal?.teks).toMatch(/opsional/);
-    expect(r.info["8712"].catatan).toMatch(/^Opsional: Surat teguran panjar/);
+    expect(r.tulis.concat(r.saran).some((x) => x.kode === "9346" || x.kode === "8712")).toBe(false);
     expect(r.info["9340"].lencana.yakin?.teks).toBe("yakin: cukup");
     expect(r.info["9341"].lencana.yakin?.teks).toBe("yakin: ragu — periksa");
     expect(r.info["9341"].lencana.asal?.teks).toBe("dari posita gugatan");
+    expect(r.info["9341"].catatan).toMatch(/DIGUGAT/);
+    expect(r.info["9341"].sumber).toHaveLength(1);
   });
 
-  it("isian yang sudah diketik petugas TIDAK ditimpa (cukup maupun ragu), manual tidak mengubah apa pun", () => {
+  it("isian yang sudah diketik petugas TIDAK ditimpa (cukup maupun ragu)", () => {
     const usulan = J6.usulanDariKonteks({ jenisPerkaraId: 370, posita: ES_POSITA, petitum: ES_PETITUM, ...KONTEKS_DASAR });
     const peta = MESIN.pilihPerKode([usulan]);
     const r = MESIN.rencanakan(peta, ["9340", "9341", "9346"].map((k) => katalog(k, false)), keIso, [usulan]);
     expect(r.tulis).toEqual([]);
     expect(r.saran).toEqual([]);
     expect(r.lewati.find((x) => x.kode === "9340")?.sebab).toBe("sudah ada isinya");
-    expect(r.lewati.find((x) => x.kode === "9346")?.sebab).toBe("diisi manual");
   });
 
-  it("usulan e-Court yang bernilai menggantikan entri manual untuk kode yang sama", () => {
+  it("usulan e-Court yang bernilai menggantikan entri manual (cadangan) untuk kode yang sama", () => {
     const manual = J6.usulanDariKonteks({ jenisPerkaraId: 348, posita: "", petitum: "", ...KONTEKS_DASAR });
+    expect(manual.find((x) => x.kode === "8436")?.keyakinan).toBe("tidak_ada_sumber");
     const ecourt: Usulan[] = [{ kode: "8436", nama: "Kesimpulan", nilai: "tetap pada gugatan", keyakinan: "ragu", sumber: [{ asal: "gugatan-ecourt", kalimat: "e-Court" }], catatan: "" }];
     const peta = MESIN.pilihPerKode([manual, ecourt]);
     expect(peta.get("8436")?.nilai).toBe("tetap pada gugatan");
@@ -559,11 +525,14 @@ describe("D. mesin ekstensi: tulis hanya yang pasti/cukup dan kosong, ragu = sar
     expect(r.info["8436"].golongan).toBe("saran");
   });
 
-  it("entri manual tanpa catatan tidak membuat lencana kosong, dan tidak ada nilai yang ditulis", () => {
-    const peta = MESIN.pilihPerKode([[{ kode: "9999", nama: "x", nilai: "", keyakinan: "tidak_ada_sumber", sumber: [], catatan: "" }]]);
-    const r = MESIN.rencanakan(peta, [katalog("9999")], keIso, []);
-    expect(r.info["9999"]).toBeUndefined();
+  it("entri manual tidak pernah menjadi tulisan atau saran, walau isiannya kosong", () => {
+    const usulan = J6.usulanDariKonteks({ jenisPerkaraId: 366, posita: "", petitum: "", ...KONTEKS_DASAR });
+    const manual = usulan.filter((x) => x.manual);
+    expect(manual.length).toBeGreaterThan(10);
+    const peta = MESIN.pilihPerKode([usulan]);
+    const r = MESIN.rencanakan(peta, manual.map((x) => katalog(x.kode)), keIso, [usulan]);
     expect(r.tulis).toEqual([]);
+    expect(r.saran).toEqual([]);
   });
 
   it("tanggal damai ES (dd/mm/yyyy) terbaca sebagai tanggal sah; tulis hanya bila cukup", () => {
@@ -584,5 +553,41 @@ describe("E. cakupan: tiap jenis S6 mempunyai entri manual dan daftar jenisnya k
       expect(m.alasan, kode).not.toMatch(/aleta/i);
       if (m.opsional) expect(m.labelPengguna || m.alasan, kode).toBeTruthy();
     }
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+describe("F. petunjuk portal: 'diisi manual' + alasan dan opsional + labelPengguna di susunan blangko", () => {
+  it("petunjuk-s6.ts sama dengan tabel MANUAL bot (kecuali yang bacaan utamanya e-Court)", () => {
+    const harapan = Object.entries(J6.MANUAL).filter(([, m]) => !(m as { ecourt?: boolean }).ecourt);
+    expect(Object.keys(PETUNJUK_ISIAN_S6).sort()).toEqual(harapan.map(([k]) => k).sort());
+    for (const [kode, m] of harapan) {
+      const p = PETUNJUK_ISIAN_S6[kode];
+      expect(p.manual, kode).toBe(true);
+      expect(p.alasan, kode).toBe(m.alasan);
+      expect(p.opsional === true, kode).toBe(m.opsional === true);
+      if (m.opsional) expect(p.labelPengguna, kode).toBe(m.labelPengguna || m.alasan);
+    }
+    for (const kode of ["8436", "8437", "9881", "9681", "9355", "9491", "8621"]) expect(PETUNJUK_ISIAN_S6[kode], kode).toBeUndefined();
+  });
+
+  it("terapkanPetunjukS6 menempel pada isian susunan: manual + alasanManual, opsional + labelPengguna; yang sudah ada tidak ditimpa", () => {
+    const D = (kode: string, nama: string): [string, Definisi] => [kode, { kode, nama, jenis: "data_teks", sql: "", bawaan: "" }];
+    const katalog = new Map<string, Definisi>([
+      D("9798", "Fakta pokok tuntutan yang terbukti (uraian singkat dari bukti dan saksi)"),
+      D("8712", "CORET: NOMOR DAN TANGGAL SURAT TEGURAN PANITERA untuk menambah panjar"),
+      D("9793", "HIBAH: PENGHIBAH - ISIAN (nama lengkap bin/binti ...)"),
+    ]);
+    const susunan = susunIsian(["9798", "8712", "9793"], katalog, { P: "Penggugat", T: "Tergugat", gugatan: "gugatan" });
+    (susunan.isian.find((b) => b.kode === "9798") as unknown as Record<string, unknown>).alasanManual = "alasan dari tempat lain";
+    terapkanPetunjukS6(susunan);
+    const oleh = new Map(susunan.isian.map((b) => [b.kode, b as unknown as Record<string, unknown>]));
+    expect(oleh.get("9798")?.manual).toBe(true);
+    expect(oleh.get("9798")?.alasanManual).toBe("alasan dari tempat lain");
+    expect(oleh.get("8712")?.manual).toBe(true);
+    expect(oleh.get("8712")?.opsional).toBe(true);
+    expect(oleh.get("8712")?.labelPengguna).toMatch(/panjar/);
+    // isian yang bisa otomatis (penghibah) tidak ditandai manual
+    expect(oleh.get("9793")?.manual).toBeUndefined();
   });
 });
