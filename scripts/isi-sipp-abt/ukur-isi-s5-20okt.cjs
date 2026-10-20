@@ -58,8 +58,10 @@ const infoIsian = new Map(daftarCek.isian.map((x) => [x.kunci, x]));
 
 /** METADATA (manual/opsional) dari modul S5 di repo yang diukur; kosong bila belum ada ("sebelum"). */
 let metadata = {};
+let S5mod = null;
 try {
-  metadata = require(path.join(akar, "aleta_bot", "services", "isiOtomatisJenisS5.js")).METADATA || {};
+  S5mod = require(path.join(akar, "aleta_bot", "services", "isiOtomatisJenisS5.js"));
+  metadata = S5mod.METADATA || {};
 } catch {
   /* belum ada: ukuran "sebelum" */
 }
@@ -160,6 +162,7 @@ const { kumpulUsulan } = require("./rantai-usulan-s5.cjs")(akar);
     }
     const semuaKode = new Set(Object.values(wajibKat).flatMap((s) => [...s]));
     const sumber = await kumpulUsulan(b);
+    const dataS5 = S5mod ? await S5mod.bacaData(b.perkara_id, q) : null;
     const pilih = mesin.pilihPerKode(sumber, semuaKode);
     const kelasKode = new Map();
     for (const k of semuaKode) {
@@ -176,7 +179,8 @@ const { kumpulUsulan } = require("./rantai-usulan-s5.cjs")(akar);
       }
       if (!kelas) {
         const meta = metadata[k] || null;
-        if (KODE_ECOURT.has(k)) kelas = "ecourt";
+        if (S5mod && dataS5 && !S5mod.berlaku(k, dataS5)) kelas = "bersyarat";
+        else if (KODE_ECOURT.has(k)) kelas = "ecourt";
         else if (meta && meta.opsional) kelas = "opsional";
         else if (meta && meta.manual) kelas = "manual";
         else kelas = "kosong";
@@ -191,13 +195,13 @@ const { kumpulUsulan } = require("./rantai-usulan-s5.cjs")(akar);
       const r = (rJ.kategori[kat] = rJ.kategori[kat] || { kode: {} });
       for (const k of wajib) {
         const { kelas, alasan } = kelasKode.get(k);
-        const c = (r.kode[k] = r.kode[k] || { otomatis: 0, ragu: 0, ecourt: 0, manual: 0, opsional: 0, kosong: 0, alasanLewat: {} });
+        const c = (r.kode[k] = r.kode[k] || { otomatis: 0, ragu: 0, ecourt: 0, manual: 0, opsional: 0, kosong: 0, bersyarat: 0, alasanLewat: {} });
         c[kelas]++;
         if (alasan) c.alasanLewat[alasan] = (c.alasanLewat[alasan] || 0) + 1;
       }
     }
   }
-  const NOL = () => ({ otomatis: 0, ragu: 0, ecourt: 0, manual: 0, opsional: 0, kosong: 0 });
+  const NOL = () => ({ otomatis: 0, ragu: 0, ecourt: 0, manual: 0, opsional: 0, kosong: 0, bersyarat: 0 });
   const ringkas = {};
   const total = {};
   for (const [kj, rJ] of Object.entries(perJenis)) {
@@ -205,16 +209,16 @@ const { kumpulUsulan } = require("./rantai-usulan-s5.cjs")(akar);
     for (const [kat, r] of Object.entries(rJ.kategori)) {
       const tot = NOL();
       for (const c of Object.values(r.kode)) for (const k of Object.keys(tot)) tot[k] += c[k];
-      const jumlah = Object.values(tot).reduce((x, y) => x + y, 0) || 1;
-      ringkas[kj].kategori[kat] = { isian: Object.keys(r.kode).length, sel: jumlah, ...Object.fromEntries(Object.entries(tot).map(([k, v]) => [k, Math.round((v / jumlah) * 1000) / 10])) };
+      const jumlah = Object.entries(tot).reduce((x, [k, y]) => (k === "bersyarat" ? x : x + y), 0) || 1;
+      ringkas[kj].kategori[kat] = { isian: Object.keys(r.kode).length, sel: jumlah, bersyaratSel: tot.bersyarat, ...Object.fromEntries(Object.entries(tot).filter(([k]) => k !== "bersyarat").map(([k, v]) => [k, Math.round((v / jumlah) * 1000) / 10])) };
       const T = (total[kat] = total[kat] || NOL());
       for (const k of Object.keys(tot)) T[k] += tot[k];
     }
   }
   const ringkasTotal = {};
   for (const [kat, t] of Object.entries(total)) {
-    const jumlah = Object.values(t).reduce((x, y) => x + y, 0) || 1;
-    ringkasTotal[kat] = { sel: jumlah, ...Object.fromEntries(Object.entries(t).map(([k, v]) => [k, Math.round((v / jumlah) * 1000) / 10])) };
+    const jumlah = Object.entries(t).reduce((x, [k, y]) => (k === "bersyarat" ? x : x + y), 0) || 1;
+    ringkasTotal[kat] = { sel: jumlah, bersyaratSel: t.bersyarat, ...Object.fromEntries(Object.entries(t).filter(([k]) => k !== "bersyarat").map(([k, v]) => [k, Math.round((v / jumlah) * 1000) / 10])) };
   }
   const out = { diukur: new Date().toISOString().slice(0, 10), dari, akar, ringkas, total: ringkasTotal, jenis: perJenis };
   if (keluar) fs.writeFileSync(keluar, JSON.stringify(out, null, 1));
@@ -224,8 +228,8 @@ const { kumpulUsulan } = require("./rantai-usulan-s5.cjs")(akar);
       for (const [kat, r] of Object.entries(rJ.kategori)) {
         console.log(`\n== ${rJ.nama} / ${kat} (perkara ${rJ.perkara})`);
         for (const [k, c] of Object.entries(r.kode)) {
-          const n = c.otomatis + c.ragu + c.ecourt + c.manual + c.opsional + c.kosong;
-          console.log(`${k} ${(infoIsian.get(k) || {}).nama?.slice(0, 48) || ""} | oto ${c.otomatis} ragu ${c.ragu} eco ${c.ecourt} man ${c.manual} ops ${c.opsional} kosong ${c.kosong} /${n}`);
+          const n = c.otomatis + c.ragu + c.ecourt + c.manual + c.opsional + c.kosong + c.bersyarat;
+          console.log(`${k} ${(infoIsian.get(k) || {}).nama?.slice(0, 48) || ""} | oto ${c.otomatis} ragu ${c.ragu} eco ${c.ecourt} man ${c.manual} ops ${c.opsional} syarat-tdk-berlaku ${c.bersyarat} kosong ${c.kosong} /${n}`);
         }
       }
     }

@@ -218,8 +218,23 @@ function golongkan({ petitum, posita, pewaris, pihak1 }) {
     else if (x.ayah && u.ayah && menunjuk(x.ayah, u.ayah)) hasil.saudara.push(n);
     else hasil.sisa.push(n);
   }
+  // Pemohon tunggal menyatakan hubungannya sendiri: "Pemohon adalah Ayah kandung dari pewaris".
+  if (!butir.length && Array.isArray(pihak1) && pihak1.length === 1) {
+    const h = /\bPemohon\s+adalah\s+(ayah|bapak|ibu|isteri|istri|suami|anak)\s+(?:kandung\s+)?(?:dari\s+)?(?:pewaris|almarhum|alm)/i.exec(B.polos(posita));
+    const g = h ? golonganDariKata(h[1]) : "";
+    const nama = B.rapikanNama(pihak1[0].nama);
+    if (g && hasil[g] && nama) {
+      hasil[g].push(nama);
+      hasil.semua.push(nama);
+    }
+  }
   // Satu orang tersisa dan posita menyebut isteri/suami (tanpa ibu/ayah/saudara): itulah pasangannya.
   const gol = golonganPosita(posita);
+  // Posita menyebut jumlah anak yang SAMA dengan banyaknya ahli waris tersisa (dan tidak ada golongan lain): semuanya anak
+  // (pewaris perempuan: anak memakai nama suaminya, tidak dapat dikenali dari nama).
+  if (hasil.sisa.length && gol && gol.anak > 0 && hasil.sisa.length === gol.anak - hasil.anak.length && !gol.pasangan && !gol.ibu && !gol.ayah && !gol.saudara) {
+    hasil.anak.push(...hasil.sisa.splice(0));
+  }
   if (hasil.sisa.length === 1 && !hasil.pasangan.length && gol && gol.pasangan && !gol.ibu && !gol.ayah && !gol.saudara) hasil.pasangan.push(hasil.sisa.pop());
   return hasil;
 }

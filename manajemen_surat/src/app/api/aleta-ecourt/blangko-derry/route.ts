@@ -13,6 +13,7 @@ import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
 
 import { jenisDokumenAkun, jenisFolderDariJalur, jenisFolderDerry, kodeTanyaJawab, kodeUntukNilai, statusNilaiLayar, susunIsian, type Definisi, type JenisDokumenDerry, type PeranTiruan, type Susunan } from "./susun";
+import { terapkanPetunjukS5 } from "./petunjuk-s5";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -249,6 +250,7 @@ export async function GET(request: NextRequest) {
       gugatan: teks(q.get("sebutanP")) === "Pemohon" ? "permohonan" : teks(q.get("sebutanP")) === "Penggugat" ? "gugatan" : "gugatan/permohonan",
     };
     const susunan: Susunan = susunIsian(penanda, peta, sebutan);
+    terapkanPetunjukS5(susunan); // "diisi manual" + alasan dan isian opsional (jenis S5) - hanya menambah keterangan
 
     const perkaraId = teks(q.get("perkaraId"));
     let nilai: Awaited<ReturnType<typeof nilaiPenanda>> | null = null;

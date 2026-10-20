@@ -49,6 +49,10 @@ const METADATA = Object.freeze({
   "9710": { manual: true, alasan: "Alasan anak belum punya akta kelahiran hanya tertulis bila posita menyebutnya; selainnya diketik dari keterangan Pemohon." },
   "9771": { manual: true, alasan: "Alasan mendesak yang dikemukakan Pemohon diambil dari posita bila ada kalimatnya; selainnya diketik dari keterangan Pemohon." },
   "1551": { manual: true, alasan: "Nama ayah calon pasangan hanya terbaca bila posita menyebutnya; selainnya diketik dari keterangan Pemohon." },
+  "0997": { manual: true, alasan: "Nama puskesmas tertulis di surat keterangan kehamilan yang diajukan; terbaca dari posita hanya bila posita menyebutnya." },
+  "1509": { manual: true, alasan: "Tempat meninggal tertulis di akta/surat kematian; posita jarang menyebutnya dan SIPP tidak menyimpannya." },
+  "8613": { manual: true, alasan: "Hanya bila pasangan pewaris sudah meninggal lebih dulu; tanggal, tempat dan sebabnya dari akta kematian pasangan." },
+  "9204": { manual: true, alasan: "Status calon suami (jejaka atau duda) diketahui dari keterangan di sidang; tidak ada di SIPP maupun posita." },
   // --- opsional ---
   "8712": { opsional: true, labelPengguna: "Surat teguran Panitera untuk menambah panjar (bila ada)" },
   "8713": { opsional: true, labelPengguna: "Batas waktu menambah panjar menurut surat teguran (bila ada)" },
@@ -75,7 +79,19 @@ const SYARAT = Object.freeze({
   "9718": (d) => !ahliWaris.golonganTiada(d).saudara,
   // Asal usul: varian "belum punya akta kelahiran" hanya bila posita menyebutnya.
   "9709": (d) => /\bbelum\s+(?:memiliki|mempunyai|punya)\s+akta\s+kelahiran\b/i.test(B.polos(d.perkara.posita)),
+  // Pernikahan pewaris / orang tua anak: isian tempat, KUA dan tanggal nikah hanya berarti bila posita memang menceritakan pernikahannya.
+  "5105": (d) => ceritaNikah(d),
+  "5178": (d) => ceritaNikah(d),
+  "5197": (d) => ceritaNikah(d),
+  // Wali adhal: nama wali nasab hanya diisi bila yang enggan BUKAN ayah kandung (petunjuk variabelnya).
+  "9201": (d) => !/\bayah\s+kandung\s+Pemohon\b/i.test(B.polos(d.perkara.posita)),
 });
+
+/** Posita menceritakan pernikahan ("telah melangsungkan perkawinan/pernikahan", "telah menikah pada tanggal")? */
+function ceritaNikah(d) {
+  if (Number(d.perkara.jenisId) === 358 || Number(d.perkara.jenisId) === 362) return true;
+  return /\b(?:melangsungkan\s+(?:perkawinan|pernikahan)|telah\s+menikah|menikah\s+(?:secara|dengan|pada)|perkawinan\s+tersebut|pernikahan\s+tersebut)\b/i.test(B.polos(d.perkara.posita));
+}
 
 /** Perkara dispensasi kawin karena hamil: alasan di SIPP (alasan_id 1) atau posita menyebut hamil. */
 function hamil(d) {

@@ -150,16 +150,20 @@ function usulPekerjaanAnak(kode, nama, orang) {
 function usulPekerjaanPria(pria) {
   const label = labelPekerjaan(pria && pria.pekerjaan);
   const uang = B.rupiahBerbilang(pria && pria.nominal);
-  if (!label || !uang || PEKERJAAN_ANAK[noRef(pria.pekerjaan)] === "pelajar") return [];
+  if (!label) return [];
+  // Pelajar dengan penghasilan tercatat hampir pasti salah catat di SIPP: pekerjaannya saja, tanpa penghasilan.
+  const denganUang = uang && PEKERJAAN_ANAK[noRef(pria.pekerjaan)] !== "pelajar";
   return [
     B.butir({
       kode: "6331",
       nama: "Pekerjaan calon suami",
-      nilai: `${label} dengan penghasilan rata-rata sejumlah ${uang} per bulan`,
+      nilai: denganUang ? `${label} dengan penghasilan rata-rata sejumlah ${uang} per bulan` : label,
       keyakinan: "ragu",
-      kalimat: `Data calon mempelai pria di SIPP: pekerjaan ${label}, penghasilan ${uang}`,
-      catatan: "Pekerjaan dan penghasilan calon pria dari data calon mempelai di SIPP. Pekerjaan sebenarnya (mis. 'buruh bangunan', 'kerja kebun sawit') dan penghasilan per bulan/per hari ditentukan di persidangan; periksa.",
-      kodePola: "s5-dk-6331-pekerjaan-penghasilan",
+      kalimat: `Data calon mempelai pria di SIPP: pekerjaan ${label}${denganUang ? `, penghasilan ${uang}` : ""}`,
+      catatan: denganUang
+        ? "Pekerjaan dan penghasilan calon pria dari data calon mempelai di SIPP. Pekerjaan sebenarnya (mis. 'buruh bangunan', 'kerja kebun sawit') dan penghasilan per bulan/per hari ditentukan di persidangan; periksa."
+        : "Pekerjaan calon pria dari data calon mempelai di SIPP; penghasilan rata-rata tidak tercatat di SIPP - tambahkan 'dengan penghasilan rata-rata sejumlah Rp... (... rupiah) per bulan' dari keterangan di sidang bila blangko memerlukannya.",
+      kodePola: denganUang ? "s5-dk-6331-pekerjaan-penghasilan" : "s5-dk-6331-pekerjaan",
     }),
   ];
 }
