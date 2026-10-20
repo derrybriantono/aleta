@@ -180,6 +180,8 @@
   function segarkanStatusAwal() {
     const k = ctx.keadaan;
     const awal = (kunci, sudah) => {
+      // Putusan yang sudah terisi tidak dapat dicentang (tidak ditimpa dari sini): selalu "sudah ada".
+      if (kunci === "isi" && sudah === true) return ["lewat", ""];
       if (!ctx.pilih[kunci]) return ["tidak", ""];
       if (sudah === true) return ["lewat", ""];
       return ["tunggu", ""];
