@@ -678,6 +678,22 @@ export function susunIsian(
   return { penanda: [...new Set(penanda)], isian, pemicu, otomatis, takDikenal };
 }
 
+/**
+ * Isian KEPUTUSAN HAKIM yang tidak ditulis di BAS (20 Okt 2026, temuan pengguna): BAS sidang putusan verstek memuat
+ * #4001# AMAR, dan kueri amar membaca #8503# (huruf alasan perceraian), sehingga kartu "Alasan perceraian" ikut tampil
+ * di BAS padahal RTF BAS tidak memuatnya dan huruf alasan diputus hakim di PUTUSAN. Isian ABT tersimpan per perkara,
+ * jadi amar di BAS tetap membaca nilai yang diisi hakim di putusan - kartunya saja yang tidak ditawarkan ke PP.
+ */
+export const KEPUTUSAN_HAKIM_BUKAN_BAS = new Set(["8503"]);
+
+/** Buang isian keputusan hakim dari susunan blangko BAS (tidak tampil, tidak dihitung, tidak ditulis dari BAS). */
+export function saringIsianBas(susunan: Susunan, jenis: JenisDokumenDerry | ""): Susunan {
+  if (jenis !== "bas") return susunan;
+  const isian = susunan.isian.filter((b) => !KEPUTUSAN_HAKIM_BUKAN_BAS.has(b.kode));
+  if (isian.length === susunan.isian.length) return susunan;
+  return { ...susunan, isian };
+}
+
 /** Jenis dokumen sebuah folder Derry menurut namanya: put (hakim), bas (PP), rel (juru sita), ptsp. */
 export function jenisFolderDerry(nama: string): "put" | "bas" | "rel" | "ptsp" | "" {
   const n = String(nama || "").trim();
