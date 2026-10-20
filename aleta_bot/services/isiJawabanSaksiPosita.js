@@ -299,7 +299,7 @@ function perwalian(butir) {
  * @param {string} posita  HTML/teks posita
  * @param {string} jenis   "itsbat"|"aua"|"cerai"|"dk"|"wa"|"paw"|"waris"|"perwalian"|"umum"|...
  */
-function positaTambahan(posita, jenis) {
+function positaTambahan(posita, jenis, petitum) {
   const butir = butirPosita(posita);
   if (!butir.length) return [];
   let dasar;
@@ -330,7 +330,7 @@ function positaTambahan(posita, jenis) {
       dasar = [];
   }
   // 20 Okt (S7): pola tambahan; kunci yang sudah terbaca pola lama tidak ditimpa
-  const tambahan = positaLain(butir, jenis);
+  const tambahan = positaLain(butir, jenis, petitum);
   // daftar nama anak pewaris dari pola baru lebih rapi dan lengkap daripada pola lama: yang baru menggantikan
   const gantiLama = new Set(tambahan.filter((x) => x.kunci === "anakPewaris").map((x) => x.kunci));
   const ada = new Set(dasar.filter((x) => !gantiLama.has(x.kunci)).map((x) => x.kunci));

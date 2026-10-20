@@ -202,6 +202,8 @@ function jumlahAnakDariTeks(t) {
 // Pemetaan variabel ABT -> kunci fakta
 // ============================================================================
 
+const KB = require("./isiJawabanSaksiKebendaanLain");
+
 const KODE_FAKTA = Object.freeze({
   5197: "tglNikah",
   5105: "tempatNikah",
@@ -248,6 +250,8 @@ const KODE_FAKTA = Object.freeze({
   1014: "hubunganErat",
   8723: "calonNama",
   8730: "bendaHarta",
+  // W2a-K2 21 Okt: isian wasiat, hibah, wakaf dan ekonomi syariah
+  ...KB.KODE_FAKTA,
 });
 
 const LABEL_FAKTA = Object.freeze({
@@ -292,6 +296,7 @@ const LABEL_FAKTA = Object.freeze({
   saudaraPengganti: "saudara pewaris yang meninggal lebih dahulu",
   keponakanPengganti: "keponakan pengganti",
   hubunganPemohon: "hubungan Pemohon dengan pewaris",
+  ...KB.LABEL_FAKTA,
 });
 
 /** "A; B; C" atau "A, B, C" -> "A, B dan C" (daftar orang di isian dipisah titik koma). */

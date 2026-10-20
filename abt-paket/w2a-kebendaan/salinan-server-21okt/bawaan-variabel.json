@@ -1,0 +1,132 @@
+{
+ "8730": {
+  "nama": "HARTA BERSAMA: OBJEK YANG DITETAPKAN SEBAGAI HARTA BERSAMA (objek, bukti hak, luas, letak, batas-batas / merek, nomor polisi, rangka, mesin; satu per baris)",
+  "default": "2.1 Sebidang tanah ... seluas _ m2 terletak di _, dengan batas-batas: Utara _; Timur _; Selatan _; Barat _;<br>2.2 1 (satu) unit kendaraan roda dua merek _ tahun _ nomor polisi _ nomor rangka _ nomor mesin _;",
+  "tipe": "data_teks"
+ },
+ "8717": {
+  "nama": "KEWARISAN: AHLI WARIS PEWARIS (nama + hubungan dengan pewaris, satu per baris)",
+  "default": "1. _ binti/bin _ (istri/suami pewaris);<br>2. _ binti/bin _ (anak kandung pewaris);",
+  "tipe": "data_teks"
+ },
+ "8718": {
+  "nama": "KEWARISAN: HARTA PENINGGALAN (TIRKAH) PEWARIS (objek, bukti hak, luas, letak dan batas-batas)",
+  "default": "1. Sebidang tanah ... Sertifikat Hak Milik Nomor _, seluas _ m2, terletak di _, dengan batas-batas: Utara _; Timur _; Selatan _; Barat _;",
+  "tipe": "data_teks"
+ },
+ "8719": {
+  "nama": "KEWARISAN: BAGIAN MASING-MASING AHLI WARIS (furudh/ashabah, contoh: istri 1/8, anak laki-laki dan perempuan ashabah 2:1)",
+  "default": "1. _ (istri) mendapat 1/8 bagian;<br>2. _ (anak) mendapat ...",
+  "tipe": "data_teks"
+ },
+ "9955": {
+  "nama": "BUKTI SURAT PERCERAIAN (OTOMATIS)",
+  "default": "Fotokopi Kartu Tanda Penduduk Elektronik (KTP-el) atas nama #4048#, NIK #0335# tanggal #8870#, yang dikeluarkan oleh Pemerintah #9277#, Provinsi #9278#, bukti surat tersebut telah diberi meterai cukup, di-nazegelen, serta telah dicocokkan dengan aslinya yang ternyata sesuai, lalu oleh #4004# diberi tanda P.1;",
+  "tipe": "data_teks"
+ },
+ "9911": {
+  "nama": "C3 Pembuktian Tergugat",
+  "default": "Fotokopi Kartu Tanda Penduduk Elektronik (KTP-el) atas nama, #0047# NIK #0337# tanggal #8871#, yang dikeluarkan oleh Pemerintah #9279#, Provinsi #9560#, bukti surat tersebut telah diberi meterai cukup, di-nazegelen, serta telah dicocokkan dengan aslinya yang ternyata sesuai, lalu diberi tanda T.1 serta diberi tanggal dan paraf oleh #4004#;",
+  "tipe": "data_teks"
+ },
+ "1214": {
+  "nama": "Alat-alat bukti CG/CT",
+  "default": "Fotokopi Kartu Tanda Penduduk Elektronik (KTP-el) atas nama #4048#, NIK #0335# tanggal #8870#, yang dikeluarkan oleh Pemerintah #9277#, Provinsi #9278#, bukti surat tersebut telah diberi meterai cukup, di-nazegelen, serta telah dicocokkan dengan aslinya yang ternyata sesuai, lalu diberi tanda P.1 serta diberi tanggal dan paraf oleh #4004#;",
+  "tipe": "data_teks"
+ },
+ "8132": {
+  "nama": "Alat Bukti PAW",
+  "default": "1.Fotokopi Silsilah Keluarga yang dibuat oleh ... diketahui Lurah / Kepala Desa ... dan Camat ..., bermeterai cukup, telah dicap pos dan telah dicocokkan dengan aslinya yang ternyata sesuai, lalu oleh Ketua Majelis diberi kode P1;",
+  "tipe": "data_teks"
+ },
+ "9700": {
+  "nama": "PENCAIRAN DANA - ISIAN (jenis dana, lembaga/bank, atas nama; satu frasa tanpa titik akhir, kosongkan bila tidak ada)",
+  "default": "dana Jaminan Hari Tua BPJS Ketenagakerjaan atas nama almarhum/almarhumah #1025#",
+  "tipe": "data_teks"
+ },
+ "9482": {
+  "nama": "WASIAT: FAKTA POKOK TUNTUTAN YANG TERBUKTI - ISIAN (uraian singkat dari bukti & saksi, mis. nilai objek wasiat melebihi sepertiga harta peninggalan dan ahli waris tidak menyetujui)",
+  "default": "wasiat tersebut ...",
+  "tipe": "data_teks"
+ },
+ "9798": {
+  "nama": "HIBAH: FAKTA POKOK TUNTUTAN YANG TERBUKTI - ISIAN (uraian singkat dari bukti & saksi, mis. nilai objek hibah melebihi sepertiga harta penghibah)",
+  "default": "hibah tersebut ...",
+  "tipe": "data_teks"
+ },
+ "9828": {
+  "nama": "WAKAF: FAKTA POKOK TUNTUTAN YANG TERBUKTI - ISIAN (uraian singkat dari bukti & saksi, mis. ikrar wakaf telah diucapkan dan objek dikuasai pihak lain)",
+  "default": "wakaf tersebut ...",
+  "tipe": "data_teks"
+ },
+ "9478": {
+  "nama": "WASIAT: BENTUK & TANGGAL WASIAT - ISIAN (mis. \"secara tertulis tertanggal ... di hadapan 2 (dua) orang saksi\" / \"dengan akta Notaris ... Nomor ...\")",
+  "default": "secara tertulis tertanggal ... di hadapan 2 (dua) orang saksi",
+  "tipe": "data_teks"
+ },
+ "9479": {
+  "nama": "WASIAT: OBJEK WASIAT - ISIAN (benda/manfaat yang diwasiatkan: objek, bukti hak, luas, letak dan batas-batas)",
+  "default": "sebidang tanah ... seluas ... m2, terletak di ..., dengan batas-batas: Utara ...; Timur ...; Selatan ...; Barat ...",
+  "tipe": "data_teks"
+ },
+ "9794": {
+  "nama": "HIBAH: BENTUK & TANGGAL HIBAH - ISIAN (mis. \"secara lisan pada tanggal ... di hadapan 2 (dua) orang saksi\" / \"dengan akta hibah di hadapan PPAT ... Nomor ...\")",
+  "default": "secara tertulis tertanggal ... di hadapan 2 (dua) orang saksi",
+  "tipe": "data_teks"
+ },
+ "9795": {
+  "nama": "HIBAH: OBJEK HIBAH - ISIAN (benda yang dihibahkan: objek, bukti hak, luas, letak dan batas-batas)",
+  "default": "sebidang tanah ... seluas ... m2, terletak di ..., dengan batas-batas: Utara ...; Timur ...; Selatan ...; Barat ...",
+  "tipe": "data_teks"
+ },
+ "9797": {
+  "nama": "HIBAH: PENERIMA HIBAH (OTOMATIS: isian 9796; kosong = #7036# bila pokok tuntutan F, selain itu #7037# (para Tergugat bila lebih dari satu))",
+  "default": "NULL",
+  "tipe": "data_sql"
+ },
+ "9823": {
+  "nama": "WAKAF: WAKIF - ISIAN (nama lengkap bin/binti ...; bila telah meninggal tulis \"almarhum/almarhumah ...\")",
+  "default": "...... bin/binti ......",
+  "tipe": "data_teks"
+ },
+ "9824": {
+  "nama": "WAKAF: NAZHIR - ISIAN (nama perseorangan, organisasi atau badan hukum Nazhir)",
+  "default": "...",
+  "tipe": "data_teks"
+ },
+ "9825": {
+  "nama": "WAKAF: BENTUK & TANGGAL IKRAR WAKAF - ISIAN (mis. \"dengan Akta Ikrar Wakaf Nomor ... tanggal ... di hadapan PPAIW ...\" / \"dengan ikrar lisan pada tanggal ... di hadapan 2 (dua) orang saksi\")",
+  "default": "dengan ikrar wakaf secara lisan pada tanggal ... di hadapan 2 (dua) orang saksi",
+  "tipe": "data_teks"
+ },
+ "9826": {
+  "nama": "WAKAF: HARTA BENDA WAKAF - ISIAN (objek wakaf: bukti hak, luas, letak dan batas-batas)",
+  "default": "sebidang tanah ... seluas ... m2, terletak di ..., dengan batas-batas: Utara ...; Timur ...; Selatan ...; Barat ...",
+  "tipe": "data_teks"
+ },
+ "9827": {
+  "nama": "WAKAF: PERUNTUKAN WAKAF - ISIAN (mis. sarana ibadah (masjid), sarana pendidikan, pemakaman)",
+  "default": "sarana ibadah (masjid)",
+  "tipe": "data_teks"
+ },
+ "1025": {
+  "nama": "Nama Almarhum / Almarhumah",
+  "default": "NULL",
+  "tipe": "data_teks"
+ },
+ "1246": {
+  "nama": "Tanggal meninggalnya #2026#",
+  "default": "NULL",
+  "tipe": "data_tanggal"
+ },
+ "1509": {
+  "nama": "Tempat Meninggal Dunia",
+  "default": "Lingkungan _, Kelurahan _, Kecamatan _, Kabupaten ...",
+  "tipe": "data_teks"
+ },
+ "1247": {
+  "nama": "Sebab meninggalnya #2026#",
+  "default": "sakit",
+  "tipe": "data_teks"
+ }
+}

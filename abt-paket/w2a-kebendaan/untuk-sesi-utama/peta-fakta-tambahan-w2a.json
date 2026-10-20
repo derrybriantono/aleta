@@ -1,0 +1,37 @@
+{
+  "skema": "peta-fakta-variabel/1",
+  "catatan": "TAMBAHAN W2a (putusan harta bersama dan kewarisan; pengisi aleta_bot/services/isiOtomatisW2a.js) untuk aleta_bot/config/peta-fakta-variabel.json. Satu kode satu fakta; tidak mengubah entri yang ada. Semua nilai dari gugatan tingkat 'ragu' (hanyaSaran).",
+  "tambahKode": {},
+  "fakta": {
+    "waris.penguasaHarta": {
+      "label": "Pihak yang menguasai harta peninggalan (kalimat posita)",
+      "tipe": "teks",
+      "kode": ["4817"],
+      "hanyaSaran": true
+    },
+    "waris.hartaBersamaPewaris": {
+      "label": "Harta bersama pewaris dengan pasangannya (kalimat posita)",
+      "tipe": "teks",
+      "kode": ["4818"],
+      "hanyaSaran": true
+    },
+    "waris.utangWasiatJenazah": {
+      "label": "Utang, wasiat dan biaya pengurusan jenazah pewaris (kalimat posita)",
+      "tipe": "teks",
+      "kode": ["4819"],
+      "hanyaSaran": true
+    },
+    "waris.bagianHitungan": {
+      "label": "Bagian masing-masing ahli waris (usulan hitungan KHI atas susunan yang terbaca penuh)",
+      "tipe": "teks",
+      "kode": ["8719"],
+      "hanyaSaran": true
+    },
+    "hb.utangBersama": {
+      "label": "Utang bersama para pihak (kalimat posita)",
+      "tipe": "teks",
+      "kode": ["4786"],
+      "hanyaSaran": true
+    }
+  }
+}

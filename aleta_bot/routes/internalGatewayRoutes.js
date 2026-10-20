@@ -2929,8 +2929,10 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       const isiSumber = require("../services/isiJawabanSaksiService");
       const positaMasuk = String(req.body?.posita || "");
       const positaKurang = positaMasuk.replace(/<[^>]*>/g, " ").trim().length < 50;
+      // 21 Okt 2026 (W2a-K1): gugatan harta bersama dan kewarisan juga dibaca PETITUM-nya (daftar objek dan ahli waris ada di petitum)
+      const perluPetitum = /\b(?:348|364)\b|harta\s*bersama|waris/i.test(String(req.body?.jenisPerkara || "") + " " + String(req.body?.kunciKatalog || ""));
       const [konteksSipp, sippSaksi, alamatPihakSipp] = await Promise.all([
-        positaKurang && nomorPerkara ? abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null) : null,
+        (positaKurang || perluPetitum) && nomorPerkara ? abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null) : null,
         nomorPerkara ? isiSumber.bacaSippSaksi(nomorPerkara).catch(() => null) : null,
         nomorPerkara && typeof abtUsulanService.alamatPihakPerkara === "function" ? abtUsulanService.alamatPihakPerkara(nomorPerkara).catch(() => null) : null,
       ]);
@@ -2939,6 +2941,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
         alur: String(req.body?.alur || "").slice(0, 20),
         kunciKatalog: String(req.body?.kunciKatalog || "").slice(0, 60),
+        petitum: String(req.body?.petitum || (konteksSipp && konteksSipp.petitum) || "").slice(0, 60000),
         kodeVariabel: Array.isArray(req.body?.kodeVariabel) ? req.body.kodeVariabel.map((x) => String(x)).slice(0, 60) : [],
         pelaku,
         lawan,
@@ -2952,6 +2955,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       // 20 Okt 2026 (U1): fakta perkara apa adanya untuk penyusun saksi katalog di panel (hanya bila diminta).
       if (req.body?.mintaFakta === true) {
         jawaban.faktaPerkara = isiSumber.faktaPerkara({
+          petitum: String(req.body?.petitum || (konteksSipp && konteksSipp.petitum) || "").slice(0, 60000),
           posita: positaKurang && konteksSipp && konteksSipp.posita ? konteksSipp.posita : positaMasuk,
           jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
           alur: String(req.body?.alur || "").slice(0, 20),

@@ -11,6 +11,14 @@
  */
 
 const { bersihNilai, tanggalIndo, rapat, jumlahAnakDariTeks } = require("./isiJawabanSaksiFakta");
+const KB = require("./isiJawabanSaksiKebendaanLain");
+
+/** W2a-K2 21 Okt: pola tambahan wasiat/hibah/wakaf/ekonomi syariah; kunci yang sudah terbaca pola lama tidak ditimpa. */
+function gabungKebendaan(hasil, butir, jenis) {
+  const sudah = new Set(hasil.map((x) => x.kunci));
+  for (const x of KB.tambahanDariPosita(butir, jenis)) if (!sudah.has(x.kunci)) hasil.push(x);
+  return hasil;
+}
 
 const BULAN = "Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember|Pebruari|Nopember";
 const TGL = `\\d{1,2}\\s+(?:${BULAN})\\s+(?:19|20)\\d{2}`;
@@ -142,6 +150,23 @@ function perwalian(butir) {
 // Ahli waris (P3HP) dan kewarisan
 // ============================================================================
 
+/**
+ * Menambahkan fakta pola lanjutan (isiJawabanSaksiKebendaan.js, W2a-K1) pada hasil pola lama. Kunci yang sudah terbaca pola lama TIDAK ditimpa,
+ * kecuali kunci di `gantiKunci` (pola lanjutan lebih luas dan sudah diukur: lihat abt-paket/w2a-kebendaan/ukur/hasil-ukur.json).
+ */
+function gabungLanjut(hasil, ambil, gantiKunci) {
+  try {
+    const tambahan = ambil();
+    if (!Array.isArray(tambahan) || !tambahan.length) return hasil;
+    const ganti = new Set((gantiKunci || []).filter((k) => tambahan.some((x) => x.kunci === k)));
+    const dasar = hasil.filter((x) => !ganti.has(x.kunci));
+    const ada = new Set(dasar.map((x) => x.kunci));
+    return [...dasar, ...tambahan.filter((x) => !ada.has(x.kunci))];
+  } catch (_galat) {
+    return hasil;
+  }
+}
+
 function waris(butir) {
   const hasil = [];
   const mati = kematianPertama(butir);
@@ -207,11 +232,16 @@ function waris(butir) {
   return hasil;
 }
 
+/** Gugatan kewarisan (364): pola waris() ditambah pola petitum/posita lanjutan (isiJawabanSaksiKebendaan.js). Penetapan ahli waris (paw) tetap memakai waris() saja. */
+function warisGugatan(butir, petitum) {
+  return gabungLanjut(waris(butir), () => require("./isiJawabanSaksiKebendaan").warisLanjut(butir, petitum), []);
+}
+
 // ============================================================================
 // Harta bersama
 // ============================================================================
 
-function hartaBersama(butir) {
+function hartaBersama(butir, petitum) {
   const hasil = [];
   for (const b of butir) {
     const m = new RegExp(`(?:Akta\\s+Cerai|putusan)[^.;]{0,40}?(?:Nomor|No\\.?)\\s*:?\\s*([0-9A-Za-z/.\\-]{5,40})[^.;]{0,40}?(?:tanggal|tgl\\.?)\\s*(${TGL})`, "i").exec(b);
@@ -228,7 +258,7 @@ function hartaBersama(butir) {
     if (harta.length >= 3) break;
   }
   if (harta.length) hasil.push({ kunci: "hartaPeninggalan", nilai: harta.join("; "), yakin: "ragu", ket: "Objek harta dibaca dari posita dengan pola longgar; periksa kelengkapannya." });
-  return hasil;
+  return gabungLanjut(hasil, () => require("./isiJawabanSaksiKebendaan").hartaBersamaLanjut(butir, petitum), ["putusanCerai", "hartaPeninggalan"]);
 }
 
 // ============================================================================
@@ -246,7 +276,7 @@ function hibah(butir) {
       break;
     }
   }
-  return hasil;
+  return gabungKebendaan(hasil, butir, "hibah");
 }
 
 function wakaf(butir) {
@@ -254,18 +284,19 @@ function wakaf(butir) {
   for (const b of butir) {
     const m = new RegExp(`(${NAMA})\\s+(?:telah\\s+)?(?:berikrar\\s+)?(?:mewakafkan|berwakaf)\\s+(.{8,220})`, "i").exec(b);
     if (m) {
-      hasil.push({ kunci: "wakif", nilai: bersihNama(m[1]), yakin: "ragu", ket: "Dari kalimat 'mewakafkan' pada gugatan; periksa." });
+      hasil.push({ kunci: "wakif", nilai: bersihNama(m[1].replace(/^(?:Wakif|Wakip|Pewakaf)\s+/i, "")), yakin: "ragu", ket: "Dari kalimat 'mewakafkan' pada gugatan; periksa." });
       const sisa = rapat(m[2]);
       const harta = sisa.split(/\s+kepada\b|\s+untuk\b/i)[0];
       if (harta.length > 5) hasil.push({ kunci: "hartaWakaf", nilai: potongBatas(harta, 150), yakin: "ragu" });
       const nz = new RegExp(`kepada\\s+(?:nazhir\\s+|nadzir\\s+)?(${NAMA})`, "i").exec(sisa);
-      if (nz) hasil.push({ kunci: "nazhir", nilai: bersihNama(nz[1]), yakin: "ragu" });
+      const namaNazhir = nz ? bersihNama(nz[1]) : "";
+      if (namaNazhir && !/^(?:Nazhir|Nadzir|Nadhir|Nazir)$/i.test(nz[1].trim())) hasil.push({ kunci: "nazhir", nilai: namaNazhir, yakin: "ragu" });
       const un = /\buntuk\s+(.{5,100}?)(?:[;.]|$)/i.exec(sisa);
       if (un) hasil.push({ kunci: "peruntukanWakaf", nilai: potongBatas(un[1], 100), yakin: "ragu" });
       break;
     }
   }
-  return hasil;
+  return gabungKebendaan(hasil, butir, "wakaf");
 }
 
 function eksyar(butir) {
@@ -284,7 +315,7 @@ function eksyar(butir) {
       break;
     }
   }
-  return hasil;
+  return gabungKebendaan(hasil, butir, "eksyar");
 }
 
 function poligami(butir) {
@@ -359,14 +390,19 @@ function hakAsuh(butir) {
   return hasil;
 }
 
+/** Wasiat: pola ahli waris/pewaris (waris) + pola wasiat W2a-K2 (bentuk, objek, penerima). */
+function wasiat(butir) {
+  return gabungKebendaan(waris(butir), butir, "wasiat");
+}
+
 const KE_FUNGSI = {
   perwalian,
   paw: waris,
-  waris,
+  waris: warisGugatan,
   hb: hartaBersama,
   hibah,
   wakaf,
-  wasiat: waris,
+  wasiat,
   eksyar,
   ip: poligami,
   mafqud,
@@ -376,11 +412,11 @@ const KE_FUNGSI = {
 };
 
 /** @returns {Array} fakta tambahan untuk jenis ini ([] bila jenis tidak punya pola di sini) */
-function positaLain(butir, jenis) {
+function positaLain(butir, jenis, petitum) {
   const f = KE_FUNGSI[jenis];
   if (!f) return [];
   try {
-    return f(butir);
+    return f(butir, petitum);
   } catch (_galat) {
     return [];
   }

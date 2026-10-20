@@ -421,6 +421,24 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "4108": { nm: "Pendapat anak mumayyiz yang didengar di persidangan" },
   "4109": { nm: "Waktu pembayaran akibat cerai", pil: ["sebelum ikrar talak", "sebelum akta cerai", "tidak disyaratkan (istri tidak keberatan)"] },
   /* === AKHIR U2 === */
+  /* === W2a 21 Okt: harta bersama, kewarisan, ekonomi syariah - keputusan majelis per tuntutan (paket abt-paket/w2a-kebendaan) === */
+  "4780": { nm: "Keputusan atas tuntutan penetapan dan pembagian harta bersama", pil: ["dikabulkan seluruhnya", "dikabulkan sebagian"] },
+  "4781": { nm: "Objek yang tidak terbukti sebagai harta bersama (satu objek per baris; kosong = semua objek terbukti)" },
+  "4782": { nm: "Bagian masing-masing pihak atas harta bersama (kosong = seperdua; bila lain tulis bagian, titik dua, lalu alasan penyimpangan)" },
+  "4783": { nm: "Keputusan atas permohonan sita jaminan", pil: ["sah dan berharga", "ditolak"] },
+  "4784": { nm: "Keputusan atas tuntutan uang paksa (dwangsom)", pil: ["ditolak", "dikabulkan"] },
+  "4785": { nm: "Keputusan atas tuntutan putusan serta merta", pil: ["ditolak", "dikabulkan"] },
+  "4786": { nm: "Utang bersama para pihak yang timbul selama perkawinan (kosong = tidak ada)" },
+  "4787": { nm: "Sikap {T} atas tiap objek (satu objek per baris: objek | nomor posita | diakui / diakui berklausul / dibantah | klausul atau alasan)" },
+  "4815": { nm: "Keputusan atas tuntutan penetapan (dikabulkan seluruhnya atau sebagian)", pil: ["dikabulkan seluruhnya", "dikabulkan sebagian"] },
+  "4816": { nm: "Objek yang tidak terbukti sebagai harta peninggalan (satu objek per baris; kosong = semua objek terbukti)" },
+  "4817": { nm: "Pihak yang menguasai harta peninggalan (tulis tidak ada bila tidak dikuasai pihak mana pun; kosong = Tergugat)" },
+  "4818": { nm: "Harta bersama pewaris dengan pasangannya yang separuhnya hak pasangan (kosong = tidak ada)" },
+  "4819": { nm: "Utang, wasiat dan biaya pengurusan jenazah pewaris yang diperhitungkan lebih dahulu (kosong = tidak ada)" },
+  "4842": { nm: "Keputusan atas tuntutan denda, ganti rugi atau ta'widh (sesudah titik dua: rumusan amar bila dikabulkan, alasan bila ditolak)", pil: ["dikabulkan", "ditolak"] },
+  "4843": { nm: "Keputusan atas tuntutan penyelesaian jaminan atau agunan (sesudah titik dua: rumusan amar bila dikabulkan, alasan bila ditolak)", pil: ["dikabulkan", "ditolak"] },
+  "4844": { nm: "Keputusan atas tuntutan pembatalan akad (sesudah titik dua: rumusan amar bila dikabulkan, alasan bila ditolak)", pil: ["dikabulkan", "ditolak"] },
+  /* === AKHIR W2a === */
 };
 
 const PEMICU_TEKS: Record<string, string> = {
@@ -435,6 +453,13 @@ const PEMICU_TEKS: Record<string, string> = {
   "4143": "petitum menuntut mut'ah (terbaca dari SIPP)",
   "4144": "petitum menuntut nafkah lampau (terbaca dari SIPP)",
   "4145": "petitum menuntut harta bersama (terbaca dari SIPP)",
+  "4788": "petitum menuntut sita jaminan (terbaca dari SIPP)",
+  "4789": "petitum menuntut bagian harta bersama selain seperdua (terbaca dari SIPP)",
+  "4790": "petitum menuntut uang paksa (terbaca dari SIPP)",
+  "4791": "petitum menuntut putusan serta merta (terbaca dari SIPP)",
+  "4845": "petitum menuntut denda, ganti rugi atau ta'widh (terbaca dari SIPP)",
+  "4846": "petitum menuntut penyelesaian jaminan atau agunan (terbaca dari SIPP)",
+  "4847": "petitum menuntut pembatalan akad (terbaca dari SIPP)",
 };
 
 /** Keterangan keadaan untuk layar ("muncul karena ..." dan daftar isian yang disembunyikan). */

@@ -1,0 +1,1571 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "wasiat",
+ "judul": "Wasiat",
+ "versi": 1,
+ "penulis": "SAKSI-D",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "365"
+  ]
+ },
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [
+  {
+   "folder": "4c Wasiat - BAS",
+   "berkas": "BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4c Wasiat - BAS",
+   "berkas": "BAS ALUR 04 [6a] BAS 6 P & T Hadir - Pembuktian P (3 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4c Wasiat - BAS",
+   "berkas": "BAS ALUR 04 [6b] BAS 6 P & T Hadir - Pembuktian P (4 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060",
+    "6124"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4c Wasiat - BAS",
+   "berkas": "BAS ALUR 04 [6c] BAS 6 P & T Hadir - Pembuktian P (5 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060",
+    "6124",
+    "8931"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4c Wasiat - BAS",
+   "berkas": "BAS ALUR 04 [7] BAS 7 P & T Hadir - Pembuktian T",
+   "variabelSaksi": [
+    "6120",
+    "6121"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4c Wasiat - BAS",
+   "berkas": "BAS ALUR 04 [7a] BAS 7 P & T Hadir - Pembuktian T (3 Saksi)",
+   "variabelSaksi": [
+    "6120",
+    "6121",
+    "8921"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4c Wasiat - BAS",
+   "berkas": "BAS ALUR 04 [7b] BAS 7 P & T Hadir - Pembuktian T (4 Saksi)",
+   "variabelSaksi": [
+    "6120",
+    "6121",
+    "8921",
+    "8941"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4c Wasiat - BAS",
+   "berkas": "BAS ALUR 42 Wasiat - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  }
+ ],
+ "dasarHukum": [
+  {
+   "id": "dh-sebab-pengetahuan",
+   "rujukan": "Pasal 171 ayat (1) dan (2) HIR / Pasal 308 ayat (1) dan (2) RBg",
+   "uraian": "saksi harus menyebut alasan dan cara ia mengetahui hal yang diterangkan; pendapat atau dugaan bukan kesaksian",
+   "status": "terverifikasi",
+   "sumber": "Pasal 171 ayat (1)-(2) HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 308 ayat (1)-(2) RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); sejalan dengan Pasal 1907 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-unus-testis",
+   "rujukan": "Pasal 169 HIR / Pasal 306 RBg / Pasal 1905 KUHPerdata",
+   "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak dapat dipercaya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 169 HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 306 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); Pasal 1905 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-saksi-syarat",
+   "rujukan": "Pasal 171, 172, 175, 307, 308 dan 309 RBg",
+   "uraian": "syarat formil saksi (bukan orang yang dilarang didengar menurut Pasal 172, antara lain anak yang belum berumur lima belas tahun; dipanggil dan diperiksa satu per satu; disumpah menurut agamanya) dan syarat materiil (kesaksian disertai alasan pengetahuan, yaitu peristiwa yang dialami, didengar dan dilihat sendiri; kesaksian yang berdiri sendiri saling bersesuaian)",
+   "status": "terverifikasi",
+   "sumber": "Pasal 171 (saksi dipanggil satu per satu, ditanya identitas dan hubungan dengan pihak), 172 (orang yang tidak boleh didengar), 175 (sumpah), 307, 308, 309 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); syarat materiil \"dialami, didengar dan dilihat sendiri\" juga pada Buku II Edisi Revisi 2013 (Ditjen Badilag MA RI), salinan PDF PA Rumbia (pa-rumbia.go.id/images/Pedoman_Organisasi/1-Buku-II-edisi-Rev_2013_Pedoman-Tugas-dan-Adm.pdf), bagian Bukti Saksi. Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: pertimbangan hukum blangko putusan Derry 4c Wasiat [01], 5a Pembatalan [01], 5b Pencegahan [01], 5 Izin Poligami [01]"
+  },
+  {
+   "id": "dh-beban-bukti",
+   "rujukan": "Pasal 283 RBg jo. Pasal 1865 KUHPerdata",
+   "uraian": "siapa yang mendalilkan suatu peristiwa wajib membuktikannya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 283 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (memuat padanan KUHperd. 1865 dan IR. 163); Pasal 1865 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: pertimbangan hukum blangko putusan Derry 4c Wasiat [01] dan 5a Pembatalan [01]"
+  },
+  {
+   "id": "dh-kewenangan",
+   "rujukan": "Pasal 49 huruf c UU 7/1989 jo UU 3/2006 jo UU 50/2009",
+   "uraian": "sengketa wasiat antara orang beragama Islam menjadi kewenangan absolut Pengadilan Agama",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 4c Wasiat [01] Kabul"
+  },
+  {
+   "id": "dh-wasiat-definisi",
+   "rujukan": "Pasal 171 huruf f dan Pasal 194 ayat (3) Kompilasi Hukum Islam",
+   "uraian": "wasiat adalah pemberian suatu benda dari pewaris kepada orang lain atau lembaga yang berlaku setelah pewaris meninggal dunia; pemilikan benda yang diwasiatkan baru dapat dilaksanakan sesudah pewasiat meninggal dunia",
+   "status": "terverifikasi",
+   "sumber": "pertimbangan hukum blangko putusan Derry 4c Wasiat [01] Kabul"
+  },
+  {
+   "id": "dh-syarat-pewasiat",
+   "rujukan": "Pasal 194 ayat (1) dan Pasal 195 ayat (1) Kompilasi Hukum Islam",
+   "uraian": "pewasiat berumur sekurang-kurangnya 21 tahun, berakal sehat dan tanpa paksaan; wasiat dilakukan secara lisan di hadapan dua orang saksi, tertulis di hadapan dua orang saksi, atau di hadapan Notaris",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9476 dan 9477 huruf C (paket Derry F22, wasiat)"
+  },
+  {
+   "id": "dh-hak-pewasiat",
+   "rujukan": "Pasal 194 ayat (2) Kompilasi Hukum Islam",
+   "uraian": "harta benda yang diwasiatkan harus merupakan hak dari pewasiat",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9476 dan 9477 huruf D (paket Derry F22, wasiat)"
+  },
+  {
+   "id": "dh-sepertiga",
+   "rujukan": "Pasal 195 ayat (2) dan Pasal 201 Kompilasi Hukum Islam",
+   "uraian": "wasiat paling banyak sepertiga dari harta warisan kecuali semua ahli waris menyetujui; bila melebihi sepertiga dan ahli waris ada yang tidak menyetujui, wasiat hanya dilaksanakan sampai batas sepertiga",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9476 dan 9477 huruf A (paket Derry F22, wasiat)"
+  },
+  {
+   "id": "dh-ahli-waris-setuju",
+   "rujukan": "Pasal 195 ayat (3) dan ayat (4) Kompilasi Hukum Islam",
+   "uraian": "wasiat kepada ahli waris berlaku bila disetujui semua ahli waris; persetujuan dinyatakan secara lisan di hadapan dua orang saksi, tertulis di hadapan dua orang saksi, atau di hadapan Notaris",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9476 dan 9477 huruf B (paket Derry F22, wasiat)"
+  },
+  {
+   "id": "dh-batal",
+   "rujukan": "Pasal 197 Kompilasi Hukum Islam",
+   "uraian": "sebab-sebab wasiat menjadi batal, termasuk penerima wasiat tidak mengetahui, menolak, atau tidak menyatakan sikap sampai ia meninggal sebelum pewasiat, dan barang yang diwasiatkan musnah",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9476 dan 9477 huruf E (paket Derry F22, wasiat)"
+  },
+  {
+   "id": "dh-wajibah",
+   "rujukan": "Pasal 209 Kompilasi Hukum Islam",
+   "uraian": "orang tua angkat dan anak angkat yang tidak menerima wasiat diberi wasiat wajibah sebanyak-banyaknya sepertiga dari harta warisan",
+   "status": "terverifikasi",
+   "sumber": "variabel ABT 9476 dan 9477 huruf G (paket Derry F22, wasiat)"
+  },
+  {
+   "id": "dh-sebutkan-penerima",
+   "rujukan": "Pasal 196 Kompilasi Hukum Islam",
+   "uraian": "dalam wasiat lisan maupun tertulis harus disebutkan dengan tegas dan jelas siapa atau lembaga apa yang ditunjuk menerima benda yang diwasiatkan",
+   "status": "terverifikasi",
+   "sumber": "Pasal 196 cocok dengan naskah KHI lampiran Inpres 1/1991 terbitan Direktorat Pembinaan Badan Peradilan Agama Islam Departemen Agama (buku digital simbi.kemenag.go.id), dicocokkan dengan digitalisasi pasal.id; diperiksa 18 Okt 2026; rincian di VERIFIKASI-HUKUM.md"
+  },
+  {
+   "id": "dh-buku2-wajibah",
+   "rujukan": "Buku II Tahun 2026 aspek 34 dan 35 (ringkasan PTA Pontianak)",
+   "uraian": "wasiat wajibah bagi anak dari perkawinan di bawah tangan yang memenuhi rukun dan syarat fikih serta anak tiri atau anak angkat yang memenuhi keadaan yang dijelaskan buku",
+   "status": "perlu-verifikasi",
+   "sumber": "memori rujukan Buku II 2026: ringkasan sekunder, naskah resmi belum dibaca"
+  }
+ ],
+ "keadaan": {
+  "kehadiran": {
+   "sumber": "otomatis",
+   "nilai": [
+    "verstek",
+    "kontradiktoir",
+    "t-tidak-hadir-setelah-mediasi"
+   ],
+   "bawaan": "kontradiktoir",
+   "label": "Kehadiran Tergugat"
+  },
+  "pokokTuntutan": {
+   "sumber": "borang",
+   "nilai": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G"
+   ],
+   "bawaan": [
+    "F"
+   ],
+   "label": "Pokok tuntutan wasiat",
+   "jamak": true
+  },
+  "bentukWasiat": {
+   "sumber": "borang",
+   "nilai": [
+    "lisan",
+    "tertulis",
+    "akta-notaris"
+   ],
+   "bawaan": "tertulis",
+   "label": "Bentuk wasiat"
+  },
+  "penerima": {
+   "sumber": "borang",
+   "nilai": [
+    "ahli-waris",
+    "bukan-ahli-waris",
+    "lembaga"
+   ],
+   "bawaan": "bukan-ahli-waris",
+   "label": "Penerima wasiat"
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-hubungan-saksi",
+   "judul": "Hubungan saksi dengan para pihak dan pewasiat",
+   "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal para pihak dan pewasiat (sebab pengetahuan)",
+   "dasarHukum": [
+    "dh-sebab-pengetahuan",
+    "dh-saksi-syarat"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-kematian-pewasiat",
+   "judul": "Meninggalnya pewasiat",
+   "uraian": "pewasiat telah meninggal dunia dalam keadaan beragama Islam; wasiat baru berlaku setelah itu",
+   "dasarHukum": [
+    "dh-wasiat-definisi",
+    "dh-kewenangan"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-syarat-pewasiat",
+   "judul": "Keadaan pewasiat ketika berwasiat",
+   "uraian": "pewasiat dewasa, berakal sehat dan tanpa paksaan ketika membuat wasiat",
+   "dasarHukum": [
+    "dh-syarat-pewasiat"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-bentuk-wasiat",
+   "judul": "Bentuk, waktu dan saksi wasiat",
+   "uraian": "wasiat lisan atau tertulis di hadapan dua orang saksi, atau di hadapan Notaris",
+   "dasarHukum": [
+    "dh-syarat-pewasiat"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-objek-wasiat",
+   "judul": "Benda yang diwasiatkan",
+   "uraian": "jenis, letak dan kepemilikan benda yang diwasiatkan; harus hak pewasiat",
+   "dasarHukum": [
+    "dh-hak-pewasiat",
+    "dh-wasiat-definisi"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-penerima-wasiat",
+   "judul": "Penerima wasiat",
+   "uraian": "siapa atau lembaga apa yang ditunjuk menerima wasiat dan hubungannya dengan pewasiat",
+   "dasarHukum": [
+    "dh-sebutkan-penerima",
+    "dh-ahli-waris-setuju"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-persetujuan-ahli-waris",
+   "judul": "Persetujuan ahli waris",
+   "uraian": "ada tidaknya persetujuan ahli waris atas wasiat dan cara menyatakannya",
+   "dasarHukum": [
+    "dh-ahli-waris-setuju"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-batas-sepertiga",
+   "judul": "Batas sepertiga harta warisan",
+   "uraian": "nilai benda yang diwasiatkan dibanding seluruh harta peninggalan",
+   "dasarHukum": [
+    "dh-sepertiga"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-harta-peninggalan",
+   "judul": "Harta peninggalan dan ahli waris",
+   "uraian": "harta peninggalan pewasiat dan ahli waris yang masih hidup",
+   "dasarHukum": [
+    "dh-sepertiga"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-penguasaan-objek",
+   "judul": "Penguasaan benda wasiat",
+   "uraian": "siapa yang menguasai benda yang diwasiatkan dan apakah sudah diserahkan",
+   "dasarHukum": [
+    "dh-wasiat-definisi"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-pembatalan-wasiat",
+   "judul": "Sebab batalnya wasiat",
+   "uraian": "sikap penerima wasiat dan keadaan yang membatalkan wasiat",
+   "dasarHukum": [
+    "dh-batal"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-wasiat-wajibah",
+   "judul": "Wasiat wajibah",
+   "uraian": "kedudukan anak angkat atau orang tua angkat yang tidak menerima wasiat",
+   "dasarHukum": [
+    "dh-wajibah",
+    "dh-buku2-wajibah"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-keberadaan-lawan",
+   "judul": "Tempat tinggal pihak lawan",
+   "uraian": "untuk perkara yang diputus tanpa hadirnya Tergugat: tempat tinggal Tergugat",
+   "dasarHukum": [
+    "dh-saksi-syarat"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-bantahan",
+   "judul": "Bantahan atas adanya wasiat",
+   "uraian": "keterangan saksi Tergugat yang menyangkal adanya wasiat",
+   "dasarHukum": [
+    "dh-beban-bukti"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-penutup",
+   "judul": "Penutup keterangan",
+   "uraian": "saksi menyatakan keterangannya telah cukup",
+   "dasarHukum": [],
+   "wajib": false
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-kenal",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 10,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi kenal dengan #0046# dan #0047# ?",
+   "teksVarian": [
+    "Apakah saksi mengenal #0046# dan #0047# ?",
+    "Apakah Saudara saksi kenal dengan #0046# serta #0047# ?"
+   ],
+   "hal": "hubungan saksi dengan para pihak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal kedua pihak dan menyebut hubungannya dengan pihak",
+     "saksi1": [
+      "saya kenal dengan #0046# dan #0047# karena saya adalah {hubungan}",
+      "saya mengenal #0046# maupun #0047# sebab saya adalah {hubungan}",
+      "#0046# dan #0047# saya kenal baik karena kedudukan saya sebagai {hubungan}",
+      "saya sudah lama mengenal #0046# dan #0047# karena saya adalah {hubungan}"
+     ],
+     "saksi2": [
+      "kedua pihak yaitu #0046# dan #0047# saya kenal karena saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya kenal dengan #0046# serta #0047#",
+      "saya tahu dan kenal #0046# juga #0047# karena saya adalah {hubungan}",
+      "perkenalan saya dengan #0046# dan #0047# terjadi karena saya adalah {hubungan}"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-kenal-pewasiat",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 20,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi kenal dengan #2026# #1025# semasa hidupnya ?",
+   "hal": "perkenalan saksi dengan pewasiat",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal pewasiat semasa hidupnya",
+     "saksi1": [
+      "saya kenal dengan #2026# #1025# semasa hidupnya",
+      "semasa hidupnya saya mengenal #2026# #1025# dengan baik",
+      "#2026# #1025# saya kenal sejak beliau masih hidup",
+      "saya mengenal #2026# #1025# selama beliau hidup dan sering bertemu dengannya"
+     ],
+     "saksi2": [
+      "saya tahu dan kenal baik dengan #2026# #1025# ketika beliau masih hidup",
+      "ketika masih hidup #2026# #1025# adalah orang yang saya kenal",
+      "saya sudah mengenal #2026# #1025# jauh sebelum beliau meninggal dunia",
+      "sewaktu hidup #2026# #1025# saya kenal secara dekat"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-meninggal",
+   "pokok": "pp-kematian-pewasiat",
+   "urutan": 30,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah #2026# #1025# sudah meninggal dunia, kapan, dan dalam keadaan beragama apa ?",
+   "hal": "kapan pewasiat meninggal dunia dan apa agamanya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui sendiri pewasiat meninggal pada tanggal yang disebut dan beragama Islam",
+     "saksi1": [
+      "#2026# #1025# meninggal dunia pada #1246# dalam keadaan beragama Islam dan saya mengetahuinya sendiri",
+      "saya mengetahui sendiri bahwa #2026# #1025# wafat pada #1246# sebagai seorang yang beragama Islam",
+      "pada #1246# #2026# #1025# berpulang dalam keadaan memeluk agama Islam dan saya ada di sana ketika itu",
+      "saya melihat sendiri #2026# #1025# telah meninggal dunia pada #1246# dan agama beliau adalah Islam"
+     ],
+     "saksi2": [
+      "benar #2026# #1025# sudah meninggal dunia pada #1246# dan sampai wafat beliau tetap beragama Islam yang saya ketahui langsung",
+      "kematian #2026# #1025# pada #1246# saya saksikan sendiri dan beliau wafat sebagai pemeluk agama Islam",
+      "hari wafatnya #2026# #1025# adalah #1246# dan beliau beragama Islam sebagaimana saya ketahui secara langsung",
+      "saya sendiri mengetahui bahwa #2026# #1025# meninggal pada #1246# dan beliau seorang muslim"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: wafat pada tanggal yang disebut dalam perkara; versi B: wafat beberapa waktu lebih awal - berselisih pada WAKTU",
+     "saksi1": [
+      "saya mengetahui sendiri #2026# #1025# meninggal dunia pada #1246#",
+      "#2026# #1025# wafat pada #1246# dan saya menyaksikannya sendiri",
+      "pada #1246# #2026# #1025# berpulang dan hal itu saya lihat sendiri",
+      "saya sendiri yang mengetahui bahwa #2026# #1025# meninggal pada #1246#"
+     ],
+     "saksi2": [
+      "setahu saya #2026# #1025# sudah meninggal dunia beberapa bulan lebih awal dari #1246# dan saya mengetahuinya sendiri",
+      "saya menyaksikan sendiri bahwa wafatnya #2026# #1025# terjadi jauh sebelum #1246#",
+      "#2026# #1025# telah wafat beberapa waktu sebelum #1246# dan itu saya lihat sendiri",
+      "seingat saya yang menyaksikan sendiri #2026# #1025# berpulang lebih dahulu daripada #1246#"
+     ],
+     "bedaPada": "waktu"
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "1246",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-keadaan-pewasiat",
+   "pokok": "pp-syarat-pewasiat",
+   "urutan": 40,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana keadaan #2026# #1025# ketika membuat wasiat, apakah sudah dewasa, sehat akalnya dan tidak dipaksa ?",
+   "hal": "keadaan pewasiat ketika membuat wasiat",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "pewasiat dewasa, berakal sehat dan tanpa paksaan ketika berwasiat",
+     "saksi1": [
+      "ketika membuat wasiat itu #2026# #1025# sudah dewasa dan sehat akalnya serta tidak ada yang memaksanya",
+      "saya lihat sendiri #2026# #1025# waktu itu sudah dewasa dan berakal sehat dan tidak dipaksa oleh siapa pun",
+      "#2026# #1025# pada saat berwasiat adalah orang dewasa yang waras dan tidak berada di bawah tekanan siapa pun",
+      "saya mengetahui sendiri bahwa saat berwasiat #2026# #1025# sudah dewasa dengan akal yang sehat tanpa ada paksaan"
+     ],
+     "saksi2": [
+      "waktu berwasiat #2026# #1025# sudah cukup umur dan pikirannya sehat dan ia melakukannya atas kemauan sendiri tidak karena dipaksa",
+      "saya menyaksikan sendiri #2026# #1025# berwasiat dalam keadaan dewasa dan sadar dan tanpa tekanan dari pihak mana pun",
+      "pada saat itu #2026# #1025# sudah dewasa dan sehat jasmani dan akalnya dan tidak ada orang yang menekannya",
+      "#2026# #1025# berwasiat dengan akal yang sehat dan umur yang sudah dewasa dan tidak ada paksaan dari siapa pun yang saya lihat"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pewasiat sehat dan sadar saat berwasiat; versi B: pewasiat sakit keras dan tidak sadar penuh - berselisih pada PERISTIWA (keadaan pewasiat)",
+     "saksi1": [
+      "ketika berwasiat #2026# #1025# dalam keadaan sehat dan sadar penuh yang saya lihat sendiri",
+      "saya menyaksikan sendiri #2026# #1025# berwasiat dalam keadaan sehat akalnya dan sadar sepenuhnya",
+      "waktu berwasiat #2026# #1025# berakal sehat dan sadar dan hal itu saya saksikan langsung",
+      "#2026# #1025# sehat dan sadar ketika menyampaikan wasiatnya dan saya melihatnya sendiri"
+     ],
+     "saksi2": [
+      "ketika berwasiat #2026# #1025# sedang sakit keras dan tidak sadar sepenuhnya yang saya lihat sendiri",
+      "saya menyaksikan sendiri #2026# #1025# berwasiat sewaktu sakit parah dan tidak lagi sehat akalnya",
+      "waktu itu #2026# #1025# terbaring sakit berat dan tidak dapat berpikir jernih dan saya melihatnya langsung",
+      "saat menyampaikan wasiatnya #2026# #1025# lemah karena sakit dan tidak sadar penuh yang saya saksikan sendiri"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-bentuk-wasiat",
+   "pokok": "pp-bentuk-wasiat",
+   "urutan": 50,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana cara #2026# #1025# menyampaikan wasiatnya, secara lisan, tertulis atau di hadapan Notaris, dan di mana serta kapan ?",
+   "hal": "cara dan waktu pewasiat menyampaikan wasiatnya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "bentukWasiat": "lisan"
+      },
+      "maksud": "wasiat disampaikan secara lisan di hadapan dua orang saksi",
+      "saksi1": [
+       "#2026# #1025# menyampaikan wasiatnya secara lisan di hadapan dua orang saksi dan saya hadir mendengarkannya",
+       "saya menyaksikan sendiri #2026# #1025# mengucapkan wasiatnya secara lisan di depan dua orang saksi",
+       "wasiat itu diucapkan langsung oleh #2026# #1025# secara lisan dengan disaksikan dua orang saksi dan saya ada di tempat itu",
+       "secara lisan #2026# #1025# berwasiat di hadapan dua orang saksi dan saya melihat kejadian itu sendiri"
+      ],
+      "saksi2": [
+       "wasiat #2026# #1025# disampaikan dengan lisan di muka dua orang saksi dan saya turut hadir ketika itu",
+       "saya ikut hadir ketika #2026# #1025# menyampaikan wasiat lisannya di hadapan dua orang saksi",
+       "pesan wasiat itu diucapkan sendiri oleh #2026# #1025# dengan lisan dan dihadiri dua orang saksi yang saya lihat langsung",
+       "#2026# #1025# berwasiat dengan ucapan lisan di depan dua orang saksi dan saya menyaksikannya sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "bentukWasiat": "tertulis"
+      },
+      "maksud": "wasiat dibuat tertulis dan ditandatangani di hadapan dua orang saksi",
+      "saksi1": [
+       "#2026# #1025# membuat wasiatnya secara tertulis dan menandatanganinya di hadapan dua orang saksi yang saya lihat sendiri",
+       "saya menyaksikan sendiri #2026# #1025# menandatangani surat wasiat tertulis di hadapan dua orang saksi",
+       "wasiat itu dibuat tertulis oleh #2026# #1025# dengan dua orang saksi dan saya ada ketika surat itu ditandatangani",
+       "dalam bentuk surat tertulis #2026# #1025# menyatakan wasiatnya di hadapan dua orang saksi dan saya melihatnya sendiri"
+      ],
+      "saksi2": [
+       "surat wasiat tertulis itu ditandatangani #2026# #1025# di depan dua orang saksi dan saya hadir saat itu",
+       "saya ada di tempat ketika #2026# #1025# menandatangani wasiat tertulisnya di muka dua orang saksi",
+       "#2026# #1025# berwasiat secara tertulis dengan disaksikan dua orang saksi yang saya lihat langsung",
+       "wasiat berupa tulisan itu dibubuhi tanda tangan #2026# #1025# di hadapan dua orang saksi dan saya menyaksikannya"
+      ]
+     },
+     {
+      "keadaan": {
+       "bentukWasiat": "akta-notaris"
+      },
+      "maksud": "wasiat dibuat dengan akta di hadapan Notaris",
+      "saksi1": [
+       "#2026# #1025# berwasiat di hadapan Notaris dan dibuatkan akta wasiat yang saya lihat sendiri",
+       "saya menyaksikan sendiri #2026# #1025# menghadap Notaris untuk membuat akta wasiat",
+       "wasiat itu dinyatakan #2026# #1025# di kantor Notaris dan saya ada di sana ketika itu",
+       "di hadapan seorang Notaris #2026# #1025# menyatakan wasiatnya dan saya melihatnya sendiri"
+      ],
+      "saksi2": [
+       "akta wasiat dibuat Notaris atas permintaan #2026# #1025# dan saya menyaksikannya",
+       "saya ikut menyaksikan #2026# #1025# berwasiat melalui akta yang dibuat oleh Notaris",
+       "#2026# #1025# datang kepada Notaris dan menyatakan wasiatnya yang saya lihat langsung",
+       "wasiat #2026# #1025# dituangkan dalam akta Notaris dan prosesnya saya saksikan sendiri"
+      ]
+     }
+    ],
+    "mendengar": {
+     "maksud": "saksi mendengar sendiri pewasiat mengucapkan wasiat",
+     "saksi1": [
+      "saya mendengar sendiri #2026# #1025# mengucapkan wasiatnya di hadapan orang-orang yang hadir",
+      "dengan telinga saya sendiri saya mendengar #2026# #1025# menyatakan wasiatnya",
+      "ucapan wasiat #2026# #1025# terdengar langsung oleh saya ketika beliau menyampaikannya",
+      "saya ikut mendengar #2026# #1025# berwasiat secara langsung"
+     ],
+     "saksi2": [
+      "saya turut mendengar langsung #2026# #1025# berpesan tentang wasiatnya",
+      "wasiat itu keluar dari mulut #2026# #1025# sendiri dan saya mendengarnya",
+      "perkataan #2026# #1025# mengenai wasiatnya saya dengar sendiri",
+      "ketika #2026# #1025# menyampaikan wasiatnya saya mendengarnya secara langsung"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi mengetahui adanya wasiat dari cerita orang lain dan tidak menyaksikannya sendiri",
+     "saksi1": [
+      "saya mengetahui adanya wasiat #2026# #1025# dari cerita {sumber} dan saya tidak menyaksikan sendiri pembuatannya",
+      "{sumber} yang menceritakan kepada saya bahwa #2026# #1025# berwasiat dan saya sendiri tidak hadir ketika itu",
+      "perihal wasiat #2026# #1025# saya diberi tahu oleh {sumber} dan saya tidak melihatnya sendiri",
+      "wasiat #2026# #1025# hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+     ],
+     "saksi2": [
+      "kabar tentang wasiat #2026# #1025# saya terima dari {sumber} dan saya tidak berada di tempat saat itu",
+      "saya mendengar dari {sumber} bahwa #2026# #1025# pernah berwasiat dan saya tidak mengalaminya langsung",
+      "{sumber} bercerita kepada saya tentang wasiat #2026# #1025# dan saya tidak menyaksikannya sendiri",
+      "soal wasiat #2026# #1025# saya dikabari oleh {sumber} dan bukan dari yang saya lihat"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian tentang wasiat, selebihnya tidak",
+     "saksi1": [
+      "saya hanya mengetahui sebagian isi wasiat #2026# #1025# dan selebihnya saya tidak tahu",
+      "yang saya ketahui tentang wasiat #2026# #1025# baru sebagian saja sedangkan sisanya tidak saya ketahui",
+      "sebagian dari cara #2026# #1025# berwasiat saya lihat sendiri dan selebihnya tidak saya saksikan",
+      "wasiat #2026# #1025# hanya sebagian yang saya ketahui dan sisanya tidak"
+     ],
+     "saksi2": [
+      "pengetahuan saya tentang wasiat #2026# #1025# terbatas pada sebagian dan selebihnya saya tidak dapat menerangkan",
+      "saya hanya tahu sebagian dari wasiat #2026# #1025# sementara bagian lainnya tidak saya ketahui",
+      "mengenai wasiat #2026# #1025# sebatas yang saya saksikan saja dan selebihnya saya tidak tahu",
+      "sebagian wasiat #2026# #1025# pernah saya dengar sendiri tetapi selebihnya tidak saya ketahui"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: wasiat disampaikan secara lisan; versi B: wasiat berbentuk surat tertulis - berselisih pada PERISTIWA (bentuk wasiat)",
+     "saksi1": [
+      "setahu saya #2026# #1025# berwasiat hanya secara lisan dan saya mendengarnya sendiri",
+      "wasiat #2026# #1025# diucapkan secara lisan dan saya menyaksikannya sendiri",
+      "saya melihat sendiri #2026# #1025# menyampaikan wasiatnya dengan ucapan lisan",
+      "#2026# #1025# berwasiat secara lisan di depan saya sendiri"
+     ],
+     "saksi2": [
+      "wasiat #2026# #1025# yang saya lihat sendiri berbentuk surat tertulis yang ditandatangani",
+      "saya menyaksikan sendiri #2026# #1025# menuliskan wasiatnya dalam sebuah surat",
+      "#2026# #1025# berwasiat dengan membuat surat tertulis dan hal itu saya lihat sendiri",
+      "bentuk wasiat #2026# #1025# adalah tulisan yang ditandatangani dan saya melihatnya langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-saksi-wasiat",
+   "pokok": "pp-bentuk-wasiat",
+   "urutan": 60,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Siapa saja yang menjadi saksi ketika wasiat itu disampaikan atau dibuat ?",
+   "hal": "siapa yang menjadi saksi wasiat",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "bentukWasiat": [
+        "lisan",
+        "tertulis"
+       ]
+      },
+      "maksud": "wasiat disaksikan dua orang saksi",
+      "saksi1": [
+       "yang menjadi saksi ketika #2026# #1025# berwasiat adalah dua orang yaitu ... dan ... yang hadir saat itu",
+       "wasiat #2026# #1025# itu disaksikan oleh dua orang yaitu ... dan ... yang saya kenal",
+       "ada dua orang saksi pada wasiat #2026# #1025# yaitu ... dan ... yang hadir di tempat itu",
+       "saksi atas wasiat #2026# #1025# berjumlah dua orang yaitu ... dan ... yang saya lihat sendiri"
+      ],
+      "saksi2": [
+       "dua orang yang menyaksikan wasiat #2026# #1025# adalah ... dan ... sebagaimana saya ketahui",
+       "saat #2026# #1025# berwasiat hadir dua orang saksi yaitu ... dan ... yang saya lihat langsung",
+       "wasiat #2026# #1025# dihadiri dan disaksikan oleh ... dan ... sebagai dua orang saksi",
+       "sebagai saksi wasiat #2026# #1025# ada dua orang yakni ... dan ... yang hadir ketika itu"
+      ]
+     },
+     {
+      "keadaan": {
+       "bentukWasiat": "akta-notaris"
+      },
+      "maksud": "akta wasiat dibuat oleh Notaris dengan dua orang saksi akta",
+      "saksi1": [
+       "wasiat #2026# #1025# dibuat di hadapan Notaris yang bernama ... dan disaksikan dua orang saksi akta",
+       "pembuat akta wasiat #2026# #1025# adalah Notaris ... dengan dua orang saksi akta yang hadir",
+       "akta wasiat #2026# #1025# dibuat oleh Notaris ... dan ditandatangani dua orang saksi",
+       "yang membuat akta wasiat #2026# #1025# adalah Notaris ... bersama dua orang saksi yang hadir di sana"
+      ],
+      "saksi2": [
+       "di hadapan Notaris ... #2026# #1025# menyatakan wasiatnya dengan dua orang saksi yang ikut menandatangani",
+       "pejabat Notaris yang saya ketahui menangani wasiat #2026# #1025# bernama ... dan didampingi dua orang saksi",
+       "wasiat #2026# #1025# dituangkan dalam akta oleh Notaris ... dan disaksikan dua orang saksi akta tersebut",
+       "akta wasiat #2026# #1025# diterbitkan Notaris ... dengan kehadiran dua orang saksi"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: wasiat disaksikan dua orang; versi B: hanya satu orang saksi - berselisih pada JUMLAH saksi wasiat",
+     "saksi1": [
+      "saya melihat sendiri wasiat #2026# #1025# disaksikan oleh dua orang",
+      "ketika #2026# #1025# berwasiat saya menyaksikan sendiri hadirnya dua orang saksi",
+      "dua orang hadir sebagai saksi atas wasiat #2026# #1025# dan itu saya lihat sendiri",
+      "yang menyaksikan wasiat #2026# #1025# berjumlah dua orang sepengetahuan saya yang melihat sendiri"
+     ],
+     "saksi2": [
+      "saya melihat sendiri wasiat #2026# #1025# hanya disaksikan seorang saja dan tidak ada saksi lainnya",
+      "ketika #2026# #1025# berwasiat saya menyaksikan sendiri bahwa yang hadir sebagai saksi cuma satu orang dan tidak lebih",
+      "satu orang saja yang hadir sebagai saksi atas wasiat #2026# #1025# dan tidak ada yang lain yang saya lihat",
+      "yang menyaksikan wasiat #2026# #1025# hanya seorang dan tidak ada orang lain yang saya saksikan"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-objek-wasiat",
+   "pokok": "pp-objek-wasiat",
+   "urutan": 70,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa saja benda atau harta yang diwasiatkan oleh #2026# #1025# dan di mana letaknya ?",
+   "hal": "benda yang diwasiatkan dan letaknya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan benda yang diwasiatkan dan letaknya karena pernah melihatnya",
+     "saksi1": [
+      "yang diwasiatkan oleh #2026# #1025# berupa ... yang terletak di ... dan saya mengetahuinya sendiri",
+      "benda yang diwasiatkan #2026# #1025# adalah ... yang letaknya di ... sebagaimana saya lihat sendiri",
+      "saya mengetahui sendiri bahwa #2026# #1025# mewasiatkan ... yang berada di ... dan benda itu pernah saya lihat",
+      "harta yang diwasiatkan #2026# #1025# adalah ... yang terletak di ... dan saya pernah melihat objeknya"
+     ],
+     "saksi2": [
+      "wasiat #2026# #1025# meliputi ... yang berlokasi di ... yang saya ketahui langsung",
+      "saya tahu sendiri benda yang diwasiatkan #2026# #1025# yaitu ... di ... karena pernah melihatnya",
+      "objek wasiat #2026# #1025# berupa ... dan letaknya di ... sebagaimana yang saya saksikan",
+      "#2026# #1025# mewasiatkan ... yang terletak di ... dan benda itu saya kenal dengan baik"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: yang diwasiatkan hanya satu jenis harta; versi B: lebih dari satu jenis harta - berselisih pada JUMLAH objek wasiat",
+     "saksi1": [
+      "yang diwasiatkan #2026# #1025# hanya satu jenis harta dan itu saya lihat sendiri",
+      "saya melihat sendiri #2026# #1025# mewasiatkan satu jenis harta saja",
+      "harta yang diwasiatkan #2026# #1025# cuma satu jenis dan saya mengetahuinya sendiri",
+      "satu jenis harta itulah yang diwasiatkan #2026# #1025# sebagaimana saya saksikan sendiri"
+     ],
+     "saksi2": [
+      "yang diwasiatkan #2026# #1025# lebih dari satu jenis harta dan itu saya lihat sendiri",
+      "saya melihat sendiri #2026# #1025# mewasiatkan beberapa jenis harta sekaligus",
+      "harta yang diwasiatkan #2026# #1025# terdiri dari banyak jenis dan saya mengetahuinya sendiri",
+      "beberapa jenis harta diwasiatkan oleh #2026# #1025# sebagaimana saya saksikan sendiri"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-milik-pewasiat",
+   "pokok": "pp-objek-wasiat",
+   "urutan": 80,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah benda yang diwasiatkan itu milik #2026# #1025# sendiri dan bagaimana ia memperolehnya ?",
+   "hal": "status kepemilikan benda yang diwasiatkan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "bukan:pokokTuntutan": "D"
+      },
+      "maksud": "benda yang diwasiatkan adalah hak milik pewasiat sendiri",
+      "saksi1": [
+       "benda yang diwasiatkan itu adalah milik #2026# #1025# sendiri dan bukan milik orang lain",
+       "setahu saya benda itu hak milik #2026# #1025# pribadi yang diperolehnya sendiri dan tidak terkait dengan milik orang lain",
+       "saya mengetahui sendiri bahwa benda yang diwasiatkan tersebut milik #2026# #1025# dan bukan kepunyaan pihak lain",
+       "benda yang diwasiatkan itu kepunyaan #2026# #1025# sendiri dan tidak bercampur dengan harta orang lain"
+      ],
+      "saksi2": [
+       "yang diwasiatkan adalah barang milik #2026# #1025# sendiri dan bukan barang milik orang lain yang saya ketahui langsung",
+       "saya tahu benda itu hak #2026# #1025# secara pribadi dan tidak ada orang lain yang mengakuinya",
+       "benda yang diwasiatkan merupakan harta #2026# #1025# sendiri dan bukan titipan siapa pun",
+       "kepemilikan benda yang diwasiatkan ada pada #2026# #1025# sendiri dan tidak dimiliki orang lain"
+      ]
+     },
+     {
+      "keadaan": {
+       "pokokTuntutan": "D"
+      },
+      "maksud": "benda yang diwasiatkan ternyata bukan hak milik pewasiat",
+      "saksi1": [
+       "benda yang diwasiatkan itu bukan milik #2026# #1025# melainkan milik orang lain yang saya ketahui sendiri",
+       "setahu saya benda yang diwasiatkan tersebut bukan hak #2026# #1025# karena masih milik pihak lain",
+       "saya melihat sendiri bahwa benda yang diwasiatkan itu bukan kepunyaan #2026# #1025# melainkan kepunyaan orang lain",
+       "benda itu bukan harta #2026# #1025# sendiri dan hal itu saya ketahui langsung"
+      ],
+      "saksi2": [
+       "yang diwasiatkan ternyata bukan barang milik #2026# #1025# tetapi milik pihak lain yang saya ketahui sendiri",
+       "saya tahu langsung bahwa benda itu bukan hak #2026# #1025# secara pribadi dan masih milik orang lain",
+       "kepemilikan benda yang diwasiatkan bukan pada #2026# #1025# melainkan pada pihak lain sebagaimana saya saksikan",
+       "benda yang diwasiatkan bukan kepunyaan #2026# #1025# sendiri dan saya mengetahuinya secara langsung"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: benda itu milik pribadi pewasiat; versi B: benda itu masih bagian harta bersama yang belum dibagi - berselisih pada PERISTIWA (status kepemilikan)",
+     "saksi1": [
+      "benda yang diwasiatkan itu milik pribadi #2026# #1025# yang saya ketahui sendiri",
+      "saya melihat sendiri benda yang diwasiatkan merupakan harta pribadi #2026# #1025#",
+      "sepengetahuan saya benda itu adalah hak #2026# #1025# secara pribadi dan saya menyaksikannya",
+      "#2026# #1025# adalah pemilik penuh benda yang diwasiatkan dan itu saya lihat sendiri"
+     ],
+     "saksi2": [
+      "benda yang diwasiatkan itu masih bagian dari harta bersama #2026# #1025# yang belum dibagi dan itu saya ketahui sendiri",
+      "saya melihat sendiri benda yang diwasiatkan masih tercampur dengan harta #2026# #1025# lainnya yang belum dibagi",
+      "sepengetahuan saya benda itu masih termasuk harta bersama #2026# #1025# yang belum dibagi dan saya menyaksikannya",
+      "benda yang diwasiatkan masih menjadi bagian harta keluarga #2026# #1025# yang belum dibagi dan itu saya lihat sendiri"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-penerima",
+   "pokok": "pp-penerima-wasiat",
+   "urutan": 90,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Siapa yang menerima wasiat dari #2026# #1025# dan apa hubungannya dengan pewasiat ?",
+   "hal": "penerima wasiat dan hubungannya dengan pewasiat",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "penerima": "ahli-waris"
+      },
+      "maksud": "penerima wasiat adalah ahli waris pewasiat",
+      "saksi1": [
+       "yang menerima wasiat dari #2026# #1025# adalah ... yang merupakan salah seorang ahli warisnya",
+       "penerima wasiat #2026# #1025# bernama ... dan ia termasuk ahli waris beliau",
+       "wasiat #2026# #1025# diberikan kepada ... yang adalah ahli waris beliau sendiri",
+       "yang ditunjuk menerima wasiat #2026# #1025# ialah ... yang berkedudukan sebagai ahli waris"
+      ],
+      "saksi2": [
+       "wasiat #2026# #1025# diperuntukkan bagi ... yang saya ketahui sebagai ahli waris beliau",
+       "orang yang menerima wasiat #2026# #1025# bernama ... dan ia masih tergolong ahli waris",
+       "saya tahu penerima wasiat #2026# #1025# adalah ... sedangkan hubungannya dengan beliau ialah ahli waris",
+       "pemberian wasiat #2026# #1025# ditujukan kepada ... selaku ahli warisnya"
+      ]
+     },
+     {
+      "keadaan": {
+       "penerima": "bukan-ahli-waris"
+      },
+      "maksud": "penerima wasiat bukan ahli waris pewasiat",
+      "saksi1": [
+       "yang menerima wasiat dari #2026# #1025# adalah ... dan ia bukan ahli waris beliau",
+       "penerima wasiat #2026# #1025# bernama ... yang bukan termasuk ahli warisnya",
+       "wasiat #2026# #1025# diberikan kepada ... yang bukan ahli waris beliau",
+       "yang ditunjuk menerima wasiat #2026# #1025# ialah ... dan ia bukan berkedudukan sebagai ahli waris"
+      ],
+      "saksi2": [
+       "wasiat #2026# #1025# diperuntukkan bagi ... yang saya ketahui bukan ahli waris beliau",
+       "orang yang menerima wasiat #2026# #1025# bernama ... dan ia tidak tergolong ahli waris",
+       "saya tahu penerima wasiat #2026# #1025# adalah ... sedangkan hubungannya dengan beliau bukan ahli waris",
+       "pemberian wasiat #2026# #1025# ditujukan kepada ... yang tidak berstatus ahli waris"
+      ]
+     },
+     {
+      "keadaan": {
+       "penerima": "lembaga"
+      },
+      "maksud": "penerima wasiat adalah sebuah lembaga",
+      "saksi1": [
+       "wasiat #2026# #1025# diberikan kepada sebuah lembaga bernama ... untuk kepentingan lembaga tersebut",
+       "yang menerima wasiat dari #2026# #1025# adalah lembaga bernama ... yang saya kenal",
+       "#2026# #1025# berwasiat kepada lembaga ... dan lembaga itu yang menerimanya",
+       "penerima wasiat #2026# #1025# berupa lembaga bernama ... yang saya ketahui"
+      ],
+      "saksi2": [
+       "wasiat #2026# #1025# diperuntukkan bagi lembaga yang bernama ... sebagaimana saya ketahui",
+       "badan yang menerima wasiat #2026# #1025# adalah lembaga ... yang saya tahu langsung",
+       "saya tahu wasiat #2026# #1025# ditujukan kepada lembaga ... dan dimanfaatkan untuk kepentingan lembaga itu",
+       "yang ditunjuk #2026# #1025# sebagai penerima wasiat adalah lembaga ... yang saya kenal"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: penerima wasiat satu orang atau satu lembaga; versi B: penerima lebih dari satu - berselisih pada JUMLAH penerima",
+     "saksi1": [
+      "penerima wasiat #2026# #1025# hanya satu dan itu saya ketahui sendiri",
+      "saya melihat sendiri #2026# #1025# menunjuk satu penerima wasiat saja",
+      "wasiat #2026# #1025# ditujukan kepada satu penerima dan saya mengetahuinya sendiri",
+      "satu penerima itulah yang ditunjuk #2026# #1025# sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "penerima wasiat #2026# #1025# lebih dari satu dan itu saya ketahui sendiri",
+      "saya melihat sendiri #2026# #1025# menunjuk beberapa penerima wasiat sekaligus",
+      "wasiat #2026# #1025# ditujukan kepada banyak penerima dan saya mengetahuinya sendiri",
+      "beberapa penerima ditunjuk oleh #2026# #1025# sebagaimana saya saksikan"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-persetujuan-ahli-waris",
+   "pokok": "pp-persetujuan-ahli-waris",
+   "urutan": 100,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": [
+     "A",
+     "B"
+    ]
+   },
+   "teks": "Apakah seluruh ahli waris #2026# #1025# menyetujui wasiat itu dan bagaimana cara mereka menyatakan persetujuan ?",
+   "hal": "persetujuan para ahli waris atas wasiat itu",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "pihakSaksi": "P"
+      },
+      "maksud": "tidak semua ahli waris menyetujui wasiat itu",
+      "saksi1": [
+       "tidak semua ahli waris #2026# #1025# menyetujui wasiat itu dan ada yang menolaknya secara terbuka",
+       "saya mengetahui sendiri ada ahli waris #2026# #1025# yang tidak setuju dengan wasiat tersebut",
+       "persetujuan seluruh ahli waris #2026# #1025# tidak pernah ada dan sebagian dari mereka keberatan",
+       "sebagian ahli waris #2026# #1025# menyatakan keberatan atas wasiat itu dan tidak pernah memberi persetujuan"
+      ],
+      "saksi2": [
+       "ada ahli waris #2026# #1025# yang tidak memberikan persetujuan atas wasiat itu dan saya mengetahuinya sendiri",
+       "wasiat itu tidak disetujui oleh semua ahli waris #2026# #1025# sebagaimana saya saksikan",
+       "saya melihat sendiri sebagian ahli waris #2026# #1025# keberatan dan tidak mau menandatangani persetujuan",
+       "tidak seluruh ahli waris #2026# #1025# merestui wasiat itu yang saya ketahui langsung"
+      ]
+     },
+     {
+      "keadaan": {
+       "pihakSaksi": "T"
+      },
+      "maksud": "seluruh ahli waris menyetujui wasiat di hadapan dua orang saksi",
+      "saksi1": [
+       "seluruh ahli waris #2026# #1025# menyetujui wasiat itu dan menyatakannya di hadapan dua orang saksi",
+       "saya menyaksikan sendiri semua ahli waris #2026# #1025# menyatakan setuju atas wasiat tersebut di depan dua orang saksi",
+       "persetujuan seluruh ahli waris #2026# #1025# diberikan secara terbuka di hadapan dua orang saksi dan saya hadir",
+       "semua ahli waris #2026# #1025# merestui wasiat itu dengan disaksikan dua orang saksi yang saya lihat langsung"
+      ],
+      "saksi2": [
+       "para ahli waris #2026# #1025# seluruhnya setuju dengan wasiat itu dan menyatakannya di muka dua orang saksi",
+       "saya ada ketika semua ahli waris #2026# #1025# menyetujui wasiat tersebut di hadapan dua orang saksi",
+       "wasiat itu disetujui oleh seluruh ahli waris #2026# #1025# secara lisan di depan dua orang saksi",
+       "semua ahli waris #2026# #1025# menyatakan restu atas wasiat itu dengan dihadiri dua orang saksi yang saya saksikan"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: seluruh ahli waris menyetujui; versi B: ada ahli waris yang tidak menyetujui - berselisih pada JUMLAH ahli waris yang menyetujui",
+     "saksi1": [
+      "saya melihat sendiri seluruh ahli waris #2026# #1025# menyetujui wasiat itu",
+      "semua ahli waris #2026# #1025# menyatakan setuju dan itu saya saksikan sendiri",
+      "persetujuan datang dari semua ahli waris #2026# #1025# sebagaimana saya lihat langsung",
+      "seluruh ahli waris #2026# #1025# merestui wasiat itu dan saya menyaksikannya"
+     ],
+     "saksi2": [
+      "saya melihat sendiri ada ahli waris #2026# #1025# yang tidak menyetujui wasiat itu",
+      "sebagian ahli waris #2026# #1025# menyatakan tidak setuju dan itu saya saksikan sendiri",
+      "persetujuan tidak datang dari semua ahli waris #2026# #1025# sebagaimana saya lihat langsung",
+      "ada ahli waris #2026# #1025# yang tidak merestui wasiat itu dan saya menyaksikannya"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-sepertiga",
+   "pokok": "pp-batas-sepertiga",
+   "urutan": 110,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": "A"
+   },
+   "teks": "Apakah nilai harta yang diwasiatkan itu lebih dari sepertiga seluruh harta peninggalan #2026# #1025# ?",
+   "hal": "perbandingan harta yang diwasiatkan dengan seluruh harta peninggalan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "nilai harta yang diwasiatkan melebihi sepertiga seluruh harta peninggalan",
+     "saksi1": [
+      "nilai harta yang diwasiatkan melebihi sepertiga dari seluruh harta peninggalan #2026# #1025#",
+      "saya mengetahui sendiri harta yang diwasiatkan #2026# #1025# lebih dari sepertiga harta peninggalannya",
+      "yang diwasiatkan #2026# #1025# itu jumlahnya melampaui sepertiga seluruh harta yang ditinggalkannya",
+      "dibandingkan seluruh harta peninggalan #2026# #1025# wasiat itu nilainya lebih besar dari sepertiga"
+     ],
+     "saksi2": [
+      "harta yang diwasiatkan itu nilainya lebih dari sepertiga keseluruhan harta peninggalan #2026# #1025# yang saya ketahui",
+      "saya hitung sendiri wasiat #2026# #1025# melebihi sepertiga dari harta peninggalan beliau",
+      "wasiat #2026# #1025# itu melewati batas sepertiga dari harta yang beliau tinggalkan",
+      "jumlah yang diwasiatkan #2026# #1025# lebih besar daripada sepertiga seluruh peninggalannya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: wasiat melebihi sepertiga harta peninggalan; versi B: wasiat tidak melebihi sepertiga - berselisih pada JUMLAH nilai wasiat",
+     "saksi1": [
+      "saya mengetahui sendiri wasiat #2026# #1025# melebihi sepertiga dari seluruh harta peninggalan",
+      "yang diwasiatkan #2026# #1025# lebih dari sepertiga harta peninggalannya dan itu saya ketahui",
+      "nilai wasiat #2026# #1025# berada di atas sepertiga dari seluruh hartanya sebagaimana saya lihat",
+      "wasiat #2026# #1025# melampaui sepertiga seluruh harta yang ditinggalkan dan saya menyaksikannya"
+     ],
+     "saksi2": [
+      "saya mengetahui sendiri wasiat #2026# #1025# tidak melebihi sepertiga dari seluruh harta peninggalan",
+      "yang diwasiatkan #2026# #1025# tidak sampai sepertiga harta peninggalannya dan itu saya ketahui",
+      "nilai wasiat #2026# #1025# tidak lebih dari sepertiga seluruh hartanya sebagaimana saya lihat",
+      "wasiat #2026# #1025# tidak melampaui sepertiga seluruh harta yang ditinggalkan dan saya menyaksikannya"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-harta-peninggalan",
+   "pokok": "pp-harta-peninggalan",
+   "urutan": 120,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa saja harta peninggalan #2026# #1025# dan siapa saja ahli warisnya yang masih hidup ?",
+   "hal": "harta peninggalan dan ahli waris pewasiat",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan harta peninggalan dan ahli waris yang masih hidup",
+     "saksi1": [
+      "harta peninggalan #2026# #1025# berupa ... dan ahli warisnya adalah ... yang saya ketahui sendiri",
+      "saya mengetahui harta yang ditinggalkan #2026# #1025# yaitu ... dengan ahli waris ... yang masih hidup",
+      "peninggalan #2026# #1025# terdiri dari ... dan yang menjadi ahli warisnya ialah ... sebagaimana saya ketahui",
+      "yang ditinggalkan #2026# #1025# adalah ... sedangkan ahli warisnya ... yang saya kenal"
+     ],
+     "saksi2": [
+      "#2026# #1025# meninggalkan harta berupa ... dengan ahli waris ... yang saya ketahui langsung",
+      "saya tahu sendiri harta peninggalan #2026# #1025# meliputi ... dan ahli warisnya terdiri dari ... yang masih hidup",
+      "harta yang ditinggalkan #2026# #1025# meliputi ... dan yang berhak mewarisinya adalah ... sebagaimana saya saksikan",
+      "peninggalan #2026# #1025# berwujud ... serta ahli waris yang masih hidup yaitu ... yang saya kenal"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: ahli waris yang masih hidup cukup banyak; versi B: hanya beberapa orang - berselisih pada JUMLAH ahli waris",
+     "saksi1": [
+      "ahli waris #2026# #1025# yang masih hidup cukup banyak dan saya mengetahuinya sendiri",
+      "saya melihat sendiri ahli waris #2026# #1025# berjumlah banyak",
+      "yang berhak mewarisi #2026# #1025# banyak orang sebagaimana saya saksikan sendiri",
+      "jumlah ahli waris #2026# #1025# besar dan saya mengenal mereka"
+     ],
+     "saksi2": [
+      "ahli waris #2026# #1025# yang masih hidup hanya beberapa orang dan saya mengetahuinya sendiri",
+      "saya melihat sendiri ahli waris #2026# #1025# cuma sedikit",
+      "yang berhak mewarisi #2026# #1025# tinggal sedikit orang sebagaimana saya saksikan sendiri",
+      "jumlah ahli waris #2026# #1025# kecil dan saya mengenal mereka"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-penguasaan",
+   "pokok": "pp-penguasaan-objek",
+   "urutan": 130,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": "F"
+   },
+   "teks": "Siapa yang saat ini menguasai benda yang diwasiatkan dan apakah sudah diserahkan kepada penerima wasiat ?",
+   "hal": "siapa yang menguasai benda yang diwasiatkan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "benda wasiat masih dikuasai Tergugat dan belum diserahkan kepada penerima",
+     "saksi1": [
+      "benda yang diwasiatkan oleh #2026# #1025# sekarang dikuasai oleh #0047# dan belum diserahkan kepada penerima wasiat",
+      "saya melihat sendiri #0047# masih menguasai benda wasiat #2026# #1025# dan belum menyerahkannya",
+      "sampai sekarang benda yang diwasiatkan #2026# #1025# berada dalam penguasaan #0047# dan belum dilepaskan",
+      "#0047# yang menguasai benda wasiat #2026# #1025# saat ini dan belum diserahkan kepada yang berhak menerimanya"
+     ],
+     "saksi2": [
+      "benda yang diwasiatkan #2026# #1025# kini masih ada di tangan #0047# dan belum diserahkan kepada penerimanya",
+      "saya tahu sendiri benda wasiat #2026# #1025# dikuasai #0047# dan belum pernah diserahterimakan",
+      "penguasaan atas benda wasiat #2026# #1025# sampai kini ada pada #0047# dan belum dikembalikan kepada penerima wasiat",
+      "yang menguasai benda wasiat #2026# #1025# sekarang adalah #0047# dan belum menyerahkannya yang saya lihat langsung"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: benda wasiat dikuasai Tergugat; versi B: benda wasiat sudah dikuasai penerima wasiat - berselisih pada PELAKU penguasaan",
+     "saksi1": [
+      "saya melihat sendiri benda wasiat #2026# #1025# dikuasai oleh #0047#",
+      "yang menguasai benda yang diwasiatkan #2026# #1025# adalah #0047# dan saya menyaksikannya",
+      "benda wasiat #2026# #1025# berada di tangan #0047# sebagaimana saya lihat",
+      "penguasaan benda wasiat #2026# #1025# ada pada #0047# yang saya ketahui sendiri"
+     ],
+     "saksi2": [
+      "saya melihat sendiri benda wasiat #2026# #1025# sudah dikuasai oleh penerima wasiat",
+      "yang menguasai benda yang diwasiatkan #2026# #1025# adalah penerima wasiat dan saya menyaksikannya",
+      "benda wasiat #2026# #1025# berada di tangan penerima wasiat sebagaimana saya lihat",
+      "penguasaan benda wasiat #2026# #1025# ada pada penerima wasiat yang saya ketahui sendiri"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "variabelAbt": [
+    "0047",
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-sikap-penerima",
+   "pokok": "pp-pembatalan-wasiat",
+   "urutan": 140,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": "E"
+   },
+   "teks": "Apakah penerima wasiat telah menyatakan menerima atau menolak wasiat dari #2026# #1025# ?",
+   "hal": "sikap penerima wasiat terhadap wasiat itu",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "penerima wasiat menyatakan menolak wasiat",
+     "saksi1": [
+      "penerima wasiat telah menolak wasiat dari #2026# #1025# dan saya mengetahuinya sendiri",
+      "saya menyaksikan sendiri penerima wasiat menyatakan menolak wasiat #2026# #1025#",
+      "wasiat #2026# #1025# ditolak oleh penerimanya secara terang-terangan yang saya lihat langsung",
+      "penerima wasiat #2026# #1025# menyampaikan penolakannya atas wasiat itu di hadapan saya"
+     ],
+     "saksi2": [
+      "penerima wasiat menolak menerima wasiat #2026# #1025# sebagaimana saya ketahui sendiri",
+      "saya hadir ketika penerima wasiat #2026# #1025# menyatakan menolak wasiat itu",
+      "penolakan atas wasiat #2026# #1025# disampaikan sendiri oleh penerimanya dan saya menyaksikannya",
+      "oleh yang ditunjuk sebagai penerima wasiat #2026# #1025# wasiat itu ditolak dan saya melihatnya langsung"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: penerima wasiat menolak wasiat; versi B: penerima wasiat menerima wasiat - berselisih pada PERISTIWA (sikap penerima)",
+     "saksi1": [
+      "saya melihat sendiri penerima wasiat #2026# #1025# menolak wasiat itu",
+      "penerima wasiat menyatakan menolak wasiat #2026# #1025# dan saya menyaksikannya sendiri",
+      "wasiat #2026# #1025# ditolak oleh penerimanya sebagaimana saya lihat langsung",
+      "penolakan penerima atas wasiat #2026# #1025# saya saksikan sendiri"
+     ],
+     "saksi2": [
+      "saya melihat sendiri penerima wasiat #2026# #1025# menerima wasiat itu",
+      "penerima wasiat menyatakan menerima wasiat #2026# #1025# dan saya menyaksikannya sendiri",
+      "wasiat #2026# #1025# diterima oleh penerimanya sebagaimana saya lihat langsung",
+      "penerimaan penerima atas wasiat #2026# #1025# saya saksikan sendiri"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-wajibah",
+   "pokok": "pp-wasiat-wajibah",
+   "urutan": 150,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": "G"
+   },
+   "teks": "Apakah #0046# adalah anak angkat atau orang tua angkat #2026# #1025#, sejak kapan dipelihara, dan apakah ia menerima wasiat ?",
+   "hal": "kedudukan pengaju sebagai anak angkat atau orang tua angkat pewasiat",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "pengaju adalah anak atau orang tua angkat pewasiat yang tidak menerima wasiat",
+     "saksi1": [
+      "#0046# adalah anak angkat atau orang tua angkat #2026# #1025# yang dipelihara sejak ... dan tidak menerima wasiat apa pun",
+      "saya mengetahui sendiri #0046# diangkat dan dipelihara oleh #2026# #1025# sejak ... dan tidak diberi wasiat",
+      "hubungan angkat antara #0046# dengan #2026# #1025# terjalin sejak ... dan tidak ada wasiat yang diterimanya",
+      "sejak ... #0046# dirawat sebagai anak atau orang tua angkat #2026# #1025# dan tidak pernah memperoleh wasiat"
+     ],
+     "saksi2": [
+      "#0046# berkedudukan sebagai anak angkat atau orang tua angkat #2026# #1025# sejak ... dan tidak mendapat wasiat sedikit pun",
+      "saya menyaksikan sendiri #0046# dipelihara #2026# #1025# sebagai anak atau orang tua angkat sejak ... dan tidak diberi wasiat",
+      "sejak ... #0046# hidup bersama #2026# #1025# sebagai anak atau orang tua angkatnya dan tidak pernah menerima wasiat",
+      "status angkat #0046# terhadap #2026# #1025# berlangsung sejak ... dan tidak ada wasiat yang ia terima"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pengaju dipelihara pewasiat dalam waktu lama; versi B: baru dalam waktu singkat - berselisih pada LAMA pemeliharaan",
+     "saksi1": [
+      "#0046# dipelihara oleh #2026# #1025# sejak kecil dalam waktu yang lama dan itu saya lihat sendiri",
+      "saya menyaksikan sendiri #0046# diasuh #2026# #1025# selama bertahun-tahun",
+      "pemeliharaan #0046# oleh #2026# #1025# berlangsung lama sebagaimana saya ketahui sendiri",
+      "sudah lama sekali #0046# berada dalam asuhan #2026# #1025# dan saya melihatnya langsung"
+     ],
+     "saksi2": [
+      "#0046# dipelihara oleh #2026# #1025# baru dalam waktu singkat dan itu saya lihat sendiri",
+      "saya menyaksikan sendiri #0046# diasuh #2026# #1025# hanya beberapa bulan",
+      "pemeliharaan #0046# oleh #2026# #1025# berlangsung sebentar sebagaimana saya ketahui sendiri",
+      "baru sebentar #0046# berada dalam asuhan #2026# #1025# dan saya melihatnya langsung"
+     ],
+     "bedaPada": "lama"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-keberadaan-lawan",
+   "pokok": "pp-keberadaan-lawan",
+   "urutan": 160,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "P"
+   ],
+   "keadaan": {
+    "kehadiran": [
+     "verstek",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   },
+   "teks": "Apakah saksi mengetahui di mana #0047# bertempat tinggal sekarang ?",
+   "hal": "tempat tinggal pihak lawan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui tempat tinggal Tergugat sendiri",
+     "saksi1": [
+      "saya mengetahui #0047# bertempat tinggal di ... dan alamat itu masih ditempatinya sampai sekarang",
+      "#0047# tinggal di ... yang sering saya lewati dan ia masih menetap di sana",
+      "tempat tinggal #0047# saat ini ada di ... dan saya mengetahuinya sendiri",
+      "sampai sekarang #0047# menetap di ... sebagaimana yang saya lihat sendiri"
+     ],
+     "saksi2": [
+      "alamat #0047# yang saya ketahui adalah ... dan ia masih tinggal di situ",
+      "saya pernah datang ke rumah #0047# di ... dan ia masih menempatinya",
+      "#0047# masih berdomisili di ... sepanjang pengetahuan saya sendiri",
+      "rumah #0047# berada di ... dan ia masih berada di sana"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: Tergugat masih tinggal di alamat yang disebut; versi B: Tergugat sudah pindah - berselisih pada TEMPAT tinggal",
+     "saksi1": [
+      "saya melihat sendiri #0047# masih tinggal di alamatnya yang lama",
+      "#0047# masih menetap di alamat yang dahulu dan saya mengetahuinya sendiri",
+      "sampai sekarang #0047# berada di rumahnya yang semula sebagaimana saya saksikan",
+      "alamat #0047# tetap di tempat yang dahulu dan saya melihatnya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0047# sudah pindah ke tempat lain",
+      "#0047# sudah berpindah dari alamatnya yang dahulu dan saya mengetahuinya sendiri",
+      "sekarang #0047# berada di tempat yang baru sebagaimana saya saksikan",
+      "alamat #0047# telah berubah ke tempat lain dan saya melihatnya langsung"
+     ],
+     "bedaPada": "tempat"
+    }
+   },
+   "variabelAbt": [
+    "0047"
+   ]
+  },
+  {
+   "id": "q-bantahan",
+   "pokok": "pp-bantahan",
+   "urutan": 170,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "kehadiran": [
+     "kontradiktoir",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   },
+   "teks": "Apakah saksi pernah melihat atau mengetahui adanya wasiat dari #2026# #1025# kepada #0046# ?",
+   "hal": "adanya wasiat dari pewasiat kepada pengaju",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi tidak pernah melihat atau mengetahui adanya wasiat kepada pengaju",
+     "saksi1": [
+      "saya tidak pernah melihat adanya wasiat dari #2026# #1025# kepada #0046#",
+      "selama #2026# #1025# hidup saya tidak pernah menyaksikan beliau berwasiat kepada #0046#",
+      "tidak ada wasiat dari #2026# #1025# kepada #0046# yang pernah saya ketahui sendiri",
+      "setahu saya #2026# #1025# tidak pernah menyatakan wasiat apa pun kepada #0046#"
+     ],
+     "saksi2": [
+      "saya sendiri tidak pernah mengetahui #2026# #1025# berwasiat kepada #0046#",
+      "sepanjang saya mengenal #2026# #1025# tidak ada pernyataan wasiat untuk #0046# yang saya saksikan",
+      "wasiat #2026# #1025# untuk #0046# tidak pernah saya lihat maupun saya dengar",
+      "#2026# #1025# tidak pernah berwasiat kepada #0046# dalam penglihatan saya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pewasiat tidak pernah berwasiat kepada pengaju; versi B: pewasiat pernah berwasiat kepada pengaju - berselisih pada PERISTIWA",
+     "saksi1": [
+      "saya tidak pernah melihat #2026# #1025# berwasiat kepada #0046#",
+      "selama beliau hidup saya tidak pernah menyaksikan #2026# #1025# berwasiat untuk #0046#",
+      "tidak ada wasiat #2026# #1025# bagi #0046# yang pernah saya lihat",
+      "setahu saya #2026# #1025# tidak pernah berwasiat kepada #0046#"
+     ],
+     "saksi2": [
+      "saya pernah menyaksikan #2026# #1025# berwasiat kepada #0046#",
+      "saya melihat sendiri #2026# #1025# menyatakan wasiat untuk #0046# semasa hidupnya",
+      "wasiat #2026# #1025# bagi #0046# pernah saya saksikan sendiri",
+      "#2026# #1025# pernah berwasiat kepada #0046# di depan mata saya"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "1025",
+    "2026"
+   ]
+  },
+  {
+   "id": "q-penutup",
+   "pokok": "pp-penutup",
+   "urutan": 200,
+   "tingkat": "inti",
+   "kelompok": "penutup",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+   "hal": "keterangan penutup",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan keterangannya sudah cukup",
+     "saksi1": [
+      "keterangan yang saya berikan sudah cukup",
+      "sekian keterangan saya dan sudah cukup",
+      "bagi saya keterangan ini sudah cukup",
+      "sudah cukup yang dapat saya terangkan"
+     ],
+     "saksi2": [
+      "dengan ini keterangan saya sudah cukup",
+      "sudah cukup apa yang saya ketahui untuk diterangkan",
+      "hanya itu keterangan saya dan sudah cukup",
+      "saya anggap keterangan saya sudah cukup sampai di sini"
+     ]
+    }
+   },
+   "variabelAbt": []
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Titik-titik (...) pada keterangan saksi wajib diganti dengan keterangan saksi yang sebenarnya; jangan dibiarkan kosong.",
+  "Wasiat kepada ahli waris hanya berlaku bila disetujui semua ahli waris (Pasal 195 ayat (3) KHI); wasiat melebihi sepertiga hanya dilaksanakan sampai sepertiga bila ada ahli waris yang tidak menyetujui (Pasal 195 ayat (2) dan Pasal 201 KHI).",
+  "Keterangan saksi yang ragu atau hanya cerita orang lain bukan keterangan yang dialami sendiri; pertimbangkan menghadirkan saksi tambahan untuk hal yang menentukan perkara.",
+  "Rujukan Buku II Tahun 2026 (wasiat wajibah) berasal dari ringkasan sekunder dan belum diperiksa pada naskah resminya."
+ ]
+}

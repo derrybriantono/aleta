@@ -115,6 +115,19 @@
       if (peta.has("6054")) kumulasi.push("nafkah-iddah");
       if (kumulasi.length) hasil.kumulasi = kumulasi;
     }
+    // W2a-K2 21 Okt: wasiat, hibah, wakaf dan ekonomi syariah. Hanya fakta yang pasti: huruf pokok tuntutan yang DIISI PETUGAS pada variabel
+    // ABT, dan alur perkara SIPP (16 = permohonan, 17 = gugatan sederhana). Selebihnya tetap pilihan petugas (saran dari gugatan: bot).
+    const alur = String((konteks && konteks.alur) || "").trim();
+    const kodePokok = idJenis.includes("365") ? "9475" : idJenis.includes("366") ? "9790" : idJenis.includes("367") ? "9820" : "";
+    if (peta && kodePokok && dipakai.has("pokokTuntutan")) {
+      const it = peta.get(kodePokok);
+      const huruf = it && it.nilai ? String(it.nilai).toUpperCase().replace(/[^A-G]/g, "") : "";
+      if (huruf.length === 1 && Array.isArray(kat.keadaan.pokokTuntutan.nilai) && kat.keadaan.pokokTuntutan.nilai.includes(huruf)) hasil.pokokTuntutan = huruf;
+    }
+    if (alur === "16" && dipakai.has("perkara")) hasil.perkara = "permohonan";
+    if (alur === "15" && dipakai.has("perkara")) hasil.perkara = "gugatan";
+    if (alur === "17" && dipakai.has("acara")) hasil.acara = "gugatan-sederhana";
+    if (alur === "15" && dipakai.has("acara")) hasil.acara = "acara-biasa";
     return hasil;
   }
 
@@ -321,7 +334,7 @@
       S.fakta = {};
       S.faktaStatus = "";
       S.perButir = {};
-      const turun = turunkanKeadaan(kat, { teks: teksHalaman(), peta: peta() });
+      const turun = turunkanKeadaan(kat, { teks: teksHalaman(), peta: peta(), alur: kenali().alur });
       S.keadaan = m.keadaanBawaan(kat, turun);
       S.isian = {};
       S.saksi = [

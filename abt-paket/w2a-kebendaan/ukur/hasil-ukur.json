@@ -1,0 +1,360 @@
+{
+ "dibuat": "2026-10-20",
+ "catatan": "ukur atas SIPP lokal PA Donggala (sampai +-9 Okt 2026) dan PA Bungku; pembanding amar putusan hakim",
+ "hb": {
+  "jumlahGugatan": 37,
+  "jumlahDenganAmar": 33,
+  "jumlahDikabulkan": 21,
+  "tglNikah": {
+   "nDenganDataSipp": 0,
+   "nTerbaca": 0,
+   "nCocok": 0,
+   "salah": []
+  },
+  "kutipanPutusanCerai": {
+   "dibaca": 10,
+   "ketemuDiSipp": 6,
+   "tanggalCocokNikah": 0,
+   "nikahDiSipp": 6,
+   "nikahCocok": 4,
+   "tidakKetemu": [
+    "19/Pdt.G/2017/PA.Dgl: Nomor 0221/AC/2016/PA/Dgl tanggal 9 Juni 2016",
+    "344/Pdt.G/2020/PA.Dgl: Nomor 126 tanggal 28 April 2020",
+    "310/Pdt.G/2025/PA.Dgl: Nomor 2757/Pdt.G/2024/PA.Mks tanggal 26 Februari 2025",
+    "506/Pdt.G/2026/PA.Dgl: Nomor 222/Pdt.G/2022/PA.Dgl tanggal 28 Juli 2022"
+   ],
+   "nikahSalah": [
+    "282/Pdt.G/2024/PA.Buk: gugatan 15 Maret 2021 vs SIPP 2021-10-15",
+    "316/Pdt.G/2024/PA.Buk: gugatan 15 Maret 2021 vs SIPP 2021-10-15"
+   ]
+  },
+  "putusanCerai": {
+   "nTerbaca": 10,
+   "nTerbacaPolaLama": 17,
+   "nAkta": 33
+  },
+  "objek": {
+   "nGugatanDenganDaftar": 28,
+   "nPolaLamaTerbaca": 27
+  },
+  "perKeadaan": [
+   {
+    "kunci": "sita=ada (gugatan menyebut sudah disita) vs amar sita sah dan berharga",
+    "n": 21,
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "tn": 21,
+    "contohSalah": [],
+    "presisi": null,
+    "recall": null
+   },
+   {
+    "kunci": "sitaDiminta atau sita (gugatan memuat sita) vs amar sita sah dan berharga",
+    "n": 21,
+    "tp": 0,
+    "fp": 19,
+    "fn": 0,
+    "tn": 2,
+    "contohSalah": [
+     "19/Pdt.G/2017/PA.Dgl (deteksi ada, putusan tidak)",
+     "310/Pdt.G/2025/PA.Dgl (deteksi ada, putusan tidak)",
+     "175/Pdt.G/2026/PA.Dgl (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0,
+    "recall": null
+   },
+   {
+    "kunci": "pembagianDiminta=seperdua (vs amar seperdua)",
+    "n": 21,
+    "tp": 6,
+    "fp": 9,
+    "fn": 3,
+    "tn": 3,
+    "contohSalah": [
+     "310/Pdt.G/2025/PA.Dgl (deteksi ada, putusan tidak)",
+     "175/Pdt.G/2026/PA.Dgl (deteksi ada, putusan tidak)",
+     "214/Pdt.G/2018/PA.Buk (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0.4,
+    "recall": 0.67
+   },
+   {
+    "kunci": "penguasa=lawan (vs amar Menghukum Tergugat menyerahkan/mengosongkan)",
+    "n": 21,
+    "tp": 2,
+    "fp": 14,
+    "fn": 1,
+    "tn": 4,
+    "contohSalah": [
+     "19/Pdt.G/2017/PA.Dgl (deteksi ada, putusan tidak)",
+     "310/Pdt.G/2025/PA.Dgl (deteksi ada, putusan tidak)",
+     "637/Pdt.G/2025/PA.Dgl (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0.13,
+    "recall": 0.67
+   },
+   {
+    "kunci": "jenisObjek tanah-bangunan (vs jenis objek pada amar)",
+    "n": 21,
+    "tp": 7,
+    "fp": 13,
+    "fn": 1,
+    "tn": 0,
+    "contohSalah": [
+     "310/Pdt.G/2025/PA.Dgl (deteksi ada, putusan tidak)",
+     "175/Pdt.G/2026/PA.Dgl (deteksi ada, putusan tidak)",
+     "214/Pdt.G/2018/PA.Buk (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0.35,
+    "recall": 0.88
+   },
+   {
+    "kunci": "jenisObjek kendaraan (vs jenis objek pada amar)",
+    "n": 21,
+    "tp": 5,
+    "fp": 7,
+    "fn": 1,
+    "tn": 8,
+    "contohSalah": [
+     "310/Pdt.G/2025/PA.Dgl (deteksi ada, putusan tidak)",
+     "214/Pdt.G/2018/PA.Buk (deteksi ada, putusan tidak)",
+     "330/Pdt.G/2020/PA.Buk (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0.42,
+    "recall": 0.83
+   },
+   {
+    "kunci": "jenisObjek kebun-ternak (vs jenis objek pada amar)",
+    "n": 21,
+    "tp": 1,
+    "fp": 4,
+    "fn": 1,
+    "tn": 15,
+    "contohSalah": [
+     "310/Pdt.G/2025/PA.Dgl (deteksi ada, putusan tidak)",
+     "330/Pdt.G/2020/PA.Buk (deteksi ada, putusan tidak)",
+     "514/Pdt.G/2022/PA.Buk (deteksi tidak ada, putusan ada)"
+    ],
+    "presisi": 0.2,
+    "recall": 0.5
+   },
+   {
+    "kunci": "jenisObjek perhiasan-perabot (vs jenis objek pada amar)",
+    "n": 21,
+    "tp": 1,
+    "fp": 5,
+    "fn": 0,
+    "tn": 15,
+    "contohSalah": [
+     "310/Pdt.G/2025/PA.Dgl (deteksi ada, putusan tidak)",
+     "214/Pdt.G/2018/PA.Buk (deteksi ada, putusan tidak)",
+     "330/Pdt.G/2020/PA.Buk (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0.17,
+    "recall": 1
+   },
+   {
+    "kunci": "tglNikah (vs perkara_data_pernikahan SIPP)",
+    "n": 0,
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "tn": 0,
+    "contohSalah": [],
+    "presisi": null,
+    "recall": null
+   }
+  ]
+ },
+ "waris": {
+  "jumlahGugatan": 31,
+  "jumlahDenganAmar": 28,
+  "jumlahDikabulkan": 18,
+  "namaAhliWaris": {
+   "perkara": 3,
+   "nama": 25,
+   "namaCocokAmar": 23,
+   "contohMeleset": [
+    "26/Pdt.G/2022/PA.Dgl: UMAR RADJAMUDA (anak kandung yang sah dari Almarhumah Ibu)",
+    "26/Pdt.G/2022/PA.Dgl: ABD. GAFUR A (anak kandung yang sah dari Almarhumah Ibu)"
+   ]
+  },
+  "tanggalWafat": {
+   "n": 1,
+   "cocok": 0,
+   "meleset": [
+    "26/Pdt.G/2022/PA.Dgl: 9 Maret 2021 vs 14 Mei 2016"
+   ]
+  },
+  "perKeadaan": [
+   {
+    "kunci": "sita=ada (gugatan menyebut sudah disita) vs amar sita sah dan berharga",
+    "n": 18,
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "tn": 18,
+    "contohSalah": [],
+    "presisi": null,
+    "recall": null
+   },
+   {
+    "kunci": "sitaDiminta atau sita (gugatan memuat sita) vs amar sita sah dan berharga",
+    "n": 18,
+    "tp": 0,
+    "fp": 11,
+    "fn": 0,
+    "tn": 7,
+    "contohSalah": [
+     "398/Pdt.G/2021/PA.Dgl (deteksi ada, putusan tidak)",
+     "514/Pdt.G/2021/PA.Dgl (deteksi ada, putusan tidak)",
+     "26/Pdt.G/2022/PA.Dgl (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0,
+    "recall": null
+   },
+   {
+    "kunci": "ahliWaris anak (vs golongan pada amar penetapan ahli waris)",
+    "n": 6,
+    "tp": 2,
+    "fp": 1,
+    "fn": 1,
+    "tn": 2,
+    "contohSalah": [
+     "514/Pdt.G/2021/PA.Dgl (deteksi tidak ada, putusan ada)",
+     "106/Pdt.G/2023/PA.Dgl (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0.67,
+    "recall": 0.67
+   },
+   {
+    "kunci": "ahliWaris orang-tua (vs golongan pada amar penetapan ahli waris)",
+    "n": 6,
+    "tp": 0,
+    "fp": 1,
+    "fn": 0,
+    "tn": 5,
+    "contohSalah": [
+     "26/Pdt.G/2022/PA.Dgl (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0,
+    "recall": null
+   },
+   {
+    "kunci": "ahliWaris saudara (vs golongan pada amar penetapan ahli waris)",
+    "n": 6,
+    "tp": 0,
+    "fp": 1,
+    "fn": 1,
+    "tn": 4,
+    "contohSalah": [
+     "26/Pdt.G/2022/PA.Dgl (deteksi tidak ada, putusan ada)",
+     "620/Pdt.G/2025/PA.Dgl (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0,
+    "recall": 0
+   },
+   {
+    "kunci": "ahliWaris cucu-pengganti (vs golongan pada amar penetapan ahli waris)",
+    "n": 6,
+    "tp": 3,
+    "fp": 2,
+    "fn": 1,
+    "tn": 0,
+    "contohSalah": [
+     "514/Pdt.G/2021/PA.Dgl (deteksi tidak ada, putusan ada)",
+     "491/Pdt.G/2022/PA.Dgl (deteksi ada, putusan tidak)",
+     "106/Pdt.G/2023/PA.Dgl (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0.6,
+    "recall": 0.75
+   },
+   {
+    "kunci": "statusPewaris=menikah (vs amar menyebut istri/suami pewaris)",
+    "n": 18,
+    "tp": 4,
+    "fp": 6,
+    "fn": 1,
+    "tn": 7,
+    "contohSalah": [
+     "398/Pdt.G/2021/PA.Dgl (deteksi ada, putusan tidak)",
+     "120/Pdt.G/2022/PA.Dgl (deteksi ada, putusan tidak)",
+     "333/Pdt.G/2022/PA.Dgl (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0.4,
+    "recall": 0.8
+   },
+   {
+    "kunci": "wasiat (vs amar menyebutnya)",
+    "n": 18,
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "tn": 18,
+    "contohSalah": [],
+    "presisi": null,
+    "recall": null
+   },
+   {
+    "kunci": "hibahSemasaHidup (vs amar menyebutnya)",
+    "n": 18,
+    "tp": 0,
+    "fp": 1,
+    "fn": 1,
+    "tn": 16,
+    "contohSalah": [
+     "491/Pdt.G/2022/PA.Dgl (deteksi ada, putusan tidak)",
+     "620/Pdt.G/2025/PA.Dgl (deteksi tidak ada, putusan ada)"
+    ],
+    "presisi": 0,
+    "recall": 0
+   },
+   {
+    "kunci": "hutang (vs amar menyebutnya)",
+    "n": 18,
+    "tp": 0,
+    "fp": 1,
+    "fn": 0,
+    "tn": 17,
+    "contohSalah": [
+     "73/Pdt.G/2022/PA.Buk (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0,
+    "recall": null
+   },
+   {
+    "kunci": "penguasa=lawan (vs amar Menghukum Tergugat menyerahkan/membagi)",
+    "n": 18,
+    "tp": 3,
+    "fp": 7,
+    "fn": 2,
+    "tn": 6,
+    "contohSalah": [
+     "398/Pdt.G/2021/PA.Dgl (deteksi ada, putusan tidak)",
+     "514/Pdt.G/2021/PA.Dgl (deteksi tidak ada, putusan ada)",
+     "120/Pdt.G/2022/PA.Dgl (deteksi ada, putusan tidak)"
+    ],
+    "presisi": 0.3,
+    "recall": 0.6
+   }
+  ],
+  "fakta": {
+   "ahliWarisTerbaca": 12,
+   "hartaTerbaca": 8,
+   "hartaPolaLama": 21,
+   "wafatTglTerbaca": 9,
+   "wafatTglPolaLama": 9
+  }
+ },
+ "batas": "Ukur kecil: sampel gugatan nyata hanya puluhan (PA Donggala sampai +-9 Okt 2026 dan PA Bungku), putusan yang dapat dibandingkan lebih sedikit lagi, dan amar putusan hanya memuat bagian yang dikabulkan sehingga pembanding sering tidak menyebut hal yang ditanyakan. tglNikah dan putusanCerai diperiksa langsung terhadap kalimat gugatan (semua yang terbaca sama dengan teks) dan putusan cerai yang dikutip dicari di SIPP satker yang sama; keadaan lain tidak dapat dinilai kuat dan karena itu hanya saran (ragu).",
+ "keputusanYakin": {
+  "tglNikah": "cukup",
+  "putusanCerai": "cukup",
+  "aktaCerai": "cukup",
+  "keadaan": "ragu",
+  "hartaPeninggalan": "ragu",
+  "ahliWaris": "ragu",
+  "alasan": "keadaan dan daftar objek/ahli waris: kecocokan dengan amar rendah atau tidak dapat dinilai (sita diminta pada hampir semua gugatan tetapi nyaris tidak ada amar sita sah dan berharga)"
+ }
+}
