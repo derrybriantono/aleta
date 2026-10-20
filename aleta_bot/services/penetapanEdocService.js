@@ -118,7 +118,7 @@ const TWIP_PER_MM = 1440 / 25.4;
 const PENANDATANGAN = Object.freeze({
   ketua: {
     sebutan: "Ketua / Wakil Ketua / Plh. Ketua",
-    label: /^(?:(?:plh|plt)\.?\s*)?(?:wakil\s+)?ketua(?:\s+pengadilan\s+agama[^,]*)?\s*,?$/i,
+    label: /^(?:(?:plh|plt)\.?\s*)?(?:wakil\s+)?ketua(?:\s+pengadilan\s+agama[^,;]{0,40})?\s*,?$/i,
   },
   ketua_majelis: {
     sebutan: "Ketua Majelis / Hakim tunggal",
@@ -126,7 +126,7 @@ const PENANDATANGAN = Object.freeze({
   },
   panitera: {
     sebutan: "Panitera / Plh. Panitera",
-    label: /^(?:(?:plh|plt)\.?\s*)?(?:wakil\s+)?panitera(?:\s+pengadilan\s+agama[^,]*)?\s*,?$/i,
+    label: /^(?:(?:plh|plt)\.?\s*)?(?:wakil\s+)?panitera(?:\s+pengadilan\s+agama[^,;]{0,40})?\s*,?$/i,
   },
   otomatis: {
     sebutan: "Siapa pun yang tertulis di blok tanda tangan",
@@ -669,6 +669,142 @@ function gambarKotakElektronik(rtf, akhir) {
 }
 
 /**
+ * LOGO DI DALAM KOTAK "DITANDATANGANI SECARA ELEKTRONIK" (20 Okt 2026, butir 6).
+ *
+ * Blangko PPP/PJS Derry menanam logo satker sebagai bentuk gambar TERPISAH
+ * di samping bentuk kotak teksnya (persegi 1866 x 1866 twip di kotak 5423 x
+ * 1641): logo lebih tinggi dari kotaknya dan kirinya 176 twip di luar garis
+ * kiri, atasnya 160 twip di luar garis atas - keluar dari kotak pada PDF.
+ * Di sini logo DIPINDAH-UKUR supaya sepenuhnya di dalam kotak: ruang tinggi
+ * kotak dikurangi bantalan (PAD), lebarnya dibatasi tepi kiri teks (inden
+ * paragraf kiri + inset kotak) dikurangi jarak (CELAH) supaya tidak menimpa
+ * tulisan; perbandingan sisi gambar dipertahankan; dipusatkan vertikal.
+ * Bentuk yang sudah di dalam kotak (dengan bantalan) tidak disentuh.
+ *
+ * Murni atas teks RTF; bentuk logo dikenali seperti gambarKotakElektronik
+ * (bentuk bergambar yang mendampingi kotak) dan harus beririsan dengan kotak.
+ */
+const LOGO_KOTAK = Object.freeze({ padTwip: 110, celahTwip: 60, insetBawaanTwip: 144, minimalTwip: 600 });
+
+function bacaGeoBentuk(isi) {
+  const g = /\\shpleft(-?\d+)\s*\\shptop(-?\d+)\s*\\shpright(-?\d+)\s*\\shpbottom(-?\d+)/.exec(isi);
+  if (!g) return null;
+  return { kiri: +g[1], atas: +g[2], kanan: +g[3], bawah: +g[4], di: g.index, panjang: g[0].length };
+}
+
+function semuaBentuk(rtf) {
+  const s = String(rtf || "");
+  const hasil = [];
+  const re = /\{\\shp(?![a-z])/g;
+  let m;
+  while ((m = re.exec(s))) {
+    const akhir = akhirKelompok(s, m.index);
+    if (akhir < 0) break;
+    const isi = s.slice(m.index, akhir + 1);
+    hasil.push({
+      awal: m.index,
+      akhir,
+      isi,
+      geo: bacaGeoBentuk(isi),
+      gambar: /\{\\sn\s*pib\}/.test(isi),
+      kotak: bentukKotakElektronik(isi),
+    });
+    re.lastIndex = akhir + 1;
+  }
+  return hasil;
+}
+
+/** Tepi kiri teks di dalam kotak (twip dari kiri kotak): inset + inden terkecil paragraf kiri/justify yang bertulisan. */
+function tepiKiriTeksKotak(isiKotak) {
+  const inset = (() => {
+    const m = /\{\\sn\s*dxTextLeft\}\s*\{\\sv\s*(-?\d+)\}/.exec(isiKotak);
+    return m ? Math.round(Number(m[1]) / 635) : LOGO_KOTAK.insetBawaanTwip;
+  })();
+  const t = isiKotak.indexOf("\\shptxt");
+  const badan = t >= 0 ? isiKotak.slice(t) : "";
+  let minInden = null;
+  const bagian = badan.split(/\\pard(?![a-z])/).slice(1);
+  for (const p of bagian) {
+    if (/\\q[rc](?![a-z])/.test(p)) continue;
+    const teks = teksKasarRtf(p.replace(/^[^{]+/, ""));
+    if (!teks) continue;
+    const li = /\\li(-?\d+)(?![\d])/.exec(p);
+    const fi = /\\fi(-?\d+)(?![\d])/.exec(p);
+    const inden = (li ? Number(li[1]) : 0) + (fi ? Number(fi[1]) : 0);
+    minInden = minInden === null ? inden : Math.min(minInden, inden);
+  }
+  return inset + (minInden === null ? 0 : Math.max(0, minInden));
+}
+
+function rapikanLogoKotakElektronik(rtf) {
+  let s = String(rtf || "");
+  const rincian = [];
+  const bentuk = semuaBentuk(s);
+  const kotakAda = bentuk.filter((b) => b.kotak && b.geo);
+  if (!kotakAda.length) return { rtf: s, dirapikan: 0, rincian };
+  const sunting = [];
+  for (const k of kotakAda) {
+    const kl = k.geo;
+    const lebarK = kl.kanan - kl.kiri;
+    const tinggiK = kl.bawah - kl.atas;
+    if (!(lebarK > 0 && tinggiK > 0)) continue;
+    // Logo: bentuk bergambar di sekitar kotak (satu jangkar paragraf) yang beririsan dengan kotak.
+    const calon = bentuk.filter((b) => {
+      if (!b.gambar || !b.geo || b === k) return false;
+      const antara = b.awal < k.awal ? s.slice(b.akhir + 1, k.awal) : s.slice(k.akhir + 1, b.awal);
+      if (teksKasarRtf(antara).length > 200 || /\\par(?![a-z])/.test(antara)) return false;
+      const g = b.geo;
+      return g.kanan > kl.kiri - 600 && g.kiri < kl.kanan && g.bawah > kl.atas - 600 && g.atas < kl.bawah + 600;
+    });
+    for (const logo of calon) {
+      const g = logo.geo;
+      const pad = LOGO_KOTAK.padTwip;
+      const sudahDalam = g.kiri >= kl.kiri + pad * 0.4 && g.atas >= kl.atas + pad * 0.4 && g.kanan <= kl.kanan - pad * 0.4 && g.bawah <= kl.bawah - pad * 0.4;
+      const tepiTeks = kl.kiri + tepiKiriTeksKotak(k.isi);
+      if (sudahDalam && g.kanan <= tepiTeks - LOGO_KOTAK.celahTwip * 0.5) continue;
+      const slotKiri = kl.kiri + pad;
+      const tinggiSedia = tinggiK - 2 * pad;
+      const lebarSedia = tepiTeks - LOGO_KOTAK.celahTwip - slotKiri;
+      let sisi = Math.min(tinggiSedia, lebarSedia);
+      if (!(sisi >= LOGO_KOTAK.minimalTwip)) sisi = Math.max(Math.min(tinggiSedia, LOGO_KOTAK.minimalTwip), 200);
+      // Perbandingan sisi gambar dari \picw/\pich (piksel) bentuk itu; tanpa itu dari kotak lama.
+      const pw = Number((/\\picw(\d+)/.exec(logo.isi) || [])[1]);
+      const ph = Number((/\\pich(\d+)/.exec(logo.isi) || [])[1]);
+      const rasio = pw > 0 && ph > 0 ? pw / ph : (g.kanan - g.kiri) / Math.max(1, g.bawah - g.atas);
+      let w = sisi;
+      let h = sisi;
+      if (rasio >= 1) h = Math.round(sisi / rasio);
+      else w = Math.round(sisi * rasio);
+      const kiriBaru = Math.round(slotKiri + (sisi - w) / 2);
+      const atasBaru = Math.round(kl.atas + (tinggiK - h) / 2);
+      sunting.push({ awal: logo.awal + g.di, akhir: logo.awal + g.di + g.panjang, isi: `\\shpleft${kiriBaru}\\shptop${atasBaru}\\shpright${kiriBaru + w}\\shpbottom${atasBaru + h}`, logo, w, h });
+      rincian.push({
+        kotak: { kiri: kl.kiri, atas: kl.atas, kanan: kl.kanan, bawah: kl.bawah },
+        logoLama: { kiri: g.kiri, atas: g.atas, kanan: g.kanan, bawah: g.bawah },
+        logoBaru: { kiri: kiriBaru, atas: atasBaru, kanan: kiriBaru + w, bawah: atasBaru + h },
+      });
+    }
+  }
+  if (!sunting.length) return { rtf: s, dirapikan: 0, rincian };
+  // Dari belakang supaya letak di depan tidak bergeser; sekalian samakan tujuan gambar (picwgoal/pichgoal) dengan bentuk barunya.
+  sunting.sort((a, b) => b.awal - a.awal);
+  for (const x of sunting) {
+    const awalBentuk = x.logo.awal;
+    const akhirBentuk = x.logo.akhir;
+    let isiBentuk = s.slice(awalBentuk, akhirBentuk + 1);
+    const rel = x.awal - awalBentuk;
+    isiBentuk = isiBentuk.slice(0, rel) + x.isi + isiBentuk.slice(rel + (x.akhir - x.awal));
+    isiBentuk = isiBentuk
+      .replace(/\\picscalex\d+/, "\\picscalex100")
+      .replace(/\\picscaley\d+/, "\\picscaley100")
+      .replace(/\\picwgoal\d+/, `\\picwgoal${x.w}`)
+      .replace(/\\pichgoal\d+/, `\\pichgoal${x.h}`);
+    s = s.slice(0, awalBentuk) + isiBentuk + s.slice(akhirBentuk + 1);
+  }
+  return { rtf: s, dirapikan: sunting.length, rincian };
+}
+
+/**
  * Membuang gambar (bentuk bergambar, \shppict/\nonshppict, \pict lepas) di
  * blok tanda tangan. Bentuk TEKS (kotak "Ditandatangani secara elektronik"
  * pada blangko gabungan) tidak disentuh.
@@ -944,6 +1080,9 @@ async function bubuhkanPenetapan({ rtf, jenis, atur, cap, daftarTtd, ambilGambar
   const a = aturBerlaku(jenis, atur);
   const peringatan = [];
   let s = String(rtf || "");
+  // Logo di kotak "Ditandatangani secara elektronik" dimuat sepenuhnya di dalam kotak (butir 6, 20 Okt).
+  const logoKotak = rapikanLogoKotakElektronik(s);
+  s = logoKotak.rtf;
 
   // Penanda tangan dibaca dulu (indeks label dipakai menentukan awal blok).
   let siapa = cariPenandaTangan(s, a);
@@ -961,10 +1100,10 @@ async function bubuhkanPenetapan({ rtf, jenis, atur, cap, daftarTtd, ambilGambar
       // elektronik oleh: ..." (PPP/PJS di @ 0): tidak ada label untuk
       // ditempeli gambar tanda tangan, dan memang tidak perlu.
       peringatan.push({ kode: "kotak_ttd_elektronik" });
-      return { ok: true, rtf: s, tandaTangan: null, penandaTangan: null, cap: null, peringatan, gambarBawaan, atur: a, modeTtd: "kotak_elektronik" };
+      return { ok: true, rtf: s, tandaTangan: null, penandaTangan: null, cap: null, peringatan, gambarBawaan, logoKotak: logoKotak.rincian, atur: a, modeTtd: "kotak_elektronik" };
     }
     peringatan.push({ kode: siapa.alasan, label: siapa.label || "", nama: siapa.nama || "", labelTerbaca: siapa.labelTerbaca || [] });
-    return { ok: true, rtf: s, tandaTangan: null, penandaTangan: null, cap: null, peringatan, gambarBawaan, atur: a, modeTtd: kotakElektronik ? "kotak_elektronik" : "tanpa" };
+    return { ok: true, rtf: s, tandaTangan: null, penandaTangan: null, cap: null, peringatan, gambarBawaan, logoKotak: logoKotak.rincian, atur: a, modeTtd: kotakElektronik ? "kotak_elektronik" : "tanpa" };
   }
 
   let ttd = null;
@@ -999,6 +1138,7 @@ async function bubuhkanPenetapan({ rtf, jenis, atur, cap, daftarTtd, ambilGambar
     geometri: hasil.geometri,
     peringatan,
     gambarBawaan,
+    logoKotak: logoKotak.rincian,
     atur: a,
     modeTtd: ttd ? "tanda_tangan_aleta" : kotakElektronik ? "kotak_elektronik" : "tanpa",
   };
@@ -1428,6 +1568,8 @@ module.exports = {
   awalBlokTtd,
   buangGambarBlokTtd,
   adaKotakTtdElektronik,
+  rapikanLogoKotakElektronik,
+  LOGO_KOTAK,
   cariPenandaTangan,
   cocokkanTandaTangan,
   tataParagraf,

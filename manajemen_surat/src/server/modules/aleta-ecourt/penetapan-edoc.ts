@@ -36,7 +36,7 @@
 
 import { type AletaDatabase } from "@/server/db/client";
 import { appendAuditLog } from "@/server/shared/audit";
-import { capBerlatarTransparan } from "@/server/shared/cap-latar-transparan";
+import { capBerlatarTransparan, pastikanCapBening } from "@/server/shared/cap-latar-transparan";
 import { nextPrefixedId } from "@/server/shared/ids";
 
 import { BATAS_PERAMBAN_MS, panggilBot, type HasilBot } from "./ecourt-aksi";
@@ -292,9 +292,18 @@ export async function pilihCap(
       .sort(terbaru)[0];
   if (!pilih)
     pilih = semua.filter((c) => c.peruntukan === "umum").sort(terbaru)[0];
+  // 20 Okt 2026 (butir 5): cap adalah cap KANTOR - satu cap yang sama dipakai
+  // Ketua, Panitera, dan hakim. Peruntukan hanya urutan pilihan: bila tidak ada
+  // yang khusus maupun "umum" (mis. hanya cap Panitera yang pernah diunggah),
+  // PMH tidak boleh terbit tanpa cap - dipakai cap aktif terbaru yang ada.
+  if (!pilih) pilih = semua.slice().sort(terbaru)[0];
   if (!pilih) return null;
   const g = await gambarCap(db, pilih.id);
-  return g ? { ...pilih, isi: g.isi } : null;
+  if (!g) return null;
+  // Cap berlatar pekat dibersihkan lebih dulu; kalau tidak, tanda tangan
+  // berlatar pekat menutupinya (cap dibubuhkan di belakang) - lihat cap-latar-transparan.
+  const bening = await pastikanCapBening(Buffer.from(g.isi)).catch(() => null);
+  return bening ? { ...pilih, isi: bening.isi, jenisBerkas: bening.jenis } : { ...pilih, isi: g.isi };
 }
 
 // ---------------------------------------------------------------------------
