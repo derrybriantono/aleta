@@ -184,6 +184,12 @@ v(4909, 'ANAK: UMUR ANAK UNTUK NAFKAH (OTOMATIS: tanggal lahir anak di SIPP; tia
   "SELECT IF(s.n = 0, '', CONCAT('<br>Menimbang, bahwa berdasarkan data kelahiran yang tercatat dalam perkara ini, ', s.daftar, '; umur tersebut dihitung sampai dengan tanggal putusan ini dijatuhkan dan menjadi bahan #8554# menilai lamanya nafkah dapat dibebankan, yaitu sampai anak tersebut dewasa atau mampu berdiri sendiri (berumur 21 (dua puluh satu) tahun) sebagaimana Pasal 156 huruf d Kompilasi Hukum Islam;')) AS data "
   "FROM (SELECT COUNT(*) AS n, GROUP_CONCAT(" + UMUR_ANAK_NAFKAH + " ORDER BY a.anak_ke, a.id SEPARATOR ';') AS daftar FROM " + ANAK + ") s")
 
+RE_NAFKAH_ANAK = 'nafkah[^;]{0,60}anak|anak[^;]{0,60}nafkah|biaya (hidup|pemeliharaan|pendidikan|kebutuhan)[^;]{0,60}anak|biaya anak'
+PET_BERSIH = "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(p.petitum, ''), '<strong>', ''), '</strong>', ''), '&nbsp;', ' '), CHAR(10), ' '), CHAR(13), ' '))"
+v(4904, 'HAK ASUH: PERINGATAN PETITUM NAFKAH ANAK BELUM DIPUTUS (OTOMATIS: [PERIKSA] bila petitum SIPP memuat nafkah anak sedangkan blangko hanya memutus hak asuh atau penguasaan anak; selain itu kosong)', 'data_sql',
+  "SELECT IF(" + PET_BERSIH + " REGEXP '" + RE_NAFKAH_ANAK + "', " + lit('<br>[PERIKSA: petitum memuat tuntutan nafkah anak, sedangkan blangko ini hanya memutus hak asuh atau penguasaan anak; gunakan blangko Hak Asuh dan Nafkah Anak atau putuskan nafkah anak pada perkara ini]')
+  + ", '') AS data FROM perkara p WHERE p.perkara_id = '#perkara_id#'")
+
 for _x in __import__('variabel_def').VAR:
     if _x['no'] >= 4880 and _x['no'] <= 4909:
         if _x['sql']:  # ABT menambah satu spasi sesudah tiap titik koma: buang spasi yang kita tulis sendiri

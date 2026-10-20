@@ -177,7 +177,7 @@ def tambal_hak_asuh(folder, berkas, penyerahan, relatif, kabul, nafkah_gabung=Fa
     peringatan = '#4882#' if mumayyiz else '#4881#'
     for a in ([A105B] if mumayyiz else [A105A, A105M]):
         if e.cari(a, wajib=False) is not None:
-            e.akhir(a, '#4880#' + peringatan + '#4883##4885##4887#', nama='umur-anak+kelayakan+ahli')
+            e.akhir(a, '#4880#' + peringatan + '#4883#' + ('' if nafkah_gabung else '#4904#') + '#4885##4887#', nama='umur-anak+kelayakan+ahli')
             break
     else:
         GALAT.append('%s/%s: tidak ada jangkar Pasal 105' % (folder, berkas))
@@ -281,7 +281,7 @@ def baru_campuran():
     e.ganti_penuh(A105A, 'Menimbang, bahwa Pasal 105 Kompilasi Hukum Islam menentukan bahwa pemeliharaan anak yang belum mumayyiz atau belum berumur 12 tahun adalah hak ibunya (huruf a), '
                   'sedangkan pemeliharaan anak yang sudah mumayyiz diserahkan kepada anak untuk memilih di antara ayah atau ibunya sebagai pemegang hak pemeliharaannya (huruf b), dan Pasal 156 huruf a '
                   'dan huruf b Kompilasi Hukum Islam menentukan bahwa anak yang belum mumayyiz berhak mendapatkan hadhanah dari ibunya, sedangkan anak yang sudah mumayyiz berhak memilih untuk mendapatkan '
-                  'hadhanah dari ayah atau ibunya;#4880##4883##4885##4887#', nama='dasar-105-campuran')
+                  'hadhanah dari ayah atau ibunya;#4880##4883##4904##4885##4887#', nama='dasar-105-campuran')
     e.ganti_penuh(A_APP, 'Menimbang, bahwa berdasarkan fakta hukum tersebut di atas, #9302# #0046# dan #0047# berada dalam keadaan yang berbeda, ada yang belum mumayyiz dan ada yang telah mumayyiz, '
                   'sehingga terhadap anak yang belum mumayyiz berlaku Pasal 105 huruf a dan Pasal 156 huruf a Kompilasi Hukum Islam, sedangkan anak yang telah mumayyiz diberi kesempatan memilih '
                   'sesuai Pasal 105 huruf b dan Pasal 156 huruf b Kompilasi Hukum Islam, dengan tetap mengutamakan kepentingan terbaik bagi masing-masing anak;#4907#', nama='penerapan-campuran')
@@ -308,7 +308,7 @@ def baru_tolak_mumayyiz_memilih_t():
             'yang telah berumur 12 (dua belas) tahun atau lebih (telah mumayyiz);', nama='fakta-2')
     e.sisip('4.\tBahwa #9433#', '5.\tBahwa #9302# tersebut telah didengar keterangannya di persidangan, dan #9307#;')
     e.ganti_penuh(A105A, 'Menimbang, bahwa Pasal 105 huruf b Kompilasi Hukum Islam menentukan pemeliharaan anak yang sudah mumayyiz diserahkan kepada anak untuk memilih di antara ayah atau ibunya sebagai pemegang '
-                  'hak pemeliharaannya, dan Pasal 156 huruf b Kompilasi Hukum Islam menentukan anak yang sudah mumayyiz berhak memilih untuk mendapatkan hadhanah dari ayah atau ibunya;#4880##4882##4883##4885##4887#', nama='dasar-105b')
+                  'hak pemeliharaannya, dan Pasal 156 huruf b Kompilasi Hukum Islam menentukan anak yang sudah mumayyiz berhak memilih untuk mendapatkan hadhanah dari ayah atau ibunya;#4880##4882##4883##4904##4885##4887#', nama='dasar-105b')
     e.ganti_penuh(A_APP, 'Menimbang, bahwa berdasarkan fakta hukum tersebut di atas, #9302# #0046# dan #0047# telah mumayyiz dan telah menyatakan pilihannya secara bebas di persidangan, yaitu #9307#, '
                   'sedangkan #0047# adalah #9301#nya dan #9433#, dan #9310#, sehingga pilihan tersebut sejalan dengan kepentingan terbaik bagi #9302# tersebut dan #0046# tidak berhasil membuktikan bahwa '
                   '#0047# tidak dapat menjamin keselamatan jasmani dan rohani #9302# tersebut;', nama='penerapan-memilih-T')
@@ -359,7 +359,7 @@ def main():
         m = re.match(r'\[(\d+[a-z]?)\]', berkas)
         kode = m.group(1)
         if kode in ('02', '02a', '02b'):
-            e = tambal_hak_asuh(F6A, berkas, penyerahan=False, relatif=True, kabul=True)
+            e = tambal_hak_asuh(F6A, berkas, penyerahan=False, relatif=True, kabul=True, nafkah_gabung=True)
             # bagian nafkah pada putusan gabungan
             if e.cari(A_NAFKAH, wajib=False) is not None:
                 e.akhir(A_NAFKAH, '#4900#', nama='perbandingan-jumlah')
