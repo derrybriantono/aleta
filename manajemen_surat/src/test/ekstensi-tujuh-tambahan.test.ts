@@ -112,7 +112,8 @@ describe("penetapan massal", () => {
     // harus diingat bersamaan setiap kali urutannya berubah.
     const isi = konten();
     expect(isi.split("async function rantaiPenetapan(").length - 1).toBe(1);
-    expect(potongFungsi(isi, "tetapkanLewatAleta")).toContain("await rantaiPenetapan(");
+    // 20 Okt: tetapkanLewatAleta = pembungkus berkunci; isinya di tetapkanLewatAletaInti.
+    expect(potongFungsi(isi, "tetapkanLewatAletaInti")).toContain("await rantaiPenetapan(");
   });
 
   it("hanya digambar bagi yang memang boleh menulis penetapan", () => {

@@ -444,7 +444,7 @@ afterEach(async () => {
   while (terbuka.length) terbuka.pop()!.window.close();
 });
 
-function bukaEkstensi(p: { mode?: string; kering?: boolean } = {}) {
+function bukaEkstensi(p: { mode?: string; kering?: boolean; muatUlang?: boolean } = {}) {
   const dom = new JSDOM(`<!doctype html><html><body><div id="wadah"></div></body></html>`, {
     url: "http://192.168.10.10/SIPP/perkara_detil_agama/ENC",
     runScripts: "outside-only",
@@ -529,7 +529,14 @@ function bukaEkstensi(p: { mode?: string; kering?: boolean } = {}) {
   // Di satker tampilannya diterapkan server; di sini penahannya dilepas seperti
   // uji BAS massal (tahanPost).
   w.eval(`${SUMBER}\n;window.__mode = () => alatUjiMode(); window.__kering = () => alatKeringNyala(); alatCobaMenahan = () => false;`);
-  return { w, minta, wadah: w.document.getElementById("wadah") as HTMLElement, k, usulan };
+  // Modul muat ulang bersama (20 Okt 2026): navigasi ditangkap, jeda hitung mundur dipendekkan.
+  const navigasi: string[] = [];
+  if (p.muatUlang) {
+    w.aletaUjiPindah = (a: string) => void navigasi.push(a);
+    w.eval(readFileSync(path.join(EKS, "muat-ulang-sipp.js"), "utf8"));
+    w.aletaMuatUlangSipp.konf.jeda = 250;
+  }
+  return { w, minta, wadah: w.document.getElementById("wadah") as HTMLElement, k, usulan, navigasi };
 }
 
 describe("6. ekstensi - tab Kasir (basmassal.js IIFE)", () => {
@@ -564,6 +571,46 @@ describe("6. ekstensi - tab Kasir (basmassal.js IIFE)", () => {
     expect(post[0].badan.baris.length).toBe(tercentang);
     await sampai(() => /tersimpan dan terbaca ulang/.test(h.wadah.textContent || ""), "kabar tersimpan");
     expect(JSON.stringify(post[0].badan)).not.toMatch(/aleta/i);
+  });
+
+  it("20 Okt: Simpan per perkara berhasil -> ringkasan lalu muat ulang OTOMATIS sekali, tetap di halaman itu", async () => {
+    const h = bukaEkstensi({ muatUlang: true });
+    await sampai(() => h.w.__mode() === "baru", "mode baru");
+    await h.w.aletaKasirPasang(h.wadah, { perkaraId: String(h.k.perkara.perkaraId) });
+    await sampai(() => h.wadah.querySelector(".aleta-kasir-keadaan"), "keadaan");
+    const simpan = Array.from(h.wadah.querySelectorAll("button")).find((b) => /Simpan ke SIPP/.test(b.textContent || "")) as HTMLButtonElement;
+    simpan.click();
+    await tunggu(20);
+    simpan.click();
+    const notis = await sampai(() => h.wadah.querySelector('[data-mu="muat-ulang"]') as HTMLElement | null, "kotak muat ulang");
+    expect(notis.textContent).toContain("Kasir tersimpan di jurnal SIPP.");
+    expect(notis.textContent).toMatch(/dimuat ulang dalam \d+ detik/);
+    expect(h.navigasi).toEqual([]);
+    await sampai(() => h.navigasi.length === 1, "memuat ulang");
+    await tunggu(500);
+    expect(h.navigasi).toEqual(["http://192.168.10.10/SIPP/perkara_detil_agama/ENC"]);
+    expect(h.wadah.textContent).not.toContain("Muat ulang halaman SIPP");
+  });
+
+  it("20 Okt: Kasir massal - TIDAK memuat ulang di tengah antrean; SEKALI di akhir", async () => {
+    const h = bukaEkstensi({ muatUlang: true });
+    await sampai(() => h.w.__mode() === "baru", "mode baru");
+    await h.w.aletaKasirPasangHarian(h.wadah, { situs: "sipp" });
+    const massal = Array.from(h.wadah.querySelectorAll("details")).find((d) => /massal/.test(d.querySelector("summary")?.textContent || "")) as HTMLDetailsElement;
+    massal.open = true;
+    massal.dispatchEvent(new h.w.Event("toggle"));
+    await sampai(() => massal.querySelector(".aleta-basmassal-baris input[type=checkbox]:checked"), "perkara tercentang");
+    const simpan = Array.from(massal.querySelectorAll("button")).find((b) => /Simpan 1 perkara/.test(b.textContent || "")) as HTMLButtonElement;
+    simpan.click();
+    await tunggu(10);
+    (Array.from(massal.querySelectorAll("button")).find((b) => /Tekan sekali lagi/.test(b.textContent || "")) as HTMLButtonElement).click();
+    await sampai(() => /Selesai: 1 perkara berhasil/.test(massal.textContent || ""), "laporan");
+    const notis = await sampai(() => massal.querySelector('[data-mu="muat-ulang"]') as HTMLElement | null, "kotak muat ulang di akhir");
+    expect(notis.textContent).toContain("Kasir massal selesai.");
+    expect(h.minta.filter((m) => m.cara === "POST").length).toBe(1);
+    await sampai(() => h.navigasi.length === 1, "memuat ulang sekali");
+    await tunggu(500);
+    expect(h.navigasi.length).toBe(1);
   });
 
   it("mode kering: Simpan tidak mengirim apa pun - yang akan disimpan disebut", async () => {
