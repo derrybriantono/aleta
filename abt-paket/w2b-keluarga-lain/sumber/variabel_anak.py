@@ -32,7 +32,7 @@ def lit(s):
 def T(n):
     """Isian data_teks bersih: garis miring terbalik -> /, kutip ganda -> entitas, kutip tunggal -> entitas, pangkas titik koma ujung."""
     return ("TRIM(TRAILING ';' FROM TRIM(REPLACE(IFNULL(REPLACE(REPLACE(REPLACE(CONVERT((SELECT data FROM %s.abt_data_teks WHERE no_var = %d AND perkara_id = '#perkara_id#' LIMIT 1) "
-            "USING utf8), '\\\\', '/'), '\"', '&quot;'), '''', '&#39;'), ''), '; ', ';')))") % (DB, n)
+            "USING utf8), CHAR(92 USING utf8), '/'), '\"', '&quot;'), '''', '&#39;'), ''), '; ', ';')))") % (DB, n)
 
 
 def SK(n):
@@ -181,10 +181,10 @@ v(4903, 'NAFKAH ANAK (KABUL SEBAGIAN): PERTIMBANGAN IBU IKUT MEMIKUL BIAYA (OTOM
 # ---------------------------------------------------------------------------------------------------------------------
 v(4905, 'HAK ASUH ANAK DENGAN STATUS MUMAYYIZ BERBEDA: PENETAPAN PER ANAK - ISIAN satu anak per baris: nama - belum mumayyiz atau mumayyiz memilih - pemegang hadhanah (ibu atau ayah kandung)', 'data_teks')
 v(4906, 'HAK ASUH ANAK-ANAK DENGAN STATUS MUMAYYIZ BERBEDA: AMAR PER ANAK (OTOMATIS: isian 4905, satu butir per anak; kosong = kalimat [PERIKSA])', 'data_sql',
-  "SELECT IF(" + SK(4905) + " = '', " + lit('[PERIKSA: isi penetapan per anak pada isian 4905, satu anak per baris]') + ", CONCAT('<br>    - ', REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CONVERT(" + SK(4905) + " USING utf8), CHAR(13), ''), '\\\\', '/'), '\"', '&quot;'), '''', '&#39;'), CHAR(10), CONCAT(';<br>    - ')), ';')) AS data")
+  "SELECT IF(" + SK(4905) + " = '', " + lit('[PERIKSA: isi penetapan per anak pada isian 4905, satu anak per baris]') + ", CONCAT('<br>    - ', REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CONVERT(" + SK(4905) + " USING utf8), CHAR(13), ''), CHAR(92 USING utf8), '/'), '\"', '&quot;'), '''', '&#39;'), CHAR(10), CONCAT(';<br>    - ')), ';')) AS data")
 v(4907, 'HAK ASUH ANAK-ANAK DENGAN STATUS MUMAYYIZ BERBEDA: PERTIMBANGAN PER ANAK (OTOMATIS: isian 4905, satu baris per anak; kosong = kalimat [PERIKSA])', 'data_sql',
   "SELECT IF(" + SK(4905) + " = '', " + lit('<br>[PERIKSA: isi penetapan per anak pada isian 4905, satu anak per baris]') + ", CONCAT('<br>Menimbang, bahwa oleh karena anak-anak tersebut berada dalam keadaan yang berbeda, ada yang belum mumayyiz dan ada yang telah mumayyiz, maka #8554# menilai kepentingan terbaik bagi masing-masing anak secara tersendiri dengan hasil sebagai berikut:', "
-  "'<br>    - ', REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CONVERT(" + SK(4905) + " USING utf8), CHAR(13), ''), '\\\\', '/'), '\"', '&quot;'), '''', '&#39;'), CHAR(10), CONCAT(';<br>    - ')), ';')) AS data")
+  "'<br>    - ', REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CONVERT(" + SK(4905) + " USING utf8), CHAR(13), ''), CHAR(92 USING utf8), '/'), '\"', '&quot;'), '''', '&#39;'), CHAR(10), CONCAT(';<br>    - ')), ';')) AS data")
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Tambahan: penyerahan anak pada putusan verstek dan umur anak untuk nafkah
