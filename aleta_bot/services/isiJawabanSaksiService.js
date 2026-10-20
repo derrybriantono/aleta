@@ -17,11 +17,13 @@
 const isi = require("./isiJawabanSaksi");
 const { positaTambahan } = require("./isiJawabanSaksiPosita");
 
-/** Kode jenis jawaban saksi dari id jenis perkara SIPP atau namanya. */
-const JENIS_ID = Object.freeze({ 346: "ct", 347: "cg", 360: "itsbat", 362: "dk", 363: "wa", 354: "perwalian", 358: "aua", 371: "paw", 364: "waris", 348: "hb", 341: "ip" });
-function kodeJenis(jenisPerkara, alur) {
+/** Kode jenis jawaban saksi dari id jenis perkara SIPP, kunci katalog, atau namanya. */
+const JENIS_ID = Object.freeze({ 346: "ct", 347: "cg", 360: "itsbat", 362: "dk", 363: "wa", 354: "perwalian", 358: "aua", 371: "paw", 364: "waris", 348: "hb", 341: "ip", 342: "cegah", 344: "batal", 349: "asuh", 743: "nafkahAnak", 365: "wasiat", 366: "hibah", 367: "wakaf", 370: "eksyar" });
+const JENIS_KATALOG = Object.freeze({ "pengangkatan-anak": "angkat", mafqud: "mafqud", "hak-asuh": "asuh", "penguasaan-anak": "asuh", "nafkah-anak": "nafkahAnak", "izin-poligami": "ip", "pencegahan-perkawinan": "cegah", "pembatalan-perkawinan": "batal", hibah: "hibah", wakaf: "wakaf", wasiat: "wasiat", "ekonomi-syariah": "eksyar" });
+function kodeJenis(jenisPerkara, alur, kunciKatalog) {
   const j = String(jenisPerkara || "").trim();
   if (JENIS_ID[j]) return JENIS_ID[j];
+  if (JENIS_KATALOG[String(kunciKatalog || "")]) return JENIS_KATALOG[String(kunciKatalog)];
   const n = j.toLowerCase();
   if (/cerai\s*talak/.test(n)) return "ct";
   if (/cerai\s*gugat/.test(n)) return "cg";
@@ -34,7 +36,38 @@ function kodeJenis(jenisPerkara, alur) {
   if (/kewarisan|waris/.test(n)) return "waris";
   if (/harta\s*bersama/.test(n)) return "hb";
   if (/poligami/.test(n)) return "ip";
+  if (/hibah/.test(n)) return "hibah";
+  if (/wakaf/.test(n)) return "wakaf";
+  if (/wasiat/.test(n)) return "wasiat";
+  if (/ekonomi\s*syariah/.test(n)) return "eksyar";
   return "umum";
+}
+
+/**
+ * Hubungan saksi dengan para pihak dari kolom Keterangan saksi di SIPP (perkara_pihak5). `kunciSaksi` = "saksi 2 p" / "saksi 1 t".
+ * @returns {{teks: string, sumber: string, yakin: string, ket: string}|null}
+ */
+function hubunganDariSipp(sipp, kunciSaksi, lawan, pelaku) {
+  const m = /^saksi\s+(\d+)\s+([pt])$/i.exec(String(kunciSaksi || "").trim());
+  const daftar = sipp && Array.isArray(sipp.saksi) ? sipp.saksi : [];
+  if (!m || !daftar.length) return null;
+  const pihak = m[2].toLowerCase() === "t" ? "T" : "P";
+  const id = daftar.find((x) => x && x.pihak === pihak && Number(x.urutPihak) === Number(m[1]));
+  const label = id ? String(id.keterangan || "").replace(/\s+/g, " ").trim() : "";
+  if (!label) return null;
+  let teks = label;
+  let yakin = "cukup";
+  try {
+    const D = require("./deteksiSaksiService");
+    const d = D.deteksiHubungan(label, { bentuk: "label" });
+    if (d) {
+      teks = D.hubunganTampil(label, d, pihak, lawan, pelaku);
+      yakin = "yakin";
+    }
+  } catch (_galat) {
+    /* label ditulis apa adanya */
+  }
+  return { teks, sumber: "data SIPP", yakin, ket: yakin === "yakin" ? "" : "Hubungan saksi ditulis seperti di kolom Keterangan saksi SIPP; periksa penulisannya." };
 }
 
 /** Isian dari peramban disaring: hanya objek kode -> nilai pendek; yang memuat nama aplikasi dibuang. */
@@ -72,15 +105,22 @@ async function bacaSippSaksi(nomorPerkara, jalankanLuar, batasMs = 2500) {
     const id = await aman("SELECT perkara_id FROM perkara WHERE nomor_perkara = ? LIMIT 1", [nomor]);
     const pid = Array.isArray(id) && id[0] ? id[0].perkara_id : null;
     if (!pid) return null;
-    const [nikah, itsbat, anak, pihak1, pihak2] = await Promise.all([
+    const [nikah, itsbat, anak, pihak1, pihak2, saksiRows] = await Promise.all([
       aman("SELECT DATE_FORMAT(tgl_nikah, '%Y-%m-%d') AS tgl_nikah, kua_tempat_nikah AS kua FROM perkara_data_pernikahan WHERE perkara_id = ? LIMIT 1", [pid]),
       aman("SELECT DATE_FORMAT(tgl_menikah, '%Y-%m-%d') AS tgl, tempat_menikah AS tempat FROM perkara_data_itsbat WHERE perkara_id = ? LIMIT 1", [pid]),
       aman("SELECT nama_anak, DATE_FORMAT(tanggal_lahir, '%Y-%m-%d') AS lahir, jenis_kelamin AS jk, diasuh_oleh, ada_anak FROM perkara_anak_pihak WHERE perkara_id = ? ORDER BY anak_ke, id LIMIT 12", [pid]),
       aman("SELECT pp.urutan, pp.nama, pp.alamat, p.pekerjaan, DATE_FORMAT(p.tanggal_lahir, '%Y-%m-%d') AS lahir, p.jenis_kelamin AS jk FROM perkara_pihak1 pp LEFT JOIN pihak p ON p.id = pp.pihak_id WHERE pp.perkara_id = ? ORDER BY pp.urutan LIMIT 4", [pid]),
       aman("SELECT pp.urutan, pp.nama, pp.alamat, p.pekerjaan, DATE_FORMAT(p.tanggal_lahir, '%Y-%m-%d') AS lahir, p.jenis_kelamin AS jk FROM perkara_pihak2 pp LEFT JOIN pihak p ON p.id = pp.pihak_id WHERE pp.perkara_id = ? ORDER BY pp.urutan LIMIT 4", [pid]),
+      aman("SELECT saksi_pihak_ke AS pihak, urutan, keterangan FROM perkara_pihak5 WHERE perkara_id = ? AND urutan > 0 ORDER BY saksi_pihak_ke, urutan LIMIT 12", [pid]),
     ]);
+    const hitungSaksi = { P: 0, T: 0 };
+    const saksi = (Array.isArray(saksiRows) ? saksiRows : []).map((b) => {
+      const pihak = Number(b.pihak) === 2 ? "T" : "P";
+      hitungSaksi[pihak] += 1;
+      return { pihak, urutPihak: hitungSaksi[pihak], keterangan: String(b.keterangan || "") };
+    });
     const satu = (x) => (Array.isArray(x) && x[0] ? x[0] : null);
-    return { nikah: satu(nikah), itsbat: satu(itsbat), anak: Array.isArray(anak) ? anak : [], pihak1: Array.isArray(pihak1) ? pihak1 : [], pihak2: Array.isArray(pihak2) ? pihak2 : [] };
+    return { nikah: satu(nikah), itsbat: satu(itsbat), anak: Array.isArray(anak) ? anak : [], pihak1: Array.isArray(pihak1) ? pihak1 : [], pihak2: Array.isArray(pihak2) ? pihak2 : [], saksi };
   };
   const batas = new Promise((selesai) => setTimeout(() => selesai(null), batasMs));
   try {
@@ -143,16 +183,20 @@ function lengkapi(hasil, o) {
     if (!hasil || hasil.ok === false) return kosong;
     const templat = Array.isArray(k.templatMasuk) ? k.templatMasuk : [];
     if (!templat.some((b) => isi.masihKosong(b && (b.jawab || b.jawaban)))) return kosong;
-    const jenis = kodeJenis(k.jenisPerkara, k.alur);
+    const jenis = kodeJenis(k.jenisPerkara, k.alur, k.kunciKatalog);
     const dp = deteksiPosita({ ...k, jenis });
     const tambahan = positaTambahan(k.posita, jenis);
     const fakta = isi.bangunFakta({ isian: saringIsian(k.isian), sipp: k.sipp, usulan: dp.usulan, cerai: dp.cerai, tambahan, sebutan: { P: k.lawan, T: k.pelaku } });
     const acuan = templat.map((b, i) => ({ no: String((b && (b.no || b.urutan_pertanyaan)) || i + 1), tanya: String((b && (b.tanya || b.pertanyaan)) || ""), jawab: String((b && (b.jawab || b.jawaban)) || "") }));
+    const hitungPihak = { P: 0, T: 0 };
     const saksi = (hasil.saksi || []).map((s, i) => {
       const m = (Array.isArray(k.saksi) && k.saksi[i]) || {};
       const sumberKode = String(m.sumber || "");
       const sumberNama = m.sumberNama || (sumberKode === "keluarga" ? "keluarga mereka" : sumberKode === "tergugat" ? k.pelaku : k.lawan);
-      return { ke: m.ke || s.ke, modus: s.modus || m.modus, sumberNama };
+      const pihak = m.pihak === "T" ? "T" : "P";
+      hitungPihak[pihak] += 1;
+      const hubungan = hubunganDariSipp(k.sipp, `saksi ${hitungPihak[pihak]} ${pihak.toLowerCase()}`, k.lawan, k.pelaku);
+      return { ke: m.ke || s.ke, modus: s.modus || m.modus, sumberNama, hubungan };
     });
     return isi.lengkapiSusunan(hasil, { templatAsli: acuan, fakta, jenis, P: k.lawan || "Penggugat", T: k.pelaku || "Tergugat", saksi });
   } catch (galat) {
@@ -173,7 +217,7 @@ function isiBaris(o) {
   const k = o && typeof o === "object" ? o : {};
   const hasil = {};
   try {
-    const jenis = kodeJenis(k.jenisPerkara, k.alur);
+    const jenis = kodeJenis(k.jenisPerkara, k.alur, k.kunciKatalog);
     const dp = deteksiPosita({ ...k, jenis });
     const fakta = isi.bangunFakta({
       isian: saringIsian(k.isian),
@@ -184,9 +228,9 @@ function isiBaris(o) {
       sebutan: { P: k.lawan, T: k.pelaku },
     });
     for (const s of Array.isArray(k.saksiIsi) ? k.saksiIsi.slice(0, 12) : []) {
-      const ctx = { jenis, P: k.lawan || "Pemohon", T: k.pelaku || "Termohon", ke: Number(s.ke) || 1, modus: String(s.modus || ""), sumberNama: String(s.sumberNama || "") };
+      const ctx = { jenis, P: k.lawan || "Pemohon", T: k.pelaku || "Termohon", ke: Number(s.ke) || 1, modus: String(s.modus || ""), sumberNama: String(s.sumberNama || ""), hubungan: hubunganDariSipp(k.sipp, s.kunci, k.lawan, k.pelaku) };
       for (const b of Array.isArray(s.baris) ? s.baris.slice(0, 80) : []) {
-        const r = isi.isiJawaban({ tanya: String(b.tanya || ""), jawab: String(b.jawab || "") }, fakta, { ...ctx });
+        const r = isi.isiJawaban({ tanya: String(b.tanya || ""), jawab: String(b.jawab || ""), ...(typeof b.kode === "string" && b.kode ? { kode: b.kode.slice(0, 3000) } : {}) }, fakta, { ...ctx });
         if (!r) continue;
         const nilai = { teks: r.teks, yakin: r.yakin, sumber: r.sumber, ket: r.ket };
         const kunci = String(b.kunci || "");
@@ -201,4 +245,4 @@ function isiBaris(o) {
   return hasil;
 }
 
-module.exports = { lengkapi, isiBaris, bacaSippSaksi, deteksiPosita, saringIsian, kodeJenis };
+module.exports = { lengkapi, isiBaris, bacaSippSaksi, deteksiPosita, saringIsian, kodeJenis, hubunganDariSipp };

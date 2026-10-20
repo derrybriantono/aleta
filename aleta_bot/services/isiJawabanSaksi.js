@@ -18,9 +18,11 @@
  */
 
 const F = require("./isiJawabanSaksiFakta");
+const V = require("./isiJawabanSaksiVariabel");
 const { T, RE_SEBUTAN, adaTitik, hitungTitik, minYakin, kecilAwal, norm, rapat, tanpaProvinsi } = F;
 
 const RE_TITIK_G = /\.{3,}|…/g;
+const RE_TANDA_G = new RegExp(`${V.TANDA_BUKA}[^${V.TANDA_TUTUP}]+${V.TANDA_TUTUP}`, "g");
 const adaPlaceholder = (t) => /\{[a-zA-Z0-9_]+\}/.test(String(t || ""));
 /** Jawaban masih memuat bagian yang belum terisi: titik-titik, "{placeholder}" katalog, atau "#kode#" ABT. */
 const masihKosong = (t) => adaTitik(t) || adaPlaceholder(t) || /#\d{3,5}#/.test(String(t || ""));
@@ -102,6 +104,13 @@ function penolong(fakta, ctx, pakai) {
       if (!f) return null;
       pakai.push(f);
       return tanpaProvinsi(f.nilai);
+    },
+    /** Hubungan saksi dengan para pihak (dari kolom Keterangan saksi di SIPP), huruf awal kecil: "menantu Penggugat"; null bila tidak ada. */
+    hubunganSaksi() {
+      const x = ctx && ctx.hubungan;
+      if (!x || !x.teks) return null;
+      pakai.push({ kunci: "hubunganSaksi", sumber: x.sumber || "data SIPP", yakin: x.yakin || "yakin", ket: x.ket || "" });
+      return kecilAwal(x.teks);
     },
   };
   return h;
@@ -200,6 +209,14 @@ cue(
   }
 );
 cue("tidak-tercatat", new RegExp(`tidak\\s+tercatat\\s+karena\\s+${T};\\s*itsbat\\s+nikah\\s+diperlukan\\s+untuk\\s+${T}`, "gi"), ({ m, h }) => h.isi(m, [h.nilai("sebabTidakTercatat"), h.nilai("tujuan")]), { jenis: ["itsbat"] });
+
+// ---- hubungan saksi dengan pihak (kolom Keterangan saksi di SIPP) -----------------------
+// Cerai ("... Penggugat" sesudah titik-titik) diisi pasangJawaban di ekstensi; di sini bentuk tanpa sebutan di ujungnya.
+cue(
+  "kenal-hubungan",
+  new RegExp(`(?:karena|sebab|yaitu|sebagai|bahwa)\\s+saya\\s+(?:adalah|sebagai)\\s+${T}(?!\\s+${RE_SEBUTAN})`, "gi"),
+  ({ m, h }) => h.isi(m, [h.hubunganSaksi()])
+);
 
 // ---- cerai -------------------------------------------------------------------
 
@@ -577,8 +594,18 @@ function isiJawaban(baris, fakta, ctx) {
   const q = norm(tanya);
   const pakai = [];
   const h = penolong(fakta, ctx, pakai);
-  const total = hitungTitik(asal);
-  let teks = isiPlaceholder(asal, tanya, h, ctx);
+  // Susunan katalog: jawaban dengan penanda ⟦#kode#⟧/⟦{slot}⟧ diisi satu per satu menurut isinya (isiJawabanSaksiVariabel.js).
+  const kode = baris && typeof baris.kode === "string" && V.adaTanda(baris.kode) ? baris.kode : "";
+  let teks;
+  let total;
+  if (kode) {
+    const sub = V.substitusi(kode, h, ctx, q);
+    teks = sub.teks;
+    total = sub.total + hitungTitik(kode.replace(RE_TANDA_G, ""));
+  } else {
+    total = hitungTitik(asal);
+    teks = isiPlaceholder(asal, tanya, h, ctx);
+  }
   for (const c of CUES) {
     if (c.jenis && c.jenis.length && !c.jenis.includes(ctx.jenis)) continue;
     if (c.tanya && !c.tanya.test(q)) continue;
@@ -649,7 +676,7 @@ function lengkapiSusunan(hasil, opsi) {
       const acuan = templat[i];
       if (!acuan || !masihKosong(acuan.jawab)) return;
       const adaPilihan = Array.isArray(j.pilihan) && j.pilihan.length >= 2;
-      const ctx = { jenis: o.jenis || "umum", P: o.P || "Penggugat", T: o.T || "Tergugat", ke: Number(pil.ke) || s.ke || idx + 1, modus: pil.modus || s.modus, sumberNama: pil.sumberNama || "" };
+      const ctx = { jenis: o.jenis || "umum", P: o.P || "Penggugat", T: o.T || "Tergugat", ke: Number(pil.ke) || s.ke || idx + 1, modus: pil.modus || s.modus, sumberNama: pil.sumberNama || "", hubungan: pil.hubungan || null };
       const isi = isiJawaban({ tanya: j.tanya || acuan.tanya, jawab: acuan.jawab }, o.fakta, ctx);
       const sekarang = String(j.jawab || "");
       const kosongPenyusun = /^\s*\[BELUM TERISI/i.test(sekarang);

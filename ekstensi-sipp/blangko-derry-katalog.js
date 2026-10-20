@@ -498,6 +498,7 @@
           tanya,
           tanyaMentah: mentah,
           jawab,
+          jawabKode: asal ? teks(asal.jawabKode || "") : "",
           jenis,
           kelompok: q.kelompok,
           tingkat: q.tingkat,

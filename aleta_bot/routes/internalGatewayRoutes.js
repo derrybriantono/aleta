@@ -2689,6 +2689,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         posita: positaKurang && konteksSipp && konteksSipp.posita ? konteksSipp.posita : positaMasuk,
         jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
         alur: String(req.body?.alur || "").slice(0, 20),
+        kunciKatalog: String(req.body?.kunciKatalog || "").slice(0, 60),
         pelaku,
         lawan,
         tanggalSidang: String(req.body?.tanggalSidang || "").slice(0, 40) || (konteksSipp && konteksSipp.tanggalSidang) || "",

@@ -751,33 +751,41 @@
     const c = ctx || {};
     const slot = c.slot || {};
     const kosong = [];
-    const variabel = (kode) => {
-      const v = typeof c.variabel === "function" ? c.variabel(kode) : undefined;
-      return tidakTerisi(v) ? "" : String(v).trim();
-    };
-    const ganti = (t) =>
-      t.replace(/\{([^{}]*)\}/g, (_semua, nama) => {
-        let nilai = slot[nama];
-        if (nama === "pengaju" && slotKosong(nilai)) nilai = "#0046#";
-        if (nama === "lawan" && slotKosong(nilai)) nilai = "#0047#";
-        if (slotKosong(nilai)) {
-          kosong.push("{" + nama + "}");
-          return "...";
+    // 20 Okt (S7): `mentah` = teks yang sama, tetapi bagian yang belum terisi tetap berupa penanda ⟦{slot}⟧ / ⟦#kode#⟧
+    // (bukan "...") dan urutannya sama dengan di teks; dipakai pengisi jawaban dari data. Tidak ikut tersalin (non-enumerable)
+    // sehingga pembanding hasil lama tidak berubah.
+    const dalam = (tandai) => {
+      const variabel = (kode) => {
+        const v = typeof c.variabel === "function" ? c.variabel(kode) : undefined;
+        return tidakTerisi(v) ? "" : String(v).trim();
+      };
+      const ganti = (t) =>
+        t.replace(/\{([^{}]*)\}/g, (_semua, nama) => {
+          let nilai = slot[nama];
+          if (nama === "pengaju" && slotKosong(nilai)) nilai = "#0046#";
+          if (nama === "lawan" && slotKosong(nilai)) nilai = "#0047#";
+          if (slotKosong(nilai)) {
+            if (!tandai) kosong.push("{" + nama + "}");
+            return tandai ? "⟦{" + nama + "}⟧" : "...";
+          }
+          return String(nilai);
+        });
+      // Dua putaran: isi slot (mis. {hal}) boleh memuat slot lain ({pelaku}).
+      let hasil = ganti(String(teks));
+      if (/\{[^{}]*\}/.test(hasil.replace(/⟦\{[^{}]*\}⟧/g, ""))) hasil = ganti(hasil.replace(/⟦(\{[^{}]*\})⟧/g, "$1"));
+      hasil = hasil.replace(/#(\d{4})#/g, (_semua, kode) => {
+        const v = variabel(kode);
+        if (!v) {
+          if (!tandai) kosong.push("#" + kode + "#");
+          return tandai ? "⟦#" + kode + "#⟧" : "...";
         }
-        return String(nilai);
+        return v;
       });
-    // Dua putaran: isi slot (mis. {hal}) boleh memuat slot lain ({pelaku}).
-    let hasil = ganti(String(teks));
-    if (/\{[^{}]*\}/.test(hasil)) hasil = ganti(hasil);
-    hasil = hasil.replace(/#(\d{4})#/g, (_semua, kode) => {
-      const v = variabel(kode);
-      if (!v) {
-        kosong.push("#" + kode + "#");
-        return "...";
-      }
-      return v;
-    });
-    return { teks: hasil, kosong };
+      return hasil;
+    };
+    const keluar = { teks: dalam(false), kosong };
+    Object.defineProperty(keluar, "mentah", { value: dalam(true), enumerable: false });
+    return keluar;
   }
 
   /**
@@ -885,7 +893,7 @@
         jawab.teks = amankanKeAbt(jawab.teks);
         tanya.teks = amankanKeAbt(tanya.teks);
         const kosong = tanpaKosongGanda([...tanya.kosong, ...jawab.kosong]);
-        baris.push({
+        const barisIni = {
           no: baris.length + 1,
           butir: q.id,
           pokok: q.pokok,
@@ -894,7 +902,10 @@
           jawab: jawab.teks,
           kosong,
           tandaKuning: jenis === "ragu" || jenis === "sebagian" || jenis === "berbeda",
-        });
+        };
+        // 20 Okt (S7): jawaban dengan penanda ⟦#kode#⟧/⟦{slot}⟧ di tempat yang belum terisi (non-enumerable)
+        Object.defineProperty(barisIni, "jawabKode", { value: jawab.mentah || jawab.teks, enumerable: false });
+        baris.push(barisIni);
         if (jenis === "ragu" || jenis === "tidak-tahu") {
           ragu.set(q.id, (ragu.get(q.id) || 0) + 1);
         }

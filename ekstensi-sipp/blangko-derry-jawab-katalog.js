@@ -47,7 +47,9 @@
       const baris = [];
       for (const b of Array.isArray(s.baris) ? s.baris : []) {
         if (!b || !b.kunciJawaban || !RE_KOSONG.test(teks(b.jawab))) continue;
-        baris.push({ kunci: teks(b.kunciJawaban), tanya: teks(b.tanya), jawab: teks(b.jawab) });
+        // `kode` = jawaban dengan penanda ⟦#kode#⟧/⟦{slot}⟧ di tempat yang belum terisi: pengisi mengisinya satu per satu menurut isinya
+        const kode = typeof b.jawabKode === "string" && /⟦/.test(b.jawabKode) ? b.jawabKode : "";
+        baris.push({ kunci: teks(b.kunciJawaban), tanya: teks(b.tanya), jawab: teks(b.jawab), ...(kode ? { kode } : {}) });
       }
       if (baris.length) saksiIsi.push({ kunci: teks(s.kunci), ke: Number(s.ke) || saksiIsi.length + 1, modus: modusDariJenis(s.jenis), sumberNama: "", baris });
     }
@@ -68,6 +70,7 @@
       nomorPerkara: teks(p.nomorPerkara),
       jenisPerkara: teks(p.jenisPerkaraId || p.jenisPerkara),
       alur: teks(p.alurPerkaraId),
+      kunciKatalog: teks(r.kenal && r.kenal.kunci),
       pelaku: teks(seb.T),
       lawan: teks(seb.P),
       isian,
