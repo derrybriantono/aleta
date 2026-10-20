@@ -745,7 +745,7 @@
       "id": "q-ha-jumlah-anak",
       "pokok": "pp-ha-identitas",
       "urutan": 31,
-      "tingkat": "pilihan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -830,7 +830,7 @@
       "id": "q-ha-akta-lahir",
       "pokok": "pp-ha-identitas",
       "urutan": 33,
-      "tingkat": "pilihan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -1453,7 +1453,7 @@
       "id": "q-ha-makan-gizi",
       "pokok": "pp-ha-jasmani",
       "urutan": 42,
-      "tingkat": "pilihan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -1604,7 +1604,7 @@
       "id": "q-ha-perawatan-harian",
       "pokok": "pp-ha-jasmani",
       "urutan": 43,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -1988,7 +1988,7 @@
       "id": "q-ha-mengaji",
       "pokok": "pp-ha-rohani",
       "urutan": 52,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -2293,7 +2293,7 @@
       "id": "q-ha-jiwa-anak",
       "pokok": "pp-ha-rohani",
       "urutan": 54,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "akibat",
       "pihakSaksi": [
         "*"
@@ -2577,7 +2577,7 @@
       "id": "q-ha-pendampingan-belajar",
       "pokok": "pp-ha-pendidikan",
       "urutan": 62,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -2728,7 +2728,7 @@
       "id": "q-ha-prestasi-sekolah",
       "pokok": "pp-ha-pendidikan",
       "urutan": 63,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "akibat",
       "pihakSaksi": [
         "*"
@@ -3260,7 +3260,7 @@
       "id": "q-ha-nama-baik-pengasuh",
       "pokok": "pp-ha-akhlak-pengasuh",
       "urutan": 73,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -3790,7 +3790,7 @@
       "id": "q-ha-dibantu-keluarga",
       "pokok": "pp-ha-waktu",
       "urutan": 82,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -3941,7 +3941,7 @@
       "id": "q-ha-tidak-ditinggal",
       "pokok": "pp-ha-waktu",
       "urutan": 83,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -4321,7 +4321,7 @@
       "id": "q-ha-kamar-aman",
       "pokok": "pp-ha-tempat",
       "urutan": 92,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -4472,7 +4472,7 @@
       "id": "q-ha-penghuni-rumah",
       "pokok": "pp-ha-tempat",
       "urutan": 93,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -4852,7 +4852,7 @@
       "id": "q-ha-pemenuhan-selama-asuh",
       "pokok": "pp-ha-ekonomi",
       "urutan": 102,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "akibat",
       "pihakSaksi": [
         "*"
@@ -6773,7 +6773,7 @@
       "id": "q-ha-sikap-anak-bertemu",
       "pokok": "pp-ha-ikatan",
       "urutan": 132,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -6924,7 +6924,7 @@
       "id": "q-ha-merindukan",
       "pokok": "pp-ha-ikatan",
       "urutan": 133,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "akibat",
       "pihakSaksi": [
         "*"
@@ -8083,7 +8083,7 @@
       "id": "q-ha-akses-komunikasi",
       "pokok": "pp-ha-akses-lanjut",
       "urutan": 153,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -9241,7 +9241,7 @@
       "id": "q-ha-kesepakatan-diingkari",
       "pokok": "pp-ha-damai",
       "urutan": 191,
-      "tingkat": "pilihan",
+      "tingkat": "jarang",
       "kelompok": "upaya",
       "pihakSaksi": [
         "*"
@@ -9321,7 +9321,7 @@
       "id": "q-ha-mediasi-keluarga",
       "pokok": "pp-ha-damai",
       "urutan": 192,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "upaya",
       "pihakSaksi": [
         "*"

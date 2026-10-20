@@ -823,7 +823,7 @@
       "id": "q-na-jumlah-anak",
       "pokok": "pp-na-identitas",
       "urutan": 31,
-      "tingkat": "pilihan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -908,7 +908,7 @@
       "id": "q-na-akta-lahir",
       "pokok": "pp-na-identitas",
       "urutan": 33,
-      "tingkat": "pilihan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -1204,7 +1204,7 @@
       "id": "q-na-pakaian",
       "pokok": "pp-na-dasar",
       "urutan": 42,
-      "tingkat": "pilihan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -1285,7 +1285,7 @@
       "id": "q-na-tempat-tinggal-biaya",
       "pokok": "pp-na-dasar",
       "urutan": 43,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -1625,7 +1625,7 @@
       "id": "q-na-sekolah-harian",
       "pokok": "pp-na-sekolah",
       "urutan": 52,
-      "tingkat": "pilihan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -1711,7 +1711,7 @@
       "id": "q-na-sekolah-tambahan",
       "pokok": "pp-na-sekolah",
       "urutan": 53,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -2015,7 +2015,7 @@
       "id": "q-na-kebutuhan-khusus",
       "pokok": "pp-na-kesehatan",
       "urutan": 62,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -2669,7 +2669,7 @@
       "id": "q-na-ayah-harta-gaya",
       "pokok": "pp-na-ayah-kemampuan",
       "urutan": 77,
-      "tingkat": "pilihan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -3158,7 +3158,7 @@
       "id": "q-na-ibu-ikut-menanggung",
       "pokok": "pp-na-ibu",
       "urutan": 83,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -3371,7 +3371,7 @@
       "id": "q-na-ayah-tahu-kebutuhan",
       "pokok": "pp-na-hubungan",
       "urutan": 92,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -3941,7 +3941,7 @@
       "id": "q-na-janji-diingkari",
       "pokok": "pp-na-lalai",
       "urutan": 105,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "pokok",
       "pihakSaksi": [
         "*"
@@ -4308,7 +4308,7 @@
       "id": "q-na-perantara-keluarga",
       "pokok": "pp-na-minta",
       "urutan": 113,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "upaya",
       "pihakSaksi": [
         "*"
@@ -5677,7 +5677,7 @@
       "id": "q-na-pertemuan-keluarga",
       "pokok": "pp-na-damai",
       "urutan": 191,
-      "tingkat": "tambahan",
+      "tingkat": "jarang",
       "kelompok": "upaya",
       "pihakSaksi": [
         "*"
@@ -5810,7 +5810,7 @@
       "id": "q-na-anak-dampak-nafkah",
       "pokok": "pp-na-hubungan",
       "urutan": 205,
-      "tingkat": "pilihan",
+      "tingkat": "jarang",
       "kelompok": "akibat",
       "pihakSaksi": [
         "*"

@@ -58,7 +58,7 @@ def S(**kw):
     SPEC.append(kw)
 
 
-S(id='jumlah-anak', pokok='pp-na-identitas', urut=31, tingkat='pilihan', kelompok='pokok',
+S(id='jumlah-anak', pokok='pp-na-identitas', urut=31, tingkat='jarang', kelompok='pokok',
   teks='Berapa jumlah anak #0046# dan #0047# dan siapa nama anak yang dituntut nafkahnya di sini?',
   varian=['Dari perkawinan #0046# dan #0047# ada berapa anak dan yang dituntut nafkahnya bernama siapa?'],
   hal='jumlah anak dan nama anak yang dituntut nafkahnya', m='jumlah dan nama anak #0046# dan #0047#',
@@ -70,7 +70,7 @@ S(id='jumlah-anak', pokok='pp-na-identitas', urut=31, tingkat='pilihan', kelompo
   B=['anak #0046# dan #0047# ada lebih banyak daripada yang disebut dalam gugatan', 'jumlah anak #0046# dan #0047# lebih banyak daripada yang disebut dalam gugatan'],
   beda_pada='jumlah', beda_maksud='versi A: hanya anak yang disebut dalam gugatan; versi B: ada anak lain yang tidak disebut - berselisih pada JUMLAH ANAK')
 
-S(id='akta-lahir', pokok='pp-na-identitas', urut=33, tingkat='pilihan', kelompok='pokok',
+S(id='akta-lahir', pokok='pp-na-identitas', urut=33, tingkat='jarang', kelompok='pokok',
   teks='Apakah anak bernama #8602# sudah mempunyai akta kelahiran yang mencatat #0047# sebagai ayahnya?',
   hal='akta kelahiran anak yang mencatat ayahnya', m='akta kelahiran anak bernama #8602#',
   K=(['anak bernama #8602# sudah memiliki akta kelahiran yang mencatat #0047# sebagai ayahnya',
@@ -103,7 +103,7 @@ S(id='makan-sehari', pokok='pp-na-dasar', urut=41, tingkat='inti', kelompok='pok
   B=['biaya makan dan gizi anak setiap bulan sedikit', 'biaya makan dan gizi anak setiap bulan kecil'],
   beda_pada='jumlah', beda_maksud='versi A: biaya makan besar; versi B: biaya makan kecil - berselisih pada JUMLAH BIAYA')
 
-S(id='pakaian', pokok='pp-na-dasar', urut=42, tingkat='pilihan', kelompok='pokok',
+S(id='pakaian', pokok='pp-na-dasar', urut=42, tingkat='jarang', kelompok='pokok',
   teks='Siapa yang membeli pakaian dan perlengkapan sehari-hari anak bernama #8602# dan seberapa sering?',
   hal='pakaian dan perlengkapan sehari-hari anak', m='pakaian dan perlengkapan anak bernama #8602#',
   K=(['#0046# yang membeli pakaian dan perlengkapan sehari-hari anak bernama #8602# dari penghasilannya sendiri',
@@ -114,7 +114,7 @@ S(id='pakaian', pokok='pp-na-dasar', urut=42, tingkat='pilihan', kelompok='pokok
   B=['pakaian anak dibelikan oleh ayahnya secara rutin', 'pakaian anak rutin dibelikan oleh ayahnya'],
   beda_pada='pelaku', beda_maksud='versi A: pakaian dibelikan ibu; versi B: dibelikan ayah - berselisih pada PELAKU')
 
-S(id='tempat-tinggal-biaya', pokok='pp-na-dasar', urut=43, tingkat='tambahan', kelompok='pokok',
+S(id='tempat-tinggal-biaya', pokok='pp-na-dasar', urut=43, tingkat='jarang', kelompok='pokok',
   teks='Anak bernama #8602# tinggal di rumah siapa dan siapa yang menanggung biaya listrik air dan keperluan rumah tangga anak?',
   hal='tempat tinggal anak dan biaya rumah tangganya', m='tempat tinggal dan biaya rumah tangga anak bernama #8602#',
   K=(['anak bernama #8602# tinggal di rumah yang ditempati #0046# dan biaya listrik air serta keperluan rumah tangganya ditanggung #0046#',
@@ -147,7 +147,7 @@ S(id='sekolah-spp', pokok='pp-na-sekolah', urut=51, tingkat='inti', kelompok='po
   B=['biaya sekolah anak dibayar ayahnya', 'biaya sekolah anak ditanggung ayahnya'],
   beda_pada='pelaku', beda_maksud='versi A: biaya sekolah dibayar ibu; versi B: dibayar ayah - berselisih pada PELAKU')
 
-S(id='sekolah-harian', pokok='pp-na-sekolah', urut=52, tingkat='pilihan', kelompok='pokok', keadaan={'tahapAnak': ['sekolah', 'remaja']},
+S(id='sekolah-harian', pokok='pp-na-sekolah', urut=52, tingkat='jarang', kelompok='pokok', keadaan={'tahapAnak': ['sekolah', 'remaja']},
   teks='Berapa uang jajan dan ongkos ke sekolah anak bernama #8602# setiap hari dan siapa yang memberinya?',
   hal='uang jajan dan ongkos sekolah anak setiap hari', m='uang jajan dan ongkos sekolah anak bernama #8602#',
   K=(['uang jajan dan ongkos sekolah anak bernama #8602# sekitar {isi} setiap hari dan #0046# yang memberinya',
@@ -158,7 +158,7 @@ S(id='sekolah-harian', pokok='pp-na-sekolah', urut=52, tingkat='pilihan', kelomp
   B=['uang jajan dan ongkos anak diberikan sesekali oleh ayahnya', 'ayahnya hanya sesekali memberi uang jajan dan ongkos anak'],
   beda_pada='jumlah', beda_maksud='versi A: setiap hari oleh ibu; versi B: sesekali oleh ayah - berselisih pada JUMLAH PEMBERIAN')
 
-S(id='sekolah-tambahan', pokok='pp-na-sekolah', urut=53, tingkat='tambahan', kelompok='pokok', keadaan={'tahapAnak': ['sekolah', 'remaja']},
+S(id='sekolah-tambahan', pokok='pp-na-sekolah', urut=53, tingkat='jarang', kelompok='pokok', keadaan={'tahapAnak': ['sekolah', 'remaja']},
   teks='Apakah anak bernama #8602# mengikuti pelajaran tambahan atau kegiatan mengaji dan berapa biayanya?',
   hal='pelajaran tambahan dan biaya mengaji anak', m='pelajaran tambahan anak bernama #8602#',
   K=(['anak bernama #8602# mengikuti pelajaran tambahan dan mengaji dengan biaya sekitar {isi} setiap bulan yang dibayar #0046#',
@@ -191,7 +191,7 @@ S(id='berobat', pokok='pp-na-kesehatan', urut=61, tingkat='pilihan', kelompok='p
   B=['biaya pengobatan anak ditanggung bersama ayahnya', 'biaya berobat anak ditanggung bersama ayahnya'],
   beda_pada='pelaku', beda_maksud='versi A: ditanggung ibu; versi B: ditanggung bersama ayah - berselisih pada PELAKU')
 
-S(id='kebutuhan-khusus', pokok='pp-na-kesehatan', urut=62, tingkat='tambahan', kelompok='pokok',
+S(id='kebutuhan-khusus', pokok='pp-na-kesehatan', urut=62, tingkat='jarang', kelompok='pokok',
   teks='Apakah anak bernama #8602# memiliki penyakit atau kebutuhan khusus yang memerlukan biaya tambahan secara rutin?',
   hal='penyakit atau kebutuhan khusus anak dan biaya tambahannya', m='kebutuhan khusus anak bernama #8602#',
   K=(['anak bernama #8602# memiliki kebutuhan kesehatan yang memerlukan biaya tambahan secara rutin yang dikeluarkan #0046#',
@@ -279,7 +279,7 @@ S(id='ayah-tidak-diketahui', pokok='pp-na-ayah-tidak-diketahui', urut=76, tingka
   B=['#0047# jarang bekerja dan hidupnya sederhana', '#0047# jarang bekerja dan hidup sederhana'],
   beda_maksud='versi A: bekerja dan berkecukupan; versi B: jarang bekerja dan sederhana - berselisih pada PERISTIWA')
 
-S(id='ayah-harta-gaya', pokok='pp-na-ayah-kemampuan', urut=77, tingkat='pilihan', kelompok='pokok',
+S(id='ayah-harta-gaya', pokok='pp-na-ayah-kemampuan', urut=77, tingkat='jarang', kelompok='pokok',
   teks='Bagaimana gaya hidup #0047# sehari-hari dan apa saja yang pernah saksi lihat dibelinya setelah berpisah?',
   hal='gaya hidup dan pembelian #0047# sesudah berpisah', m='gaya hidup #0047# sesudah berpisah',
   K=(['setelah berpisah #0047# masih mampu membeli barang barang yang tidak mendesak sehingga gaya hidupnya tergolong cukup',
@@ -334,7 +334,7 @@ S(id='ibu-bekerja', pokok='pp-na-ibu', urut=82, tingkat='pilihan', kelompok='pok
   B=['penghasilan ibu sudah mencukupi seluruh kebutuhan anak', 'penghasilan ibu sudah cukup untuk seluruh kebutuhan anak'],
   beda_pada='jumlah', beda_maksud='versi A: penghasilan ibu belum mencukupi; versi B: sudah mencukupi - berselisih pada JUMLAH PENGHASILAN')
 
-S(id='ibu-ikut-menanggung', pokok='pp-na-ibu', urut=83, tingkat='tambahan', kelompok='pokok',
+S(id='ibu-ikut-menanggung', pokok='pp-na-ibu', urut=83, tingkat='jarang', kelompok='pokok',
   teks='Apakah #0046# ikut menanggung sebagian biaya anak bernama #8602# selama ini dan bagaimana pembagiannya dengan #0047#?',
   hal='sumbangan ibu pada biaya anak dan pembagiannya dengan ayah', m='sumbangan #0046# pada biaya anak bernama #8602#',
   K=(['#0046# menanggung sebagian besar biaya anak bernama #8602# sedangkan sumbangan #0047# sedikit sekali',
@@ -356,7 +356,7 @@ S(id='ayah-menjenguk', pokok='pp-na-hubungan', urut=91, tingkat='pilihan', kelom
   B=['#0047# rutin menjenguk anak sejak berpisah', '#0047# sering menjenguk anak sejak berpisah'],
   beda_pada='jumlah', beda_maksud='versi A: jarang menjenguk; versi B: rutin menjenguk - berselisih pada JUMLAH KUNJUNGAN')
 
-S(id='ayah-tahu-kebutuhan', pokok='pp-na-hubungan', urut=92, tingkat='tambahan', kelompok='pokok',
+S(id='ayah-tahu-kebutuhan', pokok='pp-na-hubungan', urut=92, tingkat='jarang', kelompok='pokok',
   teks='Apakah #0047# mengetahui kebutuhan dan keadaan sekolah anak bernama #8602# saat ini?',
   hal='pengetahuan #0047# tentang kebutuhan dan sekolah anak', m='pengetahuan #0047# tentang kebutuhan anak bernama #8602#',
   K=(['#0047# mengetahui kebutuhan sekolah dan keadaan anak bernama #8602# karena #0046# memberitahunya',
@@ -412,7 +412,7 @@ S(id='alasan-ayah-tidak', pokok='pp-na-lalai', urut=104, tingkat='pilihan', kelo
   B=['alasan #0047# kurang memberi nafkah ialah ia merasa tidak berkewajiban', 'alasan #0047# kurang memberi nafkah ialah ia menganggap tidak berkewajiban'],
   beda_pada='penyebab', beda_maksud='versi A: penghasilan berkurang; versi B: merasa tidak berkewajiban - berselisih pada PENYEBAB')
 
-S(id='janji-diingkari', pokok='pp-na-lalai', urut=105, tingkat='tambahan', kelompok='pokok',
+S(id='janji-diingkari', pokok='pp-na-lalai', urut=105, tingkat='jarang', kelompok='pokok',
   teks='Apakah #0047# pernah berjanji akan memberi nafkah anak bernama #8602# dan apakah janji itu ditepati?',
   hal='janji #0047# memberi nafkah anak dan pelaksanaannya', m='janji #0047# memberi nafkah anak bernama #8602#', fam='hadir',
   K=(['#0047# pernah berjanji memberi nafkah anak bernama #8602# tetapi janji itu tidak ditepati',
@@ -457,7 +457,7 @@ S(id='tanggapan-ayah', pokok='pp-na-minta', urut=112, tingkat='pilihan', kelompo
   B=['#0047# bersedia memberi nafkah anak tetapi belum ada uangnya', '#0047# menyanggupi memberi nafkah anak tetapi belum ada uangnya'],
   beda_maksud='versi A: menolak; versi B: bersedia tetapi belum ada uang - berselisih pada PERISTIWA')
 
-S(id='perantara-keluarga', pokok='pp-na-minta', urut=113, tingkat='tambahan', kelompok='upaya',
+S(id='perantara-keluarga', pokok='pp-na-minta', urut=113, tingkat='jarang', kelompok='upaya',
   teks='Apakah keluarga atau tokoh masyarakat pernah menengahi agar #0047# memberi nafkah anak bernama #8602# dan bagaimana hasilnya?',
   hal='perantaraan keluarga agar ayah memberi nafkah anak', m='perantaraan keluarga tentang nafkah anak bernama #8602#',
   K=(['keluarga pernah menengahi agar #0047# memberi nafkah anak bernama #8602# tetapi #0047# tetap tidak memberinya',
@@ -604,7 +604,7 @@ S(id='ayah-saudara-anak', pokok='pp-na-hubungan', urut=93, tingkat='tambahan', k
   B=['sebagian anak masih menerima nafkah dari ayahnya', 'sebagian anak masih mendapat nafkah dari ayahnya'],
   beda_pada='jumlah', beda_maksud='versi A: semua anak tidak dinafkahi; versi B: sebagian masih dinafkahi - berselisih pada JUMLAH ANAK')
 
-S(id='pertemuan-keluarga', pokok='pp-na-damai', urut=191, tingkat='tambahan', kelompok='upaya',
+S(id='pertemuan-keluarga', pokok='pp-na-damai', urut=191, tingkat='jarang', kelompok='upaya',
   teks='Siapa dari keluarga yang pernah mempertemukan #0046# dan #0047# untuk membicarakan nafkah anak bernama #8602# dan apa hasilnya?',
   hal='pertemuan keluarga membicarakan nafkah anak dan hasilnya', m='pertemuan keluarga tentang nafkah anak bernama #8602#',
   K=(['keluarga pernah mempertemukan #0046# dan #0047# untuk membicarakan nafkah anak bernama #8602# tetapi tidak tercapai kata sepakat',
@@ -637,7 +637,7 @@ S(id='verstek-hubungan', pokok='pp-na-hubungan', urut=212, tingkat='tambahan', k
   B=['#0047# belum mengetahui adanya perkara ini', '#0047# belum tahu adanya perkara ini'],
   beda_maksud='versi A: mengetahui perkara; versi B: belum mengetahui - berselisih pada PERISTIWA')
 
-S(id='anak-dampak-nafkah', pokok='pp-na-hubungan', urut=205, tingkat='pilihan', kelompok='akibat',
+S(id='anak-dampak-nafkah', pokok='pp-na-hubungan', urut=205, tingkat='jarang', kelompok='akibat',
   teks='Apakah kurangnya nafkah berdampak pada makan sekolah atau kesehatan anak bernama #8602# yang saksi lihat sendiri?',
   hal='dampak kurangnya nafkah bagi makan sekolah dan kesehatan anak', m='dampak kurangnya nafkah bagi anak bernama #8602#', fam='hadir',
   K=(['kurangnya nafkah membuat makan dan sekolah anak bernama #8602# sering terkendala dan kesehatannya ikut terganggu',

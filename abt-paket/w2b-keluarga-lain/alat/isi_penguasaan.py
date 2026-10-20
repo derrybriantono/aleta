@@ -49,7 +49,7 @@ def S(**kw):
     SPEC.append(kw)
 
 
-S(id='jumlah-anak', pokok='pp-pa-identitas', urut=31, tingkat='pilihan', kelompok='pokok',
+S(id='jumlah-anak', pokok='pp-pa-identitas', urut=31, tingkat='jarang', kelompok='pokok',
   teks='Berapa jumlah anak #0046# dan #0047# dan siapa nama anak yang penguasaannya dipersoalkan di sini?',
   varian=['Dari perkawinan #0046# dan #0047# ada berapa anak dan yang dipersoalkan penguasaannya bernama siapa?'],
   hal='jumlah anak dan nama anak yang dipersoalkan', m='jumlah dan nama anak #0046# dan #0047#',
@@ -61,7 +61,7 @@ S(id='jumlah-anak', pokok='pp-pa-identitas', urut=31, tingkat='pilihan', kelompo
   B=['anak #0046# dan #0047# ada lebih banyak daripada yang disebut dalam gugatan', 'jumlah anak #0046# dan #0047# lebih banyak daripada yang disebut dalam gugatan'],
   beda_pada='jumlah', beda_maksud='versi A: hanya anak yang disebut dalam gugatan; versi B: ada anak lain yang tidak disebut - berselisih pada JUMLAH ANAK')
 
-S(id='akta-lahir', pokok='pp-pa-identitas', urut=33, tingkat='pilihan', kelompok='pokok',
+S(id='akta-lahir', pokok='pp-pa-identitas', urut=33, tingkat='jarang', kelompok='pokok',
   teks='Apakah anak bernama #8602# sudah mempunyai akta kelahiran dan siapa orang tua yang tercatat di dalamnya?',
   hal='akta kelahiran anak dan nama orang tua yang tercatat', m='akta kelahiran anak bernama #8602#',
   K=(['anak bernama #8602# sudah memiliki akta kelahiran yang mencatat #0046# dan #0047# sebagai orang tuanya',
@@ -180,7 +180,7 @@ S(id='alasan-menolak', pokok='pp-pa-minta', urut=52, tingkat='pilihan', kelompok
   B=['penolakan itu beralasan pengaju belum sanggup merawat anak', 'alasan penolakan adalah pengaju belum sanggup merawat anak'],
   beda_pada='penyebab', beda_maksud='versi A: alasan anak lebih terurus; versi B: alasan pengaju belum sanggup - berselisih pada PENYEBAB')
 
-S(id='teguran-perantara', pokok='pp-pa-minta', urut=53, tingkat='tambahan', kelompok='upaya', keadaan={'penyerahan': 'ya'},
+S(id='teguran-perantara', pokok='pp-pa-minta', urut=53, tingkat='jarang', kelompok='upaya', keadaan={'penyerahan': 'ya'},
   teks='Apakah pernah ada teguran atau perantaraan keluarga dan aparat desa agar anak bernama #8602# diserahkan dan bagaimana hasilnya?',
   hal='teguran dan perantaraan agar anak diserahkan', m='teguran dan perantaraan penyerahan anak bernama #8602#', v=PENGASUH,
   K=(['pernah ada perantaraan keluarga dan aparat desa agar anak bernama #8602# diserahkan namun @X@ tetap menolak',
@@ -217,7 +217,7 @@ S(id='akses-berjalan', pokok='pp-pa-halang', urut=62, tingkat='pilihan', kelompo
   B=['pengaju hanya boleh bertemu anak pada waktu tertentu', 'pengaju hanya diizinkan bertemu anak pada waktu yang ditentukan'],
   beda_pada='waktu', beda_maksud='versi A: bebas bertemu; versi B: hanya waktu tertentu - berselisih pada WAKTU')
 
-S(id='komunikasi-anak', pokok='pp-pa-halang', urut=63, tingkat='tambahan', kelompok='pokok',
+S(id='komunikasi-anak', pokok='pp-pa-halang', urut=63, tingkat='jarang', kelompok='pokok',
   teks='Apakah anak bernama #8602# dapat berkomunikasi dengan #0046# lewat telepon atau pesan selama berada dalam penguasaan sekarang?',
   hal='komunikasi anak dengan pengaju lewat telepon atau pesan', m='komunikasi anak bernama #8602# dengan #0046#', v=PENGASUH,
   K=(['anak bernama #8602# dapat berbicara dengan #0046# lewat telepon dan @X@ tidak melarangnya',
@@ -250,7 +250,7 @@ S(id='sekolah-selama-dikuasai', pokok='pp-pa-kondisi', urut=72, tingkat='pilihan
   B=['sekolah anak terhenti selama dikuasai', 'anak berhenti bersekolah selama dikuasai'],
   beda_maksud='versi A: sekolah berjalan; versi B: sekolah terhenti - berselisih pada PERISTIWA')
 
-S(id='ibadah-selama-dikuasai', pokok='pp-pa-kondisi', urut=73, tingkat='tambahan', kelompok='pokok',
+S(id='ibadah-selama-dikuasai', pokok='pp-pa-kondisi', urut=73, tingkat='jarang', kelompok='pokok',
   teks='Bagaimana anak bernama #8602# menjalankan ibadah dan belajar agama selama berada dalam penguasaan sekarang?',
   hal='ibadah dan pendidikan agama anak selama dikuasai', m='ibadah anak bernama #8602# selama dikuasai', v=PENGASUH,
   K=(['anak bernama #8602# dibimbing @X@ menjalankan ibadah dan belajar agama selama dikuasai',
@@ -261,7 +261,7 @@ S(id='ibadah-selama-dikuasai', pokok='pp-pa-kondisi', urut=73, tingkat='tambahan
   B=['anak jarang beribadah dan belajar agama selama dikuasai', 'ibadah dan pelajaran agama anak sering ditinggalkan selama dikuasai'],
   beda_maksud='versi A: rajin beribadah; versi B: jarang beribadah - berselisih pada PERISTIWA')
 
-S(id='jiwa-anak', pokok='pp-pa-kondisi', urut=74, tingkat='tambahan', kelompok='akibat',
+S(id='jiwa-anak', pokok='pp-pa-kondisi', urut=74, tingkat='jarang', kelompok='akibat',
   teks='Bagaimana perasaan dan keadaan jiwa anak bernama #8602# selama berada dalam penguasaan sekarang?',
   hal='keadaan jiwa dan perasaan anak selama dikuasai', m='keadaan jiwa anak bernama #8602# selama dikuasai', v=PENGASUH,
   K=(['anak bernama #8602# tampak tenang dan ceria selama bersama @X@',
@@ -272,7 +272,7 @@ S(id='jiwa-anak', pokok='pp-pa-kondisi', urut=74, tingkat='tambahan', kelompok='
   B=['anak tampak murung dan gelisah selama dikuasai', 'anak terlihat sedih dan gelisah selama dikuasai'],
   beda_maksud='versi A: tenang dan ceria; versi B: murung dan gelisah - berselisih pada PERISTIWA')
 
-S(id='pengaruh-lingkungan', pokok='pp-pa-kondisi', urut=75, tingkat='tambahan', kelompok='akibat',
+S(id='pengaruh-lingkungan', pokok='pp-pa-kondisi', urut=75, tingkat='jarang', kelompok='akibat',
   teks='Bagaimana pengaruh lingkungan tempat anak bernama #8602# berada sekarang terhadap pergaulan dan perilakunya?',
   hal='pengaruh lingkungan tempat anak berada terhadap pergaulan dan perilakunya', m='pengaruh lingkungan terhadap anak bernama #8602#', v=PENGASUH,
   K=(['lingkungan tempat anak bernama #8602# berada bersama @X@ baik dan pergaulan anak itu terjaga',
@@ -283,7 +283,7 @@ S(id='pengaruh-lingkungan', pokok='pp-pa-kondisi', urut=75, tingkat='tambahan', 
   B=['lingkungan tempat anak berada rawan dan pergaulannya bebas', 'pergaulan anak bebas di lingkungan yang rawan'],
   beda_pada='tempat', beda_maksud='versi A: lingkungan baik; versi B: lingkungan rawan - berselisih pada TEMPAT')
 
-S(id='penguasa-pengawasan', pokok='pp-pa-penguasa', urut=81, tingkat='pilihan', kelompok='pokok',
+S(id='penguasa-pengawasan', pokok='pp-pa-penguasa', urut=81, tingkat='jarang', kelompok='pokok',
   teks='Siapa yang mengawasi anak bernama #8602# ketika pihak yang menguasainya sedang bekerja atau bepergian?',
   hal='pengawasan anak ketika pihak yang menguasai bekerja atau bepergian', m='pengawasan anak bernama #8602# oleh pihak yang menguasai', v=PENGASUH,
   K=(['ketika @X@ bekerja atau bepergian anak bernama #8602# diawasi keluarga dekatnya',
@@ -316,7 +316,7 @@ S(id='penguasa-akhlak', pokok='pp-pa-penguasa', urut=83, tingkat='pilihan', kelo
   B=['pihak yang menguasai berperilaku buruk dan jarang beribadah', 'pihak yang menguasai berakhlak buruk dan jarang beribadah'],
   beda_maksud='versi A: akhlak baik dan taat; versi B: buruk dan jarang beribadah - berselisih pada PERISTIWA')
 
-S(id='penguasa-kebiasaan', pokok='pp-pa-penguasa', urut=84, tingkat='pilihan', kelompok='pokok',
+S(id='penguasa-kebiasaan', pokok='pp-pa-penguasa', urut=84, tingkat='jarang', kelompok='pokok',
   teks='Apakah pihak yang menguasai anak bernama #8602# memiliki kebiasaan buruk seperti minuman keras, judi atau narkoba?',
   hal='kebiasaan buruk pihak yang menguasai anak', m='kebiasaan buruk pihak yang menguasai anak bernama #8602#', v=PENGASUH,
   K=(['@X@ tidak memiliki kebiasaan buruk berupa minuman keras judi atau narkoba',
@@ -382,7 +382,7 @@ S(id='penuntut-ekonomi', pokok='pp-pa-penuntut', urut=102, tingkat='pilihan', ke
   B=['penghasilan pihak yang menuntut kecil dan pas-pasan bagi kebutuhan anak', 'penghasilan pihak yang menuntut kecil dan pas-pasan untuk kebutuhan anak'],
   beda_pada='jumlah', beda_maksud='versi A: penghasilan mencukupi; versi B: kecil dan pas-pasan - berselisih pada JUMLAH PENGHASILAN')
 
-S(id='penuntut-waktu', pokok='pp-pa-penuntut', urut=103, tingkat='pilihan', kelompok='pokok',
+S(id='penuntut-waktu', pokok='pp-pa-penuntut', urut=103, tingkat='jarang', kelompok='pokok',
   teks='Apakah pihak yang menuntut penyerahan anak bernama #8602# memiliki waktu untuk mengurus anak dan siapa yang membantunya?',
   hal='waktu dan bantuan keluarga bagi pihak yang menuntut penyerahan anak', m='waktu pihak yang menuntut mengurus anak bernama #8602#', v=PENGASUH,
   K=(['@Y@ memiliki waktu yang cukup mengurus anak bernama #8602# dan dibantu keluarga dekatnya',
@@ -393,7 +393,7 @@ S(id='penuntut-waktu', pokok='pp-pa-penuntut', urut=103, tingkat='pilihan', kelo
   B=['pihak yang menuntut sibuk bekerja dan jarang di rumah', 'pihak yang menuntut sibuk bekerja dan jarang berada di rumah'],
   beda_pada='waktu', beda_maksud='versi A: waktu cukup; versi B: sibuk dan jarang di rumah - berselisih pada WAKTU')
 
-S(id='penuntut-akhlak', pokok='pp-pa-penuntut', urut=104, tingkat='pilihan', kelompok='pokok',
+S(id='penuntut-akhlak', pokok='pp-pa-penuntut', urut=104, tingkat='jarang', kelompok='pokok',
   teks='Bagaimana akhlak dan ketaatan beribadah pihak yang menuntut penyerahan anak bernama #8602# di lingkungannya?',
   hal='akhlak dan ibadah pihak yang menuntut penyerahan anak', m='akhlak dan ibadah pihak yang menuntut penyerahan anak bernama #8602#', v=PENGASUH,
   K=(['@Y@ berakhlak baik dan taat beribadah serta dikenal baik di lingkungannya',
@@ -415,7 +415,7 @@ S(id='ikatan-anak', pokok='pp-pa-ikatan', urut=111, tingkat='pilihan', kelompok=
   B=['anak sama dekatnya dengan kedua pihak', 'kedekatan anak sama kuatnya kepada kedua pihak'],
   beda_pada='pelaku', beda_maksud='versi A: lebih dekat pada pihak yang menuntut; versi B: sama dekat - berselisih pada PELAKU')
 
-S(id='sikap-bertemu', pokok='pp-pa-ikatan', urut=112, tingkat='tambahan', kelompok='pokok',
+S(id='sikap-bertemu', pokok='pp-pa-ikatan', urut=112, tingkat='jarang', kelompok='pokok',
   teks='Bagaimana sikap anak bernama #8602# ketika bertemu dengan #0046#?',
   hal='sikap anak ketika bertemu pengaju', m='sikap anak bernama #8602# ketika bertemu #0046#', fam='hadir',
   K=(['anak bernama #8602# tampak senang dan akrab setiap kali bertemu #0046#',
@@ -426,7 +426,7 @@ S(id='sikap-bertemu', pokok='pp-pa-ikatan', urut=112, tingkat='tambahan', kelomp
   B=['anak takut dan menjauh bila bertemu pengaju', 'anak ketakutan dan menjauh saat bertemu pengaju'],
   beda_maksud='versi A: anak senang dan akrab; versi B: takut dan menjauh - berselisih pada PERISTIWA')
 
-S(id='anak-merindukan', pokok='pp-pa-ikatan', urut=113, tingkat='tambahan', kelompok='akibat',
+S(id='anak-merindukan', pokok='pp-pa-ikatan', urut=113, tingkat='jarang', kelompok='akibat',
   teks='Apakah anak bernama #8602# pernah menanyakan atau merindukan #0046#?',
   hal='anak menanyakan atau merindukan pengaju', m='anak bernama #8602# merindukan #0046#',
   M=(['anak bernama #8602# sering menanyakan #0046# dan berkata ingin bertemu',
@@ -537,7 +537,7 @@ S(id='kesepakatan-keluarga', pokok='pp-pa-damai', urut=151, tingkat='pilihan', k
   B=['kesepakatan keluarga tentang perawatan anak tidak pernah ada', 'tidak pernah ada kesepakatan keluarga tentang perawatan anak'],
   beda_maksud='versi A: ada kesepakatan dan dijalankan; versi B: tidak pernah ada kesepakatan - berselisih pada PERISTIWA')
 
-S(id='pertemuan-keluarga', pokok='pp-pa-damai', urut=152, tingkat='tambahan', kelompok='upaya',
+S(id='pertemuan-keluarga', pokok='pp-pa-damai', urut=152, tingkat='jarang', kelompok='upaya',
   teks='Siapa dari keluarga yang pernah mempertemukan #0046# dan #0047# untuk membicarakan anak bernama #8602# dan apa hasilnya?',
   hal='pertemuan keluarga membicarakan anak dan hasilnya', m='pertemuan keluarga tentang anak bernama #8602#',
   K=(['keluarga pernah mempertemukan #0046# dan #0047# untuk membicarakan anak bernama #8602# tetapi tidak tercapai kata sepakat',
