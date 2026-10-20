@@ -20,6 +20,7 @@ import { modules, portalApps } from "@/lib/mock-data";
 import { getDefaultRoleForPosition, getEffectiveRoleId, getRoleLabel, getUserPositionLabel, getUserRoleBadge, isPrivilegedAdmin } from "@/lib/permissions";
 import { USER_ADDITIONAL_ROLE_OPTIONS, getAdditionalRoleLabel, getAdditionalRoleSearchText, normalizeAdditionalRoleIds } from "@/lib/user-additional-roles";
 import { MODUL_MILIK_APLIKASI, PETA_ATURAN_APLIKASI } from "@/lib/matriks-peran";
+import { bacaPilihanAkunNonaktif, hitungAkunNonaktif, saklarNonaktifTerlihat, saringAkunNonaktif, simpanPilihanAkunNonaktif } from "@/lib/saring-akun-nonaktif";
 import { cn } from "@/lib/utils";
 import { type ExternalAppCredentialInput, type ExternalAppId, type ModuleId, type ModuleVisibility, type Position, type RoleId, type UserPersona } from "@/lib/types";
 
@@ -546,7 +547,16 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
   const actorRoleId = getEffectiveRoleId(currentUser) ?? "staf";
   const isSuperAdmin = actorRoleId === "super-admin";
 
-  const filteredUsers = useMemo(() => {
+  const [tampilkanNonaktif, setTampilkanNonaktif] = useState(false);
+  useEffect(() => {
+    setTampilkanNonaktif(bacaPilihanAkunNonaktif());
+  }, []);
+  const ubahTampilkanNonaktif = (nilai: boolean) => {
+    setTampilkanNonaktif(nilai);
+    simpanPilihanAkunNonaktif(nilai);
+  };
+
+  const { filteredUsers, jumlahNonaktif } = useMemo(() => {
     const visibleUsers = isSuperAdmin
       ? users
       : users.filter((user) => user.roleId !== "super-admin");
@@ -562,8 +572,12 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
         .includes(query.toLowerCase())
     );
 
-    return sortManagedUsers(searchedUsers, sortKey, sortDir, positions);
-  }, [isSuperAdmin, missingWhatsappOnly, positions, query, sortDir, sortKey, users]);
+    const jumlahNonaktif = hitungAkunNonaktif(searchedUsers);
+    return {
+      filteredUsers: sortManagedUsers(saringAkunNonaktif(searchedUsers, tampilkanNonaktif), sortKey, sortDir, positions),
+      jumlahNonaktif,
+    };
+  }, [isSuperAdmin, missingWhatsappOnly, positions, query, sortDir, sortKey, tampilkanNonaktif, users]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const selectedUser =
     filteredUsers.find((user) => user.id === selectedUserId) ??
@@ -717,7 +731,29 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
             </div>
           </div>
 
+          {saklarNonaktifTerlihat(jumlahNonaktif, tampilkanNonaktif) ? (
+            <label
+              className="flex cursor-pointer items-center gap-2 rounded-[1.1rem] border border-border bg-card px-3 py-2.5 text-sm text-foreground"
+              data-saklar-akun-nonaktif="1"
+            >
+              <input
+                type="checkbox"
+                className="h-4 w-4 shrink-0 accent-primary"
+                checked={tampilkanNonaktif}
+                onChange={(event) => ubahTampilkanNonaktif(event.target.checked)}
+              />
+              <span className="min-w-0">Tampilkan akun nonaktif ({jumlahNonaktif})</span>
+            </label>
+          ) : null}
+
           <div className="max-h-[calc(100vh-18rem)] space-y-2 overflow-y-auto pr-1">
+            {filteredUsers.length === 0 ? (
+              <p className="rounded-[1.2rem] border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
+                {jumlahNonaktif > 0 && !tampilkanNonaktif
+                  ? `Tidak ada akun aktif yang cocok. ${jumlahNonaktif} akun nonaktif disembunyikan.`
+                  : "Tidak ada akun yang cocok."}
+              </p>
+            ) : null}
             {filteredUsers.map((user) => {
               const canReset =
                 isAdmin &&
@@ -751,7 +787,7 @@ export function MappingBoard({ missingWhatsappOnly = false }: { missingWhatsappO
                       </div>
                       <div className="flex flex-col items-end gap-1.5">
                         <UserRoleBadgeDisplay user={user} />
-                        {!user.isActive ? <Badge variant="danger">Diblokir</Badge> : null}
+                        {!user.isActive ? <Badge variant="muted" data-akun-nonaktif="1">Nonaktif</Badge> : null}
                         {/* MASUK-SESI-SIPP 11 Okt: tautan SIPP buatan ALETA yang belum ditinjau Admin. */}
                         {user.externalCredentials?.some((k) => k.appId === "sipp" && k.tautanSumber && !k.tautanDitinjauPada && k.isEnabled) ? (
                           <Badge variant="warning" data-tautan-sipp-tinjau="1">Tautan SIPP perlu ditinjau</Badge>
