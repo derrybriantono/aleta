@@ -12,6 +12,7 @@
  *                                                      (12 tahun penuh = mumayyiz, Pasal 105 KHI). Campuran umur = tidak ditebak.
  *   2004   Kini anak diasuh oleh                       tab Anak SIPP: diasuh_oleh 1 = Penggugat/Pemohon, 2 = Tergugat/Termohon
  *                                                      (pemetaan yang sama dengan isiJawabanSaksiFakta.js); campuran = tidak ditebak.
+ *                                                      HANYA SARAN (ragu): diukur 77,5% (31/40) cocok dengan pemegang asuhan di amar hakim.
  *
  * KEPUTUSAN majelis (isian 4100-4105: dikabulkan / sebagian / ditolak / tidak dapat diterima / ex officio) SENGAJA tidak diisi mesin:
  * itu putusan hakim. Mesin hanya mengenali TUNTUTAN di petitum (variabel ABT 4140-4146) dan menyusun kalimat dari pilihan hakim.
@@ -77,7 +78,7 @@ function usulanKeadaanAnak(rows, pada) {
     return [
       butir("4106", "Keadaan anak", BELUM_MUMAYYIZ, "cukup", {
         kalimat: dasar,
-        catatan: "Semua anak di tab Anak SIPP belum berumur 12 tahun pada hari ini (belum mumayyiz, Pasal 105 huruf a dan Pasal 156 huruf a KHI). Periksa bila umur anak menjelang 12 tahun.",
+        catatan: "Semua anak di tab Anak SIPP belum berumur 12 tahun pada hari ini (belum mumayyiz, Pasal 105 huruf a dan Pasal 156 huruf a KHI). Diukur 20 dari 21 putusan (95%) sama dengan umur yang disebut hakim di amar; selisihnya anak yang tepat 12 tahun. Periksa bila umur anak menjelang 12 tahun.",
         kodePola: "sipp-anak-belum-mumayyiz",
       }),
     ];
@@ -109,9 +110,9 @@ function usulanDiasuhOleh(rows, jenis) {
   const ct = Number(jenis) === 346;
   const nilai = kode[0] === "1" ? (ct ? "Pemohon" : "Penggugat") : ct ? "Termohon" : "Tergugat";
   return [
-    butir("2004", "Kini anak tersebut diasuh oleh", nilai, "cukup", {
+    butir("2004", "Kini anak tersebut diasuh oleh", nilai, "ragu", {
       kalimat: `SIPP tab Anak: diasuh oleh ${nilai} (${anak.length} anak)`,
-      catatan: "Yang kini mengasuh anak menurut tab Anak di SIPP; kuatkan dengan keterangan saksi di sidang.",
+      catatan: "Yang kini mengasuh anak menurut tab Anak di SIPP. Atas 40 putusan cerai 2023+ yang amarnya menyebut pemegang asuhan, hanya 31 (77,5%) sama dengan isian tab Anak, jadi ini saran: kuatkan dengan keterangan saksi di sidang.",
       kodePola: "sipp-anak-diasuh-oleh",
     }),
   ];

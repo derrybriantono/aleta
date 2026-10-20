@@ -1,0 +1,34 @@
+{
+  "catatan": "Entri terukur untuk aleta_bot/config/gerbang-isian.json (cabang U6), bentuk sama dengan entri U6. Diukur 20 Okt 2026 atas SIPP server (baca saja) memakai alat/ukur_anak.py; berkas mentah ukuran/anak-vs-amar.json. Pembanding = pemegang asuhan / umur anak yang disebut hakim di amar putusan cerai kabul 2023+.",
+  "kode": {
+    "4106": {
+      "nama": "Keadaan anak (belum / sudah mumayyiz)",
+      "asal": {
+        "sipp": {
+          "n": 251,
+          "banding": 21,
+          "cocok": 20,
+          "persen": 95.2,
+          "status": "otomatis",
+          "pangkatMaks": "cukup",
+          "dasar": "tanggal lahir semua anak bernama di tab Anak SIPP, umur penuh hari ini; pembanding amar hakim; n = putusan cerai kabul 2023+ yang semua anaknya bertanggal lahir dan seragam (189 belum + 62 sudah mumayyiz) dari 1124 yang punya anak",
+          "contohSalah": [{ "usulan": "mumayyiz (berumur 12 tahun atau lebih)", "petugas": "hakim menulis umur 11 tahun (umur saat gugatan; tepat 12 tahun saat putusan)" }]
+        }
+      }
+    },
+    "2004": {
+      "nama": "kini anak tersebut diasuh oleh",
+      "asal": {
+        "sipp": {
+          "n": 976,
+          "banding": 40,
+          "cocok": 31,
+          "persen": 77.5,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "diasuh_oleh tab Anak (1 = Penggugat/Pemohon, 2 = Tergugat/Termohon) seragam pada 976 putusan cerai kabul 2023+; hanya 77,5% sama dengan pemegang asuhan di amar -> saran"
+        }
+      }
+    }
+  }
+}

@@ -46,7 +46,7 @@ KOMP = [
  ('D3', 'duduk', 'Pemanggilan dan kehadiran para pihak', r'dipanggil secara resmi dan patut|#8507#|#8508#|#8509#|#8547#', 'semua'),
  ('D4', 'duduk', 'Upaya damai oleh hakim (Ps 82 UU 7/1989, 31 PP 9/1975)', r'menasehati|menasihati|mendamaikan', 'semua'),
  ('D5', 'duduk', 'Mediasi dan hasilnya (PERMA 1/2016)', r'mediasi', 'semua'),
- ('D6', 'duduk', 'Bukti surat dan saksi dalam duduk perkara', r'Surat:.{0,400}Saksi:', 'semua'),
+ ('D6', 'duduk', 'Bukti surat dan saksi dalam duduk perkara', r'Saksi:', 'semua'),
  ('D7', 'duduk', 'Kesimpulan para pihak', r'kesimpulan', 'semua'),
  ('D8', 'duduk', 'Jawaban, replik, duplik', r'jawabannya|replik|duplik', 'kontra'),
  ('P1', 'pert', 'Kewenangan absolut', r'absolut|Personalitas Keislaman', 'semua'),
@@ -58,7 +58,7 @@ KOMP = [
  ('P7', 'pert', 'Beban pembuktian (283 RBg)', r'283 RBg|1865', 'semua'),
  ('P8', 'pert', 'Analisis bukti surat per bukti', r'P\.1|bukti P', 'semua'),
  ('P9', 'pert', 'Saksi: syarat formil (172 RBg, 76 UU 7/1989, 22 PP 9/1975)', r'172 ayat \(1\) RBg|Pasal 76|Pasal 22 ayat|syarat formil', 'semua'),
- ('P10', 'pert', 'Saksi: analisis materiil per saksi', r'syarat materiil|keterangan saksi', 'semua'),
+ ('P10', 'pert', 'Saksi: analisis materiil per saksi', r'#8528#|syarat materiil|keterangan saksi', 'semua'),
  ('P11', 'pert', 'Fakta hukum bernomor', r'fakta hukum|fakta-fakta', 'semua'),
  ('P12', 'pert', 'Unsur perceraian dan broken marriage (SEMA 3/2018)', r'broken mari|pecah', 'semua'),
  ('P13', 'pert', 'Pertimbangan menurut huruf alasan A-H (Ps 19 PP 9/1975)', r'Pasal 19 huruf', 'semua'),
@@ -138,7 +138,10 @@ def keadaan(rel):
             k.add(s)
     if 'verstek' in n or '[01]' in n.split('/')[-1][:5]:
         k.add('verstek')
-    if re.search(r'kontradiktoir|\] \[kabul\] c[gt] - f|\[02', n) or 'setelah mediasi' in n or 'rekonvensi' in n:
+    if 'setelah mediasi' in n and 'kontradiktoir' not in n:
+        k.add('setelah_mediasi')
+        k.discard('verstek')
+    elif re.search(r'kontradiktoir|\] \[kabul\] c[gt] - f|\[02', n) or 'rekonvensi' in n:
         k.add('kontra')
         k.discard('verstek')
     return k
@@ -160,6 +163,33 @@ def berlaku(kunci, k, teks_lengkap):
     return False  # akibat/hadhanah/... = hanya bila blangko memuatnya (tidak wajib untuk blangko biasa)
 
 
+def tulis_md(jalur, hasil, kurang):
+    nama = {c[0]: c for c in KOMP}
+    b = ['# Audit blangko putusan cerai Derry terhadap susunan putusan baku (U2, 20 Okt 2026)', '',
+         'Dibangun oleh `alat/audit_putusan.py` atas %d blangko putusan kabul/tolak perceraian (folder 1, 1a, 1c, 1d; keadaan server 17 Okt + paket sampai 19 Okt).' % len(hasil),
+         'Penanda #NNNN# dikembangkan dengan isi kueri variabel server sebelum dicocokkan, jadi bagian yang dibangun variabel (mis. #8528# analisis saksi) tidak dilaporkan hilang.',
+         '"wajib" = komponen yang harus ada pada blangko jenis itu (kabul/tolak, verstek, kontradiktoir, cerai talak); komponen akibat perceraian (P17-P24, A4-A10) tidak wajib pada blangko biasa tetapi dilaporkan di bagian "kemampuan menampung".', '',
+         '| id | komponen | blangko wajib | kurang |', '|---|---|---:|---:|']
+    for c in KOMP:
+        w = sum(1 for x in hasil if x['wajib'][c[0]])
+        if w:
+            b.append('| %s | %s | %d | %d |' % (c[0], c[2], w, len(kurang[c[0]])))
+    b += ['', '## Rincian blangko yang kurang (komponen wajib)', '']
+    for c in KOMP:
+        if kurang[c[0]]:
+            b.append('### %s - %s (%d blangko)' % (c[0], c[2], len(kurang[c[0]])))
+            for r in kurang[c[0]][:40]:
+                b.append('- ' + r)
+            b.append('')
+    b += ['## Kemampuan menampung akibat perceraian (bukan kewajiban, hanya fakta)', '',
+          'Jumlah blangko kabul yang SUDAH memuat pertimbangan/amar komponen tersebut (dari %d):' % sum(1 for x in hasil if 'kabul' in x['keadaan']), '', '| id | komponen | memuat |', '|---|---|---:|']
+    for c in KOMP:
+        if c[4] in ('akibat', 'hadhanah', 'nafkahanak', 'madliyah', 'harta'):
+            n = sum(1 for x in hasil if 'kabul' in x['keadaan'] and x['ada_raw'].get(c[0]))
+            b.append('| %s | %s | %d |' % (c[0], c[2], n))
+    open(jalur, 'w', encoding='utf-8', newline=chr(10)).write(chr(10).join(b) + chr(10))
+
+
 def main():
     dir_teks, sql, keluar = sys.argv[1], sys.argv[2], sys.argv[3]
     V = muat_variabel(sql)
@@ -167,6 +197,8 @@ def main():
     for p in sorted(glob.glob(os.path.join(dir_teks, '**', '*.txt'), recursive=True)):
         rel = os.path.relpath(p, dir_teks).replace(chr(92), '/')[:-4]
         folder = rel.split('/')[0]
+        if rel.split('/')[-1].startswith('BAS '):
+            continue
         if not folder.startswith(('1 Perceraian CG', '1a Perceraian CT', '1c ', '1d ')) or folder.endswith('BAS'):
             continue
         t = open(p, encoding='utf-8', errors='replace').read()
@@ -179,7 +211,15 @@ def main():
         for (cid, bag, lab, pola, wajib) in KOMP:
             sumber = amar_t if bag == 'amar' else kep
             ada[cid] = bool(re.search(pola, sumber, re.I | re.S))
-        hasil.append({'berkas': rel, 'keadaan': sorted(k), 'ada': ada, 'wajib': {c[0]: berlaku(c[4], k, t) for c in KOMP}})
+        # akibat perceraian: hanya teks blangko sendiri + penanda variabel akibat yang sudah ada (97xx), tanpa mengembangkan kueri umum
+        kep_raw, amar_raw = pisah(t)
+        tok = r'#9716#|#9717#|#97[2-5]\d#|#93\d\d#'
+        ada_raw = {}
+        for (cid, bag, lab, pola, wajib) in KOMP:
+            if wajib in ('akibat', 'hadhanah', 'nafkahanak', 'madliyah', 'harta'):
+                sumber_raw = amar_raw if bag == 'amar' else kep_raw
+                ada_raw[cid] = bool(re.search(pola, sumber_raw, re.I | re.S)) or bool(re.search(tok, sumber_raw))
+        hasil.append({'berkas': rel, 'keadaan': sorted(k), 'ada': ada, 'ada_raw': ada_raw, 'wajib': {c[0]: berlaku(c[4], k, t) for c in KOMP}})
     json.dump({'komponen': [dict(id=c[0], bagian=c[1], label=c[2], wajib=c[4]) for c in KOMP], 'berkas': hasil}, open(keluar, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     # ringkasan: komponen wajib yang tidak ada, per komponen
     kurang = collections.defaultdict(list)
@@ -187,6 +227,8 @@ def main():
         for c in KOMP:
             if b['wajib'][c[0]] and not b['ada'][c[0]]:
                 kurang[c[0]].append(b['berkas'])
+    if len(sys.argv) > 4:
+        tulis_md(sys.argv[4], hasil, kurang)
     print('berkas', len(hasil))
     for c in KOMP:
         w = sum(1 for b in hasil if b['wajib'][c[0]])

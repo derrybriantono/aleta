@@ -1,0 +1,10 @@
+{
+  "catatan": "Tambahan untuk aleta_bot/config/peta-fakta-variabel.json (cabang U6) - DITAMBAH oleh sesi utama saat menggabung; jangan ubah arti entri U6. Satu kode satu fakta: 2004 sudah dimiliki anak.diasuhOleh (U6). Isian keputusan 4100-4105 BUKAN fakta (putusan majelis) sehingga tidak masuk peta.",
+  "fakta": {
+    "anak.mumayyiz": {
+      "label": "Keadaan anak (belum atau sudah mumayyiz)",
+      "tipe": "pilihan",
+      "kode": ["4106"]
+    }
+  }
+}

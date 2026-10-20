@@ -113,11 +113,9 @@ export const ISIAN_MANUAL: Record<string, string> = {
   "0365": "Tanggal KTP dibaca dari berkas KTP di e-Court; bila perkara tidak lewat e-Court atau berkasnya tidak terbaca, isi dari KTP.",
   "0366": "Tanggal KTP dibaca dari berkas KTP di e-Court; bila perkara tidak lewat e-Court atau berkasnya tidak terbaca, isi dari KTP.",
   "2222": "Tanggal KTP dibaca dari berkas KTP di e-Court; bila perkara tidak lewat e-Court atau berkasnya tidak terbaca, isi dari KTP.",
-  // U2 20 Okt: keputusan majelis atas tuntutan akibat perceraian - pilihan hakim, tidak diputus mesin
+  // U2 20 Okt: keputusan majelis atas tuntutan akibat perceraian - pilihan hakim, tidak diputus mesin (4102 dan 4103 ada di ISIAN_OPSIONAL: tidak boleh di kedua daftar)
   "4100": "Keputusan atas tuntutan hak asuh anak adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak, tidak dapat diterima, atau ex officio.",
   "4101": "Keputusan atas tuntutan nafkah anak adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak, tidak dapat diterima, atau ex officio.",
-  "4102": "Keputusan atas nafkah iddah adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak, tidak dapat diterima, atau ex officio.",
-  "4103": "Keputusan atas mut'ah adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak, tidak dapat diterima, atau ex officio.",
   "4104": "Keputusan atas nafkah lampau (madliyah) adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak atau tidak dapat diterima.",
   "4105": "Keputusan atas tuntutan harta bersama adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak atau tidak dapat diterima.",
   "4107": "Dasar kemampuan pemberi nafkah adalah penilaian majelis atas pekerjaan dan penghasilan; kosong berarti pekerjaan di SIPP dipakai.",

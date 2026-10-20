@@ -1,0 +1,33 @@
+{
+ "2004_diasuh_oleh": {
+  "n": 40,
+  "cocok": 31,
+  "salah": [
+   "7975",
+   "7998",
+   "8201",
+   "8303",
+   "8310",
+   "8381",
+   "9248",
+   "9394",
+   "10084"
+  ],
+  "lewat_tab_campur": 12,
+  "lewat_amar_campur": 0,
+  "lewat_tanpa_pemegang": 47,
+  "persen": 77.5
+ },
+ "4106_mumayyiz": {
+  "n": 21,
+  "cocok": 20,
+  "salah": [
+   "7936"
+  ],
+  "lewat_campuran_umur": 6,
+  "lewat_tanpa_petunjuk": 5,
+  "persen": 95.2
+ },
+ "berkas": "D:/Aplikasi/aleta/tmp/u2/m4.tsv",
+ "perkaraKandidat": 99
+}

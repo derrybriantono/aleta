@@ -75,7 +75,8 @@ describe("A - pengisi tab Anak (keadaan anak dan yang mengasuh)", () => {
   });
 
   it("yang kini mengasuh: kode 1 = Penggugat/Pemohon, kode 2 = Tergugat/Termohon sesuai jenis; campuran atau kode lain tidak ditebak", () => {
-    expect(M.usulanDiasuhOleh([anak("A", "2020-01-01", "1"), anak("B", "2021-01-01", 1)], 347)[0]).toMatchObject({ kode: "2004", nilai: "Penggugat", keyakinan: "cukup" });
+    expect(M.usulanDiasuhOleh([anak("A", "2020-01-01", "1"), anak("B", "2021-01-01", 1)], 347)[0]).toMatchObject({ kode: "2004", nilai: "Penggugat", keyakinan: "ragu" });
+    expect(M.usulanDiasuhOleh([anak("A", "2020-01-01", "1")], 347)[0].catatan).toMatch(/77,5%/);
     expect(M.usulanDiasuhOleh([anak("A", "2020-01-01", "2")], 347)[0].nilai).toBe("Tergugat");
     expect(M.usulanDiasuhOleh([anak("A", "2020-01-01", "1")], 346)[0].nilai).toBe("Pemohon");
     expect(M.usulanDiasuhOleh([anak("A", "2020-01-01", "2")], 346)[0].nilai).toBe("Termohon");
@@ -161,6 +162,11 @@ describe("B - susunIsian atas rantai variabel paket", () => {
   it("keputusan adalah pilihan hakim: tanda diisi manual dengan alasan, pilihan lengkap, label bahasa pengguna", () => {
     for (const k of ["4100", "4101", "4102", "4103", "4104", "4105"]) {
       const b = per.get(k)!;
+      if (k === "4102" || k === "4103") {
+        expect(b.manual, k).toBeUndefined(); // opsional, bukan "diisi manual" (aturan: tak ada kode di kedua daftar)
+        expect(b.opsional, k).toBe(true);
+        continue;
+      }
       expect(b.manual, k).toBe(true);
       expect(b.alasanManual).toMatch(/putusan majelis/);
       expect(b.pilihan).toEqual(expect.arrayContaining(["dikabulkan seluruhnya", "dikabulkan sebagian", "ditolak", "tidak dapat diterima"]));
@@ -184,8 +190,9 @@ describe("B - susunIsian atas rantai variabel paket", () => {
     expect(per.get("6054")!.dipakaiOleh.some((x) => ["4119", "4138", "4112", "4132"].includes(x))).toBe(true);
   });
 
-  it("ISIAN_MANUAL memuat 4100-4105, 4107, 4108 dan tidak memuat isian yang bisa otomatis (4106)", () => {
-    for (const k of ["4100", "4101", "4102", "4103", "4104", "4105", "4107", "4108"]) expect(ISIAN_MANUAL[k], k).toBeTruthy();
+  it("ISIAN_MANUAL memuat 4100, 4101, 4104, 4105, 4107, 4108 (4102 dan 4103 opsional) dan tidak memuat isian yang bisa otomatis (4106)", () => {
+    for (const k of ["4100", "4101", "4104", "4105", "4107", "4108"]) expect(ISIAN_MANUAL[k], k).toBeTruthy();
+    for (const k of ["4102", "4103"]) expect(ISIAN_MANUAL[k], k).toBeUndefined();
     expect(ISIAN_MANUAL["4106"]).toBeUndefined();
   });
 });
@@ -198,6 +205,8 @@ describe("C - paket ABT: katalog, PASANG, PERIKSA, PULIH", () => {
     expect(new Set(nomor).size).toBe(nomor.length);
     expect(nomor.every((n) => n >= 4100 && n <= 4299)).toBe(true);
     for (const v of VAR) {
+      expect(v.nama.length, `nama ${v.no} <= 200 (kolom varchar(200); lebih panjang terpotong diam-diam)`).toBeLessThanOrEqual(200);
+      expect(v.tipe.length).toBeLessThanOrEqual(20);
       for (const t of [v.nama, v.sql || "", v.default || ""]) {
         expect(/^[\x09\x0a\x0d\x20-\x7e]*$/.test(t), `ASCII ${v.no}`).toBe(true);
         expect(/aleta/i.test(t), `nama aplikasi ${v.no}`).toBe(false);
@@ -246,6 +255,14 @@ describe("C - paket ABT: katalog, PASANG, PERIKSA, PULIH", () => {
       expect(v.tipe).toBe("data_sql");
       expect(v.sql).toMatch(/^SELECT IF\(c\.t[hnimdb] = 1, 'ya', ''\) AS data FROM/);
     }
+  });
+
+  it("keluaran yang berakhir pemisah paragraf diberi grup RTF kosong {}: ABT memangkas spasi di ujung nilai, '\\par' + huruf berikutnya akan menelan kata pertama paragraf berikutnya", () => {
+    for (const n of [4110, 4111, 4112, 4113, 4114, 4115, 4116, 4117, 4118, 4119, 4130, 4131, 4132, 4133, 4134, 4138, 4139]) {
+      const q = VAR.find((x) => x.no === n)!.sql!;
+      expect(q, `br ${n}`).toMatch(/^SELECT IF\(IFNULL\(t\.d, ''\) = '', '', CONCAT\(t\.d, '\{\}'\)\) AS data FROM \(SELECT /);
+    }
+    for (const n of [4140, 4146, 4150]) expect(VAR.find((x) => x.no === n)!.sql).not.toContain("'{}'");
   });
 
   it("kalimat penting ada pada variabel yang tepat: SEMA 1/2022 hanya huruf F, Pasal 70 ayat (6) hanya cerai talak, [PERIKSA] bila petitum diam-diam", () => {
@@ -305,6 +322,43 @@ describe("C - paket ABT: katalog, PASANG, PERIKSA, PULIH", () => {
     for (const f of readdirSync(dir)) {
       if (f === "MD5SUMS.txt") continue;
       expect(tercatat.get(f), `md5 ${f}`).toBe(createHash("md5").update(readFileSync(path.join(dir, f))).digest("hex"));
+    }
+  });
+});
+
+describe("C2 - PASANG, PERIKSA, PASANG ulang dan PULIH sungguhan di MariaDB laptop (DB sementara)", () => {
+  const MYSQL = "D:/Satker Asal/Website PA Bungku/xampp/mysql/bin/mysql.exe";
+  const SUMBER = "aps_badilag_u2";
+  const ada = existsSync(MYSQL) && spawnSync(MYSQL, ["-uroot", "-N", "-e", `SELECT COUNT(*) FROM ${SUMBER}.abt_variabel WHERE no_var IN (4001,8505,8527,8530,8554,8602,5114)`], { encoding: "utf-8" }).stdout?.trim() === "7";
+  const jalan = (db: string, sql: string) => spawnSync(MYSQL, ["-uroot", "--default-character-set=latin1", db], { input: Buffer.from(sql, "latin1"), encoding: "utf-8" });
+
+  it.skipIf(!ada)("PASANG berhasil dan PERIKSA 'SEMUA COCOK'; PASANG kedua ditolak prasyarat (tanpa ganda); PULIH menghapus jatah dan menyisakan variabel lama", () => {
+    const DB = "u2_uji_pasang_pulih";
+    const dir = path.join(PAKET, "paket-satker");
+    const baca = (f: string) => readFileSync(path.join(dir, f), "latin1");
+    try {
+      const siap = jalan("mysql", `DROP DATABASE IF EXISTS ${DB}; CREATE DATABASE ${DB} DEFAULT CHARACTER SET latin1; CREATE TABLE ${DB}.abt_variabel LIKE ${SUMBER}.abt_variabel; INSERT INTO ${DB}.abt_variabel SELECT * FROM ${SUMBER}.abt_variabel WHERE no_var IN (4001,8505,8527,8530,8554,8602,5114);`);
+      expect(siap.status, siap.stderr).toBe(0);
+      const p1 = jalan(DB, baca("abt-u2-PASANG.sql"));
+      expect(p1.status, p1.stderr).toBe(0);
+      expect(p1.stdout).toMatch(/PRASYARAT COCOK - memasang/);
+      const cek = jalan(DB, baca("abt-u2-PERIKSA.sql"));
+      expect(cek.status, cek.stderr).toBe(0);
+      expect(cek.stdout.trim().split(String.fromCharCode(10)).pop()).toBe("SEMUA COCOK");
+      const n1 = jalan(DB, "SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN 4100 AND 4299;").stdout.trim().split(String.fromCharCode(10)).pop();
+      expect(Number(n1)).toBe(VAR.length);
+      // PASANG ulang: gagal keras di prasyarat, tidak ada yang bertambah
+      const p2 = jalan(DB, baca("abt-u2-PASANG.sql"));
+      expect(p2.status).not.toBe(0);
+      expect(p2.stderr).toMatch(/Subquery returns more than 1 row/);
+      expect(Number(jalan(DB, "SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN 4100 AND 4299;").stdout.trim().split(String.fromCharCode(10)).pop())).toBe(VAR.length);
+      // PULIH
+      const pl = jalan(DB, baca("abt-u2-PULIH.sql"));
+      expect(pl.status, pl.stderr).toBe(0);
+      expect(Number(jalan(DB, "SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN 4100 AND 4299;").stdout.trim().split(String.fromCharCode(10)).pop())).toBe(0);
+      expect(Number(jalan(DB, "SELECT COUNT(*) FROM abt_variabel;").stdout.trim().split(String.fromCharCode(10)).pop())).toBe(7);
+    } finally {
+      jalan("mysql", `DROP DATABASE IF EXISTS ${DB};`);
     }
   });
 });

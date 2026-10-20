@@ -140,7 +140,11 @@ def tabel_turunan(db=DB, paksa=False):
     return '(' + luar + ') c'
 
 
-def SEL(ekspr, db=DB, paksa=False):
+def SEL(ekspr, db=DB, paksa=False, br=False):
+    """br=True: keluaran berakhir <br> (pemisah paragraf). ABT memangkas spasi di ujung nilai sehingga '\par ' menjadi '\par' dan
+    huruf berikutnya ikut terbaca sebagai bagian perintah RTF (kata pertama paragraf berikutnya HILANG). Ujung diberi grup RTF kosong {}."""
+    if br:
+        return "SELECT IF(IFNULL(t.d, '') = '', '', CONCAT(t.d, '{}')) AS data FROM (SELECT %s AS d FROM %s) t" % (ekspr, tabel_turunan(db, paksa))
     return 'SELECT %s AS data FROM %s' % (ekspr, tabel_turunan(db, paksa))
 
 
@@ -414,7 +418,9 @@ def amar_akibat():
     ada = "(c.cd IN ('A','S') OR c.ci IN ('A','S','X') OR c.cm IN ('A','S','X'))"
     noo = "CONCAT_WS(', ', %s, %s, %s)" % (JIKA("c.ci = 'N'", lit('nafkah iddah'), 'NULL'), JIKA("c.cm = 'N'", lit('mut&#39;ah'), 'NULL'), JIKA("c.cd = 'N'", lit('nafkah madliyah'), 'NULL'))
     teks_noo = "IF((c.ci = 'N' OR c.cm = 'N' OR c.cd = 'N'), CONCAT('Menyatakan tuntutan mengenai ', " + noo + ", ' tidak dapat diterima;<br>'), '')"
-    return ("CONCAT(IF(" + ada + ", CONCAT('Menghukum ', c.S, ' untuk membayar kepada ', c.I, " + waktu + ", ':<br>', CONCAT_WS(';<br>', " + m + ", " + i + ", " + mt + "), ';<br>'), ''), " + teks_noo + ")")
+    # Rincian berbaris '-' memakai \line (pindah baris dalam butir yang sama) supaya TIDAK ikut bernomor sebagai butir amar sendiri.
+    garis = "CHAR(92, 108, 105, 110, 101, 32)"
+    return ("CONCAT(IF(" + ada + ", CONCAT('Menghukum ', c.S, ' untuk membayar kepada ', c.I, " + waktu + ", ':', " + garis + ", CONCAT_WS(CONCAT(';', " + garis + "), " + m + ", " + i + ", " + mt + "), ';<br>'), ''), " + teks_noo + ")")
 
 
 def amar_harta():
@@ -460,7 +466,7 @@ def katalog():
         V.append(dict(no=no, nama=nama, tipe=tipe, sql=sql, default=default))
 
     # --- Isian keputusan hakim (pilihan) ----------------------------------------------------------------------------
-    tambah(N_KEP_H, 'KEPUTUSAN HAK ASUH ANAK (HADHANAH) #4140# - PILIH: dikabulkan seluruhnya / sebagian / ditolak / tidak dapat diterima; tulis alasan penolakan setelah titik dua; tulis ayah bila hak asuh diberikan kepada ayah', 'data_teks', default=PIL_KEP_X)
+    tambah(N_KEP_H, 'KEPUTUSAN HAK ASUH ANAK (HADHANAH) #4140# - PILIH: dikabulkan seluruhnya / sebagian / ditolak / tidak dapat diterima; alasan penolakan setelah titik dua; tulis ayah bila hak asuh ke ayah', 'data_teks', default=PIL_KEP_X)
     tambah(N_KEP_N, 'KEPUTUSAN NAFKAH ANAK #4141# - PILIH: dikabulkan seluruhnya / sebagian / ditolak / tidak dapat diterima; alasan penolakan setelah titik dua', 'data_teks', default=PIL_KEP_X)
     tambah(N_KEP_I, 'KEPUTUSAN NAFKAH IDDAH - PILIH: dikabulkan seluruhnya / sebagian / ditolak / tidak dapat diterima / ex officio; alasan penolakan setelah titik dua; jumlah di isian Nafkah iddah', 'data_teks', default=PIL_KEP_X)
     tambah(N_KEP_M, "KEPUTUSAN MUT'AH - PILIH: dikabulkan seluruhnya / sebagian / ditolak / tidak dapat diterima / ex officio; alasan penolakan setelah titik dua; jumlah di isian Mut'ah", 'data_teks', default=PIL_KEP_X)
@@ -468,9 +474,9 @@ def katalog():
     tambah(N_KEP_B, 'KEPUTUSAN HARTA BERSAMA #4145# - PILIH: dikabulkan seluruhnya / sebagian / ditolak / tidak dapat diterima; alasan penolakan setelah titik dua', 'data_teks', default=PIL_KEP)
     tambah(N_MUM, 'KEADAAN ANAK #4140# - PILIH: belum mumayyiz (belum 12 tahun) / mumayyiz (12 tahun atau lebih)', 'data_teks',
            default='belum mumayyiz (belum berumur 12 tahun)\nmumayyiz (berumur 12 tahun atau lebih)')
-    tambah(N_KMP, 'DASAR KEMAMPUAN PEMBERI NAFKAH (isian: pekerjaan/penghasilan suami dan kebutuhan dasar, tanpa titik akhir, mis. bahwa Tergugat bekerja sebagai petani dengan penghasilan Rp2.000.000,00 setiap bulan; kosong = pekerjaan di SIPP)', 'data_teks')
+    tambah(N_KMP, 'DASAR KEMAMPUAN PEMBERI NAFKAH (isian tanpa titik akhir, mis. bahwa Tergugat bekerja sebagai petani berpenghasilan Rp2.000.000,00 sebulan; kosong = pekerjaan di SIPP)', 'data_teks')
     tambah(N_ANAK_DIDENGAR, 'PENDAPAT ANAK MUMAYYIZ YANG DIDENGAR DI PERSIDANGAN (isian, tanpa titik akhir, mis. anak memilih tinggal bersama ibunya)', 'data_teks')
-    tambah(N_BAYAR, 'WAKTU PEMBAYARAN AKIBAT CERAI - PILIH: sebelum ikrar talak / sebelum akta cerai / tidak disyaratkan (istri tidak keberatan); kosong = cerai talak sebelum ikrar, cerai gugat menurut isian pembayaran sebelum akta cerai', 'data_teks',
+    tambah(N_BAYAR, 'WAKTU PEMBAYARAN AKIBAT CERAI - PILIH: sebelum ikrar talak / sebelum akta cerai / tidak disyaratkan; kosong = cerai talak sebelum ikrar, cerai gugat menurut isian 9715', 'data_teks',
            default='sebelum ikrar talak\nsebelum akta cerai\ntidak disyaratkan (istri tidak keberatan)')
     # --- Pemicu (menyalakan isian keputusan di layar) ----------------------------------------------------------------
     for no, flag, nm in ((4140, 'th', 'HAK ASUH ANAK'), (4141, 'tn', 'NAFKAH ANAK'), (4142, 'ti', 'NAFKAH IDDAH'), (4143, 'tm', "MUT'AH"), (4144, 'td', 'NAFKAH MADLIYAH'), (4145, 'tb', 'HARTA BERSAMA')):
@@ -478,25 +484,25 @@ def katalog():
     tambah(4146, 'TUNTUTAN AKIBAT PERCERAIAN DALAM PETITUM (OTOMATIS dari petitum SIPP: daftar tuntutan yang terbaca; kosong = tidak ada)', 'data_sql',
            SEL("CONCAT_WS(', ', IF(c.th = 1, 'hak asuh anak', NULL), IF(c.tn = 1, 'nafkah anak', NULL), IF(c.ti = 1, 'nafkah iddah', NULL), IF(c.tm = 1, 'mut&#39;ah', NULL), IF(c.td = 1, 'nafkah madliyah', NULL), IF(c.tb = 1, 'harta bersama', NULL))"))
     # --- Pertimbangan --------------------------------------------------------------------------------------------------
-    tambah(4110, 'PERTIMBANGAN HAK ASUH ANAK (OTOMATIS dari petitum dan keputusan pada isian 4100; kosong bila tidak dituntut dan tidak dipilih)', 'data_sql', SEL(pert_hadhanah()))
-    tambah(4111, 'PERTIMBANGAN NAFKAH ANAK (OTOMATIS dari petitum dan keputusan pada isian 4101)', 'data_sql', SEL(pert_nafkah_anak()))
-    tambah(4112, 'PERTIMBANGAN NAFKAH IDDAH (OTOMATIS dari petitum dan keputusan pada isian 4102)', 'data_sql', SEL(pert_iddah()))
-    tambah(4113, "PERTIMBANGAN MUT'AH (OTOMATIS dari petitum dan keputusan pada isian 4103)", 'data_sql', SEL(pert_mutah()))
-    tambah(4114, 'PERTIMBANGAN NAFKAH MADLIYAH (OTOMATIS dari petitum dan keputusan pada isian 4104)', 'data_sql', SEL(pert_madliyah()))
-    tambah(4115, 'PERTIMBANGAN HARTA BERSAMA (OTOMATIS dari petitum dan keputusan pada isian 4105)', 'data_sql', SEL(pert_harta()))
-    tambah(4116, 'PERTIMBANGAN WAKTU PEMBAYARAN AKIBAT CERAI (OTOMATIS: cerai talak sebelum ikrar talak, cerai gugat sebelum akta cerai; isian 4109)', 'data_sql', SEL(pert_bayar()))
-    tambah(4117, 'PERTIMBANGAN IZIN IKRAR DAN TENGGANG 6 BULAN (OTOMATIS: hanya cerai talak; Pasal 70 ayat (6) UU 7/1989)', 'data_sql', SEL(pert_ikrar()))
-    tambah(4118, 'PERTIMBANGAN SEMA 1/2022 (OTOMATIS: hanya alasan huruf F; pisah rumah minimal 6 bulan dinilai dari isian lama pisah)', 'data_sql', SEL(pert_sema()))
+    tambah(4110, 'PERTIMBANGAN HAK ASUH ANAK (OTOMATIS dari petitum dan keputusan pada isian 4100; kosong bila tidak dituntut dan tidak dipilih)', 'data_sql', SEL(pert_hadhanah(), br=True))
+    tambah(4111, 'PERTIMBANGAN NAFKAH ANAK (OTOMATIS dari petitum dan keputusan pada isian 4101)', 'data_sql', SEL(pert_nafkah_anak(), br=True))
+    tambah(4112, 'PERTIMBANGAN NAFKAH IDDAH (OTOMATIS dari petitum dan keputusan pada isian 4102)', 'data_sql', SEL(pert_iddah(), br=True))
+    tambah(4113, "PERTIMBANGAN MUT'AH (OTOMATIS dari petitum dan keputusan pada isian 4103)", 'data_sql', SEL(pert_mutah(), br=True))
+    tambah(4114, 'PERTIMBANGAN NAFKAH MADLIYAH (OTOMATIS dari petitum dan keputusan pada isian 4104)', 'data_sql', SEL(pert_madliyah(), br=True))
+    tambah(4115, 'PERTIMBANGAN HARTA BERSAMA (OTOMATIS dari petitum dan keputusan pada isian 4105)', 'data_sql', SEL(pert_harta(), br=True))
+    tambah(4116, 'PERTIMBANGAN WAKTU PEMBAYARAN AKIBAT CERAI (OTOMATIS: cerai talak sebelum ikrar talak, cerai gugat sebelum akta cerai; isian 4109)', 'data_sql', SEL(pert_bayar(), br=True))
+    tambah(4117, 'PERTIMBANGAN IZIN IKRAR DAN TENGGANG 6 BULAN (OTOMATIS: hanya cerai talak; Pasal 70 ayat (6) UU 7/1989)', 'data_sql', SEL(pert_ikrar(), br=True))
+    tambah(4118, 'PERTIMBANGAN SEMA 1/2022 (OTOMATIS: hanya alasan huruf F; pisah rumah minimal 6 bulan dinilai dari isian lama pisah)', 'data_sql', SEL(pert_sema(), br=True))
     gab = GABUNG(pert_hadhanah(), pert_nafkah_anak(), pert_iddah(), pert_mutah(), pert_madliyah(), pert_harta(), pert_bayar())
-    tambah(4119, 'PERTIMBANGAN AKIBAT PERCERAIAN LENGKAP (OTOMATIS: gabungan 4110 s.d. 4116 menurut petitum dan keputusan; kosong bila tidak ada tuntutan)', 'data_sql', SEL(_bungkus(gab)))
+    tambah(4119, 'PERTIMBANGAN AKIBAT PERCERAIAN LENGKAP (OTOMATIS: gabungan 4110 s.d. 4116 menurut petitum dan keputusan; kosong bila tidak ada tuntutan)', 'data_sql', SEL(_bungkus(gab), br=True))
     # --- Amar -------------------------------------------------------------------------------------------------------------
-    tambah(4130, 'AMAR HAK ASUH ANAK (OTOMATIS dari keputusan isian 4100; mulai dengan baris baru)', 'data_sql', SEL(amar_hadhanah()))
-    tambah(4131, 'AMAR NAFKAH ANAK (OTOMATIS dari keputusan isian 4101)', 'data_sql', SEL(amar_nafkah_anak()))
-    tambah(4132, "AMAR NAFKAH ISTRI: MADLIYAH, IDDAH, MUT'AH DAN WAKTU PEMBAYARAN (OTOMATIS dari keputusan isian 4102 s.d. 4104)", 'data_sql', SEL(amar_akibat()))
-    tambah(4133, 'AMAR HARTA BERSAMA (OTOMATIS dari keputusan isian 4105)', 'data_sql', SEL(amar_harta()))
-    tambah(4134, 'AMAR MENOLAK SELAIN DAN SELEBIHNYA (OTOMATIS: bila ada tuntutan akibat perceraian yang ditolak atau dikabulkan sebagian)', 'data_sql', SEL(amar_selebihnya()))
-    tambah(4138, 'AMAR AKIBAT PERCERAIAN LENGKAP (OTOMATIS: gabungan 4130 s.d. 4134; satu baris per butir, kosong bila tidak ada)', 'data_sql', SEL(_bungkus(amar_semua())))
-    tambah(4139, "AMAR MUT'AH DAN NAFKAH IDDAH SECARA EX OFFICIO (OTOMATIS untuk blangko varian Mut'ah Iddah: isian Nafkah iddah dan Mut'ah, waktu pembayaran isian 4109; mulai dengan baris baru)", 'data_sql', SEL(amar_akibat(), paksa=True))
+    tambah(4130, 'AMAR HAK ASUH ANAK (OTOMATIS dari keputusan isian 4100; mulai dengan baris baru)', 'data_sql', SEL(amar_hadhanah(), br=True))
+    tambah(4131, 'AMAR NAFKAH ANAK (OTOMATIS dari keputusan isian 4101)', 'data_sql', SEL(amar_nafkah_anak(), br=True))
+    tambah(4132, "AMAR NAFKAH ISTRI: MADLIYAH, IDDAH, MUT'AH DAN WAKTU PEMBAYARAN (OTOMATIS dari keputusan isian 4102 s.d. 4104)", 'data_sql', SEL(amar_akibat(), br=True))
+    tambah(4133, 'AMAR HARTA BERSAMA (OTOMATIS dari keputusan isian 4105)', 'data_sql', SEL(amar_harta(), br=True))
+    tambah(4134, 'AMAR MENOLAK SELAIN DAN SELEBIHNYA (OTOMATIS: bila ada tuntutan akibat perceraian yang ditolak atau dikabulkan sebagian)', 'data_sql', SEL(amar_selebihnya(), br=True))
+    tambah(4138, 'AMAR AKIBAT PERCERAIAN LENGKAP (OTOMATIS: gabungan 4130 s.d. 4134; satu baris per butir, kosong bila tidak ada)', 'data_sql', SEL(_bungkus(amar_semua()), br=True))
+    tambah(4139, "AMAR MUT'AH DAN NAFKAH IDDAH SECARA EX OFFICIO (OTOMATIS untuk blangko varian Mut'ah Iddah: isian Nafkah iddah dan Mut'ah, waktu pembayaran isian 4109; mulai dengan baris baru)", 'data_sql', SEL(amar_akibat(), paksa=True, br=True))
     tambah(4150, "RINCIAN KEWAJIBAN AKIBAT CERAI YANG DIBAYAR SAAT SIDANG IKRAR (OTOMATIS dari isian putusan nafkah iddah, mut'ah, madliyah, nafkah anak; tidak ada isian = titik-titik bawaan blangko)", 'data_sql', SEL(rincian_ikrar()))
     return V
 
