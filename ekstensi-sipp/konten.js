@@ -2173,6 +2173,15 @@ async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering, 
     }
     kunciTulisPenetapan.add(nomorKunci);
   }
+  // Sebelum menulis: simpan alamat perkara ini supaya sesudah memuat ulang
+  // halaman TETAP di perkara yang sama (penetapan-muat-ulang.js).
+  if (!kering && globalThis.aletaMuatUlangPen) {
+    try {
+      await globalThis.aletaMuatUlangPen.catatAlamat(String((usulan && usulan.perkara && usulan.perkara.nomorPerkara) || ""));
+    } catch {
+      /* alamat hanya kemudahan */
+    }
+  }
   try {
     return await tetapkanLewatAletaInti(tombol, kabar, usulan, data, keadaan, kering, opsi);
   } finally {
@@ -2197,9 +2206,13 @@ async function tetapkanLewatAletaInti(tombol, kabar, usulan, data, keadaan, keri
   // Tidak ditunggu: penetapannya sudah tertulis, edoc punya kabarnya sendiri.
   // opsi.tanpaEdocOtomatis: pemanggil (panel "Penetapan Otomatis" di halaman
   // SIPP) mengunggah e-Doc sendiri menurut kotak centang per penetapan.
+  let edocJanji = null;
   if (!kering && !opsi.tanpaEdocOtomatis && typeof e6SesudahPenetapanTertulis === "function") {
     try {
-      void Promise.resolve(e6SesudahPenetapanTertulis(kabar, usulan, hasil)).catch(() => undefined);
+      // Janjinya dibawa ke pemanggil: halaman baru dimuat ulang SESUDAH e-Doc
+      // otomatisnya selesai, bukan memotongnya di tengah unggah.
+      edocJanji = Promise.resolve(e6SesudahPenetapanTertulis(kabar, usulan, hasil)).catch(() => undefined);
+      void edocJanji;
     } catch {
       /* edoc tidak pernah menggagalkan penetapan */
     }
@@ -2209,7 +2222,7 @@ async function tetapkanLewatAletaInti(tombol, kabar, usulan, data, keadaan, keri
   // dikerjakan tangan tidak pernah lulus uji kering - tombol "Tuliskan ke
   // SIPP" tidak pernah terbuka, dan PPP, PJS, PHS tidak dapat dikerjakan.
   const dikerjakan = hasil.filter((x) => x.ok).length;
-  const ringkas = { ok: hasil.every((x) => x.ok || x.sudahAda === true), dikerjakan, hasil };
+  const ringkas = { ok: hasil.every((x) => x.ok || x.sudahAda === true), dikerjakan, hasil, edocJanji };
   // Kartu Penetapan UI Baru (satu klik) membaca hasil per langkah dari sini -
   // hanya pemberitahuan ke layar, tidak mengubah apa pun yang ditulis.
   try {
@@ -4432,14 +4445,25 @@ async function siapkanKerjakan(tombol, kabar, usulan, data) {
       //
       // Diberi jeda supaya hasil tiap langkah sempat terbaca lebih dahulu.
       if (hasil.ok) {
-        kabar.appendChild(
-          buatElemen(
-            "div",
-            "aleta-tetap-sebab",
-            "Penetapan tersimpan. Halaman dimuat ulang sebentar lagi supaya tab Penetapan dan Riwayat Perkara menampilkan hasilnya."
-          )
-        );
-        setTimeout(muatUlangHalamanPerkara, 2500);
+        // Sesudah penetapan (dan e-Doc otomatisnya) selesai: ringkasan tampil,
+        // lalu halaman dimuat ulang SENDIRI dan tetap di perkara ini
+        // (penetapan-muat-ulang.js; ada yang gagal = hanya tombol).
+        const nomorPerkaraIni = String((usulan.perkara && usulan.perkara.nomorPerkara) || "");
+        void (async () => {
+          let edocPesan = null;
+          if (hasil.edocJanji) {
+            const e = await hasil.edocJanji;
+            if (e && e.ok === false && e.alasan !== "tidak_ada_jenis" && e.alasan !== "sudah_terunggah") {
+              edocPesan = { teks: "e-Doc belum terunggah - periksa di tombol e-Doc.", gagal: true };
+            } else if (e && e.ok) edocPesan = { teks: "e-Doc terunggah.", gagal: false };
+          }
+          const pm = globalThis.aletaMuatUlangPen;
+          if (pm) {
+            pm.jadwalkan({ nomor: nomorPerkaraIni, ringkasan: pm.ringkasanDariHasil(hasil, edocPesan), wadah: kabar });
+          } else {
+            setTimeout(muatUlangHalamanPerkara, 2500);
+          }
+        })();
       }
     });
     return;

@@ -456,7 +456,11 @@
     const kabarRinci = el("div", "aleta-pensipp-tersembunyi");
     kabarRinci.hidden = true;
 
-    akar.append(kepala, badan, kaki, laporan, kabarRinci);
+    // Kotak hitung mundur muat ulang (penetapan-muat-ulang.js): di luar render(), tidak ikut terhapus.
+    const wadahMuatUlang = el("div", "aleta-pensipp-muatulang");
+    wadahMuatUlang.setAttribute("data-pensipp", "muat-ulang");
+    akar.append(kepala, badan, kaki, laporan, wadahMuatUlang, kabarRinci);
+    ctx.wadahMuatUlang = wadahMuatUlang;
     ctx.akar = akar;
     ctx.rinci = rinci;
     ctx.rinciKotak = rinciKotak;
@@ -669,18 +673,6 @@
         ul.appendChild(li);
       }
       lap.appendChild(ul);
-      if (ctx.laporan.muatUlang) {
-        const m = tombol("Muat ulang halaman SIPP", "aleta-pensipp-kecil");
-        m.setAttribute("data-pensipp", "muat-ulang");
-        m.addEventListener("click", () => {
-          try {
-            panggil("muatUlangHalamanPerkara");
-          } catch {
-            location.reload();
-          }
-        });
-        lap.append(el("span", "aleta-pensipp-catatan", "Muat ulang halaman supaya tab Penetapan dan Riwayat Perkara menampilkan hasilnya. "), m);
-      }
     } else {
       lap.className = "aleta-pensipp-laporan";
     }
@@ -851,6 +843,16 @@
     if (kunciBersama && nomorKunci) kunciBersama.add(nomorKunci);
     ctx.sibuk = true;
     ctx.laporan = null;
+    if (globalThis.aletaMuatUlangPen) {
+      globalThis.aletaMuatUlangPen.batal();
+      if (ctx.wadahMuatUlang) ctx.wadahMuatUlang.textContent = "";
+      // Alamat perkara disimpan SEBELUM menulis; sesudah selesai halaman dimuat ulang di situ juga.
+      try {
+        await globalThis.aletaMuatUlangPen.catatAlamat(ctx.nomor);
+      } catch {
+        /* alamat hanya kemudahan */
+      }
+    }
     ctx.hasil = {};
     ctx.kabarEdoc = {};
     const pencegah = (e) => {
@@ -1033,10 +1035,23 @@
         ringkas,
         baris: laporBaris,
         nada: penulisanGagal || edocGagal.length ? "salah" : diantrekan ? "tunggu" : "ok",
-        muatUlang: adaTertulis,
+        muatUlang: false,
       };
+      // Sesudah SELESAI (penetapan dan e-Doc): ringkasan + muat ulang otomatis, tetap di perkara ini.
+      // Ada yang gagal = hanya tombol (sebabnya terbaca dulu). Tidak ada yang berubah = tidak dimuat ulang.
+      if ((adaTertulis || edocSukses.length) && globalThis.aletaMuatUlangPen && ctx.wadahMuatUlang) {
+        globalThis.aletaMuatUlangPen.jadwalkan({
+          nomor: ctx.nomor,
+          ringkasan: {
+            judul: ctx.laporan.ringkas,
+            baris: laporBaris.map((b) => ({ jenis: b.jenis, teks: b.teks, nada: b.nada })),
+            adaGagal: penulisanGagal || edocGagal.length > 0 || diantrekan,
+          },
+          wadah: ctx.wadahMuatUlang,
+        });
+      }
     } catch (galat) {
-      ctx.laporan = { ringkas: `Berhenti: ${String((galat && galat.message) || galat).slice(0, 200)}`, baris: [], nada: "salah", muatUlang: adaTertulis };
+      ctx.laporan = { ringkas: `Berhenti: ${String((galat && galat.message) || galat).slice(0, 200)}`, baris: [], nada: "salah", muatUlang: false };
     } finally {
       window.removeEventListener("beforeunload", pencegah);
       if (kunciBersama && nomorKunci) kunciBersama.delete(nomorKunci);

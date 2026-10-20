@@ -64,6 +64,7 @@
         "sipp-ide-m1.js",
         "sipp-ide-m2.js",
         "penetapan-borang.js",
+        "penetapan-muat-ulang.js",
         "penetapan-sipp.js"
       ],
       "css": [
