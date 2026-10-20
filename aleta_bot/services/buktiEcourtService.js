@@ -33,8 +33,9 @@ const T = require("./tuntutanDeteksiService");
 const TJ = require("./tanyaJawabEcourtService");
 
 const KODE = Object.freeze({
-  suratP: Object.freeze(["9470", "9488", "9492"]),
-  suratT: Object.freeze(["9489", "9493"]),
+  // S6 20 Okt: + hibah 9804/9805 (gugatan) dan 9810 (permohonan), wakaf 9834/9835 dan 9840, mafqud 9873 - daftar P.1/T.1 yang sama.
+  suratP: Object.freeze(["9470", "9488", "9492", "9804", "9810", "9834", "9840", "9873"]),
+  suratT: Object.freeze(["9489", "9493", "9805", "9835"]),
   elektronikP: "9951",
   elektronikT: "9952",
   noKua: "0654",

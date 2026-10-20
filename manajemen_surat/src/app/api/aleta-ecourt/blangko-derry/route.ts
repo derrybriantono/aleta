@@ -14,6 +14,7 @@ import { ok } from "@/server/shared/http";
 
 import { jenisDokumenAkun, jenisFolderDariJalur, jenisFolderDerry, kodeTanyaJawab, kodeUntukNilai, saringIsianBas, statusNilaiLayar, susunIsian, type Definisi, type JenisDokumenDerry, type PeranTiruan, type Susunan } from "./susun";
 import { terapkanPetunjukS5 } from "./petunjuk-s5";
+import { terapkanPetunjukS6 } from "./petunjuk-s6";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -251,6 +252,7 @@ export async function GET(request: NextRequest) {
     };
     const susunan: Susunan = saringIsianBas(susunIsian(penanda, peta, sebutan), jenisFolder); // 8503 tidak di BAS
     terapkanPetunjukS5(susunan); // "diisi manual" + alasan dan isian opsional (jenis S5) - hanya menambah keterangan
+    terapkanPetunjukS6(susunan); // S6: "diisi manual" + alasan dan isian opsional (harta bersama, waris, wasiat, hibah, wakaf, ...)
 
     const perkaraId = teks(q.get("perkaraId"));
     let nilai: Awaited<ReturnType<typeof nilaiPenanda>> | null = null;
