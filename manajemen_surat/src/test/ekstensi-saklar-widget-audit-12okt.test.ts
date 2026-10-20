@@ -367,6 +367,8 @@ describe("A. popup: tiap saklar menulis kunci dan nilai yang benar (dan membaca 
     { id: "widgetKehadiran", kunci: "widgetKehadiran", bawaan: true },
     // F4.2 (17 Okt): kotak draf putusan H-7 di widget.
     { id: "widgetDrafH7", kunci: "widgetDrafH7", bawaan: true },
+    // 20 Okt: pratinjau BAS & relaas di SIPP sebelum diunduh - bawaan menyala.
+    { id: "pratinjauBasRelaas", kunci: "pratinjauBasRelaas", bawaan: true },
     // F1.5 (17 Okt): gembok panel ALETA di ABT biasa - menyala = terkunci (tampil penuh).
     { id: "gembokAbt", kunci: "gembokKepalaAbt", bawaan: false },
   ];

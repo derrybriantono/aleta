@@ -75,6 +75,8 @@
     tjJawab: "blangkoDerryTjJawab",
     // 19 Okt: isi otomatis dari SIPP (bawaan NYALA), diingat per pengguna seperti saklar lain.
     isiOto: "blangkoDerryIsiOto",
+    // 20 Okt: pratinjau BAS & relaas di SIPP sebelum diunduh (bawaan NYALA), saklarnya di Alat saya.
+    pratinjau: "pratinjauBasRelaas",
     // F1.5 (17 Okt): gembok panel ALETA di ABT biasa (sama dengan popup & tombol gembok panel).
     gembok: "gembokKepalaAbt",
     tema: "temaPanel",
@@ -496,7 +498,7 @@
   // Keadaan
   // ──────────────────────────────────────────────────────────────────────────
   const S = {
-    cfg: { bawaan: false, tawar: true, saran: true, ingat: true, tjJawab: true, isiOto: true },
+    cfg: { bawaan: false, tawar: true, saran: true, ingat: true, tjJawab: true, isiOto: true, pratinjau: true },
     /** 19 Okt: tautan dari Jadwal Sidang portal (ABT dibuka dengan #bd=...): perkara, sidang, jenis, petunjuk. Null bila tidak ada/rusak. */
     tautan: null,
     tema: "gelap",
@@ -650,13 +652,14 @@
       ingat: s[K.ingat] !== false,
       tjJawab: s[K.tjJawab] !== false,
       isiOto: s[K.isiOto] !== false,
+      pratinjau: s[K.pratinjau] !== false,
       gembok: s[K.gembok] === true,
     };
     S.tema = s[K.tema] === "terang" ? "terang" : "gelap";
     S.ukuran = Object.prototype.hasOwnProperty.call(UKURAN, s[K.ukuran]) ? s[K.ukuran] : "biasa";
   }
   async function muatSetelan() {
-    const s = await bacaPenyimpanan([K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.gembok, K.tema, K.daftar, K.aktif, K.ukuran]);
+    const s = await bacaPenyimpanan([K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.pratinjau, K.gembok, K.tema, K.daftar, K.aktif, K.ukuran]);
     terapkanSetelan(s);
     const d = s[K.daftar];
     if (d && typeof d === "object") {
@@ -1681,8 +1684,13 @@
     const saklarIsi = grup.some((g) => ["hakim", "pp", "js", "ptsp", "admin"].includes(g))
       ? `<label class="bd-wbaris bd-saklaralat"><span>Isi otomatis dari SIPP<small>isian kosong terisi sendiri dari SIPP, gugatan dan e-Court; yang sudah ada isinya tidak ditimpa</small></span><input type="checkbox" data-cfg="isiOto" aria-label="Isi otomatis dari SIPP" ${S.cfg.isiOto !== false ? "checked" : ""}></label>`
       : "";
+    // 20 Okt: saklar pratinjau BAS & relaas (SIPP) - bawaan menyala; mati = klik unduh di SIPP langsung mengunduh seperti dulu.
+    const saklarPratinjau = grup.some((g) => ["hakim", "pp", "js", "ptsp", "admin"].includes(g))
+      ? `<label class="bd-wbaris bd-saklaralat"><span>Pratinjau sebelum unduh (BAS &amp; relaas)<small>klik unduh BAS atau relaas di SIPP menampilkan isinya dulu; dari sana dapat diunduh atau dicetak. Shift atau Ctrl-klik = langsung unduh</small></span><input type="checkbox" data-cfg="pratinjau" aria-label="Pratinjau sebelum unduh (BAS dan relaas)" ${S.cfg.pratinjau !== false ? "checked" : ""}></label>`
+      : "";
     return (
       saklarIsi +
+      saklarPratinjau +
       grup
         .map(
           (g) =>
@@ -1709,7 +1717,7 @@
 
   // ── Peristiwa ─────────────────────────────────────────────────────────────
   function ubahSaklar(kunciCfg, nilai) {
-    const peta = { bawaan: K.bawaan, tawar: K.tawar, saran: K.saran, ingat: K.ingat, tjJawab: K.tjJawab, isiOto: K.isiOto, gembok: K.gembok };
+    const peta = { bawaan: K.bawaan, tawar: K.tawar, saran: K.saran, ingat: K.ingat, tjJawab: K.tjJawab, isiOto: K.isiOto, pratinjau: K.pratinjau, gembok: K.gembok };
     if (!peta[kunciCfg]) return;
     S.cfg[kunciCfg] = Boolean(nilai);
     void tulisPenyimpanan({ [peta[kunciCfg]]: Boolean(nilai) });
@@ -1889,7 +1897,7 @@
     if (wilayah !== "local" || !ubah) return;
     const s = {};
     let berubah = false;
-    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.gembok, K.tema, K.ukuran]) {
+    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.pratinjau, K.gembok, K.tema, K.ukuran]) {
       if (ubah[k]) {
         berubah = true;
         s[k] = ubah[k].newValue;
@@ -1904,6 +1912,7 @@
         [K.ingat]: S.cfg.ingat,
         [K.tjJawab]: S.cfg.tjJawab,
         [K.isiOto]: S.cfg.isiOto,
+        [K.pratinjau]: S.cfg.pratinjau,
         [K.gembok]: S.cfg.gembok,
         [K.tema]: S.tema,
         [K.ukuran]: S.ukuran,

@@ -3489,6 +3489,7 @@ const KUNCI_SETELAN_AKUN = [
   "sippTampilDobel",
   "widgetKehadiran",
   "widgetDrafH7",
+  "pratinjauBasRelaas",
   "gembokKepalaAbt",
   /* Saklar penanda SIPP (popup-ide-l2.js) - per akun seperti saklar lain (audit 17 Okt). */
   "ideL2",

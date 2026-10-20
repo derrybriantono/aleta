@@ -150,6 +150,8 @@ const BERKAS = [
   // hitung mundur, kembali dari dasbor sekali, ringkasan tampil lagi sesudah memuat.
   "muat-ulang-sipp.js",
   "penetapan-sipp.js",
+  // Pratinjau BAS/relaas di SIPP sebelum diunduh (20 Okt 2026).
+  "pratinjau-bas-relaas.js",
   "penetapan-sipp.css",
   "blangko-derry.css",
   // Menu kiri ABT bisa digulir (19 Okt 2026) - skrip konten ABT: #navbar diberi
