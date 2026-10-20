@@ -65,6 +65,7 @@ def ikut_induk(p, induk):
 def main():
     aksi, akar = sys.argv[1], sys.argv[2]
     baru = baca('daftar-rtf.tsv')
+    folder_baru = set(x[0] for x in baca('folder-baru.txt'))   # W3a: folder yang dibuat paket sendiri (belum ada saat 'cek')
     timpa = baca('daftar-timpa.tsv')
     n = {}
 
@@ -87,7 +88,7 @@ def main():
                 hitung('GAGAL', 'berkas lain bernama sama sudah ada %s/%s' % (folder, berkas))
             elif os.path.exists(dst):
                 hitung('SUDAH_BARU')
-            elif not os.path.isdir(os.path.join(akar, folder)):
+            elif not os.path.isdir(os.path.join(akar, folder)) and not (aksi == 'cek' and folder in folder_baru):
                 hitung('GAGAL', 'folder tidak ada %s' % folder)
         for folder, berkas, ml, mb, _k in timpa:
             dst = jalur(folder, berkas)

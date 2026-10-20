@@ -119,6 +119,24 @@ def main():
     for m in mods:
         m.bangun()
     relaas_w3a.bangun()
+    import periksa_isi
+    jumlah, galat = periksa_isi.periksa()
+    print('periksa isi RTF: %d berkas, %d galat' % (jumlah, len(galat)))
+    if galat:
+        for g in galat[:80]:
+            print('  GALAT', g)
+        if '--abaikan-galat' not in sys.argv:
+            raise SystemExit('bangun_paket berhenti: isi RTF tidak lolos periksa_isi')
+    # PETA putusan semua jenis -> peta-w3a.json (dipakai integrasi_w3a.py dan uji)
+    import json
+    peta = []
+    for m in mods:
+        peta.extend(getattr(m, 'PETA', []))
+    semua = list(mods) + [relaas_w3a]
+    with open(L.lp(os.path.join(AKAR, 'peta-w3a.json')), 'w', encoding='utf-8') as f:
+        json.dump(dict(jenis={k: {c: v for c, v in j.items()} for k, j in L.JENIS.items()}, peta=peta,
+                       isian={k: v for m in semua for k, v in getattr(m, 'ISIAN', {}).items()},
+                       ramah={k: v for m in semua for k, v in getattr(m, 'RAMAH', {}).items()}), f, ensure_ascii=False, indent=1)
     if os.path.isdir(L.lp(PAKET)):
         shutil.rmtree(L.lp(PAKET))
     os.makedirs(L.lp(PAKET))
@@ -215,7 +233,7 @@ def main():
     uji = '# no_var<TAB>kueri (#perkara_id# diganti pasang-satker.sh; hanya SELECT; penanda isian #nnnn# dikosongkan oleh uji)\n'
     for x in var:
         if x['tipe'] == 'data_sql' and x['sql']:
-            uji += '%d\t%s\n' % (x['no'], satu_baris(x['sql']))
+            uji += '%d\t%s\n' % (x['no'], re.sub(r'#(\d{4})#', '', satu_baris(x['sql'])))
     tulis(os.path.join(PAKET, 'uji-kueri.tsv'), uji)
 
     # --- skrip ----------------------------------------------------------------------------------------------------------------

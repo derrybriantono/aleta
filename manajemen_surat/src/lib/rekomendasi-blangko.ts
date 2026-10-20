@@ -279,6 +279,13 @@ export const FOLDER_MENU_PUTUSAN: Record<string, string> = {
   "Putusan Hibah": "4d Hibah",
   "Putusan Wakaf": "4e Wakaf",
   "Putusan Penetapan Mafqud": "9c Penetapan Mafqud",
+  // W3a 21 Okt: paket ABT abt-w3a-blangko-baru-perkawinan (menu 168, 170, 172, 174, 176, 178).
+  "Putusan Penolakan Perkawinan": "5c Penolakan Perkawinan",
+  "Putusan Perkawinan Campuran": "5d Perkawinan Campuran",
+  "Putusan Izin Kawin": "3a Izin Kawin",
+  "Putusan Pengesahan Anak": "8a Pengesahan Anak",
+  "Putusan Kelalaian Kewajiban Suami Istri": "1e Kelalaian Kewajiban Suami Istri",
+  "Putusan Hak Bekas Istri": "1f Hak Bekas Istri",
 };
 
 /**

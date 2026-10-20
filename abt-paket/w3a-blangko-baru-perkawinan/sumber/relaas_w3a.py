@@ -17,6 +17,14 @@ if not any(x['no'] == 3790 for x in VAR):
     V(3790, 'RELAAS PIHAK DIDENGAR: NAMA DAN JABATAN ATAU HUBUNGAN YANG DIPANGGIL - ISIAN (mis. Kepala Kantor Urusan Agama Kecamatan ..., atau nama orang tua/wali)', 'data_teks', default='...........................................')
     V(3791, 'RELAAS PIHAK DIDENGAR: TEMPAT KEDIAMAN ATAU ALAMAT KANTOR YANG DIPANGGIL - ISIAN', 'data_teks', default='....................................................')
 
+ISIAN = {
+    '3790': ('manual', 'Nama dan jabatan atau hubungan pihak yang dipanggil untuk didengar (pejabat pencatat nikah, orang tua, wali) tidak tercatat di SIPP; ketik dari surat atau berkas perkara.'),
+    '3791': ('manual', 'Tempat kediaman atau alamat kantor pihak yang dipanggil untuk didengar tidak tercatat di SIPP; ketik dari surat atau berkas perkara.'),
+}
+RAMAH = {
+    '3790': dict(nm='Pihak yang dipanggil untuk didengar (nama lengkap dan jabatan atau hubungan, mis. Kepala Kantor Urusan Agama Kecamatan ... atau ayah kandung Pemohon bernama ...)'),
+    '3791': dict(nm='Tempat kediaman atau alamat kantor pihak yang dipanggil untuk didengar'),
+}
 RELAAS = [
     dict(berkas='[JS] 12.1. Relaas Panggilan Sidang Penolakan Perkawinan - Pegawai Pencatat Nikah.rtf',
          peran='sebagai Pegawai Pencatat Nikah yang menolak melangsungkan perkawinan Pemohon',

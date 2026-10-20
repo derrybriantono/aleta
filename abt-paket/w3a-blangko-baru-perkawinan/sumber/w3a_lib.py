@@ -50,7 +50,7 @@ JENIS = {
         folder='8a Pengesahan Anak', menu_putusan=174, menu_bas=175, alur=63, alur_nama='Pengesahan Anak',
         var=(3660, 3689), kata='pengesahan anak', katalog='pengesahan-anak', deteksi='pengesahanAnak'),
     'kelalaian-kewajiban': dict(
-        sipp=345, nama='Kelalaian atas Kewajiban Suami/Istri', singkat='Kelalaian Kewajiban', tipe='gugatan', nomor='Pdt.G',
+        sipp=345, nama='Kelalaian atas Kewajiban Suami/Istri', singkat='Kelalaian Kewajiban Suami Istri', tipe='gugatan', nomor='Pdt.G',
         folder='1e Kelalaian Kewajiban Suami Istri', menu_putusan=176, menu_bas=177, alur=64, alur_nama='Kelalaian Kewajiban',
         var=(3690, 3739), kata='kelalaian kewajiban suami atau istri', katalog='kelalaian-kewajiban', deteksi='kelalaianKewajiban'),
     'hak-bekas-istri': dict(
@@ -70,7 +70,7 @@ for _k, _j in JENIS.items():
     _j['kunci'] = _k
     _j['kunci_cermin'], _j['padanan_sipp'] = CERMIN[_k]
     _j['folder_bas'] = _j['folder'] + ' - BAS'
-    _j['nama_menu_putusan'] = 'Putusan ' + _j['nama'] if len(_j['nama']) < 40 else 'Putusan ' + _j['singkat']
+    _j['nama_menu_putusan'] = 'Putusan ' + _j['singkat']
     _j['alias_putusan'] = _j['singkat'] + ' - Putusan'
     _j['nama_menu_bas'] = _j['singkat'] + ' - BAS'
     _j['alias_bas'] = _j['singkat'] + ' - BAS'

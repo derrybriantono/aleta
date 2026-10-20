@@ -24,6 +24,10 @@ def V(no, nama, tipe, sql=None, default=None):
         raise ValueError('nomor %d dipakai dua kali' % no)
     if 'aleta' in (nama + (sql or '') + (default or '')).lower():
         raise ValueError('variabel %d memuat kata aleta' % no)
+    if len(nama) > 200:
+        raise ValueError('variabel %d: nama %d karakter, batas kolom abt_variabel.nama = 200 (dipotong diam-diam oleh basis data): %r' % (no, len(nama), nama[:60]))
+    if len(sql or '') > 60000 or len(default or '') > 60000:
+        raise ValueError('variabel %d: kueri/bawaan melebihi batas kolom text (65535 bita)' % no)
     for teks in (nama, sql or '', default or ''):
         try:
             teks.encode('cp1252')

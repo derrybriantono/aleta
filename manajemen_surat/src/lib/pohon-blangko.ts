@@ -291,6 +291,15 @@ export const SET_BLANGKO: SetBlangko[] = [
     jenis: "putusan",
     untuk: ["mafqud", "lain-lain"],
   },
+  // W3a 21 Okt 2026 (paket ABT abt-w3a-blangko-baru-perkawinan): enam jenis baru, masing-masing sepasang folder "<jenis>" (menu putusan 168/170/172/174/176/178, hakim)
+  // dan "<jenis> - BAS" (menu 169/171/173/175/177/179, panitera). Penolakan perkawinan, perkawinan campuran, izin kawin, pengesahan anak = PERMOHONAN (Pdt.P, penetapan);
+  // kelalaian atas kewajiban suami/istri dan hak-hak bekas istri = GUGATAN (Pdt.G, putusan).
+  { id: "putusan-penolakan-perkawinan", nama: "Penetapan Penolakan Perkawinan", folder: `${AKAR}/5c Penolakan Perkawinan`, jenis: "putusan", untuk: ["penolakan perkawinan"] },
+  { id: "putusan-perkawinan-campuran", nama: "Penetapan Perkawinan Campuran", folder: `${AKAR}/5d Perkawinan Campuran`, jenis: "putusan", untuk: ["perkawinan campuran"] },
+  { id: "putusan-izin-kawin", nama: "Penetapan Izin Kawin", folder: `${AKAR}/3a Izin Kawin`, jenis: "putusan", untuk: ["izin kawin"] },
+  { id: "putusan-pengesahan-anak", nama: "Penetapan Pengesahan Anak", folder: `${AKAR}/8a Pengesahan Anak`, jenis: "putusan", untuk: ["pengesahan anak"] },
+  { id: "putusan-kelalaian-kewajiban", nama: "Putusan Kelalaian Kewajiban Suami Istri", folder: `${AKAR}/1e Kelalaian Kewajiban Suami Istri`, jenis: "putusan", untuk: ["kelalaian atas kewajiban", "kelalaian kewajiban"] },
+  { id: "putusan-hak-bekas-istri", nama: "Putusan Hak Bekas Istri", folder: `${AKAR}/1f Hak Bekas Istri`, jenis: "putusan", untuk: ["bekas istri"] },
   {
     // abt_menu hanya punya satu kolom acuan jenis (370): perkara ES melihat "10" DAN "10a"; ALETA memilih menurut nomor (Pdt.G -> set ini, Pdt.G.S -> "10").
     id: "putusan-ekonomi-syariah-biasa",

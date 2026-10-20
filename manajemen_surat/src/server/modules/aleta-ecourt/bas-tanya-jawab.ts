@@ -422,6 +422,10 @@ export const ID_JENIS_PERKARA_SIPP: Readonly<Record<string, string>> = Object.fr
   "harta bersama": "348",
   "penguasaan anak": "349",
   "pengesahan anak": "352",
+  "kelalaian atas kewajiban suami / istri": "345", // W3a 21 Okt
+  "hak - hak bekas istri/kewajiban bekas suami": "351",
+  "perkawinan campuran": "359",
+  "izin kawin": "361",
   perwalian: "354",
   "asal usul anak": "358",
   "istbat nikah": "360",
