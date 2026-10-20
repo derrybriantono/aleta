@@ -1,0 +1,160 @@
+{
+  "skema": "peta-fakta-variabel/1",
+  "catatan": "TAMBAHAN W2a-K2 (wasiat, hibah, wakaf, ekonomi syariah) untuk aleta_bot/config/peta-fakta-variabel.json. Satu kode satu fakta; tidak mengubah entri yang ada. Gabungkan saat merge: 'fakta' = entri baru. Sebelum digabung, sesi utama memeriksa bahwa kode 9340, 9341, 9478-9480, 9793-9796, 9823-9827 dan 9841 belum tercantum pada fakta lain (uji fakta-perkara-u6.test.ts menjaga satu kode satu fakta).",
+  "tambahKode": {},
+  "fakta": {
+    "hibah.penghibah": {
+      "label": "Penghibah",
+      "tipe": "nama",
+      "kode": [
+        "9793"
+      ],
+      "kunciSaksi": "penghibah"
+    },
+    "hibah.bentuk": {
+      "label": "Bentuk dan tanggal hibah",
+      "tipe": "teks",
+      "kode": [
+        "9794"
+      ],
+      "kunciSaksi": "bentukHibah"
+    },
+    "hibah.objek": {
+      "label": "Benda yang dihibahkan",
+      "tipe": "teks",
+      "kode": [
+        "9795"
+      ],
+      "kunciSaksi": "objekHibah"
+    },
+    "hibah.penerima": {
+      "label": "Penerima hibah",
+      "tipe": "nama",
+      "kode": [
+        "9796"
+      ],
+      "kunciSaksi": "penerimaHibah"
+    },
+    "wakaf.wakif": {
+      "label": "Wakif",
+      "tipe": "nama",
+      "kode": [
+        "9823"
+      ],
+      "kunciSaksi": "wakif"
+    },
+    "wakaf.nazhir": {
+      "label": "Nazhir",
+      "tipe": "nama",
+      "kode": [
+        "9824"
+      ],
+      "kunciSaksi": "nazhir"
+    },
+    "wakaf.bentukIkrar": {
+      "label": "Bentuk dan tanggal ikrar wakaf",
+      "tipe": "teks",
+      "kode": [
+        "9825"
+      ],
+      "kunciSaksi": "bentukIkrar"
+    },
+    "wakaf.harta": {
+      "label": "Harta benda wakaf",
+      "tipe": "teks",
+      "kode": [
+        "9826"
+      ],
+      "kunciSaksi": "hartaWakaf"
+    },
+    "wakaf.peruntukan": {
+      "label": "Peruntukan wakaf",
+      "tipe": "teks",
+      "kode": [
+        "9827"
+      ],
+      "kunciSaksi": "peruntukanWakaf"
+    },
+    "wakaf.penguasa": {
+      "label": "Pihak yang menguasai harta benda wakaf",
+      "tipe": "teks",
+      "kode": [
+        "9841"
+      ],
+      "kunciSaksi": "penguasaWakaf"
+    },
+    "wasiat.bentuk": {
+      "label": "Bentuk dan tanggal wasiat",
+      "tipe": "teks",
+      "kode": [
+        "9478"
+      ],
+      "kunciSaksi": "bentukWasiat"
+    },
+    "wasiat.objek": {
+      "label": "Benda yang diwasiatkan",
+      "tipe": "teks",
+      "kode": [
+        "9479"
+      ],
+      "kunciSaksi": "objekWasiat"
+    },
+    "wasiat.penerima": {
+      "label": "Penerima wasiat",
+      "tipe": "teks",
+      "kode": [
+        "9480"
+      ],
+      "kunciSaksi": "penerimaWasiat"
+    },
+    "eksyar.akad": {
+      "label": "Akad yang disengketakan",
+      "tipe": "teks",
+      "kode": [
+        "9340"
+      ],
+      "kunciSaksi": "akad"
+    },
+    "eksyar.jumlahKewajiban": {
+      "label": "Jumlah kewajiban yang digugat",
+      "tipe": "rupiah",
+      "kode": [
+        "9341"
+      ],
+      "kunciSaksi": "jumlahUtang"
+    },
+    "eksyar.rincianPembiayaan": {
+      "label": "Rincian pembiayaan",
+      "tipe": "teks",
+      "kode": [
+        "4765"
+      ],
+      "kunciSaksi": "rincianPembiayaan"
+    },
+    "eksyar.angsuran": {
+      "label": "Angsuran dan jatuh tempo",
+      "tipe": "teks",
+      "kode": [
+        "4766"
+      ],
+      "kunciSaksi": "angsuranJatuhTempo"
+    },
+    "eksyar.suratPeringatan": {
+      "label": "Surat peringatan atau somasi",
+      "tipe": "daftar",
+      "kode": [
+        "4767"
+      ],
+      "kunciSaksi": "suratPeringatan"
+    },
+    "eksyar.agunan": {
+      "label": "Agunan atau jaminan",
+      "tipe": "teks",
+      "kode": [
+        "4768"
+      ],
+      "kunciSaksi": "agunan"
+    }
+  },
+  "gerbang": "Pendeteksi posita W2a-K2 (aleta_bot/services/isiJawabanSaksiKebendaan.js) hanya menghasilkan saran berkeyakinan 'ragu' pada jalur jawaban saksi; tidak ada entri gerbang-isian.json yang diperlukan. Isian yang DIKETIK petugas pada kode-kode di atas berkeyakinan 'pasti' dan ikut menjadi fakta bagi jawaban saksi lewat KODE_FAKTA (isiJawabanSaksiFakta.js)."
+}
