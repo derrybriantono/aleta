@@ -23,6 +23,18 @@ AKHIR = '/* === AKHIR W3a === */'
 MENU_KODE = {'penolakan-perkawinan': 'w3pk', 'perkawinan-campuran': 'w3pc', 'izin-kawin': 'w3ik', 'pengesahan-anak': 'w3pa', 'kelalaian-kewajiban': 'w3kk', 'hak-bekas-istri': 'w3hb'}
 
 
+def bersih_catatan(t):
+    """Catatan peta tampil ke petugas: tanpa nomor variabel (aturan tampilan tanpa kode teknis). Bagian kalimat yang menyebut nomor dibuang."""
+    k = r'(?:\b3[67]\d\d\b|\b(?:variabel|isian)\s+\d{4}\b)'
+    t = re.sub(r'\s*\(([^()]*?)' + k + r'[^()]*\)', '', t)
+    t = re.sub(r'(?:;\s*)?alasan di isian 3[67]\d\d', '', t)
+    bagian = re.split(r'(?<=[.;])\s+', t)
+    bagian = [x for x in bagian if not re.search(k, x)]
+    t = ' '.join(bagian)
+    t = re.sub(r'\s*;\s*[^;.]*\b3[67]\d\d\b[^;.]*', '', t)
+    return re.sub(r'\s{2,}', ' ', t).strip(' ;,')
+
+
 def baris_jenis(k, rows):
     """Daftar baris peta (status, keadaan, berkas_tanpa_rtf, catatan) satu jenis, urut deterministik; baris pertama = kunci jenis tanpa status."""
     nama = lambda r: r['berkas'][:-4] if r['berkas'].lower().endswith('.rtf') else r['berkas']  # noqa: E731
@@ -49,7 +61,7 @@ def baris_jenis(k, rows):
         status, keadaan = kk
         g = grup[kk]
         utama = g[0]
-        cat = utama['catatan'] or ''
+        cat = bersih_catatan(utama['catatan'] or '')
         if len(g) > 1:
             # konvensi peta: catatan yang diawali "varian: " memuat nama berkas varian (dibaca rekomendasi sebagai alternatif); catatan lain dibuang agar awalan tetap
             cat = 'varian: ' + '; '.join(nama(x) for x in g[1:])

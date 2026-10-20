@@ -434,6 +434,7 @@ export const ID_JENIS_PERKARA_SIPP: Readonly<Record<string, string>> = Object.fr
   "wali adhol": "363",
   kewarisan: "364",
   wasiat: "365",
+  hibah: "366", // I28 18 Okt (cermin abt.js)
   wakaf: "367",
   "lain-lain": "369",
   "lain-lain *)": "369",

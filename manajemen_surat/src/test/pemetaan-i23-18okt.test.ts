@@ -67,6 +67,7 @@ const put = (m: Parameters<typeof rekomendasiBlangko>[0]) => {
   return r.length ? { berkas: nama(r[0].berkas), folder: r[0].folder.replace(A, ""), menu: r[0].menu, semua: r.map((x) => nama(x.berkas)) } : null;
 };
 
+const W3A_PUTUSAN = ["5c Penolakan Perkawinan", "5d Perkawinan Campuran", "3a Izin Kawin", "8a Pengesahan Anak", "1e Kelalaian Kewajiban Suami Istri", "1f Hak Bekas Istri"]; // W3a 21 Okt: dijaga w3a-pemetaan-21okt.test.ts (fixture 17 Okt tidak memuatnya)
 describe("A. pohon dan menu", () => {
   it("15 putusan di 6c, 38 BAS di 6c - BAS, 3 varian hak asuh + nafkah di 6a ada di fixture", () => {
     for (const b of PUTUSAN_6C) expect(FIX.berkas, b).toContain(`${A}${NF}/${b}.rtf`);
@@ -90,7 +91,7 @@ describe("A. pohon dan menu", () => {
     const tanpa: string[] = [];
     for (const [kunci, b] of Object.entries(PETA_PUTUSAN_BAWAAN)) {
       const folder = b.blangko ? FOLDER_MENU_PUTUSAN[b.blangko] : undefined;
-      if (!folder) continue;
+      if (!folder || W3A_PUTUSAN.includes(folder)) continue;
       const semua = [b.berkas, ...(/^varian: /.test(b.catatan ?? "") ? (b.catatan ?? "").slice(8).split("; ").filter(Boolean) : [])];
       for (const n of semua) {
         dijangkau.add(`${folder}/${nama(n)}.rtf`);

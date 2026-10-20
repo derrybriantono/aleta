@@ -139,6 +139,7 @@ const put = (m: Parameters<typeof rekomendasiBlangko>[0]) => {
 const nama = (x: string) => x.replace(/\.rtf$/, "");
 
 // ---------------------------------------------------------------------------
+const W3A_PUTUSAN = ["5c Penolakan Perkawinan", "5d Perkawinan Campuran", "3a Izin Kawin", "8a Pengesahan Anak", "1e Kelalaian Kewajiban Suami Istri", "1f Hak Bekas Istri"]; // W3a 21 Okt: dijaga w3a-pemetaan-21okt.test.ts (fixture 17 Okt tidak memuatnya)
 describe("A. pohon: 106 berkas paket ada di fixture dan dijangkau peta bawaan", () => {
   it("106 berkas baru paket (37 gugatan + 38 kumulasi + 31 permohonan) ada di fixture server", () => {
     expect(new Set(BARU_I17).size).toBe(106);
@@ -150,7 +151,7 @@ describe("A. pohon: 106 berkas paket ada di fixture dan dijangkau peta bawaan", 
     const tanpa: string[] = [];
     for (const [kunci, b] of Object.entries(PETA_PUTUSAN_BAWAAN)) {
       const folder = b.blangko ? FOLDER_MENU_PUTUSAN[b.blangko] : undefined;
-      if (!folder) continue;
+      if (!folder || W3A_PUTUSAN.includes(folder)) continue;
       const semua = [b.berkas, ...(/^varian: /.test(b.catatan ?? "") ? (b.catatan ?? "").slice(8).split("; ").filter(Boolean) : [])];
       for (const n of semua) if (!FIX.berkas.includes(`${A}${folder}/${nama(n)}.rtf`)) tanpa.push(`${kunci} -> ${folder}/${n}`);
     }

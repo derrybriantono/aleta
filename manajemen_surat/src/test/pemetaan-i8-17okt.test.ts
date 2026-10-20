@@ -46,7 +46,7 @@ describe("A. berkas ada di folder menunya", () => {
   });
 
   it("tiap baris putusan bawaan yang menunjuk [03a]/[03b] mengarah ke berkas yang ADA di folder menunya", () => {
-    const baris = Object.entries(PETA_PUTUSAN_BAWAAN).filter(([k, b]) => /^\[03[ab]\]/.test(b.berkas) && !/^(wasiat|ekonomi syariah)\|/.test(k)); // wasiat/ES acara biasa: paket F22
+    const baris = Object.entries(PETA_PUTUSAN_BAWAAN).filter(([k, b]) => /^\[03[ab]\]/.test(b.berkas) && !/^(wasiat|ekonomi syariah|penolakan perkawinan|perkawinan campuran|izin kawin|pengesahan anak|kelalaian kewajiban suami istri|hak bekas istri)\|/.test(k)); // W3a 21 Okt: enam jenis baru dijaga w3a-pemetaan-21okt.test.ts // wasiat/ES acara biasa: paket F22
     expect(baris.map(([k]) => k).sort()).toEqual(
       [
         "cerai gugat|ditolak|kontradiktoir",
