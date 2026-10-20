@@ -83,7 +83,16 @@ describe("A. perilaku gerbang", () => {
 });
 
 describe("B. berkas gerbang jujur terhadap data ukur", () => {
-  const mentah = [baca("UKURAN-GERBANG-U6-ACAK.json"), baca("UKURAN-GERBANG-U6-TERSTRUKTUR.json")];
+  // Pengukuran awal U6 + pengukuran ulang G1 (21 Okt 2026) atas pengisi baru U1-U5; ukuran U2 (amar vs tab Anak, ditimpa hanya bila pembandingnya lebih banyak)
+  const mentah = [
+    baca("UKURAN-GERBANG-U6-ACAK.json"),
+    baca("UKURAN-GERBANG-U6-TERSTRUKTUR.json"),
+    baca("UKURAN-GERBANG-G1-KECIL.json"),
+    baca("UKURAN-GERBANG-G1-ACAK.json"),
+    baca("UKURAN-GERBANG-G1-TERSTRUKTUR.json"),
+  ];
+  const timpaU2 = baca("UKURAN-GERBANG-U2.json");
+  const dariU2 = (kode: string, asal: string) => timpaU2.kode?.[kode]?.asal?.[asal];
   const gabung: Record<string, { kode: string; asal: string; n: number; banding: number; cocok: number; perYakin: Record<string, { n: number }> }> = {};
   for (const m of mentah) {
     for (const [k, a] of Object.entries<any>(m.agregat)) {
@@ -105,10 +114,24 @@ describe("B. berkas gerbang jujur terhadap data ukur", () => {
     for (const a of Object.values(gabung)) {
       const e = gerbang.kode[a.kode]?.asal?.[a.asal];
       expect(e, `${a.kode}@${a.asal} hilang`).toBeTruthy();
-      expect([e.status, e.pangkatMaks], `${a.kode}@${a.asal}`).toEqual(aturan(a));
-      expect(e.n).toBe(a.n);
-      expect(e.banding).toBe(a.banding);
+      const u2 = dariU2(a.kode, a.asal);
+      if (u2 && u2.banding > a.banding) {
+        // pembanding lebih banyak menang atas pembacaan terstruktur tanpa pembanding
+        expect([e.status, e.pangkatMaks, e.n, e.banding, e.cocok], `${a.kode}@${a.asal} (ukuran U2)`).toEqual([u2.status, u2.pangkatMaks, u2.n, u2.banding, u2.cocok]);
+      } else {
+        expect([e.status, e.pangkatMaks], `${a.kode}@${a.asal}`).toEqual(aturan(a));
+        expect(e.n).toBe(a.n);
+        expect(e.banding).toBe(a.banding);
+      }
       dicek++;
+    }
+    // entri ukuran U2 yang tidak terdapat pada data mentah lokal
+    for (const [kode, ent] of Object.entries<any>(timpaU2.kode || {})) {
+      for (const [asal, v] of Object.entries<any>(ent.asal)) {
+        if (gabung[`${kode}@${asal}`]) continue;
+        expect(gerbang.kode[kode]?.asal?.[asal], `${kode}@${asal} (ukuran U2) hilang`).toMatchObject({ status: v.status, pangkatMaks: v.pangkatMaks, banding: v.banding });
+        dicek++;
+      }
     }
     expect(dicek).toBeGreaterThan(100);
     expect(Object.values<any>(gerbang.kode).reduce((j, e) => j + Object.keys(e.asal).length, 0)).toBe(dicek);

@@ -515,7 +515,7 @@ def bangun(v1):
     kat["pertanyaan"].sort(key=lambda p: p["urutan"])
     kat["catatanPetugas"] = list(kat["catatanPetugas"]) + [
         "Versi 2 (20 Okt 2026): keadaan pasangan pewaris (hidup, meninggal lebih dahulu, bercerai, berpisah), lebih dari seorang istri, anak di luar perkawinan, ahli waris belum dewasa atau diampu, kerabat tidak beragama Islam, harta peninggalan dan asalnya, wasiat, hutang, tidak ada sengketa, tujuan permohonan dan kesepakatan bagian (P3HP) ditambahkan; semua butir versi 1 dipertahankan.",
-        "Pilihan keadaan di borang menentukan butir yang tampil; jawaban 'berbeda' dan jawaban yang memuat titik-titik hanya kerangka: sesuaikan dengan keterangan saksi yang sesungguhnya.",
+        "Pilihan keadaan pada layar menentukan butir yang tampil; jawaban 'berbeda' dan jawaban yang memuat titik-titik hanya kerangka: sesuaikan dengan keterangan saksi yang sesungguhnya.",
         "Bagian masing-masing ahli waris (faraid) bukan keterangan saksi: usulan hitungan ada di isian hakim (variabel 4515) dan selalu 'ragu - periksa'.",
     ]
     # variabel yang dipakai butir baru dan tidak ada di kamus lama dideklarasikan sebagai variabelBaru

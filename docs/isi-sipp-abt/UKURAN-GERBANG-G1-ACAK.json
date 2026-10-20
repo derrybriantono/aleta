@@ -1,0 +1,3189 @@
+{
+ "perkara": 320,
+ "sampel": {
+  "346": 16,
+  "347": 95,
+  "354": 1,
+  "358": 1,
+  "360": 187,
+  "362": 19,
+  "363": 1
+ },
+ "agregat": {
+  "5197@posita": {
+   "kode": "5197",
+   "asal": "posita",
+   "nama": "Tgl Nikah",
+   "n": 246,
+   "banding": 158,
+   "cocok": 153,
+   "perYakin": {
+    "cukup": {
+     "n": 245,
+     "banding": 157,
+     "cocok": 152
+    },
+    "ragu": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "354": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "358": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 0
+    },
+    "360": {
+     "n": 244,
+     "banding": 156,
+     "cocok": 152
+    }
+   },
+   "rute": {
+    "sipp": 120,
+    "itsbat": 125,
+    "posita-lain": 1
+   },
+   "contohSalah": [
+    {
+     "usulan": "15 Desember 2015",
+     "petugas": "09 Desember 2023"
+    },
+    {
+     "usulan": "26 Desember 2022",
+     "petugas": "04 Oktober 2021"
+    },
+    {
+     "usulan": "26 Desember 2022",
+     "petugas": "04 Oktober 2021"
+    }
+   ]
+  },
+  "5178@posita": {
+   "kode": "5178",
+   "asal": "posita",
+   "nama": "KUA Kec.",
+   "n": 452,
+   "banding": 155,
+   "cocok": 153,
+   "perYakin": {
+    "ragu": {
+     "n": 243,
+     "banding": 75,
+     "cocok": 73
+    },
+    "cukup": {
+     "n": 190,
+     "banding": 77,
+     "cocok": 77
+    },
+    "pasti": {
+     "n": 19,
+     "banding": 3,
+     "cocok": 3
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 14,
+     "banding": 1,
+     "cocok": 1
+    },
+    "347": {
+     "n": 86,
+     "banding": 0,
+     "cocok": 0
+    },
+    "354": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "358": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "360": {
+     "n": 312,
+     "banding": 146,
+     "cocok": 144
+    },
+    "362": {
+     "n": 38,
+     "banding": 6,
+     "cocok": 6
+    }
+   },
+   "rute": {
+    "sipp": 262,
+    "itsbat": 170,
+    "posita-lain": 20
+   },
+   "contohSalah": [
+    {
+     "usulan": "Kecamatan Palolo, Kabupaten Sigi, Provinsi Sulawesi Tengah",
+     "petugas": "Kantor Urusan Agama Kecamatan Palolo, Kabupaten Sigi sehingga pernikahan tersebu"
+    },
+    {
+     "usulan": "Kecamatan Sindue, Kabupaten Donggala, Provinsi Sulawesi Tengah",
+     "petugas": "Kantor Urusan Agama Kecamatan Sindue"
+    }
+   ]
+  },
+  "0303@sipp": {
+   "kode": "0303",
+   "asal": "sipp",
+   "nama": "Tgl. pengumuman",
+   "n": 181,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 181,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 181,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 181
+   },
+   "contohSalah": []
+  },
+  "7211@sipp": {
+   "kode": "7211",
+   "asal": "sipp",
+   "nama": "Umur Pemohon I (laki-laki) saat menikah",
+   "n": 112,
+   "banding": 67,
+   "cocok": 65,
+   "perYakin": {
+    "ragu": {
+     "n": 112,
+     "banding": 67,
+     "cocok": 65
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 112,
+     "banding": 67,
+     "cocok": 65
+    }
+   },
+   "rute": {
+    "sipp": 112
+   },
+   "contohSalah": [
+    {
+     "usulan": "42 tahun",
+     "petugas": "41"
+    },
+    {
+     "usulan": "39 tahun",
+     "petugas": "40"
+    }
+   ]
+  },
+  "7212@sipp": {
+   "kode": "7212",
+   "asal": "sipp",
+   "nama": "Umur Pemohon II (perempuan) saat menikah",
+   "n": 115,
+   "banding": 68,
+   "cocok": 67,
+   "perYakin": {
+    "ragu": {
+     "n": 115,
+     "banding": 68,
+     "cocok": 67
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 115,
+     "banding": 68,
+     "cocok": 67
+    }
+   },
+   "rute": {
+    "sipp": 115
+   },
+   "contohSalah": [
+    {
+     "usulan": "32 tahun",
+     "petugas": "33"
+    }
+   ]
+  },
+  "5105@posita": {
+   "kode": "5105",
+   "asal": "posita",
+   "nama": "Alamat tempat menikah",
+   "n": 288,
+   "banding": 200,
+   "cocok": 184,
+   "perYakin": {
+    "cukup": {
+     "n": 286,
+     "banding": 198,
+     "cocok": 183
+    },
+    "ragu": {
+     "n": 2,
+     "banding": 2,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 15,
+     "banding": 2,
+     "cocok": 2
+    },
+    "347": {
+     "n": 86,
+     "banding": 11,
+     "cocok": 9
+    },
+    "354": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "358": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 0
+    },
+    "360": {
+     "n": 185,
+     "banding": 185,
+     "cocok": 172
+    }
+   },
+   "rute": {
+    "itsbat": 185,
+    "saksi": 101,
+    "sipp": 1,
+    "posita-lain": 1
+   },
+   "contohSalah": [
+    {
+     "usulan": "Kecamatan Banawa, Kabupaten Donggala, Provinsi Sulawesi Tengah",
+     "petugas": "wilayah hukum Kantor Urusan Agama Kecamatan Banawa, Kabupaten Donggala."
+    },
+    {
+     "usulan": "Kecamatan Pos, Kabupaten Poso, Provinsi Sulawesi Tengah",
+     "petugas": "Poso, Pada hari Senin tanggal 20 Juli 2020"
+    },
+    {
+     "usulan": "Kecamatan Labuan, Kabupaten Donggala, Provinsi Sulawesi Tengah",
+     "petugas": "di wilayah hukum Kantor Urusan Agama Kecamatan Labuan"
+    }
+   ]
+  },
+  "1217@posita": {
+   "kode": "1217",
+   "asal": "posita",
+   "nama": "Nama wali nikah",
+   "n": 187,
+   "banding": 183,
+   "cocok": 175,
+   "perYakin": {
+    "cukup": {
+     "n": 187,
+     "banding": 183,
+     "cocok": 175
+    }
+   },
+   "perJenis": {
+    "358": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "360": {
+     "n": 185,
+     "banding": 182,
+     "cocok": 174
+    },
+    "363": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "itsbat": 185,
+    "sipp": 1,
+    "posita-lain": 1
+   },
+   "contohSalah": [
+    {
+     "usulan": "Abd. Rifai",
+     "petugas": "Abd. Rivai"
+    },
+    {
+     "usulan": "Abas Lindungan",
+     "petugas": "berupa uang senilai Rp.250.000 dibayar tunai;"
+    },
+    {
+     "usulan": "Opo",
+     "petugas": "Iwan bin Sabali"
+    }
+   ]
+  },
+  "1046@posita": {
+   "kode": "1046",
+   "asal": "posita",
+   "nama": "Status wali nikah",
+   "n": 178,
+   "banding": 178,
+   "cocok": 167,
+   "perYakin": {
+    "cukup": {
+     "n": 178,
+     "banding": 178,
+     "cocok": 167
+    }
+   },
+   "perJenis": {
+    "358": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "360": {
+     "n": 176,
+     "banding": 176,
+     "cocok": 165
+    },
+    "363": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "rute": {
+    "itsbat": 176,
+    "sipp": 1,
+    "posita-lain": 1
+   },
+   "contohSalah": [
+    {
+     "usulan": "Adik Kandung Pemohon II",
+     "petugas": "saudara kandung Pemohon II"
+    },
+    {
+     "usulan": "Kakak Pemohon II",
+     "petugas": "Saudara Kandung Pemohon II"
+    },
+    {
+     "usulan": "Wali Hakim",
+     "petugas": "Abas Lindungan"
+    }
+   ]
+  },
+  "8087@posita": {
+   "kode": "8087",
+   "asal": "posita",
+   "nama": "Yang menikahkan",
+   "n": 144,
+   "banding": 144,
+   "cocok": 134,
+   "perYakin": {
+    "cukup": {
+     "n": 143,
+     "banding": 143,
+     "cocok": 133
+    },
+    "ragu": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "358": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "360": {
+     "n": 143,
+     "banding": 143,
+     "cocok": 133
+    }
+   },
+   "rute": {
+    "itsbat": 143,
+    "sipp": 1
+   },
+   "contohSalah": [
+    {
+     "usulan": "Wali nikah Pemohon II dan dihadiri saksi nikah bernama Fadlin",
+     "petugas": "Ayah Penggugat"
+    },
+    {
+     "usulan": "Ayah Kandung Pemohon II bernama Yasin",
+     "petugas": "Imam Masjid Desa Ogoamas II bernama Mursalim"
+    },
+    {
+     "usulan": "Paman Pemohon II bernama Ardin",
+     "petugas": "Ardi Paman Pemohon II"
+    }
+   ]
+  },
+  "0650@posita": {
+   "kode": "0650",
+   "asal": "posita",
+   "nama": "Saksi nikah 1",
+   "n": 161,
+   "banding": 161,
+   "cocok": 149,
+   "perYakin": {
+    "cukup": {
+     "n": 161,
+     "banding": 161,
+     "cocok": 149
+    }
+   },
+   "perJenis": {
+    "358": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "360": {
+     "n": 160,
+     "banding": 160,
+     "cocok": 148
+    }
+   },
+   "rute": {
+    "itsbat": 160,
+    "sipp": 1
+   },
+   "contohSalah": [
+    {
+     "usulan": "Badaruddin",
+     "petugas": "Badarudin"
+    },
+    {
+     "usulan": "Herman",
+     "petugas": "Jufri"
+    },
+    {
+     "usulan": "Marman",
+     "petugas": "Asmar"
+    }
+   ]
+  },
+  "0651@posita": {
+   "kode": "0651",
+   "asal": "posita",
+   "nama": "Saksi nikah 2",
+   "n": 157,
+   "banding": 157,
+   "cocok": 142,
+   "perYakin": {
+    "cukup": {
+     "n": 157,
+     "banding": 157,
+     "cocok": 142
+    }
+   },
+   "perJenis": {
+    "358": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "360": {
+     "n": 156,
+     "banding": 156,
+     "cocok": 141
+    }
+   },
+   "rute": {
+    "itsbat": 156,
+    "sipp": 1
+   },
+   "contohSalah": [
+    {
+     "usulan": "Masran",
+     "petugas": "Mustafa"
+    },
+    {
+     "usulan": "Hamdan",
+     "petugas": "Derman"
+    },
+    {
+     "usulan": "Dedi Rizaldi",
+     "petugas": "Takwin"
+    }
+   ]
+  },
+  "1001@posita": {
+   "kode": "1001",
+   "asal": "posita",
+   "nama": "Mas kawin",
+   "n": 181,
+   "banding": 181,
+   "cocok": 177,
+   "perYakin": {
+    "cukup": {
+     "n": 180,
+     "banding": 180,
+     "cocok": 176
+    },
+    "ragu": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "358": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "360": {
+     "n": 180,
+     "banding": 180,
+     "cocok": 176
+    }
+   },
+   "rute": {
+    "itsbat": 180,
+    "sipp": 1
+   },
+   "contohSalah": [
+    {
+     "usulan": "uang Rp. 110.000.,- tunai",
+     "petugas": "Rp110.000.00 (seratus sepuluh ribu rupiah) dibayar tunai"
+    },
+    {
+     "usulan": "seperangkat alat shalat,dibayar tunai",
+     "petugas": "berupa uang Rp1.100.000,- (satu juta seratus ribu rupiah)"
+    },
+    {
+     "usulan": "Uang Rp.110.000,- (seratus sepuluh ribu rupiah), tunai",
+     "petugas": "Rp.110.00,00.,- dibayar tunai"
+    }
+   ]
+  },
+  "1002@posita": {
+   "kode": "1002",
+   "asal": "posita",
+   "nama": "Status Pemohon I sebelum nikah",
+   "n": 187,
+   "banding": 187,
+   "cocok": 101,
+   "perYakin": {
+    "cukup": {
+     "n": 187,
+     "banding": 187,
+     "cocok": 101
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 187,
+     "banding": 187,
+     "cocok": 101
+    }
+   },
+   "rute": {
+    "itsbat": 187
+   },
+   "contohSalah": [
+    {
+     "usulan": "Perjaka",
+     "petugas": "bujang dengan umur 36 tahun"
+    },
+    {
+     "usulan": "Perjaka",
+     "petugas": "Jejaka"
+    },
+    {
+     "usulan": "Perjaka",
+     "petugas": "Jejaka"
+    }
+   ]
+  },
+  "1003@posita": {
+   "kode": "1003",
+   "asal": "posita",
+   "nama": "Status Pemohon II sebelum nikah",
+   "n": 188,
+   "banding": 188,
+   "cocok": 155,
+   "perYakin": {
+    "cukup": {
+     "n": 188,
+     "banding": 188,
+     "cocok": 155
+    }
+   },
+   "perJenis": {
+    "358": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "360": {
+     "n": 187,
+     "banding": 187,
+     "cocok": 154
+    }
+   },
+   "rute": {
+    "itsbat": 187,
+    "sipp": 1
+   },
+   "contohSalah": [
+    {
+     "usulan": "Perawan",
+     "petugas": "gadis dengan umur 34 tahun"
+    },
+    {
+     "usulan": "Perawan",
+     "petugas": "gadis dalam usia 18 tahun"
+    },
+    {
+     "usulan": "Perawan",
+     "petugas": "gadis dengan umur 24 tahun"
+    }
+   ]
+  },
+  "7211@posita": {
+   "kode": "7211",
+   "asal": "posita",
+   "nama": "Umur Pemohon I saat menikah",
+   "n": 178,
+   "banding": 65,
+   "cocok": 65,
+   "perYakin": {
+    "cukup": {
+     "n": 177,
+     "banding": 64,
+     "cocok": 64
+    },
+    "ragu": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "358": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "360": {
+     "n": 177,
+     "banding": 64,
+     "cocok": 64
+    }
+   },
+   "rute": {
+    "itsbat": 177,
+    "sipp": 1
+   },
+   "contohSalah": []
+  },
+  "7212@posita": {
+   "kode": "7212",
+   "asal": "posita",
+   "nama": "Umur Pemohon II saat menikah",
+   "n": 180,
+   "banding": 65,
+   "cocok": 64,
+   "perYakin": {
+    "cukup": {
+     "n": 179,
+     "banding": 64,
+     "cocok": 63
+    },
+    "ragu": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "358": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "360": {
+     "n": 179,
+     "banding": 64,
+     "cocok": 63
+    }
+   },
+   "rute": {
+    "itsbat": 179,
+    "sipp": 1
+   },
+   "contohSalah": [
+    {
+     "usulan": "15 tahun",
+     "petugas": "18"
+    }
+   ]
+  },
+  "0007@posita": {
+   "kode": "0007",
+   "asal": "posita",
+   "nama": "Telah dikaruniai anak",
+   "n": 265,
+   "banding": 170,
+   "cocok": 159,
+   "perYakin": {
+    "cukup": {
+     "n": 264,
+     "banding": 169,
+     "cocok": 158
+    },
+    "ragu": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 11,
+     "banding": 4,
+     "cocok": 4
+    },
+    "347": {
+     "n": 86,
+     "banding": 7,
+     "cocok": 7
+    },
+    "354": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "358": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "360": {
+     "n": 166,
+     "banding": 157,
+     "cocok": 146
+    }
+   },
+   "rute": {
+    "itsbat": 166,
+    "saksi": 97,
+    "sipp": 1,
+    "posita-lain": 1
+   },
+   "contohSalah": [
+    {
+     "usulan": "telah dikaruniai seorang anak",
+     "petugas": "memiliki seorang anak bernama Aiman Syaid, umur 2 tahun;"
+    },
+    {
+     "usulan": "telah dikaruniai seorang anak",
+     "petugas": "sudah dikaruniai anak 1 orang bernama Muhammad Arsya Alfatih bin Farry Fadly , u"
+    },
+    {
+     "usulan": "telah dikaruniai seorang anak",
+     "petugas": "belum dikaruniai anak"
+    }
+   ]
+  },
+  "8171@posita": {
+   "kode": "8171",
+   "asal": "posita",
+   "nama": "Tujuan itsbat: 'membutuhkan ... untuk ...'",
+   "n": 186,
+   "banding": 130,
+   "cocok": 83,
+   "perYakin": {
+    "ragu": {
+     "n": 186,
+     "banding": 130,
+     "cocok": 83
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 186,
+     "banding": 130,
+     "cocok": 83
+    }
+   },
+   "rute": {
+    "itsbat": 186
+   },
+   "contohSalah": [
+    {
+     "usulan": "mengurus Buku Nikah dan untuk kepentingan hukum lainnya",
+     "petugas": "memperoleh buku nikah dan keperluan lainnya"
+    },
+    {
+     "usulan": "mengurus Buku Nikah dan untuk kepentingan hukum lainnya",
+     "petugas": "pengurusan buku nikah dan keperluan lainnya"
+    },
+    {
+     "usulan": "mengurus Buku Nikah dan untuk kepentingan hukum lainnya",
+     "petugas": "pengurusan Akta Nikah dan keperluan lainnya"
+    }
+   ]
+  },
+  "0601@sipp": {
+   "kode": "0601",
+   "asal": "sipp",
+   "nama": "Umur calon mempelai pria",
+   "n": 15,
+   "banding": 8,
+   "cocok": 8,
+   "perYakin": {
+    "cukup": {
+     "n": 11,
+     "banding": 6,
+     "cocok": 6
+    },
+    "pasti": {
+     "n": 4,
+     "banding": 2,
+     "cocok": 2
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 15,
+     "banding": 8,
+     "cocok": 8
+    }
+   },
+   "rute": {
+    "sipp": 15
+   },
+   "contohSalah": []
+  },
+  "6331@sipp": {
+   "kode": "6331",
+   "asal": "sipp",
+   "nama": "Pekerjaan calon suami",
+   "n": 12,
+   "banding": 2,
+   "cocok": 1,
+   "perYakin": {
+    "ragu": {
+     "n": 12,
+     "banding": 2,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "354": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 0
+    },
+    "362": {
+     "n": 11,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "rute": {
+    "sipp": 12
+   },
+   "contohSalah": [
+    {
+     "usulan": "Mengurus RumahTangga",
+     "petugas": "Mengurus Rumah Tangga dengan penghasilan rata-rata sejumlah Rp... (... rupiah) p"
+    }
+   ]
+  },
+  "2029@sipp": {
+   "kode": "2029",
+   "asal": "sipp",
+   "nama": "Status calon mempelai pria",
+   "n": 16,
+   "banding": 7,
+   "cocok": 5,
+   "perYakin": {
+    "ragu": {
+     "n": 11,
+     "banding": 6,
+     "cocok": 4
+    },
+    "cukup": {
+     "n": 5,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 16,
+     "banding": 7,
+     "cocok": 5
+    }
+   },
+   "rute": {
+    "sipp": 16
+   },
+   "contohSalah": [
+    {
+     "usulan": "bujang",
+     "petugas": "duda mati"
+    },
+    {
+     "usulan": "bujang",
+     "petugas": "jejaka"
+    }
+   ]
+  },
+  "0606@sipp": {
+   "kode": "0606",
+   "asal": "sipp",
+   "nama": "Nama calon mempelai wanita",
+   "n": 18,
+   "banding": 16,
+   "cocok": 16,
+   "perYakin": {
+    "pasti": {
+     "n": 18,
+     "banding": 16,
+     "cocok": 16
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 18,
+     "banding": 16,
+     "cocok": 16
+    }
+   },
+   "rute": {
+    "sipp": 18
+   },
+   "contohSalah": []
+  },
+  "0607@sipp": {
+   "kode": "0607",
+   "asal": "sipp",
+   "nama": "Umur calon mempelai wanita",
+   "n": 17,
+   "banding": 13,
+   "cocok": 13,
+   "perYakin": {
+    "pasti": {
+     "n": 17,
+     "banding": 13,
+     "cocok": 13
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 17,
+     "banding": 13,
+     "cocok": 13
+    }
+   },
+   "rute": {
+    "sipp": 17
+   },
+   "contohSalah": []
+  },
+  "0349@sipp": {
+   "kode": "0349",
+   "asal": "sipp",
+   "nama": "Tanggal lahir calon mempelai wanita",
+   "n": 18,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 18,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 18,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 18
+   },
+   "contohSalah": []
+  },
+  "0609@sipp": {
+   "kode": "0609",
+   "asal": "sipp",
+   "nama": "Pendidikan calon mempelai wanita",
+   "n": 18,
+   "banding": 12,
+   "cocok": 7,
+   "perYakin": {
+    "cukup": {
+     "n": 18,
+     "banding": 12,
+     "cocok": 7
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 18,
+     "banding": 12,
+     "cocok": 7
+    }
+   },
+   "rute": {
+    "sipp": 18
+   },
+   "contohSalah": [
+    {
+     "usulan": "SLTP",
+     "petugas": "Sekolah Dasar"
+    },
+    {
+     "usulan": "SD",
+     "petugas": "SLTP"
+    },
+    {
+     "usulan": "SD",
+     "petugas": "Sekolah Dasar,"
+    }
+   ]
+  },
+  "0610@sipp": {
+   "kode": "0610",
+   "asal": "sipp",
+   "nama": "Pekerjaan calon mempelai wanita",
+   "n": 15,
+   "banding": 10,
+   "cocok": 2,
+   "perYakin": {
+    "ragu": {
+     "n": 15,
+     "banding": 10,
+     "cocok": 2
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 15,
+     "banding": 10,
+     "cocok": 2
+    }
+   },
+   "rute": {
+    "sipp": 15
+   },
+   "contohSalah": [
+    {
+     "usulan": "Pelajar",
+     "petugas": "Urusan Rumah Tangga"
+    },
+    {
+     "usulan": "Pelajar",
+     "petugas": "Mahasiswa"
+    },
+    {
+     "usulan": "Belum bekerja",
+     "petugas": "-"
+    }
+   ]
+  },
+  "2030@sipp": {
+   "kode": "2030",
+   "asal": "sipp",
+   "nama": "Status calon mempelai wanita",
+   "n": 17,
+   "banding": 3,
+   "cocok": 2,
+   "perYakin": {
+    "cukup": {
+     "n": 17,
+     "banding": 3,
+     "cocok": 2
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 17,
+     "banding": 3,
+     "cocok": 2
+    }
+   },
+   "rute": {
+    "sipp": 17
+   },
+   "contohSalah": [
+    {
+     "usulan": "gadis",
+     "petugas": "perawan"
+    }
+   ]
+  },
+  "3333@posita": {
+   "kode": "3333",
+   "asal": "posita",
+   "nama": "Kecamatan KUA yang menolak",
+   "n": 20,
+   "banding": 8,
+   "cocok": 7,
+   "perYakin": {
+    "cukup": {
+     "n": 20,
+     "banding": 8,
+     "cocok": 7
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 19,
+     "banding": 7,
+     "cocok": 6
+    },
+    "363": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "rute": {
+    "sipp": 19,
+    "posita-lain": 1
+   },
+   "contohSalah": [
+    {
+     "usulan": "Rio Pakava, Kabupaten Donggala",
+     "petugas": "Riopakava, Kabupaten Donggala"
+    }
+   ]
+  },
+  "0652@posita": {
+   "kode": "0652",
+   "asal": "posita",
+   "nama": "No. surat penolakan KUA",
+   "n": 19,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 19,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 19,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 19
+   },
+   "contohSalah": []
+  },
+  "0653@posita": {
+   "kode": "0653",
+   "asal": "posita",
+   "nama": "Tgl. surat penolakan KUA",
+   "n": 18,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 18,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 18,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 18
+   },
+   "contohSalah": []
+  },
+  "1666@posita": {
+   "kode": "1666",
+   "asal": "posita",
+   "nama": "Lama pacaran / saling mengenal",
+   "n": 36,
+   "banding": 5,
+   "cocok": 5,
+   "perYakin": {
+    "ragu": {
+     "n": 36,
+     "banding": 5,
+     "cocok": 5
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 36,
+     "banding": 5,
+     "cocok": 5
+    }
+   },
+   "rute": {
+    "sipp": 17,
+    "posita-lain": 19
+   },
+   "contohSalah": []
+  },
+  "1014@posita": {
+   "kode": "1014",
+   "asal": "posita",
+   "nama": "Eratnya hubungan calon",
+   "n": 39,
+   "banding": 23,
+   "cocok": 9,
+   "perYakin": {
+    "ragu": {
+     "n": 39,
+     "banding": 23,
+     "cocok": 9
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 38,
+     "banding": 22,
+     "cocok": 9
+    },
+    "363": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 19,
+    "posita-lain": 20
+   },
+   "contohSalah": [
+    {
+     "usulan": "telah saling mengenal selama 3 tahun, dan hubungan mereka telah sedemikian eratn",
+     "petugas": "anak para Pemohon tersebut telah saling mengenal dengan calon Suaminya selama 3 "
+    },
+    {
+     "usulan": "hubungan mereka telah sedemikian eratnya sehingga calon suami dan keluarga telah",
+     "petugas": "anak para Pemohon tersebut telah saling mengenal dengan calon Suaminya selama 3 "
+    },
+    {
+     "usulan": "telah saling mengenal selama 10 bulan, dan hubungan mereka telah sedemikian erat",
+     "petugas": "sudah berlangsung selama 10 bulan dan calon isteri telah hamil 28 Minggu (7 bula"
+    }
+   ]
+  },
+  "0340@sipp": {
+   "kode": "0340",
+   "asal": "sipp",
+   "nama": "Tempat lahir calon mempelai pria",
+   "n": 16,
+   "banding": 7,
+   "cocok": 6,
+   "perYakin": {
+    "ragu": {
+     "n": 16,
+     "banding": 7,
+     "cocok": 6
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 16,
+     "banding": 7,
+     "cocok": 6
+    }
+   },
+   "rute": {
+    "sipp": 16
+   },
+   "contohSalah": [
+    {
+     "usulan": "Parigi",
+     "petugas": "Siaga"
+    }
+   ]
+  },
+  "0348@sipp": {
+   "kode": "0348",
+   "asal": "sipp",
+   "nama": "Tanggal lahir calon mempelai pria",
+   "n": 16,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 16,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 16,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 16
+   },
+   "contohSalah": []
+  },
+  "0344@sipp": {
+   "kode": "0344",
+   "asal": "sipp",
+   "nama": "Tempat lahir calon mempelai wanita",
+   "n": 18,
+   "banding": 6,
+   "cocok": 6,
+   "perYakin": {
+    "cukup": {
+     "n": 18,
+     "banding": 6,
+     "cocok": 6
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 18,
+     "banding": 6,
+     "cocok": 6
+    }
+   },
+   "rute": {
+    "sipp": 18
+   },
+   "contohSalah": []
+  },
+  "0606@posita": {
+   "kode": "0606",
+   "asal": "posita",
+   "nama": "Nama calon mempelai wanita",
+   "n": 19,
+   "banding": 17,
+   "cocok": 17,
+   "perYakin": {
+    "cukup": {
+     "n": 19,
+     "banding": 17,
+     "cocok": 17
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 19,
+     "banding": 17,
+     "cocok": 17
+    }
+   },
+   "rute": {
+    "posita-lain": 19
+   },
+   "contohSalah": []
+  },
+  "0600@posita": {
+   "kode": "0600",
+   "asal": "posita",
+   "nama": "Nama calon mempelai pria",
+   "n": 19,
+   "banding": 14,
+   "cocok": 14,
+   "perYakin": {
+    "cukup": {
+     "n": 19,
+     "banding": 14,
+     "cocok": 14
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 19,
+     "banding": 14,
+     "cocok": 14
+    }
+   },
+   "rute": {
+    "posita-lain": 19
+   },
+   "contohSalah": []
+  },
+  "0607@posita": {
+   "kode": "0607",
+   "asal": "posita",
+   "nama": "Umur calon mempelai wanita",
+   "n": 19,
+   "banding": 15,
+   "cocok": 15,
+   "perYakin": {
+    "cukup": {
+     "n": 19,
+     "banding": 15,
+     "cocok": 15
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 19,
+     "banding": 15,
+     "cocok": 15
+    }
+   },
+   "rute": {
+    "posita-lain": 19
+   },
+   "contohSalah": []
+  },
+  "1551@posita": {
+   "kode": "1551",
+   "asal": "posita",
+   "nama": "Nama ayah calon pasangan anak para Pemohon",
+   "n": 19,
+   "banding": 3,
+   "cocok": 2,
+   "perYakin": {
+    "ragu": {
+     "n": 19,
+     "banding": 3,
+     "cocok": 2
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 19,
+     "banding": 3,
+     "cocok": 2
+    }
+   },
+   "rute": {
+    "posita-lain": 19
+   },
+   "contohSalah": [
+    {
+     "usulan": "Muksin",
+     "petugas": "Selamet"
+    }
+   ]
+  },
+  "5197@sipp": {
+   "kode": "5197",
+   "asal": "sipp",
+   "nama": "Tgl Nikah",
+   "n": 111,
+   "banding": 6,
+   "cocok": 5,
+   "perYakin": {
+    "pasti": {
+     "n": 111,
+     "banding": 6,
+     "cocok": 5
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 16,
+     "banding": 1,
+     "cocok": 1
+    },
+    "347": {
+     "n": 95,
+     "banding": 5,
+     "cocok": 4
+    }
+   },
+   "rute": {
+    "sipp": 111
+   },
+   "contohSalah": [
+    {
+     "usulan": "20 November 2022",
+     "petugas": "07 Maret 2020;"
+    }
+   ]
+  },
+  "7035@posita": {
+   "kode": "7035",
+   "asal": "posita",
+   "nama": "Yang meninggalkan rumah bersama",
+   "n": 92,
+   "banding": 86,
+   "cocok": 80,
+   "perYakin": {
+    "ragu": {
+     "n": 92,
+     "banding": 86,
+     "cocok": 80
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 13,
+     "banding": 11,
+     "cocok": 11
+    },
+    "347": {
+     "n": 79,
+     "banding": 75,
+     "cocok": 69
+    }
+   },
+   "rute": {
+    "sipp": 92
+   },
+   "contohSalah": [
+    {
+     "usulan": "Tergugat",
+     "petugas": "Penggugat"
+    },
+    {
+     "usulan": "Tergugat",
+     "petugas": "Penggugat"
+    },
+    {
+     "usulan": "Penggugat",
+     "petugas": "Tergugat"
+    }
+   ]
+  },
+  "8503@posita": {
+   "kode": "8503",
+   "asal": "posita",
+   "nama": "Alasan perceraian",
+   "n": 109,
+   "banding": 94,
+   "cocok": 52,
+   "perYakin": {
+    "ragu": {
+     "n": 109,
+     "banding": 94,
+     "cocok": 52
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 15,
+     "banding": 9,
+     "cocok": 6
+    },
+    "347": {
+     "n": 94,
+     "banding": 85,
+     "cocok": 46
+    }
+   },
+   "rute": {
+    "sipp": 109
+   },
+   "contohSalah": [
+    {
+     "usulan": "BF",
+     "petugas": "B"
+    },
+    {
+     "usulan": "F",
+     "petugas": "AF"
+    },
+    {
+     "usulan": "BF",
+     "petugas": "B"
+    }
+   ]
+  },
+  "0222@posita": {
+   "kode": "0222",
+   "asal": "posita",
+   "nama": "Awal Konflik",
+   "n": 99,
+   "banding": 86,
+   "cocok": 80,
+   "perYakin": {
+    "ragu": {
+     "n": 99,
+     "banding": 86,
+     "cocok": 80
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 13,
+     "banding": 10,
+     "cocok": 10
+    },
+    "347": {
+     "n": 86,
+     "banding": 76,
+     "cocok": 70
+    }
+   },
+   "rute": {
+    "saksi": 99
+   },
+   "contohSalah": [
+    {
+     "usulan": "bulan Januari 2014",
+     "petugas": "2017"
+    },
+    {
+     "usulan": "tahun 1974",
+     "petugas": "pada masa awal kehidupan rumah tangga Penggugat dengan Tergugat berjalan baik-ba"
+    },
+    {
+     "usulan": "bulan Agustus 2008",
+     "petugas": "bulan Januari 2015"
+    }
+   ]
+  },
+  "5227@posita": {
+   "kode": "5227",
+   "asal": "posita",
+   "nama": "Alasan-Alasan Cerai",
+   "n": 106,
+   "banding": 78,
+   "cocok": 10,
+   "perYakin": {
+    "ragu": {
+     "n": 106,
+     "banding": 78,
+     "cocok": 10
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 15,
+     "banding": 4,
+     "cocok": 1
+    },
+    "347": {
+     "n": 91,
+     "banding": 74,
+     "cocok": 9
+    }
+   },
+   "rute": {
+    "saksi": 106
+   },
+   "contohSalah": [
+    {
+     "usulan": "Tergugat berkata kasar yang memicu perselisihan terus-menerus dengan Penggugat",
+     "petugas": "Tergugat sering berkata kasar dan menuduh Penggugat berselingkuh saat Penggugat "
+    },
+    {
+     "usulan": "Tergugat malas bekerja serta menjadi pemakai obat terlarang yang memicu perselis",
+     "petugas": "Tergugat sejak awal malas bekerja dan tidak bertanggung jawab dalam memberikan n"
+    },
+    {
+     "usulan": "Tergugat menjalin hubungan dengan pihak lain, menjadi pemabuk, menjadi penjudi, ",
+     "petugas": "Tergugat sering mengonsumsi sabu-sabu dan minuman keras serta Tergugat juga seri"
+    }
+   ]
+  },
+  "0246@posita": {
+   "kode": "0246",
+   "asal": "posita",
+   "nama": "Pisah Rumah",
+   "n": 97,
+   "banding": 86,
+   "cocok": 84,
+   "perYakin": {
+    "ragu": {
+     "n": 97,
+     "banding": 86,
+     "cocok": 84
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 11,
+     "banding": 8,
+     "cocok": 8
+    },
+    "347": {
+     "n": 86,
+     "banding": 78,
+     "cocok": 76
+    }
+   },
+   "rute": {
+    "saksi": 97
+   },
+   "contohSalah": [
+    {
+     "usulan": "bulan April 2015",
+     "petugas": "bulan September 2018"
+    },
+    {
+     "usulan": "bulan Juni 2023",
+     "petugas": "bulan Juni 2024"
+    }
+   ]
+  },
+  "9944@posita": {
+   "kode": "9944",
+   "asal": "posita",
+   "nama": "Lama Pisah",
+   "n": 102,
+   "banding": 93,
+   "cocok": 90,
+   "perYakin": {
+    "ragu": {
+     "n": 102,
+     "banding": 93,
+     "cocok": 90
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 15,
+     "banding": 11,
+     "cocok": 9
+    },
+    "347": {
+     "n": 87,
+     "banding": 82,
+     "cocok": 81
+    }
+   },
+   "rute": {
+    "saksi": 102
+   },
+   "contohSalah": [
+    {
+     "usulan": "2 tahun 5 bulan",
+     "petugas": "4 (empat) tahun"
+    },
+    {
+     "usulan": "1 tahun 6 bulan",
+     "petugas": "8 (delapan) bulan"
+    },
+    {
+     "usulan": "1 hari",
+     "petugas": "7 bulan"
+    }
+   ]
+  },
+  "1268@posita": {
+   "kode": "1268",
+   "asal": "posita",
+   "nama": "Upaya Damai Keluarga",
+   "n": 99,
+   "banding": 95,
+   "cocok": 74,
+   "perYakin": {
+    "cukup": {
+     "n": 99,
+     "banding": 95,
+     "cocok": 74
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 12,
+     "banding": 10,
+     "cocok": 7
+    },
+    "347": {
+     "n": 87,
+     "banding": 85,
+     "cocok": 67
+    }
+   },
+   "rute": {
+    "saksi": 99
+   },
+   "contohSalah": [
+    {
+     "usulan": "belum pernah ada upaya untuk merukunkan Penggugat dan Tergugat",
+     "petugas": "pihak keluarga Penggugat telah berusaha untuk mendamaikan Penggugat dan Tergugat"
+    },
+    {
+     "usulan": "belum pernah ada upaya untuk merukunkan Penggugat dan Tergugat",
+     "petugas": "pihak keluarga Penggugat dan Tergugat telah berusaha untuk mendamaikan Penggugat"
+    },
+    {
+     "usulan": "belum pernah ada upaya untuk merukunkan Penggugat dan Tergugat",
+     "petugas": "pihak keluarga Penggugat telah berusaha untuk mendamaikan Penggugat dan Tergugat"
+    }
+   ]
+  },
+  "1006@posita": {
+   "kode": "1006",
+   "asal": "posita",
+   "nama": "Tempat tinggal setelah nikah",
+   "n": 108,
+   "banding": 12,
+   "cocok": 11,
+   "perYakin": {
+    "ragu": {
+     "n": 108,
+     "banding": 12,
+     "cocok": 11
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 16,
+     "banding": 4,
+     "cocok": 4
+    },
+    "347": {
+     "n": 92,
+     "banding": 8,
+     "cocok": 7
+    }
+   },
+   "rute": {
+    "saksi": 108
+   },
+   "contohSalah": [
+    {
+     "usulan": "rumah orangtua Penggugat di Desa Bulubete selama kurang lebih 2 hari. Setelah it",
+     "petugas": "Di rumah orang tua Penggugat di Desa Bulubete kemudian pindah ke rumah orang tua"
+    }
+   ]
+  },
+  "8570@posita": {
+   "kode": "8570",
+   "asal": "posita",
+   "nama": "Kediaman bersama terakhir",
+   "n": 108,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 108,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 16,
+     "banding": 0,
+     "cocok": 0
+    },
+    "347": {
+     "n": 92,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "saksi": 108
+   },
+   "contohSalah": []
+  },
+  "5127@posita": {
+   "kode": "5127",
+   "asal": "posita",
+   "nama": "Penyebab bertengkar (BAS saksi, sama dengan 5227)",
+   "n": 104,
+   "banding": 8,
+   "cocok": 2,
+   "perYakin": {
+    "ragu": {
+     "n": 104,
+     "banding": 8,
+     "cocok": 2
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 15,
+     "banding": 3,
+     "cocok": 1
+    },
+    "347": {
+     "n": 89,
+     "banding": 5,
+     "cocok": 1
+    }
+   },
+   "rute": {
+    "saksi": 104
+   },
+   "contohSalah": [
+    {
+     "usulan": "Tergugat melalaikan kewajiban nafkah lahir, bersikap temperamental, serta bersik",
+     "petugas": "sering terjadi perselisihan dan pertengkaran disebabkan Tergugat memiliki sifat "
+    },
+    {
+     "usulan": "Tergugat menjadi penjudi serta menjadi pemakai obat terlarang yang memicu persel",
+     "petugas": "Tergugat sering mengkonsumsi obat-obatan terlarang jenis sabu dan sering bermain"
+    },
+    {
+     "usulan": "Termohon berkata kasar, serta antara Pemohon dan Termohon sering terjadi perbeda",
+     "petugas": "Termohon melarang Pemohon berhubungan dengan anak kandungnya, Pemohon sering ber"
+    }
+   ]
+  },
+  "1025@posita": {
+   "kode": "1025",
+   "asal": "posita",
+   "nama": "Nama almarhum/almarhumah",
+   "n": 8,
+   "banding": 2,
+   "cocok": 2,
+   "perYakin": {
+    "ragu": {
+     "n": 7,
+     "banding": 1,
+     "cocok": 1
+    },
+    "cukup": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "354": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    },
+    "360": {
+     "n": 7,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "rute": {
+    "itsbat": 7,
+    "posita-lain": 1
+   },
+   "contohSalah": []
+  },
+  "8603@posita": {
+   "kode": "8603",
+   "asal": "posita",
+   "nama": "Nama anak yang dimohonkan (isian bila SIPP kosong)",
+   "n": 1,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "358": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "posita-lain": 1
+   },
+   "contohSalah": []
+  },
+  "8605@posita": {
+   "kode": "8605",
+   "asal": "posita",
+   "nama": "Pernikahan resmi/tercatat para Pemohon",
+   "n": 1,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "358": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "posita-lain": 1
+   },
+   "contohSalah": []
+  },
+  "2004@sipp": {
+   "kode": "2004",
+   "asal": "sipp",
+   "nama": "Kini anak tersebut diasuh oleh",
+   "n": 67,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 67,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 4,
+     "banding": 0,
+     "cocok": 0
+    },
+    "347": {
+     "n": 63,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 67
+   },
+   "contohSalah": []
+  },
+  "0007@sipp": {
+   "kode": "0007",
+   "asal": "sipp",
+   "nama": "Telah dikaruniai anak",
+   "n": 83,
+   "banding": 9,
+   "cocok": 9,
+   "perYakin": {
+    "cukup": {
+     "n": 83,
+     "banding": 9,
+     "cocok": 9
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 8,
+     "banding": 2,
+     "cocok": 2
+    },
+    "347": {
+     "n": 75,
+     "banding": 7,
+     "cocok": 7
+    }
+   },
+   "rute": {
+    "sipp": 83
+   },
+   "contohSalah": []
+  },
+  "8603@sipp": {
+   "kode": "8603",
+   "asal": "sipp",
+   "nama": "Nama anak yang dimohonkan",
+   "n": 83,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 83,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 8,
+     "banding": 0,
+     "cocok": 0
+    },
+    "347": {
+     "n": 75,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 83
+   },
+   "contohSalah": []
+  },
+  "5110@sipp": {
+   "kode": "5110",
+   "asal": "sipp",
+   "nama": "Nama anak",
+   "n": 83,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 83,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 8,
+     "banding": 0,
+     "cocok": 0
+    },
+    "347": {
+     "n": 75,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 83
+   },
+   "contohSalah": []
+  },
+  "0709@sipp": {
+   "kode": "0709",
+   "asal": "sipp",
+   "nama": "Hubungan Penggugat (rekonvensi) dengan anak",
+   "n": 83,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 83,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 8,
+     "banding": 0,
+     "cocok": 0
+    },
+    "347": {
+     "n": 75,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 83
+   },
+   "contohSalah": []
+  },
+  "0711@sipp": {
+   "kode": "0711",
+   "asal": "sipp",
+   "nama": "Hubungan Tergugat (rekonvensi) dengan anak",
+   "n": 83,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 83,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 8,
+     "banding": 0,
+     "cocok": 0
+    },
+    "347": {
+     "n": 75,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 83
+   },
+   "contohSalah": []
+  },
+  "5111@posita": {
+   "kode": "5111",
+   "asal": "posita",
+   "nama": "Umur anak",
+   "n": 64,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 64,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 7,
+     "banding": 0,
+     "cocok": 0
+    },
+    "347": {
+     "n": 57,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 64
+   },
+   "contohSalah": []
+  },
+  "1357@posita": {
+   "kode": "1357",
+   "asal": "posita",
+   "nama": "Alasan wali nikah bukan ayah ('karena ayah kandung ... meninggal')",
+   "n": 15,
+   "banding": 4,
+   "cocok": 3,
+   "perYakin": {
+    "ragu": {
+     "n": 15,
+     "banding": 4,
+     "cocok": 3
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 15,
+     "banding": 4,
+     "cocok": 3
+    }
+   },
+   "rute": {
+    "itsbat": 15
+   },
+   "contohSalah": [
+    {
+     "usulan": ", karena Ayah Pemohon I berada jauh",
+     "petugas": ", karena ayah kandung Pemohon II telah meninggal dunia"
+    }
+   ]
+  },
+  "2004@posita": {
+   "kode": "2004",
+   "asal": "posita",
+   "nama": "kini anak tersebut diasuh oleh",
+   "n": 8,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 8,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 3,
+     "banding": 0,
+     "cocok": 0
+    },
+    "347": {
+     "n": 5,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 8
+   },
+   "contohSalah": []
+  },
+  "1246@posita": {
+   "kode": "1246",
+   "asal": "posita",
+   "nama": "Tanggal meninggal",
+   "n": 5,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 5,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 5,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "itsbat": 5
+   },
+   "contohSalah": []
+  },
+  "1247@posita": {
+   "kode": "1247",
+   "asal": "posita",
+   "nama": "Sebab meninggal",
+   "n": 1,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "itsbat": 1
+   },
+   "contohSalah": []
+  },
+  "1325@posita": {
+   "kode": "1325",
+   "asal": "posita",
+   "nama": "No. akta cerai istri dengan suami sebelumnya (bukti)",
+   "n": 2,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "itsbat": 2
+   },
+   "contohSalah": []
+  },
+  "1331@posita": {
+   "kode": "1331",
+   "asal": "posita",
+   "nama": "Penerbit akta cerai istri dengan suami sebelumnya (bukti)",
+   "n": 2,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "itsbat": 2
+   },
+   "contohSalah": []
+  },
+  "0600@sipp": {
+   "kode": "0600",
+   "asal": "sipp",
+   "nama": "Nama calon mempelai pria",
+   "n": 15,
+   "banding": 11,
+   "cocok": 11,
+   "perYakin": {
+    "pasti": {
+     "n": 15,
+     "banding": 11,
+     "cocok": 11
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 15,
+     "banding": 11,
+     "cocok": 11
+    }
+   },
+   "rute": {
+    "sipp": 15
+   },
+   "contohSalah": []
+  },
+  "0601@posita": {
+   "kode": "0601",
+   "asal": "posita",
+   "nama": "Umur calon mempelai pria",
+   "n": 4,
+   "banding": 2,
+   "cocok": 2,
+   "perYakin": {
+    "cukup": {
+     "n": 4,
+     "banding": 2,
+     "cocok": 2
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 4,
+     "banding": 2,
+     "cocok": 2
+    }
+   },
+   "rute": {
+    "posita-lain": 4
+   },
+   "contohSalah": []
+  },
+  "0999@posita": {
+   "kode": "0999",
+   "asal": "posita",
+   "nama": "Umur kandungan",
+   "n": 5,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 5,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "362": {
+     "n": 5,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "posita-lain": 5
+   },
+   "contohSalah": []
+  },
+  "1321@posita": {
+   "kode": "1321",
+   "asal": "posita",
+   "nama": "No. akta cerai suami dengan istri sebelumnya (bukti)",
+   "n": 2,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "itsbat": 2
+   },
+   "contohSalah": []
+  },
+  "1324@posita": {
+   "kode": "1324",
+   "asal": "posita",
+   "nama": "Penerbit akta cerai suami dengan istri sebelumnya (bukti)",
+   "n": 1,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "itsbat": 1
+   },
+   "contohSalah": []
+  },
+  "0132@sipp": {
+   "kode": "0132",
+   "asal": "sipp",
+   "nama": "Tgl. Register Kuasa Khusus Penggugat",
+   "n": 6,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "pasti": {
+     "n": 6,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0
+    },
+    "347": {
+     "n": 3,
+     "banding": 0,
+     "cocok": 0
+    },
+    "354": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 6
+   },
+   "contohSalah": []
+  },
+  "8539@sipp": {
+   "kode": "8539",
+   "asal": "sipp",
+   "nama": "No. Register Kuasa Khusus Penggugat",
+   "n": 9,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "pasti": {
+     "n": 9,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0
+    },
+    "347": {
+     "n": 6,
+     "banding": 0,
+     "cocok": 0
+    },
+    "354": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 9
+   },
+   "contohSalah": []
+  },
+  "8899@sipp": {
+   "kode": "8899",
+   "asal": "sipp",
+   "nama": "Pokok kesepakatan perdamaian sebagian",
+   "n": 4,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 4,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 3,
+     "banding": 0,
+     "cocok": 0
+    },
+    "347": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 4
+   },
+   "contohSalah": []
+  },
+  "1183@sipp": {
+   "kode": "1183",
+   "asal": "sipp",
+   "nama": "Tgl. batas waktu ikrar talak",
+   "n": 16,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 16,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 16,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 16
+   },
+   "contohSalah": []
+  },
+  "9686@posita": {
+   "kode": "9686",
+   "asal": "posita",
+   "nama": "Alasan Pemohon tidak mencatatkan pernikahan",
+   "n": 5,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 5,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 5,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 5
+   },
+   "contohSalah": []
+  },
+  "4106@sipp": {
+   "kode": "4106",
+   "asal": "sipp",
+   "nama": "Keadaan anak",
+   "n": 10,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 10,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "347": {
+     "n": 10,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 10
+   },
+   "contohSalah": []
+  },
+  "0185@sipp": {
+   "kode": "0185",
+   "asal": "sipp",
+   "nama": "Tgl. surat kuasa Tergugat/Termohon",
+   "n": 2,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "346": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 2
+   },
+   "contohSalah": []
+  },
+  "1154@sipp": {
+   "kode": "1154",
+   "asal": "sipp",
+   "nama": "Nomor surat permintaan bantuan panggilan",
+   "n": 2,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    },
+    "pasti": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "347": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    },
+    "360": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 2
+   },
+   "contohSalah": []
+  },
+  "1232@sipp": {
+   "kode": "1232",
+   "asal": "sipp",
+   "nama": "Tanggal surat",
+   "n": 2,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    },
+    "pasti": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "347": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    },
+    "360": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 2
+   },
+   "contohSalah": []
+  },
+  "5230@sipp": {
+   "kode": "5230",
+   "asal": "sipp",
+   "nama": "Ongkos panggilan permintaan bantuan",
+   "n": 2,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "347": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    },
+    "360": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 2
+   },
+   "contohSalah": []
+  },
+  "1230@posita": {
+   "kode": "1230",
+   "asal": "posita",
+   "nama": "Tanggal meninggal orang tua anak",
+   "n": 1,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "354": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "posita-lain": 1
+   },
+   "contohSalah": []
+  },
+  "5110@posita": {
+   "kode": "5110",
+   "asal": "posita",
+   "nama": "Nama anak yang dimohonkan perwalian",
+   "n": 1,
+   "banding": 1,
+   "cocok": 1,
+   "perYakin": {
+    "ragu": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "354": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "rute": {
+    "posita-lain": 1
+   },
+   "contohSalah": []
+  },
+  "0709@posita": {
+   "kode": "0709",
+   "asal": "posita",
+   "nama": "Pemohon dari sisi anak (ibu/bapak kandung)",
+   "n": 1,
+   "banding": 1,
+   "cocok": 1,
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "354": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "rute": {
+    "posita-lain": 1
+   },
+   "contohSalah": []
+  },
+  "0712@posita": {
+   "kode": "0712",
+   "asal": "posita",
+   "nama": "Orang tua yang meninggal dari sisi anak",
+   "n": 1,
+   "banding": 1,
+   "cocok": 1,
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "354": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "rute": {
+    "posita-lain": 1
+   },
+   "contohSalah": []
+  },
+  "1002@sipp": {
+   "kode": "1002",
+   "asal": "sipp",
+   "nama": "Status Pemohon sebelum nikah",
+   "n": 1,
+   "banding": 1,
+   "cocok": 1,
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "363": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "rute": {
+    "sipp": 1
+   },
+   "contohSalah": []
+  },
+  "6331@posita": {
+   "kode": "6331",
+   "asal": "posita",
+   "nama": "Pekerjaan calon suami",
+   "n": 1,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "363": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "sipp": 1
+   },
+   "contohSalah": []
+  },
+  "1029@posita": {
+   "kode": "1029",
+   "asal": "posita",
+   "nama": "Nama calon suami",
+   "n": 1,
+   "banding": 1,
+   "cocok": 1,
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "363": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "rute": {
+    "posita-lain": 1
+   },
+   "contohSalah": []
+  },
+  "1030@posita": {
+   "kode": "1030",
+   "asal": "posita",
+   "nama": "Umur calon suami",
+   "n": 1,
+   "banding": 1,
+   "cocok": 1,
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "perJenis": {
+    "363": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 1
+    }
+   },
+   "rute": {
+    "posita-lain": 1
+   },
+   "contohSalah": []
+  },
+  "6087@posita": {
+   "kode": "6087",
+   "asal": "posita",
+   "nama": "Alasan wali nikah menolak",
+   "n": 1,
+   "banding": 1,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "363": {
+     "n": 1,
+     "banding": 1,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "posita-lain": 1
+   },
+   "contohSalah": [
+    {
+     "usulan": "karena Ayah Pemohon mempunyai hubungan yang kurang baik dengan Pemohon, sehingga",
+     "petugas": "karena tetap tidak merestui dan enggan menjadi wali pernikahan Pemohon;"
+    }
+   ]
+  },
+  "9203@posita": {
+   "kode": "9203",
+   "asal": "posita",
+   "nama": "Wali Adhal: hubungan wali dengan Pemohon",
+   "n": 1,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "363": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "posita-lain": 1
+   },
+   "contohSalah": []
+  },
+  "9206@posita": {
+   "kode": "9206",
+   "asal": "posita",
+   "nama": "Wali Adhal: wilayah KUA wali hakim",
+   "n": 1,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "ragu": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "363": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "posita-lain": 1
+   },
+   "contohSalah": []
+  },
+  "5015@posita": {
+   "kode": "5015",
+   "asal": "posita",
+   "nama": "Tanggal meninggal istri sebelumnya Pemohon I",
+   "n": 1,
+   "banding": 0,
+   "cocok": 0,
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "perJenis": {
+    "360": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0
+    }
+   },
+   "rute": {
+    "itsbat": 1
+   },
+   "contohSalah": []
+  }
+ }
+}
