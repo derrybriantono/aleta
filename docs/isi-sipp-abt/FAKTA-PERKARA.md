@@ -118,3 +118,13 @@ Pokok pembuktian (`pernikahan, kediaman, anak, penyebab, pisah, nafkah, damai, h
 - saat berjalan, rute `/abt/usulan` menerapkan gerbang pada semua usulan (sipp, saksi, itsbat, posita-lain): kode+asal TANPA ukuran atau berstatus saran diturunkan menjadi "ragu" (`keyakinanSemula` dicatat), pasti dibatasi `pangkatMaks`; kalimat ketepatan masuk `catatan` (ikon i) dan objek `gerbang` {status, n, banding, cocok, persen}; isian petugas dan keyakinan non-otomatis tidak disentuh;
 - membangun ulang (setelah menambah pengisi): `ALETA_BOT_DB5_NAME=tidak_ada node scripts/isi-sipp-abt/ukur-gerbang-u6.cjs --maks 900 --kerja 5 --mentah <acak.json>` lalu `--khusus 45 --mentah <terstruktur.json>` lalu `--dari-mentah acak.json,terstruktur.json --tulis` (butuh XAMPP lokal `sipp_donggala` + `aps_badilag`; set `ALETA_GERBANG_ISIAN=mati` bila mengukur lewat rute agar penurunan tidak mengacaukan ukuran);
 - penjaga: uji `gerbang-isian-u6.test.ts` memindai berkas pengisi (`abtIsian*.js`, `isiOtomatis*.js`, `isiOtomatisS5/*`, termasuk berkas BARU) dan GAGAL bila ada kode yang ditulis dengan pasti/cukup tanpa entri terukur atau tanpa catatan `belumTerukur`; juga menghitung ulang seluruh entri dari data ukur mentah (`UKURAN-GERBANG-U6-*.json`) sehingga tidak ada yang dilonggarkan dengan tangan.
+
+## Hasil ukur (20 Okt 2026, salinan lokal sipp_donggala + aps_badilag; pembanding = isian petugas/hakim)
+
+| yang diukur | berkas mentah | hasil |
+| --- | --- | --- |
+| Petitum berbutir atas 3.266 perkara 2023+ | `UKURAN-PETITUM-U6.json` | 10.371 butir; 99,0% dikenali jenisnya (sisa "lain" tidak dikarang); jumlah butir = jumlah baris bernomor pada 3.254 dari 3.266 perkara (99,6%) |
+| Fakta bersama atas 300 perkara | `UKURAN-FAKTA-U6.json` | 2.724 pasangan fakta-vs-isian petugas, 86,9% cocok; pengisi tunggal lama hanya menjangkau 541 pasangan (87,4%) - jangkauan sekitar 5x dengan ketepatan setara. Fakta yang ditandai bertentangan 88,7% cocok vs 86,8% yang tidak: penanda pertentangan belum membedakan salah-benar dengan tajam (jangan dijadikan satu-satunya alasan menolak nilai) |
+| Gerbang atas 1.207 perkara | `UKURAN-GERBANG-U6-ACAK.json`, `-TERSTRUKTUR.json`, `gerbang-isian.json` | 111 pasangan (kode, asal): 26 otomatis, 15 terstruktur, 70 saran; 7 kode `belumTerukur` |
+
+Temuan yang dibawa gerbang (sebelumnya terisi sendiri, kini saran): status Pemohon sebelum nikah (1002: 50% cocok, beda istilah perjaka/jejaka), 1003 (84%), upaya damai 1268 (74%), tujuan itsbat 8171 (66%), huruf alasan 8503 (61%), alasan-alasan cerai 5227 (16%), pendidikan/pekerjaan calon mempelai (68%/35%).

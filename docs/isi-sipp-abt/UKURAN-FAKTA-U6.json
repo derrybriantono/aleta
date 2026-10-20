@@ -2,45 +2,45 @@
  "diukur": "2026-10-20",
  "cara": "scripts/isi-sipp-abt/ukur-fakta-u6.cjs: faktaPerkara() tanpa isian petugas vs aps_badilag.abt_data_teks (pembanding = isian petugas/hakim)",
  "perkara": 300,
- "pasangan": 2643,
+ "pasangan": 2724,
  "keseluruhan": {
   "fakta": {
-   "n": 2643,
-   "cocok": 2218,
-   "persen": 83.9
+   "n": 2724,
+   "cocok": 2368,
+   "persen": 86.9
   },
   "pengisiTunggal": {
-   "n": 560,
-   "cocok": 498,
-   "persen": 88.9
+   "n": 541,
+   "cocok": 473,
+   "persen": 87.4
   },
   "ditandaiBertentangan": {
-   "n": 179,
-   "cocok": 160,
-   "persen": 89.4
+   "n": 186,
+   "cocok": 165,
+   "persen": 88.7
   },
   "tidakBertentangan": {
-   "n": 2464,
-   "cocok": 2058,
-   "persen": 83.5
+   "n": 2538,
+   "cocok": 2203,
+   "persen": 86.8
   }
  },
  "kodeSetaraVsPetugas": {
-  "n": 0,
+  "n": 1,
   "cocok": 0,
-  "persen": null
+  "persen": 0
  },
  "perFakta": {
   "konflik.pergi": {
    "fakta": {
-    "n": 87,
-    "cocok": 83,
-    "persen": 95.4
+    "n": 79,
+    "cocok": 70,
+    "persen": 88.6
    },
    "pengisiTunggal": {
-    "n": 87,
-    "cocok": 83,
-    "persen": 95.4
+    "n": 79,
+    "cocok": 70,
+    "persen": 88.6
    },
    "bertentangan": {
     "n": 0,
@@ -48,27 +48,27 @@
     "persen": null
    },
    "tenang": {
-    "n": 87,
-    "cocok": 83,
-    "persen": 95.4
+    "n": 79,
+    "cocok": 70,
+    "persen": 88.6
    },
    "perYakin": {
     "cukup": {
-     "n": 87,
-     "cocok": 83
+     "n": 79,
+     "cocok": 70
     }
    }
   },
   "konflik.hurufAlasan": {
    "fakta": {
-    "n": 91,
-    "cocok": 54,
-    "persen": 59.3
+    "n": 82,
+    "cocok": 50,
+    "persen": 61
    },
    "pengisiTunggal": {
-    "n": 91,
-    "cocok": 54,
-    "persen": 59.3
+    "n": 82,
+    "cocok": 50,
+    "persen": 61
    },
    "bertentangan": {
     "n": 0,
@@ -76,22 +76,22 @@
     "persen": null
    },
    "tenang": {
-    "n": 91,
-    "cocok": 54,
-    "persen": 59.3
+    "n": 82,
+    "cocok": 50,
+    "persen": 61
    },
    "perYakin": {
     "ragu": {
-     "n": 91,
-     "cocok": 54
+     "n": 82,
+     "cocok": 50
     }
    }
   },
   "konflik.awal": {
    "fakta": {
-    "n": 87,
-    "cocok": 83,
-    "persen": 95.4
+    "n": 83,
+    "cocok": 81,
+    "persen": 97.6
    },
    "pengisiTunggal": {
     "n": 0,
@@ -104,22 +104,22 @@
     "persen": null
    },
    "tenang": {
-    "n": 87,
-    "cocok": 83,
-    "persen": 95.4
+    "n": 83,
+    "cocok": 81,
+    "persen": 97.6
    },
    "perYakin": {
     "cukup": {
-     "n": 87,
-     "cocok": 83
+     "n": 83,
+     "cocok": 81
     }
    }
   },
   "konflik.pisahSejak": {
    "fakta": {
-    "n": 84,
-    "cocok": 80,
-    "persen": 95.2
+    "n": 79,
+    "cocok": 74,
+    "persen": 93.7
    },
    "pengisiTunggal": {
     "n": 0,
@@ -132,22 +132,22 @@
     "persen": null
    },
    "tenang": {
-    "n": 84,
-    "cocok": 80,
-    "persen": 95.2
+    "n": 79,
+    "cocok": 74,
+    "persen": 93.7
    },
    "perYakin": {
     "cukup": {
-     "n": 84,
-     "cocok": 80
+     "n": 79,
+     "cocok": 74
     }
    }
   },
   "konflik.lamaPisah": {
    "fakta": {
-    "n": 96,
-    "cocok": 92,
-    "persen": 95.8
+    "n": 84,
+    "cocok": 78,
+    "persen": 92.9
    },
    "pengisiTunggal": {
     "n": 0,
@@ -160,22 +160,22 @@
     "persen": null
    },
    "tenang": {
-    "n": 96,
-    "cocok": 92,
-    "persen": 95.8
+    "n": 84,
+    "cocok": 78,
+    "persen": 92.9
    },
    "perYakin": {
     "cukup": {
-     "n": 96,
-     "cocok": 92
+     "n": 84,
+     "cocok": 78
     }
    }
   },
   "nikah.tempat": {
    "fakta": {
-    "n": 190,
-    "cocok": 168,
-    "persen": 88.4
+    "n": 194,
+    "cocok": 163,
+    "persen": 84
    },
    "pengisiTunggal": {
     "n": 1,
@@ -183,31 +183,35 @@
     "persen": 100
    },
    "bertentangan": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
+    "n": 4,
+    "cocok": 3,
+    "persen": 75
    },
    "tenang": {
     "n": 190,
-    "cocok": 168,
-    "persen": 88.4
+    "cocok": 160,
+    "persen": 84.2
    },
    "perYakin": {
     "cukup": {
-     "n": 169,
-     "cocok": 155
+     "n": 163,
+     "cocok": 150
+    },
+    "ragu": {
+     "n": 4,
+     "cocok": 3
     },
     "pasti": {
-     "n": 21,
-     "cocok": 13
+     "n": 27,
+     "cocok": 10
     }
    }
   },
   "nikah.wali.nama": {
    "fakta": {
-    "n": 176,
-    "cocok": 171,
-    "persen": 97.2
+    "n": 184,
+    "cocok": 173,
+    "persen": 94
    },
    "pengisiTunggal": {
     "n": 1,
@@ -220,22 +224,22 @@
     "persen": null
    },
    "tenang": {
-    "n": 176,
-    "cocok": 171,
-    "persen": 97.2
+    "n": 184,
+    "cocok": 173,
+    "persen": 94
    },
    "perYakin": {
     "cukup": {
-     "n": 176,
-     "cocok": 171
+     "n": 184,
+     "cocok": 173
     }
    }
   },
   "nikah.wali.hubungan": {
    "fakta": {
-    "n": 172,
-    "cocok": 162,
-    "persen": 94.2
+    "n": 187,
+    "cocok": 172,
+    "persen": 92
    },
    "pengisiTunggal": {
     "n": 1,
@@ -248,106 +252,22 @@
     "persen": null
    },
    "tenang": {
-    "n": 172,
-    "cocok": 162,
-    "persen": 94.2
+    "n": 187,
+    "cocok": 172,
+    "persen": 92
    },
    "perYakin": {
     "cukup": {
-     "n": 172,
-     "cocok": 162
-    }
-   }
-  },
-  "nikah.penikah": {
-   "fakta": {
-    "n": 145,
-    "cocok": 135,
-    "persen": 93.1
-   },
-   "pengisiTunggal": {
-    "n": 1,
-    "cocok": 1,
-    "persen": 100
-   },
-   "bertentangan": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
-   },
-   "tenang": {
-    "n": 145,
-    "cocok": 135,
-    "persen": 93.1
-   },
-   "perYakin": {
-    "cukup": {
-     "n": 145,
-     "cocok": 135
-    }
-   }
-  },
-  "nikah.saksi1": {
-   "fakta": {
-    "n": 159,
-    "cocok": 146,
-    "persen": 91.8
-   },
-   "pengisiTunggal": {
-    "n": 1,
-    "cocok": 1,
-    "persen": 100
-   },
-   "bertentangan": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
-   },
-   "tenang": {
-    "n": 159,
-    "cocok": 146,
-    "persen": 91.8
-   },
-   "perYakin": {
-    "cukup": {
-     "n": 159,
-     "cocok": 146
-    }
-   }
-  },
-  "nikah.saksi2": {
-   "fakta": {
-    "n": 151,
-    "cocok": 136,
-    "persen": 90.1
-   },
-   "pengisiTunggal": {
-    "n": 1,
-    "cocok": 1,
-    "persen": 100
-   },
-   "bertentangan": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
-   },
-   "tenang": {
-    "n": 151,
-    "cocok": 136,
-    "persen": 90.1
-   },
-   "perYakin": {
-    "cukup": {
-     "n": 151,
-     "cocok": 136
+     "n": 187,
+     "cocok": 172
     }
    }
   },
   "nikah.mahar": {
    "fakta": {
-    "n": 183,
-    "cocok": 179,
-    "persen": 97.8
+    "n": 192,
+    "cocok": 186,
+    "persen": 96.9
    },
    "pengisiTunggal": {
     "n": 1,
@@ -355,36 +275,36 @@
     "persen": 100
    },
    "bertentangan": {
-    "n": 75,
-    "cocok": 73,
-    "persen": 97.3
+    "n": 80,
+    "cocok": 77,
+    "persen": 96.3
    },
    "tenang": {
-    "n": 108,
-    "cocok": 106,
-    "persen": 98.1
+    "n": 112,
+    "cocok": 109,
+    "persen": 97.3
    },
    "perYakin": {
     "ragu": {
-     "n": 75,
-     "cocok": 73
+     "n": 80,
+     "cocok": 77
     },
     "cukup": {
-     "n": 108,
-     "cocok": 106
+     "n": 112,
+     "cocok": 109
     }
    }
   },
   "pihak.p1.statusSebelumNikah": {
    "fakta": {
-    "n": 183,
-    "cocok": 92,
-    "persen": 50.3
+    "n": 193,
+    "cocok": 107,
+    "persen": 55.4
    },
    "pengisiTunggal": {
-    "n": 1,
-    "cocok": 0,
-    "persen": 0
+    "n": 2,
+    "cocok": 1,
+    "persen": 50
    },
    "bertentangan": {
     "n": 0,
@@ -392,22 +312,22 @@
     "persen": null
    },
    "tenang": {
-    "n": 183,
-    "cocok": 92,
-    "persen": 50.3
+    "n": 193,
+    "cocok": 107,
+    "persen": 55.4
    },
    "perYakin": {
     "cukup": {
-     "n": 183,
-     "cocok": 92
+     "n": 193,
+     "cocok": 107
     }
    }
   },
   "pihak.p2.statusSebelumNikah": {
    "fakta": {
-    "n": 181,
-    "cocok": 154,
-    "persen": 85.1
+    "n": 190,
+    "cocok": 164,
+    "persen": 86.3
    },
    "pengisiTunggal": {
     "n": 0,
@@ -420,26 +340,114 @@
     "persen": null
    },
    "tenang": {
-    "n": 181,
-    "cocok": 154,
-    "persen": 85.1
+    "n": 190,
+    "cocok": 164,
+    "persen": 86.3
    },
    "perYakin": {
     "cukup": {
-     "n": 181,
-     "cocok": 154
+     "n": 190,
+     "cocok": 164
     }
    }
   },
   "anak.jumlah": {
    "fakta": {
-    "n": 165,
-    "cocok": 67,
-    "persen": 40.6
+    "n": 169,
+    "cocok": 161,
+    "persen": 95.3
    },
    "pengisiTunggal": {
-    "n": 13,
-    "cocok": 13,
+    "n": 7,
+    "cocok": 7,
+    "persen": 100
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 169,
+    "cocok": 161,
+    "persen": 95.3
+   },
+   "perYakin": {
+    "cukup": {
+     "n": 164,
+     "cocok": 156
+    },
+    "pasti": {
+     "n": 5,
+     "cocok": 5
+    }
+   }
+  },
+  "perkara.tujuan": {
+   "fakta": {
+    "n": 129,
+    "cocok": 90,
+    "persen": 69.8
+   },
+   "pengisiTunggal": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 129,
+    "cocok": 90,
+    "persen": 69.8
+   },
+   "perYakin": {
+    "ragu": {
+     "n": 129,
+     "cocok": 90
+    }
+   }
+  },
+  "nikah.penikah": {
+   "fakta": {
+    "n": 155,
+    "cocok": 149,
+    "persen": 96.1
+   },
+   "pengisiTunggal": {
+    "n": 1,
+    "cocok": 1,
+    "persen": 100
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 155,
+    "cocok": 149,
+    "persen": 96.1
+   },
+   "perYakin": {
+    "cukup": {
+     "n": 155,
+     "cocok": 149
+    }
+   }
+  },
+  "nikah.saksi1": {
+   "fakta": {
+    "n": 165,
+    "cocok": 153,
+    "persen": 92.7
+   },
+   "pengisiTunggal": {
+    "n": 1,
+    "cocok": 1,
     "persen": 100
    },
    "bertentangan": {
@@ -449,30 +457,26 @@
    },
    "tenang": {
     "n": 165,
-    "cocok": 67,
-    "persen": 40.6
+    "cocok": 153,
+    "persen": 92.7
    },
    "perYakin": {
     "cukup": {
-     "n": 154,
-     "cocok": 57
-    },
-    "pasti": {
-     "n": 11,
-     "cocok": 10
+     "n": 165,
+     "cocok": 153
     }
    }
   },
-  "perkara.tujuan": {
+  "nikah.saksi2": {
    "fakta": {
-    "n": 121,
-    "cocok": 80,
-    "persen": 66.1
+    "n": 158,
+    "cocok": 142,
+    "persen": 89.9
    },
    "pengisiTunggal": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
+    "n": 1,
+    "cocok": 1,
+    "persen": 100
    },
    "bertentangan": {
     "n": 0,
@@ -480,14 +484,14 @@
     "persen": null
    },
    "tenang": {
-    "n": 121,
-    "cocok": 80,
-    "persen": 66.1
+    "n": 158,
+    "cocok": 142,
+    "persen": 89.9
    },
    "perYakin": {
-    "ragu": {
-     "n": 121,
-     "cocok": 80
+    "cukup": {
+     "n": 158,
+     "cocok": 142
     }
    }
   },
@@ -514,286 +518,46 @@
    },
    "perYakin": {
     "cukup": {
-     "n": 61,
-     "cocok": 58
+     "n": 55,
+     "cocok": 51
     },
     "pasti": {
-     "n": 26,
-     "cocok": 25
+     "n": 32,
+     "cocok": 32
     }
    }
   },
   "nikah.kua": {
    "fakta": {
-    "n": 81,
-    "cocok": 75,
-    "persen": 92.6
+    "n": 85,
+    "cocok": 81,
+    "persen": 95.3
    },
    "pengisiTunggal": {
-    "n": 81,
-    "cocok": 76,
-    "persen": 93.8
+    "n": 85,
+    "cocok": 79,
+    "persen": 92.9
    },
    "bertentangan": {
-    "n": 76,
-    "cocok": 72,
-    "persen": 94.7
+    "n": 80,
+    "cocok": 77,
+    "persen": 96.3
    },
    "tenang": {
     "n": 5,
-    "cocok": 3,
-    "persen": 60
+    "cocok": 4,
+    "persen": 80
    },
    "perYakin": {
     "ragu": {
-     "n": 79,
-     "cocok": 73
-    },
-    "pasti": {
-     "n": 1,
-     "cocok": 1
+     "n": 83,
+     "cocok": 79
     },
     "cukup": {
      "n": 1,
      "cocok": 1
-    }
-   }
-  },
-  "pihak.p1.umurSaatNikah": {
-   "fakta": {
-    "n": 75,
-    "cocok": 69,
-    "persen": 92
-   },
-   "pengisiTunggal": {
-    "n": 73,
-    "cocok": 73,
-    "persen": 100
-   },
-   "bertentangan": {
-    "n": 12,
-    "cocok": 6,
-    "persen": 50
-   },
-   "tenang": {
-    "n": 63,
-    "cocok": 63,
-    "persen": 100
-   },
-   "perYakin": {
-    "cukup": {
-     "n": 62,
-     "cocok": 62
     },
-    "ragu": {
-     "n": 13,
-     "cocok": 7
-    }
-   }
-  },
-  "pihak.p2.umurSaatNikah": {
-   "fakta": {
-    "n": 75,
-    "cocok": 68,
-    "persen": 90.7
-   },
-   "pengisiTunggal": {
-    "n": 72,
-    "cocok": 72,
-    "persen": 100
-   },
-   "bertentangan": {
-    "n": 12,
-    "cocok": 5,
-    "persen": 41.7
-   },
-   "tenang": {
-    "n": 63,
-    "cocok": 63,
-    "persen": 100
-   },
-   "perYakin": {
-    "cukup": {
-     "n": 62,
-     "cocok": 62
-    },
-    "ragu": {
-     "n": 13,
-     "cocok": 6
-    }
-   }
-  },
-  "calon.wanita.nama": {
-   "fakta": {
-    "n": 9,
-    "cocok": 9,
-    "persen": 100
-   },
-   "pengisiTunggal": {
-    "n": 9,
-    "cocok": 9,
-    "persen": 100
-   },
-   "bertentangan": {
-    "n": 4,
-    "cocok": 4,
-    "persen": 100
-   },
-   "tenang": {
-    "n": 5,
-    "cocok": 5,
-    "persen": 100
-   },
-   "perYakin": {
     "pasti": {
-     "n": 5,
-     "cocok": 5
-    },
-    "ragu": {
-     "n": 4,
-     "cocok": 4
-    }
-   }
-  },
-  "calon.wanita.umur": {
-   "fakta": {
-    "n": 8,
-    "cocok": 8,
-    "persen": 100
-   },
-   "pengisiTunggal": {
-    "n": 8,
-    "cocok": 8,
-    "persen": 100
-   },
-   "bertentangan": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
-   },
-   "tenang": {
-    "n": 8,
-    "cocok": 8,
-    "persen": 100
-   },
-   "perYakin": {
-    "pasti": {
-     "n": 8,
-     "cocok": 8
-    }
-   }
-  },
-  "calon.wanita.pendidikan": {
-   "fakta": {
-    "n": 9,
-    "cocok": 6,
-    "persen": 66.7
-   },
-   "pengisiTunggal": {
-    "n": 9,
-    "cocok": 6,
-    "persen": 66.7
-   },
-   "bertentangan": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
-   },
-   "tenang": {
-    "n": 9,
-    "cocok": 6,
-    "persen": 66.7
-   },
-   "perYakin": {
-    "cukup": {
-     "n": 9,
-     "cocok": 6
-    }
-   }
-  },
-  "calon.wanita.pekerjaan": {
-   "fakta": {
-    "n": 7,
-    "cocok": 3,
-    "persen": 42.9
-   },
-   "pengisiTunggal": {
-    "n": 7,
-    "cocok": 3,
-    "persen": 42.9
-   },
-   "bertentangan": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
-   },
-   "tenang": {
-    "n": 7,
-    "cocok": 3,
-    "persen": 42.9
-   },
-   "perYakin": {
-    "ragu": {
-     "n": 7,
-     "cocok": 3
-    }
-   }
-  },
-  "calon.pria.nama": {
-   "fakta": {
-    "n": 4,
-    "cocok": 4,
-    "persen": 100
-   },
-   "pengisiTunggal": {
-    "n": 4,
-    "cocok": 4,
-    "persen": 100
-   },
-   "bertentangan": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
-   },
-   "tenang": {
-    "n": 4,
-    "cocok": 4,
-    "persen": 100
-   },
-   "perYakin": {
-    "pasti": {
-     "n": 4,
-     "cocok": 4
-    }
-   }
-  },
-  "calon.pria.umur": {
-   "fakta": {
-    "n": 3,
-    "cocok": 3,
-    "persen": 100
-   },
-   "pengisiTunggal": {
-    "n": 3,
-    "cocok": 3,
-    "persen": 100
-   },
-   "bertentangan": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
-   },
-   "tenang": {
-    "n": 3,
-    "cocok": 3,
-    "persen": 100
-   },
-   "perYakin": {
-    "pasti": {
-     "n": 2,
-     "cocok": 2
-    },
-    "cukup": {
      "n": 1,
      "cocok": 1
     }
@@ -801,12 +565,12 @@
   },
   "pihak.p1.pekerjaan": {
    "fakta": {
-    "n": 2,
+    "n": 3,
     "cocok": 0,
     "persen": 0
    },
    "pengisiTunggal": {
-    "n": 2,
+    "n": 3,
     "cocok": 0,
     "persen": 0
    },
@@ -816,14 +580,306 @@
     "persen": null
    },
    "tenang": {
-    "n": 2,
+    "n": 3,
     "cocok": 0,
     "persen": 0
    },
    "perYakin": {
     "ragu": {
-     "n": 2,
+     "n": 3,
      "cocok": 0
+    }
+   }
+  },
+  "pihak.p1.umurSaatNikah": {
+   "fakta": {
+    "n": 81,
+    "cocok": 70,
+    "persen": 86.4
+   },
+   "pengisiTunggal": {
+    "n": 68,
+    "cocok": 65,
+    "persen": 95.6
+   },
+   "bertentangan": {
+    "n": 11,
+    "cocok": 2,
+    "persen": 18.2
+   },
+   "tenang": {
+    "n": 70,
+    "cocok": 68,
+    "persen": 97.1
+   },
+   "perYakin": {
+    "cukup": {
+     "n": 68,
+     "cocok": 66
+    },
+    "ragu": {
+     "n": 13,
+     "cocok": 4
+    }
+   }
+  },
+  "pihak.p2.umurSaatNikah": {
+   "fakta": {
+    "n": 81,
+    "cocok": 72,
+    "persen": 88.9
+   },
+   "pengisiTunggal": {
+    "n": 71,
+    "cocok": 70,
+    "persen": 98.6
+   },
+   "bertentangan": {
+    "n": 9,
+    "cocok": 4,
+    "persen": 44.4
+   },
+   "tenang": {
+    "n": 72,
+    "cocok": 68,
+    "persen": 94.4
+   },
+   "perYakin": {
+    "ragu": {
+     "n": 11,
+     "cocok": 6
+    },
+    "cukup": {
+     "n": 70,
+     "cocok": 66
+    }
+   }
+  },
+  "nikah.wali.sebabBukanAyah": {
+   "fakta": {
+    "n": 5,
+    "cocok": 5,
+    "persen": 100
+   },
+   "pengisiTunggal": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 5,
+    "cocok": 5,
+    "persen": 100
+   },
+   "perYakin": {
+    "ragu": {
+     "n": 5,
+     "cocok": 5
+    }
+   }
+  },
+  "wali.hubunganErat": {
+   "fakta": {
+    "n": 8,
+    "cocok": 4,
+    "persen": 50
+   },
+   "pengisiTunggal": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 8,
+    "cocok": 4,
+    "persen": 50
+   },
+   "perYakin": {
+    "ragu": {
+     "n": 8,
+     "cocok": 4
+    }
+   }
+  },
+  "anak.nama": {
+   "fakta": {
+    "n": 1,
+    "cocok": 1,
+    "persen": 100
+   },
+   "pengisiTunggal": {
+    "n": 1,
+    "cocok": 1,
+    "persen": 100
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 1,
+    "cocok": 1,
+    "persen": 100
+   },
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "cocok": 1
+    }
+   }
+  },
+  "anak.hubunganPenggugat": {
+   "fakta": {
+    "n": 1,
+    "cocok": 1,
+    "persen": 100
+   },
+   "pengisiTunggal": {
+    "n": 1,
+    "cocok": 1,
+    "persen": 100
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 1,
+    "cocok": 1,
+    "persen": 100
+   },
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "cocok": 1
+    }
+   }
+  },
+  "anak.hubunganTergugat": {
+   "fakta": {
+    "n": 1,
+    "cocok": 1,
+    "persen": 100
+   },
+   "pengisiTunggal": {
+    "n": 1,
+    "cocok": 1,
+    "persen": 100
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 1,
+    "cocok": 1,
+    "persen": 100
+   },
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "cocok": 1
+    }
+   }
+  },
+  "anak.diasuhOleh": {
+   "fakta": {
+    "n": 1,
+    "cocok": 0,
+    "persen": 0
+   },
+   "pengisiTunggal": {
+    "n": 1,
+    "cocok": 1,
+    "persen": 100
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 1,
+    "cocok": 0,
+    "persen": 0
+   },
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "cocok": 0
+    }
+   }
+  },
+  "calon.pria.nama": {
+   "fakta": {
+    "n": 7,
+    "cocok": 7,
+    "persen": 100
+   },
+   "pengisiTunggal": {
+    "n": 7,
+    "cocok": 7,
+    "persen": 100
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 7,
+    "cocok": 7,
+    "persen": 100
+   },
+   "perYakin": {
+    "pasti": {
+     "n": 7,
+     "cocok": 7
+    }
+   }
+  },
+  "calon.pria.umur": {
+   "fakta": {
+    "n": 6,
+    "cocok": 6,
+    "persen": 100
+   },
+   "pengisiTunggal": {
+    "n": 6,
+    "cocok": 6,
+    "persen": 100
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 6,
+    "cocok": 6,
+    "persen": 100
+   },
+   "perYakin": {
+    "cukup": {
+     "n": 3,
+     "cocok": 3
+    },
+    "pasti": {
+     "n": 3,
+     "cocok": 3
     }
    }
   },
@@ -849,82 +905,58 @@
     "persen": 66.7
    },
    "perYakin": {
-    "cukup": {
-     "n": 2,
-     "cocok": 1
-    },
     "ragu": {
-     "n": 1,
-     "cocok": 1
-    }
-   }
-  },
-  "calon.wanita.status": {
-   "fakta": {
-    "n": 3,
-    "cocok": 2,
-    "persen": 66.7
-   },
-   "pengisiTunggal": {
-    "n": 3,
-    "cocok": 2,
-    "persen": 66.7
-   },
-   "bertentangan": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
-   },
-   "tenang": {
-    "n": 3,
-    "cocok": 2,
-    "persen": 66.7
-   },
-   "perYakin": {
-    "cukup": {
      "n": 3,
      "cocok": 2
     }
    }
   },
-  "nikah.wali.sebabBukanAyah": {
+  "calon.wanita.nama": {
    "fakta": {
-    "n": 2,
-    "cocok": 2,
-    "persen": 100
+    "n": 10,
+    "cocok": 9,
+    "persen": 90
    },
    "pengisiTunggal": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
+    "n": 9,
+    "cocok": 9,
+    "persen": 100
    },
    "bertentangan": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
-   },
-   "tenang": {
     "n": 2,
     "cocok": 2,
     "persen": 100
+   },
+   "tenang": {
+    "n": 8,
+    "cocok": 7,
+    "persen": 87.5
    },
    "perYakin": {
     "ragu": {
      "n": 2,
      "cocok": 2
+    },
+    "pasti": {
+     "n": 7,
+     "cocok": 7
+    },
+    "cukup": {
+     "n": 1,
+     "cocok": 0
     }
    }
   },
-  "wali.hubunganErat": {
+  "calon.wanita.umur": {
    "fakta": {
-    "n": 4,
-    "cocok": 2,
-    "persen": 50
+    "n": 7,
+    "cocok": 7,
+    "persen": 100
    },
    "pengisiTunggal": {
-    "n": 0,
-    "cocok": 0,
-    "persen": null
+    "n": 7,
+    "cocok": 7,
+    "persen": 100
    },
    "bertentangan": {
     "n": 0,
@@ -932,14 +964,98 @@
     "persen": null
    },
    "tenang": {
-    "n": 4,
+    "n": 7,
+    "cocok": 7,
+    "persen": 100
+   },
+   "perYakin": {
+    "pasti": {
+     "n": 7,
+     "cocok": 7
+    }
+   }
+  },
+  "calon.wanita.pendidikan": {
+   "fakta": {
+    "n": 7,
+    "cocok": 4,
+    "persen": 57.1
+   },
+   "pengisiTunggal": {
+    "n": 7,
+    "cocok": 4,
+    "persen": 57.1
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 7,
+    "cocok": 4,
+    "persen": 57.1
+   },
+   "perYakin": {
+    "cukup": {
+     "n": 7,
+     "cocok": 4
+    }
+   }
+  },
+  "calon.wanita.pekerjaan": {
+   "fakta": {
+    "n": 6,
     "cocok": 2,
-    "persen": 50
+    "persen": 33.3
+   },
+   "pengisiTunggal": {
+    "n": 6,
+    "cocok": 2,
+    "persen": 33.3
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 6,
+    "cocok": 2,
+    "persen": 33.3
    },
    "perYakin": {
     "ragu": {
-     "n": 4,
+     "n": 6,
      "cocok": 2
+    }
+   }
+  },
+  "calon.wanita.status": {
+   "fakta": {
+    "n": 1,
+    "cocok": 0,
+    "persen": 0
+   },
+   "pengisiTunggal": {
+    "n": 1,
+    "cocok": 0,
+    "persen": 0
+   },
+   "bertentangan": {
+    "n": 0,
+    "cocok": 0,
+    "persen": null
+   },
+   "tenang": {
+    "n": 1,
+    "cocok": 0,
+    "persen": 0
+   },
+   "perYakin": {
+    "cukup": {
+     "n": 1,
+     "cocok": 0
     }
    }
   }
