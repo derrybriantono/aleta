@@ -257,6 +257,7 @@ function golonganTiada(d) {
     ayah: terbaca && !g.ayah.length && !(gol && gol.ayah),
     ibu: terbaca && !g.ibu.length && !(gol && gol.ibu),
     saudara: terbaca && !g.saudara.length && !(gol && gol.saudara),
+    anak: terbaca && !g.anak.length && !(gol && gol.anak),
   };
 }
 

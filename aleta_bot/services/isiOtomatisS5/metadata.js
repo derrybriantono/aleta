@@ -77,6 +77,12 @@ const SYARAT = Object.freeze({
   "9703": (d) => !ahliWaris.golonganTiada(d).ayah,
   "9704": (d) => !ahliWaris.golonganTiada(d).ibu,
   "9718": (d) => !ahliWaris.golonganTiada(d).saudara,
+  "9702": (d) => !ahliWaris.golonganTiada(d).anak,
+  "8608": (d) => !ahliWaris.golonganTiada(d).anak,
+  // Pencairan dana hanya pada permohonan yang tujuannya dana (BPJS, tabungan, asuransi, pensiun); permohonan tanah tidak memakainya.
+  "9700": (d) => /\b(?:pencairan|dana|tabungan|deposito|bpjs|asuransi|taspen|pensiun|santunan|polis)\b/i.test(B.polos(d.perkara.petitum) + " " + B.polos(d.perkara.posita)),
+  // Nama pasangan pewaris hanya bila posita menceritakan pernikahan atau menyebut isteri/suami yang ditinggalkan.
+  "8610": (d) => ceritaNikah(d) || Boolean((ahliWaris.golonganPosita(d.perkara.posita || "") || {}).pasangan),
   // Asal usul: varian "belum punya akta kelahiran" hanya bila posita menyebutnya.
   "9709": (d) => /\bbelum\s+(?:memiliki|mempunyai|punya)\s+akta\s+kelahiran\b/i.test(B.polos(d.perkara.posita)),
   // Pernikahan pewaris / orang tua anak: isian tempat, KUA dan tanggal nikah hanya berarti bila posita memang menceritakan pernikahannya.

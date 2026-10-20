@@ -242,6 +242,23 @@ describe("A3. penetapan ahli waris: golongan dari petitum dan posita", () => {
     expect(kodeSemua(u)).not.toContain("9718");
   });
 
+  it("syarat berlaku: pencairan dana hanya bila tujuannya dana; nama pasangan hanya bila ada pernikahan; anak 'kosong bila tidak ada'", () => {
+    const tanah = DATA_PAW();
+    tanah.perkara.petitum = "3. Menetapkan ahli waris Hamdan bin Lutfi adalah: a. Rahman bin Hamdan; b. Sinta binti Hamdan 4. Menetapkan Para Pemohon ahli waris atas sebidang tanah 5. Menetapkan biaya";
+    tanah.perkara.posita = "1. Bahwa Hamdan bin Lutfi telah meninggal dunia pada tanggal 02 Mei 2020; 2. Bahwa Hamdan bin Lutfi meninggalkan dua orang anak dan juga meninggalkan sebidang tanah di Desa Ganti;";
+    expect(S5.berlaku("9700", tanah)).toBe(false);
+    expect(S5.berlaku("9700", DATA_PAW())).toBe(true);
+    expect(S5.berlaku("8610", tanah)).toBe(false);
+    expect(S5.berlaku("8610", DATA_PAW())).toBe(true);
+    expect(S5.berlaku("9702", tanah)).toBe(true); // ada anak: tetap dihitung
+    const tanpaAnak = DATA_PAW();
+    tanpaAnak.perkara.petitum = "3. Menetapkan ahli waris Zaenab binti Yudjir adalah: a. Hadija binti Yudjir; b. Sofyan bin Yudjir 4. Menetapkan Para Pemohon ahli waris untuk pencairan Dana TASPEN 5. Menetapkan biaya";
+    tanpaAnak.perkara.posita = "1. Bahwa Zaenab binti Yudjir telah meninggal dunia; 2. Bahwa Zaenab binti Yudjir meninggalkan Saudara-Saudara dan juga meninggalkan Dana TASPEN;";
+    expect(S5.berlaku("9702", tanpaAnak)).toBe(false);
+    expect(S5.berlaku("8608", tanpaAnak)).toBe(false);
+    expect(S5.berlaku("9718", tanpaAnak)).toBe(true);
+  });
+
   it("jumlah anak di posita berbeda dari yang tergolong: semua turun menjadi ragu", () => {
     const d = DATA_PAW();
     d.perkara.posita = d.perkara.posita.replace("tiga orang anak", "empat orang anak");
@@ -383,7 +400,6 @@ describe("C. mesin keputusan ekstensi atas usulan jenis S5 (tidak menimpa)", () 
   // isi-sipp-bersama.js adalah IIFE yang menaruh AletaIsiSipp di globalThis
   const mesin = (() => {
     const g = globalThis as Record<string, unknown>;
-    // eslint-disable-next-line no-new-func
     new Function(readFileSync(path.join(AKAR, "ekstensi-sipp", "isi-sipp-bersama.js"), "utf8"))();
     return g.AletaIsiSipp as {
       pilihPerKode: (sumber: Usulan[][], boleh?: Set<string>) => Map<string, Usulan>;
