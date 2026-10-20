@@ -177,6 +177,9 @@ const KELOMPOK = [
   },
 ];
 
+// 20 Okt 2026 (agen S3): pengisi cerai gugat, cerai talak, ikrar dan itsbat nikah - lihat pengisi-s3.cjs.
+KELOMPOK.push(...require("./pengisi-s3.cjs").KELOMPOK);
+
 // Tanya jawab / keterangan saksi (kunci dari susun.ts kunciTanyaJawab) yang disusun "Susun keterangan saksi".
 const TJ_DIDUKUNG = {
   berkas: "aleta_bot/services/abtUsulanService.js",

@@ -12,7 +12,7 @@
  * Sumber terstruktur SIPP (keyakinan pasti/cukup - ditulis sendiri bila saklar "Isi otomatis" menyala):
  *   1154 / 1232 / 5230   nomor surat, tanggal surat, ongkos panggilan permintaan bantuan panggilan  delegasi_keluar (Panggilan Sidang)
  *   1081                 tanggal penetapan hari sidang ikrar yang baru                              perkara_penetapan_kembali_ikrar
- *   8603 / 5110          nama anak                                                                  perkara_anak_pihak
+ *   8603 / 5110 / 0007   nama anak dan jumlah anak ("telah dikaruniai ... anak")                          perkara_anak_pihak
  *   0709 / 0711          hubungan penggugat dan tergugat dengan anak (ibu / bapak kandung)           jenis perkara + adanya anak / petitum anak
  *   7211 / 7212          umur Pemohon I (laki-laki) / II (perempuan) saat menikah                    pihak.tanggal_lahir - tanggal nikah
  * Sumber posita dan petitum di SIPP (keyakinan ragu - hanya saran bertanda "yakin: ragu - periksa"; kecuali disebut lain):
@@ -157,7 +157,23 @@ function usulanAnak(rows) {
   const nama = [...new Set((Array.isArray(rows) ? rows : []).map((r) => String((r && r.nama) || "").replace(/\s+/g, " ").trim()).filter(Boolean))];
   if (!nama.length) return [];
   const dasar = `SIPP tab Anak: ${nama.join("; ")}`;
+  // 0007: jumlah anak menurut tab Anak SIPP (atas 29 isian petugas, 28 sama persis: 97%).
+  let dikaruniai = "";
+  try {
+    dikaruniai = lazy.G().bunyiDikaruniai(`${nama.length} orang anak`);
+  } catch {
+    dikaruniai = "";
+  }
   return [
+    ...(dikaruniai
+      ? [
+          butir("0007", "Telah dikaruniai anak", dikaruniai, "cukup", {
+            kalimat: dasar,
+            catatan: `Jumlah anak dari tab Anak di SIPP (${nama.length} anak). Bila posita menyebut jumlah yang berbeda, ikuti dalil dan bukti perkara.`,
+            kodePola: "sipp-anak-jumlah",
+          }),
+        ]
+      : []),
     butir("8603", "Nama anak yang dimohonkan", nama.join(", "), "cukup", {
       kalimat: dasar,
       catatan: "Nama anak dari tab Anak di SIPP. Bila yang dimohonkan hanya sebagian anak, hapus yang tidak dimohonkan.",
@@ -428,7 +444,7 @@ const JENIS = Object.freeze({ cerai: [346, 347], itsbat: [360] });
 const KODE_DIISI = Object.freeze([
   "1154", "1232", "5230", // delegasi
   "1081", // PHS baru ikrar
-  "8603", "5110", "0709", "0711", // anak
+  "8603", "5110", "0007", "0709", "0711", // anak
   "7211", "7212", // umur itsbat
   "6054", "6055", "7120", "6071", "6072", "7778", "5111", "2004", // tuntutan accessoir
   "9711", "9712", "9713", "9715", "9050", // jumlah untuk amar
@@ -455,7 +471,7 @@ async function usulanLengkap(perkaraId, runQuery) {
   const jenis = Number(perkara.jenis);
   const cerai = JENIS.cerai.includes(jenis);
   const itsbat = JENIS.itsbat.includes(jenis);
-  if (!cerai && !itsbat) return [];
+  // Delegasi (surat bantuan panggilan) dan penetapan kembali hari sidang ikrar berlaku bagi perkara jenis apa pun; sisanya khusus cerai/itsbat.
 
   const [delegasi, kembaliIkrar, anak, pihak] = await Promise.all([
     diam(() =>
@@ -465,15 +481,13 @@ async function usulanLengkap(perkaraId, runQuery) {
         [id]
       )
     ),
-    jenis === 346
-      ? diam(() =>
-          runQuery(
-            `SELECT DATE_FORMAT(tanggal_penetapan, '%Y-%m-%d') AS penetapan, DATE_FORMAT(tanggal_sidang, '%Y-%m-%d') AS sidang
-               FROM perkara_penetapan_kembali_ikrar WHERE perkara_id = ? ORDER BY tanggal_penetapan DESC, id DESC LIMIT 3`,
-            [id]
-          )
-        )
-      : null,
+    diam(() =>
+      runQuery(
+        `SELECT DATE_FORMAT(tanggal_penetapan, '%Y-%m-%d') AS penetapan, DATE_FORMAT(tanggal_sidang, '%Y-%m-%d') AS sidang
+           FROM perkara_penetapan_kembali_ikrar WHERE perkara_id = ? ORDER BY tanggal_penetapan DESC, id DESC LIMIT 3`,
+        [id]
+      )
+    ),
     cerai ? diam(() => runQuery("SELECT nama_anak AS nama FROM perkara_anak_pihak WHERE perkara_id = ? AND nama_anak IS NOT NULL AND TRIM(nama_anak) <> '' ORDER BY anak_ke, id", [id])) : null,
     itsbat
       ? diam(() =>
@@ -491,9 +505,9 @@ async function usulanLengkap(perkaraId, runQuery) {
     for (const u of daftar || []) if (u && u.kode && !hasil.some((x) => x.kode === u.kode)) hasil.push(u);
   };
   tambah(usulanDelegasi(delegasi));
+  tambah(usulanPhsBaruIkrar(kembaliIkrar));
   if (cerai) {
     const dataAnak = Array.isArray(anak) ? anak : [];
-    if (jenis === 346) tambah(usulanPhsBaruIkrar(kembaliIkrar));
     tambah(usulanAnak(dataAnak));
     tambah(usulanHubunganOrangTua({ jenis, adaAnak: dataAnak.length > 0, petitum: polos(perkara.petitum) }));
     const g = usulanDariGugatanSipp({ jenis, posita: perkara.posita, petitum: perkara.petitum });

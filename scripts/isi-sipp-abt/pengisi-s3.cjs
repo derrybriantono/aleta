@@ -1,0 +1,99 @@
+// Kurasi pengisi isian cerai gugat, cerai talak, ikrar talak dan itsbat nikah (agen S3, 20 Okt 2026).
+// Dipanggil dari pengisi-kurasi.cjs (KELOMPOK.push). Kode memang dikerjakan di aleta_bot/services/abtIsianLengkap20okt.js;
+// uji penjaga memeriksa kode muncul sebagai token utuh di berkas itu.
+const BERKAS = "aleta_bot/services/abtIsianLengkap20okt.js";
+
+const KELOMPOK = [
+  {
+    id: "s3-delegasi",
+    kode: ["1154", "1232", "5230"],
+    untuk: "semua",
+    berkas: BERKAS,
+    sumber: "SIPP delegasi_keluar (jenis Panggilan Sidang): nomor surat, tanggal surat, biaya",
+    tingkat: "otomatis",
+    syarat: "perkara yang sudah punya surat permintaan bantuan panggilan di tab Delegasi SIPP; surat terbaru dipakai; tanpa surat: tanda 'diisi manual'",
+  },
+  {
+    id: "s3-ikrar-phs-baru",
+    kode: ["1081"],
+    untuk: "semua",
+    berkas: BERKAS,
+    sumber: "SIPP perkara_penetapan_kembali_ikrar.tanggal_penetapan (terbaru)",
+    tingkat: "otomatis",
+    syarat: "perkara yang hari sidang ikrarnya sudah ditetapkan kembali; tanpa penetapan: tanda 'diisi manual'",
+  },
+  {
+    id: "s3-anak-sipp",
+    kode: ["8603", "5110", "0007"],
+    untuk: ["cerai"],
+    berkas: BERKAS,
+    sumber: "SIPP perkara_anak_pihak (tab Anak): nama anak dan jumlah anak",
+    tingkat: "otomatis",
+    syarat: "perkara cerai yang tab Anak-nya terisi (592 dari 636 perkara cerai 2026)",
+  },
+  {
+    id: "s3-hubungan-orang-tua",
+    kode: ["0709", "0711"],
+    untuk: ["cerai"],
+    berkas: BERKAS,
+    sumber: "jenis perkara: Penggugat/Termohon-rekonvensi = ibu kandung, Tergugat/Pemohon = bapak kandung",
+    tingkat: "otomatis",
+    syarat: "perkara cerai yang menyangkut anak (tab Anak terisi atau petitum menyebut anak)",
+  },
+  {
+    id: "s3-umur-itsbat",
+    kode: ["7211", "7212"],
+    untuk: ["itsbat-nikah"],
+    berkas: BERKAS,
+    sumber: "SIPP pihak.tanggal_lahir dan tanggal nikah (data pernikahan atau kalimat pernikahan posita)",
+    tingkat: "usulan",
+    syarat: "usulan ragu: posita biasanya membulatkan umur; hanya mengisi bila posita tidak menyebut umur",
+  },
+  {
+    id: "s3-petitum-sipp",
+    kode: ["6054", "6055", "7120", "6071", "6072", "7778", "5111", "2004"],
+    untuk: ["cerai"],
+    berkas: BERKAS,
+    sumber: "posita dan petitum di SIPP, dibaca mesin isiGugatanService (yang sama dengan bacaan surat gugatan e-Court)",
+    tingkat: "usulan",
+    syarat: "usulan ragu (yang dituntut, bukan yang dikabulkan); tanpa berkas e-Court",
+  },
+  {
+    id: "s3-jumlah-amar",
+    kode: ["9711", "9712", "9713", "9715"],
+    untuk: ["cerai"],
+    berkas: BERKAS,
+    sumber: "tuntutan nafkah madliyah, iddah, mut'ah di petitum SIPP; 9715 dari kalimat 'sebelum mengambil akta cerai'",
+    tingkat: "usulan",
+    syarat: "usulan ragu: jumlah yang dituntut; besaran yang dikabulkan diputus majelis",
+  },
+  {
+    id: "s3-kenaikan-nafkah-anak",
+    kode: ["9050"],
+    untuk: ["cerai"],
+    berkas: BERKAS,
+    sumber: "petitum SIPP: persen kenaikan nafkah anak per tahun",
+    tingkat: "otomatis",
+    syarat: "hanya bila petitum menyebut persen kenaikan per tahun",
+  },
+  {
+    id: "s3-posita-cerai",
+    kode: ["7035", "8503"],
+    untuk: ["cerai"],
+    berkas: BERKAS,
+    sumber: "posita SIPP: pihak yang meninggalkan rumah (89,9% sama dengan isian petugas, 318 perkara); huruf F dan B (60% persis sama, 359 perkara)",
+    tingkat: "usulan",
+    syarat: "usulan ragu: dalil posita belum dikuatkan saksi; huruf alasan tetap keputusan hakim",
+  },
+  {
+    id: "s3-itsbat-tidak-dicatat",
+    kode: ["9686"],
+    untuk: ["itsbat-nikah"],
+    berkas: BERKAS,
+    sumber: "posita itsbat: kalimat 'tidak dicatatkan ... karena ...'",
+    tingkat: "usulan",
+    syarat: "usulan ragu; hanya bila posita memberi alasan",
+  },
+];
+
+module.exports = { KELOMPOK };

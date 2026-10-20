@@ -293,10 +293,10 @@ describe("D - perangkai usulanLengkap", () => {
     for (const x of u) expect(x.jagaIsianLama).toBe(true);
   });
 
-  it("cerai gugat tidak mendapat PHS baru ikrar (itu khusus cerai talak)", async () => {
-    const { q } = sippTiruan({ jenis: 347, alur: 15, posita: POSITA_CG, petitum: "<div>1. Mengabulkan gugatan;</div>" }, { "FROM perkara_penetapan_kembali_ikrar": [{ penetapan: "2026-09-30", sidang: "2026-10-12" }] });
+  it("cerai gugat tanpa penetapan kembali ikrar: 1081 hanya tanda 'tidak ada sumber'; fakta cerai tetap terbaca", async () => {
+    const { q } = sippTiruan({ jenis: 347, alur: 15, posita: POSITA_CG, petitum: "<div>1. Mengabulkan gugatan;</div>" });
     const u = await M.usulanLengkap(10002, q);
-    expect(u.some((x) => x.kode === "1081")).toBe(false);
+    expect(u.find((x) => x.kode === "1081")?.keyakinan).toBe("tidak_ada_sumber");
     expect(u.some((x) => x.kode === "7035")).toBe(true);
   });
 
@@ -315,7 +315,7 @@ describe("D - perangkai usulanLengkap", () => {
     expect(per["7211"].nilai).toBe("21 tahun");
     expect(per["7212"].nilai).toBe("18 tahun");
     expect(per["9686"].keyakinan).toBe("ragu");
-    for (const k of ["7035", "8503", "8603", "0709", "1081"]) expect(per[k]).toBeUndefined();
+    for (const k of ["7035", "8503", "8603", "0709"]) expect(per[k]).toBeUndefined();
   });
 
   it("satu kueri gagal tidak menggagalkan yang lain; jenis lain tidak disentuh; id tak sah kosong", async () => {
@@ -323,8 +323,9 @@ describe("D - perangkai usulanLengkap", () => {
     const u = await M.usulanLengkap(10004, q);
     expect(u.some((x) => x.kode === "8603")).toBe(true);
     expect(u.some((x) => x.kode === "1154")).toBe(true); // delegasi gagal dibaca -> tanda 'tidak ada sumber', bukan galat
-    const lain = await M.usulanLengkap(10005, sippTiruan({ jenis: 363, alur: 16, posita: "x", petitum: "y" }).q);
-    expect(lain).toEqual([]);
+    // jenis lain: hanya sumber yang berlaku bagi perkara apa pun (surat bantuan panggilan, penetapan kembali ikrar)
+    const lain = await M.usulanLengkap(10005, sippTiruan({ jenis: 363, alur: 16, posita: POSITA_CG, petitum: PETITUM_CG_NAFKAH }, { "FROM perkara_anak_pihak": [{ nama: "X bin Y" }] }).q);
+    expect(lain.map((x) => x.kode).sort()).toEqual(["1081", "1154", "1232", "5230"]);
     expect(await M.usulanLengkap(0, sippTiruan({}).q)).toEqual([]);
     expect(await M.usulanLengkap(10006, undefined as unknown as never)).toEqual([]);
     const mati = await M.usulanLengkap(10007, async () => {
