@@ -4,6 +4,6 @@
 2d6bedc566c41ad2df6188b8b4bd660a  pasang-satker.sh
 55e8e10b29c4490eaa6f7c608eddece1  pulih-satker.sh
 ae5a26e7d7024bdf6ef4cd585fd9d707  rtf-daftar-tambal.tsv
-900cbe6328e828879438c7bc41ab63df  rtf-ringkas.json
+3db3f8c06766b465d800c2215b3c1021  rtf-ringkas.json
 17edba6c2151f9807626cd57d893997c  rtf-tambal.tsv
 54f0076801058beb7bd14ede805defe7  tambal-rtf.pl
