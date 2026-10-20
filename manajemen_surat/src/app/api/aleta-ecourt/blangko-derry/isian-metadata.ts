@@ -115,9 +115,19 @@ export const ISIAN_MANUAL: Record<string, string> = {
   "2222": "Tanggal KTP dibaca dari berkas KTP di e-Court; bila perkara tidak lewat e-Court atau berkasnya tidak terbaca, isi dari KTP.",
   // Fakta sidang ikrar
   "9220": "Keadaan Termohon saat ikrar (suci, haid, atau hamil) disampaikan Termohon di sidang ikrar; tidak tercatat di SIPP.",
+  // Itsbat nikah dan asal usul anak (paket abt-u3-itsbat-aua, 20 Okt 2026): pilihan majelis yang wajib dipilih pada blangko varian itu
+  "4311": "Nama laki-laki yang diakui sebagai ayah biologis anak tidak tertulis di posita; isi dari keterangan Pemohon dan saksi (blangko Anak Luar Perkawinan).",
+  "4314": "Hubungan perdata anak luar perkawinan adalah pilihan majelis; pilih salah satu pada blangko Anak Luar Perkawinan.",
+  "4315": "Status anak yang lahir kurang dari enam bulan setelah akad adalah pilihan majelis; pilih salah satu pada blangko Anak Lahir Kurang dari Enam Bulan.",
 };
 
 export const ISIAN_OPSIONAL: Record<string, string> = {
   // #9134# = petunjuk perbaikan permohonan dari majelis pada BAS permohonan (keputusan pengguna 20 Okt: bukan bagian "Perlu diisi").
   "9134": "Petunjuk perbaikan permohonan (bila majelis memberi petunjuk)",
+  // Itsbat nikah dan asal usul anak (paket abt-u3-itsbat-aua, 20 Okt 2026): pilihan majelis bernilai bawaan atau isian khusus keadaan tertentu
+  "4300": "Dasar itsbat nikah menurut Pasal 7 ayat (3) KHI (pilihan majelis; kosong = huruf d bila nikah sebelum 1974, selain itu huruf e)",
+  "4301": "Keraguan atas syarat perkawinan (hanya bila dasar itsbat huruf c)",
+  "4302": "Keterangan hilangnya akta nikah (hanya bila dasar itsbat huruf b)",
+  "4305": "Kedudukan hukum Pemohon menurut Pasal 7 ayat (4) KHI (kosong = suami atau istri)",
+  "4310": "Nomor dan tanggal penetapan itsbat nikah orang tua anak (bila pernikahan siri sudah diitsbatkan)",
 };

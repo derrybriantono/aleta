@@ -35,13 +35,14 @@
       "jenis": "fakta",
       "bentuk": "teks",
       "awalan": ", ",
-      "regex": "(?<nilai>(?:karena|oleh\\s+karena|sebab)\\s+(?:ayah|bapak|orang\\s+tua|wali)(?:\\s+kandung)?[^;.()]{0,60}?(?:telah\\s+)?(?:meninggal(?:\\s+dunia)?|wafat|beragama\\s+(?:kristen|katolik|hindu|budha|non\\s*muslim)|non\\s*muslim|tidak\\s+(?:diketahui|ada|beragama\\s+islam))(?:(?!\\s+dan\\s+yang\\s+menikahkan|\\s+yang\\s+menikahkan)[^;.,()]){0,60})",
+      "regex": "(?<nilai>(?:karena|oleh\\s+karena|sebab)\\s+(?:ayah|bapak|orang\\s+tua|wali)(?:\\s+kandung)?[^;.()]{0,60}?(?:telah\\s+)?(?:meninggal(?:\\s+dunia)?|wafat|beragama\\s+(?:kristen|katolik|hindu|budha|non\\s*muslim)|non\\s*muslim|tidak\\s+(?:diketahui|ada|beragama\\s+islam)|berada\\s+jauh|(?:berada|tinggal|bekerja)\\s+di\\s+luar\\s+(?:daerah|kota|negeri|pulau)|sakit(?:\\s+keras)?|lumpuh|sudah\\s+uzur|hilang|gaib)(?:(?!\\s+dan\\s+yang\\s+menikahkan|\\s+yang\\s+menikahkan)[^;.,()]){0,60})",
       "flags": "i",
       "status": "aktif",
       "yakin": "ragu",
       "contohBenar": [
         "wali nikah Pemohon II adalah kakak kandungnya karena ayah kandung Pemohon II telah meninggal dunia;",
-        "wali nikah yaitu Ludin (Paman Pemohon II karena Ayah dari Pemohon II telah meninggal dunia) dan yang menikahkan adalah Makin"
+        "wali nikah yaitu Ludin (Paman Pemohon II karena Ayah dari Pemohon II telah meninggal dunia) dan yang menikahkan adalah Makin",
+      "wali nikah yaitu Hasan (Paman kandung Pemohon II karena ayah kandung Pemohon II berada jauh sehingga menyerahkannya kepada Paman Pemohon II) dan yang menikahkan adalah Hasan (Paman kandung Pemohon II)"
       ],
       "contohSalah": [
         "yang menjadi wali nikah adalah ayah kandung Pemohon II bernama Ludin;"
