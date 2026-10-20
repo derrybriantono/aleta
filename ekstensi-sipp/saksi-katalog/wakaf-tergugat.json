@@ -1,0 +1,701 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "wakaf-tergugat",
+ "judul": "Wakaf - keterangan saksi yang diajukan Tergugat",
+ "versi": 1,
+ "penulis": "W2A-K2",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "367"
+  ]
+ },
+ "tambahanUntuk": [
+  "wakaf"
+ ],
+ "urutanAwal": 1000,
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [],
+ "dasarHukum": [
+  {
+   "id": "dh-rbg-283",
+   "rujukan": "Pasal 283 RBg jo Pasal 1865 KUH Perdata",
+   "uraian": "pihak yang mendalilkan suatu hak atau peristiwa wajib membuktikannya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 283 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (memuat padanan KUHperd. 1865 dan IR. 163); Pasal 1865 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: blangko Derry 4b Kewarisan [01] [Kabul] Kewarisan - Kontradiktur (pertimbangan hukum)"
+  }
+ ],
+ "keadaan": {
+  "bantahan": {
+   "sumber": "borang",
+   "nilai": [
+    "ikrar-sah",
+    "ada-saksi-ikrar",
+    "harta-milik-wakif",
+    "nazhir-amanah",
+    "peruntukan-sesuai",
+    "tidak-dialihkan",
+    "ahli-waris-setuju-wakaf"
+   ],
+   "jamak": true,
+   "bawaan": [],
+   "label": "Bantahan Tergugat",
+   "labelNilai": {
+    "ikrar-sah": "ikrar dituangkan dalam akta ikrar wakaf",
+    "ada-saksi-ikrar": "ikrar disaksikan dua orang saksi",
+    "harta-milik-wakif": "harta wakaf milik wakif sendiri",
+    "nazhir-amanah": "nazhir terdaftar dan mengurus wakaf dengan baik",
+    "peruntukan-sesuai": "harta wakaf dipakai sesuai peruntukan",
+    "tidak-dialihkan": "harta wakaf tidak pernah dialihkan",
+    "ahli-waris-setuju-wakaf": "ahli waris wakif tidak keberatan atas wakaf"
+   }
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-bantahan",
+   "judul": "Bantahan lawan",
+   "uraian": "bantahan Tergugat atas dalil pengaju",
+   "dasarHukum": [
+    "dh-rbg-283"
+   ],
+   "wajib": false,
+   "keadaan": {
+    "kehadiran": [
+     "kontradiktoir",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   }
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-tg-wk-ikrar-akta",
+   "pokok": "pp-bantahan",
+   "urutan": 10,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "ikrar-sah"
+    ]
+   },
+   "teks": "Apakah ikrar wakaf #9823# dituangkan dalam akta ikrar wakaf bernomor di hadapan pejabat yang berwenang ?",
+   "teksVarian": [
+    "Apakah ada akta ikrar wakaf bernomor atas ikrar #9823#, dan siapa pejabat yang membuatnya ?"
+   ],
+   "hal": "akta ikrar wakaf dan pejabat pembuatnya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan akta ikrar wakaf atas ikrar #9823# dan pejabat pembuatnya sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa ikrar wakaf #9823# dituangkan dalam akta ikrar wakaf bernomor sebagaimana tertera dalam #9825#",
+      "saya tahu betul bahwa akta ikrar wakaf atas ikrar #9823# dibuat pejabat berwenang sesuai #9825#",
+      "#9823# berikrar di hadapan pejabat pembuat akta ikrar wakaf dan hasilnya dituangkan dalam akta sesuai #9825#, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa ikrar #9823# tercatat dalam akta ikrar wakaf bernomor sesuai #9825#"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa ikrar wakaf #9823# dituangkan dalam akta ikrar wakaf bernomor sebagaimana tertera dalam #9825#",
+      "akta ikrar wakaf atas ikrar #9823# dibuat pejabat berwenang sesuai #9825#, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa #9823# berikrar di hadapan pejabat pembuat akta ikrar wakaf dan hasilnya dituangkan dalam akta sesuai #9825#",
+      "saya paham dengan baik bahwa ikrar #9823# tercatat dalam akta ikrar wakaf bernomor sesuai #9825#"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan akta ikrar wakaf atas ikrar #9823# dan pejabat pembuatnya hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa ikrar wakaf #9823# dituangkan dalam akta ikrar wakaf bernomor sebagaimana tertera dalam #9825#",
+      "saya diberi tahu oleh {sumber} bahwa akta ikrar wakaf atas ikrar #9823# dibuat pejabat berwenang sesuai #9825#",
+      "#9823# berikrar di hadapan pejabat pembuat akta ikrar wakaf dan hasilnya dituangkan dalam akta sesuai #9825#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa ikrar #9823# tercatat dalam akta ikrar wakaf bernomor sesuai #9825#"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa akta ikrar wakaf atas ikrar #9823# dibuat pejabat berwenang sesuai #9825#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #9823# berikrar di hadapan pejabat pembuat akta ikrar wakaf dan hasilnya dituangkan dalam akta sesuai #9825#",
+      "ikrar #9823# tercatat dalam akta ikrar wakaf bernomor sesuai #9825#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa ikrar wakaf #9823# dituangkan dalam akta ikrar wakaf bernomor sebagaimana tertera dalam #9825#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: ikrar dituangkan dalam akta ikrar wakaf; versi B: ikrar tidak dituangkan dalam akta - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa ikrar wakaf #9823# dituangkan dalam akta ikrar wakaf sesuai #9825#",
+      "keterangan saya adalah bahwa ikrar #9823# tercatat dalam akta ikrar wakaf sesuai #9825#",
+      "ikrar wakaf #9823# dituangkan dalam akta ikrar wakaf sesuai #9825#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa ikrar #9823# tercatat dalam akta ikrar wakaf sesuai #9825#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa ikrar wakaf #9823# tidak dituangkan dalam akta ikrar wakaf sesuai #9825#",
+      "ikrar #9823# tidak tercatat dalam akta ikrar wakaf sesuai #9825#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa ikrar wakaf #9823# tidak dituangkan dalam akta ikrar wakaf sesuai #9825#",
+      "ikrar #9823# tidak tercatat dalam akta ikrar wakaf sesuai #9825#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9823",
+    "9825"
+   ],
+   "menggantikan": [
+    "q-wk-tanpa-akta"
+   ]
+  },
+  {
+   "id": "q-tg-wk-saksi-ada",
+   "pokok": "pp-bantahan",
+   "urutan": 20,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "ada-saksi-ikrar"
+    ]
+   },
+   "teks": "Siapa saja yang hadir dan menyaksikan #9823# berikrar, dan apakah mereka dua orang ?",
+   "teksVarian": [
+    "Apakah ikrar #9823# disaksikan dua orang dan siapa saja mereka ?"
+   ],
+   "hal": "saksi yang menyaksikan ikrar wakaf",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan dua orang saksi yang menyaksikan #9823# berikrar sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa ikrar wakaf #9823# disaksikan dua orang saksi yang hadir bersamaan",
+      "saya menyaksikan langsung bahwa ketika #9823# berikrar dua orang saksi hadir dan menyaksikannya",
+      "dua orang saksi menyaksikan #9823# mengucapkan ikrar wakafnya dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #9823# berikrar di depan dua orang saksi yang dikenal warga"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa ikrar wakaf #9823# disaksikan dua orang saksi yang hadir bersamaan",
+      "ketika #9823# berikrar dua orang saksi hadir dan menyaksikannya demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa dua orang saksi menyaksikan #9823# mengucapkan ikrar wakafnya",
+      "#9823# berikrar di depan dua orang saksi yang dikenal warga, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan dua orang saksi yang menyaksikan #9823# berikrar hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa ikrar wakaf #9823# disaksikan dua orang saksi yang hadir bersamaan",
+      "saya diberi tahu oleh {sumber} bahwa ketika #9823# berikrar dua orang saksi hadir dan menyaksikannya",
+      "dua orang saksi menyaksikan #9823# mengucapkan ikrar wakafnya begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #9823# berikrar di depan dua orang saksi yang dikenal warga"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa ketika #9823# berikrar dua orang saksi hadir dan menyaksikannya",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa dua orang saksi menyaksikan #9823# mengucapkan ikrar wakafnya",
+      "#9823# berikrar di depan dua orang saksi yang dikenal warga, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa ikrar wakaf #9823# disaksikan dua orang saksi yang hadir bersamaan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: ikrar disaksikan dua orang saksi; versi B: ikrar tidak disaksikan siapa pun - berselisih pada JUMLAH (saksi)",
+     "bedaPada": "jumlah",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa ikrar wakaf #9823# disaksikan dua orang saksi",
+      "keterangan saya adalah bahwa dua orang saksi menyaksikan ikrar wakaf #9823#",
+      "ikrar wakaf #9823# disaksikan dua orang saksi, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa dua orang saksi menyaksikan ikrar wakaf #9823#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa ikrar wakaf #9823# tidak disaksikan siapa pun",
+      "tidak ada saksi yang menyaksikan ikrar wakaf #9823#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa ikrar wakaf #9823# tidak disaksikan siapa pun",
+      "tidak ada saksi yang menyaksikan ikrar wakaf #9823#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9823"
+   ],
+   "menggantikan": [
+    "q-wk-tanpa-saksi"
+   ]
+  },
+  {
+   "id": "q-tg-wk-milik-wakif",
+   "pokok": "pp-bantahan",
+   "urutan": 30,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "harta-milik-wakif"
+    ]
+   },
+   "teks": "Apakah #9826# yang diwakafkan #9823# itu memang milik #9823# sendiri, dari mana ia memperolehnya, dan apa buktinya ?",
+   "teksVarian": [
+    "Dari mana #9823# memperoleh #9826# yang diwakafkannya, dan apakah #9823# pemilik sahnya ?"
+   ],
+   "hal": "kepemilikan wakif atas harta wakaf",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kepemilikan #9823# atas #9826# yang diwakafkannya sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa #9826# adalah milik #9823# sendiri yang diperolehnya dengan usahanya sebelum mewakafkan",
+      "saya tahu betul bahwa #9823# memperoleh #9826# dari hasil usahanya sendiri dan menguasainya sebagai pemilik",
+      "sebelum diwakafkan #9826# tercatat atas nama #9823# sebagai pemilik sahnya dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa #9826# sepenuhnya hak #9823# karena diperoleh dari warisan dan pembeliannya sendiri"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa #9826# sepenuhnya hak #9823# karena diperoleh dari warisan dan pembeliannya sendiri",
+      "#9826# adalah milik #9823# sendiri yang diperolehnya dengan usahanya sebelum mewakafkan, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa #9823# memperoleh #9826# dari hasil usahanya sendiri dan menguasainya sebagai pemilik",
+      "saya paham dengan baik bahwa sebelum diwakafkan #9826# tercatat atas nama #9823# sebagai pemilik sahnya"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan kepemilikan #9823# atas #9826# yang diwakafkannya hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #9826# adalah milik #9823# sendiri yang diperolehnya dengan usahanya sebelum mewakafkan",
+      "saya diberi tahu oleh {sumber} bahwa #9823# memperoleh #9826# dari hasil usahanya sendiri dan menguasainya sebagai pemilik",
+      "sebelum diwakafkan #9826# tercatat atas nama #9823# sebagai pemilik sahnya begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #9826# sepenuhnya hak #9823# karena diperoleh dari warisan dan pembeliannya sendiri"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa #9823# memperoleh #9826# dari hasil usahanya sendiri dan menguasainya sebagai pemilik",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sebelum diwakafkan #9826# tercatat atas nama #9823# sebagai pemilik sahnya",
+      "#9826# sepenuhnya hak #9823# karena diperoleh dari warisan dan pembeliannya sendiri, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #9826# adalah milik #9823# sendiri yang diperolehnya dengan usahanya sebelum mewakafkan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: harta wakaf milik wakif sendiri; versi B: harta wakaf bukan milik wakif sendiri - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #9826# adalah milik #9823# sendiri",
+      "keterangan saya adalah bahwa #9826# sepenuhnya hak #9823#",
+      "#9826# adalah milik #9823# sendiri, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #9826# sepenuhnya hak #9823#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #9826# bukan milik #9823# sendiri",
+      "#9826# bukan hak penuh #9823#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #9826# bukan milik #9823# sendiri",
+      "#9826# bukan hak penuh #9823#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9823",
+    "9826"
+   ],
+   "menggantikan": [
+    "q-wk-bukan-milik"
+   ]
+  },
+  {
+   "id": "q-tg-wk-nazhir-baik",
+   "pokok": "pp-bantahan",
+   "urutan": 40,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "nazhir-amanah"
+    ]
+   },
+   "teks": "Bagaimana #9824# mengurus harta wakaf, apakah ia terdaftar sebagai nazhir dan menyalurkan hasilnya sesuai peruntukan ?",
+   "teksVarian": [
+    "Apakah #9824# terdaftar sebagai nazhir dan mengurus harta wakaf dengan amanah ?"
+   ],
+   "hal": "pengurusan harta wakaf oleh nazhir",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pengurusan #9826# oleh #9824# untuk #9827# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #9824# terdaftar sebagai nazhir dan mengurus #9826# dengan baik sesuai peruntukan #9827#",
+      "saya menyaksikan langsung bahwa hasil #9826# disalurkan #9824# untuk #9827# dan dilaporkan secara terbuka",
+      "#9824# menjalankan tugas sebagai nazhir atas #9826# untuk #9827# dengan amanah, dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa pengurusan #9826# oleh #9824# berjalan tertib dan sesuai #9827#"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #9824# terdaftar sebagai nazhir dan mengurus #9826# dengan baik sesuai peruntukan #9827#",
+      "hasil #9826# disalurkan #9824# untuk #9827# dan dilaporkan secara terbuka, demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa #9824# menjalankan tugas sebagai nazhir atas #9826# untuk #9827# dengan amanah",
+      "pengurusan #9826# oleh #9824# berjalan tertib dan sesuai #9827#, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan pengurusan #9826# oleh #9824# untuk #9827# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #9824# terdaftar sebagai nazhir dan mengurus #9826# dengan baik sesuai peruntukan #9827#",
+      "saya diberi tahu oleh {sumber} bahwa hasil #9826# disalurkan #9824# untuk #9827# dan dilaporkan secara terbuka",
+      "#9824# menjalankan tugas sebagai nazhir atas #9826# untuk #9827# dengan amanah, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa pengurusan #9826# oleh #9824# berjalan tertib dan sesuai #9827#"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa hasil #9826# disalurkan #9824# untuk #9827# dan dilaporkan secara terbuka",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #9824# menjalankan tugas sebagai nazhir atas #9826# untuk #9827# dengan amanah",
+      "pengurusan #9826# oleh #9824# berjalan tertib dan sesuai #9827#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #9824# terdaftar sebagai nazhir dan mengurus #9826# dengan baik sesuai peruntukan #9827#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: nazhir mengurus harta wakaf dengan baik; versi B: nazhir tidak mengurus harta wakaf dengan baik - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #9824# mengurus #9826# dengan baik untuk #9827#",
+      "keterangan saya adalah bahwa pengurusan #9826# oleh #9824# baik untuk #9827#",
+      "#9824# mengurus #9826# dengan baik untuk #9827#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa pengurusan #9826# oleh #9824# baik untuk #9827#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #9824# tidak mengurus #9826# dengan baik untuk #9827#",
+      "pengurusan #9826# oleh #9824# tidak baik untuk #9827#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #9824# tidak mengurus #9826# dengan baik untuk #9827#",
+      "pengurusan #9826# oleh #9824# tidak baik untuk #9827#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9824",
+    "9826",
+    "9827"
+   ],
+   "menggantikan": [
+    "q-wk-nazhir-lalai",
+    "q-wk-nazhir-terdaftar"
+   ]
+  },
+  {
+   "id": "q-tg-wk-peruntukan-sesuai",
+   "pokok": "pp-bantahan",
+   "urutan": 50,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "peruntukan-sesuai"
+    ]
+   },
+   "teks": "Apakah sejak diwakafkan harta wakaf itu dipakai tetap sesuai peruntukannya, dan pernahkah peruntukannya diubah ?",
+   "teksVarian": [
+    "Apakah peruntukan harta wakaf itu pernah diubah sejak diikrarkan sampai sekarang ?"
+   ],
+   "hal": "kesesuaian pemakaian harta wakaf dengan peruntukannya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kesesuaian pemakaian #9826# dengan peruntukan #9827# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #9826# dipakai tetap untuk #9827# dan tidak pernah diubah peruntukannya",
+      "saya menyaksikan langsung bahwa peruntukan #9826# untuk #9827# tidak berubah sejak ikrar sampai sekarang",
+      "sejak ikrar #9826# hanya dipakai untuk #9827# tanpa perubahan, dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #9826# terus dipakai untuk #9827# dan tidak dialihkan ke kegiatan lain"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #9826# dipakai tetap untuk #9827# dan tidak pernah diubah peruntukannya",
+      "peruntukan #9826# untuk #9827# tidak berubah sejak ikrar sampai sekarang, demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa sejak ikrar #9826# hanya dipakai untuk #9827# tanpa perubahan",
+      "#9826# terus dipakai untuk #9827# dan tidak dialihkan ke kegiatan lain, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan kesesuaian pemakaian #9826# dengan peruntukan #9827# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #9826# dipakai tetap untuk #9827# dan tidak pernah diubah peruntukannya",
+      "saya diberi tahu oleh {sumber} bahwa peruntukan #9826# untuk #9827# tidak berubah sejak ikrar sampai sekarang",
+      "sejak ikrar #9826# hanya dipakai untuk #9827# tanpa perubahan, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #9826# terus dipakai untuk #9827# dan tidak dialihkan ke kegiatan lain"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa #9826# dipakai tetap untuk #9827# dan tidak pernah diubah peruntukannya",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa peruntukan #9826# untuk #9827# tidak berubah sejak ikrar sampai sekarang",
+      "sejak ikrar #9826# hanya dipakai untuk #9827# tanpa perubahan, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #9826# terus dipakai untuk #9827# dan tidak dialihkan ke kegiatan lain"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: peruntukan harta wakaf tidak berubah; versi B: peruntukan harta wakaf sudah berubah - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa peruntukan #9826# untuk #9827# tidak berubah",
+      "keterangan saya adalah bahwa #9826# tidak dipakai untuk kegiatan selain #9827#",
+      "peruntukan #9826# untuk #9827# tidak berubah, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #9826# tidak dipakai untuk kegiatan selain #9827#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa peruntukan #9826# untuk #9827# sudah berubah",
+      "#9826# sudah dipakai untuk kegiatan selain #9827#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa peruntukan #9826# untuk #9827# sudah berubah",
+      "#9826# sudah dipakai untuk kegiatan selain #9827#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9826",
+    "9827"
+   ],
+   "menggantikan": [
+    "q-wk-peruntukan-berubah",
+    "q-wk-peruntukan-ahliwaris"
+   ]
+  },
+  {
+   "id": "q-tg-wk-tidak-dialihkan",
+   "pokok": "pp-bantahan",
+   "urutan": 60,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "tidak-dialihkan"
+    ]
+   },
+   "teks": "Apakah #9826# itu pernah dijual, dihibahkan, dijaminkan atau diganti rugi sejak diwakafkan, dan bagaimana saksi mengetahuinya ?",
+   "teksVarian": [
+    "Apakah sejak diwakafkan #9826# masih utuh sebagai harta wakaf dan tidak berpindah tangan ?"
+   ],
+   "hal": "tidak dialihkannya harta wakaf",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan tidak dijual atau dialihkannya #9826# sejak diwakafkan sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa #9826# tidak pernah dijual, dihibahkan atau dijaminkan oleh siapa pun sejak diwakafkan",
+      "saya tahu betul bahwa sampai sekarang #9826# tidak berpindah tangan dan masih menjadi harta wakaf",
+      "tidak ada penjualan atau penjaminan atas #9826# sejak diwakafkan, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa #9826# masih utuh sebagai harta wakaf dan tidak pernah dialihkan"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa #9826# tidak pernah dijual, dihibahkan atau dijaminkan oleh siapa pun sejak diwakafkan",
+      "sampai sekarang #9826# tidak berpindah tangan dan masih menjadi harta wakaf, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa tidak ada penjualan atau penjaminan atas #9826# sejak diwakafkan",
+      "saya paham dengan baik bahwa #9826# masih utuh sebagai harta wakaf dan tidak pernah dialihkan"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan tidak dijual atau dialihkannya #9826# sejak diwakafkan hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #9826# tidak pernah dijual, dihibahkan atau dijaminkan oleh siapa pun sejak diwakafkan",
+      "saya diberi tahu oleh {sumber} bahwa sampai sekarang #9826# tidak berpindah tangan dan masih menjadi harta wakaf",
+      "tidak ada penjualan atau penjaminan atas #9826# sejak diwakafkan, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #9826# masih utuh sebagai harta wakaf dan tidak pernah dialihkan"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa sampai sekarang #9826# tidak berpindah tangan dan masih menjadi harta wakaf",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa tidak ada penjualan atau penjaminan atas #9826# sejak diwakafkan",
+      "#9826# masih utuh sebagai harta wakaf dan tidak pernah dialihkan, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #9826# tidak pernah dijual, dihibahkan atau dijaminkan oleh siapa pun sejak diwakafkan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: harta wakaf tidak pernah dialihkan; versi B: harta wakaf sudah dialihkan - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #9826# tidak pernah dialihkan sejak diwakafkan",
+      "keterangan saya adalah bahwa #9826# tidak pernah dijual sejak diwakafkan",
+      "#9826# tidak pernah dialihkan sejak diwakafkan, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #9826# tidak pernah dijual sejak diwakafkan"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #9826# sudah dialihkan sejak diwakafkan",
+      "#9826# sudah dijual sejak diwakafkan, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #9826# sudah dialihkan sejak diwakafkan",
+      "#9826# sudah dijual sejak diwakafkan, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9826"
+   ],
+   "menggantikan": [
+    "q-wk-dijual",
+    "q-wk-dijaminkan",
+    "q-wk-dialihkan"
+   ]
+  },
+  {
+   "id": "q-tg-wk-ahliwaris-setuju",
+   "pokok": "pp-bantahan",
+   "urutan": 70,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "ahli-waris-setuju-wakaf"
+    ]
+   },
+   "teks": "Apakah ahli waris #9823# mengetahui wakaf atas harta itu, apakah pernah meminta harta itu kembali, dan bagaimana sikap mereka ?",
+   "teksVarian": [
+    "Bagaimana sikap ahli waris #9823# terhadap wakaf itu sejak wakif wafat ?"
+   ],
+   "hal": "sikap ahli waris wakif terhadap wakaf",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sikap ahli waris #9823# terhadap wakaf atas #9826# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa ahli waris #9823# mengetahui wakaf atas #9826# dan tidak pernah meminta harta itu kembali",
+      "saya menyaksikan langsung bahwa sejak #9823# wafat ahli warisnya membiarkan #9826# tetap diurus nazhir tanpa keberatan",
+      "ahli waris #9823# ikut menyaksikan #9826# dipakai sebagai wakaf dan tidak berkeberatan, dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa keluarga #9823# menerima wakaf atas #9826# dan tidak menarik hartanya kembali"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa ahli waris #9823# mengetahui wakaf atas #9826# dan tidak pernah meminta harta itu kembali",
+      "sejak #9823# wafat ahli warisnya membiarkan #9826# tetap diurus nazhir tanpa keberatan, demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa ahli waris #9823# ikut menyaksikan #9826# dipakai sebagai wakaf dan tidak berkeberatan",
+      "keluarga #9823# menerima wakaf atas #9826# dan tidak menarik hartanya kembali, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan sikap ahli waris #9823# terhadap wakaf atas #9826# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa ahli waris #9823# mengetahui wakaf atas #9826# dan tidak pernah meminta harta itu kembali",
+      "saya diberi tahu oleh {sumber} bahwa sejak #9823# wafat ahli warisnya membiarkan #9826# tetap diurus nazhir tanpa keberatan",
+      "ahli waris #9823# ikut menyaksikan #9826# dipakai sebagai wakaf dan tidak berkeberatan, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa keluarga #9823# menerima wakaf atas #9826# dan tidak menarik hartanya kembali"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa sejak #9823# wafat ahli warisnya membiarkan #9826# tetap diurus nazhir tanpa keberatan",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa ahli waris #9823# ikut menyaksikan #9826# dipakai sebagai wakaf dan tidak berkeberatan",
+      "keluarga #9823# menerima wakaf atas #9826# dan tidak menarik hartanya kembali, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa ahli waris #9823# mengetahui wakaf atas #9826# dan tidak pernah meminta harta itu kembali"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: ahli waris tidak berkeberatan atas wakaf; versi B: ahli waris berkeberatan atas wakaf - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa ahli waris #9823# tidak berkeberatan atas wakaf #9826#",
+      "keterangan saya adalah bahwa keluarga #9823# tidak mempersoalkan wakaf #9826#",
+      "ahli waris #9823# tidak berkeberatan atas wakaf #9826#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa keluarga #9823# tidak mempersoalkan wakaf #9826#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa ahli waris #9823# berkeberatan atas wakaf #9826#",
+      "keluarga #9823# mempersoalkan wakaf #9826#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa ahli waris #9823# berkeberatan atas wakaf #9826#",
+      "keluarga #9823# mempersoalkan wakaf #9826#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9823",
+    "9826"
+   ],
+   "menggantikan": [
+    "q-wk-ahliwaris-meminta",
+    "q-wk-ahliwaris-menguasai"
+   ]
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Saksi yang diajukan Tergugat menerangkan versi Tergugat: tandai bantahan Tergugat pada keadaan perkara, lalu pilih Tergugat pada saksi yang bersangkutan.",
+  "Butir arah Tergugat hanya muncul untuk saksi Tergugat dan menggantikan butir yang arahnya dalil Penggugat atas hal yang sama."
+ ],
+ "variabelBaru": [
+  "9823",
+  "9824",
+  "9825",
+  "9826",
+  "9827"
+ ]
+}

@@ -1,0 +1,785 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "ekonomi-syariah-tergugat",
+ "judul": "Ekonomi syariah - keterangan saksi yang diajukan Tergugat",
+ "versi": 1,
+ "penulis": "W2A-K2",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "370"
+  ]
+ },
+ "tambahanUntuk": [
+  "ekonomi-syariah"
+ ],
+ "urutanAwal": 1000,
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [],
+ "dasarHukum": [
+  {
+   "id": "dh-rbg-283",
+   "rujukan": "Pasal 283 RBg jo Pasal 1865 KUH Perdata",
+   "uraian": "pihak yang mendalilkan suatu hak atau peristiwa wajib membuktikannya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 283 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (memuat padanan KUHperd. 1865 dan IR. 163); Pasal 1865 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: blangko Derry 4b Kewarisan [01] [Kabul] Kewarisan - Kontradiktur (pertimbangan hukum)"
+  }
+ ],
+ "keadaan": {
+  "bantahan": {
+   "sumber": "borang",
+   "nilai": [
+    "sudah-bayar",
+    "akad-tidak-dijelaskan",
+    "keadaan-memaksa",
+    "tidak-ada-somasi",
+    "denda-tidak-sesuai",
+    "dana-kurang",
+    "agunan-bermasalah",
+    "minta-keringanan"
+   ],
+   "jamak": true,
+   "bawaan": [],
+   "label": "Bantahan Tergugat",
+   "labelNilai": {
+    "sudah-bayar": "Tergugat sudah membayar angsuran",
+    "akad-tidak-dijelaskan": "isi akad tidak dijelaskan kepada Tergugat",
+    "keadaan-memaksa": "Tergugat tidak mampu membayar karena musibah",
+    "tidak-ada-somasi": "Tergugat tidak pernah menerima peringatan",
+    "denda-tidak-sesuai": "denda tidak sesuai akad",
+    "dana-kurang": "dana yang diterima Tergugat kurang dari akad",
+    "agunan-bermasalah": "pemilik agunan tidak mengetahui akad",
+    "minta-keringanan": "Tergugat sudah meminta keringanan"
+   }
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-bantahan",
+   "judul": "Bantahan lawan",
+   "uraian": "bantahan Tergugat atas dalil pengaju",
+   "dasarHukum": [
+    "dh-rbg-283"
+   ],
+   "wajib": false,
+   "keadaan": {
+    "kehadiran": [
+     "kontradiktoir",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   }
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-tg-es-sudah-bayar",
+   "pokok": "pp-bantahan",
+   "urutan": 10,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "sudah-bayar"
+    ]
+   },
+   "teks": "Berapa angsuran yang sudah dibayar #0047# kepada #0046#, kapan dibayar, dan apa buktinya ?",
+   "teksVarian": [
+    "Apakah #0047# sudah membayar angsuran kepada #0046# dan bagaimana bukti pembayarannya ?"
+   ],
+   "hal": "angsuran yang sudah dibayar lawan dan buktinya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan angsuran yang sudah dibayar #0047# kepada #0046# menurut #9340# dan buktinya sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0047# membayar angsuran #9340# secara teratur kepada #0046# sampai waktu tertentu dan buktinya disimpan",
+      "saya menyaksikan langsung bahwa angsuran #9340# dibayar #0047# lewat rekening #0046# dan bukti transfernya ada pada #0047#",
+      "bukti pembayaran angsuran #9340# oleh #0047# kepada #0046# masih disimpan, dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #0047# sudah melunasi sebagian besar angsuran #9340# kepada #0046# dengan bukti setoran"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #0047# membayar angsuran #9340# secara teratur kepada #0046# sampai waktu tertentu dan buktinya disimpan",
+      "angsuran #9340# dibayar #0047# lewat rekening #0046# dan bukti transfernya ada pada #0047#, demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa bukti pembayaran angsuran #9340# oleh #0047# kepada #0046# masih disimpan",
+      "#0047# sudah melunasi sebagian besar angsuran #9340# kepada #0046# dengan bukti setoran, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan angsuran yang sudah dibayar #0047# kepada #0046# menurut #9340# dan buktinya hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #0047# membayar angsuran #9340# secara teratur kepada #0046# sampai waktu tertentu dan buktinya disimpan",
+      "saya diberi tahu oleh {sumber} bahwa angsuran #9340# dibayar #0047# lewat rekening #0046# dan bukti transfernya ada pada #0047#",
+      "bukti pembayaran angsuran #9340# oleh #0047# kepada #0046# masih disimpan, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #0047# sudah melunasi sebagian besar angsuran #9340# kepada #0046# dengan bukti setoran"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa angsuran #9340# dibayar #0047# lewat rekening #0046# dan bukti transfernya ada pada #0047#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa bukti pembayaran angsuran #9340# oleh #0047# kepada #0046# masih disimpan",
+      "#0047# sudah melunasi sebagian besar angsuran #9340# kepada #0046# dengan bukti setoran, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #0047# membayar angsuran #9340# secara teratur kepada #0046# sampai waktu tertentu dan buktinya disimpan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: lawan sudah membayar angsuran; versi B: lawan belum membayar angsuran - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #0047# sudah membayar angsuran #9340# kepada #0046#",
+      "keterangan saya adalah bahwa angsuran #9340# sudah dibayar #0047# kepada #0046#",
+      "#0047# sudah membayar angsuran #9340# kepada #0046#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa angsuran #9340# sudah dibayar #0047# kepada #0046#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #0047# belum membayar angsuran #9340# kepada #0046#",
+      "angsuran #9340# belum dibayar #0047# kepada #0046#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0047# belum membayar angsuran #9340# kepada #0046#",
+      "angsuran #9340# belum dibayar #0047# kepada #0046#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9340"
+   ],
+   "menggantikan": [
+    "q-es-angsuran-terakhir",
+    "q-es-wp-sejak",
+    "q-es-sisa-rinci"
+   ]
+  },
+  {
+   "id": "q-tg-es-akad-tidak-dijelaskan",
+   "pokok": "pp-bantahan",
+   "urutan": 20,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "akad-tidak-dijelaskan"
+    ]
+   },
+   "teks": "Apakah isi akad dijelaskan dan salinannya diberikan kepada #0047# sebelum menandatangani, dan bagaimana keadaan penandatanganan ?",
+   "teksVarian": [
+    "Apakah #0047# sempat membaca dan menerima salinan akad sebelum menandatangani ?"
+   ],
+   "hal": "penjelasan isi akad dan salinan kepada lawan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan penjelasan isi #9340# dan penyerahan salinannya kepada #0047# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa isi #9340# tidak dijelaskan kepada #0047# sebelum ia menandatanganinya",
+      "saya menyaksikan langsung bahwa #0047# menandatangani #9340# tanpa sempat membaca isinya",
+      "salinan #9340# tidak diberikan kepada #0047# setelah penandatanganan, dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #0047# diminta menandatangani #9340# dengan cepat tanpa penjelasan"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa isi #9340# tidak dijelaskan kepada #0047# sebelum ia menandatanganinya",
+      "#0047# menandatangani #9340# tanpa sempat membaca isinya demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa salinan #9340# tidak diberikan kepada #0047# setelah penandatanganan",
+      "#0047# diminta menandatangani #9340# dengan cepat tanpa penjelasan, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan penjelasan isi #9340# dan penyerahan salinannya kepada #0047# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa isi #9340# tidak dijelaskan kepada #0047# sebelum ia menandatanganinya",
+      "saya diberi tahu oleh {sumber} bahwa #0047# menandatangani #9340# tanpa sempat membaca isinya",
+      "salinan #9340# tidak diberikan kepada #0047# setelah penandatanganan, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #0047# diminta menandatangani #9340# dengan cepat tanpa penjelasan"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa isi #9340# tidak dijelaskan kepada #0047# sebelum ia menandatanganinya",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #0047# menandatangani #9340# tanpa sempat membaca isinya",
+      "salinan #9340# tidak diberikan kepada #0047# setelah penandatanganan, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #0047# diminta menandatangani #9340# dengan cepat tanpa penjelasan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: isi akad tidak dijelaskan kepada lawan; versi B: isi akad dijelaskan kepada lawan - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa isi #9340# tidak dijelaskan kepada #0047#",
+      "keterangan saya adalah bahwa #0047# menandatangani #9340# tanpa penjelasan",
+      "isi #9340# tidak dijelaskan kepada #0047#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #0047# menandatangani #9340# tanpa penjelasan"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa isi #9340# dijelaskan kepada #0047#",
+      "#0047# menandatangani #9340# setelah mendapat penjelasan, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa isi #9340# dijelaskan kepada #0047#",
+      "#0047# menandatangani #9340# setelah mendapat penjelasan, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0047",
+    "9340"
+   ],
+   "menggantikan": [
+    "q-es-akad-dibacakan",
+    "q-es-akad-salinan"
+   ]
+  },
+  {
+   "id": "q-tg-es-keadaan-memaksa",
+   "pokok": "pp-bantahan",
+   "urutan": 30,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "keadaan-memaksa"
+    ]
+   },
+   "teks": "Apa yang menyebabkan #0047# tidak dapat membayar, apakah usahanya merugi atau terkena musibah, dan bagaimana saksi mengetahuinya ?",
+   "teksVarian": [
+    "Apakah usaha atau penghasilan #0047# terganggu oleh musibah sehingga ia tidak sanggup membayar ?"
+   ],
+   "hal": "sebab lawan tidak dapat membayar",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sebab #0047# tidak dapat membayar angsuran #9340# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa usaha #0047# merugi karena musibah di luar kendalinya sehingga ia tidak sanggup membayar angsuran #9340#",
+      "saya menyaksikan langsung bahwa penghasilan #0047# menurun drastis karena keadaan di luar kendalinya dan ia tidak mampu memenuhi #9340#",
+      "#0047# ditimpa musibah yang menghentikan usahanya sehingga tidak dapat membayar angsuran #9340#, dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa akibat keadaan di luar kendalinya #0047# tidak mampu membayar angsuran #9340#"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa akibat keadaan di luar kendalinya #0047# tidak mampu membayar angsuran #9340#",
+      "usaha #0047# merugi karena musibah di luar kendalinya sehingga ia tidak sanggup membayar angsuran #9340#, demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa penghasilan #0047# menurun drastis karena keadaan di luar kendalinya dan ia tidak mampu memenuhi #9340#",
+      "#0047# ditimpa musibah yang menghentikan usahanya sehingga tidak dapat membayar angsuran #9340#, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan sebab #0047# tidak dapat membayar angsuran #9340# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa usaha #0047# merugi karena musibah di luar kendalinya sehingga ia tidak sanggup membayar angsuran #9340#",
+      "saya diberi tahu oleh {sumber} bahwa penghasilan #0047# menurun drastis karena keadaan di luar kendalinya dan ia tidak mampu memenuhi #9340#",
+      "#0047# ditimpa musibah yang menghentikan usahanya sehingga tidak dapat membayar angsuran #9340#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa akibat keadaan di luar kendalinya #0047# tidak mampu membayar angsuran #9340#"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa penghasilan #0047# menurun drastis karena keadaan di luar kendalinya dan ia tidak mampu memenuhi #9340#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #0047# ditimpa musibah yang menghentikan usahanya sehingga tidak dapat membayar angsuran #9340#",
+      "akibat keadaan di luar kendalinya #0047# tidak mampu membayar angsuran #9340#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa usaha #0047# merugi karena musibah di luar kendalinya sehingga ia tidak sanggup membayar angsuran #9340#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: lawan tidak mampu membayar karena musibah; versi B: lawan mampu membayar - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #0047# tidak mampu membayar angsuran #9340# karena musibah",
+      "keterangan saya adalah bahwa #0047# tidak sanggup membayar angsuran #9340# karena usahanya merugi",
+      "#0047# tidak mampu membayar angsuran #9340# karena musibah, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #0047# tidak sanggup membayar angsuran #9340# karena usahanya merugi"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #0047# mampu membayar angsuran #9340#",
+      "#0047# sanggup membayar angsuran #9340#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0047# mampu membayar angsuran #9340#",
+      "#0047# sanggup membayar angsuran #9340#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0047",
+    "9340"
+   ],
+   "menggantikan": [
+    "q-es-wp-mampu",
+    "q-es-kemampuan-uang-paksa"
+   ]
+  },
+  {
+   "id": "q-tg-es-tidak-ada-somasi",
+   "pokok": "pp-bantahan",
+   "urutan": 40,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "tidak-ada-somasi"
+    ]
+   },
+   "teks": "Apakah #0047# pernah menerima surat peringatan atau didatangi petugas #0046# untuk ditagih, dan kapan ?",
+   "teksVarian": [
+    "Apakah sebelum digugat #0047# pernah diberi peringatan oleh #0046# secara tertulis atau lisan ?"
+   ],
+   "hal": "penerimaan surat peringatan atau penagihan oleh lawan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan penerimaan surat peringatan atau kunjungan penagihan #0046# oleh #0047# atas #9340# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0047# tidak pernah menerima surat peringatan dari #0046# mengenai #9340# sebelum digugat",
+      "saya menyaksikan langsung bahwa tidak ada petugas #0046# yang mendatangi #0047# untuk menagih tunggakan #9340#",
+      "sebelum digugat #0047# tidak pernah ditegur #0046# mengenai tunggakan #9340#, dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #0046# tidak menyampaikan peringatan kepada #0047# tentang #9340# sebelum gugatan diajukan"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #0047# tidak pernah menerima surat peringatan dari #0046# mengenai #9340# sebelum digugat",
+      "tidak ada petugas #0046# yang mendatangi #0047# untuk menagih tunggakan #9340#, demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa sebelum digugat #0047# tidak pernah ditegur #0046# mengenai tunggakan #9340#",
+      "#0046# tidak menyampaikan peringatan kepada #0047# tentang #9340# sebelum gugatan diajukan, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan penerimaan surat peringatan atau kunjungan penagihan #0046# oleh #0047# atas #9340# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #0047# tidak pernah menerima surat peringatan dari #0046# mengenai #9340# sebelum digugat",
+      "saya diberi tahu oleh {sumber} bahwa tidak ada petugas #0046# yang mendatangi #0047# untuk menagih tunggakan #9340#",
+      "sebelum digugat #0047# tidak pernah ditegur #0046# mengenai tunggakan #9340#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #0046# tidak menyampaikan peringatan kepada #0047# tentang #9340# sebelum gugatan diajukan"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa tidak ada petugas #0046# yang mendatangi #0047# untuk menagih tunggakan #9340#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sebelum digugat #0047# tidak pernah ditegur #0046# mengenai tunggakan #9340#",
+      "#0046# tidak menyampaikan peringatan kepada #0047# tentang #9340# sebelum gugatan diajukan, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #0047# tidak pernah menerima surat peringatan dari #0046# mengenai #9340# sebelum digugat"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: lawan tidak pernah menerima peringatan; versi B: lawan pernah menerima peringatan - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #0047# tidak pernah menerima peringatan dari #0046# mengenai #9340#",
+      "keterangan saya adalah bahwa #0046# tidak pernah menegur #0047# mengenai #9340#",
+      "#0047# tidak pernah menerima peringatan dari #0046# mengenai #9340#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #0046# tidak pernah menegur #0047# mengenai #9340#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #0047# pernah menerima peringatan dari #0046# mengenai #9340#",
+      "#0046# pernah menegur #0047# mengenai #9340#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0047# pernah menerima peringatan dari #0046# mengenai #9340#",
+      "#0046# pernah menegur #0047# mengenai #9340#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9340"
+   ],
+   "menggantikan": [
+    "q-es-somasi-ada",
+    "q-es-somasi-diterima",
+    "q-es-kunjungan"
+   ]
+  },
+  {
+   "id": "q-tg-es-denda-tidak-sesuai",
+   "pokok": "pp-bantahan",
+   "urutan": 50,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "denda-tidak-sesuai"
+    ]
+   },
+   "teks": "Apakah denda atau tambahan biaya yang dibebankan #0046# kepada #0047# pernah dijelaskan, dan apakah besarnya sesuai akad ?",
+   "teksVarian": [
+    "Apakah denda yang ditagih #0046# kepada #0047# sesuai ketentuan akad menurut yang saksi ketahui ?"
+   ],
+   "hal": "penjelasan dan kesesuaian denda dengan akad",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kesesuaian denda atas #9340# yang dibebankan #0046# kepada #0047# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa denda yang dibebankan kepada #0047# lebih besar daripada ketentuan dalam #9340# dan tidak pernah dijelaskan",
+      "saya tahu betul bahwa #0047# tidak pernah diberi tahu cara menghitung denda atas #9340#",
+      "besar denda atas #9340# tidak sesuai dengan ketentuan yang disepakati, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa perhitungan denda atas #9340# tidak diterangkan kepada #0047# dan nilainya membengkak"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa perhitungan denda atas #9340# tidak diterangkan kepada #0047# dan nilainya membengkak",
+      "denda yang dibebankan kepada #0047# lebih besar daripada ketentuan dalam #9340# dan tidak pernah dijelaskan, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa #0047# tidak pernah diberi tahu cara menghitung denda atas #9340#",
+      "saya paham dengan baik bahwa besar denda atas #9340# tidak sesuai dengan ketentuan yang disepakati"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan kesesuaian denda atas #9340# yang dibebankan #0046# kepada #0047# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa denda yang dibebankan kepada #0047# lebih besar daripada ketentuan dalam #9340# dan tidak pernah dijelaskan",
+      "saya diberi tahu oleh {sumber} bahwa #0047# tidak pernah diberi tahu cara menghitung denda atas #9340#",
+      "besar denda atas #9340# tidak sesuai dengan ketentuan yang disepakati, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa perhitungan denda atas #9340# tidak diterangkan kepada #0047# dan nilainya membengkak"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa #0047# tidak pernah diberi tahu cara menghitung denda atas #9340#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa besar denda atas #9340# tidak sesuai dengan ketentuan yang disepakati",
+      "perhitungan denda atas #9340# tidak diterangkan kepada #0047# dan nilainya membengkak, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa denda yang dibebankan kepada #0047# lebih besar daripada ketentuan dalam #9340# dan tidak pernah dijelaskan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: denda tidak sesuai ketentuan akad; versi B: denda sesuai ketentuan akad - berselisih pada JUMLAH",
+     "bedaPada": "jumlah",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa denda atas #9340# tidak sesuai ketentuan akad",
+      "keterangan saya adalah bahwa besar denda atas #9340# tidak sesuai dengan akad",
+      "denda atas #9340# tidak sesuai ketentuan akad, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa besar denda atas #9340# tidak sesuai dengan akad"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa denda atas #9340# sesuai ketentuan akad",
+      "besar denda atas #9340# sesuai dengan akad, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa denda atas #9340# sesuai ketentuan akad",
+      "besar denda atas #9340# sesuai dengan akad, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9340"
+   ],
+   "menggantikan": [
+    "q-es-denda"
+   ]
+  },
+  {
+   "id": "q-tg-es-dana-kurang",
+   "pokok": "pp-bantahan",
+   "urutan": 60,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "dana-kurang"
+    ]
+   },
+   "teks": "Berapa dana atau nilai barang yang sebenarnya diterima #0047#, dan apakah ada potongan biaya sebelum diterimanya ?",
+   "teksVarian": [
+    "Apakah dana yang masuk ke #0047# sama dengan angka yang tertulis dalam akad atau ada potongan ?"
+   ],
+   "hal": "dana atau barang yang sebenarnya diterima lawan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan dana atau barang yang sebenarnya diterima #0047# menurut #9340# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa dana yang diterima #0047# berdasarkan #9340# lebih kecil daripada jumlah yang tertulis karena ada potongan",
+      "saya menyaksikan langsung bahwa setelah dipotong biaya #0047# hanya menerima sebagian dana menurut #9340#",
+      "pencairan menurut #9340# yang sampai kepada #0047# kurang dari plafon yang disebut dalam akad, dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa jumlah yang diterima #0047# menurut #9340# berbeda dari angka yang tertulis dalam akad"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa pencairan menurut #9340# yang sampai kepada #0047# kurang dari plafon yang disebut dalam akad",
+      "jumlah yang diterima #0047# menurut #9340# berbeda dari angka yang tertulis dalam akad, demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa dana yang diterima #0047# berdasarkan #9340# lebih kecil daripada jumlah yang tertulis karena ada potongan",
+      "setelah dipotong biaya #0047# hanya menerima sebagian dana menurut #9340#, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan dana atau barang yang sebenarnya diterima #0047# menurut #9340# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa dana yang diterima #0047# berdasarkan #9340# lebih kecil daripada jumlah yang tertulis karena ada potongan",
+      "saya diberi tahu oleh {sumber} bahwa setelah dipotong biaya #0047# hanya menerima sebagian dana menurut #9340#",
+      "pencairan menurut #9340# yang sampai kepada #0047# kurang dari plafon yang disebut dalam akad, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa jumlah yang diterima #0047# menurut #9340# berbeda dari angka yang tertulis dalam akad"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa setelah dipotong biaya #0047# hanya menerima sebagian dana menurut #9340#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa pencairan menurut #9340# yang sampai kepada #0047# kurang dari plafon yang disebut dalam akad",
+      "jumlah yang diterima #0047# menurut #9340# berbeda dari angka yang tertulis dalam akad, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa dana yang diterima #0047# berdasarkan #9340# lebih kecil daripada jumlah yang tertulis karena ada potongan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: dana yang diterima lebih kecil dari yang tertulis; versi B: dana yang diterima sama dengan yang tertulis - berselisih pada JUMLAH",
+     "bedaPada": "jumlah",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #0047# menerima dana menurut #9340# lebih kecil dari yang tertulis",
+      "keterangan saya adalah bahwa dana menurut #9340# yang sampai kepada #0047# kurang dari yang tertulis",
+      "#0047# menerima dana menurut #9340# lebih kecil dari yang tertulis, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa dana menurut #9340# yang sampai kepada #0047# kurang dari yang tertulis"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #0047# menerima dana menurut #9340# sesuai yang tertulis",
+      "dana menurut #9340# yang sampai kepada #0047# sama dengan yang tertulis, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0047# menerima dana menurut #9340# sesuai yang tertulis",
+      "dana menurut #9340# yang sampai kepada #0047# sama dengan yang tertulis, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0047",
+    "9340"
+   ],
+   "menggantikan": [
+    "q-es-pencairan",
+    "q-es-tanda-terima"
+   ]
+  },
+  {
+   "id": "q-tg-es-agunan-masalah",
+   "pokok": "pp-bantahan",
+   "urutan": 70,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "agunan-bermasalah"
+    ]
+   },
+   "teks": "Apakah pemilik agunan mengetahui dan menyetujui agunannya dipakai untuk akad itu, dan bagaimana nilai agunan dibandingkan sisa kewajiban ?",
+   "teksVarian": [
+    "Apakah pemilik agunan pernah diminta persetujuan dan apakah nilai agunan jauh melebihi sisa kewajiban ?"
+   ],
+   "hal": "persetujuan pemilik agunan dan nilai agunan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan persetujuan pemilik #4768# dan nilai agunan untuk #9340# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa pemilik #4768# tidak mengetahui bahwa agunan itu dipakai untuk #9340#",
+      "saya tahu betul bahwa pemilik #4768# tidak ikut menandatangani persetujuan agunan untuk #9340#",
+      "nilai #4768# jauh melebihi sisa kewajiban dalam #9340# dan tidak dipertimbangkan oleh pihak pembiayaan, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa #4768# sebagai agunan #9340# tidak dikuasai #0047# melainkan dikuasai pemiliknya"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa pemilik #4768# tidak mengetahui bahwa agunan itu dipakai untuk #9340#",
+      "pemilik #4768# tidak ikut menandatangani persetujuan agunan untuk #9340#, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa nilai #4768# jauh melebihi sisa kewajiban dalam #9340# dan tidak dipertimbangkan oleh pihak pembiayaan",
+      "saya paham dengan baik bahwa #4768# sebagai agunan #9340# tidak dikuasai #0047# melainkan dikuasai pemiliknya"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan persetujuan pemilik #4768# dan nilai agunan untuk #9340# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa pemilik #4768# tidak mengetahui bahwa agunan itu dipakai untuk #9340#",
+      "saya diberi tahu oleh {sumber} bahwa pemilik #4768# tidak ikut menandatangani persetujuan agunan untuk #9340#",
+      "nilai #4768# jauh melebihi sisa kewajiban dalam #9340# dan tidak dipertimbangkan oleh pihak pembiayaan, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #4768# sebagai agunan #9340# tidak dikuasai #0047# melainkan dikuasai pemiliknya"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa pemilik #4768# tidak ikut menandatangani persetujuan agunan untuk #9340#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa nilai #4768# jauh melebihi sisa kewajiban dalam #9340# dan tidak dipertimbangkan oleh pihak pembiayaan",
+      "#4768# sebagai agunan #9340# tidak dikuasai #0047# melainkan dikuasai pemiliknya demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa pemilik #4768# tidak mengetahui bahwa agunan itu dipakai untuk #9340#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pemilik agunan tidak menyetujui agunan; versi B: pemilik agunan menyetujui agunan - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa pemilik #4768# tidak menyetujui agunan untuk #9340#",
+      "keterangan saya adalah bahwa pemilik #4768# tidak mengetahui agunan untuk #9340#",
+      "pemilik #4768# tidak menyetujui agunan untuk #9340#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa pemilik #4768# tidak mengetahui agunan untuk #9340#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa pemilik #4768# menyetujui agunan untuk #9340#",
+      "pemilik #4768# mengetahui agunan untuk #9340#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa pemilik #4768# menyetujui agunan untuk #9340#",
+      "pemilik #4768# mengetahui agunan untuk #9340#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0047",
+    "4768",
+    "9340"
+   ],
+   "menggantikan": [
+    "q-es-pemilik-jaminan-setuju",
+    "q-es-jaminan-nilai"
+   ]
+  },
+  {
+   "id": "q-tg-es-minta-keringanan",
+   "pokok": "pp-bantahan",
+   "urutan": 80,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "minta-keringanan"
+    ]
+   },
+   "teks": "Apakah #0047# pernah meminta keringanan atau penjadwalan ulang kepada #0046#, kapan, dan bagaimana tanggapan #0046# ?",
+   "teksVarian": [
+    "Apakah #0047# sudah memohon keringanan pembayaran kepada #0046# dan apa jawaban #0046# ?"
+   ],
+   "hal": "permintaan keringanan oleh lawan dan tanggapan pengaju",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan permintaan keringanan oleh #0047# atas #9340# dan tanggapan #0046# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0047# sudah meminta keringanan pembayaran atas #9340# kepada #0046# tetapi permintaan itu tidak ditanggapi",
+      "saya menyaksikan langsung bahwa permohonan penjadwalan ulang #0047# atas #9340# diajukan kepada #0046# dan tidak dijawab",
+      "#0047# berkali-kali memohon keringanan kepada #0046# atas #9340# namun tidak digubris, dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #0046# tidak memberi keringanan atas #9340# meskipun #0047# sudah memohon"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #0047# sudah meminta keringanan pembayaran atas #9340# kepada #0046# tetapi permintaan itu tidak ditanggapi",
+      "permohonan penjadwalan ulang #0047# atas #9340# diajukan kepada #0046# dan tidak dijawab, demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa #0047# berkali-kali memohon keringanan kepada #0046# atas #9340# namun tidak digubris",
+      "#0046# tidak memberi keringanan atas #9340# meskipun #0047# sudah memohon, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan permintaan keringanan oleh #0047# atas #9340# dan tanggapan #0046# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #0047# sudah meminta keringanan pembayaran atas #9340# kepada #0046# tetapi permintaan itu tidak ditanggapi",
+      "saya diberi tahu oleh {sumber} bahwa permohonan penjadwalan ulang #0047# atas #9340# diajukan kepada #0046# dan tidak dijawab",
+      "#0047# berkali-kali memohon keringanan kepada #0046# atas #9340# namun tidak digubris, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #0046# tidak memberi keringanan atas #9340# meskipun #0047# sudah memohon"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa permohonan penjadwalan ulang #0047# atas #9340# diajukan kepada #0046# dan tidak dijawab",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #0047# berkali-kali memohon keringanan kepada #0046# atas #9340# namun tidak digubris",
+      "#0046# tidak memberi keringanan atas #9340# meskipun #0047# sudah memohon, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #0047# sudah meminta keringanan pembayaran atas #9340# kepada #0046# tetapi permintaan itu tidak ditanggapi"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: permohonan keringanan lawan tidak dijawab; versi B: permohonan keringanan lawan dijawab pengaju - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #0047# sudah memohon keringanan kepada #0046# atas #9340# tetapi tidak dijawab",
+      "keterangan saya adalah bahwa #0047# mengajukan penjadwalan ulang atas #9340# tetapi tidak ditanggapi #0046#",
+      "#0047# sudah memohon keringanan kepada #0046# atas #9340# tetapi tidak dijawab, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #0047# mengajukan penjadwalan ulang atas #9340# tetapi tidak ditanggapi #0046#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #0046# menjawab permohonan keringanan #0047# atas #9340#",
+      "#0046# menanggapi permohonan penjadwalan ulang #0047# atas #9340#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0046# menjawab permohonan keringanan #0047# atas #9340#",
+      "#0046# menanggapi permohonan penjadwalan ulang #0047# atas #9340#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9340"
+   ],
+   "menggantikan": [
+    "q-es-restrukturisasi"
+   ]
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Saksi yang diajukan Tergugat menerangkan versi Tergugat: tandai bantahan Tergugat pada keadaan perkara, lalu pilih Tergugat pada saksi yang bersangkutan.",
+  "Butir arah Tergugat hanya muncul untuk saksi Tergugat dan menggantikan butir yang arahnya dalil Penggugat atas hal yang sama."
+ ],
+ "variabelBaru": [
+  "4768",
+  "9340"
+ ]
+}

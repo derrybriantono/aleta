@@ -1,0 +1,707 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "wasiat-tergugat",
+ "judul": "Wasiat - keterangan saksi yang diajukan Tergugat",
+ "versi": 1,
+ "penulis": "W2A-K2",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "365"
+  ]
+ },
+ "tambahanUntuk": [
+  "wasiat"
+ ],
+ "urutanAwal": 1000,
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [],
+ "dasarHukum": [
+  {
+   "id": "dh-rbg-283",
+   "rujukan": "Pasal 283 RBg jo Pasal 1865 KUH Perdata",
+   "uraian": "pihak yang mendalilkan suatu hak atau peristiwa wajib membuktikannya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 283 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (memuat padanan KUHperd. 1865 dan IR. 163); Pasal 1865 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: blangko Derry 4b Kewarisan [01] [Kabul] Kewarisan - Kontradiktur (pertimbangan hukum)"
+  }
+ ],
+ "keadaan": {
+  "bantahan": {
+   "sumber": "borang",
+   "nilai": [
+    "tanpa-tekanan",
+    "pewasiat-sehat",
+    "ahli-waris-setuju",
+    "tidak-dicabut",
+    "penerima-sah",
+    "benda-masih-ada",
+    "penguasaan-sah"
+   ],
+   "jamak": true,
+   "bawaan": [],
+   "label": "Bantahan Tergugat",
+   "labelNilai": {
+    "tanpa-tekanan": "pewasiat membuat wasiat tanpa tekanan",
+    "pewasiat-sehat": "pewasiat sehat badan dan akalnya",
+    "ahli-waris-setuju": "ahli waris menyetujui wasiat",
+    "tidak-dicabut": "wasiat tidak pernah dicabut",
+    "penerima-sah": "penerima wasiat tidak berbuat jahat atau merawat pewasiat",
+    "benda-masih-ada": "benda wasiat masih ada",
+    "penguasaan-sah": "penguasaan benda wasiat berdasarkan wasiat"
+   }
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-bantahan",
+   "judul": "Bantahan lawan",
+   "uraian": "bantahan Tergugat atas dalil pengaju",
+   "dasarHukum": [
+    "dh-rbg-283"
+   ],
+   "wajib": false,
+   "keadaan": {
+    "kehadiran": [
+     "kontradiktoir",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   }
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-tg-ws-tanpa-tekanan",
+   "pokok": "pp-bantahan",
+   "urutan": 10,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "tanpa-tekanan"
+    ]
+   },
+   "teks": "Apakah #2026# #1025# membuat wasiat itu atas kemauannya sendiri, dan adakah orang yang menekan atau memaksanya ?",
+   "teksVarian": [
+    "Apakah ada orang yang menekan atau memaksa #2026# #1025# ketika ia membuat wasiat itu ?"
+   ],
+   "hal": "ada tidaknya tekanan terhadap pewasiat",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kemauan #2026# #1025# membuat wasiat atas #9479# untuk #9481# tanpa tekanan sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa #2026# #1025# membuat wasiat atas #9479# untuk #9481# dengan kemauannya sendiri dan tidak ada orang yang menekannya",
+      "saya tahu betul bahwa wasiat atas #9479# untuk #9481# lahir dari kehendak #2026# #1025# sendiri tanpa tekanan siapa pun",
+      "tidak ada paksaan kepada #2026# #1025# ketika ia menyatakan wasiat atas #9479# untuk #9481#, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa #2026# #1025# berwasiat atas #9479# kepada #9481# dengan sukarela dan tanpa desakan dari pihak mana pun"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa #2026# #1025# berwasiat atas #9479# kepada #9481# dengan sukarela dan tanpa desakan dari pihak mana pun",
+      "#2026# #1025# membuat wasiat atas #9479# untuk #9481# dengan kemauannya sendiri dan tidak ada orang yang menekannya sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa wasiat atas #9479# untuk #9481# lahir dari kehendak #2026# #1025# sendiri tanpa tekanan siapa pun",
+      "saya paham dengan baik bahwa tidak ada paksaan kepada #2026# #1025# ketika ia menyatakan wasiat atas #9479# untuk #9481#"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan kemauan #2026# #1025# membuat wasiat atas #9479# untuk #9481# tanpa tekanan hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #2026# #1025# membuat wasiat atas #9479# untuk #9481# dengan kemauannya sendiri dan tidak ada orang yang menekannya",
+      "saya diberi tahu oleh {sumber} bahwa wasiat atas #9479# untuk #9481# lahir dari kehendak #2026# #1025# sendiri tanpa tekanan siapa pun",
+      "tidak ada paksaan kepada #2026# #1025# ketika ia menyatakan wasiat atas #9479# untuk #9481#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #2026# #1025# berwasiat atas #9479# kepada #9481# dengan sukarela dan tanpa desakan dari pihak mana pun"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa wasiat atas #9479# untuk #9481# lahir dari kehendak #2026# #1025# sendiri tanpa tekanan siapa pun",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa tidak ada paksaan kepada #2026# #1025# ketika ia menyatakan wasiat atas #9479# untuk #9481#",
+      "#2026# #1025# berwasiat atas #9479# kepada #9481# dengan sukarela dan tanpa desakan dari pihak mana pun, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #2026# #1025# membuat wasiat atas #9479# untuk #9481# dengan kemauannya sendiri dan tidak ada orang yang menekannya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: wasiat dibuat tanpa tekanan; versi B: pewasiat didesak orang lain - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #2026# #1025# membuat wasiat atas #9479# untuk #9481# tanpa tekanan siapa pun",
+      "keterangan saya adalah bahwa wasiat atas #9479# untuk #9481# lahir dari kehendak #2026# #1025# sendiri tanpa paksaan",
+      "#2026# #1025# membuat wasiat atas #9479# untuk #9481# tanpa tekanan siapa pun, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa wasiat atas #9479# untuk #9481# lahir dari kehendak #2026# #1025# sendiri tanpa paksaan"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #2026# #1025# membuat wasiat atas #9479# untuk #9481# karena didesak orang lain",
+      "wasiat atas #9479# untuk #9481# lahir dari desakan orang lain kepada #2026# #1025#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #2026# #1025# membuat wasiat atas #9479# untuk #9481# karena didesak orang lain",
+      "wasiat atas #9479# untuk #9481# lahir dari desakan orang lain kepada #2026# #1025#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026",
+    "9479",
+    "9481"
+   ],
+   "menggantikan": [
+    "q-ws-ada-tekanan"
+   ]
+  },
+  {
+   "id": "q-tg-ws-sehat",
+   "pokok": "pp-bantahan",
+   "urutan": 20,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "pewasiat-sehat"
+    ]
+   },
+   "teks": "Bagaimana kesehatan badan dan akal #2026# #1025# ketika membuat wasiat itu, apakah ia sehat dan mengerti isi wasiatnya ?",
+   "teksVarian": [
+    "Apakah #2026# #1025# sehat badan dan pikirannya ketika membuat wasiat itu dan mengerti apa yang diwasiatkannya ?"
+   ],
+   "hal": "kesehatan badan dan akal pewasiat ketika berwasiat",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kesehatan badan dan akal #2026# #1025# ketika membuat wasiat atas #9479# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa #2026# #1025# sehat badan dan akalnya ketika membuat wasiat atas #9479# dan mengerti isinya",
+      "saya tahu betul bahwa ketika berwasiat atas #9479# #2026# #1025# segar dan berpikir jernih serta dapat menjelaskan maksudnya",
+      "#2026# #1025# masih beraktivitas seperti biasa dan sadar penuh ketika membuat wasiat atas #9479#, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa pada saat wasiat atas #9479# dibuat #2026# #1025# bugar dan bicaranya runtut"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa #2026# #1025# sehat badan dan akalnya ketika membuat wasiat atas #9479# dan mengerti isinya",
+      "ketika berwasiat atas #9479# #2026# #1025# segar dan berpikir jernih serta dapat menjelaskan maksudnya sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa #2026# #1025# masih beraktivitas seperti biasa dan sadar penuh ketika membuat wasiat atas #9479#",
+      "saya paham dengan baik bahwa pada saat wasiat atas #9479# dibuat #2026# #1025# bugar dan bicaranya runtut"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan kesehatan badan dan akal #2026# #1025# ketika membuat wasiat atas #9479# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #2026# #1025# sehat badan dan akalnya ketika membuat wasiat atas #9479# dan mengerti isinya",
+      "saya diberi tahu oleh {sumber} bahwa ketika berwasiat atas #9479# #2026# #1025# segar dan berpikir jernih serta dapat menjelaskan maksudnya",
+      "#2026# #1025# masih beraktivitas seperti biasa dan sadar penuh ketika membuat wasiat atas #9479#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa pada saat wasiat atas #9479# dibuat #2026# #1025# bugar dan bicaranya runtut"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa ketika berwasiat atas #9479# #2026# #1025# segar dan berpikir jernih serta dapat menjelaskan maksudnya",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #2026# #1025# masih beraktivitas seperti biasa dan sadar penuh ketika membuat wasiat atas #9479#",
+      "pada saat wasiat atas #9479# dibuat #2026# #1025# bugar dan bicaranya runtut, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #2026# #1025# sehat badan dan akalnya ketika membuat wasiat atas #9479# dan mengerti isinya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pewasiat sehat akalnya; versi B: pewasiat sakit keras dan tidak sadar - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #2026# #1025# sehat akalnya ketika membuat wasiat atas #9479#",
+      "keterangan saya adalah bahwa ketika berwasiat atas #9479# #2026# #1025# berpikir jernih",
+      "#2026# #1025# sehat akalnya ketika membuat wasiat atas #9479#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa ketika berwasiat atas #9479# #2026# #1025# berpikir jernih"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #2026# #1025# sakit keras dan tidak sadar ketika membuat wasiat atas #9479#",
+      "ketika berwasiat atas #9479# #2026# #1025# tidak sadar karena sakit parah, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #2026# #1025# sakit keras dan tidak sadar ketika membuat wasiat atas #9479#",
+      "ketika berwasiat atas #9479# #2026# #1025# tidak sadar karena sakit parah, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026",
+    "9479"
+   ],
+   "menggantikan": [
+    "q-ws-akal-dipersoalkan",
+    "q-ws-sakit-wafat"
+   ]
+  },
+  {
+   "id": "q-tg-ws-persetujuan",
+   "pokok": "pp-bantahan",
+   "urutan": 30,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "ahli-waris-setuju"
+    ]
+   },
+   "teks": "Apakah ahli waris #2026# #1025# mengetahui wasiat atas benda itu dan menyatakan menyetujuinya, kapan, dan di depan siapa ?",
+   "teksVarian": [
+    "Siapa saja ahli waris #2026# #1025# yang menyetujui wasiat itu, kapan, dan di depan siapa mereka menyatakannya ?"
+   ],
+   "hal": "persetujuan ahli waris atas wasiat",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan persetujuan ahli waris #2026# #1025# atas wasiat #9479# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa seluruh ahli waris #2026# #1025# mengetahui wasiat atas #9479# dan menyatakan setuju di depan dua orang saksi",
+      "saya menyaksikan langsung bahwa ahli waris #2026# #1025# menyetujui wasiat atas #9479# dengan pernyataan yang diucapkan di hadapan dua orang saksi",
+      "persetujuan ahli waris #2026# #1025# atas wasiat #9479# diberikan secara lisan di depan dua orang saksi, dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa semua ahli waris #2026# #1025# sudah mengetahui wasiat atas #9479# dan menyatakan setuju"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa semua ahli waris #2026# #1025# sudah mengetahui wasiat atas #9479# dan menyatakan setuju",
+      "seluruh ahli waris #2026# #1025# mengetahui wasiat atas #9479# dan menyatakan setuju di depan dua orang saksi, demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa ahli waris #2026# #1025# menyetujui wasiat atas #9479# dengan pernyataan yang diucapkan di hadapan dua orang saksi",
+      "persetujuan ahli waris #2026# #1025# atas wasiat #9479# diberikan secara lisan di depan dua orang saksi, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan persetujuan ahli waris #2026# #1025# atas wasiat #9479# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa seluruh ahli waris #2026# #1025# mengetahui wasiat atas #9479# dan menyatakan setuju di depan dua orang saksi",
+      "saya diberi tahu oleh {sumber} bahwa ahli waris #2026# #1025# menyetujui wasiat atas #9479# dengan pernyataan yang diucapkan di hadapan dua orang saksi",
+      "persetujuan ahli waris #2026# #1025# atas wasiat #9479# diberikan secara lisan di depan dua orang saksi, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa semua ahli waris #2026# #1025# sudah mengetahui wasiat atas #9479# dan menyatakan setuju"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa ahli waris #2026# #1025# menyetujui wasiat atas #9479# dengan pernyataan yang diucapkan di hadapan dua orang saksi",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa persetujuan ahli waris #2026# #1025# atas wasiat #9479# diberikan secara lisan di depan dua orang saksi",
+      "semua ahli waris #2026# #1025# sudah mengetahui wasiat atas #9479# dan menyatakan setuju, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa seluruh ahli waris #2026# #1025# mengetahui wasiat atas #9479# dan menyatakan setuju di depan dua orang saksi"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: semua ahli waris menyetujui wasiat; versi B: ada ahli waris yang tidak menyetujui - berselisih pada JUMLAH",
+     "bedaPada": "jumlah",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa semua ahli waris #2026# #1025# setuju atas wasiat #9479#",
+      "keterangan saya adalah bahwa seluruh ahli waris #2026# #1025# menyetujui wasiat #9479#",
+      "semua ahli waris #2026# #1025# setuju atas wasiat #9479#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa seluruh ahli waris #2026# #1025# menyetujui wasiat #9479#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa ada ahli waris #2026# #1025# yang tidak setuju atas wasiat #9479#",
+      "tidak semua ahli waris #2026# #1025# menyetujui wasiat #9479#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa ada ahli waris #2026# #1025# yang tidak setuju atas wasiat #9479#",
+      "tidak semua ahli waris #2026# #1025# menyetujui wasiat #9479#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026",
+    "9479"
+   ],
+   "menggantikan": [
+    "q-ws-setuju-tolak",
+    "q-ws-setuju-belum"
+   ]
+  },
+  {
+   "id": "q-tg-ws-tidak-dicabut",
+   "pokok": "pp-bantahan",
+   "urutan": 40,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "tidak-dicabut"
+    ]
+   },
+   "teks": "Apakah sampai meninggal dunia #2026# #1025# tidak pernah mencabut atau mengubah wasiatnya, dan bagaimana saksi mengetahuinya ?",
+   "teksVarian": [
+    "Apakah #2026# #1025# tetap berpegang pada wasiatnya sampai wafat tanpa pernah mencabutnya ?"
+   ],
+   "hal": "tidak dicabutnya wasiat sampai pewasiat meninggal",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan tidak dicabutnya wasiat atas #9479# oleh #2026# #1025# sampai ia meninggal dunia sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa #2026# #1025# tidak pernah mencabut wasiat atas #9479# sampai ia meninggal dunia",
+      "saya tahu betul bahwa wasiat atas #9479# tetap berlaku karena #2026# #1025# tidak pernah membatalkannya",
+      "sampai wafat #2026# #1025# tidak mengubah wasiat atas #9479# yang dibuatnya dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa #2026# #1025# terus berpegang pada wasiat atas #9479# dan tidak pernah menariknya kembali"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa #2026# #1025# tidak pernah mencabut wasiat atas #9479# sampai ia meninggal dunia",
+      "wasiat atas #9479# tetap berlaku karena #2026# #1025# tidak pernah membatalkannya sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa sampai wafat #2026# #1025# tidak mengubah wasiat atas #9479# yang dibuatnya",
+      "saya paham dengan baik bahwa #2026# #1025# terus berpegang pada wasiat atas #9479# dan tidak pernah menariknya kembali"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan tidak dicabutnya wasiat atas #9479# oleh #2026# #1025# sampai ia meninggal dunia hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #2026# #1025# tidak pernah mencabut wasiat atas #9479# sampai ia meninggal dunia",
+      "saya diberi tahu oleh {sumber} bahwa wasiat atas #9479# tetap berlaku karena #2026# #1025# tidak pernah membatalkannya",
+      "sampai wafat #2026# #1025# tidak mengubah wasiat atas #9479# yang dibuatnya begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #2026# #1025# terus berpegang pada wasiat atas #9479# dan tidak pernah menariknya kembali"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa wasiat atas #9479# tetap berlaku karena #2026# #1025# tidak pernah membatalkannya",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sampai wafat #2026# #1025# tidak mengubah wasiat atas #9479# yang dibuatnya",
+      "#2026# #1025# terus berpegang pada wasiat atas #9479# dan tidak pernah menariknya kembali, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #2026# #1025# tidak pernah mencabut wasiat atas #9479# sampai ia meninggal dunia"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: wasiat tidak pernah dicabut; versi B: wasiat pernah dicabut - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #2026# #1025# tidak pernah mencabut wasiat atas #9479#",
+      "keterangan saya adalah bahwa #2026# #1025# tidak pernah membatalkan wasiat atas #9479#",
+      "#2026# #1025# tidak pernah mencabut wasiat atas #9479#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #2026# #1025# tidak pernah membatalkan wasiat atas #9479#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #2026# #1025# pernah mencabut wasiat atas #9479#",
+      "#2026# #1025# pernah membatalkan wasiat atas #9479#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #2026# #1025# pernah mencabut wasiat atas #9479#",
+      "#2026# #1025# pernah membatalkan wasiat atas #9479#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026",
+    "9479"
+   ],
+   "menggantikan": [
+    "q-ws-cabut-ada"
+   ]
+  },
+  {
+   "id": "q-tg-ws-penerima-sah",
+   "pokok": "pp-bantahan",
+   "urutan": 50,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "penerima-sah"
+    ]
+   },
+   "teks": "Apakah #9481# pernah merawat #2026# #1025# ketika sakit atau berbuat jahat kepadanya, dan bagaimana hubungan keduanya ?",
+   "teksVarian": [
+    "Bagaimana hubungan #9481# dengan #2026# #1025#, apakah ia merawatnya ketika sakit atau pernah berbuat jahat kepadanya ?"
+   ],
+   "hal": "hubungan penerima wasiat dengan pewasiat",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan hubungan #9481# dengan #2026# #1025# dan ada tidaknya perbuatan jahat sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #9481# tidak pernah menganiaya atau menghalangi #2026# #1025# dan hubungan keduanya baik sampai akhir hayat",
+      "saya menyaksikan langsung bahwa hubungan #9481# dengan #2026# #1025# baik dan tidak pernah ada fitnah atau ancaman di antara mereka",
+      "#9481# tidak termasuk orang yang merawat #2026# #1025# ketika sakit karena perawatannya diurus keluarga, dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #9481# tidak pernah berbuat jahat kepada #2026# #1025# dan hanya menjenguknya ketika sakit"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #9481# tidak pernah menganiaya atau menghalangi #2026# #1025# dan hubungan keduanya baik sampai akhir hayat",
+      "hubungan #9481# dengan #2026# #1025# baik dan tidak pernah ada fitnah atau ancaman di antara mereka, demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa #9481# tidak termasuk orang yang merawat #2026# #1025# ketika sakit karena perawatannya diurus keluarga",
+      "#9481# tidak pernah berbuat jahat kepada #2026# #1025# dan hanya menjenguknya ketika sakit, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan hubungan #9481# dengan #2026# #1025# dan ada tidaknya perbuatan jahat hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #9481# tidak pernah menganiaya atau menghalangi #2026# #1025# dan hubungan keduanya baik sampai akhir hayat",
+      "saya diberi tahu oleh {sumber} bahwa hubungan #9481# dengan #2026# #1025# baik dan tidak pernah ada fitnah atau ancaman di antara mereka",
+      "#9481# tidak termasuk orang yang merawat #2026# #1025# ketika sakit karena perawatannya diurus keluarga, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #9481# tidak pernah berbuat jahat kepada #2026# #1025# dan hanya menjenguknya ketika sakit"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa hubungan #9481# dengan #2026# #1025# baik dan tidak pernah ada fitnah atau ancaman di antara mereka",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #9481# tidak termasuk orang yang merawat #2026# #1025# ketika sakit karena perawatannya diurus keluarga",
+      "#9481# tidak pernah berbuat jahat kepada #2026# #1025# dan hanya menjenguknya ketika sakit, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #9481# tidak pernah menganiaya atau menghalangi #2026# #1025# dan hubungan keduanya baik sampai akhir hayat"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: penerima tidak pernah berbuat jahat kepada pewasiat; versi B: penerima pernah berbuat jahat - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #9481# tidak pernah berbuat jahat kepada #2026# #1025#",
+      "keterangan saya adalah bahwa hubungan #9481# dengan #2026# #1025# tidak pernah diwarnai perbuatan jahat",
+      "#9481# tidak pernah berbuat jahat kepada #2026# #1025#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa hubungan #9481# dengan #2026# #1025# tidak pernah diwarnai perbuatan jahat"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #9481# pernah berbuat jahat kepada #2026# #1025#",
+      "hubungan #9481# dengan #2026# #1025# pernah diwarnai perbuatan jahat, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #9481# pernah berbuat jahat kepada #2026# #1025#",
+      "hubungan #9481# dengan #2026# #1025# pernah diwarnai perbuatan jahat, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026",
+    "9481"
+   ],
+   "menggantikan": [
+    "q-ws-penerima-perawat",
+    "q-ws-penerima-jahat"
+   ]
+  },
+  {
+   "id": "q-tg-ws-objek-ada",
+   "pokok": "pp-bantahan",
+   "urutan": 60,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "benda-masih-ada"
+    ]
+   },
+   "teks": "Apakah #9479# yang diwasiatkan #2026# #1025# itu masih ada dan masih utuh, dan siapa yang menguasainya sekarang ?",
+   "teksVarian": [
+    "Sampai #2026# #1025# meninggal dunia apakah #9479# masih ada dan masih utuh ?"
+   ],
+   "hal": "masih adanya benda wasiat sampai pewasiat meninggal",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan keberadaan #9479# milik #2026# #1025# sampai ia meninggal dunia sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa #9479# masih ada dan utuh sampai #2026# #1025# meninggal dunia",
+      "saya tahu betul bahwa sampai #2026# #1025# wafat #9479# masih berada di tempatnya semula",
+      "ketika #2026# #1025# meninggal dunia #9479# masih lengkap dan dapat diserahkan, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa #9479# milik #2026# #1025# tetap utuh dan terpelihara sampai ia meninggal dunia"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa #9479# masih ada dan utuh sampai #2026# #1025# meninggal dunia",
+      "sampai #2026# #1025# wafat #9479# masih berada di tempatnya semula, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa ketika #2026# #1025# meninggal dunia #9479# masih lengkap dan dapat diserahkan",
+      "saya paham dengan baik bahwa #9479# milik #2026# #1025# tetap utuh dan terpelihara sampai ia meninggal dunia"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan keberadaan #9479# milik #2026# #1025# sampai ia meninggal dunia hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #9479# masih ada dan utuh sampai #2026# #1025# meninggal dunia",
+      "saya diberi tahu oleh {sumber} bahwa sampai #2026# #1025# wafat #9479# masih berada di tempatnya semula",
+      "ketika #2026# #1025# meninggal dunia #9479# masih lengkap dan dapat diserahkan, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #9479# milik #2026# #1025# tetap utuh dan terpelihara sampai ia meninggal dunia"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa sampai #2026# #1025# wafat #9479# masih berada di tempatnya semula",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa ketika #2026# #1025# meninggal dunia #9479# masih lengkap dan dapat diserahkan",
+      "#9479# milik #2026# #1025# tetap utuh dan terpelihara sampai ia meninggal dunia, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #9479# masih ada dan utuh sampai #2026# #1025# meninggal dunia"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: benda wasiat masih ada; versi B: benda wasiat sudah musnah - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #9479# masih ada sampai #2026# #1025# meninggal dunia",
+      "keterangan saya adalah bahwa sampai #2026# #1025# wafat #9479# masih utuh",
+      "#9479# masih ada sampai #2026# #1025# meninggal dunia, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa sampai #2026# #1025# wafat #9479# masih utuh"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #9479# sudah musnah sebelum #2026# #1025# meninggal dunia",
+      "sebelum #2026# #1025# wafat #9479# sudah hilang, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #9479# sudah musnah sebelum #2026# #1025# meninggal dunia",
+      "sebelum #2026# #1025# wafat #9479# sudah hilang, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "1025",
+    "2026",
+    "9479"
+   ],
+   "menggantikan": [
+    "q-ws-objek-musnah"
+   ]
+  },
+  {
+   "id": "q-tg-ws-penguasaan-sah",
+   "pokok": "pp-bantahan",
+   "urutan": 70,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "penguasaan-sah"
+    ]
+   },
+   "teks": "Atas dasar apa #0047# menguasai benda wasiat dari #2026# #1025# itu, dan apakah ia pernah menjual atau mengalihkannya ?",
+   "teksVarian": [
+    "Apakah #0047# menguasai benda wasiat dari #2026# #1025# itu karena wasiat, dan apakah benda itu pernah dijual olehnya ?"
+   ],
+   "hal": "dasar penguasaan benda wasiat dan ada tidaknya pengalihan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan dasar penguasaan #9479# oleh #0047# berdasarkan wasiat #2026# #1025# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0047# menguasai #9479# berdasarkan wasiat #2026# #1025# dan tidak pernah menjual atau mengalihkannya",
+      "saya menyaksikan langsung bahwa #9479# dari wasiat #2026# #1025# dirawat #0047# dan tidak pernah dipindahtangankan",
+      "sejak #2026# #1025# meninggal dunia #0047# memelihara #9479# sebagaimana wasiat dan tidak menjualnya dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #0047# mengelola #9479# menurut wasiat #2026# #1025# dan tidak mengalihkannya kepada siapa pun"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #0047# menguasai #9479# berdasarkan wasiat #2026# #1025# dan tidak pernah menjual atau mengalihkannya",
+      "#9479# dari wasiat #2026# #1025# dirawat #0047# dan tidak pernah dipindahtangankan, demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa sejak #2026# #1025# meninggal dunia #0047# memelihara #9479# sebagaimana wasiat dan tidak menjualnya",
+      "#0047# mengelola #9479# menurut wasiat #2026# #1025# dan tidak mengalihkannya kepada siapa pun, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan dasar penguasaan #9479# oleh #0047# berdasarkan wasiat #2026# #1025# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #0047# menguasai #9479# berdasarkan wasiat #2026# #1025# dan tidak pernah menjual atau mengalihkannya",
+      "saya diberi tahu oleh {sumber} bahwa #9479# dari wasiat #2026# #1025# dirawat #0047# dan tidak pernah dipindahtangankan",
+      "sejak #2026# #1025# meninggal dunia #0047# memelihara #9479# sebagaimana wasiat dan tidak menjualnya begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #0047# mengelola #9479# menurut wasiat #2026# #1025# dan tidak mengalihkannya kepada siapa pun"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa #9479# dari wasiat #2026# #1025# dirawat #0047# dan tidak pernah dipindahtangankan",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sejak #2026# #1025# meninggal dunia #0047# memelihara #9479# sebagaimana wasiat dan tidak menjualnya",
+      "#0047# mengelola #9479# menurut wasiat #2026# #1025# dan tidak mengalihkannya kepada siapa pun, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #0047# menguasai #9479# berdasarkan wasiat #2026# #1025# dan tidak pernah menjual atau mengalihkannya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: benda wasiat tidak pernah dijual; versi B: benda wasiat pernah dijual - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #0047# tidak pernah menjual #9479# dari wasiat #2026# #1025#",
+      "keterangan saya adalah bahwa #9479# dari wasiat #2026# #1025# tidak pernah dijual #0047#",
+      "#0047# tidak pernah menjual #9479# dari wasiat #2026# #1025#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #9479# dari wasiat #2026# #1025# tidak pernah dijual #0047#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #0047# pernah menjual #9479# dari wasiat #2026# #1025#",
+      "#9479# dari wasiat #2026# #1025# pernah dijual #0047#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0047# pernah menjual #9479# dari wasiat #2026# #1025#",
+      "#9479# dari wasiat #2026# #1025# pernah dijual #0047#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0047",
+    "1025",
+    "2026",
+    "9479"
+   ],
+   "menggantikan": [
+    "q-ws-hasil-dikuasai",
+    "q-ws-dialihkan"
+   ]
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Saksi yang diajukan Tergugat menerangkan versi Tergugat: tandai bantahan Tergugat pada keadaan perkara, lalu pilih Tergugat pada saksi yang bersangkutan.",
+  "Butir arah Tergugat hanya muncul untuk saksi Tergugat dan menggantikan butir yang arahnya dalil Penggugat atas hal yang sama."
+ ],
+ "variabelBaru": [
+  "9479",
+  "9481"
+ ]
+}
