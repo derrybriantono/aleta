@@ -743,7 +743,7 @@ describe("Blangko Derry (20 Okt): isian opsional keluar dari 'Perlu diisi'", () 
       const kotak = bagian.querySelector('[data-f="9134"]') as HTMLElement;
       expect(kotak, "kotak 9134 di bagian tambahan").not.toBeNull();
       expect(kotak.querySelector("label")!.textContent).toBe("Petunjuk perbaikan permohonan (bila majelis memberi petunjuk)");
-      expect(akar(h).textContent).not.toMatch(/Bas permohonan/);
+      expect(akar(h).innerHTML).not.toMatch(/Bas permohonan/); // juga di label ikon ⓘ
       // Hitungan: pembagi = jumlah kartu yang benar-benar wajib (9134 tidak ikut)
       // Pembanding: blangko yang sama TANPA penanda 9134 sama sekali harus memberi hitungan yang sama.
       const hit = hitunganPerlu(h);
