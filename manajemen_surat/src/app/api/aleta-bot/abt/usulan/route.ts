@@ -78,6 +78,9 @@ type BadanUsulan = {
   jenisPerkara?: unknown;
   alur?: unknown;
   saksi?: unknown;
+  /** 20 Okt 2026: isian blangko perkara itu (kode -> {nilai, keyakinan}) dan baris yang diisi (sumber 'isi-jawaban'). */
+  isian?: unknown;
+  saksiIsi?: unknown;
   /** Sumber 'pertanyaan-saksi' (12 Okt 2026): { aksi: daftar|ambil, namaSet, pihak, huruf[], tambahan[] }. */
   pertanyaanSaksi?: unknown;
 };
@@ -120,6 +123,41 @@ function saringSaksi(x: unknown) {
       ke: Number(r.ke) || 0,
       pihak: String(r.pihak || "").slice(0, 1).toUpperCase(),
       ...saringModus(r),
+    };
+  });
+}
+
+/** Isian blangko dari peramban: kode 3-5 angka -> {nilai, keyakinan}; dibatasi jumlah dan panjangnya, disaring lagi di bot. */
+function saringIsianBadan(x: unknown) {
+  if (!x || typeof x !== "object") return undefined;
+  const hasil: Record<string, { nilai: string; keyakinan?: string }> = {};
+  let n = 0;
+  for (const [kode, v] of Object.entries(x as Record<string, unknown>)) {
+    if (n >= 250 || !/^\d{3,5}$/.test(kode)) continue;
+    const r = (v && typeof v === "object" ? v : { nilai: v }) as Record<string, unknown>;
+    const nilai = String(r.nilai ?? "").slice(0, 700);
+    if (!nilai.trim()) continue;
+    const yakin = String(r.keyakinan ?? r.yakin ?? "").slice(0, 12);
+    hasil[kode] = { nilai, ...(yakin ? { keyakinan: yakin } : {}) };
+    n += 1;
+  }
+  return hasil;
+}
+
+/** Baris yang diisi (sumber 'isi-jawaban'): sampai 12 saksi x 80 baris; bentuknya dibatasi di sini dan disaring di bot. */
+function saringSaksiIsi(x: unknown) {
+  if (!Array.isArray(x)) return undefined;
+  return (x as unknown[]).slice(0, 12).map((s) => {
+    const r = (s && typeof s === "object" ? s : {}) as Record<string, unknown>;
+    return {
+      kunci: String(r.kunci || "").slice(0, 40),
+      ke: Number(r.ke) || 1,
+      modus: String(r.modus || "").slice(0, 24),
+      sumberNama: String(r.sumberNama || "").slice(0, 40),
+      baris: (Array.isArray(r.baris) ? (r.baris as unknown[]) : []).slice(0, 80).map((b) => {
+        const q = (b && typeof b === "object" ? b : {}) as Record<string, unknown>;
+        return { kunci: String(q.kunci || "").slice(0, 120), tanya: String(q.tanya || "").slice(0, 600), jawab: String(q.jawab || "").slice(0, 2000) };
+      }),
     };
   });
 }
@@ -226,7 +264,7 @@ export async function POST(request: NextRequest) {
 
     // "alasan-posita" (butir 12, 6 Okt 2026): alasan yang terbaca dari posita,
     // untuk centang modus saksi "Hanya sebagian alasan" sebelum disusun.
-    const SUMBER_DIKENAL = ["sipp", "saksi", "itsbat", "saksi-sdg", "posita-lain", "alasan-posita", "pertanyaan-saksi"] as const;
+    const SUMBER_DIKENAL = ["sipp", "saksi", "itsbat", "saksi-sdg", "posita-lain", "alasan-posita", "pertanyaan-saksi", "isi-jawaban"] as const;
     type Sumber = (typeof SUMBER_DIKENAL)[number] | "semua";
     const sumber: Sumber = (SUMBER_DIKENAL as readonly string[]).includes(sumberMinta)
       ? (sumberMinta as Sumber)
@@ -280,6 +318,8 @@ export async function POST(request: NextRequest) {
             })()
           : undefined,
       saksi: saringSaksi(body.saksi),
+      isian: saringIsianBadan(body.isian),
+      saksiIsi: saringSaksiIsi(body.saksiIsi),
       pertanyaanSaksi: saringPertanyaanSaksi(body.pertanyaanSaksi),
       tipeKeluaran: tipe.tipeKeluaran,
       // Blangko tanya jawab, diambil ekstensi dari halaman penyunting ABT
@@ -357,6 +397,7 @@ export async function POST(request: NextRequest) {
       saksi: hasil.data?.saksi ?? null,
       itsbat: hasil.data?.itsbat ?? null,
       saksiSdg: hasil.data?.saksiSdg ?? null,
+      isiJawaban: hasil.data?.isiJawaban ?? null,
       pertanyaanSaksi: hasil.data?.pertanyaanSaksi ?? null,
     });
   } catch (error) {

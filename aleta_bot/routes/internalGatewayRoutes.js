@@ -2461,6 +2461,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       saksi: null,
       itsbat: null,
       saksiSdg: null,
+      isiJawaban: null,
       positaLain: null,
       alasanPosita: null,
       // Yang dipakai penyusun, bukan yang diminta: portal menyebut asalnya
@@ -2673,6 +2674,30 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         asalPosita: !terbaca ? "" : positaDipakai === positaSipp ? "sipp" : "ekstensi",
       };
     }
+    // 20 Okt 2026: "isi-jawaban" - mengisi baris tanya jawab apa saja (susunan katalog jenis perkara) dari isian blangko >
+    // data SIPP > posita; kontrak {teks, yakin, sumber, ket} per kunci. HANYA SELECT ke SIPP, 2,5 detik.
+    if (sumber === "isi-jawaban") {
+      const isiSumber = require("../services/isiJawabanSaksiService");
+      const positaMasuk = String(req.body?.posita || "");
+      const positaKurang = positaMasuk.replace(/<[^>]*>/g, " ").trim().length < 50;
+      const [konteksSipp, sippSaksi, alamatPihakSipp] = await Promise.all([
+        positaKurang && nomorPerkara ? abtUsulanService.konteksPerkaraSaksi(nomorPerkara).catch(() => null) : null,
+        nomorPerkara ? isiSumber.bacaSippSaksi(nomorPerkara).catch(() => null) : null,
+        nomorPerkara && typeof abtUsulanService.alamatPihakPerkara === "function" ? abtUsulanService.alamatPihakPerkara(nomorPerkara).catch(() => null) : null,
+      ]);
+      jawaban.isiJawaban = isiSumber.isiBaris({
+        posita: positaKurang && konteksSipp && konteksSipp.posita ? konteksSipp.posita : positaMasuk,
+        jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+        alur: String(req.body?.alur || "").slice(0, 20),
+        pelaku,
+        lawan,
+        tanggalSidang: String(req.body?.tanggalSidang || "").slice(0, 40) || (konteksSipp && konteksSipp.tanggalSidang) || "",
+        ...(alamatPihakSipp ? { alamatPihak: alamatPihakSipp } : {}),
+        isian: req.body?.isian,
+        sipp: sippSaksi,
+        saksiIsi: Array.isArray(req.body?.saksiIsi) ? req.body.saksiIsi.slice(0, 12) : [],
+      });
+    }
     // Keterangan saksi SDG - disusun dari templat pertanyaan yang ekstensi
     // ambil lewat halaman penyunting ABT sendiri (load_template). Dua saksi,
     // satu substansi, dua bentuk kalimat.
@@ -2764,6 +2789,10 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       // 19 Okt 2026: alamat pihak di SIPP (cadangan "sekarang Penggugat tinggal di ...") dibaca hanya bila templatnya
       // menanyakan tempat tinggal masing-masing pihak sekarang; SELECT saja, 2,5 detik.
       const tanyaTempatKini = templatMasuk.some((b) => /masing-masing\s+tinggal|tinggal\s+di\s+mana/i.test(String((b && (b.tanya || b.pertanyaan)) || "")));
+      // 20 Okt 2026: data SIPP untuk pengisi jawaban bersumber (SELECT saja, 2,5 detik) - hanya bila templat masih bertitik-titik.
+      const isiSumber = require("../services/isiJawabanSaksiService");
+      const perluSumber = templatMasuk.some((b) => /(?:[.]{3,}|…|\{[a-zA-Z0-9_]+\})/.test(String((b && (b.jawab || b.jawaban)) || "")));
+      const janjiSippSaksi = perluSumber && nomorPerkara ? isiSumber.bacaSippSaksi(nomorPerkara).catch(() => null) : Promise.resolve(null);
       const [mediasiSipp, konteksSipp, alamatPihakSipp] = await Promise.all([
         !mediasiMasuk && tanyaUpaya && nomorPerkara ? abtUsulanService.mediasiPerkara(nomorPerkara).catch(() => null) : null,
         nomorPerkara && (positaKurang || !tanggalSidangMasuk)
@@ -2781,6 +2810,8 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       // posita per jenis - hanya fakta yang lulus gerbang isian saksi (deteksiJenisPerkaraService).
       // Templat masukan diganti di tempat agar susunKeteranganSaksiSdg di bawah tidak berubah.
       let jenis3Isi = null;
+      // Salinan templat SEBELUM isiTemplatSaksi menggantinya: pengisi jawaban bersumber mencocokkan titik-titik pada bunyi aslinya.
+      const templatSebelumJenis3 = templatMasuk.map((b) => (b && typeof b === "object" ? { ...b } : b));
       try {
         jenis3Isi = require("../services/deteksiJenisPerkaraService").isiTemplatSaksi(templatMasuk, {
           posita: positaDipakai,
@@ -2816,6 +2847,29 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
         ...(saksiMasuk.saksi.length ? { saksi: saksiMasuk.saksi } : {}),
         ...(tipe.tipeKeluaran ? { tipeKeluaran: tipe.tipeKeluaran } : {}),
       });
+      // 20 Okt 2026: jawaban yang masih '...' padahal datanya ada diisi dari isian blangko > data SIPP > posita (kontrak
+      // {teks, yakin, sumber, ket} per jawaban, di j.usulan). Dijalankan sebelum paragraf saksi disusun supaya ikut terbaca.
+      if (jawaban.saksiSdg && jawaban.saksiSdg.ok) {
+        try {
+          const sippSaksi = await janjiSippSaksi;
+          const ringkasIsi = isiSumber.lengkapi(jawaban.saksiSdg, {
+            templatMasuk: templatSebelumJenis3,
+            posita: positaDipakai,
+            jenisPerkara: String(req.body?.jenisPerkara || "").slice(0, 80),
+            alur: String(req.body?.alur || "").slice(0, 20),
+            pelaku,
+            lawan,
+            tanggalSidang: tanggalSidangMasuk || (konteksSipp && konteksSipp.tanggalSidang) || "",
+            ...(alamatPihakSipp ? { alamatPihak: alamatPihakSipp } : {}),
+            isian: req.body?.isian,
+            sipp: sippSaksi,
+            saksi: saksiMasuk.saksi,
+          });
+          if (ringkasIsi && ringkasIsi.terisi) jawaban.saksiSdg.terisiDariSumber = { jawaban: ringkasIsi.terisi, ragu: ringkasIsi.ragu };
+        } catch (galatIsi) {
+          jawaban.saksiSdg.isiSumberGagal = String((galatIsi && galatIsi.message) || galatIsi).slice(0, 200);
+        }
+      }
       // Dari mana fakta gugatan diambil - supaya panel dapat menyebutnya.
       if (jawaban.saksiSdg && jawaban.saksiSdg.ok) {
         jawaban.saksiSdg.asalPosita = positaDipakai === positaSipp && positaSipp ? "sipp" : positaMasuk ? "ekstensi" : "";

@@ -3761,7 +3761,10 @@ export async function getGatewayAbtUsulan(muatan: {
   upayaDamai?: string;
   /** Keadaan mediasi bila diketahui ekstensi - butir 28. */
   mediasi?: { selesai: boolean; berhasil: boolean };
-  sumber?: "semua" | "sipp" | "saksi" | "itsbat" | "saksi-sdg" | "posita-lain" | "alasan-posita" | "pertanyaan-saksi";
+  sumber?: "semua" | "sipp" | "saksi" | "itsbat" | "saksi-sdg" | "posita-lain" | "alasan-posita" | "pertanyaan-saksi" | "isi-jawaban";
+  /** Isian blangko perkara itu (kode -> {nilai, keyakinan}) dan baris yang diisi (sumber isi-jawaban), 20 Okt 2026. */
+  isian?: Record<string, { nilai: string; keyakinan?: string }>;
+  saksiIsi?: Array<{ kunci: string; ke: number; modus: string; sumberNama: string; baris: Array<{ kunci: string; tanya: string; jawab: string }> }>;
   /** Sumber 'pertanyaan-saksi' (12 Okt 2026): aksi daftar/ambil set pertanyaan saksi baku, huruf alasan, tambahan. */
   pertanyaanSaksi?: { aksi?: "daftar" | "ambil"; namaSet?: string; pihak?: string; huruf?: string[]; tambahan?: string[] };
   saksi1?: string;
@@ -3818,6 +3821,8 @@ export async function getGatewayAbtUsulan(muatan: {
     saksi: Record<string, unknown> | null;
     itsbat: Record<string, unknown> | null;
     saksiSdg: Record<string, unknown> | null;
+    /** Jawaban yang diisi dari data (sumber 'isi-jawaban'): kunci -> {teks, yakin, sumber, ket}. */
+    isiJawaban?: Record<string, { teks: string; yakin: string; sumber: string; ket: string }> | null;
     /** Usulan perkara lain dari posita (sumber 'posita-lain'). */
     positaLain?: Record<string, unknown> | null;
     /**
