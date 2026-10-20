@@ -856,6 +856,119 @@ export const DDL_ALETA_AI = {
 } as const;
 
 /**
+ * Unggah Putusan Terjadwal (0080, 21 Okt 2026, agen B3): jadwal, butir (satu
+ * perkara), berkas yang diunggah, dan jejak jujur. Cermin PERSIS dari
+ * drizzle/0080_aleta_putusan_terjadwal.sql; penjaga putusan-terjadwal-layanan-21okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK: nilai sah dijaga
+ * modul (src/server/modules/putusan-terjadwal/*).
+ */
+export const DDL_PUTUSAN_TERJADWAL = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_putusan_jadwal (
+  id TEXT PRIMARY KEY,
+  dibuat_oleh TEXT NOT NULL,
+  dibuat_nama TEXT NOT NULL DEFAULT '',
+  peran TEXT NOT NULL DEFAULT '',
+  akun_sipp TEXT NOT NULL DEFAULT '',
+  ip TEXT NOT NULL DEFAULT '',
+  sumber TEXT NOT NULL DEFAULT '',
+  tanggal_acuan TEXT NOT NULL DEFAULT '',
+  mulai_wita TEXT NOT NULL,
+  batas_akhir_wita TEXT NOT NULL DEFAULT '',
+  jeda_min INTEGER NOT NULL DEFAULT 120,
+  jeda_maks INTEGER NOT NULL DEFAULT 420,
+  jam_dari TEXT NOT NULL DEFAULT '',
+  jam_sampai TEXT NOT NULL DEFAULT '',
+  malam_boleh INTEGER NOT NULL DEFAULT 0,
+  lintas_hari INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'aktif',
+  catatan TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_putusan_jadwal_butir (
+  id TEXT PRIMARY KEY,
+  jadwal_id TEXT NOT NULL,
+  urut INTEGER NOT NULL DEFAULT 0,
+  perkara_id TEXT NOT NULL,
+  nomor_perkara TEXT NOT NULL,
+  jenis_perkara TEXT NOT NULL DEFAULT '',
+  pemilik_id TEXT NOT NULL,
+  akun_sipp TEXT NOT NULL DEFAULT '',
+  peran TEXT NOT NULL DEFAULT '',
+  ip TEXT NOT NULL DEFAULT '',
+  waktu_rencana TEXT NOT NULL,
+  langkah_isi INTEGER NOT NULL DEFAULT 0,
+  langkah_putusan INTEGER NOT NULL DEFAULT 0,
+  langkah_anonim INTEGER NOT NULL DEFAULT 0,
+  status_isi TEXT NOT NULL DEFAULT 'tidak',
+  status_putusan TEXT NOT NULL DEFAULT 'tidak',
+  status_anonim TEXT NOT NULL DEFAULT 'tidak',
+  catatan_isi TEXT NOT NULL DEFAULT '',
+  catatan_putusan TEXT NOT NULL DEFAULT '',
+  catatan_anonim TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'menunggu',
+  pilihan_json TEXT NOT NULL DEFAULT '{}',
+  berkas_id TEXT NOT NULL DEFAULT '',
+  berkas_nama TEXT NOT NULL DEFAULT '',
+  berkas_bentuk TEXT NOT NULL DEFAULT '',
+  berkas_ukuran INTEGER NOT NULL DEFAULT 0,
+  berkas_sha256 TEXT NOT NULL DEFAULT '',
+  berkas_jalur TEXT NOT NULL DEFAULT '',
+  berkas_hapus_pada TEXT NOT NULL DEFAULT '',
+  percobaan INTEGER NOT NULL DEFAULT 0,
+  klaim_oleh TEXT NOT NULL DEFAULT '',
+  klaim_sampai TEXT NOT NULL DEFAULT '',
+  tunggu_sampai TEXT NOT NULL DEFAULT '',
+  edoc_sesudah TEXT NOT NULL DEFAULT '',
+  mulai_pada TEXT NOT NULL DEFAULT '',
+  selesai_pada TEXT NOT NULL DEFAULT '',
+  dilihat_pada TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_putusan_jadwal_berkas (
+  id TEXT PRIMARY KEY,
+  pemilik_id TEXT NOT NULL,
+  nama TEXT NOT NULL,
+  bentuk TEXT NOT NULL DEFAULT '',
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  sha256 TEXT NOT NULL DEFAULT '',
+  jalur TEXT NOT NULL DEFAULT '',
+  nomor_isi TEXT NOT NULL DEFAULT '',
+  peringatan_json TEXT NOT NULL DEFAULT '[]',
+  dipakai_butir TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  dihapus_pada TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_putusan_jadwal_jejak (
+  id TEXT PRIMARY KEY,
+  jadwal_id TEXT NOT NULL DEFAULT '',
+  butir_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  waktu TEXT NOT NULL,
+  peristiwa TEXT NOT NULL,
+  pelaku TEXT NOT NULL DEFAULT '',
+  pelaku_id TEXT NOT NULL DEFAULT '',
+  akun_sipp TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL DEFAULT '',
+  ringkas TEXT NOT NULL DEFAULT '',
+  rinci_json TEXT NOT NULL DEFAULT '{}'
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_putusan_jadwal_pembuat ON aleta_putusan_jadwal(dibuat_oleh, dibuat_pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_putusan_jadwal_butir_giliran ON aleta_putusan_jadwal_butir(status, waktu_rencana)`,
+    `CREATE INDEX IF NOT EXISTS idx_putusan_jadwal_butir_pemilik ON aleta_putusan_jadwal_butir(pemilik_id, status)`,
+    `CREATE INDEX IF NOT EXISTS idx_putusan_jadwal_butir_jadwal ON aleta_putusan_jadwal_butir(jadwal_id, urut)`,
+    `CREATE INDEX IF NOT EXISTS idx_putusan_jadwal_butir_perkara ON aleta_putusan_jadwal_butir(perkara_id, status)`,
+    `CREATE INDEX IF NOT EXISTS idx_putusan_jadwal_berkas_pemilik ON aleta_putusan_jadwal_berkas(pemilik_id, dibuat_pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_putusan_jadwal_jejak_butir ON aleta_putusan_jadwal_jejak(butir_id, waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_putusan_jadwal_jejak_waktu ON aleta_putusan_jadwal_jejak(waktu)`,
+  ],
+} as const;
+
+/**
  * SKP jabatan perkara (0070, 17 Okt 2026, rancangan disetujui pengguna):
  * pemetaan akun SIPP ke pegawai (bertanggal), target, isian manual, dan
  * tangkapan realisasi yang dikunci. Cermin PERSIS dari
@@ -1956,6 +2069,8 @@ const schemaStatements = [
   ...DDL_TAUTAN_JADWAL.tabel,
   // ALETA Ai tahap 1: proyek V4.5, percakapan, saldo, tarif, rute (0078).
   ...DDL_ALETA_AI.tabel,
+  // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
+  ...DDL_PUTUSAN_TERJADWAL.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -3905,6 +4020,7 @@ const indexStatements = [
   ...DDL_BLANGKO_PRIBADI.indeks,
   ...DDL_TAUTAN_JADWAL.indeks,
   ...DDL_ALETA_AI.indeks,
+  ...DDL_PUTUSAN_TERJADWAL.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.
