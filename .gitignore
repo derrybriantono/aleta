@@ -37,6 +37,7 @@ tsconfig.tsbuildinfo
 runtime-logs/
 .runtime-logs/
 **/data/
+!abt-paket/u2-putusan-cerai-lengkap/data/
 **/public/uploads/
 **/institution-enrichment-runtime.json
 *.err.log
