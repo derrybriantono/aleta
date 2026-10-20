@@ -69,9 +69,14 @@ html[data-aleta-tema-sipp="gelap"] .aleta-pensipp-panel {
 }
 
 /* ── Tombol di deretan tombol SIPP ───────────────────────────────────────── */
+/* .aleta-sisip (panel.css) memberi garis kiri, latar, dan jarak umum sisipan; tombol ini tidak memakainya. */
 td.aleta-pensipp-sel {
   vertical-align: middle;
-  padding-right: 4px;
+  margin: 0;
+  padding: 0 4px 0 0;
+  border-left: 0;
+  border-radius: 0;
+  background: none;
 }
 .aleta-pensipp-tombol {
   --ps-t-latar: #0f5f4f;
@@ -136,6 +141,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-pensipp-tombol[aria-expanded="true"] {
   font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow: hidden;
   text-align: left;
+  padding: 0;
 }
 .aleta-pensipp-panel[hidden] {
   display: none;
@@ -463,6 +469,9 @@ html[data-aleta-tema-sipp="gelap"] .aleta-pensipp-tombol[aria-expanded="true"] {
 }
 .aleta-pensipp-laporan[hidden] {
   display: none;
+}
+.aleta-pensipp-laporan > .aleta-pensipp-kecil {
+  justify-self: start;
 }
 .aleta-pensipp-laporan-judul {
   font-size: 14.5px;

@@ -383,6 +383,11 @@ async function tungguLaporan(h: Halaman) {
 function simpanTangkapan(h: Halaman, nama: string) {
   const awalan = process.env.ALETA_TANGKAP_PENSIPP;
   if (!awalan) return;
+  // innerHTML tidak membawa keadaan "tercentang" (properti): jadikan atribut.
+  h.d.querySelectorAll("input[type=checkbox]").forEach((c) => {
+    if ((c as HTMLInputElement).checked) c.setAttribute("checked", "");
+    else c.removeAttribute("checked");
+  });
   const html = h.d.getElementById("konten")!.innerHTML;
   writeFileSync(`${awalan}-${nama}.html`, html, "utf8");
 }
