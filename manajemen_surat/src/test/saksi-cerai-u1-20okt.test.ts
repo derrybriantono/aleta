@@ -29,7 +29,7 @@ const require = createRequire(import.meta.url);
 const M = require(path.join(AKAR, "saksi-katalog.js")) as any;
 const baca = (n: string) => readFileSync(path.join(AKAR, n), "utf8");
 const katalog = (k: string) => JSON.parse(readFileSync(path.join(AKAR, "saksi-katalog", `${k}.json`), "utf8"));
-const SEMUA = ["cerai-gugat", "cerai-talak", "cerai-kumulasi", "cerai-kumulasi-itsbat"].map(katalog);
+const SEMUA = ["cerai-gugat", "cerai-talak", "cerai-kumulasi", "cerai-kumulasi-itsbat", "cerai-gugat-tergugat", "cerai-talak-tergugat"].map(katalog);
 const paket = (jenisId: string) => M.kenaliPaket(SEMUA, { jenisPerkaraId: jenisId, alurPerkaraId: "15", nama: jenisId === "346" ? "Cerai Talak" : "Cerai Gugat" });
 
 const susun = (jenisId: string, o: { keadaan?: any; saksi: any[]; variabel?: Record<string, string>; fakta?: any; slotSaksi?: any[] }) => {
@@ -193,6 +193,34 @@ describe("profil pengetahuan saksi", () => {
   it("profil yang tidak dikenal jatuh ke melihat, tidak menggagalkan penyusunan", () => {
     const h = susun("347", { saksi: [{ pihak: "P", jenis: "profil:tidak-ada" }] });
     expect(barisDi(h, 0, "q-penyebab").jenis).toBe("melihat");
+  });
+});
+
+describe("saksi yang diajukan Tergugat/Termohon (versi Tergugat)", () => {
+  const dua = [{ pihak: "P", jenis: "melihat" }, { pihak: "T", jenis: "melihat" }];
+
+  it("tanpa bantahan yang ditandai, saksi Tergugat memakai butir utama; saksi Penggugat tidak pernah berubah", () => {
+    const h = susun("347", { saksi: dua, keadaan: { bantahan: [] } });
+    const idT = h.saksi[1].baris.map((b: any) => b.butir);
+    expect(idT).toContain("q-penyebab");
+    expect(idT.some((x: string) => x.startsWith("q-tg-"))).toBe(false);
+  });
+
+  it("bantahan 'tidak ada pertengkaran' dan 'masih ingin rukun' menggantikan butir dalil Penggugat hanya untuk saksi Tergugat", () => {
+    const h = susun("347", { saksi: dua, keadaan: { bantahan: ["tidak-ada-pertengkaran", "masih-ingin-rukun", "nafkah-diberikan"] } });
+    const t = h.saksi[1].baris.map((b: any) => b.butir);
+    const p = h.saksi[0].baris.map((b: any) => b.butir);
+    expect(t).toEqual(expect.arrayContaining(["q-tg-tidak-bertengkar", "q-tg-rumah-tangga-baik", "q-tg-ingin-rukun", "q-tg-nafkah"]));
+    for (const diganti of ["q-terus-menerus", "q-bentuk", "q-kehidupan", "q-harapan-rukun", "q-nafkah-pisah"]) expect(t, diganti).not.toContain(diganti);
+    expect(p).toEqual(expect.arrayContaining(["q-terus-menerus", "q-kehidupan", "q-harapan-rukun", "q-nafkah-pisah"]));
+    expect(p.some((x: string) => x.startsWith("q-tg-"))).toBe(false);
+    expect(barisDi(h, 1, "q-tg-ingin-rukun").jawab).toContain("Tergugat");
+  });
+
+  it("cerai talak: nafkah versi Termohon tetap mengikuti suami = Pemohon", () => {
+    const h = susun("346", { saksi: dua, keadaan: { bantahan: ["nafkah-diberikan"] } });
+    expect(barisDi(h, 1, "q-tg-nafkah").tanya).toBe("Selama berpisah apakah Pemohon masih memberikan nafkah kepada Termohon, dan bagaimana saksi mengetahuinya ?");
+    expect(barisDi(h, 1, "q-tg-nafkah").jawab).toMatch(/Pemohon/);
   });
 });
 
