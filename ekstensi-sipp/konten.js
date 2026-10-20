@@ -7070,7 +7070,7 @@ async function simpanPutusanLaluBuka(nomorPerkara, kabar, opsi) {
         // Agen B2: e-Doc yang dikerjakan putusan-edoc-sekaligus.js melapor per langkah (tercatat / sudah ada /
         // gagal+sebab). Laporan dan muat ulang tetap di perkara ini lewat modul bersama; ada yang gagal =
         // tidak dimuat ulang sendiri, hanya tombol. Antrean massal tetap memakai jalur lama di bawah.
-        if (o.lanjutWalauEdocGagal !== true && b2LaporkanEdoc(nomorPerkara, o.wadahLaporan || null, edoc, "Putusan Akhir tersimpan di SIPP.")) {
+        if (o.lanjutWalauEdocGagal !== true && typeof b2LaporkanEdoc === "function" && b2LaporkanEdoc(nomorPerkara, o.wadahLaporan || null, edoc, "Putusan Akhir tersimpan di SIPP.")) {
           return { ok: true, bunyi: `${bunyi} ${edoc.bunyi}`.trim(), pesanSipp: jawaban ? jawaban.pesan : "", edoc };
         }
         if (!lanjut || !lanjut.ok) {
@@ -8376,7 +8376,19 @@ function bagianIsiPutusan(nomorPerkara) {
     wadah.appendChild(terap);
     wadah.appendChild(hasilTerap);
 
-    const isiDanSimpan = async () => {
+    // Satu kunci per perkara dipakai bersama penetapan dan tombol "Putusan Otomatis" di halaman SIPP:
+    // dua pekerjaan atas perkara yang sama tidak berjalan bersamaan (tidak ganda).
+    terap.addEventListener("click", async () => {
+      const kunci = typeof b2AmbilKunci === "function" ? await b2AmbilKunci(nomorPerkara) : { ok: true, lepas: async () => undefined };
+      if (!kunci.ok) {
+        hasilTerap.className = "aleta-abt-kabar aleta-abt-gagal";
+        hasilTerap.textContent = kunci.pesan;
+        selesaiOto({ ok: false, tahap: "kunci", pesan: kunci.pesan });
+        return;
+      }
+      let h;
+      try {
+        h = await (async () => {
       const dipilih = daftar.filter((x) => x.centang.checked && x.teks);
       const medanDipilih = pilihanTerap.filter((x) => x.centang.checked);
       if (dipilih.length === 0 && medanDipilih.length === 0) {
@@ -8591,7 +8603,7 @@ function bagianIsiPutusan(nomorPerkara) {
           !(sekaligus && sekaligus.ada()) &&
           (opsiOto && opsiOto.edoc != null ? opsiOto.edoc === true : sekaligusAbt && sekaligusAbt.dipakai())
       );
-      const tempatB2 = b2SiapkanTempat(hasilTerap);
+      const tempatB2 = typeof b2SiapkanTempat === "function" ? b2SiapkanTempat(hasilTerap) : { laporan: null, ulang: null };
       if (opsiOto && opsiOto.wadahLaporan) tempatB2.laporan = opsiOto.wadahLaporan;
       // Dari tombol "Putusan Otomatis" di halaman SIPP: kotak muat ulang melayang di halaman (panel tombol itu
       // dapat tergambar ulang saat SIPP menyegarkan isinya), bukan di dalam panel ekstensi.
@@ -8619,7 +8631,7 @@ function bagianIsiPutusan(nomorPerkara) {
         : "aleta-abt-kabar aleta-abt-gagal";
       hasilTerap.textContent = `${berhasil} isian terisi. ${hasilSimpan.bunyi}`;
       // Putusan Akhir sudah tersimpan tetapi edoc belum seluruhnya: ulangi unggah edoc SAJA, satu klik.
-      if (a30Nyala && hasilSimpan.ok && hasilSimpan.edoc && hasilSimpan.edoc.ok === false) {
+      if (a30Nyala && typeof b2PasangUlangEdoc === "function" && hasilSimpan.ok && hasilSimpan.edoc && hasilSimpan.edoc.ok === false) {
         b2PasangUlangEdoc({
           nomorPerkara,
           kabar: hasilTerap,
@@ -8632,21 +8644,7 @@ function bagianIsiPutusan(nomorPerkara) {
         });
       }
       return { ok: Boolean(hasilSimpan.ok), tersimpan: Boolean(hasilSimpan.ok), bunyi: hasilSimpan.bunyi, edoc: hasilSimpan.edoc || null };
-    };
-
-    // Satu kunci per perkara dipakai bersama penetapan dan tombol "Putusan Otomatis" di halaman SIPP:
-    // dua pekerjaan atas perkara yang sama tidak berjalan bersamaan (tidak ganda).
-    terap.addEventListener("click", async () => {
-      const kunci = await b2AmbilKunci(nomorPerkara);
-      if (!kunci.ok) {
-        hasilTerap.className = "aleta-abt-kabar aleta-abt-gagal";
-        hasilTerap.textContent = kunci.pesan;
-        selesaiOto({ ok: false, tahap: "kunci", pesan: kunci.pesan });
-        return;
-      }
-      let h;
-      try {
-        h = await isiDanSimpan();
+        })();
       } catch (galat) {
         h = { ok: false, tahap: "isi", pesan: String((galat && galat.message) || galat) };
       } finally {
@@ -8663,7 +8661,7 @@ function bagianIsiPutusan(nomorPerkara) {
         selesaiOto({
           ok: false,
           tahap: "praperiksa",
-          pesan: `Praperiksa menahan: ${ringkasHentikan(raporAgen) || "ada pertentangan dengan fakta SIPP"}. Periksa di bagian Putusan otomatis panel, lalu tekan Isikan sendiri.`,
+          pesan: `Praperiksa menahan: ${(typeof ringkasHentikan === "function" && ringkasHentikan(raporAgen)) || "ada pertentangan dengan fakta SIPP"}. Periksa di bagian Putusan otomatis panel, lalu tekan Isikan sendiri.`,
         });
       } else {
         setTimeout(() => terap.click(), 0);
