@@ -26,6 +26,9 @@ const tulis = process.argv.includes("--tulis");
 const dariMentah = arg("--dari-mentah", "");
 const khusus = Number(arg("--khusus", "0"));
 // --jenis 362,371,...: batasi sampel pada jenis perkara tertentu (gelombang 1: jenis kecil yang jarang tertangkap sampel acak)
+// --timpa berkas.json[,berkas2.json]: entri terukur dari pengukuran lain (bentuk sama dengan entri gerbang); menggantikan hasil lokal
+// HANYA bila pembandingnya (banding) lebih banyak - ketepatan atas pembanding yang lebih banyak menang atas pembacaan terstruktur tanpa pembanding
+const timpaBerkas = arg("--timpa", "").split(",").filter(Boolean);
 const jenisBatas = arg("--jenis", "").split(",").map((x) => Number(x)).filter((x) => x > 0);
 
 process.env.ALETA_BOT_DB_SIPP_NAME = process.env.ALETA_BOT_DB_SIPP_NAME || "sipp_donggala";
@@ -260,6 +263,18 @@ function aturan(a) {
       dasar: t.dasar,
       ...(a.contohSalah.length ? { contohSalah: a.contohSalah } : {}),
     };
+  }
+  for (const berkas of timpaBerkas) {
+    const t = JSON.parse(fs.readFileSync(berkas, "utf8"));
+    for (const [k, e] of Object.entries(t.kode || {})) {
+      for (const [asal, v] of Object.entries(e.asal || {})) {
+        const sekarang = kode[k] && kode[k].asal[asal];
+        if (sekarang && (sekarang.banding || 0) >= (v.banding || 0)) continue;
+        const ent = (kode[k] = kode[k] || { nama: e.nama, asal: {} });
+        ent.asal[asal] = v;
+        console.error(`timpa ${k}@${asal}: ${sekarang ? sekarang.status + "/" + sekarang.banding : "baru"} -> ${v.status}/${v.banding} (${berkas})`);
+      }
+    }
   }
   // kode yang ditulis pengisi dengan pasti/cukup tetapi tidak muncul di sampel: diakui BELUM TERUKUR (diperlakukan sebagai saran)
   const belumTerukur = {};

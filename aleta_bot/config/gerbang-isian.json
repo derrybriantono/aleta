@@ -4,20 +4,20 @@
  "diukur": "2026-10-20",
  "cara": "scripts/isi-sipp-abt/ukur-gerbang-u6.cjs: rute bot /abt/usulan sungguhan atas sampel perkara 2023+ yang punya isian petugas di ABT lokal; pembanding = aps_badilag.abt_data_teks (isian petugas/hakim)",
  "sampel": {
-  "perkara": 1207,
+  "perkara": 1919,
   "perJenis": {
-   "346": 134,
-   "347": 437,
-   "348": 2,
-   "354": 3,
-   "358": 3,
-   "360": 579,
-   "362": 37,
-   "363": 3,
-   "364": 3,
-   "365": 1,
-   "369": 2,
-   "371": 3
+   "346": 240,
+   "347": 709,
+   "348": 5,
+   "354": 9,
+   "358": 7,
+   "360": 820,
+   "362": 103,
+   "363": 8,
+   "364": 7,
+   "365": 2,
+   "369": 3,
+   "371": 6
   }
  },
  "aturan": {
@@ -31,10 +31,10 @@
    "nama": "Mas kawin",
    "asal": {
     "posita": {
-     "n": 509,
-     "banding": 508,
-     "cocok": 493,
-     "persen": 97,
+     "n": 693,
+     "banding": 692,
+     "cocok": 673,
+     "persen": 97.3,
      "status": "otomatis",
      "pangkatMaks": "pasti",
      "dasar": "pembanding isian petugas",
@@ -59,10 +59,10 @@
    "nama": "Status Pemohon I sebelum nikah",
    "asal": {
     "posita": {
-     "n": 533,
-     "banding": 532,
-     "cocok": 267,
-     "persen": 50.2,
+     "n": 722,
+     "banding": 721,
+     "cocok": 368,
+     "persen": 51,
      "status": "saran",
      "pangkatMaks": "ragu",
      "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
@@ -82,9 +82,9 @@
      ]
     },
     "sipp": {
-     "n": 3,
-     "banding": 3,
-     "cocok": 3,
+     "n": 8,
+     "banding": 8,
+     "cocok": 8,
      "persen": 100,
      "status": "saran",
      "pangkatMaks": "ragu",
@@ -96,10 +96,10 @@
    "nama": "Status Pemohon II sebelum nikah",
    "asal": {
     "posita": {
-     "n": 533,
-     "banding": 531,
-     "cocok": 448,
-     "persen": 84.4,
+     "n": 723,
+     "banding": 721,
+     "cocok": 605,
+     "persen": 83.9,
      "status": "saran",
      "pangkatMaks": "ragu",
      "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
@@ -124,10 +124,10 @@
    "nama": "Tempat tinggal setelah nikah",
    "asal": {
     "posita": {
-     "n": 318,
-     "banding": 31,
-     "cocok": 30,
-     "persen": 96.8,
+     "n": 426,
+     "banding": 43,
+     "cocok": 41,
+     "persen": 95.3,
      "status": "otomatis",
      "pangkatMaks": "cukup",
      "dasar": "pembanding isian petugas",
@@ -135,6 +135,10 @@
       {
        "usulan": "rumah Penggugat namun sejak malam pertama hingga hari ke 7 pernikahan tidak terb",
        "petugas": "di rumah orang tua Penggugat"
+      },
+      {
+       "usulan": "rumah orangtua Penggugat di Desa Bulubete selama kurang lebih 2 hari. Setelah it",
+       "petugas": "Di rumah orang tua Penggugat di Desa Bulubete kemudian pindah ke rumah orang tua"
       }
      ]
     }
@@ -144,13 +148,13 @@
    "nama": "Alasan mendesak: hubungan sudah sangat erat",
    "asal": {
     "posita": {
-     "n": 39,
-     "banding": 17,
-     "cocok": 7,
-     "persen": 41.2,
+     "n": 175,
+     "banding": 83,
+     "cocok": 31,
+     "persen": 37.3,
      "status": "saran",
      "pangkatMaks": "ragu",
-     "dasar": "contoh pembanding kurang dari 20",
+     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
      "contohSalah": [
       {
        "usulan": "hubungan mereka telah sedemikian eratnya sehingga anak para Pemohon sekarang sed",
@@ -186,9 +190,9 @@
    "nama": "Nama almarhum/almarhumah",
    "asal": {
     "posita": {
-     "n": 25,
-     "banding": 8,
-     "cocok": 8,
+     "n": 37,
+     "banding": 14,
+     "cocok": 14,
      "persen": 100,
      "status": "saran",
      "pangkatMaks": "ragu",
@@ -200,9 +204,9 @@
    "nama": "Nama calon suami",
    "asal": {
     "posita": {
-     "n": 2,
-     "banding": 2,
-     "cocok": 2,
+     "n": 6,
+     "banding": 6,
+     "cocok": 6,
      "persen": 100,
      "status": "saran",
      "pangkatMaks": "ragu",
@@ -214,9 +218,9 @@
    "nama": "Umur calon suami",
    "asal": {
     "posita": {
-     "n": 2,
-     "banding": 2,
-     "cocok": 2,
+     "n": 6,
+     "banding": 6,
+     "cocok": 6,
      "persen": 100,
      "status": "saran",
      "pangkatMaks": "ragu",
@@ -228,10 +232,10 @@
    "nama": "Status wali nikah",
    "asal": {
     "posita": {
-     "n": 505,
-     "banding": 504,
-     "cocok": 472,
-     "persen": 93.7,
+     "n": 689,
+     "banding": 688,
+     "cocok": 645,
+     "persen": 93.8,
      "status": "otomatis",
      "pangkatMaks": "cukup",
      "dasar": "pembanding isian petugas",
@@ -266,11 +270,25 @@
     }
    }
   },
+  "1108": {
+   "nama": "Nomor duplikat surat nikah",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
   "1154": {
    "nama": "Nomor surat permintaan bantuan panggilan",
    "asal": {
     "sipp": {
-     "n": 69,
+     "n": 133,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -284,7 +302,7 @@
    "nama": "Tgl. batas waktu ikrar talak",
    "asal": {
     "sipp": {
-     "n": 117,
+     "n": 209,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -298,10 +316,10 @@
    "nama": "Nama wali nikah",
    "asal": {
     "posita": {
-     "n": 527,
-     "banding": 513,
-     "cocok": 481,
-     "persen": 93.8,
+     "n": 720,
+     "banding": 701,
+     "cocok": 661,
+     "persen": 94.3,
      "status": "otomatis",
      "pangkatMaks": "cukup",
      "dasar": "pembanding isian petugas",
@@ -326,7 +344,7 @@
    "nama": "Tanggal meninggal orang tua anak",
    "asal": {
     "posita": {
-     "n": 3,
+     "n": 8,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -340,7 +358,7 @@
    "nama": "Tanggal surat",
    "asal": {
     "sipp": {
-     "n": 69,
+     "n": 133,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -354,7 +372,7 @@
    "nama": "Tanggal meninggal",
    "asal": {
     "posita": {
-     "n": 19,
+     "n": 24,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -368,7 +386,7 @@
    "nama": "Sebab meninggal",
    "asal": {
     "posita": {
-     "n": 5,
+     "n": 6,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -396,10 +414,10 @@
    "nama": "Upaya Damai Keluarga",
    "asal": {
     "posita": {
-     "n": 297,
-     "banding": 287,
-     "cocok": 212,
-     "persen": 73.9,
+     "n": 396,
+     "banding": 382,
+     "cocok": 286,
+     "persen": 74.9,
      "status": "saran",
      "pangkatMaks": "ragu",
      "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
@@ -424,7 +442,7 @@
    "nama": "No. akta cerai suami dengan istri sebelumnya (bukti)",
    "asal": {
     "posita": {
-     "n": 3,
+     "n": 5,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -452,7 +470,7 @@
    "nama": "Penerbit akta cerai suami dengan istri sebelumnya (bukti)",
    "asal": {
     "posita": {
-     "n": 2,
+     "n": 3,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -466,7 +484,7 @@
    "nama": "No. akta cerai istri dengan suami sebelumnya (bukti)",
    "asal": {
     "posita": {
-     "n": 9,
+     "n": 11,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -494,7 +512,7 @@
    "nama": "Penerbit akta cerai istri dengan suami sebelumnya (bukti)",
    "asal": {
     "posita": {
-     "n": 9,
+     "n": 11,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -508,13 +526,19 @@
    "nama": "Alasan wali nikah bukan ayah ('karena ayah kandung ... meninggal')",
    "asal": {
     "posita": {
-     "n": 40,
-     "banding": 7,
-     "cocok": 7,
-     "persen": 100,
+     "n": 55,
+     "banding": 11,
+     "cocok": 10,
+     "persen": 90.9,
      "status": "saran",
      "pangkatMaks": "ragu",
-     "dasar": "contoh pembanding kurang dari 20"
+     "dasar": "contoh pembanding kurang dari 20",
+     "contohSalah": [
+      {
+       "usulan": ", karena Ayah Pemohon I berada jauh",
+       "petugas": ", karena ayah kandung Pemohon II telah meninggal dunia"
+      }
+     ]
     }
    }
   },
@@ -522,10 +546,10 @@
    "nama": "Nama ayah calon pasangan anak para Pemohon",
    "asal": {
     "posita": {
-     "n": 37,
-     "banding": 7,
-     "cocok": 5,
-     "persen": 71.4,
+     "n": 103,
+     "banding": 18,
+     "cocok": 13,
+     "persen": 72.2,
      "status": "saran",
      "pangkatMaks": "ragu",
      "dasar": "contoh pembanding kurang dari 20",
@@ -537,6 +561,10 @@
       {
        "usulan": "Supryadi",
        "petugas": "Iwad bin Biman"
+      },
+      {
+       "usulan": "Muksin",
+       "petugas": "Selamet"
       }
      ]
     }
@@ -546,13 +574,23 @@
    "nama": "Lama saling mengenal",
    "asal": {
     "posita": {
-     "n": 37,
-     "banding": 7,
-     "cocok": 7,
-     "persen": 100,
-     "status": "saran",
-     "pangkatMaks": "ragu",
-     "dasar": "contoh pembanding kurang dari 20"
+     "n": 162,
+     "banding": 27,
+     "cocok": 25,
+     "persen": 92.6,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "2 tahun",
+       "petugas": "11 bulan"
+      },
+      {
+       "usulan": "2 (dua) tahun",
+       "petugas": "11 bulan"
+      }
+     ]
     }
    }
   },
@@ -560,13 +598,22 @@
    "nama": "kini anak tersebut diasuh oleh",
    "asal": {
     "posita": {
-     "n": 299,
+     "n": 325,
      "banding": 4,
      "cocok": 4,
      "persen": 100,
      "status": "saran",
      "pangkatMaks": "ragu",
      "dasar": "contoh pembanding kurang dari 20"
+    },
+    "sipp": {
+     "n": 976,
+     "banding": 40,
+     "cocok": 31,
+     "persen": 77.5,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "diasuh_oleh tab Anak (1 = Penggugat/Pemohon, 2 = Tergugat/Termohon) seragam pada 976 putusan cerai kabul 2023+; hanya 77,5% sama dengan pemegang asuhan di amar -> saran"
     }
    }
   },
@@ -574,13 +621,13 @@
    "nama": "Status calon mempelai pria",
    "asal": {
     "sipp": {
-     "n": 31,
-     "banding": 9,
-     "cocok": 5,
-     "persen": 55.6,
+     "n": 87,
+     "banding": 30,
+     "cocok": 17,
+     "persen": 56.7,
      "status": "saran",
      "pangkatMaks": "ragu",
-     "dasar": "contoh pembanding kurang dari 20",
+     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
      "contohSalah": [
       {
        "usulan": "bujang",
@@ -602,10 +649,10 @@
    "nama": "Status calon mempelai wanita",
    "asal": {
     "sipp": {
-     "n": 34,
-     "banding": 7,
-     "cocok": 3,
-     "persen": 42.9,
+     "n": 94,
+     "banding": 19,
+     "cocok": 8,
+     "persen": 42.1,
      "status": "saran",
      "pangkatMaks": "ragu",
      "dasar": "contoh pembanding kurang dari 20",
@@ -630,13 +677,57 @@
    "nama": "KUA kecamatan tempat menikah",
    "asal": {
     "posita": {
-     "n": 2,
-     "banding": 2,
-     "cocok": 2,
-     "persen": 100,
+     "n": 72,
+     "banding": 23,
+     "cocok": 21,
+     "persen": 91.3,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "Rio Pakava, Kabupaten Donggala",
+       "petugas": "Riopakava, Kabupaten Donggala"
+      },
+      {
+       "usulan": "Rio Pakava, Kabupaten Donggala",
+       "petugas": "Riopakava, Kabupaten Donggala"
+      }
+     ]
+    }
+   }
+  },
+  "4106": {
+   "nama": "Keadaan anak",
+   "asal": {
+    "sipp": {
+     "n": 251,
+     "banding": 21,
+     "cocok": 20,
+     "persen": 95.2,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "tanggal lahir semua anak bernama di tab Anak SIPP, umur penuh hari ini; pembanding amar hakim; n = putusan cerai kabul 2023+ yang semua anaknya bertanggal lahir dan seragam (189 belum + 62 sudah mumayyiz) dari 1124 yang punya anak",
+     "contohSalah": [
+      {
+       "usulan": "mumayyiz (berumur 12 tahun atau lebih)",
+       "petugas": "hakim menulis umur 11 tahun (umur saat gugatan; tepat 12 tahun saat putusan)"
+      }
+     ]
+    }
+   }
+  },
+  "4515": {
+   "nama": "Bagian masing-masing ahli waris (usulan hitungan)",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
      "status": "saran",
      "pangkatMaks": "ragu",
-     "dasar": "contoh pembanding kurang dari 20"
+     "dasar": "belum ada pembanding dan contoh kurang"
     }
    }
   },
@@ -644,7 +735,7 @@
    "nama": "Tanggal meninggal istri sebelumnya Pemohon I",
    "asal": {
     "posita": {
-     "n": 8,
+     "n": 9,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -658,10 +749,10 @@
    "nama": "Alamat tempat menikah",
    "asal": {
     "posita": {
-     "n": 830,
-     "banding": 557,
-     "cocok": 518,
-     "persen": 93,
+     "n": 1124,
+     "banding": 763,
+     "cocok": 706,
+     "persen": 92.5,
      "status": "otomatis",
      "pangkatMaks": "cukup",
      "dasar": "pembanding isian petugas",
@@ -686,7 +777,7 @@
    "nama": "Nama anak",
    "asal": {
     "sipp": {
-     "n": 392,
+     "n": 638,
      "banding": 4,
      "cocok": 4,
      "persen": 100,
@@ -695,9 +786,9 @@
      "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
     },
     "posita": {
-     "n": 3,
-     "banding": 3,
-     "cocok": 3,
+     "n": 8,
+     "banding": 8,
+     "cocok": 8,
      "persen": 100,
      "status": "saran",
      "pangkatMaks": "ragu",
@@ -709,7 +800,7 @@
    "nama": "Umur anak",
    "asal": {
     "posita": {
-     "n": 338,
+     "n": 536,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -723,9 +814,9 @@
    "nama": "Penyebab bertengkar (BAS saksi, sama dengan 5227)",
    "asal": {
     "posita": {
-     "n": 304,
-     "banding": 20,
-     "cocok": 5,
+     "n": 408,
+     "banding": 28,
+     "cocok": 7,
      "persen": 25,
      "status": "saran",
      "pangkatMaks": "ragu",
@@ -751,10 +842,10 @@
    "nama": "KUA Kec.",
    "asal": {
     "posita": {
-     "n": 1582,
-     "banding": 508,
-     "cocok": 488,
-     "persen": 96.1,
+     "n": 2450,
+     "banding": 732,
+     "cocok": 704,
+     "persen": 96.2,
      "status": "otomatis",
      "pangkatMaks": "cukup",
      "dasar": "pembanding isian petugas",
@@ -779,9 +870,9 @@
    "nama": "Tgl Nikah",
    "asal": {
     "sipp": {
-     "n": 571,
-     "banding": 12,
-     "cocok": 10,
+     "n": 949,
+     "banding": 18,
+     "cocok": 15,
      "persen": 83.3,
      "status": "saran",
      "pangkatMaks": "ragu",
@@ -794,14 +885,18 @@
       {
        "usulan": "20 November 2022",
        "petugas": "07 Maret 2020;"
+      },
+      {
+       "usulan": "20 November 2022",
+       "petugas": "07 Maret 2020;"
       }
      ]
     },
     "posita": {
-     "n": 789,
-     "banding": 515,
-     "cocok": 498,
-     "persen": 96.7,
+     "n": 1100,
+     "banding": 725,
+     "cocok": 699,
+     "persen": 96.4,
      "status": "otomatis",
      "pangkatMaks": "cukup",
      "dasar": "pembanding isian petugas",
@@ -826,10 +921,10 @@
    "nama": "Alasan-Alasan Cerai",
    "asal": {
     "posita": {
-     "n": 312,
-     "banding": 260,
-     "cocok": 41,
-     "persen": 15.8,
+     "n": 418,
+     "banding": 338,
+     "cocok": 51,
+     "persen": 15.1,
      "status": "saran",
      "pangkatMaks": "ragu",
      "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
@@ -854,7 +949,7 @@
    "nama": "Ongkos panggilan permintaan bantuan",
    "asal": {
     "sipp": {
-     "n": 69,
+     "n": 133,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -868,7 +963,7 @@
    "nama": "Nafkah iddah",
    "asal": {
     "posita": {
-     "n": 1,
+     "n": 2,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -882,7 +977,7 @@
    "nama": "Mut'ah",
    "asal": {
     "posita": {
-     "n": 1,
+     "n": 3,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -896,7 +991,7 @@
    "nama": "Nafkah Anak",
    "asal": {
     "posita": {
-     "n": 2,
+     "n": 4,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -910,10 +1005,10 @@
    "nama": "Alasan wali nikah menolak",
    "asal": {
     "posita": {
-     "n": 2,
-     "banding": 2,
-     "cocok": 0,
-     "persen": 0,
+     "n": 6,
+     "banding": 6,
+     "cocok": 1,
+     "persen": 16.7,
      "status": "saran",
      "pangkatMaks": "ragu",
      "dasar": "contoh pembanding kurang dari 20",
@@ -925,6 +1020,10 @@
       {
        "usulan": "karena calon suami Pemohon tidak mampu memenuhi syarat uang mahar dari saudara k",
        "petugas": "karena ingin diberi imbalan uang dari calon suami Pemohon"
+      },
+      {
+       "usulan": "karena Ayah Pemohon mempunyai hubungan yang kurang baik dengan Pemohon, sehingga",
+       "petugas": "karena tetap tidak merestui dan enggan menjadi wali pernikahan Pemohon;"
       }
      ]
     }
@@ -934,13 +1033,13 @@
    "nama": "Pekerjaan calon suami",
    "asal": {
     "sipp": {
-     "n": 25,
-     "banding": 7,
-     "cocok": 1,
-     "persen": 14.3,
+     "n": 74,
+     "banding": 20,
+     "cocok": 3,
+     "persen": 15,
      "status": "saran",
      "pangkatMaks": "ragu",
-     "dasar": "contoh pembanding kurang dari 20",
+     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
      "contohSalah": [
       {
        "usulan": "buruh harian lepas",
@@ -957,7 +1056,7 @@
      ]
     },
     "posita": {
-     "n": 3,
+     "n": 8,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -971,10 +1070,10 @@
    "nama": "Yang meninggalkan rumah bersama",
    "asal": {
     "posita": {
-     "n": 483,
-     "banding": 285,
-     "cocok": 262,
-     "persen": 91.9,
+     "n": 798,
+     "banding": 397,
+     "cocok": 366,
+     "persen": 92.2,
      "status": "otomatis",
      "pangkatMaks": "cukup",
      "dasar": "pembanding isian petugas",
@@ -999,7 +1098,7 @@
    "nama": "Nafkah Lampau (Madliyah)",
    "asal": {
     "posita": {
-     "n": 1,
+     "n": 3,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1013,9 +1112,9 @@
    "nama": "Umur Pemohon I (laki-laki) saat menikah",
    "asal": {
     "sipp": {
-     "n": 378,
-     "banding": 235,
-     "cocok": 229,
+     "n": 535,
+     "banding": 341,
+     "cocok": 332,
      "persen": 97.4,
      "status": "otomatis",
      "pangkatMaks": "pasti",
@@ -1036,10 +1135,10 @@
      ]
     },
     "posita": {
-     "n": 495,
-     "banding": 188,
-     "cocok": 187,
-     "persen": 99.5,
+     "n": 676,
+     "banding": 255,
+     "cocok": 254,
+     "persen": 99.6,
      "status": "otomatis",
      "pangkatMaks": "pasti",
      "dasar": "pembanding isian petugas",
@@ -1056,10 +1155,10 @@
    "nama": "Umur Pemohon II (perempuan) saat menikah",
    "asal": {
     "sipp": {
-     "n": 385,
-     "banding": 238,
-     "cocok": 234,
-     "persen": 98.3,
+     "n": 548,
+     "banding": 347,
+     "cocok": 342,
+     "persen": 98.6,
      "status": "otomatis",
      "pangkatMaks": "pasti",
      "dasar": "pembanding isian petugas",
@@ -1079,10 +1178,10 @@
      ]
     },
     "posita": {
-     "n": 494,
-     "banding": 188,
-     "cocok": 186,
-     "persen": 98.9,
+     "n": 675,
+     "banding": 254,
+     "cocok": 251,
+     "persen": 98.8,
      "status": "otomatis",
      "pangkatMaks": "pasti",
      "dasar": "pembanding isian petugas",
@@ -1094,6 +1193,10 @@
       {
        "usulan": "35 tahun",
        "petugas": "15"
+      },
+      {
+       "usulan": "15 tahun",
+       "petugas": "18"
       }
      ]
     }
@@ -1103,7 +1206,7 @@
    "nama": "HADHANAH (Apabila Ada Ketik : 1)",
    "asal": {
     "posita": {
-     "n": 9,
+     "n": 19,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1117,10 +1220,10 @@
    "nama": "Yang menikahkan",
    "asal": {
     "posita": {
-     "n": 420,
-     "banding": 420,
-     "cocok": 386,
-     "persen": 91.9,
+     "n": 567,
+     "banding": 567,
+     "cocok": 523,
+     "persen": 92.2,
      "status": "otomatis",
      "pangkatMaks": "cukup",
      "dasar": "pembanding isian petugas",
@@ -1145,10 +1248,10 @@
    "nama": "Tujuan itsbat: 'membutuhkan ... untuk ...'",
    "asal": {
     "posita": {
-     "n": 530,
-     "banding": 354,
-     "cocok": 235,
-     "persen": 66.4,
+     "n": 719,
+     "banding": 487,
+     "cocok": 319,
+     "persen": 65.5,
      "status": "saran",
      "pangkatMaks": "ragu",
      "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
@@ -1173,8 +1276,8 @@
    "nama": "Alasan pencabutan perkara",
    "asal": {
     "sipp": {
-     "n": 6,
-     "banding": 2,
+     "n": 13,
+     "banding": 3,
      "cocok": 0,
      "persen": 0,
      "status": "saran",
@@ -1188,6 +1291,10 @@
       {
        "usulan": "mediasi berhasil dan para pihak telah berdamai",
        "petugas": "cabut dengan akta perdamaian"
+      },
+      {
+       "usulan": "mediasi berhasil dan para pihak telah berdamai",
+       "petugas": "karena sudah rukun kembali"
       }
      ]
     }
@@ -1197,10 +1304,10 @@
    "nama": "Alasan perceraian",
    "asal": {
     "posita": {
-     "n": 562,
-     "banding": 309,
-     "cocok": 188,
-     "persen": 60.8,
+     "n": 929,
+     "banding": 435,
+     "cocok": 258,
+     "persen": 59.3,
      "status": "saran",
      "pangkatMaks": "ragu",
      "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
@@ -1225,7 +1332,7 @@
    "nama": "No. Register Kuasa Khusus Penggugat",
    "asal": {
     "sipp": {
-     "n": 71,
+     "n": 139,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1239,7 +1346,7 @@
    "nama": "Kediaman bersama terakhir",
    "asal": {
     "posita": {
-     "n": 318,
+     "n": 426,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1253,7 +1360,7 @@
    "nama": "Nama anak yang dimohonkan",
    "asal": {
     "sipp": {
-     "n": 393,
+     "n": 640,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1262,7 +1369,7 @@
      "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
     },
     "posita": {
-     "n": 3,
+     "n": 7,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1276,7 +1383,7 @@
    "nama": "Pernikahan resmi/tercatat para Pemohon",
    "asal": {
     "posita": {
-     "n": 3,
+     "n": 7,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1290,7 +1397,7 @@
    "nama": "Nama ahli waris (anak kandung)",
    "asal": {
     "posita": {
-     "n": 2,
+     "n": 5,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1304,7 +1411,7 @@
    "nama": "Harta peninggalan pewaris",
    "asal": {
     "posita": {
-     "n": 2,
+     "n": 3,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1318,7 +1425,7 @@
    "nama": "Isi kesepakatan perdamaian",
    "asal": {
     "sipp": {
-     "n": 4,
+     "n": 7,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1332,7 +1439,7 @@
    "nama": "Tanggal kesepakatan perdamaian",
    "asal": {
     "sipp": {
-     "n": 4,
+     "n": 7,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1346,7 +1453,7 @@
    "nama": "Pokok kesepakatan perdamaian sebagian",
    "asal": {
     "sipp": {
-     "n": 47,
+     "n": 84,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1356,11 +1463,25 @@
     }
    }
   },
+  "9050": {
+   "nama": "Kenaikan nafkah anak per tahun",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
   "9201": {
    "nama": "Wali Adhal: nama wali nasab",
    "asal": {
     "posita": {
-     "n": 1,
+     "n": 2,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1374,7 +1495,7 @@
    "nama": "Wali Adhal: hubungan wali dengan Pemohon",
    "asal": {
     "posita": {
-     "n": 2,
+     "n": 6,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1388,7 +1509,7 @@
    "nama": "Wali Adhal: wilayah KUA wali hakim",
    "asal": {
     "posita": {
-     "n": 2,
+     "n": 6,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1402,7 +1523,7 @@
    "nama": "Bentuk dan tanggal wasiat",
    "asal": {
     "posita": {
-     "n": 1,
+     "n": 2,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1416,7 +1537,7 @@
    "nama": "Kedudukan Penggugat (wasiat)",
    "asal": {
     "posita": {
-     "n": 1,
+     "n": 2,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1430,7 +1551,7 @@
    "nama": "Kedudukan Tergugat (wasiat)",
    "asal": {
     "posita": {
-     "n": 1,
+     "n": 2,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1444,7 +1565,21 @@
    "nama": "Alasan Pemohon tidak mencatatkan pernikahan",
    "asal": {
     "posita": {
-     "n": 29,
+     "n": 43,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9701": {
+   "nama": "Ahli waris: pasangan pewaris yang masih hidup",
+   "asal": {
+    "posita": {
+     "n": 2,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1458,7 +1593,7 @@
    "nama": "Ahli waris: anak kandung pewaris",
    "asal": {
     "posita": {
-     "n": 2,
+     "n": 5,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1472,6 +1607,15 @@
    "nama": "Tempat dan tanggal lahir anak",
    "asal": {
     "sipp": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    },
+    "posita": {
      "n": 1,
      "banding": 0,
      "cocok": 0,
@@ -1486,7 +1630,7 @@
    "nama": "Nafkah lampau (madliyah) yang dituntut",
    "asal": {
     "posita": {
-     "n": 1,
+     "n": 3,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1500,7 +1644,7 @@
    "nama": "Nafkah iddah yang dituntut",
    "asal": {
     "posita": {
-     "n": 1,
+     "n": 2,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1512,6 +1656,20 @@
   },
   "9713": {
    "nama": "Mut'ah yang dituntut",
+   "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9771": {
+   "nama": "Alasan mendesak yang dikemukakan Pemohon",
    "asal": {
     "posita": {
      "n": 1,
@@ -1528,10 +1686,10 @@
    "nama": "Lama Pisah",
    "asal": {
     "posita": {
-     "n": 298,
-     "banding": 286,
-     "cocok": 271,
-     "persen": 94.8,
+     "n": 400,
+     "banding": 379,
+     "cocok": 361,
+     "persen": 95.3,
      "status": "otomatis",
      "pangkatMaks": "cukup",
      "dasar": "pembanding isian petugas",
@@ -1556,19 +1714,19 @@
    "nama": "Telah dikaruniai anak",
    "asal": {
     "sipp": {
-     "n": 392,
-     "banding": 32,
-     "cocok": 32,
+     "n": 638,
+     "banding": 42,
+     "cocok": 42,
      "persen": 100,
      "status": "otomatis",
      "pangkatMaks": "pasti",
      "dasar": "pembanding isian petugas"
     },
     "posita": {
-     "n": 757,
-     "banding": 472,
-     "cocok": 437,
-     "persen": 92.6,
+     "n": 1029,
+     "banding": 647,
+     "cocok": 600,
+     "persen": 92.7,
      "status": "otomatis",
      "pangkatMaks": "cukup",
      "dasar": "pembanding isian petugas",
@@ -1593,7 +1751,7 @@
    "nama": "Hubungan Penggugat (rekonvensi) dengan anak",
    "asal": {
     "sipp": {
-     "n": 392,
+     "n": 641,
      "banding": 4,
      "cocok": 4,
      "persen": 100,
@@ -1602,9 +1760,9 @@
      "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
     },
     "posita": {
-     "n": 3,
-     "banding": 3,
-     "cocok": 3,
+     "n": 8,
+     "banding": 8,
+     "cocok": 8,
      "persen": 100,
      "status": "saran",
      "pangkatMaks": "ragu",
@@ -1616,7 +1774,7 @@
    "nama": "Hubungan Tergugat (rekonvensi) dengan anak",
    "asal": {
     "sipp": {
-     "n": 392,
+     "n": 641,
      "banding": 4,
      "cocok": 4,
      "persen": 100,
@@ -1630,9 +1788,9 @@
    "nama": "Awal Konflik",
    "asal": {
     "posita": {
-     "n": 294,
-     "banding": 272,
-     "cocok": 253,
+     "n": 393,
+     "banding": 358,
+     "cocok": 333,
      "persen": 93,
      "status": "otomatis",
      "pangkatMaks": "cukup",
@@ -1658,10 +1816,10 @@
    "nama": "Pisah Rumah",
    "asal": {
     "posita": {
-     "n": 285,
-     "banding": 263,
-     "cocok": 254,
-     "persen": 96.6,
+     "n": 382,
+     "banding": 349,
+     "cocok": 338,
+     "persen": 96.8,
      "status": "otomatis",
      "pangkatMaks": "cukup",
      "dasar": "pembanding isian petugas",
@@ -1686,7 +1844,7 @@
    "nama": "Tgl. pengumuman",
    "asal": {
     "sipp": {
-     "n": 554,
+     "n": 782,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1700,10 +1858,10 @@
    "nama": "Saksi nikah 1",
    "asal": {
     "posita": {
-     "n": 461,
-     "banding": 461,
-     "cocok": 434,
-     "persen": 94.1,
+     "n": 625,
+     "banding": 625,
+     "cocok": 586,
+     "persen": 93.8,
      "status": "otomatis",
      "pangkatMaks": "cukup",
      "dasar": "pembanding isian petugas",
@@ -1728,10 +1886,10 @@
    "nama": "Saksi nikah 2",
    "asal": {
     "posita": {
-     "n": 442,
-     "banding": 442,
-     "cocok": 405,
-     "persen": 91.6,
+     "n": 602,
+     "banding": 602,
+     "cocok": 550,
+     "persen": 91.4,
      "status": "otomatis",
      "pangkatMaks": "cukup",
      "dasar": "pembanding isian petugas",
@@ -1756,18 +1914,18 @@
    "nama": "Nama calon mempelai pria",
    "asal": {
     "sipp": {
-     "n": 30,
-     "banding": 21,
-     "cocok": 21,
+     "n": 85,
+     "banding": 61,
+     "cocok": 61,
      "persen": 100,
      "status": "otomatis",
      "pangkatMaks": "pasti",
      "dasar": "pembanding isian petugas"
     },
     "posita": {
-     "n": 37,
-     "banding": 25,
-     "cocok": 25,
+     "n": 103,
+     "banding": 72,
+     "cocok": 72,
      "persen": 100,
      "status": "otomatis",
      "pangkatMaks": "pasti",
@@ -1779,18 +1937,18 @@
    "nama": "Umur calon mempelai pria",
    "asal": {
     "sipp": {
-     "n": 29,
-     "banding": 13,
-     "cocok": 13,
+     "n": 83,
+     "banding": 39,
+     "cocok": 39,
      "persen": 100,
-     "status": "terstruktur",
-     "pangkatMaks": "cukup",
-     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+     "status": "otomatis",
+     "pangkatMaks": "pasti",
+     "dasar": "pembanding isian petugas"
     },
     "posita": {
-     "n": 11,
-     "banding": 7,
-     "cocok": 7,
+     "n": 29,
+     "banding": 17,
+     "cocok": 17,
      "persen": 100,
      "status": "saran",
      "pangkatMaks": "ragu",
@@ -1802,18 +1960,18 @@
    "nama": "Nama calon mempelai wanita",
    "asal": {
     "sipp": {
-     "n": 33,
-     "banding": 29,
-     "cocok": 29,
+     "n": 94,
+     "banding": 83,
+     "cocok": 83,
      "persen": 100,
      "status": "otomatis",
      "pangkatMaks": "pasti",
      "dasar": "pembanding isian petugas"
     },
     "posita": {
-     "n": 37,
-     "banding": 32,
-     "cocok": 32,
+     "n": 103,
+     "banding": 90,
+     "cocok": 90,
      "persen": 100,
      "status": "otomatis",
      "pangkatMaks": "pasti",
@@ -1825,13 +1983,22 @@
    "nama": "Tanggal lahir calon mempelai wanita",
    "asal": {
     "sipp": {
-     "n": 35,
+     "n": 98,
      "banding": 0,
      "cocok": 0,
      "persen": null,
      "status": "terstruktur",
      "pangkatMaks": "cukup",
      "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    },
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
     }
    }
   },
@@ -1839,10 +2006,10 @@
    "nama": "Pendidikan calon mempelai wanita",
    "asal": {
     "sipp": {
-     "n": 33,
-     "banding": 25,
-     "cocok": 17,
-     "persen": 68,
+     "n": 94,
+     "banding": 71,
+     "cocok": 46,
+     "persen": 64.8,
      "status": "saran",
      "pangkatMaks": "ragu",
      "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
@@ -1867,10 +2034,10 @@
    "nama": "Pekerjaan calon mempelai wanita",
    "asal": {
     "sipp": {
-     "n": 30,
-     "banding": 20,
-     "cocok": 7,
-     "persen": 35,
+     "n": 82,
+     "banding": 56,
+     "cocok": 16,
+     "persen": 28.6,
      "status": "saran",
      "pangkatMaks": "ragu",
      "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
@@ -1895,18 +2062,18 @@
    "nama": "Umur calon mempelai wanita",
    "asal": {
     "posita": {
-     "n": 36,
-     "banding": 26,
-     "cocok": 26,
+     "n": 101,
+     "banding": 74,
+     "cocok": 74,
      "persen": 100,
      "status": "otomatis",
      "pangkatMaks": "pasti",
      "dasar": "pembanding isian petugas"
     },
     "sipp": {
-     "n": 32,
-     "banding": 22,
-     "cocok": 22,
+     "n": 91,
+     "banding": 64,
+     "cocok": 64,
      "persen": 100,
      "status": "otomatis",
      "pangkatMaks": "pasti",
@@ -1918,14 +2085,18 @@
    "nama": "Umur kandungan",
    "asal": {
     "posita": {
-     "n": 14,
-     "banding": 3,
-     "cocok": 2,
-     "persen": 66.7,
+     "n": 38,
+     "banding": 7,
+     "cocok": 5,
+     "persen": 71.4,
      "status": "saran",
      "pangkatMaks": "ragu",
      "dasar": "contoh pembanding kurang dari 20",
      "contohSalah": [
+      {
+       "usulan": "19 (sembilan belas) minggu",
+       "petugas": "5 (lima) bulan"
+      },
       {
        "usulan": "19 (sembilan belas) minggu",
        "petugas": "5 (lima) bulan"
@@ -1938,7 +2109,7 @@
    "nama": "Tgl. Register Kuasa Khusus Penggugat",
    "asal": {
     "sipp": {
-     "n": 62,
+     "n": 123,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1952,7 +2123,7 @@
    "nama": "Tgl. surat kuasa Tergugat/Termohon",
    "asal": {
     "sipp": {
-     "n": 17,
+     "n": 34,
      "banding": 0,
      "cocok": 0,
      "persen": null,
@@ -1966,9 +2137,9 @@
    "nama": "Orang tua yang meninggal dari sisi anak",
    "asal": {
     "posita": {
-     "n": 3,
-     "banding": 3,
-     "cocok": 3,
+     "n": 8,
+     "banding": 8,
+     "cocok": 8,
      "persen": 100,
      "status": "saran",
      "pangkatMaks": "ragu",
@@ -1979,6 +2150,109 @@
   "0997": {
    "nama": "Puskesmas yang menerangkan kehamilan",
    "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "0652": {
+   "nama": "No. surat penolakan KUA",
+   "asal": {
+    "posita": {
+     "n": 66,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "0653": {
+   "nama": "Tgl. surat penolakan KUA",
+   "asal": {
+    "posita": {
+     "n": 61,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "0340": {
+   "nama": "Tempat lahir calon mempelai pria",
+   "asal": {
+    "sipp": {
+     "n": 55,
+     "banding": 28,
+     "cocok": 22,
+     "persen": 78.6,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
+     "contohSalah": [
+      {
+       "usulan": "Parigi",
+       "petugas": "Siaga"
+      },
+      {
+       "usulan": "Gorontalo",
+       "petugas": "Donggala"
+      },
+      {
+       "usulan": "Malaysia",
+       "petugas": "Manjang"
+      }
+     ]
+    }
+   }
+  },
+  "0348": {
+   "nama": "Tanggal lahir calon mempelai pria",
+   "asal": {
+    "sipp": {
+     "n": 57,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    }
+   }
+  },
+  "0344": {
+   "nama": "Tempat lahir calon mempelai wanita",
+   "asal": {
+    "sipp": {
+     "n": 63,
+     "banding": 21,
+     "cocok": 19,
+     "persen": 90.5,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "Donggla",
+       "petugas": "Donggala"
+      },
+      {
+       "usulan": "Kulawi",
+       "petugas": "Donggala"
+      }
+     ]
+    },
     "posita": {
      "n": 1,
      "banding": 0,
@@ -1992,12 +2266,16 @@
   }
  },
  "belumTerukur": {
-  "7084": "ditulis isiOtomatisJenisS6.js:226 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran",
-  "8706": "ditulis isiOtomatisJenisS6.js:270, isiOtomatisJenisS6.js:280 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran",
-  "9050": "ditulis abtIsianLengkap20okt.js:539 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran",
-  "9352": "ditulis isiOtomatisJenisS6.js:333 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran",
-  "9353": "ditulis isiOtomatisJenisS6.js:319 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran",
-  "9700": "ditulis isiOtomatisS5/ahliWaris.js:343 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran",
-  "9715": "ditulis abtIsianLengkap20okt.js:527 dengan pasti/cukup, tetapi tidak muncul pada 1207 perkara sampel; sampai terukur hanya saran"
+  "4400": "ditulis isiOtomatisU4/perwalian.js:73 dengan pasti/cukup, tetapi tidak muncul pada 1919 perkara sampel; sampai terukur hanya saran",
+  "4401": "ditulis isiOtomatisU4/perwalian.js:73 dengan pasti/cukup, tetapi tidak muncul pada 1919 perkara sampel; sampai terukur hanya saran",
+  "4402": "ditulis isiOtomatisU4/perwalian.js:73 dengan pasti/cukup, tetapi tidak muncul pada 1919 perkara sampel; sampai terukur hanya saran",
+  "4403": "ditulis isiOtomatisU4/perwalian.js:73 dengan pasti/cukup, tetapi tidak muncul pada 1919 perkara sampel; sampai terukur hanya saran",
+  "4404": "ditulis isiOtomatisU4/perwalian.js:73 dengan pasti/cukup, tetapi tidak muncul pada 1919 perkara sampel; sampai terukur hanya saran",
+  "7084": "ditulis isiOtomatisJenisS6.js:226 dengan pasti/cukup, tetapi tidak muncul pada 1919 perkara sampel; sampai terukur hanya saran",
+  "8706": "ditulis isiOtomatisJenisS6.js:270, isiOtomatisJenisS6.js:280 dengan pasti/cukup, tetapi tidak muncul pada 1919 perkara sampel; sampai terukur hanya saran",
+  "9352": "ditulis isiOtomatisJenisS6.js:333 dengan pasti/cukup, tetapi tidak muncul pada 1919 perkara sampel; sampai terukur hanya saran",
+  "9353": "ditulis isiOtomatisJenisS6.js:319 dengan pasti/cukup, tetapi tidak muncul pada 1919 perkara sampel; sampai terukur hanya saran",
+  "9700": "ditulis isiOtomatisS5/ahliWaris.js:343 dengan pasti/cukup, tetapi tidak muncul pada 1919 perkara sampel; sampai terukur hanya saran",
+  "9715": "ditulis abtIsianLengkap20okt.js:527 dengan pasti/cukup, tetapi tidak muncul pada 1919 perkara sampel; sampai terukur hanya saran"
  }
 }
