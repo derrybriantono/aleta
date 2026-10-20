@@ -109,7 +109,7 @@ def extras(mode):
         "jam": "SUBSTRING(c.i4843, LOCATE(':', c.i4843) + 1)",
         "bat": "SUBSTRING(c.i4844, LOCATE(':', c.i4844) + 1)",
         "turut": "CONCAT(%s, IF(c.ntt > 1, 'Para Turut', 'Turut'), %s)" % (L("Menghukum "), L(" #0047# untuk tunduk dan patuh pada putusan ini;")),
-        "sita": "CONCAT(%s, IF(c.pet REGEXP 'marital', %s, %s), IF(c.sela > 0, CONCAT(%s, '#0218#'), ''), %s)"
+        "sita": "CONCAT(%s, IF(c.pet REGEXP 'marital', %s, %s), IF(c.sela > 0, CONCAT(%s, IF(TRIM('#0218#') = '', 'DATA_TIDAK_ADA', '#0218#')), ''), %s)"
         % (L("Menyatakan sah dan berharga "), L("sita marital (maritale beslag)"), L("sita jaminan (conservatoir beslag)"), L(" berdasarkan Putusan Sela tanggal "), L(" yang telah diletakkan atas objek sengketa;")),
         "uang": "CONCAT(%s, IF(LOCATE(':', c.i4784) > 0, %s, %s), %s)"
         % (L("Menghukum #7037# untuk membayar uang paksa (dwangsom) sejumlah "), alasan("c.i4784"), L(periksa("jumlah uang paksa")), L(" setiap hari lalai menjalankan isi putusan ini;")),

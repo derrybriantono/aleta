@@ -6,6 +6,7 @@ Memakai ulang isian HB 4783-4785 (sita/uang paksa/serta merta) dan pemicu 4788/4
 """
 import json, os
 from sqlkit import lit, konteks, kode_pilihan, alasan, sebelum_titik_dua, periksa, gabung
+from variabel_hb import kutipan_bas
 from variabel_hb import (
     KEPUTUSAN_SITA, KEPUTUSAN_AT, L, isi, kalimat, p_sita, p_uang_paksa, p_serta_merta, p_turut, p_tidak_terbukti, opsional, terbilang_kecil, fakta_tidak_terbukti,
 )
@@ -58,7 +59,7 @@ def pembungkus_struktur(no_sumber, no_isian):
 
 def _bawaan(no):
     d = json.load(open(os.path.join(SALINAN, "bawaan-variabel.json"), encoding="utf-8"))
-    return d[str(no)]["default"] or "..."
+    return "DATA_TIDAK_ADA"
 
 
 def pembungkus_pertimbangan():
@@ -133,7 +134,7 @@ def amar_blok(mode):
     teks = {
         "tdk": L("Menyatakan #7037# yang telah dipanggil secara resmi dan patut untuk menghadap ke persidangan, tidak hadir;"),
         "kab": "CONCAT(%s, IF(c.sebagian = 1, %s, ''), %s)" % (L("Mengabulkan #0053# #0046#"), L(" untuk sebagian"), L(" dengan verstek;") if mode == "V" else L(";")),
-        "sita": "CONCAT(%s, IF(c.pet REGEXP 'marital', %s, %s), IF(c.sela > 0, CONCAT(%s, '#0218#'), ''), %s)"
+        "sita": "CONCAT(%s, IF(c.pet REGEXP 'marital', %s, %s), IF(c.sela > 0, CONCAT(%s, IF(TRIM('#0218#') = '', 'DATA_TIDAK_ADA', '#0218#')), ''), %s)"
         % (L("Menyatakan sah dan berharga "), L("sita marital (maritale beslag)"), L("sita jaminan (conservatoir beslag)"), L(" berdasarkan Putusan Sela tanggal "), L(" yang telah diletakkan atas harta peninggalan;")),
         "mati": L("Menetapkan #2026# #1025# telah meninggal dunia pada tanggal #1246# di #1509#;"),
         "ahli": L("Menetapkan ahli waris dari #2026# #1025# adalah: #4821#;"),
@@ -224,6 +225,7 @@ def semua():
     sql(4829, "KEWARISAN: ANALISIS BUKTI SURAT PENGGUGAT (OTOMATIS dari daftar bukti surat: dikelompokkan menurut jenis surat; daftar kosong = kosong)", analisis_bukti(9955, KELAS_BUKTI, KALIMAT_BUKTI, "P.", br=True))
     sql(4830, "KEWARISAN: ANALISIS BUKTI SURAT TERGUGAT (OTOMATIS dari daftar bukti surat Tergugat: dikelompokkan menurut jenis surat; daftar kosong = kosong)", analisis_bukti(9911, KELAS_BUKTI, KALIMAT_BUKTI, "T.", br=True))
     sql(4831, "KEWARISAN: FAKTA OBJEK YANG TIDAK TERBUKTI (OTOMATIS dari isian 4816: satu butir per objek; kosong bila semua objek terbukti)", fakta_tidak_terbukti(kata=KATA, isian=4816))
+    sql(4849, "KEWARISAN: KUTIPAN KETERANGAN SAKSI TENTANG KEMATIAN, AHLI WARIS DAN HARTA (OTOMATIS dari BAS, kueri 4618: nama saksi dan jawaban; kosong bila BAS belum menyimpan keterangan)", kutipan_bas(4618, "Menimbang, bahwa saksi-saksi yang diajukan menerangkan tentang meninggalnya pewaris dan ahli warisnya sebagai berikut: "))
     sql(4832, "KEWARISAN: PERTIMBANGAN PENGHUKUMAN MENYERAHKAN HARTA PENINGGALAN (OTOMATIS: bunyi lama bila ada penguasa menurut isian 4817; tidak dikuasai = ditolak)", bungkus(p_serah()))
     return V
 

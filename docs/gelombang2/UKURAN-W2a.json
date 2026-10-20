@@ -1,0 +1,394 @@
+{
+ "dibuat": "2026-10-20",
+ "catatan": "Pembanding = amar putusan SIPP; data lokal tanpa isian petugas untuk 8717/8719/9701-9704/8730 sehingga semua usulan W2a berkeyakinan ragu.",
+ "hasil": [
+  {
+   "db": "sipp_donggala",
+   "perkara": 39,
+   "beramar": 35,
+   "perJenis": {
+    "harta-bersama": 13,
+    "kewarisan": 23,
+    "ekonomi-syariah": 2,
+    "wasiat": 1
+   },
+   "pemicu": {
+    "sita": {
+     "petitum": 30,
+     "petitumDanAmar": 6,
+     "amarSaja": 1,
+     "jenis": "semua"
+    },
+    "uangPaksa": {
+     "petitum": 12,
+     "petitumDanAmar": 1,
+     "amarSaja": 0,
+     "jenis": "semua"
+    },
+    "sertaMerta": {
+     "petitum": 9,
+     "petitumDanAmar": 2,
+     "amarSaja": 0,
+     "jenis": "semua"
+    },
+    "turutTergugat": {
+     "petitum": 9,
+     "petitumDanAmar": 0,
+     "amarSaja": 1,
+     "jenis": "semua"
+    },
+    "bagianBukanSeperdua": {
+     "petitum": 1,
+     "petitumDanAmar": 0,
+     "amarSaja": 1,
+     "jenis": "harta-bersama"
+    },
+    "utang": {
+     "petitum": 2,
+     "petitumDanAmar": 0,
+     "amarSaja": 0,
+     "jenis": "semua"
+    },
+    "denda": {
+     "petitum": 2,
+     "petitumDanAmar": 0,
+     "amarSaja": 0,
+     "jenis": "ekonomi-syariah"
+    },
+    "jaminan": {
+     "petitum": 2,
+     "petitumDanAmar": 0,
+     "amarSaja": 0,
+     "jenis": "ekonomi-syariah"
+    },
+    "batalAkad": {
+     "petitum": 0,
+     "petitumDanAmar": 0,
+     "amarSaja": 0,
+     "jenis": "ekonomi-syariah"
+    }
+   },
+   "kewarisan": {
+    "n": 23,
+    "susunan": 11,
+    "bagian": 5,
+    "penguasa": 9,
+    "penguasaDibanding": 0,
+    "penguasaCocok": 0,
+    "hartaBersama": 6,
+    "utangWasiat": 2,
+    "contoh": [
+     {
+      "nomor": "168/Pdt.G/2016/PA.Dgl",
+      "kode": [
+       "8719",
+       "9718"
+      ],
+      "nilai8719": "Mustakim Bin Dg.Sangkala (saudara laki-laki kandung atau seayah) 1/1"
+     },
+     {
+      "nomor": "398/Pdt.G/2021/PA.Dgl",
+      "kode": [
+       "4818",
+       "9702"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "514/Pdt.G/2021/PA.Dgl",
+      "kode": [],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "26/Pdt.G/2022/PA.Dgl",
+      "kode": [
+       "4818"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "120/Pdt.G/2022/PA.Dgl",
+      "kode": [
+       "4817"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "149/Pdt.G/2022/PA.Dgl",
+      "kode": [],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "170/Pdt.G/2022/PA.Dgl",
+      "kode": [
+       "4817",
+       "8719",
+       "9702"
+      ],
+      "nilai8719": "Rusdin Bin Aphi (anak laki-laki) 1/1"
+     },
+     {
+      "nomor": "171/Pdt.G/2022/PA.Dgl",
+      "kode": [
+       "4817",
+       "8719",
+       "9718"
+      ],
+      "nilai8719": "Mas'at binti Abdul Karim (saudara perempuan kandung atau seayah) 1/1"
+     },
+     {
+      "nomor": "210/Pdt.G/2022/PA.Dgl",
+      "kode": [
+       "9702"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "333/Pdt.G/2022/PA.Dgl",
+      "kode": [
+       "4817",
+       "9718"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "491/Pdt.G/2022/PA.Dgl",
+      "kode": [
+       "4818"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "106/Pdt.G/2023/PA.Dgl",
+      "kode": [
+       "4817"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "357/Pdt.G/2023/PA.Dgl",
+      "kode": [
+       "8719",
+       "9702"
+      ],
+      "nilai8719": "PARLAN BIN AKIR D (anak laki-laki) 1/1"
+     },
+     {
+      "nomor": "93/Pdt.G/2024/PA.Dgl",
+      "kode": [
+       "4817"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "94/Pdt.G/2024/PA.Dgl",
+      "kode": [
+       "9702"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "265/Pdt.G/2024/PA.Dgl",
+      "kode": [
+       "4817"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "546/Pdt.G/2024/PA.Dgl",
+      "kode": [
+       "4817",
+       "4819"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "620/Pdt.G/2025/PA.Dgl",
+      "kode": [
+       "4818",
+       "9718"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "635/Pdt.G/2025/PA.Dgl",
+      "kode": [
+       "4817",
+       "4818"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "142/Pdt.G/2026/PA.Dgl",
+      "kode": [],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "273/Pdt.G/2026/PA.Dgl",
+      "kode": [],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "490/Pdt.G/2026/PA.Dgl",
+      "kode": [
+       "8719",
+       "9702"
+      ],
+      "nilai8719": "Ichsan S. Malontara bin Samahu alias Samahu Malontara (anak laki-laki) 1/1"
+     },
+     {
+      "nomor": "602/Pdt.G/2026/PA.Dgl",
+      "kode": [
+       "4818",
+       "4819",
+       "9701"
+      ],
+      "nilai8719": ""
+     }
+    ]
+   },
+   "hartaBersama": {
+    "n": 13,
+    "utang": 0,
+    "utangDanAmar": 0
+   }
+  },
+  {
+   "db": "sipp",
+   "perkara": 42,
+   "beramar": 39,
+   "perJenis": {
+    "harta-bersama": 32,
+    "kewarisan": 8,
+    "wakaf": 2
+   },
+   "pemicu": {
+    "sita": {
+     "petitum": 26,
+     "petitumDanAmar": 4,
+     "amarSaja": 0,
+     "jenis": "semua"
+    },
+    "uangPaksa": {
+     "petitum": 7,
+     "petitumDanAmar": 0,
+     "amarSaja": 0,
+     "jenis": "semua"
+    },
+    "sertaMerta": {
+     "petitum": 1,
+     "petitumDanAmar": 0,
+     "amarSaja": 0,
+     "jenis": "semua"
+    },
+    "turutTergugat": {
+     "petitum": 6,
+     "petitumDanAmar": 0,
+     "amarSaja": 0,
+     "jenis": "semua"
+    },
+    "bagianBukanSeperdua": {
+     "petitum": 4,
+     "petitumDanAmar": 0,
+     "amarSaja": 1,
+     "jenis": "harta-bersama"
+    },
+    "utang": {
+     "petitum": 8,
+     "petitumDanAmar": 0,
+     "amarSaja": 1,
+     "jenis": "semua"
+    },
+    "denda": {
+     "petitum": 0,
+     "petitumDanAmar": 0,
+     "amarSaja": 0,
+     "jenis": "ekonomi-syariah"
+    },
+    "jaminan": {
+     "petitum": 0,
+     "petitumDanAmar": 0,
+     "amarSaja": 0,
+     "jenis": "ekonomi-syariah"
+    },
+    "batalAkad": {
+     "petitum": 0,
+     "petitumDanAmar": 0,
+     "amarSaja": 0,
+     "jenis": "ekonomi-syariah"
+    }
+   },
+   "kewarisan": {
+    "n": 8,
+    "susunan": 4,
+    "bagian": 2,
+    "penguasa": 1,
+    "penguasaDibanding": 0,
+    "penguasaCocok": 0,
+    "hartaBersama": 1,
+    "utangWasiat": 0,
+    "contoh": [
+     {
+      "nomor": "324/Pdt.G/2019/PA.Buk",
+      "kode": [
+       "4817"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "288/Pdt.G/2021/PA.Buk",
+      "kode": [
+       "8719",
+       "9702"
+      ],
+      "nilai8719": "Asriadi bin H. Laide (anak laki-laki) 2/7; Nelli Suhartini binti H. Laide (anak perempuan) 1/7; Niar Selvitasari binti H. Laide (anak perempuan) 1/7; Anang Adrian bin H. Laide (anak laki-laki) 2/7; Feni Astarina binti H. Laide (anak perempuan) 1/7"
+     },
+     {
+      "nomor": "309/Pdt.G/2021/PA.Buk",
+      "kode": [],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "73/Pdt.G/2022/PA.Buk",
+      "kode": [
+       "9702"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "235/Pdt.G/2023/PA.Buk",
+      "kode": [
+       "8719",
+       "9702"
+      ],
+      "nilai8719": "Muh.Saleh Achmad bin H.Achmad alias Hamado (anak laki-laki) 1/1"
+     },
+     {
+      "nomor": "383/Pdt.G/2023/PA.Buk",
+      "kode": [
+       "9702"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "491/Pdt.G/2023/PA.Buk",
+      "kode": [
+       "4818"
+      ],
+      "nilai8719": ""
+     },
+     {
+      "nomor": "50/Pdt.G/2024/PA.Buk",
+      "kode": [],
+      "nilai8719": ""
+     }
+    ]
+   },
+   "hartaBersama": {
+    "n": 32,
+    "utang": 7,
+    "utangDanAmar": 0
+   }
+  }
+ ]
+}

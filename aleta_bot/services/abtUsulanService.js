@@ -1907,6 +1907,15 @@ async function dariSipp(nomorPerkara) {
     /* usulan jenis bersifat tambahan: gagal membaca tidak menggagalkan usulan SIPP lain */
   }
 
+  // W2a 21 Okt: isian tambahan harta bersama (utang bersama) dan kewarisan (ahli waris terstruktur, bagian KHI, penguasa, harta bersama
+  // pewaris, utang/wasiat) - semua "ragu" (saran), lihat isiOtomatisW2a.js. Tidak menimpa usulan yang sudah ada.
+  try {
+    const w2a = await require("./isiOtomatisW2a").usulanW2a(perkaraId, runQuery);
+    for (const u of w2a) if (!hasil.some((x) => x.kode === u.kode)) hasil.push(u);
+  } catch {
+    /* usulan jenis bersifat tambahan: gagal membaca tidak menggagalkan usulan SIPP lain */
+  }
+
   return {
     ok: true,
     perkaraId,

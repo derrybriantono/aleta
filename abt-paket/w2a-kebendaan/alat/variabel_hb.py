@@ -4,7 +4,7 @@ Variabel ABT 4780-4809: HARTA BERSAMA (gugatan, jenis perkara 348) - keputusan m
 Pola sama dengan paket U2 (cerai): tuntutan DIKENALI dari petitum SIPP, keputusan tetap isian PILIH hakim,
 tuntutan terbaca tanpa keputusan = kalimat [PERIKSA: ...]; tanpa tuntutan dan tanpa pilihan = bunyi lama blangko.
 """
-import json, os
+import json, os, re
 from sqlkit import lit, konteks, kode_pilihan, alasan, sebelum_titik_dua, bersih_html, periksa, gabung, PERKARA
 
 ISIAN_HB = [4780, 4781, 4782, 4783, 4784, 4785, 4786, 4787, 8730]
@@ -54,8 +54,26 @@ def ctx(mode):
     return "(%s) c" % b
 
 
+# Penanda isian yang bisa KOSONG. Penanda di dalam kueri diganti ABT secara tekstual sebelum kueri jalan, dan nilai kosongnya hilang begitu saja
+# (di templat RTF kosong tampil "..." lewat DATA_TIDAK_ADA). Karena itu penanda ini dibungkus: kosong -> DATA_TIDAK_ADA (ABT menampilkannya "...").
+PENANDA_BISA_KOSONG = ("1025", "1246", "1509", "0218")
+
+
 def L(t):
-    return lit(t)
+    """Literal SQL; penanda isian yang bisa kosong dibungkus supaya kosong tampil sebagai titik-titik, bukan hilang."""
+    pola = "|".join("#%s#" % k for k in PENANDA_BISA_KOSONG)
+    bagian = re.split("(%s)" % pola, t)
+    if len(bagian) == 1:
+        return lit(t)
+    unsur = []
+    for b in bagian:
+        if not b:
+            continue
+        if re.fullmatch(pola, b):
+            unsur.append("IF(TRIM(%s) = '', 'DATA_TIDAK_ADA', %s)" % (lit(b), lit(b)))
+        else:
+            unsur.append(lit(b))
+    return "CONCAT(%s)" % ", ".join(unsur)
 
 
 BAWAAN = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "salinan-server-21okt", "bawaan-variabel.json"), encoding="utf-8"))
@@ -64,8 +82,7 @@ BAWAAN = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 def isi(col, no):
     """Isian bersih; kosong -> teks bawaan variabel di server (disalin ke salinan-server-21okt/bawaan-variabel.json), bukan token:
     token di dalam kueri diganti ABT secara tekstual SEBELUM kueri jalan, jadi nilai isian bertanda petik ganda dapat merusak kueri."""
-    bawaan = BAWAAN.get(str(no), {}).get("default") or "..."
-    return "IF(c.%s <> '', c.%s, %s)" % (col, col, lit(bawaan))
+    return "IF(c.%s <> '', c.%s, 'DATA_TIDAK_ADA')" % (col, col)
 
 
 def kalimat(*bagian):
@@ -91,7 +108,7 @@ def p_tidak_terbukti(kata="harta bersama #0046# dan #7037#", petitum="penetapan 
 
 
 def p_sita(mode="K", kata="harta bersama #0046# dan #7037#"):
-    sela = "IF(c.sela > 0, CONCAT(%s, '#0218#'), '')" % L(" berdasarkan Putusan Sela tanggal ")
+    sela = "IF(c.sela > 0, CONCAT(%s, IF(TRIM('#0218#') = '', 'DATA_TIDAK_ADA', '#0218#')), '')" % L(" berdasarkan Putusan Sela tanggal ")
     marital = "IF(c.pet REGEXP 'marital', %s, %s)" % (L("sita marital (maritale beslag)"), L("sita jaminan (conservatoir beslag)"))
     if mode == "KK":
         sah = L("Menimbang, bahwa oleh karena objek yang telah diletakkan sita jaminan berdasarkan Putusan Sela tanggal #0218# terbukti sebagai harta bersama #0046# dan #0047#, maka sita jaminan (conservatoir beslag) tersebut patut dinyatakan sah dan berharga;")
@@ -258,7 +275,7 @@ def amar_blok(mode):
     akhir_kab = L(" dengan verstek;") if mode == "V" else L(";")
     teks["kab"] = "CONCAT(%s, IF(c.sebagian = 1, %s, ''), %s)" % (L("Mengabulkan #0053# #0046#"), L(" untuk sebagian"), akhir_kab)
     teks["sita"] = (
-        "CONCAT(%s, IF(c.pet REGEXP 'marital', %s, %s), IF(c.sela > 0, CONCAT(%s, '#0218#'), ''), %s)"
+        "CONCAT(%s, IF(c.pet REGEXP 'marital', %s, %s), IF(c.sela > 0, CONCAT(%s, IF(TRIM('#0218#') = '', 'DATA_TIDAK_ADA', '#0218#')), ''), %s)"
         % (L("Menyatakan sah dan berharga "), L("sita marital (maritale beslag)"), L("sita jaminan (conservatoir beslag)"), L(" berdasarkan Putusan Sela tanggal "), L(" yang telah diletakkan atas objek sengketa;"))
     )
     if mode == "KK":
@@ -448,6 +465,12 @@ def semua_kk():
     }
 
 
+def kutipan_bas(nomor_sumber, kalimat_awal):
+    """Kalimat pertimbangan dari kutipan ringkas keterangan saksi di BAS (kueri U6 4617/4618 yang disalin ke salinan-server-21okt/); kosong bila BAS belum menyimpan keterangan."""
+    sumber = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "salinan-server-21okt", "%d.sql" % nomor_sumber), encoding="utf-8").read().strip()
+    return "SELECT IF(IFNULL(z.data, '') = '', '', CONCAT('<br>', %s, z.data, ';', '{}')) AS data FROM (%s) z" % (lit(kalimat_awal), sumber)
+
+
 def semua():
     from sqlkit import isi_mentah  # noqa: F401
     V = []
@@ -500,6 +523,7 @@ def semua():
         opsional(bungkus_kk(gabung(p_tidak_terbukti(), p_utang(), p_turut()))))
     sql(4813, "HARTA BERSAMA: PERTIMBANGAN BAGIAN PARA PIHAK PADA KONVENSI (OTOMATIS: seperdua menurut bunyi blangko Konvensi Rekonvensi bila isian 4782 kosong)", bungkus_kk(p_bagian("KK")))
     sql(4814, "HARTA BERSAMA: PERTIMBANGAN SITA JAMINAN PADA KONVENSI (OTOMATIS: sah dan berharga bila isian 4783 kosong atau sah; ditolak bila dipilih)", bungkus_kk(p_sita("KK")))
+    sql(4848, "HARTA BERSAMA: KUTIPAN KETERANGAN SAKSI TENTANG HARTA DAN BENDA (OTOMATIS dari BAS, kueri 4617: nama saksi dan jawaban; kosong bila BAS belum menyimpan keterangan)", kutipan_bas(4617, "Menimbang, bahwa saksi-saksi yang diajukan menerangkan tentang harta dan benda yang disengketakan sebagai berikut: "))
     sql(4805, "HARTA BERSAMA: JAWAB-MENJAWAB PER OBJEK (OTOMATIS dari isian 4787: satu butir per objek, diakui murni / berklausul / dibantah)", jawab_per_objek())
     sql(4806, "HARTA BERSAMA: BEBAN PEMBUKTIAN PER OBJEK (OTOMATIS dari isian 4787: objek yang dibantah atau diakui berklausul)", beban_per_objek())
     sql(4807, "HARTA BERSAMA: ANALISIS BUKTI SURAT PENGGUGAT (OTOMATIS dari daftar bukti surat: dikelompokkan menurut jenis surat; daftar kosong = kosong)", analisis_p())

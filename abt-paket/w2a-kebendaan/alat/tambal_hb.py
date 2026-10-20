@@ -34,7 +34,7 @@ def tambal_v_k(nama, d):
     verstek = nama.startswith("[01b]")
     d = ganti_paragraf(d, BAGIAN_V, "#4794#", nama)
     d = tambah_akhir(d, SEMA_V, "#4799#", nama)
-    d = tambah_akhir(d, BUKTI_V, "#4807#", nama)
+    d = tambah_akhir(d, BUKTI_V, "#4807##4848#", nama)
     d = _amar_v(d, nama) if verstek else _amar_k(d, nama)
     d = tambah_isianasal(d, ISIAN_UMUM + [8730], nama)
     seimbang(d, nama)
@@ -55,6 +55,7 @@ def tambal_kk(nama, d):
     d = hapus_paragraf(d, "ISI URAIAN ISI MASING-MASING BUKTI SURAT/ELEKTRONIK PENGGUGAT", b)
     d = tambah_akhir(d, "Menimbang, bahwa bukti surat yang dikeluarkan oleh pejabat yang berwenang merupakan akta otentik", "#4807#", b)
     d = tambah_akhir(d, "Menimbang, bahwa bukti elektronik yang diajukan para pihak", "#4808#", b)
+    d = tambah_akhir(d, "Menimbang, bahwa saksi-saksi Penggugat telah dewasa", "#4848#", b)
     d = ganti_teks(d, "ISI URAIAN ISI MASING-MASING BUKTI TERGUGAT (T.1 dst.) DAN KETERANGAN SAKSI TERGUGAT YANG RELEVAN.", "ISI KETERANGAN SAKSI TERGUGAT YANG RELEVAN.", 1, b)
     # fakta objek tidak terbukti
     d = hapus_paragraf(d, "Bahwa objek _ (posita _) tidak terbukti sebagai harta bersama", b)

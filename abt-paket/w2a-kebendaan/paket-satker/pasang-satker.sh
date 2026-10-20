@@ -72,4 +72,4 @@ if [ "$SALAH" != "0" ]; then
   bash "$SINI/pulih-satker.sh"
   gagal "dipulihkan"
 fi
-echo "SELESAI - paket w2a-kebendaan terpasang ($(grep -c . DAFTAR-BLANGKO.tsv) blangko, 68 variabel). Cadangan untuk pulih: $CAD"
+echo "SELESAI - paket w2a-kebendaan terpasang ($(grep -c . DAFTAR-BLANGKO.tsv) blangko, 70 variabel). Cadangan untuk pulih: $CAD"

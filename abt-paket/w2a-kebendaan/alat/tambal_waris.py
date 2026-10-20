@@ -21,9 +21,9 @@ def tambal(nama, d):
     d = tambah_akhir(d, "Menimbang, bahwa terhadap harta peninggalan sebagaimana fakta angka 3", "#4822#", b)
     d = ganti_paragraf(d, "yang bersifat menghukum", "#4832##4823##4824#", b)
     if nama.startswith("[01b]") or nama.startswith("[01a]"):
-        d = tambah_akhir(d, "Menimbang, bahwa bukti-bukti surat yang diajukan #0046# telah bermeterai", "#4829#", b)
+        d = tambah_akhir(d, "Menimbang, bahwa bukti-bukti surat yang diajukan #0046# telah bermeterai", "#4829##4849#", b)
     else:
-        d = tambah_akhir(d, "Menimbang, bahwa terhadap akta otentik", "#4829##4830#", b)
+        d = tambah_akhir(d, "Menimbang, bahwa terhadap akta otentik", "#4829##4830##4849#", b)
     d = tambah_akhir(d, "Bahwa pewaris meninggalkan harta peninggalan", "#4831#", b)
     # amar
     if verstek:

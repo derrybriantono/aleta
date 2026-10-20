@@ -25,7 +25,7 @@ SELECT 4791 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4792 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4792) AS panjang, 4341 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4792 AND MD5(sql_query) = 'b230b951dd0ac34213e9d7d2373046fc' AND MD5(nama) = 'de1452a419bd7b46c75d4f5c82b63158' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4793 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4793) AS panjang, 5108 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4793 AND MD5(sql_query) = '9a2460fedf51123c6ea1c970e308554a' AND MD5(nama) = '44c7e31d34cc9d04dba31e8ea5efefc1' AND data_type = 'data_sql') AS cocok
+SELECT 4793 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4793) AS panjang, 5151 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4793 AND MD5(sql_query) = '31a616e60c504e68fa2a82f08da0dd87' AND MD5(nama) = '44c7e31d34cc9d04dba31e8ea5efefc1' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4794 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4794) AS panjang, 5356 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4794 AND MD5(sql_query) = '6156ddc095b3e90904cbd5adae95a514' AND MD5(nama) = 'f251c6d4ef3d553e996a2641ce167bfa' AND data_type = 'data_sql') AS cocok
 UNION ALL
@@ -37,17 +37,17 @@ SELECT 4797 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4798 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4798) AS panjang, 5104 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4798 AND MD5(sql_query) = '1da48fe9ad9c9f059ea0d2b3068b007a' AND MD5(nama) = '132ff158b7b271b1a9f84ac30886af90' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4799 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4799) AS panjang, 8373 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4799 AND MD5(sql_query) = 'fe0c3425b8f7f323ede2a10cf21093b5' AND MD5(nama) = '46e4df14b05befbe761687497aefaaa4' AND data_type = 'data_sql') AS cocok
+SELECT 4799 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4799) AS panjang, 8416 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4799 AND MD5(sql_query) = 'b2df31d219a25226e911720dee9c6da3' AND MD5(nama) = '46e4df14b05befbe761687497aefaaa4' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4800 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4800) AS panjang, 8093 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4800 AND MD5(sql_query) = '523e051141f924746b35634c4c6dfa6d' AND MD5(nama) = '1a3179aef6e7bfaed3cec419faf51357' AND data_type = 'data_sql') AS cocok
+SELECT 4800 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4800) AS panjang, 7942 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4800 AND MD5(sql_query) = 'f63a61ee6601d3495ddbdd4fdb9a05db' AND MD5(nama) = '1a3179aef6e7bfaed3cec419faf51357' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4801 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4801) AS panjang, 4212 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4801 AND MD5(sql_query) = '413ea40ed5160ec8a42f36ca40b103ac' AND MD5(nama) = 'e255daf20d53f3ef18e18754fcee3128' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4802 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4802) AS panjang, 7864 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4802 AND MD5(sql_query) = '0b25ee1a0dfd1f4b26844142a7534501' AND MD5(nama) = 'f84743d2e4cb87ed79f2931eb2de6ea3' AND data_type = 'data_sql') AS cocok
+SELECT 4802 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4802) AS panjang, 7713 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4802 AND MD5(sql_query) = '0380cbd8b626001ef3cc931b4391f5e8' AND MD5(nama) = 'f84743d2e4cb87ed79f2931eb2de6ea3' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4803 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4803) AS panjang, 4208 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4803 AND MD5(sql_query) = '8b920ca780e928830a7b88f8e017cfb4' AND MD5(nama) = '4480ba7d55bcc4fdd14e9faf4323a510' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4804 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4804) AS panjang, 9316 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4804 AND MD5(sql_query) = '4c40da2b239171b3aeebcc36f1140f59' AND MD5(nama) = '65600eb5682d66abb1241c4a643c8425' AND data_type = 'data_sql') AS cocok
+SELECT 4804 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4804) AS panjang, 9165 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4804 AND MD5(sql_query) = 'b0475c07748efb3a2af3b83cfcf7628d' AND MD5(nama) = '65600eb5682d66abb1241c4a643c8425' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4805 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4805) AS panjang, 5358 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4805 AND MD5(sql_query) = 'a854c1a488a061251a408c76c6cb624c' AND MD5(nama) = '5397ebd6c13486f6e6476a603903ae7c' AND data_type = 'data_sql') AS cocok
 UNION ALL
@@ -67,7 +67,7 @@ SELECT 4812 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4813 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4813) AS panjang, 6468 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4813 AND MD5(sql_query) = '010ab0fe08ca193641245fa98a089d0a' AND MD5(nama) = '83e5aab51802e92394502cf27fdda8e4' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4814 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4814) AS panjang, 4924 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4814 AND MD5(sql_query) = 'a270b0098005928c99036a53c07acf68' AND MD5(nama) = '08bdcfa1fdab81562054af0f8f19ce1f' AND data_type = 'data_sql') AS cocok
+SELECT 4814 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4814) AS panjang, 4983 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4814 AND MD5(sql_query) = '3c577a7b6c52c9e4007547cf539efec8' AND MD5(nama) = '08bdcfa1fdab81562054af0f8f19ce1f' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4815 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4815) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4815 AND sql_query IS NULL AND MD5(nama) = 'f593a7f5fc5a861a5167575d16ac4272' AND data_type = 'data_teks') AS cocok
 UNION ALL
@@ -79,21 +79,21 @@ SELECT 4818 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4819 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4819) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4819 AND sql_query IS NULL AND MD5(nama) = 'a112dc59aaaf0a17f53e80c39bea8a56' AND data_type = 'data_teks') AS cocok
 UNION ALL
-SELECT 4820 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4820) AS panjang, 11114 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4820 AND MD5(sql_query) = '2845b8d1622dc5fdce464eb5b3e4cde3' AND MD5(nama) = 'b816850270c2972fbaa6757e731292f8' AND data_type = 'data_sql') AS cocok
+SELECT 4820 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4820) AS panjang, 11045 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4820 AND MD5(sql_query) = 'd7e3d5dbf6ca3153eedaf1445d2944e0' AND MD5(nama) = 'b816850270c2972fbaa6757e731292f8' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4821 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4821) AS panjang, 11214 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4821 AND MD5(sql_query) = 'bdcc0b2eef92df9b57de57b6b0f46b8a' AND MD5(nama) = 'd3cbb59c0a29aa7ecf3c1fd2772c90ed' AND data_type = 'data_sql') AS cocok
+SELECT 4821 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4821) AS panjang, 11145 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4821 AND MD5(sql_query) = '0350d259b3356acce32f5467bf8efe0d' AND MD5(nama) = 'd3cbb59c0a29aa7ecf3c1fd2772c90ed' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4822 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4822) AS panjang, 44789 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4822 AND MD5(sql_query) = 'ca7057ba44c1d8aff42147f5b1abe68c' AND MD5(nama) = '05f27731aaef0c08c5eb668b75a43434' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4823 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4823) AS panjang, 4802 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4823 AND MD5(sql_query) = 'ffb3384954c8c086fb8a28c63185f74a' AND MD5(nama) = '0ed4adf8f451ac7e7d4bc4569e06bd75' AND data_type = 'data_sql') AS cocok
+SELECT 4823 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4823) AS panjang, 4861 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4823 AND MD5(sql_query) = '01027c770602ef6049f9989f2f5492c0' AND MD5(nama) = '0ed4adf8f451ac7e7d4bc4569e06bd75' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4824 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4824) AS panjang, 7725 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4824 AND MD5(sql_query) = '09f5fc48b167aaa05a78465d072245cd' AND MD5(nama) = 'cdecd34fa0149a0b18ed15dd42390939' AND data_type = 'data_sql') AS cocok
+SELECT 4824 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4824) AS panjang, 7886 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4824 AND MD5(sql_query) = 'f64e74825022fc621ee58dd0f34c167d' AND MD5(nama) = 'cdecd34fa0149a0b18ed15dd42390939' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4825 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4825) AS panjang, 8110 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4825 AND MD5(sql_query) = 'cbca6eb87cff46aaf43f971d69d1b4d8' AND MD5(nama) = '64f3c6f1e6f591ed7ebba21306089868' AND data_type = 'data_sql') AS cocok
+SELECT 4825 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4825) AS panjang, 8321 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4825 AND MD5(sql_query) = 'cd44ff7511aa5637a03f9d261fe09c81' AND MD5(nama) = '64f3c6f1e6f591ed7ebba21306089868' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4826 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4826) AS panjang, 3982 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4826 AND MD5(sql_query) = 'c6a88cdd3a8e9e01a719f2d7f45a79d8' AND MD5(nama) = 'b5826a07d264063eb07c7bc19e4947aa' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4827 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4827) AS panjang, 7881 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4827 AND MD5(sql_query) = '1e1f65819165b8cebcf4dd1743400330' AND MD5(nama) = '1bb09b2164a3e9e127a21ba475630d59' AND data_type = 'data_sql') AS cocok
+SELECT 4827 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4827) AS panjang, 8092 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4827 AND MD5(sql_query) = '8ad8f590746cd6cbaf75e919ead3c7c0' AND MD5(nama) = '1bb09b2164a3e9e127a21ba475630d59' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4828 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4828) AS panjang, 3978 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4828 AND MD5(sql_query) = '64047b36b89f235e18714e1dff9fa404' AND MD5(nama) = '9c0c9b0d3b242427c103a341a000f367' AND data_type = 'data_sql') AS cocok
 UNION ALL
@@ -109,17 +109,17 @@ SELECT 4833 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4834 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4834) AS panjang, 20011 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4834 AND MD5(sql_query) = 'd45f3c7acf1969e74314553000f2a11e' AND MD5(nama) = '028c4e2c71cfd5d9bfdee4eec8cca969' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4835 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4835) AS panjang, 10514 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4835 AND MD5(sql_query) = 'f58f5823286af54e663c7d3040036fa1' AND MD5(nama) = '78e39d1fcc4c9d2a91855316e4aa89c2' AND data_type = 'data_sql') AS cocok
+SELECT 4835 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4835) AS panjang, 10557 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4835 AND MD5(sql_query) = '46daeb8298587d443231da6a71d0e07b' AND MD5(nama) = '78e39d1fcc4c9d2a91855316e4aa89c2' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4836 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4836) AS panjang, 3964 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4836 AND MD5(sql_query) = '15ba2e637e2ef5c1e1f530f054c3bceb' AND MD5(nama) = '0739adead45ad658cd017fde6e05551b' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4837 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4837) AS panjang, 6933 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4837 AND MD5(sql_query) = '5df326b280a0d474b015a9308737fa73' AND MD5(nama) = 'c08c014540754eb1f4552ac792d4c48b' AND data_type = 'data_sql') AS cocok
+SELECT 4837 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4837) AS panjang, 6976 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4837 AND MD5(sql_query) = '321da3dd6316b08c28896b76bb79574f' AND MD5(nama) = 'c08c014540754eb1f4552ac792d4c48b' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4838 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4838) AS panjang, 4128 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4838 AND MD5(sql_query) = '1cf915157dab1aee9b5586438a83e2a3' AND MD5(nama) = 'ebc6fce74a57dcde565ec73700008e5d' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4839 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4839) AS panjang, 3983 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4839 AND MD5(sql_query) = '4c25887cc61c35725c78c77bf319995c' AND MD5(nama) = '95b5bd490ce58d2de6abf99c02bf65ff' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4840 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4840) AS panjang, 6933 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4840 AND MD5(sql_query) = '4f48a41b67445e0e646f250eeecf55d5' AND MD5(nama) = '84fac7820c3022cba40d2e0d1eabfd42' AND data_type = 'data_sql') AS cocok
+SELECT 4840 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4840) AS panjang, 6976 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4840 AND MD5(sql_query) = '6fa7cd66a2bc0c2715f44327d7b677ba' AND MD5(nama) = '84fac7820c3022cba40d2e0d1eabfd42' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4841 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4841) AS panjang, 4128 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4841 AND MD5(sql_query) = '3c4c26ad82120cc0bea686cb208feab7' AND MD5(nama) = 'd8b5b1170563dca544be36be9917d931' AND data_type = 'data_sql') AS cocok
 UNION ALL
@@ -135,8 +135,12 @@ SELECT 4846 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4847 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4847) AS panjang, 3831 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4847 AND MD5(sql_query) = '7885a8a301dfd88688ddb4cf8229bceb' AND MD5(nama) = '1dd6c59db64ef2c403c0bdf3d5eaaa56' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 0 AS no_var, NULL AS panjang, NULL AS panjang_harap, IF((SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN 4780 AND 4849) = 68, 1, 0) AS cocok;
-SELECT IF(SUM(c.cocok) = 69, 'SEMUA COCOK', 'ADA YANG TIDAK COCOK') AS hasil FROM (
+SELECT 4848 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4848) AS panjang, 619 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4848 AND MD5(sql_query) = '1a4a3ec7c99c4357d3e7082497ea0359' AND MD5(nama) = 'cf4c38f959741f776cdc414e374cc17b' AND data_type = 'data_sql') AS cocok
+UNION ALL
+SELECT 4849 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4849) AS panjang, 608 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4849 AND MD5(sql_query) = 'b02103ba1e5ffb0822d3a356fc3e2c96' AND MD5(nama) = 'f24eb02849b93da1d85bddf45639a8f8' AND data_type = 'data_sql') AS cocok
+UNION ALL
+SELECT 0 AS no_var, NULL AS panjang, NULL AS panjang_harap, IF((SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN 4780 AND 4849) = 70, 1, 0) AS cocok;
+SELECT IF(SUM(c.cocok) = 71, 'SEMUA COCOK', 'ADA YANG TIDAK COCOK') AS hasil FROM (
 SELECT 4780 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4780) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4780 AND sql_query IS NULL AND MD5(nama) = 'c528ffb474eff0606245e9819b0158f4' AND data_type = 'data_teks') AS cocok
 UNION ALL
 SELECT 4781 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4781) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4781 AND sql_query IS NULL AND MD5(nama) = '86e488ec6a58ed1975da4a8566793d45' AND data_type = 'data_teks') AS cocok
@@ -163,7 +167,7 @@ SELECT 4791 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4792 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4792) AS panjang, 4341 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4792 AND MD5(sql_query) = 'b230b951dd0ac34213e9d7d2373046fc' AND MD5(nama) = 'de1452a419bd7b46c75d4f5c82b63158' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4793 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4793) AS panjang, 5108 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4793 AND MD5(sql_query) = '9a2460fedf51123c6ea1c970e308554a' AND MD5(nama) = '44c7e31d34cc9d04dba31e8ea5efefc1' AND data_type = 'data_sql') AS cocok
+SELECT 4793 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4793) AS panjang, 5151 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4793 AND MD5(sql_query) = '31a616e60c504e68fa2a82f08da0dd87' AND MD5(nama) = '44c7e31d34cc9d04dba31e8ea5efefc1' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4794 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4794) AS panjang, 5356 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4794 AND MD5(sql_query) = '6156ddc095b3e90904cbd5adae95a514' AND MD5(nama) = 'f251c6d4ef3d553e996a2641ce167bfa' AND data_type = 'data_sql') AS cocok
 UNION ALL
@@ -175,17 +179,17 @@ SELECT 4797 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4798 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4798) AS panjang, 5104 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4798 AND MD5(sql_query) = '1da48fe9ad9c9f059ea0d2b3068b007a' AND MD5(nama) = '132ff158b7b271b1a9f84ac30886af90' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4799 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4799) AS panjang, 8373 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4799 AND MD5(sql_query) = 'fe0c3425b8f7f323ede2a10cf21093b5' AND MD5(nama) = '46e4df14b05befbe761687497aefaaa4' AND data_type = 'data_sql') AS cocok
+SELECT 4799 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4799) AS panjang, 8416 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4799 AND MD5(sql_query) = 'b2df31d219a25226e911720dee9c6da3' AND MD5(nama) = '46e4df14b05befbe761687497aefaaa4' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4800 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4800) AS panjang, 8093 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4800 AND MD5(sql_query) = '523e051141f924746b35634c4c6dfa6d' AND MD5(nama) = '1a3179aef6e7bfaed3cec419faf51357' AND data_type = 'data_sql') AS cocok
+SELECT 4800 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4800) AS panjang, 7942 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4800 AND MD5(sql_query) = 'f63a61ee6601d3495ddbdd4fdb9a05db' AND MD5(nama) = '1a3179aef6e7bfaed3cec419faf51357' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4801 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4801) AS panjang, 4212 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4801 AND MD5(sql_query) = '413ea40ed5160ec8a42f36ca40b103ac' AND MD5(nama) = 'e255daf20d53f3ef18e18754fcee3128' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4802 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4802) AS panjang, 7864 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4802 AND MD5(sql_query) = '0b25ee1a0dfd1f4b26844142a7534501' AND MD5(nama) = 'f84743d2e4cb87ed79f2931eb2de6ea3' AND data_type = 'data_sql') AS cocok
+SELECT 4802 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4802) AS panjang, 7713 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4802 AND MD5(sql_query) = '0380cbd8b626001ef3cc931b4391f5e8' AND MD5(nama) = 'f84743d2e4cb87ed79f2931eb2de6ea3' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4803 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4803) AS panjang, 4208 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4803 AND MD5(sql_query) = '8b920ca780e928830a7b88f8e017cfb4' AND MD5(nama) = '4480ba7d55bcc4fdd14e9faf4323a510' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4804 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4804) AS panjang, 9316 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4804 AND MD5(sql_query) = '4c40da2b239171b3aeebcc36f1140f59' AND MD5(nama) = '65600eb5682d66abb1241c4a643c8425' AND data_type = 'data_sql') AS cocok
+SELECT 4804 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4804) AS panjang, 9165 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4804 AND MD5(sql_query) = 'b0475c07748efb3a2af3b83cfcf7628d' AND MD5(nama) = '65600eb5682d66abb1241c4a643c8425' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4805 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4805) AS panjang, 5358 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4805 AND MD5(sql_query) = 'a854c1a488a061251a408c76c6cb624c' AND MD5(nama) = '5397ebd6c13486f6e6476a603903ae7c' AND data_type = 'data_sql') AS cocok
 UNION ALL
@@ -205,7 +209,7 @@ SELECT 4812 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4813 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4813) AS panjang, 6468 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4813 AND MD5(sql_query) = '010ab0fe08ca193641245fa98a089d0a' AND MD5(nama) = '83e5aab51802e92394502cf27fdda8e4' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4814 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4814) AS panjang, 4924 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4814 AND MD5(sql_query) = 'a270b0098005928c99036a53c07acf68' AND MD5(nama) = '08bdcfa1fdab81562054af0f8f19ce1f' AND data_type = 'data_sql') AS cocok
+SELECT 4814 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4814) AS panjang, 4983 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4814 AND MD5(sql_query) = '3c577a7b6c52c9e4007547cf539efec8' AND MD5(nama) = '08bdcfa1fdab81562054af0f8f19ce1f' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4815 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4815) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4815 AND sql_query IS NULL AND MD5(nama) = 'f593a7f5fc5a861a5167575d16ac4272' AND data_type = 'data_teks') AS cocok
 UNION ALL
@@ -217,21 +221,21 @@ SELECT 4818 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4819 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4819) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4819 AND sql_query IS NULL AND MD5(nama) = 'a112dc59aaaf0a17f53e80c39bea8a56' AND data_type = 'data_teks') AS cocok
 UNION ALL
-SELECT 4820 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4820) AS panjang, 11114 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4820 AND MD5(sql_query) = '2845b8d1622dc5fdce464eb5b3e4cde3' AND MD5(nama) = 'b816850270c2972fbaa6757e731292f8' AND data_type = 'data_sql') AS cocok
+SELECT 4820 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4820) AS panjang, 11045 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4820 AND MD5(sql_query) = 'd7e3d5dbf6ca3153eedaf1445d2944e0' AND MD5(nama) = 'b816850270c2972fbaa6757e731292f8' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4821 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4821) AS panjang, 11214 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4821 AND MD5(sql_query) = 'bdcc0b2eef92df9b57de57b6b0f46b8a' AND MD5(nama) = 'd3cbb59c0a29aa7ecf3c1fd2772c90ed' AND data_type = 'data_sql') AS cocok
+SELECT 4821 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4821) AS panjang, 11145 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4821 AND MD5(sql_query) = '0350d259b3356acce32f5467bf8efe0d' AND MD5(nama) = 'd3cbb59c0a29aa7ecf3c1fd2772c90ed' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4822 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4822) AS panjang, 44789 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4822 AND MD5(sql_query) = 'ca7057ba44c1d8aff42147f5b1abe68c' AND MD5(nama) = '05f27731aaef0c08c5eb668b75a43434' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4823 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4823) AS panjang, 4802 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4823 AND MD5(sql_query) = 'ffb3384954c8c086fb8a28c63185f74a' AND MD5(nama) = '0ed4adf8f451ac7e7d4bc4569e06bd75' AND data_type = 'data_sql') AS cocok
+SELECT 4823 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4823) AS panjang, 4861 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4823 AND MD5(sql_query) = '01027c770602ef6049f9989f2f5492c0' AND MD5(nama) = '0ed4adf8f451ac7e7d4bc4569e06bd75' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4824 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4824) AS panjang, 7725 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4824 AND MD5(sql_query) = '09f5fc48b167aaa05a78465d072245cd' AND MD5(nama) = 'cdecd34fa0149a0b18ed15dd42390939' AND data_type = 'data_sql') AS cocok
+SELECT 4824 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4824) AS panjang, 7886 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4824 AND MD5(sql_query) = 'f64e74825022fc621ee58dd0f34c167d' AND MD5(nama) = 'cdecd34fa0149a0b18ed15dd42390939' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4825 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4825) AS panjang, 8110 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4825 AND MD5(sql_query) = 'cbca6eb87cff46aaf43f971d69d1b4d8' AND MD5(nama) = '64f3c6f1e6f591ed7ebba21306089868' AND data_type = 'data_sql') AS cocok
+SELECT 4825 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4825) AS panjang, 8321 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4825 AND MD5(sql_query) = 'cd44ff7511aa5637a03f9d261fe09c81' AND MD5(nama) = '64f3c6f1e6f591ed7ebba21306089868' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4826 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4826) AS panjang, 3982 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4826 AND MD5(sql_query) = 'c6a88cdd3a8e9e01a719f2d7f45a79d8' AND MD5(nama) = 'b5826a07d264063eb07c7bc19e4947aa' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4827 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4827) AS panjang, 7881 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4827 AND MD5(sql_query) = '1e1f65819165b8cebcf4dd1743400330' AND MD5(nama) = '1bb09b2164a3e9e127a21ba475630d59' AND data_type = 'data_sql') AS cocok
+SELECT 4827 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4827) AS panjang, 8092 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4827 AND MD5(sql_query) = '8ad8f590746cd6cbaf75e919ead3c7c0' AND MD5(nama) = '1bb09b2164a3e9e127a21ba475630d59' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4828 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4828) AS panjang, 3978 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4828 AND MD5(sql_query) = '64047b36b89f235e18714e1dff9fa404' AND MD5(nama) = '9c0c9b0d3b242427c103a341a000f367' AND data_type = 'data_sql') AS cocok
 UNION ALL
@@ -247,17 +251,17 @@ SELECT 4833 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4834 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4834) AS panjang, 20011 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4834 AND MD5(sql_query) = 'd45f3c7acf1969e74314553000f2a11e' AND MD5(nama) = '028c4e2c71cfd5d9bfdee4eec8cca969' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4835 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4835) AS panjang, 10514 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4835 AND MD5(sql_query) = 'f58f5823286af54e663c7d3040036fa1' AND MD5(nama) = '78e39d1fcc4c9d2a91855316e4aa89c2' AND data_type = 'data_sql') AS cocok
+SELECT 4835 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4835) AS panjang, 10557 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4835 AND MD5(sql_query) = '46daeb8298587d443231da6a71d0e07b' AND MD5(nama) = '78e39d1fcc4c9d2a91855316e4aa89c2' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4836 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4836) AS panjang, 3964 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4836 AND MD5(sql_query) = '15ba2e637e2ef5c1e1f530f054c3bceb' AND MD5(nama) = '0739adead45ad658cd017fde6e05551b' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4837 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4837) AS panjang, 6933 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4837 AND MD5(sql_query) = '5df326b280a0d474b015a9308737fa73' AND MD5(nama) = 'c08c014540754eb1f4552ac792d4c48b' AND data_type = 'data_sql') AS cocok
+SELECT 4837 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4837) AS panjang, 6976 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4837 AND MD5(sql_query) = '321da3dd6316b08c28896b76bb79574f' AND MD5(nama) = 'c08c014540754eb1f4552ac792d4c48b' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4838 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4838) AS panjang, 4128 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4838 AND MD5(sql_query) = '1cf915157dab1aee9b5586438a83e2a3' AND MD5(nama) = 'ebc6fce74a57dcde565ec73700008e5d' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4839 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4839) AS panjang, 3983 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4839 AND MD5(sql_query) = '4c25887cc61c35725c78c77bf319995c' AND MD5(nama) = '95b5bd490ce58d2de6abf99c02bf65ff' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4840 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4840) AS panjang, 6933 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4840 AND MD5(sql_query) = '4f48a41b67445e0e646f250eeecf55d5' AND MD5(nama) = '84fac7820c3022cba40d2e0d1eabfd42' AND data_type = 'data_sql') AS cocok
+SELECT 4840 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4840) AS panjang, 6976 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4840 AND MD5(sql_query) = '6fa7cd66a2bc0c2715f44327d7b677ba' AND MD5(nama) = '84fac7820c3022cba40d2e0d1eabfd42' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4841 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4841) AS panjang, 4128 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4841 AND MD5(sql_query) = '3c4c26ad82120cc0bea686cb208feab7' AND MD5(nama) = 'd8b5b1170563dca544be36be9917d931' AND data_type = 'data_sql') AS cocok
 UNION ALL
@@ -273,5 +277,9 @@ SELECT 4846 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4847 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4847) AS panjang, 3831 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4847 AND MD5(sql_query) = '7885a8a301dfd88688ddb4cf8229bceb' AND MD5(nama) = '1dd6c59db64ef2c403c0bdf3d5eaaa56' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 0 AS no_var, NULL AS panjang, NULL AS panjang_harap, IF((SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN 4780 AND 4849) = 68, 1, 0) AS cocok
+SELECT 4848 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4848) AS panjang, 619 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4848 AND MD5(sql_query) = '1a4a3ec7c99c4357d3e7082497ea0359' AND MD5(nama) = 'cf4c38f959741f776cdc414e374cc17b' AND data_type = 'data_sql') AS cocok
+UNION ALL
+SELECT 4849 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4849) AS panjang, 608 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4849 AND MD5(sql_query) = 'b02103ba1e5ffb0822d3a356fc3e2c96' AND MD5(nama) = 'f24eb02849b93da1d85bddf45639a8f8' AND data_type = 'data_sql') AS cocok
+UNION ALL
+SELECT 0 AS no_var, NULL AS panjang, NULL AS panjang_harap, IF((SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN 4780 AND 4849) = 70, 1, 0) AS cocok
 ) c;
