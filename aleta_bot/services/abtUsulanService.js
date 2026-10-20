@@ -1865,6 +1865,15 @@ async function dariSipp(nomorPerkara) {
     /* usulan lanjutan bersifat tambahan: gagal membaca tidak menggagalkan usulan SIPP lain */
   }
 
+  // S6 20 Okt: isian otomatis jenis harta bersama, kewarisan, wasiat, hibah, wakaf, poligami, pencegahan/pembatalan,
+  // hak asuh/nafkah anak, Lain-Lain, ekonomi syariah - lihat isiOtomatisJenisS6.js (jenis lain dijawab [] tanpa pembacaan tambahan).
+  try {
+    const s6 = await require("./isiOtomatisJenisS6").usulanJenisS6(perkaraId, runQuery);
+    for (const u of s6) if (!hasil.some((x) => x.kode === u.kode)) hasil.push(u);
+  } catch {
+    /* usulan jenis bersifat tambahan: gagal membaca tidak menggagalkan usulan SIPP lain */
+  }
+
   return {
     ok: true,
     perkaraId,
