@@ -19,7 +19,7 @@
  *      PMH->PHS dalam satu transaksi, laporan per langkah;
  *   3. e-Doc: untuk tiap langkah yang dicentang DAN (tercatat ATAU sudah ada),
  *      blangko ABT dicetak sesi ABT petugas dan diunggah (e-Doc yang sudah
- *      terunggah tidak ditimpa);
+ *      terunggah tidak ditimpa tanpa ditanyakan);
  *   4. melepas kunci.
  *
  * TIDAK PERNAH MEMBONGKAR. Mode kering/latihan/coba menahan penulisan lewat
@@ -258,8 +258,10 @@
               nomorPerkara,
               perkaraId: String(perkaraId || ""),
               jenis: untukEdoc.map((x) => x.jenis),
-              // otomatis: e-Doc yang sudah terunggah dilewati, bukan ditimpa.
-              otomatis: true,
+              // Dicentang petugas = diminta tegas, jadi tidak tersaring oleh
+              // "unggah otomatis" di Peta penetapan. e-Doc yang SUDAH terunggah
+              // tidak ditimpa diam-diam: e6UnggahEdocPenetapan menanyakannya.
+              otomatis: false,
               kering: false,
               sita: masuk.sita || "",
               kabar: kabarKemajuan(pada, "edoc"),

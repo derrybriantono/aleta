@@ -69,7 +69,7 @@ Aturan yang dijamin fungsi ini:
 - Tidak pernah membongkar. Membongkar hanya lewat tombol Bongkar yang ditekan pengguna
   (lihat bagian 5).
 - Sisa PMH->PHS ditulis dalam satu transaksi (utuh atau batal); e-Doc diunggah SESUDAH
-  penetapannya tercatat, satu per satu, dan e-Doc yang sudah terunggah tidak ditimpa.
+  penetapannya tercatat, satu per satu, dan e-Doc yang sudah terunggah tidak ditimpa tanpa ditanyakan.
 - Mode kering/latihan/coba ekstensi tetap menahan penulisan (sama seperti kartu Penetapan).
 
 ## 2. Keadaan penetapan (satu sumber)
@@ -147,4 +147,10 @@ antrean, penanda halaman, dan `kerjakan` tidak pernah mengirimnya.
 
 ## Status pengerjaan
 
-Diperbarui di cabang `fitur/p1-penetapan-ganda`.
+Cabang `fitur/p1-penetapan-ganda`, 20 Okt 2026. SELESAI dan diuji:
+
+- Bot: `penetapanKeadaanService` (satu definisi "ada", dipakai penulis, usulan papan, dan penanda baris daftar), `penetapanKunciService` (kunci bermasa berlaku di basis data ALETA, gagal tertutup), kunci baris `SELECT ... FOR UPDATE` di awal transaksi rantai, rute `/penetapan/keadaan`, `/penetapan/kunci`, `/penetapan/kunci/lepas`; `tulis-rantai`, `tulis` (sungguhan) dan `hapus`/`hapus-semua` memakai kunci; bongkar menuntut `perintahPengguna:"bongkar"`.
+- Portal: `POST /penunjukan/kerjakan`, `GET /penunjukan/keadaan`, `POST /penunjukan/kunci`; rute hapus/hapus-semua meneruskan dan menuntut `perintahPengguna`.
+- Ekstensi: `ekstensi-sipp/penetapan-kerja.js` (`aletaPenetapanKerja.kerjakan/keadaan/ambilKunci/lepasKunci`); pengisian borang SIPP (`kerjakanBorang`) memegang kunci dan membaca ulang keadaan tepat sebelum menekan Simpan.
+
+Catatan untuk penggabungan dengan cabang tombol halaman SIPP (P2): e-Doc pada `kerjakan()` diunggah dengan `otomatis:false` (yang dicentang petugas tidak tersaring oleh "unggah otomatis" di Peta penetapan; e-Doc yang sudah ada ditanyakan, tidak ditimpa diam-diam). Kunci sisi ekstensi P2 (`kunciTulisPenetapan`) berlapis di atas kunci server ini - keduanya dipertahankan. Berkas yang kemungkinan bentrok teks: `ekstensi-sipp/manifest.json`, `manajemen_surat/scripts/susun-ekstensi.mjs`, `src/test/sipp-ide-l1-16okt.test.ts` (sama-sama menambah satu berkas skrip), `ekstensi-berkas.ts` (hasil tanam - jalankan ulang `rilis-ekstensi.mjs`).

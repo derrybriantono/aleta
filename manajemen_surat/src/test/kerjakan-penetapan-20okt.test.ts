@@ -41,7 +41,7 @@ function siapSipp(awal: Partial<Record<Jenis, boolean>> = {}, usulan: unknown = 
   let jeda = Promise.resolve();
   let nomorToken = 0;
   const keadaan = (id: number) => ({
-    ok: true,
+    ok: true as const,
     data: {
       perkaraId: id,
       nomorPerkara: "684/Pdt.G/2026/PA.Dgl",
@@ -170,7 +170,7 @@ describe("satu perkara hanya ditetapkan sekali", () => {
   it("kunci yang dipegang pemanggil (peramban) dipakai ulang dan TIDAK dilepas di sini", async () => {
     const s = siapSipp();
     const k = await s.dep.ambilKunci({ perkaraId: 10260, operator: "peramban", tujuan: "x" });
-    const token = String((k as { data: { token: string } }).data.token);
+    const token = String((k as unknown as { data: { token: string } }).data.token);
     const h = await kerjakanPenetapan(s.dep, { ...dasar, kunciToken: token });
     expect(h.ok).toBe(true);
     expect(s.rantai[0].kunciToken).toBe(token);
