@@ -1245,6 +1245,35 @@ ORDER BY ${kode}, ${terakhirMasuk} DESC`;
   };
 }
 
+/**
+ * Keaktifan hakim, panitera pengganti, dan juru sita menurut daftar INDUK SIPP (hakim_pn, panitera_pn, jurusita).
+ *
+ * Dipakai pemilih "Lihat sebagai" Blangko Derry di ALETA supaya orang yang sudah mutasi/pensiun tidak
+ * ditawarkan. Kolom aktif SIPP berisi 'Y' (aktif) atau 'T' (tidak); yang diputuskan nonaktif-tidaknya
+ * orang adalah ALETA (satu orang dapat punya beberapa baris induk), bukan di sini - baris dikirim apa adanya.
+ * Baca saja; tanpa nomor pegawai dan tanpa kredensial.
+ */
+async function statusAktifPetugas(params = {}) {
+  const connectionKey = normalizeConnectionKey(params.connectionKey);
+  const hasil = { hakim: [], panitera: [], jurusita: [] };
+  for (const [peran, tabel] of [["hakim", "hakim_pn"], ["panitera", "panitera_pn"], ["jurusita", "jurusita"]]) {
+    const kolom = await getTableColumns(connectionKey, tabel);
+    if (kolom.size === 0) continue;
+    const nama = columnExpr("x", kolom, ["nama"], "");
+    if (!nama) continue;
+    const aktif = columnExpr("x", kolom, ["aktif"], "'Y'");
+    const baris = await runReadOnly(
+      connectionKey,
+      `SELECT ${columnExpr("x", kolom, ["id"], "''")} AS id, ${nama} AS nama, ${aktif} AS aktif FROM ${quoteIdentifier(tabel)} x ORDER BY ${nama} LIMIT 1000`,
+      []
+    );
+    hasil[peran] = (Array.isArray(baris) ? baris : [])
+      .map((r) => ({ id: safeString(r.id), nama: safeString(r.nama), aktif: safeString(r.aktif) }))
+      .filter((r) => r.nama);
+  }
+  return hasil;
+}
+
 async function searchUsers(params = {}) {
   const connectionKey = normalizeConnectionKey(params.connectionKey);
   const query = safeString(params.query || params.username || params.nip || params.email);
@@ -3071,6 +3100,7 @@ async function handleBridgeOperation(operation, params = {}) {
     "user.byId": async (input) => (await searchUsers({ ...input, query: input.id, limit: 1 }))[0] || null,
     "user.verifikasiSandi": verifikasiSandiPengguna,
     "jabatan.pemetaanAkun": pemetaanAkunJabatan,
+    "petugas.statusAktif": statusAktifPetugas,
     /* === MASUK-SESI-SIPP 11 Okt === */
     "user.sesiSipp": sesiSippMasuk,
     "user.identitasSipp": identitasPenggunaSipp,

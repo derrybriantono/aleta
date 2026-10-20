@@ -87,10 +87,11 @@ describe("A. susunPerkaraSaya", () => {
     const h = susunPerkaraSaya(SEMUA, { hariIni: HARI_INI, nama: "Super Admin", lihatSemua: true });
     expect(h.perkara.length).toBe(3);
     expect(h.perkara[0].sebagai).toEqual(["hakim", "pp", "js"]);
-    expect(h.akun!.hakim).toEqual(expect.arrayContaining(["Budi Santoso, S.H.", "Mazidah"]));
+    expect(h.akun!.hakim).toEqual(expect.arrayContaining(["Budi Santoso, S.H.", "Mazidah, S.Ag., M.H."]));
     expect(h.akun!.pp).toEqual(["Siti Aminah", "Sri Susilowati, S.H."]);
-    // Mohammad Syukri ditulis dua ejaan di data: tercatat dua ejaan, bukan hilang.
-    expect(h.akun!.js.length).toBeGreaterThanOrEqual(2);
+    // Mohammad Syukri ditulis dua ejaan di data ("Mohammad Syukri" dan "Mohammad Syukri, S.H."): sejak 20 Okt 2026 satu orang
+    // satu entri bernama lengkap (lib/orang-unik); pencarian lewat nama tetap mendapat perkara kedua ejaan.
+    expect(h.akun!.js).toEqual(["Ali", "Mohammad Syukri, S.H."]);
     expect(h.adaYangCocok).toBe(true);
   });
 

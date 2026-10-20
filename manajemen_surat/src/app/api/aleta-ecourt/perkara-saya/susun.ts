@@ -33,6 +33,7 @@
  *
  * Tidak ada yang ditulis ke SIPP, ABT, maupun ALETA oleh apa pun di sini.
  */
+import { satukanOrang, saringAktif } from "@/lib/orang-unik";
 import { namaAdaDi, pecahNamaPetugas } from "@/lib/perkara-sendiri";
 
 export type PeranDerry = "hakim" | "pp" | "js";
@@ -199,6 +200,11 @@ export type OpsiSusun = {
   cariNomor?: string;
   /** Cetak massal PTSP (20 Okt 2026): pencarian satker TANPA kata kunci mengembalikan seluruh perkara di rentang (baca saja). */
   semuaSatker?: boolean;
+  /**
+   * Orang yang tidak ditampilkan di daftar `akun` ("Lihat sebagai"): kunciOrang yang nonaktif - `semua` (akun ALETA nonaktif/terhapus)
+   * berlaku bagi ketiga peran, lainnya menurut daftar induk SIPP (hakim_pn / panitera_pn / jurusita). Hanya mempengaruhi `akun`.
+   */
+  tidakAktif?: { semua?: ReadonlySet<string>; hakim?: ReadonlySet<string>; pp?: ReadonlySet<string>; js?: ReadonlySet<string> };
 };
 
 export type HasilSusun = {
@@ -232,9 +238,7 @@ export function susunPerkaraSaya(baris: BarisSidangSaya[], opsi: OpsiSusun): Has
   const nama = lihatSebagai || teks(opsi.nama);
   const semuaTanpaSaring = opsi.lihatSemua && !lihatSebagai;
 
-  const akun = bolehSebagai
-    ? { hakim: new Map<string, string>(), pp: new Map<string, string>(), js: new Map<string, string>() }
-    : null;
+  const akun = bolehSebagai ? { hakim: new Set<string>(), pp: new Set<string>(), js: new Set<string>() } : null;
   const perkara: PerkaraSaya[] = [];
 
   for (const [, kelompok] of peta) {
@@ -246,10 +250,8 @@ export function susunPerkaraSaya(baris: BarisSidangSaya[], opsi: OpsiSusun): Has
 
     if (akun) {
       for (const peran of SEMUA_PERAN) {
-        for (const satu of pecahNamaPetugas(teks(akhir[RUAS_PERAN[peran]]))) {
-          const kunci = satu.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-          if (kunci && !akun[peran].has(kunci)) akun[peran].set(kunci, satu);
-        }
+        // Ejaan mentah dikumpulkan apa adanya; penyatuan satu-orang-satu-entri dikerjakan sekali di akhir (orang-unik).
+        for (const satu of pecahNamaPetugas(teks(akhir[RUAS_PERAN[peran]]))) akun[peran].add(satu);
       }
     }
 
@@ -291,12 +293,14 @@ export function susunPerkaraSaya(baris: BarisSidangSaya[], opsi: OpsiSusun): Has
 
   perkara.sort((a, b) => (parseInt(a.nomorPerkara, 10) || 0) - (parseInt(b.nomorPerkara, 10) || 0) || a.nomorPerkara.localeCompare(b.nomorPerkara));
 
-  const urutNama = (m: Map<string, string>) => [...m.values()].sort((a, b) => a.localeCompare(b, "id"));
+  // Satu orang = satu entri bernama lengkap (gelar terlengkap); orang nonaktif tidak ditawarkan.
+  const unikAktif = (peran: PeranDerry, nama: Set<string>) =>
+    saringAktif(satukanOrang([...nama]), opsi.tidakAktif?.semua, opsi.tidakAktif?.[peran]).map((o) => o.nama);
   return {
     perkara,
     jumlahSemua: peta.size,
     adaYangCocok: opsi.cariNomorSatker ? true : semuaTanpaSaring ? peta.size > 0 : perkara.length > 0,
-    akun: akun ? { hakim: urutNama(akun.hakim), pp: urutNama(akun.pp), js: urutNama(akun.js) } : null,
+    akun: akun ? { hakim: unikAktif("hakim", akun.hakim), pp: unikAktif("pp", akun.pp), js: unikAktif("js", akun.js) } : null,
   };
 }
 

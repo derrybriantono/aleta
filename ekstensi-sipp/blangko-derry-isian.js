@@ -701,16 +701,20 @@
   // penetapan, panitera pengganti BAS, juru sita relaas); Super Admin/Admin mengikuti menu yang dibuka, atau putusan bila perkara sudah putus.
   const NAMA_SARAN_JENIS = { put: "putusan atau penetapan", bas: "berita acara sidang", rel: "relaas", ptsp: "PTSP" };
   function jenisSaranAktif() {
+    selaraskanPeran();
     if (S.blangko && S.blangko.jenis) return S.blangko.jenis;
     if (S.modal && S.modal.jenis) return S.modal.jenis;
     const boleh = jenisBoleh();
     if (!boleh.length) return "";
-    if (!adm()) {
-      for (const p of peranAkun()) {
+    // 20 Okt: Super Admin/Admin yang "Lihat sebagai" SATU peran mengikuti peran itu (hakim -> putusan/penetapan, PP -> BAS); dulu ia jatuh ke
+    // cabang admin di bawah dan memilih BAS bagi hakim begitu saklar "Hakim boleh membuka folder BAS" menyala. "Semua akun" tetap cabang admin.
+    const peran = peranAkun();
+    if (!adm() || peran.length === 1) {
+      for (const p of peran) {
         const j = PERAN_JENIS[p];
         if (j && boleh.includes(j)) return j;
       }
-      return boleh.find((j) => j !== "ptsp") || "";
+      if (!adm()) return boleh.find((j) => j !== "ptsp") || "";
     }
     const pk = S.pk && S.pk.perkara;
     if (boleh.includes("put") && pk && pk.sudahPutus) return "put";
@@ -1334,7 +1338,7 @@
     if (!b) return toast("Blangko itu belum terbaca dari ABT.");
     if (!kelompokBoleh({ ...k, ikrar: adalahBlangkoIkrar(k.jenis, b.berkas) })) return toast(`${NAMA_JENIS[k.jenis] || "Blangko"} di menu ${namaMenuTampil(k.nama)} bukan untuk peran ${adm() ? "akun yang sedang dilihat" : "akun Anda"}.`);
     tutupModal();
-    const blangko = { berkas: b.berkas, kelompok: k.nama, judul: k.judul || namaMenuTampil(k.nama), a: b.a, b: b.b, jenis: k.jenis, folder: folderUntuk(k) };
+    const blangko = { berkas: b.berkas, kelompok: k.nama, judul: k.judul || namaMenuTampil(k.nama), a: b.a, b: b.b, jenis: k.jenis, folder: folderUntuk(k), peranKunci: kunciPeranSekarang() };
     S.blangko = blangko;
     S.susunan = null;
     S.galatSusunan = "";
@@ -3104,6 +3108,7 @@
   function renderRingkasBlangko() {
     const w = wadah.blangko;
     if (!w) return;
+    selaraskanPeran(); // peran berganti sejak blangko dipilih: pilihan lama dibuang sebelum saran dihitung
     const b = S.blangko;
     const jenisSaran = S.pk ? jenisSaranAktif() : "";
     const rek = jenisSaran ? rekomendasiJenis(jenisSaran) : [];
@@ -6038,6 +6043,60 @@
     renderCetak();
     return true;
   }
+  /**
+   * Melepas SEMUA keadaan blangko perkara sebelumnya (blangko terpilih, isian, saran, pratinjau, tautan). Dipakai saat perkara berganti
+   * dan saat PERAN yang berlaku berganti (20 Okt 2026): pilihan blangko milik peran lain - BAS panitera pengganti vs putusan hakim -
+   * tidak boleh terbawa; saran dihitung ulang menurut peran yang sekarang.
+   */
+  function lepasBlangkoPerkara() {
+    if (S.modal) {
+      S.modal = null;
+      const m = wadah && wadah.akar ? cari("#bd-modal", wadah.akar) : null;
+      if (m) m.hidden = true;
+    }
+    S.blangko = null;
+    S.susunan = null;
+    S.galatSusunan = "";
+    S.isi = {};
+    S.diketik.clear();
+    S.nilai = {};
+    S.tersimpan = {};
+    S.saran = {};
+    S.saranSipp = {};
+    S.info = {};
+    S.bunyi = {};
+    S.bahanSaksi = null;
+    S.dariSipp = new Set();
+    S.tautan = null;
+    S.isiSipp = { jalan: false, ulang: false, kunci: "", hasil: null };
+    S.el7 = null;
+    S.el7Saran = null;
+    S.saranH7 = {}; // F4.2: saran draf H-7 milik perkara sebelumnya tidak terbawa.
+    S.bukti = { P: null, T: null };
+    S.tj = {};
+    S.tjBuka = null;
+    S.semua = null;
+    S.semuaBuka = false;
+    S.prat = { terbuka: false, memuat: false, rtf: null, html: "", galat: "", suntingPenuh: false, kotor: true, penanda: [] };
+    S.peringat = false;
+    S.ttdPilih = new Set();
+    S.log = [];
+    S.tampilTakBerlaku = false;
+    S.tandaKosong = new Set();
+  }
+  const kunciPeranSekarang = () => {
+    const a = api();
+    return a && typeof a.peranKunci === "function" ? String(a.peranKunci() || "") : "";
+  };
+  /** Peran berubah sejak blangko dipilih: pilihan dibuang. Benar bila ada yang dibuang. */
+  function selaraskanPeran() {
+    const b = S.blangko;
+    if (!b || !b.peranKunci) return false;
+    const sekarang = kunciPeranSekarang();
+    if (!sekarang || sekarang === b.peranKunci) return false;
+    lepasBlangkoPerkara();
+    return true;
+  }
   function saatPerkara(e) {
     const d = e && e.detail;
     if (!pasangWadah()) return;
@@ -6048,38 +6107,12 @@
       const t = S.api.perkaraTerpilih();
       if (t && t.perkara && t.perkara.nomorPerkara === d.nomorPerkara) S.pk.perkara = t.perkara;
     }
-    const gantiPerkara = !d || !sebelum || sebelum.perkaraId !== d.perkaraId;
+    // Peran berganti (admin memilih "Lihat sebagai" lain) = keadaan baru walau perkaranya sama.
+    const gantiPeran = Boolean(d && sebelum && d.peranKunci && sebelum.peranKunci && d.peranKunci !== sebelum.peranKunci);
+    const gantiPerkara = !d || !sebelum || sebelum.perkaraId !== d.perkaraId || gantiPeran;
     const gantiSidang = !gantiPerkara && sebelum && (sebelum.sidangKe !== d.sidangKe);
     if (gantiPerkara) {
-      S.blangko = null;
-      S.susunan = null;
-      S.galatSusunan = "";
-      S.isi = {};
-      S.diketik.clear();
-      S.nilai = {};
-      S.tersimpan = {};
-      S.saran = {};
-      S.saranSipp = {};
-      S.info = {};
-      S.bunyi = {};
-      S.bahanSaksi = null;
-      S.dariSipp = new Set();
-      S.tautan = null;
-      S.isiSipp = { jalan: false, ulang: false, kunci: "", hasil: null };
-      S.el7 = null;
-      S.el7Saran = null;
-      S.saranH7 = {}; // F4.2: saran draf H-7 milik perkara sebelumnya tidak terbawa.
-      S.bukti = { P: null, T: null };
-      S.tj = {};
-      S.tjBuka = null;
-      S.semua = null;
-      S.semuaBuka = false;
-      S.prat = { terbuka: false, memuat: false, rtf: null, html: "", galat: "", suntingPenuh: false, kotor: true, penanda: [] };
-      S.peringat = false;
-      S.ttdPilih = new Set();
-      S.log = [];
-      S.tampilTakBerlaku = false;
-      S.tandaKosong = new Set();
+      lepasBlangkoPerkara();
       if (d) {
         void bacaPenyimpanan(null).then((s) => {
           for (const [k, v] of Object.entries(s || {})) if (k.startsWith(`${K_CETAK}:${d.nomorPerkara}|`)) S.cetakTercatat[k.slice(K_CETAK.length + 1)] = v;

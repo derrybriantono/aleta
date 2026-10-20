@@ -204,6 +204,47 @@
     return hasil;
   }
 
+  // ── SATU ORANG SATU ENTRI di "Lihat sebagai" (20 Okt 2026) ────────────────
+  // Nama petugas di jadwal SIPP disalin per perkara dan ejaannya berbeda ("Derry Briantono" / "Derry Briantono, S.H."). Server sudah
+  // menyatukannya (src/lib/orang-unik.ts); salinan di bawah menjaga tampilan tetap satu entri bila server memberi daftar lama, dan
+  // mengenali pilihan tersimpan yang ejaannya berbeda dari daftar baru. Aturannya sama: gelar dan pecahan gelar dibuang, kunci diadu sama persis.
+  const GELAR_ORANG = new Set(["drs", "dra", "dr", "h", "hj", "sh", "shi", "si", "mh", "ma", "mag", "ag", "se", "st", "ir", "lc", "msi", "mkn", "spdi", "sag", "sh i", "bin", "binti"]);
+  const GELAR_ORANG_TAMBAHAN = new Set(["kom", "spd", "mpd", "mkom", "sip", "mhum", "mkes", "skm", "apt", "ners"]);
+  function kunciOrang(nama) {
+    const mentah = String(nama == null ? "" : nama);
+    const potong = mentah
+      .split(",")[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .split(" ")
+      .filter((k) => k.length > 2 && !GELAR_ORANG.has(k) && !GELAR_ORANG_TAMBAHAN.has(k));
+    if (potong.length) return Array.from(new Set(potong)).sort().join(" ");
+    return mentah.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  }
+  const rapikanNamaOrang = (n) => String(n == null ? "" : n).replace(/\s+/g, " ").replace(/\s*,\s*/g, ", ").replace(/\s+\./g, ".").trim();
+  const hurufGelarOrang = (n) => String(n).split(",").slice(1).join(",").replace(/[^A-Za-z]/g, "").length;
+  const cacatNamaOrang = (n) => (/[A-Za-z]\.\s+[A-Z]\.[A-Z]/.test(n) ? 1 : 0) + (/,\S/.test(n) ? 1 : 0) + (/\s{2,}/.test(n) ? 1 : 0);
+  /** Ejaan yang ditampilkan: gelar terlengkap, lalu tulisan paling rapi, lalu paling panjang. */
+  function namaTerbaikOrang(varian) {
+    const calon = Array.from(new Set(varian.map((v) => String(v == null ? "" : v).trim()).filter(Boolean)));
+    if (!calon.length) return "";
+    calon.sort((a, b) => hurufGelarOrang(b) - hurufGelarOrang(a) || cacatNamaOrang(a) - cacatNamaOrang(b) || b.length - a.length || a.localeCompare(b, "id"));
+    return rapikanNamaOrang(calon[0]);
+  }
+  /** Daftar nama mentah -> satu nama (terlengkap) per orang, terurut. */
+  function satukanOrang(daftar) {
+    const peta = new Map();
+    for (const n of Array.isArray(daftar) ? daftar : []) {
+      const mentah = String(n == null ? "" : n).trim();
+      const k = mentah ? kunciOrang(mentah) : "";
+      if (!k) continue;
+      if (!peta.has(k)) peta.set(k, []);
+      peta.get(k).push(mentah);
+    }
+    // Urutan kemunculan dipertahankan: server sudah mengurutkan menurut nama.
+    return Array.from(peta.values()).map(namaTerbaikOrang);
+  }
+
   // ── HAK PUTUSAN/BAS PER PERAN (16 Okt 2026 malam) ─────────────────────────
   // Keluhan pengguna: "role hakim masih bisa akses BAS dan begitupun sebaliknya".
   // Sebabnya di sini: Super Admin/Admin yang memilih "Lihat sebagai akun" tetap
@@ -502,6 +543,13 @@
   const adm = () => S.peranSet.has("admin") || S.adminAbt;
   const hariIni = () => (S.data && S.data.hariIni) || tanggalLokal();
 
+  /**
+   * Kunci PERAN yang sedang berlaku (20 Okt 2026): pilihan blangko dikunci padanya. Admin = peran yang dilihat ("semua" bila tidak
+   * menyempit); akun biasa = peran dokumennya. Berubah = pilihan blangko lama (mis. BAS milik PP) tidak boleh terbawa ke peran lain.
+   */
+  function peranKunci() {
+    return adm() ? `adm:${S.sebagai.peran || "semua"}` : `akun:${["hakim", "pp", "js", "ptsp"].filter((x) => S.peranSet.has(x)).join(",")}`;
+  }
   /** Peran yang menentukan dokumen/daftar saat ini. */
   function peranDokumen() {
     if (adm()) return S.sebagai.peran ? [S.sebagai.peran] : ["hakim", "pp", "js"];
@@ -865,10 +913,19 @@
     sel.innerHTML =
       `<option value="" title="Tampilan ${esc(label)}: semua akun">Semua akun</option>` +
       ["hakim", "pp", "js"]
-        .map((p) => `<optgroup label="${esc(NAMA_PERAN[p])}">${(akun[p] || []).map((n) => `<option value="${p}|${esc(n)}">${esc(n)}</option>`).join("")}</optgroup>`)
+        .map((p) => `<optgroup label="${esc(NAMA_PERAN[p])}">${satukanOrang(akun[p]).map((n) => `<option value="${p}|${esc(n)}">${esc(n)}</option>`).join("")}</optgroup>`)
         .join("");
-    const nilai = S.sebagai.nama ? `${S.sebagai.peran}|${S.sebagai.nama}` : "";
+    let nilai = S.sebagai.nama ? `${S.sebagai.peran}|${S.sebagai.nama}` : "";
     sel.value = nilai;
+    if (nilai && sel.value !== nilai) {
+      // Orang yang sama dengan ejaan lain (mis. daftar rentang lain menulisnya tanpa gelar): pakai entri daftar, bukan entri kembar.
+      const kunci = kunciOrang(S.sebagai.nama);
+      const sama = Array.from(sel.options).find((o) => o.value.startsWith(`${S.sebagai.peran}|`) && kunciOrang(o.value.slice(S.sebagai.peran.length + 1)) === kunci);
+      if (sama) {
+        sel.value = sama.value;
+        nilai = sama.value;
+      }
+    }
     if (sel.value !== nilai) {
       // Nama yang dipilih tidak muncul di rentang yang sedang dimuat: tetap ditampilkan.
       const o = document.createElement("option");
@@ -1399,7 +1456,7 @@
     try {
       document.dispatchEvent(
         new CustomEvent("aleta-bd-perkara", {
-          detail: p ? { nomorPerkara: p.nomorPerkara, perkaraId: p.perkaraId, jenisPerkara: p.jenisPerkara, sidang: sid.slice(), sidangKe: S.sidIdx, sidangDipilih: sid[S.sidIdx] || null, perkara: p } : null,
+          detail: p ? { nomorPerkara: p.nomorPerkara, perkaraId: p.perkaraId, jenisPerkara: p.jenisPerkara, sidang: sid.slice(), sidangKe: S.sidIdx, sidangDipilih: sid[S.sidIdx] || null, perkara: p, peranKunci: peranKunci() } : null,
         })
       );
     } catch {
@@ -1763,6 +1820,8 @@
       S.sebagai = t.value ? { peran, nama: nama.join("|") } : { peran: "", nama: "" };
       S.pk = null;
       S.data = null;
+      // Perkara dilepas: tahap pilih blangko harus tahu (tanpa ini blangko BAS milik peran lama tetap terpilih di peran baru).
+      umumkanPerkara();
       return void muatDaftar();
     }
     if (t.hasAttribute && t.hasAttribute("data-cfg")) return ubahSaklar(t.getAttribute("data-cfg"), t.checked);
@@ -1938,6 +1997,8 @@
     toast,
     adm,
     peranDokumen,
+    /** Kunci peran yang berlaku (admin: peran yang dilihat); pilihan blangko dikunci padanya. */
+    peranKunci,
     /** Jenis dokumen (put/bas/rel) yang boleh dibuka & ditulis sekarang - "Lihat sebagai" ikut membatasi. */
     jenisDokumen,
     /** Kelompok menu Blangko Derry { nama, jenis } boleh tampil/dibuka/ditulis sekarang? */
@@ -2018,7 +2079,7 @@
       tema: S.tema,
       cfg: { ...S.cfg },
     }),
-    murni: { bacaTautanBd, ringkasan, cocokCari, JENIS_CARI, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk, perkiraanZoom, ikrarJenisBoleh },
+    murni: { kunciOrang, satukanOrang, bacaTautanBd, ringkasan, cocokCari, JENIS_CARI, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk, perkiraanZoom, ikrarJenisBoleh },
   };
   globalThis.aletaBlangkoDerry = api;
   void mulai();

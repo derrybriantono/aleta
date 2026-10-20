@@ -5,6 +5,7 @@ import { isPrivilegedAdmin } from "@/lib/permissions";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { bacaTidakAktif } from "@/server/modules/aleta-ecourt/orang-tidak-aktif";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -122,6 +123,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Pemilih "Lihat sebagai" (admin saja): orang mutasi/nonaktif tidak ditawarkan; gagal-terbuka bila sumbernya tak terbaca.
+    const tidakAktif = admin ? await bacaTidakAktif(db) : undefined;
     const hasil = susunPerkaraSaya(baris, {
       hariIni,
       nama: String(actor?.name || ""),
@@ -133,6 +136,7 @@ export async function GET(request: NextRequest) {
       cariNomorSatker,
       semuaSatker: semuaSatkerPtsp,
       cariNomor: nomorCari,
+      tidakAktif,
     });
 
     return ok({
