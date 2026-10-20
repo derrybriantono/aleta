@@ -46,3 +46,7 @@ v(4411, 'PERWALIAN: PERTIMBANGAN PETITUM TINDAKAN HUKUM (OTOMATIS: muncul hanya 
   '''SELECT IF(TRIM("#4410#") <> "", CONCAT("<br>Menimbang, bahwa selanjutnya terhadap permohonan agar #0046# berwenang bertindak mewakili #4407# tersebut untuk #4410#, oleh karena perwalian meliputi diri dan harta kekayaan anak (Pasal 50 ayat (2) Undang-Undang Nomor 1 Tahun 1974 jo. Pasal 107 ayat (1) Kompilasi Hukum Islam) dan tindakan tersebut diperlukan untuk kepentingan #4407# tersebut, maka #8554# berpendapat bahwa permohonan tersebut patut dikabulkan dengan ketentuan bahwa hasil tindakan hukum tersebut wajib digunakan sebesar-besarnya untuk kepentingan #4407# yang berada di bawah perwalian dan wali bertanggung jawab atas pengelolaannya (Pasal 110 Kompilasi Hukum Islam);"), "") AS data''')
 v(4412, 'PERWALIAN: TAMBAHAN AMAR - WEWENANG MEWAKILI ANAK (OTOMATIS: muncul hanya bila isian 4410 terisi)', 'data_sql',
   '''SELECT IF(TRIM("#4410#") <> "", " dan berwenang mewakili #4407# tersebut untuk #4410#", "") AS data''')
+
+from variabel_dk import *  # noqa: E402,F401
+
+from variabel_wa import *  # noqa: E402,F401

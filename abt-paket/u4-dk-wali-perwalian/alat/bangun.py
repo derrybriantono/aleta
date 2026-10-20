@@ -79,6 +79,14 @@ class Dok:
     def teks(self, i):
         return R.peta(self.par[i])[0].replace('\n', '').strip()
 
+    def isi(self, i):
+        """Teks tampak paragraf i TANPA label daftar (listtext) - itulah yang diganti oleh ganti_teks."""
+        p = self.par[i]
+        for (a, b) in reversed(_grup_anak(p)):
+            if p[a:b].startswith('{\\listtext'):
+                p = p[:a] + p[b:]
+        return R.peta(p)[0].replace('\n', '').strip()
+
     def ganti_teks(self, i, teks, label=None):
         """Paragraf i dengan isi `teks` (satu rangkaian). label: teks label daftar baru (mis. '3.' atau '-'), None = tetap."""
         p = self.par[i]
