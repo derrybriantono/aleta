@@ -676,7 +676,7 @@ function lengkapiSusunan(hasil, opsi) {
       const acuan = templat[i];
       if (!acuan || !masihKosong(acuan.jawab)) return;
       const adaPilihan = Array.isArray(j.pilihan) && j.pilihan.length >= 2;
-      const ctx = { jenis: o.jenis || "umum", P: o.P || "Penggugat", T: o.T || "Tergugat", ke: Number(pil.ke) || s.ke || idx + 1, modus: pil.modus || s.modus, sumberNama: pil.sumberNama || "", hubungan: pil.hubungan || null };
+      const ctx = { jenis: o.jenis || "umum", P: o.P || "Penggugat", T: o.T || "Tergugat", ke: Number(pil.ke) || s.ke || idx + 1, modus: pil.modus || s.modus, sumberNama: pil.sumberNama || "", hubungan: pil.hubungan || null, jumlahP: Number(pil.jumlahP) || 0 };
       const isi = isiJawaban({ tanya: j.tanya || acuan.tanya, jawab: acuan.jawab }, o.fakta, ctx);
       const sekarang = String(j.jawab || "");
       const kosongPenyusun = /^\s*\[BELUM TERISI/i.test(sekarang);

@@ -37,6 +37,8 @@ function almarhum(nama) {
  * `kiri`/`kanan` = sepotong teks di kiri/kanan penanda (untuk menentukan bentuk kalimat).
  */
 const KODE = {
+  // ---- penyebutan pihak (data_sql 7036: Pemohon / para Pemohon menurut jumlah pihak pertama) ----
+  7036: ({ ctx }) => (Number(ctx.jumlahP) > 1 ? `para ${ctx.P}` : Number(ctx.jumlahP) === 1 ? ctx.P : null),
   // ---- pernikahan (itsbat nikah, asal usul anak, kumulasi) ----
   5197: ({ h }) => h.nilai("tglNikah"),
   5105: ({ h }) => h.tempat(),

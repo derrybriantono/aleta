@@ -228,7 +228,7 @@ function isiBaris(o) {
       sebutan: { P: k.lawan, T: k.pelaku },
     });
     for (const s of Array.isArray(k.saksiIsi) ? k.saksiIsi.slice(0, 12) : []) {
-      const ctx = { jenis, P: k.lawan || "Pemohon", T: k.pelaku || "Termohon", ke: Number(s.ke) || 1, modus: String(s.modus || ""), sumberNama: String(s.sumberNama || ""), hubungan: hubunganDariSipp(k.sipp, s.kunci, k.lawan, k.pelaku) };
+      const ctx = { jenis, P: k.lawan || "Pemohon", T: k.pelaku || "Termohon", ke: Number(s.ke) || 1, modus: String(s.modus || ""), sumberNama: String(s.sumberNama || ""), hubungan: hubunganDariSipp(k.sipp, s.kunci, k.lawan, k.pelaku), jumlahP: k.sipp && Array.isArray(k.sipp.pihak1) ? k.sipp.pihak1.length : 0 };
       for (const b of Array.isArray(s.baris) ? s.baris.slice(0, 80) : []) {
         const r = isi.isiJawaban({ tanya: String(b.tanya || ""), jawab: String(b.jawab || ""), ...(typeof b.kode === "string" && b.kode ? { kode: b.kode.slice(0, 3000) } : {}) }, fakta, { ...ctx });
         if (!r) continue;

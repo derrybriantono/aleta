@@ -17,6 +17,7 @@
  */
 
 const { bersihNilai, tanggalIndo, kuaBaku, rapat, jumlahAnakDariTeks } = require("./isiJawabanSaksiFakta");
+const { positaLain } = require("./isiJawabanSaksiPositaLain");
 
 /** Posita (HTML atau teks) -> teks polos, butir dipisah baris baru. */
 function polosPosita(html) {
@@ -284,26 +285,37 @@ function perwalian(butir) {
 function positaTambahan(posita, jenis) {
   const butir = butirPosita(posita);
   if (!butir.length) return [];
+  let dasar;
   switch (jenis) {
     case "itsbat":
     case "aua":
-      return itsbat(butir);
+      dasar = itsbat(butir);
+      break;
     case "cg":
     case "ct":
     case "cerai":
-      return cerai(butir);
+      dasar = cerai(butir);
+      break;
     case "dk":
-      return dispensasi(butir);
+      dasar = dispensasi(butir);
+      break;
     case "wa":
-      return waliAdhal(butir);
+      dasar = waliAdhal(butir);
+      break;
     case "paw":
     case "waris":
-      return waris(butir);
+      dasar = waris(butir);
+      break;
     case "perwalian":
-      return perwalian(butir);
+      dasar = perwalian(butir);
+      break;
     default:
-      return [];
+      dasar = [];
   }
+  // 20 Okt (S7): pola tambahan; kunci yang sudah terbaca pola lama tidak ditimpa
+  const ada = new Set(dasar.map((x) => x.kunci));
+  const lain = positaLain(butir, jenis).filter((x) => !ada.has(x.kunci));
+  return [...dasar, ...lain];
 }
 
 module.exports = { positaTambahan, polosPosita, butirPosita, potongPeristiwa };
