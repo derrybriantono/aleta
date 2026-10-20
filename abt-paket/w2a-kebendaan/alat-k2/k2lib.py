@@ -64,7 +64,7 @@ def periksa_inti(q):
                 assert tanda(c) == base, (q.id, "berbeda", kunci, c)
     for tv in q.teks_varian or []:
         assert penanda_semua(tv) == penanda_semua(q.teks), (q.id, "teksVarian", tv)
-    for c in (q.melihat or []) + (q.sebagian or []) + (q.mendengar or []):
+    for c in (q.melihat or []) + (q.sebagian or []) + (q.mendengar or []) + ((q.berbeda["A"] + q.berbeda["B"]) if q.berbeda else []):
         assert c[:1] != c[:1].upper() or not c[:1].isalpha(), (q.id, "inti diawali huruf besar", c)
 
 
