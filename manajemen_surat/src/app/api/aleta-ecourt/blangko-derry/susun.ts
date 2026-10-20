@@ -608,7 +608,7 @@ export function susunIsian(
     const bawaanLiteral = d.bawaan && !/#\d{4,5}#/.test(d.bawaan) ? d.bawaan.trim() : "";
     let tj: ButirIsian["tj"] = null;
     if (jenis === "tj") {
-      const t = kunciTanyaJawab(d.nama, sebutan);
+      const t = kunciTanyaJawab(d.nama, sebutan === SEBUTAN_BAWAAN ? undefined : sebutan); // tanpa sebutan dari pemanggil: tetap Penggugat/Tergugat
       const kodeSunting = t.peran === "tanyajawab" ? k : penyunting.get(t.kunci) || "";
       // Satu tombol per saksi: pasangan Keterangan/TanyaJwb saksi yang sama tidak diulang.
       if (tjAda.has(t.kunci)) {
