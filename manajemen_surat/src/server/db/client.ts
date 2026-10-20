@@ -1229,7 +1229,16 @@ export async function createAletaDatabase(options: CreateDatabaseOptions = {}) {
   );
 
   if (options.runMigrations ?? true) {
-    await runDatabaseMigrations(orm);
+    try {
+      await runDatabaseMigrations(orm);
+    } catch (galat) {
+      // 20 Okt 2026 (pasang 1.205.16): skrip pasang dan portal yang baru menyala menjalankan migrasi yang
+      // sama serentak, sehingga CREATE TABLE bertabrakan (pg_type_typname_nsp_index). Tunggu sebentar lalu
+      // coba sekali lagi - migrasi yang sudah dicatat proses lain dilewati.
+      if (isRecoverablePostgresBootError(galat)) throw galat;
+      await new Promise((selesai) => setTimeout(selesai, 3000));
+      await runDatabaseMigrations(orm);
+    }
   }
   await ensureAletaSchema(db);
   if (options.seed ?? true) {
@@ -1273,6 +1282,15 @@ export async function getDatabase() {
       });
     });
     globalForAleta.singletonDatabasePromise = singletonDatabasePromise;
+    // Janji yang GAGAL tidak boleh disimpan: dulu tiap permintaan sesudahnya ikut gagal sampai kontainer
+    // dimulai ulang (pasang 1.205.16, 20 Okt). Permintaan berikutnya menyusun ulang.
+    const janji = singletonDatabasePromise;
+    janji.catch(() => {
+      if (singletonDatabasePromise === janji) {
+        singletonDatabasePromise = null;
+        globalForAleta.singletonDatabasePromise = null;
+      }
+    });
   }
 
   return singletonDatabasePromise;
