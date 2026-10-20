@@ -434,6 +434,14 @@ async function faktaPerkara(masukan, opsi) {
     if (!t) continue;
     fakta[kunci] = { label: d.label || kunci, tipe: d.tipe, nilai: t.nilai, yakin: t.yakin, sumber: t.sumber, kutipan: t.kutipan, kodeAsal: t.kode, kode: (d.kode || []).map((k) => (typeof k === "string" ? k : k.kode)), bertentangan: t.bertentangan, catatan: t.catatan, hanyaSaran: d.hanyaSaran === true };
   }
+  // Kesaksian di BAS untuk pokok yang memuat fakta ini (bahan analisis bukti & saksi per dalil di pertimbangan putusan)
+  if (bas && bas.pokok) {
+    for (const def of peta.pokokBas || []) {
+      const kutipan = (bas.pokok[def.id] || []).map((x) => ({ saksi: x.saksi, pihak: x.pihak, nama: x.nama, tanya: x.tanya, jawab: x.jawab }));
+      if (!kutipan.length) continue;
+      for (const kunci of def.fakta || []) if (fakta[kunci]) fakta[kunci].kesaksian = kutipan;
+    }
+  }
   const bertentangan = Object.keys(fakta).filter((k) => fakta[k].bertentangan.length);
 
   // 8. Peta kode: tiap kode berpeta mendapat nilai fakta (bentuk sesuai kodenya); kode lain: usulan terbaik

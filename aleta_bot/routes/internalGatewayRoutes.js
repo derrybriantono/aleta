@@ -2487,7 +2487,7 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
                 isian: req.body?.isian,
                 ...(sippSaksiAda ? { sippSaksi: sippSaksiAda } : {}),
               }),
-              new Promise((selesai) => setTimeout(() => selesai(null), 6000)),
+              new Promise((selesai) => setTimeout(() => selesai(null), 4000)),
             ]).catch(() => null)
           : Promise.resolve(null);
       }

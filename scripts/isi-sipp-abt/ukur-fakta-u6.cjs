@@ -23,7 +23,8 @@ const mysql = createRequire(path.join(akar, "aleta_bot", "package.json"))("mysql
 const FP = require(path.join(akar, "aleta_bot", "services", "faktaPerkara.js"));
 const kon = mysql.createConnection({ host: "127.0.0.1", user: "root", typeCast: (f) => f.string() });
 const q = (s, p) => new Promise((a, b) => kon.query(s, p || [], (e, r) => (e ? b(e) : a(r))));
-const runSipp = (s, p) => q(s, p);
+const kon2 = mysql.createConnection({ host: "127.0.0.1", user: "root", database: "sipp_donggala", typeCast: (f) => f.string() });
+const runSipp = (s, p) => new Promise((a, b) => kon2.query(s, p || [], (e, r) => (e ? b(e) : a(r))));
 
 const rapat = (t) => String(t == null ? "" : t).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 const norm = (t) => rapat(t).toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();

@@ -224,3 +224,30 @@ describe("F. Blangko Derry: usulan kode setara hanya mengisi yang kosong", () =>
     expect(terisi.lewati).toContainEqual({ kode: "8603", sebab: "sudah ada isinya" });
   });
 });
+
+describe("G. BAS ikut menjadi bagian fakta perkara", () => {
+  it("kesaksian saksi untuk pokok pembuktian menempel pada fakta terkait dan bukti terbaca", async () => {
+    const runAbt = async (sql: string) =>
+      /abt_keterangan_saksi/.test(sql)
+        ? [
+            { sidang_id: 1, saksi_id: 11, urutan_pertanyaan: 1, pertanyaan: "Kapan Penggugat dan Tergugat menikah?", jawaban: "Mereka menikah pada tahun 2018;" },
+            { sidang_id: 1, saksi_id: 11, urutan_pertanyaan: 2, pertanyaan: "Siapa yang meninggalkan tempat tinggal bersama?", jawaban: "Tergugat meninggalkan rumah;" },
+          ]
+        : /abt_data_teks/.test(sql) && /1214/.test(sql)
+          ? [{ no_var: "1214", data: "Fotokopi Kutipan Akta Nikah, Nomor 12/34/2018 tanggal 05 Februari 2018, yang dikeluarkan oleh KUA Kecamatan Labuan, lalu diberi tanda P.1 oleh Ketua Majelis;" }]
+          : [];
+    const runQuery = async (sql: string) => (/perkara_pihak5/.test(sql) ? [{ id: 11, ke: 1, urutan: 1, nama: "Fadlih", hubungan: "Adik Kandung Penggugat" }] : []);
+    const f = await FP.faktaPerkara(777, {
+      tanpaDariSipp: true,
+      sippSaksi: null,
+      runAbt,
+      runQuery,
+      perkara: perkara(),
+      usulan: [{ kode: "5197", nama: "Tgl nikah", nilai: "5 Februari 2018", keyakinan: "pasti", sumber: [{ saksi: 0, asal: "sipp", kalimat: "SIPP" }] }],
+    });
+    expect(f.terbaca.bas).toBe(true);
+    expect(f.bas.jumlahSaksi).toEqual({ P: 1, T: 0 });
+    expect(f.bas.bukti[0]).toMatchObject({ tanda: "P.1", jenisKode: "aktaNikah", nomor: "12/34/2018" });
+    expect(f.fakta["nikah.tanggal"].kesaksian[0]).toMatchObject({ nama: "Fadlih", jawab: expect.stringContaining("2018") });
+  });
+});

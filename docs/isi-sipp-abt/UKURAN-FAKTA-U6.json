@@ -1,0 +1,34 @@
+{
+ "diukur": "2026-10-20",
+ "cara": "scripts/isi-sipp-abt/ukur-fakta-u6.cjs: faktaPerkara() tanpa isian petugas vs aps_badilag.abt_data_teks (pembanding = isian petugas/hakim)",
+ "perkara": 0,
+ "pasangan": 0,
+ "keseluruhan": {
+  "fakta": {
+   "n": 0,
+   "cocok": 0,
+   "persen": null
+  },
+  "pengisiTunggal": {
+   "n": 0,
+   "cocok": 0,
+   "persen": null
+  },
+  "ditandaiBertentangan": {
+   "n": 0,
+   "cocok": 0,
+   "persen": null
+  },
+  "tidakBertentangan": {
+   "n": 0,
+   "cocok": 0,
+   "persen": null
+  }
+ },
+ "kodeSetaraVsPetugas": {
+  "n": 0,
+  "cocok": 0,
+  "persen": null
+ },
+ "perFakta": {}
+}
