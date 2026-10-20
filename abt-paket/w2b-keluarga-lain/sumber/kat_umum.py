@@ -150,7 +150,7 @@ S(id='kepentingan-hukum', pokok='pp-pu-kepentingan', urut_abs=32,
 
 S(id='kedudukan-objek', pokok='pp-pu-kedudukan', urut_abs=34,
   teks='Apa hubungan {PEM} dengan orang, benda, atau peristiwa yang menjadi pokok permohonan ini?',
-  varian=['Bagaimana kaitan {PEM} dengan pokok permohonan ini sehingga {PEM} berhak mengajukannya?'],
+  varian=['Bagaimana kaitan {PEM} dengan pokok permohonan ini sehingga berhak mengajukannya?'],
   hal='hubungan pemohon dengan pokok permohonan', m='hubungan {PEM} dengan pokok permohonan',
   K=(['{PEM} berhubungan langsung dengan #4930# dan karena itu berhak mengajukan permohonan ini', '{PEM} adalah pihak yang bersangkutan dengan #4930# sehingga berhak memohon penetapan ini'],
      ['kedudukan {PEM} terhadap #4930# adalah pihak yang berhubungan langsung dan berhak mengajukan permohonan', '{PEM} adalah orang yang berkaitan langsung dengan #4930# dan berhak memohon penetapan']),
@@ -282,7 +282,7 @@ S(id='identitas-sesuai', pokok='pp-pu-keaslian', urut_abs=56, tingkat='tambahan'
 
 # ---- sengketa, pihak lain, alasan, akibat, tujuan ------------------------------------------------------------------------------
 S(id='sengketa', pokok='pp-pu-sengketa', urut_abs=62,
-  teks='Apakah ada sengketa atau perselisihan mengenai hal yang dimohonkan ini dan siapa pihak lawannya?',
+  teks='Apakah ada sengketa atau perselisihan antara {PEM} dan pihak lain mengenai hal yang dimohonkan ini, dan siapa pihak lawannya?',
   varian=['Adakah orang yang bersengketa dengan {PEM} mengenai hal yang dimohonkan, atau pihak lawan dalam perkara ini?'],
   hal='sengketa atau pihak lawan atas hal yang dimohonkan', m='ada atau tidaknya sengketa dan pihak lawan atas hal yang dimohonkan {PEM}',
   K=(['hal yang dimohonkan {PEM} bebas dari sengketa dan tanpa pihak lawan', '{PEM} tidak sedang bersengketa dengan siapa pun atas hal yang dimohonkan'],

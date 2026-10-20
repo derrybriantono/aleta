@@ -425,6 +425,7 @@ function usulanDariKonteks(k) {
   }
   for (const [kode, f] of Object.entries(fakta)) tambah([dariFakta(kode, f)]);
   if (jenis === 370 && !ada.has("9340")) tambah(usulanAkadReferensi(k.akad));
+  tambah(require("./isiOtomatisW2b/lain").usulanLain(k, butir)); // W2b-C: Lain-Lain 369 (pengangkatan anak, mafqud, permohonan umum; variabel 4910-4939)
 
   // (3) tuntutan nominal anak/nafkah
   if (JENIS_ANAK.has(jenis) && (jenis !== 369 || /\bhak\s+asuh|hadh?[ao]nah|nafkah\s+anak|penguasaan\s+anak/i.test(P.satuBaris(k.posita || "")))) {
