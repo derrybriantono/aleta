@@ -436,7 +436,7 @@ describe("pelaksana e-Doc dan sisi peramban (pg-mem)", () => {
 
   it("DOCX: e-Doc putusan = berkas asli apa adanya; anonimisasi dibuat dari RTF hasil konversi; konversi gagal = anonimisasi gagal, putusan jalan", async () => {
     const dunia = buatDunia();
-    let docx = new Uint8Array();
+    let docx: Uint8Array = new Uint8Array();
     const j = await jadwalkan(dunia, { bita: (nomor) => (docx = buatDocx(barisPutusan(nomor))), nama: "putusan.docx" });
     await detakPelaksana(db, dunia.deps);
     expect(dunia.rekam.urut).toContain("ubah-rtf");
@@ -606,6 +606,19 @@ describe("pelaksana e-Doc dan sisi peramban (pg-mem)", () => {
       expect(await giliranPeramban(db, HAKIM, {}, dpl(dunia))).toMatchObject({ ada: false, alasan: "jeda" });
       JAM = new Date(JAM.getTime() + 90_000);
       expect((await giliranPeramban(db, HAKIM, {}, dpl(dunia))).ada).toBe(true);
+    });
+
+    it("akun SIPP di peramban dikenali dari username ATAU nama tampil yang dicatat saat dijadwalkan; selain itu 'akun beda'", async () => {
+      const dunia = buatDunia();
+      const j = await jadwalkan(dunia, { langkah: { isi: true } });
+      await db.run("UPDATE aleta_putusan_jadwal_butir SET nama_sipp = 'Hakim Satu, S.H., M.H.' WHERE id = ?", [j.butirId]);
+      for (const masuk of ["hakim.satu", "HAKIM.SATU", "Hakim  Satu, S.H., M.H."]) {
+        expect((await giliranPeramban(db, HAKIM, { akunSipp: masuk }, dpl(dunia))).ada).toBe(true);
+      }
+      expect(await giliranPeramban(db, HAKIM, { akunSipp: "Hakim Dua" }, dpl(dunia))).toMatchObject({ ada: false, alasan: "akun_beda" });
+      // Tanpa nama tampil yang tercatat, hanya username yang cocok.
+      await db.run("UPDATE aleta_putusan_jadwal_butir SET nama_sipp = '' WHERE id = ?", [j.butirId]);
+      expect(await giliranPeramban(db, HAKIM, { akunSipp: "Hakim Satu, S.H., M.H." }, dpl(dunia))).toMatchObject({ ada: false, alasan: "akun_beda" });
     });
 
     it("klaim: satu pemegang; yang kedua ditolak; orang lain 403; akun beda dan belum waktunya ditolak dengan alasan", async () => {

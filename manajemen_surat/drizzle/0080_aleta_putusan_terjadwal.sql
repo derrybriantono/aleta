@@ -7,7 +7,7 @@
 -- Putusan Akhir (peramban petugas yang terbuka), e-Doc putusan dan e-Doc
 -- anonimisasi (pelaksana di server portal). Tabel ini adalah antreannya.
 --
---   aleta_putusan_jadwal         satu jadwal: siapa menjadwalkan, jam mulai, batas
+--   aleta_putusan_jadwal         satu jadwal: siapa menjadwalkan (akun SIPP + nama tampilnya), jam mulai, batas
 --                                akhir, jeda antar perkara, jendela jam kerja
 --   aleta_putusan_jadwal_butir   satu perkara dalam jadwal: langkah yang dipilih,
 --                                status tiap langkah, saat rencana, berkasnya
@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS aleta_putusan_jadwal (
   dibuat_nama TEXT NOT NULL DEFAULT '',
   peran TEXT NOT NULL DEFAULT '',
   akun_sipp TEXT NOT NULL DEFAULT '',
+  nama_sipp TEXT NOT NULL DEFAULT '',
   ip TEXT NOT NULL DEFAULT '',
   sumber TEXT NOT NULL DEFAULT '',
   tanggal_acuan TEXT NOT NULL DEFAULT '',
@@ -67,6 +68,7 @@ CREATE TABLE IF NOT EXISTS aleta_putusan_jadwal_butir (
   jenis_perkara TEXT NOT NULL DEFAULT '',
   pemilik_id TEXT NOT NULL,
   akun_sipp TEXT NOT NULL DEFAULT '',
+  nama_sipp TEXT NOT NULL DEFAULT '',
   peran TEXT NOT NULL DEFAULT '',
   ip TEXT NOT NULL DEFAULT '',
   waktu_rencana TEXT NOT NULL,

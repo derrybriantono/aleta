@@ -283,6 +283,22 @@ describe("layanan jadwal atas basis data", () => {
     expect((await baris("SELECT id FROM aleta_putusan_jadwal")).length).toBe(sebelum.length);
   });
 
+  it("nama tampil akun SIPP dicatat di jadwal dan butir; akun SIPP ganda ditolak dengan daftar pilihan (bukan ditebak)", async () => {
+    const b = await butirBaru(HAKIM, { langkah: { isi: true } });
+    const h = await buatJadwal(db, HAKIM, "", { mulai: jamMulai, namaSipp: "  Hakim   Satu, S.H. ", butir: [b] }, deps);
+    const [j] = await baris("SELECT nama_sipp FROM aleta_putusan_jadwal WHERE id = ?", [h.jadwalId]);
+    const [bt] = await baris("SELECT nama_sipp FROM aleta_putusan_jadwal_butir WHERE jadwal_id = ?", [h.jadwalId]);
+    expect(j.nama_sipp).toBe("Hakim Satu, S.H.");
+    expect(bt.nama_sipp).toBe("Hakim Satu, S.H.");
+
+    const lagi = await butirBaru(HAKIM, { langkah: { isi: true } });
+    const ganda = async () => ({ ok: false as const, pesan: "Anda menyimpan 2 akun SIPP (a, b). Pilih akun yang dipakai.", kode: "akun_sipp_ganda", milik: ["a", "b"] });
+    const galat = await buatJadwal(db, HAKIM, "", { mulai: jamMulai, butir: [lagi] }, { ...deps, akunSipp: ganda }).catch((e) => e);
+    expect(galat).toBeInstanceOf(ApiError);
+    expect(galat.message).toMatch(/Pilih akun yang dipakai/);
+    expect(galat.details).toEqual({ kode: "akun_sipp_ganda", milik: ["a", "b"] });
+  });
+
   it("satu butir tidak sah menolak SELURUH jadwal (tanpa jadwal separuh jadi): berkas milik orang lain", async () => {
     const baik = await butirBaru(HAKIM);
     const milikLain = await butirBaru(HAKIM_LAIN);

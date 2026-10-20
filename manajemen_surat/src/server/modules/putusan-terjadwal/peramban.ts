@@ -9,6 +9,7 @@ import {
   bacaButir,
   bacaPengaturan,
   catatJejak,
+  akunSippSama,
   langkahDariBaris,
   pilihanDariBaris,
   sebaris,
@@ -46,8 +47,6 @@ import { ApiError } from "@/server/shared/errors";
  */
 
 const MASA_PEGANG_MS = BATAS.masaPegangDetik * 1000;
-
-const ADA_AKUN = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 function jendela(j: BarisJadwal | undefined): PilihanJamKerja {
   return {
@@ -98,7 +97,7 @@ export async function giliranPeramban(
   const akunLain = new Set<string>();
   let alasan = berikutnya ? "belum_waktunya" : "tidak_ada";
   for (const b of jatuhTempo) {
-    if (masukan.akunSipp && !ADA_AKUN(masukan.akunSipp, b.akun_sipp)) {
+    if (masukan.akunSipp && !akunSippSama(masukan.akunSipp, b)) {
       akunLain.add(b.akun_sipp);
       alasan = "akun_beda";
       continue;
@@ -163,7 +162,7 @@ export async function klaimPeramban(
   if (b.status !== "menunggu" || b.langkah_isi !== 1 || b.status_isi !== "menunggu") {
     return { ok: false, alasan: "bukan_giliran", sebab: "Perkara ini sedang atau sudah dikerjakan." };
   }
-  if (masukan.akunSipp && !ADA_AKUN(masukan.akunSipp, b.akun_sipp)) {
+  if (masukan.akunSipp && !akunSippSama(masukan.akunSipp, b)) {
     return { ok: false, alasan: "akun_beda", sebab: `Jadwal ini atas akun SIPP ${b.akun_sipp}; masuk SIPP dengan akun itu.` };
   }
   const j = await db.queryOne<BarisJadwal>("SELECT * FROM aleta_putusan_jadwal WHERE id = ?", [b.jadwal_id]);

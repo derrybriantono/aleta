@@ -77,7 +77,7 @@ export type Pelaku = Awaited<ReturnType<typeof pastikanBolehUnggahPutusan>>;
 export type DepsLayanan = {
   sekarang?: () => Date;
   periksaMilik?: (pelaku: Pelaku, perkaraId: string) => Promise<void>;
-  akunSipp?: (db: AletaDatabase, aktorId: string, diminta?: string) => Promise<{ ok: true; username: string } | { ok: false; pesan: string }>;
+  akunSipp?: (db: AletaDatabase, aktorId: string, diminta?: string) => Promise<{ ok: true; username: string } | { ok: false; pesan: string; kode?: string; milik?: string[] }>;
   muatLibur?: (db: AletaDatabase) => Promise<(iso: string) => boolean>;
 };
 
@@ -95,7 +95,7 @@ async function liburBawaan(db: AletaDatabase): Promise<(iso: string) => boolean>
 
 async function akunBawaan(db: AletaDatabase, aktorId: string, diminta?: string) {
   const r = await akunSippPengguna(db, aktorId, diminta);
-  return r.ok ? ({ ok: true, username: r.username } as const) : ({ ok: false, pesan: r.pesan } as const);
+  return r.ok ? ({ ok: true, username: r.username } as const) : ({ ok: false, pesan: r.pesan, kode: r.alasan, milik: r.milik } as const);
 }
 
 async function milikBawaan(pelaku: Pelaku, perkaraId: string) {
@@ -217,7 +217,10 @@ export type MasukanButir = {
 export type MasukanJadwalBaru = MasukanJamKerja & {
   sumber?: "perkara" | "tanggal";
   tanggalAcuan?: string;
+  /** Username SIPP; hanya perlu bila penjadwal menyimpan lebih dari satu akun SIPP. */
   akunSipp?: string;
+  /** Nama tampil akun SIPP yang sedang masuk di peramban ("Selamat Datang ...") - pembanding saat pengisian dari peramban. */
+  namaSipp?: string;
   benih?: number;
   catatan?: string;
   butir: MasukanButir[];
@@ -261,10 +264,8 @@ export async function buatJadwal(
 
   // Akun SIPP penjadwal: tidak pernah menebak (keputusan 2 Okt butir 39).
   const akun = await (deps.akunSipp ?? akunBawaan)(db, pelaku.actor.id, masukan.akunSipp);
-  if (!akun.ok) throw new ApiError(400, akun.pesan);
-
-  const pengaturan = await bacaPengaturan(db);
-  void pengaturan;
+  if (!akun.ok) throw new ApiError(400, akun.pesan, { kode: akun.kode ?? "akun_sipp", milik: akun.milik ?? [] });
+  const namaSipp = sebaris(masukan.namaSipp, 160);
 
   // Pemeriksaan per butir (berkas, perkara ganda, hak majelis).
   const sudahDipilih = new Set<string>();
@@ -333,15 +334,16 @@ export async function buatJadwal(
   await withTransaction(db, async (tx) => {
     await tx.run(
       `INSERT INTO aleta_putusan_jadwal
-         (id, dibuat_oleh, dibuat_nama, peran, akun_sipp, ip, sumber, tanggal_acuan, mulai_wita, batas_akhir_wita,
+         (id, dibuat_oleh, dibuat_nama, peran, akun_sipp, nama_sipp, ip, sumber, tanggal_acuan, mulai_wita, batas_akhir_wita,
           jeda_min, jeda_maks, jam_dari, jam_sampai, malam_boleh, lintas_hari, status, catatan, dibuat_pada, diubah_pada)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktif', ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktif', ?, ?, ?)`,
       [
         jadwalId,
         pelaku.actor.id,
         sebaris(pelaku.actor.name, 160),
         String(pelaku.peran),
         akun.username,
+        namaSipp,
         sebaris(ip, 45),
         masukan.sumber === "tanggal" ? "tanggal" : "perkara",
         sebaris(masukan.tanggalAcuan, 10),
@@ -364,10 +366,10 @@ export async function buatJadwal(
       const st = (dipilih: boolean): StatusLangkah => (dipilih ? "menunggu" : "tidak");
       await tx.run(
         `INSERT INTO aleta_putusan_jadwal_butir
-           (id, jadwal_id, urut, perkara_id, nomor_perkara, jenis_perkara, pemilik_id, akun_sipp, peran, ip, waktu_rencana,
+           (id, jadwal_id, urut, perkara_id, nomor_perkara, jenis_perkara, pemilik_id, akun_sipp, nama_sipp, peran, ip, waktu_rencana,
             langkah_isi, langkah_putusan, langkah_anonim, status_isi, status_putusan, status_anonim, status, pilihan_json,
             berkas_id, berkas_nama, berkas_bentuk, berkas_ukuran, berkas_sha256, berkas_jalur, dibuat_pada, diubah_pada)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'menunggu', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'menunggu', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           butirId,
           jadwalId,
@@ -377,6 +379,7 @@ export async function buatJadwal(
           sebaris(b.m.jenisPerkara, 120),
           pelaku.actor.id,
           akun.username,
+          namaSipp,
           String(pelaku.peran),
           sebaris(ip, 45),
           waktu.iso,

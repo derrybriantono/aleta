@@ -36,6 +36,7 @@ export type BarisJadwal = {
   dibuat_nama: string;
   peran: string;
   akun_sipp: string;
+  nama_sipp: string;
   ip: string;
   sumber: string;
   tanggal_acuan: string;
@@ -62,6 +63,7 @@ export type BarisButir = {
   jenis_perkara: string;
   pemilik_id: string;
   akun_sipp: string;
+  nama_sipp: string;
   peran: string;
   ip: string;
   waktu_rencana: string;
@@ -117,6 +119,18 @@ export const LANGKAH_KOLOM: Record<LangkahTerjadwal, { dipilih: keyof BarisButir
 };
 
 export const sebaris = (t: unknown, maks = 300) => String(t ?? "").replace(/\s+/g, " ").trim().slice(0, maks);
+
+/**
+ * Akun SIPP yang sedang masuk di peramban (nama tampil "Selamat Datang ..." atau username)
+ * sama dengan akun yang tercatat pada butir? SIPP hanya menampilkan nama tampilnya, jadi nama
+ * itu dicatat saat dijadwalkan (nama_sipp) dan dibandingkan di samping username.
+ */
+export function akunSippSama(masuk: string, b: Pick<BarisButir, "akun_sipp" | "nama_sipp">): boolean {
+  const rapat = (x: string) => sebaris(x, 200).toLowerCase();
+  const m = rapat(masuk);
+  if (!m) return false;
+  return m === rapat(b.akun_sipp) || (rapat(b.nama_sipp) !== "" && m === rapat(b.nama_sipp));
+}
 
 export function langkahDariBaris(b: Pick<BarisButir, "status_isi" | "status_putusan" | "status_anonim">): LangkahButir {
   return { isi: b.status_isi as StatusLangkah, putusan: b.status_putusan as StatusLangkah, anonim: b.status_anonim as StatusLangkah };
