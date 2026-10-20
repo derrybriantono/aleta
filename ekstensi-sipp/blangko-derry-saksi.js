@@ -113,7 +113,9 @@
    */
   function susunMuatan(o) {
     const r = o && typeof o === "object" ? o : {};
-    if (typeof susunMuatanSdg === "function") return susunMuatanSdg(r);
+    // 20 Okt 2026: isian blangko perkara itu ikut dikirim (kode -> {nilai, keyakinan}) sebagai sumber pertama jawaban.
+    const denganIsian = (m) => (r.isian && typeof r.isian === "object" && Object.keys(r.isian).length ? { ...m, isian: r.isian } : m);
+    if (typeof susunMuatanSdg === "function") return denganIsian(susunMuatanSdg(r));
     const saksi = (Array.isArray(r.saksi) ? r.saksi : []).map((s) => ({
       ke: Number(s.ke),
       pihak: s.pihak === "T" ? "T" : "P",
@@ -124,7 +126,7 @@
     }));
     const polos = (s) => (s ? { modus: s.modus, sumber: s.sumber, sumberNama: s.sumberNama, alasan: s.alasan } : undefined);
     const saksiP = saksi.filter((s) => s.pihak === "P");
-    return {
+    return denganIsian({
       nomorPerkara: String(r.nomorPerkara || ""),
       sumber: "saksi-sdg",
       templat: Array.isArray(r.templat) ? r.templat : [],
@@ -137,7 +139,7 @@
       lawan: String(r.lawan || ""),
       modus: { saksi1: polos(saksiP[0] || saksi[0]), saksi2: polos(saksiP[1] || saksi[1]) },
       saksi,
-    };
+    });
   }
 
   /** Baris boleh diganti susunan otomatis: kosong, masih dasar/contoh set, atau hasil susunan otomatis terakhir. */
@@ -229,6 +231,9 @@
         if (r.dasar === undefined) r.dasar = sekarang;
         r.jawab = usul;
         r.otomatis = usul;
+        // Kontrak bersama {teks, yakin, sumber} (+ ket untuk ikon i) dari pengisi jawaban bersumber; tampilan menghitung r.asal darinya.
+        if (b.usulan && typeof b.usulan === "object" && b.usulan.yakin) r.usulan = { teks: usul, yakin: String(b.usulan.yakin), sumber: String(b.usulan.sumber || ""), ket: String(b.usulan.ket || "") };
+        else delete r.usulan;
         hasil.terisi += 1;
         if (adaTitik(usul)) hasil.tetapTitik += 1;
         return;

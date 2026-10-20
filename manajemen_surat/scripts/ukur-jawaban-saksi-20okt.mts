@@ -84,7 +84,7 @@ for (const p of perkara) {
   let ragu = 0,
     terisiOleh = 0;
   if (ISI) {
-    const r = ISI.lengkapi(h, { templatMasuk: templat, posita, jenisPerkara: p.j, alur: p.a, pelaku: sebT, lawan: sebP, tanggalSidang: "", alamatPihak, sipp, saksi: saksiMuat });
+    const r = ISI.lengkapi(h, { templatMasuk: templatAsli, posita, jenisPerkara: p.j, alur: p.a, pelaku: sebT, lawan: sebP, tanggalSidang: "", alamatPihak, sipp, saksi: saksiMuat });
     ragu = r.ragu;
     terisiOleh = r.terisi;
   }

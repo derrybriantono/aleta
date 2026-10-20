@@ -1208,7 +1208,7 @@ describe("nomor 3 - panel ABT lengkap perkakasnya", () => {
     // 17 Okt: deteksi-sisa-blangko.js paling depan (dipakai panel-alat.js saat unggah/unduh, bukan saat dimuat).
     // 18 Okt (1.205.6): mesin, data, dan form Susun saksi menurut keadaan perkara dimuat sebelum abt.js
     // (abt.js memanggil AletaSaksiSusun.pasang saat bagian tanya-jawab disusun).
-    expect(entri?.js).toEqual(["deteksi-sisa-blangko.js", "panel-alat.js", "jurusita.js", "basmassal.js", "saksi-katalog.js", "saksi-katalog-data.js", "saksi-susun.js", "isi-sipp-bersama.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-saksi.js", "blangko-derry-isian.js", "blangko-derry-massal.js", "konseptor-langkah.js", "putusan-advance.js", "sipp-ide-l1.js", "abt-gulir.js"]);
+    expect(entri?.js).toEqual(["deteksi-sisa-blangko.js", "panel-alat.js", "jurusita.js", "basmassal.js", "saksi-katalog.js", "saksi-katalog-data.js", "saksi-susun.js", "isi-sipp-bersama.js", "abt.js", "checklist.js", "abt-klien.js", "blangko-derry.js", "blangko-derry-saksi.js", "blangko-derry-jawab-katalog.js", "blangko-derry-isian.js", "blangko-derry-massal.js", "konseptor-langkah.js", "putusan-advance.js", "sipp-ide-l1.js", "abt-gulir.js"]);
   });
 
   it("tujuh perkakas ada semuanya", () => {

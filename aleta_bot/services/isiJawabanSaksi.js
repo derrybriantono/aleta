@@ -277,6 +277,234 @@ cue("tujuan-keperluan", new RegExp(`untuk\\s+keperluan\\s+${T}(?!\\s*\\()`, "gi"
 });
 
 // ============================================================================
+// Lapis kedua: POKOK PERTANYAAN + kata di kiri titik-titik (untuk bunyi jawaban yang beragam, mis. katalog jenis perkara)
+// ============================================================================
+
+/** "N tahun" bila di kanan belum ada kata tahun; angka saja bila sudah. */
+const satuanTahun = (n, kanan) => (/^\s*tahun/i.test(kanan) ? n : `${n} tahun`);
+const SEB = RE_SEBUTAN;
+const kiri = (s) => new RegExp(`${s}\\s*$`, "i");
+
+/**
+ * Tiap pokok: tanya (atas pertanyaan, huruf kecil tanpa tanda baca), jenis (opsional), slot [{kiri: pola atas teks di kiri
+ * titik-titik, isi: ({h, ctx, kanan}) => string|null}]. Titik-titik diproses berurutan dari kiri ke kanan; yang tidak
+ * cocok dengan aturan mana pun dibiarkan.
+ */
+const POKOK = [
+  {
+    id: "waktu-tempat",
+    jenis: ["itsbat", "aua"],
+    tanya: /kapan dan di mana.*menikah|waktu dan tempat.*(?:menikah|nikah)/,
+    slot: [
+      { kiri: kiri("\\b(?:di|bertempat di|dilangsungkan di|melangsungkan pernikahan di)"), isi: ({ h }) => h.tempat() },
+      { kiri: kiri("\\b(?:tanggal|pada|pada tanggal|sejak)"), isi: ({ h }) => h.nilai("tglNikah") },
+    ],
+  },
+  {
+    id: "umur",
+    jenis: ["itsbat", "aua"],
+    tanya: /umur.*(?:menikah|nikah)|usia.*(?:menikah|nikah)/,
+    slot: [
+      { kiri: new RegExp(`dan\\s+${SEB}\\s+sekitar\\s*$|dan\\s+${SEB}\\s*$`, "i"), isi: ({ h, kanan }) => h.nilai("umurP2", (n) => satuanTahun(n, kanan)) },
+      { kiri: new RegExp(`umur\\s+${SEB}\\s+sekitar\\s*$|umur\\s+${SEB}\\s*$`, "i"), isi: ({ h, kanan }) => h.nilai("umurP1", (n) => satuanTahun(n, kanan)) },
+    ],
+  },
+  {
+    id: "status",
+    jenis: ["itsbat", "aua"],
+    tanya: /status.*(?:menikah|nikah)|berstatus apa/,
+    slot: [
+      { kiri: new RegExp(`dan\\s+${SEB}\\s+berstatus\\s*$`, "i"), isi: ({ h }) => h.nilai("statusP2", (v) => v.toLowerCase()) },
+      { kiri: new RegExp(`${SEB}\\s+(?:masih\\s+)?berstatus\\s*$`, "i"), isi: ({ h }) => h.nilai("statusP1", (v) => v.toLowerCase()) },
+    ],
+  },
+  {
+    id: "wali",
+    jenis: ["itsbat", "aua"],
+    tanya: /wali nikah/,
+    slot: [
+      { kiri: kiri("\\bbernama"), isi: ({ h }) => h.nilai("waliNama") },
+      { kiri: kiri("\\b(?:adalah|yaitu|ialah|sebagai)"), isi: ({ h }) => h.hubunganWali(true) },
+    ],
+  },
+  {
+    id: "ijab",
+    jenis: ["itsbat", "aua"],
+    tanya: /ijab|menikahkan/,
+    slot: [{ kiri: kiri("\\b(?:adalah|dari|oleh|yaitu|ialah)"), isi: ({ h }) => h.nilai("penikah") }],
+  },
+  {
+    id: "saksi-nikah",
+    jenis: ["itsbat", "aua"],
+    tanya: /saksi nikah|disaksikan/,
+    slot: [
+      { kiri: kiri("\\bdan"), isi: ({ h }) => h.nilai("saksiNikah2") },
+      { kiri: kiri("\\b(?:yaitu|adalah|ialah|oleh|bernama|dua orang saksi)"), isi: ({ h }) => h.nilai("saksiNikah1") },
+    ],
+  },
+  {
+    id: "mahar",
+    jenis: ["itsbat", "aua"],
+    tanya: /mas kawin|mahar|maskawin/,
+    slot: [
+      {
+        kiri: kiri("\\b(?:berupa|yaitu|sebesar|adalah|ialah)"),
+        isi: ({ h, kanan }) => {
+          const f = h.fakta.ambil("mahar");
+          if (!f) return null;
+          const u = F.uraiMahar(f.nilai);
+          if (!u.barang) return null;
+          h.nilai("mahar");
+          const bayar = u.bayar === "tunai" ? ", dibayar tunai" : u.bayar === "hutang" ? ", belum dibayar (terhutang)" : "";
+          return /^\s*(?:,|dibayar)/i.test(kanan) ? u.barang : `${u.barang}${bayar}`;
+        },
+      },
+    ],
+  },
+  {
+    id: "anak",
+    jenis: ["itsbat", "aua"],
+    tanya: /(?:mempunyai|dikaruniai|punya) anak/,
+    slot: [
+      {
+        kiri: new RegExp(`${SEB}\\s*$`, "i"),
+        isi: ({ h }) => {
+          const n = h.fakta.ambil("jumlahAnak");
+          if (!n) return null;
+          h.nilai("jumlahAnak");
+          return n.nilai === "0" ? "belum dikaruniai anak" : `dikaruniai ${n.nilai} orang anak`;
+        },
+      },
+    ],
+  },
+  {
+    id: "tidak-dicatat",
+    jenis: ["itsbat"],
+    tanya: /tidak dicatat|tidak tercatat|mengapa pernikahan/,
+    slot: [{ kiri: kiri("\\b(?:ialah|adalah|karena|yaitu)"), isi: ({ h }) => h.nilai("sebabTidakTercatat") }],
+  },
+  {
+    id: "tujuan-itsbat",
+    jenis: ["itsbat"],
+    tanya: /untuk keperluan apa|keperluan apa/,
+    slot: [{ kiri: kiri("\\buntuk"), isi: ({ h }) => h.nilai("tujuan") }],
+  },
+  // ---- dispensasi kawin ----
+  {
+    id: "dk-anak",
+    jenis: ["dk"],
+    tanya: /nama.*umur.*anak|siapa nama dan berapa umur anak/,
+    slot: [
+      { kiri: kiri("\\bbernama"), isi: ({ h }) => h.nilai("anakNama") },
+      { kiri: kiri("\\b(?:berumur|umur|usia|berusia)"), isi: ({ h, kanan }) => h.nilai("anakUmur", (n) => satuanTahun(n, kanan)) },
+    ],
+  },
+  {
+    id: "dk-calon",
+    jenis: ["dk"],
+    tanya: /calon (?:suami|isteri|istri|mempelai)/,
+    slot: [
+      { kiri: kiri("\\bbernama"), isi: ({ h }) => h.nilai("calonNama") },
+      { kiri: kiri("\\b(?:berumur|umur|usia|berusia)"), isi: ({ h, kanan }) => h.nilai("calonUmur", (n) => satuanTahun(n, kanan)) },
+      { kiri: kiri("\\b(?:bekerja sebagai|pekerjaan)"), isi: ({ h }) => h.nilai("calonPekerjaan") },
+    ],
+  },
+  {
+    id: "dk-kua",
+    jenis: ["dk"],
+    tanya: /ditolak|penolakan|mengapa.*dispensasi/,
+    slot: [{ kiri: kiri("\\b(?:KUA|Kantor Urusan Agama)(?: Kecamatan)?"), isi: ({ h }) => h.nilai("kuaPenolak") }],
+  },
+  // ---- wali adhal ----
+  {
+    id: "wa-calon",
+    jenis: ["wa"],
+    tanya: /calon suami/,
+    slot: [
+      { kiri: kiri("\\bbernama"), isi: ({ h }) => h.nilai("calonNama") },
+      { kiri: kiri("\\b(?:umur|berumur|usia)"), isi: ({ h, kanan }) => h.nilai("calonUmur", (n) => satuanTahun(n, kanan)) },
+      { kiri: kiri("\\b(?:bekerja sebagai|pekerjaan)"), isi: ({ h }) => h.nilai("calonPekerjaan") },
+    ],
+  },
+  {
+    id: "wa-wali",
+    jenis: ["wa"],
+    tanya: /wali nasab|wali yang menolak|siapa wali/,
+    slot: [
+      { kiri: kiri("\\bbernama"), isi: ({ h }) => h.nilai("waliNama") },
+      { kiri: kiri("\\b(?:adalah|yaitu|ialah)"), isi: ({ h }) => h.hubunganWali(false) },
+    ],
+  },
+  {
+    id: "wa-alasan",
+    jenis: ["wa"],
+    tanya: /alasan.*wali|mengapa.*wali/,
+    slot: [{ kiri: kiri("\\b(?:karena|ialah|adalah)"), isi: ({ h }) => h.nilai("alasanWali", kecilNilai) }],
+  },
+  // ---- ahli waris / kewarisan ----
+  {
+    id: "paw-meninggal",
+    jenis: ["paw", "waris"],
+    tanya: /meninggal dunia/,
+    slot: [
+      { kiri: kiri("\\b(?:adalah|bernama)"), isi: ({ h }) => h.nilai("pewarisNama") },
+      { kiri: kiri("\\b(?:pada|tanggal)"), isi: ({ h }) => h.nilai("wafatTgl") },
+      { kiri: kiri("\\bdi"), isi: ({ h }) => h.nilai("wafatTempat") },
+      { kiri: kiri("\\b(?:karena|akibat)"), isi: ({ h }) => h.nilai("wafatSebab") },
+    ],
+  },
+  {
+    id: "paw-anak",
+    jenis: ["paw", "waris"],
+    tanya: /anak kandung|berapa orang anak/,
+    slot: [
+      { kiri: kiri("\\b(?:mempunyai|memiliki)"), isi: ({ h }) => h.nilai("jumlahAnakPewaris") },
+      { kiri: kiri("\\byaitu"), isi: ({ h }) => h.nilai("anakPewaris") },
+    ],
+  },
+  // ---- perwalian ----
+  {
+    id: "perwalian-anak",
+    jenis: ["perwalian"],
+    tanya: /nama.*anak|anak.*dimohonkan/,
+    slot: [{ kiri: kiri("\\bbernama"), isi: ({ h }) => h.nilai("anakNama") }],
+  },
+];
+
+/** Mengisi titik-titik yang tersisa menurut pokok pertanyaan dan kata di kirinya. */
+function isiPokok(teks, q, h, ctx) {
+  for (const p of POKOK) {
+    if (p.jenis && !p.jenis.includes(ctx.jenis)) continue;
+    if (!p.tanya.test(q)) continue;
+    const re = /\.{3,}|…/g;
+    const awal = teks;
+    let keluar = "";
+    let pos = 0;
+    let m;
+    while ((m = re.exec(awal)) !== null) {
+      const sebelum = keluar + awal.slice(pos, m.index);
+      const kanan = awal.slice(m.index + m[0].length, m.index + m[0].length + 24);
+      let nilai = null;
+      for (const s of p.slot) {
+        if (!s.kiri.test(sebelum.slice(-70))) continue;
+        try {
+          nilai = s.isi({ h, ctx, kanan });
+        } catch (_e) {
+          nilai = null;
+        }
+        if (nilai != null && nilai !== "") break;
+        nilai = null;
+      }
+      keluar = sebelum + (nilai == null ? m[0] : nilai);
+      pos = m.index + m[0].length;
+    }
+    const hasil = keluar + awal.slice(pos);
+    if (hasil !== awal) return hasil; // satu pokok per jawaban
+  }
+  return teks;
+}
+
+// ============================================================================
 // Placeholder katalog "{sejak}" "{lama}" "{pelaku}" ... (agen S1 menyambungkan katalog ke panel)
 // ============================================================================
 
@@ -319,7 +547,7 @@ function ragamkan(teks, ke) {
 }
 
 /** Pengetahuan saksi yang tidak diberi rincian dari data. */
-const MODUS_TANPA_RINCIAN = new Set(["tidak-tahu", "tidak-melihat", "tahu-pisah", "tidak-hadir", "tidak-menyaksikan", "tidak-mengetahui"]);
+const MODUS_TANPA_RINCIAN = new Set(["tidak-tahu", "tidak-melihat", "tahu-pisah", "tidak-hadir", "tidak-menyaksikan", "tidak-mengetahui", "ragu", "lupa"]);
 
 // ============================================================================
 // Mengisi satu jawaban
@@ -367,6 +595,7 @@ function isiJawaban(baris, fakta, ctx) {
       return r == null ? m : r;
     });
   }
+  if (adaTitik(teks)) teks = isiPokok(teks, q, h, ctx);
   const terisi = total - hitungTitik(teks);
   if (teks === asal || terisi <= 0) return null;
   teks = teks.replace(/\s{2,}/g, " ").replace(/\s+([,;])/g, "$1");
@@ -479,6 +708,8 @@ module.exports = {
   adaPlaceholder,
   ragamkan,
   CUES,
+  POKOK,
+  isiPokok,
   MODUS_TANPA_RINCIAN,
   ...F,
 };

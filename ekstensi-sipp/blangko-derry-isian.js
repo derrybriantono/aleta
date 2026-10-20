@@ -2806,6 +2806,29 @@
     S.sk.alasanPosita = hasil;
     renderTj();
   }
+  /**
+   * Isian blangko perkara ini (kode ABT -> {nilai, keyakinan}) untuk pengisi jawaban saksi bersumber: yang sudah terisi/ditemukan
+   * kartu isian, ditambah saran SIPP yang belum pasti (keyakinan ragu). Dibatasi jumlah dan panjangnya.
+   */
+  function kumpulIsianSaksi() {
+    const hasil = {};
+    let n = 0;
+    for (const [kode, v] of Object.entries(S.isi || {})) {
+      const nilai = String(v == null ? "" : v).trim();
+      if (!nilai || !/^\d{3,5}$/.test(kode) || n >= 250) continue;
+      const info = S.info && S.info[kode];
+      hasil[kode] = { nilai: nilai.slice(0, 700), keyakinan: (info && info.keyakinan) || "pasti" };
+      n += 1;
+    }
+    for (const [kode, sr] of Object.entries(S.saranSipp || {})) {
+      const nilai = String((sr && sr.nilai) || "").trim();
+      if (!nilai || hasil[kode] || !/^\d{3,5}$/.test(kode) || n >= 250) continue;
+      hasil[kode] = { nilai: nilai.slice(0, 700), keyakinan: (sr && sr.keyakinan) || "ragu" };
+      n += 1;
+    }
+    return hasil;
+  }
+  if (typeof globalThis !== "undefined") globalThis.AletaBdIsianSaksi = kumpulIsianSaksi;
   const ambilUsulan = (muatan) => ambilPortal(API_USULAN,{ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(muatan) }, "Menyusun jawaban saksi");
   const idJenisSipp = () => (typeof idJenisPerkaraSipp === "function" ? idJenisPerkaraSipp((S.pk && S.pk.jenisPerkara) || "") : String((S.pk && S.pk.jenisPerkara) || ""));
   /** alur_perkara_id SIPP: dari data perkara bila ada, selain itu dari nomor perkara (15 gugatan, 16 permohonan, 17 gugatan sederhana). */
@@ -2862,6 +2885,7 @@
           pelaku: sb.T,
           lawan: sb.P,
           saksi,
+          isian: kumpulIsianSaksi(),
         });
         const tgl = tanggalSidangIso();
         if (tgl) muatan.tanggalSidang = tgl;

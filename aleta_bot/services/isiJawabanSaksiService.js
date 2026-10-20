@@ -57,9 +57,16 @@ function saringIsian(isian) {
  * Data SIPP perkara untuk jawaban saksi (SELECT saja). Bentuk sama dengan masukan `sipp` bangunFakta.
  * `jalankan(sql, params)` dipasok pemanggil supaya berkas ini mudah diuji.
  */
-async function bacaSippSaksi(nomorPerkara, jalankan, batasMs = 2500) {
+async function bacaSippSaksi(nomorPerkara, jalankanLuar, batasMs = 2500) {
+  const jalankan =
+    typeof jalankanLuar === "function"
+      ? jalankanLuar
+      : (sql, params) =>
+          new Promise((resolve, reject) => {
+            require("../db_config").query(sql, params || [], (e, r) => (e ? reject(e) : resolve(r)));
+          });
   const nomor = String(nomorPerkara || "").trim();
-  if (!nomor || typeof jalankan !== "function") return null;
+  if (!nomor) return null;
   const aman = (sql, params) => Promise.resolve(jalankan(sql, params)).catch(() => []);
   const kerja = async () => {
     const id = await aman("SELECT perkara_id FROM perkara WHERE nomor_perkara = ? LIMIT 1", [nomor]);
@@ -154,4 +161,44 @@ function lengkapi(hasil, o) {
   }
 }
 
-module.exports = { lengkapi, bacaSippSaksi, deteksiPosita, saringIsian, kodeJenis };
+/**
+ * Mengisi baris-baris tanya jawab apa saja (mis. susunan katalog jenis perkara) - sumber 'isi-jawaban'.
+ * Kuncinya bebas (kunciJawaban katalog); hasil: { [kunci]: {teks, yakin, sumber, ket}, ["<kunci>@<kunciSaksi>"]: ... }.
+ *
+ * @param {object} o
+ *   posita, jenisPerkara, alur, pelaku, lawan, tanggalSidang, alamatPihak, isian, sipp (sama dengan lengkapi)
+ *   saksiIsi [{kunci, ke, modus, sumberNama, baris: [{kunci, tanya, jawab}]}]
+ */
+function isiBaris(o) {
+  const k = o && typeof o === "object" ? o : {};
+  const hasil = {};
+  try {
+    const jenis = kodeJenis(k.jenisPerkara, k.alur);
+    const dp = deteksiPosita({ ...k, jenis });
+    const fakta = isi.bangunFakta({
+      isian: saringIsian(k.isian),
+      sipp: k.sipp,
+      usulan: dp.usulan,
+      cerai: dp.cerai,
+      tambahan: positaTambahan(k.posita, jenis),
+      sebutan: { P: k.lawan, T: k.pelaku },
+    });
+    for (const s of Array.isArray(k.saksiIsi) ? k.saksiIsi.slice(0, 12) : []) {
+      const ctx = { jenis, P: k.lawan || "Pemohon", T: k.pelaku || "Termohon", ke: Number(s.ke) || 1, modus: String(s.modus || ""), sumberNama: String(s.sumberNama || "") };
+      for (const b of Array.isArray(s.baris) ? s.baris.slice(0, 80) : []) {
+        const r = isi.isiJawaban({ tanya: String(b.tanya || ""), jawab: String(b.jawab || "") }, fakta, { ...ctx });
+        if (!r) continue;
+        const nilai = { teks: r.teks, yakin: r.yakin, sumber: r.sumber, ket: r.ket };
+        const kunci = String(b.kunci || "");
+        if (!kunci) continue;
+        if (!hasil[kunci]) hasil[kunci] = nilai;
+        hasil[`${kunci}@${String(s.kunci || ctx.ke)}`] = nilai;
+      }
+    }
+  } catch (_galat) {
+    /* kosong = jawaban dasar dipertahankan */
+  }
+  return hasil;
+}
+
+module.exports = { lengkapi, isiBaris, bacaSippSaksi, deteksiPosita, saringIsian, kodeJenis };

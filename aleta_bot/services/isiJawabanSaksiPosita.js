@@ -247,13 +247,23 @@ function waris(butir) {
       break;
     }
   }
-  for (const b of butir) {
+  for (let i = 0; i < butir.length; i++) {
+    const b = butir[i];
     const m = /dikaruniai(?:kan)?\s+(\d+|[a-z]+)\s*(?:\([^)]*\)\s*)?orang\s+anak/i.exec(b);
-    if (m) {
-      const n = jumlahAnakDariTeks(`${m[1]} orang anak`);
-      if (n !== null) hasil.push({ kunci: "jumlahAnakPewaris", nilai: String(n), yakin: "cukup" });
-      break;
+    if (!m) continue;
+    const n = jumlahAnakDariTeks(`${m[1]} orang anak`);
+    if (n !== null) hasil.push({ kunci: "jumlahAnakPewaris", nilai: String(n), yakin: "cukup" });
+    // daftar nama sesudah "yaitu:" (satu per baris, diawali "-" atau "a.")
+    const nama = [];
+    for (let k = i + 1; k < butir.length && nama.length < 12; k++) {
+      const x = /^\s*(?:[-•*]|[a-z][.)])\s*(.+)$/i.exec(butir[k]);
+      if (!x) break;
+      const bersih = bersihNilai(x[1]).replace(/,\s*(bin|binti)\b/i, " $1");
+      if (!/^[A-Za-z]/.test(bersih)) break;
+      nama.push(bersih.replace(/^[A-Z .'-]+(?=\s+(?:bin|binti)\b)/i, (n0) => (n0 === n0.toUpperCase() ? n0.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : n0)));
     }
+    if (nama.length) hasil.push({ kunci: "anakPewaris", nilai: nama.join(", ").replace(/, ([^,]+)$/, " dan $1"), yakin: "cukup" });
+    break;
   }
   return hasil;
 }
