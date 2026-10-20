@@ -95,7 +95,15 @@ html[data-aleta-tema-sipp="gelap"] .aleta-pusipp-tombol {
 }
 html[data-aleta-tema-sipp="gelap"] .aleta-pusipp-tombol[aria-expanded="true"] {
   --pu-t-latar: #6a9fe0;
-  border-color: #6a9fe0;
+}
+/* Tombol ini juga berkelas .btn SIPP, yang di tema gelap diwarnai panel.css dengan !important lewat
+   :is(.btn, ..., #search-btn1) - kekhususannya setara ID. Karena itu tombol ini ber-id dan warnanya sendiri
+   dipertegas, supaya aksen birunya tetap dan kontrasnya terjaga (>= 4,5:1). */
+html[data-aleta-tema-sipp="gelap"] #aleta-pusipp-tombol.aleta-pusipp-tombol,
+html[data-aleta-tema-sipp="gelap"] #aleta-pusipp-tombol.aleta-pusipp-tombol:hover {
+  background-color: var(--pu-t-latar) !important;
+  color: var(--pu-t-teks) !important;
+  border-color: var(--pu-t-latar) !important;
 }
 .aleta-pusipp-ikon {
   font-size: 1.1em;

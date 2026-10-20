@@ -558,6 +558,7 @@
     if (!td) {
       td = el("td", `${KELAS} aleta-pusipp-sel`);
       const b = tombol("", "btn btn-sm aleta-pusipp-tombol");
+      b.id = "aleta-pusipp-tombol";
       b.setAttribute("data-pusipp", "tombol");
       b.setAttribute("aria-controls", ID_PANEL);
       b.append(el("span", "aleta-pusipp-ikon", "⚖"), " Putusan Otomatis");
