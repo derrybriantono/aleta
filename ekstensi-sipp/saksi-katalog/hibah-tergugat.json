@@ -1,0 +1,780 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "hibah-tergugat",
+ "judul": "Hibah - keterangan saksi yang diajukan Tergugat",
+ "versi": 1,
+ "penulis": "W2A-K2",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "366"
+  ]
+ },
+ "tambahanUntuk": [
+  "hibah"
+ ],
+ "urutanAwal": 1000,
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [],
+ "dasarHukum": [
+  {
+   "id": "dh-rbg-283",
+   "rujukan": "Pasal 283 RBg jo Pasal 1865 KUH Perdata",
+   "uraian": "pihak yang mendalilkan suatu hak atau peristiwa wajib membuktikannya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 283 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (memuat padanan KUHperd. 1865 dan IR. 163); Pasal 1865 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: blangko Derry 4b Kewarisan [01] [Kabul] Kewarisan - Kontradiktur (pertimbangan hukum)"
+  }
+ ],
+ "keadaan": {
+  "bantahan": {
+   "sumber": "borang",
+   "nilai": [
+    "penghibah-sukarela",
+    "penghibah-sehat",
+    "sudah-diserahkan",
+    "ahli-waris-setuju",
+    "tidak-ada-alasan-tarik",
+    "objek-milik-penghibah",
+    "benar-hibah",
+    "ada-saksi"
+   ],
+   "jamak": true,
+   "bawaan": [],
+   "label": "Bantahan Tergugat",
+   "labelNilai": {
+    "penghibah-sukarela": "penghibah memberikan hibah tanpa paksaan",
+    "penghibah-sehat": "penghibah sehat badan dan akalnya",
+    "sudah-diserahkan": "benda hibah sudah diserahkan kepada penerima",
+    "ahli-waris-setuju": "ahli waris menyetujui hibah",
+    "tidak-ada-alasan-tarik": "penerima hibah merawat penghibah dan tidak menjual benda hibah",
+    "objek-milik-penghibah": "benda hibah milik penghibah sendiri",
+    "benar-hibah": "pemberian itu benar hibah",
+    "ada-saksi": "hibah disaksikan dua orang saksi"
+   }
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-bantahan",
+   "judul": "Bantahan lawan",
+   "uraian": "bantahan Tergugat atas dalil pengaju",
+   "dasarHukum": [
+    "dh-rbg-283"
+   ],
+   "wajib": false,
+   "keadaan": {
+    "kehadiran": [
+     "kontradiktoir",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   }
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-tg-hb-tanpa-paksaan",
+   "pokok": "pp-bantahan",
+   "urutan": 10,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "penghibah-sukarela"
+    ]
+   },
+   "teks": "Apakah #9793# memberikan hibah itu atas kemauannya sendiri, dan adakah orang yang menekan atau memaksanya ?",
+   "teksVarian": [
+    "Apakah ada orang yang menekan atau memaksa #9793# ketika ia memberikan hibah itu ?"
+   ],
+   "hal": "ada tidaknya tekanan terhadap penghibah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kemauan #9793# memberikan hibah atas #9795# kepada #9797# tanpa tekanan sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa #9793# menghibahkan #9795# kepada #9797# dengan kemauannya sendiri dan tidak ada orang yang menekannya",
+      "saya tahu betul bahwa hibah atas #9795# untuk #9797# lahir dari kehendak #9793# sendiri tanpa tekanan siapa pun",
+      "tidak ada paksaan kepada #9793# ketika ia menyatakan hibah atas #9795# untuk #9797#, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa #9793# menghibahkan #9795# kepada #9797# dengan sukarela dan tanpa desakan dari pihak mana pun"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa #9793# menghibahkan #9795# kepada #9797# dengan sukarela dan tanpa desakan dari pihak mana pun",
+      "#9793# menghibahkan #9795# kepada #9797# dengan kemauannya sendiri dan tidak ada orang yang menekannya sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa hibah atas #9795# untuk #9797# lahir dari kehendak #9793# sendiri tanpa tekanan siapa pun",
+      "saya paham dengan baik bahwa tidak ada paksaan kepada #9793# ketika ia menyatakan hibah atas #9795# untuk #9797#"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan kemauan #9793# memberikan hibah atas #9795# kepada #9797# tanpa tekanan hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #9793# menghibahkan #9795# kepada #9797# dengan kemauannya sendiri dan tidak ada orang yang menekannya",
+      "saya diberi tahu oleh {sumber} bahwa hibah atas #9795# untuk #9797# lahir dari kehendak #9793# sendiri tanpa tekanan siapa pun",
+      "tidak ada paksaan kepada #9793# ketika ia menyatakan hibah atas #9795# untuk #9797#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #9793# menghibahkan #9795# kepada #9797# dengan sukarela dan tanpa desakan dari pihak mana pun"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa hibah atas #9795# untuk #9797# lahir dari kehendak #9793# sendiri tanpa tekanan siapa pun",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa tidak ada paksaan kepada #9793# ketika ia menyatakan hibah atas #9795# untuk #9797#",
+      "#9793# menghibahkan #9795# kepada #9797# dengan sukarela dan tanpa desakan dari pihak mana pun, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #9793# menghibahkan #9795# kepada #9797# dengan kemauannya sendiri dan tidak ada orang yang menekannya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: hibah diberikan tanpa tekanan; versi B: penghibah didesak orang lain - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #9793# menghibahkan #9795# kepada #9797# tanpa tekanan siapa pun",
+      "keterangan saya adalah bahwa hibah atas #9795# untuk #9797# lahir dari kehendak #9793# sendiri tanpa paksaan",
+      "#9793# menghibahkan #9795# kepada #9797# tanpa tekanan siapa pun, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa hibah atas #9795# untuk #9797# lahir dari kehendak #9793# sendiri tanpa paksaan"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #9793# menghibahkan #9795# kepada #9797# karena didesak orang lain",
+      "hibah atas #9795# untuk #9797# lahir dari desakan orang lain kepada #9793#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #9793# menghibahkan #9795# kepada #9797# karena didesak orang lain",
+      "hibah atas #9795# untuk #9797# lahir dari desakan orang lain kepada #9793#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9793",
+    "9795",
+    "9797"
+   ],
+   "menggantikan": [
+    "q-hb-ada-paksaan"
+   ]
+  },
+  {
+   "id": "q-tg-hb-sehat",
+   "pokok": "pp-bantahan",
+   "urutan": 20,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "penghibah-sehat"
+    ]
+   },
+   "teks": "Bagaimana kesehatan badan dan akal #9793# ketika memberikan hibah itu, apakah ia sehat dan mengerti maksud hibahnya ?",
+   "teksVarian": [
+    "Apakah #9793# sehat badan dan pikirannya ketika memberikan hibah itu dan mengerti apa yang dihibahkannya ?"
+   ],
+   "hal": "kesehatan badan dan akal penghibah ketika menghibahkan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kesehatan badan dan akal #9793# ketika menghibahkan #9795# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa #9793# sehat badan dan akalnya ketika menghibahkan #9795# dan mengerti maksudnya",
+      "saya tahu betul bahwa ketika menghibahkan #9795# #9793# segar dan berpikir jernih serta dapat menjelaskan maksudnya",
+      "#9793# masih beraktivitas seperti biasa dan sadar penuh ketika menghibahkan #9795#, dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa pada saat #9795# dihibahkan #9793# bugar dan bicaranya runtut"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa #9793# sehat badan dan akalnya ketika menghibahkan #9795# dan mengerti maksudnya",
+      "ketika menghibahkan #9795# #9793# segar dan berpikir jernih serta dapat menjelaskan maksudnya sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa #9793# masih beraktivitas seperti biasa dan sadar penuh ketika menghibahkan #9795#",
+      "saya paham dengan baik bahwa pada saat #9795# dihibahkan #9793# bugar dan bicaranya runtut"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan kesehatan badan dan akal #9793# ketika menghibahkan #9795# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #9793# sehat badan dan akalnya ketika menghibahkan #9795# dan mengerti maksudnya",
+      "saya diberi tahu oleh {sumber} bahwa ketika menghibahkan #9795# #9793# segar dan berpikir jernih serta dapat menjelaskan maksudnya",
+      "#9793# masih beraktivitas seperti biasa dan sadar penuh ketika menghibahkan #9795#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa pada saat #9795# dihibahkan #9793# bugar dan bicaranya runtut"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa ketika menghibahkan #9795# #9793# segar dan berpikir jernih serta dapat menjelaskan maksudnya",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #9793# masih beraktivitas seperti biasa dan sadar penuh ketika menghibahkan #9795#",
+      "pada saat #9795# dihibahkan #9793# bugar dan bicaranya runtut, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #9793# sehat badan dan akalnya ketika menghibahkan #9795# dan mengerti maksudnya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: penghibah sehat akalnya; versi B: penghibah sakit keras dan tidak sadar - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #9793# sehat akalnya ketika menghibahkan #9795#",
+      "keterangan saya adalah bahwa ketika menghibahkan #9795# #9793# berpikir jernih",
+      "#9793# sehat akalnya ketika menghibahkan #9795#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa ketika menghibahkan #9795# #9793# berpikir jernih"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #9793# sakit keras dan tidak sadar ketika menghibahkan #9795#",
+      "ketika menghibahkan #9795# #9793# tidak sadar karena sakit parah, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #9793# sakit keras dan tidak sadar ketika menghibahkan #9795#",
+      "ketika menghibahkan #9795# #9793# tidak sadar karena sakit parah, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9793",
+    "9795"
+   ],
+   "menggantikan": [
+    "q-hb-akal-dipersoalkan",
+    "q-hb-sakit"
+   ]
+  },
+  {
+   "id": "q-tg-hb-sudah-diserahkan",
+   "pokok": "pp-bantahan",
+   "urutan": 30,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "sudah-diserahkan"
+    ]
+   },
+   "teks": "Apakah benda yang dihibahkan #9793# itu sudah diserahkan kepada penerima hibah, kapan, dan siapa yang memakainya sejak itu ?",
+   "teksVarian": [
+    "Sejak kapan penerima hibah menguasai dan memakai benda yang dihibahkan #9793# itu ?"
+   ],
+   "hal": "penyerahan benda hibah kepada penerima",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan penyerahan #9795# dari #9793# kepada #9797# dan pemakaiannya sejak itu sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #9795# sudah diserahkan #9793# kepada #9797# pada hari hibah dan sejak itu dipakai sendiri oleh penerima",
+      "saya menyaksikan langsung bahwa sejak hibah #9793# menyerahkan #9795# kepada #9797# yang langsung menguasai dan memakainya",
+      "setelah hibah #9795# berada dalam kekuasaan #9797# dan #9793# sudah melepaskan penguasaannya dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #9797# menerima #9795# dari #9793# pada hari hibah dan mengelolanya sampai sekarang"
+     ],
+     "saksi2": [
+      "sejak hibah #9793# menyerahkan #9795# kepada #9797# yang langsung menguasai dan memakainya demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa setelah hibah #9795# berada dalam kekuasaan #9797# dan #9793# sudah melepaskan penguasaannya",
+      "#9797# menerima #9795# dari #9793# pada hari hibah dan mengelolanya sampai sekarang, sebagaimana yang saya alami",
+      "saya berada di sana ketika kejadian dan mengetahui bahwa #9795# sudah diserahkan #9793# kepada #9797# pada hari hibah dan sejak itu dipakai sendiri oleh penerima"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan penyerahan #9795# dari #9793# kepada #9797# dan pemakaiannya sejak itu hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #9795# sudah diserahkan #9793# kepada #9797# pada hari hibah dan sejak itu dipakai sendiri oleh penerima",
+      "saya diberi tahu oleh {sumber} bahwa sejak hibah #9793# menyerahkan #9795# kepada #9797# yang langsung menguasai dan memakainya",
+      "setelah hibah #9795# berada dalam kekuasaan #9797# dan #9793# sudah melepaskan penguasaannya begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #9797# menerima #9795# dari #9793# pada hari hibah dan mengelolanya sampai sekarang"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa sejak hibah #9793# menyerahkan #9795# kepada #9797# yang langsung menguasai dan memakainya",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa setelah hibah #9795# berada dalam kekuasaan #9797# dan #9793# sudah melepaskan penguasaannya",
+      "#9797# menerima #9795# dari #9793# pada hari hibah dan mengelolanya sampai sekarang, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #9795# sudah diserahkan #9793# kepada #9797# pada hari hibah dan sejak itu dipakai sendiri oleh penerima"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: benda hibah sudah diserahkan; versi B: benda hibah belum diserahkan - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #9795# sudah diserahkan #9793# kepada #9797# sejak hibah",
+      "keterangan saya adalah bahwa #9797# menguasai #9795# dari #9793# sejak hibah",
+      "#9795# sudah diserahkan #9793# kepada #9797# sejak hibah, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #9797# menguasai #9795# dari #9793# sejak hibah"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #9795# belum diserahkan #9793# kepada #9797# sejak hibah",
+      "#9797# belum menguasai #9795# dari #9793# sejak hibah, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #9795# belum diserahkan #9793# kepada #9797# sejak hibah",
+      "#9797# belum menguasai #9795# dari #9793# sejak hibah, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9793",
+    "9795",
+    "9797"
+   ],
+   "menggantikan": [
+    "q-hb-dikuasai-penghibah"
+   ]
+  },
+  {
+   "id": "q-tg-hb-setuju",
+   "pokok": "pp-bantahan",
+   "urutan": 40,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "ahli-waris-setuju"
+    ]
+   },
+   "teks": "Apakah ahli waris #9793# mengetahui hibah atas benda itu dan menyatakan menyetujuinya, kapan, dan di depan siapa ?",
+   "teksVarian": [
+    "Siapa saja ahli waris #9793# yang menyetujui hibah itu, kapan, dan di depan siapa mereka menyatakannya ?"
+   ],
+   "hal": "persetujuan ahli waris atas hibah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan persetujuan ahli waris #9793# atas hibah #9795# sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa seluruh ahli waris #9793# mengetahui hibah atas #9795# dan menyatakan setuju di depan dua orang saksi",
+      "saya menyaksikan langsung bahwa ahli waris #9793# menyetujui hibah atas #9795# dengan pernyataan yang diucapkan di hadapan dua orang saksi",
+      "persetujuan ahli waris #9793# atas hibah #9795# diberikan secara lisan di depan dua orang saksi, dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa semua ahli waris #9793# sudah mengetahui hibah atas #9795# dan menyatakan setuju"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa semua ahli waris #9793# sudah mengetahui hibah atas #9795# dan menyatakan setuju",
+      "seluruh ahli waris #9793# mengetahui hibah atas #9795# dan menyatakan setuju di depan dua orang saksi, demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa ahli waris #9793# menyetujui hibah atas #9795# dengan pernyataan yang diucapkan di hadapan dua orang saksi",
+      "persetujuan ahli waris #9793# atas hibah #9795# diberikan secara lisan di depan dua orang saksi, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan persetujuan ahli waris #9793# atas hibah #9795# hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa seluruh ahli waris #9793# mengetahui hibah atas #9795# dan menyatakan setuju di depan dua orang saksi",
+      "saya diberi tahu oleh {sumber} bahwa ahli waris #9793# menyetujui hibah atas #9795# dengan pernyataan yang diucapkan di hadapan dua orang saksi",
+      "persetujuan ahli waris #9793# atas hibah #9795# diberikan secara lisan di depan dua orang saksi, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa semua ahli waris #9793# sudah mengetahui hibah atas #9795# dan menyatakan setuju"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa ahli waris #9793# menyetujui hibah atas #9795# dengan pernyataan yang diucapkan di hadapan dua orang saksi",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa persetujuan ahli waris #9793# atas hibah #9795# diberikan secara lisan di depan dua orang saksi",
+      "semua ahli waris #9793# sudah mengetahui hibah atas #9795# dan menyatakan setuju, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa seluruh ahli waris #9793# mengetahui hibah atas #9795# dan menyatakan setuju di depan dua orang saksi"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: semua ahli waris menyetujui hibah; versi B: ada ahli waris yang tidak menyetujui - berselisih pada JUMLAH",
+     "bedaPada": "jumlah",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa semua ahli waris #9793# setuju atas hibah #9795#",
+      "keterangan saya adalah bahwa seluruh ahli waris #9793# menyetujui hibah #9795#",
+      "semua ahli waris #9793# setuju atas hibah #9795#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa seluruh ahli waris #9793# menyetujui hibah #9795#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa ada ahli waris #9793# yang tidak setuju atas hibah #9795#",
+      "tidak semua ahli waris #9793# menyetujui hibah #9795#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa ada ahli waris #9793# yang tidak setuju atas hibah #9795#",
+      "tidak semua ahli waris #9793# menyetujui hibah #9795#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9793",
+    "9795"
+   ],
+   "menggantikan": [
+    "q-hb-setuju-tolak"
+   ]
+  },
+  {
+   "id": "q-tg-hb-tidak-ada-alasan-tarik",
+   "pokok": "pp-bantahan",
+   "urutan": 50,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "tidak-ada-alasan-tarik"
+    ]
+   },
+   "teks": "Bagaimana sikap #9797# kepada #9793# setelah menerima hibah, apakah ia merawatnya, dan apakah benda hibah pernah dijual atau dipakai tidak sesuai maksud hibah ?",
+   "teksVarian": [
+    "Setelah menerima hibah apakah #9797# tetap merawat #9793# dan tidak menjual benda hibah ?"
+   ],
+   "hal": "sikap penerima hibah kepada penghibah dan pemakaian benda hibah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sikap #9797# kepada #9793# dan pemakaian #9795# setelah hibah sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #9797# tetap merawat #9793# setelah menerima #9795# dan tidak pernah menjual benda itu",
+      "saya menyaksikan langsung bahwa #9797# memelihara #9793# dengan baik dan memakai #9795# sesuai maksud hibah tanpa menjualnya",
+      "sesudah menerima #9795# #9797# terus mengurus #9793# dan tidak mengalihkan benda itu, dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #9797# menjaga #9795# dan merawat #9793# dengan baik tanpa pernah mengalihkan benda itu"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #9797# tetap merawat #9793# setelah menerima #9795# dan tidak pernah menjual benda itu",
+      "#9797# memelihara #9793# dengan baik dan memakai #9795# sesuai maksud hibah tanpa menjualnya demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa sesudah menerima #9795# #9797# terus mengurus #9793# dan tidak mengalihkan benda itu",
+      "#9797# menjaga #9795# dan merawat #9793# dengan baik tanpa pernah mengalihkan benda itu, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan sikap #9797# kepada #9793# dan pemakaian #9795# setelah hibah hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #9797# tetap merawat #9793# setelah menerima #9795# dan tidak pernah menjual benda itu",
+      "saya diberi tahu oleh {sumber} bahwa #9797# memelihara #9793# dengan baik dan memakai #9795# sesuai maksud hibah tanpa menjualnya",
+      "sesudah menerima #9795# #9797# terus mengurus #9793# dan tidak mengalihkan benda itu, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #9797# menjaga #9795# dan merawat #9793# dengan baik tanpa pernah mengalihkan benda itu"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa #9797# memelihara #9793# dengan baik dan memakai #9795# sesuai maksud hibah tanpa menjualnya",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sesudah menerima #9795# #9797# terus mengurus #9793# dan tidak mengalihkan benda itu",
+      "#9797# menjaga #9795# dan merawat #9793# dengan baik tanpa pernah mengalihkan benda itu, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #9797# tetap merawat #9793# setelah menerima #9795# dan tidak pernah menjual benda itu"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: penerima hibah merawat penghibah dan tidak menjual benda; versi B: penerima hibah menelantarkan penghibah dan menjual benda - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #9797# merawat #9793# dan tidak menjual #9795#",
+      "keterangan saya adalah bahwa #9797# memelihara #9793# dan tidak mengalihkan #9795#",
+      "#9797# merawat #9793# dan tidak menjual #9795#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #9797# memelihara #9793# dan tidak mengalihkan #9795#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #9797# menelantarkan #9793# dan menjual #9795#",
+      "#9797# mengabaikan #9793# dan mengalihkan #9795#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #9797# menelantarkan #9793# dan menjual #9795#",
+      "#9797# mengabaikan #9793# dan mengalihkan #9795#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9793",
+    "9795",
+    "9797"
+   ],
+   "menggantikan": [
+    "q-tarik-hibah",
+    "q-hb-tarik-menelantarkan",
+    "q-hb-tarik-jual",
+    "q-hb-tarik-tujuan"
+   ]
+  },
+  {
+   "id": "q-tg-hb-objek-milik",
+   "pokok": "pp-bantahan",
+   "urutan": 60,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "objek-milik-penghibah"
+    ]
+   },
+   "teks": "Apakah #9795# yang dihibahkan #9793# itu memang milik #9793# sendiri, dari mana ia memperolehnya, dan apa buktinya ?",
+   "teksVarian": [
+    "Dari mana #9793# memperoleh #9795# yang dihibahkannya, dan apakah #9793# pemilik sahnya ?"
+   ],
+   "hal": "kepemilikan penghibah atas benda hibah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kepemilikan #9793# atas #9795# yang dihibahkannya sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa #9795# adalah milik #9793# sendiri yang diperolehnya dengan usahanya sebelum menghibahkan",
+      "saya tahu betul bahwa #9793# memperoleh #9795# dari hasil usahanya sendiri dan menguasainya sebagai pemilik",
+      "sebelum dihibahkan #9795# tercatat atas nama #9793# sebagai pemilik sahnya dan hal itu saya ketahui sendiri",
+      "sebagai orang yang dekat dengan mereka saya mengetahui bahwa #9795# sepenuhnya hak #9793# karena diperoleh dari warisan dan pembeliannya sendiri"
+     ],
+     "saksi2": [
+      "yang saya ketahui secara langsung adalah bahwa #9795# sepenuhnya hak #9793# karena diperoleh dari warisan dan pembeliannya sendiri",
+      "#9795# adalah milik #9793# sendiri yang diperolehnya dengan usahanya sebelum menghibahkan, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "karena sering bersama mereka saya paham bahwa #9793# memperoleh #9795# dari hasil usahanya sendiri dan menguasainya sebagai pemilik",
+      "saya paham dengan baik bahwa sebelum dihibahkan #9795# tercatat atas nama #9793# sebagai pemilik sahnya"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan kepemilikan #9793# atas #9795# yang dihibahkannya hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #9795# adalah milik #9793# sendiri yang diperolehnya dengan usahanya sebelum menghibahkan",
+      "saya diberi tahu oleh {sumber} bahwa #9793# memperoleh #9795# dari hasil usahanya sendiri dan menguasainya sebagai pemilik",
+      "sebelum dihibahkan #9795# tercatat atas nama #9793# sebagai pemilik sahnya begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #9795# sepenuhnya hak #9793# karena diperoleh dari warisan dan pembeliannya sendiri"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa #9793# memperoleh #9795# dari hasil usahanya sendiri dan menguasainya sebagai pemilik",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sebelum dihibahkan #9795# tercatat atas nama #9793# sebagai pemilik sahnya",
+      "#9795# sepenuhnya hak #9793# karena diperoleh dari warisan dan pembeliannya sendiri, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #9795# adalah milik #9793# sendiri yang diperolehnya dengan usahanya sebelum menghibahkan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: benda hibah milik penghibah sendiri; versi B: benda hibah bukan milik penghibah sendiri - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #9795# adalah milik #9793# sendiri",
+      "keterangan saya adalah bahwa #9795# sepenuhnya hak #9793#",
+      "#9795# adalah milik #9793# sendiri, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #9795# sepenuhnya hak #9793#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #9795# bukan milik #9793# sendiri",
+      "#9795# bukan hak penuh #9793#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #9795# bukan milik #9793# sendiri",
+      "#9795# bukan hak penuh #9793#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9793",
+    "9795"
+   ],
+   "menggantikan": [
+    "q-hb-objek-bukan-hak"
+   ]
+  },
+  {
+   "id": "q-tg-hb-benar-hibah",
+   "pokok": "pp-bantahan",
+   "urutan": 70,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "benar-hibah"
+    ]
+   },
+   "teks": "Apakah pemberian #9795# dari #9793# kepada #9797# itu benar-benar hibah, tanpa bayaran atau kewajiban mengembalikan ?",
+   "teksVarian": [
+    "Apakah #9793# memberikan #9795# kepada #9797# sebagai hibah yang tidak dibayar dan tidak harus dikembalikan ?"
+   ],
+   "hal": "sifat pemberian sebagai hibah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sifat pemberian #9795# dari #9793# kepada #9797# sebagai hibah sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #9793# memberikan #9795# kepada #9797# sebagai hibah yang tidak perlu dikembalikan",
+      "saya mengetahui sendiri bahwa pemberian #9795# dari #9793# kepada #9797# adalah hibah tanpa bayaran",
+      "saya menyaksikan langsung bahwa #9797# menerima #9795# dari #9793# sebagai hibah dan tidak pernah diminta membayar",
+      "saya tahu betul bahwa #9793# menyatakan #9795# untuk #9797# sebagai hibah dan tidak sebagai pinjaman"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #9793# memberikan #9795# kepada #9797# sebagai hibah yang tidak perlu dikembalikan",
+      "yang saya ketahui secara langsung adalah bahwa pemberian #9795# dari #9793# kepada #9797# adalah hibah tanpa bayaran",
+      "#9797# menerima #9795# dari #9793# sebagai hibah dan tidak pernah diminta membayar, demikian yang tampak oleh saya waktu itu",
+      "#9793# menyatakan #9795# untuk #9797# sebagai hibah dan tidak sebagai pinjaman, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan sifat pemberian #9795# dari #9793# kepada #9797# sebagai hibah hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #9793# memberikan #9795# kepada #9797# sebagai hibah yang tidak perlu dikembalikan",
+      "saya diberi tahu oleh {sumber} bahwa pemberian #9795# dari #9793# kepada #9797# adalah hibah tanpa bayaran",
+      "#9797# menerima #9795# dari #9793# sebagai hibah dan tidak pernah diminta membayar, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #9793# menyatakan #9795# untuk #9797# sebagai hibah dan tidak sebagai pinjaman"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa pemberian #9795# dari #9793# kepada #9797# adalah hibah tanpa bayaran",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #9797# menerima #9795# dari #9793# sebagai hibah dan tidak pernah diminta membayar",
+      "#9793# menyatakan #9795# untuk #9797# sebagai hibah dan tidak sebagai pinjaman, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #9793# memberikan #9795# kepada #9797# sebagai hibah yang tidak perlu dikembalikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pemberian itu hibah; versi B: pemberian itu titipan - berselisih pada PERISTIWA",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #9795# dari #9793# diberikan kepada #9797# sebagai hibah",
+      "keterangan saya adalah bahwa pemberian #9795# dari #9793# kepada #9797# adalah hibah",
+      "#9795# dari #9793# diberikan kepada #9797# sebagai hibah, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa pemberian #9795# dari #9793# kepada #9797# adalah hibah"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #9795# dari #9793# dititipkan kepada #9797# sebagai titipan",
+      "pemberian #9795# dari #9793# kepada #9797# adalah titipan, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #9795# dari #9793# dititipkan kepada #9797# sebagai titipan",
+      "pemberian #9795# dari #9793# kepada #9797# adalah titipan, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9793",
+    "9795",
+    "9797"
+   ],
+   "menggantikan": [
+    "q-hb-pura-pura"
+   ]
+  },
+  {
+   "id": "q-tg-hb-ada-saksi",
+   "pokok": "pp-bantahan",
+   "urutan": 80,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "ada-saksi"
+    ]
+   },
+   "teks": "Siapa saja yang hadir dan menyaksikan #9793# memberikan hibah itu, dan apakah mereka dua orang ?",
+   "teksVarian": [
+    "Apakah hibah dari #9793# disaksikan dua orang dan siapa saja mereka ?"
+   ],
+   "hal": "saksi yang menyaksikan pemberian hibah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan dua orang saksi yang menyaksikan #9793# memberikan hibah sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa hibah #9793# disaksikan dua orang saksi yang hadir bersamaan",
+      "saya menyaksikan langsung bahwa ketika #9793# menghibahkan hartanya dua orang saksi hadir dan menyaksikannya",
+      "dua orang saksi menyaksikan #9793# memberikan hibahnya dan hal itu saya lihat dengan mata kepala saya sendiri",
+      "pada waktu itu saya berada di tempat kejadian dan melihat bahwa #9793# memberikan hibah di depan dua orang saksi yang dikenal keluarga"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa hibah #9793# disaksikan dua orang saksi yang hadir bersamaan",
+      "ketika #9793# menghibahkan hartanya dua orang saksi hadir dan menyaksikannya demikian yang tampak oleh saya waktu itu",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa dua orang saksi menyaksikan #9793# memberikan hibahnya",
+      "#9793# memberikan hibah di depan dua orang saksi yang dikenal keluarga, sebagaimana yang saya alami"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan dua orang saksi yang menyaksikan #9793# memberikan hibah hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa hibah #9793# disaksikan dua orang saksi yang hadir bersamaan",
+      "saya diberi tahu oleh {sumber} bahwa ketika #9793# menghibahkan hartanya dua orang saksi hadir dan menyaksikannya",
+      "dua orang saksi menyaksikan #9793# memberikan hibahnya begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #9793# memberikan hibah di depan dua orang saksi yang dikenal keluarga"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa ketika #9793# menghibahkan hartanya dua orang saksi hadir dan menyaksikannya",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa dua orang saksi menyaksikan #9793# memberikan hibahnya",
+      "#9793# memberikan hibah di depan dua orang saksi yang dikenal keluarga, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa hibah #9793# disaksikan dua orang saksi yang hadir bersamaan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: hibah disaksikan dua orang saksi; versi B: hibah tidak disaksikan siapa pun - berselisih pada JUMLAH (saksi)",
+     "bedaPada": "jumlah",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa hibah #9793# disaksikan dua orang saksi",
+      "keterangan saya adalah bahwa dua orang saksi menyaksikan hibah #9793#",
+      "hibah #9793# disaksikan dua orang saksi, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa dua orang saksi menyaksikan hibah #9793#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa hibah #9793# tidak disaksikan siapa pun",
+      "tidak ada saksi yang menyaksikan hibah #9793#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa hibah #9793# tidak disaksikan siapa pun",
+      "tidak ada saksi yang menyaksikan hibah #9793#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9793"
+   ],
+   "menggantikan": [
+    "q-hb-tanpa-saksi"
+   ]
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Saksi yang diajukan Tergugat menerangkan versi Tergugat: tandai bantahan Tergugat pada keadaan perkara, lalu pilih Tergugat pada saksi yang bersangkutan.",
+  "Butir arah Tergugat hanya muncul untuk saksi Tergugat dan menggantikan butir yang arahnya dalil Penggugat atas hal yang sama."
+ ],
+ "variabelBaru": [
+  "9793",
+  "9795",
+  "9797"
+ ]
+}

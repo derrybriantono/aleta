@@ -4,7 +4,7 @@ Membangun paket-satker/ dari variabel.py + tambal_hb/tambal_waris/tambal_lain at
   python bangun_paket.py            (dari folder alat/)
 
 Keluaran (semua SQL berteks ASCII; teks kolom ditulis sebagai literal heksadesimal supaya tidak bergantung charset klien):
-  paket-satker/abt-w2a-PASANG.sql        prasyarat (jatah 4780-4849 kosong, variabel lama ada) + INSERT dalam satu transaksi
+  paket-satker/abt-w2a-PASANG.sql        prasyarat (jatah 4750-4849 kosong, variabel lama ada) + INSERT dalam satu transaksi
   paket-satker/abt-w2a-PERIKSA.sql       panjang + MD5 tiap baris, baris terakhir SEMUA COCOK
   paket-satker/abt-w2a-PULIH-HAPUS-BARU.sql
   paket-satker/rtf/NN.rtf                blangko hasil tambal; paket-satker/DAFTAR-BLANGKO.tsv = pemetaan NN -> folder/berkas + md5 sebelum/sesudah
@@ -68,12 +68,12 @@ def token_lama(v, rtfs):
 def sql_pasang(v, pra):
     nomor = ", ".join(str(x["no"]) for x in v)
     k = []
-    k.append("-- Paket ABT w2a-kebendaan (agen W2a, 21 Okt 2026): variabel 4780-4849 untuk harta bersama, kewarisan, wasiat, hibah, wakaf dan ekonomi syariah (blangko derry_briantono).")
+    k.append("-- Paket ABT w2a-kebendaan (agen W2a, 21 Okt 2026): variabel 4750-4849 untuk harta bersama, kewarisan, wasiat, hibah, wakaf dan ekonomi syariah (blangko derry_briantono).")
     k.append("-- Dijalankan: mysql --default-character-set=latin1 aps_badilag < abt-w2a-PASANG.sql")
     k.append("-- Isi teks berupa literal heksadesimal (bita ASCII apa adanya). JANGAN disunting di editor.")
     k.append("")
     k.append("SET NAMES latin1;")
-    k.append("-- PRASYARAT: berhenti dengan galat \"Subquery returns more than 1 row\" bila jatah 4780-4849 sudah terpakai atau variabel lama yang dirujuk tidak lengkap. Tidak ada yang ditulis.")
+    k.append("-- PRASYARAT: berhenti dengan galat \"Subquery returns more than 1 row\" bila jatah 4750-4849 sudah terpakai atau variabel lama yang dirujuk tidak lengkap. Tidak ada yang ditulis.")
     k.append(
         "SELECT IF((SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN %d AND %d) = 0 AND (SELECT COUNT(*) FROM abt_variabel WHERE no_var IN (%s)) = %d, 'PRASYARAT COCOK - memasang', "
         "(SELECT 'PRASYARAT GAGAL' UNION SELECT 'BERHENTI')) AS prasyarat;" % (JATAH[0], JATAH[1], ", ".join(str(p) for p in pra), len(pra))

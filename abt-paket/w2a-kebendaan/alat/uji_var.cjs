@@ -1,5 +1,5 @@
 // Pasang variabel paket ke DB uji aps_badilag_w2a dan jalankan kueri variabel untuk perkara tertentu.
-//   node uji_var.cjs pasang                       -> hapus 4780-4849 lalu pasang dari ../data/variabel.json (jalur aps_badilag. -> aps_badilag_w2a.)
+//   node uji_var.cjs pasang                       -> hapus 4750-4849 lalu pasang dari ../data/variabel.json (jalur aps_badilag. -> aps_badilag_w2a.)
 //   node uji_var.cjs jalan <perkara_id> <no...>   -> cetak hasil tiap variabel (token #nnnn# dibiarkan apa adanya)
 //   node uji_var.cjs isian <perkara_id> <no> <teks>  (teks kosong = hapus)
 const fs = require("fs");
@@ -13,7 +13,7 @@ const V = () => JSON.parse(fs.readFileSync(path.resolve(__dirname, "../data/vari
 (async () => {
   const [, , perintah, ...arg] = process.argv;
   if (perintah === "pasang") {
-    await q(`DELETE FROM ${DB}.abt_variabel WHERE no_var BETWEEN 4780 AND 4849`);
+    await q(`DELETE FROM ${DB}.abt_variabel WHERE no_var BETWEEN 4750 AND 4849`);
     const v = V();
     for (const x of v) {
       const sql = x.sql ? x.sql.split("aps_badilag.").join(DB + ".") : null;

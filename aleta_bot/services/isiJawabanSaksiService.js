@@ -300,6 +300,11 @@ function faktaPerkara(o) {
       const saran = require("./isiJawabanSaksiKebendaan").saranKeadaan(jenis, k.posita, k.petitum);
       if (saran.length) hasil.__saranKeadaan = saran;
     }
+    // 21 Okt 2026 (W2a-K2): saran keadaan wasiat, hibah, wakaf dan ekonomi syariah (isiJawabanSaksiKebendaanLain.js); semuanya "ragu - periksa"
+    if ((jenis === "wasiat" || jenis === "hibah" || jenis === "wakaf" || jenis === "eksyar") && String(k.posita || "").replace(/<[^>]*>/g, " ").trim()) {
+      const saran = require("./isiJawabanSaksiKebendaanLain").saranKeadaan(k.posita, k.petitum, jenis, { alur: k.alur });
+      if (saran.length) hasil.__saranKeadaan = saran;
+    }
     // upaya damai keluarga dari gugatan (bukan dari mediasi: mediasi baru diketahui sesudah sidang)
     if ((jenis === "cg" || jenis === "ct") && String(k.posita || "").replace(/<[^>]*>/g, " ").trim()) {
       const A = require("./abtUsulanService");

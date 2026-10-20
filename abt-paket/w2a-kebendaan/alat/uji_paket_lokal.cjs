@@ -1,7 +1,7 @@
 // Menguji paket-satker/*.sql pada MariaDB lokal (basis data uji aps_badilag_w2ap, tabel abt_variabel tiruan skema server):
 //   1. PASANG pada tabel yang hanya berisi variabel rujukan -> PERIKSA harus "SEMUA COCOK"
 //   2. PASANG kedua kali harus GAGAL pada prasyarat (jatah terpakai) dan tidak menambah baris
-//   3. PULIH menghapus semuanya; baris di luar 4780-4849 tidak tersentuh
+//   3. PULIH menghapus semuanya; baris di luar 4750-4849 tidak tersentuh
 //   4. PASANG ditolak bila variabel rujukan tidak lengkap
 //   5. semua kueri variabel BARU jalan tanpa galat atas perkara nyata (SELECT saja, DB sipp_donggala)
 // Keluaran: JSON ringkas. Dipakai uji vitest w2a-kebendaan.test.ts.
@@ -32,7 +32,7 @@ const baca = (n) => fs.readFileSync(path.join(PAKET, n), "latin1");
     galat = e.message;
   }
   hasil.rujukanKurangGalat = galat;
-  hasil.rujukanKurangBaris = (await q("SELECT COUNT(*) n FROM abt_variabel WHERE no_var BETWEEN 4780 AND 4849"))[0].n;
+  hasil.rujukanKurangBaris = (await q("SELECT COUNT(*) n FROM abt_variabel WHERE no_var BETWEEN 4750 AND 4849"))[0].n;
   await isiPra(pra[pra.length - 1]);
   await q("INSERT INTO abt_variabel (no_var, nama, data_type, locked) VALUES (9999, 'LAIN', 'data_sql', 0)");
   hasil.sebelum = (await q("SELECT COUNT(*) n FROM abt_variabel"))[0].n;
@@ -40,7 +40,7 @@ const baca = (n) => fs.readFileSync(path.join(PAKET, n), "latin1");
   // 1. pasang
   const r1 = await q(baca("abt-w2a-PASANG.sql"));
   hasil.prasyarat = JSON.stringify(r1).includes("PRASYARAT COCOK");
-  hasil.sesudahPasang = (await q("SELECT COUNT(*) n FROM abt_variabel WHERE no_var BETWEEN 4780 AND 4849"))[0].n;
+  hasil.sesudahPasang = (await q("SELECT COUNT(*) n FROM abt_variabel WHERE no_var BETWEEN 4750 AND 4849"))[0].n;
   const per = await q(baca("abt-w2a-PERIKSA.sql"));
   const terakhir = per[per.length - 1];
   hasil.periksa = terakhir && terakhir[0] ? terakhir[0].hasil : "(tidak ada)";
@@ -55,23 +55,23 @@ const baca = (n) => fs.readFileSync(path.join(PAKET, n), "latin1");
     galat = e.message;
   }
   hasil.pasangLagiGalat = galat;
-  hasil.sesudahPasangLagi = (await q("SELECT COUNT(*) n FROM abt_variabel WHERE no_var BETWEEN 4780 AND 4849"))[0].n;
+  hasil.sesudahPasangLagi = (await q("SELECT COUNT(*) n FROM abt_variabel WHERE no_var BETWEEN 4750 AND 4849"))[0].n;
 
   // 3. pulih
   await q(baca("abt-w2a-PULIH-HAPUS-BARU.sql"));
-  hasil.sesudahPulih = (await q("SELECT COUNT(*) n FROM abt_variabel WHERE no_var BETWEEN 4780 AND 4849"))[0].n;
+  hasil.sesudahPulih = (await q("SELECT COUNT(*) n FROM abt_variabel WHERE no_var BETWEEN 4750 AND 4849"))[0].n;
   hasil.akhir = (await q("SELECT COUNT(*) n FROM abt_variabel"))[0].n;
   hasil.lainTersentuh = (await q("SELECT COUNT(*) n FROM abt_variabel WHERE no_var = 9999"))[0].n;
 
   // isi: panjang kolom dalam batas TEXT (65535) dan nama <= 200
   await q(baca("abt-w2a-PASANG.sql"));
-  const panjang = await q("SELECT no_var, LENGTH(sql_query) p, CHAR_LENGTH(nama) n, data_type t FROM abt_variabel WHERE no_var BETWEEN 4780 AND 4849 ORDER BY no_var");
+  const panjang = await q("SELECT no_var, LENGTH(sql_query) p, CHAR_LENGTH(nama) n, data_type t FROM abt_variabel WHERE no_var BETWEEN 4750 AND 4849 ORDER BY no_var");
   hasil.terpanjang = Math.max(...panjang.map((x) => Number(x.p) || 0));
   hasil.namaTerpanjang = Math.max(...panjang.map((x) => Number(x.n) || 0));
   hasil.jumlah = panjang.length;
 
   // 5. kueri berjalan (token #nnnn# dibiarkan; isian dibaca dari aps_badilag_w2a)
-  const daftar = await q("SELECT no_var, sql_query FROM abt_variabel WHERE data_type = 'data_sql' AND no_var BETWEEN 4780 AND 4849 ORDER BY no_var");
+  const daftar = await q("SELECT no_var, sql_query FROM abt_variabel WHERE data_type = 'data_sql' AND no_var BETWEEN 4750 AND 4849 ORDER BY no_var");
   const uji = ["10025", "9528", "9291", "8781", "9233"];
   hasil.kueriGalat = [];
   hasil.kueriJalan = 0;

@@ -1,0 +1,26 @@
+[
+  {
+    "no": "4765",
+    "nama": "EKONOMI SYARIAH: RINCIAN PEMBIAYAAN - ISIAN (harga beli atau plafon, margin atau nisbah, harga jual, jangka waktu; satu kalimat tanpa titik akhir)",
+    "tipe": "data_teks",
+    "catatan": "Dipakai jawaban saksi katalog ekonomi-syariah v2 (butir q-es-murabahah-harga, q-es-ijarah-objek). Isian petugas; saran dari gugatan oleh pendeteksi gugatan di bot (isiJawabanSaksiKebendaanLain.js) berkeyakinan ragu. Kosong = titik-titik pada jawaban saksi."
+  },
+  {
+    "no": "4766",
+    "nama": "EKONOMI SYARIAH: ANGSURAN DAN JATUH TEMPO - ISIAN (jumlah angsuran per bulan, tanggal jatuh tempo tiap bulan, jumlah angsuran yang sudah dibayar; satu kalimat tanpa titik akhir)",
+    "tipe": "data_teks",
+    "catatan": "Dipakai butir q-es-murabahah-angsuran dan q-es-angsuran-terakhir. Isian petugas; saran dari gugatan berkeyakinan ragu."
+  },
+  {
+    "no": "4767",
+    "nama": "EKONOMI SYARIAH: SURAT PERINGATAN ATAU SOMASI - ISIAN (nomor dan tanggal tiap surat peringatan atau somasi yang pernah dikirim, dipisah titik koma)",
+    "tipe": "data_teks",
+    "catatan": "Dipakai butir q-es-somasi-ada dan q-es-somasi-diterima. Isian petugas; saran dari daftar surat pada gugatan berkeyakinan ragu."
+  },
+  {
+    "no": "4768",
+    "nama": "EKONOMI SYARIAH: AGUNAN ATAU JAMINAN - ISIAN (bentuk, bukti hak, atas nama siapa, luas dan letak; satu kalimat tanpa titik akhir)",
+    "tipe": "data_teks",
+    "catatan": "Dipakai butir q-es-jaminan-tanah, q-es-jaminan-fidusia, q-es-jaminan-nilai, q-es-sita, q-es-lelang dan q-es-pengosongan. Isian petugas; saran dari gugatan berkeyakinan ragu."
+  }
+]

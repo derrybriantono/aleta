@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-Kumpulan variabel ABT paket w2a-kebendaan (nomor 4780-4849). Pakai:
+Kumpulan variabel ABT paket w2a-kebendaan (nomor 4750-4849). Pakai:
   python variabel.py            -> ringkasan
   python variabel.py --json     -> tulis ../data/variabel.json
-Aturan: nomor unik, dalam jatah 4780-4849, nama <= 200 huruf, semua teks ASCII, tanpa kata aplikasi.
+Aturan: nomor unik, dalam jatah 4750-4849, nama <= 200 huruf, semua teks ASCII, tanpa kata aplikasi.
 """
 import json, os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from sqlkit import periksa_ascii
 
-JATAH = (4780, 4849)
+JATAH = (4750, 4849)
 
 
 def muat():
     daftar = []
-    modul = ["variabel_hb", "variabel_waris", "variabel_lain"]
+    modul = ["variabel_katalog", "variabel_hb", "variabel_waris", "variabel_lain"]
     for nama in modul:
         try:
             m = __import__(nama)

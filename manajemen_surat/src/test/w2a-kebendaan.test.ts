@@ -73,12 +73,12 @@ describe("A. paket ABT w2a-kebendaan utuh", () => {
     expect([...folder].sort()).toEqual(["10 Ekonomi Syariah", "10a Ekonomi Syariah Biasa", "4a Harta Bersama", "4b Kewarisan", "4c Wasiat", "4d Hibah", "4e Wakaf"].sort());
   });
 
-  it("variabel: 70 buah, nomor unik dalam jatah 4780-4849, nama <= 200 huruf, ASCII, tanpa kata aplikasi, sql data_sql berawalan SELECT", () => {
-    expect(variabel.length).toBe(70);
+  it("variabel: 74 buah, nomor unik dalam jatah 4750-4849, nama <= 200 huruf, ASCII, tanpa kata aplikasi, sql data_sql berawalan SELECT", () => {
+    expect(variabel.length).toBe(74);
     const nomor = variabel.map((v) => v.no);
     expect(new Set(nomor).size).toBe(nomor.length);
     for (const v of variabel) {
-      expect(v.no).toBeGreaterThanOrEqual(4780);
+      expect(v.no).toBeGreaterThanOrEqual(4750);
       expect(v.no).toBeLessThanOrEqual(4849);
       expect(v.nama.length).toBeLessThanOrEqual(200);
       for (const t of [v.nama, v.sql || "", v.default || ""]) {
@@ -110,14 +110,14 @@ describe("A. paket ABT w2a-kebendaan utuh", () => {
     expect(pasang).toContain("PRASYARAT COCOK");
     expect(pasang).toContain("START TRANSACTION;");
     expect(pasang).toContain("COMMIT;");
-    expect((pasang.match(/^INSERT INTO abt_variabel/gm) || []).length).toBe(70);
+    expect((pasang.match(/^INSERT INTO abt_variabel/gm) || []).length).toBe(74);
     expect(/aleta/i.test(pasang)).toBe(false);
     expect(/^[\x00-\x7f]*$/.test(pasang)).toBe(true);
     const periksa = baca(SATKER, "abt-w2a-PERIKSA.sql");
-    expect((periksa.match(/MD5\(nama\)/g) || []).length).toBeGreaterThanOrEqual(70);
+    expect((periksa.match(/MD5\(nama\)/g) || []).length).toBeGreaterThanOrEqual(74);
     expect(periksa).toContain("SEMUA COCOK");
     const pulih = baca(SATKER, "abt-w2a-PULIH-HAPUS-BARU.sql");
-    expect(pulih).toContain("DELETE FROM abt_variabel WHERE no_var BETWEEN 4780 AND 4849;");
+    expect(pulih).toContain("DELETE FROM abt_variabel WHERE no_var BETWEEN 4750 AND 4849;");
     expect(pulih.match(/DELETE/g)!.length).toBe(1);
   });
 
@@ -183,15 +183,15 @@ describe("B. paket di MariaDB lokal", () => {
     if (ada) hasil = jalankan("uji_paket_lokal.cjs");
   }, 1_000_000);
 
-  it("PASANG -> PERIKSA 'SEMUA COCOK' di 71 baris; PASANG kedua ditolak tanpa menambah baris", (c) => {
+  it("PASANG -> PERIKSA 'SEMUA COCOK' di 75 baris; PASANG kedua ditolak tanpa menambah baris", (c) => {
     if (!ada) return c.skip();
     expect(hasil.prasyarat).toBe(true);
-    expect(hasil.sesudahPasang).toBe("70");
+    expect(hasil.sesudahPasang).toBe("74");
     expect(hasil.periksa).toBe("SEMUA COCOK");
-    expect(hasil.barisPeriksa).toBe(71);
+    expect(hasil.barisPeriksa).toBe(75);
     expect(hasil.barisTidakCocok).toEqual([]);
     expect(hasil.pasangLagiGalat).toMatch(/Subquery returns more than 1 row/);
-    expect(hasil.sesudahPasangLagi).toBe("70");
+    expect(hasil.sesudahPasangLagi).toBe("74");
   });
 
   it("PASANG ditolak bila variabel rujukan lama tidak lengkap; PULIH mengembalikan jumlah semula tanpa menyentuh baris lain", (c) => {

@@ -1,13 +1,13 @@
 # Paket ABT "w2a-kebendaan" - harta bersama, kewarisan, wasiat, hibah, wakaf, ekonomi syariah (agen W2a, 21 Okt 2026)
 
-Menambah **70 variabel ABT baru (4780-4849)** dan menambal **35 blangko putusan Derry** (folder `4a Harta Bersama`, `4b Kewarisan`, `4c Wasiat`, `4d Hibah`, `4e Wakaf`, `10 Ekonomi Syariah`, `10a Ekonomi Syariah Biasa`).
+Menambah **74 variabel ABT baru (4750-4849; 4750-4779 isian katalog saksi, 4780-4849 putusan)** dan menambal **35 blangko putusan Derry** (folder `4a Harta Bersama`, `4b Kewarisan`, `4c Wasiat`, `4d Hibah`, `4e Wakaf`, `10 Ekonomi Syariah`, `10a Ekonomi Syariah Biasa`).
 HANYA blangko dan variabel Derry; tanpa kata aplikasi di ABT. **Diuji di MariaDB lokal dan ABT lokal (PHP 5.6 asli); BELUM dipasang di server** - dipasang sesi utama.
 Isi dan alasan tiap perubahan: `docs/gelombang2/AUDIT-PUTUSAN-W2a.md`. Rujukan hukum baru: `docs/gelombang2/PERIKSA-PASAL-W2a.md`. Angka ukur: `docs/gelombang2/UKURAN-W2a.json`.
 
 ## Prasyarat
 
 - Paket gelombang 1 sudah terpasang (U6 4600-4629 dst.); paket ini membaca variabel lama 46, 47, 53, 218, 1025, 1246, 1509, 2026, 7037, 8554 dan menyalin kueri 9768/9769/9770 (ahli waris) ke dalam 4820-4822 (`salinan-server-21okt/`).
-- Jatah **4780-4849 kosong** di `aps_badilag.abt_variabel` (PASANG menolak sendiri bila ada yang terpakai). Jatah 4750-4779 dipakai katalog saksi (K1/K2) bila membutuhkan variabel isian.
+- Jatah **4750-4849 kosong** di `aps_badilag.abt_variabel` (PASANG menolak sendiri bila ada yang terpakai). Jatah 4750-4779 dipakai katalog saksi (K2: 4765-4768 rincian pembiayaan, angsuran, surat peringatan, agunan).
 - Blangko Derry di server tidak berubah sejak diukur 21 Okt 2026: skrip pasang membandingkan md5 SEMUA 35 berkas lebih dulu dan **tidak mengubah apa pun** bila ada satu yang berbeda.
 - Server tidak sedang dipakai mencetak/menyunting blangko kebendaan.
 
@@ -15,9 +15,9 @@ Isi dan alasan tiap perubahan: `docs/gelombang2/AUDIT-PUTUSAN-W2a.md`. Rujukan h
 
 | berkas | isi |
 |---|---|
-| `paket-satker/abt-w2a-PASANG.sql` | prasyarat (jatah kosong, rujukan lama ada; gagal keras bila tidak) + 70 INSERT dalam satu transaksi. Tidak ada UPDATE/DELETE: variabel lama tidak disentuh. |
+| `paket-satker/abt-w2a-PASANG.sql` | prasyarat (jatah kosong, rujukan lama ada; gagal keras bila tidak) + 74 INSERT dalam satu transaksi. Tidak ada UPDATE/DELETE: variabel lama tidak disentuh. |
 | `paket-satker/abt-w2a-PERIKSA.sql` | panjang + MD5 (kueri dan nama) tiap baris; baris terakhir `SEMUA COCOK` |
-| `paket-satker/abt-w2a-PULIH-HAPUS-BARU.sql` | `DELETE ... BETWEEN 4780 AND 4849` |
+| `paket-satker/abt-w2a-PULIH-HAPUS-BARU.sql` | `DELETE ... BETWEEN 4750 AND 4849` |
 | `paket-satker/rtf/NN.rtf` + `DAFTAR-BLANGKO.tsv` | 35 blangko hasil tambal; `DAFTAR-BLANGKO.tsv` = NN, folder, berkas, md5 sebelum (diukur 21 Okt), md5 sesudah |
 | `paket-satker/pasang-satker.sh`, `pulih-satker.sh`, `MD5SUMS.txt` | jalankan DI SERVER dari folder paket (cek berkas -> cek md5 blangko -> cek jatah -> cadang -> pasang -> periksa -> ganti RTF -> cek md5; gagal = pulih sendiri) |
 | `asli-server-21okt/` | 99 RTF putusan asli server yang diukur 21 Okt (acuan tambal dan uji) |
@@ -29,6 +29,7 @@ Isi dan alasan tiap perubahan: `docs/gelombang2/AUDIT-PUTUSAN-W2a.md`. Rujukan h
 
 | nomor | isi |
 |---|---|
+| 4765-4768 | isian katalog saksi ekonomi syariah (rincian pembiayaan, angsuran, surat peringatan, agunan; dari K2) |
 | 4780-4787 | isian harta bersama: keputusan penetapan, objek tidak terbukti, bagian, sita, uang paksa, serta merta, utang bersama, sikap Tergugat per objek |
 | 4788-4791 | pemicu dari petitum SIPP: sita, bagian bukan seperdua, uang paksa, serta merta |
 | 4792-4814 | harta bersama: pertimbangan (objek tidak terbukti, sita, bagian, utang, Turut Tergugat, uang paksa, serta merta, gabungan), amar bernomor verstek/kontradiktoir/konvensi, nomor butir biaya, jawab-menjawab dan beban pembuktian per objek, analisis bukti P/T |
@@ -48,9 +49,9 @@ scp paket-satker/rtf/*.rtf aleta:/root/abt-w2a-20261021/rtf/
 ssh aleta 'cd /root/abt-w2a-20261021 && md5sum -c MD5SUMS.txt | grep -v ": OK$"'    # keluaran harus kosong
 ssh aleta 'bash /root/abt-w2a-20261021/pasang-satker.sh'
 ```
-Keluaran benar: `CADANGAN: ...`, tabel PERIKSA `cocok = 1` di 71 baris, `SEMUA COCOK`, `SELESAI - paket w2a-kebendaan terpasang (35 blangko, 70 variabel)`.
+Keluaran benar: `CADANGAN: ...`, tabel PERIKSA `cocok = 1` di 75 baris, `SEMUA COCOK`, `SELESAI - paket w2a-kebendaan terpasang (35 blangko, 74 variabel)`.
 Bila skrip menolak karena md5 blangko satker sudah berbeda dari yang diukur (ada paket lain menyentuh folder ini): ambil RTF terbaru, ganti `asli-server-21okt/`, jalankan `python alat/bangun_paket.py` (tambalan berjangkar: bila jangkar tak ditemukan tepat sekali, pembangun berhenti dan tidak menulis apa pun), lalu pasang ulang.
-Pulih: `ssh aleta 'bash /root/abt-w2a-20261021/pulih-satker.sh'` (hapus 4780-4849 + kembalikan 35 RTF dari `cadangan/`, md5 diperiksa).
+Pulih: `ssh aleta 'bash /root/abt-w2a-20261021/pulih-satker.sh'` (hapus 4750-4849 + kembalikan 35 RTF dari `cadangan/`, md5 diperiksa).
 
 ## Yang harus disusul sesudah pasang
 

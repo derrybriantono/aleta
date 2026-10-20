@@ -1,4 +1,12 @@
 -- Periksa hasil pemasangan: tiap baris harus cocok = 1, dan baris terakhir "SEMUA COCOK".
+SELECT 4765 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4765) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4765 AND sql_query IS NULL AND MD5(nama) = '5fca33e483936017d84fe606b4606ba8' AND data_type = 'data_teks') AS cocok
+UNION ALL
+SELECT 4766 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4766) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4766 AND sql_query IS NULL AND MD5(nama) = '3de13f56b15dc63ab21f4732ae68a0c6' AND data_type = 'data_teks') AS cocok
+UNION ALL
+SELECT 4767 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4767) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4767 AND sql_query IS NULL AND MD5(nama) = 'a6eb22cea864d955226caf82642c33a7' AND data_type = 'data_teks') AS cocok
+UNION ALL
+SELECT 4768 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4768) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4768 AND sql_query IS NULL AND MD5(nama) = '33cdfc5dfcb0d9bc9e98a0a31218ad05' AND data_type = 'data_teks') AS cocok
+UNION ALL
 SELECT 4780 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4780) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4780 AND sql_query IS NULL AND MD5(nama) = 'c528ffb474eff0606245e9819b0158f4' AND data_type = 'data_teks') AS cocok
 UNION ALL
 SELECT 4781 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4781) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4781 AND sql_query IS NULL AND MD5(nama) = '86e488ec6a58ed1975da4a8566793d45' AND data_type = 'data_teks') AS cocok
@@ -139,8 +147,16 @@ SELECT 4848 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4849 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4849) AS panjang, 608 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4849 AND MD5(sql_query) = 'b02103ba1e5ffb0822d3a356fc3e2c96' AND MD5(nama) = 'f24eb02849b93da1d85bddf45639a8f8' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 0 AS no_var, NULL AS panjang, NULL AS panjang_harap, IF((SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN 4780 AND 4849) = 70, 1, 0) AS cocok;
-SELECT IF(SUM(c.cocok) = 71, 'SEMUA COCOK', 'ADA YANG TIDAK COCOK') AS hasil FROM (
+SELECT 0 AS no_var, NULL AS panjang, NULL AS panjang_harap, IF((SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN 4750 AND 4849) = 74, 1, 0) AS cocok;
+SELECT IF(SUM(c.cocok) = 75, 'SEMUA COCOK', 'ADA YANG TIDAK COCOK') AS hasil FROM (
+SELECT 4765 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4765) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4765 AND sql_query IS NULL AND MD5(nama) = '5fca33e483936017d84fe606b4606ba8' AND data_type = 'data_teks') AS cocok
+UNION ALL
+SELECT 4766 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4766) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4766 AND sql_query IS NULL AND MD5(nama) = '3de13f56b15dc63ab21f4732ae68a0c6' AND data_type = 'data_teks') AS cocok
+UNION ALL
+SELECT 4767 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4767) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4767 AND sql_query IS NULL AND MD5(nama) = 'a6eb22cea864d955226caf82642c33a7' AND data_type = 'data_teks') AS cocok
+UNION ALL
+SELECT 4768 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4768) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4768 AND sql_query IS NULL AND MD5(nama) = '33cdfc5dfcb0d9bc9e98a0a31218ad05' AND data_type = 'data_teks') AS cocok
+UNION ALL
 SELECT 4780 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4780) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4780 AND sql_query IS NULL AND MD5(nama) = 'c528ffb474eff0606245e9819b0158f4' AND data_type = 'data_teks') AS cocok
 UNION ALL
 SELECT 4781 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4781) AS panjang, NULL AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4781 AND sql_query IS NULL AND MD5(nama) = '86e488ec6a58ed1975da4a8566793d45' AND data_type = 'data_teks') AS cocok
@@ -281,5 +297,5 @@ SELECT 4848 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4849 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4849) AS panjang, 608 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4849 AND MD5(sql_query) = 'b02103ba1e5ffb0822d3a356fc3e2c96' AND MD5(nama) = 'f24eb02849b93da1d85bddf45639a8f8' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 0 AS no_var, NULL AS panjang, NULL AS panjang_harap, IF((SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN 4780 AND 4849) = 70, 1, 0) AS cocok
+SELECT 0 AS no_var, NULL AS panjang, NULL AS panjang_harap, IF((SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN 4750 AND 4849) = 74, 1, 0) AS cocok
 ) c;

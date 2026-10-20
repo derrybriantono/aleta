@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# PULIH paket ABT "w2a-kebendaan" di SATKER: hapus variabel 4780-4849 dan kembalikan semua blangko dari cadangan
+# PULIH paket ABT "w2a-kebendaan" di SATKER: hapus variabel 4750-4849 dan kembalikan semua blangko dari cadangan
 # yang dibuat pasang-satker.sh.
 # =============================================================================
 set -u

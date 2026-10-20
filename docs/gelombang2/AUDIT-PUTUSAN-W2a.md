@@ -2,7 +2,7 @@
 
 Lingkup: blangko Derry (satker PA Donggala, folder `4a Harta Bersama`, `4b Kewarisan`, `4c Wasiat`, `4d Hibah`, `4e Wakaf`, `10 Ekonomi Syariah` (gugatan sederhana), `10a Ekonomi Syariah Biasa`, `97 Sita`).
 Dasar audit: RTF **terbaru dari server** diambil 20 Okt 2026 22.4x (99 berkas putusan; salinan di `abt-paket/w2a-kebendaan/asli-server-21okt/`, md5 tiap berkas ada di `paket-satker/DAFTAR-BLANGKO.tsv`).
-Variabel ABT baru: 4780-4849 (70 buah; jatah W2a 4750-4849, 4750-4779 untuk variabel katalog saksi). Paket: `abt-paket/w2a-kebendaan/` (cara pasang: `PASANG.md`).
+Variabel ABT baru: 4750-4849 (74 buah; 4750-4779 isian katalog saksi, 4780-4849 putusan). Paket: `abt-paket/w2a-kebendaan/` (cara pasang: `PASANG.md`).
 
 Susunan baku yang dipakai sebagai tolok ukur: kepala dan identitas; duduk perkara (posita ringkas, petitum, upaya damai/mediasi, jawaban/replik/duplik, bukti surat, saksi dari BAS, kesimpulan); pertimbangan (kewenangan absolut/relatif, legal standing, mediasi, pokok sengketa, beban dan analisis bukti, fakta hukum, pertimbangan per butir petitum, biaya); amar per butir petitum.
 

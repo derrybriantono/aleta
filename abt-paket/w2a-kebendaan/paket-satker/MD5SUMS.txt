@@ -1,9 +1,9 @@
 f49d19266ee430ecc9a59d52550aab1f  DAFTAR-BLANGKO.tsv
-62fcd4cdb224c56d23e81acfdbd24855  abt-w2a-PASANG.sql
-d390727d1db02a73f8d556cb8a3f96d8  abt-w2a-PERIKSA.sql
-9d48c3917eb7364cc58754d77e9b0a4d  abt-w2a-PULIH-HAPUS-BARU.sql
-ac2777531b31714ee86bb1350a89b619  pasang-satker.sh
-1f10b1e1380e49454af2166db0be0c50  pulih-satker.sh
+f01476fe34259cc456a98299254da72e  abt-w2a-PASANG.sql
+5aacb636bb6bddc8ddf0f2a80c7221d5  abt-w2a-PERIKSA.sql
+7f1e6b823f056fa733710f3c9a20070b  abt-w2a-PULIH-HAPUS-BARU.sql
+2e0a197cfd366b4a9ac8aab227244bd7  pasang-satker.sh
+a3f276e017d52c2703272a003ec40d40  pulih-satker.sh
 7b5472563bec7cfa2a73cfc152b4f082  rtf/01.rtf
 f2e09c8a140eaf1e837ea8166e86a7b7  rtf/02.rtf
 2201f30d4f4a213f2d1a1badd944878e  rtf/03.rtf

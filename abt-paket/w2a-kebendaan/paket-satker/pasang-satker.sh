@@ -32,8 +32,8 @@ while IFS="$TAB" read -r NN FOLDER BERKAS PRA BARU; do
 done < DAFTAR-BLANGKO.tsv
 [ "$SALAH" = "0" ] || gagal "ada blangko satker yang bukan versi terukur (atau berkas paket rusak) - TIDAK ada yang diubah (bangun ulang tambalan: lihat PASANG.md)"
 
-N=$($MY -N -e "SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN 4780 AND 4849")
-[ "$N" = "0" ] || gagal "jatah 4780-4849 sudah terpakai ($N baris) - TIDAK ada yang diubah"
+N=$($MY -N -e "SELECT COUNT(*) FROM abt_variabel WHERE no_var BETWEEN 4750 AND 4849")
+[ "$N" = "0" ] || gagal "jatah 4750-4849 sudah terpakai ($N baris) - TIDAK ada yang diubah"
 
 # --- 2. CADANG ----------------------------------------------------------------
 mkdir -p "$CAD/rtf" || gagal "tidak bisa membuat $CAD"
@@ -72,4 +72,4 @@ if [ "$SALAH" != "0" ]; then
   bash "$SINI/pulih-satker.sh"
   gagal "dipulihkan"
 fi
-echo "SELESAI - paket w2a-kebendaan terpasang ($(grep -c . DAFTAR-BLANGKO.tsv) blangko, 70 variabel). Cadangan untuk pulih: $CAD"
+echo "SELESAI - paket w2a-kebendaan terpasang ($(grep -c . DAFTAR-BLANGKO.tsv) blangko, 74 variabel). Cadangan untuk pulih: $CAD"
