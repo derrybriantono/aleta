@@ -61,6 +61,7 @@ const hasil = {
   batas: [
     "Hanya 6 perkara pengangkatan anak dan 1 penetapan kematian (permohonan umum); mafqud TIDAK ADA perkara nyata (diuji dengan fixture di uji w2b-lain-isian-21okt).",
     "Kode 4910-4939 baru: belum ada isian petugas pembanding di ABT server (0 baris) maupun lokal; ketepatan di sini = kecocokan dengan pelabelan manual, bukan dengan isian hakim.",
+    "Pola pembaca disusun atas perkara yang sama dengan yang diukur (tidak ada himpunan uji terpisah), sehingga angka 100% ini batas atas, bukan jaminan untuk perkara baru.",
     "Semua usulan keyakinan ragu (saran). Naik tingkat hanya setelah ada pembanding isian petugas >= 20 perkara.",
   ],
   jumlahPerkara: data.length,

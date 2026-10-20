@@ -19,16 +19,16 @@ DASAR_BARU = [
          status='perlu-verifikasi', sumber='dikutip dari pengetahuan hukum; belum dicocokkan dengan naskah resmi (naskah UU 35/2014 di peraturan.bpk.go.id/Download/28052 perlu dibaca untuk Pasal 40)'),
     dict(id='dh-aa-khi-209', rujukan='Pasal 209 Kompilasi Hukum Islam',
          uraian='anak angkat yang tidak menerima wasiat diberi wasiat wajibah oleh orang tua angkatnya, dan sebaliknya; anak angkat bukan ahli waris orang tua angkat',
-         status='perlu-verifikasi', sumber='dikutip dari pengetahuan hukum; belum dicocokkan dengan naskah KHI terbitan Kemenag'),
+         status='perlu-verifikasi', sumber='bunyi ayat (2) cocok dengan beberapa jurnal hukum (sumber sekunder, hasil pencarian W2b-C 21 Okt 2026); naskah KHI (Inpres 1/1991) terbitan Kemenag belum dibaca'),
     dict(id='dh-aa-khi-wali-nikah', rujukan='Ketentuan Kompilasi Hukum Islam tentang wali nikah (Pasal 19 sampai Pasal 23)',
          uraian='wali nikah anak perempuan adalah wali nasab menurut urutan kekerabatan darah, sehingga pengangkatan anak tidak memindahkan kedudukan wali nikah kepada orang tua angkat',
          status='perlu-verifikasi', sumber='dikutip dari pengetahuan hukum; belum dicocokkan dengan naskah KHI terbitan Kemenag'),
-    dict(id='dh-aa-pp54-tunggal', rujukan='Ketentuan PP 54/2007 tentang pengangkatan anak oleh orang tua tunggal',
-         uraian='pengangkatan anak oleh orang yang tidak terikat perkawinan (orang tua tunggal) dimungkinkan dengan syarat yang diatur peraturan pemerintah',
-         status='perlu-verifikasi', sumber='dikutip dari pengetahuan hukum tanpa nomor pasal; naskah PP 54/2007 perlu dibaca untuk menentukan pasalnya'),
-    dict(id='dh-aa-pp54-pantau', rujukan='Ketentuan PP 54/2007 tentang bimbingan dan pengawasan pengangkatan anak oleh instansi sosial',
-         uraian='instansi sosial melakukan bimbingan, pelaporan, dan pengawasan terhadap pelaksanaan pengangkatan anak, termasuk pelaporan setelah penetapan pengadilan',
-         status='perlu-verifikasi', sumber='dikutip dari pengetahuan hukum tanpa nomor pasal; naskah PP 54/2007 perlu dibaca'),
+    dict(id='dh-aa-pp54-tunggal', rujukan='Pasal 16 ayat (1) dan ayat (2) PP 54/2007 tentang Pelaksanaan Pengangkatan Anak',
+         uraian='pengangkatan anak oleh orang tua tunggal hanya dapat dilakukan oleh Warga Negara Indonesia setelah mendapat izin dari Menteri; pemberian izin dapat didelegasikan kepada kepala instansi sosial di provinsi',
+         status='terverifikasi', sumber=SUMBER_PP54.replace('18 Okt', '21 Okt') + '; dibaca lagi W2b-C 21 Okt 2026 (Pasal 16 ayat (1)-(2))'),
+    dict(id='dh-aa-pp54-pantau', rujukan='Pasal 30 ayat (2) huruf b, Pasal 36, dan Pasal 39 PP 54/2007',
+         uraian='pendampingan memantau perkembangan anak dalam pengasuhan orang tua angkat; pengawasan oleh Pemerintah (Departemen Sosial); pekerja sosial menyampaikan laporan sosial tentang kelayakan orang tua angkat dan perkembangan anak kepada Menteri atau kepala instansi sosial setempat',
+         status='terverifikasi', sumber='jdih.kemenkeu.go.id/api/download/fulltext/2007/54TAHUN2007PP.htm (dibaca W2b-C 21 Okt 2026); teks pasal tidak menyebut waktu pelaporan sesudah penetapan pengadilan'),
 ]
 
 KEADAAN_BARU = {

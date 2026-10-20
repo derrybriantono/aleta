@@ -126,6 +126,14 @@ export const ISIAN_MANUAL: Record<string, string> = {
   "4311": "Nama laki-laki yang diakui sebagai ayah biologis anak tidak tertulis di posita; isi dari keterangan Pemohon dan saksi (blangko Anak Luar Perkawinan).",
   "4314": "Hubungan perdata anak luar perkawinan adalah pilihan majelis; pilih salah satu pada blangko Anak Luar Perkawinan.",
   "4315": "Status anak yang lahir kurang dari enam bulan setelah akad adalah pilihan majelis; pilih salah satu pada blangko Anak Lahir Kurang dari Enam Bulan.",
+  // W2b-C 21 Okt: Permohonan Umum (penetapan dikabulkan atau ditolak) - penilaian majelis, tidak diputus mesin
+  "4930": "Hal yang dimohonkan ditetapkan dibaca dari petitum bila jenis permohonannya penetapan kematian; selain itu isi dari permohonan.",
+  "4932": "Bukti surat diajukan di persidangan dan dicatat panitera; tidak ada di SIPP.",
+  "4935": "Dasar kewenangan Pengadilan Agama atas permohonan ini adalah penilaian majelis; diisi hakim.",
+  "4936": "Kedudukan dan kepentingan hukum Pemohon adalah penilaian majelis atas bukti dan keterangan saksi; diisi hakim.",
+  "4937": "Fakta yang terbukti diputus majelis dari bukti surat dan keterangan saksi; diisi hakim.",
+  "4938": "Amar pokok (apa yang ditetapkan) adalah keputusan majelis; diisi hakim.",
+  "4939": "Alasan penolakan atau tidak dapat diterima adalah penilaian majelis; diisi hakim bila permohonan ditolak.",
 };
 
 export const ISIAN_OPSIONAL: Record<string, string> = {
@@ -141,4 +149,18 @@ export const ISIAN_OPSIONAL: Record<string, string> = {
   "4102": "Keputusan nafkah iddah (bila ada tuntutan atau diberikan ex officio)",
   "4103": "Keputusan mut'ah (bila ada tuntutan atau diberikan ex officio)",
   "4109": "Waktu pembayaran akibat cerai (bila ada nafkah iddah, mut'ah atau nafkah lampau)",
+  // W2b-C 21 Okt: pengangkatan anak, mafqud, permohonan umum - kalimat bersyarat: kosong = bagian itu dilewati
+  "4910": "Sejak kapan anak diasuh Pemohon (lanjutan \"sejak ...\", mis. lahir atau tahun 2017)",
+  "4911": "Alasan orang tua kandung menyerahkan anak",
+  "4912": "Riwayat perkawinan dan anak kandung Pemohon",
+  "4913": "Izin atau rekomendasi instansi sosial (nomor dan tanggal)",
+  "4914": "Penghasilan Pemohon",
+  "4915": "Tujuan pengangkatan anak menurut Pemohon",
+  "4920": "Umur, pekerjaan, dan alamat terakhir orang yang hilang (mafqud)",
+  "4921": "Keluarga yang ditinggalkan orang yang hilang (mafqud)",
+  "4922": "Harta yang ditinggalkan orang yang hilang dan siapa yang menguasainya (mafqud)",
+  "4923": "Sebab dan tujuan kepergian orang yang hilang (mafqud)",
+  "4931": "Waktu dan tempat peristiwa yang dimohonkan penetapan",
+  "4933": "Keperluan dan instansi tujuan penetapan",
+  "4934": "Sebab meninggal dan tempat dimakamkan (penetapan kematian)",
 };

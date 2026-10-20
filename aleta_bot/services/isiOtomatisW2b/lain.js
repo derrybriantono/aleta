@@ -84,7 +84,7 @@ function alasanSerah(daftar) {
     if (!/orang\s*tua\s+kandung/i.test(k) || !/\b(?:menyerahkan|memberikan|menitipkan|penyerahan)\b/i.test(k)) continue;
     const m = /\b(?:dikarenakan|disebabkan|karena|dengan\s+pertimbangan)\s+(.+?)(?:\s*\((?:Surat|Bukti)[^)]*\)|$)/i.exec(k);
     if (m && bersih(m[1]).length > 8) {
-      const isi = bersih(m[1], 300).replace(/^(?:dengan\s+pertimbangan|karena)\s+/i, "").replace(/dan\s+dikarenakan/gi, "dan");
+      const isi = bersih(m[1], 300).replace(/^(?:dengan\s+pertimbangan|karena)\s+/i, "").replace(/\bdan\s+dikarenakan\b/gi, "dan");
       return B.fakta(isi, k, "ragu", "w2b-lain-4911-alasan");
     }
   }
@@ -139,7 +139,7 @@ function penghasilan(t) {
   const hasil = [];
   for (const m of t.matchAll(/penghasilan(?:nya)?\s*(?:\([^)]{0,60}\)\s*)?(?:sebesar|sekitar|rata-rata|kurang\s+lebih|sejumlah)?\s*(Rp\.?\s*[0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2}|,-)?)/gi)) {
     const sesudah = t.slice(m.index + m[0].length, m.index + m[0].length + 80);
-    const per = /(?:^|\s|\))(?:per\s*|setiap\s+|tiap\s+|\/\s*)(bulan|tahun)/i.exec(sesudah);
+    const per = /(?:^|\s|\))(?:per\s*|setiap\s+|tiap\s+|\/\s*)(bulan|tahun)\b/i.exec(sesudah);
     const rp = m[1].replace(/Rp\.?\s*/i, "Rp").replace(/[.,]$/, "");
     hasil.push({ nilai: `${rp}${per ? ` per ${per[1].toLowerCase()}` : ""}`, sumber: m[0] });
     if (hasil.length >= 2) break;
