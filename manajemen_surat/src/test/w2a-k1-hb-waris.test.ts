@@ -418,7 +418,8 @@ describe("B. pendeteksi gugatan harta bersama atas bunyi nyata (nama dan nomor d
   it("saran keadaan: jenis objek, penguasa campur, pembagian seperdua; sita hanya DIMINTA bukan 'ada'; semuanya ragu", () => {
     const s = K.saranKeadaan("hb", butir, PETITUM_HB);
     expect(kunci(s, "jenisObjek").nilai).toEqual(expect.arrayContaining(["tanah-bangunan", "kendaraan"]));
-    expect(kunci(s, "penguasa").nilai).toBe("campur");
+    expect(kunci(s, "penguasa")).toBeUndefined();
+    expect(kunci(s, "penguasaCampur").nilai).toBe("lawan dan pengaju");
     expect(kunci(s, "pembagianDiminta").nilai).toBe("seperdua");
     expect(kunci(s, "sita")).toBeUndefined();
     expect(kunci(s, "sitaDiminta").nilai).toBe("ya");
@@ -533,6 +534,59 @@ describe("B2. pendeteksi gugatan kewarisan atas bunyi nyata (nama diganti)", () 
   it("jenis lain tidak terpengaruh: cerai dan penetapan ahli waris tetap memakai pola masing-masing", () => {
     expect(Posita.positaTambahan(POSITA_WR, "paw", PETITUM_WR).some((x: any) => x.kunci === "ahliWaris")).toBe(false);
     expect(K.saranKeadaan("cg", [], "")).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+describe("B3. saran keadaan selalu memakai nilai yang sah di katalog (tidak ada nilai karangan)", () => {
+  const sah = (kat: any, saran: any[]) => {
+    let dicek = 0;
+    for (const x of saran) {
+      const d = kat.keadaan[x.kunci];
+      if (!d) continue; // kunci keterangan (sitaDiminta, penguasaCampur, jumlahObjek): bukan kunci keadaan
+      for (const n of Array.isArray(x.nilai) ? x.nilai : [x.nilai]) {
+        expect(d.nilai, `${x.kunci}=${n}`).toContain(n);
+        dicek += 1;
+      }
+    }
+    return dicek;
+  };
+
+  it("harta bersama: semua pemicu sekaligus", () => {
+    const posita = Posita.butirPosita(
+      [
+        "Penggugat telah menikah lagi dengan istri kedua dan Tergugat meninggal dunia pada tahun lalu",
+        "Penggugat dan Tergugat membuat perjanjian perkawinan pisah harta pada saat menikah",
+        "Sertifikat tanah itu menjadi agunan kredit di bank dan penetapan sita jaminan sudah dijatuhkan",
+        "Rumah kos itu disewakan dengan uang sewa setiap bulan dan nilai pasar sekitar Rp. 250.000.000",
+        "Para pihak telah bersepakat bermusyawarah soal pembagian harta secara kekeluargaan",
+        "bagian Penggugat 2/3 dari harta bersama",
+      ].join("\n")
+    );
+    const petitum = ["Menetapkan harta bersama berupa:", "1. Sebidang tanah dan rumah SHM No. 1", "2. Satu unit mobil", "3. Tabungan di bank", "4. Perhiasan emas", "5. Kebun kelapa", "6. Usaha warung"].join("\n");
+    const s = K.saranKeadaan("hb", posita, petitum);
+    expect(sah(muat(FOLDER, "harta-bersama"), s)).toBeGreaterThan(10);
+    expect(s.find((x: any) => x.kunci === "pihakMeninggal").nilai).toBe("lawan");
+    expect(s.find((x: any) => x.kunci === "pembagianDiminta").nilai).toBe("tidak-sama");
+    expect(s.find((x: any) => x.kunci === "sita").nilai).toBe("ada");
+    // kunci keadaan yang dipakai pendeteksi memang ada di katalog
+    for (const x of s) if (!["sitaDiminta", "penguasaCampur"].includes(x.kunci)) expect(Object.keys(muat(FOLDER, "harta-bersama").keadaan), x.kunci).toContain(x.kunci);
+  });
+
+  it("kewarisan: semua pemicu sekaligus", () => {
+    const posita = Posita.butirPosita(
+      [
+        "Almarhum meninggalkan istri yang masih hidup dan anak kandung serta saudara kandung, ayah dan ibu kandung sudah meninggal lebih dahulu",
+        "Ahli waris pengganti dari Almh. Ema adalah cucu pewaris yang masih di bawah umur",
+        "Almarhum memiliki anak angkat, istri kedua, dan berwasiat serta menghibahkan tanah semasa hidup",
+        "Pewaris meninggalkan hutang pewaris dan sebagian ahli waris beragama Kristen",
+        "Harta bersama yang diperoleh selama perkawinan dikuasai oleh Tergugat",
+        "Tanah, kebun, mobil, tabungan dan perhiasan emas serta warung usaha",
+      ].join("\n")
+    );
+    const s = K.saranKeadaan("waris", posita, "Meletakkan sita jaminan atas harta peninggalan");
+    expect(sah(muat(FOLDER, "kewarisan"), s)).toBeGreaterThan(12);
+    for (const x of s) if (!["sitaDiminta"].includes(x.kunci)) expect(Object.keys(muat(FOLDER, "kewarisan").keadaan), x.kunci).toContain(x.kunci);
   });
 });
 

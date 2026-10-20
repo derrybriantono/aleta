@@ -271,7 +271,8 @@ function saranKeadaanHb(posita, petitum) {
   if (jenis.length) tambah("jenisObjek", jenis.map((x) => x[0]), "ragu", daftar.length ? "daftar objek gugatan" : "petitum gugatan", "Jenis objek dari kata benda pada daftar objek gugatan; hanya saran, periksa.");
   const pk = penguasaDari(teks);
   if (pk === "lawan" || pk === "pengaju") tambah("penguasa", pk, "ragu", "kalimat gugatan", "Dari kalimat 'dikuasai/dalam penguasaan ...' pada gugatan.");
-  if (pk === "campur") tambah("penguasa", "campur", "ragu", "kalimat gugatan", "Gugatan menyebut sebagian objek dikuasai Penggugat dan sebagian Tergugat: pilih sesuai objek yang diterangkan saksi.");
+  // bukan kunci keadaan katalog (penguasa hanya satu nilai): keterangan untuk petugas agar memilih sesuai objek yang diterangkan saksi
+  if (pk === "campur") tambah("penguasaCampur", "lawan dan pengaju", "ragu", "kalimat gugatan", "Gugatan menyebut sebagian objek dikuasai Penggugat dan sebagian Tergugat: pilih keadaan penguasa sesuai objek yang diterangkan saksi.");
   if (/\bsita\s+(?:jaminan|marital|konservatoir|conservatoir)|conservatoir\s+beslag|\bsita\b[^.;]{0,30}\bharta\s+bersama/i.test(teks)) {
     const sudah = /\b(?:telah|sudah)\s+(?:dilakukan|diletakkan)\s+sita|penetapan\s+sita|berita\s+acara\s+(?:peletakan\s+)?sita/i.test(teks);
     if (sudah) tambah("sita", "ada", "ragu", "petitum/posita", "Gugatan menyebut sita sudah diletakkan; periksa penetapan sita.");
@@ -287,7 +288,8 @@ function saranKeadaanHb(posita, petitum) {
   if (/\b(?:kredit|angsur|cicil)\w*\b/i.test(teks)) tambah("sumberDana", ["kredit-bank"], "ragu", "kalimat gugatan", "Gugatan menyebut kredit atau angsuran.");
   if (/\bsertifikat|\bSHM\b|\bhak\s+milik\b/i.test(teks)) tambah("statusTanah", "bersertifikat", "ragu", "kalimat gugatan", "Gugatan menyebut sertifikat.");
   else if (/\b(?:girik|segel|surat\s+keterangan\s+(?:tanah|kepala\s+desa)|kwitansi\s+pembelian|belum\s+bersertifikat)\b/i.test(teks)) tambah("statusTanah", "belum-bersertifikat", "ragu", "kalimat gugatan", "Gugatan menyebut surat tanah selain sertifikat.");
-  if (/\b(?:Tergugat|Penggugat)\s+(?:telah\s+)?(?:meninggal|wafat)\b/i.test(teks)) tambah("pihakMeninggal", "lawan_atau_pengaju", "ragu", "kalimat gugatan", "Gugatan menyebut salah satu pihak meninggal dunia: pilih siapa yang meninggal.");
+  const meninggal = /\b(Tergugat|Penggugat)\s+(?:telah\s+)?(?:meninggal|wafat)\b/i.exec(teks);
+  if (meninggal) tambah("pihakMeninggal", /^tergugat$/i.test(meninggal[1]) ? "lawan" : "pengaju", "ragu", "kalimat gugatan", "Gugatan menyebut salah satu pihak meninggal dunia; periksa siapa yang meninggal.");
   if (/\b(?:bersepakat|kesepakatan|musyawarah|kekeluargaan)\b[^.;]{0,80}\b(?:bagi|pembagian|harta)\b/i.test(teks)) tambah("kesepakatan", "ada", "ragu", "kalimat gugatan", "Gugatan menyebut upaya atau kesepakatan pembagian secara kekeluargaan.");
   return hasil;
 }
@@ -308,7 +310,7 @@ function saranKeadaanWaris(posita, petitum) {
   if (/\b(?:istri|isteri|suami|janda|duda)\s+(?:pewaris|almarhum|alm\.?)|\bmenikah\s+dengan\b|\bmeninggalkan\s+(?:seorang\s+)?(?:istri|isteri|suami)\b/i.test(teks)) tambah("statusPewaris", "menikah", "ragu", "kalimat gugatan", "Gugatan menyebut suami atau istri pewaris.");
   if (/\b(?:ayah|ibu|orang\s*tua)\b[^.;]{0,40}\b(?:telah\s+)?(?:meninggal|wafat)\s+(?:lebih\s+(?:dulu|dahulu)|terlebih\s+dahulu)/i.test(teks)) tambah("orangTua", "meninggal-lebih-dahulu", "ragu", "kalimat gugatan", "Gugatan menyebut orang tua pewaris meninggal lebih dahulu.");
   const jenis = [];
-  for (const [nama, re, yakin] of JENIS_OBJEK) if (["tanah-bangunan", "kendaraan", "kebun-ternak", "rekening-uang", "usaha", "perhiasan-perabot"].includes(nama) && ADA(re, teks)) jenis.push([nama === "kebun-ternak" ? "kebun-sawah" : nama, yakin]);
+  for (const [nama, re, yakin] of JENIS_OBJEK) if (["tanah-bangunan", "kendaraan", "kebun-ternak", "rekening-uang", "usaha", "perhiasan-perabot"].includes(nama) && ADA(re, teks)) jenis.push([nama === "kebun-ternak" ? "kebun-sawah" : nama === "rekening-uang" ? "uang-simpanan" : nama, yakin]);
   if (jenis.length) tambah("jenisHarta", jenis.map((x) => x[0]), "ragu", "kalimat gugatan", "Jenis harta dari kata benda pada gugatan; periksa daftar harta peninggalan.");
   if (/\b(?:harta\s+bersama|gono[- ]?gini|selama\s+(?:masa\s+)?(?:perkawinan|pernikahan)|dicari\s+bersama)\b/i.test(teks)) tambah("asalHarta", "bersama-pasangan", "ragu", "kalimat gugatan", "Gugatan menyebut harta yang diperoleh selama perkawinan pewaris.");
   else if (/\b(?:warisan|peninggalan)\s+(?:dari\s+)?(?:orang\s*tua|leluhur|kakek|nenek)\b|\bpeninggalan\s+orang\s*tua\b/i.test(teks)) tambah("asalHarta", "warisan-leluhur", "ragu", "kalimat gugatan", "Gugatan menyebut harta berasal dari warisan orang tua atau leluhur pewaris.");
