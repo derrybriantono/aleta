@@ -18,7 +18,7 @@ import variabel_def as VD  # noqa: E402
 import w3a_lib as L  # noqa: E402
 
 MYSQL = r'D:\satker asal\website pa bungku\xampp\mysql\bin\mysql.exe'
-JENIS_UKUR = {343: 3, 347: 40, 346: 40, 360: 25, 362: 25, 358: 10, 363: 8, 354: 10}
+JENIS_UKUR = {343: 3, 347: 40, 346: 30, 360: 25, 362: 20, 358: 10, 363: 8, 354: 10}
 
 
 def sql(db, kueri):
@@ -37,25 +37,35 @@ def main():
     semua = [p for v in sampel.values() for p in v]
     baris = []
     galat_total = 0
-    for x in sorted(VD.VAR, key=lambda v: v['no']):
-        if x['tipe'] != 'data_sql':
-            continue
-        kueri = re.sub(r'#(\d{4})#', '', x['sql']).strip().rstrip(';')
-        terisi, galat, contoh = 0, 0, ''
-        for pid in semua:
-            rc, out, err = sql('sipp_donggala', 'SELECT x.data FROM (%s) x LIMIT 1' % kueri.replace('#perkara_id#', pid))
-            if rc != 0:
-                galat += 1
-                contoh = contoh or err.strip()[:120]
+    vs = [x for x in sorted(VD.VAR, key=lambda v: v['no']) if x['tipe'] == 'data_sql']
+    stat = {x['no']: [0, 0, ''] for x in vs}   # terisi, galat, contoh
+    for pid in semua:
+        stmt = []
+        for x in vs:
+            kueri = re.sub(r'#(\d{4})#', '', x['sql']).strip().rstrip(';').replace('#perkara_id#', pid)
+            stmt.append("SELECT %d, REPLACE(IFNULL((SELECT x.data FROM (%s) x LIMIT 1), ''), CHAR(10), ' ');" % (x['no'], kueri))
+        r = subprocess.run([MYSQL, '-h', '127.0.0.1', '-u', 'root', '--default-character-set=latin1', '-N', '-B', '-f', 'sipp_donggala'], input=('\n').join(stmt).encode('latin1', 'replace'), capture_output=True)
+        keluar = r.stdout.decode('latin1', 'replace').split('\n')
+        ada = set()
+        for ln in keluar:
+            if not ln.strip():
                 continue
-            nilai = out.strip()
-            if nilai and nilai != 'NULL':
-                terisi += 1
-                if not contoh:
-                    contoh = nilai.replace('\n', ' ')[:110]
-        galat_total += galat
-        baris.append((x['no'], len(semua), terisi, galat, contoh))
-        print('%d: perkara %d, terisi %d, galat %d | %s' % (x['no'], len(semua), terisi, galat, contoh))
+            no, _, nilai = ln.partition('\t')
+            if no.strip().isdigit():
+                ada.add(int(no))
+                if nilai.strip() and nilai.strip() != 'NULL':
+                    stat[int(no)][0] += 1
+                    if not stat[int(no)][2]:
+                        stat[int(no)][2] = nilai.strip()[:110]
+        for x in vs:
+            if x['no'] not in ada:
+                stat[x['no']][1] += 1
+                stat[x['no']][2] = stat[x['no']][2] or r.stderr.decode('latin1', 'replace').strip()[:120]
+    for x in vs:
+        t, g, c = stat[x['no']]
+        galat_total += g
+        baris.append((x['no'], len(semua), t, g, c))
+        print('%d: perkara %d, terisi %d, galat %d | %s' % (x['no'], len(semua), t, g, c))
     print('TOTAL variabel data_sql: %d, galat: %d' % (len(baris), galat_total))
     if '--tulis' in sys.argv:
         tujuan = sys.argv[sys.argv.index('--tulis') + 1]
