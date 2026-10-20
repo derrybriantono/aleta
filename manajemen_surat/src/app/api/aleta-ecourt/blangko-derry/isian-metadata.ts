@@ -113,6 +113,13 @@ export const ISIAN_MANUAL: Record<string, string> = {
   "0365": "Tanggal KTP dibaca dari berkas KTP di e-Court; bila perkara tidak lewat e-Court atau berkasnya tidak terbaca, isi dari KTP.",
   "0366": "Tanggal KTP dibaca dari berkas KTP di e-Court; bila perkara tidak lewat e-Court atau berkasnya tidak terbaca, isi dari KTP.",
   "2222": "Tanggal KTP dibaca dari berkas KTP di e-Court; bila perkara tidak lewat e-Court atau berkasnya tidak terbaca, isi dari KTP.",
+  // U2 20 Okt: keputusan majelis atas tuntutan akibat perceraian - pilihan hakim, tidak diputus mesin (4102 dan 4103 ada di ISIAN_OPSIONAL: tidak boleh di kedua daftar)
+  "4100": "Keputusan atas tuntutan hak asuh anak adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak, tidak dapat diterima, atau ex officio.",
+  "4101": "Keputusan atas tuntutan nafkah anak adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak, tidak dapat diterima, atau ex officio.",
+  "4104": "Keputusan atas nafkah lampau (madliyah) adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak atau tidak dapat diterima.",
+  "4105": "Keputusan atas tuntutan harta bersama adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak atau tidak dapat diterima.",
+  "4107": "Dasar kemampuan pemberi nafkah adalah penilaian majelis atas pekerjaan dan penghasilan; kosong berarti pekerjaan di SIPP dipakai.",
+  "4108": "Pendapat anak mumayyiz didengar majelis di persidangan; tidak tercatat di SIPP.",
   // Fakta sidang ikrar
   "9220": "Keadaan Termohon saat ikrar (suci, haid, atau hamil) disampaikan Termohon di sidang ikrar; tidak tercatat di SIPP.",
   // Itsbat nikah dan asal usul anak (paket abt-u3-itsbat-aua, 20 Okt 2026): pilihan majelis yang wajib dipilih pada blangko varian itu
@@ -130,4 +137,8 @@ export const ISIAN_OPSIONAL: Record<string, string> = {
   "4302": "Keterangan hilangnya akta nikah (hanya bila dasar itsbat huruf b)",
   "4305": "Kedudukan hukum Pemohon menurut Pasal 7 ayat (4) KHI (kosong = suami atau istri)",
   "4310": "Nomor dan tanggal penetapan itsbat nikah orang tua anak (bila pernikahan siri sudah diitsbatkan)",
+  // U2 20 Okt: keputusan nafkah iddah dan mut'ah (ex officio) serta waktu pembayaran: ada pada sebagian kecil perkara
+  "4102": "Keputusan nafkah iddah (bila ada tuntutan atau diberikan ex officio)",
+  "4103": "Keputusan mut'ah (bila ada tuntutan atau diberikan ex officio)",
+  "4109": "Waktu pembayaran akibat cerai (bila ada nafkah iddah, mut'ah atau nafkah lampau)",
 };

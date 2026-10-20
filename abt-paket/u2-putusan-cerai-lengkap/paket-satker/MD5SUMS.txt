@@ -1,0 +1,9 @@
+1e1c848c6b6d69e58a71cde00870ac12  abt-u2-PASANG.sql
+6dea6a4d6dbd12ecef07b1a15f1307ed  abt-u2-PERIKSA.sql
+5adf4f705593d0805dd16c11426bbfe3  abt-u2-PULIH.sql
+2d6bedc566c41ad2df6188b8b4bd660a  pasang-satker.sh
+55e8e10b29c4490eaa6f7c608eddece1  pulih-satker.sh
+ae5a26e7d7024bdf6ef4cd585fd9d707  rtf-daftar-tambal.tsv
+900cbe6328e828879438c7bc41ab63df  rtf-ringkas.json
+17edba6c2151f9807626cd57d893997c  rtf-tambal.tsv
+54f0076801058beb7bd14ede805defe7  tambal-rtf.pl

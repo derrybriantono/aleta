@@ -1,0 +1,11 @@
+{
+  "sumber": "SIPP + ABT server (baca saja), putusan cerai kabul sejak 2023-01-01 yang punya isian alasan perceraian (8503)",
+  "putusanDenganIsianAlasan": 365,
+  "bukanF": 59,
+  "F": 306,
+  "F_lamaPisahMemenuhi": 294,
+  "F_lamaPisahKurangDari6Bulan": 4,
+  "F_lamaPisahKosong": 8,
+  "contohKurang": ["5 (lima) bulan", "2 (dua) bulan", "4 bulan", "3 tahuh 5 bulan (salah ketik; sesudah perbaikan aturan 'tah' tidak lagi ditandai)"],
+  "arti": "Paragraf SEMA 1/2022 muncul pada 100% putusan kabul huruf F; 96,1% memenuhi (294/306); 8 (2,6%) belum mengisi lama pisah sehingga muncul [PERIKSA]; 3 (1,0%) benar-benar di bawah 6 bulan dan muncul [PERIKSA] untuk menguraikan pengecualian atau memakai blangko Tolak."
+}
