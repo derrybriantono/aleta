@@ -24,4 +24,9 @@ def V(no, nama, tipe, sql=None, default=None):
         raise ValueError('nomor %d dipakai dua kali' % no)
     if 'aleta' in (nama + (sql or '') + (default or '')).lower():
         raise ValueError('variabel %d memuat kata aleta' % no)
+    for teks in (nama, sql or '', default or ''):
+        try:
+            teks.encode('cp1252')
+        except UnicodeEncodeError as e:
+            raise ValueError('variabel %d memuat karakter di luar cp1252 (basis ABT latin1): %r' % (no, teks[e.start:e.end]))
     VAR.append(dict(no=no, nama=nama, tipe=tipe, sql=sql, default=default))
