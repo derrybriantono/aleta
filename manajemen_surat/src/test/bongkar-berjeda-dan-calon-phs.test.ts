@@ -70,7 +70,8 @@ describe("bongkar: akun pejabat yang sama, jam SIPP seperti orang bekerja (butir
 
   it("ekstensi mengirim nama akun SIPP yang masuk pada kedua jalur bongkar", () => {
     const konten = baca("ekstensi-sipp/konten.js");
-    expect(konten).toContain("JSON.stringify({ jenis, perkaraId, olehUsername, akunSippMasuk: namaPenggunaSipp(), kering })");
-    expect(konten).toContain("JSON.stringify({ perkaraId, akunPerJenis, akunSippMasuk: namaPenggunaSipp(), kering })");
+    // 20 Okt (P1): bongkar sungguhan membawa perintahPengguna "bongkar"; uji kering tidak.
+    expect(konten).toContain('JSON.stringify({ jenis, perkaraId, olehUsername, akunSippMasuk: namaPenggunaSipp(), kering, perintahPengguna: kering ? "" : "bongkar" })');
+    expect(konten).toContain('JSON.stringify({ perkaraId, akunPerJenis, akunSippMasuk: namaPenggunaSipp(), kering, perintahPengguna: kering ? "" : "bongkar" })');
   });
 });

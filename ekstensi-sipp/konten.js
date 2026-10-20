@@ -4973,7 +4973,7 @@ async function kerjakanBorangInti(rencana) {
       return;
     }
     if (baru.langkah && baru.langkah[formulir] && baru.langkah[formulir].ada) {
-      kembalikan(`${formulir.toUpperCase()} ternyata sudah ada di SIPP selagi borang diisi - Simpan TIDAK ditekan, supaya tidak ganda. Muat ulang halaman.`);
+      kembalikan(`${formulir.toUpperCase()} ternyata sudah ada di SIPP selagi formulir diisi - Simpan TIDAK ditekan, supaya tidak ganda. Muat ulang halaman.`);
       return;
     }
   }

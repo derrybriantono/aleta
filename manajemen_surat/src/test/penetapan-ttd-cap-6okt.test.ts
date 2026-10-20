@@ -901,7 +901,8 @@ describe("E. konten.js blok 6 Okt: tanpa jalur tulis baru, otomatis hanya sesuda
   it("tetapkanLewatAleta memanggil edoc HANYA bila tidak kering; e6 hanya UI Baru dan hanya jenis yang ok", () => {
     const i = konten.indexOf("async function tetapkanLewatAleta(");
     const fungsi = konten.slice(i, konten.indexOf("\n}\n", i));
-    expect(fungsi).toMatch(/if \(!kering && typeof e6SesudahPenetapanTertulis === "function"\)/);
+    // 20 Okt: panel Penetapan Otomatis mengunggah e-Doc sendiri (opsi tanpaEdocOtomatis); jalur lain tetap otomatis sesudah tertulis.
+    expect(fungsi).toMatch(/if \(!kering && !opsi\.tanpaEdocOtomatis && typeof e6SesudahPenetapanTertulis === "function"\)/);
     expect(blok).toMatch(/if \(typeof s1Aktif !== "function" \|\| !s1Aktif\(\)\) return null;/);
     expect(blok).toMatch(/filter\(\(x\) => x && x\.ok === true\)/);
   });

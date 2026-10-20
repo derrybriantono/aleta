@@ -49,7 +49,7 @@ describe("penolakan bot sampai ke portal beserta status dan kodenya", () => {
   it("404 perkara tidak ada: error, status 404, kode perkara_tidak_ada", async () => {
     jawab(JSON.stringify({ ok: false, kode: "perkara_tidak_ada", alasan: "Perkara tidak ditemukan di SIPP." }), 404);
     const hasil = await getGatewayRiwayatPihak({ perkaraId: "123" });
-    expect(hasil).toEqual({ ok: false, error: "Perkara tidak ditemukan di SIPP.", status: 404, kode: "perkara_tidak_ada" });
+    expect(hasil).toEqual({ ok: false, error: "Perkara tidak ditemukan di SIPP.", status: 404, kode: "perkara_tidak_ada", badan: { ok: false, kode: "perkara_tidak_ada", alasan: "Perkara tidak ditemukan di SIPP." } });
   });
 
   it("400 masukan tidak sah dan 500 SIPP error membawa kodenya masing-masing", async () => {
