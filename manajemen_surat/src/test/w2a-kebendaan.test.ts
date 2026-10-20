@@ -383,7 +383,8 @@ describe("D. pengisi isiOtomatisW2a (kewarisan dan harta bersama)", () => {
     const anak = u.find((x: any) => x.kode === "9702");
     expect(anak.nilai).toContain("Udin bin Abide");
     const bagian = u.find((x: any) => x.kode === "8719");
-    expect(bagian.nilai).toMatch(/2\/9|1\/9|2\/7/);
+    expect(bagian.nilai).toContain("2/5"); // dua anak laki-laki 2/5 masing-masing, satu anak perempuan 1/5 (Pasal 176 KHI, dua banding satu)
+    expect(bagian.nilai).toContain("1/5");
     const tanpa = W.usulanDariData({ perkara: { jenisId: 364, posita: "1. Bahwa X telah meninggal dunia", petitum: "Menyatakan ahli waris" }, pihak1: [] });
     expect(tanpa.find((x: any) => x.kode === "8719")).toBeUndefined();
   });

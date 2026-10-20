@@ -1,5 +1,1 @@
---- sebelum
-+++ sesudah
--3. Menetapkan harta-harta sebagai berikut: ... adalah harta bersama Penggugat dan Tergugat yang belum terbagi;
-+3. Menetapkan harta-harta sebagai berikut: 2.1 Sebidang tanah ... seluas _ m2 terletak di _, dengan batas-batas: Utara _; Timur _; Selatan _; Barat _;
-+2.2 1 (satu) unit kendaraan roda dua merek _ tahun _ nomor polisi _ nomor rangka _ nomor mesin _; adalah harta bersama Penggugat dan Tergugat yang belum terbagi;
+
