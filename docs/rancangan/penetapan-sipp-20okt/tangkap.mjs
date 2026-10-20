@@ -28,7 +28,7 @@ const halaman = (isi, gelap) => {
 };
 const peramban = await chromium.launch();
 try {
-  for (const nama of ["1-awal", "2-konfirmasi", "3-berjalan", "4-selesai", "5-gagal", "6-manual"]) {
+  for (const nama of ["1-awal", "2-konfirmasi", "3-berjalan", "4-selesai", "5-gagal", "6-manual", "7-muat-ulang", "8-sesudah-muat-ulang", "9-muat-ulang-gagal"]) {
     const f = `${awalan}-${nama}.html`;
     if (!fs.existsSync(f)) continue;
     const isi = fs.readFileSync(f, "utf8");

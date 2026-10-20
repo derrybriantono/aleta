@@ -408,7 +408,9 @@ function simpanTangkapan(h: Halaman, nama: string) {
     if ((c as HTMLInputElement).checked) c.setAttribute("checked", "");
     else c.removeAttribute("checked");
   });
-  const html = h.d.getElementById("konten")!.innerHTML;
+  // Kotak melayang (ringkasan sesudah memuat ulang) berada di <body>, di luar #konten.
+  const melayang = Array.from(h.d.querySelectorAll("body > .aleta-mu-melayang")).map((x) => x.outerHTML).join("");
+  const html = h.d.getElementById("konten")!.innerHTML + melayang;
   writeFileSync(`${awalan}-${nama}.html`, html, "utf8");
 }
 

@@ -646,3 +646,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-mu {
   border-radius: 0;
   background: transparent;
 }
+/* Kotak muat ulang sudah memuat ringkasan yang sama: laporan panel tidak ditampilkan dua kali. */
+.aleta-pensipp-panel:has(.aleta-pensipp-muatulang .aleta-mu) .aleta-pensipp-laporan {
+  display: none;
+}
