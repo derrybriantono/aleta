@@ -3625,6 +3625,7 @@
     if (!b) return [];
     if (b.khusus === "bukti") return KET_BUKTI.slice();
     const i = S.info[b.kode];
+    if (!i && b.manual && b.alasanManual && !b.khusus && b.jenis !== "tj") return [`Diisi manual: ${b.alasanManual}`];
     if (!i || b.khusus || b.jenis === "tj") return [];
     const out = [];
     const c = bersihKeterangan(i.catatan);
@@ -3659,6 +3660,7 @@
     if (S.saran[b.kode]) out.push({ t: "posita", nama: "Bawaan ABT dari data perkara", jelas: `ABT menghitung saran dari data perkara di SIPP (termasuk gugatan): "${potong(S.saran[b.kode], 160)}". Tekan Tab di kotak kosong untuk memakainya.` });
     else if (b.saran) out.push({ t: "posita", nama: "Saran ALETA", jelas: `Saran umum untuk isian ini: "${potong(b.saran, 160)}". Periksa dengan gugatan sebelum dipakai.` });
     if (b.dipakaiOleh && b.dipakaiOleh.length) out.push({ t: "rumus", nama: "Dipakai juga di bagian lain", jelas: "Nilai ini juga dibaca bagian otomatis lain di naskah (mis. amar, pertimbangan), jadi isilah dengan teliti." });
+    if (b.manual && b.alasanManual && !S.dariSipp.has(b.kode) && !S.saranSipp[b.kode]) out.push({ t: "tangan", nama: "Diisi manual", jelas: b.alasanManual });
     out.push({ t: "tangan", nama: "Diketik petugas", jelas: b.jenis === "tanggal" ? "Tanggal diketik petugas, tersimpan di ABT untuk perkara ini." : "Diketik petugas (atau dipilih dari pilihan), tersimpan di ABT untuk perkara ini." });
     return out;
   }
@@ -3735,6 +3737,11 @@
   }
   function kepingKet(b) {
     const i = S.info[b.kode];
+    // Isian yang tidak mungkin otomatis (penilaian hakim, pemeriksaan sidang, data tidak ada di SIPP): ditandai "diisi manual"
+    // selama belum ada nilai maupun saran; alasannya ada di ikon ⓘ (ketItem).
+    if (!i && b.manual && !b.khusus && b.jenis !== "tj" && !String(S.isi[b.kode] || "").trim() && !(S.saranSipp && S.saranSipp[b.kode])) {
+      return `<div class="bd-ket"><span class="bd-tandabaris"><span class="bd-tanda abu">diisi manual</span></span></div>`;
+    }
     if (!i || b.khusus || b.jenis === "tj") return "";
     const kode = esc(b.kode);
     const tanda = (x) => (x ? `<span class="bd-tanda ${esc(x.kelas)}">${esc(x.teks)}</span>` : "");

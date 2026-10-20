@@ -1875,6 +1875,18 @@ async function dariSipp(nomorPerkara) {
     /* pengisi tambahan: gagal membaca tidak menggagalkan usulan SIPP lain */
   }
   /* === AKHIR S3 === */
+  // S5 20 Okt: isian "Perlu diisi" jenis dispensasi kawin, perwalian, asal usul anak, wali adhal, penetapan ahli waris
+  // (data calon mempelai/anak/pihak SIPP + posita/petitum) - lihat isiOtomatisJenisS5.js. Usulan yang lebih yakin menggantikan.
+  try {
+    const PANGKAT_S5 = { pasti: 3, cukup: 2, ragu: 1 };
+    for (const u of await require("./isiOtomatisJenisS5").usulanJenisS5(perkaraId, runQuery)) {
+      const i = hasil.findIndex((x) => x.kode === u.kode);
+      if (i < 0) hasil.push(u);
+      else if ((PANGKAT_S5[u.keyakinan] || 0) > (PANGKAT_S5[hasil[i].keyakinan] || 0) && hasil[i].keyakinan !== "tidak_ada_sumber") hasil[i] = u;
+    }
+  } catch {
+    /* pengisi jenis bersifat tambahan: gagal membaca tidak menggagalkan usulan SIPP lain */
+  }
 
   return {
     ok: true,
