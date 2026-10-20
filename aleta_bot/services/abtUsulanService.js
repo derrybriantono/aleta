@@ -1865,6 +1865,17 @@ async function dariSipp(nomorPerkara) {
     /* usulan lanjutan bersifat tambahan: gagal membaca tidak menggagalkan usulan SIPP lain */
   }
 
+  /* === S3 20 Okt === */
+  // Isian popup cerai/ikrar/itsbat yang datanya ada di SIPP (delegasi, penetapan kembali ikrar, anak, umur dari tanggal lahir) atau di
+  // posita+petitum SIPP (nafkah, hak asuh, 7035, 8503, 9686) - lihat abtIsianLengkap20okt.js. Hanya SELECT.
+  try {
+    const lengkap = await require("./abtIsianLengkap20okt").usulanLengkap(perkaraId, runQuery);
+    for (const u of lengkap) if (!hasil.some((x) => x.kode === u.kode)) hasil.push(u);
+  } catch {
+    /* pengisi tambahan: gagal membaca tidak menggagalkan usulan SIPP lain */
+  }
+  /* === AKHIR S3 === */
+
   return {
     ok: true,
     perkaraId,

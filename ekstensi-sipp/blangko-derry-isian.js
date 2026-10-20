@@ -1798,11 +1798,14 @@
         const daftar = perlu();
         const rencana = mesin.rencanakan(
           usulan,
-          daftar.map((b) => ({ kode: b.kode, nama: b.nama, jenis: b.jenis, opsi: b.opsi, kosong: sedangKosong(b), bolehGanti: bolehGantiMentah(b, jejak) })),
+          daftar.map((b) => ({ kode: b.kode, nama: b.nama, jenis: b.jenis, opsi: b.opsi, kosong: sedangKosong(b), bolehGanti: bolehGantiMentah(b, jejak), manual: b.manual === true, alasanManual: b.alasanManual || "" })),
           keIso,
           usulanSumber
         );
         for (const [kode, info] of Object.entries(rencana.info)) {
+          // Tanda "diisi manual" tidak menimpa bacaan atau alasan yang sudah ada dari putaran sebelumnya (mis. KTP datang belakangan).
+          // Juga tidak dipasang bila isian itu sudah punya saran (bawaan ABT dari data perkara, draf H-7, bacaan samar): bukan "tanpa sumber".
+          if (info.golongan === "manual" && (S.info[kode] || (S.saran && S.saran[kode]) || (S.saranH7 && S.saranH7[kode]) || (S.saranSipp && S.saranSipp[kode]))) continue;
           S.info[kode] = info;
           if (info.pilihan && info.pilihan.length) S.bunyi[kode] = info.pilihan;
         }
