@@ -61,13 +61,13 @@ def _min_maks_umur(kolom_ref=TGL_REF):
 
 
 BULAN = "ELT(MONTH(a.tanggal_lahir), 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember')"
-UMUR_ANAK = ("CONCAT(TRIM(CONVERT(a.nama_anak USING utf8)), ' (lahir tanggal ', DAY(a.tanggal_lahir), ' ', " + BULAN + ", ' ', YEAR(a.tanggal_lahir), ', berumur ', "
+UMUR_ANAK = ("CONCAT(TRIM(CONVERT(a.nama_anak USING utf8)), ' (lahir ', DAY(a.tanggal_lahir), ' ', " + BULAN + ", ' ', YEAR(a.tanggal_lahir), ', umur ', "
              "TIMESTAMPDIFF(YEAR, a.tanggal_lahir, " + TGL_REF + "), ' tahun ', MOD(TIMESTAMPDIFF(MONTH, a.tanggal_lahir, " + TGL_REF + "), 12), ' bulan, ', "
-             "IF(TIMESTAMPDIFF(YEAR, a.tanggal_lahir, " + TGL_REF + ") < 12, 'belum mencapai 12 (dua belas) tahun', 'telah mencapai 12 (dua belas) tahun'), ')')")
+             "IF(TIMESTAMPDIFF(YEAR, a.tanggal_lahir, " + TGL_REF + ") < 12, 'belum berumur 12 tahun', 'telah berumur 12 tahun atau lebih'), ')')")
 
-UMUR_ANAK_NAFKAH = ("CONCAT(TRIM(CONVERT(a.nama_anak USING utf8)), ' (lahir tanggal ', DAY(a.tanggal_lahir), ' ', " + BULAN + ", ' ', YEAR(a.tanggal_lahir), ', berumur ', "
+UMUR_ANAK_NAFKAH = ("CONCAT(TRIM(CONVERT(a.nama_anak USING utf8)), ' (lahir ', DAY(a.tanggal_lahir), ' ', " + BULAN + ", ' ', YEAR(a.tanggal_lahir), ', umur ', "
                     "TIMESTAMPDIFF(YEAR, a.tanggal_lahir, " + TGL_REF + "), ' tahun ', MOD(TIMESTAMPDIFF(MONTH, a.tanggal_lahir, " + TGL_REF + "), 12), ' bulan, ', "
-                    "IF(TIMESTAMPDIFF(YEAR, a.tanggal_lahir, " + TGL_REF + ") < 21, 'belum mencapai 21 (dua puluh satu) tahun', 'telah mencapai 21 (dua puluh satu) tahun'), ')')")
+                    "IF(TIMESTAMPDIFF(YEAR, a.tanggal_lahir, " + TGL_REF + ") < 21, 'belum berumur 21 tahun', 'telah berumur 21 tahun atau lebih'), ')')")
 
 v(4880, 'ANAK: UMUR ANAK PADA SAAT PUTUSAN (OTOMATIS: tanggal lahir anak di SIPP; tiap anak ditulis umurnya dan belum atau telah 12 tahun; kosong bila tanggal lahir belum ada; diawali satu baris baru)', 'data_sql',
   "SELECT IF(s.n = 0, '', CONCAT('<br>Menimbang, bahwa berdasarkan data kelahiran yang tercatat dalam perkara ini, ', s.daftar, '; umur tersebut dihitung sampai dengan tanggal putusan ini dijatuhkan dan menjadi bahan #8554# menilai keadaan mumayyiz atau belum mumayyiz anak tersebut sesuai Pasal 105 Kompilasi Hukum Islam;')) AS data "
