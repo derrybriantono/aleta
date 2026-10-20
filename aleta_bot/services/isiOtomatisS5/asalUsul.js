@@ -30,7 +30,7 @@ const KEYAKINAN_FAKTA = Object.freeze({
   "1003": "cukup", // 654/670
   "1046": "cukup", // 614/631
   "1217": "cukup", // 578/637
-  "5105": "cukup", // 627/675
+  "5105": "ragu", // itsbat 627/675, tetapi pada AUA 0 dari 2 isian petugas sama: variannya memakainya untuk tempat lahir anak ATAU tempat nikah
   "5178": "cukup", // 260/269
   "0007": "cukup", // 511/560
   "0650": "cukup", // 509/569 (0,894; templat AUA 'dihadiri 2 (dua) orang saksi nikah bernama A dan B')
