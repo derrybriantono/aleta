@@ -16,6 +16,7 @@ import {
 } from "@/lib/eviden-skp-unduh";
 import { hitungIndikatorSkp, hitungLembarSkp, type KonteksHitungSkp } from "@/lib/skp-jabatan-hitung";
 import {
+  KUNCI_FAKTA_ALETA_SKP_JABATAN,
   KUNCI_FAKTA_SKP_JABATAN,
   SKP_JABATAN_2026,
   kunciFaktaIndikator,
@@ -99,8 +100,8 @@ const isian = (over: Partial<IsianManualSkp>): IsianManualSkp => ({
   userId: "u1",
   periode: "b03",
   tahun: 2026,
-  kunciRhk: "pn-administrasi",
-  kunciIndikator: "pn-administrasi-kuantitas",
+  kunciRhk: "pp-putusan",
+  kunciIndikator: "pp-putusan-kuantitas",
   nilai: 4,
   nilaiTeks: "",
   catatan: "",
@@ -157,7 +158,8 @@ describe("katalog SKP_JABATAN_2026", () => {
 
   it("`dari` dan pembanding rasio menunjuk fakta yang ada dalam jabatan itu", () => {
     for (const j of JABATAN_SKP) {
-      const dikenal = new Set(KUNCI_FAKTA_SKP_JABATAN[j]);
+      // Fakta dikirim bot (SIPP) atau dibaca portal dari catatan sistem (aleta).
+      const dikenal = new Set([...KUNCI_FAKTA_SKP_JABATAN[j], ...Object.keys(KUNCI_FAKTA_ALETA_SKP_JABATAN[j])]);
       for (const r of SKP_JABATAN_2026[j]) {
         for (const i of r.indikator) {
           if (i.dari) expect(dikenal.has(i.dari), `${j}:${i.kunci} dari ${i.dari}`).toBe(true);
@@ -338,14 +340,14 @@ describe("aturan hitung: rata-rata hari dan rasio", () => {
 });
 
 describe("isian manual dan target", () => {
-  const k = (isianUji: IsianManualSkp[]) => konteks([], { isian: isianUji, jabatan: "panitera" });
+  const k = (isianUji: IsianManualSkp[]) => konteks([], { isian: isianUji, jabatan: "pp" });
 
   it("indikator isian: draf tidak dihitung, diajukan dihitung dengan sumber isian", () => {
-    const kosong = hitung("panitera", "pn-administrasi-kuantitas", k([isian({ status: "draf" })]));
+    const kosong = hitung("pp", "pp-putusan-kuantitas", k([isian({ status: "draf" })]));
     expect(kosong.realisasi).toBeNull();
     expect(kosong.dasar).toContain("belum ada isian");
 
-    const ada = hitung("panitera", "pn-administrasi-kuantitas", k([isian({ status: "diajukan", nilai: 4 })]));
+    const ada = hitung("pp", "pp-putusan-kuantitas", k([isian({ status: "diajukan", nilai: 4 })]));
     expect(ada.realisasi).toBe(4);
     expect(ada.sumber).toBe("isian");
     expect(ada.realisasiTeks).toBe("4 Kegiatan");
@@ -353,7 +355,7 @@ describe("isian manual dan target", () => {
 
   it("isian periode atau pegawai lain tidak ikut", () => {
     const lain = [isian({ periode: "b02" }), isian({ userId: "u2" }), isian({ tahun: 2025 })];
-    expect(hitung("panitera", "pn-administrasi-kuantitas", k(lain)).realisasi).toBeNull();
+    expect(hitung("pp", "pp-putusan-kuantitas", k(lain)).realisasi).toBeNull();
   });
 
   it("jumlah dari SIPP ditambah isian = gabungan", () => {

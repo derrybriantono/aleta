@@ -104,6 +104,11 @@ const JABATAN = Object.freeze([
   "operator",
   "koordinator-delegasi",
   "informasi",
+  // 20 Okt 2026: mediator (SIPP), tiga lainnya sepenuhnya dari catatan sistem di portal.
+  "mediator",
+  "sekretaris",
+  "kasubag",
+  "analis-perkara",
 ]);
 
 /**
@@ -132,6 +137,8 @@ const AWAL_PANMUD = Object.freeze({ "panmud-gugatan": "gugatan", "panmud-permoho
 
 /** Konfigurasi SIPP yang perlu dibetulkan petugas (bukan galat bacaan): masuk catatanOperator. */
 const TAUTAN_PANITERA = "Akun SIPP ini belum ditautkan ke panitera (user_panitera).";
+const POLA_AKUN_MEDIATOR = /^mediator:\d{1,10}$/i;
+const TAUTAN_MEDIATOR = "Akun SIPP ini belum ditautkan ke mediator (user_hakim dan mediator.hakim_id).";
 
 /** Alasan bernada ramah untuk pembaca (tanpa galat MySQL mentah). */
 const FRASA = Object.freeze({
@@ -206,10 +213,15 @@ const KUNCI_FAKTA = Object.freeze({
     "ks-biaya-sisa",
     "ks-pendaftaran-kuantitas",
   ]),
-  // Sumbernya bukan SIPP (jejak ALETA di portal): bot tidak mengirim apa pun.
+  // Operator: jejak audit SIPP akun itu (sys_audittrail), dirangkum per hari.
   operator: Object.freeze(["op-layanan-kuantitas"]),
   "koordinator-delegasi": Object.freeze([]),
   informasi: Object.freeze([]),
+  mediator: Object.freeze(["md-mediasi-kuantitas", "md-mediasi-laporan", "md-mediasi-kualitas", "md-mediasi-waktu"]),
+  // Sumbernya catatan sistem yang dibaca portal (surat, disposisi, e-Court, cuti, pemantauan): bot tidak mengirim.
+  sekretaris: Object.freeze([]),
+  kasubag: Object.freeze([]),
+  "analis-perkara": Object.freeze([]),
 });
 
 /**
@@ -235,7 +247,7 @@ const KUNCI_TURUNAN = Object.freeze([
   "js-input-waktu",
   "ks-penerimaan-waktu",
   "ks-biaya-kualitas",
-  "op-layanan-kuantitas",
+  "md-mediasi-kualitas",
 ]);
 
 /** Kunci tambahan (awalan x-) hanya dikirim bila diminta (tambahan=1): pembanding angka emas. */
@@ -456,8 +468,19 @@ function buatLayanan(deps = {}) {
     const jurusitaBaris =
       (await tabelAda("user_jurusita")) && (await tabelAda("jurusita"))
         ? await kueri(
-            `SELECT uj.userid AS userid, j.jabatan AS jabatan
+            `SELECT uj.userid AS userid, j.jabatan AS jabatan, uj.jurusita_id AS jurusitaId
                FROM user_jurusita uj JOIN jurusita j ON j.id = uj.jurusita_id`
+          )
+        : [];
+    // Hakim dan mediator yang tertaut ke akun (mediator hakim: mediator.hakim_id = user_hakim.hakim_id).
+    const hakimBaris = (await tabelAda("user_hakim"))
+      ? await kueri("SELECT uh.userid AS userid, uh.hakim_id AS hakimId FROM user_hakim uh")
+      : [];
+    const mediatorBaris =
+      (await tabelAda("user_hakim")) && (await tabelAda("mediator"))
+        ? await kueri(
+            `SELECT uh.userid AS userid, m.id AS mediatorId
+               FROM user_hakim uh JOIN mediator m ON m.hakim_id = uh.hakim_id`
           )
         : [];
     const paniteraBaris = (await tabelAda("user_panitera"))
@@ -472,6 +495,14 @@ function buatLayanan(deps = {}) {
     }
     const jabatanJurusita = new Map(jurusitaBaris.map((b) => [Number(b.userid), bersih(b.jabatan)]));
     const idPanitera = new Map(paniteraBaris.map((b) => [Number(b.userid), Number(b.paniteraId)]));
+    const idJurusita = new Map(jurusitaBaris.map((b) => [Number(b.userid), Number(b.jurusitaId)]));
+    const idHakim = new Map(hakimBaris.map((b) => [Number(b.userid), Number(b.hakimId)]));
+    const idMediator = new Map();
+    for (const b of mediatorBaris) {
+      const daftar = idMediator.get(Number(b.userid)) || [];
+      daftar.push(Number(b.mediatorId));
+      idMediator.set(Number(b.userid), daftar);
+    }
 
     return akunBaris.map((b) => {
       const userid = Number(b.userid);
@@ -485,8 +516,32 @@ function buatLayanan(deps = {}) {
         grupDetail: grup,
         jabatanDugaan: jabatanDugaan(grup, jabatanJurusita.get(userid) || ""),
         paniteraId: idPanitera.has(userid) ? idPanitera.get(userid) : null,
+        jurusitaId: idJurusita.has(userid) && Number.isFinite(idJurusita.get(userid)) ? idJurusita.get(userid) : null,
+        hakimId: idHakim.has(userid) && Number.isFinite(idHakim.get(userid)) ? idHakim.get(userid) : null,
+        mediatorIds: idMediator.get(userid) || [],
       };
     });
+  }
+
+  /** Mediator tanpa akun SIPP sebagai akun tiruan "mediator:<id>"; null bila tidak ada di tabel mediator. */
+  async function bacaAkunMediator(id) {
+    if (!Number.isInteger(id) || id <= 0) return null;
+    await wajibTabel("mediator");
+    const baris = await kueri("SELECT m.id AS id, m.nama AS nama, m.aktif AS aktif FROM mediator m WHERE m.id = ?", [id]);
+    if (!baris.length) return null;
+    return {
+      userid: id,
+      username: `mediator:${id}`,
+      nama: bersih(baris[0].nama),
+      aktif: bersih(baris[0].aktif).toUpperCase() === "Y",
+      grup: [],
+      grupDetail: [],
+      jabatanDugaan: "mediator",
+      paniteraId: null,
+      jurusitaId: null,
+      hakimId: null,
+      mediatorIds: [id],
+    };
   }
 
   // ---- bantuan baca perkara -------------------------------------------------
@@ -1151,6 +1206,148 @@ function buatLayanan(deps = {}) {
     };
   }
 
+  /** Arti sandi hasil mediasi (komentar kolom hasil_mediasi SIPP; sama dengan Rekap Mediator). */
+  const HASIL_MEDIASI = Object.freeze({
+    Y1: "Berhasil dengan kesepakatan",
+    Y2: "Berhasil dengan pencabutan",
+    S: "Berhasil sebagian",
+    T: "Tidak berhasil",
+    D: "Tidak dapat dilaksanakan",
+  });
+
+  /**
+   * Mediasi yang ditangani akun ini (mediator_id berupa DAFTAR ber-koma, dicocokkan
+   * dengan FIND_IN_SET; yang kosong dicari lewat perkara_mediator aktif). Satu
+   * kejadian per PERKARA: mediasi berulang pada satu perkara tidak dihitung dua kali.
+   */
+  async function paketMediasi(k) {
+    const ids = (k.akun.mediatorIds || []).filter((x) => Number.isInteger(x) && x > 0);
+    if (!ids.length) throw new TidakTerbaca(TAUTAN_MEDIATOR);
+    await wajibTabel("perkara_mediasi", "perkara");
+    const penetapan = await wajibKolom("perkara_mediasi", ["penetapan_penunjukan_mediator"], "penetapan penunjukan mediator");
+    const laporan = await wajibKolom("perkara_mediasi", ["tgl_laporan_mediator"], "laporan mediator");
+    const hasil = await wajibKolom("perkara_mediasi", ["hasil_mediasi"], "hasil mediasi");
+    const mediator = await wajibKolom("perkara_mediasi", ["mediator_id"], "mediator mediasi");
+    const adaPerkaraMediator = await tabelAda("perkara_mediator");
+    const bagian = ids.map(() => `FIND_IN_SET(?, REPLACE(m.${mediator}, ' ', '')) > 0`);
+    const nilai = [...ids];
+    if (adaPerkaraMediator) {
+      bagian.push(
+        `((m.${mediator} IS NULL OR m.${mediator} = '') AND EXISTS (SELECT 1 FROM perkara_mediator pm ` +
+          `WHERE pm.perkara_id = m.perkara_id AND pm.aktif = 'Y' AND pm.mediator_id IN (${ids.map(() => "?").join(", ")})))`
+      );
+      nilai.push(...ids);
+    }
+    const baris = await kueri(
+      `SELECT m.perkara_id AS id, p.nomor_perkara AS nomor,
+              DATE_FORMAT(m.${penetapan}, '%Y-%m-%d') AS penetapan,
+              DATE_FORMAT(m.${laporan}, '%Y-%m-%d') AS laporan,
+              m.${hasil} AS hasil
+         FROM perkara_mediasi m
+         LEFT JOIN perkara p ON p.perkara_id = m.perkara_id
+        WHERE (${bagian.join(" OR ")}) AND m.${penetapan} BETWEEN ? AND ?
+        ORDER BY m.${penetapan} ASC, m.perkara_id ASC
+        LIMIT 5001`,
+      [...nilai, k.dari, k.sampai]
+    );
+    if (baris.length > 5000) throw new TidakTerbaca("Mediasi yang ditangani terlalu banyak untuk dibaca sekaligus; persempit periodenya.");
+    // Satu per perkara; yang sudah berlaporan menang atas yang menggantung.
+    const perPerkara = new Map();
+    for (const b of baris) {
+      const kunci = String(b.id);
+      const ada = perPerkara.get(kunci);
+      if (!ada || (!tanggalSah(ada.laporan) && tanggalSah(b.laporan))) perPerkara.set(kunci, b);
+    }
+    const unik = [...perPerkara.values()];
+    const teksHasil = (b) => HASIL_MEDIASI[bersih(b.hasil).toUpperCase()] || "Belum ada hasil";
+    const dasar = (b, keterangan) =>
+      kejadian({
+        perkaraId: b.id,
+        nomorPerkara: b.nomor,
+        tanggal: b.penetapan,
+        keterangan,
+      });
+    return {
+      "md-mediasi-kuantitas": unik.map((b) => dasar(b, `Mediasi - ${teksHasil(b)}`)),
+      "md-mediasi-laporan": unik
+        .filter((b) => tanggalSah(b.laporan))
+        .map((b) =>
+          kejadian({ perkaraId: b.id, nomorPerkara: b.nomor, tanggal: b.laporan, tanggalAcuan: b.penetapan, keterangan: "Laporan hasil mediasi dibuat" })
+        ),
+      // tanggal = laporan (boleh kosong: belum dilaporkan), tanggalAcuan = penetapan penunjukan mediator.
+      "md-mediasi-waktu": unik.map((b) =>
+        kejadian({
+          perkaraId: b.id,
+          nomorPerkara: b.nomor,
+          tanggal: b.laporan,
+          tanggalAcuan: b.penetapan,
+          keterangan: tanggalSah(b.laporan) ? "Mediasi dilaporkan" : "Laporan mediasi belum dibuat",
+        })
+      ),
+    };
+  }
+
+  /** Nama tabel SIPP yang sering muncul di jejak audit -> bahasa awam; selain itu "Data SIPP (nama tabel)". */
+  const NAMA_TABEL_AUDIT = Object.freeze({
+    perkara: "Data perkara",
+    perkara_biaya: "Biaya perkara",
+    perkara_putusan: "Putusan",
+    perkara_penetapan: "Penetapan",
+    perkara_jadwal_sidang: "Jadwal sidang",
+    perkara_pelaksanaan_relaas: "Relaas",
+    perkara_akta_cerai: "Akta cerai",
+    perkara_ikrar_talak: "Ikrar talak",
+    perkara_mediasi: "Mediasi",
+    perkara_hakim_pn: "Majelis hakim",
+    perkara_panitera_pn: "Panitera pengganti",
+    perkara_jurusita: "Jurusita",
+    pihak: "Data pihak",
+  });
+  const NAMA_AKSI_AUDIT = Object.freeze({
+    insert: "input baru",
+    tambah: "input baru",
+    update: "perubahan",
+    edit: "perubahan",
+    delete: "penghapusan",
+    hapus: "penghapusan",
+    unggah: "unggah berkas",
+  });
+
+  /**
+   * Kegiatan operator = jejak audit SIPP akunnya (sys_audittrail), dirangkum per
+   * hari dan jenis kegiatan: satu kejadian = satu baris rangkuman, `nilai` =
+   * banyaknya kegiatan (aturan jumlah-kegiatan di portal). Username dibandingkan
+   * sebagai PARAMETER (kolasi antartabel SIPP berbeda), tidak digabung lewat JOIN.
+   */
+  async function paketAuditOperator(k) {
+    await wajibTabel("sys_audittrail");
+    const waktu = await wajibKolom("sys_audittrail", ["datetime"], "waktu jejak audit");
+    const pengguna = await wajibKolom("sys_audittrail", ["username"], "pengguna jejak audit");
+    const tabel = await wajibKolom("sys_audittrail", ["tablename"], "tabel jejak audit");
+    const aksi = await wajibKolom("sys_audittrail", ["action"], "aksi jejak audit");
+    const baris = await kueri(
+      `SELECT DATE_FORMAT(a.${waktu}, '%Y-%m-%d') AS tanggal, a.${tabel} AS tabel, a.${aksi} AS aksi, COUNT(*) AS jumlah
+         FROM sys_audittrail a
+        WHERE a.${pengguna} = ? AND a.${waktu} >= ? AND a.${waktu} < DATE_ADD(?, INTERVAL 1 DAY)
+        GROUP BY DATE_FORMAT(a.${waktu}, '%Y-%m-%d'), a.${tabel}, a.${aksi}
+        ORDER BY DATE_FORMAT(a.${waktu}, '%Y-%m-%d') ASC, a.${tabel} ASC
+        LIMIT 5001`,
+      [k.akun.username, k.dari, k.sampai]
+    );
+    if (baris.length > 5000) throw new TidakTerbaca("Jejak kegiatan di SIPP terlalu banyak untuk dibaca sekaligus; persempit periodenya.");
+    return {
+      "op-layanan-kuantitas": baris.map((b) => {
+        const nama = NAMA_TABEL_AUDIT[bersih(b.tabel)] || `Data SIPP (${bersih(b.tabel)})`;
+        const jenis = NAMA_AKSI_AUDIT[bersih(b.aksi).toLowerCase()] || bersih(b.aksi).toLowerCase();
+        return kejadian({
+          tanggal: b.tanggal,
+          nilai: b.jumlah,
+          keterangan: `${nama} - ${jenis} (${Number(b.jumlah)} kali)`,
+        });
+      }),
+    };
+  }
+
   /**
    * Paket sumber tiap jabatan. `kunci` = kunci yang dihasilkan (agar bila paket
    * gagal, semua kuncinya ditandai tidak terbaca). `tambahan` = hanya bila diminta.
@@ -1201,8 +1398,12 @@ function buatLayanan(deps = {}) {
           { kunci: ["ks-biaya-kuantitas"], jalan: paketBiayaDibebankan },
           { kunci: ["ks-biaya-sisa", "ks-biaya-sisa-kembali"], jalan: paketSisaPanjar },
         ];
+      case "mediator":
+        return [{ kunci: ["md-mediasi-kuantitas", "md-mediasi-laporan", "md-mediasi-waktu"], jalan: paketMediasi }];
+      case "operator":
+        return [{ kunci: ["op-layanan-kuantitas"], jalan: paketAuditOperator }];
       default:
-        // operator, koordinator-delegasi, informasi: tidak ada indikator SIPP.
+        // koordinator-delegasi, informasi, sekretaris, kasubag, analis-perkara: tidak ada indikator SIPP.
         return [];
     }
   }
@@ -1227,6 +1428,8 @@ function buatLayanan(deps = {}) {
     [paketPanjarDiterima, "Panjar yang diterima"],
     [paketBiayaDibebankan, "Biaya yang dibebankan"],
     [paketSisaPanjar, "Pengembalian sisa panjar"],
+    [paketMediasi, "Mediasi"],
+    [paketAuditOperator, "Jejak kegiatan di SIPP"],
   ]);
 
   // ---- satu akun ------------------------------------------------------------------
@@ -1278,7 +1481,14 @@ function buatLayanan(deps = {}) {
 
     let akunSemua;
     try {
-      akunSemua = await bacaAkun({ usernames });
+      // "mediator:<id>" = mediator tanpa akun SIPP (mediator non-hakim): akun tiruan dari tabel mediator.
+      const tiruan = usernames.filter((u) => POLA_AKUN_MEDIATOR.test(u));
+      const nyata = usernames.filter((u) => !POLA_AKUN_MEDIATOR.test(u));
+      akunSemua = !username || nyata.length > 0 ? await bacaAkun({ usernames: nyata }) : [];
+      for (const u of tiruan) {
+        const akunMediator = await bacaAkunMediator(Number(u.split(":")[1]));
+        if (akunMediator) akunSemua.push(akunMediator);
+      }
     } catch (error) {
       if (!(error instanceof TidakTerbaca)) catatLog("daftar akun", error);
       return {
@@ -1294,7 +1504,11 @@ function buatLayanan(deps = {}) {
     // Sebagian username tak dikenal: yang ada tetap dihitung, yang hilang dicatat untuk petugas.
     for (const diminta of usernames) {
       if (!akunSemua.some((a) => a.username.toLowerCase() === diminta.toLowerCase())) {
-        catatanOperator.push(`Akun SIPP "${diminta}" tidak ditemukan di sys_users: periksa penautan akunnya di Pemetaan.`);
+        catatanOperator.push(
+          POLA_AKUN_MEDIATOR.test(diminta)
+            ? `Mediator "${diminta}" tidak ditemukan di tabel mediator: periksa penautan akunnya di Pemetaan.`
+            : `Akun SIPP "${diminta}" tidak ditemukan di sys_users: periksa penautan akunnya di Pemetaan.`
+        );
       }
     }
 
@@ -1321,6 +1535,9 @@ function buatLayanan(deps = {}) {
         if (f.terbaca || !f.galat) continue;
         if (f.galat === TAUTAN_PANITERA) {
           const baris = `Akun SIPP "${a.username}" belum ditautkan ke panitera (user_panitera): sidang dan putusannya tidak dapat dibaca.`;
+          if (!catatanOperator.includes(baris)) catatanOperator.push(baris);
+        } else if (f.galat === TAUTAN_MEDIATOR) {
+          const baris = `Akun SIPP "${a.username}" belum ditautkan ke mediator: mediasinya tidak dapat dibaca. Petakan memakai nama akun "mediator:<id mediator>" untuk mediator tanpa akun SIPP.`;
           if (!catatanOperator.includes(baris)) catatanOperator.push(baris);
         } else if (!galat.includes(f.galat)) {
           galat.push(f.galat);
@@ -1352,9 +1569,14 @@ function buatLayanan(deps = {}) {
     if (jabatan === "wakil-ketua" || jabatan === "ketua") {
       catatanOperator.push("Ketua dan Wakil Ketua satu grup SIPP (10): dibedakan lewat peran di ALETA.");
     }
-    if (jabatan === "operator" || jabatan === "koordinator-delegasi" || jabatan === "informasi") {
+    if (jabatan === "koordinator-delegasi" || jabatan === "informasi" || jabatan === "sekretaris" || jabatan === "kasubag" || jabatan === "analis-perkara") {
       catatanOperator.push(
-        "SIPP tidak memuat indikator untuk jabatan ini: SKP-nya disusun dari jejak ALETA dan isian manual."
+        "SIPP tidak memuat indikator untuk jabatan ini: SKP-nya disusun dari catatan sistem dan isian manual."
+      );
+    }
+    if (jabatan === "operator") {
+      catatanOperator.push(
+        "Kegiatan operator dibaca dari jejak audit SIPP akun itu (input, ubah, hapus, unggah); indikator lain dari catatan sistem dan isian manual."
       );
     }
 
@@ -1405,6 +1627,10 @@ function buatLayanan(deps = {}) {
         grup: a.grupDetail.map((g) => ({ groupid: g.groupid, nama: g.nama || null })),
         jabatanDugaan: a.jabatanDugaan,
         tautPanitera: a.paniteraId !== null,
+        paniteraId: a.paniteraId,
+        jurusitaId: a.jurusitaId,
+        hakimId: a.hakimId,
+        mediatorIds: a.mediatorIds,
       }));
     return { ok: true, akun, dihitungPada: new Date(jam()).toISOString() };
   }

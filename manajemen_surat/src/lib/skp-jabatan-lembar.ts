@@ -37,7 +37,7 @@ export const SEBUTAN_KANAN_SKP = "Pejabat Penilai Kinerja,";
 const TITIK_ISIAN = "..................";
 const TITIK_JABATAN_PENILAI = "..................................";
 
-const LABEL_SUMBER: Record<SumberSkp, string> = { sipp: "SIPP", isian: "Isian", gabungan: "SIPP + isian" };
+const LABEL_SUMBER: Record<SumberSkp, string> = { sipp: "SIPP", sistem: "Sistem", isian: "Isian", gabungan: "SIPP/sistem + isian" };
 
 /** Sebutan di baris tanda tangan kiri ("Pegawai yang bersangkutan,"). */
 export function sebutanOrangSkp(jenis: JenisSkp): string {
@@ -244,7 +244,7 @@ export function susunDokumenBuktiSkp(r: RincianRhkSkp, h: HasilSkpJabatan): Doku
     `Kalimat realisasi untuk e-Kinerja: ${kalimatRealisasiEkinerja(r, periode.labelPanjang)}`,
   ];
   if (baris.length === 0) {
-    catatan.push("Tidak ada kejadian SIPP yang dapat dicantumkan; bukti dukung untuk indikator ini diisi manual pegawai.");
+    catatan.push("Tidak ada kegiatan tercatat yang dapat dicantumkan; bukti dukung untuk indikator ini diisi manual pegawai.");
   }
   catatan.push(...h.lembar.catatan.slice(0, 1));
 

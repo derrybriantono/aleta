@@ -3,7 +3,7 @@ import type { AktorSkp, JabatanSkp, JenisSkp, LembarSkp, PegawaiSkp } from "@/li
 import { type AletaDatabase } from "@/server/db/client";
 import { peranAktorSkp, type PegawaiHakSkp } from "@/server/modules/skp/hak";
 import { bacaPemetaan, pemetaanDalamRentang, sarankanJabatanSkp } from "@/server/modules/skp/pemetaan";
-import { teksAtauNull } from "@/server/modules/skp/umum";
+import { bacaJsonAman, teksAtauNull } from "@/server/modules/skp/umum";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { requireActorUser } from "@/server/modules/organization/service";
 import type { PemetaanAkunPegawaiSkp } from "@/lib/skp-jabatan-tipe";
@@ -17,6 +17,8 @@ import type { PemetaanAkunPegawaiSkp } from "@/lib/skp-jabatan-tipe";
 export type KeadaanPegawaiSkp = PegawaiSkp & {
   roleId: string;
   positionId: string;
+  /** Peran tambahan (mediator, kasir, meja, operator) - ikut menentukan saran jabatan. */
+  peranTambahan: string[];
   aktif: boolean;
   atasanLangsungUserId: string | null;
   atasanNama: string | null;
@@ -33,6 +35,7 @@ type BarisPegawai = {
   nip: string | null;
   role_id: string;
   position_id: string;
+  additional_role_ids_json: string | null;
   is_active: number | boolean;
   profile_nip: string | null;
   rank_grade: string | null;
@@ -44,7 +47,7 @@ type BarisPegawai = {
 };
 
 const KUERI_PEGAWAI = `
-  SELECT u.id, u.name, u.nip, u.role_id, u.position_id, u.is_active,
+  SELECT u.id, u.name, u.nip, u.role_id, u.position_id, u.additional_role_ids_json, u.is_active,
          p.nip AS profile_nip, p.rank_grade,
          s.user_id AS atasan_user_id, su.name AS atasan_nama, su.nip AS atasan_nip,
          s.nip AS atasan_profile_nip, sp.name AS atasan_jabatan
@@ -73,7 +76,11 @@ function susunKeadaan(
   // jabatannya (akun yang dipegang dihitung terpisah, menurut tanggal).
   const berlaku = urut(pemetaanDalamRentang(pemetaanUser, mulai, selesai));
   const acuan = berlaku.length > 0 ? berlaku : urut(pemetaanUser.filter((p) => p.berlakuDari <= selesai));
-  const saran = sarankanJabatanSkp({ roleId: b.role_id, positionId: b.position_id });
+  const peranTambahan = (() => {
+    const daftar = bacaJsonAman<unknown>(b.additional_role_ids_json, []);
+    return Array.isArray(daftar) ? daftar.map(String) : [];
+  })();
+  const saran = sarankanJabatanSkp({ roleId: b.role_id, positionId: b.position_id, additionalRoleIds: peranTambahan });
 
   let utama: JabatanSkp | null = acuan.find((p) => p.jabatanUtama)?.jabatanUtama ?? saran.utama;
   let tambahan: JabatanSkp[] = acuan.length > 0 ? [...new Set(acuan.flatMap((p) => p.jabatanTambahan))] : saran.tambahan;
@@ -97,6 +104,7 @@ function susunKeadaan(
     jabatanTambahan: tambahan,
     roleId: b.role_id,
     positionId: b.position_id,
+    peranTambahan,
     aktif: Boolean(b.is_active),
     atasanLangsungUserId: teksAtauNull(b.atasan_user_id),
     atasanNama: teksAtauNull(b.atasan_nama),

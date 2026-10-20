@@ -49,6 +49,11 @@ export const JABATAN_SKP = [
   "operator",
   "koordinator-delegasi",
   "informasi",
+  // 20 Okt 2026 (eviden SKP semua peran): mediator, Sekretaris, Kasubag, Analis.
+  "mediator",
+  "sekretaris",
+  "kasubag",
+  "analis-perkara",
 ] as const;
 
 export type JabatanSkp = (typeof JABATAN_SKP)[number];
@@ -68,6 +73,10 @@ export const LABEL_JABATAN_SKP: Record<JabatanSkp, string> = {
   operator: "Operator",
   "koordinator-delegasi": "Koordinator Delegasi",
   informasi: "Petugas Informasi",
+  mediator: "Mediator",
+  sekretaris: "Sekretaris",
+  kasubag: "Kepala Subbagian",
+  "analis-perkara": "Analis Perkara Peradilan",
 };
 
 /**
@@ -152,6 +161,14 @@ export type FaktaIndikatorSkp = {
   galat: string | null;
 };
 
+/**
+ * Nama "akun" tiruan yang memuat fakta dari catatan sistem (e-Court, surat,
+ * aplikasi pengadilan) yang dibaca portal, berdampingan dengan akun SIPP asli.
+ * Bukan username SIPP: tidak pernah dikirim ke bot dan tidak dipotong menurut
+ * jendela berlaku akun.
+ */
+export const USERNAME_SISTEM = "__sistem__";
+
 /** Fakta satu akun SIPP. */
 export type FaktaAkunSkp = {
   /** sys_users.username */
@@ -188,8 +205,11 @@ export type DataSkpJabatan = {
 
 export type AspekSkp = "Kuantitas" | "Kualitas" | "Waktu";
 
-/** Asal angka: "SIPP" (dari SIPP), "isian" (manual), "gabungan" (keduanya). */
-export type SumberSkp = "sipp" | "isian" | "gabungan";
+/**
+ * Asal angka: "sipp" (dari SIPP), "sistem" (catatan e-Court dan aplikasi
+ * pengadilan, bukan SIPP), "isian" (manual), "gabungan" (SIPP/sistem + isian).
+ */
+export type SumberSkp = "sipp" | "sistem" | "isian" | "gabungan";
 
 /** Usulan = konstanta kode ALETA (SKP_JABATAN_2026); disahkan = salinan e-Kinerja. */
 export type StatusTargetSkp = "usulan" | "disahkan";

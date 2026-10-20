@@ -1,14 +1,16 @@
 import { persen, selisihHari, tanggalWita } from "@/lib/eviden-skp-katalog";
 import {
   KALIMAT_USULAN_SKP,
+  KUNCI_FAKTA_SKP_JABATAN,
   PERILAKU_KERJA_SKP,
   SKP_JABATAN_2026,
   type ArahSelisihSkp,
   type DefIndikatorSkp,
   type DefRhkSkp,
 } from "@/lib/skp-jabatan-katalog";
-import type {
-  BuktiIsianSkp,
+import {
+  USERNAME_SISTEM,
+  type BuktiIsianSkp,
   DataSkpJabatan,
   FaktaAkunSkp,
   IndikatorSkp,
@@ -199,6 +201,9 @@ export function hitungIndikatorSkp(def: DefIndikatorSkp, kunciRhk: string, k: Ko
   };
   const satuan = target?.satuan || def.satuan;
   const isian = cariIsian(k, kunciRhk, def.kunci);
+  // Asal fakta: SIPP (dikirim bot) atau catatan sistem (e-Court dan aplikasi pengadilan, dibaca portal).
+  const asal = def.aleta ? "sistem" : "SIPP";
+  const sumberDasar: SumberSkp = def.aleta ? "sistem" : "sipp";
 
   const bungkus = (a: Angka, sumber: SumberSkp, kunciSumber: string | null, kejadian: KejadianSkp[]): HasilIndikatorSkp => ({
     indikator: {
@@ -219,7 +224,7 @@ export function hitungIndikatorSkp(def: DefIndikatorSkp, kunciRhk: string, k: Ko
     },
     sumberKunci: kunciSumber,
     kejadian,
-    isian: sumber === "sipp" ? null : isian,
+    isian: sumber === "sipp" || sumber === "sistem" ? null : isian,
   });
 
   // Isian sebagai satu-satunya sumber (indikator tanpa SIPP) atau pengganti SIPP.
@@ -228,7 +233,7 @@ export function hitungIndikatorSkp(def: DefIndikatorSkp, kunciRhk: string, k: Ko
       return TIDAK_TERHITUNG(
         def.aturan.jenis === "isian"
           ? "Indikator ini tidak dicatat di SIPP; belum ada isian manual yang diajukan."
-          : "Tidak terbaca dari SIPP dan belum ada isian manual; angkanya tidak dianggap 0.",
+          : `Tidak terbaca dari ${asal} dan belum ada isian manual; angkanya tidak dianggap 0.`,
         [...catatanAwal, "isian"]
       );
     }
@@ -258,24 +263,26 @@ export function hitungIndikatorSkp(def: DefIndikatorSkp, kunciRhk: string, k: Ko
     f.ada
       ? f.galat.length > 0
         ? f.galat
-        : [`Bagian SIPP untuk ${nama} tidak terbaca.`]
-      : [`SIPP tidak mengirim data untuk ${nama}.`];
+        : [`Bagian ${asal} untuk ${nama} tidak terbaca.`]
+      : [`${asal === "SIPP" ? "SIPP" : "Catatan sistem"} tidak mengirim data untuk ${nama}.`];
 
   const tidakTerbaca = (f: FaktaGabung | FaktaGabung[]): HasilIndikatorSkp => {
     const daftar = Array.isArray(f) ? f : [f];
     const galat = daftar.flatMap((x) => bacaGalat(x, def.objek));
     const pengganti = isian ? dariIsian(galat) : TIDAK_TERHITUNG(
-      "Tidak terbaca dari SIPP; angkanya tidak dianggap 0 dan perlu diisi manual.",
+      `Tidak terbaca dari ${asal}; angkanya tidak dianggap 0 dan perlu diisi manual.`,
       galat
     );
-    return bungkus(pengganti, isian ? "isian" : "sipp", null, []);
+    return bungkus(pengganti, isian ? "isian" : sumberDasar, null, []);
   };
 
   switch (aturan.jenis) {
     case "jumlah":
-    case "jumlah-nilai": {
+    case "jumlah-nilai":
+    case "jumlah-kegiatan": {
       if (!fakta.terbaca) return tidakTerbaca(fakta);
       const nilai = aturan.jenis === "jumlah-nilai";
+      const kegiatan = aturan.jenis === "jumlah-kegiatan";
       let jumlah: number;
       let dasar: string;
       let tanpaNilai = 0;
@@ -283,16 +290,21 @@ export function hitungIndikatorSkp(def: DefIndikatorSkp, kunciRhk: string, k: Ko
         const bernilai = fakta.kejadian.filter((x) => x.nilai !== null && Number.isFinite(x.nilai));
         tanpaNilai = fakta.kejadian.length - bernilai.length;
         jumlah = bernilai.reduce((t, x) => t + (x.nilai as number), 0);
-        dasar = `${rupiahSkp(jumlah)} dari ${angkaSkp(bernilai.length)} ${def.objek} tercatat di SIPP${kalimatTakDinilai(
+        dasar = `${rupiahSkp(jumlah)} dari ${angkaSkp(bernilai.length)} ${def.objek} tercatat di ${asal}${kalimatTakDinilai(
           tanpaNilai,
           "tanpa nilai tidak dijumlahkan"
         )}.`;
+      } else if (kegiatan) {
+        // Tiap kejadian = rangkuman kegiatan satu hari; nilai kosong dihitung satu kegiatan.
+        jumlah = fakta.kejadian.reduce((t, x) => t + (x.nilai !== null && Number.isFinite(x.nilai) ? x.nilai : 1), 0);
+        const hari = new Set(fakta.kejadian.map((x) => (x.tanggal ?? "").slice(0, 10)).filter(Boolean)).size;
+        dasar = `${angkaSkp(jumlah)} ${def.objek} tercatat di ${asal}${hari > 0 ? ` pada ${angkaSkp(hari)} hari` : ""} dalam periode.`;
       } else {
         jumlah = fakta.kejadian.length;
-        dasar = `${angkaSkp(jumlah)} ${def.objek} tercatat di SIPP pada periode.`;
+        dasar = `${angkaSkp(jumlah)} ${def.objek} tercatat di ${asal} pada periode.`;
       }
-      const catatan = ["dari SIPP"];
-      let sumber: SumberSkp = "sipp";
+      const catatan = [`dari ${asal}`];
+      let sumber: SumberSkp = sumberDasar;
       let akhir = jumlah;
       if (isian && isian.nilai !== null) {
         akhir = jumlah + isian.nilai;
@@ -328,13 +340,13 @@ export function hitungIndikatorSkp(def: DefIndikatorSkp, kunciRhk: string, k: Ko
           if (hasil) lulus += 1;
         }
       }
-      const catatan = ["dari SIPP"];
+      const catatan = [`dari ${asal}`];
       if (dinilai === 0) {
         const dasar =
           fakta.kejadian.length === 0
             ? `Tidak ada ${def.objek} pada periode; persentase tidak dapat dihitung.`
             : `Dari ${angkaSkp(fakta.kejadian.length)} ${def.objek}, tidak satu pun dapat dinilai (tanggal tidak lengkap atau belum jatuh tempo); persentase tidak dapat dihitung.`;
-        return bungkus(TIDAK_TERHITUNG(dasar, catatan), "sipp", kunciSumber, fakta.kejadian);
+        return bungkus(TIDAK_TERHITUNG(dasar, catatan), sumberDasar, kunciSumber, fakta.kejadian);
       }
       return bungkus(
         {
@@ -348,7 +360,7 @@ export function hitungIndikatorSkp(def: DefIndikatorSkp, kunciRhk: string, k: Ko
           )}.`,
           catatan,
         },
-        "sipp",
+        sumberDasar,
         kunciSumber,
         fakta.kejadian
       );
@@ -366,9 +378,9 @@ export function hitungIndikatorSkp(def: DefIndikatorSkp, kunciRhk: string, k: Ko
             fakta.kejadian.length === 0
               ? `Tidak ada ${def.objek} pada periode; rata-rata tidak dapat dihitung.`
               : `Tanggal ${def.objek} tidak lengkap; rata-rata tidak dapat dihitung.`,
-            ["dari SIPP"]
+            [`dari ${asal}`]
           ),
-          "sipp",
+          sumberDasar,
           kunciSumber,
           fakta.kejadian
         );
@@ -384,9 +396,9 @@ export function hitungIndikatorSkp(def: DefIndikatorSkp, kunciRhk: string, k: Ko
             tanpa,
             "tidak dihitung karena tanggalnya tidak lengkap"
           )}.`,
-          catatan: ["dari SIPP"],
+          catatan: [`dari ${asal}`],
         },
-        "sipp",
+        sumberDasar,
         kunciSumber,
         fakta.kejadian
       );
@@ -398,8 +410,8 @@ export function hitungIndikatorSkp(def: DefIndikatorSkp, kunciRhk: string, k: Ko
       if (!a.terbaca || !b.terbaca) return tidakTerbaca([a, b].filter((x) => !x.terbaca));
       if (b.kejadian.length === 0) {
         return bungkus(
-          TIDAK_TERHITUNG(`Tidak ada ${def.objek} pada periode; persentase tidak dapat dihitung.`, ["dari SIPP"]),
-          "sipp",
+          TIDAK_TERHITUNG(`Tidak ada ${def.objek} pada periode; persentase tidak dapat dihitung.`, [`dari ${asal}`]),
+          sumberDasar,
           aturan.penyebut,
           b.kejadian
         );
@@ -412,9 +424,9 @@ export function hitungIndikatorSkp(def: DefIndikatorSkp, kunciRhk: string, k: Ko
           pembilang: sebagian,
           penyebut: b.kejadian.length,
           dasar: `${angkaSkp(sebagian)} dari ${angkaSkp(b.kejadian.length)} ${def.objek} ${aturan.syarat}.`,
-          catatan: ["dari SIPP"],
+          catatan: [`dari ${asal}`],
         },
-        "sipp",
+        sumberDasar,
         aturan.penyebut,
         b.kejadian
       );
@@ -486,7 +498,10 @@ export function hitungLembarSkp(m: MasukanLembarSkp): HasilSkpJabatan {
   const batas = hariIni < m.periode.selesai ? hariIni : m.periode.selesai;
 
   const dipilih = new Set((m.usernameSipp ?? []).map((u) => u.trim().toLowerCase()).filter(Boolean));
-  const akun = (m.data?.akun ?? []).filter((a) => dipilih.size === 0 || dipilih.has(a.username.toLowerCase()));
+  const akun = (m.data?.akun ?? []).filter(
+    (a) => a.username === USERNAME_SISTEM || dipilih.size === 0 || dipilih.has(a.username.toLowerCase())
+  );
+  const akunSipp = akun.filter((a) => a.username !== USERNAME_SISTEM);
 
   const jabatanUtama = jabatanKatalogSkp(m.jenis, m.pegawai);
   const dasarKonteks: KonteksHitungSkp = {
@@ -513,8 +528,10 @@ export function hitungLembarSkp(m: MasukanLembarSkp): HasilSkpJabatan {
   }
 
   const catatan: string[] = [KALIMAT_USULAN_SKP];
+  const jabatanLembar = [jabatanUtama, ...(m.sertakanTambahan === false ? [] : m.pegawai.jabatanTambahan)];
+  const memakaiSipp = jabatanLembar.some((j) => (KUNCI_FAKTA_SKP_JABATAN[j] ?? []).length > 0);
   if (m.data === null) catatan.push("Data SIPP tidak terjangkau saat dokumen disusun; semua indikator dari SIPP tampil \"—\".");
-  else if (akun.length === 0) {
+  else if (akunSipp.length === 0 && memakaiSipp) {
     catatan.push(
       "Pegawai ini belum ditautkan ke akun SIPP yang aktif pada periode ini; indikator dari SIPP tampil \"—\" dan perlu diisi manual dengan bukti."
     );

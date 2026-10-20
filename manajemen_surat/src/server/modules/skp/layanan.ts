@@ -1,3 +1,4 @@
+import { pegawaiDitawarkan } from "@/lib/eviden-skp-peran";
 import { bacaIdSipp } from "@/lib/rekap-petugas";
 import { LABEL_JABATAN_SKP, type AktorSkp, type JenisSkp, type KunciPeriodeSkpJabatan } from "@/lib/skp-jabatan-tipe";
 import { waktuPengadilan } from "@/lib/waktu-pengadilan";
@@ -46,11 +47,12 @@ export async function daftarPegawaiUntukAktor(db: AletaDatabase, aktor: AktorSkp
   if (lingkup === "semua" && !bolehLihatSemuaSkp(aktor)) {
     throw new ApiError(403, "Daftar seluruh pegawai hanya untuk Ketua, Wakil Ketua, Panitera, dan administrator.");
   }
-  const semua = await daftarKeadaanPegawai(db, null);
+  // Pegawai nonaktif (mutasi/pensiun) tidak ditawarkan di daftar mana pun.
+  const semua = pegawaiDitawarkan(await daftarKeadaanPegawai(db, null));
   const dipilih = semua.filter((k) => {
     if (lingkup === "saya") return k.userId === aktor.userId;
     if (lingkup === "bawahan") return k.atasanLangsungUserId === aktor.userId && k.userId !== aktor.userId;
-    return k.aktif;
+    return true;
   });
   const pegawai: BarisPegawaiSkp[] = [];
   for (const k of dipilih) {
@@ -242,7 +244,7 @@ export async function bacaPemetaanUntukLayar(db: AletaDatabase, aktor: AktorSkp)
     pegawai: pegawai
       .filter((k) => k.aktif)
       .map((k) => {
-        const saran = sarankanJabatanSkp({ roleId: k.roleId, positionId: k.positionId });
+        const saran = sarankanJabatanSkp({ roleId: k.roleId, positionId: k.positionId, additionalRoleIds: k.peranTambahan });
         return {
           userId: k.userId,
           nama: k.nama,

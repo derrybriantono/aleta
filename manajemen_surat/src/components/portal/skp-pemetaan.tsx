@@ -113,6 +113,9 @@ function FormTautan({
               <option key={a} value={a} />
             ))}
           </datalist>
+          <span className="font-normal">
+            Mediator yang tidak punya akun SIPP: tulis <span className="font-mono">mediator:</span> diikuti nomor mediatornya di SIPP.
+          </span>
         </Label>
         <Label>
           Jabatan utama
