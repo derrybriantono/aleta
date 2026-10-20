@@ -1,0 +1,30 @@
+7222b3ec74c0615ae67a166eee8f3a5e  abt-u4-dk-wali-perwalian-PASANG.sql
+14742ab18dea15f6dc9b774578cc70d6  abt-u4-dk-wali-perwalian-PERIKSA.sql
+717ce911e933286ae47036685f683a82  abt-u4-dk-wali-perwalian-PRASYARAT.sql
+3bdb47d55c786169eee3899ee391c5b4  abt-u4-dk-wali-perwalian-PULIH.sql
+b4d27a83f17ff7365333e0055db6c2fb  berkas_rtf.py
+531cdf5815ea7f69d3a77bea4a6f98f6  daftar-dasar.tsv
+531cdf5815ea7f69d3a77bea4a6f98f6  daftar-pindah.tsv
+3ebb178d131300fe7c33a77fe0d4058e  daftar-rtf.tsv
+531cdf5815ea7f69d3a77bea4a6f98f6  daftar-sunting.tsv
+a3aa6261a1d460fef8aea2915b8e945b  daftar-timpa.tsv
+2b237ad1b640d8651bb0ba33513c1dd5  folder-ada.txt
+8495509a54970204b98c9bb9c09e7cc9  folder-baru.txt
+7c1ce954a20a9cf74849d191ac67a364  pasang-satker.sh
+2a9656df4aeaedf0830e05ea06dfc0a4  pulih-satker.sh
+58c0c1afaeaa7696103e6d3e102fc882  rtf/derry_briantono/3 Dispensasi Kawin/[01c] [Kabul] DK - (Anak P Cewek) Alasan Mendesak Otomatis (Hamil atau Pacaran Erat).rtf
+edb08ff5d0ac2d128cae918b18f778a7  rtf/derry_briantono/3 Dispensasi Kawin/[01d] [Kabul] DK - Kedua Calon Mempelai di Bawah Umur (Dua Keluarga Pemohon, Hamil atau Pacaran Erat).rtf
+adc244166f2073816355cea3c768f2b1  rtf/derry_briantono/6 Perwalian/[01b] [Kabul] Perwalian - Anak Yatim Piatu oleh Kerabat (Bukan Orang Tua).rtf
+0941381a101b12f96cbe9c900d2341e5  timpa/derry_briantono/3 Dispensasi Kawin/[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf
+668f9b6569beb3cebf0c7ba73dc4ece8  timpa/derry_briantono/3 Dispensasi Kawin/[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil.rtf
+09a389fe13f2b7c827a5d69b1bd9bcbf  timpa/derry_briantono/3 Dispensasi Kawin/[02] [Kabul] DK - (Anak P Cewek) sudah berhubungan badan.rtf
+01d333cdfbcef8c4ba55ba07f2f5dc30  timpa/derry_briantono/3 Dispensasi Kawin/[02] [Kabul] DK - (Anak P Cowok) sudah berhubungan badan.rtf
+3a58a6dcd353d87d1f5b2abe9dcedac6  timpa/derry_briantono/3 Dispensasi Kawin/[03] [Tolak] DK - (Anak P Cewek) Belum Hamil.rtf
+95fa08960ae7be56a29fe53e951646a1  timpa/derry_briantono/3 Dispensasi Kawin/[03a] [Tolak] DK - (Anak P Cowok) Calon Istri Belum Hamil, Hanya Berpacaran.rtf
+10cf89dad9fc9e68e8d4d5413e97c215  timpa/derry_briantono/3 Dispensasi Kawin/[03b] [Tolak] DK - (Anak P Cewek) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf
+64319742d86d33734b058253b9fba2c6  timpa/derry_briantono/3 Dispensasi Kawin/[03c] [Tolak] DK - (Anak P Cowok) Alasan Sangat Mendesak Tidak Terbukti (Alasan Lain, Isian 9771).rtf
+295f79cb41d28aee4dfbfa813056abdb  timpa/derry_briantono/6 Perwalian/Perwalian Anak oleh ortu kandung Kabul.rtf
+75d674ff56238950b7a31617230b6983  timpa/derry_briantono/7 Wali Adhal/[01] [Kabul] Wali Adhal - Wali Tidak Hadir.rtf
+b45eaea3e2033a616eee2d4600a627da  timpa/derry_briantono/7 Wali Adhal/[01a] [Kabul] Wali Adhal - Wali Hadir Tetap Enggan.rtf
+e0f544d2ba546fdef205b06d34b28370  timpa/derry_briantono/7 Wali Adhal/[03] [Tolak] Wali Adhal - Keengganan Wali Beralasan Hukum.rtf
+1fb84a9a0c7aed361a40007d7b080c42  uji-kueri.tsv
