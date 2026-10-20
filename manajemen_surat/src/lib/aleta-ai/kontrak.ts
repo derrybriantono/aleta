@@ -20,7 +20,7 @@ export type RingkasAi = {
   saldoRp: number;
   superAdmin: boolean;
   pemicu: Pemicu[];
-  proyekVersi?: string;
+  proyekVersi?: string | number;
 };
 
 export type RingkasPercakapan = { id: string; judul: string; diperbarui: string; perkara?: string };

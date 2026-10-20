@@ -59,13 +59,14 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
     versi: "1.205.16",
     dirilis: "2026-10-20T13:00:00+08:00",
-    judul: "Cetak massal per peran, cetak relaas sinkron peta, eviden SKP semua peran, dan Jadwal Sidang lewat tautan",
+    judul: "Cetak massal per peran, cetak relaas sinkron peta, eviden SKP semua peran, Jadwal Sidang lewat tautan, dan ALETA Ai tahap 1",
     butir: [
       "Cetak massal di Blangko ABT by Derry Briantono menurut peran: hakim mencetak putusan, panitera dan panitera pengganti mencetak BAS, juru sita mencetak relaas, petugas PTSP mencetak penetapan; blangko dipilih dan diisi otomatis per perkara, ada daftar periksa siap/perlu dicek sebelum dicetak.",
       "Cetak relaas di Jadwal Sidang memakai aturan pihak yang sama dengan peta perkara relaas: perkara permohonan (Pdt.P) tidak lagi dipanggil dengan format gugatan seolah ada Termohon.",
       "Unduh eviden SKP kini tersedia untuk peran selain hakim (panitera, panitera pengganti, panitera muda, juru sita, mediator, PTSP, kasir, sekretariat) dari kegiatan nyata di SIPP, e-Court, dan aplikasi.",
       "Tanda tangan pejabat yang lebih besar dan ditindis cap berukuran tetap juga dipakai di ekstensi dan salinan putusan, dengan pengaturan ukuran di halaman Tanda tangan pejabat.",
       "Jadwal Sidang dapat dibuka lewat tautan rahasia tanpa akun dari jaringan kantor: hanya tombol tunda, putus, Court Calendar, mediator, dan tombol sisi kanan; semua tanda tetap tampil; tunda dan putus tercatat atas panitera pengganti perkara. Tautan dibuat dan dicabut oleh Admin.",
+      "ALETA Ai (tahap 1, untuk sementara hanya Super Admin): asisten percakapan berisi Proyek ALETA AI PA V4.5 dengan mode Cepat/Teliti/Mendalam yang dipilih otomatis, biaya per jawaban dalam rupiah mengikuti kurs harian, dan saldo; aktif setelah kunci layanan dipasang di server.",
     ],
   },
   {
