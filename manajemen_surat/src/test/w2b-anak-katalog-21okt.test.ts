@@ -244,6 +244,34 @@ describe("kalimat saksi 1 dan saksi 2 pada semua tingkat pengetahuan", () => {
   }
 });
 
+describe("cakupan: setiap butir baru menjawab untuk semua jenis keterangan pada keadaan yang mengaktifkannya", () => {
+  const JENIS_KET = ["melihat", "mendengar", "de-auditu", "sebagian", "tidak-tahu", "ragu", "berbeda"];
+  for (const [kunci, kat, awalan] of JENIS) {
+    it(`${kunci}: tiap butir baru menghasilkan kalimat untuk 7 jenis keterangan, tiap varian pihak, dan dua saksi`, () => {
+      const lama = muat(CAD, `${kunci}.json`);
+      const baru = kat.pertanyaan.filter((q: any) => q.id.startsWith(awalan) && !lama.pertanyaan.some((l: any) => l.id === q.id));
+      for (const q of baru) {
+        const dasar: Record<string, any> = { ...Mesin.keadaanBawaan(kat, {}), kehadiran: "kontradiktoir" };
+        for (const [k, v] of Object.entries(q.keadaan || {})) dasar[k] = Array.isArray(v) ? v[0] : v;
+        // semua nilai keadaan yang membedakan objek jawaban (mis. pengasuhAnak pengaju atau lawan)
+        const pembeda: Record<string, Set<string>> = {};
+        for (const v of Object.values(q.jawaban) as any[]) for (const x of Array.isArray(v) ? v : [v]) for (const [k, n] of Object.entries(x.keadaan || {})) (pembeda[k] = pembeda[k] || new Set()).add(String(n));
+        const kombinasi: Record<string, any>[] = [dasar];
+        for (const [k, nilai] of Object.entries(pembeda)) for (const n of nilai) kombinasi.push({ ...dasar, [k]: n });
+        for (const keadaan of kombinasi) {
+          for (const jenis of JENIS_KET) {
+            for (const ke of [1, 2]) {
+              const p = Mesin.pilihJawaban(kat, q, jenis, keadaan, ke, "uji/Pdt.G/2026/PA.Dgl", new Set());
+              expect(p, `${q.id}/${jenis}/saksi${ke}/${JSON.stringify(keadaan)}`).toBeTruthy();
+              expect(String(p.teks).length, `${q.id}/${jenis}`).toBeGreaterThan(10);
+            }
+          }
+        }
+      }
+    });
+  }
+});
+
 describe("data ekstensi sinkron dengan JSON", () => {
   it("saksi-katalog-data.js memuat butir baru ketiga jenis", () => {
     const data = readFileSync(path.join(EK, "saksi-katalog-data.js"), "utf8");
