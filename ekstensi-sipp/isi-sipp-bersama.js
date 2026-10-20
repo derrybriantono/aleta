@@ -454,11 +454,13 @@
       }
       const periode = /(awal konflik|puncak|pisah rumah|sejak)/i.test(teks(b.nama)) && b.jenis === "teks";
       const h = putuskan(u, { kosong: b.kosong !== false, bolehGanti: b.bolehGanti === true, jenis: b.jenis, opsi: b.opsi, keIso, periode, nama: b.nama });
-      // Pengisi menyatakan terus terang "tidak ada sumber" (mis. nomor SK prodeo) atau isian ditandai manual dan tak ada nilai: tanda "diisi manual".
+      // Pengisi menyatakan terus terang "tidak ada sumber" (mis. nomor SK prodeo, surat bantuan panggilan) atau isian ditandai manual
+      // dan tak ada nilai yang terbaca: tanda "diisi manual" + alasan (alasan dari pengisi didahulukan, lalu alasan tetap isian itu).
       if (h.golongan === "lewati" && h.sebab === "tidak terdeteksi" && b.kosong !== false) {
-        const alasan = htmlKeTeks(teks(u.catatan)).trim() || teks(b.alasanManual).trim();
-        if (alasan && (teks(u.keyakinan) === "tidak_ada_sumber" || b.manual === true)) {
-          hasil.info[kode] = infoManual(kode, alasan);
+        const dinamis = teks(u.keyakinan) === "tidak_ada_sumber" ? htmlKeTeks(teks(u.catatan)).trim() : "";
+        const statik = b.manual === true ? teks(b.alasanManual).trim() : "";
+        if (dinamis || statik) {
+          hasil.info[kode] = infoManual(kode, dinamis || statik);
           continue;
         }
       }

@@ -1794,6 +1794,8 @@
           usulanSumber
         );
         for (const [kode, info] of Object.entries(rencana.info)) {
+          // Tanda "diisi manual" tidak menghapus bacaan yang sudah ada dari putaran sebelumnya (mis. KTP datang belakangan).
+          if (info.golongan === "manual" && S.info[kode] && S.info[kode].golongan !== "manual") continue;
           S.info[kode] = info;
           if (info.pilihan && info.pilihan.length) S.bunyi[kode] = info.pilihan;
         }

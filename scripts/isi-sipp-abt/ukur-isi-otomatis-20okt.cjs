@@ -126,7 +126,12 @@ function kategoriBlangko(b) {
 function relevan(b, jenis, alur, perkara) {
   const berkas = String(b.jalur || "").split("/").pop();
   if (/Pencegahan Perkawinan/i.test(berkas)) return false;
-  if (/Pengumuman Permohonan Itsbat/i.test(berkas)) return jenis === 360 && String(alur) === "16";
+  if (/Pengumuman Permohonan Itsbat/i.test(berkas)) {
+    if (!(jenis === 360 && String(alur) === "16")) return false;
+    // 9.1 = dua Pemohon, 9.2 = satu Pemohon (pasangan telah meninggal)
+    const dua = Number(perkara.jmlPihak1) >= 2;
+    return /2 Pemohon/i.test(berkas) ? dua : !dua;
+  }
   if (/Ikrar Talak/i.test(berkas)) return jenis === 346;
   // Blangko ikrar hanya untuk cerai talak (nama berkas/folder memuat "ikrar" juga pada folder cerai gugat: tidak berlaku).
   if (kategoriBlangko(b) === "ikrar") return jenis === 346;
@@ -157,16 +162,22 @@ function blangkoUntuk(j, a, perkara) {
     const kunciJ = `${b.j}/${b.a}`;
     hitung[kunciJ] = (hitung[kunciJ] || 0) + 1;
     if (hitung[kunciJ] > maks) continue;
+    b.jmlPihak1 = Number(((await q("SELECT COUNT(*) AS n FROM perkara_pihak1 WHERE perkara_id = ?", [b.perkara_id])) || [{}])[0].n) || 0;
     const blangko = blangkoUntuk(j, b.a, b);
     if (!blangko.length) continue;
     const perKat = {};
+    const jmlBlangko = {};
+    const adaDi = {};
     for (const bl of blangko) {
       const kat = kategoriBlangko(bl);
+      jmlBlangko[kat] = (jmlBlangko[kat] || 0) + 1;
       for (const k of bl.isian) {
         const x = infoIsian.get(k);
         if (!x || String(k).startsWith("tj:")) continue;
         if (x.keadaan) continue; // kuasa/prodeo/ghaib/insidentil/alasan C-H: bersyarat keadaan
         (perKat[kat] = perKat[kat] || new Map()).set(k, x.jenis === "tanggal" ? "tanggal" : "teks");
+        const kunciF = `${kat}|${k}`;
+        adaDi[kunciF] = (adaDi[kunciF] || 0) + 1;
       }
     }
     const pihak = j === 346 ? { pelaku: "Termohon", lawan: "Pemohon" } : j === 347 ? { pelaku: "Tergugat", lawan: "Penggugat" } : { pelaku: "Termohon", lawan: "Pemohon" };
@@ -193,7 +204,7 @@ function blangkoUntuk(j, a, perkara) {
         if (bag && Array.isArray(bag.usulan)) daftarUsulan.push(bag.usulan);
       }
       const usulan = mesin.pilihPerKode(daftarUsulan, kodeAda);
-      const katalog = [...kodeMap.entries()].map(([kode, jenis]) => ({ kode, nama: (infoIsian.get(kode) || {}).nama || "", jenis, opsi: [], kosong: true, bolehGanti: false }));
+      const katalog = [...kodeMap.entries()].map(([kode, jenis]) => ({ kode, nama: (infoIsian.get(kode) || {}).nama || "", jenis, opsi: [], kosong: true, bolehGanti: false, manual: Boolean(metadata.manual[kode]), alasanManual: metadata.manual[kode] || "" }));
       const rencana = mesin.rencanakan(usulan, katalog, keIso, daftarUsulan);
       const tulis = new Set(rencana.tulis.map((x) => x.kode));
       const saran = new Set(rencana.saran.map((x) => x.kode));
@@ -204,10 +215,12 @@ function blangkoUntuk(j, a, perkara) {
         else if (saran.has(k)) kelas = "ragu";
         else if (KODE_ECOURT.has(k)) kelas = "ecourt";
         else if (metadata.opsional[k]) kelas = "opsional";
-        else if (metadata.manual[k]) kelas = "manual";
+        else if (rencana.info[k] && rencana.info[k].golongan === "manual") kelas = "manual";
         else kelas = "kosong";
         const c = (r.kode[k] = r.kode[k] || { otomatis: 0, ragu: 0, ecourt: 0, manual: 0, opsional: 0, kosong: 0 });
         c[kelas]++;
+        // Isian "umum" = ada di sedikitnya 40% blangko kategori itu (selebihnya khas satu skenario: tolak, cabut, nafkah, pasangan meninggal ...).
+        c.umum = (adaDi[`${kat}|${k}`] || 0) / (jmlBlangko[kat] || 1) >= 0.4;
       }
     }
   }
@@ -225,9 +238,14 @@ function blangkoUntuk(j, a, perkara) {
   }
   const jml = Object.values(total).reduce((x, y) => x + y, 0) || 1;
   const keseluruhan = Object.fromEntries(Object.entries(total).map(([k, v]) => [k, Math.round((v / jml) * 1000) / 10]));
-  const out = { diukur: new Date().toISOString().slice(0, 10), akar, keseluruhan, ringkasPersen: ringkas, jenis: perJenis };
+  // Hanya isian umum (ada di >= 40% blangko kategorinya): gambaran perkara biasa tanpa skenario khusus.
+  const totU = { otomatis: 0, ragu: 0, ecourt: 0, manual: 0, opsional: 0, kosong: 0 };
+  for (const rJ of Object.values(perJenis)) for (const r of Object.values(rJ.kategori)) for (const c of Object.values(r.kode)) if (c.umum) for (const k of Object.keys(totU)) totU[k] += c[k];
+  const jmlU = Object.values(totU).reduce((x, y) => x + y, 0) || 1;
+  const keseluruhanUmum = Object.fromEntries(Object.entries(totU).map(([k, v]) => [k, Math.round((v / jmlU) * 1000) / 10]));
+  const out = { diukur: new Date().toISOString().slice(0, 10), akar, keseluruhan, keseluruhanUmum, ringkasPersen: ringkas, jenis: perJenis };
   if (keluar) fs.writeFileSync(keluar, JSON.stringify(out, null, 1));
-  console.log(JSON.stringify({ keseluruhan, ringkas }));
+  console.log(JSON.stringify({ keseluruhan, keseluruhanUmum, ringkas }));
   kon.end();
   process.exit(0);
 })().catch((e) => {

@@ -218,9 +218,9 @@ function usulanUmurItsbat(pihak, tglNikahIso) {
     const n = umurTahun(daftar[0].lahir, tglNikahIso);
     if (n === null || n < 10) return;
     hasil.push(
-      butir(kode, nama, `${n} tahun`, "cukup", {
+      butir(kode, nama, `${n} tahun`, "ragu", {
         kalimat: `SIPP data ${sebutan}: lahir ${isoKeTampil(daftar[0].lahir)}; menikah ${isoKeTampil(tglNikahIso)}`,
-        catatan: `Dihitung dari tanggal lahir ${sebutan} di data pihak SIPP sampai tanggal nikah (${isoKeTampil(tglNikahIso)}). Bila posita menyebut umur yang berbeda, ikuti dalil permohonan.`,
+        catatan: `Dihitung dari tanggal lahir ${sebutan} di data pihak SIPP sampai tanggal nikah (${isoKeTampil(tglNikahIso)}). Posita biasanya menyebut umur yang dibulatkan, jadi bisa berbeda satu tahun; bila posita menyebut umur, ikuti dalil permohonan.`,
         kodePola: "sipp-umur-saat-nikah",
       })
     );
@@ -351,30 +351,42 @@ function usulanPergiDariPosita(posita, jenis) {
   ];
 }
 
-/** 8503: huruf alasan perceraian yang tampak dari posita (saran saja - keputusan hakim). Mis. "F", "AF", "DF". */
+/**
+ * 8503: huruf alasan perceraian yang tampak dari posita - SARAN saja (keputusan hakim). Hanya dua huruf yang cukup terukur:
+ * F (posita mendalilkan perselisihan terus-menerus) dan B (pisah rumah 24 bulan atau lebih menurut posita); atas 359 isian petugas
+ * kombinasi ini persis sama pada 60% perkara (huruf A/D/C dari posita saja terlalu sering tidak dipakai majelis, jadi hanya disebut di catatan).
+ */
 function usulanHurufDariPosita(posita, jenis) {
   const U = lazy.U();
   const A = require("./deteksiAlasanService");
-  let ringkas;
+  let dalil;
+  let bulan = null;
   try {
     const butirPosita = U.kalimatPositaSambung ? U.kalimatPositaSambung(posita) : U.kalimatPosita(posita);
     if (!butirPosita.length) return [];
     const ct = jenis === 346;
     const hasil = A.deteksiPerkara({ b1: [], b2: [], butirPosita, pihak: { pelaku: ct ? "Termohon" : "Tergugat", lawan: ct ? "Pemohon" : "Penggugat" }, lamaPisahBulan: null });
-    ringkas = (hasil.huruf || []).filter((x) => x.didalilkan === true);
+    dalil = new Set((hasil.huruf || []).filter((x) => x.didalilkan === true).map((x) => x.huruf));
+    const lama = U.lamaPisahPosita(U.kalimatPosita(posita));
+    bulan = lama && lama.nilai ? U.totalBulan(lama.nilai) : null;
   } catch {
     return [];
   }
-  let huruf = [...new Set(ringkas.map((x) => x.huruf))].filter((h) => "ACDEFGH".includes(h));
   // Posita yang menyangkal ada perselisihan ("tidak pernah terjadi perselisihan dan pertengkaran") bukan dalil huruf F.
-  if (/tidak\s+pernah\s+(?:ada\s+|terjadi\s+)?(?:perselisihan|pertengkaran)/i.test(polos(posita))) huruf = huruf.filter((h) => h !== "F");
+  if (/tidak\s+pernah\s+(?:ada\s+|terjadi\s+)?(?:perselisihan|pertengkaran)/i.test(polos(posita))) dalil.delete("F");
+  const huruf = [];
+  if (dalil.has("F")) huruf.push("F");
+  if (Number.isFinite(bulan) && bulan >= 24) huruf.push("B");
   if (!huruf.length) return [];
-  const nilai = huruf.sort().join("");
+  huruf.sort();
+  const lain = [...dalil].filter((h) => !huruf.includes(h) && "ACDEGH".includes(h)).sort();
   return [
-    butir("8503", "Alasan perceraian", nilai, "ragu", {
+    butir("8503", "Alasan perceraian", huruf.join(""), "ragu", {
       asal: "posita-gugatan",
-      kalimat: `Posita menyebut peristiwa yang termasuk huruf ${huruf.join(", ")}`,
-      catatan: "Huruf alasan perceraian adalah keputusan hakim. Yang tampil hanya huruf yang didalilkan posita; periksa dengan keterangan saksi dan pertimbangan majelis sebelum dipakai.",
+      kalimat: `Posita mendalilkan ${huruf.includes("F") ? "perselisihan terus-menerus" : ""}${huruf.length === 2 ? " dan " : ""}${huruf.includes("B") ? `pisah rumah ${bulan} bulan (24 bulan atau lebih)` : ""}`,
+      catatan:
+        "Huruf alasan perceraian adalah keputusan hakim. Yang tampil hanya huruf yang tampak dari posita (F perselisihan terus-menerus; B pisah rumah 24 bulan atau lebih); periksa dengan keterangan saksi dan pertimbangan majelis sebelum dipakai." +
+        (lain.length ? ` Posita juga menyebut peristiwa yang mengarah ke huruf ${lain.join(", ")}; dimasukkan hanya bila terbukti oleh saksi.` : ""),
       kodePola: "posita-huruf-alasan",
     }),
   ];
@@ -411,6 +423,18 @@ function alasanTidakDicatat(posita) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 const JENIS = Object.freeze({ cerai: [346, 347], itsbat: [360] });
+
+/** Semua kode isian yang dapat dipancarkan modul ini (dipakai uji penjaga: tiap kode punya pengisi atau tanda manual). */
+const KODE_DIISI = Object.freeze([
+  "1154", "1232", "5230", // delegasi
+  "1081", // PHS baru ikrar
+  "8603", "5110", "0709", "0711", // anak
+  "7211", "7212", // umur itsbat
+  "6054", "6055", "7120", "6071", "6072", "7778", "5111", "2004", // tuntutan accessoir
+  "9711", "9712", "9713", "9715", "9050", // jumlah untuk amar
+  "7035", "8503", // fakta posita cerai
+  "9686", // itsbat
+]);
 
 /**
  * Semua usulan lengkap satu perkara. `runQuery(sql, params)` = pembaca SIPP baca-saja milik abtUsulanService.
@@ -504,13 +528,15 @@ async function usulanLengkap(perkaraId, runQuery) {
     tambah(usulanHurufDariPosita(perkara.posita, jenis));
   }
   if (itsbat) {
-    // Tanggal nikah yang pasti: data pernikahan SIPP, atau kalimat pernikahan di posita (sama dengan 5197).
+    // Tanggal nikah yang pasti: data pernikahan SIPP (perkara_data_pernikahan), atau kalimat pernikahan di posita (sama dengan 5197).
     let tglNikah = "";
     try {
-      const U = lazy.U();
-      const u5197 = (await diam(() => U.usulanTanggalNikahSipp(id))) || [];
-      const t = (Array.isArray(u5197) ? u5197 : []).find((x) => x && x.kode === "5197" && x.nilai);
-      tglNikah = t ? ketanggalIso(t.nilai) : "";
+      const nikah = satu(await diam(() => runQuery("SELECT DATE_FORMAT(tgl_nikah, '%Y-%m-%d') AS tgl FROM perkara_data_pernikahan WHERE perkara_id = ? LIMIT 1", [id])));
+      tglNikah = nikah && /^\d{4}-\d{2}-\d{2}$/.test(String(nikah.tgl || "")) && !String(nikah.tgl).startsWith("0000") ? String(nikah.tgl) : "";
+      if (!tglNikah) {
+        const U = lazy.U();
+        tglNikah = ketanggalIso(U.tanggalNikahDariPosita(U.kalimatPosita(perkara.posita)).nilai);
+      }
     } catch {
       tglNikah = "";
     }
@@ -549,6 +575,7 @@ function ketanggalIso(teks) {
 }
 
 module.exports = {
+  KODE_DIISI,
   polos,
   usulanDelegasi,
   usulanPhsBaruIkrar,
