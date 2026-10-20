@@ -697,19 +697,41 @@
   }
 
   /**
-   * Memasang jawaban usulan (kontrak bersama {teks, yakin, sumber}) pada baris hasil gabung().
-   * `usulan` = { [kunciJawaban]: {teks, yakin, sumber} }. Hanya baris yang BELUM diketik petugas yang diganti
-   * (kosong, kalimat dasar katalog, atau hasil susunan sebelumnya); baris yang diketik petugas tidak pernah disentuh.
-   * Baris yang dipasang membawa `otomatis` (= teks), `yakin`, dan `sumberJawab` untuk tampilan.
-   * @returns {{rows: Array, terisi: number, tertahan: number}}
+   * Memasang jawaban usulan (kontrak bersama {teks, yakin, sumber, ket}) pada baris hasil gabung().
+   * `usulan` = { [kunciJawaban]: {teks, yakin, sumber, ket}, ["<kunciJawaban>@<kunciSaksi>"]: ... }. Pengisi jawaban dari data
+   * mengembalikan kalimat yang dibedakan menurut saksi (saksi 2 memakai kalimat lain) di kunci berekor `@kunciSaksi`;
+   * karena itu, bila `kunciSaksi` diberikan, kunci berekor dicoba LEBIH DULU lalu kunci polos.
+   * Hanya baris yang BELUM diketik petugas yang diganti (kosong, kalimat dasar katalog, atau hasil susunan sebelumnya);
+   * baris yang diketik petugas tidak pernah disentuh. Baris yang dipasang membawa `otomatis` (= teks),
+   * `usulan` {teks, yakin, sumber, ket} (dibaca tampilan: warna kotak, lencana ragu, ikon i), serta `yakin` dan `sumberJawab`.
+   * @param {Array} rows
+   * @param {object} usulan
+   * @param {string} [kunciSaksi]
+   * @returns {{rows: Array, terisi: number, tertahan: number, ragu: number}}
    */
-  function terapkanUsulan(rows, usulan) {
+  function terapkanUsulan(rows, usulan, kunciSaksi) {
     const u = laRaya(usulan) ? usulan : {};
+    const ks = teks(kunciSaksi);
     let terisi = 0;
     let tertahan = 0;
+    let ragu = 0;
     const hasil = daftar(rows).map((r) => {
       const kunci = teks(r && (r.kunciJawaban || (r.butir && r.jenisKat ? `${r.butir}/${r.jenisKat}` : "")));
-      const cari = u[kunci] || (r && r.butir && r.jenisKat ? u[`${r.butir}/${r.jenisKat}`] : undefined);
+      const polos = r && r.butir && r.jenisKat ? `${r.butir}/${r.jenisKat}` : "";
+      const calon = [];
+      if (ks) {
+        if (kunci) calon.push(`${kunci}@${ks}`);
+        if (polos && polos !== kunci) calon.push(`${polos}@${ks}`);
+      }
+      if (kunci) calon.push(kunci);
+      if (polos && polos !== kunci) calon.push(polos);
+      let cari;
+      for (const c of calon) {
+        if (u[c] && rapat(u[c].teks)) {
+          cari = u[c];
+          break;
+        }
+      }
       const isi = cari && rapat(cari.teks);
       if (!isi) return r;
       if (diketikPetugas(r)) {
@@ -717,9 +739,12 @@
         return r;
       }
       terisi += 1;
-      return Object.assign({}, r, { jawab: isi, otomatis: isi, yakin: cari.yakin === "yakin" || cari.yakin === "ragu" ? cari.yakin : "cukup", sumberJawab: teks(cari.sumber) });
+      const yakin = cari.yakin === "yakin" || cari.yakin === "ragu" ? cari.yakin : "cukup";
+      if (yakin === "ragu") ragu += 1;
+      const sumber = teks(cari.sumber);
+      return Object.assign({}, r, { jawab: isi, otomatis: isi, yakin, sumberJawab: sumber, usulan: { teks: isi, yakin, sumber, ket: teks(cari.ket) } });
     });
-    return { rows: hasil, terisi, tertahan };
+    return { rows: hasil, terisi, tertahan, ragu };
   }
 
   // ──────────────────────────────────────────────────────────────────────────

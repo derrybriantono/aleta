@@ -3328,7 +3328,7 @@
           S.sk.status[k] = { teks: "Daftar pertanyaan ini bukan susunan katalog. Pilih set pertanyaan katalog di atas lalu tekan Muat bila ingin menyusunnya; jawaban yang sudah Anda ketik tetap dipertahankan." };
           continue;
         }
-        const rows = usulan ? K.terapkanUsulan(g.rows, usulan).rows : g.rows;
+        const rows = usulan ? K.terapkanUsulan(g.rows, usulan, k).rows : g.rows;
         const sama = JSON.stringify(rows.map((r) => [r.tanya, r.jawab])) === JSON.stringify(t.rows.map((r) => [r.tanya, r.jawab]));
         if (!sama) {
           if (!dicatat.size) tjCatat(grupSaksi(k));
