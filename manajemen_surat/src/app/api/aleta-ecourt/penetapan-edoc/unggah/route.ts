@@ -12,6 +12,7 @@ import {
 } from "@/server/modules/aleta-ecourt/penetapan-edoc";
 import { aturUntukBot, jenisPetaSah, kalimatPeringatanPenetapan } from "@/lib/peta-penetapan";
 import { petaPenetapanBerlaku } from "@/server/modules/aleta-ecourt/peta-penetapan";
+import { ukuranTimpaUntukBot } from "@/server/modules/aleta-ecourt/ukuran-ttd-cap";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { appendAuditLog } from "@/server/shared/audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -212,9 +213,12 @@ export async function POST(request: NextRequest) {
     // lalu cap aktif terbaru sesuai peruntukan. Tanpa cap: bot menyusun
     // dokumen tanpa cap dan menyebutnya (peringatan cap_belum_ada).
     const cap: Partial<Record<JenisPenetapan, { id: string; nama: string; jenis: string; isiBase64: string }>> = {};
+    // 20 Okt: ukuran tanda tangan/cap dari kartu "Ukuran tanda tangan & cap" (satu set untuk e-Doc, ekstensi, salinan)
+    // menimpa ukuran per jenis Peta penetapan bila admin pernah menyimpannya.
+    const ukuranKartu = await ukuranTimpaUntukBot(db).catch(() => null);
     for (const j of semuaJenis) {
       const a = peta.get(j);
-      if (a) atur[j] = aturUntukBot(a);
+      if (a) atur[j] = { ...aturUntukBot(a), ...(ukuranKartu ?? {}) };
       if (a && !a.pakaiCap) continue;
       const c = await pilihCap(db, j, (a && a.capId) || badan.capId?.[j] || badan.capId?.[j.toUpperCase()] || null);
       if (c) cap[j] = { id: c.id, nama: c.nama, jenis: c.jenisBerkas, isiBase64: c.isi.toString("base64") };

@@ -335,18 +335,76 @@ function ukuranGambar(isi) {
   return { w: 0, h: 0 };
 }
 
+/** Tinggi satu baris kosong blangko (mm) - dasar menambah ruang tanda tangan. */
+const MM_PER_BARIS_KOSONG = 5;
+
+/**
+ * Jumlah baris kosong yang perlu ditambahkan di atas nama supaya tanda tangan
+ * (tinggi `tinggiTtdMm`, menimpa 1/3 atas nama) tidak menutupi label "Panitera,"
+ * di atasnya: ruang yang dibutuhkan = tinggi - turun; ruang yang ada = baris
+ * kosong blangko. Hasil dibatasi 0-8.
+ */
+function barisKosongTambahan(tinggiTtdMm, turunMm, kosonganAda) {
+  const perlu = tinggiTtdMm - turunMm - kosonganAda * MM_PER_BARIS_KOSONG * 1.2;
+  return perlu > 0 ? Math.min(8, Math.ceil(perlu / MM_PER_BARIS_KOSONG)) : 0;
+}
+
+/**
+ * c. (20 Okt 2026) TTD Panitera MENGAMBANG: bentuk bergambar yang menimpa
+ * +-1/3 atas baris nama dan, bila ada, CAP berdiameter tetap yang menindih sisi
+ * kiri TTD - aturan, ukuran, dan mesin yang SAMA dengan e-Doc penetapan
+ * (penetapanEdocService.bubuhkanTtdCap + UKURAN_TTD_CAP). Cap hanya dibubuhkan
+ * bersama tanda tangan Panitera yang sah.
+ * Pulang null bila letak nama tidak ditemukan (pemanggil memakai cara sebaris).
+ */
+function tandaTanganMengambang(s, blok, ttd, cap, atur) {
+  const edoc = require("./penetapanEdocService");
+  const baris = edoc.sapuRtf(s).baris;
+  let mulai = -1;
+  for (let k = baris.length - 1; k >= 0; k -= 1) {
+    if (baris[k].teks === blok.namaPanitera) {
+      mulai = baris[k].mulai;
+      break;
+    }
+  }
+  if (!(mulai > 0)) return null;
+  const a = edoc.aturBerlaku("ppp", atur);
+  const mm = (n) => Number(n);
+  // Tinggi TTD sesudah dibatasi (sama dengan bubuhkanTtdCap).
+  const u = edoc.ukuranGambar(ttd.isi);
+  let tinggi = mm(a.lebarTtdMm) / 2;
+  if (u && u.lebar > 0) tinggi = (mm(a.lebarTtdMm) * u.tinggi) / u.lebar;
+  tinggi = Math.min(tinggi, mm(a.tinggiTtdMaksMm));
+  const tambah = barisKosongTambahan(tinggi, mm(a.ttdTurunMm), blok.kosongan.length);
+  const jeda = tambah ? "\\par ".repeat(tambah) : "";
+  const siap = tambah ? `${s.slice(0, mulai)}${jeda}${s.slice(mulai)}` : s;
+  const letak = mulai + jeda.length;
+  const capSah = cap && cap.isi && Buffer.from(cap.isi).length ? cap : null;
+  const r = edoc.bubuhkanTtdCap(siap, { mulaiNama: letak, ttd, cap: capSah, atur: a });
+  if (!r.ok) return null;
+  return { rtf: r.rtf, ok: true, namaPanitera: blok.namaPanitera, mengambang: true, capDipasang: Boolean(r.geometri && r.geometri.cap), barisKosongTambah: tambah, geometri: r.geometri };
+}
+
 /**
  * c. Gambar tanda tangan Panitera di blok Untuk Salinan, di atas namanya.
  *
- * Disisipkan ke paragraf kosong PERTAMA di antara "Panitera," dan nama -
- * ruang tanda tangan yang memang disediakan blangko. Tanpa paragraf kosong,
- * gambar ditaruh di awal paragraf nama disusul pindah baris.
+ * Utama: bentuk mengambang menimpa nama (+ cap) - lihat tandaTanganMengambang.
+ * Cadangan bila letak nama tak terbaca: gambar sebaris di paragraf kosong
+ * PERTAMA di antara "Panitera," dan nama - ruang tanda tangan yang memang
+ * disediakan blangko. Tanpa paragraf kosong, gambar ditaruh di awal paragraf
+ * nama disusul pindah baris.
  */
-function sisipkanTtdPanitera(rtf, ttd, { tinggiTwip = 1440, lebarMaks = 4480 } = {}) {
+function sisipkanTtdPanitera(rtf, ttd, { tinggiTwip = 1440, lebarMaks = 4480, cap = null, atur = null } = {}) {
   const s = String(rtf || "");
   if (!ttd || !ttd.isi || !Buffer.from(ttd.isi).length) return { rtf: s, ok: false, alasan: "ttd_tidak_ada" };
   const blok = blokUntukSalinan(s);
   if (!blok) return { rtf: s, ok: false, alasan: "blok_untuk_salinan_tidak_ada" };
+  try {
+    const mengambang = tandaTanganMengambang(s, blok, ttd, cap, atur);
+    if (mengambang) return mengambang;
+  } catch {
+    // jatuh ke cara sebaris di bawah
+  }
   const { w, h } = ukuranGambar(ttd.isi);
   const tinggi = tinggiTwip;
   const lebar = w > 0 && h > 0 ? Math.min(lebarMaks, Math.round((tinggi * w) / h)) : Math.round(tinggi * 2.4);
@@ -371,12 +429,12 @@ function sisipkanTtdPanitera(rtf, ttd, { tinggiTwip = 1440, lebarMaks = 4480 } =
  * namanya di blok Untuk Salinan (SUDAH disahkan - lihat
  * tandaTanganService.untukPejabat), atau null.
  */
-function susunSalinan(rtf, { ttd = null } = {}) {
+function susunSalinan(rtf, { ttd = null, cap = null, atur = null } = {}) {
   const a = salinanKeKiri(rtf);
   const b = tambahTtdPejabat(a.rtf);
   const u = tampakkanUntukSalinan(b.rtf);
   const namaPanitera = namaPaniteraSalinan(u.rtf);
-  const c = sisipkanTtdPanitera(u.rtf, ttd);
+  const c = sisipkanTtdPanitera(u.rtf, ttd, { cap, atur });
   return {
     rtf: c.rtf,
     laporan: {
@@ -386,6 +444,8 @@ function susunSalinan(rtf, { ttd = null } = {}) {
       ttdSudahAda: b.sudahAda,
       namaPanitera,
       gambarTtdPanitera: c.ok,
+      ttdMengambang: Boolean(c.mengambang),
+      capPanitera: Boolean(c.capDipasang),
       alasanTanpaGambar: c.ok ? "" : c.alasan,
     },
   };
@@ -400,6 +460,7 @@ module.exports = {
   warnaPutih,
   namaPaniteraSalinan,
   sisipkanTtdPanitera,
+  barisKosongTambahan,
   ukuranGambar,
   susunSalinan,
 };

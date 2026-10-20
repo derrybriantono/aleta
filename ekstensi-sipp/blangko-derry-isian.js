@@ -42,6 +42,7 @@
   const API_PDF = "/aleta/api/aleta-bot/abt/pdf";
   const API_USULAN = "/aleta/api/aleta-bot/abt/usulan";
   const API_TTD = "/aleta/api/aleta-ecourt/tanda-tangan";
+  const API_UKURAN_TTD = "/aleta/api/aleta-ecourt/ukuran-ttd-cap"; // 20 Okt: ukuran TTD & cap satu set (kartu portal)
   const API_UNGGAH_SIPP = "/aleta/api/aleta-ecourt/putusan/unggah-sipp";
   const API_KTP_PIHAK = "/aleta/api/aleta-ecourt/ktp-pihak";
   /** Akar portal (basePath) yang sama dengan alamat rute di atas: "/aleta". */
@@ -4595,18 +4596,131 @@
     return { w: dv.getUint32(16), h: dv.getUint32(20) };
   }
   const hexDari = (bita) => Array.from(new Uint8Array(bita), (b) => b.toString(16).padStart(2, "0")).join("");
+  // ──────────────────────────────────────────────────────────────────────────
+  // TTD MENGAMBANG (20 Okt 2026): bentuk bergambar yang menimpa +-1/3 atas baris nama, ukuran SAMA dengan e-Doc penetapan
+  // (penetapanEdocService.UKURAN_TTD_CAP + bubuhkanTtdCap di bot) dan salinan putusan. Nilai bawaan di bawah = cermin
+  // UKURAN_TTD_CAP; yang berlaku diambil dari kartu "Ukuran tanda tangan & cap" portal (GET ukuran-ttd-cap).
+  // ──────────────────────────────────────────────────────────────────────────
+  const TWIP_PER_MM = 1440 / 25.4;
+  const UKURAN_TTD_CAP_BAWAAN = Object.freeze({ lebarTtdMm: 64, tinggiTtdMaksMm: 35, ttdTurunMm: 3, lebarCapMm: 36, capGeserKiriMm: 13, capGeserAtasMm: 4, opasitasCap: 0.88 });
+  const BATAS_UKURAN_TTD = Object.freeze({
+    lebarTtdMm: [10, 90],
+    tinggiTtdMaksMm: [8, 60],
+    ttdTurunMm: [-30, 30],
+    lebarCapMm: [10, 60],
+    capGeserKiriMm: [-60, 60],
+    capGeserAtasMm: [-60, 60],
+    opasitasCap: [0.3, 1],
+  });
+  /** Ukuran yang berlaku: bawaan <- kiriman portal (disaring ke batas). */
+  function ukuranTtdBerlaku(mentah) {
+    const u = { ...UKURAN_TTD_CAP_BAWAAN };
+    const m = mentah && typeof mentah === "object" ? mentah : {};
+    for (const [k, [bawah, atas]] of Object.entries(BATAS_UKURAN_TTD)) {
+      const n = Number(m[k]);
+      if (m[k] !== undefined && m[k] !== null && m[k] !== "" && Number.isFinite(n)) u[k] = Math.min(atas, Math.max(bawah, n));
+    }
+    return u;
+  }
+  async function muatUkuranTtd() {
+    let mentah = null;
+    try {
+      const r = typeof alatAmbil === "function" ? await alatAmbil(API_UKURAN_TTD, { credentials: "include", cache: "no-store" }, "Membaca ukuran tanda tangan") : await fetch(API_UKURAN_TTD, { credentials: "include", cache: "no-store" });
+      const j = await r.json().catch(() => null);
+      if (r.ok && j) mentah = [j.ukuranBot, j.data && j.data.ukuranBot].find((x) => x && typeof x === "object") || null;
+    } catch (_) {
+      mentah = null; // portal tidak menjawab: ukuran bawaan, penandatanganan tetap jalan
+    }
+    return ukuranTtdBerlaku(mentah);
+  }
+  /** Penanda tangan yang berhak CAP (aturan yang ada): Panitera (salinan) dan Ketua (penetapan Ketua). Hakim, PP, juru sita: TIDAK. */
+  const berhakCap = (t) => Boolean(t) && (t.peran === "panitera" || t.peran === "ketua_pa");
+  /** Tata paragraf di `posisi` (cermin tataParagraf bot): rata, inden, lebar bidang tulis, baris pertama? */
+  function tataParagrafRtf(s, posisi) {
+    const terakhirDi = (re, sampai) => {
+      const g = new RegExp(re.source, "g");
+      const potongan = s.slice(0, sampai);
+      let m;
+      let hasil = null;
+      while ((m = g.exec(potongan))) hasil = m;
+      return hasil;
+    };
+    const pard = s.lastIndexOf("\\pard", posisi);
+    const potong = pard >= 0 ? s.slice(pard, posisi) : s.slice(0, posisi);
+    const ambil = (re) => {
+      const g = new RegExp(re.source, "g");
+      let m;
+      let hasil = null;
+      while ((m = g.exec(potong))) hasil = m;
+      return hasil;
+    };
+    const rata = ambil(/\\q([lrcj])(?![a-z])/);
+    const li = ambil(/\\li(-?\d+)(?![a-z\d])/);
+    const fi = ambil(/\\fi(-?\d+)(?![a-z\d])/);
+    const ri = ambil(/\\ri(-?\d+)(?![a-z\d])/);
+    const kertasM = terakhirDi(/\\(?:paperw|pgwsxn)(\d+)/, posisi);
+    const kiriM = terakhirDi(/\\(?:margl|marglsxn)(\d+)/, posisi);
+    const kananM = terakhirDi(/\\(?:margr|margrsxn)(\d+)/, posisi);
+    const kertas = kertasM ? Number(kertasM[1]) : 12240;
+    const kiri = kiriM ? Number(kiriM[1]) : 1800;
+    const kanan = kananM ? Number(kananM[1]) : 1800;
+    const awalPar = Math.max(s.lastIndexOf("\\par", posisi), pard);
+    const antara = awalPar >= 0 ? s.slice(awalPar, posisi) : "";
+    return {
+      rata: rata ? rata[1] : "l",
+      li: li ? Number(li[1]) : 0,
+      fi: fi ? Number(fi[1]) : 0,
+      ri: ri ? Number(ri[1]) : 0,
+      lebarBidang: Math.max(2000, kertas - kiri - kanan),
+      barisPertama: !/\\line(?![a-z])/.test(antara.replace(/^\\pard?/, "")),
+    };
+  }
+  /** Satu bentuk gambar mengambang tertambat pada paragraf, relatif kolom (cermin bentukGambar bot). */
+  function bentukGambarRtf({ hex, w, h, kiri, atas, lebar, tinggi, z, depan, nama }) {
+    const k = Math.round(kiri);
+    const a = Math.round(atas);
+    const l = Math.round(lebar);
+    const t = Math.round(tinggi);
+    return (
+      `{\\shp{\\*\\shpinst\\shpleft${k}\\shptop${a}\\shpright${k + l}\\shpbottom${a + t}` +
+      `\\shpfhdr0\\shpbxcolumn\\shpbxignore\\shpbypara\\shpbyignore\\shpwr3\\shpwrk0\\shpfblwtxt${depan ? 0 : 1}\\shpz${z}\\shplid${z}` +
+      `{\\sp{\\sn shapeType}{\\sv 75}}{\\sp{\\sn fFlipH}{\\sv 0}}{\\sp{\\sn fFlipV}{\\sv 0}}{\\sp{\\sn fLockAspectRatio}{\\sv 1}}` +
+      `{\\sp{\\sn fAllowOverlap}{\\sv 1}}{\\sp{\\sn fBehindDocument}{\\sv ${depan ? 0 : 1}}}{\\sp{\\sn fLayoutInCell}{\\sv 1}}` +
+      `{\\sp{\\sn fLine}{\\sv 0}}{\\sp{\\sn fFilled}{\\sv 0}}{\\sp{\\sn wzName}{\\sv ${nama}}}` +
+      `{\\sp{\\sn pib}{\\sv {\\pict\\pngblip\\picw${w}\\pich${h}\\picwgoal${l}\\pichgoal${t} ${hex}}}}}}`
+    );
+  }
+  /** Paragraf kosong tepat di atas paragraf nama (di antara label jabatan dan nama). */
+  function barisKosongSebelum(rtf, idx) {
+    const bagian = rtf.slice(Math.max(0, idx - 3000), idx).split(/\\par(?![a-z])/);
+    bagian.pop(); // awal paragraf nama sendiri
+    let n = 0;
+    for (let i = bagian.length - 1; i >= 0 && n < 8; i -= 1) {
+      const teks = bagian[i].replace(/\\'[0-9a-fA-F]{2}/g, "x").replace(/\\[a-zA-Z]+-?\d* ?/g, "").replace(/[{}\s]/g, "");
+      if (teks) break;
+      n += 1;
+    }
+    return n;
+  }
+  const MM_PER_BARIS_KOSONG = 5; // cermin salinanPutusanService
   /**
-   * Menyisipkan gambar tanda tangan (PNG) ke RTF tepat di atas nama penandatangan.
-   * Pulang { rtf, dipasang:[nama], tidakDitemukan:[nama] }. Lebar 4,8 cm (2722 twip; 19 Okt 2026: 1,6x dari 3 cm).
+   * Menyisipkan tanda tangan (PNG) sebagai bentuk MENGAMBANG yang menimpa +-1/3 atas baris nama penandatangan, ber-cap bila `d.cap`
+   * ({ png, ukuran?, hex? }) diberikan: cap berdiameter tetap (lebarCapMm) di sisi kiri tanda tangan, di atasnya. Cap HANYA untuk
+   * penanda tangan yang berhak (berhakCap) - pemanggil yang menentukan; hakim/PP/juru sita tidak membawa cap.
+   * Pulang { rtf, dipasang:[nama], tidakDitemukan:[nama], geometri:[{nama, ttd, cap}] }.
    *
    * Nama hakim/PP juga tertulis LEBIH DULU di paragraf "Demikian ... oleh <nama> ..." (dan di kepala BAS); blok tanda tangan
    * selalu di ujung naskah. Jadi yang dipakai kemunculan TERAKHIR sebelum kotak "Untuk Salinan" dan sebelum penanda asal
    * tersembunyi {\*\isianasal ...} (paket I3; sebelumnya {\*\aletaasal ...}, keduanya dikenali) - bukan kemunculan pertama, yang memecah paragraf "Demikian".
+   * Ruang di atas nama ditambah (paragraf kosong) bila baris kosong blangko kurang dari tinggi tanda tangan, supaya label jabatan tidak tertutup.
    */
-  function sisipkanTtdRtf(rtfLatin1, daftar) {
+  function sisipkanTtdRtf(rtfLatin1, daftar, ukuranMentah) {
     let rtf = String(rtfLatin1);
+    const u = ukuranTtdBerlaku(ukuranMentah);
+    const mm = (n) => Number(n) * TWIP_PER_MM;
     const dipasang = [];
     const tidakDitemukan = [];
+    const geometri = [];
     const cariTerakhir = (teks, kecil) => {
       const sumber = kecil ? rtf.toLowerCase() : rtf;
       const t = kecil ? teks.toLowerCase() : teks;
@@ -4617,15 +4731,13 @@
       const i = sumber.lastIndexOf(t, batas);
       return i >= 0 ? i : sumber.lastIndexOf(t);
     };
+    let urut = 0;
     for (const d of daftar) {
       const ukuran = d.ukuran || ukuranPng(d.png);
       if (!ukuran) {
         tidakDitemukan.push(d.nama);
         continue;
       }
-      const goalW = d.lebarTwip || 2722; // 19 Okt 2026: 4,8 cm = 1,6x dari 3 cm (1701) - tanda tangan lebih besar agar terlihat asli
-      const goalH = Math.round((goalW * ukuran.h) / ukuran.w);
-      const pict = `{\\pict\\pngblip\\picw${ukuran.w}\\pich${ukuran.h}\\picwgoal${goalW}\\pichgoal${goalH} ${d.hex || hexDari(d.png)}}\\par `;
       const calon = [d.nama, d.nama.toUpperCase(), d.nama.replace(/\s*\(Ketua\)/i, "")].filter(Boolean);
       let idx = -1;
       for (const c of calon) {
@@ -4641,10 +4753,49 @@
         tidakDitemukan.push(d.nama);
         continue;
       }
-      rtf = `${rtf.slice(0, idx)}${pict}${rtf.slice(idx)}`;
+      // Ukuran tanda tangan: lebar dari pengaturan, tinggi menurut perbandingan gambarnya, dibatasi tinggi maksimum.
+      let ttdL = mm(u.lebarTtdMm);
+      let ttdT = (ttdL * ukuran.h) / ukuran.w;
+      if (ttdT > mm(u.tinggiTtdMaksMm)) {
+        ttdL = (ttdL * mm(u.tinggiTtdMaksMm)) / ttdT;
+        ttdT = mm(u.tinggiTtdMaksMm);
+      }
+      // Ruang kosong di atas nama (mm) vs yang dibutuhkan: tinggi tanda tangan - turun.
+      const perluMm = ttdT / TWIP_PER_MM - u.ttdTurunMm - barisKosongSebelum(rtf, idx) * MM_PER_BARIS_KOSONG * 1.2;
+      const tambah = perluMm > 0 ? Math.min(8, Math.ceil(perluMm / MM_PER_BARIS_KOSONG)) : 0;
+      const jeda = tambah ? "\\par ".repeat(tambah) : "";
+      if (jeda) rtf = `${rtf.slice(0, idx)}${jeda}${rtf.slice(idx)}`;
+      const letak = idx + jeda.length;
+      const tata = tataParagrafRtf(rtf, letak);
+      const x0 = tata.li + (tata.barisPertama ? tata.fi : 0);
+      let ttdKiri;
+      if (tata.rata === "c") ttdKiri = tata.li + (tata.lebarBidang - tata.li - tata.ri - ttdL) / 2;
+      else if (tata.rata === "r") ttdKiri = tata.lebarBidang - tata.ri - ttdL;
+      else ttdKiri = x0;
+      ttdKiri = Math.max(0, Math.min(ttdKiri, tata.lebarBidang - tata.ri - ttdL));
+      const ttdAtas = -ttdT + mm(u.ttdTurunMm);
+      const g = { nama: d.nama, ttd: { kiri: Math.round(ttdKiri), atas: Math.round(ttdAtas), lebar: Math.round(ttdL), tinggi: Math.round(ttdT) }, cap: null, barisTambah: tambah };
+      let sisipan = bentukGambarRtf({ hex: d.hex || hexDari(d.png), w: ukuran.w, h: ukuran.h, kiri: ttdKiri, atas: ttdAtas, lebar: ttdL, tinggi: ttdT, z: 2001 + urut * 2, depan: true, nama: "Tanda tangan" });
+      const capUkuran = d.cap ? d.cap.ukuran || ukuranPng(d.cap.png) : null;
+      if (d.cap && capUkuran) {
+        // Diameter cap TETAP: gambar muat ke kotak persegi lebarCapMm x lebarCapMm dengan perbandingan aslinya, dipusatkan.
+        const kotak = mm(u.lebarCapMm);
+        let capL = kotak;
+        let capT = kotak;
+        if (capUkuran.w >= capUkuran.h) capT = (kotak * capUkuran.h) / capUkuran.w;
+        else capL = (kotak * capUkuran.w) / capUkuran.h;
+        let pusatX = ttdKiri + ttdL / 2 - mm(u.capGeserKiriMm);
+        const pusatY = ttdAtas + ttdT / 2 - mm(u.capGeserAtasMm);
+        pusatX = Math.max(kotak / 2, Math.min(pusatX, tata.lebarBidang - tata.ri - kotak / 2));
+        sisipan += bentukGambarRtf({ hex: d.cap.hex || hexDari(d.cap.png), w: capUkuran.w, h: capUkuran.h, kiri: pusatX - capL / 2, atas: pusatY - capT / 2, lebar: capL, tinggi: capT, z: 2002 + urut * 2, depan: true, nama: "Cap" });
+        g.cap = { kiri: Math.round(pusatX - capL / 2), atas: Math.round(pusatY - capT / 2), lebar: Math.round(capL), tinggi: Math.round(capT) };
+      }
+      rtf = `${rtf.slice(0, letak)}${sisipan}${rtf.slice(letak)}`;
       dipasang.push(d.nama);
+      geometri.push(g);
+      urut += 1;
     }
-    return { rtf, dipasang, tidakDitemukan };
+    return { rtf, dipasang, tidakDitemukan, geometri };
   }
   async function bitaTtd(g) {
     if (g.sumber === "ekstensi") {
@@ -4675,7 +4826,7 @@
         gagal.push(`${t.nama} (${String((e && e.message) || e)})`);
       }
     }
-    const h = sisipkanTtdRtf(latin1(rtf), daftar);
+    const h = sisipkanTtdRtf(latin1(rtf), daftar, await muatUkuranTtd());
     return { ...h, gagal };
   }
 
@@ -6055,7 +6206,7 @@
       takBerlaku: daftarTakBerlaku().map((b) => b.kode),
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, perkiraanSidang, keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
+    murni: { bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, perkiraanSidang, keadaanBerlakuMurni, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {

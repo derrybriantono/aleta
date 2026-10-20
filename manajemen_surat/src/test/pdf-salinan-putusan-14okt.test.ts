@@ -132,8 +132,10 @@ describe("salinanPutusanService - RTF salinan", () => {
     expect(pict).toBeGreaterThan(rtf.indexOf("Panitera,}", rtf.indexOf("Untuk Salinan")));
     expect(pict).toBeLessThan(rtf.indexOf("Nama Panitera Tiruan"));
     expect(rtf.slice(pict, pict + 80 + PNG.length * 2)).toContain(PNG.toString("hex"));
-    // Lebar mengikuti perbandingan gambar 4:2 -> 1800 x 900 twip.
-    expect(rtf).toContain("\\picwgoal2880\\pichgoal1440");
+    // 20 Okt: TTD Panitera MENGAMBANG (bentuk, bukan sebaris) 64 mm menimpa nama; perbandingan gambar 4:2 -> 3628 x 1814 twip.
+    // Cap dan hak lainnya dijaga ttd-cap-sisa-20okt.test.ts.
+    expect(rtf).toContain("\\shpbypara");
+    expect(rtf).toContain("\\picwgoal3628\\pichgoal1814");
     const t = salinan.teksTampak(rtf);
     expect(t.indexOf("Untuk Salinan")).toBeGreaterThan(t.indexOf("J u m l a h"));
     const blok = rtf.slice(rtf.lastIndexOf("\\trowd", rtf.indexOf("Untuk Salinan")));
@@ -178,7 +180,7 @@ describe("jalur PDF salinan: bot -> portal -> ekstensi", () => {
 
   it("portal meneruskan { salinan } dan memulangkan keterangannya", () => {
     const r = baca("manajemen_surat/src/app/api/aleta-bot/abt/pdf/route.ts");
-    expect(r).toContain("getGatewayAbtPdf(rtfBase64, { salinan })");
+    expect(r).toContain("getGatewayAbtPdf(rtfBase64, salinanOpsi ?? { salinan })"); // 20 Okt: + ukuran TTD/cap dan cap Panitera
     expect(r).toContain("salinan: hasil.data?.salinan ?? null");
   });
 

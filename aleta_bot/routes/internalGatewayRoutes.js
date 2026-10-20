@@ -2965,7 +2965,15 @@ router.post("/abt/pdf", requireInternalToken, async (req, res) => {
       } catch (e) {
         galatTtd = String((e && e.message) || e).slice(0, 160);
       }
-      const susun = salinanPutusanService.susunSalinan(teks, { ttd });
+      // 20 Okt: ukuran tanda tangan/cap dari portal (satu set dengan e-Doc penetapan & ekstensi);
+      // cap Panitera (bila ada) dibubuhkan di sisi kiri tanda tangan. Tanpa kiriman = ukuran bawaan, tanpa cap.
+      let cap = null;
+      const kapBody = req.body && req.body.cap;
+      if (kapBody && typeof kapBody.isiBase64 === "string" && kapBody.isiBase64) {
+        const isiCap = Buffer.from(kapBody.isiBase64, "base64");
+        if (isiCap.length) cap = { isi: isiCap, jenis: String(kapBody.jenis || "") };
+      }
+      const susun = salinanPutusanService.susunSalinan(teks, { ttd, cap, atur: req.body && req.body.atur });
       isi = Buffer.from(susun.rtf, "latin1");
       salinan = { ...susun.laporan, ttdTerdaftar: Boolean(ttd), galatTtd };
     }

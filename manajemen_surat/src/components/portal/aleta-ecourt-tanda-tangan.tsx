@@ -39,6 +39,7 @@ import type { HasilTtd, ringkasTtd } from "@/lib/tautan-ttd-akun";
 
 import { AletaEcourtCap } from "./aleta-ecourt-cap";
 import { AletaEcourtTte } from "./aleta-ecourt-tte";
+import { AletaEcourtUkuranTtdCap } from "./aleta-ecourt-ukuran-ttd-cap";
 
 /** Pengguna portal yang dapat ditautkan ke sebuah tanda tangan. */
 type PenggunaTaut = {
@@ -746,6 +747,8 @@ export function AletaEcourtTandaTangan() {
       </CardContent>
       </Card>
       <AletaEcourtCap />
+      {/* 20 Okt 2026: ukuran tanda tangan & cap satu set untuk e-Doc penetapan, ekstensi, salinan putusan (Admin/Super Admin). */}
+      <AletaEcourtUkuranTtdCap />
       {/* 19 Okt 2026: TTE BSrE per pejabat - menggantikan tombol Passphrase TTE di panel ekstensi. */}
       <AletaEcourtTte />
     </div>
