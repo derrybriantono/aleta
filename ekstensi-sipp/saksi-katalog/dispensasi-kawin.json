@@ -2,7 +2,7 @@
  "skema": "saksi-katalog/1",
  "kunci": "dispensasi-kawin",
  "judul": "Dispensasi kawin",
- "versi": 1,
+ "versi": 2,
  "penulis": "SAKSI-B",
  "tahap": 1,
  "contoh": false,
@@ -280,6 +280,78 @@
    "judul": "Penutup keterangan saksi",
    "uraian": "saksi mengakhiri keterangannya",
    "dasarHukum": [],
+   "wajib": false
+  },
+  {
+   "id": "pp-dk-penolakan-kua",
+   "judul": "Penolakan pendaftaran nikah oleh Kantor Urusan Agama",
+   "uraian": "rencana pernikahan sudah didaftarkan ke KUA dan ditolak karena belum cukup umur (dasar mengajukan dispensasi)",
+   "dasarHukum": [
+    "dh-uu16-2019-7-2-3"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-dk-selisih-usia",
+   "judul": "Umur dan selisih umur anak dengan calon",
+   "uraian": "umur anak dan calon suami atau istri serta selisih umur keduanya sebagai bahan kepentingan terbaik anak",
+   "dasarHukum": [
+    "dh-perma5-2019-hakim"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-dk-kekerasan",
+   "judul": "Tidak ada kekerasan atau paksaan",
+   "uraian": "tidak ada unsur paksaan psikis, fisik, seksual atau ekonomi dari calon terhadap anak (Pasal 16 huruf i PERMA 5/2019)",
+   "dasarHukum": [
+    "dh-perma5-2019-hakim"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-dk-ekonomi",
+   "judul": "Pekerjaan, penghasilan dan rencana tempat tinggal",
+   "uraian": "kesiapan ekonomi calon dan rencana tempat tinggal serta bantuan keluarga setelah menikah",
+   "dasarHukum": [
+    "dh-perma5-2019-hakim"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-dk-upaya-tunda",
+   "judul": "Upaya orang tua menunda pernikahan",
+   "uraian": "orang tua sudah menasihati agar pernikahan ditunda sampai cukup umur dan tanggapan anak",
+   "dasarHukum": [
+    "dh-perma5-2019-12-4"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-dk-lingkungan",
+   "judul": "Kekhawatiran lingkungan atas kedekatan anak dan calon",
+   "uraian": "kedekatan keduanya menimbulkan kekhawatiran keluarga dan lingkungan",
+   "dasarHukum": [
+    "dh-uu16-2019-7-2-3"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-dk-pendampingan",
+   "judul": "Pemeriksaan atau pendampingan profesional terhadap anak",
+   "uraian": "anak sudah diperiksa atau didampingi tenaga kesehatan, psikolog atau lembaga pendamping anak (Pasal 15 dan Pasal 16 huruf h PERMA 5/2019)",
+   "dasarHukum": [
+    "dh-perma5-2019-hakim"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-dk-dua-keluarga",
+   "judul": "Orang tua calon ikut mengajukan permohonan bila calon juga di bawah umur",
+   "uraian": "bila calon juga belum 19 tahun orang tua calon turut menjadi pemohon dan merestui (Pasal 7 ayat (2) UU 1/1974 jo. UU 16/2019: orang tua pihak pria dan/atau pihak wanita)",
+   "dasarHukum": [
+    "dh-uu16-2019-7-2-3"
+   ],
    "wajib": false
   }
  ],
@@ -3355,6 +3427,1261 @@
    "variabelAbt": [
     "0606",
     "0999"
+   ]
+  },
+  {
+   "id": "q-dk-penolakan-kua-pr",
+   "pokok": "pp-dk-penolakan-kua",
+   "urutan": 1910,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "perempuan"
+   },
+   "teks": "Apakah rencana pernikahan #0606# dan #0600# sudah didaftarkan ke Kantor Urusan Agama, dan bagaimana jawaban KUA?",
+   "teksVarian": [],
+   "hal": "penolakan pendaftaran nikah oleh Kantor Urusan Agama",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan penolakan pendaftaran nikah oleh Kantor Urusan Agama sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa rencana pernikahan #0606# dan #0600# sudah didaftarkan ke #5178# tetapi ditolak karena #0606# belum berumur 19 tahun",
+      "saya mengetahui sendiri bahwa rencana pernikahan #0606# dan #0600# sudah didaftarkan ke #5178# tetapi ditolak karena #0606# belum berumur 19 tahun",
+      "saya menyaksikan langsung bahwa rencana pernikahan #0606# dan #0600# sudah didaftarkan ke #5178# tetapi ditolak karena #0606# belum berumur 19 tahun",
+      "saya tahu betul bahwa rencana pernikahan #0606# dan #0600# sudah didaftarkan ke #5178# tetapi ditolak karena #0606# belum berumur 19 tahun"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa pendaftaran nikah #0606# dan #0600# ke #5178# ditolak oleh petugas sebab #0606# belum mencapai umur 19 tahun",
+      "yang saya ketahui secara langsung adalah bahwa pendaftaran nikah #0606# dan #0600# ke #5178# ditolak oleh petugas sebab #0606# belum mencapai umur 19 tahun",
+      "pendaftaran nikah #0606# dan #0600# ke #5178# ditolak oleh petugas sebab #0606# belum mencapai umur 19 tahun, demikian yang tampak oleh saya waktu itu",
+      "pendaftaran nikah #0606# dan #0600# ke #5178# ditolak oleh petugas sebab #0606# belum mencapai umur 19 tahun, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan penolakan pendaftaran nikah oleh Kantor Urusan Agama hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa rencana pernikahan #0606# dan #0600# sudah didaftarkan ke #5178# tetapi ditolak karena #0606# belum berumur 19 tahun",
+      "saya diberi tahu oleh {sumber} bahwa rencana pernikahan #0606# dan #0600# sudah didaftarkan ke #5178# tetapi ditolak karena #0606# belum berumur 19 tahun",
+      "rencana pernikahan #0606# dan #0600# sudah didaftarkan ke #5178# tetapi ditolak karena #0606# belum berumur 19 tahun, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa rencana pernikahan #0606# dan #0600# sudah didaftarkan ke #5178# tetapi ditolak karena #0606# belum berumur 19 tahun"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa pendaftaran nikah #0606# dan #0600# ke #5178# ditolak oleh petugas sebab #0606# belum mencapai umur 19 tahun",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa pendaftaran nikah #0606# dan #0600# ke #5178# ditolak oleh petugas sebab #0606# belum mencapai umur 19 tahun",
+      "pendaftaran nikah #0606# dan #0600# ke #5178# ditolak oleh petugas sebab #0606# belum mencapai umur 19 tahun, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa pendaftaran nikah #0606# dan #0600# ke #5178# ditolak oleh petugas sebab #0606# belum mencapai umur 19 tahun"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari penolakan pendaftaran nikah oleh Kantor Urusan Agama",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa rencana pernikahan #0606# dan #0600# pernah didaftarkan ke #5178#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa rencana pernikahan #0606# dan #0600# pernah didaftarkan ke #5178#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa rencana pernikahan #0606# dan #0600# pernah didaftarkan ke #5178#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa rencana pernikahan #0606# dan #0600# pernah didaftarkan ke #5178#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa pendaftaran nikah #0606# dan #0600# pernah diajukan ke #5178#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa pendaftaran nikah #0606# dan #0600# pernah diajukan ke #5178#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa pendaftaran nikah #0606# dan #0600# pernah diajukan ke #5178#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa pendaftaran nikah #0606# dan #0600# pernah diajukan ke #5178#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0606",
+    "5178"
+   ]
+  },
+  {
+   "id": "q-dk-penolakan-kua-lk",
+   "pokok": "pp-dk-penolakan-kua",
+   "urutan": 1911,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "laki-laki"
+   },
+   "teks": "Apakah rencana pernikahan #0600# dan #0606# sudah didaftarkan ke Kantor Urusan Agama, dan bagaimana jawaban KUA?",
+   "teksVarian": [],
+   "hal": "penolakan pendaftaran nikah oleh Kantor Urusan Agama",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan penolakan pendaftaran nikah oleh Kantor Urusan Agama sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa rencana pernikahan #0600# dan #0606# sudah didaftarkan ke #5178# tetapi ditolak karena #0600# belum berumur 19 tahun",
+      "saya mengetahui sendiri bahwa rencana pernikahan #0600# dan #0606# sudah didaftarkan ke #5178# tetapi ditolak karena #0600# belum berumur 19 tahun",
+      "saya menyaksikan langsung bahwa rencana pernikahan #0600# dan #0606# sudah didaftarkan ke #5178# tetapi ditolak karena #0600# belum berumur 19 tahun",
+      "saya tahu betul bahwa rencana pernikahan #0600# dan #0606# sudah didaftarkan ke #5178# tetapi ditolak karena #0600# belum berumur 19 tahun"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa pendaftaran nikah #0600# dan #0606# ke #5178# ditolak oleh petugas sebab #0600# belum mencapai umur 19 tahun",
+      "yang saya ketahui secara langsung adalah bahwa pendaftaran nikah #0600# dan #0606# ke #5178# ditolak oleh petugas sebab #0600# belum mencapai umur 19 tahun",
+      "pendaftaran nikah #0600# dan #0606# ke #5178# ditolak oleh petugas sebab #0600# belum mencapai umur 19 tahun, demikian yang tampak oleh saya waktu itu",
+      "pendaftaran nikah #0600# dan #0606# ke #5178# ditolak oleh petugas sebab #0600# belum mencapai umur 19 tahun, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan penolakan pendaftaran nikah oleh Kantor Urusan Agama hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa rencana pernikahan #0600# dan #0606# sudah didaftarkan ke #5178# tetapi ditolak karena #0600# belum berumur 19 tahun",
+      "saya diberi tahu oleh {sumber} bahwa rencana pernikahan #0600# dan #0606# sudah didaftarkan ke #5178# tetapi ditolak karena #0600# belum berumur 19 tahun",
+      "rencana pernikahan #0600# dan #0606# sudah didaftarkan ke #5178# tetapi ditolak karena #0600# belum berumur 19 tahun, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa rencana pernikahan #0600# dan #0606# sudah didaftarkan ke #5178# tetapi ditolak karena #0600# belum berumur 19 tahun"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa pendaftaran nikah #0600# dan #0606# ke #5178# ditolak oleh petugas sebab #0600# belum mencapai umur 19 tahun",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa pendaftaran nikah #0600# dan #0606# ke #5178# ditolak oleh petugas sebab #0600# belum mencapai umur 19 tahun",
+      "pendaftaran nikah #0600# dan #0606# ke #5178# ditolak oleh petugas sebab #0600# belum mencapai umur 19 tahun, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa pendaftaran nikah #0600# dan #0606# ke #5178# ditolak oleh petugas sebab #0600# belum mencapai umur 19 tahun"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari penolakan pendaftaran nikah oleh Kantor Urusan Agama",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa rencana pernikahan #0600# dan #0606# pernah didaftarkan ke #5178#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa rencana pernikahan #0600# dan #0606# pernah didaftarkan ke #5178#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa rencana pernikahan #0600# dan #0606# pernah didaftarkan ke #5178#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa rencana pernikahan #0600# dan #0606# pernah didaftarkan ke #5178#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa pendaftaran nikah #0600# dan #0606# pernah diajukan ke #5178#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa pendaftaran nikah #0600# dan #0606# pernah diajukan ke #5178#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa pendaftaran nikah #0600# dan #0606# pernah diajukan ke #5178#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa pendaftaran nikah #0600# dan #0606# pernah diajukan ke #5178#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0606",
+    "5178"
+   ]
+  },
+  {
+   "id": "q-dk-selisih-usia-pr",
+   "pokok": "pp-dk-selisih-usia",
+   "urutan": 1912,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "perempuan"
+   },
+   "teks": "Berapa umur #0606# dan berapa umur #0600#, dan sejauh mana selisih umur keduanya?",
+   "teksVarian": [],
+   "hal": "umur dan selisih umur keduanya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan umur dan selisih umur keduanya sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa umur #0606# adalah #0607# dan umur #0600# adalah #0601#",
+      "saya mengetahui sendiri bahwa umur #0606# adalah #0607# dan umur #0600# adalah #0601#",
+      "saya menyaksikan langsung bahwa umur #0606# adalah #0607# dan umur #0600# adalah #0601#",
+      "saya tahu betul bahwa umur #0606# adalah #0607# dan umur #0600# adalah #0601#"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #0606# sekarang berumur #0607# sedangkan #0600# sekarang berumur #0601#",
+      "yang saya ketahui secara langsung adalah bahwa #0606# sekarang berumur #0607# sedangkan #0600# sekarang berumur #0601#",
+      "#0606# sekarang berumur #0607# sedangkan #0600# sekarang berumur #0601#, demikian yang tampak oleh saya waktu itu",
+      "#0606# sekarang berumur #0607# sedangkan #0600# sekarang berumur #0601#, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan umur dan selisih umur keduanya hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa umur #0606# adalah #0607# dan umur #0600# adalah #0601#",
+      "saya diberi tahu oleh {sumber} bahwa umur #0606# adalah #0607# dan umur #0600# adalah #0601#",
+      "umur #0606# adalah #0607# dan umur #0600# adalah #0601#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa umur #0606# adalah #0607# dan umur #0600# adalah #0601#"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa #0606# sekarang berumur #0607# sedangkan #0600# sekarang berumur #0601#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #0606# sekarang berumur #0607# sedangkan #0600# sekarang berumur #0601#",
+      "#0606# sekarang berumur #0607# sedangkan #0600# sekarang berumur #0601#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #0606# sekarang berumur #0607# sedangkan #0600# sekarang berumur #0601#"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari umur dan selisih umur keduanya",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa umur #0606# adalah #0607#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa umur #0606# adalah #0607#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa umur #0606# adalah #0607#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa umur #0606# adalah #0607#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa #0606# sekarang berumur #0607#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa #0606# sekarang berumur #0607#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa #0606# sekarang berumur #0607#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa #0606# sekarang berumur #0607#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0601",
+    "0606",
+    "0607"
+   ]
+  },
+  {
+   "id": "q-dk-selisih-usia-lk",
+   "pokok": "pp-dk-selisih-usia",
+   "urutan": 1913,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "laki-laki"
+   },
+   "teks": "Berapa umur #0600# dan berapa umur #0606#, dan sejauh mana selisih umur keduanya?",
+   "teksVarian": [],
+   "hal": "umur dan selisih umur keduanya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan umur dan selisih umur keduanya sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa umur #0600# adalah #0601# dan umur #0606# adalah #0607#",
+      "saya mengetahui sendiri bahwa umur #0600# adalah #0601# dan umur #0606# adalah #0607#",
+      "saya menyaksikan langsung bahwa umur #0600# adalah #0601# dan umur #0606# adalah #0607#",
+      "saya tahu betul bahwa umur #0600# adalah #0601# dan umur #0606# adalah #0607#"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #0600# sekarang berumur #0601# sedangkan #0606# sekarang berumur #0607#",
+      "yang saya ketahui secara langsung adalah bahwa #0600# sekarang berumur #0601# sedangkan #0606# sekarang berumur #0607#",
+      "#0600# sekarang berumur #0601# sedangkan #0606# sekarang berumur #0607#, demikian yang tampak oleh saya waktu itu",
+      "#0600# sekarang berumur #0601# sedangkan #0606# sekarang berumur #0607#, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan umur dan selisih umur keduanya hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa umur #0600# adalah #0601# dan umur #0606# adalah #0607#",
+      "saya diberi tahu oleh {sumber} bahwa umur #0600# adalah #0601# dan umur #0606# adalah #0607#",
+      "umur #0600# adalah #0601# dan umur #0606# adalah #0607#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa umur #0600# adalah #0601# dan umur #0606# adalah #0607#"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa #0600# sekarang berumur #0601# sedangkan #0606# sekarang berumur #0607#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa #0600# sekarang berumur #0601# sedangkan #0606# sekarang berumur #0607#",
+      "#0600# sekarang berumur #0601# sedangkan #0606# sekarang berumur #0607#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa #0600# sekarang berumur #0601# sedangkan #0606# sekarang berumur #0607#"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari umur dan selisih umur keduanya",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa umur #0600# adalah #0601#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa umur #0600# adalah #0601#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa umur #0600# adalah #0601#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa umur #0600# adalah #0601#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa #0600# sekarang berumur #0601#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa #0600# sekarang berumur #0601#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa #0600# sekarang berumur #0601#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa #0600# sekarang berumur #0601#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0601",
+    "0606",
+    "0607"
+   ]
+  },
+  {
+   "id": "q-dk-kekerasan-pr",
+   "pokok": "pp-dk-kekerasan",
+   "urutan": 1914,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "perempuan"
+   },
+   "teks": "Apakah #0600# pernah berbuat kasar, mengancam atau memaksa #0606# dalam bentuk apa pun?",
+   "teksVarian": [],
+   "hal": "ada tidaknya kekerasan atau paksaan terhadap anak",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan ada tidaknya kekerasan atau paksaan terhadap anak sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0600# tidak pernah berbuat kasar, mengancam, maupun memaksa #0606# secara fisik, psikis, seksual atau ekonomi",
+      "saya mengetahui sendiri bahwa #0600# tidak pernah berbuat kasar, mengancam, maupun memaksa #0606# secara fisik, psikis, seksual atau ekonomi",
+      "saya menyaksikan langsung bahwa #0600# tidak pernah berbuat kasar, mengancam, maupun memaksa #0606# secara fisik, psikis, seksual atau ekonomi",
+      "saya tahu betul bahwa #0600# tidak pernah berbuat kasar, mengancam, maupun memaksa #0606# secara fisik, psikis, seksual atau ekonomi"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0600# kepada #0606#",
+      "yang saya ketahui secara langsung adalah bahwa tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0600# kepada #0606#",
+      "tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0600# kepada #0606#, demikian yang tampak oleh saya waktu itu",
+      "tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0600# kepada #0606#, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "mendengar": {
+     "maksud": "saksi menerangkan ada tidaknya kekerasan atau paksaan terhadap anak dari ucapan yang didengarnya langsung, bukan dari penglihatan",
+     "saksi1": [
+      "saya mendengar sendiri ucapan mereka bahwa #0600# tidak pernah berkata kasar atau mengancam #0606#",
+      "saya mendengar langsung perkataan mereka bahwa #0600# tidak pernah berkata kasar atau mengancam #0606#",
+      "dari ucapan mereka yang saya dengar sendiri diketahui bahwa #0600# tidak pernah berkata kasar atau mengancam #0606#",
+      "saya sendiri mendengar mereka mengatakan bahwa #0600# tidak pernah berkata kasar atau mengancam #0606#"
+     ],
+     "saksi2": [
+      "saya turut mendengar langsung pembicaraan mereka bahwa tidak pernah ada kata-kata kasar maupun ancaman dari #0600# kepada #0606#",
+      "perkataan mereka yang terdengar langsung oleh saya menerangkan bahwa tidak pernah ada kata-kata kasar maupun ancaman dari #0600# kepada #0606#",
+      "tidak pernah ada kata-kata kasar maupun ancaman dari #0600# kepada #0606#, itulah ucapan mereka yang saya dengar sendiri",
+      "saya mendengar dengan telinga saya sendiri bahwa tidak pernah ada kata-kata kasar maupun ancaman dari #0600# kepada #0606#"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan ada tidaknya kekerasan atau paksaan terhadap anak hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #0600# tidak pernah berbuat kasar, mengancam, maupun memaksa #0606# secara fisik, psikis, seksual atau ekonomi",
+      "saya diberi tahu oleh {sumber} bahwa #0600# tidak pernah berbuat kasar, mengancam, maupun memaksa #0606# secara fisik, psikis, seksual atau ekonomi",
+      "#0600# tidak pernah berbuat kasar, mengancam, maupun memaksa #0606# secara fisik, psikis, seksual atau ekonomi, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #0600# tidak pernah berbuat kasar, mengancam, maupun memaksa #0606# secara fisik, psikis, seksual atau ekonomi"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0600# kepada #0606#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0600# kepada #0606#",
+      "tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0600# kepada #0606#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0600# kepada #0606#"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari ada tidaknya kekerasan atau paksaan terhadap anak",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #0600# tidak pernah berbuat kasar kepada #0606#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #0600# tidak pernah berbuat kasar kepada #0606#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #0600# tidak pernah berbuat kasar kepada #0606#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #0600# tidak pernah berbuat kasar kepada #0606#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa tidak pernah ada perbuatan kasar dari #0600# kepada #0606#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa tidak pernah ada perbuatan kasar dari #0600# kepada #0606#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa tidak pernah ada perbuatan kasar dari #0600# kepada #0606#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa tidak pernah ada perbuatan kasar dari #0600# kepada #0606#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0606"
+   ]
+  },
+  {
+   "id": "q-dk-kekerasan-lk",
+   "pokok": "pp-dk-kekerasan",
+   "urutan": 1915,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "laki-laki"
+   },
+   "teks": "Apakah #0606# pernah berbuat kasar, mengancam atau memaksa #0600# dalam bentuk apa pun?",
+   "teksVarian": [],
+   "hal": "ada tidaknya kekerasan atau paksaan terhadap anak",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan ada tidaknya kekerasan atau paksaan terhadap anak sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0606# tidak pernah berbuat kasar, mengancam, maupun memaksa #0600# secara fisik, psikis, seksual atau ekonomi",
+      "saya mengetahui sendiri bahwa #0606# tidak pernah berbuat kasar, mengancam, maupun memaksa #0600# secara fisik, psikis, seksual atau ekonomi",
+      "saya menyaksikan langsung bahwa #0606# tidak pernah berbuat kasar, mengancam, maupun memaksa #0600# secara fisik, psikis, seksual atau ekonomi",
+      "saya tahu betul bahwa #0606# tidak pernah berbuat kasar, mengancam, maupun memaksa #0600# secara fisik, psikis, seksual atau ekonomi"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0606# kepada #0600#",
+      "yang saya ketahui secara langsung adalah bahwa tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0606# kepada #0600#",
+      "tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0606# kepada #0600#, demikian yang tampak oleh saya waktu itu",
+      "tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0606# kepada #0600#, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "mendengar": {
+     "maksud": "saksi menerangkan ada tidaknya kekerasan atau paksaan terhadap anak dari ucapan yang didengarnya langsung, bukan dari penglihatan",
+     "saksi1": [
+      "saya mendengar sendiri ucapan mereka bahwa #0606# tidak pernah berkata kasar atau mengancam #0600#",
+      "saya mendengar langsung perkataan mereka bahwa #0606# tidak pernah berkata kasar atau mengancam #0600#",
+      "dari ucapan mereka yang saya dengar sendiri diketahui bahwa #0606# tidak pernah berkata kasar atau mengancam #0600#",
+      "saya sendiri mendengar mereka mengatakan bahwa #0606# tidak pernah berkata kasar atau mengancam #0600#"
+     ],
+     "saksi2": [
+      "saya turut mendengar langsung pembicaraan mereka bahwa tidak pernah ada kata-kata kasar maupun ancaman dari #0606# kepada #0600#",
+      "perkataan mereka yang terdengar langsung oleh saya menerangkan bahwa tidak pernah ada kata-kata kasar maupun ancaman dari #0606# kepada #0600#",
+      "tidak pernah ada kata-kata kasar maupun ancaman dari #0606# kepada #0600#, itulah ucapan mereka yang saya dengar sendiri",
+      "saya mendengar dengan telinga saya sendiri bahwa tidak pernah ada kata-kata kasar maupun ancaman dari #0606# kepada #0600#"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan ada tidaknya kekerasan atau paksaan terhadap anak hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #0606# tidak pernah berbuat kasar, mengancam, maupun memaksa #0600# secara fisik, psikis, seksual atau ekonomi",
+      "saya diberi tahu oleh {sumber} bahwa #0606# tidak pernah berbuat kasar, mengancam, maupun memaksa #0600# secara fisik, psikis, seksual atau ekonomi",
+      "#0606# tidak pernah berbuat kasar, mengancam, maupun memaksa #0600# secara fisik, psikis, seksual atau ekonomi, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #0606# tidak pernah berbuat kasar, mengancam, maupun memaksa #0600# secara fisik, psikis, seksual atau ekonomi"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0606# kepada #0600#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0606# kepada #0600#",
+      "tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0606# kepada #0600#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa tidak pernah ada perbuatan kasar, ancaman ataupun paksaan dari #0606# kepada #0600#"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari ada tidaknya kekerasan atau paksaan terhadap anak",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #0606# tidak pernah berbuat kasar kepada #0600#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #0606# tidak pernah berbuat kasar kepada #0600#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #0606# tidak pernah berbuat kasar kepada #0600#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #0606# tidak pernah berbuat kasar kepada #0600#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa tidak pernah ada perbuatan kasar dari #0606# kepada #0600#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa tidak pernah ada perbuatan kasar dari #0606# kepada #0600#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa tidak pernah ada perbuatan kasar dari #0606# kepada #0600#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa tidak pernah ada perbuatan kasar dari #0606# kepada #0600#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0606"
+   ]
+  },
+  {
+   "id": "q-dk-ekonomi-pr",
+   "pokok": "pp-dk-ekonomi",
+   "urutan": 1916,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "perempuan"
+   },
+   "teks": "Apa pekerjaan #0600# dan apakah penghasilannya cukup untuk membiayai rumah tangga mereka kelak?",
+   "teksVarian": [],
+   "hal": "pekerjaan dan penghasilan calon sebagai bekal rumah tangga",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pekerjaan dan penghasilan calon sebagai bekal rumah tangga sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0600# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan rumah tangga #0606# dan #0600#",
+      "saya mengetahui sendiri bahwa #0600# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan rumah tangga #0606# dan #0600#",
+      "saya menyaksikan langsung bahwa #0600# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan rumah tangga #0606# dan #0600#",
+      "saya tahu betul bahwa #0600# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan rumah tangga #0606# dan #0600#"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa mata pencaharian #0600# adalah #6331#, hasilnya mencukupi untuk menghidupi rumah tangga #0606# dan #0600#",
+      "yang saya ketahui secara langsung adalah bahwa mata pencaharian #0600# adalah #6331#, hasilnya mencukupi untuk menghidupi rumah tangga #0606# dan #0600#",
+      "mata pencaharian #0600# adalah #6331#, hasilnya mencukupi untuk menghidupi rumah tangga #0606# dan #0600#, demikian yang tampak oleh saya waktu itu",
+      "mata pencaharian #0600# adalah #6331#, hasilnya mencukupi untuk menghidupi rumah tangga #0606# dan #0600#, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan pekerjaan dan penghasilan calon sebagai bekal rumah tangga hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #0600# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan rumah tangga #0606# dan #0600#",
+      "saya diberi tahu oleh {sumber} bahwa #0600# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan rumah tangga #0606# dan #0600#",
+      "#0600# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan rumah tangga #0606# dan #0600#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #0600# bekerja sebagai #6331# dan penghasilannya cukup untuk membiayai kebutuhan rumah tangga #0606# dan #0600#"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa mata pencaharian #0600# adalah #6331#, hasilnya mencukupi untuk menghidupi rumah tangga #0606# dan #0600#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa mata pencaharian #0600# adalah #6331#, hasilnya mencukupi untuk menghidupi rumah tangga #0606# dan #0600#",
+      "mata pencaharian #0600# adalah #6331#, hasilnya mencukupi untuk menghidupi rumah tangga #0606# dan #0600#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa mata pencaharian #0600# adalah #6331#, hasilnya mencukupi untuk menghidupi rumah tangga #0606# dan #0600#"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari pekerjaan dan penghasilan calon sebagai bekal rumah tangga",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #0600# bekerja sebagai #6331#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #0600# bekerja sebagai #6331#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #0600# bekerja sebagai #6331#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #0600# bekerja sebagai #6331#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa mata pencaharian #0600# adalah #6331#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa mata pencaharian #0600# adalah #6331#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa mata pencaharian #0600# adalah #6331#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa mata pencaharian #0600# adalah #6331#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0606",
+    "6331"
+   ]
+  },
+  {
+   "id": "q-dk-tinggal-pr",
+   "pokok": "pp-dk-ekonomi",
+   "urutan": 1917,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "perempuan"
+   },
+   "teks": "Di mana #0606# dan #0600# akan tinggal setelah menikah dan siapa yang akan membantu mereka?",
+   "teksVarian": [],
+   "hal": "rencana tempat tinggal dan bantuan keluarga setelah menikah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan rencana tempat tinggal dan bantuan keluarga setelah menikah sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa setelah menikah #0606# dan #0600# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka",
+      "saya mengetahui sendiri bahwa setelah menikah #0606# dan #0600# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka",
+      "saya menyaksikan langsung bahwa setelah menikah #0606# dan #0600# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka",
+      "saya tahu betul bahwa setelah menikah #0606# dan #0600# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa rencananya #0606# dan #0600# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak",
+      "yang saya ketahui secara langsung adalah bahwa rencananya #0606# dan #0600# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak",
+      "rencananya #0606# dan #0600# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak, demikian yang tampak oleh saya waktu itu",
+      "rencananya #0606# dan #0600# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan rencana tempat tinggal dan bantuan keluarga setelah menikah hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa setelah menikah #0606# dan #0600# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka",
+      "saya diberi tahu oleh {sumber} bahwa setelah menikah #0606# dan #0600# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka",
+      "setelah menikah #0606# dan #0600# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa setelah menikah #0606# dan #0600# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa rencananya #0606# dan #0600# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa rencananya #0606# dan #0600# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak",
+      "rencananya #0606# dan #0600# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa rencananya #0606# dan #0600# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari rencana tempat tinggal dan bantuan keluarga setelah menikah",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa setelah menikah #0606# dan #0600# akan tinggal bersama keluarga, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa setelah menikah #0606# dan #0600# akan tinggal bersama keluarga, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa setelah menikah #0606# dan #0600# akan tinggal bersama keluarga",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa setelah menikah #0606# dan #0600# akan tinggal bersama keluarga"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa rencananya #0606# dan #0600# menetap di rumah keluarga, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa rencananya #0606# dan #0600# menetap di rumah keluarga, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa rencananya #0606# dan #0600# menetap di rumah keluarga, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa rencananya #0606# dan #0600# menetap di rumah keluarga, selebihnya kurang saya pahami"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: tinggal di rumah orang tua calon; versi B: tinggal di rumah sendiri - berselisih pada TEMPAT",
+     "bedaPada": "tempat",
+     "saksi1": [
+      "setahu saya setelah menikah #0606# dan #0600# akan tinggal di rumah orang tua #0600#",
+      "saya mengetahui sendiri bahwa #0606# dan #0600# akan menetap di rumah orang tua #0600# sesudah menikah",
+      "sesudah menikah #0606# dan #0600# tinggal bersama orang tua #0600#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #0606# dan #0600# akan serumah dengan orang tua #0600#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya setelah menikah #0606# dan #0600# akan menempati rumah sendiri",
+      "rencana yang saya ketahui adalah #0606# dan #0600# akan mengontrak rumah sendiri sesudah menikah",
+      "sesudah menikah #0606# dan #0600# menempati rumah mereka sendiri, begitu yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0606# dan #0600# akan tinggal di rumah sendiri"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0606"
+   ]
+  },
+  {
+   "id": "q-dk-tinggal-lk",
+   "pokok": "pp-dk-ekonomi",
+   "urutan": 1918,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "laki-laki"
+   },
+   "teks": "Di mana #0600# dan #0606# akan tinggal setelah menikah dan siapa yang akan membantu mereka?",
+   "teksVarian": [],
+   "hal": "rencana tempat tinggal dan bantuan keluarga setelah menikah",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan rencana tempat tinggal dan bantuan keluarga setelah menikah sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa setelah menikah #0600# dan #0606# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka",
+      "saya mengetahui sendiri bahwa setelah menikah #0600# dan #0606# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka",
+      "saya menyaksikan langsung bahwa setelah menikah #0600# dan #0606# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka",
+      "saya tahu betul bahwa setelah menikah #0600# dan #0606# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa rencananya #0600# dan #0606# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak",
+      "yang saya ketahui secara langsung adalah bahwa rencananya #0600# dan #0606# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak",
+      "rencananya #0600# dan #0606# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak, demikian yang tampak oleh saya waktu itu",
+      "rencananya #0600# dan #0606# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan rencana tempat tinggal dan bantuan keluarga setelah menikah hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa setelah menikah #0600# dan #0606# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka",
+      "saya diberi tahu oleh {sumber} bahwa setelah menikah #0600# dan #0606# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka",
+      "setelah menikah #0600# dan #0606# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa setelah menikah #0600# dan #0606# akan tinggal bersama orang tua salah satu pihak yang siap membimbing dan membantu mereka"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa rencananya #0600# dan #0606# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa rencananya #0600# dan #0606# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak",
+      "rencananya #0600# dan #0606# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa rencananya #0600# dan #0606# menetap di rumah keluarga dan dibantu oleh orang tua kedua belah pihak"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari rencana tempat tinggal dan bantuan keluarga setelah menikah",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa setelah menikah #0600# dan #0606# akan tinggal bersama keluarga, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa setelah menikah #0600# dan #0606# akan tinggal bersama keluarga, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa setelah menikah #0600# dan #0606# akan tinggal bersama keluarga",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa setelah menikah #0600# dan #0606# akan tinggal bersama keluarga"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa rencananya #0600# dan #0606# menetap di rumah keluarga, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa rencananya #0600# dan #0606# menetap di rumah keluarga, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa rencananya #0600# dan #0606# menetap di rumah keluarga, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa rencananya #0600# dan #0606# menetap di rumah keluarga, selebihnya kurang saya pahami"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: tinggal di rumah orang tua calon; versi B: tinggal di rumah sendiri - berselisih pada TEMPAT",
+     "bedaPada": "tempat",
+     "saksi1": [
+      "setahu saya setelah menikah #0600# dan #0606# akan tinggal di rumah orang tua #0606#",
+      "saya mengetahui sendiri bahwa #0600# dan #0606# akan menetap di rumah orang tua #0606# sesudah menikah",
+      "sesudah menikah #0600# dan #0606# tinggal bersama orang tua #0606#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa #0600# dan #0606# akan serumah dengan orang tua #0606#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya setelah menikah #0600# dan #0606# akan menempati rumah sendiri",
+      "rencana yang saya ketahui adalah #0600# dan #0606# akan mengontrak rumah sendiri sesudah menikah",
+      "sesudah menikah #0600# dan #0606# menempati rumah mereka sendiri, begitu yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0600# dan #0606# akan tinggal di rumah sendiri"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0606"
+   ]
+  },
+  {
+   "id": "q-dk-upaya-tunda-pr",
+   "pokok": "pp-dk-upaya-tunda",
+   "urutan": 1919,
+   "tingkat": "inti",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "perempuan"
+   },
+   "teks": "Apakah orang tua pernah menasihati #0606# agar menunda pernikahan sampai cukup umur, dan bagaimana tanggapan #0606#?",
+   "teksVarian": [],
+   "hal": "upaya orang tua menunda pernikahan sampai cukup umur",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan upaya orang tua menunda pernikahan sampai cukup umur sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa orang tua sudah menasihati #0606# agar menunda pernikahan sampai cukup umur tetapi #0606# dan #0600# tetap berkeinginan menikah",
+      "saya mengetahui sendiri bahwa orang tua sudah menasihati #0606# agar menunda pernikahan sampai cukup umur tetapi #0606# dan #0600# tetap berkeinginan menikah",
+      "saya menyaksikan langsung bahwa orang tua sudah menasihati #0606# agar menunda pernikahan sampai cukup umur tetapi #0606# dan #0600# tetap berkeinginan menikah",
+      "saya tahu betul bahwa orang tua sudah menasihati #0606# agar menunda pernikahan sampai cukup umur tetapi #0606# dan #0600# tetap berkeinginan menikah"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa sudah ada nasihat dari orang tua kepada #0606# untuk menunda pernikahan hingga cukup umur namun #0606# dan #0600# tetap ingin menikah",
+      "yang saya ketahui secara langsung adalah bahwa sudah ada nasihat dari orang tua kepada #0606# untuk menunda pernikahan hingga cukup umur namun #0606# dan #0600# tetap ingin menikah",
+      "sudah ada nasihat dari orang tua kepada #0606# untuk menunda pernikahan hingga cukup umur namun #0606# dan #0600# tetap ingin menikah, demikian yang tampak oleh saya waktu itu",
+      "sudah ada nasihat dari orang tua kepada #0606# untuk menunda pernikahan hingga cukup umur namun #0606# dan #0600# tetap ingin menikah, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan upaya orang tua menunda pernikahan sampai cukup umur hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa orang tua sudah menasihati #0606# agar menunda pernikahan sampai cukup umur tetapi #0606# dan #0600# tetap berkeinginan menikah",
+      "saya diberi tahu oleh {sumber} bahwa orang tua sudah menasihati #0606# agar menunda pernikahan sampai cukup umur tetapi #0606# dan #0600# tetap berkeinginan menikah",
+      "orang tua sudah menasihati #0606# agar menunda pernikahan sampai cukup umur tetapi #0606# dan #0600# tetap berkeinginan menikah, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa orang tua sudah menasihati #0606# agar menunda pernikahan sampai cukup umur tetapi #0606# dan #0600# tetap berkeinginan menikah"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa sudah ada nasihat dari orang tua kepada #0606# untuk menunda pernikahan hingga cukup umur namun #0606# dan #0600# tetap ingin menikah",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sudah ada nasihat dari orang tua kepada #0606# untuk menunda pernikahan hingga cukup umur namun #0606# dan #0600# tetap ingin menikah",
+      "sudah ada nasihat dari orang tua kepada #0606# untuk menunda pernikahan hingga cukup umur namun #0606# dan #0600# tetap ingin menikah, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa sudah ada nasihat dari orang tua kepada #0606# untuk menunda pernikahan hingga cukup umur namun #0606# dan #0600# tetap ingin menikah"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari upaya orang tua menunda pernikahan sampai cukup umur",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa orang tua sudah menasihati #0606# agar menunda pernikahan, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa orang tua sudah menasihati #0606# agar menunda pernikahan, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa orang tua sudah menasihati #0606# agar menunda pernikahan",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa orang tua sudah menasihati #0606# agar menunda pernikahan"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa sudah ada nasihat dari orang tua kepada #0606# untuk menunda pernikahan, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa sudah ada nasihat dari orang tua kepada #0606# untuk menunda pernikahan, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa sudah ada nasihat dari orang tua kepada #0606# untuk menunda pernikahan, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa sudah ada nasihat dari orang tua kepada #0606# untuk menunda pernikahan, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0606"
+   ]
+  },
+  {
+   "id": "q-dk-upaya-tunda-lk",
+   "pokok": "pp-dk-upaya-tunda",
+   "urutan": 1920,
+   "tingkat": "inti",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "laki-laki"
+   },
+   "teks": "Apakah orang tua pernah menasihati #0600# agar menunda pernikahan sampai cukup umur, dan bagaimana tanggapan #0600#?",
+   "teksVarian": [],
+   "hal": "upaya orang tua menunda pernikahan sampai cukup umur",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan upaya orang tua menunda pernikahan sampai cukup umur sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa orang tua sudah menasihati #0600# agar menunda pernikahan sampai cukup umur tetapi #0600# dan #0606# tetap berkeinginan menikah",
+      "saya mengetahui sendiri bahwa orang tua sudah menasihati #0600# agar menunda pernikahan sampai cukup umur tetapi #0600# dan #0606# tetap berkeinginan menikah",
+      "saya menyaksikan langsung bahwa orang tua sudah menasihati #0600# agar menunda pernikahan sampai cukup umur tetapi #0600# dan #0606# tetap berkeinginan menikah",
+      "saya tahu betul bahwa orang tua sudah menasihati #0600# agar menunda pernikahan sampai cukup umur tetapi #0600# dan #0606# tetap berkeinginan menikah"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa sudah ada nasihat dari orang tua kepada #0600# untuk menunda pernikahan hingga cukup umur namun #0600# dan #0606# tetap ingin menikah",
+      "yang saya ketahui secara langsung adalah bahwa sudah ada nasihat dari orang tua kepada #0600# untuk menunda pernikahan hingga cukup umur namun #0600# dan #0606# tetap ingin menikah",
+      "sudah ada nasihat dari orang tua kepada #0600# untuk menunda pernikahan hingga cukup umur namun #0600# dan #0606# tetap ingin menikah, demikian yang tampak oleh saya waktu itu",
+      "sudah ada nasihat dari orang tua kepada #0600# untuk menunda pernikahan hingga cukup umur namun #0600# dan #0606# tetap ingin menikah, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan upaya orang tua menunda pernikahan sampai cukup umur hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa orang tua sudah menasihati #0600# agar menunda pernikahan sampai cukup umur tetapi #0600# dan #0606# tetap berkeinginan menikah",
+      "saya diberi tahu oleh {sumber} bahwa orang tua sudah menasihati #0600# agar menunda pernikahan sampai cukup umur tetapi #0600# dan #0606# tetap berkeinginan menikah",
+      "orang tua sudah menasihati #0600# agar menunda pernikahan sampai cukup umur tetapi #0600# dan #0606# tetap berkeinginan menikah, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa orang tua sudah menasihati #0600# agar menunda pernikahan sampai cukup umur tetapi #0600# dan #0606# tetap berkeinginan menikah"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa sudah ada nasihat dari orang tua kepada #0600# untuk menunda pernikahan hingga cukup umur namun #0600# dan #0606# tetap ingin menikah",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sudah ada nasihat dari orang tua kepada #0600# untuk menunda pernikahan hingga cukup umur namun #0600# dan #0606# tetap ingin menikah",
+      "sudah ada nasihat dari orang tua kepada #0600# untuk menunda pernikahan hingga cukup umur namun #0600# dan #0606# tetap ingin menikah, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa sudah ada nasihat dari orang tua kepada #0600# untuk menunda pernikahan hingga cukup umur namun #0600# dan #0606# tetap ingin menikah"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari upaya orang tua menunda pernikahan sampai cukup umur",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa orang tua sudah menasihati #0600# agar menunda pernikahan, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa orang tua sudah menasihati #0600# agar menunda pernikahan, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa orang tua sudah menasihati #0600# agar menunda pernikahan",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa orang tua sudah menasihati #0600# agar menunda pernikahan"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa sudah ada nasihat dari orang tua kepada #0600# untuk menunda pernikahan, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa sudah ada nasihat dari orang tua kepada #0600# untuk menunda pernikahan, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa sudah ada nasihat dari orang tua kepada #0600# untuk menunda pernikahan, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa sudah ada nasihat dari orang tua kepada #0600# untuk menunda pernikahan, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0606"
+   ]
+  },
+  {
+   "id": "q-dk-lingkungan-pr",
+   "pokok": "pp-dk-lingkungan",
+   "urutan": 1921,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "perempuan"
+   },
+   "teks": "Apakah kedekatan #0606# dan #0600# sudah menimbulkan kekhawatiran atau pembicaraan di lingkungan sekitar?",
+   "teksVarian": [],
+   "hal": "kekhawatiran lingkungan atas kedekatan keduanya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kekhawatiran lingkungan atas kedekatan keduanya sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa kedekatan #0606# dan #0600# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan",
+      "saya mengetahui sendiri bahwa kedekatan #0606# dan #0600# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan",
+      "saya menyaksikan langsung bahwa kedekatan #0606# dan #0600# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan",
+      "saya tahu betul bahwa kedekatan #0606# dan #0600# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0606# dan #0600# apabila keduanya tidak lekas dinikahkan",
+      "yang saya ketahui secara langsung adalah bahwa warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0606# dan #0600# apabila keduanya tidak lekas dinikahkan",
+      "warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0606# dan #0600# apabila keduanya tidak lekas dinikahkan, demikian yang tampak oleh saya waktu itu",
+      "warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0606# dan #0600# apabila keduanya tidak lekas dinikahkan, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan kekhawatiran lingkungan atas kedekatan keduanya hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa kedekatan #0606# dan #0600# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan",
+      "saya diberi tahu oleh {sumber} bahwa kedekatan #0606# dan #0600# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan",
+      "kedekatan #0606# dan #0600# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa kedekatan #0606# dan #0600# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0606# dan #0600# apabila keduanya tidak lekas dinikahkan",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0606# dan #0600# apabila keduanya tidak lekas dinikahkan",
+      "warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0606# dan #0600# apabila keduanya tidak lekas dinikahkan, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0606# dan #0600# apabila keduanya tidak lekas dinikahkan"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari kekhawatiran lingkungan atas kedekatan keduanya",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa kedekatan #0606# dan #0600# sudah menimbulkan kekhawatiran keluarga, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa kedekatan #0606# dan #0600# sudah menimbulkan kekhawatiran keluarga, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa kedekatan #0606# dan #0600# sudah menimbulkan kekhawatiran keluarga",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa kedekatan #0606# dan #0600# sudah menimbulkan kekhawatiran keluarga"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa keluarga mulai mengkhawatirkan kedekatan #0606# dan #0600#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa keluarga mulai mengkhawatirkan kedekatan #0606# dan #0600#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa keluarga mulai mengkhawatirkan kedekatan #0606# dan #0600#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa keluarga mulai mengkhawatirkan kedekatan #0606# dan #0600#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0606"
+   ]
+  },
+  {
+   "id": "q-dk-lingkungan-lk",
+   "pokok": "pp-dk-lingkungan",
+   "urutan": 1922,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "laki-laki"
+   },
+   "teks": "Apakah kedekatan #0600# dan #0606# sudah menimbulkan kekhawatiran atau pembicaraan di lingkungan sekitar?",
+   "teksVarian": [],
+   "hal": "kekhawatiran lingkungan atas kedekatan keduanya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan kekhawatiran lingkungan atas kedekatan keduanya sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa kedekatan #0600# dan #0606# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan",
+      "saya mengetahui sendiri bahwa kedekatan #0600# dan #0606# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan",
+      "saya menyaksikan langsung bahwa kedekatan #0600# dan #0606# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan",
+      "saya tahu betul bahwa kedekatan #0600# dan #0606# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0600# dan #0606# apabila keduanya tidak lekas dinikahkan",
+      "yang saya ketahui secara langsung adalah bahwa warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0600# dan #0606# apabila keduanya tidak lekas dinikahkan",
+      "warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0600# dan #0606# apabila keduanya tidak lekas dinikahkan, demikian yang tampak oleh saya waktu itu",
+      "warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0600# dan #0606# apabila keduanya tidak lekas dinikahkan, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan kekhawatiran lingkungan atas kedekatan keduanya hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa kedekatan #0600# dan #0606# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan",
+      "saya diberi tahu oleh {sumber} bahwa kedekatan #0600# dan #0606# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan",
+      "kedekatan #0600# dan #0606# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa kedekatan #0600# dan #0606# sudah menimbulkan kekhawatiran keluarga dan pembicaraan warga sekitar jika keduanya tidak segera dinikahkan"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0600# dan #0606# apabila keduanya tidak lekas dinikahkan",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0600# dan #0606# apabila keduanya tidak lekas dinikahkan",
+      "warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0600# dan #0606# apabila keduanya tidak lekas dinikahkan, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa warga sekitar dan keluarga mulai mengkhawatirkan kedekatan #0600# dan #0606# apabila keduanya tidak lekas dinikahkan"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari kekhawatiran lingkungan atas kedekatan keduanya",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa kedekatan #0600# dan #0606# sudah menimbulkan kekhawatiran keluarga, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa kedekatan #0600# dan #0606# sudah menimbulkan kekhawatiran keluarga, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa kedekatan #0600# dan #0606# sudah menimbulkan kekhawatiran keluarga",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa kedekatan #0600# dan #0606# sudah menimbulkan kekhawatiran keluarga"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa keluarga mulai mengkhawatirkan kedekatan #0600# dan #0606#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa keluarga mulai mengkhawatirkan kedekatan #0600# dan #0606#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa keluarga mulai mengkhawatirkan kedekatan #0600# dan #0606#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa keluarga mulai mengkhawatirkan kedekatan #0600# dan #0606#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0606"
+   ]
+  },
+  {
+   "id": "q-dk-pendampingan-pr",
+   "pokok": "pp-dk-pendampingan",
+   "urutan": 1923,
+   "tingkat": "pilihan",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "perempuan"
+   },
+   "teks": "Apakah #0606# sudah pernah diperiksa atau berkonsultasi dengan dokter, bidan, psikolog atau lembaga pendamping anak?",
+   "teksVarian": [],
+   "hal": "pemeriksaan atau pendampingan profesional terhadap anak",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pemeriksaan atau pendampingan profesional terhadap anak sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0606# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan",
+      "saya mengetahui sendiri bahwa #0606# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan",
+      "saya menyaksikan langsung bahwa #0606# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan",
+      "saya tahu betul bahwa #0606# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa sebelum perkara ini diajukan #0606# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping",
+      "yang saya ketahui secara langsung adalah bahwa sebelum perkara ini diajukan #0606# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping",
+      "sebelum perkara ini diajukan #0606# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping, demikian yang tampak oleh saya waktu itu",
+      "sebelum perkara ini diajukan #0606# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan pemeriksaan atau pendampingan profesional terhadap anak hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #0606# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan",
+      "saya diberi tahu oleh {sumber} bahwa #0606# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan",
+      "#0606# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #0606# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa sebelum perkara ini diajukan #0606# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sebelum perkara ini diajukan #0606# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping",
+      "sebelum perkara ini diajukan #0606# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa sebelum perkara ini diajukan #0606# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari pemeriksaan atau pendampingan profesional terhadap anak",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #0606# sudah pernah diperiksakan ke tenaga kesehatan, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #0606# sudah pernah diperiksakan ke tenaga kesehatan, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #0606# sudah pernah diperiksakan ke tenaga kesehatan",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #0606# sudah pernah diperiksakan ke tenaga kesehatan"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa #0606# sudah dibawa memeriksakan diri ke tenaga kesehatan, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa #0606# sudah dibawa memeriksakan diri ke tenaga kesehatan, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa #0606# sudah dibawa memeriksakan diri ke tenaga kesehatan, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa #0606# sudah dibawa memeriksakan diri ke tenaga kesehatan, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0606"
+   ]
+  },
+  {
+   "id": "q-dk-pendampingan-lk",
+   "pokok": "pp-dk-pendampingan",
+   "urutan": 1924,
+   "tingkat": "pilihan",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "laki-laki"
+   },
+   "teks": "Apakah #0600# sudah pernah diperiksa atau berkonsultasi dengan dokter, bidan, psikolog atau lembaga pendamping anak?",
+   "teksVarian": [],
+   "hal": "pemeriksaan atau pendampingan profesional terhadap anak",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan pemeriksaan atau pendampingan profesional terhadap anak sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0600# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan",
+      "saya mengetahui sendiri bahwa #0600# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan",
+      "saya menyaksikan langsung bahwa #0600# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan",
+      "saya tahu betul bahwa #0600# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa sebelum perkara ini diajukan #0600# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping",
+      "yang saya ketahui secara langsung adalah bahwa sebelum perkara ini diajukan #0600# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping",
+      "sebelum perkara ini diajukan #0600# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping, demikian yang tampak oleh saya waktu itu",
+      "sebelum perkara ini diajukan #0600# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan pemeriksaan atau pendampingan profesional terhadap anak hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa #0600# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan",
+      "saya diberi tahu oleh {sumber} bahwa #0600# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan",
+      "#0600# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa #0600# sudah pernah diperiksakan atau berkonsultasi dengan tenaga kesehatan atau lembaga pendamping sebelum perkara ini diajukan"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa sebelum perkara ini diajukan #0600# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa sebelum perkara ini diajukan #0600# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping",
+      "sebelum perkara ini diajukan #0600# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa sebelum perkara ini diajukan #0600# sudah dibawa memeriksakan diri ke tenaga kesehatan atau lembaga pendamping"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari pemeriksaan atau pendampingan profesional terhadap anak",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa #0600# sudah pernah diperiksakan ke tenaga kesehatan, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa #0600# sudah pernah diperiksakan ke tenaga kesehatan, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa #0600# sudah pernah diperiksakan ke tenaga kesehatan",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa #0600# sudah pernah diperiksakan ke tenaga kesehatan"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa #0600# sudah dibawa memeriksakan diri ke tenaga kesehatan, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa #0600# sudah dibawa memeriksakan diri ke tenaga kesehatan, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa #0600# sudah dibawa memeriksakan diri ke tenaga kesehatan, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa #0600# sudah dibawa memeriksakan diri ke tenaga kesehatan, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600"
+   ]
+  },
+  {
+   "id": "q-dk-dua-keluarga-pr",
+   "pokok": "pp-dk-dua-keluarga",
+   "urutan": 1925,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "perempuan",
+    "calonJuga": "di-bawah-umur"
+   },
+   "teks": "Apakah orang tua #0600# juga ikut mengajukan permohonan dispensasi kawin untuk #0600# dan apakah mereka menyetujui pernikahan ini?",
+   "teksVarian": [],
+   "hal": "keikutsertaan orang tua calon sebagai pemohon dan restu mereka",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan keikutsertaan orang tua calon sebagai pemohon dan restu mereka sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa orang tua #0600# ikut mengajukan permohonan dispensasi kawin untuk #0600# dan menyetujui pernikahan #0606# dan #0600#",
+      "saya mengetahui sendiri bahwa orang tua #0600# ikut mengajukan permohonan dispensasi kawin untuk #0600# dan menyetujui pernikahan #0606# dan #0600#",
+      "saya menyaksikan langsung bahwa orang tua #0600# ikut mengajukan permohonan dispensasi kawin untuk #0600# dan menyetujui pernikahan #0606# dan #0600#",
+      "saya tahu betul bahwa orang tua #0600# ikut mengajukan permohonan dispensasi kawin untuk #0600# dan menyetujui pernikahan #0606# dan #0600#"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa permohonan dispensasi kawin untuk #0600# juga diajukan oleh orang tua #0600# yang merestui pernikahan #0606# dan #0600#",
+      "yang saya ketahui secara langsung adalah bahwa permohonan dispensasi kawin untuk #0600# juga diajukan oleh orang tua #0600# yang merestui pernikahan #0606# dan #0600#",
+      "permohonan dispensasi kawin untuk #0600# juga diajukan oleh orang tua #0600# yang merestui pernikahan #0606# dan #0600#, demikian yang tampak oleh saya waktu itu",
+      "permohonan dispensasi kawin untuk #0600# juga diajukan oleh orang tua #0600# yang merestui pernikahan #0606# dan #0600#, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan keikutsertaan orang tua calon sebagai pemohon dan restu mereka hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa orang tua #0600# ikut mengajukan permohonan dispensasi kawin untuk #0600# dan menyetujui pernikahan #0606# dan #0600#",
+      "saya diberi tahu oleh {sumber} bahwa orang tua #0600# ikut mengajukan permohonan dispensasi kawin untuk #0600# dan menyetujui pernikahan #0606# dan #0600#",
+      "orang tua #0600# ikut mengajukan permohonan dispensasi kawin untuk #0600# dan menyetujui pernikahan #0606# dan #0600#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa orang tua #0600# ikut mengajukan permohonan dispensasi kawin untuk #0600# dan menyetujui pernikahan #0606# dan #0600#"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa permohonan dispensasi kawin untuk #0600# juga diajukan oleh orang tua #0600# yang merestui pernikahan #0606# dan #0600#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa permohonan dispensasi kawin untuk #0600# juga diajukan oleh orang tua #0600# yang merestui pernikahan #0606# dan #0600#",
+      "permohonan dispensasi kawin untuk #0600# juga diajukan oleh orang tua #0600# yang merestui pernikahan #0606# dan #0600#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa permohonan dispensasi kawin untuk #0600# juga diajukan oleh orang tua #0600# yang merestui pernikahan #0606# dan #0600#"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari keikutsertaan orang tua calon sebagai pemohon dan restu mereka",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa orang tua #0600# ikut mengajukan permohonan untuk #0600#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa orang tua #0600# ikut mengajukan permohonan untuk #0600#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa orang tua #0600# ikut mengajukan permohonan untuk #0600#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa orang tua #0600# ikut mengajukan permohonan untuk #0600#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa permohonan untuk #0600# juga diajukan oleh orang tua #0600#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa permohonan untuk #0600# juga diajukan oleh orang tua #0600#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa permohonan untuk #0600# juga diajukan oleh orang tua #0600#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa permohonan untuk #0600# juga diajukan oleh orang tua #0600#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0606"
+   ]
+  },
+  {
+   "id": "q-dk-dua-keluarga-lk",
+   "pokok": "pp-dk-dua-keluarga",
+   "urutan": 1926,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "jenisKelaminAnak": "laki-laki",
+    "calonJuga": "di-bawah-umur"
+   },
+   "teks": "Apakah orang tua #0606# juga ikut mengajukan permohonan dispensasi kawin untuk #0606# dan apakah mereka menyetujui pernikahan ini?",
+   "teksVarian": [],
+   "hal": "keikutsertaan orang tua calon sebagai pemohon dan restu mereka",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan keikutsertaan orang tua calon sebagai pemohon dan restu mereka sebagai hal yang dilihat atau dialaminya sendiri",
+     "saksi1": [
+      "saya melihat sendiri bahwa orang tua #0606# ikut mengajukan permohonan dispensasi kawin untuk #0606# dan menyetujui pernikahan #0600# dan #0606#",
+      "saya mengetahui sendiri bahwa orang tua #0606# ikut mengajukan permohonan dispensasi kawin untuk #0606# dan menyetujui pernikahan #0600# dan #0606#",
+      "saya menyaksikan langsung bahwa orang tua #0606# ikut mengajukan permohonan dispensasi kawin untuk #0606# dan menyetujui pernikahan #0600# dan #0606#",
+      "saya tahu betul bahwa orang tua #0606# ikut mengajukan permohonan dispensasi kawin untuk #0606# dan menyetujui pernikahan #0600# dan #0606#"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa permohonan dispensasi kawin untuk #0606# juga diajukan oleh orang tua #0606# yang merestui pernikahan #0600# dan #0606#",
+      "yang saya ketahui secara langsung adalah bahwa permohonan dispensasi kawin untuk #0606# juga diajukan oleh orang tua #0606# yang merestui pernikahan #0600# dan #0606#",
+      "permohonan dispensasi kawin untuk #0606# juga diajukan oleh orang tua #0606# yang merestui pernikahan #0600# dan #0606#, demikian yang tampak oleh saya waktu itu",
+      "permohonan dispensasi kawin untuk #0606# juga diajukan oleh orang tua #0606# yang merestui pernikahan #0600# dan #0606#, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi menerangkan keikutsertaan orang tua calon sebagai pemohon dan restu mereka hanya dari cerita orang lain, bukan yang disaksikannya sendiri",
+     "saksi1": [
+      "{sumber} bercerita kepada saya bahwa orang tua #0606# ikut mengajukan permohonan dispensasi kawin untuk #0606# dan menyetujui pernikahan #0600# dan #0606#",
+      "saya diberi tahu oleh {sumber} bahwa orang tua #0606# ikut mengajukan permohonan dispensasi kawin untuk #0606# dan menyetujui pernikahan #0600# dan #0606#",
+      "orang tua #0606# ikut mengajukan permohonan dispensasi kawin untuk #0606# dan menyetujui pernikahan #0600# dan #0606#, begitulah cerita {sumber} kepada saya",
+      "setahu saya berdasarkan cerita {sumber} bahwa orang tua #0606# ikut mengajukan permohonan dispensasi kawin untuk #0606# dan menyetujui pernikahan #0600# dan #0606#"
+     ],
+     "saksi2": [
+      "dari penuturan {sumber} yang sampai kepada saya diketahui bahwa permohonan dispensasi kawin untuk #0606# juga diajukan oleh orang tua #0606# yang merestui pernikahan #0600# dan #0606#",
+      "kabar dari {sumber} yang saya terima menyebutkan bahwa permohonan dispensasi kawin untuk #0606# juga diajukan oleh orang tua #0606# yang merestui pernikahan #0600# dan #0606#",
+      "permohonan dispensasi kawin untuk #0606# juga diajukan oleh orang tua #0606# yang merestui pernikahan #0600# dan #0606#, demikian yang diceritakan {sumber} kepada saya",
+      "yang saya ketahui berasal dari cerita {sumber} yaitu bahwa permohonan dispensasi kawin untuk #0606# juga diajukan oleh orang tua #0606# yang merestui pernikahan #0600# dan #0606#"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari keikutsertaan orang tua calon sebagai pemohon dan restu mereka",
+     "saksi1": [
+      "yang saya ketahui hanya sebagian saja yaitu bahwa orang tua #0606# ikut mengajukan permohonan untuk #0606#, sedangkan selebihnya kurang saya ketahui",
+      "saya hanya tahu sebagian yaitu bahwa orang tua #0606# ikut mengajukan permohonan untuk #0606#, dan selebihnya kurang saya ketahui",
+      "sebagian saja yang saya ketahui yakni bahwa orang tua #0606# ikut mengajukan permohonan untuk #0606#",
+      "hanya sebatas itu yang saya ketahui yaitu bahwa orang tua #0606# ikut mengajukan permohonan untuk #0606#"
+     ],
+     "saksi2": [
+      "pengetahuan saya terbatas pada satu hal bahwa permohonan untuk #0606# juga diajukan oleh orang tua #0606#, adapun selebihnya kurang jelas bagi saya",
+      "sejauh yang saya tahu bahwa permohonan untuk #0606# juga diajukan oleh orang tua #0606#, sedangkan sisanya kurang saya pahami",
+      "bagian yang saya kuasai hanyalah bahwa permohonan untuk #0606# juga diajukan oleh orang tua #0606#, dan lainnya kurang saya pahami",
+      "yang bisa saya terangkan sebatas bahwa permohonan untuk #0606# juga diajukan oleh orang tua #0606#, selebihnya kurang saya pahami"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0600",
+    "0606"
    ]
   },
   {
