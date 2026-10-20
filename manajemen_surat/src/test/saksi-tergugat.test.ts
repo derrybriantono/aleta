@@ -55,8 +55,8 @@ describe("katalog tambahan Tergugat menempel pada harta bersama dan kewarisan", 
     }
     expect(HB.digabungDari).toContain("harta-bersama-tergugat");
     expect(WR.digabungDari).toContain("kewarisan-tergugat");
-    expect(HB.pertanyaan.length).toBe(HB_UTAMA.pertanyaan.length + 7);
-    expect(WR.pertanyaan.length).toBe(WR_UTAMA.pertanyaan.length + 5);
+    expect(HB.pertanyaan.length).toBe(HB_UTAMA.pertanyaan.length + katalog.find((x) => x.kunci === "harta-bersama-tergugat").pertanyaan.length);
+    expect(WR.pertanyaan.length).toBe(WR_UTAMA.pertanyaan.length + katalog.find((x) => x.kunci === "kewarisan-tergugat").pertanyaan.length);
   });
 
   it("paket gabungan lolos skema: id dan urutan tidak bentrok, butir yang digantikan ada", () => {

@@ -1,0 +1,630 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "harta-bersama-tergugat",
+ "judul": "Harta bersama - keterangan saksi yang diajukan Tergugat",
+ "versi": 1,
+ "penulis": "SAKSI-LANJUT",
+ "tahap": 1,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "348"
+  ]
+ },
+ "tambahanUntuk": [
+  "harta-bersama"
+ ],
+ "urutanAwal": 1000,
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [],
+ "dasarHukum": [
+  {
+   "id": "dh-rbg-283",
+   "rujukan": "Pasal 283 RBg jo Pasal 1865 KUH Perdata",
+   "uraian": "pihak yang mendalilkan suatu hak atau peristiwa wajib membuktikannya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 283 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (memuat padanan KUHperd. 1865 dan IR. 163); Pasal 1865 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: blangko Derry 4a Harta Bersama [01] [Kabul] [E-Court] HB - Kontradiktoir Konvensi Rekonvensi Sita Jaminan (pertimbangan hukum)"
+  }
+ ],
+ "keadaan": {
+  "bantahan": {
+   "sumber": "borang",
+   "nilai": [
+    "bawaan-hibah-warisan",
+    "sebelum-menikah",
+    "sudah-dijual-dijaminkan",
+    "milik-pihak-ketiga",
+    "sudah-dibagi",
+    "sudah-dihibahkan",
+    "utang-bersama",
+    "pisah-harta"
+   ],
+   "jamak": true,
+   "bawaan": [],
+   "label": "Bantahan Tergugat atas objek",
+   "labelNilai": {
+    "sudah-dibagi": "harta sudah dibagi",
+    "sudah-dihibahkan": "objek sudah dihibahkan",
+    "utang-bersama": "ada utang bersama yang harus diperhitungkan",
+    "pisah-harta": "ada perjanjian perkawinan pisah harta"
+   }
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-bantahan",
+   "judul": "Bantahan lawan atas objek",
+   "uraian": "bantahan Tergugat bahwa objek berasal dari luar perkawinan, sudah dialihkan atau milik pihak lain",
+   "dasarHukum": [
+    "dh-rbg-283"
+   ],
+   "wajib": false,
+   "keadaan": {
+    "kehadiran": [
+     "kontradiktoir",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   }
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-tg-asal-bawaan",
+   "pokok": "pp-bantahan",
+   "urutan": 10,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "bawaan-hibah-warisan",
+     "sebelum-menikah"
+    ]
+   },
+   "teks": "Apakah objek-objek yang digugat berasal dari harta bawaan, hadiah, atau warisan #0047#, dan bagaimana saksi mengetahuinya ?",
+   "teksVarian": [
+    "Dari mana asal objek-objek yang digugat menurut pengetahuan saksi, apakah bawaan, hadiah, atau warisan #0047# ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi Tergugat menerangkan bahwa objek yang digugat berasal dari harta bawaan, hadiah, atau warisan Tergugat dan bukan hasil usaha bersama",
+     "saksi1": [
+      "saya melihat sendiri bahwa objek-objek yang digugat itu berasal dari harta bawaan #0047# dan bukan hasil usaha bersama dengan #0046#",
+      "saya mengetahui sendiri bahwa objek-objek tersebut diterima #0047# sebagai hadiah dan warisan dari keluarganya sehingga bukan harta yang dicari bersama #0046#",
+      "saya menyaksikan langsung bahwa objek-objek itu sudah menjadi milik #0047# sebelum menikah dengan #0046# dan bukan dibeli sesudahnya",
+      "saya tahu betul bahwa asal objek-objek itu adalah warisan orang tua #0047# dan hadiah keluarganya dan bukan penghasilan selama perkawinan"
+     ],
+     "saksi2": [
+      "asal objek-objek itu adalah warisan orang tua #0047# dan hadiah keluarganya dan bukan penghasilan selama perkawinan, demikian yang tampak oleh saya waktu itu",
+      "objek-objek yang digugat itu berasal dari harta bawaan #0047# dan bukan hasil usaha bersama dengan #0046#, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa objek-objek tersebut diterima #0047# sebagai hadiah dan warisan dari keluarganya sehingga bukan harta yang dicari bersama #0046#",
+      "karena sering bersama mereka saya paham bahwa objek-objek itu sudah menjadi milik #0047# sebelum menikah dengan #0046# dan bukan dibeli sesudahnya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: objek berasal dari harta bawaan atau warisan Tergugat; versi B: objek dibeli dari penghasilan bersama selama perkawinan - berselisih pada PERISTIWA (asal objek)",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa objek-objek yang digugat itu berasal dari harta bawaan atau warisan #0047#",
+      "keterangan saya adalah bahwa objek-objek tersebut diterima #0047# sebagai hadiah dan warisan dari keluarganya",
+      "sebelum menikah dengan #0046# objek-objek itu sudah menjadi milik #0047#, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa asal objek-objek itu adalah warisan orang tua #0047# dan hadiah dari keluarganya"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa objek-objek yang digugat itu dibeli dari hasil usaha #0046# dan #0047# bersama selama perkawinan",
+      "objek-objek tersebut diperoleh dari penghasilan bersama setelah #0046# dan #0047# menikah, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa sesudah menikah dengan #0046# barulah objek-objek itu dibeli #0047# dari uang bersama",
+      "asal objek-objek itu adalah tabungan bersama #0046# dan #0047# selama menikah, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "hal": "asal objek-objek itu sebagai harta bawaan, hadiah atau warisan",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "menggantikan": [
+    "q-bukan-bawaan",
+    "q-dalil-bawaan"
+   ]
+  },
+  {
+   "id": "q-tg-waktu-sebelum-menikah",
+   "pokok": "pp-bantahan",
+   "urutan": 20,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "sebelum-menikah"
+    ]
+   },
+   "teks": "Apakah objek-objek yang digugat sudah dimiliki #0047# sebelum menikah dengan #0046#, dan sejak kapan ?",
+   "teksVarian": [
+    "Kapan #0047# memperoleh objek-objek tersebut, apakah sebelum atau sesudah menikah dengan #0046# ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi Tergugat menerangkan bahwa objek yang digugat sudah dimiliki Tergugat sebelum menikah dan bukan diperoleh sesudah perkawinan",
+     "saksi1": [
+      "saya melihat sendiri bahwa objek-objek yang digugat sudah dimiliki #0047# sebelum menikah dengan #0046# dan bukan diperoleh sesudah perkawinan",
+      "saya mengetahui sendiri bahwa sejak sebelum perkawinan objek-objek itu telah berada dalam penguasaan #0047# dan bukan baru dibeli selama menikah",
+      "saya menyaksikan langsung bahwa #0047# memperoleh objek-objek tersebut pada masa lajangnya dan bukan pada masa perkawinan dengan #0046#",
+      "saya tahu betul bahwa waktu perolehan objek-objek itu jatuh sebelum #0047# dan #0046# menikah dan bukan sesudahnya"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #0047# memperoleh objek-objek tersebut pada masa lajangnya dan bukan pada masa perkawinan dengan #0046#",
+      "yang saya ketahui secara langsung adalah bahwa waktu perolehan objek-objek itu jatuh sebelum #0047# dan #0046# menikah dan bukan sesudahnya",
+      "objek-objek yang digugat sudah dimiliki #0047# sebelum menikah dengan #0046# dan bukan diperoleh sesudah perkawinan, demikian yang tampak oleh saya waktu itu",
+      "sejak sebelum perkawinan objek-objek itu telah berada dalam penguasaan #0047# dan bukan baru dibeli selama menikah, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: objek diperoleh sebelum para pihak menikah; versi B: objek diperoleh sesudah para pihak menikah - berselisih pada WAKTU",
+     "bedaPada": "waktu",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa objek-objek itu sudah dimiliki #0047# sebelum menikah dengan #0046#",
+      "keterangan saya adalah bahwa sebelum perkawinan objek-objek itu telah berada dalam penguasaan #0047#",
+      "#0047# memperoleh objek-objek tersebut pada masa lajangnya itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa waktu perolehan objek-objek itu jatuh sebelum #0047# dan #0046# menikah"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa objek-objek itu baru diperoleh sesudah #0047# menikah dengan #0046#",
+      "pada masa perkawinan objek-objek itu mulai dimiliki #0047# dan #0046#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0047# dan #0046# memperoleh objek-objek tersebut ketika sudah menjadi suami istri",
+      "waktu perolehan objek-objek itu jatuh sesudah #0047# dan #0046# menikah, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "hal": "waktu objek-objek itu mulai dimiliki",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "menggantikan": [
+    "q-waktu-perolehan"
+   ]
+  },
+  {
+   "id": "q-tg-sumber-dana",
+   "pokok": "pp-bantahan",
+   "urutan": 30,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "bawaan-hibah-warisan",
+     "sebelum-menikah"
+    ]
+   },
+   "teks": "Dari mana uang atau modal untuk memperoleh objek-objek yang digugat itu, apakah dari harta pribadi #0047# ?",
+   "teksVarian": [
+    "Siapa yang menyediakan uang atau modal untuk objek-objek yang digugat itu, apakah #0047# sendiri ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi Tergugat menerangkan bahwa dana perolehan objek berasal dari harta pribadi Tergugat dan bukan dari penghasilan bersama",
+     "saksi1": [
+      "saya melihat sendiri bahwa uang untuk memperoleh objek-objek itu berasal dari harta pribadi #0047# dan bukan dari penghasilan bersama",
+      "saya mengetahui sendiri bahwa modalnya disediakan #0047# dari warisan dan tabungannya sendiri sehingga bukan uang bersama dengan #0046#",
+      "saya menyaksikan langsung bahwa pembelian dan pembangunan objek-objek itu dibiayai #0047# dengan hartanya sendiri dan bukan dengan uang rumah tangga",
+      "saya tahu betul bahwa dana objek-objek tersebut datang dari pemberian keluarga #0047# dan bukan dari hasil kerja #0046#"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa pembelian dan pembangunan objek-objek itu dibiayai #0047# dengan hartanya sendiri dan bukan dengan uang rumah tangga",
+      "yang saya ketahui secara langsung adalah bahwa dana objek-objek tersebut datang dari pemberian keluarga #0047# dan bukan dari hasil kerja #0046#",
+      "uang untuk memperoleh objek-objek itu berasal dari harta pribadi #0047# dan bukan dari penghasilan bersama, demikian yang tampak oleh saya waktu itu",
+      "modalnya disediakan #0047# dari warisan dan tabungannya sendiri sehingga bukan uang bersama dengan #0046#, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: dana berasal dari harta pribadi Tergugat; versi B: dana berasal dari penghasilan bersama - berselisih pada PENYEBAB (sumber dana)",
+     "bedaPada": "penyebab",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa dana objek-objek itu berasal dari harta pribadi #0047#",
+      "keterangan saya adalah bahwa modalnya disediakan #0047# dari warisan dan tabungannya sendiri",
+      "pembelian objek-objek itu dibiayai #0047# dengan hartanya sendiri, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa dana objek-objek tersebut datang dari pemberian keluarga #0047#"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa dana objek-objek itu berasal dari penghasilan bersama #0046# dan #0047#",
+      "modalnya disediakan dari tabungan rumah tangga #0046# dan #0047#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa pembelian objek-objek itu dibiayai dengan uang hasil kerja #0046# dan #0047# bersama",
+      "dana objek-objek tersebut datang dari gaji dan usaha kedua pihak selama menikah, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "hal": "asal uang atau modal untuk memperoleh objek-objek itu",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "menggantikan": [
+    "q-sumber-dana"
+   ]
+  },
+  {
+   "id": "q-tg-sudah-dibagi",
+   "pokok": "pp-bantahan",
+   "urutan": 40,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "sudah-dibagi"
+    ]
+   },
+   "teks": "Apakah harta tersebut sudah pernah dibagi atau diserahkan kepada salah satu pihak, kapan, dan bagaimana caranya ?",
+   "teksVarian": [
+    "Apakah para pihak pernah membagi harta tersebut di antara mereka, dan bagaimana pembagiannya ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi Tergugat menerangkan bahwa harta sudah dibagi antara para pihak",
+     "saksi1": [
+      "saya melihat sendiri bahwa harta tersebut sudah dibagi antara #0046# dan #0047# dan masing-masing telah menerima bagiannya",
+      "saya mengetahui sendiri bahwa pembagian harta itu telah dilakukan secara kekeluargaan dan sebagian besar objeknya sudah diserahkan kepada pihak yang berhak",
+      "saya menyaksikan langsung bahwa sebelum perkara ini diajukan #0046# dan #0047# telah sepakat membagi harta itu dan pembagiannya sudah dijalankan",
+      "saya tahu betul bahwa bagian #0046# dari harta tersebut sudah diserahkan kepadanya dan sisanya dikuasai #0047#"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa sebelum perkara ini diajukan #0046# dan #0047# telah sepakat membagi harta itu dan pembagiannya sudah dijalankan",
+      "yang saya ketahui secara langsung adalah bahwa bagian #0046# dari harta tersebut sudah diserahkan kepadanya dan sisanya dikuasai #0047#",
+      "harta tersebut sudah dibagi antara #0046# dan #0047# dan masing-masing telah menerima bagiannya demikian yang tampak oleh saya waktu itu",
+      "pembagian harta itu telah dilakukan secara kekeluargaan dan sebagian besar objeknya sudah diserahkan kepada pihak yang berhak, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: harta sudah dibagi antara para pihak; versi B: harta belum pernah dibagi - berselisih pada PERISTIWA (pembagian harta)",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa harta itu sudah dibagi antara #0046# dan #0047#",
+      "keterangan saya adalah bahwa pembagian harta itu telah dilakukan secara kekeluargaan",
+      "#0046# dan #0047# telah sepakat membagi harta itu dan pembagiannya sudah dijalankan, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa bagian #0046# dari harta itu sudah diserahkan kepadanya"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa harta itu belum pernah dibagi antara #0046# dan #0047#",
+      "pembagian harta itu belum pernah dilakukan secara kekeluargaan, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa #0046# dan #0047# belum sepakat membagi harta itu sama sekali",
+      "bagian #0046# dari harta itu belum diserahkan kepadanya dan itulah keterangan saya"
+     ]
+    }
+   },
+   "hal": "pembagian harta itu antara para pihak",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "menggantikan": [
+    "q-belum-terbagi"
+   ]
+  },
+  {
+   "id": "q-tg-dialihkan",
+   "pokok": "pp-bantahan",
+   "urutan": 50,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "sudah-dijual-dijaminkan",
+     "milik-pihak-ketiga",
+     "sudah-dihibahkan"
+    ]
+   },
+   "teks": "Apakah ada objek yang digugat itu yang sudah dijual, dihibahkan, dijaminkan, atau merupakan milik pihak lain, dan sejak kapan ?",
+   "teksVarian": [
+    "Bagaimana status objek yang digugat itu, apakah sudah berpindah tangan kepada pihak lain ?"
+   ],
+   "jawaban": {
+    "melihat": [
+     {
+      "maksud": "saksi Tergugat menerangkan bahwa objek telah dijual atau dijaminkan kepada pihak lain",
+      "keadaan": {
+       "bantahan": "sudah-dijual-dijaminkan"
+      },
+      "saksi1": [
+       "saya melihat sendiri bahwa sebagian objek yang digugat itu telah dijual kepada pihak lain",
+       "saya mengetahui sendiri bahwa objek yang digugat itu sudah dijadikan jaminan utang kepada pihak lain",
+       "saya menyaksikan langsung bahwa objek tersebut telah berpindah tangan lewat penjualan kepada orang lain",
+       "saya tahu betul bahwa sebagian objek itu sudah dijual dan sebagian lain dijaminkan kepada pihak lain"
+      ],
+      "saksi2": [
+       "karena saya turut hadir maka saya terangkan bahwa sebagian objek yang digugat itu telah dijual kepada pihak lain",
+       "yang saya ketahui secara langsung adalah bahwa objek yang digugat itu sudah dijadikan jaminan utang kepada pihak lain",
+       "objek tersebut telah berpindah tangan lewat penjualan kepada orang lain, demikian yang tampak oleh saya waktu itu",
+       "sebagian objek itu sudah dijual dan sebagian lain dijaminkan kepada pihak lain, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+      ]
+     },
+     {
+      "maksud": "saksi Tergugat menerangkan bahwa objek yang digugat milik pihak lain",
+      "keadaan": {
+       "bantahan": "milik-pihak-ketiga"
+      },
+      "saksi1": [
+       "saya melihat sendiri bahwa objek yang digugat itu milik pihak lain yang dititipkan kepada #0047#",
+       "saya mengetahui sendiri bahwa objek tersebut adalah milik orang lain dan hanya dipinjam oleh #0047#",
+       "saya menyaksikan langsung bahwa pemilik sebenarnya objek itu adalah pihak lain di luar #0046# dan #0047#",
+       "saya tahu betul bahwa objek yang digugat itu dikuasai #0047# atas nama pihak lain"
+      ],
+      "saksi2": [
+       "karena saya turut hadir maka saya terangkan bahwa objek yang digugat itu milik pihak lain yang dititipkan kepada #0047#",
+       "yang saya ketahui secara langsung adalah bahwa objek tersebut adalah milik orang lain dan hanya dipinjam oleh #0047#",
+       "pemilik sebenarnya objek itu adalah pihak lain di luar #0046# dan #0047#, demikian yang tampak oleh saya waktu itu",
+       "objek yang digugat itu dikuasai #0047# atas nama pihak lain, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+      ]
+     },
+     {
+      "maksud": "saksi Tergugat menerangkan bahwa objek yang digugat sudah dihibahkan",
+      "keadaan": {
+       "bantahan": "sudah-dihibahkan"
+      },
+      "saksi1": [
+       "saya melihat sendiri bahwa objek yang digugat itu telah dihibahkan kepada pihak lain",
+       "saya mengetahui sendiri bahwa hibah atas objek tersebut sudah diserahkan kepada penerimanya",
+       "saya menyaksikan langsung bahwa objek itu sudah menjadi milik penerima hibah sejak diserahkan kepadanya",
+       "saya tahu betul bahwa penghibahan objek yang digugat itu sudah dilakukan dan penerimanya telah menguasainya"
+      ],
+      "saksi2": [
+       "karena saya turut hadir maka saya terangkan bahwa objek yang digugat itu telah dihibahkan kepada pihak lain",
+       "yang saya ketahui secara langsung adalah bahwa hibah atas objek tersebut sudah diserahkan kepada penerimanya",
+       "objek itu sudah menjadi milik penerima hibah sejak diserahkan kepadanya demikian yang tampak oleh saya waktu itu",
+       "penghibahan objek yang digugat itu sudah dilakukan dan penerimanya telah menguasainya sebagaimana yang saya alami dalam pergaulan dengan mereka"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: objek sudah dialihkan kepada pihak lain; versi B: objek belum dialihkan - berselisih pada PERISTIWA (pengalihan objek)",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa ada objek yang digugat yang sudah dijual atau dihibahkan kepada pihak lain",
+      "keterangan saya adalah bahwa objek yang digugat itu sudah berpindah tangan kepada orang lain",
+      "sebagian objek tersebut sudah dijaminkan atau diserahkan kepada pihak lain, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa objek yang digugat itu telah dialihkan #0047# kepada pihak lain"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa objek yang digugat itu belum pernah dijual atau dihibahkan kepada pihak lain",
+      "objek yang digugat itu belum berpindah tangan kepada orang lain, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa objek tersebut belum dijaminkan atau diserahkan kepada pihak lain",
+      "objek yang digugat itu belum dialihkan kepada pihak lain, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "hal": "pengalihan atau status objek-objek itu",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "menggantikan": [
+    "q-dijual-dijaminkan",
+    "q-dalil-dialihkan"
+   ]
+  },
+  {
+   "id": "q-tg-utang-bersama",
+   "pokok": "pp-bantahan",
+   "urutan": 60,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "utang-bersama"
+    ]
+   },
+   "teks": "Apakah selama perkawinan #0046# dan #0047# mempunyai utang yang dipakai untuk keperluan bersama, untuk apa utang itu dipakai, dan siapa yang menanggung angsurannya ?",
+   "teksVarian": [
+    "Apakah ada utang #0046# dan #0047# yang harus diperhitungkan sebelum harta bersama dibagi, dan untuk apa utang itu dipakai ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi Tergugat menerangkan bahwa para pihak mempunyai utang untuk keperluan keluarga yang harus ditanggung bersama dan diperhitungkan",
+     "saksi1": [
+      "saya melihat sendiri bahwa selama menikah #0046# dan #0047# meminjam uang untuk keperluan rumah tangga dan utang itu harus ditanggung bersama",
+      "saya mengetahui sendiri bahwa utang yang dibuat #0047# dipakai untuk kebutuhan keluarga sehingga menjadi tanggungan bersama dan perlu diperhitungkan",
+      "saya menyaksikan langsung bahwa angsuran utang keluarga itu dibayar #0047# dari penghasilannya dan harus diperhitungkan sebelum harta dibagi",
+      "saya tahu betul bahwa pinjaman yang dipakai membeli dan mengurus harta tersebut adalah utang bersama #0046# dan #0047#"
+     ],
+     "saksi2": [
+      "selama menikah #0046# dan #0047# meminjam uang untuk keperluan rumah tangga dan utang itu harus ditanggung bersama, demikian yang tampak oleh saya waktu itu",
+      "utang yang dibuat #0047# dipakai untuk kebutuhan keluarga sehingga menjadi tanggungan bersama dan perlu diperhitungkan, sebagaimana yang saya alami dalam pergaulan dengan mereka",
+      "saya ada di lokasi pada saat itu dan mendapati bahwa angsuran utang keluarga itu dibayar #0047# dari penghasilannya dan harus diperhitungkan sebelum harta dibagi",
+      "karena sering bersama mereka saya paham bahwa pinjaman yang dipakai membeli dan mengurus harta tersebut adalah utang bersama #0046# dan #0047#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: utang dipakai untuk keperluan keluarga dan menjadi tanggungan bersama; versi B: utang untuk keperluan pribadi dan bukan tanggungan bersama - berselisih pada PERISTIWA (sifat utang)",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa utang itu dipakai untuk keperluan rumah tangga dan menjadi tanggungan #0046# dan #0047# bersama",
+      "keterangan saya adalah bahwa pinjaman itu dibuat untuk kebutuhan keluarga dan harus ditanggung bersama",
+      "angsuran utang itu dibayar #0047# untuk kepentingan keluarga, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa utang tersebut adalah utang bersama yang timbul selama perkawinan"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa utang itu dipakai untuk keperluan pribadi #0046# dan bukan tanggungan bersama",
+      "pinjaman itu dibuat untuk kepentingan sendiri #0046# dan bukan utang keluarga, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa angsuran utang itu dibayar #0046# sendiri dan bukan untuk kepentingan rumah tangga",
+      "utang tersebut bukan utang bersama karena timbul untuk keperluan pribadi #0046#, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "hal": "utang bersama para pihak yang harus diperhitungkan",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "menggantikan": [
+    "q-utang-bersama"
+   ]
+  },
+  {
+   "id": "q-tg-pisah-harta",
+   "pokok": "pp-bantahan",
+   "urutan": 70,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bantahan": [
+     "pisah-harta"
+    ]
+   },
+   "teks": "Apakah sebelum atau selama perkawinan #0046# dan #0047# membuat perjanjian perkawinan yang memisahkan harta, dan di hadapan siapa perjanjian itu dibuat ?",
+   "teksVarian": [
+    "Apakah saksi mengetahui adanya perjanjian pemisahan harta antara #0046# dan #0047# ?"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi Tergugat menerangkan bahwa para pihak membuat perjanjian perkawinan yang memisahkan harta",
+     "saksi1": [
+      "saya melihat sendiri bahwa #0046# dan #0047# membuat perjanjian perkawinan yang memisahkan harta masing-masing sebelum menikah",
+      "saya mengetahui sendiri bahwa ada perjanjian tertulis antara #0046# dan #0047# bahwa harta mereka terpisah selama perkawinan",
+      "saya menyaksikan langsung bahwa perjanjian pemisahan harta itu dibuat #0046# dan #0047# di hadapan pejabat yang berwenang sebelum akad nikah",
+      "saya tahu betul bahwa sebelum menikah #0046# dan #0047# sepakat memisahkan harta dan kesepakatan itu dituangkan dalam perjanjian"
+     ],
+     "saksi2": [
+      "karena saya turut hadir maka saya terangkan bahwa #0046# dan #0047# membuat perjanjian perkawinan yang memisahkan harta masing-masing sebelum menikah",
+      "yang saya ketahui secara langsung adalah bahwa ada perjanjian tertulis antara #0046# dan #0047# bahwa harta mereka terpisah selama perkawinan",
+      "perjanjian pemisahan harta itu dibuat #0046# dan #0047# di hadapan pejabat yang berwenang sebelum akad nikah, demikian yang tampak oleh saya waktu itu",
+      "sebelum menikah #0046# dan #0047# sepakat memisahkan harta dan kesepakatan itu dituangkan dalam perjanjian, sebagaimana yang saya alami dalam pergaulan dengan mereka"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: ada perjanjian pemisahan harta; versi B: tidak ada perjanjian pemisahan harta - berselisih pada PERISTIWA (perjanjian perkawinan)",
+     "bedaPada": "peristiwa",
+     "saksi1": [
+      "menurut yang saya ketahui sendiri bahwa #0046# dan #0047# membuat perjanjian pemisahan harta sebelum menikah",
+      "keterangan saya adalah bahwa ada perjanjian tertulis yang memisahkan harta #0046# dan #0047#",
+      "perjanjian pemisahan harta itu dibuat di hadapan pejabat yang berwenang, itulah yang saya ketahui",
+      "yang saya terangkan di sini adalah bahwa sebelum akad nikah #0046# dan #0047# sepakat memisahkan harta mereka"
+     ],
+     "saksi2": [
+      "sepengetahuan saya bahwa #0046# dan #0047# tidak pernah membuat perjanjian pemisahan harta",
+      "tidak ada perjanjian tertulis yang memisahkan harta #0046# dan #0047#, begitulah yang saya alami",
+      "yang saya ingat dan saya sampaikan adalah bahwa perjanjian pemisahan harta itu tidak pernah dibuat di hadapan pejabat mana pun",
+      "sebelum akad nikah #0046# dan #0047# tidak sepakat memisahkan harta mereka, dan itulah keterangan saya"
+     ]
+    }
+   },
+   "hal": "perjanjian perkawinan pemisahan harta",
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "menggantikan": [
+    "q-perjanjian-kawin"
+   ]
+  }
+ ],
+ "jawabanUmum": {
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri ucapan atau pembicaraan para pihak tentang {hal}",
+   "saksi1": [
+    "saya mendengar sendiri pembicaraan para pihak mengenai {hal}",
+    "saya mendengar langsung ucapan salah satu pihak yang menyinggung {hal}",
+    "mengenai {hal} saya ikut mendengar ketika para pihak membicarakannya di depan saya",
+    "ucapan para pihak tentang {hal} terdengar langsung oleh saya"
+   ],
+   "saksi2": [
+    "perihal {hal} saya mendengar sendiri apa yang diucapkan para pihak",
+    "saya hadir dan mendengar sendiri perkataan para pihak tentang {hal}",
+    "saya berada di dekat mereka dan mendengar sendiri pembicaraan soal {hal}",
+    "saya mendengar secara langsung para pihak berbicara tentang {hal}"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui {hal} dari cerita pihak lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} kepada saya dan tidak menyaksikannya sendiri",
+    "tentang {hal} saya diberi tahu oleh {sumber} karena saya tidak ada di tempat kejadian",
+    "{sumber} menceritakan {hal} kepada saya sedangkan saya tidak melihat sendiri kejadiannya",
+    "yang saya ketahui tentang {hal} berasal dari penuturan {sumber} dan bukan dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "saya mendengar kabar tentang {hal} dari {sumber} dan tidak mengalaminya sendiri",
+    "pengetahuan saya tentang {hal} berasal dari cerita {sumber} karena saya tidak berada di tempat",
+    "{sumber} memberi tahu saya tentang {hal} dan saya sendiri tidak menyaksikannya",
+    "setahu saya {hal} itu dikatakan oleh {sumber} kepada saya sedangkan saya tidak ikut melihatnya"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari {hal} dan selebihnya tidak diketahui",
+   "saksi1": [
+    "saya hanya mengetahui sebagian dari {hal} dan selebihnya tidak saya ketahui",
+    "mengenai {hal} yang saya ketahui sebatas yang saya lihat sendiri dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sedangkan bagian lainnya tidak saya ketahui",
+    "saya mengetahui sebagian saja tentang {hal} dan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "tentang {hal} pengetahuan saya terbatas pada sebagian saja dan selebihnya tidak saya ketahui",
+    "hanya sebagian hal tentang {hal} yang saya ketahui dan lainnya tidak saya ketahui",
+    "sejauh yang saya ketahui tentang {hal} hanya sebagian dan sisanya tidak saya ketahui",
+    "saya tidak mengetahui seluruh {hal} dan hanya tahu sebagian saja"
+   ]
+  },
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui {hal}",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu apa-apa",
+    "soal {hal} saya tidak mengetahuinya",
+    "saya tidak tahu menahu tentang {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} tidak ada yang saya ketahui",
+    "{hal} itu tak saya ketahui",
+    "saya tak mengetahui apa pun mengenai {hal}",
+    "perihal {hal} saya tidak punya pengetahuan"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu atau lupa tentang {hal} sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu mengenai {hal} karena ingatan saya kurang kuat",
+    "tentang {hal} saya lupa rinciannya",
+    "mengenai {hal} rasanya demikian tetapi saya kurang yakin",
+    "saya kurang yakin soal {hal}"
+   ],
+   "saksi2": [
+    "{hal} itu mungkin benar tetapi saya ragu",
+    "tentang {hal} saya ragu-ragu mengatakannya karena ingatan saya samar",
+    "kira-kira begitu yang saya ingat tentang {hal} dan saya sulit memastikannya",
+    "saya lupa sebagian besar tentang {hal}"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Saksi yang diajukan Tergugat menerangkan versi Tergugat: tandai bantahan Tergugat pada keadaan perkara, lalu pilih Tergugat pada saksi yang bersangkutan.",
+  "Butir arah Tergugat hanya muncul untuk saksi Tergugat dan menggantikan butir yang arahnya dalil Penggugat atas hal yang sama."
+ ]
+}
