@@ -407,7 +407,14 @@
     if (s && Number(s.urutan) > 0) return String(s.urutan);
     return String((Number(S.pk.sidangKe) || 0) + 1);
   };
+  /** Katalog jenis perkara untuk tanya jawab saksi (blangko-derry-katalog.js); null bila belum termuat. */
+  const KT = () => (typeof globalThis !== "undefined" && globalThis.AletaBdKatalog) || null;
   const sebutan = () => {
+    // 20 Okt: sebutan menurut NOMOR alur/jenis perkara (satu sumber dengan portal), bukan menurut kata.
+    if (KT() && S.pk) {
+      const sb = KT().sebutanPihak(ktPerkaraObj());
+      return { P: sb.P, T: sb.T };
+    }
     const j = String((S.pk && S.pk.jenisPerkara) || "").toLowerCase();
     const permohonan = /pdt\.p/i.test(nomorPerkara()) || /cerai talak|permohonan|itsbat|dispensasi|perwalian|asal usul|ahli waris|poligami|pengangkatan/.test(j);
     return permohonan ? { P: "Pemohon", T: "Termohon" } : { P: "Penggugat", T: "Tergugat" };
@@ -1429,6 +1436,7 @@
       if (S.blangko !== blangko) return;
       if (!d || !d.ada) throw new Error((d && d.sebab) || "Isian blangko tidak terbaca.");
       S.susunan = d;
+      ktSeragamkanNama(d);
       S.nilai = d.nilai && typeof d.nilai === "object" ? d.nilai : {};
       if (!d.nilaiAda) await nilaiDariAbt(d);
       if (S.blangko !== blangko) return;
@@ -2891,6 +2899,7 @@
    * tombol Isi ulang dari data perkara): hasil selalu dilaporkan. Tanpa itu (pemuatan otomatis) hanya yang benar-benar berubah yang dilaporkan.
    */
   function isiOtomatis(targets, opsi) {
+    if (ktAktif()) return ktIsiOtomatis(targets, opsi);
     const m = SK();
     if (!m || !S.blangko || !S.pk) return Promise.resolve();
     const kerja = async () => {
@@ -3009,6 +3018,7 @@
     laporKeKerangka();
   }
   function ubahPilSaksi(kunci, bidang, el) {
+    if (String(bidang).indexOf("kat-") === 0) return ubahKatalog(kunci, bidang, el);
     const m = SK();
     if (!m || !tjItem(kunci)) return;
     const p = m.bakukanPilihan(S.sk.pil[kunci], urutSaksi(kunci));
@@ -3026,6 +3036,8 @@
   }
   /** Panel "Pengetahuan saksi" di atas tabel tanya jawab: pilihan sama dengan Susun keterangan saksi di panel ABT. */
   function panelPengetahuan(keys) {
+    const pkt = ktPanel(keys);
+    if (pkt !== null) return pkt;
     const m = SK();
     if (!m) return "";
     const alasan = S.sk.alasan || m.alasanBawaan();
@@ -3090,6 +3102,285 @@
       `<div class="bd-baris"><button type="button" class="bd-btn kecil utama" data-bd2="isiulangya"${tanpaUbah ? " disabled" : ""}>Lanjutkan</button><button type="button" class="bd-btn kecil" data-bd2="isiulangbatal">Batal</button></div>` +
       `</div>`
     );
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+  // 20 Okt 2026: tanya jawab saksi menurut KATALOG jenis perkara (blangko-derry-katalog.js).
+  // Perkara cerai (346/347 dan kumulasi) tetap memakai pilihan lama di atas. Jenis lain memakai katalog yang sama dengan
+  // "Susun saksi" di panel ABT: keadaan perkara, peran saksi, tingkat pengetahuan, dan susunan pertanyaan mengikutinya.
+  // Baris yang diketik petugas tidak pernah ditimpa; hasil susunan belum tersimpan sampai petugas menekan Simpan ke ABT.
+  // ──────────────────────────────────────────────────────────────────────────
+  function ktPerkaraObj() {
+    const p = (S.pk && S.pk.perkara) || {};
+    return {
+      jenisPerkara: String((S.pk && S.pk.jenisPerkara) || p.jenisPerkara || ""),
+      jenisPerkaraId: String(p.jenisPerkaraId || (S.pk && S.pk.jenisPerkaraId) || ""),
+      alurPerkaraId: String((S.pk && S.pk.alurPerkaraId) || p.alurPerkaraId || ""),
+      nomorPerkara: nomorPerkara(),
+    };
+  }
+  let ktMemoKenal = { kunci: "", hasil: null };
+  /** Hasil kenali() untuk perkara yang terbuka (diingat per perkara); null bila modul katalog belum termuat. */
+  function ktKenal() {
+    const K = KT();
+    if (!K || !S.pk) return null;
+    const o = ktPerkaraObj();
+    const kunci = JSON.stringify(o);
+    if (ktMemoKenal.kunci !== kunci) ktMemoKenal = { kunci, hasil: K.kenali(o) };
+    return ktMemoKenal.hasil;
+  }
+  /** Mode katalog (atau jenis tanpa katalog) aktif: panel dan penyusunan lama (khusus cerai) tidak dipakai. */
+  function ktAktif() {
+    const k = ktKenal();
+    return Boolean(k && (k.mode === "katalog" || k.mode === "tanpa"));
+  }
+  /** Nama saksi di judul/tombol mengikuti sebutan menurut nomor alur/jenis ("Saksi 1 Pemohon" pada permohonan). */
+  function ktSeragamkanNama(d) {
+    const K = KT();
+    if (!K || !d || !Array.isArray(d.isian) || !S.pk) return;
+    const sb = sebutan();
+    for (const b of d.isian) {
+      if (b && b.jenis === "tj" && b.tj) {
+        const nama = K.namaSaksi(b.tj.kunci, sb);
+        if (nama) b.tj.sebutan = nama;
+      }
+    }
+  }
+  const ktState = () => {
+    if (!S.sk.kt) S.sk.kt = { perkara: "", keadaan: {}, saksi: {}, jarang: false, var: {}, varKunci: "", muat: null };
+    return S.sk.kt;
+  };
+  const ktSaksi = (kunci) => {
+    const st = ktState();
+    if (!st.saksi[kunci]) st.saksi[kunci] = { jenis: "melihat", sumber: "", keadaan: {} };
+    return st.saksi[kunci];
+  };
+  /** Pilihan petugas (keadaan, pengetahuan tiap saksi) diingat per perkara, seperti pilihan saksi cerai. */
+  function ktMuat() {
+    const id = perkaraId();
+    const st = ktState();
+    if (!id) return Promise.resolve();
+    if (st.perkara === id && st.muat) return st.muat;
+    st.perkara = id;
+    st.keadaan = {};
+    st.saksi = {};
+    st.jarang = false;
+    st.muat = (async () => {
+      const kunci = `bdSaksiKat:${id}`;
+      const v = (await bacaPenyimpanan(kunci))[kunci];
+      if (v && typeof v === "object" && st.perkara === id) {
+        if (v.keadaan && typeof v.keadaan === "object") st.keadaan = v.keadaan;
+        if (v.saksi && typeof v.saksi === "object") st.saksi = v.saksi;
+        st.jarang = v.jarang === true;
+      }
+      renderTj();
+    })();
+    return st.muat;
+  }
+  function ktSimpan() {
+    if (!perkaraId()) return;
+    const st = ktState();
+    void tulisPenyimpanan({ [`bdSaksiKat:${perkaraId()}`]: { keadaan: st.keadaan, saksi: st.saksi, jarang: st.jarang, saat: Date.now() } });
+  }
+  /** Keadaan perkara: bawaan katalog, lalu yang terbaca dari data perkara, lalu pilihan petugas. */
+  function ktKeadaanPerkara(kenal) {
+    const K = KT();
+    const m = globalThis.AletaSaksiKatalog;
+    const st = ktState();
+    const pihak = S.pk && S.pk.perkara && S.pk.perkara.pihak && S.pk.perkara.pihak.penggugat;
+    const sd = S.pk && S.pk.sidangDipilih;
+    const data = K.keadaanDariData(kenal.kat, {
+      alurId: kenal.alurId,
+      jumlahPemohon: Array.isArray(pihak) ? pihak.length : 0,
+      teksBlangko: S.blangko ? `${S.blangko.berkas || ""} ${S.blangko.folder || ""}` : "",
+      hadir: sd && sd.hadir !== undefined && sd.hadir !== null && sd.hadir !== "" ? Number(sd.hadir) : null,
+    });
+    const keadaan = K.lengkapiBawaan(kenal.kat, Object.assign({}, m.keadaanBawaan(kenal.kat, {}), data.keadaan, st.keadaan));
+    return { keadaan, dariData: data.dariData.filter((x) => !(x in st.keadaan)) };
+  }
+  /** Keadaan dan pengetahuan efektif satu saksi (pengetahuan yang tidak lagi ada di katalog untuk keadaan ini kembali ke "melihat"). */
+  function ktSaksiEfektif(kunci, kenal, ker) {
+    const K = KT();
+    const st = ktSaksi(kunci);
+    const pihak = K.pihakDariKunci(kunci);
+    const keadaan = Object.assign({}, ker.keadaan, st.keadaan, { pihakSaksi: pihak });
+    const pilihan = K.pilihanPengetahuan(kenal.kat, keadaan, pihak, K.tingkatDipakai(ktState().jarang));
+    const jenis = pilihan.some((x) => x.nilai === st.jenis) ? st.jenis : "melihat";
+    return { pihak, keadaan, pilihan, jenis, sumber: st.sumber };
+  }
+  /** Nilai variabel #nnnn# untuk teks pertanyaan: isian blangko, nilai yang sudah terbaca, lalu dibaca dari ABT (diingat per sidang). */
+  async function ktBacaVariabel(kodes) {
+    const hasil = {};
+    const st = ktState();
+    const kunciCache = `${perkaraId()}|${sidangUrutan()}`;
+    if (st.varKunci !== kunciCache) {
+      st.varKunci = kunciCache;
+      st.var = {};
+    }
+    const m = globalThis.AletaSaksiKatalog;
+    for (const kode of (kodes || []).slice(0, 14)) {
+      if (kode in st.var) {
+        if (st.var[kode]) hasil[kode] = st.var[kode];
+        continue;
+      }
+      let v = String(S.isi[kode] || "").trim();
+      if (!v && S.nilai && S.nilai[kode] && S.nilai[kode].status === "terisi") v = String(S.nilai[kode].teks || "").trim();
+      if (!v) {
+        try {
+          const r = await klienAbt().bacaIsian(kode, perkaraId(), "", sidangUrutan());
+          if (r && r.ok) v = mesinIsi().htmlKeTeks(r.nilai).trim();
+        } catch {
+          /* variabel tidak terbaca: penandanya dibiarkan, ABT mengisinya saat mencetak */
+        }
+      }
+      if (v && m && m.tidakTerisi(v)) v = "";
+      st.var[kode] = v;
+      if (v) hasil[kode] = v;
+    }
+    return hasil;
+  }
+  const ktAdaIsi = (rows) => (rows || []).some((r) => String(r.tanya || "").trim() || String(r.jawab || "").trim());
+  /**
+   * Menyusun tanya jawab saksi dari katalog. `opsi.lapor` = atas permintaan petugas (pilihan diubah, Isi ulang, Muat katalog):
+   * daftar yang sudah ada digabung dengan susunan katalog. Tanpa itu (pembukaan otomatis) hanya daftar yang masih kosong
+   * sama sekali yang diisi. `opsi.gantiDaftar` = Muat katalog: daftar contoh/titik-titik diganti katalog.
+   */
+  function ktIsiOtomatis(targets, opsi) {
+    const o = opsi || {};
+    const kerja = async () => {
+      const K = KT();
+      const kenal = ktKenal();
+      if (!K || !kenal || kenal.mode !== "katalog" || !S.blangko || !S.pk) return;
+      await ktMuat();
+      const sah = targets.filter((k) => S.tj[k] && S.tj[k].dimuat && !S.tj[k].memuat && tjItem(k));
+      const sasaran = o.lapor ? sah : sah.filter((k) => !ktAdaIsi(S.tj[k].rows));
+      if (!sasaran.length) return;
+      const semua = kunciSaksiSemua().filter((k) => tjItem(k));
+      const ker = ktKeadaanPerkara(kenal);
+      const efektif = new Map(semua.map((k) => [k, ktSaksiEfektif(k, kenal, ker)]));
+      const susun = (variabel) =>
+        K.susun({
+          kat: kenal.kat,
+          sebutan: kenal.sebutan,
+          benih: nomorPerkara(),
+          keadaan: ker.keadaan,
+          jarang: ktState().jarang,
+          variabel,
+          saksi: semua.map((k) => {
+            const e = efektif.get(k);
+            return { kunci: k, pihak: e.pihak, jenis: e.jenis, sumber: e.sumber, keadaan: ktSaksi(k).keadaan };
+          }),
+        });
+      for (const k of sasaran) S.sk.status[k] = { teks: "Menyusun pertanyaan dari katalog jenis perkara…" };
+      renderTj();
+      let hasil;
+      let usulan = null;
+      try {
+        hasil = susun(undefined);
+        const nilaiVar = await ktBacaVariabel(hasil.variabelTanya);
+        if (Object.keys(nilaiVar).length) hasil = susun((kode) => nilaiVar[kode]);
+        const pengisi = typeof globalThis !== "undefined" ? globalThis.AletaBdJawabanKatalog : null;
+        if (pengisi && typeof pengisi.usulkan === "function") {
+          try {
+            usulan = await pengisi.usulkan({ perkara: ktPerkaraObj(), kenal, keadaan: ker.keadaan, saksi: hasil.saksi, variabel: nilaiVar });
+          } catch {
+            usulan = null; // pengisi jawaban gagal: jawaban dasar katalog tetap terpasang
+          }
+        }
+      } catch (e) {
+        for (const k of sasaran) S.sk.status[k] = { galat: `Pertanyaan belum dapat disusun: ${String((e && e.message) || e)}` };
+        renderTj();
+        return;
+      }
+      const dicatat = new Set();
+      for (const k of sasaran) {
+        const t = S.tj[k];
+        const sk = hasil.saksi[semua.indexOf(k)];
+        if (!t || !sk) {
+          S.sk.status[k] = null;
+          continue;
+        }
+        const g = K.gabung(t.rows, sk.baris, { gantiDaftar: o.gantiDaftar === true });
+        if (ktAdaIsi(t.rows) && g.dipertahankan + g.diganti === 0 && o.gantiDaftar !== true && !t.rows.some((r) => r.butir)) {
+          S.sk.status[k] = { teks: "Daftar pertanyaan ini bukan susunan katalog. Pilih set pertanyaan katalog di atas lalu tekan Muat bila ingin menyusunnya; jawaban yang sudah Anda ketik tetap dipertahankan." };
+          continue;
+        }
+        const rows = usulan ? K.terapkanUsulan(g.rows, usulan).rows : g.rows;
+        const sama = JSON.stringify(rows.map((r) => [r.tanya, r.jawab])) === JSON.stringify(t.rows.map((r) => [r.tanya, r.jawab]));
+        if (!sama) {
+          if (!dicatat.size) tjCatat(grupSaksi(k));
+          dicatat.add(k);
+          t.rows = rows;
+          t.berubah = true;
+        } else t.rows = rows;
+        const potong = [];
+        if (g.dipertahankan) potong.push(`${g.dipertahankan} jawaban ketikan Anda dipertahankan`);
+        if (g.baru) potong.push(`${g.baru} pertanyaan baru`);
+        if (g.dibuang) potong.push(`${g.dibuang} pertanyaan dibuang karena keadaannya berubah`);
+        S.sk.status[k] = { teks: `Disusun dari katalog ${kenal.judul}: ${rows.length} pertanyaan${potong.length ? `; ${potong.join(", ")}` : ""}. Belum disimpan.` };
+      }
+      renderTj();
+      laporKeKerangka();
+    };
+    S.sk.rantai = S.sk.rantai.then(kerja, kerja).catch(() => {});
+    return S.sk.rantai;
+  }
+  /** Saksi yang sedang terbuka di penyunting (pasangan berdampingan atau satu saksi). */
+  const ktGrupBuka = () => (S.tjBuka ? (S.tjSisi && tjPasangan(S.tjBuka)) || [S.tjBuka] : []);
+  function ubahKatalog(kunci, bidang, el) {
+    if (!ktAktif()) return;
+    const st = ktState();
+    const [aksi, sub] = String(bidang).split(":");
+    if (aksi === "kat-keadaan") {
+      if (el.type === "checkbox") {
+        const kartu = el.closest ? el.closest("[data-skkartu]") : null;
+        st.keadaan[sub] = Array.from(kartu ? kartu.querySelectorAll(`[data-skfld="${bidang}"]`) : [el]).filter((x) => x.checked).map((x) => x.value);
+      } else st.keadaan[sub] = el.value;
+    } else if (aksi === "kat-jarang") st.jarang = Boolean(el.checked);
+    else if (!tjItem(kunci)) return;
+    else if (aksi === "kat-jenis") ktSaksi(kunci).jenis = el.value;
+    else if (aksi === "kat-sumber") ktSaksi(kunci).sumber = el.value;
+    else if (aksi === "kat-saksi") ktSaksi(kunci).keadaan[sub] = el.value;
+    else return;
+    ktSimpan();
+    renderTj();
+    const grup = ktGrupBuka();
+    if (grup.length && tjSiap(grup)) void ktIsiOtomatis(grup, { lapor: true });
+  }
+  /** Panel "Pengetahuan saksi" mode katalog; null bila perkara ini cerai (panel lama dipakai). */
+  function ktPanel(keys) {
+    const K = KT();
+    const kenal = ktKenal();
+    if (!K || !kenal || kenal.mode === "cerai") return null;
+    if (kenal.mode === "tanpa") return K.panelTanpaHtml(S.pk && S.pk.jenisPerkara);
+    if (ktState().perkara !== perkaraId()) void ktMuat();
+    const ker = ktKeadaanPerkara(kenal);
+    const bidang = K.bidangKeadaan(kenal.kat, ker.keadaan, kenal.sebutan, ker.dariData);
+    const kartu = keys
+      .filter((k) => tjItem(k))
+      .map((k) => {
+        const e = ktSaksiEfektif(k, kenal, ker);
+        const per = K.bidangKeadaan(kenal.kat, e.keadaan, kenal.sebutan, []).filter((b) => b.perSaksi);
+        const st = S.sk.status[k];
+        return {
+          kunci: k,
+          nama: tjItem(k).tj.sebutan,
+          jenis: e.jenis,
+          pilihan: e.pilihan,
+          sumber: e.sumber || K.pilihanSumberCerita()[0].nilai,
+          sumberPilihan: K.pilihanSumberCerita(),
+          bidangSaksi: per,
+          status: st && st.teks,
+          galat: st && st.galat,
+        };
+      });
+    if (!kartu.length) return "";
+    return K.panelHtml({ judul: kenal.judul, keys, siap: tjSiap(keys), jarang: ktState().jarang, ada: true, bidang, kartu });
+  }
+  /** Pilihan "Katalog <jenis perkara>" di daftar Set pertanyaan (terpilih bawaan); kosong untuk cerai dan jenis tanpa katalog. */
+  function ktOpsiSet() {
+    const k = ktKenal();
+    if (!k || k.mode !== "katalog") return "";
+    return `<optgroup label="Katalog jenis perkara"><option value="katalog:${esc(k.kunci)}" selected title="Disusun dari keadaan perkara yang dipilih di panel Pengetahuan saksi">${esc(k.judul)} - disarankan</option></optgroup>`;
   }
   // Simpan ke ABT = HAPUS lalu isi ulang seluruh keterangan sidang itu. Sebelum keterangan
   // yang sudah ada di ABT terbaca, menyimpan (atau mengganti daftar) akan menghapusnya tanpa
@@ -3811,11 +4102,12 @@
   function pilihanSetSaksi(t) {
     const abt = (t && t.templates ? t.templates : []).map((x) => `<option value="${esc(x.nilai)}">${esc(x.kode === "#" ? `Salin dari ${x.nama}` : `${x.nama} (${x.kode})`)}</option>`).join("");
     const aleta = S.setSaksi && S.setSaksi.daftar.length ? S.setSaksi.daftar : [];
-    if (!aleta.length) return abt;
+    const opsiKat = ktOpsiSet();
+    if (!aleta.length) return opsiKat + abt;
     // 19 Okt 2026: saran TERPILIH otomatis di dropdown; alasannya hanya `title` (bukan paragraf di layar).
-    const idUtama = (aleta.find((x) => x.utama) || {}).id;
+    const idUtama = opsiKat ? "" : (aleta.find((x) => x.utama) || {}).id;
     const opsi = aleta.map((x) => `<option value="aleta:${esc(x.id)}" title="${esc([x.untuk, x.utama ? x.sebab : ""].filter(Boolean).join(" - "))}"${idUtama && x.id === idUtama ? " selected" : ""}>${esc(x.judul)}${x.utama ? " - disarankan" : ""}</option>`).join("");
-    return `<optgroup label="Panduan ALETA sesuai jenis perkara">${opsi}</optgroup>${abt ? `<optgroup label="Set yang tersimpan di ABT">${abt}</optgroup>` : ""}`;
+    return `${opsiKat}<optgroup label="Panduan ALETA sesuai jenis perkara">${opsi}</optgroup>${abt ? `<optgroup label="Set yang tersimpan di ABT">${abt}</optgroup>` : ""}`;
   }
   /**
    * 19 Okt 2026: TIDAK ada lagi paragraf penjelasan di bawah tombol (permintaan pengguna).
@@ -5600,6 +5892,10 @@
       const kunci = String(aksi.getAttribute("data-kunci") || "").split("|").filter(Boolean);
       if (!sel || !sel.value) return toast("Pilih set pertanyaan dulu.");
       if (!tjSiap(kunci)) return toast(PESAN_TJ_BELUM_TERBACA);
+      if (sel.value.startsWith("katalog:")) {
+        void ktIsiOtomatis(kunci, { lapor: true, gantiDaftar: true });
+        return toast("Pertanyaan disusun dari katalog jenis perkara (belum disimpan). Jawaban yang sudah Anda ketik dipertahankan.");
+      }
       tjCatat(kunci);
       if (sel.value.startsWith("aleta:")) {
         const dipakai = kunci.map((k) => pakaiSetSaksi(k, sel.value.slice(6))).filter(Boolean);
