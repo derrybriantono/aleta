@@ -56,7 +56,7 @@ def B(pada, maksud, A, Bv):
 # Penanda sebutan pihak boleh berbeda antar kalimat (aturan 7.3 butir 2); selebihnya wajib sama.
 def tanda(core):
     t = re.findall(r"#\d{4}#|<[A-Z]+>|\{[a-z]+\}", core)
-    return sorted(x for x in t if x not in ("<PM>", "<TG>", "<PW>", "<PS>", "#0046#", "#0047#", "{pengaju}", "{lawan}"))
+    return sorted(set(x for x in t if x not in ("<PM>", "<TG>", "<W>", "<PW>", "<PS>", "#0046#", "#0047#", "{pengaju}", "{lawan}")))
 
 
 POLA_NEGASI = re.compile(r"\b(tidak|bukan|belum|tanpa|tak|tiada|nihil|jangan)\b", re.I)

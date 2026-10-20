@@ -148,6 +148,23 @@ def seragamkan(cores, idq=""):
     return terbaik
 
 
+def samakan_nama(cores):
+    """Nama pewaris <W> (dua penanda: #2026# dan #1025#) harus muncul sama banyak di setiap inti satu daftar (aturan invarian mesin).
+    Langkah: tiap inti hanya memuat satu <W> (yang lain menjadi kata 'pewaris'); bila daftar masih campur ada/tidak, semua <W> menjadi 'pewaris'."""
+    if not cores or not any("<W>" in c for c in cores):
+        return cores
+    satu = []
+    for c in cores:
+        i = c.find("<W>")
+        if i >= 0:
+            c = c[: i + 3] + c[i + 3 :].replace("<W>", "pewaris")
+        satu.append(c)
+    ada = {("<W>" in c) for c in satu}
+    if len(ada) > 1:
+        satu = [c.replace("<W>", "pewaris") for c in satu]
+    return satu
+
+
 def sambung(frames, cores, banyak=4, offset=0):
     """Menyusun `banyak` kalimat: tiap kalimat memakai satu kerangka berbeda; inti diputar mulai dari `offset`."""
     hasil, dipakai = [], set()
@@ -289,9 +306,9 @@ def bangun_q(q, peta, extra_keadaan=None):
     for nama in ('melihat', 'sebagian', 'mendengar', 'de_auditu'):
         v = getattr(q, nama)
         if isinstance(v, list):
-            setattr(q, nama, seragamkan(v, q.id))
+            setattr(q, nama, seragamkan(samakan_nama(v), q.id))
     if q.berbeda and 'A' in q.berbeda:
-        q.berbeda = dict(q.berbeda, A=seragamkan(q.berbeda['A'], q.id), B=seragamkan(q.berbeda['B'], q.id))
+        q.berbeda = dict(q.berbeda, A=seragamkan(samakan_nama(q.berbeda['A']), q.id), B=seragamkan(samakan_nama(q.berbeda['B']), q.id))
     d = {
         'id': q.id, 'pokok': q.pokok, 'urutan': q.urut, 'tingkat': q.tingkat, 'kelompok': q.kelompok,
         'pihakSaksi': list(q.pihak),
