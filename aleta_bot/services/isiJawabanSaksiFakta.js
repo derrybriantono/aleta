@@ -229,6 +229,17 @@ const KODE_FAKTA = Object.freeze({
   8610: "pewarisPasangan",
   8614: "hartaPeninggalan",
   8608: "anakPewaris",
+  // U5 20 Okt: susunan ahli waris dan isian paket u5-ahli-waris (daftar dipisah titik koma di isian, ditulis "A, B dan C" di jawaban)
+  9702: "anakPewaris",
+  9701: "pewarisPasangan",
+  9718: "saudaraPewaris",
+  9703: "ayahHidup",
+  9704: "ibuHidup",
+  9762: "pewarisPengganti",
+  9763: "cucuPewaris",
+  4540: "saudaraPengganti",
+  4541: "keponakanPengganti",
+  4501: "tujuan",
   5110: "anakNama",
   8603: "anakNama",
   1014: "hubunganErat",
@@ -261,7 +272,37 @@ const LABEL_FAKTA = Object.freeze({
   alamatP: "alamat pihak pertama",
   alamatT: "alamat pihak kedua",
   tujuan: "tujuan perkara",
+  pewarisNama: "nama pewaris",
+  wafatTgl: "tanggal meninggal",
+  wafatTempat: "tempat meninggal",
+  wafatSebab: "sebab meninggal",
+  anakPewaris: "anak kandung pewaris",
+  jumlahAnakPewaris: "jumlah anak pewaris",
+  pewarisPasangan: "suami/istri pewaris",
+  saudaraPewaris: "saudara pewaris",
+  jumlahSaudaraPewaris: "jumlah saudara pewaris",
+  pewarisPengganti: "ahli waris yang meninggal lebih dahulu",
+  cucuPewaris: "cucu pengganti",
+  saudaraPengganti: "saudara pewaris yang meninggal lebih dahulu",
+  keponakanPengganti: "keponakan pengganti",
 });
+
+/** "A; B; C" atau "A, B, C" -> "A, B dan C" (daftar orang di isian dipisah titik koma). */
+function daftarOrang(v) {
+  const bagian = String(v == null ? "" : v)
+    .split(/\s*;\s*|\s*,\s*(?=[A-Z])/)
+    .map((x) => bersihNilai(x))
+    .filter(Boolean);
+  if (bagian.length <= 1) return bagian.join("");
+  return `${bagian.slice(0, -1).join(", ")} dan ${bagian[bagian.length - 1]}`;
+}
+/** Banyaknya orang pada daftar (titik koma atau "dan"/koma sebelum huruf besar). */
+function hitungOrang(v) {
+  return String(v == null ? "" : v)
+    .split(/\s*;\s*|\s*,\s*(?=[A-Z])|\s+dan\s+(?=[A-Z])/)
+    .map((x) => bersihNilai(x))
+    .filter(Boolean).length;
+}
 
 /** Normalisasi nilai menurut kuncinya (supaya dua sumber dapat dibandingkan dan dituliskan seragam). */
 const NORMAL = {
@@ -274,6 +315,11 @@ const NORMAL = {
   statusP2: (v) => bersihNilai(v).toLowerCase(),
   mahar: (v) => rapat(v),
   waliHubungan: (v) => bersihNilai(v),
+  anakPewaris: (v) => daftarOrang(v),
+  pewarisPasangan: (v) => daftarOrang(v),
+  saudaraPewaris: (v) => daftarOrang(v),
+  cucuPewaris: (v) => daftarOrang(v),
+  keponakanPengganti: (v) => daftarOrang(v),
 };
 
 /** Dua nilai dianggap sama bila setelah normalisasi saling memuat. */
@@ -391,6 +437,8 @@ function bangunFakta(s) {
       continue;
     }
     F.tambah(kunci, nilai, yakin, 1);
+    if (kunci === "anakPewaris") F.tambah("jumlahAnakPewaris", String(hitungOrang(nilai)), yakin, 1);
+    if (kunci === "saudaraPewaris") F.tambah("jumlahSaudaraPewaris", String(hitungOrang(nilai)), yakin, 1);
   }
 
   // 2. data SIPP
@@ -445,6 +493,8 @@ function bangunFakta(s) {
       continue;
     }
     F.tambah(kunci, nilai, u.keyakinan, 3);
+    if (kunci === "anakPewaris") F.tambah("jumlahAnakPewaris", String(hitungOrang(nilai)), u.keyakinan, 3);
+    if (kunci === "saudaraPewaris") F.tambah("jumlahSaudaraPewaris", String(hitungOrang(nilai)), u.keyakinan, 3);
   }
   const c = o.cerai && typeof o.cerai === "object" ? o.cerai : null;
   if (c) {
@@ -490,6 +540,8 @@ module.exports = {
   rupiah,
   keAngka,
   jumlahAnakDariTeks,
+  daftarOrang,
+  hitungOrang,
   umurPada,
   adaTitik,
   hitungTitik,

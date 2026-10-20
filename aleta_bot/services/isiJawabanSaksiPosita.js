@@ -231,38 +231,44 @@ function waliAdhal(butir) {
 
 function waris(butir) {
   const hasil = [];
+  // Pewaris, tanggal, tempat dan sebab meninggal: "Bahwa Sinumaire binti Kudo telah meninggal dunia pada tanggal 24 Mei 2026 di Kabupaten Sigi dikarenakan sakit sesuai ..."
+  const reWafat = /^(?:Almarhum(?:ah)?\.?\s+|Alm[h]?\.\s*)?([A-Z][A-Za-z.'`\- ]{1,70}?\s+(?:bin|binti)\s+[A-Za-z.'`\- ]{1,50}?)\s*(?:\((?:Alm[a-z]*\.?|Pewaris)\))?\s+(?:telah\s+)?meninggal\s+dunia\s+pada\s+(?:tanggal\s+)?(\d{1,2}\s+[A-Za-z]+\s+(?:19|20)\d{2})(?:\s+di\s+([A-Z][A-Za-z.' -]{2,50}?))?(?=\s+(?:dikarenakan|dikarena|karena|disebabkan|sesuai|berdasarkan|yang|dan|,|;|\.)|\s*$)(?:\s+(?:dikarenakan|dikarena|karena|disebabkan)\s+([a-z][^,;.]{2,40}?)(?=\s+(?:sesuai|berdasarkan|dengan|dan|yang|,|;|\.)|\s*$))?/;
   for (const b of butir) {
-    const m = /(?:Almarhum(?:ah)?|Alm\.?|Almh\.?)\s+([A-Z][A-Za-z.' -]{2,50}?)\s+meninggal\s+dunia\s+pada\s+(?:tanggal\s+)?(\d{1,2}\s+[A-Za-z]+\s+(?:19|20)\d{2})/i.exec(b);
-    if (m) {
-      hasil.push({ kunci: "pewarisNama", nilai: bersihNilai(m[1]), yakin: "cukup" });
-      const t = tanggalIndo(m[2]);
-      if (t) hasil.push({ kunci: "wafatTgl", nilai: t, yakin: "cukup" });
-      break;
-    }
+    const m = reWafat.exec(b);
+    if (!m) continue;
+    hasil.push({ kunci: "pewarisNama", nilai: bersihNilai(m[1]), yakin: "cukup" });
+    const t = tanggalIndo(m[2]);
+    if (t) hasil.push({ kunci: "wafatTgl", nilai: t, yakin: "cukup" });
+    if (m[3]) hasil.push({ kunci: "wafatTempat", nilai: bersihNilai(m[3]), yakin: "ragu", ket: "Dari kalimat 'meninggal dunia ... di ...' pada posita; periksa." });
+    if (m[4]) hasil.push({ kunci: "wafatSebab", nilai: bersihNilai(m[4]), yakin: "cukup" });
+    break;
   }
-  for (const b of butir) {
-    const m = /meninggal(?:kan)?\s+(?:dunia\s+)?(?:di\s+)([A-Z][^,;.]{3,60})/.exec(b);
-    if (m && /(?:meninggal|wafat)/i.test(b)) {
-      hasil.push({ kunci: "wafatTempat", nilai: bersihNilai(m[1]), yakin: "ragu", ket: "Dari kalimat 'meninggal dunia di ...' pada posita; periksa." });
-      break;
-    }
-  }
+  // Anak: "telah dikaruniai 2 (dua) orang anak yang masing-masing bernama: a. X (Pemohon) b. Y, Almarhum"
   for (let i = 0; i < butir.length; i++) {
     const b = butir[i];
-    const m = /dikaruniai(?:kan)?\s+(\d+|[a-z]+)\s*(?:\([^)]*\)\s*)?orang\s+anak/i.exec(b);
+    const m = /(?:dikaruniai(?:kan)?|melahirkan|mempunyai|memiliki)\s+(\d+|[a-z]+)\s*(?:\([^)]*\)\s*)?orang\s+anak/i.exec(b);
     if (!m) continue;
     const n = jumlahAnakDariTeks(`${m[1]} orang anak`);
-    if (n !== null) hasil.push({ kunci: "jumlahAnakPewaris", nilai: String(n), yakin: "cukup" });
-    // daftar nama sesudah "yaitu:" (satu per baris, diawali "-" atau "a.")
+    if (n === null) continue;
+    hasil.push({ kunci: "jumlahAnakPewaris", nilai: String(n), yakin: "cukup" });
     const nama = [];
-    for (let k = i + 1; k < butir.length && nama.length < 12; k++) {
+    const tampung = (teks) => {
+      for (const x of String(teks).split(/\s+(?=[a-h]\s*[.)]\s+[A-Z])/)) {
+        const mm = /^(?:[a-h]\s*[.)]\s+)?([A-Z][^()]*?\s+(?:bin|binti)\s+[A-Za-z.'`\- ]{1,50}?)(?=\s*(?:,|\(|$|\s+[Uu]sia|\s+[Uu]mur|\s+Almarhum|\s+meninggal))/.exec(x.trim());
+        if (mm && nama.length < 14) nama.push(bersihNilai(mm[1]));
+      }
+    };
+    const sesudahNama = b.slice(m.index + m[0].length);
+    const inline = /(?:bernama|yaitu)\s*:?\s*(.+)$/i.exec(sesudahNama);
+    if (inline) tampung(inline[1]);
+    for (let k = i + 1; k < butir.length && nama.length < 14; k++) {
       const x = /^\s*(?:[-•*]|[a-z][.)])\s*(.+)$/i.exec(butir[k]);
       if (!x) break;
-      const bersih = bersihNilai(x[1]).replace(/,\s*(bin|binti)\b/i, " $1");
-      if (!/^[A-Za-z]/.test(bersih)) break;
-      nama.push(bersih.replace(/^[A-Z .'-]+(?=\s+(?:bin|binti)\b)/i, (n0) => (n0 === n0.toUpperCase() ? n0.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : n0)));
+      tampung(`a. ${x[1]}`);
     }
-    if (nama.length) hasil.push({ kunci: "anakPewaris", nilai: nama.join(", ").replace(/, ([^,]+)$/, " dan $1"), yakin: "cukup" });
+    // pewaris sendiri yang tertulis "(Pewaris)" pada daftar saudara bukan anaknya
+    const bersih = nama.filter((x) => !/\(Pewaris\)/i.test(x));
+    if (bersih.length) hasil.push({ kunci: "anakPewaris", nilai: bersih.join(", ").replace(/, ([^,]+)$/, " dan $1"), yakin: "cukup" });
     break;
   }
   return hasil;

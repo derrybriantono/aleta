@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from rtf2txt import rtf_ke_teks
 
 ISIAN_BARU = "#4500# #4502# #4505# #4507# #4510# #4513# #4515# #4520# #4534#"
+ISIAN_PENGGANTI = "#4540# #4541#"
 ISIAN_LAMA_01B = "#9700# #9701# #9702# #9703# #9704# #9718#"
 
 PASAL_175 = (
@@ -49,7 +50,13 @@ EDIT_BC = [
     ("Mengabulkan #0053# #7036#;", "Mengabulkan #0053# #7036#;#4531#", 1),
 ]
 EDIT_B = [("#9706#", "#9706##4517#", 1), ("adalah #9705#;#9707#", "adalah #9705#;#9707##4506##4516##4535#", 1)]
-EDIT_C = [("#9769#", "#9769##4517#", 1), ("adalah #9770#;#9707#", "adalah #9770#;#9707##4506##4516##4535#", 1)]
+EDIT_C = [
+    ("#9769#", "#9769##4542##4517#", 1),
+    ("adalah #9770#;#9707#", "adalah #9770##4543#;#9707##4506##4516##4535#", 1),
+    ("#9768#", "#9768##4543#", 5),
+    ("menghalangi #9770#", "menghalangi #9770##4543#", 1),
+    ("hukum pada saat Pewaris meninggal dunia adalah #9770#;", "hukum pada saat Pewaris meninggal dunia adalah #9770##4543#;", 1),
+]
 
 EDIT_01 = [
     ("dan juga tidak mempunyai anak angkat;", "dan juga #4503#;", 2),
@@ -140,6 +147,8 @@ def tambal(nama, d):
         if nama.startswith("[01b]"):
             d = tambah_isianasal(d, ISIAN_LAMA_01B, nama)
         d = tambah_isianasal(d, ISIAN_BARU, nama)
+        if nama.startswith("[01c]"):
+            d = tambah_isianasal(d, ISIAN_PENGGANTI, nama)
     elif nama.startswith("[01] "):
         for j, g, n in EDIT_01:
             d = pasti(d, j, g, n, nama)

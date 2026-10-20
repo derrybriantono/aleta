@@ -1,0 +1,8 @@
+bf2da83f45f37d8ce853b26d337fc604  abt-u5-PASANG.sql
+73f7eec1e581fefe1a0d42a230a68137  abt-u5-PERIKSA.sql
+3d294d01bbb675775e3ecc3b7e37182a  abt-u5-PULIH-HAPUS-BARU.sql
+1cd8a7a4f70f8319159de0c1f5a47543  pasang-satker.sh
+7685cdc8ca07d6089809f331d41a7ea9  pulih-satker.sh
+3f9df01692b10bd302dab00de4a2deaf  rtf/01.rtf
+3a2af6863b04f31bcdcecb171992fc5e  rtf/01b.rtf
+2d7de65e88d797c54b2ff6db52c2b762  rtf/01c.rtf

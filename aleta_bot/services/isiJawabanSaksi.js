@@ -458,8 +458,59 @@ const POKOK = [
     jenis: ["paw", "waris"],
     tanya: /anak kandung|berapa orang anak/,
     slot: [
-      { kiri: kiri("\\b(?:mempunyai|memiliki)"), isi: ({ h }) => h.nilai("jumlahAnakPewaris") },
-      { kiri: kiri("\\byaitu"), isi: ({ h }) => h.nilai("anakPewaris") },
+      { kiri: kiri("\\b(?:mempunyai|memiliki|memperoleh|meninggalkan|berjumlah|dikaruniai)"), isi: ({ h }) => h.nilai("jumlahAnakPewaris") },
+      { kiri: kiri("\\b(?:yaitu|bernama)"), isi: ({ h }) => h.nilai("anakPewaris") },
+    ],
+  },
+  // U5 20 Okt: butir katalog penetapan ahli waris versi 2 (titik-titik diisi dari susunan ahli waris dan isian paket u5-ahli-waris)
+  {
+    id: "paw-saudara-jumlah",
+    jenis: ["paw", "waris"],
+    tanya: /mempunyai saudara kandung|siapa saja saudara kandung/,
+    slot: [{ kiri: kiri("\\b(?:mempunyai|bersaudara kandung|berjumlah|memiliki)"), isi: ({ h }) => h.nilai("jumlahSaudaraPewaris") }],
+  },
+  {
+    id: "paw-pasangan",
+    jenis: ["paw", "waris"],
+    tanya: /dengan siapa.*menikah|lebih dari seorang istri/,
+    slot: [
+      { kiri: kiri("\\b(?:menikah|bersuami|beristri)\\s+dengan"), isi: ({ h }) => h.nilai("pewarisPasangan") },
+      { kiri: kiri("\\b(?:yaitu|di antaranya|bernama)"), isi: ({ h }) => h.nilai("pewarisPasangan") },
+    ],
+  },
+  {
+    id: "paw-saudara-pengganti",
+    jenis: ["paw", "waris"],
+    tanya: /saudara.*meninggal lebih dahulu/,
+    slot: [
+      { kiri: kiri("\\b(?:bernama|yaitu)"), isi: ({ h }) => h.nilai("saudaraPengganti") },
+      { kiri: kiri("\\banak\\s+(?:yang\\s+)?bernama"), isi: ({ h }) => h.nilai("keponakanPengganti") },
+    ],
+  },
+  {
+    id: "paw-pengganti",
+    jenis: ["paw", "waris"],
+    tanya: /ahli waris.*meninggal lebih dahulu/,
+    slot: [
+      { kiri: kiri("\\b(?:bernama|yaitu)"), isi: ({ h }) => h.nilai("pewarisPengganti") },
+      { kiri: kiri("\\banak\\s+(?:yang\\s+)?bernama"), isi: ({ h }) => h.nilai("cucuPewaris") },
+    ],
+  },
+  {
+    id: "paw-orang-tua",
+    jenis: ["paw", "waris"],
+    tanya: /orang tua kandung.*masih hidup/,
+    slot: [
+      {
+        kiri: kiri("\\b(?:yaitu|hanya)"),
+        isi: ({ h }) => {
+          const a = h.fakta.ambil("ayahHidup");
+          const i = h.fakta.ambil("ibuHidup");
+          if (a && !i) return (h.nilai("ayahHidup"), "ibu kandung");
+          if (i && !a) return (h.nilai("ibuHidup"), "ayah kandung");
+          return null;
+        },
+      },
     ],
   },
   // ---- perwalian ----

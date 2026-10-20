@@ -302,6 +302,38 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "9771": { nm: "Alasan yang dikemukakan {P} untuk mendesaknya perkawinan anak (satu frasa tanpa titik akhir, mis. khawatir terjadi pelanggaran norma agama)" },
   "9772": { nm: "Rukun atau syarat nikah yang tidak terbukti (satu kalimat tanpa titik akhir, mis. wali nikah bukan wali yang berhak)" },
   /* === AKHIR I26 === */
+  /* === U5 20 Okt: penetapan ahli waris / P3HP, paket ABT u5-ahli-waris (4500-4543). Kosong = bunyi lama blangko dipakai. === */
+  "4500": { nm: "Tujuan permohonan bila bukan pencairan dana (frasa sesudah kata untuk, mis. mengurus balik nama sebidang tanah di Desa ...; kosong = otomatis dari pencairan dana atau mengurus harta peninggalan)" },
+  "4502": { nm: "Anak angkat Pewaris (nama lengkap dengan bin atau binti; kosong = tidak ada anak angkat)" },
+  "4505": {
+    nm: "Sikap terhadap anak angkat Pewaris (hanya bila ada anak angkat)",
+    opsi: [
+      { nilai: "1", label: "Anak angkat dinyatakan berhak atas wasiat wajibah dalam amar (Pasal 209 ayat (2) KHI)" },
+      { nilai: "0", label: "Hanya dipertimbangkan, tidak dimuat dalam amar" },
+    ],
+  },
+  "4507": { nm: "Wasiat Pewaris (penerima dan bendanya; kosong = Pewaris tidak meninggalkan wasiat)" },
+  "4510": { nm: "Kerabat Pewaris yang tidak beragama Islam (nama dan hubungannya, mis. Budi bin Ali (anak kandung Pewaris); kosong = semua beragama Islam)" },
+  "4513": {
+    nm: "Keadaan perkawinan Pewaris saat meninggal (pilihan hakim)",
+    opsi: [
+      { nilai: "1", label: "Berpisah tempat tinggal tetapi belum bercerai - pasangan tetap ahli waris" },
+      { nilai: "2", label: "Sudah bercerai sebelum Pewaris meninggal - pasangan bukan ahli waris" },
+      { nilai: "0", label: "Perkawinan berlangsung sampai Pewaris meninggal" },
+    ],
+  },
+  "4515": { nm: "Bagian masing-masing ahli waris (hanya bila hakim menetapkannya dalam amar; usulan hitungan KHI, keputusan hakim; kosong = bagian tidak ditetapkan)" },
+  "4520": { nm: "Harta peninggalan yang diperoleh selama perkawinan / harta bersama (uraian; kosong = tidak ada pertimbangan harta bersama)" },
+  "4534": {
+    nm: "Penetapan hanya boleh dipakai untuk tujuan permohonan?",
+    opsi: [
+      { nilai: "1", label: "Ya, dibatasi untuk tujuan permohonan (dimuat dalam amar)" },
+      { nilai: "0", label: "Tidak dibatasi" },
+    ],
+  },
+  "4540": { nm: "Saudara Pewaris yang meninggal lebih dahulu (nama lengkap dengan bin atau binti; harus berpasangan dengan anaknya di isian berikut; kosong = tidak ada)" },
+  "4541": { nm: "Anak dari saudara itu / keponakan Pewaris, ahli waris pengganti (nama lengkap dengan bin atau binti; beberapa dipisah titik koma)" },
+  /* === AKHIR U5 === */
   /* === I28 18 Okt: hibah (9790-9810), wakaf (9820-9841), penetapan mafqud (9860-9875). 9791-9792, 9797, 9800, 9821-9822, 9830, 9866-9867, 9874 otomatis. Kosong = bagian itu tampil titik-titik di ABT. === */
   "9790": {
     nm: "Pokok tuntutan hibah (pilih satu huruf)",

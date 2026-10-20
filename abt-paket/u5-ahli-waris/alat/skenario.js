@@ -41,6 +41,8 @@ const SKENARIO = {
   matiIslam: { id: 10172, sippId: 10172, isi: { 1509: "Desa Sibowi", 1247: "sakit" } },
   matiTanpaIslam: { id: 10178, sippId: 10178, isi: {} },
   tanpaMati: { id: 10058, sippId: 10058, isi: { 1509: "Kabupaten Sigi" } },
+  pengganti: { id: 990007, isi: { 4540: "Sukati binti Petapoi", 4541: "Kisman bin Ambo" } },
+  penggantiBanyak: { id: 990008, isi: { 4540: "Amir bin Yusuf", 4541: "Ali bin Amir; Budi binti Amir; Cici binti Amir" } },
   buktiTanpaKode: { id: 990006, isi: { 8132: "1.\tFotokopi Kartu Keluarga a.n. Pewaris;\n2.\tFotokopi Akta Kematian Pewaris;\n3.\tFotokopi KTP Pemohon" } },
 };
 

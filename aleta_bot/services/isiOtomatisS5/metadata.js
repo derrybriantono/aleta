@@ -58,6 +58,18 @@ const METADATA = Object.freeze({
   "8713": { opsional: true, labelPengguna: "Batas waktu menambah panjar menurut surat teguran (bila ada)" },
   "8714": { opsional: true, labelPengguna: "Surat keterangan Panitera bahwa panjar tidak ditambah (bila ada)" },
   "9134": { opsional: true, labelPengguna: "Petunjuk perbaikan permohonan dari majelis (bila ada)" },
+  // --- paket ABT u5-ahli-waris (variabel 4500-4599, 20 Okt 2026): semua opsional; kosong = bunyi lama blangko tetap dipakai ---
+  "4500": { opsional: true, labelPengguna: "Tujuan permohonan bila bukan pencairan dana (bila ada)" },
+  "4502": { opsional: true, labelPengguna: "Anak angkat Pewaris (bila ada)" },
+  "4505": { opsional: true, labelPengguna: "Sikap terhadap anak angkat: wasiat wajibah dalam amar (pilihan hakim, bila ada anak angkat)" },
+  "4507": { opsional: true, labelPengguna: "Wasiat Pewaris (bila ada)" },
+  "4510": { opsional: true, labelPengguna: "Kerabat Pewaris yang tidak beragama Islam (bila ada)" },
+  "4513": { opsional: true, labelPengguna: "Keadaan perkawinan Pewaris bila berpisah atau sudah bercerai (pilihan hakim, bila ada)" },
+  "4515": { opsional: true, labelPengguna: "Bagian masing-masing ahli waris bila hakim menetapkannya (usulan hitungan, keputusan hakim)" },
+  "4520": { opsional: true, labelPengguna: "Harta peninggalan yang diperoleh selama perkawinan / harta bersama (bila ada)" },
+  "4534": { opsional: true, labelPengguna: "Batasi penggunaan penetapan hanya untuk tujuan permohonan (pilihan hakim, bila ada)" },
+  "4540": { opsional: true, labelPengguna: "Saudara Pewaris yang meninggal lebih dahulu dan digantikan anaknya (bila ada)" },
+  "4541": { opsional: true, labelPengguna: "Anak dari saudara Pewaris yang meninggal lebih dahulu / ahli waris pengganti (bila ada)" },
 });
 
 /**

@@ -291,3 +291,50 @@ VARIABEL.append(
     )
 )
 
+
+# ---------------------------------------------------------------- ahli waris pengganti dari SAUDARA pewaris (Pasal 185 KHI)
+# 9762/9763 hanya mengenal anak pewaris yang meninggal lebih dahulu dan cucunya. Pada perkara nyata (91/Pdt.P/2026) saudara pewaris
+# yang meninggal lebih dahulu digantikan anaknya (keponakan pewaris). Susunan 9768/9770 tidak diubah: 4543 menyambungkan kalimatnya.
+def daftar_orang(x):
+    """'A; B; C' -> 'A, B dan C' (pola 9768)."""
+    n = "(LENGTH(%s) - LENGTH(REPLACE(%s, ';', '')) + 1)" % (x, x)
+    return (
+        "IF(LOCATE(';', %s) = 0, %s, CONCAT(REPLACE(SUBSTRING_INDEX(%s, ';', %s - 1), ';', ','), ' dan ', TRIM(SUBSTRING_INDEX(%s, ';', -1))))"
+        % (x, x, x, n, x)
+    )
+
+
+VARIABEL.append(
+    v_teks(
+        4540,
+        "AHLI WARIS PENGGANTI SAUDARA - SAUDARA PEWARIS YANG MENINGGAL LEBIH DAHULU (satu nama lengkap dengan bin atau binti; berpasangan dengan 4541; kosong = tidak ada)",
+    )
+)
+VARIABEL.append(
+    v_teks(
+        4541,
+        "AHLI WARIS PENGGANTI SAUDARA - ANAK DARI SAUDARA ITU / KEPONAKAN PEWARIS (nama lengkap dengan bin atau binti; beberapa nama dipisah titik koma; berpasangan dengan 4540)",
+    )
+)
+VARIABEL.append(
+    v_sql(
+        4543,
+        "AHLI WARIS PENGGANTI SAUDARA - KALIMAT SUSUNAN (OTOMATIS dari 4540 dan 4541; disambung sesudah susunan ahli waris 9768 dan 9770; kosong bila tidak ada)",
+        [("sd", 4540), ("kp", 4541)],
+        "IF(sd = '' OR kp = '', '', CONCAT('; ', " + daftar_orang("kp") + ", IF(LOCATE(';', kp) = 0, ' (anak dari ', ' (anak-anak dari '), sd, "
+        "', saudara Pewaris yang telah meninggal dunia lebih dahulu dari Pewaris), selaku ahli waris pengganti'))",
+    )
+)
+VARIABEL.append(
+    v_sql(
+        4542,
+        "AHLI WARIS PENGGANTI SAUDARA - PERTIMBANGAN (OTOMATIS dari 4540 dan 4541; Pasal 185 KHI; besarnya bagian ditentukan tersendiri oleh hakim)",
+        [("sd", 4540), ("kp", 4541)],
+        "IF(sd = '' OR kp = '', '', CONCAT("
+        "'<br>Menimbang, bahwa saudara Pewaris yaitu ', sd, ' telah meninggal dunia lebih dahulu daripada Pewaris dan meninggalkan ', "
+        "IF(LOCATE(';', kp) = 0, 'anak yaitu ', 'anak-anak yaitu '), " + daftar_orang("kp") + ", '; berdasarkan Pasal 185 ayat (1) Kompilasi Hukum Islam ahli waris yang meninggal "
+        "lebih dahulu daripada pewaris kedudukannya dapat digantikan oleh anaknya, kecuali mereka yang tersebut dalam Pasal 173, dan menurut Pasal 185 ayat (2) bagian ahli waris "
+        "pengganti tidak boleh melebihi bagian ahli waris yang sederajat dengan yang diganti; dengan demikian ', " + daftar_orang("kp") + ", ' berkedudukan sebagai ahli waris pengganti dari ', sd, "
+        "' dan besarnya bagian ahli waris pengganti tersebut bersama bagian ahli waris lainnya ditentukan tersendiri oleh #8554#;'))",
+    )
+)
