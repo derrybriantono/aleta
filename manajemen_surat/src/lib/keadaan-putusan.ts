@@ -219,7 +219,16 @@ function jenisItsbat(j: string) {
 /** F21 17 Okt: hak asuh anak (349 Penguasaan Anak), pembatalan perkawinan, ekonomi syariah - gugatan yang mengenal mediasi dan verstek seperti cerai. */
 function jenisGugatanBaru(j: string) {
   // I23 18 Okt: "Nafkah Anak Pasca Perceraian" (jenis 743, folder 6c) - gugatan yang mengenal mediasi, verstek, dan cabut sesudah jawaban seperti penguasaan anak.
-  return j.includes("penguasaan anak") || j.includes("hak asuh") || j.includes("pembatalan perkawinan") || j.includes("ekonomi syariah") || j.includes("nafkah anak");
+  // W3a 21 Okt: kelalaian atas kewajiban suami/istri (345) dan hak-hak bekas istri/kewajiban bekas suami (351) - gugatan Pdt.G yang mengenal mediasi, verstek, dan cabut sesudah jawaban.
+  return (
+    j.includes("penguasaan anak") ||
+    j.includes("hak asuh") ||
+    j.includes("pembatalan perkawinan") ||
+    j.includes("ekonomi syariah") ||
+    j.includes("nafkah anak") ||
+    j.includes("kelalaian atas kewajiban") ||
+    j.includes("bekas istri")
+  );
 }
 /** Gugatan hak asuh anak yang didaftarkan sebagai "Lain-Lain" (369) bernomor Pdt.G; pengangkatan anak (Pdt.P) bukan. */
 function hakAsuhTerdaftarLainLain(j: string, nomor: unknown) {

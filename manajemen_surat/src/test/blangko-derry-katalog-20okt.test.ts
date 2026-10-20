@@ -395,7 +395,7 @@ describe("blangko-derry-katalog.js (murni)", () => {
     expect(K.kenali({ jenisPerkara: "Cerai Gugat", jenisPerkaraId: "347", alurPerkaraId: "15" }).mode).toBe("cerai");
     expect(K.kenali({ jenisPerkara: "Cerai Talak", nomorPerkara: "1/Pdt.G/2026/PA.Dgl" }).mode).toBe("cerai");
     expect(K.kenali({ jenisPerkara: "Dispensasi Kawin", alurPerkaraId: "16" })).toMatchObject({ mode: "katalog", jenisId: "362" });
-    expect(K.kenali({ jenisPerkara: "Pengesahan Anak", jenisPerkaraId: "352", alurPerkaraId: "16" }).mode).toBe("tanpa");
+    expect(K.kenali({ jenisPerkara: "Jenis Contoh Tanpa Katalog", jenisPerkaraId: "999", alurPerkaraId: "16" }).mode).toBe("tanpa");
     // nama SIPP ("Istbat") dikenali tanpa nomor jenis
     expect(K.kenali({ jenisPerkara: "Pengesahan Perkawinan/Istbat Nikah" }).kunci).toBe("itsbat-nikah");
     // jenis belum terbaca sama sekali: panel lama (aman), bukan katalog tebakan
@@ -689,7 +689,7 @@ describe("Blangko Derry: panel Pengetahuan saksi menurut katalog jenis perkara",
     expect(qd(dk, '[data-skfld="modus"]')).toHaveLength(0);
     expect(qd(dk, '[data-tj="saksi 1 p"]')[0].textContent).toMatch(/Saksi 1 Pemohon/);
     expect(semuaTanya(dk).length).toBeGreaterThanOrEqual(10);
-    const tanpa = await bukaSaksi({ jenis: "Pengesahan Anak", alur: 16, nomor: "9/Pdt.P/2026" }, false);
+    const tanpa = await bukaSaksi({ jenis: "Jenis Contoh Tanpa Katalog", alur: 16, nomor: "9/Pdt.P/2026" }, false);
     expect(q(tanpa, ".bd-skkatalog")).toBeNull();
     expect(qd(tanpa, '[data-skfld="modus"]')).toHaveLength(0);
     expect(akar(tanpa).textContent).toMatch(/belum punya katalog pertanyaan saksi/);

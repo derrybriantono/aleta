@@ -187,6 +187,14 @@ const JENIS_FOLDER: Array<[RegExp, string, string[]]> = [
   [/hibah/i, "Hibah", ["hibah"]],
   [/wakaf/i, "Wakaf", ["wakaf"]],
   [/mafqud/i, "Penetapan Mafqud", ["mafqud", "lain-lain"]],
+  // W3a 21 Okt (paket ABT abt-w3a-blangko-baru-perkawinan): penolakan perkawinan (343), perkawinan campuran (359), izin kawin (361), pengesahan anak (352),
+  // kelalaian atas kewajiban suami/istri (345), hak-hak bekas istri/kewajiban bekas suami (351). Kata kunci = potongan nama jenis perkara SIPP (huruf kecil).
+  [/penolakan\s+perkawinan/i, "Penolakan Perkawinan", ["penolakan perkawinan"]],
+  [/perkawinan\s+campuran/i, "Perkawinan Campuran", ["perkawinan campuran"]],
+  [/izin\s+kawin/i, "Izin Kawin", ["izin kawin"]],
+  [/pengesahan\s+anak/i, "Pengesahan Anak", ["pengesahan anak"]],
+  [/kelalaian/i, "Kelalaian Kewajiban Suami/Istri", ["kelalaian atas kewajiban", "kelalaian kewajiban"]],
+  [/bekas\s+istri/i, "Hak Bekas Istri", ["bekas istri"]],
 ];
 
 export function jenisPerkaraDariFolder(folder: string): { label: string[]; untuk: string[] } {

@@ -36,8 +36,9 @@
  * pemuat ini tidak pernah menggagalkan usulan.
  */
 
+// W3a 21 Okt: penolakan perkawinan (343), perkawinan campuran (359), izin kawin (361), pengesahan anak (352), kelalaian kewajiban (345), hak bekas istri (351).
 // Agen X/W/Y (13 Okt): DK, poligami, waris, harta bersama, perwalian, asal usul, pengangkatan anak, wali adhol, hadhanah, Lain-Lain.
-const DAFTAR = Object.freeze(["itsbat", "cerai", "dispensasiKawin", "poligami", "waris", "hartaBersama", "perwalian", "asalUsul", "pengangkatanAnak", "waliAdhol", "hadhanah", "lainLain"]);
+const DAFTAR = Object.freeze(["itsbat", "cerai", "dispensasiKawin", "poligami", "waris", "hartaBersama", "perwalian", "asalUsul", "pengangkatanAnak", "waliAdhol", "hadhanah", "lainLain", "penolakanPerkawinan", "perkawinanCampuran", "izinKawin", "pengesahanAnak", "kelalaianKewajiban", "hakBekasIstri"]);
 
 let tembolok = null;
 

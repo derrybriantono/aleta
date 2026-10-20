@@ -1,0 +1,6 @@
+*.rtf binary
+*.sql -text
+*.tsv -text
+*.sh text eol=lf
+*.txt -text
+*.md text

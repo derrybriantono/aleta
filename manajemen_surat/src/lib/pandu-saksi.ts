@@ -130,6 +130,13 @@ export function jenisPerkaraIdDariNama(nama: string | null | undefined, alur?: n
   if (/perwalian/.test(t)) return 354;
   if (/poligami/.test(t)) return 341;
   if (/pencegahan\s*perkawinan/.test(t)) return 342;
+  // W3a 21 Okt: penolakan perkawinan (343), kelalaian atas kewajiban suami/istri (345), hak-hak bekas istri (351), pengesahan anak (352), perkawinan campuran (359), izin kawin (361).
+  if (/penolakan\s*perkawinan/.test(t)) return 343;
+  if (/kelalaian\s*(?:atas\s*)?kewajiban/.test(t)) return 345;
+  if (/bekas\s*istri/.test(t)) return 351;
+  if (/pengesahan\s*anak/.test(t)) return 352;
+  if (/perkawinan\s*campuran/.test(t)) return 359;
+  if (/izin\s*kawin/.test(t)) return 361;
   if (/pembatalan\s*perkawinan/.test(t)) return 344;
   if (/ekonomi\s*syariah/.test(t)) return 370;
   if (/p3hp|penetapan\s*ahli\s*waris/.test(t)) return 371;

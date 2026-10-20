@@ -1,0 +1,13 @@
+# folder BARU (relatif _blangko_abt) yang dibuat paket ini; dihapus pulih-satker.sh bila kosong
+derry_briantono/1e Kelalaian Kewajiban Suami Istri
+derry_briantono/1e Kelalaian Kewajiban Suami Istri - BAS
+derry_briantono/1f Hak Bekas Istri
+derry_briantono/1f Hak Bekas Istri - BAS
+derry_briantono/3a Izin Kawin
+derry_briantono/3a Izin Kawin - BAS
+derry_briantono/5c Penolakan Perkawinan
+derry_briantono/5c Penolakan Perkawinan - BAS
+derry_briantono/5d Perkawinan Campuran
+derry_briantono/5d Perkawinan Campuran - BAS
+derry_briantono/8a Pengesahan Anak
+derry_briantono/8a Pengesahan Anak - BAS

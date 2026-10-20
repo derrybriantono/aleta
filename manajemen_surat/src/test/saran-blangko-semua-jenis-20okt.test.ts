@@ -161,10 +161,10 @@ describe("A. putusan/penetapan: sidang yang belum memutus tetap disarankan blang
     expect(dkDamai.putusan[0].alasan).toContain("dikabulkan");
   });
 
-  it("jenis tanpa blangko putusan (penolakan perkawinan) tetap kosong; sidang ikrar talak tidak diberi putusan cadangan", () => {
+  it("penolakan perkawinan kini punya blangko putusan sendiri (W3a 21 Okt, folder 5c); sidang ikrar talak tidak diberi putusan cadangan", () => {
     const tolak = saranBlangkoLengkap({ jenisPerkara: "Penolakan Perkawinan", nomorPerkara: "5/Pdt.P/2026/PA.Dgl", urutanSidang: 1, agenda: "Sidang Pertama" });
-    expect(tolak.putusan).toEqual([]);
-    expect(tolak.bas).toEqual([]);
+    expect(tolak.putusan.length).toBeGreaterThan(0);
+    expect(tolak.putusan.every((p) => p.folder.includes("5c Penolakan Perkawinan"))).toBe(true);
     // tetap ada relaas dan PTSP umum
     expect(tolak.relaas.length).toBeGreaterThan(0);
     expect(tolak.ptsp!.length).toBeGreaterThan(0);

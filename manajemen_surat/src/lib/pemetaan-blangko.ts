@@ -60,6 +60,13 @@ export const KUNCI_BAKU: Record<JenisPemetaan, { kunci: string; sebutan: string 
     // I28 18 Okt (paket ABT abt-hibah-derry, abt-wakaf-derry): jenis SIPP 366 Hibah dan 367 Wakaf - folder 4d / 4e (menu 180 / 182).
     { kunci: "Hibah", sebutan: "Hibah (gugatan dan permohonan)" },
     { kunci: "Wakaf", sebutan: "Wakaf (gugatan dan permohonan pengukuhan)" },
+    // W3a 21 Okt (paket ABT abt-w3a-blangko-baru-perkawinan): enam jenis SIPP baru - folder 5c / 5d / 3a / 8a (penetapan) dan 1e / 1f (putusan), menu 168-179.
+    { kunci: "Penolakan Perkawinan", sebutan: "Penolakan Perkawinan (343, folder 5c)" },
+    { kunci: "Perkawinan Campuran", sebutan: "Perkawinan Campuran (359, folder 5d)" },
+    { kunci: "Izin Kawin", sebutan: "Izin Kawin (361, folder 3a)" },
+    { kunci: "Pengesahan Anak", sebutan: "Pengesahan Anak (352, folder 8a)" },
+    { kunci: "Kelalaian Kewajiban Suami Istri", sebutan: "Kelalaian atas Kewajiban Suami/Istri (345, folder 1e)" },
+    { kunci: "Hak Bekas Istri", sebutan: "Hak-hak Bekas Istri/Kewajiban Bekas Suami (351, folder 1f)" },
     // I23 18 Okt (paket ABT abt-nafkah-anak-derry): jenis SIPP 743 "Nafkah Anak Pasca Perceraian" - folder 6c (menu 165/166).
     { kunci: "Nafkah Anak Pasca Perceraian", sebutan: "Nafkah Anak Pasca Perceraian (folder 6c, jenis 743)" },
   ],
@@ -825,6 +832,13 @@ export const JENIS_BAS_BAKU = [
   "Hibah",
   "Wakaf",
   "Penetapan Mafqud",
+  // W3a 21 Okt: folder "5c Penolakan Perkawinan - BAS", "5d Perkawinan Campuran - BAS", "3a Izin Kawin - BAS", "8a Pengesahan Anak - BAS", "1e Kelalaian Kewajiban Suami Istri - BAS", "1f Hak Bekas Istri - BAS".
+  "Penolakan Perkawinan",
+  "Perkawinan Campuran",
+  "Izin Kawin",
+  "Pengesahan Anak",
+  "Kelalaian Kewajiban Suami Istri",
+  "Hak Bekas Istri",
   // I23 18 Okt: folder "6c Nafkah Anak - BAS" (jenis 743).
   "Nafkah Anak Pasca Perceraian",
 ] as const;

@@ -34,8 +34,9 @@ const TJ = require("./tanyaJawabEcourtService");
 
 const KODE = Object.freeze({
   // S6 20 Okt: + hibah 9804/9805 (gugatan) dan 9810 (permohonan), wakaf 9834/9835 dan 9840, mafqud 9873 - daftar P.1/T.1 yang sama.
-  suratP: Object.freeze(["9470", "9488", "9492", "9804", "9810", "9834", "9840", "9873"]),
-  suratT: Object.freeze(["9489", "9493", "9805", "9835"]),
+  // W3a 21 Okt: + penolakan perkawinan 3613, perkawinan campuran 3634, izin kawin 3654, pengesahan anak 3669, kelalaian kewajiban 3730 / 3731, hak bekas istri 3757 / 3758.
+  suratP: Object.freeze(["9470", "9488", "9492", "9804", "9810", "9834", "9840", "9873", "3613", "3634", "3654", "3669", "3730", "3757"]),
+  suratT: Object.freeze(["9489", "9493", "9805", "9835", "3731", "3758"]),
   elektronikP: "9951",
   elektronikT: "9952",
   noKua: "0654",
