@@ -5577,7 +5577,7 @@ async function konteksPerkaraSaksi(nomorPerkara) {
   const nomor = String(nomorPerkara || "").trim();
   if (!nomor) return null;
   const kueri = runQuery(
-    `SELECT p.posita AS posita, p.jenis_perkara_id AS jenis_perkara_id,
+    `SELECT p.posita AS posita, p.petitum AS petitum, p.jenis_perkara_id AS jenis_perkara_id,
             (SELECT DATE_FORMAT(j.tanggal_sidang, '%Y-%m-%d') FROM perkara_jadwal_sidang j
               WHERE j.perkara_id = p.perkara_id
               ORDER BY ABS(DATEDIFF(j.tanggal_sidang, CURDATE())) ASC, j.tanggal_sidang DESC LIMIT 1) AS tanggal_sidang
@@ -5589,7 +5589,7 @@ async function konteksPerkaraSaksi(nomorPerkara) {
   const r = Array.isArray(baris) && baris[0];
   if (!r) return null;
   // 13 Okt: jenis perkara ikut - deteksi/cerai.js hanya ditambahkan untuk cerai gugat/talak (346/347).
-  return { posita: String(r.posita || ""), tanggalSidang: String(r.tanggal_sidang || ""), jenisPerkaraId: Number(r.jenis_perkara_id) || null };
+  return { posita: String(r.posita || ""), petitum: String(r.petitum || ""), tanggalSidang: String(r.tanggal_sidang || ""), jenisPerkaraId: Number(r.jenis_perkara_id) || null };
 }
 
 module.exports = {

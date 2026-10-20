@@ -1,0 +1,48 @@
+{
+  "skema": "peta-fakta-variabel/1",
+  "catatan": "TAMBAHAN K1 (harta bersama 348 dan kewarisan 364) untuk aleta_bot/config/peta-fakta-variabel.json. Satu kode satu fakta; tidak mengubah entri U6. 'tambahKode' = tambahkan kode ke fakta yang sudah ada; 'fakta' = entri baru. Kunci saksi (kunciSaksi) dibaca oleh aleta_bot/services/isiJawabanSaksiKebendaan.js lewat isiJawabanSaksiPositaLain.js (hartaBersama dan waris). Semua nilai dari gugatan tingkat 'ragu' kecuali tglNikah dan putusanCerai (diukur; lihat abt-paket/w2a-kebendaan/ukur/hasil-ukur.json).",
+  "tambahKode": {
+    "waris.hartaPeninggalan": [
+      "8718"
+    ]
+  },
+  "fakta": {
+    "hb.putusanCerai": {
+      "label": "Putusan cerai para pihak yang dikutip gugatan harta bersama (Nomor ... tanggal ...)",
+      "tipe": "teks",
+      "kode": [
+        "9280"
+      ],
+      "kunciSaksi": "putusanCerai"
+    },
+    "hb.aktaCerai": {
+      "label": "Akta cerai para pihak yang dikutip gugatan harta bersama",
+      "tipe": "teks",
+      "kode": [],
+      "kunciSaksi": "aktaCerai"
+    },
+    "hb.nilaiTotalHarta": {
+      "label": "Nilai total harta bersama menurut gugatan (dalil Penggugat, bukan penilaian)",
+      "tipe": "teks",
+      "kode": [],
+      "kunciSaksi": "nilaiTotalHarta",
+      "hanyaSaran": true
+    },
+    "hb.jumlahObjek": {
+      "label": "Jumlah baris objek pada daftar harta bersama gugatan",
+      "tipe": "teks",
+      "kode": [],
+      "kunciSaksi": "jumlahObjek",
+      "hanyaSaran": true
+    },
+    "waris.ahliWaris": {
+      "label": "Ahli waris menurut petitum gugatan kewarisan (nama dan hubungan)",
+      "tipe": "daftar",
+      "kode": [
+        "8717"
+      ],
+      "kunciSaksi": "ahliWaris",
+      "hanyaSaran": true
+    }
+  }
+}
