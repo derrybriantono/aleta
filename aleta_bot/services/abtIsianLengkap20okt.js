@@ -106,10 +106,10 @@ function usulanDelegasi(rows) {
   const dasar = `SIPP delegasi: surat${r.nomor ? ` nomor ${String(r.nomor).trim()}` : ""}${isoKeTampil(r.tgl) ? ` tanggal ${isoKeTampil(r.tgl)}` : ""}${tujuan ? ` kepada ${tujuan}` : ""}`;
   const hasil = [];
   if (String(r.nomor || "").trim()) {
-    hasil.push(butir("1154", "Nomor surat permintaan bantuan panggilan", String(r.nomor).trim(), "pasti", { kalimat: dasar, catatan: `Nomor surat dari tab Delegasi SIPP.${banyak}`, kodePola: "sipp-delegasi-nomor" }));
+    hasil.push(butir("1154", "Nomor surat permintaan bantuan panggilan", String(r.nomor).trim(), daftar.length > 1 ? "cukup" : "pasti", { kalimat: dasar, catatan: `Nomor surat dari tab Delegasi SIPP.${banyak}`, kodePola: "sipp-delegasi-nomor" }));
   }
   if (isoKeTampil(r.tgl)) {
-    hasil.push(butir("1232", "Tanggal surat", isoKeTampil(r.tgl), "pasti", { kalimat: dasar, catatan: `Tanggal surat dari tab Delegasi SIPP.${banyak}`, kodePola: "sipp-delegasi-tanggal" }));
+    hasil.push(butir("1232", "Tanggal surat", isoKeTampil(r.tgl), daftar.length > 1 ? "cukup" : "pasti", { kalimat: dasar, catatan: `Tanggal surat dari tab Delegasi SIPP.${banyak}`, kodePola: "sipp-delegasi-tanggal" }));
   }
   const biaya = Math.round(Number(r.biaya));
   if (Number.isFinite(biaya) && biaya > 0) {
@@ -179,9 +179,9 @@ function usulanAnak(rows) {
       catatan: "Nama anak dari tab Anak di SIPP. Bila yang dimohonkan hanya sebagian anak, hapus yang tidak dimohonkan.",
       kodePola: "sipp-anak-nama",
     }),
-    butir("5110", "Nama anak", daftarNama(nama), "cukup", {
+    butir("5110", "Nama anak", daftarNama(nama), "ragu", {
       kalimat: dasar,
-      catatan: "Nama anak dari tab Anak di SIPP. Bila yang dimohonkan hanya sebagian anak, hapus yang tidak dimohonkan.",
+      catatan: "Nama semua anak dari tab Anak di SIPP. Pada amar hak asuh, tulis hanya anak yang dimohonkan di petitum (hapus yang tidak dimohonkan).",
       kodePola: "sipp-anak-nama",
     }),
   ];

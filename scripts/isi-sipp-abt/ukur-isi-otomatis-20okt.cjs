@@ -135,7 +135,7 @@ function relevan(b, jenis, alur, perkara) {
   if (/Ikrar Talak/i.test(berkas)) return jenis === 346;
   // Blangko ikrar hanya untuk cerai talak (nama berkas/folder memuat "ikrar" juga pada folder cerai gugat: tidak berlaku).
   if (kategoriBlangko(b) === "ikrar") return jenis === 346;
-  if (/^97 Sita/.test(b.folder) || /Sita/i.test(berkas)) return /sita/i.test(`${perkara.petitum || ""} ${perkara.posita || ""}`);
+  if (/^97 Sita/.test(b.folder) || /Sita/i.test(berkas)) return /(^|[^a-z])sita([^a-z]|$)/i.test(`${perkara.petitum || ""} ${perkara.posita || ""}`);
   if (/Mediator|Mediasi/i.test(berkas) && /Relaas/.test(b.folder)) return true;
   return true;
 }

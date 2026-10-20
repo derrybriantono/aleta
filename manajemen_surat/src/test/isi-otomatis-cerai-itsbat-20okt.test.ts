@@ -101,10 +101,12 @@ describe("A - sumber terstruktur SIPP", () => {
     ]);
     const per = Object.fromEntries(u.map((x) => [x.kode, x]));
     expect(per["1154"].nilai).toBe("62/PAN.PA.W22-A5/HK.2.6/XII/2026");
-    expect(per["1154"].keyakinan).toBe("pasti");
+    expect(per["1154"].keyakinan).toBe("cukup"); // dua surat: yang terbaru dipakai, tidak lagi 'pasti'
     expect(per["1232"].nilai).toBe("11/12/2026");
     expect(per["5230"].nilai).toBe("1280000");
     expect(per["5230"].keyakinan).toBe("cukup");
+    // satu surat saja: nomor dan tanggal pasti
+    expect(M.usulanDelegasi([{ nomor: "9/X", tgl: "2026-10-01", biaya: "100000", tujuan: "" }]).filter((x) => x.kode !== "5230").every((x) => x.keyakinan === "pasti")).toBe(true);
     expect(per["1154"].catatan).toMatch(/2 surat/);
     expect(per["1154"].sumber[0].kalimat).toMatch(/PENGADILAN AGAMA PALU/);
   });
@@ -135,6 +137,9 @@ describe("A - sumber terstruktur SIPP", () => {
     const per = Object.fromEntries(u.map((x) => [x.kode, x.nilai]));
     expect(per["8603"]).toBe("Anak Satu bin Fulan, Anak Dua binti Fulan, Anak Tiga bin Fulan");
     expect(per["5110"]).toBe("Anak Satu bin Fulan, Anak Dua binti Fulan dan Anak Tiga bin Fulan");
+    // 5110 dipakai amar hak asuh yang hanya menyebut anak yang dimohonkan: tab Anak memuat semua anak, jadi ragu
+    expect(u.find((x) => x.kode === "5110")?.keyakinan).toBe("ragu");
+    expect(u.find((x) => x.kode === "8603")?.keyakinan).toBe("cukup");
     expect(M.usulanAnak([])).toEqual([]);
     expect(M.usulanAnak(null)).toEqual([]);
   });

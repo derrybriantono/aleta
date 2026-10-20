@@ -23,8 +23,17 @@ const KELOMPOK = [
     syarat: "perkara yang hari sidang ikrarnya sudah ditetapkan kembali; tanpa penetapan: tanda 'diisi manual'",
   },
   {
+    id: "s3-anak-sipp-5110",
+    kode: ["5110"],
+    untuk: ["cerai"],
+    berkas: BERKAS,
+    sumber: "SIPP perkara_anak_pihak (tab Anak): nama semua anak - amar hak asuh hanya menyebut anak yang dimohonkan",
+    tingkat: "usulan",
+    syarat: "usulan ragu: tab Anak memuat semua anak, petitum bisa hanya sebagian",
+  },
+  {
     id: "s3-anak-sipp",
-    kode: ["8603", "5110", "0007"],
+    kode: ["8603", "0007"],
     untuk: ["cerai"],
     berkas: BERKAS,
     sumber: "SIPP perkara_anak_pihak (tab Anak): nama anak dan jumlah anak",

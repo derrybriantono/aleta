@@ -1,0 +1,390 @@
+{
+ "diukur": "2026-10-20",
+ "agen": "S3",
+ "cara": "scripts/isi-sipp-abt/ukur-isi-otomatis-20okt.cjs (rute bot /abt/usulan sungguhan + mesin isi-sipp-bersama.js; --maks 80 perkara terdaftar 2026 per jenis; e-Court tidak terukur lokal)",
+ "keterangan": {
+  "otomatis": "ditulis sendiri (pasti/cukup) bila saklar Isi otomatis menyala",
+  "ragu": "hanya saran bertanda 'yakin: ragu - periksa'",
+  "ecourt": "bergantung berkas e-Court",
+  "manual": "tanda 'diisi manual' + alasan",
+  "opsional": "Isian tambahan (bila ada)",
+  "kosong": "tanpa pengisi dan tanpa tanda",
+  "umum": "isian yang ada di >= 40% blangko kategorinya (perkara biasa tanpa skenario khusus)"
+ },
+ "sebelum": {
+  "semua": {
+   "otomatis": 20.1,
+   "ragu": 11.5,
+   "ecourt": 19.8,
+   "manual": 0,
+   "opsional": 0,
+   "kosong": 48.6
+  },
+  "umum": {
+   "otomatis": 58.1,
+   "ragu": 19.2,
+   "ecourt": 5.6,
+   "manual": 0,
+   "opsional": 0,
+   "kosong": 17.1
+  }
+ },
+ "sesudah": {
+  "semua": {
+   "otomatis": 21.6,
+   "ragu": 16.9,
+   "ecourt": 19.2,
+   "manual": 41.8,
+   "opsional": 0.5,
+   "kosong": 0
+  },
+  "umum": {
+   "otomatis": 58.1,
+   "ragu": 31.2,
+   "ecourt": 5.6,
+   "manual": 5.1,
+   "opsional": 0,
+   "kosong": 0
+  }
+ },
+ "perJenisKategori": {
+  "360/16": {
+   "jenis": "Itsbat Nikah (voluntair)",
+   "perkara": 80,
+   "kategori": {
+    "bas": {
+     "isian": 21,
+     "sebelum": {
+      "otomatis": 58.2,
+      "ragu": 4.8,
+      "ecourt": 14.4,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 22.6
+     },
+     "sesudah": {
+      "otomatis": 58.2,
+      "ragu": 9.4,
+      "ecourt": 14.4,
+      "manual": 13.2,
+      "opsional": 4.8,
+      "kosong": 0
+     }
+    },
+    "putusan": {
+     "isian": 37,
+     "sebelum": {
+      "otomatis": 33.1,
+      "ragu": 0.2,
+      "ecourt": 8.2,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 58.5
+     },
+     "sesudah": {
+      "otomatis": 33.1,
+      "ragu": 5.5,
+      "ecourt": 8.2,
+      "manual": 53.2,
+      "opsional": 0,
+      "kosong": 0
+     }
+    },
+    "relaas": {
+     "isian": 7,
+     "sebelum": {
+      "otomatis": 42.7,
+      "ragu": 14.3,
+      "ecourt": 0,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 43
+     },
+     "sesudah": {
+      "otomatis": 42.7,
+      "ragu": 14.3,
+      "ecourt": 0,
+      "manual": 43,
+      "opsional": 0,
+      "kosong": 0
+     }
+    }
+   }
+  },
+  "346/15": {
+   "jenis": "Cerai Talak",
+   "perkara": 80,
+   "kategori": {
+    "bas": {
+     "isian": 20,
+     "sebelum": {
+      "otomatis": 18.9,
+      "ragu": 23.8,
+      "ecourt": 20.6,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 36.8
+     },
+     "sesudah": {
+      "otomatis": 19.1,
+      "ragu": 33.1,
+      "ecourt": 20.3,
+      "manual": 27.4,
+      "opsional": 0,
+      "kosong": 0.1
+     }
+    },
+    "putusan": {
+     "isian": 46,
+     "sebelum": {
+      "otomatis": 6.2,
+      "ragu": 14.3,
+      "ecourt": 35.1,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 44.4
+     },
+     "sesudah": {
+      "otomatis": 9.4,
+      "ragu": 20.6,
+      "ecourt": 32.7,
+      "manual": 37.2,
+      "opsional": 0,
+      "kosong": 0.1
+     }
+    },
+    "ikrar": {
+     "isian": 2,
+     "sebelum": {
+      "otomatis": 26.3,
+      "ragu": 0,
+      "ecourt": 0,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 73.8
+     },
+     "sesudah": {
+      "otomatis": 26.3,
+      "ragu": 0,
+      "ecourt": 0,
+      "manual": 73.8,
+      "opsional": 0,
+      "kosong": 0
+     }
+    },
+    "relaas": {
+     "isian": 3,
+     "sebelum": {
+      "otomatis": 0,
+      "ragu": 0,
+      "ecourt": 0,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 100
+     },
+     "sesudah": {
+      "otomatis": 0,
+      "ragu": 0,
+      "ecourt": 0,
+      "manual": 100,
+      "opsional": 0,
+      "kosong": 0
+     }
+    },
+    "ptsp": {
+     "isian": 1,
+     "sebelum": {
+      "otomatis": 0,
+      "ragu": 0,
+      "ecourt": 0,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 100
+     },
+     "sesudah": {
+      "otomatis": 1.3,
+      "ragu": 0,
+      "ecourt": 0,
+      "manual": 98.8,
+      "opsional": 0,
+      "kosong": 0
+     }
+    }
+   }
+  },
+  "347/15": {
+   "jenis": "Cerai Gugat",
+   "perkara": 80,
+   "kategori": {
+    "bas": {
+     "isian": 26,
+     "sebelum": {
+      "otomatis": 15.2,
+      "ragu": 19.1,
+      "ecourt": 23.3,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 42.4
+     },
+     "sesudah": {
+      "otomatis": 18.5,
+      "ragu": 26.4,
+      "ecourt": 23.1,
+      "manual": 31.9,
+      "opsional": 0,
+      "kosong": 0
+     }
+    },
+    "putusan": {
+     "isian": 43,
+     "sebelum": {
+      "otomatis": 6.9,
+      "ragu": 13.7,
+      "ecourt": 21.1,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 58.3
+     },
+     "sesudah": {
+      "otomatis": 8.9,
+      "ragu": 18.2,
+      "ecourt": 20.9,
+      "manual": 52,
+      "opsional": 0,
+      "kosong": 0
+     }
+    },
+    "relaas": {
+     "isian": 3,
+     "sebelum": {
+      "otomatis": 0,
+      "ragu": 0,
+      "ecourt": 0,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 100
+     },
+     "sesudah": {
+      "otomatis": 0,
+      "ragu": 0,
+      "ecourt": 0,
+      "manual": 100,
+      "opsional": 0,
+      "kosong": 0
+     }
+    }
+   }
+  },
+  "360/15": {
+   "jenis": "Itsbat Nikah (kontensius)",
+   "perkara": 9,
+   "kategori": {
+    "bas": {
+     "isian": 13,
+     "sebelum": {
+      "otomatis": 22.2,
+      "ragu": 7.7,
+      "ecourt": 38.5,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 31.6
+     },
+     "sesudah": {
+      "otomatis": 22.2,
+      "ragu": 7.7,
+      "ecourt": 38.5,
+      "manual": 31.6,
+      "opsional": 0,
+      "kosong": 0
+     }
+    },
+    "putusan": {
+     "isian": 47,
+     "sebelum": {
+      "otomatis": 29.6,
+      "ragu": 10.4,
+      "ecourt": 14.9,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 45.2
+     },
+     "sesudah": {
+      "otomatis": 29.6,
+      "ragu": 10.4,
+      "ecourt": 14.9,
+      "manual": 45.2,
+      "opsional": 0,
+      "kosong": 0
+     }
+    },
+    "relaas": {
+     "isian": 3,
+     "sebelum": {
+      "otomatis": 0,
+      "ragu": 0,
+      "ecourt": 0,
+      "manual": 0,
+      "opsional": 0,
+      "kosong": 100
+     },
+     "sesudah": {
+      "otomatis": 0,
+      "ragu": 0,
+      "ecourt": 0,
+      "manual": 100,
+      "opsional": 0,
+      "kosong": 0
+     }
+    }
+   }
+  }
+ },
+ "kalibrasiAtasIsianPetugas": {
+  "7035": {
+   "sumber": "posita (siapaPergiPosita) vs isian petugas ABT",
+   "petugas": 374,
+   "usulanAda": 318,
+   "sama": 286,
+   "persen": 89.9,
+   "tingkat": "ragu"
+  },
+  "8503": {
+   "sumber": "posita: huruf F (perselisihan) + B (pisah >= 24 bulan) vs isian petugas",
+   "petugas": 359,
+   "sama": 217,
+   "persen": 60.4,
+   "tingkat": "ragu",
+   "catatan": "semua huruf dari posita hanya 33% persis (112 dari 338); A/C/D dari posita saja berlebihan"
+  },
+  "7211/7212": {
+   "sumber": "tanggal lahir SIPP - tanggal nikah, tahun penuh",
+   "petugas": 511,
+   "sama": 404,
+   "persen": 79.1,
+   "tingkat": "ragu",
+   "catatan": "selisih satu tahun karena posita membulatkan umur; selisih tahun kalender hanya cocok 59%"
+  },
+  "0007": {
+   "sumber": "jumlah baris tab Anak SIPP vs isian petugas",
+   "petugas": 29,
+   "sama": 28,
+   "persen": 96.6,
+   "tingkat": "cukup"
+  },
+  "1081": {
+   "sumber": "perkara_penetapan_kembali_ikrar vs isian petugas",
+   "petugas": 1,
+   "sama": 1,
+   "persen": 100,
+   "tingkat": "cukup",
+   "catatan": "hanya satu pembanding di salinan lokal"
+  },
+  "0709/0711": {
+   "sumber": "jenis perkara (ibu/bapak kandung) vs isian petugas",
+   "petugas": 4,
+   "sama": 4,
+   "persen": 100,
+   "tingkat": "cukup"
+  }
+ }
+}
