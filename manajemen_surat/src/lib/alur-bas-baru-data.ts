@@ -19,6 +19,8 @@
  * 9c Penetapan Mafqud - BAS, menu 185); hibah/wakaf: V1, AP, CB, V2, TP, NO (gugatan, pola wasiat) + permohonan 1, 1a, 1b, 1c, 2, 2a, 2b, 3, T, N; mafqud hanya permohonan; 29 salinan ALUR 04-09 di 4d / 4e.
  * I23 18 Okt (abt-nafkah-anak-derry): ALUR 46 (nafkah anak pasca perceraian, jenis 743, folder 6c - BAS, menu 166) 9 langkah: V1, V2, V2S, AP, GD, N, T, CS, CM; 29 salinan ALUR 04-09 di salinan-bas-jenis-data.ts.
  */
+import { ALUR_BAS_W3B } from "@/lib/alur-bas-w3b-data";
+
 export type MenuBasBaru = { id: number; nama: string; alias: string };
 export type LangkahBasBaru = { kode: string; berkas: string; keterangan: string };
 export type AlurBasBaru = {
@@ -1847,3 +1849,8 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
   }
 ];
 /* === AKHIR G3 === */
+
+/* === W3b 21 Okt === */
+/** ALUR 60-66 (blangko Derry baru gelombang 3) dibangkitkan ke alur-bas-w3b-data.ts oleh abt-paket/w3b-blangko-baru-kuasa-wali/sumber/bangkitkan_ts.py. */
+ALUR_BAS_BARU.push(...ALUR_BAS_W3B);
+/* === AKHIR W3b === */

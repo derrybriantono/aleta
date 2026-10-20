@@ -237,11 +237,25 @@ function esAcaraBiasa(j: string, nomor: unknown) {
  */
 function jenisWasiat(j: string, nomor: unknown = "") {
   if (/\bwasiat\b/.test(j)) return true;
+  if (jenisW3bGugatan(j, nomor)) return true;
   return /\b(?:hibah|wakaf)\b/.test(j) && !/\/pdt\.p\//i.test(String(nomor ?? ""));
+}
+/**
+ * W3b 21 Okt (paket abt-w3b-blangko-baru-kuasa-wali): pencabutan kekuasaan orang tua (353) dan pencabutan kekuasaan wali (355) bernomor Pdt.G, serta ganti rugi terhadap wali
+ * (357, selalu gugatan), berpola gugatan wasiat/hibah: mediasi, verstek, cabut sesudah jawaban. Nafkah anak oleh ibu (350) sudah ikut "nafkah anak" (jenisGugatanBaru).
+ */
+function jenisW3bGugatan(j: string, nomor: unknown) {
+  if (/ganti rugi terhadap wali/.test(j)) return true;
+  return /pencabutan kekuasaan (?:orang tua|wali)/.test(j) && !/\/pdt\.p\//i.test(String(nomor ?? ""));
+}
+/** W3b: pencabutan kekuasaan orang tua / wali bernomor Pdt.P, dan penunjukan orang lain sebagai wali (356, selalu permohonan voluntair). */
+function jenisW3bPermohonan(j: string, nomor: unknown) {
+  if (/penunjukan orang lain sebagai wali/.test(j)) return true;
+  return /pencabutan kekuasaan (?:orang tua|wali)/.test(j) && /\/pdt\.p\//i.test(String(nomor ?? ""));
 }
 /** I28 18 Okt: hibah / wakaf bernomor Pdt.P - permohonan penetapan (hibah) atau pengukuhan wakaf (PP 42/2006 Pasal 58); tanpa mediasi, verstek, atau jawaban. */
 function jenisHibahWakafPermohonan(j: string, nomor: unknown) {
-  return /\b(?:hibah|wakaf)\b/.test(j) && /\/pdt\.p\//i.test(String(nomor ?? ""));
+  return (/\b(?:hibah|wakaf)\b/.test(j) && /\/pdt\.p\//i.test(String(nomor ?? ""))) || jenisW3bPermohonan(j, nomor);
 }
 /** I28 18 Okt: penetapan mafqud = Lain-Lain (369) bernomor Pdt.P yang ditandai mafqud (saklar / bot membaca petitum) atau amarnya menyebut mafqud / orang hilang. */
 function mafqudDariAmar(amar: unknown) {

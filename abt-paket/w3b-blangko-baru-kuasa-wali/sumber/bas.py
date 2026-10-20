@@ -54,8 +54,18 @@ def klon_gugatan(S, folder_keluar=None):
             keluar = f                     # salinan ALUR 04-09: nama sama
         b = Berkas(os.path.join(DASAR_G, f))
         r = Rakit(b)
+        # BAS verstek memuat amar putusan: butir "Menghukum ..." khusus 6c diganti amar jenis ini (butir biaya dinomori ulang)
+        i_hukum = b.cari(r'^\d+\.	Menghukum') if 'Pembuktian dan Putusan Verstek' in f else None
+        i_biaya = b.cari(r'^\d+\.	#8505#', i_hukum) if i_hukum is not None else None
         for i in range(b.n):
-            if 'nafkah anak' in b.t[i]:
+            if i_hukum is not None and i == i_hukum:
+                butir = list(S['gugatan']['amar_kabul']) + ['#8505# (#0155# #7095#).']
+                n0 = int(re.match(r'^(\d+)\.', b.t[i_hukum]).group(1))
+                for k, teks in enumerate(butir):
+                    r.nomor(i_hukum, n0 + k, teks)
+            elif i_biaya is not None and i == i_biaya:
+                continue
+            elif 'nafkah anak' in b.t[i]:
                 r.frasa(i, [('nafkah anak', label)])
             else:
                 r.raw(i)
@@ -73,7 +83,7 @@ def klon_permohonan(S, folder_keluar=None):
         m = re.match(r'^BAS ALUR 16 Perwalian - \[([0-9a-zA-Z]+)\] (.*)$', f)
         if not m or m.group(1) not in LANGKAH_P:
             continue
-        keluar = 'BAS ALUR %d %s Mohon - [%s] %s' % (S['alur'], S['nama_pendek'], m.group(1), m.group(2))
+        keluar = 'BAS ALUR %d %s%s - [%s] %s' % (S['alur'], S['nama_pendek'], ' Mohon' if 'gugatan' in S else '', m.group(1), m.group(2))
         b = Berkas(os.path.join(DASAR_P, f))
         r = Rakit(b)
         for i in range(b.n):

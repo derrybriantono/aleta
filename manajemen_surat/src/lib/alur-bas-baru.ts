@@ -66,7 +66,8 @@ export type HasilBasBaru = {
 
 type JenisBaru =
   | "paw" | "perwalian" | "wali-adhal" | "angkat-anak" | "itsbat" | "itsbat-kontensius" | "dk" | "aua"
-  | "hb" | "waris" | "poligami" | "cerai-gugat" | "cerai-talak" | "hak-asuh" | "penguasaan-anak" | "nafkah-anak" | "pembatalan" | "es" | "pencegahan" | "wasiat" | "es-biasa" | "hibah" | "wakaf" | "hibah-mohon" | "wakaf-mohon" | "mafqud" | "";
+  | "hb" | "waris" | "poligami" | "cerai-gugat" | "cerai-talak" | "hak-asuh" | "penguasaan-anak" | "nafkah-anak" | "pembatalan" | "es" | "pencegahan" | "wasiat" | "es-biasa" | "hibah" | "wakaf" | "hibah-mohon" | "wakaf-mohon" | "mafqud"
+  | "kuasa-asuh" | "kuasa-asuh-mohon" | "kuasa-wali" | "kuasa-wali-mohon" | "penunjukan-wali" | "ganti-rugi-wali" | "nafkah-anak-ibu" | "";
 
 /** Jenis perkara SIPP -> jenis yang dikenal berkas ini. Itsbat dipilah menurut nomor (Pdt.G = kontensius). */
 export function jenisBasBaru(jenisPerkara: unknown, nomorPerkara?: unknown): JenisBaru {
@@ -84,6 +85,14 @@ export function jenisBasBaru(jenisPerkara: unknown, nomorPerkara?: unknown): Jen
   // I15 18 Okt: penguasaan anak (349) punya folder sendiri "6b Penguasaan Anak - BAS" (ALUR 44), terpisah dari hak asuh/hadhanah (ALUR 38, jenis 369).
   if (j.includes("penguasaan anak")) return "penguasaan-anak";
   // I23 18 Okt: "Nafkah Anak Pasca Perceraian" (jenis 743) punya folder sendiri "6c Nafkah Anak - BAS" (ALUR 46).
+  // W3b 21 Okt (paket abt-w3b-blangko-baru-kuasa-wali): pencabutan kekuasaan orang tua (353, ALUR 60) dan wali (355, ALUR 61): Pdt.G = gugatan, Pdt.P = permohonan;
+  // penunjukan orang lain sebagai wali (356, ALUR 62, permohonan); ganti rugi terhadap wali (357, ALUR 63, gugatan); nafkah anak oleh ibu (350, ALUR 64, gugatan).
+  // Dibaca LEBIH DULU dari "nafkah anak" (743, ALUR 46).
+  if (j.includes("pencabutan kekuasaan orang tua")) return /\/Pdt\.P\//i.test(String(nomorPerkara ?? "")) ? "kuasa-asuh-mohon" : "kuasa-asuh";
+  if (j.includes("pencabutan kekuasaan wali")) return /\/Pdt\.P\//i.test(String(nomorPerkara ?? "")) ? "kuasa-wali-mohon" : "kuasa-wali";
+  if (j.includes("penunjukan orang lain sebagai wali")) return "penunjukan-wali";
+  if (j.includes("ganti rugi terhadap wali")) return "ganti-rugi-wali";
+  if (j.includes("nafkah anak oleh ibu")) return "nafkah-anak-ibu";
   if (j.includes("nafkah anak")) return "nafkah-anak";
   if (j.includes("hak asuh") || j.includes("hadhanah")) return "hak-asuh";
   if (j.includes("pembatalan perkawinan")) return "pembatalan";
@@ -173,13 +182,15 @@ const ID_KELUARGA: Record<string, string> = {
   paw: "alur-14", perwalian: "alur-16", "wali-adhal": "alur-19", "angkat-anak": "alur-18", itsbat: "alur-17", dk: "alur-12l", aua: "alur-13l",
   // I28 18 Okt: permohonan hibah / wakaf (Pdt.P) dan penetapan mafqud.
   "hibah-mohon": "alur-47", "wakaf-mohon": "alur-48", mafqud: "alur-49",
+  // W3b 21 Okt: permohonan pencabutan kekuasaan orang tua / wali dan penunjukan wali.
+  "kuasa-asuh-mohon": "alur-60", "kuasa-wali-mohon": "alur-61", "penunjukan-wali": "alur-62",
 };
 
 function permohonan(jenis: JenisBaru, m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
   const akhir = m.akhir ?? (RX_CABUT.test(agenda) ? "cabut" : null);
   const h = m.dihadiriOleh;
   const id = ID_KELUARGA[jenis];
-  const namaJenis = ({ dk: "Dispensasi kawin", aua: "Asal usul anak", itsbat: "Itsbat nikah", "hibah-mohon": "Permohonan hibah", "wakaf-mohon": "Permohonan wakaf", mafqud: "Penetapan mafqud" } as Record<string, string>)[jenis] ?? "Permohonan";
+  const namaJenis = ({ dk: "Dispensasi kawin", aua: "Asal usul anak", itsbat: "Itsbat nikah", "hibah-mohon": "Permohonan hibah", "wakaf-mohon": "Permohonan wakaf", mafqud: "Penetapan mafqud", "kuasa-asuh-mohon": "Permohonan pencabutan kekuasaan orang tua", "kuasa-wali-mohon": "Permohonan pencabutan kekuasaan wali", "penunjukan-wali": "Penunjukan wali oleh pengadilan" } as Record<string, string>)[jenis] ?? "Permohonan";
 
   // Itsbat gugur/cabut sudah dilayani peta 946 (alur-bas-kumulasi): tidak diubah.
   if (jenis === "itsbat" && (akhir === "cabut" || akhir === "gugur")) return null;
@@ -304,10 +315,10 @@ function gugatanKebendaan(jenis: "hb" | "waris", m: MasukanBasBaru, n: number, a
  * kedua pihak memakai salinan BAS kontradiktoir ALUR 04-09 di folder jenisnya (seperti HB/waris); T tidak hadir, mediasi berhasil, cabut,
  * P tidak hadir, dan NO memakai BAS khusus ALUR 38/39. Perdamaian (akta) hanya hak asuh; pembatalan perkawinan tidak dapat didamaikan.
  */
-function gugatanKeluarga(jenis: "hak-asuh" | "penguasaan-anak" | "nafkah-anak" | "pembatalan" | "wasiat" | "es-biasa" | "hibah" | "wakaf", m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
+function gugatanKeluarga(jenis: "hak-asuh" | "penguasaan-anak" | "nafkah-anak" | "pembatalan" | "wasiat" | "es-biasa" | "hibah" | "wakaf" | "kuasa-asuh" | "kuasa-wali" | "ganti-rugi-wali" | "nafkah-anak-ibu", m: MasukanBasBaru, n: number, agenda: string): HasilBasBaru | null {
   // F22 17 Okt: wasiat (ALUR 42) dan ES acara biasa (ALUR 43) berpola sama dengan hak asuh: mediasi dan akta perdamaian ada; hanya pembatalan yang tidak.
   const asuh = jenis !== "pembatalan";
-  const id = { "hak-asuh": "alur-38", "penguasaan-anak": "alur-44", "nafkah-anak": "alur-46", pembatalan: "alur-39", wasiat: "alur-42", "es-biasa": "alur-43", hibah: "alur-47", wakaf: "alur-48" }[jenis];
+  const id = { "hak-asuh": "alur-38", "penguasaan-anak": "alur-44", "nafkah-anak": "alur-46", pembatalan: "alur-39", wasiat: "alur-42", "es-biasa": "alur-43", hibah: "alur-47", wakaf: "alur-48", "kuasa-asuh": "alur-60", "kuasa-wali": "alur-61", "ganti-rugi-wali": "alur-63", "nafkah-anak-ibu": "alur-64" }[jenis];
   // ALUR 46 memakai kode langkah N (NO), T (tunda panggil P) dan GD (gugatan dicabut, mediasi berhasil); alur lain NO / TP / CB.
   const kd = (c: string) => (id === "alur-46" ? (({ NO: "N", TP: "T", CB: "GD" }) as Record<string, string>)[c] ?? c : c);
   const nama = {
@@ -319,6 +330,10 @@ function gugatanKeluarga(jenis: "hak-asuh" | "penguasaan-anak" | "nafkah-anak" |
     "es-biasa": "Ekonomi syariah (acara biasa)",
     hibah: "Hibah",
     wakaf: "Wakaf",
+    "kuasa-asuh": "Pencabutan kekuasaan orang tua",
+    "kuasa-wali": "Pencabutan kekuasaan wali",
+    "ganti-rugi-wali": "Ganti rugi terhadap wali",
+    "nafkah-anak-ibu": "Nafkah anak oleh ibu",
   }[jenis];
   const h = m.dihadiriOleh;
   const akhir = m.akhir ?? (RX_CABUT.test(agenda) ? "cabut" : null);
@@ -327,7 +342,8 @@ function gugatanKeluarga(jenis: "hak-asuh" | "penguasaan-anak" | "nafkah-anak" |
   // semua BAS mediasi salinan ALUR 04-08 dipindah ke derry_briantono/terhapus. Cabut/damai pada 344 tidak diusulkan BAS mediasi dari folder mana pun.
   if (akhir === "cabut") return asuh ? buat(id, kd("CB"), ["AP"], false, `${nama}: gugatan dicabut.`) : null;
   if (RX_DAMAI.test(agenda)) {
-    return asuh ? buat(id, "AP", [kd("CB")], false, `${nama}: mediasi berhasil - akta perdamaian (atau gugatan dicabut).`) : null;
+    // W3b: pencabutan kekuasaan orang tua / wali tidak berakta perdamaian (status anak tidak dapat dikesampingkan) - hanya "gugatan dicabut".
+    return asuh ? (buat(id, "AP", [kd("CB")], false, `${nama}: mediasi berhasil - akta perdamaian (atau gugatan dicabut).`) ?? buat(id, kd("CB"), [], false, `${nama}: mediasi berhasil - gugatan dicabut.`)) : null;
   }
   if (h === 3 || h === 4) return buat(id, kd("TP"), [kd("NO")], true, `${nama}: Penggugat tidak hadir - tunda panggil P; bila sudah dua kali tidak hadir: putusan NO.`);
   // T tidak hadir dan tidak pernah hadir: verstek (sidang 1 tunda panggil T, sidang 2 pembuktian dan putusan verstek).
@@ -553,7 +569,7 @@ function cabutSesudahJawaban(jenis: JenisBaru, m: MasukanBasBaru, agenda: string
     const ada = (k: string) => butir.some((b) => b.kode === k);
     id = jenis === "cerai-gugat" && ada("hak-asuh-anak") ? "alur-37" : ada("itsbat-nikah") ? "alur-36" : jenis === "cerai-gugat" ? "alur-08g" : "alur-08t";
   } else {
-    id = ({ hb: "alur-31", waris: "alur-33", "itsbat-kontensius": "alur-35", "hak-asuh": "alur-38", pembatalan: "alur-39", es: "alur-40", "es-biasa": "alur-43", "penguasaan-anak": "alur-44", "nafkah-anak": "alur-46" } as Record<string, string>)[jenis] ?? "";
+    id = ({ hb: "alur-31", waris: "alur-33", "itsbat-kontensius": "alur-35", "hak-asuh": "alur-38", pembatalan: "alur-39", es: "alur-40", "es-biasa": "alur-43", "penguasaan-anak": "alur-44", "nafkah-anak": "alur-46", "kuasa-asuh": "alur-60", "kuasa-wali": "alur-61", "ganti-rugi-wali": "alur-63", "nafkah-anak-ibu": "alur-64" } as Record<string, string>)[jenis] ?? "";
   }
   if (!id) return null;
   return sikap === "setuju"
@@ -592,6 +608,10 @@ export function tentukanBasBaru(m: MasukanBasBaru): HasilBasBaru | null {
     case "es-biasa":
     case "hibah":
     case "wakaf":
+    case "kuasa-asuh":
+    case "kuasa-wali":
+    case "ganti-rugi-wali":
+    case "nafkah-anak-ibu":
       return gugatanKeluarga(jenis, m, n, agenda);
     case "pencegahan":
       return pencegahanPerkawinan(m, n, agenda);

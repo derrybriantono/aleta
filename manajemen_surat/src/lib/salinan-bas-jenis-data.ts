@@ -9,6 +9,9 @@
  * Berkas ini DIBANGKITKAN dari paket-satker/daftar-salin.tsv + server-db/abt_menu-derry.tsv paket itu
  * (D:/aleta-dev/kerja/batch-14okt-sore/f3/bangkitkan_salinan.py); dijaga src/test/salinan-bas-jenis.test.ts; logikanya di lib/salinan-bas-jenis.ts.
  */
+import { SALINAN_PENERIMA_W3B } from "@/lib/alur-bas-w3b-data";
+import { JENIS_W3B } from "@/lib/w3b-jenis-data";
+
 export const AKAR_SALINAN_BAS = "derry_briantono";
 
 /** Folder jenis tujuan -> nama & alias menu ABT-nya (abt_menu.nama / nama_alias; h3 kartu & bilah kiri ABT). */
@@ -160,3 +163,17 @@ export const SALINAN_BAS_LANGSUNG: Record<string, Record<string, string[]>> = {
   },
 };
 /* === AKHIR I2 === */
+
+/* === W3b 21 Okt === */
+/**
+ * Paket abt-w3b-blangko-baru-kuasa-wali (21 Okt 2026): folder BAS jenis gugatan baru (353, 355, 357, 350) menerima 29 salinan BAS ALUR 04-09 yang sama dengan
+ * "6c Nafkah Anak - BAS" (isi disalin dengan sebutan perkara diganti); menu BAS semua folder baru didaftarkan di MENU_FOLDER_JENIS. Dibangkitkan datanya oleh bangkitkan_ts.py.
+ */
+for (const j of JENIS_W3B) MENU_FOLDER_JENIS[j.folderBas] = { id: j.menuBas.id, nama: j.menuBas.nama, alias: j.menuBas.alias };
+for (const isi of Object.values(SALINAN_BAS_JENIS)) {
+  for (const tujuan of Object.values(isi)) {
+    if (!tujuan.includes("6c Nafkah Anak - BAS")) continue;
+    for (const f of SALINAN_PENERIMA_W3B) if (!tujuan.includes(f)) tujuan.push(f);
+  }
+}
+/* === AKHIR W3b === */

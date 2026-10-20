@@ -27,6 +27,7 @@
  */
 import { gabungSemuaBas, type PilihanBlangkoBas } from "@/app/api/aleta-ecourt/bas-massal/susun";
 import { perluasAliasMenu } from "@/lib/alias-menu-derry";
+import { FOLDER_MENU_W3B } from "@/lib/w3b-jenis-data";
 import { tentukanAlurBasKumulasi } from "@/lib/alur-bas-kumulasi";
 import { tentukanBasBaru } from "@/lib/alur-bas-baru";
 import { batasEnamBulanIkrar } from "@/lib/ikrar-talak";
@@ -279,6 +280,8 @@ export const FOLDER_MENU_PUTUSAN: Record<string, string> = {
   "Putusan Hibah": "4d Hibah",
   "Putusan Wakaf": "4e Wakaf",
   "Putusan Penetapan Mafqud": "9c Penetapan Mafqud",
+  // W3b 21 Okt: paket abt-w3b-blangko-baru-kuasa-wali (menu 240-253; dibangkitkan ke w3b-jenis-data.ts).
+  ...FOLDER_MENU_W3B,
 };
 
 /**

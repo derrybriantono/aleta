@@ -32,6 +32,7 @@
  * penilaian, bukan data, dan tidak dapat dibaca dari nama folder.
  */
 
+import { JENIS_W3B } from "@/lib/w3b-jenis-data";
 import { folderTugas, tugasBlangko, type TugasBlangko } from "@/lib/tugas-blangko";
 
 export type BlangkoItem = {
@@ -234,7 +235,7 @@ export const SET_BLANGKO: SetBlangko[] = [
     nama: "Putusan Nafkah Anak",
     folder: `${AKAR}/6c Nafkah Anak`,
     jenis: "putusan",
-    untuk: ["nafkah anak pasca perceraian", "nafkah anak"],
+    untuk: ["nafkah anak pasca perceraian"],
   },
   {
     id: "putusan-pembatalan-perkawinan",
@@ -301,6 +302,17 @@ export const SET_BLANGKO: SetBlangko[] = [
     syaratNomor: "gugatan-biasa",
   },
 ];
+
+/* === W3b 21 Okt === */
+/**
+ * Blangko Derry baru gelombang 3 (paket abt-w3b-blangko-baru-kuasa-wali): folder putusan jenis 353, 355, 356, 357, 350 (menu 240-249; BAS berpasangan "<folder> - BAS").
+ * Dibangkitkan datanya oleh bangkitkan_ts.py ke w3b-jenis-data.ts. Eksekusi dan verzet bukan jenis perkara (menu ABT berdasarkan proses SIPP), jadi tidak ada di sini.
+ */
+for (const j of JENIS_W3B) {
+  if (j.idJenis === null) continue;
+  SET_BLANGKO.push({ id: `putusan-w3b-${j.kunci}`, nama: `Putusan ${j.namaSipp}`, folder: `${AKAR}/${j.folder}`, jenis: "putusan", untuk: [j.kunciPeta] });
+}
+/* === AKHIR W3b === */
 
 /* === S 13 Okt === */
 /**

@@ -123,6 +123,12 @@ export function jenisPerkaraIdDariNama(nama: string | null | undefined, alur?: n
   if (/cerai\s*gugat/.test(t)) return 347;
   if (/harta\s*bersama/.test(t)) return 348;
   if (/penguasaan\s*anak/.test(t)) return 349;
+  // W3b 21 Okt: blangko Derry baru gelombang 3 (dibaca lebih dulu dari "nafkah anak" 743).
+  if (/nafkah\s*anak\s*oleh\s*ibu/.test(t)) return 350;
+  if (/pencabutan\s*kekuasaan\s*orang\s*tua/.test(t)) return 353;
+  if (/pencabutan\s*kekuasaan\s*wali/.test(t)) return 355;
+  if (/penunjukan\s*orang\s*lain\s*sebagai\s*wali/.test(t)) return 356;
+  if (/ganti\s*rugi\s*terhadap\s*wali/.test(t)) return 357;
   if (/nafkah\s*anak/.test(t)) return 743;
   if (/asal.?usul\s*anak/.test(t)) return 358;
   if (/dispensasi/.test(t)) return 362;
