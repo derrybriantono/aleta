@@ -353,11 +353,12 @@ export function Label({ className, ...props }: React.ComponentProps<"label">) {
   return <label className={cn("flex flex-col gap-1 text-xs font-medium text-muted-foreground", className)} {...props} />;
 }
 
-/** Penanda asal angka: "dari SIPP", "isian", atau "SIPP + isian". */
-export function TandaSumber({ sumber }: { sumber: "sipp" | "isian" | "gabungan" }) {
-  const teks = sumber === "sipp" ? "dari SIPP" : sumber === "isian" ? "isian" : "SIPP + isian";
+/** Penanda asal angka: "dari SIPP", "dari catatan sistem", "isian", atau "dengan isian". */
+export function TandaSumber({ sumber }: { sumber: "sipp" | "sistem" | "isian" | "gabungan" }) {
+  const teks =
+    sumber === "sipp" ? "dari SIPP" : sumber === "sistem" ? "dari catatan sistem" : sumber === "isian" ? "isian" : "SIPP/sistem + isian";
   const kelas =
-    sumber === "sipp"
+    sumber === "sipp" || sumber === "sistem"
       ? "border-sky-300/70 bg-sky-100 text-sky-800 dark:border-sky-700/50 dark:bg-sky-950/70 dark:text-sky-300"
       : sumber === "isian"
         ? "border-violet-300/70 bg-violet-100 text-violet-800 dark:border-violet-700/50 dark:bg-violet-950/70 dark:text-violet-300"

@@ -38,6 +38,12 @@ export type AturanHitungSkp =
   /** Jumlah `nilai` kejadian (rupiah). */
   | { jenis: "jumlah-nilai" }
   /**
+   * Jumlah KEGIATAN: tiap kejadian bernilai `nilai` kegiatan (kosong = 1).
+   * Untuk catatan yang dirangkum per hari (jejak aplikasi: 14 kegiatan pada
+   * satu tanggal = satu baris bukti dengan nilai 14), bukan rupiah.
+   */
+  | { jenis: "jumlah-kegiatan" }
+  /**
    * Persen kejadian yang selisih harinya memenuhi batas. maks: selisih <=
    * batas (batal tertib = belum diinput melewati batas); min: selisih >=
    * batas. `syarat` = frasa dasar hitung ("diberitahukan paling lama 7 hari").
@@ -50,7 +56,35 @@ export type AturanHitungSkp =
   /** Tidak ada sumber SIPP: seluruhnya isian manual (dengan bukti). */
   | { jenis: "isian" };
 
+/**
+ * Pembaca fakta yang berjalan di PORTAL (catatan e-Court dan aplikasi
+ * pengadilan), bukan di bot SIPP. Tiap id dikerjakan satu fungsi di
+ * server/modules/skp/kegiatan-aleta.ts; diuji selaras (setiap id punya
+ * pembaca, setiap pembaca dipakai katalog).
+ */
+export const PEMBACA_KEGIATAN_ALETA = [
+  "surat-dikelola",
+  "disposisi-diterima",
+  "disposisi-selesai",
+  "disposisi-tanggapan",
+  "ecourt-verifikasi",
+  "ecourt-percobaan",
+  "ecourt-berkas",
+  "aplikasi-kegiatan",
+  "cuti-diproses",
+  "analisis-dijalankan",
+] as const;
+
+export type PembacaKegiatanAleta = (typeof PEMBACA_KEGIATAN_ALETA)[number];
+
 export type DefIndikatorSkp = {
+  /**
+   * Kunci fakta -> pembaca portal, untuk indikator yang kegiatannya dibaca
+   * dari catatan e-Court / aplikasi pengadilan (bukan SIPP). Memuat kunci
+   * indikator sendiri dan kunci pembanding (rasio). Kunci yang tercantum
+   * di sini TIDAK dikirim bot dan tidak masuk KUNCI_FAKTA_SKP_JABATAN.
+   */
+  aleta?: Readonly<Record<string, PembacaKegiatanAleta>>;
   kunci: string;
   aspek: AspekSkp;
   teks: string;
@@ -89,6 +123,7 @@ type Opsi = {
   target?: { targetNilai: number | null; targetTeks: string };
   dari?: string;
   faktaTambahan?: string[];
+  aleta?: Readonly<Record<string, PembacaKegiatanAleta>>;
 };
 
 function ind(aspek: AspekSkp, kunci: string, teks: string, aturan: AturanHitungSkp, o: Opsi = {}): DefIndikatorSkp {
@@ -100,7 +135,9 @@ function ind(aspek: AspekSkp, kunci: string, teks: string, aturan: AturanHitungS
         ? "Hari"
         : aturan.jenis === "jumlah-nilai"
           ? "Rp"
-          : "Perkara");
+          : aturan.jenis === "jumlah-kegiatan"
+            ? "Kegiatan"
+            : "Perkara");
   return {
     kunci,
     aspek,
@@ -111,6 +148,7 @@ function ind(aspek: AspekSkp, kunci: string, teks: string, aturan: AturanHitungS
     ...(o.target ?? (aturan.jenis === "persen-hari" || aturan.jenis === "rasio" ? TARGET_SERATUS : TANPA_TARGET)),
     ...(o.dari ? { dari: o.dari } : {}),
     ...(o.faktaTambahan ? { faktaTambahan: o.faktaTambahan } : {}),
+    ...(o.aleta ? { aleta: o.aleta } : {}),
   };
 }
 
@@ -204,15 +242,21 @@ const RHK_PANITERA: DefRhkSkp[] = [
       ),
     ]
   ),
-  rhkIsian(
+  rhk(
     "pn-administrasi",
     "Terkelolanya administrasi perkara di bawah kendali Panitera secara tertib dan akuntabel",
     "Rekap Pengelolaan Administrasi Perkara",
-    {
-      k: "Jumlah kegiatan pengendalian administrasi perkara yang dilaksanakan",
-      q: "Tingkat kesesuaian pengelolaan administrasi perkara dengan standar layanan",
-      w: "Tingkat ketepatan waktu penyelesaian administrasi perkara sesuai SOP",
-    }
+    [
+      ind(
+        "Kuantitas",
+        "pn-administrasi-kuantitas",
+        "Jumlah kegiatan pengendalian administrasi perkara yang dilaksanakan",
+        { jenis: "jumlah-kegiatan" },
+        { objek: "kegiatan pengendalian administrasi", satuan: "Kegiatan", aleta: { "pn-administrasi-kuantitas": "aplikasi-kegiatan" } }
+      ),
+      ind("Kualitas", "pn-administrasi-kualitas", "Tingkat kesesuaian pengelolaan administrasi perkara dengan standar layanan", { jenis: "isian" }, { satuan: "%" }),
+      ind("Waktu", "pn-administrasi-waktu", "Tingkat ketepatan waktu penyelesaian administrasi perkara sesuai SOP", { jenis: "isian" }, { satuan: "%" }),
+    ]
   ),
 ];
 
@@ -424,7 +468,28 @@ const RHK_MEJA: DefRhkSkp[] = [
     k: "Jumlah pencari keadilan yang dilayani di meja",
     q: "Tingkat kepuasan pencari keadilan terhadap pelayanan meja",
     w: "Tingkat ketepatan waktu pelayanan meja sesuai standar",
-  }),
+  }),  rhk(
+    "mj-ecourt",
+    "Terwujudnya verifikasi dokumen layanan elektronik (e-Court) yang tertib dan akurat",
+    "Rekap Verifikasi Dokumen e-Court",
+    [
+      ind(
+        "Kuantitas",
+        "mj-ecourt-kuantitas",
+        "Jumlah dokumen e-Court yang diverifikasi",
+        { jenis: "jumlah" },
+        { objek: "dokumen e-Court diverifikasi", satuan: "Dokumen", aleta: { "mj-ecourt-kuantitas": "ecourt-verifikasi" } }
+      ),
+      ind(
+        "Kualitas",
+        "mj-ecourt-kualitas",
+        "Persentase verifikasi dokumen e-Court yang berhasil dari seluruh verifikasi yang dijalankan",
+        { jenis: "rasio", pembilang: "mj-ecourt-kuantitas", penyebut: "mj-ecourt-percobaan", syarat: "berhasil diverifikasi" },
+        { objek: "verifikasi dokumen e-Court", target: TANPA_TARGET, faktaTambahan: ["mj-ecourt-percobaan"], aleta: { "mj-ecourt-kuantitas": "ecourt-verifikasi", "mj-ecourt-percobaan": "ecourt-percobaan" } }
+      ),
+      ind("Waktu", "mj-ecourt-waktu", "Tingkat ketepatan waktu verifikasi dokumen e-Court", { jenis: "isian" }, { satuan: "%" }),
+    ]
+  ),
 ];
 
 // ─── Kasir ──────────────────────────────────────────────────────────────────
@@ -488,9 +553,31 @@ const RHK_OPERATOR: DefRhkSkp[] = [
     "Terwujudnya pengoperasian aplikasi perkara yang tertib dan akurat",
     "Rekap Pengoperasian Aplikasi",
     [
-      ind("Kuantitas", "op-layanan-kuantitas", "Jumlah kegiatan pengoperasian aplikasi yang tercatat", { jenis: "jumlah" }, { objek: "kegiatan pengoperasian", satuan: "Kegiatan" }),
+      ind("Kuantitas", "op-layanan-kuantitas", "Jumlah kegiatan pengoperasian aplikasi yang tercatat", { jenis: "jumlah-kegiatan" }, { objek: "kegiatan pengoperasian", satuan: "Kegiatan" }),
       ind("Kualitas", "op-layanan-kualitas", "Tingkat akurasi data yang dioperasikan", { jenis: "isian" }, { satuan: "%" }),
       ind("Waktu", "op-layanan-waktu", "Tingkat ketepatan waktu penyelesaian pekerjaan operator", { jenis: "isian" }, { satuan: "%" }),
+    ]
+  ),
+  rhk(
+    "op-sistem",
+    "Terwujudnya pengoperasian layanan elektronik (e-Court) dan aplikasi pendukung pengadilan secara tertib",
+    "Rekap Pengoperasian e-Court dan Aplikasi Pendukung",
+    [
+      ind(
+        "Kuantitas",
+        "op-sistem-kuantitas",
+        "Jumlah kegiatan pengoperasian e-Court dan aplikasi pendukung yang tercatat",
+        { jenis: "jumlah-kegiatan" },
+        { objek: "kegiatan pengoperasian", satuan: "Kegiatan", aleta: { "op-sistem-kuantitas": "aplikasi-kegiatan" } }
+      ),
+      ind(
+        "Kualitas",
+        "op-sistem-kualitas",
+        "Jumlah berkas e-Court (salinan putusan atau penetapan) yang berhasil ditandatangani atau diunggah",
+        { jenis: "jumlah" },
+        { objek: "berkas e-Court", satuan: "Berkas", aleta: { "op-sistem-kualitas": "ecourt-berkas" } }
+      ),
+      ind("Waktu", "op-sistem-waktu", "Tingkat ketepatan waktu penyelesaian pekerjaan e-Court dan aplikasi pendukung", { jenis: "isian" }, { satuan: "%" }),
     ]
   ),
 ];
@@ -508,6 +595,140 @@ const RHK_INFORMASI: DefRhkSkp[] = [
     k: "Jumlah permintaan informasi yang dilayani",
     q: "Tingkat kepuasan pemohon informasi",
     w: "Tingkat ketepatan waktu pelayanan informasi sesuai standar",
+  }),
+];
+
+// ─── Mediator ───────────────────────────────────────────────────────────────
+
+/**
+ * Mediator (hakim mediator maupun mediator non-hakim). Batas 30 hari = PERMA
+ * 1/2016 Pasal 24 (sama dengan Rekap Mediator), bukan target karangan.
+ */
+const RHK_MEDIATOR: DefRhkSkp[] = [
+  rhk(
+    "md-mediasi",
+    "Terselenggaranya mediasi pada perkara yang ditunjuk secara tertib, tepat waktu, dan terlaporkan",
+    "Rekap Pelaksanaan Mediasi",
+    [
+      ind("Kuantitas", "md-mediasi-kuantitas", "Jumlah perkara yang ditunjuk untuk dimediasi", { jenis: "jumlah" }, { objek: "perkara dimediasi", satuan: "Perkara", target: TANPA_TARGET }),
+      ind(
+        "Kualitas",
+        "md-mediasi-kualitas",
+        "Persentase mediasi yang laporan hasil mediasinya sudah dibuat",
+        { jenis: "rasio", pembilang: "md-mediasi-laporan", penyebut: "md-mediasi-kuantitas", syarat: "laporan hasil mediasinya sudah dibuat" },
+        { objek: "mediasi", target: TANPA_TARGET, faktaTambahan: ["md-mediasi-laporan"] }
+      ),
+      ind(
+        "Waktu",
+        "md-mediasi-waktu",
+        "Persentase mediasi yang laporannya dibuat paling lama 30 hari sejak penetapan penunjukan mediator",
+        { jenis: "persen-hari", arah: "acuan-ke-tanggal", cocok: "maks", batas: 30, syarat: "dilaporkan paling lama 30 hari sejak penetapan penunjukan mediator (PERMA 1/2016 Pasal 24)" },
+        { objek: "mediasi", target: TANPA_TARGET }
+      ),
+    ]
+  ),
+];
+
+// ─── Sekretaris, Kasubag, Analis Perkara (sumber: catatan aplikasi) ─────────
+
+const TARGET_BELUM = { targetNilai: null, targetTeks: "Belum ada target" } as const;
+
+/** Persuratan: surat dikelola, disposisi yang ditindaklanjuti, dan waktu tanggapan disposisi. */
+function rhkPersuratan(awal: string, teksRhk: string, judulRekap: string): DefRhkSkp {
+  const k = `${awal}-persuratan-kuantitas`;
+  const selesai = `${awal}-persuratan-selesai`;
+  const diterima = `${awal}-persuratan-diterima`;
+  const w = `${awal}-persuratan-waktu`;
+  return rhk(`${awal}-persuratan`, teksRhk, judulRekap, [
+    ind("Kuantitas", k, "Jumlah surat masuk dan surat keluar yang dikelola", { jenis: "jumlah" }, { objek: "surat dikelola", satuan: "Surat", target: TARGET_BELUM, aleta: { [k]: "surat-dikelola" } }),
+    ind(
+      "Kualitas",
+      `${awal}-persuratan-kualitas`,
+      "Persentase disposisi yang diterima dan sudah ditindaklanjuti",
+      { jenis: "rasio", pembilang: selesai, penyebut: diterima, syarat: "sudah ditindaklanjuti" },
+      { objek: "disposisi diterima", target: TARGET_BELUM, faktaTambahan: [selesai, diterima], aleta: { [selesai]: "disposisi-selesai", [diterima]: "disposisi-diterima" } }
+    ),
+    ind(
+      "Waktu",
+      w,
+      "Rata-rata waktu membuka disposisi sejak disposisi diterima",
+      { jenis: "rata-hari", arah: "acuan-ke-tanggal" },
+      { objek: "disposisi", target: TARGET_BELUM, aleta: { [w]: "disposisi-tanggapan" } }
+    ),
+  ]);
+}
+
+const RHK_SEKRETARIS: DefRhkSkp[] = [
+  rhkPersuratan("sk", "Terkelolanya persuratan pengadilan (surat masuk, surat keluar, dan disposisi) secara tertib", "Rekap Pengelolaan Persuratan"),
+  rhkIsian(
+    "sk-manajemen",
+    "Terselenggaranya dukungan manajemen kesekretariatan (perencanaan, kepegawaian, keuangan, dan umum) secara akuntabel",
+    "Rekap Dukungan Manajemen Kesekretariatan",
+    {
+      k: "Jumlah kegiatan dukungan manajemen kesekretariatan yang dilaksanakan",
+      q: "Tingkat kesesuaian dokumen kesekretariatan dengan ketentuan",
+      w: "Tingkat ketepatan waktu penyelesaian dokumen kesekretariatan",
+    }
+  ),
+];
+
+const RHK_KASUBAG: DefRhkSkp[] = [
+  rhkPersuratan("kb", "Terkelolanya persuratan dan disposisi subbagian secara tertib", "Rekap Pengelolaan Persuratan Subbagian"),
+  rhk(
+    "kb-kepegawaian",
+    "Terlayaninya administrasi kepegawaian (permohonan cuti pegawai) secara tertib dan tepat waktu",
+    "Rekap Pemrosesan Permohonan Cuti",
+    [
+      ind(
+        "Kuantitas",
+        "kb-kepegawaian-kuantitas",
+        "Jumlah permohonan cuti pegawai yang diproses",
+        { jenis: "jumlah" },
+        { objek: "permohonan cuti diproses", satuan: "Permohonan", target: TARGET_BELUM, aleta: { "kb-kepegawaian-kuantitas": "cuti-diproses" } }
+      ),
+      ind("Kualitas", "kb-kepegawaian-kualitas", "Tingkat kesesuaian pemrosesan cuti dengan ketentuan kepegawaian", { jenis: "isian" }, { satuan: "%" }),
+      ind(
+        "Waktu",
+        "kb-kepegawaian-waktu",
+        "Rata-rata waktu pemrosesan permohonan cuti sejak diajukan",
+        { jenis: "rata-hari", arah: "acuan-ke-tanggal" },
+        { objek: "permohonan cuti", target: TARGET_BELUM, dari: "kb-kepegawaian-kuantitas", aleta: { "kb-kepegawaian-kuantitas": "cuti-diproses" } }
+      ),
+    ]
+  ),
+  rhkIsian(
+    "kb-umum",
+    "Terselenggaranya pelayanan subbagian (umum, keuangan, perencanaan, teknologi informasi, pelaporan, atau ortala) secara akuntabel",
+    "Rekap Pelayanan Subbagian",
+    {
+      k: "Jumlah kegiatan pelayanan subbagian yang dilaksanakan",
+      q: "Tingkat kesesuaian dokumen subbagian dengan ketentuan",
+      w: "Tingkat ketepatan waktu penyelesaian dokumen subbagian",
+    }
+  ),
+];
+
+const RHK_ANALIS: DefRhkSkp[] = [
+  rhk(
+    "an-analisis",
+    "Tersedianya hasil pemantauan dan analisis kinerja perkara sebagai bahan pengambilan keputusan pimpinan",
+    "Rekap Pemantauan dan Analisis Kinerja Perkara",
+    [
+      ind(
+        "Kuantitas",
+        "an-analisis-kuantitas",
+        "Jumlah pemantauan dan analisis kinerja perkara yang dijalankan",
+        { jenis: "jumlah" },
+        { objek: "pemantauan dan analisis", satuan: "Analisis", target: TARGET_BELUM, aleta: { "an-analisis-kuantitas": "analisis-dijalankan" } }
+      ),
+      ind("Kualitas", "an-analisis-kualitas", "Tingkat ketepatan dan kelengkapan hasil analisis kinerja perkara", { jenis: "isian" }, { satuan: "%" }),
+      ind("Waktu", "an-analisis-waktu", "Tingkat ketepatan waktu penyampaian hasil analisis kepada pimpinan", { jenis: "isian" }, { satuan: "%" }),
+    ]
+  ),
+  rhkIsian("an-laporan", "Tersusunnya laporan dan telaah perkara untuk kebutuhan pimpinan secara akurat", "Rekap Laporan dan Telaah Perkara", {
+    k: "Jumlah laporan dan telaah perkara yang disusun",
+    q: "Tingkat akurasi laporan dan telaah perkara",
+    w: "Tingkat ketepatan waktu penyampaian laporan dan telaah",
   }),
 ];
 
@@ -533,6 +754,10 @@ export const SKP_JABATAN_2026: Readonly<Record<JabatanSkp, readonly DefRhkSkp[]>
   operator: RHK_OPERATOR,
   "koordinator-delegasi": RHK_KOORDINATOR_DELEGASI,
   informasi: RHK_INFORMASI,
+  mediator: RHK_MEDIATOR,
+  sekretaris: RHK_SEKRETARIS,
+  kasubag: RHK_KASUBAG,
+  "analis-perkara": RHK_ANALIS,
 };
 
 /** Perilaku kerja (Permen PANRB 6/2022, BerAKHLAK) - nilainya diisi manual pejabat penilai. */
@@ -561,6 +786,9 @@ export function rhkJabatanSkp(jabatan: JabatanSkp): readonly DefRhkSkp[] {
 /** Kunci fakta yang dibaca portal untuk sebuah indikator: miliknya sendiri (atau `dari`) dan pembandingnya. */
 export function kunciFaktaIndikator(def: DefIndikatorSkp): string[] {
   const kunci = new Set<string>();
+  // Kunci yang dibaca portal sendiri (catatan e-Court/aplikasi) tidak diminta dari bot.
+  const lokal = new Set(Object.keys(def.aleta ?? {}));
+  if (def.aleta) lokal.add(def.kunci);
   if (def.aturan.jenis !== "isian") {
     kunci.add(def.kunci);
     if (def.dari) kunci.add(def.dari);
@@ -570,7 +798,7 @@ export function kunciFaktaIndikator(def: DefIndikatorSkp): string[] {
     }
     for (const t of def.faktaTambahan ?? []) kunci.add(t);
   }
-  return [...kunci];
+  return [...kunci].filter((k) => !lokal.has(k));
 }
 
 /**
@@ -584,3 +812,18 @@ export const KUNCI_FAKTA_SKP_JABATAN: Readonly<Record<JabatanSkp, readonly strin
     [...new Set(SKP_JABATAN_2026[j].flatMap((r) => r.indikator.flatMap(kunciFaktaIndikator)))],
   ])
 ) as unknown as Record<JabatanSkp, readonly string[]>;
+
+/**
+ * Kunci fakta yang dibaca PORTAL (bukan bot) tiap jabatan -> pembacanya.
+ * Pembanding KUNCI_FAKTA_SKP_JABATAN: dua daftar ini tidak pernah beririsan.
+ */
+export const KUNCI_FAKTA_ALETA_SKP_JABATAN: Readonly<Record<JabatanSkp, Readonly<Record<string, PembacaKegiatanAleta>>>> =
+  Object.fromEntries(
+    (Object.keys(SKP_JABATAN_2026) as JabatanSkp[]).map((j) => [
+      j,
+      Object.assign({}, ...SKP_JABATAN_2026[j].flatMap((r) => r.indikator.map((i) => i.aleta ?? {}))) as Record<
+        string,
+        PembacaKegiatanAleta
+      >,
+    ])
+  ) as unknown as Record<JabatanSkp, Record<string, PembacaKegiatanAleta>>;

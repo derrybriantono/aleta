@@ -2317,6 +2317,29 @@ export async function getGatewaySkpJabatan(p: {
   });
 }
 
+/** Akun SIPP beserta tautannya ke panitera, jurusita, hakim, dan mediator (rute bot GET /sipp/skp-akun). */
+export type AkunSippSkp = {
+  username: string;
+  userIdSipp: string;
+  nama: string;
+  aktif: boolean;
+  jabatanDugaan: string | null;
+  paniteraId: number | null;
+  jurusitaId: number | null;
+  hakimId: number | null;
+  mediatorIds: number[];
+};
+
+/**
+ * Daftar akun SIPP untuk menautkan halaman Rekap Petugas (id panitera/jurusita/
+ * mediator) ke akunnya, lalu ke pegawai lewat Pemetaan. Hanya SELECT di bot.
+ */
+export async function getGatewaySkpAkun(p: { semua?: boolean } = {}): Promise<GatewayResult<{ ok: boolean; akun: AkunSippSkp[] }>> {
+  const kueri = new URLSearchParams();
+  if (p.semua) kueri.set("semua", "1");
+  return gatewayFetch(`/internal/aleta-bot/sipp/skp-akun?${kueri.toString()}`, { timeoutMs: TIMEOUT_PENILAIAN_MS });
+}
+
 /**
  * Jalur halaman satu perkara di SIPP - "perkara_detil_agama/<enc>" - untuk
  * tombol "Buka SIPP" dan "Salin tautan" di Status Perkara.

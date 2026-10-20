@@ -298,7 +298,16 @@ async function main() {
     const sisaLama = lamaDiminta.akun[0] && lamaDiminta.akun[0].fakta.find((f) => f.kunci === "ks-biaya-sisa-kembali");
     periksa("akun lama diminta tegas: ikut, tetapi tanpa pekerjaan unit (kunci unit tidak dikirim)", lamaDiminta.akun.length === 1 && !sisaLama, lamaDiminta.akun);
     const opr = await layLama.skpJabatan({ tahun: "2026", periode: "tw3", jabatan: "operator", username: "kasir" }, opsiTetap);
-    periksa("operator: akun ada, fakta kosong, catatan operator menyebut jejak ALETA", opr.akun.length === 1 && opr.akun[0].fakta.length === 0 && opr.catatanOperator.some((c) => /jejak ALETA/.test(c)), opr);
+    // 20 Okt 2026: operator kini dibaca dari jejak audit SIPP akunnya (op-layanan-kuantitas); daftar kosong = nol sungguhan.
+    periksa(
+      "operator: akun ada, fakta jejak audit terbaca (kosong bila tak ada kegiatan), catatan operator menyebut jejak audit SIPP",
+      opr.akun.length === 1 &&
+        opr.akun[0].fakta.length === 1 &&
+        opr.akun[0].fakta[0].kunci === "op-layanan-kuantitas" &&
+        opr.akun[0].fakta[0].terbaca === true &&
+        opr.catatanOperator.some((c) => /jejak audit SIPP/.test(c)),
+      opr
+    );
   }
 
   // ==========================================================================

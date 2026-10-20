@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import { peranEvidenSkpSah } from "@/lib/eviden-skp-unduh";
+import type { JabatanSkp } from "@/lib/skp-jabatan-tipe";
 import { apiPath, withBasePath } from "@/lib/base-path";
 import {
   KEADAAN_SARING,
@@ -218,6 +219,30 @@ export function RekapPetugas({ peran, id }: { peran: string; id: string }) {
   // Pilihan "Jenis SKP" (SKP Hakim / SKP Pimpinan) hanya untuk Ketua dan Wakil Ketua.
   const bolehPilihJenisSkp = useBolehPilihJenisSkp();
   const tombolEviden = useRef<HTMLButtonElement>(null);
+  // Eviden SKP Panitera Pengganti, Juru Sita, dan Mediator (20 Okt 2026): pegawai di balik halaman ini,
+  // dicari lewat akun SIPP -> Pemetaan. Tombol hanya muncul bila ada, aktif, dan pengunjung berhak.
+  const [pegawaiEviden, setPegawaiEviden] = useState<{ userId: string; jenis: JabatanSkp } | null>(null);
+  useEffect(() => {
+    if (!peranSah || peranSah === "hakim" || idSah === null) return;
+    let batal = false;
+    void (async () => {
+      try {
+        const balasan = await fetch(apiPath(`/api/skp/rekap-pegawai?peran=${peranSah}&id=${idSah}`), { cache: "no-store" });
+        const isi = (await balasan.json().catch(() => null)) as {
+          data?: { tersedia?: boolean; jenis?: JabatanSkp; pegawai?: { userId?: string } };
+        } | null;
+        if (batal) return;
+        const d = isi?.data;
+        setPegawaiEviden(balasan.ok && d?.tersedia && d.jenis && d.pegawai?.userId ? { userId: d.pegawai.userId, jenis: d.jenis } : null);
+      } catch {
+        if (!batal) setPegawaiEviden(null);
+      }
+    })();
+    return () => {
+      batal = true;
+    };
+  }, [peranSah, idSah]);
+  const adaTombolEviden = Boolean(peranSah && (peranEvidenSkpSah(peranSah) || pegawaiEviden));
   const tutupEviden = useCallback(() => {
     setBukaEviden(false);
     window.setTimeout(() => tombolEviden.current?.focus(), 0);
@@ -338,8 +363,8 @@ export function RekapPetugas({ peran, id }: { peran: string; id: string }) {
           <h1 className="font-serif text-2xl leading-tight text-foreground sm:text-[2.1rem]">
             {identitas?.nama || (memuat ? "Memuat…" : `${SEBUTAN_PERAN[peranSah]} ${idSah}`)}
           </h1>
-          {/* Eviden SKP (2.40.0): sementara hakim; panitera dan juru sita menyusul. */}
-          {peranEvidenSkpSah(peranSah) ? (
+          {/* Eviden SKP: hakim (2.40.0); PP, Juru Sita, dan Mediator lewat pegawai yang tertaut (20 Okt 2026). */}
+          {adaTombolEviden ? (
             <Button
               ref={tombolEviden}
               type="button"
@@ -868,6 +893,15 @@ export function RekapPetugas({ peran, id }: { peran: string; id: string }) {
 
       {bukaEviden && peranEvidenSkpSah(peranSah) ? (
         <EvidenSkpMenu peran={peranSah} id={idSah} nama={identitas?.nama} onTutup={tutupEviden} pilihanJenis={bolehPilihJenisSkp} />
+      ) : null}
+      {bukaEviden && peranSah !== "hakim" && pegawaiEviden ? (
+        <EvidenSkpMenu
+          peran="hakim"
+          id={idSah}
+          nama={identitas?.nama}
+          onTutup={tutupEviden}
+          jabatan={{ jenis: pegawaiEviden.jenis, pegawai: pegawaiEviden.userId }}
+        />
       ) : null}
     </div>
   );

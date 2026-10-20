@@ -1,6 +1,7 @@
 import { susunPeriodeSkpJabatan } from "@/lib/eviden-skp-unduh";
 import type { DataEvidenSkp } from "@/lib/eviden-skp-tipe";
 import { hitungLembarSkp, type HasilSkpJabatan } from "@/lib/skp-jabatan-hitung";
+import { KUNCI_FAKTA_SKP_JABATAN } from "@/lib/skp-jabatan-katalog";
 import type {
   AktorSkp,
   DataSkpJabatan,
@@ -15,6 +16,7 @@ import type {
 import { type AletaDatabase } from "@/server/db/client";
 import { ambilDataEvidenSkpPeriode, ambilDataSkpJabatan } from "@/server/modules/aleta-ecourt/eviden-skp-data";
 import { bolehLihatSkp } from "@/server/modules/skp/hak";
+import { bacaFaktaSistem } from "@/server/modules/skp/kegiatan-aleta";
 import { bacaIsian } from "@/server/modules/skp/isian";
 import { akunTertautPegawai, type AkunTertaut } from "@/server/modules/skp/pemetaan";
 import { bacaKeadaanPegawai, hakPegawai, pejabatPenilaiSkp, type KeadaanPegawaiSkp, type PenilaiSkp } from "@/server/modules/skp/pegawai";
@@ -182,7 +184,12 @@ export async function siapkanSkp(
   let data: DataSkpJabatan | null = null;
   let sippTerjangkau = true;
   const mulaiDari = new Date().toISOString();
-  if (usernames.length === 0) {
+  const jabatanLembar = jabatanDiminta(p, pegawai);
+  // Bot hanya ditanya untuk jabatan yang punya indikator SIPP; jabatan yang
+  // seluruhnya dari catatan sistem (Sekretaris, Kasubag, Analis) tidak
+  // bergantung pada SIPP terjangkau atau tidaknya.
+  const jabatanSipp = jabatanLembar.filter((j) => (KUNCI_FAKTA_SKP_JABATAN[j] ?? []).length > 0);
+  if (usernames.length === 0 || jabatanSipp.length === 0) {
     data = {
       ok: true,
       periode,
@@ -194,7 +201,7 @@ export async function siapkanSkp(
     };
   } else {
     const diterima: DataSkpJabatan[] = [];
-    for (const jabatan of jabatanDiminta(p, pegawai)) {
+    for (const jabatan of jabatanSipp) {
       const jawaban = await ambilDataSkpJabatan({ tahun: p.tahun, periode: p.periode, jabatan, username: usernames });
       if (!jawaban.ok) {
         if (p.ketat) throw new ApiError(jawaban.status, jawaban.alasan);
@@ -209,6 +216,18 @@ export async function siapkanSkp(
       data = { ...gabung, akun: potongMenurutJendela(gabung.akun, tautan.akun) };
       catatanOperator.push(...(gabung.catatanOperator ?? []));
     }
+  }
+
+  // Kegiatan nyata di e-Court dan aplikasi pengadilan (bukan SIPP): dibaca di
+  // portal, dimiliki satu pegawai, digabung ke fakta supaya satu jalur hitung.
+  if (data) {
+    const sistem = await bacaFaktaSistem(db, {
+      userId: pegawai.userId,
+      jabatan: jabatanLembar,
+      mulai: periode.mulai,
+      selesai: periode.selesai,
+    });
+    if (sistem) data = { ...data, akun: [...data.akun, sistem] };
   }
 
   let dataHakim: DataEvidenSkp | null = null;

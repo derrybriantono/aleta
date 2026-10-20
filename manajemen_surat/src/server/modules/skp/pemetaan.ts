@@ -180,6 +180,20 @@ const JABATAN_DARI_POSISI: Readonly<Record<string, JabatanSkp>> = {
   "pos-panitera-pengganti": "pp",
   "pos-jurusita": "jurusita",
   "pos-jurusita-pengganti": "jurusita-pengganti",
+  "pos-ptsp": "petugas-meja",
+  "pos-bendahara": "kasir",
+  "pos-analis-keuangan": "kasir",
+  "pos-pranata-komputer": "operator",
+  "pos-staf-ptip": "operator",
+  "pos-sekretaris": "sekretaris",
+  "pos-kasubag-umum": "kasubag",
+  "pos-kasubag-kepegawaian": "kasubag",
+  "pos-kasubag-ptip": "kasubag",
+  "pos-analis-perkara": "analis-perkara",
+  "pos-analis-perkara-gugatan": "analis-perkara",
+  "pos-analis-perkara-hukum": "analis-perkara",
+  "pos-dokumentalis-hukum": "analis-perkara",
+  "pos-pengelola-penanganan-perkara-gugatan": "analis-perkara",
 };
 
 const JABATAN_DARI_PERAN: Readonly<Record<string, JabatanSkp>> = {
@@ -188,7 +202,28 @@ const JABATAN_DARI_PERAN: Readonly<Record<string, JabatanSkp>> = {
   panitera: "panitera",
   "panitera-pengganti": "pp",
   jurusita: "jurusita",
+  sekretaris: "sekretaris",
+  kasubag: "kasubag",
+  "analis-perkara": "analis-perkara",
+  "pranata-komputer": "operator",
+  operator: "operator",
+  "analis-keuangan": "kasir",
 };
+
+/** Peran tambahan (additional_role_ids) -> jabatan SKP yang ikut melekat. */
+function jabatanDariPeranTambahan(tambahan: readonly string[]): JabatanSkp[] {
+  const hasil: JabatanSkp[] = [];
+  const ada = (j: JabatanSkp) => {
+    if (!hasil.includes(j)) hasil.push(j);
+  };
+  for (const x of tambahan.map((t) => String(t).toLowerCase())) {
+    if (x === "mediator" || x === "mediator_non_hakim") ada("mediator");
+    else if (x === "kasir" || x === "petugas_keuangan_perkara" || x === "bendahara_penerimaan") ada("kasir");
+    else if (/^petugas_meja_/.test(x) || x === "petugas_ptsp" || x === "petugas_pendaftaran_perkara") ada("petugas-meja");
+    else if (x === "operator" || x === "operator_sipp" || x === "operator_edoc") ada("operator");
+  }
+  return hasil;
+}
 
 /**
  * Saran jabatan dari peran dan jabatan ALETA (dan tebakan grup SIPP bila ada).
@@ -199,6 +234,8 @@ const JABATAN_DARI_PERAN: Readonly<Record<string, JabatanSkp>> = {
 export function sarankanJabatanSkp(p: {
   roleId: string;
   positionId: string;
+  /** Peran tambahan pengguna (mediator, kasir, meja, operator) - hanya menambah jabatan. */
+  additionalRoleIds?: readonly string[];
   dugaanSipp?: JabatanSkp | null;
   grupSipp?: readonly number[];
 }): { utama: JabatanSkp | null; tambahan: JabatanSkp[] } {
@@ -211,10 +248,17 @@ export function sarankanJabatanSkp(p: {
     JABATAN_DARI_POSISI[String(p.positionId || "")] ?? JABATAN_DARI_PERAN[role] ?? (p.dugaanSipp && p.dugaanSipp !== "ketua" ? p.dugaanSipp : null) ?? dariGrup[0] ?? null;
   // Rangkap: pejabat kepaniteraan yang juga terdaftar PP di SIPP -> blok tugas PP.
   const tambahan: JabatanSkp[] = [];
+  const dariPeranTambahan = jabatanDariPeranTambahan(p.additionalRoleIds ?? []);
   if (utama && utama !== "pp" && (utama === "panitera" || utama.startsWith("panmud-")) && dariGrup.includes("pp")) {
     tambahan.push("pp");
   }
-  return { utama, tambahan };
+  // Peran tambahan: mengisi jabatan utama bila kosong, selebihnya menjadi tambahan.
+  let utamaAkhir = utama;
+  for (const j of dariPeranTambahan) {
+    if (!utamaAkhir) utamaAkhir = j;
+    else if (j !== utamaAkhir && !tambahan.includes(j) && utamaAkhir !== "ketua" && utamaAkhir !== "wakil-ketua") tambahan.push(j);
+  }
+  return { utama: utamaAkhir, tambahan };
 }
 
 // ─── Simpan ─────────────────────────────────────────────────────────────────
