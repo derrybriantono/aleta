@@ -756,6 +756,8 @@ export const aletaSippHariSidang = pgTable("aleta_sipp_hari_sidang", {
   skNomor: text("sk_nomor").notNull().default(""),
   skTanggal: text("sk_tanggal").notNull().default(""),
   keterangan: text("keterangan").notNull().default(""),
+  /** 0 = dihapus dari SK (soft); lihat drizzle/0079_aleta_sk_majelis_aktif.sql. */
+  aktif: integer("aktif").notNull().default(1),
   updatedAt: text("updated_at").notNull(),
   updatedBy: text("updated_by"),
 });

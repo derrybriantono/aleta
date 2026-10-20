@@ -53,6 +53,8 @@ const drizzle = baca("manajemen_surat/src/server/db/drizzle-schema.ts");
 const layanan = baca("manajemen_surat/src/server/modules/aleta-ecourt/penunjukan-pengaturan.ts");
 const rute = baca("manajemen_surat/src/app/api/aleta-ecourt/sk-majelis/route.ts");
 const layar = baca("manajemen_surat/src/components/portal/aleta-ecourt-sk-majelis.tsx");
+// Sejak 20 Okt 2026 badan simpan dirakit oleh lib/sk-majelis-draf (halaman menyunting draf).
+const draf = baca("manajemen_surat/src/lib/sk-majelis-draf.ts");
 
 describe("migrasi 0045", () => {
   it("terdaftar pada jurnal dengan nomornya sendiri, dan tidak ada idx kembar", () => {
@@ -107,7 +109,7 @@ describe("tidak ada jalan menautkan di luar majelis", () => {
   });
 
   it("layar mengirimnya bersama majelisnya, bukan sendiri", () => {
-    expect(layar).toContain("akunId: (gabung.akun ?? []).map((a) => `${a.kode}=${a.akunId}`).join(\",\")");
+    expect(draf).toContain("akunId: (m.akun ?? []).filter((a) => kodeAda.has(a.kode)).map((a) => `${a.kode}=${a.akunId}`).join(\",\")");
     // Tidak ada pemanggilan simpan yang membawa akun tanpa majelisnya.
     expect(layar).not.toMatch(/fetch\([^)]*sk-majelis[^)]*\)[\s\S]{0,200}akunId[^]{0,80}majelisKode/);
   });
@@ -120,8 +122,8 @@ describe("tidak ada jalan menautkan di luar majelis", () => {
 
 describe("SK per majelis tetap bisa diisi sebagai pengecualian (17 Okt 2026)", () => {
   it("layar mengirim nomor & tanggal SK majelis dan menawarkan SK dari SIPP; rute meneruskannya", () => {
-    expect(layar).toContain("skNomor: gabung.skIkutBawaan ? \"\" : gabung.skNomor");
-    expect(layar).toContain("skTanggal: gabung.skIkutBawaan ? \"\" : gabung.skTanggal");
+    expect(draf).toContain("skNomor: m.skIkutBawaan ? \"\" : m.skNomor");
+    expect(draf).toContain("skTanggal: m.skIkutBawaan ? \"\" : m.skTanggal");
     expect(layar).toContain("ikut SK bawaan");
     expect(layar).toContain("Pilih dari SK di SIPP");
     expect(rute).toContain("badan.skNomor === undefined ? undefined : String(badan.skNomor ?? \"\")");
@@ -159,11 +161,11 @@ describe("bentuknya berpasangan", () => {
 
 describe("hakim dan panitera satu daftar", () => {
   it("layar menawarkan keduanya pada blok yang sama", () => {
-    expect(layar).toContain("[...satu.hakimKode, ...satu.paniteraKode].map((kode)");
+    expect(layar).toContain("[...m.hakimKode, ...m.paniteraKode].filter(Boolean).map((kode)");
   });
 
   it("perannya disebut - ketua, hakim, atau panitera", () => {
-    expect(layar).toContain('satu.hakimKode[0] === kode ? "ketua" : "hakim"');
+    expect(layar).toContain('m.hakimKode[0] === kode ? "ketua" : "hakim"');
     expect(layar).toContain('"panitera"');
   });
 

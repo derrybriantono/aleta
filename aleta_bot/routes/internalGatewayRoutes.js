@@ -779,7 +779,14 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
         }))
         .filter((p) => p.kode && Number.isInteger(p.id) && p.id > 0);
 
-      susunanSk.push({ majelisKode: kode, hakimKode: hakim, panitera });
+      susunanSk.push({
+        majelisKode: kode,
+        hakimKode: hakim,
+        panitera,
+        // SK per majelis (pengecualian) - hanya untuk ditampilkan di papan.
+        skNomor: String((satu && satu.skNomor) || "").replace(/\s+/g, " ").trim().slice(0, 120),
+        skTanggal: /^\d{4}-\d{2}-\d{2}$/.test(String((satu && satu.skTanggal) || "")) ? String(satu.skTanggal) : "",
+      });
     }
 
     // Majelis yang dipilih petugas di papan - id hakim_pn, ketua di depan.
@@ -818,6 +825,19 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
       },
       hariSidang,
       paniteraMajelis,
+      // SK yang berlaku (nomor + tanggal) - untuk papan dan pemeriksaan kesesuaian.
+      sk: {
+        nomor: String((kirim.sk && kirim.sk.nomor) || "").replace(/\s+/g, " ").trim().slice(0, 120),
+        tanggal: /^\d{4}-\d{2}-\d{2}$/.test(String((kirim.sk && kirim.sk.tanggal) || "")) ? String(kirim.sk.tanggal) : "",
+        berlaku: /^\d{4}-\d{2}-\d{2}$/.test(String((kirim.sk && kirim.sk.berlaku) || "")) ? String(kirim.sk.berlaku) : "",
+        // Pegawai di SK yang perlu diperbarui menurut portal (akun nonaktif/jabatan berganti).
+        peringatan: (Array.isArray(kirim.sk && kirim.sk.peringatan) ? kirim.sk.peringatan : []).slice(0, 30).map((x) => ({
+          majelisKode: String((x && x.majelisKode) || "").toUpperCase().slice(0, 8),
+          kode: String((x && x.kode) || "").toUpperCase().slice(0, 8),
+          nama: String((x && x.nama) || "").slice(0, 80),
+          alasan: String((x && x.alasan) || "").slice(0, 160),
+        })),
+      },
       susunanSk,
       andaian,
       pilihanMajelis,

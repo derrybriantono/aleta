@@ -19,6 +19,7 @@ const gerbang = baca("aleta_bot/routes/internalGatewayRoutes.js");
 const konten = baca("ekstensi-sipp/konten.js");
 const migrasi = baca("manajemen_surat/drizzle/0044_sk_susunan_majelis.sql");
 const layar = baca("manajemen_surat/src/components/portal/aleta-ecourt-sk-majelis.tsx");
+const drafSk = baca("manajemen_surat/src/lib/sk-majelis-draf.ts");
 const jurnal = JSON.parse(baca("manajemen_surat/drizzle/meta/_journal.json")) as {
   entries: { idx: number; tag: string }[];
 };
@@ -136,7 +137,7 @@ describe("layar pengaturannya ada, dan menerangkan sebabnya", () => {
   });
 
   it("mengirim pasangan kode=id", () => {
-    expect(layar).toContain("gabung.panitera.map((p) => `${p.kode}=${p.id}`).join(\",\")");
+    expect(drafSk).toContain("paniteraId: barisPanitera(m).map((p) => `${p.kode}=${p.id}`).join(\",\")");
   });
 
   it("menghitung sendiri kode yang tabrakan, bukan menyebutnya dari ingatan", () => {

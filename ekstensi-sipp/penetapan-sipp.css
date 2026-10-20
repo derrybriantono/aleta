@@ -650,3 +650,93 @@ html[data-aleta-tema-sipp="gelap"] .aleta-mu {
 .aleta-pensipp-panel:has(.aleta-pensipp-muatulang .aleta-mu) .aleta-pensipp-laporan {
   display: none;
 }
+
+/*
+ * Beban penetapan & SK (20 Okt 2026, B1) - blok yang sama di papan konten.js dan di
+ * panel ini (penunjukan-statistik.js). Memakai peubah --aleta-* yang ada di kedua tempat.
+ */
+.aleta-bebanstat {
+  margin: 10px 0 4px;
+  border: 1px solid var(--aleta-garis, #c5d3c9);
+  border-radius: 8px;
+  background: var(--aleta-latar-naik, #f2f6f3);
+  color: var(--aleta-tulisan, #16231b);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.aleta-bebanstat-ringkas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: baseline;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.aleta-bebanstat-ringkas-judul {
+  font-weight: 700;
+}
+.aleta-bebanstat-sk {
+  color: var(--aleta-tulisan-lembut, #4d5d53);
+}
+.aleta-bebanstat-awas {
+  color: var(--aleta-mendesak, #7a5c0a);
+  font-weight: 600;
+}
+.aleta-bebanstat-kesesuaian,
+.aleta-bebanstat-rekomendasi,
+.aleta-bebanstat-bagian,
+.aleta-bebanstat > .aleta-bebanstat-catatan {
+  margin: 0 10px 8px;
+}
+.aleta-bebanstat-kesesuaian {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--aleta-garis, #c5d3c9);
+}
+.aleta-bebanstat-sesuai {
+  border-color: var(--aleta-aman, #1b6e38);
+  color: var(--aleta-aman, #1b6e38);
+}
+.aleta-bebanstat-kesesuaian.aleta-bebanstat-awas {
+  border-color: var(--aleta-mendesak, #7a5c0a);
+}
+.aleta-bebanstat-rekomendasi {
+  padding-left: 18px;
+}
+.aleta-bebanstat-judul {
+  font-weight: 700;
+  margin: 6px 0 3px;
+}
+.aleta-bebanstat-tabel {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+.aleta-bebanstat-tabel th,
+.aleta-bebanstat-tabel td {
+  padding: 3px 6px;
+  border-bottom: 1px solid var(--aleta-garis, #c5d3c9);
+  text-align: left;
+  vertical-align: top;
+}
+.aleta-bebanstat-tabel th {
+  color: var(--aleta-tulisan-lembut, #4d5d53);
+  font-weight: 600;
+}
+.aleta-bebanstat-angka {
+  font-variant-numeric: tabular-nums;
+}
+.aleta-bebanstat-usul td {
+  background: var(--aleta-merek-latar, #e3f3e8);
+  font-weight: 600;
+}
+.aleta-bebanstat-catatan {
+  color: var(--aleta-tulisan-lembut, #4d5d53);
+  font-size: 11px;
+}
+@media (max-width: 640px) {
+  .aleta-bebanstat-tabel {
+    display: block;
+    overflow-x: auto;
+  }
+}

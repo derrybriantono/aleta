@@ -7,136 +7,50 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
-import { tanggalPanjang } from "@/lib/tanggal-indonesia";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
+import {
+  badanSimpan,
+  bandingkan,
+  barisPanitera,
+  drafDari,
+  KODE_SAH,
+  majelisBaru,
+  periksaDraf,
+  susunPratinjau,
+  terapkanBarisPanitera,
+  terapkanHakim,
+  type DrafMajelis,
+  type MajelisSk,
+  type PegawaiRingkas,
+} from "@/lib/sk-majelis-draf";
+import { tanggalPanjang } from "@/lib/tanggal-indonesia";
 
 /**
- * SK Ketua: susunan majelis hakim dan panitera sidangnya.
+ * SK Ketua: susunan majelis hakim dan panitera pendamping (halaman admin).
  *
  * ============================================================================
- * KENAPA PENGIKATAN INI TIDAK DAPAT DIKERJAKAN MESIN
+ * DISUNTING SEBAGAI DRAF, DISIMPAN SEKALI DENGAN KONFIRMASI (20 Okt 2026)
  * ============================================================================
  *
- * Kode hakim pada SK - A, B, C1, C2, C3 - cocok persis dengan hakim_pn di
- * SIPP, jadi susunan hakimnya cukup disimpan sebagai kode.
+ * Super Admin/Admin menyunting nomor, tanggal, dan "berlaku mulai" SK; menambah,
+ * mengubah, dan menghapus majelis (ketua dan anggota BERURUTAN dipilih dari
+ * hakim aktif; panitera pendamping dengan kode D, D1, ... diikat ke orangnya,
+ * dipilih dari panitera aktif). Tidak ada yang tersimpan sebelum tombol Simpan
+ * dan konfirmasi di halaman; konfirmasi menyebut apa yang berubah. Jejak siapa
+ * mengubah apa dan kapan ada di bagian bawah (audit_logs).
  *
- * Kode panitera TIDAK. Diperiksa pada panitera_pn PA Donggala:
+ * BENTUK DATA TIDAK BERUBAH: majelis tetap disimpan dengan rute dan kolom yang
+ * sama sejak 0044/0045 (hakimKode berurutan, paniteraId berpasangan kode=id,
+ * akun portal berpasangan kode=akun). Data lama tetap terbaca. Logika murninya
+ * di lib/sk-majelis-draf.ts (diuji).
  *
- *   Sri Susilowati "D"   Munifa "D"   Qadariyah "D"   Andini "D"
- *   Sitti Nurhidayah "D8"   Unun Fidiyasari ""   Fikrianto ""
- *
- * sementara SK menyebut D, D1, D2, D3, D4, D5, D6. Empat orang berbagi satu
- * kode, dan lima kode SK tidak ada sama sekali. Namanya pun berbeda ejaan -
- * SK menulis "Munifah", SIPP menulis "Munifa".
- *
- * Karena itu tiap kode SK diikat ke ORANG di layar ini, sekali, oleh manusia.
- * Kodenya tetap tersimpan dan tetap terbaca di sebelah namanya pada panel
- * penetapan - ia label, bukan penunjuk orang.
+ * Kode panitera pada SIPP tabrakan (empat orang berbagi "D"), karena itu tiap
+ * kode SK diikat ke ORANG sekali di sini; kodenya tetap tampil di sebelah namanya
+ * pada panel penetapan sebagai label.
  */
-
-type Majelis = {
-  majelisKode: string;
-  hari: number;
-  namaHari: string;
-  paniteraKode: string[];
-  panitera: { kode: string; id: number }[];
-  hakimKode: string[];
-  /** Kode SK beserta akun portalnya - hakim maupun panitera, satu daftar. */
-  akun: { kode: string; akunId: string }[];
-  /** SK yang berlaku bagi majelis ini (pengecualiannya, atau SK bawaan). */
-  skNomor: string;
-  skTanggal: string;
-  /** true = tidak ada pengecualian; ikut SK bawaan dari kartu Nomor SK penunjukan. */
-  skIkutBawaan: boolean;
-  keterangan: string;
-  bawaan: boolean;
-};
 
 type SkTetap = { nomor: string; tanggal: string };
 
-/**
- * SK pengecualian satu majelis: nomor dan tanggal diisi sekaligus lalu disimpan
- * dengan tombol, atau dikosongkan agar majelis ini ikut SK bawaan. Pilihan SK yang
- * sudah tercatat di SIPP (bila terbaca) mengisi keduanya.
- */
-function SkPengecualian({
-  satu,
-  skTetap,
-  sibuk,
-  simpanSk,
-}: {
-  satu: Majelis;
-  skTetap: SkTetap[];
-  sibuk: boolean;
-  simpanSk: (nomor: string, tanggal: string) => void;
-}) {
-  const [nomor, setNomor] = useState(satu.skIkutBawaan ? "" : satu.skNomor);
-  const [tanggal, setTanggal] = useState(satu.skIkutBawaan ? "" : satu.skTanggal);
-  const sama = nomor.trim() === (satu.skIkutBawaan ? "" : satu.skNomor) && tanggal === (satu.skIkutBawaan ? "" : satu.skTanggal);
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="w-32 text-muted-foreground">SK</span>
-        <span>
-          Nomor {satu.skNomor || "-"}
-          {satu.skTanggal ? ` tanggal ${tanggalPanjang(satu.skTanggal, satu.skTanggal)}` : ""}
-        </span>
-        <Badge variant={satu.skIkutBawaan ? "outline" : "info"}>{satu.skIkutBawaan ? "ikut SK bawaan" : "SK khusus majelis ini"}</Badge>
-        {satu.skIkutBawaan ? (
-          <a className="text-xs text-primary underline" href="#nomor-sk">
-            Ubah SK bawaan
-          </a>
-        ) : null}
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="w-32 text-muted-foreground">SK khusus (opsional)</span>
-        <Input className="max-w-sm" value={nomor} placeholder="Kosong = ikut SK bawaan" onChange={(e) => setNomor(e.target.value)} />
-        <Input className="max-w-40" type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
-        {skTetap.length ? (
-          <select
-            className="h-9 max-w-xs rounded-md border border-input bg-background px-2 text-sm"
-            value=""
-            onChange={(e) => {
-              const pilih = skTetap[Number(e.target.value)];
-              if (!pilih) return;
-              setNomor(pilih.nomor);
-              setTanggal(pilih.tanggal);
-            }}
-          >
-            <option value="">Pilih dari SK di SIPP...</option>
-            {skTetap.map((x, i) => (
-              <option key={`${x.nomor}-${i}`} value={i}>
-                {x.nomor}
-                {x.tanggal ? ` (${tanggalPanjang(x.tanggal, x.tanggal)})` : ""}
-              </option>
-            ))}
-          </select>
-        ) : null}
-        <Button size="sm" variant="outline" disabled={sibuk || sama} onClick={() => simpanSk(nomor.trim(), tanggal)}>
-          Simpan SK khusus
-        </Button>
-        {!satu.skIkutBawaan ? (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={sibuk}
-            onClick={() => {
-              setNomor("");
-              setTanggal("");
-              simpanSk("", "");
-            }}
-          >
-            Ikut SK bawaan
-          </Button>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-type Pegawai = { id: number; kode: string; nama: string };
-
-/** Akun portal yang dapat ditautkan ke anggota majelis. */
 type AkunPortal = {
   id: string;
   nama: string;
@@ -146,18 +60,50 @@ type AkunPortal = {
   subPeran: string;
 };
 
+type PeringatanServer = { majelisKode: string; kode: string; nama: string; alasan: string };
+
+type Jejak = { id: string; aksi: string; majelisKode: string; oleh: string; pada: string; sebelum: unknown; sesudah: unknown };
+
+const NAMA_AKSI: Record<string, string> = {
+  SIMPAN_SK_MAJELIS: "mengubah",
+  TAMBAH_SK_MAJELIS: "menambah",
+  HAPUS_SK_MAJELIS: "menghapus",
+  UBAH_SK_BERLAKU_MULAI: "mengubah tanggal berlaku",
+};
+
+const jam = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+};
+
+async function kirimJson(alamat: string, badan: Record<string, unknown>) {
+  const r = await fetch(apiPath(alamat), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badan) });
+  const isi = await r.json().catch(() => null);
+  if (!r.ok || (isi && isi.ok === false)) throw new Error(pesanGalatPortal(isi, "Gagal menyimpan."));
+  return isi?.data ?? isi;
+}
+
+const kelasSelect = "h-9 min-w-56 rounded-md border border-input bg-background px-2 text-sm";
+
 export function AletaEcourtSkMajelis() {
-  const [majelis, setMajelis] = useState<Majelis[]>([]);
-  const [hakim, setHakim] = useState<Pegawai[]>([]);
-  const [panitera, setPanitera] = useState<Pegawai[]>([]);
+  const [asli, setAsli] = useState<MajelisSk[]>([]);
+  const [draf, setDraf] = useState<DrafMajelis[]>([]);
+  const [hakim, setHakim] = useState<PegawaiRingkas[]>([]);
+  const [panitera, setPanitera] = useState<PegawaiRingkas[]>([]);
   const [akun, setAkun] = useState<AkunPortal[]>([]);
   const [akunAlasan, setAkunAlasan] = useState("");
   const [namaHari, setNamaHari] = useState<string[]>([]);
-  const [skBerlaku, setSkBerlaku] = useState<{ nomor: string; tanggal: string } | null>(null);
   const [skTetap, setSkTetap] = useState<SkTetap[]>([]);
   const [pegawaiAlasan, setPegawaiAlasan] = useState("");
+  const [peringatanServer, setPeringatanServer] = useState<PeringatanServer[]>([]);
+  const [jejak, setJejak] = useState<Jejak[]>([]);
+  // SK atas: yang tersimpan dan yang sedang disunting.
+  const [skAsli, setSkAsli] = useState({ nomor: "", tanggal: "", berlaku: "" });
+  const [sk, setSk] = useState({ nomor: "", tanggal: "", berlaku: "" });
+  const [kodeBaru, setKodeBaru] = useState("");
   const [memuat, setMemuat] = useState(true);
-  const [sibuk, setSibuk] = useState("");
+  const [sibuk, setSibuk] = useState(false);
+  const [konfirmasi, setKonfirmasi] = useState(false);
   const [galat, setGalat] = useState("");
   const [pesan, setPesan] = useState("");
 
@@ -169,15 +115,23 @@ export function AletaEcourtSkMajelis() {
       const isi = await jawaban.json();
       if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal membaca SK susunan majelis."));
       const data = isi?.data ?? isi;
-      setMajelis((data.majelis ?? []) as Majelis[]);
-      setHakim((data.hakim ?? []) as Pegawai[]);
-      setPanitera((data.panitera ?? []) as Pegawai[]);
+      const daftar = (data.majelis ?? []) as MajelisSk[];
+      setAsli(daftar);
+      setDraf(drafDari(daftar));
+      setHakim((data.hakim ?? []) as PegawaiRingkas[]);
+      setPanitera((data.panitera ?? []) as PegawaiRingkas[]);
       setAkun((data.akun ?? []) as AkunPortal[]);
       setAkunAlasan(String(data.akunAlasan ?? ""));
       setNamaHari((data.namaHari ?? []) as string[]);
-      setSkBerlaku((data.skBerlaku ?? null) as { nomor: string; tanggal: string } | null);
       setSkTetap((data.skTetap ?? []) as SkTetap[]);
       setPegawaiAlasan(String(data.pegawaiAlasan ?? ""));
+      setPeringatanServer((data.peringatan ?? []) as PeringatanServer[]);
+      setJejak((data.jejak ?? []) as Jejak[]);
+      const bawaan = (data.skBerlaku ?? { nomor: "", tanggal: "" }) as { nomor: string; tanggal: string };
+      const berlaku = data.berlakuMulai?.tanggal ? String(data.berlakuMulai.tanggal) : bawaan.tanggal;
+      const nilai = { nomor: bawaan.nomor ?? "", tanggal: bawaan.tanggal ?? "", berlaku: data.berlakuMulai?.diisi ? berlaku : "" };
+      setSkAsli(nilai);
+      setSk(nilai);
     } catch (kesalahan) {
       setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal membaca SK.");
     } finally {
@@ -186,16 +140,17 @@ export function AletaEcourtSkMajelis() {
   }, []);
 
   useEffect(() => {
-    void muat();
+    const t = window.setTimeout(() => void muat(), 0);
+    return () => window.clearTimeout(t);
   }, [muat]);
 
-  const namaHakim = useMemo(
-    () => new Map(hakim.map((x) => [x.kode.toUpperCase(), x.nama])),
-    [hakim]
-  );
-  const namaPanitera = useMemo(() => new Map(panitera.map((x) => [x.id, x.nama])), [panitera]);
+  const ubahMajelis = useCallback((kode: string, fn: (m: DrafMajelis) => DrafMajelis) => {
+    setKonfirmasi(false);
+    setPesan("");
+    setDraf((lama) => lama.map((m) => (m.majelisKode === kode ? fn(m) : m)));
+  }, []);
 
-  /** Empat panitera berbagi kode "D" - itu yang membuat layar ini perlu. */
+  /** Empat panitera berbagi kode "D" - itu yang membuat pengikatan ke orang perlu. */
   const kodeTabrakan = useMemo(() => {
     const hitung = new Map<string, number>();
     for (const p of panitera) {
@@ -205,302 +160,578 @@ export function AletaEcourtSkMajelis() {
     return [...hitung.entries()].filter(([, n]) => n > 1);
   }, [panitera]);
 
-  const simpan = useCallback(
-    async (satu: Majelis, ubahan: Partial<Majelis>) => {
-      setSibuk(satu.majelisKode);
-      setGalat("");
-      setPesan("");
-      const gabung = { ...satu, ...ubahan };
-      try {
-        const jawaban = await fetch(apiPath("/api/aleta-ecourt/sk-majelis"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            majelisKode: gabung.majelisKode,
-            hari: gabung.hari,
-            paniteraKode: gabung.paniteraKode.join(","),
-            hakimKode: gabung.hakimKode.join(","),
-            // Pasangan kode=id - bentuk yang sama yang tersimpan.
-            paniteraId: gabung.panitera.map((p) => `${p.kode}=${p.id}`).join(","),
-            // Tautan akun portal - bentuk yang sama, dan dikirim BERSAMA
-            // majelisnya. Tidak ada alamat lain yang menerimanya, dan itulah
-            // yang membuat "hanya dapat ditautkan apabila masuk majelis"
-            // berlaku sungguhan, bukan sekadar dianjurkan di layar.
-            akunId: (gabung.akun ?? []).map((a) => `${a.kode}=${a.akunId}`).join(","),
-            // Pengecualian SK majelis ini; kosong keduanya = ikut SK bawaan. Dikirim apa adanya,
-            // tidak diabaikan: simpan hari/kode pun membawa pengecualian yang sedang berlaku.
-            skNomor: gabung.skIkutBawaan ? "" : gabung.skNomor,
-            skTanggal: gabung.skIkutBawaan ? "" : gabung.skTanggal,
-            keterangan: gabung.keterangan,
-          }),
-        });
-        const isi = await jawaban.json();
-        if (!jawaban.ok) throw new Error(pesanGalatPortal(isi, "Gagal menyimpan."));
-        const data = isi?.data ?? isi;
-        setMajelis((data.majelis ?? []) as Majelis[]);
-        setPesan(`Majelis ${gabung.majelisKode} tersimpan.`);
-      } catch (kesalahan) {
-        setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal menyimpan.");
-      } finally {
-        setSibuk("");
-      }
-    },
-    []
+  const periksa = useMemo(() => periksaDraf(draf, hakim, panitera), [draf, hakim, panitera]);
+  const perubahan = useMemo(() => bandingkan(asli, draf, hakim, panitera), [asli, draf, hakim, panitera]);
+  const skBerubah = sk.nomor.trim() !== skAsli.nomor || sk.tanggal !== skAsli.tanggal;
+  const berlakuBerubah = sk.berlaku !== skAsli.berlaku;
+  const jumlahPerubahan = perubahan.length + (skBerubah ? 1 : 0) + (berlakuBerubah ? 1 : 0);
+  const berlakuTampil = sk.berlaku || sk.tanggal;
+  const pratinjau = useMemo(
+    () =>
+      susunPratinjau(draf, hakim, panitera, {
+        nomor: sk.nomor,
+        tanggal: sk.tanggal ? tanggalPanjang(sk.tanggal, sk.tanggal) : "",
+        berlaku: berlakuTampil ? tanggalPanjang(berlakuTampil, berlakuTampil) : "",
+      }),
+    [draf, hakim, panitera, sk, berlakuTampil]
   );
 
-  if (memuat) {
+  // Peringatan langsung dari draf + yang dibawa server (mutasi, jabatan berganti).
+  const semuaPeringatan = useMemo(() => {
+    const dariServer = peringatanServer.map((p) => `Majelis ${p.majelisKode}: ${p.kode}${p.nama ? ` (${p.nama})` : ""} - ${p.alasan}.`);
+    return [...new Set([...dariServer, ...periksa.peringatan])];
+  }, [peringatanServer, periksa.peringatan]);
+
+  const tambahMajelis = () => {
+    const kode = kodeBaru.trim().toUpperCase();
+    if (!KODE_SAH.test(kode)) {
+      setGalat("Kode majelis hanya huruf dan angka, paling banyak 8 (mis. A, B, C1).");
+      return;
+    }
+    if (draf.some((m) => m.majelisKode === kode && !m.hapus)) {
+      setGalat(`Majelis ${kode} sudah ada.`);
+      return;
+    }
+    setGalat("");
+    setKonfirmasi(false);
+    setDraf((lama) => [...lama.filter((m) => m.majelisKode !== kode), majelisBaru(kode, 1, namaHari[1] ?? "Senin")]);
+    setKodeBaru("");
+  };
+
+  const simpanSemua = async () => {
+    setSibuk(true);
+    setGalat("");
+    setPesan("");
+    try {
+      for (const p of perubahan) {
+        const m = draf.find((x) => x.majelisKode === p.kode);
+        if (!m) continue;
+        if (p.jenis === "hapus") await kirimJson("/api/aleta-ecourt/sk-majelis", { tindakan: "hapus", majelisKode: m.majelisKode });
+        else await kirimJson("/api/aleta-ecourt/sk-majelis", badanSimpan(m));
+      }
+      if (skBerubah) {
+        await kirimJson("/api/pengaturan-sipp-abt", {
+          tindakan: "simpan-nomor-sk",
+          nilai: { majelis: { nomor: sk.nomor.trim(), tanggal: sk.tanggal } },
+        });
+      }
+      if (berlakuBerubah) await kirimJson("/api/aleta-ecourt/sk-majelis", { tindakan: "berlaku-mulai", tanggal: sk.berlaku });
+      setPesan("SK tersimpan.");
+      setKonfirmasi(false);
+    } catch (kesalahan) {
+      setGalat(kesalahan instanceof Error ? kesalahan.message : "Gagal menyimpan.");
+    } finally {
+      setSibuk(false);
+      await muat();
+    }
+  };
+
+  if (memuat && draf.length === 0 && !galat) {
     return <p className="text-sm text-muted-foreground">Membaca SK susunan majelis…</p>;
   }
 
+  const bolehSimpan = jumlahPerubahan > 0 && periksa.galat.length === 0 && !sibuk;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-sk-majelis>
       <Card>
         <CardHeader>
-          <CardTitle>SK susunan majelis hakim dan panitera sidang</CardTitle>
+          <CardTitle>SK susunan majelis hakim dan panitera pendamping</CardTitle>
           <CardDescription>
-            {skBerlaku?.nomor
-              ? `SK bawaan: Nomor ${skBerlaku.nomor} tanggal ${tanggalPanjang(
-                  skBerlaku.tanggal,
-                  skBerlaku.tanggal
-                )} (diubah di kartu Nomor SK penunjukan di bawah; dipakai semua majelis dan blangko ABT). Majelis tertentu boleh memakai SK sendiri di isian SK khusus. `
-              : ""}
-            Yang tersimpan di sini menang atas susunan yang disimpulkan dari pemakaian di SIPP:
-            majelis yang ada di SK muncul lebih dahulu pada panel penetapan, beserta kodenya.
-            Susunan di luar SK tetap dapat dipilih, di bawahnya, tanpa kode.
+            Yang tersimpan di sini menang atas susunan yang disimpulkan dari pemakaian di SIPP: majelis yang ada di SK muncul lebih dahulu pada
+            papan dan panel penetapan, beserta kodenya. Susunan di luar SK tetap dapat dipilih, bertanda &quot;di luar SK&quot;. Perubahan baru
+            tersimpan sesudah Anda menekan Simpan dan membenarkannya.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          {pegawaiAlasan ? (
-            <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2">
-              Daftar pegawai SIPP tidak terbaca: {pegawaiAlasan}. Hari sidang dan kode masih dapat
-              disunting, tetapi panitera sidang belum dapat diikat ke orangnya.
-            </p>
-          ) : null}
-
-          {kodeTabrakan.length > 0 ? (
-            <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-muted-foreground">
-              Kode panitera di SIPP tidak dapat dipakai menunjuk orang —{" "}
-              {kodeTabrakan.map(([kode, n]) => `${n} orang berkode "${kode}"`).join(", ")}. Karena
-              itu tiap kode SK diikat ke orangnya di bawah ini; kodenya tetap tampil di sebelah
-              namanya pada panel penetapan.
-            </p>
-          ) : null}
-
-          {galat ? <p className="text-destructive">{galat}</p> : null}
-          {pesan ? <p className="text-emerald-600">{pesan}</p> : null}
-        </CardContent>
-      </Card>
-
-      {majelis.map((satu) => (
-        <Card key={satu.majelisKode}>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <span>Majelis {satu.majelisKode}</span>
-              {satu.bawaan ? <Badge variant="outline">belum disunting</Badge> : null}
-              <Badge variant="muted">{namaHari[satu.hari] ?? satu.namaHari}</Badge>
-            </CardTitle>
-            <CardDescription>
-              {satu.hakimKode.length > 0
-                ? satu.hakimKode
-                    .map((kode) => `${kode} — ${namaHakim.get(kode) ?? "tidak ada di SIPP"}`)
-                    .join("  ·  ")
-                : "Susunan hakimnya belum diisi — panel masih menyimpulkannya dari pemakaian di SIPP."}
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="space-y-3 text-sm">
+          <div className="grid gap-3 md:grid-cols-3">
+            <label className="space-y-1">
+              <span className="text-muted-foreground">Nomor SK</span>
+              <Input
+                aria-label="Nomor SK"
+                value={sk.nomor}
+                onChange={(e) => {
+                  setKonfirmasi(false);
+                  setSk((s) => ({ ...s, nomor: e.target.value }));
+                }}
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-muted-foreground">Tanggal SK</span>
+              <Input
+                aria-label="Tanggal SK"
+                type="date"
+                value={sk.tanggal}
+                onChange={(e) => {
+                  setKonfirmasi(false);
+                  setSk((s) => ({ ...s, tanggal: e.target.value }));
+                }}
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-muted-foreground">Berlaku mulai</span>
+              <Input
+                aria-label="Berlaku mulai"
+                type="date"
+                value={sk.berlaku}
+                onChange={(e) => {
+                  setKonfirmasi(false);
+                  setSk((s) => ({ ...s, berlaku: e.target.value }));
+                }}
+              />
+              <span className="block text-xs text-muted-foreground">Kosong = sama dengan tanggal SK. Beban majelis dinilai sejak tanggal ini.</span>
+            </label>
+          </div>
+          {skTetap.length ? (
             <label className="flex flex-wrap items-center gap-2">
-              <span className="w-32 text-muted-foreground">Hari sidang</span>
+              <span className="text-muted-foreground">Isi dari SK yang tercatat di SIPP</span>
               <select
-                className="h-9 rounded-md border border-input bg-background px-2"
-                value={satu.hari}
-                onChange={(e) => void simpan(satu, { hari: Number(e.target.value) })}
-                disabled={sibuk === satu.majelisKode}
+                className={kelasSelect}
+                value=""
+                aria-label="Pilih dari SK di SIPP"
+                onChange={(e) => {
+                  const pilih = skTetap[Number(e.target.value)];
+                  if (pilih) setSk((s) => ({ ...s, nomor: pilih.nomor, tanggal: pilih.tanggal || s.tanggal }));
+                }}
               >
-                {namaHari.map((nama, i) => (
-                  <option key={nama} value={i}>
-                    {nama}
+                <option value="">Pilih…</option>
+                {skTetap.map((x, i) => (
+                  <option key={`${x.nomor}-${i}`} value={i}>
+                    {x.nomor}
+                    {x.tanggal ? ` (${tanggalPanjang(x.tanggal, x.tanggal)})` : ""}
                   </option>
                 ))}
               </select>
             </label>
+          ) : null}
+          <p className="text-xs text-muted-foreground">
+            Menyimpan nomor/tanggal di sini tidak mengubah blangko ABT. Untuk memakainya di blangko, tekan &quot;Terapkan ke ABT&quot; di kartu Nomor SK
+            penunjukan di bawah.
+          </p>
+          {pegawaiAlasan ? (
+            <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2">
+              Daftar pegawai SIPP tidak terbaca: {pegawaiAlasan}. Hari sidang dan kode masih dapat disunting, tetapi panitera sidang belum dapat diikat ke orangnya.
+            </p>
+          ) : null}
+          {kodeTabrakan.length > 0 ? (
+            <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-muted-foreground">
+              Kode panitera di SIPP tidak dapat dipakai menunjuk orang — {kodeTabrakan.map(([kode, n]) => `${n} orang berkode "${kode}"`).join(", ")}.
+              Karena itu tiap kode SK diikat ke orangnya di bawah ini; kodenya tetap tampil di sebelah namanya pada panel penetapan.
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
 
-            <label className="flex flex-wrap items-center gap-2">
-              <span className="w-32 text-muted-foreground">Kode hakim</span>
-              <Input
-                className="max-w-xs"
-                defaultValue={satu.hakimKode.join(",")}
-                placeholder="A,C1,C3"
-                onBlur={(e) => {
-                  const baru = e.target.value.trim().toUpperCase();
-                  if (baru === satu.hakimKode.join(",")) return;
-                  void simpan(satu, {
-                    hakimKode: baru.split(",").map((x) => x.trim()).filter(Boolean),
-                  });
-                }}
-              />
-              <span className="text-xs text-muted-foreground">
-                Ketua di depan. Kode hakim_pn SIPP: {hakim.map((x) => x.kode).filter(Boolean).join(", ") || "—"}
-              </span>
-            </label>
-
-            <div className="space-y-2">
-              <p className="text-muted-foreground">Panitera sidang menurut SK</p>
-              {satu.paniteraKode.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Belum ada kode panitera pada SK majelis ini.
-                </p>
-              ) : null}
-              {satu.paniteraKode.map((kode) => {
-                const terikat = satu.panitera.find((p) => p.kode === kode);
-                return (
-                  <label key={kode} className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="w-14 justify-center">
-                      {kode}
-                    </Badge>
-                    <select
-                      className="h-9 min-w-64 rounded-md border border-input bg-background px-2"
-                      value={terikat?.id ?? 0}
-                      disabled={sibuk === satu.majelisKode || panitera.length === 0}
-                      onChange={(e) => {
-                        const id = Number(e.target.value);
-                        const lain = satu.panitera.filter((p) => p.kode !== kode);
-                        void simpan(satu, { panitera: [...lain, { kode, id }] });
-                      }}
-                    >
-                      <option value={0}>— belum diikat —</option>
-                      {panitera.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.nama}
-                          {p.kode ? ` (kode SIPP ${p.kode})` : " (tanpa kode SIPP)"}
-                        </option>
-                      ))}
-                    </select>
-                    {terikat?.id ? (
-                      <span className="text-xs text-muted-foreground">
-                        {namaPanitera.get(terikat.id) ?? "orangnya sudah tidak aktif"}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-amber-600">
-                        belum diikat — panel memakai giliran beban
-                      </span>
-                    )}
-                  </label>
-                );
-              })}
-            </div>
-
-            {/* ==============================================================
-                TAUTAN AKUN PORTAL - HAKIM DAN PANITERA SEKALIGUS
-
-                Dua hal yang berbeda, dan keduanya perlu: pengikatan di atas
-                menunjuk orang di SIPP, yang ini menunjuk AKUN di ALETA. SIPP
-                tahu siapa yang menyidangkan; portal tahu siapa yang boleh
-                membuka layarnya, siapa yang diberi tahu, dan tanda tangan
-                siapa yang dibubuhkan.
-
-                Berdiri DI DALAM baris majelis, dan itu disengaja: satker
-                meminta "hanya bisa ditautkan apabila masuk majelis, tidak bisa
-                satu per satu". Di sini tautan itu tidak punya tempat untuk
-                hidup sendirian - menghapus majelisnya menghapus tautannya.
-                ============================================================== */}
-            <div className="space-y-2">
-              <p className="text-muted-foreground">Akun portal tiap anggota majelis</p>
-              {akunAlasan ? (
-                <p className="text-xs text-amber-600">
-                  Daftar akun tidak terbaca: {akunAlasan}. Susunan majelisnya tetap dapat disunting.
-                </p>
-              ) : null}
-              {[...satu.hakimKode, ...satu.paniteraKode].length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Belum ada kode hakim maupun panitera pada majelis ini — isi kodenya lebih dahulu,
-                  lalu akunnya dapat ditautkan.
-                </p>
-              ) : null}
-              {[...satu.hakimKode, ...satu.paniteraKode].map((kode) => {
-                const tertaut = (satu.akun ?? []).find((a) => a.kode === kode);
-                const orang = tertaut ? akun.find((u) => u.id === tertaut.akunId) : null;
-                const hakimKah = satu.hakimKode.includes(kode);
-                return (
-                  <label key={`akun-${kode}`} className="flex flex-wrap items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className="w-14 justify-center"
-                      title={hakimKah ? "Kode hakim" : "Kode panitera sidang"}
-                    >
-                      {kode}
-                    </Badge>
-                    <span className="w-20 text-xs text-muted-foreground">
-                      {hakimKah ? (satu.hakimKode[0] === kode ? "ketua" : "hakim") : "panitera"}
-                    </span>
-                    <select
-                      className="h-9 min-w-64 rounded-md border border-input bg-background px-2"
-                      value={tertaut?.akunId ?? ""}
-                      disabled={sibuk === satu.majelisKode || akun.length === 0}
-                      onChange={(e) => {
-                        const akunId = e.target.value;
-                        const lain = (satu.akun ?? []).filter((a) => a.kode !== kode);
-                        void simpan(satu, {
-                          akun: akunId ? [...lain, { kode, akunId }] : lain,
-                        });
-                      }}
-                    >
-                      <option value="">— belum ditautkan —</option>
-                      {akun.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.nama} — {u.peranLabel}
-                          {u.jabatan ? ` · ${u.jabatan}` : ""}
-                        </option>
-                      ))}
-                    </select>
-                    {orang ? (
-                      <span className="text-xs text-muted-foreground">
-                        {orang.peranLabel}
-                        {orang.jabatan ? ` · ${orang.jabatan}` : ""}
-                        {orang.subPeran ? ` · +${orang.subPeran}` : ""}
-                      </span>
-                    ) : tertaut ? (
-                      <span className="text-xs text-amber-600">
-                        akunnya sudah tidak aktif atau tidak terlihat
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">belum ditautkan</span>
-                    )}
-                  </label>
-                );
-              })}
-            </div>
-
-            <label className="flex flex-wrap items-center gap-2">
-              <span className="w-32 text-muted-foreground">Kode panitera SK</span>
-              <Input
-                className="max-w-xs"
-                defaultValue={satu.paniteraKode.join(",")}
-                placeholder="D,D4"
-                onBlur={(e) => {
-                  const baru = e.target.value.trim().toUpperCase();
-                  if (baru === satu.paniteraKode.join(",")) return;
-                  void simpan(satu, {
-                    paniteraKode: baru.split(",").map((x) => x.trim()).filter(Boolean),
-                  });
-                }}
-              />
-            </label>
-
-            <SkPengecualian
-              key={`${satu.majelisKode}-${satu.skNomor}-${satu.skTanggal}-${satu.skIkutBawaan}`}
-              satu={satu}
-              skTetap={skTetap}
-              sibuk={sibuk === satu.majelisKode}
-              simpanSk={(nomor, tanggal) => void simpan(satu, { skNomor: nomor, skTanggal: tanggal, skIkutBawaan: !nomor && !tanggal })}
-            />
+      {semuaPeringatan.length > 0 ? (
+        <Card data-sk-peringatan>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">SK perlu diperbarui</CardTitle>
+            <CardDescription>Pegawai berikut di SK sudah tidak aktif, bermutasi, atau jabatannya berubah. Ganti di majelisnya di bawah.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-amber-700 dark:text-amber-400">
+              {semuaPeringatan.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
-      ))}
+      ) : null}
 
-      <Button variant="outline" onClick={() => void muat()} disabled={memuat}>
-        Muat ulang
-      </Button>
+      {draf.length === 0 ? (
+        <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          Belum ada majelis di SK. Tambahkan di bawah; sampai itu usulan memakai susunan yang terpakai tahun ini dan papan memberi tanda
+          &quot;belum memakai SK&quot;.
+        </p>
+      ) : null}
+
+      {draf.map((m) =>
+        m.hapus ? (
+          <Card key={m.majelisKode} data-majelis={m.majelisKode} data-hapus>
+            <CardContent className="flex flex-wrap items-center gap-3 py-4 text-sm">
+              <span>
+                Majelis {m.majelisKode} akan dihapus dari SK saat disimpan.
+              </span>
+              <Button size="sm" variant="outline" onClick={() => ubahMajelis(m.majelisKode, (x) => ({ ...x, hapus: false }))}>
+                Batalkan penghapusan
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <KartuMajelis
+            key={m.majelisKode}
+            m={m}
+            hakim={hakim}
+            panitera={panitera}
+            akun={akun}
+            akunAlasan={akunAlasan}
+            namaHari={namaHari}
+            ubah={(fn) => ubahMajelis(m.majelisKode, fn)}
+            hapus={() => {
+              setKonfirmasi(false);
+              if (m.baru) setDraf((lama) => lama.filter((x) => x.majelisKode !== m.majelisKode));
+              else ubahMajelis(m.majelisKode, (x) => ({ ...x, hapus: true }));
+            }}
+          />
+        )
+      )}
+
+      <Card>
+        <CardContent className="flex flex-wrap items-center gap-2 py-4 text-sm">
+          <span className="text-muted-foreground">Tambah majelis</span>
+          <Input
+            aria-label="Kode majelis baru"
+            className="max-w-32"
+            value={kodeBaru}
+            placeholder="mis. C2"
+            onChange={(e) => setKodeBaru(e.target.value.toUpperCase())}
+          />
+          <Button size="sm" variant="outline" onClick={tambahMajelis}>
+            Tambah majelis
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card data-sk-pratinjau>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Pratinjau: begini usulan akan memakai SK ini</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-1 text-sm">
+            {pratinjau.map((b, i) => (
+              <li key={i} className={b.startsWith("  ") ? "pl-5 text-muted-foreground" : ""}>
+                {b.trim()}
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card data-sk-simpan>
+        <CardContent className="space-y-3 py-4 text-sm">
+          {periksa.galat.length > 0 ? (
+            <ul className="list-disc space-y-1 pl-5 text-destructive" data-sk-galat>
+              {periksa.galat.map((g) => (
+                <li key={g}>{g}</li>
+              ))}
+            </ul>
+          ) : null}
+          {galat ? <p className="text-destructive">{galat}</p> : null}
+          {pesan ? <p className="text-emerald-600">{pesan}</p> : null}
+
+          {konfirmasi ? (
+            <div className="space-y-2 rounded-md border border-border bg-muted/40 p-3" role="group" aria-label="Konfirmasi simpan SK">
+              <p className="font-semibold">Simpan {jumlahPerubahan} perubahan SK ini?</p>
+              <ul className="list-disc space-y-1 pl-5">
+                {skBerubah ? <li>Nomor/tanggal SK: {sk.nomor} ({sk.tanggal ? tanggalPanjang(sk.tanggal, sk.tanggal) : "-"})</li> : null}
+                {berlakuBerubah ? <li>Berlaku mulai: {sk.berlaku ? tanggalPanjang(sk.berlaku, sk.berlaku) : "sama dengan tanggal SK"}</li> : null}
+                {perubahan.map((p) => (
+                  <li key={p.kode}>
+                    <strong>Majelis {p.kode}</strong> ({p.jenis}): {p.uraian.join("; ")}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex gap-2">
+                <Button size="sm" disabled={sibuk} onClick={() => void simpanSemua()}>
+                  Ya, simpan
+                </Button>
+                <Button size="sm" variant="outline" disabled={sibuk} onClick={() => setKonfirmasi(false)}>
+                  Batal
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <Button disabled={!bolehSimpan} onClick={() => setKonfirmasi(true)}>
+                Simpan perubahan
+              </Button>
+              <span className="text-muted-foreground">
+                {jumlahPerubahan > 0 ? `${jumlahPerubahan} perubahan belum disimpan.` : "Tidak ada perubahan."}
+              </span>
+              {jumlahPerubahan > 0 ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setDraf(drafDari(asli));
+                    setSk(skAsli);
+                    setGalat("");
+                  }}
+                >
+                  Buang perubahan
+                </Button>
+              ) : null}
+              <Button size="sm" variant="outline" onClick={() => void muat()} disabled={memuat}>
+                Muat ulang
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card data-sk-jejak>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Jejak perubahan</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {jejak.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Belum ada perubahan SK yang tercatat.</p>
+          ) : (
+            <ul className="space-y-1 text-sm">
+              {jejak.map((j) => (
+                <li key={j.id}>
+                  {jam(j.pada)} - {j.oleh} {NAMA_AKSI[j.aksi] ?? j.aksi.toLowerCase()}
+                  {j.majelisKode && !j.majelisKode.startsWith("*") ? ` Majelis ${j.majelisKode}` : ""}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
+  );
+}
+
+function KartuMajelis({
+  m,
+  hakim,
+  panitera,
+  akun,
+  akunAlasan,
+  namaHari,
+  ubah,
+  hapus,
+}: {
+  m: DrafMajelis;
+  hakim: PegawaiRingkas[];
+  panitera: PegawaiRingkas[];
+  akun: AkunPortal[];
+  akunAlasan: string;
+  namaHari: string[];
+  ubah: (fn: (m: DrafMajelis) => DrafMajelis) => void;
+  hapus: () => void;
+}) {
+  const [yakinHapus, setYakinHapus] = useState(false);
+  const barisPp = barisPanitera(m);
+  const daftarHakimBisaDipilih = hakim.length > 0;
+
+  const gantiHakim = (indeks: number, kode: string) =>
+    ubah((x) => terapkanHakim(x, x.hakimKode.map((k, i) => (i === indeks ? kode : k))));
+  const geserHakim = (indeks: number, arah: -1 | 1) =>
+    ubah((x) => {
+      const tujuan = indeks + arah;
+      if (tujuan < 0 || tujuan >= x.hakimKode.length) return x;
+      const salin = [...x.hakimKode];
+      [salin[indeks], salin[tujuan]] = [salin[tujuan], salin[indeks]];
+      return terapkanHakim(x, salin);
+    });
+
+  const ubahBarisPp = (indeks: number, bagian: Partial<{ kode: string; id: number }>) =>
+    ubah((x) => terapkanBarisPanitera(x, barisPanitera(x).map((b, i) => (i === indeks ? { ...b, ...bagian } : b))));
+
+  return (
+    <Card data-majelis={m.majelisKode}>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+          <span>Majelis {m.majelisKode}</span>
+          {m.baru ? <Badge variant="info">baru</Badge> : null}
+          {!m.baru && m.bawaan ? <Badge variant="outline">belum disunting</Badge> : null}
+          <Badge variant="muted">{namaHari[m.hari] ?? m.namaHari}</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        <label className="flex flex-wrap items-center gap-2">
+          <span className="w-36 text-muted-foreground">Hari sidang</span>
+          <select
+            className={kelasSelect}
+            aria-label={`Hari sidang Majelis ${m.majelisKode}`}
+            value={m.hari}
+            onChange={(e) => ubah((x) => ({ ...x, hari: Number(e.target.value), namaHari: namaHari[Number(e.target.value)] ?? x.namaHari }))}
+          >
+            {namaHari.map((nama, i) => (
+              <option key={nama} value={i}>
+                {nama}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="space-y-2">
+          <p className="text-muted-foreground">Hakim (ketua di urutan pertama)</p>
+          {m.hakimKode.map((kode, i) => {
+            const adaDiDaftar = hakim.some((h) => h.kode.toUpperCase() === kode);
+            return (
+              <div key={`${i}-${kode}`} className="flex flex-wrap items-center gap-2" data-baris-hakim>
+                <Badge variant="outline" className="w-20 justify-center">
+                  {i === 0 ? "Ketua" : `Anggota ${i}`}
+                </Badge>
+                {daftarHakimBisaDipilih ? (
+                  <select
+                    className={kelasSelect}
+                    aria-label={`${i === 0 ? "Ketua" : `Anggota ${i}`} Majelis ${m.majelisKode}`}
+                    value={kode}
+                    onChange={(e) => gantiHakim(i, e.target.value)}
+                  >
+                    <option value="">— pilih hakim —</option>
+                    {kode && !adaDiDaftar ? <option value={kode}>{kode} — tidak aktif di SIPP</option> : null}
+                    {hakim
+                      .filter((h) => h.kode)
+                      .map((h) => (
+                        <option key={h.id} value={h.kode.toUpperCase()}>
+                          {h.kode} — {h.nama}
+                        </option>
+                      ))}
+                  </select>
+                ) : (
+                  <Input className="max-w-32" aria-label={`Kode hakim ${i + 1} Majelis ${m.majelisKode}`} value={kode} onChange={(e) => gantiHakim(i, e.target.value.toUpperCase())} />
+                )}
+                <Button size="sm" variant="outline" disabled={i === 0} onClick={() => geserHakim(i, -1)} aria-label="Naikkan urutan">
+                  ↑
+                </Button>
+                <Button size="sm" variant="outline" disabled={i === m.hakimKode.length - 1} onClick={() => geserHakim(i, 1)} aria-label="Turunkan urutan">
+                  ↓
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => ubah((x) => terapkanHakim(x, x.hakimKode.filter((_, j) => j !== i)))}>
+                  Hapus
+                </Button>
+              </div>
+            );
+          })}
+          <Button size="sm" variant="outline" onClick={() => ubah((x) => terapkanHakim(x, [...x.hakimKode, ""]))}>
+            Tambah {m.hakimKode.length === 0 ? "ketua" : "anggota"}
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-muted-foreground">Panitera sidang menurut SK (pendamping; kode SK diikat ke orangnya)</p>
+          {barisPp.map((b, i) => {
+            const orang = panitera.find((p) => p.id === b.id);
+            return (
+              <div key={`${i}`} className="flex flex-wrap items-center gap-2" data-baris-panitera>
+                <Input
+                  className="w-20"
+                  aria-label={`Kode panitera ${i + 1} Majelis ${m.majelisKode}`}
+                  value={b.kode}
+                  placeholder="D1"
+                  onChange={(e) => ubahBarisPp(i, { kode: e.target.value.toUpperCase() })}
+                />
+                <select
+                  className={kelasSelect}
+                  aria-label={`Orang untuk kode ${b.kode || i + 1} Majelis ${m.majelisKode}`}
+                  value={b.id}
+                  disabled={panitera.length === 0}
+                  onChange={(e) => ubahBarisPp(i, { id: Number(e.target.value) })}
+                >
+                  <option value={0}>— belum diikat —</option>
+                  {b.id > 0 && !orang ? <option value={b.id}>(tidak aktif di SIPP)</option> : null}
+                  {panitera.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nama}
+                      {p.kode ? ` (kode SIPP ${p.kode})` : " (tanpa kode SIPP)"}
+                    </option>
+                  ))}
+                </select>
+                {b.id === 0 ? <span className="text-xs text-amber-600">belum diikat — panel memakai giliran beban</span> : null}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => ubah((x) => terapkanBarisPanitera(x, barisPanitera(x).filter((_, j) => j !== i)))}
+                >
+                  Hapus
+                </Button>
+              </div>
+            );
+          })}
+          <Button size="sm" variant="outline" onClick={() => ubah((x) => terapkanBarisPanitera(x, [...barisPanitera(x), { kode: "", id: 0 }]))}>
+            Tambah pendamping
+          </Button>
+        </div>
+
+        <details>
+          <summary className="cursor-pointer text-muted-foreground">Akun portal tiap anggota majelis dan SK khusus majelis ini</summary>
+          <div className="mt-3 space-y-3">
+            {akunAlasan ? (
+              <p className="text-xs text-amber-600">Daftar akun tidak terbaca: {akunAlasan}. Susunan majelisnya tetap dapat disunting.</p>
+            ) : null}
+            {[...m.hakimKode, ...m.paniteraKode].filter(Boolean).length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Belum ada kode hakim maupun panitera pada majelis ini — isi kodenya lebih dahulu, lalu akunnya dapat ditautkan.
+              </p>
+            ) : null}
+            {[...m.hakimKode, ...m.paniteraKode].filter(Boolean).map((kode) => {
+              const tertaut = (m.akun ?? []).find((a) => a.kode === kode);
+              const orang = tertaut ? akun.find((u) => u.id === tertaut.akunId) : null;
+              return (
+                <label key={`akun-${kode}`} className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="w-14 justify-center">
+                    {kode}
+                  </Badge>
+                  <span className="w-20 text-xs text-muted-foreground">
+                    {m.hakimKode.includes(kode) ? (m.hakimKode[0] === kode ? "ketua" : "hakim") : "panitera"}
+                  </span>
+                  <select
+                    className={kelasSelect}
+                    aria-label={`Akun untuk ${kode} Majelis ${m.majelisKode}`}
+                    value={tertaut?.akunId ?? ""}
+                    disabled={akun.length === 0}
+                    onChange={(e) => {
+                      const akunId = e.target.value;
+                      ubah((x) => {
+                        const lain = (x.akun ?? []).filter((a) => a.kode !== kode);
+                        return { ...x, akun: akunId ? [...lain, { kode, akunId }] : lain };
+                      });
+                    }}
+                  >
+                    <option value="">— belum ditautkan —</option>
+                    {akun.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.nama} — {u.peranLabel}
+                        {u.jabatan ? ` · ${u.jabatan}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {tertaut && !orang ? <span className="text-xs text-amber-600">akunnya sudah tidak aktif atau tidak terlihat</span> : null}
+                </label>
+              );
+            })}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="w-36 text-muted-foreground">SK khusus (opsional)</span>
+              <Input
+                className="max-w-sm"
+                aria-label={`Nomor SK khusus Majelis ${m.majelisKode}`}
+                value={m.skIkutBawaan ? "" : m.skNomor}
+                placeholder="Kosong = ikut SK bawaan di atas"
+                onChange={(e) => ubah((x) => ({ ...x, skNomor: e.target.value, skIkutBawaan: !e.target.value && !x.skTanggal }))}
+              />
+              <Input
+                className="max-w-40"
+                type="date"
+                aria-label={`Tanggal SK khusus Majelis ${m.majelisKode}`}
+                value={m.skIkutBawaan ? "" : m.skTanggal}
+                onChange={(e) => ubah((x) => ({ ...x, skTanggal: e.target.value, skIkutBawaan: !e.target.value && !x.skNomor }))}
+              />
+            </div>
+          </div>
+        </details>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {yakinHapus ? (
+            <>
+              <span>Hapus Majelis {m.majelisKode} dari SK?</span>
+              <Button size="sm" variant="destructive" onClick={() => hapus()}>
+                Ya, hapus
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setYakinHapus(false)}>
+                Batal
+              </Button>
+            </>
+          ) : (
+            <Button size="sm" variant="outline" onClick={() => setYakinHapus(true)}>
+              Hapus majelis
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
