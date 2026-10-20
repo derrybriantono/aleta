@@ -18,7 +18,7 @@
  *   4515 bagian ahli waris        hitungan KHI (faraid.js) atas susunan yang terbaca penuh; selalu "ragu" dengan rincian hitungan
  *
  * Aturan: yang diambil hanya yang TERTULIS; tidak ada yang disimpulkan. Penilaian hukum tetap milik hakim: semua isian lanjutan berkeyakinan
- * "ragu" (saran) kecuali yang dapat diperiksa silang dengan petitum (4540/4541 bila anak itu ada di daftar ahli waris petitum).
+ * "ragu" (saran): belum ada isian petugas pembanding dalam jumlah yang dituntut gerbang otomatis berdasar; 4540/4541 hanya dicatat bila anak itu ada di petitum.
  * Hanya SELECT-bebas: modul ini murni (data masuk, usulan keluar).
  */
 
@@ -67,7 +67,7 @@ const potong = (s, n = 230) => {
 
 /** Nama orang di dalam teks pendek: "Fulan bin Fulan" (dengan bin/binti) pertama. */
 function namaDi(t) {
-  const m = /([A-Z][A-Za-z.'`-]*(?:\s+[A-Za-z.'`-]+){0,5}?\s+(?:bin|binti)\s+[A-Z][A-Za-z.'`-]*(?:\s+[A-Za-z.'`-]+){0,3})/.exec(String(t || ""));
+  const m = /([A-Z][A-Za-z.'`-]*(?:\s+[A-Z][A-Za-z.'`-]*){0,5}?\s+(?:bin|binti)\s+[A-Z][A-Za-z.'`-]*(?:\s+[A-Z][A-Za-z.'`-]*){0,2})/.exec(String(t || ""));
   return m ? B.rapikanNama(m[1]).replace(/\s*\((?:Alm[a-z]*|Pewaris|Pemohon[^)]*)\.?\)\s*$/i, "") : "";
 }
 
@@ -243,7 +243,7 @@ function usulanLanjut(d, opsi = {}) {
   if (!dana) {
     const t = tujuanLain(posita, petitum, butir);
     if (t) {
-      ada("4500", t.nilai, t.dari === "petitum" ? "cukup" : "ragu", t.kalimat, t.dari === "petitum" ? "Frasa 'untuk keperluan ...' pada petitum; dipakai sesudah kata 'untuk' pada naskah." : "Tujuan dari kalimat posita; periksa dan ringkas menjadi satu frasa sesudah kata 'untuk'.", "u5-paw-4500-tujuan");
+      ada("4500", t.nilai, "ragu", t.kalimat, t.dari === "petitum" ? "Frasa 'untuk keperluan ...' pada petitum; dipakai sesudah kata 'untuk' pada naskah." : "Tujuan dari kalimat posita; periksa dan ringkas menjadi satu frasa sesudah kata 'untuk'.", "u5-paw-4500-tujuan");
     }
   }
   const aa = anakAngkat(butir);
@@ -258,8 +258,9 @@ function usulanLanjut(d, opsi = {}) {
   }
   const ps = penggantiSaudara(butir, petitum);
   if (ps) {
-    const yakin = ps.dalamPetitum ? "cukup" : "ragu";
-    const cat = "Posita menyebut saudara pewaris yang meninggal lebih dahulu dengan anak sebagai ahli waris pengganti (Pasal 185 KHI)" + (ps.dalamPetitum ? "; anak itu ada pada daftar ahli waris petitum." : "; anak itu tidak ditemukan pada daftar ahli waris petitum - periksa.");
+    // semua usulan lanjutan "ragu": belum ada pembanding isian petugas dalam jumlah memadai (gerbang otomatis berdasar, U6); silang dengan petitum dicatat
+    const yakin = "ragu";
+    const cat = "Posita menyebut saudara pewaris yang meninggal lebih dahulu dengan anak sebagai ahli waris pengganti (Pasal 185 KHI)" + (ps.dalamPetitum ? "; anak itu ada pada daftar ahli waris petitum (cocok dengan amar pada satu-satunya perkara 2025-2026 yang memuatnya)." : "; anak itu tidak ditemukan pada daftar ahli waris petitum - periksa.");
     ada("4540", ps.saudara, yakin, ps.kalimat, cat, "u5-paw-4540-saudara");
     ada("4541", ps.anak.join("; "), yakin, ps.kalimat, cat, "u5-paw-4541-keponakan");
   }

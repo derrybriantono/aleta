@@ -464,6 +464,12 @@ const POKOK = [
   },
   // U5 20 Okt: butir katalog penetapan ahli waris versi 2 (titik-titik diisi dari susunan ahli waris dan isian paket u5-ahli-waris)
   {
+    id: "paw-hubungan-pemohon",
+    jenis: ["paw", "waris"],
+    tanya: /apa hubungan.*dengan|itu apanya/,
+    slot: [{ kiri: kiri("\\b(?:adalah|sebagai)"), isi: ({ h }) => h.nilai("hubunganPemohon") }],
+  },
+  {
     id: "paw-saudara-jumlah",
     jenis: ["paw", "waris"],
     tanya: /mempunyai saudara kandung|siapa saja saudara kandung/,
@@ -483,8 +489,8 @@ const POKOK = [
     jenis: ["paw", "waris"],
     tanya: /saudara.*meninggal lebih dahulu/,
     slot: [
-      { kiri: kiri("\\b(?:bernama|yaitu)"), isi: ({ h }) => h.nilai("saudaraPengganti") },
       { kiri: kiri("\\banak\\s+(?:yang\\s+)?bernama"), isi: ({ h }) => h.nilai("keponakanPengganti") },
+      { kiri: kiri("\\b(?:bernama|yaitu)"), isi: ({ h }) => h.nilai("saudaraPengganti") },
     ],
   },
   {
@@ -492,14 +498,14 @@ const POKOK = [
     jenis: ["paw", "waris"],
     tanya: /ahli waris.*meninggal lebih dahulu/,
     slot: [
-      { kiri: kiri("\\b(?:bernama|yaitu)"), isi: ({ h }) => h.nilai("pewarisPengganti") },
       { kiri: kiri("\\banak\\s+(?:yang\\s+)?bernama"), isi: ({ h }) => h.nilai("cucuPewaris") },
+      { kiri: kiri("\\b(?:bernama|yaitu)"), isi: ({ h }) => h.nilai("pewarisPengganti") },
     ],
   },
   {
     id: "paw-orang-tua",
     jenis: ["paw", "waris"],
-    tanya: /orang tua kandung.*masih hidup/,
+    tanya: /(?:orang tua kandung|ayah kandung dan ibu kandung).*masih hidup/,
     slot: [
       {
         kiri: kiri("\\b(?:yaitu|hanya)"),

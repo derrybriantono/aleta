@@ -65,7 +65,7 @@ const METADATA = Object.freeze({
   "4507": { opsional: true, labelPengguna: "Wasiat Pewaris (bila ada)" },
   "4510": { opsional: true, labelPengguna: "Kerabat Pewaris yang tidak beragama Islam (bila ada)" },
   "4513": { opsional: true, labelPengguna: "Keadaan perkawinan Pewaris bila berpisah atau sudah bercerai (pilihan hakim, bila ada)" },
-  "4515": { opsional: true, labelPengguna: "Bagian masing-masing ahli waris bila hakim menetapkannya (usulan hitungan, keputusan hakim)" },
+  "4515": { opsional: true, labelPengguna: "Bagian masing-masing ahli waris (usulan hitungan, keputusan hakim; bila ada)" },
   "4520": { opsional: true, labelPengguna: "Harta peninggalan yang diperoleh selama perkawinan / harta bersama (bila ada)" },
   "4534": { opsional: true, labelPengguna: "Batasi penggunaan penetapan hanya untuk tujuan permohonan (pilihan hakim, bila ada)" },
   "4540": { opsional: true, labelPengguna: "Saudara Pewaris yang meninggal lebih dahulu dan digantikan anaknya (bila ada)" },

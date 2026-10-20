@@ -1,5 +1,5 @@
-bf2da83f45f37d8ce853b26d337fc604  abt-u5-PASANG.sql
-73f7eec1e581fefe1a0d42a230a68137  abt-u5-PERIKSA.sql
+aab539d800bde32f1d798961fecbe11e  abt-u5-PASANG.sql
+97e671b377c126586d084f4e391ebe8d  abt-u5-PERIKSA.sql
 3d294d01bbb675775e3ecc3b7e37182a  abt-u5-PULIH-HAPUS-BARU.sql
 1cd8a7a4f70f8319159de0c1f5a47543  pasang-satker.sh
 7685cdc8ca07d6089809f331d41a7ea9  pulih-satker.sh

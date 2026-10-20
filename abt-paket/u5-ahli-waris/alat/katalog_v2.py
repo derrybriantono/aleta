@@ -87,7 +87,7 @@ KEADAAN_BARU = {
 }
 
 # ------------------------------------------------------------------ pertanyaan baru
-tambah(Q("q-paw-domisili", "pp-paw-domisili", 15, "tambahan", "pokok",
+tambah(Q("q-paw-domisili", "pp-paw-domisili", 15, "jarang", "pokok",
          "Di mana <PW> bertempat tinggal terakhir dan di mana <PM> bertempat tinggal sekarang?",
          hal="tempat tinggal pewaris dan para pemohon", ringkas="tempat tinggal terakhir <PW> dan tempat tinggal <PM>",
          teks_varian=["Di mana tempat tinggal terakhir <PW> dan tempat tinggal <PM> saat ini?"],
@@ -100,7 +100,7 @@ tambah(Q("q-paw-domisili", "pp-paw-domisili", 15, "tambahan", "pokok",
                    ["<PW> terakhir bertempat tinggal di ... sedangkan <PM> bertempat tinggal di wilayah #8011#", "tempat tinggal terakhir <PW> adalah di ... dan <PM> bertempat tinggal di wilayah #8011#"],
                    ["<PW> terakhir bertempat tinggal di luar wilayah #8011# sedangkan <PM> tinggal di dalamnya", "tempat tinggal terakhir <PW> berada di luar wilayah #8011# dan <PM> tinggal di wilayah itu"])))
 
-tambah(Q("q-paw-kematian-lihat", "pp-paw-kematian", 32, "pilihan", "pokok",
+tambah(Q("q-paw-kematian-lihat", "pp-paw-kematian", 32, "jarang", "pokok",
          "Apakah Saudara ikut melayat atau mengetahui pemakaman <PW>?",
          hal="pelayatan dan pemakaman pewaris", ringkas="pelayatan dan pemakaman <PW> setelah meninggal dunia",
          teks_varian=["Apakah Saudara hadir di rumah duka ketika <PW> meninggal dunia?"],
@@ -115,7 +115,7 @@ tambah(Q("q-paw-kematian-lihat", "pp-paw-kematian", 32, "pilihan", "pokok",
        gaya="lihat")
 
 # --- keadaan pasangan pewaris saat meninggal
-tambah(Q("q-paw-pasangan-hidup", "pp-paw-perkawinan", 74, "inti", "pokok",
+tambah(Q("q-paw-pasangan-hidup", "pp-paw-perkawinan", 74, "jarang", "pokok",
          "Ketika <PW> meninggal dunia, apakah suami atau istrinya masih hidup? Siapa namanya?",
          hal="keadaan suami atau istri pewaris ketika pewaris meninggal", ringkas="keadaan suami atau istri <PW> ketika ia meninggal dunia",
          teks_varian=["Apakah pasangan <PW> masih hidup pada saat ia wafat?"],
@@ -186,7 +186,7 @@ tambah(Q("q-paw-poligami", "pp-paw-perkawinan", 78, "pilihan", "pokok",
        pasanganPewaris="ada", jumlahPasangan="lebih-dari-satu")
 
 # --- kedudukan anak
-tambah(Q("q-paw-anak-sah", "pp-paw-nasab-anak", 81, "pilihan", "pokok",
+tambah(Q("q-paw-anak-sah", "pp-paw-nasab-anak", 81, "jarang", "pokok",
          "Apakah semua anak <PW> dilahirkan dari perkawinan yang sah dengan pasangannya?",
          hal="kedudukan sah anak pewaris", ringkas="kelahiran anak <PW> dalam perkawinan yang sah",
          teks_varian=["Apakah anak-anak <PW> lahir dalam perkawinan yang sah?"],
@@ -200,7 +200,7 @@ tambah(Q("q-paw-anak-sah", "pp-paw-nasab-anak", 81, "pilihan", "pokok",
                    ["ada anak <PW> yang lahir di luar perkawinan yang sah dengan pasangannya", "di antara anak <PW> terdapat anak yang lahir di luar perkawinan yang sah dengan pasangannya"])),
        susunanAhliWaris="ada-anak")
 
-tambah(Q("q-paw-anak-luar-tidak", "pp-paw-nasab-anak", 83, "pilihan", "pokok",
+tambah(Q("q-paw-anak-luar-tidak", "pp-paw-nasab-anak", 83, "jarang", "pokok",
          "Apakah <PW> mempunyai anak yang lahir di luar perkawinan yang sah?",
          hal="anak pewaris yang lahir di luar perkawinan", ringkas="ada tidaknya anak <PW> yang lahir di luar perkawinan yang sah",
          teks_varian=["Apakah <PW> mempunyai anak dari hubungan di luar perkawinan yang sah?"],
@@ -227,7 +227,7 @@ tambah(Q("q-paw-anak-luar-ada", "pp-paw-nasab-anak", 84, "inti", "pokok",
                    ["<PW> mempunyai anak bernama ... yang lahir dari perkawinan yang sah dengan ibu bernama ... yaitu perempuan yang melahirkannya", "anak <PW> bernama ... lahir dalam perkawinan yang sah dari ibu bernama ... yaitu perempuan yang melahirkannya"])),
        anakLuarNikah="ada")
 
-tambah(Q("q-paw-belum-dewasa-tidak", "pp-paw-nasab-anak", 106, "pilihan", "pokok",
+tambah(Q("q-paw-belum-dewasa-tidak", "pp-paw-nasab-anak", 106, "jarang", "pokok",
          "Apakah ada ahli waris <PW> yang belum dewasa atau berada di bawah pengampuan?",
          hal="ahli waris yang belum dewasa atau diampu", ringkas="ada tidaknya ahli waris <PW> yang belum dewasa atau diampu",
          teks_varian=["Adakah ahli waris <PW> yang masih anak-anak atau tidak cakap bertindak?"],
@@ -336,7 +336,7 @@ tambah(Q("q-paw-harta", "pp-paw-harta", 143, "inti", "pokok",
                    ["<PW> meninggalkan harta peninggalan berupa #8614#", "harta yang ditinggalkan <PW> berupa #8614#"],
                    ["<PW> meninggalkan harta peninggalan yang berbeda dari #8614#", "harta yang ditinggalkan <PW> berlainan dengan #8614#"])))
 
-tambah(Q("q-paw-harta-atas-nama", "pp-paw-harta", 146, "pilihan", "pokok",
+tambah(Q("q-paw-harta-atas-nama", "pp-paw-harta", 146, "jarang", "pokok",
          "Atas nama siapa harta atau dana itu tercatat?",
          hal="nama pemilik tercatat atas harta atau dana peninggalan", ringkas="nama pemilik tercatat atas harta atau dana peninggalan <PW>",
          teks_varian=["Harta atau dana itu terdaftar atas nama siapa?"],
@@ -388,7 +388,7 @@ tambah(Q("q-paw-wasiat", "pp-paw-wasiat-hutang", 150, "inti", "pokok",
                    ["<PW> #4508#", "ketika wafat <PW> #4508#"],
                    ["<PW> meninggalkan wasiat berupa pemberian benda kepada orang lain", "ketika wafat <PW> meninggalkan wasiat untuk seseorang"])))
 
-tambah(Q("q-paw-hutang-tidak", "pp-paw-wasiat-hutang", 152, "pilihan", "pokok",
+tambah(Q("q-paw-hutang-tidak", "pp-paw-wasiat-hutang", 152, "jarang", "pokok",
          "Apakah <PW> meninggalkan hutang atau kewajiban yang belum dilunasi?",
          hal="ada tidaknya hutang pewaris", ringkas="ada tidaknya hutang <PW> yang belum dilunasi",
          teks_varian=["Adakah hutang <PW> yang masih harus dibayar ketika ia meninggal dunia?"],
@@ -429,7 +429,7 @@ tambah(Q("q-paw-tanpa-sengketa", "pp-paw-tanpa-sengketa", 160, "inti", "pokok",
                    ["tidak ada perselisihan atau keberatan dari ahli waris mana pun terhadap permohonan <PM>", "semua ahli waris setuju dengan permohonan <PM> dan tidak ada yang berkeberatan"],
                    ["ada ahli waris yang berkeberatan terhadap permohonan <PM>", "sebagian ahli waris mempersoalkan permohonan <PM>"])))
 
-tambah(Q("q-paw-ahli-lain-setuju", "pp-paw-ahli-lain", 104, "pilihan", "pokok",
+tambah(Q("q-paw-ahli-lain-setuju", "pp-paw-ahli-lain", 104, "jarang", "pokok",
          "Apakah ahli waris yang tidak ikut menjadi pemohon mengetahui dan menyetujui permohonan ini?",
          hal="persetujuan ahli waris yang tidak ikut menjadi pemohon", ringkas="persetujuan ahli waris yang tidak ikut menjadi <PM>",
          teks_varian=["Apakah ahli waris lain yang tidak ikut mengajukan permohonan sudah menyetujuinya?"],

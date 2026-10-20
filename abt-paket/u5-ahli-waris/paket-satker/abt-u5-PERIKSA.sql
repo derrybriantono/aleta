@@ -39,7 +39,7 @@ SELECT 4520 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4521 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4521) AS panjang, 1174 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4521 AND MD5(sql_query) = 'eca805bf2941c7ca7a401d15d4debd6d' AND MD5(nama) = 'ba2261364ad6619e08d0cc6f728ffe54' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4530 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4530) AS panjang, 10729 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4530 AND MD5(sql_query) = 'bac0729e291deef41e038835755c2ae4' AND MD5(nama) = '769728bee1cf720db8c91212f94d0ee0' AND data_type = 'data_sql') AS cocok
+SELECT 4530 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4530) AS panjang, 12264 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4530 AND MD5(sql_query) = 'bdc79ee8e9d06fe39d04437e4b58f086' AND MD5(nama) = '769728bee1cf720db8c91212f94d0ee0' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4531 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4531) AS panjang, 1084 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4531 AND MD5(sql_query) = 'cf0854488a7de3a59a23d03d4e2350c2' AND MD5(nama) = '59f36b434e786f5463a1b23c0aab6133' AND data_type = 'data_sql') AS cocok
 UNION ALL
@@ -99,7 +99,7 @@ SELECT 4520 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var 
 UNION ALL
 SELECT 4521 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4521) AS panjang, 1174 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4521 AND MD5(sql_query) = 'eca805bf2941c7ca7a401d15d4debd6d' AND MD5(nama) = 'ba2261364ad6619e08d0cc6f728ffe54' AND data_type = 'data_sql') AS cocok
 UNION ALL
-SELECT 4530 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4530) AS panjang, 10729 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4530 AND MD5(sql_query) = 'bac0729e291deef41e038835755c2ae4' AND MD5(nama) = '769728bee1cf720db8c91212f94d0ee0' AND data_type = 'data_sql') AS cocok
+SELECT 4530 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4530) AS panjang, 12264 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4530 AND MD5(sql_query) = 'bdc79ee8e9d06fe39d04437e4b58f086' AND MD5(nama) = '769728bee1cf720db8c91212f94d0ee0' AND data_type = 'data_sql') AS cocok
 UNION ALL
 SELECT 4531 AS no_var, (SELECT LENGTH(sql_query) FROM abt_variabel WHERE no_var = 4531) AS panjang, 1084 AS panjang_harap, (SELECT COUNT(*) FROM abt_variabel WHERE no_var = 4531 AND MD5(sql_query) = 'cf0854488a7de3a59a23d03d4e2350c2' AND MD5(nama) = '59f36b434e786f5463a1b23c0aab6133' AND data_type = 'data_sql') AS cocok
 UNION ALL

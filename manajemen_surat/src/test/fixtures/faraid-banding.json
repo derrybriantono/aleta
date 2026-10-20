@@ -1,0 +1,3758 @@
+{
+ "catatan": "Hasil kueri ABT 9769 (salinan server 20 Okt 2026) atas susunan ahli waris acak; dipakai uji u5-faraid.test.ts",
+ "sama": 57,
+ "beda": 0,
+ "fb": 39,
+ "kasus": [
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [
+     "Adi1 binti Hasan"
+    ],
+    "seibu": [
+     "Joko2 binti Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "radd",
+   "js": {
+    "saudaraP": {
+     "n": 1,
+     "jumlah": "3/4"
+    },
+    "seibu": {
+     "n": 1,
+     "jumlah": "1/4"
+    }
+   },
+   "sql": {
+    "saudaraP": {
+     "n": 1,
+     "jumlah": "3/4"
+    },
+    "seibu": {
+     "n": 1,
+     "jumlah": "1/4"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [
+     "Indra4 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Candra5 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "5/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "5/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Lina7 bin Sahar"
+    ],
+    "anak": [],
+    "ayah": "Hana8 bin Ali",
+    "ibu": "",
+    "saudara": [
+     "Candra9 binti Hasan",
+     "Joko10 binti Hasan"
+    ],
+    "seibu": [
+     "Edo11 binti Zaki",
+     "Fajar12 binti Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Gita14 binti Sahar",
+     "Budi15 binti Sahar"
+    ],
+    "anak": [
+     "Kiki16 binti Fulan"
+    ],
+    "ayah": "Indra17 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [
+     "Gita18 binti Amin"
+    ],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Lina20 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [
+     "Dedi21 bin Hasan",
+     "Candra22 binti Hasan",
+     "Adi23 bin Hasan"
+    ],
+    "seibu": [
+     "Edo24 binti Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "janda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "saudaraL": {
+     "n": 2,
+     "jumlah": "7/15"
+    },
+    "saudaraP": {
+     "n": 1,
+     "jumlah": "7/60"
+    },
+    "seibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "janda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "saudaraL": {
+     "n": 2,
+     "jumlah": "7/15"
+    },
+    "saudaraP": {
+     "n": 1,
+     "jumlah": "7/60"
+    },
+    "seibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Kiki26 binti Sahar"
+    ],
+    "anak": [
+     "Fajar27 bin Fulan",
+     "Kiki28 bin Fulan",
+     "Dedi29 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 3,
+     "jumlah": "7/8"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 3,
+     "jumlah": "7/8"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [
+     "Hana31 binti Fulan",
+     "Indra32 binti Fulan",
+     "Indra33 bin Fulan",
+     "Gita34 binti Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Budi35 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "1/3"
+    },
+    "anakP": {
+     "n": 3,
+     "jumlah": "1/2"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "1/3"
+    },
+    "anakP": {
+     "n": 3,
+     "jumlah": "1/2"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Gita38 bin Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Edo40 bin Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Dedi41 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Adi43 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Lina44 binti Usman",
+    "saudara": [
+     "Adi45 binti Hasan",
+     "Candra46 bin Hasan",
+     "Edo47 bin Hasan"
+    ],
+    "seibu": [
+     "Gita48 binti Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "saudaraL": {
+     "n": 2,
+     "jumlah": "1/3"
+    },
+    "saudaraP": {
+     "n": 1,
+     "jumlah": "1/12"
+    },
+    "seibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "saudaraL": {
+     "n": 2,
+     "jumlah": "1/3"
+    },
+    "saudaraP": {
+     "n": 1,
+     "jumlah": "1/12"
+    },
+    "seibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Fajar50 binti Sahar",
+     "Indra51 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Joko53 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "Indra54 bin Ali",
+    "ibu": "",
+    "saudara": [
+     "Budi55 bin Hasan"
+    ],
+    "seibu": [
+     "Lina56 bin Zaki",
+     "Indra57 binti Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Indra59 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Adi60 binti Usman",
+    "saudara": [],
+    "seibu": [
+     "Fajar61 bin Zaki",
+     "Candra62 bin Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Gita64 bin Sahar"
+    ],
+    "anak": [],
+    "ayah": "Joko65 bin Ali",
+    "ibu": "Adi66 binti Usman",
+    "saudara": [
+     "Lina67 bin Hasan"
+    ],
+    "seibu": [
+     "Candra68 binti Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "exact",
+   "js": {
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/3"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/2"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/3"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/2"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [
+     "Lina70 binti Fulan",
+     "Joko71 binti Fulan",
+     "Indra72 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "1/2"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "1/2"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "1/2"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "1/2"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Indra74 bin Sahar"
+    ],
+    "anak": [
+     "Edo75 bin Fulan",
+     "Hana76 binti Fulan",
+     "Adi77 bin Fulan"
+    ],
+    "ayah": "Adi78 bin Ali",
+    "ibu": "Joko79 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "1/3"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "1/12"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "1/3"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "1/12"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [
+     "Hana81 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Fajar82 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "5/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "5/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [
+     "Edo84 bin Fulan",
+     "Joko85 binti Fulan",
+     "Budi86 bin Fulan",
+     "Adi87 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Gita88 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 3,
+     "jumlah": "5/7"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "5/42"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 3,
+     "jumlah": "5/7"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "5/42"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "Lina90 bin Ali",
+    "ibu": "",
+    "saudara": [
+     "Joko91 bin Hasan",
+     "Adi92 bin Hasan",
+     "Dedi93 bin Hasan"
+    ],
+    "seibu": [
+     "Budi94 bin Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Kiki96 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [
+     "Edo97 binti Hasan"
+    ],
+    "seibu": [
+     "Hana98 bin Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Budi100 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [
+     "Adi101 binti Amin"
+    ],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "radd",
+   "js": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/1"
+    }
+   },
+   "sql": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/1"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [
+     "Indra103 binti Umar"
+    ],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "radd",
+   "js": {
+    "nenek": {
+     "n": 1,
+     "jumlah": "1/1"
+    }
+   },
+   "sql": {
+    "nenek": {
+     "n": 1,
+     "jumlah": "1/1"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "Edo105 bin Ali",
+    "ibu": "Lina106 binti Usman",
+    "saudara": [
+     "Hana107 binti Hasan"
+    ],
+    "seibu": [
+     "Gita108 bin Zaki",
+     "Lina109 bin Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Hana111 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [
+     "Hana112 bin Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "Indra114 bin Ali",
+    "ibu": "Dedi115 binti Usman",
+    "saudara": [],
+    "seibu": [
+     "Budi116 bin Zaki",
+     "Edo117 binti Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [
+     "Hana118 binti Amin"
+    ],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Budi120 bin Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Indra121 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [
+     "Candra122 binti Amin"
+    ],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Adi124 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "radd",
+   "js": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/1"
+    }
+   },
+   "sql": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/1"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Budi126 bin Sahar"
+    ],
+    "anak": [],
+    "ayah": "Adi127 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [
+     "Adi129 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Lina130 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "5/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "5/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [
+     "Hana132 bin Fulan",
+     "Dedi133 binti Fulan",
+     "Indra134 binti Fulan"
+    ],
+    "ayah": "Indra135 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "5/12"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "5/12"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "5/12"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "5/12"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Hana137 binti Sahar",
+     "Edo138 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "Indra139 bin Ali",
+    "ibu": "Kiki140 binti Usman",
+    "saudara": [
+     "Adi141 binti Hasan",
+     "Lina142 bin Hasan"
+    ],
+    "seibu": [
+     "Indra143 bin Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Adi145 binti Sahar",
+     "Joko146 binti Sahar"
+    ],
+    "anak": [
+     "Budi147 bin Fulan",
+     "Gita148 bin Fulan",
+     "Indra149 bin Fulan",
+     "Candra150 bin Fulan"
+    ],
+    "ayah": "Hana151 bin Ali",
+    "ibu": "Dedi152 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 4,
+     "jumlah": "13/24"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 4,
+     "jumlah": "13/24"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "Adi154 bin Ali",
+    "ibu": "Kiki155 binti Usman",
+    "saudara": [
+     "Gita156 binti Hasan"
+    ],
+    "seibu": [
+     "Adi157 bin Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Gita159 binti Sahar"
+    ],
+    "anak": [
+     "Budi160 binti Fulan",
+     "Kiki161 binti Fulan",
+     "Budi162 binti Fulan",
+     "Kiki163 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [
+     "Hana164 binti Umar"
+    ],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "17/60"
+    },
+    "anakP": {
+     "n": 3,
+     "jumlah": "17/40"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    },
+    "nenek": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "17/60"
+    },
+    "anakP": {
+     "n": 3,
+     "jumlah": "17/40"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    },
+    "nenek": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Joko166 binti Usman",
+    "saudara": [
+     "Dedi167 bin Hasan",
+     "Kiki168 bin Hasan"
+    ],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "saudaraL": {
+     "n": 2,
+     "jumlah": "5/6"
+    }
+   },
+   "sql": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "saudaraL": {
+     "n": 2,
+     "jumlah": "5/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Budi170 bin Sahar"
+    ],
+    "anak": [
+     "Joko171 binti Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Kiki173 bin Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [
+     "Kiki175 binti Fulan",
+     "Joko176 bin Fulan",
+     "Hana177 binti Fulan"
+    ],
+    "ayah": "Indra178 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "5/12"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "5/12"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "5/12"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "5/12"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Candra180 bin Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [
+     "Dedi182 binti Fulan"
+    ],
+    "ayah": "Dedi183 bin Ali",
+    "ibu": "Hana184 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Joko186 bin Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Dedi187 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [
+     "Fajar189 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "1/1"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "1/1"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Dedi191 binti Sahar"
+    ],
+    "anak": [
+     "Kiki192 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [
+     "Dedi193 binti Amin"
+    ],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "17/24"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    },
+    "nenek": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "17/24"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    },
+    "nenek": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Adi195 bin Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Joko196 binti Usman",
+    "saudara": [
+     "Kiki197 binti Hasan",
+     "Dedi198 bin Hasan"
+    ],
+    "seibu": [
+     "Joko199 binti Zaki",
+     "Kiki200 binti Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [
+     "Joko201 binti Amin"
+    ],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "Candra203 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Budi205 bin Sahar"
+    ],
+    "anak": [
+     "Budi206 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Indra207 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "7/12"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "7/12"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Edo209 binti Sahar"
+    ],
+    "anak": [
+     "Gita210 bin Fulan",
+     "Fajar211 bin Fulan",
+     "Lina212 binti Fulan",
+     "Indra213 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Gita214 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 3,
+     "jumlah": "17/28"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "17/168"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 3,
+     "jumlah": "17/28"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "17/168"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "Dedi216 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Gita218 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "radd",
+   "js": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/1"
+    }
+   },
+   "sql": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/1"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Lina220 bin Sahar"
+    ],
+    "anak": [
+     "Joko221 binti Fulan",
+     "Adi222 bin Fulan",
+     "Fajar223 binti Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "3/8"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "3/8"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "3/8"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "3/8"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [
+     "Adi225 bin Fulan"
+    ],
+    "ayah": "Fajar226 bin Ali",
+    "ibu": "Budi227 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "2/3"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "2/3"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [
+     "Joko229 binti Hasan",
+     "Hana230 binti Hasan",
+     "Dedi231 bin Hasan"
+    ],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "saudaraL": {
+     "n": 1,
+     "jumlah": "1/2"
+    },
+    "saudaraP": {
+     "n": 2,
+     "jumlah": "1/2"
+    }
+   },
+   "sql": {
+    "saudaraL": {
+     "n": 1,
+     "jumlah": "1/2"
+    },
+    "saudaraP": {
+     "n": 2,
+     "jumlah": "1/2"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [
+     "Fajar234 binti Fulan",
+     "Joko235 binti Fulan",
+     "Gita236 binti Fulan"
+    ],
+    "ayah": "Adi237 bin Ali",
+    "ibu": "Joko238 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "exact",
+   "js": {
+    "anakP": {
+     "n": 3,
+     "jumlah": "2/3"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakP": {
+     "n": 3,
+     "jumlah": "2/3"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Lina240 bin Sahar"
+    ],
+    "anak": [
+     "Hana241 bin Fulan",
+     "Dedi242 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Gita243 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "7/12"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "7/12"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Lina246 binti Sahar",
+     "Edo247 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Lina248 binti Usman",
+    "saudara": [
+     "Edo249 binti Hasan",
+     "Fajar250 binti Hasan",
+     "Edo251 bin Hasan"
+    ],
+    "seibu": [
+     "Adi252 bin Zaki",
+     "Dedi253 bin Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "saudaraL": {
+     "n": 1,
+     "jumlah": "1/8"
+    },
+    "saudaraP": {
+     "n": 2,
+     "jumlah": "1/8"
+    },
+    "seibu": {
+     "n": 2,
+     "jumlah": "1/3"
+    }
+   },
+   "sql": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "saudaraL": {
+     "n": 1,
+     "jumlah": "1/8"
+    },
+    "saudaraP": {
+     "n": 2,
+     "jumlah": "1/8"
+    },
+    "seibu": {
+     "n": 1,
+     "jumlah": "1/3"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Joko255 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [
+     "Indra256 binti Umar"
+    ],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "radd",
+   "js": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/1"
+    }
+   },
+   "sql": {
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/1"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Adi258 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Budi259 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "Kiki261 bin Ali",
+    "ibu": "Fajar262 binti Usman",
+    "saudara": [
+     "Budi263 bin Hasan",
+     "Kiki264 binti Hasan"
+    ],
+    "seibu": [
+     "Fajar265 bin Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Adi267 binti Sahar",
+     "Indra268 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "Fajar269 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Indra272 binti Sahar",
+     "Edo273 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [
+     "Dedi274 bin Hasan",
+     "Kiki275 bin Hasan"
+    ],
+    "seibu": [
+     "Lina276 binti Zaki",
+     "Adi277 binti Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "janda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "saudaraL": {
+     "n": 2,
+     "jumlah": "5/12"
+    },
+    "seibu": {
+     "n": 2,
+     "jumlah": "1/3"
+    }
+   },
+   "sql": {
+    "janda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "saudaraL": {
+     "n": 2,
+     "jumlah": "5/12"
+    },
+    "seibu": {
+     "n": 1,
+     "jumlah": "1/3"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [
+     "Dedi279 bin Fulan",
+     "Joko280 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Lina281 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [
+     "Fajar282 binti Umar"
+    ],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "5/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "5/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "Gita284 bin Ali",
+    "ibu": "Dedi285 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [
+     "Kiki287 binti Fulan",
+     "Candra288 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Adi289 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "5/9"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "5/18"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "5/9"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "5/18"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Fajar291 bin Sahar"
+    ],
+    "anak": [
+     "Kiki292 binti Fulan",
+     "Kiki293 bin Fulan",
+     "Gita294 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Joko295 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "7/15"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "7/60"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "7/15"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "7/60"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Lina297 binti Sahar",
+     "Hana298 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Dedi300 binti Sahar"
+    ],
+    "anak": [
+     "Hana301 bin Fulan",
+     "Joko302 bin Fulan",
+     "Dedi303 bin Fulan",
+     "Lina304 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 4,
+     "jumlah": "7/8"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 4,
+     "jumlah": "7/8"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Adi306 bin Sahar"
+    ],
+    "anak": [
+     "Budi307 bin Fulan",
+     "Hana308 bin Fulan",
+     "Fajar309 binti Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "3/5"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "3/20"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "3/5"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "3/20"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Joko311 binti Sahar"
+    ],
+    "anak": [
+     "Joko312 binti Fulan"
+    ],
+    "ayah": "Dedi313 bin Ali",
+    "ibu": "Adi314 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "Candra316 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Adi318 bin Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [
+     "Candra319 binti Hasan"
+    ],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "exact",
+   "js": {
+    "duda": {
+     "n": 1,
+     "jumlah": "1/2"
+    },
+    "saudaraP": {
+     "n": 1,
+     "jumlah": "1/2"
+    }
+   },
+   "sql": {
+    "duda": {
+     "n": 1,
+     "jumlah": "1/2"
+    },
+    "saudaraP": {
+     "n": 1,
+     "jumlah": "1/2"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [
+     "Joko321 binti Fulan",
+     "Dedi322 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "2/3"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "1/3"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "2/3"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "1/3"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [
+     "Edo324 binti Hasan",
+     "Edo325 binti Hasan"
+    ],
+    "seibu": [
+     "Gita326 binti Zaki"
+    ],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "radd",
+   "js": {
+    "saudaraP": {
+     "n": 2,
+     "jumlah": "4/5"
+    },
+    "seibu": {
+     "n": 1,
+     "jumlah": "1/5"
+    }
+   },
+   "sql": {
+    "saudaraP": {
+     "n": 1,
+     "jumlah": "4/5"
+    },
+    "seibu": {
+     "n": 1,
+     "jumlah": "1/5"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Hana328 binti Sahar",
+     "Indra329 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Joko331 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "Indra332 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Edo334 binti Sahar",
+     "Adi335 binti Sahar"
+    ],
+    "anak": [
+     "Edo336 binti Fulan",
+     "Hana337 binti Fulan",
+     "Kiki338 binti Fulan",
+     "Hana339 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Edo340 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "17/60"
+    },
+    "anakP": {
+     "n": 3,
+     "jumlah": "17/40"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "17/60"
+    },
+    "anakP": {
+     "n": 3,
+     "jumlah": "17/40"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Kiki342 binti Sahar",
+     "Adi343 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [
+     "Edo344 bin Hasan",
+     "Adi345 binti Hasan",
+     "Budi346 bin Hasan"
+    ],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [
+     "Edo347 binti Amin"
+    ],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "janda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "nenek": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "saudaraL": {
+     "n": 2,
+     "jumlah": "7/15"
+    },
+    "saudaraP": {
+     "n": 1,
+     "jumlah": "7/60"
+    }
+   },
+   "sql": {
+    "janda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "nenek": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "saudaraL": {
+     "n": 2,
+     "jumlah": "7/15"
+    },
+    "saudaraP": {
+     "n": 1,
+     "jumlah": "7/60"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Gita349 binti Sahar",
+     "Lina350 binti Sahar"
+    ],
+    "anak": [
+     "Budi351 binti Fulan",
+     "Joko352 bin Fulan",
+     "Dedi353 bin Fulan",
+     "Adi354 binti Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Lina355 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "17/36"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "17/72"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "17/36"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "17/72"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Joko357 binti Sahar",
+     "Edo358 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Kiki359 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Dedi361 bin Sahar"
+    ],
+    "anak": [
+     "Joko362 binti Fulan",
+     "Edo363 binti Fulan",
+     "Edo364 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Indra365 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [
+     "Dedi366 binti Amin"
+    ],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "7/24"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "7/24"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "7/24"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "7/24"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [
+     "Gita368 binti Fulan",
+     "Adi369 binti Fulan",
+     "Edo370 binti Fulan"
+    ],
+    "ayah": "Indra371 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [
+     "Hana373 binti Fulan",
+     "Edo374 bin Fulan",
+     "Adi375 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Kiki376 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "2/3"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "2/3"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "1/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [],
+    "anak": [],
+    "ayah": "Kiki378 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [
+     "Indra380 binti Fulan",
+     "Edo381 binti Fulan",
+     "Joko382 binti Fulan",
+     "Candra383 binti Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "radd",
+   "js": {
+    "anakP": {
+     "n": 4,
+     "jumlah": "1/1"
+    }
+   },
+   "sql": {
+    "anakP": {
+     "n": 4,
+     "jumlah": "1/1"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Candra385 binti Sahar",
+     "Indra386 binti Sahar"
+    ],
+    "anak": [
+     "Adi387 binti Fulan"
+    ],
+    "ayah": "Dedi388 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Candra390 binti Sahar"
+    ],
+    "anak": [
+     "Edo391 binti Fulan",
+     "Edo392 bin Fulan",
+     "Budi393 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "7/10"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "7/40"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "7/10"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "7/40"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Joko395 binti Sahar",
+     "Gita396 binti Sahar"
+    ],
+    "anak": [
+     "Dedi397 bin Fulan",
+     "Budi398 bin Fulan",
+     "Indra399 binti Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "7/10"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "7/40"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "7/10"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "7/40"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Fajar401 binti Sahar",
+     "Edo402 binti Sahar"
+    ],
+    "anak": [
+     "Edo403 bin Fulan",
+     "Fajar404 binti Fulan",
+     "Candra405 bin Fulan",
+     "Gita406 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 3,
+     "jumlah": "3/4"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "1/8"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 3,
+     "jumlah": "3/4"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "1/8"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Fajar408 binti Sahar"
+    ],
+    "anak": [
+     "Lina409 binti Fulan",
+     "Lina410 bin Fulan",
+     "Gita411 binti Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [
+     "Fajar412 binti Umar"
+    ],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "17/48"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "17/48"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    },
+    "nenek": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "17/48"
+    },
+    "anakP": {
+     "n": 2,
+     "jumlah": "17/48"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    },
+    "nenek": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [
+     "Candra414 bin Fulan",
+     "Hana415 bin Fulan",
+     "Edo416 bin Fulan",
+     "Fajar417 bin Fulan"
+    ],
+    "ayah": "Dedi418 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 4,
+     "jumlah": "5/6"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 4,
+     "jumlah": "5/6"
+    },
+    "ayah": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Indra420 binti Sahar",
+     "Kiki421 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "Kiki422 bin Ali",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [
+     "Adi424 bin Fulan",
+     "Edo425 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Lina426 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [
+     "Fajar427 binti Amin"
+    ],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "5/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "5/6"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Hana429 bin Sahar"
+    ],
+    "anak": [
+     "Edo430 bin Fulan",
+     "Adi431 binti Fulan",
+     "Budi432 bin Fulan",
+     "Hana433 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 3,
+     "jumlah": "9/14"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "3/28"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 3,
+     "jumlah": "9/14"
+    },
+    "anakP": {
+     "n": 1,
+     "jumlah": "3/28"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [
+     "Fajar435 bin Sahar"
+    ],
+    "anak": [
+     "Hana436 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Adi437 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "7/12"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 1,
+     "jumlah": "7/12"
+    },
+    "duda": {
+     "n": 1,
+     "jumlah": "1/4"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/6"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Hana439 binti Sahar"
+    ],
+    "anak": [],
+    "ayah": "",
+    "ibu": "Joko440 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "fb",
+   "js": null,
+   "sql": null,
+   "tersendiriSql": true,
+   "sqlSerahHakim": true
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": false,
+    "pasangan": [
+     "Candra442 binti Sahar"
+    ],
+    "anak": [
+     "Edo443 bin Fulan",
+     "Adi444 bin Fulan"
+    ],
+    "ayah": "",
+    "ibu": "",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "ashabah",
+   "js": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "7/8"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "sql": {
+    "anakL": {
+     "n": 2,
+     "jumlah": "7/8"
+    },
+    "janda": {
+     "n": 1,
+     "jumlah": "1/8"
+    }
+   },
+   "tersendiriSql": false
+  },
+  {
+   "masukan": {
+    "pewarisPerempuan": true,
+    "pasangan": [],
+    "anak": [
+     "Fajar446 binti Fulan",
+     "Gita447 binti Fulan"
+    ],
+    "ayah": "",
+    "ibu": "Kiki448 binti Usman",
+    "saudara": [],
+    "seibu": [],
+    "nenekIbu": [],
+    "nenekAyah": [],
+    "kakek": "",
+    "cucu": [],
+    "penggantiInduk": ""
+   },
+   "kasusJs": "radd",
+   "js": {
+    "anakP": {
+     "n": 2,
+     "jumlah": "4/5"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/5"
+    }
+   },
+   "sql": {
+    "anakP": {
+     "n": 2,
+     "jumlah": "4/5"
+    },
+    "ibu": {
+     "n": 1,
+     "jumlah": "1/5"
+    }
+   },
+   "tersendiriSql": false
+  }
+ ]
+}

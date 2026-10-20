@@ -7,7 +7,7 @@ Daftar kosong = bunyi bawaan lama (KTP, KK, bukti surat lainnya) agar blangko la
 """
 from variabel import PERKARA, v_sql
 
-MAKS = 40
+MAKS = 90
 
 RAW = (
     "REPLACE(REPLACE(REPLACE(REPLACE(CONVERT((SELECT data FROM aps_badilag.abt_data_teks WHERE no_var = 8132 AND perkara_id = '" + PERKARA + "' LIMIT 1) USING utf8), "
@@ -17,13 +17,13 @@ RAW = (
 # kelas -> kata kunci pada 90 huruf pertama baris (huruf kecil). Urutan menentukan prioritas.
 KELAS = [
     (4, ["akta cerai", "putusan perceraian", "akta perceraian"]),
-    (3, ["akta nikah", "buku nikah", "surat nikah", "keterangan nikah"]),
+    (3, ["akta nikah", "buku nikah", "surat nikah", "keterangan nikah", "keterangan menikah", "pernah menikah"]),
     (5, ["akta kematian", "keterangan kematian", "keterangan meninggal", "surat kematian", "akta meninggal", "surat meninggal"]),
-    (6, ["akta kelahiran", "keterangan lahir", "surat kelahiran", "akta lahir", "akta pengangkatan"]),
+    (6, ["akta kelahiran", "keterangan lahir", "kenal lahir", "surat kelahiran", "akta lahir", "akta pengangkatan"]),
     (2, ["kartu keluarga", "kartu kartu keluarga", "susunan keluarga"]),
     (1, ["kartu tanda penduduk", "ktp"]),
-    (7, ["silsila", "ahli waris", "surat pernyataan", "raja muda"]),
-    (8, ["taspen", "bpjs", "tabungan", "sertipikat", "sertifikat", "polis", "pensiun", "kenaikan pangkat", "pegawai negeri", "surat keputusan", "paspor", "kartu peserta", "deposito", "asuransi", "kartu tenaga"]),
+    (7, ["silsila", "silisil", "ahli waris", "kewarisan", "surat pernyataan", "raja muda"]),
+    (8, ["taspen", "bpjs", "tabungan", "sertipikat", "sertifikat", "polis", "pensiun", "kenaikan pangkat", "pegawai negeri", "surat keputusan", "paspor", "kartu peserta", "deposito", "asuransi", "kartu tenaga", "rekening", "tabum", "riwayat tanah", "kepemilikan", "tanah milik", "pergi haji", "porsi haji"]),
 ]
 
 KALIMAT = {

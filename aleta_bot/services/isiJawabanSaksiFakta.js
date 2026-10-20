@@ -239,7 +239,10 @@ const KODE_FAKTA = Object.freeze({
   9763: "cucuPewaris",
   4540: "saudaraPengganti",
   4541: "keponakanPengganti",
-  4501: "tujuan",
+  4500: "tujuan",
+  4502: "anakAngkat",
+  4507: "wasiatPewaris",
+  4510: "kerabatTakIslam",
   5110: "anakNama",
   8603: "anakNama",
   1014: "hubunganErat",
@@ -285,6 +288,7 @@ const LABEL_FAKTA = Object.freeze({
   cucuPewaris: "cucu pengganti",
   saudaraPengganti: "saudara pewaris yang meninggal lebih dahulu",
   keponakanPengganti: "keponakan pengganti",
+  hubunganPemohon: "hubungan Pemohon dengan pewaris",
 });
 
 /** "A; B; C" atau "A, B, C" -> "A, B dan C" (daftar orang di isian dipisah titik koma). */
@@ -520,7 +524,52 @@ function bangunFakta(s) {
   for (const t of Array.isArray(o.tambahan) ? o.tambahan : []) {
     if (t && t.kunci && t.nilai) F.tambah(t.kunci, t.nilai, t.yakin || "ragu", 3, t.ket);
   }
+  hubunganPemohonWaris(F, p1);
   return F;
+}
+
+/**
+ * Penetapan ahli waris: hubungan Pemohon dengan Pewaris diturunkan dari susunan ahli waris yang SUDAH terisi (anak, saudara, pasangan,
+ * ayah, ibu) bila SEMUA Pemohon menempati satu golongan yang sama. Golongan campur dibiarkan (petugas yang menulis).
+ */
+function hubunganPemohonWaris(F, pihak1) {
+  const pemohon = (Array.isArray(pihak1) ? pihak1 : []).map((p) => rapat(p && p.nama)).filter(Boolean);
+  if (!pemohon.length) return;
+  const golongan = [
+    ["anakPewaris", "anak kandung"],
+    ["saudaraPewaris", "saudara kandung"],
+    ["pewarisPasangan", null],
+    ["ayahHidup", "ayah kandung"],
+    ["ibuHidup", "ibu kandung"],
+  ];
+  const sama = (a, b) => {
+    const x = norm(a).replace(/ /g, "");
+    const y = norm(b).replace(/ /g, "");
+    if (!x || !y) return false;
+    if (x === y) return true;
+    const inti = (t) => norm(String(t).split(/\s+(?:bin|binti)\s+/i)[0]).replace(/ /g, "");
+    return inti(a) === inti(b) && inti(a).length >= 4;
+  };
+  const daftarDi = (kunci) => {
+    const f = F.ambil(kunci);
+    return f ? String(f.nilai).split(/\s*,\s*|\s+dan\s+/).map((x) => x.trim()).filter(Boolean) : [];
+  };
+  const hasil = new Set();
+  let yakin = "cukup";
+  for (const nama of pemohon) {
+    let ketemu = "";
+    for (const [kunci, label] of golongan) {
+      if (!daftarDi(kunci).some((x) => sama(x, nama))) continue;
+      const pw = F.ambil("pewarisNama");
+      ketemu = label || (pw && /\sbinti\s/i.test(` ${pw.nilai} `) ? "suami" : pw ? "istri" : "");
+      const f = F.ambil(kunci);
+      if (f && f.yakin === "ragu") yakin = "ragu";
+      break;
+    }
+    if (!ketemu) return;
+    hasil.add(ketemu);
+  }
+  if (hasil.size === 1) F.tambah("hubunganPemohon", [...hasil][0], yakin, 2, "Diturunkan dari susunan ahli waris yang terisi dan nama Pemohon di SIPP.");
 }
 
 module.exports = {

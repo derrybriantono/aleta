@@ -243,32 +243,43 @@ function waris(butir) {
     if (m[4]) hasil.push({ kunci: "wafatSebab", nilai: bersihNilai(m[4]), yakin: "cukup" });
     break;
   }
-  // Anak: "telah dikaruniai 2 (dua) orang anak yang masing-masing bernama: a. X (Pemohon) b. Y, Almarhum"
+  // Anak atau saudara: "telah dikaruniai 2 (dua) orang anak yang masing-masing bernama: a. X (Pemohon) b. Y, Almarhum".
+  // Bunyi baku PA Donggala "Ayah Pewaris bernama A dan ibu B ... Dari pernikahan tersebut melahirkan 6 orang anak ... (Pewaris)" menyebut
+  // anak ORANG TUA pewaris, yaitu saudara pewaris (pewaris sendiri ikut tertulis): dibaca sebagai saudara, bukan anak pewaris.
   for (let i = 0; i < butir.length; i++) {
     const b = butir[i];
-    const m = /(?:dikaruniai(?:kan)?|melahirkan|mempunyai|memiliki)\s+(\d+|[a-z]+)\s*(?:\([^)]*\)\s*)?orang\s+anak/i.exec(b);
+    const m = /(?:di\s*karuniai(?:kan)?|melahirkan|mempunyai|memiliki)\s+(\d+|[a-z]+)\s*(?:\([^)]*\)\s*)?orang\s+anak/i.exec(b);
     if (!m) continue;
     const n = jumlahAnakDariTeks(`${m[1]} orang anak`);
     if (n === null) continue;
-    hasil.push({ kunci: "jumlahAnakPewaris", nilai: String(n), yakin: "cukup" });
+    const konteks = `${butir[i - 2] || ""} ${butir[i - 1] || ""} ${b.slice(0, m.index)}`;
+    const modeSaudara = /\b(?:Ayah|Bapak|Ibu|orang\s*tua)\s+(?:dari\s+)?Pewaris\b/i.test(konteks);
     const nama = [];
     const tampung = (teks) => {
       for (const x of String(teks).split(/\s+(?=[a-h]\s*[.)]\s+[A-Z])/)) {
         const mm = /^(?:[a-h]\s*[.)]\s+)?([A-Z][^()]*?\s+(?:bin|binti)\s+[A-Za-z.'`\- ]{1,50}?)(?=\s*(?:,|\(|$|\s+[Uu]sia|\s+[Uu]mur|\s+Almarhum|\s+meninggal))/.exec(x.trim());
-        if (mm && nama.length < 14) nama.push(bersihNilai(mm[1]));
+        if (mm && nama.length < 16) nama.push({ nama: bersihNilai(mm[1]), pewaris: /\(Pewaris\)/i.test(x), wafat: /\(\s*meninggal|\bAlmarhum|\(Almh?\b/i.test(x) });
       }
     };
     const sesudahNama = b.slice(m.index + m[0].length);
     const inline = /(?:bernama|yaitu)\s*:?\s*(.+)$/i.exec(sesudahNama);
     if (inline) tampung(inline[1]);
-    for (let k = i + 1; k < butir.length && nama.length < 14; k++) {
+    for (let k = i + 1; k < butir.length && nama.length < 16; k++) {
       const x = /^\s*(?:[-•*]|[a-z][.)])\s*(.+)$/i.exec(butir[k]);
       if (!x) break;
       tampung(`a. ${x[1]}`);
     }
-    // pewaris sendiri yang tertulis "(Pewaris)" pada daftar saudara bukan anaknya
-    const bersih = nama.filter((x) => !/\(Pewaris\)/i.test(x));
-    if (bersih.length) hasil.push({ kunci: "anakPewaris", nilai: bersih.join(", ").replace(/, ([^,]+)$/, " dan $1"), yakin: "cukup" });
+    const gabung = (l) => l.join(", ").replace(/, ([^,]+)$/, " dan $1");
+    if (modeSaudara) {
+      const lain = nama.filter((x) => !x.pewaris);
+      hasil.push({ kunci: "jumlahSaudaraPewaris", nilai: String(Math.max(0, n - 1)), yakin: "cukup" });
+      const hidup = lain.filter((x) => !x.wafat).map((x) => x.nama);
+      if (hidup.length) hasil.push({ kunci: "saudaraPewaris", nilai: gabung(hidup), yakin: "cukup" });
+    } else {
+      hasil.push({ kunci: "jumlahAnakPewaris", nilai: String(n), yakin: "cukup" });
+      const bersih = nama.filter((x) => !x.pewaris).map((x) => x.nama);
+      if (bersih.length) hasil.push({ kunci: "anakPewaris", nilai: gabung(bersih), yakin: "cukup" });
+    }
     break;
   }
   return hasil;

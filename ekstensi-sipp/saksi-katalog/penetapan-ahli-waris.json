@@ -563,7 +563,7 @@
    "id": "q-paw-domisili",
    "pokok": "pp-paw-domisili",
    "urutan": 15,
-   "tingkat": "tambahan",
+   "tingkat": "jarang",
    "kelompok": "pokok",
    "pihakSaksi": [
     "*"
@@ -897,7 +897,7 @@
    "id": "q-paw-kematian-lihat",
    "pokok": "pp-paw-kematian",
    "urutan": 32,
-   "tingkat": "pilihan",
+   "tingkat": "jarang",
    "kelompok": "pokok",
    "pihakSaksi": [
     "*"
@@ -1642,7 +1642,7 @@
    "id": "q-paw-pasangan-hidup",
    "pokok": "pp-paw-perkawinan",
    "urutan": 74,
-   "tingkat": "inti",
+   "tingkat": "jarang",
    "kelompok": "pokok",
    "pihakSaksi": [
     "*"
@@ -2163,7 +2163,7 @@
    "id": "q-paw-anak-sah",
    "pokok": "pp-paw-nasab-anak",
    "urutan": 81,
-   "tingkat": "pilihan",
+   "tingkat": "jarang",
    "kelompok": "pokok",
    "pihakSaksi": [
     "*"
@@ -2321,7 +2321,7 @@
    "id": "q-paw-anak-luar-tidak",
    "pokok": "pp-paw-nasab-anak",
    "urutan": 83,
-   "tingkat": "pilihan",
+   "tingkat": "jarang",
    "kelompok": "pokok",
    "pihakSaksi": [
     "*"
@@ -2998,7 +2998,7 @@
    "id": "q-paw-ahli-lain-setuju",
    "pokok": "pp-paw-ahli-lain",
    "urutan": 104,
-   "tingkat": "pilihan",
+   "tingkat": "jarang",
    "kelompok": "pokok",
    "pihakSaksi": [
     "*"
@@ -3068,7 +3068,7 @@
    "id": "q-paw-belum-dewasa-tidak",
    "pokok": "pp-paw-nasab-anak",
    "urutan": 106,
-   "tingkat": "pilihan",
+   "tingkat": "jarang",
    "kelompok": "pokok",
    "pihakSaksi": [
     "*"
@@ -3896,7 +3896,7 @@
    "id": "q-paw-harta-atas-nama",
    "pokok": "pp-paw-harta",
    "urutan": 146,
-   "tingkat": "pilihan",
+   "tingkat": "jarang",
    "kelompok": "pokok",
    "pihakSaksi": [
     "*"
@@ -4177,7 +4177,7 @@
    "id": "q-paw-hutang-tidak",
    "pokok": "pp-paw-wasiat-hutang",
    "urutan": 152,
-   "tingkat": "pilihan",
+   "tingkat": "jarang",
    "kelompok": "pokok",
    "pihakSaksi": [
     "*"

@@ -5,16 +5,29 @@ const fs = require("fs");
 const { createRequire } = require("module");
 const akar = path.resolve(__dirname, "..", "..", "..");
 const mysql = createRequire(path.join(akar, "aleta_bot", "package.json"))("mysql");
-const SQL_DIR = process.env.SQL_9769 || "D:/Aplikasi/aleta/tmp/u5/sql";
+const SQL_DIR = process.env.SQL_9769 || path.join(__dirname, "..", "salinan-server-20okt");
 
 function buatPenjalan() {
-  const kon = mysql.createConnection({ host: "127.0.0.1", user: "root", database: "aps_badilag_u5", multipleStatements: true, typeCast: (f) => f.string() });
+  // basis data uji khusus hitungan bagian (terpisah dari uji_lokal.js)
+  const awal = mysql.createConnection({ host: "127.0.0.1", user: "root", multipleStatements: true });
+  const siap = new Promise((ok, g) =>
+    awal.query(
+      "CREATE DATABASE IF NOT EXISTS aps_badilag_u5; CREATE TABLE IF NOT EXISTS aps_badilag_u5.abt_data_teks (no_var int(4) unsigned zerofill NOT NULL, perkara_id bigint(20) NOT NULL, `data` text, modifier varchar(30), modified timestamp NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (no_var, perkara_id)) DEFAULT CHARSET=utf8",
+      (e) => {
+        awal.end();
+        return e ? g(e) : ok();
+      }
+    )
+  );
+  const kon = mysql.createConnection({ host: "127.0.0.1", user: "root", multipleStatements: true, typeCast: (f) => f.string() });
   const q = (s, p) => new Promise((ok, g) => kon.query(s, p || [], (e, r) => (e ? g(e) : ok(r))));
   const sqls = {};
   for (const n of [9768, 9769, 9770]) sqls[n] = fs.readFileSync(path.join(SQL_DIR, `${n}.sql`), "latin1");
   let id = 880000;
   return {
     async jalankan(isian) {
+      await siap;
+      await q("USE aps_badilag_u5");
       id += 1;
       await q("DELETE FROM abt_data_teks WHERE perkara_id = ?", [id]).catch(() => null);
       for (const [no, data] of Object.entries(isian)) await q("INSERT INTO abt_data_teks (no_var, perkara_id, data) VALUES (?, ?, ?)", [Number(no), id, data]);

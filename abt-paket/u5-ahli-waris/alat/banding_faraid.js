@@ -73,7 +73,21 @@ const kunciPeran = (label) => {
   return "lain:" + l;
 };
 
-/** Mengurai bagian rincian dari keluaran 9769 -> { peran: [pecahan per orang, terurut] } atau null. */
+/** Menjumlahkan pecahan "a/b". */
+const jumlahkan = (daftar) => {
+  let tot = [0, 1];
+  for (const x of daftar) {
+    const [n, d] = x.split("/").map(Number);
+    tot = F.pecah(tot[0] * d + n * tot[1], tot[1] * d);
+  }
+  return F.teksPecahan(tot);
+};
+
+/**
+ * Mengurai bagian rincian dari keluaran 9769 -> { peran: { n: banyak orang, jumlah: jumlah bagian kelompok } } atau null.
+ * Kueri 9769 menulis kelompok sebagai "anak perempuan (2 orang) masing-masing 4/13" (per orang) atau
+ * "saudara seibu (2 orang) bersama-sama 1/3" (satu bagian untuk kelompok): keduanya dijadikan jumlah kelompok.
+ */
 function uraiSql(t9769) {
   const t = t9769.replace(/<br>/g, "\n");
   const m = /(?:rincian bagian:|bagian masing-masing ahli waris menjadi:)\s*([^\n]*?);?(?:\n|$)/g;
@@ -85,30 +99,39 @@ function uraiSql(t9769) {
   for (const butir of terakhir.split(/;\s*/).filter(Boolean)) {
     const mm = /^(.*?)\s+(\d+\/\d+)$/.exec(butir.trim());
     if (!mm) return { galat: butir };
-    let label = mm[1];
-    const orang = /\((\d+) orang\)\s*masing-masing/.exec(label);
+    const label = mm[1];
+    const orang = /\((\d+) orang\)\s*(masing-masing|bersama-sama)?/.exec(label);
     const n = orang ? Number(orang[1]) : 1;
+    const bersama = orang && orang[2] === "bersama-sama";
     const k = kunciPeran(label);
-    hasil[k] = hasil[k] || [];
-    for (let i = 0; i < n; i++) hasil[k].push(reduksi(mm[2]));
+    const pecahan = reduksi(mm[2]);
+    const perOrang = bersama ? null : pecahan;
+    const prev = hasil[k] || { n: 0, bagian: [] };
+    prev.n += n;
+    if (bersama) prev.bagian.push(pecahan);
+    else for (let i = 0; i < n; i++) prev.bagian.push(perOrang);
+    hasil[k] = prev;
   }
-  for (const k of Object.keys(hasil)) hasil[k].sort();
-  return hasil;
+  return Object.fromEntries(Object.keys(hasil).sort().map((k) => [k, { n: hasil[k].n, jumlah: jumlahkan(hasil[k].bagian) }]));
 }
 
 function peranJs(p) {
   return kunciPeran(p === "janda" || p === "duda" ? `(${p})` : p === "ayah" ? "(ayah)" : p === "ibu" ? "(ibu)" : p);
 }
 function uraiJs(h) {
-  const hasil = {};
+  const per = {};
   for (const b of h.bagian) {
     const k = peranJs(b.peran);
-    hasil[k] = hasil[k] || [];
-    hasil[k].push(b.pecahan);
+    per[k] = per[k] || { n: 0, bagian: [] };
+    per[k].n += 1;
+    per[k].bagian.push(b.pecahan);
   }
-  for (const k of Object.keys(hasil)) hasil[k].sort();
-  return hasil;
+  // pasangan: kueri menyebut satu kelompok (janda/duda) tanpa menghitung orangnya
+  return Object.fromEntries(Object.keys(per).sort().map((k) => [k, { n: k === "janda" || k === "duda" ? 1 : per[k].n, jumlah: jumlahkan(per[k].bagian) }]));
 }
+
+// kueri 9769 tidak selalu menyebut banyaknya orang pada kelompok "bersama-sama": yang dibandingkan jumlah bagian per kelompok
+const sebatJumlah = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, v.jumlah]));
 
 (async () => {
   const jumlah = Number(process.argv[2] || 300);
@@ -134,7 +157,7 @@ function uraiJs(h) {
       continue;
     }
     if (!uSql || uSql.galat) { takTerurai += 1; contohBeda.push({ alasan: "SQL tak terurai", c, t9769: t9769.slice(0, 600) }); emas.push(catat); continue; }
-    if (JSON.stringify(uSql) === JSON.stringify(catat.js)) sama += 1;
+    if (JSON.stringify(sebatJumlah(uSql)) === JSON.stringify(sebatJumlah(catat.js))) sama += 1;
     else { beda += 1; contohBeda.push({ alasan: "angka beda", c, js: catat.js, sql: uSql }); }
     emas.push(catat);
   }
