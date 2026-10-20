@@ -45,6 +45,7 @@
     dasar: "/aleta/api/aleta-ecourt/putusan-terjadwal",
     berkas: "/aleta/api/aleta-ecourt/putusan-terjadwal/berkas",
     pratinjau: "/aleta/api/aleta-ecourt/putusan-terjadwal/pratinjau",
+    peramban: "/aleta/api/aleta-ecourt/putusan-terjadwal/peramban",
     ringkasan: "/aleta/api/aleta-ecourt/putusan-terjadwal/ringkasan-form",
     massal: "/aleta/api/aleta-ecourt/unggah-massal?putusan=saya",
     sidang: "/aleta/api/aleta-ecourt/sidang",
@@ -1546,6 +1547,13 @@
           tunda.addEventListener("click", () => void aksiButir("tunda", b.id, { menit: 60 }));
           aksi.appendChild(tunda);
         }
+        const butuhPeramban = (b.status === "sebagian" || b.status === "gagal") && b.berkasAda && ["putusan", "anonim"].some((k) => b.langkah[k] && ["gagal", "tertahan"].includes(b.statusLangkah[k])) && !["menunggu", "jalan", "gagal", "tertahan"].includes(b.statusLangkah.isi);
+        if (butuhPeramban) {
+          const selesai = tombol("Selesaikan di peramban ini", "aleta-ptj-sekunder", "Mengunggah e-Doc yang tertahan dari peramban ini: penyamar lalu cadangan anonimisasi ABT, dan Anda yang memutuskan bila masih ada data pribadi tersisa");
+          selesai.setAttribute("data-ptj-aksi", `peramban:${b.id}`);
+          selesai.addEventListener("click", () => void selesaikanDiPeramban(b, selesai));
+          aksi.appendChild(selesai);
+        }
         if (b.dapatUlang) {
           const ulang = tombol("Ulangi", "aleta-ptj-sekunder");
           ulang.setAttribute("data-ptj-aksi", `ulang:${b.id}`);
@@ -1574,6 +1582,67 @@
         kotak.appendChild(bawah);
       }
       wadah.appendChild(kotak);
+    }
+  }
+
+  /**
+   * e-Doc yang tertahan di server (anonimisasi masih memuat data pribadi, penyamar tak bekerja) diselesaikan di
+   * peramban ini dengan alur unggah e-Doc yang SAMA dengan Putusan Otomatis (putusan-edoc-sekaligus.js): penyamar,
+   * lalu cadangan anonimisasi ABT dengan sesi ABT petugas, dan petugas yang memutuskan "Tetap unggah". Server
+   * hanya mencatat hasilnya, dan menyatakan selesai bila SIPP sendiri sudah memuat e-Doc-nya.
+   */
+  async function selesaikanDiPeramban(b, tombolKlik) {
+    const mod = globalThis.aletaPutusanEdoc;
+    if (!mod || typeof mod.jalankan !== "function") {
+      S.pesan = { jenis: "galat", teks: "Pengunggah e-Doc belum termuat di halaman ini." };
+      gambarPesan();
+      return;
+    }
+    tombolKlik.disabled = true;
+    const wadah = el("div", "aleta-ptj-awas");
+    wadah.setAttribute("data-ptj", "peramban-kerja");
+    tombolKlik.parentNode.appendChild(wadah);
+    const kabar = el("div", "aleta-ptj-ket", "Mengambil berkas dari server…");
+    wadah.appendChild(kabar);
+    let kunci = null;
+    try {
+      const r = await ambilJson(API.peramban, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aksi: "berkas", id: b.id }) }, "Mengambil berkas putusan");
+      const d = r.data && typeof r.data === "object" ? r.data : {};
+      if (!r.ok || !d.base64) throw new Error(d.sebab || r.pesan || "Berkas tidak dapat diambil.");
+      const bita = Uint8Array.from(atob(d.base64), (c) => c.charCodeAt(0));
+      const berkas = new File([bita], d.nama || "putusan", { type: "application/octet-stream" });
+      // Kunci perkara yang sama dengan penetapan/putusan: pekerjaan lain atas perkara ini tidak berjalan bersamaan.
+      if (typeof mod.ambilKunci === "function") {
+        kunci = await mod.ambilKunci(b.nomorPerkara, b.perkaraId);
+        if (kunci && kunci.ok === false) throw new Error(kunci.pesan || "Perkara ini sedang dikerjakan pekerjaan lain.");
+      }
+      const perlu = (k) => b.langkah[k] && ["gagal", "tertahan"].includes(b.statusLangkah[k]);
+      const hasil = await mod.jalankan({
+        nomorPerkara: b.nomorPerkara,
+        perkaraId: b.perkaraId,
+        putusan: berkas,
+        denganPutusan: perlu("putusan"),
+        denganAnonim: perlu("anonim"),
+        kabar,
+        wadah,
+      });
+      const langkah = (hasil.langkah || []).map((l) => ({
+        langkah: l.kunci === "putusan" ? "putusan" : "anonim",
+        hasil: l.nada === "ok" ? "selesai" : l.nada === "lewat" ? "lewat" : /tertahan|data pribadi/i.test(l.teks || "") ? "tertahan" : "gagal",
+        catatan: l.teks || "",
+      }));
+      const lapor = await ambilJson(API.peramban, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aksi: "edoc-selesai", id: b.id, langkah }) }, "Mencatat hasil e-Doc");
+      S.pesan = lapor.ok
+        ? { jenis: "sukses", teks: `${b.nomorPerkara}: ${(lapor.data.rincian || []).map((x) => `${NAMA_LANGKAH[x.langkah]} ${NAMA_STATUS[x.status] || x.status}`).join("; ") || "selesai"}.` }
+        : { jenis: "galat", teks: lapor.pesan || "Hasil tidak dapat dicatat di server." };
+    } catch (galat) {
+      S.pesan = { jenis: "galat", teks: sebaris((galat && galat.message) || galat) };
+    } finally {
+      if (kunci && typeof kunci.lepas === "function") await kunci.lepas().catch(() => undefined);
+      wadah.remove();
+      tombolKlik.disabled = false;
+      gambarPesan();
+      await muatAntrean();
     }
   }
 
@@ -1634,6 +1703,8 @@
     const k = tambahKandidat({ nomor: S.nomor, ket: "perkara yang sedang dibuka", dari: "perkara" });
     if (k) {
       pilih(k.kunci, true);
+      gambarSemua();
+      segarkanPasangan();
       void perkaraIdUntuk(S.nomor).then(async (id) => {
         if (k) k.perkaraId = id;
         // Putusan yang sudah terisi tidak ditimpa: langkah isi dimatikan bila SIPP sudah memuatnya.

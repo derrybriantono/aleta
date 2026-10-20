@@ -121,6 +121,8 @@ function buka(o: Opsi = {}) {
 
   // ── Server portal tiruan ──
   const panggilan: Panggilan[] = [];
+  const selesaiDikirim: any[] = [];
+  const jalanDengan: any[] = [];
   const berkasServer = new Map<string, { nama: string; bentuk: string; nomorIsi: string }>();
   let urutBerkas = 0;
   const jawab = (data: unknown, status = 200, galat?: { pesan: string; rincian?: unknown }) => ({
@@ -164,6 +166,13 @@ function buka(o: Opsi = {}) {
     }
     if (alamat.includes("/unggah-massal")) return jawab({ ok: true, putusan: o.massal?.putusan ?? [], tertahan: o.massal?.tertahan ?? [] });
     if (alamat.includes("/aleta-ecourt/sidang")) return jawab({ available: true, sidang: o.sidang ?? [] });
+    if (alamat.includes("/putusan-terjadwal/peramban") && metode === "POST") {
+      if (badan.aksi === "berkas") return jawab({ ok: true, nama: "putusan.rtf", bentuk: "rtf", base64: btoa("{\rtf1 isi}") });
+      if (badan.aksi === "edoc-selesai") {
+        selesaiDikirim.push(badan);
+        return jawab({ ok: true, status: "selesai", rincian: badan.langkah.map((l: any) => ({ langkah: l.langkah, status: l.hasil === "selesai" ? "selesai" : "gagal", catatan: l.catatan })) });
+      }
+    }
     if (alamat.includes("/putusan-terjadwal") && metode === "POST") {
       if (o.buatGagal) return jawab({ ok: false }, 400, o.buatGagal);
       const butir = badan.butir.map((b: any, i: number) => ({ id: `ptb-${i + 1}`, urut: i + 1, nomorPerkara: b.nomorPerkara, waktuWita: `${badan.mulai.slice(0, 16)}`, waktuIso: "", langkah: [], ringkasForm: "" }));
@@ -186,6 +195,13 @@ function buka(o: Opsi = {}) {
     alatSidangPadaTanggal: async (tgl: string) => (o.sidang ?? []).map((s) => ({ ...s, tanggalSidang: tgl })),
     barisPerkaraDiHalaman: () => Array.from(w.document.querySelectorAll("#daftar tr")).slice(1).map((tr: any) => ({ nomor: tr.cells[1].textContent, baris: tr })),
   });
+  w.aletaPutusanEdoc = {
+    ambilKunci: async () => ({ ok: true, lepas: async () => undefined }),
+    jalankan: async (p: any) => {
+      jalanDengan.push({ nomorPerkara: p.nomorPerkara, perkaraId: p.perkaraId, namaBerkas: p.putusan && p.putusan.name, denganPutusan: p.denganPutusan, denganAnonim: p.denganAnonim });
+      return { ok: true, bunyi: "x", langkah: [{ kunci: "anonimisasi", judul: "e-Doc anonimisasi", teks: "terunggah (disamarkan)", nada: "ok" }] };
+    },
+  };
   if (!o.tanpaPasangan) vm.runInContext(PASANGAN, ctx, { filename: "putusan-terjadwal-pasangan.js" });
   // Tempat tombol: Putusan Otomatis (B2) dan Buka di ABT / ALETA (L1).
   if (halaman === "perkara") {
@@ -204,7 +220,7 @@ function buka(o: Opsi = {}) {
     baris.insertBefore(put, l1);
   }
   vm.runInContext(PTJ, ctx, { filename: "putusan-terjadwal.js" });
-  return { w, d: w.document as Document, panggilan, simpanan, berkasServer };
+  return { w, d: w.document as Document, panggilan, simpanan, berkasServer, selesaiDikirim, jalanDengan };
 }
 type Halaman = ReturnType<typeof buka>;
 
@@ -721,6 +737,22 @@ describe("antrean terjadwal", () => {
     expect(h.panggilan.find((p) => p.metode === "PATCH" && p.badan.aksi === "tunda")!.badan.menit).toBe(60);
     // Butir yang selesai tidak punya tombol batal.
     expect(panel(h)!.querySelector('[data-ptj-aksi="batal:102"]')).toBeNull();
+  });
+
+  it("e-Doc yang tertahan (anonimisasi): 'Selesaikan di peramban ini' mengambil berkas, menjalankan alur e-Doc yang sama dengan Putusan Otomatis, lalu mencatat hasil ke server", async () => {
+    const h = buka({ antrean: ANTREAN });
+    await panelSiap(h);
+    (q(h, '[data-ptj="tab-antrean"]') as HTMLButtonElement).click();
+    await sampai(() => qq(h, "[data-ptj-butir]").length === 3, "tiga butir");
+    // Tombol hanya untuk butir yang e-Doc-nya tertahan/gagal dan Putusan Akhir-nya sudah beres.
+    expect(panel(h)!.querySelector('[data-ptj-aksi="peramban:101"]')).toBeNull();
+    expect(panel(h)!.querySelector('[data-ptj-aksi="peramban:102"]')).toBeNull();
+    (q(h, '[data-ptj-aksi="peramban:103"]') as HTMLButtonElement).click();
+    await sampai(() => h.selesaiDikirim.length === 1, "hasil dicatat ke server");
+    // Hanya langkah yang tertahan yang dikerjakan: e-Doc putusan sudah selesai, tidak diunggah ulang.
+    expect(h.jalanDengan).toEqual([{ nomorPerkara: "103/Pdt.G/2026/PA.Dgl", perkaraId: "1", namaBerkas: "putusan.rtf", denganPutusan: false, denganAnonim: true }]);
+    expect(h.selesaiDikirim[0]).toMatchObject({ aksi: "edoc-selesai", id: "103", langkah: [{ langkah: "anonim", hasil: "selesai", catatan: "terunggah (disamarkan)" }] });
+    await sampai(() => panel(h)!.textContent!.includes("103/Pdt.G/2026/PA.Dgl: e-Doc anonimisasi selesai"), "hasil tampil");
   });
 
   it("pelaksana server dimatikan admin: dikatakan di antrean", async () => {

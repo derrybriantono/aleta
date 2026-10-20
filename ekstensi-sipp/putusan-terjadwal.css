@@ -654,3 +654,40 @@ html[data-aleta-tema-sipp="gelap"] .aleta-ptj-spanduk {
   --pt-emas: #e0b861;
   color-scheme: dark;
 }
+
+/* .aleta-sisip (panel.css) menandai sisipan ALETA di tabel SIPP dan diabaikan pengamat konten.js - kelas itu
+   WAJIB tetap ada; gaya hijaunya dinetralkan di sini untuk elemen melayang dan panel. */
+.aleta-ptj-melayang.aleta-sisip,
+.aleta-ptj-spanduk.aleta-sisip {
+  margin-top: 0;
+  border-left-width: 2px;
+}
+.aleta-ptj-melayang.aleta-sisip {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+.aleta-ptj-panel.aleta-sisip {
+  margin-top: 8px;
+}
+.aleta-ptj-laci.aleta-sisip {
+  margin-top: 0;
+}
+
+/* Atribut hidden harus menang atas display:grid/flex yang dipasang kelas di atas. */
+.aleta-ptj-badan[hidden],
+.aleta-ptj-kaki[hidden],
+.aleta-ptj-melayang[hidden],
+.aleta-ptj-spanduk[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 720px) {
+  .aleta-ptj-kandidat label {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .aleta-ptj-kandidat label .aleta-ptj-ket {
+    grid-column: 2;
+  }
+}

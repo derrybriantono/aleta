@@ -41,7 +41,7 @@ import {
   pulihkanMacet,
   type DepsPelaksana,
 } from "@/server/modules/putusan-terjadwal/pelaksana";
-import { giliranPeramban, klaimPeramban, laporPeramban, lepasPeramban, siapkanDraf } from "@/server/modules/putusan-terjadwal/peramban";
+import { ambilBerkasPeramban, giliranPeramban, klaimPeramban, laporPeramban, lepasPeramban, selesaikanEdocPeramban, siapkanDraf } from "@/server/modules/putusan-terjadwal/peramban";
 
 const pelaku = (id: string, nama: string, peran: string): Pelaku => ({ actor: { id, name: nama, roleId: peran, isActive: true }, peran }) as unknown as Pelaku;
 const HAKIM = pelaku("usr-pl-hakim", "Hakim Satu", "hakim");
@@ -767,6 +767,47 @@ describe("pelaksana e-Doc dan sisi peramban (pg-mem)", () => {
       }
       expect(b.status).toBe("gagal");
       expect(String(b.catatan_isi)).toMatch(/Gagal setelah 4 percobaan/);
+    });
+
+    it("e-Doc yang tertahan di server (data pribadi tersisa) diselesaikan di peramban: berkas diambil pemiliknya saja; 'selesai' hanya bila SIPP membuktikan; langkah yang tidak tertahan diabaikan", async () => {
+      const dunia = buatDunia({ sisa: [{ jenis: "nama pihak", kata: "Hendrawan", konteks: "kuasa Hendrawan" }] });
+      const j = await jadwalkan(dunia);
+      await detakPelaksana(db, dunia.deps);
+      expect(await butir(j.butirId)).toMatchObject({ status: "sebagian", status_putusan: "selesai", status_anonim: "tertahan" });
+      // Berkas: hanya pemilik; sidik jari diperiksa; berkas yang sudah dihapus tidak ada.
+      await expect(ambilBerkasPeramban(db, HAKIM_LAIN, { id: j.butirId }, dunia.deps)).rejects.toThrow(/milik pengguna lain/);
+      const berkas = await ambilBerkasPeramban(db, HAKIM, { id: j.butirId }, dunia.deps);
+      expect(berkas).toMatchObject({ ok: true, bentuk: "rtf" });
+      expect(Buffer.from((berkas as { base64: string }).base64, "base64").toString("latin1")).toContain("{\\rtf1");
+      const asli = new Map(dunia.berkas);
+      for (const k of dunia.berkas.keys()) dunia.berkas.set(k, rtf(["{diubah}"]));
+      expect(await ambilBerkasPeramban(db, HAKIM, { id: j.butirId }, dunia.deps)).toMatchObject({ ok: false, sebab: expect.stringMatching(/sidik jari tidak sama/) });
+      for (const [k, v] of asli) dunia.berkas.set(k, v);
+
+      // Peramban melapor selesai, tetapi SIPP belum memuat e-Doc anonimisasi: GAGAL, bukan selesai.
+      const belum = await selesaikanEdocPeramban(db, HAKIM, { id: j.butirId, langkah: [{ langkah: "anonim", hasil: "selesai" }] }, dunia.deps);
+      expect(belum.rincian[0]).toMatchObject({ langkah: "anonim", status: "gagal" });
+      expect(belum.rincian[0].catatan).toMatch(/SIPP belum memuat e-Doc-nya/);
+      expect((await butir(j.butirId)).status).toBe("sebagian");
+
+      // SIPP memuatnya: selesai (dibuktikan), butir selesai; langkah putusan yang sudah selesai diabaikan.
+      dunia.sipp.anonim = true;
+      const ok = await selesaikanEdocPeramban(
+        db,
+        HAKIM,
+        { id: j.butirId, langkah: [{ langkah: "anonim", hasil: "selesai", catatan: "Tetap diunggah atas keputusan petugas" }, { langkah: "putusan", hasil: "gagal" }] },
+        dunia.deps
+      );
+      expect(ok.status).toBe("selesai");
+      expect(ok.rincian).toHaveLength(1);
+      const b = await butir(j.butirId);
+      expect(b).toMatchObject({ status: "selesai", status_putusan: "selesai", status_anonim: "selesai" });
+      expect(String(b.catatan_anonim)).toMatch(/Diunggah dari peramban dan terbukti ada di SIPP \(Tetap diunggah atas keputusan petugas\)/);
+      const jejak = await baris("SELECT pelaku, hasil FROM aleta_putusan_jadwal_jejak WHERE butir_id = ? AND peristiwa = 'edoc-anonim' ORDER BY waktu", [j.butirId]);
+      expect(jejak.some((x) => x.pelaku === "peramban: Hakim Satu" && x.hasil === "ok")).toBe(true);
+      // Tidak ada yang tertahan lagi: tidak dapat diselesaikan dua kali.
+      await expect(selesaikanEdocPeramban(db, HAKIM, { id: j.butirId, langkah: [{ langkah: "anonim", hasil: "selesai" }] }, dunia.deps)).rejects.toThrow(/Tidak ada langkah e-Doc yang tertahan/);
+      await expect(selesaikanEdocPeramban(db, HAKIM_LAIN, { id: j.butirId, langkah: [{ langkah: "anonim", hasil: "selesai" }] }, dunia.deps)).rejects.toThrow(/milik pengguna lain/);
     });
 
     it("UJUNG KE UJUNG: peramban mengisi Putusan Akhir, lalu server mengunggah e-Doc beberapa saat kemudian; semuanya selesai", async () => {

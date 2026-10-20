@@ -3,7 +3,17 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { pastikanBolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
 import { depsAsli } from "@/server/modules/putusan-terjadwal/pelaksana";
-import { giliranPeramban, klaimPeramban, laporPeramban, lepasPeramban, siapkanDraf, type HasilLaporan } from "@/server/modules/putusan-terjadwal/peramban";
+import {
+  ambilBerkasPeramban,
+  giliranPeramban,
+  klaimPeramban,
+  laporPeramban,
+  lepasPeramban,
+  selesaikanEdocPeramban,
+  siapkanDraf,
+  type HasilLaporan,
+  type LaporanEdocPeramban,
+} from "@/server/modules/putusan-terjadwal/peramban";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
 import { ok } from "@/server/shared/http";
@@ -20,6 +30,8 @@ export const dynamic = "force-dynamic";
  *
  *   GET  ?akunSipp=        -> { ada, butir?, tautan? } | { ada:false, menunggu, berikutnya, alasan }
  *   POST { aksi: "klaim" | "draf" | "lapor" | "lepas", id, ... }
+ *   POST { aksi: "berkas", id }                    -> berkas terpasang (base64) untuk menyelesaikan e-Doc di peramban
+ *   POST { aksi: "edoc-selesai", id, langkah: [] } -> hasil e-Doc yang diselesaikan di peramban (selesai hanya bila SIPP membuktikannya)
  */
 export async function GET(request: NextRequest) {
   let db: Awaited<ReturnType<typeof getDatabase>> | null = null;
@@ -60,6 +72,10 @@ export async function POST(request: NextRequest) {
         return ok(await laporPeramban(db, pelaku, { id, hasil: String(badan.hasil ?? "") as HasilLaporan, catatan: String(badan.catatan ?? "") }, deps));
       case "lepas":
         return ok(await lepasPeramban(db, pelaku, { id, tundaDetik: Number(badan.tundaDetik) || undefined, sebab: String(badan.sebab ?? ""), hitung: badan.hitung === true }, deps));
+      case "berkas":
+        return ok(await ambilBerkasPeramban(db, pelaku, { id }, deps));
+      case "edoc-selesai":
+        return ok(await selesaikanEdocPeramban(db, pelaku, { id, langkah: (Array.isArray(badan.langkah) ? badan.langkah : []) as LaporanEdocPeramban[] }, deps));
       default:
         return ok({ ok: false, sebab: "Aksi tidak dikenal." });
     }

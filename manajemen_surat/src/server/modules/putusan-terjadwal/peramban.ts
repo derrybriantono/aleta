@@ -328,3 +328,92 @@ export async function lepasPeramban(
   }
   return { ok: true };
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// Menyelesaikan e-Doc yang tertahan di peramban (cadangan anonimisasi ABT, "Tetap unggah")
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Berkas yang dipasang ke butir ini, untuk dikerjakan di peramban penjadwal. Penyamar di server tidak dapat
+ * memakai sesi ABT petugas; cadangan anonimisasi ABT dan pertanyaan "tetap unggah" hanya hidup di peramban.
+ * Hanya pemilik jadwal, dan hanya selama berkasnya masih disimpan; sidik jarinya diperiksa.
+ */
+export async function ambilBerkasPeramban(
+  db: AletaDatabase,
+  pelaku: Pelaku,
+  masukan: { id: string },
+  deps: Pick<DepsPelaksana, "bacaBerkas"> = depsAsli()
+): Promise<{ ok: true; nama: string; bentuk: string; base64: string } | { ok: false; sebab: string }> {
+  const b = await butirMilik(db, pelaku, masukan.id);
+  if (b.status === "dibatalkan") return { ok: false, sebab: "Jadwal ini sudah dibatalkan." };
+  if (!b.berkas_jalur) return { ok: false, sebab: "Berkas sudah tidak disimpan di server; seret ulang berkasnya." };
+  const bita = await deps.bacaBerkas(b.berkas_jalur);
+  if (!bita) return { ok: false, sebab: "Berkas tidak ada lagi di penyimpanan; seret ulang berkasnya." };
+  if (b.berkas_sha256 && sha256(bita) !== b.berkas_sha256) return { ok: false, sebab: "Isi berkas berubah sejak diunggah (sidik jari tidak sama); tidak dipakai." };
+  return { ok: true, nama: b.berkas_nama || "putusan", bentuk: b.berkas_bentuk, base64: Buffer.from(bita).toString("base64") };
+}
+
+export type LaporanEdocPeramban = { langkah: "putusan" | "anonim"; hasil: "selesai" | "lewat" | "gagal" | "tertahan"; catatan?: string };
+
+/**
+ * Petugas menyelesaikan e-Doc yang tertahan lewat peramban (alur unggah e-Doc yang sama dengan B2). Yang
+ * diterima server HANYA langkah yang sedang gagal/tertahan, dan "selesai" hanya bila SIPP sendiri sekarang
+ * memuat e-Doc-nya (bukti dari SIPP, bukan dari laporan peramban).
+ */
+export async function selesaikanEdocPeramban(
+  db: AletaDatabase,
+  pelaku: Pelaku,
+  masukan: { id: string; langkah: LaporanEdocPeramban[] },
+  deps: Pick<DepsPelaksana, "sekarang" | "cekSlot"> = depsAsli()
+): Promise<{ ok: true; status: string; rincian: Array<{ langkah: string; status: string; catatan: string }> }> {
+  const kini = deps.sekarang();
+  const b = await butirMilik(db, pelaku, masukan.id);
+  if (b.status === "jalan" || b.status === "dibatalkan") throw new ApiError(409, `${b.nomor_perkara} sedang dikerjakan atau sudah dibatalkan.`);
+  const langkah = langkahDariBaris(b);
+  const bukti = await deps.cekSlot(b.perkara_id);
+  const perubahan: PerubahanButir = { lain: { selesai_pada: "", klaim_oleh: "", klaim_sampai: "" } };
+  const rincian: Array<{ langkah: string; status: string; catatan: string }> = [];
+  for (const l of Array.isArray(masukan.langkah) ? masukan.langkah : []) {
+    const k = l && (l.langkah === "putusan" || l.langkah === "anonim") ? l.langkah : null;
+    if (!k || (langkah[k] !== "gagal" && langkah[k] !== "tertahan")) continue;
+    const catatan = sebaris(l.catatan, 300);
+    let status: StatusLangkah;
+    let teks: string;
+    if (l.hasil === "selesai" || l.hasil === "lewat") {
+      const ada = bukti.ok ? (k === "putusan" ? bukti.adaPutusan : bukti.adaAnonim) : null;
+      if (ada === false) {
+        status = "gagal";
+        teks = "Peramban melaporkan terunggah, tetapi SIPP belum memuat e-Doc-nya; diperiksa manual.";
+      } else {
+        status = l.hasil === "lewat" ? "dilewati" : "selesai";
+        teks = `${l.hasil === "lewat" ? "Sudah ada di SIPP - tidak diganti" : "Diunggah dari peramban"}${ada === true ? " dan terbukti ada di SIPP" : ""}${catatan ? ` (${catatan})` : ""}.`;
+      }
+    } else {
+      status = l.hasil === "tertahan" ? "tertahan" : "gagal";
+      teks = catatan || "Belum selesai dari peramban.";
+    }
+    perubahan[k] = { status, catatan: teks };
+    rincian.push({ langkah: k, status, catatan: teks });
+  }
+  if (rincian.length === 0) throw new ApiError(409, "Tidak ada langkah e-Doc yang tertahan untuk diselesaikan.");
+  const baru = await ubahButir(db, b.id, perubahan, { kini });
+  if (!baru) throw new ApiError(409, "Butir ini baru saja berubah; muat ulang.");
+  const nama = `peramban: ${sebaris(pelaku.actor.name, 120)}`;
+  for (const r of rincian) {
+    await catatJejak(db, {
+      jadwalId: b.jadwal_id,
+      butirId: b.id,
+      nomorPerkara: b.nomor_perkara,
+      peristiwa: r.langkah === "putusan" ? "edoc-putusan" : "edoc-anonim",
+      pelaku: nama,
+      pelakuId: pelaku.actor.id,
+      akunSipp: b.akun_sipp,
+      hasil: r.status === "selesai" ? "ok" : r.status === "dilewati" ? "dilewati" : r.status === "tertahan" ? "tertahan" : "gagal",
+      ringkas: `${b.nomor_perkara}: ${r.langkah === "putusan" ? "e-Doc putusan" : "e-Doc anonimisasi"} diselesaikan di peramban - ${r.catatan}`,
+      kini,
+    });
+  }
+  const pengaturan = await bacaPengaturan(db);
+  const akhir = await akhiriBilaSelesai(db, baru, { kini, pelaku: nama, pelakuId: pelaku.actor.id, pengaturan });
+  return { ok: true, status: akhir.status, rincian };
+}
