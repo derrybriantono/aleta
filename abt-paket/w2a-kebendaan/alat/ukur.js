@@ -84,7 +84,7 @@ function samaHimpunan(a, b) {
   per.push(hitung("sita=ada (gugatan menyebut sudah disita) vs amar sita sah dan berharga", hbAmar, (x) => Boolean(sar(x, "sita")), sitaAmar));
   per.push(hitung("sitaDiminta atau sita (gugatan memuat sita) vs amar sita sah dan berharga", hbAmar, (x) => Boolean(sar(x, "sita") || sar(x, "sitaDiminta")), sitaAmar));
   per.push(hitung("pembagianDiminta=seperdua (vs amar seperdua)", hbAmar, (x) => Boolean(sar(x, "pembagianDiminta") && sar(x, "pembagianDiminta").nilai === "seperdua"), (x) => /seperdua|½|1\s*\/\s*2|50\s*%|setengah|separuh/i.test(x.amar)));
-  per.push(hitung("penguasa=lawan (vs amar Menghukum Tergugat menyerahkan/mengosongkan)", hbAmar, (x) => Boolean(sar(x, "penguasa") && ["lawan", "campur"].includes(sar(x, "penguasa").nilai)), (x) => /Menghukum\s+Tergugat[^;]{0,200}(menyerahkan|mengosongkan|membagi)/i.test(x.amar)));
+  per.push(hitung("penguasa=lawan (vs amar Menghukum Tergugat menyerahkan/mengosongkan)", hbAmar, (x) => Boolean((sar(x, "penguasa") && sar(x, "penguasa").nilai === "lawan") || sar(x, "penguasaCampur")), (x) => /Menghukum\s+Tergugat[^;]{0,200}(menyerahkan|mengosongkan|membagi)/i.test(x.amar)));
   // jenis objek: tiap jenis dinilai terhadap amar
   for (const [nama, re] of K.JENIS_OBJEK) {
     if (!["tanah-bangunan", "kendaraan", "perhiasan-perabot", "kebun-ternak"].includes(nama)) continue;
