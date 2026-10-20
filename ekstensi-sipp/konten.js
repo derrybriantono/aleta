@@ -2151,7 +2151,36 @@ async function kirimRantaiUtuh(usulan, perkaraId, akunMasuk, hasil, antre, pilih
   }
 }
 
-async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering) {
+/**
+ * Penetapan yang SEDANG ditulis di halaman ini, per nomor perkara. Satu kunci
+ * untuk SEMUA jalan menulis di halaman (kartu Penetapan, tombol Tetapkan, dan
+ * tombol "Penetapan Otomatis" di halaman SIPP): tekanan kedua dari jalan mana
+ * pun selagi yang pertama berjalan DITOLAK, bukan ditulis ganda (20 Okt 2026,
+ * temuan penetapan ganda 684/Pdt.G/2026/PA.Dgl). Uji kering tidak menulis,
+ * jadi tidak dikunci.
+ */
+const kunciTulisPenetapan = new Set();
+
+async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering, opsi = {}) {
+  const nomorKunci = String((usulan && usulan.perkara && usulan.perkara.nomorPerkara) || (usulan && usulan.perkara && usulan.perkara.perkaraId) || "");
+  // opsi.kunciDipegang: pemanggil sudah memegang kunci ini untuk SELURUH urutannya
+  // (uji kering sampai e-Doc) dan melepasnya sendiri.
+  const kunciSendiri = !kering && nomorKunci && !(opsi && opsi.kunciDipegang);
+  if (kunciSendiri) {
+    if (kunciTulisPenetapan.has(nomorKunci)) {
+      const bunyi = "Penetapan perkara ini sedang ditulis dari tempat lain di halaman ini. Tunggu sampai selesai - tidak ditulis dua kali.";
+      return { ok: false, dikerjakan: 0, hasil: [{ jenis: URUTAN_TULIS[0], ok: false, alasan: "sedang_ditulis", bunyi }] };
+    }
+    kunciTulisPenetapan.add(nomorKunci);
+  }
+  try {
+    return await tetapkanLewatAletaInti(tombol, kabar, usulan, data, keadaan, kering, opsi);
+  } finally {
+    if (kunciSendiri) kunciTulisPenetapan.delete(nomorKunci);
+  }
+}
+
+async function tetapkanLewatAletaInti(tombol, kabar, usulan, data, keadaan, kering, opsi = {}) {
   const perkaraId = Number((usulan.perkara && usulan.perkara.perkaraId) || 0);
   if (!perkaraId) {
     kabar.textContent = "Perkara tidak dikenali.";
@@ -2166,7 +2195,9 @@ async function tetapkanLewatAleta(tombol, kabar, usulan, data, keadaan, kering) 
   // Perbaikan 6 Okt (butir 17) - UI Baru saja: penetapan yang SUNGGUH
   // tertulis langsung disusul edoc-nya dari blangko ABT (Peta penetapan).
   // Tidak ditunggu: penetapannya sudah tertulis, edoc punya kabarnya sendiri.
-  if (!kering && typeof e6SesudahPenetapanTertulis === "function") {
+  // opsi.tanpaEdocOtomatis: pemanggil (panel "Penetapan Otomatis" di halaman
+  // SIPP) mengunggah e-Doc sendiri menurut kotak centang per penetapan.
+  if (!kering && !opsi.tanpaEdocOtomatis && typeof e6SesudahPenetapanTertulis === "function") {
     try {
       void Promise.resolve(e6SesudahPenetapanTertulis(kabar, usulan, hasil)).catch(() => undefined);
     } catch {
@@ -4143,6 +4174,11 @@ function gambarPenunjukan(isi, data) {
 
     isi.appendChild(kotakPejabat);
   }
+
+  // Panel "Penetapan Otomatis" di halaman SIPP memakai bagian rinci ini hanya
+  // untuk PILIHAN (cara, majelis, panitera, juru sita, hari sidang); tombol
+  // menulisnya milik panel itu sendiri (penetapan-sipp.js).
+  if (isi.hasAttribute && isi.hasAttribute("data-aleta-tanpa-kaki")) return;
 
   // --- tombol Kerjakan ----------------------------------------------------
   // ==========================================================================

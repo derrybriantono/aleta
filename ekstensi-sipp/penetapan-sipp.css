@@ -1,0 +1,547 @@
+/*
+ * Penetapan Otomatis di halaman perkara SIPP (20 Okt 2026).
+ * Tata letak mengikuti rancangan yang disetujui: tombol tebal paling kiri di
+ * deretan tombol, panel terbentang di bawahnya. Terang mengikuti SIPP; gelap
+ * mengikuti penanda tema yang sama dengan seluruh ekstensi
+ * (html[data-aleta-tema-sipp="gelap"]). Kontras tombol dijaga uji (>= 4,5:1).
+ *
+ * Panel meminjam bagian rinci papan penetapan (gambarPenunjukan) yang
+ * gayanya ada di panel.css dan memakai peubah --aleta-*; peubah itu diberi
+ * nilai tema panel ini di bawah, supaya rinci terbaca di atas latar panel.
+ */
+.aleta-pensipp-panel {
+  --ps-latar: #ffffff;
+  --ps-latar-lembut: #f2f6f3;
+  --ps-tinta: #16231b;
+  --ps-redup: #4d5d53;
+  --ps-garis: #c5d3c9;
+  --ps-merek: #0f5f4f;
+  --ps-merek-tua: #134a28;
+  --ps-merek-teks: #ffffff;
+  --ps-emas: #8a5a0d;
+  --ps-emas-lembut: #fbf1dc;
+  --ps-ok: #1b6e38;
+  --ps-ok-lembut: #e3f3e8;
+  --ps-tunggu: #7a5c0a;
+  --ps-tunggu-lembut: #fbf3d9;
+  --ps-lewat: #4a5565;
+  --ps-lewat-lembut: #eceff3;
+  --ps-salah: #b42318;
+  --ps-salah-lembut: #fde8e6;
+  /* Peubah panel.css untuk bagian rinci yang dipinjam. */
+  --aleta-latar: var(--ps-latar);
+  --aleta-latar-naik: var(--ps-latar-lembut);
+  --aleta-garis: var(--ps-garis);
+  --aleta-garis-kuat: #98ab9f;
+  --aleta-tulisan: var(--ps-tinta);
+  --aleta-tulisan-lembut: var(--ps-redup);
+  --aleta-merek: var(--ps-merek);
+  --aleta-aman: var(--ps-ok);
+  --aleta-mendesak: var(--ps-tunggu);
+  --aleta-lewat: var(--ps-salah);
+  --aleta-merek-latar: color-mix(in srgb, var(--aleta-merek) 12%, var(--aleta-latar));
+  --aleta-merek-garis: color-mix(in srgb, var(--aleta-merek) 42%, var(--aleta-latar));
+  --aleta-merek-tombol: color-mix(in srgb, var(--aleta-merek) 18%, var(--aleta-latar));
+  --aleta-merek-tombol-sorot: color-mix(in srgb, var(--aleta-merek) 28%, var(--aleta-latar));
+  --aleta-merek-tulisan: var(--ps-merek);
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-pensipp-panel {
+  --ps-latar: #17231d;
+  --ps-latar-lembut: #1d2d25;
+  --ps-tinta: #e6efe9;
+  --ps-redup: #a9bbb0;
+  --ps-garis: #33463b;
+  --ps-merek: #7fd0a6;
+  --ps-merek-tua: #1f5c36;
+  --ps-merek-teks: #05261a;
+  --ps-emas: #e0b861;
+  --ps-emas-lembut: #3a2e17;
+  --ps-ok: #7fd9a1;
+  --ps-ok-lembut: #183527;
+  --ps-tunggu: #e5c35c;
+  --ps-tunggu-lembut: #3a3216;
+  --ps-lewat: #b7c2d0;
+  --ps-lewat-lembut: #262d36;
+  --ps-salah: #ff9b92;
+  --ps-salah-lembut: #43211f;
+  --aleta-garis-kuat: #4b6355;
+  color-scheme: dark;
+}
+
+/* ── Tombol di deretan tombol SIPP ───────────────────────────────────────── */
+td.aleta-pensipp-sel {
+  vertical-align: middle;
+  padding-right: 4px;
+}
+.aleta-pensipp-tombol {
+  --ps-t-latar: #0f5f4f;
+  --ps-t-teks: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--ps-t-latar);
+  color: var(--ps-t-teks) !important;
+  border: 2px solid var(--ps-t-latar);
+  border-radius: 4px;
+  padding: 4px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(15, 95, 79, 0.25);
+}
+.aleta-pensipp-tombol:hover {
+  filter: brightness(1.12);
+}
+.aleta-pensipp-tombol[aria-expanded="true"] {
+  --ps-t-latar: #134a28;
+  border-color: #134a28;
+}
+.aleta-pensipp-tombol:focus-visible,
+.aleta-pensipp-utama:focus-visible,
+.aleta-pensipp-kecil:focus-visible,
+.aleta-pensipp-mode-pil:focus-visible,
+.aleta-pensipp-rinci-ringkas:focus-visible,
+.aleta-pensipp-panel input:focus-visible {
+  outline: 3px solid #e0a800;
+  outline-offset: 2px;
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-pensipp-tombol {
+  --ps-t-latar: #7fd0a6;
+  --ps-t-teks: #05261a;
+  box-shadow: 0 0 0 3px rgba(127, 208, 166, 0.3);
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-pensipp-tombol[aria-expanded="true"] {
+  --ps-t-latar: #58b88a;
+  border-color: #58b88a;
+}
+.aleta-pensipp-ikon {
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+/* ── Panel ───────────────────────────────────────────────────────────────── */
+.aleta-pensipp-panel {
+  box-sizing: border-box;
+  clear: both;
+  width: 100%;
+  max-width: 1100px;
+  margin: 8px 0 14px;
+  border: 2px solid var(--ps-merek);
+  border-radius: 8px;
+  background: var(--ps-latar);
+  color: var(--ps-tinta);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+  text-align: left;
+}
+.aleta-pensipp-panel[hidden] {
+  display: none;
+}
+.aleta-pensipp-panel *,
+.aleta-pensipp-panel *::before,
+.aleta-pensipp-panel *::after {
+  box-sizing: border-box;
+}
+.aleta-pensipp-kepala {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ps-garis);
+}
+.aleta-pensipp-judul {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--ps-tinta);
+}
+.aleta-pensipp-mono {
+  font-family: ui-monospace, "JetBrains Mono", Consolas, monospace;
+  font-size: 0.92em;
+}
+.aleta-pensipp-catatan {
+  font-size: 13px;
+  color: var(--ps-redup);
+}
+.aleta-pensipp-mode {
+  display: inline-flex;
+  border: 1px solid var(--ps-garis);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.aleta-pensipp-mode-pil {
+  border: 0;
+  background: transparent;
+  color: var(--ps-tinta);
+  padding: 6px 16px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+}
+.aleta-pensipp-mode-pil[aria-pressed="true"] {
+  background: var(--ps-merek);
+  color: var(--ps-merek-teks);
+}
+.aleta-pensipp-mode-pil:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.aleta-pensipp-badan {
+  display: grid;
+  gap: 10px;
+  padding: 12px 16px;
+}
+.aleta-pensipp-info {
+  font-size: 13.5px;
+  color: var(--ps-redup);
+}
+.aleta-pensipp-info-salah {
+  color: var(--ps-salah);
+  font-weight: 700;
+}
+.aleta-pensipp-info-awas {
+  color: var(--ps-emas);
+  font-weight: 700;
+}
+.aleta-pensipp-daftar {
+  display: grid;
+  gap: 10px;
+}
+
+/* ── Satu langkah ────────────────────────────────────────────────────────── */
+.aleta-pensipp-langkah {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px 14px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid var(--ps-garis);
+  border-radius: 9px;
+  background: var(--ps-latar);
+}
+.aleta-pensipp-no {
+  font: 800 12px/1.2 ui-monospace, Consolas, monospace;
+  background: var(--ps-lewat-lembut);
+  color: var(--ps-lewat);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+.aleta-pensipp-nama {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ps-tinta);
+}
+.aleta-pensipp-penetap,
+.aleta-pensipp-sebab {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--ps-redup);
+}
+.aleta-pensipp-awas {
+  margin: 4px 0 0;
+  padding: 3px 8px;
+  border-left: 3px solid var(--ps-emas);
+  background: var(--ps-emas-lembut);
+  color: var(--ps-emas);
+  font-size: 13px;
+  font-weight: 700;
+}
+.aleta-pensipp-pejabat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.aleta-pensipp-nilai {
+  background: var(--ps-lewat-lembut);
+  border-radius: 6px;
+  padding: 2px 9px;
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.aleta-pensipp-kosong {
+  color: var(--ps-redup);
+  font-style: italic;
+}
+.aleta-pensipp-chip {
+  align-self: center;
+  background: var(--ps-ok-lembut);
+  color: var(--ps-ok);
+  border-radius: 99px;
+  padding: 1px 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.aleta-pensipp-chip-edoc {
+  background: var(--ps-emas-lembut);
+  color: var(--ps-emas);
+}
+.aleta-pensipp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  border-radius: 99px;
+  padding: 3px 11px;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.aleta-pensipp-s-tunggu {
+  background: var(--ps-tunggu-lembut);
+  color: var(--ps-tunggu);
+}
+.aleta-pensipp-s-ok {
+  background: var(--ps-ok-lembut);
+  color: var(--ps-ok);
+}
+.aleta-pensipp-s-lewat {
+  background: var(--ps-lewat-lembut);
+  color: var(--ps-lewat);
+}
+.aleta-pensipp-s-jalan {
+  background: var(--ps-emas-lembut);
+  color: var(--ps-emas);
+}
+.aleta-pensipp-s-salah {
+  background: var(--ps-salah-lembut);
+  color: var(--ps-salah);
+}
+.aleta-pensipp-putar {
+  width: 11px;
+  height: 11px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: aleta-pensipp-putar 0.8s linear infinite;
+}
+@keyframes aleta-pensipp-putar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.aleta-pensipp-hasil-sebab {
+  grid-column: 2 / 4;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ps-redup);
+}
+.aleta-pensipp-hasil-salah {
+  color: var(--ps-salah);
+  font-weight: 700;
+}
+.aleta-pensipp-edoc {
+  grid-column: 2 / 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 14px;
+}
+.aleta-pensipp-edoc-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.aleta-pensipp-edoc-label input,
+.aleta-pensipp-semua input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ps-merek);
+}
+.aleta-pensipp-edoc-ket {
+  color: var(--ps-redup);
+  font-size: 12.5px;
+}
+.aleta-pensipp-edoc-kabar {
+  flex-basis: 100%;
+  font-size: 13px;
+  color: var(--ps-redup);
+}
+.aleta-pensipp-edoc-kabar .aleta-abt-gagal {
+  color: var(--ps-salah);
+  font-weight: 700;
+}
+
+/* ── Konfirmasi di halaman ───────────────────────────────────────────────── */
+.aleta-pensipp-konfirm {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--ps-emas);
+  border-radius: 9px;
+  background: var(--ps-emas-lembut);
+  color: var(--ps-tinta);
+}
+.aleta-pensipp-konfirm .aleta-pensipp-catatan {
+  color: var(--ps-tinta);
+}
+.aleta-pensipp-baris-tombol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ── Kaki dan tombol utama ───────────────────────────────────────────────── */
+.aleta-pensipp-kaki {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--ps-garis);
+  background: color-mix(in srgb, var(--ps-merek) 7%, var(--ps-latar));
+}
+.aleta-pensipp-ringkas {
+  font-size: 13.5px;
+  color: var(--ps-redup);
+}
+.aleta-pensipp-aksi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.aleta-pensipp-semua {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.aleta-pensipp-utama {
+  background: var(--ps-merek);
+  color: var(--ps-merek-teks);
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.3;
+  cursor: pointer;
+}
+.aleta-pensipp-utama:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.aleta-pensipp-kecil {
+  background: var(--ps-latar);
+  color: var(--ps-tinta);
+  border: 1px solid var(--ps-garis);
+  border-radius: 7px;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+/* ── Laporan akhir ───────────────────────────────────────────────────────── */
+.aleta-pensipp-laporan {
+  display: grid;
+  gap: 6px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--ps-garis);
+  font-size: 14px;
+}
+.aleta-pensipp-laporan[hidden] {
+  display: none;
+}
+.aleta-pensipp-laporan-judul {
+  font-size: 14.5px;
+}
+.aleta-pensipp-laporan-ok .aleta-pensipp-laporan-judul {
+  color: var(--ps-ok);
+}
+.aleta-pensipp-laporan-salah .aleta-pensipp-laporan-judul {
+  color: var(--ps-salah);
+}
+.aleta-pensipp-laporan-tunggu .aleta-pensipp-laporan-judul {
+  color: var(--ps-tunggu);
+}
+.aleta-pensipp-laporan-daftar {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 2px;
+}
+li.aleta-pensipp-laporan-salah {
+  color: var(--ps-salah);
+}
+.aleta-pensipp-tersembunyi {
+  display: none !important;
+}
+
+/* ── Bagian rinci (dipinjam dari papan penetapan) ────────────────────────── */
+.aleta-pensipp-rinci-kotak {
+  border: 1px solid var(--ps-garis);
+  border-radius: 9px;
+  background: var(--ps-latar);
+}
+.aleta-pensipp-rinci-kotak[hidden] {
+  display: none;
+}
+.aleta-pensipp-rinci-ringkas {
+  padding: 9px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.aleta-pensipp-rinci {
+  padding: 0 0 6px;
+  color: var(--ps-tinta);
+}
+/* Cara (Otomatis/Manual) sudah ada di kepala panel; barisnya tidak diulang. */
+.aleta-pensipp-rinci > .aleta-saklar:first-child {
+  display: none;
+}
+/* Keempat penetapan sudah tergambar sebagai langkah di atas. */
+.aleta-pensipp-rinci .aleta-tetap,
+.aleta-pensipp-rinci .aleta-tetap-hitung {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .aleta-pensipp-langkah {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .aleta-pensipp-status {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .aleta-pensipp-hasil-sebab,
+  .aleta-pensipp-edoc {
+    grid-column: 1 / 3;
+  }
+  .aleta-pensipp-kepala,
+  .aleta-pensipp-badan,
+  .aleta-pensipp-kaki,
+  .aleta-pensipp-laporan {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .aleta-pensipp-utama {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aleta-pensipp-putar {
+    animation: none;
+  }
+}

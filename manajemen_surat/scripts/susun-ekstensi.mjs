@@ -139,6 +139,11 @@ const BERKAS = [
   // paling belakang (memakai ambilUsulanPenunjukan/idUntukTulis konten.js):
   // tombol "Isi otomatis" di borang PMH/PPP/PJS/PHS, hanya mengisi kolom.
   "penetapan-borang.js",
+  // Penetapan Otomatis di halaman perkara SIPP (20 Okt 2026): tombol tebal paling
+  // kiri + panel terbentang (mode, empat langkah, centang e-Doc, satu klik
+  // tulis lalu unggah). Skrip konten SIPP paling belakang; gayanya sendiri.
+  "penetapan-sipp.js",
+  "penetapan-sipp.css",
   "blangko-derry.css",
   // Menu kiri ABT bisa digulir (19 Okt 2026) - skrip konten ABT: #navbar diberi
   // max-height + overflow-y supaya submenu Blangko Derry terjangkau; gaya saja.
