@@ -37,6 +37,20 @@ function kodeJenis(jenisPerkara, alur) {
   return "umum";
 }
 
+/**
+ * Menambahkan fakta bersama (faktaPerkara, U6) ke fakta jawaban saksi: tanya jawab saksi/BAS memakai nilai yang sama dengan
+ * Blangko Derry dan putusan. Fakta bersama hanya MENAMBAH kandidat; prioritas dan penanda bertentangan tetap diputuskan buatFakta.
+ */
+function sertakanFaktaBersama(fakta, faktaBersama) {
+  if (!faktaBersama || !fakta || typeof fakta.tambah !== "function") return fakta;
+  try {
+    for (const c of require("./faktaPerkara").kandidatUntukSaksi(faktaBersama)) fakta.tambah(c.kunci, c.nilai, c.yakin, c.prio, c.ket);
+  } catch (_galat) {
+    /* fakta bersama tidak terbaca: jawaban tetap dari sumber sendiri */
+  }
+  return fakta;
+}
+
 /** Isian dari peramban disaring: hanya objek kode -> nilai pendek; yang memuat nama aplikasi dibuang. */
 function saringIsian(isian) {
   const hasil = {};
@@ -146,7 +160,7 @@ function lengkapi(hasil, o) {
     const jenis = kodeJenis(k.jenisPerkara, k.alur);
     const dp = deteksiPosita({ ...k, jenis });
     const tambahan = positaTambahan(k.posita, jenis);
-    const fakta = isi.bangunFakta({ isian: saringIsian(k.isian), sipp: k.sipp, usulan: dp.usulan, cerai: dp.cerai, tambahan, sebutan: { P: k.lawan, T: k.pelaku } });
+    const fakta = sertakanFaktaBersama(isi.bangunFakta({ isian: saringIsian(k.isian), sipp: k.sipp, usulan: dp.usulan, cerai: dp.cerai, tambahan, sebutan: { P: k.lawan, T: k.pelaku } }), k.faktaBersama);
     const acuan = templat.map((b, i) => ({ no: String((b && (b.no || b.urutan_pertanyaan)) || i + 1), tanya: String((b && (b.tanya || b.pertanyaan)) || ""), jawab: String((b && (b.jawab || b.jawaban)) || "") }));
     const saksi = (hasil.saksi || []).map((s, i) => {
       const m = (Array.isArray(k.saksi) && k.saksi[i]) || {};
@@ -175,14 +189,17 @@ function isiBaris(o) {
   try {
     const jenis = kodeJenis(k.jenisPerkara, k.alur);
     const dp = deteksiPosita({ ...k, jenis });
-    const fakta = isi.bangunFakta({
-      isian: saringIsian(k.isian),
-      sipp: k.sipp,
-      usulan: dp.usulan,
-      cerai: dp.cerai,
-      tambahan: positaTambahan(k.posita, jenis),
-      sebutan: { P: k.lawan, T: k.pelaku },
-    });
+    const fakta = sertakanFaktaBersama(
+      isi.bangunFakta({
+        isian: saringIsian(k.isian),
+        sipp: k.sipp,
+        usulan: dp.usulan,
+        cerai: dp.cerai,
+        tambahan: positaTambahan(k.posita, jenis),
+        sebutan: { P: k.lawan, T: k.pelaku },
+      }),
+      k.faktaBersama
+    );
     for (const s of Array.isArray(k.saksiIsi) ? k.saksiIsi.slice(0, 12) : []) {
       const ctx = { jenis, P: k.lawan || "Pemohon", T: k.pelaku || "Termohon", ke: Number(s.ke) || 1, modus: String(s.modus || ""), sumberNama: String(s.sumberNama || "") };
       for (const b of Array.isArray(s.baris) ? s.baris.slice(0, 80) : []) {
@@ -201,4 +218,4 @@ function isiBaris(o) {
   return hasil;
 }
 
-module.exports = { lengkapi, isiBaris, bacaSippSaksi, deteksiPosita, saringIsian, kodeJenis };
+module.exports = { lengkapi, isiBaris, bacaSippSaksi, deteksiPosita, saringIsian, kodeJenis, sertakanFaktaBersama };

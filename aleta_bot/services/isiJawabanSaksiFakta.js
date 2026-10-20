@@ -331,6 +331,10 @@ function buatFakta() {
     semua() {
       return [...kandidat.keys()];
     },
+    /** Salinan kandidat mentah satu kunci ({nilai, yakin, prio, ket}); dipakai faktaPerkara (U6) untuk menimbang ulang antar sumber. */
+    kandidat(kunci) {
+      return (kandidat.get(kunci) || []).map((k) => ({ ...k }));
+    },
   };
   return api;
 }
