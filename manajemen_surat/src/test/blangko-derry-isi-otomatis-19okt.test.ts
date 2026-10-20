@@ -364,6 +364,22 @@ describe("A. saklar Isi otomatis dari SIPP", () => {
     for (const berkas of ["popup.js", "latar.js", "blangko-derry.js"]) expect(baca(berkas), berkas).toContain("blangkoDerryIsiOto");
     expect(baca("popup.html")).toContain('id="derryIsiOto"');
   });
+
+  it("20 Okt: saklar Pratinjau sebelum unduh (BAS & relaas) di Alat saya - bawaan menyala, diingat, kunci sama di popup dan latar", async () => {
+    const h = buka();
+    await sampaiPerkara(h);
+    expect(h.w.aletaBlangkoDerry.setelan().pratinjau).toBe(true);
+    klik(h, "#bd-alat-btn");
+    const kotak = (await sampai(() => q(h, '#bd-alat input[data-cfg="pratinjau"]'), "saklar pratinjau")) as HTMLInputElement;
+    expect(kotak.checked).toBe(true);
+    expect(q(h, "#bd-alat")!.textContent).toContain("Pratinjau sebelum unduh (BAS & relaas)");
+    kotak.checked = false;
+    kotak.dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    await sampai(() => h.simpanan.pratinjauBasRelaas === false, "setelan tersimpan");
+    expect(h.w.aletaBlangkoDerry.setelan().pratinjau).toBe(false);
+    for (const berkas of ["popup.js", "latar.js", "blangko-derry.js", "pratinjau-bas-relaas.js"]) expect(baca(berkas), berkas).toContain("pratinjauBasRelaas");
+    expect(baca("popup.html")).toContain('id="pratinjauBasRelaas"');
+  });
 });
 
 describe("B. isi otomatis begitu perkara dan blangko dipilih", () => {

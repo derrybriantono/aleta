@@ -502,6 +502,11 @@
     .pesan.ok { color:#22c55e; } .pesan.salah { color:var(--galat); }
     @media (max-width:640px) {
       .latar { padding:0; } .kotak { height:100%; border-radius:0; width:100%; }
+      header { display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; }
+      header .chip.jenis { grid-column:1; grid-row:1; justify-self:start; }
+      header [data-p="tema"] { grid-column:2; grid-row:1; } header [data-p="x"] { grid-column:3; grid-row:1; }
+      h2 { grid-column:1 / -1; grid-row:2; white-space:normal; word-break:break-all; font-size:14px; flex:none; }
+      header .info { grid-column:1 / -1; grid-row:3; }
       footer button { flex:1 1 30%; } .teks { padding:20px 18px; margin:8px auto; } .petunjuk { display:none; }
     }`;
 
@@ -635,7 +640,7 @@
       pdf(blob) {
         const f = el("iframe", "isi");
         f.title = "Isi dokumen";
-        f.src = `${blobUrl(blob)}#view=FitH`;
+        f.src = `${blobUrl(blob)}#navpanes=0&view=FitH`;
         badan(f);
         q("cetak").disabled = false;
         onCetak = () => {

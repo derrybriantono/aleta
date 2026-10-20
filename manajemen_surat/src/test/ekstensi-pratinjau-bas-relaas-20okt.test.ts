@@ -262,7 +262,7 @@ describe("tautan e-Doc BAS dan relaas", () => {
     expect(dibatalkan).toBe(true);
     expect(sampaiAsli).toBe(false);
     const iframe = await sampai(() => l.dalam("badan")?.querySelector("iframe"), "iframe PDF");
-    expect(iframe.getAttribute("src")).toMatch(/^blob:http:\/\/192\.168\.10\.10\/uuid-\d+#view=FitH$/);
+    expect(iframe.getAttribute("src")).toMatch(/^blob:http:\/\/192\.168\.10\.10\/uuid-\d+#navpanes=0&view=FitH$/);
     expect(l.permintaan).toHaveLength(1);
     expect(l.permintaan[0].alamat).toBe(ALAMAT_BAS_PDF);
     expect(l.permintaan[0].init.credentials).toBe("include");
