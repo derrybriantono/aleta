@@ -24,6 +24,9 @@ const B = require("./isiOtomatisS5/bantu");
 const DK = require("./isiOtomatisS5/dk");
 const AUA = require("./isiOtomatisS5/asalUsul");
 const PAW = require("./isiOtomatisS5/ahliWaris");
+const PW = require("./isiOtomatisS5/perwalian");
+const WA = require("./isiOtomatisS5/waliAdhal");
+const META = require("./isiOtomatisS5/metadata");
 
 const JENIS = Object.freeze({ DK: 362, PERWALIAN: 354, ASAL_USUL: 358, WALI_ADHAL: 363, AHLI_WARIS: 371 });
 const JENIS_S5 = new Set(Object.values(JENIS));
@@ -47,7 +50,7 @@ async function bacaData(perkaraId, runQuery) {
   const id = Number(perkaraId);
   if (!Number.isFinite(id) || id <= 0 || typeof runQuery !== "function") return null;
   const q = (sql) => diam(() => runQuery(sql, [id]));
-  const [perkara, pihak1, pihak2, mempelai, anak, nikah, itsbat] = await Promise.all([
+  const [perkara, pihak1, pihak2, mempelai, anak, nikah, itsbat, alasanNikah] = await Promise.all([
     q(
       `SELECT p.nomor_perkara AS nomor, p.jenis_perkara_id AS jenisId, p.alur_perkara_id AS alurId, p.posita, p.petitum,
               DATE_FORMAT(p.tanggal_pendaftaran, '%Y-%m-%d') AS tanggalDaftar
@@ -77,6 +80,7 @@ async function bacaData(perkaraId, runQuery) {
          FROM perkara_data_pernikahan WHERE perkara_id = ? LIMIT 1`
     ),
     q(`SELECT DATE_FORMAT(tgl_menikah, '%Y-%m-%d') AS tglNikah, tempat_menikah AS tempat FROM perkara_data_itsbat WHERE perkara_id = ? LIMIT 1`),
+    q(`SELECT alasan_id AS alasanId, nama FROM perkara_alasan_nikah WHERE perkara_id = ?`),
   ]);
   const p = satu(perkara);
   if (!p) return null;
@@ -96,6 +100,7 @@ async function bacaData(perkaraId, runQuery) {
     anak: baris(anak),
     nikah: satu(nikah),
     itsbat: satu(itsbat),
+    alasanNikah: baris(alasanNikah),
   };
 }
 
@@ -131,6 +136,8 @@ function usulanDariData(d) {
   const jenis = d.perkara.jenisId;
   if (!JENIS_S5.has(jenis)) return [];
   const hasil = [];
+  if (jenis === JENIS.PERWALIAN) hasil.push(...PW.usulanPerwalian(d));
+  if (jenis === JENIS.WALI_ADHAL) hasil.push(...WA.usulanWaliAdhal(d));
   if (jenis === JENIS.DK) hasil.push(...DK.usulanDk(d, { bacaPosita: bacaPositaDk }));
   if (jenis === JENIS.AHLI_WARIS) hasil.push(...PAW.usulanAhliWaris(d, { pewaris: pewarisDariModul(d.perkara.posita, d.perkara.petitum) }));
   if (jenis === JENIS.ASAL_USUL) hasil.push(...AUA.usulanAsalUsul(d, { urai: uraiItsbat, bacaPetitum: bacaPetitumAsalUsul }));
@@ -152,9 +159,20 @@ async function usulanJenisS5(perkaraId, runQuery) {
 }
 
 /**
- * Isian yang tidak mungkin otomatis ("diisi manual" + alasan) atau opsional (+ labelPengguna). Diisi bertahap bersama pengisi.
+ * Isian yang tidak mungkin otomatis ("diisi manual" + alasan) atau opsional (+ labelPengguna) - lihat isiOtomatisS5/metadata.js.
  * Bentuk: kode -> { manual: true, alasan } | { opsional: true, labelPengguna }.
  */
-const METADATA = Object.freeze({});
+const METADATA = META.METADATA;
 
-module.exports = { JENIS, JENIS_S5, METADATA, bacaData, usulanDariData, usulanJenisS5, B };
+/** Isian ini berlaku untuk perkara itu? false = varian blangko lain (tidak dihitung kosong). `data` = keluaran bacaData. */
+function berlaku(kode, data) {
+  const f = META.SYARAT[String(kode)];
+  if (!f || !data || !data.perkara) return true;
+  try {
+    return f(data) !== false;
+  } catch {
+    return true;
+  }
+}
+
+module.exports = { JENIS, JENIS_S5, METADATA, berlaku, bacaData, usulanDariData, usulanJenisS5, B };
