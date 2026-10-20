@@ -37,7 +37,7 @@ import { CERMIN_EKSTENSI } from "@/lib/tipe-keluaran/bawaan/bawaan-ekstensi";
 
 const AKAR = "derry_briantono";
 
-export type JenisRekomendasi = "bas" | "putusan" | "relaas";
+export type JenisRekomendasi = "bas" | "putusan" | "relaas" | "ptsp";
 
 export type Rekomendasi = {
   jenis: JenisRekomendasi;
@@ -54,6 +54,8 @@ export type Rekomendasi = {
   utama: boolean;
   /** true = ditebak (urutan sidang, agenda, kehadiran, status belum tercatat) - periksa kembali. */
   perkiraan: boolean;
+  /** 20 Okt: tingkat keyakinan saran ("pasti" = keadaan perkara cocok; "cukup" = jenis dan tahap cocok; "perkiraan" = ditebak). Kosong = dihitung dari `perkiraan`. */
+  keyakinan?: "pasti" | "cukup" | "perkiraan";
 };
 
 export type MasukanRekomendasi = {
@@ -85,6 +87,16 @@ export type MasukanRekomendasi = {
   /** 19 Okt: banyaknya saksi yang tercatat/diajukan pada perkara (SIPP); dipakai memilih varian "(N Saksi)" blangko putusan. Kosong = tidak diketahui. */
   jumlahSaksi?: number | null;
   lewatEcourt?: boolean | null;
+  /**
+   * 20 Okt (saran semua jenis): alur SIPP (15 gugatan, 16 permohonan/voluntair), banyaknya pihak pertama (Pemohon/Penggugat) dan pihak kedua
+   * (Termohon/Tergugat), serta ada-tidaknya majelis, panitera pengganti, dan juru sita yang tertunjuk. Kosong = tidak diketahui (tidak ditebak).
+   */
+  alurPerkaraId?: number | null;
+  jumlahPemohon?: number | null;
+  jumlahTermohon?: number | null;
+  majelisAda?: boolean;
+  paniteraAda?: boolean;
+  jurusitaAda?: boolean;
   /** I14 18 Okt: jenis_perkara_id (bot); 342 = pencegahan perkawinan -> relaas Pemohon [JS] 11.1. Kosong: dikenali dari nama jenis. */
   jenisPerkaraId?: number | null;
   /** I9 17 Okt: petitum perkara memohon sita (bot: baris jadwal `sita` terisi). */
@@ -141,6 +153,8 @@ export type HasilRekomendasi = {
   bas: Rekomendasi[];
   putusan: Rekomendasi[];
   relaas: Rekomendasi[];
+  /** 20 Okt: saran blangko PTSP (penetapan PMH / PPP / PJS / PHS dst.); diisi oleh saran-blangko-semua.ts. */
+  ptsp?: Rekomendasi[];
 };
 
 const adaHuruf = (x: unknown) => /[a-z]/i.test(String(x ?? ""));
@@ -301,7 +315,7 @@ export const PENETAPAN_IKRAR = {
 } as const;
 
 /** Baris jenis lama tanpa menu (itsbat, dispensasi): menu menurut jenisnya. */
-const MENU_JENIS_TANPA_MENU: Record<string, string> = { "itsbat nikah": "Putusan Itsbat Nikah", "dispensasi kawin": "Putusan Dispensasi Kawin" };
+export const MENU_JENIS_TANPA_MENU: Record<string, string> = { "itsbat nikah": "Putusan Itsbat Nikah", "dispensasi kawin": "Putusan Dispensasi Kawin" };
 
 const URUT_KUMULASI = ["itsbat-nikah", "hak-asuh-anak", "nafkah-anak"];
 
@@ -425,7 +439,7 @@ function rekomendasiPutusanSelaSita(m: MasukanRekomendasi, teks: string): Rekome
   ];
 }
 
-function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
+export function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] {
   if (m.sidangIkrarTalak === true && kunciJenisPerkara(m.jenisPerkara) === "cerai talak") return rekomendasiPenetapanIkrar(m, teks);
   // I9 17 Okt: putusan sela sita (bukan putusan akhir) - didahulukan; sela di luar konteks sita tetap diperlakukan seperti dulu.
   const sela = rekomendasiPutusanSelaSita(m, teks);
@@ -521,7 +535,7 @@ function rekomendasiPutusan(m: MasukanRekomendasi, teks: string): Rekomendasi[] 
 // ---------------------------------------------------------------------------
 // RELAAS
 // ---------------------------------------------------------------------------
-function dariRelaas(b: BlangkoRelaas, alasan: string, utama: boolean): Rekomendasi {
+export function dariRelaas(b: BlangkoRelaas, alasan: string, utama: boolean): Rekomendasi {
   return {
     jenis: "relaas",
     folder: b.folder,
@@ -611,6 +625,17 @@ export function masukanRekomendasiDariBaris(b: Record<string, unknown>): Masukan
         : {}),
     lewatEcourt: typeof b.lewatEcourt === "boolean" ? b.lewatEcourt : null,
     jenisPerkaraId: angka(b.jenisPerkaraId),
+    // 20 Okt: bahan saran semua jenis (alur, jumlah pihak, petugas tertunjuk) - ruas yang tak terkirim dibiarkan kosong.
+    alurPerkaraId: angka(b.alurPerkaraId),
+    ...(b.pihak && typeof b.pihak === "object"
+      ? {
+          jumlahPemohon: Array.isArray((b.pihak as { penggugat?: unknown }).penggugat) ? ((b.pihak as { penggugat: unknown[] }).penggugat.length || null) : null,
+          jumlahTermohon: Array.isArray((b.pihak as { tergugat?: unknown }).tergugat) ? (b.pihak as { tergugat: unknown[] }).tergugat.length : null,
+        }
+      : {}),
+    ...(typeof b.majelisNama === "string" ? { majelisAda: b.majelisNama.trim() !== "" || String(b.majelisKode ?? "").trim() !== "" } : {}),
+    ...(typeof b.paniteraNama === "string" ? { paniteraAda: b.paniteraNama.trim() !== "" } : {}),
+    ...(typeof b.jurusitaNama === "string" ? { jurusitaAda: b.jurusitaNama.trim() !== "" } : {}),
     bersita: Boolean(b.sita) && typeof b.sita === "object",
     tergugatPerempuan: typeof b.tergugatPerempuan === "boolean" ? b.tergugatPerempuan : null,
     amarRekonvensi: typeof b.amarRekonvensi === "string" ? b.amarRekonvensi : "",

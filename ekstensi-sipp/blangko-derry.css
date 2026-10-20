@@ -317,6 +317,7 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-kel:focus-visible { outline: 2px solid var(--accent); }
 #aleta-bd-akar .bd-kel.aktif { background: var(--okbg); font-weight: 600; }
 #aleta-bd-akar .bd-kel.saran .kn { color: var(--accent); font-weight: 600; }
+#aleta-bd-akar .bd-kel.adasaran .kn { color: var(--accent); font-weight: 600; }
 #aleta-bd-akar .bd-kel .kj { font-size: 11.5px; color: var(--muted); }
 #aleta-bd-akar .bd-kel .ks { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); font-weight: 400; }
 #aleta-bd-akar .bd-kel.kosong { opacity: .4; }
