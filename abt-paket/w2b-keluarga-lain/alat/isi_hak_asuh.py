@@ -83,6 +83,7 @@ S(id='akta-lahir', pokok='pp-ha-identitas', urut=33, tingkat='pilihan', kelompok
 
 # ---- perpisahan -----------------------------------------------------------------------------------------------------
 S(id='pisah-kapan', pokok='pp-ha-pisah', urut=35, tingkat='inti', kelompok='pokok',
+  slotDari={'sejak': 'pisahSejak'},
   teks='Sejak kapan #0046# dan #0047# berpisah tempat tinggal dan dengan siapa anak bernama #8602# tinggal sesudah itu?',
   varian=['Kapan #0046# dan #0047# mulai tidak serumah lagi dan anak bernama #8602# ikut siapa?'],
   hal='waktu orang tua berpisah dan pengasuhan anak sesudahnya', m='waktu #0046# dan #0047# berpisah dan pengasuhan anak sesudahnya', v=PENGASUH,

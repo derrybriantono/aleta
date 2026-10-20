@@ -101,6 +101,8 @@ def bangun(sp):
         for x in (j if isinstance(j, list) else [j]):
             teks_semua += x['saksi1'] + x['saksi2']
     q['variabelAbt'] = sorted(set(sum((_kode(t) for t in teks_semua), [])))
+    if sp.get('slotDari'):
+        q['slotDari'] = dict(sp['slotDari'])
     if sp.get('catatan'):
         q['catatan'] = sp['catatan']
     return q
