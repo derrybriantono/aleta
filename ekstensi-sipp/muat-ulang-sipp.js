@@ -51,7 +51,14 @@
   let terjadwal = null;
   let sudahMemuat = false;
   let tahanHitung = 0;
+  let tahanSejak = 0;
   let tertunda = null;
+  // Tahanan yang bocor (antrean mati di tengah) tidak menahan selamanya.
+  const BATAS_TAHAN_MS = 3 * 60 * 60 * 1000;
+  const sedangDitahan = () => {
+    if (tahanHitung > 0 && Date.now() - tahanSejak > BATAS_TAHAN_MS) tahanHitung = 0;
+    return tahanHitung > 0;
+  };
 
   const sebaris = (t) => String(t == null ? "" : t).replace(/\s+/g, " ").trim();
   const kunciNomor = (nomor) => String(nomor || "").replace(/\s+/g, "").toUpperCase();
@@ -222,7 +229,7 @@
    * @param {{nomor?:string, kunci?:string, ringkasan:{judul,baris,adaGagal}, wadah?:HTMLElement}} p
    */
   function jadwalkan(p) {
-    if (tahanHitung > 0) {
+    if (sedangDitahan()) {
       tertunda = { ...p };
       return { otomatis: false, tertunda: true };
     }
@@ -252,6 +259,12 @@
     if (r.adaGagal) {
       // Ada yang gagal: tidak dimuat ulang sebelum sebabnya terbaca. Tombol saja.
       ket.textContent = "Halaman tidak dimuat ulang sendiri karena ada yang gagal. Baca sebabnya di atas; muat ulang bila sudah siap.";
+      sekarang.textContent = "Muat ulang halaman";
+      return { otomatis: false };
+    }
+    if (p && p.tanpaOtomatis) {
+      // Dikerjakan sendiri di latar (tanpa ditekan petugas): halaman yang sedang dipakai tidak direbut.
+      ket.textContent = "Selesai dikerjakan di latar. Halaman tidak dimuat ulang sendiri; muat ulang bila ingin melihat data terbaru.";
       sekarang.textContent = "Muat ulang halaman";
       return { otomatis: false };
     }
@@ -330,6 +343,7 @@
   // Antrean massal: tidak memuat ulang di tengah, sekali di akhir.
   // ──────────────────────────────────────────────────────────────────────────
   function tahan() {
+    if (tahanHitung === 0) tahanSejak = Date.now();
     tahanHitung += 1;
     return tahanHitung;
   }
@@ -346,7 +360,7 @@
   }
   /** Dipakai muatUlangHalamanPerkara (jalur lama): true = ditahan, jangan memuat ulang sekarang. */
   function tahanLegacy(kunci) {
-    if (tahanHitung <= 0) return false;
+    if (!sedangDitahan()) return false;
     tertunda = { legacy: true, kunci: kunci || "" };
     return true;
   }

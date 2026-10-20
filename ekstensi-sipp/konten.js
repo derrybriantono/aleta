@@ -273,6 +273,37 @@ function muatUlangHalamanPerkara() {
 }
 
 /**
+ * Jalur tulis ke SIPP -> modul bersama (muat-ulang-sipp.js): alamat halaman
+ * disimpan SEBELUM menulis, ringkasan + muat ulang otomatis SESUDAH selesai
+ * (gagal = hanya tombol). Daftar jalur: docs/muat-ulang/DAFTAR-JALUR-TULIS-SIPP.md.
+ */
+async function catatAlamatSebelumTulis(nomor) {
+  const mu = globalThis.aletaMuatUlangSipp;
+  if (!mu) return;
+  try {
+    await mu.catatAlamat(String(nomor || ""));
+  } catch {
+    /* alamat hanya kemudahan */
+  }
+}
+
+/** @param {{nomor?:string, judulOk:string, judulGagal?:string, baris:Array<{jenis,teks,ok?}>, wadah?:HTMLElement, tanpaOtomatis?:boolean}} o */
+function muatUlangSesudahTulis(o) {
+  const mu = globalThis.aletaMuatUlangSipp;
+  if (!mu) return null;
+  try {
+    return mu.jadwalkan({
+      nomor: String(o.nomor || ""),
+      ringkasan: mu.ringkasan(o.judulOk, o.baris, o.judulGagal),
+      wadah: o.wadah,
+      tanpaOtomatis: o.tanpaOtomatis === true,
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
  * ============================================================================
  * NOMOR PERKARA DIBACA DARI SIPP, BUKAN DARI PANEL ALETA SENDIRI
  * ============================================================================
@@ -4868,6 +4899,8 @@ async function kerjakanBorang(rencana) {
 
   await tutupTitipan(idTitipan, formulir);
   kabar.textContent = "Menyimpan…";
+  // Penunjuk Simpan hasil pemetaan portal dapat bernama apa saja: pengawal dasbor dipasang eksplisit.
+  if (globalThis.aletaMuatUlangSipp) await globalThis.aletaMuatUlangSipp.pasangPengawal("").catch(() => undefined);
   const jawabSimpan = await kirimKeJembatan({ jenis: "tekan", penunjuk: medanSimpan.penunjuk });
   if (!jawabSimpan.ok) {
     kembalikan(`Terisi, tetapi Simpan tidak dapat ditekan: ${jawabSimpan.alasan}. Tekan sendiri.`);
@@ -5252,9 +5285,11 @@ function gambarKerjakanDataUmum(isi, hasil, konteks) {
 
   let rencanaSiap = null;
 
+  const wadahMuatUlang = buatElemen("div", "aleta-muat-ulang-wadah");
   const kirim = async (kering) => {
     tombol.disabled = true;
     kabar.textContent = kering ? "Menyusun pernyataan…" : "Menuliskan ke SIPP…";
+    if (!kering) await catatAlamatSebelumTulis(String((konteks && konteks.nomorPerkara) || ""));
     try {
       const respons = await alatAmbil(ALETA_API_TULIS, {
         method: "POST",
@@ -5302,6 +5337,13 @@ function gambarKerjakanDataUmum(isi, hasil, konteks) {
       lupakanStatusPerkara(String((konteks && konteks.nomorPerkara) || ""));
       kabar.textContent = `Tersimpan. ${(h.selesai || []).length} pernyataan dijalankan.`;
       tombol.textContent = "Sudah ditulis";
+      // Halaman Data Umum SIPP memperlihatkan data lama sampai dimuat ulang.
+      muatUlangSesudahTulis({
+        nomor: String((konteks && konteks.nomorPerkara) || ""),
+        judulOk: "Data Umum tersimpan di SIPP.",
+        baris: [{ jenis: "Data Umum", teks: `${(h.selesai || []).length} pernyataan dijalankan` }],
+        wadah: wadahMuatUlang,
+      });
     } catch (galat) {
       kabar.textContent = String(galat.message || galat).slice(0, 180);
       tombol.disabled = false;
@@ -5313,6 +5355,7 @@ function gambarKerjakanDataUmum(isi, hasil, konteks) {
   kaki.appendChild(tombol);
   isi.appendChild(kaki);
   isi.appendChild(kabar);
+  isi.appendChild(wadahMuatUlang);
 }
 
 /**
@@ -9076,6 +9119,17 @@ async function kirimKeJembatan(pesan) {
     return { ok: false, alasan: "mode_coba" };
   }
 
+  // Menekan Simpan borang SIPP dari ALETA: SIPP sendiri yang memuat ulang. Pengawal
+  // (muat-ulang-sipp.js) hanya menjaga agar halaman tidak berakhir di dasbor -
+  // petugas dikembalikan ke alamat semula SEKALI saja.
+  if (jenis === "tekan" && /simpan|submit/i.test(penunjuk) && globalThis.aletaMuatUlangSipp) {
+    try {
+      await globalThis.aletaMuatUlangSipp.pasangPengawal("");
+    } catch {
+      /* pengawal hanya kemudahan */
+    }
+  }
+
   // Penjaga batas di SATU PINTU (audit jejak 18 Okt 2026): dulu hanya isiBorang yang
   // memeriksa; isian CKEditor (pertimbangan/amar), alamat, email/HP lewat pintu ini
   // tanpa pemeriksaan. Teks yang memuat kata ALETA (selain data SIPP yang tampil di
@@ -10544,6 +10598,7 @@ function ccGambar(isi, status, konteks) {
     gambarBaris();
     void (async () => {
       let hasil;
+      await catatAlamatSebelumTulis(nomor);
       try {
         hasil = await ccInputKeSipp(keadaan.baris, {
           nomorPerkara: nomor,
@@ -10562,10 +10617,24 @@ function ccGambar(isi, status, konteks) {
       }
       if (Array.isArray(hasil.daftarSesudah)) keadaan.kalenderSipp = hasil.daftarSesudah;
       keadaan.sedang = false;
-      kabar.textContent = hasil.ok ? `${hasil.pesan} Muat ulang tab Court Calendar SIPP untuk melihatnya.` : hasil.pesan;
+      kabar.textContent = hasil.ok ? `${hasil.pesan} Halaman SIPP dimuat ulang supaya tab Court Calendar menampilkannya.` : hasil.pesan;
       kabar.classList.toggle("aleta-cc-kabar-gagal", !hasil.ok);
       gambarAda();
       gambarBaris();
+      // Court Calendar ditulis langsung ke SIPP: tab Court Calendar di halaman ini basi sampai dimuat ulang.
+      const tersimpanCc = Array.from(hasil.hasil.values()).filter((r) => r.keadaan === "tersimpan").length;
+      if (tersimpanCc > 0) {
+        muatUlangSesudahTulis({
+          nomor,
+          judulOk: "Court Calendar tersimpan di SIPP.",
+          judulGagal: "Court Calendar belum tersimpan seluruhnya.",
+          baris: Array.from(hasil.hasil.entries()).map(([b, r]) => ({
+            jenis: String(b.tanggal || "baris"),
+            teks: `${String(b.agenda || "").slice(0, 40)} - ${r.keadaan}${r.pesan && r.keadaan !== "tersimpan" ? ` (${String(r.pesan).slice(0, 80)})` : ""}`,
+            ok: r.keadaan === "tersimpan" || r.keadaan === "sudah-ada",
+          })),
+        });
+      }
     })();
   });
 
@@ -14031,8 +14100,20 @@ function bagianPenetapanMassal(ringkasan) {
       tombol.disabled = false;
       return;
     }
-    kabar.textContent = `Selesai: ${ringkasAntrean(hasil, false)}. Muat ulang halaman daftar untuk melihat keadaannya yang baru.`;
+    kabar.textContent = `Selesai: ${ringkasAntrean(hasil, false)}. Halaman daftar dimuat ulang SEKALI supaya keadaannya yang baru tampil.`;
     tombol.textContent = "Selesai";
+    // Antrean massal: tidak memuat ulang di tengah; sekali di akhir, kembali ke halaman daftar ini.
+    if (hasil.berhasil > 0) {
+      muatUlangSesudahTulis({
+        judulOk: "Penetapan massal selesai.",
+        judulGagal: "Penetapan massal belum selesai seluruhnya.",
+        baris: [
+          { jenis: "ditetapkan", teks: `${hasil.berhasil} perkara`, ok: true },
+          ...(hasil.dilewati ? [{ jenis: "dilewati", teks: `${hasil.dilewati} perkara (sudah lengkap)`, ok: true }] : []),
+          ...hasil.gagalPer.map((x) => ({ jenis: "gagal", teks: `${x.nomor} - ${x.sebab}`, ok: false })),
+        ],
+      });
+    }
   });
 
   return kotak;
@@ -26102,9 +26183,15 @@ function s2BagianEdocPenetapanManual(nomorPerkara) {
       badan.append("jenis", j);
       badan.append(`berkas_${j}`, f, f.name);
     }
+    await catatAlamatSebelumTulis(nomor);
     const hasil = await s2KirimEdoc(badan, "Upload manual edoc penetapan");
     if (hasil.ok) {
       kabar.textContent = s2RingkasHasil(hasil, `${s2SebutPenetapan(jenis)} terunggah ke e-Doc SIPP.`);
+      muatUlangSesudahTulis({
+        nomor,
+        judulOk: "e-Doc penetapan terunggah ke SIPP.",
+        baris: (s2BacaHasilEdoc(hasil.d).length ? s2BacaHasilEdoc(hasil.d) : [{ jenis: "e-Doc", ok: true }]).map((x) => ({ jenis: x.jenis || "e-Doc", teks: x.ok ? "e-Doc terunggah" : `gagal${x.sebab ? ` (${x.sebab})` : ""}`, ok: x.ok })),
+      });
     } else {
       kabar.className = hasil.status === 404 ? "aleta-abt-kabar" : "aleta-abt-kabar aleta-abt-gagal";
       kabar.textContent = hasil.pesan;
@@ -26713,7 +26800,10 @@ async function e6UnggahEdocPenetapan(p) {
     return { ok: false, gagal };
   }
   tulis(`${kering ? "Memeriksa" : "Mengunggah"} ${abt.map((x) => String(x.jenis).toUpperCase()).join(" dan ")}…`);
-  if (!kering) await s2JedaTulis("unggah", S2_API_EDOC_UNGGAH);
+  if (!kering) {
+    await s2JedaTulis("unggah", S2_API_EDOC_UNGGAH);
+    await catatAlamatSebelumTulis(String(p.nomorPerkara || ""));
+  }
   const badan = {
     nomorPerkara: String(p.nomorPerkara || ""),
     perkaraId,
@@ -26724,6 +26814,19 @@ async function e6UnggahEdocPenetapan(p) {
     olehUsername: namaPenggunaSipp() || "",
   };
   const hasil = await s2KirimEdoc(JSON.stringify(badan), "Upload edoc penetapan");
+  // e-Doc penetapan baru terunggah: tab Penetapan SIPP basi sampai dimuat ulang. Pemanggil yang
+  // mengurutkan banyak langkah (panel Penetapan Otomatis, e-Doc sesudah menulis) memuat ulang SEKALI sendiri.
+  if (hasil.ok && !kering && !p.tanpaMuatUlang) {
+    const berkasHasil = hasil.d && Array.isArray(hasil.d.berkas) ? hasil.d.berkas : [];
+    muatUlangSesudahTulis({
+      nomor: String(p.nomorPerkara || ""),
+      judulOk: "e-Doc penetapan terunggah ke SIPP.",
+      judulGagal: "e-Doc penetapan belum terunggah seluruhnya.",
+      baris: berkasHasil.length
+        ? berkasHasil.map((x) => ({ jenis: String(x.jenis || ""), teks: x.ok ? "e-Doc terunggah" : `gagal${x.sebab ? ` (${x.sebab})` : ""}`, ok: x.ok !== false }))
+        : abt.map((x) => ({ jenis: String(x.jenis || ""), teks: "e-Doc terunggah", ok: true })),
+    });
+  }
   const ringkas = hasil.d ? e6RingkasHasil({ ...hasil.d, kering }) : "";
   const tambahan = (gagal.length ? ` · tidak tercetak: ${gagal.join("; ")}` : "") + (dilewati ? ` · ${dilewati}` : "");
   if (hasil.ok) tulis(`${ringkas || (kering ? "Siap diunggah." : "Terunggah ke e-Doc SIPP.")}${tambahan}`, Boolean(gagal.length));
@@ -26749,6 +26852,7 @@ function e6SesudahPenetapanTertulis(kabar, usulan, hasil) {
     jenis: tertulis,
     otomatis: true,
     kering: false,
+    tanpaMuatUlang: true,
     kabar: wadah,
   });
 }

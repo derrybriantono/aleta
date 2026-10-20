@@ -2229,6 +2229,8 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       kabar(kotakKabar, sungguh ? `Menyimpan ${baris.length} baris ke jurnal SIPP…` : "Menyusun pratinjau…");
       for (const b of aksi.querySelectorAll("button")) b.disabled = true;
       try {
+        // Sebelum menulis: alamat halaman disimpan supaya muat ulang sesudahnya tetap di sini (muat-ulang-sipp.js).
+        if (sungguh && globalThis.aletaMuatUlangSipp) await globalThis.aletaMuatUlangSipp.catatAlamat("").catch(() => undefined);
         const isi = await ambil(API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -2274,8 +2276,23 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
           } catch {
             /* peramban tanpa CustomEvent - lencana disegarkan saat tab dibuka lagi */
           }
-          const muatSipp = tombol("Muat ulang halaman SIPP", "", () => location.reload());
-          kotakKabar.appendChild(muatSipp);
+          // Tab Biaya/jurnal SIPP basi sampai dimuat ulang: ringkasan, lalu muat ulang otomatis
+          // (gagal = hanya tombol) lewat modul bersama; tanpa modul tetap tombol lama.
+          const mu = globalThis.aletaMuatUlangSipp;
+          if (mu) {
+            const wadahMu = el("div");
+            kotakKabar.appendChild(wadahMu);
+            mu.jadwalkan({
+              ringkasan: mu.ringkasan(
+                "Kasir tersimpan di jurnal SIPP.",
+                [{ jenis: "Kasir", teks: bagian.join("; ") || "tersimpan", ok: isi.ok === true }],
+                "Kasir belum tersimpan seluruhnya."
+              ),
+              wadah: wadahMu,
+            });
+          } else {
+            kotakKabar.appendChild(tombol("Muat ulang halaman SIPP", "", () => location.reload()));
+          }
         }
       } catch (galat) {
         kabar(kotakKabar, String((galat && galat.message) || galat), "salah");
@@ -2411,6 +2428,12 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       gambar();
       gambarAksi();
       let ke = 0;
+      // Antrean massal: tidak ada muat ulang di tengah (juga dari jalur lama); sekali di akhir.
+      const mu = globalThis.aletaMuatUlangSipp;
+      if (sungguh && mu) {
+        mu.tahan();
+        await mu.catatAlamat("").catch(() => undefined);
+      }
       // Keputusan 104 (18 Okt 2026): di luar jam kerja bot bertanya sekali;
       // pilihan petugas (Antrekan / Tulis sekarang) berlaku untuk seluruh daftar.
       let pilihJamKerja = "";
@@ -2469,6 +2492,22 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       );
       gambar();
       gambarAksi();
+      if (sungguh && mu) {
+        mu.lepasTahan();
+        // Satu kali di akhir antrean, kembali ke halaman asal; ada yang gagal = hanya tombol.
+        if (semua.some((x) => x.ok)) {
+          const wadahMu = el("div");
+          kotakKabar.appendChild(wadahMu);
+          mu.jadwalkan({
+            ringkasan: mu.ringkasan(
+              "Kasir massal selesai.",
+              [...laporan.entries()].map(([id, x]) => ({ jenis: String((daftarKirim.find((p) => String(p.perkaraId) === String(id)) || {}).nomorPerkara || id), teks: x.pesan, ok: x.ok })),
+              "Kasir massal belum selesai seluruhnya."
+            ),
+            wadah: wadahMu,
+          });
+        }
+      }
     };
 
     const baca = async () => {
@@ -2927,6 +2966,11 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       laporan.clear();
       gambar();
       let ke = 0;
+      const mu = globalThis.aletaMuatUlangSipp;
+      if (mu) {
+        mu.tahan();
+        await mu.catatAlamat("").catch(() => undefined);
+      }
       for (const p of antre) {
         if (!isi.isConnected) break;
         // Jarak antarperkara seperti kasir sungguhan (audit pola 18 Okt 2026, 3.233
@@ -2971,6 +3015,24 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         `Kasir otomatis${sebab === "tombol" ? "" : " (sendiri)"} selesai: ${semua.filter((x) => x.ok).length} perkara tertulis, ${semua.filter((x) => !x.ok).length} tidak.`,
         semua.every((x) => x.ok) ? "baik" : "peringatan"
       );
+      if (mu) {
+        mu.lepasTahan();
+        // Hanya yang ditekan petugas ("tombol") yang memuat ulang sendiri; yang jalan sendiri di latar
+        // (buka panel / tiap 10 menit) tidak merebut halaman yang sedang dipakai - hanya tombol.
+        if (semua.some((x) => x.ok)) {
+          const wadahMu = el("div");
+          kotakKabar.appendChild(wadahMu);
+          mu.jadwalkan({
+            ringkasan: mu.ringkasan(
+              "Kasir otomatis selesai.",
+              [...laporan.entries()].map(([id, x]) => ({ jenis: String((antre.find((p) => String(p.perkaraId) === String(id)) || {}).nomorPerkara || id), teks: x.pesan, ok: x.ok })),
+              "Kasir otomatis belum selesai seluruhnya."
+            ),
+            wadah: wadahMu,
+            tanpaOtomatis: sebab !== "tombol",
+          });
+        }
+      }
     };
 
     const baca = async () => {

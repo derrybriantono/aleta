@@ -968,6 +968,7 @@
               otomatis: false,
               kering: false,
               timpaDisetujui: true,
+              tanpaMuatUlang: true,
               kabar: kabarEdoc,
             });
           } catch (galat) {
