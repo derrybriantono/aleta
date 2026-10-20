@@ -100,7 +100,7 @@ describe("C. faktaPerkara dengan data tiruan", () => {
     const f = await FP.faktaPerkara(777, { perkara: perkara(), ...dasar, usulan });
     expect(f.ok).toBe(true);
     expect(f.fakta["nikah.tanggal"].nilai).toBe("2018-02-05");
-    expect(FP.nilaiKode(f, "5197")).toBe("2018-02-05");
+    expect(FP.nilaiKode(f, "5197")).toBe("5 Februari 2018"); // kode menyimpan tulisan asli pengisi, fakta menyimpan nilai kanonik
     expect(f.kode["9999"].nilai).toBe("isi bebas");
     expect(f.kode["8603"].nilai).toMatch(/Aisilah/);
   });
@@ -249,5 +249,14 @@ describe("G. BAS ikut menjadi bagian fakta perkara", () => {
     expect(f.bas.jumlahSaksi).toEqual({ P: 1, T: 0 });
     expect(f.bas.bukti[0]).toMatchObject({ tanda: "P.1", jenisKode: "aktaNikah", nomor: "12/34/2018" });
     expect(f.fakta["nikah.tanggal"].kesaksian[0]).toMatchObject({ nama: "Fadlih", jawab: expect.stringContaining("2018") });
+  });
+});
+
+describe("H. bentuk kode mengikuti kebiasaan variabel", () => {
+  it("jumlah anak ditulis sebagai kalimat untuk variabel 0007; kalimat asli petugas dipertahankan", () => {
+    expect(FP.tulisBentuk("2", "kalimatAnak", "2")).toBe("telah dikaruniai 2 (dua) orang anak");
+    expect(FP.tulisBentuk("1", "kalimatAnak", "1")).toBe("telah dikaruniai seorang anak");
+    expect(FP.tulisBentuk("0", "kalimatAnak", "0")).toBe("belum dikaruniai anak");
+    expect(FP.tulisBentuk("3", "kalimatAnak", "telah dikaruniai 3 orang anak bernama A, B, C")).toBe("telah dikaruniai 3 orang anak bernama A, B, C");
   });
 });

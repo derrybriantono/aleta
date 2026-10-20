@@ -161,7 +161,15 @@ function sama(tipe, a, b) {
 
 const BULAN_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 /** Menulis nilai fakta menurut bentuk kode: asal | indo | slash | iso. Selain tanggal lengkap: apa adanya. */
-function tulisBentuk(nilai, bentuk) {
+function tulisBentuk(nilai, bentuk, asli) {
+  if (bentuk === "kalimatAnak") {
+    // variabel 0007 menyimpan kalimat, bukan bilangan: "telah dikaruniai seorang anak" / "belum dikaruniai anak"
+    if (/karunia/i.test(String(asli || ""))) return asli;
+    const n = Number(nilai);
+    if (!Number.isFinite(n) || n < 0) return nilai;
+    const kata = ["", "seorang", "2 (dua) orang", "3 (tiga) orang", "4 (empat) orang", "5 (lima) orang", "6 (enam) orang"];
+    return n === 0 ? "belum dikaruniai anak" : n === 1 ? "telah dikaruniai seorang anak" : `telah dikaruniai ${kata[n] || `${n} orang`} anak`;
+  }
   if (!bentuk || bentuk === "asal") return nilai;
   const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(nilai));
   if (!iso) return nilai;
@@ -193,7 +201,7 @@ function buatGudang(peta) {
       const nilai = kanon(tipe, c.nilai);
       if (nilai === "") return;
       const daftar = kandidat.get(kunci) || [];
-      daftar.push({ nilai, yakin: dariYakin(c.yakin), prio: c.prio, sumber: LABEL_SUMBER[c.prio], kutipan: rapat(c.kutipan).slice(0, 400), kode: c.kode ? kodeBaku(c.kode) : "", asal: c.asal || "", urut: daftar.length });
+      daftar.push({ nilai, asli: rapat(c.nilai), yakin: dariYakin(c.yakin), prio: c.prio, sumber: LABEL_SUMBER[c.prio], kutipan: rapat(c.kutipan).slice(0, 400), kode: c.kode ? kodeBaku(c.kode) : "", asal: c.asal || "", urut: daftar.length });
       kandidat.set(kunci, daftar);
     },
     tambahKode(kode, c) {
@@ -235,7 +243,7 @@ function timbang(tipe, daftar) {
     const l = lawan[0];
     catatan = `${atas.sumber} menyebut "${potong(atas.nilai)}", sedangkan ${l.sumber} menyebut "${potong(l.nilai)}". Periksa mana yang benar.`;
   }
-  return { nilai: atas.nilai, yakin, sumber, kutipan, kode, bertentangan, catatan, prio: atas.prio };
+  return { nilai: atas.nilai, nilaiAsli: atas.asli || atas.nilai, yakin, sumber, kutipan, kode, bertentangan, catatan, prio: atas.prio };
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -432,7 +440,7 @@ async function faktaPerkara(masukan, opsi) {
     const d = peta.fakta[kunci] || { tipe: "teks", kode: [] };
     const t = timbang(d.tipe, g.kandidatFakta(kunci));
     if (!t) continue;
-    fakta[kunci] = { label: d.label || kunci, tipe: d.tipe, nilai: t.nilai, yakin: t.yakin, sumber: t.sumber, kutipan: t.kutipan, kodeAsal: t.kode, kode: (d.kode || []).map((k) => (typeof k === "string" ? k : k.kode)), bertentangan: t.bertentangan, catatan: t.catatan, hanyaSaran: d.hanyaSaran === true };
+    fakta[kunci] = { label: d.label || kunci, tipe: d.tipe, nilai: t.nilai, nilaiAsli: t.nilaiAsli, yakin: t.yakin, sumber: t.sumber, kutipan: t.kutipan, kodeAsal: t.kode, kode: (d.kode || []).map((k) => (typeof k === "string" ? k : k.kode)), bertentangan: t.bertentangan, catatan: t.catatan, hanyaSaran: d.hanyaSaran === true };
   }
   // Kesaksian di BAS untuk pokok yang memuat fakta ini (bahan analisis bukti & saksi per dalil di pertimbangan putusan)
   if (bas && bas.pokok) {
@@ -451,7 +459,7 @@ async function faktaPerkara(masukan, opsi) {
     for (const k of d.kode || []) {
       const kd = typeof k === "string" ? k : k.kode;
       const bentuk = (typeof k === "object" && k.bentuk) || (d.bentukKode && d.bentukKode[kd]) || "asal";
-      kode[kd] = { nilai: tulisBentuk(f.nilai, bentuk), yakin: f.yakin, sumber: f.sumber, kutipan: f.kutipan, fakta: kunci, bentrok: f.bertentangan.length > 0, asalKode: f.kodeAsal.includes(kd) };
+      kode[kd] = { nilai: bentuk === "asal" ? f.nilaiAsli : tulisBentuk(f.nilai, bentuk, f.nilaiAsli), yakin: f.yakin, sumber: f.sumber, kutipan: f.kutipan, fakta: kunci, bentrok: f.bertentangan.length > 0, asalKode: f.kodeAsal.includes(kd) };
     }
   }
   for (const kd of g.kunciKode()) {

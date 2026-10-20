@@ -17,7 +17,8 @@
     "asal": "ditulis sama persis dengan nilai fakta",
     "indo": "17 November 2025",
     "slash": "17/11/2025",
-    "iso": "2025-11-17"
+    "iso": "2025-11-17",
+    "kalimatAnak": "kalimat jumlah anak: 'telah dikaruniai seorang anak' / 'belum dikaruniai anak' (variabel 0007)"
   },
   "fakta": {
     "nikah.tanggal": {
@@ -163,7 +164,10 @@
       "kode": [
         "0007"
       ],
-      "kunciSaksi": "jumlahAnak"
+      "kunciSaksi": "jumlahAnak",
+      "bentukKode": {
+        "0007": "kalimatAnak"
+      }
     },
     "anak.nama": {
       "label": "Nama anak",
