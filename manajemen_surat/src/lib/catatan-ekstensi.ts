@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.19",
+    dirilis: "2026-10-20T22:01:00+08:00",
+    judul: "Penetapan Otomatis di halaman SIPP, penetapan tanpa ganda, dan muat ulang otomatis",
+    butir: [
+      "Tombol \"Penetapan Otomatis\" di halaman perkara SIPP: panel terbentang berisi PMH, PPP, PJS, dan PHS dengan centang unggah e-Doc; satu klik menetapkan yang belum ada lalu mengunggah e-Doc yang dicentang.",
+      "Penetapan tidak lagi dapat tertulis ganda: keadaan penetapan dibaca dari satu sumber dan dikunci per perkara, formulir SIPP yang diisi ekstensi memeriksa ulang sebelum Simpan, dan pembongkaran hanya terjadi atas perintah petugas.",
+      "Sesudah menulis ke SIPP (penetapan, bongkar, Data Umum, Court Calendar, e-Doc penetapan, penetapan massal, kasir), halaman dimuat ulang otomatis dan tetap di perkara yang sama, dengan ringkasan hasil per langkah; bila ada yang gagal halaman tidak dimuat ulang sendiri.",
+      "e-Doc penetapan: PMH memakai cap kantor menindih tanda tangan, logo pada kotak tanda tangan elektronik PPP dan PJS berada di dalam kotak, dan kata tidak lagi terpotong di tengah.",
+      "Tanya jawab saksi dan isi otomatis gelombang 1 diperluas: cerai, itsbat, asal usul anak, dispensasi kawin, wali adhal, perwalian, dan ahli waris memakai satu sumber fakta perkara; isian hanya terisi sendiri bila ketepatannya sudah terukur, selebihnya saran bertanda ragu.",
+    ],
+  },
+  {
     versi: "1.205.18",
     dirilis: "2026-10-20T16:05:00+08:00",
     judul: "Tanya jawab saksi semua jenis perkara dan isi otomatis seluruh isian ABT",
