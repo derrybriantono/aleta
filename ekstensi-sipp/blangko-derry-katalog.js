@@ -708,9 +708,10 @@
    * @param {Array} rows
    * @param {object} usulan
    * @param {string} [kunciSaksi]
+   * @param {{timpa?: boolean}} [opsi]  timpa: ketikan petugas ikut diganti (hanya atas persetujuan di layar konfirmasi)
    * @returns {{rows: Array, terisi: number, tertahan: number, ragu: number}}
    */
-  function terapkanUsulan(rows, usulan, kunciSaksi) {
+  function terapkanUsulan(rows, usulan, kunciSaksi, opsi) {
     const u = laRaya(usulan) ? usulan : {};
     const ks = teks(kunciSaksi);
     let terisi = 0;
@@ -735,8 +736,9 @@
       }
       const isi = cari && rapat(cari.teks);
       if (!isi) return r;
-      if (diketikPetugas(r)) {
-        tertahan += 1;
+      if (diketikPetugas(r) && !(opsi && opsi.timpa === true)) {
+        // ketikan yang sudah sama dengan usulan tidak perlu ditahan atau diganti
+        if (norm(r.jawab) !== norm(isi)) tertahan += 1;
         return r;
       }
       terisi += 1;
@@ -809,6 +811,7 @@
     return (
       `<div class="bd-skpanel bd-skkatalog" role="group" aria-label="Pengetahuan saksi" data-katalog="${esc(o.judul)}">` +
       `<div class="bd-skhead"><span class="bd-lbl">Pengetahuan saksi · ${esc(o.judul)}</span><button type="button" class="bd-btn kecil" data-bd2="isioto" data-kunci="${esc(daftar(o.keys).join("|"))}"${mati}>Isi ulang dari data perkara</button></div>` +
+      `${typeof o.konfirmasi === "string" ? o.konfirmasi : ""}` +
       `<div class="bd-skgrid">${keadaanHtml(daftar(o.bidang), mati)}${kartu}</div>${jarang}</div>`
     );
   }

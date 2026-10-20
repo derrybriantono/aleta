@@ -22,7 +22,7 @@ import { tawarkanSetSaksi } from "@/lib/set-pertanyaan-saksi";
 const require_ = createRequire(path.resolve(process.cwd(), "../aleta_bot/routes/internalGatewayRoutes.js"));
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (berkas: string) => readFileSync(path.join(EKSTENSI, berkas), "utf8").replace(/\r\n/g, "\n");
-const SUMBER = ["panel-alat.js", "abt-klien.js", "blangko-derry.js", "saksi-katalog.js", "saksi-katalog-data.js", "blangko-derry-saksi.js", "blangko-derry-katalog.js", "blangko-derry-isian.js"].map(baca).join("\n;\n");
+const SUMBER = ["panel-alat.js", "abt-klien.js", "blangko-derry.js", "saksi-katalog.js", "saksi-katalog-data.js", "blangko-derry-saksi.js", "blangko-derry-saksi-tampil.js", "blangko-derry-katalog.js", "blangko-derry-jawab-katalog.js", "blangko-derry-isian.js"].map(baca).join("\n;\n");
 
 const ASAL = "http://192.168.10.10";
 const ABT = `${ASAL}/aps_badilag/index.php/abt`;
@@ -386,6 +386,7 @@ const ITS = { jenisPerkara: "Pengesahan Perkawinan/Istbat Nikah", jenisPerkaraId
 // ============================================================================
 // Bot sungguhan (tanpa basis data)
 // ============================================================================
+const reqLokal = createRequire(import.meta.url);
 const servis = require_("../services/isiJawabanSaksiService.js");
 const usul = require_("../services/abtUsulanService.js");
 const djp = require_("../services/deteksiJenisPerkaraService.js");
@@ -454,16 +455,16 @@ describe("sambungan S1<->S2: terapkanUsulan memakai kunci berekor saksi lebih du
     expect(K.terapkanUsulan(rows, u, "saksi 1 p").rows[0].jawab).toBe("kalimat polos");
     expect(K.terapkanUsulan(rows, u).rows[0].jawab).toBe("kalimat polos");
     // tampilan S4 membaca baris itu: ragu / data
-    const T = require_("../../../ekstensi-sipp/blangko-derry-saksi-tampil.js");
+    const T = reqLokal("../../../ekstensi-sipp/blangko-derry-saksi-tampil.js");
     expect(T.asalBaris(dua.rows[0])).toBe("ragu");
-    expect(T.alasanRagu(dua.rows[0])).toBe("gugatan");
+    expect(T.alasanRagu(dua.rows[0])).toBe("tanggal berbeda antar sumber");
     expect(T.asalBaris(K.terapkanUsulan(rows, u, "saksi 1 p").rows[0])).toBe("data");
   });
 
   it("baris katalog dan jalur cerai lama memberi usulan yang sama-sama terbaca metaUsulan", () => {
     const K: Mod = muat();
-    const T = require_("../../../ekstensi-sipp/blangko-derry-saksi-tampil.js");
-    const BD = require_("../../../ekstensi-sipp/blangko-derry-saksi.js");
+    const T = reqLokal("../../../ekstensi-sipp/blangko-derry-saksi-tampil.js");
+    const BD = reqLokal("../../../ekstensi-sipp/blangko-derry-saksi.js");
     const katalog = K.terapkanUsulan([{ butir: "b", jenisKat: "melihat", kunciJawaban: "k/b/melihat", tanya: "t", jawab: "..." }], { "k/b/melihat": { teks: "isi", yakin: "ragu", sumber: "akta", ket: "k" } }).rows[0];
     const lama = BD.pasangJawaban([{ no: "1", tanya: "t", jawab: "...", dasar: "..." }], [{ no: "1", tanya: "t", jawab: "isi lama", usulan: { yakin: "ragu", sumber: "gugatan", ket: "k2" } }], {}).rows[0];
     expect(T.metaUsulan(katalog)).toMatchObject({ yakin: "ragu", sumber: "akta" });
@@ -509,7 +510,7 @@ describe("uji gabungan jsdom: itsbat 228/Pdt.P/2026 (2 pemohon, alur 16)", () =>
       const asal = el.getAttribute("data-asal") || "";
       expect(el.classList.contains(`bd-asal-${asal}`), el.value).toBe(true);
       if (/\.{3,}|…/.test(el.value) || !el.value.trim()) expect(asal).toBe("kosong");
-      else expect(["data", "ragu"]).toContain(asal);
+      else expect(["data", "ragu", "manual"]).toContain(asal); // "manual" = kalimat dasar katalog tanpa variabel (tidak perlu data)
     }
     // ringkasan sama dengan hitungan kotak
     const n = asalDom(h);
@@ -599,5 +600,20 @@ describe("uji gabungan jsdom: ketikan petugas tidak ditimpa", () => {
     expect(kotak(h, 0)[idx].getAttribute("data-asal")).toBe("manual");
     expect(kotak(h, 0).map(nilaiTa).filter((x) => x === diketik)).toHaveLength(1);
     expect(kotak(h, 0).length).toBe(sebelum.length);
+    // Batal tidak mengubah apa pun; hanya dengan centang "termasuk yang sudah diketik" ketikan petugas diganti
+    klik(h, '[data-bd2="isioto"]');
+    await sampai(() => q(h, "[data-skkonfirm]"), "konfirmasi tampil lagi");
+    klik(h, '[data-bd2="isiulangbatal"]');
+    await sampai(() => !q(h, "[data-skkonfirm]"), "konfirmasi tertutup");
+    expect(nilaiTa(kotak(h, 0)[idx])).toBe(diketik);
+    klik(h, '[data-bd2="isioto"]');
+    await sampai(() => q(h, "[data-skkonfirm]"), "konfirmasi tampil ketiga kali");
+    klik(h, '[data-bd2="tinjautimpa"]');
+    await sampai(() => (q(h, '[data-bd2="tinjautimpa"]') as HTMLInputElement)?.checked, "centang aktif");
+    expect(q(h, "[data-skkal]")!.textContent).toMatch(/^1 jawaban akan berubah/);
+    klik(h, '[data-bd2="isiulangya"]');
+    await sampai(() => nilaiTa(kotak(h, 0)[idx]) !== diketik, "ketikan diganti atas persetujuan");
+    expect(nilaiTa(kotak(h, 0)[idx])).toMatch(/17 November 2025/);
+    expect(kotak(h, 0)[idx].getAttribute("data-asal")).not.toBe("manual");
   });
 });
