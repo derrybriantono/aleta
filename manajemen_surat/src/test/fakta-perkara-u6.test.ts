@@ -24,7 +24,7 @@ const FP = require_(path.join(AKAR, "aleta_bot", "services", "faktaPerkara.js"))
   timbang: (tipe: string, daftar: any[]) => any;
   kanon: (tipe: string, v: string) => string;
   sama: (tipe: string, a: string, b: string) => boolean;
-  tulisBentuk: (n: string, b: string) => string;
+  tulisBentuk: (n: string, b: string, asli?: string) => string;
   muatPeta: (p?: unknown) => any;
   nilaiKode: (h: any, k: string) => string;
   PRIO: Record<string, number>;
