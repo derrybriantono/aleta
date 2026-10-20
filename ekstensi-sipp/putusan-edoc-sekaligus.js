@@ -286,11 +286,22 @@
     return b;
   }
 
+  /** Isi berkas sebagai ArrayBuffer (File.arrayBuffer bila ada, kalau tidak FileReader). */
+  function bacaBita(berkas) {
+    if (berkas && typeof berkas.arrayBuffer === "function") return berkas.arrayBuffer();
+    return new Promise((selesai, tolak) => {
+      const pembaca = new FileReader();
+      pembaca.onload = () => selesai(pembaca.result);
+      pembaca.onerror = () => tolak(pembaca.error || new Error("berkas tidak terbaca"));
+      pembaca.readAsArrayBuffer(berkas);
+    });
+  }
+
   /** Penyamar di portal. Pulang { ok, berkas: File, sisa[] } atau { ok:false, sebab }. */
   async function anonimDenganPenyamar(p, putusan) {
     let bita;
     try {
-      bita = await putusan.arrayBuffer();
+      bita = await bacaBita(putusan);
     } catch (galat) {
       return { ok: false, sebab: `berkas putusan tidak terbaca (${sebaris((galat && galat.message) || galat)})` };
     }
@@ -419,7 +430,11 @@
         arg.kabar.textContent = teks;
       }
     };
-    const selesai = (ok, ekstra) => ({ ok, bunyi: bunyiLangkah(hasil), langkah: hasil, ...(ekstra || {}) });
+    const selesai = (ok, ekstra) => {
+      // Urutan tetap: putusan dulu, anonimisasi sesudahnya (urutan layar dan laporan).
+      hasil.sort((a, b) => (a.kunci === b.kunci ? 0 : a.kunci === "putusan" ? -1 : 1));
+      return { ok, bunyi: bunyiLangkah(hasil), langkah: hasil, ...(ekstra || {}) };
+    };
     try {
       // Hak peran: portal menegakkannya lagi (403), ini hanya mencegah perjalanan sia-sia.
       const boleh = arg.deps.bolehUnggah ? arg.deps.bolehUnggah() : fungsi("alatBolehUnggahPutusanKini") ? fungsi("alatBolehUnggahPutusanKini")() : null;
