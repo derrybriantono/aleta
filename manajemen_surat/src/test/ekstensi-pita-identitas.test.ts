@@ -195,7 +195,7 @@ describe("itsbat nikah dan keterangan dua saksi", () => {
     const isi = rute();
     // "posita-lain" (perkara lain dari posita permohonan) ditambah 26 Sep 2026.
     // "alasan-posita" ditambah 6 Okt 2026 (butir 12: centang sesuai posita).
-    expect(isi).toContain('["sipp", "saksi", "itsbat", "saksi-sdg", "posita-lain", "alasan-posita", "pertanyaan-saksi"]');
+    expect(isi).toContain('["sipp", "saksi", "itsbat", "saksi-sdg", "posita-lain", "alasan-posita", "pertanyaan-saksi", "isi-jawaban"]');
     expect(isi).toContain('if (sumberMinta === "siapa") {');
     expect(isi).toContain("pengguna,");
     // Templat adalah masukan dari peramban: dibatasi, bukan dipercaya.
