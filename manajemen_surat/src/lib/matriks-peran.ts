@@ -838,7 +838,18 @@ export const AKSI = {
     crud: "CU",
     golongan: ["pimpinan", "hakim"],
     lingkup: "milik",
-    rute: ["POST /api/aleta-ecourt/putusan/unggah-sipp", "POST /api/aleta-ecourt/putusan/isian-sipp", "POST /api/aleta-ecourt/putusan/unggah-naskah"],
+    rute: [
+      "POST /api/aleta-ecourt/putusan/unggah-sipp",
+      "POST /api/aleta-ecourt/putusan/isian-sipp",
+      "POST /api/aleta-ecourt/putusan/unggah-naskah",
+      // 21 Okt: Unggah Putusan Terjadwal (hak yang sama: pastikanBolehUnggahPutusan di tiap rute).
+      "GET|POST|PATCH /api/aleta-ecourt/putusan-terjadwal",
+      "POST|DELETE /api/aleta-ecourt/putusan-terjadwal/berkas",
+      "POST /api/aleta-ecourt/putusan-terjadwal/pratinjau",
+      "POST /api/aleta-ecourt/putusan-terjadwal/ringkasan-form",
+      "GET|POST /api/aleta-ecourt/putusan-terjadwal/peramban",
+      "GET|POST /api/aleta-ecourt/putusan-terjadwal/pengaturan",
+    ],
     alasan: "Keputusan pengguna 9 Okt: hanya Hakim (termasuk Ketua/Wakil), Admin, Super Admin (pastikanBolehUnggahPutusan).",
   },
   "ttd.kelola": {

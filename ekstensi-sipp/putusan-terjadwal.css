@@ -1,0 +1,693 @@
+/*
+ * Unggah Putusan Terjadwal - tombol "Jadwalkan Putusan" dan panelnya (21 Okt 2026, agen B3).
+ * Tombol tebal di sebelah "Putusan Otomatis" di halaman perkara SIPP; di dashboard dan daftar/jurnal perkara
+ * tombol melayang di sudut kiri bawah dan panelnya terbuka sebagai laci. Aksen ungu tua (putih di atas
+ * #4b2f8f = 9,3:1; gelap #1b0f38 di atas #c9b5f5 = 9,6:1) supaya terbedakan dari Penetapan (hijau) dan
+ * Putusan Otomatis (biru). Terang mengikuti SIPP; gelap mengikuti html[data-aleta-tema-sipp="gelap"].
+ */
+.aleta-ptj-panel,
+.aleta-ptj-melayang {
+  --pt-latar: #ffffff;
+  --pt-latar-lembut: #f4f1fb;
+  --pt-tinta: #1d1830;
+  --pt-redup: #51486b;
+  --pt-garis: #cdc4e3;
+  --pt-merek: #4b2f8f;
+  --pt-merek-teks: #ffffff;
+  --pt-emas: #8a5a0d;
+  --pt-emas-lembut: #fbf1dc;
+  --pt-ok: #1b6e38;
+  --pt-ok-lembut: #e3f3e8;
+  --pt-tunggu: #7a5c0a;
+  --pt-tunggu-lembut: #fbf3d9;
+  --pt-lewat: #4a5565;
+  --pt-lewat-lembut: #eceff3;
+  --pt-salah: #b42318;
+  --pt-salah-lembut: #fde8e6;
+  --pt-sorot: #efe9fb;
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-ptj-panel,
+html[data-aleta-tema-sipp="gelap"] .aleta-ptj-melayang {
+  --pt-latar: #1a1627;
+  --pt-latar-lembut: #231d36;
+  --pt-tinta: #ece8f7;
+  --pt-redup: #b6add0;
+  --pt-garis: #3e3560;
+  --pt-merek: #c9b5f5;
+  --pt-merek-teks: #1b0f38;
+  --pt-emas: #e0b861;
+  --pt-emas-lembut: #3a2e17;
+  --pt-ok: #7fd9a1;
+  --pt-ok-lembut: #183527;
+  --pt-tunggu: #e5c35c;
+  --pt-tunggu-lembut: #3a3216;
+  --pt-lewat: #b7c2d0;
+  --pt-lewat-lembut: #262d36;
+  --pt-salah: #ff9b92;
+  --pt-salah-lembut: #43211f;
+  --pt-sorot: #2c2446;
+  color-scheme: dark;
+}
+
+/* ── Tombol di deretan tombol SIPP ───────────────────────────────────────── */
+td.aleta-ptj-sel {
+  vertical-align: middle;
+  margin: 0;
+  padding: 0 4px 0 0;
+  border-left: 0;
+  border-radius: 0;
+  background: none;
+}
+.aleta-ptj-tombol {
+  --pt-t-latar: #4b2f8f;
+  --pt-t-teks: #ffffff;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--pt-t-latar);
+  color: var(--pt-t-teks) !important;
+  border: 2px solid var(--pt-t-latar);
+  border-radius: 4px;
+  padding: 4px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(75, 47, 143, 0.25);
+}
+.aleta-ptj-tombol:hover {
+  filter: brightness(1.12);
+}
+.aleta-ptj-tombol[aria-expanded="true"] {
+  --pt-t-latar: #3a2370;
+  border-color: #3a2370;
+}
+.aleta-ptj-tombol:focus-visible,
+.aleta-ptj-panel button:focus-visible,
+.aleta-ptj-panel input:focus-visible,
+.aleta-ptj-panel select:focus-visible {
+  outline: 3px solid #e0a800;
+  outline-offset: 2px;
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-ptj-tombol {
+  --pt-t-latar: #c9b5f5;
+  --pt-t-teks: #1b0f38;
+  box-shadow: 0 0 0 3px rgba(201, 181, 245, 0.3);
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-ptj-tombol[aria-expanded="true"] {
+  --pt-t-latar: #b49be8;
+}
+/* Tombol ini juga berkelas .btn SIPP; di tema gelap panel.css mewarnainya dengan !important setara ID, jadi
+   warnanya dipertegas lewat id supaya aksen ungunya tetap dan kontrasnya terjaga (>= 4,5:1). */
+html[data-aleta-tema-sipp="gelap"] #aleta-ptj-tombol.aleta-ptj-tombol,
+html[data-aleta-tema-sipp="gelap"] #aleta-ptj-tombol.aleta-ptj-tombol:hover {
+  background-color: var(--pt-t-latar) !important;
+  color: var(--pt-t-teks) !important;
+  border-color: var(--pt-t-latar) !important;
+}
+.aleta-ptj-ikon {
+  font-size: 1.1em;
+  line-height: 1;
+}
+.aleta-ptj-lencana {
+  display: inline-block;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: #e0a800;
+  color: #1b1200;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 20px;
+  text-align: center;
+}
+.aleta-ptj-lencana[hidden] {
+  display: none;
+}
+
+/* Tombol melayang (dashboard / daftar / jurnal) */
+.aleta-ptj-melayang {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 2147482000;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.aleta-ptj-melayang .aleta-ptj-tombol {
+  border-radius: 99px;
+  padding: 8px 18px;
+  box-shadow: 0 6px 18px rgba(20, 10, 50, 0.35);
+}
+.aleta-ptj-laci {
+  position: fixed;
+  left: 16px;
+  bottom: 70px;
+  z-index: 2147482000;
+  width: min(1040px, calc(100vw - 32px));
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+  margin: 0;
+  box-shadow: 0 12px 40px rgba(20, 10, 50, 0.4);
+}
+
+/* ── Panel ───────────────────────────────────────────────────────────────── */
+.aleta-ptj-panel {
+  box-sizing: border-box;
+  clear: both;
+  width: 100%;
+  max-width: 1100px;
+  margin: 8px 0 14px;
+  border: 2px solid var(--pt-merek);
+  border-radius: 8px;
+  background: var(--pt-latar);
+  color: var(--pt-tinta);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  text-align: left;
+  padding: 0;
+}
+.aleta-ptj-panel[hidden] {
+  display: none;
+}
+.aleta-ptj-panel *,
+.aleta-ptj-panel *::before,
+.aleta-ptj-panel *::after {
+  box-sizing: border-box;
+}
+.aleta-ptj-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 14px;
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid var(--pt-garis);
+}
+.aleta-ptj-judul {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--pt-tinta);
+}
+.aleta-ptj-mono {
+  font-family: ui-monospace, "JetBrains Mono", Consolas, monospace;
+  font-size: 0.92em;
+}
+.aleta-ptj-catatan {
+  font-size: 13px;
+  color: var(--pt-redup);
+  max-width: 640px;
+}
+.aleta-ptj-tab {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+  border-bottom: 1px solid var(--pt-garis);
+  background: var(--pt-latar-lembut);
+}
+.aleta-ptj-tab button {
+  border: 1px solid var(--pt-garis);
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: var(--pt-latar);
+  color: var(--pt-redup);
+  padding: 6px 16px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.aleta-ptj-tab button[aria-selected="true"] {
+  background: var(--pt-merek);
+  border-color: var(--pt-merek);
+  color: var(--pt-merek-teks);
+}
+.aleta-ptj-badan {
+  display: grid;
+  gap: 14px;
+  padding: 12px 16px 14px;
+}
+.aleta-ptj-bagian {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--pt-garis);
+  border-radius: 9px;
+  background: var(--pt-latar);
+}
+.aleta-ptj-bagian > h3 {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--pt-tinta);
+}
+.aleta-ptj-bagian > h3 .aleta-ptj-no {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--pt-merek);
+  color: var(--pt-merek-teks);
+  font-size: 12.5px;
+  line-height: 22px;
+  text-align: center;
+}
+.aleta-ptj-bantu {
+  font-size: 13px;
+  color: var(--pt-redup);
+}
+.aleta-ptj-baris-aksi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.aleta-ptj-panel label {
+  font-size: 13.5px;
+  color: var(--pt-tinta);
+}
+.aleta-ptj-panel input[type="date"],
+.aleta-ptj-panel input[type="time"],
+.aleta-ptj-panel input[type="number"],
+.aleta-ptj-panel select {
+  background: var(--pt-latar);
+  color: var(--pt-tinta);
+  border: 1px solid var(--pt-garis);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font: inherit;
+  min-height: 34px;
+}
+.aleta-ptj-panel input[type="number"] {
+  width: 76px;
+}
+.aleta-ptj-tombol-kecil,
+.aleta-ptj-utama,
+.aleta-ptj-ya {
+  background: var(--pt-merek);
+  color: var(--pt-merek-teks);
+  border: 2px solid var(--pt-merek);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.aleta-ptj-utama,
+.aleta-ptj-ya {
+  padding: 8px 20px;
+  font-size: 14.5px;
+}
+.aleta-ptj-sekunder,
+.aleta-ptj-batal {
+  background: transparent;
+  color: var(--pt-tinta);
+  border: 2px solid var(--pt-garis);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.aleta-ptj-panel button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ── Daftar perkara terpilih ─────────────────────────────────────────────── */
+.aleta-ptj-kandidat {
+  display: grid;
+  gap: 4px;
+  max-height: 260px;
+  overflow: auto;
+  padding: 2px;
+}
+.aleta-ptj-kandidat label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.aleta-ptj-kandidat label:hover {
+  background: var(--pt-sorot);
+}
+.aleta-ptj-nomor {
+  font-weight: 800;
+  font-family: ui-monospace, "JetBrains Mono", Consolas, monospace;
+  font-size: 13px;
+}
+.aleta-ptj-ket {
+  font-size: 12.5px;
+  color: var(--pt-redup);
+}
+
+/* ── Seret-lepas ─────────────────────────────────────────────────────────── */
+.aleta-ptj-zona {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  min-height: 92px;
+  padding: 14px;
+  border: 2px dashed var(--pt-merek);
+  border-radius: 10px;
+  background: var(--pt-latar-lembut);
+  text-align: center;
+  color: var(--pt-tinta);
+}
+.aleta-ptj-zona[data-sorot="1"] {
+  background: var(--pt-sorot);
+  border-style: solid;
+}
+.aleta-ptj-zona strong {
+  font-size: 15px;
+}
+.aleta-ptj-berkas-daftar {
+  display: grid;
+  gap: 6px;
+}
+.aleta-ptj-berkas {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--pt-garis);
+  border-radius: 8px;
+  background: var(--pt-latar);
+}
+.aleta-ptj-berkas[data-status="cocok"] {
+  border-color: var(--pt-ok);
+}
+.aleta-ptj-berkas[data-status="konflik"],
+.aleta-ptj-berkas[data-status="ganda"],
+.aleta-ptj-berkas[data-status="ditolak"] {
+  border-color: var(--pt-salah);
+}
+.aleta-ptj-berkas[data-status="tidak-cocok"],
+.aleta-ptj-berkas[data-status="tanpa-nomor"] {
+  border-color: var(--pt-emas);
+}
+.aleta-ptj-berkas .aleta-ptj-nama {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.aleta-ptj-chip {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  border-radius: 99px;
+  padding: 2px 10px;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.aleta-ptj-c-ok {
+  background: var(--pt-ok-lembut);
+  color: var(--pt-ok);
+}
+.aleta-ptj-c-tunggu {
+  background: var(--pt-tunggu-lembut);
+  color: var(--pt-tunggu);
+}
+.aleta-ptj-c-lewat {
+  background: var(--pt-lewat-lembut);
+  color: var(--pt-lewat);
+}
+.aleta-ptj-c-salah {
+  background: var(--pt-salah-lembut);
+  color: var(--pt-salah);
+}
+.aleta-ptj-c-jalan {
+  background: var(--pt-emas-lembut);
+  color: var(--pt-emas);
+}
+
+/* ── Tabel perkara x langkah x jam ───────────────────────────────────────── */
+.aleta-ptj-tabel {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.aleta-ptj-tabel th,
+.aleta-ptj-tabel td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--pt-garis);
+  text-align: left;
+  vertical-align: top;
+}
+.aleta-ptj-tabel th {
+  font-size: 12.5px;
+  color: var(--pt-redup);
+  font-weight: 800;
+}
+.aleta-ptj-tabel td.aleta-ptj-jam {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.aleta-ptj-tabel select {
+  max-width: 170px;
+}
+.aleta-ptj-langkah {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.aleta-ptj-langkah label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.aleta-ptj-form-ringkas {
+  font-size: 12.5px;
+  color: var(--pt-redup);
+}
+.aleta-ptj-form-ringkas b {
+  color: var(--pt-tinta);
+}
+
+/* ── Jam ─────────────────────────────────────────────────────────────────── */
+.aleta-ptj-jam-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px 14px;
+}
+.aleta-ptj-jam-grid > div {
+  display: grid;
+  gap: 3px;
+}
+.aleta-ptj-pratinjau {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--pt-latar-lembut);
+  font-size: 13.5px;
+}
+.aleta-ptj-awas {
+  padding: 8px 10px;
+  border: 1px solid var(--pt-emas);
+  border-radius: 8px;
+  background: var(--pt-emas-lembut);
+  color: var(--pt-tinta);
+  font-size: 13.5px;
+}
+.aleta-ptj-galat {
+  padding: 8px 10px;
+  border: 1px solid var(--pt-salah);
+  border-radius: 8px;
+  background: var(--pt-salah-lembut);
+  color: var(--pt-tinta);
+  font-size: 13.5px;
+}
+.aleta-ptj-sukses {
+  padding: 8px 10px;
+  border: 1px solid var(--pt-ok);
+  border-radius: 8px;
+  background: var(--pt-ok-lembut);
+  color: var(--pt-tinta);
+  font-size: 13.5px;
+}
+
+/* ── Kaki dan konfirmasi ─────────────────────────────────────────────────── */
+.aleta-ptj-kaki {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--pt-garis);
+  background: var(--pt-latar-lembut);
+  border-radius: 0 0 6px 6px;
+}
+.aleta-ptj-ringkas {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--pt-tinta);
+}
+.aleta-ptj-konfirm {
+  border: 2px solid var(--pt-emas);
+  border-radius: 9px;
+  background: var(--pt-emas-lembut);
+  padding: 12px 14px;
+}
+.aleta-ptj-konfirm p {
+  margin: 0 0 6px;
+  color: var(--pt-tinta);
+}
+.aleta-ptj-konfirm-aksi {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* ── Antrean ─────────────────────────────────────────────────────────────── */
+.aleta-ptj-jadwal {
+  border: 1px solid var(--pt-garis);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.aleta-ptj-jadwal-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 8px 12px;
+  background: var(--pt-latar-lembut);
+  font-size: 13px;
+}
+.aleta-ptj-aksi-baris {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.aleta-ptj-aksi-baris button {
+  padding: 3px 9px;
+  font-size: 12.5px;
+}
+
+@media (max-width: 720px) {
+  .aleta-ptj-berkas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .aleta-ptj-tabel thead {
+    display: none;
+  }
+  .aleta-ptj-tabel tr {
+    display: grid;
+    gap: 2px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--pt-garis);
+  }
+  .aleta-ptj-tabel td {
+    border: 0;
+    padding: 2px 8px;
+  }
+  .aleta-ptj-laci {
+    left: 8px;
+    width: calc(100vw - 16px);
+  }
+}
+
+/* ── Spanduk pemberitahuan pelaksana peramban ─────────────────────────────── */
+.aleta-ptj-spanduk {
+  --pt-latar: #ffffff;
+  --pt-tinta: #1d1830;
+  --pt-garis: #cdc4e3;
+  --pt-merek: #4b2f8f;
+  --pt-merek-teks: #ffffff;
+  --pt-ok: #1b6e38;
+  --pt-salah: #b42318;
+  --pt-emas: #8a5a0d;
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147482500;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border: 2px solid var(--pt-merek);
+  border-radius: 10px;
+  background: var(--pt-latar);
+  color: var(--pt-tinta);
+  font: 13.5px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 8px 28px rgba(20, 10, 50, 0.35);
+}
+.aleta-ptj-spanduk[data-ptj-spanduk="ok"] {
+  border-color: var(--pt-ok);
+}
+.aleta-ptj-spanduk[data-ptj-spanduk="salah"] {
+  border-color: var(--pt-salah);
+}
+.aleta-ptj-spanduk[data-ptj-spanduk="jatuh-tempo"],
+.aleta-ptj-spanduk[data-ptj-spanduk="awas"] {
+  border-color: var(--pt-emas);
+}
+.aleta-ptj-spanduk .aleta-ptj-tombol-kecil {
+  background: var(--pt-merek);
+  color: var(--pt-merek-teks);
+  border: 2px solid var(--pt-merek);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+html[data-aleta-tema-sipp="gelap"] .aleta-ptj-spanduk {
+  --pt-latar: #1a1627;
+  --pt-tinta: #ece8f7;
+  --pt-garis: #3e3560;
+  --pt-merek: #c9b5f5;
+  --pt-merek-teks: #1b0f38;
+  --pt-ok: #7fd9a1;
+  --pt-salah: #ff9b92;
+  --pt-emas: #e0b861;
+  color-scheme: dark;
+}
+
+/* .aleta-sisip (panel.css) menandai sisipan ALETA di tabel SIPP dan diabaikan pengamat konten.js - kelas itu
+   WAJIB tetap ada; gaya hijaunya dinetralkan di sini untuk elemen melayang dan panel. */
+.aleta-ptj-melayang.aleta-sisip,
+.aleta-ptj-spanduk.aleta-sisip {
+  margin-top: 0;
+  border-left-width: 2px;
+}
+.aleta-ptj-melayang.aleta-sisip {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+.aleta-ptj-panel.aleta-sisip {
+  margin-top: 8px;
+}
+.aleta-ptj-laci.aleta-sisip {
+  margin-top: 0;
+}
+
+/* Atribut hidden harus menang atas display:grid/flex yang dipasang kelas di atas. */
+.aleta-ptj-badan[hidden],
+.aleta-ptj-kaki[hidden],
+.aleta-ptj-melayang[hidden],
+.aleta-ptj-spanduk[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 720px) {
+  .aleta-ptj-kandidat label {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .aleta-ptj-kandidat label .aleta-ptj-ket {
+    grid-column: 2;
+  }
+}

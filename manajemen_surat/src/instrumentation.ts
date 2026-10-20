@@ -49,6 +49,15 @@ export async function register() {
     mulaiAgenH7Berkala(getDatabase);
   }
   /* === AKHIR AGEN H-7 === */
+  /* === PUTUSAN TERJADWAL 21 Okt (B3) === pelaksana server unggah putusan terjadwal: tiap 30 detik mengerjakan paling
+     banyak SATU butir e-Doc (putusan + anonimisasi) yang jatuh tempo, di dalam jendela jam kerja jadwalnya, atas akun
+     SIPP penjadwal, lewat jalur tulis unggah-sipp yang sudah ada. Pengisian Putusan Akhir TIDAK dikerjakan di sini
+     (ekstensi di peramban). Matikan dengan ALETA_PUTUSAN_TERJADWAL=0 atau saklar di pengaturan layar. */
+  if (process.env.ALETA_PUTUSAN_TERJADWAL !== "0") {
+    const { mulaiPelaksanaBerkala } = await import("@/server/modules/putusan-terjadwal/pelaksana");
+    mulaiPelaksanaBerkala();
+  }
+  /* === AKHIR PUTUSAN TERJADWAL === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
   const { mulaiPenjadwalSinkron } = await import("@/server/modules/sinkron/penjadwal");
   mulaiPenjadwalSinkron();

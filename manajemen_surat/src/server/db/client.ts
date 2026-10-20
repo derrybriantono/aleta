@@ -403,6 +403,11 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_ai_pengaturan",
   "aleta_ai_rute",
   "aleta_ai_jejak",
+  // 21 Oktober 2026 (0080): Unggah Putusan Terjadwal. Tanpa kunci asing - urutannya bebas.
+  "aleta_putusan_jadwal",
+  "aleta_putusan_jadwal_butir",
+  "aleta_putusan_jadwal_berkas",
+  "aleta_putusan_jadwal_jejak",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",
