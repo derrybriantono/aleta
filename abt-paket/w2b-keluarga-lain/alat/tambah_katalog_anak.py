@@ -24,17 +24,17 @@ import katalog_anak as M  # noqa: E402
 
 CATATAN = {
     'hak-asuh.json': [
-        'Pilih pihak yang mengasuh anak sekarang dan keadaan pihak yang dipersoalkan pada borang agar butir yang sesuai ikut diajukan; pilihan itu hanya menentukan pertanyaan, bukan putusan.',
+        'Pilih pihak yang mengasuh anak sekarang dan keadaan pihak yang dipersoalkan pada blangko agar butir yang sesuai ikut diajukan; pilihan itu hanya menentukan pertanyaan, bukan putusan.',
         'Jawaban saksi hanya kerangka dari isian perkara; sesuaikan dengan keterangan saksi yang sesungguhnya dan jangan biarkan titik-titik atau isian kosong.',
         'Pendapat anak yang sudah mumayyiz (12 tahun) didengar langsung oleh hakim; keterangan saksi tentang pilihan anak hanya pelengkap.',
     ],
     'penguasaan-anak.json': [
-        'Pilih dasar penguasaan dan pihak yang sekarang menguasai anak pada borang; pilihan itu hanya menentukan pertanyaan, bukan putusan.',
+        'Pilih dasar penguasaan dan pihak yang sekarang menguasai anak pada blangko; pilihan itu hanya menentukan pertanyaan, bukan putusan.',
         'Jawaban saksi hanya kerangka dari isian perkara; sesuaikan dengan keterangan saksi yang sesungguhnya dan jangan biarkan titik-titik atau isian kosong.',
         'Butir tentang pengalihan penguasaan dan penyerahan anak hanya diajukan bila dituntut dalam gugatan.',
     ],
     'nafkah-anak.json': [
-        'Pilih jenis nafkah yang dituntut dan kemampuan ayah pada borang agar butir yang sesuai ikut diajukan; besaran nafkah yang dikabulkan tetap pilihan majelis.',
+        'Pilih jenis nafkah yang dituntut dan kemampuan ayah pada blangko agar butir yang sesuai ikut diajukan; besaran nafkah yang dikabulkan tetap pilihan majelis.',
         'Jawaban saksi hanya kerangka dari isian perkara; sesuaikan dengan keterangan saksi yang sesungguhnya dan jangan biarkan titik-titik atau isian kosong.',
         'Nafkah lampau hanya dapat dituntut oleh ibu atau pengasuh nyata yang telah menanggung biaya anak; tanyakan hanya bila dituntut dalam gugatan.',
     ],

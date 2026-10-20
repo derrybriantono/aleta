@@ -1,0 +1,1829 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "pencabutan-kuasa-wali",
+ "judul": "Pencabutan kekuasaan wali",
+ "versi": 1,
+ "penulis": "W3b-355",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "355"
+  ]
+ },
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [
+  {
+   "folder": "6e Pencabutan Kekuasaan Wali - BAS",
+   "berkas": "BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060",
+    "6124",
+    "8931"
+   ],
+   "catatan": "gugatan; saksi P lewat variabel tanya_jawab; [6a] 3 saksi, [6b] 4 saksi, [6c] 5 saksi sama; paket w3b-blangko-baru-kuasa-wali (menu 242/243, ALUR 71)"
+  },
+  {
+   "folder": "6e Pencabutan Kekuasaan Wali - BAS",
+   "berkas": "BAS ALUR 04 [7] BAS 7 P & T Hadir - Pembuktian T",
+   "variabelSaksi": [
+    "6120",
+    "6121",
+    "8921",
+    "8941"
+   ],
+   "catatan": "gugatan; saksi T; [7a] 3 saksi, [7b] 4 saksi sama"
+  },
+  {
+   "folder": "6e Pencabutan Kekuasaan Wali - BAS",
+   "berkas": "BAS ALUR 71 Pencabutan Perwalian - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": "gugatan verstek: hanya saksi P (2 saksi)"
+  },
+  {
+   "folder": "6e Pencabutan Kekuasaan Wali - BAS",
+   "berkas": "BAS ALUR 71 Pencabutan Perwalian Mohon - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": "permohonan (Pdt.P): saksi P"
+  },
+  {
+   "folder": "6e Pencabutan Kekuasaan Wali - BAS",
+   "berkas": "BAS ALUR 71 Pencabutan Perwalian Mohon - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": "permohonan (Pdt.P): saksi P"
+  },
+  {
+   "folder": "6e Pencabutan Kekuasaan Wali - BAS",
+   "berkas": "BAS ALUR 71 Pencabutan Perwalian Mohon - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": "permohonan (Pdt.P): saksi P"
+  },
+  {
+   "folder": "6e Pencabutan Kekuasaan Wali - BAS",
+   "berkas": "BAS ALUR 71 Pencabutan Perwalian Mohon - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": "permohonan (Pdt.P): saksi P"
+  },
+  {
+   "folder": "6e Pencabutan Kekuasaan Wali - BAS",
+   "berkas": "BAS ALUR 71 Pencabutan Perwalian Mohon - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": "permohonan (Pdt.P): saksi P"
+  }
+ ],
+ "dasarHukum": [
+  {
+   "id": "dh-hir-171",
+   "rujukan": "Pasal 171 ayat (1) dan (2) HIR / Pasal 308 RBg",
+   "uraian": "tiap kesaksian harus disertai keterangan tentang bagaimana saksi mengetahuinya; pendapat atau dugaan saksi bukan kesaksian",
+   "status": "terverifikasi",
+   "sumber": "Pasal 171 ayat (1)-(2) HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 308 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-hir-169",
+   "rujukan": "Pasal 169 HIR / Pasal 306 RBg",
+   "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak dapat dipercaya; karena itu diperlukan sedikitnya dua saksi yang memenuhi syarat, atau satu saksi disertai alat bukti lain",
+   "status": "terverifikasi",
+   "sumber": "Pasal 169 HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 306 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-hir-172",
+   "rujukan": "Pasal 172 HIR / Pasal 309 RBg",
+   "uraian": "hakim menilai kesaksian dari kecocokan antar saksi, alasan saksi, dan kedudukan saksi",
+   "status": "terverifikasi",
+   "sumber": "Pasal 172 HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 309 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); sejalan dengan Pasal 1908 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-saksi-materiil",
+   "rujukan": "Pasal 307, 308, dan 309 RBg jo. Pasal 1905 sampai dengan 1908 KUH Perdata",
+   "uraian": "syarat materiil kesaksian: keterangan dari yang dialami, didengar dan dilihat sendiri, disertai sumber pengetahuan yang jelas, berkaitan dengan perkara, dan bersesuaian antar saksi; keterangan seorang saksi saja tanpa alat bukti lain tidak dapat dipercaya (Pasal 1905)",
+   "status": "terverifikasi",
+   "sumber": "Pasal 307, 308, 309 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (memuat padanan KUHperd. 1906, 1907, 1908); Pasal 1905-1908 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: dikutip pada blangko putusan Derry \"3 Dispensasi Kawin\", \"2 Itsbat Nikah\", dan \"9 Penetapan Ahli Waris\" (teks derry-teks), diperiksa 18 Okt 2026"
+  },
+  {
+   "id": "dh-saksi-formil",
+   "rujukan": "Pasal 22 ayat (2) PP 9/1975 jo. Pasal 171, 172 ayat (2), dan 175 RBg jo. Pasal 1909 sampai dengan 1912 KUH Perdata",
+   "uraian": "syarat formil saksi: hadir pribadi, diperiksa satu per satu, tidak terhalang secara hukum, dan memberi keterangan di bawah sumpah",
+   "status": "terverifikasi",
+   "sumber": "Pasal 171 (dipanggil satu per satu), 172 ayat (1)-(2) (orang yang tidak boleh didengar dan pengecualiannya), 175 (sumpah) RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056); Pasal 1909-1912 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf); Pasal 22 ayat (2) PP 9/1975 (pihak keluarga dan orang yang dekat dengan suami-isteri didengar; naskah BPK, referensi/_unduhan/pp9-1975). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: dikutip pada blangko putusan Derry \"3 Dispensasi Kawin\" dan \"6 Perwalian\" (teks derry-teks), diperiksa 18 Okt 2026"
+  },
+  {
+   "id": "dh-uu1-74-50-51",
+   "rujukan": "Pasal 47 ayat (1) dan (2) serta Pasal 50 ayat (1) UU 1/1974",
+   "uraian": "anak yang belum mencapai umur 18 tahun atau belum pernah melangsungkan perkawinan berada di bawah kekuasaan orang tuanya selama tidak dicabut; anak yang tidak berada di bawah kekuasaan orang tua berada di bawah kekuasaan wali",
+   "status": "terverifikasi",
+   "sumber": "bunyi dikutip pada blangko putusan Derry \"6 Perwalian\" (Perwalian Anak oleh ortu kandung Kabul; teks derry-teks), diperiksa 18 Okt 2026"
+  },
+  {
+   "id": "dh-pp29-2019",
+   "rujukan": "Pasal 1 ayat (1) dan Pasal 3 ayat (1) PP 29/2019 tentang Syarat dan Tata Cara Penunjukan Wali",
+   "uraian": "wali adalah orang atau badan yang dalam kenyataannya menjalankan kekuasaan asuh sebagai orang tua; calon wali dari keluarga anak, saudara, orang lain, atau badan hukum harus memenuhi syarat penunjukan wali dan melalui penetapan pengadilan",
+   "status": "terverifikasi",
+   "sumber": "Pasal 1 angka 1 dan Pasal 3 ayat (1) cocok dengan naskah PP 29/2019 di peraturan.bpk.go.id/Download/97304; syarat seagama dengan anak juga cocok (Pasal 4 ayat (1) huruf f, Pasal 5 ayat (1) huruf f, Pasal 6 ayat (1) huruf f); rincian di VERIFIKASI-HUKUM.md"
+  },
+  {
+   "id": "dh-uu35-2014-33",
+   "rujukan": "Pasal 33 ayat (1) UU 23/2002 tentang Perlindungan Anak sebagaimana diubah UU 35/2014",
+   "uraian": "bila orang tua dan keluarga anak tidak dapat melaksanakan kewajiban dan tanggung jawab sebagaimana dimaksud dalam Pasal 26, seseorang atau badan hukum yang memenuhi persyaratan dapat ditunjuk sebagai wali anak; penunjukan wali melalui penetapan pengadilan dan wali harus seagama dengan anak",
+   "status": "terverifikasi",
+   "sumber": "Pasal 33 ayat (1) sampai (3) sebagaimana diubah UU 35/2014 cocok dengan naskah UU 35/2014 di peraturan.bpk.go.id/Download/28052; koreksi: uraian semula memakai rumusan UU 23/2002 sebelum perubahan (orang tua tidak cakap atau tidak diketahui keberadaannya); rincian di VERIFIKASI-HUKUM.md"
+  },
+  {
+   "id": "dh-beban-bukti",
+   "rujukan": "Pasal 283 RBg jo. Pasal 1865 KUHPerdata",
+   "uraian": "siapa yang mendalilkan suatu peristiwa wajib membuktikannya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 283 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (memuat padanan KUHperd. 1865 dan IR. 163); Pasal 1865 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: pertimbangan hukum blangko putusan Derry 4c Wasiat [01] dan 5a Pembatalan [01]"
+  },
+  {
+   "id": "dh-uu1-74-53-49",
+   "rujukan": "Pasal 53 ayat (1) dan ayat (2) jo. Pasal 49 ayat (1) UU 1/1974",
+   "uraian": "wali dapat dicabut dari kekuasaannya dalam hal wali sangat melalaikan kewajibannya terhadap anak atau berkelakuan buruk sekali; bila kekuasaan wali dicabut, oleh Pengadilan ditunjuk orang lain sebagai wali",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 1/1974 (peraturan.bpk.go.id), berkas referensi/_unduhan/uu1-1974/uu1-1974-bpk.txt; Pasal 49, 50, 51, 52, 53 dibaca ulang 21 Okt 2026"
+  },
+  {
+   "id": "dh-khi-107-3",
+   "rujukan": "Pasal 107 ayat (3) Kompilasi Hukum Islam",
+   "uraian": "bila wali tidak mampu berbuat atau lalai melaksanakan tugas perwaliannya, Pengadilan Agama dapat menunjuk salah seorang kerabat untuk bertindak sebagai wali atas permohonan kerabat tersebut",
+   "status": "terverifikasi",
+   "sumber": "Kompilasi Hukum Islam (Inpres 1/1991), berkas referensi/_unduhan/khi/khi-pasalid.json; Pasal 107, 109, 110 dibaca ulang 21 Okt 2026"
+  },
+  {
+   "id": "dh-khi-109-110-wl",
+   "rujukan": "Pasal 109 dan Pasal 110 ayat (1), (3), dan (4) Kompilasi Hukum Islam",
+   "uraian": "Pengadilan Agama dapat mencabut hak perwalian atas permohonan kerabat bila wali pemabuk, penjudi, pemboros, gila, dan atau melalaikan atau menyalahgunakan hak dan wewenangnya; wali mengurus diri dan harta anak dengan sebaik-baiknya, bertanggung jawab atas harta anak, dan pertanggungjawabannya dibuktikan dengan pembukuan yang ditutup tiap satu tahun sekali",
+   "status": "terverifikasi",
+   "sumber": "Kompilasi Hukum Islam (Inpres 1/1991), berkas referensi/_unduhan/khi/khi-pasalid.json; Pasal 107, 109, 110 dibaca ulang 21 Okt 2026"
+  },
+  {
+   "id": "dh-pp29-17-19",
+   "rujukan": "Pasal 17, Pasal 18, dan Pasal 19 PP 29/2019 tentang Syarat dan Tata Cara Penunjukan Wali",
+   "uraian": "kekuasaan wali dapat dicabut karena wali melalaikan kewajiban, tidak cakap melakukan perbuatan hukum, menyalahgunakan kewenangan, melakukan kekerasan terhadap anak, atau orang tua dianggap telah mampu; penilaian kemampuan orang tua berdasarkan rekomendasi dinas sosial; Pengadilan dapat mengembalikan kuasa asuh kepada orang tua atau menetapkan wali pengganti",
+   "status": "terverifikasi",
+   "sumber": "naskah PP 29/2019 (peraturan.bpk.go.id/Download/97304), berkas referensi/_unduhan/ekstra/pp29-2019.txt; Pasal 1-19 dibaca ulang 21 Okt 2026"
+  },
+  {
+   "id": "dh-pp29-3-7",
+   "rujukan": "Pasal 3 sampai dengan Pasal 7 PP 29/2019",
+   "uraian": "syarat orang atau badan hukum yang ditunjuk sebagai wali: warga negara Indonesia, umur paling rendah, sehat fisik dan mental, berkelakuan baik, mampu secara ekonomi, seagama dengan anak, bersedia, dan tidak pernah melakukan kekerasan terhadap anak; keluarga anak diutamakan",
+   "status": "terverifikasi",
+   "sumber": "naskah PP 29/2019 (peraturan.bpk.go.id/Download/97304), berkas referensi/_unduhan/ekstra/pp29-2019.txt; Pasal 1-19 dibaca ulang 21 Okt 2026"
+  },
+  {
+   "id": "dh-pp29-12",
+   "rujukan": "Pasal 12 ayat (1) PP 29/2019",
+   "uraian": "rekomendasi dinas sosial kabupaten atau kota menjadi bahan pertimbangan dalam penetapan wali atau pencabutan kuasa asuh",
+   "status": "terverifikasi",
+   "sumber": "naskah PP 29/2019 (peraturan.bpk.go.id/Download/97304), berkas referensi/_unduhan/ekstra/pp29-2019.txt; Pasal 1-19 dibaca ulang 21 Okt 2026"
+  }
+ ],
+ "keadaan": {
+  "pemohon": {
+   "sumber": "borang",
+   "nilai": [
+    "orang-tua",
+    "kerabat"
+   ],
+   "bawaan": "orang-tua",
+   "label": "Pengaju (Penggugat atau Pemohon) adalah",
+   "labelNilai": {
+    "orang-tua": "Orang tua anak",
+    "kerabat": "Kerabat atau pihak berkepentingan lain"
+   }
+  },
+  "alasan": {
+   "sumber": "borang",
+   "nilai": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G"
+   ],
+   "bawaan": [
+    "A"
+   ],
+   "jamak": true,
+   "label": "Alasan pencabutan yang didalilkan (sama dengan huruf isian perkara)",
+   "labelNilai": {
+    "A": "A - Wali melalaikan kewajibannya",
+    "B": "B - Wali berkelakuan buruk sekali",
+    "C": "C - Wali pemabuk, penjudi, pemboros, atau gila",
+    "D": "D - Wali menyalahgunakan hak dan wewenangnya",
+    "E": "E - Wali melakukan kekerasan terhadap anak",
+    "F": "F - Orang tua telah mampu melaksanakan kewajibannya",
+    "G": "G - Wali tidak cakap melakukan perbuatan hukum"
+   }
+  },
+  "hartaAnak": {
+   "sumber": "borang",
+   "nilai": [
+    "tidak-ada",
+    "ada"
+   ],
+   "bawaan": "tidak-ada",
+   "label": "Anak mempunyai harta yang dikelola wali",
+   "labelNilai": {
+    "tidak-ada": "Tidak ada harta anak yang dipersoalkan",
+    "ada": "Ada harta anak yang dikelola wali"
+   }
+  },
+  "pengganti": {
+   "sumber": "borang",
+   "nilai": [
+    "tidak-ada",
+    "wali-pengganti",
+    "kembali-ke-orang-tua"
+   ],
+   "bawaan": "tidak-ada",
+   "label": "Sesudah pencabutan yang dimohonkan",
+   "labelNilai": {
+    "tidak-ada": "Tanpa penunjukan wali pengganti dalam perkara ini",
+    "wali-pengganti": "Ditunjuk wali pengganti",
+    "kembali-ke-orang-tua": "Kuasa asuh dikembalikan kepada orang tua"
+   }
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-wl-hubungan-saksi",
+   "judul": "Hubungan saksi dengan para pihak",
+   "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal pengaju dan wali (sebab pengetahuan)",
+   "dasarHukum": [
+    "dh-hir-171",
+    "dh-hir-169",
+    "dh-saksi-materiil",
+    "dh-saksi-formil"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-wl-status-anak",
+   "judul": "Anak belum dewasa dan berada dalam perwalian",
+   "uraian": "anak belum berumur 18 tahun atau belum pernah kawin dan tidak berada di bawah kekuasaan orang tua sehingga berada di bawah wali",
+   "dasarHukum": [
+    "dh-uu1-74-50-51",
+    "dh-khi-107-3"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-wl-kewalian",
+   "judul": "Kedudukan tergugat atau termohon sebagai wali",
+   "uraian": "dasar penunjukan wali dan siapa yang nyatanya mengasuh anak sehari-hari",
+   "dasarHukum": [
+    "dh-uu1-74-50-51",
+    "dh-pp29-2019",
+    "dh-uu35-2014-33"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-wl-kedudukan-pengaju",
+   "judul": "Kedudukan pengaju terhadap anak",
+   "uraian": "hubungan penggugat atau pemohon dengan anak sebagai orang tua atau kerabat yang berhak meminta pencabutan",
+   "dasarHukum": [
+    "dh-khi-109-110-wl",
+    "dh-pp29-17-19",
+    "dh-uu1-74-53-49"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-wl-perbuatan-wali",
+   "judul": "Perbuatan atau keadaan wali sebagai alasan pencabutan",
+   "uraian": "wali melalaikan kewajiban, berkelakuan buruk, pemabuk atau penjudi, menyalahgunakan wewenang, melakukan kekerasan, atau tidak cakap",
+   "dasarHukum": [
+    "dh-uu1-74-53-49",
+    "dh-khi-109-110-wl",
+    "dh-pp29-17-19"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-wl-akibat-anak",
+   "judul": "Akibat bagi anak dan keadaan anak sekarang",
+   "uraian": "akibat perbuatan wali terhadap anak, upaya menegur wali, dan keadaan anak saat ini",
+   "dasarHukum": [
+    "dh-uu1-74-50-51",
+    "dh-khi-109-110-wl"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-wl-harta-anak",
+   "judul": "Harta anak dan pengelolaannya",
+   "uraian": "harta milik anak, siapa yang mengelola, dan pertanggungjawaban pengelolaannya",
+   "dasarHukum": [
+    "dh-uu1-74-50-51",
+    "dh-khi-109-110-wl"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-wl-pengganti",
+   "judul": "Wali pengganti atau pengembalian kuasa asuh",
+   "uraian": "kesiapan dan kemampuan calon wali pengganti atau orang tua yang akan menerima kembali kuasa asuh",
+   "dasarHukum": [
+    "dh-uu1-74-53-49",
+    "dh-khi-107-3",
+    "dh-pp29-3-7",
+    "dh-pp29-17-19",
+    "dh-pp29-12",
+    "dh-uu35-2014-33"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-wl-pembelaan",
+   "judul": "Pembelaan tergugat",
+   "uraian": "keterangan saksi tergugat tentang cara wali mengurus anak dan hartanya",
+   "dasarHukum": [
+    "dh-hir-172",
+    "dh-beban-bukti"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-wl-penutup",
+   "judul": "Penutup keterangan saksi",
+   "uraian": "saksi mengakhiri keterangannya",
+   "dasarHukum": [],
+   "wajib": false
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-wl-kenal-pengaju",
+   "pokok": "pp-wl-hubungan-saksi",
+   "urutan": 10,
+   "kelompok": "hubungan",
+   "teks": "Apakah saksi kenal dengan #0046# ? Apa hubungan saksi dengan #0046# ?",
+   "teksVarian": [
+    "Apakah saksi mengenal #0046# dan apa hubungan saksi dengan #0046# ?"
+   ],
+   "hal": "hubungan saksi dengan pengaju",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal #0046# dan menyebut hubungannya dengan #0046#",
+     "saksi1": [
+      "saya kenal dengan #0046# karena saya adalah {hubungan}",
+      "saya mengenal #0046# dengan baik sebab saya adalah {hubungan}",
+      "#0046# saya kenal karena kedudukan saya sebagai {hubungan}",
+      "sudah lama saya mengenal #0046# karena saya adalah {hubungan}"
+     ],
+     "saksi2": [
+      "saya kenal #0046# karena hubungan saya dengannya adalah {hubungan}",
+      "saya tahu siapa #0046# sebab saya adalah {hubungan}",
+      "perkenalan saya dengan #0046# terjadi karena saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya mengenal #0046#"
+     ]
+    }
+   },
+   "tingkat": "inti",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "tidakBerlaku": [
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu",
+    "ragu",
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-wl-kenal-wali",
+   "pokok": "pp-wl-hubungan-saksi",
+   "urutan": 20,
+   "kelompok": "hubungan",
+   "teks": "Apakah saksi kenal dengan #3853# ? Apa kedudukan #3853# terhadap #4406# ?",
+   "teksVarian": [
+    "Apakah saksi mengenal #3853# dan apa kedudukan #3853# terhadap #4406# ?"
+   ],
+   "hal": "kedudukan wali terhadap anak",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal #3853# dan mengetahui bahwa ia berkedudukan sebagai wali #4406#",
+     "saksi1": [
+      "saya kenal dengan #3853# dan saya mengetahui sendiri bahwa ia adalah wali dari #4406#",
+      "#3853# saya kenal baik dan ia memang berkedudukan sebagai wali yang mengurus #4406#",
+      "saya mengenal #3853# sebagai orang yang menjadi wali bagi #4406#",
+      "sudah lama saya kenal #3853# yang kedudukannya adalah wali dari #4406#"
+     ],
+     "saksi2": [
+      "saya tahu siapa #3853# dan saya melihat sendiri bahwa ia bertindak sebagai wali #4406#",
+      "perkenalan saya dengan #3853# sudah lama dan ia adalah wali bagi #4406#",
+      "#3853# adalah orang yang saya kenal karena ia menjadi wali dari #4406#",
+      "saya kenal #3853# dengan baik sebab ia berkedudukan sebagai wali atas #4406#"
+     ]
+    }
+   },
+   "tingkat": "inti",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "tidakBerlaku": [
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu",
+    "ragu",
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-hubungan-pengaju-anak",
+   "pokok": "pp-wl-kedudukan-pengaju",
+   "urutan": 30,
+   "kelompok": "hubungan",
+   "teks": "Apa hubungan #0046# dengan #4406# ?",
+   "teksVarian": [
+    "Bagaimana hubungan keluarga antara #0046# dengan #4406# ?"
+   ],
+   "hal": "hubungan pengaju dengan anak",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#0046# adalah #3831# dari #4406# dan saksi mengetahuinya sendiri",
+     "saksi1": [
+      "#0046# adalah #3831# dari #4406# dan hal itu saya ketahui sendiri",
+      "hubungan #0046# dengan #4406# adalah sebagai #3831# yang saya ketahui langsung",
+      "saya mengetahui sendiri bahwa #0046# berkedudukan sebagai #3831# dari #4406#",
+      "#4406# adalah anak yang hubungannya dengan #0046# sebagai #3831# menurut yang saya ketahui"
+     ],
+     "saksi2": [
+      "saya tahu #0046# adalah #3831# dari #4406# karena saya mengalami sendiri pergaulan mereka",
+      "kedudukan #0046# terhadap #4406# adalah #3831# dan saya melihatnya sendiri",
+      "yang saya ketahui langsung adalah #0046# merupakan #3831# bagi #4406#",
+      "antara #0046# dan #4406# ada hubungan sebagai #3831# sebagaimana yang saya ketahui"
+     ]
+    }
+   },
+   "tingkat": "inti",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "tidakBerlaku": [
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu",
+    "ragu",
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046",
+    "3831",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-identitas-anak",
+   "pokok": "pp-wl-status-anak",
+   "urutan": 40,
+   "kelompok": "pokok",
+   "teks": "Siapa nama anak yang berada dalam perwalian #3853# , berapa umurnya sekarang, dan apakah anak itu pernah menikah ?",
+   "hal": "nama, umur, dan status pernikahan anak",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan nama anak, umurnya sekarang, dan bahwa anak belum pernah menikah",
+     "saksi1": [
+      "anak itu bernama #4406# yang sekarang berumur ... tahun dan belum pernah menikah serta berada dalam perwalian #3853#",
+      "nama anak yang berada dalam perwalian #3853# adalah #4406# yang saat ini berumur ... tahun dan belum pernah kawin",
+      "#4406# saat ini berumur ... tahun dan sampai sekarang belum pernah menikah, anak itu berada dalam perwalian #3853#",
+      "yang saya kenal sebagai anak dalam perwalian #3853# adalah #4406# dan umurnya sekarang ... tahun serta belum pernah menikah"
+     ],
+     "saksi2": [
+      "#4406# adalah anak yang berada dalam perwalian #3853# dan umurnya kini ... tahun, ia belum pernah menikah",
+      "anak tersebut bernama #4406# dan umurnya ... tahun sampai hari ini serta belum pernah melangsungkan pernikahan, ia berada dalam perwalian #3853#",
+      "saya mengetahui sendiri bahwa #4406# yang berada dalam perwalian #3853# berumur ... tahun dan belum pernah berumah tangga",
+      "sekarang #4406# berusia ... tahun, belum pernah menikah, dan berada dalam perwalian #3853#"
+     ]
+    }
+   },
+   "tingkat": "inti",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-sebab-perwalian-ot",
+   "pokok": "pp-wl-status-anak",
+   "urutan": 50,
+   "kelompok": "pokok",
+   "keadaan": {
+    "pemohon": "orang-tua"
+   },
+   "teks": "Mengapa #4406# berada dalam pengasuhan #3853# sebagai wali, padahal #0046# adalah orang tuanya ?",
+   "hal": "sebab anak berada dalam pengasuhan wali",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan sebab anak berada dalam pengasuhan wali meskipun orang tuanya masih ada",
+     "saksi1": [
+      "#4406# berada dalam pengasuhan #3853# karena pada waktu itu #0046# masih sulit mengasuhnya sendiri akibat ..., hal itu saya ketahui langsung",
+      "anak itu bernama #4406# diserahkan kepada #3853# untuk diasuh sebagai wali sebab #0046# ketika itu sedang ... dan saya menyaksikannya sendiri",
+      "sebab keadaan #0046# pada waktu itu yaitu ..., maka #4406# diasuh oleh #3853# sebagai wali dan saya mengalami sendiri peristiwa itu",
+      "saya mengetahui sendiri bahwa #4406# diurus #3853# sebagai wali karena #0046# pada saat itu kesulitan mengasuhnya akibat ... tersebut"
+     ],
+     "saksi2": [
+      "karena #0046# ketika itu kesulitan mengasuh anaknya akibat ..., #4406# kemudian diasuh oleh #3853# sebagai wali dan saya hadir saat penyerahan itu",
+      "pengasuhan #4406# berpindah kepada #3853# sebagai wali sebab #0046# pada waktu itu dalam keadaan ... dan saya menyaksikannya sendiri",
+      "yang saya lihat sendiri adalah #4406# dititipkan dan diasuh oleh #3853# sebagai wali karena #0046# saat itu kurang mampu mengurusnya akibat ... tersebut",
+      "saya sendiri mengetahui bahwa #3853# mengasuh #4406# sebagai wali sejak #0046# kesulitan mengurus anak itu karena ... tersebut"
+     ]
+    }
+   },
+   "tingkat": "inti",
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046",
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-sebab-perwalian-kr",
+   "pokok": "pp-wl-status-anak",
+   "urutan": 51,
+   "kelompok": "pokok",
+   "keadaan": {
+    "pemohon": "kerabat"
+   },
+   "teks": "Bagaimana keadaan orang tua #4406# sehingga anak itu berada dalam perwalian #3853# ?",
+   "hal": "keadaan orang tua anak dan sebab perwalian",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan keadaan orang tua anak sehingga anak berada dalam perwalian wali",
+     "saksi1": [
+      "orang tua #4406# ... sehingga anak itu kemudian berada dalam perwalian #3853# dan hal itu saya ketahui langsung",
+      "keadaan orang tua #4406# pada waktu itu adalah ... karena itu #3853# menjadi wali yang mengurus anak itu dan saya mengalami sendiri hal tersebut",
+      "saya mengetahui sendiri bahwa orang tua #4406# ... maka anak itu diurus oleh #3853# sebagai wali",
+      "sebab orang tua #4406# ... anak itu berada dalam perwalian #3853# dan saya menyaksikan sendiri peralihan pengasuhan itu"
+     ],
+     "saksi2": [
+      "karena orang tua #4406# ... #3853# kemudian mengasuh anak itu sebagai wali dan saya hadir ketika hal itu terjadi",
+      "pengasuhan #4406# beralih kepada #3853# sebagai wali sebab orang tuanya mengalami ... sebagaimana yang saya saksikan sendiri",
+      "yang saya lihat langsung adalah #4406# diasuh #3853# sebagai wali setelah orang tuanya mengalami ... tersebut",
+      "saya sendiri mengetahui bahwa #3853# menjadi wali #4406# karena orang tua anak itu mengalami ... tersebut"
+     ]
+    }
+   },
+   "tingkat": "inti",
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-dasar-kewalian",
+   "pokok": "pp-wl-kewalian",
+   "urutan": 60,
+   "kelompok": "pokok",
+   "teks": "Atas dasar apa #3853# menjadi wali #4406# ? Apakah ada penetapan pengadilan atau dasar lain ?",
+   "hal": "dasar kedudukan wali",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan dasar kedudukan #3853# sebagai wali #4406#",
+     "saksi1": [
+      "#3853# menjadi wali #4406# berdasarkan #3832# dan saya mengetahuinya langsung",
+      "dasar kedudukan #3853# sebagai wali #4406# adalah #3832#, hal itu saya ketahui sendiri",
+      "saya mengetahui sendiri bahwa #3853# ditunjuk sebagai wali #4406# berdasarkan #3832#",
+      "penunjukan #3853# sebagai wali #4406# didasarkan pada #3832# sebagaimana yang saya ketahui"
+     ],
+     "saksi2": [
+      "yang menjadi dasar #3853# mengurus #4406# sebagai wali adalah #3832# dan saya tahu hal itu",
+      "#3853# berkedudukan sebagai wali bagi #4406# atas dasar #3832# yang saya ketahui sendiri",
+      "saya paham bahwa #3853# menjadi wali #4406# karena #3832#",
+      "kewalian #3853# atas #4406# bersumber dari #3832# dan saya mengetahuinya"
+     ]
+    }
+   },
+   "tingkat": "inti",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "3832",
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-pengasuh-sehari",
+   "pokok": "pp-wl-kewalian",
+   "urutan": 70,
+   "kelompok": "pokok",
+   "teks": "Siapa yang selama ini tinggal bersama dan mengurus kebutuhan sehari-hari #4406# ?",
+   "hal": "siapa yang mengurus anak sehari-hari",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan siapa yang sehari-hari tinggal bersama dan mengurus #4406#",
+     "saksi1": [
+      "selama ini #4406# tinggal bersama #3853# dan kebutuhan sehari-harinya diurus oleh ... yang saya lihat sendiri",
+      "yang tinggal bersama #4406# sehari-hari adalah #3853# sedangkan yang mengurus kebutuhannya adalah ... sebagaimana yang saya saksikan",
+      "saya melihat sendiri bahwa #4406# tinggal serumah dengan #3853# dan keperluannya sehari-hari diurus oleh ... tersebut",
+      "dalam keseharian #4406# berada di rumah #3853# dan yang mengurus keperluannya adalah ... menurut apa yang saya lihat"
+     ],
+     "saksi2": [
+      "sehari-hari #4406# tinggal bersama #3853# dan yang mengurus kebutuhannya adalah ... saya menyaksikannya sendiri",
+      "saya sering melihat #4406# berada di rumah #3853# dan keperluannya diurus oleh ... tersebut",
+      "yang mengurus #4406# setiap hari adalah ... sementara tempat tinggalnya bersama #3853# sebagaimana yang saya lihat sendiri",
+      "dari yang saya alami sendiri #4406# tinggal di rumah #3853# dan ... yang mengurus kebutuhan sehari-harinya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: #3853# sendiri yang mengurus #4406# sehari-hari; versi B: yang mengurus orang lain, bukan #3853# - berselisih pada PELAKU pengasuhan",
+     "saksi1": [
+      "yang mengurus kebutuhan #4406# sehari-hari adalah #3853# sendiri dan saya melihatnya langsung",
+      "#3853# sendiri yang setiap hari mengurus #4406# sebagaimana yang saya saksikan",
+      "saya menyaksikan sendiri bahwa #4406# diurus oleh #3853# dalam kesehariannya",
+      "pengurusan #4406# sehari-hari dilakukan oleh #3853# sendiri menurut yang saya lihat"
+     ],
+     "saksi2": [
+      "yang mengurus kebutuhan #4406# sehari-hari bukan #3853# melainkan orang lain dan saya melihatnya langsung",
+      "bukan #3853# yang setiap hari mengurus #4406# tetapi orang lain sebagaimana yang saya saksikan",
+      "saya menyaksikan sendiri bahwa #4406# diurus oleh orang lain dan bukan oleh #3853# dalam kesehariannya",
+      "pengurusan #4406# sehari-hari dilakukan oleh orang lain bukan #3853# menurut yang saya lihat"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "tingkat": "inti",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-melalaikan-kebutuhan",
+   "pokok": "pp-wl-perbuatan-wali",
+   "urutan": 80,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "alasan": "A"
+   },
+   "teks": "Apakah #3853# memenuhi kebutuhan #4406# sehari-hari seperti makan, pakaian, tempat tinggal dan kesehatan ? Bagaimana kenyataannya ?",
+   "hal": "pemenuhan kebutuhan anak oleh wali",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#3853# tidak memenuhi kebutuhan pokok #4406# sebagaimana mestinya sehingga lalai sebagai wali",
+     "saksi1": [
+      "#3853# tidak memenuhi kebutuhan #4406# sehari-hari berupa makan, pakaian, tempat tinggal dan kesehatan sebagaimana mestinya dan saya melihatnya sendiri",
+      "saya melihat sendiri #4406# kekurangan makan, pakaian dan perawatan kesehatan karena #3853# tidak mengurusnya sebagaimana mestinya",
+      "kebutuhan makan, pakaian, tempat tinggal dan kesehatan #4406# tidak dipenuhi oleh #3853# dan hal itu saya saksikan sendiri",
+      "sebagai wali #3853# tidak mencukupi kebutuhan makan, pakaian dan kesehatan #4406# menurut yang saya lihat langsung"
+     ],
+     "saksi2": [
+      "saya menyaksikan sendiri #3853# tidak menyediakan makan, pakaian, tempat tinggal dan pengobatan yang layak bagi #4406#",
+      "pemenuhan kebutuhan #4406# berupa makan, pakaian dan kesehatan tidak dilakukan oleh #3853# dan saya mengalami sendiri keadaan itu",
+      "#4406# tidak terurus kebutuhan makan, pakaian dan kesehatannya oleh #3853# sebagaimana yang saya lihat sendiri",
+      "yang saya lihat langsung adalah #3853# tidak peduli memenuhi kebutuhan makan, pakaian, tempat tinggal dan kesehatan #4406#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: #3853# tidak memenuhi kebutuhan #4406#; versi B: #3853# memenuhi kebutuhan #4406# - berselisih pada PERISTIWA pengurusan",
+     "saksi1": [
+      "saya melihat sendiri #3853# tidak memenuhi kebutuhan makan, pakaian dan kesehatan #4406#",
+      "#3853# tidak mengurus kebutuhan makan, pakaian dan kesehatan #4406# sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung kebutuhan makan, pakaian dan kesehatan #4406# tidak dipenuhi oleh #3853#",
+      "saya mengetahui sendiri bahwa #3853# tidak menyediakan makan, pakaian dan pengobatan bagi #4406#"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #3853# memenuhi kebutuhan makan, pakaian dan kesehatan #4406#",
+      "#3853# mengurus kebutuhan makan, pakaian dan kesehatan #4406# sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung kebutuhan makan, pakaian dan kesehatan #4406# dipenuhi oleh #3853#",
+      "saya mengetahui sendiri bahwa #3853# menyediakan makan, pakaian dan pengobatan bagi #4406#"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-melalaikan-pendidikan",
+   "pokok": "pp-wl-perbuatan-wali",
+   "urutan": 90,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "alasan": "A"
+   },
+   "teks": "Apakah #3853# menyekolahkan #4406# dan memberinya bimbingan agama ? Bagaimana kenyataannya ?",
+   "hal": "pendidikan dan bimbingan agama anak",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#3853# tidak menyekolahkan #4406# dan tidak memberinya bimbingan agama sebagaimana mestinya",
+     "saksi1": [
+      "#3853# tidak menyekolahkan #4406# dan tidak memberinya bimbingan agama sebagaimana mestinya dan hal itu saya ketahui sendiri",
+      "saya melihat sendiri #4406# tidak disekolahkan dan tidak dibimbing dalam agama oleh #3853#",
+      "#3853# tidak mengurus sekolah #4406# dan tidak memperhatikan pelajaran agamanya menurut yang saya saksikan",
+      "sepanjang yang saya lihat langsung #3853# tidak menyekolahkan #4406# serta tidak memberi bimbingan agama kepadanya"
+     ],
+     "saksi2": [
+      "pendidikan #4406# tidak diurus dan bimbingan agamanya tidak diberikan oleh #3853# sebagaimana yang saya saksikan sendiri",
+      "saya mengetahui langsung bahwa #3853# tidak membiayai sekolah #4406# dan tidak mengajarinya agama",
+      "tidak ada upaya dari #3853# untuk menyekolahkan #4406# dan tidak ada pula pembimbingan agamanya menurut yang saya lihat",
+      "yang saya alami sendiri #4406# tidak mendapat pendidikan dan tidak mendapat bimbingan agama dari #3853#"
+     ]
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-kelakuan-buruk",
+   "pokok": "pp-wl-perbuatan-wali",
+   "urutan": 100,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "alasan": "B"
+   },
+   "teks": "Bagaimana kelakuan #3853# sehari-hari terhadap #4406# dan di lingkungan tempat tinggalnya ?",
+   "hal": "kelakuan wali sehari-hari",
+   "jawaban": {
+    "melihat": {
+     "maksud": "kelakuan #3853# sangat buruk dan dilakukan di hadapan atau terhadap #4406#",
+     "saksi1": [
+      "kelakuan #3853# sangat buruk berupa ... yang saya lihat sendiri dan dilakukan di hadapan #4406#",
+      "saya menyaksikan sendiri #3853# berkelakuan buruk sekali dengan ... sehingga #4406# ikut melihatnya",
+      "perbuatan #3853# berupa ... sangat tercela dan #4406# berada di tempat itu menurut yang saya lihat langsung",
+      "sehari-hari #3853# bertingkah laku buruk yaitu ... dan saya mengalami sendiri hal itu bersama #4406#"
+     ],
+     "saksi2": [
+      "yang saya lihat langsung adalah #3853# berkelakuan sangat buruk dengan ... di depan #4406#",
+      "kelakuan buruk #3853# berupa ... saya saksikan sendiri dan #4406# berada di dekatnya",
+      "saya tahu sendiri bahwa #3853# bertingkah laku tercela yaitu ... di lingkungan tempat tinggal #4406#",
+      "#3853# berkelakuan buruk sekali berupa ... sebagaimana yang saya alami sendiri bersama #4406#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: #3853# berkelakuan buruk sekali; versi B: #3853# berkelakuan baik - berselisih pada PERISTIWA kelakuan wali",
+     "saksi1": [
+      "saya melihat sendiri #3853# berkelakuan buruk sekali di hadapan #4406#",
+      "#3853# bertingkah laku sangat buruk terhadap #4406# sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung kelakuan #3853# di depan #4406# sangat buruk",
+      "saya mengetahui sendiri bahwa kelakuan #3853# terhadap #4406# tercela"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #3853# berkelakuan baik di hadapan #4406#",
+      "#3853# bertingkah laku sopan terhadap #4406# sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung kelakuan #3853# di depan #4406# baik",
+      "saya mengetahui sendiri bahwa kelakuan #3853# terhadap #4406# terpuji"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-sifat-wali",
+   "pokok": "pp-wl-perbuatan-wali",
+   "urutan": 110,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "alasan": "C"
+   },
+   "teks": "Apakah #3853# mempunyai kebiasaan mabuk, berjudi, boros, atau mengalami gangguan jiwa ? Mohon diterangkan.",
+   "hal": "kebiasaan atau keadaan wali (pemabuk, penjudi, pemboros, gila)",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#3853# bersifat #3857# dan saksi melihatnya sendiri",
+     "saksi1": [
+      "#3853# bersifat #3857# dan saya melihatnya sendiri",
+      "saya menyaksikan sendiri bahwa #3853# bersifat #3857# dalam kehidupan sehari-hari",
+      "sudah saya lihat langsung #3853# bersifat #3857# dan hal itu diketahui banyak orang",
+      "yang saya alami sendiri adalah #3853# bersifat #3857# sehingga mengganggu pengurusan anak"
+     ],
+     "saksi2": [
+      "saya tahu sendiri #3853# bersifat #3857# karena sering bertemu dengannya",
+      "sifat #3853# yaitu #3857# saya saksikan sendiri dengan mata kepala saya",
+      "dengan mata kepala sendiri saya melihat #3853# bersifat #3857#",
+      "tentang keadaan #3853# saya mengetahui langsung bahwa ia bersifat #3857# dan itu berlangsung berulang kali"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: #3853# bersifat #3857#; versi B: #3853# tidak bersifat demikian - berselisih pada PERISTIWA kebiasaan wali",
+     "saksi1": [
+      "saya melihat sendiri #3853# bersifat #3857#",
+      "#3853# bersifat #3857# sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung #3853# bersifat #3857#",
+      "saya mengetahui sendiri bahwa #3853# bersifat #3857#"
+     ],
+     "saksi2": [
+      "saya tidak pernah melihat #3853# bersifat #3857#",
+      "#3853# tidak bersifat #3857# sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung #3853# tidak bersifat #3857#",
+      "saya mengetahui sendiri bahwa #3853# tidak bersifat #3857#"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "3853",
+    "3857"
+   ]
+  },
+  {
+   "id": "q-wl-salah-guna",
+   "pokok": "pp-wl-perbuatan-wali",
+   "urutan": 120,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "alasan": "D"
+   },
+   "teks": "Apakah #3853# pernah memakai hak, harta, atau uang milik #4406# untuk kepentingan sendiri atau bukan untuk kepentingan #4406# ? Apa yang dipakai ?",
+   "hal": "penyalahgunaan hak dan wewenang wali",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#3853# memakai hak atau harta #4406# untuk kepentingan sendiri dan bukan untuk kepentingan #4406#",
+     "saksi1": [
+      "#3853# memakai ... milik #4406# untuk kepentingannya sendiri dan bukan untuk kepentingan #4406#, hal itu saya ketahui sendiri",
+      "saya melihat sendiri #3853# menggunakan ... milik #4406# bagi keperluannya sendiri bukan keperluan #4406#",
+      "menurut yang saya saksikan #3853# memanfaatkan ... milik #4406# untuk dirinya sendiri dan bukan untuk #4406#",
+      "yang saya alami langsung adalah #3853# menyalahgunakan ... milik #4406# demi kepentingannya sendiri dan bukan kepentingan #4406#"
+     ],
+     "saksi2": [
+      "saya tahu sendiri #3853# mempergunakan ... milik #4406# untuk keperluan pribadinya dan bukan keperluan #4406#",
+      "dengan mata kepala sendiri saya melihat #3853# memakai ... milik #4406# demi kepentingannya sendiri bukan untuk #4406#",
+      "#3853# memakai ... milik #4406# untuk kepentingan dirinya sendiri sebagaimana yang saya saksikan bukan untuk #4406#",
+      "saya mengetahui langsung #3853# menyalahgunakan hak atas ... milik #4406# untuk kepentingan sendiri dan bukan untuk #4406#"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: #3853# memakai harta #4406# untuk kepentingan sendiri; versi B: #3853# memakainya untuk kepentingan #4406# - berselisih pada PERISTIWA pemakaian harta",
+     "saksi1": [
+      "saya melihat sendiri #3853# memakai harta #4406# untuk kepentingan dirinya sendiri",
+      "#3853# menggunakan harta #4406# bagi keperluan pribadinya sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung harta #4406# dipakai #3853# untuk kepentingan sendiri",
+      "saya mengetahui sendiri bahwa #3853# mengambil harta #4406# bagi kepentingannya sendiri"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #3853# memakai harta #4406# untuk kepentingan #4406#",
+      "#3853# menggunakan harta #4406# bagi keperluan #4406# sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung harta #4406# dipakai #3853# untuk kebutuhan #4406#",
+      "saya mengetahui sendiri bahwa #3853# memanfaatkan harta #4406# bagi keperluan #4406#"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-kekerasan",
+   "pokok": "pp-wl-perbuatan-wali",
+   "urutan": 130,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "alasan": "E"
+   },
+   "teks": "Apakah #3853# pernah memukul, membentak, mengurung, atau melakukan kekerasan lain terhadap #4406# ? Kapan dan bagaimana kejadiannya ?",
+   "hal": "kekerasan wali terhadap anak",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#3853# melakukan kekerasan terhadap #4406# yang saksi lihat sendiri",
+     "saksi1": [
+      "saya melihat sendiri #3853# melakukan kekerasan terhadap #4406# berupa ... pada waktu tersebut",
+      "#3853# pernah berbuat kasar kepada #4406# dengan ... dan kejadian itu saya saksikan sendiri",
+      "saya berada di tempat ketika #3853# menyakiti #4406# dengan cara ... dan melihatnya langsung",
+      "kekerasan #3853# terhadap #4406# berupa ... terjadi di depan mata saya"
+     ],
+     "saksi2": [
+      "pada waktu ... saya menyaksikan langsung #3853# berbuat kasar terhadap #4406# dengan cara ... tersebut",
+      "saya sendiri melihat #3853# memperlakukan #4406# dengan kekerasan berupa ... tersebut",
+      "kejadian ketika #3853# menyakiti #4406# dengan ... saya alami dan lihat sendiri",
+      "#3853# melakukan kekerasan kepada #4406# berupa ... sebagaimana yang saya saksikan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: #3853# melakukan kekerasan terhadap #4406#; versi B: #3853# tidak pernah melakukan kekerasan - berselisih pada PERISTIWA kekerasan",
+     "saksi1": [
+      "saya melihat sendiri #3853# berbuat kasar terhadap #4406#",
+      "#3853# melakukan kekerasan terhadap #4406# sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung #3853# menyakiti #4406#",
+      "saya mengetahui sendiri bahwa #3853# memperlakukan #4406# dengan kekerasan"
+     ],
+     "saksi2": [
+      "saya tidak pernah melihat #3853# berbuat kasar terhadap #4406#",
+      "#3853# tidak melakukan kekerasan terhadap #4406# sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung #3853# tidak menyakiti #4406#",
+      "saya mengetahui sendiri bahwa #3853# tidak memperlakukan #4406# dengan kekerasan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-tidak-cakap",
+   "pokok": "pp-wl-perbuatan-wali",
+   "urutan": 140,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "alasan": "G"
+   },
+   "teks": "Bagaimana keadaan kesehatan dan kecakapan #3853# dalam mengurus dirinya sendiri dan keperluan #4406# ?",
+   "hal": "kecakapan wali melakukan perbuatan hukum",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#3853# tidak cakap melakukan perbuatan hukum sehingga tidak mampu mengurus keperluan #4406#",
+     "saksi1": [
+      "#3853# tidak cakap melakukan perbuatan hukum karena ... sehingga keperluan #4406# terabaikan dan hal itu saya ketahui sendiri",
+      "saya melihat sendiri keadaan #3853# yang ... membuatnya tidak mampu mengurus diri maupun keperluan #4406#",
+      "karena keadaannya yang ... #3853# tidak dapat mengurus keperluan #4406# menurut yang saya saksikan",
+      "yang saya alami langsung adalah #3853# tidak mampu bertindak secara hukum karena ... sehingga keperluan #4406# terabaikan"
+     ],
+     "saksi2": [
+      "sepengetahuan saya sendiri #3853# tidak cakap bertindak hukum akibat ... sehingga keperluan #4406# terabaikan",
+      "saya menyaksikan sendiri #3853# dalam keadaan ... yang membuatnya tidak mampu mengurus #4406#",
+      "kondisi #3853# yaitu ... saya lihat sendiri dan karenanya ia tidak sanggup mengurus keperluan #4406#",
+      "#3853# tidak cakap dalam melakukan perbuatan hukum karena ... sehingga keperluan #4406# terabaikan dan saya mengetahuinya langsung"
+     ]
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-sejak-kapan",
+   "pokok": "pp-wl-perbuatan-wali",
+   "urutan": 150,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "alasan": [
+     "A",
+     "B",
+     "C",
+     "D",
+     "E",
+     "G"
+    ]
+   },
+   "teks": "Sejak kapan perbuatan atau keadaan #3853# tersebut terjadi dan apakah masih berlangsung sampai sekarang ?",
+   "hal": "sejak kapan perbuatan wali terjadi",
+   "jawaban": {
+    "melihat": {
+     "maksud": "perbuatan atau keadaan #3853# terjadi sejak waktu tertentu dan masih berlangsung sampai sekarang",
+     "saksi1": [
+      "perbuatan #3853# itu terjadi sejak ... dan masih berlangsung sampai sekarang menurut yang saya lihat",
+      "sejak ... #3853# berbuat demikian dan sampai sekarang masih sama dan hal itu saya ketahui sendiri",
+      "saya menyaksikan sendiri bahwa keadaan #3853# tersebut dimulai sejak ... dan masih terus berlangsung",
+      "yang saya alami langsung adalah #3853# berbuat demikian sejak ... hingga saat ini"
+     ],
+     "saksi2": [
+      "saya tahu sendiri perbuatan #3853# itu bermula sejak ... dan sampai saat ini masih terjadi",
+      "mulai ... #3853# bertingkah demikian dan sampai sekarang tetap sama sebagaimana yang saya saksikan",
+      "sejak waktu ... keadaan #3853# tersebut berlangsung dan hingga hari ini masih sama saja menurut yang saya lihat",
+      "sepengetahuan saya sendiri #3853# berbuat demikian terhitung sejak ... sampai sekarang"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: perbuatan #3853# dimulai pada waktu tertentu dan berlangsung terus; versi B: perbuatan #3853# dimulai pada waktu yang lain - berselisih pada WAKTU",
+     "saksi1": [
+      "saya mengetahui sendiri perbuatan #3853# itu dimulai sejak ... dan berlangsung terus",
+      "sejak ... #3853# berbuat demikian sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung perbuatan #3853# bermula pada ... tersebut",
+      "saya ingat sendiri bahwa perbuatan #3853# dimulai pada ... itu"
+     ],
+     "saksi2": [
+      "saya mengetahui sendiri perbuatan #3853# itu dimulai sejak waktu yang lain yaitu ... dan berlangsung terus",
+      "baru sejak ... #3853# berbuat demikian sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung perbuatan #3853# bermula pada waktu yang berbeda yaitu ... tersebut",
+      "saya ingat sendiri bahwa perbuatan #3853# baru dimulai pada ... itu"
+     ],
+     "bedaPada": "waktu"
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "3853"
+   ]
+  },
+  {
+   "id": "q-wl-akibat-anak",
+   "pokok": "pp-wl-akibat-anak",
+   "urutan": 160,
+   "kelompok": "akibat",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "alasan": [
+     "A",
+     "B",
+     "C",
+     "D",
+     "E",
+     "G"
+    ]
+   },
+   "teks": "Apa akibat perbuatan atau keadaan #3853# tersebut bagi #4406# ?",
+   "hal": "akibat perbuatan wali bagi anak",
+   "jawaban": {
+    "melihat": {
+     "maksud": "akibat perbuatan atau keadaan #3853# tersebut #4406# menjadi terganggu dan tidak terurus",
+     "saksi1": [
+      "akibat perbuatan #3853# itu #4406# menjadi ... dan terabaikan sebagaimana mestinya dan hal itu saya lihat sendiri",
+      "saya menyaksikan langsung bahwa #4406# menjadi ... karena keadaan #3853# tersebut",
+      "karena perbuatan #3853# itu #4406# mengalami ... menurut apa yang saya alami sendiri",
+      "yang saya lihat langsung adalah #4406# menderita ... sebagai akibat dari keadaan #3853#"
+     ],
+     "saksi2": [
+      "dampak dari keadaan #3853# itu #4406# menjadi ... dan saya melihatnya sendiri",
+      "saya tahu sendiri #4406# akhirnya ... karena perbuatan #3853# tersebut",
+      "sebagai akibat keadaan #3853# #4406# mengalami ... sebagaimana yang saya saksikan",
+      "dengan mata kepala sendiri saya melihat #4406# menjadi ... akibat perbuatan #3853#"
+     ]
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-upaya-teguran",
+   "pokok": "pp-wl-akibat-anak",
+   "urutan": 170,
+   "kelompok": "upaya",
+   "tingkat": "pilihan",
+   "teks": "Apakah ada upaya menegur, menasihati, atau bermusyawarah dengan #3853# ? Bagaimana hasilnya ?",
+   "hal": "upaya menegur atau bermusyawarah dengan wali",
+   "jawaban": {
+    "melihat": {
+     "maksud": "pengaju dan keluarga sudah menegur atau menasihati #3853# tetapi tidak ada perubahan",
+     "saksi1": [
+      "#0046# dan keluarga sudah menegur dan menasihati #3853# tetapi ia tetap tidak berubah, saya hadir saat itu",
+      "saya ikut dalam musyawarah keluarga yang menasihati #3853# namun tidak ada hasilnya",
+      "teguran dari #0046# kepada #3853# pernah saya saksikan sendiri dan ia tidak mengindahkannya",
+      "upaya menasihati #3853# oleh keluarga saya lihat langsung dan sampai sekarang tidak membuahkan perubahan"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0046# menegur #3853# dan ia tidak mau berubah",
+      "keluarga pernah berkumpul menasihati #3853# dan saya hadir tetapi tidak membawa hasil",
+      "pernah saya saksikan sendiri #0046# bermusyawarah dengan #3853# namun tidak ada perubahan",
+      "nasihat keluarga kepada #3853# saya ketahui langsung dan tidak pernah dihiraukan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: sudah ada teguran dan musyawarah dengan #3853#; versi B: belum pernah ada teguran - berselisih pada PERISTIWA teguran",
+     "saksi1": [
+      "saya mengetahui sendiri #3853# sudah beberapa kali ditegur oleh #0046#",
+      "#3853# pernah dinasihati keluarga sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung sudah ada musyawarah keluarga dengan #3853#",
+      "saya hadir ketika #3853# ditegur dan dinasihati"
+     ],
+     "saksi2": [
+      "saya tidak pernah melihat #3853# ditegur oleh #0046#",
+      "#3853# tidak pernah dinasihati keluarga sebagaimana yang saya ketahui",
+      "menurut yang saya lihat langsung belum ada musyawarah keluarga dengan #3853#",
+      "saya tidak pernah hadir ketika #3853# ditegur atau dinasihati"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "0046",
+    "3853"
+   ]
+  },
+  {
+   "id": "q-wl-keadaan-anak-kini",
+   "pokok": "pp-wl-akibat-anak",
+   "urutan": 180,
+   "kelompok": "akibat",
+   "tingkat": "pilihan",
+   "teks": "Di mana #4406# tinggal sekarang, bersama siapa, dan bagaimana keadaannya ?",
+   "hal": "keadaan dan tempat tinggal anak sekarang",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan tempat tinggal #4406# sekarang, bersama siapa, dan keadaannya",
+     "saksi1": [
+      "sekarang #4406# tinggal di ... bersama ... dan keadaannya ..., saya mengetahuinya sendiri",
+      "saat ini #4406# berada di ... dengan ... dan kondisinya ... sebagaimana yang saya lihat",
+      "saya melihat langsung bahwa #4406# kini tinggal bersama ... di ... dan keadaannya ... tersebut",
+      "yang saya ketahui sendiri #4406# sekarang berada di ... bersama ... dengan keadaan ... tersebut"
+     ],
+     "saksi2": [
+      "kini #4406# menempati ... bersama ... dan keadaannya ... menurut yang saya saksikan",
+      "saya tahu sendiri bahwa #4406# sekarang tinggal di ... dan diasuh ... dengan keadaan ... tersebut",
+      "tempat tinggal #4406# saat ini di ... bersama ... dan kondisinya ... saya lihat sendiri",
+      "#4406# sekarang bertempat tinggal di ... dengan ... dan keadaannya ... sebagaimana yang saya alami"
+     ]
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-harta-anak",
+   "pokok": "pp-wl-harta-anak",
+   "urutan": 190,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "hartaAnak": "ada"
+   },
+   "teks": "Apakah #4406# mempunyai harta, apa saja, dan siapa yang mengelolanya ?",
+   "hal": "harta anak dan pengelolanya",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#4406# mempunyai harta berupa #3849# yang dikelola oleh #3853#",
+     "saksi1": [
+      "#4406# mempunyai harta berupa #3849# yang dikelola oleh #3853# dan saya mengetahuinya sendiri",
+      "harta milik #4406# yaitu #3849# berada dalam pengelolaan #3853# menurut yang saya ketahui langsung",
+      "saya tahu sendiri bahwa #3849# adalah harta #4406# dan yang mengelolanya adalah #3853#",
+      "yang menjadi harta #4406# adalah #3849# dan pengelolaannya dipegang oleh #3853# sebagaimana yang saya lihat"
+     ],
+     "saksi2": [
+      "sepengetahuan saya #4406# memiliki #3849# dan yang mengurusnya adalah #3853#",
+      "harta #4406# berupa #3849# dikuasai dan dikelola #3853# sebagaimana yang saya saksikan",
+      "saya mengetahui langsung #3849# merupakan harta #4406# yang dipegang oleh #3853#",
+      "#4406# mempunyai harta yaitu #3849# yang pengelolaannya ada pada #3853# menurut yang saya alami"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: harta #4406# berupa #3849# dikelola #3853#; versi B: harta itu dikelola orang lain, bukan #3853# - berselisih pada PELAKU pengelolaan",
+     "saksi1": [
+      "yang mengelola #3849# milik #4406# adalah #3853# sendiri sebagaimana yang saya saksikan",
+      "saya mengetahui sendiri bahwa #3853# yang memegang #3849# milik #4406#",
+      "menurut yang saya lihat langsung #3849# milik #4406# berada di tangan #3853#",
+      "#3849# milik #4406# dikelola oleh #3853# yang saya ketahui langsung"
+     ],
+     "saksi2": [
+      "yang mengelola #3849# milik #4406# bukan #3853# melainkan orang lain sebagaimana yang saya saksikan",
+      "saya mengetahui sendiri bahwa orang lain yang memegang #3849# milik #4406# dan bukan #3853#",
+      "menurut yang saya lihat langsung #3849# milik #4406# tidak berada di tangan #3853#",
+      "#3849# milik #4406# dikelola oleh orang lain bukan oleh #3853# yang saya ketahui langsung"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "3849",
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-pertanggungjawaban-harta",
+   "pokok": "pp-wl-harta-anak",
+   "urutan": 200,
+   "kelompok": "upaya",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "hartaAnak": "ada"
+   },
+   "teks": "Apakah #3853# pernah menyampaikan atau mempertanggungjawabkan pengelolaan harta #4406# kepada keluarga ?",
+   "hal": "pertanggungjawaban pengelolaan harta anak",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#3853# tidak pernah mempertanggungjawabkan pengelolaan harta #4406# berupa #3849# kepada keluarga",
+     "saksi1": [
+      "#3853# tidak pernah mempertanggungjawabkan pengelolaan #3849# milik #4406# kepada keluarga dan saya mengetahuinya sendiri",
+      "saya tidak pernah melihat #3853# memberi laporan tentang #3849# milik #4406# kepada keluarga",
+      "tidak ada pertanggungjawaban dari #3853# mengenai #3849# milik #4406# menurut yang saya ketahui langsung",
+      "sepanjang yang saya alami #3853# tidak menyampaikan pembukuan #3849# milik #4406# kepada siapa pun"
+     ],
+     "saksi2": [
+      "saya mengetahui sendiri #3853# tidak pernah memberi pertanggungjawaban atas #3849# milik #4406#",
+      "tidak pernah saya lihat #3853# menyerahkan laporan atau pembukuan #3849# milik #4406# kepada keluarga",
+      "mengenai #3849# milik #4406# tidak ada penjelasan apa pun dari #3853# kepada keluarga sebagaimana yang saya saksikan",
+      "#3853# tidak pernah menyampaikan laporan pengelolaan #3849# milik #4406# kepada keluarga menurut yang saya alami"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: #3853# tidak pernah mempertanggungjawabkan harta #4406#; versi B: #3853# pernah menyampaikan pertanggungjawaban - berselisih pada PERISTIWA pertanggungjawaban",
+     "saksi1": [
+      "#3853# tidak pernah mempertanggungjawabkan #3849# milik #4406# kepada keluarga",
+      "saya tidak pernah melihat #3853# melaporkan #3849# milik #4406#",
+      "tidak ada pertanggungjawaban #3849# milik #4406# dari #3853# menurut yang saya lihat langsung",
+      "saya mengetahui sendiri #3853# tidak menyampaikan laporan #3849# milik #4406#"
+     ],
+     "saksi2": [
+      "#3853# pernah mempertanggungjawabkan #3849# milik #4406# kepada keluarga",
+      "saya pernah melihat #3853# melaporkan #3849# milik #4406# kepada keluarga",
+      "ada pertanggungjawaban #3849# milik #4406# dari #3853# menurut yang saya lihat langsung",
+      "saya mengetahui sendiri #3853# menyampaikan laporan #3849# milik #4406# kepada keluarga"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "3849",
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-orangtua-mampu",
+   "pokok": "pp-wl-pengganti",
+   "urutan": 210,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "alasan": "F"
+   },
+   "teks": "Bagaimana keadaan #0046# sekarang, apakah sudah mampu mengasuh dan membiayai #4406# ? (tempat tinggal, penghasilan, kesehatan)",
+   "hal": "kemampuan orang tua mengasuh anak",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#0046# sekarang sudah mampu mengasuh dan membiayai #4406#",
+     "saksi1": [
+      "sekarang #0046# sudah mampu mengasuh dan membiayai #4406# karena mempunyai tempat tinggal dan penghasilan berupa ..., saya mengetahuinya sendiri",
+      "saya melihat sendiri keadaan #0046# kini sudah baik dengan tempat tinggal dan penghasilan ... sehingga mampu mengurus #4406#",
+      "#0046# saat ini sehat dan berpenghasilan ... serta bertempat tinggal tetap sehingga sanggup membiayai #4406# menurut yang saya saksikan",
+      "yang saya ketahui langsung adalah #0046# sekarang mampu secara ekonomi dengan ... untuk mengasuh #4406#"
+     ],
+     "saksi2": [
+      "saya tahu sendiri bahwa #0046# kini sanggup mengasuh dan membiayai #4406# dengan penghasilan ... dan tempat tinggal yang layak",
+      "keadaan #0046# sekarang sudah mapan dengan ... dan saya menyaksikan sendiri ia mampu mengurus #4406#",
+      "dengan mata kepala sendiri saya melihat #0046# mempunyai ... dan kesehatan yang baik untuk mengasuh #4406#",
+      "#0046# pada saat ini mampu membiayai dan mengurus #4406# sebagaimana yang saya alami karena ... tersebut"
+     ]
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-asesmen-dinsos",
+   "pokok": "pp-wl-pengganti",
+   "urutan": 220,
+   "kelompok": "upaya",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "alasan": "F"
+   },
+   "teks": "Apakah saksi mengetahui adanya penilaian atau rekomendasi dinas sosial tentang kemampuan #0046# mengasuh #4406# ?",
+   "hal": "penilaian atau rekomendasi dinas sosial",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui sendiri adanya asesmen dan rekomendasi dinas sosial yang dituangkan dalam #3847#",
+     "saksi1": [
+      "saya mengetahui sendiri bahwa pekerja sosial dari dinas sosial pernah menilai keadaan #0046# dan #4406# yang hasilnya dituangkan dalam #3847#",
+      "petugas dinas sosial pernah datang ke rumah #0046# dan saya melihatnya sedangkan hasil penilaiannya adalah #3847# untuk #4406#",
+      "rekomendasi dinas sosial yaitu #3847# mengenai kemampuan #0046# mengasuh #4406# saya ketahui langsung",
+      "saya hadir ketika pekerja sosial menilai #0046# dan #4406# lalu dibuat #3847#"
+     ],
+     "saksi2": [
+      "dinas sosial pernah melakukan asesmen terhadap #0046# dan #4406# dan saya menyaksikan sendiri, hasilnya berupa #3847#",
+      "saya tahu sendiri petugas pekerja sosial mengunjungi #0046# dan #4406# dan menyusun #3847#",
+      "ada rekomendasi dinas sosial berupa #3847# tentang #0046# dan #4406# yang saya ketahui langsung",
+      "sepengetahuan saya sendiri pekerja sosial menilai #0046# dan #4406# lalu menerbitkan #3847#"
+     ]
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "0046",
+    "3847",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-calon-pengganti",
+   "pokok": "pp-wl-pengganti",
+   "urutan": 230,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "pengganti": "wali-pengganti"
+   },
+   "teks": "Apakah saksi kenal dengan #3841# ? Bagaimana hubungannya dengan #4406# dan kelakuannya sehari-hari ?",
+   "hal": "calon wali pengganti dan hubungannya dengan anak",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal #3841# yang berkelakuan baik dan mempunyai hubungan dengan #4406#",
+     "saksi1": [
+      "saya kenal dengan #3841# yang mempunyai hubungan dengan #4406# dan sehari-hari berkelakuan baik, saya mengetahuinya sendiri",
+      "#3841# saya kenal baik, ia dekat dengan #4406# dan kelakuannya baik menurut yang saya lihat",
+      "saya melihat sendiri bahwa #3841# berkelakuan baik dan akrab dengan #4406#",
+      "hubungan #3841# dengan #4406# dekat dan kelakuannya terpuji sebagaimana yang saya saksikan"
+     ],
+     "saksi2": [
+      "saya mengenal #3841# dan melihat sendiri ia berkelakuan baik serta dekat dengan #4406#",
+      "perkenalan saya dengan #3841# sudah lama, ia dekat dengan #4406# dan berkelakuan baik",
+      "#3841# adalah orang yang berkelakuan baik dan akrab dengan #4406# menurut yang saya alami",
+      "yang saya ketahui langsung #3841# bersikap baik dan memiliki kedekatan dengan #4406#"
+     ]
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "3841",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-kesiapan-pengganti",
+   "pokok": "pp-wl-pengganti",
+   "urutan": 240,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "pengganti": "wali-pengganti"
+   },
+   "teks": "Apakah #3841# sehat jasmani dan rohani, mampu secara ekonomi, seagama dengan #4406#, dan bersedia menjadi wali ?",
+   "hal": "kesiapan calon wali pengganti",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#3841# sehat jasmani dan rohani, mampu secara ekonomi, seagama dengan #4406#, dan bersedia menjadi wali",
+     "saksi1": [
+      "#3841# sehat jasmani dan rohani, mampu secara ekonomi, seagama dengan #4406#, dan bersedia menjadi wali, hal itu saya ketahui sendiri",
+      "saya melihat sendiri #3841# sehat dan mampu secara ekonomi serta seagama dengan #4406# dan ia menyatakan bersedia menjadi wali",
+      "menurut yang saya saksikan #3841# memenuhi syarat sehat, mampu dan seagama dengan #4406# serta bersedia menjadi wali",
+      "sepengetahuan saya sendiri #3841# bersedia menjadi wali karena sehat, mampu secara ekonomi, dan seagama dengan #4406#"
+     ],
+     "saksi2": [
+      "saya tahu sendiri #3841# dalam keadaan sehat, berkecukupan, beragama sama dengan #4406#, dan sanggup menjadi wali",
+      "#3841# sehat badan dan jiwa, berkecukupan, seagama dengan #4406#, serta menyatakan kesediaan menjadi wali sebagaimana yang saya dengar langsung",
+      "dengan mata kepala sendiri saya melihat #3841# sehat dan berkecukupan serta seagama dengan #4406# dan siap menjadi wali",
+      "yang saya alami sendiri #3841# mampu, sehat, seagama dengan #4406#, dan mau menjadi wali"
+     ]
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "3841",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-persetujuan-pengganti",
+   "pokok": "pp-wl-pengganti",
+   "urutan": 250,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "pengganti": "wali-pengganti"
+   },
+   "teks": "Apakah #4406# dan keluarga menyetujui #3841# menjadi wali yang baru ?",
+   "hal": "persetujuan anak dan keluarga atas wali pengganti",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#4406# dan keluarga menyetujui #3841# menjadi wali yang baru",
+     "saksi1": [
+      "#4406# dan keluarga menyetujui #3841# menjadi wali yang baru, saya mendengar dan melihat sendiri persetujuan itu",
+      "saya hadir ketika #4406# dan keluarga menyatakan setuju #3841# menjadi wali",
+      "persetujuan dari #4406# dan keluarga atas #3841# sebagai wali saya saksikan sendiri",
+      "menurut yang saya alami langsung #4406# beserta keluarga menyetujui dengan lapang dada #3841# menjadi wali"
+     ],
+     "saksi2": [
+      "saya sendiri menyaksikan #4406# dan keluarga setuju bila #3841# menjadi wali",
+      "kesetujuan #4406# dan keluarga terhadap #3841# sebagai wali saya ketahui langsung",
+      "#4406# dan keluarga sepakat #3841# menjadi wali dan saya hadir saat kesepakatan itu",
+      "saya mengetahui sendiri #4406# dan keluarga merestui #3841# menjadi wali yang baru"
+     ]
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "3841",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-kembali-orangtua",
+   "pokok": "pp-wl-pengganti",
+   "urutan": 260,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "keadaan": {
+    "pengganti": "kembali-ke-orang-tua"
+   },
+   "teks": "Apakah #3842# sanggup mengasuh dan mengurus #4406# bila kuasa asuh dikembalikan kepadanya, dan bagaimana kedekatannya dengan #4406# ?",
+   "hal": "kesanggupan orang tua menerima kembali kuasa asuh",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#3842# sanggup mengasuh dan mengurus #4406# serta dekat dengan anak itu",
+     "saksi1": [
+      "#3842# sanggup mengasuh dan mengurus #4406# dan sehari-hari dekat dengan anak itu, hal itu saya ketahui sendiri",
+      "saya melihat sendiri #3842# mampu mengurus #4406# dan sangat dekat dengannya",
+      "menurut yang saya saksikan #3842# siap menerima kembali #4406# dan hubungan mereka akrab",
+      "yang saya alami langsung adalah #3842# sanggup mengasuh #4406# dan dekat dengan anak itu"
+     ],
+     "saksi2": [
+      "saya tahu sendiri #3842# sanggup mengurus dan mengasuh #4406# serta akrab dengan anak itu",
+      "#3842# mampu merawat #4406# dan kedekatan mereka saya lihat sendiri",
+      "dengan mata kepala sendiri saya melihat #3842# siap mengasuh #4406# dan hubungannya baik dengan anak itu",
+      "sepengetahuan saya sendiri #3842# sanggup mengurus #4406# dan dekat dengannya"
+     ]
+    }
+   },
+   "pihakSaksi": [
+    "*"
+   ],
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "3842",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-pembelaan-pengasuhan",
+   "pokok": "pp-wl-pembelaan",
+   "urutan": 270,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bukan:kehadiran": "verstek"
+   },
+   "teks": "Bagaimana #3853# mengurus dan mengasuh #4406# selama ini ?",
+   "hal": "cara wali mengurus anak",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#3853# mengurus #4406# dengan baik dan kebutuhannya terpenuhi",
+     "saksi1": [
+      "#3853# mengurus #4406# dengan baik, kebutuhan makan, pakaian dan sekolahnya terpenuhi, dan saya melihatnya sendiri",
+      "saya menyaksikan sendiri #3853# merawat #4406# sehari-hari dan memenuhi keperluannya",
+      "selama ini #4406# diasuh #3853# dengan baik menurut yang saya lihat langsung",
+      "kebutuhan #4406# dicukupi oleh #3853# sebagaimana yang saya alami sendiri"
+     ],
+     "saksi2": [
+      "saya tahu sendiri #3853# mengasuh #4406# dengan baik dan mencukupi kebutuhan makan, pakaian dan sekolahnya",
+      "#3853# merawat #4406# dengan penuh perhatian sebagaimana yang saya saksikan",
+      "dengan mata kepala sendiri saya melihat #3853# memenuhi keperluan #4406# setiap hari",
+      "pengurusan #4406# oleh #3853# berjalan baik menurut yang saya lihat langsung"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: #3853# mengurus #4406# dengan baik; versi B: #3853# kurang mengurus #4406# - berselisih pada PERISTIWA pengurusan",
+     "saksi1": [
+      "saya melihat sendiri #3853# mengurus #4406# dengan baik",
+      "#3853# mencukupi kebutuhan #4406# sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung #4406# diasuh #3853# dengan baik",
+      "saya mengetahui sendiri #3853# merawat #4406# dengan perhatian"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #3853# kurang mengurus #4406#",
+      "#3853# kurang mencukupi kebutuhan #4406# sebagaimana yang saya saksikan",
+      "menurut yang saya lihat langsung #4406# kurang diasuh #3853#",
+      "saya mengetahui sendiri #3853# kurang memperhatikan #4406#"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "tidakBerlaku": [],
+   "variabelAbt": [
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-pembelaan-harta",
+   "pokok": "pp-wl-pembelaan",
+   "urutan": 280,
+   "kelompok": "pokok",
+   "tingkat": "tambahan",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "bukan:kehadiran": "verstek",
+    "hartaAnak": "ada"
+   },
+   "teks": "Bagaimana #3853# mengelola harta #4406# berupa #3849# ?",
+   "hal": "pengelolaan harta anak oleh wali",
+   "jawaban": {
+    "melihat": {
+     "maksud": "#3853# mengelola #3849# milik #4406# untuk keperluan #4406#",
+     "saksi1": [
+      "#3853# mengelola #3849# milik #4406# untuk keperluan #4406# dan saya melihatnya sendiri",
+      "menurut yang saya saksikan #3849# milik #4406# dipakai #3853# bagi kebutuhan #4406#",
+      "saya mengetahui sendiri #3853# menggunakan #3849# milik #4406# untuk biaya hidup dan sekolah #4406#",
+      "pengelolaan #3849# milik #4406# oleh #3853# diperuntukkan bagi #4406# sebagaimana yang saya alami"
+     ],
+     "saksi2": [
+      "saya tahu sendiri #3849# milik #4406# dikelola #3853# untuk keperluan #4406#",
+      "#3853# memakai #3849# milik #4406# bagi kepentingan #4406# sebagaimana yang saya saksikan",
+      "dengan mata kepala sendiri saya melihat #3853# mengelola #3849# milik #4406# demi kebutuhan #4406#",
+      "#3849# milik #4406# digunakan #3853# untuk biaya #4406# menurut yang saya lihat langsung"
+     ]
+    }
+   },
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "variabelAbt": [
+    "3849",
+    "3853",
+    "4406"
+   ]
+  },
+  {
+   "id": "q-wl-penutup",
+   "pokok": "pp-wl-penutup",
+   "urutan": 900,
+   "kelompok": "penutup",
+   "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+   "hal": "keterangan penutup",
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan keterangannya sudah cukup",
+     "saksi1": [
+      "keterangan yang saya berikan sudah cukup",
+      "sekian keterangan saya dan sudah cukup",
+      "bagi saya keterangan ini sudah cukup",
+      "sudah cukup yang dapat saya terangkan"
+     ],
+     "saksi2": [
+      "dengan ini keterangan saya sudah cukup",
+      "sudah cukup apa yang saya ketahui untuk diterangkan",
+      "hanya itu keterangan saya dan sudah cukup",
+      "saya anggap keterangan saya sudah cukup sampai di sini"
+     ]
+    }
+   },
+   "tingkat": "inti",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "tidakBerlaku": [
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu",
+    "ragu",
+    "berbeda"
+   ],
+   "variabelAbt": []
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Titik-titik (...) pada keterangan saksi wajib diganti dengan keterangan saksi yang sebenarnya; jangan dibiarkan kosong.",
+  "Keterangan seorang saksi saja tidak cukup; diperlukan sedikitnya dua saksi yang memenuhi syarat.",
+  "Keterangan saksi harus menyebut bagaimana saksi mengetahuinya; pendapat atau dugaan bukan kesaksian.",
+  "Pilih huruf alasan pencabutan pada isian perkara sesuai dalil dan bukti; pertanyaan alasan hanya muncul untuk huruf yang dipilih.",
+  "Jawaban bertanda berselisih hanya kerangka: sesuaikan dengan keterangan saksi yang sesungguhnya."
+ ],
+ "variabelBaru": [
+  "3831",
+  "3832",
+  "3841",
+  "3842",
+  "3847",
+  "3849",
+  "3853",
+  "3857",
+  "4406"
+ ]
+}

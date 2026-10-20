@@ -383,6 +383,6 @@ describe("F. kunci baku Pemetaan blangko", () => {
       expect(kunciJenisPerkara(k)).toBe(k.toLowerCase());
       expect(KUNCI_BAKU.bas.some((b) => b.kunci === `${k}|1|semua-hadir`), k).toBe(true);
     }
-    expect(JENIS_BAS_BAKU).toHaveLength(27); // W3a 21 Okt: + 6 jenis (343, 345, 351, 352, 359, 361); // I28 18 Okt: + Hibah, Wakaf, Penetapan Mafqud
+    expect(JENIS_BAS_BAKU).toHaveLength(32); // W3a 21 Okt: + 6 jenis (343, 345, 351, 352, 359, 361); W3b 21 Okt: + 5 jenis keluarga/wali (353, 355, 356, 357, 350); // I28 18 Okt: + Hibah, Wakaf, Penetapan Mafqud
   });
 });

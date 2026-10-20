@@ -1,0 +1,1824 @@
+{
+  "skema": "saksi-katalog/1",
+  "kunci": "ganti-rugi-wali",
+  "judul": "Ganti rugi terhadap wali",
+  "versi": 1,
+  "penulis": "W3b-357",
+  "tahap": 2,
+  "contoh": false,
+  "syarat": {
+    "jenisPerkaraId": [
+      "357"
+    ]
+  },
+  "pihak": {
+    "pengaju": "#0046#",
+    "lawan": "#0047#"
+  },
+  "blangkoBas": [
+    {
+      "folder": "6g Ganti Rugi terhadap Wali - BAS",
+      "berkas": "BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P",
+      "variabelSaksi": [
+        "2021",
+        "2022",
+        "2031",
+        "6124",
+        "8932"
+      ],
+      "catatan": "paket ABT w3b-blangko-baru-kuasa-wali (menu putusan 246, BAS 247, jenis 357); saksi P"
+    },
+    {
+      "folder": "6g Ganti Rugi terhadap Wali - BAS",
+      "berkas": "BAS ALUR 04 [7] BAS 7 P & T Hadir - Pembuktian T",
+      "variabelSaksi": [
+        "2023",
+        "2024",
+        "2032",
+        "8942"
+      ],
+      "catatan": "paket ABT w3b-blangko-baru-kuasa-wali (menu putusan 246, BAS 247, jenis 357); saksi T"
+    },
+    {
+      "folder": "6g Ganti Rugi terhadap Wali - BAS",
+      "berkas": "BAS ALUR 73 Ganti Rugi Wali - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek",
+      "variabelSaksi": [
+        "2021",
+        "2022"
+      ],
+      "catatan": "paket ABT w3b-blangko-baru-kuasa-wali (menu putusan 246, BAS 247, jenis 357); verstek: hanya saksi P (2 saksi)"
+    }
+  ],
+  "dasarHukum": [
+    {
+      "id": "dh-sebab-pengetahuan",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 103: syarat materiil saksi (Pasal 308 ayat (2) RBg)",
+      "uraian": "keterangan saksi harus tentang peristiwa yang dialami, didengar atau dilihat sendiri dan menyebut sumber pengetahuannya; pendapat atau dugaan bukan kesaksian",
+      "status": "terverifikasi",
+      "sumber": "Buku II Edisi Revisi 2013 (Ditjen Badilag MA RI), salinan PDF PA Rumbia (pa-rumbia.go.id/images/Pedoman_Organisasi/1-Buku-II-edisi-Rev_2013_Pedoman-Tugas-dan-Adm.pdf), bagian Bukti Saksi, Syarat materiil alat bukti saksi (hlm. 103 menurut nomor halaman berkas PDF itu; cetakan lain dapat berselisih satu halaman); Pasal 308 ayat (2) RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+    },
+    {
+      "id": "dh-de-auditu",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (7)",
+      "uraian": "keterangan yang diperoleh saksi dari orang lain (de auditu) dapat dipakai hanya sebagai sumber persangkaan",
+      "status": "terverifikasi",
+      "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+    },
+    {
+      "id": "dh-unus-testis",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (8)",
+      "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak cukup (satu saksi bukan saksi)",
+      "status": "terverifikasi",
+      "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+    },
+    {
+      "id": "dh-larangan-saksi",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 101-102 butir (3)-(4) (Pasal 172 RBg)",
+      "uraian": "keluarga sedarah dan semenda dalam garis lurus, suami atau istri salah satu pihak (juga setelah bercerai), dan anak yang belum berumur lima belas tahun tidak dapat didengar sebagai saksi; keluarga sedarah atau semenda tetap dapat menjadi saksi dalam perkara tentang keadaan menurut hukum sipil para pihak atau perjanjian kerja",
+      "status": "terverifikasi",
+      "sumber": "Buku II Edisi Revisi 2013 (Ditjen Badilag MA RI), salinan PDF PA Rumbia (pa-rumbia.go.id/images/Pedoman_Organisasi/1-Buku-II-edisi-Rev_2013_Pedoman-Tugas-dan-Adm.pdf), bagian Bukti Saksi butir (3)-(4) (hlm. 101-102 menurut nomor halaman berkas PDF itu; cetakan lain dapat berselisih satu halaman); Pasal 172 ayat (1)-(2) RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+    },
+    {
+      "id": "dh-kesesuaian-saksi",
+      "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (2) (Pasal 309 RBg)",
+      "uraian": "hakim menilai kesesuaian keterangan saksi yang satu dengan lainnya dan alasan saksi memberi keterangan",
+      "status": "terverifikasi",
+      "sumber": "Buku II Edisi Revisi 2013 (Ditjen Badilag MA RI), salinan PDF PA Rumbia (pa-rumbia.go.id/images/Pedoman_Organisasi/1-Buku-II-edisi-Rev_2013_Pedoman-Tugas-dan-Adm.pdf), bagian Bukti Saksi butir (2) (hlm. 101 menurut nomor halaman berkas PDF itu; cetakan lain dapat berselisih satu halaman); Pasal 309 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+    },
+    {
+      "id": "dh-uu1-p50-51",
+      "rujukan": "Pasal 50 ayat (1)-(2) dan Pasal 51 ayat (3)-(5) UU 1/1974 tentang Perkawinan",
+      "uraian": "anak yang tidak berada di bawah kekuasaan orang tua berada di bawah kekuasaan wali, perwalian itu mengenai pribadi dan harta benda anak; wali wajib mengurus anak dan harta bendanya sebaik-baiknya, wajib membuat daftar harta benda anak dan mencatat perubahannya, serta bertanggung jawab atas kerugian yang ditimbulkan karena kesalahan atau kelalaiannya",
+      "status": "terverifikasi",
+      "sumber": "naskah UU 1/1974 dari peraturan.bpk.go.id (berkas uu1-1974-bpk.txt di arsip referensi), bunyi pasal dicocokkan 21 Okt 2026"
+    },
+    {
+      "id": "dh-uu1-p48-52",
+      "rujukan": "Pasal 48 jo. Pasal 52 UU 1/1974 tentang Perkawinan",
+      "uraian": "wali tidak diperbolehkan memindahkan hak atau menggadaikan barang-barang tetap yang dimiliki anak yang belum berumur 18 tahun atau belum pernah kawin, kecuali apabila kepentingan anak itu menghendakinya",
+      "status": "terverifikasi",
+      "sumber": "naskah UU 1/1974 dari peraturan.bpk.go.id (berkas uu1-1974-bpk.txt di arsip referensi), bunyi pasal dicocokkan 21 Okt 2026"
+    },
+    {
+      "id": "dh-uu1-p54",
+      "rujukan": "Pasal 54 UU 1/1974 tentang Perkawinan",
+      "uraian": "wali yang telah menyebabkan kerugian kepada harta benda anak yang di bawah kekuasaannya, atas tuntutan anak atau keluarga anak tersebut dengan keputusan Pengadilan, dapat diwajibkan untuk mengganti kerugian tersebut",
+      "status": "terverifikasi",
+      "sumber": "naskah UU 1/1974 dari peraturan.bpk.go.id (berkas uu1-1974-bpk.txt di arsip referensi), bunyi pasal dicocokkan 21 Okt 2026"
+    },
+    {
+      "id": "dh-khi-107",
+      "rujukan": "Pasal 107 ayat (1) dan (2) Kompilasi Hukum Islam",
+      "uraian": "perwalian hanya terhadap anak yang belum mencapai umur 21 tahun dan atau belum pernah melangsungkan perkawinan, dan meliputi perwalian terhadap diri dan harta kekayaannya",
+      "status": "terverifikasi",
+      "sumber": "berkas JSON KHI per pasal (khi-pasalid.json di arsip referensi), kunci 107, dibaca 21 Okt 2026"
+    },
+    {
+      "id": "dh-khi-110",
+      "rujukan": "Pasal 110 ayat (1)-(4) Kompilasi Hukum Islam",
+      "uraian": "wali wajib mengurus diri dan harta anak dengan sebaik-baiknya; dilarang mengikatkan, membebani dan mengasingkan harta anak kecuali menguntungkan anak atau kenyataan yang tidak dapat dihindarkan; wali bertanggung jawab atas harta anak dan mengganti kerugian akibat kesalahan atau kelalaiannya; pertanggungjawaban dibuktikan dengan pembukuan yang ditutup tiap satu tahun sekali",
+      "status": "terverifikasi",
+      "sumber": "berkas JSON KHI per pasal (khi-pasalid.json di arsip referensi), kunci 110, dibaca 21 Okt 2026"
+    },
+    {
+      "id": "dh-khi-111-112",
+      "rujukan": "Pasal 111 ayat (1)-(2) dan Pasal 112 Kompilasi Hukum Islam",
+      "uraian": "wali wajib menyerahkan seluruh harta anak bila anak berumur 21 tahun atau telah kawin; bila perwalian berakhir Pengadilan Agama berwenang mengadili perselisihan wali dan anak tentang harta yang diserahkan; wali hanya boleh memakai harta anak sepanjang diperlukan untuk kepentingan anak menurut kepatutan atau bil ma'ruf kalau wali itu fakir",
+      "status": "terverifikasi",
+      "sumber": "berkas JSON KHI per pasal (khi-pasalid.json di arsip referensi), kunci 111 dan 112, dibaca 21 Okt 2026"
+    },
+    {
+      "id": "dh-uu35-2014-33",
+      "rujukan": "Pasal 33 ayat (4) UU 23/2002 tentang Perlindungan Anak sebagaimana diubah UU 35/2014",
+      "uraian": "wali bertanggung jawab terhadap diri anak dan wajib mengelola harta milik anak untuk kepentingan terbaik bagi anak",
+      "status": "terverifikasi",
+      "sumber": "naskah UU 35/2014 (uu35-2014.txt di arsip referensi), Pasal 33 ayat (4), dibaca 21 Okt 2026"
+    },
+    {
+      "id": "dh-pp29-2019-14",
+      "rujukan": "Pasal 14 ayat (1) huruf d PP 29/2019 tentang Syarat dan Tata Cara Penunjukan Wali",
+      "uraian": "wali yang ditetapkan oleh Pengadilan berkewajiban mengelola harta milik anak untuk keperluan anak",
+      "status": "terverifikasi",
+      "sumber": "naskah PP 29/2019 (pp29-2019.txt di arsip referensi), Pasal 14 ayat (1), dibaca 21 Okt 2026"
+    },
+    {
+      "id": "dh-penjelasan-49-18",
+      "rujukan": "Pasal 49 huruf a dan penjelasan angka 18 UU 7/1989 jo. UU 3/2006 jo. UU 50/2009",
+      "uraian": "perkawinan meliputi pembebanan kewajiban ganti kerugian atas harta benda anak yang ada di bawah kekuasaannya; perkara ini menjadi kewenangan absolut Pengadilan Agama",
+      "status": "terverifikasi",
+      "sumber": "teks penjelasan Pasal 49 huruf a UU 3/2006 pada berkas query.js kode bot (butir 18), dibaca 21 Okt 2026"
+    },
+    {
+      "id": "dh-rbg-283",
+      "rujukan": "Pasal 283 RBg",
+      "uraian": "barang siapa beranggapan mempunyai suatu hak atau suatu keadaan untuk menguatkan haknya atau menyangkal hak orang lain harus membuktikan hak atau keadaan itu",
+      "status": "terverifikasi",
+      "sumber": "naskah RBg (rbg-unnes.txt di arsip referensi), Pasal 283, dibaca 21 Okt 2026"
+    }
+  ],
+  "keadaan": {
+    "kehadiran": {
+      "sumber": "otomatis",
+      "nilai": [
+        "verstek",
+        "kontradiktoir",
+        "t-tidak-hadir-setelah-mediasi"
+      ],
+      "bawaan": "kontradiktoir",
+      "label": "Kehadiran Tergugat"
+    },
+    "kedudukanPenggugat": {
+      "sumber": "borang",
+      "nilai": [
+        "anak-dewasa",
+        "keluarga-anak"
+      ],
+      "bawaan": "keluarga-anak",
+      "label": "Kedudukan Penggugat",
+      "labelNilai": {
+        "anak-dewasa": "Anak yang kini telah dewasa",
+        "keluarga-anak": "Keluarga anak"
+      }
+    },
+    "jenisPerbuatan": {
+      "sumber": "borang",
+      "nilai": [
+        "mengalihkan-harta",
+        "memakai-hasil",
+        "tanpa-pembukuan",
+        "lalai-memelihara"
+      ],
+      "jamak": true,
+      "bawaan": [
+        "mengalihkan-harta"
+      ],
+      "label": "Perbuatan wali yang didalilkan",
+      "labelNilai": {
+        "mengalihkan-harta": "Menjual, menggadaikan atau memindahkan hak atas harta anak",
+        "memakai-hasil": "Memakai uang atau hasil harta anak untuk keperluan sendiri",
+        "tanpa-pembukuan": "Tidak membuat daftar harta dan pembukuan",
+        "lalai-memelihara": "Membiarkan harta anak rusak, hilang atau terbengkalai"
+      }
+    },
+    "bentukPenggantian": {
+      "sumber": "borang",
+      "nilai": [
+        "uang",
+        "pengembalian-harta"
+      ],
+      "jamak": true,
+      "bawaan": [
+        "uang"
+      ],
+      "label": "Bentuk ganti rugi yang dituntut",
+      "labelNilai": {
+        "uang": "Ganti rugi berupa uang",
+        "pengembalian-harta": "Pengembalian harta atau barang"
+      }
+    },
+    "teguran": {
+      "sumber": "borang",
+      "nilai": [
+        "tidak",
+        "ada"
+      ],
+      "bawaan": "tidak",
+      "label": "Teguran kepada Tergugat sebelum gugatan",
+      "labelNilai": {
+        "tidak": "Tidak ada teguran",
+        "ada": "Ada teguran atau permintaan pertanggungjawaban"
+      }
+    },
+    "bantahan": {
+      "sumber": "borang",
+      "nilai": [
+        "untuk-kepentingan-anak",
+        "ada-persetujuan",
+        "ada-pembukuan",
+        "harta-utuh"
+      ],
+      "jamak": true,
+      "bawaan": [],
+      "label": "Bantahan Tergugat yang diterangkan saksi Tergugat",
+      "labelNilai": {
+        "untuk-kepentingan-anak": "Perbuatan untuk kepentingan anak",
+        "ada-persetujuan": "Ada persetujuan keluarga atau izin pengadilan",
+        "ada-pembukuan": "Ada pembukuan dan catatan pengelolaan",
+        "harta-utuh": "Harta anak tetap utuh dan terpelihara"
+      }
+    }
+  },
+  "pokokPembuktian": [
+    {
+      "id": "pp-hubungan-saksi",
+      "judul": "Hubungan saksi dengan para pihak",
+      "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal para pihak (sebab pengetahuan)",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-sebab-pengetahuan",
+        "dh-larangan-saksi",
+        "dh-unus-testis"
+      ]
+    },
+    {
+      "id": "pp-kedudukan-penggugat",
+      "judul": "Kedudukan Penggugat terhadap anak",
+      "uraian": "Penggugat adalah anak yang telah dewasa atau keluarga anak yang berhak menuntut wali mengganti kerugian",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-uu1-p54",
+        "dh-khi-111-112"
+      ]
+    },
+    {
+      "id": "pp-perwalian",
+      "judul": "Kedudukan Tergugat sebagai wali",
+      "uraian": "Tergugat adalah wali dari anak berdasarkan penetapan pengadilan, wasiat atau kenyataan menjalankan perwalian, dan sejak kapan ia mengurus anak dan hartanya",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-uu1-p50-51",
+        "dh-khi-107",
+        "dh-pp29-2019-14"
+      ]
+    },
+    {
+      "id": "pp-harta-anak",
+      "judul": "Harta benda milik anak",
+      "uraian": "harta benda yang dipersoalkan adalah milik anak, apa jenisnya, dari mana asalnya, dan berada dalam pengurusan wali",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-uu1-p50-51",
+        "dh-uu35-2014-33",
+        "dh-penjelasan-49-18"
+      ]
+    },
+    {
+      "id": "pp-perbuatan-wali",
+      "judul": "Perbuatan wali yang salah atau lalai",
+      "uraian": "perbuatan atau kelalaian wali atas harta anak, waktunya, serta apakah dilakukan untuk kepentingan anak, dengan persetujuan keluarga atau izin pengadilan",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-uu1-p48-52",
+        "dh-khi-110",
+        "dh-rbg-283"
+      ]
+    },
+    {
+      "id": "pp-pembukuan",
+      "judul": "Daftar harta dan pembukuan wali",
+      "uraian": "wali wajib membuat daftar harta benda anak pada waktu memulai jabatan dan pembukuan yang ditutup tiap tahun",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-uu1-p50-51",
+        "dh-khi-110"
+      ]
+    },
+    {
+      "id": "pp-kerugian",
+      "judul": "Kerugian pada harta benda anak dan besarnya",
+      "uraian": "akibat perbuatan wali harta anak berkurang, hilang atau rusak, dan berapa nilai kerugian yang dialami anak",
+      "wajib": true,
+      "dasarHukum": [
+        "dh-uu1-p54",
+        "dh-khi-110",
+        "dh-rbg-283"
+      ]
+    },
+    {
+      "id": "pp-teguran",
+      "judul": "Teguran dan tanggapan wali",
+      "uraian": "apakah wali pernah ditegur atau diminta mempertanggungjawabkan harta anak, dan bagaimana tanggapannya",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-khi-110"
+      ]
+    },
+    {
+      "id": "pp-pengembalian",
+      "judul": "Pengembalian harta atau barang",
+      "uraian": "harta atau barang yang dituntut dikembalikan masih ada dan dapat diserahkan kembali",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-khi-111-112",
+        "dh-uu35-2014-33"
+      ]
+    },
+    {
+      "id": "pp-upaya",
+      "judul": "Upaya penyelesaian sebelum perkara",
+      "uraian": "apakah sebelum perkara diajukan telah ada upaya penyelesaian secara kekeluargaan",
+      "wajib": false,
+      "dasarHukum": []
+    },
+    {
+      "id": "pp-keadaan-anak",
+      "judul": "Keadaan anak sekarang",
+      "uraian": "akibat berkurangnya harta terhadap kebutuhan hidup dan pendidikan anak",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-uu35-2014-33"
+      ]
+    },
+    {
+      "id": "pp-bantahan",
+      "judul": "Bantahan Tergugat",
+      "uraian": "keterangan saksi yang diajukan Tergugat tentang tujuan perbuatan, persetujuan, pembukuan dan keadaan harta anak",
+      "wajib": false,
+      "dasarHukum": [
+        "dh-uu1-p48-52",
+        "dh-khi-110",
+        "dh-rbg-283"
+      ]
+    },
+    {
+      "id": "pp-penutup",
+      "judul": "Penutup keterangan saksi",
+      "uraian": "saksi menyatakan keterangannya sudah cukup",
+      "wajib": false,
+      "dasarHukum": []
+    }
+  ],
+  "pertanyaan": [
+    {
+      "id": "q-kenal",
+      "pokok": "pp-hubungan-saksi",
+      "urutan": 10,
+      "tingkat": "inti",
+      "kelompok": "hubungan",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah saksi kenal dengan #0046# dan #0047# ?",
+      "teksVarian": [
+        "Apakah saksi mengenal #0046# dan #0047# ?",
+        "Apakah Saudara saksi kenal dengan #0046# serta #0047# ?"
+      ],
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "hubungan saksi dengan para pihak",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi mengenal kedua pihak dan menyebut hubungannya dengan pihak",
+          "saksi1": [
+            "saya kenal dengan #0046# dan #0047# karena saya adalah {hubungan}",
+            "saya mengenal #0046# dan #0047# sebab saya ini {hubungan}",
+            "benar saya kenal kedua pihak yaitu #0046# dan #0047# dan saya adalah {hubungan}",
+            "dalam kedudukan saya sebagai {hubungan} saya mengenal #0046# serta #0047#"
+          ],
+          "saksi2": [
+            "kedua pihak #0046# dan #0047# saya kenal dengan baik karena saya adalah {hubungan}",
+            "saya tahu dan kenal #0046# serta #0047# sebab hubungan saya dengan mereka adalah {hubungan}",
+            "saya lama mengenal #0046# berikut #0047# dan saya adalah {hubungan}",
+            "yang saya kenal adalah #0046# dan #0047# karena saya berkedudukan sebagai {hubungan}"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-hubungan-penggugat-anak",
+      "pokok": "pp-kedudukan-penggugat",
+      "urutan": 20,
+      "tingkat": "inti",
+      "kelompok": "hubungan",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah saksi tahu hubungan antara #0046# dengan anak yang hartanya dipersoalkan dalam perkara ini ?",
+      "teksVarian": [
+        "Apa hubungan #0046# dengan anak yang hartanya dipersoalkan dalam perkara ini ?"
+      ],
+      "variabelAbt": [
+        "0046",
+        "3890"
+      ],
+      "hal": "hubungan #0046# dengan anak yang hartanya dipersoalkan",
+      "tidakBerlaku": [
+        "ragu",
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan hubungan Penggugat dengan anak pemilik harta",
+          "saksi1": [
+            "#0046# adalah #3890# dan hubungan itu saya ketahui sendiri",
+            "saya mengetahui sendiri bahwa #0046# adalah #3890#",
+            "hubungan #0046# dengan anak tersebut yaitu sebagai #3890# sebagaimana yang saya saksikan sendiri",
+            "benar #0046# adalah #3890# dan saya mengenal keluarga mereka secara langsung"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri #0046# adalah #3890#",
+            "#0046# berkedudukan sebagai #3890# dan hal itu saya ketahui langsung",
+            "saya tahu langsung kedudukan #0046# terhadap anak itu yaitu #3890#",
+            "yang saya ketahui sendiri #0046# adalah #3890# dari anak yang dipersoalkan hartanya"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-dewasa-penggugat",
+      "pokok": "pp-kedudukan-penggugat",
+      "urutan": 25,
+      "tingkat": "tambahan",
+      "kelompok": "hubungan",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "kedudukanPenggugat": "anak-dewasa"
+      },
+      "teks": "Sejak kapan #0046# telah dewasa atau menikah dan apakah harta bendanya sudah diserahkan oleh #0047# kepadanya ?",
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "waktu #0046# dewasa dan penyerahan hartanya oleh #0047#",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan Penggugat telah dewasa dan harta bendanya belum diserahkan wali",
+          "saksi1": [
+            "#0046# sudah dewasa sejak {sejak} dan harta bendanya belum diserahkan #0047# sebagaimana yang saya ketahui sendiri",
+            "saya melihat sendiri bahwa sejak {sejak} #0046# telah dewasa tetapi #0047# belum menyerahkan harta bendanya",
+            "sejak {sejak} #0046# sudah cakap bertindak sendiri dan harta bendanya belum dikembalikan #0047# menurut yang saya saksikan",
+            "benar #0046# telah dewasa sejak {sejak} dan belum menerima kembali harta bendanya dari #0047#"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri #0046# dewasa sejak {sejak} namun harta bendanya belum juga diserahkan #0047#",
+            "#0046# telah mencapai usia dewasa sejak {sejak} sedangkan #0047# belum menyerahkan hartanya yang saya ketahui langsung",
+            "saya tahu langsung bahwa sejak {sejak} #0046# sudah dewasa dan hartanya belum diterima dari #0047#",
+            "sejak {sejak} #0046# dewasa dan penyerahan harta bendanya oleh #0047# belum terjadi sebagaimana saya lihat sendiri"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-alasan-keluarga",
+      "pokok": "pp-kedudukan-penggugat",
+      "urutan": 27,
+      "tingkat": "tambahan",
+      "kelompok": "hubungan",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "kedudukanPenggugat": "keluarga-anak"
+      },
+      "teks": "Mengapa #0046# yang mengajukan tuntutan atas harta benda anak tersebut ?",
+      "variabelAbt": [
+        "0046",
+        "3890"
+      ],
+      "hal": "alasan #0046# mengajukan tuntutan atas harta benda anak tersebut",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan Penggugat sebagai keluarga anak berkepentingan atas harta anak",
+          "saksi1": [
+            "#0046# yang mengajukan tuntutan karena #0046# adalah #3890# dan anak tersebut belum dapat bertindak sendiri menurut yang saya ketahui",
+            "saya mengetahui sendiri bahwa #0046# sebagai #3890# merasa berkewajiban menjaga harta anak itu yang belum dapat dijaganya sendiri",
+            "sebagai #3890# #0046# berkepentingan atas harta anak tersebut yang belum dapat dibelanya sendiri sebagaimana yang saya saksikan",
+            "benar #0046# yang bertindak karena kedudukannya sebagai #3890# sedangkan anak itu belum cakap mengajukan sendiri"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri #0046# adalah #3890# sehingga ia yang membela harta anak itu yang belum dapat dibelanya sendiri",
+            "#0046# tampil mengajukan tuntutan karena kedudukannya sebagai #3890# sedangkan anak itu belum dapat bertindak sendiri dan hal itu saya ketahui langsung",
+            "saya tahu langsung bahwa #0046# yang berkedudukan sebagai #3890# peduli terhadap harta anak tersebut yang belum dapat diurusnya sendiri",
+            "yang saya ketahui sendiri #0046# adalah #3890# yang berkepentingan melindungi harta anak itu karena anak itu belum cakap bertindak sendiri"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-wali-anak",
+      "pokok": "pp-perwalian",
+      "urutan": 30,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah saksi tahu bahwa #0047# adalah wali dari anak tersebut dan atas dasar apa ia menjadi wali ?",
+      "teksVarian": [
+        "Apakah benar #0047# wali dari anak tersebut dan apa dasar perwaliannya ?"
+      ],
+      "variabelAbt": [
+        "0047",
+        "3894"
+      ],
+      "hal": "kedudukan #0047# sebagai wali anak tersebut",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan Tergugat adalah wali anak berdasarkan dasar perwalian",
+          "saksi1": [
+            "#0047# adalah wali anak tersebut berdasarkan #3894# dan hal itu saya ketahui sendiri",
+            "saya mengetahui sendiri bahwa #0047# menjadi wali anak itu berdasarkan #3894#",
+            "kedudukan #0047# sebagai wali anak tersebut didasarkan pada #3894# sebagaimana yang saya saksikan",
+            "benar #0047# bertindak sebagai wali anak itu atas dasar #3894# dan saya tahu langsung"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri #0047# diangkat sebagai wali anak tersebut berdasarkan #3894#",
+            "dasar perwalian #0047# atas anak itu adalah #3894# yang saya ketahui langsung",
+            "saya tahu langsung bahwa #0047# menjalankan perwalian anak tersebut berdasarkan #3894#",
+            "yang saya ketahui sendiri #0047# menjadi wali anak itu karena #3894#"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: Tergugat wali yang sah menurut dasar perwalian; versi B: Tergugat tidak ditetapkan secara resmi sebagai wali - berselisih pada PERISTIWA",
+          "saksi1": [
+            "#0047# adalah wali yang sah dari anak tersebut berdasarkan #3894#",
+            "saya tahu sendiri bahwa perwalian #0047# atas anak itu sah karena #3894#",
+            "#0047# memang ditetapkan sebagai wali anak tersebut atas dasar #3894#",
+            "menurut penglihatan saya perwalian #0047# didasarkan pada #3894# secara sah"
+          ],
+          "saksi2": [
+            "#0047# bukan wali yang ditetapkan secara resmi dan hanya membantu mengurus anak tersebut",
+            "setahu saya #0047# tidak pernah ditetapkan sebagai wali dan hanya ikut merawat anak itu",
+            "perwalian #0047# atas anak tersebut tidak pernah ditetapkan secara resmi menurut yang saya ketahui langsung",
+            "saya mengetahui sendiri bahwa #0047# hanya membantu mengasuh anak itu tanpa penetapan sebagai wali"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-sejak-wali",
+      "pokok": "pp-perwalian",
+      "urutan": 40,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Sejak kapan #0047# mengurus anak tersebut beserta harta bendanya ?",
+      "variabelAbt": [
+        "0047"
+      ],
+      "hal": "waktu mulai #0047# mengurus anak dan harta bendanya",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan sejak kapan Tergugat mengurus anak dan hartanya",
+          "saksi1": [
+            "#0047# mengurus anak tersebut beserta harta bendanya sejak {sejak}",
+            "sejak {sejak} #0047# menguasai dan mengurus harta anak itu sebagaimana saya saksikan",
+            "saya melihat sendiri #0047# mulai mengurus anak dan hartanya sejak {sejak}",
+            "pengurusan anak tersebut dan hartanya oleh #0047# dimulai sejak {sejak} menurut yang saya ketahui sendiri"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri #0047# memegang pengurusan anak itu serta hartanya sejak {sejak}",
+            "sejak {sejak} anak tersebut berada dalam pengurusan #0047# berikut harta bendanya",
+            "yang saya ketahui langsung #0047# mengelola anak dan harta bendanya sejak {sejak}",
+            "saya menyaksikan sendiri #0047# mengambil alih pengurusan anak itu dan hartanya sejak {sejak}"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: Tergugat sudah lama mengurus anak dan hartanya; versi B: Tergugat baru belakangan mengurusnya - berselisih pada WAKTU",
+          "saksi1": [
+            "#0047# sudah lama mengurus anak tersebut dan harta bendanya",
+            "saya tahu sendiri bahwa #0047# telah lama memegang pengurusan anak itu dan hartanya",
+            "sejak waktu yang lama #0047# yang mengelola harta anak tersebut menurut penglihatan saya",
+            "pengurusan anak itu oleh #0047# sudah berlangsung lama sebagaimana yang saya saksikan"
+          ],
+          "saksi2": [
+            "#0047# belum lama mengurus anak tersebut dan harta bendanya",
+            "setahu saya #0047# belum lama memegang pengurusan anak itu dan hartanya",
+            "belum lama ini #0047# mulai mengelola harta anak tersebut menurut yang saya ketahui langsung",
+            "pengurusan anak itu oleh #0047# belum lama dimulai sebagaimana saya lihat sendiri"
+          ],
+          "bedaPada": "waktu"
+        }
+      }
+    },
+    {
+      "id": "q-harta-anak",
+      "pokok": "pp-harta-anak",
+      "urutan": 50,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apa saja harta benda milik anak tersebut yang berada dalam pengurusan #0047# ?",
+      "variabelAbt": [
+        "0047",
+        "3895"
+      ],
+      "hal": "harta benda milik anak tersebut yang diurus #0047#",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan harta benda milik anak yang diurus Tergugat",
+          "saksi1": [
+            "harta benda milik anak tersebut yang diurus #0047# adalah #3895# dan saya mengetahuinya sendiri",
+            "saya tahu sendiri bahwa anak itu memiliki #3895# yang berada dalam pengurusan #0047#",
+            "yang menjadi harta anak tersebut dalam pengurusan #0047# berupa #3895# sebagaimana yang saya saksikan",
+            "benar anak tersebut mempunyai harta berupa #3895# yang diurus #0047#"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri harta anak itu yang dipegang #0047# berupa #3895#",
+            "harta milik anak tersebut yang dikelola #0047# yaitu #3895# yang saya lihat langsung",
+            "saya menyaksikan sendiri anak itu memiliki #3895# dan #0047# yang mengurusnya",
+            "yang saya ketahui langsung #3895# adalah milik anak tersebut dan berada dalam pengurusan #0047#"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: harta tersebut milik anak sepenuhnya; versi B: harta tersebut bukan milik anak melainkan harta bersama keluarga - berselisih pada PERISTIWA",
+          "saksi1": [
+            "#3895# adalah milik anak tersebut sepenuhnya dan tercatat atas namanya",
+            "saya tahu sendiri bahwa #3895# hanya milik anak itu",
+            "menurut penglihatan saya #3895# sepenuhnya hak anak tersebut",
+            "#3895# memang harta anak itu sebagaimana yang saya ketahui langsung"
+          ],
+          "saksi2": [
+            "#3895# bukan milik anak tersebut melainkan harta keluarga secara bersama",
+            "setahu saya #3895# adalah harta bersama keluarga dan bukan harta anak itu semata",
+            "menurut yang saya ketahui langsung #3895# milik keluarga besar bukan milik anak tersebut",
+            "saya mengetahui sendiri bahwa #3895# dimiliki bersama oleh keluarga dan bukan hanya oleh anak itu"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-asal-harta",
+      "pokok": "pp-harta-anak",
+      "urutan": 60,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Dari mana anak tersebut memperoleh harta benda itu ?",
+      "variabelAbt": [
+        "0047",
+        "3895"
+      ],
+      "hal": "asal harta benda milik anak tersebut",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan asal perolehan harta benda anak",
+          "saksi1": [
+            "harta benda #3895# diperoleh anak tersebut dari {peristiwa} dan saya mengetahuinya sendiri",
+            "saya tahu sendiri bahwa #3895# menjadi milik anak itu karena {peristiwa}",
+            "asal harta anak tersebut yaitu #3895# adalah {peristiwa} sebagaimana yang saya saksikan",
+            "benar anak itu memperoleh #3895# melalui {peristiwa}"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri anak tersebut mendapatkan #3895# dari {peristiwa}",
+            "#3895# menjadi harta anak itu berasal dari {peristiwa} yang saya ketahui langsung",
+            "saya menyaksikan sendiri bahwa #3895# diperoleh anak tersebut melalui {peristiwa}",
+            "yang saya ketahui langsung harta anak itu berupa #3895# berasal dari {peristiwa}"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: harta berasal dari peninggalan orang tua anak; versi B: harta dibeli sendiri oleh Tergugat - berselisih pada PENYEBAB",
+          "saksi1": [
+            "#3895# adalah peninggalan orang tua anak tersebut yang menjadi haknya",
+            "saya tahu sendiri bahwa #3895# berasal dari harta peninggalan orang tua anak itu",
+            "menurut penglihatan saya #3895# diwariskan kepada anak tersebut oleh orang tuanya",
+            "#3895# memang harta warisan orang tua anak itu sebagaimana yang saya ketahui langsung"
+          ],
+          "saksi2": [
+            "#3895# dibeli sendiri oleh #0047# dengan uangnya",
+            "setahu saya #3895# berasal dari hasil jerih payah #0047# sendiri",
+            "menurut yang saya ketahui langsung #0047# sendiri yang membeli #3895#",
+            "saya mengetahui sendiri bahwa #3895# diperoleh #0047# dengan usahanya sendiri"
+          ],
+          "bedaPada": "penyebab"
+        }
+      }
+    },
+    {
+      "id": "q-perbuatan",
+      "pokok": "pp-perbuatan-wali",
+      "urutan": 80,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apa yang telah dilakukan #0047# terhadap harta benda anak tersebut ?",
+      "teksVarian": [
+        "Perbuatan apa yang dilakukan #0047# terhadap harta benda anak tersebut ?"
+      ],
+      "variabelAbt": [
+        "0047",
+        "3895",
+        "3896"
+      ],
+      "hal": "perbuatan #0047# terhadap harta benda anak tersebut",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan perbuatan Tergugat terhadap harta benda anak yang dilihatnya",
+          "saksi1": [
+            "perbuatan #0047# terhadap harta benda #3895# milik anak tersebut yaitu #3896# dan saya menyaksikannya sendiri",
+            "saya melihat sendiri bahwa #0047# #3896# atas #3895# milik anak itu",
+            "yang saya saksikan langsung #0047# telah #3896# padahal #3895# adalah harta anak tersebut",
+            "saya mengetahui sendiri perbuatan #0047# atas #3895# yaitu #3896#"
+          ],
+          "saksi2": [
+            "menurut penglihatan saya sendiri #0047# #3896# terhadap #3895# milik anak tersebut",
+            "perbuatan yang dilakukan #0047# atas harta anak itu berupa #3895# adalah #3896# sebagaimana saya lihat langsung",
+            "saya menyaksikan sendiri #0047# telah #3896# yang menyangkut #3895# milik anak itu",
+            "yang saya ketahui langsung #0047# memperlakukan #3895# milik anak tersebut dengan perbuatan yaitu #3896#"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: Tergugat melakukan perbuatan sebagaimana didalilkan; versi B: Tergugat tidak melakukan perbuatan itu - berselisih pada PERISTIWA",
+          "saksi1": [
+            "#0047# benar #3896# dan perbuatan itu menyangkut #3895# milik anak tersebut",
+            "saya melihat sendiri #0047# #3896# atas #3895# anak itu",
+            "memang #0047# telah #3896# terhadap #3895# milik anak tersebut",
+            "yang saya saksikan #0047# #3896# dan objeknya adalah #3895#"
+          ],
+          "saksi2": [
+            "#0047# tidak pernah #3896# dan #3895# masih dikelola untuk anak tersebut",
+            "setahu saya #0047# tidak #3896# terhadap #3895# milik anak itu",
+            "saya tidak pernah melihat #0047# #3896# atas #3895#",
+            "menurut penglihatan saya #3895# anak tersebut tidak pernah dijadikan objek perbuatan #0047# yaitu #3896#"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-waktu-perbuatan",
+      "pokok": "pp-perbuatan-wali",
+      "urutan": 90,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Kapan perbuatan #0047# tersebut dilakukan ?",
+      "variabelAbt": [
+        "0047",
+        "3897"
+      ],
+      "hal": "waktu perbuatan #0047# tersebut",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan waktu perbuatan Tergugat",
+          "saksi1": [
+            "perbuatan itu dilakukan #0047# pada waktu #3897# sebagaimana yang saya ketahui sendiri",
+            "saya mengetahui sendiri bahwa peristiwa itu terjadi pada waktu #3897#",
+            "yang saya saksikan langsung perbuatan #0047# tersebut berlangsung pada waktu #3897#",
+            "waktu terjadinya perbuatan #0047# itu adalah #3897# menurut penglihatan saya"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri #0047# melakukannya pada waktu #3897#",
+            "peristiwa tersebut terjadi pada waktu #3897# dan saya menyaksikannya",
+            "saya tahu langsung perbuatan itu berlangsung pada waktu #3897#",
+            "pada waktu #3897# #0047# melakukan perbuatan tersebut sebagaimana saya lihat sendiri"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: perbuatan terjadi belum lama; versi B: perbuatan sudah terjadi sejak lama - berselisih pada WAKTU",
+          "saksi1": [
+            "perbuatan #0047# itu terjadi belum lama ini",
+            "saya tahu sendiri perbuatan #0047# tersebut belum lama terjadi",
+            "menurut penglihatan saya peristiwa itu belum lama berlalu",
+            "perbuatan itu oleh #0047# dilakukan belum lama berselang sebagaimana yang saya saksikan"
+          ],
+          "saksi2": [
+            "perbuatan #0047# itu sudah terjadi sejak lama",
+            "setahu saya perbuatan #0047# tersebut sudah lama berlalu",
+            "menurut yang saya ketahui langsung peristiwa itu terjadi jauh sebelum sekarang",
+            "perbuatan itu oleh #0047# telah dilakukan sejak dahulu sebagaimana saya lihat sendiri"
+          ],
+          "bedaPada": "waktu"
+        }
+      }
+    },
+    {
+      "id": "q-kepentingan-anak",
+      "pokok": "pp-perbuatan-wali",
+      "urutan": 100,
+      "tingkat": "inti",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "P"
+      ],
+      "keadaan": {},
+      "teks": "Apakah perbuatan #0047# tersebut dilakukan untuk kepentingan anak tersebut ?",
+      "variabelAbt": [
+        "0047",
+        "3896"
+      ],
+      "hal": "tujuan perbuatan #0047# terhadap harta anak",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan perbuatan Tergugat tidak untuk kepentingan anak",
+          "saksi1": [
+            "perbuatan #0047# yaitu #3896# tidak dilakukan untuk kepentingan anak tersebut sebagaimana saya ketahui sendiri",
+            "saya melihat sendiri bahwa #3896# oleh #0047# tidak membawa manfaat bagi anak itu",
+            "menurut penglihatan saya tindakan #0047# yaitu #3896# bukan untuk kebaikan anak tersebut",
+            "yang saya saksikan langsung #0047# #3896# bukan demi kepentingan anak itu"
+          ],
+          "saksi2": [
+            "saya tahu langsung #0047# #3896# tanpa ada manfaat bagi anak tersebut",
+            "perbuatan #0047# itu yaitu #3896# tidak untuk kepentingan anak itu menurut pengetahuan saya sendiri",
+            "tidak ada kepentingan anak tersebut dalam tindakan #0047# yaitu #3896# sebagaimana yang saya lihat",
+            "setahu saya #3896# oleh #0047# tidak dimaksudkan untuk kebaikan anak itu"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: perbuatan Tergugat untuk keperluan sendiri; versi B: perbuatan Tergugat untuk biaya hidup anak - berselisih pada PERISTIWA",
+          "saksi1": [
+            "perbuatan #0047# itu untuk keperluan #0047# sendiri",
+            "saya tahu sendiri hasil perbuatan #0047# itu dipakai untuk kepentingannya sendiri",
+            "menurut penglihatan saya #0047# melakukannya demi keuntungan pribadinya",
+            "yang saya saksikan perbuatan #0047# tersebut hanya menguntungkan dirinya sendiri"
+          ],
+          "saksi2": [
+            "perbuatan #0047# itu untuk biaya hidup anak tersebut",
+            "setahu saya hasil perbuatan #0047# itu dipakai menghidupi anak itu",
+            "menurut yang saya ketahui langsung #0047# melakukannya demi kebutuhan anak tersebut",
+            "saya mengetahui sendiri bahwa perbuatan #0047# itu untuk menopang keperluan anak itu"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-izin-pengalihan",
+      "pokok": "pp-perbuatan-wali",
+      "urutan": 110,
+      "tingkat": "tambahan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "P"
+      ],
+      "keadaan": {
+        "jenisPerbuatan": [
+          "mengalihkan-harta"
+        ]
+      },
+      "teks": "Apakah ada persetujuan keluarga atau izin pengadilan atas perbuatan #0047# mengalihkan harta anak tersebut ?",
+      "variabelAbt": [
+        "0047",
+        "3895"
+      ],
+      "hal": "persetujuan keluarga atau izin pengadilan atas pengalihan harta anak tersebut",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan tidak ada persetujuan keluarga maupun izin pengadilan atas pengalihan harta anak",
+          "saksi1": [
+            "tidak ada persetujuan keluarga maupun izin pengadilan atas pengalihan #3895# milik anak tersebut yang saya ketahui sendiri",
+            "saya mengetahui sendiri bahwa pengalihan #3895# itu dilakukan #0047# tanpa persetujuan keluarga maupun izin pengadilan",
+            "setahu saya tidak pernah ada izin pengadilan atas pengalihan #3895# anak tersebut",
+            "tidak pernah ada permintaan persetujuan kepada keluarga maupun izin dari pengadilan atas pengalihan #3895# itu menurut yang saya saksikan"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri pengalihan #3895# oleh #0047# tidak disertai persetujuan keluarga ataupun izin pengadilan",
+            "saya tidak pernah mengetahui adanya izin pengadilan untuk pengalihan #3895# milik anak itu",
+            "pengalihan #3895# dilakukan #0047# secara diam-diam tanpa izin pengadilan sebagaimana saya lihat langsung",
+            "yang saya ketahui langsung keluarga maupun pengadilan tidak pernah menyetujui pengalihan #3895#"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: tidak ada persetujuan atau izin; versi B: ada persetujuan keluarga - berselisih pada PERISTIWA",
+          "saksi1": [
+            "pengalihan #3895# dilakukan tanpa persetujuan keluarga maupun izin pengadilan",
+            "saya tahu sendiri tidak ada izin pengadilan atas pengalihan #3895#",
+            "menurut penglihatan saya keluarga tidak pernah menyetujui pengalihan #3895# itu",
+            "setahu saya pengalihan #3895# tidak pernah mendapat izin dari pihak mana pun"
+          ],
+          "saksi2": [
+            "pengalihan #3895# dilakukan dengan persetujuan keluarga",
+            "saya hadir ketika keluarga menyetujui pengalihan #3895# itu",
+            "menurut yang saya ketahui langsung keluarga telah memberi persetujuan atas pengalihan #3895#",
+            "saya mengetahui sendiri pengalihan #3895# dilakukan atas sepengetahuan keluarga"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-penggunaan-hasil",
+      "pokok": "pp-perbuatan-wali",
+      "urutan": 120,
+      "tingkat": "tambahan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "P"
+      ],
+      "keadaan": {
+        "jenisPerbuatan": [
+          "memakai-hasil"
+        ]
+      },
+      "teks": "Untuk apa uang atau hasil harta anak tersebut dipakai oleh #0047# ?",
+      "variabelAbt": [
+        "0047",
+        "3895"
+      ],
+      "hal": "penggunaan uang atau hasil harta anak tersebut oleh #0047#",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan uang atau hasil harta anak dipakai Tergugat bukan untuk anak",
+          "saksi1": [
+            "uang atau hasil dari #3895# dipakai #0047# untuk keperluannya sendiri dan bukan untuk anak tersebut",
+            "saya melihat sendiri bahwa hasil #3895# milik anak itu dinikmati #0047# sendiri dan bukan oleh anak itu",
+            "yang saya saksikan langsung #0047# memakai hasil #3895# bagi dirinya bukan bagi anak tersebut",
+            "saya mengetahui sendiri bahwa uang dari #3895# tidak sampai kepada anak itu melainkan dipakai #0047#"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri hasil #3895# digunakan #0047# untuk keperluan pribadinya dan bukan untuk anak tersebut",
+            "saya tahu langsung bahwa uang dari #3895# dipakai oleh #0047# sendiri dan bukan oleh anak itu",
+            "#0047# memakai hasil #3895# untuk dirinya sebagaimana saya lihat langsung sedangkan anak tersebut tidak menerimanya",
+            "yang saya ketahui sendiri hasil #3895# dimanfaatkan #0047# untuk kepentingannya dan bukan demi anak itu"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-daftar-harta",
+      "pokok": "pp-pembukuan",
+      "urutan": 130,
+      "tingkat": "tambahan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "P"
+      ],
+      "keadaan": {
+        "jenisPerbuatan": [
+          "tanpa-pembukuan"
+        ]
+      },
+      "teks": "Apakah #0047# pernah membuat daftar harta benda anak tersebut dan pembukuan pengelolaannya ?",
+      "variabelAbt": [
+        "0047",
+        "3895"
+      ],
+      "hal": "daftar harta benda dan pembukuan pengelolaan oleh #0047#",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan Tergugat tidak pernah membuat daftar harta dan pembukuan",
+          "saksi1": [
+            "#0047# tidak pernah membuat daftar harta benda anak tersebut berupa #3895# ataupun melaporkan pengelolaannya menurut yang saya ketahui sendiri",
+            "saya mengetahui sendiri bahwa #0047# tidak memiliki catatan harta dan pembukuan atas #3895# milik anak itu",
+            "setahu saya #0047# tidak pernah menyusun daftar harta anak tersebut berupa #3895# ataupun memperlihatkan pembukuannya kepada keluarga",
+            "yang saya saksikan #0047# tidak pernah mencatat perubahan #3895# milik anak itu maupun pengeluarannya"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri #0047# tidak pernah menyusun daftar harta anak tersebut berupa #3895# maupun membukukan pengelolaannya",
+            "saya tahu langsung bahwa tidak ada pembukuan tahunan dari #0047# atas #3895# milik anak itu",
+            "#0047# tidak pernah menunjukkan catatan #3895# milik anak tersebut kepada keluarga sebagaimana saya lihat sendiri",
+            "tidak pernah ada daftar harta ataupun laporan pengelolaan #3895# dari #0047# yang saya ketahui langsung"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: Tergugat tidak pernah membuat daftar harta; versi B: Tergugat membuat catatan harta anak - berselisih pada PERISTIWA",
+          "saksi1": [
+            "#0047# tidak pernah membuat daftar harta anak tersebut berupa #3895#",
+            "saya tahu sendiri tidak ada catatan #3895# milik anak itu yang dibuat #0047#",
+            "menurut penglihatan saya #0047# tidak pernah membukukan pengelolaan #3895# anak tersebut",
+            "setahu saya daftar #3895# milik anak itu tidak pernah disusun oleh #0047#"
+          ],
+          "saksi2": [
+            "#0047# membuat catatan harta anak tersebut berupa #3895#",
+            "saya melihat sendiri #0047# mencatat penerimaan dan pengeluaran #3895# milik anak itu",
+            "menurut yang saya ketahui langsung #0047# menyimpan pembukuan #3895# anak tersebut",
+            "saya mengetahui sendiri bahwa #0047# menyusun daftar #3895# milik anak itu"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-kondisi-harta",
+      "pokok": "pp-perbuatan-wali",
+      "urutan": 135,
+      "tingkat": "tambahan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "P"
+      ],
+      "keadaan": {
+        "jenisPerbuatan": [
+          "lalai-memelihara"
+        ]
+      },
+      "teks": "Bagaimana keadaan harta benda anak tersebut sekarang ?",
+      "variabelAbt": [
+        "0047",
+        "3895"
+      ],
+      "hal": "keadaan harta benda anak tersebut sekarang",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan harta benda anak rusak, hilang atau terbengkalai karena dibiarkan Tergugat",
+          "saksi1": [
+            "#3895# milik anak tersebut kini rusak dan tidak terurus karena dibiarkan #0047# dan saya menyaksikannya sendiri",
+            "saya melihat sendiri bahwa #3895# anak itu tidak terpelihara selama dalam pengurusan #0047#",
+            "yang saya saksikan langsung #3895# milik anak tersebut dibiarkan #0047# hingga rusak dan tidak terawat",
+            "keadaan #3895# anak itu sekarang tidak terawat akibat pembiaran oleh #0047# sebagaimana saya ketahui sendiri"
+          ],
+          "saksi2": [
+            "menurut penglihatan saya sendiri #3895# anak tersebut terlantar karena #0047# tidak memeliharanya",
+            "saya tahu langsung bahwa #3895# anak itu dibiarkan rusak oleh #0047# dan tidak terpelihara",
+            "#0047# membiarkan #3895# milik anak tersebut tidak terurus sebagaimana yang saya lihat langsung",
+            "yang saya ketahui sendiri #3895# anak itu kini tidak terawat akibat kelalaian #0047#"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-kerugian",
+      "pokok": "pp-kerugian",
+      "urutan": 140,
+      "tingkat": "inti",
+      "kelompok": "akibat",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Kerugian apa yang dialami anak tersebut akibat perbuatan #0047# ?",
+      "variabelAbt": [
+        "0047",
+        "3895"
+      ],
+      "hal": "kerugian anak tersebut akibat perbuatan #0047#",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan kerugian harta benda yang dialami anak akibat perbuatan Tergugat",
+          "saksi1": [
+            "akibat perbuatan #0047# anak tersebut kehilangan atau berkurang haknya atas #3895# dan saya menyaksikannya sendiri",
+            "saya melihat sendiri bahwa karena perbuatan #0047# harta anak itu berupa #3895# menjadi berkurang",
+            "yang saya saksikan langsung anak tersebut dirugikan atas #3895# oleh perbuatan #0047#",
+            "saya mengetahui sendiri kerugian anak itu yaitu hilangnya manfaat #3895# akibat perbuatan #0047#"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri anak tersebut menderita kerugian atas #3895# karena perbuatan #0047#",
+            "perbuatan #0047# membuat anak itu kehilangan #3895# sebagaimana yang saya lihat langsung",
+            "saya tahu langsung bahwa harta anak tersebut berupa #3895# berkurang akibat perbuatan #0047#",
+            "yang saya ketahui sendiri anak itu rugi atas #3895# sebagai akibat dari perbuatan #0047#"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: anak mengalami kerugian akibat perbuatan Tergugat; versi B: anak tidak mengalami kerugian - berselisih pada PERISTIWA",
+          "saksi1": [
+            "anak tersebut mengalami kerugian atas #3895# akibat perbuatan #0047#",
+            "saya tahu sendiri harta anak itu berupa #3895# menjadi rugi karena #0047#",
+            "menurut penglihatan saya perbuatan #0047# merugikan anak tersebut atas #3895#",
+            "yang saya saksikan anak itu dirugikan #0047# pada #3895#"
+          ],
+          "saksi2": [
+            "anak tersebut tidak mengalami kerugian atas #3895#",
+            "setahu saya harta anak itu berupa #3895# tetap utuh tanpa kerugian",
+            "menurut yang saya ketahui langsung perbuatan #0047# tidak merugikan anak tersebut atas #3895#",
+            "saya mengetahui sendiri bahwa #3895# anak itu tidak berkurang sedikit pun"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-besar-kerugian",
+      "pokok": "pp-kerugian",
+      "urutan": 150,
+      "tingkat": "inti",
+      "kelompok": "akibat",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Berapa besar kerugian yang dialami anak tersebut menurut saksi ?",
+      "variabelAbt": [
+        "0046",
+        "3916"
+      ],
+      "hal": "besar kerugian yang dialami anak tersebut",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan perkiraan besar kerugian anak sesuai tuntutan",
+          "saksi1": [
+            "kerugian yang dialami anak tersebut besarnya Rp#3916# menurut yang saya ketahui sendiri",
+            "saya mengetahui sendiri bahwa nilai kerugian anak itu sebesar Rp#3916#",
+            "menurut penglihatan saya kerugian anak tersebut berjumlah Rp#3916#",
+            "nilai harta anak yang hilang atau berkurang itu sebesar Rp#3916# sebagaimana saya ketahui langsung"
+          ],
+          "saksi2": [
+            "yang saya ketahui sendiri kerugian anak itu sebesar Rp#3916#",
+            "menurut pengetahuan saya kerugian yang diderita anak tersebut senilai Rp#3916#",
+            "saya tahu langsung bahwa anak itu rugi sebesar Rp#3916#",
+            "besar kerugian anak tersebut adalah Rp#3916# sebagaimana yang saya lihat sendiri"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: kerugian anak sebesar yang didalilkan; versi B: kerugian anak tidak sebesar yang didalilkan - berselisih pada JUMLAH",
+          "saksi1": [
+            "kerugian anak itu besar sesuai dengan yang didalilkan #0046#",
+            "saya tahu sendiri nilai kerugian anak tersebut sebesar yang disebutkan #0046#",
+            "menurut penglihatan saya jumlah kerugian anak itu sama dengan tuntutan #0046#",
+            "kerugian anak tersebut sebesar yang dituntut #0046# sebagaimana yang saya ketahui langsung"
+          ],
+          "saksi2": [
+            "kerugian anak itu tidak sebesar yang didalilkan #0046#",
+            "setahu saya nilai kerugian anak tersebut tidak sebanyak yang disebutkan #0046#",
+            "menurut yang saya ketahui langsung jumlah kerugian anak itu tidak sampai pada tuntutan #0046#",
+            "saya mengetahui sendiri bahwa kerugian anak tersebut tidak mencapai yang dituntut #0046#"
+          ],
+          "bedaPada": "jumlah"
+        }
+      }
+    },
+    {
+      "id": "q-dasar-nilai",
+      "pokok": "pp-kerugian",
+      "urutan": 155,
+      "tingkat": "pilihan",
+      "kelompok": "akibat",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Dari mana saksi mengetahui nilai harta benda dan besarnya kerugian itu ?",
+      "variabelAbt": [],
+      "hal": "dasar pengetahuan saksi tentang nilai kerugian anak tersebut",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan dasar pengetahuannya tentang nilai harta dan kerugian",
+          "saksi1": [
+            "saya mengetahui nilainya karena saya pernah melihat sendiri jual beli harta sejenis di daerah yang sama",
+            "pengetahuan saya tentang nilai itu berasal dari harga harta sejenis yang berlaku di sekitar tempat tersebut",
+            "saya tahu nilainya sebab saya sendiri pernah menanyakan harga harta sejenis di lokasi yang sama",
+            "saya mengetahui besarnya dari harga yang berlaku di tempat itu sebagaimana yang saya alami sendiri"
+          ],
+          "saksi2": [
+            "nilai itu saya ketahui dari transaksi harta sejenis yang saya saksikan langsung di daerah tersebut",
+            "saya memperoleh gambaran nilainya dari harga yang saya lihat sendiri di lokasi harta itu",
+            "pengetahuan saya mengenai nilai itu bersumber dari pengalaman saya sendiri dalam jual beli harta sejenis",
+            "saya tahu karena saya mengikuti sendiri harga harta sejenis di wilayah itu"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-teguran",
+      "pokok": "pp-teguran",
+      "urutan": 160,
+      "tingkat": "tambahan",
+      "kelompok": "upaya",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "teguran": "ada"
+      },
+      "teks": "Apakah sebelum perkara ini diajukan ada yang menegur atau meminta pertanggungjawaban #0047# atas harta anak tersebut ?",
+      "variabelAbt": [
+        "0047",
+        "3913"
+      ],
+      "hal": "teguran atau permintaan pertanggungjawaban kepada #0047# sebelum perkara diajukan",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan adanya teguran kepada Tergugat sebelum perkara diajukan",
+          "saksi1": [
+            "saya mengetahui sendiri bahwa sebelum perkara ini diajukan telah ada teguran kepada #0047# yaitu #3913#",
+            "sebelum perkara ini diajukan #0047# sudah ditegur dan hal itu yaitu #3913# saya saksikan sendiri",
+            "saya melihat langsung teguran kepada #0047# sebelum perkara ini diajukan berupa #3913#",
+            "benar sebelum perkara ini diajukan ada teguran kepada #0047# berupa #3913# sebagaimana yang saya ketahui sendiri"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri #0047# telah ditegur sebelum perkara ini diajukan yaitu #3913#",
+            "sebelum ada perkara ini teguran kepada #0047# telah dilakukan berupa #3913# dan saya hadir saat itu",
+            "saya tahu langsung bahwa #0047# pernah ditegur sebelum perkara diajukan yaitu #3913#",
+            "yang saya saksikan sendiri sebelum perkara ini #0047# sudah diminta pertanggungjawaban berupa #3913#"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-tanggapan-wali",
+      "pokok": "pp-teguran",
+      "urutan": 165,
+      "tingkat": "tambahan",
+      "kelompok": "upaya",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "teguran": "ada"
+      },
+      "teks": "Bagaimana tanggapan #0047# atas teguran itu ?",
+      "variabelAbt": [
+        "0047"
+      ],
+      "hal": "tanggapan #0047# atas teguran kepadanya",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan Tergugat tidak menanggapi dan tidak mengganti kerugian",
+          "saksi1": [
+            "#0047# tidak menanggapi teguran itu maupun mengganti kerugian anak tersebut menurut yang saya ketahui sendiri",
+            "saya melihat sendiri bahwa #0047# mengabaikan teguran itu dan tidak mengembalikan harta anak tersebut",
+            "setahu saya #0047# tidak menjawab teguran maupun melakukan pemulihan apa pun terhadap harta anak itu",
+            "yang saya saksikan langsung #0047# tetap tidak mengganti kerugian anak tersebut sesudah ditegur"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri #0047# mengabaikan teguran itu dan tidak memulihkan harta anak tersebut",
+            "saya tahu langsung bahwa #0047# tidak memberi tanggapan atas teguran maupun mengganti kerugian anak itu",
+            "#0047# tidak mengindahkan teguran tersebut maupun menyerahkan apa pun kepada anak itu sebagaimana saya lihat sendiri",
+            "sampai sekarang #0047# tidak mengganti kerugian anak tersebut meskipun sudah ditegur menurut yang saya ketahui langsung"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: Tergugat tidak menanggapi teguran; versi B: Tergugat menyanggupi mengganti kerugian - berselisih pada PERISTIWA",
+          "saksi1": [
+            "#0047# tidak menanggapi teguran itu",
+            "saya tahu sendiri #0047# tidak menggubris teguran tersebut",
+            "menurut penglihatan saya #0047# tidak bereaksi ketika ditegur",
+            "setahu saya #0047# tidak mengindahkan teguran itu sama sekali"
+          ],
+          "saksi2": [
+            "#0047# menyanggupi akan mengganti kerugian anak tersebut",
+            "saya mendengar sendiri #0047# berjanji mengganti kerugian anak itu",
+            "menurut yang saya ketahui langsung #0047# bersedia mengembalikan harta anak tersebut",
+            "saya mengetahui sendiri bahwa #0047# menyatakan sanggup memulihkan kerugian anak itu"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-upaya-damai",
+      "pokok": "pp-upaya",
+      "urutan": 180,
+      "tingkat": "pilihan",
+      "kelompok": "upaya",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah sebelum perkara ini diajukan pernah ada upaya penyelesaian secara kekeluargaan antara #0046# dengan #0047# ?",
+      "variabelAbt": [
+        "0046",
+        "0047"
+      ],
+      "hal": "upaya penyelesaian secara kekeluargaan antara #0046# dengan #0047#",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan adanya upaya penyelesaian secara kekeluargaan yang tidak berhasil",
+          "saksi1": [
+            "pernah ada upaya penyelesaian secara kekeluargaan antara #0046# dengan #0047# namun tidak berhasil menurut yang saya ketahui sendiri",
+            "saya menyaksikan sendiri keluarga mengupayakan penyelesaian antara #0046# dan #0047# tetapi tidak membuahkan hasil",
+            "sebelum perkara ini diajukan keluarga sudah berusaha menyelesaikannya secara kekeluargaan tetapi tidak berhasil sebagaimana saya lihat sendiri",
+            "benar pernah dilakukan musyawarah keluarga antara #0046# dengan #0047# dan tidak tercapai kesepakatan"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri musyawarah kekeluargaan antara #0046# dan #0047# sudah pernah ditempuh tetapi tidak berhasil",
+            "saya tahu langsung bahwa penyelesaian secara damai antara #0046# dengan #0047# pernah diupayakan namun tidak berhasil",
+            "sebelum perkara ini ada upaya damai antara #0046# dan #0047# yang saya hadiri dan tidak membuahkan kesepakatan",
+            "yang saya saksikan langsung #0046# dan #0047# sudah dipertemukan keluarga tetapi tidak sepakat"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-pengembalian",
+      "pokok": "pp-pengembalian",
+      "urutan": 190,
+      "tingkat": "tambahan",
+      "kelompok": "akibat",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "bentukPenggantian": [
+          "pengembalian-harta"
+        ]
+      },
+      "teks": "Apakah harta atau barang yang dituntut dikembalikan masih ada dan dapat diserahkan kembali oleh #0047# ?",
+      "variabelAbt": [
+        "0047",
+        "3903"
+      ],
+      "hal": "keberadaan harta atau barang yang dituntut dikembalikan",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan harta atau barang yang dituntut masih ada dan dapat diserahkan kembali",
+          "saksi1": [
+            "#3903# masih ada dan dapat diserahkan kembali oleh #0047# menurut yang saya ketahui sendiri",
+            "saya melihat sendiri bahwa #3903# masih berada dalam penguasaan #0047# sehingga dapat dikembalikan",
+            "yang saya saksikan langsung #3903# masih berada pada #0047# dan dapat diserahkan kembali",
+            "saya mengetahui sendiri bahwa #3903# masih dikuasai #0047# dan dapat dikembalikan kepada anak tersebut"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri #3903# masih dipegang #0047# dan bisa diserahkan kembali",
+            "saya tahu langsung bahwa #3903# masih ada pada #0047# sehingga dapat dikembalikan",
+            "#3903# masih berada di tangan #0047# sebagaimana yang saya lihat sendiri dan dapat diserahkan",
+            "yang saya ketahui langsung #3903# masih utuh dan dapat dikembalikan oleh #0047#"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: harta masih ada dan dapat dikembalikan; versi B: harta sudah beralih ke pihak lain dan tidak dapat dikembalikan - berselisih pada PERISTIWA",
+          "saksi1": [
+            "#3903# masih ada dan dapat dikembalikan",
+            "saya tahu sendiri #3903# masih dikuasai #0047# dan dapat diserahkan",
+            "menurut penglihatan saya #3903# masih di tangan #0047# dan dapat dikembalikan",
+            "setahu saya #3903# masih ada pada #0047# sehingga dapat dikembalikan"
+          ],
+          "saksi2": [
+            "#3903# sudah beralih ke pihak lain dan tidak dapat dikembalikan",
+            "saya tahu sendiri #3903# telah dijual kepada orang lain sehingga tidak dapat diserahkan lagi",
+            "menurut yang saya ketahui langsung #3903# sudah berpindah tangan dan tidak ada lagi pada #0047#",
+            "setahu saya #3903# tidak lagi dikuasai #0047# karena sudah dialihkan"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-keberadaan-tergugat",
+      "pokok": "pp-teguran",
+      "urutan": 200,
+      "tingkat": "tambahan",
+      "kelompok": "upaya",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {
+        "kehadiran": "verstek"
+      },
+      "teks": "Apa yang saksi ketahui tentang tempat tinggal #0047# sekarang ?",
+      "variabelAbt": [
+        "0047"
+      ],
+      "hal": "tempat tinggal #0047# sekarang",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan tempat tinggal Tergugat sekarang",
+          "saksi1": [
+            "setahu saya #0047# bertempat tinggal di alamat sebagaimana tercantum dalam surat gugatan ini",
+            "saya mengetahui sendiri bahwa #0047# masih tinggal di alamat yang disebut dalam surat gugatan",
+            "yang saya saksikan langsung #0047# berdiam di tempat sebagaimana tertulis dalam gugatan",
+            "saya tahu #0047# sekarang tinggal di alamat yang dicantumkan dalam surat gugatan ini"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri #0047# masih bertempat tinggal di alamat dalam gugatan",
+            "#0047# tinggal di alamat yang tertera dalam surat gugatan sebagaimana saya lihat langsung",
+            "saya tahu langsung bahwa tempat tinggal #0047# sekarang sama dengan yang tercantum dalam gugatan",
+            "alamat #0047# yang saya ketahui sendiri sama dengan yang disebut dalam surat gugatan"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-keadaan-anak",
+      "pokok": "pp-keadaan-anak",
+      "urutan": 210,
+      "tingkat": "pilihan",
+      "kelompok": "akibat",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Bagaimana keadaan anak tersebut sekarang dan apa pengaruh berkurangnya harta itu terhadap kebutuhannya ?",
+      "variabelAbt": [],
+      "hal": "keadaan anak tersebut sekarang akibat berkurangnya hartanya",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menerangkan kesulitan anak akibat berkurangnya harta",
+          "saksi1": [
+            "anak tersebut kini tidak dapat memenuhi kebutuhan hidup dan pendidikannya dengan baik karena hartanya berkurang menurut yang saya ketahui sendiri",
+            "saya melihat sendiri bahwa berkurangnya harta anak itu membuat kebutuhan sehari-harinya tidak tercukupi",
+            "yang saya saksikan langsung anak tersebut tidak lagi berkecukupan setelah hartanya hilang",
+            "saya mengetahui sendiri anak itu tidak bisa membiayai hidup dan sekolahnya akibat berkurangnya hartanya"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri anak tersebut tidak mampu mencukupi kebutuhannya karena hartanya berkurang",
+            "saya tahu langsung bahwa sesudah hartanya hilang anak itu tidak punya cukup biaya hidup dan pendidikan",
+            "anak tersebut tidak lagi hidup berkecukupan sejak hartanya berkurang sebagaimana saya lihat sendiri",
+            "yang saya ketahui sendiri kebutuhan anak itu tidak lagi terpenuhi karena hartanya berkurang"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-tg-kepentingan-anak",
+      "pokok": "pp-bantahan",
+      "urutan": 300,
+      "tingkat": "tambahan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "T"
+      ],
+      "keadaan": {
+        "bantahan": [
+          "untuk-kepentingan-anak"
+        ]
+      },
+      "teks": "Apakah perbuatan #0047# tersebut dilakukan untuk kepentingan anak tersebut dan untuk apa hasilnya dipakai ?",
+      "variabelAbt": [
+        "0047",
+        "3896"
+      ],
+      "hal": "tujuan perbuatan #0047# dan penggunaan hasilnya",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi Tergugat menerangkan perbuatan Tergugat untuk kepentingan anak dan hasilnya dipakai bagi anak",
+          "saksi1": [
+            "perbuatan #0047# yaitu #3896# dilakukan untuk kepentingan anak tersebut karena hasilnya dipakai untuk biaya hidup dan sekolah anak itu menurut yang saya ketahui sendiri",
+            "saya melihat sendiri bahwa hasil dari perbuatan #0047# yaitu #3896# dipergunakan untuk keperluan anak tersebut",
+            "yang saya saksikan langsung #0047# memakai hasil perbuatannya yaitu #3896# demi kebutuhan anak itu",
+            "saya mengetahui sendiri bahwa #3896# dilakukan #0047# untuk menopang hidup anak tersebut"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri hasil dari #3896# oleh #0047# dipakai untuk kebutuhan anak itu",
+            "saya tahu langsung #0047# melakukan #3896# demi kepentingan anak tersebut dan hasilnya dinikmati anak itu",
+            "perbuatan #0047# yaitu #3896# bertujuan membiayai anak tersebut sebagaimana saya lihat sendiri",
+            "yang saya ketahui sendiri hasil #3896# oleh #0047# sampai ke tangan anak itu seluruhnya"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: hasil dipakai untuk anak; versi B: hasil dipakai untuk keperluan Tergugat sendiri - berselisih pada PERISTIWA",
+          "saksi1": [
+            "hasil perbuatan #0047# dipakai untuk kebutuhan anak tersebut",
+            "saya tahu sendiri hasilnya dipergunakan bagi anak itu",
+            "menurut penglihatan saya hasilnya dinikmati anak tersebut",
+            "setahu saya hasil itu dipakai membiayai anak itu"
+          ],
+          "saksi2": [
+            "hasil perbuatan #0047# dipakai untuk keperluan #0047# sendiri dan bukan untuk anak itu",
+            "saya tahu sendiri hasilnya tidak dipergunakan bagi anak itu",
+            "menurut yang saya ketahui langsung hasilnya dinikmati #0047# sendiri bukan anak tersebut",
+            "setahu saya hasil itu tidak sampai kepada anak tersebut"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-tg-persetujuan",
+      "pokok": "pp-bantahan",
+      "urutan": 310,
+      "tingkat": "tambahan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "T"
+      ],
+      "keadaan": {
+        "bantahan": [
+          "ada-persetujuan"
+        ]
+      },
+      "teks": "Apakah ada persetujuan keluarga atau izin pengadilan atas perbuatan #0047# tersebut ?",
+      "variabelAbt": [
+        "0047",
+        "3896"
+      ],
+      "hal": "persetujuan keluarga atau izin pengadilan atas perbuatan #0047#",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi Tergugat menerangkan adanya persetujuan keluarga atas perbuatan Tergugat",
+          "saksi1": [
+            "ada persetujuan keluarga atas perbuatan #0047# yaitu #3896# dan saya hadir saat itu",
+            "saya mengetahui sendiri bahwa keluarga menyetujui perbuatan #0047# yaitu #3896#",
+            "sebelum #0047# melakukan #3896# keluarga sudah diberi tahu dan menyetujuinya sebagaimana saya saksikan",
+            "yang saya saksikan langsung keluarga setuju dengan perbuatan #0047# yaitu #3896#"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri keluarga memberi persetujuan atas #3896# oleh #0047#",
+            "saya hadir ketika keluarga menyetujui #0047# melakukan #3896#",
+            "persetujuan keluarga atas perbuatan #0047# yaitu #3896# saya ketahui langsung",
+            "saya melihat sendiri keluarga menyatakan setuju atas #3896# yang dilakukan #0047#"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: keluarga memberi persetujuan; versi B: keluarga tidak pernah memberi persetujuan - berselisih pada PERISTIWA",
+          "saksi1": [
+            "keluarga memberi persetujuan atas perbuatan #0047# itu",
+            "saya tahu sendiri keluarga menyetujui perbuatan #0047# tersebut",
+            "menurut penglihatan saya keluarga setuju atas perbuatan #0047# itu",
+            "setahu saya persetujuan keluarga atas perbuatan #0047# itu ada"
+          ],
+          "saksi2": [
+            "keluarga tidak pernah memberi persetujuan atas perbuatan #0047# itu",
+            "saya tahu sendiri keluarga tidak diminta persetujuan atas perbuatan #0047# tersebut",
+            "menurut yang saya ketahui langsung keluarga tidak setuju atas perbuatan #0047# itu",
+            "setahu saya tidak ada persetujuan keluarga atas perbuatan #0047# itu"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-tg-pembukuan",
+      "pokok": "pp-bantahan",
+      "urutan": 320,
+      "tingkat": "tambahan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "T"
+      ],
+      "keadaan": {
+        "bantahan": [
+          "ada-pembukuan"
+        ]
+      },
+      "teks": "Apakah #0047# mencatat penerimaan dan pengeluaran harta anak tersebut ?",
+      "variabelAbt": [
+        "0047",
+        "3895"
+      ],
+      "hal": "catatan penerimaan dan pengeluaran harta anak oleh #0047#",
+      "tidakBerlaku": [
+        "berbeda"
+      ],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi Tergugat menerangkan Tergugat mencatat penerimaan dan pengeluaran harta anak",
+          "saksi1": [
+            "#0047# mencatat penerimaan dan pengeluaran #3895# milik anak tersebut dan saya melihat sendiri catatannya",
+            "saya mengetahui sendiri bahwa #0047# membukukan pengelolaan #3895# milik anak itu",
+            "yang saya saksikan langsung #0047# menyimpan catatan atas #3895# anak tersebut",
+            "saya pernah melihat sendiri buku catatan #0047# tentang harta anak itu berupa #3895#"
+          ],
+          "saksi2": [
+            "menurut pengetahuan saya sendiri #0047# membuat pembukuan atas pengelolaan #3895# milik anak tersebut",
+            "saya tahu langsung bahwa #0047# mencatat uang masuk dan keluar dari #3895# anak itu",
+            "catatan pengelolaan #3895# milik anak tersebut dibuat #0047# sebagaimana yang saya lihat sendiri",
+            "yang saya ketahui sendiri #0047# memelihara buku pengelolaan harta anak itu berupa #3895#"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-tg-harta-utuh",
+      "pokok": "pp-bantahan",
+      "urutan": 330,
+      "tingkat": "tambahan",
+      "kelompok": "pokok",
+      "pihakSaksi": [
+        "T"
+      ],
+      "keadaan": {
+        "bantahan": [
+          "harta-utuh"
+        ]
+      },
+      "teks": "Bagaimana keadaan harta benda anak tersebut yang diurus #0047# ?",
+      "variabelAbt": [
+        "0047",
+        "3895"
+      ],
+      "hal": "keadaan harta benda anak tersebut yang diurus #0047#",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi Tergugat menerangkan harta anak masih utuh dan terpelihara dalam pengurusan Tergugat",
+          "saksi1": [
+            "#3895# milik anak tersebut masih utuh dan terpelihara dalam pengurusan #0047# menurut yang saya ketahui sendiri",
+            "saya melihat sendiri bahwa #3895# anak itu tetap terawat selama diurus #0047#",
+            "yang saya saksikan langsung #0047# memelihara #3895# anak tersebut dengan baik",
+            "saya mengetahui sendiri bahwa #3895# milik anak itu tetap lengkap dalam pengurusan #0047#"
+          ],
+          "saksi2": [
+            "menurut penglihatan saya sendiri #3895# anak tersebut masih baik di bawah pengurusan #0047#",
+            "saya tahu langsung bahwa #0047# menjaga #3895# milik anak itu sehingga tetap utuh",
+            "#3895# anak tersebut masih ada dan terpelihara oleh #0047# sebagaimana saya lihat sendiri",
+            "yang saya ketahui sendiri #0047# merawat #3895# anak itu dan hartanya tetap lengkap"
+          ]
+        },
+        "berbeda": {
+          "maksud": "versi A: harta masih utuh; versi B: harta sudah berkurang - berselisih pada PERISTIWA",
+          "saksi1": [
+            "#3895# milik anak tersebut masih utuh",
+            "saya tahu sendiri #3895# anak itu tetap utuh",
+            "menurut penglihatan saya #3895# anak tersebut terpelihara dengan baik",
+            "setahu saya #3895# anak itu masih lengkap"
+          ],
+          "saksi2": [
+            "#3895# milik anak tersebut sudah berkurang",
+            "saya tahu sendiri #3895# anak itu sudah berkurang jumlahnya",
+            "menurut yang saya ketahui langsung #3895# anak tersebut rusak sebagian",
+            "setahu saya #3895# anak itu sudah banyak berkurang"
+          ],
+          "bedaPada": "peristiwa"
+        }
+      }
+    },
+    {
+      "id": "q-penutup",
+      "pokok": "pp-penutup",
+      "urutan": 900,
+      "tingkat": "inti",
+      "kelompok": "penutup",
+      "pihakSaksi": [
+        "*"
+      ],
+      "keadaan": {},
+      "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+      "teksVarian": [
+        "Apakah masih ada keterangan lain yang akan saksi sampaikan ?",
+        "Adakah hal lain yang hendak saksi terangkan ?"
+      ],
+      "variabelAbt": [],
+      "hal": "keterangan tambahan",
+      "tidakBerlaku": [],
+      "jawaban": {
+        "melihat": {
+          "maksud": "saksi menyatakan keterangannya sudah cukup",
+          "saksi1": [
+            "sudah cukup",
+            "sudah cukup sekian dari saya",
+            "sudah cukup keterangan saya",
+            "sudah cukup itu saja"
+          ],
+          "saksi2": [
+            "sudah cukup demikian keterangan saya",
+            "sudah cukup semua yang dapat saya terangkan",
+            "sudah cukup sampai di sini keterangan saya",
+            "sudah cukup demikian yang saya ketahui"
+          ]
+        }
+      }
+    }
+  ],
+  "jawabanUmum": {
+    "tidak-tahu": {
+      "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+      "saksi1": [
+        "saya tidak mengetahui {hal}",
+        "mengenai {hal} saya tidak tahu sama sekali",
+        "{hal} tidak saya ketahui",
+        "saya tidak pernah mengetahui {hal}"
+      ],
+      "saksi2": [
+        "tentang {hal} saya tidak mengetahui apa pun",
+        "saya tidak tahu menahu soal {hal}",
+        "perihal {hal} tidak ada yang saya ketahui",
+        "soal {hal} saya sama sekali tidak tahu"
+      ]
+    },
+    "ragu": {
+      "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+      "saksi1": [
+        "saya ragu dan kurang yakin mengenai {hal}",
+        "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+        "soal {hal} saya hanya menduga-duga dan kurang pasti",
+        "saya agak ragu untuk menjelaskan {hal}"
+      ],
+      "saksi2": [
+        "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+        "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+        "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+        "saya lupa-lupa ingat tentang {hal}"
+      ]
+    },
+    "sebagian": {
+      "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+      "saksi1": [
+        "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+        "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+        "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+        "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+      ],
+      "saksi2": [
+        "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+        "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+        "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+        "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+      ]
+    },
+    "de-auditu": {
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+      "saksi1": [
+        "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+        "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+        "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+        "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+      ],
+      "saksi2": [
+        "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+        "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+        "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+        "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+      ]
+    },
+    "mendengar": {
+      "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+      "saksi1": [
+        "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+        "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+        "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+        "saya mendengar secara langsung mereka membicarakan {hal}"
+      ],
+      "saksi2": [
+        "soal {hal} ucapan mereka terdengar langsung oleh saya",
+        "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+        "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+        "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+      ]
+    }
+  },
+  "variabelBaru": [
+    "3890",
+    "3894",
+    "3895",
+    "3896",
+    "3897",
+    "3903",
+    "3913",
+    "3916"
+  ],
+  "catatanPetugas": [
+    "Titik-titik (...) pada keterangan saksi wajib diganti dengan keterangan saksi yang sebenarnya; jangan dibiarkan kosong.",
+    "Wali bertanggung jawab atas harta benda anak dan kerugian yang timbul karena kesalahan atau kelalaiannya; penggantian kerugian diputus Pengadilan atas tuntutan anak atau keluarga anak (Pasal 51 ayat (5) dan Pasal 54 UU 1/1974).",
+    "Wali tidak boleh memindahkan hak atau menggadaikan barang tetap milik anak kecuali kepentingan anak menghendakinya (Pasal 48 jo. Pasal 52 UU 1/1974; Pasal 110 ayat (2) KHI); butir persetujuan dan izin hanya diajukan bila yang didalilkan adalah pengalihan harta.",
+    "Besarnya kerugian ditentukan hakim berdasarkan alat bukti; keterangan saksi tentang nilai hanya salah satu bahan penilaian. Isian jumlah di blangko adalah jumlah yang dituntut, bukan jumlah yang dikabulkan.",
+    "Pilih bantahan Tergugat pada form hanya bila saksi yang diajukan Tergugat benar-benar menerangkan bantahan itu; tanpa pilihan, butir saksi Tergugat tidak diajukan.",
+    "Keterangan saksi yang ragu atau hanya cerita orang lain bukan keterangan yang dialami sendiri; pertimbangkan menghadirkan saksi tambahan untuk pokok yang wajib dibuktikan."
+  ]
+}

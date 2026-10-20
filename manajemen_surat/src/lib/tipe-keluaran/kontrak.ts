@@ -396,11 +396,12 @@ export const BATAS_DAFTAR = {
    * Butir 9 (13 Okt 2026): bawaan jawaban-modus 280 kalimat (20 bank x 14).
    * Cerminnya di bot: abtUsulanService BATAS_ENTRI_KHUSUS dan rute
    * BATAS_ENTRI_KHUSUS_ABT - ketiganya harus sama.
+   * 21 Okt 2026: peta blangko 557 entri sesudah W3a + W3b (batas 700).
    * 18 Okt 2026: peta blangko 270 entri sesudah pemetaan i14-i17 (cermin
    * ekstensi ALAT_TIPE_MAKS_ENTRI_KHUSUS di panel-alat.js; bot tidak menyaring
    * daftar ini).
    */
-  entriKhusus: { "bas.saksi.jawaban-modus": 400, "putusan.peta-blangko": 500 } as Partial<Record<KunciDaftar, number>>,
+  entriKhusus: { "bas.saksi.jawaban-modus": 400, "putusan.peta-blangko": 700 } as Partial<Record<KunciDaftar, number>>,
 } as const;
 
 /** Batas entri satu daftar (cermin + tambahan) yang diterima bot. */

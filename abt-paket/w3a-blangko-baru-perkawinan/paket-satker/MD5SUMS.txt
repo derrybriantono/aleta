@@ -2,7 +2,7 @@
 b9d64bcb61a9cb6072e3b3910a6c8272  abt-w3a-blangko-baru-perkawinan-PERIKSA.sql
 deda7fa7c3e19531a33bbf6a660d84cd  abt-w3a-blangko-baru-perkawinan-PRASYARAT.sql
 b13aa220ebea04ffce7d732e02c79f62  abt-w3a-blangko-baru-perkawinan-PULIH.sql
-c298bc58da907c105467dede2d71a1b6  berkas_rtf.py
+bc40e218c8bd110289fae74a0bb54a94  berkas_rtf.py
 ceae689c6fed51ce799876bb059afa90  daftar-dasar.tsv
 ceae689c6fed51ce799876bb059afa90  daftar-pindah.tsv
 6c6c7c3ecdc8e17039e85d73dcc384db  daftar-rtf.tsv

@@ -1,5 +1,6 @@
 import { BLANGKO_RELAAS, type KeadaanRelaas } from "@/lib/pohon-blangko";
 import { CERMIN_EKSTENSI } from "@/lib/tipe-keluaran/bawaan/bawaan-ekstensi";
+import { JENIS_W3B } from "@/lib/w3b-jenis-data";
 
 /**
  * ============================================================================
@@ -124,6 +125,12 @@ export const KUNCI_BAKU: Record<JenisPemetaan, { kunci: string; sebutan: string 
   // Disusun di bawah (KUNCI_BAKU_BAS) - fungsi, bukan daftar ketikan.
   bas: [],
 };
+
+// W3b 21 Okt: kunci baku putusan untuk blangko Derry baru gelombang 3 (nama jenis SIPP).
+for (const j of JENIS_W3B) {
+  if (j.idJenis === null) continue;
+  KUNCI_BAKU.putusan.push({ kunci: j.namaSipp, sebutan: `${j.namaSipp} (folder ${j.folder.split(" ")[0]}, jenis ${j.idJenis})` });
+}
 
 export const BATAS_BUTIR_PEMETAAN = 200;
 export const BATAS_PANJANG_NAMA = 300;
@@ -841,6 +848,12 @@ export const JENIS_BAS_BAKU = [
   "Hak Bekas Istri",
   // I23 18 Okt: folder "6c Nafkah Anak - BAS" (jenis 743).
   "Nafkah Anak Pasca Perceraian",
+  // W3b 21 Okt: folder BAS "6d".."6h" (jenis 353, 355, 356, 357, 350).
+  "Pencabutan Kekuasaan Orang Tua",
+  "Pencabutan Kekuasaan Wali",
+  "Penunjukan orang lain sebagai Wali oleh Pengadilan",
+  "Ganti Rugi terhadap Wali",
+  "Nafkah Anak Oleh Ibu karena Ayah tidak mampu",
 ] as const;
 
 function normalkanBagianSidang(x: string): string {

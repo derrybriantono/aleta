@@ -1,0 +1,15 @@
+# folder BARU (relatif _blangko_abt) yang dibuat paket ini
+derry_briantono/6d Pencabutan Kekuasaan Orang Tua
+derry_briantono/6d Pencabutan Kekuasaan Orang Tua - BAS
+derry_briantono/6e Pencabutan Kekuasaan Wali
+derry_briantono/6e Pencabutan Kekuasaan Wali - BAS
+derry_briantono/6f Penunjukan Wali oleh Pengadilan
+derry_briantono/6f Penunjukan Wali oleh Pengadilan - BAS
+derry_briantono/6g Ganti Rugi terhadap Wali
+derry_briantono/6g Ganti Rugi terhadap Wali - BAS
+derry_briantono/6h Nafkah Anak oleh Ibu
+derry_briantono/6h Nafkah Anak oleh Ibu - BAS
+derry_briantono/96 Eksekusi
+derry_briantono/96 Eksekusi - BAS
+derry_briantono/96a Verzet
+derry_briantono/96a Verzet - BAS

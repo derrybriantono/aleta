@@ -322,7 +322,7 @@ export function validasiEntri(daftar: unknown, masukan: MasukanEntri): HasilVali
       break;
     }
     case "putusan.peta-blangko": {
-      teksWajib("Jenis perkara", k, alasan, 80);
+      teksWajib("Jenis perkara", k, alasan, 120); // W3b 21 Okt: kunci "<jenis>|<status>|<keadaan>" jenis panjang (penunjukan wali, nafkah anak oleh ibu) mencapai 94 huruf
       if (k && bakuJenis(k) !== k) alasan.push("Kunci jenis harus huruf kecil dengan satu spasi.");
       teksWajib("Berkas blangko", v, alasan, 200);
       // statusAsli (P 12 Okt): baris status putusan bawaan, kunci "<jenis>|<status>[|verstek]".

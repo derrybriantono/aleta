@@ -7528,8 +7528,8 @@ const ALAT_TIPE_BATAS_MS = 5000;
 const ALAT_TIPE_JEDA_GAGAL_MS = 60000;
 /** Sama dengan penyaring bot (K6): lebih dari ini bukan daftar, melainkan kekeliruan. */
 const ALAT_TIPE_MAKS_ENTRI = 200;
-/** Peta blangko bawaan sudah >200 sejak pemetaan i14-i17 (270); cermin portal kontrak.ts BATAS_DAFTAR.entriKhusus. */
-const ALAT_TIPE_MAKS_ENTRI_KHUSUS = { "putusan.peta-blangko": 500 };
+/** Peta blangko bawaan sudah >200 sejak pemetaan i14-i17 (270), 557 sesudah gelombang 3 (W3a + W3b, 21 Okt); cermin portal kontrak.ts BATAS_DAFTAR.entriKhusus. */
+const ALAT_TIPE_MAKS_ENTRI_KHUSUS = { "putusan.peta-blangko": 700 };
 function alatTipeMaksEntri(daftar) {
   return ALAT_TIPE_MAKS_ENTRI_KHUSUS[daftar] || ALAT_TIPE_MAKS_ENTRI;
 }
@@ -10175,6 +10175,159 @@ function alatPetaW3a() {
 }
 Object.assign(ALAT_PETA_BAWAAN, alatPetaW3a());
 /* === AKHIR W3a === */
+/* === W3b 21 Okt === */
+/**
+ * BLANGKO DERRY BARU GELOMBANG 3 (agen W3b): pencabutan kekuasaan orang tua (353), pencabutan kekuasaan wali (355), penunjukan orang lain sebagai wali (356),
+ * ganti rugi terhadap wali (357), nafkah anak oleh ibu karena ayah tidak mampu (350); menu putusan 240-248 berpasangan dengan BAS 241-249 (paket abt-w3b-blangko-baru-kuasa-wali).
+ * DIBANGKITKAN oleh abt-paket/w3b-blangko-baru-kuasa-wali/sumber/bangkitkan_ts.py. Gugatan (Pdt.G) berpola wasiat/hibah; permohonan (Pdt.P, keadaan "permohonan") memakai [01p]/[03p]/[99p];
+ * cabut, gugur dan NO SEMA 1/2022 permohonan memakai 9b Permohonan Umum. Eksekusi dan verzet bukan jenis perkara: hanya menu ABT (proses SIPP 600-645 / 240-280).
+ */
+Object.assign(ALAT_MENU_PUTUSAN, {
+  "kk": {
+    "blangko": "Putusan Pencabutan Kekuasaan Orang Tua",
+    "lain": [
+      "Pencabutan Kuasa Orang Tua - Putusan"
+    ]
+  },
+  "kw": {
+    "blangko": "Putusan Pencabutan Kekuasaan Wali",
+    "lain": [
+      "Pencabutan Kuasa Wali - Putusan"
+    ]
+  },
+  "pw": {
+    "blangko": "Putusan Penunjukan Wali oleh Pengadilan",
+    "lain": [
+      "Penunjukan Wali - Putusan"
+    ]
+  },
+  "gr": {
+    "blangko": "Putusan Ganti Rugi terhadap Wali",
+    "lain": [
+      "Ganti Rugi Wali - Putusan"
+    ]
+  },
+  "ni": {
+    "blangko": "Putusan Nafkah Anak oleh Ibu karena Ayah Tidak Mampu",
+    "lain": [
+      "Nafkah Anak Ibu - Putusan"
+    ]
+  },
+  "ek": {
+    "blangko": "Putusan Eksekusi",
+    "lain": [
+      "Eksekusi - Putusan"
+    ]
+  },
+  "vz": {
+    "blangko": "Putusan Verzet (Perlawanan atas Putusan Verstek)",
+    "lain": [
+      "Verzet - Putusan"
+    ]
+  }
+});
+function alatPetaW3b(kunci, jenisAsli, menu, B, punyaGugatan, punyaPermohonan) {
+  const baris = punyaGugatan ? alatPetaGugatanDua(kunci, jenisAsli, menu, B, {}) : {};
+  const kl = (status, tanda) => `${kunci}|${status}${tanda ? `|${tanda}` : ""}`;
+  if (punyaGugatan && !B.damai) delete baris[kl("perdamaian", "")]; // pencabutan kekuasaan orang tua / wali: tanpa akta perdamaian
+  const r = (status, berkas, catatan) => alatBarisPutusanLain(menu, jenisAsli, status, berkas, catatan);
+  const um = (status, catatan) => alatBarisPutusanLain("um", jenisAsli, status, status === "Tidak Dapat Diterima" ? ALAT_BERKAS_UMUM.no : status === "Dicabut" ? ALAT_BERKAS_UMUM.cabut : ALAT_BERKAS_UMUM.gugur, catatan);
+  if (punyaGugatan) {
+    baris[kl("dicabut", "sesudah-jawaban")] = r("Dicabut", B.cabutSesudahJawaban, "keadaan: dicabut sesudah Tergugat menjawab (dengan persetujuannya)");
+    baris[kl("tidak dapat diterima", "kurang-pihak")] = r("Tidak Dapat Diterima", B.noFormil, "dipilih manual: kurang pihak (plurium litis consortium)");
+    baris[kl("tidak dapat diterima", "gugatan-kabur")] = r("Tidak Dapat Diterima", B.noKabur, "dipilih manual: gugatan kabur (obscuur libel)");
+  }
+  if (punyaPermohonan) {
+    const mohon = "keadaan: permohonan (nomor perkara Pdt.P)";
+    if (!punyaGugatan) baris[kunci] = r("", B.mohonKabul, `varian: ${B.mohonTolak}; ${B.mohonNo}`);
+    baris[kl("dikabulkan", "permohonan")] = r("Dikabulkan", B.mohonKabul, mohon);
+    baris[kl("ditolak", "permohonan")] = r("Ditolak", B.mohonTolak, mohon);
+    baris[kl("tidak dapat diterima", "permohonan")] = r("Tidak Dapat Diterima", B.mohonNo, `${mohon}; NO formil`);
+    baris[kl("dicabut", "permohonan")] = um("Dicabut", `${mohon}; permohonan umum (9b)`);
+    baris[kl("digugurkan", "permohonan")] = um("Digugurkan", `${mohon}; permohonan umum (9b)`);
+    baris[kl("gugur", "permohonan")] = um("Gugur", `${mohon}; permohonan umum (9b)`);
+    baris[kl("tidak dapat diterima", "permohonan-sema-1-2022")] = um("Tidak Dapat Diterima", `${mohon}; permohonan umum (9b) - pola SEMA 1/2022`);
+  }
+  return baris;
+}
+const ALAT_BERKAS_W3B_353 = {
+  "kabul": "[01] [Kabul] Pencabutan Kekuasaan Orang Tua - Kontradiktoir",
+  "setelahMediasi": "[01a] [Kabul] Pencabutan Kekuasaan Orang Tua - T Tidak Hadir Setelah Mediasi",
+  "verstek": "[01b] [Kabul Verstek] Pencabutan Kekuasaan Orang Tua",
+  "tolak": "[03] [Tolak] Pencabutan Kekuasaan Orang Tua - Kontradiktoir - Dalil Tidak Terbukti",
+  "tolakVerstek": "[03b] [Tolak Verstek] Pencabutan Kekuasaan Orang Tua - Dalil Tidak Terbukti",
+  "gugur": "[98a] [Gugur] Pencabutan Kekuasaan Orang Tua - P Tidak Hadir Sidang Pertama",
+  "cabutSesudahJawaban": "[98b] [Cabut] Pencabutan Kekuasaan Orang Tua - Sesudah Jawaban dengan Persetujuan T",
+  "cabut": "[98] [Cabut] Pencabutan Kekuasaan Orang Tua - P & T Hadir Sebelum Jawaban",
+  "coret": "[98c] [Coret] Pencabutan Kekuasaan Orang Tua - Dibatalkan dari Pendaftaran - Panjar Habis",
+  "noFormil": "[99a] [NO] Pencabutan Kekuasaan Orang Tua - Kurang Pihak (Plurium Litis Consortium)",
+  "noKabur": "[99b] [NO] Pencabutan Kekuasaan Orang Tua - Gugatan Kabur (Obscuur Libel)",
+  "noSema": "[99] [NO] Pencabutan Kekuasaan Orang Tua - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
+  "mohonKabul": "[01p] [Kabul] Pencabutan Kekuasaan Orang Tua - Permohonan (Pemohon Hadir)",
+  "mohonTolak": "[03p] [Tolak] Pencabutan Kekuasaan Orang Tua - Dalil Permohonan Tidak Terbukti",
+  "mohonNo": "[99p] [NO] Pencabutan Kekuasaan Orang Tua - Permohonan Tidak Dapat Diterima (Formil)"
+};
+const ALAT_BERKAS_W3B_355 = {
+  "kabul": "[01] [Kabul] Pencabutan Kekuasaan Wali - Kontradiktoir",
+  "setelahMediasi": "[01a] [Kabul] Pencabutan Kekuasaan Wali - T Tidak Hadir Setelah Mediasi",
+  "verstek": "[01b] [Kabul Verstek] Pencabutan Kekuasaan Wali",
+  "tolak": "[03] [Tolak] Pencabutan Kekuasaan Wali - Kontradiktoir - Dalil Tidak Terbukti",
+  "tolakVerstek": "[03b] [Tolak Verstek] Pencabutan Kekuasaan Wali - Dalil Tidak Terbukti",
+  "gugur": "[98a] [Gugur] Pencabutan Kekuasaan Wali - P Tidak Hadir Sidang Pertama",
+  "cabutSesudahJawaban": "[98b] [Cabut] Pencabutan Kekuasaan Wali - Sesudah Jawaban dengan Persetujuan T",
+  "cabut": "[98] [Cabut] Pencabutan Kekuasaan Wali - P & T Hadir Sebelum Jawaban",
+  "coret": "[98c] [Coret] Pencabutan Kekuasaan Wali - Dibatalkan dari Pendaftaran - Panjar Habis",
+  "noFormil": "[99a] [NO] Pencabutan Kekuasaan Wali - Kurang Pihak (Plurium Litis Consortium)",
+  "noKabur": "[99b] [NO] Pencabutan Kekuasaan Wali - Gugatan Kabur (Obscuur Libel)",
+  "noSema": "[99] [NO] Pencabutan Kekuasaan Wali - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)",
+  "mohonKabul": "[01p] [Kabul] Pencabutan Kekuasaan Wali - Permohonan (Pemohon Hadir)",
+  "mohonTolak": "[03p] [Tolak] Pencabutan Kekuasaan Wali - Dalil Permohonan Tidak Terbukti",
+  "mohonNo": "[99p] [NO] Pencabutan Kekuasaan Wali - Permohonan Tidak Dapat Diterima (Formil)"
+};
+const ALAT_BERKAS_W3B_356 = {
+  "mohonKabul": "[01p] [Kabul] Penunjukan Wali oleh Pengadilan - Permohonan (Pemohon Hadir)",
+  "mohonTolak": "[03p] [Tolak] Penunjukan Wali oleh Pengadilan - Dalil Permohonan Tidak Terbukti",
+  "mohonNo": "[99p] [NO] Penunjukan Wali oleh Pengadilan - Permohonan Tidak Dapat Diterima (Formil)",
+  "noKabur": ""
+};
+const ALAT_BERKAS_W3B_357 = {
+  "kabul": "[01] [Kabul] Ganti Rugi terhadap Wali - Kontradiktoir",
+  "setelahMediasi": "[01a] [Kabul] Ganti Rugi terhadap Wali - T Tidak Hadir Setelah Mediasi",
+  "verstek": "[01b] [Kabul Verstek] Ganti Rugi terhadap Wali",
+  "tolak": "[03] [Tolak] Ganti Rugi terhadap Wali - Kontradiktoir - Dalil Tidak Terbukti",
+  "tolakVerstek": "[03b] [Tolak Verstek] Ganti Rugi terhadap Wali - Dalil Tidak Terbukti",
+  "damai": "[97] [Perdamaian] Ganti Rugi terhadap Wali - Akta Perdamaian",
+  "gugur": "[98a] [Gugur] Ganti Rugi terhadap Wali - P Tidak Hadir Sidang Pertama",
+  "cabutSesudahJawaban": "[98b] [Cabut] Ganti Rugi terhadap Wali - Sesudah Jawaban dengan Persetujuan T",
+  "cabut": "[98] [Cabut] Ganti Rugi terhadap Wali - P & T Hadir Sebelum Jawaban",
+  "coret": "[98c] [Coret] Ganti Rugi terhadap Wali - Dibatalkan dari Pendaftaran - Panjar Habis",
+  "noFormil": "[99a] [NO] Ganti Rugi terhadap Wali - Kurang Pihak (Plurium Litis Consortium)",
+  "noKabur": "[99b] [NO] Ganti Rugi terhadap Wali - Gugatan Kabur (Obscuur Libel)",
+  "noSema": "[99] [NO] Ganti Rugi terhadap Wali - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)"
+};
+const ALAT_BERKAS_W3B_350 = {
+  "kabul": "[01] [Kabul] Nafkah Anak oleh Ibu - Kontradiktoir",
+  "setelahMediasi": "[01a] [Kabul] Nafkah Anak oleh Ibu - T Tidak Hadir Setelah Mediasi",
+  "verstek": "[01b] [Kabul Verstek] Nafkah Anak oleh Ibu",
+  "tolak": "[03] [Tolak] Nafkah Anak oleh Ibu - Kontradiktoir - Dalil Tidak Terbukti",
+  "tolakVerstek": "[03b] [Tolak Verstek] Nafkah Anak oleh Ibu - Dalil Tidak Terbukti",
+  "damai": "[97] [Perdamaian] Nafkah Anak oleh Ibu - Akta Perdamaian",
+  "gugur": "[98a] [Gugur] Nafkah Anak oleh Ibu - P Tidak Hadir Sidang Pertama",
+  "cabutSesudahJawaban": "[98b] [Cabut] Nafkah Anak oleh Ibu - Sesudah Jawaban dengan Persetujuan T",
+  "cabut": "[98] [Cabut] Nafkah Anak oleh Ibu - P & T Hadir Sebelum Jawaban",
+  "coret": "[98c] [Coret] Nafkah Anak oleh Ibu - Dibatalkan dari Pendaftaran - Panjar Habis",
+  "noFormil": "[99a] [NO] Nafkah Anak oleh Ibu - Kurang Pihak (Plurium Litis Consortium)",
+  "noKabur": "[99b] [NO] Nafkah Anak oleh Ibu - Gugatan Kabur (Obscuur Libel)",
+  "noSema": "[99] [NO] Nafkah Anak oleh Ibu - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)"
+};
+Object.assign(ALAT_PETA_BAWAAN
+  , alatPetaW3b("pencabutan kekuasaan orang tua", "Pencabutan Kekuasaan Orang Tua", "kk", ALAT_BERKAS_W3B_353, true, true)
+  , alatPetaW3b("pencabutan kekuasaan wali", "Pencabutan Kekuasaan Wali", "kw", ALAT_BERKAS_W3B_355, true, true)
+  , alatPetaW3b("penunjukan orang lain sebagai wali oleh pengadilan", "Penunjukan orang lain sebagai Wali oleh Pengadilan", "pw", ALAT_BERKAS_W3B_356, false, true)
+  , alatPetaW3b("ganti rugi terhadap wali", "Ganti Rugi terhadap Wali", "gr", ALAT_BERKAS_W3B_357, true, false)
+  , alatPetaW3b("nafkah anak oleh ibu karena ayah tidak mampu", "Nafkah Anak Oleh Ibu karena Ayah tidak mampu", "ni", ALAT_BERKAS_W3B_350, true, false)
+);
+/* === AKHIR W3b === */
 
 
 

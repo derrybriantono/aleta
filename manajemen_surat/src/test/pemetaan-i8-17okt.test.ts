@@ -63,6 +63,11 @@ describe("A. berkas ada di folder menunya", () => {
         "penguasaan anak|ditolak|verstek",
         // I23 18 Okt: nafkah anak pasca perceraian (6c) punya [03b] tolak verstek sendiri.
         "nafkah anak pasca perceraian|ditolak|verstek",
+        // W3b 21 Okt: jenis gugatan baru (353, 355, 357, 350) masing-masing punya [03b] tolak verstek sendiri.
+        "pencabutan kekuasaan orang tua|ditolak|verstek",
+        "pencabutan kekuasaan wali|ditolak|verstek",
+        "ganti rugi terhadap wali|ditolak|verstek",
+        "nafkah anak oleh ibu karena ayah tidak mampu|ditolak|verstek",
         // I26 18 Okt: DK ditolak [03a] (anak laki-laki, pacaran) dan [03b] (anak perempuan, alasan lain), serta cerai kumulasi itsbat yang itsbatnya ditolak [03b] (CG dan CT,
         // pada status ditolak maupun tidak dapat diterima). [03c] DK menunjuk [03c] sehingga tidak terhitung di sini.
         "dispensasi kawin|ditolak|anak-laki-laki-pacaran",

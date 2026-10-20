@@ -49,6 +49,12 @@ const ID_JENIS = Object.freeze({
   wasiat: "365",
   hibah: "366", // I28 18 Okt
   wakaf: "367",
+  // W3b 21 Okt: blangko Derry baru gelombang 3.
+  "nafkah anak oleh ibu karena ayah tidak mampu": "350",
+  "pencabutan kekuasaan orang tua": "353",
+  "pencabutan kekuasaan wali": "355",
+  "penunjukan orang lain sebagai wali oleh pengadilan": "356",
+  "ganti rugi terhadap wali": "357",
   "lain-lain": "369",
   "lain-lain *)": "369",
   "ekonomi syariah": "370",
