@@ -1,0 +1,139 @@
+{
+  "perkaraDiperiksa": 117,
+  "jenisAnakMandiri": {
+    "349": "0",
+    "350": "0",
+    "351": "0",
+    "743": "0"
+  },
+  "kode": {
+    "4888": {
+      "muncul": 2,
+      "banding": 0,
+      "cocok": 0
+    },
+    "4890": {
+      "muncul": 2,
+      "banding": 0,
+      "cocok": 0
+    },
+    "4899": {
+      "muncul": 25,
+      "banding": 0,
+      "cocok": 0
+    },
+    "4901": {
+      "muncul": 2,
+      "banding": 0,
+      "cocok": 0
+    },
+    "4905": {
+      "muncul": 6,
+      "banding": 0,
+      "cocok": 0
+    }
+  },
+  "contoh": {
+    "4888": [
+      {
+        "perkara": "175/Pdt.G/2026/PA.Dgl",
+        "nilai": "pada hari libur atau waktu lain yang disepakati",
+        "kalimat": "3. Menghukum Penggugat rekonvensi untuk memberikan akses kepada Tergugat rekonvensi dalam bertemu dan mencurahkan kasih sayang kepada anak-anak tersebut pada ha"
+      },
+      {
+        "perkara": "308/Pdt.G/2026/PA.Dgl",
+        "nilai": "pada hari libur atau waktu lain yang disepakati",
+        "kalimat": "3. Menghukum Penggugat rekonvensi untuk memberikan akses kepada Tergugat rekonvensi dalam bertemu dan mencurahkan kasih sayang kepada anak-anak tersebut pada ha"
+      }
+    ],
+    "4890": [
+      {
+        "perkara": "290/Pdt.G/2023/PA.Dgl",
+        "nilai": "1",
+        "kalimat": "Petitum di SIPP: Menghukum Tergugat untuk menyerahkan anak yang bernama Novianti Nusa Waluya binti Arif Rifan kepada Penggugat ;"
+      },
+      {
+        "perkara": "314/Pdt.G/2026/PA.Dgl",
+        "nilai": "1",
+        "kalimat": "Petitum di SIPP: Menghukum Termohon untuk menyerahkan anak NABILA ALIMUGNI Binti MOH. REZALDI dan MUHAMMAD FA'AZ AL-QARNI Bin MOH. REZALDI kepada Pemohon;------"
+      }
+    ],
+    "4899": [
+      {
+        "perkara": "159/Pdt.G/2016/PA.Dgl",
+        "nilai": "Rp2.500.000,00 (dua juta lima ratus ribu rupiah)",
+        "kalimat": "Petitum di SIPP: Menghukum Tergugat untuk memberikan biaya nafkah hidup dan biaya pendidikan anak-anak sebesar Rp.2.500.000,-(dua juta lima ratus ribu rupiah)pe"
+      },
+      {
+        "perkara": "295/Pdt.G/2016/PA.Dgl",
+        "nilai": "Rp3.000.000,00 (tiga juta rupiah)",
+        "kalimat": "Petitum di SIPP: Menghukum kepada Tergugat memberikan nafkah hidup dan biaya pendidikan kepada kedua anak sebesar Rp.3.000.000/bulan sampai anak dewasa/hidup ma"
+      },
+      {
+        "perkara": "197/Pdt.G/2017/PA.Dgl",
+        "nilai": "Rp600.000,00 (enam ratus ribu rupiah)",
+        "kalimat": "Petitum di SIPP: Menghukum Tergugat untuk menanggung biaya pemeliharaan anak untuk biaya nafkah hidup dan biaya pendidikan anak sebesar Rp.600.000 perbulan yang"
+      },
+      {
+        "perkara": "241/Pdt.G/2017/PA.Dgl",
+        "nilai": "Rp500.000,00 (lima ratus ribu rupiah)",
+        "kalimat": "Petitum di SIPP: Menghukum Tergugat untuk menanggung biaya pemeliharaan anak,biaya nafkah hidup dan biaya pendidikan anak MOH.ALFAN PRATAMA sebesar Rp.500.000 p"
+      },
+      {
+        "perkara": "18/Pdt.G/2018/PA.Dgl",
+        "nilai": "Rp1.500.000,00 (satu juta lima ratus ribu rupiah)",
+        "kalimat": "Petitum di SIPP: Menghukum kepada TERGUGAT memberikan nafkah hidup dan biaya pendidikan kepada anak sebesar Rp. 1.500.000,- (satu juta lima ratus ribu rupiah) /"
+      },
+      {
+        "perkara": "19/Pdt.G/2018/PA.Dgl",
+        "nilai": "Rp. 1.000,- (satu juta rupiah)",
+        "kalimat": "Petitum di SIPP: Menghukum kepada TERGUGAT memberikan nafkah hidup dan biaya pendidikan kepada anak sebesar Rp. 1.000,- (satu juta rupiah) / bulan sampai anak d"
+      }
+    ],
+    "4901": [
+      {
+        "perkara": "361/Pdt.G/2021/PA.Dgl",
+        "nilai": "sejak awal menikah TERGUGAT tidak bekerja sehingga untuk memenuhi kebutuhan sehari-hari PENGGUGAT lah yang bekerja",
+        "kalimat": "Bahwa sejak awal menikah TERGUGAT tidak bekerja sehingga untuk memenuhi kebutuhan sehari-hari PENGGUGAT lah yang bekerja."
+      },
+      {
+        "perkara": "339/Pdt.G/2024/PA.Dgl",
+        "nilai": "sejak keadaan rumah tangga #0046# dan #0047# mulai tidak harmonis dan sering terjadi perselisihan dan pertengkaran yang disebabkan karena : #0047# tidak bekerja",
+        "kalimat": "Bahwa sejak keadaan rumah tangga Penggugat dan Tergugat mulai tidak harmonis dan sering terjadi perselisihan dan pertengkaran yang disebabkan karena : Tergugat "
+      }
+    ],
+    "4905": [
+      {
+        "perkara": "114/Pdt.G/2021/PA.Dgl",
+        "nilai": "Bambang Saputra - mumayyiz memilih -\nAgry Alkhadry - belum mumayyiz - ibu kandung",
+        "kalimat": "dikaruniai anak 3 (Tiga) orang anak, masing-masing bernama: Migta Nurfiana Maserang (Perempuan), umur 23 Tahun; Bambang Saputra (Laki-laki), umur 20 Tahun; Agry"
+      },
+      {
+        "perkara": "167/Pdt.G/2022/PA.Dgl",
+        "nilai": "Assad Dhaifan Baikuni bin Juprianto - mumayyiz memilih -\nAisya binti Juprianto - mumayyiz memilih -\nMoh. Baihaqi bin Juprianto - belum mumayyiz - ibu kandung\nMo",
+        "kalimat": "di karuniai 4 anak yang bernama : Assad Dhaifan Baikuni bin Juprianto, usia 17 tahun; Aisya binti Juprianto, usia 14 tahun; Moh. Baihaqi bin Juprianto, usia 9 t"
+      },
+      {
+        "perkara": "76/Pdt.G/2023/PA.Dgl",
+        "nilai": "Moh Jibril Afdiansyah bin Fadli - mumayyiz memilih -\nMoh. Faid Haikal bin Fadli - belum mumayyiz - ibu kandung\nFahira Putri Aurora binti Fadli - belum mumayyiz ",
+        "kalimat": "di karuniai 3 (tiga) orang anak yang bernama : Moh Jibril Afdiansyah bin Fadli, usia 12 tahun ; Moh. Faid Haikal bin Fadli, usia 8 tahun; Fahira Putri Aurora bi"
+      },
+      {
+        "perkara": "412/Pdt.G/2023/PA.Dgl",
+        "nilai": "Muhamad Deri Ramadhan bin Dede Mahpudin - mumayyiz memilih -\nAzzam Syam Al- Fath bin Dede Mahpudin - belum mumayyiz - ibu kandung",
+        "kalimat": "di karuniai 2 (dua) orang anak yang masing-masing bernama : Muhamad Deri Ramadhan bin Dede Mahpudin, usia 12 tahun. Saat ini berada dalam pengasuhan Tergugat; A"
+      },
+      {
+        "perkara": "275/Pdt.G/2024/PA.Dgl",
+        "nilai": "Affandi Januarizal bin Musadiq - mumayyiz memilih -\nNur Fadila binti Musadiq - mumayyiz memilih -\nAriqa Fatina Rahim binti Musadiq - belum mumayyiz - ibu kandun",
+        "kalimat": "di karuniai 5 (Lima) orang anak yang masing-masing bernama : Andi Rifany binti Musadiq usia 23 tahun; Affandi Januarizal bin Musadiq usia 20 tahun; Nur Fadila b"
+      },
+      {
+        "perkara": "90/Pdt.G/2025/PA.Dgl",
+        "nilai": "Abd.Azlim Fairuz bin Syarifuddin - mumayyiz memilih -\nAisyah Aqilah binti Syarifuddin - belum mumayyiz - ibu kandung",
+        "kalimat": "di karuniai 2 (dua) orang anak yang masing-masing bernama : Abd.Azlim Fairuz bin Syarifuddin, usia 14 tahun; Aisyah Aqilah binti Syarifuddin, usia 6 tahun; Saat"
+      }
+    ]
+  },
+  "catatan": "Semua kode tetap 'ragu' (saran): pembanding isian petugas < 20 per kode. Angka muncul = jumlah perkara tempat pembaca menemukan bahan."
+}

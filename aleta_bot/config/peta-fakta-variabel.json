@@ -908,6 +908,208 @@
         "4768"
       ],
       "kunciSaksi": "agunan"
+    },
+    "anak.penyerahanDipetitumkan": {
+      "label": "Petitum meminta anak diserahkan (1 = dimohonkan)",
+      "tipe": "pilihan",
+      "kode": [
+        "4890"
+      ],
+      "hanyaSaran": true
+    },
+    "tuntutan.nafkahAnak.jumlahDimohon": {
+      "label": "Jumlah nafkah anak yang dimohon dalam petitum",
+      "tipe": "rupiah",
+      "kode": [
+        "4899"
+      ]
+    },
+    "anak.aksesBertemu": {
+      "label": "Rincian waktu atau cara orang tua lainnya bertemu anak",
+      "tipe": "teks",
+      "kode": [
+        "4888"
+      ]
+    },
+    "anak.kelayakanPemegang": {
+      "label": "Fakta kelayakan calon pemegang hak asuh menurut posita",
+      "tipe": "teks",
+      "kode": [
+        "4884"
+      ],
+      "hanyaSaran": true
+    },
+    "anak.ayahTakMampu": {
+      "label": "Fakta ketidakmampuan ayah memberi nafkah anak menurut posita",
+      "tipe": "teks",
+      "kode": [
+        "4901"
+      ]
+    },
+    "anak.mumayyizPerAnak": {
+      "label": "Status mumayyiz tiap anak (umur dari posita; pemegang hak asuh diputus majelis)",
+      "tipe": "daftar",
+      "kode": [
+        "4905"
+      ],
+      "hanyaSaran": true
+    },
+    "angkat.sejakDiasuh": {
+      "label": "Sejak kapan anak diasuh Pemohon",
+      "tipe": "teks",
+      "kode": [
+        "4910"
+      ],
+      "hanyaSaran": true
+    },
+    "angkat.alasanPenyerahan": {
+      "label": "Alasan orang tua kandung menyerahkan anak",
+      "tipe": "teks",
+      "kode": [
+        "4911"
+      ],
+      "hanyaSaran": true
+    },
+    "angkat.riwayatPerkawinan": {
+      "label": "Riwayat perkawinan dan anak kandung Pemohon",
+      "tipe": "teks",
+      "kode": [
+        "4912"
+      ],
+      "hanyaSaran": true
+    },
+    "angkat.izinInstansiSosial": {
+      "label": "Izin atau rekomendasi instansi sosial",
+      "tipe": "teks",
+      "kode": [
+        "4913"
+      ],
+      "hanyaSaran": true
+    },
+    "angkat.penghasilan": {
+      "label": "Penghasilan Pemohon",
+      "tipe": "teks",
+      "kode": [
+        "4914"
+      ],
+      "hanyaSaran": true
+    },
+    "angkat.tujuan": {
+      "label": "Tujuan pengangkatan anak",
+      "tipe": "teks",
+      "kode": [
+        "4915"
+      ],
+      "hanyaSaran": true
+    },
+    "mafqud.identitasHilang": {
+      "label": "Umur, pekerjaan, dan alamat terakhir orang yang hilang",
+      "tipe": "teks",
+      "kode": [
+        "4920"
+      ],
+      "hanyaSaran": true
+    },
+    "mafqud.keluargaDitinggal": {
+      "label": "Keluarga yang ditinggalkan orang yang hilang",
+      "tipe": "teks",
+      "kode": [
+        "4921"
+      ],
+      "hanyaSaran": true
+    },
+    "mafqud.hartaDitinggal": {
+      "label": "Harta yang ditinggalkan orang yang hilang",
+      "tipe": "teks",
+      "kode": [
+        "4922"
+      ],
+      "hanyaSaran": true
+    },
+    "mafqud.sebabKepergian": {
+      "label": "Sebab dan tujuan kepergian orang yang hilang",
+      "tipe": "teks",
+      "kode": [
+        "4923"
+      ],
+      "hanyaSaran": true
+    },
+    "umum.halDimohonkan": {
+      "label": "Hal yang dimohonkan ditetapkan",
+      "tipe": "teks",
+      "kode": [
+        "4930"
+      ],
+      "hanyaSaran": true
+    },
+    "umum.waktuTempat": {
+      "label": "Waktu dan tempat peristiwa",
+      "tipe": "teks",
+      "kode": [
+        "4931"
+      ],
+      "hanyaSaran": true
+    },
+    "umum.keperluan": {
+      "label": "Keperluan dan instansi tujuan penetapan",
+      "tipe": "teks",
+      "kode": [
+        "4933"
+      ],
+      "hanyaSaran": true
+    },
+    "umum.sebabMeninggalMakam": {
+      "label": "Sebab meninggal dan tempat dimakamkan",
+      "tipe": "teks",
+      "kode": [
+        "4934"
+      ],
+      "hanyaSaran": true
+    },
+    "poligami.statusCalon": {
+      "label": "Status calon istri kedua (perawan, janda cerai, janda ditinggal mati suami)",
+      "tipe": "pilihan",
+      "kode": [
+        "4854"
+      ],
+      "hanyaSaran": true
+    },
+    "poligami.buktiStatusCalon": {
+      "label": "Bukti status janda calon istri kedua (akta cerai atau surat keterangan kematian)",
+      "tipe": "teks",
+      "kode": [
+        "4855"
+      ]
+    },
+    "poligami.jumlahIstri": {
+      "label": "Jumlah istri Pemohon saat ini",
+      "tipe": "teks",
+      "kode": [
+        "4856"
+      ]
+    },
+    "poligami.suratSetujuIstri": {
+      "label": "Surat persetujuan tertulis istri",
+      "tipe": "teks",
+      "kode": [
+        "4850"
+      ]
+    },
+    "poligami.alasanKeberatanIstri": {
+      "label": "Alasan keberatan istri atas rencana poligami",
+      "tipe": "teks",
+      "kode": [
+        "4851"
+      ],
+      "hanyaSaran": true
+    },
+    "poligami.istriTidakMungkin": {
+      "label": "Keadaan istri yang membuatnya tidak mungkin dimintai persetujuan",
+      "tipe": "teks",
+      "kode": [
+        "4852"
+      ],
+      "hanyaSaran": true
     }
   },
   "pokokBas": [

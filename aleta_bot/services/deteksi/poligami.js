@@ -243,6 +243,7 @@ function deteksi(posita, opsi = {}) {
 
   const izin = izinAtasan(satu);
   if (izin) hasil["8726"] = { nilai: izin.nilai, kalimat: izin.kalimat, yakin: "ragu", kodePola: "poligami-izin-atasan" };
+  Object.assign(hasil, require("../isiOtomatisW2b/poligami").deteksi(satu)); // W2b-A 21 Okt: status calon istri, sikap istri (4850-4856), semua ragu
   return hasil;
 }
 

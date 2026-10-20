@@ -1,0 +1,91 @@
+{
+  "skema": "gerbang-isian-usulan/1",
+  "catatan": "USULAN W2b-A. Semua kode 4850-4856 BARU dan belum punya pembanding isian petugas: tetap saran (ragu). Tidak ada usulan naik tingkat. Data ukur: docs/gelombang2/UKURAN-W2b-poligami.json (12 perkara nyata; 8 berposita).",
+  "kode": {
+    "4854": {
+      "nama": "Status calon istri kedua",
+      "asal": {
+        "posita": {
+          "n": 4,
+          "banding": 0,
+          "cocok": 0,
+          "persen": null,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "4 dari 8 posita menyebut status calon istri; semua terbaca sesuai teks posita; tanpa isian petugas pembanding"
+        }
+      }
+    },
+    "4855": {
+      "nama": "Bukti status janda calon istri kedua",
+      "asal": {
+        "posita": {
+          "n": 2,
+          "banding": 0,
+          "cocok": 0,
+          "persen": null,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "2 posita menyebut nomor akta cerai; tanpa pembanding"
+        }
+      }
+    },
+    "4856": {
+      "nama": "Jumlah istri Pemohon saat ini",
+      "asal": {
+        "posita": {
+          "n": 0,
+          "banding": 0,
+          "cocok": 0,
+          "persen": null,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "tidak muncul pada 12 perkara nyata"
+        }
+      }
+    },
+    "4850": {
+      "nama": "Surat persetujuan tertulis istri",
+      "asal": {
+        "posita": {
+          "n": 0,
+          "banding": 0,
+          "cocok": 0,
+          "persen": null,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "tidak muncul pada 12 perkara nyata"
+        }
+      }
+    },
+    "4851": {
+      "nama": "Alasan keberatan istri",
+      "asal": {
+        "posita": {
+          "n": 0,
+          "banding": 0,
+          "cocok": 0,
+          "persen": null,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "tidak muncul; keberatan lazimnya disampaikan di jawaban atau sidang"
+        }
+      }
+    },
+    "4852": {
+      "nama": "Keadaan istri tidak mungkin dimintai persetujuan",
+      "asal": {
+        "posita": {
+          "n": 0,
+          "banding": 0,
+          "cocok": 0,
+          "persen": null,
+          "status": "saran",
+          "pangkatMaks": "ragu",
+          "dasar": "tidak muncul pada 12 perkara nyata"
+        }
+      }
+    }
+  },
+  "belumTerukur": {}
+}

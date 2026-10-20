@@ -425,11 +425,14 @@ function usulanDariKonteks(k) {
   }
   for (const [kode, f] of Object.entries(fakta)) tambah([dariFakta(kode, f)]);
   if (jenis === 370 && !ada.has("9340")) tambah(usulanAkadReferensi(k.akad));
+  tambah(require("./isiOtomatisW2b/lain").usulanLain(k, butir)); // W2b-C: Lain-Lain 369 (pengangkatan anak, mafqud, permohonan umum; variabel 4910-4939)
 
   // (3) tuntutan nominal anak/nafkah
   if (JENIS_ANAK.has(jenis) && (jenis !== 369 || /\bhak\s+asuh|hadh?[ao]nah|nafkah\s+anak|penguasaan\s+anak/i.test(P.satuBaris(k.posita || "")))) {
     tambah(usulanTuntutan(k.posita || "", k.petitum || ""));
   }
+  // W2b-B: isian blangko keluarga anak (4884-4905), semua saran "ragu" - isiOtomatisW2b/anak.js
+  tambah(require("./isiOtomatisW2b/anak").usulanAnak(k));
 
   // (4) isian yang memang manual (hanya yang belum terbaca dari data)
   tambah(usulanManual(jenis, ada));

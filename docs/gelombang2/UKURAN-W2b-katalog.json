@@ -1,0 +1,304 @@
+{
+  "dibuat": "2026-10-21",
+  "cara": "abt-paket/w2b-keluarga-lain/alat/ukur_katalog_w2b.cjs (tanpa data perkara; keadaan bawaan, pihak Pemohon)",
+  "hasil": {
+    "izin-poligami": {
+      "sebelum": {
+        "versi": 1,
+        "pokok": 10,
+        "butir": 18,
+        "butirBersyaratKeadaan": 2,
+        "aktifPerSaksiInti": 13,
+        "aktifPerSaksiIntiPilihan": 16,
+        "aktifPerSaksiIntiPilihanTambahan": 16,
+        "aktifPerSaksiSemua": 16,
+        "kalimatJawaban": 360,
+        "blokJawabanTingkat": 45,
+        "dasarHukum": 13,
+        "keadaan": 4
+      },
+      "sesudah": {
+        "versi": 2,
+        "pokok": 22,
+        "butir": 93,
+        "butirBersyaratKeadaan": 41,
+        "aktifPerSaksiInti": 21,
+        "aktifPerSaksiIntiPilihan": 51,
+        "aktifPerSaksiIntiPilihanTambahan": 63,
+        "aktifPerSaksiSemua": 63,
+        "kalimatJawaban": 2784,
+        "blokJawabanTingkat": 348,
+        "dasarHukum": 23,
+        "keadaan": 7
+      }
+    },
+    "pencegahan-perkawinan": {
+      "sebelum": {
+        "versi": 1,
+        "pokok": 8,
+        "butir": 16,
+        "butirBersyaratKeadaan": 9,
+        "aktifPerSaksiInti": 6,
+        "aktifPerSaksiIntiPilihan": 8,
+        "aktifPerSaksiIntiPilihanTambahan": 8,
+        "aktifPerSaksiSemua": 8,
+        "kalimatJawaban": 264,
+        "blokJawabanTingkat": 33,
+        "dasarHukum": 16,
+        "keadaan": 3
+      },
+      "sesudah": {
+        "versi": 2,
+        "pokok": 23,
+        "butir": 54,
+        "butirBersyaratKeadaan": 33,
+        "aktifPerSaksiInti": 15,
+        "aktifPerSaksiIntiPilihan": 27,
+        "aktifPerSaksiIntiPilihanTambahan": 28,
+        "aktifPerSaksiSemua": 28,
+        "kalimatJawaban": 1520,
+        "blokJawabanTingkat": 190,
+        "dasarHukum": 25,
+        "keadaan": 7
+      }
+    },
+    "pembatalan-perkawinan": {
+      "sebelum": {
+        "versi": 1,
+        "pokok": 11,
+        "butir": 17,
+        "butirBersyaratKeadaan": 11,
+        "aktifPerSaksiInti": 5,
+        "aktifPerSaksiIntiPilihan": 7,
+        "aktifPerSaksiIntiPilihanTambahan": 7,
+        "aktifPerSaksiSemua": 7,
+        "kalimatJawaban": 280,
+        "blokJawabanTingkat": 35,
+        "dasarHukum": 17,
+        "keadaan": 4
+      },
+      "sesudah": {
+        "versi": 2,
+        "pokok": 29,
+        "butir": 47,
+        "butirBersyaratKeadaan": 36,
+        "aktifPerSaksiInti": 8,
+        "aktifPerSaksiIntiPilihan": 16,
+        "aktifPerSaksiIntiPilihanTambahan": 16,
+        "aktifPerSaksiSemua": 17,
+        "kalimatJawaban": 1248,
+        "blokJawabanTingkat": 156,
+        "dasarHukum": 31,
+        "keadaan": 8
+      }
+    },
+    "hak-asuh": {
+      "sebelum": {
+        "versi": 1,
+        "pokok": 11,
+        "butir": 22,
+        "butirBersyaratKeadaan": 6,
+        "aktifPerSaksiInti": 16,
+        "aktifPerSaksiIntiPilihan": 17,
+        "aktifPerSaksiIntiPilihanTambahan": 17,
+        "aktifPerSaksiSemua": 17,
+        "kalimatJawaban": 400,
+        "blokJawabanTingkat": 50,
+        "dasarHukum": 14,
+        "keadaan": 6
+      },
+      "sesudah": {
+        "versi": 2,
+        "pokok": 29,
+        "butir": 76,
+        "butirBersyaratKeadaan": 28,
+        "aktifPerSaksiInti": 18,
+        "aktifPerSaksiIntiPilihan": 31,
+        "aktifPerSaksiIntiPilihanTambahan": 31,
+        "aktifPerSaksiSemua": 50,
+        "kalimatJawaban": 3272,
+        "blokJawabanTingkat": 409,
+        "dasarHukum": 18,
+        "keadaan": 11
+      }
+    },
+    "penguasaan-anak": {
+      "sebelum": {
+        "versi": 1,
+        "pokok": 12,
+        "butir": 25,
+        "butirBersyaratKeadaan": 6,
+        "aktifPerSaksiInti": 18,
+        "aktifPerSaksiIntiPilihan": 20,
+        "aktifPerSaksiIntiPilihanTambahan": 21,
+        "aktifPerSaksiSemua": 21,
+        "kalimatJawaban": 480,
+        "blokJawabanTingkat": 60,
+        "dasarHukum": 16,
+        "keadaan": 8
+      },
+      "sesudah": {
+        "versi": 2,
+        "pokok": 29,
+        "butir": 70,
+        "butirBersyaratKeadaan": 26,
+        "aktifPerSaksiInti": 20,
+        "aktifPerSaksiIntiPilihan": 36,
+        "aktifPerSaksiIntiPilihanTambahan": 37,
+        "aktifPerSaksiSemua": 51,
+        "kalimatJawaban": 2872,
+        "blokJawabanTingkat": 359,
+        "dasarHukum": 18,
+        "keadaan": 13
+      }
+    },
+    "nafkah-anak": {
+      "sebelum": {
+        "versi": 1,
+        "pokok": 14,
+        "butir": 22,
+        "butirBersyaratKeadaan": 9,
+        "aktifPerSaksiInti": 11,
+        "aktifPerSaksiIntiPilihan": 13,
+        "aktifPerSaksiIntiPilihanTambahan": 13,
+        "aktifPerSaksiSemua": 13,
+        "kalimatJawaban": 296,
+        "blokJawabanTingkat": 37,
+        "dasarHukum": 14,
+        "keadaan": 6
+      },
+      "sesudah": {
+        "versi": 2,
+        "pokok": 35,
+        "butir": 74,
+        "butirBersyaratKeadaan": 37,
+        "aktifPerSaksiInti": 19,
+        "aktifPerSaksiIntiPilihan": 31,
+        "aktifPerSaksiIntiPilihanTambahan": 31,
+        "aktifPerSaksiSemua": 45,
+        "kalimatJawaban": 1992,
+        "blokJawabanTingkat": 249,
+        "dasarHukum": 18,
+        "keadaan": 12
+      }
+    },
+    "pengangkatan-anak": {
+      "sebelum": {
+        "versi": 1,
+        "pokok": 12,
+        "butir": 24,
+        "butirBersyaratKeadaan": 1,
+        "aktifPerSaksiInti": 19,
+        "aktifPerSaksiIntiPilihan": 22,
+        "aktifPerSaksiIntiPilihanTambahan": 24,
+        "aktifPerSaksiSemua": 24,
+        "kalimatJawaban": 344,
+        "blokJawabanTingkat": 43,
+        "dasarHukum": 14,
+        "keadaan": 2
+      },
+      "sesudah": {
+        "versi": 2,
+        "pokok": 37,
+        "butir": 66,
+        "butirBersyaratKeadaan": 18,
+        "aktifPerSaksiInti": 22,
+        "aktifPerSaksiIntiPilihan": 45,
+        "aktifPerSaksiIntiPilihanTambahan": 57,
+        "aktifPerSaksiSemua": 58,
+        "kalimatJawaban": 1728,
+        "blokJawabanTingkat": 216,
+        "dasarHukum": 19,
+        "keadaan": 5
+      }
+    },
+    "mafqud": {
+      "sebelum": {
+        "versi": 1,
+        "pokok": 13,
+        "butir": 14,
+        "butirBersyaratKeadaan": 3,
+        "aktifPerSaksiInti": 9,
+        "aktifPerSaksiIntiPilihan": 11,
+        "aktifPerSaksiIntiPilihanTambahan": 12,
+        "aktifPerSaksiSemua": 12,
+        "kalimatJawaban": 160,
+        "blokJawabanTingkat": 20,
+        "dasarHukum": 7,
+        "keadaan": 1
+      },
+      "sesudah": {
+        "versi": 2,
+        "pokok": 38,
+        "butir": 42,
+        "butirBersyaratKeadaan": 13,
+        "aktifPerSaksiInti": 10,
+        "aktifPerSaksiIntiPilihan": 28,
+        "aktifPerSaksiIntiPilihanTambahan": 32,
+        "aktifPerSaksiSemua": 35,
+        "kalimatJawaban": 1064,
+        "blokJawabanTingkat": 133,
+        "dasarHukum": 7,
+        "keadaan": 6
+      }
+    },
+    "permohonan-umum": {
+      "sebelum": {
+        "versi": 1,
+        "pokok": 6,
+        "butir": 11,
+        "butirBersyaratKeadaan": 0,
+        "aktifPerSaksiInti": 8,
+        "aktifPerSaksiIntiPilihan": 11,
+        "aktifPerSaksiIntiPilihanTambahan": 11,
+        "aktifPerSaksiSemua": 11,
+        "kalimatJawaban": 136,
+        "blokJawabanTingkat": 17,
+        "dasarHukum": 6,
+        "keadaan": 0
+      },
+      "sesudah": {
+        "versi": 2,
+        "pokok": 29,
+        "butir": 40,
+        "butirBersyaratKeadaan": 18,
+        "aktifPerSaksiInti": 8,
+        "aktifPerSaksiIntiPilihan": 23,
+        "aktifPerSaksiIntiPilihanTambahan": 26,
+        "aktifPerSaksiSemua": 27,
+        "kalimatJawaban": 1080,
+        "blokJawabanTingkat": 135,
+        "dasarHukum": 8,
+        "keadaan": 4
+      }
+    },
+    "JUMLAH": {
+      "sebelum": {
+        "pokok": 97,
+        "butir": 169,
+        "butirBersyaratKeadaan": 47,
+        "aktifPerSaksiInti": 105,
+        "aktifPerSaksiIntiPilihan": 125,
+        "aktifPerSaksiIntiPilihanTambahan": 129,
+        "aktifPerSaksiSemua": 129,
+        "kalimatJawaban": 2720,
+        "blokJawabanTingkat": 340,
+        "dasarHukum": 117,
+        "keadaan": 34
+      },
+      "sesudah": {
+        "pokok": 271,
+        "butir": 562,
+        "butirBersyaratKeadaan": 250,
+        "aktifPerSaksiInti": 141,
+        "aktifPerSaksiIntiPilihan": 288,
+        "aktifPerSaksiIntiPilihanTambahan": 321,
+        "aktifPerSaksiSemua": 374,
+        "kalimatJawaban": 17560,
+        "blokJawabanTingkat": 2195,
+        "dasarHukum": 167,
+        "keadaan": 73
+      }
+    }
+  }
+}

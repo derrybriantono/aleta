@@ -1,0 +1,12 @@
+# Nomor perkara SIPP server untuk uji kueri keluarga anak (hanya SELECT, baca saja).
+# Batas data jujur: di SIPP server jenis perkara 349 (Penguasaan Anak), 350 (Nafkah Anak oleh Ibu karena Ayah tidak mampu), 351 dan 743 (Nafkah Anak Pasca Perceraian)
+# berjumlah 0 perkara dan hak asuh tidak punya jenis mandiri (memakai 369 Lain-Lain). Maka kueri diuji atas perkara CERAI GUGAT / CERAI TALAK yang memuat
+# petitum hak asuh atau nafkah anak dan yang tab Anak-nya punya tanggal lahir (umur anak, mumayyiz, batas 21 tahun).
+534/Pdt.G/2026/PA.Dgl
+583/Pdt.G/2026/PA.Dgl
+451/Pdt.G/2026/PA.Dgl
+371/Pdt.G/2026/PA.Dgl
+95/Pdt.G/2026/PA.Dgl
+23/Pdt.G/2026/PA.Dgl
+700/Pdt.G/2025/PA.Dgl
+480/Pdt.G/2025/PA.Dgl

@@ -1,0 +1,1756 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "hak-asuh",
+ "judul": "Hak asuh anak (hadhanah)",
+ "versi": 1,
+ "penulis": "SAKSI-E",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "369"
+  ],
+  "alurPerkaraId": [
+   "15"
+  ],
+  "polaNama": "asuh|hadhanah|hadanah|pemeliharaan anak"
+ },
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [
+  {
+   "folder": "6a Hak Asuh Anak (Hadhanah) - BAS",
+   "berkas": "BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P",
+   "variabelSaksi": [
+    "2021",
+    "2022",
+    "2031",
+    "6124",
+    "8932"
+   ],
+   "catatan": "paket abt-hak-asuh-derry (F21, terpasang 17 Okt malam); saksi P disunting lewat variabel tanya_jawab (BAS memakai 5058/5059/5060 yang berbagi data); varian [6a] 3 saksi, [6b] 4 saksi, [6c] 5 saksi sama"
+  },
+  {
+   "folder": "6a Hak Asuh Anak (Hadhanah) - BAS",
+   "berkas": "BAS ALUR 04 [7] BAS 7 P & T Hadir - Pembuktian T",
+   "variabelSaksi": [
+    "2023",
+    "2024",
+    "2032",
+    "8942"
+   ],
+   "catatan": "saksi T (BAS memakai 6120/6121/6122 dan 8921/8941); [7a] 3 saksi, [7b] 4 saksi"
+  },
+  {
+   "folder": "6a Hak Asuh Anak (Hadhanah) - BAS",
+   "berkas": "BAS ALUR 38 Hak Asuh - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek",
+   "variabelSaksi": [
+    "2021",
+    "2022"
+   ],
+   "catatan": "verstek: hanya saksi P (2 saksi)"
+  },
+  {
+   "folder": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS",
+   "berkas": "BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Anak dan Nafkah Anak - P Hadir & T Tidak Hadir (2 Saksi)",
+   "variabelSaksi": [
+    "2021",
+    "2022"
+   ],
+   "catatan": "kumulasi cerai gugat + hak asuh: dipakai bersama katalog cerai-gugat dengan keadaan kumulasi hak-asuh"
+  }
+ ],
+ "dasarHukum": [
+  {
+   "id": "dh-sebab-pengetahuan",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 103: syarat materiil saksi (Pasal 308 ayat (2) RBg)",
+   "uraian": "keterangan saksi harus tentang peristiwa yang dialami, didengar atau dilihat sendiri dan menyebut sumber pengetahuannya; pendapat atau dugaan bukan kesaksian",
+   "status": "terverifikasi",
+   "sumber": "Buku II Edisi Revisi 2013 (Ditjen Badilag MA RI), salinan PDF PA Rumbia (pa-rumbia.go.id/images/Pedoman_Organisasi/1-Buku-II-edisi-Rev_2013_Pedoman-Tugas-dan-Adm.pdf), bagian Bukti Saksi, Syarat materiil alat bukti saksi (hlm. 103 menurut nomor halaman berkas PDF itu; cetakan lain dapat berselisih satu halaman); Pasal 308 ayat (2) RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-de-auditu",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (7)",
+   "uraian": "keterangan yang diperoleh saksi dari orang lain (de auditu) dapat dipakai hanya sebagai sumber persangkaan",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-unus-testis",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (8)",
+   "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak cukup (satu saksi bukan saksi)",
+   "status": "terverifikasi",
+   "sumber": "Buku II Pedoman Pelaksanaan Tugas dan Administrasi Peradilan Agama Edisi Revisi 2013, bagian Bukti Saksi (hlm. 101-102; dibaca dari salinan teks)"
+  },
+  {
+   "id": "dh-larangan-saksi",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 101-102 butir (3)-(4) (Pasal 172 RBg)",
+   "uraian": "keluarga sedarah dan semenda dalam garis lurus, suami atau istri salah satu pihak (juga setelah bercerai), dan anak yang belum berumur lima belas tahun tidak dapat didengar sebagai saksi; keluarga sedarah atau semenda tetap dapat menjadi saksi dalam perkara tentang keadaan menurut hukum sipil para pihak atau perjanjian kerja",
+   "status": "terverifikasi",
+   "sumber": "Buku II Edisi Revisi 2013 (Ditjen Badilag MA RI), salinan PDF PA Rumbia (pa-rumbia.go.id/images/Pedoman_Organisasi/1-Buku-II-edisi-Rev_2013_Pedoman-Tugas-dan-Adm.pdf), bagian Bukti Saksi butir (3)-(4) (hlm. 101-102 menurut nomor halaman berkas PDF itu; cetakan lain dapat berselisih satu halaman); Pasal 172 ayat (1)-(2) RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-kesesuaian-saksi",
+   "rujukan": "Buku II Edisi Revisi 2013 hlm. 101 butir (2) (Pasal 309 RBg)",
+   "uraian": "hakim menilai kesesuaian keterangan saksi yang satu dengan lainnya dan alasan saksi memberi keterangan",
+   "status": "terverifikasi",
+   "sumber": "Buku II Edisi Revisi 2013 (Ditjen Badilag MA RI), salinan PDF PA Rumbia (pa-rumbia.go.id/images/Pedoman_Organisasi/1-Buku-II-edisi-Rev_2013_Pedoman-Tugas-dan-Adm.pdf), bagian Bukti Saksi butir (2) (hlm. 101 menurut nomor halaman berkas PDF itu; cetakan lain dapat berselisih satu halaman); Pasal 309 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-uu1-41-45",
+   "rujukan": "Pasal 41 huruf a dan Pasal 45 ayat (1)-(2) UU 1/1974 tentang Perkawinan",
+   "uraian": "ibu atau bapak tetap berkewajiban memelihara dan mendidik anak semata-mata berdasarkan kepentingan anak; bila ada perselisihan tentang penguasaan anak pengadilan memberi keputusan; kewajiban berlaku sampai anak kawin atau dapat berdiri sendiri dan terus berlaku meskipun perkawinan orang tua putus",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 1/1974 dalam buku KHI terbitan Kemenag dan salinan UGM (dibaca agen I15, 18 Okt 2026)"
+  },
+  {
+   "id": "dh-penjelasan-49-11",
+   "rujukan": "Penjelasan Pasal 49 huruf a angka 11 UU 7/1989 sebagaimana diubah UU 3/2006",
+   "uraian": "penguasaan anak-anak termasuk bidang perkawinan yang menjadi kewenangan pengadilan agama",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 3/2006 (peraturan.bpk.go.id, dibaca agen I15, 18 Okt 2026)"
+  },
+  {
+   "id": "dh-khi-1g",
+   "rujukan": "Pasal 1 huruf g Kompilasi Hukum Islam",
+   "uraian": "pemeliharaan anak atau hadhanah ialah kegiatan mengasuh, memelihara dan mendidik anak hingga dewasa atau mampu berdiri sendiri",
+   "status": "terverifikasi",
+   "sumber": "KHI terbitan Kemenag (dibaca 18 Okt 2026)"
+  },
+  {
+   "id": "dh-khi-105",
+   "rujukan": "Pasal 105 huruf a, b, c Kompilasi Hukum Islam",
+   "uraian": "pada perceraian: anak yang belum mumayyiz atau belum berumur 12 tahun pemeliharaannya hak ibunya; anak yang sudah mumayyiz memilih antara ayah atau ibunya; biaya pemeliharaan ditanggung ayah",
+   "status": "terverifikasi",
+   "sumber": "KHI terbitan Kemenag (dibaca 18 Okt 2026)"
+  },
+  {
+   "id": "dh-khi-156",
+   "rujukan": "Pasal 156 huruf a sampai f Kompilasi Hukum Islam",
+   "uraian": "hadhanah anak belum mumayyiz pada ibu; anak mumayyiz berhak memilih; pemegang hadhanah yang tidak dapat menjamin keselamatan jasmani dan rohani anak dapat diganti atas permintaan kerabat (huruf c); biaya hadhanah dan nafkah anak tanggung jawab ayah menurut kemampuannya; perselisihan diputus menurut huruf a, b, d",
+   "status": "terverifikasi",
+   "sumber": "KHI terbitan Kemenag (dibaca 18 Okt 2026)"
+  },
+  {
+   "id": "dh-sema-1-2017-akses",
+   "rujukan": "SEMA 1/2017 Rumusan Kamar Agama angka 4",
+   "uraian": "amar penetapan hak asuh memuat kewajiban pemegang hak memberi akses kepada orang tua yang tidak memegang hak; tidak memberi akses menjadi alasan gugatan pencabutan hak asuh",
+   "status": "terverifikasi",
+   "sumber": "Buku Kompilasi Rumusan Kamar Mahkamah Agung (dibaca agen I15; bukan PDF SEMA)"
+  },
+  {
+   "id": "dh-sema-2-2024-tempat",
+   "rujukan": "SEMA 2/2024 Rumusan Kamar Agama, Hukum Formil angka 4",
+   "uraian": "perkara hadanah diajukan ke pengadilan agama yang mewilayahi tempat tinggal anak senyatanya",
+   "status": "terverifikasi",
+   "sumber": "Buku Kompilasi Rumusan Kamar Mahkamah Agung (dibaca agen I15; bukan PDF SEMA)"
+  },
+  {
+   "id": "dh-uupa-terbaik",
+   "rujukan": "Pasal 2 (asas kepentingan yang terbaik bagi anak, butir kedua) dan Pasal 14 ayat (1) UU 23/2002 sebagaimana diubah UU 35/2014 tentang Perlindungan Anak",
+   "uraian": "kepentingan terbaik bagi anak menjadi pertimbangan utama dalam pengasuhan",
+   "status": "terverifikasi",
+   "sumber": "Pasal 14 ayat (1) cocok dengan naskah UU 35/2014 di peraturan.bpk.go.id/Download/28052 dan UU 23/2002 di peraturan.go.id/files/uu23-2002.pdf; Pasal 2 memuat asas kepentingan yang terbaik bagi anak, dan di salinan peraturan.go.id asas itu butir kedua bernomor 2 (penyebutan huruf b tidak dapat dipastikan dari salinan itu sehingga rujukan ditulis butir kedua); rincian di VERIFIKASI-HUKUM.md"
+  },
+  {
+   "id": "dh-buku2-2026-28",
+   "rujukan": "Buku II Tahun 2026 aspek 28 (ringkasan perbandingan PTA Pontianak)",
+   "uraian": "hadhanah: kompetensi menurut tempat tinggal anak senyatanya, mendengar pilihan anak mumayyiz, akses bagi orang tua lainnya, kemungkinan pencabutan hadhanah karena penghalangan akses",
+   "status": "perlu-verifikasi",
+   "sumber": "berkas rujukan BUKU-II-2013-vs-2026-PTA-Pontianak.txt dari pengguna (ringkasan sekunder; naskah resmi Buku II 2026 belum ada)"
+  }
+ ],
+ "keadaan": {
+  "kehadiran": {
+   "sumber": "otomatis",
+   "nilai": [
+    "verstek",
+    "kontradiktoir",
+    "t-tidak-hadir-setelah-mediasi"
+   ],
+   "label": "Kehadiran Tergugat",
+   "bawaan": "kontradiktoir"
+  },
+  "anakMumayyiz": {
+   "sumber": "borang",
+   "nilai": [
+    "belum",
+    "sudah"
+   ],
+   "label": "Anak sudah berumur 12 tahun (mumayyiz)",
+   "bawaan": "belum"
+  },
+  "pengasuhAnak": {
+   "sumber": "borang",
+   "nilai": [
+    "pengaju",
+    "lawan"
+   ],
+   "label": "Pihak yang mengasuh anak sekarang",
+   "bawaan": "pengaju"
+  },
+  "akses": {
+   "sumber": "borang",
+   "nilai": [
+    "ya",
+    "tidak"
+   ],
+   "label": "Orang tua lainnya diberi kesempatan bertemu anak",
+   "bawaan": "ya"
+  },
+  "pilihanAnak": {
+   "sumber": "borang",
+   "nilai": [
+    "pengaju",
+    "lawan"
+   ],
+   "label": "Anak (sudah 12 tahun) memilih tinggal bersama",
+   "bawaan": "pengaju"
+  },
+  "pengalihan": {
+   "sumber": "borang",
+   "nilai": [
+    "tidak",
+    "ya"
+   ],
+   "label": "Hadhanah dimohonkan dialihkan karena pengasuh tidak dapat menjamin keselamatan anak",
+   "bawaan": "tidak"
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-hubungan-saksi",
+   "judul": "Hubungan saksi dengan para pihak",
+   "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal para pihak (sebab pengetahuan)",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-sebab-pengetahuan",
+    "dh-larangan-saksi",
+    "dh-unus-testis"
+   ]
+  },
+  {
+   "id": "pp-perkawinan-anak",
+   "judul": "Para pihak dan anak yang disengketakan",
+   "uraian": "para pihak dahulu suami istri, perkawinan putus, dan anak yang disengketakan lahir dari perkawinan itu",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-uu1-41-45",
+    "dh-penjelasan-49-11"
+   ]
+  },
+  {
+   "id": "pp-umur-anak",
+   "judul": "Umur anak",
+   "uraian": "umur anak: belum atau sudah 12 tahun (mumayyiz) sebagai dasar hak ibu atau pilihan anak",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-khi-105",
+    "dh-khi-156"
+   ]
+  },
+  {
+   "id": "pp-pengasuhan-sekarang",
+   "judul": "Pengasuhan anak saat ini",
+   "uraian": "dengan siapa anak tinggal sekarang, sejak kapan, siapa yang mengurus keperluan sehari-hari dan bagaimana keadaan anak",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-sema-2-2024-tempat",
+    "dh-uu1-41-45",
+    "dh-khi-1g",
+    "dh-kesesuaian-saksi"
+   ]
+  },
+  {
+   "id": "pp-kecakapan",
+   "judul": "Kecakapan mengasuh dan kepentingan terbaik anak",
+   "uraian": "sikap, penghasilan, waktu dan lingkungan yang menjamin keselamatan jasmani dan rohani anak",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-khi-156",
+    "dh-uu1-41-45",
+    "dh-uupa-terbaik"
+   ]
+  },
+  {
+   "id": "pp-akses",
+   "judul": "Akses orang tua lainnya",
+   "uraian": "apakah orang tua yang tidak memegang hak asuh diberi kesempatan bertemu dan berhubungan dengan anak",
+   "wajib": true,
+   "dasarHukum": [
+    "dh-sema-1-2017-akses",
+    "dh-buku2-2026-28"
+   ]
+  },
+  {
+   "id": "pp-pilihan-anak",
+   "judul": "Pilihan anak yang sudah mumayyiz",
+   "uraian": "pilihan anak tentang dengan siapa ia tinggal (anak 12 tahun ke atas)",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-khi-105",
+    "dh-khi-156"
+   ],
+   "keadaan": {
+    "anakMumayyiz": "sudah"
+   }
+  },
+  {
+   "id": "pp-pengalihan",
+   "judul": "Pengalihan hak hadhanah",
+   "uraian": "keadaan yang membuat pemegang hadhanah tidak dapat menjamin keselamatan jasmani dan rohani anak",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-khi-156"
+   ],
+   "keadaan": {
+    "pengalihan": "ya"
+   }
+  },
+  {
+   "id": "pp-biaya-anak",
+   "judul": "Biaya hidup anak",
+   "uraian": "pemenuhan biaya hidup dan sekolah anak oleh orang tua yang tidak mengasuh (bila nafkah anak ikut dituntut)",
+   "wajib": false,
+   "dasarHukum": [
+    "dh-khi-156",
+    "dh-khi-105"
+   ],
+   "keadaan": {
+    "kumulasi": "nafkah-anak"
+   }
+  },
+  {
+   "id": "pp-upaya",
+   "judul": "Upaya penyelesaian kekeluargaan",
+   "uraian": "upaya keluarga menyelesaikan soal pengasuhan anak dan hasilnya",
+   "wajib": false,
+   "dasarHukum": []
+  },
+  {
+   "id": "pp-penutup",
+   "judul": "Penutup keterangan",
+   "uraian": "saksi menyatakan keterangannya telah cukup",
+   "wajib": false,
+   "dasarHukum": []
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-kenal",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 10,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi kenal dengan #0046# dan #0047# ?",
+   "teksVarian": [
+    "Apakah saksi mengenal #0046# dan #0047# ?",
+    "Apakah Saudara saksi kenal dengan #0046# serta #0047# ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "hubungan saksi dengan para pihak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal kedua pihak dan menyebut hubungannya dengan pihak",
+     "saksi1": [
+      "saya kenal dengan #0046# dan #0047# karena saya adalah {hubungan}",
+      "saya mengenal #0046# dan #0047# sebab saya ini {hubungan}",
+      "benar saya kenal kedua pihak yaitu #0046# dan #0047# dan saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya mengenal #0046# serta #0047#"
+     ],
+     "saksi2": [
+      "kedua pihak #0046# dan #0047# saya kenal dengan baik karena saya adalah {hubungan}",
+      "saya tahu dan kenal #0046# serta #0047# sebab hubungan saya dengan mereka adalah {hubungan}",
+      "saya lama mengenal #0046# berikut #0047# dan saya adalah {hubungan}",
+      "yang saya kenal adalah #0046# dan #0047# karena saya berkedudukan sebagai {hubungan}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-hubungan-pihak",
+   "pokok": "pp-perkawinan-anak",
+   "urutan": 20,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi tahu hubungan antara #0046# dan #0047# ?",
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "hubungan para pihak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan para pihak dahulu suami istri yang sah dan perkawinannya telah putus",
+     "saksi1": [
+      "#0046# dan #0047# dahulu suami istri yang sah dan sekarang mereka telah bercerai",
+      "saya tahu keduanya dulu suami istri yang menikah secara sah dan kini perkawinan mereka telah putus",
+      "antara #0046# dengan #0047# dahulu terikat perkawinan yang sah namun sekarang telah berpisah secara resmi",
+      "benar #0046# dan #0047# dahulu suami istri sah dan saya mengetahui mereka telah bercerai"
+     ],
+     "saksi2": [
+      "hubungan #0046# dan #0047# dahulu adalah suami istri sah dan kini perkawinan itu telah berakhir",
+      "saya kenal betul bahwa dulu mereka berdua suami istri yang sah lalu bercerai",
+      "mereka berdua adalah bekas suami istri yang dahulu menikah dengan sah",
+      "dahulu #0046# dan #0047# hidup sebagai suami istri yang sah dan sekarang telah putus perkawinannya"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-anak-lahir",
+   "pokok": "pp-perkawinan-anak",
+   "urutan": 30,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah dari perkawinan #0046# dengan #0047# lahir anak dan siapa nama anak itu ?",
+   "teksVarian": [
+    "Apakah #0046# dan #0047# dikaruniai anak dan siapa namanya ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8602"
+   ],
+   "hal": "anak yang lahir dari perkawinan mereka",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan anak yang disengketakan lahir dari perkawinan para pihak beserta namanya",
+     "saksi1": [
+      "dari perkawinan #0046# dengan #0047# lahir anak bernama #8602#",
+      "mereka dikaruniai anak yang bernama #8602# dan saya mengenalnya",
+      "anak mereka bernama #8602# dan saya melihat sendiri anak itu tumbuh",
+      "#0046# dan #0047# mempunyai anak bernama #8602# dari perkawinan mereka"
+     ],
+     "saksi2": [
+      "saya tahu #0046# serta #0047# punya anak yang bernama #8602#",
+      "buah hati dari perkawinan keduanya adalah #8602# yang saya kenal langsung",
+      "lahir dari rumah tangga mereka seorang anak bernama #8602#",
+      "keduanya telah dikaruniai anak dengan nama #8602# dan saya mengetahuinya sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: anak mereka satu orang; versi B: anak mereka lebih dari satu orang - berselisih pada JUMLAH ANAK",
+     "saksi1": [
+      "anak mereka satu orang saja yaitu #8602#",
+      "dari perkawinan itu lahir satu orang anak yaitu #8602#",
+      "setahu saya mereka punya satu anak yaitu #8602#",
+      "anak keduanya cuma satu orang yaitu #8602#"
+     ],
+     "saksi2": [
+      "anak mereka lebih dari satu orang dan salah satunya #8602#",
+      "dari perkawinan itu lahir beberapa anak dan di antaranya #8602#",
+      "anak mereka banyak dan satu di antaranya #8602#",
+      "keduanya punya anak lebih dari satu dan salah satunya #8602#"
+     ],
+     "bedaPada": "jumlah"
+    }
+   }
+  },
+  {
+   "id": "q-umur-anak",
+   "pokok": "pp-umur-anak",
+   "urutan": 40,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Berapa umur anak bernama #8602# sekarang ?",
+   "variabelAbt": [
+    "8602"
+   ],
+   "hal": "umur anak saat ini",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "anakMumayyiz": "belum"
+      },
+      "maksud": "anak masih di bawah 12 tahun",
+      "saksi1": [
+       "anak bernama #8602# sekarang belum berumur 12 tahun dan itu saya ketahui sendiri",
+       "setahu saya anak bernama #8602# belum melewati 12 tahun",
+       "umur anak bernama #8602# belum sampai 12 tahun dan saya mengenalnya sejak kecil",
+       "saya tahu langsung bahwa anak bernama #8602# belum genap 12 tahun"
+      ],
+      "saksi2": [
+       "anak itu yang bernama #8602# masih kecil dan umurnya belum mencapai 12 tahun",
+       "saya menyaksikan sendiri anak bernama #8602# tumbuh dan sekarang umurnya belum 12 tahun",
+       "umur anak bernama #8602# belum sampai 12 tahun menurut yang saya ketahui",
+       "menurut yang saya ketahui langsung umur anak bernama #8602# belum 12 tahun"
+      ]
+     },
+     {
+      "keadaan": {
+       "anakMumayyiz": "sudah"
+      },
+      "maksud": "anak berumur lebih dari 12 tahun",
+      "saksi1": [
+       "umur anak bernama #8602# sekarang lebih dari 12 tahun dan saya tahu sendiri",
+       "setahu saya anak bernama #8602# telah lewat 12 tahun",
+       "anak bernama #8602# berumur di atas 12 tahun dan saya menyaksikan tumbuhnya",
+       "saya tahu langsung anak bernama #8602# telah melewati umur 12 tahun"
+      ],
+      "saksi2": [
+       "anak itu yang bernama #8602# berumur lebih dari 12 tahun dan saya melihatnya sendiri",
+       "saya melihat sendiri anak bernama #8602# telah besar dan umurnya di atas 12 tahun",
+       "umur anak bernama #8602# telah lewat dari 12 tahun menurut yang saya ketahui langsung",
+       "menurut penglihatan saya sendiri anak bernama #8602# berumur lebih dari 12 tahun"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: anak masih balita; versi B: anak telah usia sekolah dasar - berselisih pada UMUR ANAK",
+     "saksi1": [
+      "anak bernama #8602# masih balita dan belum masuk sekolah",
+      "anak bernama #8602# masih kecil sekali dan belum bersekolah",
+      "umur anak bernama #8602# masih balita dan belum sekolah",
+      "anak bernama #8602# masih bayi atau balita dan belum sekolah"
+     ],
+     "saksi2": [
+      "anak bernama #8602# sudah duduk di bangku sekolah dasar",
+      "anak bernama #8602# sudah bersekolah dan cukup besar",
+      "umur anak bernama #8602# sudah masuk usia sekolah dasar",
+      "anak bernama #8602# sudah sekolah di tingkat dasar"
+     ],
+     "bedaPada": "jumlah"
+    }
+   }
+  },
+  {
+   "id": "q-tinggal-bersama",
+   "pokok": "pp-pengasuhan-sekarang",
+   "urutan": 50,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Sekarang anak bernama #8602# tinggal bersama siapa ?",
+   "teksVarian": [
+    "Dengan siapa anak bernama #8602# tinggal sekarang ?",
+    "Saat ini anak bernama #8602# diasuh dan tinggal bersama siapa ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8602"
+   ],
+   "hal": "tempat tinggal anak saat ini",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "anak sekarang tinggal bersama pihak yang diterangkan dan saksi melihatnya sendiri",
+      "saksi1": [
+       "anak bernama #8602# sekarang tinggal bersama #0046# dan saya melihatnya sendiri",
+       "saya melihat sendiri anak bernama #8602# tinggal serumah dengan #0046#",
+       "tempat tinggal anak bernama #8602# sekarang ada pada #0046# dan saya datang ke sana",
+       "saya tahu langsung bahwa anak bernama #8602# dibawa tinggal oleh #0046#"
+      ],
+      "saksi2": [
+       "anak itu yang bernama #8602# sekarang berada dalam asuhan #0046# dan saya menyaksikannya",
+       "saya menyaksikan sendiri anak bernama #8602# tinggal di rumah #0046#",
+       "bersama #0046# anak bernama #8602# sekarang tinggal dan itu saya lihat sendiri",
+       "dari penglihatan saya sendiri anak bernama #8602# menetap bersama #0046#"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "anak sekarang tinggal bersama pihak yang diterangkan dan saksi melihatnya sendiri",
+      "saksi1": [
+       "anak bernama #8602# sekarang tinggal bersama #0047# dan saya melihatnya sendiri",
+       "saya melihat sendiri anak bernama #8602# tinggal serumah dengan #0047#",
+       "tempat tinggal anak bernama #8602# sekarang ada pada #0047# dan saya datang ke sana",
+       "saya tahu langsung bahwa anak bernama #8602# dibawa tinggal oleh #0047#"
+      ],
+      "saksi2": [
+       "anak itu yang bernama #8602# sekarang berada dalam asuhan #0047# dan saya menyaksikannya",
+       "saya menyaksikan sendiri anak bernama #8602# tinggal di rumah #0047#",
+       "bersama #0047# anak bernama #8602# sekarang tinggal dan itu saya lihat sendiri",
+       "dari penglihatan saya sendiri anak bernama #8602# menetap bersama #0047#"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: anak tinggal bersama Penggugat; versi B: anak tinggal bersama Tergugat - berselisih pada PIHAK YANG MENGASUH",
+     "saksi1": [
+      "anak bernama #8602# sekarang tinggal bersama #0046# dan saya lihat sendiri",
+      "saya saksikan anak bernama #8602# tinggal serumah dengan #0046#",
+      "setahu saya anak bernama #8602# berada dalam asuhan #0046#",
+      "yang mengasuh anak bernama #8602# sekarang adalah #0046# menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "anak bernama #8602# sekarang tinggal bersama #0047# dan saya lihat sendiri",
+      "saya saksikan anak bernama #8602# tinggal serumah dengan #0047#",
+      "setahu saya anak bernama #8602# berada dalam asuhan #0047#",
+      "yang mengasuh anak bernama #8602# sekarang adalah #0047# menurut penglihatan saya"
+     ],
+     "bedaPada": "pelaku"
+    }
+   }
+  },
+  {
+   "id": "q-sejak-kapan",
+   "pokok": "pp-pengasuhan-sekarang",
+   "urutan": 60,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Sejak kapan anak bernama #8602# tinggal di tempat tinggalnya sekarang ?",
+   "teksVarian": [
+    "Sejak kapan anak bernama #8602# menetap di tempat sekarang ?"
+   ],
+   "variabelAbt": [
+    "8602"
+   ],
+   "hal": "sejak kapan anak tinggal di tempat sekarang",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "anak tinggal di tempat sekarang sejak waktu yang diisikan petugas",
+     "saksi1": [
+      "anak bernama #8602# tinggal di tempatnya sekarang sejak {sejak} dan saya mengetahuinya sendiri",
+      "sejak {sejak} anak bernama #8602# menetap di tempat sekarang dan saya menyaksikannya",
+      "saya melihat sendiri anak bernama #8602# mulai tinggal di sana sejak {sejak}",
+      "mulai {sejak} anak bernama #8602# berada di tempat tinggalnya yang sekarang menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "kepindahan anak bernama #8602# ke tempat sekarang terjadi sejak {sejak} dan saya ada di sana ketika itu",
+      "saya tahu langsung anak bernama #8602# tinggal di tempat itu sejak {sejak}",
+      "anak bernama #8602# menempati tempat tinggalnya sekarang sejak {sejak} sebagaimana saya lihat sendiri",
+      "sejak {sejak} saya menyaksikan anak bernama #8602# menetap di rumah yang sekarang"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: sejak waktu pada isian; versi B: baru beberapa bulan terakhir - berselisih pada WAKTU",
+     "saksi1": [
+      "anak bernama #8602# tinggal di tempatnya sekarang sejak {sejak} dan saya lihat sendiri",
+      "sejak {sejak} anak bernama #8602# menetap di tempat sekarang",
+      "saya saksikan anak bernama #8602# mulai tinggal di sana sejak {sejak}",
+      "mulai {sejak} anak bernama #8602# berada di tempat tinggal yang sekarang"
+     ],
+     "saksi2": [
+      "anak bernama #8602# baru dalam beberapa bulan terakhir tinggal di sana",
+      "setahu saya anak bernama #8602# pindah ke tempat itu masih baru",
+      "kepindahan anak bernama #8602# ke tempat itu terjadi beberapa bulan lalu",
+      "anak bernama #8602# menetap di tempat sekarang beberapa bulan lalu"
+     ],
+     "bedaPada": "waktu"
+    }
+   }
+  },
+  {
+   "id": "q-pengurusan-harian",
+   "pokok": "pp-pengasuhan-sekarang",
+   "urutan": 70,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Siapa yang sehari-hari mengurus makan, pakaian, kesehatan dan keperluan anak ?",
+   "teksVarian": [
+    "Siapa yang setiap hari menyiapkan makan dan pakaian anak serta merawatnya bila sakit ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "pihak yang mengurus keperluan anak sehari-hari",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "pihak yang mengasuh mengurus keperluan anak sehari-hari dan saksi melihatnya sendiri",
+      "saksi1": [
+       "sehari-hari yang mengurus makan pakaian dan kesehatan anak adalah #0046# dan saya melihatnya sendiri",
+       "saya menyaksikan sendiri #0046# menyiapkan makan dan pakaian anak serta merawatnya bila sakit",
+       "keperluan anak setiap hari diurus langsung oleh #0046# sebagaimana saya lihat",
+       "#0046# yang mengurus segala keperluan anak sehari-hari dan saya ada di tempat ketika itu"
+      ],
+      "saksi2": [
+       "makan pakaian dan perawatan anak sehari-hari dikerjakan oleh #0046# dan saya menyaksikannya",
+       "saya tahu langsung bahwa #0046# mengurus anak dari bangun tidur sampai tidur lagi",
+       "bila anak sakit #0046# yang merawat dan saya melihat sendiri",
+       "yang menyiapkan kebutuhan anak setiap hari adalah #0046# menurut yang saya lihat sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "pihak yang mengasuh mengurus keperluan anak sehari-hari dan saksi melihatnya sendiri",
+      "saksi1": [
+       "sehari-hari yang mengurus makan pakaian dan kesehatan anak adalah #0047# dan saya melihatnya sendiri",
+       "saya menyaksikan sendiri #0047# menyiapkan makan dan pakaian anak serta merawatnya bila sakit",
+       "keperluan anak setiap hari diurus langsung oleh #0047# sebagaimana saya lihat",
+       "#0047# yang mengurus segala keperluan anak sehari-hari dan saya ada di tempat ketika itu"
+      ],
+      "saksi2": [
+       "makan pakaian dan perawatan anak sehari-hari dikerjakan oleh #0047# dan saya menyaksikannya",
+       "saya tahu langsung bahwa #0047# mengurus anak dari bangun tidur sampai tidur lagi",
+       "bila anak sakit #0047# yang merawat dan saya melihat sendiri",
+       "yang menyiapkan kebutuhan anak setiap hari adalah #0047# menurut yang saya lihat sendiri"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: anak diurus langsung oleh orang tuanya; versi B: anak lebih banyak diurus keluarga lain - berselisih pada PIHAK YANG MENGURUS",
+     "saksi1": [
+      "anak sehari-hari diurus langsung oleh orang tuanya sendiri",
+      "keperluan anak dikerjakan langsung oleh orang tuanya menurut penglihatan saya",
+      "orang tuanya sendiri yang mengurus makan dan pakaian anak",
+      "saya melihat sendiri anak itu dirawat langsung oleh orang tuanya"
+     ],
+     "saksi2": [
+      "anak sehari-hari lebih banyak diurus oleh neneknya atau keluarga lain",
+      "keperluan anak dikerjakan oleh kakek neneknya menurut penglihatan saya",
+      "kerabatnya yang mengurus makan dan pakaian anak",
+      "saya melihat sendiri anak itu dirawat oleh keluarga yang lain"
+     ],
+     "bedaPada": "pelaku"
+    }
+   }
+  },
+  {
+   "id": "q-kondisi-anak",
+   "pokok": "pp-pengasuhan-sekarang",
+   "urutan": 80,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana keadaan anak selama dalam pengasuhan sekarang, apakah sehat dan terawat ?",
+   "teksVarian": [
+    "Bagaimana kesehatan dan perawatan anak selama berada dalam asuhan sekarang ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8602"
+   ],
+   "hal": "keadaan anak selama dalam pengasuhan sekarang",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "selama dalam asuhan pihak itu anak sehat dan terawat",
+      "saksi1": [
+       "selama diasuh #0046# anak bernama #8602# sehat dan terawat dengan baik menurut penglihatan saya",
+       "saya melihat sendiri anak bernama #8602# bersama #0046# tumbuh sehat dan terurus",
+       "badan anak bernama #8602# sehat dan pakaiannya bersih selama berada pada #0046# sebagaimana saya lihat",
+       "anak bernama #8602# terlihat sehat dan terpelihara dalam asuhan #0046#"
+      ],
+      "saksi2": [
+       "dalam asuhan #0046# anak bernama #8602# tampak sehat bersih dan terawat dan saya menyaksikannya",
+       "tumbuh kembang anak bernama #8602# bersama #0046# baik dan sehat menurut yang saya lihat langsung",
+       "saya tahu sendiri anak bernama #8602# terawat baik oleh #0046#",
+       "kesehatan anak bernama #8602# terjaga selama bersama #0046# dan saya melihatnya"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "selama dalam asuhan pihak itu anak sehat dan terawat",
+      "saksi1": [
+       "selama diasuh #0047# anak bernama #8602# sehat dan terawat dengan baik menurut penglihatan saya",
+       "saya melihat sendiri anak bernama #8602# bersama #0047# tumbuh sehat dan terurus",
+       "badan anak bernama #8602# sehat dan pakaiannya bersih selama berada pada #0047# sebagaimana saya lihat",
+       "anak bernama #8602# terlihat sehat dan terpelihara dalam asuhan #0047#"
+      ],
+      "saksi2": [
+       "dalam asuhan #0047# anak bernama #8602# tampak sehat bersih dan terawat dan saya menyaksikannya",
+       "tumbuh kembang anak bernama #8602# bersama #0047# baik dan sehat menurut yang saya lihat langsung",
+       "saya tahu sendiri anak bernama #8602# terawat baik oleh #0047#",
+       "kesehatan anak bernama #8602# terjaga selama bersama #0047# dan saya melihatnya"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: anak sehat dan terawat; versi B: anak kurang terurus - berselisih pada KEADAAN ANAK",
+     "saksi1": [
+      "anak bernama #8602# terlihat sehat terawat dan pakaiannya bersih",
+      "menurut penglihatan saya anak bernama #8602# tumbuh sehat dan terurus",
+      "saya melihat sendiri anak bernama #8602# terpelihara dengan baik",
+      "kondisi anak bernama #8602# sehat dan terawat sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "anak bernama #8602# terlihat kurus dan kurang terurus",
+      "saya melihat sendiri pakaian anak bernama #8602# kotor dan badannya kurang terawat",
+      "menurut penglihatan saya anak bernama #8602# mudah sakit dan kurang diperhatikan",
+      "keadaan anak bernama #8602# kurang terpelihara sebagaimana saya saksikan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-pendidikan-anak",
+   "pokok": "pp-pengasuhan-sekarang",
+   "urutan": 90,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah anak bersekolah dan siapa yang mengurus sekolah serta pendidikan agamanya ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8602"
+   ],
+   "hal": "pendidikan dan pendidikan agama anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "pihak yang mengasuh mengurus sekolah dan pendidikan agama anak",
+      "saksi1": [
+       "anak bernama #8602# bersekolah dan #0046# yang menyiapkan keperluan sekolahnya serta mengajarinya mengaji",
+       "saya melihat sendiri #0046# mengurus sekolah anak bernama #8602# dan membimbing ibadahnya",
+       "pendidikan dan agama anak bernama #8602# diurus oleh #0046# sebagaimana saya saksikan",
+       "#0046# yang membayar dan menyiapkan sekolah anak bernama #8602# serta mengajarkan salat kepadanya menurut yang saya lihat"
+      ],
+      "saksi2": [
+       "keperluan sekolah anak bernama #8602# dipenuhi #0046# dan saya menyaksikannya sendiri",
+       "#0046# menjaga sekolah anak bernama #8602# tetap berjalan dan membimbing mengajinya yang saya lihat sendiri",
+       "saya tahu langsung #0046# menyekolahkan anak bernama #8602# dan mengajarinya salat",
+       "bimbingan belajar dan agama anak bernama #8602# diberikan oleh #0046# di depan mata saya"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "pihak yang mengasuh mengurus sekolah dan pendidikan agama anak",
+      "saksi1": [
+       "anak bernama #8602# bersekolah dan #0047# yang menyiapkan keperluan sekolahnya serta mengajarinya mengaji",
+       "saya melihat sendiri #0047# mengurus sekolah anak bernama #8602# dan membimbing ibadahnya",
+       "pendidikan dan agama anak bernama #8602# diurus oleh #0047# sebagaimana saya saksikan",
+       "#0047# yang membayar dan menyiapkan sekolah anak bernama #8602# serta mengajarkan salat kepadanya menurut yang saya lihat"
+      ],
+      "saksi2": [
+       "keperluan sekolah anak bernama #8602# dipenuhi #0047# dan saya menyaksikannya sendiri",
+       "#0047# menjaga sekolah anak bernama #8602# tetap berjalan dan membimbing mengajinya yang saya lihat sendiri",
+       "saya tahu langsung #0047# menyekolahkan anak bernama #8602# dan mengajarinya salat",
+       "bimbingan belajar dan agama anak bernama #8602# diberikan oleh #0047# di depan mata saya"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: sekolah anak berjalan teratur; versi B: anak putus sekolah - berselisih pada PENDIDIKAN ANAK",
+     "saksi1": [
+      "anak bernama #8602# bersekolah dengan teratur dan keperluannya terpenuhi",
+      "sekolah anak bernama #8602# berjalan baik menurut penglihatan saya",
+      "saya lihat sendiri anak bernama #8602# berangkat sekolah dengan perlengkapan lengkap",
+      "anak bernama #8602# bersekolah dan biayanya terbayar sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "anak bernama #8602# putus sekolah karena kekurangan biaya",
+      "anak bernama #8602# berhenti bersekolah menurut penglihatan saya",
+      "sekolah anak bernama #8602# terbengkalai sebagaimana saya saksikan",
+      "saya melihat sendiri anak bernama #8602# berhenti sekolah dan menganggur di rumah"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-sikap-pengasuh",
+   "pokok": "pp-kecakapan",
+   "urutan": 100,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana sikap dan perilaku orang tua yang mengasuh anak terhadap anak sehari-hari ?",
+   "teksVarian": [
+    "Bagaimana perlakuan orang tua yang mengasuh anak terhadap anak itu setiap hari ?"
+   ],
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8602"
+   ],
+   "hal": "sikap dan perilaku orang tua yang mengasuh anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "pihak yang mengasuh bersikap baik dan penuh perhatian kepada anak",
+      "saksi1": [
+       "sikap #0046# terhadap anak bernama #8602# baik penuh kasih dan sabar menurut penglihatan saya",
+       "saya menyaksikan sendiri #0046# memperlakukan anak bernama #8602# dengan lembut dan penuh perhatian",
+       "#0046# bertanggung jawab dan telaten merawat anak bernama #8602# sebagaimana saya lihat sendiri",
+       "#0046# bersikap lembut kepada anak bernama #8602# dan saya menyaksikan sendiri perhatiannya"
+      ],
+      "saksi2": [
+       "dalam pandangan saya #0046# orang yang bertanggung jawab dalam mengasuh anak bernama #8602#",
+       "#0046# mengasihi anak bernama #8602# dan memperlakukannya dengan baik di depan mata saya",
+       "saya melihat sendiri #0046# sabar membimbing anak bernama #8602#",
+       "cara #0046# memperlakukan anak bernama #8602# baik dan penuh perhatian sebagaimana saya saksikan"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "pihak yang mengasuh bersikap baik dan penuh perhatian kepada anak",
+      "saksi1": [
+       "sikap #0047# terhadap anak bernama #8602# baik penuh kasih dan sabar menurut penglihatan saya",
+       "saya menyaksikan sendiri #0047# memperlakukan anak bernama #8602# dengan lembut dan penuh perhatian",
+       "#0047# bertanggung jawab dan telaten merawat anak bernama #8602# sebagaimana saya lihat sendiri",
+       "#0047# bersikap lembut kepada anak bernama #8602# dan saya menyaksikan sendiri perhatiannya"
+      ],
+      "saksi2": [
+       "dalam pandangan saya #0047# orang yang bertanggung jawab dalam mengasuh anak bernama #8602#",
+       "#0047# mengasihi anak bernama #8602# dan memperlakukannya dengan baik di depan mata saya",
+       "saya melihat sendiri #0047# sabar membimbing anak bernama #8602#",
+       "cara #0047# memperlakukan anak bernama #8602# baik dan penuh perhatian sebagaimana saya saksikan"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: orang tua yang mengasuh bersikap baik; versi B: bersikap kasar - berselisih pada PERILAKU",
+     "saksi1": [
+      "orang tua yang mengasuh anak bernama #8602# bersikap baik dan penuh perhatian menurut penglihatan saya",
+      "saya lihat sendiri orang tua yang mengasuh anak bernama #8602# bersikap lembut dan sabar",
+      "perilaku orang tua yang mengasuh anak bernama #8602# baik sebagaimana saya saksikan",
+      "orang tua yang mengasuh anak bernama #8602# memperlakukannya dengan baik di depan mata saya"
+     ],
+     "saksi2": [
+      "orang tua yang mengasuh anak bernama #8602# bersikap kasar dan mudah marah menurut penglihatan saya",
+      "saya lihat sendiri orang tua yang mengasuh anak bernama #8602# membentak dan memukulnya",
+      "perilaku orang tua yang mengasuh anak bernama #8602# kasar sebagaimana saya saksikan",
+      "orang tua yang mengasuh anak bernama #8602# memperlakukannya dengan keras di depan mata saya"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-pekerjaan-pengasuh",
+   "pokok": "pp-kecakapan",
+   "urutan": 110,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa pekerjaan orang tua yang mengasuh anak dan apakah penghasilannya mencukupi kebutuhan anak ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "0100",
+    "0104"
+   ],
+   "hal": "pekerjaan dan penghasilan orang tua yang mengasuh anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "pihak yang mengasuh bekerja dan penghasilannya mencukupi kebutuhan anak",
+      "saksi1": [
+       "#0046# bekerja sebagai #0100# dengan penghasilan {penghasilan} dan itu mencukupi kebutuhan anak",
+       "pekerjaan #0046# adalah #0100# dan penghasilannya {penghasilan} yang saya ketahui langsung mencukupi kebutuhan anak",
+       "saya tahu sendiri #0046# berpenghasilan {penghasilan} dari pekerjaannya sebagai #0100# dan itu mencukupi untuk anak",
+       "dari pekerjaan sebagai #0100# #0046# memperoleh {penghasilan} dan itu mencukupi kebutuhan anak menurut yang saya lihat"
+      ],
+      "saksi2": [
+       "#0046# menekuni pekerjaan sebagai #0100# dengan hasil {penghasilan} yang saya lihat mencukupi biaya anak",
+       "yang saya ketahui langsung #0046# bekerja sebagai #0100# dan hasilnya {penghasilan} mencukupi keperluan anak",
+       "penghasilan #0046# dari pekerjaan sebagai #0100# sebesar {penghasilan} dan itu memenuhi kebutuhan anak",
+       "saya menyaksikan sendiri #0046# bekerja sebagai #0100# dan penghasilannya {penghasilan} mencukupi untuk anak"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "pihak yang mengasuh bekerja dan penghasilannya mencukupi kebutuhan anak",
+      "saksi1": [
+       "#0047# bekerja sebagai #0104# dengan penghasilan {penghasilan} dan itu mencukupi kebutuhan anak",
+       "pekerjaan #0047# adalah #0104# dan penghasilannya {penghasilan} yang saya ketahui langsung mencukupi kebutuhan anak",
+       "saya tahu sendiri #0047# berpenghasilan {penghasilan} dari pekerjaannya sebagai #0104# dan itu mencukupi untuk anak",
+       "dari pekerjaan sebagai #0104# #0047# memperoleh {penghasilan} dan itu mencukupi kebutuhan anak menurut yang saya lihat"
+      ],
+      "saksi2": [
+       "#0047# menekuni pekerjaan sebagai #0104# dengan hasil {penghasilan} yang saya lihat mencukupi biaya anak",
+       "yang saya ketahui langsung #0047# bekerja sebagai #0104# dan hasilnya {penghasilan} mencukupi keperluan anak",
+       "penghasilan #0047# dari pekerjaan sebagai #0104# sebesar {penghasilan} dan itu memenuhi kebutuhan anak",
+       "saya menyaksikan sendiri #0047# bekerja sebagai #0104# dan penghasilannya {penghasilan} mencukupi untuk anak"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: penghasilan mencukupi kebutuhan anak; versi B: penghasilan kurang - berselisih pada PENGHASILAN",
+     "saksi1": [
+      "penghasilan orang tua yang mengasuh anak mencukupi kebutuhan anak menurut penglihatan saya",
+      "saya tahu langsung penghasilan orang tua yang mengasuh anak cukup untuk biaya anak",
+      "kebutuhan anak tercukupi dari penghasilan orang tua yang mengasuhnya",
+      "penghasilan orang tua yang mengasuh anak memadai untuk keperluan anak sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "penghasilan orang tua yang mengasuh anak kurang untuk kebutuhan anak menurut penglihatan saya",
+      "saya tahu langsung penghasilan orang tua yang mengasuh anak kecil untuk biaya anak",
+      "kebutuhan anak kekurangan dari penghasilan orang tua yang mengasuhnya",
+      "penghasilan orang tua yang mengasuh anak pas-pasan untuk keperluan anak sebagaimana saya saksikan"
+     ],
+     "bedaPada": "jumlah"
+    }
+   }
+  },
+  {
+   "id": "q-waktu-mengasuh",
+   "pokok": "pp-kecakapan",
+   "urutan": 120,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah orang tua yang mengasuh anak memiliki waktu yang cukup untuk mengurus anak ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8602"
+   ],
+   "hal": "waktu orang tua yang mengasuh untuk mengurus anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "pihak yang mengasuh memiliki waktu cukup untuk mengurus anak",
+      "saksi1": [
+       "#0046# memiliki waktu yang cukup untuk mengurus anak bernama #8602# karena saya melihat sendiri kesehariannya",
+       "saya menyaksikan sendiri #0046# meluangkan waktu untuk anak bernama #8602# setiap hari",
+       "di sela pekerjaannya #0046# mengurus anak bernama #8602# sebagaimana saya lihat",
+       "waktu #0046# bagi anak bernama #8602# cukup menurut penglihatan saya"
+      ],
+      "saksi2": [
+       "saya tahu langsung #0046# mengatur waktu agar dapat mengurus anak bernama #8602#",
+       "#0046# mendampingi anak bernama #8602# belajar dan bermain di rumah menurut penglihatan saya",
+       "#0046# pandai membagi waktu antara pekerjaan dan mengurus anak bernama #8602# yang saya lihat sendiri",
+       "anak bernama #8602# mendapat waktu yang cukup dari #0046# sebagaimana saya saksikan"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "pihak yang mengasuh memiliki waktu cukup untuk mengurus anak",
+      "saksi1": [
+       "#0047# memiliki waktu yang cukup untuk mengurus anak bernama #8602# karena saya melihat sendiri kesehariannya",
+       "saya menyaksikan sendiri #0047# meluangkan waktu untuk anak bernama #8602# setiap hari",
+       "di sela pekerjaannya #0047# mengurus anak bernama #8602# sebagaimana saya lihat",
+       "waktu #0047# bagi anak bernama #8602# cukup menurut penglihatan saya"
+      ],
+      "saksi2": [
+       "saya tahu langsung #0047# mengatur waktu agar dapat mengurus anak bernama #8602#",
+       "#0047# mendampingi anak bernama #8602# belajar dan bermain di rumah menurut penglihatan saya",
+       "#0047# pandai membagi waktu antara pekerjaan dan mengurus anak bernama #8602# yang saya lihat sendiri",
+       "anak bernama #8602# mendapat waktu yang cukup dari #0047# sebagaimana saya saksikan"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: orang tua yang mengasuh punya waktu cukup; versi B: waktunya terbatas karena sibuk - berselisih pada WAKTU MENGASUH",
+     "saksi1": [
+      "orang tua yang mengasuh anak bernama #8602# punya waktu cukup untuknya menurut penglihatan saya",
+      "saya lihat sendiri orang tua yang mengasuh anak bernama #8602# meluangkan waktu setiap hari",
+      "waktu orang tua yang mengasuh anak bernama #8602# cukup sebagaimana saya saksikan",
+      "orang tua yang mengasuh anak bernama #8602# dapat membagi waktu untuk anaknya"
+     ],
+     "saksi2": [
+      "orang tua yang mengasuh anak bernama #8602# sibuk bekerja dan waktu untuk anaknya sedikit",
+      "saya lihat sendiri orang tua yang mengasuh anak bernama #8602# pulang larut malam",
+      "waktu orang tua yang mengasuh anak bernama #8602# terbatas sebagaimana saya saksikan",
+      "orang tua yang mengasuh anak bernama #8602# lebih banyak berada di luar rumah"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-lingkungan-tinggal",
+   "pokok": "pp-kecakapan",
+   "urutan": 130,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana keadaan rumah dan lingkungan tempat anak tinggal sekarang ?",
+   "variabelAbt": [
+    "8602"
+   ],
+   "hal": "keadaan rumah dan lingkungan tempat tinggal anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "rumah dan lingkungan tempat anak tinggal layak dan aman",
+     "saksi1": [
+      "rumah tempat anak bernama #8602# tinggal layak dan bersih dengan lingkungan yang aman dan baik",
+      "saya datang sendiri ke rumah tempat anak bernama #8602# tinggal dan melihat keadaannya layak serta lingkungannya baik",
+      "tempat tinggal anak bernama #8602# bersih rapi dan berada di lingkungan yang aman menurut penglihatan saya",
+      "saya melihat sendiri rumah anak bernama #8602# layak dihuni dan tetangganya baik"
+     ],
+     "saksi2": [
+      "lingkungan sekitar tempat tinggal anak bernama #8602# tenang dan rumahnya layak sebagaimana saya saksikan",
+      "rumah yang ditempati anak bernama #8602# memadai dan bersih dan tetangga sekitarnya baik menurut penglihatan saya",
+      "saya mengetahui langsung tempat anak bernama #8602# tinggal aman dan layak dihuni",
+      "keadaan rumah dan sekitarnya tempat anak bernama #8602# tinggal baik dan nyaman yang saya lihat sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: rumah dan lingkungan layak; versi B: rumah sempit dan lingkungan kurang baik - berselisih pada KEADAAN TEMPAT TINGGAL",
+     "saksi1": [
+      "rumah tempat anak bernama #8602# tinggal layak dan lingkungannya aman",
+      "saya lihat sendiri rumah anak bernama #8602# bersih dan lingkungannya baik",
+      "tempat tinggal anak bernama #8602# memadai dan sekitarnya tenang",
+      "rumah yang ditempati anak bernama #8602# layak huni menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "rumah tempat anak bernama #8602# tinggal sempit dan lingkungannya kurang baik",
+      "saya lihat sendiri rumah anak bernama #8602# kumuh dan sekitarnya rawan",
+      "tempat tinggal anak bernama #8602# sesak dan sekitarnya ramai gangguan",
+      "rumah yang ditempati anak bernama #8602# kurang layak menurut penglihatan saya"
+     ],
+     "bedaPada": "tempat"
+    }
+   }
+  },
+  {
+   "id": "q-kelayakan-lain",
+   "pokok": "pp-kecakapan",
+   "urutan": 140,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kehadiran": [
+     "kontradiktoir",
+     "t-tidak-hadir-setelah-mediasi"
+    ]
+   },
+   "teks": "Apakah saksi mengetahui hal yang membuat orang tua lainnya kurang cakap mengasuh anak ?",
+   "variabelAbt": [],
+   "hal": "hal yang membuat orang tua lainnya kurang cakap mengasuh anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan hal yang ia lihat sendiri pada orang tua lainnya yang membuatnya kurang cakap mengasuh anak",
+     "saksi1": [
+      "hal yang saya saksikan sendiri pada orang tua lainnya sehingga ia kurang cakap mengasuh anak adalah {daftar}",
+      "yang saya lihat langsung membuat orang tua lainnya kurang cakap merawat anak adalah {daftar}",
+      "dengan mata kepala sendiri saya melihat orang tua lainnya kurang cakap mengasuh karena {daftar}",
+      "kekurangcakapan orang tua lainnya dalam mengasuh anak saya saksikan sendiri berupa {daftar}"
+     ],
+     "saksi2": [
+      "saya tahu langsung orang tua lainnya kurang cakap merawat anak disebabkan {daftar}",
+      "menurut penglihatan saya orang tua lainnya kurang mampu mengasuh karena {daftar}",
+      "yang saya ketahui sendiri tentang kekurangan orang tua lainnya dalam mengasuh anak adalah {daftar}",
+      "orang tua lainnya kurang cakap mengurus anak dan alasannya {daftar} sebagaimana saya lihat"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: orang tua lainnya kurang cakap mengasuh; versi B: orang tua lainnya cakap dan baik - berselisih pada KECAKAPAN",
+     "saksi1": [
+      "saya melihat sendiri orang tua lainnya kurang cakap mengurus anak",
+      "menurut penglihatan saya orang tua lainnya kurang mampu mengasuh anak",
+      "orang tua lainnya kurang telaten merawat anak sebagaimana saya saksikan",
+      "saya tahu langsung orang tua lainnya kurang cakap mengasuh anak"
+     ],
+     "saksi2": [
+      "saya melihat sendiri orang tua lainnya cakap dan baik mengurus anak",
+      "menurut penglihatan saya orang tua lainnya mampu mengasuh anak",
+      "orang tua lainnya telaten merawat anak sebagaimana saya saksikan",
+      "saya tahu langsung orang tua lainnya cakap mengasuh anak"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-akses",
+   "pokok": "pp-akses",
+   "urutan": 150,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah orang tua yang tidak mengasuh anak diberi kesempatan untuk bertemu dan berhubungan dengan anak ?",
+   "teksVarian": [
+    "Apakah orang tua lainnya dapat bertemu, menelepon atau menjenguk anak ?"
+   ],
+   "variabelAbt": [
+    "8602"
+   ],
+   "hal": "kesempatan orang tua lainnya bertemu anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "akses": "ya"
+      },
+      "maksud": "orang tua lainnya diberi kesempatan bertemu dan berhubungan dengan anak",
+      "saksi1": [
+       "orang tua lainnya diberi kesempatan bertemu dengan anak bernama #8602# dan saya menyaksikannya sendiri",
+       "saya melihat sendiri orang tua lainnya datang menjenguk anak bernama #8602# dan diterima dengan baik",
+       "pertemuan antara anak bernama #8602# dan orang tua lainnya berjalan lancar sebagaimana saya lihat",
+       "anak bernama #8602# bebas bertemu dan berkomunikasi dengan orang tua lainnya menurut penglihatan saya"
+      ],
+      "saksi2": [
+       "kesempatan bertemu anak bernama #8602# diberikan kepada orang tua lainnya dan saya ada di sana",
+       "saya tahu langsung orang tua lainnya dapat berkunjung dan menelepon anak bernama #8602#",
+       "orang tua lainnya leluasa menemui anak bernama #8602# sebagaimana saya saksikan",
+       "anak bernama #8602# dibolehkan berhubungan dengan orang tua lainnya di depan mata saya"
+      ]
+     },
+     {
+      "keadaan": {
+       "akses": "tidak"
+      },
+      "maksud": "orang tua lainnya dihalangi bertemu dan berhubungan dengan anak",
+      "saksi1": [
+       "orang tua lainnya dihalangi bertemu dengan anak bernama #8602# dan saya menyaksikannya sendiri",
+       "saya melihat sendiri orang tua lainnya datang menjenguk anak bernama #8602# lalu ditolak",
+       "pertemuan anak bernama #8602# dengan orang tua lainnya dilarang sebagaimana saya lihat",
+       "anak bernama #8602# dilarang berhubungan dengan orang tua lainnya menurut penglihatan saya"
+      ],
+      "saksi2": [
+       "kesempatan bertemu anak bernama #8602# ditutup bagi orang tua lainnya dan saya ada di sana",
+       "saya tahu langsung orang tua lainnya ditolak ketika hendak berkunjung dan menelepon anak bernama #8602#",
+       "orang tua lainnya dicegah menemui anak bernama #8602# sebagaimana saya saksikan",
+       "anak bernama #8602# dilarang menemui orang tua lainnya di depan mata saya"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: orang tua lainnya diberi akses bertemu anak; versi B: orang tua lainnya dihalangi - berselisih pada AKSES BERTEMU ANAK",
+     "saksi1": [
+      "orang tua lainnya diberi kesempatan bertemu anak bernama #8602# menurut penglihatan saya",
+      "saya lihat sendiri orang tua lainnya menjenguk anak bernama #8602# dengan leluasa",
+      "orang tua lainnya dibolehkan menemui anak bernama #8602# sebagaimana saya saksikan",
+      "anak bernama #8602# bebas bertemu orang tua lainnya di depan mata saya"
+     ],
+     "saksi2": [
+      "orang tua lainnya dihalangi bertemu anak bernama #8602# menurut penglihatan saya",
+      "saya lihat sendiri orang tua lainnya ditolak ketika menjenguk anak bernama #8602#",
+      "orang tua lainnya dilarang menemui anak bernama #8602# sebagaimana saya saksikan",
+      "anak bernama #8602# dicegah bertemu orang tua lainnya di depan mata saya"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-pilihan-anak",
+   "pokok": "pp-pilihan-anak",
+   "urutan": 160,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "anakMumayyiz": "sudah"
+   },
+   "teks": "Apakah anak bernama #8602# pernah menyampaikan kepada saksi dengan siapa ia ingin tinggal ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8602"
+   ],
+   "hal": "pilihan anak tentang dengan siapa ia tinggal",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "pilihanAnak": "pengaju"
+      },
+      "maksud": "anak menyampaikan langsung kepada saksi pilihannya tinggal bersama salah satu orang tua",
+      "saksi1": [
+       "anak bernama #8602# mengatakan langsung kepada saya bahwa ia ingin tinggal bersama #0046#",
+       "saya mendengar sendiri anak bernama #8602# menyatakan memilih tinggal bersama #0046#",
+       "di hadapan saya anak bernama #8602# berkata ingin ikut #0046#",
+       "anak bernama #8602# menyampaikan sendiri kepada saya keinginannya tinggal bersama #0046#"
+      ],
+      "saksi2": [
+       "anak bernama #8602# menegaskan kepada saya pilihannya untuk tinggal dengan #0046#",
+       "saya menyaksikan anak bernama #8602# menyebut #0046# sebagai orang tua yang ia pilih untuk tinggal bersama",
+       "dari mulut anak bernama #8602# sendiri saya mendengar bahwa ia memilih #0046#",
+       "anak bernama #8602# mengutarakan langsung kepada saya bahwa ia memilih tinggal bersama #0046#"
+      ]
+     },
+     {
+      "keadaan": {
+       "pilihanAnak": "lawan"
+      },
+      "maksud": "anak menyampaikan langsung kepada saksi pilihannya tinggal bersama salah satu orang tua",
+      "saksi1": [
+       "anak bernama #8602# mengatakan langsung kepada saya bahwa ia ingin tinggal bersama #0047#",
+       "saya mendengar sendiri anak bernama #8602# menyatakan memilih tinggal bersama #0047#",
+       "di hadapan saya anak bernama #8602# berkata ingin ikut #0047#",
+       "anak bernama #8602# menyampaikan sendiri kepada saya keinginannya tinggal bersama #0047#"
+      ],
+      "saksi2": [
+       "anak bernama #8602# menegaskan kepada saya pilihannya untuk tinggal dengan #0047#",
+       "saya menyaksikan anak bernama #8602# menyebut #0047# sebagai orang tua yang ia pilih untuk tinggal bersama",
+       "dari mulut anak bernama #8602# sendiri saya mendengar bahwa ia memilih #0047#",
+       "anak bernama #8602# mengutarakan langsung kepada saya bahwa ia memilih tinggal bersama #0047#"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: anak memilih Penggugat; versi B: anak memilih Tergugat - berselisih pada PILIHAN ANAK",
+     "saksi1": [
+      "anak bernama #8602# mengatakan langsung kepada saya ingin tinggal bersama #0046#",
+      "saya mendengar sendiri anak bernama #8602# memilih tinggal bersama #0046#",
+      "di hadapan saya anak bernama #8602# berkata ingin ikut #0046#",
+      "anak bernama #8602# menyampaikan sendiri kepada saya keinginannya tinggal bersama #0046#"
+     ],
+     "saksi2": [
+      "anak bernama #8602# mengatakan langsung kepada saya ingin tinggal bersama #0047#",
+      "saya mendengar sendiri anak bernama #8602# memilih tinggal bersama #0047#",
+      "di hadapan saya anak bernama #8602# berkata ingin ikut #0047#",
+      "anak bernama #8602# menyampaikan sendiri kepada saya keinginannya tinggal bersama #0047#"
+     ],
+     "bedaPada": "pelaku"
+    }
+   }
+  },
+  {
+   "id": "q-alih-keadaan",
+   "pokok": "pp-pengalihan",
+   "urutan": 170,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pengalihan": "ya"
+   },
+   "teks": "Apa yang saksi ketahui tentang keadaan yang membuat keselamatan jasmani dan rohani anak kurang terjamin bila tetap bersama pemegang asuh sekarang ?",
+   "variabelAbt": [
+    "8602"
+   ],
+   "hal": "keadaan yang mengancam jasmani dan rohani anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan keadaan yang ia lihat sendiri dan mengancam keselamatan jasmani dan rohani anak",
+     "saksi1": [
+      "yang saya lihat sendiri mengancam keselamatan jasmani dan rohani anak bernama #8602# adalah {daftar}",
+      "saya menyaksikan sendiri keadaan yang membahayakan jasmani dan rohani anak bernama #8602# yaitu {daftar}",
+      "keselamatan jasmani dan rohani anak bernama #8602# terancam karena {daftar} sebagaimana saya lihat",
+      "dengan mata kepala sendiri saya melihat anak bernama #8602# terancam jasmani dan rohaninya oleh {daftar}"
+     ],
+     "saksi2": [
+      "hal yang saya ketahui langsung dan mengancam keselamatan anak bernama #8602# lahir dan batin ialah {daftar}",
+      "saya melihat sendiri {daftar} yang membuat anak bernama #8602# terancam secara jasmani dan rohani",
+      "anak bernama #8602# berada dalam bahaya jasmani dan rohani akibat {daftar} yang saya saksikan",
+      "sepengetahuan saya yang melihat langsung keselamatan jasmani dan rohani anak bernama #8602# terganggu oleh {daftar}"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pemegang asuh sekarang melalaikan keselamatan anak; versi B: pemegang asuh menjaga keselamatan anak dengan baik - berselisih pada KESELAMATAN ANAK",
+     "saksi1": [
+      "saya melihat sendiri pemegang asuh sekarang melalaikan keselamatan anak bernama #8602#",
+      "menurut penglihatan saya pemegang asuh sekarang lalai menjaga anak bernama #8602#",
+      "pemegang asuh sekarang mengabaikan keselamatan anak bernama #8602# sebagaimana saya saksikan",
+      "saya tahu langsung pemegang asuh sekarang membiarkan anak bernama #8602# dalam bahaya"
+     ],
+     "saksi2": [
+      "saya melihat sendiri pemegang asuh sekarang menjaga keselamatan anak bernama #8602# dengan baik",
+      "menurut penglihatan saya pemegang asuh sekarang teliti menjaga anak bernama #8602#",
+      "pemegang asuh sekarang memperhatikan keselamatan anak bernama #8602# sebagaimana saya saksikan",
+      "saya tahu langsung pemegang asuh sekarang melindungi anak bernama #8602# dari bahaya"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-alih-teguran",
+   "pokok": "pp-pengalihan",
+   "urutan": 180,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pengalihan": "ya"
+   },
+   "teks": "Apakah ada teguran atau upaya agar keadaan itu diperbaiki dan bagaimana tanggapan pemegang asuh sekarang ?",
+   "variabelAbt": [],
+   "hal": "upaya memperbaiki keadaan pengasuhan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "keluarga telah menegur dan membujuk agar keadaan diperbaiki namun keadaan tetap sama",
+     "saksi1": [
+      "keluarga telah menegur dan membujuk agar keadaan itu diperbaiki tetapi keadaannya tetap sama",
+      "saya sendiri ikut menasihati agar pengasuhan anak diperbaiki namun keadaan tetap seperti semula",
+      "teguran dan nasihat telah disampaikan kepada pemegang asuh sekarang tetapi keadaan anak masih seperti sebelumnya",
+      "kami telah mengingatkan pemegang asuh sekarang agar memperbaiki pengasuhan namun hasilnya tetap sama"
+     ],
+     "saksi2": [
+      "saya dan keluarga telah berulang kali meminta keadaan itu diperbaiki tetapi pengasuhan tetap seperti dulu",
+      "nasihat telah kami sampaikan kepada pemegang asuh sekarang namun pengasuhan anak masih seperti semula",
+      "upaya menegur pemegang asuh sekarang telah dilakukan tetapi keadaan anak tetap sama",
+      "kami telah menegur agar pengasuhan diperbaiki namun keadaannya tetap begitu saja"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: sudah ada teguran; versi B: belum ada teguran - berselisih pada ADA TIDAKNYA TEGURAN",
+     "saksi1": [
+      "ada teguran dari keluarga kepada pemegang asuh sekarang",
+      "keluarga menegur pemegang asuh sekarang agar memperbaiki pengasuhan",
+      "saya sendiri telah menasihati pemegang asuh sekarang",
+      "teguran telah disampaikan kepada pemegang asuh sekarang"
+     ],
+     "saksi2": [
+      "belum ada teguran dari keluarga kepada pemegang asuh sekarang",
+      "keluarga belum menegur pemegang asuh sekarang soal pengasuhan",
+      "saya sendiri belum menasihati pemegang asuh sekarang",
+      "teguran belum disampaikan kepada pemegang asuh sekarang"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-biaya-anak",
+   "pokok": "pp-biaya-anak",
+   "urutan": 190,
+   "tingkat": "tambahan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "nafkah-anak"
+   },
+   "teks": "Apakah orang tua yang tidak mengasuh anak ikut membiayai kebutuhan hidup dan sekolah anak ?",
+   "variabelAbt": [
+    "8602"
+   ],
+   "hal": "pembiayaan kebutuhan hidup dan sekolah anak oleh orang tua lainnya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "orang tua lainnya lalai memberikan biaya untuk kebutuhan hidup dan sekolah anak",
+     "saksi1": [
+      "orang tua lainnya lalai memberikan biaya hidup dan sekolah anak bernama #8602# dan saya menyaksikan sendiri keadaan itu",
+      "saya melihat sendiri biaya anak bernama #8602# ditanggung oleh pengasuhnya sementara orang tua lainnya lalai",
+      "kebutuhan anak bernama #8602# dipenuhi pengasuhnya dan orang tua lainnya melalaikan kewajibannya sebagaimana saya lihat",
+      "orang tua lainnya melalaikan biaya anak bernama #8602# menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "biaya hidup dan sekolah anak bernama #8602# dilalaikan oleh orang tua lainnya dan saya mengetahuinya langsung",
+      "yang membiayai anak bernama #8602# adalah pengasuhnya sedangkan orang tua lainnya lalai menurut yang saya lihat",
+      "saya tahu sendiri orang tua lainnya melalaikan kewajiban membiayai anak bernama #8602#",
+      "kewajiban biaya anak bernama #8602# dilalaikan oleh orang tua lainnya di depan mata saya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: orang tua lainnya lalai memberi biaya; versi B: orang tua lainnya memberi biaya - berselisih pada PEMBIAYAAN ANAK",
+     "saksi1": [
+      "orang tua lainnya lalai memberi biaya untuk anak bernama #8602#",
+      "saya lihat sendiri orang tua lainnya melalaikan biaya anak bernama #8602#",
+      "biaya anak bernama #8602# dilalaikan orang tua lainnya menurut penglihatan saya",
+      "orang tua lainnya melalaikan kewajiban biaya anak bernama #8602# sebagaimana saya saksikan"
+     ],
+     "saksi2": [
+      "orang tua lainnya memberi biaya untuk anak bernama #8602# dengan teratur",
+      "saya lihat sendiri orang tua lainnya menyerahkan biaya anak bernama #8602#",
+      "biaya anak bernama #8602# dipenuhi orang tua lainnya menurut penglihatan saya",
+      "orang tua lainnya menunaikan kewajiban biaya anak bernama #8602# sebagaimana saya saksikan"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-hubungan-lawan-anak",
+   "pokok": "pp-kecakapan",
+   "urutan": 200,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kehadiran": "verstek"
+   },
+   "teks": "Apa yang saksi ketahui tentang hubungan #0047# dengan anak selama ini dan keberadaannya sekarang ?",
+   "variabelAbt": [
+    "0047",
+    "8602"
+   ],
+   "hal": "hubungan #0047# dengan anak dan keberadaannya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menerangkan hubungan Tergugat dengan anak selama ini yang ia lihat sendiri",
+     "saksi1": [
+      "yang saya lihat sendiri mengenai hubungan #0047# dengan anak bernama #8602# adalah {daftar}",
+      "saya menyaksikan sendiri hubungan #0047# dengan anak bernama #8602# selama ini yaitu {daftar}",
+      "tentang hubungan #0047# dengan anak bernama #8602# yang saya saksikan langsung adalah {daftar}",
+      "dengan mata kepala sendiri saya melihat hubungan #0047# dengan anak bernama #8602# berupa {daftar}"
+     ],
+     "saksi2": [
+      "hal yang saya ketahui langsung tentang hubungan #0047# dengan anak bernama #8602# ialah {daftar}",
+      "menurut penglihatan saya sendiri hubungan #0047# dengan anak bernama #8602# selama ini {daftar}",
+      "saya tahu sendiri bagaimana #0047# terhadap anak bernama #8602# yaitu {daftar}",
+      "sepengetahuan saya yang menyaksikan langsung hubungan #0047# dengan anak bernama #8602# adalah {daftar}"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-upaya-keluarga",
+   "pokok": "pp-upaya",
+   "urutan": 210,
+   "tingkat": "inti",
+   "kelompok": "upaya",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah sudah ada upaya keluarga menyelesaikan soal pengasuhan anak ini secara kekeluargaan ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "8602"
+   ],
+   "hal": "upaya keluarga menyelesaikan soal pengasuhan anak",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "keluarga telah berupaya menyelesaikan soal pengasuhan anak secara kekeluargaan namun gagal",
+     "saksi1": [
+      "keluarga telah berupaya menyelesaikan soal pengasuhan anak bernama #8602# secara kekeluargaan namun upaya itu gagal",
+      "saya ikut mempertemukan kedua pihak untuk membicarakan pengasuhan anak bernama #8602# tetapi gagal mencapai kesepakatan",
+      "musyawarah keluarga tentang pengasuhan anak bernama #8602# telah dilakukan dan gagal",
+      "kami sekeluarga telah mencoba membicarakan pengasuhan anak bernama #8602# secara baik-baik namun gagal"
+     ],
+     "saksi2": [
+      "upaya kekeluargaan mengenai pengasuhan anak bernama #8602# telah ditempuh tetapi gagal",
+      "saya menyaksikan sendiri keluarga mempertemukan #0046# dan #0047# untuk membahas anak bernama #8602# namun gagal",
+      "pembicaraan keluarga soal siapa yang mengasuh anak bernama #8602# telah diupayakan dan gagal",
+      "keluarga besar telah mengusahakan jalan damai soal anak bernama #8602# tetapi gagal"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: sudah ada upaya keluarga; versi B: belum ada upaya keluarga - berselisih pada UPAYA KEKELUARGAAN",
+     "saksi1": [
+      "ada upaya keluarga membicarakan pengasuhan anak bernama #8602#",
+      "keluarga mempertemukan kedua pihak soal anak bernama #8602#",
+      "musyawarah keluarga soal anak bernama #8602# telah dilakukan",
+      "saya sendiri telah mencoba menengahi soal anak bernama #8602#"
+     ],
+     "saksi2": [
+      "belum ada upaya keluarga membicarakan pengasuhan anak bernama #8602#",
+      "keluarga belum mempertemukan kedua pihak soal anak bernama #8602#",
+      "musyawarah keluarga soal anak bernama #8602# belum dilakukan",
+      "saya sendiri belum mencoba menengahi soal anak bernama #8602#"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   }
+  },
+  {
+   "id": "q-penutup",
+   "pokok": "pp-penutup",
+   "urutan": 900,
+   "tingkat": "inti",
+   "kelompok": "penutup",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+   "teksVarian": [
+    "Apakah masih ada keterangan lain yang akan saksi sampaikan ?",
+    "Adakah hal lain yang hendak saksi terangkan ?"
+   ],
+   "variabelAbt": [],
+   "hal": "keterangan tambahan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan keterangannya sudah cukup",
+     "saksi1": [
+      "sudah cukup",
+      "sudah cukup sekian dari saya",
+      "sudah cukup keterangan saya",
+      "sudah cukup itu saja"
+     ],
+     "saksi2": [
+      "sudah cukup demikian keterangan saya",
+      "sudah cukup semua yang dapat saya terangkan",
+      "sudah cukup sampai di sini keterangan saya",
+      "sudah cukup demikian yang saya ketahui"
+     ]
+    }
+   }
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "catatanPetugas": [
+  "Keterangan saksi harus menyebut sebab pengetahuannya; keterangan seorang saksi saja tanpa alat bukti lain tidak cukup.",
+  "Keluarga sedarah dan semenda garis lurus serta suami atau istri salah satu pihak pada dasarnya tidak dapat didengar sebagai saksi; perkara tentang keadaan menurut hukum sipil seseorang dikecualikan (Buku II Edisi Revisi 2013 hlm. 100-101). Penilaian ada pada hakim.",
+  "Keterangan yang hanya berasal dari cerita orang lain hanya dapat menjadi sumber persangkaan.",
+  "Perkara hak asuh diperiksa pada pengadilan agama tempat tinggal anak senyatanya (SEMA 2/2024).",
+  "Keterangan saksi tentang pilihan anak yang sudah mumayyiz bukan pengganti pendengaran anak oleh hakim di persidangan."
+ ]
+}

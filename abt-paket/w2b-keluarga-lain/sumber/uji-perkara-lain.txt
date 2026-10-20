@@ -1,0 +1,8 @@
+# nomor perkara nyata di SIPP server untuk uji kueri variabel 4916-4919, 4924, 4925 (pengangkatan anak, penetapan kematian)
+152/Pdt.P/2025/PA.Dgl
+12/Pdt.P/2024/PA.Dgl
+8/Pdt.P/2024/PA.Dgl
+162/Pdt.P/2023/PA.Dgl
+5/Pdt.P/2022/PA.Dgl
+173/Pdt.P/2021/PA.Dgl
+648/Pdt.P/2019/PA.Dgl
