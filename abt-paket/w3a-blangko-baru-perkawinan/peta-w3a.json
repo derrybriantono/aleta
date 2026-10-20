@@ -1,0 +1,1670 @@
+{
+ "jenis": {
+  "penolakan-perkawinan": {
+   "sipp": 343,
+   "nama": "Penolakan Perkawinan",
+   "singkat": "Penolakan Perkawinan",
+   "tipe": "permohonan",
+   "nomor": "Pdt.P",
+   "folder": "5c Penolakan Perkawinan",
+   "menu_putusan": 168,
+   "menu_bas": 169,
+   "alur": 60,
+   "alur_nama": "Penolakan Perkawinan",
+   "var": [
+    3600,
+    3619
+   ],
+   "kata": "penolakan perkawinan",
+   "katalog": "penolakan-perkawinan",
+   "deteksi": "penolakanPerkawinan",
+   "kunci": "penolakan-perkawinan",
+   "kunci_cermin": "penolakan perkawinan",
+   "padanan_sipp": [],
+   "folder_bas": "5c Penolakan Perkawinan - BAS",
+   "nama_menu_putusan": "Putusan Penolakan Perkawinan",
+   "alias_putusan": "Penolakan Perkawinan - Putusan",
+   "nama_menu_bas": "Penolakan Perkawinan - BAS",
+   "alias_bas": "Penolakan Perkawinan - BAS",
+   "awalan_bas": "BAS ALUR 60 Penolakan Perkawinan"
+  },
+  "perkawinan-campuran": {
+   "sipp": 359,
+   "nama": "Perkawinan Campuran",
+   "singkat": "Perkawinan Campuran",
+   "tipe": "permohonan",
+   "nomor": "Pdt.P",
+   "folder": "5d Perkawinan Campuran",
+   "menu_putusan": 170,
+   "menu_bas": 171,
+   "alur": 61,
+   "alur_nama": "Perkawinan Campuran",
+   "var": [
+    3620,
+    3639
+   ],
+   "kata": "perkawinan campuran",
+   "katalog": "perkawinan-campuran",
+   "deteksi": "perkawinanCampuran",
+   "kunci": "perkawinan-campuran",
+   "kunci_cermin": "perkawinan campuran",
+   "padanan_sipp": [],
+   "folder_bas": "5d Perkawinan Campuran - BAS",
+   "nama_menu_putusan": "Putusan Perkawinan Campuran",
+   "alias_putusan": "Perkawinan Campuran - Putusan",
+   "nama_menu_bas": "Perkawinan Campuran - BAS",
+   "alias_bas": "Perkawinan Campuran - BAS",
+   "awalan_bas": "BAS ALUR 61 Perkawinan Campuran"
+  },
+  "izin-kawin": {
+   "sipp": 361,
+   "nama": "Izin Kawin",
+   "singkat": "Izin Kawin",
+   "tipe": "permohonan",
+   "nomor": "Pdt.P",
+   "folder": "3a Izin Kawin",
+   "menu_putusan": 172,
+   "menu_bas": 173,
+   "alur": 62,
+   "alur_nama": "Izin Kawin",
+   "var": [
+    3640,
+    3659
+   ],
+   "kata": "izin kawin",
+   "katalog": "izin-kawin",
+   "deteksi": "izinKawin",
+   "kunci": "izin-kawin",
+   "kunci_cermin": "izin kawin",
+   "padanan_sipp": [],
+   "folder_bas": "3a Izin Kawin - BAS",
+   "nama_menu_putusan": "Putusan Izin Kawin",
+   "alias_putusan": "Izin Kawin - Putusan",
+   "nama_menu_bas": "Izin Kawin - BAS",
+   "alias_bas": "Izin Kawin - BAS",
+   "awalan_bas": "BAS ALUR 62 Izin Kawin"
+  },
+  "pengesahan-anak": {
+   "sipp": 352,
+   "nama": "Pengesahan Anak",
+   "singkat": "Pengesahan Anak",
+   "tipe": "permohonan",
+   "nomor": "Pdt.P",
+   "folder": "8a Pengesahan Anak",
+   "menu_putusan": 174,
+   "menu_bas": 175,
+   "alur": 63,
+   "alur_nama": "Pengesahan Anak",
+   "var": [
+    3660,
+    3689
+   ],
+   "kata": "pengesahan anak",
+   "katalog": "pengesahan-anak",
+   "deteksi": "pengesahanAnak",
+   "kunci": "pengesahan-anak",
+   "kunci_cermin": "pengesahan anak",
+   "padanan_sipp": [],
+   "folder_bas": "8a Pengesahan Anak - BAS",
+   "nama_menu_putusan": "Putusan Pengesahan Anak",
+   "alias_putusan": "Pengesahan Anak - Putusan",
+   "nama_menu_bas": "Pengesahan Anak - BAS",
+   "alias_bas": "Pengesahan Anak - BAS",
+   "awalan_bas": "BAS ALUR 63 Pengesahan Anak"
+  },
+  "kelalaian-kewajiban": {
+   "sipp": 345,
+   "nama": "Kelalaian atas Kewajiban Suami/Istri",
+   "singkat": "Kelalaian Kewajiban Suami Istri",
+   "tipe": "gugatan",
+   "nomor": "Pdt.G",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "menu_putusan": 176,
+   "menu_bas": 177,
+   "alur": 64,
+   "alur_nama": "Kelalaian Kewajiban",
+   "var": [
+    3690,
+    3739
+   ],
+   "kata": "kelalaian kewajiban suami atau istri",
+   "katalog": "kelalaian-kewajiban",
+   "deteksi": "kelalaianKewajiban",
+   "kunci": "kelalaian-kewajiban",
+   "kunci_cermin": "kelalaian kewajiban suami istri",
+   "padanan_sipp": [
+    "kelalaian atas kewajiban suami / istri",
+    "kelalaian atas kewajiban suami/istri"
+   ],
+   "folder_bas": "1e Kelalaian Kewajiban Suami Istri - BAS",
+   "nama_menu_putusan": "Putusan Kelalaian Kewajiban Suami Istri",
+   "alias_putusan": "Kelalaian Kewajiban Suami Istri - Putusan",
+   "nama_menu_bas": "Kelalaian Kewajiban Suami Istri - BAS",
+   "alias_bas": "Kelalaian Kewajiban Suami Istri - BAS",
+   "awalan_bas": "BAS ALUR 64 Kelalaian Kewajiban"
+  },
+  "hak-bekas-istri": {
+   "sipp": 351,
+   "nama": "Hak-hak Bekas Istri/Kewajiban Bekas Suami",
+   "singkat": "Hak Bekas Istri",
+   "tipe": "gugatan",
+   "nomor": "Pdt.G",
+   "folder": "1f Hak Bekas Istri",
+   "menu_putusan": 178,
+   "menu_bas": 179,
+   "alur": 65,
+   "alur_nama": "Hak Bekas Istri",
+   "var": [
+    3740,
+    3789
+   ],
+   "kata": "hak bekas istri dan kewajiban bekas suami",
+   "katalog": "hak-bekas-istri",
+   "deteksi": "hakBekasIstri",
+   "kunci": "hak-bekas-istri",
+   "kunci_cermin": "hak bekas istri",
+   "padanan_sipp": [
+    "hak - hak bekas istri/kewajiban bekas suami",
+    "hak-hak bekas istri/kewajiban bekas suami"
+   ],
+   "folder_bas": "1f Hak Bekas Istri - BAS",
+   "nama_menu_putusan": "Putusan Hak Bekas Istri",
+   "alias_putusan": "Hak Bekas Istri - Putusan",
+   "nama_menu_bas": "Hak Bekas Istri - BAS",
+   "alias_bas": "Hak Bekas Istri - BAS",
+   "awalan_bas": "BAS ALUR 65 Hak Bekas Istri"
+  }
+ },
+ "peta": [
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[01] [Kabul] Hak Bekas Istri - Kontradiktoir.rtf",
+   "kode": "01",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "",
+   "catatan": "Dikabulkan seluruhnya; hak yang terisi (nafkah iddah, maskan, kiswah, mutah, madliyah, mahar, biaya hadhanah) tercetak di amar."
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[01a] [Kabul] Hak Bekas Istri - T Tidak Hadir Setelah Mediasi.rtf",
+   "kode": "01a",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "t-tidak-hadir-setelah-mediasi",
+   "catatan": ""
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[01b] [Kabul Verstek] Hak Bekas Istri.rtf",
+   "kode": "01b",
+   "label": "Kabul Verstek",
+   "status": "Dikabulkan",
+   "keadaan": "verstek",
+   "catatan": ""
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[02] [Kabul Sebagian] Hak Bekas Istri - Kontradiktoir - Petitum Selebihnya Ditolak.rtf",
+   "kode": "02",
+   "label": "Kabul Sebagian",
+   "status": "Dikabulkan Sebagian",
+   "keadaan": "",
+   "catatan": "Dikabulkan sebagian; hak yang dikosongkan tidak tercetak dan petitum selebihnya ditolak (alasan di isian 3755)."
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[02b] [Kabul Sebagian Verstek] Hak Bekas Istri - T Tidak Hadir - Petitum Selebihnya Ditolak.rtf",
+   "kode": "02b",
+   "label": "Kabul Sebagian Verstek",
+   "status": "Dikabulkan Sebagian",
+   "keadaan": "verstek",
+   "catatan": ""
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[03] [Tolak] Hak Bekas Istri - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+   "kode": "03",
+   "label": "Tolak",
+   "status": "Ditolak",
+   "keadaan": "",
+   "catatan": "Ditolak; alasan di isian 3755 (mis. nusyuz, telah diputus dalam perkara cerai)."
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[03b] [Tolak Verstek] Hak Bekas Istri - T Tidak Hadir - Dalil Tidak Terbukti.rtf",
+   "kode": "03b",
+   "label": "Tolak Verstek",
+   "status": "Ditolak",
+   "keadaan": "verstek",
+   "catatan": ""
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[97] [Perdamaian] Hak Bekas Istri - Akta Perdamaian.rtf",
+   "kode": "97",
+   "label": "Perdamaian",
+   "status": "Perdamaian",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[98] [Cabut] Hak Bekas Istri - P & T Hadir Sebelum Jawaban.rtf",
+   "kode": "98",
+   "label": "Cabut",
+   "status": "Dicabut",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[98b] [Cabut] Hak Bekas Istri - Sesudah Jawaban dengan Persetujuan T.rtf",
+   "kode": "98b",
+   "label": "Cabut",
+   "status": "Dicabut",
+   "keadaan": "sesudah-jawaban",
+   "catatan": ""
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[98a] [Gugur] Hak Bekas Istri - P Tidak Hadir Sidang Pertama.rtf",
+   "kode": "98a",
+   "label": "Gugur",
+   "status": "Digugurkan",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[98c] [Coret] Hak Bekas Istri - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
+   "kode": "98c",
+   "label": "Coret",
+   "status": "Dicoret dari Register",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[99] [NO] Hak Bekas Istri - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022).rtf",
+   "kode": "99",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "sema-1-2022",
+   "catatan": ""
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[99a] [NO] Hak Bekas Istri - Kurang Pihak (Plurium Litis Consortium).rtf",
+   "kode": "99a",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "kurang-pihak",
+   "catatan": ""
+  },
+  {
+   "jenis": "hak-bekas-istri",
+   "folder": "1f Hak Bekas Istri",
+   "berkas": "[99b] [NO] Hak Bekas Istri - Gugatan Kabur (Obscuur Libel).rtf",
+   "kode": "99b",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "cacat-formil",
+   "catatan": "Gugatan kabur (obscuur libel); uraian di variabel 9651."
+  },
+  {
+   "jenis": "izin-kawin",
+   "folder": "3a Izin Kawin",
+   "berkas": "[01] [Kabul] Izin Kawin - Orang Tua atau Wali Hadir dan Berbeda Pendapat.rtf",
+   "kode": "01",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "",
+   "catatan": "Pasal 6 ayat (5) UU 1/1974: orang tua/wali hadir, didengar, tidak memberi izin. Isi 3649 (keadaan orang tua), 3644-3645 (orang yang didengar), 3650, 3651, 3656."
+  },
+  {
+   "jenis": "izin-kawin",
+   "folder": "3a Izin Kawin",
+   "berkas": "[01a] [Kabul] Izin Kawin - Orang Tua atau Wali Dipanggil Patut Tidak Hadir atau Tidak Menyatakan Pendapat.rtf",
+   "kode": "01a",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "orang-tua-tidak-hadir",
+   "catatan": "Orang tua/wali dipanggil patut tetapi tidak hadir sehingga tidak menyatakan pendapat (Pasal 6 ayat (5)). Pastikan relaas panggilan sah dan patut."
+  },
+  {
+   "jenis": "izin-kawin",
+   "folder": "3a Izin Kawin",
+   "berkas": "[01b] [Kabul] Izin Kawin - Salah Seorang Orang Tua Meninggal atau Tidak Mampu Menyatakan Kehendak.rtf",
+   "kode": "01b",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "salah-satu-orang-tua",
+   "catatan": "Pasal 6 ayat (3): izin cukup dari orang tua yang masih hidup/mampu; orang tua tersebut hadir tetapi tidak memberi izin."
+  },
+  {
+   "jenis": "izin-kawin",
+   "folder": "3a Izin Kawin",
+   "berkas": "[01c] [Kabul] Izin Kawin - Kedua Orang Tua Meninggal atau Tidak Mampu, Wali atau Keluarga Garis Lurus Berbeda Pendapat.rtf",
+   "kode": "01c",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "wali-keluarga",
+   "catatan": "Pasal 6 ayat (4): izin dari wali, orang yang memelihara atau keluarga garis lurus ke atas yang masih hidup dan dapat menyatakan kehendak."
+  },
+  {
+   "jenis": "izin-kawin",
+   "folder": "3a Izin Kawin",
+   "berkas": "[03] [Tolak] Izin Kawin - Keberatan Orang Tua atau Wali Beralasan Hukum.rtf",
+   "kode": "03",
+   "label": "Tolak",
+   "status": "Ditolak",
+   "keadaan": "",
+   "catatan": "Majelis menilai keberatan orang tua/wali beralasan (isi 3656); izin tidak diberikan."
+  },
+  {
+   "jenis": "izin-kawin",
+   "folder": "3a Izin Kawin",
+   "berkas": "[03a] [Tolak] Izin Kawin - Syarat Perkawinan Tidak Terpenuhi.rtf",
+   "kode": "03a",
+   "label": "Tolak",
+   "status": "Ditolak",
+   "keadaan": "syarat-tidak-terpenuhi",
+   "catatan": "Izin tidak diberikan karena syarat perkawinan lain tidak terpenuhi (halangan perkawinan, persetujuan calon, atau calon pasangan belum 19 tahun); uraikan di 3656."
+  },
+  {
+   "jenis": "izin-kawin",
+   "folder": "3a Izin Kawin",
+   "berkas": "[99a] [NO] Izin Kawin - Pemohon Belum Berumur 19 Tahun (Bukan Izin Kawin tetapi Dispensasi Kawin).rtf",
+   "kode": "99a",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "umur-kurang-19",
+   "catatan": "Pemohon belum 19 tahun: yang tepat dispensasi kawin yang dimohonkan orang tua (Pasal 7 ayat (2) UU 1/1974 jo. UU 16/2019, PERMA 5/2019)."
+  },
+  {
+   "jenis": "izin-kawin",
+   "folder": "3a Izin Kawin",
+   "berkas": "[99b] [NO] Izin Kawin - Pemohon Sudah Berumur 21 Tahun (Tidak Perlu Izin).rtf",
+   "kode": "99b",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "umur-21-lebih",
+   "catatan": "Pemohon sudah 21 tahun atau lebih: izin Pasal 6 ayat (2) tidak diperlukan."
+  },
+  {
+   "jenis": "izin-kawin",
+   "folder": "3a Izin Kawin",
+   "berkas": "[99c] [NO] Izin Kawin - Orang Tua atau Wali Telah Memberi Izin (Tidak Ada Perbedaan Pendapat).rtf",
+   "kode": "99c",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "izin-diberikan",
+   "catatan": "Orang tua/wali yang hadir ternyata memberi izin: tidak ada perbedaan pendapat, tidak ada sengketa untuk diputus."
+  },
+  {
+   "jenis": "izin-kawin",
+   "folder": "3a Izin Kawin",
+   "berkas": "[98] [Cabut] Izin Kawin.rtf",
+   "kode": "98",
+   "label": "Cabut",
+   "status": "Dicabut",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "izin-kawin",
+   "folder": "3a Izin Kawin",
+   "berkas": "[98a] [Gugur] Izin Kawin - Pemohon Tidak Pernah Hadir.rtf",
+   "kode": "98a",
+   "label": "Gugur",
+   "status": "Digugurkan",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "izin-kawin",
+   "folder": "3a Izin Kawin",
+   "berkas": "[98c] [Coret] Izin Kawin - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
+   "kode": "98c",
+   "label": "Coret",
+   "status": "Dicoret dari Register",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "izin-kawin",
+   "folder": "3a Izin Kawin",
+   "berkas": "[99] [NO] Izin Kawin - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf",
+   "kode": "99",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "sema-1-2022",
+   "catatan": ""
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[01] [Kabul] Kelalaian Kewajiban Suami Istri - Kontradiktoir.rtf",
+   "kode": "01",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "",
+   "catatan": "Dikabulkan: kontradiktoir"
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[01a] [Kabul] Kelalaian Kewajiban Suami Istri - T Tidak Hadir Setelah Mediasi.rtf",
+   "kode": "01a",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "t-tidak-hadir-setelah-mediasi",
+   "catatan": "Dikabulkan: Tergugat berhenti hadir sesudah mediasi"
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[01b] [Kabul Verstek] Kelalaian Kewajiban Suami Istri.rtf",
+   "kode": "01b",
+   "label": "Kabul Verstek",
+   "status": "Dikabulkan",
+   "keadaan": "verstek",
+   "catatan": "Dikabulkan: verstek"
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[02] [Kabul Sebagian] Kelalaian Kewajiban Suami Istri - Kontradiktoir - Petitum Selebihnya Ditolak.rtf",
+   "kode": "02",
+   "label": "Kabul Sebagian",
+   "status": "Dikabulkan Sebagian",
+   "keadaan": "",
+   "catatan": "Dikabulkan sebagian: petitum selebihnya ditolak"
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[02b] [Kabul Sebagian Verstek] Kelalaian Kewajiban Suami Istri - T Tidak Hadir - Petitum Selebihnya Ditolak.rtf",
+   "kode": "02b",
+   "label": "Kabul Sebagian Verstek",
+   "status": "Dikabulkan Sebagian",
+   "keadaan": "verstek",
+   "catatan": "Dikabulkan sebagian: verstek"
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[03] [Tolak] Kelalaian Kewajiban Suami Istri - Kontradiktoir - Dalil Tidak Terbukti.rtf",
+   "kode": "03",
+   "label": "Tolak",
+   "status": "Ditolak",
+   "keadaan": "",
+   "catatan": "Ditolak: dalil tidak terbukti, Tergugat tidak mampu, atau nusyuz"
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[03b] [Tolak Verstek] Kelalaian Kewajiban Suami Istri - T Tidak Hadir - Dalil Tidak Terbukti.rtf",
+   "kode": "03b",
+   "label": "Tolak Verstek",
+   "status": "Ditolak",
+   "keadaan": "verstek",
+   "catatan": "Ditolak: verstek"
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[97] [Perdamaian] Kelalaian Kewajiban Suami Istri - Akta Perdamaian.rtf",
+   "kode": "97",
+   "label": "Perdamaian",
+   "status": "Perdamaian",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[98] [Cabut] Kelalaian Kewajiban Suami Istri - P & T Hadir Sebelum Jawaban.rtf",
+   "kode": "98",
+   "label": "Cabut",
+   "status": "Dicabut",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[98b] [Cabut] Kelalaian Kewajiban Suami Istri - Sesudah Jawaban dengan Persetujuan T.rtf",
+   "kode": "98b",
+   "label": "Cabut",
+   "status": "Dicabut",
+   "keadaan": "sesudah-jawaban",
+   "catatan": ""
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[98a] [Gugur] Kelalaian Kewajiban Suami Istri - P Tidak Hadir Sidang Pertama.rtf",
+   "kode": "98a",
+   "label": "Gugur",
+   "status": "Digugurkan",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[98c] [Coret] Kelalaian Kewajiban Suami Istri - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
+   "kode": "98c",
+   "label": "Coret",
+   "status": "Dicoret dari Register",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[99] [NO] Kelalaian Kewajiban Suami Istri - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022).rtf",
+   "kode": "99",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "sema-1-2022",
+   "catatan": ""
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[99a] [NO] Kelalaian Kewajiban Suami Istri - Kurang Pihak (Plurium Litis Consortium).rtf",
+   "kode": "99a",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "kurang-pihak",
+   "catatan": "Tidak dapat diterima: kurang pihak"
+  },
+  {
+   "jenis": "kelalaian-kewajiban",
+   "folder": "1e Kelalaian Kewajiban Suami Istri",
+   "berkas": "[99b] [NO] Kelalaian Kewajiban Suami Istri - Gugatan Kabur (Obscuur Libel).rtf",
+   "kode": "99b",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "cacat-formil",
+   "catatan": "Tidak dapat diterima: gugatan kabur"
+  },
+  {
+   "jenis": "pengesahan-anak",
+   "folder": "8a Pengesahan Anak",
+   "berkas": "[01] [Kabul] Pengesahan Anak - Anak Lahir dalam Perkawinan Sah yang Belum atau Baru Dicatat.rtf",
+   "kode": "01",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "",
+   "catatan": "Anak lahir dalam perkawinan sah menurut hukum Islam yang belum/baru dicatat atau telah diitsbatkan (pilih A/B/C di 3662); status anak = pilihan majelis 3668."
+  },
+  {
+   "jenis": "pengesahan-anak",
+   "folder": "8a Pengesahan Anak",
+   "berkas": "[01a] [Kabul] Pengesahan Anak - Anak Lahir Sebelum Pernikahan Para Pemohon (Pengakuan atau Hubungan Darah).rtf",
+   "kode": "01a",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "lahir-sebelum-nikah",
+   "catatan": "Anak lahir sebelum pernikahan para Pemohon: pengakuan ayah/tes DNA (isi 3666 dan 3670), Pasal 43 ayat (1) UU 1/1974 sebagaimana dimaknai Putusan MK 46/PUU-VIII/2010; pilih status di 3668."
+  },
+  {
+   "jenis": "pengesahan-anak",
+   "folder": "8a Pengesahan Anak",
+   "berkas": "[03] [Tolak] Pengesahan Anak - Dalil Pengesahan Tidak Terbukti.rtf",
+   "kode": "03",
+   "label": "Tolak",
+   "status": "Ditolak",
+   "keadaan": "",
+   "catatan": "Pernikahan atau kelahiran anak tidak terbukti; uraikan di 3671."
+  },
+  {
+   "jenis": "pengesahan-anak",
+   "folder": "8a Pengesahan Anak",
+   "berkas": "[03a] [Tolak] Pengesahan Anak - Hubungan Darah atau Pengakuan Tidak Terbukti.rtf",
+   "kode": "03a",
+   "label": "Tolak",
+   "status": "Ditolak",
+   "keadaan": "hubungan-darah-tidak-terbukti",
+   "catatan": "Anak lahir sebelum pernikahan tetapi hubungan darah/pengakuan tidak terbukti; uraikan di 3671."
+  },
+  {
+   "jenis": "pengesahan-anak",
+   "folder": "8a Pengesahan Anak",
+   "berkas": "[99a] [NO] Pengesahan Anak - Pernikahan Orang Tua Belum Terbukti Sah (Itsbat Nikah Lebih Dahulu).rtf",
+   "kode": "99a",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "perkawinan-belum-terbukti",
+   "catatan": "Pengesahan anak prematur karena pernikahan orang tua belum dibuktikan sah (belum akta nikah/itsbat); uraikan di 3671."
+  },
+  {
+   "jenis": "pengesahan-anak",
+   "folder": "8a Pengesahan Anak",
+   "berkas": "[99b] [NO] Pengesahan Anak - Pemohon Bukan Orang Tua atau Tidak Berkepentingan.rtf",
+   "kode": "99b",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "bukan-orang-tua",
+   "catatan": "Pemohon bukan ayah atau ibu anak / tidak berkepentingan langsung (Pasal 44 ayat (2) UU 1/1974); uraikan di 3671."
+  },
+  {
+   "jenis": "pengesahan-anak",
+   "folder": "8a Pengesahan Anak",
+   "berkas": "[99c] [NO] Pengesahan Anak - Anak Sudah Mempunyai Akta Kelahiran.rtf",
+   "kode": "99c",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "sudah-berakta",
+   "catatan": "Anak sudah mempunyai akta kelahiran yang memuat nama orang tuanya dan tidak ada sengketa status (Pasal 55 ayat (1) UU 1/1974); uraikan di 3671."
+  },
+  {
+   "jenis": "pengesahan-anak",
+   "folder": "8a Pengesahan Anak",
+   "berkas": "[98] [Cabut] Pengesahan Anak.rtf",
+   "kode": "98",
+   "label": "Cabut",
+   "status": "Dicabut",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "pengesahan-anak",
+   "folder": "8a Pengesahan Anak",
+   "berkas": "[98a] [Gugur] Pengesahan Anak - Pemohon Tidak Pernah Hadir.rtf",
+   "kode": "98a",
+   "label": "Gugur",
+   "status": "Digugurkan",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "pengesahan-anak",
+   "folder": "8a Pengesahan Anak",
+   "berkas": "[98c] [Coret] Pengesahan Anak - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
+   "kode": "98c",
+   "label": "Coret",
+   "status": "Dicoret dari Register",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "pengesahan-anak",
+   "folder": "8a Pengesahan Anak",
+   "berkas": "[99] [NO] Pengesahan Anak - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf",
+   "kode": "99",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "sema-1-2022",
+   "catatan": ""
+  },
+  {
+   "jenis": "penolakan-perkawinan",
+   "folder": "5c Penolakan Perkawinan",
+   "berkas": "[01] [Kabul] Penolakan Perkawinan - PPN Didengar atau Menyerahkan Surat Penolakan.rtf",
+   "kode": "01",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "",
+   "catatan": "Kabul: penolakan PPN dinyatakan tidak beralasan dan perkawinan diperintahkan dilangsungkan (Pasal 21 ayat (4)); PPN didengar atau menyerahkan surat"
+  },
+  {
+   "jenis": "penolakan-perkawinan",
+   "folder": "5c Penolakan Perkawinan",
+   "berkas": "[01a] [Kabul] Penolakan Perkawinan - PPN Tidak Hadir.rtf",
+   "kode": "01a",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "ppn-tidak-hadir",
+   "catatan": "Kabul: PPN diberi kesempatan didengar tetapi tidak hadir"
+  },
+  {
+   "jenis": "penolakan-perkawinan",
+   "folder": "5c Penolakan Perkawinan",
+   "berkas": "[03] [Tolak] Penolakan Perkawinan - Larangan Perkawinan Terbukti.rtf",
+   "kode": "03",
+   "label": "Tolak",
+   "status": "Ditolak",
+   "keadaan": "",
+   "catatan": "Tolak: larangan perkawinan terbukti, penolakan PPN dikuatkan"
+  },
+  {
+   "jenis": "penolakan-perkawinan",
+   "folder": "5c Penolakan Perkawinan",
+   "berkas": "[99a] [NO] Penolakan Perkawinan - Belum Ada Penolakan Tertulis PPN.rtf",
+   "kode": "99a",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "belum-ada-penolakan-tertulis",
+   "catatan": "NO: belum ada penolakan tertulis dari PPN (permohonan prematur, Pasal 21 ayat (2) dan (3))"
+  },
+  {
+   "jenis": "penolakan-perkawinan",
+   "folder": "5c Penolakan Perkawinan",
+   "berkas": "[99b] [NO] Penolakan Perkawinan - PPN Berkedudukan di Luar Wilayah Hukum.rtf",
+   "kode": "99b",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "bukan-wilayah-hukum",
+   "catatan": "NO: PPN yang menolak berkedudukan di luar wilayah hukum Pengadilan (Pasal 21 ayat (3))"
+  },
+  {
+   "jenis": "penolakan-perkawinan",
+   "folder": "5c Penolakan Perkawinan",
+   "berkas": "[98] [Cabut] Penolakan Perkawinan.rtf",
+   "kode": "98",
+   "label": "Cabut",
+   "status": "Dicabut",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "penolakan-perkawinan",
+   "folder": "5c Penolakan Perkawinan",
+   "berkas": "[98a] [Gugur] Penolakan Perkawinan - Pemohon Tidak Pernah Hadir.rtf",
+   "kode": "98a",
+   "label": "Gugur",
+   "status": "Digugurkan",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "penolakan-perkawinan",
+   "folder": "5c Penolakan Perkawinan",
+   "berkas": "[98c] [Coret] Penolakan Perkawinan - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
+   "kode": "98c",
+   "label": "Coret",
+   "status": "Dicoret dari Register",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "penolakan-perkawinan",
+   "folder": "5c Penolakan Perkawinan",
+   "berkas": "[99] [NO] Penolakan Perkawinan - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf",
+   "kode": "99",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "sema-1-2022",
+   "catatan": ""
+  },
+  {
+   "jenis": "perkawinan-campuran",
+   "folder": "5d Perkawinan Campuran",
+   "berkas": "[01] [Kabul] Perkawinan Campuran - Pejabat Didengar atau Menyerahkan Surat Penolakan.rtf",
+   "kode": "01",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "",
+   "catatan": "Kabul: penolakan tidak beralasan dan penetapan menjadi pengganti surat keterangan (Pasal 60 ayat (4)); pejabat didengar atau menyerahkan surat"
+  },
+  {
+   "jenis": "perkawinan-campuran",
+   "folder": "5d Perkawinan Campuran",
+   "berkas": "[01a] [Kabul] Perkawinan Campuran - Pejabat Tidak Hadir.rtf",
+   "kode": "01a",
+   "label": "Kabul",
+   "status": "Dikabulkan",
+   "keadaan": "pejabat-tidak-hadir",
+   "catatan": "Kabul: pejabat diberi kesempatan didengar tetapi tidak hadir"
+  },
+  {
+   "jenis": "perkawinan-campuran",
+   "folder": "5d Perkawinan Campuran",
+   "berkas": "[03] [Tolak] Perkawinan Campuran - Syarat Perkawinan Belum Terpenuhi.rtf",
+   "kode": "03",
+   "label": "Tolak",
+   "status": "Ditolak",
+   "keadaan": "",
+   "catatan": "Tolak: syarat perkawinan belum terpenuhi, penolakan beralasan"
+  },
+  {
+   "jenis": "perkawinan-campuran",
+   "folder": "5d Perkawinan Campuran",
+   "berkas": "[99a] [NO] Perkawinan Campuran - Calon Mempelai Tidak Beragama Islam.rtf",
+   "kode": "99a",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "calon-tidak-beragama-islam",
+   "catatan": "NO: calon mempelai tidak beragama Islam, bukan wewenang Pengadilan Agama (Pasal 63 ayat (1))"
+  },
+  {
+   "jenis": "perkawinan-campuran",
+   "folder": "5d Perkawinan Campuran",
+   "berkas": "[99b] [NO] Perkawinan Campuran - Belum Ada Penolakan Pejabat.rtf",
+   "kode": "99b",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "belum-ada-penolakan",
+   "catatan": "NO: belum ada penolakan pejabat (Pasal 60 ayat (3))"
+  },
+  {
+   "jenis": "perkawinan-campuran",
+   "folder": "5d Perkawinan Campuran",
+   "berkas": "[99c] [NO] Perkawinan Campuran - Bukan Perkawinan Campuran.rtf",
+   "kode": "99c",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "bukan-perkawinan-campuran",
+   "catatan": "NO: bukan perkawinan campuran (Pasal 57)"
+  },
+  {
+   "jenis": "perkawinan-campuran",
+   "folder": "5d Perkawinan Campuran",
+   "berkas": "[98] [Cabut] Perkawinan Campuran.rtf",
+   "kode": "98",
+   "label": "Cabut",
+   "status": "Dicabut",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "perkawinan-campuran",
+   "folder": "5d Perkawinan Campuran",
+   "berkas": "[98a] [Gugur] Perkawinan Campuran - Pemohon Tidak Pernah Hadir.rtf",
+   "kode": "98a",
+   "label": "Gugur",
+   "status": "Digugurkan",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "perkawinan-campuran",
+   "folder": "5d Perkawinan Campuran",
+   "berkas": "[98c] [Coret] Perkawinan Campuran - Dibatalkan dari Pendaftaran - Panjar Habis.rtf",
+   "kode": "98c",
+   "label": "Coret",
+   "status": "Dicoret dari Register",
+   "keadaan": "",
+   "catatan": ""
+  },
+  {
+   "jenis": "perkawinan-campuran",
+   "folder": "5d Perkawinan Campuran",
+   "berkas": "[99] [NO] Perkawinan Campuran - Pemohon Tidak Hadir Lagi (SEMA 1 2022).rtf",
+   "kode": "99",
+   "label": "NO",
+   "status": "Tidak Dapat Diterima",
+   "keadaan": "sema-1-2022",
+   "catatan": ""
+  }
+ ],
+ "isian": {
+  "3740": [
+   "manual",
+   "Nomor dan tanggal putusan perceraian serta akta cerai ada di berkas perkara cerai atau bukti surat; diisi dari bukti yang diajukan."
+  ],
+  "3741": [
+   "manual",
+   "Cerai talak atau cerai gugat dibaca dari putusan perceraian; posita menyebutnya bila jelas, selebihnya dipilih dari bukti."
+  ],
+  "3742": [
+   "manual",
+   "Tanggal ikrar talak atau putusan cerai berkekuatan hukum tetap adalah awal masa iddah; diisi dari akta cerai atau putusan perceraian."
+  ],
+  "3743": [
+   "manual",
+   "Masa iddah (haid, tidak haid, hamil, atau tanpa iddah) ditentukan majelis dari keadaan Penggugat; tidak tercatat di SIPP."
+  ],
+  "3744": [
+   "manual",
+   "Apakah masa iddah masih berjalan saat gugatan diajukan dihitung majelis dari tanggal putus dan tanggal pendaftaran perkara."
+  ],
+  "3745": [
+   "manual",
+   "Keadaan dukhul (bada atau qobla al dukhul) diterangkan para pihak dan saksi; posita jarang menyebutnya tegas."
+  ],
+  "3746": [
+   "manual",
+   "Terbukti atau tidaknya nusyuz adalah penilaian majelis atas bukti dan saksi."
+  ],
+  "3747": [
+   "manual",
+   "Apakah hak-hak itu pernah diputus dalam perkara cerai diperiksa majelis dari putusan perceraian; menentukan nebis in idem."
+  ],
+  "3749": [
+   "manual",
+   "Fakta kepatutan besaran (lama perkawinan, keadaan Penggugat, penghasilan Tergugat) adalah temuan majelis dari saksi dan bukti."
+  ],
+  "3755": [
+   "manual",
+   "Alasan sebagian petitum atau seluruh gugatan ditolak adalah pertimbangan majelis."
+  ],
+  "3748": [
+   "opsional",
+   "Hanya bila sebagian hak telah diputus dalam perkara cerai."
+  ],
+  "3750": [
+   "opsional",
+   "Hanya bila Tergugat mengajukan bantahan atau eksepsi yang perlu ditanggapi majelis."
+  ],
+  "3751": [
+   "opsional",
+   "Hanya bila maskan dituntut dan dikabulkan."
+  ],
+  "3752": [
+   "opsional",
+   "Hanya bila kiswah dituntut dan dikabulkan."
+  ],
+  "3753": [
+   "opsional",
+   "Hanya bila mahar terhutang dituntut dan dikabulkan."
+  ],
+  "3754": [
+   "opsional",
+   "Hanya bila ada sita jaminan untuk biaya hadhanah anak."
+  ],
+  "3756": [
+   "opsional",
+   "Waktu pembayaran hanya bila majelis menentukannya dalam amar."
+  ],
+  "3640": [
+   "manual",
+   "Nama calon pasangan dibaca dari posita bila ada kalimat \"akan menikah dengan ... bernama ...\"; selain itu ketik dari keterangan Pemohon (tidak ada di data pihak SIPP)."
+  ],
+  "3641": [
+   "manual",
+   "Umur calon pasangan tidak tercatat di SIPP; ketik dari posita atau keterangan di sidang. Bila di bawah 19 tahun, calon pasangan perlu dispensasi kawin."
+  ],
+  "3644": [
+   "manual",
+   "Orang tua, wali atau keluarga garis lurus ke atas yang didengar bukan pihak di SIPP; ketik namanya dari posita atau relaas panggilan."
+  ],
+  "3645": [
+   "manual",
+   "Hubungan orang yang didengar dengan Pemohon (ayah kandung, ibu kandung, kakek, wali, dan seterusnya) diisi dari posita atau keterangan di sidang."
+  ],
+  "3646": [
+   "opsional",
+   "Orang kedua yang didengar (mis. ibu kandung) bila orang tua kedua-duanya didengar."
+  ],
+  "3647": [
+   "opsional",
+   "Hubungan orang kedua yang didengar dengan Pemohon (mis. ibu kandung)."
+  ],
+  "3649": [
+   "manual",
+   "Keadaan orang tua (kedua hidup, salah seorang meninggal atau tidak mampu, kedua meninggal atau tidak mampu) menentukan siapa yang memberi izin menurut Pasal 6 ayat (2), (3), (4); diisi dari posita dan bukti."
+  ],
+  "3650": [
+   "manual",
+   "Pokok keterangan orang tua/wali di sidang tidak tercatat di SIPP; ketik dari berita acara sidang. Kosongkan bila tidak hadir meskipun dipanggil patut."
+  ],
+  "3651": [
+   "manual",
+   "Alasan orang tua/wali tidak memberi izin atau tidak menyatakan pendapat diambil dari posita atau keterangan di sidang."
+  ],
+  "3654": [
+   "manual",
+   "Daftar bukti surat diketik dari berkas e-Court atau yang diserahkan di sidang (KTP, KK, akta kelahiran Pemohon, identitas calon pasangan)."
+  ],
+  "3656": [
+   "manual",
+   "Penilaian atas keberatan orang tua/wali (beralasan atau tidak) adalah pertimbangan majelis; diisi hakim."
+  ],
+  "3657": [
+   "opsional",
+   "Kesiapan Pemohon dan calon pasangan (pendidikan, pekerjaan, kemampuan) bila majelis mempertimbangkannya."
+  ],
+  "3691": [
+   "opsional",
+   "Kedudukan Penggugat (istri atau suami) - hanya bila jenis kelamin Penggugat di SIPP kosong atau keliru"
+  ],
+  "3694": [
+   "opsional",
+   "Kewajiban yang dilalaikan (frasa benda) - kosong = kewajiban selaku suami/istri menurut kedudukan"
+  ],
+  "3696": [
+   "manual",
+   "Fakta hukum kelalaian adalah penilaian majelis atas bukti dan keterangan saksi; diisi hakim"
+  ],
+  "3697": [
+   "opsional",
+   "Sejak kapan kewajiban dilalaikan (bila ingin disebut dalam pertimbangan)"
+  ],
+  "3699": [
+   "opsional",
+   "Dalil Tergugat atau alasan sah (nusyuz, tidak mampu, dibebaskan) - bila ada; terbukti atau tidaknya penilaian majelis"
+  ],
+  "3700": [
+   "manual",
+   "Besar nafkah ke depan ditetapkan majelis menurut kemampuan Tergugat dan kebutuhan dasar Penggugat; kosong bila tidak dikabulkan"
+  ],
+  "3701": [
+   "opsional",
+   "Jangka waktu nafkah lampau (bila nafkah lampau dituntut dan terbukti)"
+  ],
+  "3702": [
+   "manual",
+   "Jumlah nafkah lampau yang dikabulkan ditetapkan majelis menurut yang terbukti; kosong bila tidak dikabulkan"
+  ],
+  "3703": [
+   "opsional",
+   "Kiswah (pakaian) - bila dituntut dan dikabulkan"
+  ],
+  "3704": [
+   "opsional",
+   "Tempat kediaman - bila dituntut dan dikabulkan"
+  ],
+  "3705": [
+   "opsional",
+   "Biaya rumah tangga, perawatan dan pengobatan - bila dituntut dan dikabulkan"
+  ],
+  "3706": [
+   "opsional",
+   "Kewajiban lain bukan uang (mis. kembali serumah, mengurus rumah tangga) - bila dituntut dan dikabulkan"
+  ],
+  "3707": [
+   "manual",
+   "Dasar kemampuan Tergugat dan kebutuhan dasar adalah pertimbangan majelis dari pekerjaan, penghasilan dan standar biaya hidup setempat"
+  ],
+  "3708": [
+   "opsional",
+   "Pemotongan langsung penghasilan (instansi tempat Tergugat bekerja) - bila dimohonkan"
+  ],
+  "3709": [
+   "opsional",
+   "Sita jaminan (objek dan berita acara sita) - hanya bila ada sita"
+  ],
+  "3710": [
+   "opsional",
+   "Uang paksa - hanya bila dituntut dan dinilai layak oleh majelis"
+  ],
+  "3711": [
+   "manual",
+   "Alasan petitum selebihnya ditolak adalah pertimbangan majelis; diisi hakim"
+  ],
+  "3712": [
+   "manual",
+   "Alasan gugatan ditolak adalah pertimbangan majelis; diisi hakim"
+  ],
+  "3730": [
+   "manual",
+   "Alat bukti surat Penggugat dicatat dari persidangan (nomor, tanggal, pengeluar, tanda P)"
+  ],
+  "3731": [
+   "opsional",
+   "Alat bukti surat Tergugat - bila Tergugat mengajukan bukti surat"
+  ],
+  "3660": [
+   "manual",
+   "Tempat dan tanggal lahir anak dibaca dari posita bila tertulis jelas; selain itu ketik dari surat keterangan lahir (tidak ada di tab Anak SIPP)."
+  ],
+  "3662": [
+   "manual",
+   "Keadaan pencatatan pernikahan (dicatat kemudian, belum dicatat, atau diitsbatkan) diisi dari posita dan bukti nikah; menentukan pertimbangan keabsahan pernikahan."
+  ],
+  "3664": [
+   "manual",
+   "Nomor dan tanggal akta nikah atau penetapan itsbat nikah dibaca dari posita bila ada; selain itu ketik dari bukti surat."
+  ],
+  "3665": [
+   "manual",
+   "Sebab anak belum mempunyai akta kelahiran disampaikan Pemohon di sidang; tidak tercatat di SIPP."
+  ],
+  "3666": [
+   "opsional",
+   "Bukti hubungan darah (hasil tes DNA, pengakuan, keterangan saksi) hanya diisi bila anak lahir sebelum pernikahan para Pemohon."
+  ],
+  "3668": [
+   "manual",
+   "Status anak yang ditetapkan adalah putusan majelis; pilih salah satu: anak sah, anak sah meskipun baru dicatat, atau anak luar kawin dengan hubungan perdata dengan ayah biologis."
+  ],
+  "3669": [
+   "manual",
+   "Daftar bukti surat diketik dari berkas e-Court atau yang diserahkan di sidang (KTP, KK, akta nikah atau penetapan itsbat, surat keterangan lahir)."
+  ],
+  "3670": [
+   "opsional",
+   "Pengakuan ayah atas anak hanya diisi bila anak lahir sebelum pernikahan para Pemohon."
+  ],
+  "3671": [
+   "manual",
+   "Dalil atau bukti yang kurang adalah penilaian majelis (blangko Tolak dan Tidak Dapat Diterima); diisi hakim."
+  ],
+  "3672": [
+   "opsional",
+   "Tujuan pengesahan (mis. pengurusan akta kelahiran) bila berbeda dari bunyi bawaan."
+  ],
+  "3600": [
+   "opsional",
+   "Nama calon suami; isi hanya bila calon suami bukan Pemohon (bila Pemohon laki-laki, nama diambil dari SIPP)"
+  ],
+  "3601": [
+   "opsional",
+   "Nama calon istri; isi hanya bila calon istri bukan Pemohon (bila Pemohon perempuan, nama diambil dari SIPP)"
+  ],
+  "3604": [
+   "manual",
+   "Wilayah KUA yang menolak ditulis di surat penolakan; belum tentu sama dengan tempat tinggal Pemohon dan tidak ada di SIPP"
+  ],
+  "3605": [
+   "manual",
+   "Alasan penolakan dikutip dari surat Pegawai Pencatat Nikah yang diserahkan Pemohon; tidak dicatat terstruktur di SIPP"
+  ],
+  "3606": [
+   "manual",
+   "Huruf larangan yang dijadikan alasan penolakan ditentukan majelis dari surat penolakan dan alat bukti"
+  ],
+  "3609": [
+   "manual",
+   "Pertimbangan bahwa larangan tidak terbukti adalah penilaian majelis atas bukti dan saksi; diisi hakim pada blangko Kabul"
+  ],
+  "3610": [
+   "manual",
+   "Larangan yang terbukti adalah penilaian majelis atas bukti dan saksi; diisi hakim pada blangko Tolak"
+  ],
+  "3611": [
+   "manual",
+   "Keterangan Pegawai Pencatat Nikah di persidangan atau melalui surat bukan data SIPP; isi dari persidangan"
+  ],
+  "3612": [
+   "manual",
+   "Keterangan calon mempelai di persidangan diambil dari berita acara sidang; tidak ada di SIPP"
+  ],
+  "3613": [
+   "manual",
+   "Daftar alat bukti surat diketik dari bukti yang diajukan Pemohon"
+  ],
+  "3616": [
+   "manual",
+   "Pengadilan Agama yang berwenang menurut wilayah KUA yang menolak ditetapkan majelis; pada blangko Tidak Dapat Diterima (wilayah)"
+  ],
+  "3617": [
+   "manual",
+   "Keadaan belum adanya penolakan tertulis diambil dari keterangan Pemohon dan bukti surat; pada blangko Tidak Dapat Diterima (prematur)"
+  ],
+  "3620": [
+   "opsional",
+   "Nama calon WNI; isi hanya bila calon WNI bukan Pemohon (bila Pemohon berwarganegara Indonesia, nama diambil dari SIPP)"
+  ],
+  "3621": [
+   "opsional",
+   "Nama calon WNA sesuai paspor; kosong = Pemohon berkewarganegaraan asing pada SIPP"
+  ],
+  "3624": [
+   "opsional",
+   "Negara asal calon WNA; kosong = negara pada data pihak SIPP"
+  ],
+  "3626": [
+   "manual",
+   "Pejabat yang menolak ditulis di surat penolakan; tidak dicatat terstruktur di SIPP"
+  ],
+  "3627": [
+   "manual",
+   "Alasan penolakan dikutip dari surat penolakan yang diserahkan Pemohon; tidak ada di SIPP"
+  ],
+  "3629": [
+   "manual",
+   "Pertimbangan bahwa syarat perkawinan telah terpenuhi adalah penilaian majelis atas bukti dan saksi; diisi hakim pada blangko Kabul"
+  ],
+  "3630": [
+   "manual",
+   "Syarat yang belum terpenuhi adalah penilaian majelis atas bukti dan saksi; diisi hakim pada blangko Tolak"
+  ],
+  "3631": [
+   "manual",
+   "Huruf syarat yang dijadikan alasan penolakan ditentukan majelis dari surat penolakan dan alat bukti"
+  ],
+  "3634": [
+   "manual",
+   "Daftar alat bukti surat diketik dari bukti yang diajukan Pemohon (paspor, surat keterangan negara asal, surat penolakan)"
+  ],
+  "3636": [
+   "manual",
+   "Keterangan pejabat di persidangan atau melalui surat bukan data SIPP; isi dari persidangan"
+  ],
+  "3637": [
+   "manual",
+   "Keterangan calon mempelai di persidangan diambil dari berita acara sidang; tidak ada di SIPP"
+  ],
+  "3638": [
+   "manual",
+   "Fakta penyebab tidak dapat diterima adalah penilaian majelis; pada blangko Tidak Dapat Diterima"
+  ],
+  "3790": [
+   "manual",
+   "Nama dan jabatan atau hubungan pihak yang dipanggil untuk didengar (pejabat pencatat nikah, orang tua, wali) tidak tercatat di SIPP; ketik dari surat atau berkas perkara."
+  ],
+  "3791": [
+   "manual",
+   "Tempat kediaman atau alamat kantor pihak yang dipanggil untuk didengar tidak tercatat di SIPP; ketik dari surat atau berkas perkara."
+  ]
+ },
+ "ramah": {
+  "3740": {
+   "nm": "Putusan perceraian dan akta cerai (nomor dan tanggal)",
+   "saran": "putusan Pengadilan Agama Donggala Nomor 100/Pdt.G/2025/PA.Dgl tanggal 3 Maret 2025 yang telah berkekuatan hukum tetap dan Akta Cerai Nomor 50/AC/2025/PA.Dgl tanggal 20 Maret 2025"
+  },
+  "3741": {
+   "nm": "Cara perkawinan putus",
+   "pil": [
+    "cerai talak",
+    "cerai gugat"
+   ],
+   "saran": "cerai talak"
+  },
+  "3742": {
+   "nm": "Tanggal perkawinan putus (ikrar talak atau putusan cerai berkekuatan hukum tetap)",
+   "saran": "20 Maret 2025"
+  },
+  "3743": {
+   "nm": "Masa iddah {P}",
+   "pil": [
+    "3 (tiga) kali suci dengan sekurang-kurangnya 90 (sembilan puluh) hari",
+    "90 (sembilan puluh) hari karena tidak haid",
+    "sampai melahirkan karena dalam keadaan hamil",
+    "tidak ada masa iddah karena qobla al dukhul"
+   ]
+  },
+  "3744": {
+   "nm": "Masa iddah saat gugatan diajukan",
+   "pil": [
+    "masih berjalan",
+    "telah berakhir"
+   ]
+  },
+  "3745": {
+   "nm": "Keadaan dukhul {P} dan {T}",
+   "pil": [
+    "selama menjadi suami istri #0046# dan #0047# telah bergaul sebagaimana layaknya suami istri (bada al dukhul)",
+    "antara #0046# dan #0047# belum pernah terjadi hubungan sebagaimana layaknya suami istri (qobla al dukhul)"
+   ]
+  },
+  "3746": {
+   "nm": "Nusyuz {P}",
+   "pil": [
+    "dalam perkara ini tidak ditemukan bukti bahwa #0046# berbuat nusyuz",
+    "#0046# terbukti berbuat nusyuz sehingga tidak berhak atas nafkah iddah, maskan dan kiswah"
+   ]
+  },
+  "3747": {
+   "nm": "Apakah hak-hak ini sudah diputus dalam perkara cerai",
+   "pil": [
+    "hak-hak bekas istri yang dituntut dalam perkara ini belum pernah dituntut dan belum pernah diputus dalam perkara perceraian #0046# dan #0047#",
+    "hak-hak bekas istri yang dituntut dalam perkara ini pernah dituntut dalam perkara perceraian #0046# dan #0047# tetapi tidak dipertimbangkan sehingga belum diputus",
+    "hak-hak bekas istri yang dituntut dalam perkara ini telah diputus dalam perkara perceraian #0046# dan #0047#"
+   ]
+  },
+  "3748": {
+   "nm": "Hak yang sudah diputus dalam perkara cerai (kosong = tidak ada)",
+   "saran": "nafkah iddah dan mutah dalam putusan Nomor 100/Pdt.G/2025/PA.Dgl"
+  },
+  "3749": {
+   "nm": "Fakta kepatutan besaran: lama perkawinan, keadaan {P}, penghasilan {T}",
+   "saran": "perkawinan {P} dan {T} berlangsung selama 10 tahun dan {P} tidak bekerja"
+  },
+  "3750": {
+   "nm": "Bantahan atau eksepsi {T} dan tanggapan majelis (kosong = tidak ada)",
+   "saran": "bantahan {T} bahwa tuntutan telah daluwarsa tidak beralasan karena tidak ada ketentuan yang membatasi waktu tuntutan tersebut"
+  },
+  "3751": {
+   "nm": "Maskan (tempat tinggal) selama iddah: jumlah dan rincian (kosong = tidak dikabulkan)",
+   "saran": "Rp1.500.000,00 (3 bulan x Rp500.000,00)"
+  },
+  "3752": {
+   "nm": "Kiswah (pakaian) selama iddah: jumlah dan rincian (kosong = tidak dikabulkan)",
+   "saran": "Rp900.000,00 (3 bulan x Rp300.000,00)"
+  },
+  "3753": {
+   "nm": "Mahar yang masih terhutang: jumlah atau bentuk (kosong = tidak ada)",
+   "saran": "Rp5.000.000,00"
+  },
+  "3754": {
+   "nm": "Sita jaminan untuk biaya hadhanah anak: objek dirinci dan nomor serta tanggal berita acara sita (kosong = tanpa sita)"
+  },
+  "3755": {
+   "nm": "Alasan petitum atau gugatan ditolak (kalimat sesudah \"Menimbang, bahwa\")",
+   "saran": "{P} terbukti nusyuz sehingga tidak berhak atas nafkah iddah, maskan dan kiswah"
+  },
+  "3756": {
+   "nm": "Waktu pembayaran (kosong = tidak ditentukan)",
+   "pil": [
+    "segera setelah putusan ini berkekuatan hukum tetap",
+    "paling lambat 30 (tiga puluh) hari sejak putusan ini berkekuatan hukum tetap"
+   ]
+  },
+  "3757": {
+   "nm": "Alat bukti surat {P} (daftar bukti P.1 dan seterusnya)"
+  },
+  "3758": {
+   "nm": "Alat bukti surat {T} (daftar bukti T.1 dan seterusnya)"
+  },
+  "3640": {
+   "nm": "Nama calon suami atau calon istri {P} (lengkap, bin atau binti)",
+   "saran": "Dibaca dari posita bila tertulis; selain itu ketik dari keterangan Pemohon."
+  },
+  "3641": {
+   "nm": "Umur calon suami atau calon istri {P} (angka tahun)",
+   "saran": "Bila di bawah 19 tahun, calon pasangan juga memerlukan dispensasi kawin."
+  },
+  "3644": {
+   "nm": "Orang tua, wali atau keluarga yang didengar (pertama): nama lengkap bin atau binti"
+  },
+  "3645": {
+   "nm": "Hubungan orang yang didengar (pertama) dengan {P}",
+   "saran": "Mis. ayah kandung, ibu kandung, kakek, nenek, wali, orang yang memelihara."
+  },
+  "3646": {
+   "nm": "Orang tua, wali atau keluarga yang didengar (kedua): nama lengkap bin atau binti",
+   "saran": "Kosongkan bila hanya satu orang yang didengar."
+  },
+  "3647": {
+   "nm": "Hubungan orang yang didengar (kedua) dengan {P}",
+   "saran": "Mis. ibu kandung."
+  },
+  "3649": {
+   "nm": "Keadaan orang tua {P} (pilih satu)",
+   "pil": [
+    "1 · kedua orang tua masih hidup dan mampu menyatakan kehendak",
+    "2 · salah seorang orang tua meninggal dunia",
+    "3 · salah seorang orang tua tidak mampu menyatakan kehendak",
+    "4 · kedua orang tua meninggal dunia",
+    "5 · kedua orang tua tidak mampu menyatakan kehendak"
+   ],
+   "saran": "Menentukan siapa yang berhak memberi izin menurut Pasal 6 ayat (2), (3), (4) UU 1/1974."
+  },
+  "3650": {
+   "nm": "Pokok keterangan orang yang didengar di sidang",
+   "saran": "Ketik dari berita acara sidang. Kosongkan bila tidak hadir meskipun dipanggil patut."
+  },
+  "3651": {
+   "nm": "Alasan tidak memberi izin atau belum menyatakan pendapat (tulis \"karena ...\")"
+  },
+  "3654": {
+   "nm": "Bukti surat {P} (P.1 dan seterusnya)",
+   "saran": "KTP dan KK Pemohon, akta kelahiran Pemohon, identitas calon pasangan dan orang yang didengar."
+  },
+  "3656": {
+   "nm": "Pertimbangan majelis atas keberatan (isi hakim)",
+   "saran": "Kabul: mengapa keberatan tidak beralasan hukum. Tolak: mengapa beralasan atau syarat lain tidak terpenuhi."
+  },
+  "3657": {
+   "nm": "Kesiapan {P} dan calon pasangan (bila dipertimbangkan)",
+   "saran": "Pendidikan, pekerjaan, kemampuan membina rumah tangga. Kosongkan bila tidak dipertimbangkan."
+  },
+  "3691": {
+   "nm": "Kedudukan {P} (isi hanya bila jenis kelamin {P} di SIPP kosong atau keliru)",
+   "pil": [
+    "istri",
+    "suami"
+   ],
+   "saran": "istri"
+  },
+  "3694": {
+   "nm": "Kewajiban yang dilalaikan {T} (kosong = kewajiban selaku suami atau istri)",
+   "pil": [
+    "kewajiban memberi nafkah lahir dan menyediakan tempat kediaman",
+    "kewajiban mengatur urusan rumah tangga dan berbakti lahir batin",
+    "kewajiban tinggal serumah dan memelihara rumah tangga"
+   ],
+   "saran": "kewajiban memberi nafkah lahir dan menyediakan tempat kediaman"
+  },
+  "3696": {
+   "nm": "Fakta hukum kelalaian (siapa melalaikan apa, sejak kapan, serumah atau berpisah; kosong = kalimat bawaan)",
+   "saran": "{T} tidak memberikan nafkah lahir kepada {P} sejak bulan Maret 2024 dan keduanya telah berpisah tempat tinggal"
+  },
+  "3697": {
+   "nm": "Sejak kapan kewajiban dilalaikan (kosong = tidak disebut)",
+   "pil": [
+    "sejak bulan Maret 2024",
+    "sejak tahun 2023",
+    "sejak awal tahun 2025"
+   ]
+  },
+  "3699": {
+   "nm": "Dalil {T} atau alasan sah (nusyuz, tidak mampu, dibebaskan; kosong = tidak ada)",
+   "pil": [
+    "{P} nusyuz karena pergi dari tempat kediaman bersama tanpa izin {T}",
+    "{T} tidak mampu karena tidak berpenghasilan tetap",
+    "{P} telah membebaskan {T} dari kewajiban tersebut"
+   ]
+  },
+  "3700": {
+   "nm": "Nafkah ke depan: jumlah setiap bulan (rupiah dan terbilang; kosong = tidak dituntut atau tidak dikabulkan)",
+   "saran": "Rp1.500.000,00 (satu juta lima ratus ribu rupiah)"
+  },
+  "3701": {
+   "nm": "Nafkah lampau: jangka waktu (mis. sejak bulan ... sampai bulan ...)",
+   "saran": "sejak bulan Maret 2024 sampai dengan bulan Juli 2026 (29 bulan)"
+  },
+  "3702": {
+   "nm": "Nafkah lampau: jumlah (rupiah dan terbilang, jumlah bulan x besaran; kosong = tidak dikabulkan)",
+   "saran": "Rp43.500.000,00 (empat puluh tiga juta lima ratus ribu rupiah)"
+  },
+  "3703": {
+   "nm": "Kiswah (pakaian) untuk {P}: bentuk atau jumlah (kosong = tidak dituntut)",
+   "saran": "pakaian yang layak sesuai kebutuhan"
+  },
+  "3704": {
+   "nm": "Tempat kediaman untuk {P}: bentuk pemenuhan (kosong = tidak dituntut)",
+   "saran": "rumah yang layak di wilayah tempat tinggal bersama"
+  },
+  "3705": {
+   "nm": "Biaya rumah tangga, perawatan dan pengobatan {P} (kosong = tidak dituntut)",
+   "saran": "kebutuhan pokok sehari-hari dan biaya berobat"
+  },
+  "3706": {
+   "nm": "Kewajiban lain bukan uang yang dituntut (kata kerja untuk amar; kosong = tidak dituntut)",
+   "pil": [
+    "kembali tinggal serumah dengan {P} di tempat kediaman bersama",
+    "mengatur urusan rumah tangga sebaik-baiknya"
+   ],
+   "saran": "kembali tinggal serumah dengan {P} di tempat kediaman bersama"
+  },
+  "3707": {
+   "nm": "Dasar kemampuan {T} dan kebutuhan dasar {P} (pekerjaan, penghasilan, standar biaya hidup setempat)",
+   "saran": "{T} berpenghasilan sekitar Rp5.000.000,00 per bulan"
+  },
+  "3708": {
+   "nm": "Pemotongan langsung dari penghasilan {T}: nama instansi atau perusahaan (kosong = tanpa pemotongan)"
+  },
+  "3709": {
+   "nm": "Sita jaminan: objek yang dirinci dan nomor serta tanggal berita acara sita (kosong = tanpa sita)"
+  },
+  "3710": {
+   "nm": "Uang paksa per hari keterlambatan (hanya bila dituntut dan hanya atas kewajiban bukan uang; kosong = tidak dikabulkan)",
+   "saran": "Rp100.000,00 (seratus ribu rupiah)"
+  },
+  "3711": {
+   "nm": "Alasan petitum selebihnya ditolak (putusan dikabulkan sebagian; kosong = kalimat bawaan)"
+  },
+  "3712": {
+   "nm": "Alasan gugatan ditolak (putusan ditolak; kosong = kalimat bawaan)",
+   "pil": [
+    "alat bukti yang diajukan {P} tidak cukup membuktikan bahwa {T} telah melalaikan kewajibannya tanpa alasan yang sah",
+    "{T} terbukti tidak mampu sehingga tidak memenuhi kewajiban bukan karena kelalaian",
+    "{P} terbukti nusyuz sehingga kewajiban {T} tidak berlaku"
+   ]
+  },
+  "3730": {
+   "nm": "Alat bukti surat {P} (daftar bukti P.1 dst.; kosong = tanpa daftar)"
+  },
+  "3731": {
+   "nm": "Alat bukti surat {T} (daftar bukti T.1 dst.; kosong = tanpa daftar)"
+  },
+  "3660": {
+   "nm": "Tempat dan tanggal lahir anak (tulis \"di ... pada tanggal ...\")",
+   "saran": "Dibaca dari posita bila jelas; selain itu ketik dari surat keterangan lahir."
+  },
+  "3662": {
+   "nm": "Keadaan pencatatan pernikahan {P} (pilih satu)",
+   "pil": [
+    "A · pernikahan baru dicatat Pegawai Pencatat Nikah sesudah anak lahir",
+    "B · pernikahan belum dicatat (nikah menurut agama)",
+    "C · pernikahan telah diitsbatkan Pengadilan"
+   ],
+   "saran": "Menentukan pertimbangan keabsahan pernikahan para Pemohon."
+  },
+  "3664": {
+   "nm": "Nomor dan tanggal akta nikah atau penetapan itsbat nikah",
+   "saran": "Mis. Akta Nikah Nomor ... tanggal ... KUA Kecamatan ..."
+  },
+  "3665": {
+   "nm": "Sebab anak belum mempunyai akta kelahiran (satu kalimat tanpa titik akhir)"
+  },
+  "3666": {
+   "nm": "Bukti hubungan darah anak dengan ayah biologis",
+   "saran": "Hanya bila anak lahir sebelum pernikahan: mis. \"dibuktikan dengan hasil tes DNA ...\" atau pengakuan dan keterangan saksi."
+  },
+  "3668": {
+   "nm": "Status anak yang ditetapkan majelis (pilih satu)",
+   "pil": [
+    "anak sah dari #3673# karena dilahirkan dalam perkawinan yang sah menurut hukum Islam",
+    "anak sah dari #3673# karena dilahirkan dalam perkawinan yang sah menurut hukum Islam, meskipun pernikahan tersebut baru dicatat setelah anak dilahirkan",
+    "anak yang dilahirkan di luar perkawinan yang sah, yang mempunyai hubungan nasab dan hubungan perdata dengan ibunya dan keluarga ibunya serta hubungan perdata dengan #0098# sebagai ayah biologisnya"
+   ],
+   "saran": "Putusan majelis. Pilihan ketiga untuk anak yang lahir sebelum pernikahan para Pemohon (Putusan MK 46/PUU-VIII/2010)."
+  },
+  "3669": {
+   "nm": "Bukti surat {P} (P.1 dan seterusnya)",
+   "saran": "KTP, KK, akta nikah atau penetapan itsbat, surat keterangan lahir anak."
+  },
+  "3670": {
+   "nm": "Pengakuan ayah atas anak",
+   "saran": "Hanya bila anak lahir sebelum pernikahan: mis. \"mengakui anak tersebut sebagai anak kandungnya\"."
+  },
+  "3671": {
+   "nm": "Pertimbangan majelis atas dalil yang tidak terbukti (isi hakim)",
+   "saran": "Dalil atau bukti apa yang kurang (blangko Tolak dan Tidak Dapat Diterima)."
+  },
+  "3672": {
+   "nm": "Tujuan pengesahan (setelah kata \"untuk\")",
+   "saran": "Bawaan: pengurusan akta kelahiran dan dokumen kependudukan anak."
+  },
+  "3600": {
+   "nm": "Calon suami (nama lengkap bin ...; kosong = Pemohon laki-laki dari SIPP)",
+   "saran": "Isi hanya bila calon suami bukan Pemohon"
+  },
+  "3601": {
+   "nm": "Calon istri (nama lengkap binti ...; kosong = Pemohon perempuan dari SIPP)",
+   "saran": "Isi hanya bila calon istri bukan Pemohon"
+  },
+  "3604": {
+   "nm": "Wilayah KUA yang menolak (Kecamatan ..., Kabupaten ...)",
+   "saran": "Lihat kop surat penolakan Pegawai Pencatat Nikah"
+  },
+  "3605": {
+   "nm": "Alasan penolakan menurut surat Pegawai Pencatat Nikah",
+   "saran": "Kutip singkat dari surat penolakan"
+  },
+  "3606": {
+   "nm": "Larangan yang dijadikan alasan penolakan (pilih satu huruf)",
+   "pil": [
+    "A · masih terikat perkawinan dengan orang lain",
+    "B · belum mencapai umur perkawinan",
+    "C · hubungan darah, semenda atau susuan",
+    "D · masih dalam masa tunggu (iddah)",
+    "E · beda agama",
+    "F · sudah dua kali cerai satu sama lain, talak tiga atau li'an",
+    "G · tanpa persetujuan calon mempelai atau izin orang tua",
+    "H · syarat administrasi belum lengkap"
+   ]
+  },
+  "3609": {
+   "nm": "Fakta hukum mengapa larangan tidak terbukti (untuk putusan dikabulkan)",
+   "saran": "Satu klausa dari bukti dan saksi, mis. calon istri lahir pada ... sehingga telah berumur 19 tahun"
+  },
+  "3610": {
+   "nm": "Fakta hukum larangan yang terbukti (untuk putusan ditolak)",
+   "saran": "Satu klausa dari bukti dan saksi"
+  },
+  "3611": {
+   "nm": "Keterangan Pegawai Pencatat Nikah yang didengar",
+   "saran": "Mis. hadir di persidangan dan menerangkan bahwa ...; atau menyerahkan surat tanggal ...; atau tidak hadir"
+  },
+  "3612": {
+   "nm": "Pokok keterangan calon mempelai di persidangan",
+   "saran": "Satu klausa dari berita acara sidang"
+  },
+  "3613": {
+   "nm": "Alat bukti surat {P} (daftar bukti P.1 dst.)",
+   "saran": "Sertakan surat penolakan Pegawai Pencatat Nikah"
+  },
+  "3616": {
+   "nm": "Pengadilan Agama yang berwenang menurut wilayah KUA yang menolak (untuk Tidak Dapat Diterima)"
+  },
+  "3617": {
+   "nm": "Fakta keadaan pemberitahuan dan penolakan di KUA (untuk Tidak Dapat Diterima, belum ada penolakan tertulis)",
+   "saran": "Satu klausa, mis. belum ada surat penolakan tertulis dari Pegawai Pencatat Nikah"
+  },
+  "3620": {
+   "nm": "Calon mempelai WNI (nama lengkap; kosong = Pemohon berwarganegara Indonesia dari SIPP)",
+   "saran": "Isi hanya bila calon WNI bukan Pemohon"
+  },
+  "3621": {
+   "nm": "Calon mempelai WNA (nama sesuai paspor; kosong = Pemohon berwarganegara asing dari SIPP)",
+   "saran": "Tulis persis seperti di paspor"
+  },
+  "3624": {
+   "nm": "Negara asal calon mempelai WNA (mis. Malaysia; kosong = dari SIPP)"
+  },
+  "3626": {
+   "nm": "Pejabat yang menolak memberikan surat keterangan",
+   "saran": "Mis. Pegawai Pencatat Nikah Kantor Urusan Agama Kecamatan ..., Kabupaten ..."
+  },
+  "3627": {
+   "nm": "Alasan penolakan menurut surat pejabat",
+   "saran": "Kutip singkat dari surat penolakan"
+  },
+  "3629": {
+   "nm": "Fakta hukum syarat perkawinan telah terpenuhi (untuk putusan dikabulkan)",
+   "saran": "Satu klausa dari bukti dan saksi, mis. calon WNA bebas menikah menurut surat keterangan kedutaan negara asalnya"
+  },
+  "3630": {
+   "nm": "Fakta hukum syarat perkawinan belum terpenuhi (untuk putusan ditolak)",
+   "saran": "Satu klausa dari bukti dan saksi"
+  },
+  "3631": {
+   "nm": "Syarat yang dijadikan alasan penolakan (pilih satu huruf)",
+   "pil": [
+    "A · surat keterangan dari negara asal calon WNA belum ada",
+    "B · calon masih terikat perkawinan",
+    "C · belum mencapai umur perkawinan",
+    "D · perbedaan agama",
+    "E · paspor atau izin tinggal bermasalah",
+    "F · syarat lain menurut hukum masing-masing"
+   ]
+  },
+  "3634": {
+   "nm": "Alat bukti surat {P} (daftar bukti P.1 dst.)",
+   "saran": "Sertakan paspor, surat keterangan negara asal dan surat penolakan"
+  },
+  "3636": {
+   "nm": "Keterangan pejabat yang didengar",
+   "saran": "Mis. hadir dan menerangkan ...; menyerahkan surat ...; atau tidak hadir"
+  },
+  "3637": {
+   "nm": "Pokok keterangan calon mempelai di persidangan",
+   "saran": "Satu klausa dari berita acara sidang"
+  },
+  "3638": {
+   "nm": "Fakta penyebab tidak dapat diterima (untuk Tidak Dapat Diterima)",
+   "saran": "Satu klausa sesuai blangko: calon WNA beragama ...; belum ada penolakan tertulis; atau kedua calon berwarganegara Indonesia"
+  },
+  "3790": {
+   "nm": "Pihak yang dipanggil untuk didengar (nama lengkap dan jabatan atau hubungan, mis. Kepala Kantor Urusan Agama Kecamatan ... atau ayah kandung Pemohon bernama ...)"
+  },
+  "3791": {
+   "nm": "Tempat kediaman atau alamat kantor pihak yang dipanggil untuk didengar"
+  }
+ }
+}

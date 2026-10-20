@@ -298,8 +298,8 @@ describe("D. set pohon dan kunci baku", () => {
     expect(kunci).toEqual(expect.arrayContaining(["Pencegahan Perkawinan", "Wasiat", "Ekonomi Syariah"]));
     expect(KUNCI_BAKU.putusan.find((k) => k.kunci === "Ekonomi Syariah")!.sebutan).toMatch(/gugatan sederhana dan acara biasa/);
     expect(JENIS_BAS_BAKU).toEqual(expect.arrayContaining(["Pencegahan Perkawinan", "Wasiat"]));
-    expect(JENIS_BAS_BAKU).toHaveLength(21); // I23 18 Okt: + Nafkah Anak Pasca Perceraian; I28 18 Okt: + Hibah, Wakaf, Penetapan Mafqud
-    expect(KUNCI_BAKU.bas).toHaveLength(21 * 11);
+    expect(JENIS_BAS_BAKU).toHaveLength(27); // W3a 21 Okt: + 6 jenis (343, 345, 351, 352, 359, 361); // I23 18 Okt: + Nafkah Anak Pasca Perceraian; I28 18 Okt: + Hibah, Wakaf, Penetapan Mafqud
+    expect(KUNCI_BAKU.bas).toHaveLength(27 * 11); // W3a 21 Okt: 27 jenis
     expect(kunciJenisPerkara("Pencegahan Perkawinan")).toBe("pencegahan perkawinan");
     expect(kunciJenisPerkara("Wasiat")).toBe("wasiat");
   });

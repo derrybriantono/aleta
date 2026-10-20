@@ -341,7 +341,7 @@ def buat_bas_khusus_gugatan(j, amar_verstek, amar_sebagian, nasihat=None):
         raw = baca_raw('6c Nafkah Anak - BAS/BAS ALUR 46 Nafkah Anak - %s.rtf' % akhir)
         raw = ganti(raw, variasi('nafkah anak', j['kata']))
         if kode in ('V2', 'V2S'):
-            raw = ganti_paragraf(raw, r'^Menghukum #0047# untuk melaksanakan kewajibannya', amar_verstek if kode == 'V2' else amar_sebagian)
+            raw = ganti_paragraf(raw, r'^(?:\d+\.\s*)?Menghukum #0047# untuk melaksanakan kewajibannya', amar_verstek if kode == 'V2' else amar_sebagian)
         hasil.append(simpan_bas(j, '%s - %s.rtf' % (j['awalan_bas'], akhir), raw))
     return hasil
 

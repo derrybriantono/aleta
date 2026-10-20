@@ -7872,6 +7872,10 @@ const ALAT_PADANAN_JENIS = [
   ["penetapan ahli waris", ["p3hp/penetapan ahli waris", "p3hp"]],
   ["poligami", ["izin poligami"]],
   ["wali adhal", ["wali adhol", "wali adlal"]],
+  // W3a 21 Okt: padanan nama SIPP -> kunci baku
+  ["kelalaian kewajiban suami istri", ["kelalaian atas kewajiban suami / istri", "kelalaian atas kewajiban suami/istri"]],
+  ["hak bekas istri", ["hak - hak bekas istri/kewajiban bekas suami", "hak-hak bekas istri/kewajiban bekas suami"]],
+  // AKHIR W3a padanan
 ];
 
 /**
@@ -10015,6 +10019,162 @@ function alatPetaMafqud() {
 }
 Object.assign(ALAT_PETA_BAWAAN, alatPetaHibahWakaf("hibah", "Hibah", "hi", ALAT_BERKAS_HIBAH), alatPetaHibahWakaf("wakaf", "Wakaf", "wk", ALAT_BERKAS_WAKAF), alatPetaMafqud());
 /* === AKHIR I28 === */
+/* === W3a 21 Okt === */
+/**
+ * ENAM JENIS PERKAWINAN/KELUARGA BARU versi Derry - paket ABT abt-w3a-blangko-baru-perkawinan (21 Okt 2026): penolakan perkawinan (343), perkawinan campuran (359), izin kawin (361),
+ * pengesahan anak (352) = PERMOHONAN (Pdt.P, penetapan); kelalaian atas kewajiban suami/istri (345) dan hak-hak bekas istri/kewajiban bekas suami (351) = GUGATAN (Pdt.G).
+ * Folder 5c / 5d / 3a / 8a / 1e / 1f; menu putusan 168 / 170 / 172 / 174 / 176 / 178 berpasangan dengan BAS 169 / 171 / 173 / 175 / 177 / 179. Baris dibangkitkan dari
+ * abt-paket/w3a-blangko-baru-perkawinan/peta-w3a.json (integrasi_w3a.py); [status, keadaan, berkas, catatan].
+ */
+Object.assign(ALAT_MENU_PUTUSAN, {
+  w3pk: { blangko: "Putusan Penolakan Perkawinan", lain: ["Penolakan Perkawinan - Putusan"] },
+  w3pc: { blangko: "Putusan Perkawinan Campuran", lain: ["Perkawinan Campuran - Putusan"] },
+  w3ik: { blangko: "Putusan Izin Kawin", lain: ["Izin Kawin - Putusan"] },
+  w3pa: { blangko: "Putusan Pengesahan Anak", lain: ["Pengesahan Anak - Putusan"] },
+  w3kk: { blangko: "Putusan Kelalaian Kewajiban Suami Istri", lain: ["Kelalaian Kewajiban Suami Istri - Putusan"] },
+  w3hb: { blangko: "Putusan Hak Bekas Istri", lain: ["Hak Bekas Istri - Putusan"] },
+});
+const ALAT_W3A_PETA = {
+  "penolakan perkawinan": {
+    asli: "Penolakan Perkawinan",
+    menu: "w3pk",
+    baris: [
+      ["", "", "[01] [Kabul] Penolakan Perkawinan - PPN Didengar atau Menyerahkan Surat Penolakan", "varian: [01a] [Kabul] Penolakan Perkawinan - PPN Tidak Hadir"],
+      ["Dikabulkan", "", "[01] [Kabul] Penolakan Perkawinan - PPN Didengar atau Menyerahkan Surat Penolakan", "Kabul: penolakan PPN dinyatakan tidak beralasan dan perkawinan diperintahkan dilangsungkan (Pasal 21 ayat (4)); PPN didengar atau menyerahkan surat"],
+      ["Dikabulkan", "ppn-tidak-hadir", "[01a] [Kabul] Penolakan Perkawinan - PPN Tidak Hadir", "Kabul: PPN diberi kesempatan didengar tetapi tidak hadir"],
+      ["Ditolak", "", "[03] [Tolak] Penolakan Perkawinan - Larangan Perkawinan Terbukti", "Tolak: larangan perkawinan terbukti, penolakan PPN dikuatkan"],
+      ["Tidak Dapat Diterima", "", "[99a] [NO] Penolakan Perkawinan - Belum Ada Penolakan Tertulis PPN", "varian: [99b] [NO] Penolakan Perkawinan - PPN Berkedudukan di Luar Wilayah Hukum; [99] [NO] Penolakan Perkawinan - Pemohon Tidak Hadir Lagi (SEMA 1 2022)"],
+      ["Tidak Dapat Diterima", "belum-ada-penolakan-tertulis", "[99a] [NO] Penolakan Perkawinan - Belum Ada Penolakan Tertulis PPN", "NO: belum ada penolakan tertulis dari PPN (permohonan prematur, Pasal 21 ayat (2) dan (3))"],
+      ["Tidak Dapat Diterima", "bukan-wilayah-hukum", "[99b] [NO] Penolakan Perkawinan - PPN Berkedudukan di Luar Wilayah Hukum", "NO: PPN yang menolak berkedudukan di luar wilayah hukum Pengadilan (Pasal 21 ayat (3))"],
+      ["Dicabut", "", "[98] [Cabut] Penolakan Perkawinan", ""],
+      ["Digugurkan", "", "[98a] [Gugur] Penolakan Perkawinan - Pemohon Tidak Pernah Hadir", ""],
+      ["Gugur", "", "[98a] [Gugur] Penolakan Perkawinan - Pemohon Tidak Pernah Hadir", ""],
+      ["Dicoret dari Register", "", "[98c] [Coret] Penolakan Perkawinan - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+      ["Tidak Dapat Diterima", "sema-1-2022", "[99] [NO] Penolakan Perkawinan - Pemohon Tidak Hadir Lagi (SEMA 1 2022)", "keadaan: sema 1 2022"],
+    ],
+  },
+  "perkawinan campuran": {
+    asli: "Perkawinan Campuran",
+    menu: "w3pc",
+    baris: [
+      ["", "", "[01] [Kabul] Perkawinan Campuran - Pejabat Didengar atau Menyerahkan Surat Penolakan", "varian: [01a] [Kabul] Perkawinan Campuran - Pejabat Tidak Hadir"],
+      ["Dikabulkan", "", "[01] [Kabul] Perkawinan Campuran - Pejabat Didengar atau Menyerahkan Surat Penolakan", "Kabul: penolakan tidak beralasan dan penetapan menjadi pengganti surat keterangan (Pasal 60 ayat (4)); pejabat didengar atau menyerahkan surat"],
+      ["Dikabulkan", "pejabat-tidak-hadir", "[01a] [Kabul] Perkawinan Campuran - Pejabat Tidak Hadir", "Kabul: pejabat diberi kesempatan didengar tetapi tidak hadir"],
+      ["Ditolak", "", "[03] [Tolak] Perkawinan Campuran - Syarat Perkawinan Belum Terpenuhi", "Tolak: syarat perkawinan belum terpenuhi, penolakan beralasan"],
+      ["Tidak Dapat Diterima", "", "[99a] [NO] Perkawinan Campuran - Calon Mempelai Tidak Beragama Islam", "varian: [99b] [NO] Perkawinan Campuran - Belum Ada Penolakan Pejabat; [99c] [NO] Perkawinan Campuran - Bukan Perkawinan Campuran; [99] [NO] Perkawinan Campuran - Pemohon Tidak Hadir Lagi (SEMA 1 2022)"],
+      ["Tidak Dapat Diterima", "calon-tidak-beragama-islam", "[99a] [NO] Perkawinan Campuran - Calon Mempelai Tidak Beragama Islam", "NO: calon mempelai tidak beragama Islam, bukan wewenang Pengadilan Agama (Pasal 63 ayat (1))"],
+      ["Tidak Dapat Diterima", "belum-ada-penolakan", "[99b] [NO] Perkawinan Campuran - Belum Ada Penolakan Pejabat", "NO: belum ada penolakan pejabat (Pasal 60 ayat (3))"],
+      ["Tidak Dapat Diterima", "bukan-perkawinan-campuran", "[99c] [NO] Perkawinan Campuran - Bukan Perkawinan Campuran", "NO: bukan perkawinan campuran (Pasal 57)"],
+      ["Dicabut", "", "[98] [Cabut] Perkawinan Campuran", ""],
+      ["Digugurkan", "", "[98a] [Gugur] Perkawinan Campuran - Pemohon Tidak Pernah Hadir", ""],
+      ["Gugur", "", "[98a] [Gugur] Perkawinan Campuran - Pemohon Tidak Pernah Hadir", ""],
+      ["Dicoret dari Register", "", "[98c] [Coret] Perkawinan Campuran - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+      ["Tidak Dapat Diterima", "sema-1-2022", "[99] [NO] Perkawinan Campuran - Pemohon Tidak Hadir Lagi (SEMA 1 2022)", "keadaan: sema 1 2022"],
+    ],
+  },
+  "izin kawin": {
+    asli: "Izin Kawin",
+    menu: "w3ik",
+    baris: [
+      ["", "", "[01] [Kabul] Izin Kawin - Orang Tua atau Wali Hadir dan Berbeda Pendapat", "varian: [01a] [Kabul] Izin Kawin - Orang Tua atau Wali Dipanggil Patut Tidak Hadir atau Tidak Menyatakan Pendapat; [01b] [Kabul] Izin Kawin - Salah Seorang Orang Tua Meninggal atau Tidak Mampu Menyatakan Kehendak; [01c] [Kabul] Izin Kawin - Kedua Orang Tua Meninggal atau Tidak Mampu, Wali atau Keluarga Garis Lurus Berbeda Pendapat"],
+      ["Dikabulkan", "", "[01] [Kabul] Izin Kawin - Orang Tua atau Wali Hadir dan Berbeda Pendapat", "Pasal 6 ayat (5) UU 1/1974: orang tua/wali hadir, didengar, tidak memberi izin. Isi 3649 (keadaan orang tua), 3644-3645 (orang yang didengar), 3650, 3651, 3656."],
+      ["Dikabulkan", "orang-tua-tidak-hadir", "[01a] [Kabul] Izin Kawin - Orang Tua atau Wali Dipanggil Patut Tidak Hadir atau Tidak Menyatakan Pendapat", "Orang tua/wali dipanggil patut tetapi tidak hadir sehingga tidak menyatakan pendapat (Pasal 6 ayat (5)). Pastikan relaas panggilan sah dan patut."],
+      ["Dikabulkan", "salah-satu-orang-tua", "[01b] [Kabul] Izin Kawin - Salah Seorang Orang Tua Meninggal atau Tidak Mampu Menyatakan Kehendak", "Pasal 6 ayat (3): izin cukup dari orang tua yang masih hidup/mampu; orang tua tersebut hadir tetapi tidak memberi izin."],
+      ["Dikabulkan", "wali-keluarga", "[01c] [Kabul] Izin Kawin - Kedua Orang Tua Meninggal atau Tidak Mampu, Wali atau Keluarga Garis Lurus Berbeda Pendapat", "Pasal 6 ayat (4): izin dari wali, orang yang memelihara atau keluarga garis lurus ke atas yang masih hidup dan dapat menyatakan kehendak."],
+      ["Ditolak", "", "[03] [Tolak] Izin Kawin - Keberatan Orang Tua atau Wali Beralasan Hukum", "Majelis menilai keberatan orang tua/wali beralasan (isi 3656); izin tidak diberikan."],
+      ["Ditolak", "syarat-tidak-terpenuhi", "[03a] [Tolak] Izin Kawin - Syarat Perkawinan Tidak Terpenuhi", "Izin tidak diberikan karena syarat perkawinan lain tidak terpenuhi (halangan perkawinan, persetujuan calon, atau calon pasangan belum 19 tahun); uraikan di 3656."],
+      ["Tidak Dapat Diterima", "", "[99a] [NO] Izin Kawin - Pemohon Belum Berumur 19 Tahun (Bukan Izin Kawin tetapi Dispensasi Kawin)", "varian: [99b] [NO] Izin Kawin - Pemohon Sudah Berumur 21 Tahun (Tidak Perlu Izin); [99c] [NO] Izin Kawin - Orang Tua atau Wali Telah Memberi Izin (Tidak Ada Perbedaan Pendapat); [99] [NO] Izin Kawin - Pemohon Tidak Hadir Lagi (SEMA 1 2022)"],
+      ["Tidak Dapat Diterima", "umur-kurang-19", "[99a] [NO] Izin Kawin - Pemohon Belum Berumur 19 Tahun (Bukan Izin Kawin tetapi Dispensasi Kawin)", "Pemohon belum 19 tahun: yang tepat dispensasi kawin yang dimohonkan orang tua (Pasal 7 ayat (2) UU 1/1974 jo. UU 16/2019, PERMA 5/2019)."],
+      ["Tidak Dapat Diterima", "umur-21-lebih", "[99b] [NO] Izin Kawin - Pemohon Sudah Berumur 21 Tahun (Tidak Perlu Izin)", "Pemohon sudah 21 tahun atau lebih: izin Pasal 6 ayat (2) tidak diperlukan."],
+      ["Tidak Dapat Diterima", "izin-diberikan", "[99c] [NO] Izin Kawin - Orang Tua atau Wali Telah Memberi Izin (Tidak Ada Perbedaan Pendapat)", "Orang tua/wali yang hadir ternyata memberi izin: tidak ada perbedaan pendapat, tidak ada sengketa untuk diputus."],
+      ["Dicabut", "", "[98] [Cabut] Izin Kawin", ""],
+      ["Digugurkan", "", "[98a] [Gugur] Izin Kawin - Pemohon Tidak Pernah Hadir", ""],
+      ["Gugur", "", "[98a] [Gugur] Izin Kawin - Pemohon Tidak Pernah Hadir", ""],
+      ["Dicoret dari Register", "", "[98c] [Coret] Izin Kawin - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+      ["Tidak Dapat Diterima", "sema-1-2022", "[99] [NO] Izin Kawin - Pemohon Tidak Hadir Lagi (SEMA 1 2022)", "keadaan: sema 1 2022"],
+    ],
+  },
+  "pengesahan anak": {
+    asli: "Pengesahan Anak",
+    menu: "w3pa",
+    baris: [
+      ["", "", "[01] [Kabul] Pengesahan Anak - Anak Lahir dalam Perkawinan Sah yang Belum atau Baru Dicatat", "varian: [01a] [Kabul] Pengesahan Anak - Anak Lahir Sebelum Pernikahan Para Pemohon (Pengakuan atau Hubungan Darah)"],
+      ["Dikabulkan", "", "[01] [Kabul] Pengesahan Anak - Anak Lahir dalam Perkawinan Sah yang Belum atau Baru Dicatat", "Anak lahir dalam perkawinan sah menurut hukum Islam yang belum/baru dicatat atau telah diitsbatkan (pilih A/B/C di 3662); status anak = pilihan majelis 3668."],
+      ["Dikabulkan", "lahir-sebelum-nikah", "[01a] [Kabul] Pengesahan Anak - Anak Lahir Sebelum Pernikahan Para Pemohon (Pengakuan atau Hubungan Darah)", "Anak lahir sebelum pernikahan para Pemohon: pengakuan ayah/tes DNA (isi 3666 dan 3670), Pasal 43 ayat (1) UU 1/1974 sebagaimana dimaknai Putusan MK 46/PUU-VIII/2010; pilih status di 3668."],
+      ["Ditolak", "", "[03] [Tolak] Pengesahan Anak - Dalil Pengesahan Tidak Terbukti", "Pernikahan atau kelahiran anak tidak terbukti; uraikan di 3671."],
+      ["Ditolak", "hubungan-darah-tidak-terbukti", "[03a] [Tolak] Pengesahan Anak - Hubungan Darah atau Pengakuan Tidak Terbukti", "Anak lahir sebelum pernikahan tetapi hubungan darah/pengakuan tidak terbukti; uraikan di 3671."],
+      ["Tidak Dapat Diterima", "", "[99a] [NO] Pengesahan Anak - Pernikahan Orang Tua Belum Terbukti Sah (Itsbat Nikah Lebih Dahulu)", "varian: [99b] [NO] Pengesahan Anak - Pemohon Bukan Orang Tua atau Tidak Berkepentingan; [99c] [NO] Pengesahan Anak - Anak Sudah Mempunyai Akta Kelahiran; [99] [NO] Pengesahan Anak - Pemohon Tidak Hadir Lagi (SEMA 1 2022)"],
+      ["Tidak Dapat Diterima", "perkawinan-belum-terbukti", "[99a] [NO] Pengesahan Anak - Pernikahan Orang Tua Belum Terbukti Sah (Itsbat Nikah Lebih Dahulu)", "Pengesahan anak prematur karena pernikahan orang tua belum dibuktikan sah (belum akta nikah/itsbat); uraikan di 3671."],
+      ["Tidak Dapat Diterima", "bukan-orang-tua", "[99b] [NO] Pengesahan Anak - Pemohon Bukan Orang Tua atau Tidak Berkepentingan", "Pemohon bukan ayah atau ibu anak / tidak berkepentingan langsung (Pasal 44 ayat (2) UU 1/1974); uraikan di 3671."],
+      ["Tidak Dapat Diterima", "sudah-berakta", "[99c] [NO] Pengesahan Anak - Anak Sudah Mempunyai Akta Kelahiran", "Anak sudah mempunyai akta kelahiran yang memuat nama orang tuanya dan tidak ada sengketa status (Pasal 55 ayat (1) UU 1/1974); uraikan di 3671."],
+      ["Dicabut", "", "[98] [Cabut] Pengesahan Anak", ""],
+      ["Digugurkan", "", "[98a] [Gugur] Pengesahan Anak - Pemohon Tidak Pernah Hadir", ""],
+      ["Gugur", "", "[98a] [Gugur] Pengesahan Anak - Pemohon Tidak Pernah Hadir", ""],
+      ["Dicoret dari Register", "", "[98c] [Coret] Pengesahan Anak - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+      ["Tidak Dapat Diterima", "sema-1-2022", "[99] [NO] Pengesahan Anak - Pemohon Tidak Hadir Lagi (SEMA 1 2022)", "keadaan: sema 1 2022"],
+    ],
+  },
+  "kelalaian kewajiban suami istri": {
+    asli: "Kelalaian atas Kewajiban Suami/Istri",
+    menu: "w3kk",
+    baris: [
+      ["", "", "[01] [Kabul] Kelalaian Kewajiban Suami Istri - Kontradiktoir", "varian: [01a] [Kabul] Kelalaian Kewajiban Suami Istri - T Tidak Hadir Setelah Mediasi; [01b] [Kabul Verstek] Kelalaian Kewajiban Suami Istri"],
+      ["Dikabulkan", "", "[01] [Kabul] Kelalaian Kewajiban Suami Istri - Kontradiktoir", "Dikabulkan: kontradiktoir"],
+      ["Dikabulkan", "t-tidak-hadir-setelah-mediasi", "[01a] [Kabul] Kelalaian Kewajiban Suami Istri - T Tidak Hadir Setelah Mediasi", "Dikabulkan: Tergugat berhenti hadir sesudah mediasi"],
+      ["Dikabulkan", "verstek", "[01b] [Kabul Verstek] Kelalaian Kewajiban Suami Istri", "Dikabulkan: verstek"],
+      ["Dikabulkan Sebagian", "", "[02] [Kabul Sebagian] Kelalaian Kewajiban Suami Istri - Kontradiktoir - Petitum Selebihnya Ditolak", "Dikabulkan sebagian: petitum selebihnya ditolak"],
+      ["Dikabulkan Sebagian", "verstek", "[02b] [Kabul Sebagian Verstek] Kelalaian Kewajiban Suami Istri - T Tidak Hadir - Petitum Selebihnya Ditolak", "Dikabulkan sebagian: verstek"],
+      ["Ditolak", "", "[03] [Tolak] Kelalaian Kewajiban Suami Istri - Kontradiktoir - Dalil Tidak Terbukti", "Ditolak: dalil tidak terbukti, Tergugat tidak mampu, atau nusyuz"],
+      ["Ditolak", "verstek", "[03b] [Tolak Verstek] Kelalaian Kewajiban Suami Istri - T Tidak Hadir - Dalil Tidak Terbukti", "Ditolak: verstek"],
+      ["Perdamaian", "", "[97] [Perdamaian] Kelalaian Kewajiban Suami Istri - Akta Perdamaian", ""],
+      ["Dicabut", "", "[98] [Cabut] Kelalaian Kewajiban Suami Istri - P & T Hadir Sebelum Jawaban", ""],
+      ["Dicabut", "sesudah-jawaban", "[98b] [Cabut] Kelalaian Kewajiban Suami Istri - Sesudah Jawaban dengan Persetujuan T", "keadaan: sesudah jawaban"],
+      ["Digugurkan", "", "[98a] [Gugur] Kelalaian Kewajiban Suami Istri - P Tidak Hadir Sidang Pertama", ""],
+      ["Gugur", "", "[98a] [Gugur] Kelalaian Kewajiban Suami Istri - P Tidak Hadir Sidang Pertama", ""],
+      ["Dicoret dari Register", "", "[98c] [Coret] Kelalaian Kewajiban Suami Istri - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+      ["Tidak Dapat Diterima", "", "[99] [NO] Kelalaian Kewajiban Suami Istri - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)", "varian: [99a] [NO] Kelalaian Kewajiban Suami Istri - Kurang Pihak (Plurium Litis Consortium); [99b] [NO] Kelalaian Kewajiban Suami Istri - Gugatan Kabur (Obscuur Libel)"],
+      ["Tidak Dapat Diterima", "sema-1-2022", "[99] [NO] Kelalaian Kewajiban Suami Istri - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)", "keadaan: sema 1 2022"],
+      ["Tidak Dapat Diterima", "kurang-pihak", "[99a] [NO] Kelalaian Kewajiban Suami Istri - Kurang Pihak (Plurium Litis Consortium)", "Tidak dapat diterima: kurang pihak"],
+      ["Tidak Dapat Diterima", "cacat-formil", "[99b] [NO] Kelalaian Kewajiban Suami Istri - Gugatan Kabur (Obscuur Libel)", "Tidak dapat diterima: gugatan kabur"],
+    ],
+  },
+  "hak bekas istri": {
+    asli: "Hak-hak Bekas Istri/Kewajiban Bekas Suami",
+    menu: "w3hb",
+    baris: [
+      ["", "", "[01] [Kabul] Hak Bekas Istri - Kontradiktoir", "varian: [01a] [Kabul] Hak Bekas Istri - T Tidak Hadir Setelah Mediasi; [01b] [Kabul Verstek] Hak Bekas Istri"],
+      ["Dikabulkan", "", "[01] [Kabul] Hak Bekas Istri - Kontradiktoir", "Dikabulkan seluruhnya; hak yang terisi (nafkah iddah, maskan, kiswah, mutah, madliyah, mahar, biaya hadhanah) tercetak di amar."],
+      ["Dikabulkan", "t-tidak-hadir-setelah-mediasi", "[01a] [Kabul] Hak Bekas Istri - T Tidak Hadir Setelah Mediasi", "keadaan: t tidak hadir setelah mediasi"],
+      ["Dikabulkan", "verstek", "[01b] [Kabul Verstek] Hak Bekas Istri", "keadaan: verstek"],
+      ["Dikabulkan Sebagian", "", "[02] [Kabul Sebagian] Hak Bekas Istri - Kontradiktoir - Petitum Selebihnya Ditolak", "Dikabulkan sebagian; hak yang dikosongkan tidak tercetak dan petitum selebihnya ditolak (alasan di isian 3755)."],
+      ["Dikabulkan Sebagian", "verstek", "[02b] [Kabul Sebagian Verstek] Hak Bekas Istri - T Tidak Hadir - Petitum Selebihnya Ditolak", "keadaan: verstek"],
+      ["Ditolak", "", "[03] [Tolak] Hak Bekas Istri - Kontradiktoir - Dalil Tidak Terbukti", "Ditolak; alasan di isian 3755 (mis. nusyuz, telah diputus dalam perkara cerai)."],
+      ["Ditolak", "verstek", "[03b] [Tolak Verstek] Hak Bekas Istri - T Tidak Hadir - Dalil Tidak Terbukti", "keadaan: verstek"],
+      ["Perdamaian", "", "[97] [Perdamaian] Hak Bekas Istri - Akta Perdamaian", ""],
+      ["Dicabut", "", "[98] [Cabut] Hak Bekas Istri - P & T Hadir Sebelum Jawaban", ""],
+      ["Dicabut", "sesudah-jawaban", "[98b] [Cabut] Hak Bekas Istri - Sesudah Jawaban dengan Persetujuan T", "keadaan: sesudah jawaban"],
+      ["Digugurkan", "", "[98a] [Gugur] Hak Bekas Istri - P Tidak Hadir Sidang Pertama", ""],
+      ["Gugur", "", "[98a] [Gugur] Hak Bekas Istri - P Tidak Hadir Sidang Pertama", ""],
+      ["Dicoret dari Register", "", "[98c] [Coret] Hak Bekas Istri - Dibatalkan dari Pendaftaran - Panjar Habis", ""],
+      ["Tidak Dapat Diterima", "", "[99] [NO] Hak Bekas Istri - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)", "varian: [99a] [NO] Hak Bekas Istri - Kurang Pihak (Plurium Litis Consortium); [99b] [NO] Hak Bekas Istri - Gugatan Kabur (Obscuur Libel)"],
+      ["Tidak Dapat Diterima", "sema-1-2022", "[99] [NO] Hak Bekas Istri - P Hadir Lalu 2x Tidak Hadir (SEMA 1 2022)", "keadaan: sema 1 2022"],
+      ["Tidak Dapat Diterima", "kurang-pihak", "[99a] [NO] Hak Bekas Istri - Kurang Pihak (Plurium Litis Consortium)", "keadaan: kurang pihak"],
+      ["Tidak Dapat Diterima", "cacat-formil", "[99b] [NO] Hak Bekas Istri - Gugatan Kabur (Obscuur Libel)", "Gugatan kabur (obscuur libel); uraian di variabel 9651."],
+    ],
+  },
+};
+function alatPetaW3a() {
+  const hasil = {};
+  for (const [kunci, j] of Object.entries(ALAT_W3A_PETA)) {
+    for (const [status, keadaan, berkas, catatan] of j.baris) {
+      const k = status ? `${kunci}|${status.toLowerCase()}${keadaan ? `|${keadaan}` : ""}` : kunci;
+      hasil[k] = alatBarisPutusanLain(j.menu, j.asli, status, berkas, catatan);
+    }
+  }
+  return hasil;
+}
+Object.assign(ALAT_PETA_BAWAAN, alatPetaW3a());
+/* === AKHIR W3a === */
 
 
 

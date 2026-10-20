@@ -35,6 +35,7 @@ const A = `${AKAR_SALINAN_BAS}/`;
 const ALUR04 = "ALUR 04 Cerai Kontra Tertulis (Mediasi s.d. Putusan)";
 const BERKAS_04 = "[2] BAS 2 P & T Hadir - Laporan Mediasi dan Pemeriksaan Pokok Perkara.rtf";
 const SALIN_04 = `BAS ALUR 04 ${BERKAS_04}`;
+const W3A_BAS = new Set(["5c Penolakan Perkawinan - BAS", "5d Perkawinan Campuran - BAS", "3a Izin Kawin - BAS", "8a Pengesahan Anak - BAS", "1e Kelalaian Kewajiban Suami Istri - BAS", "1f Hak Bekas Istri - BAS"]); // W3a 21 Okt: dijaga w3a-pemetaan-21okt.test.ts (fixture 17 Okt tidak memuatnya)
 
 describe("A. tabel salinan = 233 BAS paket A3 + 53 salinan F21 (58 - 5 dipindah I7) + 1 BAS langsung ikrar di fixture", () => {
   it("setiap salinan turunan tabel ADA di fixture, dan semua BAS salinan fixture ada di tabel", () => {
@@ -46,6 +47,7 @@ describe("A. tabel salinan = 233 BAS paket A3 + 53 salinan F21 (58 - 5 dipindah 
         expect(FIX.berkas, `${fs}/${bs}`).toContain(`${A}${fs}/${bs}`); // sumber tetap ada di disk
         for (const ft of tujuan) {
           expect(MENU_FOLDER_JENIS[ft], ft).toBeTruthy();
+          if (W3A_BAS.has(ft)) continue; // W3a 21 Okt: 29 salinan ke 1e dan 1f (w3a-pemetaan-21okt.test.ts)
           turunan.add(`${A}${ft}/${awalan}${bs}`);
         }
       }
@@ -72,6 +74,7 @@ describe("A. tabel salinan = 233 BAS paket A3 + 53 salinan F21 (58 - 5 dipindah 
 
   it("nama menu tiap folder jenis = abt_menu.nama/nama_alias di fixture", () => {
     for (const [folder, m] of Object.entries(MENU_FOLDER_JENIS)) {
+      if (W3A_BAS.has(folder)) continue;
       const baris = FIX.menu.find((x) => x.id === m.id)!;
       expect(baris.direktori, folder).toBe(folder);
       expect([baris.nama, baris.nama_alias], folder).toEqual([m.nama, m.alias]);
@@ -83,7 +86,7 @@ describe("A. tabel salinan = 233 BAS paket A3 + 53 salinan F21 (58 - 5 dipindah 
       const bagi = lama.split("/");
       const hasil = semuaSalinanBas(bagi.slice(0, 2).join("/"), bagi[2]);
       expect(hasil.length, lama).toBeGreaterThan(0);
-      for (const s of hasil) expect(FIX.berkas, lama).toContain(`${s.folder}/${s.berkas}`);
+      for (const s of hasil) if (!W3A_BAS.has(s.folder.slice(A.length))) expect(FIX.berkas, lama).toContain(`${s.folder}/${s.berkas}`);
     }
   });
 });

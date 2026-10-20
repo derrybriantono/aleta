@@ -1844,6 +1844,428 @@ export const ALUR_BAS_BARU: AlurBasBaru[] = [
         "keterangan": "Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022)"
       }
     ]
+  },
+  /* === W3a 21 Okt === */
+  {
+    "id": "alur-60",
+    "nomor": 60,
+    "nama": "Penolakan Perkawinan (permohonan)",
+    "folder": "derry_briantono/5c Penolakan Perkawinan - BAS",
+    "menu": {
+      "id": 169,
+      "nama": "Penolakan Perkawinan - BAS",
+      "alias": "Penolakan Perkawinan - BAS"
+    },
+    "jenisMin": 343,
+    "jenisMaks": 343,
+    "langkah": [
+      {
+        "kode": "1",
+        "berkas": "BAS ALUR 60 Penolakan Perkawinan - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)"
+      },
+      {
+        "kode": "1a",
+        "berkas": "BAS ALUR 60 Penolakan Perkawinan - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "1b",
+        "berkas": "BAS ALUR 60 Penolakan Perkawinan - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf",
+        "keterangan": "Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi"
+      },
+      {
+        "kode": "1c",
+        "berkas": "BAS ALUR 60 Penolakan Perkawinan - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf",
+        "keterangan": "Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan"
+      },
+      {
+        "kode": "2",
+        "berkas": "BAS ALUR 60 Penolakan Perkawinan - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2a",
+        "berkas": "BAS ALUR 60 Penolakan Perkawinan - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2b",
+        "berkas": "BAS ALUR 60 Penolakan Perkawinan - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan"
+      },
+      {
+        "kode": "3",
+        "berkas": "BAS ALUR 60 Penolakan Perkawinan - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Terakhir - Pembacaan Penetapan"
+      },
+      {
+        "kode": "C",
+        "berkas": "BAS ALUR 60 Penolakan Perkawinan - [C] Pemohon Hadir Mencabut Permohonan.rtf",
+        "keterangan": "Pemohon Hadir Mencabut Permohonan"
+      },
+      {
+        "kode": "G",
+        "berkas": "BAS ALUR 60 Penolakan Perkawinan - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
+        "keterangan": "Pemohon Tidak Pernah Hadir - Permohonan Gugur"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 60 Penolakan Perkawinan - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon Tidak Hadir - Tunda Panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 60 Penolakan Perkawinan - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022)"
+      }
+    ]
+  },
+  {
+    "id": "alur-61",
+    "nomor": 61,
+    "nama": "Perkawinan Campuran (permohonan)",
+    "folder": "derry_briantono/5d Perkawinan Campuran - BAS",
+    "menu": {
+      "id": 171,
+      "nama": "Perkawinan Campuran - BAS",
+      "alias": "Perkawinan Campuran - BAS"
+    },
+    "jenisMin": 359,
+    "jenisMaks": 359,
+    "langkah": [
+      {
+        "kode": "1",
+        "berkas": "BAS ALUR 61 Perkawinan Campuran - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)"
+      },
+      {
+        "kode": "1a",
+        "berkas": "BAS ALUR 61 Perkawinan Campuran - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "1b",
+        "berkas": "BAS ALUR 61 Perkawinan Campuran - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf",
+        "keterangan": "Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi"
+      },
+      {
+        "kode": "1c",
+        "berkas": "BAS ALUR 61 Perkawinan Campuran - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf",
+        "keterangan": "Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan"
+      },
+      {
+        "kode": "2",
+        "berkas": "BAS ALUR 61 Perkawinan Campuran - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2a",
+        "berkas": "BAS ALUR 61 Perkawinan Campuran - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2b",
+        "berkas": "BAS ALUR 61 Perkawinan Campuran - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan"
+      },
+      {
+        "kode": "3",
+        "berkas": "BAS ALUR 61 Perkawinan Campuran - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Terakhir - Pembacaan Penetapan"
+      },
+      {
+        "kode": "C",
+        "berkas": "BAS ALUR 61 Perkawinan Campuran - [C] Pemohon Hadir Mencabut Permohonan.rtf",
+        "keterangan": "Pemohon Hadir Mencabut Permohonan"
+      },
+      {
+        "kode": "G",
+        "berkas": "BAS ALUR 61 Perkawinan Campuran - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
+        "keterangan": "Pemohon Tidak Pernah Hadir - Permohonan Gugur"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 61 Perkawinan Campuran - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon Tidak Hadir - Tunda Panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 61 Perkawinan Campuran - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022)"
+      }
+    ]
+  },
+  {
+    "id": "alur-62",
+    "nomor": 62,
+    "nama": "Izin Kawin (permohonan)",
+    "folder": "derry_briantono/3a Izin Kawin - BAS",
+    "menu": {
+      "id": 173,
+      "nama": "Izin Kawin - BAS",
+      "alias": "Izin Kawin - BAS"
+    },
+    "jenisMin": 361,
+    "jenisMaks": 361,
+    "langkah": [
+      {
+        "kode": "1",
+        "berkas": "BAS ALUR 62 Izin Kawin - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)"
+      },
+      {
+        "kode": "1a",
+        "berkas": "BAS ALUR 62 Izin Kawin - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "1b",
+        "berkas": "BAS ALUR 62 Izin Kawin - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf",
+        "keterangan": "Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi"
+      },
+      {
+        "kode": "1c",
+        "berkas": "BAS ALUR 62 Izin Kawin - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf",
+        "keterangan": "Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan"
+      },
+      {
+        "kode": "2",
+        "berkas": "BAS ALUR 62 Izin Kawin - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2a",
+        "berkas": "BAS ALUR 62 Izin Kawin - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2b",
+        "berkas": "BAS ALUR 62 Izin Kawin - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan"
+      },
+      {
+        "kode": "3",
+        "berkas": "BAS ALUR 62 Izin Kawin - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Terakhir - Pembacaan Penetapan"
+      },
+      {
+        "kode": "C",
+        "berkas": "BAS ALUR 62 Izin Kawin - [C] Pemohon Hadir Mencabut Permohonan.rtf",
+        "keterangan": "Pemohon Hadir Mencabut Permohonan"
+      },
+      {
+        "kode": "G",
+        "berkas": "BAS ALUR 62 Izin Kawin - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
+        "keterangan": "Pemohon Tidak Pernah Hadir - Permohonan Gugur"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 62 Izin Kawin - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon Tidak Hadir - Tunda Panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 62 Izin Kawin - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022)"
+      }
+    ]
+  },
+  {
+    "id": "alur-63",
+    "nomor": 63,
+    "nama": "Pengesahan Anak (permohonan)",
+    "folder": "derry_briantono/8a Pengesahan Anak - BAS",
+    "menu": {
+      "id": 175,
+      "nama": "Pengesahan Anak - BAS",
+      "alias": "Pengesahan Anak - BAS"
+    },
+    "jenisMin": 352,
+    "jenisMaks": 352,
+    "langkah": [
+      {
+        "kode": "1",
+        "berkas": "BAS ALUR 63 Pengesahan Anak - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang).rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)"
+      },
+      {
+        "kode": "1a",
+        "berkas": "BAS ALUR 63 Pengesahan Anak - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "1b",
+        "berkas": "BAS ALUR 63 Pengesahan Anak - [1b] Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi.rtf",
+        "keterangan": "Sidang 1 - Pembacaan Permohonan dan Bukti Surat, Tunda Pemeriksaan Saksi"
+      },
+      {
+        "kode": "1c",
+        "berkas": "BAS ALUR 63 Pengesahan Anak - [1c] Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan.rtf",
+        "keterangan": "Sidang 1 - Petunjuk Perbaikan Permohonan, Tunda Perbaikan"
+      },
+      {
+        "kode": "2",
+        "berkas": "BAS ALUR 63 Pengesahan Anak - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2a",
+        "berkas": "BAS ALUR 63 Pengesahan Anak - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan"
+      },
+      {
+        "kode": "2b",
+        "berkas": "BAS ALUR 63 Pengesahan Anak - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan.rtf",
+        "keterangan": "Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan"
+      },
+      {
+        "kode": "3",
+        "berkas": "BAS ALUR 63 Pengesahan Anak - [3] Sidang Terakhir - Pembacaan Penetapan.rtf",
+        "keterangan": "Sidang Terakhir - Pembacaan Penetapan"
+      },
+      {
+        "kode": "C",
+        "berkas": "BAS ALUR 63 Pengesahan Anak - [C] Pemohon Hadir Mencabut Permohonan.rtf",
+        "keterangan": "Pemohon Hadir Mencabut Permohonan"
+      },
+      {
+        "kode": "G",
+        "berkas": "BAS ALUR 63 Pengesahan Anak - [G] Pemohon Tidak Pernah Hadir - Permohonan Gugur.rtf",
+        "keterangan": "Pemohon Tidak Pernah Hadir - Permohonan Gugur"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 63 Pengesahan Anak - [T] Pemohon Tidak Hadir - Tunda Panggil Pemohon.rtf",
+        "keterangan": "Pemohon Tidak Hadir - Tunda Panggil Pemohon"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 63 Pengesahan Anak - [N] Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022).rtf",
+        "keterangan": "Pemohon Tidak Hadir Lagi - Tidak Dapat Diterima (SEMA 1 2022)"
+      }
+    ]
+  },
+  {
+    "id": "alur-64",
+    "nomor": 64,
+    "nama": "Kelalaian Kewajiban - Verstek, Perdamaian, Cabut, P Tidak Hadir, NO",
+    "folder": "derry_briantono/1e Kelalaian Kewajiban Suami Istri - BAS",
+    "menu": {
+      "id": 177,
+      "nama": "Kelalaian Kewajiban Suami Istri - BAS",
+      "alias": "Kelalaian Kewajiban Suami Istri - BAS"
+    },
+    "jenisMin": 345,
+    "jenisMaks": 345,
+    "langkah": [
+      {
+        "kode": "V1",
+        "berkas": "BAS ALUR 64 Kelalaian Kewajiban - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T"
+      },
+      {
+        "kode": "V2",
+        "berkas": "BAS ALUR 64 Kelalaian Kewajiban - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
+        "keterangan": "Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek"
+      },
+      {
+        "kode": "V2S",
+        "berkas": "BAS ALUR 64 Kelalaian Kewajiban - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek Kabul Sebagian.rtf",
+        "keterangan": "Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek Kabul Sebagian"
+      },
+      {
+        "kode": "AP",
+        "berkas": "BAS ALUR 64 Kelalaian Kewajiban - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Akta Perdamaian"
+      },
+      {
+        "kode": "GD",
+        "berkas": "BAS ALUR 64 Kelalaian Kewajiban - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Gugatan Dicabut"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 64 Kelalaian Kewajiban - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
+        "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 64 Kelalaian Kewajiban - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf",
+        "keterangan": "Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P"
+      },
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 64 Kelalaian Kewajiban - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 64 Kelalaian Kewajiban - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
+      }
+    ]
+  },
+  {
+    "id": "alur-65",
+    "nomor": 65,
+    "nama": "Hak Bekas Istri - Verstek, Perdamaian, Cabut, P Tidak Hadir, NO",
+    "folder": "derry_briantono/1f Hak Bekas Istri - BAS",
+    "menu": {
+      "id": 179,
+      "nama": "Hak Bekas Istri - BAS",
+      "alias": "Hak Bekas Istri - BAS"
+    },
+    "jenisMin": 351,
+    "jenisMaks": 351,
+    "langkah": [
+      {
+        "kode": "V1",
+        "berkas": "BAS ALUR 65 Hak Bekas Istri - Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T.rtf",
+        "keterangan": "Sidang 1 - P Hadir & T Tidak Hadir - Tunda Panggil T"
+      },
+      {
+        "kode": "V2",
+        "berkas": "BAS ALUR 65 Hak Bekas Istri - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek.rtf",
+        "keterangan": "Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek"
+      },
+      {
+        "kode": "V2S",
+        "berkas": "BAS ALUR 65 Hak Bekas Istri - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek Kabul Sebagian.rtf",
+        "keterangan": "Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek Kabul Sebagian"
+      },
+      {
+        "kode": "AP",
+        "berkas": "BAS ALUR 65 Hak Bekas Istri - Sidang 2 - Mediasi Berhasil - Akta Perdamaian.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Akta Perdamaian"
+      },
+      {
+        "kode": "GD",
+        "berkas": "BAS ALUR 65 Hak Bekas Istri - Sidang 2 - Mediasi Berhasil - Gugatan Dicabut.rtf",
+        "keterangan": "Sidang 2 - Mediasi Berhasil - Gugatan Dicabut"
+      },
+      {
+        "kode": "N",
+        "berkas": "BAS ALUR 65 Hak Bekas Istri - Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022).rtf",
+        "keterangan": "Sidang Lanjutan - P 2x Tidak Hadir - Putusan NO (SEMA 1 2022)"
+      },
+      {
+        "kode": "T",
+        "berkas": "BAS ALUR 65 Hak Bekas Istri - Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P.rtf",
+        "keterangan": "Sidang Lanjutan - P Tidak Hadir - Tunda Panggil P"
+      },
+      {
+        "kode": "CS",
+        "berkas": "BAS ALUR 65 Hak Bekas Istri - Cabut sesudah Jawaban - Tergugat Setuju.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat setuju"
+      },
+      {
+        "kode": "CM",
+        "berkas": "BAS ALUR 65 Hak Bekas Istri - Cabut sesudah Jawaban - Tergugat Menolak.rtf",
+        "keterangan": "Cabut sesudah jawaban - Tergugat menolak (dilanjutkan)"
+      }
+    ]
   }
+  /* === AKHIR W3a === */
 ];
 /* === AKHIR G3 === */

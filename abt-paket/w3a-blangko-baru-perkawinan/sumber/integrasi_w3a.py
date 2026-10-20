@@ -33,6 +33,13 @@ def baris_jenis(k, rows):
             grup[kk] = []
             urut.append(kk)
         grup[kk].append(r)
+    # status yang hanya punya baris berkeadaan khusus tetap perlu baris polos (tanpa keadaan): tanpa itu pilihan jatuh ke blangko KABUL jenisnya
+    for kk in list(urut):
+        status, keadaan = kk
+        if keadaan and (status, '') not in grup:
+            sama = [r for r in rows if r['status'] == status]
+            grup[(status, '')] = [sama[0]] + [r for r in sama[1:]]
+            urut.insert(urut.index(kk), (status, ''))
     hasil = []
     kabul = grup.get(('Dikabulkan', ''))
     if kabul:
