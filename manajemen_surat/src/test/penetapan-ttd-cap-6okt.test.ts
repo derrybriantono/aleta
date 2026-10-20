@@ -899,7 +899,7 @@ describe("E. konten.js blok 6 Okt: tanpa jalur tulis baru, otomatis hanya sesuda
   });
 
   it("tetapkanLewatAleta memanggil edoc HANYA bila tidak kering; e6 hanya UI Baru dan hanya jenis yang ok", () => {
-    const i = konten.indexOf("async function tetapkanLewatAleta(");
+    const i = konten.indexOf("async function tetapkanLewatAletaInti(");
     const fungsi = konten.slice(i, konten.indexOf("\n}\n", i));
     // 20 Okt: panel Penetapan Otomatis mengunggah e-Doc sendiri (opsi tanpaEdocOtomatis); jalur lain tetap otomatis sesudah tertulis.
     expect(fungsi).toMatch(/if \(!kering && !opsi\.tanpaEdocOtomatis && typeof e6SesudahPenetapanTertulis === "function"\)/);
