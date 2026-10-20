@@ -243,7 +243,10 @@ describe("C - fakta dari posita: ragu dan tidak menebak", () => {
   it("9686: alasan tidak mencatatkan pernikahan dari kalimat 'karena ...' pada posita itsbat; tanpa kalimat itu kosong", () => {
     const a = M.alasanTidakDicatat(POSITA_ITSBAT);
     expect(a).not.toBeNull();
-    expect(a?.nilai).toMatch(/^para Pemohon masih berstatus belum cukup umur saat pernikahan/i);
+    expect(a?.nilai).toBe("Para Pemohon masih berstatus belum cukup umur saat pernikahan"); // klausa 'dan pernikahan tersebut tidak terdaftar ...' dibuang
+    // kalimat baku yang hanya mengulang fakta tidak tercatat bukan alasan
+    expect(M.alasanTidakDicatat("<div>6. Bahwa Pemohon tidak mempunyai Akta Nikah, karena pernikahan tersebut tidak terdaftar di Kantor Urusan Agama Kecamatan Labuan, sehingga tidak dicatatkan;</div>")).toBeNull();
+    expect(M.alasanTidakDicatat("<div>6. Bahwa Pemohon tidak mempunyai Akta Nikah, karena Imam Desa tidak mencatatkan pernikahan para Pemohon dan pernikahan tersebut tidak terdaftar di KUA Labuan;</div>")?.nilai).toBe("Imam Desa tidak mencatatkan pernikahan para Pemohon");
     expect(M.alasanTidakDicatat("<div>1. Bahwa Pemohon I dan Pemohon II menikah pada 2020 di KUA;</div>")).toBeNull();
   });
 
@@ -433,6 +436,16 @@ describe("F - susunIsian: opsional dan manual", () => {
       }
     }
     for (const k of Object.keys(ISIAN_OPSIONAL)) expect(ISIAN_MANUAL[k]).toBeUndefined();
+  });
+});
+
+describe("G0 - berkas sumber bersih", () => {
+  it("pengisi baru tidak memuat karakter kendali tersembunyi (mis. \\b salah ketik yang diam-diam mematikan sebuah pola)", () => {
+    for (const rel of ["aleta_bot/services/abtIsianLengkap20okt.js", "ekstensi-sipp/isi-sipp-bersama.js", "manajemen_surat/src/app/api/aleta-ecourt/blangko-derry/isian-metadata.ts"]) {
+      const teks = readFileSync(path.join(AKAR, rel), "utf8");
+      // eslint-disable-next-line no-control-regex
+      expect(teks.match(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g) || [], rel).toEqual([]);
+    }
   });
 });
 

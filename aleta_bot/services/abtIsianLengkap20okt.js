@@ -302,7 +302,7 @@ function usulanDariGugatanSipp(o) {
   // Jumlah untuk amar putusan (nafkah madliyah, iddah, mut'ah cerai gugat): yang DITUNTUT; besaran yang dikabulkan diputus majelis.
   for (const t of (h && h.tuntutan) || []) {
     const kode = NAMA_JENIS_TUNTUTAN[t.jenis];
-    if (!kode || t.rekonvensi === true && o.jenis === 347 || t.untukAnak) continue;
+    if (!kode || (t.rekonvensi === true && o.jenis === 347) || t.untukAnak) continue;
     const nilai = rincianNafkah(t, T);
     if (!nilai || usulan.some((u) => u.kode === kode)) continue;
     usulan.push(
@@ -426,9 +426,15 @@ function alasanTidakDicatat(posita) {
     if (!/tidak\s+(?:dicatat|terdaftar|tercatat|didaftarkan|dicatatkan)|belum\s+(?:dicatat|didaftarkan|terdaftar)/i.test(t)) continue;
     const m = /(?:karena|dikarenakan|disebabkan(?:\s+oleh)?|lantaran|sebab)\s+(.{8,260}?)(?:\s*(?:,|;)?\s*(?:sehingga|sementara|dan\s+(?:saat|sekarang|kini)|oleh\s+karena)\b|[;.]|$)/i.exec(t);
     if (!m) continue;
-    let nilai = m[1].replace(/^bahwa\s+/i, "").replace(/[\s,;.]+$/, "").trim();
-    if (nilai.length < 8) continue;
-    nilai = nilai.charAt(0).toLowerCase() + nilai.slice(1);
+    // Kalimat baku "... dan pernikahan tersebut tidak terdaftar di KUA ..." hanya mengulang fakta tidak tercatat, bukan alasannya:
+    // yang diambil hanya klausa alasan sebelum kalimat baku itu; bila yang tersisa cuma pengulangan, dilewati.
+    let nilai = m[1]
+      .split(/\s*(?:,|;)?\s*(?:dan|serta|sehingga|maka)\s+(?:pernikahan|perkawinan)(?:nya)?\s+(?:tersebut\s+)?(?:tidak|belum)\s+(?:terdaftar|dicatat|tercatat|didaftarkan|dicatatkan)/i)[0]
+      .replace(/^bahwa\s+/i, "")
+      .replace(/[\s,;.]+$/, "")
+      .trim();
+    if (nilai.length < 8 || /^(?:pernikahan|perkawinan)(?:nya)?\s+(?:tersebut\s+)?(?:tidak|belum)\s+(?:terdaftar|dicatat|tercatat|didaftarkan|dicatatkan)/i.test(nilai)) continue;
+    // Huruf awal dibiarkan seperti di posita (mis. "Pemohon II belum cukup umur": sebutan pihak berhuruf besar).
     return { nilai, kalimat: t.slice(0, 400) };
   }
   return null;
