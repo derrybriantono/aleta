@@ -1,0 +1,1632 @@
+{
+ "skema": "saksi-katalog/1",
+ "kunci": "wakaf",
+ "judul": "Wakaf",
+ "versi": 1,
+ "penulis": "L60",
+ "tahap": 2,
+ "contoh": false,
+ "syarat": {
+  "jenisPerkaraId": [
+   "367"
+  ]
+ },
+ "pihak": {
+  "pengaju": "#0046#",
+  "lawan": "#0047#"
+ },
+ "blangkoBas": [
+  {
+   "folder": "4e Wakaf - BAS",
+   "berkas": "BAS ALUR 04 [6] BAS 6 P & T Hadir - Pembuktian P",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4e Wakaf - BAS",
+   "berkas": "BAS ALUR 04 [6a] BAS 6 P & T Hadir - Pembuktian P (3 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4e Wakaf - BAS",
+   "berkas": "BAS ALUR 04 [6b] BAS 6 P & T Hadir - Pembuktian P (4 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060",
+    "6124"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4e Wakaf - BAS",
+   "berkas": "BAS ALUR 04 [6c] BAS 6 P & T Hadir - Pembuktian P (5 Saksi)",
+   "variabelSaksi": [
+    "5058",
+    "5059",
+    "5060",
+    "6124",
+    "8931"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4e Wakaf - BAS",
+   "berkas": "BAS ALUR 04 [7] BAS 7 P & T Hadir - Pembuktian T",
+   "variabelSaksi": [
+    "6120",
+    "6121"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4e Wakaf - BAS",
+   "berkas": "BAS ALUR 04 [7a] BAS 7 P & T Hadir - Pembuktian T (3 Saksi)",
+   "variabelSaksi": [
+    "6120",
+    "6121",
+    "8921"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4e Wakaf - BAS",
+   "berkas": "BAS ALUR 04 [7b] BAS 7 P & T Hadir - Pembuktian T (4 Saksi)",
+   "variabelSaksi": [
+    "6120",
+    "6121",
+    "8921",
+    "8941"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4e Wakaf - BAS",
+   "berkas": "BAS ALUR 48 Wakaf - Sidang 2 - T Tetap Tidak Hadir - Pembuktian dan Putusan Verstek",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4e Wakaf - BAS",
+   "berkas": "BAS ALUR 48 Wakaf Mohon - [1] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Penetapan Dibacakan (1x Sidang)",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4e Wakaf - BAS",
+   "berkas": "BAS ALUR 48 Wakaf Mohon - [1a] Sidang 1 - Pemeriksaan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4e Wakaf - BAS",
+   "berkas": "BAS ALUR 48 Wakaf Mohon - [2] Sidang Lanjutan - Pemeriksaan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4e Wakaf - BAS",
+   "berkas": "BAS ALUR 48 Wakaf Mohon - [2a] Sidang Lanjutan - Perbaikan Permohonan, Bukti Surat dan 2 Saksi, Tunda Pembacaan Penetapan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  },
+  {
+   "folder": "4e Wakaf - BAS",
+   "berkas": "BAS ALUR 48 Wakaf Mohon - [2b] Sidang Lanjutan - Pemeriksaan 2 Saksi, Penetapan Dibacakan",
+   "variabelSaksi": [
+    "5058",
+    "5059"
+   ],
+   "catatan": ""
+  }
+ ],
+ "dasarHukum": [
+  {
+   "id": "dh-sebab-pengetahuan",
+   "rujukan": "Pasal 171 ayat (1) dan (2) HIR / Pasal 308 ayat (1) dan (2) RBg",
+   "uraian": "saksi harus menyebut alasan dan cara ia mengetahui hal yang diterangkan; pendapat atau dugaan bukan kesaksian",
+   "status": "terverifikasi",
+   "sumber": "Pasal 171 ayat (1)-(2) HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 308 ayat (1)-(2) RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); sejalan dengan Pasal 1907 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-unus-testis",
+   "rujukan": "Pasal 169 HIR / Pasal 306 RBg / Pasal 1905 KUHPerdata",
+   "uraian": "keterangan seorang saksi saja tanpa alat bukti lain tidak dapat dipercaya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 169 HIR (Stb. 1941 No. 44), berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_HERZIEN_INLANDSCH_REGLEMENT.pdf); Pasal 306 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); Pasal 1905 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md)."
+  },
+  {
+   "id": "dh-saksi-syarat",
+   "rujukan": "Pasal 171, 172, 175, 307, 308 dan 309 RBg",
+   "uraian": "syarat formil saksi (bukan orang yang dilarang didengar menurut Pasal 172, antara lain anak yang belum berumur lima belas tahun; dipanggil dan diperiksa satu per satu; disumpah menurut agamanya) dan syarat materiil (kesaksian disertai alasan pengetahuan, yaitu peristiwa yang dialami, didengar dan dilihat sendiri; kesaksian yang berdiri sendiri saling bersesuaian)",
+   "status": "terverifikasi",
+   "sumber": "Pasal 171 (saksi dipanggil satu per satu, ditanya identitas dan hubungan dengan pihak), 172 (orang yang tidak boleh didengar), 175 (sumpah), 307, 308, 309 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (naskah RBg memuat padanan IR (HIR) pada tiap pasal); syarat materiil \"dialami, didengar dan dilihat sendiri\" juga pada Buku II Edisi Revisi 2013 (Ditjen Badilag MA RI), salinan PDF PA Rumbia (pa-rumbia.go.id/images/Pedoman_Organisasi/1-Buku-II-edisi-Rev_2013_Pedoman-Tugas-dan-Adm.pdf), bagian Bukti Saksi. Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: pertimbangan hukum blangko putusan Derry 4c Wasiat [01], 5a Pembatalan [01], 5b Pencegahan [01], 5 Izin Poligami [01]"
+  },
+  {
+   "id": "dh-beban-bukti",
+   "rujukan": "Pasal 283 RBg jo. Pasal 1865 KUHPerdata",
+   "uraian": "siapa yang mendalilkan suatu peristiwa wajib membuktikannya",
+   "status": "terverifikasi",
+   "sumber": "Pasal 283 RBg (S. 1927-227) Titel IV-V, berkas JDIH UNNES (jdih.unnes.ac.id/web/download/9da05dfa-3414-4a3d-974b-2c25c2261056) (memuat padanan KUHperd. 1865 dan IR. 163); Pasal 1865 KUHPerdata, berkas JDIH PN Bengkalis (jdihpn.pn-bengkalis.go.id, KOLONIAL_KUH_PERDATA.pdf). Bunyi pasal dicocokkan dengan naskah 18 Okt 2026 (VERIFIKASI-HIR-RBG.md). Asal kutipan: pertimbangan hukum blangko putusan Derry 4c Wasiat [01] dan 5a Pembatalan [01]"
+  },
+  {
+   "id": "dh-kewenangan-wakaf",
+   "rujukan": "Pasal 49 huruf e UU 7/1989 jo UU 3/2006 jo UU 50/2009 dan Pasal 62 UU 41/2004",
+   "uraian": "sengketa dan permohonan wakaf antara orang-orang beragama Islam menjadi kewenangan Pengadilan Agama; sengketa perwakafan dapat diselesaikan melalui pengadilan",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 3/2006 Pasal 49 dan naskah UU 41/2004 Pasal 62 ayat (2)"
+  },
+  {
+   "id": "dh-uuw-1",
+   "rujukan": "Pasal 1 angka 1 UU 41/2004",
+   "uraian": "wakaf adalah perbuatan hukum wakif untuk memisahkan dan/atau menyerahkan sebagian harta benda miliknya untuk dimanfaatkan selamanya atau untuk jangka waktu tertentu guna keperluan ibadah dan/atau kesejahteraan umum menurut syariah",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 41/2004 tentang Wakaf (peraturan.go.id/files/uu41-2004.pdf), dibaca penuh"
+  },
+  {
+   "id": "dh-uuw-2-3",
+   "rujukan": "Pasal 2 dan Pasal 3 UU 41/2004",
+   "uraian": "wakaf sah apabila dilaksanakan menurut syariah; wakaf yang telah diikrarkan tidak dapat dibatalkan",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 41/2004 tentang Wakaf (peraturan.go.id/files/uu41-2004.pdf), dibaca penuh"
+  },
+  {
+   "id": "dh-uuw-8",
+   "rujukan": "Pasal 8 ayat (1) UU 41/2004",
+   "uraian": "wakif perseorangan harus dewasa, berakal sehat, tidak terhalang melakukan perbuatan hukum dan pemilik sah harta benda wakaf",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 41/2004 tentang Wakaf (peraturan.go.id/files/uu41-2004.pdf), dibaca penuh"
+  },
+  {
+   "id": "dh-uuw-10",
+   "rujukan": "Pasal 10 ayat (1) UU 41/2004",
+   "uraian": "nazhir perseorangan harus warga negara Indonesia, beragama Islam, dewasa, amanah, mampu jasmani dan rohani, dan tidak terhalang melakukan perbuatan hukum",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 41/2004 tentang Wakaf (peraturan.go.id/files/uu41-2004.pdf), dibaca penuh"
+  },
+  {
+   "id": "dh-uuw-15",
+   "rujukan": "Pasal 15 UU 41/2004",
+   "uraian": "harta benda wakaf hanya dapat diwakafkan apabila dimiliki dan dikuasai oleh wakif secara sah",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 41/2004 tentang Wakaf (peraturan.go.id/files/uu41-2004.pdf), dibaca penuh"
+  },
+  {
+   "id": "dh-uuw-17",
+   "rujukan": "Pasal 17 dan Pasal 21 ayat (1) UU 41/2004",
+   "uraian": "ikrar wakaf dilaksanakan oleh wakif kepada nazhir di hadapan PPAIW dengan disaksikan 2 orang saksi, dinyatakan lisan dan/atau tulisan serta dituangkan dalam akta ikrar wakaf",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 41/2004 tentang Wakaf (peraturan.go.id/files/uu41-2004.pdf), dibaca penuh"
+  },
+  {
+   "id": "dh-uuw-22-23",
+   "rujukan": "Pasal 22 dan Pasal 23 ayat (1) UU 41/2004",
+   "uraian": "harta benda wakaf hanya dapat diperuntukkan bagi kepentingan yang disebut undang-undang; peruntukan ditetapkan wakif pada pelaksanaan ikrar wakaf",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 41/2004 tentang Wakaf (peraturan.go.id/files/uu41-2004.pdf), dibaca penuh"
+  },
+  {
+   "id": "dh-uuw-24-27",
+   "rujukan": "Pasal 24 sampai Pasal 27 UU 41/2004",
+   "uraian": "wakaf dengan wasiat disaksikan paling sedikit 2 orang saksi; paling banyak 1/3 harta warisan kecuali seluruh ahli waris menyetujui; dilaksanakan penerima wasiat setelah pewasiat meninggal; pengadilan dapat memerintahkan penerima wasiat melaksanakannya",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 41/2004 tentang Wakaf (peraturan.go.id/files/uu41-2004.pdf), dibaca penuh"
+  },
+  {
+   "id": "dh-uuw-40-41",
+   "rujukan": "Pasal 40 dan Pasal 41 UU 41/2004",
+   "uraian": "harta benda wakaf dilarang dijadikan jaminan, disita, dihibahkan, dijual, diwariskan, ditukar atau dialihkan; penukaran hanya dikecualikan untuk kepentingan umum dengan izin tertulis",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 41/2004 tentang Wakaf (peraturan.go.id/files/uu41-2004.pdf), dibaca penuh"
+  },
+  {
+   "id": "dh-uuw-44",
+   "rujukan": "Pasal 44 ayat (1) dan (2) UU 41/2004",
+   "uraian": "nazhir dilarang mengubah peruntukan harta benda wakaf kecuali dengan izin tertulis Badan Wakaf Indonesia",
+   "status": "terverifikasi",
+   "sumber": "naskah UU 41/2004 tentang Wakaf (peraturan.go.id/files/uu41-2004.pdf), dibaca penuh"
+  },
+  {
+   "id": "dh-pp-17",
+   "rujukan": "Pasal 17 ayat (3) PP 42/2006",
+   "uraian": "hak atas tanah yang diwakafkan wajib dimiliki atau dikuasai wakif secara sah serta bebas dari sitaan, perkara, sengketa dan tidak dijaminkan",
+   "status": "terverifikasi",
+   "sumber": "naskah PP 42/2006 (peraturan.bpk.go.id/Download/38464/PP_no_42_th_2006.pdf), dibaca penuh; PP 25/2018 tidak mengubah Pasal 17 dan 58"
+  },
+  {
+   "id": "dh-pp-58",
+   "rujukan": "Pasal 58 ayat (1) huruf c PP 42/2006",
+   "uraian": "harta benda wakaf yang dikuasai ahli waris wakif atau nazhir dapat didaftarkan menjadi wakaf sepanjang ada kesaksian dari pihak yang mengetahui wakaf tersebut dan dikukuhkan dengan penetapan pengadilan",
+   "status": "terverifikasi",
+   "sumber": "naskah PP 42/2006 (peraturan.bpk.go.id/Download/38464/PP_no_42_th_2006.pdf), dibaca penuh; PP 25/2018 tidak mengubah Pasal 17 dan 58"
+  }
+ ],
+ "keadaan": {
+  "kehadiran": {
+   "sumber": "otomatis",
+   "nilai": [
+    "verstek",
+    "kontradiktoir",
+    "t-tidak-hadir-setelah-mediasi"
+   ],
+   "bawaan": "kontradiktoir",
+   "label": "Kehadiran Tergugat"
+  },
+  "perkara": {
+   "sumber": "borang",
+   "nilai": [
+    "gugatan",
+    "permohonan"
+   ],
+   "bawaan": "gugatan",
+   "label": "Jenis perkara",
+   "labelNilai": {
+    "gugatan": "Gugatan (ada Tergugat)",
+    "permohonan": "Permohonan (tanpa lawan)"
+   }
+  },
+  "pokokTuntutan": {
+   "sumber": "borang",
+   "nilai": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F"
+   ],
+   "bawaan": [
+    "A"
+   ],
+   "jamak": true,
+   "label": "Pokok tuntutan wakaf",
+   "labelNilai": {
+    "A": "A - Pengesahan wakaf dan penyerahan kepada Nazhir",
+    "B": "B - Wakaf tidak sah",
+    "C": "C - Pengalihan harta benda wakaf yang dilarang",
+    "D": "D - Perubahan peruntukan tanpa izin",
+    "E": "E - Wakaf dengan wasiat melebihi sepertiga",
+    "F": "F - Perintah melaksanakan wakaf dengan wasiat"
+   }
+  },
+  "bentukIkrar": {
+   "sumber": "borang",
+   "nilai": [
+    "lisan",
+    "tertulis",
+    "akta-ikrar-wakaf"
+   ],
+   "bawaan": "akta-ikrar-wakaf",
+   "label": "Bentuk ikrar wakaf",
+   "labelNilai": {
+    "lisan": "Lisan",
+    "tertulis": "Tertulis",
+    "akta-ikrar-wakaf": "Dengan akta ikrar wakaf di hadapan PPAIW"
+   }
+  }
+ },
+ "pokokPembuktian": [
+  {
+   "id": "pp-hubungan-saksi",
+   "judul": "Hubungan saksi dengan para pihak dan wakif",
+   "uraian": "saksi menerangkan siapa dirinya dan bagaimana ia mengenal para pihak dan wakif (sebab pengetahuan)",
+   "dasarHukum": [
+    "dh-sebab-pengetahuan",
+    "dh-saksi-syarat"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-syarat-wakif",
+   "judul": "Keadaan wakif ketika mewakafkan",
+   "uraian": "wakif dewasa, berakal sehat, tidak terhalang melakukan perbuatan hukum dan pemilik sah",
+   "dasarHukum": [
+    "dh-uuw-8"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-milik-wakif",
+   "judul": "Harta benda wakaf dimiliki dan dikuasai wakif secara sah",
+   "uraian": "harta benda wakaf hanya dapat diwakafkan bila dimiliki dan dikuasai wakif secara sah",
+   "dasarHukum": [
+    "dh-uuw-15"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-ikrar",
+   "judul": "Ikrar wakaf",
+   "uraian": "ikrar wakaf kepada nazhir, di hadapan PPAIW atau saksi, kapan dan di mana",
+   "dasarHukum": [
+    "dh-uuw-17",
+    "dh-uuw-1"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-saksi-ikrar",
+   "judul": "Dua orang saksi ikrar wakaf",
+   "uraian": "ikrar wakaf disaksikan dua orang saksi",
+   "dasarHukum": [
+    "dh-uuw-17"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-nazhir",
+   "judul": "Nazhir",
+   "uraian": "siapa nazhir dan syaratnya",
+   "dasarHukum": [
+    "dh-uuw-10"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-objek-wakaf",
+   "judul": "Harta benda wakaf",
+   "uraian": "benda yang diwakafkan, letak, luas dan batas-batasnya",
+   "dasarHukum": [
+    "dh-uuw-1"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-peruntukan",
+   "judul": "Peruntukan wakaf",
+   "uraian": "peruntukan yang ditetapkan wakif",
+   "dasarHukum": [
+    "dh-uuw-22-23"
+   ],
+   "wajib": true
+  },
+  {
+   "id": "pp-pemanfaatan",
+   "judul": "Pemanfaatan dan penguasaan harta benda wakaf",
+   "uraian": "sejak kapan dimanfaatkan sesuai peruntukan dan siapa yang menguasai",
+   "dasarHukum": [
+    "dh-uuw-1"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-tarik-wakaf",
+   "judul": "Penarikan kembali wakaf",
+   "uraian": "wakaf yang telah diikrarkan tidak dapat dibatalkan",
+   "dasarHukum": [
+    "dh-uuw-2-3"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-pengalihan",
+   "judul": "Pengalihan harta benda wakaf",
+   "uraian": "larangan menjual, menghibahkan, mewariskan, menjaminkan, menukar atau mengalihkan",
+   "dasarHukum": [
+    "dh-uuw-40-41"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-ubah-peruntukan",
+   "judul": "Perubahan peruntukan",
+   "uraian": "nazhir dilarang mengubah peruntukan tanpa izin tertulis",
+   "dasarHukum": [
+    "dh-uuw-44",
+    "dh-uuw-22-23"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-wakaf-wasiat",
+   "judul": "Wakaf dengan wasiat",
+   "uraian": "dua orang saksi, batas sepertiga, persetujuan ahli waris",
+   "dasarHukum": [
+    "dh-uuw-24-27"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-penerima-wasiat",
+   "judul": "Pelaksanaan wakaf wasiat oleh penerima wasiat",
+   "uraian": "penerima wasiat bertindak sebagai kuasa wakif; belum dilaksanakan",
+   "dasarHukum": [
+    "dh-uuw-24-27"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-belum-terdaftar",
+   "judul": "Wakaf belum terdaftar dan dikuasai ahli waris atau nazhir (permohonan)",
+   "uraian": "wakaf sebelum PP 42/2006, belum terdaftar, dikuasai ahli waris wakif atau nazhir",
+   "dasarHukum": [
+    "dh-pp-58"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-keberadaan-lawan",
+   "judul": "Tempat tinggal pihak lawan",
+   "uraian": "untuk perkara yang diputus tanpa hadirnya Tergugat: tempat tinggal Tergugat",
+   "dasarHukum": [
+    "dh-saksi-syarat"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-bantahan",
+   "judul": "Bantahan atas adanya ikrar wakaf",
+   "uraian": "keterangan saksi Tergugat yang menyangkal adanya ikrar wakaf",
+   "dasarHukum": [
+    "dh-beban-bukti"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-tanpa-sengketa",
+   "judul": "Objek wakaf bebas sengketa (permohonan)",
+   "uraian": "tidak ada sengketa, sitaan atau jaminan atas objek wakaf",
+   "dasarHukum": [
+    "dh-pp-17"
+   ],
+   "wajib": false
+  },
+  {
+   "id": "pp-penutup",
+   "judul": "Penutup keterangan",
+   "uraian": "saksi menyatakan keterangannya telah cukup",
+   "dasarHukum": [],
+   "wajib": false
+  }
+ ],
+ "pertanyaan": [
+  {
+   "id": "q-kenal",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 10,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "perkara": "gugatan"
+   },
+   "teks": "Apakah saksi kenal dengan #0046# dan #0047# ?",
+   "teksVarian": [
+    "Apakah saksi mengenal #0046# dan #0047# ?",
+    "Apakah Saudara saksi kenal dengan #0046# serta #0047# ?"
+   ],
+   "hal": "hubungan saksi dengan para pihak",
+   "tidakBerlaku": [
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu",
+    "ragu",
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal kedua pihak dan menyebut hubungannya dengan pihak",
+     "saksi1": [
+      "saya kenal dengan #0046# dan #0047# karena saya adalah {hubungan}",
+      "saya mengenal #0046# maupun #0047# sebab saya adalah {hubungan}",
+      "#0046# dan #0047# saya kenal baik karena kedudukan saya sebagai {hubungan}",
+      "saya sudah lama mengenal #0046# dan #0047# karena saya adalah {hubungan}"
+     ],
+     "saksi2": [
+      "kedua pihak yaitu #0046# dan #0047# saya kenal karena saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya kenal dengan #0046# serta #0047#",
+      "saya tahu dan kenal #0046# juga #0047# karena saya adalah {hubungan}",
+      "perkenalan saya dengan #0046# dan #0047# terjadi karena saya adalah {hubungan}"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ]
+  },
+  {
+   "id": "q-kenal-pemohon",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 11,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "perkara": "permohonan"
+   },
+   "teks": "Apakah saksi kenal dengan #0046# ?",
+   "hal": "hubungan saksi dengan pemohon",
+   "tidakBerlaku": [
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu",
+    "ragu",
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal pemohon dan menyebut hubungannya dengan pemohon",
+     "saksi1": [
+      "saya kenal dengan #0046# karena saya adalah {hubungan}",
+      "saya mengenal #0046# sebab saya adalah {hubungan}",
+      "#0046# saya kenal baik karena kedudukan saya sebagai {hubungan}",
+      "saya sudah lama mengenal #0046# karena saya adalah {hubungan}"
+     ],
+     "saksi2": [
+      "pemohon yaitu #0046# saya kenal karena saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya kenal dengan #0046#",
+      "saya tahu dan kenal #0046# karena saya adalah {hubungan}",
+      "perkenalan saya dengan #0046# terjadi karena saya adalah {hubungan}"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "0046"
+   ]
+  },
+  {
+   "id": "q-kenal-wakif",
+   "pokok": "pp-hubungan-saksi",
+   "urutan": 20,
+   "tingkat": "inti",
+   "kelompok": "hubungan",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah saksi kenal dengan #9823# selaku wakif ?",
+   "hal": "hubungan saksi dengan wakif",
+   "tidakBerlaku": [
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu",
+    "ragu",
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengenal wakif dan menyebut hubungannya",
+     "saksi1": [
+      "saya kenal dengan #9823# karena saya adalah {hubungan}",
+      "saya mengenal #9823# sebab saya adalah {hubungan}",
+      "#9823# saya kenal baik karena kedudukan saya sebagai {hubungan}",
+      "saya sudah lama mengenal #9823# karena saya adalah {hubungan}"
+     ],
+     "saksi2": [
+      "wakif yaitu #9823# saya kenal karena saya adalah {hubungan}",
+      "dalam kedudukan saya sebagai {hubungan} saya kenal dengan #9823#",
+      "saya tahu dan kenal #9823# karena saya adalah {hubungan}",
+      "perkenalan saya dengan #9823# terjadi karena saya adalah {hubungan}"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9823"
+   ]
+  },
+  {
+   "id": "q-syarat-wakif",
+   "pokok": "pp-syarat-wakif",
+   "urutan": 30,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Ketika mewakafkan bagaimana keadaan #9823# apakah sudah dewasa sehat akalnya dan pemilik sah harta itu ?",
+   "hal": "keadaan wakif ketika mewakafkan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "wakif sudah dewasa berakal sehat dan merupakan pemilik sah harta yang diwakafkan",
+     "saksi1": [
+      "pada waktu mewakafkan hartanya #9823# sudah dewasa dan sehat akalnya serta merupakan pemilik sah harta itu",
+      "saya mengetahui sendiri bahwa #9823# ketika berwakaf telah dewasa dan berakal sehat dan hartanya itu miliknya sendiri",
+      "#9823# saat itu sudah cukup umur dan sehat pikirannya sehingga ia berwakaf atas harta yang sah menjadi miliknya",
+      "setahu saya yang menyaksikan langsung #9823# waktu itu dewasa dan berakal sehat dan harta yang diwakafkan adalah haknya"
+     ],
+     "saksi2": [
+      "ketika wakaf dilakukan #9823# telah dewasa dan akalnya sehat dan saya mengetahui harta itu miliknya yang sah",
+      "saya hadir saat itu dan melihat #9823# yang sudah dewasa dan berakal sehat mewakafkan harta miliknya sendiri",
+      "menurut penglihatan saya sendiri #9823# sudah dewasa dan sadar penuh ketika mewakafkan harta yang sah miliknya",
+      "pada hari wakaf itu #9823# sudah dewasa dan berakal sehat dan saya menyaksikan beliau mewakafkan hartanya sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: wakif pemilik sah harta yang diwakafkan; versi B: harta itu milik bersama dengan orang lain - berselisih pada PELAKU pemilik",
+     "saksi1": [
+      "saya mengetahui sendiri harta yang diwakafkan #9823# adalah miliknya sendiri",
+      "harta itu hak #9823# seorang diri sebagaimana yang saya ketahui",
+      "saya melihat sendiri harta tersebut dimiliki #9823# seorang",
+      "pemilik harta yang diwakafkan itu hanya #9823# menurut saya"
+     ],
+     "saksi2": [
+      "saya mengetahui sendiri harta yang diwakafkan #9823# adalah milik bersama dengan orang lain",
+      "harta itu hak #9823# bersama pihak lain sebagaimana yang saya ketahui",
+      "saya melihat sendiri harta tersebut dimiliki #9823# bersama orang lain",
+      "pemilik harta yang diwakafkan itu #9823# dan orang lain menurut saya"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "variabelAbt": [
+    "9823"
+   ]
+  },
+  {
+   "id": "q-milik-wakif",
+   "pokok": "pp-milik-wakif",
+   "urutan": 40,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana #9823# memperoleh harta yang diwakafkan itu dan siapa yang menguasainya ketika diwakafkan ?",
+   "hal": "perolehan dan penguasaan harta oleh wakif",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "wakif memperoleh harta itu secara sah dan menguasainya ketika mewakafkan",
+     "saksi1": [
+      "#9823# memperoleh harta itu secara sah dan menguasainya sendiri ketika ia mewakafkannya",
+      "saya mengetahui #9823# menguasai harta itu dengan sah sejak ia memperolehnya sampai ia berwakaf",
+      "harta yang diwakafkan #9823# berada dalam penguasaannya yang sah dan saya melihat sendiri hal itu",
+      "menurut penglihatan saya #9823# adalah pemilik dan penguasa sah harta itu ketika berwakaf"
+     ],
+     "saksi2": [
+      "perolehan harta oleh #9823# berlangsung secara sah dan ia sendiri yang menguasainya saat berwakaf",
+      "saya menyaksikan #9823# memegang dan menguasai harta itu dengan sah sebelum mewakafkannya",
+      "sepanjang pengetahuan saya #9823# menguasai sendiri harta itu secara sah ketika wakaf dilakukan",
+      "harta tersebut sah dikuasai #9823# dari ia memperolehnya hingga saat berwakaf sebagaimana yang saya ketahui"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9823"
+   ]
+  },
+  {
+   "id": "q-ikrar",
+   "pokok": "pp-ikrar",
+   "urutan": 50,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Bagaimana #9823# mengikrarkan wakafnya secara lisan tertulis atau dengan akta dan kepada siapa serta di mana dan kapan ?",
+   "hal": "cara dan waktu ikrar wakaf",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "bentukIkrar": "lisan"
+      },
+      "maksud": "ikrar wakaf diucapkan lisan kepada nazhir di hadapan dua orang saksi",
+      "saksi1": [
+       "#9823# mengikrarkan wakafnya secara lisan kepada nazhir di hadapan dua orang saksi dan saya hadir mendengarkannya",
+       "saya menyaksikan sendiri #9823# mengucapkan ikrar wakafnya secara lisan kepada nazhir di depan dua orang saksi",
+       "ikrar wakaf itu diucapkan langsung oleh #9823# dengan lisan kepada nazhir disaksikan dua orang saksi dan saya ada di tempat itu",
+       "secara lisan #9823# berikrar wakaf kepada nazhir di hadapan dua orang saksi dan saya melihat kejadian itu sendiri"
+      ],
+      "saksi2": [
+       "ikrar wakaf #9823# disampaikan dengan lisan kepada nazhir di muka dua orang saksi dan saya turut hadir ketika itu",
+       "saya ikut hadir ketika #9823# menyatakan ikrar wakaf lisannya kepada nazhir di hadapan dua orang saksi",
+       "pernyataan ikrar itu diucapkan sendiri oleh #9823# dengan lisan kepada nazhir dan dihadiri dua orang saksi yang saya lihat langsung",
+       "#9823# berwakaf dengan ucapan lisan kepada nazhir di depan dua orang saksi dan saya menyaksikannya sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "bentukIkrar": "tertulis"
+      },
+      "maksud": "ikrar wakaf dibuat tertulis dan ditandatangani di hadapan dua orang saksi",
+      "saksi1": [
+       "#9823# membuat ikrar wakafnya secara tertulis kepada nazhir dan menandatanganinya di hadapan dua orang saksi yang saya lihat sendiri",
+       "saya menyaksikan sendiri #9823# menandatangani surat ikrar wakaf tertulis kepada nazhir di hadapan dua orang saksi",
+       "ikrar wakaf itu dibuat tertulis oleh #9823# dengan dua orang saksi dan saya ada ketika surat itu ditandatangani",
+       "dalam bentuk surat tertulis #9823# menyatakan ikrar wakafnya kepada nazhir di hadapan dua orang saksi dan saya melihatnya sendiri"
+      ],
+      "saksi2": [
+       "surat ikrar wakaf tertulis itu ditandatangani #9823# di depan dua orang saksi dan saya hadir saat itu",
+       "saya ada di tempat ketika #9823# menandatangani ikrar wakaf tertulisnya kepada nazhir di muka dua orang saksi",
+       "#9823# berikrar wakaf secara tertulis kepada nazhir dengan disaksikan dua orang saksi yang saya lihat langsung",
+       "ikrar wakaf berupa tulisan itu dibubuhi tanda tangan #9823# di hadapan dua orang saksi dan saya menyaksikannya"
+      ]
+     },
+     {
+      "keadaan": {
+       "bentukIkrar": "akta-ikrar-wakaf"
+      },
+      "maksud": "ikrar wakaf dilakukan kepada nazhir di hadapan pejabat pembuat akta ikrar wakaf dan dituangkan dalam akta ikrar wakaf",
+      "saksi1": [
+       "#9823# berikrar wakaf kepada nazhir di hadapan pejabat pembuat akta ikrar wakaf dan dibuatkan akta ikrar wakaf yang saya lihat sendiri",
+       "saya menyaksikan sendiri #9823# menghadap pejabat pembuat akta ikrar wakaf untuk berikrar kepada nazhir",
+       "ikrar wakaf itu dinyatakan #9823# kepada nazhir di kantor pejabat pembuat akta ikrar wakaf dan saya ada di sana ketika itu",
+       "di hadapan pejabat pembuat akta ikrar wakaf #9823# menyatakan ikrarnya kepada nazhir dan saya melihatnya sendiri"
+      ],
+      "saksi2": [
+       "akta ikrar wakaf dibuat pejabat pembuat akta ikrar wakaf atas ikrar #9823# kepada nazhir dan saya menyaksikannya",
+       "saya ikut menyaksikan #9823# berikrar wakaf kepada nazhir yang dituangkan dalam akta ikrar wakaf",
+       "#9823# datang kepada pejabat pembuat akta ikrar wakaf dan menyatakan ikrar wakafnya kepada nazhir yang saya lihat langsung",
+       "ikrar #9823# dituangkan dalam akta ikrar wakaf dan prosesnya saya saksikan sendiri"
+      ]
+     }
+    ],
+    "berbeda": {
+     "maksud": "versi A: ikrar wakaf dilakukan pada waktu yang disebut dalam perkara; versi B: ikrar dilakukan pada waktu yang berbeda - berselisih pada WAKTU",
+     "saksi1": [
+      "saya mengetahui sendiri #9823# berikrar wakaf pada waktu yang disebut dalam perkara ini",
+      "ikrar wakaf #9823# dilakukan pada hari yang dimaksud dalam perkara ini dan saya hadir saat itu",
+      "pada hari yang disebut dalam perkara ini #9823# berwakaf sebagaimana yang saya saksikan",
+      "waktu ikrar #9823# sesuai dengan yang didalilkan dalam perkara ini dan saya melihatnya sendiri"
+     ],
+     "saksi2": [
+      "saya mengetahui sendiri #9823# berikrar wakaf pada waktu yang berbeda dari yang disebut dalam perkara ini",
+      "ikrar wakaf #9823# dilakukan bukan pada hari yang dimaksud dalam perkara ini melainkan lebih awal dan saya hadir saat itu",
+      "bukan pada hari yang disebut dalam perkara ini #9823# berwakaf sebagaimana yang saya saksikan",
+      "waktu ikrar #9823# berbeda dengan yang didalilkan dalam perkara ini dan saya melihatnya sendiri"
+     ],
+     "bedaPada": "waktu"
+    }
+   },
+   "variabelAbt": [
+    "9823"
+   ]
+  },
+  {
+   "id": "q-saksi-ikrar",
+   "pokok": "pp-saksi-ikrar",
+   "urutan": 60,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Siapa saja yang menjadi dua orang saksi ketika ikrar wakaf itu diucapkan ?",
+   "hal": "saksi-saksi ketika ikrar wakaf diucapkan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "ikrar wakaf disaksikan dua orang saksi yang dikenal saksi",
+     "saksi1": [
+      "ketika ikrar wakaf diucapkan ada dua orang saksi yang hadir dan saya mengenal keduanya",
+      "yang menjadi saksi ikrar wakaf itu ada dua orang dan saya melihat sendiri mereka hadir",
+      "dua orang saksi hadir menyaksikan ikrar wakaf itu dan saya tahu siapa mereka",
+      "saya melihat dua orang saksi ikut hadir ketika ikrar wakaf itu diucapkan"
+     ],
+     "saksi2": [
+      "pada saat ikrar wakaf itu diucapkan dua orang saksi turut hadir dan keduanya saya kenal",
+      "ikrar wakaf itu disaksikan oleh dua orang dan saya sendiri melihat kehadiran mereka",
+      "saya mengetahui dua orang yang menjadi saksi ikrar wakaf itu karena saya ada di tempat",
+      "dua orang saksi menyaksikan ikrar wakaf itu secara langsung sebagaimana yang saya lihat"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: ikrar disaksikan dua orang; versi B: ikrar disaksikan satu orang saja - berselisih pada JUMLAH saksi",
+     "saksi1": [
+      "saya melihat sendiri ikrar wakaf itu disaksikan oleh dua orang saksi",
+      "yang hadir menyaksikan ikrar wakaf itu ada dua orang dan saya mengetahuinya sendiri",
+      "dua orang saksi ada ketika ikrar wakaf diucapkan sebagaimana yang saya lihat",
+      "saya menyaksikan ikrar wakaf itu dihadiri dua orang saksi"
+     ],
+     "saksi2": [
+      "saya melihat sendiri ikrar wakaf itu hanya disaksikan oleh satu orang saksi",
+      "yang hadir menyaksikan ikrar wakaf itu hanya satu orang dan saya mengetahuinya sendiri",
+      "satu orang saja yang ada ketika ikrar wakaf diucapkan sebagaimana yang saya lihat",
+      "saya menyaksikan ikrar wakaf itu dihadiri hanya satu orang saksi"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": []
+  },
+  {
+   "id": "q-nazhir",
+   "pokok": "pp-nazhir",
+   "urutan": 70,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Siapa yang menerima wakaf itu sebagai nazhir dan apakah ia beragama Islam dewasa dan dapat dipercaya ?",
+   "hal": "nazhir penerima wakaf",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "nazhir yang menerima wakaf beragama Islam dewasa dan dapat dipercaya",
+     "saksi1": [
+      "yang menerima wakaf #9823# sebagai nazhir adalah #9824# yang beragama Islam dan sudah dewasa serta dapat dipercaya menurut penglihatan saya",
+      "saya mengenal #9824# selaku nazhir wakaf #9823# dan ia muslim dewasa yang amanah",
+      "#9824# ditunjuk #9823# sebagai nazhir dan saya tahu ia beragama Islam dewasa dan dipercaya masyarakat",
+      "nazhir wakaf #9823# yaitu #9824# adalah orang Islam yang sudah dewasa dan amanah sebagaimana yang saya ketahui"
+     ],
+     "saksi2": [
+      "penerima wakaf #9823# sebagai nazhir ialah #9824# seorang muslim dewasa yang dapat dipercaya",
+      "saya melihat sendiri #9824# menerima wakaf #9823# selaku nazhir dan ia dikenal amanah serta beragama Islam dan dewasa",
+      "menurut yang saya ketahui nazhir wakaf #9823# adalah #9824# yang beragama Islam dewasa dan terpercaya",
+      "#9824# menjadi nazhir atas wakaf #9823# dan saya mengetahui ia muslim yang sudah dewasa dan jujur"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: nazhir wakaf adalah penerima wakaf yang disebut dalam perkara; versi B: nazhir wakaf adalah orang lain - berselisih pada PELAKU nazhir",
+     "saksi1": [
+      "nazhir wakaf #9823# adalah #9824# sebagaimana yang saya ketahui",
+      "saya melihat sendiri #9824# menerima wakaf #9823# sebagai nazhir",
+      "yang ditunjuk #9823# sebagai nazhir ialah #9824# menurut penglihatan saya",
+      "penerima wakaf #9823# selaku nazhir adalah #9824# sepanjang pengetahuan saya"
+     ],
+     "saksi2": [
+      "nazhir wakaf #9823# bukan #9824# melainkan orang lain sebagaimana yang saya ketahui",
+      "saya melihat sendiri orang lain yang menerima wakaf #9823# sebagai nazhir dan bukan #9824#",
+      "yang ditunjuk #9823# sebagai nazhir bukanlah #9824# menurut penglihatan saya",
+      "penerima wakaf #9823# selaku nazhir bukan #9824# sepanjang pengetahuan saya"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "variabelAbt": [
+    "9823",
+    "9824"
+   ]
+  },
+  {
+   "id": "q-objek-wakaf",
+   "pokok": "pp-objek-wakaf",
+   "urutan": 80,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apa saja harta benda yang diwakafkan oleh #9823# dan di mana letak serta batas-batasnya ?",
+   "hal": "harta benda wakaf dan letaknya",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui harta benda yang diwakafkan beserta letaknya",
+     "saksi1": [
+      "harta yang diwakafkan #9823# adalah #9826# dan saya mengetahui letaknya karena sering melewatinya",
+      "saya tahu objek wakaf #9823# itu yaitu #9826# yang berada di tempat yang saya kenal",
+      "menurut pengetahuan saya sendiri yang diwakafkan oleh #9823# adalah #9826#",
+      "objek wakaf #9823# berupa #9826# dan saya pernah mendatangi lokasinya"
+     ],
+     "saksi2": [
+      "wakaf #9823# berupa #9826# dan lokasinya saya ketahui sendiri",
+      "saya pernah melihat langsung harta yang diwakafkan #9823# yaitu #9826#",
+      "yang menjadi objek wakaf #9823# adalah #9826# sebagaimana yang saya ketahui",
+      "harta wakaf #9823# yaitu #9826# berada di lokasi yang saya kenal dengan baik"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: luas objek wakaf sesuai yang disebut dalam perkara; versi B: luas objek wakaf lebih kecil - berselisih pada JUMLAH luas",
+     "saksi1": [
+      "luas harta yang diwakafkan #9823# sama dengan yang disebut dalam perkara ini sebagaimana yang saya ketahui",
+      "saya mengetahui sendiri luas objek wakaf #9823# sesuai dengan yang didalilkan",
+      "ukuran harta wakaf #9823# menurut penglihatan saya cocok dengan yang disebut dalam perkara ini",
+      "luas harta yang diwakafkan #9823# sesuai dengan yang tertulis dalam perkara ini menurut saya"
+     ],
+     "saksi2": [
+      "luas harta yang diwakafkan #9823# lebih kecil dari yang disebut dalam perkara ini sebagaimana yang saya ketahui",
+      "saya mengetahui sendiri luas objek wakaf #9823# tidak sebesar yang didalilkan",
+      "ukuran harta wakaf #9823# menurut penglihatan saya lebih sempit dari yang disebut dalam perkara ini",
+      "luas harta yang diwakafkan #9823# lebih kecil dari yang tertulis dalam perkara ini menurut saya"
+     ],
+     "bedaPada": "jumlah"
+    }
+   },
+   "variabelAbt": [
+    "9823",
+    "9826"
+   ]
+  },
+  {
+   "id": "q-peruntukan",
+   "pokok": "pp-peruntukan",
+   "urutan": 90,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Untuk apa harta itu diwakafkan oleh #9823# atau apa peruntukannya ?",
+   "hal": "peruntukan wakaf",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "wakif menetapkan peruntukan wakaf pada saat ikrar",
+     "saksi1": [
+      "#9823# menyatakan harta itu diwakafkan untuk #9827# dan saya mendengar sendiri pernyataan itu",
+      "saya mengetahui peruntukan wakaf #9823# adalah #9827# sebagaimana yang ia tetapkan sendiri",
+      "sewaktu berikrar #9823# menentukan wakafnya diperuntukkan bagi #9827# dan saya menyaksikannya",
+      "tujuan wakaf #9823# yaitu #9827# saya ketahui langsung dari ucapannya"
+     ],
+     "saksi2": [
+      "peruntukan wakaf yang ditetapkan #9823# adalah #9827# dan saya hadir ketika ia menyebutkannya",
+      "saya melihat dan mendengar #9823# menetapkan wakafnya untuk #9827#",
+      "wakaf #9823# diperuntukkan bagi #9827# sebagaimana yang saya dengar sendiri darinya",
+      "dalam ikrarnya #9823# menyebut harta itu untuk #9827# dan saya mengetahuinya sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: peruntukan sesuai yang disebut dalam perkara; versi B: peruntukan berbeda - berselisih pada PELAKU peruntukan",
+     "saksi1": [
+      "peruntukan wakaf #9823# adalah #9827# sebagaimana yang saya dengar sendiri",
+      "saya mendengar #9823# menetapkan wakafnya untuk #9827#",
+      "wakaf #9823# diperuntukkan bagi #9827# menurut pendengaran saya",
+      "tujuan wakaf #9823# yaitu #9827# saya ketahui langsung"
+     ],
+     "saksi2": [
+      "peruntukan wakaf #9823# bukan #9827# melainkan hal lain sebagaimana yang saya dengar sendiri",
+      "saya mendengar #9823# menetapkan wakafnya bukan untuk #9827#",
+      "wakaf #9823# tidak diperuntukkan bagi #9827# menurut pendengaran saya",
+      "tujuan wakaf #9823# bukan #9827# saya ketahui langsung"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "9823",
+    "9827"
+   ]
+  },
+  {
+   "id": "q-pemanfaatan",
+   "pokok": "pp-pemanfaatan",
+   "urutan": 100,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Sejak kapan harta wakaf itu dimanfaatkan sesuai peruntukannya dan siapa yang menguasainya sekarang ?",
+   "hal": "pemanfaatan dan penguasaan harta wakaf",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "harta wakaf dimanfaatkan sesuai peruntukannya dan saat ini dikuasai pihak yang disebut saksi",
+     "saksi1": [
+      "sejak diwakafkan #9823# harta itu dimanfaatkan sesuai peruntukannya dan sekarang dikuasai oleh pihak yang saya kenal",
+      "saya melihat sendiri harta wakaf #9823# dipakai sesuai peruntukannya dan kini dikuasai orang yang saya sebutkan",
+      "harta yang diwakafkan #9823# dimanfaatkan sebagaimana peruntukannya dan penguasanya sekarang saya ketahui",
+      "setelah wakaf #9823# harta itu dipergunakan sesuai tujuannya dan sampai kini berada dalam penguasaan pihak yang saya kenal"
+     ],
+     "saksi2": [
+      "pemanfaatan harta wakaf #9823# sesuai peruntukannya sudah berjalan dan penguasanya sekarang saya ketahui",
+      "saya menyaksikan harta wakaf #9823# digunakan sesuai peruntukannya dan saat ini dikuasai pihak yang saya kenal",
+      "harta dari wakaf #9823# telah dipakai sesuai tujuannya dan pihak yang menguasainya kini saya ketahui",
+      "sejak berwakafnya #9823# harta itu dimanfaatkan sebagaimana tujuannya dan yang menguasainya sekarang saya ketahui sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: harta wakaf dikuasai nazhir; versi B: harta wakaf dikuasai ahli waris wakif - berselisih pada PELAKU penguasa",
+     "saksi1": [
+      "harta wakaf #9823# sekarang dikuasai oleh nazhir menurut penglihatan saya",
+      "saya melihat sendiri nazhir yang menguasai harta wakaf #9823#",
+      "yang menguasai harta wakaf #9823# saat ini adalah nazhir sebagaimana yang saya ketahui",
+      "penguasaan harta wakaf #9823# ada pada nazhir menurut saya"
+     ],
+     "saksi2": [
+      "harta wakaf #9823# sekarang dikuasai oleh ahli waris wakif menurut penglihatan saya",
+      "saya melihat sendiri ahli waris wakif yang menguasai harta wakaf #9823#",
+      "yang menguasai harta wakaf #9823# saat ini adalah ahli waris wakif sebagaimana yang saya ketahui",
+      "penguasaan harta wakaf #9823# ada pada ahli waris wakif menurut saya"
+     ],
+     "bedaPada": "pelaku"
+    }
+   },
+   "variabelAbt": [
+    "9823"
+   ]
+  },
+  {
+   "id": "q-tarik-wakaf",
+   "pokok": "pp-tarik-wakaf",
+   "urutan": 110,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": "A"
+   },
+   "teks": "Apakah #9823# atau ahli warisnya pernah meminta wakaf itu dibatalkan atau dikembalikan dan apa sebabnya ?",
+   "hal": "permintaan membatalkan atau menarik kembali wakaf",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "wakif atau ahli warisnya pernah meminta wakaf dibatalkan",
+     "saksi1": [
+      "saya pernah mendengar sendiri #9823# atau ahli warisnya meminta wakaf itu dibatalkan",
+      "di depan saya #9823# atau ahli warisnya menyampaikan permintaan agar wakaf dikembalikan",
+      "saya mengetahui ada permintaan dari #9823# atau ahli warisnya untuk membatalkan wakaf dan saya hadir saat itu",
+      "permintaan agar wakaf dibatalkan oleh #9823# atau ahli warisnya saya saksikan sendiri"
+     ],
+     "saksi2": [
+      "permintaan #9823# atau ahli warisnya agar wakaf dibatalkan saya dengar sendiri",
+      "saya hadir ketika #9823# atau ahli warisnya meminta harta wakaf dikembalikan",
+      "saya menyaksikan #9823# atau ahli warisnya menuntut wakaf dibatalkan",
+      "penarikan kembali wakaf yang diminta #9823# atau ahli warisnya pernah saya ketahui sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pernah ada permintaan membatalkan wakaf; versi B: tidak pernah ada permintaan - berselisih pada PERISTIWA permintaan",
+     "saksi1": [
+      "saya mendengar sendiri #9823# atau ahli warisnya pernah meminta wakaf dibatalkan",
+      "permintaan #9823# atau ahli warisnya agar wakaf dibatalkan pernah saya saksikan",
+      "di depan saya #9823# atau ahli warisnya pernah meminta wakaf dikembalikan",
+      "saya mengetahui #9823# atau ahli warisnya pernah menuntut kembali wakaf itu"
+     ],
+     "saksi2": [
+      "saya tidak pernah mendengar #9823# atau ahli warisnya meminta wakaf dibatalkan",
+      "permintaan #9823# atau ahli warisnya agar wakaf dibatalkan tidak pernah saya saksikan",
+      "di depan saya #9823# atau ahli warisnya tidak pernah meminta wakaf dikembalikan",
+      "saya mengetahui #9823# atau ahli warisnya tidak pernah menuntut kembali wakaf itu"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "9823"
+   ]
+  },
+  {
+   "id": "q-pengalihan",
+   "pokok": "pp-pengalihan",
+   "urutan": 120,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": [
+     "B",
+     "C"
+    ]
+   },
+   "teks": "Apakah harta wakaf itu pernah dijual dihibahkan diwariskan dijaminkan atau ditukar dan oleh siapa serta kapan ?",
+   "hal": "pengalihan harta wakaf",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "harta wakaf pernah dialihkan oleh pihak tertentu tanpa izin",
+     "saksi1": [
+      "saya mengetahui harta wakaf #9823# pernah dialihkan oleh pihak tertentu tanpa izin dan saya melihat sendiri peristiwanya",
+      "harta yang diwakafkan #9823# dialihkan kepada orang lain dan saya menyaksikan sendiri hal itu",
+      "saya hadir ketika harta wakaf #9823# dijual atau dialihkan oleh pihak yang saya kenal tanpa izin",
+      "pengalihan harta wakaf #9823# kepada pihak lain saya lihat sendiri dan tidak ada izin"
+     ],
+     "saksi2": [
+      "peralihan harta wakaf #9823# oleh pihak tertentu tanpa izin saya ketahui langsung",
+      "saya melihat sendiri harta wakaf #9823# berpindah ke tangan orang lain tanpa izin",
+      "saya menyaksikan harta wakaf #9823# diperjualbelikan atau dialihkan oleh pihak yang saya kenal tanpa izin",
+      "harta yang pernah diwakafkan #9823# dialihkan ke pihak lain tanpa izin dan saya mengetahuinya sendiri"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: pengalihan dilakukan pada waktu yang disebut dalam perkara; versi B: pengalihan dilakukan pada waktu yang berbeda - berselisih pada WAKTU",
+     "saksi1": [
+      "pengalihan harta wakaf #9823# terjadi pada waktu yang disebut dalam perkara ini menurut saya",
+      "saya mengetahui sendiri harta wakaf #9823# dialihkan pada hari yang dimaksud dalam perkara ini",
+      "peralihan harta wakaf #9823# sesuai waktunya dengan yang didalilkan dan saya melihatnya",
+      "pada waktu yang disebut dalam perkara ini harta wakaf #9823# dialihkan sebagaimana yang saya saksikan"
+     ],
+     "saksi2": [
+      "pengalihan harta wakaf #9823# terjadi pada waktu yang berbeda dari yang disebut dalam perkara ini menurut saya",
+      "saya mengetahui sendiri harta wakaf #9823# dialihkan bukan pada hari yang dimaksud dalam perkara ini",
+      "peralihan harta wakaf #9823# tidak sesuai waktunya dengan yang didalilkan dan saya melihatnya",
+      "bukan pada waktu yang disebut dalam perkara ini harta wakaf #9823# dialihkan sebagaimana yang saya saksikan"
+     ],
+     "bedaPada": "waktu"
+    }
+   },
+   "variabelAbt": [
+    "9823"
+   ]
+  },
+  {
+   "id": "q-ubah-peruntukan",
+   "pokok": "pp-ubah-peruntukan",
+   "urutan": 130,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": "D"
+   },
+   "teks": "Apakah peruntukan harta wakaf itu pernah diubah oleh nazhir atau pihak lain dan apakah ada izin tertulis ?",
+   "hal": "perubahan peruntukan harta wakaf",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "peruntukan harta wakaf diubah tanpa izin tertulis",
+     "saksi1": [
+      "saya mengetahui peruntukan harta wakaf #9823# diubah dan tidak ada izin tertulis yang saya ketahui",
+      "saya melihat sendiri harta wakaf #9823# dipakai untuk keperluan lain tanpa izin tertulis",
+      "penggunaan harta wakaf #9823# berubah dari peruntukan semula dan saya tidak pernah melihat izin tertulisnya",
+      "peruntukan harta wakaf #9823# berganti menjadi yang lain tanpa izin tertulis menurut saya"
+     ],
+     "saksi2": [
+      "perubahan peruntukan harta wakaf #9823# saya saksikan sendiri tanpa izin tertulis",
+      "saya tahu harta wakaf #9823# tidak lagi dipakai sesuai peruntukannya dan tidak ada izin tertulis",
+      "harta yang diwakafkan #9823# dialihfungsikan dan saya tidak pernah mengetahui izin tertulisnya",
+      "saya melihat langsung harta wakaf #9823# digunakan untuk tujuan lain tanpa izin tertulis"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9823"
+   ]
+  },
+  {
+   "id": "q-wakaf-wasiat",
+   "pokok": "pp-wakaf-wasiat",
+   "urutan": 140,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": "E"
+   },
+   "teks": "Apakah wakaf itu dilakukan dengan wasiat disaksikan dua orang saksi dan berapa bagiannya dari seluruh harta serta apakah ahli waris menyetujui ?",
+   "hal": "wakaf dengan wasiat dan persetujuan ahli waris",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "wakaf dengan wasiat disaksikan dua orang saksi dan melebihi sepertiga harta tanpa persetujuan semua ahli waris",
+     "saksi1": [
+      "#9823# mewakafkan hartanya dengan wasiat yang disaksikan dua orang saksi dan bagiannya melebihi sepertiga harta serta tidak semua ahli waris menyetujui",
+      "saya mengetahui wakaf #9823# dilakukan dengan wasiat dua orang saksi dan lebih dari sepertiga hartanya tanpa persetujuan seluruh ahli waris",
+      "wasiat wakaf #9823# disaksikan dua orang saksi dan nilainya di atas sepertiga harta sedangkan ahli waris tidak semuanya setuju",
+      "menurut yang saya saksikan wakaf wasiat #9823# melebihi sepertiga harta dan tidak mendapat persetujuan semua ahli waris"
+     ],
+     "saksi2": [
+      "wakaf dengan wasiat dari #9823# dihadiri dua orang saksi dan melampaui sepertiga harta serta ada ahli waris yang tidak setuju",
+      "saya hadir ketika #9823# berwasiat wakaf di depan dua orang saksi dan bagiannya lebih dari sepertiga hartanya tanpa persetujuan seluruh ahli waris",
+      "wasiat wakaf #9823# dilakukan dengan dua orang saksi dan melebihi sepertiga harta dan tidak semua ahli waris menyetujui",
+      "saya mengetahui wakaf wasiat #9823# melewati sepertiga hartanya dan tidak disetujui seluruh ahli waris"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9823"
+   ]
+  },
+  {
+   "id": "q-penerima-wasiat",
+   "pokok": "pp-penerima-wasiat",
+   "urutan": 150,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "pokokTuntutan": "F"
+   },
+   "teks": "Siapa penerima wasiat wakaf itu dan apakah wakaf sudah dilaksanakan sesudah #9823# meninggal dunia ?",
+   "hal": "penerima wasiat dan pelaksanaan wakaf wasiat",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "penerima wasiat belum melaksanakan wakaf sesudah wakif meninggal dunia",
+     "saksi1": [
+      "penerima wasiat wakaf #9823# belum melaksanakan wakaf itu padahal pemberi wasiat sudah meninggal dunia dan saya mengetahuinya sendiri",
+      "sesudah #9823# wafat penerima wasiat belum melaksanakan wakafnya sebagaimana yang saya lihat",
+      "saya tahu wakaf wasiat #9823# belum dilaksanakan oleh penerima wasiat sampai sekarang",
+      "penerima wasiat yang diberi amanah #9823# belum menjalankan wakaf itu setelah beliau meninggal menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "wakaf dari wasiat #9823# belum dilaksanakan penerima wasiat sesudah pewakif itu meninggal dunia dan saya menyaksikannya",
+      "saya mengetahui sendiri penerima wasiat belum menunaikan wakaf #9823# setelah wafatnya",
+      "sampai kini penerima wasiat belum melaksanakan wakaf yang diwasiatkan #9823# sebagaimana yang saya ketahui",
+      "pelaksanaan wakaf wasiat #9823# oleh penerima wasiat belum terjadi menurut saya setelah ia meninggal"
+     ]
+    }
+   },
+   "variabelAbt": [
+    "9823"
+   ]
+  },
+  {
+   "id": "q-belum-terdaftar",
+   "pokok": "pp-belum-terdaftar",
+   "urutan": 160,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "perkara": "permohonan"
+   },
+   "teks": "Apakah wakaf itu diikrarkan sebelum tahun 2006 dan belum didaftarkan serta siapa yang menguasai harta wakaf itu ?",
+   "hal": "wakaf sebelum tahun 2006 yang belum terdaftar",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "wakaf diikrarkan sebelum tahun 2006 belum didaftarkan dan harta wakaf dikuasai ahli waris wakif atau nazhir",
+     "saksi1": [
+      "wakaf itu diikrarkan sebelum tahun 2006 dan sampai sekarang belum didaftarkan sedangkan hartanya dikuasai ahli waris wakif atau nazhir",
+      "saya mengetahui wakaf itu terjadi sebelum tahun 2006 dan belum pernah didaftarkan dan harta wakaf dikuasai ahli waris wakif atau nazhir",
+      "ikrar wakaf itu dilakukan sebelum tahun 2006 dan belum terdaftar sedangkan ahli waris wakif atau nazhir yang menguasai hartanya",
+      "sebelum tahun 2006 harta itu sudah diwakafkan dan belum didaftarkan dan sekarang dikuasai ahli waris wakif atau nazhir menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "wakaf tersebut berlangsung sebelum tahun 2006 belum didaftarkan dan penguasaan hartanya ada pada ahli waris wakif atau nazhir",
+      "saya menyaksikan wakaf itu sebelum tahun 2006 dan belum pernah didaftarkan sedangkan hartanya dikuasai ahli waris wakif atau nazhir",
+      "harta tersebut telah diwakafkan sebelum tahun 2006 dan belum terdaftar dan dikuasai ahli waris wakif atau nazhir sebagaimana yang saya ketahui",
+      "sebelum tahun 2006 wakaf itu sudah ada dan belum didaftarkan dan yang menguasai hartanya ahli waris wakif atau nazhir"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: wakaf diikrarkan sebelum tahun 2006; versi B: wakaf diikrarkan sesudah tahun 2006 - berselisih pada WAKTU ikrar",
+     "saksi1": [
+      "saya mengetahui wakaf itu diikrarkan sebelum tahun 2006",
+      "ikrar wakaf itu terjadi sebelum tahun 2006 sebagaimana yang saya saksikan",
+      "wakaf tersebut dilakukan sebelum tahun 2006 menurut pengetahuan saya",
+      "sebelum tahun 2006 harta itu sudah diwakafkan menurut penglihatan saya"
+     ],
+     "saksi2": [
+      "saya mengetahui wakaf itu diikrarkan sesudah tahun 2006",
+      "ikrar wakaf itu terjadi sesudah tahun 2006 sebagaimana yang saya saksikan",
+      "wakaf tersebut dilakukan sesudah tahun 2006 menurut pengetahuan saya",
+      "sesudah tahun 2006 harta itu baru diwakafkan menurut penglihatan saya"
+     ],
+     "bedaPada": "waktu"
+    }
+   },
+   "variabelAbt": []
+  },
+  {
+   "id": "q-keberadaan-lawan",
+   "pokok": "pp-keberadaan-lawan",
+   "urutan": 170,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "P"
+   ],
+   "keadaan": {
+    "kehadiran": [
+     "verstek",
+     "t-tidak-hadir-setelah-mediasi"
+    ],
+    "perkara": "gugatan"
+   },
+   "teks": "Apakah saksi mengetahui di mana #0047# bertempat tinggal sekarang ?",
+   "hal": "tempat tinggal pihak lawan",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui tempat tinggal Tergugat sendiri",
+     "saksi1": [
+      "saya mengetahui #0047# bertempat tinggal di ... dan alamat itu masih ditempatinya sampai sekarang",
+      "#0047# tinggal di ... yang sering saya lewati dan ia masih menetap di sana",
+      "tempat tinggal #0047# saat ini ada di ... dan saya mengetahuinya sendiri",
+      "sampai sekarang #0047# menetap di ... sebagaimana yang saya lihat sendiri"
+     ],
+     "saksi2": [
+      "alamat #0047# yang saya ketahui adalah ... dan ia masih tinggal di situ",
+      "saya pernah datang ke rumah #0047# di ... dan ia masih menempatinya",
+      "#0047# masih berdomisili di ... sepanjang pengetahuan saya sendiri",
+      "rumah #0047# berada di ... dan ia masih berada di sana"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: Tergugat masih tinggal di alamat yang disebut; versi B: Tergugat sudah pindah - berselisih pada TEMPAT tinggal",
+     "saksi1": [
+      "saya melihat sendiri #0047# masih tinggal di alamatnya yang lama",
+      "#0047# masih menetap di alamat yang dahulu dan saya mengetahuinya sendiri",
+      "sampai sekarang #0047# berada di rumahnya yang semula sebagaimana saya saksikan",
+      "alamat #0047# tetap di tempat yang dahulu dan saya melihatnya langsung"
+     ],
+     "saksi2": [
+      "saya melihat sendiri #0047# sudah pindah ke tempat lain",
+      "#0047# sudah berpindah dari alamatnya yang dahulu dan saya mengetahuinya sendiri",
+      "sekarang #0047# berada di tempat yang baru sebagaimana saya saksikan",
+      "alamat #0047# telah berubah ke tempat lain dan saya melihatnya langsung"
+     ],
+     "bedaPada": "tempat"
+    }
+   },
+   "variabelAbt": [
+    "0047"
+   ]
+  },
+  {
+   "id": "q-bantahan",
+   "pokok": "pp-bantahan",
+   "urutan": 180,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "T"
+   ],
+   "keadaan": {
+    "kehadiran": [
+     "kontradiktoir",
+     "t-tidak-hadir-setelah-mediasi"
+    ],
+    "perkara": "gugatan"
+   },
+   "teks": "Apakah saksi pernah melihat atau mengetahui #9823# berikrar mewakafkan #9826# kepada nazhir ?",
+   "hal": "adanya ikrar wakaf dari wakif",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi tidak pernah melihat atau mengetahui adanya ikrar wakaf dari wakif",
+     "saksi1": [
+      "saya tidak pernah melihat #9823# berikrar mewakafkan #9826# kepada nazhir",
+      "selama ini saya tidak pernah menyaksikan #9823# mewakafkan #9826#",
+      "tidak ada ikrar wakaf #9823# atas #9826# yang pernah saya ketahui sendiri",
+      "setahu saya #9823# tidak pernah mengikrarkan wakaf atas #9826#"
+     ],
+     "saksi2": [
+      "saya sendiri tidak pernah mengetahui #9823# mewakafkan #9826#",
+      "sepanjang saya mengenal #9823# tidak ada ikrar wakaf atas #9826# yang saya saksikan",
+      "ikrar wakaf #9823# atas #9826# tidak pernah saya lihat maupun saya dengar",
+      "#9823# tidak pernah berwakaf atas #9826# dalam penglihatan saya"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: wakif tidak pernah berikrar wakaf; versi B: wakif pernah berikrar wakaf - berselisih pada PERISTIWA ikrar",
+     "saksi1": [
+      "saya tidak pernah melihat #9823# berikrar mewakafkan hartanya",
+      "selama ini saya tidak pernah menyaksikan #9823# berwakaf",
+      "tidak ada ikrar wakaf #9823# yang pernah saya lihat",
+      "setahu saya #9823# tidak pernah mewakafkan hartanya"
+     ],
+     "saksi2": [
+      "saya pernah melihat #9823# berikrar mewakafkan hartanya",
+      "saya pernah menyaksikan #9823# berwakaf",
+      "ikrar wakaf #9823# pernah saya lihat",
+      "setahu saya #9823# pernah mewakafkan hartanya"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "9823",
+    "9826"
+   ]
+  },
+  {
+   "id": "q-tanpa-sengketa",
+   "pokok": "pp-tanpa-sengketa",
+   "urutan": 190,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "perkara": "permohonan"
+   },
+   "teks": "Apakah harta wakaf itu pernah disita dijaminkan atau menjadi sengketa dengan pihak lain ?",
+   "hal": "status sengketa dan jaminan atas harta wakaf",
+   "tidakBerlaku": [],
+   "jawaban": {
+    "melihat": {
+     "maksud": "harta wakaf tidak pernah disita dijaminkan atau disengketakan",
+     "saksi1": [
+      "harta wakaf #9823# tidak pernah disita dijaminkan atau disengketakan dengan pihak lain sepanjang pengetahuan saya",
+      "saya mengetahui tanah wakaf #9823# tidak sedang dalam sengketa sitaan maupun jaminan",
+      "sampai sekarang tidak ada pihak yang menyengketakan harta wakaf #9823# atau menjaminkannya",
+      "harta yang diwakafkan #9823# bebas dari sitaan jaminan dan sengketa menurut saya"
+     ],
+     "saksi2": [
+      "tidak pernah ada sitaan jaminan atau sengketa atas harta wakaf #9823# yang saya ketahui",
+      "saya tidak pernah mendengar harta wakaf #9823# dijadikan jaminan disita atau disengketakan",
+      "harta wakaf #9823# tidak dipersoalkan siapa pun dan tidak dijaminkan sebagaimana yang saya lihat",
+      "sepengetahuan saya harta wakaf #9823# bersih dari sengketa sitaan dan jaminan"
+     ]
+    },
+    "berbeda": {
+     "maksud": "versi A: harta wakaf tidak dalam sengketa; versi B: harta wakaf sedang disengketakan - berselisih pada PERISTIWA sengketa",
+     "saksi1": [
+      "harta wakaf #9823# tidak sedang disengketakan menurut pengetahuan saya",
+      "tidak ada yang menyengketakan harta wakaf #9823# sebagaimana yang saya ketahui",
+      "harta wakaf #9823# bebas dari sengketa menurut penglihatan saya",
+      "saya mengetahui tidak ada sengketa atas harta wakaf #9823#"
+     ],
+     "saksi2": [
+      "harta wakaf #9823# sedang disengketakan menurut pengetahuan saya",
+      "ada yang menyengketakan harta wakaf #9823# sebagaimana yang saya ketahui",
+      "harta wakaf #9823# dalam sengketa menurut penglihatan saya",
+      "saya mengetahui ada sengketa atas harta wakaf #9823#"
+     ],
+     "bedaPada": "peristiwa"
+    }
+   },
+   "variabelAbt": [
+    "9823"
+   ]
+  },
+  {
+   "id": "q-penutup",
+   "pokok": "pp-penutup",
+   "urutan": 200,
+   "tingkat": "inti",
+   "kelompok": "penutup",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {},
+   "teks": "Apakah masih ada yang ingin saksi sampaikan ?",
+   "hal": "keterangan penutup",
+   "tidakBerlaku": [
+    "mendengar",
+    "de-auditu",
+    "sebagian",
+    "tidak-tahu",
+    "ragu",
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi menyatakan keterangannya sudah cukup",
+     "saksi1": [
+      "keterangan yang saya berikan sudah cukup",
+      "sekian keterangan saya dan sudah cukup",
+      "bagi saya keterangan ini sudah cukup",
+      "sudah cukup yang dapat saya terangkan"
+     ],
+     "saksi2": [
+      "dengan ini keterangan saya sudah cukup",
+      "sudah cukup apa yang saya ketahui untuk diterangkan",
+      "hanya itu keterangan saya dan sudah cukup",
+      "saya anggap keterangan saya sudah cukup sampai di sini"
+     ]
+    }
+   },
+   "variabelAbt": []
+  }
+ ],
+ "jawabanUmum": {
+  "tidak-tahu": {
+   "maksud": "saksi tidak mengetahui hal yang ditanyakan",
+   "saksi1": [
+    "saya tidak mengetahui {hal}",
+    "mengenai {hal} saya tidak tahu sama sekali",
+    "{hal} tidak saya ketahui",
+    "saya tidak pernah mengetahui {hal}"
+   ],
+   "saksi2": [
+    "tentang {hal} saya tidak mengetahui apa pun",
+    "saya tidak tahu menahu soal {hal}",
+    "perihal {hal} tidak ada yang saya ketahui",
+    "soal {hal} saya sama sekali tidak tahu"
+   ]
+  },
+  "ragu": {
+   "maksud": "saksi ragu dan tidak yakin mengenai hal yang ditanyakan sehingga tidak dapat memastikannya",
+   "saksi1": [
+    "saya ragu dan kurang yakin mengenai {hal}",
+    "mengenai {hal} saya lupa dan kurang jelas bagi saya",
+    "soal {hal} saya hanya menduga-duga dan kurang pasti",
+    "saya agak ragu untuk menjelaskan {hal}"
+   ],
+   "saksi2": [
+    "mengenai {hal} ingatan saya kurang jelas dan saya ragu",
+    "saya mungkin keliru soal {hal} sehingga saya ragu menjawabnya",
+    "mengenai {hal} saya hanya bisa mengira-ngira dan kurang yakin",
+    "saya lupa-lupa ingat tentang {hal}"
+   ]
+  },
+  "sebagian": {
+   "maksud": "saksi hanya mengetahui sebagian dari hal yang ditanyakan, selebihnya tidak diketahuinya",
+   "saksi1": [
+    "yang saya ketahui mengenai {hal} hanya sebagian saja dan selebihnya saya tidak tahu",
+    "mengenai {hal} saya hanya tahu sebagian dan selebihnya tidak saya ketahui",
+    "sebagian dari {hal} saya ketahui sendiri dan sisanya saya tidak tahu",
+    "tentang {hal} hanya sebagian yang saya tahu sedangkan sisanya tidak saya ketahui"
+   ],
+   "saksi2": [
+    "pengetahuan saya tentang {hal} terbatas pada sebagian saja dan selain itu saya tidak tahu",
+    "soal {hal} sebatas yang saya ketahui saja dan selebihnya saya tidak dapat menerangkan",
+    "saya hanya mengetahui sebagian mengenai {hal} dan tidak tahu sisanya",
+    "mengenai {hal} baru sebagian yang saya ketahui sedangkan lainnya tidak saya ketahui"
+   ]
+  },
+  "de-auditu": {
+   "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya sendiri",
+   "saksi1": [
+    "saya mengetahui {hal} dari cerita {sumber} dan saya tidak menyaksikannya sendiri",
+    "{sumber} yang menceritakan {hal} kepada saya dan saya sendiri tidak melihatnya",
+    "tentang {hal} saya diberi tahu oleh {sumber} dan saya tidak pernah menyaksikannya",
+    "{hal} hanya saya ketahui dari penuturan {sumber} dan tidak dari penglihatan saya sendiri"
+   ],
+   "saksi2": [
+    "yang saya ketahui mengenai {hal} berasal dari cerita {sumber} bukan dari yang saya lihat sendiri",
+    "saya mendengar dari {sumber} soal {hal} dan saya tidak berada di sana ketika itu",
+    "perihal {hal} {sumber} bercerita kepada saya dan saya tidak mengalaminya langsung",
+    "soal {hal} saya dikabari oleh {sumber} dan saya tidak menyaksikan sendiri kejadiannya"
+   ]
+  },
+  "mendengar": {
+   "maksud": "saksi mendengar sendiri secara langsung ucapan atau pembicaraan para pihak mengenai hal itu",
+   "saksi1": [
+    "mengenai {hal} saya mendengar sendiri ucapan mereka di hadapan saya",
+    "saya sendiri yang mendengar langsung perkataan mereka tentang {hal}",
+    "tentang {hal} saya mendengarnya sendiri ketika mereka berbicara",
+    "saya mendengar secara langsung mereka membicarakan {hal}"
+   ],
+   "saksi2": [
+    "soal {hal} ucapan mereka terdengar langsung oleh saya",
+    "perihal {hal} saya ikut mendengar pembicaraan mereka secara langsung",
+    "saya turut mendengar sendiri mereka berbicara mengenai {hal}",
+    "mengenai {hal} saya mendengar langsung dari mulut mereka sendiri"
+   ]
+  }
+ },
+ "variabelBaru": [
+  "9823",
+  "9824",
+  "9826",
+  "9827"
+ ],
+ "catatanPetugas": [
+  "Titik-titik (...) pada keterangan saksi wajib diganti dengan keterangan saksi yang sebenarnya; jangan dibiarkan kosong.",
+  "Ikrar wakaf dilaksanakan oleh wakif kepada nazhir di hadapan pejabat pembuat akta ikrar wakaf dengan disaksikan dua orang saksi (Pasal 17 UU 41/2004); wakaf yang telah diikrarkan tidak dapat dibatalkan (Pasal 3).",
+  "Harta benda wakaf dilarang dijual, dihibahkan, diwariskan, dijaminkan atau ditukar (Pasal 40 UU 41/2004); perubahan peruntukan memerlukan izin tertulis (Pasal 44).",
+  "Pengukuhan wakaf yang belum terdaftar dengan penetapan pengadilan (Pasal 58 ayat (1) huruf c PP 42/2006) berlaku bagi wakaf yang diikrarkan sebelum PP itu berlaku dan memerlukan kesaksian pihak yang mengetahui wakaf tersebut.",
+  "Keterangan saksi yang ragu atau hanya cerita orang lain bukan keterangan yang dialami sendiri; pertimbangkan menghadirkan saksi tambahan untuk hal yang menentukan perkara."
+ ]
+}
