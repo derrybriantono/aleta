@@ -36,7 +36,7 @@
   const KELOMPOK = Object.freeze(["identitas", "hubungan", "pokok", "akibat", "upaya", "penutup"]);
   const KELOMPOK_TETAP = Object.freeze(["identitas", "hubungan", "penutup"]);
   const BEDA_PADA = Object.freeze(["waktu", "lama", "jumlah", "penyebab", "pelaku", "tempat", "peristiwa"]);
-  const SLOT_BAKU = Object.freeze(["pengaju", "lawan", "sumber", "hal", "daftar", "isi", "lama", "sejak", "hubungan", "pihakSaksi", "lawanSaksi", "pelaku", "korban", "pekerjaan", "penghasilan"]);
+  const SLOT_BAKU = Object.freeze(["pengaju", "lawan", "sumber", "hal", "daftar", "isi", "lama", "sejak", "hubungan", "pihakSaksi", "lawanSaksi", "pelaku", "korban", "pekerjaan", "penghasilan", "waktu", "peristiwa"]);
   /** Variabel ABT "Hbgn. Saksi n dg. Pihak" - menurut pihak dan urutan saksi (abt-variabel.json). */
   const VARIABEL_HUBUNGAN = Object.freeze({
     P: Object.freeze([["1241"], ["1242"], ["6149"], ["8923", "6150"], ["8930"]]),
@@ -207,6 +207,42 @@
 
     if (kat.tanpaLawan !== undefined && typeof kat.tanpaLawan !== "boolean") g("tanpaLawan harus boolean");
 
+    // ── profil pengetahuan saksi (opsional): satu pilihan per saksi yang menentukan jenis keterangan tiap butir ──
+    if (kat.profilSaksi !== undefined) {
+      if (!laRaya(kat.profilSaksi) || !Object.keys(kat.profilSaksi).length) g("profilSaksi harus objek berisi sedikitnya satu profil");
+      else {
+        for (const [kp, prof] of Object.entries(kat.profilSaksi)) {
+          if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(kp)) g(`profilSaksi.${kp}: kunci harus kebab-case`);
+          if (!laRaya(prof)) {
+            g(`profilSaksi.${kp} bukan objek`);
+            continue;
+          }
+          if (typeof prof.label !== "string" || !prof.label.trim()) g(`profilSaksi.${kp}.label kosong`);
+          if (prof.sumber !== undefined && typeof prof.sumber !== "boolean") g(`profilSaksi.${kp}.sumber harus boolean`);
+          if (!laRaya(prof.peta) || !Object.keys(prof.peta).length) g(`profilSaksi.${kp}.peta kosong`);
+          else {
+            for (const [kunciPeta, jenisPeta] of Object.entries(prof.peta)) {
+              if (!JENIS_KETERANGAN.includes(jenisPeta) || jenisPeta === "berbeda") g(`profilSaksi.${kp}.peta.${kunciPeta}: jenis "${jenisPeta}" tidak sah`);
+            }
+            if (!("*" in prof.peta)) g(`profilSaksi.${kp}.peta wajib memuat "*" (jenis bawaan)`);
+          }
+        }
+      }
+    }
+    if (kat.pilihanDaftar !== undefined) {
+      if (!Array.isArray(kat.pilihanDaftar) || !kat.pilihanDaftar.length || kat.pilihanDaftar.length > 40) g("pilihanDaftar harus daftar 1 sampai 40 frasa");
+      else {
+        const lihatDaftar = new Set();
+        kat.pilihanDaftar.forEach((x, i) => {
+          if (typeof x !== "string" || !x.trim() || x.length > 80 || x !== x.trim()) g(`pilihanDaftar[${i}] harus teks 1-80 huruf tanpa spasi tepi`);
+          else if (/[,;{}#<\r\n]/.test(x)) g(`pilihanDaftar[${i}] memuat tanda yang tidak boleh ( , ; { } # < )`);
+          else if (/ya,|sayang/i.test(x)) g(`pilihanDaftar[${i}] memuat "ya," atau "sayang"`);
+          else if (lihatDaftar.has(x.toLowerCase())) g(`pilihanDaftar[${i}] kembar`);
+          lihatDaftar.add(String(x).toLowerCase());
+        });
+      }
+    }
+
     // ── dasar hukum ──
     const idDasar = new Set();
     daftar(kat.dasarHukum).forEach((d, i) => {
@@ -229,6 +265,8 @@
       if (!["otomatis", "borang"].includes(v.sumber)) g(`keadaan.${k}.sumber harus salah satu nilai sumber keadaan yang dikenal`);
       if (!daftar(v.nilai).length) g(`keadaan.${k}.nilai kosong`);
       if (typeof v.label !== "string" || !v.label.trim()) g(`keadaan.${k}.label kosong`);
+      if (v.perSaksi !== undefined && typeof v.perSaksi !== "boolean") g(`keadaan.${k}.perSaksi harus boolean`);
+      if (v.perSaksi === true && v.sumber !== "borang") g(`keadaan.${k}: perSaksi hanya untuk keadaan yang dipilih petugas`);
       if (v.sumber === "otomatis" && !KEADAAN_BAKU[k]) g(`keadaan.${k}: sumber otomatis hanya untuk kunci baku (${Object.keys(KEADAAN_BAKU).join(", ")})`);
       nilaiSah[k] = new Set(daftar(v.nilai).map(String));
     }
@@ -295,7 +333,7 @@
         for (const m of kal.matchAll(POLA_SLOT)) {
           if (!SLOT_BAKU.includes(m[1])) g(`${tempat}: slot tidak baku {${m[1]}}`);
         }
-        if (/\{(hal|daftar|isi|lama|sejak|pekerjaan|penghasilan)\}\s*,/.test(kal)) g(`${tempat}: slot teks bebas langsung sebelum koma (isi slot yang berakhir "ya" dimakan ABT)`);
+        if (/\{(hal|daftar|isi|lama|sejak|pekerjaan|penghasilan|waktu|peristiwa)\}\s*,/.test(kal)) g(`${tempat}: slot teks bebas langsung sebelum koma (isi slot yang berakhir "ya" dimakan ABT)`);
         if (/#/.test(kal.replace(POLA_PENANDA, ""))) g(`${tempat}: penanda # rusak`);
         const norm = rapikan(kal);
         if (lihat.has(norm)) g(`${tempat}: kembar dengan #${lihat.get(norm) + 1}`);
@@ -389,6 +427,15 @@
       for (const [j, tv] of teksVarian.entries()) {
         if (typeof tv !== "string" || !tv.trim()) g(`${lok}: teksVarian[${j}] kosong`);
         else if (JSON.stringify(penandaDi(tv)) !== JSON.stringify(penandaDi(q.teks || ""))) g(`${lok}: teksVarian[${j}] himpunan penanda berbeda dari teks`);
+      }
+      if (q.slotDari !== undefined) {
+        if (!laRaya(q.slotDari) || !Object.keys(q.slotDari).length) g(`${lok}: slotDari harus objek {slot: kunciFakta}`);
+        else {
+          for (const [namaSlot, kunciFakta] of Object.entries(q.slotDari)) {
+            if (!SLOT_BAKU.includes(namaSlot)) g(`${lok}: slotDari memuat slot tidak baku {${namaSlot}}`);
+            if (typeof kunciFakta !== "string" || !/^[a-zA-Z]+$/.test(kunciFakta)) g(`${lok}: slotDari.${namaSlot} harus kunci fakta`);
+          }
+        }
       }
       if (q.menggantikan !== undefined) {
         if (!Array.isArray(q.menggantikan) || !q.menggantikan.length || !q.menggantikan.every((x) => typeof x === "string" && /^q-[a-z0-9-]+$/.test(x) && x !== q.id)) g(`${lok}: menggantikan harus daftar id butir lain (q-...)`);
@@ -673,6 +720,49 @@
     return JENIS_KETERANGAN.filter((j) => j === "melihat" || (!tetap && !tb.includes(j)));
   }
 
+  /** Awalan nilai jenis saksi yang menunjuk profil pengetahuan katalog ("profil:tahu-pisah"). */
+  const AWALAN_PROFIL = "profil:";
+
+  /**
+   * Jenis keterangan butir ini menurut PROFIL pengetahuan saksi (katalog.profilSaksi), atau "" bila `jenisSaksi` bukan profil.
+   * Peta profil dicari menurut id butir, pokoknya, kelompoknya, lalu "*" (jenis bawaan profil). Butir yang tidak memungkinkan
+   * jenis itu (tidakBerlaku, kelompok tetap) jatuh ke "melihat" oleh pemanggil.
+   */
+  function jenisDariProfil(kat, jenisSaksi, q) {
+    const kode = typeof jenisSaksi === "string" && jenisSaksi.startsWith(AWALAN_PROFIL) ? jenisSaksi.slice(AWALAN_PROFIL.length) : "";
+    if (!kode) return "";
+    const prof = laRaya(kat && kat.profilSaksi) ? kat.profilSaksi[kode] : null;
+    if (!laRaya(prof) || !laRaya(prof.peta)) return "";
+    const peta = prof.peta;
+    for (const kunci of [q && q.id, q && q.pokok, q && q.kelompok, "*"]) {
+      if (kunci && typeof peta[kunci] === "string" && peta[kunci] !== "berbeda") return peta[kunci];
+    }
+    return "";
+  }
+
+  /** Profil pengetahuan saksi katalog untuk pilihan di borang: [{nilai: "profil:<kunci>", label, sumber}]. */
+  function profilUntukBorang(kat) {
+    const hasil = [];
+    if (!laRaya(kat && kat.profilSaksi)) return hasil;
+    for (const [kunci, prof] of Object.entries(kat.profilSaksi)) {
+      if (!laRaya(prof)) continue;
+      hasil.push({ nilai: AWALAN_PROFIL + kunci, label: String(prof.label || kunci), sumber: prof.sumber === true });
+    }
+    return hasil;
+  }
+
+  /**
+   * Saksi keluarga atau bukan dari uraian hubungannya dengan pihak ("ibu kandung Penggugat", "tetangga"). "" bila tidak terbaca:
+   * hubungan yang tidak dikenal tidak pernah ditebak. Dasar: UU 7/1989 Pasal 76 ayat (1) membedakan keluarga dan orang dekat.
+   */
+  function kerabatDariHubungan(teks) {
+    const t = rapikan(String(teks || "").replace(POLA_PENANDA, " "));
+    if (!t) return "";
+    if (/\b(tetangga|teman|sahabat|rekan|kenalan|warga|kawan|majikan|atasan|bawahan|pembantu|ketua rt|ketua rw|kepala dusun|kepala desa|tokoh|jiran|karyawan|pekerja|buruh|aparat|adat)\b/.test(t)) return "bukan-keluarga";
+    if (/\b(ayah|bapak|ibu|mama|papa|kakak|abang|adik|saudara|paman|om|bibi|tante|kakek|nenek|sepupu|keponakan|ipar|mertua|menantu|orang tua|orangtua|ortu|ponakan|kemanakan|kemenakan|supupu|kerabat|keluarga|anak|cucu|besan|kandung|tiri)\b/.test(t)) return "keluarga";
+    return "";
+  }
+
   /** Pilih objek Jawaban yang berlaku menurut keadaan (yang paling spesifik). */
   function pilihObjekJawaban(kat, q, jenis, keadaan) {
     let sumber = bentukJawaban(q.jawaban && q.jawaban[jenis]);
@@ -730,6 +820,72 @@
   function slotKosong(nilai) {
     const t = String(nilai === undefined || nilai === null ? "" : nilai).trim();
     return !t || /^[._\s-]+$/.test(t);
+  }
+
+  /**
+   * Variabel ABT yang dapat diisi dari FAKTA PERKARA (gugatan, data SIPP, isian blangko) bila nilainya di ABT kosong. Kode -> {kunci fakta,
+   * format}. Hanya cadangan: nilai di ABT selalu menang, dan fakta tidak pernah menimpa isian petugas.
+   */
+  const KODE_KE_FAKTA = Object.freeze({
+    "0222": { kunci: "awalKonflik" },
+    "0246": { kunci: "pisahSejak" },
+    "9944": { kunci: "lamaPisah" },
+    "7035": { kunci: "siapaPergi" },
+    "8491": { kunci: "kediaman" },
+    "5197": { kunci: "tglNikah" },
+    "5105": { kunci: "tempatNikah" },
+    "0101": { kunci: "alamatP" },
+    "0105": { kunci: "alamatT" },
+    "0100": { kunci: "pekerjaanP" },
+    "0104": { kunci: "pekerjaanT" },
+    "5227": { kunci: "penyebab" },
+    "8535": { kunci: "jumlahAnak", format: "anak" },
+    "9302": { kunci: "jumlahAnak", format: "sebutanAnak" },
+    "7777": { kunci: "tglNikah", format: "lamaNikah" },
+    "8570": { kunci: "kediaman" },
+    "1268": { kunci: "upayaDamai" },
+  });
+
+  const BULAN_ID = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember", "pebruari", "nopember"];
+
+  /** "12 Mei 2015" / "Mei 2015" -> {tahun, bulan(1-12)}; selain itu null. */
+  function uraiTanggalNikah(teks) {
+    const t = String(teks || "").toLowerCase();
+    const m = /(?:(\d{1,2})\s+)?([a-z]+)\s+((?:19|20)\d{2})/.exec(t);
+    if (!m) return null;
+    let b = BULAN_ID.indexOf(m[2]);
+    if (b < 0) return null;
+    if (b > 11) b = b === 12 ? 1 : 10;
+    return { tahun: Number(m[3]), bulan: b + 1 };
+  }
+
+  function lamaSejakNikah(teks, acuan) {
+    const u = uraiTanggalNikah(teks);
+    if (!u) return "";
+    const a = acuan instanceof Date ? acuan : new Date();
+    let bulan = (a.getFullYear() - u.tahun) * 12 + (a.getMonth() + 1 - u.bulan);
+    if (bulan < 1) return "";
+    const th = Math.floor(bulan / 12);
+    const bl = bulan % 12;
+    return th && bl ? `${th} tahun ${bl} bulan` : th ? `${th} tahun` : `${bl} bulan`;
+  }
+
+  function formatFaktaUntukKode(kode, nilai, acuan) {
+    const info = KODE_KE_FAKTA[kode];
+    const t = String(nilai === undefined || nilai === null ? "" : nilai).trim();
+    if (!info || !t) return "";
+    if (info.format === "lamaNikah") return lamaSejakNikah(t, acuan);
+    if (info.format === "sebutanAnak") {
+      if (/(belum|tidak)/i.test(t)) return "";
+      const n = Number((/\d+/.exec(t) || ["0"])[0]);
+      return n > 1 ? "anak-anak" : n === 1 ? "anak" : "";
+    }
+    if (info.format === "anak") {
+      if (/\b(belum|tidak)\b/i.test(t)) return "belum dikaruniai anak";
+      const n = (/\d+/.exec(t) || [""])[0];
+      return n && n !== "0" ? `telah dikaruniai ${n} orang anak` : "";
+    }
+    return t;
   }
 
   function tidakTerisi(nilai) {
@@ -852,7 +1008,6 @@
       const pihak = s.pihak === "T" ? "T" : "P";
       // keadaan khusus saksi ini (mis. peran saksi pada pernikahan di itsbat nikah) menimpa keadaan perkara
       const keadaan = Object.assign({}, keadaanDasar, laRaya(s.keadaan) ? s.keadaan : {}, { pihakSaksi: pihak });
-      const butir = pertanyaanAktif(kat, keadaan, pihak, { tingkat: m.tingkat });
       const slotSaksi = Object.assign({}, m.slot || {}, (m.slotSaksi && m.slotSaksi[indeks]) || {});
       if (slotKosong(slotSaksi.sumber)) slotSaksi.sumber = pihak === "T" ? "#0047#" : "#0046#";
       if (slotKosong(slotSaksi.pihakSaksi)) slotSaksi.pihakSaksi = pihak === "T" ? "#0047#" : "#0046#";
@@ -869,11 +1024,19 @@
           }
         }
       }
+      // saksi keluarga atau bukan: dipilih petugas; bila belum dipilih dan katalog memuat keadaan itu, dibaca dari uraian hubungannya
+      const dekKerabat = laRaya(kat && kat.keadaan) ? kat.keadaan.kerabat : null;
+      if (laRaya(dekKerabat) && !(laRaya(s.keadaan) && s.keadaan.kerabat !== undefined)) {
+        const turunan = tidakTerisi(slotSaksi.hubungan) ? "" : kerabatDariHubungan(slotSaksi.hubungan);
+        if (turunan && daftar(dekKerabat.nilai).map(String).includes(turunan)) keadaan.kerabat = turunan;
+      }
+      const butir = pertanyaanAktif(kat, keadaan, pihak, { tingkat: m.tingkat });
       const baris = [];
       const ragaman = [];
       butir.forEach((q) => {
         const masuk = jenisKeteranganButir(q);
-        let jenis = (s.perButir && s.perButir[q.id]) || s.jenis || "melihat";
+        // urutan: pilihan per butir > profil pengetahuan saksi ("profil:<kunci>") > jenis saksi > melihat
+        let jenis = (s.perButir && s.perButir[q.id]) || jenisDariProfil(kat, s.jenis, q) || s.jenis || "melihat";
         if (!JENIS_KETERANGAN.includes(jenis)) jenis = "melihat";
         if (!masuk.includes(jenis)) jenis = "melihat";
         // saksi "berbeda": hanya pada butir yang dipilih dan bila butir mendukungnya
@@ -888,8 +1051,33 @@
         terpakaiPerButir.set(q.id + "|" + jenis, terpakai);
 
         const slotButir = Object.assign({}, slotSaksi, { hal: q.hal || slotSaksi.hal });
-        const tanya = isiPenanda(pilihTeksPertanyaan(q, ke, benih), { variabel: m.variabel, slot: slotButir });
-        const jawab = isiPenanda(pilih.teks, { variabel: m.variabel, slot: slotButir });
+        // fakta perkara (gugatan > data SIPP) hanya mengisi yang KOSONG: variabel ABT yang belum terisi dan slot yang dipetakan butir (slotDari)
+        const dariGugatan = [];
+        const faktaPerkara = laRaya(m.fakta) ? m.fakta : {};
+        const catatFakta = (nama, kunciFakta, f) => {
+          if (!dariGugatan.some((x) => x.nama === nama)) dariGugatan.push({ nama, kunci: kunciFakta, sumber: String(f.sumber || ""), yakin: String(f.yakin || "cukup"), ket: String(f.ket || "") });
+        };
+        if (laRaya(q.slotDari) && jenis !== "ragu" && jenis !== "tidak-tahu") {
+          for (const [namaSlot, kunciFakta] of Object.entries(q.slotDari)) {
+            const f = faktaPerkara[kunciFakta];
+            if (f && String(f.nilai || "").trim() && slotKosong(slotButir[namaSlot])) {
+              slotButir[namaSlot] = String(f.nilai).trim();
+              catatFakta(`{${namaSlot}}`, kunciFakta, f);
+            }
+          }
+        }
+        const variabelButir = (kode) => {
+          const v = typeof m.variabel === "function" ? m.variabel(kode) : undefined;
+          if (!tidakTerisi(v) || jenis === "ragu" || jenis === "tidak-tahu") return v;
+          const info = KODE_KE_FAKTA[kode];
+          const f = info && faktaPerkara[info.kunci];
+          const teks = f ? formatFaktaUntukKode(kode, f.nilai, m.acuan) : "";
+          if (!teks) return v;
+          catatFakta(`#${kode}#`, info.kunci, f);
+          return teks;
+        };
+        const tanya = isiPenanda(pilihTeksPertanyaan(q, ke, benih), { variabel: variabelButir, slot: slotButir });
+        const jawab = isiPenanda(pilih.teks, { variabel: variabelButir, slot: slotButir });
         jawab.teks = amankanKeAbt(jawab.teks);
         tanya.teks = amankanKeAbt(tanya.teks);
         const kosong = tanpaKosongGanda([...tanya.kosong, ...jawab.kosong]);
@@ -901,7 +1089,8 @@
           tanya: tanya.teks,
           jawab: jawab.teks,
           kosong,
-          tandaKuning: jenis === "ragu" || jenis === "sebagian" || jenis === "berbeda",
+          dariGugatan,
+          tandaKuning: jenis === "ragu" || jenis === "sebagian" || jenis === "berbeda" || dariGugatan.some((x) => x.yakin === "ragu"),
         };
         // 20 Okt (S7): jawaban dengan penanda ⟦#kode#⟧/⟦{slot}⟧ di tempat yang belum terisi (non-enumerable)
         Object.defineProperty(barisIni, "jawabKode", { value: jawab.mentah || jawab.teks, enumerable: false });
@@ -1147,6 +1336,7 @@
         jamak: Boolean(v.jamak) || KEADAAN_BAKU_JAMAK.includes(kunci),
         bawaan: v.bawaan,
         sumber: String(v.sumber),
+        perSaksi: v.perSaksi === true,
       });
     }
     const sebut = (syarat) => {
@@ -1173,7 +1363,7 @@
   }
 
   /** Slot yang diisi petugas di borang (teks bebas). */
-  const ISIAN_PETUGAS = Object.freeze(["daftar", "isi", "lama", "sejak", "pekerjaan", "penghasilan"]);
+  const ISIAN_PETUGAS = Object.freeze(["daftar", "isi", "lama", "sejak", "pekerjaan", "penghasilan", "waktu", "peristiwa"]);
 
   /** Slot isian petugas yang benar-benar dipakai butir-butir ini. */
   function slotIsianDipakai(butir) {
@@ -1294,9 +1484,15 @@
     LABEL_KEADAAN_BAKU,
     LABEL_NILAI_BAKU,
     keadaanUntukBorang,
+    jenisDariProfil,
+    profilUntukBorang,
+    kerabatDariHubungan,
+    AWALAN_PROFIL,
     slotIsianDipakai,
     ringkasKatalog,
     ISIAN_PETUGAS,
     KEADAAN_TURUNAN,
+    KODE_KE_FAKTA,
+    formatFaktaUntukKode,
   });
 });

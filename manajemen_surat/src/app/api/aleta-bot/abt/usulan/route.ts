@@ -81,6 +81,8 @@ type BadanUsulan = {
   /** 20 Okt 2026: isian blangko perkara itu (kode -> {nilai, keyakinan}) dan baris yang diisi (sumber 'isi-jawaban'). */
   isian?: unknown;
   saksiIsi?: unknown;
+  /** 20 Okt 2026 (U1): minta fakta perkara apa adanya (sumber isi-jawaban) untuk penyusun saksi katalog. */
+  mintaFakta?: unknown;
   /** Sumber 'pertanyaan-saksi' (12 Okt 2026): { aksi: daftar|ambil, namaSet, pihak, huruf[], tambahan[] }. */
   pertanyaanSaksi?: unknown;
 };
@@ -320,6 +322,7 @@ export async function POST(request: NextRequest) {
       saksi: saringSaksi(body.saksi),
       isian: saringIsianBadan(body.isian),
       saksiIsi: saringSaksiIsi(body.saksiIsi),
+      mintaFakta: body.mintaFakta === true,
       pertanyaanSaksi: saringPertanyaanSaksi(body.pertanyaanSaksi),
       tipeKeluaran: tipe.tipeKeluaran,
       // Blangko tanya jawab, diambil ekstensi dari halaman penyunting ABT
@@ -398,6 +401,7 @@ export async function POST(request: NextRequest) {
       itsbat: hasil.data?.itsbat ?? null,
       saksiSdg: hasil.data?.saksiSdg ?? null,
       isiJawaban: hasil.data?.isiJawaban ?? null,
+      faktaPerkara: hasil.data?.faktaPerkara ?? null,
       pertanyaanSaksi: hasil.data?.pertanyaanSaksi ?? null,
     });
   } catch (error) {

@@ -259,6 +259,9 @@ const LABEL_FAKTA = Object.freeze({
   puncakPeristiwa: "peristiwa puncak",
   kediaman: "tempat tinggal bersama",
   alamatP: "alamat pihak pertama",
+  pekerjaanP: "pekerjaan pihak pertama",
+  pekerjaanT: "pekerjaan pihak kedua",
+  penyebab: "sebab perselisihan",
   alamatT: "alamat pihak kedua",
   tujuan: "tujuan perkara",
 });
@@ -427,6 +430,8 @@ function bangunFakta(s) {
   const p2 = Array.isArray(sipp.pihak2) ? sipp.pihak2 : [];
   if (p1[0] && p1[0].alamat) F.tambah("alamatP", bersihAlamat(p1[0].alamat), "yakin", 2);
   if (p2[0] && p2[0].alamat) F.tambah("alamatT", bersihAlamat(p2[0].alamat), "yakin", 2);
+  if (p1[0] && rapat(p1[0].pekerjaan)) F.tambah("pekerjaanP", rapat(p1[0].pekerjaan).toLowerCase(), "yakin", 2);
+  if (p2[0] && rapat(p2[0].pekerjaan)) F.tambah("pekerjaanT", rapat(p2[0].pekerjaan).toLowerCase(), "yakin", 2);
   // umur saat menikah dari tanggal lahir di SIPP (hanya bila tanggal nikah diketahui)
   const tglNikahIso = isoDariIndo((F.ambil("tglNikah") || {}).nilai);
   if (tglNikahIso) {
@@ -457,6 +462,7 @@ function bangunFakta(s) {
     };
     pasang("awalKonflik", c.awalKonflik);
     pasang("puncak", c.puncak);
+    pasang("penyebab", c.penyebab);
     pasang("pisahSejak", c.pisahSejak);
     pasang("lamaPisah", c.lamaPisah, c.lamaPisahDihitung ? "cukup" : "cukup", c.lamaPisahDihitung ? "Dihitung dari tanggal pisah rumah di gugatan sampai tanggal sidang." : "");
     pasang("siapaPergi", c.siapaPergi);

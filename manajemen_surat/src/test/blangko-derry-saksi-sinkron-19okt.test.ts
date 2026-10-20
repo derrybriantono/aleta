@@ -453,10 +453,11 @@ describe("daftar pilihan sama dengan Susun saksi di abt.js", () => {
       return new Function(`return ${abt.slice(mulai + `const ${nama} = `.length, akhir).replace(/;\s*$/, "")}`)();
     };
     const mod = require_("../../ekstensi-sipp/blangko-derry-saksi.js");
-    expect(mod.DAFTAR_MODUS).toEqual(ambilDaftar("DAFTAR_MODUS", "\n    ];"));
+    // Blangko Derry memuat dua pilihan tambahan (U1 20 Okt 2026) yang di abt.js disisipkan hanya pada tampilan Baru / UI Baru
+    expect(mod.DAFTAR_MODUS.filter((x: string[]) => !["mendengar", "ragu"].includes(x[0]))).toEqual(ambilDaftar("DAFTAR_MODUS", "\n    ];"));
     expect(mod.DAFTAR_SUMBER).toEqual(ambilDaftar("DAFTAR_SUMBER", "\n    ];"));
     expect(mod.alasanBawaan().map((a: { kunci: string }) => a.kunci)).toEqual(ambilDaftar("DAFTAR_ALASAN_SDG", "\n];"));
-    expect(mod.DAFTAR_MODUS.map((x: string[]) => x[0])).toEqual(["sama", "sebagian", "tidak-tahu", "tidak-melihat", "dari-cerita", "tahu-pisah"]);
+    expect(mod.DAFTAR_MODUS.map((x: string[]) => x[0])).toEqual(["sama", "mendengar", "sebagian", "tidak-tahu", "tidak-melihat", "dari-cerita", "tahu-pisah", "ragu"]);
   });
 
   it("muatan permintaan sama bentuk dengan susunMuatanSdg milik abt.js", () => {

@@ -35,11 +35,13 @@
   // ujinya (blangko-derry-saksi-sinkron-19okt) membandingkan keduanya.
   const DAFTAR_MODUS = [
     ["sama", "Tahu seluruh alasan, melihat sendiri"],
+    ["mendengar", "Mendengar sendiri pertengkaran, tidak melihat"],
     ["sebagian", "Hanya sebagian alasan yang ia ketahui"],
     ["tidak-tahu", "Tahu berselisih & berpisah, tidak tahu sebabnya"],
     ["tidak-melihat", "Tidak pernah menyaksikan pertengkaran"],
     ["dari-cerita", "Tahu dari cerita salah satu pihak"],
     ["tahu-pisah", "Tidak tahu pertengkarannya, hanya tahu sudah pisah"],
+    ["ragu", "Ragu dan kurang ingat"],
   ];
   const DAFTAR_SUMBER = [
     ["penggugat", "Penggugat/Pemohon"],

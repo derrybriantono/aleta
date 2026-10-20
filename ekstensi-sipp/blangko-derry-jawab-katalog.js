@@ -122,7 +122,63 @@
     }
   }
 
-  const api = { usulkan, susunMuatan, petakan, modusDariJenis };
+  /** Fakta perkara -> peta kunci -> {nilai, yakin, sumber, ket}; hanya teks yang sah dan tanpa nama aplikasi. */
+  function petakanFakta(f) {
+    const hasil = {};
+    if (!f || typeof f !== "object") return hasil;
+    for (const [kunci, v] of Object.entries(f)) {
+      const nilai = v && typeof v === "object" ? teks(v.nilai).trim() : "";
+      if (!nilai || /aleta/i.test(nilai) || !/^[a-zA-Z]{2,30}$/.test(kunci)) continue;
+      const yakin = v.yakin === "yakin" || v.yakin === "ragu" ? v.yakin : "cukup";
+      hasil[kunci] = { nilai: nilai.slice(0, 400), yakin, sumber: teks(v.sumber).slice(0, 80), ket: teks(v.ket).slice(0, 300) };
+    }
+    return hasil;
+  }
+
+  /**
+   * Fakta perkara apa adanya (tanggal dan tempat nikah, anak, awal dan sebab perselisihan, puncak, pisah sejak, alamat, pekerjaan)
+   * dari isian blangko > data SIPP > gugatan, lewat permintaan 'isi-jawaban' dengan mintaFakta. Dipakai penyusun saksi katalog di panel
+   * ABT; gagal = {} (penyusun memakai isian petugas dan variabel ABT saja).
+   *   o = { perkara: {nomorPerkara, jenisPerkaraId, alurPerkaraId}, sebutan: {P, T}, posita, tanggalSidang, variabel: {kode: nilai} }
+   */
+  async function ambilFakta(o) {
+    const r = o && typeof o === "object" ? o : {};
+    const p = r.perkara && typeof r.perkara === "object" ? r.perkara : {};
+    const seb = r.sebutan && typeof r.sebutan === "object" ? r.sebutan : {};
+    if (!teks(p.nomorPerkara)) return {};
+    const isian = {};
+    try {
+      const dariPanel = typeof globalThis !== "undefined" && typeof globalThis.AletaBdIsianSaksi === "function" ? globalThis.AletaBdIsianSaksi() : null;
+      if (dariPanel && typeof dariPanel === "object") Object.assign(isian, dariPanel);
+    } catch {
+      /* tanpa isian kartu */
+    }
+    for (const [kode, v] of Object.entries(r.variabel && typeof r.variabel === "object" ? r.variabel : {})) {
+      const nilai = teks(v).trim();
+      if (nilai && /^\d{3,5}$/.test(kode) && !isian[kode]) isian[kode] = { nilai: nilai.slice(0, 700), keyakinan: "pasti" };
+    }
+    try {
+      const data = await kirim({
+        sumber: "isi-jawaban",
+        mintaFakta: true,
+        nomorPerkara: teks(p.nomorPerkara),
+        jenisPerkara: teks(p.jenisPerkaraId || p.jenisPerkara),
+        alur: teks(p.alurPerkaraId),
+        pelaku: teks(seb.T),
+        lawan: teks(seb.P),
+        posita: teks(r.posita).slice(0, 60000),
+        tanggalSidang: teks(r.tanggalSidang).slice(0, 40),
+        isian,
+        saksiIsi: [],
+      });
+      if (!data || data.available === false) return {};
+      return petakanFakta(data.faktaPerkara);
+    } catch {
+      return {};
+    }
+  }
+
+  const api = { usulkan, susunMuatan, petakan, modusDariJenis, ambilFakta, petakanFakta };
   globalThis.AletaBdJawabanKatalog = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

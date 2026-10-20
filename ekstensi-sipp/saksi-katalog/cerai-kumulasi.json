@@ -2,8 +2,8 @@
  "skema": "saksi-katalog/1",
  "kunci": "cerai-kumulasi",
  "judul": "Cerai - tambahan kumulasi (hak asuh, nafkah anak, nafkah istri, harta bersama)",
- "versi": 1,
- "penulis": "SAKSI-C",
+ "versi": 2,
+ "penulis": "SAKSI-C + U1 (20 Okt 2026)",
  "tahap": 1,
  "contoh": false,
  "syarat": {
@@ -1934,6 +1934,1752 @@
     "0046",
     "0047"
    ]
+  },
+  {
+   "id": "q-pengasuh-sehari-hari",
+   "pokok": "pp-pengasuhan",
+   "urutan": 342,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "hak-asuh"
+   },
+   "teks": "Siapa yang sehari-hari mengurus #9302# tersebut, mulai dari makan, kesehatan, sampai sekolahnya ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9302"
+   ],
+   "hal": "pengasuh sehari-hari anak",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa #0046# yang sehari-hari mengurus #9302# dari makan sampai sekolah, baik sebelum maupun sesudah perpisahan",
+       "saya menyaksikan langsung bahwa #0046# yang merawat #9302# setiap hari dan memenuhi keperluannya",
+       "dalam keseharian #9302# diurus oleh #0046# termasuk makan dan sekolahnya dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa urusan harian #9302# ditangani langsung oleh #0046#"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa yang mengurus keperluan #9302# sehari-hari adalah #0046#",
+       "dengan mata kepala saya sendiri saya melihat bahwa #0046# yang menyiapkan makan dan kebutuhan sekolah #9302#",
+       "saya mengalami dan melihat langsung bahwa sehari-hari #9302# berada dalam perawatan #0046#",
+       "perawatan harian #9302# dilakukan oleh #0046# sebagaimana yang saya saksikan sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa #0047# yang sehari-hari mengurus #9302# dari makan sampai sekolah, baik sebelum maupun sesudah perpisahan",
+       "saya menyaksikan langsung bahwa #0047# yang merawat #9302# setiap hari dan memenuhi keperluannya",
+       "dalam keseharian #9302# diurus oleh #0047# termasuk makan dan sekolahnya dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa urusan harian #9302# ditangani langsung oleh #0047#"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa yang mengurus keperluan #9302# sehari-hari adalah #0047#",
+       "dengan mata kepala saya sendiri saya melihat bahwa #0047# yang menyiapkan makan dan kebutuhan sekolah #9302#",
+       "saya mengalami dan melihat langsung bahwa sehari-hari #9302# berada dalam perawatan #0047#",
+       "perawatan harian #9302# dilakukan oleh #0047# sebagaimana yang saya saksikan sendiri"
+      ]
+     }
+    ],
+    "mendengar": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa #0046# yang sehari-hari mengurus #9302# dari makan sampai sekolah, baik sebelum maupun sesudah perpisahan tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa #0046# yang merawat #9302# setiap hari dan memenuhi keperluannya sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa dalam keseharian #9302# diurus oleh #0046# termasuk makan dan sekolahnya sementara saya tidak melihatnya",
+       "urusan harian #9302# ditangani langsung oleh #0046# dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa yang mengurus keperluan #9302# sehari-hari adalah #0046# namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa #0046# yang menyiapkan makan dan kebutuhan sekolah #9302# walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa sehari-hari #9302# berada dalam perawatan #0046# akan tetapi saya tidak melihat kejadiannya",
+       "perawatan harian #9302# dilakukan oleh #0046# dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa #0047# yang sehari-hari mengurus #9302# dari makan sampai sekolah, baik sebelum maupun sesudah perpisahan tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa #0047# yang merawat #9302# setiap hari dan memenuhi keperluannya sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa dalam keseharian #9302# diurus oleh #0047# termasuk makan dan sekolahnya sementara saya tidak melihatnya",
+       "urusan harian #9302# ditangani langsung oleh #0047# dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa yang mengurus keperluan #9302# sehari-hari adalah #0047# namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa #0047# yang menyiapkan makan dan kebutuhan sekolah #9302# walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa sehari-hari #9302# berada dalam perawatan #0047# akan tetapi saya tidak melihat kejadiannya",
+       "perawatan harian #9302# dilakukan oleh #0047# dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     }
+    ],
+    "de-auditu": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} #0046# yang sehari-hari mengurus #9302# dari makan sampai sekolah, baik sebelum maupun sesudah perpisahan dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa #0046# yang merawat #9302# setiap hari dan memenuhi keperluannya dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa dalam keseharian #9302# diurus oleh #0046# termasuk makan dan sekolahnya sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa urusan harian #9302# ditangani langsung oleh #0046# dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} yang mengurus keperluan #9302# sehari-hari adalah #0046# dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa #0046# yang menyiapkan makan dan kebutuhan sekolah #9302# karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa sehari-hari #9302# berada dalam perawatan #0046# sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa perawatan harian #9302# dilakukan oleh #0046# dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} #0047# yang sehari-hari mengurus #9302# dari makan sampai sekolah, baik sebelum maupun sesudah perpisahan dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa #0047# yang merawat #9302# setiap hari dan memenuhi keperluannya dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa dalam keseharian #9302# diurus oleh #0047# termasuk makan dan sekolahnya sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa urusan harian #9302# ditangani langsung oleh #0047# dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} yang mengurus keperluan #9302# sehari-hari adalah #0047# dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa #0047# yang menyiapkan makan dan kebutuhan sekolah #9302# karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa sehari-hari #9302# berada dalam perawatan #0047# sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa perawatan harian #9302# dilakukan oleh #0047# dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     }
+    ],
+    "sebagian": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa #0046# yang sehari-hari mengurus #9302# dari makan sampai sekolah, baik sebelum maupun sesudah perpisahan dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa #0046# yang merawat #9302# setiap hari dan memenuhi keperluannya sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa dalam keseharian #9302# diurus oleh #0046# termasuk makan dan sekolahnya dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu urusan harian #9302# ditangani langsung oleh #0046# dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa yang mengurus keperluan #9302# sehari-hari adalah #0046# dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa #0046# yang menyiapkan makan dan kebutuhan sekolah #9302# sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa sehari-hari #9302# berada dalam perawatan #0046# dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni perawatan harian #9302# dilakukan oleh #0046# selebihnya tidak saya ketahui"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa #0047# yang sehari-hari mengurus #9302# dari makan sampai sekolah, baik sebelum maupun sesudah perpisahan dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa #0047# yang merawat #9302# setiap hari dan memenuhi keperluannya sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa dalam keseharian #9302# diurus oleh #0047# termasuk makan dan sekolahnya dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu urusan harian #9302# ditangani langsung oleh #0047# dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa yang mengurus keperluan #9302# sehari-hari adalah #0047# dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa #0047# yang menyiapkan makan dan kebutuhan sekolah #9302# sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa sehari-hari #9302# berada dalam perawatan #0047# dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni perawatan harian #9302# dilakukan oleh #0047# selebihnya tidak saya ketahui"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "q-pengasuh-perilaku",
+   "pokok": "pp-pengasuhan",
+   "urutan": 352,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "hak-asuh"
+   },
+   "teks": "Bagaimana akhlak dan perilaku pihak yang mengasuh #9302#, apakah ada kebiasaan buruk yang membahayakan anak ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9302"
+   ],
+   "hal": "perilaku pihak yang mengasuh anak",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa #0046# berperilaku baik dan tidak mempunyai kebiasaan buruk yang membahayakan #9302#",
+       "saya menyaksikan langsung bahwa akhlak #0046# baik dan tidak ada kebiasaan buruk yang mengancam #9302#",
+       "#0046# berkelakuan baik dan tidak memiliki kebiasaan yang merugikan #9302# dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa tidak ada perilaku buruk pada #0046# yang membahayakan #9302#"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa perilaku #0046# sehari-hari baik dan tidak pernah membahayakan #9302#",
+       "dengan mata kepala saya sendiri saya melihat bahwa #0046# orang yang santun dan tidak memiliki kebiasaan yang merusak #9302#",
+       "saya mengalami dan melihat langsung bahwa selama saya kenal #0046# tidak pernah menunjukkan kebiasaan buruk di depan #9302#",
+       "kebiasaan buruk tidak terdapat pada #0046# sehingga #9302# aman bersamanya sebagaimana yang saya saksikan sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa #0047# berperilaku baik dan tidak mempunyai kebiasaan buruk yang membahayakan #9302#",
+       "saya menyaksikan langsung bahwa akhlak #0047# baik dan tidak ada kebiasaan buruk yang mengancam #9302#",
+       "#0047# berkelakuan baik dan tidak memiliki kebiasaan yang merugikan #9302# dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa tidak ada perilaku buruk pada #0047# yang membahayakan #9302#"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa perilaku #0047# sehari-hari baik dan tidak pernah membahayakan #9302#",
+       "dengan mata kepala saya sendiri saya melihat bahwa #0047# orang yang santun dan tidak memiliki kebiasaan yang merusak #9302#",
+       "saya mengalami dan melihat langsung bahwa selama saya kenal #0047# tidak pernah menunjukkan kebiasaan buruk di depan #9302#",
+       "kebiasaan buruk tidak terdapat pada #0047# sehingga #9302# aman bersamanya sebagaimana yang saya saksikan sendiri"
+      ]
+     }
+    ],
+    "mendengar": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa #0046# berperilaku baik dan tidak mempunyai kebiasaan buruk yang membahayakan #9302# tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa akhlak #0046# baik dan tidak ada kebiasaan buruk yang mengancam #9302# sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa #0046# berkelakuan baik dan tidak memiliki kebiasaan yang merugikan #9302# sementara saya tidak melihatnya",
+       "tidak ada perilaku buruk pada #0046# yang membahayakan #9302# dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa perilaku #0046# sehari-hari baik dan tidak pernah membahayakan #9302# namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa #0046# orang yang santun dan tidak memiliki kebiasaan yang merusak #9302# walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa selama saya kenal #0046# tidak pernah menunjukkan kebiasaan buruk di depan #9302# akan tetapi saya tidak melihat kejadiannya",
+       "kebiasaan buruk tidak terdapat pada #0046# sehingga #9302# aman bersamanya dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa #0047# berperilaku baik dan tidak mempunyai kebiasaan buruk yang membahayakan #9302# tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa akhlak #0047# baik dan tidak ada kebiasaan buruk yang mengancam #9302# sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa #0047# berkelakuan baik dan tidak memiliki kebiasaan yang merugikan #9302# sementara saya tidak melihatnya",
+       "tidak ada perilaku buruk pada #0047# yang membahayakan #9302# dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa perilaku #0047# sehari-hari baik dan tidak pernah membahayakan #9302# namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa #0047# orang yang santun dan tidak memiliki kebiasaan yang merusak #9302# walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa selama saya kenal #0047# tidak pernah menunjukkan kebiasaan buruk di depan #9302# akan tetapi saya tidak melihat kejadiannya",
+       "kebiasaan buruk tidak terdapat pada #0047# sehingga #9302# aman bersamanya dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     }
+    ],
+    "de-auditu": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} #0046# berperilaku baik dan tidak mempunyai kebiasaan buruk yang membahayakan #9302# dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa akhlak #0046# baik dan tidak ada kebiasaan buruk yang mengancam #9302# dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa #0046# berkelakuan baik dan tidak memiliki kebiasaan yang merugikan #9302# sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa tidak ada perilaku buruk pada #0046# yang membahayakan #9302# dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} perilaku #0046# sehari-hari baik dan tidak pernah membahayakan #9302# dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa #0046# orang yang santun dan tidak memiliki kebiasaan yang merusak #9302# karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa selama saya kenal #0046# tidak pernah menunjukkan kebiasaan buruk di depan #9302# sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa kebiasaan buruk tidak terdapat pada #0046# sehingga #9302# aman bersamanya dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} #0047# berperilaku baik dan tidak mempunyai kebiasaan buruk yang membahayakan #9302# dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa akhlak #0047# baik dan tidak ada kebiasaan buruk yang mengancam #9302# dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa #0047# berkelakuan baik dan tidak memiliki kebiasaan yang merugikan #9302# sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa tidak ada perilaku buruk pada #0047# yang membahayakan #9302# dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} perilaku #0047# sehari-hari baik dan tidak pernah membahayakan #9302# dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa #0047# orang yang santun dan tidak memiliki kebiasaan yang merusak #9302# karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa selama saya kenal #0047# tidak pernah menunjukkan kebiasaan buruk di depan #9302# sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa kebiasaan buruk tidak terdapat pada #0047# sehingga #9302# aman bersamanya dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     }
+    ],
+    "sebagian": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa #0046# berperilaku baik dan tidak mempunyai kebiasaan buruk yang membahayakan #9302# dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa akhlak #0046# baik dan tidak ada kebiasaan buruk yang mengancam #9302# sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa #0046# berkelakuan baik dan tidak memiliki kebiasaan yang merugikan #9302# dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu tidak ada perilaku buruk pada #0046# yang membahayakan #9302# dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa perilaku #0046# sehari-hari baik dan tidak pernah membahayakan #9302# dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa #0046# orang yang santun dan tidak memiliki kebiasaan yang merusak #9302# sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa selama saya kenal #0046# tidak pernah menunjukkan kebiasaan buruk di depan #9302# dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni kebiasaan buruk tidak terdapat pada #0046# sehingga #9302# aman bersamanya selebihnya tidak saya ketahui"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa #0047# berperilaku baik dan tidak mempunyai kebiasaan buruk yang membahayakan #9302# dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa akhlak #0047# baik dan tidak ada kebiasaan buruk yang mengancam #9302# sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa #0047# berkelakuan baik dan tidak memiliki kebiasaan yang merugikan #9302# dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu tidak ada perilaku buruk pada #0047# yang membahayakan #9302# dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa perilaku #0047# sehari-hari baik dan tidak pernah membahayakan #9302# dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa #0047# orang yang santun dan tidak memiliki kebiasaan yang merusak #9302# sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa selama saya kenal #0047# tidak pernah menunjukkan kebiasaan buruk di depan #9302# dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni kebiasaan buruk tidak terdapat pada #0047# sehingga #9302# aman bersamanya selebihnya tidak saya ketahui"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "q-pengasuh-agama",
+   "pokok": "pp-pengasuhan",
+   "urutan": 354,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "hak-asuh"
+   },
+   "teks": "Apakah pihak yang mengasuh #9302# beragama Islam dan menanamkan nilai agama kepada anak ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "9302"
+   ],
+   "hal": "agama dan pembinaan agama oleh pengasuh",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa #0046# beragama Islam dan menanamkan nilai agama kepada #9302#",
+       "saya menyaksikan langsung bahwa #0046# memeluk agama Islam serta mengajarkan ibadah kepada #9302#",
+       "#0046# seorang muslim yang membimbing #9302# dalam beribadah dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa pembinaan agama bagi #9302# dilakukan oleh #0046# yang beragama Islam"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa dalam asuhan #0046# yang beragama Islam #9302# dibimbing menjalankan ibadah",
+       "dengan mata kepala saya sendiri saya melihat bahwa #0046# mengajari #9302# shalat dan mengaji sebagai muslim",
+       "saya mengalami dan melihat langsung bahwa nilai-nilai agama Islam ditanamkan #0046# kepada #9302#",
+       "#0046# menjadikan agama Islam pegangan dalam mendidik #9302# sebagaimana yang saya saksikan sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa #0047# beragama Islam dan menanamkan nilai agama kepada #9302#",
+       "saya menyaksikan langsung bahwa #0047# memeluk agama Islam serta mengajarkan ibadah kepada #9302#",
+       "#0047# seorang muslim yang membimbing #9302# dalam beribadah dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa pembinaan agama bagi #9302# dilakukan oleh #0047# yang beragama Islam"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa dalam asuhan #0047# yang beragama Islam #9302# dibimbing menjalankan ibadah",
+       "dengan mata kepala saya sendiri saya melihat bahwa #0047# mengajari #9302# shalat dan mengaji sebagai muslim",
+       "saya mengalami dan melihat langsung bahwa nilai-nilai agama Islam ditanamkan #0047# kepada #9302#",
+       "#0047# menjadikan agama Islam pegangan dalam mendidik #9302# sebagaimana yang saya saksikan sendiri"
+      ]
+     }
+    ],
+    "mendengar": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa #0046# beragama Islam dan menanamkan nilai agama kepada #9302# tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa #0046# memeluk agama Islam serta mengajarkan ibadah kepada #9302# sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa #0046# seorang muslim yang membimbing #9302# dalam beribadah sementara saya tidak melihatnya",
+       "pembinaan agama bagi #9302# dilakukan oleh #0046# yang beragama Islam dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa dalam asuhan #0046# yang beragama Islam #9302# dibimbing menjalankan ibadah namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa #0046# mengajari #9302# shalat dan mengaji sebagai muslim walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa nilai-nilai agama Islam ditanamkan #0046# kepada #9302# akan tetapi saya tidak melihat kejadiannya",
+       "#0046# menjadikan agama Islam pegangan dalam mendidik #9302# dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa #0047# beragama Islam dan menanamkan nilai agama kepada #9302# tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa #0047# memeluk agama Islam serta mengajarkan ibadah kepada #9302# sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa #0047# seorang muslim yang membimbing #9302# dalam beribadah sementara saya tidak melihatnya",
+       "pembinaan agama bagi #9302# dilakukan oleh #0047# yang beragama Islam dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa dalam asuhan #0047# yang beragama Islam #9302# dibimbing menjalankan ibadah namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa #0047# mengajari #9302# shalat dan mengaji sebagai muslim walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa nilai-nilai agama Islam ditanamkan #0047# kepada #9302# akan tetapi saya tidak melihat kejadiannya",
+       "#0047# menjadikan agama Islam pegangan dalam mendidik #9302# dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     }
+    ],
+    "de-auditu": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} #0046# beragama Islam dan menanamkan nilai agama kepada #9302# dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa #0046# memeluk agama Islam serta mengajarkan ibadah kepada #9302# dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa #0046# seorang muslim yang membimbing #9302# dalam beribadah sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa pembinaan agama bagi #9302# dilakukan oleh #0046# yang beragama Islam dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} dalam asuhan #0046# yang beragama Islam #9302# dibimbing menjalankan ibadah dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa #0046# mengajari #9302# shalat dan mengaji sebagai muslim karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa nilai-nilai agama Islam ditanamkan #0046# kepada #9302# sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa #0046# menjadikan agama Islam pegangan dalam mendidik #9302# dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} #0047# beragama Islam dan menanamkan nilai agama kepada #9302# dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa #0047# memeluk agama Islam serta mengajarkan ibadah kepada #9302# dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa #0047# seorang muslim yang membimbing #9302# dalam beribadah sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa pembinaan agama bagi #9302# dilakukan oleh #0047# yang beragama Islam dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} dalam asuhan #0047# yang beragama Islam #9302# dibimbing menjalankan ibadah dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa #0047# mengajari #9302# shalat dan mengaji sebagai muslim karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa nilai-nilai agama Islam ditanamkan #0047# kepada #9302# sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa #0047# menjadikan agama Islam pegangan dalam mendidik #9302# dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     }
+    ],
+    "sebagian": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa #0046# beragama Islam dan menanamkan nilai agama kepada #9302# dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa #0046# memeluk agama Islam serta mengajarkan ibadah kepada #9302# sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa #0046# seorang muslim yang membimbing #9302# dalam beribadah dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu pembinaan agama bagi #9302# dilakukan oleh #0046# yang beragama Islam dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa dalam asuhan #0046# yang beragama Islam #9302# dibimbing menjalankan ibadah dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa #0046# mengajari #9302# shalat dan mengaji sebagai muslim sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa nilai-nilai agama Islam ditanamkan #0046# kepada #9302# dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni #0046# menjadikan agama Islam pegangan dalam mendidik #9302# selebihnya tidak saya ketahui"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa #0047# beragama Islam dan menanamkan nilai agama kepada #9302# dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa #0047# memeluk agama Islam serta mengajarkan ibadah kepada #9302# sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa #0047# seorang muslim yang membimbing #9302# dalam beribadah dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu pembinaan agama bagi #9302# dilakukan oleh #0047# yang beragama Islam dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa dalam asuhan #0047# yang beragama Islam #9302# dibimbing menjalankan ibadah dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa #0047# mengajari #9302# shalat dan mengaji sebagai muslim sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa nilai-nilai agama Islam ditanamkan #0047# kepada #9302# dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni #0047# menjadikan agama Islam pegangan dalam mendidik #9302# selebihnya tidak saya ketahui"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "q-pengasuh-waktu",
+   "pokok": "pp-pengasuhan",
+   "urutan": 356,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "hak-asuh"
+   },
+   "teks": "Apa pekerjaan pihak yang mengasuh #9302#, dan apakah ia masih mempunyai waktu untuk mengasuh anak ?",
+   "variabelAbt": [
+    "0046",
+    "0047",
+    "0100",
+    "0104",
+    "9302"
+   ],
+   "hal": "pekerjaan dan waktu pengasuh untuk anak",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa #0046# bekerja sebagai #0100# tetapi masih mempunyai waktu untuk mengasuh #9302#",
+       "saya menyaksikan langsung bahwa walaupun bekerja sebagai #0100# #0046# tetap menyempatkan diri mengasuh #9302#",
+       "pekerjaan #0046# adalah #0100# dan waktunya masih cukup untuk #9302# dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa #0046# berprofesi #0100# namun mampu membagi waktu bagi #9302#"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa di sela pekerjaannya sebagai #0100# #0046# mengurus #9302#",
+       "dengan mata kepala saya sendiri saya melihat bahwa #0046# yang bekerja sebagai #0100# mengatur waktu agar #9302# terurus",
+       "saya mengalami dan melihat langsung bahwa meskipun sibuk bekerja sebagai #0100# #0046# mengasuh #9302# dengan baik",
+       "dengan pekerjaan sebagai #0100# #0046# masih sempat menemani #9302# sebagaimana yang saya saksikan sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa #0047# bekerja sebagai #0104# tetapi masih mempunyai waktu untuk mengasuh #9302#",
+       "saya menyaksikan langsung bahwa walaupun bekerja sebagai #0104# #0047# tetap menyempatkan diri mengasuh #9302#",
+       "pekerjaan #0047# adalah #0104# dan waktunya masih cukup untuk #9302# dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa #0047# berprofesi #0104# namun mampu membagi waktu bagi #9302#"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa di sela pekerjaannya sebagai #0104# #0047# mengurus #9302#",
+       "dengan mata kepala saya sendiri saya melihat bahwa #0047# yang bekerja sebagai #0104# mengatur waktu agar #9302# terurus",
+       "saya mengalami dan melihat langsung bahwa meskipun sibuk bekerja sebagai #0104# #0047# mengasuh #9302# dengan baik",
+       "dengan pekerjaan sebagai #0104# #0047# masih sempat menemani #9302# sebagaimana yang saya saksikan sendiri"
+      ]
+     }
+    ],
+    "mendengar": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa #0046# bekerja sebagai #0100# tetapi masih mempunyai waktu untuk mengasuh #9302# tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa walaupun bekerja sebagai #0100# #0046# tetap menyempatkan diri mengasuh #9302# sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa pekerjaan #0046# adalah #0100# dan waktunya masih cukup untuk #9302# sementara saya tidak melihatnya",
+       "#0046# berprofesi #0100# namun mampu membagi waktu bagi #9302# dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa di sela pekerjaannya sebagai #0100# #0046# mengurus #9302# namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa #0046# yang bekerja sebagai #0100# mengatur waktu agar #9302# terurus walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa meskipun sibuk bekerja sebagai #0100# #0046# mengasuh #9302# dengan baik akan tetapi saya tidak melihat kejadiannya",
+       "dengan pekerjaan sebagai #0100# #0046# masih sempat menemani #9302# dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa #0047# bekerja sebagai #0104# tetapi masih mempunyai waktu untuk mengasuh #9302# tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa walaupun bekerja sebagai #0104# #0047# tetap menyempatkan diri mengasuh #9302# sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa pekerjaan #0047# adalah #0104# dan waktunya masih cukup untuk #9302# sementara saya tidak melihatnya",
+       "#0047# berprofesi #0104# namun mampu membagi waktu bagi #9302# dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa di sela pekerjaannya sebagai #0104# #0047# mengurus #9302# namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa #0047# yang bekerja sebagai #0104# mengatur waktu agar #9302# terurus walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa meskipun sibuk bekerja sebagai #0104# #0047# mengasuh #9302# dengan baik akan tetapi saya tidak melihat kejadiannya",
+       "dengan pekerjaan sebagai #0104# #0047# masih sempat menemani #9302# dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     }
+    ],
+    "de-auditu": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} #0046# bekerja sebagai #0100# tetapi masih mempunyai waktu untuk mengasuh #9302# dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa walaupun bekerja sebagai #0100# #0046# tetap menyempatkan diri mengasuh #9302# dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa pekerjaan #0046# adalah #0100# dan waktunya masih cukup untuk #9302# sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa #0046# berprofesi #0100# namun mampu membagi waktu bagi #9302# dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} di sela pekerjaannya sebagai #0100# #0046# mengurus #9302# dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa #0046# yang bekerja sebagai #0100# mengatur waktu agar #9302# terurus karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa meskipun sibuk bekerja sebagai #0100# #0046# mengasuh #9302# dengan baik sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa dengan pekerjaan sebagai #0100# #0046# masih sempat menemani #9302# dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} #0047# bekerja sebagai #0104# tetapi masih mempunyai waktu untuk mengasuh #9302# dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa walaupun bekerja sebagai #0104# #0047# tetap menyempatkan diri mengasuh #9302# dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa pekerjaan #0047# adalah #0104# dan waktunya masih cukup untuk #9302# sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa #0047# berprofesi #0104# namun mampu membagi waktu bagi #9302# dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} di sela pekerjaannya sebagai #0104# #0047# mengurus #9302# dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa #0047# yang bekerja sebagai #0104# mengatur waktu agar #9302# terurus karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa meskipun sibuk bekerja sebagai #0104# #0047# mengasuh #9302# dengan baik sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa dengan pekerjaan sebagai #0104# #0047# masih sempat menemani #9302# dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     }
+    ],
+    "sebagian": [
+     {
+      "keadaan": {
+       "pengasuhAnak": "pengaju"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa #0046# bekerja sebagai #0100# tetapi masih mempunyai waktu untuk mengasuh #9302# dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa walaupun bekerja sebagai #0100# #0046# tetap menyempatkan diri mengasuh #9302# sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa pekerjaan #0046# adalah #0100# dan waktunya masih cukup untuk #9302# dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu #0046# berprofesi #0100# namun mampu membagi waktu bagi #9302# dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa di sela pekerjaannya sebagai #0100# #0046# mengurus #9302# dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa #0046# yang bekerja sebagai #0100# mengatur waktu agar #9302# terurus sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa meskipun sibuk bekerja sebagai #0100# #0046# mengasuh #9302# dengan baik dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni dengan pekerjaan sebagai #0100# #0046# masih sempat menemani #9302# selebihnya tidak saya ketahui"
+      ]
+     },
+     {
+      "keadaan": {
+       "pengasuhAnak": "lawan"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa #0047# bekerja sebagai #0104# tetapi masih mempunyai waktu untuk mengasuh #9302# dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa walaupun bekerja sebagai #0104# #0047# tetap menyempatkan diri mengasuh #9302# sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa pekerjaan #0047# adalah #0104# dan waktunya masih cukup untuk #9302# dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu #0047# berprofesi #0104# namun mampu membagi waktu bagi #9302# dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa di sela pekerjaannya sebagai #0104# #0047# mengurus #9302# dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa #0047# yang bekerja sebagai #0104# mengatur waktu agar #9302# terurus sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa meskipun sibuk bekerja sebagai #0104# #0047# mengasuh #9302# dengan baik dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni dengan pekerjaan sebagai #0104# #0047# masih sempat menemani #9302# selebihnya tidak saya ketahui"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "q-anak-sekolah",
+   "pokok": "pp-anak",
+   "urutan": 325,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "hak-asuh"
+   },
+   "teks": "Apakah #9302# tersebut bersekolah, dan siapa yang membiayai sekolahnya ?",
+   "variabelAbt": [
+    "9302"
+   ],
+   "hal": "sekolah anak dan pembiayaannya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui hal itu dari pengamatannya sendiri",
+     "saksi1": [
+      "#9302# bersekolah dan biaya sekolahnya ditanggung oleh {isi}",
+      "sekolah #9302# berjalan dengan biaya dari {isi}",
+      "#9302# masih bersekolah sedangkan biayanya dipikul {isi}",
+      "pendidikan #9302# dibiayai oleh {isi}"
+     ],
+     "saksi2": [
+      "yang membiayai sekolah #9302# adalah {isi}",
+      "#9302# bersekolah dengan biaya yang berasal dari {isi}",
+      "biaya pendidikan #9302# dibayar oleh {isi}",
+      "#9302# tetap sekolah berkat biaya dari {isi}"
+     ]
+    },
+    "mendengar": {
+     "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+     "saksi1": [
+      "saya mendengar sendiri bahwa #9302# bersekolah dan biaya sekolahnya ditanggung oleh {isi} tetapi saya tidak melihatnya",
+      "saya mendengar langsung bahwa sekolah #9302# berjalan dengan biaya dari {isi} sedangkan saya tidak menyaksikannya",
+      "telinga saya sendiri yang mendengar bahwa #9302# masih bersekolah sedangkan biayanya dipikul {isi} sementara saya tidak melihatnya",
+      "pendidikan #9302# dibiayai oleh {isi} dan itu saya dengar sendiri tanpa melihat kejadiannya"
+     ],
+     "saksi2": [
+      "yang terdengar oleh saya sendiri adalah bahwa yang membiayai sekolah #9302# adalah {isi} namun saya tidak melihatnya",
+      "saya mendengar dengan jelas bahwa #9302# bersekolah dengan biaya yang berasal dari {isi} walaupun saya tidak menyaksikannya",
+      "saya ikut mendengar sendiri bahwa biaya pendidikan #9302# dibayar oleh {isi} akan tetapi saya tidak melihat kejadiannya",
+      "#9302# tetap sekolah berkat biaya dari {isi} dan itu saya dengar sendiri bukan saya lihat"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+     "saksi1": [
+      "menurut cerita {sumber} #9302# bersekolah dan biaya sekolahnya ditanggung oleh {isi} dan saya tidak menyaksikannya sendiri",
+      "saya diceritakan oleh {sumber} bahwa sekolah #9302# berjalan dengan biaya dari {isi} dan saya tidak melihatnya langsung",
+      "{sumber} menceritakan kepada saya bahwa #9302# masih bersekolah sedangkan biayanya dipikul {isi} sedangkan saya tidak mengalaminya",
+      "dari penuturan {sumber} saya tahu bahwa pendidikan #9302# dibiayai oleh {isi} dan saya tidak berada di tempat kejadian"
+     ],
+     "saksi2": [
+      "sepengetahuan saya dari cerita {sumber} yang membiayai sekolah #9302# adalah {isi} dan saya tidak melihatnya sendiri",
+      "saya mengetahuinya hanya dari kabar {sumber} bahwa #9302# bersekolah dengan biaya yang berasal dari {isi} karena saya tidak ada di sana",
+      "kabar dari {sumber} yang sampai kepada saya adalah bahwa biaya pendidikan #9302# dibayar oleh {isi} sedangkan saya tidak menyaksikannya",
+      "{sumber} bercerita bahwa #9302# tetap sekolah berkat biaya dari {isi} dan saya sendiri tidak mengetahuinya secara langsung"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+     "saksi1": [
+      "saya hanya mengetahui sebagian bahwa #9302# bersekolah dan biaya sekolahnya ditanggung oleh {isi} dan selebihnya tidak saya ketahui",
+      "sebagian saja yang saya ketahui yaitu bahwa sekolah #9302# berjalan dengan biaya dari {isi} sedangkan sisanya tidak saya ketahui",
+      "yang saya ketahui sebatas bahwa #9302# masih bersekolah sedangkan biayanya dipikul {isi} dan hal lainnya tidak saya ketahui",
+      "pengetahuan saya hanya sebagian yaitu pendidikan #9302# dibiayai oleh {isi} dan selebihnya tidak saya ketahui"
+     ],
+     "saksi2": [
+      "hanya sebagian yang saya lihat yaitu bahwa yang membiayai sekolah #9302# adalah {isi} dan selebihnya saya tidak tahu",
+      "saya mengetahui sebagian saja bahwa #9302# bersekolah dengan biaya yang berasal dari {isi} sementara bagian lainnya tidak saya ketahui",
+      "sejauh yang saya ketahui hanya bahwa biaya pendidikan #9302# dibayar oleh {isi} dan selain itu tidak ada yang saya ketahui",
+      "sebatas itu yang saya ketahui yakni #9302# tetap sekolah berkat biaya dari {isi} selebihnya tidak saya ketahui"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-biaya-sekolah",
+   "pokok": "pp-kebutuhan-anak",
+   "urutan": 615,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "nafkah-anak"
+   },
+   "teks": "Berapa kira-kira biaya sekolah #9302# setiap bulan ?",
+   "variabelAbt": [
+    "9302"
+   ],
+   "hal": "biaya sekolah anak setiap bulan",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui hal itu dari pengamatannya sendiri",
+     "saksi1": [
+      "biaya sekolah #9302# setiap bulan berkisar {isi}",
+      "untuk sekolah #9302# diperlukan dana sekitar {isi} tiap bulan",
+      "pengeluaran pendidikan #9302# sebulan kurang lebih {isi}",
+      "sebulan biaya sekolah #9302# mencapai sekitar {isi}"
+     ],
+     "saksi2": [
+      "kebutuhan sekolah #9302# per bulan sekitar {isi}",
+      "setiap bulan pendidikan #9302# memerlukan sekitar {isi}",
+      "biaya pendidikan #9302# tiap bulannya lebih kurang {isi}",
+      "dana yang dikeluarkan untuk sekolah #9302# sebulan sekitar {isi}"
+     ]
+    },
+    "mendengar": {
+     "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+     "saksi1": [
+      "saya mendengar sendiri bahwa biaya sekolah #9302# setiap bulan berkisar {isi} tetapi saya tidak melihatnya",
+      "saya mendengar langsung bahwa untuk sekolah #9302# diperlukan dana sekitar {isi} tiap bulan sedangkan saya tidak menyaksikannya",
+      "telinga saya sendiri yang mendengar bahwa pengeluaran pendidikan #9302# sebulan kurang lebih {isi} sementara saya tidak melihatnya",
+      "sebulan biaya sekolah #9302# mencapai sekitar {isi} dan itu saya dengar sendiri tanpa melihat kejadiannya"
+     ],
+     "saksi2": [
+      "yang terdengar oleh saya sendiri adalah bahwa kebutuhan sekolah #9302# per bulan sekitar {isi} namun saya tidak melihatnya",
+      "saya mendengar dengan jelas bahwa setiap bulan pendidikan #9302# memerlukan sekitar {isi} walaupun saya tidak menyaksikannya",
+      "saya ikut mendengar sendiri bahwa biaya pendidikan #9302# tiap bulannya lebih kurang {isi} akan tetapi saya tidak melihat kejadiannya",
+      "dana yang dikeluarkan untuk sekolah #9302# sebulan sekitar {isi} dan itu saya dengar sendiri bukan saya lihat"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+     "saksi1": [
+      "menurut cerita {sumber} biaya sekolah #9302# setiap bulan berkisar {isi} dan saya tidak menyaksikannya sendiri",
+      "saya diceritakan oleh {sumber} bahwa untuk sekolah #9302# diperlukan dana sekitar {isi} tiap bulan dan saya tidak melihatnya langsung",
+      "{sumber} menceritakan kepada saya bahwa pengeluaran pendidikan #9302# sebulan kurang lebih {isi} sedangkan saya tidak mengalaminya",
+      "dari penuturan {sumber} saya tahu bahwa sebulan biaya sekolah #9302# mencapai sekitar {isi} dan saya tidak berada di tempat kejadian"
+     ],
+     "saksi2": [
+      "sepengetahuan saya dari cerita {sumber} kebutuhan sekolah #9302# per bulan sekitar {isi} dan saya tidak melihatnya sendiri",
+      "saya mengetahuinya hanya dari kabar {sumber} bahwa setiap bulan pendidikan #9302# memerlukan sekitar {isi} karena saya tidak ada di sana",
+      "kabar dari {sumber} yang sampai kepada saya adalah bahwa biaya pendidikan #9302# tiap bulannya lebih kurang {isi} sedangkan saya tidak menyaksikannya",
+      "{sumber} bercerita bahwa dana yang dikeluarkan untuk sekolah #9302# sebulan sekitar {isi} dan saya sendiri tidak mengetahuinya secara langsung"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+     "saksi1": [
+      "saya hanya mengetahui sebagian bahwa biaya sekolah #9302# setiap bulan berkisar {isi} dan selebihnya tidak saya ketahui",
+      "sebagian saja yang saya ketahui yaitu bahwa untuk sekolah #9302# diperlukan dana sekitar {isi} tiap bulan sedangkan sisanya tidak saya ketahui",
+      "yang saya ketahui sebatas bahwa pengeluaran pendidikan #9302# sebulan kurang lebih {isi} dan hal lainnya tidak saya ketahui",
+      "pengetahuan saya hanya sebagian yaitu sebulan biaya sekolah #9302# mencapai sekitar {isi} dan selebihnya tidak saya ketahui"
+     ],
+     "saksi2": [
+      "hanya sebagian yang saya lihat yaitu bahwa kebutuhan sekolah #9302# per bulan sekitar {isi} dan selebihnya saya tidak tahu",
+      "saya mengetahui sebagian saja bahwa setiap bulan pendidikan #9302# memerlukan sekitar {isi} sementara bagian lainnya tidak saya ketahui",
+      "sejauh yang saya ketahui hanya bahwa biaya pendidikan #9302# tiap bulannya lebih kurang {isi} dan selain itu tidak ada yang saya ketahui",
+      "sebatas itu yang saya ketahui yakni dana yang dikeluarkan untuk sekolah #9302# sebulan sekitar {isi} selebihnya tidak saya ketahui"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-nafkah-anak-diberikan",
+   "pokok": "pp-kebutuhan-anak",
+   "urutan": 635,
+   "tingkat": "inti",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "nafkah-anak"
+   },
+   "teks": "Sejak berpisah, apakah ayah #9302# masih memberikan nafkah untuk anaknya, dan berapa ?",
+   "variabelAbt": [
+    "9302"
+   ],
+   "hal": "nafkah anak yang diberikan ayah sejak berpisah",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "nafkahLampauAnak": "ya"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa sejak berpisah ayah #9302# tidak pernah memberikan nafkah untuk anaknya",
+       "saya menyaksikan langsung bahwa setelah pisah ayah #9302# tidak memberi biaya hidup bagi anaknya",
+       "selama berpisah ayah #9302# tidak mengirim uang untuk keperluan anaknya dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa ayah #9302# tidak lagi menanggung kebutuhan anaknya sejak berpisah"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa sesudah berpisah tidak ada nafkah dari ayah #9302# untuk anaknya",
+       "dengan mata kepala saya sendiri saya melihat bahwa ayah #9302# tidak membantu biaya anaknya sejak pisah rumah",
+       "saya mengalami dan melihat langsung bahwa sejak pisah ayah #9302# tidak menafkahi anaknya",
+       "kebutuhan anaknya tidak lagi dipenuhi ayah #9302# sejak berpisah sebagaimana yang saya saksikan sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "nafkahLampauAnak": "tidak"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa ayah #9302# masih memberikan nafkah untuk anaknya dengan jumlah {isi}",
+       "saya menyaksikan langsung bahwa sampai sekarang ayah #9302# mengirim uang untuk anaknya sebesar {isi}",
+       "ayah #9302# tetap membantu biaya anaknya sekitar {isi} dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa nafkah anak dari ayah #9302# yang diterima berkisar {isi}"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa dari ayah #9302# anak itu masih menerima nafkah sekitar {isi}",
+       "dengan mata kepala saya sendiri saya melihat bahwa ayah #9302# masih menanggung sebagian kebutuhan anaknya yaitu {isi}",
+       "saya mengalami dan melihat langsung bahwa setiap kali ayah #9302# memberi nafkah untuk anaknya berupa {isi}",
+       "bantuan biaya dari ayah #9302# untuk anaknya adalah {isi} sebagaimana yang saya saksikan sendiri"
+      ]
+     }
+    ],
+    "mendengar": [
+     {
+      "keadaan": {
+       "nafkahLampauAnak": "ya"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa sejak berpisah ayah #9302# tidak pernah memberikan nafkah untuk anaknya tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa setelah pisah ayah #9302# tidak memberi biaya hidup bagi anaknya sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa selama berpisah ayah #9302# tidak mengirim uang untuk keperluan anaknya sementara saya tidak melihatnya",
+       "ayah #9302# tidak lagi menanggung kebutuhan anaknya sejak berpisah dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa sesudah berpisah tidak ada nafkah dari ayah #9302# untuk anaknya namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa ayah #9302# tidak membantu biaya anaknya sejak pisah rumah walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa sejak pisah ayah #9302# tidak menafkahi anaknya akan tetapi saya tidak melihat kejadiannya",
+       "kebutuhan anaknya tidak lagi dipenuhi ayah #9302# sejak berpisah dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     },
+     {
+      "keadaan": {
+       "nafkahLampauAnak": "tidak"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa ayah #9302# masih memberikan nafkah untuk anaknya dengan jumlah {isi} tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa sampai sekarang ayah #9302# mengirim uang untuk anaknya sebesar {isi} sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa ayah #9302# tetap membantu biaya anaknya sekitar {isi} sementara saya tidak melihatnya",
+       "nafkah anak dari ayah #9302# yang diterima berkisar {isi} dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa dari ayah #9302# anak itu masih menerima nafkah sekitar {isi} namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa ayah #9302# masih menanggung sebagian kebutuhan anaknya yaitu {isi} walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa setiap kali ayah #9302# memberi nafkah untuk anaknya berupa {isi} akan tetapi saya tidak melihat kejadiannya",
+       "bantuan biaya dari ayah #9302# untuk anaknya adalah {isi} dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     }
+    ],
+    "de-auditu": [
+     {
+      "keadaan": {
+       "nafkahLampauAnak": "ya"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} sejak berpisah ayah #9302# tidak pernah memberikan nafkah untuk anaknya dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa setelah pisah ayah #9302# tidak memberi biaya hidup bagi anaknya dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa selama berpisah ayah #9302# tidak mengirim uang untuk keperluan anaknya sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa ayah #9302# tidak lagi menanggung kebutuhan anaknya sejak berpisah dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} sesudah berpisah tidak ada nafkah dari ayah #9302# untuk anaknya dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa ayah #9302# tidak membantu biaya anaknya sejak pisah rumah karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa sejak pisah ayah #9302# tidak menafkahi anaknya sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa kebutuhan anaknya tidak lagi dipenuhi ayah #9302# sejak berpisah dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     },
+     {
+      "keadaan": {
+       "nafkahLampauAnak": "tidak"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} ayah #9302# masih memberikan nafkah untuk anaknya dengan jumlah {isi} dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa sampai sekarang ayah #9302# mengirim uang untuk anaknya sebesar {isi} dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa ayah #9302# tetap membantu biaya anaknya sekitar {isi} sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa nafkah anak dari ayah #9302# yang diterima berkisar {isi} dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} dari ayah #9302# anak itu masih menerima nafkah sekitar {isi} dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa ayah #9302# masih menanggung sebagian kebutuhan anaknya yaitu {isi} karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa setiap kali ayah #9302# memberi nafkah untuk anaknya berupa {isi} sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa bantuan biaya dari ayah #9302# untuk anaknya adalah {isi} dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     }
+    ],
+    "sebagian": [
+     {
+      "keadaan": {
+       "nafkahLampauAnak": "ya"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa sejak berpisah ayah #9302# tidak pernah memberikan nafkah untuk anaknya dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa setelah pisah ayah #9302# tidak memberi biaya hidup bagi anaknya sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa selama berpisah ayah #9302# tidak mengirim uang untuk keperluan anaknya dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu ayah #9302# tidak lagi menanggung kebutuhan anaknya sejak berpisah dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa sesudah berpisah tidak ada nafkah dari ayah #9302# untuk anaknya dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa ayah #9302# tidak membantu biaya anaknya sejak pisah rumah sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa sejak pisah ayah #9302# tidak menafkahi anaknya dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni kebutuhan anaknya tidak lagi dipenuhi ayah #9302# sejak berpisah selebihnya tidak saya ketahui"
+      ]
+     },
+     {
+      "keadaan": {
+       "nafkahLampauAnak": "tidak"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa ayah #9302# masih memberikan nafkah untuk anaknya dengan jumlah {isi} dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa sampai sekarang ayah #9302# mengirim uang untuk anaknya sebesar {isi} sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa ayah #9302# tetap membantu biaya anaknya sekitar {isi} dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu nafkah anak dari ayah #9302# yang diterima berkisar {isi} dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa dari ayah #9302# anak itu masih menerima nafkah sekitar {isi} dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa ayah #9302# masih menanggung sebagian kebutuhan anaknya yaitu {isi} sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa setiap kali ayah #9302# memberi nafkah untuk anaknya berupa {isi} dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni bantuan biaya dari ayah #9302# untuk anaknya adalah {isi} selebihnya tidak saya ketahui"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "q-aset-suami",
+   "pokok": "pp-kemampuan-ayah",
+   "urutan": 605,
+   "tingkat": "pilihan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": [
+     "nafkah-anak",
+     "nafkah-iddah",
+     "mutah",
+     "nafkah-madliyah"
+    ]
+   },
+   "teks": "Apakah suami mempunyai usaha, harta, atau penghasilan lain yang menunjukkan kemampuannya ?",
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "usaha atau harta lain suami yang menunjukkan kemampuannya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "suami": "pengaju"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa #0046# memiliki {isi} yang menunjukkan kemampuan ekonominya",
+       "saya menyaksikan langsung bahwa selain pekerjaannya #0046# mempunyai {isi} sebagai sumber penghasilan",
+       "kemampuan ekonomi #0046# terlihat dari {isi} yang dimilikinya dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa #0046# juga memiliki {isi} di luar penghasilan tetapnya"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa harta atau usaha #0046# berupa {isi} menunjukkan ia mampu",
+       "dengan mata kepala saya sendiri saya melihat bahwa #0046# mempunyai {isi} yang dapat dihitung sebagai kemampuannya",
+       "saya mengalami dan melihat langsung bahwa selain bekerja #0046# menguasai {isi} sebagai tambahan penghasilan",
+       "kehidupan #0046# didukung oleh {isi} yang dimilikinya sebagaimana yang saya saksikan sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "suami": "lawan"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa #0047# memiliki {isi} yang menunjukkan kemampuan ekonominya",
+       "saya menyaksikan langsung bahwa selain pekerjaannya #0047# mempunyai {isi} sebagai sumber penghasilan",
+       "kemampuan ekonomi #0047# terlihat dari {isi} yang dimilikinya dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa #0047# juga memiliki {isi} di luar penghasilan tetapnya"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa harta atau usaha #0047# berupa {isi} menunjukkan ia mampu",
+       "dengan mata kepala saya sendiri saya melihat bahwa #0047# mempunyai {isi} yang dapat dihitung sebagai kemampuannya",
+       "saya mengalami dan melihat langsung bahwa selain bekerja #0047# menguasai {isi} sebagai tambahan penghasilan",
+       "kehidupan #0047# didukung oleh {isi} yang dimilikinya sebagaimana yang saya saksikan sendiri"
+      ]
+     }
+    ],
+    "mendengar": [
+     {
+      "keadaan": {
+       "suami": "pengaju"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa #0046# memiliki {isi} yang menunjukkan kemampuan ekonominya tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa selain pekerjaannya #0046# mempunyai {isi} sebagai sumber penghasilan sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa kemampuan ekonomi #0046# terlihat dari {isi} yang dimilikinya sementara saya tidak melihatnya",
+       "#0046# juga memiliki {isi} di luar penghasilan tetapnya dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa harta atau usaha #0046# berupa {isi} menunjukkan ia mampu namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa #0046# mempunyai {isi} yang dapat dihitung sebagai kemampuannya walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa selain bekerja #0046# menguasai {isi} sebagai tambahan penghasilan akan tetapi saya tidak melihat kejadiannya",
+       "kehidupan #0046# didukung oleh {isi} yang dimilikinya dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     },
+     {
+      "keadaan": {
+       "suami": "lawan"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa #0047# memiliki {isi} yang menunjukkan kemampuan ekonominya tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa selain pekerjaannya #0047# mempunyai {isi} sebagai sumber penghasilan sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa kemampuan ekonomi #0047# terlihat dari {isi} yang dimilikinya sementara saya tidak melihatnya",
+       "#0047# juga memiliki {isi} di luar penghasilan tetapnya dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa harta atau usaha #0047# berupa {isi} menunjukkan ia mampu namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa #0047# mempunyai {isi} yang dapat dihitung sebagai kemampuannya walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa selain bekerja #0047# menguasai {isi} sebagai tambahan penghasilan akan tetapi saya tidak melihat kejadiannya",
+       "kehidupan #0047# didukung oleh {isi} yang dimilikinya dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     }
+    ],
+    "de-auditu": [
+     {
+      "keadaan": {
+       "suami": "pengaju"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} #0046# memiliki {isi} yang menunjukkan kemampuan ekonominya dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa selain pekerjaannya #0046# mempunyai {isi} sebagai sumber penghasilan dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa kemampuan ekonomi #0046# terlihat dari {isi} yang dimilikinya sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa #0046# juga memiliki {isi} di luar penghasilan tetapnya dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} harta atau usaha #0046# berupa {isi} menunjukkan ia mampu dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa #0046# mempunyai {isi} yang dapat dihitung sebagai kemampuannya karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa selain bekerja #0046# menguasai {isi} sebagai tambahan penghasilan sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa kehidupan #0046# didukung oleh {isi} yang dimilikinya dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     },
+     {
+      "keadaan": {
+       "suami": "lawan"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} #0047# memiliki {isi} yang menunjukkan kemampuan ekonominya dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa selain pekerjaannya #0047# mempunyai {isi} sebagai sumber penghasilan dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa kemampuan ekonomi #0047# terlihat dari {isi} yang dimilikinya sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa #0047# juga memiliki {isi} di luar penghasilan tetapnya dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} harta atau usaha #0047# berupa {isi} menunjukkan ia mampu dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa #0047# mempunyai {isi} yang dapat dihitung sebagai kemampuannya karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa selain bekerja #0047# menguasai {isi} sebagai tambahan penghasilan sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa kehidupan #0047# didukung oleh {isi} yang dimilikinya dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     }
+    ],
+    "sebagian": [
+     {
+      "keadaan": {
+       "suami": "pengaju"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa #0046# memiliki {isi} yang menunjukkan kemampuan ekonominya dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa selain pekerjaannya #0046# mempunyai {isi} sebagai sumber penghasilan sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa kemampuan ekonomi #0046# terlihat dari {isi} yang dimilikinya dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu #0046# juga memiliki {isi} di luar penghasilan tetapnya dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa harta atau usaha #0046# berupa {isi} menunjukkan ia mampu dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa #0046# mempunyai {isi} yang dapat dihitung sebagai kemampuannya sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa selain bekerja #0046# menguasai {isi} sebagai tambahan penghasilan dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni kehidupan #0046# didukung oleh {isi} yang dimilikinya selebihnya tidak saya ketahui"
+      ]
+     },
+     {
+      "keadaan": {
+       "suami": "lawan"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa #0047# memiliki {isi} yang menunjukkan kemampuan ekonominya dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa selain pekerjaannya #0047# mempunyai {isi} sebagai sumber penghasilan sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa kemampuan ekonomi #0047# terlihat dari {isi} yang dimilikinya dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu #0047# juga memiliki {isi} di luar penghasilan tetapnya dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa harta atau usaha #0047# berupa {isi} menunjukkan ia mampu dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa #0047# mempunyai {isi} yang dapat dihitung sebagai kemampuannya sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa selain bekerja #0047# menguasai {isi} sebagai tambahan penghasilan dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni kehidupan #0047# didukung oleh {isi} yang dimilikinya selebihnya tidak saya ketahui"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "q-madliyah-lama",
+   "pokok": "pp-nafkah-istri-lalai",
+   "urutan": 745,
+   "tingkat": "pilihan",
+   "kelompok": "akibat",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "nafkah-madliyah"
+   },
+   "teks": "Sudah berapa lama suami tidak memberikan nafkah kepada istri ?",
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "lamanya suami tidak memberi nafkah kepada istri",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "suami": "pengaju"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa selama {lama} #0046# tidak memberikan nafkah kepada #0047#",
+       "saya menyaksikan langsung bahwa sudah {lama} lamanya #0046# tidak menafkahi #0047#",
+       "sepanjang {lama} nafkah dari #0046# kepada #0047# tidak ada dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa #0046# tidak mengirim nafkah kepada #0047# selama {lama}"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa nafkah #0046# tidak diterima #0047# selama {lama}",
+       "dengan mata kepala saya sendiri saya melihat bahwa dalam kurun {lama} #0046# tidak memenuhi kebutuhan #0047#",
+       "saya mengalami dan melihat langsung bahwa selama {lama} terakhir #0046# tidak menafkahi #0047#",
+       "#0046# tidak lagi menanggung kebutuhan #0047# dalam waktu {lama} sebagaimana yang saya saksikan sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "suami": "lawan"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa selama {lama} #0047# tidak memberikan nafkah kepada #0046#",
+       "saya menyaksikan langsung bahwa sudah {lama} lamanya #0047# tidak menafkahi #0046#",
+       "sepanjang {lama} nafkah dari #0047# kepada #0046# tidak ada dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa #0047# tidak mengirim nafkah kepada #0046# selama {lama}"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa nafkah #0047# tidak diterima #0046# selama {lama}",
+       "dengan mata kepala saya sendiri saya melihat bahwa dalam kurun {lama} #0047# tidak memenuhi kebutuhan #0046#",
+       "saya mengalami dan melihat langsung bahwa selama {lama} terakhir #0047# tidak menafkahi #0046#",
+       "#0047# tidak lagi menanggung kebutuhan #0046# dalam waktu {lama} sebagaimana yang saya saksikan sendiri"
+      ]
+     }
+    ],
+    "mendengar": [
+     {
+      "keadaan": {
+       "suami": "pengaju"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa selama {lama} #0046# tidak memberikan nafkah kepada #0047# tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa sudah {lama} lamanya #0046# tidak menafkahi #0047# sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa sepanjang {lama} nafkah dari #0046# kepada #0047# tidak ada sementara saya tidak melihatnya",
+       "#0046# tidak mengirim nafkah kepada #0047# selama {lama} dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa nafkah #0046# tidak diterima #0047# selama {lama} namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa dalam kurun {lama} #0046# tidak memenuhi kebutuhan #0047# walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa selama {lama} terakhir #0046# tidak menafkahi #0047# akan tetapi saya tidak melihat kejadiannya",
+       "#0046# tidak lagi menanggung kebutuhan #0047# dalam waktu {lama} dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     },
+     {
+      "keadaan": {
+       "suami": "lawan"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa selama {lama} #0047# tidak memberikan nafkah kepada #0046# tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa sudah {lama} lamanya #0047# tidak menafkahi #0046# sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa sepanjang {lama} nafkah dari #0047# kepada #0046# tidak ada sementara saya tidak melihatnya",
+       "#0047# tidak mengirim nafkah kepada #0046# selama {lama} dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa nafkah #0047# tidak diterima #0046# selama {lama} namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa dalam kurun {lama} #0047# tidak memenuhi kebutuhan #0046# walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa selama {lama} terakhir #0047# tidak menafkahi #0046# akan tetapi saya tidak melihat kejadiannya",
+       "#0047# tidak lagi menanggung kebutuhan #0046# dalam waktu {lama} dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     }
+    ],
+    "de-auditu": [
+     {
+      "keadaan": {
+       "suami": "pengaju"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} selama {lama} #0046# tidak memberikan nafkah kepada #0047# dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa sudah {lama} lamanya #0046# tidak menafkahi #0047# dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa sepanjang {lama} nafkah dari #0046# kepada #0047# tidak ada sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa #0046# tidak mengirim nafkah kepada #0047# selama {lama} dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} nafkah #0046# tidak diterima #0047# selama {lama} dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa dalam kurun {lama} #0046# tidak memenuhi kebutuhan #0047# karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa selama {lama} terakhir #0046# tidak menafkahi #0047# sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa #0046# tidak lagi menanggung kebutuhan #0047# dalam waktu {lama} dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     },
+     {
+      "keadaan": {
+       "suami": "lawan"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} selama {lama} #0047# tidak memberikan nafkah kepada #0046# dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa sudah {lama} lamanya #0047# tidak menafkahi #0046# dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa sepanjang {lama} nafkah dari #0047# kepada #0046# tidak ada sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa #0047# tidak mengirim nafkah kepada #0046# selama {lama} dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} nafkah #0047# tidak diterima #0046# selama {lama} dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa dalam kurun {lama} #0047# tidak memenuhi kebutuhan #0046# karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa selama {lama} terakhir #0047# tidak menafkahi #0046# sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa #0047# tidak lagi menanggung kebutuhan #0046# dalam waktu {lama} dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     }
+    ],
+    "sebagian": [
+     {
+      "keadaan": {
+       "suami": "pengaju"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa selama {lama} #0046# tidak memberikan nafkah kepada #0047# dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa sudah {lama} lamanya #0046# tidak menafkahi #0047# sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa sepanjang {lama} nafkah dari #0046# kepada #0047# tidak ada dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu #0046# tidak mengirim nafkah kepada #0047# selama {lama} dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa nafkah #0046# tidak diterima #0047# selama {lama} dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa dalam kurun {lama} #0046# tidak memenuhi kebutuhan #0047# sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa selama {lama} terakhir #0046# tidak menafkahi #0047# dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni #0046# tidak lagi menanggung kebutuhan #0047# dalam waktu {lama} selebihnya tidak saya ketahui"
+      ]
+     },
+     {
+      "keadaan": {
+       "suami": "lawan"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa selama {lama} #0047# tidak memberikan nafkah kepada #0046# dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa sudah {lama} lamanya #0047# tidak menafkahi #0046# sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa sepanjang {lama} nafkah dari #0047# kepada #0046# tidak ada dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu #0047# tidak mengirim nafkah kepada #0046# selama {lama} dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa nafkah #0047# tidak diterima #0046# selama {lama} dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa dalam kurun {lama} #0047# tidak memenuhi kebutuhan #0046# sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa selama {lama} terakhir #0047# tidak menafkahi #0046# dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni #0047# tidak lagi menanggung kebutuhan #0046# dalam waktu {lama} selebihnya tidak saya ketahui"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "q-hb-bukti",
+   "pokok": "pp-hb",
+   "urutan": 815,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "harta-bersama"
+   },
+   "teks": "Atas nama siapa bukti kepemilikan harta tersebut tercatat ?",
+   "variabelAbt": [],
+   "hal": "bukti kepemilikan harta dan nama pemegangnya",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui hal itu dari pengamatannya sendiri",
+     "saksi1": [
+      "bukti kepemilikan harta itu tercatat atas nama {isi}",
+      "surat kepemilikan harta tersebut dibuat atas nama {isi}",
+      "harta itu tercatat milik {isi} dalam bukti kepemilikannya",
+      "nama yang tertera pada bukti kepemilikan harta itu adalah {isi}"
+     ],
+     "saksi2": [
+      "atas nama {isi} bukti kepemilikan harta itu diterbitkan",
+      "pada surat harta tersebut tertulis nama {isi}",
+      "harta itu terdaftar atas nama {isi}",
+      "kepemilikan harta itu dicatat atas nama {isi}"
+     ]
+    },
+    "mendengar": {
+     "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+     "saksi1": [
+      "saya mendengar sendiri bahwa bukti kepemilikan harta itu tercatat atas nama {isi} tetapi saya tidak melihatnya",
+      "saya mendengar langsung bahwa surat kepemilikan harta tersebut dibuat atas nama {isi} sedangkan saya tidak menyaksikannya",
+      "telinga saya sendiri yang mendengar bahwa harta itu tercatat milik {isi} dalam bukti kepemilikannya sementara saya tidak melihatnya",
+      "nama yang tertera pada bukti kepemilikan harta itu adalah {isi} dan itu saya dengar sendiri tanpa melihat kejadiannya"
+     ],
+     "saksi2": [
+      "yang terdengar oleh saya sendiri adalah bahwa atas nama {isi} bukti kepemilikan harta itu diterbitkan namun saya tidak melihatnya",
+      "saya mendengar dengan jelas bahwa pada surat harta tersebut tertulis nama {isi} walaupun saya tidak menyaksikannya",
+      "saya ikut mendengar sendiri bahwa harta itu terdaftar atas nama {isi} akan tetapi saya tidak melihat kejadiannya",
+      "kepemilikan harta itu dicatat atas nama {isi} dan itu saya dengar sendiri bukan saya lihat"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+     "saksi1": [
+      "menurut cerita {sumber} bukti kepemilikan harta itu tercatat atas nama {isi} dan saya tidak menyaksikannya sendiri",
+      "saya diceritakan oleh {sumber} bahwa surat kepemilikan harta tersebut dibuat atas nama {isi} dan saya tidak melihatnya langsung",
+      "{sumber} menceritakan kepada saya bahwa harta itu tercatat milik {isi} dalam bukti kepemilikannya sedangkan saya tidak mengalaminya",
+      "dari penuturan {sumber} saya tahu bahwa nama yang tertera pada bukti kepemilikan harta itu adalah {isi} dan saya tidak berada di tempat kejadian"
+     ],
+     "saksi2": [
+      "sepengetahuan saya dari cerita {sumber} atas nama {isi} bukti kepemilikan harta itu diterbitkan dan saya tidak melihatnya sendiri",
+      "saya mengetahuinya hanya dari kabar {sumber} bahwa pada surat harta tersebut tertulis nama {isi} karena saya tidak ada di sana",
+      "kabar dari {sumber} yang sampai kepada saya adalah bahwa harta itu terdaftar atas nama {isi} sedangkan saya tidak menyaksikannya",
+      "{sumber} bercerita bahwa kepemilikan harta itu dicatat atas nama {isi} dan saya sendiri tidak mengetahuinya secara langsung"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+     "saksi1": [
+      "saya hanya mengetahui sebagian bahwa bukti kepemilikan harta itu tercatat atas nama {isi} dan selebihnya tidak saya ketahui",
+      "sebagian saja yang saya ketahui yaitu bahwa surat kepemilikan harta tersebut dibuat atas nama {isi} sedangkan sisanya tidak saya ketahui",
+      "yang saya ketahui sebatas bahwa harta itu tercatat milik {isi} dalam bukti kepemilikannya dan hal lainnya tidak saya ketahui",
+      "pengetahuan saya hanya sebagian yaitu nama yang tertera pada bukti kepemilikan harta itu adalah {isi} dan selebihnya tidak saya ketahui"
+     ],
+     "saksi2": [
+      "hanya sebagian yang saya lihat yaitu bahwa atas nama {isi} bukti kepemilikan harta itu diterbitkan dan selebihnya saya tidak tahu",
+      "saya mengetahui sebagian saja bahwa pada surat harta tersebut tertulis nama {isi} sementara bagian lainnya tidak saya ketahui",
+      "sejauh yang saya ketahui hanya bahwa harta itu terdaftar atas nama {isi} dan selain itu tidak ada yang saya ketahui",
+      "sebatas itu yang saya ketahui yakni kepemilikan harta itu dicatat atas nama {isi} selebihnya tidak saya ketahui"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-hb-nilai",
+   "pokok": "pp-hb",
+   "urutan": 816,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "harta-bersama"
+   },
+   "teks": "Berapa kira-kira nilai harta tersebut sekarang ?",
+   "variabelAbt": [],
+   "hal": "perkiraan nilai harta bersama",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": {
+     "maksud": "saksi mengetahui hal itu dari pengamatannya sendiri",
+     "saksi1": [
+      "nilai harta itu sekarang sekitar {isi}",
+      "harga harta tersebut saat ini berkisar {isi}",
+      "harta itu bernilai kurang lebih {isi} pada waktu sekarang",
+      "perkiraan harga harta itu hari ini adalah {isi}"
+     ],
+     "saksi2": [
+      "taksiran nilai harta itu sekarang {isi}",
+      "jika dijual harta itu bernilai sekitar {isi}",
+      "nilai pasar harta tersebut saat ini lebih kurang {isi}",
+      "harta itu dihargai orang sekitar {isi} sekarang"
+     ]
+    },
+    "mendengar": {
+     "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+     "saksi1": [
+      "saya mendengar sendiri bahwa nilai harta itu sekarang sekitar {isi} tetapi saya tidak melihatnya",
+      "saya mendengar langsung bahwa harga harta tersebut saat ini berkisar {isi} sedangkan saya tidak menyaksikannya",
+      "telinga saya sendiri yang mendengar bahwa harta itu bernilai kurang lebih {isi} pada waktu sekarang sementara saya tidak melihatnya",
+      "perkiraan harga harta itu hari ini adalah {isi} dan itu saya dengar sendiri tanpa melihat kejadiannya"
+     ],
+     "saksi2": [
+      "yang terdengar oleh saya sendiri adalah bahwa taksiran nilai harta itu sekarang {isi} namun saya tidak melihatnya",
+      "saya mendengar dengan jelas bahwa jika dijual harta itu bernilai sekitar {isi} walaupun saya tidak menyaksikannya",
+      "saya ikut mendengar sendiri bahwa nilai pasar harta tersebut saat ini lebih kurang {isi} akan tetapi saya tidak melihat kejadiannya",
+      "harta itu dihargai orang sekitar {isi} sekarang dan itu saya dengar sendiri bukan saya lihat"
+     ]
+    },
+    "de-auditu": {
+     "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+     "saksi1": [
+      "menurut cerita {sumber} nilai harta itu sekarang sekitar {isi} dan saya tidak menyaksikannya sendiri",
+      "saya diceritakan oleh {sumber} bahwa harga harta tersebut saat ini berkisar {isi} dan saya tidak melihatnya langsung",
+      "{sumber} menceritakan kepada saya bahwa harta itu bernilai kurang lebih {isi} pada waktu sekarang sedangkan saya tidak mengalaminya",
+      "dari penuturan {sumber} saya tahu bahwa perkiraan harga harta itu hari ini adalah {isi} dan saya tidak berada di tempat kejadian"
+     ],
+     "saksi2": [
+      "sepengetahuan saya dari cerita {sumber} taksiran nilai harta itu sekarang {isi} dan saya tidak melihatnya sendiri",
+      "saya mengetahuinya hanya dari kabar {sumber} bahwa jika dijual harta itu bernilai sekitar {isi} karena saya tidak ada di sana",
+      "kabar dari {sumber} yang sampai kepada saya adalah bahwa nilai pasar harta tersebut saat ini lebih kurang {isi} sedangkan saya tidak menyaksikannya",
+      "{sumber} bercerita bahwa harta itu dihargai orang sekitar {isi} sekarang dan saya sendiri tidak mengetahuinya secara langsung"
+     ]
+    },
+    "sebagian": {
+     "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+     "saksi1": [
+      "saya hanya mengetahui sebagian bahwa nilai harta itu sekarang sekitar {isi} dan selebihnya tidak saya ketahui",
+      "sebagian saja yang saya ketahui yaitu bahwa harga harta tersebut saat ini berkisar {isi} sedangkan sisanya tidak saya ketahui",
+      "yang saya ketahui sebatas bahwa harta itu bernilai kurang lebih {isi} pada waktu sekarang dan hal lainnya tidak saya ketahui",
+      "pengetahuan saya hanya sebagian yaitu perkiraan harga harta itu hari ini adalah {isi} dan selebihnya tidak saya ketahui"
+     ],
+     "saksi2": [
+      "hanya sebagian yang saya lihat yaitu bahwa taksiran nilai harta itu sekarang {isi} dan selebihnya saya tidak tahu",
+      "saya mengetahui sebagian saja bahwa jika dijual harta itu bernilai sekitar {isi} sementara bagian lainnya tidak saya ketahui",
+      "sejauh yang saya ketahui hanya bahwa nilai pasar harta tersebut saat ini lebih kurang {isi} dan selain itu tidak ada yang saya ketahui",
+      "sebatas itu yang saya ketahui yakni harta itu dihargai orang sekitar {isi} sekarang selebihnya tidak saya ketahui"
+     ]
+    }
+   }
+  },
+  {
+   "id": "q-hb-kontribusi",
+   "pokok": "pp-hb",
+   "urutan": 817,
+   "tingkat": "tambahan",
+   "kelompok": "pokok",
+   "pihakSaksi": [
+    "*"
+   ],
+   "keadaan": {
+    "kumulasi": "harta-bersama"
+   },
+   "teks": "Siapa yang bekerja dan mengurus rumah tangga sehingga harta itu dapat diperoleh ?",
+   "variabelAbt": [
+    "0046",
+    "0047"
+   ],
+   "hal": "sumbangan masing-masing pihak dalam memperoleh harta",
+   "tidakBerlaku": [
+    "berbeda"
+   ],
+   "jawaban": {
+    "melihat": [
+     {
+      "keadaan": {
+       "suami": "pengaju"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa harta itu diperoleh dari hasil kerja #0046# sedangkan #0047# mengurus rumah tangga dan anak",
+       "saya menyaksikan langsung bahwa #0046# bekerja mencari nafkah dan #0047# mengelola rumah tangga sehingga harta itu terkumpul",
+       "hasil kerja #0046# serta pengurusan rumah tangga oleh #0047# menjadi sebab harta itu ada dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa harta itu terkumpul karena #0046# bekerja dan #0047# menjaga rumah tangga"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa sumber harta itu adalah pekerjaan #0046# dan peran #0047# dalam mengurus keluarga",
+       "dengan mata kepala saya sendiri saya melihat bahwa #0046# mencari penghasilan dan #0047# merawat keluarga hingga harta itu diperoleh",
+       "saya mengalami dan melihat langsung bahwa kerja keras #0046# dan pengurusan rumah tangga oleh #0047# menghasilkan harta tersebut",
+       "harta itu lahir dari kerja #0046# dan pengabdian #0047# di dalam rumah tangga sebagaimana yang saya saksikan sendiri"
+      ]
+     },
+     {
+      "keadaan": {
+       "suami": "lawan"
+      },
+      "maksud": "saksi melihat dan menyaksikan sendiri hal itu",
+      "saksi1": [
+       "saya melihat sendiri bahwa harta itu diperoleh dari hasil kerja #0047# sedangkan #0046# mengurus rumah tangga dan anak",
+       "saya menyaksikan langsung bahwa #0047# bekerja mencari nafkah dan #0046# mengelola rumah tangga sehingga harta itu terkumpul",
+       "hasil kerja #0047# serta pengurusan rumah tangga oleh #0046# menjadi sebab harta itu ada dan hal itu saya lihat sendiri",
+       "saya berada di tempat kejadian dan melihat bahwa harta itu terkumpul karena #0047# bekerja dan #0046# menjaga rumah tangga"
+      ],
+      "saksi2": [
+       "yang saya saksikan sendiri adalah bahwa sumber harta itu adalah pekerjaan #0047# dan peran #0046# dalam mengurus keluarga",
+       "dengan mata kepala saya sendiri saya melihat bahwa #0047# mencari penghasilan dan #0046# merawat keluarga hingga harta itu diperoleh",
+       "saya mengalami dan melihat langsung bahwa kerja keras #0047# dan pengurusan rumah tangga oleh #0046# menghasilkan harta tersebut",
+       "harta itu lahir dari kerja #0047# dan pengabdian #0046# di dalam rumah tangga sebagaimana yang saya saksikan sendiri"
+      ]
+     }
+    ],
+    "mendengar": [
+     {
+      "keadaan": {
+       "suami": "pengaju"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa harta itu diperoleh dari hasil kerja #0046# sedangkan #0047# mengurus rumah tangga dan anak tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa #0046# bekerja mencari nafkah dan #0047# mengelola rumah tangga sehingga harta itu terkumpul sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa hasil kerja #0046# serta pengurusan rumah tangga oleh #0047# menjadi sebab harta itu ada sementara saya tidak melihatnya",
+       "harta itu terkumpul karena #0046# bekerja dan #0047# menjaga rumah tangga dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa sumber harta itu adalah pekerjaan #0046# dan peran #0047# dalam mengurus keluarga namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa #0046# mencari penghasilan dan #0047# merawat keluarga hingga harta itu diperoleh walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa kerja keras #0046# dan pengurusan rumah tangga oleh #0047# menghasilkan harta tersebut akan tetapi saya tidak melihat kejadiannya",
+       "harta itu lahir dari kerja #0046# dan pengabdian #0047# di dalam rumah tangga dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     },
+     {
+      "keadaan": {
+       "suami": "lawan"
+      },
+      "maksud": "saksi mendengar sendiri hal itu tetapi tidak melihatnya",
+      "saksi1": [
+       "saya mendengar sendiri bahwa harta itu diperoleh dari hasil kerja #0047# sedangkan #0046# mengurus rumah tangga dan anak tetapi saya tidak melihatnya",
+       "saya mendengar langsung bahwa #0047# bekerja mencari nafkah dan #0046# mengelola rumah tangga sehingga harta itu terkumpul sedangkan saya tidak menyaksikannya",
+       "telinga saya sendiri yang mendengar bahwa hasil kerja #0047# serta pengurusan rumah tangga oleh #0046# menjadi sebab harta itu ada sementara saya tidak melihatnya",
+       "harta itu terkumpul karena #0047# bekerja dan #0046# menjaga rumah tangga dan itu saya dengar sendiri tanpa melihat kejadiannya"
+      ],
+      "saksi2": [
+       "yang terdengar oleh saya sendiri adalah bahwa sumber harta itu adalah pekerjaan #0047# dan peran #0046# dalam mengurus keluarga namun saya tidak melihatnya",
+       "saya mendengar dengan jelas bahwa #0047# mencari penghasilan dan #0046# merawat keluarga hingga harta itu diperoleh walaupun saya tidak menyaksikannya",
+       "saya ikut mendengar sendiri bahwa kerja keras #0047# dan pengurusan rumah tangga oleh #0046# menghasilkan harta tersebut akan tetapi saya tidak melihat kejadiannya",
+       "harta itu lahir dari kerja #0047# dan pengabdian #0046# di dalam rumah tangga dan itu saya dengar sendiri bukan saya lihat"
+      ]
+     }
+    ],
+    "de-auditu": [
+     {
+      "keadaan": {
+       "suami": "pengaju"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} harta itu diperoleh dari hasil kerja #0046# sedangkan #0047# mengurus rumah tangga dan anak dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa #0046# bekerja mencari nafkah dan #0047# mengelola rumah tangga sehingga harta itu terkumpul dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa hasil kerja #0046# serta pengurusan rumah tangga oleh #0047# menjadi sebab harta itu ada sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa harta itu terkumpul karena #0046# bekerja dan #0047# menjaga rumah tangga dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} sumber harta itu adalah pekerjaan #0046# dan peran #0047# dalam mengurus keluarga dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa #0046# mencari penghasilan dan #0047# merawat keluarga hingga harta itu diperoleh karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa kerja keras #0046# dan pengurusan rumah tangga oleh #0047# menghasilkan harta tersebut sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa harta itu lahir dari kerja #0046# dan pengabdian #0047# di dalam rumah tangga dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     },
+     {
+      "keadaan": {
+       "suami": "lawan"
+      },
+      "maksud": "saksi mengetahui hal itu dari cerita orang lain dan tidak menyaksikannya",
+      "saksi1": [
+       "menurut cerita {sumber} harta itu diperoleh dari hasil kerja #0047# sedangkan #0046# mengurus rumah tangga dan anak dan saya tidak menyaksikannya sendiri",
+       "saya diceritakan oleh {sumber} bahwa #0047# bekerja mencari nafkah dan #0046# mengelola rumah tangga sehingga harta itu terkumpul dan saya tidak melihatnya langsung",
+       "{sumber} menceritakan kepada saya bahwa hasil kerja #0047# serta pengurusan rumah tangga oleh #0046# menjadi sebab harta itu ada sedangkan saya tidak mengalaminya",
+       "dari penuturan {sumber} saya tahu bahwa harta itu terkumpul karena #0047# bekerja dan #0046# menjaga rumah tangga dan saya tidak berada di tempat kejadian"
+      ],
+      "saksi2": [
+       "sepengetahuan saya dari cerita {sumber} sumber harta itu adalah pekerjaan #0047# dan peran #0046# dalam mengurus keluarga dan saya tidak melihatnya sendiri",
+       "saya mengetahuinya hanya dari kabar {sumber} bahwa #0047# mencari penghasilan dan #0046# merawat keluarga hingga harta itu diperoleh karena saya tidak ada di sana",
+       "kabar dari {sumber} yang sampai kepada saya adalah bahwa kerja keras #0047# dan pengurusan rumah tangga oleh #0046# menghasilkan harta tersebut sedangkan saya tidak menyaksikannya",
+       "{sumber} bercerita bahwa harta itu lahir dari kerja #0047# dan pengabdian #0046# di dalam rumah tangga dan saya sendiri tidak mengetahuinya secara langsung"
+      ]
+     }
+    ],
+    "sebagian": [
+     {
+      "keadaan": {
+       "suami": "pengaju"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa harta itu diperoleh dari hasil kerja #0046# sedangkan #0047# mengurus rumah tangga dan anak dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa #0046# bekerja mencari nafkah dan #0047# mengelola rumah tangga sehingga harta itu terkumpul sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa hasil kerja #0046# serta pengurusan rumah tangga oleh #0047# menjadi sebab harta itu ada dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu harta itu terkumpul karena #0046# bekerja dan #0047# menjaga rumah tangga dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa sumber harta itu adalah pekerjaan #0046# dan peran #0047# dalam mengurus keluarga dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa #0046# mencari penghasilan dan #0047# merawat keluarga hingga harta itu diperoleh sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa kerja keras #0046# dan pengurusan rumah tangga oleh #0047# menghasilkan harta tersebut dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni harta itu lahir dari kerja #0046# dan pengabdian #0047# di dalam rumah tangga selebihnya tidak saya ketahui"
+      ]
+     },
+     {
+      "keadaan": {
+       "suami": "lawan"
+      },
+      "maksud": "saksi hanya mengetahui sebagian dari hal itu",
+      "saksi1": [
+       "saya hanya mengetahui sebagian bahwa harta itu diperoleh dari hasil kerja #0047# sedangkan #0046# mengurus rumah tangga dan anak dan selebihnya tidak saya ketahui",
+       "sebagian saja yang saya ketahui yaitu bahwa #0047# bekerja mencari nafkah dan #0046# mengelola rumah tangga sehingga harta itu terkumpul sedangkan sisanya tidak saya ketahui",
+       "yang saya ketahui sebatas bahwa hasil kerja #0047# serta pengurusan rumah tangga oleh #0046# menjadi sebab harta itu ada dan hal lainnya tidak saya ketahui",
+       "pengetahuan saya hanya sebagian yaitu harta itu terkumpul karena #0047# bekerja dan #0046# menjaga rumah tangga dan selebihnya tidak saya ketahui"
+      ],
+      "saksi2": [
+       "hanya sebagian yang saya lihat yaitu bahwa sumber harta itu adalah pekerjaan #0047# dan peran #0046# dalam mengurus keluarga dan selebihnya saya tidak tahu",
+       "saya mengetahui sebagian saja bahwa #0047# mencari penghasilan dan #0046# merawat keluarga hingga harta itu diperoleh sementara bagian lainnya tidak saya ketahui",
+       "sejauh yang saya ketahui hanya bahwa kerja keras #0047# dan pengurusan rumah tangga oleh #0046# menghasilkan harta tersebut dan selain itu tidak ada yang saya ketahui",
+       "sebatas itu yang saya ketahui yakni harta itu lahir dari kerja #0047# dan pengabdian #0046# di dalam rumah tangga selebihnya tidak saya ketahui"
+      ]
+     }
+    ]
+   }
   }
  ],
  "jawabanUmum": {
