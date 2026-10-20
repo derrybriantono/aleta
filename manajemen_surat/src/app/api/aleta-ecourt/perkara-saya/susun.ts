@@ -197,6 +197,8 @@ export type OpsiSusun = {
    */
   cariNomorSatker?: boolean;
   cariNomor?: string;
+  /** Cetak massal PTSP (20 Okt 2026): pencarian satker TANPA kata kunci mengembalikan seluruh perkara di rentang (baca saja). */
+  semuaSatker?: boolean;
 };
 
 export type HasilSusun = {
@@ -254,7 +256,7 @@ export function susunPerkaraSaya(baris: BarisSidangSaya[], opsi: OpsiSusun): Has
     let sebagai: PeranDerry[];
     if (opsi.cariNomorSatker) {
       // Pencarian PTSP: tanpa kata kunci tidak ada yang dikembalikan; peran tulis hanya bila akun itu memang majelis/PP/juru sita.
-      if (!kataNomor || !teks(akhir.nomorPerkara).toLowerCase().includes(kataNomor)) continue;
+      if (!opsi.semuaSatker && (!kataNomor || !teks(akhir.nomorPerkara).toLowerCase().includes(kataNomor))) continue;
       sebagai = sebagaiApa(akhir, nama, batas);
     } else if (semuaTanpaSaring) sebagai = [...peranSemua];
     else {
