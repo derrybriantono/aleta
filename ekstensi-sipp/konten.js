@@ -1494,6 +1494,23 @@ const KALIMAT_ALASAN = [
       "Pejabat penetapnya belum dipilih. Pilih pejabat pada \"Pejabat yang menetapkan\" - penetapan dicatat di SIPP atas nama akun pejabat itu.",
   },
   {
+    pola: /^sedang_dikerjakan$/,
+    kalimat: () =>
+      "Perkara ini sedang dikerjakan penetapannya oleh pekerjaan lain (tab, tombol di halaman SIPP, atau antrean). Tunggu selesai, lalu muat ulang - yang sudah tertulis dilewati.",
+  },
+  {
+    pola: /^kunci_tidak_tersedia$/,
+    kalimat: () => "Pagar penetapan di server ALETA tidak dapat dipakai sekarang, jadi tidak ada yang ditulis. Coba lagi sebentar lagi.",
+  },
+  {
+    pola: /^keadaan_tidak_terbaca$/,
+    kalimat: () => "Keadaan penetapan perkara ini tidak terbaca dari SIPP, jadi tidak ada yang ditulis. Coba lagi sebentar lagi.",
+  },
+  {
+    pola: /^bongkar_tanpa_perintah$/,
+    kalimat: () => "Membongkar hanya dapat dilakukan dengan menekan tombol Bongkar sendiri.",
+  },
+  {
     pola: /^pejabat_tidak_sah$/,
     kalimat: (akun) =>
       `Akun ${akun ? `"${akun}"` : "pilihan"} bukan pejabat yang berwenang untuk langkah ini (PMH: Ketua/Wakil/Plh Ketua; PPP/PJS: Panitera/Plh Panitera). Pilih pejabat lain.`,
@@ -1654,10 +1671,14 @@ function kalimatAlasan(kode, akun) {
  */
 function keadaanPenetapanUsulan(usulan) {
   const p = (usulan && usulan.penetapan) || {};
+  // langkahAda: jawaban SATU sumber keadaan (tanggal terisi ATAU barisnya sudah
+  // ada). Langkah yang ada tanpa tanggal terbaca tetap "sudah ada" - tidak
+  // pernah ditawarkan untuk ditulis di atasnya.
+  const ada = p.langkahAda || {};
   const hasil = {};
   for (const jenis of URUTAN_TULIS) {
     const nilai = String(p[jenis] || "").trim();
-    hasil[jenis] = /^\d{4}-\d{2}-\d{2}/.test(nilai) ? nilai.slice(0, 10) : "";
+    hasil[jenis] = /^\d{4}-\d{2}-\d{2}/.test(nilai) ? nilai.slice(0, 10) : ada[jenis] === true ? "ada" : "";
   }
   return hasil;
 }
@@ -2228,7 +2249,9 @@ async function mintaBongkar(perkaraId, jenis, olehUsername, kering) {
         headers: { "Content-Type": "application/json" },
         // akunSippMasuk: akun SIPP yang sedang masuk - penekan, dicatat di jejak
         // ALETA. Yang dicatat SIPP: akun pejabat penetapan itu (butir 17).
-        body: JSON.stringify({ jenis, perkaraId, olehUsername, akunSippMasuk: namaPenggunaSipp(), kering }),
+        // perintahPengguna: tanda bahwa pengguna sendiri menekan Bongkar. Hanya
+        // tombol Bongkar yang memanggil fungsi ini; mode otomatis tidak pernah.
+        body: JSON.stringify({ jenis, perkaraId, olehUsername, akunSippMasuk: namaPenggunaSipp(), kering, perintahPengguna: kering ? "" : "bongkar" }),
       },
       kering ? "Menyusun rencana pembatalan" : "Membatalkan penetapan"
     );
@@ -2254,7 +2277,7 @@ async function mintaBongkarSemua(perkaraId, akunPerJenis, kering) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ perkaraId, akunPerJenis, akunSippMasuk: namaPenggunaSipp(), kering }),
+        body: JSON.stringify({ perkaraId, akunPerJenis, akunSippMasuk: namaPenggunaSipp(), kering, perintahPengguna: kering ? "" : "bongkar" }),
       },
       kering ? "Menyusun rencana pembatalan menyeluruh" : "Membatalkan seluruh penetapan"
     );
@@ -3136,7 +3159,7 @@ function barisPenetapanTercatat(judul, jenis, usulan) {
   const nilai = buatElemen("span", "aleta-tetap-nilai");
   nilai.appendChild(buatElemen("span", "aleta-tetap-isi aleta-tetap-tercatat", teks || "tercatat di SIPP"));
   nilai.appendChild(
-    buatElemen("span", "aleta-tetap-sebab", `sudah ada di SIPP (${sebutTanggal(tanggal)}) - tidak ditulis ulang`)
+    buatElemen("span", "aleta-tetap-sebab", `sudah ada di SIPP (${tanggal === "ada" ? "tanggal belum terisi" : sebutTanggal(tanggal)}) - tidak ditulis ulang`)
   );
   baris.appendChild(nilai);
   return baris;
@@ -4738,7 +4761,49 @@ async function tutupTitipan(id, formulir) {
   }
 }
 
+/**
+ * Pagar bersama untuk pengisian borang SIPP (20 Okt 2026, agen P1): sebelum
+ * mengisi dan SEBELUM menekan Simpan SIPP, keadaan penetapan perkara dibaca
+ * dari sumber yang sama dengan penulis di server, dan kunci perkara dipegang
+ * selama pengisian. Langkah yang sudah ada tidak diisi ulang (tidak ada
+ * penetapan ganda dari mode otomatis ini); perkara yang sedang dikerjakan
+ * pekerjaan lain tidak disentuh.
+ */
 async function kerjakanBorang(rencana) {
+  const { tombol, kabar, formulir, usulan } = rencana;
+  const perkaraId = Number((usulan && usulan.perkara && usulan.perkara.perkaraId) || 0);
+  const kerja = typeof aletaPenetapanKerja === "object" ? aletaPenetapanKerja : null;
+  let token = "";
+  if (kerja && perkaraId) {
+    const mundur = (pesan) => {
+      kabar.textContent = pesan;
+      tombol.disabled = false;
+      tombol.classList.remove("aleta-tombol-mati");
+    };
+    const k = await kerja.keadaan({ perkaraId });
+    if (k && k.ok !== false && k.langkah && k.langkah[formulir] && k.langkah[formulir].ada) {
+      mundur(`${formulir.toUpperCase()} perkara ini sudah ada di SIPP - tidak diisi ulang. Muat ulang halaman.`);
+      return;
+    }
+    if (rencana.simpanOtomatis && (!k || k.ok === false)) {
+      mundur(kalimatAlasan("keadaan_tidak_terbaca"));
+      return;
+    }
+    const kunci = await kerja.ambilKunci(perkaraId, `isi-borang-${formulir}`);
+    if (!kunci || kunci.ok !== true) {
+      mundur(kalimatAlasan(String((kunci && kunci.alasan) || "kunci_tidak_tersedia")));
+      return;
+    }
+    token = String(kunci.token || "");
+  }
+  try {
+    await kerjakanBorangInti(rencana);
+  } finally {
+    if (kerja && token) await kerja.lepasKunci(perkaraId, token);
+  }
+}
+
+async function kerjakanBorangInti(rencana) {
   const { tombol, kabar, formulir, nilai, medanBorang, medanSimpan, simpanOtomatis, usulan, data } =
     rencana;
   const idTitipan = rencana.idTitipan || "";
@@ -4798,6 +4863,20 @@ async function kerjakanBorang(rencana) {
   }
 
   await tutupTitipan(idTitipan, formulir);
+  // Dibaca ULANG tepat sebelum Simpan SIPP ditekan: selama borang diisi, jalan
+  // lain (tombol server, tab lain) dapat sudah menulis langkah ini. Ada -> tidak
+  // ditekan. Tidak terbaca -> tidak ditekan (gagal tertutup).
+  if (typeof aletaPenetapanKerja === "object") {
+    const baru = await aletaPenetapanKerja.keadaan({ perkaraId: Number((usulan.perkara && usulan.perkara.perkaraId) || 0) });
+    if (!baru || baru.ok === false) {
+      kembalikan(`Terisi, tetapi Simpan tidak ditekan: ${kalimatAlasan("keadaan_tidak_terbaca")}`);
+      return;
+    }
+    if (baru.langkah && baru.langkah[formulir] && baru.langkah[formulir].ada) {
+      kembalikan(`${formulir.toUpperCase()} ternyata sudah ada di SIPP selagi borang diisi - Simpan TIDAK ditekan, supaya tidak ganda. Muat ulang halaman.`);
+      return;
+    }
+  }
   kabar.textContent = "Menyimpan…";
   const jawabSimpan = await kirimKeJembatan({ jenis: "tekan", penunjuk: medanSimpan.penunjuk });
   if (!jawabSimpan.ok) {

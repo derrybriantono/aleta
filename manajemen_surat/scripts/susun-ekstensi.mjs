@@ -139,6 +139,10 @@ const BERKAS = [
   // paling belakang (memakai ambilUsulanPenunjukan/idUntukTulis konten.js):
   // tombol "Isi otomatis" di borang PMH/PPP/PJS/PHS, hanya mengisi kolom.
   "penetapan-borang.js",
+  // Kerjakan penetapan satu perkara - satu pintu (20 Okt 2026, agen P1): fungsi
+  // aletaPenetapanKerja.kerjakan/keadaan/ambilKunci untuk tombol halaman SIPP
+  // dan penanda halaman; satu sumber keadaan + satu kunci per perkara.
+  "penetapan-kerja.js",
   "blangko-derry.css",
   // Menu kiri ABT bisa digulir (19 Okt 2026) - skrip konten ABT: #navbar diberi
   // max-height + overflow-y supaya submenu Blangko Derry terjangkau; gaya saja.

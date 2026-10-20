@@ -76,6 +76,9 @@ const tandaTanganService = require("../services/tandaTanganService");
 const dokumenPenetapanService = require("../services/dokumenPenetapanService");
 const salinanPutusanService = require("../services/salinanPutusanService");
 const penetapanTulisService = require("../services/penetapanTulisService");
+// 20 Okt 2026: satu sumber keadaan penetapan + satu kunci per perkara untuk SEMUA jalan tulis.
+const penetapanKeadaanService = require("../services/penetapanKeadaanService");
+const penetapanKunciService = require("../services/penetapanKunciService");
 const sidangHasilService = require("../services/sidangHasilService");
 const putusanTulisService = require("../services/putusanTulisService");
 const antrianSidangService = require("../services/antrianSidangService");
@@ -922,6 +925,96 @@ router.get("/penetapan/ruangan", requireInternalToken, async (req, res) => {
 });
 
 /**
+ * ============================================================================
+ * KEADAAN PENETAPAN + KUNCI PER PERKARA (20 Okt 2026, satu sumber untuk semua)
+ * ============================================================================
+ *
+ * Dibaca kartu Penetapan, tombol di halaman SIPP, penanda baris daftar, dan
+ * borang SIPP yang disimpan peramban - lihat penetapanKeadaanService. Kunci:
+ * penetapanKunciService (masa berlaku, gagal tertutup).
+ */
+router.post("/penetapan/keadaan", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const acuan = Number(badan.perkaraId) > 0 ? Number(badan.perkaraId) : String(badan.nomorPerkara || "").trim();
+    if (!acuan) {
+      res.status(400).json({ ok: false, alasan: "perkara_tidak_disebut" });
+      return;
+    }
+    const keadaan = await penetapanKeadaanService.keadaanSatu(acuan);
+    if (!keadaan.ok) {
+      res.status(keadaan.alasan === "perkara_tidak_ketemu" ? 404 : 503).json(keadaan);
+      return;
+    }
+    keadaan.kunci = await penetapanKunciService.layanan().lihat(keadaan.perkaraId);
+    res.json(keadaan);
+  } catch (error) {
+    res.status(500).json({ ok: false, alasan: "keadaan_tidak_terbaca", pesan: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/penetapan/kunci", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const operator = String(badan.operator || "").trim();
+    if (!operator) {
+      res.status(400).json({ ok: false, alasan: "operator_tidak_disebut" });
+      return;
+    }
+    const hasil = await penetapanKunciService.layanan().ambil({
+      perkaraId: badan.perkaraId,
+      pemilik: operator,
+      tujuan: String(badan.tujuan || "kerjakan"),
+      ttlDetik: badan.ttlDetik,
+      tokenLama: String(badan.token || ""),
+    });
+    res.status(hasil.ok ? 200 : 409).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, alasan: "kunci_tidak_tersedia", pesan: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.post("/penetapan/kunci/lepas", requireInternalToken, async (req, res) => {
+  try {
+    const badan = req.body || {};
+    const hasil = await penetapanKunciService.layanan().lepas({ perkaraId: badan.perkaraId, token: String(badan.token || "") });
+    res.status(hasil.ok ? 200 : 400).json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, alasan: "kunci_tidak_tersedia", pesan: String(error.message || error).slice(0, 300) });
+  }
+});
+
+/**
+ * Menjalankan `kerja` selagi memegang kunci perkara. Kunci yang tidak didapat
+ * dijawab 409 `sedang_dikerjakan` (atau 503 `kunci_tidak_tersedia`) dan `kerja`
+ * TIDAK dijalankan - pekerjaan kedua atas perkara yang sama tidak menulis apa pun.
+ * Token dari pemanggil yang masih berlaku dipakai ulang (pekerjaan yang sama
+ * yang melangkah dari keadaan ke tulis), bukan ditolak oleh dirinya sendiri.
+ */
+async function denganKunciPerkara(res, { perkaraId, operator, tujuan, token }, kerja) {
+  const dikerjakan = await penetapanKunciService.layanan().dengan(
+    { perkaraId, pemilik: operator, tujuan, tokenLama: String(token || "") },
+    kerja
+  );
+  if (!dikerjakan.dikunci) {
+    const k = dikerjakan.kunci || {};
+    const sibuk = k.alasan === "sedang_dikerjakan";
+    res.status(sibuk ? 409 : 503).json({
+      ok: false,
+      alasan: k.alasan || "kunci_tidak_tersedia",
+      oleh: k.oleh || "",
+      tujuan: k.tujuan || "",
+      sampai: k.sampai || "",
+      pesan: k.pesan || "",
+      hasil: [],
+      dipulihkan: true,
+    });
+    return undefined;
+  }
+  return dikerjakan.hasil;
+}
+
+/**
  * Sisa penetapan SATU perkara, utuh atau batal (uji rilis U1, 9 Okt 2026) -
  * lihat penetapanTulisService.tulisRantaiUtuh. Hanya penulisan sungguhan;
  * uji kering tetap lewat /penetapan/tulis per langkah. Selalu 200 dengan ok di
@@ -952,14 +1045,23 @@ router.post(
       pejabatUsername: String((x && x.pejabatUsername) || "").trim().slice(0, 150),
     }));
     const ip = alamatAudit(req);
-    const hasil = await penetapanTulisService.tulisRantaiUtuh({
-      perkaraId: badan.perkaraId,
-      tanggalPenetapan: String(badan.tanggalPenetapan || ""),
-      olehUsername: String(badan.olehUsername || ""),
-      operator,
-      ip,
-      langkah,
-    });
+    // Satu perkara, satu pekerjaan: kartu Penetapan, tombol halaman SIPP, antrean
+    // jam kerja, dan penanda halaman melewati pagar yang SAMA. Yang kedua
+    // berpapasan tidak menulis apa pun (409 sedang_dikerjakan).
+    const hasil = await denganKunciPerkara(
+      res,
+      { perkaraId: badan.perkaraId, operator, tujuan: "penetapan-rantai", token: badan.kunciToken },
+      () =>
+        penetapanTulisService.tulisRantaiUtuh({
+          perkaraId: badan.perkaraId,
+          tanggalPenetapan: String(badan.tanggalPenetapan || ""),
+          olehUsername: String(badan.olehUsername || ""),
+          operator,
+          ip,
+          langkah,
+        })
+    );
+    if (hasil === undefined) return;
 
     // Jejak jujur per langkah - termasuk yang DIBATALKAN bersama rantainya.
     for (const satu of hasil.hasil || []) {
@@ -1017,6 +1119,10 @@ router.post(
 );
 
 router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
+  // Kunci perkara untuk penulisan sungguhan satu langkah (jalan lama), diambil
+  // SEBELUM keadaan dibaca dan dilepas di akhir. Uji kering dan Data Umum tidak
+  // dikunci: keduanya tidak menulis penetapan.
+  let kunciDiambil = null;
   try {
     const badan = req.body || {};
     const operator = String(badan.operator || "").trim();
@@ -1029,6 +1135,27 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
     // penyusun rencana, bukan hanya ke penjalannya: PHS menuntut PMH sudah
     // tersimpan, dan pada uji kering belum ada satu baris pun yang ditulis.
     const kering = badan.kering !== false;
+
+    if (!kering && penetapanKeadaanService.JENIS.includes(String(badan.jenis || "").toLowerCase())) {
+      const kunci = await penetapanKunciService.layanan().ambil({
+        perkaraId: badan.perkaraId,
+        pemilik: operator,
+        tujuan: `penetapan-${String(badan.jenis).toLowerCase()}`,
+        tokenLama: String(badan.kunciToken || ""),
+      });
+      if (!kunci.ok) {
+        res.status(kunci.alasan === "sedang_dikerjakan" ? 409 : 503).json({
+          ok: false,
+          alasan: kunci.alasan,
+          oleh: kunci.oleh || "",
+          tujuan: kunci.tujuan || "",
+          sampai: kunci.sampai || "",
+          pesan: kunci.pesan || "",
+        });
+        return;
+      }
+      if (!kunci.diperpanjang) kunciDiambil = kunci.token;
+    }
 
     // ========================================================================
     // JEDA SUNGGUHAN SEBELUM MENULIS - DAN JAMNYA DIAMBIL SESUDAHNYA
@@ -1138,6 +1265,10 @@ router.post("/penetapan/tulis", requireInternalToken, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  } finally {
+    if (kunciDiambil) {
+      await penetapanKunciService.layanan().lepas({ perkaraId: (req.body || {}).perkaraId, token: kunciDiambil });
+    }
   }
 });
 
@@ -1392,6 +1523,7 @@ router.post("/sidang/putus", requireInternalToken, async (req, res) => {
  * dahulu, dan membongkar sungguhan menuntut { kering: false } yang tegas.
  */
 router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
+  let kunciHapus = null;
   try {
     const badan = req.body || {};
     const operator = String(badan.operator || "").trim();
@@ -1401,6 +1533,32 @@ router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
     }
 
     const kering = badan.kering !== false;
+    // Membongkar HANYA atas perintah eksplisit pengguna (tombol Bongkar yang
+    // ia tekan). Mode otomatis, antrean, dan penanda halaman tidak pernah
+    // mengirim tanda ini - perkara tidak dibongkar lalu ditulis ulang sendiri.
+    if (!kering && String(badan.perintahPengguna || "") !== "bongkar") {
+      res.status(400).json({ ok: false, alasan: "bongkar_tanpa_perintah" });
+      return;
+    }
+    if (!kering) {
+      const kunci = await penetapanKunciService.layanan().ambil({
+        perkaraId: badan.perkaraId,
+        pemilik: operator,
+        tujuan: `bongkar-${String(badan.jenis || "").toLowerCase()}`,
+        tokenLama: String(badan.kunciToken || ""),
+      });
+      if (!kunci.ok) {
+        res.status(kunci.alasan === "sedang_dikerjakan" ? 409 : 503).json({
+          ok: false,
+          alasan: kunci.alasan,
+          oleh: kunci.oleh || "",
+          sampai: kunci.sampai || "",
+          pesan: kunci.pesan || "",
+        });
+        return;
+      }
+      if (!kunci.diperpanjang) kunciHapus = kunci.token;
+    }
     // Jeda sungguhan sebelum membongkar - jamnya diambil sesudahnya (butir 39).
     if (!kering) await jedaManusiaService.jeda("simpan", { kering });
     const rencana = await penetapanTulisService.susunRencanaHapus({
@@ -1462,6 +1620,8 @@ router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  } finally {
+    if (kunciHapus) await penetapanKunciService.layanan().lepas({ perkaraId: (req.body || {}).perkaraId, token: kunciHapus });
   }
 });
 
@@ -1484,6 +1644,7 @@ router.post("/penetapan/hapus", requireInternalToken, async (req, res) => {
  * menyebut { kering: false } menerima RENCANA, bukan pembongkarannya.
  */
 router.post("/penetapan/hapus-semua", requireInternalToken, async (req, res) => {
+  let kunciHapusSemua = null;
   try {
     const badan = req.body || {};
     const operator = String(badan.operator || "").trim();
@@ -1503,6 +1664,31 @@ router.post("/penetapan/hapus-semua", requireInternalToken, async (req, res) => 
     const akun = badan.akunPerJenis && typeof badan.akunPerJenis === "object" ? badan.akunPerJenis : {};
     const kering = badan.kering !== false;
     const ip = alamatAudit(req);
+
+    // Hanya atas perintah eksplisit pengguna (lihat /penetapan/hapus).
+    if (!kering && String(badan.perintahPengguna || "") !== "bongkar") {
+      res.status(400).json({ ok: false, alasan: "bongkar_tanpa_perintah" });
+      return;
+    }
+    if (!kering) {
+      const kunci = await penetapanKunciService.layanan().ambil({
+        perkaraId,
+        pemilik: operator,
+        tujuan: "bongkar-semua",
+        tokenLama: String(badan.kunciToken || ""),
+      });
+      if (!kunci.ok) {
+        res.status(kunci.alasan === "sedang_dikerjakan" ? 409 : 503).json({
+          ok: false,
+          alasan: kunci.alasan,
+          oleh: kunci.oleh || "",
+          sampai: kunci.sampai || "",
+          pesan: kunci.pesan || "",
+        });
+        return;
+      }
+      if (!kunci.diperpanjang) kunciHapusSemua = kunci.token;
+    }
 
     const langkah = [];
     const rantaiDibongkar = [];
@@ -1606,6 +1792,8 @@ router.post("/penetapan/hapus-semua", requireInternalToken, async (req, res) => 
     });
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  } finally {
+    if (kunciHapusSemua) await penetapanKunciService.layanan().lepas({ perkaraId: (req.body || {}).perkaraId, token: kunciHapusSemua });
   }
 });
 

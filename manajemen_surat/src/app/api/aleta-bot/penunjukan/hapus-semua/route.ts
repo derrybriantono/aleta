@@ -84,6 +84,12 @@ export async function POST(request: NextRequest) {
 
     const kering = badan.kering !== false;
 
+    // Hanya atas perintah eksplisit pengguna (lihat rute hapus).
+    const perintahPengguna = String(badan.perintahPengguna || "") === "bongkar" ? "bongkar" : "";
+    if (!kering && !perintahPengguna) {
+      return Response.json({ ok: false, alasan: "bongkar_tanpa_perintah" }, { status: 400 });
+    }
+
     const respons = await kirimPenetapanHapusSemuaGateway({
       perkaraId,
       akunPerJenis,
@@ -91,6 +97,7 @@ export async function POST(request: NextRequest) {
       operator,
       kering,
       ip: alamatIpPeramban(request),
+      perintahPengguna,
     });
 
     return Response.json(respons, { status: respons?.ok === false ? 409 : 200 });

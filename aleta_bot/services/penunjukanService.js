@@ -337,9 +337,23 @@ async function penetapanPerkara(perkaraId) {
   ).catch(() => []);
 
   const baris = rows[0];
-  if (!baris) return { ada: false, pmh: "", ppp: "", pjs: "", phs: "", sidangPertama: "" };
+
+  // 20 Okt 2026: "sudah ada atau belum" tiap langkah dijawab SATU sumber yang
+  // sama dengan penulis dan penanda baris daftar (penetapanKeadaanService).
+  // Kolom tanggal di bawah tetap dikirim apa adanya untuk tampilan; keputusan
+  // ada/tidaknya ada di langkahAda (tanggal terisi ATAU barisnya sudah ada).
+  const bersama = await require("./penetapanKeadaanService")
+    .keadaanSatu(perkaraId, { kueri: runQuery })
+    .catch(() => ({ ok: false }));
+  const langkahAda = bersama && bersama.ok
+    ? { pmh: bersama.langkah.pmh.ada, ppp: bersama.langkah.ppp.ada, pjs: bersama.langkah.pjs.ada, phs: bersama.langkah.phs.ada }
+    : null;
+  const tambahan = langkahAda ? { langkahAda, tidakSelaras: bersama.tidakSelaras, sidik: bersama.sidik } : {};
+
+  if (!baris) return { ada: Boolean(langkahAda && Object.values(langkahAda).some(Boolean)), pmh: "", ppp: "", pjs: "", phs: "", sidangPertama: "", ...tambahan };
 
   return {
+    ...tambahan,
     ada: true,
     pmh: isoTanggal(baris.pmh),
     ppp: isoTanggal(baris.ppp),

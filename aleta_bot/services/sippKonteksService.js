@@ -638,23 +638,26 @@ async function identitasMassal(nomorBersih) {
   // Sumbernya kini SAMA PERSIS dengan yang dipakai penetapanTulisService saat
   // memutuskan *_sudah_ada: keempat kolom pada perkara_penetapan. Tanggal
   // yang terisi berarti sudah; null berarti belum.
-  const barisPenetapan = await amanSkema("penetapan", () =>
-    runQuerySipp(
-      `SELECT perkara_id AS id,
-              penetapan_majelis_hakim AS pmh,
-              penetapan_panitera_pengganti AS ppp,
-              penetapan_jurusita AS pjs,
-              penetapan_hari_sidang AS phs
-         FROM perkara_penetapan
-        WHERE perkara_id IN (${isianId})`,
-      daftarId
-    )
+  //
+  // 20 Okt 2026: bukan lagi kueri sendiri. Penanda baris daftar, kartu
+  // Penetapan, dan penulis memakai penetapanKeadaanService - satu definisi
+  // "ada" (tanggal terisi ATAU barisnya sudah ada), supaya penanda tidak pernah
+  // menawarkan "belum ditetapkan" untuk perkara yang di mata penulis sudah ada.
+  const keadaanBersama = await amanSkema("penetapan", () =>
+    require("./penetapanKeadaanService").keadaanBanyak(daftarId.map((x) => Number(x)), {
+      kueri: runQuerySipp,
+    })
   );
-  for (const satu of Array.isArray(barisPenetapan) ? barisPenetapan : []) {
-    const nomor = petaId.get(Number(satu.id));
-    if (!nomor || !hasil[nomor]) continue;
-    for (const jenis of ["pmh", "ppp", "pjs", "phs"]) {
-      hasil[nomor].penetapan[jenis] = Boolean(satu[jenis]);
+  if (keadaanBersama && keadaanBersama.ok) {
+    for (const id of daftarId) {
+      const k = keadaanBersama.peta[Number(id)];
+      const nomor = petaId.get(Number(id));
+      if (!k || !nomor || !hasil[nomor]) continue;
+      for (const jenis of ["pmh", "ppp", "pjs", "phs"]) {
+        hasil[nomor].penetapan[jenis] = Boolean(k.langkah[jenis] && k.langkah[jenis].ada);
+      }
+      hasil[nomor].penetapan.sidik = k.sidik;
+      hasil[nomor].penetapan.tidakSelaras = k.tidakSelaras;
     }
   }
 
