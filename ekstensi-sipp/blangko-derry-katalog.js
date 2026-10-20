@@ -498,6 +498,7 @@
           tanya,
           tanyaMentah: mentah,
           jawab,
+          jawabKode: asal ? teks(asal.jawabKode || "") : "",
           jenis,
           kelompok: q.kelompok,
           tingkat: q.tingkat,
@@ -697,29 +698,56 @@
   }
 
   /**
-   * Memasang jawaban usulan (kontrak bersama {teks, yakin, sumber}) pada baris hasil gabung().
-   * `usulan` = { [kunciJawaban]: {teks, yakin, sumber} }. Hanya baris yang BELUM diketik petugas yang diganti
-   * (kosong, kalimat dasar katalog, atau hasil susunan sebelumnya); baris yang diketik petugas tidak pernah disentuh.
-   * Baris yang dipasang membawa `otomatis` (= teks), `yakin`, dan `sumberJawab` untuk tampilan.
-   * @returns {{rows: Array, terisi: number, tertahan: number}}
+   * Memasang jawaban usulan (kontrak bersama {teks, yakin, sumber, ket}) pada baris hasil gabung().
+   * `usulan` = { [kunciJawaban]: {teks, yakin, sumber, ket}, ["<kunciJawaban>@<kunciSaksi>"]: ... }. Pengisi jawaban dari data
+   * mengembalikan kalimat yang dibedakan menurut saksi (saksi 2 memakai kalimat lain) di kunci berekor `@kunciSaksi`;
+   * karena itu, bila `kunciSaksi` diberikan, kunci berekor dicoba LEBIH DULU lalu kunci polos.
+   * Hanya baris yang BELUM diketik petugas yang diganti (kosong, kalimat dasar katalog, atau hasil susunan sebelumnya);
+   * baris yang diketik petugas tidak pernah disentuh. Baris yang dipasang membawa `otomatis` (= teks),
+   * `usulan` {teks, yakin, sumber, ket} (dibaca tampilan: warna kotak, lencana ragu, ikon i), serta `yakin` dan `sumberJawab`.
+   * @param {Array} rows
+   * @param {object} usulan
+   * @param {string} [kunciSaksi]
+   * @param {{timpa?: boolean}} [opsi]  timpa: ketikan petugas ikut diganti (hanya atas persetujuan di layar konfirmasi)
+   * @returns {{rows: Array, terisi: number, tertahan: number, ragu: number}}
    */
-  function terapkanUsulan(rows, usulan) {
+  function terapkanUsulan(rows, usulan, kunciSaksi, opsi) {
     const u = laRaya(usulan) ? usulan : {};
+    const ks = teks(kunciSaksi);
     let terisi = 0;
     let tertahan = 0;
+    let ragu = 0;
     const hasil = daftar(rows).map((r) => {
       const kunci = teks(r && (r.kunciJawaban || (r.butir && r.jenisKat ? `${r.butir}/${r.jenisKat}` : "")));
-      const cari = u[kunci] || (r && r.butir && r.jenisKat ? u[`${r.butir}/${r.jenisKat}`] : undefined);
+      const polos = r && r.butir && r.jenisKat ? `${r.butir}/${r.jenisKat}` : "";
+      const calon = [];
+      if (ks) {
+        if (kunci) calon.push(`${kunci}@${ks}`);
+        if (polos && polos !== kunci) calon.push(`${polos}@${ks}`);
+      }
+      if (kunci) calon.push(kunci);
+      if (polos && polos !== kunci) calon.push(polos);
+      let cari;
+      for (const c of calon) {
+        if (u[c] && rapat(u[c].teks)) {
+          cari = u[c];
+          break;
+        }
+      }
       const isi = cari && rapat(cari.teks);
       if (!isi) return r;
-      if (diketikPetugas(r)) {
-        tertahan += 1;
+      if (diketikPetugas(r) && !(opsi && opsi.timpa === true)) {
+        // ketikan yang sudah sama dengan usulan tidak perlu ditahan atau diganti
+        if (norm(r.jawab) !== norm(isi)) tertahan += 1;
         return r;
       }
       terisi += 1;
-      return Object.assign({}, r, { jawab: isi, otomatis: isi, yakin: cari.yakin === "yakin" || cari.yakin === "ragu" ? cari.yakin : "cukup", sumberJawab: teks(cari.sumber) });
+      const yakin = cari.yakin === "yakin" || cari.yakin === "ragu" ? cari.yakin : "cukup";
+      if (yakin === "ragu") ragu += 1;
+      const sumber = teks(cari.sumber);
+      return Object.assign({}, r, { jawab: isi, otomatis: isi, yakin, sumberJawab: sumber, usulan: { teks: isi, yakin, sumber, ket: teks(cari.ket) } });
     });
-    return { rows: hasil, terisi, tertahan };
+    return { rows: hasil, terisi, tertahan, ragu };
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -783,6 +811,7 @@
     return (
       `<div class="bd-skpanel bd-skkatalog" role="group" aria-label="Pengetahuan saksi" data-katalog="${esc(o.judul)}">` +
       `<div class="bd-skhead"><span class="bd-lbl">Pengetahuan saksi · ${esc(o.judul)}</span><button type="button" class="bd-btn kecil" data-bd2="isioto" data-kunci="${esc(daftar(o.keys).join("|"))}"${mati}>Isi ulang dari data perkara</button></div>` +
+      `${typeof o.konfirmasi === "string" ? o.konfirmasi : ""}` +
       `<div class="bd-skgrid">${keadaanHtml(daftar(o.bidang), mati)}${kartu}</div>${jarang}</div>`
     );
   }

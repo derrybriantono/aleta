@@ -47,7 +47,9 @@
       const baris = [];
       for (const b of Array.isArray(s.baris) ? s.baris : []) {
         if (!b || !b.kunciJawaban || !RE_KOSONG.test(teks(b.jawab))) continue;
-        baris.push({ kunci: teks(b.kunciJawaban), tanya: teks(b.tanya), jawab: teks(b.jawab) });
+        // `kode` = jawaban dengan penanda ⟦#kode#⟧/⟦{slot}⟧ di tempat yang belum terisi: pengisi mengisinya satu per satu menurut isinya
+        const kode = typeof b.jawabKode === "string" && /⟦/.test(b.jawabKode) ? b.jawabKode : "";
+        baris.push({ kunci: teks(b.kunciJawaban), tanya: teks(b.tanya), jawab: teks(b.jawab), ...(kode ? { kode } : {}) });
       }
       if (baris.length) saksiIsi.push({ kunci: teks(s.kunci), ke: Number(s.ke) || saksiIsi.length + 1, modus: modusDariJenis(s.jenis), sumberNama: "", baris });
     }
@@ -68,6 +70,8 @@
       nomorPerkara: teks(p.nomorPerkara),
       jenisPerkara: teks(p.jenisPerkaraId || p.jenisPerkara),
       alur: teks(p.alurPerkaraId),
+      kunciKatalog: teks(r.kenal && r.kenal.kunci),
+      kodeVariabel: (Array.isArray(r.kodeBelum) ? r.kodeBelum : []).map(teks).filter((x) => /^\d{4}$/.test(x)).slice(0, 60),
       pelaku: teks(seb.T),
       lawan: teks(seb.P),
       isian,
@@ -87,7 +91,17 @@
   function petakan(isi) {
     const hasil = {};
     if (!isi || typeof isi !== "object") return hasil;
+    // variabel ABT (kode -> nilai) yang dihitung dari data: tidak ikut peta jawaban, dibawa sebagai properti terpisah
+    const variabel = {};
+    if (isi["__variabel"] && typeof isi["__variabel"] === "object") {
+      for (const [kode, v] of Object.entries(isi["__variabel"])) {
+        const t = v && typeof v === "object" ? teks(v.teks).trim() : "";
+        if (/^\d{4}$/.test(kode) && t && !/aleta/i.test(t)) variabel[kode] = { teks: t, yakin: v.yakin === "ragu" ? "ragu" : "yakin", sumber: teks(v.sumber) };
+      }
+    }
+    Object.defineProperty(hasil, "variabel", { value: variabel, enumerable: false });
     for (const [kunci, v] of Object.entries(isi)) {
+      if (kunci === "__variabel") continue;
       const t = v && typeof v === "object" ? teks(v.teks).trim() : "";
       if (!t || /aleta/i.test(t)) continue;
       const yakin = v.yakin === "yakin" || v.yakin === "ragu" ? v.yakin : "cukup";
@@ -98,7 +112,7 @@
 
   async function usulkan(o) {
     const muatan = susunMuatan(o);
-    if (!muatan.saksiIsi.length || !muatan.nomorPerkara) return {};
+    if ((!muatan.saksiIsi.length && !muatan.kodeVariabel.length) || !muatan.nomorPerkara) return {};
     try {
       const data = await kirim(muatan);
       if (!data || data.available === false) return {};

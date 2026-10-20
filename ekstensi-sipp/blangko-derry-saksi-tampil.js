@@ -46,7 +46,8 @@
     const m = b.jawab && typeof b.jawab === "object" ? b.jawab : b.usulan && typeof b.usulan === "object" ? b.usulan : b;
     const yakin = YAKIN.includes(teks(m.yakin)) ? teks(m.yakin) : "";
     const sumber = teks(m.sumber).trim();
-    return yakin || sumber ? { yakin, sumber } : null;
+    const ket = teks(m.ket).trim();
+    return yakin || sumber ? { yakin, sumber, ...(ket ? { ket } : {}) } : null;
   }
 
   /**
@@ -63,7 +64,9 @@
 
   /** Alasan "ragu" untuk ikon ⓘ: sumber usulan bila ada, selain itu kalimat umum. */
   function alasanRagu(r) {
-    const s = r && r.usulan && r.usulan.sumber ? teks(r.usulan.sumber).trim() : "";
+    const u = r && r.usulan ? r.usulan : null;
+    // keterangan (mis. "gugatan menyebut X, sedangkan data SIPP menyebut Y") lebih berguna daripada nama sumbernya saja
+    const s = u && u.ket ? teks(u.ket).trim() : u && u.sumber ? teks(u.sumber).trim() : "";
     return s || "Jawaban ini disusun dari data yang kurang pasti; periksa dengan keterangan saksi.";
   }
 

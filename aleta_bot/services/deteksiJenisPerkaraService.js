@@ -398,6 +398,27 @@ function lulusGerbangIsi(polaTanya, kunci) {
   return { lulus, ukur: terbaik };
 }
 
+/** Variabel yang isinya NAMA orang / UMUR (tahun) / jumlah anak PEMOHON sendiri. */
+const KODE_NAMA = new Set(["0600", "0606", "1029", "1551", "5110", "8603", "8723", "1217", "8087", "0650", "0651"]);
+const KODE_UMUR = new Set(["0601", "0607", "1030", "7211", "7212"]);
+const KODE_ANAK_PEMOHON = new Set(["0007", "9003", "fakta-jumlah-anak"]);
+
+/**
+ * 20 Okt (S7): fakta hanya boleh mengisi templat bila MAKNANYA cocok dengan isian itu. Perbaikan bug dispensasi kawin:
+ * "Calon suami ... bernama 3 orang anak" dan "Anak Pemohon sudah dikaruniai 3 orang anak" - jumlah anak dari perkawinan
+ * Pemohon (kalimat "telah dikaruniai 3 (tiga) anak yang masing-masing bernama") terisi ke nama calon dan ke anak Pemohon
+ * sendiri. Aturan: (1) jumlah anak Pemohon tidak dipakai pada jenis yang membicarakan anak Pemohon (dispensasi kawin,
+ * perwalian, wali adhal); (2) isian nama tidak boleh berisi angka atau "orang anak"; (3) isian umur harus angka tahun.
+ */
+function maknaCocok(jenis, kunci, f) {
+  const nilai = f && f.nilai === true ? "" : String((f && f.nilai) || "").trim();
+  const k = String(kunci);
+  if (KODE_ANAK_PEMOHON.has(k) && jenis && ["dispensasi-kawin", "perwalian", "wali-adhol"].includes(jenis.kunci)) return false;
+  if (KODE_NAMA.has(k) && nilai && (/\d/.test(nilai) || /\b(?:orang\s+anak|dikaruni\w*|anak\s+yang\s+masing)/i.test(nilai))) return false;
+  if (KODE_UMUR.has(k) && nilai && !/^\d{1,2}(?:\s*tahun)?$/i.test(nilai)) return false;
+  return true;
+}
+
 /**
  * Templat tanya-jawab ABT untuk jenis non-cerai, dengan variabel/slot kosong diisi
  * dari posita. Mengembalikan templat BARU (masukan tidak diubah) dan daftar isian.
@@ -417,7 +438,7 @@ function isiTemplatSaksi(templat, opsi = {}) {
   const faktaLulus = {};
   for (const [k, f] of Object.entries(fakta)) {
     const g = opsi.tanpaGerbang ? { lulus: true } : lulusGerbangIsi(polaTanya, k);
-    if (g.lulus) faktaLulus[k] = f;
+    if (g.lulus && maknaCocok(jenis, k, f)) faktaLulus[k] = f;
     else if (f.nilai !== true) tertahan.push({ kunci: k, nama: f.label, nilai: String(f.nilai), kodePola: f.kodePola, ukur: g.ukur || null });
   }
   const terisi = [];

@@ -2898,6 +2898,21 @@
     const timpa = tj.termasuk === true;
     S.sk.tinjau = null;
     const hasil = [];
+    // 20 Okt (S7): hasil tinjauan susunan KATALOG sudah berupa baris jadi; ketikan petugas hanya diganti bila dicentang
+    const dariKatalog = tj.item.filter((x) => x.kat);
+    if (dariKatalog.length) {
+      tjCatat(dariKatalog.map((x) => x.k));
+      for (const x of dariKatalog) {
+        const t = S.tj[x.k];
+        if (!t) continue;
+        t.rows = timpa ? x.rowsTimpa : x.rows;
+        t.berubah = true;
+        S.sk.status[x.k] = { teks: `Jawaban diisi ulang dari data perkara: ${timpa ? x.ubah + x.tahan : x.ubah} berubah${!timpa && x.tahan ? `, ${x.tahan} jawaban ketikan Anda dipertahankan` : ""}. Belum disimpan.` };
+      }
+      renderTj();
+      laporKeKerangka();
+      return;
+    }
     for (const x of tj.item) {
       const t = S.tj[x.k];
       if (!t || m.tandaTanya(t.rows) !== x.tanda) {
@@ -3308,7 +3323,14 @@
         const pengisi = typeof globalThis !== "undefined" ? globalThis.AletaBdJawabanKatalog : null;
         if (pengisi && typeof pengisi.usulkan === "function") {
           try {
-            usulan = await pengisi.usulkan({ perkara: ktPerkaraObj(), kenal, keadaan: ker.keadaan, saksi: hasil.saksi, variabel: nilaiVar });
+            usulan = await pengisi.usulkan({ perkara: ktPerkaraObj(), kenal, keadaan: ker.keadaan, saksi: hasil.saksi, variabel: nilaiVar, kodeBelum: (hasil.variabelAbt || []).filter((kd) => !(kd in nilaiVar)) });
+            // variabel ABT yang belum terbaca (nama anak, almarhum, ...) dihitung bot dari data perkara: pertanyaan disusun ulang memakainya
+            const dariBot = usulan && usulan.variabel;
+            if (dariBot && Object.keys(dariBot).length) {
+              const gabungVar = Object.assign({}, nilaiVar);
+              for (const [kd, v] of Object.entries(dariBot)) if (!gabungVar[kd]) gabungVar[kd] = v.teks;
+              hasil = susun((kode) => gabungVar[kode]);
+            }
           } catch {
             usulan = null; // pengisi jawaban gagal: jawaban dasar katalog tetap terpasang
           }
@@ -3319,6 +3341,9 @@
         return;
       }
       const dicatat = new Set();
+      // 20 Okt (S7): "Isi ulang dari data perkara" pada susunan katalog meminta persetujuan dulu (jumlah berubah / tertahan).
+      const tinjau = o.tinjau === true && Boolean(TP());
+      if (tinjau) S.sk.tinjau = { kunci: sasaran.slice(), item: [], termasuk: false, siap: false };
       for (const k of sasaran) {
         const t = S.tj[k];
         const sk = hasil.saksi[semua.indexOf(k)];
@@ -3327,11 +3352,20 @@
           continue;
         }
         const g = K.gabung(t.rows, sk.baris, { gantiDaftar: o.gantiDaftar === true });
+        if (tinjau) {
+          const biasa = usulan ? K.terapkanUsulan(g.rows, usulan, k) : { rows: g.rows, tertahan: 0 };
+          const timpaSemua = usulan ? K.terapkanUsulan(g.rows, usulan, k, { timpa: true }) : { rows: g.rows };
+          const lama = new Set(t.rows.map((r) => `${r.tanya}${r.jawab}`));
+          const ubah = biasa.rows.filter((r) => !lama.has(`${r.tanya}${r.jawab}`)).length;
+          S.sk.status[k] = null;
+          S.sk.tinjau.item.push({ k, kat: true, rows: biasa.rows, rowsTimpa: timpaSemua.rows, ubah, tahan: biasa.tertahan });
+          continue;
+        }
         if (ktAdaIsi(t.rows) && g.dipertahankan + g.diganti === 0 && o.gantiDaftar !== true && !t.rows.some((r) => r.butir)) {
           S.sk.status[k] = { teks: "Daftar pertanyaan ini bukan susunan katalog. Pilih set pertanyaan katalog di atas lalu tekan Muat bila ingin menyusunnya; jawaban yang sudah Anda ketik tetap dipertahankan." };
           continue;
         }
-        const rows = usulan ? K.terapkanUsulan(g.rows, usulan).rows : g.rows;
+        const rows = usulan ? K.terapkanUsulan(g.rows, usulan, k).rows : g.rows;
         const sama = JSON.stringify(rows.map((r) => [r.tanya, r.jawab])) === JSON.stringify(t.rows.map((r) => [r.tanya, r.jawab]));
         if (!sama) {
           if (!dicatat.size) tjCatat(grupSaksi(k));
@@ -3344,6 +3378,10 @@
         if (g.baru) potong.push(`${g.baru} pertanyaan baru`);
         if (g.dibuang) potong.push(`${g.dibuang} pertanyaan dibuang karena keadaannya berubah`);
         S.sk.status[k] = { teks: `Disusun dari katalog ${kenal.judul}: ${rows.length} pertanyaan${potong.length ? `; ${potong.join(", ")}` : ""}. Belum disimpan.` };
+      }
+      if (tinjau && S.sk.tinjau) {
+        if (S.sk.tinjau.item.length) S.sk.tinjau.siap = true;
+        else S.sk.tinjau = null;
       }
       renderTj();
       laporKeKerangka();
@@ -3369,6 +3407,7 @@
     else if (aksi === "kat-saksi") ktSaksi(kunci).keadaan[sub] = el.value;
     else return;
     ktSimpan();
+    S.sk.tinjau = null;
     renderTj();
     const grup = ktGrupBuka();
     if (grup.length && tjSiap(grup)) void ktIsiOtomatis(grup, { lapor: true });
@@ -3401,7 +3440,7 @@
         };
       });
     if (!kartu.length) return "";
-    return K.panelHtml({ judul: kenal.judul, keys, siap: tjSiap(keys), jarang: ktState().jarang, ada: true, bidang, kartu });
+    return K.panelHtml({ judul: kenal.judul, keys, siap: tjSiap(keys), jarang: ktState().jarang, ada: true, bidang, kartu, konfirmasi: htmlKonfirmasiIsiUlang(keys) });
   }
   /** Pilihan "Katalog <jenis perkara>" di daftar Set pertanyaan (terpilih bawaan); kosong untuk cerai dan jenis tanpa katalog. */
   function ktOpsiSet() {
