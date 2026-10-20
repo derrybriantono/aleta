@@ -95,9 +95,11 @@ function riwayatPerkawinan(t, daftar) {
   const bagian = [];
   let sumber = "";
   const nikah = /(?:menikah|melangsungkan\s+(?:pernikahan|perkawinan)|pernikahan\s+(?:para\s+)?pemohon\s+telah\s+dilangsungkan)[^.;]{0,60}?(?:pada\s+)?(?:tanggal\s+)?(\d{1,2}\s+[A-Za-z]+\s+(?:tahun\s+)?\d{4})/i.exec(t);
-  if (nikah && B.tanggalPertama(nikah[1])) {
-    bagian.push(`dilangsungkan pada tanggal ${B.tanggalPertama(nikah[1])}`);
-    sumber = nikah[0];
+  const nikah2 = nikah ? null : /pada\s+tanggal\s+(\d{1,2}\s+[A-Za-z]+\s+(?:tahun\s+)?\d{4}),?\s+(?:para\s+)?Pemohon\s+telah\s+(?:melangsungkan|menikah)/i.exec(t);
+  const tglNikah = nikah ? nikah : nikah2;
+  if (tglNikah && B.tanggalPertama(tglNikah[1])) {
+    bagian.push(`dilangsungkan pada tanggal ${B.tanggalPertama(tglNikah[1])}`);
+    sumber = tglNikah[0];
   } else {
     const cerai = /telah\s+bercerai[^.;]{0,120}?Akta\s+Cerai\s+Nomor\s*:?\s*([0-9A-Za-z/.]+)/i.exec(t);
     if (cerai) {
@@ -105,7 +107,7 @@ function riwayatPerkawinan(t, daftar) {
       sumber = cerai[0];
     }
   }
-  const belum = /belum\s+(?:di)?karunia[ik]\s+(?:ke)?turunan|belum\s+(?:di)?karunia[ik]\s+anak|belum\s+memiliki\s+(?:keturunan|anak)/i.exec(t);
+  const belum = /belum\s+(?:di)?karunia[ik]\s+k[eu]turunan|belum\s+(?:di)?karunia[ik]\s+anak|belum\s+memiliki\s+(?:keturunan|anak)/i.exec(t);
   const ada = /dikaruniai\s+(\d+|satu|dua|tiga|empat|lima)\s*(?:\(\w+\)\s*)?orang\s+anak/i.exec(t);
   if (belum) {
     bagian.push("belum dikaruniai keturunan");
@@ -126,7 +128,7 @@ function izinSosial(daftar) {
   const nomor = [];
   for (const k of kal) {
     for (const m of k.matchAll(/Dinas\s+Sosial\s+(?:Provinsi|Kabupaten|Kota)\s+[A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)?/g)) if (!nama.includes(m[0])) nama.push(m[0]);
-    for (const m of k.matchAll(/(?:No\.?|Nomor)\s*:?\s*([0-9][0-9A-Za-z./-]{3,40})/g)) if (!nomor.includes(m[1])) nomor.push(m[1].replace(/[.,;]$/, ""));
+    for (const m of k.matchAll(/(?:No\.?|Nomor)\s*:?\s*([0-9][0-9A-Za-z./-]{3,40})/gi)) if (!nomor.includes(m[1])) nomor.push(m[1].replace(/[.,;]$/, ""));
   }
   if (!nama.length) return null;
   const per = nama.slice(0, 2).map((n, i) => (nomor[i] ? `${n} Nomor ${nomor[i]}` : n));
@@ -134,12 +136,17 @@ function izinSosial(daftar) {
 }
 
 function penghasilan(t) {
-  const m = /penghasilan(?:nya)?\s+(?:sebesar|sekitar|rata-rata|kurang\s+lebih|sejumlah)?\s*(Rp\.?\s*[0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2}|,-)?)/i.exec(t);
-  if (!m) return null;
-  const sesudah = t.slice(m.index + m[0].length, m.index + m[0].length + 80);
-  const per = /(?:^|\s|\))(?:per\s*|setiap\s+|tiap\s+|\/\s*)(bulan|tahun)\b/i.exec(sesudah);
-  const rp = m[1].replace(/Rp\.?\s*/i, "Rp").replace(/[.,]$/, "");
-  return B.fakta(`sebesar ${rp}${per ? ` per ${per[1].toLowerCase()}` : ""}`, m[0], "ragu", "w2b-lain-4914-penghasilan");
+  const hasil = [];
+  for (const m of t.matchAll(/penghasilan(?:nya)?\s*(?:\([^)]{0,60}\)\s*)?(?:sebesar|sekitar|rata-rata|kurang\s+lebih|sejumlah)?\s*(Rp\.?\s*[0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2}|,-)?)/gi)) {
+    const sesudah = t.slice(m.index + m[0].length, m.index + m[0].length + 80);
+    const per = /(?:^|\s|\))(?:per\s*|setiap\s+|tiap\s+|\/\s*)(bulan|tahun)/i.exec(sesudah);
+    const rp = m[1].replace(/Rp\.?\s*/i, "Rp").replace(/[.,]$/, "");
+    hasil.push({ nilai: `${rp}${per ? ` per ${per[1].toLowerCase()}` : ""}`, sumber: m[0] });
+    if (hasil.length >= 2) break;
+  }
+  if (!hasil.length) return null;
+  const nilai = hasil.length === 1 ? `sebesar ${hasil[0].nilai}` : `Pemohon I sebesar ${hasil[0].nilai} dan Pemohon II sebesar ${hasil[1].nilai}`;
+  return B.fakta(nilai, hasil[0].sumber, "ragu", "w2b-lain-4914-penghasilan");
 }
 
 function tujuan(daftar) {

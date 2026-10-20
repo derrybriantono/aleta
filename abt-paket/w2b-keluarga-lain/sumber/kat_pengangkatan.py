@@ -35,7 +35,7 @@ KEADAAN_BARU = {
     'pemohonPerkawinan': {'sumber': 'borang', 'nilai': ['berdua', 'sendiri'], 'label': 'Pemohon pengangkatan anak: suami istri berdua atau seorang diri', 'bawaan': 'berdua'},
     'orangTuaKandung': {'sumber': 'borang', 'nilai': ['lengkap', 'salah-satu-meninggal', 'kedua-meninggal', 'tidak-diketahui'],
                         'label': 'Keadaan orang tua kandung anak yang akan diangkat', 'bawaan': 'lengkap'},
-    'anakKandungPemohon': {'sumber': 'borang', 'nilai': ['ada', 'belum-ada'], 'label': 'Pemohon sudah mempunyai anak kandung', 'bawaan': 'belum-ada'},
+    'anakKandungPemohon': {'sumber': 'borang', 'nilai': ['belum-ada', 'ada'], 'label': 'Pemohon sudah mempunyai anak kandung', 'bawaan': 'belum-ada'},
 }
 
 

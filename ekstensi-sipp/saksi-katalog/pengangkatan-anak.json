@@ -222,8 +222,8 @@
     "anakKandungPemohon": {
       "sumber": "borang",
       "nilai": [
-        "ada",
-        "belum-ada"
+        "belum-ada",
+        "ada"
       ],
       "label": "Pemohon sudah mempunyai anak kandung",
       "bawaan": "belum-ada"

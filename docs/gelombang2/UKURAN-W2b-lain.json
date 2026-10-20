@@ -1,0 +1,232 @@
+{
+ "skema": "ukuran-w2b-lain/1",
+ "diukur": "2026-10-21",
+ "cara": "alat/ukur_lain.cjs: pengisi isiOtomatisW2b/lain.js atas 19 perkara Lain-Lain (369) sipp_donggala; pembanding = pelabelan manual agen atas posita (data-uji/lain-gold.json)",
+ "batas": [
+  "Hanya 6 perkara pengangkatan anak dan 1 penetapan kematian (permohonan umum); mafqud TIDAK ADA perkara nyata (diuji dengan fixture di uji w2b-lain-isian-21okt).",
+  "Kode 4910-4939 baru: belum ada isian petugas pembanding di ABT server (0 baris) maupun lokal; ketepatan di sini = kecocokan dengan pelabelan manual, bukan dengan isian hakim.",
+  "Semua usulan keyakinan ragu (saran). Naik tingkat hanya setelah ada pembanding isian petugas >= 20 perkara."
+ ],
+ "jumlahPerkara": 19,
+ "perkaraBerlabel": 19,
+ "perkaraTanpaLabel": 0,
+ "usulanPadaPerkaraBukanKeluargaIni": 0,
+ "kode": {
+  "4910": {
+   "n": 6,
+   "ditemukan": 6,
+   "cocok": 6,
+   "tambahanSalah": 0,
+   "contohSalah": [],
+   "persenCocokDariAda": 100,
+   "status": "saran",
+   "alasanStatus": "pembanding hasil pelabelan manual dan kurang dari 20 perkara; kode baru belum pernah diisi petugas"
+  },
+  "4911": {
+   "n": 2,
+   "ditemukan": 2,
+   "cocok": 2,
+   "tambahanSalah": 0,
+   "contohSalah": [],
+   "persenCocokDariAda": 100,
+   "status": "saran",
+   "alasanStatus": "pembanding hasil pelabelan manual dan kurang dari 20 perkara; kode baru belum pernah diisi petugas"
+  },
+  "4912": {
+   "n": 6,
+   "ditemukan": 6,
+   "cocok": 6,
+   "tambahanSalah": 0,
+   "contohSalah": [],
+   "persenCocokDariAda": 100,
+   "status": "saran",
+   "alasanStatus": "pembanding hasil pelabelan manual dan kurang dari 20 perkara; kode baru belum pernah diisi petugas"
+  },
+  "4913": {
+   "n": 4,
+   "ditemukan": 4,
+   "cocok": 4,
+   "tambahanSalah": 0,
+   "contohSalah": [],
+   "persenCocokDariAda": 100,
+   "status": "saran",
+   "alasanStatus": "pembanding hasil pelabelan manual dan kurang dari 20 perkara; kode baru belum pernah diisi petugas"
+  },
+  "4914": {
+   "n": 2,
+   "ditemukan": 2,
+   "cocok": 2,
+   "tambahanSalah": 0,
+   "contohSalah": [],
+   "persenCocokDariAda": 100,
+   "status": "saran",
+   "alasanStatus": "pembanding hasil pelabelan manual dan kurang dari 20 perkara; kode baru belum pernah diisi petugas"
+  },
+  "4915": {
+   "n": 6,
+   "ditemukan": 6,
+   "cocok": 6,
+   "tambahanSalah": 0,
+   "contohSalah": [],
+   "persenCocokDariAda": 100,
+   "status": "saran",
+   "alasanStatus": "pembanding hasil pelabelan manual dan kurang dari 20 perkara; kode baru belum pernah diisi petugas"
+  },
+  "4930": {
+   "n": 1,
+   "ditemukan": 1,
+   "cocok": 1,
+   "tambahanSalah": 0,
+   "contohSalah": [],
+   "persenCocokDariAda": 100,
+   "status": "saran",
+   "alasanStatus": "pembanding hasil pelabelan manual dan kurang dari 20 perkara; kode baru belum pernah diisi petugas"
+  },
+  "4931": {
+   "n": 1,
+   "ditemukan": 1,
+   "cocok": 1,
+   "tambahanSalah": 0,
+   "contohSalah": [],
+   "persenCocokDariAda": 100,
+   "status": "saran",
+   "alasanStatus": "pembanding hasil pelabelan manual dan kurang dari 20 perkara; kode baru belum pernah diisi petugas"
+  },
+  "4933": {
+   "n": 1,
+   "ditemukan": 1,
+   "cocok": 1,
+   "tambahanSalah": 0,
+   "contohSalah": [],
+   "persenCocokDariAda": 100,
+   "status": "saran",
+   "alasanStatus": "pembanding hasil pelabelan manual dan kurang dari 20 perkara; kode baru belum pernah diisi petugas"
+  },
+  "4934": {
+   "n": 1,
+   "ditemukan": 1,
+   "cocok": 1,
+   "tambahanSalah": 0,
+   "contohSalah": [],
+   "persenCocokDariAda": 100,
+   "status": "saran",
+   "alasanStatus": "pembanding hasil pelabelan manual dan kurang dari 20 perkara; kode baru belum pernah diisi petugas"
+  }
+ },
+ "perPerkara": [
+  {
+   "nomor": "343/Pdt.G/2019/PA.Dgl",
+   "subJenis": "",
+   "usulan": 0,
+   "gold": 0
+  },
+  {
+   "nomor": "648/Pdt.P/2019/PA.Dgl",
+   "subJenis": "permohonan-umum",
+   "usulan": 4,
+   "gold": 4
+  },
+  {
+   "nomor": "358/Pdt.G/2020/PA.Dgl",
+   "subJenis": "",
+   "usulan": 0,
+   "gold": 0
+  },
+  {
+   "nomor": "542/Pdt.G/2021/PA.Dgl",
+   "subJenis": "",
+   "usulan": 0,
+   "gold": 0
+  },
+  {
+   "nomor": "173/Pdt.P/2021/PA.Dgl",
+   "subJenis": "pengangkatan-anak",
+   "usulan": 6,
+   "gold": 6
+  },
+  {
+   "nomor": "5/Pdt.P/2022/PA.Dgl",
+   "subJenis": "pengangkatan-anak",
+   "usulan": 6,
+   "gold": 6
+  },
+  {
+   "nomor": "57/Pdt.G/2022/PA.Dgl",
+   "subJenis": "",
+   "usulan": 0,
+   "gold": 0
+  },
+  {
+   "nomor": "177/Pdt.G/2022/PA.Dgl",
+   "subJenis": "",
+   "usulan": 0,
+   "gold": 0
+  },
+  {
+   "nomor": "88/Pdt.P/2022/PA.Dgl",
+   "subJenis": "",
+   "usulan": 0,
+   "gold": 0
+  },
+  {
+   "nomor": "89/Pdt.P/2022/PA.Dgl",
+   "subJenis": "",
+   "usulan": 0,
+   "gold": 0
+  },
+  {
+   "nomor": "336/Pdt.G/2022/PA.Dgl",
+   "subJenis": "",
+   "usulan": 0,
+   "gold": 0
+  },
+  {
+   "nomor": "350/Pdt.G/2022/PA.Dgl",
+   "subJenis": "",
+   "usulan": 0,
+   "gold": 0
+  },
+  {
+   "nomor": "160/Pdt.P/2022/PA.Dgl",
+   "subJenis": "",
+   "usulan": 0,
+   "gold": 0
+  },
+  {
+   "nomor": "290/Pdt.G/2023/PA.Dgl",
+   "subJenis": "",
+   "usulan": 0,
+   "gold": 0
+  },
+  {
+   "nomor": "162/Pdt.P/2023/PA.Dgl",
+   "subJenis": "pengangkatan-anak",
+   "usulan": 3,
+   "gold": 3
+  },
+  {
+   "nomor": "7/Pdt.P/2024/PA.Dgl",
+   "subJenis": "",
+   "usulan": 0,
+   "gold": 0
+  },
+  {
+   "nomor": "8/Pdt.P/2024/PA.Dgl",
+   "subJenis": "pengangkatan-anak",
+   "usulan": 3,
+   "gold": 3
+  },
+  {
+   "nomor": "12/Pdt.P/2024/PA.Dgl",
+   "subJenis": "pengangkatan-anak",
+   "usulan": 4,
+   "gold": 4
+  },
+  {
+   "nomor": "152/Pdt.P/2025/PA.Dgl",
+   "subJenis": "pengangkatan-anak",
+   "usulan": 4,
+   "gold": 4
+  }
+ ]
+}
