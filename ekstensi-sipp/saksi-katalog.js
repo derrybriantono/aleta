@@ -819,7 +819,7 @@
    * }} masukan
    * @returns {{saksi: Array<{ke:number,pihak:string,baris:object[]}>, peringatan: string[]}}
    *
-   * Setiap saksi: `jenis` = jenis keterangan bawaan (default "melihat"); `perButir[idButir]`
+   * Setiap saksi: `keadaan` (opsional) = keadaan khusus saksi itu yang menimpa keadaan perkara; `jenis` = jenis keterangan bawaan (default "melihat"); `perButir[idButir]`
    * menimpa untuk satu butir. Butir yang jenisnya tidak masuk akal (tidakBerlaku) jatuh ke "melihat".
    * Jaminan: pada satu butir, dua saksi tidak pernah mendapat kalimat jawaban yang sama
    * (setelah dirapikan), selama katalog lolos periksaKatalog.
@@ -842,7 +842,8 @@
     saksiMasuk.forEach((s, indeks) => {
       const ke = indeks + 1;
       const pihak = s.pihak === "T" ? "T" : "P";
-      const keadaan = Object.assign({}, keadaanDasar, { pihakSaksi: pihak });
+      // keadaan khusus saksi ini (mis. peran saksi pada pernikahan di itsbat nikah) menimpa keadaan perkara
+      const keadaan = Object.assign({}, keadaanDasar, laRaya(s.keadaan) ? s.keadaan : {}, { pihakSaksi: pihak });
       const butir = pertanyaanAktif(kat, keadaan, pihak, { tingkat: m.tingkat });
       const slotSaksi = Object.assign({}, m.slot || {}, (m.slotSaksi && m.slotSaksi[indeks]) || {});
       if (slotKosong(slotSaksi.sumber)) slotSaksi.sumber = pihak === "T" ? "#0047#" : "#0046#";
