@@ -5,7 +5,7 @@
 b4d27a83f17ff7365333e0055db6c2fb  berkas_rtf.py
 531cdf5815ea7f69d3a77bea4a6f98f6  daftar-dasar.tsv
 531cdf5815ea7f69d3a77bea4a6f98f6  daftar-pindah.tsv
-3ebb178d131300fe7c33a77fe0d4058e  daftar-rtf.tsv
+7a96c1ca2b120ff93bbdf406d5f51dd6  daftar-rtf.tsv
 531cdf5815ea7f69d3a77bea4a6f98f6  daftar-sunting.tsv
 a3aa6261a1d460fef8aea2915b8e945b  daftar-timpa.tsv
 2b237ad1b640d8651bb0ba33513c1dd5  folder-ada.txt
@@ -14,7 +14,7 @@ a3aa6261a1d460fef8aea2915b8e945b  daftar-timpa.tsv
 2a9656df4aeaedf0830e05ea06dfc0a4  pulih-satker.sh
 58c0c1afaeaa7696103e6d3e102fc882  rtf/derry_briantono/3 Dispensasi Kawin/[01c] [Kabul] DK - (Anak P Cewek) Alasan Mendesak Otomatis (Hamil atau Pacaran Erat).rtf
 edb08ff5d0ac2d128cae918b18f778a7  rtf/derry_briantono/3 Dispensasi Kawin/[01d] [Kabul] DK - Kedua Calon Mempelai di Bawah Umur (Dua Keluarga Pemohon, Hamil atau Pacaran Erat).rtf
-adc244166f2073816355cea3c768f2b1  rtf/derry_briantono/6 Perwalian/[01b] [Kabul] Perwalian - Anak Yatim Piatu oleh Kerabat (Bukan Orang Tua).rtf
+dab920ebd0fffee00e579e319bba9e44  rtf/derry_briantono/6 Perwalian/[01b] [Kabul] Perwalian - Anak Yatim Piatu oleh Kerabat (Bukan Orang Tua).rtf
 0941381a101b12f96cbe9c900d2341e5  timpa/derry_briantono/3 Dispensasi Kawin/[01] [Kabul] DK - (Anak P Cewek) Hamil.rtf
 668f9b6569beb3cebf0c7ba73dc4ece8  timpa/derry_briantono/3 Dispensasi Kawin/[01] [Kabul] DK - (Anak P Cowok) Calon Istri Hamil.rtf
 09a389fe13f2b7c827a5d69b1bd9bcbf  timpa/derry_briantono/3 Dispensasi Kawin/[02] [Kabul] DK - (Anak P Cewek) sudah berhubungan badan.rtf

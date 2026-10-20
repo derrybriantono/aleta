@@ -58,9 +58,6 @@ const METADATA = Object.freeze({
   "8713": { opsional: true, labelPengguna: "Batas waktu menambah panjar menurut surat teguran (bila ada)" },
   "8714": { opsional: true, labelPengguna: "Surat keterangan Panitera bahwa panjar tidak ditambah (bila ada)" },
   "9134": { opsional: true, labelPengguna: "Petunjuk perbaikan permohonan dari majelis (bila ada)" },
-  // agen U4 (20 Okt 2026): perwalian oleh kerabat dan dispensasi kawin
-  "4410": { opsional: true, labelPengguna: "Tindakan hukum yang dimohonkan izinnya untuk anak (mis. pencairan dana BPJS) - kosongkan bila tidak dimohonkan" },
-  "4427": { opsional: true, labelPengguna: "Rekomendasi psikolog, dokter, bidan, pekerja sosial, P2TP2A atau KPAD (bila ada)" },
 });
 
 /**

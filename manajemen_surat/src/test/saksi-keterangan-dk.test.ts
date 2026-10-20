@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
  *
  * Katalog keterangan pihak (ekstensi-sipp/saksi-katalog/dispensasi-kawin-keterangan.json) menempel pada katalog
  * saksi dispensasi kawin tetapi BUKAN butir saksi. Yang dijaga:
- *   - butir saksi dispensasi kawin tetap 45 (katalog keterangan tidak melebur ke saksi);
+ *   - butir saksi dispensasi kawin tetap sebanyak katalog saksinya (45 pada versi 1, 62 pada versi 2 agen U4); katalog keterangan tidak melebur ke saksi;
  *   - butir kehamilan dan hubungan badan TIDAK tercetak sebelum petugas mengonfirmasi (bawaan: mati);
  *   - ayah dan ibu diperiksa terpisah, nomor pemberi keterangan ganjil/genap tidak membuat kalimat kembar;
  *   - jawaban "berbeda" memakai versi B; ragu dan berbeda bertanda kuning, ragu pada hal yang menentukan diperingatkan;
@@ -66,9 +66,9 @@ const semuaBaris = (h: any) => h.pemberi.flatMap((p: any) => p.baris) as any[];
 const adaButir = (h: any, id: string) => semuaBaris(h).some((b) => b.butir === id);
 
 describe("katalog keterangan tidak mengubah butir saksi", () => {
-  it("butir saksi dispensasi kawin tetap 45 dan tidak ada tanda penggabungan", () => {
+  it("butir saksi dispensasi kawin tidak berubah oleh katalog keterangan (62 butir pada katalog versi 2) dan tidak ada tanda penggabungan", () => {
     expect(DK, "katalog dispensasi kawin").toBeTruthy();
-    expect(DK.pertanyaan.length).toBe(45);
+    expect(DK.pertanyaan.length).toBe(62);
     expect(DK.digabungDari).toBeUndefined();
     expect(DK.pertanyaan.some((q: any) => String(q.id).startsWith("q-kt-"))).toBe(false);
     expect(Object.keys(DK.keadaan)).not.toContain("peran");
@@ -79,7 +79,7 @@ describe("katalog keterangan tidak mengubah butir saksi", () => {
     expect(KET.jenisKatalog).toBe("keterangan-pihak");
     expect(KET.tambahanUntuk).toContain("dispensasi-kawin");
     const gabung = Mesin.gabungKatalog(Mesin.kenaliKatalog(katalog, { jenisPerkaraId: "362" }), katalog);
-    expect(gabung.pertanyaan.length).toBe(45);
+    expect(gabung.pertanyaan.length).toBe(62);
   });
 
   it("katalog keterangan tidak dikenali sebagai katalog saksi berdiri sendiri", () => {

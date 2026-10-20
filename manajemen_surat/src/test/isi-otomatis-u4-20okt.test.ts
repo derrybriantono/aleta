@@ -111,14 +111,12 @@ describe("tersambung ke jalur S5 dan metadata", () => {
     expect(sPw.map((x: any) => x.kode)).toEqual(expect.arrayContaining(["4400", "4401", "4402", "4403", "4404"]));
   });
 
-  it("4400-4404 hanya berlaku pada perwalian oleh kerabat; 4410 dan 4427 opsional", () => {
+  it("4400-4404 hanya berlaku pada perwalian oleh kerabat", () => {
     const kerabat = { perkara: { posita: POSITA_KERABAT } };
     const orangTua = { perkara: { posita: "Bahwa Pemohon adalah ibu kandung dari anak Contoh; Bahwa suami Pemohon telah meninggal dunia" } };
     for (const kode of ["4400", "4401", "4402", "4403", "4404"]) {
       expect(meta.SYARAT[kode](kerabat), kode).toBe(true);
       expect(meta.SYARAT[kode](orangTua), kode).toBe(false);
     }
-    expect(meta.METADATA["4410"].opsional).toBe(true);
-    expect(meta.METADATA["4427"].opsional).toBe(true);
   });
 });
