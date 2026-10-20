@@ -120,6 +120,15 @@ export const ISIAN_MANUAL: Record<string, string> = {
   "4105": "Keputusan atas tuntutan harta bersama adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak atau tidak dapat diterima.",
   "4107": "Dasar kemampuan pemberi nafkah adalah penilaian majelis atas pekerjaan dan penghasilan; kosong berarti pekerjaan di SIPP dipakai.",
   "4108": "Pendapat anak mumayyiz didengar majelis di persidangan; tidak tercatat di SIPP.",
+  // W2a 21 Okt: harta bersama, kewarisan, ekonomi syariah - keputusan majelis per tuntutan (pilihan hakim, tidak diputus mesin)
+  "4782": "Bagian masing-masing pihak atas harta bersama adalah putusan majelis; kosong berarti seperdua, bila petitum menyebut bagian lain majelis wajib memutuskan.",
+  "4783": "Keputusan atas permohonan sita jaminan adalah putusan majelis; pilih sah dan berharga atau ditolak.",
+  "4784": "Keputusan atas tuntutan uang paksa adalah putusan majelis; pilih ditolak atau dikabulkan beserta jumlahnya.",
+  "4785": "Keputusan atas tuntutan putusan serta merta adalah putusan majelis; pilih ditolak atau dikabulkan beserta alasannya.",
+  "4787": "Sikap Tergugat atas tiap objek berasal dari jawaban, replik dan duplik; tidak tercatat di SIPP.",
+  "4842": "Keputusan atas tuntutan denda, ganti rugi atau ta'widh adalah putusan majelis; pilih dikabulkan atau ditolak.",
+  "4843": "Keputusan atas tuntutan penyelesaian jaminan atau agunan adalah putusan majelis; pilih dikabulkan atau ditolak.",
+  "4844": "Keputusan atas tuntutan pembatalan akad adalah putusan majelis; pilih dikabulkan atau ditolak.",
   // Fakta sidang ikrar
   "9220": "Keadaan Termohon saat ikrar (suci, haid, atau hamil) disampaikan Termohon di sidang ikrar; tidak tercatat di SIPP.",
   // Itsbat nikah dan asal usul anak (paket abt-u3-itsbat-aua, 20 Okt 2026): pilihan majelis yang wajib dipilih pada blangko varian itu
@@ -141,4 +150,13 @@ export const ISIAN_OPSIONAL: Record<string, string> = {
   "4102": "Keputusan nafkah iddah (bila ada tuntutan atau diberikan ex officio)",
   "4103": "Keputusan mut'ah (bila ada tuntutan atau diberikan ex officio)",
   "4109": "Waktu pembayaran akibat cerai (bila ada nafkah iddah, mut'ah atau nafkah lampau)",
+  // W2a 21 Okt: isian pilihan majelis yang boleh kosong (kosong = bunyi lama blangko)
+  "4780": "Keputusan atas tuntutan penetapan dan pembagian harta bersama (kosong = seluruhnya bila semua objek terbukti)",
+  "4781": "Objek yang tidak terbukti sebagai harta bersama (kosong = semua objek terbukti)",
+  "4786": "Utang bersama para pihak (kosong = tidak ada utang bersama)",
+  "4815": "Keputusan atas tuntutan penetapan (kosong = bunyi lama blangko: kewarisan dan ekonomi syariah sebagian, wasiat, hibah dan wakaf seluruhnya)",
+  "4816": "Objek yang tidak terbukti sebagai harta peninggalan (kosong = semua objek terbukti)",
+  "4817": "Pihak yang menguasai harta peninggalan (kosong = Tergugat)",
+  "4818": "Harta bersama pewaris dengan pasangannya (kosong = tidak ada)",
+  "4819": "Utang, wasiat dan biaya pengurusan jenazah pewaris (kosong = tidak ada)",
 };

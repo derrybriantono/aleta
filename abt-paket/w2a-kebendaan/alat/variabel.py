@@ -15,7 +15,7 @@ JATAH = (4780, 4849)
 
 def muat():
     daftar = []
-    modul = ["variabel_hb", "variabel_waris", "variabel_wasiat", "variabel_ekonomi"]
+    modul = ["variabel_hb", "variabel_waris", "variabel_lain"]
     for nama in modul:
         try:
             m = __import__(nama)
