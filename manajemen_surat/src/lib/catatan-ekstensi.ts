@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.18",
+    dirilis: "2026-10-20T16:05:00+08:00",
+    judul: "Tanya jawab saksi semua jenis perkara dan isi otomatis seluruh isian ABT",
+    butir: [
+      "Tanya jawab saksi di Blangko ABT by Derry Briantono mengikuti jenis perkara: pilihan \"Yang diketahui saksi\", peran saksi (mis. wali atau saksi nikah pada itsbat), dan susunan pertanyaan diambil dari katalog jenis perkaranya; perkara permohonan menyebut \"Saksi 1 Pemohon\".",
+      "Jawaban saksi terisi otomatis dari isian blangko, data SIPP, dan posita gugatan/permohonan untuk semua jenis perkara termasuk cerai (titik-titik turun dari sekitar 34% menjadi sekitar 8%); jawaban yang sumbernya bertentangan diberi tanda ragu dengan penjelasan di ikon ⓘ, dan saksi kedua memakai kalimat yang berbeda.",
+      "Kotak jawaban saksi berwarna menurut keadaannya (kuning perlu dilengkapi, oranye ragu, hijau terisi dari data) dengan ringkasan yang dapat diklik untuk melompat ke kotaknya; tombol Tambah baris pindah ke bawah tabel.",
+      "Tombol \"Susun ulang jawaban\" menjadi \"Isi ulang dari data perkara\" dan selalu meminta persetujuan dengan jumlah jawaban yang akan berubah; jawaban yang sudah diketik tidak ditimpa tanpa centang khusus.",
+      "Isi otomatis isian ABT diperluas ke semua jenis perkara dan semua jenis blangko (putusan/penetapan, BAS, relaas, PTSP, ikrar); isian yang tidak pasti diberi tanda ragu, isian yang memang keputusan majelis diberi tanda \"diisi manual\" beserta alasannya.",
+      "Petunjuk perbaikan permohonan (#9134) dipindah ke bagian \"Isian tambahan (bila ada)\" dan tidak lagi dihitung di Perlu diisi; kartu alasan perceraian tidak lagi muncul di BAS.",
+      "Kepala panel Blangko Derry yang menempel saat digulir kini berlatar padat dan ramping; peringatan daftar saksi kosong tidak lagi muncul ganda.",
+    ],
+  },
+  {
     versi: "1.205.17",
     dirilis: "2026-10-20T11:15:00+08:00",
     judul: "Lihat sebagai tanpa nama kembar, peran tidak bertabrakan, saran blangko semua jenis perkara",
