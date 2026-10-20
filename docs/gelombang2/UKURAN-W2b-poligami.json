@@ -1,0 +1,437 @@
+{
+  "versi": "ukuran-w2b-poligami/1",
+  "tanggal": "2026-10-21",
+  "sumber": "SIPP lokal sipp_donggala (snapshot s.d. 2025), perkara jenis 341",
+  "batas": "hanya 12 perkara nyata (8 berposita); tidak ada isian petugas ABT pembanding untuk kode 4850-4856 (kode baru) maupun untuk 8720-8726 pada 12 perkara ini; ketepatan hanya dapat diuji terhadap amar (nama calon istri)",
+  "jumlahPerkara": 12,
+  "berposita": 8,
+  "petitumMengandungIzinPoligami": 12,
+  "kodeTerbaca": {
+    "1152": 6,
+    "4850": 0,
+    "4851": 0,
+    "4852": 0,
+    "4854": 4,
+    "4855": 2,
+    "4856": 0,
+    "8720": 4,
+    "8722": 7,
+    "8723": 8,
+    "8724": 8,
+    "8725": 7,
+    "8726": 0
+  },
+  "namaCalonIstri": {
+    "terbaca": 8,
+    "cocokDenganAmar": 7
+  },
+  "sikapIstriSetuju": {
+    "terbaca": 6,
+    "putusanMengabulkan": 6
+  },
+  "perPerkara": [
+    {
+      "perkaraId": 424,
+      "nomor": "0036/Pdt.G/2016/PA.Dgl",
+      "adaPosita": false,
+      "panjangPosita": 0,
+      "jenisPetitum": [
+        "poligami",
+        "poligami",
+        "biaya"
+      ],
+      "kode": {},
+      "petunjukKeadaan": {}
+    },
+    {
+      "perkaraId": 568,
+      "nomor": "0102/Pdt.G/2016/PA.Dgl",
+      "adaPosita": false,
+      "panjangPosita": 0,
+      "jenisPetitum": [
+        "poligami",
+        "biaya"
+      ],
+      "kode": {},
+      "petunjukKeadaan": {}
+    },
+    {
+      "perkaraId": 720,
+      "nomor": "174/Pdt.G/2016/PA.Dgl",
+      "adaPosita": false,
+      "panjangPosita": 0,
+      "jenisPetitum": [
+        "poligami",
+        "poligami",
+        "harta-bersama",
+        "biaya"
+      ],
+      "kode": {},
+      "petunjukKeadaan": {}
+    },
+    {
+      "perkaraId": 1508,
+      "nomor": "92/Pdt.G/2017/PA.Dgl",
+      "adaPosita": false,
+      "panjangPosita": 0,
+      "jenisPetitum": [
+        "kabul",
+        "poligami",
+        "harta-bersama",
+        "biaya",
+        "subsider"
+      ],
+      "kode": {},
+      "petunjukKeadaan": {}
+    },
+    {
+      "perkaraId": 3759,
+      "nomor": "156/Pdt.G/2019/PA.Dgl",
+      "adaPosita": true,
+      "panjangPosita": 3800,
+      "jenisPetitum": [
+        "kabul",
+        "poligami",
+        "biaya"
+      ],
+      "kode": {
+        "1152": {
+          "nilai": "Termohon sudah tidak mampu memenuhi kebutuhan seksual Pemohon dan Termohon tidak mampu lagi memberikan keturunan",
+          "yakin": "ragu"
+        },
+        "8720": {
+          "nilai": "a, c",
+          "yakin": "ragu"
+        },
+        "8722": {
+          "nilai": "1. kendaraan roda 2 dengan nomor polisi DN 6396 JD;",
+          "yakin": "ragu"
+        },
+        "8723": {
+          "nilai": "Nurfiah binti Saheratu",
+          "yakin": "cukup"
+        },
+        "8724": {
+          "nilai": "umur 40 tahun, pekerjaan Urusan Rumah Tangga, bertempat tinggal di RT.001 RW.001, Jalan Tanggul Mas Palu, Desa Petobo, Kecamatan Palu Selatan, Kota Palu",
+          "yakin": "ragu"
+        },
+        "8725": {
+          "nilai": "Rp6.000.000,00 (enam juta rupiah)",
+          "yakin": "ragu"
+        }
+      },
+      "namaCalonCocokAmar": true,
+      "petunjukKeadaan": {
+        "sikapIstri": "setuju",
+        "kumulasi": [
+          "harta-bersama"
+        ]
+      }
+    },
+    {
+      "perkaraId": 4620,
+      "nomor": "449/Pdt.G/2019/PA.Dgl",
+      "adaPosita": true,
+      "panjangPosita": 3819,
+      "jenisPetitum": [
+        "kabul",
+        "poligami",
+        "biaya"
+      ],
+      "kode": {
+        "1152": {
+          "nilai": "Termohon sudah tidak mampu lagi memberikan keturunan",
+          "yakin": "ragu"
+        },
+        "8720": {
+          "nilai": "c",
+          "yakin": "ragu"
+        },
+        "8722": {
+          "nilai": "1. kendaraan roda 2 dengan nomor polisi DN 2364 BR;",
+          "yakin": "ragu"
+        },
+        "8723": {
+          "nilai": "Neni Triyana binti Lacaco",
+          "yakin": "cukup"
+        },
+        "8724": {
+          "nilai": "umur 24 tahun, pekerjaan tidak bekerja, bertempat tinggal di RT.001 RW.001, Jalan Poros Palu Kulawi KM.9, Desa Kabobona, Kecamatan Dolo, Kabupaten Sigi",
+          "yakin": "ragu"
+        }
+      },
+      "namaCalonCocokAmar": true,
+      "petunjukKeadaan": {
+        "sikapIstri": "setuju",
+        "kumulasi": [
+          "harta-bersama"
+        ]
+      }
+    },
+    {
+      "perkaraId": 5432,
+      "nomor": "369/Pdt.G/2020/PA.Dgl",
+      "adaPosita": true,
+      "panjangPosita": 2397,
+      "jenisPetitum": [
+        "kabul",
+        "poligami",
+        "biaya"
+      ],
+      "kode": {
+        "8723": {
+          "nilai": "Nurzakia binti Jumasang",
+          "yakin": "cukup"
+        },
+        "8724": {
+          "nilai": "umur 22 tahun, pekerjaan Guru Ponpes, bertempat tinggal di Dusun Gunung Sari, Desa Tamarunang Kec. Doripoku",
+          "yakin": "ragu"
+        },
+        "8725": {
+          "nilai": "Rp18.500.000,00 (delapan belas juta lima ratus ribu rupiah)",
+          "yakin": "ragu"
+        }
+      },
+      "namaCalonCocokAmar": true,
+      "petunjukKeadaan": {}
+    },
+    {
+      "perkaraId": 6083,
+      "nomor": "404/Pdt.G/2021/PA.Dgl",
+      "adaPosita": true,
+      "panjangPosita": 3221,
+      "jenisPetitum": [
+        "kabul",
+        "poligami",
+        "biaya",
+        "subsider"
+      ],
+      "kode": {
+        "8722": {
+          "nilai": "1. Akta Hibah Tanah, Pemegang Hak: Idrus Ali Alhabsyi, Nomor Hak: 007/593/AT/2013, Luas: 5000 Meter, Lokasi: Desa Bulan Kec. Ampana Tete Kab. Tojo Una-una, Tanda-tanda: sebelah utara tanah saudara Atep Rohendi, sebelah timur tanah saudara Said Ranteuju, sebelah Selatan saudara Jafar S K dan sebelah Barat tanah saudara Ahirudin sebagaimana diuraikan dalam surat ukur/peta Nomor: 841/Bulan Jaya/1999 tanggal 13 Maret 2000;<br>2. Kendaraan Mobil 1 Unit, Nama Pemilik: Idrus Ali Alhabsyi, Bukti: Kwitansi Pembelian, Nomor Registrasi: DN 1283 NM, Merek: Mitsubishi, Type: Xpander 1,5L Sport, Warna: Silver Metalik;",
+          "yakin": "ragu"
+        },
+        "8723": {
+          "nilai": "Neneng Sri Darmayantinah binti Ismail Said",
+          "yakin": "cukup"
+        },
+        "8724": {
+          "nilai": "umur 23 tahun, pekerjaan Pelajar/Mahasiswa, bertempat tinggal di Desa Wanasari Kec. Ampana Tete",
+          "yakin": "ragu"
+        },
+        "8725": {
+          "nilai": "Rp10.000.000,00 (sepuluh juta rupiah)",
+          "yakin": "ragu"
+        }
+      },
+      "namaCalonCocokAmar": true,
+      "petunjukKeadaan": {
+        "kumulasi": [
+          "harta-bersama"
+        ]
+      }
+    },
+    {
+      "perkaraId": 6259,
+      "nomor": "517/Pdt.G/2021/PA.Dgl",
+      "adaPosita": true,
+      "panjangPosita": 3830,
+      "jenisPetitum": [
+        "kabul",
+        "poligami",
+        "biaya",
+        "subsider"
+      ],
+      "kode": {
+        "1152": {
+          "nilai": "Termohon sudah tidak mampu lagi mengurus kebutuhan Pemohon",
+          "yakin": "ragu"
+        },
+        "4854": {
+          "nilai": "janda ditinggal mati suami",
+          "yakin": "ragu"
+        },
+        "8720": {
+          "nilai": "a",
+          "yakin": "ragu"
+        },
+        "8722": {
+          "nilai": "1. Rumah 1 unit, Lokasi: Desa Sibualong;<br>2. Kendaraan Motor 1 unit;",
+          "yakin": "ragu"
+        },
+        "8723": {
+          "nilai": "Asnizar binti Husni Lahadja",
+          "yakin": "cukup"
+        },
+        "8724": {
+          "nilai": "janda, umur 50 tahun, pekerjaan Ibu Rumah Tangga, bertempat tinggal di Desa Lende, Kecamatan Sirenja, Kabupaten Donggala",
+          "yakin": "ragu"
+        },
+        "8725": {
+          "nilai": "Rp2.000.000,00 (dua juta rupiah)",
+          "yakin": "ragu"
+        }
+      },
+      "namaCalonCocokAmar": true,
+      "petunjukKeadaan": {
+        "sikapIstri": "setuju",
+        "statusCalon": "janda-meninggal",
+        "kumulasi": [
+          "harta-bersama"
+        ]
+      }
+    },
+    {
+      "perkaraId": 6416,
+      "nomor": "113/Pdt.G/2022/PA.Dgl",
+      "adaPosita": true,
+      "panjangPosita": 3649,
+      "jenisPetitum": [
+        "kabul",
+        "poligami",
+        "biaya",
+        "subsider"
+      ],
+      "kode": {
+        "1152": {
+          "nilai": "Termohon sudah tidak mampu lagi mengurus kebutuhan Pemohon",
+          "yakin": "ragu"
+        },
+        "4854": {
+          "nilai": "perawan",
+          "yakin": "ragu"
+        },
+        "8720": {
+          "nilai": "a",
+          "yakin": "ragu"
+        },
+        "8722": {
+          "nilai": "1. Rumah 1 unit, Lokasi: Desa Loli Tasiburi;<br>2. Kendaraan Motor 1 unit;",
+          "yakin": "ragu"
+        },
+        "8723": {
+          "nilai": "Nur Faiza binti Amaludin",
+          "yakin": "cukup"
+        },
+        "8724": {
+          "nilai": "gadis, umur 33 tahun, pekerjaan Wiraswasta, bertempat tinggal di Desa Loli Oge, Kecamatan Banawa,Kabupaten Donggala",
+          "yakin": "ragu"
+        },
+        "8725": {
+          "nilai": "Rp3.284.000,00 (tiga juta dua ratus delapan puluh empat ribu rupiah)",
+          "yakin": "ragu"
+        }
+      },
+      "namaCalonCocokAmar": true,
+      "petunjukKeadaan": {
+        "sikapIstri": "setuju",
+        "statusCalon": "gadis",
+        "kumulasi": [
+          "harta-bersama"
+        ]
+      }
+    },
+    {
+      "perkaraId": 7883,
+      "nomor": "252/Pdt.G/2024/PA.Dgl",
+      "adaPosita": true,
+      "panjangPosita": 2392,
+      "jenisPetitum": [
+        "kabul",
+        "poligami",
+        "harta-bersama",
+        "biaya",
+        "subsider"
+      ],
+      "kode": {
+        "1152": {
+          "nilai": "Pemohon telah menjalin hubungan yang sangat dekat dengan seorang wanita yang bernama Yanti Afriyanti Palit binti Yos Palit",
+          "yakin": "ragu"
+        },
+        "4854": {
+          "nilai": "janda cerai",
+          "yakin": "ragu"
+        },
+        "4855": {
+          "nilai": "Akta Cerai Nomor 00356/AC/2019/Pa.Pal",
+          "yakin": "ragu"
+        },
+        "8722": {
+          "nilai": "1. Rumah 1 unit, Lokasi: BTN Biromaru Permai G9, RT019, RW005, Kelurahan Lolu, Kecamatan Sigi Biromaru, Kabupaten Sigi;<br>2. Kendaraan Mobil 1 Unit;",
+          "yakin": "ragu"
+        },
+        "8723": {
+          "nilai": "Yunita Afriyanti Palit binti Yos Palit",
+          "yakin": "cukup"
+        },
+        "8724": {
+          "nilai": "janda, umur 35 tahun, pekerjaan Mengurus Rumah Tangga, bertempat tinggal di Jalan Lagarutu, BTN Permata Asri No. 8, Kelurahan Tanahmonindi, kecamatan Mantikulore, Kota Palu",
+          "yakin": "ragu"
+        },
+        "8725": {
+          "nilai": "Rp15.000.000,00 (lima belas juta rupiah)",
+          "yakin": "ragu"
+        }
+      },
+      "namaCalonCocokAmar": true,
+      "petunjukKeadaan": {
+        "sikapIstri": "setuju",
+        "statusCalon": "janda-cerai",
+        "kumulasi": [
+          "harta-bersama"
+        ]
+      }
+    },
+    {
+      "perkaraId": 8785,
+      "nomor": "376/Pdt.G/2025/PA.Dgl",
+      "adaPosita": true,
+      "panjangPosita": 2426,
+      "jenisPetitum": [
+        "kabul",
+        "poligami",
+        "harta-bersama",
+        "biaya",
+        "subsider"
+      ],
+      "kode": {
+        "1152": {
+          "nilai": "Pemohon telah menjalin hubungan yang sangat dekat dengan seorang wanita yang bernama Sarifah Nur binti Ahmad",
+          "yakin": "ragu"
+        },
+        "4854": {
+          "nilai": "janda cerai",
+          "yakin": "ragu"
+        },
+        "4855": {
+          "nilai": "Akta Cerai Nomor 152/AC/2025/Pa.Dgl",
+          "yakin": "ragu"
+        },
+        "8722": {
+          "nilai": "1. Rumah 1 unit, Lokasi: Jalan Lasaganti, RT015, RW003, Kelurahan Tinggede, Kecamatan Marawola, Kabupaten Sigi;",
+          "yakin": "ragu"
+        },
+        "8723": {
+          "nilai": "Sarifah Nur binti Ahmad",
+          "yakin": "cukup"
+        },
+        "8724": {
+          "nilai": "janda, umur 40 tahun, pekerjaan Mengurus Rumah Tangga, bertempat tinggal di Jalan Lando, RT002, RW001, Sunju, Kecamatan Marawola, Kabupaten Sigi, Provinsi Sulawesi Tengah",
+          "yakin": "ragu"
+        },
+        "8725": {
+          "nilai": "Rp3.000.000,00 (tiga juta rupiah)",
+          "yakin": "ragu"
+        }
+      },
+      "namaCalonCocokAmar": false,
+      "petunjukKeadaan": {
+        "sikapIstri": "setuju",
+        "statusCalon": "janda-cerai",
+        "kumulasi": [
+          "harta-bersama"
+        ]
+      }
+    }
+  ]
+}
