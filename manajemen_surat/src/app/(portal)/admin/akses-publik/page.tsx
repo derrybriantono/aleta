@@ -1,6 +1,7 @@
 "use client";
 
 import { AletaAntrianPublikPengaturan } from "@/components/portal/aleta-antrian-publik-pengaturan";
+import { AletaTautanJadwalPengaturan } from "@/components/portal/aleta-tautan-jadwal-pengaturan";
 import { PublicAccessPanel } from "@/components/portal/public-access-panel";
 import { getEffectiveRoleId } from "@/lib/permissions";
 import { usePortal } from "@/lib/app-state";
@@ -27,6 +28,7 @@ export default function AdminPublicAccessPage() {
     <div className="flex flex-col gap-6">
       <PublicAccessPanel />
       <AletaAntrianPublikPengaturan bolehUbah={bolehUbah} />
+      <AletaTautanJadwalPengaturan bolehUbah={bolehUbah} />
     </div>
   );
 }

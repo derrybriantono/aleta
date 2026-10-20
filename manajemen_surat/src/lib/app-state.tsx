@@ -2604,3 +2604,40 @@ export function usePortal() {
 
   return context;
 }
+
+/**
+ * TAUTAN JADWAL SIDANG (20 Okt 2026): halaman /jadwal/<rahasia> tidak punya
+ * sesi akun. Pembungkus ini MENIMPA pengguna aktif dengan akun yang diwakili
+ * tautan (tanpa sandi/surel/nomor), supaya seluruh komponen Jadwal Sidang -
+ * termasuk yang memanggil usePortal sendiri - menggambar tombol sesuai hak
+ * akun itu. Ini hanya soal TAMPILAN; penjaga sebenarnya ada di server
+ * (resolveActorUserId + daftar izin rute tautan).
+ */
+export function KonteksPenggunaTautan({
+  pengguna,
+  children,
+}: {
+  pengguna: Pick<UserPersona, "id" | "name" | "roleId" | "positionId"> & { additionalRoleIds?: string[] };
+  children: ReactNode;
+}) {
+  const induk = useContext(PortalContext);
+  const nilai = useMemo(() => {
+    if (!induk) return null;
+    const persona: UserPersona = {
+      id: pengguna.id,
+      username: "",
+      password: "",
+      name: pengguna.name,
+      nip: "",
+      email: "",
+      whatsappNumber: "",
+      roleId: pengguna.roleId,
+      positionId: pengguna.positionId,
+      additionalRoleIds: pengguna.additionalRoleIds ?? [],
+      isActive: true,
+    };
+    return { ...induk, currentUserId: persona.id, currentUser: persona };
+  }, [induk, pengguna]);
+  if (!nilai) throw new Error("KonteksPenggunaTautan must be used within PortalProvider");
+  return <PortalContext.Provider value={nilai}>{children}</PortalContext.Provider>;
+}

@@ -27,6 +27,7 @@ import {
   FileText,
   Filter,
   Gauge,
+  Link2,
   ListOrdered,
   MapPin,
   MonitorPlay,
@@ -41,6 +42,12 @@ import {
 
 import { AletaEcourtCetakJadwal } from "@/components/portal/aleta-ecourt-cetak-jadwal";
 import { daftarRuangAktif, ruangPilihanBerlaku, saringKeRuang } from "@/lib/ruang-sidang-saring";
+import {
+  cocokkanRuang,
+  susunPencarianJadwal,
+  tampilanUrlJadwal,
+  type ParameterJadwalTampil,
+} from "@/lib/jadwal-tampil-url";
 /* === 12OKT-C: kartu ruang sidang & mediator === */
 import { PitaRuangSidang } from "@/components/portal/pita-ruang-sidang";
 import { TombolBlangkoDerry } from "@/components/portal/tombol-blangko-derry";
@@ -4382,6 +4389,10 @@ export function AletaEcourtSidang({
   onBukaStatus,
   onBukaTunda,
   bolehCetakRelaas = false,
+  modeUrl = false,
+  awal,
+  bolehKelolaTautan = false,
+  namaTautan = "",
 }: {
   onBukaStatus?: (nomorPerkara: string) => void;
   /**
@@ -4406,9 +4417,31 @@ export function AletaEcourtSidang({
    * bagi juru sita, admin, dan super admin.
    */
   bolehCetakRelaas?: boolean;
+  /**
+   * TAMPILAN LEWAT ALAMAT (/jadwal, 20 Okt 2026).
+   *
+   * Komponen yang SAMA, hanya apa yang digambar yang dibatasi: tag dan lencana
+   * semuanya tampil; tombol hanya tunda | putus, Court Calendar, Mediator, dan
+   * tombol kolom kanan (Rincian, Status, Blangko, Pertanyaan saksi, Skors,
+   * Lompat, Tandai berjalan, Selesai, Keterangan, Tunjuk konseptor); di kepala
+   * hanya alat CETAK. Daftar izinnya satu: tampilanUrlJadwal() di
+   * @/lib/jadwal-tampil-url. Hak peran tetap berlaku (saringSaklarSidang).
+   */
+  modeUrl?: boolean;
+  /** Nilai awal dari alamat: tanggal (YYYY-MM-DD), ruang, majelis. */
+  awal?: Partial<ParameterJadwalTampil>;
+  /**
+   * Menampilkan tombol kecil "Tautan jadwal" di pojok kanan atas (Super Admin
+   * dan Admin): menuju pengaturan tempat tautan rahasia tampilan alamat dibuat
+   * dan dicabut. Rahasianya hanya tampak sekali saat dibuat, jadi tidak ada
+   * tombol "salin" di sini.
+   */
+  bolehKelolaTautan?: boolean;
+  /** Nama tautan yang sedang dipakai (mode alamat) - ditampilkan di bawah judul. */
+  namaTautan?: string;
 } = {}) {
-  const [dari, setDari] = useState(hariIni());
-  const [sampai, setSampai] = useState(hariIni());
+  const [dari, setDari] = useState(awal?.tanggal || hariIni());
+  const [sampai, setSampai] = useState(awal?.tanggal || hariIni());
   const [cari, setCari] = useState("");
 
   const [sidang, setSidang] = useState<SidangBaris[]>([]);
@@ -4613,7 +4646,9 @@ export function AletaEcourtSidang({
    * berikutnya mendapati daftar yang tersaring atas nama orang sebelumnya
    * tanpa tahu sebabnya.
    */
-  const [hanyaMilikSaya, setHanyaMilikSaya] = useState(true);
+  // Tampilan lewat alamat memuat SELURUH jadwal satker (tombol "Perkara saya"
+  // tidak ada di sana); yang hanya ingin satu majelis memakai ?majelis=.
+  const [hanyaMilikSaya, setHanyaMilikSaya] = useState(!modeUrl);
 
   /**
    * Butir 11 (6 Okt 2026): "Tampilkan contoh" di panel Tampilan - memampangkan
@@ -4623,7 +4658,13 @@ export function AletaEcourtSidang({
   const [contohSaklar, setContohSaklar] = useState(false);
 
   /** Butir 5 (6 Okt 2026): ruang sidang pilihan di ujung kanan deretan alat. Tidak diingat - sama seperti di atas. */
-  const [ruangDipilih, setRuangDipilih] = useState<string | null>(null);
+  const [ruangDipilih, setRuangDipilihMentah] = useState<string | null>(null);
+  // Dari alamat (?ruang=): berlaku sampai pemakai menekan pilihan ruang sendiri.
+  const [ruangAlamat, setRuangAlamat] = useState(awal?.ruang ?? "");
+  const setRuangDipilih = useCallback((ruang: string | null) => {
+    setRuangAlamat("");
+    setRuangDipilihMentah(ruang);
+  }, []);
 
   // Nama pengadilan dari identitas lembaga, bukan dipatok mati - ALETA dapat
   // dipasang di satker lain.
@@ -4772,6 +4813,11 @@ export function AletaEcourtSidang({
   // pohonnya dan menyusun ulang. Penyetelannya sendiri ditunda satu putaran
   // supaya ia tidak berjalan serentak di dalam badan efek.
   useEffect(() => {
+    // Tampilan lewat alamat selalu LENGKAP: kolom Putusan (konseptor,
+    // keterangan, checklist) hanya ada di mode itu. Di HP tabelnya menggulir
+    // mendatar di dalam kotaknya sendiri (Ringkas diukur lebih buruk: tunda | putus
+    // dan kolom kanan malah terpotong).
+    if (modeUrl) return;
     let batal = false;
     void Promise.resolve().then(() => {
       if (batal) return;
@@ -4785,7 +4831,7 @@ export function AletaEcourtSidang({
     return () => {
       batal = true;
     };
-  }, []);
+  }, [modeUrl]);
 
   // Disimpan HANYA saat pemakai memilih, bukan lewat efek atas [modeRingkas].
   // Efek penyimpan dahulu berjalan serentak pada pemasangan pertama dan
@@ -4814,7 +4860,13 @@ export function AletaEcourtSidang({
   // (Tunda/Putus, Mediator, Court Calendar, Kasir, Konseptor, Antrian, ...)
   // dimatikan apa pun pilihan saklarnya; pilihan aslinya tetap tersimpan.
   // Rutenya juga menjawab 403 (pastikanAksi).
-  const tampilan = useMemo(() => saringSaklarSidang(tampilanPilihan, currentUser), [tampilanPilihan, currentUser]);
+  // Tampilan lewat alamat: pilihan TETAP (daftar izin di jadwal-tampil-url),
+  // bukan pilihan peramban - yang membuka tautan melihat hal yang sama di
+  // mana pun, dan penanda yang pernah dimatikan di Tampilan tidak ikut hilang.
+  const tampilan = useMemo(
+    () => saringSaklarSidang(modeUrl ? tampilanUrlJadwal() : tampilanPilihan, currentUser),
+    [modeUrl, tampilanPilihan, currentUser]
+  );
   const bolehJalannya = bolehAksi(currentUser, "sidang.jalannya");
   /* === AKHIR HAK-PERAN === */
   /* === 12OKT-B: saklar penanda perkara & pihak, panggil saksi === */
@@ -4852,6 +4904,7 @@ export function AletaEcourtSidang({
   const tandaSelesai = useSelesaiSidang(dari, sampai, sidang);
 
   useEffect(() => {
+    if (modeUrl) return;
     let batal = false;
     void Promise.resolve().then(() => {
       if (batal) return;
@@ -4883,7 +4936,7 @@ export function AletaEcourtSidang({
     return () => {
       batal = true;
     };
-  }, []);
+  }, [modeUrl]);
 
   const ubahSaklar = useCallback((kunci: string, menyala: boolean) => {
     setTampilan((lama) => {
@@ -5291,9 +5344,28 @@ export function AletaEcourtSidang({
   // 12OKT-C: kartu ruang memakai saringan yang SAMA - menekan kartu saat tombol
   // ruangnya dimatikan tetap harus menyaring, jadi salah satu saklar cukup.
   const ruangSaring =
-    tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang")
-      ? ruangPilihanBerlaku(ruangDipilih, ruangAktif)
+    modeUrl || tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang")
+      ? ruangPilihanBerlaku(ruangDipilih ?? (ruangAlamat ? cocokkanRuang(ruangAlamat, ruangAktif) : null), ruangAktif)
       : null;
+  // Tampilan lewat alamat: alamat di bilah peramban ikut tanggal dan saringan
+  // yang sedang dilihat, supaya muat-ulang dan salinannya tetap sama. Tanggal
+  // hanya ditulis bila diminta di alamat atau bukan hari ini - tautan tanpa
+  // tanggal selalu berarti "hari ini".
+  const ruangUntukAlamat = ruangDipilih !== null ? ruangDipilih : ruangAlamat;
+  useEffect(() => {
+    if (!modeUrl || typeof window === "undefined") return;
+    const pencarian = susunPencarianJadwal({
+      tanggal: dari === hariIni() && !awal?.tanggal ? "" : dari,
+      ruang: ruangUntukAlamat,
+      majelis: awal?.majelis ?? "",
+    });
+    if (pencarian === window.location.search) return;
+    try {
+      window.history.replaceState(window.history.state, "", `${window.location.pathname}${pencarian}${window.location.hash}`);
+    } catch {
+      /* alamat tidak dapat diperbarui - tampilannya tetap benar */
+    }
+  }, [modeUrl, dari, ruangUntukAlamat, awal?.majelis, awal?.tanggal]);
   /* === 12OKT-C: kartu ruang sidang (butir 3) ===
      "Perlu diperiksa" per ruang = predikat kotak gabungan "Perlu diperiksa"
      milik layar ini (KEADAAN_PERLU_DIPERIKSA) - bukan aturan kedua. Dihitung
@@ -5310,7 +5382,11 @@ export function AletaEcourtSidang({
     JAM_BATAS_HASIL_SIDANG.slice(0, 5)
   );
   /* === AKHIR 12OKT-C === */
-  const sidangSesudahRuang = saringKeRuang(milikSaya.baris, ruangSaring);
+  // Tampilan lewat alamat: ?majelis= menyaring ke satu majelis (kode, huruf besar/kecil tak dibedakan).
+  const majelisAlamat = modeUrl ? (awal?.majelis ?? "").trim().toLowerCase() : "";
+  const sidangSesudahRuang = saringKeRuang(milikSaya.baris, ruangSaring).filter(
+    (b) => !majelisAlamat || String(b.majelisKode || "").trim().toLowerCase() === majelisAlamat
+  );
   // Butir 8 (6 Okt 2026): "Ciutkan perkara yang sudah selesai" - bawaannya mati.
   // Selesai = tanda hijau yang sama dengan kolom Putusan (selesaiPerKunciWaktu).
   const petaSelesaiCiut = useMemo(
@@ -6107,7 +6183,18 @@ export function AletaEcourtSidang({
             TIDAK boleh menjadi title hanya peringatan namanya tidak ketemu -
             title tidak terlihat tanpa disentuh, dan peringatan yang tidak
             terlihat sama saja tidak ada. Itu tetap tinggal di atas tabel. */}
-        {currentUser ? (
+        {!modeUrl && bolehKelolaTautan ? (
+          <a
+            href={withBasePath("/admin/akses-publik")}
+            data-tautan-jadwal=""
+            className="inline-flex h-8 items-center gap-1 rounded-md border px-2.5 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            title="Membuat atau mencabut tautan rahasia Jadwal Sidang (tanpa masuk akun, hanya dari jaringan kantor)."
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            Tautan jadwal
+          </a>
+        ) : null}
+        {currentUser && !modeUrl ? (
           <Button
             type="button"
             size="sm"
@@ -6148,6 +6235,8 @@ export function AletaEcourtSidang({
             ia menjawab "seberapa padat saya mau melihatnya", satu keluarga
             dengan tombol ciutkan - dan justru paling dibutuhkan ketika
             kendali lainnya sedang disembunyikan. */}
+        {modeUrl ? null : (
+        <>
         <div className="inline-flex overflow-hidden rounded-md border text-sm">
           <button
             type="button"
@@ -6208,6 +6297,8 @@ export function AletaEcourtSidang({
             </span>
           ) : null}
         </button>
+        </>
+        )}
         </div>
         {/* ==================================================================
             SIAPA YANG SEDANG MEMBUKANYA - DI BAWAH, BUKAN DI ANTARA TOMBOL
@@ -6224,7 +6315,11 @@ export function AletaEcourtSidang({
 
             Ia keterangan, bukan kendali; menaruhnya di antara tombol membuat
             orang mencoba menekannya. */}
-        {currentUser ? (
+        {modeUrl ? (
+          <p className="w-full basis-full text-xs text-muted-foreground" data-nama-tautan="">
+            {namaTautan ? `Tautan: ${namaTautan}` : "Tautan jadwal sidang"}
+          </p>
+        ) : currentUser ? (
           <p className="w-full basis-full text-xs text-muted-foreground">
             {currentUser.name}
             {jabatanSaya ? ` · ${jabatanSaya}` : ""}
@@ -6471,6 +6566,8 @@ export function AletaEcourtSidang({
                   className="h-9 w-[8.75rem] rounded-none border-0 bg-transparent text-center focus-visible:ring-0"
                   aria-label="Tanggal sidang mulai"
                 />
+                {modeUrl ? null : (
+                <>
                 <span aria-hidden className="select-none px-0.5 text-muted-foreground">
                   –
                 </span>
@@ -6482,6 +6579,8 @@ export function AletaEcourtSidang({
                   className="h-9 w-[8.75rem] rounded-none border-0 bg-transparent text-center focus-visible:ring-0"
                   aria-label="Tanggal sidang sampai"
                 />
+                </>
+                )}
               </div>
 
               <button
@@ -6505,6 +6604,7 @@ export function AletaEcourtSidang({
                   namanya hanya menambah lebar tanpa menambah keterangan.
                   aria-label dan title menjaganya tetap terbaca bagi yang
                   memakai pembaca layar maupun yang ragu. */}
+              {modeUrl ? null : (
               <button
                 type="button"
                 aria-label="Pilih tanggal dari kalender"
@@ -6514,14 +6614,17 @@ export function AletaEcourtSidang({
               >
                 <CalendarDays className="h-4 w-4" />
               </button>
+              )}
             </div>
 
             {/* JADWAL-3 butir 5: tulisan dan keadaannya TETAP selama memuat -
                 penyegaran latar (antrian, 45 detik) tidak boleh menggambar apa
                 pun. Tekanan ganda ditolak muatTanggal sendiri (memuatRef). */}
+            {modeUrl ? null : (
             <Button size="sm" onClick={() => void muat()}>
               Tampilkan
             </Button>
+            )}
 
             {/* Tanggal terbacanya, bukan angka - "Senin" adalah yang dicari
                 orang, bukan "31/08". */}
@@ -6553,7 +6656,7 @@ export function AletaEcourtSidang({
 
               Sekarang: mengetik menyaring seketika; menekan Enter melebarkan
               pencarian ke SIPP. Lihat catatan pada kirimCariKeSipp. */}
-          <div className={cn("space-y-1.5", kendaliCiut && "hidden")}>
+          <div className={cn("space-y-1.5", (kendaliCiut || modeUrl) && "hidden")}>
             {/* ==============================================================
                 LEBARNYA DIBATASI, DAN TEMANNYA DI SEBELAHNYA
                 ==============================================================
@@ -6677,10 +6780,11 @@ export function AletaEcourtSidang({
           <div
             className={cn(
               "flex flex-wrap items-center gap-2",
-              (kendaliCiut || alatCiut) && "hidden"
+              !modeUrl && (kendaliCiut || alatCiut) && "hidden"
             )}
           >
             <div className="flex flex-wrap items-center gap-2">
+              {modeUrl ? null : (
               <button
                 type="button"
                 onClick={() => setAlatCiut(true)}
@@ -6690,6 +6794,7 @@ export function AletaEcourtSidang({
               >
                 <ChevronsDownUp className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
+              )}
               {/* Tombol skor ikut saklarnya. Yang mematikannya juga
                   memadamkan lencana nilai di tiap baris - lihat LencanaKesiapan
                   di bawah. Membiarkan lencananya hidup sementara tombolnya
@@ -6865,7 +6970,7 @@ export function AletaEcourtSidang({
             melewati sembilan kotak mati sebelum sampai ke yang hidup.
             Kecualinya kotak yang sedang MENYALA - kalau ia ikut hilang saat
             angkanya nol, saringannya tidak dapat dimatikan lagi. */}
-        {sidang.length > 0 && !kendaliCiut ? (
+        {sidang.length > 0 && (modeUrl || !kendaliCiut) ? (
           <div className="flex flex-wrap items-center gap-1.5">
             {/* ============================================================
                 SAKLAR CIUT - DAN SARINGAN YANG MENYALA TIDAK IKUT HILANG
@@ -6887,7 +6992,7 @@ export function AletaEcourtSidang({
                 mengubah penciutan menjadi penghapusan, dan yang menekannya
                 sekali harus memuat ulang halaman untuk mendapatkannya lagi.
                 Karena itu ia pindah ke sini, di kepala deretan yang naik. */}
-            {alatCiut ? (
+            {alatCiut && !modeUrl ? (
               <button
                 type="button"
                 onClick={() => setAlatCiut(false)}
@@ -6913,6 +7018,7 @@ export function AletaEcourtSidang({
                 "bentangkan". Panah tunggal atas/bawah, yang dipakai sebelum
                 ini, baru terbaca setelah ada tulisan di sebelahnya; tanpa
                 tulisan ia menjadi tebakan. */}
+            {modeUrl ? null : (
             <button
               type="button"
               onClick={alihkanSeluruhPenanda}
@@ -6931,6 +7037,7 @@ export function AletaEcourtSidang({
                 <ChevronsDownUp className="h-3.5 w-3.5" aria-hidden="true" />
               )}
             </button>
+            )}
 
             {ringkasAlur(sidang)
               .filter((k) => k.jumlah > 0 || alurTerpilih === k.kunci)
@@ -7039,7 +7146,7 @@ export function AletaEcourtSidang({
                 membuang saklarnya sendiri, dan kelompok itu tidak akan pernah
                 dapat dibentangkan kembali. */}
             {kelompokKeadaanTampak(jumlahKeadaan, keadaanTerpilih).map((kelompok) => {
-              const ciut = kelompokCiut.includes(kelompok.kunci);
+              const ciut = !modeUrl && kelompokCiut.includes(kelompok.kunci);
               const tampak = ciut
                 ? kelompok.anggota.filter((k) => keadaanTerpilih.includes(k.kunci))
                 : kelompok.anggota;
@@ -7052,6 +7159,7 @@ export function AletaEcourtSidang({
                 <button
                   type="button"
                   onClick={() => alihkanKelompokPenanda(kelompok.kunci)}
+                  disabled={modeUrl}
                   aria-expanded={!ciut}
                   title={
                     ciut
@@ -7060,7 +7168,7 @@ export function AletaEcourtSidang({
                   }
                   className="mr-0.5 inline-flex items-center gap-0.5 rounded-full px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground transition hover:bg-muted hover:text-foreground"
                 >
-                  {ciut ? (
+                  {modeUrl ? null : ciut ? (
                     <ChevronRight className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
                   ) : (
                     <ChevronDown className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
@@ -7656,7 +7764,8 @@ export function AletaEcourtSidang({
                     bisaTandai: Boolean(waktuAntrian.hariIni) && baris.tanggalSidang === waktuAntrian.hariIni,
                   });
                   // Butir 33/36 (5 Okt 2026): nama petugas & pihak dapat diklik untuk dipanggil.
-                  const konteksPanggil = { perkaraId: String(baris.perkaraId), tanggal: baris.tanggalSidang.slice(0, 10), nomorPerkara: baris.nomorPerkara, ruang: baris.ruangan, agenda: baris.agenda };
+                  // Tampilan lewat alamat: nama tidak dapat ditekan untuk memanggil (perkaraId kosong = teks biasa).
+                  const konteksPanggil = { perkaraId: modeUrl ? "" : String(baris.perkaraId), tanggal: baris.tanggalSidang.slice(0, 10), nomorPerkara: baris.nomorPerkara, ruang: baris.ruangan, agenda: baris.agenda };
                   /* === 12OKT-C: mediator di Majelis & Petugas (butir 6) === */
                   const mediatorIni = tampil(tampilan, "mediator-majelis") ? mediatorBaris(baris) : "";
                   /* === AKHIR 12OKT-C === */
@@ -11260,3 +11369,4 @@ export function RincianSidang({
     </div>
   );
 }
+

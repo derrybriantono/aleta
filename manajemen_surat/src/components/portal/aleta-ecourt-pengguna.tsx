@@ -764,6 +764,9 @@ export function AletaEcourtPengguna() {
               // Tombol Cetak relaas - panggilan sidang dan pemberitahuan
               // putusan yang lahir pada hari itu, dicetak lewat ekstensi.
               bolehCetakRelaas={bolehRelaasMassal}
+              // Tombol kecil "Tautan jadwal" -> pengaturan tautan rahasia
+              // (tampilan lewat alamat, 20 Okt 2026): Super Admin dan Admin.
+              bolehKelolaTautan={bolehMengatur}
             />
           ) : null}
 
