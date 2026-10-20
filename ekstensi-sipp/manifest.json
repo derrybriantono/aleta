@@ -66,7 +66,9 @@
         "penetapan-borang.js",
         "penetapan-kerja.js",
         "muat-ulang-sipp.js",
-        "penetapan-sipp.js"
+        "penetapan-sipp.js",
+        "abt-klien.js",
+        "putusan-edoc-sekaligus.js"
       ],
       "css": [
         "panel.css",

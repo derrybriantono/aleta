@@ -150,6 +150,10 @@ const BERKAS = [
   // hitung mundur, kembali dari dasbor sekali, ringkasan tampil lagi sesudah memuat.
   "muat-ulang-sipp.js",
   "penetapan-sipp.js",
+  // Putusan otomatis + e-Doc putusan + e-Doc anonimisasi dalam satu kali kerja (20 Okt 2026, agen B2):
+  // skrip konten SIPP paling belakang; memakai abt-klien.js (kini juga dimuat di SIPP) untuk mencetak
+  // Blangko Derry putusan dari ABT sesudah Putusan Akhir tersimpan.
+  "putusan-edoc-sekaligus.js",
   "penetapan-sipp.css",
   "blangko-derry.css",
   // Menu kiri ABT bisa digulir (19 Okt 2026) - skrip konten ABT: #navbar diberi
