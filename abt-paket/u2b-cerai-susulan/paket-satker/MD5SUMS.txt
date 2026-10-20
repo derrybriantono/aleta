@@ -1,0 +1,6 @@
+0b60eaafa7b12b6fdb380e71b4b9006c *abt-u2b-PRASYARAT.sql
+e875b6c4f03bc0316307bb194796df0a *pasang-satker.sh
+82fdf78a85985bf1e5fc92e23c79bb4d *pulih-satker.sh
+b331c722989e419dbc074da6135264d6 *rtf-daftar-tambal.tsv
+45e9b3e0551213460b5559df2d449373 *rtf-tambal.tsv
+f58e399978667a27e648ed7e107fcc29 *tambal-rtf.pl
