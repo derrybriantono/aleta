@@ -113,6 +113,15 @@ export const ISIAN_MANUAL: Record<string, string> = {
   "0365": "Tanggal KTP dibaca dari berkas KTP di e-Court; bila perkara tidak lewat e-Court atau berkasnya tidak terbaca, isi dari KTP.",
   "0366": "Tanggal KTP dibaca dari berkas KTP di e-Court; bila perkara tidak lewat e-Court atau berkasnya tidak terbaca, isi dari KTP.",
   "2222": "Tanggal KTP dibaca dari berkas KTP di e-Court; bila perkara tidak lewat e-Court atau berkasnya tidak terbaca, isi dari KTP.",
+  // U2 20 Okt: keputusan majelis atas tuntutan akibat perceraian - pilihan hakim, tidak diputus mesin
+  "4100": "Keputusan atas tuntutan hak asuh anak adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak, tidak dapat diterima, atau ex officio.",
+  "4101": "Keputusan atas tuntutan nafkah anak adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak, tidak dapat diterima, atau ex officio.",
+  "4102": "Keputusan atas nafkah iddah adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak, tidak dapat diterima, atau ex officio.",
+  "4103": "Keputusan atas mut'ah adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak, tidak dapat diterima, atau ex officio.",
+  "4104": "Keputusan atas nafkah lampau (madliyah) adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak atau tidak dapat diterima.",
+  "4105": "Keputusan atas tuntutan harta bersama adalah putusan majelis; pilih dikabulkan, dikabulkan sebagian, ditolak atau tidak dapat diterima.",
+  "4107": "Dasar kemampuan pemberi nafkah adalah penilaian majelis atas pekerjaan dan penghasilan; kosong berarti pekerjaan di SIPP dipakai.",
+  "4108": "Pendapat anak mumayyiz didengar majelis di persidangan; tidak tercatat di SIPP.",
   // Fakta sidang ikrar
   "9220": "Keadaan Termohon saat ikrar (suci, haid, atau hamil) disampaikan Termohon di sidang ikrar; tidak tercatat di SIPP.",
 };
@@ -120,4 +129,8 @@ export const ISIAN_MANUAL: Record<string, string> = {
 export const ISIAN_OPSIONAL: Record<string, string> = {
   // #9134# = petunjuk perbaikan permohonan dari majelis pada BAS permohonan (keputusan pengguna 20 Okt: bukan bagian "Perlu diisi").
   "9134": "Petunjuk perbaikan permohonan (bila majelis memberi petunjuk)",
+  // U2 20 Okt: keputusan nafkah iddah dan mut'ah (ex officio) serta waktu pembayaran: ada pada sebagian kecil perkara
+  "4102": "Keputusan nafkah iddah (bila ada tuntutan atau diberikan ex officio)",
+  "4103": "Keputusan mut'ah (bila ada tuntutan atau diberikan ex officio)",
+  "4109": "Waktu pembayaran akibat cerai (bila ada nafkah iddah, mut'ah atau nafkah lampau)",
 };

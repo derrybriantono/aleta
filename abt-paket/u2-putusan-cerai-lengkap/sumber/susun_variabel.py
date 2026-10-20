@@ -68,14 +68,14 @@ def ALASAN(col):
     return "IF(LOCATE(':', %s) > 0, TRIM(SUBSTRING(%s, LOCATE(':', %s) + 1)), '')" % (col, col, col)
 
 
-PET = ("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p.petitum,'<strong>',''),'</strong>',''),'<em>',''),'</em>',''),"
-       "'&nbsp;',' '),CHAR(10),' '),CHAR(13),' '))")
+PET = ("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CONCAT(IFNULL(p.petitum,''), ' ', IFNULL((SELECT GROUP_CONCAT(r.isi_petitum SEPARATOR ' ') FROM perkara_rekonvensi r WHERE r.perkara_id = p.perkara_id),'')),"
+       "'<strong>',''),'</strong>',''),'<em>',''),'</em>',''),'&nbsp;',' '),CHAR(10),' '),CHAR(13),' '))")
 
 RE_H = ('hadhanah|hadlanah|hadanah|hak asuh|hak pengasuhan|kuasa asuh|hak pemeliharaan|pemeliharaan anak|pengasuhan anak|asuhan anak|'
         'di bawah (asuhan|pemeliharaan)|berada (di bawah|dalam) (asuhan|pemeliharaan|hadhanah)')
 RE_N = 'nafkah[^;]{0,60}anak|anak[^;]{0,60}nafkah|biaya (hidup|pemeliharaan|pendidikan|kebutuhan)[^;]{0,60}anak|biaya anak'
 RE_I = 'iddah|idah'
-RE_M = 'mut.?ah'
+RE_M = 'mut[^a-z]{0,4}ah'
 RE_D = 'madli|madhi|mahdhi|lampau|yang lalu|terhutang'
 RE_B = 'harta bersama|harta gono|gono.?gini'
 
@@ -99,6 +99,7 @@ def tabel_turunan(db=DB, paksa=False):
     dalam = ("SELECT p.jenis_perkara_id AS jn, %s AS pet, "
              "(SELECT COUNT(*) FROM perkara_kumulasi k WHERE k.perkara_id = p.perkara_id AND k.jenis_perkara_id = 349) AS kh, "
              "(SELECT COUNT(*) FROM perkara_kumulasi k WHERE k.perkara_id = p.perkara_id AND k.jenis_perkara_id = 348) AS kbh, "
+             "(SELECT COUNT(*) FROM perkara_rekonvensi r WHERE r.perkara_id = p.perkara_id) AS rk, "
              "TRIM(i.i4100) AS r_h, TRIM(i.i4101) AS r_n, TRIM(i.i4102) AS r_i, TRIM(i.i4103) AS r_m, TRIM(i.i4104) AS r_d, TRIM(i.i4105) AS r_b, "
              "TRIM(i.i4106) AS r_mum, TRIM(i.i4107) AS r_kmp, TRIM(i.i4108) AS r_did, TRIM(i.i4109) AS r_byr, "
              "COALESCE(NULLIF(TRIM(i.i6054),''), NULLIF(TRIM(i.i9712),''), '') AS v_ai, "
@@ -170,7 +171,7 @@ def blok(*bagian):
 
 
 def pert_hadhanah():
-    awal_ab = tpl('Menimbang, bahwa selain perceraian, {I} dalam #0053#nya juga menuntut agar #5114# {S} dan {I} yang bernama #8602# ditetapkan berada di bawah pemeliharaan (hadhanah) {hold}. '
+    awal_ab = tpl('Menimbang, bahwa selain perceraian, dalam perkara ini dituntut pula agar #5114# {S} dan {I} yang bernama #8602# ditetapkan berada di bawah pemeliharaan (hadhanah) {hold}. '
                   'Tuntutan mengenai penguasaan anak tersebut dapat diajukan bersama-sama dengan perkara perceraian sebagaimana ketentuan Pasal 86 ayat (1) Undang-Undang Nomor 7 Tahun 1989 '
                   'tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan perubahan kedua dengan Undang-Undang Nomor 50 Tahun 2009, oleh karena itu #8554# '
                   'akan mempertimbangkannya bersama-sama dengan pokok perkara perceraian;<br>')
@@ -219,7 +220,7 @@ def pert_hadhanah():
 
 
 def pert_nafkah_anak():
-    awal = tpl('Menimbang, bahwa {I} juga menuntut agar {S} dihukum membayar nafkah #5114# tersebut. Berdasarkan Pasal 41 huruf b Undang-Undang Nomor 1 Tahun 1974 tentang Perkawinan jo. Pasal 45 ayat (2) '
+    awal = tpl('Menimbang, bahwa dalam perkara ini dituntut pula agar {S} dihukum membayar nafkah #5114# tersebut. Berdasarkan Pasal 41 huruf b Undang-Undang Nomor 1 Tahun 1974 tentang Perkawinan jo. Pasal 45 ayat (2) '
                'Undang-Undang yang sama dan Pasal 149 huruf d serta Pasal 156 huruf d dan huruf f Kompilasi Hukum Islam, semua biaya pemeliharaan dan pendidikan anak menjadi tanggung jawab ayah '
                'menurut kemampuannya, sekurang-kurangnya sampai anak tersebut dewasa dan dapat mengurus diri sendiri (21 tahun), meskipun perkawinan kedua orang tuanya telah putus karena perceraian;<br>')
     awal_x = tpl('Menimbang, bahwa meskipun tidak ada tuntutan nafkah anak, berdasarkan Pasal 41 huruf b Undang-Undang Nomor 1 Tahun 1974 tentang Perkawinan jo. Pasal 45 ayat (2) Undang-Undang yang sama '
@@ -263,7 +264,7 @@ def pert_iddah():
     jumlah = lambda kata: GABUNG(tpl('Menimbang, bahwa berdasarkan pertimbangan tersebut, ' + kata + ' nafkah iddah yang wajib dibayarkan oleh {S} kepada {I} adalah '),
                                  JIKA("c.ai_a <> ''", GABUNG('c.ai_a', JIKA("c.ai_a REGEXP 'bulan'", lit(''), lit(' selama masa iddah 3 (tiga) bulan'))),
                                       lit('[PERIKSA: isi jumlah nafkah iddah dan rincian per bulan, mis. Rp4.500.000,00 (3 bulan x Rp1.500.000,00)]')), lit(';<br>'))
-    awal = tpl('Menimbang, bahwa {I} menuntut nafkah iddah dari {S}, sehingga #8554# mempertimbangkannya sebagai berikut;<br>')
+    awal = tpl('Menimbang, bahwa dalam perkara ini dituntut pula nafkah iddah dari {S} kepada {I}, sehingga #8554# mempertimbangkannya sebagai berikut;<br>')
     awal_x = tpl('Menimbang, bahwa meskipun {I} tidak mengajukan tuntutan nafkah iddah, talak yang dijatuhkan menimbulkan kewajiban {S} menanggung nafkah selama masa iddah bagi {I}, sehingga #8554# '
                  'mempertimbangkannya secara ex officio (vide Pasal 149 Kompilasi Hukum Islam) sebagai berikut;<br>')
     inti = lambda a, kata: GABUNG(a, dasar, syar, nusyuz, nilai, jumlah(kata))
@@ -290,7 +291,7 @@ def pert_mutah():
                    tpl(', serta lamanya perkawinan {S} dan {I} yang telah berlangsung #7777# lamanya;<br>'))
     jumlah = lambda kata: GABUNG(tpl('Menimbang, bahwa berdasarkan asas kemampuan suami, kepatutan dan kelayakan tersebut, ' + kata + ' mut&#39;ah yang wajib diberikan oleh {S} kepada {I} adalah '),
                                  JIKA("c.am_a <> ''", 'c.am_a', lit('[PERIKSA: isi bentuk dan jumlah mut&#39;ah]')), lit(';<br>'))
-    awal = tpl('Menimbang, bahwa {I} menuntut mut&#39;ah dari {S}, sehingga #8554# mempertimbangkannya sebagai berikut;<br>')
+    awal = tpl('Menimbang, bahwa dalam perkara ini dituntut pula mut&#39;ah dari {S} kepada {I}, sehingga #8554# mempertimbangkannya sebagai berikut;<br>')
     awal_x = tpl('Menimbang, bahwa meskipun {I} tidak mengajukan tuntutan mut&#39;ah, perceraian dengan talak menimbulkan kewajiban {S} memberikan mut&#39;ah kepada {I}, sehingga #8554# '
                  'mempertimbangkannya secara ex officio (vide Pasal 149 Kompilasi Hukum Islam) sebagai berikut;<br>')
     inti = lambda a, kata: GABUNG(a, dasar, syar, hak, nilai, jumlah(kata))
@@ -306,7 +307,7 @@ def pert_mutah():
 
 
 def pert_madliyah():
-    awal = tpl('Menimbang, bahwa {I} juga menuntut nafkah madliyah (nafkah lampau) dari {S}, yang akan dipertimbangkan sebagai berikut;<br>')
+    awal = tpl('Menimbang, bahwa dalam perkara ini dituntut pula nafkah madliyah (nafkah lampau) dari {S} kepada {I}, yang akan dipertimbangkan sebagai berikut;<br>')
     dasar = tpl('Menimbang, bahwa pemberian nafkah terhadap seorang istri merupakan kewajiban seorang suami sepanjang istri tersebut tidak berlaku nusyuz sebagaimana diatur dalam Pasal 34 ayat (1) '
                 'Undang-Undang Nomor 1 Tahun 1974 tentang Perkawinan sebagaimana telah diubah dengan Undang-Undang Nomor 16 Tahun 2019 jo. Pasal 80 Kompilasi Hukum Islam, dan jika kewajiban tersebut tidak '
                 'dilaksanakan menjadi hutang yang dapat dituntut oleh istri walaupun telah terjadi perceraian;<br>')
@@ -325,7 +326,7 @@ def pert_madliyah():
 
 
 def pert_harta():
-    awal = tpl('Menimbang, bahwa {I} juga menuntut penetapan harta bersama {S} dan {I}. Tuntutan mengenai harta bersama suami istri dapat diajukan bersama-sama dengan perkara perceraian sebagaimana ketentuan '
+    awal = tpl('Menimbang, bahwa dalam perkara ini dituntut pula penetapan harta bersama {S} dan {I}. Tuntutan mengenai harta bersama suami istri dapat diajukan bersama-sama dengan perkara perceraian sebagaimana ketentuan '
                'Pasal 86 ayat (1) Undang-Undang Nomor 7 Tahun 1989 tentang Peradilan Agama sebagaimana telah diubah dengan Undang-Undang Nomor 3 Tahun 2006 dan perubahan kedua dengan Undang-Undang Nomor 50 Tahun 2009, '
                'oleh karena itu #8554# mempertimbangkannya bersama-sama dengan pokok perkara perceraian;<br>')
     dasar = GABUNG(tpl('Menimbang, bahwa berdasarkan Pasal 35 ayat (1) Undang-Undang Nomor 1 Tahun 1974 tentang Perkawinan, harta benda yang diperoleh selama perkawinan menjadi harta bersama, dan menurut Pasal 97 '
@@ -371,7 +372,7 @@ def pert_sema():
     """SEMA 1/2022: perselisihan terus-menerus (huruf F) dikabulkan bila terbukti berselisih dan/atau berpisah tempat tinggal minimal 6 bulan."""
     huruf_f = "UPPER(c.v_8503) REGEXP 'F'"
     lama = "LOWER(c.v_9944)"
-    kurang = "(%s REGEXP '(^|[^0-9])[1-5] *(\\\\(|bulan)' AND %s NOT REGEXP 'tahun')" % (lama, lama)
+    kurang = "(%s REGEXP '(^|[^0-9])[1-5] *([(]|bulan)' AND %s NOT REGEXP 'tah')" % (lama, lama)
     sema = tpl('Menimbang, bahwa selanjutnya #8554# perlu mengemukakan ketentuan dalam Surat Edaran Mahkamah Agung (SEMA) Nomor 1 Tahun 2022 tentang Pemberlakuan Rumusan Hasil Rapat Pleno Kamar Mahkamah Agung '
                'Tahun 2022 Sebagai Pedoman Pelaksanaan Tugas Bagi Pengadilan yang mengatur bahwa dalam upaya mempertahankan suatu perkawinan dan memenuhi prinsip mempersukar perceraian maka perkara perceraian '
                'dengan alasan perselisihan dan pertengkaran yang terus menerus dapat dikabulkan jika terbukti suami/isteri berselisih dan bertengkar terus menerus atau telah berpisah tempat tinggal selama minimal '
@@ -380,7 +381,7 @@ def pert_sema():
                     'atau telah melampaui batas minimal 6 (enam) bulan, sehingga ketentuan SEMA Nomor 1 Tahun 2022 tersebut telah terpenuhi;<br>')
     return ("CASE WHEN NOT (" + huruf_f + ") THEN '' "
             "WHEN c.v_9944 = '' AND c.v_246 = '' THEN CONCAT(" + sema + ", " + PERIKSA('isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai') + ") "
-            "WHEN " + kurang + " THEN CONCAT(" + sema + ", " + PERIKSA('lama pisah rumah menurut isian kurang dari 6 bulan sehingga belum memenuhi SEMA 1/2022; pertimbangkan blangko Tolak - Kurang 6 Bulan') + ") "
+            "WHEN " + kurang + " THEN CONCAT(" + sema + ", " + PERIKSA('lama pisah rumah menurut isian kurang dari 6 bulan sehingga belum memenuhi SEMA 1/2022; uraikan alasan pengecualiannya bila ada, atau pertimbangkan blangko Tolak - Kurang 6 Bulan') + ") "
             "ELSE CONCAT(" + sema + ", " + penerapan + ") END")
 
 
@@ -404,16 +405,16 @@ def amar_nafkah_anak():
 
 
 def amar_akibat():
-    """Satu butir: Menghukum S membayar kepada I berupa nafkah madliyah, nafkah iddah, mut'ah (+ waktu pembayaran)."""
-    m = JIKA("c.cd IN ('A','S')", GABUNG(lit('nafkah madliyah '), JIKA("c.ad_a <> ''", 'c.ad_a', lit('[PERIKSA: isi nafkah madliyah]'))), 'NULL')
-    i = JIKA("c.ci IN ('A','S','X')", GABUNG(lit('nafkah iddah '), JIKA("c.ai_a <> ''", GABUNG('c.ai_a', JIKA("c.ai_a REGEXP 'bulan'", lit(''), lit(' selama masa iddah 3 (tiga) bulan'))), lit('[PERIKSA: isi nafkah iddah]'))), 'NULL')
-    mt = JIKA("c.cm IN ('A','S','X')", GABUNG(lit('mut&#39;ah '), JIKA("c.am_a <> ''", 'c.am_a', lit('[PERIKSA: isi mut&#39;ah]'))), 'NULL')
-    waktu = ("CASE WHEN c.byr REGEXP 'tidak' THEN '' WHEN c.byr REGEXP 'akta cerai' THEN CONCAT(', yang dibayarkan sebelum ', c.S, ' mengambil akta cerai') "
-             "WHEN c.byr REGEXP 'ikrar' THEN CONCAT(', yang dibayarkan sebelum ', c.S, ' mengucapkan ikrar talak') ELSE '' END")
+    """Menghukum S membayar kepada I (nafkah madliyah, nafkah iddah, mut'ah) - satu butir, rincian berbaris '-' seperti amar yang lazim dipakai."""
+    m = JIKA("c.cd IN ('A','S')", GABUNG(lit('-   Nafkah madliyah '), JIKA("c.ad_a <> ''", 'c.ad_a', lit('[PERIKSA: isi nafkah madliyah]'))), 'NULL')
+    i = JIKA("c.ci IN ('A','S','X')", GABUNG(lit('-   Nafkah iddah '), JIKA("c.ai_a <> ''", GABUNG('c.ai_a', JIKA("c.ai_a REGEXP 'bulan'", lit(''), lit(' selama masa iddah 3 (tiga) bulan'))), lit('[PERIKSA: isi nafkah iddah]'))), 'NULL')
+    mt = JIKA("c.cm IN ('A','S','X')", GABUNG(lit('-   Mut&#39;ah '), JIKA("c.am_a <> ''", 'c.am_a', lit('[PERIKSA: isi mut&#39;ah]'))), 'NULL')
+    waktu = ("CASE WHEN c.byr REGEXP 'tidak' THEN '' WHEN c.byr REGEXP 'akta cerai' THEN CONCAT(' sebelum ', c.S, ' mengambil akta cerai') "
+             "WHEN c.byr REGEXP 'ikrar' THEN CONCAT(' sesaat sebelum ', c.S, ' mengucapkan ikrar talak') ELSE '' END")
     ada = "(c.cd IN ('A','S') OR c.ci IN ('A','S','X') OR c.cm IN ('A','S','X'))"
     noo = "CONCAT_WS(', ', %s, %s, %s)" % (JIKA("c.ci = 'N'", lit('nafkah iddah'), 'NULL'), JIKA("c.cm = 'N'", lit('mut&#39;ah'), 'NULL'), JIKA("c.cd = 'N'", lit('nafkah madliyah'), 'NULL'))
     teks_noo = "IF((c.ci = 'N' OR c.cm = 'N' OR c.cd = 'N'), CONCAT('Menyatakan tuntutan mengenai ', " + noo + ", ' tidak dapat diterima;<br>'), '')"
-    return ("CONCAT(IF(" + ada + ", CONCAT('Menghukum ', c.S, ' untuk membayar kepada ', c.I, ' berupa: ', CONCAT_WS('; ', " + m + ", " + i + ", " + mt + "), " + waktu + ", ';<br>'), ''), " + teks_noo + ")")
+    return ("CONCAT(IF(" + ada + ", CONCAT('Menghukum ', c.S, ' untuk membayar kepada ', c.I, " + waktu + ", ':<br>', CONCAT_WS(';<br>', " + m + ", " + i + ", " + mt + "), ';<br>'), ''), " + teks_noo + ")")
 
 
 def amar_harta():
@@ -434,9 +435,9 @@ def rincian_ikrar():
                    '-   Mut&#39;ah berupa uang sejumlah Rp.................. (... rupiah);<br>'
                    '-   Nafkah anak sebesar Rp.................. (... rupiah) perbulan secara keseluruhan selama ... bulan, sejumlah Rp.................. (... rupiah).')
     butir = "CONCAT_WS(';<br>', %s, %s, %s, %s)" % (
+        JIKA("c.ad_a <> ''", GABUNG(lit('-   Nafkah madliyah '), 'c.ad_a'), 'NULL'),
         JIKA("c.ai_a <> ''", GABUNG(lit('-   Nafkah iddah '), 'c.ai_a'), 'NULL'),
         JIKA("c.am_a <> ''", GABUNG(lit('-   Mut&#39;ah '), 'c.am_a'), 'NULL'),
-        JIKA("c.ad_a <> ''", GABUNG(lit('-   Nafkah madliyah '), 'c.ad_a'), 'NULL'),
         JIKA("c.an_a <> ''", GABUNG(lit('-   Nafkah anak '), 'c.an_a'), 'NULL'))
     return "IF(c.ai_a = '' AND c.am_a = '' AND c.ad_a = '' AND c.an_a = '', %s, CONCAT(%s, '.'))" % (cadangan, butir)
 

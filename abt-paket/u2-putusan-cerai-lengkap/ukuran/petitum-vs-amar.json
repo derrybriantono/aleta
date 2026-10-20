@@ -1,0 +1,68 @@
+{
+ "cerai gugat": {
+  "putusan_kabul": 1619,
+  "hak asuh": {
+   "petitum_dan_amar": 30,
+   "petitum_saja": 10,
+   "amar_saja": 49
+  },
+  "nafkah anak": {
+   "petitum_dan_amar": 11,
+   "petitum_saja": 3,
+   "amar_saja": 10
+  },
+  "nafkah iddah": {
+   "petitum_dan_amar": 4,
+   "petitum_saja": 1,
+   "amar_saja": 2
+  },
+  "mut'ah": {
+   "petitum_dan_amar": 2,
+   "petitum_saja": 1,
+   "amar_saja": 1
+  },
+  "nafkah madliyah": {
+   "petitum_dan_amar": 3,
+   "petitum_saja": 2,
+   "amar_saja": 0
+  },
+  "harta bersama": {
+   "petitum_dan_amar": 0,
+   "petitum_saja": 0,
+   "amar_saja": 2
+  }
+ },
+ "cerai talak": {
+  "putusan_kabul": 345,
+  "hak asuh": {
+   "petitum_dan_amar": 5,
+   "petitum_saja": 2,
+   "amar_saja": 35
+  },
+  "nafkah anak": {
+   "petitum_dan_amar": 0,
+   "petitum_saja": 0,
+   "amar_saja": 43
+  },
+  "nafkah iddah": {
+   "petitum_dan_amar": 3,
+   "petitum_saja": 1,
+   "amar_saja": 44
+  },
+  "mut'ah": {
+   "petitum_dan_amar": 1,
+   "petitum_saja": 1,
+   "amar_saja": 34
+  },
+  "nafkah madliyah": {
+   "petitum_dan_amar": 0,
+   "petitum_saja": 0,
+   "amar_saja": 24
+  },
+  "harta bersama": {
+   "petitum_dan_amar": 0,
+   "petitum_saja": 0,
+   "amar_saja": 3
+  }
+ }
+}

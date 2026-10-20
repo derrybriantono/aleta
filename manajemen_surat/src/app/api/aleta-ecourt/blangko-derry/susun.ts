@@ -75,7 +75,7 @@ export type Susunan = {
 const MANUAL: Record<string, JenisIsian> = { data_teks: "teks", data_tanggal: "tanggal", tanya_jawab: "tj" };
 const POLA_REF = /#(\d{4,5})#/g;
 const POLA_NO_VAR = /no_var\s*(?:=|in\s*\()\s*['"]?(\d{4,5})/gi;
-const POLA_PEMICU = /#(111\d\d)#/;
+const POLA_PEMICU = /#(111\d\d|414[0-5])#/;
 
 /** Urutan tampil isian perceraian (dari rancangan v12); yang tidak disebut mengikuti urutan di RTF. */
 const URUTAN = [
@@ -377,6 +377,18 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "9873": { nm: "Alat bukti surat Pemohon (daftar bukti P.1 dst.; mis. surat keterangan hilang dari kepolisian atau desa; kosong = tanpa daftar)" },
   "9875": { nm: "Tanggal berlaku mati secara hukum (opsional; kosong = sejak penetapan diucapkan)" },
   /* === AKHIR I28 === */
+  /* === U2 20 Okt: keputusan majelis atas tuntutan akibat perceraian (nafkah anak, hak asuh, iddah, mut'ah, madliyah, harta bersama) === */
+  "4100": { nm: "Keputusan atas tuntutan hak asuh anak (hadhanah)", pil: ["dikabulkan seluruhnya", "dikabulkan sebagian", "ditolak", "tidak dapat diterima", "diberikan secara ex officio (tidak dituntut)"] },
+  "4101": { nm: "Keputusan atas tuntutan nafkah anak", pil: ["dikabulkan seluruhnya", "dikabulkan sebagian", "ditolak", "tidak dapat diterima", "diberikan secara ex officio (tidak dituntut)"] },
+  "4102": { nm: "Keputusan atas nafkah iddah", pil: ["dikabulkan seluruhnya", "dikabulkan sebagian", "ditolak", "tidak dapat diterima", "diberikan secara ex officio (tidak dituntut)"] },
+  "4103": { nm: "Keputusan atas mut'ah", pil: ["dikabulkan seluruhnya", "dikabulkan sebagian", "ditolak", "tidak dapat diterima", "diberikan secara ex officio (tidak dituntut)"] },
+  "4104": { nm: "Keputusan atas nafkah lampau (madliyah)", pil: ["dikabulkan seluruhnya", "dikabulkan sebagian", "ditolak", "tidak dapat diterima"] },
+  "4105": { nm: "Keputusan atas tuntutan harta bersama", pil: ["dikabulkan seluruhnya", "dikabulkan sebagian", "ditolak", "tidak dapat diterima"] },
+  "4106": { nm: "Keadaan anak (sudah atau belum mumayyiz)", pil: ["belum mumayyiz (belum berumur 12 tahun)", "mumayyiz (berumur 12 tahun atau lebih)"] },
+  "4107": { nm: "Dasar kemampuan pemberi nafkah (pekerjaan atau penghasilan; kosong = pekerjaan di SIPP)" },
+  "4108": { nm: "Pendapat anak mumayyiz yang didengar di persidangan" },
+  "4109": { nm: "Waktu pembayaran akibat cerai", pil: ["sebelum ikrar talak", "sebelum akta cerai", "tidak disyaratkan (istri tidak keberatan)"] },
+  /* === AKHIR U2 === */
 };
 
 const PEMICU_TEKS: Record<string, string> = {
@@ -385,6 +397,12 @@ const PEMICU_TEKS: Record<string, string> = {
   "11112": "perkara ini prodeo (terbaca dari SIPP)",
   "11116": "alasan perceraian huruf C dipilih",
   "11117": "alasan perceraian huruf H dipilih",
+  "4140": "petitum menuntut hak asuh anak (terbaca dari SIPP)",
+  "4141": "petitum menuntut nafkah anak (terbaca dari SIPP)",
+  "4142": "petitum menuntut nafkah iddah (terbaca dari SIPP)",
+  "4143": "petitum menuntut mut'ah (terbaca dari SIPP)",
+  "4144": "petitum menuntut nafkah lampau (terbaca dari SIPP)",
+  "4145": "petitum menuntut harta bersama (terbaca dari SIPP)",
 };
 
 /** Keterangan keadaan untuk layar ("muncul karena ..." dan daftar isian yang disembunyikan). */

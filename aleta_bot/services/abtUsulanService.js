@@ -1865,6 +1865,16 @@ async function dariSipp(nomorPerkara) {
     /* usulan lanjutan bersifat tambahan: gagal membaca tidak menggagalkan usulan SIPP lain */
   }
 
+  /* === U2 20 Okt === */
+  // Keadaan anak (mumayyiz atau belum) dan yang kini mengasuh anak dari tab Anak SIPP untuk putusan cerai - lihat abtIsianPutusanCerai20okt.js.
+  // Dipasang SEBELUM blok S3 supaya data terstruktur tab Anak mengalahkan tebakan dari posita. Hanya SELECT.
+  try {
+    const cerai = await require("./abtIsianPutusanCerai20okt").usulanPutusanCerai(perkaraId, runQuery);
+    for (const u of cerai) if (!hasil.some((x) => x.kode === u.kode)) hasil.push(u);
+  } catch {
+    /* pengisi tambahan: gagal membaca tidak menggagalkan usulan SIPP lain */
+  }
+  /* === AKHIR U2 === */
   /* === S3 20 Okt === */
   // Isian popup cerai/ikrar/itsbat yang datanya ada di SIPP (delegasi, penetapan kembali ikrar, anak, umur dari tanggal lahir) atau di
   // posita+petitum SIPP (nafkah, hak asuh, 7035, 8503, 9686) - lihat abtIsianLengkap20okt.js. Hanya SELECT.

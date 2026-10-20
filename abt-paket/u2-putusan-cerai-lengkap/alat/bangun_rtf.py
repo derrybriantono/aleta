@@ -106,8 +106,8 @@ def main():
                 tujuan = os.path.normpath(os.path.join(os.path.abspath(hasil_pohon), rel))
                 os.makedirs(os.path.dirname(LP + tujuan), exist_ok=True)
                 open(LP + tujuan, 'wb').write(baru.encode('latin1'))
-    open(os.path.join(keluar, 'rtf-tambal.tsv'), 'w', encoding='ascii').write('\n'.join(tsv) + '\n')
-    open(os.path.join(keluar, 'rtf-daftar-tambal.tsv'), 'w', encoding='utf-8').write('\n'.join(daftar) + '\n')
+    open(os.path.join(keluar, 'rtf-tambal.tsv'), 'w', encoding='ascii', newline=chr(10)).write('\n'.join(tsv) + '\n')
+    open(os.path.join(keluar, 'rtf-daftar-tambal.tsv'), 'w', encoding='utf-8', newline=chr(10)).write('\n'.join(daftar) + '\n')
     json.dump({'berkas': len(daftar), 'jenis': dict(ringkas), 'lewat': lewat}, open(os.path.join(keluar, 'rtf-ringkas.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print('berkas ditambal', len(daftar), dict(ringkas), 'lewat', len(lewat))
     for x in lewat[:10]:
