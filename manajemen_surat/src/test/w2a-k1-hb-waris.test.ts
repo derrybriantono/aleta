@@ -53,7 +53,7 @@ const JENIS = ["melihat", "mendengar", "de-auditu", "sebagian", "tidak-tahu", "r
 describe.each([
   ["harta bersama", "harta-bersama", 70, ["q-kenal-pihak", "q-pernikahan"]],
   ["kewarisan", "kewarisan", 70, ["q-kenal-pewaris", "q-pewaris-meninggal"]],
-] as const)("A. katalog %s versi 2", (_nama, kunci, minimal) => {
+] as const)("A. katalog %s versi 2", (_nama, kunci, minimal, _awal) => {
   const v1 = muat(path.join(PAKET, "katalog-v1"), kunci);
   const v2 = muat(FOLDER, kunci);
   const id = (l: any[]) => l.map((x) => x.id);

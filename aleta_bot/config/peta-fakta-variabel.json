@@ -756,6 +756,158 @@
         "4786"
       ],
       "hanyaSaran": true
+    },
+    "hibah.penghibah": {
+      "label": "Penghibah",
+      "tipe": "nama",
+      "kode": [
+        "9793"
+      ],
+      "kunciSaksi": "penghibah"
+    },
+    "hibah.bentuk": {
+      "label": "Bentuk dan tanggal hibah",
+      "tipe": "teks",
+      "kode": [
+        "9794"
+      ],
+      "kunciSaksi": "bentukHibah"
+    },
+    "hibah.objek": {
+      "label": "Benda yang dihibahkan",
+      "tipe": "teks",
+      "kode": [
+        "9795"
+      ],
+      "kunciSaksi": "objekHibah"
+    },
+    "hibah.penerima": {
+      "label": "Penerima hibah",
+      "tipe": "nama",
+      "kode": [
+        "9796"
+      ],
+      "kunciSaksi": "penerimaHibah"
+    },
+    "wakaf.wakif": {
+      "label": "Wakif",
+      "tipe": "nama",
+      "kode": [
+        "9823"
+      ],
+      "kunciSaksi": "wakif"
+    },
+    "wakaf.nazhir": {
+      "label": "Nazhir",
+      "tipe": "nama",
+      "kode": [
+        "9824"
+      ],
+      "kunciSaksi": "nazhir"
+    },
+    "wakaf.bentukIkrar": {
+      "label": "Bentuk dan tanggal ikrar wakaf",
+      "tipe": "teks",
+      "kode": [
+        "9825"
+      ],
+      "kunciSaksi": "bentukIkrar"
+    },
+    "wakaf.harta": {
+      "label": "Harta benda wakaf",
+      "tipe": "teks",
+      "kode": [
+        "9826"
+      ],
+      "kunciSaksi": "hartaWakaf"
+    },
+    "wakaf.peruntukan": {
+      "label": "Peruntukan wakaf",
+      "tipe": "teks",
+      "kode": [
+        "9827"
+      ],
+      "kunciSaksi": "peruntukanWakaf"
+    },
+    "wakaf.penguasa": {
+      "label": "Pihak yang menguasai harta benda wakaf",
+      "tipe": "teks",
+      "kode": [
+        "9841"
+      ],
+      "kunciSaksi": "penguasaWakaf"
+    },
+    "wasiat.bentuk": {
+      "label": "Bentuk dan tanggal wasiat",
+      "tipe": "teks",
+      "kode": [
+        "9478"
+      ],
+      "kunciSaksi": "bentukWasiat"
+    },
+    "wasiat.objek": {
+      "label": "Benda yang diwasiatkan",
+      "tipe": "teks",
+      "kode": [
+        "9479"
+      ],
+      "kunciSaksi": "objekWasiat"
+    },
+    "wasiat.penerima": {
+      "label": "Penerima wasiat",
+      "tipe": "teks",
+      "kode": [
+        "9480"
+      ],
+      "kunciSaksi": "penerimaWasiat"
+    },
+    "eksyar.akad": {
+      "label": "Akad yang disengketakan",
+      "tipe": "teks",
+      "kode": [
+        "9340"
+      ],
+      "kunciSaksi": "akad"
+    },
+    "eksyar.jumlahKewajiban": {
+      "label": "Jumlah kewajiban yang digugat",
+      "tipe": "rupiah",
+      "kode": [
+        "9341"
+      ],
+      "kunciSaksi": "jumlahUtang"
+    },
+    "eksyar.rincianPembiayaan": {
+      "label": "Rincian pembiayaan",
+      "tipe": "teks",
+      "kode": [
+        "4765"
+      ],
+      "kunciSaksi": "rincianPembiayaan"
+    },
+    "eksyar.angsuran": {
+      "label": "Angsuran dan jatuh tempo",
+      "tipe": "teks",
+      "kode": [
+        "4766"
+      ],
+      "kunciSaksi": "angsuranJatuhTempo"
+    },
+    "eksyar.suratPeringatan": {
+      "label": "Surat peringatan atau somasi",
+      "tipe": "daftar",
+      "kode": [
+        "4767"
+      ],
+      "kunciSaksi": "suratPeringatan"
+    },
+    "eksyar.agunan": {
+      "label": "Agunan atau jaminan",
+      "tipe": "teks",
+      "kode": [
+        "4768"
+      ],
+      "kunciSaksi": "agunan"
     }
   },
   "pokokBas": [
