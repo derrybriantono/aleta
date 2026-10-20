@@ -1,0 +1,176 @@
+[
+ {
+  "no_var": 4600,
+  "nama": "BAS: jumlah saksi Penggugat/Pemohon yang diperiksa",
+  "data_type": "data_sql",
+  "sql_query": "select count(*) as data from perkara_pihak5 s where s.perkara_id = #perkara_id# and s.saksi_pihak_ke = 1 and exists (select 1 from aps_badilag.abt_keterangan_saksi k where k.saksi_id = s.id and k.perkara_id = #perkara_id#)"
+ },
+ {
+  "no_var": 4601,
+  "nama": "BAS: jumlah saksi Tergugat/Termohon yang diperiksa",
+  "data_type": "data_sql",
+  "sql_query": "select count(*) as data from perkara_pihak5 s where s.perkara_id = #perkara_id# and s.saksi_pihak_ke = 2 and exists (select 1 from aps_badilag.abt_keterangan_saksi k where k.saksi_id = s.id and k.perkara_id = #perkara_id#)"
+ },
+ {
+  "no_var": 4602,
+  "nama": "BAS: jumlah saksi Penggugat/Pemohon (angka dan terbilang)",
+  "data_type": "data_sql",
+  "sql_query": "select (case x.n when 0 then 'tidak ada' when 1 then '1 (satu)' when 2 then '2 (dua)' when 3 then '3 (tiga)' when 4 then '4 (empat)' when 5 then '5 (lima)' when 6 then '6 (enam)' when 7 then '7 (tujuh)' when 8 then '8 (delapan)' else concat(x.n, ' orang') end) as data from (select count(*) as n from perkara_pihak5 s where s.perkara_id = #perkara_id# and s.saksi_pihak_ke = 1 and exists (select 1 from aps_badilag.abt_keterangan_saksi k where k.saksi_id = s.id and k.perkara_id = #perkara_id#)) x"
+ },
+ {
+  "no_var": 4603,
+  "nama": "BAS: jumlah saksi Tergugat/Termohon (angka dan terbilang)",
+  "data_type": "data_sql",
+  "sql_query": "select (case x.n when 0 then 'tidak ada' when 1 then '1 (satu)' when 2 then '2 (dua)' when 3 then '3 (tiga)' when 4 then '4 (empat)' when 5 then '5 (lima)' when 6 then '6 (enam)' when 7 then '7 (tujuh)' when 8 then '8 (delapan)' else concat(x.n, ' orang') end) as data from (select count(*) as n from perkara_pihak5 s where s.perkara_id = #perkara_id# and s.saksi_pihak_ke = 2 and exists (select 1 from aps_badilag.abt_keterangan_saksi k where k.saksi_id = s.id and k.perkara_id = #perkara_id#)) x"
+ },
+ {
+  "no_var": 4604,
+  "nama": "BAS: nama saksi Penggugat/Pemohon yang diperiksa",
+  "data_type": "data_sql",
+  "sql_query": "select group_concat(s.nama order by s.urutan separator ' dan ') as data from perkara_pihak5 s where s.perkara_id = #perkara_id# and s.saksi_pihak_ke = 1 and exists (select 1 from aps_badilag.abt_keterangan_saksi k where k.saksi_id = s.id and k.perkara_id = #perkara_id#)"
+ },
+ {
+  "no_var": 4605,
+  "nama": "BAS: nama saksi Tergugat/Termohon yang diperiksa",
+  "data_type": "data_sql",
+  "sql_query": "select group_concat(s.nama order by s.urutan separator ' dan ') as data from perkara_pihak5 s where s.perkara_id = #perkara_id# and s.saksi_pihak_ke = 2 and exists (select 1 from aps_badilag.abt_keterangan_saksi k where k.saksi_id = s.id and k.perkara_id = #perkara_id#)"
+ },
+ {
+  "no_var": 4606,
+  "nama": "BAS: hubungan saksi dengan Penggugat/Pemohon",
+  "data_type": "data_sql",
+  "sql_query": "select group_concat(s.keterangan order by s.urutan separator ' dan ') as data from perkara_pihak5 s where s.perkara_id = #perkara_id# and s.saksi_pihak_ke = 1 and exists (select 1 from aps_badilag.abt_keterangan_saksi k where k.saksi_id = s.id and k.perkara_id = #perkara_id#)"
+ },
+ {
+  "no_var": 4607,
+  "nama": "BAS: hubungan saksi dengan Tergugat/Termohon",
+  "data_type": "data_sql",
+  "sql_query": "select group_concat(s.keterangan order by s.urutan separator ' dan ') as data from perkara_pihak5 s where s.perkara_id = #perkara_id# and s.saksi_pihak_ke = 2 and exists (select 1 from aps_badilag.abt_keterangan_saksi k where k.saksi_id = s.id and k.perkara_id = #perkara_id#)"
+ },
+ {
+  "no_var": 4608,
+  "nama": "BAS: ada keterangan saksi tersimpan (ya/tidak)",
+  "data_type": "data_sql",
+  "sql_query": "select (case when exists (select 1 from aps_badilag.abt_keterangan_saksi k where k.perkara_id = #perkara_id#) then 'ya' else 'tidak' end) as data"
+ },
+ {
+  "no_var": 4609,
+  "nama": "BAS: jumlah sidang pemeriksaan saksi",
+  "data_type": "data_sql",
+  "sql_query": "select count(distinct k.sidang_id) as data from aps_badilag.abt_keterangan_saksi k where k.perkara_id = #perkara_id#"
+ },
+ {
+  "no_var": 4610,
+  "nama": "BAS: keterangan saksi tentang pernikahan (kutipan ringkas)",
+  "data_type": "data_sql",
+  "sql_query": "select substring(group_concat(concat(s.nama, ': ', left(trim(trailing ';' from k.jawaban), 150)) order by s.saksi_pihak_ke, s.urutan, k.urutan_pertanyaan separator '; '), 1, 900) as data from aps_badilag.abt_keterangan_saksi k join perkara_pihak5 s on s.id = k.saksi_id where k.perkara_id = #perkara_id# and k.pertanyaan regexp 'menikah|nikah|perkawinan|dinikahkan|wali'"
+ },
+ {
+  "no_var": 4611,
+  "nama": "BAS: keterangan saksi tentang tempat tinggal bersama (kutipan ringkas)",
+  "data_type": "data_sql",
+  "sql_query": "select substring(group_concat(concat(s.nama, ': ', left(trim(trailing ';' from k.jawaban), 150)) order by s.saksi_pihak_ke, s.urutan, k.urutan_pertanyaan separator '; '), 1, 900) as data from aps_badilag.abt_keterangan_saksi k join perkara_pihak5 s on s.id = k.saksi_id where k.perkara_id = #perkara_id# and k.pertanyaan regexp 'tinggal bersama|tempat tinggal|kediaman|serumah'"
+ },
+ {
+  "no_var": 4612,
+  "nama": "BAS: keterangan saksi tentang anak (kutipan ringkas)",
+  "data_type": "data_sql",
+  "sql_query": "select substring(group_concat(concat(s.nama, ': ', left(trim(trailing ';' from k.jawaban), 150)) order by s.saksi_pihak_ke, s.urutan, k.urutan_pertanyaan separator '; '), 1, 900) as data from aps_badilag.abt_keterangan_saksi k join perkara_pihak5 s on s.id = k.saksi_id where k.perkara_id = #perkara_id# and k.pertanyaan regexp 'anak|dikaruniai|dikarunia|diasuh|hak asuh'"
+ },
+ {
+  "no_var": 4613,
+  "nama": "BAS: keterangan saksi tentang penyebab perselisihan dan pertengkaran (kutipan ringkas)",
+  "data_type": "data_sql",
+  "sql_query": "select substring(group_concat(concat(s.nama, ': ', left(trim(trailing ';' from k.jawaban), 150)) order by s.saksi_pihak_ke, s.urutan, k.urutan_pertanyaan separator '; '), 1, 900) as data from aps_badilag.abt_keterangan_saksi k join perkara_pihak5 s on s.id = k.saksi_id where k.perkara_id = #perkara_id# and k.pertanyaan regexp 'penyebab|sebab|kenapa|mengapa|perselisihan|pertengkaran|cekcok'"
+ },
+ {
+  "no_var": 4614,
+  "nama": "BAS: keterangan saksi tentang pisah rumah (kutipan ringkas)",
+  "data_type": "data_sql",
+  "sql_query": "select substring(group_concat(concat(s.nama, ': ', left(trim(trailing ';' from k.jawaban), 150)) order by s.saksi_pihak_ke, s.urutan, k.urutan_pertanyaan separator '; '), 1, 900) as data from aps_badilag.abt_keterangan_saksi k join perkara_pihak5 s on s.id = k.saksi_id where k.perkara_id = #perkara_id# and k.pertanyaan regexp 'pisah|meninggalkan|pergi|berpisah'"
+ },
+ {
+  "no_var": 4615,
+  "nama": "BAS: keterangan saksi tentang nafkah (kutipan ringkas)",
+  "data_type": "data_sql",
+  "sql_query": "select substring(group_concat(concat(s.nama, ': ', left(trim(trailing ';' from k.jawaban), 150)) order by s.saksi_pihak_ke, s.urutan, k.urutan_pertanyaan separator '; '), 1, 900) as data from aps_badilag.abt_keterangan_saksi k join perkara_pihak5 s on s.id = k.saksi_id where k.perkara_id = #perkara_id# and k.pertanyaan regexp 'nafkah|iddah|mut'"
+ },
+ {
+  "no_var": 4616,
+  "nama": "BAS: keterangan saksi tentang upaya damai (kutipan ringkas)",
+  "data_type": "data_sql",
+  "sql_query": "select substring(group_concat(concat(s.nama, ': ', left(trim(trailing ';' from k.jawaban), 150)) order by s.saksi_pihak_ke, s.urutan, k.urutan_pertanyaan separator '; '), 1, 900) as data from aps_badilag.abt_keterangan_saksi k join perkara_pihak5 s on s.id = k.saksi_id where k.perkara_id = #perkara_id# and k.pertanyaan regexp 'damai|mendamaikan|rukun kembali|menasehati|menasihati|upaya'"
+ },
+ {
+  "no_var": 4617,
+  "nama": "BAS: keterangan saksi tentang harta dan benda (kutipan ringkas)",
+  "data_type": "data_sql",
+  "sql_query": "select substring(group_concat(concat(s.nama, ': ', left(trim(trailing ';' from k.jawaban), 150)) order by s.saksi_pihak_ke, s.urutan, k.urutan_pertanyaan separator '; '), 1, 900) as data from aps_badilag.abt_keterangan_saksi k join perkara_pihak5 s on s.id = k.saksi_id where k.perkara_id = #perkara_id# and k.pertanyaan regexp 'harta|barang|tanah|kendaraan|motor|mobil|kebun|sertifikat|rumah (milik|bersama)'"
+ },
+ {
+  "no_var": 4618,
+  "nama": "BAS: keterangan saksi tentang kematian dan ahli waris (kutipan ringkas)",
+  "data_type": "data_sql",
+  "sql_query": "select substring(group_concat(concat(s.nama, ': ', left(trim(trailing ';' from k.jawaban), 150)) order by s.saksi_pihak_ke, s.urutan, k.urutan_pertanyaan separator '; '), 1, 900) as data from aps_badilag.abt_keterangan_saksi k join perkara_pihak5 s on s.id = k.saksi_id where k.perkara_id = #perkara_id# and k.pertanyaan regexp 'meninggal( |$)|wafat|ahli waris|warisan|hutang|utang|peninggalan'"
+ },
+ {
+  "no_var": 4620,
+  "nama": "BAS: jumlah bukti surat Penggugat/Pemohon",
+  "data_type": "data_sql",
+  "sql_query": "select (case when d regexp '(^|[^A-Za-z])P[.] ?20([^0-9]|$)' then 20 when d regexp '(^|[^A-Za-z])P[.] ?19([^0-9]|$)' then 19 when d regexp '(^|[^A-Za-z])P[.] ?18([^0-9]|$)' then 18 when d regexp '(^|[^A-Za-z])P[.] ?17([^0-9]|$)' then 17 when d regexp '(^|[^A-Za-z])P[.] ?16([^0-9]|$)' then 16 when d regexp '(^|[^A-Za-z])P[.] ?15([^0-9]|$)' then 15 when d regexp '(^|[^A-Za-z])P[.] ?14([^0-9]|$)' then 14 when d regexp '(^|[^A-Za-z])P[.] ?13([^0-9]|$)' then 13 when d regexp '(^|[^A-Za-z])P[.] ?12([^0-9]|$)' then 12 when d regexp '(^|[^A-Za-z])P[.] ?11([^0-9]|$)' then 11 when d regexp '(^|[^A-Za-z])P[.] ?10([^0-9]|$)' then 10 when d regexp '(^|[^A-Za-z])P[.] ?9([^0-9]|$)' then 9 when d regexp '(^|[^A-Za-z])P[.] ?8([^0-9]|$)' then 8 when d regexp '(^|[^A-Za-z])P[.] ?7([^0-9]|$)' then 7 when d regexp '(^|[^A-Za-z])P[.] ?6([^0-9]|$)' then 6 when d regexp '(^|[^A-Za-z])P[.] ?5([^0-9]|$)' then 5 when d regexp '(^|[^A-Za-z])P[.] ?4([^0-9]|$)' then 4 when d regexp '(^|[^A-Za-z])P[.] ?3([^0-9]|$)' then 3 when d regexp '(^|[^A-Za-z])P[.] ?2([^0-9]|$)' then 2 when d regexp '(^|[^A-Za-z])P[.] ?1([^0-9]|$)' then 1 else 0 end) as data from (select concat_ws(char(10), (select data from aps_badilag.abt_data_teks where no_var = 1214 and perkara_id = #perkara_id#)) as d) x"
+ },
+ {
+  "no_var": 4621,
+  "nama": "BAS: jumlah bukti surat Tergugat/Termohon",
+  "data_type": "data_sql",
+  "sql_query": "select (case when d regexp '(^|[^A-Za-z])T[.] ?20([^0-9]|$)' then 20 when d regexp '(^|[^A-Za-z])T[.] ?19([^0-9]|$)' then 19 when d regexp '(^|[^A-Za-z])T[.] ?18([^0-9]|$)' then 18 when d regexp '(^|[^A-Za-z])T[.] ?17([^0-9]|$)' then 17 when d regexp '(^|[^A-Za-z])T[.] ?16([^0-9]|$)' then 16 when d regexp '(^|[^A-Za-z])T[.] ?15([^0-9]|$)' then 15 when d regexp '(^|[^A-Za-z])T[.] ?14([^0-9]|$)' then 14 when d regexp '(^|[^A-Za-z])T[.] ?13([^0-9]|$)' then 13 when d regexp '(^|[^A-Za-z])T[.] ?12([^0-9]|$)' then 12 when d regexp '(^|[^A-Za-z])T[.] ?11([^0-9]|$)' then 11 when d regexp '(^|[^A-Za-z])T[.] ?10([^0-9]|$)' then 10 when d regexp '(^|[^A-Za-z])T[.] ?9([^0-9]|$)' then 9 when d regexp '(^|[^A-Za-z])T[.] ?8([^0-9]|$)' then 8 when d regexp '(^|[^A-Za-z])T[.] ?7([^0-9]|$)' then 7 when d regexp '(^|[^A-Za-z])T[.] ?6([^0-9]|$)' then 6 when d regexp '(^|[^A-Za-z])T[.] ?5([^0-9]|$)' then 5 when d regexp '(^|[^A-Za-z])T[.] ?4([^0-9]|$)' then 4 when d regexp '(^|[^A-Za-z])T[.] ?3([^0-9]|$)' then 3 when d regexp '(^|[^A-Za-z])T[.] ?2([^0-9]|$)' then 2 when d regexp '(^|[^A-Za-z])T[.] ?1([^0-9]|$)' then 1 else 0 end) as data from (select concat_ws(char(10), (select data from aps_badilag.abt_data_teks where no_var = 9911 and perkara_id = #perkara_id#), (select data from aps_badilag.abt_data_teks where no_var = 1262 and perkara_id = #perkara_id#)) as d) x"
+ },
+ {
+  "no_var": 4622,
+  "nama": "BAS: tanda bukti surat Penggugat/Pemohon (P.1 s.d. P.n)",
+  "data_type": "data_sql",
+  "sql_query": "select (case when y.n = 0 then '' when y.n = 1 then 'P.1' else concat('P.1 sampai dengan P.', y.n) end) as data from (select (case when d regexp '(^|[^A-Za-z])P[.] ?20([^0-9]|$)' then 20 when d regexp '(^|[^A-Za-z])P[.] ?19([^0-9]|$)' then 19 when d regexp '(^|[^A-Za-z])P[.] ?18([^0-9]|$)' then 18 when d regexp '(^|[^A-Za-z])P[.] ?17([^0-9]|$)' then 17 when d regexp '(^|[^A-Za-z])P[.] ?16([^0-9]|$)' then 16 when d regexp '(^|[^A-Za-z])P[.] ?15([^0-9]|$)' then 15 when d regexp '(^|[^A-Za-z])P[.] ?14([^0-9]|$)' then 14 when d regexp '(^|[^A-Za-z])P[.] ?13([^0-9]|$)' then 13 when d regexp '(^|[^A-Za-z])P[.] ?12([^0-9]|$)' then 12 when d regexp '(^|[^A-Za-z])P[.] ?11([^0-9]|$)' then 11 when d regexp '(^|[^A-Za-z])P[.] ?10([^0-9]|$)' then 10 when d regexp '(^|[^A-Za-z])P[.] ?9([^0-9]|$)' then 9 when d regexp '(^|[^A-Za-z])P[.] ?8([^0-9]|$)' then 8 when d regexp '(^|[^A-Za-z])P[.] ?7([^0-9]|$)' then 7 when d regexp '(^|[^A-Za-z])P[.] ?6([^0-9]|$)' then 6 when d regexp '(^|[^A-Za-z])P[.] ?5([^0-9]|$)' then 5 when d regexp '(^|[^A-Za-z])P[.] ?4([^0-9]|$)' then 4 when d regexp '(^|[^A-Za-z])P[.] ?3([^0-9]|$)' then 3 when d regexp '(^|[^A-Za-z])P[.] ?2([^0-9]|$)' then 2 when d regexp '(^|[^A-Za-z])P[.] ?1([^0-9]|$)' then 1 else 0 end) as n from (select concat_ws(char(10), (select data from aps_badilag.abt_data_teks where no_var = 1214 and perkara_id = #perkara_id#)) as d) x) y"
+ },
+ {
+  "no_var": 4623,
+  "nama": "BAS: tanda bukti surat Tergugat/Termohon (T.1 s.d. T.n)",
+  "data_type": "data_sql",
+  "sql_query": "select (case when y.n = 0 then '' when y.n = 1 then 'T.1' else concat('T.1 sampai dengan T.', y.n) end) as data from (select (case when d regexp '(^|[^A-Za-z])T[.] ?20([^0-9]|$)' then 20 when d regexp '(^|[^A-Za-z])T[.] ?19([^0-9]|$)' then 19 when d regexp '(^|[^A-Za-z])T[.] ?18([^0-9]|$)' then 18 when d regexp '(^|[^A-Za-z])T[.] ?17([^0-9]|$)' then 17 when d regexp '(^|[^A-Za-z])T[.] ?16([^0-9]|$)' then 16 when d regexp '(^|[^A-Za-z])T[.] ?15([^0-9]|$)' then 15 when d regexp '(^|[^A-Za-z])T[.] ?14([^0-9]|$)' then 14 when d regexp '(^|[^A-Za-z])T[.] ?13([^0-9]|$)' then 13 when d regexp '(^|[^A-Za-z])T[.] ?12([^0-9]|$)' then 12 when d regexp '(^|[^A-Za-z])T[.] ?11([^0-9]|$)' then 11 when d regexp '(^|[^A-Za-z])T[.] ?10([^0-9]|$)' then 10 when d regexp '(^|[^A-Za-z])T[.] ?9([^0-9]|$)' then 9 when d regexp '(^|[^A-Za-z])T[.] ?8([^0-9]|$)' then 8 when d regexp '(^|[^A-Za-z])T[.] ?7([^0-9]|$)' then 7 when d regexp '(^|[^A-Za-z])T[.] ?6([^0-9]|$)' then 6 when d regexp '(^|[^A-Za-z])T[.] ?5([^0-9]|$)' then 5 when d regexp '(^|[^A-Za-z])T[.] ?4([^0-9]|$)' then 4 when d regexp '(^|[^A-Za-z])T[.] ?3([^0-9]|$)' then 3 when d regexp '(^|[^A-Za-z])T[.] ?2([^0-9]|$)' then 2 when d regexp '(^|[^A-Za-z])T[.] ?1([^0-9]|$)' then 1 else 0 end) as n from (select concat_ws(char(10), (select data from aps_badilag.abt_data_teks where no_var = 9911 and perkara_id = #perkara_id#), (select data from aps_badilag.abt_data_teks where no_var = 1262 and perkara_id = #perkara_id#)) as d) x) y"
+ },
+ {
+  "no_var": 4624,
+  "nama": "BAS: bukti Penggugat/Pemohon memuat akta nikah (ya/tidak)",
+  "data_type": "data_sql",
+  "sql_query": "select (case when d like '%akta nikah%' or d like '%Akta Nikah%' or d like '%buku nikah%' then 'ya' else 'tidak' end) as data from (select concat_ws(char(10), (select data from aps_badilag.abt_data_teks where no_var = 1214 and perkara_id = #perkara_id#)) as d) x"
+ },
+ {
+  "no_var": 4625,
+  "nama": "BAS: bukti Penggugat/Pemohon memuat KTP (ya/tidak)",
+  "data_type": "data_sql",
+  "sql_query": "select (case when d like '%Tanda Penduduk%' or d like '%KTP%' then 'ya' else 'tidak' end) as data from (select concat_ws(char(10), (select data from aps_badilag.abt_data_teks where no_var = 1214 and perkara_id = #perkara_id#)) as d) x"
+ },
+ {
+  "no_var": 4626,
+  "nama": "BAS: bukti Penggugat/Pemohon memuat Kartu Keluarga (ya/tidak)",
+  "data_type": "data_sql",
+  "sql_query": "select (case when d like '%Kartu Keluarga%' then 'ya' else 'tidak' end) as data from (select concat_ws(char(10), (select data from aps_badilag.abt_data_teks where no_var = 1214 and perkara_id = #perkara_id#)) as d) x"
+ },
+ {
+  "no_var": 4627,
+  "nama": "BAS: bukti Penggugat/Pemohon memuat akta kelahiran (ya/tidak)",
+  "data_type": "data_sql",
+  "sql_query": "select (case when d like '%Akta Kelahiran%' or d like '%akta kelahiran%' then 'ya' else 'tidak' end) as data from (select concat_ws(char(10), (select data from aps_badilag.abt_data_teks where no_var = 1214 and perkara_id = #perkara_id#)) as d) x"
+ },
+ {
+  "no_var": 4628,
+  "nama": "BAS: bukti Penggugat/Pemohon memuat akta cerai atau kematian (ya/tidak)",
+  "data_type": "data_sql",
+  "sql_query": "select (case when d like '%Akta Cerai%' or d like '%akta cerai%' or d like '%Akta Kematian%' or d like '%akta kematian%' or d like '%Surat Kematian%' then 'ya' else 'tidak' end) as data from (select concat_ws(char(10), (select data from aps_badilag.abt_data_teks where no_var = 1214 and perkara_id = #perkara_id#)) as d) x"
+ },
+ {
+  "no_var": 4629,
+  "nama": "BAS: bukti Tergugat/Termohon memuat akta nikah (ya/tidak)",
+  "data_type": "data_sql",
+  "sql_query": "select (case when d like '%akta nikah%' or d like '%Akta Nikah%' or d like '%buku nikah%' then 'ya' else 'tidak' end) as data from (select concat_ws(char(10), (select data from aps_badilag.abt_data_teks where no_var = 9911 and perkara_id = #perkara_id#), (select data from aps_badilag.abt_data_teks where no_var = 1262 and perkara_id = #perkara_id#)) as d) x"
+ }
+]

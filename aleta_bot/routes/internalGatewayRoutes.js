@@ -3023,6 +3023,17 @@ router.post("/abt/usulan", requireInternalToken, async (req, res) => {
       jawaban.tipeKeluaranDitolak = [...tipe.ditolak, ...ditolakLayanan];
     }
 
+    /* === U6 20 Okt === */
+    // GERBANG OTOMATIS BERDASAR: usulan pasti/cukup hanya tetap bila kode+asalnya terukur ketepatannya (config/gerbang-isian.json);
+    // selain itu menjadi saran "ragu". Satu tempat untuk semua sumber usulan (sipp, saksi, itsbat, posita-lain).
+    try {
+      const gerbang = require("../services/gerbangIsian");
+      for (const bag of [jawaban.sipp, jawaban.saksi, jawaban.itsbat, jawaban.positaLain]) if (bag && Array.isArray(bag.usulan)) gerbang.terapkan(bag.usulan);
+    } catch (galatGerbang) {
+      jawaban.gerbangGalat = String((galatGerbang && galatGerbang.message) || galatGerbang).slice(0, 160);
+    }
+    /* === AKHIR U6 === */
+
     res.json(jawaban);
   } catch (error) {
     res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });

@@ -57,6 +57,9 @@ const JENIS_TUNTUTAN = Object.freeze({
   "uang-paksa": "Uang paksa (dwangsom)",
   "serta-merta": "Putusan serta merta",
   eksekusi: "Perintah pelaksanaan / eksekusi",
+  "perintah-panitera": "Perintah kepada Panitera (menyampaikan salinan)",
+  "status-quo": "Status quo / larangan mengalihkan objek",
+  "kematian-pewaris": "Pernyataan kematian pewaris",
   "pengangkatan-anak": "Pengangkatan anak",
   "ekonomi-syariah": "Sengketa ekonomi syariah",
   "pencatatan-akta": "Pemerintah mencatat / menerbitkan akta",
@@ -70,17 +73,19 @@ const JENIS_TUNTUTAN = Object.freeze({
 /** Pola kata kunci per jenis (diperiksa berurutan; yang pertama cocok menang). Semua pada teks huruf kecil. */
 const POLA = [
   ["subsider", /ex\s*aequo|seadil[- ]?adilnya|mohon\s+putusan\s+lain/],
-  ["biaya", /membebankan\s+biaya|biaya\s+perkara|membebani\s+biaya|menghukum[^.;]{0,40}membayar\s+biaya/],
+  ["biaya", /membebankan\s+biaya|biaya\s+perkara|membebani\s+biaya|menghukum[^.;]{0,40}membayar\s+biaya|menanggung[^.;]{0,30}biaya\s+(?:yang\s+timbul|perkara)/],
   ["serta-merta", /serta\s*merta|uitvoerbaar/],
   ["uang-paksa", /uang\s*paksa|dwangsom/],
   ["sita", /sita\s*(?:jaminan|marital)|conservatoir|conservatoire|meletakkan\s+sita/],
   ["provisi-izin-berpisah", /izin[^.;]{0,30}(?:tinggal|berdiam)\s+(?:terpisah|berpisah)|tinggal\s+terpisah|berpisah\s+tempat\s+tinggal/],
-  ["talak-ikrar", /izin[^.;]{0,60}(?:menjatuhkan|mengikrarkan|ikrar)\s+(?:talak|ikrar)|ikrar\s+talak/],
-  ["cerai-talak", /menjatuhkan\s+talak|jatuh\s+talak|talak\s+(?:satu|1|dua|2|tiga|3)\s+(?:ba|raj)|talak\s+(?:ba|raj)/],
-  ["cerai-fasakh", /fasakh|membatalkan\s+(?:perkawinan|pernikahan)|pembatalan\s+(?:perkawinan|pernikahan)/],
   ["nafkah-iddah", /nafkah\s+(?:selama\s+)?(?:masa\s+)?'?iddah|nafkah\s+idah|nafkah\s+iddah|nafkah\s+'iddah/],
   ["mutah", /mut'?ah|mutah|mut\W?ah/],
   ["nafkah-madliyah", /nafkah\s+(?:lampau|madliyah|madhiyah|madiyah|yang\s+lalu|terdahulu|yang\s+tidak\s+dibayar)|madliyah|madhiyah/],
+  ["talak-ikrar", /izin[^.;]{0,60}(?:menjatuhkan|mengikrarkan|ikrar)\s+(?:talak|ikrar)|ikrar\s+talak/],
+  ["cerai-talak", /menjatuhkan\s+talak|jatuh\s+talak|talak\s+(?:satu|1|dua|2|tiga|3)\s+(?:ba|raj)|talak\s+(?:ba|raj)/],
+  ["cerai-talak-putus", /putusan\s+(?:perkawinan|pernikahan)|(?:perkawinan|pernikahan)\s+antara[^.;]{0,80}(?:putus|cerai)|perkawinan[^.;]{0,70}\bputus|putus(?:nya)?\s+(?:perkawinan|pernikahan)|menjatuhkan\s+cerai|cerai\s+dari|bercerai/],
+  ["cerai-fasakh", /fasakh|membatalkan\s+(?:perkawinan|pernikahan)|pembatalan\s+(?:perkawinan|pernikahan)/],
+  ["nafkah-anak-biaya", /biaya\s+kebutuhan[^.;]{0,40}(?:perkembangan|anak)|biaya\s+pendidikan|biaya\s+kesehatan/],
   ["nafkah-anak", /nafkah\s+(?:untuk\s+|bagi\s+)?(?:anak|pemeliharaan|hadhanah)|biaya\s+(?:hidup|pemeliharaan|pendidikan)\s+(?:untuk\s+)?anak|biaya\s+nafkah\s+anak/],
   ["hadhanah", /hadhanah|hadanah|hak\s+asuh|hak\s+pemeliharaan|pengasuhan|pemeliharaan\s+(?:dan\s+pendidikan\s+)?anak|di\s+bawah\s+(?:asuhan|pemeliharaan)/],
   ["harta-bersama", /harta\s+bersama|harta\s+gono|gono[- ]?gini|harta\s+perkawinan|membagi\s+harta/],
@@ -89,7 +94,7 @@ const POLA = [
   ["verstek", /verstek|dipanggil\s+(?:secara\s+)?resmi\s+dan\s+patut|tidak\s+hadir/],
   ["dispensasi", /dispensasi/],
   ["wali-adhal", /adhal|adlal|wali\s+hakim|enggan\s+menjadi\s+wali/],
-  ["perwalian", /perwalian|menunjuk[^.;]{0,30}\bwali\b|menetapkan[^.;]{0,30}\bwali\b/],
+  ["perwalian", /perwalian|menunjuk[^.;]{0,30}\bwali\b|menetapkan[^.;]{0,30}\bwali\b|sebagai\s+wali|menjadi\s+wali/],
   ["asal-usul-anak", /asal\s+usul\s+anak|anak\s+sah|anak\s+kandung[^.;]{0,40}(?:dari|pasangan)|status\s+anak/],
   ["ahli-waris", /ahli\s+waris|warisan|pewaris|waris\b|faraid|tirkah|harta\s+peninggalan/],
   ["hibah", /hibah/],
@@ -97,20 +102,26 @@ const POLA = [
   ["wakaf", /wakaf|nazhir|nadzir/],
   ["poligami", /poligami|menikah\s+lagi|beristri\s+lebih|beristeri\s+lebih|izin\s+beristri/],
   ["pengangkatan-anak", /pengangkatan\s+anak|mengangkat\s+anak|adopsi/],
+  ["perintah-panitera", /panitera[^.;]{0,100}(?:mengirim|menyampaikan|menyerahkan|memberitahukan)|salinan\s+(?:putusan|penetapan)\s+(?:ini\s+)?(?:kepada|ke)/],
   ["pencatatan-akta", /mencatat|pencatat|menerbitkan\s+(?:akta|kutipan)|kutipan\s+akta|kantor\s+urusan\s+agama[^.;]{0,40}mencatat|dukcapil/],
   ["ekonomi-syariah", /akad|murabahah|mudharabah|musyarakah|ijarah|wanprestasi|ingkar\s+janji|pembiayaan|ganti\s+rugi|kerugian/],
+  ["status-quo", /status\s+quo|melarang[^.;]{0,60}(?:mengalihkan|menjual|menjaminkan)/],
+  ["kematian-pewaris", /meninggal\s+dunia|telah\s+wafat|\bwafat\b/],
   ["eksekusi", /melaksanakan\s+putusan|menghukum[^.;]{0,50}(?:menyerahkan|mengosongkan)|mengosongkan/],
 ];
 /** Butir "Mengabulkan gugatan/permohonan ..." tanpa kata kunci jenis lain. */
 const POLA_KABUL = /^\s*(?:[-–•*]\s*)?(?:menerima\s+dan\s+)?(?:mengabulkan|menerima|mengabulkangugatan)\s*(?:seluruh|gugatan|permohonan|para|pemohon|penggugat)/;
 
+const POLA_PENGANTAR = /(?:mohon|memohon)\s+(?:kepada|agar)|berkenan\s+(?:menjatuhkan|memutus|memberikan)|(?:sebagai|dengan\s+amar)\s+berikut\s*:?\s*$|^\s*(?:\u0001)?\s*(?:bahwa|berdasarkan)\b/i;
+
 /** Judul bagian petitum. */
 const JUDUL = [
   ["subsider", /^(?:subsider|subsidair|subsidiair|atau\s+subsider)\b[\s:.-]*/i],
-  ["primer", /^(?:primer|primair|primaire|dalam\s+pokok\s+perkara|dalam\s+konvensi|pokok\s+perkara)\b[\s:.-]*/i],
+  ["primer", /^(?:p\s*r\s*i\s*m\s*[ae]?\s*[ai]?\s*i\s*r|prmer|primer|primair|primaire|dalam\s+pokok\s+perkara|dalam\s+konvensi|pokok\s+perkara)\b[\s:.-]*/i],
   ["provisi", /^(?:dalam\s+provisi|provisi)\b[\s:.-]*/i],
   ["rekonvensi", /^(?:dalam\s+rekonvensi|rekonvensi|gugatan\s+rekonvensi)\b[\s:.-]*/i],
   ["eksepsi", /^(?:dalam\s+eksepsi|eksepsi)\b[\s:.-]*/i],
+  ["sela", /^(?:dalam\s+putusan\s+sela|putusan\s+sela)\b[\s:.-]*/i],
 ];
 
 const rapat = (t) => String(t == null ? "" : t).replace(/\s+/g, " ").trim();
@@ -119,7 +130,7 @@ function polosHtml(html) {
   return String(html == null ? "" : html)
     .replace(/<\s*br\s*\/?>/gi, "\n")
     .replace(/<\s*\/\s*(?:div|p|li|tr|h\d)\s*>/gi, "\n")
-    .replace(/<\s*li[^>]*>/gi, "\n- ")
+    .replace(/<\s*li[^>]*>/gi, "\n\u0001")
     .replace(/<[^>]*>/g, "")
     .replace(/&nbsp;/gi, " ")
     .replace(/&#0*39;|&apos;|&rsquo;|&lsquo;/gi, "'")
@@ -133,8 +144,16 @@ function polosHtml(html) {
     .replace(/\r\n?/g, "\n");
 }
 
+/** Kata kerja pembuka butir amar/petitum; butir daftar (<li>) tanpa kata ini dianggap sub-butir (nama anak, batas tanah, ahli waris). */
+const KATA_AMAR = /^(?:\d{1,2}\s*[.)]\s*)?(?:menetapkan|menyatakan|menghukum|memerintahkan|membebankan|membebani|mengabulkan|memberi|memberikan|menjatuhkan|menolak|menerima|mengizinkan|menunjuk|membatalkan|menguatkan|meletakkan|mewajibkan|melarang|menyerahkan|membayar|menjadikan|mengesahkan|mencatat|apabila|jika|dalam|primer|subsider|tahap)\b/i;
+
 /** Penomoran awal butir: "1.", "2)", "(3)", "a.", "-", "•" -> {nomor, sisa, tingkat} */
 function bacaNomor(baris) {
+  // butir daftar HTML (<li>): selalu butir tingkat 1 walau teksnya tidak bernomor
+  if (baris.charAt(0) === "\u0001") {
+    const isi = baris.slice(1).trim();
+    return { nomor: "", sisa: isi, tingkat: KATA_AMAR.test(isi) ? 1 : 2 };
+  }
   let m = /^\s*(\d{1,2})\s*[.)]\s*(?!\d)(.*)$/.exec(baris);
   if (m) return { nomor: m[1], sisa: m[2], tingkat: 1 };
   m = /^\s*\((\d{1,2})\)\s*(.*)$/.exec(baris);
@@ -147,7 +166,7 @@ function bacaNomor(baris) {
 }
 
 function bagianDariJudul(baris) {
-  const t = rapat(baris);
+  const t = rapat(baris).replace(/^\u0001/, "");
   if (!t || t.length > 90) return null;
   for (const [nama, re] of JUDUL) {
     const m = re.exec(t);
@@ -160,10 +179,13 @@ function bagianDariJudul(baris) {
   return null;
 }
 
+/** Pola cadangan yang menghasilkan jenis yang sama. */
+const ALIAS_JENIS = { "cerai-talak-putus": "cerai-talak", "nafkah-anak-biaya": "nafkah-anak" };
+
 /** Jenis tuntutan dari teks butir. */
 function jenisButir(teks) {
   const k = rapat(teks).toLowerCase().replace(/^[-–•*]\s*/, "");
-  for (const [jenis, re] of POLA) if (re.test(k)) return jenis;
+  for (const [jenis, re] of POLA) if (re.test(k)) return ALIAS_JENIS[jenis] || jenis;
   return POLA_KABUL.test(k) ? "kabul" : "lain";
 }
 
@@ -238,8 +260,11 @@ function varianButir(jenis, teks) {
     return [ke ? `talak ${ke}` : "", bain ? (sughra ? "ba'in sughra" : kubra ? "ba'in kubra" : "ba'in") : raji ? "raj'i" : ""].filter(Boolean).join(" ");
   }
   if (jenis === "hadhanah") {
-    if (/di\s+bawah\s+(?:asuhan|pemeliharaan)\s+(?:pemohon|penggugat)|kepada\s+(?:pemohon|penggugat)/.test(k)) return "kepada Penggugat/Pemohon";
-    if (/(?:tergugat|termohon)/.test(k) && /asuh|pelihara/.test(k)) return "kepada Tergugat/Termohon";
+    const pihak = (x) => (/^(?:penggugat|pemohon)$/.test(x) ? "kepada Penggugat/Pemohon" : "kepada Tergugat/Termohon");
+    let m = /(penggugat|pemohon|tergugat|termohon)[^.;]{0,40}(?:sebagai\s+)?(?:pemegang|pemilik)\s+(?:hak\s+asuh|hadhanah|hak\s+pemeliharaan)/.exec(k);
+    if (m) return pihak(m[1]);
+    m = /(?:hak\s+asuh|hadhanah|pengasuhan|pemeliharaan)[^.;]{0,60}(?:kepada|pada|ada\s+pada|di\s+bawah\s+(?:asuhan|pemeliharaan))\s+(penggugat|pemohon|tergugat|termohon)/.exec(k) || /di\s+bawah\s+(?:asuhan|pemeliharaan)\s+(penggugat|pemohon|tergugat|termohon)/.exec(k);
+    if (m) return pihak(m[1]);
   }
   return "";
 }
@@ -251,7 +276,10 @@ function varianButir(jenis, teks) {
 function petitumBerbutir(petitumHtml, opsi) {
   const o = opsi && typeof opsi === "object" ? opsi : {};
   const polos = polosHtml(petitumHtml);
-  const baris = polos.split("\n").map((b) => b.replace(/\s+$/, ""));
+  const baris = polos
+    .split("\n")
+    .flatMap((b) => b.split(/;\s+(?=(?:subsider|subsidair|subsidiair|primer|primair|dalam\s+(?:provisi|pokok|konvensi|rekonvensi|putusan\s+sela))\b)/i).map((x, i, a) => (i < a.length - 1 && !/;$/.test(x) ? `${x};` : x)))
+    .map((b) => b.replace(/\s+$/, ""));
   const butir = [];
   let bagian = "primer";
   let sedangSubsider = false;
@@ -277,6 +305,8 @@ function petitumBerbutir(petitumHtml, opsi) {
       }
       continue;
     }
+    // kalimat pengantar ("... mohon kepada Ketua Pengadilan Agama ... menjatuhkan putusan sebagai berikut:") bukan butir tuntutan
+    if (!induk && POLA_PENGANTAR.test(b)) continue;
     const nm = bacaNomor(b);
     if (nm && nm.tingkat === 1) {
       tutup();
@@ -295,7 +325,18 @@ function petitumBerbutir(petitumHtml, opsi) {
   }
   tutup();
 
-  const hasil = butir
+  // butir majemuk tak bernomor ("Nafkah iddah Rp. ; Mut'ah Rp. ;") dipecah bila bagian-bagiannya berjenis berbeda dan dikenali
+  const rata = [];
+  for (const b of butir) {
+    const bagianTeks = rapat(b.teks).split(/;\s+(?=[A-Z])/).filter((x) => x.trim().length > 8);
+    const jenisBagian = bagianTeks.map((x) => jenisButir(x));
+    const beda = new Set(jenisBagian.filter((j) => j !== "lain" && j !== "kabul")).size >= 2;
+    if (bagianTeks.length >= 2 && beda && !b.sub.length) {
+      bagianTeks.forEach((x, i) => rata.push({ ...b, nomor: b.nomor ? `${b.nomor}.${i + 1}` : "", teks: x, sub: [] }));
+    } else rata.push(b);
+  }
+
+  const hasil = rata
     .filter((b) => b.teks.length >= 3)
     .map((b, i) => {
       const teks = rapat(b.teks);
@@ -315,6 +356,7 @@ function petitumBerbutir(petitumHtml, opsi) {
         teks,
         sub: b.sub,
         nominal,
+        nominalKosong: !nominal && /\bRp\.?\s*(?:[;,.:]|$|sejumlah|sebesar)/i.test(teks),
         dibebani: dibebaniDari(teks),
         penerima: penerimaDari(teks),
         didukungPosita: adaDiPosita(jenis, o.posita),

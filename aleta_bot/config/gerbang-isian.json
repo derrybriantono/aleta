@@ -1,0 +1,1994 @@
+{
+ "skema": "gerbang-isian/1",
+ "versi": 1,
+ "diukur": "2026-10-20",
+ "cara": "scripts/isi-sipp-abt/ukur-gerbang-u6.cjs: rute bot /abt/usulan sungguhan atas sampel perkara 2023+ yang punya isian petugas di ABT lokal; pembanding = aps_badilag.abt_data_teks (isian petugas/hakim)",
+ "sampel": {
+  "perkara": 1207,
+  "perJenis": {
+   "346": 134,
+   "347": 437,
+   "348": 2,
+   "354": 3,
+   "358": 3,
+   "360": 579,
+   "362": 37,
+   "363": 3,
+   "364": 3,
+   "365": 1,
+   "369": 2,
+   "371": 3
+  }
+ },
+ "aturan": {
+  "otomatis": "n_banding >= 20 dan cocok >= 90% (pasti bila >= 97%)",
+  "terstruktur": "nilai terbaca langsung dari kolom SIPP, pembanding < 20: boleh terisi sendiri sampai 'cukup'",
+  "saran": "selainnya: usulan hanya saran 'ragu - periksa'",
+  "tanpaUkuran": "kode/asal yang tidak tercatat di sini diturunkan menjadi saran 'ragu' saat berjalan"
+ },
+ "kode": {
+  "1001": {
+   "nama": "Mas kawin",
+   "asal": {
+    "posita": {
+     "n": 509,
+     "banding": 508,
+     "cocok": 493,
+     "persen": 97,
+     "status": "otomatis",
+     "pangkatMaks": "pasti",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "uang Rp. 110.000.,- tunai",
+       "petugas": "Rp110.000.00 (seratus sepuluh ribu rupiah) dibayar tunai"
+      },
+      {
+       "usulan": "uang tunai senilai Rp.11.000 (sebelas ribu rupiah)",
+       "petugas": "Rp. 11.000 dibayar tunai"
+      },
+      {
+       "usulan": "seperangkat alat shalat,dibayar tunai",
+       "petugas": "berupa uang Rp1.100.000,- (satu juta seratus ribu rupiah)"
+      }
+     ]
+    }
+   }
+  },
+  "1002": {
+   "nama": "Status Pemohon I sebelum nikah",
+   "asal": {
+    "posita": {
+     "n": 533,
+     "banding": 532,
+     "cocok": 267,
+     "persen": 50.2,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
+     "contohSalah": [
+      {
+       "usulan": "Perjaka",
+       "petugas": "Jejaka"
+      },
+      {
+       "usulan": "Perjaka",
+       "petugas": "Jejaka"
+      },
+      {
+       "usulan": "Perjaka",
+       "petugas": "Jejaka"
+      }
+     ]
+    },
+    "sipp": {
+     "n": 3,
+     "banding": 3,
+     "cocok": 3,
+     "persen": 100,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20"
+    }
+   }
+  },
+  "1003": {
+   "nama": "Status Pemohon II sebelum nikah",
+   "asal": {
+    "posita": {
+     "n": 533,
+     "banding": 531,
+     "cocok": 448,
+     "persen": 84.4,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
+     "contohSalah": [
+      {
+       "usulan": "Perjaka",
+       "petugas": "bujang dengan umur 23 tahun"
+      },
+      {
+       "usulan": "Perjaka",
+       "petugas": "bujang"
+      },
+      {
+       "usulan": "Perawan",
+       "petugas": "gadis dalam usia 18 tahun"
+      }
+     ]
+    }
+   }
+  },
+  "1006": {
+   "nama": "Tempat tinggal setelah nikah",
+   "asal": {
+    "posita": {
+     "n": 318,
+     "banding": 31,
+     "cocok": 30,
+     "persen": 96.8,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "rumah Penggugat namun sejak malam pertama hingga hari ke 7 pernikahan tidak terb",
+       "petugas": "di rumah orang tua Penggugat"
+      }
+     ]
+    }
+   }
+  },
+  "1014": {
+   "nama": "Alasan mendesak: hubungan sudah sangat erat",
+   "asal": {
+    "posita": {
+     "n": 39,
+     "banding": 17,
+     "cocok": 7,
+     "persen": 41.2,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20",
+     "contohSalah": [
+      {
+       "usulan": "hubungan mereka telah sedemikian eratnya sehingga anak para Pemohon sekarang sed",
+       "petugas": "sudah sangat erat"
+      },
+      {
+       "usulan": "hubungan mereka telah sedemikian eratnya",
+       "petugas": "telah saling mencintai dan sudah tidak dapat lagi dipisahkan"
+      },
+      {
+       "usulan": "hubungan mereka telah sedemikian eratnya",
+       "petugas": "keduanya sudah 2 (dua) tahun menjalin hubungan pacaran dan sering jalan berduaan"
+      }
+     ]
+    }
+   }
+  },
+  "1021": {
+   "nama": "Nama istri sebelumnya Pemohon I",
+   "asal": {
+    "posita": {
+     "n": 4,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "1025": {
+   "nama": "Nama almarhum/almarhumah",
+   "asal": {
+    "posita": {
+     "n": 25,
+     "banding": 8,
+     "cocok": 8,
+     "persen": 100,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20"
+    }
+   }
+  },
+  "1029": {
+   "nama": "Nama calon suami",
+   "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 2,
+     "cocok": 2,
+     "persen": 100,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20"
+    }
+   }
+  },
+  "1030": {
+   "nama": "Umur calon suami",
+   "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 2,
+     "cocok": 2,
+     "persen": 100,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20"
+    }
+   }
+  },
+  "1046": {
+   "nama": "Status wali nikah",
+   "asal": {
+    "posita": {
+     "n": 505,
+     "banding": 504,
+     "cocok": 472,
+     "persen": 93.7,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "Kakak Kandung Pemohon II",
+       "petugas": "saudara kandung"
+      },
+      {
+       "usulan": "Bapak Kandung Pemohon II",
+       "petugas": "ayah kandung"
+      },
+      {
+       "usulan": "Ayah Kandung Pemohon II",
+       "petugas": "Anak paman bapak sebapak Pemohon II"
+      }
+     ]
+    }
+   }
+  },
+  "1081": {
+   "nama": "Tgl. PHS Baru Ikrar Talak",
+   "asal": {
+    "sipp": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "1154": {
+   "nama": "Nomor surat permintaan bantuan panggilan",
+   "asal": {
+    "sipp": {
+     "n": 69,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    }
+   }
+  },
+  "1183": {
+   "nama": "Tgl. batas waktu ikrar talak",
+   "asal": {
+    "sipp": {
+     "n": 117,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    }
+   }
+  },
+  "1217": {
+   "nama": "Nama wali nikah",
+   "asal": {
+    "posita": {
+     "n": 527,
+     "banding": 513,
+     "cocok": 481,
+     "persen": 93.8,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "Moh.Ridwan",
+       "petugas": "Husen"
+      },
+      {
+       "usulan": "Jahoni",
+       "petugas": "Talub"
+      },
+      {
+       "usulan": "Nurdin",
+       "petugas": "SYAHRUDIN"
+      }
+     ]
+    }
+   }
+  },
+  "1230": {
+   "nama": "Tanggal meninggal orang tua anak",
+   "asal": {
+    "posita": {
+     "n": 3,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "1232": {
+   "nama": "Tanggal surat",
+   "asal": {
+    "sipp": {
+     "n": 69,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    }
+   }
+  },
+  "1246": {
+   "nama": "Tanggal meninggal",
+   "asal": {
+    "posita": {
+     "n": 19,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "1247": {
+   "nama": "Sebab meninggal",
+   "asal": {
+    "posita": {
+     "n": 5,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "1267": {
+   "nama": "Masih/tidak komunikasi",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "1268": {
+   "nama": "Upaya Damai Keluarga",
+   "asal": {
+    "posita": {
+     "n": 297,
+     "banding": 287,
+     "cocok": 212,
+     "persen": 73.9,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
+     "contohSalah": [
+      {
+       "usulan": "belum pernah ada upaya untuk merukunkan Penggugat dan Tergugat",
+       "petugas": "pihak keluarga telah berusaha untuk mendamaikan Penggugat dan Tergugat, namun ti"
+      },
+      {
+       "usulan": "belum pernah ada upaya untuk merukunkan Penggugat dan Tergugat",
+       "petugas": "pihak keluarga telah berusaha untuk mendamaikan Penggugat dan Tergugat, namun ti"
+      },
+      {
+       "usulan": "belum pernah ada upaya untuk merukunkan Penggugat dan Tergugat",
+       "petugas": "pihak keluarga telah berusaha untuk mendamaikan Penggugat dan Tergugat, namun ti"
+      }
+     ]
+    }
+   }
+  },
+  "1321": {
+   "nama": "No. akta cerai suami dengan istri sebelumnya (bukti)",
+   "asal": {
+    "posita": {
+     "n": 3,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "1322": {
+   "nama": "Tgl. akta cerai suami dengan istri sebelumnya (bukti)",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "1324": {
+   "nama": "Penerbit akta cerai suami dengan istri sebelumnya (bukti)",
+   "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "1325": {
+   "nama": "No. akta cerai istri dengan suami sebelumnya (bukti)",
+   "asal": {
+    "posita": {
+     "n": 9,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "1329": {
+   "nama": "Tgl. akta cerai istri dengan suami sebelumnya (bukti)",
+   "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "1331": {
+   "nama": "Penerbit akta cerai istri dengan suami sebelumnya (bukti)",
+   "asal": {
+    "posita": {
+     "n": 9,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "1357": {
+   "nama": "Alasan wali nikah bukan ayah ('karena ayah kandung ... meninggal')",
+   "asal": {
+    "posita": {
+     "n": 40,
+     "banding": 7,
+     "cocok": 7,
+     "persen": 100,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20"
+    }
+   }
+  },
+  "1551": {
+   "nama": "Nama ayah calon pasangan anak para Pemohon",
+   "asal": {
+    "posita": {
+     "n": 37,
+     "banding": 7,
+     "cocok": 5,
+     "persen": 71.4,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20",
+     "contohSalah": [
+      {
+       "usulan": "Muksin",
+       "petugas": "Selamet"
+      },
+      {
+       "usulan": "Supryadi",
+       "petugas": "Iwad bin Biman"
+      }
+     ]
+    }
+   }
+  },
+  "1666": {
+   "nama": "Lama saling mengenal",
+   "asal": {
+    "posita": {
+     "n": 37,
+     "banding": 7,
+     "cocok": 7,
+     "persen": 100,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20"
+    }
+   }
+  },
+  "2004": {
+   "nama": "kini anak tersebut diasuh oleh",
+   "asal": {
+    "posita": {
+     "n": 299,
+     "banding": 4,
+     "cocok": 4,
+     "persen": 100,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20"
+    }
+   }
+  },
+  "2029": {
+   "nama": "Status calon mempelai pria",
+   "asal": {
+    "sipp": {
+     "n": 31,
+     "banding": 9,
+     "cocok": 5,
+     "persen": 55.6,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20",
+     "contohSalah": [
+      {
+       "usulan": "bujang",
+       "petugas": "jejaka"
+      },
+      {
+       "usulan": "bujang",
+       "petugas": "jejaka"
+      },
+      {
+       "usulan": "bujang",
+       "petugas": "perjaka"
+      }
+     ]
+    }
+   }
+  },
+  "2030": {
+   "nama": "Status calon mempelai wanita",
+   "asal": {
+    "sipp": {
+     "n": 34,
+     "banding": 7,
+     "cocok": 3,
+     "persen": 42.9,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20",
+     "contohSalah": [
+      {
+       "usulan": "gadis",
+       "petugas": "perawan"
+      },
+      {
+       "usulan": "gadis",
+       "petugas": "perawan"
+      },
+      {
+       "usulan": "gadis",
+       "petugas": "perawan"
+      }
+     ]
+    }
+   }
+  },
+  "3333": {
+   "nama": "KUA kecamatan tempat menikah",
+   "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 2,
+     "cocok": 2,
+     "persen": 100,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20"
+    }
+   }
+  },
+  "5015": {
+   "nama": "Tanggal meninggal istri sebelumnya Pemohon I",
+   "asal": {
+    "posita": {
+     "n": 8,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "5105": {
+   "nama": "Alamat tempat menikah",
+   "asal": {
+    "posita": {
+     "n": 830,
+     "banding": 557,
+     "cocok": 518,
+     "persen": 93,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "Desa Pewunu, Kecamatan Dolo Barat, Kabupaten Sigi, Provinsi Sulawesi Tengah",
+       "petugas": "rumah orangtua Penggugat di Desa Pewunu selama kurang lebih 3 bulan, setelah itu"
+      },
+      {
+       "usulan": "Kecamatan Tanambulava, Kabupaten Sigi, Provinsi Sulawesi Tengah",
+       "petugas": "Desa _Sibalaya, Kecamatan Sigi Biromaru_, Kabupaten Donggala"
+      },
+      {
+       "usulan": "Desa Rantaleda",
+       "petugas": "Desa Ranteleda Kecamatan Palolo, Kabupaten Sigi"
+      }
+     ]
+    }
+   }
+  },
+  "5110": {
+   "nama": "Nama anak",
+   "asal": {
+    "sipp": {
+     "n": 392,
+     "banding": 4,
+     "cocok": 4,
+     "persen": 100,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    },
+    "posita": {
+     "n": 3,
+     "banding": 3,
+     "cocok": 3,
+     "persen": 100,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20"
+    }
+   }
+  },
+  "5111": {
+   "nama": "Umur anak",
+   "asal": {
+    "posita": {
+     "n": 338,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "5127": {
+   "nama": "Penyebab bertengkar (BAS saksi, sama dengan 5227)",
+   "asal": {
+    "posita": {
+     "n": 304,
+     "banding": 20,
+     "cocok": 5,
+     "persen": 25,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
+     "contohSalah": [
+      {
+       "usulan": "Tergugat melalaikan kewajiban nafkah lahir, bersikap temperamental, berkata kasa",
+       "petugas": "Tergugat sering melakukan kekerasan fisik terhadap Penggugat hingga menyebabkan "
+      },
+      {
+       "usulan": "Tergugat melalaikan kewajiban nafkah lahir dan sering berutang",
+       "petugas": "Tergugat kurang dalam memberikan nafkah hingga untuk memenuhi kebutuhan umah tan"
+      },
+      {
+       "usulan": "Tergugat melalaikan kewajiban nafkah lahir serta malas bekerja yang memicu perse",
+       "petugas": "Tergugat malas bekerja, tidak mencukupi kebutuhan. Penggugat secara layak, Tergu"
+      }
+     ]
+    }
+   }
+  },
+  "5178": {
+   "nama": "KUA Kec.",
+   "asal": {
+    "posita": {
+     "n": 1582,
+     "banding": 508,
+     "cocok": 488,
+     "persen": 96.1,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "Kecamatan Banawa, Kabupaten Donggala, Provinsi Sulawesi Tengah",
+       "petugas": "Kantor Urusan Agama Kecamatan Banawa Selatan, Kabupaten Donggala sehingga pernik"
+      },
+      {
+       "usulan": "Kecamatan Palolo, Kabupaten Sigi, Provinsi Sulawesi Tengah",
+       "petugas": "Kantor Urusan Agama Kecamatan Palolo, Kabupaten Sigi sehingga pernikahan tersebu"
+      },
+      {
+       "usulan": "Kecamatan Tatanga, Kota Palu, Provinsi Sulawesi Tengah",
+       "petugas": "Kantor Urusan Agama Kecamatan Tatanga, Kota Palu sehingga pernikahan tersebut ti"
+      }
+     ]
+    }
+   }
+  },
+  "5197": {
+   "nama": "Tgl Nikah",
+   "asal": {
+    "sipp": {
+     "n": 571,
+     "banding": 12,
+     "cocok": 10,
+     "persen": 83.3,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20",
+     "contohSalah": [
+      {
+       "usulan": "25 Agustus 2014",
+       "petugas": "07 Agustus 2021"
+      },
+      {
+       "usulan": "20 November 2022",
+       "petugas": "07 Maret 2020;"
+      }
+     ]
+    },
+    "posita": {
+     "n": 789,
+     "banding": 515,
+     "cocok": 498,
+     "persen": 96.7,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "24 April 2024",
+       "petugas": "Bahwa pada hari sabtu 22 Maret 1992"
+      },
+      {
+       "usulan": "24 April 2024",
+       "petugas": "Bahwa pada hari sabtu 22 Maret 1992"
+      },
+      {
+       "usulan": "24 Juni 2016",
+       "petugas": "07 Maret 2017 di Desa Kalora di wilayah hukum Kantor Urusan Agama Kecamatan Kino"
+      }
+     ]
+    }
+   }
+  },
+  "5227": {
+   "nama": "Alasan-Alasan Cerai",
+   "asal": {
+    "posita": {
+     "n": 312,
+     "banding": 260,
+     "cocok": 41,
+     "persen": 15.8,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
+     "contohSalah": [
+      {
+       "usulan": "Tergugat bersikap temperamental, melakukan Kekerasan Dalam Rumah Tangga (KDRT), ",
+       "petugas": "a. Tergugat sering mengkonsumsi obat-obatan terlarang jenis sabu-sabu dan minuma"
+      },
+      {
+       "usulan": "keluarga Tergugat sering ikut campur dalam urusan rumah tangga Penggugat dan Ter",
+       "petugas": "Tergugat kurang memberikan nafkah lahir kepada Penggugat serta malas bekerja unt"
+      },
+      {
+       "usulan": "Tergugat melalaikan kewajiban nafkah lahir yang memicu perselisihan terus-meneru",
+       "petugas": "Tergugat tidak pernah memberikan Nafkah Batin kepada Penggugat selama masa bersa"
+      }
+     ]
+    }
+   }
+  },
+  "5230": {
+   "nama": "Ongkos panggilan permintaan bantuan",
+   "asal": {
+    "sipp": {
+     "n": 69,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    }
+   }
+  },
+  "6054": {
+   "nama": "Nafkah iddah",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "6055": {
+   "nama": "Mut'ah",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "6071": {
+   "nama": "Nafkah Anak",
+   "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "6087": {
+   "nama": "Alasan wali nikah menolak",
+   "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 2,
+     "cocok": 0,
+     "persen": 0,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20",
+     "contohSalah": [
+      {
+       "usulan": "karena Ayah Pemohon mempunyai hubungan yang kurang baik dengan Pemohon, sehingga",
+       "petugas": "karena tetap tidak merestui dan enggan menjadi wali pernikahan Pemohon;"
+      },
+      {
+       "usulan": "karena calon suami Pemohon tidak mampu memenuhi syarat uang mahar dari saudara k",
+       "petugas": "karena ingin diberi imbalan uang dari calon suami Pemohon"
+      }
+     ]
+    }
+   }
+  },
+  "6331": {
+   "nama": "Pekerjaan calon suami",
+   "asal": {
+    "sipp": {
+     "n": 25,
+     "banding": 7,
+     "cocok": 1,
+     "persen": 14.3,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20",
+     "contohSalah": [
+      {
+       "usulan": "buruh harian lepas",
+       "petugas": "Buruh Bangunan dengan penghasilan rata-rata sejumlah Rp 3.000.000,- (tiga juta r"
+      },
+      {
+       "usulan": "Mengurus Rumah Tangga",
+       "petugas": "orangtua dengan penghasilan rata-rata sejumlah Rp. 5.000.000,. (lima juta rupiah"
+      },
+      {
+       "usulan": "Mengurus Rumah Tangga",
+       "petugas": "... dengan penghasilan rata-rata sejumlah Rp... (... rupiah) per bulan"
+      }
+     ]
+    },
+    "posita": {
+     "n": 3,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "7035": {
+   "nama": "Yang meninggalkan rumah bersama",
+   "asal": {
+    "posita": {
+     "n": 483,
+     "banding": 285,
+     "cocok": 262,
+     "persen": 91.9,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "Tergugat",
+       "petugas": "Penggugat"
+      },
+      {
+       "usulan": "Tergugat",
+       "petugas": "Penggugat"
+      },
+      {
+       "usulan": "Tergugat",
+       "petugas": "Penggugat"
+      }
+     ]
+    }
+   }
+  },
+  "7120": {
+   "nama": "Nafkah Lampau (Madliyah)",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "7211": {
+   "nama": "Umur Pemohon I (laki-laki) saat menikah",
+   "asal": {
+    "sipp": {
+     "n": 378,
+     "banding": 235,
+     "cocok": 229,
+     "persen": 97.4,
+     "status": "otomatis",
+     "pangkatMaks": "pasti",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "17 tahun",
+       "petugas": "18"
+      },
+      {
+       "usulan": "42 tahun",
+       "petugas": "41"
+      },
+      {
+       "usulan": "39 tahun",
+       "petugas": "40"
+      }
+     ]
+    },
+    "posita": {
+     "n": 495,
+     "banding": 188,
+     "cocok": 187,
+     "persen": 99.5,
+     "status": "otomatis",
+     "pangkatMaks": "pasti",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "37 tahun",
+       "petugas": "19"
+      }
+     ]
+    }
+   }
+  },
+  "7212": {
+   "nama": "Umur Pemohon II (perempuan) saat menikah",
+   "asal": {
+    "sipp": {
+     "n": 385,
+     "banding": 238,
+     "cocok": 234,
+     "persen": 98.3,
+     "status": "otomatis",
+     "pangkatMaks": "pasti",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "33 tahun",
+       "petugas": "34"
+      },
+      {
+       "usulan": "32 tahun",
+       "petugas": "33"
+      },
+      {
+       "usulan": "35 tahun",
+       "petugas": "15"
+      }
+     ]
+    },
+    "posita": {
+     "n": 494,
+     "banding": 188,
+     "cocok": 186,
+     "persen": 98.9,
+     "status": "otomatis",
+     "pangkatMaks": "pasti",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "15 tahun",
+       "petugas": "18"
+      },
+      {
+       "usulan": "35 tahun",
+       "petugas": "15"
+      }
+     ]
+    }
+   }
+  },
+  "7778": {
+   "nama": "HADHANAH (Apabila Ada Ketik : 1)",
+   "asal": {
+    "posita": {
+     "n": 9,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "8087": {
+   "nama": "Yang menikahkan",
+   "asal": {
+    "posita": {
+     "n": 420,
+     "banding": 420,
+     "cocok": 386,
+     "persen": 91.9,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "Wakil imam bernama Abas",
+       "petugas": "ayah kandung Pemohon II"
+      },
+      {
+       "usulan": "Ayah kandung Pemohon II bernama Langkuati Laose",
+       "petugas": "Ambo Mai (Imam masjid)"
+      },
+      {
+       "usulan": "H.MohAbdu",
+       "petugas": "Imam bernama H. Moh. Abdu"
+      }
+     ]
+    }
+   }
+  },
+  "8171": {
+   "nama": "Tujuan itsbat: 'membutuhkan ... untuk ...'",
+   "asal": {
+    "posita": {
+     "n": 530,
+     "banding": 354,
+     "cocok": 235,
+     "persen": 66.4,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
+     "contohSalah": [
+      {
+       "usulan": "mengurus Buku Nikah dan untuk kepentingan hukum lainnya",
+       "petugas": "pengurusan buku nikah dan keperluan lainnya"
+      },
+      {
+       "usulan": "mengurus Buku Nikah dan untuk kepentingan hukum lainnya",
+       "petugas": "pengurusan Buku Nikah dan keperluan lainnya"
+      },
+      {
+       "usulan": "mengurus Buku Nikah dan untuk kepentingan hukum lainnya",
+       "petugas": "pengurusan buku nikah dan keperluan lainnya"
+      }
+     ]
+    }
+   }
+  },
+  "8433": {
+   "nama": "Alasan pencabutan perkara",
+   "asal": {
+    "sipp": {
+     "n": 6,
+     "banding": 2,
+     "cocok": 0,
+     "persen": 0,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20",
+     "contohSalah": [
+      {
+       "usulan": "mediasi berhasil dan para pihak telah berdamai",
+       "petugas": "Mediasi Pemohon dan Termohon berhasil dan akan rukun kembali dalam membina rumah"
+      },
+      {
+       "usulan": "mediasi berhasil dan para pihak telah berdamai",
+       "petugas": "cabut dengan akta perdamaian"
+      }
+     ]
+    }
+   }
+  },
+  "8503": {
+   "nama": "Alasan perceraian",
+   "asal": {
+    "posita": {
+     "n": 562,
+     "banding": 309,
+     "cocok": 188,
+     "persen": 60.8,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
+     "contohSalah": [
+      {
+       "usulan": "F",
+       "petugas": "AF"
+      },
+      {
+       "usulan": "F",
+       "petugas": "AF"
+      },
+      {
+       "usulan": "F",
+       "petugas": "af"
+      }
+     ]
+    }
+   }
+  },
+  "8539": {
+   "nama": "No. Register Kuasa Khusus Penggugat",
+   "asal": {
+    "sipp": {
+     "n": 71,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    }
+   }
+  },
+  "8570": {
+   "nama": "Kediaman bersama terakhir",
+   "asal": {
+    "posita": {
+     "n": 318,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "8603": {
+   "nama": "Nama anak yang dimohonkan",
+   "asal": {
+    "sipp": {
+     "n": 393,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    },
+    "posita": {
+     "n": 3,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "8605": {
+   "nama": "Pernikahan resmi/tercatat para Pemohon",
+   "asal": {
+    "posita": {
+     "n": 3,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "8608": {
+   "nama": "Nama ahli waris (anak kandung)",
+   "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "8614": {
+   "nama": "Harta peninggalan pewaris",
+   "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "8704": {
+   "nama": "Isi kesepakatan perdamaian",
+   "asal": {
+    "sipp": {
+     "n": 4,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "8705": {
+   "nama": "Tanggal kesepakatan perdamaian",
+   "asal": {
+    "sipp": {
+     "n": 4,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "8899": {
+   "nama": "Pokok kesepakatan perdamaian sebagian",
+   "asal": {
+    "sipp": {
+     "n": 47,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    }
+   }
+  },
+  "9201": {
+   "nama": "Wali Adhal: nama wali nasab",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9203": {
+   "nama": "Wali Adhal: hubungan wali dengan Pemohon",
+   "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9206": {
+   "nama": "Wali Adhal: wilayah KUA wali hakim",
+   "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9478": {
+   "nama": "Bentuk dan tanggal wasiat",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9486": {
+   "nama": "Kedudukan Penggugat (wasiat)",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9487": {
+   "nama": "Kedudukan Tergugat (wasiat)",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9686": {
+   "nama": "Alasan Pemohon tidak mencatatkan pernikahan",
+   "asal": {
+    "posita": {
+     "n": 29,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9702": {
+   "nama": "Ahli waris: anak kandung pewaris",
+   "asal": {
+    "posita": {
+     "n": 2,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9709": {
+   "nama": "Tempat dan tanggal lahir anak",
+   "asal": {
+    "sipp": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9711": {
+   "nama": "Nafkah lampau (madliyah) yang dituntut",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9712": {
+   "nama": "Nafkah iddah yang dituntut",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9713": {
+   "nama": "Mut'ah yang dituntut",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  },
+  "9944": {
+   "nama": "Lama Pisah",
+   "asal": {
+    "posita": {
+     "n": 298,
+     "banding": 286,
+     "cocok": 271,
+     "persen": 94.8,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "11 bulan",
+       "petugas": "28 Agustus 2025 atau kurang lebih 1 (Satu) tahun"
+      },
+      {
+       "usulan": "6 bulan",
+       "petugas": "1 tahun"
+      },
+      {
+       "usulan": "1 tahun",
+       "petugas": "bulan Januari 2023"
+      }
+     ]
+    }
+   }
+  },
+  "0007": {
+   "nama": "Telah dikaruniai anak",
+   "asal": {
+    "sipp": {
+     "n": 392,
+     "banding": 32,
+     "cocok": 32,
+     "persen": 100,
+     "status": "otomatis",
+     "pangkatMaks": "pasti",
+     "dasar": "pembanding isian petugas"
+    },
+    "posita": {
+     "n": 757,
+     "banding": 472,
+     "cocok": 437,
+     "persen": 92.6,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "telah dikaruniai seorang anak",
+       "petugas": "sudah dikaruniai satu orang anak"
+      },
+      {
+       "usulan": "telah dikaruniai seorang anak",
+       "petugas": "sudah dikaruniai 1 orang anak"
+      },
+      {
+       "usulan": "telah dikaruniai satu orang anak",
+       "petugas": "telah dikaruniai seorang anak, bernama Nazwa Ananda Rezki umur 3 tahun"
+      }
+     ]
+    }
+   }
+  },
+  "0709": {
+   "nama": "Hubungan Penggugat (rekonvensi) dengan anak",
+   "asal": {
+    "sipp": {
+     "n": 392,
+     "banding": 4,
+     "cocok": 4,
+     "persen": 100,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    },
+    "posita": {
+     "n": 3,
+     "banding": 3,
+     "cocok": 3,
+     "persen": 100,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20"
+    }
+   }
+  },
+  "0711": {
+   "nama": "Hubungan Tergugat (rekonvensi) dengan anak",
+   "asal": {
+    "sipp": {
+     "n": 392,
+     "banding": 4,
+     "cocok": 4,
+     "persen": 100,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    }
+   }
+  },
+  "0222": {
+   "nama": "Awal Konflik",
+   "asal": {
+    "posita": {
+     "n": 294,
+     "banding": 272,
+     "cocok": 253,
+     "persen": 93,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "bulan Agustus 2024",
+       "petugas": "tahun 2023"
+      },
+      {
+       "usulan": "tahun 2008",
+       "petugas": "tahun 2022"
+      },
+      {
+       "usulan": "bulan Juli 2021",
+       "petugas": "bulan November 2022"
+      }
+     ]
+    }
+   }
+  },
+  "0246": {
+   "nama": "Pisah Rumah",
+   "asal": {
+    "posita": {
+     "n": 285,
+     "banding": 263,
+     "cocok": 254,
+     "persen": 96.6,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "tahun 2020",
+       "petugas": "tahun 2019"
+      },
+      {
+       "usulan": "bulan Januari 2025",
+       "petugas": "3 tahun"
+      },
+      {
+       "usulan": "bulan Juli 2024",
+       "petugas": "Juli 2025"
+      }
+     ]
+    }
+   }
+  },
+  "0303": {
+   "nama": "Tgl. pengumuman",
+   "asal": {
+    "sipp": {
+     "n": 554,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    }
+   }
+  },
+  "0650": {
+   "nama": "Saksi nikah 1",
+   "asal": {
+    "posita": {
+     "n": 461,
+     "banding": 461,
+     "cocok": 434,
+     "persen": 94.1,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "Badaruddin",
+       "petugas": "Badarudin"
+      },
+      {
+       "usulan": "Taufik",
+       "petugas": "Hasmun"
+      },
+      {
+       "usulan": "Sugiono",
+       "petugas": "Sukiman"
+      }
+     ]
+    }
+   }
+  },
+  "0651": {
+   "nama": "Saksi nikah 2",
+   "asal": {
+    "posita": {
+     "n": 442,
+     "banding": 442,
+     "cocok": 405,
+     "persen": 91.6,
+     "status": "otomatis",
+     "pangkatMaks": "cukup",
+     "dasar": "pembanding isian petugas",
+     "contohSalah": [
+      {
+       "usulan": "Hanto",
+       "petugas": "Sidiq"
+      },
+      {
+       "usulan": "Badarul Syamsi",
+       "petugas": "Arisman"
+      },
+      {
+       "usulan": "Darmin",
+       "petugas": "Muis"
+      }
+     ]
+    }
+   }
+  },
+  "0600": {
+   "nama": "Nama calon mempelai pria",
+   "asal": {
+    "sipp": {
+     "n": 30,
+     "banding": 21,
+     "cocok": 21,
+     "persen": 100,
+     "status": "otomatis",
+     "pangkatMaks": "pasti",
+     "dasar": "pembanding isian petugas"
+    },
+    "posita": {
+     "n": 37,
+     "banding": 25,
+     "cocok": 25,
+     "persen": 100,
+     "status": "otomatis",
+     "pangkatMaks": "pasti",
+     "dasar": "pembanding isian petugas"
+    }
+   }
+  },
+  "0601": {
+   "nama": "Umur calon mempelai pria",
+   "asal": {
+    "sipp": {
+     "n": 29,
+     "banding": 13,
+     "cocok": 13,
+     "persen": 100,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    },
+    "posita": {
+     "n": 11,
+     "banding": 7,
+     "cocok": 7,
+     "persen": 100,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20"
+    }
+   }
+  },
+  "0606": {
+   "nama": "Nama calon mempelai wanita",
+   "asal": {
+    "sipp": {
+     "n": 33,
+     "banding": 29,
+     "cocok": 29,
+     "persen": 100,
+     "status": "otomatis",
+     "pangkatMaks": "pasti",
+     "dasar": "pembanding isian petugas"
+    },
+    "posita": {
+     "n": 37,
+     "banding": 32,
+     "cocok": 32,
+     "persen": 100,
+     "status": "otomatis",
+     "pangkatMaks": "pasti",
+     "dasar": "pembanding isian petugas"
+    }
+   }
+  },
+  "0349": {
+   "nama": "Tanggal lahir calon mempelai wanita",
+   "asal": {
+    "sipp": {
+     "n": 35,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    }
+   }
+  },
+  "0609": {
+   "nama": "Pendidikan calon mempelai wanita",
+   "asal": {
+    "sipp": {
+     "n": 33,
+     "banding": 25,
+     "cocok": 17,
+     "persen": 68,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
+     "contohSalah": [
+      {
+       "usulan": "SD",
+       "petugas": "SLTP"
+      },
+      {
+       "usulan": "SLTP",
+       "petugas": "Sekolah Menengah Pertama"
+      },
+      {
+       "usulan": "SD",
+       "petugas": "tidak tamat SD"
+      }
+     ]
+    }
+   }
+  },
+  "0610": {
+   "nama": "Pekerjaan calon mempelai wanita",
+   "asal": {
+    "sipp": {
+     "n": 30,
+     "banding": 20,
+     "cocok": 7,
+     "persen": 35,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "pembanding isian petugas: ketepatan di bawah 90%",
+     "contohSalah": [
+      {
+       "usulan": "Belum bekerja",
+       "petugas": "Belum ada"
+      },
+      {
+       "usulan": "Pelajar",
+       "petugas": "Mahasiswa"
+      },
+      {
+       "usulan": "Belum bekerja",
+       "petugas": "tidak bekerja"
+      }
+     ]
+    }
+   }
+  },
+  "0607": {
+   "nama": "Umur calon mempelai wanita",
+   "asal": {
+    "posita": {
+     "n": 36,
+     "banding": 26,
+     "cocok": 26,
+     "persen": 100,
+     "status": "otomatis",
+     "pangkatMaks": "pasti",
+     "dasar": "pembanding isian petugas"
+    },
+    "sipp": {
+     "n": 32,
+     "banding": 22,
+     "cocok": 22,
+     "persen": 100,
+     "status": "otomatis",
+     "pangkatMaks": "pasti",
+     "dasar": "pembanding isian petugas"
+    }
+   }
+  },
+  "0999": {
+   "nama": "Umur kandungan",
+   "asal": {
+    "posita": {
+     "n": 14,
+     "banding": 3,
+     "cocok": 2,
+     "persen": 66.7,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20",
+     "contohSalah": [
+      {
+       "usulan": "19 (sembilan belas) minggu",
+       "petugas": "5 (lima) bulan"
+      }
+     ]
+    }
+   }
+  },
+  "0132": {
+   "nama": "Tgl. Register Kuasa Khusus Penggugat",
+   "asal": {
+    "sipp": {
+     "n": 62,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    }
+   }
+  },
+  "0185": {
+   "nama": "Tgl. surat kuasa Tergugat/Termohon",
+   "asal": {
+    "sipp": {
+     "n": 17,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "terstruktur",
+     "pangkatMaks": "cukup",
+     "dasar": "terbaca langsung dari kolom SIPP; isian petugas pembanding kurang dari 20"
+    }
+   }
+  },
+  "0712": {
+   "nama": "Orang tua yang meninggal dari sisi anak",
+   "asal": {
+    "posita": {
+     "n": 3,
+     "banding": 3,
+     "cocok": 3,
+     "persen": 100,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "contoh pembanding kurang dari 20"
+    }
+   }
+  },
+  "0997": {
+   "nama": "Puskesmas yang menerangkan kehamilan",
+   "asal": {
+    "posita": {
+     "n": 1,
+     "banding": 0,
+     "cocok": 0,
+     "persen": null,
+     "status": "saran",
+     "pangkatMaks": "ragu",
+     "dasar": "belum ada pembanding dan contoh kurang"
+    }
+   }
+  }
+ }
+}

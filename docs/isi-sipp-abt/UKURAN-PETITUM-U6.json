@@ -1,0 +1,296 @@
+{
+ "diukur": "2026-10-20",
+ "perkara": 3266,
+ "butirUtama": 10371,
+ "dikenali": 10268,
+ "cakupanPersen": 99,
+ "perkaraTanpaButir": 0,
+ "jumlahButirSamaDenganBarisBernomor": {
+  "cocok": 3254,
+  "dari": 3266
+ },
+ "perJenisButir": {
+  "kabul": 3236,
+  "itsbat-nikah": 792,
+  "pencatatan-akta": 237,
+  "biaya": 3206,
+  "talak-ikrar": 251,
+  "cerai-talak": 2050,
+  "dispensasi": 56,
+  "ahli-waris": 134,
+  "kematian-pewaris": 47,
+  "status-quo": 1,
+  "sita": 18,
+  "perwalian": 65,
+  "mutah": 7,
+  "lain": 103,
+  "harta-bersama": 29,
+  "eksekusi": 7,
+  "hadhanah": 49,
+  "nafkah-anak": 16,
+  "nafkah-iddah": 6,
+  "mahar": 4,
+  "wali-adhal": 6,
+  "serta-merta": 9,
+  "uang-paksa": 9,
+  "cerai-fasakh": 9,
+  "ekonomi-syariah": 4,
+  "pengangkatan-anak": 4,
+  "perintah-panitera": 9,
+  "poligami": 2,
+  "nafkah-madliyah": 3,
+  "asal-usul-anak": 2
+ },
+ "perJenisPerkara": {
+  "341": {
+   "perkara": 2,
+   "butirUtama": 8,
+   "lain": 0,
+   "tanpaButir": 0
+  },
+  "346": {
+   "perkara": 428,
+   "butirUtama": 1295,
+   "lain": 4,
+   "tanpaButir": 0
+  },
+  "347": {
+   "perkara": 1911,
+   "butirUtama": 5811,
+   "lain": 31,
+   "tanpaButir": 0
+  },
+  "348": {
+   "perkara": 8,
+   "butirUtama": 54,
+   "lain": 10,
+   "tanpaButir": 0
+  },
+  "354": {
+   "perkara": 43,
+   "butirUtama": 147,
+   "lain": 2,
+   "tanpaButir": 0
+  },
+  "358": {
+   "perkara": 8,
+   "butirUtama": 24,
+   "lain": 8,
+   "tanpaButir": 0
+  },
+  "360": {
+   "perkara": 738,
+   "butirUtama": 2445,
+   "lain": 3,
+   "tanpaButir": 0
+  },
+  "362": {
+   "perkara": 56,
+   "butirUtama": 169,
+   "lain": 1,
+   "tanpaButir": 0
+  },
+  "363": {
+   "perkara": 3,
+   "butirUtama": 12,
+   "lain": 0,
+   "tanpaButir": 0
+  },
+  "364": {
+   "perkara": 12,
+   "butirUtama": 132,
+   "lain": 25,
+   "tanpaButir": 0
+  },
+  "365": {
+   "perkara": 1,
+   "butirUtama": 12,
+   "lain": 2,
+   "tanpaButir": 0
+  },
+  "369": {
+   "perkara": 6,
+   "butirUtama": 19,
+   "lain": 2,
+   "tanpaButir": 0
+  },
+  "370": {
+   "perkara": 2,
+   "butirUtama": 16,
+   "lain": 4,
+   "tanpaButir": 0
+  },
+  "371": {
+   "perkara": 48,
+   "butirUtama": 227,
+   "lain": 11,
+   "tanpaButir": 0
+  }
+ },
+ "pembandingAmar": {
+  "nafkah-iddah": {
+   "petitum": 4,
+   "amar": 1
+  },
+  "mutah": {
+   "petitum": 4,
+   "amar": 2
+  },
+  "nafkah-madliyah": {
+   "petitum": 2,
+   "amar": 1
+  },
+  "nafkah-anak": {
+   "petitum": 15,
+   "amar": 1
+  },
+  "hadhanah": {
+   "petitum": 44,
+   "amar": 27
+  },
+  "harta-bersama": {
+   "petitum": 10,
+   "amar": 3
+  }
+ },
+ "butirLainTeratas": [
+  [
+   "\u0001mengabulkangugatanpenggugat :",
+   5
+  ],
+  [
+   "menyatakan bahwa perkawinanpenggugatdengantergugatputuskaren",
+   5
+  ],
+  [
+   "menetapkan oleh karena hukum pernikahan antara penggugat den",
+   4
+  ],
+  [
+   "alm NAMA",
+   3
+  ],
+  [
+   "menghukum turut tergugat untuk tunduk dan patuh terhadap put",
+   2
+  ],
+  [
+   "mengabulkan cerai gugat penggugat untuk seluruhnya;",
+   2
+  ],
+  [
+   "menyatakan putusan ini dapat dilaksanakan terlebih dahulu me",
+   2
+  ],
+  [
+   "menetapkan bahwa menurut hukum penggugat berhak menuntut kep",
+   2
+  ],
+  [
+   "menghukum kepada tergugat menanggung semua biaya hidup dan p",
+   2
+  ],
+  [
+   "multazam #/# × #/# = #/#",
+   1
+  ],
+  [
+   "imaduddin #/#",
+   1
+  ],
+  [
+   "muhammad furqan/tergugat ii #/#",
+   1
+  ],
+  [
+   "memerintahkan tergugat i untuk memperlihatkan dan menyerahka",
+   1
+  ],
+  [
+   "menetapkan # (tiga) orang anak yang masing-masing benama: al",
+   1
+  ],
+  [
+   "bahwa penggugat sanggup membayar biaya yang timbul dalam per",
+   1
+  ],
+  [
+   "menyatakan dwiky NAMA.ambo alias ahmad hi. yambo adalah peny",
+   1
+  ],
+  [
+   "menghukum turut tergugat untuk tunduk dan patuh pada putusan",
+   1
+  ],
+  [
+   "membebankan semua biaya yang timbul dalam perkara ini menuru",
+   1
+  ],
+  [
+   "a. primair:",
+   1
+  ],
+  [
+   "menetapkan NAMA. pasaribu alias akram, umur # tahun. sampai ",
+   1
+  ],
+  [
+   "menetapkan faiha al-NAMA. dengan tetap memberikan hak akses ",
+   1
+  ],
+  [
+   "menetapkan nabila NAMA. rezaldi dan muhammad fa'az al-NAMA. ",
+   1
+  ],
+  [
+   "diperkirakan sebidang tanah dengan luas bangunan # m⊃#; (lim",
+   1
+  ],
+  [
+   "menetapkan seorang anak yang benama moh. zayyan putra NAMA# ",
+   1
+  ],
+  [
+   "menyatakan surat nomor: #/#/kec.sju/x/# tanggal # oktober # ",
+   1
+  ]
+ ],
+ "labelJenis": {
+  "provisi-izin-berpisah": "Izin tinggal terpisah (provisi)",
+  "talak-ikrar": "Izin mengikrarkan talak",
+  "cerai-talak": "Menjatuhkan talak",
+  "cerai-fasakh": "Fasakh / pembatalan nikah",
+  "nafkah-iddah": "Nafkah iddah",
+  "mutah": "Mut'ah",
+  "nafkah-madliyah": "Nafkah lampau (madliyah)",
+  "nafkah-anak": "Nafkah anak",
+  "hadhanah": "Hak asuh anak (hadhanah)",
+  "harta-bersama": "Harta bersama",
+  "mahar": "Mahar terutang",
+  "itsbat-nikah": "Itsbat nikah",
+  "dispensasi": "Dispensasi kawin",
+  "wali-adhal": "Wali adhal",
+  "perwalian": "Perwalian",
+  "asal-usul-anak": "Asal usul anak",
+  "ahli-waris": "Penetapan ahli waris / pembagian waris",
+  "hibah": "Hibah",
+  "wasiat": "Wasiat",
+  "wakaf": "Wakaf",
+  "poligami": "Izin poligami",
+  "sita": "Sita jaminan",
+  "uang-paksa": "Uang paksa (dwangsom)",
+  "serta-merta": "Putusan serta merta",
+  "eksekusi": "Perintah pelaksanaan / eksekusi",
+  "perintah-panitera": "Perintah kepada Panitera (menyampaikan salinan)",
+  "status-quo": "Status quo / larangan mengalihkan objek",
+  "kematian-pewaris": "Pernyataan kematian pewaris",
+  "pengangkatan-anak": "Pengangkatan anak",
+  "ekonomi-syariah": "Sengketa ekonomi syariah",
+  "pencatatan-akta": "Pemerintah mencatat / menerbitkan akta",
+  "biaya": "Biaya perkara",
+  "verstek": "Pernyataan ketidakhadiran / verstek",
+  "kabul": "Mengabulkan gugatan / permohonan",
+  "subsider": "Subsider (ex aequo et bono)",
+  "lain": "Lain-lain"
+ }
+}
