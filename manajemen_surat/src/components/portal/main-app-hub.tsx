@@ -14,6 +14,7 @@ import {
   MessageCircleMore,
   Scale,
   ScrollText,
+  Sparkles,
   UsersRound,
   Wallet,
 } from "lucide-react";
@@ -38,6 +39,7 @@ const iconMap = {
   bot: Bot,
   database: Database,
   "file-text": FileText,
+  sparkles: Sparkles,
 };
 
 /**
