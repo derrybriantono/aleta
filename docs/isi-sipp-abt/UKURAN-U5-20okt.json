@@ -1,0 +1,280 @@
+{
+ "dibuat": "2026-10-20",
+ "agen": "U5",
+ "sumber": "salinan lokal sipp_donggala (sama dengan server: 29 perkara 371 sejak 2025); aps_badilag server (baca saja)",
+ "katalog": {
+  "lama": {
+   "versi": 1,
+   "pertanyaan": 24,
+   "pokok": 11,
+   "keadaan": 5,
+   "dasarHukum": 14,
+   "aktifBawaan": 16,
+   "aktifLengkap": 16,
+   "ringkas": {
+    "pertanyaan": 24,
+    "kombinasi": 80,
+    "kalimat": 640,
+    "perJenis": {
+     "melihat": 24,
+     "de-auditu": 22,
+     "sebagian": 7,
+     "berbeda": 22
+    }
+   }
+  },
+  "baru": {
+   "versi": 2,
+   "pertanyaan": 53,
+   "pokok": 17,
+   "keadaan": 15,
+   "dasarHukum": 20,
+   "aktifBawaan": 21,
+   "aktifLengkap": 30,
+   "ringkas": {
+    "pertanyaan": 53,
+    "kombinasi": 183,
+    "kalimat": 1464,
+    "perJenis": {
+     "melihat": 53,
+     "de-auditu": 51,
+     "sebagian": 23,
+     "berbeda": 51
+    }
+   }
+  }
+ },
+ "isianLanjutan": {
+  "2025-2026": {
+   "perkara": 29,
+   "jawabanBertitik": {
+    "lama": {
+     "titik": 174,
+     "isi": 0,
+     "jawaban": 174,
+     "jawabanTerisiSebagian": 0
+    },
+    "baru": {
+     "titik": 174,
+     "isi": 54,
+     "jawaban": 174,
+     "jawabanTerisiSebagian": 54
+    }
+   },
+   "isianBaru": {
+    "4500": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 2
+    },
+    "4513": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 4
+    },
+    "4515": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 11
+    },
+    "4540": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 1
+    },
+    "4541": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 1
+    },
+    "8613": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 2
+    }
+   },
+   "perButirBaru": {
+    "q-paw-hubungan": {
+     "titik": 58,
+     "isi": 14
+    },
+    "q-paw-menikah": {
+     "titik": 58,
+     "isi": 4
+    },
+    "q-paw-anak": {
+     "titik": 58,
+     "isi": 36
+    }
+   }
+  },
+  "2022-2026": {
+   "perkara": 54,
+   "jawabanBertitik": {
+    "lama": {
+     "titik": 324,
+     "isi": 0,
+     "jawaban": 324,
+     "jawabanTerisiSebagian": 0
+    },
+    "baru": {
+     "titik": 324,
+     "isi": 104,
+     "jawaban": 324,
+     "jawabanTerisiSebagian": 104
+    }
+   },
+   "isianBaru": {
+    "4500": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 2
+    },
+    "4502": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 1
+    },
+    "4513": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 4
+    },
+    "4515": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 19
+    },
+    "4540": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 1
+    },
+    "4541": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 1
+    },
+    "8613": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 2
+    }
+   },
+   "perButirBaru": {
+    "q-paw-hubungan": {
+     "titik": 108,
+     "isi": 20
+    },
+    "q-paw-menikah": {
+     "titik": 108,
+     "isi": 16
+    },
+    "q-paw-anak": {
+     "titik": 108,
+     "isi": 68
+    }
+   }
+  },
+  "2015-2026": {
+   "perkara": 105,
+   "jawabanBertitik": {
+    "lama": {
+     "titik": 630,
+     "isi": 0,
+     "jawaban": 630,
+     "jawabanTerisiSebagian": 0
+    },
+    "baru": {
+     "titik": 630,
+     "isi": 170,
+     "jawaban": 630,
+     "jawabanTerisiSebagian": 170
+    }
+   },
+   "isianBaru": {
+    "4500": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 2
+    },
+    "4502": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 1
+    },
+    "4513": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 4
+    },
+    "4515": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 35
+    },
+    "4540": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 1
+    },
+    "4541": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 1
+    },
+    "8613": {
+     "pasti": 0,
+     "cukup": 0,
+     "ragu": 2
+    }
+   },
+   "perButirBaru": {
+    "q-paw-hubungan": {
+     "titik": 210,
+     "isi": 32
+    },
+    "q-paw-menikah": {
+     "titik": 210,
+     "isi": 20
+    },
+    "q-paw-anak": {
+     "titik": 210,
+     "isi": 118
+    }
+   }
+  }
+ },
+ "catatanKeyakinan": "Semua usulan lanjutan U5 berkeyakinan ragu (saran): belum ada isian petugas pembanding dalam jumlah yang dituntut gerbang otomatis berdasar (U6).",
+ "petitumMenyatakanMeninggal": {
+  "2025-2026": "27 dari 29 (93%)",
+  "2022-2026": "44 dari 54 (81%)"
+ },
+ "petitumPencairanDana": {
+  "2025-2026": "13 dari 29 (45%)",
+  "2022-2026": "15 dari 54 (28%)"
+ },
+ "pembandingAmar": {
+  "4540/4541": "1 dari 1 perkara (91/Pdt.P/2026): keponakan Kisman bin Ambo ditetapkan hakim sebagai ahli waris pengganti dari saudara",
+  "4513=2 (sudah bercerai)": "4 dari 4 perkara (168/2026, 199/2025, 153/2025, 9/2024): bekas pasangan tidak ditetapkan sebagai ahli waris",
+  "4513=1 (berpisah)": "1 perkara (230/2026) belum diputus",
+  "4502 anak angkat": "197/2023: hakim menetapkan anak angkat bersama saudara kandung sebagai ahli waris (berbeda dari KHI 171 huruf c; pilihan 4505 dan pertimbangan 4504 menyediakan wasiat wajibah Pasal 209 ayat (2))"
+ },
+ "analisisBukti4530": {
+  "daftar8132": 32,
+  "baris": 587,
+  "kelompok": 199,
+  "barisLainLain": 5,
+  "persenLainLain": 0.85,
+  "keterangan": "daftar alat bukti PAW isian petugas sungguhan di server (2023-2026); 5 baris surat keterangan umum jatuh ke kelompok lain-lain"
+ },
+ "bagianFaraid": {
+  "susunanAcak": 100,
+  "identikDenganKueri9769": 57,
+  "beda": 0,
+  "keduanyaSerahkanKeHakim": 39,
+  "kosong": 4,
+  "keterangan": "hasil kueri 9769 (salinan server) dijalankan di MariaDB lokal; fixture manajemen_surat/src/test/fixtures/faraid-banding.json"
+ },
+ "variabelSqlServer": "uji_server.js: 29 variabel dijalankan SELECT-saja di MariaDB 5.5.68 server dengan isian literal; hasil sama dengan MariaDB lokal pada semua skenario"
+}

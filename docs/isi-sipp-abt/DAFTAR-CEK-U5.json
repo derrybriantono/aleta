@@ -1,0 +1,178 @@
+{
+ "dibuat": "2026-10-20",
+ "catatan": "Isian BARU paket ABT u5-ahli-waris (variabel 4500-4599). Melengkapi DAFTAR-CEK.json (status 19 Okt) yang dibangun dari pohon blangko sebelum paket ini; semua opsional (kosong = bunyi lama blangko tetap dipakai).",
+ "isian": [
+  {
+   "kunci": "4500",
+   "namaAsli": "TUJUAN PERMOHONAN AHLI WARIS - ISIAN (frasa sesudah kata untuk, tanpa titik akhir, mis. mengurus balik nama sebidang tanah; kosong = otomatis dari pencairan dana 9700)",
+   "jenis": "teks",
+   "tingkat": "tambahan",
+   "wajib": false,
+   "folder": [
+    "9 Penetapan Ahli Waris"
+   ],
+   "blangko": [
+    "[01]",
+    "[01b]",
+    "[01c]"
+   ],
+   "paket": "abt-paket/u5-ahli-waris"
+  },
+  {
+   "kunci": "4502",
+   "namaAsli": "ANAK ANGKAT PEWARIS - ISIAN (nama lengkap dengan bin atau binti; kosong = Pewaris tidak mempunyai anak angkat)",
+   "jenis": "teks",
+   "tingkat": "tambahan",
+   "wajib": false,
+   "folder": [
+    "9 Penetapan Ahli Waris"
+   ],
+   "blangko": [
+    "[01]",
+    "[01b]",
+    "[01c]"
+   ],
+   "paket": "abt-paket/u5-ahli-waris"
+  },
+  {
+   "kunci": "4505",
+   "namaAsli": "ANAK ANGKAT - PILIHAN HAKIM (ketik 1 bila anak angkat dinyatakan berhak atas wasiat wajibah dalam amar; kosong = hanya dipertimbangkan, tidak diamarkan)",
+   "jenis": "teks",
+   "tingkat": "tambahan",
+   "wajib": false,
+   "folder": [
+    "9 Penetapan Ahli Waris"
+   ],
+   "blangko": [
+    "[01]",
+    "[01b]",
+    "[01c]"
+   ],
+   "paket": "abt-paket/u5-ahli-waris"
+  },
+  {
+   "kunci": "4507",
+   "namaAsli": "WASIAT PEWARIS - ISIAN (uraian singkat: penerima dan bendanya; kosong = Pewaris tidak meninggalkan wasiat)",
+   "jenis": "teks",
+   "tingkat": "tambahan",
+   "wajib": false,
+   "folder": [
+    "9 Penetapan Ahli Waris"
+   ],
+   "blangko": [
+    "[01]",
+    "[01b]",
+    "[01c]"
+   ],
+   "paket": "abt-paket/u5-ahli-waris"
+  },
+  {
+   "kunci": "4510",
+   "namaAsli": "KERABAT PEWARIS YANG TIDAK BERAGAMA ISLAM - ISIAN (nama dan hubungannya, mis. Budi bin Ali (anak kandung Pewaris); beberapa orang dipisah titik koma; kosong = semua ahli waris beragama Islam)",
+   "jenis": "teks",
+   "tingkat": "tambahan",
+   "wajib": false,
+   "folder": [
+    "9 Penetapan Ahli Waris"
+   ],
+   "blangko": [
+    "[01]",
+    "[01b]",
+    "[01c]"
+   ],
+   "paket": "abt-paket/u5-ahli-waris"
+  },
+  {
+   "kunci": "4513",
+   "namaAsli": "KEADAAN PERKAWINAN PEWARIS - PILIHAN HAKIM (1 = berpisah tetapi belum bercerai, pasangan tetap ahli waris; 2 = sudah bercerai sebelum Pewaris meninggal; kosong = berlangsung sampai meninggal)",
+   "jenis": "teks",
+   "tingkat": "tambahan",
+   "wajib": false,
+   "folder": [
+    "9 Penetapan Ahli Waris"
+   ],
+   "blangko": [
+    "[01]",
+    "[01b]",
+    "[01c]"
+   ],
+   "paket": "abt-paket/u5-ahli-waris"
+  },
+  {
+   "kunci": "4515",
+   "namaAsli": "BAGIAN MASING-MASING AHLI WARIS (P3HP) - ISIAN HAKIM (mis. Janda 1/8; anak laki-laki dan anak perempuan menerima sisa dengan perbandingan 2 : 1; kosong = bagian tidak ditetapkan dalam amar)",
+   "jenis": "teks",
+   "tingkat": "tambahan",
+   "wajib": false,
+   "folder": [
+    "9 Penetapan Ahli Waris"
+   ],
+   "blangko": [
+    "[01]",
+    "[01b]",
+    "[01c]"
+   ],
+   "paket": "abt-paket/u5-ahli-waris"
+  },
+  {
+   "kunci": "4520",
+   "namaAsli": "HARTA PENINGGALAN YANG DIPEROLEH SELAMA PERKAWINAN (HARTA BERSAMA) - ISIAN (uraian harta; kosong = tidak ada pertimbangan harta bersama)",
+   "jenis": "teks",
+   "tingkat": "tambahan",
+   "wajib": false,
+   "folder": [
+    "9 Penetapan Ahli Waris"
+   ],
+   "blangko": [
+    "[01]",
+    "[01b]",
+    "[01c]"
+   ],
+   "paket": "abt-paket/u5-ahli-waris"
+  },
+  {
+   "kunci": "4534",
+   "namaAsli": "PEMBATASAN PENGGUNAAN PENETAPAN - PILIHAN HAKIM (ketik 1 bila penetapan hanya boleh dipakai untuk tujuan permohonan pada isian 4501; kosong = tanpa pembatasan)",
+   "jenis": "teks",
+   "tingkat": "tambahan",
+   "wajib": false,
+   "folder": [
+    "9 Penetapan Ahli Waris"
+   ],
+   "blangko": [
+    "[01]",
+    "[01b]",
+    "[01c]"
+   ],
+   "paket": "abt-paket/u5-ahli-waris"
+  },
+  {
+   "kunci": "4540",
+   "namaAsli": "AHLI WARIS PENGGANTI SAUDARA - SAUDARA PEWARIS YANG MENINGGAL LEBIH DAHULU (satu nama lengkap dengan bin atau binti; berpasangan dengan 4541; kosong = tidak ada)",
+   "jenis": "teks",
+   "tingkat": "tambahan",
+   "wajib": false,
+   "folder": [
+    "9 Penetapan Ahli Waris"
+   ],
+   "blangko": [
+    "[01c]"
+   ],
+   "paket": "abt-paket/u5-ahli-waris"
+  },
+  {
+   "kunci": "4541",
+   "namaAsli": "AHLI WARIS PENGGANTI SAUDARA - ANAK DARI SAUDARA ITU / KEPONAKAN PEWARIS (nama lengkap dengan bin atau binti; beberapa nama dipisah titik koma; berpasangan dengan 4540)",
+   "jenis": "teks",
+   "tingkat": "tambahan",
+   "wajib": false,
+   "folder": [
+    "9 Penetapan Ahli Waris"
+   ],
+   "blangko": [
+    "[01c]"
+   ],
+   "paket": "abt-paket/u5-ahli-waris"
+  }
+ ]
+}

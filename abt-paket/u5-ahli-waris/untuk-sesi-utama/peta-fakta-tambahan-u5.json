@@ -1,0 +1,98 @@
+{
+  "skema": "peta-fakta-variabel/1",
+  "catatan": "TAMBAHAN U5 (penetapan ahli waris / P3HP) untuk aleta_bot/config/peta-fakta-variabel.json cabang fitur/u6-fakta-sinkron. Satu kode satu fakta; tidak mengubah entri U6. Gabungkan saat merge: 'tambahKode' = tambahkan kode ke fakta yang sudah ada; 'fakta' = entri baru.",
+  "tambahKode": {
+    "perkara.tujuan": [
+      "4500"
+    ]
+  },
+  "fakta": {
+    "waris.anakAngkat": {
+      "label": "Anak angkat pewaris",
+      "tipe": "nama",
+      "kode": [
+        "4502"
+      ],
+      "kunciSaksi": "anakAngkat"
+    },
+    "waris.wasiat": {
+      "label": "Wasiat pewaris",
+      "tipe": "teks",
+      "kode": [
+        "4507"
+      ],
+      "kunciSaksi": "wasiatPewaris"
+    },
+    "waris.kerabatTakIslam": {
+      "label": "Kerabat pewaris yang tidak beragama Islam",
+      "tipe": "teks",
+      "kode": [
+        "4510"
+      ],
+      "kunciSaksi": "kerabatTakIslam"
+    },
+    "waris.keadaanPerkawinan": {
+      "label": "Keadaan perkawinan pewaris saat meninggal (1 berpisah, 2 bercerai)",
+      "tipe": "pilihan",
+      "kode": [
+        "4513"
+      ],
+      "hanyaSaran": true
+    },
+    "waris.bagian": {
+      "label": "Bagian masing-masing ahli waris (usulan hitungan KHI)",
+      "tipe": "teks",
+      "kode": [
+        "4515"
+      ],
+      "hanyaSaran": true
+    },
+    "waris.hartaBersama": {
+      "label": "Harta peninggalan yang diperoleh selama perkawinan",
+      "tipe": "teks",
+      "kode": [
+        "4520"
+      ]
+    },
+    "waris.sikapAnakAngkat": {
+      "label": "Sikap terhadap anak angkat (1 = wasiat wajibah dalam amar)",
+      "tipe": "pilihan",
+      "kode": [
+        "4505"
+      ],
+      "hanyaSaran": true
+    },
+    "waris.batasPenggunaan": {
+      "label": "Pembatasan penggunaan penetapan (1 = hanya untuk tujuan permohonan)",
+      "tipe": "pilihan",
+      "kode": [
+        "4534"
+      ],
+      "hanyaSaran": true
+    },
+    "waris.penggantiSaudara": {
+      "label": "Saudara pewaris yang meninggal lebih dahulu (diganti anaknya)",
+      "tipe": "nama",
+      "kode": [
+        "4540"
+      ],
+      "kunciSaksi": "saudaraPengganti"
+    },
+    "waris.penggantiKeponakan": {
+      "label": "Anak dari saudara pewaris yang meninggal lebih dahulu (ahli waris pengganti)",
+      "tipe": "daftar",
+      "kode": [
+        "4541"
+      ],
+      "kunciSaksi": "keponakanPengganti"
+    },
+    "waris.pasanganWafat": {
+      "label": "Kematian suami/istri pewaris (pada tanggal ... di ... karena ...)",
+      "tipe": "teks",
+      "kode": [
+        "8613"
+      ]
+    }
+  },
+  "gerbang": "Semua usulan baru U5 (ahliWarisLanjut.js) berkeyakinan 'ragu' (saran): tidak ada entri gerbang-isian.json yang diperlukan. Hanya pengisi lama S5 (9701-9718, 8608, 8610, 8614, 9700) yang memakai cukup/pasti dan menjadi urusan gerbang U6."
+}

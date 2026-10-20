@@ -485,6 +485,9 @@ describe("D. petunjuk manual / opsional", () => {
   it("setiap kode petunjuk adalah isian sungguhan blangko Derry (daftar cek), bukan kode karangan", () => {
     const daftar = JSON.parse(readFileSync(path.join(AKAR, "docs", "isi-sipp-abt", "DAFTAR-CEK.json"), "utf8")) as { isian: Array<{ kunci: string }> };
     const ada = new Set(daftar.isian.map((i) => i.kunci));
+    // isian paket ABT u5-ahli-waris (4500-4599) belum ada di pohon yang dianalisa 19 Okt: didaftarkan di DAFTAR-CEK-U5.json
+    const u5 = JSON.parse(readFileSync(path.join(AKAR, "docs", "isi-sipp-abt", "DAFTAR-CEK-U5.json"), "utf8")) as { isian: Array<{ kunci: string }> };
+    for (const i of u5.isian) ada.add(i.kunci);
     for (const k of Object.keys(S5.METADATA)) expect(ada.has(k), k).toBe(true);
   });
 });

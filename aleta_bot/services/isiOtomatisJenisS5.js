@@ -24,6 +24,7 @@ const B = require("./isiOtomatisS5/bantu");
 const DK = require("./isiOtomatisS5/dk");
 const AUA = require("./isiOtomatisS5/asalUsul");
 const PAW = require("./isiOtomatisS5/ahliWaris");
+const PAWL = require("./isiOtomatisS5/ahliWarisLanjut");
 const PW = require("./isiOtomatisS5/perwalian");
 const WA = require("./isiOtomatisS5/waliAdhal");
 const META = require("./isiOtomatisS5/metadata");
@@ -141,7 +142,12 @@ function usulanDariData(d) {
   if (jenis === JENIS.PERWALIAN) hasil.push(...PW.usulanPerwalian(d), ...U4PW.usulanU4Perwalian(d));
   if (jenis === JENIS.WALI_ADHAL) hasil.push(...WA.usulanWaliAdhal(d));
   if (jenis === JENIS.DK) hasil.push(...DK.usulanDk(d, { bacaPosita: bacaPositaDk }), ...U4DK.usulanU4Dk(d));
-  if (jenis === JENIS.AHLI_WARIS) hasil.push(...PAW.usulanAhliWaris(d, { pewaris: pewarisDariModul(d.perkara.posita, d.perkara.petitum) }));
+  if (jenis === JENIS.AHLI_WARIS) {
+    const pewaris = pewarisDariModul(d.perkara.posita, d.perkara.petitum);
+    hasil.push(...PAW.usulanAhliWaris(d, { pewaris }));
+    // U5 20 Okt: isian lanjutan 4500-4599 (tujuan, anak angkat, wasiat, kerabat tidak Islam, perkawinan, pengganti saudara, bagian)
+    hasil.push(...PAWL.usulanLanjut(d, { pewaris }));
+  }
   if (jenis === JENIS.ASAL_USUL) hasil.push(...AUA.usulanAsalUsul(d, { urai: uraiItsbat, bacaPetitum: bacaPetitumAsalUsul }));
   return hasil;
 }
