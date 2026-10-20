@@ -1001,6 +1001,22 @@ export const modules: ModuleConfig[] = [
     badgeLabel: "Kinerja",
   },
   {
+    // ALETA Ai (20 Okt 2026): tahap awal hanya Super Admin (aturan "belum-fix");
+    // peran lain dibuka lewat Akses Menu bila server dan saldonya siap.
+    id: "aleta-ai",
+    label: "ALETA Ai",
+    description: "Tanya jawab dan bantuan menyusun naskah perkara, dengan biaya sesuai pemakaian.",
+    href: "/aleta-ai",
+    icon: "sparkles",
+    roleIds: roles.map((role) => role.id),
+    showInHub: true,
+    showInSidebar: true,
+    iconBgClass: "bg-violet-100",
+    iconFgClass: "text-violet-700",
+    cardClass: "border-violet-200/80 bg-violet-50/70",
+    badgeLabel: "Asisten",
+  },
+  {
     // Blangko pribadi (18 Okt 2026): hanya hakim, panitera, dan konseptor
     // (panitera muda / pengganti); isinya milik pembuatnya sendiri.
     id: "blangko-saya",
@@ -1842,6 +1858,18 @@ export const portalApps: PortalAppConfig[] = [
     iconBgClass: "bg-sky-100 dark:bg-sky-500/15",
     iconFgClass: "text-sky-700 dark:text-sky-200",
     cardClass: "border-sky-200/80 bg-sky-50/80 dark:border-sky-500/20 dark:bg-slate-900/80",
+  },
+  {
+    id: "aleta-ai",
+    label: "ALETA Ai",
+    description: "Tanya jawab dan bantuan menyusun naskah perkara, dengan biaya sesuai pemakaian.",
+    href: "/aleta-ai",
+    icon: "sparkles",
+    roleIds: roles.map((role) => role.id),
+    badgeLabel: "Asisten",
+    iconBgClass: "bg-violet-100 dark:bg-violet-500/15",
+    iconFgClass: "text-violet-700 dark:text-violet-200",
+    cardClass: "border-violet-200/80 bg-violet-50/80 dark:border-violet-500/20 dark:bg-slate-900/80",
   },
   {
     id: "blangko-saya",

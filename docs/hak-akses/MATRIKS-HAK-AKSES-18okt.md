@@ -91,6 +91,7 @@ Jabatan (misalnya Panitera Muda Gugatan, Jurusita Pengganti, Pranata Komputer) d
 | ALETA e-Court (pengaturan) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Peta Perkara (modul) | U | U | L | L | L | L | - | - | - | - | - | - | - | L | - | - |
 | Blangko Saya (buat blangko sendiri) | U | U | U | U | U | U | U | - | - | - | - | - | - | - | - | - |
+| ALETA Ai | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | SKP (kinerja pegawai) | U | U | L | L | L | L | L | L | L | L | L | L | L | L | L | L |
 | Beban Konseptor (modul) | U | U | L | - | L | - | - | - | - | - | - | - | - | - | - | - |
 | ALETA x SIPP | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
@@ -108,6 +109,7 @@ Catatan kewenangan:
 - **Kelola PLH dan PLT**: Pejabat struktural dan kesekretariatan menetapkan penggantinya sendiri; Plt/Plh yang berlaku tidak dapat menetapkan lagi.
 - **Audit Trail**: Hanya Super Admin (halaman dan rutenya menolak Admin).
 - **Blangko Saya (buat blangko sendiri)**: Tahap awal (18 Okt 2026): ubin dan menu hanya tampil bagi Super Admin sampai saklar Fitur Satker 'Blangko Saya untuk semua peran' dinyalakan; kolom peran lain berlaku sesudahnya.
+- **ALETA Ai**: Belum dibuka untuk peran lain: aplikasi masih dalam penyempurnaan. Super Admin dapat membukanya per peran lewat Akses Menu.
 - **ALETA x SIPP**: Belum dibuka untuk peran lain: aplikasi masih dalam penyempurnaan. Super Admin dapat membukanya per peran lewat Akses Menu.
 - **ALETA Judicia (Legal Form / JLF)**: Belum dibuka untuk peran lain: aplikasi masih dalam penyempurnaan. Super Admin dapat membukanya per peran lewat Akses Menu.
 - **ALETA e-Audit**: Belum dibuka untuk peran lain: aplikasi masih dalam penyempurnaan. Super Admin dapat membukanya per peran lewat Akses Menu.

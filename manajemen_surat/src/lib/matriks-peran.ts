@@ -388,6 +388,14 @@ export const ATURAN_APLIKASI: readonly AturanAplikasi[] = [
     hak: hakUntuk(["pimpinan", "hakim", "panitera", "panmud", "pp"], "CRUD"),
   },
   {
+    id: "aleta-ai",
+    label: "ALETA Ai",
+    status: "belum-fix",
+    alasan:
+      "Asisten percakapan berbayar per pemakaian (tahap 1). Hak per peran, saldo, dan batas pemakaian dipegang server; sementara ini hanya Super Admin. Buka lewat Akses Menu untuk peran lain bila sudah siap.",
+    hak: {},
+  },
+  {
     id: "skp",
     label: "SKP (kinerja pegawai)",
     status: "matang",
@@ -473,6 +481,7 @@ export const MODUL_MILIK_APLIKASI: Readonly<Record<string, string>> = {
   "beban-konseptor": "beban-konseptor",
   skp: "skp",
   "blangko-saya": "blangko-saya",
+  "aleta-ai": "aleta-ai",
 };
 
 /**

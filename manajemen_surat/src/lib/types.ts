@@ -57,6 +57,8 @@ export type ModuleId =
   | "skp"
   // Buat blangko sendiri (18 Okt 2026): blangko pribadi hakim, panitera, konseptor.
   | "blangko-saya"
+  // ALETA Ai (20 Okt 2026): asisten percakapan berbayar-per-pemakaian, layar gaya chatbot.
+  | "aleta-ai"
   // Peta perkara - sebaran wilayah, faktor perceraian, dan siapa yang
   // mengajukan. Terpisah dari "statistik" sebagaimana beban konseptor:
   // statistik menghitung perkara, ini menghitung ASAL perkara.
@@ -126,6 +128,8 @@ export type PortalAppId =
   | "skp"
   // Buat blangko sendiri (18 Okt 2026): blangko pribadi hakim, panitera, konseptor.
   | "blangko-saya"
+  // ALETA Ai (20 Okt 2026): asisten percakapan berbayar-per-pemakaian, layar gaya chatbot.
+  | "aleta-ai"
   | "e-kepegawaian"
   | "e-status"
   | "sipp"
