@@ -161,6 +161,8 @@ const BERKAS = [
   // alur Putusan otomatis panel ekstensi dan e-Doc-nya; tepat di sebelah Penetapan Otomatis.
   "putusan-sipp.js",
   "putusan-sipp.css",
+  // Pratinjau BAS/relaas di SIPP sebelum diunduh (20 Okt 2026).
+  "pratinjau-bas-relaas.js",
   "penetapan-sipp.css",
   "blangko-derry.css",
   // Menu kiri ABT bisa digulir (19 Okt 2026) - skrip konten ABT: #navbar diberi

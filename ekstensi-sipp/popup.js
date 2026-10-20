@@ -36,6 +36,8 @@ const SAKLAR_SIPP_IDE = {
   widgetKehadiran: ["widgetKehadiran", true],
   /* F4.2: kotak draf putusan H-7 di widget - keputusan 17 Okt butir 41: bawaan MENYALA, terlipat di kiri bawah. */
   widgetDrafH7: ["widgetDrafH7", true],
+  /* 20 Okt: klik unduh BAS/relaas di SIPP menampilkan pratinjau dulu (pratinjau-bas-relaas.js), bawaan MENYALA. */
+  pratinjauBasRelaas: ["pratinjauBasRelaas", true],
 };
 /* F1.5 (17 Okt): gembok panel ALETA di ABT biasa - kunci yang sama dengan tombol
    gembok di bawah kepala panel dan Widget ALETA. Menyala = terkunci (tampil penuh). */
@@ -127,6 +129,7 @@ const KUNCI_SETELAN_AKUN = [
   "sippTampilDobel",
   "widgetKehadiran",
   "widgetDrafH7",
+  "pratinjauBasRelaas",
   "gembokKepalaAbt",
   /* Saklar penanda SIPP (popup-ide-l2.js) - per akun seperti saklar lain (audit 17 Okt). */
   "ideL2",
@@ -173,6 +176,7 @@ const BAWAAN_AKUN = {
   sippTampilDobel: false,
   widgetKehadiran: true,
   widgetDrafH7: true,
+  pratinjauBasRelaas: true,
   gembokKepalaAbt: false,
   skalaHuruf: 100,
   temaPopup: "ikut",
@@ -2119,7 +2123,7 @@ function pasangRingkas(gayaUi) {
 
 const KELOMPOK_SAKLAR = [
   { kode: "tampilan", judul: "Tampilan", isi: [] },
-  { kode: "sipp", judul: "SIPP", isi: ["tandaiHalaman", "sisipJadwal"] },
+  { kode: "sipp", judul: "SIPP", isi: ["tandaiHalaman", "sisipJadwal", "pratinjauBasRelaas"] },
   { kode: "abt", judul: "ABT", isi: ["suntingLangsungAbt", "cetakTigaBerkas", "gembokAbt"] },
   { kode: "portal", judul: "Portal", isi: ["checklistMilestone", "widgetKehadiran", "widgetDrafH7"] },
 ];

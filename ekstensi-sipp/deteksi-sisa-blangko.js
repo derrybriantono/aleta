@@ -1036,6 +1036,9 @@
     periksaRtf,
     periksaDocxXml,
     periksaDocxBita,
+    /* 20 Okt: dipakai pratinjau BAS/relaas (pratinjau-bas-relaas.js) untuk tampilan teks cadangan DOCX dan nama daftar masalah. */
+    ambilDariZip,
+    namaTxt,
     periksaBita,
     kenaliBentuk,
     jenisNaskahDariNama,
