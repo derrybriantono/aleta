@@ -19044,9 +19044,9 @@ function a3KartuKuasaKosong(tampil, sama, data) {
  *
  * Tidak ada yang ditulis sebelum petugas mencentang dan menekan Input ke ABT.
  */
-const P4_VAR_ECOURT = Object.freeze(["6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227", "8436", "8437", "9355", "9491", "9681", "9164", "9283", "9470", "9488", "9489", "9492", "9493", "9951", "9952", "0654", "0655"]);
+const P4_VAR_ECOURT = Object.freeze(["6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227", "8436", "8437", "9355", "9491", "9681", "9164", "9283", "9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655"]);
 /** JJ2 (18 Okt): variabel bukti - halaman yang memuatnya meminta portal membaca juga berkas bukti (daftar bukti, surat keterangan KUA). */
-const P4_VAR_BUKTI = Object.freeze(["9470", "9488", "9489", "9492", "9493", "9951", "9952", "0654", "0655"]);
+const P4_VAR_BUKTI = Object.freeze(["9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655"]);
 const ALETA_API_ISI_GUGATAN = "/aleta/api/aleta-ecourt/isi-gugatan";
 
 /** Dibaca bersama bacaan Isi dari SIPP lainnya. Diam bila server lama belum punya rutenya. */

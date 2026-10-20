@@ -58,10 +58,10 @@
   /** Keterangan saksi yang dibaca mesin: kode isian yang berasal dari keterangan saksi / posita alasan cerai. */
   const VAR_ALASAN_CERAI = Object.freeze(["0222", "5227", "0246", "9944", "7035", "1268", "8503"]);
   /** Variabel yang memicu bacaan berkas bukti e-Court (P4_VAR_BUKTI di abt.js). */
-  const VAR_BUKTI = Object.freeze(["9470", "9488", "9489", "9492", "9493", "9951", "9952", "0654", "0655"]);
+  const VAR_BUKTI = Object.freeze(["9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655"]);
   /** Variabel yang diisi dari berkas e-Court (P4_VAR_ECOURT + K5_VAR_KONTAK di abt.js): bacaan e-Court hanya diminta bila blangko memuatnya. */
   const VAR_ECOURT = Object.freeze([
-    "6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227", "8436", "8437", "9355", "9491", "9681", "9164", "9283", "9470", "9488", "9489", "9492", "9493", "9951", "9952", "0654", "0655",
+    "6055", "6054", "7120", "6071", "6072", "7778", "5110", "5111", "0007", "2004", "7084", "9881", "5227", "8436", "8437", "9355", "9491", "9681", "9164", "9283", "9470", "9488", "9489", "9492", "9493", "9804", "9805", "9810", "9834", "9835", "9840", "9873", "9951", "9952", "0654", "0655",
     "0027", "0045", "8175", "8179", "8180", "0370", "0372", "0123", "7139", "8548", "8549", "8800", "8801", "8802", "8803", "8804", "8805", "8806", "8807", "8808", "8809", "8810", "8811", "8813",
   ]);
   /** Variabel kuasa dari surat gugatan (A3_VAR_KUASA di abt.js). */
@@ -334,6 +334,9 @@
     cukup: Object.freeze({ kelas: "kuning", teks: "yakin: cukup" }),
     ragu: Object.freeze({ kelas: "abu", teks: "yakin: ragu — periksa" }),
   });
+  /** Isian yang tidak mungkin otomatis (S6): lencana "diisi manual"; `opsional` menambah "opsional - boleh kosong". */
+  const NADA_MANUAL = Object.freeze({ kelas: "abu", teks: "diisi manual" });
+  const NADA_OPSIONAL = Object.freeze({ kelas: "abu", teks: "opsional - boleh kosong" });
   const NADA_KESEPAKATAN = Object.freeze({
     sama: Object.freeze({ kelas: "hijau", teks: "kedua saksi sama" }),
     berbeda: Object.freeze({ kelas: "merah", teks: "saksi berbeda" }),
@@ -430,7 +433,33 @@
       const kode = teks(b.kode);
       const u = usulan.get(kode);
       if (!u) continue;
-      const periode = /(awal konflik|puncak|pisah rumah|sejak)/i.test(teks(b.nama)) && b.jenis === "teks";
+      // Isian yang tidak mungkin otomatis (penilaian hakim, hasil sidang, surat yang tidak tercatat di SIPP): lencana
+      // "diisi manual" + alasan di ikon keterangan; `opsional` + `labelPengguna` bagi isian yang boleh dikosongkan.
+      if (u.manual === true || teks(u.keyakinan) === "tidak_ada_sumber") {
+        if (!terdeteksi(u) && teks(u.catatan).trim()) {
+          hasil.lewati.push({ kode, sebab: "diisi manual" });
+          const opsional = u.opsional === true;
+          const label = htmlKeTeks(teks(u.labelPengguna)).slice(0, 160);
+          hasil.info[kode] = {
+            kode,
+            nilai: "",
+            golongan: "manual",
+            sebab: "diisi manual",
+            keyakinan: "tidak_ada_sumber",
+            asal: "",
+            lencana: { yakin: NADA_MANUAL, asal: opsional ? NADA_OPSIONAL : null, sepakat: null },
+            sumber: [],
+            catatan: htmlKeTeks([opsional && label ? `Opsional: ${label}.` : "", teks(u.catatan)].filter(Boolean).join(" ")).slice(0, 500),
+            bentrok: "",
+            pilihan: [],
+            ganti: false,
+            opsional,
+            labelPengguna: label,
+          };
+        }
+        continue;
+      }
+      const periode =/(awal konflik|puncak|pisah rumah|sejak)/i.test(teks(b.nama)) && b.jenis === "teks";
       const h = putuskan(u, { kosong: b.kosong !== false, bolehGanti: b.bolehGanti === true, jenis: b.jenis, opsi: b.opsi, keIso, periode, nama: b.nama });
       const butir = { kode, nilai: h.nilai, keyakinan: teks(u.keyakinan), asal: asalUsulan(u), ganti: h.ganti };
       if (h.golongan === "tulis") hasil.tulis.push(butir);
@@ -599,6 +628,8 @@
     KODE_PERIODE,
     ISIAN_PENDEK,
     NADA_TINGKAT,
+    NADA_MANUAL,
+    NADA_OPSIONAL,
     NADA_KESEPAKATAN,
     adaHtml,
     htmlKeTeks,

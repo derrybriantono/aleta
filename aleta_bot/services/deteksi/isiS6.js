@@ -493,16 +493,20 @@ function deteksiMafqud(posita, opsi = {}) {
   // 9860 Nama orang hilang
   let nama = "";
   let sumber = "";
-  const mH = /(?:mafqud|hilang|menghilang|pergi|meninggalkan)\b/i.exec(satu);
-  const kHilang = kal.find((k) => /(?:mafqud|menghilang|hilang\s+(?:tanpa|sejak)|pergi\s+meninggalkan|tidak\s+diketahui\s+keberadaan)/i.test(k));
+  const AKSI_HILANG = /(?:menghilang|hilang\s+(?:tanpa|sejak)|pergi\s+meninggalkan|meninggalkan\s+(?:rumah|tempat)|tidak\s+diketahui\s+keberadaan|tidak\s+ada\s+kabar)/i;
+  const kHilang = kal.find((k) => AKSI_HILANG.test(k) && !/^\s*Perihal/i.test(k));
   if (kHilang) {
-    const idx = kHilang.search(/(?:mafqud|menghilang|hilang\s+(?:tanpa|sejak)|pergi\s+meninggalkan|tidak\s+diketahui\s+keberadaan)/i);
+    const idx = kHilang.search(AKSI_HILANG);
     nama = namaSebelum(kHilang, idx, 120) || namaSesudah(kHilang, 0, 160);
     sumber = kHilang;
   }
-  if (!nama && mH) {
-    nama = namaSebelum(satu, mH.index, 120);
-    sumber = P.kalimatDi(satu, mH.index, mH[0].length);
+  if (!nama) {
+    // "Pemohon adalah istri sah dari X" - nama orang yang hilang sebagai pasangan/keluarga Pemohon.
+    const dari = /Pemohon(?:\s+(?:I|II))?\s+(?:adalah|merupakan)\s+(?:istri|isteri|suami|anak|ibu|ayah|bapak|saudara|kakak|adik|menantu|cucu)[^;]{0,40}?\s+dari\s+/i.exec(satu);
+    if (dari) {
+      nama = namaSesudah(satu, dari.index + dari[0].length, 80);
+      sumber = P.kalimatDi(satu, dari.index, dari[0].length);
+    }
   }
   taruh(hasil, "9860", fakta(nama, sumber, "ragu", "mafqud-nama", "Nama orang yang hilang dibaca dari kalimat kepergiannya; pastikan bukan nama Pemohon."));
 

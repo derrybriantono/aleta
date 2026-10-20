@@ -163,6 +163,18 @@ const MANUAL = Object.freeze({
   "9684": { jenis: [348, 364], alasan: "Alasan hakim bahwa perkara termasuk kewenangan Pengadilan Agama; putusan sela." },
   "9685": { jenis: [348, 364], alasan: "Isi eksepsi kewenangan yang diucapkan di sidang; diketik dari BAS." },
   "0663": { alasan: "Tanggal penetapan prodeo tidak disimpan SIPP; tertulis di penetapan prodeo." },
+  // Isian yang bacaan utamanya berkas e-Court (bila berkasnya ada, usulan e-Court menggantikan entri ini)
+  "8433": { alasan: "Alasan pencabutan diucapkan Penggugat/Pemohon di sidang; SIPP hanya mencatat pencabutan karena mediasi berhasil (itu pun hanya bila hasil mediasinya tercatat)." },
+  "8436": { alasan: "Kesimpulan Penggugat/Pemohon dibaca dari berkas kesimpulan di e-Court; bila tidak diunggah, diketik dari sidang." },
+  "8437": { alasan: "Kesimpulan Tergugat/Termohon dibaca dari berkas kesimpulan di e-Court; bila tidak diunggah, diketik dari sidang." },
+  "9881": { alasan: "Jawab-menjawab tertulis dibaca dari berkas e-Court; bila tidak ada berkasnya, jawab-menjawab dilakukan lisan dan dicatat di BAS." },
+  "9681": { jenis: [348, 364], alasan: "Isi eksepsi kewenangan dibaca dari berkas jawaban e-Court; bila diucapkan lisan, diketik dari BAS." },
+  "9355": { jenis: [370], alasan: "Pokok jawaban Tergugat dibaca dari berkas jawaban e-Court; bila lisan, diketik dari BAS." },
+  "9491": { jenis: [370], alasan: "Pokok eksepsi Tergugat dibaca dari berkas jawaban e-Court; bila lisan, diketik dari BAS." },
+  "9282": { jenis: [348], opsional: true, labelPengguna: "Putusan cerai para pihak (isi hanya bila server tidak menemukannya)", alasan: "Server mencari perkara cerai terdahulu kedua pihak di SIPP; isi hanya bila tidak ditemukan (mis. cerai di pengadilan lain): Pengadilan Agama X Nomor 12/Pdt.G/2024/PA.X tanggal 5 Maret 2024." },
+  "8618": { jenis: [369], alasan: "Tempat lahir anak umumnya hanya tertulis di akta kelahiran (berkas e-Court); posita biasanya hanya menyebut tanggal lahirnya." },
+  "8620": { jenis: [369], alasan: "Keterangan orang tua kandung diucapkan di persidangan; diketik panitera dari sidang." },
+  "8621": { jenis: [369], alasan: "Daftar alat bukti pengangkatan anak dibaca dari berkas daftar bukti e-Court; bila tidak ada, diketik dari sidang." },
 });
 
 /* ---------------------------------------------------------------------------
