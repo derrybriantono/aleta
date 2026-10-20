@@ -199,7 +199,7 @@ function lengkapi(hasil, o) {
     if (!templat.some((b) => isi.masihKosong(b && (b.jawab || b.jawaban)))) return kosong;
     const jenis = kodeJenis(k.jenisPerkara, k.alur, k.kunciKatalog);
     const dp = deteksiPosita({ ...k, jenis });
-    const tambahan = positaTambahan(k.posita, jenis);
+    const tambahan = positaTambahan(k.posita, jenis, k.petitum);
     const fakta = sertakanFaktaBersama(isi.bangunFakta({ isian: saringIsian(k.isian), sipp: k.sipp, usulan: dp.usulan, cerai: dp.cerai, tambahan, sebutan: { P: k.lawan, T: k.pelaku } }), k.faktaBersama);
     const acuan = templat.map((b, i) => ({ no: String((b && (b.no || b.urutan_pertanyaan)) || i + 1), tanya: String((b && (b.tanya || b.pertanyaan)) || ""), jawab: String((b && (b.jawab || b.jawaban)) || "") }));
     const hitungPihak = { P: 0, T: 0 };
@@ -239,7 +239,7 @@ function isiBaris(o) {
       sipp: k.sipp,
       usulan: dp.usulan,
       cerai: dp.cerai,
-      tambahan: positaTambahan(k.posita, jenis),
+      tambahan: positaTambahan(k.posita, jenis, k.petitum),
       sebutan: { P: k.lawan, T: k.pelaku },
       }),
       k.faktaBersama
@@ -276,7 +276,7 @@ function isiBaris(o) {
  * katalog di panel untuk mengisi {slot} dan variabel ABT yang masih kosong dari isian blangko > data SIPP > gugatan. Tidak pernah
  * menebak: kunci yang tidak ada di ketiga sumber tidak muncul.
  */
-const KUNCI_FAKTA_PUBLIK = ["tglNikah", "tempatNikah", "kua", "kediaman", "awalKonflik", "puncak", "puncakPeristiwa", "penyebab", "pisahSejak", "lamaPisah", "siapaPergi", "jumlahAnak", "anakNama", "anakIkutPihak", "alamatP", "alamatT", "pekerjaanP", "pekerjaanT", "upayaDamai"];
+const KUNCI_FAKTA_PUBLIK = ["tglNikah", "tempatNikah", "kua", "kediaman", "awalKonflik", "puncak", "puncakPeristiwa", "penyebab", "pisahSejak", "lamaPisah", "siapaPergi", "jumlahAnak", "anakNama", "anakIkutPihak", "alamatP", "alamatT", "pekerjaanP", "pekerjaanT", "upayaDamai", "putusanCerai", "aktaCerai", "hartaPeninggalan", "jumlahObjek", "nilaiTotalHarta", "ahliWaris", "pewarisNama", "wafatTgl", "wafatTempat"];
 function faktaPerkara(o) {
   const k = o && typeof o === "object" ? o : {};
   const hasil = {};
@@ -288,12 +288,17 @@ function faktaPerkara(o) {
       sipp: k.sipp,
       usulan: dp.usulan,
       cerai: dp.cerai,
-      tambahan: positaTambahan(k.posita, jenis),
+      tambahan: positaTambahan(k.posita, jenis, k.petitum),
       sebutan: { P: k.lawan, T: k.pelaku },
     });
     for (const kunci of KUNCI_FAKTA_PUBLIK) {
       const f = fakta.ambil(kunci);
       if (f && f.nilai) hasil[kunci] = { nilai: String(f.nilai).slice(0, 400), yakin: f.yakin, sumber: f.sumber, ket: String(f.ket || "").slice(0, 300) };
+    }
+    // 21 Okt 2026 (W2a-K1): saran keadaan perkara (butir mana yang tampil) dari posita dan petitum harta bersama / kewarisan; semuanya "ragu - periksa"
+    if ((jenis === "hb" || jenis === "waris") && String(k.posita || "").replace(/<[^>]*>/g, " ").trim()) {
+      const saran = require("./isiJawabanSaksiKebendaan").saranKeadaan(jenis, k.posita, k.petitum);
+      if (saran.length) hasil.__saranKeadaan = saran;
     }
     // upaya damai keluarga dari gugatan (bukan dari mediasi: mediasi baru diketahui sesudah sidang)
     if ((jenis === "cg" || jenis === "ct") && String(k.posita || "").replace(/<[^>]*>/g, " ").trim()) {

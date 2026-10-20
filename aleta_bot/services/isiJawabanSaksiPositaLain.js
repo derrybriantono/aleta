@@ -142,6 +142,23 @@ function perwalian(butir) {
 // Ahli waris (P3HP) dan kewarisan
 // ============================================================================
 
+/**
+ * Menambahkan fakta pola lanjutan (isiJawabanSaksiKebendaan.js, W2a-K1) pada hasil pola lama. Kunci yang sudah terbaca pola lama TIDAK ditimpa,
+ * kecuali kunci di `gantiKunci` (pola lanjutan lebih luas dan sudah diukur: lihat abt-paket/w2a-kebendaan/ukur/hasil-ukur.json).
+ */
+function gabungLanjut(hasil, ambil, gantiKunci) {
+  try {
+    const tambahan = ambil();
+    if (!Array.isArray(tambahan) || !tambahan.length) return hasil;
+    const ganti = new Set((gantiKunci || []).filter((k) => tambahan.some((x) => x.kunci === k)));
+    const dasar = hasil.filter((x) => !ganti.has(x.kunci));
+    const ada = new Set(dasar.map((x) => x.kunci));
+    return [...dasar, ...tambahan.filter((x) => !ada.has(x.kunci))];
+  } catch (_galat) {
+    return hasil;
+  }
+}
+
 function waris(butir) {
   const hasil = [];
   const mati = kematianPertama(butir);
@@ -207,11 +224,16 @@ function waris(butir) {
   return hasil;
 }
 
+/** Gugatan kewarisan (364): pola waris() ditambah pola petitum/posita lanjutan (isiJawabanSaksiKebendaan.js). Penetapan ahli waris (paw) tetap memakai waris() saja. */
+function warisGugatan(butir, petitum) {
+  return gabungLanjut(waris(butir), () => require("./isiJawabanSaksiKebendaan").warisLanjut(butir, petitum), []);
+}
+
 // ============================================================================
 // Harta bersama
 // ============================================================================
 
-function hartaBersama(butir) {
+function hartaBersama(butir, petitum) {
   const hasil = [];
   for (const b of butir) {
     const m = new RegExp(`(?:Akta\\s+Cerai|putusan)[^.;]{0,40}?(?:Nomor|No\\.?)\\s*:?\\s*([0-9A-Za-z/.\\-]{5,40})[^.;]{0,40}?(?:tanggal|tgl\\.?)\\s*(${TGL})`, "i").exec(b);
@@ -228,7 +250,7 @@ function hartaBersama(butir) {
     if (harta.length >= 3) break;
   }
   if (harta.length) hasil.push({ kunci: "hartaPeninggalan", nilai: harta.join("; "), yakin: "ragu", ket: "Objek harta dibaca dari posita dengan pola longgar; periksa kelengkapannya." });
-  return hasil;
+  return gabungLanjut(hasil, () => require("./isiJawabanSaksiKebendaan").hartaBersamaLanjut(butir, petitum), ["putusanCerai", "hartaPeninggalan"]);
 }
 
 // ============================================================================
@@ -362,7 +384,7 @@ function hakAsuh(butir) {
 const KE_FUNGSI = {
   perwalian,
   paw: waris,
-  waris,
+  waris: warisGugatan,
   hb: hartaBersama,
   hibah,
   wakaf,
@@ -376,11 +398,11 @@ const KE_FUNGSI = {
 };
 
 /** @returns {Array} fakta tambahan untuk jenis ini ([] bila jenis tidak punya pola di sini) */
-function positaLain(butir, jenis) {
+function positaLain(butir, jenis, petitum) {
   const f = KE_FUNGSI[jenis];
   if (!f) return [];
   try {
-    return f(butir);
+    return f(butir, petitum);
   } catch (_galat) {
     return [];
   }
