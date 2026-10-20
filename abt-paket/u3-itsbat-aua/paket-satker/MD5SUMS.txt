@@ -1,0 +1,18 @@
+a615ea22051b5684f02df35594f9e444 *abt-u3-itsbat-aua-PASANG.sql
+ccda421f1d64c9c64634319a483c3ceb *abt-u3-itsbat-aua-PERIKSA.sql
+07bbe0b5a58491adb547d70741f03593 *abt-u3-itsbat-aua-PRASYARAT.sql
+79ad85af123bc4c1ca5ee4965b0095b6 *abt-u3-itsbat-aua-PULIH.sql
+054fe5962bb318500963dcb499471b9b *berkas_rtf.py
+24c1ce85d99fec29b54c97d159d8dbf0 *daftar-rtf.tsv
+aea442e68bda9697dffa34b7caa43698 *daftar-singkir.tsv
+bdcb3e7bca0af17a36524f5e1d3e4c7a *pasang-satker.sh
+a5c326d76cc9930e2cefb0c7beb0699d *pulih-satker.sh
+32bd8420b341d38e396fcb8564b9af91 *uji-kueri.tsv
+01e2cb7a9d1a14dbad906e9b00975731 *rtf/derry_briantono/2 Itsbat Nikah - BAS/BAS ALUR 11 [1b] BAS 1 IN - Kabul (1x Sidang) - Tanya Jawab dari Katalog Saksi.rtf
+fbfae4351be3f3e59a08d1a98cddd27f *rtf/derry_briantono/2 Itsbat Nikah - BAS/BAS ALUR 11 [1c] BAS 1 IN - Kabul Syahadah Istifadhah (1x Sidang) - Tanya Jawab dari Katalog Saksi.rtf
+f32ab24a4156c85ba29e4a3386720598 *rtf/derry_briantono/2 Itsbat Nikah/[01d] [Kabul] IN - Format Lengkap Rukun dan Syarat per Unsur.rtf
+f9cfe0296d40efd29b485573f2396463 *rtf/derry_briantono/2 Itsbat Nikah/[01e] [Kabul] IN - Satu Pemohon (Pasangan Meninggal, Voluntair).rtf
+1b5b7c37c0cf50cc1b227b6427940317 *rtf/derry_briantono/8 Asal Usul Anak - BAS/BAS ALUR 13 [1b] BAS 1 Asal Usul Anak - Kabul - Tanya Jawab dari Katalog Saksi.rtf
+b2dfe31ce4b9254b48e7c5adc33c454f *rtf/derry_briantono/8 Asal Usul Anak/[01a] [Kabul] AUA - Perkawinan Siri Dicatat Kemudian, Anak Lahir Sebelum Pencatatan.rtf
+d7c088025f0b9913dd0618aca4f3895e *rtf/derry_briantono/8 Asal Usul Anak/[01b] [Kabul] AUA - Anak Luar Perkawinan Sah, Hubungan Perdata (Ibu Saja atau Perkawinan Siri).rtf
+f49b0202389869ceab5534a48a788cf8 *rtf/derry_briantono/8 Asal Usul Anak/[01c] [Kabul] AUA - Anak Lahir Kurang dari Enam Bulan setelah Akad Nikah.rtf
