@@ -39,6 +39,7 @@ const TABEL: Baris[] = [
   { id: "panelRingkas", kunci: "panelRingkas", bagian: "tampilan", bawaan: false, pembaca: ["panel-alat.js"] },
   { id: "tandaiHalaman", kunci: "tandaiHalaman", bagian: "sipp", bawaan: true, pembaca: ["konten.js", "panel-alat.js"] },
   { id: "sisipJadwal", kunci: "sisipJadwal", bagian: "sipp", bawaan: false, pembaca: ["konten.js"] },
+  { id: "pratinjauBasRelaas", kunci: "pratinjauBasRelaas", bagian: "sipp", bawaan: true, pembaca: ["pratinjau-bas-relaas.js"] },
   { id: "sippPenyatu", kunci: "sippPenyatu", bagian: "sipp", bawaan: true, pembaca: ["sipp-ide-m2.js"] },
   { id: "sippTampilDobel", kunci: "sippTampilDobel", bagian: "sipp", bawaan: false, pembaca: ["sipp-ide-m2.js"] },
   { id: "gembokSipp", kunci: "gembokKepalaSipp", bagian: "sipp", bawaan: false, pembaca: ["panel-alat.js"] },
