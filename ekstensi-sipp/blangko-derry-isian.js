@@ -1223,7 +1223,7 @@
         memuat: ikrar.memuat && !berkas.length,
         galat: "",
       };
-      let pos = daftar.findIndex((x) => !x.saran && /cerai\s*talak|CT/i.test(x.nama));
+      let pos = daftar.findIndex((x) => !x.saran && /cerai\s*talak|\bCT\b/i.test(x.nama));
       pos = pos >= 0 ? pos + 1 : daftar.length && daftar[0].saran ? 1 : 0;
       daftar.splice(pos, 0, grup);
     }
@@ -3116,7 +3116,7 @@
     const saranPertama = rek[0];
     const urutanSaran = S.pk ? sidangUrutan() : "";
     const peringatanSidang = b && b.jenis === "bas" && S.susunan && S.susunan.isian.some((x) => x.jenis !== "tj" && x.wajib)
-      ? `<p class="bd-catat bd-ingatsidang">Isian ketikan di bawah ini tersimpan per perkara, <b>bukan per sidang</b>: BAS sidang lain memakai isian yang sama. Cetak segera sesudah mengisi.</p>`
+      ? ikonInfo("info:persidang")
       : "";
     // Rancangan v12: [kelompok] [nama blangko] [disarankan] dalam satu kotak, lalu satu kalimat saran.
     w.innerHTML =
@@ -3124,7 +3124,7 @@
         b
           ? `<span class="bd-chip">${esc(b.judul || namaMenuTampil(b.kelompok) || NAMA_JENIS[b.jenis] || b.jenis)}</span><span class="bd-potong" title="${esc(namaTampil(b.berkas, b.jenis))} (klik dua kali untuk mengganti blangko)">${esc(namaTampil(b.berkas, b.jenis))}</span>${disaran ? `<span class="bd-chip sebagian">disarankan</span>` : ""}`
           : `<span class="bd-catat">Belum ada blangko dipilih</span>`
-      }</div><button type="button" class="bd-btn kecil${b ? "" : " utama"}" data-bd2="bukamodal">${b ? "Ganti blangko" : "Pilih blangko"}</button></div>` +
+      }</div><button type="button" class="bd-btn kecil${b ? "" : " utama"}" data-bd2="bukamodal">${b ? "Ganti blangko" : "Pilih blangko"}</button>${peringatanSidang}</div>` +
       (S.pk
         ? `<p class="bd-petunjuk" id="bd-saranblangko">${
             saranPertama
@@ -3135,8 +3135,7 @@
                 ? `Belum ada saran blangko ${esc(NAMA_SARAN_JENIS[jenisSaran] || "")} untuk sidang ke-${esc(urutanSaran)}; pilih sendiri lewat Pilih blangko.`
                 : "Pilih blangko lewat tombol Pilih blangko."
           }</p>`
-        : "") +
-      peringatanSidang;
+        : "");
   }
 
   /**
@@ -3150,8 +3149,55 @@
     if (!adm() || !/^\d{3,6}$/.test(String(kode || ""))) return "";
     return `<a class="bd-editvar" href="${esc(alamatEditVariabel(kode))}" target="_blank" rel="noopener" title="Buka pengaturan variabel #${esc(kode)}# di portal ALETA">Edit variabel ini</a>`;
   }
-  function ikonSumber(id, nm) {
-    return `<button type="button" class="bd-ikon bd-sumber" data-sumber="${esc(id)}" aria-label="Dari mana isian ${esc(nm)} ini?" aria-haspopup="dialog">ⓘ</button>`;
+  /**
+   * Satu-satunya ikon ⓘ per isian. Keterangan (`ket`, daftar kalimat) TIDAK tampil sebagai teks di kartu: ia ada di title
+   * (tip saat kursor/telaah pembaca layar) dan di gelembung yang terbuka saat ikon diklik, bersama sumber isian.
+   */
+  function ikonSumber(id, nm, ket) {
+    const k = (Array.isArray(ket) ? ket : []).filter(Boolean);
+    return `<button type="button" class="bd-ikon bd-sumber${k.length ? " ada-ket" : ""}" data-sumber="${esc(id)}" aria-label="Dari mana isian ${esc(nm)} ini?" aria-haspopup="dialog" aria-expanded="false"${k.length ? ` title="${esc(k.join(" "))}"` : ""}>ⓘ</button>`;
+  }
+  /** Keterangan umum yang bukan milik satu isian (ⓘ memakai gelembung yang sama dengan sumber isian). */
+  const INFO_UMUM = {
+    "info:persidang": {
+      label: "Keterangan: isian tersimpan per perkara, bukan per sidang",
+      judul: "Isian ini berlaku untuk perkara, bukan per sidang",
+      teks: "Isian ketikan tersimpan per perkara, bukan per sidang: BAS sidang lain memakai isian yang sama. Cetak segera sesudah mengisi.",
+    },
+  };
+  function ikonInfo(id) {
+    const x = INFO_UMUM[id];
+    return x ? `<button type="button" class="bd-ikon bd-sumber ada-ket bd-ingatsidang" data-sumber="${esc(id)}" aria-label="${esc(x.label)}" aria-haspopup="dialog" aria-expanded="false" title="${esc(x.teks)}">ⓘ</button>` : "";
+  }
+  /**
+   * Menyaring keterangan usulan untuk mata petugas: angka ukur internal ("ukur 10 Okt ... 540 dari 578 ... 93,4%") dan
+   * pengenal teknis (nama berkas aturan bertitik) dibuang; yang tersisa kalimat sumber data dan apa yang perlu diperiksa.
+   * Hanya tampilan: data usulan (S.info) tidak diubah.
+   */
+  const POLA_UKUR_KURUNG = /\s*\([^()]*(?:\b(?:ter|di)?ukur\b|\b\d+\s+dari\s+\d+\b|\d+(?:[.,]\d+)?\s*%)[^()]*\)/gi;
+  function bersihKeterangan(t) {
+    const x = String(t || "")
+      .replace(POLA_UKUR_KURUNG, "")
+      .split(/(?<=[.!?])\s+/)
+      .filter((k) => !/\b(?:ter|di)?ukur\s+\d/i.test(k) && !/\b[a-z]+(?:\.[a-z][\w-]*){2,}\b/i.test(k))
+      .join(" ");
+    return x.replace(/\s+([.,;:])/g, "$1").replace(/\s{2,}/g, " ").trim();
+  }
+  const KET_BUKTI = [
+    "Kode bukti, tanggal dan paraf Ketua Majelis ditulis otomatis. Bagian yang kosong tidak ikut ditulis.",
+    "Pada Tulis manual, kalimat dicetak apa adanya. Kodenya diganti otomatis bila urutan bukti berubah; bila tidak ditulis, kode, tanggal dan paraf Ketua Majelis ditambahkan di akhir.",
+  ];
+  /** Keterangan satu isian untuk ikon ⓘ: catatan usulan (disaring) dan selisih keterangan saksi. */
+  function ketItem(b) {
+    if (!b) return [];
+    if (b.khusus === "bukti") return KET_BUKTI.slice();
+    const i = S.info[b.kode];
+    if (!i || b.khusus || b.jenis === "tj") return [];
+    const out = [];
+    const c = bersihKeterangan(i.catatan);
+    if (c) out.push(c);
+    if (i.bentrok) out.push(`Saksi kedua mengatakan "${i.bentrok}". Selisih ini soal pembuktian, bukan soal pengisian.`);
+    return out;
   }
   /** Sumber satu isian - jujur: dari SIPP/ABT, dari gugatan (saran bawaan ABT yang dihitung), diketik, atau tanya jawab. */
   function sumberDaftar(b) {
@@ -3268,8 +3314,7 @@
       (n ? `<button type="button" class="bd-tautankecil" data-bd2="ketsumber" data-ket="${kode}" aria-expanded="${buka}">sumber (${n}) ${buka ? "▾" : "▸"}</button>` : "") +
       `<button type="button" class="bd-ikon" data-bd2="ketsemat" data-ket="${kode}" aria-pressed="${semat}" title="${semat ? "Lepas sematan isian ini" : "Sematkan isian ini (sama dengan bintang di panel ABT)"}">${semat ? "★" : "☆"}</button>` +
       `<button type="button" class="bd-ikon" data-bd2="ketriwayat" data-ket="${kode}" aria-expanded="${riw}" title="Riwayat isian ini - dengan tombol kembalikan">⟲</button></span></div>`;
-    if (i.catatan) h += `<p class="bd-catat bd-ketcatatan" title="${esc(i.catatan)}">ⓘ ${esc(i.catatan)}</p>`;
-    if (i.bentrok) h += `<p class="bd-catat bd-ketcatatan">ⓘ Saksi kedua mengatakan "${esc(i.bentrok)}". Selisih ini soal pembuktian, bukan soal pengisian.</p>`;
+    // Catatan usulan dan selisih saksi tidak lagi tampil di sini: ada di ikon ⓘ di samping judul isian (lihat ketItem).
     if (buka && n) h += `<ul class="bd-sumberlist">${i.sumber.map((s) => `<li><b>${esc(s.label)}</b> ${esc(s.kalimat)}</li>`).join("")}</ul>`;
     if (riw) h += riwayatKet(b.kode);
     return h;
@@ -3424,7 +3469,7 @@
           .join("")}</select></label>`
       : "";
     return (
-      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(b.nama)}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama)}</div>${muncul}${kepingKet(b)}` +
+      `<div class="bd-f${v.trim() ? " beres" : ""}${panjang ? " panjang" : ""}${tanda}" data-f="${b.kode}"><div class="bd-fh"><label for="bd-i${b.kode}" title="${esc(b.nama)}">${esc(b.nama)}</label>${ikonSumber(b.kode, b.nama, ketItem(b))}</div>${muncul}${kepingKet(b)}` +
       isian +
       sandingKet(b) +
       pilihBunyi +
@@ -3453,9 +3498,9 @@
   function kotakBukti(b) {
     const rows = S.bukti[b.pihak];
     const w = b.pihak;
-    if (!rows) return `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama)}</div><p class="bd-catat">Membaca bukti bawaan dari ABT…</p></div>`;
+    if (!rows) return `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama, ketItem(b))}</div><p class="bd-catat">Membaca bukti bawaan dari ABT…</p></div>`;
     return (
-      `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama)}<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(S.tersimpan[b.kode] || ""))}</span></div>` +
+      `<div class="bd-f lebar" data-f="${b.kode}"><div class="bd-fh"><label>${esc(b.nama)}</label>${ikonSumber(`bukti:${w}`, b.nama, ketItem(b))}<span class="bd-status" data-status="${b.kode}">${esc(teksStatus(S.tersimpan[b.kode] || ""))}</span></div>` +
       rows
         .map((r, i) => {
           const kode = `${w}.${i + 1}`;
@@ -3469,13 +3514,13 @@
           if (manual)
             return (
               `<div class="bd-bukti" data-manual="1">${kepala}<textarea class="bd-bmanual" data-bk="${id}" data-isi="manual" aria-label="Kalimat bukti ${kode}">${esc(r.manual)}</textarea>` +
-              `<p class="bd-catat">Kalimat ini dicetak apa adanya. Kode ${kode} diganti otomatis bila urutan bukti berubah; bila tidak ditulis, kode, tanggal dan paraf Ketua Majelis ditambahkan di akhir.</p></div>`
+              `</div>`
             );
           return (
             `<div class="bd-bukti">${kepala}` +
             `<div class="bd-bgrid"><label>Atas nama<input data-bk="${id}" data-isi="an" value="${esc(r.an || "")}" placeholder="boleh kosong"></label><label>${lblNo}<input data-bk="${id}" data-isi="no" value="${esc(r.no)}" placeholder="${esc(phNo)}"></label><label>Tanggal<input type="date" data-bk="${id}" data-isi="tgl" value="${esc(r.tgl)}"></label><label class="dua2">Dikeluarkan oleh<input data-bk="${id}" data-isi="oleh" value="${esc(r.oleh)}" placeholder="boleh kosong"></label></div>` +
             `<div class="bd-bgrid bd-bpilih"><label>Meterai<select data-bk="${id}" data-isi="meterai">${PIL_METERAI.map((o, j) => `<option value="${j}" ${Number(r.meterai) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label><label class="dua2">Dicocokkan dengan aslinya<select data-bk="${id}" data-isi="cocok">${PIL_COCOK.map((o, j) => `<option value="${j}" ${Number(r.cocok) === j ? "selected" : ""}>${o}</option>`).join("")}</select></label></div>` +
-            `<p class="bd-catat">Kode ${kode}, tanggal dan paraf Ketua Majelis ditulis otomatis. Bagian yang kosong tidak ikut ditulis.</p></div>`
+            `</div>`
           );
         })
         .join("") +
@@ -5138,17 +5183,23 @@
     if (!pop) return;
     if (!pop.hidden && popSumberJangkar === btn) return tutupSumber();
     const id = btn.getAttribute("data-sumber");
-    const it = itemSumber(id);
-    const nama = btn.getAttribute("aria-label").replace(/^Dari mana isian /, "").replace(/ ini\?$/, "");
-    const l = it ? sumberDaftar(it) : [{ t: "tangan", nama: "Diketik petugas", jelas: "Diketik petugas." }];
+    const umum = INFO_UMUM[id];
+    const it = umum ? null : itemSumber(id);
+    const nama = umum ? umum.judul : btn.getAttribute("aria-label").replace(/^Dari mana isian /, "").replace(/ ini\?$/, "");
+    const l = umum ? [] : it ? sumberDaftar(it) : [{ t: "tangan", nama: "Diketik petugas", jelas: "Diketik petugas." }];
+    const ket = umum ? [umum.teks] : ketItem(it);
     pop.innerHTML =
-      `<div class="bd-pkepala"><b>Dari mana isian ini?</b><button type="button" class="bd-ikon" data-bd2="tutupsumber" aria-label="Tutup keterangan sumber">✕</button></div><p class="bd-sumnama">${esc(nama)}</p>` +
+      `<div class="bd-pkepala"><b>${umum ? "Keterangan" : "Dari mana isian ini?"}</b><button type="button" class="bd-ikon" data-bd2="tutupsumber" aria-label="Tutup keterangan">✕</button></div><p class="bd-sumnama">${esc(nama)}</p>` +
+      (ket.length ? `<div class="bd-sumitem bd-sumket"><span class="bd-chip bd-sumchip catatan">Catatan</span>${ket.map((x) => `<p>${esc(x)}</p>`).join("")}</div>` : "") +
       l.map((x) => `<div class="bd-sumitem"><span class="bd-chip bd-sumchip ${x.t}">${esc(x.nama)}</span><p>${esc(x.jelas)}</p></div>`).join("") +
-      `<p class="bd-catat">Yang Anda ketik sendiri selalu didahulukan dan tersimpan di ABT.</p>` +
+      (umum ? "" : `<p class="bd-catat">Yang Anda ketik sendiri selalu didahulukan dan tersimpan di ABT.</p>`) +
       (it && it.jenis !== "tj" && adm() ? `<p class="bd-sumadmin">Admin: ${tautanEditVariabel(it.kode)}</p>` : "");
     popSumberJangkar = btn;
     cariSemua(".bd-sumber[aria-expanded]", wadah.akar).forEach((b) => b.setAttribute("aria-expanded", "false"));
     btn.setAttribute("aria-expanded", "true");
+    const tip = cari("#bd-tip", wadah.akar);
+    if (tip) tip.hidden = true; // gelembung yang diklik menggantikan tip kursor
+    tutupPopTtd(); // satu gelembung saja yang terbuka
     taruhPop(pop, btn);
   }
   function tutupSumber() {
@@ -5989,11 +6040,23 @@
   }
   function saatTunjuk(e) {
     const el = e.target.closest && e.target.closest(".bd-sumber");
-    if (!el || el.getAttribute("aria-expanded") === "true") return;
+    if (!el) return;
+    // Tip tema ALETA menggantikan tip bawaan peramban: title disimpan sementara supaya tidak muncul dua tip.
+    if (el.hasAttribute("title")) {
+      el.setAttribute("data-judul", el.getAttribute("title") || "");
+      el.removeAttribute("title");
+    }
+    if (el.getAttribute("aria-expanded") === "true") return;
     const tip = cari("#bd-tip", wadah.akar);
-    const it = itemSumber(el.getAttribute("data-sumber"));
-    if (!tip || !it) return;
-    tip.innerHTML = `<b>Sumber isian</b>: ${esc(sumberDaftar(it).map((x) => x.nama.toLowerCase()).join(", "))}<br><small>Klik untuk keterangannya</small>`;
+    const id = el.getAttribute("data-sumber");
+    const umum = INFO_UMUM[id];
+    const it = umum ? null : itemSumber(id);
+    if (!tip || (!it && !umum)) return;
+    const ket = umum ? [umum.teks] : ketItem(it);
+    tip.innerHTML =
+      (ket.length ? `<span class="bd-tipket">${esc(ket.join(" "))}</span>` : "") +
+      (it ? `${ket.length ? "<br>" : ""}<b>Sumber isian</b>: ${esc(sumberDaftar(it).map((x) => x.nama.toLowerCase()).join(", "))}` : "") +
+      `<br><small>Klik untuk keterangannya</small>`;
     tip.hidden = false;
     const r = el.getBoundingClientRect();
     const vw = document.documentElement.clientWidth || window.innerWidth;
@@ -6004,6 +6067,10 @@
   function saatLepas(e) {
     const el = e.target.closest && e.target.closest(".bd-sumber");
     const tip = cari("#bd-tip", wadah.akar);
+    if (el && el.hasAttribute("data-judul")) {
+      el.setAttribute("title", el.getAttribute("data-judul") || "");
+      el.removeAttribute("data-judul");
+    }
     if (el && tip) tip.hidden = true;
   }
 
@@ -6036,6 +6103,8 @@
     wadah.akar.addEventListener("keydown", saatTombol);
     wadah.akar.addEventListener("mouseover", saatTunjuk);
     wadah.akar.addEventListener("mouseout", saatLepas);
+    wadah.akar.addEventListener("focusin", saatTunjuk);
+    wadah.akar.addEventListener("focusout", saatLepas);
     S.terpasang = true;
     renderRingkasBlangko();
     renderIsian();
