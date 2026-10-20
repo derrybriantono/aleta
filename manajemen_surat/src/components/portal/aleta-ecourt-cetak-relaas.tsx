@@ -66,6 +66,12 @@ import {
   type PetaBlangkoCetak,
   type PihakPilihan,
 } from "@/app/api/aleta-ecourt/relaas-massal/cetak/nilai-cetak";
+import {
+  labelPihakRelaas,
+  labelPilihanPihakRelaas,
+  pilihanPihakRelaas,
+  selaraskanPihakRelaas,
+} from "@/lib/relaas-pihak";
 import { pecahDokumenPerPihak, pecahPilihanKeduanya } from "@/app/api/aleta-ecourt/relaas-massal/cetak/pemetaan-cetak";
 import { AletaEcourtRelaasMassal } from "@/components/portal/aleta-ecourt-relaas-massal";
 import { Badge } from "@/components/ui/badge";
@@ -271,19 +277,7 @@ export function kalimatSebabMasuk(sebab: string, tanggal: string, hariIni: strin
   }
 }
 
-function labelPihak(pihak: string, pemberitahuan: boolean) {
-  if (pihak === "keduanya") return "Kedua pihak";
-  if (pihak === "pertama") return "Pihak Pertama (P)";
-  if (pihak === "kedua") return "Pihak Kedua (T)";
-  if (pihak === "tidak-perlu") return "Tidak ada - semua pihak hadir";
-  return pemberitahuan ? "Belum diketahui siapa yang diberi tahu" : "Belum diketahui siapa yang dipanggil";
-}
-
-const LABEL_PILIHAN: Record<PihakPilihan, string> = {
-  pertama: "Pihak Pertama (P) saja",
-  kedua: "Pihak Kedua (T) saja",
-  keduanya: "Kedua pihak",
-};
+// 20 Okt: kalimat pihak dan label pilihan dari SATU aturan (lib/relaas-pihak.ts) - permohonan memakai Pemohon I/II, bukan label gugatan.
 
 /**
  * Mengapa pihaknya tidak diketahui. Keterangan bot didahulukan - ia menyebut
@@ -724,7 +718,9 @@ export function DialogCetakRelaas({
   // sebelum dinilai; gabungan 3.b hanya bila blangko per pihak tidak ada.
   const dokumen = useMemo(
     () =>
-      (data?.dokumen ?? []).flatMap((d) => pecahDokumenPerPihak(d, petaBlangko?.relaas ?? {}, petaBlangko?.pbt ?? {})),
+      (data?.dokumen ?? [])
+        .map(selaraskanPihakRelaas)
+        .flatMap((d) => pecahDokumenPerPihak(d, petaBlangko?.relaas ?? {}, petaBlangko?.pbt ?? {})),
     [data, petaBlangko]
   );
   /**
@@ -737,6 +733,7 @@ export function DialogCetakRelaas({
   const dokumenKemarin = useMemo(() => {
     const hariIniKunci = new Set(dokumen.map((d) => d.kunci));
     return (data?.hariKerjaSebelumnya?.dokumen ?? [])
+      .map(selaraskanPihakRelaas)
       .flatMap((d) => pecahDokumenPerPihak(d, petaBlangko?.relaas ?? {}, petaBlangko?.pbt ?? {}))
       .filter((d) => !hariIniKunci.has(d.kunci));
   }, [data, dokumen, petaBlangko]);
@@ -1508,7 +1505,7 @@ export function BarisDokumen({
           <p className="text-xs">
             <span className="text-muted-foreground">{pemberitahuan ? "Diberi tahu: " : "Dipanggil: "}</span>
             <span className={nilai.pihak === "tidak-diketahui" ? "font-medium text-amber-700 dark:text-amber-400" : "font-medium"}>
-              {labelPihak(nilai.pihak, pemberitahuan)}
+              {labelPihakRelaas(nilai.pihak, dok, pemberitahuan)}
             </span>
             {perluPilih && pilihan ? <span className="text-muted-foreground"> (dipilih petugas)</span> : null}
           </p>
@@ -1528,9 +1525,9 @@ export function BarisDokumen({
               aria-label={`Pihak ${pemberitahuan ? "yang diberi tahu" : "yang dipanggil"} untuk ${dok.nomorPerkara}`}
             >
               <option value="">- pilih -</option>
-              {PIHAK_PILIHAN.map((p) => (
+              {pilihanPihakRelaas(dok).map((p) => (
                 <option key={p} value={p}>
-                  {LABEL_PILIHAN[p]}
+                  {labelPilihanPihakRelaas(p, dok)}
                 </option>
               ))}
             </select>

@@ -53,6 +53,7 @@ import {
 } from "@/lib/pohon-blangko";
 
 import { uraiKunciRelaas } from "@/lib/pemetaan-blangko";
+import { strukturPihakRelaas } from "@/lib/relaas-pihak";
 
 import { blangkoMenurutPemetaan, opsiEcourtDokumen } from "./pemetaan-cetak";
 
@@ -314,6 +315,10 @@ export function nilaiCetakDokumen(
   }
   if (!PIHAK_DIKENAL.has(pihak)) {
     return tolak(`Pihak "${pihak}" tidak dikenal - pilih pihaknya dulu.`);
+  }
+  // 20 Okt: permohonan tanpa Termohon dan hanya satu Pemohon tidak punya pihak kedua - tidak dicetak dengan blangko T.
+  if ((pihak === "kedua" || pihak === "keduanya") && !strukturPihakRelaas(dokumen).adaPihakKedua) {
+    return tolak("Perkara permohonan ini tidak punya Termohon maupun Pemohon II - tidak ada pihak kedua yang dipanggil.");
   }
   if (!blangko) {
     return tolak(`Tidak ada blangko terdaftar untuk keadaan "${keadaan}" dengan pihak "${pihak}".`);

@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 
 import { tambahPengumumanItsbat } from "@/lib/pengumuman-itsbat";
+import { catatanPihakRelaas } from "@/lib/relaas-pihak";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { pastikanAksiAktor } from "@/server/modules/akses/hak-peran";
@@ -134,7 +135,9 @@ export async function GET(request: NextRequest) {
     // daftar ini dan sudah memilih blangko per sisi yang dicentang. Dialog
     // Cetak relaas portal memecahnya sendiri (pecahDokumenPerPihak) dengan
     // `petaBlangko` di bawah - 6 Okt, butir 10.
-    return ok({ ...data, dokumen, hariKerjaSebelumnya, petaBlangko });
+    // 20 Okt: catatan bot "keduanya tanpa pihak kedua (permohonan voluntair)" menyebut satu sebab untuk dua keadaan; disusun ulang dari aturan pihak yang sama.
+    const catatan = catatanPihakRelaas(data.dokumen, data.catatan);
+    return ok({ ...data, catatan, dokumen, hariKerjaSebelumnya, petaBlangko });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,

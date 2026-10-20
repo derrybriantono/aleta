@@ -1,4 +1,5 @@
 import { blangkoRelaasPerPihak, jenisPencegahanPerkawinan, keadaanUntukGolongan } from "@/lib/pohon-blangko";
+import { kunciKhususSisiRelaas, strukturPihakRelaas } from "@/lib/relaas-pihak";
 import {
   AWALAN_KUNCI_BAS_DB,
   pilihKunciRelaas,
@@ -86,16 +87,14 @@ export function permintaanUntukDokumen(dokumen: DokumenPetakan): PermintaanRelaa
   const pihak = String(dokumen.pihakDipanggil ?? "");
   if (pihak !== "pertama" && pihak !== "kedua") return { awalan, keadaan: k, khusus: "", umum: "", ...ec };
   const umum: PihakKunci = pihak === "pertama" ? "penggugat" : "tergugat";
+  // 20 Okt: kunci pihak dari SATU aturan (lib/relaas-pihak.ts) - "Pemohon II" tetap sisi kedua (blangko T), bukan Pemohon.
   const dariSebutan = sebutanKhusus(dokumen.sebutanPihak ? dokumen.sebutanPihak[pihak] : "");
   const alurPermohonan = Number(dokumen.alurPerkaraId) === 16;
-  const khusus: PihakKunci =
-    dariSebutan === "pemohon" || dariSebutan === "termohon"
+  const khusus: PihakKunci = alurPermohonan
+    ? (kunciKhususSisiRelaas(dokumen, pihak) as PihakKunci)
+    : dariSebutan === "pemohon" || dariSebutan === "termohon"
       ? dariSebutan
-      : alurPermohonan
-        ? pihak === "pertama"
-          ? "pemohon"
-          : "termohon"
-        : umum;
+      : umum;
   return { awalan, keadaan: k, khusus, umum, ...ec };
 }
 
@@ -174,6 +173,8 @@ export function pecahDokumenPerPihak<T extends DokumenPecah>(
   // I14 18 Okt: pencegahan perkawinan hanya punya satu pihak SIPP (Pemohon) - satu dokumen, blangko [JS] 11.1; tidak dipecah ke blangko T.
   if (jenisPencegahanPerkawinan(dokumen.jenisPerkaraId) && (keadaan === "sidang-pertama" || keadaan === "sidang-ditunda")) return [dokumen];
   if (keadaan !== "sidang-pertama" && keadaan !== "sidang-ditunda" && keadaan !== "pemberitahuan-putusan") return [dokumen];
+  // 20 Okt: permohonan tanpa pihak kedua (satu Pemohon, tanpa Termohon) tidak dipecah ke blangko T.
+  if (!strukturPihakRelaas(dokumen).adaPihakKedua) return [dokumen];
   const p = berkasSisi(dokumen, "pertama", petaRelaas, petaPbt);
   const t = berkasSisi(dokumen, "kedua", petaRelaas, petaPbt);
   if (!p || !t || p === t) return [dokumen];

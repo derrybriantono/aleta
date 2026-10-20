@@ -22,6 +22,8 @@
  * tambahPengumumanItsbat di bawah, ekstensi massal membaca rute yang sama).
  */
 
+import { selaraskanPihakRelaas } from "@/lib/relaas-pihak";
+
 export const JENIS_ITSBAT_NIKAH = 360;
 export const ALUR_VOLUNTAIR = 16;
 export const GOLONGAN_PENGUMUMAN_ITSBAT = "pengumuman-itsbat";
@@ -111,19 +113,9 @@ export function dokumenPengumumanItsbat<T extends DokumenSumber>(dok: T): T | nu
 export function tambahPengumumanItsbat<T extends DokumenSumber>(dokumen: T[]): T[] {
   const hasil: T[] = [];
   const sudah = new Set<string>();
-  for (const asli of dokumen) {
-    const satuPemohon =
-      asli.golongan === "sidang-pertama" &&
-      itsbatVoluntair(asli) &&
-      jumlahPemohon(asli) === 1 &&
-      asli.pihakDipanggil === "keduanya";
-    const dok: T = satuPemohon
-      ? ({
-          ...asli,
-          pihakDipanggil: "pertama",
-          keterangan: [...(asli.keterangan ?? []), "Itsbat nikah dengan satu Pemohon - hanya Pemohon yang dipanggil."],
-        } as T)
-      : asli;
+  for (const mentah of dokumen) {
+    // 20 Okt: satu aturan pihak (lib/relaas-pihak.ts) untuk SEMUA permohonan voluntair - itsbat satu Pemohon hanya satu kasus di dalamnya.
+    const dok: T = selaraskanPihakRelaas(mentah);
     hasil.push(dok);
     const p = dokumenPengumumanItsbat(dok);
     if (!p || sudah.has(String(dok.perkaraId))) continue;

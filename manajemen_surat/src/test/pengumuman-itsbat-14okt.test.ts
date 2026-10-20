@@ -135,7 +135,9 @@ describe("aturan: hanya sidang pertama itsbat VOLUNTAIR", () => {
       bot({ perkaraId: 904, golongan: "pemberitahuan-putusan", d: null, pihakKe: 1, pihakDipanggil: "pertama" }),
       bot({ perkaraId: 905, jenisPerkaraId: 358 }),
     ];
-    expect(tambahPengumumanItsbat(daftar)).toEqual(daftar);
+    // 20 Okt: sebutanPihak diselaraskan (Pemohon I/II) - yang dijaga: tidak ada dokumen pengumuman, golongan dan pihak tetap.
+    const ringkas = (d: any[]) => d.map((x) => `${x.perkaraId}|${x.golongan}|${x.pihakDipanggil}`);
+    expect(ringkas(tambahPengumumanItsbat(daftar))).toEqual(ringkas(daftar));
   });
 
   it("jumlah Pemohon tak terbaca (bot lama): 2P, keterangannya menyebut; satu pengumuman per perkara", () => {
