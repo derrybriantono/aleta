@@ -51,7 +51,7 @@ def G(*xs):
 # Tanggal acuan umur: tanggal putusan bila sudah ada, selain itu hari ini
 REF = "IF(IFNULL(pp.tanggal_putusan, '0000-00-00') > '1000-01-01', pp.tanggal_putusan, CURDATE())"
 # Anak bernama dengan tanggal lahir sah
-ANAK = ("perkara_anak_pihak a WHERE a.perkara_id = '#perkara_id#' AND TRIM(IFNULL(a.nama_anak, '')) <> '' AND IFNULL(a.tanggal_lahir, '0000-00-00') > '1000-01-01'")
+ANAK = ("perkara_anak_pihak a WHERE a.perkara_id = '#perkara_id#' AND TRIM(IFNULL(a.nama_anak, '')) <> '' AND IFNULL(a.tanggal_lahir, '0000-00-00') > '1000-01-01' AND a.tanggal_lahir <= CURDATE()")
 TGL_REF = "(SELECT %s FROM (SELECT 1) z LEFT JOIN perkara_putusan pp ON pp.perkara_id = '#perkara_id#' LIMIT 1)" % REF
 
 
@@ -147,14 +147,25 @@ def _angka(n):
     return "CAST(SUBSTRING_INDEX(REPLACE(REPLACE(REPLACE(LOWER(" + SK(n) + "), 'rp', ''), '.', ''), ' ', ''), ',', 1) AS UNSIGNED)"
 
 
+def SB(x):
+    """' setiap bulan' hanya bila isian x belum menyebutnya."""
+    return "IF(LOCATE('setiap bulan', " + x + ") > 0, '', ' setiap bulan')"
+
+
+_AWAL_DIMOHON = '<br>Menimbang, bahwa jumlah nafkah #9302# tersebut yang dimohon #0046# adalah '
+_TENGAH_BEDA = ', sedangkan setelah #8554# mempertimbangkan kebutuhan dasar hidup #9302# tersebut serta kemampuan #0047# sebagaimana fakta hukum di atas, jumlah yang patut dan layak ditetapkan adalah '
 v(4900, 'NAFKAH ANAK: PERTIMBANGAN JUMLAH DIMOHON DAN DITETAPKAN (OTOMATIS: isian 4899 dan 9740; sama = sesuai; rendah = selebihnya ditolak; tinggi = [PERIKSA]; kosong = tidak tercetak)', 'data_sql',
   "SELECT CASE WHEN " + T(4899) + " = '' OR " + T(9740) + " = '' THEN '' "
+  # kedua jumlah terbaca sebagai angka: bandingkan angka
   "WHEN " + _angka(4899) + " > 0 AND " + _angka(9740) + " > " + _angka(4899) + " THEN " + lit('<br>[PERIKSA: jumlah nafkah anak yang ditetapkan pada isian 9740 lebih besar dari jumlah yang dimohon pada isian 4899; periksa kedua isian karena putusan tidak boleh melebihi tuntutan kecuali ada dasar hukumnya]') + " "
-  "WHEN LOWER(" + T(4899) + ") = LOWER(" + T(9740) + ") OR (" + _angka(4899) + " > 0 AND " + _angka(9740) + " = " + _angka(4899) + ") THEN CONCAT(" + lit('<br>Menimbang, bahwa jumlah nafkah #9302# tersebut yang dimohon #0046# adalah ') + ", " + T(4899)
-  + ", " + lit(' setiap bulan, dan setelah #8554# mempertimbangkan kebutuhan dasar hidup #9302# tersebut serta kemampuan #0047# sebagaimana fakta hukum di atas, jumlah tersebut patut dan layak sehingga ditetapkan sesuai permohonan;') + ") "
-  "ELSE CONCAT(" + lit('<br>Menimbang, bahwa jumlah nafkah #9302# tersebut yang dimohon #0046# adalah ') + ", " + T(4899)
-  + ", " + lit(', sedangkan setelah #8554# mempertimbangkan kebutuhan dasar hidup #9302# tersebut serta kemampuan #0047# sebagaimana fakta hukum di atas, jumlah yang patut dan layak ditetapkan adalah ') + ", " + T(9740)
-  + ", " + lit(' setiap bulan, sehingga permohonan mengenai jumlah selebihnya patut ditolak;') + ") END AS data")
+  "WHEN " + _angka(4899) + " > 0 AND " + _angka(9740) + " = " + _angka(4899) + " THEN CONCAT(" + lit(_AWAL_DIMOHON) + ", " + T(4899)
+  + ", " + SB(T(4899)) + ", " + lit(', dan setelah #8554# mempertimbangkan kebutuhan dasar hidup #9302# tersebut serta kemampuan #0047# sebagaimana fakta hukum di atas, jumlah tersebut patut dan layak sehingga ditetapkan sesuai permohonan;') + ") "
+  "WHEN " + _angka(4899) + " > 0 AND " + _angka(9740) + " > 0 THEN CONCAT(" + lit(_AWAL_DIMOHON) + ", " + T(4899)
+  + ", " + lit(_TENGAH_BEDA) + ", " + T(9740) + ", " + SB(T(9740)) + ", " + lit(', sehingga permohonan mengenai jumlah selebihnya patut ditolak;') + ") "
+  # tidak dapat dibandingkan sebagai angka: sama persis = sesuai, selain itu uraikan keduanya tanpa menyimpulkan selisih
+  "WHEN LOWER(" + T(4899) + ") = LOWER(" + T(9740) + ") THEN CONCAT(" + lit(_AWAL_DIMOHON) + ", " + T(4899)
+  + ", " + lit(', dan setelah #8554# mempertimbangkan kebutuhan dasar hidup #9302# tersebut serta kemampuan #0047# sebagaimana fakta hukum di atas, jumlah tersebut patut dan layak sehingga ditetapkan sesuai permohonan;') + ") "
+  "ELSE CONCAT(" + lit(_AWAL_DIMOHON) + ", " + T(4899) + ", " + lit(_TENGAH_BEDA) + ", " + T(9740) + ", " + lit(';') + ") END AS data")
 
 # Nafkah anak: ayah hanya mampu sebagian, ibu ikut memikul sisanya (Pasal 41 huruf b UU 1/1974) - dipakai di pertimbangan Kabul Sebagian
 v(4901, 'NAFKAH ANAK (KABUL SEBAGIAN): FAKTA AYAH HANYA MAMPU SEBAGIAN - ISIAN sesudah "fakta bahwa" (mis. ayah tidak berpenghasilan tetap atau sakit), tanpa titik akhir; kosong = tidak tercetak', 'data_teks')
