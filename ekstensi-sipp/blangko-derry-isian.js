@@ -3201,7 +3201,7 @@
           continue;
         }
         const g = K.gabung(t.rows, sk.baris, { gantiDaftar: o.gantiDaftar === true });
-        if (ktAdaIsi(t.rows) && g.dipertahankan + g.diganti === 0 && o.gantiDaftar !== true) {
+        if (ktAdaIsi(t.rows) && g.dipertahankan + g.diganti === 0 && o.gantiDaftar !== true && !t.rows.some((r) => r.butir)) {
           S.sk.status[k] = { teks: "Daftar pertanyaan ini bukan susunan katalog. Pilih set pertanyaan katalog di atas lalu tekan Muat bila ingin menyusunnya; jawaban yang sudah Anda ketik tetap dipertahankan." };
           continue;
         }

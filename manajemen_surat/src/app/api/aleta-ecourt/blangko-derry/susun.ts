@@ -488,17 +488,18 @@ export function rujukan(d: Definisi): string[] {
  * Yang berawalan "Keterangan" = daftar butir (dicetak di putusan); selainnya ("TanyaJwb ...", "Jawaban Lisan
  * Tergugat", "Replik Lisan ...") = penyunting tanya jawab ABT.
  */
-export function kunciTanyaJawab(nama: string): { kunci: string; peran: "tanyajawab" | "keterangan"; sebutan: string } {
+export function kunciTanyaJawab(nama: string, sebutan: { P: string; T: string } = { P: "Penggugat", T: "Tergugat" }): { kunci: string; peran: "tanyajawab" | "keterangan"; sebutan: string } {
   const p = polosHtml(nama);
   const keterangan = /^keterangan\b/i.test(p);
   const sisa = p.replace(/^(tanya\s*jwb|tanya\s*jawab|keterangan)\s*/i, "").trim();
   const kunci = sisa.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  return { kunci, peran: keterangan ? "keterangan" : "tanyajawab", sebutan: sebutSaksi(sisa) };
+  return { kunci, peran: keterangan ? "keterangan" : "tanyajawab", sebutan: sebutSaksi(sisa, sebutan) };
 }
 
-function sebutSaksi(sisa: string): string {
+/** "Saksi 1 P" -> "Saksi 1 Pemohon" pada permohonan, "Saksi 1 Penggugat" pada gugatan (sebutan menurut nomor alur/jenis, bukan kata). */
+function sebutSaksi(sisa: string, sebutan: { P: string; T: string }): string {
   const m = sisa.match(/^Saksi\s*(\d+)\s*([PT])\b/i);
-  if (m) return `Saksi ${m[1]} ${m[2].toUpperCase() === "P" ? "Penggugat" : "Tergugat"}`;
+  if (m) return `Saksi ${m[1]} ${m[2].toUpperCase() === "P" ? sebutan.P : sebutan.T}`;
   return sisa;
 }
 
@@ -607,7 +608,7 @@ export function susunIsian(
     const bawaanLiteral = d.bawaan && !/#\d{4,5}#/.test(d.bawaan) ? d.bawaan.trim() : "";
     let tj: ButirIsian["tj"] = null;
     if (jenis === "tj") {
-      const t = kunciTanyaJawab(d.nama);
+      const t = kunciTanyaJawab(d.nama, sebutan);
       const kodeSunting = t.peran === "tanyajawab" ? k : penyunting.get(t.kunci) || "";
       // Satu tombol per saksi: pasangan Keterangan/TanyaJwb saksi yang sama tidak diulang.
       if (tjAda.has(t.kunci)) {
