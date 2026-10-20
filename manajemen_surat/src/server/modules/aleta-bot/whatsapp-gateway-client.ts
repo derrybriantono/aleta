@@ -155,6 +155,11 @@ export type GatewayResult<T> =
        * "ditolak" dari "tidak terjangkau" membaca ini, bukan teks galatnya.
        */
       kode?: string;
+      /**
+       * Badan JSON penolakan bot apa adanya (rincian per langkah penetapan,
+       * pemegang kunci, dan sejenisnya). Tambahan: pemanggil lama mengabaikannya.
+       */
+      badan?: Record<string, unknown>;
     };
 
 /**
@@ -250,6 +255,7 @@ async function gatewayFetch<T>(
         // "bot tidak dapat dihubungi" - dan petugas memeriksa bot yang sehat.
         status: response.status,
         ...(typeof json.kode === "string" && json.kode ? { kode: json.kode } : {}),
+        badan: json,
       };
     }
 
@@ -4276,6 +4282,8 @@ export async function kirimPenetapanTulisRantaiGateway(payload: {
   /** Keputusan 104: tanya dulu bila di luar jam kerja / pilihan petugas. */
   tanyaJamKerja?: boolean;
   jamKerja?: "antrekan" | "sekarang";
+  /** Token kunci perkara yang sudah dipegang pemanggil (kerjakan penetapan); bot memperpanjangnya. */
+  kunciToken?: string;
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/tulis-rantai", {
     method: "POST",
@@ -4299,6 +4307,8 @@ export async function kirimPenetapanHapusGateway(payload: {
   operator: string;
   kering: boolean;
   ip?: string;
+  /** "bongkar" - hanya dikirim tombol Bongkar yang ditekan pengguna; tanpanya bot menolak membongkar sungguhan. */
+  perintahPengguna?: string;
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/hapus", {
     method: "POST",
@@ -4454,8 +4464,43 @@ export async function kirimPenetapanHapusSemuaGateway(payload: {
   operator: string;
   kering: boolean;
   ip?: string;
+  /** Lihat kirimPenetapanHapusGateway. */
+  perintahPengguna?: string;
 }) {
   return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/hapus-semua", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Keadaan penetapan satu perkara - SATU sumber (bot: penetapanKeadaanService)
+ * untuk kartu Penetapan, tombol halaman SIPP, dan penanda baris daftar.
+ */
+export async function bacaKeadaanPenetapanGateway(payload: { perkaraId?: number; nomorPerkara?: string }) {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/keadaan", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Mengambil / memperpanjang kunci penetapan satu perkara (masa berlaku di bot). */
+export async function ambilKunciPenetapanGateway(payload: {
+  perkaraId: number;
+  operator: string;
+  tujuan?: string;
+  ttlDetik?: number;
+  /** Token lama yang masih dipegang - diperpanjang, tidak ditolak oleh dirinya sendiri. */
+  token?: string;
+}) {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/kunci", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function lepasKunciPenetapanGateway(payload: { perkaraId: number; token: string }) {
+  return gatewayFetch<Record<string, unknown>>("/internal/aleta-bot/penetapan/kunci/lepas", {
     method: "POST",
     body: JSON.stringify(payload),
   });

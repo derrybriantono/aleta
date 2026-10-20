@@ -79,6 +79,14 @@ export async function POST(request: NextRequest) {
 
     const kering = badan.kering !== false;
 
+    // Membongkar sungguhan HANYA atas perintah eksplisit pengguna: tombol
+    // Bongkar mengirim perintahPengguna:"bongkar". Mode otomatis dan jalur lain
+    // tidak pernah mengirimnya, jadi tidak pernah membongkar.
+    const perintahPengguna = String(badan.perintahPengguna || "") === "bongkar" ? "bongkar" : "";
+    if (!kering && !perintahPengguna) {
+      return Response.json({ ok: false, alasan: "bongkar_tanpa_perintah" }, { status: 400 });
+    }
+
     const respons = await kirimPenetapanHapusGateway({
       jenis,
       perkaraId,
@@ -87,6 +95,7 @@ export async function POST(request: NextRequest) {
       operator,
       kering,
       ip: alamatIpPeramban(request),
+      perintahPengguna,
     });
 
     return Response.json(respons, { status: respons?.ok === false ? 409 : 200 });
