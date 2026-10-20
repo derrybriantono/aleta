@@ -128,6 +128,8 @@ function relevan(b, jenis, alur, perkara) {
   if (/Pencegahan Perkawinan/i.test(berkas)) return false;
   if (/Pengumuman Permohonan Itsbat/i.test(berkas)) return jenis === 360 && String(alur) === "16";
   if (/Ikrar Talak/i.test(berkas)) return jenis === 346;
+  // Blangko ikrar hanya untuk cerai talak (nama berkas/folder memuat "ikrar" juga pada folder cerai gugat: tidak berlaku).
+  if (kategoriBlangko(b) === "ikrar") return jenis === 346;
   if (/^97 Sita/.test(b.folder) || /Sita/i.test(berkas)) return /sita/i.test(`${perkara.petitum || ""} ${perkara.posita || ""}`);
   if (/Mediator|Mediasi/i.test(berkas) && /Relaas/.test(b.folder)) return true;
   return true;
@@ -137,6 +139,7 @@ function blangkoUntuk(j, a, perkara) {
   return daftarCek.blangko.filter((b) => {
     const pf = petaFolder(b.folder);
     if (pf.universal) return relevan(b, j, a, perkara);
+    if (kategoriBlangko(b) === "ikrar" && j !== 346) return false;
     return pf.freq.includes(kunci);
   });
 }

@@ -16,6 +16,8 @@
  * bot (abt.semuaVariabel) atau salinan kamus ALETA.
  */
 
+import { ISIAN_MANUAL, ISIAN_OPSIONAL } from "./isian-metadata";
+
 export type Definisi = { kode: string; nama: string; jenis: string; sql: string; bawaan: string };
 export type JenisIsian = "teks" | "tanggal" | "tj";
 export type ButirIsian = {
@@ -48,6 +50,18 @@ export type ButirIsian = {
   /** Pilihan bernilai (mis. 7139: "1"/"2") - layar menampilkan label, ABT menyimpan nilai. */
   opsi: Array<{ nilai: string; label: string }>;
   tj: null | { kunci: string; sebutan: string; peran: "tanyajawab" | "keterangan"; kodeSunting: string };
+  /**
+   * 20 Okt (S3): isian tambahan "bila ada" (mis. #9134# petunjuk perbaikan permohonan) - layar memindahkannya ke bagian tertutup
+   * "Isian tambahan (bila ada)" dengan labelPengguna. Hanya ada pada isian yang opsional.
+   */
+  opsional?: boolean;
+  labelPengguna?: string;
+  /**
+   * 20 Okt (S3): isian yang tidak mungkin terisi otomatis (penilaian majelis / fakta persidangan yang tidak dicatat SIPP):
+   * ditandai "diisi manual" dengan alasannya (ikon ⓘ). Pengisi otomatis tetap menang bila menemukan nilai.
+   */
+  manual?: boolean;
+  alasanManual?: string;
 };
 export type Keadaan = "" | "kuasaP" | "kuasaT" | "prodeo" | "alasanC" | "alasanH" | "ghaib" | "ecourt" | "insidentil";
 export type Susunan = {
@@ -137,6 +151,7 @@ const RAMAH: Record<string, { nm: string; pil?: string[]; saran?: string; opsi?:
   "1232": { nm: "Tanggal surat" },
   "5230": { nm: "Ongkos panggilan permintaan bantuan" },
   "8712": { nm: "Nomor dan tanggal surat teguran panitera" },
+  "9134": { nm: ISIAN_OPSIONAL["9134"] },
   "8713": { nm: "Batas waktu menambah panjar" },
   "8714": { nm: "Nomor dan tanggal laporan panjar tidak ditambah" },
   "8729": { nm: "Penilaian keterangan saksi dan fakta yang tidak terbukti" },
@@ -646,6 +661,8 @@ export function susunIsian(
       keadaan,
       tingkat,
       opsi: (r && r.opsi) || [],
+      ...(ISIAN_OPSIONAL[k] ? { opsional: true, labelPengguna: ISIAN_OPSIONAL[k] } : {}),
+      ...(ISIAN_MANUAL[k] ? { manual: true, alasanManual: ISIAN_MANUAL[k] } : {}),
     });
   }
   isian.sort((a, b) => urutanKode(a, urutanRtf) - urutanKode(b, urutanRtf) || a.kode.localeCompare(b.kode));

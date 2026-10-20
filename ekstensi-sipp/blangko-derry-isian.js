@@ -1789,7 +1789,7 @@
         const daftar = perlu();
         const rencana = mesin.rencanakan(
           usulan,
-          daftar.map((b) => ({ kode: b.kode, nama: b.nama, jenis: b.jenis, opsi: b.opsi, kosong: sedangKosong(b), bolehGanti: bolehGantiMentah(b, jejak) })),
+          daftar.map((b) => ({ kode: b.kode, nama: b.nama, jenis: b.jenis, opsi: b.opsi, kosong: sedangKosong(b), bolehGanti: bolehGantiMentah(b, jejak), manual: b.manual === true, alasanManual: b.alasanManual || "" })),
           keIso,
           usulanSumber
         );

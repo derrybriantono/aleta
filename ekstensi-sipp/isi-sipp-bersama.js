@@ -417,6 +417,24 @@
     return { golongan: "tulis", nilai, sebab: yakin, ganti };
   }
 
+  /** Bahan tampilan isian yang "diisi manual": lencana abu "diisi manual", tanpa sumber, alasan di catatan (ikon ⓘ). */
+  function infoManual(kode, alasan) {
+    return {
+      kode,
+      nilai: "",
+      golongan: "manual",
+      sebab: "diisi manual",
+      keyakinan: "",
+      asal: "",
+      lencana: { yakin: { kelas: "abu", teks: "diisi manual" }, asal: null, sepakat: null },
+      sumber: [],
+      catatan: htmlKeTeks(teks(alasan)).slice(0, 500),
+      bentrok: "",
+      pilihan: [],
+      ganti: false,
+    };
+  }
+
   /**
    * Rencana isian untuk satu blangko.
    *   usulan  : Map kode -> usulan terbaik (pilihPerKode)
@@ -429,9 +447,21 @@
     for (const b of katalog || []) {
       const kode = teks(b.kode);
       const u = usulan.get(kode);
-      if (!u) continue;
+      // 20 Okt (S3): isian yang tidak mungkin terisi otomatis diberi tanda "diisi manual" dan alasannya - tidak dibiarkan kosong tanpa kabar.
+      if (!u) {
+        if (b.manual === true && b.kosong !== false && teks(b.alasanManual).trim()) hasil.info[kode] = infoManual(kode, b.alasanManual);
+        continue;
+      }
       const periode = /(awal konflik|puncak|pisah rumah|sejak)/i.test(teks(b.nama)) && b.jenis === "teks";
       const h = putuskan(u, { kosong: b.kosong !== false, bolehGanti: b.bolehGanti === true, jenis: b.jenis, opsi: b.opsi, keIso, periode, nama: b.nama });
+      // Pengisi menyatakan terus terang "tidak ada sumber" (mis. nomor SK prodeo) atau isian ditandai manual dan tak ada nilai: tanda "diisi manual".
+      if (h.golongan === "lewati" && h.sebab === "tidak terdeteksi" && b.kosong !== false) {
+        const alasan = htmlKeTeks(teks(u.catatan)).trim() || teks(b.alasanManual).trim();
+        if (alasan && (teks(u.keyakinan) === "tidak_ada_sumber" || b.manual === true)) {
+          hasil.info[kode] = infoManual(kode, alasan);
+          continue;
+        }
+      }
       const butir = { kode, nilai: h.nilai, keyakinan: teks(u.keyakinan), asal: asalUsulan(u), ganti: h.ganti };
       if (h.golongan === "tulis") hasil.tulis.push(butir);
       else if (h.golongan === "saran") hasil.saran.push(butir);
@@ -622,6 +652,7 @@
     kutipanUsulan,
     putuskan,
     rencanakan,
+    infoManual,
     usulanTanggalKtp,
     saranElitigasi,
     kumpulkan,
