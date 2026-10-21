@@ -982,10 +982,20 @@ function bersihkanKeteranganSaksi(teks, pertanyaan) {
   const rapat = String(teks || "").replace(/^[\s\-–•]+/, "").replace(/\s+/g, " ").trim();
   if (rapat && (POLA_PENUTUP_UTUH.test(rapat) || adalahKalimatPenutupSaksi(rapat, pertanyaan))) return "";
   const baris = String(teks || "").replace(/\r\n/g, "\n").split("\n");
-  const disimpan = baris.filter((satu) => {
+  // 21 Okt (x6): baris penutup dibuang HANYA bila berdiri sesudah kalimat yang selesai (baris sebelumnya
+  // berakhir ; . ! ? :) dan ia sendiri berakhir dengan tanda itu atau baris terakhir. Baris yang terbelah di
+  // tengah kalimat ("... tidak" / "cukup;") bukan penutup: dulu "nafkah ... tidak\ncukup;" terpotong jadi
+  // "... tidak" (ukur 69.427 jawaban nyata: 1 kasus). Cermin isian_rtf_saring_penutup (SQL) di paket x6.
+  let sebelumSelesai = true;
+  const disimpan = baris.filter((satu, i) => {
     const bersih = satu.replace(/^[\s\-–•]+/, "").replace(/\s+/g, " ").trim();
     if (bersih === "") return true; // baris kosong diurus di bawah
-    return !POLA_PENUTUP.some((pola) => pola.test(bersih)) && !adalahKalimatPenutupSaksi(bersih, pertanyaan);
+    const selesai = /[;.!?:]$/.test(bersih);
+    const terakhir = baris.slice(i + 1).every((x) => x.trim() === "");
+    const penutup = POLA_PENUTUP.some((pola) => pola.test(bersih)) || adalahKalimatPenutupSaksi(bersih, pertanyaan);
+    if (penutup && sebelumSelesai && (selesai || terakhir)) return false;
+    sebelumSelesai = selesai;
+    return true;
   });
 
   return disimpan
@@ -3674,6 +3684,26 @@ const VAR_NAMA_SAKSI = Object.freeze({
 /* === AKHIR SAKSI-N === */
 
 /**
+ * 21 Okt (x6): variabel "Keterangan Saksi N" (tanya-jawab, isi butir "- Bahwa ...") yang dirapikan Rapikan dan
+ * Input ke ABT - dulu hanya 2021/2022 (saksi 1-2 Penggugat), sehingga kalimat penutup saksi ke-3 ke atas dan
+ * seluruh saksi Tergugat tinggal di putusan. Tersimpan per NAMA saksi di abt_keterangan_saksi, jadi variabel
+ * "TanyaJwb Saksi N" (tabel BAS) berbagi data yang sama dan tidak perlu didaftar di sini.
+ */
+const VAR_KETERANGAN_SAKSI = Object.freeze({
+  P: Object.freeze(["2021", "2022", "2031", "8920", "8932"]),
+  T: Object.freeze(["2023", "2024", "2032", "8942"]),
+});
+function kodeKeteranganSaksi() {
+  return [...VAR_KETERANGAN_SAKSI.P, ...VAR_KETERANGAN_SAKSI.T];
+}
+function namaKeteranganSaksi(kode) {
+  const p = VAR_KETERANGAN_SAKSI.P.indexOf(kode);
+  if (p >= 0) return `Keterangan saksi ${p + 1}`;
+  const t = VAR_KETERANGAN_SAKSI.T.indexOf(kode);
+  return t >= 0 ? `Keterangan saksi ${t + 1} Tergugat` : `Keterangan saksi ${kode}`;
+}
+
+/**
  * 1.184.0 (5 Okt, butir 23): "Susun keterangan saksi" juga dari halaman
  * blangko perkara ABT yang memakai variabel tanya-jawab saksi LAIN.
  *
@@ -4175,8 +4205,42 @@ async function muatTemplatAbt(kodeTemplat, urutan) {
   }));
 }
 
+/**
+ * 21 Okt (x6): kalimat penutup pemeriksaan saksi ("Sudah cukup;" jawaban atas "Apakah masih ada yang ingin
+ * Saudara sampaikan?") tidak pernah ikut tertulis ke ABT. Templat ABT membawanya sebagai jawaban bawaan di
+ * SETIAP kumpulan (04, A1, DK1, ...), jadi "Susun keterangan saksi" yang memuat templat lalu menyimpan
+ * semua barisnya menulis "Sudah cukup;" ke abt_keterangan_saksi - dan ABT mencetaknya di putusan dan BAS.
+ * Baris yang jawabannya SELURUHNYA penutup dibuang (pertanyaan ikut hilang, sama seperti Rapikan); jawaban
+ * yang hanya SEBAGIAN barisnya penutup dipotong; selebihnya tidak disentuh. Nomor dihitung ulang.
+ *
+ * @param baris [{no, tanya, jawab}]
+ * @returns {{baris: Array, dibuang: number}}
+ */
+function saringBarisPenutup(baris) {
+  const hasil = [];
+  let dibuang = 0;
+  for (const x of Array.isArray(baris) ? baris : []) {
+    const asli = String((x && x.jawab) || "");
+    if (!asli.trim()) {
+      hasil.push(x);
+      continue;
+    }
+    const bersih = bersihkanKeteranganSaksi(asli, String((x && x.tanya) || ""));
+    if (!bersih.trim()) {
+      dibuang += 1;
+      continue;
+    }
+    const berubah = bersih.replace(/\s+/g, " ") !== asli.replace(/\s+/g, " ").trim();
+    hasil.push(berubah ? { ...x, jawab: bersih } : x);
+  }
+  if (dibuang > 0) return { baris: hasil.map((x, i) => ({ ...x, no: String(i + 1) })), dibuang };
+  return { baris: hasil, dibuang };
+}
+
 /** Menulis satu daftar tanya-jawab ke ABT lewat rute simpannya sendiri. */
-async function kirimTanyaJawab(kodeVariabel, urutan, baris) {
+async function kirimTanyaJawab(kodeVariabel, urutan, barisMasuk) {
+  const saring = saringBarisPenutup(barisMasuk);
+  const baris = saring.baris;
   const badan = new URLSearchParams();
   badan.set("data", JSON.stringify(baris));
   await a2JedaTulis("simpan", alamatTanyaJawab(kodeVariabel, true, urutan));
@@ -4195,7 +4259,11 @@ async function kirimTanyaJawab(kodeVariabel, urutan, baris) {
       pesan: `ABT tidak mengatakan tersimpan: ${jawab.replace(/<[^>]*>/g, " ").trim().slice(0, 160)}`,
     };
   }
-  return { ok: true, pesan: `${baris.length} tanya-jawab tersimpan.` };
+  return {
+    ok: true,
+    penutupDibuang: saring.dibuang,
+    pesan: `${baris.length} tanya-jawab tersimpan.` + (saring.dibuang ? ` Kalimat penutup ("Sudah cukup" dan sejenisnya) tidak ikut disimpan: ${saring.dibuang} baris.` : ""),
+  };
 }
 
 /** Templat yang paling mungkin dimaksud, menurut blangko yang dibuka. */
@@ -5142,7 +5210,7 @@ function susunPanelAbt(jatiDiri) {
         );
       }
     }
-    for (const kode of [VAR_SAKSI_1, VAR_SAKSI_2]) {
+    for (const kode of kodeKeteranganSaksi()) {
       const item = peta.get(kode);
       if (!item) continue;
       const asli = item.selNilai.innerText;
@@ -5150,7 +5218,7 @@ function susunPanelAbt(jatiDiri) {
       if (bersih && bersih !== asli.trim()) {
         rencana.push({
           kode,
-          nama: `Keterangan saksi ${kode === VAR_SAKSI_1 ? 1 : 2}`,
+          nama: namaKeteranganSaksi(kode),
           sebelum: asli,
           sesudah: bersih,
         });
@@ -5203,7 +5271,7 @@ function susunPanelAbt(jatiDiri) {
             // Teks lama diambil dari SIPP, bukan dari yang tergambar di
             // halaman - riwayat perubahan harus memuat yang benar-benar ada.
             if (hasil.ok && hasil.sebelum) r.sebelum = hasil.sebelum;
-          } else if (r.kode === VAR_SAKSI_1 || r.kode === VAR_SAKSI_2) {
+          } else if (kodeKeteranganSaksi().includes(r.kode)) {
             hasil = await simpanKeteranganSaksi(r.kode);
           } else {
             hasil = await simpanVariabel(r.kode, r.sesudah, jatiDiri);
@@ -16732,7 +16800,7 @@ async function a1BacaRapi(k) {
       hasil.catatan.push(`Posita rapi tidak dapat dipratinjau: ${sorePesan(galat)}`);
     }
   }
-  for (const kode of [VAR_SAKSI_1, VAR_SAKSI_2]) {
+  for (const kode of kodeKeteranganSaksi()) {
     const item = peta.get(kode);
     if (!item) continue;
     const asli = String(item.selNilai.innerText || "");
@@ -16740,7 +16808,7 @@ async function a1BacaRapi(k) {
     if (bersih && bersih !== asli.trim()) {
       hasil.butir.push({
         kode,
-        nama: `Keterangan saksi ${kode === VAR_SAKSI_1 ? 1 : 2}`,
+        nama: namaKeteranganSaksi(kode),
         sebelum: asli,
         sesudah: bersih,
         ket: "Kalimat penutup (\"Bahwa sudah cukup\" dan sejenisnya) dibuang - disimpan lewat tanya-jawab ABT; pertanyaannya tidak disentuh.",

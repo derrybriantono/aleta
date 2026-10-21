@@ -728,6 +728,11 @@ function abtKlienBuat(opsi) {
       if (!Array.isArray(baris)) return gagal("baris harus larik.");
       if (baris.length === 0 && !bolehKosong) return gagal("Daftar kosong akan MENGHAPUS keterangan - perlu bolehKosong:true.");
       if (!lewatiCekSidang && !(await klien.sidangAda(perkaraId, sidang))) return gagal(`Sidang urutan ${sidang} tidak ada pada perkara ini - tidak ditulis (ABT akan menulis dengan sidang kosong).`);
+      // 21 Okt (x6): kalimat penutup pemeriksaan saksi ("Sudah cukup;") tidak ikut ditulis ke ABT - ia tercetak di putusan/BAS.
+      // Memakai saringBarisPenutup milik abt.js (satu aturan dengan Rapikan dan Susun saksi) bila halaman memuatnya.
+      const disaring = typeof saringBarisPenutup === "function" ? saringBarisPenutup(baris) : { baris, dibuang: 0 };
+      baris = disaring.baris;
+      if (baris.length === 0 && !bolehKosong) return gagal(disaring.dibuang ? "Seluruh baris hanya kalimat penutup - menyimpannya akan MENGHAPUS keterangan; perlu bolehKosong:true." : "Daftar kosong akan MENGHAPUS keterangan - perlu bolehKosong:true.");
       const nomor = new Set();
       const bersih = baris.map((x, i) => {
         let no = String((x && x.no) || i + 1);
@@ -742,7 +747,7 @@ function abtKlienBuat(opsi) {
       if (!/Tanya\s*Jawab\s*Disimpan/i.test(t)) return gagal(`ABT tidak mengatakan tersimpan: ${abtKlienSebaris(t).slice(0, 200)}`);
       const lagi = await klien.bacaTanyaJawab({ kode, perkaraId, sidang, a, b });
       const sama = lagi.ok && lagi.baris.length === bersih.length;
-      return { ok: sama, tersimpan: true, jumlahDikirim: bersih.length, jumlahTerbaca: lagi.ok ? lagi.baris.length : null, pesan: sama ? "tersimpan" : "tersimpan tetapi jumlah baris bacaan ulang berbeda" };
+      return { ok: sama, tersimpan: true, jumlahDikirim: bersih.length, penutupDibuang: disaring.dibuang, jumlahTerbaca: lagi.ok ? lagi.baris.length : null, pesan: sama ? "tersimpan" : "tersimpan tetapi jumlah baris bacaan ulang berbeda" };
     },
 
     // ── (5) pratinjau & cetak (RTF) ────────────────────────────────────────

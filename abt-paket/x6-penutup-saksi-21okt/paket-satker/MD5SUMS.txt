@@ -1,0 +1,7 @@
+fd83cb05628180a46fb5fdd4c84261dd *abt-x6-penutup-saksi-21okt-FUNGSI.sql
+e9a4a137511f1b0bbae1f35fbfdc8d07 *abt-x6-penutup-saksi-21okt-HITUNG.sql
+bdbddaf4d9d9dab51cad7e6eed091a3d *abt-x6-penutup-saksi-21okt-PERIKSA.sql
+f078fea03470f98f4c48c249b6f00673 *abt-x6-penutup-saksi-21okt-PRASYARAT.sql
+4b3d1531391262f6145f054d5ea4f8e2 *fungsi-lama.sql
+9188f8bca83b2ffbb593a53705698ccc *pasang-satker.sh
+ce6bcaada3bcfe9c3c17f3ff552faf9c *pulih-satker.sh
