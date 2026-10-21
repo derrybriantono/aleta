@@ -56,7 +56,8 @@ function buatAlir(sinyal?: AbortSignal | null): Alir {
 }
 
 const sekarang = new Date();
-const kemarin = new Date(sekarang.getTime() - 86_400_000 - 3_600_000);
+// Siang hari kemarin (bukan "sekarang - 25 jam": antara 00.00-01.00 itu jatuh ke dua hari lalu).
+const kemarin = new Date(sekarang.getFullYear(), sekarang.getMonth(), sekarang.getDate() - 1, 12, 0, 0);
 
 const RINGKAS_BIASA = {
   aktif: true,
