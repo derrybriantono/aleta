@@ -1,0 +1,12 @@
+{
+ "total": 651,
+ "hasil": {
+  "lama kosong (\"...\"), baru terisi": 283,
+  "sama": 183,
+  "lama SALAH/beda (lama banyak, baru pasti)": 97,
+  "lama SALAH/beda (lama satu, baru pasti)": 34,
+  "tanpa keduanya (alamat tidak diketahui)": 32,
+  "baru kosong, lama terisi (lama bisa salah)": 14,
+  "kosong keduanya": 8
+ }
+}

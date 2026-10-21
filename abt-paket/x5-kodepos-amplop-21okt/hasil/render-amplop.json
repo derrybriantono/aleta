@@ -1,0 +1,74 @@
+{
+ "10210": {
+  "[JS] 8.1.1. Amplop Relaas Panggilan Sidang P.rtf": {
+   "sebelum": {
+    "status": "OK 232039 puncak_mem=5505024 kueri_sipp=-1 detik=3",
+    "kode_pos_tercetak": [],
+    "penanda_sisa": [],
+    "titik_tiga": 0,
+    "panjang": 232039
+   },
+   "sesudah": {
+    "status": "OK 232055 puncak_mem=5505024 kueri_sipp=-1 detik=3",
+    "kode_pos_tercetak": [
+     "94352"
+    ],
+    "penanda_sisa": [],
+    "titik_tiga": 0,
+    "panjang": 232055
+   }
+  },
+  "[JS] 8.1.2. Amplop Relaas Panggilan Sidang T.rtf": {
+   "sebelum": {
+    "status": "OK 232255 puncak_mem=5505024 kueri_sipp=-1 detik=2",
+    "kode_pos_tercetak": [],
+    "penanda_sisa": [],
+    "titik_tiga": 0,
+    "panjang": 232255
+   },
+   "sesudah": {
+    "status": "OK 232271 puncak_mem=5505024 kueri_sipp=-1 detik=2",
+    "kode_pos_tercetak": [
+     "94352"
+    ],
+    "penanda_sisa": [],
+    "titik_tiga": 0,
+    "panjang": 232271
+   }
+  },
+  "[JS] 8.3.2. Amplop Relaas Panggilan Ikrar Talak T.rtf": {
+   "sebelum": {
+    "status": "OK 232214 puncak_mem=5505024 kueri_sipp=-1 detik=1",
+    "kode_pos_tercetak": [],
+    "penanda_sisa": [],
+    "titik_tiga": 0,
+    "panjang": 232214
+   },
+   "sesudah": {
+    "status": "OK 232230 puncak_mem=5505024 kueri_sipp=-1 detik=2",
+    "kode_pos_tercetak": [
+     "94352"
+    ],
+    "penanda_sisa": [],
+    "titik_tiga": 0,
+    "panjang": 232230
+   }
+  },
+  "[JS] --AMPLOP PANGGILAN SURAT TERCATAT--.rtf": {
+   "sebelum": {
+    "status": "OK 262878 puncak_mem=6553600 kueri_sipp=-1 detik=6",
+    "kode_pos_tercetak": [],
+    "penanda_sisa": [],
+    "titik_tiga": 3,
+    "panjang": 262878
+   },
+   "sesudah": {
+    "status": "OK 262878 puncak_mem=6553600 kueri_sipp=-1 detik=1",
+    "kode_pos_tercetak": [],
+    "penanda_sisa": [],
+    "titik_tiga": 3,
+    "panjang": 262878
+   }
+  }
+ }
+}
