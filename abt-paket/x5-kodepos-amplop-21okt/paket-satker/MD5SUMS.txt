@@ -1,0 +1,12 @@
+9129faa780bf01fa0d3647399852cf96  abt-x5-kodepos-amplop-21okt-PASANG.sql
+66815a019e9a82ce147c44538b218d58  abt-x5-kodepos-amplop-21okt-PERIKSA.sql
+3fd797dbbd415bbbc1bb3245f6285257  abt-x5-kodepos-amplop-21okt-PRASYARAT.sql
+e925b3172ff21782713132ea734850aa  abt-x5-kodepos-amplop-21okt-PULIH.sql
+d62c0883fb4584fac2f659d7de0a6bb6  berkas_rtf.py
+0534c2814d27509d72fc720ffe82d5ec  daftar-sunting.tsv
+8ed7e37830ed051e9aa5a967a53822f8  folder-ada.txt
+5da6d6535f215f65e6eddf335e4013e8  nomor-baru.txt
+df61591e7b87b6b5aaaf9f7cad72830b  nomor-ubah.txt
+cdd2d34b4338ad9799bbdf4aaf244a98  pasang-satker.sh
+27f0a9670ae488d61a0de1b185bad619  pulih-satker.sh
+f71a043e6e7011dae816121bad771f4d  uji-kueri.tsv

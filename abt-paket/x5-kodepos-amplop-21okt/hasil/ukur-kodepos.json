@@ -1,0 +1,72 @@
+{
+ "tahun": 2026,
+ "pihak_urutan1": 1546,
+ "terisi_pasti": 1472,
+ "persen_terisi": 95.2,
+ "sebab": {
+  "ISI-desa": 1372,
+  "ISI-kecamatan": 100,
+  "kosong:kecamatan-tidak-ada-di-kode-pos": 39,
+  "alamat-tidak-diketahui/ghaib (sengaja tanpa kode pos)": 23,
+  "tanpa-kode-wilayah-ghaib/tidak-diketahui": 9,
+  "kosong:desa-tidak-cocok-dan-kecamatan-beberapa-kode-pos": 2,
+  "tanpa-kode-wilayah": 1
+ },
+ "per_sisi": {
+  "1": {
+   "ISI-desa": 807,
+   "ISI-kecamatan": 68,
+   "kosong:kecamatan-tidak-ada-di-kode-pos": 18,
+   "tanpa-kode-wilayah": 1,
+   "kosong:desa-tidak-cocok-dan-kecamatan-beberapa-kode-pos": 1
+  },
+  "2": {
+   "ISI-desa": 565,
+   "ISI-kecamatan": 32,
+   "alamat-tidak-diketahui/ghaib (sengaja tanpa kode pos)": 23,
+   "kosong:kecamatan-tidak-ada-di-kode-pos": 21,
+   "tanpa-kode-wilayah-ghaib/tidak-diketahui": 9,
+   "kosong:desa-tidak-cocok-dan-kecamatan-beberapa-kode-pos": 1
+  }
+ },
+ "kode_kelurahan_unik": 354,
+ "beda_sql_vs_js": 0,
+ "sql_diuji": 105,
+ "sql_diuji_tepi": 45,
+ "terisi_menurut_kabupaten": {
+  "Sulawesi Tengah / Kabupaten Donggala": 780,
+  "Sulawesi Tengah / Kabupaten Sigi": 558,
+  "Sulawesi Tengah / Kota Palu": 72,
+  "Sulawesi Tengah / Kabupaten Parigi Moutong": 20,
+  "Sulawesi Tengah / Kabupaten Poso": 7,
+  "Sulawesi Tengah / Kabupaten Toli Toli": 7,
+  "Sulawesi Selatan / Kota Makassar": 5,
+  "Kalimantan Timur / Kabupaten Kutai Timur": 4,
+  "Sulawesi Tengah / Kabupaten Morowali": 3,
+  "Kalimantan Selatan / Kabupaten Kotabaru": 2,
+  "Sulawesi Selatan / Kabupaten Luwu Timur": 2,
+  "Kalimantan Timur / Kota Samarinda": 2
+ },
+ "contoh_terisi": [
+  "Desa/Kel. Sibualong, Kec. Balaesang, Kabupaten Donggala, Sulawesi Tengah -> Kode Pos 94355 (desa)",
+  "Desa/Kel. Lalundu, Kec. Rio Pakava, Kabupaten Donggala, Sulawesi Tengah -> Kode Pos 94362 (desa)",
+  "Desa/Kel. Gunung Bale, Kec. Banawa, Kabupaten Donggala, Sulawesi Tengah -> Kode Pos 94351 (desa)",
+  "Desa/Kel. Tulo, Kec. Dolo, Kabupaten Sigi, Sulawesi Tengah -> Kode Pos 94361 (desa)",
+  "Desa/Kel. Donggala Kodi, Kec. Ulujadi, Kota Palu, Sulawesi Tengah -> Kode Pos 94226 (desa)",
+  "Desa/Kel. Dalaka, Kec. Sindue, Kabupaten Donggala, Sulawesi Tengah -> Kode Pos 94353 (desa)",
+  "Desa/Kel. Bambarimi, Kec. Banawa Selatan, Kabupaten Donggala, Sulawesi Tengah -> Kode Pos 94351 (desa)",
+  "Desa/Kel. Boyabaliase, Kec. Marawola, Kabupaten Sigi, Sulawesi Tengah -> Kode Pos 94362 (desa)",
+  "Desa/Kel. Saloya, Kec. Sindue Tombusabora, Kabupaten Donggala, Sulawesi Tengah -> Kode Pos 94353 (desa)",
+  "Desa/Kel. Sarumana, Kec. Palolo, Kabupaten Sigi, Sulawesi Tengah -> Kode Pos 94364 (desa)"
+ ],
+ "contoh_kosong": [
+  "Desa/Kel. Berbas Pantai, Kec. Bontang Selatan, Kota Bontang -> kosong (desa-tidak-cocok-dan-kecamatan-beberapa-kode-pos)",
+  "Desa/Kel. Bunyu Barat, Kec. Bunyu, Kabupaten Bulungan -> kosong (kecamatan-tidak-ada-di-kode-pos)",
+  "Desa/Kel. Porame, Kec. Kinovaro, Kabupaten Sigi -> kosong (kecamatan-tidak-ada-di-kode-pos)",
+  "Desa/Kel. Balane, Kec. Kinovaro, Kabupaten Sigi -> kosong (kecamatan-tidak-ada-di-kode-pos)",
+  "Desa/Kel. Uwemanje, Kec. Kinovaro, Kabupaten Sigi -> kosong (kecamatan-tidak-ada-di-kode-pos)",
+  "Desa/Kel. Doda, Kec. Kinovaro, Kabupaten Sigi -> kosong (kecamatan-tidak-ada-di-kode-pos)",
+  "Desa/Kel. Kalora, Kec. Kinovaro, Kabupaten Sigi -> kosong (kecamatan-tidak-ada-di-kode-pos)",
+  "Desa/Kel. Kanuna, Kec. Kinovaro, Kabupaten Sigi -> kosong (kecamatan-tidak-ada-di-kode-pos)"
+ ]
+}
