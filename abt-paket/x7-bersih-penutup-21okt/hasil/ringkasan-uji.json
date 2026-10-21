@@ -1,0 +1,39 @@
+{
+  "tanggal": "2026-10-21",
+  "definisi_belum_minutasi": "perkara ada di SIPP.perkara dengan proses_terakhir_id < 220 (Minutasi) DAN tanpa baris perkara_proses proses_id = 220; kolom perkara_putusan.tanggal_minutasi tidak dipakai (terisi untuk 10.125 dari 10.125 putusan, kolom mati)",
+  "server_baca_saja_21_okt": {
+    "baris_abt_keterangan_saksi_T": 69427,
+    "baris_di_perkara_belum_minutasi_R": 914,
+    "baris_penutup_seluruhnya_di_perkara_belum_minutasi_C": 52,
+    "perkara_terkena": 27,
+    "rincian_menurut_proses_terakhir": {"200 Persidangan (belum putus)": {"perkara": 25, "baris": 48}, "210 Putusan (belum minutasi)": {"perkara": 1, "baris": 2}, "218 Pemberitahuan Putusan (belum minutasi)": {"perkara": 1, "baris": 2}},
+    "tepi_tidak_disentuh": {"keterangan": "tanpa catatan proses 220 tetapi sudah lewat Minutasi (293 Penetapan Hari Sidang Ikrar Talak, 296 Pembuatan Akta Cerai); putusan sudah dicetak/ditandatangani", "perkara": 7, "baris": 17},
+    "minutasi_tidak_disentuh": {"perkara_berpenutup": 2023, "baris_penutup": 4265}
+  },
+  "semua_perkara_untuk_perbandingan": {"baris_penutup_seluruh_server": 4334, "perkara": 2057},
+  "tabel_lain_diukur": {
+    "abt_data_teks": "16.093 baris; 0 memuat salinan kalimat penutup keterangan saksi (Bahwa sudah cukup / Sudah cukup; / Cukup sekian)",
+    "abt_keterangan_terdakwa": "932 baris (jawaban/replik/duplik lisan); 6 baris penutup, semuanya di perkara yang sudah minutasi (6920 7055 7199 7346 7723 8635, proses 296) - tidak ada yang dihapus; fungsi cetaknya isian_rtf_keterangan (9252-9254) kini memakai penyaring x6",
+    "abt_tanyajawab_template": "398 baris; setiap kumpulan membawa jawaban bawaan 'Sudah cukup;' - tidak diubah (templat, bukan isian perkara); ekstensi tidak lagi menyimpannya (x6)"
+  },
+  "pindai_blangko_derry": {
+    "berkas_rtf": 1753,
+    "memuat_variabel_keterangan_saksi_tercetak": 564,
+    "lewat_fungsi_sql_9259_9265": 243,
+    "variabel_Keterangan_Saksi_tanya_jawab_php_tercetak": 0,
+    "tabel_TanyaJwb_bas_php": 321,
+    "kutipan_BAS_4608_4618_4848_4849": 12,
+    "kutipan_pertanyaan_penutup_cocok_pola_topik": 0,
+    "catatan": "salinan RTF server 21 Okt pagi; variabel dalam tujuan tersembunyi isianasal tidak dihitung (tidak tercetak)"
+  },
+  "lab_laptop": {
+    "basis": "aps_badilag_x7 = sampel 215 perkara / 6.129 baris abt_keterangan_saksi + abt_keterangan_terdakwa penuh (932) + 20 fungsi persis server + paket x6; sipp_x7 = status perkara server",
+    "sebelum": {"T": 6129, "R": 914, "C": 52},
+    "sesudah": {"T": 6077, "R": 862, "C": 0},
+    "id_dihapus_sama_dengan_harapan_js": true,
+    "perkara_minutasi_tak_berubah": true,
+    "isi_tabel_sesudah_pulih_sama_persis_dengan_awal": true,
+    "md5_fungsi_isian_rtf_keterangan_lama_sama_dengan_server": "9b005e6442a8b8731f97f3b8dbe98a61",
+    "isian_rtf_keterangan_baru_vs_lama_pada_data_terdakwa": {"kelompok": 109, "sama": 109}
+  }
+}

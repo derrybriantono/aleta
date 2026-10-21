@@ -1,0 +1,10 @@
+f6a46bbad07654a0ab7b65d8e45e5cb7 *abt-x7-bersih-penutup-21okt-DAFTAR.sql
+6438f25364cd5b2fc9a6c3d5dc970b8e *abt-x7-bersih-penutup-21okt-FUNGSI.sql
+7712aa6b76a9666445f06431034ad6e3 *abt-x7-bersih-penutup-21okt-HAPUS.sql
+94121fae2444fc8828df1dc5f8d685ea *abt-x7-bersih-penutup-21okt-HITUNG.sql
+92d6d0836e65f531a22362ef929c085f *abt-x7-bersih-penutup-21okt-PERIKSA.sql
+e1279da5ee3d05c54e11c61d21b8429f *abt-x7-bersih-penutup-21okt-PERKARA.sql
+63e5d71443177f9b5496ee153148b561 *abt-x7-bersih-penutup-21okt-PRASYARAT.sql
+8f365b0cc2cc83d789f140bbd35601c0 *fungsi-lama.sql
+a1b909dd17521e14721731e9ff2dc7ce *pasang-satker.sh
+69091126bac7d2815271a090b5278e6f *pulih-satker.sh

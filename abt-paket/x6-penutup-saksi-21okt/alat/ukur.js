@@ -1,5 +1,5 @@
 const fs = require('fs');
-const W = 'D:/aleta-dev/wt/w30';
+const W = require('path').resolve(__dirname, '../../..');
 const src = fs.readFileSync(W + '/ekstensi-sipp/abt.js', 'utf8');
 const a = src.indexOf('const POLA_PENUTUP = [');
 const bEnd = src.indexOf('// ─── Posita: dirapikan di SIPP');
