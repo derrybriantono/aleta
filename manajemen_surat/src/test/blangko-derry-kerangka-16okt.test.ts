@@ -611,7 +611,7 @@ describe("D. daftar perkara", () => {
     await bukaTampilan(h);
     tekan(h, '[data-mode="rentang"]');
     const a = akarDari(h)!;
-    expect(a.textContent).toContain("Pilih tanggal mulai dan akhir");
+    expect(a.textContent).toContain("cukup satu tanggal untuk satu hari");
     (a.querySelector("#bd-dari") as HTMLInputElement).value = "2026-10-12";
     (a.querySelector("#bd-sampai") as HTMLInputElement).value = "2026-10-16";
     tekan(h, '[data-bd="rentang"]');
@@ -619,6 +619,48 @@ describe("D. daftar perkara", () => {
     await sampai(() => a.querySelector("[data-pk]"), "daftar rentang");
     tekan(h, '[data-mode="semua"]');
     await sampai(() => h.minta.some((m) => m.url.includes("/perkara-saya?mode=semua")), "semua diminta");
+  });
+
+  it("21 Okt: Pilih tanggal - satu tanggal saja (DARI atau SAMPAI) = satu hari; terbalik ditukar; kosong = petunjuk tanpa galat dan tanpa permintaan", async () => {
+    const h = buka();
+    await bukaTampilan(h);
+    tekan(h, '[data-mode="rentang"]');
+    const a = akarDari(h)!;
+    const dari = () => a.querySelector("#bd-dari") as HTMLInputElement;
+    const sampaiI = () => a.querySelector("#bd-sampai") as HTMLInputElement;
+    const adaPesanGalat = () => /Tanggal harus berbentuk/.test(a.textContent || "");
+    // keduanya kosong
+    dari().value = "";
+    sampaiI().value = "";
+    const sebelum = h.minta.length;
+    tekan(h, '[data-bd="rentang"]');
+    await tunggu(50);
+    expect(h.minta.length).toBe(sebelum);
+    expect(adaPesanGalat()).toBe(false);
+    // hanya DARI
+    dari().value = "2026-10-14";
+    sampaiI().value = "";
+    tekan(h, '[data-bd="rentang"]');
+    await sampai(() => h.minta.some((m) => m.url.includes("mode=rentang&dari=2026-10-14&sampai=2026-10-14")), "satu hari (DARI)");
+    // hanya SAMPAI
+    dari().value = "";
+    sampaiI().value = "2026-10-15";
+    tekan(h, '[data-bd="rentang"]');
+    await sampai(() => h.minta.some((m) => m.url.includes("mode=rentang&dari=2026-10-15&sampai=2026-10-15")), "satu hari (SAMPAI)");
+    // terbalik
+    dari().value = "2026-10-18";
+    sampaiI().value = "2026-10-16";
+    tekan(h, '[data-bd="rentang"]');
+    await sampai(() => h.minta.some((m) => m.url.includes("mode=rentang&dari=2026-10-16&sampai=2026-10-18")), "tertukar");
+    expect(adaPesanGalat()).toBe(false);
+  });
+
+  it("21 Okt: bawaan panel = Sidang hari ini walau kunjungan lalu menyimpan 'Pilih tanggal'", async () => {
+    const h = buka({ simpanan: { blangkoDerryDaftar: { mode: "rentang", lihat: "kartu" } } });
+    await bukaTampilan(h);
+    expect(h.minta.some((m) => m.url.includes("mode=hari"))).toBe(true);
+    expect(h.minta.some((m) => m.url.includes("mode=rentang"))).toBe(false);
+    expect(akarDari(h)!.querySelector('[data-mode="hari"][aria-selected="true"]')).toBeTruthy();
   });
 
   it("daftar kosong hari ini menawarkan 'Lihat semua perkara saya'", async () => {

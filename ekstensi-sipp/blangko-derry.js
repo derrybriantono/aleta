@@ -106,6 +106,34 @@
   };
   const selisih = (a, b) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 864e5);
   const tambah = (s, n) => new Date(Date.parse(`${s}T00:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
+  /**
+   * 21 Okt (w25): tanggal dari isian rentang -> "YYYY-MM-DD", "" bila kosong/bukan tanggal. Menerima nilai input type=date
+   * (YYYY-MM-DD) dan ketikan dd/mm/yyyy atau dd-mm-yyyy.
+   */
+  function isoTanggalRentang(v) {
+    const t = String(v == null ? "" : v).trim();
+    let y;
+    let m;
+    let d;
+    let a = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (a) [, y, m, d] = a;
+    else if ((a = t.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/))) [, d, m, y] = a;
+    else return "";
+    const p = (n) => String(n).padStart(2, "0");
+    const iso = `${y}-${p(m)}-${p(d)}`;
+    const dt = new Date(`${iso}T00:00:00Z`);
+    return Number.isNaN(dt.getTime()) || dt.toISOString().slice(0, 10) !== iso ? "" : iso;
+  }
+  /** Rentang dari dua isian: satu tanggal = satu hari, terbalik ditukar, keduanya kosong = null. */
+  function rentangDari(dari, sampai) {
+    let a = isoTanggalRentang(dari);
+    let b = isoTanggalRentang(sampai);
+    if (!a && !b) return null;
+    if (!a) a = b;
+    if (!b) b = a;
+    if (a > b) [a, b] = [b, a];
+    return { dari: a, sampai: b };
+  }
   const hariDari = (t) => HARI[new Date(`${t}T00:00:00Z`).getUTCDay()];
   const tanggalLokal = () => {
     const d = new Date();
@@ -667,7 +695,8 @@
       if (KUNCI_URUT[d.urut]) S.urut = d.urut;
       if (d.arah === 1 || d.arah === -1) S.arah = d.arah;
       if (typeof d.depan === "boolean") S.depan = d.depan;
-      if (["hari", "rentang", "semua"].includes(d.mode)) S.mode = d.mode;
+      // 21 Okt (w25): mode daftar TIDAK dipulihkan - panel selalu dibuka di "Sidang hari ini". "Pilih tanggal" yang terpulihkan tanpa
+      // tanggal membuat galat "Tanggal harus berbentuk YYYY-MM-DD", dan "Semua perkara saya" memuat jauh lebih banyak daripada perlu.
       if (d.ket && typeof d.ket === "object") for (const k of Object.keys(S.ket)) if (typeof d.ket[k] === "boolean") S.ket[k] = d.ket[k];
     }
     return s[K.aktif] !== false;
@@ -969,7 +998,8 @@
 
   // ── Daftar perkara ────────────────────────────────────────────────────────
   function kunciPermintaan() {
-    return [S.mode, S.mode === "rentang" ? S.dari : "", S.mode === "rentang" ? S.sampai : "", S.sebagai.nama, S.sebagai.peran, nomorCariPtsp()].join("|");
+    const r = S.mode === "rentang" ? rentangDari(S.dari, S.sampai) : null;
+    return [S.mode, r ? r.dari : "", r ? r.sampai : "", S.sebagai.nama, S.sebagai.peran, nomorCariPtsp()].join("|");
   }
   function alamatPermintaan() {
     const q = new URLSearchParams();
@@ -977,8 +1007,9 @@
     q.set("mode", nomorCariPtsp() ? "semua" : S.mode);
     if (nomorCariPtsp()) q.set("nomor", nomorCariPtsp());
     if (!nomorCariPtsp() && S.mode === "rentang") {
-      q.set("dari", S.dari);
-      q.set("sampai", S.sampai);
+      const r = rentangDari(S.dari, S.sampai) || { dari: hariIni(), sampai: hariIni() };
+      q.set("dari", r.dari);
+      q.set("sampai", r.sampai);
     }
     if (adm() && S.sebagai.nama) {
       q.set("sebagai", S.sebagai.nama);
@@ -988,6 +1019,14 @@
   }
 
   async function muatDaftar(paksa) {
+    // Pilih tanggal tanpa satu tanggal pun: tidak ada yang dimuat dan tidak ada galat - petunjuk lembut saja.
+    if (S.mode === "rentang" && !nomorCariPtsp() && !rentangDari(S.dari, S.sampai)) {
+      S.data = null;
+      S.galat = "";
+      S.memuat = false;
+      renderSemua();
+      return;
+    }
     const kunci = kunciPermintaan();
     const simpan = singgah.get(kunci);
     if (!paksa && simpan && Date.now() - simpan.waktu < TTL_DAFTAR_MS) {
@@ -1364,7 +1403,7 @@
       ).join("")}</div>`;
     }
     let badan;
-    if (S.mode === "rentang" && !S.data && !S.memuat && !S.galat) badan = `<p class="bd-catat">Pilih tanggal mulai dan akhir, lalu tekan Tampilkan.</p>`;
+    if (S.mode === "rentang" && !S.data && !S.memuat && !S.galat) badan = `<p class="bd-catat">Pilih tanggal (cukup satu tanggal untuk satu hari), lalu tekan Tampilkan.</p>`;
     else if (S.memuat || (!S.data && !S.galat)) badan = `<p class="bd-catat" role="status">Membaca daftar perkara dari SIPP…</p>`;
     else if (S.galat) {
       badan = `<div class="bd-peringatan" role="alert">${esc(S.galat)} <button type="button" class="bd-btn kecil" data-bd="coba">Coba lagi</button></div>`;
@@ -1743,12 +1782,11 @@
       return renderPerkara();
     }
     if (kode === "rentang") {
-      const d = cari("#bd-dari", akar).value;
-      const s = cari("#bd-sampai", akar).value || d;
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return toast("Isi tanggal mulai dulu.");
-      if (s < d) return toast("Tanggal akhir lebih awal daripada tanggal mulai.");
-      S.dari = d;
-      S.sampai = s;
+      // Cukup SATU tanggal (DARI atau SAMPAI) = satu hari; terbalik ditukar; keduanya kosong = petunjuk, bukan galat.
+      const r = rentangDari(cari("#bd-dari", akar).value, cari("#bd-sampai", akar).value);
+      if (!r) return toast("Pilih tanggal dulu - cukup satu tanggal untuk melihat satu hari.");
+      S.dari = r.dari;
+      S.sampai = r.sampai;
       return void muatDaftar();
     }
     const alat = c("[data-alat]");
@@ -2095,7 +2133,7 @@
       tema: S.tema,
       cfg: { ...S.cfg },
     }),
-    murni: { kunciOrang, satukanOrang, bacaTautanBd, ringkasan, cocokCari, JENIS_CARI, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk, perkiraanZoom, ikrarJenisBoleh },
+    murni: { isoTanggalRentang, rentangDari, kunciOrang, satukanOrang, bacaTautanBd, ringkasan, cocokCari, JENIS_CARI, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk, perkiraanZoom, ikrarJenisBoleh },
   };
   globalThis.aletaBlangkoDerry = api;
   void mulai();
