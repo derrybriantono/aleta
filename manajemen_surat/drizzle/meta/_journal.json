@@ -526,6 +526,13 @@
       "when": 1792216800001,
       "tag": "0081_aleta_mediasi_arsip",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1792224000001,
+      "tag": "0083_aleta_sidang_keliling_hakim",
+      "breakpoints": true
     }
   ]
 }
