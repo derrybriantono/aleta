@@ -1,0 +1,98 @@
+{
+ "lama": {
+  "hak asuh": {
+   "-A rekonvensi lisan (tidak tercatat di SIPP)": 11,
+   "--": 2136,
+   "D-": 19,
+   "DA": 35,
+   "-A ditetapkan majelis tanpa tuntutan tercatat (ex officio/perubahan gugatan)": 53,
+   "-A kesepakatan mediasi": 15
+  },
+  "nafkah anak": {
+   "-A rekonvensi lisan (tidak tercatat di SIPP)": 19,
+   "--": 2201,
+   "D-": 5,
+   "-A ditetapkan majelis tanpa tuntutan tercatat (ex officio/perubahan gugatan)": 25,
+   "-A kesepakatan mediasi": 8,
+   "DA": 11
+  },
+  "nafkah iddah": {
+   "-A rekonvensi lisan (tidak tercatat di SIPP)": 22,
+   "--": 2212,
+   "-A ditetapkan majelis tanpa tuntutan tercatat (ex officio/perubahan gugatan)": 19,
+   "D-": 10,
+   "-A kesepakatan mediasi": 5,
+   "DA": 1
+  },
+  "mut'ah": {
+   "-A rekonvensi lisan (tidak tercatat di SIPP)": 19,
+   "--": 2221,
+   "D-": 5,
+   "-A kesepakatan mediasi": 6,
+   "-A ditetapkan majelis tanpa tuntutan tercatat (ex officio/perubahan gugatan)": 17,
+   "DA": 1
+  },
+  "madliyah": {
+   "--": 2240,
+   "-A rekonvensi lisan (tidak tercatat di SIPP)": 15,
+   "D-": 3,
+   "-A kesepakatan mediasi": 1,
+   "-A ditetapkan majelis tanpa tuntutan tercatat (ex officio/perubahan gugatan)": 8,
+   "DA": 2
+  },
+  "harta bersama": {
+   "--": 2264,
+   "-A kesepakatan mediasi": 3,
+   "-A ditetapkan majelis tanpa tuntutan tercatat (ex officio/perubahan gugatan)": 1,
+   "-A rekonvensi lisan (tidak tercatat di SIPP)": 1
+  }
+ },
+ "baru": {
+  "hak asuh": {
+   "-A rekonvensi lisan (tidak tercatat di SIPP)": 11,
+   "--": 2136,
+   "D-": 19,
+   "DA": 35,
+   "-A ditetapkan majelis tanpa tuntutan tercatat (ex officio/perubahan gugatan)": 53,
+   "-A kesepakatan mediasi": 15
+  },
+  "nafkah anak": {
+   "-A rekonvensi lisan (tidak tercatat di SIPP)": 19,
+   "--": 2201,
+   "D-": 5,
+   "-A ditetapkan majelis tanpa tuntutan tercatat (ex officio/perubahan gugatan)": 25,
+   "-A kesepakatan mediasi": 8,
+   "DA": 11
+  },
+  "nafkah iddah": {
+   "-A rekonvensi lisan (tidak tercatat di SIPP)": 22,
+   "--": 2219,
+   "-A ditetapkan majelis tanpa tuntutan tercatat (ex officio/perubahan gugatan)": 19,
+   "-A kesepakatan mediasi": 5,
+   "D-": 3,
+   "DA": 1
+  },
+  "mut'ah": {
+   "-A rekonvensi lisan (tidak tercatat di SIPP)": 19,
+   "--": 2223,
+   "D-": 3,
+   "-A kesepakatan mediasi": 6,
+   "-A ditetapkan majelis tanpa tuntutan tercatat (ex officio/perubahan gugatan)": 17,
+   "DA": 1
+  },
+  "madliyah": {
+   "--": 2241,
+   "-A rekonvensi lisan (tidak tercatat di SIPP)": 15,
+   "D-": 2,
+   "-A kesepakatan mediasi": 1,
+   "-A ditetapkan majelis tanpa tuntutan tercatat (ex officio/perubahan gugatan)": 8,
+   "DA": 2
+  },
+  "harta bersama": {
+   "--": 2264,
+   "-A kesepakatan mediasi": 3,
+   "-A ditetapkan majelis tanpa tuntutan tercatat (ex officio/perubahan gugatan)": 1,
+   "-A rekonvensi lisan (tidak tercatat di SIPP)": 1
+  }
+ }
+}

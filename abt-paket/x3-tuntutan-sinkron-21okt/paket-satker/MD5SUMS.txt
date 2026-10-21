@@ -1,0 +1,10 @@
+451cc1f5f060ab5adf3cfc15015a948c  abt-x3-tuntutan-sinkron-21okt-PASANG.sql
+88a0b96c916ddcd4b70ffdf304488341  abt-x3-tuntutan-sinkron-21okt-PERIKSA.sql
+a75b46f6cb6d686ef0c75a9989a7d146  abt-x3-tuntutan-sinkron-21okt-PRASYARAT.sql
+0f50108a6f10b98ab2d50fe34e03fc49  abt-x3-tuntutan-sinkron-21okt-PULIH.sql
+c9005acc146482bbe482888544c95c64  nomor-baru.txt
+be8bbfd0ea7b68d1555b417ce348ccd6  nomor-ubah.txt
+5f7b0ab69a1c604cbe3577a89859cd73  pasang-satker.sh
+5cbf2ca80132c365b04a7c3dc2719b0c  perkara-uji.txt
+ac10ecb1a28fdcc1c9c8fa907cc23d7a  pulih-satker.sh
+b3ac827d799d8f401f34b614dab0bee5  uji-kueri.tsv

@@ -1,0 +1,586 @@
+{
+ "s1-cg-cerai-saja": {
+  "label": "CG verstek, petitum cerai saja (nama Penggugat memuat \"idah\")",
+  "perkara_id": 7326,
+  "harap_tercetak": [],
+  "diminta_petitum": [],
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]",
+    "[PERIKSA: petitum menuntut nafkah iddah; pilih keputusan majelis pada isian keputusan nafkah iddah]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 169419 puncak_mem=8912896 kueri_sipp=-1 detik=29"
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 169313 puncak_mem=8912896 kueri_sipp=-1 detik=30.1"
+  }
+ },
+ "s2-cg-tuntut-belum-diputus": {
+  "label": "CG, petitum menuntut nafkah anak, iddah, mut'ah, madliyah - belum dipilih",
+  "perkara_id": 9089,
+  "harap_tercetak": [],
+  "diminta_petitum": [
+   "nafkah_anak",
+   "iddah",
+   "mutah",
+   "madliyah"
+  ],
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]",
+    "[PERIKSA: petitum menuntut nafkah anak; pilih keputusan majelis pada isian keputusan nafkah anak]",
+    "[PERIKSA: petitum menuntut nafkah iddah; pilih keputusan majelis pada isian keputusan nafkah iddah]",
+    "[PERIKSA: petitum menuntut mut'ah; pilih keputusan majelis pada isian keputusan mut'ah]",
+    "[PERIKSA: petitum menuntut nafkah madliyah; pilih keputusan majelis pada isian keputusan nafkah madliyah]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 175273 puncak_mem=8912896 kueri_sipp=-1 detik=28.5"
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]",
+    "[PERIKSA: petitum menuntut nafkah anak; pilih keputusan majelis pada isian keputusan nafkah anak]",
+    "[PERIKSA: petitum menuntut nafkah iddah; pilih keputusan majelis pada isian keputusan nafkah iddah]",
+    "[PERIKSA: petitum menuntut mut'ah; pilih keputusan majelis pada isian keputusan mut'ah]",
+    "[PERIKSA: petitum menuntut nafkah madliyah; pilih keputusan majelis pada isian keputusan nafkah madliyah]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 175273 puncak_mem=8912896 kueri_sipp=-1 detik=35"
+  }
+ },
+ "s3-cg-tuntut-diputus": {
+  "label": "CG, nafkah anak + iddah dikabulkan, mut'ah + madliyah ditolak",
+  "perkara_id": 9089,
+  "harap_tercetak": [
+   "nafkah_anak",
+   "iddah"
+  ],
+  "diminta_petitum": [
+   "nafkah_anak",
+   "iddah",
+   "mutah",
+   "madliyah"
+  ],
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]",
+    "[PERIKSA: isi kenaikan nafkah anak per tahun, 10% s.d. 20%]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 179585 puncak_mem=8912896 kueri_sipp=-1 detik=32.6"
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]",
+    "[PERIKSA: isi kenaikan nafkah anak per tahun, 10% s.d. 20%]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 179585 puncak_mem=8912896 kueri_sipp=-1 detik=40.3"
+  }
+ },
+ "s4-ct-tanpa-tuntutan": {
+  "label": "CT verstek tanpa tuntutan (nama Termohon memuat \"idah\")",
+  "perkara_id": 7522,
+  "harap_tercetak": [],
+  "diminta_petitum": [],
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]",
+    "[PERIKSA: petitum menuntut nafkah iddah; pilih keputusan majelis pada isian keputusan nafkah iddah]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 162363 puncak_mem=8912896 kueri_sipp=-1 detik=33.9"
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 162257 puncak_mem=8912896 kueri_sipp=-1 detik=27.3"
+  }
+ },
+ "s5-ct-ex-officio": {
+  "label": "CT verstek, mut'ah dan iddah ditetapkan karena jabatan",
+  "perkara_id": 7522,
+  "harap_tercetak": [
+   "iddah",
+   "mutah"
+  ],
+  "diminta_petitum": [],
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 168208 puncak_mem=8912896 kueri_sipp=-1 detik=25.4"
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 168208 puncak_mem=8912896 kueri_sipp=-1 detik=30.6"
+  }
+ },
+ "s6-ct-tuntut-mutah-iddah": {
+  "label": "CT, petitum Pemohon memuat mut'ah dan iddah - belum dipilih",
+  "perkara_id": 7868,
+  "harap_tercetak": [],
+  "diminta_petitum": [
+   "iddah",
+   "mutah"
+  ],
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]",
+    "[PERIKSA: petitum menuntut nafkah iddah; pilih keputusan majelis pada isian keputusan nafkah iddah]",
+    "[PERIKSA: petitum menuntut mut'ah; pilih keputusan majelis pada isian keputusan mut'ah]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 162473 puncak_mem=8912896 kueri_sipp=-1 detik=25.9"
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]",
+    "[PERIKSA: petitum menuntut nafkah iddah; pilih keputusan majelis pada isian keputusan nafkah iddah]",
+    "[PERIKSA: petitum menuntut mut'ah; pilih keputusan majelis pada isian keputusan mut'ah]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 162473 puncak_mem=8912896 kueri_sipp=-1 detik=26"
+  }
+ },
+ "s7-ct-tuntut-diputus": {
+  "label": "CT, mut'ah dan iddah dikabulkan",
+  "perkara_id": 7868,
+  "harap_tercetak": [
+   "iddah",
+   "mutah"
+  ],
+  "diminta_petitum": [
+   "iddah",
+   "mutah"
+  ],
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 167953 puncak_mem=8912896 kueri_sipp=-1 detik=24.7"
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 167953 puncak_mem=8912896 kueri_sipp=-1 detik=25.5"
+  }
+ },
+ "s8-ct-varian-mutah-iddah": {
+  "label": "CT varian Mut'ah Iddah (blangko ex officio), tanpa tuntutan",
+  "perkara_id": 7522,
+  "harap_tercetak": [
+   "iddah",
+   "mutah"
+  ],
+  "diminta_petitum": [],
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 281568 puncak_mem=9699328 kueri_sipp=-1 detik=24.1"
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 281568 puncak_mem=9699328 kueri_sipp=-1 detik=26.9"
+  }
+ }
+}

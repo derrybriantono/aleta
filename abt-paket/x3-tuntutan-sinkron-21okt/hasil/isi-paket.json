@@ -1,0 +1,609 @@
+{
+ "baru": [
+  {
+   "no": 3400,
+   "nama": "TUNTUTAN AKIBAT PERCERAIAN: KEADAAN DAN KUTIPAN PETITUM (OTOMATIS dari petitum/rekonvensi/kumulasi SIPP, satu baris per tuntutan 4140-4145; tidak dicetak di blangko)",
+   "tipe": "data_sql",
+   "butir": "keadaan diminta/tidak/ragu dan kutipan petitum untuk layar (pola sama dengan 4140-4145)",
+   "sql": "SELECT CONCAT_WS(CHAR(10), CONCAT('4140|', IF(c.kosong = 1, 'ragu|petitum di SIPP kosong', IF(c.th = 1, CONCAT('ya|', IF(c.kh > 0 AND c.th_teks = 0, 'kumulasi hak asuh anak tercatat di SIPP', IF(LEAST(IF(LOCATE('hak asuh', c.kecil) = 0, 999999, LOCATE('hak asuh', c.kecil)), IF(LOCATE('hadhanah', c.kecil) = 0, 999999, LOCATE('hadhanah', c.kecil)), IF(LOCATE('hadlanah', c.kecil) = 0, 999999, LOCATE('hadlanah', c.kecil)), IF(LOCATE('hadanah', c.kecil) = 0, 999999, LOCATE('hadanah', c.kecil)), IF(LOCATE('hak pemeliharaan', c.kecil) = 0, 999999, LOCATE('hak pemeliharaan', c.kecil)), IF(LOCATE('pemeliharaan anak', c.kecil) = 0, 999999, LOCATE('pemeliharaan anak', c.kecil)), IF(LOCATE('pengasuhan', c.kecil) = 0, 999999, LOCATE('pengasuhan', c.kecil)), IF(LOCATE('kuasa asuh', c.kecil) = 0, 999999, LOCATE('kuasa asuh', c.kecil)), IF(LOCATE('asuhan', c.kecil) = 0, 999999, LOCATE('asuhan', c.kecil))) = 999999, 'kata kunci tidak dapat dikutip', CONCAT(IF(LEAST(IF(LOCATE('hak asuh', c.kecil) = 0, 999999, LOCATE('hak asuh', c.kecil)), IF(LOCATE('hadhanah', c.kecil) = 0, 999999, LOCATE('hadhanah', c.kecil)), IF(LOCATE('hadlanah', c.kecil) = 0, 999999, LOCATE('hadlanah', c.kecil)), IF(LOCATE('hadanah', c.kecil) = 0, 999999, LOCATE('hadanah', c.kecil)), IF(LOCATE('hak pemeliharaan', c.kecil) = 0, 999999, LOCATE('hak pemeliharaan', c.kecil)), IF(LOCATE('pemeliharaan anak', c.kecil) = 0, 999999, LOCATE('pemeliharaan anak', c.kecil)), IF(LOCATE('pengasuhan', c.kecil) = 0, 999999, LOCATE('pengasuhan', c.kecil)), IF(LOCATE('kuasa asuh', c.kecil) = 0, 999999, LOCATE('kuasa asuh', c.kecil)), IF(LOCATE('asuhan', c.kecil) = 0, 999999, LOCATE('asuhan', c.kecil))) > 70, '...', ''), TRIM(SUBSTRING(c.polos, GREATEST(1, LEAST(IF(LOCATE('hak asuh', c.kecil) = 0, 999999, LOCATE('hak asuh', c.kecil)), IF(LOCATE('hadhanah', c.kecil) = 0, 999999, LOCATE('hadhanah', c.kecil)), IF(LOCATE('hadlanah', c.kecil) = 0, 999999, LOCATE('hadlanah', c.kecil)), IF(LOCATE('hadanah', c.kecil) = 0, 999999, LOCATE('hadanah', c.kecil)), IF(LOCATE('hak pemeliharaan', c.kecil) = 0, 999999, LOCATE('hak pemeliharaan', c.kecil)), IF(LOCATE('pemeliharaan anak', c.kecil) = 0, 999999, LOCATE('pemeliharaan anak', c.kecil)), IF(LOCATE('pengasuhan', c.kecil) = 0, 999999, LOCATE('pengasuhan', c.kecil)), IF(LOCATE('kuasa asuh', c.kecil) = 0, 999999, LOCATE('kuasa asuh', c.kecil)), IF(LOCATE('asuhan', c.kecil) = 0, 999999, LOCATE('asuhan', c.kecil))) - 70), 190)), '...')))), 'tidak|'))), CONCAT('4141|', IF(c.kosong = 1, 'ragu|petitum di SIPP kosong', IF(c.tn = 1, CONCAT('ya|', IF(LEAST(IF(LOCATE('nafkah anak', c.kecil) = 0, 999999, LOCATE('nafkah anak', c.kecil)), IF(LOCATE('nafkah untuk anak', c.kecil) = 0, 999999, LOCATE('nafkah untuk anak', c.kecil)), IF(LOCATE('nafkah kepada anak', c.kecil) = 0, 999999, LOCATE('nafkah kepada anak', c.kecil)), IF(LOCATE('biaya hidup', c.kecil) = 0, 999999, LOCATE('biaya hidup', c.kecil)), IF(LOCATE('biaya pemeliharaan', c.kecil) = 0, 999999, LOCATE('biaya pemeliharaan', c.kecil)), IF(LOCATE('biaya pendidikan', c.kecil) = 0, 999999, LOCATE('biaya pendidikan', c.kecil)), IF(LOCATE('biaya kebutuhan', c.kecil) = 0, 999999, LOCATE('biaya kebutuhan', c.kecil)), IF(LOCATE('biaya anak', c.kecil) = 0, 999999, LOCATE('biaya anak', c.kecil)), IF(LOCATE('nafkah', c.kecil) = 0, 999999, LOCATE('nafkah', c.kecil))) = 999999, 'kata kunci tidak dapat dikutip', CONCAT(IF(LEAST(IF(LOCATE('nafkah anak', c.kecil) = 0, 999999, LOCATE('nafkah anak', c.kecil)), IF(LOCATE('nafkah untuk anak', c.kecil) = 0, 999999, LOCATE('nafkah untuk anak', c.kecil)), IF(LOCATE('nafkah kepada anak', c.kecil) = 0, 999999, LOCATE('nafkah kepada anak', c.kecil)), IF(LOCATE('biaya hidup', c.kecil) = 0, 999999, LOCATE('biaya hidup', c.kecil)), IF(LOCATE('biaya pemeliharaan', c.kecil) = 0, 999999, LOCATE('biaya pemeliharaan', c.kecil)), IF(LOCATE('biaya pendidikan', c.kecil) = 0, 999999, LOCATE('biaya pendidikan', c.kecil)), IF(LOCATE('biaya kebutuhan', c.kecil) = 0, 999999, LOCATE('biaya kebutuhan', c.kecil)), IF(LOCATE('biaya anak', c.kecil) = 0, 999999, LOCATE('biaya anak', c.kecil)), IF(LOCATE('nafkah', c.kecil) = 0, 999999, LOCATE('nafkah', c.kecil))) > 70, '...', ''), TRIM(SUBSTRING(c.polos, GREATEST(1, LEAST(IF(LOCATE('nafkah anak', c.kecil) = 0, 999999, LOCATE('nafkah anak', c.kecil)), IF(LOCATE('nafkah untuk anak', c.kecil) = 0, 999999, LOCATE('nafkah untuk anak', c.kecil)), IF(LOCATE('nafkah kepada anak', c.kecil) = 0, 999999, LOCATE('nafkah kepada anak', c.kecil)), IF(LOCATE('biaya hidup', c.kecil) = 0, 999999, LOCATE('biaya hidup', c.kecil)), IF(LOCATE('biaya pemeliharaan', c.kecil) = 0, 999999, LOCATE('biaya pemeliharaan', c.kecil)), IF(LOCATE('biaya pendidikan', c.kecil) = 0, 999999, LOCATE('biaya pendidikan', c.kecil)), IF(LOCATE('biaya kebutuhan', c.kecil) = 0, 999999, LOCATE('biaya kebutuhan', c.kecil)), IF(LOCATE('biaya anak', c.kecil) = 0, 999999, LOCATE('biaya anak', c.kecil)), IF(LOCATE('nafkah', c.kecil) = 0, 999999, LOCATE('nafkah', c.kecil))) - 70), 190)), '...'))), 'tidak|'))), CONCAT('4142|', IF(c.kosong = 1, 'ragu|petitum di SIPP kosong', IF(c.ti = 1, CONCAT('ya|', IF(LEAST(IF(LOCATE('nafkah iddah', c.kecil) = 0, 999999, LOCATE('nafkah iddah', c.kecil)), IF(LOCATE('nafkah idah', c.kecil) = 0, 999999, LOCATE('nafkah idah', c.kecil)), IF(LOCATE('nafkah selama masa', c.kecil) = 0, 999999, LOCATE('nafkah selama masa', c.kecil)), IF(LOCATE('masa iddah', c.kecil) = 0, 999999, LOCATE('masa iddah', c.kecil)), IF(LOCATE('masa idah', c.kecil) = 0, 999999, LOCATE('masa idah', c.kecil)), IF(LOCATE('iddah', c.kecil) = 0, 999999, LOCATE('iddah', c.kecil)), IF(LOCATE('idah', c.kecil) = 0, 999999, LOCATE('idah', c.kecil))) = 999999, 'kata kunci tidak dapat dikutip', CONCAT(IF(LEAST(IF(LOCATE('nafkah iddah', c.kecil) = 0, 999999, LOCATE('nafkah iddah', c.kecil)), IF(LOCATE('nafkah idah', c.kecil) = 0, 999999, LOCATE('nafkah idah', c.kecil)), IF(LOCATE('nafkah selama masa', c.kecil) = 0, 999999, LOCATE('nafkah selama masa', c.kecil)), IF(LOCATE('masa iddah', c.kecil) = 0, 999999, LOCATE('masa iddah', c.kecil)), IF(LOCATE('masa idah', c.kecil) = 0, 999999, LOCATE('masa idah', c.kecil)), IF(LOCATE('iddah', c.kecil) = 0, 999999, LOCATE('iddah', c.kecil)), IF(LOCATE('idah', c.kecil) = 0, 999999, LOCATE('idah', c.kecil))) > 70, '...', ''), TRIM(SUBSTRING(c.polos, GREATEST(1, LEAST(IF(LOCATE('nafkah iddah', c.kecil) = 0, 999999, LOCATE('nafkah iddah', c.kecil)), IF(LOCATE('nafkah idah', c.kecil) = 0, 999999, LOCATE('nafkah idah', c.kecil)), IF(LOCATE('nafkah selama masa', c.kecil) = 0, 999999, LOCATE('nafkah selama masa', c.kecil)), IF(LOCATE('masa iddah', c.kecil) = 0, 999999, LOCATE('masa iddah', c.kecil)), IF(LOCATE('masa idah', c.kecil) = 0, 999999, LOCATE('masa idah', c.kecil)), IF(LOCATE('iddah', c.kecil) = 0, 999999, LOCATE('iddah', c.kecil)), IF(LOCATE('idah', c.kecil) = 0, 999999, LOCATE('idah', c.kecil))) - 70), 190)), '...'))), 'tidak|'))), CONCAT('4143|', IF(c.kosong = 1, 'ragu|petitum di SIPP kosong', IF(c.tm = 1, CONCAT('ya|', IF(LEAST(IF(LOCATE('mut&#39;ah', c.kecil) = 0, 999999, LOCATE('mut&#39;ah', c.kecil)), IF(LOCATE('mut''ah', c.kecil) = 0, 999999, LOCATE('mut''ah', c.kecil)), IF(LOCATE('mutah', c.kecil) = 0, 999999, LOCATE('mutah', c.kecil)), IF(LOCATE('muth', c.kecil) = 0, 999999, LOCATE('muth', c.kecil)), IF(LOCATE('mut', c.kecil) = 0, 999999, LOCATE('mut', c.kecil))) = 999999, 'kata kunci tidak dapat dikutip', CONCAT(IF(LEAST(IF(LOCATE('mut&#39;ah', c.kecil) = 0, 999999, LOCATE('mut&#39;ah', c.kecil)), IF(LOCATE('mut''ah', c.kecil) = 0, 999999, LOCATE('mut''ah', c.kecil)), IF(LOCATE('mutah', c.kecil) = 0, 999999, LOCATE('mutah', c.kecil)), IF(LOCATE('muth', c.kecil) = 0, 999999, LOCATE('muth', c.kecil)), IF(LOCATE('mut', c.kecil) = 0, 999999, LOCATE('mut', c.kecil))) > 70, '...', ''), TRIM(SUBSTRING(c.polos, GREATEST(1, LEAST(IF(LOCATE('mut&#39;ah', c.kecil) = 0, 999999, LOCATE('mut&#39;ah', c.kecil)), IF(LOCATE('mut''ah', c.kecil) = 0, 999999, LOCATE('mut''ah', c.kecil)), IF(LOCATE('mutah', c.kecil) = 0, 999999, LOCATE('mutah', c.kecil)), IF(LOCATE('muth', c.kecil) = 0, 999999, LOCATE('muth', c.kecil)), IF(LOCATE('mut', c.kecil) = 0, 999999, LOCATE('mut', c.kecil))) - 70), 190)), '...'))), 'tidak|'))), CONCAT('4144|', IF(c.kosong = 1, 'ragu|petitum di SIPP kosong', IF(c.td = 1, CONCAT('ya|', IF(LEAST(IF(LOCATE('madliyah', c.kecil) = 0, 999999, LOCATE('madliyah', c.kecil)), IF(LOCATE('madhiyah', c.kecil) = 0, 999999, LOCATE('madhiyah', c.kecil)), IF(LOCATE('mahdhiyah', c.kecil) = 0, 999999, LOCATE('mahdhiyah', c.kecil)), IF(LOCATE('madiyah', c.kecil) = 0, 999999, LOCATE('madiyah', c.kecil)), IF(LOCATE('nafkah lampau', c.kecil) = 0, 999999, LOCATE('nafkah lampau', c.kecil)), IF(LOCATE('lampau', c.kecil) = 0, 999999, LOCATE('lampau', c.kecil)), IF(LOCATE('terhutang', c.kecil) = 0, 999999, LOCATE('terhutang', c.kecil)), IF(LOCATE('terutang', c.kecil) = 0, 999999, LOCATE('terutang', c.kecil)), IF(LOCATE('tertunggak', c.kecil) = 0, 999999, LOCATE('tertunggak', c.kecil)), IF(LOCATE('yang lalu', c.kecil) = 0, 999999, LOCATE('yang lalu', c.kecil))) = 999999, 'kata kunci tidak dapat dikutip', CONCAT(IF(LEAST(IF(LOCATE('madliyah', c.kecil) = 0, 999999, LOCATE('madliyah', c.kecil)), IF(LOCATE('madhiyah', c.kecil) = 0, 999999, LOCATE('madhiyah', c.kecil)), IF(LOCATE('mahdhiyah', c.kecil) = 0, 999999, LOCATE('mahdhiyah', c.kecil)), IF(LOCATE('madiyah', c.kecil) = 0, 999999, LOCATE('madiyah', c.kecil)), IF(LOCATE('nafkah lampau', c.kecil) = 0, 999999, LOCATE('nafkah lampau', c.kecil)), IF(LOCATE('lampau', c.kecil) = 0, 999999, LOCATE('lampau', c.kecil)), IF(LOCATE('terhutang', c.kecil) = 0, 999999, LOCATE('terhutang', c.kecil)), IF(LOCATE('terutang', c.kecil) = 0, 999999, LOCATE('terutang', c.kecil)), IF(LOCATE('tertunggak', c.kecil) = 0, 999999, LOCATE('tertunggak', c.kecil)), IF(LOCATE('yang lalu', c.kecil) = 0, 999999, LOCATE('yang lalu', c.kecil))) > 70, '...', ''), TRIM(SUBSTRING(c.polos, GREATEST(1, LEAST(IF(LOCATE('madliyah', c.kecil) = 0, 999999, LOCATE('madliyah', c.kecil)), IF(LOCATE('madhiyah', c.kecil) = 0, 999999, LOCATE('madhiyah', c.kecil)), IF(LOCATE('mahdhiyah', c.kecil) = 0, 999999, LOCATE('mahdhiyah', c.kecil)), IF(LOCATE('madiyah', c.kecil) = 0, 999999, LOCATE('madiyah', c.kecil)), IF(LOCATE('nafkah lampau', c.kecil) = 0, 999999, LOCATE('nafkah lampau', c.kecil)), IF(LOCATE('lampau', c.kecil) = 0, 999999, LOCATE('lampau', c.kecil)), IF(LOCATE('terhutang', c.kecil) = 0, 999999, LOCATE('terhutang', c.kecil)), IF(LOCATE('terutang', c.kecil) = 0, 999999, LOCATE('terutang', c.kecil)), IF(LOCATE('tertunggak', c.kecil) = 0, 999999, LOCATE('tertunggak', c.kecil)), IF(LOCATE('yang lalu', c.kecil) = 0, 999999, LOCATE('yang lalu', c.kecil))) - 70), 190)), '...'))), 'tidak|'))), CONCAT('4145|', IF(c.kosong = 1, 'ragu|petitum di SIPP kosong', IF(c.tb = 1, CONCAT('ya|', IF(c.kbh > 0 AND c.tb_teks = 0, 'kumulasi harta bersama tercatat di SIPP', IF(LEAST(IF(LOCATE('harta bersama', c.kecil) = 0, 999999, LOCATE('harta bersama', c.kecil)), IF(LOCATE('gono', c.kecil) = 0, 999999, LOCATE('gono', c.kecil)), IF(LOCATE('harta', c.kecil) = 0, 999999, LOCATE('harta', c.kecil))) = 999999, 'kata kunci tidak dapat dikutip', CONCAT(IF(LEAST(IF(LOCATE('harta bersama', c.kecil) = 0, 999999, LOCATE('harta bersama', c.kecil)), IF(LOCATE('gono', c.kecil) = 0, 999999, LOCATE('gono', c.kecil)), IF(LOCATE('harta', c.kecil) = 0, 999999, LOCATE('harta', c.kecil))) > 70, '...', ''), TRIM(SUBSTRING(c.polos, GREATEST(1, LEAST(IF(LOCATE('harta bersama', c.kecil) = 0, 999999, LOCATE('harta bersama', c.kecil)), IF(LOCATE('gono', c.kecil) = 0, 999999, LOCATE('gono', c.kecil)), IF(LOCATE('harta', c.kecil) = 0, 999999, LOCATE('harta', c.kecil))) - 70), 190)), '...')))), 'tidak|')))) AS data FROM (SELECT w.*, IF(w.pet REGEXP 'hadhanah|hadlanah|hadanah|hak asuh|hak pengasuhan|kuasa asuh|hak pemeliharaan|pemeliharaan anak|pengasuhan anak|asuhan anak|di bawah (asuhan|pemeliharaan)|berada (di bawah|dalam) (asuhan|pemeliharaan|hadhanah)' OR w.kh > 0, 1, 0) AS th, IF(w.pet REGEXP 'nafkah[^;]{0,60}anak|anak[^;]{0,60}nafkah|biaya (hidup|pemeliharaan|pendidikan|kebutuhan)[^;]{0,60}anak|biaya anak', 1, 0) AS tn, IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti, IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm, IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td, IF(w.pet REGEXP 'harta bersama|harta gono|gono.?gini' OR w.kbh > 0, 1, 0) AS tb, IF(w.pet REGEXP 'hadhanah|hadlanah|hadanah|hak asuh|hak pengasuhan|kuasa asuh|hak pemeliharaan|pemeliharaan anak|pengasuhan anak|asuhan anak|di bawah (asuhan|pemeliharaan)|berada (di bawah|dalam) (asuhan|pemeliharaan|hadhanah)', 1, 0) AS th_teks, IF(w.pet REGEXP 'harta bersama|harta gono|gono.?gini', 1, 0) AS tb_teks, IF(CHAR_LENGTH(TRIM(w.pet)) < 30, 1, 0) AS kosong FROM (SELECT LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CONCAT(IFNULL(p.petitum,''), ' ', IFNULL((SELECT GROUP_CONCAT(r.isi_petitum SEPARATOR ' ') FROM perkara_rekonvensi r WHERE r.perkara_id = p.perkara_id),'')),'<strong>',''),'</strong>',''),'<em>',''),'</em>',''),'&nbsp;',' '),CHAR(10),' '),CHAR(13),' ')) AS pet, REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CONCAT(IFNULL(p.petitum,''), ' ', IFNULL((SELECT GROUP_CONCAT(r.isi_petitum SEPARATOR ' ') FROM perkara_rekonvensi r WHERE r.perkara_id = p.perkara_id),'')),'<strong>',' '),'</strong>',' '),'<em>',' '),'</em>',' '),'<p>',' '),'</p>',' '),'<li>',' '),'</li>',' '),'<ol>',' '),'</ol>',' '),'<ul>',' '),'</ul>',' '),'<br>',' '),'<br />',' '),'<br/>',' '),'<u>',' '),'</u>',' '),'<b>',' '),'</b>',' '),'<i>',' '),'</i>',' '),'&nbsp;',' '),CHAR(10),' '),CHAR(13),' '),CHAR(9),' '),'|',' ') AS polos, LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CONCAT(IFNULL(p.petitum,''), ' ', IFNULL((SELECT GROUP_CONCAT(r.isi_petitum SEPARATOR ' ') FROM perkara_rekonvensi r WHERE r.perkara_id = p.perkara_id),'')),'<strong>',' '),'</strong>',' '),'<em>',' '),'</em>',' '),'<p>',' '),'</p>',' '),'<li>',' '),'</li>',' '),'<ol>',' '),'</ol>',' '),'<ul>',' '),'</ul>',' '),'<br>',' '),'<br />',' '),'<br/>',' '),'<u>',' '),'</u>',' '),'<b>',' '),'</b>',' '),'<i>',' '),'</i>',' '),'&nbsp;',' '),CHAR(10),' '),CHAR(13),' '),CHAR(9),' '),'|',' ')) AS kecil, (SELECT COUNT(*) FROM perkara_kumulasi k WHERE k.perkara_id = p.perkara_id AND k.jenis_perkara_id = 349) AS kh, (SELECT COUNT(*) FROM perkara_kumulasi k WHERE k.perkara_id = p.perkara_id AND k.jenis_perkara_id = 348) AS kbh FROM perkara p WHERE p.perkara_id = '#perkara_id#') w) c",
+   "default": null,
+   "tabel": null,
+   "kolom": null,
+   "urutan": null
+  }
+ ],
+ "ubah": [
+  {
+   "no": 4110,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "343394c8e5c0b2a0bfb44d41726f208c",
+   "baru_md5": "330753f09640361f5cd21c0d0c329690",
+   "lama_panjang": 22601,
+   "baru_panjang": 22805,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4111,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "2ec1845a880f9cf3a57f7b20618627ad",
+   "baru_md5": "1fe7b9f4c11db7ff25a601777e73c6f9",
+   "lama_panjang": 16277,
+   "baru_panjang": 16481,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4112,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "f26488e30e57c32a8abca1e7d24f8371",
+   "baru_md5": "dc302f9da1903fab7003b2ec6336a4b2",
+   "lama_panjang": 17352,
+   "baru_panjang": 17556,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4113,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "60b3860d013f522494a25dcac8ee7708",
+   "baru_md5": "7ff592fb31678eac6a7317bcf597dcef",
+   "lama_panjang": 16761,
+   "baru_panjang": 16965,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4114,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "dc51b6cedfea23d736d37640adde275a",
+   "baru_md5": "96ced06213bae42f5fb30c7e5eb631d3",
+   "lama_panjang": 10871,
+   "baru_panjang": 11075,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4115,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "462d18ceaa4bc64aeff2ad95d3f5d1b9",
+   "baru_md5": "b99e76ac771c24e07baaa73506cfd940",
+   "lama_panjang": 12117,
+   "baru_panjang": 12321,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4116,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "5d52541c7c813c7b78f9ebf06cb08cb1",
+   "baru_md5": "71fd318769194901f841fc05c1fa800a",
+   "lama_panjang": 10739,
+   "baru_panjang": 10943,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4117,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "387b524c5fba98c4d5f7d70d6ca57405",
+   "baru_md5": "2d9f39375eb0a816961a94b3b7d7d1c5",
+   "lama_panjang": 9654,
+   "baru_panjang": 9858,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4118,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "94bd20d1581b11c59fba0d578e9d3e80",
+   "baru_md5": "360515bc02decd458a047c63098619b5",
+   "lama_panjang": 11484,
+   "baru_panjang": 11688,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4119,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "104852899a8428b9690d46c2514e8e25",
+   "baru_md5": "060c11209bb79ca150b9d3380551540d",
+   "lama_panjang": 53914,
+   "baru_panjang": 54118,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4130,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "982e944bf1f4ae4cdb0ab395674e19ed",
+   "baru_md5": "3339c3d032a1baca16b43bf635c905d8",
+   "lama_panjang": 9287,
+   "baru_panjang": 9491,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4131,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "1e604019849c3fef14c96b879fe76922",
+   "baru_md5": "d9b7968366b008cf86fad52cdce638a6",
+   "lama_panjang": 9321,
+   "baru_panjang": 9525,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4132,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "813ca7e1beb921d7affec2535fe35310",
+   "baru_md5": "70afc24c94b10d520fbbbe8837d174c2",
+   "lama_panjang": 9967,
+   "baru_panjang": 10171,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4133,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "77c53cdc56eebe692cd73fef24dbae58",
+   "baru_md5": "033c6f9bf0b9ae208b402d0bb3853b41",
+   "lama_panjang": 9204,
+   "baru_panjang": 9408,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4134,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "a4a578732d86b0305bf820df5edf648b",
+   "baru_md5": "d725712c494877642a37f9227f3fe964",
+   "lama_panjang": 8999,
+   "baru_panjang": 9203,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4138,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "2ebb01d31ce546b5ea39c9e7fa611235",
+   "baru_md5": "99f7e0fb55fecd6c8a2522df8b73b538",
+   "lama_panjang": 11578,
+   "baru_panjang": 11782,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4139,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "c21b2a8dad25635c1c3f4391c9599bbe",
+   "baru_md5": "465a961641ae042eb43825dd4f45ec01",
+   "lama_panjang": 10723,
+   "baru_panjang": 10927,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4140,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "65c840a62eb186039aad3b3fe8df7401",
+   "baru_md5": "c80d5e5c792636c7f2d0b426fb4ccdaf",
+   "lama_panjang": 8757,
+   "baru_panjang": 8961,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4141,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "99373cd6d407df8f85bac560e9bcbec8",
+   "baru_md5": "4c19b9eacaa9939146c4db2e1b4b29c4",
+   "lama_panjang": 8757,
+   "baru_panjang": 8961,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4142,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "ad237a2952545b10c91a9fbc0feb6bf5",
+   "baru_md5": "2c9d405da0ec95ccf80cded7957e47cf",
+   "lama_panjang": 8757,
+   "baru_panjang": 8961,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4143,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "6ca4ebda1713d2363ecc45ab2e6e053b",
+   "baru_md5": "14232a4becd28953512220b66f528095",
+   "lama_panjang": 8757,
+   "baru_panjang": 8961,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4144,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "1027b480622cb5900ce44453f929d57a",
+   "baru_md5": "566e642a191971b71e6359871138717f",
+   "lama_panjang": 8757,
+   "baru_panjang": 8961,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4145,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "e945c2fd5a6f6469953da45cf7af888f",
+   "baru_md5": "52338485826a406401d24897a7cc5004",
+   "lama_panjang": 8757,
+   "baru_panjang": 8961,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4146,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "96b10258e6a8eeb2a2fa87abe6da8400",
+   "baru_md5": "799456b68389afdc9a282b59f396daf2",
+   "lama_panjang": 8968,
+   "baru_panjang": 9172,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  },
+  {
+   "no": 4150,
+   "kolom": "sql_query",
+   "butir": "pola pembaca petitum (nama pihak tidak lagi menyalakan tuntutan)",
+   "lama_md5": "ac3e3a516e636d647ebf2d012de3ddc4",
+   "baru_md5": "5c1889632ed309c0adb0c2531709ac53",
+   "lama_panjang": 9452,
+   "baru_panjang": 9656,
+   "pola": [
+    {
+     "lama": "IF(w.pet REGEXP 'iddah|idah', 1, 0) AS ti",
+     "baru": "IF(w.pet REGEXP '(nafkah|biaya|uang|masa|selama|membayar|tunggu)[^;]{0,40}[^a-z](iddah|idah|eddah)([^a-z]|$)', 1, 0) AS ti"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'mut[^a-z]{0,4}ah', 1, 0) AS tm",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])muth?[^a-z]{0,6}ah([^a-z]|$)', 1, 0) AS tm"
+    },
+    {
+     "lama": "IF(w.pet REGEXP 'madli|madhi|mahdhi|lampau|yang lalu|terhutang', 1, 0) AS td",
+     "baru": "IF(w.pet REGEXP '(^|[^a-z])(madl?iy*ah|madhiy*ah|mahdhiy*ah)|nafkah[^;]{0,30}(lampau|yang lalu|terhutang|terutang|tertunggak|yang belum dibayar|yang tidak dibayar)', 1, 0) AS td"
+    }
+   ]
+  }
+ ],
+ "dependensi": [
+  46,
+  47,
+  53,
+  100,
+  104,
+  222,
+  246,
+  5114,
+  7777,
+  8008,
+  8554,
+  8602,
+  9944
+ ],
+ "harap": "0|0|25|0|13|0",
+ "ulang": "0|1|0|25|13|0"
+}
