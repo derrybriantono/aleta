@@ -1,0 +1,20 @@
+# no_var<TAB>kueri (#perkara_id# diganti pasang-satker.sh; hanya SELECT; baca saja)
+18	select b.nama_gelar as data from perkara_jurusita a join jurusita b on a.jurusita_id =b.id where a.aktif="Y" and a.urutan=1 and a.perkara_id=#perkara_id# order by a.id limit 1
+212	select keterangan as data from perkara_panitera_pn where aktif="Y" and urutan=1 and perkara_id=#perkara_id# order by tanggal_penetapan desc, id limit 1
+213	select keterangan as data from perkara_jurusita where aktif="Y" and urutan=1 and perkara_id=#perkara_id# order by id limit 1
+357	select b.tanggal_lahir as data from perkara_pihak5 a join pihak b on a.pihak_id=b.id where a.saksi_pihak_ke=2 and a.perkara_id=#perkara_id# order by a.urutan limit 0,1
+1076	select min(a.tanggal_relaas) data from perkara_pelaksanaan_relaas a join perkara_pihak1 b on a.perkara_id=b.perkara_id and a.pihak_id=b.pihak_id join perkara_jadwal_sidang c on a.perkara_id=c.perkara_id where c.ikrar_talak="T" and b.urutan=1 and a.perkara_id=#perkara_id#
+1077	select min(a.tanggal_relaas) data from perkara_pelaksanaan_relaas a join perkara_pihak2 b on a.perkara_id=b.perkara_id and a.pihak_id=b.pihak_id join perkara_jadwal_sidang c on a.perkara_id=c.perkara_id where c.ikrar_talak="T" and b.urutan=1 and a.perkara_id=#perkara_id#
+6031	select b.nama_gelar as data from perkara_jurusita a join jurusita b on a.jurusita_id =b.id where a.aktif="Y" and a.urutan=1 and a.perkara_id=#perkara_id# order by a.id limit 1
+6144	select nama as data from perkara_pihak5 where saksi_pihak_ke=1 and perkara_id=#perkara_id# order by urutan limit 3,1
+6145	select (get_umur(b.tanggal_lahir,a.diinput_tanggal))as data from perkara_pihak5 a join pihak b on a.pihak_id=b.id where a.saksi_pihak_ke=1 and a.perkara_id=#perkara_id# order by a.urutan limit 3,1
+6146	select c.nama as data from perkara_pihak5 a join pihak b on a.pihak_id=b.id join agama c on b.agama_id=c.id where a.saksi_pihak_ke=1 and a.perkara_id=#perkara_id# order by a.urutan limit 3,1
+6147	select c.kode as data from perkara_pihak5 a join pihak b on a.pihak_id=b.id join tingkat_pendidikan c on b.pendidikan_id=c.id where a.saksi_pihak_ke=1 and a.perkara_id=#perkara_id# order by a.urutan limit 3,1
+6148	select alamat as data from perkara_pihak5 where saksi_pihak_ke=1 and perkara_id=#perkara_id# order by urutan limit 3,1
+6150	select keterangan as data from perkara_pihak5 where saksi_pihak_ke=1 and perkara_id=#perkara_id# order by urutan limit 3,1
+6151	select b.pekerjaan as data from perkara_pihak5 a join pihak b on a.pihak_id=b.id where a.saksi_pihak_ke=1 and a.perkara_id=#perkara_id# order by a.urutan limit 3,1
+7123	SELECT rencana_tanggal AS data FROM perkara_court_calendar WHERE perkara_id = #perkara_id# AND (rencana_agenda LIKE '%perbaikan%' AND rencana_agenda NOT LIKE '%rekonvensi%') UNION ALL SELECT '' AS data FROM DUAL WHERE NOT EXISTS ( SELECT 1 FROM perkara_court_calendar WHERE perkara_id = #perkara_id# AND (rencana_agenda LIKE '%perbaikan%' AND rencana_agenda NOT LIKE '%rekonvensi%') )
+7124	SELECT CASE DAYOFWEEK(DATE(rencana_tanggal)) WHEN 1 THEN 'Minggu' WHEN 2 THEN 'Senin' WHEN 3 THEN 'Selasa' WHEN 4 THEN 'Rabu' WHEN 5 THEN 'Kamis' WHEN 6 THEN 'Jumat' WHEN 7 THEN 'Sabtu' END AS data FROM perkara_court_calendar WHERE perkara_id = #perkara_id# AND (rencana_agenda LIKE '%perbaikan%' AND rencana_agenda NOT LIKE '%rekonvensi%') UNION ALL SELECT '' AS data FROM DUAL WHERE NOT EXISTS ( SELECT 1 FROM perkara_court_calendar WHERE perkara_id = #perkara_id# AND (rencana_agenda LIKE '%perbaikan%' AND rencana_agenda NOT LIKE '%rekonvensi%') )
+7713	SELECT rencana_tanggal AS data FROM perkara_court_calendar WHERE rencana_agenda LIKE '%duplik%' AND rencana_agenda NOT LIKE '%Duplik Rekonvensi%' AND perkara_id = #perkara_id#
+8146	select (case when alur_perkara_id=16 or jenis_perkara_id=346 or jenis_perkara_id=341 then "PEMOHON" else "PENGGUGAT" end) as data from perkara where perkara_id=#perkara_id#
+8147	select (case when alur_perkara_id=16 or jenis_perkara_id=346 or jenis_perkara_id=341 then "TERMOHON" else "TERGUGAT" end) as data from perkara where perkara_id=#perkara_id#

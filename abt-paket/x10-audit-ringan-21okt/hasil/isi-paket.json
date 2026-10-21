@@ -1,0 +1,361 @@
+{
+ "baru": [],
+ "ubah": [
+  {
+   "no": 18,
+   "butir": "R4",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select b.nama_gelar as data\r\nfrom perkara_jurusita a\r\njoin jurusita b on a.jurusita_id =b.id\r\nwhere a.aktif=\"Y\" and a.urutan=1 and a.perkara_id=#perkara_id#\r\norder by a.id\r\nlimit 1"
+   },
+   "lama": {
+    "sql_query": "select b.nama_gelar as data\r\nfrom perkara_jurusita a\r\njoin jurusita b on a.jurusita_id =b.id\r\nwhere a.aktif=\"Y\" and a.urutan=1 and a.perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 143,
+   "butir": "R3",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "SELECT\r\n    (0#0279# + \r\n    0#6060# + \r\n    0#0312# + \r\n    0#6063# + \r\n    0#6061# + \r\n    0#6062# +\r\n    0#0026# +\r\n    0#0281# +\r\n    0#0242# +\r\n    0#0244# +\r\n    0#5223#) as data;"
+   },
+   "lama": {
+    "sql_query": "SELECT\r\n    (0#0279# + \r\n    0#6060# + \r\n    0#0312# + \r\n    0#6063# + \r\n    0#6061# + \r\n    0#6062# +\r\n    0#0026# +\r\n    0#0281# +\r\n    0#0242# +\r\n    0#0243# +\r\n    0#0244# +\r\n    0#5223#) as data;"
+   }
+  },
+  {
+   "no": 212,
+   "butir": "R4",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select keterangan as data from perkara_panitera_pn\r\nwhere aktif=\"Y\" and urutan=1 and perkara_id=#perkara_id#\r\norder by tanggal_penetapan desc, id\r\nlimit 1"
+   },
+   "lama": {
+    "sql_query": "select keterangan as data from perkara_panitera_pn\r\nwhere aktif=\"Y\" and urutan=1 and perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 213,
+   "butir": "R4",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select keterangan as data from perkara_jurusita\r\nwhere aktif=\"Y\" and urutan=1 and perkara_id=#perkara_id#\r\norder by id\r\nlimit 1"
+   },
+   "lama": {
+    "sql_query": "select keterangan as data from perkara_jurusita\r\nwhere aktif=\"Y\" and urutan=1 and perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 228,
+   "butir": "R7",
+   "kolom": [
+    "default_data"
+   ],
+   "sesudah": {
+    "default_data": "belum lahir dan  mendengarkan cerita dari orang tua saksi\r\nberada di luar kota\r\nsedang sakit sehingga tidak dapat hadir"
+   },
+   "lama": {
+    "default_data": "belum lahir dan  mendengarkan cerita dari orang tua saksi\r\nberada diluar kota\r\nsedang sakit sehingga tidak dapat hadir"
+   }
+  },
+  {
+   "no": 317,
+   "butir": "R7",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select (case\r\n\r\nwhen locate(\"hilang\",\"#1358#\")>0 or locate(\"rusak\",\"#1358#\")>0 or locate(\"terbakar\",\"#1358#\")>0 or locate(\"tenggelam\",\"#1358#\")>0 or locate(\"robek\",\"#1358#\")>0 or locate(\"hanyut\",\"#1358#\")>0 then\r\n\"menurut pengakuan para Pemohon pernah mempunyai Akta Nikah namun hilang/rusak, maka permohonan Itsbat Nikah dalam perkara ini juga telah memenuhi ketentuan Pasal 7 ayat (3) huruf (b) Kompilasi Hukum Islam\"\r\n\r\nwhen locate(\"1974\",\"#1358#\")>0 then\r\n\"pernikahan tersebut terjadi sebelum berlakunya Undang-Undang Nomor 1 Tahun 1974, maka permohonan Itsbat Nikah dalam perkara ini juga telah memenuhi ketentuan Pasal 7 ayat (3) huruf (d) Kompilasi Hukum Islam\"\r\n\r\nelse\r\n\"yang menikah tidak mempunyai halangan menikah menurut Undang-Undang Nomor 1 Tahun 1974, maka permohonan Itsbat Nikah dalam perkara ini juga telah memenuhi ketentuan Pasal 7 ayat (3) huruf (e) Kompilasi Hukum Islam\"\r\n\r\nend)\r\nas data"
+   },
+   "lama": {
+    "sql_query": "select (case\r\n\r\nwhen locate(\"hilang\",\"#1358#\")>0 or locate(\"rusak\",\"#1358#\")>0 or locate(\"terbakar\",\"#1358#\")>0 or locate(\"tenggelam\",\"#1358#\")>0 or locate(\"robek\",\"#1358#\")>0 or locate(\"hanyut\",\"#1358#\")>0 then\r\n\"menurut pengakuan para Pemohon pernah mempunyai Akta Nikah namun hilang/rusak, maka permohonan Itsbat Nikah dalam perkara ini juga telah memenuhi ketentuan Pasal 7 ayat (3) huruf (b) Kompilasi Hukum Islam\"\r\n\r\nwhen locate(\"1974\",\"#1358#\")>0 then\r\n\"pernikahan tersebut terjadi sebelum berlakunya Undang-undang Nomor 1 tahun 1974, maka permohonan Itsbat Nikah dalam perkara ini juga telah memenuhi ketentuan Pasal 7 ayat (3) huruf (d) Kompilasi Hukum Islam\"\r\n\r\nelse\r\n\"yang menikah tidak mempunyai halangan menikah menurut Undang-Undang Nomor 1 tahun 1974, maka permohonan Itsbat Nikah dalam perkara ini juga telah memenuhi ketentuan Pasal 7 ayat (3) huruf (e) Kompilasi Hukum Islam\"\r\n\r\nend)\r\nas data"
+   }
+  },
+  {
+   "no": 328,
+   "butir": "R7",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select (case\r\n\r\nwhen locate(\"hilang\",\"#1358#\")>0 or locate(\"rusak\",\"#1358#\")>0 or locate(\"terbakar\",\"#1358#\")>0 or locate(\"tenggelam\",\"#1358#\")>0 or locate(\"robek\",\"#1358#\")>0 or locate(\"hanyut\",\"#1358#\")>0 then\r\n\"menurut pengakuan Pemohon pernah mempunyai Akta Nikah namun hilang/rusak, maka permohonan Itsbat Nikah dalam perkara ini juga telah memenuhi ketentuan Pasal 7 ayat (3) huruf (b) Kompilasi Hukum Islam\"\r\n\r\nwhen locate(\"1974\",\"#1358#\")>0 then\r\n\"pernikahan tersebut terjadi sebelum berlakunya Undang-Undang Nomor 1 Tahun 1974, maka permohonan Itsbat Nikah dalam perkara ini juga telah memenuhi ketentuan Pasal 7 ayat (3) huruf (d) Kompilasi Hukum Islam\"\r\n\r\nelse\r\n\"yang menikah tidak mempunyai halangan menikah menurut Undang-Undang Nomor 1 Tahun 1974, maka permohonan Itsbat Nikah dalam perkara ini juga telah memenuhi ketentuan Pasal 7 ayat (3) huruf (e) Kompilasi Hukum Islam\"\r\n\r\nend)\r\nas data"
+   },
+   "lama": {
+    "sql_query": "select (case\r\n\r\nwhen locate(\"hilang\",\"#1358#\")>0 or locate(\"rusak\",\"#1358#\")>0 or locate(\"terbakar\",\"#1358#\")>0 or locate(\"tenggelam\",\"#1358#\")>0 or locate(\"robek\",\"#1358#\")>0 or locate(\"hanyut\",\"#1358#\")>0 then\r\n\"menurut pengakuan Pemohon pernah mempunyai Akta Nikah namun hilang/rusak, maka permohonan Itsbat Nikah dalam perkara ini juga telah memenuhi ketentuan Pasal 7 ayat (3) huruf (b) Kompilasi Hukum Islam\"\r\n\r\nwhen locate(\"1974\",\"#1358#\")>0 then\r\n\"pernikahan tersebut terjadi sebelum berlakunya Undang-undang Nomor 1 tahun 1974, maka permohonan Itsbat Nikah dalam perkara ini juga telah memenuhi ketentuan Pasal 7 ayat (3) huruf (d) Kompilasi Hukum Islam\"\r\n\r\nelse\r\n\"yang menikah tidak mempunyai halangan menikah menurut Undang-Undang Nomor 1 tahun 1974, maka permohonan Itsbat Nikah dalam perkara ini juga telah memenuhi ketentuan Pasal 7 ayat (3) huruf (e) Kompilasi Hukum Islam\"\r\n\r\nend)\r\nas data"
+   }
+  },
+  {
+   "no": 357,
+   "butir": "R6",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select b.tanggal_lahir as data\r\nfrom perkara_pihak5 a\r\njoin pihak b on a.pihak_id=b.id\r\nwhere a.saksi_pihak_ke=2 and a.perkara_id=#perkara_id#\r\norder by a.urutan\r\nlimit 0,1"
+   },
+   "lama": {
+    "sql_query": "select b.tanggal_lahir as data\r\nfrom perkara_pihak5 a\r\njoin pihak b on a.pihak_id=b.id\r\nwhere a.saksi_pihak_ke=2 and a.perkara_id=#perkara_id#\r\nlimit 0,1"
+   }
+  },
+  {
+   "no": 1076,
+   "butir": "R5",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select min(a.tanggal_relaas) data from perkara_pelaksanaan_relaas a\r\njoin perkara_pihak1 b on a.perkara_id=b.perkara_id and a.pihak_id=b.pihak_id\r\njoin perkara_jadwal_sidang c on a.perkara_id=c.perkara_id\r\nwhere c.ikrar_talak=\"T\" and b.urutan=1 and a.perkara_id=#perkara_id#"
+   },
+   "lama": {
+    "sql_query": "select min(a.tanggal_relaas) data from perkara_pelaksanaan_relaas a\r\njoin v_pihak_perkara b on a.perkara_id=b.perkara_id and a.pihak_id=b.pihak_id\r\njoin perkara_jadwal_sidang c on a.perkara_id=c.perkara_id\r\nwhere c.ikrar_talak=\"T\" and b.urutan=1 and b.pihak_ke=1 and a.perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 1077,
+   "butir": "R5",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select min(a.tanggal_relaas) data from perkara_pelaksanaan_relaas a\r\njoin perkara_pihak2 b on a.perkara_id=b.perkara_id and a.pihak_id=b.pihak_id\r\njoin perkara_jadwal_sidang c on a.perkara_id=c.perkara_id\r\nwhere c.ikrar_talak=\"T\" and b.urutan=1 and a.perkara_id=#perkara_id#"
+   },
+   "lama": {
+    "sql_query": "select min(a.tanggal_relaas) data from perkara_pelaksanaan_relaas a\r\njoin v_pihak_perkara b on a.perkara_id=b.perkara_id and a.pihak_id=b.pihak_id\r\njoin perkara_jadwal_sidang c on a.perkara_id=c.perkara_id\r\nwhere c.ikrar_talak=\"T\" and b.urutan=1 and b.pihak_ke=2 and a.perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 1149,
+   "butir": "R8",
+   "kolom": [
+    "default_data"
+   ],
+   "sesudah": {
+    "default_data": "........"
+   },
+   "lama": {
+    "default_data": "Dwi Anugerah, S.H.I., M.H."
+   }
+  },
+  {
+   "no": 3333,
+   "butir": "R8",
+   "kolom": [
+    "default_data"
+   ],
+   "sesudah": {
+    "default_data": "Kecamatan ..., Kabupaten ..."
+   },
+   "lama": {
+    "default_data": "Banawa, Kabupaten Donggala\r\nBiromaru, Kabupaten Sigi"
+   }
+  },
+  {
+   "no": 6031,
+   "butir": "R4",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select b.nama_gelar as data\r\nfrom perkara_jurusita a\r\njoin jurusita b on a.jurusita_id =b.id\r\nwhere a.aktif=\"Y\" and a.urutan=1 and a.perkara_id=#perkara_id#\r\norder by a.id\r\nlimit 1"
+   },
+   "lama": {
+    "sql_query": "select b.nama_gelar as data\r\nfrom perkara_jurusita a\r\njoin jurusita b on a.jurusita_id =b.id\r\nwhere a.aktif=\"Y\" and a.urutan=1 and a.perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 6144,
+   "butir": "R6",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select nama as data from perkara_pihak5\r\nwhere saksi_pihak_ke=1 and perkara_id=#perkara_id#\r\norder by urutan\r\nlimit 3,1"
+   },
+   "lama": {
+    "sql_query": "select nama as data from perkara_pihak5\r\nwhere saksi_pihak_ke=1 and perkara_id=#perkara_id#\r\norder by urutan\r\nlimit 3,2"
+   }
+  },
+  {
+   "no": 6145,
+   "butir": "R6",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select (get_umur(b.tanggal_lahir,a.diinput_tanggal))as data\r\nfrom perkara_pihak5 a\r\njoin pihak b on a.pihak_id=b.id\r\nwhere a.saksi_pihak_ke=1 and a.perkara_id=#perkara_id#\r\norder by a.urutan\r\nlimit 3,1"
+   },
+   "lama": {
+    "sql_query": "select (get_umur(b.tanggal_lahir,a.diinput_tanggal))as data\r\nfrom perkara_pihak5 a\r\njoin pihak b on a.pihak_id=b.id\r\nwhere a.saksi_pihak_ke=1 and a.perkara_id=#perkara_id#\r\norder by a.urutan\r\nlimit 3,2"
+   }
+  },
+  {
+   "no": 6146,
+   "butir": "R6",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select c.nama as data\r\nfrom perkara_pihak5 a\r\njoin pihak b on a.pihak_id=b.id\r\njoin agama c on b.agama_id=c.id\r\nwhere a.saksi_pihak_ke=1 and a.perkara_id=#perkara_id#\r\norder by a.urutan\r\nlimit 3,1"
+   },
+   "lama": {
+    "sql_query": "select c.nama as data\r\nfrom perkara_pihak5 a\r\njoin pihak b on a.pihak_id=b.id\r\njoin agama c on b.agama_id=c.id\r\nwhere a.saksi_pihak_ke=1 and a.perkara_id=#perkara_id#\r\norder by a.urutan\r\nlimit 3,2"
+   }
+  },
+  {
+   "no": 6147,
+   "butir": "R6",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select c.kode as data from perkara_pihak5 a\r\njoin pihak b on a.pihak_id=b.id\r\njoin tingkat_pendidikan c on b.pendidikan_id=c.id\r\nwhere a.saksi_pihak_ke=1 and a.perkara_id=#perkara_id#\r\norder by a.urutan\r\nlimit 3,1"
+   },
+   "lama": {
+    "sql_query": "select c.kode as data from perkara_pihak5 a\r\njoin pihak b on a.pihak_id=b.id\r\njoin tingkat_pendidikan c on b.pendidikan_id=c.id\r\nwhere a.saksi_pihak_ke=1 and a.perkara_id=#perkara_id#\r\norder by a.urutan\r\nlimit 3,2"
+   }
+  },
+  {
+   "no": 6148,
+   "butir": "R6",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select alamat as data from perkara_pihak5\r\nwhere saksi_pihak_ke=1 and perkara_id=#perkara_id#\r\norder by urutan\r\nlimit 3,1"
+   },
+   "lama": {
+    "sql_query": "select alamat as data from perkara_pihak5\r\nwhere saksi_pihak_ke=1 and perkara_id=#perkara_id#\r\norder by urutan\r\nlimit 3,2"
+   }
+  },
+  {
+   "no": 6150,
+   "butir": "R11",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select keterangan as data from perkara_pihak5\r\nwhere saksi_pihak_ke=1 and perkara_id=#perkara_id# order by urutan limit 3,1"
+   },
+   "lama": {
+    "sql_query": "select keterangan as data from perkara_pihak5\r\nwhere saksi_pihak_ke=4 and urutan=1 and perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 6151,
+   "butir": "R6",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select b.pekerjaan as data\r\nfrom perkara_pihak5 a\r\njoin pihak b on a.pihak_id=b.id\r\nwhere a.saksi_pihak_ke=1 and a.perkara_id=#perkara_id#\r\norder by a.urutan\r\nlimit 3,1"
+   },
+   "lama": {
+    "sql_query": "select b.pekerjaan as data\r\nfrom perkara_pihak5 a\r\njoin pihak b on a.pihak_id=b.id\r\nwhere a.saksi_pihak_ke=1 and a.perkara_id=#perkara_id#\r\norder by a.urutan\r\nlimit 3,2"
+   }
+  },
+  {
+   "no": 7123,
+   "butir": "R11",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "SELECT\r\n  rencana_tanggal AS data\r\nFROM \r\n  perkara_court_calendar\r\nWHERE \r\n  perkara_id = #perkara_id#\r\n  AND (rencana_agenda LIKE '%perbaikan%' AND rencana_agenda NOT LIKE '%rekonvensi%')\r\n\r\nUNION ALL\r\n\r\nSELECT '' AS data\r\nFROM DUAL\r\nWHERE NOT EXISTS (\r\n  SELECT 1\r\n  FROM perkara_court_calendar\r\n  WHERE \r\n    perkara_id = #perkara_id#\r\n    AND (rencana_agenda LIKE '%perbaikan%' AND rencana_agenda NOT LIKE '%rekonvensi%')\r\n);\r\n"
+   },
+   "lama": {
+    "sql_query": "SELECT\r\n  rencana_tanggal AS data\r\nFROM \r\n  perkara_court_calendar\r\nWHERE \r\n  perkara_id = #perkara_id#\r\n  AND rencana_agenda LIKE '%replik%'\r\n  AND rencana_agenda NOT LIKE '%replik rekonvensi%'\r\n\r\nUNION ALL\r\n\r\nSELECT '' AS data\r\nFROM DUAL\r\nWHERE NOT EXISTS (\r\n  SELECT 1\r\n  FROM perkara_court_calendar\r\n  WHERE \r\n    perkara_id = #perkara_id#\r\n    AND rencana_agenda LIKE '%Perbaikan Gugatan%' OR  '%Perbaikan Permohonan%'\r\n    AND rencana_agenda NOT LIKE '%Perbaikan Gugatan Rekonvensi%' OR  '%Perbaikan Permohonan Rekonvensi%'\r\n);"
+   }
+  },
+  {
+   "no": 7124,
+   "butir": "R11",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "SELECT\r\n  CASE DAYOFWEEK(DATE(rencana_tanggal))\r\n    WHEN 1 THEN 'Minggu'\r\n    WHEN 2 THEN 'Senin'\r\n    WHEN 3 THEN 'Selasa'\r\n    WHEN 4 THEN 'Rabu'\r\n    WHEN 5 THEN 'Kamis'\r\n    WHEN 6 THEN 'Jumat'\r\n    WHEN 7 THEN 'Sabtu'\r\n  END AS data\r\nFROM \r\n  perkara_court_calendar\r\nWHERE \r\n  perkara_id = #perkara_id#\r\n  AND (rencana_agenda LIKE '%perbaikan%' AND rencana_agenda NOT LIKE '%rekonvensi%')\r\n\r\nUNION ALL\r\n\r\nSELECT '' AS data\r\nFROM DUAL\r\nWHERE NOT EXISTS (\r\n  SELECT 1\r\n  FROM perkara_court_calendar\r\n  WHERE \r\n    perkara_id = #perkara_id#\r\n    AND (rencana_agenda LIKE '%perbaikan%' AND rencana_agenda NOT LIKE '%rekonvensi%')\r\n);\r\n"
+   },
+   "lama": {
+    "sql_query": "SELECT\r\n  CASE DAYOFWEEK(DATE(rencana_tanggal))\r\n    WHEN 1 THEN 'Minggu'\r\n    WHEN 2 THEN 'Senin'\r\n    WHEN 3 THEN 'Selasa'\r\n    WHEN 4 THEN 'Rabu'\r\n    WHEN 5 THEN 'Kamis'\r\n    WHEN 6 THEN 'Jumat'\r\n    WHEN 7 THEN 'Sabtu'\r\n  END AS data\r\nFROM \r\n  perkara_court_calendar\r\nWHERE \r\n  perkara_id = #perkara_id#\r\n  AND rencana_agenda LIKE '%kesimpulan%'\r\n\r\nUNION ALL\r\n\r\nSELECT '' AS data\r\nFROM DUAL\r\nWHERE NOT EXISTS (\r\n  SELECT 1\r\n  FROM perkara_court_calendar\r\n  WHERE \r\n    perkara_id = #perkara_id#\r\n    AND rencana_agenda LIKE '%Perbaikan Gugatan%' OR '%Perbaikan Permohonan%'\r\n);"
+   }
+  },
+  {
+   "no": 7178,
+   "butir": "R7",
+   "kolom": [
+    "default_data"
+   ],
+   "sesudah": {
+    "default_data": "#6032# tidak bertemu #0047# karena alamat tidak jelas dan tidak ada yang mengenal #0047#, Lurah/Kepala Desa tidak mau tanda tangan karena tidak mengenal #0047#\r\n\r\n#6032# tidak bertemu #0047# karena alamat #0047# di luar batas antar\r\n\r\n#6032# tidak bertemu #0047# karena #0047# tidak berada di tempat"
+   },
+   "lama": {
+    "default_data": "#6032# tidak bertemu #0047# karena alamat tidak jelas dan tidak ada yang mengenal #0047#, Lurah/Kepala Desa tidak mau tanda tangan karena tidak mengenal #0047#\r\n\r\n#6032# tidak bertemu #0047# karena alamat #0047# diluar batas antar\r\n\r\n#6032# tidak bertemu #0047# karena #0047# tidak berada ditempat"
+   }
+  },
+  {
+   "no": 7713,
+   "butir": "R2",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "SELECT\r\n  rencana_tanggal AS data\r\nFROM \r\n  perkara_court_calendar\r\nWHERE \r\n  rencana_agenda LIKE '%duplik%'\r\n  AND rencana_agenda NOT LIKE '%Duplik Rekonvensi%'\r\n  AND perkara_id = #perkara_id#;\r\n"
+   },
+   "lama": {
+    "sql_query": "SELECT\r\n  rencana_tanggal AS data\r\nFROM \r\n  perkara_court_calendar\r\nWHERE \r\n  rencana_agenda LIKE '%duplik%'\r\n  AND perkara_id = #perkara_id#;\r\n"
+   }
+  },
+  {
+   "no": 8146,
+   "butir": "R2",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select (case when alur_perkara_id=16 or jenis_perkara_id=346 or jenis_perkara_id=341 then \"PEMOHON\"\r\nelse \"PENGGUGAT\" end) as data\r\nfrom perkara where perkara_id=#perkara_id#"
+   },
+   "lama": {
+    "sql_query": "select (case when alur_perkara_id=16 or jenis_perkara_id=346 then \"PEMOHON\"\r\nelse \"PENGGUGAT\" end) as data\r\nfrom perkara where perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 8147,
+   "butir": "R2",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select (case when alur_perkara_id=16 or jenis_perkara_id=346 or jenis_perkara_id=341 then \"TERMOHON\"\r\nelse \"TERGUGAT\" end) as data\r\nfrom perkara where perkara_id=#perkara_id#"
+   },
+   "lama": {
+    "sql_query": "select (case when alur_perkara_id=16 or jenis_perkara_id=346 then \"TERMOHON\"\r\nelse \"TERGUGAT\" end) as data\r\nfrom perkara where perkara_id=#perkara_id#"
+   }
+  }
+ ],
+ "dependensi": [
+  26,
+  47,
+  242,
+  244,
+  279,
+  281,
+  312,
+  1358,
+  5223,
+  6032,
+  6060,
+  6061,
+  6062,
+  6063
+ ],
+ "harap": "0|0|26|0|14|0",
+ "ulang": "0|0|0|26|14|0"
+}

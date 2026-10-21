@@ -1,0 +1,100 @@
+{
+ "dasar": "abt_variabel server 21 Okt malam sesudah x1-x7: 2480 baris",
+ "siklus_lab": {
+  "prasyarat_pertama": "0|0|26|0|14|0",
+  "prasyarat_ulang": "0|0|0|26|14|0",
+  "periksa": "SEMUA COCOK",
+  "pulih": "PULIH COCOK",
+  "sidik_jari_awal_sama_dengan_sesudah_pulih": true,
+  "baris": 2480
+ },
+ "prasyarat_server_baca_saja": "0|0|26|0|14|0",
+ "banding_sql_lokal": {
+  "0018,6031,0212,0213": {
+   "perkara": 10201,
+   "berbeda": 0
+  },
+  "6144-6148,6151": {
+   "perkara": 117,
+   "berbeda": 0
+  },
+  "0357": {
+   "perkara": 129,
+   "berbeda": 0
+  },
+  "1076,1077": {
+   "perkara": 300,
+   "berbeda": 0,
+   "detik_per_300_lama": "17-80",
+   "detik_per_300_baru": "4-8"
+  },
+  "8146,8147": {
+   "perkara": 10216,
+   "berbeda": 12
+  },
+  "6150": {
+   "perkara": 117,
+   "berbeda": 53
+  },
+  "7713": {
+   "perkara": 3878,
+   "berbeda": 1
+  },
+  "7123": {
+   "perkara": 3878,
+   "berbeda": 133
+  },
+  "7124": {
+   "perkara": 3878,
+   "berbeda": 149
+  }
+ },
+ "render_205_perkara": {
+  "317": {
+   "sama": 0,
+   "beda": 205
+  },
+  "328": {
+   "sama": 0,
+   "beda": 205
+  },
+  "6150": {
+   "sama": 203,
+   "beda": 2
+  },
+  "7123": {
+   "sama": 185,
+   "beda": 20
+  },
+  "7124": {
+   "sama": 189,
+   "beda": 16
+  },
+  "8146": {
+   "sama": 204,
+   "beda": 1
+  },
+  "8147": {
+   "sama": 204,
+   "beda": 1
+  }
+ },
+ "rtf_asli": {
+  "cetakan": 27,
+  "sama": 25,
+  "berubah": 2,
+  "galat": 0,
+  "titik3_naik": 0
+ },
+ "server_baca_saja": {
+  "perkara": 9,
+  "variabel": 19,
+  "berbeda": [
+   "7123",
+   "8146",
+   "8147",
+   "212 (kosong vs NULL, tercetak sama)"
+  ],
+  "uji_kueri": "19 kueri x 9 perkara tanpa galat"
+ }
+}
