@@ -328,7 +328,7 @@
       }
       ctx.data = data;
       gambarRinci();
-      if (ctx.terbuka) void muatPetaEdoc();
+      void muatPetaEdoc();
     } catch (galat) {
       ctx.galat = String((galat && galat.message) || galat).slice(0, 200);
     } finally {
@@ -1118,7 +1118,7 @@
   }
 
   /**
-   * Keempat penetapan (PMH, PPP, PJS, PHS) perkara ini SUDAH tercatat di SIPP? Sumber yang sama dengan "sudah tercatat - dilewati"
+   * Keempat penetapan (PMH, PPP, PJS, PHS) perkara ini SUDAH tercatat di SIPP DAN e-Doc keempatnya sudah ada? Sumber yang sama dengan "sudah tercatat - dilewati"
    * (keadaanPenetapanUsulan). Belum terbaca / gagal baca = false (tombol tetap tampil). Sesudah petugas menjalankan penetapan di
    * halaman ini, tombol tidak dicabut di tengah jalan (hasilnya masih dibaca di panel).
    */
@@ -1128,7 +1128,10 @@
     const u = d.usulan;
     if (!u || u.ok === false || !u.penetapan || typeof u.penetapan !== "object") return false;
     const t = tercatatDi(d);
-    return URUTAN.every((j) => Boolean(t[j]));
+    if (!URUTAN.every((j) => Boolean(t[j]))) return false;
+    // e-Doc keempatnya juga harus sudah ada (sumber "e-Doc sudah ada" yang sama dengan chip di panel); belum/gagal terbaca = tombol tetap
+    // tampil supaya jalur "Tetapkan & unggah e-Doc" tidak hilang.
+    return Boolean(ctx.edocPeta) && URUTAN.every((j) => sudahEdoc(j));
   }
 
   function buangTombol(tr) {
@@ -1191,7 +1194,6 @@
     // Keadaan penetapan dibaca walau panel terlipat: tombolnya disembunyikan bila keempat penetapan sudah tercatat di SIPP.
     if (!ctx.data && !ctx.memuat && !ctx.galat) void muat();
     else if (ctx.dirender === false) render();
-    if (ctx.terbuka && ctx.data && !ctx.edocPetaDimuat) void muatPetaEdoc();
   }
 
   function bersihkan(doc) {

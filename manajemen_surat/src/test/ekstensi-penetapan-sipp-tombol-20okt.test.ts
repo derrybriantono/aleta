@@ -579,21 +579,37 @@ describe("panel: terbentang, empat langkah, e-Doc tercentang semua", () => {
     expect(panel(h)!.hidden).toBe(false);
   });
 
-  it("21 Okt: keempat penetapan SUDAH tercatat di SIPP -> tombol dan panel tidak dimunculkan; belum tercatat satu pun / sebagian -> tombol tampil", async () => {
-    const lengkap = buka({ pmh: HARI, ppp: HARI, pjs: HARI, phs: HARI });
+  it("21 Okt: keempat penetapan tercatat DAN e-Doc keempatnya sudah ada -> tombol dan panel tidak dimunculkan", async () => {
+    const lengkap = buka({ pmh: HARI, ppp: HARI, pjs: HARI, phs: HARI }, { edocSudah: ["pmh", "ppp", "pjs", "phs"] });
     await tombolSiap(lengkap).catch(() => null);
-    await sampai(() => (api(lengkap).pasang(lengkap.d), api(lengkap).keadaan()?.data && tombolPen(lengkap) === null ? true : null), () => `tombol harus hilang; ada=${Boolean(tombolPen(lengkap))}`);
+    await sampai(() => (api(lengkap).pasang(lengkap.d), api(lengkap).keadaan()?.edocPeta && tombolPen(lengkap) === null ? true : null), () => `tombol harus hilang; ada=${Boolean(tombolPen(lengkap))}`);
     expect(tombolPen(lengkap)).toBeNull();
     expect(panel(lengkap)?.hidden ?? true).toBe(true);
     simpanTangkapan(lengkap, "5-semua-tercatat");
-    // tetap tidak muncul lagi pada detak berikutnya
-    await tunggu(1200);
+    await tunggu(1200); // detak berikutnya tidak memunculkannya lagi
     expect(tombolPen(lengkap)).toBeNull();
+  });
 
-    const sebagian = buka({ pmh: HARI, ppp: HARI, pjs: HARI, phs: "" });
+  it("21 Okt: keempat tercatat tetapi SATU e-Doc belum ada -> tombol tetap tampil (jalur Tetapkan & unggah e-Doc tidak hilang)", async () => {
+    const h = buka({ pmh: HARI, ppp: HARI, pjs: HARI, phs: HARI }, { edocSudah: ["pmh", "ppp", "pjs"] });
+    await tombolSiap(h);
+    await sampai(() => (api(h).pasang(h.d), api(h).keadaan()?.edocPeta ? true : null), "peta e-Doc terbaca");
+    await tunggu(1200);
+    api(h).pasang(h.d);
+    expect(tombolPen(h)).not.toBeNull();
+  });
+
+  it("21 Okt: tercatat sebagian -> tombol tampil; e-Doc gagal terbaca -> tombol tampil", async () => {
+    const sebagian = buka({ pmh: HARI, ppp: HARI, pjs: HARI, phs: "" }, { edocSudah: ["pmh", "ppp", "pjs", "phs"] });
     await tombolSiap(sebagian);
     await sampai(() => (api(sebagian).pasang(sebagian.d), api(sebagian).keadaan()?.data ? true : null), "usulan terbaca");
     expect(tombolPen(sebagian)).not.toBeNull();
+    const tanpaPeta = buka({ pmh: HARI, ppp: HARI, pjs: HARI, phs: HARI });
+    await tombolSiap(tanpaPeta);
+    await sampai(() => (api(tanpaPeta).pasang(tanpaPeta.d), api(tanpaPeta).keadaan()?.data ? true : null), "usulan terbaca");
+    await tunggu(800);
+    api(tanpaPeta).pasang(tanpaPeta.d);
+    expect(tombolPen(tanpaPeta)).not.toBeNull();
   });
 
   it("memakai objek data yang SAMA dengan papan di panel ALETA (satu sumber keadaan)", async () => {
