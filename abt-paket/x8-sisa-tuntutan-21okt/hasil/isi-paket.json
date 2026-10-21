@@ -1,0 +1,75 @@
+{
+ "baru": [
+  {
+   "no": 3450,
+   "nama": "TUNTUTAN LAIN (HAK BEKAS ISTRI, KEBENDAAN, ANAK, KELALAIAN): KEADAAN DAN KUTIPAN PETITUM (OTOMATIS dari nilai pemicu dan petitum SIPP; tidak dicetak di blangko)",
+   "kelompok": 2,
+   "butir": "keadaan dan kutipan petitum untuk layar (bendera = nilai pemicu itu sendiri)",
+   "panjang": 19727
+  },
+  {
+   "no": 3451,
+   "nama": "PERTIMBANGAN HARTA BERSAMA DALAM REKONVENSI CERAI TALAK (OTOMATIS dari petitum/rekonvensi dan keputusan isian 4105; kosong bila tidak dituntut dan tidak dipilih)",
+   "kelompok": 1,
+   "butir": "pertimbangan harta bersama gugatan rekonvensi CT [02]",
+   "panjang": 12669
+  },
+  {
+   "no": 3452,
+   "nama": "AMAR HARTA BERSAMA DALAM REKONVENSI CERAI TALAK (OTOMATIS dari keputusan isian 4105; disambung di ujung butir amar rekonvensi terakhir, kosong bila tidak ada)",
+   "kelompok": 1,
+   "butir": "amar harta bersama gugatan rekonvensi CT [02]",
+   "panjang": 9765
+  }
+ ],
+ "ubah": [],
+ "rtf": [
+  {
+   "kode": "R001",
+   "rel": "1a Perceraian CT/[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf",
+   "m0": "6d2ec1224a96a0d71946670fa9640056",
+   "m1": "684b45123d7d2ff1936bf362dd0b9082",
+   "n": 2,
+   "jenis": "rek"
+  }
+ ],
+ "dependensi": [
+  46,
+  47,
+  100,
+  104,
+  3401,
+  3402,
+  3403,
+  3404,
+  3405,
+  3406,
+  3407,
+  3408,
+  3430,
+  3431,
+  3432,
+  3433,
+  3434,
+  3435,
+  3440,
+  3441,
+  3442,
+  3443,
+  3444,
+  3445,
+  3446,
+  3447,
+  3448,
+  4788,
+  4789,
+  4790,
+  4791,
+  4845,
+  4846,
+  4847,
+  8554
+ ],
+ "harap": "0|0|0|0|35|0",
+ "ulang": "0|3|0|0|35|0"
+}

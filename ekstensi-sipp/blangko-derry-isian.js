@@ -1470,7 +1470,7 @@
   }
   /** Bot tidak menjawab: nilai isian & pemicu dibaca satu per satu dari jendela sembul ABT (edit_data). */
   async function nilaiDariAbt(d) {
-    const kode = [...d.isian.filter((b) => b.jenis !== "tj").map((b) => b.kode), ...d.pemicu.map((p) => p.kode), ...(d.kutipanTuntutan ? [d.kutipanTuntutan] : [])];
+    const kode = [...d.isian.filter((b) => b.jenis !== "tj").map((b) => b.kode), ...d.pemicu.map((p) => p.kode), ...(d.kutipanTuntutan ? [d.kutipanTuntutan] : []), ...(d.kutipanLain ? [d.kutipanLain] : [])];
     const k = klienAbt();
     for (let i = 0; i < kode.length; i += 4) {
       await Promise.all(
@@ -2345,11 +2345,11 @@
     if (opsional) return b.jenis !== "tj" && !b.khusus ? "tambahan" : "pilihan";
     return keadaanBerlakuMurni(b, ctx) ? "utama" : "takberlaku";
   }
-  /** Nilai #3400# ("4142|ya|kutipan" per baris) -> { "4142": { status: "ya"|"tidak"|"ragu", kutipan } }. */
+  /** Nilai #3400# / #3450# ("4142|ya|kutipan" per baris; 21 Okt x8: semua kode pemicu, bukan hanya 4140-4145) -> { "4142": { status: "ya"|"tidak"|"ragu", kutipan } }. */
   function uraiKutipanTuntutan(teks) {
     const hasil = {};
     for (const baris of String(teks || "").split(/\r?\n/)) {
-      const m = baris.match(/^\s*(414[0-5])\|(ya|tidak|ragu)\|(.*)$/);
+      const m = baris.match(/^\s*(\d{4,5})\|(ya|tidak|ragu)\|(.*)$/);
       if (m) hasil[m[1]] = { status: m[2], kutipan: m[3].replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&").trim() };
     }
     return hasil;
@@ -2385,7 +2385,10 @@
   const golonganIsian = (b) => golonganIsianMurni(b, ctxGolongan());
   /** Keadaan tiap tuntutan blangko ini: { pemicu, label, status: ya|tidak|ragu, kutipan, jabatan, keputusan, isian }. */
   function keadaanTuntutan() {
-    const kut = uraiKutipanTuntutan(S.nilai["3400"] && S.nilai["3400"].teks);
+    // 21 Okt (x8): kutipan tuntutan lain (#3450#, hak bekas istri, kebendaan, anak, kelalaian) digabung dengan #3400# (akibat cerai).
+    const teksKutipan = (k) => (k && S.nilai[k] && S.nilai[k].teks) || "";
+    const kodeLain = (S.susunan && S.susunan.kutipanLain) || "";
+    const kut = { ...uraiKutipanTuntutan(teksKutipan(kodeLain)), ...uraiKutipanTuntutan(teksKutipan("3400")) };
     return tuntutanBlangko().map((t) => {
       const k = kut[t.pemicu];
       const status = k ? k.status : pemicuMenyala(t.pemicu) ? "ya" : "tidak";

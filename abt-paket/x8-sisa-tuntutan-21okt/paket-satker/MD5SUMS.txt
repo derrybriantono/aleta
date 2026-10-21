@@ -1,0 +1,14 @@
+c5594dc780cf085e4f7c18f61802ae88  abt-x8-sisa-tuntutan-21okt-PASANG.sql
+61f53bb1bf1a7024e65cc37fa43d1d49  abt-x8-sisa-tuntutan-21okt-PERIKSA.sql
+83837ec1cad861337b0f60868d57bb15  abt-x8-sisa-tuntutan-21okt-PRASYARAT.sql
+bacf10f0300a682cf247404904d26a38  abt-x8-sisa-tuntutan-21okt-PULIH.sql
+3780f37fb00216ab76a3eec2346703cd  harap.txt
+bf68128cfbf3f3d27639fdced10d0aed  nomor-baru.txt
+eb844645e8e61de0a4cf4b991e65e63e  nomor-ubah.txt
+e63f024cb6cecc4b7f6aa55c0a552225  pasang-satker.sh
+f4beb766bfe6b30bd91c9df1dbd285a8  perkara-uji.txt
+bb7bf5403be122faf26cec57e88d1183  pulih-satker.sh
+7fb27bcf9589bea26b797194804ba665  rtf-daftar-tambal.tsv
+e551fbfef837959b6078a9b9ead5c3c0  rtf-tambal.tsv
+554501273d085c72e8207887a66837d8  tambal-rtf.pl
+396b6148b5ba5ab5b579fc359a4d6ae3  uji-kueri.tsv

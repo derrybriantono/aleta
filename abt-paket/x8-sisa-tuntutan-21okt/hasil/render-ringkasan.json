@@ -1,0 +1,283 @@
+{
+ "x8-rek-tanpa-harta": {
+  "label": "CT [02] Rekonvensi, gugatan rekonvensi tanpa harta bersama",
+  "blangko": "1a Perceraian CT/[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    1,
+    2,
+    1,
+    2,
+    3,
+    3,
+    4
+   ],
+   "nomor_urut": false,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 5,
+   "penanda_sisa": [],
+   "status": "OK 678225 puncak_mem=12845056 kueri_sipp=-1 detik=1039.2",
+   "harap_ada": {},
+   "harap_tidak": {}
+  },
+  "sesudah": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    1,
+    2,
+    1,
+    2,
+    3,
+    3,
+    4
+   ],
+   "nomor_urut": false,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 5,
+   "penanda_sisa": [],
+   "status": "OK 678346 puncak_mem=12845056 kueri_sipp=-1 detik=877.1",
+   "harap_ada": {},
+   "harap_tidak": {},
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    3,
+    4
+   ],
+   "nomor_utama_urut": false,
+   "nomor_lanjut_sebelum": true
+  },
+  "teks_sama_dengan_sebelum": true,
+  "lolos": true
+ },
+ "x8-rek-harta-belum": {
+  "label": "CT [02] Rekonvensi, harta bersama dituntut - keputusan belum dipilih",
+  "blangko": "1a Perceraian CT/[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    1,
+    2,
+    1,
+    2,
+    3,
+    3,
+    4
+   ],
+   "nomor_urut": false,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 5,
+   "penanda_sisa": [],
+   "status": "OK 681602 puncak_mem=11272192 kueri_sipp=-1 detik=1039.2",
+   "harap_ada": {
+    "periksa harta bersama": false
+   },
+   "harap_tidak": {
+    "amar harta": false
+   }
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: petitum menuntut harta bersama; pilih keputusan majelis pada isian keputusan harta bersama]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    1,
+    2,
+    1,
+    2,
+    3,
+    3,
+    4
+   ],
+   "nomor_urut": false,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 5,
+   "penanda_sisa": [],
+   "status": "OK 681831 puncak_mem=12058624 kueri_sipp=-1 detik=897.3",
+   "harap_ada": {
+    "periksa harta bersama": true
+   },
+   "harap_tidak": {
+    "amar harta": false
+   },
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    3,
+    4
+   ],
+   "nomor_utama_urut": false,
+   "nomor_lanjut_sebelum": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ },
+ "x8-rek-harta-kabul": {
+  "label": "CT [02] Rekonvensi, harta bersama dikabulkan",
+  "blangko": "1a Perceraian CT/[02] [Kabul] [Rekonvensi] CT - F (Mutah iddah nafkah anak).rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    1,
+    2,
+    1,
+    2,
+    3,
+    3,
+    4
+   ],
+   "nomor_urut": false,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 5,
+   "penanda_sisa": [],
+   "status": "OK 680125 puncak_mem=12845056 kueri_sipp=-1 detik=1039.2",
+   "harap_ada": {
+    "pertimbangan rekonvensi": false,
+    "dasar pasal 66": true,
+    "amar butir 5": false,
+    "sebelum Dalam Konvensi dan Rekonvensi": false
+   },
+   "harap_tidak": {
+    "periksa": false
+   }
+  },
+  "sesudah": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    1,
+    2,
+    1,
+    2,
+    3,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": false,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 5,
+   "penanda_sisa": [],
+   "status": "OK 681812 puncak_mem=12845056 kueri_sipp=-1 detik=877.1",
+   "harap_ada": {
+    "pertimbangan rekonvensi": true,
+    "dasar pasal 66": true,
+    "amar butir 5": true,
+    "sebelum Dalam Konvensi dan Rekonvensi": true
+   },
+   "harap_tidak": {
+    "periksa": false
+   },
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    3,
+    4,
+    5
+   ],
+   "nomor_utama_urut": false,
+   "nomor_lanjut_sebelum": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ }
+}

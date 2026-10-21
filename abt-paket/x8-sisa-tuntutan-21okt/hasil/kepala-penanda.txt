@@ -1,0 +1,78 @@
+('diabaikan (\\*isianasal)', '1 Perceraian CG') 13
+('diabaikan (\\*isianasal)', '10 Ekonomi Syariah') 3
+('diabaikan (\\*isianasal)', '10a Ekonomi Syariah Biasa') 6
+('diabaikan (\\*isianasal)', '1a Perceraian CT') 17
+('diabaikan (\\*isianasal)', '1c Perceraian Kumulasi Itsbat Nikah') 4
+('diabaikan (\\*isianasal)', '1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak') 5
+('diabaikan (\\*isianasal)', '1e Kelalaian Kewajiban Suami Istri') 9
+('diabaikan (\\*isianasal)', '1e Kelalaian Kewajiban Suami Istri - BAS') 2
+('diabaikan (\\*isianasal)', '1f Hak Bekas Istri') 9
+('diabaikan (\\*isianasal)', '1f Hak Bekas Istri - BAS') 2
+('diabaikan (\\*isianasal)', '2a Itsbat Nikah Kontensius') 4
+('diabaikan (\\*isianasal)', '4a Harta Bersama') 12
+('diabaikan (\\*isianasal)', '4b Kewarisan') 12
+('diabaikan (\\*isianasal)', '4c Wasiat') 6
+('diabaikan (\\*isianasal)', '4d Hibah') 6
+('diabaikan (\\*isianasal)', '4e Wakaf') 6
+('diabaikan (\\*isianasal)', '5a Pembatalan Perkawinan') 7
+('diabaikan (\\*isianasal)', '6a Hak Asuh Anak (Hadhanah)') 17
+('diabaikan (\\*isianasal)', '6b Penguasaan Anak') 11
+('diabaikan (\\*isianasal)', '6c Nafkah Anak') 9
+('diabaikan (\\*isianasal)', '6c Nafkah Anak - BAS') 2
+('diabaikan (\\*isianasal)', '6d Pencabutan Kekuasaan Orang Tua') 10
+('diabaikan (\\*isianasal)', '6d Pencabutan Kekuasaan Orang Tua - BAS') 8
+('diabaikan (\\*isianasal)', '6e Pencabutan Kekuasaan Wali') 10
+('diabaikan (\\*isianasal)', '6e Pencabutan Kekuasaan Wali - BAS') 13
+('diabaikan (\\*isianasal)', '6f Penunjukan Wali oleh Pengadilan') 3
+('diabaikan (\\*isianasal)', '6g Ganti Rugi terhadap Wali') 7
+('diabaikan (\\*isianasal)', '6g Ganti Rugi terhadap Wali - BAS') 8
+('diabaikan (\\*isianasal)', '6h Nafkah Anak oleh Ibu') 7
+('diabaikan (\\*isianasal)', '6h Nafkah Anak oleh Ibu - BAS') 8
+('diabaikan (\\*isianasal)', '9 Penetapan Ahli Waris') 3
+('diabaikan (\\*isianasal)', '96a Verzet') 8
+('diabaikan (\\*isianasal)', '96a Verzet - BAS') 4
+('teks kecil fs2', '- BAS ASAL USUL ANAK -') 1
+('teks kecil fs2', '- BAS ITSTBAT NIKAH -') 2
+('teks kecil fs2', '1 Perceraian CG') 10
+('teks kecil fs2', '1a Perceraian CT') 26
+('teks kecil fs2', '1c Perceraian Kumulasi Itsbat Nikah') 6
+('teks kecil fs2', '1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak') 4
+('teks kecil fs2', '2 Itsbat Nikah') 4
+('teks kecil fs2', '2 Itsbat Nikah - BAS') 11
+('teks kecil fs2', '3a Izin Kawin - BAS') 8
+('teks kecil fs2', '4d Hibah - BAS') 8
+('teks kecil fs2', '4e Wakaf - BAS') 8
+('teks kecil fs2', '5b Pencegahan Perkawinan - BAS') 6
+('teks kecil fs2', '5c Penolakan Perkawinan - BAS') 8
+('teks kecil fs2', '5d Perkawinan Campuran - BAS') 8
+('teks kecil fs2', '6 Perwalian - BAS') 8
+('teks kecil fs2', '6d Pencabutan Kekuasaan Orang Tua - BAS') 8
+('teks kecil fs2', '6e Pencabutan Kekuasaan Wali - BAS') 8
+('teks kecil fs2', '6f Penunjukan Wali oleh Pengadilan - BAS') 8
+('teks kecil fs2', '7 Wali Adhal - BAS') 6
+('teks kecil fs2', '8 Asal Usul Anak - BAS') 2
+('teks kecil fs2', '8a Pengesahan Anak - BAS') 8
+('teks kecil fs2', '9 Penetapan Ahli Waris - BAS') 8
+('teks kecil fs2', '96 Eksekusi - BAS') 1
+('teks kecil fs2', '9a Lain-Lain (Pengangkatan Anak) - BAS') 8
+('teks kecil fs2', '9c Penetapan Mafqud - BAS') 8
+('teks kecil fs2', 'ALUR 11 Itsbat Nikah 1 Sidang') 2
+('teks kecil fs2', 'ALUR 13 Asal Usul Anak') 1
+('tersembunyi', '1 Perceraian CG') 2
+('tersembunyi', '1a Perceraian CT') 2
+('tersembunyi', '1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS') 1
+('tersembunyi', '1f Hak Bekas Istri') 9
+('tersembunyi', '3a Izin Kawin') 9
+('tersembunyi', '4d Hibah') 3
+('tersembunyi', '4e Wakaf') 3
+('tersembunyi', '5b Pencegahan Perkawinan') 5
+('tersembunyi', '5c Penolakan Perkawinan') 5
+('tersembunyi', '5d Perkawinan Campuran') 6
+('tersembunyi', '6d Pencabutan Kekuasaan Orang Tua') 3
+('tersembunyi', '6e Pencabutan Kekuasaan Wali') 3
+('tersembunyi', '6f Penunjukan Wali oleh Pengadilan') 3
+('tersembunyi', '8a Pengesahan Anak') 7
+('tersembunyi', '9b Permohonan Umum') 2
+('tersembunyi', '9c Penetapan Mafqud') 3
+('tersembunyi', 'BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)') 1
+TAMPIL total 0

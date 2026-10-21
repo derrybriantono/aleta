@@ -93,9 +93,13 @@ export type Susunan = {
   tuntutan?: TuntutanBlangko[];
   /** 21 Okt: kode variabel keadaan + kutipan petitum per tuntutan (paket x3, #3400#) - dinilai bot bila ada tuntutan. */
   kutipanTuntutan?: string;
+  /** 21 Okt (x8): kode variabel keadaan + kutipan petitum untuk pemicu tuntutan LAIN (34xx, kebendaan 4788-4791/4845-4847; #3450#). */
+  kutipanLain?: string;
 };
 /** Variabel ABT keadaan dan kutipan tuntutan (paket x3-tuntutan-sinkron-21okt; tidak dicetak di blangko). */
 export const KODE_KUTIPAN_TUNTUTAN = "3400";
+/** Variabel ABT keadaan dan kutipan tuntutan lain (paket x8-sisa-tuntutan-21okt; bendera = nilai pemicu itu sendiri; tidak dicetak). */
+export const KODE_KUTIPAN_LAIN = "3450";
 
 const MANUAL: Record<string, JenisIsian> = { data_teks: "teks", data_tanggal: "tanggal", tanya_jawab: "tj" };
 const POLA_REF = /#(\d{4,5})#/g;
@@ -197,6 +201,8 @@ const HBI_BAGIAN = rentang(3760, 3779);
 const CERAI_BAGIAN = [...rentang(4110, 4119), ...rentang(4130, 4139), "4150", "9716", "9717", ...rentang(3410, 3421)];
 const BAGIAN_BERSYARAT: Record<string, string[]> = {
   ...Object.fromEntries(["4140", "4141", "4142", "4143", "4144", "4145"].map((p) => [p, CERAI_BAGIAN])),
+  // x8: harta bersama dalam gugatan rekonvensi CT [02] - HANYA harta bersama (isi tetap rekonvensi lain tidak disembunyikan)
+  "4145": [...CERAI_BAGIAN, "3451", "3452"],
   ...Object.fromEntries(["3401", "3402", "3403", "3404", "3405", "3406", "3407", "3408"].map((p) => [p, HBI_BAGIAN])),
   // kebendaan: hanya bagian yang MENCETAK tuntutan itu bersyarat petitum/keputusan (blangko Konvensi Rekonvensi Sita Jaminan menetapkan
   // sita sendiri lewat 4804/4814 - tidak termasuk)
@@ -1016,7 +1022,13 @@ export function susunIsian(
     pemicu,
     otomatis,
     takDikenal,
-    ...(tuntutan.length ? { tuntutan, ...(katalog.has(KODE_KUTIPAN_TUNTUTAN) ? { kutipanTuntutan: KODE_KUTIPAN_TUNTUTAN } : {}) } : {}),
+    ...(tuntutan.length
+      ? {
+          tuntutan,
+          ...(katalog.has(KODE_KUTIPAN_TUNTUTAN) && tuntutan.some((t) => /^414[0-5]$/.test(t.pemicu)) ? { kutipanTuntutan: KODE_KUTIPAN_TUNTUTAN } : {}),
+          ...(katalog.has(KODE_KUTIPAN_LAIN) && tuntutan.some((t) => !/^414[0-5]$/.test(t.pemicu)) ? { kutipanLain: KODE_KUTIPAN_LAIN } : {}),
+        }
+      : {}),
   };
 }
 
@@ -1134,6 +1146,7 @@ export function kodeUntukNilai(susunan: Susunan, semua: boolean): string[] {
     ? [...susunan.penanda, ...susunan.isian.map((b) => b.kode), ...susunan.otomatis.map((o) => o.kode), ...susunan.pemicu.map((p) => p.kode), ...tj]
     : [...susunan.isian.filter((b) => b.jenis !== "tj").map((b) => b.kode), ...susunan.pemicu.map((p) => p.kode), ...tj];
   if (susunan.kutipanTuntutan) dasar.push(susunan.kutipanTuntutan);
+  if (susunan.kutipanLain) dasar.push(susunan.kutipanLain);
   return [...new Set(dasar)];
 }
 
