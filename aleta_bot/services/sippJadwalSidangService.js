@@ -2424,13 +2424,17 @@ async function bahanVarianPutusan(rows = []) {
       })()
     );
   }
+  // 21 Okt 2026: pola REGEXP DIKIRIM SEBAGAI PARAMETER, bukan ditempel di dalam kutip. Pustaka mysql
+  // mengganti SETIAP tanda tanya - juga yang di dalam kutip - jadi "mut.?ah" dan "(yang +)?hilang"
+  // memakan nomor perkara pertama dan menyisakan "?)" di ujung kueri: MariaDB menolak seluruh kueri
+  // ("near '?)'") dan bahan varian satu putaran unggah massal hilang ([unggah massal] sipp/varian putusan).
   const petitumBendera = (daftar, pola, simpan, kolom = "p.petitum") =>
     kerja.push(
       (async () => {
         const isian = daftar.map(() => "?").join(", ");
         const baris = await runQuery(
-          `SELECT p.perkara_id AS perkaraId, (LOWER(${kolom}) REGEXP '${pola}') AS ya FROM perkara p WHERE p.perkara_id IN (${isian})`,
-          daftar
+          `SELECT p.perkara_id AS perkaraId, (LOWER(${kolom}) REGEXP ?) AS ya FROM perkara p WHERE p.perkara_id IN (${isian})`,
+          [pola, ...daftar]
         );
         for (const b of Array.isArray(baris) ? baris : []) simpan[String(b.perkaraId)] = Number(b.ya) === 1;
       })()
