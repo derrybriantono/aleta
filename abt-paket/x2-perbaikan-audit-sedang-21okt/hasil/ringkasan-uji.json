@@ -1,0 +1,272 @@
+{
+ "siklus_lab": {
+  "basis": "aps_badilag_x2 = server pagi 21 Okt + x1",
+  "baris_awal": 2421,
+  "baris_sesudah_pasang": 2440,
+  "prasyarat_pertama": "0|0|69|0|9|0",
+  "prasyarat_ulang": "0|19|0|69|9|0",
+  "sidik_jari_awal_sama_dengan_sesudah_pulih": true,
+  "periksa": "SEMUA COCOK",
+  "pulih": "PULIH COCOK"
+ },
+ "banding_sql_10216_perkara": {
+  "15": {
+   "total": 10216,
+   "sama": 10208,
+   "berbeda": 8,
+   "rincian": {
+    "isi -> isi (isi lain)": 8
+   }
+  },
+  "18": {
+   "total": 10216,
+   "sama": 10216,
+   "berbeda": 0,
+   "rincian": {}
+  },
+  "6031": {
+   "total": 10216,
+   "sama": 10216,
+   "berbeda": 0,
+   "rincian": {}
+  },
+  "6032": {
+   "total": 10216,
+   "sama": 10202,
+   "berbeda": 14,
+   "rincian": {
+    "isi -> isi (isi lain)": 14
+   }
+  },
+  "5101": {
+   "total": 10216,
+   "sama": 10202,
+   "berbeda": 14,
+   "rincian": {
+    "isi -> isi (isi lain)": 14
+   }
+  },
+  "1241": {
+   "total": 10216,
+   "sama": 10076,
+   "berbeda": 140,
+   "rincian": {
+    "tak-ada-baris(...) -> kosong": 79,
+    "tak-ada-baris(...) -> isi": 61
+   }
+  },
+  "1242": {
+   "total": 10216,
+   "sama": 10079,
+   "berbeda": 137,
+   "rincian": {
+    "tak-ada-baris(...) -> kosong": 37,
+    "tak-ada-baris(...) -> isi": 57,
+    "kosong -> isi": 5,
+    "isi -> isi (isi lain)": 30,
+    "kosong -> tak-ada-baris(...)": 3,
+    "isi -> kosong": 2,
+    "isi -> tak-ada-baris(...)": 3
+   }
+  },
+  "1251": {
+   "total": 10216,
+   "sama": 10088,
+   "berbeda": 128,
+   "rincian": {
+    "tak-ada-baris(...) -> kosong": 79,
+    "tak-ada-baris(...) -> isi": 49
+   }
+  },
+  "1252": {
+   "total": 10216,
+   "sama": 10125,
+   "berbeda": 91,
+   "rincian": {
+    "tak-ada-baris(...) -> kosong": 52,
+    "tak-ada-baris(...) -> isi": 38,
+    "isi -> isi (isi lain)": 1
+   }
+  },
+  "6149": {
+   "total": 10216,
+   "sama": 10046,
+   "berbeda": 170,
+   "rincian": {
+    "kosong -> tak-ada-baris(...)": 75,
+    "isi -> tak-ada-baris(...)": 86,
+    "tak-ada-baris(...) -> kosong": 4,
+    "isi -> isi (isi lain)": 1,
+    "tak-ada-baris(...) -> isi": 4
+   }
+  },
+  "1197": {
+   "total": 10216,
+   "sama": 10216,
+   "berbeda": 0,
+   "rincian": {}
+  },
+  "1203": {
+   "total": 10216,
+   "sama": 10216,
+   "berbeda": 0,
+   "rincian": {}
+  },
+  "6100": {
+   "total": 10216,
+   "sama": 10216,
+   "berbeda": 0,
+   "rincian": {}
+  },
+  "6106": {
+   "total": 10216,
+   "sama": 10216,
+   "berbeda": 0,
+   "rincian": {}
+  },
+  "6132": {
+   "total": 10216,
+   "sama": 10216,
+   "berbeda": 0,
+   "rincian": {}
+  },
+  "8544": {
+   "total": 10216,
+   "sama": 527,
+   "berbeda": 9689,
+   "rincian": {
+    "kosong -> isi": 9665,
+    "isi -> isi (isi lain)": 24
+   }
+  },
+  "8545": {
+   "total": 10216,
+   "sama": 538,
+   "berbeda": 9678,
+   "rincian": {
+    "kosong -> isi": 9665,
+    "isi -> isi (isi lain)": 13
+   }
+  },
+  "74": {
+   "total": 10216,
+   "sama": 2039,
+   "berbeda": 8177,
+   "rincian": {
+    "tak-ada-baris(...) -> kosong": 5999,
+    "tak-ada-baris(...) -> isi": 2178
+   }
+  }
+ },
+ "kecocokan_hubungan_saksi": {
+  "lama_tak_cocok": {
+   "1241": 61,
+   "1242": 94,
+   "1251": 49,
+   "1252": 39,
+   "6149": 5
+  },
+  "lama_hubungan_tanpa_saksi_di_posisi": {
+   "1242": 6,
+   "6149": 161
+  },
+  "baru_tak_cocok": {
+   "1241": 0,
+   "1242": 0,
+   "1251": 0,
+   "1252": 0,
+   "6149": 0
+  },
+  "perkara_dengan_saksi": {
+   "1241": 8178,
+   "1242": 8048,
+   "1251": 130,
+   "1252": 93,
+   "6149": 118
+  }
+ },
+ "render_472_perkara_A": {
+  "15": {
+   "berubah": 8,
+   "dari": 472
+  },
+  "74": {
+   "berubah": 383,
+   "dari": 472
+  },
+  "207": {
+   "berubah": 5,
+   "dari": 472
+  },
+  "1241": {
+   "berubah": 38,
+   "dari": 472
+  },
+  "1242": {
+   "berubah": 40,
+   "dari": 472
+  },
+  "1251": {
+   "berubah": 45,
+   "dari": 472
+  },
+  "1252": {
+   "berubah": 33,
+   "dari": 472
+  },
+  "5101": {
+   "berubah": 14,
+   "dari": 472
+  },
+  "6032": {
+   "berubah": 14,
+   "dari": 472
+  },
+  "6149": {
+   "berubah": 40,
+   "dari": 472
+  },
+  "8155": {
+   "berubah": 472,
+   "dari": 472
+  },
+  "8544": {
+   "berubah": 420,
+   "dari": 472
+  },
+  "8545": {
+   "berubah": 409,
+   "dari": 472
+  }
+ },
+ "render_B_9003_C_7105_7106_D_6271": {
+  "B": {
+   "perkara": 472,
+   "sama": 462,
+   "galat->jalan": 10
+  },
+  "C": {
+   "perkara": 62,
+   "galat->jalan": 10,
+   "sama": 52
+  },
+  "D": {
+   "perkara": 5,
+   "galat->jalan": 5
+  }
+ },
+ "rtf_asli": {
+  "cetakan": 39,
+  "sama": 16,
+  "galat_sesudah": 0,
+  "titik3_naik": 0,
+  "titik3_turun": 11
+ },
+ "server_baca_saja": {
+  "perkara": 9,
+  "pasangan_lama_baru_dibandingkan": 297,
+  "sama_dengan_laptop": 294,
+  "beda_perkara_273_2026_saksi_baru": 3,
+  "uji_kueri": "23 kueri x 9 perkara tanpa galat"
+ }
+}
