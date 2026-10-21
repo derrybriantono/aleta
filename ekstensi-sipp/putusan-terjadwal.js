@@ -23,24 +23,29 @@
  *     lewat alur Putusan Otomatis yang sama - formulir SIPP hanya aman diisi dari halamannya sendiri.
  *
  * Tempat:
- *   - halaman perkara SIPP: tombol tebal tepat di sebelah "Putusan Otomatis" (sebelum Buka di ABT / Buka di ALETA),
- *     panel terbentang di bawahnya;
- *   - dashboard, daftar perkara, dan jurnal perkara (gugatan/permohonan): tombol melayang di kiri bawah, panel
- *     sebagai laci; perkara dipilih menurut tanggal sidang / tanggal putus, atau dari baris di halaman.
+ * SATU PERKARA dan MASSAL dibedakan (21 Okt 2026):
+ *   - halaman perkara SIPP (SATU perkara): tombol tepat di sebelah "Putusan Otomatis" (sebelum Buka di ABT /
+ *     Buka di ALETA); panel di bawah deretan tombol hanya untuk perkara itu - satu berkas, satu jam;
+ *   - MASSAL, hanya di dua tempat: DASHBOARD SIPP (tombol di samping tulisan "DASHBOARD PERKARA [Statistik
+ *     Perkara]") dan DAFTAR PERKARA PERDATA GUGATAN / PERMOHONAN (tombol di samping tombol "Cetak"); panel
+ *     terbuka tepat di bawah tempat itu: perkara dipilih menurut tanggal sidang / tanggal putus (dapat disaring),
+ *     berkas banyak diseret dan dipasangkan menurut nomor perkara, jam dengan jeda antar perkara.
+ *   - SEMUA panel bawaannya TERLIPAT dan warnanya mengikuti tema terang/gelap seperti Penetapan Otomatis.
  *
- * Hak: hanya Super Admin, Admin, dan Hakim (termasuk Ketua/Wakil) - keputusan 9 Okt 2026, sama dengan
- * alatBolehUnggahPutusan; server menegakkannya lagi di tiap rute. Tampilan Lama tidak berubah. Tidak ada kata
- * ALETA yang ditulis ke SIPP: teks di layar ini hanya untuk petugas.
+ * Hak: HANYA Ketua, Wakil Ketua, dan Hakim; Super Admin (golongan admin) tetap boleh semua -
+ * alatBolehTombolPutusanSipp (21 Okt 2026); server menegakkannya lagi di tiap rute. Tampilan Lama tidak
+ * berubah. Tidak ada kata ALETA yang ditulis ke SIPP: teks di layar ini hanya untuk petugas.
  */
 (function putusanTerjadwalModul() {
   if (typeof globalThis === "undefined" || globalThis.aletaPutusanTerjadwal) return;
 
   const KELAS = "aleta-sisip aleta-ptj";
   const ID_PANEL = "aleta-ptj-panel";
-  const ID_MELAYANG = "aleta-ptj-melayang";
+  const ID_MASSAL = "aleta-ptj-massal";
   const KUNCI_SETELAN = "putusanTerjadwalSetelan";
   const KUNCI_LIPAT = "lipatanBagian";
-  const KUNCI_LIPAT_PANEL = "putusanTerjadwal";
+  // Kunci baru (21 Okt 2026): bawaan TERLIPAT; true = sengaja dilipat, false = sengaja dibuka petugas.
+  const KUNCI_LIPAT_PANEL = "putusanTerjadwal2";
   const API = {
     dasar: "/aleta/api/aleta-ecourt/putusan-terjadwal",
     berkas: "/aleta/api/aleta-ecourt/putusan-terjadwal/berkas",
@@ -50,8 +55,9 @@
     massal: "/aleta/api/aleta-ecourt/unggah-massal?putusan=saya",
     sidang: "/aleta/api/aleta-ecourt/sidang",
   };
-  const DASBOR = /\/(main|beranda|dashboard|home)(\/|$|\?)|\/(sipp|index\.php)\/?$/i;
-  const JURNAL = /\/(?:jurnal_perkara_list|all_jurnal_perkara|jurnal_all_perkara|jurnal_perkara)(?:\/|$)/i;
+  // Judul halaman SIPP: dashboard (section.content-header h1) dan daftar perkara (#pageTitle).
+  const POLA_DASHBOARD = /DASHBOARD\s+PERKARA/i;
+  const POLA_DAFTAR = /DAFTAR\s+PERKARA\s+(?:PERDATA\s+)?(?:GUGATAN|PERMOHONAN)\b/i;
   const BATAS_BERKAS = 10 * 1024 * 1024;
   const BENTUK = /\.(rtf|docx|doc|pdf)$/i;
   const NAMA_LANGKAH = { isi: "Isi & simpan Putusan Akhir", putusan: "e-Doc putusan", anonim: "e-Doc anonimisasi" };
@@ -188,11 +194,12 @@
     }
   }
 
-  /** Hanya Super Admin, Admin, Hakim (termasuk Ketua/Wakil); peran yang belum terbaca = tidak tampil. */
+  /** Ketua, Wakil Ketua, Hakim, dan Super Admin (golongan admin); peran yang belum terbaca = tidak tampil. */
   function berhak() {
     try {
       if (typeof penggunaTerakhir === "undefined" || !penggunaTerakhir) return false;
       if (typeof alatBolehUnggahPutusan !== "function" || alatBolehUnggahPutusan(penggunaTerakhir) !== true) return false;
+      if (typeof alatBolehTombolPutusanSipp === "function" && alatBolehTombolPutusanSipp(penggunaTerakhir) !== true) return false;
       return typeof boleh === "function" ? boleh("data-umum") === true : true;
     } catch {
       return false;
@@ -231,7 +238,7 @@
   const SETELAN_BAWAAN = { jedaMin: 2, jedaMaks: 7, jamDari: "", jamSampai: "", malamBoleh: false, lintasHari: false };
   let S = null; // keadaan panel yang sedang hidup
 
-  function keadaanBaru(mode, nomor) {
+  function keadaanBaru(mode, nomor, tempat) {
     const sekarang = witaDari(Date.now());
     const tanggalSekarang = sekarang.slice(0, 10);
     const lewatSore = sekarang.slice(11, 13) >= "15";
@@ -245,7 +252,10 @@
     return {
       mode,
       nomor,
-      terbuka: true,
+      // "perkara" (satu perkara) | "dashboard" | "daftar" (massal); mode "daftar" memuat kedua tempat massal.
+      tempat: tempat || (mode === "perkara" ? "perkara" : "daftar"),
+      saring: "",
+      terbuka: false, // bawaan TERLIPAT
       tab: "baru",
       tanggalCari: hariIniUntukCari(),
       sumberTanggal: "sidang",
@@ -363,6 +373,7 @@
                 ket: `sidang ${s.jam || ""} · ${s.agenda || "tanpa agenda"}${s.sudahPutus ? " · sudah diputus di SIPP" : ""}`.replace(/\s+/g, " "),
                 sudahPutus: Boolean(s.sudahPutus),
                 putusAgenda: /utus/i.test(String(s.agenda || "")),
+                majelis: sebaris(s.majelis || ""),
                 dari: "sidang",
               });
             }
@@ -450,7 +461,13 @@
   let urutBerkas = 0;
   function tambahBerkas(daftar) {
     const baru = [];
-    for (const file of Array.from(daftar || [])) {
+    // SATU perkara: hanya satu berkas; berkas baru menggantikan yang lama (yang lama dibuang dari server).
+    let masuk = Array.from(daftar || []);
+    if (S.mode === "perkara" && masuk.length) {
+      masuk = masuk.slice(0, 1);
+      for (const lama of [...S.berkas]) void buangBerkas(lama.kunci);
+    }
+    for (const file of masuk) {
       const nama = String((file && file.name) || "");
       const e = { kunci: `b${(urutBerkas += 1)}`, file, nama, ukuran: file.size || 0, status: "antre", id: "", bentuk: "", nomorIsi: "", peringatan: [], tolak: "" };
       const bukanNaskah = pasangan() ? pasangan().tandaBukanNaskah(nama) : "";
@@ -532,6 +549,8 @@
     e.bentuk = d.berkas.bentuk;
     e.nomorIsi = d.berkas.nomorIsi || "";
     e.peringatan = Array.isArray(d.berkas.peringatan) ? d.berkas.peringatan : [];
+    // SATU perkara: berkas ini pasti milik perkara yang dibuka - dipasang tanpa menunggu nomor di nama/isi.
+    if (S.mode === "perkara" && S.kandidat[0]) S.manual[e.kunci] = S.kandidat[0].kunci;
   }
 
   async function buangBerkas(kunci) {
@@ -660,7 +679,7 @@
   // ──────────────────────────────────────────────────────────────────────────
   function buatKerangka() {
     const mode = S.mode;
-    const akar = el("section", `${KELAS} aleta-ptj-panel${mode === "daftar" ? " aleta-ptj-laci" : ""}`);
+    const akar = el("section", `${KELAS} aleta-ptj-panel aleta-ptj-${mode === "perkara" ? "tunggal" : "massal-panel"}`);
     akar.id = ID_PANEL;
     akar.setAttribute("role", "region");
     akar.setAttribute("aria-label", "Jadwalkan Putusan");
@@ -668,15 +687,18 @@
 
     const kepala = el("div", "aleta-ptj-kepala");
     const h = el("h2", "aleta-ptj-judul");
-    h.append("Jadwalkan Putusan");
+    h.append(mode === "perkara" ? "Jadwalkan Putusan" : "Jadwalkan Putusan Massal");
     if (S.nomor) h.append(" · ", el("span", "aleta-ptj-mono", S.nomor));
     kepala.append(
       h,
       el(
         "div",
         "aleta-ptj-catatan",
-        "Berkas diunggah ke server dan dikerjakan pada jam yang dipilih, dengan jeda antar perkara yang wajar. " +
-          "e-Doc diunggah server (laptop tidak perlu menyala); mengisi & menyimpan Putusan Akhir dikerjakan lewat SIPP yang terbuka di peramban ini."
+        mode === "perkara"
+          ? "Berkas diunggah ke server dan dikerjakan pada jam yang dipilih. " +
+              "e-Doc diunggah server (laptop tidak perlu menyala); mengisi & menyimpan Putusan Akhir dikerjakan lewat SIPP yang terbuka di peramban ini."
+          : "Pilih banyak perkara, seret banyak berkas (dipasangkan otomatis menurut nomor perkara), lalu tentukan jam. Berkas diunggah ke server dan dikerjakan pada jam yang dipilih, dengan jeda antar perkara yang wajar. " +
+              "e-Doc diunggah server (laptop tidak perlu menyala); mengisi & menyimpan Putusan Akhir dikerjakan lewat SIPP yang terbuka di peramban ini."
       )
     );
     const tab = el("div", "aleta-ptj-tab");
@@ -764,17 +786,32 @@
     }
   }
 
+  /** Kandidat yang lolos saringan teks (nomor, jenis, keterangan, majelis). */
+  function kandidatTersaring() {
+    const kata = String((S && S.saring) || "").toLowerCase().trim();
+    if (!kata) return S.kandidat;
+    return S.kandidat.filter((k) => [k.nomor, k.jenis, k.ket, k.majelis].some((x) => String(x || "").toLowerCase().includes(kata)));
+  }
+
   // 1. Perkara
   function gambarKandidat() {
     if (!S || !S.r) return;
     const wadah = S.r.perkara;
     wadah.textContent = "";
     const judul = el("h3");
-    judul.append(el("span", "aleta-ptj-no", "1"), "Pilih perkara");
+    judul.append(el("span", "aleta-ptj-no", "1"), S.mode === "daftar" ? "Pilih perkara" : "Perkara");
     wadah.appendChild(judul);
 
     if (S.mode === "daftar") {
-      wadah.appendChild(el("div", "aleta-ptj-bantu", "Pilih menurut tanggal, atau tambahkan baris perkara yang sedang tampil di halaman ini."));
+      wadah.appendChild(
+        el(
+          "div",
+          "aleta-ptj-bantu",
+          S.tempat === "dashboard"
+            ? "Pilih menurut tanggal sidang atau tanggal putus, lalu centang perkara yang akan dijadwalkan."
+            : "Pilih menurut tanggal, atau tambahkan baris perkara yang sedang tampil di halaman ini."
+        )
+      );
       const baris = el("div", "aleta-ptj-baris-aksi");
       const tgl = masukan("date", S.tanggalCari);
       tgl.setAttribute("data-ptj", "tanggal-cari");
@@ -805,13 +842,34 @@
         tgl.value = S.tanggalCari;
       });
       baris.append(tgl, sumber, hari, muat);
-      const dariHalaman = tombol("Tambahkan perkara di halaman ini", "aleta-ptj-sekunder");
-      dariHalaman.setAttribute("data-ptj", "dari-halaman");
-      dariHalaman.addEventListener("click", tambahDariHalaman);
-      baris.appendChild(dariHalaman);
+      if (S.tempat === "daftar") {
+        const dariHalaman = tombol("Tambahkan perkara di halaman ini", "aleta-ptj-sekunder");
+        dariHalaman.setAttribute("data-ptj", "dari-halaman");
+        dariHalaman.addEventListener("click", tambahDariHalaman);
+        baris.appendChild(dariHalaman);
+      }
       wadah.appendChild(baris);
+      // Saring daftar yang sudah terbaca: nomor, jenis, keterangan (tanggal putus / sidang), atau majelis.
+      const sar = masukan("search", S.saring, { placeholder: "Saring: nomor, jenis, tanggal putus, majelis", "aria-label": "Saring perkara" });
+      sar.setAttribute("data-ptj", "saring");
+      sar.addEventListener("input", () => {
+        S.saring = sar.value;
+        gambarKandidat();
+        const f = document.querySelector("#aleta-ptj-panel [data-ptj='saring']");
+        if (f && f.focus) {
+          f.focus();
+          try {
+            f.setSelectionRange(S.saring.length, S.saring.length);
+          } catch {
+            /* tipe search tanpa seleksi */
+          }
+        }
+      });
+      const barisSaring = el("div", "aleta-ptj-baris-aksi");
+      barisSaring.appendChild(sar);
+      wadah.appendChild(barisSaring);
     } else {
-      wadah.appendChild(el("div", "aleta-ptj-bantu", "Perkara yang sedang dibuka. Untuk banyak perkara sekaligus, buka dashboard atau jurnal perkara, lalu pilih menurut tanggal."));
+      wadah.appendChild(el("div", "aleta-ptj-bantu", "Hanya untuk perkara yang sedang dibuka ini."));
     }
 
     const daftar = el("div", "aleta-ptj-kandidat");
@@ -819,7 +877,11 @@
     if (!S.kandidat.length) {
       daftar.appendChild(el("div", "aleta-ptj-ket", S.mode === "daftar" ? "Belum ada perkara. Pilih tanggal lalu tekan Tampilkan perkara." : "Perkara halaman ini belum terbaca."));
     }
-    for (const k of S.kandidat) {
+    const tampil = kandidatTersaring();
+    if (S.mode === "daftar" && S.kandidat.length && !tampil.length) {
+      daftar.appendChild(el("div", "aleta-ptj-ket", "Tidak ada perkara yang cocok dengan saringan."));
+    }
+    for (const k of tampil) {
       const lab = el("label");
       const cek = masukan("checkbox");
       cek.checked = S.terpilih.has(k.kunci);
@@ -836,9 +898,9 @@
     wadah.appendChild(daftar);
     if (S.kandidat.length > 1) {
       const aksi = el("div", "aleta-ptj-baris-aksi");
-      const semua = tombol("Centang semua", "aleta-ptj-sekunder");
+      const semua = tombol(S.saring ? "Centang yang tampil" : "Centang semua", "aleta-ptj-sekunder");
       semua.addEventListener("click", () => {
-        for (const k of S.kandidat) pilih(k.kunci, true);
+        for (const k of kandidatTersaring()) pilih(k.kunci, true);
         gambarKandidat();
         segarkanPasangan();
       });
@@ -848,7 +910,7 @@
         gambarKandidat();
         segarkanPasangan();
       });
-      aksi.append(semua, kosong, el("span", "aleta-ptj-ket", `${S.terpilih.size} dari ${S.kandidat.length} dipilih`));
+      aksi.append(semua, kosong, el("span", "aleta-ptj-ket", `${S.terpilih.size} dari ${S.kandidat.length} dipilih${S.saring ? ` · ${tampil.length} tampil` : ""}`));
       wadah.appendChild(aksi);
     }
   }
@@ -859,13 +921,23 @@
     const wadah = S.r.berkas;
     wadah.textContent = "";
     const judul = el("h3");
-    judul.append(el("span", "aleta-ptj-no", "2"), "Berkas putusan (seret banyak sekaligus)");
+    const tunggal = S.mode === "perkara";
+    judul.append(el("span", "aleta-ptj-no", "2"), tunggal ? "Berkas putusan perkara ini" : "Berkas putusan (seret banyak sekaligus)");
     wadah.appendChild(judul);
 
     const zona = el("div", "aleta-ptj-zona");
     zona.setAttribute("data-ptj", "zona");
-    zona.append(el("strong", "", "Seret berkas putusan ke sini"), el("span", "aleta-ptj-bantu", "RTF, DOCX, DOC, atau PDF · paling banyak 10 MB per berkas · dipasangkan otomatis menurut nomor perkara di nama dan isi berkas"));
-    const pilihBerkas = masukan("file", null, { multiple: "multiple", accept: ".rtf,.docx,.doc,.pdf", "aria-label": "Pilih berkas putusan" });
+    zona.append(
+      el("strong", "", tunggal ? "Seret berkas putusan ke sini, atau pilih" : "Seret berkas putusan ke sini"),
+      el(
+        "span",
+        "aleta-ptj-bantu",
+        tunggal
+          ? "RTF, DOCX, DOC, atau PDF · paling besar 10 MB · satu berkas untuk perkara ini"
+          : "RTF, DOCX, DOC, atau PDF · paling banyak 10 MB per berkas · dipasangkan otomatis menurut nomor perkara di nama dan isi berkas"
+      )
+    );
+    const pilihBerkas = masukan("file", null, { ...(tunggal ? {} : { multiple: "multiple" }), accept: ".rtf,.docx,.doc,.pdf", "aria-label": "Pilih berkas putusan" });
     pilihBerkas.setAttribute("data-ptj", "pilih-berkas");
     pilihBerkas.addEventListener("change", () => {
       tambahBerkas(pilihBerkas.files);
@@ -982,7 +1054,7 @@
     const wadah = S.r.baris;
     wadah.textContent = "";
     const judul = el("h3");
-    judul.append(el("span", "aleta-ptj-no", "3"), "Langkah, pilihan form, dan jam tiap perkara");
+    judul.append(el("span", "aleta-ptj-no", "3"), S.mode === "perkara" ? "Langkah dan pilihan form" : "Langkah, pilihan form, dan jam tiap perkara");
     wadah.appendChild(judul);
     const terpilih = S.kandidat.filter((k) => S.terpilih.has(k.kunci));
     if (!terpilih.length) {
@@ -1120,11 +1192,14 @@
     const judul = el("h3");
     judul.append(el("span", "aleta-ptj-no", "4"), "Jam dikerjakan");
     wadah.appendChild(judul);
+    const tunggalJam = S.mode === "perkara";
     wadah.appendChild(
       el(
         "div",
         "aleta-ptj-bantu",
-        "Jam yang dipilih adalah jam WITA. Perkara pertama dikerjakan pada jam mulai, perkara berikutnya menyusul dengan jeda acak. Tidak ada yang dikerjakan di luar jam kerja satker (Senin-Kamis 07.30-16.00, Jumat 07.30-16.30, istirahat siang dilewati, hari libur dilewati) kecuali Anda mengizinkannya."
+        tunggalJam
+          ? "Jam yang dipilih adalah jam WITA. Tidak dikerjakan di luar jam kerja satker (Senin-Kamis 07.30-16.00, Jumat 07.30-16.30, istirahat siang dan hari libur dilewati)."
+          : "Jam yang dipilih adalah jam WITA. Perkara pertama dikerjakan pada jam mulai, perkara berikutnya menyusul dengan jeda acak. Tidak ada yang dikerjakan di luar jam kerja satker (Senin-Kamis 07.30-16.00, Jumat 07.30-16.30, istirahat siang dilewati, hari libur dilewati) kecuali Anda mengizinkannya."
       )
     );
     const j = S.jadwal;
@@ -1170,15 +1245,20 @@
       segarkanPasangan();
     };
     for (const k of [tanggal, jam, batas, jedaMin, jedaMaks, dari, sampai]) k.addEventListener("change", ubah);
-    grid.append(
-      buatBidang("Tanggal mulai", tanggal),
-      buatBidang("Jam mulai", jam),
-      buatBidang("Batas akhir (opsional)", batas),
-      buatBidang("Jeda terpendek (menit)", jedaMin),
-      buatBidang("Jeda terpanjang (menit)", jedaMaks),
-      buatBidang("Jam kerja dari (opsional)", dari),
-      buatBidang("Jam kerja sampai (opsional)", sampai)
-    );
+    if (tunggalJam) {
+      // Satu perkara: hanya tanggal dan jam; jeda, batas akhir, dan jam kerja tidak berlaku.
+      grid.append(buatBidang("Tanggal", tanggal), buatBidang("Jam", jam));
+    } else {
+      grid.append(
+        buatBidang("Tanggal mulai", tanggal),
+        buatBidang("Jam mulai", jam),
+        buatBidang("Batas akhir (opsional)", batas),
+        buatBidang("Jeda terpendek (menit)", jedaMin),
+        buatBidang("Jeda terpanjang (menit)", jedaMaks),
+        buatBidang("Jam kerja dari (opsional)", dari),
+        buatBidang("Jam kerja sampai (opsional)", sampai)
+      );
+    }
     wadah.appendChild(grid);
     const pilihan = el("div", "aleta-ptj-baris-aksi");
     const lintas = masukan("checkbox");
@@ -1205,14 +1285,16 @@
       berlabel("", (() => { const s = el("span"); s.append(lintas, " Bila tidak muat, lanjutkan ke hari kerja berikutnya (batas akhir diabaikan)"); return s; })()),
       berlabel("", (() => { const s = el("span"); s.append(malam, " Izinkan di luar jam kerja (malam, Sabtu/Minggu, libur) - tidak disarankan"); return s; })())
     );
-    wadah.appendChild(pilihan);
     const acak = tombol("Acak ulang jam", "aleta-ptj-sekunder", "Menghitung ulang jeda acak antar perkara");
     acak.setAttribute("data-ptj", "acak-ulang");
     acak.addEventListener("click", () => {
       acakUlang = true;
       void muatPratinjau();
     });
-    wadah.appendChild(acak);
+    if (!tunggalJam) {
+      wadah.appendChild(pilihan);
+      wadah.appendChild(acak);
+    }
     const pr = el("div", "aleta-ptj-pratinjau");
     pr.setAttribute("data-ptj", "pratinjau");
     pr.setAttribute("aria-live", "polite");
@@ -1673,31 +1755,36 @@
     return nyala && !modeLama();
   }
 
-  function modeHalaman(doc) {
+  /**
+   * Tempat tombol: "perkara" (detil perkara, satu perkara), "dashboard" atau "daftar" (massal), atau "".
+   * Dashboard dikenali dari judul "DASHBOARD PERKARA [Statistik Perkara]" (section.content-header h1);
+   * daftar perkara dari #pageTitle "DAFTAR PERKARA PERDATA GUGATAN / PERMOHONAN" bertombol Cetak
+   * (#cetak_perkara_list). Halaman lain (jurnal, banding, eksekusi, dst.) tidak diberi tombol.
+   */
+  /** Judul dashboard: "DASHBOARD PERKARA [Statistik Perkara]" (h1) atau, di dashboard lama, "STATISTIK PERKARA DAN REMINDER" (h2). */
+  function judulDashboard(d) {
+    const h1 = d.querySelector("section.content-header h1, .content-header h1");
+    if (h1 && POLA_DASHBOARD.test(String(h1.textContent || ""))) return h1;
+    for (const h2 of Array.from(d.querySelectorAll("h2"))) {
+      if (/STATISTIK\s+PERKARA\s+DAN\s+REMINDER/i.test(String(h2.textContent || ""))) return h2;
+    }
+    return null;
+  }
+  function tempatHalaman(doc) {
     const d = doc || document;
     const tr = barisTombol(d);
     if (tr && nomorHalaman(d)) return "perkara";
     if (/\/aps_badilag\//i.test(String(location.pathname || ""))) return "";
-    if (JURNAL.test(String(location.pathname || "")) || DASBOR.test(String(location.pathname || ""))) return "daftar";
-    const baris = fungsi("barisPerkaraDiHalaman");
-    if (baris) {
-      // Memindai seluruh baris tabel mahal; hasilnya dipakai ulang beberapa detik.
-      const kini = Date.now();
-      if (kini - cacheDaftar.t > 5000 || cacheDaftar.alamat !== location.href) {
-        let ya = false;
-        try {
-          ya = baris().length >= 1;
-        } catch {
-          ya = false;
-        }
-        cacheDaftar = { t: kini, ya, alamat: location.href };
-      }
-      if (cacheDaftar.ya) return "daftar";
-    }
+    if (judulDashboard(d)) return "dashboard";
+    const judul = d.getElementById("pageTitle");
+    if (judul && POLA_DAFTAR.test(String(judul.textContent || "")) && d.getElementById("cetak_perkara_list")) return "daftar";
     return "";
   }
-  let cacheDaftar = { t: 0, ya: false, alamat: "" };
-
+  /** "perkara" atau "daftar" (massal); "" bila bukan tempat tombol. */
+  function modeHalaman(doc) {
+    const t = tempatHalaman(doc);
+    return t === "perkara" ? "perkara" : t ? "daftar" : "";
+  }
   function awalPerkara() {
     if (!S || S.mode !== "perkara") return;
     const k = tambahKandidat({ nomor: S.nomor, ket: "perkara yang sedang dibuka", dari: "perkara" });
@@ -1742,25 +1829,21 @@
       b.addEventListener("click", () => {
         if (!S) return;
         S.terbuka = !S.terbuka;
+        const lipat = !S.terbuka;
         void bacaPenyimpanan([KUNCI_LIPAT]).then((s) => {
           const lip = s && s[KUNCI_LIPAT] && typeof s[KUNCI_LIPAT] === "object" ? s[KUNCI_LIPAT] : {};
-          void tulisPenyimpanan({ [KUNCI_LIPAT]: { ...lip, [KUNCI_LIPAT_PANEL]: !S.terbuka } });
+          void tulisPenyimpanan({ [KUNCI_LIPAT]: { ...lip, [KUNCI_LIPAT_PANEL]: lipat } });
         });
         pasangPanel(tr);
       });
       td.appendChild(b);
     }
-    const putusan = tr.querySelector(":scope > .aleta-pusipp-sel");
-    const penetapan = tr.querySelector(":scope > .aleta-pensipp-sel");
-    const l1 = tr.querySelector(":scope > .aleta-l1-submenu");
-    const jangkar = putusan || penetapan;
-    if (jangkar) {
-      if (td.previousElementSibling !== jangkar) tr.insertBefore(td, jangkar.nextSibling);
-    } else if (l1) {
-      if (td.nextElementSibling !== l1 || td.parentElement !== tr) tr.insertBefore(td, l1);
-    } else if (td.parentElement !== tr) {
-      tr.appendChild(td);
+    // Urutan tetap (Penetapan, Putusan, Jadwalkan, Buka di ABT/ALETA) dijaga SATU pengurut bersama (panel-alat.js).
+    if (td.parentElement !== tr) {
+      const l1 = tr.querySelector(":scope > .aleta-l1-submenu");
+      tr.insertBefore(td, l1 || null);
     }
+    if (typeof alatUrutkanTombolSipp === "function") alatUrutkanTombolSipp(tr);
     const b = td.querySelector("button");
     if (b) b.setAttribute("aria-expanded", S && S.terbuka ? "true" : "false");
     return td;
@@ -1786,43 +1869,70 @@
     if (tb) tb.setAttribute("aria-expanded", S.terbuka ? "true" : "false");
   }
 
-  function pasangMelayang() {
-    let wadah = document.getElementById(ID_MELAYANG);
+  /**
+   * MASSAL: tombol di dashboard (di samping judul "DASHBOARD PERKARA [Statistik Perkara]") dan di daftar
+   * perkara (di samping tombol "Cetak"); panelnya terbuka tepat di bawah tempat itu, bukan melayang.
+   */
+  function jangkarMassal(tempat) {
+    if (tempat === "dashboard") {
+      const h1 = judulDashboard(document);
+      return h1 ? { tombol: h1, tombolDi: "dalam", panelSesudah: h1.closest("section") || h1 } : null;
+    }
+    const cetak = document.getElementById("cetak_perkara_list");
+    if (!cetak) return null;
+    const halaman = document.getElementById("pages");
+    return { tombol: cetak, tombolDi: "sesudah", panelSebelum: halaman && halaman.parentNode ? halaman : null, panelSesudah: cetak.closest("#left") || cetak };
+  }
+
+  function pasangTombolMassal(tempat) {
+    const j = jangkarMassal(tempat);
+    if (!j) return null;
+    let wadah = document.getElementById(ID_MASSAL);
     if (!wadah) {
-      wadah = el("div", `${KELAS} aleta-ptj-melayang`);
-      wadah.id = ID_MELAYANG;
-      const b = tombol("", "btn aleta-ptj-tombol");
+      wadah = el("span", `${KELAS} aleta-ptj-massal`);
+      wadah.id = ID_MASSAL;
+      const b = tombol("", "btn btn-sm aleta-ptj-tombol");
       b.id = "aleta-ptj-tombol";
       b.setAttribute("data-ptj", "tombol");
       b.setAttribute("aria-controls", ID_PANEL);
-      b.append(el("span", "aleta-ptj-ikon", "⏱"), " Jadwalkan Putusan ");
+      b.append(el("span", "aleta-ptj-ikon", "⏱"), " Jadwalkan Putusan Massal ");
       const lencana = el("span", "aleta-ptj-lencana", String(lencanaTerakhir));
       lencana.hidden = lencanaTerakhir === 0;
       b.appendChild(lencana);
       b.addEventListener("click", () => {
         if (!S) return;
         S.terbuka = !S.terbuka;
-        pasangPanelLaci();
+        pasangPanelMassal(tempat);
       });
       wadah.appendChild(b);
-      document.body.appendChild(wadah);
+    }
+    // Letak: dashboard = di dalam judul (di samping tulisan); daftar = tepat sesudah tombol Cetak.
+    if (j.tombolDi === "dalam") {
+      if (wadah.parentNode !== j.tombol) j.tombol.appendChild(wadah);
+    } else if (wadah.previousElementSibling !== j.tombol || wadah.parentNode !== j.tombol.parentNode) {
+      j.tombol.parentNode.insertBefore(wadah, j.tombol.nextSibling);
     }
     const b = wadah.querySelector("button");
     if (b) b.setAttribute("aria-expanded", S && S.terbuka ? "true" : "false");
+    return wadah;
   }
 
-  function pasangPanelLaci() {
+  function pasangPanelMassal(tempat) {
+    const j = jangkarMassal(tempat);
+    if (!j) return;
     const ada = document.getElementById(ID_PANEL);
     if (!S.akar || !ada) {
       const akar = buatKerangka();
       if (ada) ada.remove();
-      document.body.appendChild(akar);
+      if (j.panelSebelum) j.panelSebelum.parentNode.insertBefore(akar, j.panelSebelum);
+      else if (j.panelSesudah && j.panelSesudah.parentNode) j.panelSesudah.parentNode.insertBefore(akar, j.panelSesudah.nextSibling);
+      else document.body.appendChild(akar);
       gambarSemua();
       void muatSetelan();
-      tambahDariHalamanDiam();
+      if (tempat === "daftar") tambahDariHalamanDiam();
     }
     S.akar.hidden = !S.terbuka;
-    const b = document.querySelector("#aleta-ptj-melayang button");
+    const b = document.querySelector("#aleta-ptj-massal button");
     if (b) b.setAttribute("aria-expanded", S.terbuka ? "true" : "false");
   }
   /** Baris di halaman daftar ditawarkan (belum dicentang) supaya cepat dipilih. */
@@ -1850,37 +1960,38 @@
       if (d.querySelector(".aleta-ptj") && !(S && S.sibuk)) bersihkan(d);
       return { tombol: false, panel: false, mode: "" };
     }
-    const mode = modeHalaman(d);
+    const tempat = tempatHalaman(d);
+    const mode = tempat === "perkara" ? "perkara" : tempat ? "daftar" : "";
     if (!mode) {
       if (d.querySelector(".aleta-ptj") && !(S && S.sibuk)) bersihkan(d);
-      return { tombol: false, panel: false, mode: "" };
+      return { tombol: false, panel: false, mode: "", tempat: "" };
     }
     const nomor = mode === "perkara" ? nomorHalaman(d) : "";
-    if (!S || S.mode !== mode || S.nomor !== nomor) {
+    if (!S || S.mode !== mode || S.nomor !== nomor || S.tempat !== tempat) {
       if (d.querySelector(".aleta-ptj")) bersihkan(d);
-      S = keadaanBaru(mode, nomor);
-      if (mode === "daftar") S.terbuka = false;
+      S = keadaanBaru(mode, nomor, tempat);
+      // Bawaan TERLIPAT di semua tempat (21 Okt 2026); hanya yang sengaja dibuka petugas (false) yang terbuka lagi.
       void bacaPenyimpanan([KUNCI_LIPAT]).then((simpan) => {
         if (!S || S.mode !== "perkara" || S.nomor !== nomor) return;
         const lip = simpan && simpan[KUNCI_LIPAT] && typeof simpan[KUNCI_LIPAT] === "object" ? simpan[KUNCI_LIPAT] : {};
-        // Bawaan TERBENTANG di halaman perkara; hanya yang sengaja dilipat petugas yang tetap terlipat.
-        if (lip[KUNCI_LIPAT_PANEL] === true) {
-          S.terbuka = false;
+        if (lip[KUNCI_LIPAT_PANEL] === false && !S.lipatDibaca) {
+          S.terbuka = true;
           const tr = barisTombol(document);
           if (tr) pasangPanel(tr);
         }
+        S.lipatDibaca = true;
       });
     }
     if (mode === "perkara") {
       const tr = barisTombol(d);
-      if (!tr) return { tombol: false, panel: false, mode };
+      if (!tr) return { tombol: false, panel: false, mode, tempat };
       pasangTombol(tr);
       pasangPanel(tr);
     } else {
-      pasangMelayang();
-      if (S.terbuka || S.akar) pasangPanelLaci();
+      if (!pasangTombolMassal(tempat)) return { tombol: false, panel: false, mode, tempat };
+      if (S.terbuka || S.akar) pasangPanelMassal(tempat);
     }
-    return { tombol: true, panel: Boolean(S.akar && !S.akar.hidden), mode };
+    return { tombol: true, panel: Boolean(S.akar && !S.akar.hidden), mode, tempat };
   }
 
   let detak = null;
@@ -1924,7 +2035,7 @@
   }
 
   globalThis.aletaPutusanTerjadwal = {
-    versi: "b3-21okt",
+    versi: "b3-21okt-2",
     pasang,
     bersihkan,
     keadaan: () => S,
@@ -1934,7 +2045,7 @@
     muatPratinjau,
     hasilPasangan,
     kirimJadwal,
-    murni: { berhak, barisTombol, nomorHalaman, modeHalaman, witaDari, hariKerjaBerikut, sebutTanggal },
+    murni: { berhak, barisTombol, nomorHalaman, modeHalaman, tempatHalaman, witaDari, hariKerjaBerikut, sebutTanggal },
   };
   void mulai();
 })();

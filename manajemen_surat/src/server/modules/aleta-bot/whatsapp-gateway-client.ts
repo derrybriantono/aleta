@@ -4540,6 +4540,8 @@ export async function getGatewayPenunjukanUsulan(payload: {
     aturan: Record<string, unknown>;
     hariSidang: Record<string, number>;
     paniteraMajelis: Record<string, string[]>;
+    /** Nama (tanpa gelar) petugas dengan akun portal nonaktif/mutasi - tidak diusulkan sebagai panitera pengganti/juru sita. */
+    petugasNonaktif?: string[];
     /**
      * Susunan majelis menurut SK Ketua - kode majelis, kode hakim, dan
      * panitera sidangnya sebagai pasangan kode-orang.

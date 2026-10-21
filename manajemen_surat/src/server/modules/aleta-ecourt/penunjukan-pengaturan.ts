@@ -504,6 +504,24 @@ export async function periksaAkunSk(db: AletaDatabase, hariSidang: HariSidangMaj
  * menerima aturannya dari pemanggil. Kalau bot ikut menyimpan salinan, ada dua
  * tempat yang harus disunting tiap SK berganti - dan yang kedua pasti terlupa.
  */
+/**
+ * Nama petugas yang akun portalnya NONAKTIF/terhapus (mutasi) dan tidak punya akun
+ * aktif lain bernama sama. Bot memakainya agar panitera pengganti / juru sita yang
+ * sudah pindah tidak diusulkan dan tidak tampil di tabel beban. Nama sudah dibersihkan
+ * dari gelar (namaBersih); tanpa kata sandi atau data lain.
+ */
+export async function bacaPetugasNonaktif(db: AletaDatabase): Promise<string[]> {
+  const akun = await bacaAkunUntukPeringatan(db);
+  const aktif = new Set(akun.filter((a) => a.aktif).map((a) => namaBersih(a.nama)));
+  const hasil = new Set<string>();
+  for (const a of akun) {
+    if (a.aktif) continue;
+    const n = namaBersih(a.nama);
+    if (n && !aktif.has(n)) hasil.add(n);
+  }
+  return [...hasil];
+}
+
 export async function bacaPengaturanPenunjukan(db: AletaDatabase) {
   const [hariSidang, aturan, skBawaan] = await Promise.all([
     bacaHariSidang(db),
@@ -512,9 +530,11 @@ export async function bacaPengaturanPenunjukan(db: AletaDatabase) {
   ]);
   const peringatanSk = await periksaAkunSk(db, hariSidang);
   const berlaku = await bacaBerlakuMulai(db);
+  const petugasNonaktif = await bacaPetugasNonaktif(db);
 
   return {
     aturan,
+    petugasNonaktif,
     hariSidang: Object.fromEntries(hariSidang.map((x) => [x.majelisKode, x.hari])),
     paniteraMajelis: Object.fromEntries(
       hariSidang.map((x) => [x.majelisKode, x.paniteraKode])

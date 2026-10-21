@@ -33,8 +33,19 @@ const AKAR = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (b: string) => readFileSync(path.join(AKAR, b), "utf8").replace(/\r\n/g, "\n");
 const ALAT = baca("panel-alat.js");
 const PUSIPP = baca("putusan-sipp.js");
+const PASANGAN = baca("putusan-terjadwal-pasangan.js");
 const PENSIPP = baca("penetapan-sipp.js");
 const CSS = baca("putusan-sipp.css");
+const CSS_BERSAMA = baca("penetapan-sipp.css");
+/** Isi blok CSS yang daftar selektornya memuat `selektor` PERSIS (aturan berdaftar-selektor dikenali). */
+function blokCss(css: string, selektor: string): string {
+  const bersih = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  for (const m of bersih.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+    if (m[1].split(",").some((x) => x.trim() === selektor)) return m[2];
+  }
+  return "";
+}
+
 
 const ASAL = "http://192.168.10.10";
 const NOMOR = "684/Pdt.G/2026/PA.Dgl";
@@ -72,6 +83,8 @@ type Opsi = {
   otomatis?: (opsi: Record<string, unknown>) => Promise<Record<string, unknown>>;
   edocJalankan?: (p: Record<string, unknown>) => Promise<{ ok: boolean; bunyi: string; langkah: Array<Record<string, string>> }>;
   tanpaPenetapan?: boolean;
+  simpananAwal?: Record<string, unknown>;
+  konversiGagal?: boolean;
   dengaPenetapanSungguhan?: boolean;
   bukaBlangko?: { ok: boolean; pesan?: string };
 };
@@ -87,7 +100,7 @@ function buka(o: Opsi = {}) {
   );
   terbuka.push(dom);
   const w = dom.window as any;
-  const simpanan: Record<string, unknown> = { ujiTampilan: o.tampilan || "ui", ujiIzinkanNyata: true };
+  const simpanan: Record<string, unknown> = { ujiTampilan: o.tampilan || "ui", ujiIzinkanNyata: true, ...(o.simpananAwal || {}) };
   w.chrome = {
     runtime: { id: "uji", getManifest: () => ({ version: "1.205.19" }), getURL: (x: string) => x, sendMessage: async () => ({}) },
     storage: {
@@ -157,6 +170,13 @@ function buka(o: Opsi = {}) {
       }
       return true;
     },
+    a30PerluKeRtf: (nama: string) => /\.(docx|doc|pdf)$/i.test(nama),
+    a30KonversiNaskah: async (berkas: { name: string }) => ({
+      ok: !o.konversiGagal,
+      pesan: "konversi tiruan gagal",
+      berkas: new w.File([new Uint8Array(64)], String(berkas.name).replace(/\.[A-Za-z]+$/, ".rtf")),
+      peringatan: /\.pdf$/i.test(berkas.name) ? ["PDF dapat berubah tata letaknya; periksa naskahnya."] : [],
+    }),
     aletaPutusanEdoc: {
       cekSlot: async () => (o.cekGagal ? { ok: false, sebab: "portal tidak menjawab" } : { ok: true, adaBaris: true, adaPutusan: Boolean(o.adaPutusan), adaAnonim: Boolean(o.adaAnonim) }),
       ambilKunci: async () => {
@@ -169,7 +189,7 @@ function buka(o: Opsi = {}) {
       },
       jalankan: async (p: Record<string, unknown>) => {
         urut.push("edoc:jalankan");
-        opsiOto.push({ edocSaja: true, denganPutusan: p.denganPutusan, denganAnonim: p.denganAnonim });
+        opsiOto.push({ edocSaja: true, denganPutusan: p.denganPutusan, denganAnonim: p.denganAnonim, namaPutusan: p.putusan ? (p.putusan as { name: string }).name : null, namaRtf: p.putusanRtf ? (p.putusanRtf as { name: string }).name : null });
         await tunggu(5);
         if (o.edocJalankan) return o.edocJalankan(p);
         const langkah: Array<Record<string, string>> = [];
@@ -179,6 +199,7 @@ function buka(o: Opsi = {}) {
       },
     },
   });
+  vm.runInContext(PASANGAN, ctx, { filename: "putusan-terjadwal-pasangan.js" });
   vm.runInContext(PUSIPP, ctx, { filename: "putusan-sipp.js" });
   if (!o.tanpaPenetapan) {
     // Tombol Penetapan Otomatis (P2) dan tombol L1 (Buka di ABT/ALETA) di baris yang sama.
@@ -209,6 +230,12 @@ const cek = (h: Halaman, j: string) => panel(h)!.querySelector(`[data-pusipp-cek
 const utama = (h: Halaman) => panel(h)!.querySelector('[data-pusipp="utama"]') as HTMLButtonElement;
 
 async function panelSiap(h: Halaman) {
+  // 21 Okt 2026: bawaan TERLIPAT - petugas membukanya dulu (sekali).
+  await sampai(() => (api(h).pasang(h.d), tombolPu(h)), "tombol Putusan Otomatis");
+  if (!api(h).keadaan().terbuka) {
+    tombolPu(h)!.click();
+    await tunggu(5);
+  }
   await sampai(() => {
     api(h).pasang(h.d);
     const k = api(h).keadaan();
@@ -251,7 +278,7 @@ describe("tombol: bersebelahan dengan Penetapan Otomatis, tebal, hanya untuk yan
   });
 
   it("bersama penetapan-sipp.js SUNGGUHAN: urutannya stabil, tidak saling memindahkan tiap detak", async () => {
-    const h = buka({ dengaPenetapanSungguhan: true });
+    const h = buka({ dengaPenetapanSungguhan: true, peran: "Ketua" });
     await sampai(() => (api(h).pasang(h.d), h.d.querySelector(".aleta-pensipp-sel") || null) , "tombol penetapan").catch(() => null);
     // Penetapan Otomatis butuh perkara dan hak penetapan: bila belum muncul, buatkan tempatnya seperti P2.
     const urutan = () => Array.from(h.d.querySelector("#submenus td#backlist")!.parentElement!.children).map((x) => (x.classList.contains("aleta-pensipp-sel") ? "pen" : x.classList.contains("aleta-pusipp-sel") ? "put" : x.classList.contains("aleta-l1-submenu") ? "l1" : "lain"));
@@ -272,11 +299,7 @@ describe("tombol: bersebelahan dengan Penetapan Otomatis, tebal, hanya untuk yan
     expect(akhir).toEqual(["pen", "put", "l1"]);
   });
 
-  it("gaya: huruf tebal (>= 700) dan kontras >= 4,5:1 di tema terang dan gelap", () => {
-    const ambil = (selektor: string) => {
-      const m = CSS.replace(/\/\*[\s\S]*?\*\//g, "").match(new RegExp(`${selektor.replace(/[.[\]"=-]/g, "\\$&")}\\s*\\{([^}]*)\\}`));
-      return m ? m[1] : "";
-    };
+  it("gaya: huruf tebal (>= 700), kontras >= 4,5:1, satu gaya dan palet dengan Penetapan Otomatis di tema terang dan gelap", () => {
     const hex = (s: string, nama: string) => new RegExp(`${nama}:\\s*(#[0-9a-fA-F]{6})`).exec(s)?.[1] || "";
     const lum = (x: string) => {
       const c = [1, 3, 5].map((i) => parseInt(x.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
@@ -286,18 +309,150 @@ describe("tombol: bersebelahan dengan Penetapan Otomatis, tebal, hanya untuk yan
       const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
       return (x + 0.05) / (y + 0.05);
     };
-    const dasar = ambil(".aleta-pusipp-tombol");
+    // Tombol: gaya BERSAMA (aturan berdaftar-selektor di penetapan-sipp.css) - tidak biru tetap lagi.
+    const dasar = blokCss(CSS_BERSAMA, ".aleta-pusipp-tombol");
+    expect(dasar).toBe(blokCss(CSS_BERSAMA, ".aleta-pensipp-tombol"));
+    expect(dasar).toBe(blokCss(CSS_BERSAMA, ".aleta-ptj-tombol"));
     expect(Number(/font-weight:\s*(\d+)/.exec(dasar)?.[1])).toBeGreaterThanOrEqual(700);
-    expect(rasio(hex(dasar, "--pu-t-teks"), hex(dasar, "--pu-t-latar"))).toBeGreaterThanOrEqual(4.5);
-    const gelap = ambil('html[data-aleta-tema-sipp="gelap"] .aleta-pusipp-tombol');
-    expect(rasio(hex(gelap, "--pu-t-teks"), hex(gelap, "--pu-t-latar"))).toBeGreaterThanOrEqual(4.5);
-    const pT = ambil(".aleta-pusipp-panel");
-    const pG = ambil('html[data-aleta-tema-sipp="gelap"] .aleta-pusipp-panel');
-    expect(rasio(hex(pT, "--pu-merek-teks"), hex(pT, "--pu-merek"))).toBeGreaterThanOrEqual(4.5);
-    expect(rasio(hex(pG, "--pu-merek-teks"), hex(pG, "--pu-merek"))).toBeGreaterThanOrEqual(4.5);
-    expect(rasio(hex(pT, "--pu-tinta"), hex(pT, "--pu-latar"))).toBeGreaterThanOrEqual(7);
-    expect(rasio(hex(pG, "--pu-tinta"), hex(pG, "--pu-latar"))).toBeGreaterThanOrEqual(7);
+    expect(rasio(hex(dasar, "--ps-t-teks"), hex(dasar, "--ps-t-latar"))).toBeGreaterThanOrEqual(4.5);
+    const gelap = blokCss(CSS_BERSAMA, 'html[data-aleta-tema-sipp="gelap"] .aleta-pusipp-tombol');
+    expect(rasio(hex(gelap, "--ps-t-teks"), hex(gelap, "--ps-t-latar"))).toBeGreaterThanOrEqual(4.5);
+    // Palet panel: bersama pula; peubah --pu-* hanya memetakan ke --ps-*.
+    const pT = blokCss(CSS_BERSAMA, ".aleta-pusipp-panel");
+    const pG = blokCss(CSS_BERSAMA, 'html[data-aleta-tema-sipp="gelap"] .aleta-pusipp-panel');
+    expect(pT).toBe(blokCss(CSS_BERSAMA, ".aleta-pensipp-panel"));
+    expect(rasio(hex(pT, "--ps-merek-teks"), hex(pT, "--ps-merek"))).toBeGreaterThanOrEqual(4.5);
+    expect(rasio(hex(pG, "--ps-merek-teks"), hex(pG, "--ps-merek"))).toBeGreaterThanOrEqual(4.5);
+    expect(rasio(hex(pT, "--ps-tinta"), hex(pT, "--ps-latar"))).toBeGreaterThanOrEqual(7);
+    expect(rasio(hex(pG, "--ps-tinta"), hex(pG, "--ps-latar"))).toBeGreaterThanOrEqual(7);
+    const alias = blokCss(CSS, ".aleta-pusipp-panel");
+    expect(alias).toContain("--pu-merek: var(--ps-merek)");
+    expect(alias).toContain("--pu-latar: var(--ps-latar)");
+    // Tidak ada lagi aksen biru tetap.
+    expect(CSS).not.toMatch(/#1f4e8c|#173b6b|#8db8f0/i);
   });
+});
+
+describe("tempat unggah berkas putusan di panel Putusan Otomatis (21 Okt 2026)", () => {
+  const berkas = (h: Halaman, nama: string, ukuran = 4096) => new h.w.File([new Uint8Array(ukuran)], nama);
+  async function pilihBerkas(h: Halaman, nama: string, ukuran = 4096) {
+    const zona = panel(h)!.querySelector('[data-pusipp="zona"]') as HTMLElement;
+    const evt = new h.w.Event("drop", { bubbles: true, cancelable: true }) as any;
+    evt.dataTransfer = { files: [berkas(h, nama, ukuran)] };
+    zona.dispatchEvent(evt);
+    await sampai(() => api(h).keadaan().berkas && api(h).keadaan().berkas.status !== "periksa" && api(h).keadaan().berkas.status !== "ubah", "berkas diproses");
+  }
+
+  it("ada zona seret/pilih (RTF, DOCX, DOC, PDF) di panel, bukan hanya di bagian ALETA", async () => {
+    const h = buka();
+    const p = await panelSiap(h);
+    const zona = p.querySelector('[data-pusipp="zona"]') as HTMLElement;
+    expect(zona).toBeTruthy();
+    expect(zona.textContent).toMatch(/RTF, DOCX, DOC, atau PDF/);
+    const masuk = p.querySelector('[data-pusipp="pilih-berkas"]') as HTMLInputElement;
+    expect(masuk.type).toBe("file");
+    expect(masuk.accept).toBe(".rtf,.docx,.doc,.pdf");
+    expect(masuk.hasAttribute("multiple")).toBe(false);
+  });
+
+  it("RTF dipilih: siap dipakai, ringkasan menyebut berkas; Ya meneruskan berkas ke alur ekstensi (e-Doc putusan + anonimisasi)", async () => {
+    const h = buka();
+    await panelSiap(h);
+    await pilihBerkas(h, "684_Pdt.G_2026_PA.Dgl putusan.rtf");
+    expect(panel(h)!.querySelector('[data-pusipp="berkas-terpilih"]')!.textContent).toContain("putusan.rtf");
+    expect(panel(h)!.querySelector('[data-pusipp="berkas-terpilih"] [data-status="ok"]')).toBeTruthy();
+    expect(panel(h)!.querySelector(".aleta-pusipp-ringkas")!.textContent).toContain("dari berkas yang dipilih");
+    await klikSatuKali(h);
+    await sampai(() => status(h, "anonim") === "ok", "selesai");
+    expect(h.urut.filter((x) => x === "otomatis")).toHaveLength(1);
+    expect(h.opsiOto[0]).toMatchObject({ edoc: true, denganPutusan: true, denganAnonim: true });
+    expect((h.opsiOto[0].putusan as { name: string }).name).toBe("684_Pdt.G_2026_PA.Dgl putusan.rtf");
+    expect((h.opsiOto[0].putusanRtf as { name: string }).name).toBe("684_Pdt.G_2026_PA.Dgl putusan.rtf");
+    simpanTangkapan(h, "berkas-dipilih");
+  });
+
+  it("DOCX/PDF dipilih: diubah server menjadi RTF (bahan anonimisasi) dan peringatan konversi tampil; berkas asli yang menjadi e-Doc putusan", async () => {
+    const h = buka({ terisi: true });
+    await panelSiap(h);
+    await pilihBerkas(h, "putusan.pdf");
+    const b = api(h).keadaan().berkas;
+    expect(b.status).toBe("ok");
+    expect(b.rtf.name).toBe("putusan.rtf");
+    expect(panel(h)!.textContent).toMatch(/PDF dapat berubah tata letaknya/);
+    // Putusan sudah terisi: hanya e-Doc, tanpa membuka blangko - berkas tetap ikut.
+    await klikSatuKali(h);
+    await sampai(() => h.urut.includes("edoc:jalankan"), "e-Doc dijalankan");
+    expect(h.opsiOto.at(-1)).toMatchObject({ edocSaja: true, namaPutusan: "putusan.pdf", namaRtf: "putusan.rtf" });
+    expect(h.urut).not.toContain("buka-blangko");
+  });
+
+  it("konversi gagal: berkas tetap dipakai sebagai e-Doc putusan, anonimisasi lewat ABT (peringatan)", async () => {
+    const h = buka({ terisi: true, konversiGagal: true });
+    await panelSiap(h);
+    await pilihBerkas(h, "putusan.docx");
+    expect(api(h).keadaan().berkas.status).toBe("ok");
+    expect(api(h).keadaan().berkas.rtf).toBeNull();
+    expect(panel(h)!.textContent).toMatch(/pembuat anonimisasi ABT/);
+  });
+
+  it("ditolak: bentuk lain, BAS, anonimisasi, lebih dari 10 MB, kosong - tidak ikut dipakai dan tombol utama tidak membawa berkas", async () => {
+    const h = buka({ terisi: true });
+    await panelSiap(h);
+    const kasus: Array<[string, number, RegExp]> = [
+      ["catatan.txt", 4096, /bukan RTF, DOCX, DOC, atau PDF/],
+      ["BAS 684_Pdt.G_2026_PA.Dgl.rtf", 4096, /berita acara sidang/],
+      ["684_Pdt.G_2026_PA.Dgl anonimisasi.rtf", 4096, /anonimisasi dibuat otomatis/],
+      ["besar.rtf", 11 * 1024 * 1024, /lebih dari 10 MB/],
+      ["kosong.rtf", 0, /berkas kosong/],
+    ];
+    for (const [nama, ukuran, pola] of kasus) {
+      await pilihBerkas(h, nama, ukuran);
+      const b = api(h).keadaan().berkas;
+      expect(b.status, nama).toBe("ditolak");
+      expect(b.tolak, nama).toMatch(pola);
+      expect(api(h).berkasSiap(), nama).toBeNull();
+    }
+    await klikSatuKali(h);
+    await sampai(() => h.urut.includes("edoc:jalankan"), "e-Doc dijalankan");
+    expect(h.opsiOto.at(-1)).toMatchObject({ namaPutusan: null, namaRtf: null });
+  });
+
+  it("Buang melepas berkas; tombol utama menunggu berkas yang sedang diubah ke RTF", async () => {
+    const h = buka({ terisi: true });
+    await panelSiap(h);
+    await pilihBerkas(h, "putusan.rtf");
+    (panel(h)!.querySelector('[data-pusipp="buang-berkas"]') as HTMLButtonElement).click();
+    expect(api(h).keadaan().berkas).toBeNull();
+    expect(panel(h)!.querySelector('[data-pusipp="berkas-terpilih"]')!.textContent).toBe("");
+  });
+
+  it("tidak ada tulisan ke SIPP dari zona ini: berkasnya tidak dikirim sebelum tombol utama ditekan", async () => {
+    const h = buka();
+    await panelSiap(h);
+    await pilihBerkas(h, "684_Pdt.G_2026_PA.Dgl putusan.rtf");
+    expect(h.urut).toEqual([]);
+  });
+});
+
+describe("hak: Ketua, Wakil Ketua, Hakim, dan Super Admin (21 Okt 2026)", () => {
+  for (const peran of ["Super Admin", "Hakim", "Ketua", "Wakil Ketua"]) {
+    it(`${peran}: tombol dan panel tampil`, async () => {
+      const h = buka({ peran });
+      await sampai(() => (api(h).pasang(h.d), tombolPu(h)), `tombol untuk ${peran}`);
+      expect(panel(h)).toBeTruthy();
+    });
+  }
+  for (const peran of ["Panitera Pengganti", "Panitera", "Panitera Muda", "Juru Sita", "Petugas PTSP", "Kasir", "Analis Perkara", "Staf"]) {
+    it(`${peran}: tidak ada tombol maupun panel`, async () => {
+      const h = buka({ peran });
+      for (let i = 0; i < 4; i += 1) {
+        api(h).pasang(h.d);
+        await tunggu(10);
+      }
+      expect(tombolPu(h)).toBeNull();
+      expect(panel(h)).toBeNull();
+    });
+  }
 });
 
 describe("hak: hanya Super Admin, Admin, dan Hakim", () => {
@@ -366,6 +521,8 @@ describe("panel: terbentang, semua tercentang, keadaan SIPP dibaca", () => {
 
   it("e-Doc yang sudah ada: dilewati; semuanya sudah ada = tombol utama mati dengan keterangan", async () => {
     const h = buka({ terisi: true, adaPutusan: true, adaAnonim: true });
+    await sampai(() => (api(h).pasang(h.d), tombolPu(h)), "tombol");
+    tombolPu(h)!.click();
     const p = await sampai(() => (api(h).pasang(h.d), api(h).keadaan()?.dibaca ? panel(h) : null), "dibaca");
     expect(["isi", "putusan", "anonim"].map((j) => status(h, j))).toEqual(["lewat", "lewat", "lewat"]);
     expect(p.querySelector(".aleta-pusipp-ringkas")!.textContent).toContain("Tidak ada yang perlu dikerjakan");
@@ -378,14 +535,27 @@ describe("panel: terbentang, semua tercentang, keadaan SIPP dibaca", () => {
     expect(p.querySelector(".aleta-pusipp-info")!.textContent).toContain("belum terbaca (portal tidak menjawab)");
   });
 
-  it("dilipat petugas: panel tersembunyi, tombol ber-aria-expanded=false, dan diingat", async () => {
+  it("BAWAAN TERLIPAT: panel tersembunyi dan belum membaca apa pun; dibuka petugas = terbentang dan diingat; dilipat lagi = diingat", async () => {
     const h = buka();
-    await panelSiap(h);
+    await sampai(() => (api(h).pasang(h.d), tombolPu(h)), "tombol");
+    expect(panel(h)!.hidden).toBe(true);
+    expect(tombolPu(h)!.getAttribute("aria-expanded")).toBe("false");
+    expect(api(h).keadaan().dibaca).toBe(false);
+    tombolPu(h)!.click();
+    await tunggu(10);
+    expect(panel(h)!.hidden).toBe(false);
+    expect(tombolPu(h)!.getAttribute("aria-expanded")).toBe("true");
+    await sampai(() => (h.simpanan.lipatanBagian as any)?.putusanSipp2 === false, "pembukaan tersimpan");
     tombolPu(h)!.click();
     await tunggu(10);
     expect(panel(h)!.hidden).toBe(true);
-    expect(tombolPu(h)!.getAttribute("aria-expanded")).toBe("false");
-    await sampai(() => (h.simpanan.lipatanBagian as any)?.putusanSipp === true, "lipatan tersimpan");
+    await sampai(() => (h.simpanan.lipatanBagian as any)?.putusanSipp2 === true, "lipatan tersimpan");
+  });
+
+  it("yang sengaja dibuka petugas pada kunjungan lalu terbuka lagi; tanpa catatan tetap terlipat", async () => {
+    const h = buka({ simpananAwal: { lipatanBagian: { putusanSipp2: false } } });
+    await sampai(() => (api(h).pasang(h.d), tombolPu(h)), "tombol");
+    await sampai(() => (api(h).pasang(h.d), panel(h) && !panel(h)!.hidden ? panel(h) : null), "terbuka sesuai catatan");
   });
 });
 
@@ -411,7 +581,7 @@ describe("konfirmasi di halaman dan satu klik", () => {
     await klikSatuKali(h);
     await sampai(() => status(h, "anonim") === "ok", () => `langkah selesai; status: ${["isi", "putusan", "anonim"].map((j) => status(h, j))}`);
     expect(h.urut).toEqual(["buka-blangko", "gambar-ulang", "otomatis"]);
-    expect(h.opsiOto).toEqual([{ edoc: true, denganPutusan: true, denganAnonim: true, melayang: true }]);
+    expect(h.opsiOto).toEqual([{ edoc: true, denganPutusan: true, denganAnonim: true, melayang: true, putusan: null, putusanRtf: null }]);
     expect(["isi", "putusan", "anonim"].map((j) => status(h, j))).toEqual(["ok", "ok", "ok"]);
     expect(baris(h, "isi").textContent).toContain("Tersimpan di SIPP");
     simpanTangkapan(h, "selesai");
@@ -505,7 +675,7 @@ describe("putusan sudah terisi: hanya e-Doc (juga untuk mengulang unggah saja)",
     await klikSatuKali(h);
     await sampai(() => status(h, "anonim") === "ok", "selesai");
     expect(h.urut).toEqual(["kunci:ambil", "edoc:jalankan", "kunci:lepas"]);
-    expect(h.opsiOto).toEqual([{ edocSaja: true, denganPutusan: true, denganAnonim: true }]);
+    expect(h.opsiOto).toEqual([{ edocSaja: true, denganPutusan: true, denganAnonim: true, namaPutusan: null, namaRtf: null }]);
     expect(status(h, "isi")).toBe("lewat");
     expect(h.ringkasan).toHaveLength(1);
     expect(h.ringkasan[0].nomor).toBe(NOMOR);

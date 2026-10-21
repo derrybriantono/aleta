@@ -33,6 +33,16 @@ const ALAT = baca("panel-alat.js");
 const PASANGAN = baca("putusan-terjadwal-pasangan.js");
 const PTJ = baca("putusan-terjadwal.js");
 const CSS = baca("putusan-terjadwal.css");
+const CSS_BERSAMA = baca("penetapan-sipp.css");
+
+/** Isi blok CSS yang daftar selektornya memuat `selektor` PERSIS (aturan berdaftar-selektor dikenali). */
+function blokCss(css: string, selektor: string): string {
+  const bersih = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  for (const m of bersih.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+    if (m[1].split(",").some((x) => x.trim() === selektor)) return m[2];
+  }
+  return "";
+}
 
 const ASAL = "http://192.168.10.10";
 const NOMOR = "684/Pdt.G/2026/PA.Dgl";
@@ -78,9 +88,19 @@ type Opsi = {
 function buka(o: Opsi = {}) {
   const halaman = o.halaman ?? "perkara";
   const jalur = halaman === "perkara" ? "/SIPP/detil_perkara_agama" : halaman === "jurnal" ? "/SIPP/jurnal_perkara_list" : halaman === "dasbor" ? "/SIPP/main" : "/SIPP/perkara_list";
-  const isiDaftar =
+  const tabelDaftar =
     `<table id="daftar"><tr><th>No</th><th>Nomor</th></tr>` +
     `<tr><td>1</td><td>12/Pdt.G/2026/PA.Dgl</td></tr><tr><td>2</td><td>13/Pdt.G/2026/PA.Dgl</td></tr><tr><td>3</td><td>14/Pdt.P/2026/PA.Dgl</td></tr></table>`;
+  // Daftar perkara SIPP (views/body/body.php + perkara_list.php): #pageTitle, tombol Cetak di #left, tabel di #pages.
+  const isiDaftar =
+    `<div id="konten-sipp"><div id="pageTitle">DAFTAR PERKARA PERDATA GUGATAN</div><hr class="thick-line">` +
+    `<div id="left"><input id="cetak_perkara_list" type="submit" value="Cetak" class="btn"></div>` +
+    `<div id="pages">${tabelDaftar}</div></div>`;
+  // Dashboard SIPP (views/dashboard/dashboard2.php): section.content-header h1.
+  const isiDasbor =
+    `<section class="content-header"><h1><small>DASHBOARD PERKARA PERTAMA</small> <small>[Statistik Perkara]</small></h1></section>` +
+    `<div class="konten"><section class="content">${tabelDaftar}</section></div>`;
+  const isiJurnal = `<div id="pageTitle">JURNAL PERKARA</div>${tabelDaftar}`;
   const dom = new JSDOM(
     `<!doctype html><html><head><title>SIPP</title></head><body><div id="konten">` +
       (halaman === "perkara"
@@ -90,7 +110,11 @@ function buka(o: Opsi = {}) {
           `</tr></table></td></tr></table>`
         : halaman === "lain"
           ? `<form><input name="x"></form>`
-          : isiDaftar) +
+          : halaman === "dasbor"
+            ? isiDasbor
+            : halaman === "jurnal"
+              ? isiJurnal
+              : isiDaftar) +
       `</div></body></html>`,
     { url: `${ASAL}${jalur}`, runScripts: "outside-only", pretendToBeVisual: true } as ConstructorParameters<typeof JSDOM>[1]
   );
@@ -230,9 +254,10 @@ const panel = (h: Halaman) => h.d.getElementById("aleta-ptj-panel") as HTMLEleme
 const q = (h: Halaman, sel: string) => panel(h)!.querySelector(sel) as HTMLElement;
 const qq = (h: Halaman, sel: string) => Array.from(panel(h)!.querySelectorAll(sel)) as HTMLElement[];
 
-async function panelSiap(h: Halaman, bukaLaci = false) {
+async function panelSiap(h: Halaman, _lama = false) {
   await sampai(() => (api(h).pasang(h.d), tombolPt(h)), "tombol Jadwalkan Putusan");
-  if (bukaLaci) {
+  // 21 Okt 2026: SEMUA panel bawaannya TERLIPAT - petugas membukanya dulu (sekali).
+  if (!api(h).keadaan().terbuka) {
     tombolPt(h)!.click();
     api(h).pasang(h.d);
   }
@@ -278,7 +303,7 @@ describe("tombol", () => {
     expect(idx("aleta-pusipp-sel")).toBe(idx("aleta-pensipp-sel") + 1);
     expect(idx("aleta-ptj-sel")).toBeLessThan(idx("aleta-l1-submenu"));
     expect(tombolPt(h)!.textContent).toContain("Jadwalkan Putusan");
-    expect(CSS).toMatch(/\.aleta-ptj-tombol \{[^}]*font-weight: 800/);
+    expect(Number(/font-weight:\s*(\d+)/.exec(blokCss(CSS_BERSAMA, ".aleta-ptj-tombol"))?.[1])).toBeGreaterThanOrEqual(800);
     for (let i = 0; i < 5; i += 1) api(h).pasang(h.d);
     expect(h.d.querySelectorAll(".aleta-ptj-sel")).toHaveLength(1);
     expect(h.d.querySelectorAll("#aleta-ptj-panel")).toHaveLength(1);
@@ -292,12 +317,12 @@ describe("tombol", () => {
     expect(anak.findIndex((x) => x.classList.contains("aleta-ptj-sel"))).toBe(anak.findIndex((x) => x.classList.contains("aleta-pensipp-sel")) + 1);
   });
 
-  it("hanya Super Admin, Admin, Hakim; panitera, juru sita, dan peran belum terbaca tidak melihatnya; tampilan Lama tidak berubah", async () => {
-    for (const peran of ["Super Admin", "Admin", "Hakim", "Ketua"]) {
+  it("hanya Ketua, Wakil Ketua, Hakim, dan Super Admin; panitera, juru sita, dan peran belum terbaca tidak melihatnya; tampilan Lama tidak berubah", async () => {
+    for (const peran of ["Super Admin", "Hakim", "Ketua", "Wakil Ketua"]) {
       const h = buka({ peran });
       await sampai(() => (api(h).pasang(h.d), tombolPt(h)), `tombol untuk ${peran}`);
     }
-    for (const peran of ["Panitera Pengganti", "Juru Sita", "Panitera", "Kasir", null]) {
+    for (const peran of ["Panitera Pengganti", "Juru Sita", "Panitera", "Panitera Muda", "Kasir", "Operator", "Petugas PTSP", "Analis Perkara", null]) {
       const h = buka({ peran: peran as string | null });
       // Pembanding positif lebih dulu: tombol Putusan Otomatis versi tiruan tetap ada, jadi inisialisasi sudah selesai.
       await sampai(() => (typeof h.w.alatUjiMode === "function" && h.w.alatUjiMode() !== "lama" ? true : null), "mode tampilan terbaca");
@@ -311,20 +336,117 @@ describe("tombol", () => {
     expect(tombolPt(lama)).toBeNull();
   });
 
-  it("dashboard, daftar perkara, dan jurnal: tombol melayang di kiri bawah (bukan deretan tombol); halaman lain (formulir) tidak ada", async () => {
-    for (const halaman of ["daftar", "jurnal", "dasbor"] as const) {
-      const h = buka({ halaman });
-      await sampai(() => (api(h).pasang(h.d), h.d.querySelector("#aleta-ptj-melayang")), `tombol melayang di ${halaman}`);
-      const r = api(h).pasang(h.d);
-      expect(r.mode, halaman).toBe("daftar");
-      expect(h.d.querySelector("#aleta-ptj-melayang #aleta-ptj-tombol"), halaman).toBeTruthy();
-      expect(h.d.querySelector("td.aleta-ptj-sel")).toBeNull();
+  it("MASSAL hanya di dashboard (di samping judul DASHBOARD PERKARA) dan di daftar perkara gugatan/permohonan (di samping Cetak); jurnal dan halaman lain tidak", async () => {
+    // Dashboard: tombol di dalam judul h1, tepat sesudah tulisan "[Statistik Perkara]".
+    const d = buka({ halaman: "dasbor" });
+    await sampai(() => (api(d).pasang(d.d), d.d.querySelector("#aleta-ptj-massal")), "tombol massal di dashboard");
+    const h1 = d.d.querySelector("section.content-header h1")!;
+    expect(d.d.querySelector("#aleta-ptj-massal")!.parentElement).toBe(h1);
+    expect(h1.textContent).toMatch(/DASHBOARD PERKARA.*Statistik Perkara.*Jadwalkan Putusan Massal/);
+    expect(api(d).pasang(d.d)).toMatchObject({ mode: "daftar", tempat: "dashboard" });
+    expect(d.d.querySelector("td.aleta-ptj-sel")).toBeNull();
+    // Daftar perkara: tombol tepat sesudah tombol Cetak, di wadah yang sama.
+    const l = buka({ halaman: "daftar" });
+    await sampai(() => (api(l).pasang(l.d), l.d.querySelector("#aleta-ptj-massal")), "tombol massal di daftar perkara");
+    const cetak = l.d.getElementById("cetak_perkara_list")!;
+    expect(cetak.nextElementSibling).toBe(l.d.getElementById("aleta-ptj-massal"));
+    expect(api(l).pasang(l.d)).toMatchObject({ mode: "daftar", tempat: "daftar" });
+    // Jurnal, formulir, dan daftar lain (banding, eksekusi, dst.) tidak diberi tombol.
+    for (const halaman of ["jurnal", "lain"] as const) {
+      const x = buka({ halaman });
+      await sampai(() => (typeof x.w.alatUjiMode === "function" && x.w.alatUjiMode() !== "lama" ? true : null), "mode tampilan terbaca");
+      expect(api(x).pasang(x.d).mode, halaman).toBe("");
+      expect(x.d.querySelector(".aleta-ptj"), halaman).toBeNull();
     }
-    const lain = buka({ halaman: "lain" });
-    await sampai(() => (typeof lain.w.alatUjiMode === "function" && lain.w.alatUjiMode() !== "lama" ? true : null), "mode tampilan terbaca");
-    expect(api(lain).pasang(lain.d).mode).toBe("");
-    expect(lain.d.querySelector(".aleta-ptj")).toBeNull();
-    expect(CSS).toMatch(/\.aleta-ptj-melayang \{[^}]*position: fixed;[^}]*left: 16px;[^}]*bottom: 16px/);
+    const banding = buka({ halaman: "daftar" });
+    banding.d.getElementById("pageTitle")!.textContent = "DAFTAR PERKARA BANDING";
+    await sampai(() => (typeof banding.w.alatUjiMode === "function" && banding.w.alatUjiMode() !== "lama" ? true : null), "mode tampilan terbaca");
+    expect(api(banding).pasang(banding.d).mode).toBe("");
+    // Permohonan juga.
+    const mohon = buka({ halaman: "daftar" });
+    mohon.d.getElementById("pageTitle")!.textContent = "DAFTAR PERKARA PERDATA PERMOHONAN";
+    await sampai(() => (api(mohon).pasang(mohon.d), mohon.d.querySelector("#aleta-ptj-massal")), "tombol massal di daftar permohonan");
+  });
+
+  it("peran lain tidak melihat tombol massal; Hakim, Ketua, Wakil Ketua, Super Admin melihatnya", async () => {
+    for (const peran of ["Hakim", "Ketua", "Wakil Ketua", "Super Admin"]) {
+      const h = buka({ halaman: "dasbor", peran });
+      await sampai(() => (api(h).pasang(h.d), h.d.querySelector("#aleta-ptj-massal")), `tombol massal untuk ${peran}`);
+    }
+    for (const peran of ["Panitera Pengganti", "Panitera", "Juru Sita", "Operator", "Kasir", null]) {
+      const h = buka({ halaman: "daftar", peran: peran as string | null });
+      await sampai(() => (typeof h.w.alatUjiMode === "function" && h.w.alatUjiMode() !== "lama" ? true : null), "mode tampilan terbaca");
+      api(h).pasang(h.d);
+      expect(h.d.querySelector("#aleta-ptj-massal"), String(peran)).toBeNull();
+    }
+  });
+
+  it("panel massal dan satu perkara BERBEDA: massal punya pilihan tanggal, saringan, banyak berkas, jeda; satu perkara hanya satu berkas, satu tanggal-jam", async () => {
+    const m = buka({ halaman: "dasbor" });
+    await panelSiap(m);
+    expect(q(m, "h2").textContent).toContain("Jadwalkan Putusan Massal");
+    expect(q(m, '[data-ptj="tanggal-cari"]')).toBeTruthy();
+    expect(q(m, '[data-ptj="saring"]')).toBeTruthy();
+    expect(q(m, '[data-ptj="pilih-berkas"]').hasAttribute("multiple")).toBe(true);
+    expect(q(m, '[data-ptj="jadwal-jeda-min"]')).toBeTruthy();
+    expect(q(m, '[data-ptj="acak-ulang"]')).toBeTruthy();
+    expect(panel(m)!.textContent).not.toMatch(/buka dashboard atau jurnal/);
+    const p = buka();
+    await panelSiap(p);
+    expect(q(p, "h2").textContent).not.toContain("Massal");
+    expect(panel(p)!.querySelector('[data-ptj="tanggal-cari"]')).toBeNull();
+    expect(panel(p)!.querySelector('[data-ptj="saring"]')).toBeNull();
+    expect(q(p, '[data-ptj="pilih-berkas"]').hasAttribute("multiple")).toBe(false);
+    expect(panel(p)!.querySelector('[data-ptj="jadwal-jeda-min"]')).toBeNull();
+    expect(panel(p)!.querySelector('[data-ptj="acak-ulang"]')).toBeNull();
+    expect(q(p, '[data-ptj="jadwal-tanggal"]')).toBeTruthy();
+    expect(q(p, '[data-ptj="jadwal-jam"]')).toBeTruthy();
+    // Teks "untuk banyak perkara buka dashboard..." DIHAPUS dari detil perkara.
+    expect(panel(p)!.textContent).not.toMatch(/banyak perkara|dashboard atau jurnal/);
+    expect(baca("putusan-terjadwal.js")).not.toContain("buka dashboard atau jurnal");
+  });
+
+  it("semua panel bawaannya TERLIPAT (satu perkara, dashboard, daftar); dibuka petugas diingat", async () => {
+    for (const halaman of ["perkara", "dasbor", "daftar"] as const) {
+      const h = buka({ halaman });
+      await sampai(() => (api(h).pasang(h.d), tombolPt(h)), `tombol di ${halaman}`);
+      expect(api(h).keadaan().terbuka, halaman).toBe(false);
+      expect(tombolPt(h)!.getAttribute("aria-expanded"), halaman).toBe("false");
+      const ada = panel(h);
+      expect(!ada || ada.hidden, halaman).toBe(true);
+    }
+    const h = buka();
+    await sampai(() => (api(h).pasang(h.d), tombolPt(h)), "tombol");
+    tombolPt(h)!.click();
+    await sampai(() => (h.simpanan.lipatanBagian as any)?.putusanTerjadwal2 === false, "pembukaan diingat");
+    expect(panel(h)!.hidden).toBe(false);
+  });
+
+  it("gaya: SATU gaya dan palet dengan Penetapan Otomatis (tanpa ungu tetap); kontras >= 4,5:1 terang dan gelap", () => {
+    const hex = (x: string, nama: string) => new RegExp(`${nama}:\\s*(#[0-9a-fA-F]{6})`).exec(x)?.[1] || "";
+    const lum = (x: string) => {
+      const c = [1, 3, 5].map((i) => parseInt(x.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    };
+    const rasio = (a: string, b: string) => {
+      const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+      return (x + 0.05) / (y + 0.05);
+    };
+    const dasar = blokCss(CSS_BERSAMA, ".aleta-ptj-tombol");
+    expect(dasar).toBe(blokCss(CSS_BERSAMA, ".aleta-pensipp-tombol"));
+    expect(Number(/font-weight:\s*(\d+)/.exec(dasar)?.[1])).toBeGreaterThanOrEqual(800);
+    expect(rasio(hex(dasar, "--ps-t-teks"), hex(dasar, "--ps-t-latar"))).toBeGreaterThanOrEqual(4.5);
+    const gelap = blokCss(CSS_BERSAMA, 'html[data-aleta-tema-sipp="gelap"] .aleta-ptj-tombol');
+    expect(rasio(hex(gelap, "--ps-t-teks"), hex(gelap, "--ps-t-latar"))).toBeGreaterThanOrEqual(4.5);
+    // Palet panel dan tombol massal bersama (termasuk spanduk pelaksana).
+    for (const sel of [".aleta-ptj-panel", ".aleta-ptj-massal", ".aleta-ptj-spanduk"]) {
+      expect(blokCss(CSS_BERSAMA, sel), sel).toContain("--ps-latar:");
+      expect(blokCss(CSS_BERSAMA, `html[data-aleta-tema-sipp="gelap"] ${sel}`), sel).toContain("--ps-latar:");
+    }
+    expect(blokCss(CSS, ".aleta-ptj-panel")).toContain("--pt-merek: var(--ps-merek)");
+    expect(CSS).not.toMatch(/#4b2f8f|#3a2370|#c9b5f5|#b49be8|#1a1627/i);
+    // Tidak ada lagi tombol melayang / laci tetap.
+    expect(CSS).not.toMatch(/aleta-ptj-melayang|aleta-ptj-laci/);
   });
 });
 
@@ -427,14 +549,30 @@ describe("halaman perkara: panel, seret-lepas banyak berkas, pasangan", () => {
     expect(api(h).hasilPasangan()[0]).toMatchObject({ status: "cocok", sumber: "manual" });
   });
 
-  it("dua berkas untuk satu perkara = ganda; membuang salah satunya (juga dari server) menyelesaikannya", async () => {
-    const h = buka();
+  it("MASSAL: dua berkas untuk satu perkara = ganda; membuang salah satunya (juga dari server) menyelesaikannya", async () => {
+    const h = buka({ halaman: "daftar" });
     await panelSiap(h);
-    await seret(h, ["684_Pdt.G_2026_PA.Dgl v1.rtf", "684_Pdt.G_2026_PA.Dgl v2.docx"]);
+    q(h, '[data-ptj="dari-halaman"]').click();
+    await seret(h, ["12_Pdt.G_2026_PA.Dgl v1.rtf", "12_Pdt.G_2026_PA.Dgl v2.docx"]);
     expect(api(h).hasilPasangan().map((x: any) => x.status)).toEqual(["ganda", "ganda"]);
-    const buang = qq(h, "button").find((b) => b.getAttribute("aria-label") === "Buang 684_Pdt.G_2026_PA.Dgl v1.rtf")!;
+    const buang = qq(h, "button").find((b) => b.getAttribute("aria-label") === "Buang 12_Pdt.G_2026_PA.Dgl v1.rtf")!;
     buang.click();
     await sampai(() => h.panggilan.some((p) => p.metode === "DELETE" && p.alamat.includes("id=ptf-1")), "berkas dibuang dari server");
+    expect(api(h).hasilPasangan().map((x: any) => x.status)).toEqual(["cocok"]);
+  });
+
+  it("SATU perkara: hanya satu berkas - yang kedua MENGGANTIKAN yang pertama (yang lama dibuang dari server) dan langsung terpasang ke perkara ini walau nomornya lain", async () => {
+    const h = buka();
+    await panelSiap(h);
+    await seret(h, ["684_Pdt.G_2026_PA.Dgl v1.rtf"]);
+    expect(api(h).hasilPasangan().map((x: any) => x.status)).toEqual(["cocok"]);
+    const zona = q(h, '[data-ptj="zona"]');
+    const evt = new h.w.Event("drop", { bubbles: true, cancelable: true }) as any;
+    evt.dataTransfer = { files: [berkasTiruan(h.w, "bebas nomor.docx"), berkasTiruan(h.w, "lain.rtf")] };
+    zona.dispatchEvent(evt);
+    await sampai(() => api(h).keadaan().berkas.length === 1 && api(h).keadaan().berkas[0].status === "ok", "berkas pengganti diproses");
+    expect(api(h).keadaan().berkas[0].nama).toBe("bebas nomor.docx");
+    await sampai(() => h.panggilan.some((p) => p.metode === "DELETE" && p.alamat.includes("id=ptf-1")), "berkas lama dibuang dari server");
     expect(api(h).hasilPasangan().map((x: any) => x.status)).toEqual(["cocok"]);
   });
 
@@ -466,11 +604,19 @@ describe("jam, konfirmasi, dan satu kiriman jadwal", () => {
     await sampai(() => !(q(h, '[data-ptj="utama"]') as HTMLButtonElement).disabled, "tombol jadwalkan siap");
   }
 
-  it("pratinjau jam dari server tampil per perkara dan ringkasannya; jeda yang diubah menghitung ulang", async () => {
-    const h = buka();
+  it("pratinjau jam dari server tampil per perkara dan ringkasannya; jeda yang diubah menghitung ulang (massal)", async () => {
+    const h = buka({ halaman: "daftar" });
     await panelSiap(h);
-    await siapKirim(h);
-    expect(q(h, '[data-ptj="jam-baris"]').textContent).toMatch(/^\d{2}:\d{2}$/);
+    q(h, '[data-ptj="dari-halaman"]').click();
+    await seret(h, ["12_Pdt.G_2026_PA.Dgl putusan.rtf"]);
+    // Dua perkara lain di halaman dilepas: tinggal satu yang dijadwalkan.
+    for (const k of api(h).keadaan().kandidat.slice(1)) {
+      const cek = q(h, `[data-ptj-kandidat="${k.kunci}"]`) as HTMLInputElement;
+      cek.checked = false;
+      cek.dispatchEvent(new h.w.Event("change", { bubbles: true }));
+    }
+    await sampai(() => api(h).keadaan().pratinjau && api(h).keadaan().pratinjau.ok, "pratinjau jam");
+    expect(qq(h, '[data-ptj="jam-baris"]')[0].textContent).toMatch(/^\d{2}:\d{2}$/);
     expect(q(h, '[data-ptj="pratinjau"]').textContent).toMatch(/1 perkara · mulai .* WITA · jeda 2-7 menit/);
     const sebelum = h.panggilan.filter((p) => p.alamat.includes("/pratinjau")).length;
     const jedaMaks = q(h, '[data-ptj="jadwal-jeda-maks"]') as HTMLInputElement;
@@ -583,7 +729,7 @@ describe("jam, konfirmasi, dan satu kiriman jadwal", () => {
 });
 
 // ============================================================================
-describe("daftar / jurnal / dashboard: perkara menurut tanggal", () => {
+describe("massal (dashboard dan daftar perkara): perkara menurut tanggal", () => {
   const SIDANG = [
     { nomor: "21/Pdt.G/2026/PA.Dgl", perkaraId: "9021", jenis: "Cerai Gugat", agenda: "Putusan", sudahPutus: false, jam: "09:00" },
     { nomor: "22/Pdt.G/2026/PA.Dgl", perkaraId: "9022", jenis: "Cerai Talak", agenda: "Pembuktian", sudahPutus: false, jam: "10:00" },
@@ -591,7 +737,7 @@ describe("daftar / jurnal / dashboard: perkara menurut tanggal", () => {
   ];
 
   it("menurut tanggal sidang: sidang beragenda putusan yang belum diputus + sidang putusan yang belum diisi langsung tercentang; yang lain dapat dicentang sendiri", async () => {
-    const h = buka({ halaman: "jurnal", sidang: SIDANG, massal: { tertahan: [{ perkaraId: "9030", nomorPerkara: "30/Pdt.G/2026/PA.Dgl", tanggalSidang: "2026-10-21" }] } });
+    const h = buka({ halaman: "daftar", sidang: SIDANG, massal: { tertahan: [{ perkaraId: "9030", nomorPerkara: "30/Pdt.G/2026/PA.Dgl", tanggalSidang: "2026-10-21" }] } });
     await panelSiap(h, true);
     const tgl = q(h, '[data-ptj="tanggal-cari"]') as HTMLInputElement;
     tgl.value = "2026-10-21";
@@ -642,15 +788,45 @@ describe("daftar / jurnal / dashboard: perkara menurut tanggal", () => {
     expect(c("anonim").checked).toBe(true);
   });
 
-  it("baris perkara yang tampil di halaman dapat ditambahkan sekaligus; panel laci tidak menutup tombolnya", async () => {
+  it("baris perkara yang tampil di daftar dapat ditambahkan sekaligus; panel terbuka di bawah daftar tombol (bukan melayang) dan tidak menutup tombolnya", async () => {
     const h = buka({ halaman: "daftar" });
-    await panelSiap(h, true);
+    await panelSiap(h);
     expect(api(h).keadaan().kandidat.map((x: any) => x.nomor)).toEqual(["12/Pdt.G/2026/PA.Dgl", "13/Pdt.G/2026/PA.Dgl", "14/Pdt.P/2026/PA.Dgl"]);
     expect(api(h).keadaan().terpilih.size).toBe(0);
     q(h, '[data-ptj="dari-halaman"]').click();
     expect(api(h).keadaan().terpilih.size).toBe(3);
-    expect(panel(h)!.classList.contains("aleta-ptj-laci")).toBe(true);
-    expect(CSS).toMatch(/\.aleta-ptj-laci \{[^}]*position: fixed;[^}]*bottom: 70px/);
+    // Panel inline: tepat sebelum #pages (tabel daftar), sesudah baris tombol (#left).
+    expect(panel(h)!.nextElementSibling).toBe(h.d.getElementById("pages"));
+    expect(panel(h)!.previousElementSibling).toBe(h.d.getElementById("left"));
+    expect(CSS).not.toMatch(/position:\s*fixed;[^}]*bottom:\s*70px/);
+  });
+
+  it("di dashboard panel terbuka tepat di bawah judul (section.content-header)", async () => {
+    const h = buka({ halaman: "dasbor" });
+    await panelSiap(h);
+    expect(panel(h)!.previousElementSibling).toBe(h.d.querySelector("section.content-header"));
+    expect(h.d.querySelector("#aleta-ptj-tombol")!.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("saringan: menyempitkan daftar menurut nomor, jenis, keterangan, atau majelis; 'Centang yang tampil' hanya yang tersaring", async () => {
+    const h = buka({
+      halaman: "daftar",
+      sidang: [
+        { nomor: "21/Pdt.G/2026/PA.Dgl", perkaraId: "9021", jenis: "Cerai Gugat", agenda: "Putusan", sudahPutus: false, jam: "09:00", majelis: "Majelis A" },
+        { nomor: "22/Pdt.G/2026/PA.Dgl", perkaraId: "9022", jenis: "Cerai Talak", agenda: "Pembuktian", sudahPutus: false, jam: "10:00", majelis: "Majelis B" },
+      ],
+    });
+    await panelSiap(h);
+    (q(h, '[data-ptj="muat-tanggal"]') as HTMLButtonElement).click();
+    await sampai(() => api(h).keadaan().kandidat.some((x: any) => x.nomor.startsWith("22/")), "kandidat termuat");
+    const sar = q(h, '[data-ptj="saring"]') as HTMLInputElement;
+    sar.value = "majelis b";
+    sar.dispatchEvent(new h.w.Event("input", { bubbles: true }));
+    const tampil = qq(h, "[data-ptj-kandidat]");
+    expect(tampil).toHaveLength(1);
+    expect(panel(h)!.textContent).toContain("22/Pdt.G/2026/PA.Dgl");
+    const semua = qq(h, "button").find((b) => /Centang yang tampil/.test(b.textContent || ""));
+    expect(semua).toBeTruthy();
   });
 });
 

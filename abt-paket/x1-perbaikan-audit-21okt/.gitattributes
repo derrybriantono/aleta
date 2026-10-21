@@ -1,0 +1,5 @@
+*.sql -text
+*.tsv -text
+*.txt -text
+*.sh text eol=lf
+*.md text

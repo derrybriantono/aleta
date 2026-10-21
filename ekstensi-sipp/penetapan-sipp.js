@@ -158,6 +158,8 @@
     try {
       if (typeof boleh !== "function") return false;
       if (typeof penggunaTerakhir === "undefined" || !penggunaTerakhir) return false;
+      // 21 Okt 2026: HANYA PTSP (termasuk Operator/Petugas Meja), Ketua, Wakil Ketua; Super Admin tetap boleh semua.
+      if (typeof alatBolehTombolPenetapanSipp === "function" && alatBolehTombolPenetapanSipp(penggunaTerakhir) !== true) return false;
       return boleh("penunjukan") === true && boleh("kerjakan") === true;
     } catch {
       return false;
@@ -401,6 +403,11 @@
     const h = el("h2", "aleta-pensipp-judul");
     h.append("Penetapan Otomatis · ", el("span", "aleta-pensipp-mono", ctx.nomor));
     judul.append(h, el("div", "aleta-pensipp-catatan", "Atas akun pejabat berwenang · sama dengan mode penetapan di ekstensi ALETA"));
+    // Ringkasan di samping judul: beban usulan + perkara diterima 30 hari terakhir (dari usulan.statistik).
+    const ringkasBeban = el("div", "aleta-pensipp-beban-ringkas");
+    ringkasBeban.setAttribute("data-pensipp", "beban-ringkas");
+    ringkasBeban.hidden = true;
+    judul.append(ringkasBeban);
     const mode = el("div", "aleta-pensipp-mode");
     mode.setAttribute("role", "group");
     mode.setAttribute("aria-label", "Mode");
@@ -432,7 +439,7 @@
     // usulan.statistik (penunjukan-statistik.js). Terbentang bawaannya.
     const beban = el("div", "aleta-pensipp-beban");
     beban.setAttribute("data-pensipp", "beban");
-    badan.append(info, konfirm, daftar, beban, rinciKotak);
+    badan.append(info, konfirm, daftar);
 
     const kaki = el("div", "aleta-pensipp-kaki");
     const ringkas = el("div", "aleta-pensipp-ringkas");
@@ -463,11 +470,15 @@
     // Kotak hitung mundur muat ulang (muat-ulang-sipp.js): di luar render(), tidak ikut terhapus.
     const wadahMuatUlang = el("div", "aleta-pensipp-muatulang");
     wadahMuatUlang.setAttribute("data-pensipp", "muat-ulang");
-    akar.append(kepala, badan, kaki, laporan, wadahMuatUlang, kabarRinci);
+    // Urutan: daftar PMH/PPP/PJS/PHS -> centang semua & Tetapkan (kaki) -> laporan -> BARU rincian beban dan pilihan lain.
+    const tambahan = el("div", "aleta-pensipp-tambahan");
+    tambahan.append(beban, rinciKotak);
+    akar.append(kepala, badan, kaki, laporan, wadahMuatUlang, tambahan, kabarRinci);
     ctx.wadahMuatUlang = wadahMuatUlang;
     ctx.akar = akar;
     ctx.rinci = rinci;
     ctx.beban = beban;
+    ctx.bebanRingkas = ringkasBeban;
     ctx.rinciKotak = rinciKotak;
     ctx.kabarRinci = kabarRinci;
     new MutationObserver(() => jadwalRender()).observe(rinci, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "disabled"] });
@@ -507,7 +518,8 @@
       const kes = ctx.data && ctx.data.usulan ? ctx.data.usulan.kesesuaianSk : null;
       if (ctx.bebanTanda !== stat || ctx.bebanKes !== kes) {
         const bukaLama = ctx.beban.querySelector("[data-bebanstat]");
-        const terbuka = bukaLama ? bukaLama.open : true;
+        // Bawaan TERLIPAT; yang dibuka petugas tetap terbuka selama usulannya tidak berganti.
+        const terbuka = bukaLama ? bukaLama.open : false;
         ctx.bebanTanda = stat;
         ctx.bebanKes = kes;
         ctx.beban.textContent = "";
@@ -519,6 +531,16 @@
           }
         }
       }
+    }
+
+    // Ringkasan beban di samping judul (satu baris; rinciannya di bagian "Beban penetapan" di bawah).
+    if (ctx.bebanRingkas) {
+      const mod = globalThis.aletaPenunjukanStatistik;
+      const r = mod && ctx.data && ctx.data.usulan && typeof mod.ringkasBeban === "function" ? mod.ringkasBeban(ctx.data.usulan) : { beban: "", diterima: "" };
+      ctx.bebanRingkas.textContent = "";
+      if (r.beban) ctx.bebanRingkas.append(el("span", "aleta-pensipp-beban-bagian", r.beban));
+      if (r.diterima) ctx.bebanRingkas.append(el("span", "aleta-pensipp-beban-bagian aleta-pensipp-beban-diterima", r.diterima));
+      ctx.bebanRingkas.hidden = !(r.beban || r.diterima);
     }
 
     // Info / galat / mode latihan
@@ -1100,6 +1122,7 @@
     if (!td) {
       td = el("td", `${KELAS} aleta-pensipp-sel`);
       const b = tombol("", "btn btn-sm aleta-pensipp-tombol");
+      b.id = "aleta-pensipp-tombol";
       b.setAttribute("data-pensipp", "tombol");
       b.setAttribute("aria-controls", ID_PANEL);
       b.append(el("span", "aleta-pensipp-ikon", "⚖"), " Penetapan Otomatis");
@@ -1112,16 +1135,14 @@
       });
       td.appendChild(b);
     }
-    // PALING KIRI di antara tombol sisipan ALETA: sebelum "Buka di ABT"/"Buka di ALETA".
-    const l1 = tr.querySelector(":scope > .aleta-l1-submenu");
-    if (l1) {
-      // Tombol "Putusan Otomatis" (putusan-sipp.js) boleh duduk tepat di antara tombol ini dan tombol L1.
-      const sebelah = td.nextElementSibling;
-      const wajar = sebelah === l1 || (sebelah && sebelah.classList.contains("aleta-pusipp-sel") && sebelah.nextElementSibling === l1);
-      if (!wajar || td.parentElement !== tr) tr.insertBefore(td, l1);
-    } else if (td.parentElement !== tr) {
-      tr.appendChild(td);
+    // PALING KIRI di antara tombol sisipan ALETA: sebelum Putusan Otomatis, Jadwalkan Putusan, lalu
+    // "Buka di ABT"/"Buka di ALETA". Urutan dijaga SATU pengurut bersama (panel-alat.js) - tidak ada
+    // lagi tombol yang saling memindahkan ketika Jadwalkan Putusan hadir.
+    if (td.parentElement !== tr) {
+      const l1 = tr.querySelector(":scope > .aleta-l1-submenu");
+      tr.insertBefore(td, l1 || null);
     }
+    if (typeof alatUrutkanTombolSipp === "function") alatUrutkanTombolSipp(tr);
     const b = td.querySelector("button");
     if (b) b.setAttribute("aria-expanded", ctx && ctx.terbuka ? "true" : "false");
     return td;
@@ -1254,7 +1275,7 @@
   }
 
   globalThis.aletaPenetapanSipp = {
-    versi: "p2-20okt",
+    versi: "p2-21okt",
     pasang,
     bersihkan,
     muat,

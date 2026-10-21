@@ -1,0 +1,24 @@
+# no_var<TAB>kueri (#perkara_id# diganti pasang-satker.sh; hanya SELECT; baca saja)
+74	select keterangan as data from perkara_pihak5 where saksi_pihak_ke=1 and perkara_id=#perkara_id# order by urutan limit 0,1
+10121	select a.nama as data from perkara_pihak3 a where a.perkara_id=#perkara_id# order by a.urutan, a.id limit 1
+10122	select (get_umur(b.tanggal_lahir,c.tanggal_pendaftaran)) as data from perkara_pihak3 a join pihak b on a.pihak_id=b.id join perkara c on a.perkara_id=c.perkara_id where a.perkara_id=#perkara_id# order by a.urutan, a.id limit 1
+10123	select c.nama as data from perkara_pihak3 a join pihak b on a.pihak_id=b.id join agama c on b.agama_id=c.id where a.perkara_id=#perkara_id# order by a.urutan, a.id limit 1
+10124	select c.kode as data from perkara_pihak3 a join pihak b on a.pihak_id=b.id join tingkat_pendidikan c on b.pendidikan_id=c.id where a.perkara_id=#perkara_id# order by a.urutan, a.id limit 1
+10125	select b.pekerjaan as data from perkara_pihak3 a join pihak b on a.pihak_id=b.id where a.perkara_id=#perkara_id# order by a.urutan, a.id limit 1
+10126	select a.alamat as data from perkara_pihak3 a where a.perkara_id=#perkara_id# order by a.urutan, a.id limit 1
+15	select panitera_nama as data from perkara_panitera_pn where aktif="Y" and perkara_id=#perkara_id# and IFNULL(panitera_nama,"")<>"" order by tanggal_penetapan desc, urutan, id limit 1
+1241	select keterangan as data from perkara_pihak5 where saksi_pihak_ke=1 and perkara_id=#perkara_id# order by urutan limit 0,1
+1242	select keterangan as data from perkara_pihak5 where saksi_pihak_ke=1 and perkara_id=#perkara_id# order by urutan limit 1,1
+1251	select keterangan as data from perkara_pihak5 where saksi_pihak_ke=2 and perkara_id=#perkara_id# order by urutan limit 0,1
+1252	select keterangan as data from perkara_pihak5 where saksi_pihak_ke=2 and perkara_id=#perkara_id# order by urutan limit 1,1
+5101	select (case when b.jabatan = 1 then "JURUSITA" else "JURUSITA PENGGANTI" end) data from perkara_jurusita a join jurusita b on a.jurusita_id=b.id where a.aktif="Y" and a.urutan=1 and a.perkara_id=#perkara_id# order by a.id limit 1
+6032	select (case when b.jabatan = 1 then "Jurusita" else "Jurusita Pengganti" end) data from perkara_jurusita a join jurusita b on a.jurusita_id=b.id where a.aktif="Y" and a.urutan=1 and a.perkara_id=#perkara_id# order by a.id limit 1
+6149	select keterangan as data from perkara_pihak5 where saksi_pihak_ke=1 and perkara_id=#perkara_id# order by urutan limit 2,1
+8544	SELECT IFNULL(IFNULL((SELECT pu.tanggal_putusan FROM perkara_putusan pu WHERE pu.perkara_id = #perkara_id# AND pu.tanggal_putusan > '1900-01-01' ORDER BY pu.tanggal_putusan DESC LIMIT 1), (SELECT c.rencana_tanggal FROM perkara_court_calendar c WHERE c.perkara_id = #perkara_id# AND c.rencana_tanggal > '1900-01-01' AND (c.rencana_agenda LIKE '%musyawarah%' OR c.rencana_agenda LIKE '%putusan%' OR c.rencana_agenda LIKE '%penetapan%') ORDER BY c.rencana_tanggal DESC, c.id DESC LIMIT 1)), '') AS data
+8545	SELECT IFNULL(CASE DAYOFWEEK(DATE(x.d)) WHEN 1 THEN 'Minggu' WHEN 2 THEN 'Senin' WHEN 3 THEN 'Selasa' WHEN 4 THEN 'Rabu' WHEN 5 THEN 'Kamis' WHEN 6 THEN 'Jumat' WHEN 7 THEN 'Sabtu' END, '') AS data FROM (SELECT IFNULL((SELECT pu.tanggal_putusan FROM perkara_putusan pu WHERE pu.perkara_id = #perkara_id# AND pu.tanggal_putusan > '1900-01-01' ORDER BY pu.tanggal_putusan DESC LIMIT 1), (SELECT c.rencana_tanggal FROM perkara_court_calendar c WHERE c.perkara_id = #perkara_id# AND c.rencana_tanggal > '1900-01-01' AND (c.rencana_agenda LIKE '%musyawarah%' OR c.rencana_agenda LIKE '%putusan%' OR c.rencana_agenda LIKE '%penetapan%') ORDER BY c.rencana_tanggal DESC, c.id DESC LIMIT 1)) AS d) x
+9003	select (case when '1' = '1' then "Sidang Pertama" else "Lanjutan" end) data from dual where '1' <> ''
+9003	select (case when '' = '1' then "Sidang Pertama" else "Lanjutan" end) data from dual where '' <> ''
+7105	select (case when '1' = '1' then "x" else "x" end) data from dual where '1' <> ''
+7105	select (case when '' = '1' then "x" else "x" end) data from dual where '' <> ''
+7106	select (case when '1' = '1' then "x" else "x" end) data from dual where '1' <> ''
+7106	select (case when '' = '1' then "x" else "x" end) data from dual where '' <> ''

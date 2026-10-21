@@ -877,6 +877,8 @@ describe("permintaan agen M: alatSidangPadaTanggal meneruskan bahan aletaMassalP
         kumulasi: [],
         // Q3 16 Okt: kode keadaan putusan dari portal (kosong bila bot/portal lama tidak mengirimnya).
         keadaan: [],
+        // 21 Okt: nama majelis untuk saringan Jadwalkan Putusan massal (kosong bila jadwal tidak membawanya).
+        majelis: "",
       },
       {
         nomor: "11/Pdt.G/2026/PA.Dgl",
@@ -895,6 +897,8 @@ describe("permintaan agen M: alatSidangPadaTanggal meneruskan bahan aletaMassalP
         tanggalSidang: "2026-10-01",
         kumulasi: [],
         keadaan: [],
+        // 21 Okt: nama majelis untuk saringan Jadwalkan Putusan massal (kosong bila jadwal tidak membawanya).
+        majelis: "",
       },
     ]);
     // Urutan ruas lama tidak berubah - tambahan di belakang.

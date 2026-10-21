@@ -789,6 +789,12 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
       });
     }
 
+    // Nama petugas bernakun nonaktif (mutasi) - hanya teks pendek, maksimal 60 nama.
+    const petugasNonaktif = (Array.isArray(kirim.petugasNonaktif) ? kirim.petugasNonaktif : [])
+      .slice(0, 60)
+      .map((x) => String(x || "").replace(/\s+/g, " ").trim().slice(0, 80))
+      .filter(Boolean);
+
     // Majelis yang dipilih petugas di papan - id hakim_pn, ketua di depan.
     // Dibatasi lima: majelis tidak pernah lebih dari itu, dan daftar panjang
     // dari peramban bukan pilihan melainkan kekeliruan.
@@ -840,6 +846,7 @@ router.post("/penunjukan/usulan", requireInternalToken, async (req, res) => {
       },
       susunanSk,
       andaian,
+      petugasNonaktif,
       pilihanMajelis,
     });
 

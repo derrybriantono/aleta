@@ -1555,16 +1555,17 @@ function bandingGiliranMajelis(a, b) {
  * ekstensi dan panel SIPP lewat objek usulan yang sama. Gagal membaca =
  * null dan usulan memakai urutan lama (tidak pernah menggagalkan usulan).
  */
-async function susunStatistikBeban({ baris, hakimAktif, jurusitaSemua, paniteraSemua, paniteraAktifSemua, rasioPanitera, andaian, bobotAndaian, susunanSk, skTanggal, sekarang }) {
+async function susunStatistikBeban({ tidakBertugas, baris, hakimAktif, jurusitaSemua, paniteraSemua, paniteraAktifSemua, rasioPanitera, andaian, bobotAndaian, susunanSk, skTanggal, sekarang }) {
   try {
     const kini = bebanService.jendelaWaktu(sekarang).sekarang;
+    const tb = tidakBertugas || { panitera: new Map(), jurusita: new Map() };
     const mulaiDariHari = (x) => (x && x.baruBertugas && Number(x.hariBertugas) > 0 ? geserHari(kini, -Number(x.hariBertugas)) : "");
     const orang = {
       hakim: hakimAktif.map((h) => ({ id: h.hakimId, kode: h.kode, nama: h.nama, mulai: h.mulai, rasio: h.rasio })),
       panitera: (paniteraSemua && paniteraSemua.terbaca && (paniteraSemua.daftar || []).length > 0
         ? paniteraSemua.daftar.map((x) => ({ id: x.paniteraId, kode: x.kode, nama: x.nama, rasio: porsiPanitera(rasioPanitera, x.nama), mulai: mulaiDariHari(x) }))
-        : paniteraAktifSemua.map((x) => ({ id: x.paniteraId, kode: x.kode, nama: x.nama, rasio: porsiPanitera(rasioPanitera, x.nama), mulai: "" }))),
-      jurusita: ((jurusitaSemua && jurusitaSemua.daftar) || []).map((x) => ({ id: x.jurusitaId, kode: x.kode, nama: x.nama, rasio: 100, mulai: mulaiDariHari(x) })),
+        : paniteraAktifSemua.map((x) => ({ id: x.paniteraId, kode: x.kode, nama: x.nama, rasio: porsiPanitera(rasioPanitera, x.nama), mulai: "" }))).filter((x) => !tb.panitera.has(Number(x.id))),
+      jurusita: ((jurusitaSemua && jurusitaSemua.daftar) || []).filter((x) => !tb.jurusita.has(Number(x.jurusitaId))).map((x) => ({ id: x.jurusitaId, kode: x.kode, nama: x.nama, rasio: 100, mulai: mulaiDariHari(x) })),
     };
     if (orang.hakim.length + orang.panitera.length + orang.jurusita.length === 0) return null;
     // Tidak ada satu penetapan pun yang terbaca: jangan berpura-pura menilai beban.
@@ -1589,6 +1590,7 @@ async function susunStatistikBeban({ baris, hakimAktif, jurusitaSemua, paniteraS
       orang,
       susunanSk,
       skTanggal: isoTanggal(skTanggal) || "",
+      diterima: baris.diterima || null,
       bobot: bobotJenis,
       kebendaan: adalahKebendaan,
     });
@@ -1671,6 +1673,7 @@ function bangunStatistikUsulan({ statBeban, kebendaanPerkara, pmh, ppp, pjs, sus
   return {
     terbaca: true,
     jendela: stat.jendela,
+    diterima: stat.diterima || null,
     kebendaanPerkara,
     sk,
     majelis: ranked,
@@ -1803,7 +1806,7 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   const hakimAktif = hakimAktifSemua
     .filter((x) => !diblokir.hakim.has(Number(x.hakimId)))
     .map((x) => ({ ...x, rasio: rasio.get(Number(x.hakimId)) || 100 }));
-  const paniteraAktif = paniteraAktifSemua
+  let paniteraAktif = paniteraAktifSemua
     .filter((x) => !diblokir.panitera.has(Number(x.paniteraId)))
     .map((x) => ({ ...x, rasio: porsiPanitera(rasioPanitera, x.nama) }));
   const jurusita = {
@@ -1863,8 +1866,43 @@ async function usulanPenunjukan(nomorPerkara, pengaturan = {}) {
   } catch {
     barisBeban = null;
   }
+  // ==========================================================================
+  // PETUGAS YANG TIDAK BERTUGAS TIDAK DIUSULKAN (21 Okt 2026)
+  // ==========================================================================
+  //
+  // Panitera pengganti dan juru sita yang sudah mutasi (akun portal nonaktif) atau
+  // lama tidak diberi perkara tidak masuk kolam usulan maupun tabel beban; tanpa ini
+  // "paling ringan" selalu jatuh ke petugas yang sudah pindah (0 perkara berjalan).
+  const nonaktifNama = Array.isArray(pengaturan.petugasNonaktif) ? pengaturan.petugasNonaktif : [];
+  const orangPp = paniteraSemua && paniteraSemua.terbaca && (paniteraSemua.daftar || []).length > 0 ? paniteraSemua.daftar : paniteraAktifSemua;
+  const tidakBertugas = {
+    panitera: bebanService.petugasTidakBertugas({
+      orang: orangPp.map((x) => ({ id: x.paniteraId, nama: x.nama, mulai: x.baruBertugas && Number(x.hariBertugas) > 0 ? geserHari(isoTanggal(sekarangBeban), -Number(x.hariBertugas)) : "" })),
+      baris: barisBeban ? barisBeban.panitera : [],
+      sekarang: sekarangBeban,
+      nonaktifNama,
+    }),
+    jurusita: bebanService.petugasTidakBertugas({
+      orang: ((jurusitaSemua && jurusitaSemua.daftar) || []).map((x) => ({ id: x.jurusitaId, nama: x.nama, mulai: x.baruBertugas && Number(x.hariBertugas) > 0 ? geserHari(isoTanggal(sekarangBeban), -Number(x.hariBertugas)) : "" })),
+      baris: barisBeban ? barisBeban.jurusita : [],
+      sekarang: sekarangBeban,
+      nonaktifNama,
+    }),
+  };
+  if (tidakBertugas.panitera.size > 0) {
+    const keluar = (x) => tidakBertugas.panitera.has(Number(x.id ?? x.paniteraId));
+    panitera.daftar = (panitera.daftar || []).filter((x) => !keluar(x));
+    panitera.usulan = panitera.daftar.find((x) => x === paniteraSemua.usulan) || panitera.daftar[0] || null;
+    paniteraAktif = paniteraAktif.filter((x) => !keluar(x));
+  }
+  if (tidakBertugas.jurusita.size > 0) {
+    const keluar = (x) => tidakBertugas.jurusita.has(Number(x.id ?? x.jurusitaId));
+    jurusita.daftar = (jurusita.daftar || []).filter((x) => !keluar(x));
+    jurusita.usulan = jurusita.daftar.find((x) => x === jurusitaSemua.usulan) || jurusita.daftar[0] || null;
+  }
   const statBeban = barisBeban
     ? await susunStatistikBeban({
+        tidakBertugas,
         baris: barisBeban,
         hakimAktif,
         jurusitaSemua,

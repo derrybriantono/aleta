@@ -35,8 +35,11 @@
  *                  perkara - dari panel ekstensi atau dari tombol ini - tidak
  *                  berjalan bersamaan.
  *
- * Hak: hanya Super Admin, Admin, dan Hakim (termasuk Ketua/Wakil) -
- * alatBolehUnggahPutusan, sama dengan bagian Putusan otomatis di panel.
+ * Hak: HANYA Ketua, Wakil Ketua, dan Hakim; Super Admin (golongan admin) tetap boleh
+ * semua - alatBolehTombolPutusanSipp (21 Okt 2026) di atas alatBolehUnggahPutusan.
+ * BAWAAN TERLIPAT (21 Okt 2026); warna mengikuti tema terang/gelap seperti Penetapan Otomatis.
+ * Berkas putusan boleh diseret/dipilih di panel ini (RTF, DOCX, DOC, PDF): dipakai untuk e-Doc
+ * putusan dan e-Doc anonimisasi lewat jalur e-Doc yang sama (putusan-edoc-sekaligus.js).
  * Tampilan Lama tidak berubah. Tidak ada kata ALETA yang ditulis ke SIPP:
  * teks di layar ini hanya untuk petugas.
  */
@@ -46,7 +49,10 @@
   const KELAS = "aleta-sisip aleta-pusipp";
   const ID_PANEL = "aleta-pusipp-panel";
   const KUNCI_LIPAT = "lipatanBagian";
-  const KUNCI_LIPAT_PANEL = "putusanSipp";
+  // Kunci baru (21 Okt 2026): bawaan TERLIPAT; true = sengaja dilipat, false = sengaja dibuka petugas.
+  const KUNCI_LIPAT_PANEL = "putusanSipp2";
+  const BATAS_BERKAS = 10 * 1024 * 1024;
+  const BENTUK_BERKAS = /\.(rtf|docx|doc|pdf)$/i;
   const LANGKAH = ["isi", "putusan", "anonim"];
   const NAMA = { isi: "Isi & simpan Putusan Akhir", putusan: "e-Doc putusan", anonim: "e-Doc anonimisasi" };
   const STATUS = {
@@ -112,11 +118,12 @@
     }
   }
 
-  /** Hanya Super Admin, Admin, Hakim (termasuk Ketua/Wakil) - keputusan 9 Okt 2026; peran yang belum terbaca = tidak tampil. */
+  /** Ketua, Wakil Ketua, Hakim, dan Super Admin (golongan admin); peran yang belum terbaca = tidak tampil. */
   function berhak() {
     try {
       if (typeof penggunaTerakhir === "undefined" || !penggunaTerakhir) return false;
       if (typeof alatBolehUnggahPutusan !== "function" || alatBolehUnggahPutusan(penggunaTerakhir) !== true) return false;
+      if (typeof alatBolehTombolPutusanSipp === "function" && alatBolehTombolPutusanSipp(penggunaTerakhir) !== true) return false;
       return typeof boleh === "function" ? boleh("data-umum") === true : true;
     } catch {
       return false;
@@ -151,8 +158,9 @@
   function buatCtx(nomor) {
     return {
       nomor,
-      terbuka: true,
+      terbuka: false,
       lipatDibaca: false,
+      berkas: null,
       sibuk: false,
       memuat: false,
       dibaca: false,
@@ -246,6 +254,90 @@
   }
 
   // ──────────────────────────────────────────────────────────────────────────
+  // Berkas putusan yang diseret/dipilih (dipakai untuk e-Doc putusan dan anonimisasi)
+  // ──────────────────────────────────────────────────────────────────────────
+  /**
+   * Satu berkas untuk perkara ini. Diperiksa seperti di Jadwalkan Putusan (bentuk, ukuran, bukan
+   * naskah lain, bukan anonimisasi, sisa blangko); DOCX/DOC/PDF diubah server menjadi RTF supaya
+   * anonimisasi mandiri dapat bekerja (jalur konversi yang sama dengan bagian Putusan otomatis).
+   * Tidak ada yang ditulis ke SIPP dari sini: berkas baru dipakai ketika tombol utama ditekan.
+   */
+  async function terimaBerkas(daftar) {
+    if (!ctx || ctx.sibuk) return;
+    const file = Array.from(daftar || [])[0];
+    if (!file) return;
+    const nama = String(file.name || "");
+    const e = { file, nama, ukuran: file.size || 0, status: "periksa", tolak: "", rtf: null, peringatan: [], bentuk: (/\.([a-z]+)$/i.exec(nama) || [, ""])[1].toLowerCase() };
+    const pasangan = globalThis.aletaPutusanTerjadwalPasangan;
+    const bukanNaskah = pasangan && typeof pasangan.tandaBukanNaskah === "function" ? pasangan.tandaBukanNaskah(nama) : "";
+    if (!BENTUK_BERKAS.test(nama)) e.tolak = "bukan RTF, DOCX, DOC, atau PDF";
+    else if (bukanNaskah) e.tolak = `bukan naskah putusan: ${bukanNaskah}`;
+    else if (pasangan && typeof pasangan.namaAnonim === "function" && pasangan.namaAnonim(nama)) e.tolak = "anonimisasi dibuat otomatis dari putusan, jadi berkas ini tidak dipakai";
+    else if (e.ukuran > BATAS_BERKAS) e.tolak = "lebih dari 10 MB";
+    else if (e.ukuran === 0) e.tolak = "berkas kosong";
+    if (e.tolak) {
+      e.status = "ditolak";
+      ctx.berkas = e;
+      render();
+      return;
+    }
+    ctx.berkas = e;
+    render();
+    const nomor = ctx.nomor;
+    const deteksi = globalThis.aletaDeteksiSisa;
+    if (deteksi && typeof deteksi.tinjau === "function") {
+      let lanjut = true;
+      try {
+        const h = await deteksi.tinjau(file, { nama, jenis: "putusan", aksi: "unggah", massal: false });
+        lanjut = !h || h.lanjut !== false;
+      } catch {
+        lanjut = true;
+      }
+      if (!ctx || ctx.nomor !== nomor || ctx.berkas !== e) return;
+      if (!lanjut) {
+        e.status = "ditolak";
+        e.tolak = "dibatalkan karena masih ada sisa blangko";
+        render();
+        return;
+      }
+    }
+    const perlu = fungsi("a30PerluKeRtf");
+    const ubah = fungsi("a30KonversiNaskah");
+    if (perlu && ubah && perlu(nama)) {
+      e.status = "ubah";
+      render();
+      let hasil = null;
+      try {
+        hasil = await ubah(file, "rtf");
+      } catch (galat) {
+        hasil = { ok: false, pesan: sebaris((galat && galat.message) || galat) };
+      }
+      if (!ctx || ctx.nomor !== nomor || ctx.berkas !== e) return;
+      if (hasil && hasil.ok && hasil.berkas) {
+        e.rtf = hasil.berkas;
+        e.peringatan = Array.isArray(hasil.peringatan) ? hasil.peringatan.map(String) : [];
+      } else {
+        e.peringatan = [`Belum dapat diubah menjadi RTF (${sebaris((hasil && hasil.pesan) || "tanpa keterangan")}); anonimisasi memakai pembuat anonimisasi ABT.`];
+      }
+    } else if (e.bentuk === "rtf") {
+      e.rtf = file;
+    }
+    e.status = "ok";
+    render();
+  }
+
+  function buangBerkas() {
+    if (!ctx || ctx.sibuk) return;
+    ctx.berkas = null;
+    render();
+  }
+
+  /** Berkas yang siap dipakai e-Doc (status ok), atau null. */
+  function berkasSiap() {
+    return ctx && ctx.berkas && ctx.berkas.status === "ok" ? ctx.berkas : null;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
   // Gambar
   // ──────────────────────────────────────────────────────────────────────────
   function buatKerangka() {
@@ -265,7 +357,47 @@
     info.setAttribute("aria-live", "polite");
     const konfirm = el("div", "aleta-pusipp-konfirm-wadah");
     const daftar = el("div", "aleta-pusipp-daftar");
-    badan.append(info, konfirm, daftar);
+    // Tempat unggah berkas putusan (opsional): seret atau pilih; dipakai untuk e-Doc putusan dan anonimisasi.
+    const berkasWadah = el("div", "aleta-pusipp-berkas");
+    berkasWadah.setAttribute("data-pusipp", "berkas");
+    berkasWadah.append(el("h3", "aleta-pusipp-berkas-judul", "Berkas putusan untuk e-Doc"));
+    const zona = el("div", "aleta-pusipp-zona");
+    zona.setAttribute("data-pusipp", "zona");
+    zona.append(
+      el("strong", "", "Seret berkas putusan ke sini, atau pilih"),
+      el("span", "aleta-pusipp-zona-bantu", "RTF, DOCX, DOC, atau PDF · paling besar 10 MB · dipakai untuk e-Doc putusan dan e-Doc anonimisasi. Tanpa berkas, putusan dicetak dari Blangko Derry di ABT.")
+    );
+    const pilihBerkas = document.createElement("input");
+    pilihBerkas.type = "file";
+    pilihBerkas.accept = ".rtf,.docx,.doc,.pdf";
+    pilihBerkas.setAttribute("data-pusipp", "pilih-berkas");
+    pilihBerkas.setAttribute("aria-label", "Pilih berkas putusan");
+    pilihBerkas.addEventListener("change", () => {
+      void terimaBerkas(pilihBerkas.files);
+      pilihBerkas.value = "";
+    });
+    zona.appendChild(pilihBerkas);
+    const sorot = (ya) => zona.setAttribute("data-sorot", ya ? "1" : "0");
+    zona.addEventListener("dragenter", (e) => {
+      e.preventDefault();
+      sorot(true);
+    });
+    zona.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      sorot(true);
+    });
+    zona.addEventListener("dragleave", () => sorot(false));
+    zona.addEventListener("drop", (e) => {
+      e.preventDefault();
+      sorot(false);
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length) void terimaBerkas(dt.files);
+    });
+    const terpilih = el("div", "aleta-pusipp-berkas-terpilih");
+    terpilih.setAttribute("data-pusipp", "berkas-terpilih");
+    terpilih.setAttribute("aria-live", "polite");
+    berkasWadah.append(zona, terpilih);
+    badan.append(info, konfirm, daftar, berkasWadah);
 
     const kaki = el("div", "aleta-pusipp-kaki");
     const ringkas = el("div", "aleta-pusipp-ringkas");
@@ -296,6 +428,8 @@
     laporan.setAttribute("data-pusipp", "laporan");
     akar.append(kepala, badan, kaki, laporan);
     ctx.akar = akar;
+    ctx.zona = zona;
+    ctx.berkasTerpilih = terpilih;
     ctx.laporan = laporan;
     return akar;
   }
@@ -332,6 +466,39 @@
       daftar.appendChild(baris);
     }
 
+    // Berkas yang dipilih
+    if (ctx.berkasTerpilih) {
+      const k = ctx.berkasTerpilih;
+      k.textContent = "";
+      const b = ctx.berkas;
+      if (ctx.zona) ctx.zona.setAttribute("aria-disabled", ctx.sibuk ? "true" : "false");
+      const masuk = ctx.zona && ctx.zona.querySelector("input[type=file]");
+      if (masuk) masuk.disabled = ctx.sibuk;
+      if (b) {
+        const baris = el("div", `aleta-pusipp-berkas-baris aleta-pusipp-berkas-${b.status}`);
+        baris.setAttribute("data-status", b.status);
+        const kiri = el("div", "aleta-pusipp-berkas-isi");
+        kiri.append(
+          el("div", "aleta-pusipp-berkas-nama", b.nama),
+          el("div", "aleta-pusipp-berkas-ket", `${b.bentuk ? b.bentuk.toUpperCase() + " · " : ""}${Math.max(1, Math.round(b.ukuran / 1024))} KB`)
+        );
+        const chip =
+          b.status === "ditolak"
+            ? el("span", "aleta-pusipp-status aleta-pusipp-s-salah", `ditolak · ${b.tolak}`)
+            : b.status === "ok"
+              ? el("span", "aleta-pusipp-status aleta-pusipp-s-ok", "siap dipakai")
+              : el("span", "aleta-pusipp-status aleta-pusipp-s-jalan", b.status === "ubah" ? "diubah menjadi RTF…" : "memeriksa…");
+        const buang = tombol("Buang", "aleta-pusipp-kecil");
+        buang.setAttribute("data-pusipp", "buang-berkas");
+        buang.setAttribute("aria-label", `Buang ${b.nama}`);
+        buang.disabled = ctx.sibuk;
+        buang.addEventListener("click", buangBerkas);
+        baris.append(kiri, chip, buang);
+        k.appendChild(baris);
+        for (const w of b.peringatan || []) k.appendChild(el("div", "aleta-pusipp-ket", w));
+      }
+    }
+
     const r = rencana();
     const semua = akar.querySelector("[data-pusipp='semua']");
     if (semua) {
@@ -343,9 +510,10 @@
       ? "Sedang bekerja - jangan menutup atau memuat ulang halaman ini."
       : r.total === 0
         ? "Tidak ada yang perlu dikerjakan - yang dicentang sudah ada di SIPP."
-        : `${r.isi ? "1 Putusan Akhir akan diisi dan disimpan" : "Putusan Akhir tidak diisi"} · ${r.edoc} e-Doc akan diunggah`;
+        : `${r.isi ? "1 Putusan Akhir akan diisi dan disimpan" : "Putusan Akhir tidak diisi"} · ${r.edoc} e-Doc akan diunggah${berkasSiap() && r.edoc ? " dari berkas yang dipilih" : ""}`;
     const utama = akar.querySelector("[data-pusipp='utama']");
-    utama.disabled = ctx.sibuk || r.total === 0 || !ctx.dibaca;
+    const berkasBelum = Boolean(ctx.berkas && (ctx.berkas.status === "periksa" || ctx.berkas.status === "ubah"));
+    utama.disabled = ctx.sibuk || r.total === 0 || !ctx.dibaca || berkasBelum;
 
     const wadahKonfirm = akar.querySelector(".aleta-pusipp-konfirm-wadah");
     wadahKonfirm.textContent = "";
@@ -460,6 +628,9 @@
           edoc: r.edoc > 0,
           denganPutusan: r.putusan > 0,
           denganAnonim: r.anonim > 0,
+          // Berkas yang dipilih di panel ini menjadi e-Doc putusan dan bahan anonimisasi (tanpa berkas: dicetak dari ABT).
+          putusan: berkasSiap() ? berkasSiap().file : null,
+          putusanRtf: berkasSiap() ? berkasSiap().rtf : null,
           // Kotak muat ulang melayang di halaman: panel ini dapat tergambar ulang saat SIPP menyegarkan isinya.
           melayang: true,
         });
@@ -498,6 +669,8 @@
           wadah: ctx.laporan,
           denganPutusan: r.putusan > 0,
           denganAnonim: r.anonim > 0,
+          putusan: berkasSiap() ? berkasSiap().file : null,
+          putusanRtf: berkasSiap() ? berkasSiap().rtf : null,
         });
       } finally {
         await kunci.lepas();
@@ -566,23 +739,21 @@
         if (!ctx) return;
         ctx.terbuka = !ctx.terbuka;
         ctx.lipatDibaca = true;
+        const lipat = !ctx.terbuka;
         void bacaPenyimpanan([KUNCI_LIPAT]).then((s) => {
           const lip = s && s[KUNCI_LIPAT] && typeof s[KUNCI_LIPAT] === "object" ? s[KUNCI_LIPAT] : {};
-          void tulisPenyimpanan({ [KUNCI_LIPAT]: { ...lip, [KUNCI_LIPAT_PANEL]: !ctx.terbuka } });
+          void tulisPenyimpanan({ [KUNCI_LIPAT]: { ...lip, [KUNCI_LIPAT_PANEL]: lipat } });
         });
         pasangPanel(tr);
       });
       td.appendChild(b);
     }
-    const penetapan = tr.querySelector(":scope > .aleta-pensipp-sel");
-    const l1 = tr.querySelector(":scope > .aleta-l1-submenu");
-    if (penetapan) {
-      if (td.previousElementSibling !== penetapan) tr.insertBefore(td, penetapan.nextSibling);
-    } else if (l1) {
-      if (td.nextElementSibling !== l1 || td.parentElement !== tr) tr.insertBefore(td, l1);
-    } else if (td.parentElement !== tr) {
-      tr.appendChild(td);
+    // Urutan tetap (Penetapan, Putusan, Jadwalkan, Buka di ABT/ALETA) dijaga SATU pengurut bersama (panel-alat.js).
+    if (td.parentElement !== tr) {
+      const l1 = tr.querySelector(":scope > .aleta-l1-submenu");
+      tr.insertBefore(td, l1 || null);
     }
+    if (typeof alatUrutkanTombolSipp === "function") alatUrutkanTombolSipp(tr);
     const b = td.querySelector("button");
     if (b) b.setAttribute("aria-expanded", ctx && ctx.terbuka ? "true" : "false");
     return td;
@@ -634,9 +805,9 @@
       void bacaPenyimpanan([KUNCI_LIPAT]).then((simpan) => {
         if (!ctx || ctx.nomor !== nomor) return;
         const lip = simpan && simpan[KUNCI_LIPAT] && typeof simpan[KUNCI_LIPAT] === "object" ? simpan[KUNCI_LIPAT] : {};
-        // Bawaan TERBENTANG; hanya yang sengaja dilipat petugas yang tetap terlipat.
-        if (lip[KUNCI_LIPAT_PANEL] === true && !ctx.lipatDibaca) {
-          ctx.terbuka = false;
+        // Bawaan TERLIPAT (21 Okt 2026); hanya yang sengaja dibuka petugas (false) yang terbuka lagi.
+        if (lip[KUNCI_LIPAT_PANEL] === false && !ctx.lipatDibaca) {
+          ctx.terbuka = true;
           const baris = barisTombol(document);
           if (baris) pasangPanel(baris);
         }
@@ -683,13 +854,16 @@
   }
 
   globalThis.aletaPutusanSipp = {
-    versi: "b2-20okt",
+    versi: "b2-21okt",
     pasang,
     bersihkan,
     muat,
     jalankan,
     mintaKonfirmasi,
     keadaan: () => ctx,
+    terimaBerkas,
+    buangBerkas,
+    berkasSiap,
     murni: { berhak, barisTombol, nomorHalaman, STATUS, LANGKAH },
   };
   void mulai();

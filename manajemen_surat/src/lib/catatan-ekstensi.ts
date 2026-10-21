@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.23",
+    dirilis: "2026-10-21T11:29:00+08:00",
+    judul: "Penetapan, putusan dan jadwal putusan di SIPP lebih rapi",
+    butir: [
+      "Penetapan Otomatis di SIPP: tombol Centang semua e-Doc dan Tetapkan & unggah e-Doc langsung di bawah daftar PMH-PHS; ringkasan beban usulan dan jumlah perkara diterima 30 hari di samping judul; rincian beban terlipat (buka dengan Rincian).",
+      "Beban penetapan: hitungan Tahun ini untuk majelis kini mencakup seluruh perkara tahun berjalan (sebelumnya hanya sejak SK berlaku); panitera pengganti dan juru sita yang tidak aktif tidak lagi diusulkan; nama majelis tampil dipisah koma.",
+      "Tombol Penetapan Otomatis, Putusan Otomatis dan Jadwalkan Putusan tetap di tempatnya dengan warna seragam; Putusan Otomatis dan Jadwalkan Putusan mengikuti tema gelap/terang dan terlipat bawaan.",
+      "Putusan Otomatis: tempat seret/pilih berkas putusan (RTF, DOCX, DOC, PDF) untuk e-Doc putusan dan anonimisasi.",
+      "Jadwalkan Putusan banyak perkara sekaligus kini di Dashboard SIPP dan Daftar Perkara Perdata (samping tombol Cetak); di detil perkara hanya untuk perkara itu.",
+      "Hak: Putusan Otomatis dan Jadwalkan Putusan untuk Ketua, Wakil Ketua dan Hakim; Penetapan Otomatis untuk PTSP, Ketua dan Wakil Ketua.",
+    ],
+  },
+  {
     versi: "1.205.22",
     dirilis: "2026-10-21T08:10:00+08:00",
     judul: "Akun nonaktif tersembunyi di Admin",

@@ -779,7 +779,7 @@
     }
     const kode = st.borang.kode;
     const p = usulan.penetapan || {};
-    if (kode !== "pmh" && p.majelisNama) baris(isi, "Majelis tercatat", String(p.majelisNama));
+    if (kode !== "pmh" && p.majelisNama) baris(isi, "Majelis tercatat", typeof bersihkanPemisahBr === "function" ? bersihkanPemisahBr(p.majelisNama) : String(p.majelisNama).replace(/<[^>]*>/g, ", "));
     if (kode === "pmh") gambarPmh(st, isi);
     else if (kode === "ppp") gambarPp(st, isi);
     else if (kode === "pjs") gambarJs(st, isi);

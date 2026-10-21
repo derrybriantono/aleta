@@ -288,16 +288,22 @@ const kunciIdUrut = (ids) => [...(ids || [])].map(Number).sort((a, b) => a - b).
  * alasan yang sama dengan penunjukanService.kodeSkUntuk).
  */
 function statistikMajelis({ barisHakim, hakimAktif, susunanSk, jendela, bobot, kebendaan, skTanggal = "" }) {
-  // Majelis SK dinilai sejak SK berlaku: susunan sebelum SK bukan majelis yang
-  // sama, dan membandingkannya membuat majelis "tertinggal" yang lalu dibanjiri
-  // perkara (terukur: 70 dari 136 perkara jatuh ke satu majelis).
+  // ATURAN HITUNG MAJELIS (21 Okt 2026):
+  //   - ANGKA TAMPIL (Berjalan, Tahun ini, 30 hari, Kebendaan 6 bln) = SEMUA perkara
+  //     tahun berjalan (berjalan: semua yang belum diputus) yang susunan hakimnya sama
+  //     dengan susunan SK majelis itu (himpunan hakim, urutan duduk tidak dihitung).
+  //     Dahulu perkara sebelum tanggal SK berlaku ikut dibuang dari angka tampil,
+  //     sehingga tiga majelis hanya 177 dari 561 perkara (SK berlaku akhir Agustus).
+  //   - NISBAH SKOR (penentu urutan usulan) tetap dinilai SEJAK SK berlaku: susunan
+  //     sebelum SK bukan majelis yang sama, dan membandingkannya membuat majelis
+  //     "tertinggal" yang lalu dibanjiri perkara (terukur: 70 dari 136 perkara jatuh
+  //     ke satu majelis). Untuk itu tiap entri membawa hitungan kedua `sk*`.
   const mulaiMajelis = iso(skTanggal) && iso(skTanggal) > jendela.awalTahun ? iso(skTanggal) : jendela.awalTahun;
   const kodeDariId = new Map(hakimAktif.map((h) => [Number(h.id), String(h.kode || "").toUpperCase()]));
   const idDariKode = new Map(hakimAktif.map((h) => [String(h.kode || "").toUpperCase(), Number(h.id)]));
   const perPerkara = new Map();
   for (const b of barisHakim) {
     if (!(Number(b.orangId) > 0)) continue;
-    if (!(iso(b.tanggal) >= mulaiMajelis)) continue;
     const p = perPerkara.get(b.perkaraId) || { ids: new Set(), tanggal: iso(b.tanggal), jenisId: b.jenisId, berjalan: b.berjalan };
     p.ids.add(Number(b.orangId));
     perPerkara.set(b.perkaraId, p);
@@ -310,7 +316,7 @@ function statistikMajelis({ barisHakim, hakimAktif, susunanSk, jendela, bobot, k
   const entri = new Map();
   const ambil = (kunci, awal) => {
     if (!entri.has(kunci)) {
-      entri.set(kunci, { ...awal, aktif: 0, aktifBobot: 0, tahun: 0, tahunBobot: 0, hari30: 0, hari30Bobot: 0, kebendaan6: 0, terakhir: "" });
+      entri.set(kunci, { ...awal, aktif: 0, aktifBobot: 0, tahun: 0, tahunBobot: 0, hari30: 0, hari30Bobot: 0, kebendaan6: 0, terakhir: "", skAktifBobot: 0, skTahunBobot: 0, skHari30Bobot: 0, skKebendaan6: 0 });
     }
     return entri.get(kunci);
   };
@@ -341,6 +347,7 @@ function statistikMajelis({ barisHakim, hakimAktif, susunanSk, jendela, bobot, k
     const ada30 = p.tanggal && p.tanggal >= jendela.dari30 && p.tanggal <= jendela.sekarang;
     const adaTahun = p.tanggal && p.tanggal >= jendela.awalTahun && p.tanggal <= jendela.sekarang;
     const adaKeb = p.tanggal && p.tanggal >= jendela.dari6 && p.tanggal <= jendela.sekarang && kebendaan(p.jenisId);
+    const sejakSk = Boolean(p.tanggal) && p.tanggal >= mulaiMajelis;
     if (ids.length < 2) {
       if (p.berjalan) tunggal.aktif += 1;
       if (adaTahun) tunggal.tahun += 1;
@@ -364,16 +371,22 @@ function statistikMajelis({ barisHakim, hakimAktif, susunanSk, jendela, bobot, k
     if (p.berjalan) {
       sasaran.aktif += 1;
       sasaran.aktifBobot += w;
+      if (sejakSk) sasaran.skAktifBobot += w;
     }
     if (adaTahun) {
       sasaran.tahun += 1;
       sasaran.tahunBobot += w;
+      if (sejakSk) sasaran.skTahunBobot += w;
     }
     if (ada30) {
       sasaran.hari30 += 1;
       sasaran.hari30Bobot += w;
+      if (sejakSk) sasaran.skHari30Bobot += w;
     }
-    if (adaKeb) sasaran.kebendaan6 += 1;
+    if (adaKeb) {
+      sasaran.kebendaan6 += 1;
+      if (sejakSk) sasaran.skKebendaan6 += 1;
+    }
     if (p.tanggal && p.tanggal > sasaran.terakhir) sasaran.terakhir = p.tanggal;
   }
 
@@ -381,14 +394,14 @@ function statistikMajelis({ barisHakim, hakimAktif, susunanSk, jendela, bobot, k
   const n = daftar.length || 1;
   const total = (k) => daftar.reduce((s, e) => s + e[k], 0);
   const t = {
-    aktifBobot: total("aktifBobot"),
-    tahunBobot: total("tahunBobot"),
-    hari30Bobot: total("hari30Bobot"),
-    hari30: total("hari30"),
-    kebendaan6: total("kebendaan6"),
+    aktifBobot: total("skAktifBobot"),
+    tahunBobot: total("skTahunBobot"),
+    hari30Bobot: total("skHari30Bobot"),
+    kebendaan6: total("skKebendaan6"),
   };
   for (const e of daftar) {
     // Semua majelis SK dianggap bersidang penuh (tiap majelis satu hari sidang).
+    // Yang dibandingkan hanya perkara sejak SK berlaku (sk*), bukan angka tampil.
     const harap = {
       aktif: t.aktifBobot / n,
       tahun: t.tahunBobot / n,
@@ -396,10 +409,10 @@ function statistikMajelis({ barisHakim, hakimAktif, susunanSk, jendela, bobot, k
       kebendaan: t.kebendaan6 / n,
     };
     e.nisbah = {
-      aktif: (e.aktifBobot + PENGHALUS) / (harap.aktif + PENGHALUS),
-      tahun: (e.tahunBobot + PENGHALUS) / (harap.tahun + PENGHALUS),
-      hari30: (e.hari30Bobot + PENGHALUS) / (harap.hari30 + PENGHALUS),
-      kebendaan: (e.kebendaan6 + PENGHALUS) / (harap.kebendaan + PENGHALUS),
+      aktif: (e.skAktifBobot + PENGHALUS) / (harap.aktif + PENGHALUS),
+      tahun: (e.skTahunBobot + PENGHALUS) / (harap.tahun + PENGHALUS),
+      hari30: (e.skHari30Bobot + PENGHALUS) / (harap.hari30 + PENGHALUS),
+      kebendaan: (e.skKebendaan6 + PENGHALUS) / (harap.kebendaan + PENGHALUS),
     };
     e.persen30 = persen(e.hari30, totalMajelis30);
     e.rataRata30 = bulat1(100 / n);
@@ -447,7 +460,7 @@ function skorMajelis(entri, statHakim, opsi) {
  * @param {(jenisId:number)=>number} p.bobot
  * @param {(jenisId:number)=>boolean} p.kebendaan
  */
-function hitungStatistik({ sekarang, baris, orang, susunanSk = [], bobot, kebendaan, skTanggal = "" }) {
+function hitungStatistik({ sekarang, baris, orang, susunanSk = [], bobot, kebendaan, skTanggal = "", diterima = null }) {
   const jendela = jendelaWaktu(sekarang);
   const peran = (nama) =>
     statistikPeran({
@@ -481,6 +494,8 @@ function hitungStatistik({ sekarang, baris, orang, susunanSk = [], bobot, kebend
     panitera,
     jurusita,
     majelis,
+    // Perkara yang DITERIMA (didaftarkan) tahun ini dan 30 hari terakhir; null bila tak terbaca.
+    diterima: diterima && Number.isFinite(Number(diterima.hari30)) ? { tahun: Number(diterima.tahun) || 0, hari30: Number(diterima.hari30) || 0 } : null,
     // Kursi hakim = jumlah seluruh keanggotaan; perkara berbeda dengan kursi bila bermajelis.
     catatan:
       "Bagian 30 hari dan kebendaan 6 bulan dihitung atas kursi/penetapan di tiap peran; rata-rata = 100% dibagi jumlah orang aktif.",
@@ -619,6 +634,65 @@ function periksaKesesuaianSk({ hakimKode = [], hakimId = [], paniteraId = 0, tan
 }
 
 // ---------------------------------------------------------------------------
+// Petugas yang tidak bertugas (mutasi / lama tidak menerima penetapan)
+// ---------------------------------------------------------------------------
+
+const HARI_TIDAK_BERTUGAS = 60;
+const GELAR_NAMA = /\b(s\.?\s?h\.?i?|m\.?\s?h\.?i?|s\.?\s?ag|dr|drs|hj?|s\.?\s?kom)\b\.?/gi;
+
+/** Nama tanpa gelar/tanda baca, huruf kecil - dipakai mencocokkan petugas SIPP dengan akun portal. */
+function namaBersih(teks) {
+  return String(teks == null ? "" : teks)
+    .toLowerCase()
+    .replace(/,.*$/, "")
+    .replace(GELAR_NAMA, " ")
+    .replace(/[^a-z\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Siapa yang TIDAK bertugas di satu peran (panitera pengganti, juru sita):
+ *   1. akun portalnya nonaktif/mutasi (nama masuk `nonaktifNama`, hasil portal); atau
+ *   2. sudah bertugas lebih dari 60 hari TETAPI tidak satu pun penetapan baru dalam
+ *      60 hari terakhir (petugas lama yang tidak lagi diberi perkara).
+ * Petugas yang baru bertugas (mulai dalam 60 hari) selalu dianggap bertugas.
+ * Pengaman: bila hasilnya mengosongkan seluruh peran, atau tidak ada penetapan
+ * terbaca sama sekali, tidak seorang pun disaring (data tak terbaca bukan bukti).
+ *
+ * @returns {Map<number,string>} id -> alasan
+ */
+function petugasTidakBertugas({ orang, baris, sekarang, nonaktifNama = [], hariBatas = HARI_TIDAK_BERTUGAS }) {
+  const kini = iso(sekarang) || iso(new Date());
+  const batas = geser(kini, -hariBatas);
+  const nonaktif = new Set((Array.isArray(nonaktifNama) ? nonaktifNama : []).map(namaBersih).filter(Boolean));
+  const terakhir = new Map();
+  for (const b of Array.isArray(baris) ? baris : []) {
+    const t = iso(b && b.tanggal);
+    const id = Number(b && b.orangId);
+    if (!t || !(id > 0)) continue;
+    if (t > (terakhir.get(id) || "")) terakhir.set(id, t);
+  }
+  const daftar = Array.isArray(orang) ? orang : [];
+  const hasil = new Map();
+  const adaAktivitas = terakhir.size > 0;
+  for (const o of daftar) {
+    const id = Number(o.id);
+    if (nonaktif.has(namaBersih(o.nama))) {
+      hasil.set(id, "akun sudah tidak aktif (mutasi)");
+      continue;
+    }
+    if (!adaAktivitas) continue;
+    const mulai = iso(o.mulai);
+    if (mulai && mulai > batas) continue; // baru bertugas
+    const t = terakhir.get(id) || "";
+    if (!t || t < batas) hasil.set(id, `tidak menerima penetapan sejak ${hariBatas} hari terakhir`);
+  }
+  if (hasil.size >= daftar.length) return new Map();
+  return hasil;
+}
+
+// ---------------------------------------------------------------------------
 // Pembaca SIPP (hanya SELECT)
 // ---------------------------------------------------------------------------
 
@@ -682,12 +756,35 @@ async function bacaBaris(sekarang, { db = require("../db_config"), tabelAda } = 
   return hasil;
 }
 
+/**
+ * Perkara yang DITERIMA (tanggal_pendaftaran) tahun berjalan dan 30 hari terakhir.
+ * Satu SELECT COUNT; gagal membaca = null (tampilan menyembunyikan angkanya).
+ */
+async function bacaDiterima(sekarang, { db = require("../db_config") } = {}) {
+  try {
+    const j = jendelaWaktu(sekarang);
+    const rows = await jalankan(
+      db,
+      `SELECT COUNT(*) AS tahun, COALESCE(SUM(tanggal_pendaftaran >= ?), 0) AS hari30
+         FROM perkara
+        WHERE tanggal_pendaftaran >= ? AND tanggal_pendaftaran <= ?`,
+      [j.dari30, j.awalTahun, j.sekarang]
+    );
+    if (!rows.length) return null;
+    const r = rows[0];
+    return { tahun: Number(r.tahun) || 0, hari30: Number(r.hari30) || 0 };
+  } catch {
+    return null;
+  }
+}
+
 /** Baris dengan simpanan 10 detik (antrean massal memanggil usulan berulang). */
 async function bacaBarisBersimpan(sekarang, opsi) {
   const kunci = iso(sekarang) || iso(new Date());
   const kini = Date.now();
   if (simpanan && simpanan.kunci === kunci && kini - simpanan.waktu < TTL_SIMPANAN_MS) return simpanan.baris;
   const baris = await bacaBaris(sekarang, opsi);
+  baris.diterima = await bacaDiterima(sekarang, opsi);
   simpanan = { kunci, waktu: kini, baris };
   return baris;
 }
@@ -726,6 +823,10 @@ module.exports = {
   alasanSingkat,
   periksaKesesuaianSk,
   bacaBaris,
+  bacaDiterima,
+  petugasTidakBertugas,
+  namaBersih,
+  HARI_TIDAK_BERTUGAS,
   bacaBarisBersimpan,
   paniteraTercatat,
   lupakanSimpanan,

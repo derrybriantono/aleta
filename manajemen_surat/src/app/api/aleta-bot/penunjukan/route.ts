@@ -76,6 +76,7 @@ export async function GET(request: NextRequest) {
         aturan: pengaturan.aturan as unknown as Record<string, unknown>,
         hariSidang: pengaturan.hariSidang,
         paniteraMajelis: pengaturan.paniteraMajelis,
+        petugasNonaktif: pengaturan.petugasNonaktif,
         // Susunan menurut SK Ketua - majelis berkode didahulukan, dan panitera
         // sidangnya ditunjuk lewat id, bukan lewat kode yang tabrakan di SIPP.
         susunanSk: pengaturan.susunanSk as unknown as Record<string, unknown>[],
