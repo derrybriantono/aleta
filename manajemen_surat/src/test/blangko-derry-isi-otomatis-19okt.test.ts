@@ -365,14 +365,14 @@ describe("A. saklar Isi otomatis dari SIPP", () => {
     expect(baca("popup.html")).toContain('id="derryIsiOto"');
   });
 
-  it("20 Okt: saklar Pratinjau sebelum unduh (BAS & relaas) di Alat saya - bawaan menyala, diingat, kunci sama di popup dan latar", async () => {
+  it("20 Okt: saklar Pratinjau dokumen sebelum unduh di Alat saya - bawaan menyala, diingat, kunci sama di popup dan latar", async () => {
     const h = buka();
     await sampaiPerkara(h);
     expect(h.w.aletaBlangkoDerry.setelan().pratinjau).toBe(true);
     klik(h, "#bd-alat-btn");
     const kotak = (await sampai(() => q(h, '#bd-alat input[data-cfg="pratinjau"]'), "saklar pratinjau")) as HTMLInputElement;
     expect(kotak.checked).toBe(true);
-    expect(q(h, "#bd-alat")!.textContent).toContain("Pratinjau sebelum unduh (BAS & relaas)");
+    expect(q(h, "#bd-alat")!.textContent).toContain("Pratinjau dokumen sebelum unduh");
     kotak.checked = false;
     kotak.dispatchEvent(new h.w.Event("change", { bubbles: true }));
     await sampai(() => h.simpanan.pratinjauBasRelaas === false, "setelan tersimpan");

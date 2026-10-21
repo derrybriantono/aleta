@@ -238,7 +238,9 @@ describe("pengenalan alamat dan berkas", () => {
     expect(a.jenisBerkas("http://192.168.10.10/SIPP/resources/file/doc/2026/09/PADgl_2026_PdtG_600_bas_3_1792347558.pdf")).toBe("bas");
     expect(a.jenisBerkas("http://192.168.10.10/SIPP/resources/file/doc/2024/01/PADgl_2024_PdtG_33_relaas_7648_14307_26648_1705372784.pdf")).toBe("relaas");
     expect(a.jenisBerkas("http://192.168.10.10/SIPP/resources/file/doc/2026/10/resi_20421_36941.pdf")).toBe("relaas");
-    expect(a.jenisBerkas("http://192.168.10.10/SIPP/resources/file/doc/2026/10/PADgl_2026_PdtG_600_putusan_akhir_1.pdf")).toBe("");
+    // 21 Okt: aturan umum - putusan juga dikenali (jenis dokumen lain, lihat pratinjau-dokumen-mediasi-21okt.test.ts).
+    expect(a.jenisBerkas("http://192.168.10.10/SIPP/resources/file/doc/2026/10/PADgl_2026_PdtG_600_putusan_akhir_1.pdf")).toBe("putusan");
+    expect(a.jenisBerkas("http://192.168.10.10/SIPP/resources/file/doc/2026/10/PADgl_2026_PdtG_600_entah_1.pdf")).toBe("");
   });
 
   it("bentuk dikenali dari ISI, bukan nama", () => {
@@ -333,9 +335,9 @@ describe("tautan e-Doc BAS dan relaas", () => {
     expect(l.permintaan).toHaveLength(1);
   });
 
-  it("tautan lain (bukan BAS/relaas) tidak disentuh", async () => {
+  it("tautan lain (bukan dokumen: halaman, Excel, foto pegawai, backup) tidak disentuh", async () => {
     const l = lingkungan({
-      html: `<base href="http://192.168.10.10/SIPP/"><a href=resources/file/doc/2026/09/PADgl_2026_PdtG_600_putusan_1.pdf>Unduh Dokumen</a><a href="#x">x</a>`,
+      html: `<base href="http://192.168.10.10/SIPP/"><a href=resources/file/doc/2026/09/rekap.xlsx>Unduh</a><a href="#x">x</a><a href="detil_perkara_agama">d</a><a href=resources/file/foto/a.jpg>f</a><a href="backup/doDownload/ABC">b</a><a href="cetak_register/tampil">r</a>`,
     });
     for (const a of Array.from(l.doc.querySelectorAll("a"))) expect(l.klik(a).dibatalkan).toBe(false);
     await tunggu(20);
@@ -404,9 +406,9 @@ describe("borang cetak SIPP (RTF POST)", () => {
     expect(l.dalam("nama")!.textContent).toBe("R_201_684_Pdt_G_2026_PA_Dgl_20261020010101.rtf");
   });
 
-  it("borang lain (bukan cetak BAS/relaas) dan borang GET tidak disentuh", async () => {
+  it("borang lain (bukan rute dokumen) tidak disentuh", async () => {
     const l = lingkungan({
-      html: `<form method="POST" action="http://192.168.10.10/SIPP/c_template_akta_cerai/cetak_akta_cerai"><input name="a" value="1"></form><form method="GET" action="${ALAMAT_CETAK_BAS}"></form>`,
+      html: `<form method="POST" action="http://192.168.10.10/SIPP/laporan/export"><input name="a" value="1"></form><form method="POST" action="http://192.168.10.10/SIPP/backup/doDownload/X"></form>`,
     });
     for (const f of Array.from(l.doc.querySelectorAll("form"))) expect(l.kirim(f).dibatalkan).toBe(false);
     await tunggu(20);
