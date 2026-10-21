@@ -1,5 +1,6 @@
 "use client";
 
+import { useOverlayHanyaGagal } from "@/lib/global-loading";
 import { labelTidakPatut } from "@/lib/label-kepatutan";
 import type { CaraRelaas } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 
@@ -254,6 +255,7 @@ import { useTarikBelumUpload } from "@/components/portal/use-tarik-belum-upload"
 import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import { PanduanPemeriksaanSaksi, type PropsPanduanSaksi } from "@/components/portal/panduan-pemeriksaan-saksi";
 import { agendaPembuktianSaksi, keadaanAwalDariSidang, sudahMasukPemeriksaan } from "@/lib/pandu-saksi";
+import { relaasBertemu, relaasElektronik } from "@/lib/hasil-relaas";
 
 /**
  * Dialog Cetak relaas dimuat SAAT DIBUKA, bukan bersama jadwal.
@@ -1841,7 +1843,7 @@ function jenisRelaas(baris: {
   // menurut HIR, relaasnya patut, dan sidangnya boleh berjalan. Menyebutnya
   // "tidak bertemu" membuat yang membacanya menunda sidang yang sudah boleh.
   if (baris.caraRelaas?.cara) return baris.caraRelaas.cara;
-  if (baris.bertemu) return "Bertemu";
+  if (relaasBertemu(baris)) return "Bertemu";
   if (baris.tanggalRelaas) return "Tidak bertemu";
   return "Belum dilaksanakan";
 }
@@ -4440,6 +4442,8 @@ export function AletaEcourtSidang({
   /** Nama tautan yang sedang dipakai (mode alamat) - ditampilkan di bawah judul. */
   namaTautan?: string;
 } = {}) {
+  // 21 Okt 2026: lapisan memuat/berhasil tidak muncul di jadwal; hanya yang GAGAL.
+  useOverlayHanyaGagal();
   const [dari, setDari] = useState(awal?.tanggal || hariIni());
   const [sampai, setSampai] = useState(awal?.tanggal || hariIni());
   const [cari, setCari] = useState("");
@@ -6332,6 +6336,17 @@ export function AletaEcourtSidang({
         {galat ? (
           <p className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
             <span className="min-w-0 flex-1">{galat}</span>
+            <button
+              type="button"
+              data-jadwal-coba-lagi=""
+              onClick={() => {
+                setGalat("");
+                void cobaLagiJadwal.cobaSekarang();
+              }}
+              className="shrink-0 rounded border border-rose-300 px-2 py-0.5 text-xs font-medium text-rose-700 transition hover:bg-rose-100"
+            >
+              Coba lagi
+            </button>
             <TombolTutupPesan onTutup={() => setGalat("")} />
           </p>
         ) : null}
@@ -9991,6 +10006,12 @@ export function RincianSidang({
                         <span className="rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold text-white">
                           Retur
                         </span>
+                      ) : relaasElektronik(baris) ? (
+                        // Panggilan elektronik yang dilaksanakan dianggap
+                        // bertemu: lencana hijau yang sama dengan bertemu langsung.
+                        <Badge variant="success" title="Panggilan elektronik dianggap bertemu.">
+                          Bertemu (elektronik)
+                        </Badge>
                       ) : baris.caraRelaas?.cara ? (
                         // Warnanya mengikuti SAMPAI atau tidaknya, bukan
                         // mengikuti "bertemu langsung". Panggilan elektronik
@@ -10114,8 +10135,10 @@ export function RincianSidang({
                   <span className="rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold text-white">
                     Retur
                   </span>
-                ) : baris.bertemu ? (
-                  <Badge variant="success">bertemu</Badge>
+                ) : relaasBertemu(baris) ? (
+                  <Badge variant="success" title={relaasElektronik(baris) ? "Panggilan elektronik dianggap bertemu." : undefined}>
+                    bertemu
+                  </Badge>
                 ) : baris.tanggalRelaas ? (
                   <Badge variant="warning">tidak bertemu</Badge>
                 ) : null}

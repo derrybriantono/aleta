@@ -158,7 +158,8 @@ describe("B5 - sembilan sandi ket_temu, bukan ya/tidak", () => {
   it("bertemu TIDAK dibuang - artinya masih tepat", () => {
     // Empat tempat di portal memakainya, dan "bertemu langsung" tetap keadaan
     // yang nyata. Yang ditambahkan keterangan di sebelahnya.
-    expect(layanan).toContain('bertemu: cleanText(row.ketTemu).toUpperCase() === "Y"');
+    // 21 Okt 2026: panggilan elektronik (E) dianggap bertemu.
+    expect(layanan).toContain('bertemu: ["Y", "E"].includes(cleanText(row.ketTemu).toUpperCase())');
     expect(layanan).toContain("caraRelaas: caraRelaas(row.ketTemu)");
   });
 

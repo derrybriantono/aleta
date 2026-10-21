@@ -61,12 +61,11 @@ import Link from "next/link";
  * terpasang, jadi menggambarnya di server tidak menghasilkan apa pun selain
  * kerangka kosong yang sama.
  *
- * Kerangka penunggu dibuat setinggi kira-kira layar aslinya supaya isi
- * halaman tidak melompat saat muatannya tiba.
+ * Jadwal Sidang dan Jadwal Mediasi tanpa kerangka penunggu (21 Okt 2026).
  */
 const AletaEcourtSidang = dynamic(
   () => import("@/components/portal/aleta-ecourt-sidang").then((m) => m.AletaEcourtSidang),
-  { ssr: false, loading: () => <div className="min-h-[28rem] animate-pulse rounded-[1.4rem] border border-border bg-muted/30" /> }
+  { ssr: false, loading: () => null }
 );
 
 const AletaEcourtStatusPerkara = dynamic(
@@ -76,7 +75,7 @@ const AletaEcourtStatusPerkara = dynamic(
 
 const AletaEcourtMediasi = dynamic(
   () => import("@/components/portal/aleta-ecourt-mediasi").then((m) => m.AletaEcourtMediasi),
-  { ssr: false, loading: () => <div className="min-h-[20rem] animate-pulse rounded-[1.4rem] border border-border bg-muted/30" /> }
+  { ssr: false, loading: () => null }
 );
 
 const AletaEcourtTandaTangan = dynamic(

@@ -3128,7 +3128,10 @@ async function relaasSidang(perkaraId, sidangId) {
     // TIDAK dibuang walau caranya sekarang dibaca terpisah: empat tempat di
     // portal memakainya, dan artinya tetap tepat - bertemu LANGSUNG. Yang
     // ditambahkan keterangan di sebelahnya, bukan penggantinya.
-    bertemu: cleanText(row.ketTemu).toUpperCase() === "Y",
+    // 21 Okt 2026: panggilan elektronik (E) yang dilaksanakan DIANGGAP bertemu
+    // (ketentuan pengguna) - tafsiran ALETA, data SIPP tidak diubah. SIPP tidak
+    // menyimpan status gagal untuk sandi E, jadi tidak ada yang dikecualikan.
+    bertemu: ["Y", "E"].includes(cleanText(row.ketTemu).toUpperCase()),
     // Cara penyampaiannya - lihat SANDI_CARA_RELAAS. Sebelum ini segala yang
     // bukan "Y" tampil sebagai "tidak bertemu", termasuk panggilan elektronik
     // dan relaas yang diterima orang serumah; 46,4% baris salah dilabeli.
