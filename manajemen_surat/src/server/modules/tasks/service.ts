@@ -28,6 +28,8 @@ import { kalimatPemberitahuan } from "@/lib/super-admin-global";
 import { listNotificationReadsFromDb } from "@/server/modules/notifications/service";
 import { getPositionsFromDb, requireActorUser } from "@/server/modules/organization/service";
 import { daftarAksesTerbaru } from "@/server/modules/satker/akses-global";
+import { namaAdaDi } from "@/lib/perkara-sendiri";
+import { pemberitahuanTundaOtomatis } from "@/server/modules/tunda-otomatis/layanan";
 
 export type TaskQuery = {
   source?: string | null;
@@ -1174,6 +1176,39 @@ async function buildEStatusTaskSource(
   }
 }
 
+/**
+ * Tunda otomatis 16.30 (22 Okt 2026): hasil jalan hari ini untuk majelis/PP
+ * perkaranya - usulan GUGUR/TIDAK DAPAT DITERIMA (mendesak) dan tundaan
+ * otomatis. Admin/Super Admin melihat satu ringkasan. Gagal baca = tidak ada.
+ */
+async function buildTundaOtomatisTasks(db: AletaDatabase, readSet: Set<string>, actor: Awaited<ReturnType<typeof requireActorUser>>): Promise<TaskItem[]> {
+  try {
+    const daftar = await pemberitahuanTundaOtomatis(db, {
+      nama: String(actor.name || ""),
+      lihatSemua: isPrivilegedAdmin(actor),
+      cocokNama: namaAdaDi,
+    });
+    return daftar.map((p) => ({
+      id: `system_task:${p.id}`,
+      entityType: "system_task" as const,
+      entityId: p.id,
+      sourceApp: "aleta-bot",
+      sourceLabel: "Tunda otomatis",
+      title: p.judul,
+      description: p.uraian,
+      href: "/aleta-ecourt#tunda-otomatis",
+      status: p.penting ? "Perlu disahkan majelis" : "Dicatat",
+      priority: p.penting ? ("urgent" as const) : ("normal" as const),
+      sourceType: "system_task" as const,
+      createdAt: p.waktu,
+      footer: "Tunda otomatis",
+      seen: isSeen(readSet, "system_task", p.id),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function getTaskSourcesForUser(
   db: AletaDatabase,
   actorUserId: string | null | undefined,
@@ -1197,9 +1232,13 @@ export async function getTaskSourcesForUser(
     appHref: "/admin",
     tasks: sortTaskItems([...approvalSource.tasks, ...adminSettingsTasks], "priority").slice(0, 50),
   });
+  const sumberBot = buildAletaBotTaskSource(readSet, accessibleLetters, dispositions, pendingInbox, actor.id);
+  const tundaOtomatis = await buildTundaOtomatisTasks(db, readSet, actor);
   const sources = [
     buildMailTaskSource(readSet, accessibleLetters, pendingInbox),
-    buildAletaBotTaskSource(readSet, accessibleLetters, dispositions, pendingInbox, actor.id),
+    tundaOtomatis.length
+      ? finalizeTaskSource({ appId: sumberBot.appId, appName: sumberBot.appName, appHref: sumberBot.appHref, tasks: [...tundaOtomatis, ...sumberBot.tasks] })
+      : sumberBot,
     await buildFeedbackTaskSource(db, readSet, actor),
     adminSource,
     await buildEKepegawaianTaskSource(db, readSet, actor),

@@ -124,6 +124,9 @@ async function jalankanHasilSidang(jalan, badan = {}, konteks = {}, deps = layan
           ruanganIdBerikut: badan.ruanganIdBerikut,
           sidangKelilingBerikut:
             typeof badan.sidangKelilingBerikut === "boolean" ? badan.sidangKelilingBerikut : undefined,
+          // Tunda otomatis 16.30: penjaga keadaan dibaca ulang saat menulis (penjagaTundaOtomatis).
+          otomatis: badan.otomatis === true,
+          tanggalSidangHarap: String(badan.tanggalSidangHarap || ""),
           operator,
           ip,
         })

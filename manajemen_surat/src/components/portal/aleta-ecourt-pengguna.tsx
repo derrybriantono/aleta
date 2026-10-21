@@ -307,6 +307,8 @@ export function AletaEcourtPengguna() {
         jangkar = "";
       }
       if (jangkar === "kasir") setMenu("sidang");
+      // 22 Okt 2026: #tunda-otomatis (pemberitahuan tunda otomatis) juga membuka Jadwal Sidang.
+      if (jangkar === "tunda-otomatis") setMenu("sidang");
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);

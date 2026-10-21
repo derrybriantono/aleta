@@ -707,6 +707,27 @@ async function kalenderPerkara(perkaraId) {
   }));
 }
 
+/**
+ * Hari sidang keliling yang SUDAH terjadwal di satu lokasi (nama ruangan sidang
+ * keliling, mis. "Sidang Keliling Kulawi") sesudah tanggal tertentu - bahan
+ * tunda otomatis 16.30. Hanya SELECT. null = tidak terbaca.
+ */
+async function tanggalKelilingLokasi(ruangan, setelah) {
+  const nama = bersih(ruangan);
+  const sejak = penetapan.tanggalIso(setelah);
+  if (!nama || !tanggalSah(sejak)) return null;
+  const baris = await kueri(
+    `SELECT DISTINCT DATE_FORMAT(tanggal_sidang, '%Y-%m-%d') AS tanggal
+       FROM perkara_jadwal_sidang
+      WHERE sidang_keliling = 'Y' AND ruangan = ? AND tanggal_sidang > ?
+      ORDER BY tanggal ASC
+      LIMIT 30`,
+    [nama, sejak]
+  ).catch(() => null);
+  if (!Array.isArray(baris)) return null;
+  return baris.map((b) => bersih(b.tanggal)).filter(tanggalSah);
+}
+
 /** Akun pejabat yang dipakai menulis - harus benar-benar ada di SIPP. */
 async function akunSipp(username) {
   const nama = bersih(username);
@@ -843,6 +864,44 @@ function prosesUntukTunda(keadaan, jenisPengadilan) {
 }
 
 /**
+ * ============================================================================
+ * PENJAGA TUNDA OTOMATIS 16.30 (22 Okt 2026)
+ * ============================================================================
+ *
+ * Tunda otomatis disusun pukul 16.30 dan - karena di luar jam kerja -
+ * dikerjakan antrean pada jam kerja berikutnya. Di antara keduanya petugas
+ * boleh sudah mencatat hasil sidangnya sendiri. Penjaga ini membaca ulang
+ * keadaan SIPP TEPAT SEBELUM menulis dan menolak bila:
+ *
+ *   - alasan/hasil sidang sudah terisi (termasuk "putus ..." yang berbendera
+ *     ditunda='T' - pemeriksaan ditunda='Y' di atas tidak menangkapnya);
+ *   - perkaranya sudah diputus; sudah ada sidang sesudahnya;
+ *   - tanggal sidang tidak lagi sama dengan yang dinilai (jadwal diubah);
+ *   - sidang ikrar talak; petugas sedang memegang kunci perkara.
+ *
+ * Penolakan = tidak ada yang ditulis; alasannya kembali ke daftar portal.
+ */
+async function penjagaTundaOtomatis(keadaan, minta = {}) {
+  const alasan = bersih(keadaan.alasanDitunda);
+  if (alasan !== "" && alasan !== "0") return { ok: false, alasan: "sidang_sudah_diberi_hasil", alasanTercatat: alasan.slice(0, 120) };
+  if (tanggalSah(penetapan.tanggalIso(keadaan.tanggalPutusan))) return { ok: false, alasan: "perkara_sudah_diputus" };
+  const harap = bersih(minta.tanggalSidangHarap);
+  if (harap && penetapan.tanggalIso(keadaan.tanggalSidang) !== harap) return { ok: false, alasan: "jadwal_berubah", diminta: harap };
+  if (bersih(keadaan.ikrarTalak) === "Y") return { ok: false, alasan: "sidang_ikrar_dilewati" };
+  const sesudah = await adaSidangSesudah(keadaan);
+  if (sesudah !== false) return { ok: false, alasan: sesudah === null ? "jadwal_tidak_terbaca" : "sudah_ada_jadwal_berikutnya" };
+  let kunci = { aktif: false };
+  try {
+    kunci = await require("./penetapanKunciService").layanan().lihat(keadaan.perkaraId);
+  } catch {
+    kunci = { aktif: false, tidakTerbaca: true };
+  }
+  // Gagal tertutup, sama dengan kunci penetapan: kunci yang tak terbaca menahan tulisan.
+  if (kunci.aktif || kunci.tidakTerbaca) return { ok: false, alasan: "perkara_sedang_dikerjakan" };
+  return null;
+}
+
+/**
  * Menyusun rencana penundaan - TIDAK menulis apa pun.
  *
  * @returns {Promise<object>} { ok, jenis, perkara, atasNama, langkah, andaian }
@@ -860,6 +919,13 @@ async function susunRencanaTunda(minta = {}) {
       alasan: utuh === false ? "tunda_belum_utuh" : "sidang_sudah_ditunda",
       alasanTercatat: bersih(keadaan.alasanDitunda),
     };
+  }
+
+  // Tunda otomatis 16.30 (22 Okt 2026): penjaga TAMBAHAN, dibaca ulang saat
+  // tulisan benar-benar dikerjakan (antrean jam kerja dapat berjalan esok pagi).
+  if (minta.otomatis === true) {
+    const tolak = await penjagaTundaOtomatis(keadaan, minta);
+    if (tolak) return tolak;
   }
 
   // ==========================================================================
@@ -1757,6 +1823,8 @@ module.exports = {
   prosesUntukTunda,
   ruangDipilih,
   susunRencanaTunda,
+  penjagaTundaOtomatis,
+  tanggalKelilingLokasi,
   susunRencanaPutus,
   susunRencanaPutusIkrar,
   AMAR_BELUM,

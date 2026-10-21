@@ -254,6 +254,44 @@ router.get("/kalender", wajibToken, async (req, res) => {
 });
 
 /**
+ * TUNDA OTOMATIS 16.30 (22 Okt 2026) - bahan satu sidang dalam SATU panggilan:
+ * keadaan + riwayat + antrian + atas nama siapa (PP) dari alur yang sama dengan
+ * borang tunda, Court Calendar, email (ada/tidak), kunci perkara, dan hari
+ * sidang keliling berikutnya di lokasi yang sama. HANYA MEMBACA.
+ */
+router.get("/tunda-otomatis/bahan", wajibToken, async (req, res) => {
+  try {
+    res.json(await require("../services/tundaOtomatisBahanService").bahanSidang(req.query.jadwalId));
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+/** Baris antrean tunda otomatis sejak tanggal tertentu (WITA) - status untuk daftar. Hanya membaca. */
+router.get("/tunda-otomatis/antrean", wajibToken, async (req, res) => {
+  try {
+    const sejak = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.sejak || "")) ? `${req.query.sejak} 00:00:00` : "";
+    const baris = await require("../services/antreanTulisSippService")
+      .layanan()
+      .daftarMenurutAwalan({ awalan: "sidang-tunda:otomatis:", sejak });
+    res.json({ ok: true, baris });
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+/** "Jangan tunda otomatis" sesudah diantrekan: membatalkan baris OTOMATIS yang masih menunggu. */
+router.post("/tunda-otomatis/antrean-batal", wajibToken, async (req, res) => {
+  try {
+    const jadwalId = String((req.body && req.body.jadwalId) || "").replace(/\D/g, "");
+    if (!jadwalId) return res.status(400).json({ ok: false, alasan: "jadwal_tidak_sah" });
+    res.json(await require("../services/antreanTulisSippService").layanan().batalkanOtomatis(`sidang-tunda:otomatis:${jadwalId}`));
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+/**
  * Email dan persetujuan saluran elektronik para pihak - bahan aturan tunda karena
  * ketidakhadiran. Hanya membaca (SIPP SELECT + tabel bot hasil jembatan e-Court);
  * alamat email TIDAK dikirim, hanya ada/tidaknya.

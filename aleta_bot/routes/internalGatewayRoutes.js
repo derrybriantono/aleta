@@ -1340,10 +1340,13 @@ router.get("/sidang/keadaan", requireInternalToken, async (req, res) => {
  * hanya melaporkan bahwa antriannya tidak ikut bergerak, bukan membatalkan
  * yang sudah benar.
  */
+// Tunda otomatis 16.30 (22 Okt 2026) berkunci antrean sendiri ("otomatis:<jadwal>")
+// supaya tidak pernah bertabrakan dengan tundaan manual yang diantrekan petugas,
+// dan supaya tombol "jangan tunda otomatis" dapat membatalkannya.
 router.post(
   "/sidang/tunda",
   requireInternalToken,
-  manualJamKerja("sidang-tunda", (b) => String(b.jadwalId || ""), async (req, res) => {
+  manualJamKerja("sidang-tunda", (b) => (b.otomatis === true ? `otomatis:${String(b.jadwalId || "")}` : String(b.jadwalId || "")), async (req, res) => {
   try {
     // Alurnya di sidangHasilAlur (7 Okt 2026, kasus 273): rencana -> jeda ->
     // SATU transaksi -> antrian -> jejak jujur; penolakan membawa kalimat sebab.
