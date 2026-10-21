@@ -48,9 +48,11 @@
 
   const KELAS = "aleta-sisip aleta-pusipp";
   const ID_PANEL = "aleta-pusipp-panel";
-  const KUNCI_LIPAT = "lipatanBagian";
-  // Kunci baru (21 Okt 2026): bawaan TERLIPAT; true = sengaja dilipat, false = sengaja dibuka petugas.
-  const KUNCI_LIPAT_PANEL = "putusanSipp2";
+  // 21 Okt 2026 (perbaikan): BAWAAN TERLIPAT di SETIAP kunjungan. Pilihan buka-tutup petugas hanya diingat
+  // selama halaman ini terbuka (aturan bersama alatPanelTerbuka/alatIngatPanel di panel-alat.js); dulu
+  // diingat di chrome.storage.local, sehingga panel yang sekali dibuka terbuka lagi di setiap perkara dan
+  // sesudah tiap muat ulang.
+  const KUNCI_PANEL = "putusan-otomatis-sipp";
   const BATAS_BERKAS = 10 * 1024 * 1024;
   const BENTUK_BERKAS = /\.(rtf|docx|doc|pdf)$/i;
   const LANGKAH = ["isi", "putusan", "anonim"];
@@ -63,7 +65,9 @@
     gagal: { teks: "gagal", nada: "salah" },
     tidak: { teks: "tidak dicentang", nada: "lewat" },
     baca: { teks: "memeriksa…", nada: "jalan" },
+    perlu: { teks: "perlu berkas putusan", nada: "salah" },
   };
+  const TIDAK_DIKERJAKAN = "Tidak dikerjakan: Putusan Akhir belum tersimpan (sebabnya tertulis di langkah pertama).";
 
   const sebaris = (t) => String(t == null ? "" : t).replace(/\s+/g, " ").trim();
   function el(tag, kelas, teks) {
@@ -110,13 +114,6 @@
       return {};
     }
   }
-  async function tulisPenyimpanan(isi) {
-    try {
-      await chrome.storage.local.set(isi);
-    } catch {
-      /* ingatan lipatan hanya kenyamanan */
-    }
-  }
 
   /** Ketua, Wakil Ketua, Hakim, dan Super Admin (golongan admin); peran yang belum terbaca = tidak tampil. */
   function berhak() {
@@ -128,6 +125,50 @@
     } catch {
       return false;
     }
+  }
+
+  /** Pilihan buka-tutup panel ini pada kunjungan halaman yang sama (bawaan: terlipat). */
+  function terbukaTersimpan(nomor) {
+    try {
+      return typeof alatPanelTerbuka === "function" ? alatPanelTerbuka(`${KUNCI_PANEL}:${nomor}`) : false;
+    } catch {
+      return false;
+    }
+  }
+  function ingatTerbuka(nomor, buka) {
+    try {
+      if (typeof alatIngatPanel === "function") alatIngatPanel(`${KUNCI_PANEL}:${nomor}`, buka);
+    } catch {
+      /* ingatan lipatan hanya kenyamanan */
+    }
+  }
+
+  /**
+   * Draf putusan ALETA perkara ini (baca saja). Pulang { ada:true, versi } | { ada:false, sebab } |
+   * { ada:null, sebab } (tidak terbaca - pengisian tetap boleh dicoba, alurnya yang akan menyebut sebabnya).
+   */
+  async function cekDraf(nomor) {
+    // Pembacanya di konten.js (cekDrafPutusanAleta) - satu sumber dengan "Ambil usulan dari ALETA";
+    // berkas ini tidak memanggil portal sendiri.
+    const baca = fungsi("cekDrafPutusanAleta");
+    if (!baca) return { ada: null, sebab: "pembaca draf belum termuat" };
+    try {
+      const h = await baca(nomor);
+      if (h && h.ada === true) return { ada: true, versi: h.versi };
+      if (h && h.ada === false) return { ada: false, sebab: sebaris(h.sebab || "Belum ada draf putusan ALETA untuk perkara ini.") };
+      return { ada: null, sebab: sebaris((h && h.sebab) || "draf belum terbaca") };
+    } catch (galat) {
+      return { ada: null, sebab: sebaris((galat && galat.message) || galat) };
+    }
+  }
+
+  /** Kalimat sebab bila Putusan Akhir hendak diisi tanpa draf dan tanpa berkas. */
+  function sebabTanpaSumber() {
+    return (
+      "Belum ada draf putusan ALETA untuk perkara ini dan belum ada berkas putusan yang dipilih, jadi tidak ada yang dapat diisikan. " +
+      "Seret berkas putusan (RTF, DOCX, DOC, atau PDF) ke kotak \"Berkas putusan\" di panel ini, lalu jalankan lagi - " +
+      "berkas itu dibaca untuk mengisi Putusan Akhir dan dipakai juga untuk e-Doc."
+    );
   }
 
   function barisTombol(doc) {
@@ -159,20 +200,24 @@
     return {
       nomor,
       terbuka: false,
-      lipatDibaca: false,
       berkas: null,
       sibuk: false,
       memuat: false,
       dibaca: false,
       konfirm: false,
       pilih: { isi: true, putusan: true, anonim: true },
-      keadaan: { terisi: null, adaPutusan: null, adaAnonim: null, galatEdoc: "" },
+      keadaan: { terisi: null, adaPutusan: null, adaAnonim: null, galatEdoc: "", draf: null, versiDraf: null, sebabDraf: "" },
       status: { isi: "tunggu", putusan: "tunggu", anonim: "tunggu" },
       catatan: { isi: "", putusan: "", anonim: "" },
       info: "",
       akar: null,
       dirender: false,
     };
+  }
+
+  /** Isi Putusan Akhir dicentang, tetapi draf ALETA terbukti tidak ada dan tidak ada berkas yang siap. */
+  function tanpaSumberIsi() {
+    return Boolean(ctx && ctx.pilih.isi && ctx.keadaan.terisi !== true && ctx.keadaan.draf === false && !berkasSiap());
   }
 
   /** Apa yang akan dikerjakan menurut keadaan SIPP dan centang. Murni terhadap ctx. */
@@ -195,6 +240,13 @@
       return ["tunggu", ""];
     };
     let [s, c] = awal("isi", k.terisi);
+    if (s === "tunggu" && tanpaSumberIsi()) {
+      s = "perlu";
+      c = sebabTanpaSumber();
+    } else if (s === "tunggu") {
+      const b = berkasSiap();
+      c = b ? `Diisi dari berkas ${b.nama}.` : k.draf === true ? `Diisi dari draf putusan ALETA${k.versiDraf ? ` versi ${k.versiDraf}` : ""}.` : c;
+    }
     ctx.status.isi = s;
     ctx.catatan.isi = k.terisi === true ? `Putusan sudah terisi di SIPP${k.rincianTerisi || ""} - tidak ditimpa dari sini.` : c;
     [s, c] = awal("putusan", k.adaPutusan);
@@ -225,6 +277,14 @@
         ctx.pilih.isi = false;
       } else {
         ctx.keadaan.terisi = k ? false : null;
+      }
+      // Sumber isian Putusan Akhir (baca saja): tanpa draf ALETA, berkas putusan di panel ini yang dibaca.
+      if (ctx.keadaan.terisi !== true) {
+        const dr = await cekDraf(nomor);
+        if (!ctx || ctx.nomor !== nomor) return;
+        ctx.keadaan.draf = dr.ada;
+        ctx.keadaan.versiDraf = dr.ada ? dr.versi : null;
+        ctx.keadaan.sebabDraf = dr.ada ? "" : dr.sebab || "";
       }
       const mod = globalThis.aletaPutusanEdoc;
       const cariId = fungsi("a30PerkaraIdUntukAbt");
@@ -278,10 +338,12 @@
     if (e.tolak) {
       e.status = "ditolak";
       ctx.berkas = e;
+      segarkanStatusAwal();
       render();
       return;
     }
     ctx.berkas = e;
+    segarkanStatusAwal();
     render();
     const nomor = ctx.nomor;
     const deteksi = globalThis.aletaDeteksiSisa;
@@ -297,6 +359,7 @@
       if (!lanjut) {
         e.status = "ditolak";
         e.tolak = "dibatalkan karena masih ada sisa blangko";
+        segarkanStatusAwal();
         render();
         return;
       }
@@ -323,12 +386,14 @@
       e.rtf = file;
     }
     e.status = "ok";
+    if (!ctx.sibuk) segarkanStatusAwal();
     render();
   }
 
   function buangBerkas() {
     if (!ctx || ctx.sibuk) return;
     ctx.berkas = null;
+    segarkanStatusAwal();
     render();
   }
 
@@ -360,12 +425,17 @@
     // Tempat unggah berkas putusan (opsional): seret atau pilih; dipakai untuk e-Doc putusan dan anonimisasi.
     const berkasWadah = el("div", "aleta-pusipp-berkas");
     berkasWadah.setAttribute("data-pusipp", "berkas");
-    berkasWadah.append(el("h3", "aleta-pusipp-berkas-judul", "Berkas putusan untuk e-Doc"));
+    berkasWadah.append(el("h3", "aleta-pusipp-berkas-judul", "Berkas putusan"));
     const zona = el("div", "aleta-pusipp-zona");
     zona.setAttribute("data-pusipp", "zona");
     zona.append(
       el("strong", "", "Seret berkas putusan ke sini, atau pilih"),
-      el("span", "aleta-pusipp-zona-bantu", "RTF, DOCX, DOC, atau PDF · paling besar 10 MB · dipakai untuk e-Doc putusan dan e-Doc anonimisasi. Tanpa berkas, putusan dicetak dari Blangko Derry di ABT.")
+      el(
+        "span",
+        "aleta-pusipp-zona-bantu",
+        "RTF, DOCX, DOC, atau PDF · paling besar 10 MB · dibaca untuk mengisi Putusan Akhir dan dipakai untuk e-Doc putusan dan e-Doc anonimisasi. " +
+          "Tanpa berkas: isian dari draf putusan ALETA, e-Doc dicetak dari Blangko Derry di ABT."
+      )
     );
     const pilihBerkas = document.createElement("input");
     pilihBerkas.type = "file";
@@ -506,14 +576,17 @@
       semua.disabled = ctx.sibuk;
     }
     const ringkas = akar.querySelector(".aleta-pusipp-ringkas");
+    const tanpaSumber = tanpaSumberIsi();
     ringkas.textContent = ctx.sibuk
       ? "Sedang bekerja - jangan menutup atau memuat ulang halaman ini."
       : r.total === 0
         ? "Tidak ada yang perlu dikerjakan - yang dicentang sudah ada di SIPP."
-        : `${r.isi ? "1 Putusan Akhir akan diisi dan disimpan" : "Putusan Akhir tidak diisi"} · ${r.edoc} e-Doc akan diunggah${berkasSiap() && r.edoc ? " dari berkas yang dipilih" : ""}`;
+        : tanpaSumber
+          ? "Pilih berkas putusan lebih dulu: belum ada draf putusan ALETA untuk mengisi Putusan Akhir."
+          : `${r.isi ? `1 Putusan Akhir akan diisi dan disimpan${berkasSiap() ? " dari berkas yang dipilih" : ""}` : "Putusan Akhir tidak diisi"} · ${r.edoc} e-Doc akan diunggah${berkasSiap() && r.edoc ? " dari berkas yang dipilih" : ""}`;
     const utama = akar.querySelector("[data-pusipp='utama']");
     const berkasBelum = Boolean(ctx.berkas && (ctx.berkas.status === "periksa" || ctx.berkas.status === "ubah"));
-    utama.disabled = ctx.sibuk || r.total === 0 || !ctx.dibaca || berkasBelum;
+    utama.disabled = ctx.sibuk || r.total === 0 || !ctx.dibaca || berkasBelum || tanpaSumber;
 
     const wadahKonfirm = akar.querySelector(".aleta-pusipp-konfirm-wadah");
     wadahKonfirm.textContent = "";
@@ -522,7 +595,7 @@
       kotak.setAttribute("role", "alertdialog");
       kotak.setAttribute("aria-label", "Konfirmasi");
       const bagian = [];
-      if (r.isi) bagian.push("mengisi dan menyimpan 1 Putusan Akhir dari draf");
+      if (r.isi) bagian.push(`mengisi dan menyimpan 1 Putusan Akhir dari ${berkasSiap() ? `berkas ${berkasSiap().nama}` : "draf putusan ALETA"}`);
       if (r.edoc) bagian.push(`mengunggah ${r.edoc} e-Doc (${[r.putusan ? "putusan" : "", r.anonim ? "anonimisasi" : ""].filter(Boolean).join(" dan ")})`);
       kotak.appendChild(el("p", "aleta-pusipp-konfirm-teks", `Akan ${bagian.join(", lalu ")} untuk perkara ${ctx.nomor}.`));
       kotak.appendChild(
@@ -550,7 +623,7 @@
 
   function mintaKonfirmasi() {
     if (!ctx || ctx.sibuk || !ctx.dibaca) return;
-    if (rencana().total === 0) return;
+    if (rencana().total === 0 || tanpaSumberIsi()) return;
     ctx.konfirm = true;
     render();
     const ya = ctx.akar && ctx.akar.querySelector("[data-pusipp='ya']");
@@ -581,7 +654,7 @@
   async function jalankan() {
     if (!ctx || ctx.sibuk || !ctx.dibaca) return;
     const r = rencana();
-    if (r.total === 0) return;
+    if (r.total === 0 || tanpaSumberIsi()) return;
     const nomor = ctx.nomor;
     ctx.sibuk = true;
     ctx.konfirm = false;
@@ -595,14 +668,31 @@
       if (!mod) throw new Error("Pengunggah e-Doc belum termuat di halaman ini");
       if (r.isi) {
         // Isi & simpan: alur panel ekstensi yang SAMA.
+        const gagalSemua = (sebab) => {
+          setStatus("isi", "gagal", sebab);
+          if (r.putusan) setStatus("putusan", "gagal", TIDAK_DIKERJAKAN);
+          if (r.anonim) setStatus("anonim", "gagal", TIDAK_DIKERJAKAN);
+        };
+        const berkasIsi = berkasSiap();
+        // 21 Okt 2026: sumber isian diperiksa SEBELUM blangko dibuka. Dulu blangko dibuka lebih dulu, lalu alur
+        // berhenti di "Belum ada draf" tanpa mengisi apa pun (yang terlihat petugas: borang terbuka, kosong).
+        if (!berkasIsi) {
+          setStatus("isi", "jalan", "Memeriksa draf putusan ALETA…");
+          const dr = await cekDraf(nomor);
+          if (!ctx || ctx.nomor !== nomor) return;
+          ctx.keadaan.draf = dr.ada;
+          ctx.keadaan.versiDraf = dr.ada ? dr.versi : null;
+          if (dr.ada === false) {
+            gagalSemua(sebabTanpaSumber());
+            return;
+          }
+        }
         setStatus("isi", "jalan", "Membuka blangko Putusan Akhir…");
         const buka = fungsi("s1BukaBlangkoPutusan");
         if (!buka) throw new Error("Pembuka blangko Putusan Akhir belum termuat");
         const b = await buka();
         if (!b.ok) {
-          setStatus("isi", "gagal", b.pesan);
-          if (r.putusan) setStatus("putusan", "gagal", "Tidak dikerjakan - Putusan Akhir belum tersimpan.");
-          if (r.anonim) setStatus("anonim", "gagal", "Tidak dikerjakan - Putusan Akhir belum tersimpan.");
+          gagalSemua(b.pesan);
           return;
         }
         const gambarUlang = fungsi("gambarUlangSesudahBlangko");
@@ -618,26 +708,32 @@
           100
         );
         if (!bagianOto) {
-          setStatus("isi", "gagal", "Blangko terbuka, tetapi bagian Putusan otomatis di panel tidak termuat (tampilan, kewenangan peran, atau putusan sudah terisi).");
-          if (r.putusan) setStatus("putusan", "gagal", "Tidak dikerjakan - Putusan Akhir belum tersimpan.");
-          if (r.anonim) setStatus("anonim", "gagal", "Tidak dikerjakan - Putusan Akhir belum tersimpan.");
+          gagalSemua(
+            "Blangko Putusan Akhir terbuka, tetapi bagian Putusan otomatis di panel ALETA tidak termuat dalam 15 detik, jadi tidak ada yang diisikan. " +
+              "Muat ulang data perkara dari menu ⋯ panel ALETA (atau muat ulang halaman), lalu jalankan lagi - blangko yang sudah terbuka dipakai."
+          );
           return;
         }
-        setStatus("isi", "jalan", "Mengambil draf, memeriksa, mengisi, dan menyimpan…");
+        setStatus(
+          "isi",
+          "jalan",
+          berkasIsi ? `Membaca berkas ${berkasIsi.nama}, memeriksa, mengisi, dan menyimpan…` : "Mengambil draf, memeriksa, mengisi, dan menyimpan…"
+        );
         const h = await bagianOto.otomatis({
           edoc: r.edoc > 0,
           denganPutusan: r.putusan > 0,
           denganAnonim: r.anonim > 0,
-          // Berkas yang dipilih di panel ini menjadi e-Doc putusan dan bahan anonimisasi (tanpa berkas: dicetak dari ABT).
-          putusan: berkasSiap() ? berkasSiap().file : null,
-          putusanRtf: berkasSiap() ? berkasSiap().rtf : null,
+          // 21 Okt 2026: berkas yang dipilih di panel ini DIBACA untuk mengisi Putusan Akhir (naskah) dan menjadi
+          // e-Doc putusan serta bahan anonimisasi. Tanpa berkas: isian dari draf ALETA, e-Doc dicetak dari ABT.
+          naskah: berkasIsi ? berkasIsi.file : null,
+          naskahRtf: berkasIsi ? berkasIsi.rtf : null,
+          putusan: berkasIsi ? berkasIsi.file : null,
+          putusanRtf: berkasIsi ? berkasIsi.rtf : null,
           // Kotak muat ulang melayang di halaman: panel ini dapat tergambar ulang saat SIPP menyegarkan isinya.
           melayang: true,
         });
         if (!h || !h.tersimpan) {
-          setStatus("isi", "gagal", sebaris((h && h.pesan) || (h && h.bunyi) || "Pengisian berhenti sebelum Simpan."));
-          if (r.putusan) setStatus("putusan", "gagal", "Tidak dikerjakan - Putusan Akhir belum tersimpan.");
-          if (r.anonim) setStatus("anonim", "gagal", "Tidak dikerjakan - Putusan Akhir belum tersimpan.");
+          gagalSemua(sebaris((h && h.pesan) || (h && h.bunyi) || "Pengisian berhenti sebelum Simpan."));
           return;
         }
         setStatus("isi", "ok", "Tersimpan di SIPP.");
@@ -646,8 +742,9 @@
           if (langkah.length) terapkanLangkahEdoc(langkah);
           else {
             const ok = Boolean(h.edoc && h.edoc.ok);
-            if (r.putusan) setStatus("putusan", ok ? "ok" : "gagal", ok ? "terunggah" : (h.edoc && h.edoc.bunyi) || "tidak terunggah");
-            if (r.anonim) setStatus("anonim", ok ? "ok" : "gagal", ok ? "terunggah" : (h.edoc && h.edoc.bunyi) || "tidak terunggah");
+            const sebab = (h.edoc && h.edoc.bunyi) || "tidak ada laporan dari pengunggah e-Doc (Putusan Akhir sudah tersimpan; ulangi unggah e-Doc saja dari panel ini)";
+            if (r.putusan) setStatus("putusan", ok ? "ok" : "gagal", ok ? "terunggah" : sebab);
+            if (r.anonim) setStatus("anonim", ok ? "ok" : "gagal", ok ? "terunggah" : sebab);
           }
         }
         // Muat ulang tetap di perkara: sudah dijadwalkan alur panel (kotak melayang) bersama laporannya.
@@ -738,13 +835,9 @@
       b.addEventListener("click", () => {
         if (!ctx) return;
         ctx.terbuka = !ctx.terbuka;
-        ctx.lipatDibaca = true;
-        const lipat = !ctx.terbuka;
-        void bacaPenyimpanan([KUNCI_LIPAT]).then((s) => {
-          const lip = s && s[KUNCI_LIPAT] && typeof s[KUNCI_LIPAT] === "object" ? s[KUNCI_LIPAT] : {};
-          void tulisPenyimpanan({ [KUNCI_LIPAT]: { ...lip, [KUNCI_LIPAT_PANEL]: lipat } });
-        });
-        pasangPanel(tr);
+        ingatTerbuka(ctx.nomor, ctx.terbuka);
+        const baris = barisTombol(document) || tr;
+        pasangPanel(baris);
       });
       td.appendChild(b);
     }
@@ -802,17 +895,9 @@
     if (!ctx || ctx.nomor !== nomor) {
       if (d.querySelector(".aleta-pusipp")) bersihkan(d);
       ctx = buatCtx(nomor);
-      void bacaPenyimpanan([KUNCI_LIPAT]).then((simpan) => {
-        if (!ctx || ctx.nomor !== nomor) return;
-        const lip = simpan && simpan[KUNCI_LIPAT] && typeof simpan[KUNCI_LIPAT] === "object" ? simpan[KUNCI_LIPAT] : {};
-        // Bawaan TERLIPAT (21 Okt 2026); hanya yang sengaja dibuka petugas (false) yang terbuka lagi.
-        if (lip[KUNCI_LIPAT_PANEL] === false && !ctx.lipatDibaca) {
-          ctx.terbuka = true;
-          const baris = barisTombol(document);
-          if (baris) pasangPanel(baris);
-        }
-        ctx.lipatDibaca = true;
-      });
+      // Bawaan TERLIPAT; terbuka lagi HANYA bila petugas membukanya pada kunjungan halaman yang sama
+      // (mis. SIPP menyegarkan isi halaman tanpa berpindah). Muat ulang / kembali ke halaman = terlipat.
+      ctx.terbuka = terbukaTersimpan(nomor);
     }
     pasangTombol(tr);
     pasangPanel(tr);
