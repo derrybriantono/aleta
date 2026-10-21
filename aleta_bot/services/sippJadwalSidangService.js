@@ -178,6 +178,8 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
             -- "SIDANG IKRAR TALAK", "Sidank Ikrar Talak", "sidang ikrar ",
             -- "penyaksian ikrar talak", "Pengucapan Ikrar".
             j.ikrar_talak         AS ikrarTalak,
+            -- 22 Okt 2026: bendera sidang keliling SIPP - dasar pop-up Sidang keliling di portal.
+            j.sidang_keliling     AS sidangKeliling,
             j.urutan              AS urutanSidang,
             -- 1 semua pihak, 2 penggugat saja, 3 tergugat saja, 4 tidak hadir.
             j.dihadiri_oleh       AS dihadiriOleh,
@@ -450,6 +452,8 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
       // Sidang penyaksian ikrar talak, menurut bendera SIPP sendiri. Lihat
       // catatan panjang di kuerinya - agendanya tidak dapat dipakai menebak.
       sidangIkrarTalak: cleanText(row.ikrarTalak).toUpperCase() === "Y",
+      // 22 Okt 2026: bendera SIPP sidang_keliling = 'Y' (portal: pop-up Sidang keliling bila mayoritas di luar gedung).
+      sidangKeliling: cleanText(row.sidangKeliling).toUpperCase() === "Y",
       // Sidang yang ikrarnya SUDAH tercatat di perkara_ikrar_talak pada
       // tanggal sidang ini - hasil sidangnya ada walau alasan_ditunda kosong
       // atau "0" (26 dari 33 sidang ikrar beralasan kosong, Jan 2025 - Sep

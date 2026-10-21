@@ -675,6 +675,24 @@ export const AKSI = {
     rute: ["POST /api/aleta-ecourt/keterangan-perkara"],
     alasan: "Catatan kerja petugas yang menangani perkara.",
   },
+  // 22 Okt 2026 (permintaan hakim): saklar Sidang keliling per tanggal dan
+  // pilihan SATU hakim yang menyidangkan per perkara - keduanya hanya di ALETA.
+  "sidang.keliling": {
+    label: "Nyalakan / matikan Sidang keliling per tanggal",
+    crud: "CU",
+    golongan: ["pimpinan", "hakim", "panitera", "pp"],
+    lingkup: "semua",
+    rute: ["PUT /api/aleta-ecourt/sidang/keliling"],
+    alasan: "Hari sidang keliling diketahui majelis dan panitera sidang yang berangkat; pada hari itu tunda otomatis berjalan lebih awal.",
+  },
+  "sidang.pilih-hakim": {
+    label: "Pilih hakim yang menyidangkan per perkara",
+    crud: "CUD",
+    golongan: ["pimpinan", "hakim", "pp"],
+    lingkup: "semua",
+    rute: ["PUT|DELETE /api/aleta-ecourt/sidang/hakim-sidang"],
+    alasan: "Satu hakim menyidangkan perkara pada hari itu (mis. sidang keliling); dipilih majelis, pimpinan, atau panitera sidang. Konseptor sementara ikut diisi hakim itu.",
+  },
   "sidang.konseptor": {
     label: "Tunjuk konseptor sementara",
     crud: "CU",

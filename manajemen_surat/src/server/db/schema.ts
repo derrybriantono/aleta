@@ -1032,6 +1032,45 @@ export const DDL_MEDIASI_ARSIP = {
 } as const;
 
 /**
+ * Sidang keliling per hari & hakim yang menyidangkan per perkara (0083, 22 Okt
+ * 2026). Cermin PERSIS dari drizzle/0083_aleta_sidang_keliling_hakim.sql;
+ * penjaga jadwal-keliling-hakim-massal-22okt.test.ts membandingkan keduanya.
+ * Tanpa kunci asing. Tidak ada yang ditulis ke SIPP dari tabel ini.
+ */
+export const DDL_SIDANG_KELILING_HAKIM = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_sidang_keliling_hari (
+  tanggal TEXT PRIMARY KEY,
+  aktif INTEGER NOT NULL DEFAULT 0,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_nama TEXT NOT NULL DEFAULT '',
+  diubah_pada TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_hakim_sidang_perkara (
+  id TEXT PRIMARY KEY,
+  tanggal TEXT NOT NULL,
+  perkara_id TEXT NOT NULL,
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  sidang_id TEXT NOT NULL DEFAULT '',
+  hakim_id TEXT NOT NULL DEFAULT '',
+  hakim_nama TEXT NOT NULL,
+  hakim_kode TEXT NOT NULL DEFAULT '',
+  anggota_majelis INTEGER NOT NULL DEFAULT 0,
+  panitera_nama TEXT NOT NULL DEFAULT '',
+  konseptor_diisi INTEGER NOT NULL DEFAULT 0,
+  konseptor_sebelum TEXT NOT NULL DEFAULT '',
+  dipilih_oleh TEXT NOT NULL DEFAULT '',
+  dipilih_nama TEXT NOT NULL DEFAULT '',
+  waktu TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_hakim_sidang_perkara_kunci ON aleta_hakim_sidang_perkara(tanggal, perkara_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_hakim_sidang_perkara_tanggal ON aleta_hakim_sidang_perkara(tanggal, hakim_nama)`,
+  ],
+} as const;
+
+/**
  * SKP jabatan perkara (0070, 17 Okt 2026, rancangan disetujui pengguna):
  * pemetaan akun SIPP ke pegawai (bertanggal), target, isian manual, dan
  * tangkapan realisasi yang dikunci. Cermin PERSIS dari
@@ -2136,6 +2175,8 @@ const schemaStatements = [
   ...DDL_PUTUSAN_TERJADWAL.tabel,
   // Arsip hasil mediasi per perkara (0081).
   ...DDL_MEDIASI_ARSIP.tabel,
+  // Sidang keliling per hari & hakim yang menyidangkan per perkara (0083).
+  ...DDL_SIDANG_KELILING_HAKIM.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -4087,6 +4128,7 @@ const indexStatements = [
   ...DDL_ALETA_AI.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
+  ...DDL_SIDANG_KELILING_HAKIM.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.

@@ -39,6 +39,7 @@ import {
   Smartphone,
   StickyNote,
   UserRound,
+  Users,
 } from "lucide-react";
 
 import { AletaEcourtCetakJadwal } from "@/components/portal/aleta-ecourt-cetak-jadwal";
@@ -198,6 +199,16 @@ import { bahanKehadiranDariBaris, kunciKehadiran, ringkasKehadiran, susunKehadir
 import { DaftarHadirRinci, RingkasKehadiran, daftarPilihanHadir, type PilihanHadir } from "@/components/portal/kehadiran-rinci-sidang"; /* F3.2 */
 import { EcourtAksiPerkara, EcourtLencanaPutusan } from "@/components/portal/ecourt-aksi-perkara";
 import { bolehAksi, saringSaklarSidang, type PenggunaGolongan } from "@/lib/matriks-peran";
+/* 22 Okt 2026: sidang keliling, hakim per perkara, meja panitera sidang, cetak per hakim */
+import {
+  MejaPaniteraSidang,
+  NamaHakimMenyidangkan,
+  PemilihHakimBaris,
+  PilihanCetak,
+  SaklarSidangKeliling,
+  useKelilingHakim,
+} from "@/components/portal/jadwal-keliling-hakim";
+import { adaPilihanHakim, kelompokPerHakim, majelisTampil } from "@/lib/jadwal-keliling-hakim";
 import {
   AGENDA_ELITIGASI,
   AGENDA_MUSYAWARAH,
@@ -341,6 +352,8 @@ type SidangBaris = {
   ruangan: string;
   ditunda: boolean;
   alasanDitunda: string;
+  /** 22 Okt 2026: bendera SIPP sidang_keliling = 'Y' (bot 22 Okt ke atas) - dasar pop-up Sidang keliling. */
+  sidangKeliling?: boolean;
   /**
    * Sidang penyaksian ikrar talak, dari kolom `ikrar_talak` milik SIPP.
    *
@@ -4872,6 +4885,15 @@ export function AletaEcourtSidang({
     [modeUrl, tampilanPilihan, currentUser]
   );
   const bolehJalannya = bolehAksi(currentUser, "sidang.jalannya");
+  // 22 Okt 2026: Sidang keliling per tanggal, hakim per perkara, meja panitera
+  // sidang (tunda/putus massal), cetak per hakim - hanya untuk SATU tanggal dan
+  // bukan di tampilan lewat alamat. Lihat jadwal-keliling-hakim.tsx.
+  const satuTanggalJadwal = dari === sampai;
+  const kh = useKelilingHakim({ tanggal: dari, nyala: satuTanggalJadwal && !modeUrl && Boolean(currentUser) });
+  const bolehTundaPutusMassal = bolehAksi(currentUser, "sidang.tunda-putus");
+  const [mejaPp, setMejaPp] = useState(false);
+  const [pilihCetak, setPilihCetak] = useState(false);
+  const [cetakPerHakim, setCetakPerHakim] = useState(false);
   /* === AKHIR HAK-PERAN === */
   /* === 12OKT-B: saklar penanda perkara & pihak, panggil saksi === */
   const aktifPenandaPerkara = tampil(tampilan, "penanda-perkara");
@@ -6840,15 +6862,60 @@ export function AletaEcourtSidang({
               {tampil(tampilan, "layar-antrian") ? <MenuLayarAntrian /> : null}
 
               {tampil(tampilan, "cetak") ? (
+              <div className="relative">
               <Button
                 size="sm"
                 variant="outline"
                 disabled={sidang.length === 0}
-                onClick={() => setSedangCetak(true)}
+                onClick={() => {
+                  // 22 Okt 2026: ada hakim per perkara -> tawarkan cetak per hakim.
+                  if (adaPilihanHakim(sidangTampil, kh.pilihan)) setPilihCetak((b) => !b);
+                  else {
+                    setCetakPerHakim(false);
+                    setSedangCetak(true);
+                  }
+                }}
+                aria-expanded={pilihCetak}
               >
                 <Printer className="mr-1.5 h-4 w-4" />
                 Cetak
               </Button>
+              {pilihCetak ? (
+                <PilihanCetak
+                  jumlahBagian={kelompokPerHakim(sidangTampil, kh.pilihan).length}
+                  onTutup={() => setPilihCetak(false)}
+                  onPerHakim={() => {
+                    setPilihCetak(false);
+                    setCetakPerHakim(true);
+                    setSedangCetak(true);
+                  }}
+                  onGabungan={() => {
+                    setPilihCetak(false);
+                    setCetakPerHakim(false);
+                    setSedangCetak(true);
+                  }}
+                />
+              ) : null}
+              </div>
+              ) : null}
+
+              {/* 22 Okt 2026: Sidang keliling (saklar per tanggal) dan meja per
+                  panitera sidang - TERPISAH dari Layar antrian. */}
+              {!modeUrl && satuTanggalJadwal ? (
+                <SaklarSidangKeliling kh={kh} daftar={sidang} penggunaId={String(currentUser?.id ?? "")} />
+              ) : null}
+              {!modeUrl && satuTanggalJadwal && kh.keliling && (kh.bolehHakim || bolehTundaPutusMassal) && sidang.length > 0 ? (
+                <Button
+                  size="sm"
+                  variant={mejaPp ? "default" : "outline"}
+                  aria-pressed={mejaPp}
+                  data-tombol-meja-pp=""
+                  onClick={() => setMejaPp((b) => !b)}
+                  title="Pilih hakim, tunda massal, atau keterangan putus massal untuk semua perkara satu panitera sidang"
+                >
+                  <Users className="mr-1.5 h-4 w-4" />
+                  Per panitera sidang
+                </Button>
               ) : null}
 
               {/* Cetak relaas panggilan dan pemberitahuan putusan yang lahir
@@ -6926,6 +6993,17 @@ export function AletaEcourtSidang({
               </div>
             ) : null}
           </div>
+
+          {mejaPp && !modeUrl && satuTanggalJadwal && kh.keliling ? (
+            <MejaPaniteraSidang
+              daftar={sidang}
+              kh={kh}
+              sudahHasil={sidangSelesaiHariIni}
+              bolehTundaPutus={bolehTundaPutusMassal}
+              onSelesai={() => void muatTanggal(dari, sampai, nilaiKesiapan)}
+              onTutup={() => setMejaPp(false)}
+            />
+          ) : null}
 
           {/* === 12OKT-C: kartu ruang sidang (butir 3) ===
               Sejak 19 Okt 2026 (JADWAL-3 butir 3) kartu ruang tidak lagi
@@ -8330,6 +8408,12 @@ export function AletaEcourtSidang({
                                 <NamaDapatDipanggil golongan="majelis" {...konteksPanggil}>
                                   <span className={cn(KELAS_KODE_MAJELIS, "text-foreground")}>{baris.majelisKode}</span>
                                 </NamaDapatDipanggil>
+                                {majelisTampil(baris, kh.pilihan).diganti ? (
+                                  <>
+                                    {" "}
+                                    <NamaHakimMenyidangkan baris={baris} pilihan={kh.pilihan} />
+                                  </>
+                                ) : null}
                               </span>
                             ) : null}
                             {baris.paniteraNama ? (
@@ -8872,7 +8956,11 @@ export function AletaEcourtSidang({
                             <span className={KELAS_LENCANA_KODE_MAJELIS}>
                               {baris.majelisKode || "—"}
                             </span>
-                            {baris.majelisNama ? (
+                            {/* 22 Okt 2026: hakim yang menyidangkan menggantikan
+                                nama majelis; KODE majelis di sebelahnya tetap. */}
+                            {majelisTampil(baris, kh.pilihan).diganti ? (
+                              <NamaHakimMenyidangkan baris={baris} pilihan={kh.pilihan} />
+                            ) : baris.majelisNama ? (
                               <span
                                 className="min-w-0 break-words text-muted-foreground"
                                 title={baris.majelisNama}
@@ -8880,6 +8968,7 @@ export function AletaEcourtSidang({
                                 <NamaDapatDipanggil golongan="majelis" {...konteksPanggil}>{baris.majelisNama}</NamaDapatDipanggil>
                               </span>
                             ) : null}
+                            {!modeUrl && satuTanggalJadwal ? <PemilihHakimBaris baris={baris} kh={kh} /> : null}
                           </div>
 
                           {/* JADWAL-3 tambahan A (19 Okt 2026): PP dan JS
@@ -9422,7 +9511,16 @@ export function AletaEcourtSidang({
             lain sebagai daftar yang benar. */}
         {sedangCetak ? (
           <AletaEcourtCetakJadwal
-            sidang={sidangTampil}
+            /* 22 Okt 2026: nama majelis diganti hakim yang menyidangkan (kode tetap). */
+            sidang={sidangTampil.map((b) => ({ ...b, majelisNama: majelisTampil(b, kh.pilihan).nama }))}
+            bagianHakim={
+              cetakPerHakim
+                ? kelompokPerHakim(
+                    sidangTampil.map((b) => ({ ...b, majelisNama: majelisTampil(b, kh.pilihan).nama })),
+                    kh.pilihan
+                  )
+                : undefined
+            }
             antrian={antrian.peta}
             catatanSaringan={
               sidangTampil.length === sidang.length

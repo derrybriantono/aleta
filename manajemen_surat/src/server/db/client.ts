@@ -411,6 +411,9 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // 21 Oktober 2026 (0081): arsip hasil mediasi per perkara.
   "aleta_mediasi_berkas",
   "aleta_mediasi_berkas_jejak",
+  // 22 Oktober 2026 (0083): saklar sidang keliling per hari + hakim yang menyidangkan per perkara.
+  "aleta_sidang_keliling_hari",
+  "aleta_hakim_sidang_perkara",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",
