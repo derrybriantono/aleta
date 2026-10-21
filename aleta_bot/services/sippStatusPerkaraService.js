@@ -208,7 +208,7 @@ const RELAAS_SYARAT = {
     `EXISTS (SELECT 1 FROM perkara_pelaksanaan_relaas r
               WHERE r.perkara_id = p.perkara_id AND r.ket_temu IN ('R', 'M', 'W', 'P'))`,
   bertemu:
-    "EXISTS (SELECT 1 FROM perkara_pelaksanaan_relaas r WHERE r.perkara_id = p.perkara_id AND r.ket_temu = 'Y')",
+    "EXISTS (SELECT 1 FROM perkara_pelaksanaan_relaas r WHERE r.perkara_id = p.perkara_id AND r.ket_temu IN ('Y', 'E'))",
   // Belum ada satu pun relaas tercatat - beda dengan relaas yang dikembalikan.
   tanpa_relaas:
     "NOT EXISTS (SELECT 1 FROM perkara_pelaksanaan_relaas r WHERE r.perkara_id = p.perkara_id)",

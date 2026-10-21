@@ -257,6 +257,16 @@ function getFetchResultText(input: FetchInput, init: FetchInit | undefined, ok: 
   };
 }
 
+/**
+ * Halaman Jadwal Sidang / Jadwal Mediasi (21 Okt 2026): membukanya tidak
+ * memunculkan kotak "ALETA sedang membuka halaman" - isinya tampil begitu
+ * datanya siap, dan hanya kegagalan yang diberi pesan. Halaman lain tidak
+ * berubah.
+ */
+export function tanpaLayarMuatNavigasi(url: URL): boolean {
+  return /^(\/aleta)?\/aleta-ecourt\/?$/.test(url.pathname);
+}
+
 function getNavigationTarget(event: MouseEvent) {
   if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
     return null;
@@ -550,6 +560,7 @@ export function GlobalLoadingProvider({ children }: { children: ReactNode }) {
     const handleDocumentClick = (event: MouseEvent) => {
       const url = getNavigationTarget(event);
       if (!url) return;
+      if (tanpaLayarMuatNavigasi(url)) return;
 
       stopCurrentNavigation();
       stopNavigationLoading = startLoading({

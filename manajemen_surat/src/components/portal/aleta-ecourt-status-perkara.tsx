@@ -113,6 +113,7 @@ import { BannerGangguan } from "@/components/portal/banner-gangguan";
 import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import { cn } from "@/lib/utils";
 import { kelasTulisanPutusan, warnaStatusPutusan } from "@/lib/warna-putusan";
+import { relaasElektronik } from "@/lib/hasil-relaas";
 
 /**
  * Status satu perkara.
@@ -6926,7 +6927,11 @@ function BarisRelaas({
       {/* Bertemu orangnya atau tidak - inilah yang menentukan panggilan sah
           disampaikan langsung, atau lewat kepala desa. Diam berarti tidak
           tercatat, dan itu berbeda dari "tidak bertemu". */}
-      {relaas.caraRelaas?.cara ? (
+      {relaasElektronik(relaas) ? (
+        <Badge variant="success" title="Panggilan elektronik dianggap bertemu.">
+          Panggilan elektronik - bertemu
+        </Badge>
+      ) : relaas.caraRelaas?.cara ? (
         // ====================================================================
         // CARANYA DARI SANDI SIPP, BUKAN DARI "BUKAN BERTEMU"
         // ====================================================================

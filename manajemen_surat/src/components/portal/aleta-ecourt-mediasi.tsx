@@ -19,6 +19,7 @@
  * muncul di mana pun pada SIPP.
  */
 
+import { useOverlayHanyaGagal } from "@/lib/global-loading";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -817,6 +818,8 @@ export function AletaEcourtMediasi({
    */
   pengguna?: (PenggunaHasilMediasi & { namaPengadilan?: string }) | null;
 } = {}) {
+  // 21 Okt 2026: lapisan memuat/berhasil tidak muncul di jadwal; hanya yang GAGAL.
+  useOverlayHanyaGagal();
   // HAK-PERAN 12 Okt: catat kehadiran/status mediasi hanya golongan mediasi.catat.
   const penggunaAktif = usePenggunaAktifOpsional();
   const bolehCatatMediasi = bolehAksiLayar(penggunaAktif, "mediasi.catat");
@@ -1156,6 +1159,17 @@ export function AletaEcourtMediasi({
         {pesan ? (
           <p className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
             <span className="min-w-0 flex-1">{pesan}</span>
+            <button
+              type="button"
+              data-jadwal-coba-lagi=""
+              onClick={() => {
+                setPesan("");
+                void cobaLagiMediasi.cobaSekarang();
+              }}
+              className="shrink-0 rounded border border-amber-400 px-2 py-0.5 text-xs font-medium transition hover:bg-amber-100 dark:hover:bg-amber-900/40"
+            >
+              Coba lagi
+            </button>
             <TombolTutupPesan onTutup={() => setPesan("")} />
           </p>
         ) : null}

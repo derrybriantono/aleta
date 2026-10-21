@@ -968,7 +968,7 @@ async function analisaPanggilan(id) {
     Y: "bertemu langsung",
     S: "surat tercatat",
     T: "tidak bertemu, diteruskan lewat pemerintah desa",
-    E: "elektronik ke kuasa",
+    E: "elektronik (dianggap bertemu)",
     R: "radio",
     M: "media massa cetak/elektronik",
     W: "web/papan pengumuman pengadilan",
