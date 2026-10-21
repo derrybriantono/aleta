@@ -1,0 +1,35 @@
+SNAP awal   : 2441	18f066120122b6f95ecd306585d75401 RTF 9a7be97088b2c443926bbd69ad486ef2
+== 1. PASANG
+PRASYARAT COCOK (0|0|84|0|27|0)
+RTF RINGKAS COCOK=22 SUDAH=0 LEWAT=0
+CADANGAN: paket-satker/cadangan/abt_variabel-sebelum.sql (84 baris lama)
+SEMUA COCOK
+RINGKAS DITAMBAL=22 SUDAH=0 LEWAT=0
+RTF RINGKAS COCOK=0 SUDAH=22 LEWAT=0
+SELESAI - paket abt-x4-tuntutan-perluasan-21okt terpasang. Cadangan: paket-satker/cadangan. Pulih: bash /d/aleta-dev/wt/w26/abt-paket/x4-tuntu
+SNAP pasang : 2476	20f71ea1d0ec1791e0af2a590f82bd7e RTF cdef956bad93fc1985bfe4351a1c8bc8
+== 2. PERIKSA
+SEMUA COCOK
+== 3. pasang ulang
+PRASYARAT COCOK (0|35|0|84|27|0)
+RTF RINGKAS COCOK=0 SUDAH=22 LEWAT=0
+PASANG ULANG: cadangan isi lama dibiarkan
+SEMUA COCOK
+RTF RINGKAS COCOK=0 SUDAH=22 LEWAT=0
+SELESAI - paket abt-x4-tuntutan-perluasan-21okt terpasang. Cadangan: paket-satker/cadangan. Pulih: bash paket-satker/pulih-satker.sh
+SNAP ulang  : 2476	20f71ea1d0ec1791e0af2a590f82bd7e RTF cdef956bad93fc1985bfe4351a1c8bc8
+== 4. PULIH
+RTF RINGKAS PULIH=22 DILEWATI=0
+PULIH COCOK
+SNAP pulih  : 2441	18f066120122b6f95ecd306585d75401 RTF 9a7be97088b2c443926bbd69ad486ef2
+== 5. PRASYARAT sesudah pulih
+0|0|84|0|27|0
+== 6. pasang lagi
+PRASYARAT COCOK (0|0|84|0|27|0)
+RTF RINGKAS COCOK=22 SUDAH=0 LEWAT=0
+CADANGAN: paket-satker/cadangan/abt_variabel-sebelum.sql (84 baris lama)
+SEMUA COCOK
+RTF RINGKAS COCOK=0 SUDAH=22 LEWAT=0
+SELESAI - paket abt-x4-tuntutan-perluasan-21okt terpasang. Cadangan: paket-satker/cadangan. Pulih: bas
+SNAP lagi   : 2476	20f71ea1d0ec1791e0af2a590f82bd7e RTF cdef956bad93fc1985bfe4351a1c8bc8
+rc=0

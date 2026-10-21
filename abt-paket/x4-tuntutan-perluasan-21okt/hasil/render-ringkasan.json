@@ -1,0 +1,1610 @@
+{
+ "g2-mi-tanpa-tuntutan": {
+  "label": "CT Mut'ah Iddah, petitum cerai saja",
+  "blangko": "1a Perceraian CT/[01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah.rtf",
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 285117 puncak_mem=9699328 kueri_sipp=-1 detik=121.5",
+   "harap_ada": {},
+   "harap_tidak": {}
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 285117 puncak_mem=9961472 kueri_sipp=-1 detik=148.6",
+   "harap_ada": {},
+   "harap_tidak": {},
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": true,
+  "lolos": true
+ },
+ "g2-mi-tuntut-belum": {
+  "label": "CT Mut'ah Iddah, petitum + hak asuh, nafkah anak, madliyah - belum dipilih",
+  "blangko": "1a Perceraian CT/[01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah.rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 291915 puncak_mem=9699328 kueri_sipp=-1 detik=411.5",
+   "harap_ada": {
+    "periksa hak asuh": false,
+    "periksa nafkah anak": false,
+    "periksa madliyah": false
+   },
+   "harap_tidak": {}
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: petitum menuntut hak asuh anak (hadhanah); pilih keputusan majelis pada isian keputusan hak asuh]",
+    "[PERIKSA: petitum menuntut nafkah anak; pilih keputusan majelis pada isian keputusan nafkah anak]",
+    "[PERIKSA: petitum menuntut nafkah madliyah; pilih keputusan majelis pada isian keputusan nafkah madliyah]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 292241 puncak_mem=9961472 kueri_sipp=-1 detik=321.1",
+   "harap_ada": {
+    "periksa hak asuh": true,
+    "periksa nafkah anak": true,
+    "periksa madliyah": true
+   },
+   "harap_tidak": {},
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ },
+ "g2-mi-tuntut-diputus": {
+  "label": "CT Mut'ah Iddah, hak asuh + nafkah anak + madliyah dikabulkan",
+  "blangko": "1a Perceraian CT/[01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah.rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 288005 puncak_mem=9699328 kueri_sipp=-1 detik=408.8",
+   "harap_ada": {
+    "amar hadhanah": false,
+    "amar nafkah anak": false,
+    "amar madliyah": true,
+    "pertimbangan madliyah": true
+   },
+   "harap_tidak": {
+    "periksa": false
+   }
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi kenaikan nafkah anak per tahun, 10% s.d. 20%]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 294373 puncak_mem=10485760 kueri_sipp=-1 detik=319.3",
+   "harap_ada": {
+    "amar hadhanah": true,
+    "amar nafkah anak": true,
+    "amar madliyah": true,
+    "pertimbangan madliyah": true
+   },
+   "harap_tidak": {
+    "periksa": false
+   },
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ },
+ "g2-penjaga-daftar-bawaan": {
+  "label": "CG Format Lengkap, petitum cerai saja, keputusan 4100-4105 dan 4109 tersimpan sebagai DAFTAR bawaan",
+  "blangko": "1 Perceraian CG/[01] [Kabul Verstek] Cerai (Format Lengkap).rtf",
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]",
+    "[PERIKSA: tulis alasan setelah titik dua pada isian keputusan hak asuh]",
+    "[PERIKSA: tulis alasan setelah titik dua pada isian keputusan nafkah anak]",
+    "[PERIKSA: tulis alasan setelah titik dua pada isian keputusan nafkah iddah]",
+    "[PERIKSA: tulis alasan setelah titik dua pada isian keputusan mut'ah]",
+    "[PERIKSA: tulis alasan setelah titik dua pada isian keputusan nafkah madliyah]",
+    "[PERIKSA: tulis alasan setelah titik dua pada isian keputusan harta bersama]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 169128 puncak_mem=8912896 kueri_sipp=-1 detik=266.7",
+   "harap_ada": {},
+   "harap_tidak": {
+    "tidak dapat diterima": true
+   }
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 167730 puncak_mem=8912896 kueri_sipp=-1 detik=441.3",
+   "harap_ada": {},
+   "harap_tidak": {
+    "tidak dapat diterima": false
+   },
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ },
+ "g2-ex-tanpa-tuntutan": {
+  "label": "CT [01a] ex officio, petitum cerai saja",
+  "blangko": "1a Perceraian CT/[01a] [Kabul Verstek] CT - F (Ex Offiicio mutah iddah dan nafkah anak).rtf",
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    1,
+    2,
+    5,
+    6,
+    7
+   ],
+   "nomor_urut": false,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 330488 puncak_mem=10485760 kueri_sipp=-1 detik=398.4",
+   "harap_ada": {},
+   "harap_tidak": {}
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    1,
+    2,
+    5,
+    6,
+    7
+   ],
+   "nomor_urut": false,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 330488 puncak_mem=10485760 kueri_sipp=-1 detik=293",
+   "harap_ada": {},
+   "harap_tidak": {},
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": true,
+  "lolos": true
+ },
+ "g2-ex-madliyah-hadhanah": {
+  "label": "CT [01a] ex officio, petitum + madliyah + hak asuh dikabulkan",
+  "blangko": "1a Perceraian CT/[01a] [Kabul Verstek] CT - F (Ex Offiicio mutah iddah dan nafkah anak).rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    1,
+    2,
+    5,
+    6,
+    7
+   ],
+   "nomor_urut": false,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 332363 puncak_mem=10485760 kueri_sipp=-1 detik=397.2",
+   "harap_ada": {
+    "amar hadhanah": false,
+    "amar madliyah": false
+   },
+   "harap_tidak": {
+    "periksa": false
+   }
+  },
+  "sesudah": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    1,
+    2,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "nomor_urut": false,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 336979 puncak_mem=10485760 kueri_sipp=-1 detik=293.1",
+   "harap_ada": {
+    "amar hadhanah": true,
+    "amar madliyah": true
+   },
+   "harap_tidak": {
+    "periksa": false
+   },
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ },
+ "g2-ni-tanpa-tuntutan": {
+  "label": "CG kumulasi nafkah istri, petitum cerai saja",
+  "blangko": "1 Perceraian CG/[01d] [Kabul Verstek] Cerai (Format Lengkap) - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah).rtf",
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 168250 puncak_mem=8650752 kueri_sipp=-1 detik=289.5",
+   "harap_ada": {},
+   "harap_tidak": {}
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi lama pisah rumah dan sejak kapan pisah rumah agar syarat SEMA 1/2022 (minimal 6 bulan) dapat dinilai]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 168250 puncak_mem=11010048 kueri_sipp=-1 detik=440.7",
+   "harap_ada": {},
+   "harap_tidak": {},
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": true,
+  "lolos": true
+ },
+ "g2-ni-hadhanah": {
+  "label": "CG kumulasi nafkah istri, madliyah (9711) + hak asuh dikabulkan",
+  "blangko": "1 Perceraian CG/[01d] [Kabul Verstek] Cerai (Format Lengkap) - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah).rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 166918 puncak_mem=8650752 kueri_sipp=-1 detik=289.5",
+   "harap_ada": {
+    "amar hadhanah": false,
+    "amar madliyah 9716": true
+   },
+   "harap_tidak": {
+    "periksa": false
+   }
+  },
+  "sesudah": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": true,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 170090 puncak_mem=10747904 kueri_sipp=-1 detik=440.7",
+   "harap_ada": {
+    "amar hadhanah": true,
+    "amar madliyah 9716": true
+   },
+   "harap_tidak": {
+    "periksa": false
+   },
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ },
+ "g2-1d02-tanpa-tuntutan": {
+  "label": "1d [02] kontradiktoir (nomor amar tetap), petitum cerai + hak asuh",
+  "blangko": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02] [Kabul] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir.rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 5,
+   "penanda_sisa": [],
+   "status": "OK 373129 puncak_mem=10747904 kueri_sipp=-1 detik=332.9",
+   "harap_ada": {},
+   "harap_tidak": {}
+  },
+  "sesudah": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 5,
+   "penanda_sisa": [],
+   "status": "OK 373129 puncak_mem=10747904 kueri_sipp=-1 detik=237.6",
+   "harap_ada": {},
+   "harap_tidak": {},
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": true,
+  "lolos": true
+ },
+ "g2-1d02-nafkah-mutah": {
+  "label": "1d [02] nomor tetap: nafkah anak dikabulkan, mut'ah ditolak",
+  "blangko": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02] [Kabul] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir.rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 5,
+   "penanda_sisa": [],
+   "status": "OK 372424 puncak_mem=10485760 kueri_sipp=-1 detik=331.4",
+   "harap_ada": {
+    "amar nafkah anak": false,
+    "menolak selebihnya": false,
+    "pertimbangan mutah ditolak": true
+   },
+   "harap_tidak": {
+    "periksa": false
+   }
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: isi kenaikan nafkah anak per tahun, 10% s.d. 20%]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 5,
+   "penanda_sisa": [],
+   "status": "OK 374674 puncak_mem=10747904 kueri_sipp=-1 detik=237.6",
+   "harap_ada": {
+    "amar nafkah anak": true,
+    "menolak selebihnya": true,
+    "pertimbangan mutah ditolak": true
+   },
+   "harap_tidak": {
+    "periksa": false
+   },
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ },
+ "g2-1d01d-iddah": {
+  "label": "1d [01d] nomor tetap mulai 5: nafkah iddah dikabulkan",
+  "blangko": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[01d] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - T Tidak Hadir Setelah Mediasi.rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 171345 puncak_mem=8912896 kueri_sipp=-1 detik=367.9",
+   "harap_ada": {
+    "amar iddah": true
+   },
+   "harap_tidak": {
+    "periksa": false
+   }
+  },
+  "sesudah": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 173659 puncak_mem=8912896 kueri_sipp=-1 detik=197.1",
+   "harap_ada": {
+    "amar iddah": true
+   },
+   "harap_tidak": {
+    "periksa": false
+   },
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ },
+ "g2-1d01-tanpa-tuntutan": {
+  "label": "1d [01] verstek (daftar otomatis), petitum cerai + hak asuh",
+  "blangko": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[01] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak - Anak Belum Mumayyiz.rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 171861 puncak_mem=10223616 kueri_sipp=-1 detik=262.8",
+   "harap_ada": {},
+   "harap_tidak": {}
+  },
+  "sesudah": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 171861 puncak_mem=8912896 kueri_sipp=-1 detik=131.5",
+   "harap_ada": {},
+   "harap_tidak": {},
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": true,
+  "lolos": true
+ },
+ "g2-qd-hadhanah-belum": {
+  "label": "CG [01a] qabla dukhul, petitum + hak asuh belum dipilih",
+  "blangko": "1 Perceraian CG/[01a] [Kabul Verstek] Cerai - Alasan E (Qabla Ad Dukhul).rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 196491 puncak_mem=7602176 kueri_sipp=-1 detik=133.4",
+   "harap_ada": {
+    "periksa hak asuh": false
+   },
+   "harap_tidak": {}
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: petitum menuntut hak asuh anak (hadhanah); pilih keputusan majelis pada isian keputusan hak asuh]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 196605 puncak_mem=9175040 kueri_sipp=-1 detik=237.6",
+   "harap_ada": {
+    "periksa hak asuh": true
+   },
+   "harap_tidak": {},
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ },
+ "g2-qd-tanpa-tuntutan": {
+  "label": "CG [01a] qabla dukhul, petitum cerai saja",
+  "blangko": "1 Perceraian CG/[01a] [Kabul Verstek] Cerai - Alasan E (Qabla Ad Dukhul).rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 202192 puncak_mem=7602176 kueri_sipp=-1 detik=87.5",
+   "harap_ada": {},
+   "harap_tidak": {}
+  },
+  "sesudah": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 202192 puncak_mem=10485760 kueri_sipp=-1 detik=96.4",
+   "harap_ada": {},
+   "harap_tidak": {},
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": true,
+  "lolos": true
+ },
+ "g2-bas1d-nafkah": {
+  "label": "BAS putus verstek 1d [2]: nafkah anak dikabulkan",
+  "blangko": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS/BAS KUMULASI [2] BAS Putus Verstek CG Kumulasi Hak Asuh Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 2,
+   "penanda_sisa": [],
+   "status": "OK 119342 puncak_mem=5767168 kueri_sipp=-1 detik=332.8",
+   "harap_ada": {
+    "amar nafkah anak": false
+   },
+   "harap_tidak": {}
+  },
+  "sesudah": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": true,
+    "hadhanah": true
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 2,
+   "penanda_sisa": [],
+   "status": "OK 119586 puncak_mem=5505024 kueri_sipp=-1 detik=268.8",
+   "harap_ada": {
+    "amar nafkah anak": true
+   },
+   "harap_tidak": {},
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ },
+ "g1-hbi-mutah-nama": {
+  "label": "HBI verstek: petitum hanya mut'ah (nama Penggugat memuat \"idah\", alamat \"tempat tinggal\")",
+  "blangko": "1f Hak Bekas Istri/[01b] [Kabul Verstek] Hak Bekas Istri.rtf",
+  "sebelum": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 122335 puncak_mem=8388608 kueri_sipp=-1 detik=130.4",
+   "harap_ada": {
+    "mutah dituntut": false
+   },
+   "harap_tidak": {
+    "iddah dituntut": false,
+    "maskan dituntut": true
+   }
+  },
+  "sesudah": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 122324 puncak_mem=8388608 kueri_sipp=-1 detik=132.4",
+   "harap_ada": {
+    "mutah dituntut": true
+   },
+   "harap_tidak": {
+    "iddah dituntut": false,
+    "maskan dituntut": false
+   },
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ },
+ "g1-hbi-daftar-bawaan": {
+  "label": "HBI verstek: isian PILIH tersimpan sebagai DAFTAR bawaan (waktu bayar, nusyuz, dukhul)",
+  "blangko": "1f Hak Bekas Istri/[01b] [Kabul Verstek] Hak Bekas Istri.rtf",
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: pilih isian fakta nusyuz (3746)]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 127495 puncak_mem=8388608 kueri_sipp=-1 detik=186.9",
+   "harap_ada": {},
+   "harap_tidak": {
+    "dua pilihan waktu bayar": true
+   }
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: pilih isian fakta nusyuz (3746)]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": true,
+    "mutah": true,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": true
+   },
+   "tuntutan_amar": {
+    "iddah": true,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 126915 puncak_mem=8388608 kueri_sipp=-1 detik=253.4",
+   "harap_ada": {},
+   "harap_tidak": {
+    "dua pilihan waktu bayar di amar": false
+   },
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ },
+ "g3-hb-posita-bukan-sita": {
+  "label": "HB verstek, petitum menyebut \"posita\" tanpa sita jaminan (perkara nyata)",
+  "blangko": "4a Harta Bersama/[01b] [Kabul Verstek] HB.rtf",
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: petitum menuntut sita jaminan;  pilih keputusan majelis pada isian keputusan sita jaminan]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 124214 puncak_mem=8126464 kueri_sipp=-1 detik=128.3",
+   "harap_ada": {},
+   "harap_tidak": {
+    "periksa sita": true
+   }
+  },
+  "sesudah": {
+   "periksa": [],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 124107 puncak_mem=8126464 kueri_sipp=-1 detik=130.6",
+   "harap_ada": {},
+   "harap_tidak": {
+    "periksa sita": false
+   },
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": false,
+  "lolos": true
+ },
+ "g3-hb-sita-nyata": {
+  "label": "HB verstek, petitum menuntut sita marital (perkara nyata)",
+  "blangko": "4a Harta Bersama/[01b] [Kabul Verstek] HB.rtf",
+  "sebelum": {
+   "periksa": [
+    "[PERIKSA: petitum menuntut sita jaminan;  pilih keputusan majelis pada isian keputusan sita jaminan]",
+    "[PERIKSA: petitum menuntut uang paksa (dwangsom);  pilih keputusan majelis pada isian keputusan uang paksa]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 133308 puncak_mem=8126464 kueri_sipp=-1 detik=113.5",
+   "harap_ada": {
+    "periksa sita": true
+   },
+   "harap_tidak": {}
+  },
+  "sesudah": {
+   "periksa": [
+    "[PERIKSA: petitum menuntut sita jaminan;  pilih keputusan majelis pada isian keputusan sita jaminan]",
+    "[PERIKSA: petitum menuntut uang paksa (dwangsom);  pilih keputusan majelis pada isian keputusan uang paksa]"
+   ],
+   "tuntutan_pertimbangan": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "tuntutan_amar": {
+    "iddah": false,
+    "mutah": false,
+    "madliyah": false,
+    "nafkah_anak": false,
+    "hadhanah": false
+   },
+   "nomor_amar": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_urut": true,
+   "butir_kosong": 0,
+   "paragraf_kosong_ganda": 4,
+   "penanda_sisa": [],
+   "status": "OK 133308 puncak_mem=8126464 kueri_sipp=-1 detik=109.2",
+   "harap_ada": {
+    "periksa sita": true
+   },
+   "harap_tidak": {},
+   "nomor_utama": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "nomor_utama_urut": true
+  },
+  "teks_sama_dengan_sebelum": true,
+  "lolos": true
+ }
+}

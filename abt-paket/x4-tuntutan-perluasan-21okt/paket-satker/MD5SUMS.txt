@@ -1,0 +1,14 @@
+98151de21e03150a71066556e03b5468  abt-x4-tuntutan-perluasan-21okt-PASANG.sql
+da9789cb55eada340fb79b98a8fb518e  abt-x4-tuntutan-perluasan-21okt-PERIKSA.sql
+b490dc70d5093e81bb14a2db5afc392c  abt-x4-tuntutan-perluasan-21okt-PRASYARAT.sql
+ec91daf8c7475bcd65f0199697aec559  abt-x4-tuntutan-perluasan-21okt-PULIH.sql
+784f79147e1a7fec06746814d90a36cd  harap.txt
+12a71dc0d5e60beb196f48768dafb699  nomor-baru.txt
+37719f9eed0e52347c76e6190391be79  nomor-ubah.txt
+620a36d77251ffb8652e8d68da7d0393  pasang-satker.sh
+f4beb766bfe6b30bd91c9df1dbd285a8  perkara-uji.txt
+d60de60b14130b4d6f1acd104fd598fc  pulih-satker.sh
+ee6b9a94dc1a19c3d2390f1f94969c7c  rtf-daftar-tambal.tsv
+b391fbf7ed65f5225e5c1c62080c5636  rtf-tambal.tsv
+7171e65b13f464f7c291b9ba5a6e96dc  tambal-rtf.pl
+a9aa08a97ff91bd0ef84ab6eeca21d76  uji-kueri.tsv
