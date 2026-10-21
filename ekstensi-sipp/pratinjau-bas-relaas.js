@@ -24,9 +24,49 @@
  *   4. Cetak BA elektronik (window.open(.../cetak_BA_elektronik/...)): GET, RTF.
  *
  * ----------------------------------------------------------------------------
+ * PERLUASAN 21 Okt 2026: SEMUA DOKUMEN SIPP (aturan umum, bukan daftar tombol)
+ * ----------------------------------------------------------------------------
+ *   Inventarisasi titik unduh di kode SIPP server (baca saja) menunjukkan lima
+ *   bentuk; semuanya dicegat dengan aturan yang SAMA (satu permintaan -> pratinjau
+ *   -> Unduh lewat tombol -> gagal = tindakan asli SEKALI):
+ *     a. tautan ke berkas statis resources/file/** dan dokumen_arsip/** berakhiran
+ *        pdf rtf doc docx odt dan gambar (BAS, relaas, putusan, putusan sela,
+ *        salinan, anonimisasi, gugatan/permohonan "petitum", penetapan
+ *        PMH/PPP/PJS/PHS "_Dokumen_PMH_", e-Doc e-Court, delegasi, ...). Foto
+ *        pegawai, ini, indikator, ekspor Excel, zip, dan sejenisnya TIDAK;
+ *     b. rute cetak c_template_*\/cetak* (semua jenis: BAS, relaas, putusan,
+ *        penetapan, akta, mediasi, teguran, ...), cetak_majelis_hakim_pemeriksaan_pk,
+ *        court_calendar\/cetak: tautan, window.open, <select> pilih_cetak, borang
+ *        POST maupun GET;
+ *     c. rute unduh bawaan: manage_arsip_c\/doDownload, sppt_inbound\/file,
+ *        perkara_list_verifikasi_prodeo\/file, upload_dirput\/print_barcode;
+ *     d. window.open(...) dan form.submit() yang dipanggil SKRIP halaman (740
+ *        pemanggilan window.open di view SIPP): dikabarkan oleh unduh-halaman.js
+ *        (dunia halaman) lewat peristiwa yang dapat dibatalkan;
+ *     e. isi jawaban selalu diperiksa dari BAITNYA: yang bukan PDF/RTF/DOC/DOCX/
+ *        gambar (zip, Excel, ...) diunduh apa adanya tanpa kotak.
+ *   Tidak dicegat sama sekali: ekspor laporan Excel (jadwal_sidang_list_cetak,
+ *   jurnal_cetak, laporan\/*), backup\/doDownload, cetak_register (halaman HTML),
+ *   location.href = ... (tidak dapat dibungkus), tautan ber-atribut download.
+ *
+ * ----------------------------------------------------------------------------
+ * KEKOSONGAN "Berkasnya kosong di SIPP" + unduhan "video.pdf" (21 Okt 2026)
+ * ----------------------------------------------------------------------------
+ *   Telaah server: berkas BAS ada, tidak kosong, dilayani Apache statis
+ *   (Content-Type application/pdf, tanpa Content-Disposition, 200 OK); tidak ada
+ *   satu pun kata "video" di kode SIPP, basis data, atau berkas. D:\Download File\
+ *   video.pdf identik (md5) dengan BAS yang diklik, dan log Apache memuat pola
+ *   "200 penuh + tiga 206 serentak" dari peramban yang sama: pengelola unduhan
+ *   (IDM) di komputer itu merebut permintaan PDF - fetch halaman pulang kosong
+ *   dan IDM menyimpannya sendiri bernama "video.pdf". Berkas statis kini diambil
+ *   LEBIH DAHULU lewat pekerja latar (tanpa tab, pesan "ambil-berkas-sipp"), baru
+ *   fetch halaman bila itu gagal; hasil kosong dijelaskan dan dapat dibuka seperti
+ *   biasa SEKALI. Tindakan asli tidak pernah dijalankan dua kali.
+ *
+ * ----------------------------------------------------------------------------
  * YANG TERJADI
  * ----------------------------------------------------------------------------
- *   Saklar "Pratinjau sebelum unduh (BAS & relaas)" menyala (bawaan) -> klik /
+ *   Saklar "Pratinjau dokumen sebelum unduh" menyala (bawaan) -> klik /
  *   Cetak membuka kotak pratinjau besar (Shadow DOM, gelap/terang):
  *     - PDF           : penampil PDF bawaan peramban (blob dalam iframe);
  *     - gambar        : <img>;
@@ -66,7 +106,18 @@
   const BATAS_KONVERSI_BAJT = 20 * 1024 * 1024;
   const BATAS_KONVERSI_MS = 130 * 1000;
   const ID_KOTAK = "aleta-pratinjau-berkas";
-  const NAMA_JENIS = { bas: "Berita Acara Sidang", relaas: "Relaas" };
+  const NAMA_JENIS = {
+    bas: "Berita Acara Sidang",
+    relaas: "Relaas",
+    putusan: "Putusan",
+    penetapan: "Penetapan",
+    gugatan: "Gugatan / Permohonan",
+    ecourt: "Berkas e-Court",
+    akta: "Akta",
+    dokumen: "Dokumen",
+  };
+  /** Awalan nama berkas bila SIPP tak menyebut nama (jarang). */
+  const NAMA_DASAR = { bas: "BAS", relaas: "Relaas", putusan: "Putusan", penetapan: "Penetapan", gugatan: "Gugatan", ecourt: "Berkas e-Court", akta: "Akta", dokumen: "Dokumen" };
 
   // Alamat cetak SIPP (c_template_*/cetak_*): BAS dan relaas. Pola longgar pada nama
   // controller, ketat pada nama fungsi cetaknya - teguran/pengembalian panjar dan
@@ -77,6 +128,19 @@
   // Berkas e-Doc: <satker>_<nomor>_bas_<urutan>_<waktu>.ext dan relaas_/resi_<angka>_<angka>.ext
   const POLA_BERKAS_BAS = /(?:^|[_\-/ ])bas[_\- ]\d+[_\-]\d+\.[a-z0-9]{2,5}$/i;
   const POLA_BERKAS_RELAAS = /(?:^|[_\-/ ])(?:relaas|resi)[_\-]\d+(?:[_\-]\d+)+\.[a-z0-9]{2,5}$/i;
+  // Aturan umum 21 Okt 2026 (lihat kepala berkas): bentuk-bentuk titik unduh SIPP.
+  const POLA_CETAK_PUTUSAN = /\/c_template_[a-z0-9_]*(?:putusan[a-z0-9_]*\/cetak[a-z0-9_]*|\/cetak_[a-z0-9_]*putusan[a-z0-9_]*)(?:[/?#]|$)/i;
+  const POLA_CETAK_PENETAPAN =
+    /\/c_template_[a-z0-9_]*\/cetak_(?:penetapan[a-z0-9_]*|pmh|ppp|pppp|pjs|phs[a-z0-9_]*|penunjukan[a-z0-9_]*)(?:[/?#]|$)|\/c_template_penetapan[a-z0-9_]*\/cetak[a-z0-9_]*(?:[/?#]|$)/i;
+  const POLA_CETAK_AKTA = /\/c_template_[a-z0-9_]*akta[a-z0-9_]*\/cetak[a-z0-9_]*(?:[/?#]|$)|\/c_template_[a-z0-9_]*\/cetak_[a-z0-9_]*akta[a-z0-9_]*(?:[/?#]|$)/i;
+  /** Semua rute cetak berkas SIPP; cetak_register dkk. (halaman HTML) sengaja tidak termasuk. */
+  const POLA_CETAK_UMUM =
+    /\/(?:c_template_[a-z0-9_]+\/cetak[a-z0-9_]*|cetak_majelis_hakim_pemeriksaan_pk|(?:court_calendar|setting_bas_c)\/cetak[a-z0-9_]*)(?:[/?#]|$)/i;
+  /** Rute unduh bawaan SIPP yang menjawab berkas dokumen. backup/doDownload TIDAK termasuk. */
+  const POLA_UNDUH_RUTE = /\/(?:manage_arsip_c\/doDownload|sppt_inbound\/file|perkara_list_verifikasi_prodeo\/file|upload_dirput\/print_barcode)(?:[/?#]|$)/i;
+  /** Berkas statis dokumen. Foto pegawai, ini, dan indikator bukan dokumen perkara. */
+  const POLA_BERKAS_STATIS = /\/(?:resources\/file\/(?!foto\/|ini\/|indikator)|dokumen_arsip\/)[^?#]+$/i;
+  const POLA_AKHIRAN_DOKUMEN = /\.(?:pdf|rtf|docx?|odt|jpe?g|png|gif|bmp|tiff?|webp)$/i;
 
   let nyala = true;
   let kotakAktif = null;
@@ -137,13 +201,52 @@
     return "";
   }
 
-  /** Jenis dari nama berkas e-Doc. */
+  /** Jenis dari nama berkas e-Doc ("bas" | "relaas" | "putusan" | "penetapan" | "gugatan" | "akta" | ""). */
   function jenisBerkas(alamat) {
     const nama = decodeURIComponentAman(jalur(alamat).split("/").filter(Boolean).pop() || "");
     if (POLA_BERKAS_BAS.test(nama)) return "bas";
     if (POLA_BERKAS_RELAAS.test(nama)) return "relaas";
+    if (/_Dokumen_(?:PMH|PPP|PJS|PHS)_/i.test(nama)) return "penetapan";
+    if (/(?:^|[_\-])(?:putusan|salinan|amar)(?:[_\-]|\.)/i.test(nama) || /\/anonimisasi\//i.test(jalur(alamat))) return "putusan";
+    if (/(?:^|[_\-])(?:petitum|dakwaan|gugatan|perbaikan)(?:[_\-]|\.)/i.test(nama)) return "gugatan";
+    if (/(?:^|[_\-])(?:akta|aktacerai|aktarujuk)(?:[_\-]|\.)/i.test(nama)) return "akta";
     return "";
   }
+
+  /** Jenis dari teks di sekitar tautan (judul baris tabel SIPP, tulisan tombol). */
+  function jenisDariTeks(teks) {
+    const t = sebaris(teks).toLowerCase();
+    if (!t) return "";
+    if (/berita acara|\bbas\b/.test(t)) return "bas";
+    if (/relaas|resi\b/.test(t)) return "relaas";
+    if (/putusan|salinan|amar/.test(t)) return "putusan";
+    if (/penetapan|\bpmh\b|\bppp\b|\bpjs\b|\bphs\b/.test(t)) return "penetapan";
+    if (/gugatan|permohonan|petitum|dakwaan/.test(t)) return "gugatan";
+    if (/e-?court|jawaban|replik|duplik|bukti|kesimpulan|e-?filing/.test(t)) return "ecourt";
+    if (/\bakta\b/.test(t)) return "akta";
+    return "";
+  }
+
+  /**
+   * ATURAN UMUM: jenis dokumen dari ALAMAT (cetak, rute unduh, berkas statis), atau "".
+   * konteks = teks di sekitar tautan (opsional) untuk menamai jenis berkas statis.
+   */
+  function jenisDokumen(alamat, konteks) {
+    const p = jalur(alamat);
+    if (!p) return "";
+    const cetak = jenisCetak(alamat);
+    if (cetak) return cetak;
+    if (POLA_CETAK_PUTUSAN.test(p)) return "putusan";
+    if (POLA_CETAK_PENETAPAN.test(p)) return "penetapan";
+    if (POLA_CETAK_AKTA.test(p)) return "akta";
+    if (POLA_CETAK_UMUM.test(p) || POLA_UNDUH_RUTE.test(p)) return jenisDariTeks(konteks) || "dokumen";
+    if (POLA_BERKAS_STATIS.test(p)) {
+      if (!POLA_AKHIRAN_DOKUMEN.test(p)) return "";
+      return jenisBerkas(alamat) || jenisDariTeks(konteks) || "dokumen";
+    }
+    return "";
+  }
+
   function decodeURIComponentAman(s) {
     try {
       return decodeURIComponent(s);
@@ -221,7 +324,7 @@
     const d = new Date();
     const p2 = (n) => String(n).padStart(2, "0");
     const stempel = `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}`;
-    return `${jenis === "bas" ? "BAS" : "Relaas"} ${stempel}.${akhiran}`;
+    return `${NAMA_DASAR[jenis] || "Dokumen"} ${stempel}.${akhiran}`;
   }
 
   const ukuranTeks = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1).replace(".", ",")} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
@@ -251,13 +354,26 @@
   // --------------------------------------------------------------------------
   // Mengenali sasaran
   // --------------------------------------------------------------------------
-  /** Tautan: e-Doc BAS/relaas (href) atau window.open(...cetak...) di onclick. */
+  /** Teks di sekitar tautan: judul baris tabel SIPP + tulisan tautan (menamai jenis berkas statis). */
+  function teksKonteks(a) {
+    try {
+      const baris = a.closest && a.closest("tr");
+      const sel = baris ? baris.querySelector("td, th") : null;
+      return `${sebaris(a.textContent)} ${sel && !sel.contains(a) ? sebaris(sel.textContent).slice(0, 80) : ""}`;
+    } catch {
+      return "";
+    }
+  }
+
+  /** Tautan: berkas dokumen/rute cetak (href) atau window.open(...) di onclick. */
   function sasaranDariTautan(a) {
+    if (a.hasAttribute && a.hasAttribute("download")) return null; // bagian unduhan universal
+    const konteks = teksKonteks(a);
     const onclick = a.getAttribute("onclick") || "";
     const dariKlik = /window\.open\(\s*(['"])(.+?)\1/.exec(onclick);
     if (dariKlik) {
       const alamat = mutlak(dariKlik[2]);
-      const jenis = alamat ? jenisCetak(alamat) : "";
+      const jenis = alamat ? jenisDokumen(alamat, konteks) : "";
       if (!jenis) return null;
       return { jenis, metode: "GET", alamat, petunjuk: "", asli: () => window.open(alamat) };
     }
@@ -265,13 +381,13 @@
     if (!href || /^(?:#|javascript:|mailto:|tel:)/i.test(href)) return null;
     const alamat = mutlak(a.href);
     if (!alamat) return null;
-    let jenis = jenisCetak(alamat) || jenisBerkas(alamat);
+    let jenis = jenisDokumen(alamat, konteks);
     if (!jenis) {
       if (/unduh\s+dokumen\s+bas/i.test(sebaris(a.textContent))) jenis = "bas";
       else if (a.closest && a.closest(".upload_relaas")) jenis = "relaas";
     }
     if (!jenis) return null;
-    const petunjuk = a.getAttribute("download") || decodeURIComponentAman(jalur(alamat).split("/").filter(Boolean).pop() || "");
+    const petunjuk = decodeURIComponentAman(jalur(alamat).split("/").filter(Boolean).pop() || "");
     return {
       jenis,
       metode: "GET",
@@ -288,39 +404,53 @@
     };
   }
 
-  /** Borang POST ke .../cetak_* BAS atau relaas. */
+  /** Dari data borang (alamat, metode, pasangan teks): POST badan, GET dengan kueri. Null bila bukan dokumen. */
+  function sasaranDariData(aksi, metode, entri, asli) {
+    const alamat0 = mutlak(aksi || location.href);
+    if (!alamat0) return null;
+    const jenis = jenisDokumen(alamat0, "");
+    if (!jenis) return null;
+    const badan = new URLSearchParams();
+    for (const [k, v] of entri) badan.append(k, v);
+    if (String(metode).toUpperCase() === "POST") {
+      return { jenis, metode: "POST", alamat: alamat0, badan, petunjuk: "", asli };
+    }
+    const u = new URL(alamat0);
+    for (const [k, v] of badan.entries()) u.searchParams.append(k, v);
+    return { jenis, metode: "GET", alamat: u.href, petunjuk: "", asli };
+  }
+
+  /** Borang SIPP (POST atau GET) ke rute dokumen. */
   function sasaranDariBorang(form, pengirim) {
     if (!form || String(form.tagName).toUpperCase() !== "FORM") return null;
-    if (String(form.method || "get").toUpperCase() !== "POST") return null;
+    const metode = String(form.method || "get").toUpperCase();
+    if (metode !== "POST" && metode !== "GET") return null;
     const alamat = mutlak(form.action || location.href);
-    const jenis = alamat ? jenisCetak(alamat) : "";
-    if (!jenis) return null;
+    if (!alamat || !jenisDokumen(alamat, "")) return null;
     let data;
     try {
       data = pengirim ? new FormData(form, pengirim) : new FormData(form);
     } catch {
       data = new FormData(form);
     }
-    const badan = new URLSearchParams();
+    const entri = [];
     for (const [k, v] of data.entries()) {
       if (typeof v !== "string") return null; // berisi berkas: bukan borang cetak
-      badan.append(k, v);
+      entri.push([k, v]);
     }
-    return {
-      jenis,
-      metode: "POST",
-      alamat,
-      badan,
-      petunjuk: "",
-      asli: () => {
+    return sasaranDariData(
+      form.action || location.href,
+      metode,
+      entri,
+      () => {
         lewatiSekali = form;
         try {
           HTMLFormElement.prototype.submit.call(form);
         } finally {
           lewatiSekali = null;
         }
-      },
-    };
+      }
+    );
   }
 
   /** <select> "Cetak Relas"/BA: opsi bernilai alamat cetak -> window.open(nilai, '_self'). */
@@ -328,7 +458,7 @@
     if (!pilih || String(pilih.tagName).toUpperCase() !== "SELECT") return null;
     if (!/pilih_cetak/.test(pilih.getAttribute("onchange") || "")) return null;
     const alamat = mutlak(pilih.value);
-    const jenis = alamat ? jenisCetak(alamat) : "";
+    const jenis = alamat ? jenisDokumen(alamat, "") : "";
     if (!jenis) return null;
     return {
       jenis,
@@ -340,29 +470,125 @@
     };
   }
 
+  /** window.open(alamat, target) yang dipanggil skrip HALAMAN (dikabarkan unduh-halaman.js). */
+  function sasaranDariBuka(href, target) {
+    const alamat = mutlak(href);
+    if (!alamat) return null;
+    if (alamat.replace(/#.*$/, "") === String(location.href).replace(/#.*$/, "")) return null;
+    const jenis = jenisDokumen(alamat, "");
+    if (!jenis) return null;
+    return { jenis, metode: "GET", alamat, petunjuk: "", asli: () => window.open(alamat, target || "_self") };
+  }
+
+  /** form.submit() yang dipanggil skrip HALAMAN: asli = borang sementara bermuatan sama. */
+  function sasaranDariKirimSkrip(d) {
+    const metode = String(d.metode || "POST").toUpperCase();
+    if (d.berkas || !Array.isArray(d.entri)) return null;
+    const entri = d.entri.filter((x) => Array.isArray(x) && typeof x[0] === "string" && typeof x[1] === "string");
+    return sasaranDariData(d.aksi, metode, entri, () => {
+      const f = document.createElement("form");
+      f.method = metode;
+      f.action = String(d.aksi || location.href);
+      if (d.target) f.target = String(d.target);
+      f.style.display = "none";
+      for (const [k, v] of entri) {
+        const i = document.createElement("input");
+        i.type = "hidden";
+        i.name = k;
+        i.value = v;
+        f.appendChild(i);
+      }
+      (document.body || document.documentElement).appendChild(f);
+      lewatiSekali = f;
+      try {
+        HTMLFormElement.prototype.submit.call(f);
+      } finally {
+        lewatiSekali = null;
+        setTimeout(() => f.remove(), 2000);
+      }
+    });
+  }
+
   // --------------------------------------------------------------------------
   // Mengambil berkas (SATU permintaan: dipakai pratinjau DAN unduhan)
   // --------------------------------------------------------------------------
+  const PESAN_KOSONG =
+    "Berkas ini terbaca kosong. Bila di SIPP berkasnya ada isinya, biasanya aplikasi pengelola unduhan di komputer ini (mis. IDM) mengambilnya lebih dulu. Tambahkan alamat server ke daftar pengecualian aplikasi itu, lalu coba lagi atau pakai tombol di bawah.";
+
+  /** Berkas statis dokumen: bisa diambil pekerja latar tanpa lewat tab. */
+  function statisKah(s) {
+    return s.metode === "GET" && POLA_BERKAS_STATIS.test(jalur(s.alamat));
+  }
+
   /**
-   * @returns {Promise<{ok:true, blob, bita, bentuk, nama, ukuran} | {ok:false, pakaiAsli?:boolean, pesan:string}>}
+   * Mengambil berkas statis lewat pekerja latar (pesan "ambil-berkas-sipp"). Permintaan dari
+   * pekerja tidak melewati tab, sehingga tidak direbut pengelola unduhan di peramban.
+   * Pulang { bita, tipe, disposisi } atau null (gagal/tidak tersedia -> fetch halaman).
+   */
+  async function ambilLewatLatar(alamat) {
+    try {
+      if (typeof chrome === "undefined" || !chrome.runtime || typeof chrome.runtime.sendMessage !== "function") return null;
+      const jawab = await new Promise((selesai) => {
+        const jam = setTimeout(() => selesai(null), 70 * 1000);
+        try {
+          chrome.runtime.sendMessage({ sumber: "aleta-panel", jenis: "ambil-berkas-sipp", alamat }, (h) => {
+            void chrome.runtime.lastError;
+            clearTimeout(jam);
+            selesai(h);
+          });
+        } catch {
+          clearTimeout(jam);
+          selesai(null);
+        }
+      });
+      if (!jawab || jawab.ok !== true || typeof jawab.base64 !== "string" || !jawab.base64) return null;
+      const biner = atob(jawab.base64);
+      const bita = new Uint8Array(biner.length);
+      for (let i = 0; i < biner.length; i += 1) bita[i] = biner.charCodeAt(i);
+      if (!bita.length) return null;
+      return { bita, tipe: String(jawab.tipe || ""), disposisi: String(jawab.disposisi || "") };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * @returns {Promise<{ok:true, blob, bita, bentuk, nama, ukuran} | {ok:false, pakaiAsli?:boolean, pesan:string, kosong?:boolean}>}
    * pakaiAsli: jaringan/ukuran - tak ada yang bisa dilaporkan, jalankan tindakan asli.
+   * Satu berkas = satu pengambilan yang berhasil; pekerja latar didahulukan untuk berkas statis,
+   * fetch halaman hanya bila itu tidak membuahkan isi.
    */
   async function ambilBerkas(s) {
-    let respons;
-    try {
-      respons = await fetch(s.alamat, { method: s.metode, body: s.badan || undefined, credentials: "include" });
-    } catch (g) {
-      return { ok: false, pakaiAsli: true, pesan: `permintaan gagal: ${String((g && g.message) || g).slice(0, 120)}` };
+    let tipe = "";
+    let disposisi = "";
+    let bita = null;
+    if (statisKah(s)) {
+      const dariLatar = await ambilLewatLatar(s.alamat);
+      if (dariLatar) {
+        ({ bita, tipe, disposisi } = dariLatar);
+      }
     }
-    if (!respons.ok) return { ok: false, pesan: `SIPP menjawab kode ${respons.status}. Berkasnya tidak dapat diambil.` };
-    const tipe = String((respons.headers && respons.headers.get && respons.headers.get("content-type")) || "");
-    const blob = await respons.blob();
-    if (!blob || blob.size === 0) return { ok: false, pesan: "Berkasnya kosong di SIPP." };
-    if (blob.size > BATAS_BAJT) return { ok: false, pakaiAsli: true, pesan: "Berkas terlalu besar untuk pratinjau." };
-    const bita = await bitaDari(blob);
-    const disposisi = respons.headers && respons.headers.get ? respons.headers.get("content-disposition") : "";
+    if (!bita) {
+      let respons;
+      try {
+        // no-store: entri tembolok yang rusak (terpotong pengelola unduhan) tidak dipakai ulang.
+        respons = await fetch(s.alamat, { method: s.metode, body: s.badan || undefined, credentials: "include", cache: "no-store" });
+      } catch (g) {
+        return { ok: false, pakaiAsli: true, pesan: `permintaan gagal: ${String((g && g.message) || g).slice(0, 120)}` };
+      }
+      if (!respons.ok) return { ok: false, pesan: `SIPP menjawab kode ${respons.status}. Berkasnya tidak dapat diambil.` };
+      tipe = String((respons.headers && respons.headers.get && respons.headers.get("content-type")) || "");
+      disposisi = String((respons.headers && respons.headers.get && respons.headers.get("content-disposition")) || "");
+      const blob = await respons.blob();
+      if (!blob || blob.size === 0) return { ok: false, kosong: true, pesan: PESAN_KOSONG };
+      if (blob.size > BATAS_BAJT) return { ok: false, pakaiAsli: true, pesan: "Berkas terlalu besar untuk pratinjau." };
+      bita = await bitaDari(blob);
+      if (!tipe) tipe = blob.type || "";
+    } else if (bita.length > BATAS_BAJT) {
+      return { ok: false, pakaiAsli: true, pesan: "Berkas terlalu besar untuk pratinjau." };
+    }
     const nama0 = namaDariDisposisi(disposisi) || s.petunjuk || decodeURIComponentAman(jalur(s.alamat).split("/").filter(Boolean).pop() || "");
-    const bentuk = kenaliBentuk(bita, nama0, tipe || blob.type);
+    const bentuk = kenaliBentuk(bita, nama0, tipe);
     if (bentuk === "lain" && /text\/html/i.test(tipe) && !/\.html?$/i.test(nama0)) {
       return { ok: false, pesan: "SIPP menjawab halaman web, bukan berkas. Masuk ke SIPP lagi lalu ulangi." };
     }
@@ -371,9 +597,9 @@
       s.jenis,
       bentuk,
       bita,
-      tipe || blob.type
+      tipe
     );
-    return { ok: true, blob, bita, bentuk, nama, ukuran: bita.length };
+    return { ok: true, blob: new Blob([bita], { type: tipe || mimeBentuk(bentuk, bita) }), bita, bentuk, nama, ukuran: bita.length };
   }
 
   // --------------------------------------------------------------------------
@@ -623,6 +849,7 @@
         badan(d);
       },
       galat(teks, pilihan) {
+        if (q("nama").textContent === "Menyiapkan dokumen...") q("nama").textContent = "Dokumen tidak dapat dibuka";
         const d = tengah("galat", `<div><b>Pratinjau tidak dapat ditampilkan</b></div><div class="kecil" data-t="t"></div>`);
         d.querySelector('[data-t="t"]').textContent = teks;
         if (pilihan && pilihan.cobaAsli) {
@@ -878,12 +1105,23 @@
     }
   }
 
+  /** Fungsi yang hanya berjalan SEKALI (tindakan asli tidak pernah dua kali). */
+  function sekali(fn) {
+    let sudah = false;
+    return function jalankanSekali() {
+      if (sudah) return undefined;
+      sudah = true;
+      return fn.apply(this, arguments);
+    };
+  }
+
   /**
    * @param s sasaran { jenis, metode, alamat, badan?, petunjuk, asli }
    * @param langsung true = unduh langsung tanpa pratinjau (Shift/Ctrl/Alt-klik)
    */
   async function mulai(s, langsung) {
     sibuk = true;
+    s = { ...s, asli: sekali(s.asli) };
     let kotak = null;
     try {
       if (!langsung) kotak = susunKotak(s.jenis);
@@ -922,9 +1160,13 @@
   // --------------------------------------------------------------------------
   // Pendengar halaman
   // --------------------------------------------------------------------------
+  /** Klik terakhir di halaman: Shift/Ctrl pada klik yang melahirkan window.open() skrip halaman. */
+  let klikTerakhir = null;
+
   function dengarKlik(e) {
     try {
       if (!nyala || !halamanSipp()) return;
+      klikTerakhir = { langsung: langsungKah(e), saat: Date.now() };
       if (e.defaultPrevented || (e.button !== undefined && e.button !== 0)) return;
       const t = e.target && e.target.closest ? e.target : null;
       if (!t) return;
@@ -981,7 +1223,25 @@
     }
   }
 
+  /** Kabar dari unduh-halaman.js (dunia halaman): window.open(...) dan form.submit() oleh skrip SIPP. */
+  function dengarKabarHalaman(e) {
+    try {
+      if (!nyala || !halamanSipp()) return;
+      const d = JSON.parse(String(e.detail || "{}"));
+      const s = e.type === "buka-dokumen-ekstensi" ? sasaranDariBuka(d.href, d.target) : sasaranDariKirimSkrip(d);
+      if (!s) return;
+      const baru = klikTerakhir && Date.now() - klikTerakhir.saat < KADALUARSA_UJUNG_MS ? klikTerakhir : null;
+      e.preventDefault(); // pemanggil di dunia halaman TIDAK membuka/mengirim sendiri
+      if (sibuk || kotakAktif) return;
+      void mulai(s, Boolean(baru && baru.langsung));
+    } catch {
+      /* gagal memeriksa: window.open/submit berjalan seperti biasa */
+    }
+  }
+
   window.addEventListener("click", dengarKlik, true);
+  document.addEventListener("buka-dokumen-ekstensi", dengarKabarHalaman, true);
+  document.addEventListener("kirim-dokumen-ekstensi", dengarKabarHalaman, true);
   window.addEventListener("submit", dengarKirim, false);
   window.addEventListener("change", dengarPilih, true);
   void bacaSaklar();
@@ -995,9 +1255,11 @@
     muatSaklar: bacaSaklar,
     jenisCetak,
     jenisBerkas,
+    jenisDokumen,
     kenaliBentuk,
     sasaranDariTautan,
     sasaranDariBorang,
+    sasaranDariBuka,
     ambilBerkas,
     namaDariDisposisi,
     ubahKePdf,
@@ -1008,7 +1270,7 @@
       const bita = await bitaDari(opsi.blob);
       const bentuk = kenaliBentuk(bita, opsi.nama, opsi.blob.type);
       const info = { ok: true, blob: opsi.blob, bita, bentuk, nama: opsi.nama, ukuran: bita.length };
-      const kotak = susunKotak(opsi.jenis === "relaas" ? "relaas" : "bas", info);
+      const kotak = susunKotak(NAMA_JENIS[opsi.jenis] ? opsi.jenis : "bas", info);
       await tampilkan(kotak, { jenis: opsi.jenis }, info);
       return kotak;
     },

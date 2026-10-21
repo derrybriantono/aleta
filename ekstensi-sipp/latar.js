@@ -530,6 +530,38 @@ function ikutiUnduhan(id, selesai) {
 }
 
 /**
+ * Mengambil SATU berkas statis dokumen SIPP untuk pratinjau (pesan "ambil-berkas-sipp").
+ * Hanya GET, hanya asal yang sama dengan tab pengirim, hanya resources/file/** dan dokumen_arsip/**;
+ * jawaban berupa base64 (batas 40 MB). Pulang { ok, base64, tipe, disposisi } atau { ok:false, ... }.
+ */
+async function ambilBerkasSipp(pesan, pengirim) {
+  const BATAS = 40 * 1024 * 1024;
+  let u;
+  let asal = "";
+  try {
+    u = new URL(String(pesan.alamat || ""));
+    asal = new URL(String((pengirim && pengirim.url) || "")).origin;
+  } catch {
+    return { ok: false, pesan: "alamat tidak sah" };
+  }
+  if ((u.protocol !== "http:" && u.protocol !== "https:") || u.origin !== asal) return { ok: false, pesan: "alamat bukan milik halaman ini" };
+  if (!/\/(?:resources\/file|dokumen_arsip)\//i.test(u.pathname)) return { ok: false, pesan: "alamat bukan berkas dokumen" };
+  const r = await fetch(u.href, { method: "GET", credentials: "include", cache: "no-store" });
+  if (!r.ok) return { ok: false, status: r.status, pesan: `kode ${r.status}` };
+  const bita = new Uint8Array(await r.arrayBuffer());
+  if (!bita.length) return { ok: false, kosong: true, pesan: "kosong" };
+  if (bita.length > BATAS) return { ok: false, pesan: "terlalu besar" };
+  let biner = "";
+  for (let i = 0; i < bita.length; i += 0x8000) biner += String.fromCharCode.apply(null, bita.subarray(i, i + 0x8000));
+  return {
+    ok: true,
+    base64: btoa(biner),
+    tipe: r.headers.get("content-type") || "",
+    disposisi: r.headers.get("content-disposition") || "",
+  };
+}
+
+/**
  * Menerbitkan satu unduhan beralamat data: dengan nama yang sudah dirapikan.
  *
  * Dipakai dua jalur - pesan `unduh` dari panel, dan putaran relaas massal di
@@ -899,6 +931,13 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
       jawab({ ok: true });
     });
     return true;
+  }
+
+  // Pratinjau dokumen SIPP (21 Okt 2026): berkas statis diambil dari pekerja latar, bukan dari tab,
+  // supaya tidak direbut pengelola unduhan (IDM) yang menambatkan diri pada permintaan tab.
+  if (pesan.jenis === "ambil-berkas-sipp") {
+    ambilBerkasSipp(pesan, pengirim).then(jawab, (e) => jawab({ ok: false, pesan: String((e && e.message) || e).slice(0, 160) }));
+    return true; // jawaban menyusul
   }
 
   if (pesan.jenis === "unduh") {

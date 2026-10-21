@@ -1686,7 +1686,7 @@
       : "";
     // 20 Okt: saklar pratinjau BAS & relaas (SIPP) - bawaan menyala; mati = klik unduh di SIPP langsung mengunduh seperti dulu.
     const saklarPratinjau = grup.some((g) => ["hakim", "pp", "js", "ptsp", "admin"].includes(g))
-      ? `<label class="bd-wbaris bd-saklaralat"><span>Pratinjau sebelum unduh (BAS &amp; relaas)<small>klik unduh BAS atau relaas di SIPP menampilkan isinya dulu; dari sana dapat diunduh atau dicetak. Shift atau Ctrl-klik = langsung unduh</small></span><input type="checkbox" data-cfg="pratinjau" aria-label="Pratinjau sebelum unduh (BAS dan relaas)" ${S.cfg.pratinjau !== false ? "checked" : ""}></label>`
+      ? `<label class="bd-wbaris bd-saklaralat"><span>Pratinjau dokumen sebelum unduh<small>klik unduh atau cetak dokumen apa pun di SIPP menampilkan isinya dulu; dari sana dapat diunduh atau dicetak. Shift atau Ctrl-klik = langsung unduh</small></span><input type="checkbox" data-cfg="pratinjau" aria-label="Pratinjau dokumen sebelum unduh" ${S.cfg.pratinjau !== false ? "checked" : ""}></label>`
       : "";
     return (
       saklarIsi +
