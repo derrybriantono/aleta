@@ -453,6 +453,29 @@ function satukanPenandaTerpecah(rtf) {
   return { rtf: hasil, jumlah };
 }
 
+/**
+ * Penanda #NNNN# PERSIS seperti tabel variabel ABT (Abt_model::show_variabel_rtf, 21 Okt 2026): baris baru dibuang, dua
+ * potongan kode huruf Word dibuang, lalu preg_match_all("/#([0-9]*)#/") - URUTAN KEMUNCULAN, ganda dibuang (kunci array
+ * PHP). Penanda yang terpecah kode RTF TIDAK disatukan: ABT pun tidak melihatnya. Dipakai panel Blangko Derry agar daftar
+ * isiannya sama dengan tabel ABT lama untuk blangko yang sama (yang beda hanya tampilan).
+ */
+function penandaUrutAbt(rtfLatin1) {
+  const isi = String(rtfLatin1 || "")
+    .replace(/\n/g, "")
+    .split("\\hich\\af1\\dbch\\af31505\\loch\\f0 ")
+    .join("")
+    .split("\\hich\\af1\\dbch\\af31505\\loch\\f1 ")
+    .join("");
+  const hasil = [];
+  const ada = new Set();
+  for (const m of isi.matchAll(/#([0-9]*)#/g)) {
+    if (ada.has(m[1])) continue;
+    ada.add(m[1]);
+    hasil.push(m[1]);
+  }
+  return hasil;
+}
+
 /** Warna sorot "isian kosong": ditambahkan ke \colortbl; null bila tabel warna tidak ada. */
 function siapkanSorot(rtf) {
   const awal = rtf.indexOf("{\\colortbl");
@@ -963,6 +986,7 @@ module.exports = {
   tabelTanyaJawab,
   daftarKeterangan,
   satukanPenandaTerpecah,
+  penandaUrutAbt,
   siapkanSorot,
   tglIndo2,
   getHari,

@@ -125,18 +125,19 @@ function tampil(p: PerkaraUji, isi: Record<string, string> = {}) {
 describe("ekstensi: isian hanya muncul bila keadaannya berlaku", () => {
   const dasar = { prodeo: false, ghaib: false, lewatEcourt: true, kuasaP: false, kuasaT: false };
   it("581/Pdt.G/2026 (CG verstek, e-Court, tanpa kuasa): tanpa ghaib, tanpa kuasa, tanpa kuasa insidentil, tanpa prodeo", () => {
-    expect(tampil(dasar, { "8503": "AF" })).toEqual(["8503", "7139", "1214"]);
+    // 21 Okt: urutan = urutan tabel ABT (penanda langsung dulu, isian yang dibaca bagian otomatis menyusul), bukan daftar rancangan v12.
+    expect(tampil(dasar, { "8503": "AF" })).toEqual(["7139", "8503", "1214"]);
   });
   it("Penggugat berkuasa: kantor advokat + PT tempat advokat disumpah; Tergugat berkuasa: tanggal surat kuasa T", () => {
-    expect(tampil({ ...dasar, kuasaP: true })).toEqual(["8503", "7139", "0156", "8892", "1214"]);
-    expect(tampil({ ...dasar, kuasaT: true })).toEqual(["8503", "7139", "0185", "1214"]);
+    expect(tampil({ ...dasar, kuasaP: true })).toEqual(["0156", "7139", "8503", "8892", "1214"]);
+    expect(tampil({ ...dasar, kuasaT: true })).toEqual(["0185", "7139", "8503", "1214"]);
   });
   it("ghaib: tanggal pengumuman panggilan ghaib muncul; perkara bukan e-Court: beracara elektronik hilang", () => {
     expect(tampil({ ...dasar, ghaib: true, lewatEcourt: false })).toEqual(["8503", "8564", "1214"]);
     expect(tampil({ ...dasar, lewatEcourt: null })).toContain("7139"); // tidak diketahui = tetap tampil
   });
   it("prodeo (dari pemicu ABT atau data perkara SIPP) dan alasan C dari huruf yang diketik", () => {
-    expect(tampil({ ...dasar, prodeo: true })).toEqual(["8503", "7139", "0661", "1214"]);
+    expect(tampil({ ...dasar, prodeo: true })).toEqual(["0661", "7139", "8503", "1214"]);
     expect(tampil(dasar, { "8503": "CF" })).toContain("8536");
   });
   it("kuasa insidentil yang hanya dibaca variabel lain muncul bila sudah terisi; yang tertulis langsung di blangko selalu", () => {

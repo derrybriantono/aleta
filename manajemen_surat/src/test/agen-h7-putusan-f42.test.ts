@@ -421,8 +421,9 @@ describe("jalan agen (sumber tiruan, pg-mem berbenih)", () => {
     const d = (await susunDrafSatu(db!, BARIS, sumberTiruan(panggilan)))!;
     expect(d.blangko.utama!.label).toMatch(/Verstek/);
     expect(d.isian.map((i) => [i.kode, i.golongan])).toEqual([
-      ["8503", "usulan"],
+      // 21 Okt: urutan tabel ABT (urutan penanda di blangko)
       ["0222", "pasti"],
+      ["8503", "usulan"],
       ["1214", "manusia"],
     ]);
     expect(d.otomatis).toMatchObject({ jumlah: 1, terisi: 1 });

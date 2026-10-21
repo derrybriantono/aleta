@@ -2677,8 +2677,12 @@ async function bacaBlangko(params = {}) {
       return { ada: false, sebab: `Blangko terlalu besar (${Math.round(info.size / 1024)} KB).` };
     }
     // Penanda yang terpecah kode RTF ikut dihitung (Q2) - mesin pengisi menyatukannya juga.
-    const rtf = require("./abtMesinVariabel").satukanPenandaTerpecah(await fs.readFile(jalur, "latin1")).rtf;
+    const mesin = require("./abtMesinVariabel");
+    const asli = await fs.readFile(jalur, "latin1");
+    const rtf = mesin.satukanPenandaTerpecah(asli).rtf;
     const penanda = [...new Set([...rtf.matchAll(/#(\d{3,5})#/g)].map((c) => c[1]))].sort();
+    // 21 Okt: penanda persis tabel variabel ABT (urutan kemunculan, tanpa penyatuan) - daftar isian panel = tabel ABT lama.
+    const penandaAbt = mesin.penandaUrutAbt(asli).filter((k) => /^\d{3,5}$/.test(k));
 
     return {
       ada: true,
@@ -2686,6 +2690,7 @@ async function bacaBlangko(params = {}) {
       besarByte: info.size,
       jumlahPenanda: penanda.length,
       penanda,
+      penandaAbt,
       teks: rtfKeTeks(rtf).slice(0, 20000),
     };
   } catch (error) {

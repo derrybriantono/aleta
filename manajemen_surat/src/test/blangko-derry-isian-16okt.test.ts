@@ -426,7 +426,9 @@ describe("F. perlu diisi", () => {
     expect(susunan[0].url).toContain("sidangKe=2");
     const kode = qq(h, "#bd-perlu .bd-f").map((f) => f.getAttribute("data-f"));
     // 8503 tidak langsung di RTF tetapi dibaca #4001#; 0156/0184 (kuasa) dan 8536 (C), 0227 (H) tersembunyi.
-    expect(kode).toEqual(["8503", "0007", "1214"]);
+    // 21 Okt: 8503 tidak ada di tabel ABT blangko ini - pindah ke bagian tertutup "Isian di dalam bagian otomatis" (tetap dapat diisi).
+    expect(kode).toEqual(["0007", "1214"]);
+    expect(qq(h, "#bd-lanjutan .bd-f").map((f) => f.getAttribute("data-f"))).toContain("8503");
     expect((q(h, "#bd-i8503") as HTMLInputElement).value).toBe("F");
     expect(q(h, '.bd-f[data-f="8503"]')!.classList.contains("beres")).toBe(true);
     // 19 Okt: keterangan teknis tentang isian yang disembunyikan tidak tampil lagi (hanya ke konsol).

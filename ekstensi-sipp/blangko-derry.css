@@ -540,6 +540,12 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-tambahan { border: 1px dashed var(--line); border-radius: 10px; padding: 6px 10px; background: var(--deep); }
 #aleta-bd-akar .bd-tambahan > summary { cursor: pointer; font-weight: 600; padding: 2px 0; }
 #aleta-bd-akar .bd-tambahan > .bd-pgrid { margin-top: 8px; }
+/* 21 Okt: tuntutan dalam posita dan petitum (diminta / tidak diminta / ragu / karena jabatan) */
+#aleta-bd-akar .bd-tanda.biru { background: #1f5fa8; border-color: #174a84; }
+#aleta-bd-akar .bd-tuntutandaftar { list-style: none; margin: 6px 0 2px; padding: 0; display: grid; gap: 6px; }
+#aleta-bd-akar .bd-tuntutan { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 0; border-top: 1px dotted var(--line); }
+#aleta-bd-akar .bd-tuntutan:first-child { border-top: 0; }
+#aleta-bd-akar .bd-tuntutan .bd-kutipan { flex-basis: 100%; font-style: italic; overflow-wrap: anywhere; }
 
 /* ===== Tata letak kartu isian ("Perlu diisi") dan alat bukti surat (19 Okt 2026) =====
    Tujuan: kartu tidak ada yang besar-kecil tanpa sebab, tidak berdempetan, tidak ada teks terpotong.

@@ -62,7 +62,7 @@ const BATAS_NILAI = 600;
  * (edit_data) dari ekstensi.
  */
 type JawabanKatalog = { ada?: boolean; variabel?: Array<{ noVar?: unknown; nama?: unknown; jenis?: unknown; sqlQuery?: unknown; defaultData?: unknown }> };
-type JawabanBaca = { ada?: boolean; sebab?: string; berkas?: string; penanda?: string[] };
+type JawabanBaca = { ada?: boolean; sebab?: string; berkas?: string; penanda?: string[]; penandaAbt?: string[] };
 type JawabanPohon = { ada?: boolean; berkas?: Array<{ jalur?: unknown; folder?: unknown; berkas?: unknown }> };
 type JawabanKatalogFolder = { ada?: boolean; set?: Array<{ nama?: unknown }>; blangko?: Array<{ berkas?: unknown }> };
 type JawabanNilai = { ok?: boolean; nilai?: Record<string, { status?: string; teks?: string; nama?: string; sebab?: string }> };
@@ -243,7 +243,9 @@ export async function GET(request: NextRequest) {
     if (!dibaca.ok || !dibaca.data?.ada) {
       return ok({ ada: false, sebab: (dibaca.ok ? teks(dibaca.data?.sebab) : teks(dibaca.error)) || "Blangko tidak terbaca di server.", folder: jalurFolder, berkas: namaBerkas });
     }
-    const penanda = (dibaca.data.penanda ?? []).map(teks).filter((x) => /^\d{3,5}$/.test(x));
+    // 21 Okt: urutan dan himpunan penanda PERSIS tabel variabel ABT (bot penandaAbt); bot lama tanpa itu = daftar terurut lama.
+    const penandaAbt = Array.isArray(dibaca.data.penandaAbt) ? dibaca.data.penandaAbt.map(teks).filter((x) => /^\d{3,5}$/.test(x)) : [];
+    const penanda = penandaAbt.length ? penandaAbt : (dibaca.data.penanda ?? []).map(teks).filter((x) => /^\d{3,5}$/.test(x));
     const { peta, sumber } = await katalogVariabel(db);
     const sebutan = {
       P: teks(q.get("sebutanP")) || "Penggugat/Pemohon",

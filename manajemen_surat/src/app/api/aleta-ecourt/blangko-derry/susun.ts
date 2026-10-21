@@ -67,26 +67,78 @@ export type ButirIsian = {
    */
   manual?: boolean;
   alasanManual?: string;
+  /**
+   * 21 Okt (tuntutan sinkron): kode pemicu petitum (4140-4145) tuntutan yang dilayani isian ini. Isian yang TIDAK tertulis
+   * langsung di blangko (hanya dibaca bagian otomatis, mis. #4119#/#4138#) hanya tampil bila tuntutan itu diminta petitum,
+   * ditetapkan hakim karena jabatan, keputusan majelisnya sudah dipilih, atau isiannya sudah ada isinya.
+   */
+  tuntutan?: string[];
+  /**
+   * 21 Okt: isian CADANGAN tuntutan untuk jenis perkara ini ("cg" cerai gugat / "ct" cerai talak): kueri paket u2 membaca
+   * COALESCE(isian cerai talak, isian cerai gugat) - satu besaran punya dua kotak. Kotak cadangan tidak tampil di daftar utama
+   * kecuali sudah berisi (masuk bagian tertutup), supaya petugas tidak mengisi dua kotak untuk satu besaran.
+   */
+  cadangan?: Array<"cg" | "ct">;
 };
 export type Keadaan = "" | "kuasaP" | "kuasaT" | "prodeo" | "alasanC" | "alasanH" | "ghaib" | "ecourt" | "insidentil";
+/** Satu tuntutan akibat perceraian yang isiannya ada (lewat bagian otomatis) di blangko ini. */
+export type TuntutanBlangko = { pemicu: string; label: string; keputusan: string; isian: string[] };
 export type Susunan = {
   penanda: string[];
   isian: ButirIsian[];
   pemicu: Array<{ kode: string; nama: string; keterangan: string }>;
   otomatis: Array<{ kode: string; nama: string; jenis: string; langsung: boolean }>;
   takDikenal: string[];
+  /** 21 Okt: tuntutan yang dikenal blangko ini (urut pemicu); kosong bila blangko tidak memuat isian tuntutan. */
+  tuntutan?: TuntutanBlangko[];
+  /** 21 Okt: kode variabel keadaan + kutipan petitum per tuntutan (paket x3, #3400#) - dinilai bot bila ada tuntutan. */
+  kutipanTuntutan?: string;
 };
+/** Variabel ABT keadaan dan kutipan tuntutan (paket x3-tuntutan-sinkron-21okt; tidak dicetak di blangko). */
+export const KODE_KUTIPAN_TUNTUTAN = "3400";
 
 const MANUAL: Record<string, JenisIsian> = { data_teks: "teks", data_tanggal: "tanggal", tanya_jawab: "tj" };
 const POLA_REF = /#(\d{4,5})#/g;
 const POLA_NO_VAR = /no_var\s*(?:=|in\s*\()\s*['"]?(\d{4,5})/gi;
 const POLA_PEMICU = /#(111\d\d|414[0-5])#/;
 
-/** Urutan tampil isian perceraian (dari rancangan v12); yang tidak disebut mengikuti urutan di RTF. */
-const URUTAN = [
-  "8503", "5227", "0222", "7035", "0246", "9944", "1268", "0007", "1006", "1267", "7139", "8433", "7178", "8436", "8437", "8536", "0227",
-  "0156", "8537", "8538", "0184", "0132", "8892", "0157", "0185", "0661", "0663", "8564", "0670", "0182", "8894", "8895", "8896", "9123", "0303",
+/**
+ * 21 Okt (temuan pengguna): urutan isian = URUTAN PENANDA DI TABEL VARIABEL ABT (urutan kemunculan di RTF). Daftar urutan
+ * rancangan v12 yang dulu mendahulukan isian perceraian tertentu dihapus - tabel ABT lama dan panel Blangko Derry harus sama,
+ * yang beda hanya tampilan. Isian yang tidak tertulis langsung di RTF menyusul sesudahnya.
+ */
+
+/**
+ * 21 Okt (tuntutan sinkron posita/petitum): isian akibat perceraian per tuntutan. Kunci = kode pemicu petitum (paket u2, dihitung
+ * ABT dari petitum + rekonvensi + kumulasi SIPP: "ya" bila menuntut), keputusan = isian keputusan majelis tuntutan itu.
+ * Isian bersama (dasar kemampuan, waktu pembayaran, nama anak) melayani lebih dari satu tuntutan.
+ */
+export const TUNTUTAN_CERAI: ReadonlyArray<TuntutanBlangko> = [
+  { pemicu: "4140", label: "Hak asuh anak (hadhanah)", keputusan: "4100", isian: ["4100", "4106", "4108", "2004"] },
+  { pemicu: "4141", label: "Nafkah anak", keputusan: "4101", isian: ["4101", "6071", "6072", "9740", "9741", "9050"] },
+  { pemicu: "4142", label: "Nafkah iddah", keputusan: "4102", isian: ["4102", "6054", "9712"] },
+  { pemicu: "4143", label: "Mut'ah", keputusan: "4103", isian: ["4103", "6055", "9713"] },
+  { pemicu: "4144", label: "Nafkah lampau (madliyah)", keputusan: "4104", isian: ["4104", "7120", "9711"] },
+  { pemicu: "4145", label: "Harta bersama", keputusan: "4105", isian: ["4105", "8730"] },
 ];
+const TUNTUTAN_BERSAMA: Record<string, string[]> = {
+  "8603": ["4140", "4141"], // nama anak
+  "4107": ["4141", "4142", "4143", "4144"], // dasar kemampuan pemberi nafkah
+  "9714": ["4142", "4143", "4144"], // dasar kemampuan (cerai gugat kumulasi nafkah istri)
+  "4109": ["4142", "4143", "4144"], // waktu pembayaran akibat cerai
+  "9715": ["4142", "4143", "4144"], // dibayar sebelum mengambil akta cerai
+};
+/** Kotak besaran yang menjadi cadangan per jenis cerai (urutan COALESCE paket u2: 6054/9712, 6055/9713, 7120/9711, 9740/6071/6072, 9741/9050). */
+const CADANGAN_TUNTUTAN: Record<string, Array<"cg" | "ct">> = {
+  "6054": ["cg"], "6055": ["cg"], "7120": ["cg"],
+  "9711": ["ct"], "9712": ["ct"], "9713": ["ct"], "9715": ["ct"],
+  "6071": ["cg", "ct"], "6072": ["cg", "ct"], "9050": ["cg", "ct"],
+};
+/** Kode isian -> pemicu tuntutan yang dilayaninya. */
+export function tuntutanIsian(kode: string): string[] {
+  if (TUNTUTAN_BERSAMA[kode]) return [...TUNTUTAN_BERSAMA[kode]];
+  return TUNTUTAN_CERAI.filter((t) => t.isian.includes(kode)).map((t) => t.pemicu);
+}
 
 export const PILIHAN_ALASAN = [
   "F · terus-menerus berselisih dan bertengkar",
@@ -696,9 +748,8 @@ function pihakBuktiDari(k: string, namaPolos: string): "" | "P" | "T" {
 function urutanKode(b: ButirIsian, urutanRtf: Map<string, number>): number {
   if (b.khusus === "bukti") return 9000 + (b.pihak === "T" ? 1 : 0);
   if (b.jenis === "tj") return 9500 + (urutanRtf.get(b.kode) ?? 400);
-  const u = URUTAN.indexOf(b.kode);
-  if (u >= 0) return u;
-  return 100 + (urutanRtf.get(b.kode) ?? 400) + (b.langsung ? 0 : 300);
+  // Urutan tabel ABT: penanda langsung menurut kemunculannya; isian yang hanya dibaca bagian otomatis menyusul.
+  return b.langsung ? urutanRtf.get(b.kode) ?? 0 : 5000;
 }
 
 /**
@@ -835,7 +886,17 @@ export function susunIsian(
       opsi: (r && r.opsi) || [],
       ...(ISIAN_OPSIONAL[k] ? { opsional: true, labelPengguna: ISIAN_OPSIONAL[k] } : {}),
       ...(ISIAN_MANUAL[k] ? { manual: true, alasanManual: ISIAN_MANUAL[k] } : {}),
+      ...(tuntutanIsian(k).length ? { tuntutan: tuntutanIsian(k), ...(CADANGAN_TUNTUTAN[k] ? { cadangan: CADANGAN_TUNTUTAN[k] } : {}) } : {}),
     });
+  }
+  // 21 Okt: tuntutan yang isiannya hanya dibaca bagian otomatis (tidak tertulis langsung) - pemicu petitumnya ikut dinilai bot
+  // supaya layar tahu tuntutan mana yang diminta; isian langsung (blangko varian/kumulasi) tetap tampil seperti tabel ABT.
+  const tuntutan: TuntutanBlangko[] = [];
+  for (const t of TUNTUTAN_CERAI) {
+    const isianT = isian.filter((b) => !b.langsung && (b.tuntutan || []).includes(t.pemicu)).map((b) => b.kode);
+    if (!isianT.length || !katalog.has(t.pemicu)) continue;
+    tuntutan.push({ ...t, isian: isianT });
+    if (!pemicuDipakai.has(t.pemicu)) pemicuDipakai.set(t.pemicu, katalog.get(t.pemicu)?.nama || "");
   }
   isian.sort((a, b) => urutanKode(a, urutanRtf) - urutanKode(b, urutanRtf) || a.kode.localeCompare(b.kode));
 
@@ -846,7 +907,14 @@ export function susunIsian(
   }));
   pemicu.sort((a, b) => a.kode.localeCompare(b.kode));
   otomatis.sort((a, b) => Number(a.langsung) - Number(b.langsung) || (urutanRtf.get(a.kode) ?? 999) - (urutanRtf.get(b.kode) ?? 999));
-  return { penanda: [...new Set(penanda)], isian, pemicu, otomatis, takDikenal };
+  return {
+    penanda: [...new Set(penanda)],
+    isian,
+    pemicu,
+    otomatis,
+    takDikenal,
+    ...(tuntutan.length ? { tuntutan, ...(katalog.has(KODE_KUTIPAN_TUNTUTAN) ? { kutipanTuntutan: KODE_KUTIPAN_TUNTUTAN } : {}) } : {}),
+  };
 }
 
 /**
@@ -962,6 +1030,7 @@ export function kodeUntukNilai(susunan: Susunan, semua: boolean): string[] {
   const dasar = semua
     ? [...susunan.penanda, ...susunan.isian.map((b) => b.kode), ...susunan.otomatis.map((o) => o.kode), ...susunan.pemicu.map((p) => p.kode), ...tj]
     : [...susunan.isian.filter((b) => b.jenis !== "tj").map((b) => b.kode), ...susunan.pemicu.map((p) => p.kode), ...tj];
+  if (susunan.kutipanTuntutan) dasar.push(susunan.kutipanTuntutan);
   return [...new Set(dasar)];
 }
 

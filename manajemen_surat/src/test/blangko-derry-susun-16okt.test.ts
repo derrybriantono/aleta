@@ -209,7 +209,8 @@ describe("B. GET /aleta-ecourt/blangko-derry", () => {
     const j = await (await GET(nextReq("?folder=1%20Perceraian%20CG&berkas=%5B01%5D%20%5BKabul%20Verstek%5D%20Cerai%20(Format%20Lengkap)&perkaraId=10154&sidangKe=2&sebutanP=Penggugat&sebutanT=Tergugat"))).json();
     expect(j.ok).toBe(true);
     expect(j.data).toMatchObject({ ada: true, folder: "derry_briantono/1 Perceraian CG", sumberKatalog: "abt", nilaiAda: true, jumlahPenanda: 4 });
-    expect(j.data.isian.map((b: { kode: string }) => b.kode)).toEqual(["8503", "0156", "2021"]);
+    // 21 Okt: urutan tabel ABT - 0156 tertulis langsung, 8503 hanya dibaca bagian otomatis (menyusul).
+    expect(j.data.isian.map((b: { kode: string }) => b.kode)).toEqual(["0156", "8503", "2021"]);
     expect(j.data.nilai["8503"]).toEqual({ status: "terisi", teks: "F", nama: "ALASAN", sebab: "" });
     expect(j.data.pemicu.map((p: { kode: string }) => p.kode)).toEqual(["11111"]);
     // Katalog disinggahkan: panggilan kedua tidak meminta abt.semuaVariabel lagi.
