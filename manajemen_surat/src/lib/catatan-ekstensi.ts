@@ -58,7 +58,7 @@ export type CatatanEkstensi = {
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
     versi: "1.205.29",
-    dirilis: "2026-10-21T06:59:00+08:00",
+    dirilis: "2026-10-22T06:59:00+08:00",
     judul: "Jadwal Sidang: tunda otomatis, sidang keliling, hakim per perkara",
     butir: [
       "Jadwal Sidang: menu tunda dan putus ringkas - pilih lalu Simpan, tertutup sendiri, tanpa keterangan teknis; usulan tanggal dengan kalimat singkat.",

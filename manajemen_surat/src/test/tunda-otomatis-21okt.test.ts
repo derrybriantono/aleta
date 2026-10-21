@@ -453,9 +453,9 @@ describe("layanan tunda otomatis (basis data dalam memori)", () => {
   });
 
   it("hari sidang keliling aktif: jalan pukul 14.00 dan TIDAK lagi pukul 16.30", async () => {
-    await db.run("CREATE TABLE IF NOT EXISTS aleta_sidang_keliling_hari (tanggal TEXT PRIMARY KEY, aktif BOOLEAN NOT NULL, diubah_oleh TEXT, diubah_pada TEXT)");
+    // Tabel dibuat migrasi 0083 (fitur Sidang keliling); aktif disimpan 0/1.
     const TGL = "2026-10-29";
-    await db.run("INSERT INTO aleta_sidang_keliling_hari (tanggal, aktif, diubah_oleh, diubah_pada) VALUES (?, ?, ?, ?)", [TGL, true, "Derry", "x"]);
+    await db.run("INSERT INTO aleta_sidang_keliling_hari (tanggal, aktif, diubah_oleh, diubah_pada) VALUES (?, ?, ?, ?)", [TGL, 1, "Derry", "x"]);
     await simpanSetelan(db, SUPER, { nyala: true, kering: true }, "");
     expect(await jamTundaOtomatis(db, TGL)).toBe("14:00");
     expect(await jamTundaOtomatis(db, HARI)).toBe("16:30");
