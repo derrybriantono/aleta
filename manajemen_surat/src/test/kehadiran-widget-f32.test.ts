@@ -154,6 +154,11 @@ function buka(awal: Record<string, unknown>, statusKh = 200) {
   terbuka.push(dom);
   const w = dom.window as any;
   const simpanan: Record<string, unknown> = polos({ posisiChecklistSipp: { kecil: false }, checklistMilestone: true, widgetKehadiran: true, ...awal });
+  // 21 Okt 2026 (semua panel ekstensi bawaannya terlipat): widget terbentang hanya bila dibentangkan pada SESI TAB
+  // ini (panel-alat.js alatPanelTerbuka sesiTab). Uji kotak Kehadiran di dalam dok memakai widget yang dibentangkan.
+  if ((simpanan.posisiChecklistSipp as { kecil?: boolean } | undefined)?.kecil === false) {
+    w.sessionStorage.setItem("aleta-panel-terbuka:checklist-widget", "1");
+  }
   const pendengar: Array<(u: Ubah, wil: string) => void> = [];
   w.chrome = {
     runtime: { id: "aleta-uji", getManifest: () => ({ version: "0.0.0" }), getURL: (x: string) => `chrome-extension://aleta-uji/${x}`, sendMessage: async () => ({}) },

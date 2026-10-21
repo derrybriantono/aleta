@@ -364,7 +364,9 @@ describe("bunyi mentah tidak tertinggal di jalur yang dilihat petugas", () => {
     // pihak (PNS/PPPK/TNI/POLRI/BUMN/BUMD) untuk usulan pilihan blangko pihak SIPP.
     // 48 sejak hari libur satu sumber (18 Okt 2026): panel membaca daftar libur lewat alatAmbil (petugas melihat
     // kalimat, bukan kode, bila gagal).
-    expect(lewatAlat).toBe(48);
+    // 49 sejak Putusan Otomatis halaman SIPP (21 Okt 2026): cekDrafPutusanAleta membaca ada-tidaknya draf putusan
+    // sebelum blangko dibuka; gagalnya berbunyi lewat alatPesanGagal di langkah "Isi & simpan".
+    expect(lewatAlat).toBe(49);
 
     // ==========================================================================
     // LIMA YANG SENGAJA DIBIARKAN MENTAH - DAN SEBABNYA SATU PER SATU

@@ -21333,7 +21333,9 @@ function t7TerapkanLabuh() {
   } catch {
     /* tanpa atributnya, panel mengambang seperti semula */
   }
-  if (nyala && panel && !panel.aletaT7Diamati) {
+  // 21 Okt 2026: pengamat dipasang juga pada panel yang LAHIR sebagai lencana (semua panel bawaannya terlipat) -
+  // dulu hanya bila sudah berlabuh, sehingga panel yang dibentangkan dari lencana tidak pernah berlabuh kanan.
+  if (panel && panel.isConnected && panel.getAttribute("data-t7") === "ui" && t7Modern() && !panel.aletaT7Diamati) {
     panel.aletaT7Diamati = true;
     const p = new MutationObserver(() => t7TerapkanLabuh());
     p.observe(panel, { attributes: true, attributeFilter: ["class"] });

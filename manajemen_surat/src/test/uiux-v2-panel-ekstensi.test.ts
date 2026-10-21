@@ -321,7 +321,12 @@ describe("V2: panel SIPP pada lebar 1280 tetap memuat semua tab dan tombol", () 
   it("lebar jendela 1280: berlabuh di kanan dan semua tab ada, dapat dipilih", async () => {
     const { w, panel } = await bukaSipp();
     expect(w.innerWidth).toBe(1280);
-    expect(w.document.documentElement.getAttribute("data-aleta-sipp-labuh")).toBe("kanan");
+    // 21 Okt 2026: semua panel bawaannya terlipat - panel SIPP lahir sebagai lencana (tanpa labuh); petugas
+    // membentangkannya, dan saat itulah ia berlabuh di kanan.
+    await sampai(() => panel.classList.contains("aleta-panel-lencana"), "lahir sebagai lencana");
+    expect(w.document.documentElement.getAttribute("data-aleta-sipp-labuh")).toBeNull();
+    w.ciutkanKeLencana(panel, false);
+    await sampai(() => w.document.documentElement.getAttribute("data-aleta-sipp-labuh") === "kanan", "berlabuh sesudah dibentangkan");
     const tab = Array.from(panel.querySelectorAll(".aleta-t7-tab")).map((t: any) => t.getAttribute("data-t7-ke"));
     expect(tab).toEqual(["kerjakan", "ptspKel", "putusanKel", "berkas", "perkara"]);
     for (const ke of tab) {

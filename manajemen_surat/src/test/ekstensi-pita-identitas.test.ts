@@ -179,7 +179,10 @@ describe("itsbat nikah dan keterangan dua saksi", () => {
     const isi = abt();
     expect(isi).toContain('badan.set("load_template", kodeTemplat);');
     expect(isi).toContain("async function daftarTemplatAbt(urutan) {");
-    expect(isi).toContain("async function kirimTanyaJawab(kodeVariabel, urutan, baris) {");
+    // 21 Okt 2026 (penutup saksi): kirimTanyaJawab menyaring baris penutup lebih dulu - tetap menulis lewat
+    // halaman tanya-jawab ABT (alamatTanyaJawab), bukan ke basis datanya.
+    expect(isi).toContain("async function kirimTanyaJawab(kodeVariabel, urutan, barisMasuk) {");
+    expect(isi).toContain("const saring = saringBarisPenutup(barisMasuk);");
     // Menyimpan menghapus lalu menulis ulang; sidang yang akan ditimpa
     // disebut SEBELUM tombolnya ditekan.
     expect(isi).toContain("Menyimpan akan MENIMPANYA");
