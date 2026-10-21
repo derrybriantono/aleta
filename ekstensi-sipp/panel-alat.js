@@ -8696,8 +8696,6 @@ async function alatSidangPadaTanggal(tanggalIso) {
       perkaraId: String(s.perkaraId || ""),
       jenis: String(s.jenisPerkara || ""),
       agenda: String(s.agenda || ""),
-      // 21 Okt 2026: nama majelis (bila jadwal sidang membawanya) - bahan saringan Jadwalkan Putusan Massal.
-      majelis: String(s.majelisNama || ""),
       sudahPutus: Boolean(s.sudahPutus),
       // Dipakai menamai berkas - lihat sebutStatusPutusan di abt.js.
       statusPutusan: String(s.statusPutusan || ""),
@@ -8715,6 +8713,8 @@ async function alatSidangPadaTanggal(tanggalIso) {
       kumulasi: alatKodeKumulasi(s.kumulasi),
       // Q3 16 Okt: keadaan putusan (portal lib/keadaan-putusan.ts) - dipakai alatPetaUntukPerkara (mediasi sebagian, T tidak hadir setelah mediasi, dst.).
       keadaan: alatKodeKeadaan(s.keadaanPutusan),
+      // 21 Okt 2026: nama majelis (bila jadwal sidang membawanya) - bahan saringan Jadwalkan Putusan Massal (ruas tambahan di belakang).
+      majelis: String(s.majelisNama || ""),
     });
   }
   return [...per.values()];
