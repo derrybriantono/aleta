@@ -120,8 +120,14 @@ function golongan(awal: string, k: Keadaan = {}) {
   const tabel = penandaTabel(b);
   const s = susunIsian(tabel, KATALOG);
   const isi = k.isi || {};
-  const keputusan = (p: string) => Boolean(String(isi[TUNTUTAN_CERAI.find((t) => t.pemicu === p)?.keputusan || ""] || "").trim());
+  const keputusan = (p: string) => {
+    const kode = TUNTUTAN_CERAI.find((t) => t.pemicu === p)?.keputusan || "";
+    return Boolean(M().keputusanDipilihMurni(s.isian.find((x) => x.kode === kode) || { kode }, isi[kode] || ""));
+  };
   const ctx = {
+    dikenal: (p: string) => TUNTUTAN_CERAI.some((t) => t.pemicu === p),
+    // simulasi nilai TERSIMPAN petugas: kerangka/bawaan tidak dihitung, keputusan harus tepat satu pilihan
+    terisiTuntutan: (x: ButirIsian) => Boolean(String(isi[x.kode] || "").trim()) && !M().kerangkaBawaanMurni(x, isi[x.kode]) && (!x.pilihan.length || M().keputusanDipilihMurni(x, isi[x.kode])),
     perkara: { prodeo: false, ghaib: false, lewatEcourt: true, kuasaP: false, kuasaT: false },
     menyala: (p: string) => (k.menyala || []).includes(p),
     terisi: (x: ButirIsian) => Boolean(String(isi[x.kode] || "").trim()),
@@ -140,7 +146,7 @@ describe("C. panel = tabel ABT; tuntutan yang tidak diminta tidak tampil", () =>
     for (const b of FX.blangko) {
       const h = golongan(b.berkas);
       for (const k of h.utama) expect(h.tabel, `${b.berkas}: kartu ${k} tidak ada di tabel ABT`).toContain(k);
-      for (const x of h.s.isian.filter((y) => y.langsung)) expect(["utama", "takberlaku", "tambahan", "pilihan"], `${b.berkas} ${x.kode}`).toContain(h.g.get(x.kode));
+      for (const x of h.s.isian.filter((y) => y.langsung)) expect(["utama", "takberlaku", "tambahan", "pilihan", "tuntutan"], `${b.berkas} ${x.kode}`).toContain(h.g.get(x.kode));
     }
   });
 
@@ -184,10 +190,13 @@ describe("C. panel = tabel ABT; tuntutan yang tidak diminta tidak tampil", () =>
     expect(h.g.get("6054")).toBe("tuntutan");
   });
 
-  it("varian CT Mut'ah Iddah: nafkah iddah dan mut'ah TERTULIS LANGSUNG di blangko (baris tabel ABT) - tetap tampil", () => {
-    const h = golongan(CT_MI);
+  it("varian CT Mut'ah Iddah: nafkah iddah dan mut'ah TERTULIS LANGSUNG di blangko (baris tabel ABT) - tampil bila diminta / karena jabatan, disembunyikan bila tidak diminta (21 Okt w25)", () => {
+    const h = golongan(CT_MI, { menyala: ["4142", "4143"] });
     expect(h.tabel).toEqual(expect.arrayContaining(["6054", "6055", "4139"]));
     expect(h.utama).toEqual(expect.arrayContaining(["6054", "6055"]));
+    const tak = golongan(CT_MI);
+    expect(tak.g.get("6054")).toBe("tuntutan");
+    expect(tak.g.get("6055")).toBe("tuntutan");
   });
 
   it("CG [01d] kumulasi nafkah istri: madliyah/iddah/mut'ah dibaca #9716#/#9717# - hanya yang diminta yang tampil", () => {

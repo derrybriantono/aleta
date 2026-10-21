@@ -1445,7 +1445,8 @@
       if (S.blangko !== blangko) return;
       for (const b of d.isian) {
         const v = S.nilai[b.kode];
-        if (v && v.status === "terisi" && b.jenis !== "tj") S.isi[b.kode] = b.jenis === "tanggal" ? keIso(v.teks) || v.teks : v.teks;
+        // 21 Okt (w25): bawaan ABT berupa DAFTAR pilihan (mis. keputusan 4100-4105) bukan isian: kotak tetap kosong, belum dipilih.
+        if (v && v.status === "terisi" && b.jenis !== "tj" && !daftarPilihanMurni(b, v.teks)) S.isi[b.kode] = b.jenis === "tanggal" ? keIso(v.teks) || v.teks : v.teks;
       }
       S.memuatSusunan = false;
       renderRingkasBlangko();
@@ -2273,11 +2274,51 @@
   //         keputusan majelisnya sudah dipilih, atau isiannya sudah berisi; selain itu masuk "Tuntutan yang tidak diminta";
   //       * isian lain masuk bagian tertutup "Isian di dalam bagian otomatis" (tetap dapat diisi, ikut isi otomatis).
   // ──────────────────────────────────────────────────────────────────────────
-  /** Tuntutan isian ini aktif? ctx: { menyala(p), jabatan(p), keputusan(p), terisi(b) }. */
+  // 21 Okt (perbaikan w25): nilai yang dibaca dari jendela ABT BUKAN selalu isian petugas - ABT mengembalikan BAWAAN
+  // (default_data) bila belum ada yang tersimpan: keputusan 4100-4105 berupa daftar semua pilihan, harta bersama berupa kerangka
+  // "2.1 Sebidang tanah ... seluas _ m2", nama anak dihitung dari SIPP. Bawaan itu tidak boleh dianggap "sudah dipilih/terisi".
+  const PIL_KEPUTUSAN_BAWAAN = ["dikabulkan seluruhnya", "dikabulkan sebagian", "ditolak", "tidak dapat diterima", "diberikan secara ex officio (tidak dituntut)"];
+  const PIL_EX_OFFICIO = "diberikan secara ex officio (tidak dituntut)";
+  const normPil = (x) => String(x == null ? "" : x).replace(/\s+/g, " ").trim().toLowerCase();
+  const pilihanSahDari = (b) => (b && Array.isArray(b.pilihan) && b.pilihan.length ? b.pilihan : b && /^410[0-5]$/.test(String(b.kode || "")) ? PIL_KEPUTUSAN_BAWAAN : []);
+  /** Nilai sama dengan TEPAT SATU pilihan sah (boleh diikuti ":" + alasan, mis. "ditolak: istri nusyuz")? Mengembalikan pilihannya atau "". */
+  function pilihanTunggalMurni(teks, pilihan) {
+    const t = normPil(teks);
+    if (!t) return "";
+    for (const pl of pilihan || []) {
+      const n = normPil(pl);
+      if (n && (t === n || t.startsWith(n + ":"))) return String(pl);
+    }
+    return "";
+  }
+  /** Nilai hanya kerangka/bawaan ABT (kosong, daftar pilihan bergabung, bawaan itu sendiri, atau berisi "_" / "..." kerangka)? */
+  function kerangkaBawaanMurni(b, teks) {
+    const t = String(teks == null ? "" : teks).trim();
+    if (!t) return true;
+    const n = normPil(t);
+    if (b && (n === normPil(b.bawaan) || n === normPil(b.saran))) return true;
+    const pil = pilihanSahDari(b);
+    if (pil.length > 1 && pil.map(normPil).filter((x) => x && n.includes(x)).length >= 2) return true;
+    if (/(^|\s)_+(?=$|[\s.,;:)])/.test(t) || /\.{3}|…/.test(t)) return true;
+    return false;
+  }
+  /** Nilai adalah DAFTAR beberapa pilihan sekaligus (bawaan ABT untuk isian berpilihan), bukan satu pilihan? */
+  function daftarPilihanMurni(b, teks) {
+    const pil = pilihanSahDari(b);
+    const n = normPil(teks);
+    return pil.length > 1 && Boolean(n) && pil.map(normPil).filter((x) => x && n.includes(x)).length >= 2;
+  }
+  /** Keputusan tuntutan (nilai tersimpan, bukan bawaan) = tepat satu pilihan sah? */
+  const keputusanDipilihMurni = (b, teks) => Boolean(pilihanTunggalMurni(teks, pilihanSahDari(b)));
+  const keputusanExOfficioMurni = (teks) => normPil(teks).startsWith(normPil(PIL_EX_OFFICIO));
+  /**
+   * Tuntutan isian ini aktif? ctx: { menyala(p), jabatan(p), keputusan(p), terisi(b), terisiTuntutan(b)? }.
+   * terisiTuntutan = isian bermakna yang DISIMPAN petugas (bukan bawaan/kerangka/hitungan ABT); tanpa itu dipakai terisi(b).
+   */
   function tuntutanAktifMurni(b, ctx) {
     const daftar = Array.isArray(b.tuntutan) ? b.tuntutan : [];
     if (!daftar.length) return true;
-    if (ctx.terisi(b)) return true;
+    if ((ctx.terisiTuntutan || ctx.terisi)(b)) return true;
     return daftar.some((p) => ctx.menyala(p) || (ctx.jabatan && ctx.jabatan(p)) || (ctx.keputusan && ctx.keputusan(p)));
   }
   /**
@@ -2290,6 +2331,10 @@
     const opsional = ctx.opsional ? ctx.opsional(b) : false;
     // Bukti yang hanya dibaca bagian otomatis juga tidak ada di tabel ABT blangko ini (21 Okt: paritas penuh).
     const tidakLangsung = b.langsung === false && b.jenis !== "tj";
+    // 21 Okt (w25): isian tuntutan yang tertulis LANGSUNG di blangko juga disembunyikan bila tuntutannya tidak diminta
+    // (aturan pengguna: tidak diminta = tidak ada pertimbangan/form), asalkan status tuntutannya terbaca (ctx.dikenal).
+    const langsungBertuntutan = b.langsung === true && b.jenis !== "tj" && Array.isArray(b.tuntutan) && b.tuntutan.length > 0 && Boolean(ctx.dikenal) && b.tuntutan.some((p) => ctx.dikenal(p));
+    if (langsungBertuntutan && !tuntutanAktifMurni(b, ctx)) return "tuntutan";
     if (tidakLangsung && Array.isArray(b.tuntutan) && b.tuntutan.length) {
       if (!tuntutanAktifMurni(b, ctx)) return "tuntutan";
       // Kotak cadangan satu besaran (mis. nafkah iddah cerai talak 6054 pada perkara cerai gugat): bagian tertutup, kecuali sudah berisi.
@@ -2312,16 +2357,31 @@
   const kunciJabatan = (p) => `${perkaraId()}|${p}`;
   const jabatanMenyala = (p) => Boolean(S.jabatan && S.jabatan[kunciJabatan(p)]);
   const tuntutanBlangko = () => (S.susunan && Array.isArray(S.susunan.tuntutan) ? S.susunan.tuntutan : []);
-  /** Keputusan majelis tuntutan p (4100-4105) sudah dipilih? */
+  const nilaiIsianKini = (kode) => (S.isi[kode] !== undefined ? S.isi[kode] : S.nilai[kode] && S.nilai[kode].teks);
+  const isianBlangko = (kode) => (S.susunan && Array.isArray(S.susunan.isian) ? S.susunan.isian.find((x) => x.kode === kode) : null) || { kode };
+  /** Keputusan majelis tuntutan p (4100-4105) sudah DIPILIH? Hanya bila nilainya tepat satu pilihan sah - daftar pilihan bawaan ABT bukan pilihan. */
   function keputusanTuntutan(p) {
     const t = tuntutanBlangko().find((x) => x.pemicu === p);
     if (!t || !t.keputusan) return false;
-    const v = S.isi[t.keputusan] !== undefined ? S.isi[t.keputusan] : S.nilai[t.keputusan] && S.nilai[t.keputusan].teks;
-    return Boolean(String(v || "").trim());
+    return keputusanDipilihMurni(isianBlangko(t.keputusan), nilaiIsianKini(t.keputusan));
+  }
+  /** Keputusan tersimpan "diberikan secara ex officio (tidak dituntut)" = ditetapkan karena jabatan. */
+  function keputusanKarenaJabatan(p) {
+    const t = tuntutanBlangko().find((x) => x.pemicu === p);
+    return Boolean(t && t.keputusan && keputusanTuntutan(p) && keputusanExOfficioMurni(nilaiIsianKini(t.keputusan)));
+  }
+  /** Isian bermakna untuk tampil-tuntutan: keputusan yang dipilih, atau isian yang petugas simpan di sesi ini dan bukan kerangka. Bawaan/hitungan ABT tidak dihitung. */
+  function terisiTuntutan(b) {
+    const v = nilaiIsianKini(b.kode);
+    if (kerangkaBawaanMurni(b, v)) return false;
+    const pil = pilihanSahDari(b);
+    if (pil.length) return keputusanDipilihMurni(b, v);
+    return S.tersimpan[b.kode] === "tersimpan";
   }
   /** "ct" (cerai talak: Pemohon/Termohon menurut nomor alur/jenis) atau "cg" - memilih kotak besaran utama. */
   const jenisCerai = () => (sebutan().P === "Pemohon" ? "ct" : "cg");
-  const ctxGolongan = () => ({ perkara: perkaraSipp(), menyala: pemicuMenyala, terisi, nilai: S.nilai, jabatan: jabatanMenyala, keputusan: keputusanTuntutan, opsional: isianOpsional, jenisCerai: jenisCerai() });
+  const tuntutanDikenal = (p) => tuntutanBlangko().some((t) => t.pemicu === p) && S.nilai[p] !== undefined;
+  const ctxGolongan = () => ({ perkara: perkaraSipp(), menyala: pemicuMenyala, terisi, terisiTuntutan, nilai: S.nilai, jabatan: jabatanMenyala, keputusan: keputusanTuntutan, dikenal: tuntutanDikenal, opsional: isianOpsional, jenisCerai: jenisCerai() });
   const golonganIsian = (b) => golonganIsianMurni(b, ctxGolongan());
   /** Keadaan tiap tuntutan blangko ini: { pemicu, label, status: ya|tidak|ragu, kutipan, jabatan, keputusan, isian }. */
   function keadaanTuntutan() {
@@ -2329,7 +2389,7 @@
     return tuntutanBlangko().map((t) => {
       const k = kut[t.pemicu];
       const status = k ? k.status : pemicuMenyala(t.pemicu) ? "ya" : "tidak";
-      return { ...t, status: pemicuMenyala(t.pemicu) ? "ya" : status, kutipan: k ? k.kutipan : "", jabatan: jabatanMenyala(t.pemicu), dipilih: keputusanTuntutan(t.pemicu) };
+      return { ...t, status: pemicuMenyala(t.pemicu) ? "ya" : status, kutipan: k ? k.kutipan : "", jabatan: jabatanMenyala(t.pemicu) || keputusanKarenaJabatan(t.pemicu), dipilih: keputusanTuntutan(t.pemicu) };
     });
   }
   /** Isian wajib yang keadaannya tidak berlaku untuk perkara ini (disembunyikan; dapat ditampilkan). */
@@ -4001,11 +4061,13 @@
     const opsi = Array.isArray(b.opsi) ? b.opsi : [];
     // e-Court adalah keadaan sebagian besar perkara: tanpa lencana "muncul karena" supaya kotak tetap ringkas.
     // 21 Okt: isian tuntutan yang hanya dibaca bagian otomatis menyebut sebab tampilnya (diminta petitum / karena jabatan).
+    // 21 Okt (w25): sebabnya harus benar - "karena jabatan" hanya dari saklar hakim atau keputusan "diberikan secara ex officio";
+    // keputusan lain yang sudah dipilih (ditolak, dikabulkan, ...) tidak diberi sebab (kartu tampil karena sudah diputus).
     const alasanTuntutan =
-      b.langsung === false && Array.isArray(b.tuntutan) && b.tuntutan.length
+      Array.isArray(b.tuntutan) && b.tuntutan.length && (b.langsung === false || b.tuntutan.some((p) => tuntutanDikenal(p)))
         ? b.tuntutan.some((p) => pemicuMenyala(p))
           ? "diminta dalam petitum"
-          : b.tuntutan.some((p) => jabatanMenyala(p) || keputusanTuntutan(p))
+          : b.tuntutan.some((p) => jabatanMenyala(p) || keputusanKarenaJabatan(p))
             ? "ditetapkan karena jabatan"
             : ""
         : "";
@@ -4016,7 +4078,20 @@
     let isian;
     let panjang = false;
     let lebarSelalu = false;
-    if (opsi.length) {
+    // 21 Okt (w25): keputusan majelis atas tuntutan = pemilih tunggal; daftar pilihan bawaan ABT tidak pernah tampil sebagai isi kotak.
+    const keputusanKotak = !opsi.length && pil.length > 0 && Array.isArray(b.tuntutan) && b.tuntutan.length > 0 && /^410[0-5]$/.test(b.kode);
+    if (keputusanKotak) {
+      const terpilih = pilihanTunggalMurni(v, pil);
+      const alasanKep = terpilih && v.length > terpilih.length ? v.slice(terpilih.length).replace(/^\s*:\s*/, "") : "";
+      const butuhAlasan = ["ditolak", "tidak dapat diterima"].includes(normPil(terpilih));
+      const asing = v.trim() && !terpilih && !daftarPilihanMurni(b, v);
+      isian =
+        `<div class="bd-isiwadah"><select id="bd-i${b.kode}" class="bd-opsi" data-k="${b.kode}" data-keputusan="1" ${ro}><option value="" ${terpilih || asing ? "" : "selected"}>pilih keputusan majelis…</option>` +
+        pil.map((o) => `<option value="${esc(o)}" ${o === terpilih ? "selected" : ""}>${esc(o)}</option>`).join("") +
+        (asing ? `<option value="${esc(v)}" selected>${esc(v)}</option>` : "") +
+        `</select></div>` +
+        (butuhAlasan ? `<div class="bd-isiwadah"><input type="text" class="bd-alasan" data-alasan="${b.kode}" value="${esc(alasanKep)}" placeholder="alasan (ditulis sesudah titik dua)" autocomplete="off" ${bolehTulis() ? "" : "readonly"}></div>` : "");
+    } else if (opsi.length) {
       // Pilihan bernilai (mis. beracara elektronik: ABT menyimpan 1/2) - petugas hanya melihat kalimatnya.
       const ada = opsi.some((o) => o.nilai === v);
       isian =
@@ -4138,8 +4213,10 @@
             ? `<span class="bd-tanda hijau">diminta dalam petitum</span>`
             : t.status === "ragu"
               ? `<span class="bd-tanda kuning">ragu - periksa surat gugatan</span>`
-              : t.jabatan || t.dipilih
+              : t.jabatan
                 ? `<span class="bd-tanda biru">ditetapkan karena jabatan</span>`
+                : t.dipilih
+                  ? `<span class="bd-tanda biru">keputusan sudah dipilih</span>`
                 : `<span class="bd-tanda abu">tidak diminta</span>`;
         const kutipan = t.kutipan ? `<div class="bd-catat bd-kutipan">“${esc(potong(t.kutipan, 230))}”</div>` : "";
         let tombol = "";
@@ -6716,11 +6793,22 @@
       renderIsian();
       return;
     }
+    const alasanKode = t.getAttribute && t.getAttribute("data-alasan");
+    if (alasanKode) {
+      // Alasan keputusan (ditolak / tidak dapat diterima) ditulis sesudah titik dua pada nilai keputusan.
+      const pl = pilihanTunggalMurni(S.isi[alasanKode], pilihanSahDari(isianBlangko(alasanKode)));
+      if (!pl || !bolehTulis()) return;
+      const alasanTeks = String(t.value || "").trim();
+      void jadwalkanSimpan(alasanKode, alasanTeks ? `${pl}: ${alasanTeks}` : pl, true);
+      return;
+    }
     const k = t.getAttribute && t.getAttribute("data-k");
     if (k) {
       if (t.type === "date" || t.tagName === "SELECT" || t.closest("#bd-vdaftar")) {
         jadwalkanSimpan(k, t.value, true);
         if (t.tagName === "SELECT") renderStatusIsian(k);
+        // Keputusan tuntutan berubah: kartu lain (tampil/tersembunyi menurut keputusan) dan kotak alasan mengikuti.
+        if (t.tagName === "SELECT" && t.getAttribute("data-keputusan")) renderIsian();
       }
       return;
     }
@@ -7277,7 +7365,7 @@
       tuntutan: S.susunan ? keadaanTuntutan().map((t) => ({ pemicu: t.pemicu, status: t.status, jabatan: t.jabatan, dipilih: t.dipilih })) : [],
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
+    murni: { pilihanTunggalMurni, kerangkaBawaanMurni, daftarPilihanMurni, keputusanDipilihMurni, keputusanExOfficioMurni, bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {

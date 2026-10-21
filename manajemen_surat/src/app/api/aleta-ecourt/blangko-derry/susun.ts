@@ -890,10 +890,11 @@ export function susunIsian(
     });
   }
   // 21 Okt: tuntutan yang isiannya hanya dibaca bagian otomatis (tidak tertulis langsung) - pemicu petitumnya ikut dinilai bot
-  // supaya layar tahu tuntutan mana yang diminta; isian langsung (blangko varian/kumulasi) tetap tampil seperti tabel ABT.
+  // supaya layar tahu tuntutan mana yang diminta. 21 Okt (w25): isian yang tertulis langsung di blangko ikut dihitung - tuntutan yang
+  // tidak diminta tetap disembunyikan walau tertulis langsung ("tidak diminta = tidak ada pertimbangan dan form-nya").
   const tuntutan: TuntutanBlangko[] = [];
   for (const t of TUNTUTAN_CERAI) {
-    const isianT = isian.filter((b) => !b.langsung && (b.tuntutan || []).includes(t.pemicu)).map((b) => b.kode);
+    const isianT = isian.filter((b) => (b.tuntutan || []).includes(t.pemicu)).map((b) => b.kode);
     if (!isianT.length || !katalog.has(t.pemicu)) continue;
     tuntutan.push({ ...t, isian: isianT });
     if (!pemicuDipakai.has(t.pemicu)) pemicuDipakai.set(t.pemicu, katalog.get(t.pemicu)?.nama || "");
