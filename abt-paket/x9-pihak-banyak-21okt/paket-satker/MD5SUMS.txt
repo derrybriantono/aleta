@@ -1,0 +1,12 @@
+b115d091ffbace024bd2032354476c97  abt-x9-pihak-banyak-21okt-FUNGSI.sql
+0032cc279a5a6dd1a115d131a90d5bb4  abt-x9-pihak-banyak-21okt-PASANG.sql
+0a24de687883c0d8a28f12f7ce002029  abt-x9-pihak-banyak-21okt-PERIKSA.sql
+988f80ba5e06447b6a6b7eff4d0d7350  abt-x9-pihak-banyak-21okt-PRASYARAT.sql
+664f781b5a43b105262f128a3fa0d229  abt-x9-pihak-banyak-21okt-PULIH.sql
+a91d3813f585a540afb68a12c4653c54  nama-fungsi.txt
+2f2e5d491f318d01e09e4dee8abfda69  nomor-baru.txt
+9c845eae1517063f4732afb683de7992  nomor-ubah.txt
+603a3cdafead870ea60e2bf55d0d9478  pasang-satker.sh
+89e6338f245b50c868987fea7c0718b3  perkara-uji.txt
+102bf6111b6446c1eefff197f9128104  pulih-satker.sh
+d27637cf980335c8e53fab33ed90ebab  uji-kueri.tsv

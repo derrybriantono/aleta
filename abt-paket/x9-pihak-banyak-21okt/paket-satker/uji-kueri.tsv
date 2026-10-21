@@ -1,0 +1,13 @@
+# no_var<TAB>kueri (#perkara_id# diganti pasang-satker.sh; hanya SELECT; baca saja)
+3507	SELECT aps_badilag.isian_rtf_pihak_utama(#perkara_id#, 1, 5, "Pemohon", "tempat kediaman di") AS data
+3508	SELECT aps_badilag.isian_rtf_pihak_urutan(#perkara_id#, 1, "Pemohon") AS data
+3509	SELECT aps_badilag.isian_rtf_pihak_utama(#perkara_id#, 2, 6, "Tergugat", "tempat kediaman di ") AS data
+3510	SELECT aps_badilag.isian_rtf_pihak_urutan(#perkara_id#, 2, "Tergugat") AS data
+3511	SELECT aps_badilag.isian_rtf_pihak_nama(#perkara_id#, 1, 6, "Pemohon") AS data
+3512	SELECT aps_badilag.isian_rtf_pihak_nama(#perkara_id#, 2, 6, "Tergugat") AS data
+3513	SELECT aps_badilag.isian_rtf_pihak_utama(#perkara_id#, 1, 1, "Pemohon", "tempat kediaman di") AS data
+3514	SELECT aps_badilag.isian_rtf_pihak_utama(#perkara_id#, 2, 1, "Tergugat", "tempat kediaman di ") AS data
+3515	SELECT aps_badilag.isian_rtf_pihak_nama(#perkara_id#, 1, 1, "Pemohon") AS data
+3516	SELECT aps_badilag.isian_rtf_pihak_nama(#perkara_id#, 2, 1, "Tergugat") AS data
+8710	SELECT aps_badilag.isian_rtf_pihak_tambahan(#perkara_id#, 4) AS data
+7054	SELECT aps_badilag.isian_rtf_pihak_tambahan(#perkara_id#, 3) AS data

@@ -1,0 +1,1 @@
+isian_rtf_romawi isian_rtf_tanggal isian_rtf_pihak_utama isian_rtf_pihak_nama isian_rtf_pihak_urutan isian_rtf_pihak_tambahan

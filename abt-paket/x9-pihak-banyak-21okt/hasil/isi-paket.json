@@ -1,0 +1,211 @@
+{
+ "baru": [
+  {
+   "no": 3507,
+   "nama": "PIHAK: IDENTITAS #0046# KE-5 DST (OTOMATIS dari SIPP perkara_pihak1, semua pihak urutan 5 sampai terakhir, sebutan berangka romawi; dipanggil variabel 7047)",
+   "sql": "SELECT aps_badilag.isian_rtf_pihak_utama(#perkara_id#, 1, 5, \"#0046#\", \"tempat kediaman di\") AS data",
+   "butir": "a"
+  },
+  {
+   "no": 3508,
+   "nama": "PIHAK: SEBUTAN SEMUA #0046# (OTOMATIS: #0046# I, #0046# II, ... dan #0046# N menurut urutan terbesar di SIPP)",
+   "sql": "SELECT aps_badilag.isian_rtf_pihak_urutan(#perkara_id#, 1, \"#0046#\") AS data",
+   "butir": "a"
+  },
+  {
+   "no": 3509,
+   "nama": "PIHAK: IDENTITAS #0047# KE-6 DST (OTOMATIS dari SIPP perkara_pihak2, semua pihak urutan 6 sampai terakhir, sebutan berangka romawi; dipanggil variabel 7048)",
+   "sql": "SELECT aps_badilag.isian_rtf_pihak_utama(#perkara_id#, 2, 6, \"#0047#\", \"#0124#\") AS data",
+   "butir": "a"
+  },
+  {
+   "no": 3510,
+   "nama": "PIHAK: SEBUTAN SEMUA #0047# (OTOMATIS: #0047# I, #0047# II, ... dan #0047# N menurut urutan terbesar di SIPP)",
+   "sql": "SELECT aps_badilag.isian_rtf_pihak_urutan(#perkara_id#, 2, \"#0047#\") AS data",
+   "butir": "a"
+  },
+  {
+   "no": 3511,
+   "nama": "PIHAK: NAMA #0046# KE-6 DST (OTOMATIS dari SIPP perkara_pihak1, urutan 6 sampai terakhir; dipanggil variabel 7097)",
+   "sql": "SELECT aps_badilag.isian_rtf_pihak_nama(#perkara_id#, 1, 6, \"#0046#\") AS data",
+   "butir": "a"
+  },
+  {
+   "no": 3512,
+   "nama": "PIHAK: NAMA #0047# KE-6 DST (OTOMATIS dari SIPP perkara_pihak2, urutan 6 sampai terakhir; dipanggil variabel 7098)",
+   "sql": "SELECT aps_badilag.isian_rtf_pihak_nama(#perkara_id#, 2, 6, \"#0047#\") AS data",
+   "butir": "a"
+  },
+  {
+   "no": 3513,
+   "nama": "PIHAK: IDENTITAS SEMUA #0046# (OTOMATIS dari SIPP perkara_pihak1, urutan 1 sampai terakhir, tanpa batas; tanpa kalimat kuasa)",
+   "sql": "SELECT aps_badilag.isian_rtf_pihak_utama(#perkara_id#, 1, 1, \"#0046#\", \"tempat kediaman di\") AS data",
+   "butir": "b"
+  },
+  {
+   "no": 3514,
+   "nama": "PIHAK: IDENTITAS SEMUA #0047# (OTOMATIS dari SIPP perkara_pihak2, urutan 1 sampai terakhir, tanpa batas; tanpa kalimat kuasa)",
+   "sql": "SELECT aps_badilag.isian_rtf_pihak_utama(#perkara_id#, 2, 1, \"#0047#\", \"#0124#\") AS data",
+   "butir": "b"
+  },
+  {
+   "no": 3515,
+   "nama": "PIHAK: NAMA SEMUA #0046# (OTOMATIS dari SIPP perkara_pihak1, urutan 1 sampai terakhir, tanpa batas)",
+   "sql": "SELECT aps_badilag.isian_rtf_pihak_nama(#perkara_id#, 1, 1, \"#0046#\") AS data",
+   "butir": "b"
+  },
+  {
+   "no": 3516,
+   "nama": "PIHAK: NAMA SEMUA #0047# (OTOMATIS dari SIPP perkara_pihak2, urutan 1 sampai terakhir, tanpa batas)",
+   "sql": "SELECT aps_badilag.isian_rtf_pihak_nama(#perkara_id#, 2, 1, \"#0047#\") AS data",
+   "butir": "b"
+  }
+ ],
+ "ubah": [
+  {
+   "no": 7047,
+   "kolom": "sql_query",
+   "ket": "7047: cabang urutan >= 5 (dulu ELSE kosong) memakai #3507# dan #3508#",
+   "lama_md5": "a7955dd37306ae7033c8efaec385d396",
+   "baru_md5": "4768ceb89c86ce434e89654add897548",
+   "lama_panjang": 7663,
+   "baru_panjang": 9031
+  },
+  {
+   "no": 7048,
+   "kolom": "sql_query",
+   "ket": "7048: cabang urutan >= 6 memakai #3509# dan #3510#",
+   "lama_md5": "922bffb349956eed6d125ca85b498343",
+   "baru_md5": "48b9f3ff7ec2039aa61707881ccaa4e0",
+   "lama_panjang": 9334,
+   "baru_panjang": 10896
+  },
+  {
+   "no": 7054,
+   "kolom": "sql_query",
+   "ket": "7054: pihak intervensi semua urutan lewat fungsi (dulu maksimum 5)",
+   "lama_md5": "64c8011629af7b725ef3b14c701c4302",
+   "baru_md5": "fea7ab72cd98afb9503e70bf97c34534",
+   "lama_panjang": 6909,
+   "baru_panjang": 68
+  },
+  {
+   "no": 7097,
+   "kolom": "sql_query",
+   "ket": "7097: cabang urutan >= 6 memakai #3511#",
+   "lama_md5": "8066a1f0f34a09b007ff7f9659ec5cb0",
+   "baru_md5": "34861e8bbe329026885e141001b2eaa5",
+   "lama_panjang": 4592,
+   "baru_panjang": 5060
+  },
+  {
+   "no": 7098,
+   "kolom": "sql_query",
+   "ket": "7098: cabang urutan >= 6 memakai #3512#",
+   "lama_md5": "0c721e524fb6510614d7ce8e0b541735",
+   "baru_md5": "063178271c53178f36fdb8dbb7979c67",
+   "lama_panjang": 4134,
+   "baru_panjang": 4630
+  },
+  {
+   "no": 8710,
+   "kolom": "sql_query",
+   "ket": "8710: Turut Tergugat semua urutan lewat fungsi (dulu maksimum 10)",
+   "lama_md5": "cefcc67d8ce1bf13dc3689ac89cb8eca",
+   "baru_md5": "211d132dd75aad35808d205d785ceb1c",
+   "lama_panjang": 12867,
+   "baru_panjang": 68
+  }
+ ],
+ "fungsi": [
+  "isian_rtf_romawi",
+  "isian_rtf_tanggal",
+  "isian_rtf_pihak_utama",
+  "isian_rtf_pihak_nama",
+  "isian_rtf_pihak_urutan",
+  "isian_rtf_pihak_tambahan"
+ ],
+ "dependensi": [
+  10,
+  11,
+  20,
+  21,
+  24,
+  46,
+  47,
+  98,
+  100,
+  101,
+  102,
+  103,
+  104,
+  105,
+  124,
+  335,
+  336,
+  337,
+  341,
+  342,
+  343,
+  345,
+  346,
+  347,
+  1033,
+  1035,
+  1036,
+  1176,
+  3111,
+  3112,
+  3113,
+  3114,
+  3115,
+  3117,
+  3118,
+  3119,
+  3121,
+  3122,
+  3123,
+  3124,
+  3125,
+  3127,
+  3128,
+  3129,
+  3131,
+  5019,
+  5026,
+  5028,
+  5029,
+  5078,
+  5079,
+  5080,
+  5081,
+  5083,
+  5084,
+  5085,
+  5086,
+  5087,
+  5088,
+  5089,
+  5090,
+  5091,
+  5092,
+  5093,
+  5094,
+  5095,
+  5096,
+  5097,
+  5098,
+  5099,
+  5102,
+  5103,
+  5104,
+  5106,
+  5107,
+  5117,
+  5118,
+  8540,
+  8541
+ ],
+ "harap": "0|0|6|0|0|79|0",
+ "ulang": "0|10|0|6|6|79|0"
+}

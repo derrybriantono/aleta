@@ -1,0 +1,634 @@
+{
+"sebelum": {
+"c107-10152": {
+"panjang": 106,
+"titik3": 0,
+"sebutan": 2,
+"sisa": [],
+"galat": false
+},
+"c107-6759": {
+"panjang": 154,
+"titik3": 0,
+"sebutan": 3,
+"sisa": [],
+"galat": false
+},
+"c107-6952": {
+"panjang": 52,
+"titik3": 0,
+"sebutan": 1,
+"sisa": [],
+"galat": false
+},
+"c107-9729": {
+"panjang": 810,
+"titik3": 0,
+"sebutan": 7,
+"sisa": [],
+"galat": false
+},
+"c62-10152": {
+"panjang": 669,
+"titik3": 0,
+"sebutan": 2,
+"sisa": [],
+"galat": false
+},
+"c62-6759": {
+"panjang": 490,
+"titik3": 0,
+"sebutan": 2,
+"sisa": [],
+"galat": false
+},
+"c62-6952": {
+"panjang": 721,
+"titik3": 0,
+"sebutan": 1,
+"sisa": [],
+"galat": false
+},
+"c62-9729": {
+"panjang": 810,
+"titik3": 0,
+"sebutan": 7,
+"sisa": [],
+"galat": false
+},
+"p47-10070": {
+"panjang": 1293,
+"titik3": 0,
+"sebutan": 4,
+"sisa": [],
+"galat": false
+},
+"p47-10152": {
+"panjang": 375,
+"titik3": 0,
+"sebutan": 1,
+"sisa": [],
+"galat": false
+},
+"p47-5979": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"p47-6759": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"p47-7450": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"p47-8644": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"p47-9571": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"p47-9729": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"p97-10070": {
+"panjang": 169,
+"titik3": 0,
+"sebutan": 4,
+"sisa": [],
+"galat": false
+},
+"p97-5979": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"p97-6759": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"p97-8644": {
+"panjang": 219,
+"titik3": 0,
+"sebutan": 5,
+"sisa": [],
+"galat": false
+},
+"p97-9571": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"t48-10152": {
+"panjang": 278,
+"titik3": 0,
+"sebutan": 1,
+"sisa": [],
+"galat": false
+},
+"t48-10155": {
+"panjang": 1000,
+"titik3": 0,
+"sebutan": 5,
+"sisa": [],
+"galat": false
+},
+"t48-10225": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"t48-6533": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"t48-6952": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"t48-7712": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"t48-9729": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"t98-10155": {
+"panjang": 159,
+"titik3": 0,
+"sebutan": 5,
+"sisa": [],
+"galat": false
+},
+"t98-6533": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"t98-6952": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"t98-7712": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"t98-9729": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"u8710-10225": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"u8710-6326": {
+"panjang": 656,
+"titik3": 0,
+"sebutan": 3,
+"sisa": [],
+"galat": false
+},
+"u8710-9233": {
+"panjang": 908,
+"titik3": 0,
+"sebutan": 6,
+"sisa": [],
+"galat": false
+},
+"u8710-9528": {
+"panjang": 515,
+"titik3": 0,
+"sebutan": 5,
+"sisa": [],
+"galat": false
+},
+"u8710-9729": {
+"panjang": 801,
+"titik3": 0,
+"sebutan": 7,
+"sisa": [],
+"galat": false
+},
+"r-hibah-10152": {
+"panjang": 42946,
+"titik3": 62,
+"sebutan": 2,
+"sisa": []
+},
+"r-hibah-6759": {
+"panjang": 94037,
+"titik3": 62,
+"sebutan": 8,
+"sisa": []
+},
+"r-hibah-6952": {
+"panjang": 49590,
+"titik3": 34,
+"sebutan": 1,
+"sisa": []
+},
+"r-hibah-9729": {
+"panjang": 87842,
+"titik3": 45,
+"sebutan": 7,
+"sisa": []
+},
+"r-itsbat-10070": {
+"panjang": 110009,
+"titik3": 56,
+"sebutan": 4,
+"sisa": []
+},
+"r-itsbat-5979": {
+"panjang": 116909,
+"titik3": 446,
+"sebutan": 0,
+"sisa": []
+},
+"r-itsbat-8644": {
+"panjang": 111511,
+"titik3": 58,
+"sebutan": 0,
+"sisa": []
+},
+"r-itsbat-9571": {
+"panjang": 146624,
+"titik3": 58,
+"sebutan": 0,
+"sisa": []
+}
+},
+"sesudah": {
+"c107-10152": {
+"panjang": 106,
+"titik3": 0,
+"sebutan": 2,
+"sisa": [],
+"galat": false
+},
+"c107-6759": {
+"panjang": 563,
+"titik3": 0,
+"sebutan": 11,
+"sisa": [],
+"galat": false
+},
+"c107-6952": {
+"panjang": 357,
+"titik3": 0,
+"sebutan": 9,
+"sisa": [],
+"galat": false
+},
+"c107-9729": {
+"panjang": 1865,
+"titik3": 0,
+"sebutan": 32,
+"sisa": [],
+"galat": false
+},
+"c62-10152": {
+"panjang": 669,
+"titik3": 0,
+"sebutan": 2,
+"sisa": [],
+"galat": false
+},
+"c62-6759": {
+"panjang": 4161,
+"titik3": 0,
+"sebutan": 11,
+"sisa": [],
+"galat": false
+},
+"c62-6952": {
+"panjang": 2464,
+"titik3": 0,
+"sebutan": 9,
+"sisa": [],
+"galat": false
+},
+"c62-9729": {
+"panjang": 6459,
+"titik3": 0,
+"sebutan": 33,
+"sisa": [],
+"galat": false
+},
+"p47-10070": {
+"panjang": 1293,
+"titik3": 0,
+"sebutan": 4,
+"sisa": [],
+"galat": false
+},
+"p47-10152": {
+"panjang": 375,
+"titik3": 0,
+"sebutan": 1,
+"sisa": [],
+"galat": false
+},
+"p47-5979": {
+"panjang": 2196,
+"titik3": 0,
+"sebutan": 7,
+"sisa": [],
+"galat": false
+},
+"p47-6759": {
+"panjang": 3662,
+"titik3": 0,
+"sebutan": 9,
+"sisa": [],
+"galat": false
+},
+"p47-7450": {
+"panjang": 1784,
+"titik3": 0,
+"sebutan": 6,
+"sisa": [],
+"galat": false
+},
+"p47-8644": {
+"panjang": 1817,
+"titik3": 0,
+"sebutan": 6,
+"sisa": [],
+"galat": false
+},
+"p47-9571": {
+"panjang": 9170,
+"titik3": 0,
+"sebutan": 33,
+"sisa": [],
+"galat": false
+},
+"p47-9729": {
+"panjang": 4011,
+"titik3": 0,
+"sebutan": 15,
+"sisa": [],
+"galat": false
+},
+"p97-10070": {
+"panjang": 169,
+"titik3": 0,
+"sebutan": 4,
+"sisa": [],
+"galat": false
+},
+"p97-5979": {
+"panjang": 205,
+"titik3": 0,
+"sebutan": 6,
+"sisa": [],
+"galat": false
+},
+"p97-6759": {
+"panjang": 406,
+"titik3": 0,
+"sebutan": 8,
+"sisa": [],
+"galat": false
+},
+"p97-8644": {
+"panjang": 219,
+"titik3": 0,
+"sebutan": 5,
+"sisa": [],
+"galat": false
+},
+"p97-9571": {
+"panjang": 1123,
+"titik3": 0,
+"sebutan": 32,
+"sisa": [],
+"galat": false
+},
+"t48-10152": {
+"panjang": 278,
+"titik3": 0,
+"sebutan": 1,
+"sisa": [],
+"galat": false
+},
+"t48-10155": {
+"panjang": 1000,
+"titik3": 0,
+"sebutan": 5,
+"sisa": [],
+"galat": false
+},
+"t48-10225": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"t48-6533": {
+"panjang": 1450,
+"titik3": 0,
+"sebutan": 6,
+"sisa": [],
+"galat": false
+},
+"t48-6952": {
+"panjang": 1741,
+"titik3": 0,
+"sebutan": 8,
+"sisa": [],
+"galat": false
+},
+"t48-7712": {
+"panjang": 2561,
+"titik3": 0,
+"sebutan": 10,
+"sisa": [],
+"galat": false
+},
+"t48-9729": {
+"panjang": 1628,
+"titik3": 0,
+"sebutan": 11,
+"sisa": [],
+"galat": false
+},
+"t98-10155": {
+"panjang": 159,
+"titik3": 0,
+"sebutan": 5,
+"sisa": [],
+"galat": false
+},
+"t98-6533": {
+"panjang": 267,
+"titik3": 0,
+"sebutan": 6,
+"sisa": [],
+"galat": false
+},
+"t98-6952": {
+"panjang": 303,
+"titik3": 0,
+"sebutan": 8,
+"sisa": [],
+"galat": false
+},
+"t98-7712": {
+"panjang": 517,
+"titik3": 0,
+"sebutan": 10,
+"sisa": [],
+"galat": false
+},
+"t98-9729": {
+"panjang": 398,
+"titik3": 0,
+"sebutan": 11,
+"sisa": [],
+"galat": false
+},
+"u8710-10225": {
+"panjang": 0,
+"titik3": 0,
+"sebutan": 0,
+"sisa": [],
+"galat": false
+},
+"u8710-6326": {
+"panjang": 656,
+"titik3": 0,
+"sebutan": 3,
+"sisa": [],
+"galat": false
+},
+"u8710-9233": {
+"panjang": 908,
+"titik3": 0,
+"sebutan": 6,
+"sisa": [],
+"galat": false
+},
+"u8710-9528": {
+"panjang": 515,
+"titik3": 0,
+"sebutan": 5,
+"sisa": [],
+"galat": false
+},
+"u8710-9729": {
+"panjang": 801,
+"titik3": 0,
+"sebutan": 7,
+"sisa": [],
+"galat": false
+},
+"r-hibah-10152": {
+"panjang": 42946,
+"titik3": 62,
+"sebutan": 2,
+"sisa": []
+},
+"r-hibah-6759": {
+"panjang": 97699,
+"titik3": 62,
+"sebutan": 17,
+"sisa": []
+},
+"r-hibah-6952": {
+"panjang": 51331,
+"titik3": 34,
+"sebutan": 9,
+"sisa": []
+},
+"r-hibah-9729": {
+"panjang": 93481,
+"titik3": 45,
+"sebutan": 33,
+"sisa": []
+},
+"r-itsbat-10070": {
+"panjang": 110009,
+"titik3": 56,
+"sebutan": 4,
+"sisa": []
+},
+"r-itsbat-5979": {
+"panjang": 119105,
+"titik3": 446,
+"sebutan": 7,
+"sisa": []
+},
+"r-itsbat-8644": {
+"panjang": 113328,
+"titik3": 58,
+"sebutan": 6,
+"sisa": []
+},
+"r-itsbat-9571": {
+"panjang": 155794,
+"titik3": 58,
+"sebutan": 33,
+"sisa": []
+}
+}
+}
