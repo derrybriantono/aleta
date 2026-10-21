@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.29",
+    dirilis: "2026-10-21T06:59:00+08:00",
+    judul: "Jadwal Sidang: tunda otomatis, sidang keliling, hakim per perkara",
+    butir: [
+      "Jadwal Sidang: menu tunda dan putus ringkas - pilih lalu Simpan, tertutup sendiri, tanpa keterangan teknis; usulan tanggal dengan kalimat singkat.",
+      "Saklar Tunda otomatis (Super Admin, bawaan mati, ada mode kering): pukul 16.30 perkara yang belum diberi hasil ditunda menurut kebiasaan; gugur dan tidak dapat diterima hanya menjadi usulan untuk majelis.",
+      "Saklar Sidang keliling per tanggal (tawaran otomatis bila sebagian besar sidang di luar gedung); tunda otomatis hari itu pukul 14.00.",
+      "Pilih satu hakim per perkara atau per panitera sidang (konseptor sementara ikut terisi), nama hakim tampil di jadwal, dan cetak terpisah per hakim.",
+      "Per panitera sidang: tunda massal dan keterangan putus massal dengan laporan per perkara.",
+    ],
+  },
+  {
     versi: "1.205.28",
     dirilis: "2026-10-21T23:57:00+08:00",
     judul: "Tombol Muat ulang dan pihak lengkap di blangko",
