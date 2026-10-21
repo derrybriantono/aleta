@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.28",
+    dirilis: "2026-10-21T23:57:00+08:00",
+    judul: "Tombol Muat ulang dan pihak lengkap di blangko",
+    butir: [
+      "Tombol Muat ulang di kepala SIPP halaman perkara (samping Tarik data): memuat ulang tetap di perkara dan tab yang sama sehingga berkas yang baru diunggah langsung tampil; bila ada isian yang belum disimpan, ditanya dulu.",
+      "Blangko Derry: semua pihak (Pemohon/Penggugat, Termohon/Tergugat, Turut Tergugat) tercetak lengkap sampai pihak terakhir; tiga Pemohon dengan kuasa dan koma kalimat kuasa empat pihak dibetulkan.",
+      "Rekonvensi cerai talak: tuntutan harta bersama dalam rekonvensi kini tercetak; kutipan petitum tampil untuk semua tuntutan.",
+      "Perbaikan kecil isi blangko: total biaya, ejaan, sebutan Pemohon pada izin poligami, tanggal relaas pertama lebih cepat.",
+    ],
+  },
+  {
     versi: "1.205.27",
     dirilis: "2026-10-21T18:13:00+08:00",
     judul: "Arsip hasil mediasi dan peta relaas elektronik",
