@@ -1,0 +1,11 @@
+-- Paket ABT "abt-x8-sisa-tuntutan-21okt" (21 Okt 2026): sisa paket x4 - kutipan petitum untuk pemicu tuntutan lain (layar), harta bersama dalam
+-- gugatan rekonvensi cerai talak. 3 variabel baru, 0 baris diubah. Blangko RTF yang ditambal: 1 (lihat rtf-daftar-tambal.tsv).
+-- PULIH (deterministik): variabel baru dihapus HANYA bila isinya masih persis paket; baris yang diubah dikembalikan dari tabel sementara x8_lama
+-- (dibuat pulih-satker.sh dari cadangan/abt_variabel-sebelum.sql) HANYA bila isinya masih isi BARU paket dan baris cadangan masih isi LAMA yang diharapkan.
+-- Jalankan lewat pulih-satker.sh (bukan langsung): tabel x8_lama harus ada.
+START TRANSACTION;
+DELETE FROM abt_variabel WHERE (no_var=3450 AND MD5(nama)='f8983d4f21ee9c0ee7dac5417ec2c8dc' AND data_type='data_sql' AND IFNULL(data_tabel,'')='' AND IFNULL(data_kolom,'')='' AND IFNULL(urutan_data,0)=0 AND referensi IS NULL AND multi_sidang IS NULL AND locked=0 AND IFNULL(MD5(sql_query),'-')='bfd6fed2fd020c5a97ac2cd7ca1231ad' AND IFNULL(MD5(default_data),'-')='-');
+DELETE FROM abt_variabel WHERE (no_var=3451 AND MD5(nama)='1473f7c13293c56fd49710095c586d7f' AND data_type='data_sql' AND IFNULL(data_tabel,'')='' AND IFNULL(data_kolom,'')='' AND IFNULL(urutan_data,0)=0 AND referensi IS NULL AND multi_sidang IS NULL AND locked=0 AND IFNULL(MD5(sql_query),'-')='e68587a70636b2e1ca008b9e1b21ad2f' AND IFNULL(MD5(default_data),'-')='-');
+DELETE FROM abt_variabel WHERE (no_var=3452 AND MD5(nama)='37e7dbe69017ebd8ff17cd7b2a513ce7' AND data_type='data_sql' AND IFNULL(data_tabel,'')='' AND IFNULL(data_kolom,'')='' AND IFNULL(urutan_data,0)=0 AND referensi IS NULL AND multi_sidang IS NULL AND locked=0 AND IFNULL(MD5(sql_query),'-')='740623d500419c0bb58e3010149a6d18' AND IFNULL(MD5(default_data),'-')='-');
+COMMIT;
+SELECT IF((SELECT COUNT(*) FROM abt_variabel WHERE no_var IN (3450,3451,3452)) = 0 AND (SELECT COUNT(*) FROM abt_variabel WHERE (1=0)) = 0, 'PULIH COCOK', CONCAT('PULIH TIDAK LENGKAP - nomor baru tersisa ', (SELECT COUNT(*) FROM abt_variabel WHERE no_var IN (3450,3451,3452)), ', baris diubah yang sudah kembali ', (SELECT COUNT(*) FROM abt_variabel WHERE (1=0)), ' dari 0 (diubah orang sesudah dipasang? dibiarkan)')) AS hasil;
