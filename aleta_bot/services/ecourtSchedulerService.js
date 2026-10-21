@@ -1011,6 +1011,33 @@ function mulaiUlang() {
   mulai();
 }
 
+/**
+ * Keadaan untuk menimbang SELA tarikan satu perkara (ecourtTarikSatuService).
+ *
+ * HANYA MEMBACA - tidak mengubah jadwal, kursor, atau kunci. Mengembalikan
+ * kapan putaran utama berikutnya (berkala dan pagi) akan jatuh tempo, supaya
+ * tarikan satu perkara dari kepala SIPP hanya dimulai bila ia pasti selesai
+ * sebelum putaran utama; putaran utama yang SEDANG berjalan atau SEDANG dipilih
+ * (sedangPutaranTerjadwal, sebelum jembatan dijalankan) juga terbaca sibuk.
+ */
+function keadaanGiliran(sekarangMs = Date.now()) {
+  const pengaturan = getSettings();
+  const berkala = keadaan.timer
+    ? jadwalBerkalaBerikutnya({ aktif: pengaturan.aktif, berikutnyaMs: keadaan.berkalaBerikutnyaMs, sekarangMs, pengaturan })
+    : null;
+  const pagi = pengaturan.aktif
+    ? jadwalPagiBerikutnya({ sekarangMs, pengaturan, terakhirTanggal: String(bacaPagi().tanggal || "") })
+    : { waktu: null };
+  return {
+    aktif: pengaturan.aktif === true,
+    sibuk: Boolean(keadaan.sedangPutaranTerjadwal || keadaan.sedangJalan),
+    penarikanLain: !keadaan.sedangJalan && kunciMasihHidup(),
+    memulihkan: pulihSedangMemakaiProfil(),
+    berkalaBerikutnyaMs: berkala ? Date.parse(berkala) : null,
+    pagiBerikutnyaMs: pagi.waktu ? Date.parse(pagi.waktu) : null,
+  };
+}
+
 /** Keadaan penjadwal untuk ditampilkan portal. */
 function getStatus() {
   const pengaturan = getSettings();
@@ -1227,6 +1254,7 @@ module.exports = {
   dalamJamKerja,
   getSettings,
   getStatus,
+  keadaanGiliran,
   hentikanPenarikan,
   jalankanSatuPutaran,
   mulaiPenarikanBelumAda,

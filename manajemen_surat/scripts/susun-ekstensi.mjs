@@ -163,6 +163,9 @@ const BERKAS = [
   "putusan-sipp.css",
   // Pratinjau BAS/relaas di SIPP sebelum diunduh (20 Okt 2026).
   "pratinjau-bas-relaas.js",
+  // Tombol "Tarik data" di kepala halaman perkara SIPP (21 Okt 2026): menarik e-Court satu perkara saja,
+  // di sela penarikan utama (antrean & batas laju di server); sebelah kiri "Selamat Datang <pengguna>".
+  "tarik-satu-perkara.js",
   // Unggah Putusan Terjadwal (21 Okt 2026, agen B3): tombol "Jadwalkan Putusan" di sebelah Putusan Otomatis (halaman perkara)
   // dan melayang di dashboard/daftar/jurnal; pemasangan berkas ke perkara (murni, dapat diuji); pelaksana peramban yang
   // mengisi & menyimpan Putusan Akhir pada waktunya lewat alur Putusan Otomatis. e-Doc dikerjakan server.

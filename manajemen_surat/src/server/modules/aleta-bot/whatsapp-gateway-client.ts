@@ -3957,6 +3957,37 @@ export async function getGatewayEcourtPermintaan(nomorPerkara: string) {
   );
 }
 
+/**
+ * Tarik data SATU perkara dari kepala halaman perkara SIPP (21 Okt 2026).
+ * Antrean di sela penarikan utama dan batas laju per perkara dijaga di bot.
+ * `paksa` hanya boleh true bila PORTAL sudah memastikan peminta Admin/Super Admin.
+ */
+export type GatewayTarikSatu = {
+  ok?: boolean;
+  hasil?: "dimulai" | "diantrekan" | "bergabung" | "segar" | "bukan_ecourt";
+  alasan?: string;
+  pesan?: string;
+  terakhirDetik?: number | null;
+  terakhirTeks?: string;
+  sisaSegarDetik?: number;
+  antrean?: number;
+  ada?: boolean;
+  tarikan?: Record<string, unknown> | null;
+};
+
+export async function mintaGatewayTarikSatu(nomorPerkara: string, olehSiapa: string, paksa: boolean) {
+  return gatewayFetch<GatewayTarikSatu>("/internal/aleta-bot/ecourt/tarik-satu", {
+    method: "POST",
+    body: JSON.stringify({ nomorPerkara, olehSiapa, paksa }),
+    timeoutMs: 20000,
+  });
+}
+
+export async function getGatewayTarikSatu(nomorPerkara: string) {
+  const params = new URLSearchParams({ nomor: nomorPerkara });
+  return gatewayFetch<GatewayTarikSatu>(`/internal/aleta-bot/ecourt/tarik-satu?${params.toString()}`, { timeoutMs: 8000 });
+}
+
 export async function getGatewaySippKonteks(
   nomor: string,
   nama = ""
