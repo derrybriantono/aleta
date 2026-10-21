@@ -57,6 +57,15 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.27",
+    dirilis: "2026-10-21T18:13:00+08:00",
+    judul: "Arsip hasil mediasi dan peta relaas elektronik",
+    butir: [
+      "Tab Mediasi SIPP: tombol Unggah hasil mediasi (PDF, RTF, DOC, DOCX) di bawah Edit Hasil Mediasi; berkas disimpan di arsip per perkara dengan daftar, pratinjau, ganti dan hapus berjejak; bila mediasi berhasil dengan akta perdamaian, dapat dikirim juga sebagai e-Doc akta di SIPP dengan konfirmasi.",
+      "Peta relaas: panggilan elektronik dihitung bertemu.",
+    ],
+  },
+  {
     versi: "1.205.26",
     dirilis: "2026-10-21T16:59:00+08:00",
     judul: "Putusan Otomatis, tarik data satu perkara, tuntutan semua blangko",
