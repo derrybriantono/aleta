@@ -309,6 +309,20 @@ export type TanggalBerikut = {
   bergeserDari?: string;
 };
 
+/**
+ * Keterangan tanggal untuk PETUGAS (22 Okt 2026): satu kalimat awam, tanpa
+ * menyebut data e-Court, panggilan, atau dasar hitungnya. Penjelasan panjang
+ * di `penjelasan` tetap ada untuk uji dan catatan, tidak ditampilkan di menu.
+ */
+export function usulanTanggalAwam(t: Pick<TanggalBerikut, "sumber" | "penjelasan" | "bergeserDari">): string {
+  const geser = t.bergeserDari ? " Digeser ke hari kerja karena hari libur." : "";
+  if (t.sumber === "court-calendar") return `Usulan: sesuai Court Calendar.${geser}`;
+  if (t.sumber === "mediasi") return `Usulan: 3 minggu sesudah sidang ini.${geser}`;
+  if (t.sumber === "dua-pekan") return `Usulan: 2 minggu sesudah sidang ini.${geser}`;
+  const minggu = /(\d+) minggu/.exec(t.penjelasan)?.[1];
+  return minggu ? `Usulan: ${minggu} minggu sesudah sidang ini.${geser}` : `Usulan sesuai aturan.${geser}`;
+}
+
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 /**

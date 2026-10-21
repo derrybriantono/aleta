@@ -12,6 +12,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CatatHasilRingkas } from "@/components/portal/hasil-sidang";
+import { usulanTanggalAwam } from "@/lib/bawaan-tunda";
 
 const RUANGAN = [{ id: 1, kode: "101", nama: "Ruang Sidang 1 Dalam Gedung", benderaKeliling: false, aktif: true }];
 
@@ -302,6 +303,33 @@ describe("menu putus", () => {
     expect(kiriman[0]).toMatchObject({ statusPutusanId: 62, kering: false });
     expect(document.body.textContent).not.toMatch(/atas nama|Sitti Nurhidayah|tabel|perkara_/i);
     await waitFor(() => expect(onTutup).toHaveBeenCalledTimes(1), { timeout: 5000 });
+  });
+});
+
+describe("keterangan tanggal berikutnya: kalimat awam", () => {
+  it("memetakan tiap sumber ke satu kalimat pendek tanpa menyebut data e-Court", () => {
+    expect(usulanTanggalAwam({ sumber: "court-calendar", penjelasan: "mengikuti Court Calendar: 2026-07-08 (sidang ke-3)." })).toBe("Usulan: sesuai Court Calendar.");
+    expect(usulanTanggalAwam({ sumber: "mediasi", penjelasan: "tundaan mediasi: 3 minggu (21 hari) sesudah sidang ini." })).toBe("Usulan: 3 minggu sesudah sidang ini.");
+    expect(usulanTanggalAwam({ sumber: "dua-pekan", penjelasan: "Court Calendar tidak terbaca, dua pekan sesudah sidang ini." })).toBe("Usulan: 2 minggu sesudah sidang ini.");
+    expect(
+      usulanTanggalAwam({ sumber: "tidak-hadir", penjelasan: "tergugat tidak setuju e-Court: 1 minggu (7 hari) sesudah sidang ini." })
+    ).toBe("Usulan: 1 minggu sesudah sidang ini.");
+    expect(
+      usulanTanggalAwam({ sumber: "tidak-hadir", penjelasan: "penggugat dan tergugat tidak hadir, data e-Court belum dibaca: 2 minggu (14 hari) sesudah sidang ini." })
+    ).toBe("Usulan: 2 minggu sesudah sidang ini.");
+  });
+
+  it("menyebut pergeseran karena hari libur", () => {
+    expect(usulanTanggalAwam({ sumber: "dua-pekan", penjelasan: "", bergeserDari: "2026-10-19" })).toContain("hari libur");
+  });
+
+  it("menu tunda tidak menampilkan kata e-Court, dibaca, atau data", async () => {
+    pasangFetch({ jalan: "tunda" });
+    gambar("tunda");
+    await screen.findByLabelText("Alasan penundaan", {}, { timeout: 10000 });
+    const ket = document.querySelector("[data-sumber-tanggal]")?.textContent ?? "";
+    expect(ket).toMatch(/^Usulan: /);
+    expect(ket).not.toMatch(/e-Court|dibaca|data /i);
   });
 });
 

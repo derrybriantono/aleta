@@ -26,6 +26,7 @@ import {
   type MediasiRiwayat,
   type RencanaKalender,
   type SidangRiwayat,
+  usulanTanggalAwam,
 } from "@/lib/bawaan-tunda";
 import { bacaKontakPihak, kalimatKontak } from "@/lib/jadwal-sidang-kontak";
 import {
@@ -785,7 +786,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                           className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                         />
                         <span className="text-[0.7rem]" data-sumber-tanggal={tanggalDisentuh ? "manual" : sumberDasarTanggal.sumber}>
-                          {tanggalDisentuh ? "Tanggal diganti manual." : `Tanggal ${sumberDasarTanggal.penjelasan}`}
+                          {tanggalDisentuh ? "Tanggal diganti manual." : usulanTanggalAwam(sumberDasarTanggal)}
                         </span>
                       </label>
                       <label className="flex min-w-[7rem] flex-1 flex-col gap-1 text-xs text-muted-foreground">
@@ -1707,7 +1708,7 @@ export function CatatHasilRingkas({
               className="mt-0.5 block text-[10px] leading-tight text-muted-foreground"
               data-sumber-tanggal={tanggalDisentuh ? "manual" : sumberDasarTanggal.sumber}
             >
-              {tanggalDisentuh ? "Tanggal diganti manual." : `Tanggal ${sumberDasarTanggal.penjelasan}`}
+              {tanggalDisentuh ? "Tanggal diganti manual." : usulanTanggalAwam(sumberDasarTanggal)}
             </span>
           </label>
           <label className="text-xs">

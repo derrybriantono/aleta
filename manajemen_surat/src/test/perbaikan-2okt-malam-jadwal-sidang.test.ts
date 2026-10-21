@@ -380,7 +380,7 @@ describe("butir 1c - SATU fungsi bersama: kedua layar tidak memegang aturan send
     for (const c of [cRingkas, cPenuh]) {
       const sumber = c.querySelector("[data-sumber-tanggal]");
       expect(sumber?.getAttribute("data-sumber-tanggal")).toBe("court-calendar");
-      expect(sumber?.textContent).toContain("mengikuti Court Calendar: 2026-07-08 (sidang ke-3)");
+      expect(sumber?.textContent).toContain("Usulan: sesuai Court Calendar");
     }
   });
 
@@ -391,7 +391,7 @@ describe("butir 1c - SATU fungsi bersama: kedua layar tidak memegang aturan send
     await waitFor(() => expect(tanggalDari(cPenuh)).toBe("2026-07-15"));
     for (const c of [cRingkas, cPenuh]) {
       expect(c.querySelector("[data-sumber-tanggal]")?.getAttribute("data-sumber-tanggal")).toBe("dua-pekan");
-      expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("Court Calendar tidak terbaca");
+      expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("Usulan: 2 minggu sesudah sidang ini");
     }
   });
 
@@ -408,7 +408,7 @@ describe("butir 1c - SATU fungsi bersama: kedua layar tidak memegang aturan send
       await waitFor(() => expect(tanggalDari(c)).toBe("2026-07-22"));
       expect(jamDari(c)).toBe("09:00");
       expect(c.querySelector("[data-sumber-tanggal]")?.getAttribute("data-sumber-tanggal")).toBe("mediasi");
-      expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("tundaan mediasi: 3 minggu");
+      expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("Usulan: 3 minggu sesudah sidang ini");
     }
   });
 
@@ -439,7 +439,7 @@ describe("butir 1c - SATU fungsi bersama: kedua layar tidak memegang aturan send
       fireEvent.change(pilih, { target: { value: "2" } });
       await waitFor(() => expect(tanggalDari(c)).toBe("2026-07-15"));
       expect(c.querySelector("[data-sumber-tanggal]")?.getAttribute("data-sumber-tanggal")).toBe("tidak-hadir");
-      expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("2 minggu");
+      expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("Usulan: 2 minggu");
     }
   });
 
@@ -475,7 +475,7 @@ describe("butir 1c - SATU fungsi bersama: kedua layar tidak memegang aturan send
       await waitFor(() => expect(tanggalDari(c)).toBe("2026-03-16"));
       const sumber = c.querySelector("[data-sumber-tanggal]");
       expect(sumber?.getAttribute("data-sumber-tanggal")).toBe("tidak-hadir");
-      expect(sumber?.textContent).toContain("tergugat tidak hadir, tergugat punya email dan setuju e-Court: 1 minggu");
+      expect(sumber?.textContent).toContain("Usulan: 1 minggu sesudah sidang ini");
       expect(c.querySelector("[data-kontak-pihak]")?.textContent).toContain("Email tergugat: ada · persetujuan e-Court: setuju");
     }
   });
@@ -485,7 +485,7 @@ describe("butir 1c - SATU fungsi bersama: kedua layar tidak memegang aturan send
     const { cRingkas, cPenuh } = await renderKeduanya104();
     for (const c of [cRingkas, cPenuh]) {
       await waitFor(() => expect(tanggalDari(c)).toBe("2026-03-25"));
-      expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("tergugat tidak setuju e-Court: 2 minggu");
+      expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("Usulan: 2 minggu sesudah sidang ini");
       expect(c.querySelector("[data-kontak-pihak]")?.textContent).toContain("persetujuan e-Court: tidak setuju");
     }
   });
@@ -495,7 +495,7 @@ describe("butir 1c - SATU fungsi bersama: kedua layar tidak memegang aturan send
     const { cRingkas, cPenuh } = await renderKeduanya104();
     for (const c of [cRingkas, cPenuh]) {
       await waitFor(() => expect(tanggalDari(c)).toBe("2026-03-25"));
-      expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("data e-Court belum dibaca");
+      expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("Usulan: 2 minggu sesudah sidang ini");
       expect(c.querySelector("[data-kontak-pihak]")?.textContent).toContain("belum dapat dibaca");
     }
   });
@@ -508,7 +508,7 @@ describe("butir 1c - SATU fungsi bersama: kedua layar tidak memegang aturan send
       const pilih = Array.from(c.querySelectorAll("select")).find((x) => /Pihak pertama saja/.test(x.textContent ?? "")) as HTMLSelectElement;
       fireEvent.change(pilih, { target: { value: "3" } });
       await waitFor(() => expect(tanggalDari(c)).toBe("2026-03-16"));
-      expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("penggugat tidak hadir, tergugat hadir: 1 minggu");
+      expect(c.querySelector("[data-sumber-tanggal]")?.textContent).toContain("Usulan: 1 minggu sesudah sidang ini");
     }
   });
 
