@@ -406,7 +406,7 @@ describe("tombol", () => {
     expect(baca("putusan-terjadwal.js")).not.toContain("buka dashboard atau jurnal");
   });
 
-  it("semua panel bawaannya TERLIPAT (satu perkara, dashboard, daftar); dibuka petugas diingat", async () => {
+  it("semua panel bawaannya TERLIPAT (satu perkara, dashboard, daftar); dibuka petugas diingat selama kunjungan ini saja", async () => {
     for (const halaman of ["perkara", "dasbor", "daftar"] as const) {
       const h = buka({ halaman });
       await sampai(() => (api(h).pasang(h.d), tombolPt(h)), `tombol di ${halaman}`);
@@ -418,8 +418,12 @@ describe("tombol", () => {
     const h = buka();
     await sampai(() => (api(h).pasang(h.d), tombolPt(h)), "tombol");
     tombolPt(h)!.click();
-    await sampai(() => (h.simpanan.lipatanBagian as any)?.putusanTerjadwal2 === false, "pembukaan diingat");
     expect(panel(h)!.hidden).toBe(false);
+    // 21 Okt 2026 (perbaikan): diingat di memori halaman (alatPanelTerbuka), BUKAN chrome.storage.local -
+    // kunjungan berikutnya / sesudah muat ulang kembali terlipat.
+    await tunggu(30);
+    expect(h.simpanan.lipatanBagian).toBeUndefined();
+    expect((h.w as any).alatPanelTerbuka(`jadwalkan-putusan:perkara:${api(h).keadaan().nomor}`)).toBe(true);
   });
 
   it("gaya: SATU gaya dan palet dengan Penetapan Otomatis (tanpa ungu tetap); kontras >= 4,5:1 terang dan gelap", () => {

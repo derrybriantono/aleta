@@ -43,9 +43,25 @@
   const ID_PANEL = "aleta-ptj-panel";
   const ID_MASSAL = "aleta-ptj-massal";
   const KUNCI_SETELAN = "putusanTerjadwalSetelan";
-  const KUNCI_LIPAT = "lipatanBagian";
-  // Kunci baru (21 Okt 2026): bawaan TERLIPAT; true = sengaja dilipat, false = sengaja dibuka petugas.
-  const KUNCI_LIPAT_PANEL = "putusanTerjadwal2";
+  // 21 Okt 2026 (perbaikan): BAWAAN TERLIPAT di setiap kunjungan; pilihan petugas diingat hanya selama halaman
+  // ini terbuka (aturan bersama alatPanelTerbuka/alatIngatPanel, panel-alat.js). Dulu chrome.storage.local:
+  // panel yang sekali dibuka terbuka lagi di setiap perkara dan sesudah tiap muat ulang.
+  const KUNCI_PANEL = "jadwalkan-putusan";
+  const kunciPanel = (mode, nomor, tempat) => `${KUNCI_PANEL}:${mode}:${mode === "perkara" ? nomor : tempat}`;
+  function terbukaTersimpan(kunci) {
+    try {
+      return typeof alatPanelTerbuka === "function" ? alatPanelTerbuka(kunci) : false;
+    } catch {
+      return false;
+    }
+  }
+  function ingatTerbuka(kunci, buka) {
+    try {
+      if (typeof alatIngatPanel === "function") alatIngatPanel(kunci, buka);
+    } catch {
+      /* ingatan lipatan hanya kenyamanan */
+    }
+  }
   const API = {
     dasar: "/aleta/api/aleta-ecourt/putusan-terjadwal",
     berkas: "/aleta/api/aleta-ecourt/putusan-terjadwal/berkas",
@@ -1829,12 +1845,8 @@
       b.addEventListener("click", () => {
         if (!S) return;
         S.terbuka = !S.terbuka;
-        const lipat = !S.terbuka;
-        void bacaPenyimpanan([KUNCI_LIPAT]).then((s) => {
-          const lip = s && s[KUNCI_LIPAT] && typeof s[KUNCI_LIPAT] === "object" ? s[KUNCI_LIPAT] : {};
-          void tulisPenyimpanan({ [KUNCI_LIPAT]: { ...lip, [KUNCI_LIPAT_PANEL]: lipat } });
-        });
-        pasangPanel(tr);
+        ingatTerbuka(kunciPanel(S.mode, S.nomor, S.tempat), S.terbuka);
+        pasangPanel(barisTombol(document) || tr);
       });
       td.appendChild(b);
     }
@@ -1902,6 +1914,7 @@
       b.addEventListener("click", () => {
         if (!S) return;
         S.terbuka = !S.terbuka;
+        ingatTerbuka(kunciPanel(S.mode, S.nomor, S.tempat), S.terbuka);
         pasangPanelMassal(tempat);
       });
       wadah.appendChild(b);
@@ -1970,17 +1983,8 @@
     if (!S || S.mode !== mode || S.nomor !== nomor || S.tempat !== tempat) {
       if (d.querySelector(".aleta-ptj")) bersihkan(d);
       S = keadaanBaru(mode, nomor, tempat);
-      // Bawaan TERLIPAT di semua tempat (21 Okt 2026); hanya yang sengaja dibuka petugas (false) yang terbuka lagi.
-      void bacaPenyimpanan([KUNCI_LIPAT]).then((simpan) => {
-        if (!S || S.mode !== "perkara" || S.nomor !== nomor) return;
-        const lip = simpan && simpan[KUNCI_LIPAT] && typeof simpan[KUNCI_LIPAT] === "object" ? simpan[KUNCI_LIPAT] : {};
-        if (lip[KUNCI_LIPAT_PANEL] === false && !S.lipatDibaca) {
-          S.terbuka = true;
-          const tr = barisTombol(document);
-          if (tr) pasangPanel(tr);
-        }
-        S.lipatDibaca = true;
-      });
+      // Bawaan TERLIPAT di semua tempat; terbuka lagi HANYA bila petugas membukanya pada kunjungan halaman ini.
+      S.terbuka = terbukaTersimpan(kunciPanel(mode, nomor, tempat));
     }
     if (mode === "perkara") {
       const tr = barisTombol(d);

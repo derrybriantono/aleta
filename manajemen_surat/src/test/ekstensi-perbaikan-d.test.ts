@@ -178,7 +178,8 @@ const UI = {
   ujiTampilan: "ui",
   ujiIzinkanNyata: true,
   aktif: true,
-  panelBawaanTampil: { aleta: true, diubahPada: "2026-10-02T00:00:00.000Z" },
+  // 21 Okt 2026: pilihan "terbuka" hanya berlaku bila disimpan sesudah keputusan "semua panel terlipat".
+  panelBawaanTampil: { aleta: true, diubahPada: "2026-10-22T00:00:00.000Z" },
 };
 const BARU = { ujiTampilan: "baru", ujiIzinkanNyata: true, aktif: true };
 /**

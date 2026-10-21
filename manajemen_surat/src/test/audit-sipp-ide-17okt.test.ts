@@ -400,6 +400,11 @@ describe("G. widget kehadiran: jadwal sidang tidak terbaca bukan 'tidak ada sida
     terbuka.push(dom);
     const w = dom.window as Jendela;
     const simpanan: Record<string, unknown> = { posisiChecklistSipp: { kecil: false }, checklistMilestone: true, widgetKehadiran: true, ujiTampilan: "ui" };
+    // 21 Okt 2026: widget terbentang hanya bila dibentangkan pada SESI TAB ini (panel-alat.js alatPanelTerbuka
+    // sesiTab) - posisi "terbentang" yang tersimpan saja tidak lagi membentangkannya di tab baru.
+    if (["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"].some((k) => (simpanan[k] as { kecil?: boolean } | undefined)?.kecil === false)) {
+      w.sessionStorage.setItem("aleta-panel-terbuka:checklist-widget", "1");
+    }
     w.chrome = {
       runtime: { id: "aleta-uji", getManifest: () => ({ version: "0.0.0" }), getURL: (x: string) => `chrome-extension://aleta-uji/${x}`, sendMessage: async () => ({}) },
       storage: {

@@ -7527,8 +7527,11 @@ function bagianIsiPutusan(nomorPerkara) {
   // Perbaikan 1 Okt (S, butir 3): pembaca naskah diberi nama supaya UI Baru
   // dapat meneruskan naskah yang dipilih SEBELUM blangko dibuka. Isinya sama
   // dengan pendengar change sebelumnya; Lama dan Baru tetap lewat pemilih.
-  const prosesNaskah = async (dipilih) => {
-    if (!dipilih) return;
+  // 21 Okt 2026: memulangkan { ok, pesan } (dulu tanpa nilai) supaya tombol "Putusan Otomatis" di halaman
+  // SIPP tahu naskahnya gagal dibaca dan tidak menunggu selamanya. `rtfSiap` = RTF yang sudah diubah
+  // server dari berkas yang sama (panel halaman SIPP) - tidak diubah dua kali.
+  const prosesNaskah = async (dipilih, rtfSiap) => {
+    if (!dipilih) return { ok: false, pesan: "Berkas putusan belum dipilih." };
     pemilih.disabled = true;
     tombol.disabled = true;
     wadah.textContent = "";
@@ -7542,7 +7545,10 @@ function bagianIsiPutusan(nomorPerkara) {
     let berkas = dipilih;
     let peringatanBentuk = [];
     naskahEdoc = null;
-    if (a30Nyala && typeof a30PerluKeRtf === "function" && a30PerluKeRtf(dipilih.name)) {
+    if (a30Nyala && rtfSiap && /\.rtf$/i.test(String(rtfSiap.name || "")) && typeof a30PerluKeRtf === "function" && a30PerluKeRtf(dipilih.name)) {
+      berkas = rtfSiap;
+      kabar.textContent = `Membaca ${dipilih.name} (sebagai RTF)…`;
+    } else if (a30Nyala && typeof a30PerluKeRtf === "function" && a30PerluKeRtf(dipilih.name)) {
       kabar.textContent = `Mengubah ${dipilih.name} menjadi RTF…`;
       const ubah = await a30KonversiNaskah(dipilih, "rtf");
       if (!ubah.ok) {
@@ -7551,7 +7557,7 @@ function bagianIsiPutusan(nomorPerkara) {
         pemilih.disabled = false;
         tombol.disabled = false;
         pemilih.value = "";
-        return;
+        return { ok: false, pesan: `${dipilih.name} belum dapat diubah menjadi RTF: ${ubah.pesan || "tanpa keterangan"}` };
       }
       berkas = ubah.berkas;
       peringatanBentuk = ubah.peringatan;
@@ -7585,7 +7591,7 @@ function bagianIsiPutusan(nomorPerkara) {
       kabar.textContent = String((galat && galat.message) || galat);
       pemilih.disabled = false;
       tombol.disabled = false;
-      return;
+      return { ok: false, pesan: `Naskah ${dipilih.name} belum terkirim ke ALETA: ${kabar.textContent}` };
     }
 
     pemilih.disabled = false;
@@ -7595,7 +7601,7 @@ function bagianIsiPutusan(nomorPerkara) {
     if (!jawab || !jawab.ok) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
       kabar.textContent = (jawab && jawab.sebab) || "Naskahnya tidak dapat dibaca.";
-      return;
+      return { ok: false, pesan: `Naskah ${dipilih.name} tidak dapat dibaca: ${kabar.textContent}` };
     }
 
     // Panjang tiap bagian diperlihatkan SEBELUM apa pun diisikan. Bagian
@@ -7627,8 +7633,10 @@ function bagianIsiPutusan(nomorPerkara) {
     // Perbaikan 1 Okt (S, butir 12 - UI Baru saja): anonimisasi edoc mulai
     // disiapkan SEKARANG, selagi usulan dibaca dan diperiksa - bukan sesudah
     // Isikan. Tidak ada yang dikirim ke SIPP; pemeriksanya tetap berjalan.
+    // Dari tombol "Putusan Otomatis" halaman SIPP: anonimisasinya disiapkan modul e-Doc sesudah Simpan
+    // terbukti (putusan-edoc-sekaligus.js) - tidak disiapkan dua kali di sini.
     anonimAwal =
-      typeof s1Aktif === "function" && s1Aktif() && typeof s1SiapkanAnonimAwal === "function"
+      !otoMenunggu && typeof s1Aktif === "function" && s1Aktif() && typeof s1SiapkanAnonimAwal === "function"
         ? s1SiapkanAnonimAwal({ naskahEdoc, sekaligus, anonimPilihan, nomorPerkara, kotakUnggah })
         : null;
 
@@ -7643,6 +7651,7 @@ function bagianIsiPutusan(nomorPerkara) {
     // Langsung disambung ke pembacaan usulan - yang mengunggah naskah
     // memang hendak mengisikannya, bukan hendak berhenti di sini.
     tombol.click();
+    return { ok: true };
   };
   pemilih.addEventListener("change", () => void prosesNaskah(pemilih.files && pemilih.files[0]));
 
@@ -7910,7 +7919,14 @@ function bagianIsiPutusan(nomorPerkara) {
     if (!otoMenunggu) return;
     const { resolve } = otoMenunggu;
     otoMenunggu = null;
+    kotak.removeAttribute("data-oto-jalan");
     resolve(hasil);
+  };
+  // 21 Okt 2026: pembacaan usulan yang tidak diminta alur otomatis (mis. muat-draf-sendiri UI Baru) selagi
+  // Isikan/Simpan alur otomatis masih berjalan tidak boleh menutup alur itu lebih dulu dengan "gagal".
+  const selesaiOtoUsulan = (hasil) => {
+    if (otoMenunggu && otoMenunggu.terapJalan) return;
+    selesaiOto(hasil);
   };
 
   tombol.addEventListener("click", async () => {
@@ -7937,7 +7953,7 @@ function bagianIsiPutusan(nomorPerkara) {
       kabar.className = "aleta-abt-kabar aleta-abt-gagal";
       kabar.textContent = String((galat && galat.message) || galat);
       tombol.disabled = false;
-      selesaiOto({ ok: false, tahap: "usulan", pesan: kabar.textContent });
+      selesaiOtoUsulan({ ok: false, tahap: "usulan", pesan: kabar.textContent });
       return;
     }
 
@@ -7945,7 +7961,7 @@ function bagianIsiPutusan(nomorPerkara) {
       kabar.className = "aleta-abt-kabar";
       kabar.textContent = (jawab && jawab.sebab) || "Belum ada draf putusan untuk perkara ini.";
       tombol.disabled = false;
-      selesaiOto({ ok: false, tahap: "usulan", pesan: kabar.textContent });
+      selesaiOtoUsulan({ ok: false, tahap: "usulan", pesan: kabar.textContent });
       return;
     }
 
@@ -8409,6 +8425,8 @@ function bagianIsiPutusan(nomorPerkara) {
     // Satu kunci per perkara dipakai bersama penetapan dan tombol "Putusan Otomatis" di halaman SIPP:
     // dua pekerjaan atas perkara yang sama tidak berjalan bersamaan (tidak ganda).
     terap.addEventListener("click", async () => {
+      // Alur otomatis: Isikan/Simpan ini sedang berjalan - pembacaan usulan lain tidak menekan Isikan kedua kalinya.
+      if (otoMenunggu) otoMenunggu.terapJalan = true;
       const kunci = typeof b2AmbilKunci === "function" ? await b2AmbilKunci(nomorPerkara) : { ok: true, lepas: async () => undefined };
       if (!kunci.ok) {
         hasilTerap.className = "aleta-abt-kabar aleta-abt-gagal";
@@ -8446,8 +8464,13 @@ function bagianIsiPutusan(nomorPerkara) {
       // pengisian blangko (persiapan itu tidak menulis ke SIPP), bukan sesudah
       // seluruh isian selesai - pemeriksanya tetap berjalan sebelum Simpan.
       const opsiOto = otoMenunggu ? otoMenunggu.opsi || {} : null;
+      // 21 Okt 2026: dari tombol "Putusan Otomatis" halaman SIPP (opsi.edoc tertentu) e-Doc SELALU lewat modul
+      // e-Doc bersama (edocAbt di bawah) - centang "e-Doc putusan"/"e-Doc anonimisasi" panel itu hanya
+      // dihormati di sana. Dulu naskah yang tersimpan di peramban membelokkannya ke jalur sekaligus, yang
+      // mengunggah KEDUA e-Doc walau salah satunya tidak dicentang.
+      const otoTentukanEdoc = Boolean(opsiOto && opsiOto.edoc != null);
       const edocA30 =
-        opsiOto && opsiOto.edoc === false
+        (opsiOto && opsiOto.edoc === false) || otoTentukanEdoc
           ? null
           : sekaligus && sekaligus.dipakai() && naskahEdoc
           ? s1Cepat && anonimPilihan
@@ -8548,6 +8571,7 @@ function bagianIsiPutusan(nomorPerkara) {
           `${hasilTerap.textContent} Blangko memunculkan ` +
           `${tampakSesudah - medanTampak.length} pilihan baru - dibacakan ulang…`;
         if (kabarAnon) kabarAnon.remove();
+        if (otoMenunggu) otoMenunggu.terapJalan = false;
         tombol.click();
         return "lanjut";
       }
@@ -8630,9 +8654,13 @@ function bagianIsiPutusan(nomorPerkara) {
       const edocAbt = Boolean(
         a30Nyala &&
           !edocA30 &&
-          !(sekaligus && sekaligus.ada()) &&
-          (opsiOto && opsiOto.edoc != null ? opsiOto.edoc === true : sekaligusAbt && sekaligusAbt.dipakai())
+          (otoTentukanEdoc ? opsiOto.edoc === true : !(sekaligus && sekaligus.ada()) && sekaligusAbt && sekaligusAbt.dipakai())
       );
+      // Berkas e-Doc dari tombol halaman SIPP: berkas yang dipilih di panelnya; kalau tidak ada, naskah yang
+      // barusan dibaca untuk mengisi blangko ini; kalau tidak ada juga, dicetak dari Blangko Derry di ABT.
+      const putusanOto = (opsiOto && (opsiOto.putusan || opsiOto.naskah)) || (otoTentukanEdoc && naskahEdoc ? naskahEdoc.asli : null) || null;
+      const putusanRtfOto =
+        (opsiOto && (opsiOto.putusanRtf || opsiOto.naskahRtf)) || (otoTentukanEdoc && naskahEdoc ? naskahEdoc.rtf : null) || null;
       const tempatB2 = typeof b2SiapkanTempat === "function" ? b2SiapkanTempat(hasilTerap) : { laporan: null, ulang: null };
       if (opsiOto && opsiOto.wadahLaporan) tempatB2.laporan = opsiOto.wadahLaporan;
       // Dari tombol "Putusan Otomatis" di halaman SIPP: kotak muat ulang melayang di halaman (panel tombol itu
@@ -8648,8 +8676,8 @@ function bagianIsiPutusan(nomorPerkara) {
               wadah,
               anonim: anonimPilihan || null,
               // Berkas yang dipilih di panel "Putusan Otomatis" halaman SIPP (putusan-sipp.js); kosong = dicetak dari ABT.
-              putusan: (opsiOto && opsiOto.putusan) || null,
-              putusanRtf: (opsiOto && opsiOto.putusanRtf) || null,
+              putusan: putusanOto,
+              putusanRtf: putusanRtfOto,
               denganPutusan: !(opsiOto && opsiOto.denganPutusan === false),
               denganAnonim: !(opsiOto && opsiOto.denganAnonim === false),
             });
@@ -8670,8 +8698,8 @@ function bagianIsiPutusan(nomorPerkara) {
           kabar: hasilTerap,
           wadah,
           tempat: tempatB2,
-          putusan: sekaligus && sekaligus.dipakai() && naskahEdoc ? naskahEdoc.asli : (opsiOto && opsiOto.putusan) || null,
-          putusanRtf: sekaligus && sekaligus.dipakai() && naskahEdoc ? naskahEdoc.rtf : (opsiOto && opsiOto.putusanRtf) || null,
+          putusan: !otoTentukanEdoc && sekaligus && sekaligus.dipakai() && naskahEdoc ? naskahEdoc.asli : putusanOto,
+          putusanRtf: !otoTentukanEdoc && sekaligus && sekaligus.dipakai() && naskahEdoc ? naskahEdoc.rtf : putusanRtfOto,
           anonim: anonimPilihan || null,
           perluBerkas: Boolean(hasilSimpan.edoc.perluBerkas),
         });
@@ -8689,7 +8717,8 @@ function bagianIsiPutusan(nomorPerkara) {
     });
 
     // Tombol "Putusan Otomatis": usulan sudah terbaca -> Isikan ditekan sendiri (yang menahan tetap menahan).
-    if (otoMenunggu) {
+    // Sekali per putaran: bila Isikan alur ini sedang berjalan, pembacaan ini bukan miliknya.
+    if (otoMenunggu && !otoMenunggu.terapJalan) {
       if (terap.disabled) {
         selesaiOto({
           ok: false,
@@ -8712,8 +8741,23 @@ function bagianIsiPutusan(nomorPerkara) {
     while (tombol.disabled && Date.now() - mulai < 20000) await new Promise((r) => setTimeout(r, 100));
     if (tombol.disabled) return { ok: false, tahap: "sibuk", pesan: "Bagian Putusan otomatis masih bekerja - tunggu sampai selesai, lalu ulangi." };
     if (otoMenunggu) return { ok: false, tahap: "sibuk", pesan: "Putusan otomatis perkara ini sedang berjalan." };
+    const o = opsi || {};
     return new Promise((resolve) => {
-      otoMenunggu = { resolve, opsi: opsi || {} };
+      otoMenunggu = { resolve, opsi: o, terapJalan: false };
+      // Penanda bagi muat-draf-sendiri UI Baru (s1PasangPutusanOtomatis): jangan menekan "Ambil usulan" lagi.
+      kotak.setAttribute("data-oto-jalan", "1");
+      // 21 Okt 2026: berkas putusan yang dipilih di panel halaman SIPP MENJADI sumber isian (sama dengan
+      // "Ambil dari naskah putusan" di bagian ini): dibaca portal menjadi draf, lalu usulan -> praperiksa ->
+      // Isikan -> Simpan. Dulu berkas itu hanya dipakai untuk e-Doc, sehingga perkara tanpa draf ALETA
+      // berhenti di "Belum ada draf" sesudah blangko terbuka dan tidak ada yang terisi.
+      if (o.naskah) {
+        void prosesNaskah(o.naskah, o.naskahRtf || null)
+          .then((h) => {
+            if (h && h.ok === false) selesaiOto({ ok: false, tahap: "naskah", pesan: h.pesan });
+          })
+          .catch((galat) => selesaiOto({ ok: false, tahap: "naskah", pesan: String((galat && galat.message) || galat) }));
+        return;
+      }
       tombol.click();
     });
   };
@@ -24827,6 +24871,29 @@ function s1CariEditPutusan() {
 }
 
 /**
+ * 21 Okt 2026: ADA-TIDAKNYA draf putusan ALETA untuk satu perkara (baca saja, rute yang sama dengan
+ * "Ambil usulan dari ALETA"). Dipakai tombol "Putusan Otomatis" halaman SIPP (putusan-sipp.js) SEBELUM
+ * blangko dibuka: tanpa draf dan tanpa berkas putusan tidak ada yang dapat diisikan, jadi blangko tidak
+ * dibuka sia-sia. Pulang { ada:true, versi } | { ada:false, sebab } | { ada:null, sebab }. Tidak pernah melempar.
+ */
+async function cekDrafPutusanAleta(nomorPerkara) {
+  try {
+    const r = await alatAmbil(
+      `${ALETA_API_ISIAN_PUTUSAN}?nomorPerkara=${encodeURIComponent(nomorPerkara || "")}`,
+      { credentials: "include", cache: "no-store" },
+      "Memeriksa draf putusan"
+    );
+    if (!r.ok) return { ada: null, sebab: alatPesanGagal(null, r.status, "Memeriksa draf putusan") };
+    const luar = await r.json();
+    const d = luar && luar.data ? luar.data : luar;
+    if (d && d.ada) return { ada: true, versi: d.versi };
+    return { ada: false, sebab: String((d && d.sebab) || "Belum ada draf putusan ALETA untuk perkara ini.") };
+  } catch (galat) {
+    return { ada: null, sebab: String((galat && galat.message) || galat) };
+  }
+}
+
+/**
  * Membuka blangko Putusan Akhir SIPP seperti petugas, lewat jalan yang
  * ditawarkan SIPP sendiri:
  *
@@ -25124,7 +25191,8 @@ function s1PasangPutusanOtomatis(p) {
     }
     // Antrean putusan massal SIPP yang menunggu perkara ini mengisinya sendiri.
     if (await s1AntreanMenunggu(p.nomorPerkara)) return;
-    if (!p.kotak.isConnected || p.tombol.disabled) return;
+    // 21 Okt 2026: tombol "Putusan Otomatis" halaman SIPP sudah menjalankan alurnya atas blangko ini.
+    if (!p.kotak.isConnected || p.tombol.disabled || p.kotak.hasAttribute("data-oto-jalan")) return;
     p.tombol.click();
   }, 700);
 }

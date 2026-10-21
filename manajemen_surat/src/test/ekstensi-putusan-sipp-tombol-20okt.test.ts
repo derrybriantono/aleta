@@ -535,7 +535,7 @@ describe("panel: terbentang, semua tercentang, keadaan SIPP dibaca", () => {
     expect(p.querySelector(".aleta-pusipp-info")!.textContent).toContain("belum terbaca (portal tidak menjawab)");
   });
 
-  it("BAWAAN TERLIPAT: panel tersembunyi dan belum membaca apa pun; dibuka petugas = terbentang dan diingat; dilipat lagi = diingat", async () => {
+  it("BAWAAN TERLIPAT: panel tersembunyi dan belum membaca apa pun; dibuka petugas = terbentang; dilipat lagi = terlipat (tanpa chrome.storage)", async () => {
     const h = buka();
     await sampai(() => (api(h).pasang(h.d), tombolPu(h)), "tombol");
     expect(panel(h)!.hidden).toBe(true);
@@ -545,17 +545,35 @@ describe("panel: terbentang, semua tercentang, keadaan SIPP dibaca", () => {
     await tunggu(10);
     expect(panel(h)!.hidden).toBe(false);
     expect(tombolPu(h)!.getAttribute("aria-expanded")).toBe("true");
-    await sampai(() => (h.simpanan.lipatanBagian as any)?.putusanSipp2 === false, "pembukaan tersimpan");
+    expect(h.w.alatPanelTerbuka(`putusan-otomatis-sipp:${NOMOR}`)).toBe(true);
     tombolPu(h)!.click();
     await tunggu(10);
     expect(panel(h)!.hidden).toBe(true);
-    await sampai(() => (h.simpanan.lipatanBagian as any)?.putusanSipp2 === true, "lipatan tersimpan");
+    expect(h.w.alatPanelTerbuka(`putusan-otomatis-sipp:${NOMOR}`)).toBe(false);
+    // 21 Okt 2026 (perbaikan): tidak ada lagi ingatan lintas kunjungan di chrome.storage.local.
+    expect(h.simpanan.lipatanBagian).toBeUndefined();
   });
 
-  it("yang sengaja dibuka petugas pada kunjungan lalu terbuka lagi; tanpa catatan tetap terlipat", async () => {
+  it("21 Okt 2026: catatan 'dibuka' dari kunjungan lalu (chrome.storage) TIDAK membuka panel - kunjungan baru selalu terlipat", async () => {
     const h = buka({ simpananAwal: { lipatanBagian: { putusanSipp2: false } } });
     await sampai(() => (api(h).pasang(h.d), tombolPu(h)), "tombol");
-    await sampai(() => (api(h).pasang(h.d), panel(h) && !panel(h)!.hidden ? panel(h) : null), "terbuka sesuai catatan");
+    for (let i = 0; i < 5; i += 1) {
+      api(h).pasang(h.d);
+      await tunggu(10);
+    }
+    expect(panel(h)!.hidden).toBe(true);
+    expect(api(h).keadaan().dibaca).toBe(false);
+  });
+
+  it("dibuka pada kunjungan ini lalu SIPP menggambar ulang halamannya (tanpa pindah): tetap terbuka", async () => {
+    const h = buka();
+    await sampai(() => (api(h).pasang(h.d), tombolPu(h)), "tombol");
+    tombolPu(h)!.click();
+    await tunggu(10);
+    // SIPP mengganti isi halaman: semua sisipan hilang, keadaan panel dibuang.
+    api(h).bersihkan(h.d);
+    api(h).pasang(h.d);
+    await sampai(() => panel(h) && !panel(h)!.hidden, "terbuka lagi pada kunjungan yang sama");
   });
 });
 
@@ -581,7 +599,7 @@ describe("konfirmasi di halaman dan satu klik", () => {
     await klikSatuKali(h);
     await sampai(() => status(h, "anonim") === "ok", () => `langkah selesai; status: ${["isi", "putusan", "anonim"].map((j) => status(h, j))}`);
     expect(h.urut).toEqual(["buka-blangko", "gambar-ulang", "otomatis"]);
-    expect(h.opsiOto).toEqual([{ edoc: true, denganPutusan: true, denganAnonim: true, melayang: true, putusan: null, putusanRtf: null }]);
+    expect(h.opsiOto).toEqual([{ edoc: true, denganPutusan: true, denganAnonim: true, melayang: true, naskah: null, naskahRtf: null, putusan: null, putusanRtf: null }]);
     expect(["isi", "putusan", "anonim"].map((j) => status(h, j))).toEqual(["ok", "ok", "ok"]);
     expect(baris(h, "isi").textContent).toContain("Tersimpan di SIPP");
     simpanTangkapan(h, "selesai");
@@ -620,7 +638,7 @@ describe("konfirmasi di halaman dan satu klik", () => {
     await sampai(() => status(h, "isi") === "gagal", "gagal");
     expect(baris(h, "isi").textContent).toContain("Praperiksa menahan");
     expect(status(h, "putusan")).toBe("gagal");
-    expect(baris(h, "putusan").textContent).toContain("Tidak dikerjakan - Putusan Akhir belum tersimpan");
+    expect(baris(h, "putusan").textContent).toContain("Tidak dikerjakan: Putusan Akhir belum tersimpan");
     simpanTangkapan(h, "gagal");
   });
 

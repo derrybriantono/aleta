@@ -339,7 +339,8 @@ const q = (h: Halaman, pemilih: string) => panelDari(h)?.querySelector(pemilih) 
 const qs = (h: Halaman, pemilih: string) => Array.from(panelDari(h)?.querySelectorAll(pemilih) || []) as any[];
 const tombol = (h: Halaman, teks: string | RegExp) => qs(h, "button").find((b) => (typeof teks === "string" ? b.textContent === teks : teks.test(b.textContent)));
 const fitur = (kode: string[]) => Object.fromEntries(kode.map((k) => [k, true]));
-const ui = (kode: string[], lain: Record<string, unknown> = {}) => ({ ujiTampilan: "ui", ujiFitur: fitur(kode), ...lain });
+// 21 Okt 2026: panel bawaannya lencana; uji isi/letak panel memakai panel yang disetel TERBUKA (pilihan sesudah keputusan itu).
+const ui = (kode: string[], lain: Record<string, unknown> = {}) => ({ ujiTampilan: "ui", ujiFitur: fitur(kode), panelBawaanTampil: { aleta: true, sipp: true, abt: true, diubahPada: "2026-10-22T00:00:00.000Z" }, ...lain });
 const baru = (kode: string[], lain: Record<string, unknown> = {}) => ({ ujiTampilan: "baru", ujiFitur: fitur(kode), ...lain });
 const nyata = { ujiIzinkanNyata: true };
 

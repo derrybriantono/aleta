@@ -271,7 +271,8 @@ const siapA30 = (h: Halaman, nilai: string) =>
     return pn && pn.getAttribute("data-t7-a30") === nilai && pn.querySelector(".aleta-kelompok") ? pn : null;
   }, `panel ${nilai} tertata`);
 const BARU = { ujiTampilan: "baru", ujiIzinkanNyata: true };
-const UI = { ujiTampilan: "ui", ujiIzinkanNyata: true };
+// 21 Okt 2026: panel bawaannya lencana; uji isi/letak panel memakai panel yang disetel TERBUKA (pilihan sesudah keputusan itu).
+const UI = { ujiTampilan: "ui", ujiIzinkanNyata: true, panelBawaanTampil: { aleta: true, sipp: true, abt: true, diubahPada: "2026-10-22T00:00:00.000Z" } };
 const pilihBerkas = (h: Halaman, el: HTMLInputElement, berkas: File[]) => {
   Object.defineProperty(el, "files", { value: berkas, configurable: true });
   el.dispatchEvent(new h.w.Event("change"));

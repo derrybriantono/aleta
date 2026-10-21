@@ -190,6 +190,11 @@ function buka(simpananAwal: Record<string, unknown>, opsi: { denyut?: boolean } 
   for (const k of ["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"]) {
     if (!(k in awalSimpanan)) awalSimpanan[k] = { kecil: false };
   }
+  // 21 Okt 2026: widget terbentang hanya bila dibentangkan pada SESI TAB ini (panel-alat.js alatPanelTerbuka
+  // sesiTab) - posisi "terbentang" yang tersimpan saja tidak lagi membentangkannya di tab baru.
+  if (["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"].some((k) => (awalSimpanan[k] as { kecil?: boolean } | undefined)?.kecil === false)) {
+    w.sessionStorage.setItem("aleta-panel-terbuka:checklist-widget", "1");
+  }
   const { simpanan, tulisan, storage } = penyimpananTiruan(awalSimpanan);
   w.chrome = {
     runtime: {
