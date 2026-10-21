@@ -2577,9 +2577,9 @@ export function PetaTitikPerkara({
             ) : relaas ? (
               <>
                 Dihitung dari <strong>{angka(relaas.relaas ?? 0)}</strong> relaas yang memakai sandi
-                bertemu/tidak — <strong>{relaas.persen ?? 0}%</strong> tidak bertemu. Sandi{" "}
+                bertemu/tidak, termasuk panggilan elektronik yang dianggap bertemu — <strong>{relaas.persen ?? 0}%</strong> tidak bertemu. Sandi{" "}
                 <code>ket_temu</code> BERGANTI ARTI sejak 2025: sejak itu isinya menandai saluran
-                pengiriman, bukan hasil pertemuan, sehingga baris baru hampir seluruhnya di luar
+                pengiriman, bukan hasil pertemuan, sehingga surat tercatat dan cara lain di luar
                 hitungan ini. Desa dengan kurang dari {relaas.ambang ?? 10} relaas dibiarkan kelabu —
                 tiga relaas yang dua gagal bukan &quot;67% gagal&quot;, itu kebetulan.
               </>

@@ -4662,7 +4662,7 @@ router.post("/sipp/saksi-bantu/ganda", requireInternalToken, async (req, res) =>
 /**
  * Lapisan panggilan tidak bertemu per desa.
  *
- * Dihitung HANYA dari baris bersandi Y/T - sandi `ket_temu` berganti arti sejak
+ * Dihitung HANYA dari baris bersandi Y/T/E (E = elektronik, dianggap bertemu) - sandi `ket_temu` berganti arti sejak
  * 2025, dan dihitung apa adanya dua tahun terakhir akan memulangkan 0% tidak
  * bertemu. Lihat keterangan panjang pada petaPerkaraService.
  */

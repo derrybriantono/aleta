@@ -1036,7 +1036,7 @@ async function hitungIkrar(minta, { tingkat, induk, periode, dari, sampai }) {
  * makna". Justru kesalahan yang paling sukar ketahuan, sebab hasilnya masuk
  * akal.
  *
- * Karena itu yang dihitung HANYA baris bersandi Y atau T - 7.751 dari 14.495
+ * Karena itu yang dihitung HANYA baris bersandi Y, T, atau E (E dianggap bertemu) - 7.751 dari 14.495
  * baris (53%) - dan jangkauannya disebut di layar. Pembatasan ini menyesuaikan
  * diri sendiri: begitu satker kembali memakai Y/T, barisnya ikut terhitung
  * tanpa kode ini disentuh.
@@ -1045,7 +1045,10 @@ async function hitungIkrar(minta, { tingkat, induk, periode, dari, sampai }) {
  * "67% gagal" - itu kebetulan. Yang di bawah ambang tetap dikirim beserta
  * jumlahnya, tetapi ditandai `cukup: false`; layar tidak mewarnainya.
  */
-const SANDI_TEMU = ["Y", "T"];
+// 21 Okt 2026: panggilan elektronik (E) yang dilaksanakan DIANGGAP bertemu (ketentuan
+// pengguna) - masuk penyebut, bukan pembilang. Tafsiran ALETA; data SIPP tidak diubah.
+// Sama dengan relaasBertemu di portal (lib/hasil-relaas.ts) dan bertemu di sippJadwalSidangService.
+const SANDI_TEMU = ["Y", "T", "E"];
 const AMBANG_RELAAS = 10;
 
 async function sebaranRelaas(dari, sampai) {
