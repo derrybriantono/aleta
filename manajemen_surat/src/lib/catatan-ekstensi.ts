@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.26",
+    dirilis: "2026-10-21T16:59:00+08:00",
+    judul: "Putusan Otomatis, tarik data satu perkara, tuntutan semua blangko",
+    butir: [
+      "Putusan Otomatis di SIPP: berkas putusan yang diseret ke panel kini dipakai mengisi Putusan Akhir lalu diunggah sebagai e-Doc putusan dan anonimisasi; tanpa draf maupun berkas, panel memberi petunjuk dan tidak membuka formulir kosong.",
+      "Semua panel ALETA terlipat pada setiap kunjungan, kecuali Blangko ABT by Derry.",
+      "Tombol Tarik data di kepala SIPP (kiri Selamat Datang) menarik data e-Court satu perkara di sela penarikan utama, tanpa memberatkannya.",
+      "Jadwal Sidang dan Jadwal Mediasi tanpa layar memuat (pesan hanya bila gagal, dengan Coba lagi); panggilan elektronik dihitung bertemu.",
+      "Tuntutan dalam petitum kini juga untuk hak bekas istri, varian cerai (mut'ah iddah, hak asuh, nafkah anak), kebendaan dan anak; nama pihak tidak lagi terbaca sebagai tuntutan.",
+      "Kode pos di amplop relaas dari tabel kode pos SIPP (hanya bila pasti).",
+      "Kalimat penutup keterangan saksi (mis. Bahwa sudah cukup) tidak lagi tercetak di putusan dan BAS, baik lewat panel maupun ABT langsung.",
+    ],
+  },
+  {
     versi: "1.205.25",
     dirilis: "2026-10-21T15:12:00+08:00",
     judul: "Tuntutan, penetapan dan pratinjau dokumen lebih tepat",
