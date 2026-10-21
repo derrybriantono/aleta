@@ -244,7 +244,8 @@ function buka(p: Opsi = {}): Halaman {
 }
 
 const BARU = { ujiTampilan: "baru", ujiIzinkanNyata: true };
-const UI = { ujiTampilan: "ui", ujiIzinkanNyata: true };
+// 21 Okt 2026: panel SIPP bawaannya lencana; uji isi panel memakai panel yang disetel TERBUKA (pilihan sesudah keputusan itu).
+const UI = { ujiTampilan: "ui", ujiIzinkanNyata: true, panelBawaanTampil: { aleta: true, sipp: true, abt: true, diubahPada: "2026-10-22T00:00:00.000Z" } };
 
 const panelDari = (h: Halaman) => h.d.getElementById("aleta-panel-sipp") as any;
 const siapUi = (h: Halaman) =>

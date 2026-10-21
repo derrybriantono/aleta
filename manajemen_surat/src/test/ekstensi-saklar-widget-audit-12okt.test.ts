@@ -592,12 +592,12 @@ describe("B. ujung ke ujung: popup membalik, halaman SIPP (pembaca) mengikuti", 
   it("panelBawaanTampil (UI Baru): kotak per situs menulis peta yang dibaca alatBawaanTampilBerlaku", async () => {
     const { gudang, halaman, popup } = await pasangan({ ujiTampilan: "ui" });
     await sampai(() => popup.d.getElementById("bawaanPanel-sipp"), "kotak panel bawaan tersusun");
-    expect(popup.kotak("bawaanPanel-sipp").checked).toBe(true);
+    // 21 Okt 2026: bawaan SEMUA panel tertutup (lencana); petugas yang membuka SIPP sesudahnya dihormati.
+    expect(popup.kotak("bawaanPanel-sipp").checked).toBe(false);
     popup.balik("bawaanPanel-sipp");
-    await sampai(() => (gudang.data.panelBawaanTampil as Record<string, boolean> | undefined)?.sipp === false, "peta lokal tertulis");
+    await sampai(() => (gudang.data.panelBawaanTampil as Record<string, boolean> | undefined)?.sipp === true, "peta lokal tertulis");
     const b = halaman.w.alatBawaanTampilBerlaku(gudang.data.panelBawaanTampil, null);
-    // Bawaan panel: portal tertutup (lencana), SIPP dan ABT terbuka.
-    expect(b).toMatchObject({ aleta: false, sipp: false, abt: true, sumber: "lokal" });
+    expect(b).toMatchObject({ aleta: false, sipp: true, abt: false, sumber: "lokal" });
   });
 
   it("senyap (popup-12): tombol popup menulis senyapSampai yang dibaca alatSenyapAktif; berakhir dengan sendirinya", async () => {

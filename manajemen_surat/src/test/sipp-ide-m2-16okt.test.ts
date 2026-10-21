@@ -412,8 +412,11 @@ describe("C. kotak penyatu di halaman perkara SIPP", () => {
     w.aletaSippIdeM2.pasang(w.document);
     const kotak = w.document.querySelector(".aleta-m2-kotak");
     await sampai(() => kotak.getAttribute("data-m2-keadaan") === "siap", "siap");
-    expect(kotak.querySelector(".aleta-m2-badan").hidden).toBe(false); // ada selisih -> terbuka
+    // 21 Okt 2026: semua panel ekstensi bawaannya TERLIPAT - selisih tetap terbaca di kepala, rincian dibuka petugas.
+    expect(kotak.querySelector(".aleta-m2-badan").hidden).toBe(true);
     expect(kotak.querySelector(".aleta-m2-kepala").textContent).toContain("2 data berbeda");
+    (kotak.querySelector(".aleta-m2-kepala") as HTMLElement).click();
+    expect(kotak.querySelector(".aleta-m2-badan").hidden).toBe(false);
     const s = kotak.querySelector('[data-m2-selisih="sidang-tanggal"]');
     const urai = s.nextElementSibling;
     expect(urai.hidden).toBe(true);

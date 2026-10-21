@@ -108,6 +108,11 @@ function halaman(
   terbuka.push(dom);
   const w = dom.window as any;
   const { simpanan, storage } = penyimpanan(p.simpanan ?? {});
+  // 21 Okt 2026: widget checklist terbentang hanya bila dibentangkan pada SESI TAB ini (alatPanelTerbuka sesiTab).
+  const awalPosisi = p.simpanan ?? {};
+  if (["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"].some((k) => (awalPosisi[k] as { kecil?: boolean } | undefined)?.kecil === false)) {
+    w.sessionStorage.setItem("aleta-panel-terbuka:checklist-widget", "1");
+  }
   w.chrome = {
     runtime: { id: "aleta-uji", getManifest: () => ({ version: "0.0.0" }), getURL: (x: string) => x, sendMessage: async () => ({}) },
     storage,
@@ -353,16 +358,23 @@ describe("butir 1 (K7) - kepala dan kaki panel portal", () => {
 // butir 4 - panel terbuka/tersembunyi saat halaman dimuat
 // ============================================================================
 describe("butir 4 - bawaan tampil per situs", () => {
-  it("alatBawaanTampilBerlaku: bawaan ALETA tersembunyi, SIPP/ABT terbuka; yang lebih baru menang", () => {
+  it("alatBawaanTampilBerlaku: 21 Okt 2026 SEMUA tersembunyi (lencana); pilihan sebelum keputusan itu tidak berlaku; yang lebih baru menang", () => {
     const h = halaman();
     const f = (l: unknown, s: unknown) => polos(h.w.alatBawaanTampilBerlaku(l, s));
-    expect(f(null, undefined)).toEqual({ aleta: false, sipp: true, abt: true, sumber: "bawaan" });
-    const lokal = { sipp: false, diubahPada: "2026-10-02T02:00:00Z" };
-    const akun = { nilai: { aleta: true, sipp: true }, diubahPada: "2026-10-02T01:00:00Z" };
-    expect(f(lokal, akun)).toEqual({ aleta: false, sipp: false, abt: true, sumber: "lokal" });
-    expect(f({ ...lokal, diubahPada: "2026-10-01T00:00:00Z" }, akun)).toEqual({ aleta: true, sipp: true, abt: true, sumber: "akun" });
+    expect(f(null, undefined)).toEqual({ aleta: false, sipp: false, abt: false, sumber: "bawaan" });
+    // Pilihan "terbuka" yang disimpan SEBELUM 21 Okt 2026 16.00 WITA tidak lagi membuka panel.
+    expect(f({ sipp: true, abt: true, diubahPada: "2026-10-02T02:00:00Z" }, { nilai: { aleta: true }, diubahPada: "2026-10-02T01:00:00Z" })).toEqual({
+      aleta: false,
+      sipp: false,
+      abt: false,
+      sumber: "bawaan",
+    });
+    const lokal = { sipp: true, diubahPada: "2026-10-22T02:00:00Z" };
+    const akun = { nilai: { aleta: true, abt: true }, diubahPada: "2026-10-22T01:00:00Z" };
+    expect(f(lokal, akun)).toEqual({ aleta: false, sipp: true, abt: false, sumber: "lokal" });
+    expect(f({ ...lokal, diubahPada: "2026-10-01T00:00:00Z" }, akun)).toEqual({ aleta: true, sipp: false, abt: true, sumber: "akun" });
     // Ruas asing dan bukan boolean dibuang.
-    expect(f({ aleta: "ya", lain: false, diubahPada: "2026-10-02T00:00:00Z" }, null)).toEqual({ aleta: false, sipp: true, abt: true, sumber: "lokal" });
+    expect(f({ aleta: "ya", lain: true, diubahPada: "2026-10-22T00:00:00Z" }, null)).toEqual({ aleta: false, sipp: false, abt: false, sumber: "lokal" });
     expect(h.w.alatSitusPanel("posisiPanelAleta")).toBe("aleta");
     expect(h.w.alatSitusPanel("posisiPanelAbtMassal")).toBe("abt");
     expect(h.w.alatSitusPanel("posisiPanel")).toBe("sipp");
@@ -378,7 +390,7 @@ describe("butir 4 - bawaan tampil per situs", () => {
   });
 
   it("UI Baru portal dengan aleta:true - terbuka; Lama tanpa setelan - terbuka (tidak berubah)", async () => {
-    const buka = halamanPortal({ ujiTampilan: "ui", ujiFitur: {}, panelBawaanTampil: { aleta: true, diubahPada: "2026-10-02T00:00:00Z" } });
+    const buka = halamanPortal({ ujiTampilan: "ui", ujiFitur: {}, panelBawaanTampil: { aleta: true, diubahPada: "2026-10-22T00:00:00Z" } });
     const pb = await sampai(() => {
       const p = panelPortal(buka);
       return p && p.getAttribute("data-t4") === "ui" ? p : null;
@@ -412,15 +424,20 @@ describe("butir 4 - bawaan tampil per situs", () => {
     expect(ciut).toBe(1);
   });
 
-  it("ABT bawaan terbuka: tidak diciutkan", async () => {
-    const h = halaman({ alamat: `${ASAL}/aps_badilag/abt/main/beranda`, simpanan: { ujiTampilan: "ui" } });
-    await h.w.alatUjiSiap();
-    const p = h.d.createElement("div");
-    h.d.body.appendChild(p);
-    let ciut = 0;
-    h.w.alatPasangJalanKeluar(p, "posisiPanelAbt", { ciutkan: () => (ciut += 1) });
-    await tunggu(200);
-    expect(ciut).toBe(0);
+  it("21 Okt 2026: ABT bawaan TERSEMBUNYI - diciutkan sekali; pilihan lama 'terbuka' tidak berlaku, pilihan baru berlaku", async () => {
+    const pasang = async (simpanan: Record<string, unknown>) => {
+      const h = halaman({ alamat: `${ASAL}/aps_badilag/abt/main/beranda`, simpanan: { ujiTampilan: "ui", ...simpanan } });
+      await h.w.alatUjiSiap();
+      const p = h.d.createElement("div");
+      h.d.body.appendChild(p);
+      let ciut = 0;
+      h.w.alatPasangJalanKeluar(p, "posisiPanelAbt", { ciutkan: () => (ciut += 1) });
+      await tunggu(200);
+      return ciut;
+    };
+    expect(await pasang({})).toBe(1);
+    expect(await pasang({ panelBawaanTampil: { abt: true, diubahPada: "2026-10-02T00:00:00Z" } })).toBe(1);
+    expect(await pasang({ panelBawaanTampil: { abt: true, diubahPada: "2026-10-22T00:00:00Z" } })).toBe(0);
   });
 
   it("setelan akun 'panel.bawaan' disinggahkan HANYA bila portal mengirimnya", () => {
@@ -486,19 +503,19 @@ function bukaPopup(simpan: Record<string, unknown>) {
 }
 
 describe("butir 4 - popup UI Baru: tiga saklar panel saat halaman dibuka", () => {
-  it("bawaan ALETA mati, SIPP/ABT nyala; mengubah = cadangan lokal + PUT setelan akun panel.bawaan", async () => {
+  it("21 Okt 2026: bawaan KETIGANYA mati (terlipat); mengubah = cadangan lokal + PUT setelan akun panel.bawaan", async () => {
     const p = bukaPopup({ ujiTampilan: "ui", ujiFitur: {}, tampilanServer: { mode: "lama", fitur: {}, diterapkan: false, versi: "", diambil: Date.now() } });
     const kotak = await sampai(() => p.d.getElementById("bawaanPanel-sipp") as HTMLInputElement | null, "saklar popup");
     expect((p.d.getElementById("bawaanPanel-aleta") as HTMLInputElement).checked).toBe(false);
-    expect(kotak.checked).toBe(true);
-    expect((p.d.getElementById("bawaanPanel-abt") as HTMLInputElement).checked).toBe(true);
-    kotak.checked = false;
+    expect(kotak.checked).toBe(false);
+    expect((p.d.getElementById("bawaanPanel-abt") as HTMLInputElement).checked).toBe(false);
+    kotak.checked = true;
     kotak.dispatchEvent(new p.w.Event("change", { bubbles: true }));
     await sampai(() => p.panggilan.some((x) => x.cara === "PUT"), "PUT");
     const put = p.panggilan.find((x) => x.cara === "PUT")!;
     expect(put.alamat).toBe(`${ASAL}/aleta/api/aleta-ecourt/ekstensi/setelan`);
-    expect(JSON.parse(put.badan!)).toEqual({ kunci: "panel.bawaan", nilai: { aleta: false, sipp: false, abt: true } });
-    expect((p.simpanan.panelBawaanTampil as any).sipp).toBe(false);
+    expect(JSON.parse(put.badan!)).toEqual({ kunci: "panel.bawaan", nilai: { aleta: false, sipp: true, abt: false } });
+    expect((p.simpanan.panelBawaanTampil as any).sipp).toBe(true);
     await sampai(() => (p.simpanan.tampilanServer as any)?.setelan?.["panel.bawaan"], "singgahan diperbarui");
     await sampai(() => /akun Anda/.test(p.d.getElementById("bawaanPanelKabar")!.textContent || ""), "kabar");
   });
@@ -506,11 +523,11 @@ describe("butir 4 - popup UI Baru: tiga saklar panel saat halaman dibuka", () =>
   it("mode latihan: lokal saja, tanpa PUT; tampilan Lama: tidak ada saklarnya", async () => {
     const p = bukaPopup({ ujiTampilan: "ui", ujiFitur: {}, modeLatihan: true });
     const kotak = await sampai(() => p.d.getElementById("bawaanPanel-abt") as HTMLInputElement | null, "saklar");
-    kotak.checked = false;
+    kotak.checked = true;
     kotak.dispatchEvent(new p.w.Event("change", { bubbles: true }));
     await sampai(() => /Mode latihan/.test(p.d.getElementById("bawaanPanelKabar")!.textContent || ""), "kabar latihan");
     expect(p.panggilan.filter((x) => x.cara === "PUT")).toEqual([]);
-    expect((p.simpanan.panelBawaanTampil as any).abt).toBe(false);
+    expect((p.simpanan.panelBawaanTampil as any).abt).toBe(true);
 
     const lama = bukaPopup({});
     await tunggu(150);
@@ -555,7 +572,11 @@ describe("butir 11 - sudut panel", () => {
   });
 
   it("UI Baru: mendekat = sorot; klik dua kali di pojok kanan atas = pindah + tersimpan digabung; kepala TIDAK ke layar penuh", async () => {
-    const h = halaman({ alamat: `${ASAL}/aps_badilag/abt/main/view`, simpanan: { ujiTampilan: "ui", posisiPanelAbt: { lebar: 400, kiri: 5, atas: 5 } } });
+    const h = halaman({
+      alamat: `${ASAL}/aps_badilag/abt/main/view`,
+      // 21 Okt 2026: panel ABT bawaannya lencana; uji sudut memakai panel yang disetel terbuka.
+      simpanan: { ujiTampilan: "ui", posisiPanelAbt: { lebar: 400, kiri: 5, atas: 5 }, panelBawaanTampil: { abt: true, diubahPada: "2026-10-22T00:00:00Z" } },
+    });
     await h.w.alatUjiSiap();
     const { p, kepala, penuh } = panelUji(h, "aleta-panel-abt");
     h.w.alatPasangJalanKeluar(p, "posisiPanelAbt");

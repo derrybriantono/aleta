@@ -714,8 +714,9 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m2-gagal{color:#ff9d92}
     kaki.appendChild(el("span", "aleta-m2-kecil", " Hanya membaca - tidak ada yang diubah di SIPP, ABT, maupun ALETA."));
     badan.appendChild(kaki);
 
-    // Terbuka bila ada yang perlu perhatian, kecuali petugas sudah memilih sendiri.
-    if (!kotak.hasAttribute("data-m2-dipilih")) badan.hidden = !r.perluPerhatian;
+    // 21 Okt 2026 (semua panel ekstensi bawaannya terlipat): TIDAK lagi terbuka sendiri. Yang perlu perhatian
+    // tetap terbaca di kepala kotak (penanda "perlu"); rincian dibuka petugas dengan satu klik.
+    if (!kotak.hasAttribute("data-m2-dipilih")) badan.hidden = true;
   }
 
   const LABEL_PERAN = {

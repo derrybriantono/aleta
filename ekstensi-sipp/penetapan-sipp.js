@@ -57,8 +57,24 @@
   const KELAS = "aleta-sisip aleta-pensipp";
   const ID_PANEL = "aleta-pensipp-panel";
   const ID_PANEL_UTAMA = "aleta-panel-sipp";
-  const KUNCI_LIPAT = "lipatanBagian";
-  const KUNCI_LIPAT_PANEL = "penetapanSipp";
+  // 21 Okt 2026 (perbaikan): BAWAAN TERLIPAT di setiap kunjungan; pilihan petugas diingat hanya selama halaman
+  // ini terbuka (aturan bersama alatPanelTerbuka/alatIngatPanel, panel-alat.js). Dulu diingat di
+  // chrome.storage.local: panel yang sekali dibuka terbuka lagi di setiap perkara sesudahnya.
+  const KUNCI_PANEL = "penetapan-otomatis-sipp";
+  function terbukaTersimpan(nomor) {
+    try {
+      return typeof alatPanelTerbuka === "function" ? alatPanelTerbuka(`${KUNCI_PANEL}:${nomor}`) : false;
+    } catch {
+      return false;
+    }
+  }
+  function ingatTerbuka(nomor, buka) {
+    try {
+      if (typeof alatIngatPanel === "function") alatIngatPanel(`${KUNCI_PANEL}:${nomor}`, buka);
+    } catch {
+      /* ingatan lipatan hanya kenyamanan */
+    }
+  }
   const URUTAN = ["pmh", "ppp", "pjs", "phs"];
   const NAMA = {
     pmh: "Penetapan Majelis Hakim",
@@ -136,14 +152,6 @@
       return {};
     }
   }
-  async function tulisPenyimpanan(isi) {
-    try {
-      await chrome.storage.local.set(isi);
-    } catch {
-      /* ingatan lipatan hanya kenyamanan */
-    }
-  }
-
   // ──────────────────────────────────────────────────────────────────────────
   // Hak, nomor, dan letak di halaman
   // ──────────────────────────────────────────────────────────────────────────
@@ -194,8 +202,7 @@
   function buatCtx(nomor) {
     return {
       nomor,
-      terbuka: false, // 21 Okt: bawaan TERLIPAT; dibuka dengan klik tombol (atau yang sengaja dibuka petugas pada kunjungan lalu)
-      lipatDibaca: false,
+      terbuka: false, // 21 Okt: bawaan TERLIPAT; dibuka dengan klik tombol (diingat hanya selama halaman ini terbuka)
       data: null,
       memuat: false,
       galat: "",
@@ -1154,13 +1161,8 @@
         if (!ctx) return;
         ctx.terbuka = !ctx.terbuka;
         if (ctx.terbuka) ctx.dibukaPetugas = true; // panel yang sengaja dibuka petugas tidak dicabut walau semua penetapan tercatat
-        ctx.lipatDibaca = true;
-        const lipat = !ctx.terbuka;
-        void bacaPenyimpanan([KUNCI_LIPAT]).then((simpan) => {
-          const lip = simpan && simpan[KUNCI_LIPAT] && typeof simpan[KUNCI_LIPAT] === "object" ? simpan[KUNCI_LIPAT] : {};
-          void tulisPenyimpanan({ [KUNCI_LIPAT]: { ...lip, [KUNCI_LIPAT_PANEL]: lipat } });
-        });
-        pasangPanel(tr);
+        ingatTerbuka(ctx.nomor, ctx.terbuka);
+        pasangPanel(barisTombol(document) || tr);
       });
       td.appendChild(b);
     }
@@ -1221,18 +1223,11 @@
     if (!ctx || ctx.nomor !== nomor) {
       if (d.querySelector(".aleta-pensipp")) bersihkan(d);
       ctx = buatCtx(nomor);
-      void bacaPenyimpanan([KUNCI_LIPAT]).then((simpan) => {
-        if (!ctx || ctx.nomor !== nomor) return;
-        const lip = simpan && simpan[KUNCI_LIPAT] && typeof simpan[KUNCI_LIPAT] === "object" ? simpan[KUNCI_LIPAT] : {};
-        ctx.lipatan = lip;
-        // Bawaan TERLIPAT (21 Okt 2026, sama dengan Putusan Otomatis); hanya yang sengaja dibuka petugas (false) yang terbuka lagi.
-        if (lip[KUNCI_LIPAT_PANEL] === false && !ctx.lipatDibaca) {
-          ctx.terbuka = true;
-          const baris = barisTombol(document);
-          if (baris) pasangPanel(baris);
-        }
-        ctx.lipatDibaca = true;
-      });
+      // Bawaan TERLIPAT; terbuka lagi HANYA bila petugas membukanya pada kunjungan halaman ini.
+      if (terbukaTersimpan(nomor)) {
+        ctx.terbuka = true;
+        ctx.dibukaPetugas = true;
+      }
     }
     if (semuaPenetapanTercatat()) {
       // 21 Okt: keempat penetapan sudah tercatat - tidak ada yang perlu dikerjakan, tombol dan panel tidak dimunculkan.

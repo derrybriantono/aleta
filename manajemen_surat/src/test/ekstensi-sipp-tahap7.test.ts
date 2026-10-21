@@ -715,7 +715,7 @@ describe("ide sipp-N hanya bila saklarnya menyala; D1-D15 hanya UI Baru", () => 
   });
 
   it("UI Baru: tab (D3), menu ⋯ (D2), kartu Langkah berikutnya (D4), labuh (D1)", async () => {
-    const h = buka({ simpanan: { ujiTampilan: "ui", ujiIzinkanNyata: true } });
+    const h = buka({ simpanan: { ujiTampilan: "ui", ujiIzinkanNyata: true, panelBawaanTampil: { aleta: true, sipp: true, abt: true, diubahPada: "2026-10-22T00:00:00.000Z" } } }); // 21 Okt: panel disetel terbuka
     await siapT7(h, "ui");
     await tunggu(30);
     const panel = panelDari(h);
@@ -767,7 +767,7 @@ describe("ide sipp-N hanya bila saklarnya menyala; D1-D15 hanya UI Baru", () => 
 // ============================================================================
 describe("D8: Zona berbahaya menuntut nomor perkara diketik", () => {
   it("tombol pembongkar yang SAMA dipindah; klik tertahan sampai nomornya cocok", async () => {
-    const h = buka({ simpanan: { ujiTampilan: "ui", ujiIzinkanNyata: true } });
+    const h = buka({ simpanan: { ujiTampilan: "ui", ujiIzinkanNyata: true, panelBawaanTampil: { aleta: true, sipp: true, abt: true, diubahPada: "2026-10-22T00:00:00.000Z" } } }); // 21 Okt: panel disetel terbuka
     const panel = await siapT7(h, "ui");
     await tunggu(20);
     // Bongkar-semua tiruan, dibentuk seperti tombolBongkarSemua: pembungkus + tombol + pendengar.

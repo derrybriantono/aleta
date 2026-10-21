@@ -1592,7 +1592,19 @@
    * pilihan petugas diingat.
    */
   function sedangKecil() {
+    // 21 Okt 2026 (semua panel ekstensi bawaannya terlipat; Baru & UI Baru - Lama tidak berubah): KECIL di
+    // setiap tab baru. Yang dibentangkan petugas diingat per SESI TAB (alatPanelTerbuka sesiTab, panel-alat.js)
+    // - berpindah halaman di tab yang sama tidak menciutkannya lagi; kecil:false yang tersimpan dari sesi
+    // lain tidak lagi membentangkannya.
+    if (modeUji() !== "lama" && !terbentangSesiIni()) return true;
     return keadaan.posisi ? keadaan.posisi.kecil === true : true;
+  }
+  function terbentangSesiIni() {
+    try {
+      return typeof alatPanelTerbuka === "function" && alatPanelTerbuka("checklist-widget", { sesiTab: true });
+    } catch {
+      return false;
+    }
   }
   /* === AKHIR CHECKLIST-POSISI === */
 
@@ -6029,6 +6041,11 @@
   }
 
   function setelKecil(kecil) {
+    try {
+      if (typeof alatIngatPanel === "function") alatIngatPanel("checklist-widget", !kecil, { sesiTab: true });
+    } catch {
+      /* ingatan lipatan hanya kenyamanan */
+    }
     keadaan.posisi = { ...(keadaan.posisi || {}), kecil };
     simpanPosisi();
     gambar();

@@ -164,7 +164,8 @@ function bukaSaksi(p: OpsiE = {}) {
   w.HTMLElement.prototype.getClientRects = function () {
     return [{}];
   };
-  const simpanan: Record<string, unknown> = { ujiTampilan: "ui", ujiIzinkanNyata: true };
+  // 21 Okt 2026: panel bawaannya lencana; uji isi/letak panel memakai panel yang disetel TERBUKA (pilihan sesudah keputusan itu).
+  const simpanan: Record<string, unknown> = { ujiTampilan: "ui", ujiIzinkanNyata: true, panelBawaanTampil: { aleta: true, sipp: true, abt: true, diubahPada: "2026-10-22T00:00:00.000Z" } };
   w.chrome = {
     runtime: { id: "aleta-uji", getManifest: () => ({ version: "1.184.0" }), getURL: (x: string) => x, sendMessage: () => undefined },
     storage: {
@@ -419,7 +420,8 @@ function bukaPanel(p: OpsiP = {}) {
   });
   w.TextDecoder = globalThis.TextDecoder;
   w.Response = globalThis.Response;
-  const simpanan: Record<string, unknown> = polos(p.simpanan ?? { ujiTampilan: "ui", ujiIzinkanNyata: true });
+  // 21 Okt 2026: panel bawaannya lencana; uji isi/letak panel memakai panel yang disetel TERBUKA (pilihan sesudah keputusan itu).
+  const simpanan: Record<string, unknown> = polos(p.simpanan ?? { ujiTampilan: "ui", ujiIzinkanNyata: true, panelBawaanTampil: { aleta: true, sipp: true, abt: true, diubahPada: "2026-10-22T00:00:00.000Z" } });
   w.chrome = {
     runtime: { id: "aleta-uji", getManifest: () => ({ version: "1.184.0" }), getURL: (x: string) => `chrome-extension://aleta-uji/${x}`, sendMessage: async () => ({}) },
     storage: {

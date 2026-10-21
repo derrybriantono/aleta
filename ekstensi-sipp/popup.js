@@ -2465,7 +2465,9 @@ function terapkanProfil(kode) {
   void (async () => {
     if (kustomSaklar) await ubahRekamAkun({ kustom: { saklar: kustomSaklar, panel: await panelLama } });
     await ubahRekamAkun({ profil: kode });
-    await simpanBawaanPanel(p.panel);
+    // 21 Okt 2026: profil tidak lagi membuka panel saat halaman dibuka - semua panel bawaannya terlipat.
+    // (p.panel tetap menentukan saklar panel mana yang relevan bagi golongan itu.)
+    await simpanBawaanPanel(BAWAAN_PANEL);
     kabarkanPanelPopup();
   })();
   segarkanSusunan();
@@ -3398,7 +3400,10 @@ function komponenKakiUi() {
 // panel-alat.js). Mode latihan/kering: lokal saja. UI Baru saja.
 const KUNCI_BAWAAN_PANEL = "panelBawaanTampil";
 const SETELAN_BAWAAN_PANEL = "panel.bawaan";
-const BAWAAN_PANEL = { aleta: false, sipp: true, abt: true };
+// 21 Okt 2026: semua panel bawaannya terlipat; pilihan yang disimpan sebelum keputusan itu tidak berlaku lagi
+// (sama dengan ALAT_BAWAAN_TAMPIL_SEJAK di panel-alat.js). Pilihan yang dibuat sesudahnya tetap dihormati.
+const BAWAAN_PANEL = { aleta: false, sipp: false, abt: false };
+const BAWAAN_PANEL_SEJAK = Date.parse("2026-10-21T16:00:00+08:00");
 const SITUS_BAWAAN_PANEL = [
   ["aleta", "Panel ALETA (portal)"],
   ["sipp", "Panel SIPP"],
@@ -3417,8 +3422,10 @@ function bawaanPanelBerlaku(lokal, server) {
     const t = Date.parse(String((x && x.diubahPada) || ""));
     return Number.isFinite(t) ? t : 0;
   };
-  const sv = server && typeof server === "object" && server.nilai && typeof server.nilai === "object" ? server : null;
-  const lk = lokal && typeof lokal === "object" ? lokal : null;
+  const sv0 = server && typeof server === "object" && server.nilai && typeof server.nilai === "object" ? server : null;
+  const lk0 = lokal && typeof lokal === "object" ? lokal : null;
+  const sv = sv0 && waktu(sv0) >= BAWAAN_PANEL_SEJAK ? sv0 : null;
+  const lk = lk0 && waktu(lk0) >= BAWAAN_PANEL_SEJAK ? lk0 : null;
   if (sv && (!lk || waktu(sv) >= waktu(lk))) return { ...BAWAAN_PANEL, ...bawaanPanelBersih(sv.nilai), sumber: "akun" };
   if (lk) return { ...BAWAAN_PANEL, ...bawaanPanelBersih(lk), sumber: "lokal" };
   return { ...BAWAAN_PANEL, sumber: "bawaan" };

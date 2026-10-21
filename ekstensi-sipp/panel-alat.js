@@ -2979,6 +2979,61 @@ function alatBolehTombolPenetapanSipp(pengguna) {
 }
 
 /*
+ * ============================================================================
+ * SEMUA PANEL EKSTENSI BAWAANNYA TERLIPAT (21 Okt 2026)
+ * ============================================================================
+ *
+ * Keputusan pengguna: "Semua tampilan ekstensi sekarang itu defaultnya minimize (kecuali blangko ABT by
+ * Derry Briantono)". SATU aturan untuk semua panel: kunjungan halaman yang baru = terlipat. Yang sengaja
+ * dibuka petugas diingat HANYA selama halaman itu terbuka (memori skrip ini - SIPP yang menyegarkan isinya
+ * tanpa berpindah halaman, atau panel yang digambar ulang, tidak melipatnya lagi); muat ulang, kembali ke
+ * halaman, atau perkara lain = terlipat lagi. Dahulu sebagian panel mengingatnya di chrome.storage.local,
+ * sehingga panel yang SEKALI dibuka terbuka di setiap kunjungan sesudahnya.
+ *
+ *   alatPanelTerbuka(kunci, o)        true bila petugas membukanya pada kunjungan ini; selain itu false
+ *   alatIngatPanel(kunci, terbuka, o) mencatat pilihan petugas (kunjungan ini saja)
+ *   alatBawaanTerlipat(kunci, o)      = !alatPanelTerbuka(kunci, o) - dipakai saat panel dibuat
+ *
+ *   o.sesiTab = true: diingat per SESI TAB (sessionStorage - bertahan saat halaman dimuat ulang di tab yang
+ *   sama, hilang di tab baru). Dipakai widget yang melayang di semua halaman (checklist), supaya tidak
+ *   menciut lagi tiap kali petugas berpindah halaman. Panel di halaman perkara (Penetapan/Putusan Otomatis,
+ *   Jadwalkan Putusan) TIDAK memakainya: sesudah muat ulang atau kembali ke halaman, panel itu terlipat lagi.
+ *
+ * Panel "Blangko ABT by Derry Briantono" di halaman ABT SENGAJA tidak memakai aturan ini (tetap terbuka).
+ */
+const ALAT_PANEL_TERBUKA = new Map();
+const ALAT_PANEL_SESI_AWALAN = "aleta-panel-terbuka:";
+function alatPanelTerbuka(kunci, opsi) {
+  const k = String(kunci || "");
+  if (ALAT_PANEL_TERBUKA.get(k) === true) return true;
+  if (opsi && opsi.sesiTab) {
+    try {
+      return globalThis.sessionStorage && globalThis.sessionStorage.getItem(ALAT_PANEL_SESI_AWALAN + k) === "1";
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+function alatIngatPanel(kunci, terbuka, opsi) {
+  const k = String(kunci || "");
+  if (!k) return;
+  if (terbuka) ALAT_PANEL_TERBUKA.set(k, true);
+  else ALAT_PANEL_TERBUKA.delete(k);
+  if (opsi && opsi.sesiTab) {
+    try {
+      if (terbuka) globalThis.sessionStorage.setItem(ALAT_PANEL_SESI_AWALAN + k, "1");
+      else globalThis.sessionStorage.removeItem(ALAT_PANEL_SESI_AWALAN + k);
+    } catch {
+      /* penyimpanan sesi tidak tersedia: diingat selama halaman ini saja */
+    }
+  }
+}
+function alatBawaanTerlipat(kunci, opsi) {
+  return !alatPanelTerbuka(kunci, opsi);
+}
+
+/*
  * URUTAN TETAP TOMBOL DI DERETAN TOMBOL HALAMAN PERKARA SIPP (21 Okt 2026):
  * Penetapan Otomatis, Putusan Otomatis, Jadwalkan Putusan, lalu Buka di ABT / Buka di ALETA.
  * Satu pengurut untuk ketiga modul (penetapan-sipp.js, putusan-sipp.js, putusan-terjadwal.js):
@@ -7191,7 +7246,11 @@ Portal menyajikan ${tertinggal.portal}, yang berjalan ${tertinggal.terpasang}. U
  */
 const ALAT_BAWAAN_TAMPIL_KUNCI = "panelBawaanTampil";
 const ALAT_BAWAAN_TAMPIL_SETELAN = "panel.bawaan";
-const ALAT_BAWAAN_TAMPIL = { aleta: false, sipp: true, abt: true };
+// 21 Okt 2026: SEMUA panel ekstensi bawaannya terlipat (keputusan pengguna) - ketiga situs lahir sebagai lencana
+// di tiap kunjungan; satu klik membentangkannya. Pilihan "terbuka" yang disimpan SEBELUM keputusan itu
+// (ALAT_BAWAAN_TAMPIL_SEJAK) tidak lagi berlaku; pilihan yang dibuat sesudahnya tetap dihormati.
+const ALAT_BAWAAN_TAMPIL = { aleta: false, sipp: false, abt: false };
+const ALAT_BAWAAN_TAMPIL_SEJAK = Date.parse("2026-10-21T16:00:00+08:00");
 const ALAT_BAWAAN_SITUS = ["aleta", "sipp", "abt"];
 /** Kunci posisi panel yang sudah diberi bawaannya di halaman ini. */
 const alatBawaanSudah = new Set();
@@ -7217,11 +7276,13 @@ function alatBawaanTampilBerlaku(lokal, server) {
   };
   let pilih = null;
   let sumber = "bawaan";
-  if (s && (!l || waktu(s) >= waktu(l))) {
-    pilih = alatBawaanTampilBersih(s.nilai);
+  const s2 = s && waktu(s) >= ALAT_BAWAAN_TAMPIL_SEJAK ? s : null;
+  const l2 = l && waktu(l) >= ALAT_BAWAAN_TAMPIL_SEJAK ? l : null;
+  if (s2 && (!l2 || waktu(s2) >= waktu(l2))) {
+    pilih = alatBawaanTampilBersih(s2.nilai);
     sumber = "akun";
-  } else if (l) {
-    pilih = alatBawaanTampilBersih(l);
+  } else if (l2) {
+    pilih = alatBawaanTampilBersih(l2);
     sumber = "lokal";
   }
   return { ...ALAT_BAWAAN_TAMPIL, ...(pilih || {}), sumber };

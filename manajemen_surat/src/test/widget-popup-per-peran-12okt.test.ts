@@ -311,17 +311,18 @@ describe("butir 3 - profil saklar: bug dan perbedaan nyata per peran", () => {
       tandaTangan.set(kode, `${nilaiSaklar(p)}|${panel.aleta ? 1 : 0}${panel.sipp ? 1 : 0}${panel.abt ? 1 : 0}`);
     }
     // 14 Okt (permintaan pengguna): panel ALETA di portal TERTUTUP bawaan untuk SEMUA profil - Panitera
-    // kini sama dengan Juru Sita (tadinya beda hanya di panel ALETA terbuka). Tujuh tanda tangan berbeda.
-    expect(new Set(tandaTangan.values()).size).toBe(7);
+    // kini sama dengan Juru Sita. 21 Okt 2026: SEMUA panel (ALETA, SIPP, ABT) terlipat bawaan untuk semua
+    // profil, jadi profil hanya berbeda di saklarnya: lima tanda tangan berbeda.
+    expect(new Set(tandaTangan.values()).size).toBe(5);
     expect(tandaTangan.get("panitera")).toBe(tandaTangan.get("jurusita"));
-    for (const v of tandaTangan.values()) expect(v.split("|")[1].startsWith("0")).toBe(true);
+    for (const v of tandaTangan.values()) expect(v.split("|")[1]).toBe("000");
     // Nilai di penyimpanan = nilai di kotak centang (satu penulis); profil terakhir = Operator.
     expect(p.simpanan.checklistMilestone).toBe((p.d.getElementById("checklistMilestone") as HTMLInputElement).checked);
     expect(p.simpanan.checklistMilestone).toBe(false);
-    expect(tandaTangan.get("kasir")).toBe("00001|010");
-    expect(tandaTangan.get("hakim")).toBe("11001|011");
-    expect(tandaTangan.get("pp")).toBe("11101|011");
-    expect(tandaTangan.get("jurusita")).toBe("10001|011");
+    expect(tandaTangan.get("kasir")).toBe("00001|000");
+    expect(tandaTangan.get("hakim")).toBe("11001|000");
+    expect(tandaTangan.get("pp")).toBe("11101|000");
+    expect(tandaTangan.get("jurusita")).toBe("10001|000");
   });
 
   it("Kustom = setelan sendiri: diingat sebelum profil dicoba, dan dipulihkan saat Kustom ditekan", async () => {

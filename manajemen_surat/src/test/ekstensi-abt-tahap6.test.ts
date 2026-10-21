@@ -501,7 +501,8 @@ function fitur(kode: string[]): Record<string, boolean> {
   return Object.fromEntries(kode.map((k) => [k, true]));
 }
 const baru = (kode: string[], lain: Record<string, unknown> = {}) => ({ ujiTampilan: "baru", ujiFitur: fitur(kode), ...lain });
-const ui = (kode: string[], lain: Record<string, unknown> = {}) => ({ ujiTampilan: "ui", ujiFitur: fitur(kode), ...lain });
+// 21 Okt 2026: panel bawaannya lencana; uji isi/letak panel memakai panel yang disetel TERBUKA (pilihan sesudah keputusan itu).
+const ui = (kode: string[], lain: Record<string, unknown> = {}) => ({ ujiTampilan: "ui", ujiFitur: fitur(kode), panelBawaanTampil: { aleta: true, sipp: true, abt: true, diubahPada: "2026-10-22T00:00:00.000Z" }, ...lain });
 const nyata = { ujiIzinkanNyata: true };
 
 /** Permintaan yang hanya dapat berasal dari Tahap 6. */

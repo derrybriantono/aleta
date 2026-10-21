@@ -190,6 +190,12 @@ function buka(
     tinggi?: number;
     /** Jalankan panel-alat.js saja (tanpa checklist.js). */
     tanpaChecklist?: boolean;
+    /**
+     * 21 Okt 2026: posisi "terbentang" yang tersimpan hanya membentangkan widget pada SESI TAB yang sama
+     * (alatPanelTerbuka sesiTab). Bawaan helper ini: sesi tab yang sama (tanda sesi diisi bila kecil:false
+     * tersimpan); tabBaru: true = tab baru tanpa tanda sesi.
+     */
+    tabBaru?: boolean;
   } = {}
 ): Halaman {
   const dom = new JSDOM(`<!doctype html><html><head></head><body></body></html>`, {
@@ -202,6 +208,10 @@ function buka(
   if (p.lebar) Object.defineProperty(w, "innerWidth", { value: p.lebar, configurable: true });
   if (p.tinggi) Object.defineProperty(w, "innerHeight", { value: p.tinggi, configurable: true });
   const { simpanan, storage } = penyimpananTiruan(p.simpanan ?? {});
+  const awalPosisi = p.simpanan ?? {};
+  if (!p.tabBaru && ["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"].some((k) => (awalPosisi[k] as { kecil?: boolean } | undefined)?.kecil === false)) {
+    w.sessionStorage.setItem("aleta-panel-terbuka:checklist-widget", "1");
+  }
   w.chrome = {
     runtime: {
       id: "aleta-uji",
@@ -260,6 +270,8 @@ describe("7. checklist BAWAAN TERTUTUP; pilihan petugas diingat", () => {
     lencana.click();
     await sampai(() => q(h, ".aleta-cm-kelompok"), "daftar terbentang");
     await sampai(() => (h.simpanan.posisiChecklistSipp as any)?.kecil === false, "bentangan diingat");
+    // 21 Okt 2026: diingat per SESI TAB - berpindah halaman di tab yang sama tetap terbentang.
+    expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:checklist-widget")).toBe("1");
   });
 
   it("tampilan Lama: pil, bukan daftar; klik pil membentangkan", async () => {
@@ -270,11 +282,21 @@ describe("7. checklist BAWAAN TERTUTUP; pilihan petugas diingat", () => {
     await sampai(() => q(h, ".aleta-cm-kelompok"), "terbentang");
   });
 
-  it("yang pernah dibentangkan (kecil:false tersimpan) tetap terbentang di sesi berikutnya", async () => {
+  it("yang dibentangkan pada sesi tab yang sama tetap terbentang (berpindah halaman / muat ulang)", async () => {
     const h = buka({ simpanan: { ...UI, posisiChecklistSipp: { kecil: false } } });
     await sampai(() => q(h, ".aleta-cm-kelompok"), "terbentang dari ingatan");
     expect(q(h, ".aleta-cmw-lencana")).not.toBeNull(); // lencana tetap di kaki dok
     expect(q(h, ".aleta-cmw-lencana").getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("21 Okt 2026: tab baru = BAWAAN TERTUTUP walau kunjungan lalu terbentang (kecil:false tersimpan)", async () => {
+    const h = buka({ simpanan: { ...UI, posisiChecklistSipp: { kecil: false } }, tabBaru: true });
+    const lencana = await sampai(() => q(h, ".aleta-cmw-lencana"), "lencana");
+    await tunggu(50);
+    expect(q(h, ".aleta-cm-kelompok")).toBeNull();
+    expect(lencana.getAttribute("aria-expanded")).toBe("false");
+    lencana.click();
+    await sampai(() => q(h, ".aleta-cm-kelompok"), "dibentangkan petugas");
   });
 
   it("digeser selagi tertutup: tetap tertutup, posisinya diingat", async () => {
@@ -341,7 +363,9 @@ describe("7. panel ALETA: sesi baru di KANAN ATAS dengan ukuran bawaan besar", (
   });
 
   it("alatPasangPanel: sesi baru - lebar & tinggi bawaan, sudut KANAN ATAS tetap di tempatnya", async () => {
-    const h = buka({ lebar: 1920, tinggi: 1080, tanpaChecklist: true, simpanan: { ujiTampilan: "ui" } });
+    // 21 Okt 2026: panel bawaannya lencana; ukuran bawaan diuji pada panel yang disetel terbuka.
+    const terbukaAbt = { panelBawaanTampil: { abt: true, diubahPada: "2026-10-22T00:00:00.000Z" } };
+    const h = buka({ lebar: 1920, tinggi: 1080, tanpaChecklist: true, simpanan: { ujiTampilan: "ui", ...terbukaAbt } });
     await modeBerlaku(h, "ui");
     const panel = h.w.document.createElement("div");
     panel.className = "aleta-panel";
