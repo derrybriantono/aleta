@@ -58,6 +58,17 @@ export async function register() {
     mulaiPelaksanaBerkala();
   }
   /* === AKHIR PUTUSAN TERJADWAL === */
+  /* === TUNDA OTOMATIS 22 Okt === detak 5 menit; jalan SEKALI per tanggal pada jam pemicu (16.30 WITA, 14.00 pada hari
+     sidang keliling aktif) HANYA bila saklar Super Admin menyala (bawaan MATI, mode kering). Menulis ke SIPP hanya lewat
+     penulis tunda yang ada (bot, akun PP, antrean jam kerja). Matikan seluruhnya dengan ALETA_TUNDA_OTOMATIS=0. */
+  if (process.env.ALETA_TUNDA_OTOMATIS !== "0") {
+    const [{ mulaiTundaOtomatisBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/tunda-otomatis/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiTundaOtomatisBerkala(getDatabase);
+  }
+  /* === AKHIR TUNDA OTOMATIS === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
   const { mulaiPenjadwalSinkron } = await import("@/server/modules/sinkron/penjadwal");
   mulaiPenjadwalSinkron();

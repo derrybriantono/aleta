@@ -2725,11 +2725,13 @@ export async function getGatewayKeadaanSidang(
  * SIPP yang sedang dipakai petugas.
  */
 export async function postGatewayTundaSidang(
-  isi: Record<string, unknown>
+  isi: Record<string, unknown>,
+  opsi: { timeoutMs?: number } = {}
 ): Promise<GatewayResult<Record<string, unknown>>> {
   return gatewayFetch(`/internal/aleta-bot/sidang/tunda`, {
     method: "POST",
     body: JSON.stringify(isi),
+    ...(opsi.timeoutMs ? { timeoutMs: opsi.timeoutMs } : {}),
   });
 }
 

@@ -163,6 +163,50 @@ function buatLayanan({ db, sekarang = () => jamKerja.sekarangSatker(), acak = Ma
     return (Array.isArray(baris) ? baris : []).map((b) => ({ ...b, jadwal: teks(b.jadwal), kalimat: jamKerja.kalimatDiantrekan(teks(b.jadwal)) }));
   }
 
+  /**
+   * Baris berawalan kunci tertentu (mis. "sidang-tunda:otomatis:") yang dibuat
+   * sejak `sejak` (WITA) - untuk daftar hasil tunda otomatis. Hanya membaca.
+   */
+  async function daftarMenurutAwalan({ awalan, sejak = "", batas = 200 } = {}) {
+    const pola = String(awalan || "");
+    if (!pola) return [];
+    await pastikanSkema();
+    const baris = await q(
+      `SELECT id, kunci, jenis, asal, status, percobaan, hasil,
+              DATE_FORMAT(jadwal_satker, '%Y-%m-%d %H:%i:%s') AS jadwal,
+              DATE_FORMAT(dibuat_satker, '%Y-%m-%d %H:%i:%s') AS dibuat,
+              DATE_FORMAT(selesai_satker, '%Y-%m-%d %H:%i:%s') AS selesai
+         FROM ${TABEL}
+        WHERE kunci LIKE ? AND dibuat_satker >= ?
+        ORDER BY id DESC LIMIT ${Math.min(Math.max(Number(batas) || 200, 1), 500)}`,
+      [`${pola.replace(/[\\%_]/g, (h) => `\\${h}`)}%`, String(sejak || "1970-01-01 00:00:00")]
+    );
+    return (Array.isArray(baris) ? baris : []).map((b) => ({
+      ...b,
+      jadwal: teks(b.jadwal),
+      dibuat: teks(b.dibuat),
+      selesai: teks(b.selesai),
+      kalimat: b.status === "menunggu" ? jamKerja.kalimatDiantrekan(teks(b.jadwal)) : "",
+    }));
+  }
+
+  /**
+   * Membatalkan baris OTOMATIS yang masih menunggu (tombol "jangan tunda
+   * otomatis" sesudah daftar diantrekan). Baris manual tidak pernah disentuh;
+   * yang sedang jalan/selesai tidak dapat dibatalkan.
+   */
+  async function batalkanOtomatis(kunci) {
+    if (!kunci) return { ok: false, alasan: "antrean_tanpa_kunci" };
+    await pastikanSkema();
+    const r = await q(
+      `UPDATE ${TABEL} SET status = 'batal', selesai_satker = ?, hasil = ?
+        WHERE kunci = ? AND asal = 'otomatis' AND status = 'menunggu'`,
+      [sekarang(), JSON.stringify({ ok: false, alasan: "dibatalkan_petugas" }), String(kunci).slice(0, 191)]
+    );
+    const n = Number(r && r.affectedRows) || 0;
+    return { ok: n === 1, dibatalkan: n === 1, alasan: n === 1 ? "" : "tidak_ada_yang_menunggu" };
+  }
+
   /** Sesudah restart: baris yang tertinggal "jalan" kembali menunggu. */
   async function pulihkan() {
     await pastikanSkema();
@@ -269,7 +313,9 @@ function buatLayanan({ db, sekarang = () => jamKerja.sekarangSatker(), acak = Ma
     const pilihan = String(badan.jamKerja || "").toLowerCase();
     if (pilihan === "sekarang") return null;
     if (pilihan === "antrekan") {
-      const r = await antrekan({ jenis, kunci, muatan: { ...muatan, jamKerja: "sekarang" }, keterangan, asal: "manual" });
+      // Tunda otomatis 16.30 (22 Okt 2026) tercatat sebagai tulisan OTOMATIS di antrean.
+      const asal = badan.otomatis === true ? "otomatis" : "manual";
+      const r = await antrekan({ jenis, kunci, muatan: { ...muatan, jamKerja: "sekarang" }, keterangan, asal });
       return { status: r.ok ? 200 : 500, body: { ...r, pesan: r.kalimat || r.alasan } };
     }
     if (badan.tanyaJamKerja === true) {
@@ -307,6 +353,8 @@ function buatLayanan({ db, sekarang = () => jamKerja.sekarangSatker(), acak = Ma
     jadwalUntuk,
     antrekan,
     daftarMenunggu,
+    daftarMenurutAwalan,
+    batalkanOtomatis,
     pulihkan,
     daftarkanPelaksana,
     kerjakanSatu,

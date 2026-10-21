@@ -130,6 +130,21 @@ function pesanHasilSidang(hasil, jalan = "tunda") {
         "Coba lagi; bila berulang, catat lewat SIPP dan laporkan pesan ini ke admin."
       );
     }
+    // Tunda otomatis 16.30 (22 Okt 2026) - penjagaTundaOtomatis.
+    case "sidang_sudah_diberi_hasil":
+      return `Hasil sidang ini sudah dicatat petugas${bersih(h.alasanTercatat) ? ` ("${bersih(h.alasanTercatat)}")` : ""} - tunda otomatis tidak menimpanya. ${tidakAdaPerubahan}`;
+    case "perkara_sudah_diputus":
+      return `Perkara ini sudah diputus - tunda otomatis tidak menulis apa pun. ${tidakAdaPerubahan}`;
+    case "jadwal_berubah":
+      return `Tanggal sidang ini sudah diubah sejak daftar tunda otomatis disusun - tidak ditulis. ${tidakAdaPerubahan}`;
+    case "sidang_ikrar_dilewati":
+      return `Sidang ikrar talak tidak ditunda otomatis - pakai tombol ikrar di Jadwal Sidang. ${tidakAdaPerubahan}`;
+    case "sudah_ada_jadwal_berikutnya":
+      return `Perkara ini sudah punya jadwal sidang berikutnya - tunda otomatis tidak menulis apa pun. ${tidakAdaPerubahan}`;
+    case "jadwal_tidak_terbaca":
+      return `Jadwal sidang perkara ini tidak dapat dibaca dari SIPP saat ini. ${tidakAdaPerubahan}`;
+    case "perkara_sedang_dikerjakan":
+      return `Petugas sedang mengerjakan perkara ini (atau kuncinya tidak terbaca) - tunda otomatis menunggu, tidak menulis. ${tidakAdaPerubahan}`;
     case "bukan_sidang_ikrar":
       return `Jadwal sidang ini bukan sidang ikrar talak. ${tidakAdaPerubahan}`;
     case "ikrar_belum_dinyatakan_terlaksana":

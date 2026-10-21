@@ -52,6 +52,7 @@ import {
 } from "@/lib/jadwal-tampil-url";
 /* === 12OKT-C: kartu ruang sidang & mediator === */
 import { PitaRuangSidang } from "@/components/portal/pita-ruang-sidang";
+import { TombolTundaOtomatis } from "@/components/portal/tunda-otomatis-panel";
 import { TombolBlangkoDerry } from "@/components/portal/tombol-blangko-derry";
 import { jenisBlangkoBoleh, jenisBlangkoMenurutKeadaan, saringJenisBlangko } from "@/lib/tautan-blangko-derry";
 import { susunPitaRuang } from "@/lib/pita-ruang-sidang";
@@ -6220,6 +6221,8 @@ export function AletaEcourtSidang({
             Tautan jadwal
           </a>
         ) : null}
+        {/* Tunda otomatis 16.30 (22 Okt 2026): daftar harian + saklar Super Admin. */}
+        {currentUser && !modeUrl ? <TombolTundaOtomatis tanggal={dari} /> : null}
         {currentUser && !modeUrl ? (
           <Button
             type="button"
