@@ -1,85 +1,30 @@
 /*
- * Putusan Otomatis di halaman perkara SIPP (20 Okt 2026, agen B2).
- * Tombol tebal di sebelah "Penetapan Otomatis"; panel terbentang di bawah deretan tombol.
- * Warna tombol biru tua supaya terbedakan dari Penetapan (hijau) tanpa mengorbankan kontras
- * (putih di atas #1f4e8c = 8,2:1; gelap #061a33 di atas #8db8f0 = 8,9:1). Terang mengikuti SIPP;
- * gelap mengikuti penanda tema ekstensi (html[data-aleta-tema-sipp="gelap"]).
+ * Putusan Otomatis di halaman perkara SIPP (20 Okt 2026, agen B2; disatukan 21 Okt 2026).
+ * Tombol dan palet panel DIPINJAM dari penetapan-sipp.css (satu gaya, satu warna merek, mengikuti tema
+ * terang/gelap SIPP lewat html[data-aleta-tema-sipp="gelap"]) - tidak ada lagi aksen biru tetap.
+ * Peubah --pu-* di bawah hanya memetakan nama lama ke palet bersama (--ps-*).
  */
 .aleta-pusipp-panel {
-  --pu-latar: #ffffff;
-  --pu-latar-lembut: #f1f5fb;
-  --pu-tinta: #14202f;
-  --pu-redup: #4a5a6e;
-  --pu-garis: #c4d0e0;
-  --pu-merek: #1f4e8c;
-  --pu-merek-teks: #ffffff;
-  --pu-emas: #8a5a0d;
-  --pu-emas-lembut: #fbf1dc;
-  --pu-ok: #1b6e38;
-  --pu-ok-lembut: #e3f3e8;
-  --pu-tunggu: #7a5c0a;
-  --pu-tunggu-lembut: #fbf3d9;
-  --pu-lewat: #4a5565;
-  --pu-lewat-lembut: #eceff3;
-  --pu-salah: #b42318;
-  --pu-salah-lembut: #fde8e6;
-}
-html[data-aleta-tema-sipp="gelap"] .aleta-pusipp-panel {
-  --pu-latar: #17202d;
-  --pu-latar-lembut: #1d2a3b;
-  --pu-tinta: #e6edf6;
-  --pu-redup: #a9b8cb;
-  --pu-garis: #33465e;
-  --pu-merek: #8db8f0;
-  --pu-merek-teks: #061a33;
-  --pu-emas: #e0b861;
-  --pu-emas-lembut: #3a2e17;
-  --pu-ok: #7fd9a1;
-  --pu-ok-lembut: #183527;
-  --pu-tunggu: #e5c35c;
-  --pu-tunggu-lembut: #3a3216;
-  --pu-lewat: #b7c2d0;
-  --pu-lewat-lembut: #262d36;
-  --pu-salah: #ff9b92;
-  --pu-salah-lembut: #43211f;
-  color-scheme: dark;
+  --pu-latar: var(--ps-latar);
+  --pu-latar-lembut: var(--ps-latar-lembut);
+  --pu-tinta: var(--ps-tinta);
+  --pu-redup: var(--ps-redup);
+  --pu-garis: var(--ps-garis);
+  --pu-merek: var(--ps-merek);
+  --pu-merek-teks: var(--ps-merek-teks);
+  --pu-emas: var(--ps-emas);
+  --pu-emas-lembut: var(--ps-emas-lembut);
+  --pu-ok: var(--ps-ok);
+  --pu-ok-lembut: var(--ps-ok-lembut);
+  --pu-tunggu: var(--ps-tunggu);
+  --pu-tunggu-lembut: var(--ps-tunggu-lembut);
+  --pu-lewat: var(--ps-lewat);
+  --pu-lewat-lembut: var(--ps-lewat-lembut);
+  --pu-salah: var(--ps-salah);
+  --pu-salah-lembut: var(--ps-salah-lembut);
 }
 
-/* ── Tombol di deretan tombol SIPP ───────────────────────────────────────── */
-td.aleta-pusipp-sel {
-  vertical-align: middle;
-  margin: 0;
-  padding: 0 4px 0 0;
-  border-left: 0;
-  border-radius: 0;
-  background: none;
-}
-.aleta-pusipp-tombol {
-  --pu-t-latar: #1f4e8c;
-  --pu-t-teks: #ffffff;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: var(--pu-t-latar);
-  color: var(--pu-t-teks) !important;
-  border: 2px solid var(--pu-t-latar);
-  border-radius: 4px;
-  padding: 4px 14px;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 800;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  box-shadow: 0 0 0 3px rgba(31, 78, 140, 0.25);
-}
-.aleta-pusipp-tombol:hover {
-  filter: brightness(1.12);
-}
-.aleta-pusipp-tombol[aria-expanded="true"] {
-  --pu-t-latar: #173b6b;
-  border-color: #173b6b;
-}
+/* Tombol: gaya bersama di penetapan-sipp.css (.aleta-pusipp-tombol). */
 .aleta-pusipp-tombol:focus-visible,
 .aleta-pusipp-utama:focus-visible,
 .aleta-pusipp-ya:focus-visible,
@@ -87,23 +32,6 @@ td.aleta-pusipp-sel {
 .aleta-pusipp-panel input:focus-visible {
   outline: 3px solid #e0a800;
   outline-offset: 2px;
-}
-html[data-aleta-tema-sipp="gelap"] .aleta-pusipp-tombol {
-  --pu-t-latar: #8db8f0;
-  --pu-t-teks: #061a33;
-  box-shadow: 0 0 0 3px rgba(141, 184, 240, 0.3);
-}
-html[data-aleta-tema-sipp="gelap"] .aleta-pusipp-tombol[aria-expanded="true"] {
-  --pu-t-latar: #6a9fe0;
-}
-/* Tombol ini juga berkelas .btn SIPP, yang di tema gelap diwarnai panel.css dengan !important lewat
-   :is(.btn, ..., #search-btn1) - kekhususannya setara ID. Karena itu tombol ini ber-id dan warnanya sendiri
-   dipertegas, supaya aksen birunya tetap dan kontrasnya terjaga (>= 4,5:1). */
-html[data-aleta-tema-sipp="gelap"] #aleta-pusipp-tombol.aleta-pusipp-tombol,
-html[data-aleta-tema-sipp="gelap"] #aleta-pusipp-tombol.aleta-pusipp-tombol:hover {
-  background-color: var(--pu-t-latar) !important;
-  color: var(--pu-t-teks) !important;
-  border-color: var(--pu-t-latar) !important;
 }
 .aleta-pusipp-ikon {
   font-size: 1.1em;
@@ -219,6 +147,83 @@ html[data-aleta-tema-sipp="gelap"] #aleta-pusipp-tombol.aleta-pusipp-tombol:hove
 .aleta-pusipp-s-salah {
   background: var(--pu-salah-lembut);
   color: var(--pu-salah);
+}
+
+/* ── Tempat unggah berkas putusan (seret / pilih) ─────────────────────────── */
+.aleta-pusipp-berkas {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+}
+.aleta-pusipp-berkas-judul {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--pu-tinta);
+}
+.aleta-pusipp-zona {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  padding: 12px 14px;
+  border: 2px dashed var(--pu-garis);
+  border-radius: 9px;
+  background: var(--pu-latar-lembut);
+  color: var(--pu-tinta);
+}
+.aleta-pusipp-zona[data-sorot="1"] {
+  border-color: var(--pu-merek);
+  background: color-mix(in srgb, var(--pu-merek) 14%, var(--pu-latar));
+}
+.aleta-pusipp-zona[aria-disabled="true"] {
+  opacity: 0.6;
+}
+.aleta-pusipp-zona-bantu {
+  font-size: 13px;
+  color: var(--pu-redup);
+}
+.aleta-pusipp-zona input[type="file"] {
+  max-width: 100%;
+  font: inherit;
+  font-size: 13px;
+  color: var(--pu-tinta);
+}
+.aleta-pusipp-berkas-terpilih:empty {
+  display: none;
+}
+.aleta-pusipp-berkas-baris {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 4px 10px;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid var(--pu-garis);
+  border-radius: 9px;
+  background: var(--pu-latar);
+}
+.aleta-pusipp-berkas-nama {
+  font-size: 14px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.aleta-pusipp-berkas-ket {
+  font-size: 12.5px;
+  color: var(--pu-redup);
+}
+.aleta-pusipp-kecil {
+  background: transparent;
+  color: var(--pu-tinta);
+  border: 2px solid var(--pu-garis);
+  border-radius: 6px;
+  padding: 3px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.aleta-pusipp-kecil:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* ── Kaki, konfirmasi, laporan ───────────────────────────────────────────── */

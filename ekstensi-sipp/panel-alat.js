@@ -2944,6 +2944,61 @@ function alatBolehUnggahPutusanKini() {
   return alatBolehUnggahPutusan(alatPenggunaAkunAleta());
 }
 
+/*
+ * ============================================================================
+ * HAK TOMBOL DI HALAMAN SIPP (21 Okt 2026, permintaan tegas pengguna)
+ * ============================================================================
+ *
+ *   "Putusan Otomatis" dan "Jadwalkan Putusan" (satu perkara maupun massal):
+ *       HANYA Ketua, Wakil Ketua, dan Hakim. Super Admin tetap boleh semua.
+ *   "Penetapan Otomatis":
+ *       HANYA PTSP (termasuk Operator dan Petugas Meja), Ketua, dan Wakil Ketua.
+ *       Super Admin tetap boleh semua.
+ *
+ * Golongan "admin" di matriks menu ini memuat Super Admin DAN Admin (pola matriks
+ * yang sudah ada, sama dengan gerbang portal pastikanKapabilitas / hak unggah
+ * putusan), jadi Admin ikut seperti Super Admin. Peran lain - Panitera, Panitera
+ * Muda, Panitera Pengganti, Juru Sita, Kasir, Analis, Staf - tidak melihat tombol
+ * maupun panelnya. true | false | null (peran belum terbaca: tidak digambar).
+ * Penjagaan sesungguhnya tetap di rute portal; ini kenyamanan dan kejelasan.
+ */
+function alatBolehTombolPutusanSipp(pengguna) {
+  const p = pengguna === undefined ? alatPenggunaAkunAleta() : pengguna;
+  if (!p) return null;
+  if (typeof p === "object" && !String(p.peran || "").trim() && !Array.isArray(p.golonganMenu)) return null;
+  const g = alatGolonganMenuSemua(p);
+  return g.includes("admin") || g.includes("ketua") || g.includes("hakim");
+}
+
+function alatBolehTombolPenetapanSipp(pengguna) {
+  const p = pengguna === undefined ? alatPenggunaAkunAleta() : pengguna;
+  if (!p) return null;
+  if (typeof p === "object" && !String(p.peran || "").trim() && !Array.isArray(p.golonganMenu)) return null;
+  const g = alatGolonganMenuSemua(p);
+  return g.includes("admin") || g.includes("ketua") || g.includes("ptsp") || alatSubPeranPenetapan(p);
+}
+
+/*
+ * URUTAN TETAP TOMBOL DI DERETAN TOMBOL HALAMAN PERKARA SIPP (21 Okt 2026):
+ * Penetapan Otomatis, Putusan Otomatis, Jadwalkan Putusan, lalu Buka di ABT / Buka di ALETA.
+ * Satu pengurut untuk ketiga modul (penetapan-sipp.js, putusan-sipp.js, putusan-terjadwal.js):
+ * dahulu tiap modul menempatkan dirinya relatif terhadap yang lain, sehingga ketika yang
+ * ketiga hadir ketiganya saling memindahkan tiap detik. Pengurut ini tidak menyentuh DOM
+ * bila susunan sudah benar (tidak ada kedipan dan tidak ada tombol yang melompat).
+ */
+const ALAT_URUTAN_TOMBOL_SIPP = ["aleta-pensipp-sel", "aleta-pusipp-sel", "aleta-ptj-sel"];
+function alatUrutkanTombolSipp(tr) {
+  if (!tr || typeof tr.querySelector !== "function") return false;
+  const ada = ALAT_URUTAN_TOMBOL_SIPP.map((k) => tr.querySelector(`:scope > .${k}`)).filter(Boolean);
+  if (!ada.length) return false;
+  const l1 = tr.querySelector(":scope > .aleta-l1-submenu");
+  let benar = ada.every((td, i) => i === 0 || td.previousElementSibling === ada[i - 1]);
+  if (benar && l1) benar = ada[ada.length - 1].nextElementSibling === l1;
+  if (benar) return false;
+  for (const td of ada) tr.insertBefore(td, l1 || null);
+  return true;
+}
+
 /** Rute portal yang MENULIS putusan atau menyiapkan isian borang putusan. */
 const ALAT_RUTE_UNGGAH_PUTUSAN = [
   /\/aleta\/api\/aleta-ecourt\/putusan\/unggah-sipp(?:[?#]|$)/,
@@ -8641,6 +8696,8 @@ async function alatSidangPadaTanggal(tanggalIso) {
       perkaraId: String(s.perkaraId || ""),
       jenis: String(s.jenisPerkara || ""),
       agenda: String(s.agenda || ""),
+      // 21 Okt 2026: nama majelis (bila jadwal sidang membawanya) - bahan saringan Jadwalkan Putusan Massal.
+      majelis: String(s.majelisNama || ""),
       sudahPutus: Boolean(s.sudahPutus),
       // Dipakai menamai berkas - lihat sebutStatusPutusan di abt.js.
       statusPutusan: String(s.statusPutusan || ""),

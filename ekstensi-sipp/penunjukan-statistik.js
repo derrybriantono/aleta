@@ -13,7 +13,9 @@
  * persentase, skor, urutan, dan kalimat alasan semuanya datang dari server.
  *
  * Memasang: tempelDi(wadah, usulan, { terbuka }) - mengganti blok lama di
- * wadah itu dengan yang baru. Dipanggil dari:
+ * wadah itu dengan yang baru. BAWAAN TERLIPAT (21 Okt 2026): yang tampil hanya
+ * ringkasan satu-dua baris (beban usulan + perkara diterima 30 hari); tabelnya
+ * terbuka saat "Rincian" diklik. Dipanggil dari:
  *   - konten.js        gambarPenunjukan (papan)
  *   - penetapan-sipp.js render() (panel halaman SIPP, kotak "Beban & SK")
  *
@@ -62,6 +64,50 @@
     if (r.panitera) baris.push(`Panitera pengganti paling ringan: ${r.panitera.nama} - ${r.panitera.alasan}`);
     if (r.jurusita) baris.push(`Juru sita paling ringan: ${r.jurusita.nama} - ${r.jurusita.alasan}`);
     return baris;
+  }
+
+  /**
+   * Ringkasan SATU-DUA BARIS untuk judul/ringkasan panel (21 Okt 2026):
+   *   beban     "Beban usulan: Majelis C 63 berjalan · PP Qadariyah 19 berjalan · JS Mustini 40 berjalan"
+   *   diterima  "99 perkara diterima 30 hari terakhir (934 tahun ini)"
+   * Pulang { beban, diterima } (string kosong bila tidak terbaca).
+   */
+  function ringkasBeban(usulan) {
+    const stat = usulan && usulan.statistik;
+    if (!stat || stat.terbaca !== true) return { beban: "", diterima: "" };
+    const bagian = [];
+    const mj = (stat.majelis || []).find((m) => m.diusulkan);
+    if (mj) bagian.push(`Majelis ${mj.kode} ${mj.aktif} berjalan`);
+    else {
+      const hk = (stat.hakim || []).filter((h) => h.diusulkan);
+      if (hk.length === 1) bagian.push(`${hk[0].nama} ${hk[0].aktif} berjalan`);
+    }
+    const pp = (stat.panitera || []).find((x) => x.diusulkan);
+    if (pp) bagian.push(`PP ${pp.nama} ${pp.aktif} berjalan`);
+    const js = (stat.jurusita || []).find((x) => x.diusulkan);
+    if (js) bagian.push(`JS ${js.nama} ${js.aktif} berjalan`);
+    const d = stat.diterima;
+    const diterima = d && Number.isFinite(Number(d.hari30)) ? `${d.hari30} perkara diterima 30 hari terakhir${Number.isFinite(Number(d.tahun)) ? ` (${d.tahun} tahun ini)` : ""}` : "";
+    return { beban: bagian.length ? `Beban usulan: ${bagian.join(" · ")}` : "", diterima };
+  }
+
+  /** Rumus hitung majelis, dijelaskan sekali di bawah tabel Majelis. */
+  function catatanMajelis(stat) {
+    const luar = stat.luarSk || {};
+    const tunggal = stat.tunggal || {};
+    const sk = (stat.majelis || []).reduce((n, m) => n + (Number(m.tahun) || 0), 0);
+    const bagian = [
+      "Berjalan, Tahun ini, 30 hari, dan Kebendaan dihitung atas SEMUA perkara yang susunan hakimnya sama dengan susunan majelis itu menurut SK (urutan duduk tidak dihitung); " +
+        "urutan usulan dinilai sejak SK berlaku.",
+    ];
+    if (Number(luar.perkara) > 0 || sk > 0) {
+      bagian.push(
+        `Tahun ini: ${sk} perkara di majelis SK + ${Number(luar.perkara) || 0} di luar SK (susunan lain)${Number(tunggal.tahun) > 0 ? ` + ${tunggal.tahun} hakim tunggal` : ""}` +
+          (Number(luar.hari30) > 0 ? `; di luar SK ${luar.hari30} dalam 30 hari` : "") +
+          "."
+      );
+    }
+    return bagian.join(" ");
   }
 
   const STATUS_SK = {
@@ -134,12 +180,27 @@
 
     const kotak = el(doc, "details", KELAS);
     kotak.setAttribute("data-bebanstat", "1");
-    kotak.open = o.terbuka !== false;
+    // BAWAAN TERLIPAT: hanya ringkasan yang tampak; tabel rinci muncul saat "Rincian" diklik.
+    kotak.open = o.terbuka === true;
 
     const sk = stat.sk || {};
     const ringkas = el(doc, "summary", "aleta-bebanstat-ringkas");
-    ringkas.append(el(doc, "span", "aleta-bebanstat-ringkas-judul", "Beban penetapan"));
-    ringkas.append(el(doc, "span", sk.dipakai ? "aleta-bebanstat-sk" : "aleta-bebanstat-sk aleta-bebanstat-awas", kalimatSk(stat)));
+    const atas = el(doc, "span", "aleta-bebanstat-ringkas-atas");
+    atas.append(el(doc, "span", "aleta-bebanstat-ringkas-judul", "Beban penetapan"));
+    atas.append(el(doc, "span", sk.dipakai ? "aleta-bebanstat-sk" : "aleta-bebanstat-sk aleta-bebanstat-awas", kalimatSk(stat)));
+    if ((sk.peringatan || []).length > 0) atas.append(el(doc, "span", "aleta-bebanstat-sk aleta-bebanstat-awas", `SK perlu diperbarui (${sk.peringatan.length})`));
+    const tanda = el(doc, "span", "aleta-bebanstat-rincian-tanda", "Rincian");
+    tanda.setAttribute("data-bebanstat-tanda", "1");
+    atas.append(tanda);
+    ringkas.append(atas);
+    const r = ringkasBeban(usulan);
+    if (r.beban || r.diterima) {
+      const bawah = el(doc, "span", "aleta-bebanstat-ringkas-bawah");
+      bawah.setAttribute("data-bebanstat-ringkas", "1");
+      if (r.beban) bawah.append(el(doc, "span", "aleta-bebanstat-ringkas-beban", r.beban));
+      if (r.diterima) bawah.append(el(doc, "span", "aleta-bebanstat-ringkas-diterima", r.diterima));
+      ringkas.append(bawah);
+    }
     kotak.append(ringkas);
 
     if ((sk.peringatan || []).length > 0) {
@@ -181,11 +242,7 @@
     }
 
     if ((stat.majelis || []).length > 0) {
-      const luar = stat.luarSk || {};
-      const catatan =
-        luar.perkara > 0
-          ? `Di luar SK: ${luar.perkara} perkara bermajelis tahun ini (${luar.hari30} dalam 30 hari).`
-          : "";
+      const catatan = catatanMajelis(stat);
       kotak.append(
         tabel(
           doc,
@@ -223,10 +280,11 @@
   }
 
   globalThis.aletaPenunjukanStatistik = {
-    versi: "b1-20okt",
+    versi: "b1-21okt",
     gambar,
     tempelDi,
-    murni: { kalimatOrang, kalimatSk, kalimatRekomendasi, teks30, teksKebendaan, STATUS_SK },
+    ringkasBeban,
+    murni: { catatanMajelis, ringkasBeban, kalimatOrang, kalimatSk, kalimatRekomendasi, teks30, teksKebendaan, STATUS_SK },
   };
   if (typeof module !== "undefined" && module.exports) module.exports = globalThis.aletaPenunjukanStatistik;
 })();

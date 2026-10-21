@@ -3229,6 +3229,22 @@ function barisPenetapan(judul, isiTeks, sebab, peringatan, penetap) {
  */
 const TERCATAT_PENETAPAN = { pmh: "majelisNama", ppp: "paniteraText", pjs: "jurusitaText" };
 
+/**
+ * Teks petugas/majelis tercatat dari SIPP memisahkan nama dengan markah HTML mentah
+ * ("Fahri Saifuddin</br>Himawan Tatura Wijaya</br>Derry Briantono"). Di layar menjadi
+ * "Fahri Saifuddin, Himawan Tatura Wijaya, Derry Briantono" - tanpa penyisipan HTML
+ * (hanya teks), sisa penanda lain dibuang.
+ */
+function bersihkanPemisahBr(teks) {
+  return String(teks == null ? "" : teks)
+    .replace(/<\s*\/?\s*br\s*\/?\s*>/gi, ", ")
+    .replace(/<[^>]*>/g, "")
+    .replace(/(?:\s*,){2,}/g, ",")
+    .replace(/\s*,\s*/g, ", ")
+    .replace(/\s+/g, " ")
+    .replace(/^[,\s]+|[,\s]+$/g, "");
+}
+
 function barisPenetapanTercatat(judul, jenis, usulan) {
   const p = (usulan && usulan.penetapan) || {};
   const tanggal = keadaanPenetapanUsulan(usulan)[jenis];
@@ -3237,7 +3253,7 @@ function barisPenetapanTercatat(judul, jenis, usulan) {
       ? p.sidangPertama
         ? `sidang pertama ${sebutTanggal(String(p.sidangPertama).slice(0, 10))}`
         : ""
-      : String(p[TERCATAT_PENETAPAN[jenis]] || "").trim();
+      : bersihkanPemisahBr(p[TERCATAT_PENETAPAN[jenis]]);
   const baris = buatElemen("div", "aleta-tetap aleta-tetap-sudah");
   baris.appendChild(buatElemen("span", "aleta-tetap-label", judul));
   const nilai = buatElemen("span", "aleta-tetap-nilai");
@@ -8631,6 +8647,9 @@ function bagianIsiPutusan(nomorPerkara) {
               kabar: kabarLangkah || hasilTerap,
               wadah,
               anonim: anonimPilihan || null,
+              // Berkas yang dipilih di panel "Putusan Otomatis" halaman SIPP (putusan-sipp.js); kosong = dicetak dari ABT.
+              putusan: (opsiOto && opsiOto.putusan) || null,
+              putusanRtf: (opsiOto && opsiOto.putusanRtf) || null,
               denganPutusan: !(opsiOto && opsiOto.denganPutusan === false),
               denganAnonim: !(opsiOto && opsiOto.denganAnonim === false),
             });
@@ -8651,8 +8670,8 @@ function bagianIsiPutusan(nomorPerkara) {
           kabar: hasilTerap,
           wadah,
           tempat: tempatB2,
-          putusan: sekaligus && sekaligus.dipakai() && naskahEdoc ? naskahEdoc.asli : null,
-          putusanRtf: sekaligus && sekaligus.dipakai() && naskahEdoc ? naskahEdoc.rtf : null,
+          putusan: sekaligus && sekaligus.dipakai() && naskahEdoc ? naskahEdoc.asli : (opsiOto && opsiOto.putusan) || null,
+          putusanRtf: sekaligus && sekaligus.dipakai() && naskahEdoc ? naskahEdoc.rtf : (opsiOto && opsiOto.putusanRtf) || null,
           anonim: anonimPilihan || null,
           perluBerkas: Boolean(hasilSimpan.edoc.perluBerkas),
         });

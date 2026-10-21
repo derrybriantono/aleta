@@ -36,6 +36,7 @@ const kueri = [];
 function cocokkan(sql) {
   const teks = String(sql);
   kueri.push(teks);
+  if (teks.includes("COUNT(*) AS tahun")) return jawaban.diterima ? [jawaban.diterima] : [];
   if (teks.includes("FROM perkara_hakim_pn bh")) return jawaban.barisHakim || [];
   if (teks.includes("FROM perkara_panitera_pn bpp")) return jawaban.barisPanitera || [];
   if (teks.includes("FROM perkara_jurusita bjs")) return jawaban.barisJurusita || [];
@@ -240,6 +241,8 @@ const kebendaan = layanan.adalahKebendaan;
       barisPanitera: [
         ...Array.from({ length: 8 }, (_, i) => ({ perkaraId: 2000 + i, orangId: 1, tanggal: iso(-i - 1), jenisId: 347, tahapan: 14 })),
         ...Array.from({ length: 2 }, (_, i) => ({ perkaraId: 2100 + i, orangId: 4, tanggal: iso(-i - 1), jenisId: 347, tahapan: 14 })),
+        // Munifah (id 2) bertugas tetapi hanya satu penetapan 45 hari lalu: masih dalam batas 60 hari, tidak disaring.
+        { perkaraId: 2200, orangId: 2, tanggal: iso(-45), jenisId: 347, tahapan: 14 },
       ],
       barisJurusita: [
         ...Array.from({ length: 6 }, (_, i) => ({ perkaraId: 3000 + i, orangId: 1, tanggal: iso(-i - 1), jenisId: 347, tahapan: 14 })),
@@ -287,6 +290,36 @@ const kebendaan = layanan.adalahKebendaan;
       kebendaan,
     });
     periksa("angka di usulan sama dengan hitungan murni yang sama (satu sumber)", st.hakim.every((h) => murni.hakim.orang.find((x) => x.id === h.id).hari30 === h.hari30 && murni.hakim.orang.find((x) => x.id === h.id).persen30 === h.persen30));
+  }
+
+  // Perkara DITERIMA tahun ini dan 30 hari terakhir ikut di statistik (ringkasan di samping judul panel).
+  {
+    beban.lupakanSimpanan();
+    jawaban = dasar();
+    jawaban.diterima = { tahun: 934, hari30: 99 };
+    const u = await layanan.usulanPenunjukan("468/Pdt.G/2026/PA.Dgl", { ...PENGATURAN, susunanSk: SK });
+    periksa("statistik memuat perkara diterima: 99 dalam 30 hari, 934 tahun ini", u.statistik.diterima && u.statistik.diterima.hari30 === 99 && u.statistik.diterima.tahun === 934, JSON.stringify(u.statistik.diterima));
+    beban.lupakanSimpanan();
+    jawaban = dasar();
+    const t = await layanan.usulanPenunjukan("468/Pdt.G/2026/PA.Dgl", { ...PENGATURAN, susunanSk: SK });
+    periksa("jumlah diterima tidak terbaca: null (bukan nol yang menyesatkan)", t.statistik.diterima === null, JSON.stringify(t.statistik.diterima));
+  }
+
+  // Petugas yang tidak bertugas (mutasi / lama tidak menerima penetapan) tidak diusulkan dan tidak tampil.
+  {
+    beban.lupakanSimpanan();
+    jawaban = dasar();
+    const u = await layanan.usulanPenunjukan("468/Pdt.G/2026/PA.Dgl", { ...PENGATURAN, susunanSk: SK, petugasNonaktif: ["Andini"] });
+    const id = (x) => Number(x.id ?? x.paniteraId);
+    periksa("PP berakun nonaktif (mutasi) tidak ada di calon PP", !(u.ppp.calon || []).some((x) => id(x) === 4), (u.ppp.calon || []).map(id).join());
+    periksa("PP mutasi tidak tampil di tabel beban", !u.statistik.panitera.some((x) => x.id === 4));
+    periksa("PP yang masih bertugas tetap ada", (u.ppp.calon || []).some((x) => id(x) === 1) && u.statistik.panitera.some((x) => x.id === 1));
+    beban.lupakanSimpanan();
+    jawaban = dasar();
+    jawaban.barisPanitera = jawaban.barisPanitera.filter((b) => b.orangId !== 2);
+    const v = await layanan.usulanPenunjukan("468/Pdt.G/2026/PA.Dgl", { ...PENGATURAN, susunanSk: SK });
+    periksa("PP tanpa satu pun penetapan dalam 60 hari tidak diusulkan dan tidak tampil", !(v.ppp.calon || []).some((x) => id(x) === 2) && !v.statistik.panitera.some((x) => x.id === 2), (v.ppp.calon || []).map(id).join());
+    periksa("PP yang tersisa bukan yang tidak bertugas (usulan tidak jatuh ke yang 0 perkara)", id(v.ppp.usulan) !== 2, String(id(v.ppp.usulan)));
   }
 
   // Perkara kebendaan memakai bobot kebendaan.

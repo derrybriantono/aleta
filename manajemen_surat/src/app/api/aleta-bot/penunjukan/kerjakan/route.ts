@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
             aturan: pengaturan.aturan as unknown as Record<string, unknown>,
             hariSidang: pengaturan.hariSidang,
             paniteraMajelis: pengaturan.paniteraMajelis,
+            petugasNonaktif: pengaturan.petugasNonaktif,
             susunanSk: pengaturan.susunanSk as unknown as Record<string, unknown>[],
             sk: pengaturan.sk,
             pilihanMajelis,

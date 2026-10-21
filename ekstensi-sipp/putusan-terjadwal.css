@@ -1,112 +1,39 @@
 /*
- * Unggah Putusan Terjadwal - tombol "Jadwalkan Putusan" dan panelnya (21 Okt 2026, agen B3).
- * Tombol tebal di sebelah "Putusan Otomatis" di halaman perkara SIPP; di dashboard dan daftar/jurnal perkara
- * tombol melayang di sudut kiri bawah dan panelnya terbuka sebagai laci. Aksen ungu tua (putih di atas
- * #4b2f8f = 9,3:1; gelap #1b0f38 di atas #c9b5f5 = 9,6:1) supaya terbedakan dari Penetapan (hijau) dan
- * Putusan Otomatis (biru). Terang mengikuti SIPP; gelap mengikuti html[data-aleta-tema-sipp="gelap"].
+ * Unggah Putusan Terjadwal - tombol "Jadwalkan Putusan" dan panelnya (21 Okt 2026, agen B3; disatukan 21 Okt 2026).
+ * Tombol dan palet panel DIPINJAM dari penetapan-sipp.css (satu gaya, satu warna merek, mengikuti tema
+ * terang/gelap SIPP) - tidak ada lagi aksen ungu tetap. Peubah --pt-* hanya memetakan nama lama ke palet bersama.
+ * Satu perkara: tombol di deretan tombol halaman perkara. Massal: tombol di DASHBOARD (di samping judul
+ * "DASHBOARD PERKARA") dan di DAFTAR PERKARA PERDATA GUGATAN / PERMOHONAN (di samping tombol "Cetak").
  */
 .aleta-ptj-panel,
-.aleta-ptj-melayang {
-  --pt-latar: #ffffff;
-  --pt-latar-lembut: #f4f1fb;
-  --pt-tinta: #1d1830;
-  --pt-redup: #51486b;
-  --pt-garis: #cdc4e3;
-  --pt-merek: #4b2f8f;
-  --pt-merek-teks: #ffffff;
-  --pt-emas: #8a5a0d;
-  --pt-emas-lembut: #fbf1dc;
-  --pt-ok: #1b6e38;
-  --pt-ok-lembut: #e3f3e8;
-  --pt-tunggu: #7a5c0a;
-  --pt-tunggu-lembut: #fbf3d9;
-  --pt-lewat: #4a5565;
-  --pt-lewat-lembut: #eceff3;
-  --pt-salah: #b42318;
-  --pt-salah-lembut: #fde8e6;
-  --pt-sorot: #efe9fb;
-}
-html[data-aleta-tema-sipp="gelap"] .aleta-ptj-panel,
-html[data-aleta-tema-sipp="gelap"] .aleta-ptj-melayang {
-  --pt-latar: #1a1627;
-  --pt-latar-lembut: #231d36;
-  --pt-tinta: #ece8f7;
-  --pt-redup: #b6add0;
-  --pt-garis: #3e3560;
-  --pt-merek: #c9b5f5;
-  --pt-merek-teks: #1b0f38;
-  --pt-emas: #e0b861;
-  --pt-emas-lembut: #3a2e17;
-  --pt-ok: #7fd9a1;
-  --pt-ok-lembut: #183527;
-  --pt-tunggu: #e5c35c;
-  --pt-tunggu-lembut: #3a3216;
-  --pt-lewat: #b7c2d0;
-  --pt-lewat-lembut: #262d36;
-  --pt-salah: #ff9b92;
-  --pt-salah-lembut: #43211f;
-  --pt-sorot: #2c2446;
-  color-scheme: dark;
+.aleta-ptj-massal {
+  --pt-latar: var(--ps-latar);
+  --pt-latar-lembut: var(--ps-latar-lembut);
+  --pt-tinta: var(--ps-tinta);
+  --pt-redup: var(--ps-redup);
+  --pt-garis: var(--ps-garis);
+  --pt-merek: var(--ps-merek);
+  --pt-merek-teks: var(--ps-merek-teks);
+  --pt-emas: var(--ps-emas);
+  --pt-emas-lembut: var(--ps-emas-lembut);
+  --pt-ok: var(--ps-ok);
+  --pt-ok-lembut: var(--ps-ok-lembut);
+  --pt-tunggu: var(--ps-tunggu);
+  --pt-tunggu-lembut: var(--ps-tunggu-lembut);
+  --pt-lewat: var(--ps-lewat);
+  --pt-lewat-lembut: var(--ps-lewat-lembut);
+  --pt-salah: var(--ps-salah);
+  --pt-salah-lembut: var(--ps-salah-lembut);
+  --pt-sorot: color-mix(in srgb, var(--ps-merek) 14%, var(--ps-latar));
 }
 
-/* ── Tombol di deretan tombol SIPP ───────────────────────────────────────── */
-td.aleta-ptj-sel {
-  vertical-align: middle;
-  margin: 0;
-  padding: 0 4px 0 0;
-  border-left: 0;
-  border-radius: 0;
-  background: none;
-}
-.aleta-ptj-tombol {
-  --pt-t-latar: #4b2f8f;
-  --pt-t-teks: #ffffff;
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: var(--pt-t-latar);
-  color: var(--pt-t-teks) !important;
-  border: 2px solid var(--pt-t-latar);
-  border-radius: 4px;
-  padding: 4px 14px;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 800;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  box-shadow: 0 0 0 3px rgba(75, 47, 143, 0.25);
-}
-.aleta-ptj-tombol:hover {
-  filter: brightness(1.12);
-}
-.aleta-ptj-tombol[aria-expanded="true"] {
-  --pt-t-latar: #3a2370;
-  border-color: #3a2370;
-}
+/* ── Tombol: gaya bersama di penetapan-sipp.css (.aleta-ptj-tombol) ───────── */
 .aleta-ptj-tombol:focus-visible,
 .aleta-ptj-panel button:focus-visible,
 .aleta-ptj-panel input:focus-visible,
 .aleta-ptj-panel select:focus-visible {
   outline: 3px solid #e0a800;
   outline-offset: 2px;
-}
-html[data-aleta-tema-sipp="gelap"] .aleta-ptj-tombol {
-  --pt-t-latar: #c9b5f5;
-  --pt-t-teks: #1b0f38;
-  box-shadow: 0 0 0 3px rgba(201, 181, 245, 0.3);
-}
-html[data-aleta-tema-sipp="gelap"] .aleta-ptj-tombol[aria-expanded="true"] {
-  --pt-t-latar: #b49be8;
-}
-/* Tombol ini juga berkelas .btn SIPP; di tema gelap panel.css mewarnainya dengan !important setara ID, jadi
-   warnanya dipertegas lewat id supaya aksen ungunya tetap dan kontrasnya terjaga (>= 4,5:1). */
-html[data-aleta-tema-sipp="gelap"] #aleta-ptj-tombol.aleta-ptj-tombol,
-html[data-aleta-tema-sipp="gelap"] #aleta-ptj-tombol.aleta-ptj-tombol:hover {
-  background-color: var(--pt-t-latar) !important;
-  color: var(--pt-t-teks) !important;
-  border-color: var(--pt-t-latar) !important;
 }
 .aleta-ptj-ikon {
   font-size: 1.1em;
@@ -128,29 +55,19 @@ html[data-aleta-tema-sipp="gelap"] #aleta-ptj-tombol.aleta-ptj-tombol:hover {
   display: none;
 }
 
-/* Tombol melayang (dashboard / daftar / jurnal) */
-.aleta-ptj-melayang {
-  position: fixed;
-  left: 16px;
-  bottom: 16px;
-  z-index: 2147482000;
+/* Tombol massal: di DASHBOARD (di samping judul "DASHBOARD PERKARA") dan di DAFTAR PERKARA (di samping "Cetak"). */
+.aleta-ptj-massal {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0 0 10px;
+  padding: 0;
+  border: 0;
+  background: none;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
-.aleta-ptj-melayang .aleta-ptj-tombol {
-  border-radius: 99px;
-  padding: 8px 18px;
-  box-shadow: 0 6px 18px rgba(20, 10, 50, 0.35);
-}
-.aleta-ptj-laci {
-  position: fixed;
-  left: 16px;
-  bottom: 70px;
-  z-index: 2147482000;
-  width: min(1040px, calc(100vw - 32px));
-  max-height: calc(100vh - 96px);
-  overflow: auto;
-  margin: 0;
-  box-shadow: 0 12px 40px rgba(20, 10, 50, 0.4);
+.aleta-ptj-massal .aleta-ptj-tombol {
+  font-size: 13px;
+  padding: 3px 12px;
 }
 
 /* ── Panel ───────────────────────────────────────────────────────────────── */
@@ -590,22 +507,18 @@ html[data-aleta-tema-sipp="gelap"] #aleta-ptj-tombol.aleta-ptj-tombol:hover {
     border: 0;
     padding: 2px 8px;
   }
-  .aleta-ptj-laci {
-    left: 8px;
-    width: calc(100vw - 16px);
-  }
 }
 
 /* ── Spanduk pemberitahuan pelaksana peramban ─────────────────────────────── */
 .aleta-ptj-spanduk {
-  --pt-latar: #ffffff;
-  --pt-tinta: #1d1830;
-  --pt-garis: #cdc4e3;
-  --pt-merek: #4b2f8f;
-  --pt-merek-teks: #ffffff;
-  --pt-ok: #1b6e38;
-  --pt-salah: #b42318;
-  --pt-emas: #8a5a0d;
+  --pt-latar: var(--ps-latar);
+  --pt-tinta: var(--ps-tinta);
+  --pt-garis: var(--ps-garis);
+  --pt-merek: var(--ps-merek);
+  --pt-merek-teks: var(--ps-merek-teks);
+  --pt-ok: var(--ps-ok);
+  --pt-salah: var(--ps-salah);
+  --pt-emas: var(--ps-emas);
   position: fixed;
   right: 16px;
   bottom: 16px;
@@ -644,25 +557,17 @@ html[data-aleta-tema-sipp="gelap"] #aleta-ptj-tombol.aleta-ptj-tombol:hover {
   cursor: pointer;
 }
 html[data-aleta-tema-sipp="gelap"] .aleta-ptj-spanduk {
-  --pt-latar: #1a1627;
-  --pt-tinta: #ece8f7;
-  --pt-garis: #3e3560;
-  --pt-merek: #c9b5f5;
-  --pt-merek-teks: #1b0f38;
-  --pt-ok: #7fd9a1;
-  --pt-salah: #ff9b92;
-  --pt-emas: #e0b861;
   color-scheme: dark;
 }
 
 /* .aleta-sisip (panel.css) menandai sisipan ALETA di tabel SIPP dan diabaikan pengamat konten.js - kelas itu
-   WAJIB tetap ada; gaya hijaunya dinetralkan di sini untuk elemen melayang dan panel. */
-.aleta-ptj-melayang.aleta-sisip,
+   WAJIB tetap ada; gaya hijaunya dinetralkan di sini untuk tombol massal dan panel. */
+.aleta-ptj-massal.aleta-sisip,
 .aleta-ptj-spanduk.aleta-sisip {
   margin-top: 0;
   border-left-width: 2px;
 }
-.aleta-ptj-melayang.aleta-sisip {
+.aleta-ptj-massal.aleta-sisip {
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -671,14 +576,11 @@ html[data-aleta-tema-sipp="gelap"] .aleta-ptj-spanduk {
 .aleta-ptj-panel.aleta-sisip {
   margin-top: 8px;
 }
-.aleta-ptj-laci.aleta-sisip {
-  margin-top: 0;
-}
 
 /* Atribut hidden harus menang atas display:grid/flex yang dipasang kelas di atas. */
 .aleta-ptj-badan[hidden],
 .aleta-ptj-kaki[hidden],
-.aleta-ptj-melayang[hidden],
+.aleta-ptj-massal[hidden],
 .aleta-ptj-spanduk[hidden] {
   display: none !important;
 }
@@ -690,4 +592,17 @@ html[data-aleta-tema-sipp="gelap"] .aleta-ptj-spanduk {
   .aleta-ptj-kandidat label .aleta-ptj-ket {
     grid-column: 2;
   }
+}
+
+/* Kotak saring perkara (massal): lebar wajar, tidak terpotong di layar sempit. */
+.aleta-ptj-panel input[type="search"] {
+  box-sizing: border-box;
+  width: min(440px, 100%);
+  padding: 6px 10px;
+  border: 1px solid var(--pt-garis);
+  border-radius: 6px;
+  background: var(--pt-latar);
+  color: var(--pt-tinta);
+  font: inherit;
+  font-size: 13.5px;
 }

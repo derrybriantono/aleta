@@ -5,11 +5,20 @@
  * mengikuti penanda tema yang sama dengan seluruh ekstensi
  * (html[data-aleta-tema-sipp="gelap"]). Kontras tombol dijaga uji (>= 4,5:1).
  *
+ * 21 Okt 2026: palet panel (--ps-*) dan gaya tiga tombol di deretan tombol (Penetapan Otomatis, Putusan
+ * Otomatis, Jadwalkan Putusan) dipakai SAMA oleh ketiga panel - warna mengikuti tema terang/gelap SIPP,
+ * bukan aksen biru/ungu tetap. putusan-sipp.css dan putusan-terjadwal.css hanya memetakan peubahnya sendiri
+ * (--pu-*, --pt-*) ke palet ini.
+ *
  * Panel meminjam bagian rinci papan penetapan (gambarPenunjukan) yang
  * gayanya ada di panel.css dan memakai peubah --aleta-*; peubah itu diberi
  * nilai tema panel ini di bawah, supaya rinci terbaca di atas latar panel.
  */
-.aleta-pensipp-panel {
+.aleta-pensipp-panel,
+.aleta-pusipp-panel,
+.aleta-ptj-panel,
+.aleta-ptj-massal,
+.aleta-ptj-spanduk {
   --ps-latar: #ffffff;
   --ps-latar-lembut: #f2f6f3;
   --ps-tinta: #16231b;
@@ -45,7 +54,11 @@
   --aleta-merek-tombol-sorot: color-mix(in srgb, var(--aleta-merek) 28%, var(--aleta-latar));
   --aleta-merek-tulisan: var(--ps-merek);
 }
-html[data-aleta-tema-sipp="gelap"] .aleta-pensipp-panel {
+html[data-aleta-tema-sipp="gelap"] .aleta-pensipp-panel,
+html[data-aleta-tema-sipp="gelap"] .aleta-pusipp-panel,
+html[data-aleta-tema-sipp="gelap"] .aleta-ptj-panel,
+html[data-aleta-tema-sipp="gelap"] .aleta-ptj-massal,
+html[data-aleta-tema-sipp="gelap"] .aleta-ptj-spanduk {
   --ps-latar: #17231d;
   --ps-latar-lembut: #1d2d25;
   --ps-tinta: #e6efe9;
@@ -68,9 +81,11 @@ html[data-aleta-tema-sipp="gelap"] .aleta-pensipp-panel {
   color-scheme: dark;
 }
 
-/* ── Tombol di deretan tombol SIPP ───────────────────────────────────────── */
+/* ── Tombol di deretan tombol SIPP: TIGA TOMBOL SERAGAM ──────────────────── */
 /* .aleta-sisip (panel.css) memberi garis kiri, latar, dan jarak umum sisipan; tombol ini tidak memakainya. */
-td.aleta-pensipp-sel {
+td.aleta-pensipp-sel,
+td.aleta-pusipp-sel,
+td.aleta-ptj-sel {
   vertical-align: middle;
   margin: 0;
   padding: 0 4px 0 0;
@@ -78,12 +93,20 @@ td.aleta-pensipp-sel {
   border-radius: 0;
   background: none;
 }
-.aleta-pensipp-tombol {
+/* Satu gaya, satu warna (hijau merek): keadaan terbuka hanya ditandai garis tipis di bawah tombol dan
+   cincin yang sedikit lebih tegas - ukuran, tepi, dan warna isi TIDAK berubah, jadi tombol tidak bergeser. */
+.aleta-pensipp-tombol,
+.aleta-pusipp-tombol,
+.aleta-ptj-tombol {
   --ps-t-latar: #0f5f4f;
   --ps-t-teks: #ffffff;
+  --ps-t-cincin: rgba(15, 95, 79, 0.25);
+  --ps-t-tanda: rgba(255, 255, 255, 0.7);
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
   background: var(--ps-t-latar);
   color: var(--ps-t-teks) !important;
   border: 2px solid var(--ps-t-latar);
@@ -95,16 +118,23 @@ td.aleta-pensipp-sel {
   line-height: 1.4;
   letter-spacing: 0.01em;
   cursor: pointer;
-  box-shadow: 0 0 0 3px rgba(15, 95, 79, 0.25);
+  box-shadow: 0 0 0 3px var(--ps-t-cincin);
 }
-.aleta-pensipp-tombol:hover {
+.aleta-pensipp-tombol:hover,
+.aleta-pusipp-tombol:hover,
+.aleta-ptj-tombol:hover {
   filter: brightness(1.12);
 }
-.aleta-pensipp-tombol[aria-expanded="true"] {
-  --ps-t-latar: #134a28;
-  border-color: #134a28;
+.aleta-pensipp-tombol[aria-expanded="true"],
+.aleta-pusipp-tombol[aria-expanded="true"],
+.aleta-ptj-tombol[aria-expanded="true"] {
+  box-shadow:
+    0 0 0 3px var(--ps-t-cincin),
+    inset 0 -4px 0 var(--ps-t-tanda);
 }
 .aleta-pensipp-tombol:focus-visible,
+.aleta-pusipp-tombol:focus-visible,
+.aleta-ptj-tombol:focus-visible,
 .aleta-pensipp-utama:focus-visible,
 .aleta-pensipp-kecil:focus-visible,
 .aleta-pensipp-mode-pil:focus-visible,
@@ -113,14 +143,25 @@ td.aleta-pensipp-sel {
   outline: 3px solid #e0a800;
   outline-offset: 2px;
 }
-html[data-aleta-tema-sipp="gelap"] .aleta-pensipp-tombol {
+html[data-aleta-tema-sipp="gelap"] .aleta-pensipp-tombol,
+html[data-aleta-tema-sipp="gelap"] .aleta-pusipp-tombol,
+html[data-aleta-tema-sipp="gelap"] .aleta-ptj-tombol {
   --ps-t-latar: #7fd0a6;
   --ps-t-teks: #05261a;
-  box-shadow: 0 0 0 3px rgba(127, 208, 166, 0.3);
+  --ps-t-cincin: rgba(127, 208, 166, 0.3);
+  --ps-t-tanda: rgba(5, 38, 26, 0.65);
 }
-html[data-aleta-tema-sipp="gelap"] .aleta-pensipp-tombol[aria-expanded="true"] {
-  --ps-t-latar: #58b88a;
-  border-color: #58b88a;
+/* Tombol ini juga berkelas .btn SIPP; di tema gelap panel.css mewarnainya dengan !important (kekhususan setara ID).
+   Karena itu ketiga tombol ber-id dan aturan ini memakai id, supaya ketiganya tetap sewarna dan kontrasnya terjaga (>= 4,5:1). */
+html[data-aleta-tema-sipp="gelap"] #aleta-pensipp-tombol.aleta-pensipp-tombol,
+html[data-aleta-tema-sipp="gelap"] #aleta-pusipp-tombol.aleta-pusipp-tombol,
+html[data-aleta-tema-sipp="gelap"] #aleta-ptj-tombol.aleta-ptj-tombol,
+html[data-aleta-tema-sipp="gelap"] #aleta-pensipp-tombol.aleta-pensipp-tombol:hover,
+html[data-aleta-tema-sipp="gelap"] #aleta-pusipp-tombol.aleta-pusipp-tombol:hover,
+html[data-aleta-tema-sipp="gelap"] #aleta-ptj-tombol.aleta-ptj-tombol:hover {
+  background-color: var(--ps-t-latar) !important;
+  color: var(--ps-t-teks) !important;
+  border-color: var(--ps-t-latar) !important;
 }
 .aleta-pensipp-ikon {
   font-size: 1.1em;
@@ -166,6 +207,30 @@ html[data-aleta-tema-sipp="gelap"] .aleta-pensipp-tombol[aria-expanded="true"] {
   font-weight: 800;
   line-height: 1.3;
   color: var(--ps-tinta);
+}
+.aleta-pensipp-judul-wadah {
+  min-width: 0;
+  flex: 1 1 320px;
+}
+.aleta-pensipp-beban-ringkas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin-top: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ps-tinta);
+}
+.aleta-pensipp-beban-ringkas[hidden] {
+  display: none;
+}
+.aleta-pensipp-beban-diterima {
+  color: var(--ps-redup);
+}
+.aleta-pensipp-tambahan {
+  display: grid;
+  gap: 10px;
+  padding: 0 16px 12px;
 }
 .aleta-pensipp-mono {
   font-family: ui-monospace, "JetBrains Mono", Consolas, monospace;
@@ -665,15 +730,51 @@ html[data-aleta-tema-sipp="gelap"] .aleta-mu {
   line-height: 1.45;
 }
 .aleta-bebanstat-ringkas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  align-items: baseline;
+  display: grid;
+  gap: 3px;
   padding: 8px 10px;
   cursor: pointer;
+  list-style: none;
+}
+.aleta-bebanstat-ringkas::-webkit-details-marker {
+  display: none;
+}
+.aleta-bebanstat-ringkas-atas,
+.aleta-bebanstat-ringkas-bawah {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  align-items: baseline;
+  min-width: 0;
 }
 .aleta-bebanstat-ringkas-judul {
   font-weight: 700;
+}
+.aleta-bebanstat-rincian-tanda {
+  margin-left: auto;
+  padding: 0 9px;
+  border: 1px solid var(--aleta-garis-kuat, #98ab9f);
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--aleta-merek-tulisan, var(--aleta-tulisan, #16231b));
+}
+.aleta-bebanstat-rincian-tanda::after {
+  content: " ▾";
+}
+.aleta-bebanstat[open] .aleta-bebanstat-rincian-tanda::after {
+  content: " ▴";
+}
+/* Di panel Penetapan Otomatis, beban usulan dan perkara diterima sudah tampil di samping judul. */
+.aleta-pensipp-panel .aleta-bebanstat-ringkas-bawah {
+  display: none;
+}
+.aleta-bebanstat-ringkas-beban {
+  font-weight: 600;
+}
+.aleta-bebanstat-ringkas-diterima {
+  color: var(--aleta-tulisan-lembut, #4d5d53);
 }
 .aleta-bebanstat-sk {
   color: var(--aleta-tulisan-lembut, #4d5d53);
@@ -706,6 +807,9 @@ html[data-aleta-tema-sipp="gelap"] .aleta-mu {
 .aleta-bebanstat-judul {
   font-weight: 700;
   margin: 6px 0 3px;
+}
+.aleta-bebanstat-bagian {
+  overflow-x: auto;
 }
 .aleta-bebanstat-tabel {
   width: 100%;

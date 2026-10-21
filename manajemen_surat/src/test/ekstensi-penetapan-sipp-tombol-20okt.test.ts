@@ -37,6 +37,15 @@ const PENSIPP = baca("penetapan-sipp.js");
 const MUATULANG = baca("muat-ulang-sipp.js");
 const CSS = baca("penetapan-sipp.css");
 
+/** Isi blok CSS yang daftar selektornya memuat `selektor` PERSIS (aturan berdaftar-selektor dikenali). */
+function blokCss(css: string, selektor: string): string {
+  const bersih = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  for (const m of bersih.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+    if (m[1].split(",").some((x) => x.trim() === selektor)) return m[2];
+  }
+  return "";
+}
+
 const ASAL = "http://192.168.10.10";
 const NOMOR = "684/Pdt.G/2026/PA.Dgl";
 const AKUN = "Derry Briantono";
@@ -443,10 +452,7 @@ describe("tombol: paling kiri, tebal, hanya untuk yang berhak", () => {
   });
 
   it("gaya: huruf tebal (>= 700) dan kontras >= 4,5:1 di tema terang dan gelap", () => {
-    const ambil = (selektor: string) => {
-      const m = CSS.replace(/\/\*[\s\S]*?\*\//g, "").match(new RegExp(`${selektor.replace(/[.[\]"=-]/g, "\\$&")}\\s*\\{([^}]*)\\}`));
-      return m ? m[1] : "";
-    };
+    const ambil = (selektor: string) => blokCss(CSS, selektor);
     const dasar = ambil(".aleta-pensipp-tombol");
     expect(Number(/font-weight:\s*(\d+)/.exec(dasar)?.[1])).toBeGreaterThanOrEqual(700);
     const hex = (s: string, nama: string) => new RegExp(`${nama}:\\s*(#[0-9a-fA-F]{6})`).exec(s)?.[1] || "";
