@@ -57,6 +57,14 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.22",
+    dirilis: "2026-10-21T08:10:00+08:00",
+    judul: "Akun nonaktif tersembunyi di Admin",
+    butir: [
+      "Admin - Akun: akun nonaktif tidak lagi memenuhi daftar; centang \"Tampilkan akun nonaktif\" untuk memperlihatkannya kembali (pilihan diingat di peramban). Akun nonaktif bertanda \"Nonaktif\".",
+    ],
+  },
+  {
     versi: "1.205.21",
     dirilis: "2026-10-21T02:38:00+08:00",
     judul: "Kerangka universal gelombang 2 dan 3: semua jenis perkara",
