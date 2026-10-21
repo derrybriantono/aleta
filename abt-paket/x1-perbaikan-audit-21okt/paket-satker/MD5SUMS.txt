@@ -1,0 +1,11 @@
+5ef45e3fca2544225a73368d3530268c  abt-x1-perbaikan-audit-21okt-PASANG.sql
+093d0b61bb7611933e7d50ebccd9c42c  abt-x1-perbaikan-audit-21okt-PERIKSA.sql
+51aa5590b72f35e910aa976ca499b88c  abt-x1-perbaikan-audit-21okt-PRASYARAT.sql
+31e478800ae889e1fb7cd16e277e0184  abt-x1-perbaikan-audit-21okt-PULIH.sql
+01dc3e7b1f518f3868b1e9dc7aaa025d  hitung-8133.sh
+ad45760b390eb112b7fe6aa864454ea3  nomor-baru.txt
+54de1c9183a6f37cbfe0ef335afff5f7  nomor-ubah.txt
+1d667cd3bfde0efa00861294d8ccc6bb  pasang-satker.sh
+5350214519af049b43b1292501b7235c  perkara-uji.txt
+cc956b7e5ac89246deb3b2e72c1ff6de  pulih-satker.sh
+e6ce11c46e1fefb2ce58072624ec0401  uji-kueri.tsv

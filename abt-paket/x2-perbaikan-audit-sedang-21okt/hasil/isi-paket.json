@@ -1,0 +1,1093 @@
+{
+ "baru": [
+  {
+   "no": 74,
+   "nama": "Hbgn. Saksi1 P dg. Pihak (BAS PA Donggala; sama dengan #1241#)",
+   "tipe": "data_sql",
+   "butir": "S8",
+   "sql": "select keterangan as data from perkara_pihak5 where saksi_pihak_ke=1 and perkara_id=#perkara_id# order by urutan limit 0,1",
+   "default": null,
+   "ref": null
+  },
+  {
+   "no": 207,
+   "nama": "Tgl. Surat Kuasa Khusus #0046# (sama dengan isian #0184#; dirujuk BAS Pertama P Kuasa Tidak Hadir/T Hadir)",
+   "tipe": "data_sql",
+   "butir": "S8",
+   "sql": "SELECT x.d AS data FROM (SELECT '#0184#' AS d) x WHERE x.d <> ''",
+   "default": null,
+   "ref": null
+  },
+  {
+   "no": 5052,
+   "nama": "Jawaban #0047# atas #0053# (Voeging/Vrijwaring) - isian",
+   "tipe": "data_teks",
+   "butir": "S8",
+   "sql": null,
+   "default": null,
+   "ref": null
+  },
+  {
+   "no": 6115,
+   "nama": "Pertanyaan Ketua Majelis pada pemeriksaan setempat (1) - isian",
+   "tipe": "data_teks",
+   "butir": "S8",
+   "sql": null,
+   "default": null,
+   "ref": null
+  },
+  {
+   "no": 6116,
+   "nama": "Pertanyaan Ketua Majelis pada pemeriksaan setempat (2) - isian",
+   "tipe": "data_teks",
+   "butir": "S8",
+   "sql": null,
+   "default": null,
+   "ref": null
+  },
+  {
+   "no": 8155,
+   "nama": "Hijriyah Tgl. Putusan Sela (sama dengan tanggal sidang #0033#, seperti #8184#)",
+   "tipe": "tanggal_hijriah",
+   "butir": "S8",
+   "sql": null,
+   "default": null,
+   "ref": 33
+  },
+  {
+   "no": 8439,
+   "nama": "Nama Pihak Ketiga (Tussenkomst/Voeging/Vrijwaring) - isian, bawaan dari SIPP",
+   "tipe": "data_teks",
+   "butir": "S8",
+   "sql": null,
+   "default": "#10121#",
+   "ref": null
+  },
+  {
+   "no": 8440,
+   "nama": "Umur Pihak Ketiga (Tussenkomst/Voeging/Vrijwaring) - isian, bawaan dari SIPP",
+   "tipe": "data_teks",
+   "butir": "S8",
+   "sql": null,
+   "default": "#10122#",
+   "ref": null
+  },
+  {
+   "no": 8441,
+   "nama": "Agama Pihak Ketiga (Tussenkomst/Voeging/Vrijwaring) - isian, bawaan dari SIPP",
+   "tipe": "data_teks",
+   "butir": "S8",
+   "sql": null,
+   "default": "#10123#",
+   "ref": null
+  },
+  {
+   "no": 8442,
+   "nama": "Pendidikan Pihak Ketiga (Tussenkomst/Voeging/Vrijwaring) - isian, bawaan dari SIPP",
+   "tipe": "data_teks",
+   "butir": "S8",
+   "sql": null,
+   "default": "#10124#",
+   "ref": null
+  },
+  {
+   "no": 8443,
+   "nama": "Pekerjaan Pihak Ketiga (Tussenkomst/Voeging/Vrijwaring) - isian, bawaan dari SIPP",
+   "tipe": "data_teks",
+   "butir": "S8",
+   "sql": null,
+   "default": "#10125#",
+   "ref": null
+  },
+  {
+   "no": 8444,
+   "nama": "Tempat Tinggal Pihak Ketiga (Tussenkomst/Voeging/Vrijwaring) - isian, bawaan dari SIPP",
+   "tipe": "data_teks",
+   "butir": "S8",
+   "sql": null,
+   "default": "#10126#",
+   "ref": null
+  },
+  {
+   "no": 8445,
+   "nama": "Tuntutan pihak ketiga (Tussenkomst/Voeging/Vrijwaring) - isian",
+   "tipe": "data_teks",
+   "butir": "S8",
+   "sql": null,
+   "default": null,
+   "ref": null
+  },
+  {
+   "no": 10121,
+   "nama": "Otomatis Nama Pihak Ketiga (SIPP perkara_pihak3 urutan pertama)",
+   "tipe": "data_sql",
+   "butir": "S8",
+   "sql": "select a.nama as data from perkara_pihak3 a where a.perkara_id=#perkara_id# order by a.urutan, a.id limit 1",
+   "default": null,
+   "ref": null
+  },
+  {
+   "no": 10122,
+   "nama": "Otomatis Umur Pihak Ketiga (SIPP perkara_pihak3 urutan pertama)",
+   "tipe": "data_sql",
+   "butir": "S8",
+   "sql": "select (get_umur(b.tanggal_lahir,c.tanggal_pendaftaran)) as data from perkara_pihak3 a join pihak b on a.pihak_id=b.id join perkara c on a.perkara_id=c.perkara_id where a.perkara_id=#perkara_id# order by a.urutan, a.id limit 1",
+   "default": null,
+   "ref": null
+  },
+  {
+   "no": 10123,
+   "nama": "Otomatis Agama Pihak Ketiga (SIPP perkara_pihak3 urutan pertama)",
+   "tipe": "data_sql",
+   "butir": "S8",
+   "sql": "select c.nama as data from perkara_pihak3 a join pihak b on a.pihak_id=b.id join agama c on b.agama_id=c.id where a.perkara_id=#perkara_id# order by a.urutan, a.id limit 1",
+   "default": null,
+   "ref": null
+  },
+  {
+   "no": 10124,
+   "nama": "Otomatis Pendidikan Pihak Ketiga (SIPP perkara_pihak3 urutan pertama)",
+   "tipe": "data_sql",
+   "butir": "S8",
+   "sql": "select c.kode as data from perkara_pihak3 a join pihak b on a.pihak_id=b.id join tingkat_pendidikan c on b.pendidikan_id=c.id where a.perkara_id=#perkara_id# order by a.urutan, a.id limit 1",
+   "default": null,
+   "ref": null
+  },
+  {
+   "no": 10125,
+   "nama": "Otomatis Pekerjaan Pihak Ketiga (SIPP perkara_pihak3 urutan pertama)",
+   "tipe": "data_sql",
+   "butir": "S8",
+   "sql": "select b.pekerjaan as data from perkara_pihak3 a join pihak b on a.pihak_id=b.id where a.perkara_id=#perkara_id# order by a.urutan, a.id limit 1",
+   "default": null,
+   "ref": null
+  },
+  {
+   "no": 10126,
+   "nama": "Otomatis Alamat Pihak Ketiga (SIPP perkara_pihak3 urutan pertama)",
+   "tipe": "data_sql",
+   "butir": "S8",
+   "sql": "select a.alamat as data from perkara_pihak3 a where a.perkara_id=#perkara_id# order by a.urutan, a.id limit 1",
+   "default": null,
+   "ref": null
+  }
+ ],
+ "ubah": [
+  {
+   "no": 15,
+   "butir": "S1",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select panitera_nama as data\r\nfrom perkara_panitera_pn \r\nwhere aktif=\"Y\" and perkara_id=#perkara_id# and IFNULL(panitera_nama,\"\")<>\"\"\r\norder by tanggal_penetapan desc, urutan, id\r\nlimit 1"
+   },
+   "lama": {
+    "sql_query": "select panitera_nama as data\r\nfrom perkara_panitera_pn \r\nwhere aktif=\"Y\" and perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 309,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_tanggal"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 662,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_tanggal"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 704,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 705,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 706,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 707,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1031,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1032,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1037,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1038,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1039,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1040,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1042,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1043,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1044,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1045,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1048,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1162,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1163,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1236,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1241,
+   "butir": "S4",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select keterangan as data from perkara_pihak5\r\nwhere saksi_pihak_ke=1 and perkara_id=#perkara_id# order by urutan limit 0,1"
+   },
+   "lama": {
+    "sql_query": "select keterangan as data from perkara_pihak5\r\nwhere saksi_pihak_ke=1 and urutan=1 and perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 1242,
+   "butir": "S4",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select keterangan as data from perkara_pihak5\r\nwhere saksi_pihak_ke=1 and perkara_id=#perkara_id# order by urutan limit 1,1"
+   },
+   "lama": {
+    "sql_query": "select keterangan as data from perkara_pihak5\r\nwhere saksi_pihak_ke=1 and urutan=2 and perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 1245,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1249,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1250,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1251,
+   "butir": "S4",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select keterangan as data from perkara_pihak5\r\nwhere saksi_pihak_ke=2 and perkara_id=#perkara_id# order by urutan limit 0,1"
+   },
+   "lama": {
+    "sql_query": "select keterangan as data from perkara_pihak5\r\nwhere saksi_pihak_ke=2 and urutan=1 and perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 1252,
+   "butir": "S4",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select keterangan as data from perkara_pihak5\r\nwhere saksi_pihak_ke=2 and perkara_id=#perkara_id# order by urutan limit 1,1"
+   },
+   "lama": {
+    "sql_query": "select keterangan as data from perkara_pihak5\r\nwhere saksi_pihak_ke=2 and urutan=2 and perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 1281,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_tanggal"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1335,
+   "butir": "S9",
+   "kolom": [
+    "default_data"
+   ],
+   "sesudah": {
+    "default_data": "Kepala Dinas Kependudukan dan Pencatatan Sipil Kabupaten .....\r\nKepala Sekolah .....\r\nBidan atas nama ....."
+   },
+   "lama": {
+    "default_data": "Kepala Dinas Kependudukan dan Pencatatan Sipil Kabupaten Majene\r\nKepala Sekolah .....\r\nBidan atas nama ....."
+   }
+  },
+  {
+   "no": 1356,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 1372,
+   "butir": "S9",
+   "kolom": [
+    "default_data"
+   ],
+   "sesudah": {
+    "default_data": "Kepala Dinas Kependudukan dan Pencatatan Sipil Kabupaten ....."
+   },
+   "lama": {
+    "default_data": "Kepala Dinas Kependudukan dan Pencatatan Sipil Kabupaten Majene"
+   }
+  },
+  {
+   "no": 2011,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 2040,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 5004,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 5101,
+   "butir": "S2",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select\r\n(case when b.jabatan = 1 then \"JURUSITA\"\r\nelse \"JURUSITA PENGGANTI\" end) data\r\nfrom perkara_jurusita a\r\njoin jurusita b on a.jurusita_id=b.id\r\nwhere a.aktif=\"Y\" and a.urutan=1 and a.perkara_id=#perkara_id#\r\norder by a.id\r\nlimit 1"
+   },
+   "lama": {
+    "sql_query": "select\r\n(case when b.jabatan = 1 then \"JURUSITA\"\r\nelse \"JURUSITA PENGGANTI\" end) data\r\nfrom perkara_jurusita a\r\njoin jurusita b on a.jurusita_id=b.id\r\nwhere a.perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 5111,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 5113,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 5128,
+   "butir": "S7",
+   "kolom": [
+    "default_data"
+   ],
+   "sesudah": {
+    "default_data": "Bahwa sejak semula pernikahan #0046# dengan #0047# dilaksanakan secara terpaksa karena ??;\r\nBahwa sejak semula pernikahan #0046# dengan #0047# bukan atas dasar saling mencintai melainkan hanya dijodohkan oleh orang tua kedua belah pihak;\r\nBahwa sejak semula pernikahan #0046# dengan #0047# tidak direstui oleh orang tua ?? sehingga ??;\r\nBahwa #0046# dengan #0047# hidup berjauhan sejak ?.... karena ?.... dan hanya biasa berkumpul ketemu ....... kali dalam......;\r\nBahwa pada ?? telah terjadi perselisihan antara #0046# dan #0047# karena ??;\r\nBahwa pada ?? terjadi kembali perselisihan antara #0046# dan #0047# karena ..?.;\r\nBahwa sejak ?? antara #0046# dan #0047# sering terjadi perselisihan karena ??;\r\nBahwa kemelut rumah tangga antara #0046# dan #0047# mulai muncul pada ....... karena ...?;\r\nBahwa #0047# sering mengucapkan kata-kata hinaan seperti ....... / mengucapkan kata-kata cerai / melakukan kekerasan fisik kepada #0046# ketika marah;\r\nBahwa puncak perselisihan / kemelut rumah tangga antara #0046# dan #0047# terjadi pada ?? karena ?? akibatnya ??;\r\nBahwa #0046# dengan #0047# tidak pernah dapat melakukan hubungan suami istri (qabladdukhul) karena ??;\r\nBahwa pada ??. #0047# pergi ke ?? untuk ?? namun sudah sekitar ??. tidak pernah ada kabar beritanya dan tidak diketahui lagi keberadaannya;\r\nBahwa pada ?.? #0047# pergi ke ?? untuk .?.. namun tidak pernah kembali lagi untuk hidup bersama dengan #0046#;\r\nBahwa #0047# telah pergi meninggalkan #0046# sejak ?? dan tidak pernah kembali lagi untuk hidup bersama dengan #0046#;\r\nBahwa #0046# telah meninggalkan #0047# sejak ?? karena ??;\r\nBahwa #0047# sudah tidak diketahui alamat keberadaannya oleh #0046#;\r\nBahwa #0046# dengan #0047# sudah tidak pernah satu ranjang selama ??;\r\nBahwa #0046# dengan #0047# sudah berpisah tempat tinggal selama ??;\r\nBahwa #0047# tidak pernah lagi datang mengunjungi #0046# sudah sekitar ?? tahun;\r\nBahwa antara #0046# dan #0047# sudah tidak pernah ada komunikasi selama ??;\r\nBahwa #0046# dengan #0047# sudah tidak saling mempedulikan selama ??.;\r\nBahwa #0046# dengan #0047# sudah pernah diupayakan untuk dirukunkan oleh ?? namun tidak berhasil;\r\nBahwa #0046# sudah berusaha mencari tahu keberadaan #0047# dengan ?? namun tidak berhasil;"
+   },
+   "lama": {
+    "default_data": "Bahwa sejak semula pernikahan #0046# dengan #0047# dilaksanakan secara terpaksa karena ??;\r\nBahwa sejak semula pernikahan #0046# dengan #0047# bukan atas dasar saling mencintai melainkan hanya dijodohkan oleh orang tua kedua belah pihak;\r\nBahwa sejak semula pernikahan #0046# dengan #0047# tidak direstui oleh orang tua ?? sehingga ??;\r\nBahwa #0046# dengan #0047# hidup berjauhan sejak ?.... karena ?.... dan hanya biasa berkumpul ketemu ....... kali dalam......;\r\nBahwa pada ?? telah terjadi perselisihan antara Pernggugat dan #0047# karena ??;\r\nBahwa pada ?? terjadi kembali perselisihan antara #0046# dan #0047# karena ..?.;\r\nBahwa sejak ?? antara #0046# dan #0047# sering terjadi perselisihan karena ??;\r\nBahwa kemelut rumah tangga antara #0046# dan #0047# mulai muncul pada ....... karena ...?;\r\nBahwa #0047# sering mengucapkan kata-kata hinaan seperti ....... / mengucapkan kata-kata cerai / melakukan kekerasan pisik kepada #0046# ketika marah;\r\nBahwa puncak perselisihan / kemelut rumah tangga antara #0046# dan #0047# terjadi pada ?? karena ?? akibatnya ??;\r\nBahwa #0046# dengan #0047# tidak pernah dapat melakukan hubungan suami istri (qabladdukhul) karena ??;\r\nBahwa pada ??. #0047# pergi ke ?? untuk ?? namun sudah sekitar ??. tidak pernah ada kabar beritanya dan tidak diketahui lagi keberadaannya;\r\nBahwa pada ?.? #0047# pergi ke ?? untuk .?.. namun tidak pernah kembali lagi untuk hidup bersama dengan #0046#;\r\nBahwa #0047# telah pergi meninggalkan #0046# sejak ?? dan tidak pernah kembali lagi untuk hidup bersama dengan #0046#;\r\nBahwa #0046# telah meninggalkan #0047# sejak ?? karena ??;\r\nBahwa #0047# sudah tidak diketahui alamat keberadaannya oleh #0046#;\r\nBahwa #0046# dengan #0047# sudah tidak pernah satu ranjang selama ??;\r\nBahwa #0046# dengan #0047# sudah berpisah tempat tinggal selama ??;\r\nBahwa #0047# tidak pernah lagi datang mengunjungi #0046# sudah sekitar ?? tahun;\r\nBahwa antara #0046# dan #0047# sudah tidak pernah ada komunikasi selama ??;\r\nBahwa #0046# dengan #0047# sudah tidak saling mempedulikan selama ??.;\r\nBahwa #0046# dengan #0047# sudah pernah diupayakan untuk dirukunkan oleh ?? namun tidak berhasil;\r\nBahwa #0046# sudah berusaha mencari tahu keberadaan #0047# dengan ?? namun tidak berhasil;"
+   }
+  },
+  {
+   "no": 5140,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 5208,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 5209,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 5210,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 6032,
+   "butir": "S2",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select\r\n(case when b.jabatan = 1 then \"Jurusita\"\r\nelse \"Jurusita Pengganti\" end) data\r\nfrom perkara_jurusita a\r\njoin jurusita b on a.jurusita_id=b.id\r\nwhere a.aktif=\"Y\" and a.urutan=1 and a.perkara_id=#perkara_id#\r\norder by a.id\r\nlimit 1"
+   },
+   "lama": {
+    "sql_query": "select\r\n(case when b.jabatan = 1 then \"Jurusita\"\r\nelse \"Jurusita Pengganti\" end) data\r\nfrom perkara_jurusita a\r\njoin jurusita b on a.jurusita_id=b.id\r\nwhere a.perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 6058,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 6065,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 6118,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 6119,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 6125,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 6128,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 6129,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 6130,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 6131,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 6149,
+   "butir": "S4",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select keterangan as data from perkara_pihak5\r\nwhere saksi_pihak_ke=1 and perkara_id=#perkara_id# order by urutan limit 2,1"
+   },
+   "lama": {
+    "sql_query": "select keterangan as data from perkara_pihak5\r\nwhere saksi_pihak_ke=1 and urutan=3 and perkara_id=#perkara_id#"
+   }
+  },
+  {
+   "no": 6271,
+   "butir": "S10",
+   "kolom": [
+    "data_type",
+    "default_data",
+    "sql_query"
+   ],
+   "sesudah": {
+    "data_type": "data_teks",
+    "default_data": "yang penghasilannya kurang lebih Rp5.000.000,00 (lima juta rupiah) per bulan\r\nyang tidak memiliki penghasilan",
+    "sql_query": null
+   },
+   "lama": {
+    "data_type": "data_sql",
+    "default_data": null,
+    "sql_query": "yang penghasilannya kurang lebih Rp5.000.000,00 (lima juta rupiah) per bulan\r\nyang tidak memiliki penghasilan"
+   }
+  },
+  {
+   "no": 7105,
+   "butir": "S3",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select (case when '#0050#' = '1' then \"#7101#\" else \"#7103#\" end) data from dual where '#0050#' <> ''"
+   },
+   "lama": {
+    "sql_query": "select (case when #0050# = 1 then \"#7101#\" else \"#7103#\" end) data"
+   }
+  },
+  {
+   "no": 7106,
+   "butir": "S3",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select (case when '#0050#' = '1' then \"#7102#\" else \"#7104#\" end) data from dual where '#0050#' <> ''"
+   },
+   "lama": {
+    "sql_query": "select (case when #0050# = 1 then \"#7102#\" else \"#7104#\" end) data"
+   }
+  },
+  {
+   "no": 8018,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_tanggal"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 8020,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 8134,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 8426,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 8427,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 8428,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 8429,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 8430,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 8431,
+   "butir": "S5",
+   "kolom": [
+    "data_type"
+   ],
+   "sesudah": {
+    "data_type": "data_teks"
+   },
+   "lama": {
+    "data_type": null
+   }
+  },
+  {
+   "no": 8544,
+   "butir": "S6",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "SELECT\r\n  IFNULL(IFNULL((SELECT pu.tanggal_putusan FROM perkara_putusan pu WHERE pu.perkara_id = #perkara_id# AND pu.tanggal_putusan > '1900-01-01' ORDER BY pu.tanggal_putusan DESC LIMIT 1), (SELECT c.rencana_tanggal FROM perkara_court_calendar c WHERE c.perkara_id = #perkara_id# AND c.rencana_tanggal > '1900-01-01' AND (c.rencana_agenda LIKE '%musyawarah%' OR c.rencana_agenda LIKE '%putusan%' OR c.rencana_agenda LIKE '%penetapan%') ORDER BY c.rencana_tanggal DESC, c.id DESC LIMIT 1)), '') AS data"
+   },
+   "lama": {
+    "sql_query": "SELECT\r\n  rencana_tanggal AS data\r\nFROM \r\n  perkara_court_calendar\r\nWHERE \r\n  perkara_id = #perkara_id#\r\n  AND (\r\n    rencana_agenda LIKE '%musyawarah%'\r\n    OR rencana_agenda LIKE '%putusan%'\r\n    OR rencana_agenda LIKE '%penetapan%'\r\n  )\r\n\r\nUNION ALL\r\n\r\nSELECT '' AS data\r\nFROM DUAL\r\nWHERE NOT EXISTS (\r\n  SELECT 1\r\n  FROM perkara_court_calendar\r\n  WHERE \r\n    perkara_id = #perkara_id#\r\n    AND (\r\n      rencana_agenda LIKE '%musyawarah%'\r\n      OR rencana_agenda LIKE '%putusan%'\r\n      OR rencana_agenda LIKE '%penetapan%'\r\n    )\r\n);"
+   }
+  },
+  {
+   "no": 8545,
+   "butir": "S6",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "SELECT\r\n  IFNULL(CASE DAYOFWEEK(DATE(x.d))\r\n    WHEN 1 THEN 'Minggu'\r\n    WHEN 2 THEN 'Senin'\r\n    WHEN 3 THEN 'Selasa'\r\n    WHEN 4 THEN 'Rabu'\r\n    WHEN 5 THEN 'Kamis'\r\n    WHEN 6 THEN 'Jumat'\r\n    WHEN 7 THEN 'Sabtu'\r\n  END, '') AS data\r\nFROM (SELECT IFNULL((SELECT pu.tanggal_putusan FROM perkara_putusan pu WHERE pu.perkara_id = #perkara_id# AND pu.tanggal_putusan > '1900-01-01' ORDER BY pu.tanggal_putusan DESC LIMIT 1), (SELECT c.rencana_tanggal FROM perkara_court_calendar c WHERE c.perkara_id = #perkara_id# AND c.rencana_tanggal > '1900-01-01' AND (c.rencana_agenda LIKE '%musyawarah%' OR c.rencana_agenda LIKE '%putusan%' OR c.rencana_agenda LIKE '%penetapan%') ORDER BY c.rencana_tanggal DESC, c.id DESC LIMIT 1)) AS d) x"
+   },
+   "lama": {
+    "sql_query": "SELECT\r\n  CASE DAYOFWEEK(DATE(rencana_tanggal))\r\n    WHEN 1 THEN 'Minggu'\r\n    WHEN 2 THEN 'Senin'\r\n    WHEN 3 THEN 'Selasa'\r\n    WHEN 4 THEN 'Rabu'\r\n    WHEN 5 THEN 'Kamis'\r\n    WHEN 6 THEN 'Jumat'\r\n    WHEN 7 THEN 'Sabtu'\r\n  END AS data\r\nFROM \r\n  perkara_court_calendar\r\nWHERE \r\n  perkara_id = #perkara_id#\r\n  AND (\r\n    rencana_agenda LIKE '%musyawarah%'\r\n    OR rencana_agenda LIKE '%putusan%'\r\n    OR rencana_agenda LIKE '%penetapan%'\r\n  )\r\n\r\nUNION ALL\r\n\r\nSELECT '' AS data\r\nFROM DUAL\r\nWHERE NOT EXISTS (\r\n  SELECT 1\r\n  FROM perkara_court_calendar\r\n  WHERE \r\n    perkara_id = #perkara_id#\r\n    AND (\r\n      rencana_agenda LIKE '%musyawarah%'\r\n      OR rencana_agenda LIKE '%putusan%'\r\n      OR rencana_agenda LIKE '%penetapan%'\r\n    )\r\n);"
+   }
+  },
+  {
+   "no": 9003,
+   "butir": "S3",
+   "kolom": [
+    "sql_query"
+   ],
+   "sesudah": {
+    "sql_query": "select (case when '#0050#' = '1' then \"Sidang Pertama\" else \"Lanjutan\" end) data from dual where '#0050#' <> ''"
+   },
+   "lama": {
+    "sql_query": "select (case when #0050# = 1 then \"Sidang Pertama\" else \"Lanjutan\" end) data"
+   }
+  }
+ ],
+ "dependensi": [
+  33,
+  46,
+  47,
+  50,
+  184,
+  7101,
+  7102,
+  7103,
+  7104
+ ],
+ "harap": "0|0|69|0|9|0",
+ "ulang": "0|19|0|69|9|0"
+}
