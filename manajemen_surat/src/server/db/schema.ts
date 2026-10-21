@@ -971,6 +971,67 @@ export const DDL_PUTUSAN_TERJADWAL = {
 } as const;
 
 /**
+ * Arsip hasil mediasi per perkara (0081, 21 Okt 2026): berkas yang diunggah petugas dan jejak jujurnya.
+ * Cermin PERSIS dari drizzle/0081_aleta_mediasi_arsip.sql; penjaga pratinjau-dokumen-mediasi-21okt.test.ts
+ * membandingkan keduanya. Tanpa kunci asing dan tanpa CHECK: nilai sah dijaga modul
+ * (src/server/modules/mediasi-arsip/*).
+ */
+export const DDL_MEDIASI_ARSIP = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_mediasi_berkas (
+  id TEXT PRIMARY KEY,
+  nomor_perkara TEXT NOT NULL,
+  perkara_kunci TEXT NOT NULL,
+  urutan_mediasi INTEGER NOT NULL DEFAULT 0,
+  nama_asli TEXT NOT NULL,
+  bentuk_asal TEXT NOT NULL DEFAULT '',
+  jalur_asal TEXT NOT NULL DEFAULT '',
+  jalur_pdf TEXT NOT NULL DEFAULT '',
+  ukuran_asal INTEGER NOT NULL DEFAULT 0,
+  ukuran_pdf INTEGER NOT NULL DEFAULT 0,
+  sha256 TEXT NOT NULL DEFAULT '',
+  versi INTEGER NOT NULL DEFAULT 1,
+  menggantikan_id TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'aktif',
+  peringatan TEXT NOT NULL DEFAULT '',
+  diunggah_oleh TEXT NOT NULL,
+  diunggah_nama TEXT NOT NULL DEFAULT '',
+  peran TEXT NOT NULL DEFAULT '',
+  akun_sipp TEXT NOT NULL DEFAULT '',
+  ip TEXT NOT NULL DEFAULT '',
+  ke_sipp_pada TEXT NOT NULL DEFAULT '',
+  ke_sipp_oleh TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL,
+  dihapus_oleh TEXT NOT NULL DEFAULT '',
+  dihapus_pada TEXT NOT NULL DEFAULT '',
+  alasan_hapus TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_mediasi_berkas_jejak (
+  id TEXT PRIMARY KEY,
+  berkas_id TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  waktu TEXT NOT NULL,
+  peristiwa TEXT NOT NULL,
+  pelaku TEXT NOT NULL DEFAULT '',
+  pelaku_id TEXT NOT NULL DEFAULT '',
+  peran TEXT NOT NULL DEFAULT '',
+  akun_sipp TEXT NOT NULL DEFAULT '',
+  ip TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL DEFAULT '',
+  ringkas TEXT NOT NULL DEFAULT '',
+  rinci_json TEXT NOT NULL DEFAULT '{}'
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_mediasi_berkas_perkara ON aleta_mediasi_berkas(perkara_kunci, status)`,
+    `CREATE INDEX IF NOT EXISTS idx_mediasi_berkas_sha ON aleta_mediasi_berkas(perkara_kunci, sha256)`,
+    `CREATE INDEX IF NOT EXISTS idx_mediasi_berkas_jejak_berkas ON aleta_mediasi_berkas_jejak(berkas_id, waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_mediasi_berkas_jejak_perkara ON aleta_mediasi_berkas_jejak(nomor_perkara, waktu)`,
+  ],
+} as const;
+
+/**
  * SKP jabatan perkara (0070, 17 Okt 2026, rancangan disetujui pengguna):
  * pemetaan akun SIPP ke pegawai (bertanggal), target, isian manual, dan
  * tangkapan realisasi yang dikunci. Cermin PERSIS dari
@@ -2073,6 +2134,8 @@ const schemaStatements = [
   ...DDL_ALETA_AI.tabel,
   // Unggah Putusan Terjadwal: jadwal, butir, berkas, jejak (0080).
   ...DDL_PUTUSAN_TERJADWAL.tabel,
+  // Arsip hasil mediasi per perkara (0081).
+  ...DDL_MEDIASI_ARSIP.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -4023,6 +4086,7 @@ const indexStatements = [
   ...DDL_TAUTAN_JADWAL.indeks,
   ...DDL_ALETA_AI.indeks,
   ...DDL_PUTUSAN_TERJADWAL.indeks,
+  ...DDL_MEDIASI_ARSIP.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.

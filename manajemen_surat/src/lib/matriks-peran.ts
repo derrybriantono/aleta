@@ -766,6 +766,31 @@ export const AKSI = {
     rute: ["POST /api/aleta-ecourt/hasil-mediasi"],
     alasan: "Rute menegakkan pastikanMediator (nama akun cocok dengan mediator perkara di SIPP, atau Super Admin) - lebih tepat daripada golongan, jadi rute TIDAK diberi pagar golongan.",
   },
+  // Arsip hasil mediasi per perkara (21 Okt 2026): SIPP tidak punya tempat unggah dokumen hasil mediasi.
+  "mediasi.arsip-lihat": {
+    label: "Melihat dan mengunduh berkas hasil mediasi (arsip perkara)",
+    crud: "R",
+    golongan: ["mediator", "hakim", "pimpinan", "panitera", "panmud", "pp"],
+    lingkup: "semua",
+    rute: ["GET /api/aleta-ecourt/mediasi-arsip", "GET /api/aleta-ecourt/mediasi-arsip/berkas"],
+    alasan: "Mediasi tertutup untuk umum (PERMA 1/2016 ps. 5): hanya mediator dan majelis/kepaniteraan perkara itu - sama dengan yang mencatat mediasi. PTSP dan analis tidak.",
+  },
+  "mediasi.arsip-unggah": {
+    label: "Mengunggah dan mengganti berkas hasil mediasi (arsip perkara)",
+    crud: "CU",
+    golongan: ["mediator", "hakim", "pimpinan", "panitera", "panmud", "pp"],
+    lingkup: "milik",
+    rute: ["POST /api/aleta-ecourt/mediasi-arsip", "POST /api/aleta-ecourt/mediasi-arsip/jejak"],
+    alasan: "Yang mencatat mediasi (mediator, hakim, kepaniteraan perkara itu) mengunggah hasilnya. Menulis HANYA ke arsip ALETA; unggahan e-Doc Akta Perdamaian ke SIPP dijaga SIPP sendiri atas akun yang masuk.",
+  },
+  "mediasi.arsip-hapus": {
+    label: "Menghapus berkas hasil mediasi (arsip perkara)",
+    crud: "D",
+    golongan: ["mediator", "hakim", "pimpinan", "panitera", "panmud", "pp"],
+    lingkup: "milik",
+    rute: ["DELETE /api/aleta-ecourt/mediasi-arsip"],
+    alasan: "Golongan yang boleh mengunggah, tetapi rute menegakkan lebih ketat: hanya PENGUNGGAH berkas itu atau Admin/Super Admin, dengan konfirmasi dan jejak.",
+  },
   // Panduan pertanyaan saksi (Jadwal Sidang & Status Perkara) - hanya membaca, tidak menulis ke SIPP/ABT
   "pandu.saksi": {
     label: "Panduan pemeriksaan saksi",
