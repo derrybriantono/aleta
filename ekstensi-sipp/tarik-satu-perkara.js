@@ -33,6 +33,10 @@
   const API = "/aleta/api/aleta-ecourt/tarik-satu";
   const ID = "aleta-tarik-satu";
   const ID_GAYA = "aleta-tarik-satu-gaya";
+  const ID_MU = "aleta-muat-ulang-perkara";
+  const KUNCI_TAB = "muatUlangTabPerkara";
+  const UMUR_TAB_MS = 90 * 1000;
+  const KUNCI_KONTEKS = "simpananKonteks";
   const JEDA_TANYA_MS = 3000;
   const BATAS_PANTAU_MS = 14 * 60 * 1000;
   const SEMENTARA = new Set(["menunggu-giliran", "berjalan"]);
@@ -191,6 +195,16 @@
       `@keyframes aleta-ts-putar{to{transform:rotate(360deg);}}`,
       `html[data-aleta-tema-sipp="gelap"] #${ID} .aleta-ts-tombol{background:#164e63;border-color:#67e8f9;}`,
       `html[data-aleta-tema-sipp="gelap"] #${ID} .aleta-ts-tombol:hover:not(:disabled){background:#155e75;}`,
+      // Tombol "Muat ulang" yang berdiri sendiri (peran tanpa hak tarik data): gaya sama dengan tombol di atas.
+      `#${ID_MU}.aleta-sisip{position:absolute;right:100%;width:max-content;margin:0 8px 0 0;padding:0;border:0;border-radius:0;background:none;display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:12px;line-height:1.25;}`,
+      `#${ID_MU} .aleta-ts-tombol{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid rgba(255,255,255,.6);border-radius:3px;background:#0e7490;color:#fff;font-size:12px;font-weight:600;cursor:pointer;}`,
+      `#${ID_MU} .aleta-ts-tombol:hover:not(:disabled){background:#155e75;}`,
+      `#${ID_MU} .aleta-ts-tombol:focus-visible{outline:2px solid #fff;outline-offset:2px;}`,
+      `html[data-aleta-tema-sipp="gelap"] #${ID_MU} .aleta-ts-tombol{background:#164e63;border-color:#67e8f9;}`,
+      // Muat ulang tampil sebagai tombol bergaris (sekunder) di samping Tarik data yang berisi.
+      `#${ID} .aleta-ts-tombol.aleta-ts-muat,#${ID_MU} .aleta-ts-tombol.aleta-ts-muat{background:#fff;color:#0e7490;border-color:#0e7490;}`,
+      `#${ID} .aleta-ts-tombol.aleta-ts-muat:hover:not(:disabled),#${ID_MU} .aleta-ts-tombol.aleta-ts-muat:hover:not(:disabled){background:#e0f2fe;}`,
+      `html[data-aleta-tema-sipp="gelap"] #${ID} .aleta-ts-tombol.aleta-ts-muat,html[data-aleta-tema-sipp="gelap"] #${ID_MU} .aleta-ts-tombol.aleta-ts-muat{background:#0b2530;color:#a5f3fc;border-color:#67e8f9;}`,
     ].join("\n");
     document.head.appendChild(g);
   }
@@ -450,16 +464,177 @@
     S.teksTerakhir = "";
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Tombol "Muat ulang" (21 Okt 2026): memuat ulang halaman perkara ini, tetap di
+  // perkara & tab yang sama, supaya berkas/relaas/BAS/putusan yang baru diunggah
+  // dan semua panel tampil terbaru. Tidak menulis apa pun ke SIPP.
+  // ──────────────────────────────────────────────────────────────────────────
+  const kunciNomor = (n) => String(n || "").replace(/\s+/g, "").toUpperCase();
+  const dalamAleta = (e) => Boolean(e.closest && e.closest(".aleta-sisip,[class*='aleta-'],[id^='aleta-']"));
+
+  /** Tab yang sedang terbuka di halaman perkara (href "#tabsN"), atau "". */
+  function tabAktif() {
+    const a = document.querySelector('li.ui-tabs-active > a[href^="#tabs"], li.ui-state-active > a[href^="#tabs"], li.active > a[href^="#tabs"]');
+    return a ? String(a.getAttribute("href") || "") : "";
+  }
+
+  /** Ada isian borang SIPP yang diubah tetapi belum disimpan? (isian milik panel kita tidak dihitung) */
+  function adaBorangBelumDisimpan() {
+    const kolom = document.querySelectorAll("form input, form textarea, form select");
+    for (const e of kolom) {
+      if (dalamAleta(e) || e.disabled) continue;
+      const jenis = String(e.type || "").toLowerCase();
+      if (["hidden", "button", "submit", "reset", "search", "file", "image"].includes(jenis)) continue;
+      if (jenis === "checkbox" || jenis === "radio") {
+        if (e.checked !== e.defaultChecked) return true;
+      } else if (e.tagName === "SELECT") {
+        if (Array.from(e.options).some((o) => o.selected !== o.defaultSelected)) return true;
+      } else if (String(e.value) !== String(e.defaultValue)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Membuang tembolok data panel ALETA untuk perkara ini (yang selamat dari muat ulang: penyimpanan ekstensi). */
+  async function buangTembolok(nomor) {
+    const k = kunciNomor(nomor);
+    try {
+      const s = await chrome.storage.local.get([KUNCI_KONTEKS]);
+      const peta = s && s[KUNCI_KONTEKS] && typeof s[KUNCI_KONTEKS] === "object" ? { ...s[KUNCI_KONTEKS] } : null;
+      if (peta) {
+        let ubah = false;
+        for (const n of Object.keys(peta)) {
+          if (kunciNomor(n) === k) {
+            delete peta[n];
+            ubah = true;
+          }
+        }
+        if (ubah) await chrome.storage.local.set({ [KUNCI_KONTEKS]: peta });
+      }
+    } catch {
+      /* tembolok hanya kemudahan */
+    }
+    try {
+      // Penjaga panel di halaman ini: tanpa ini panel menolak menggambar ulang untuk nomor yang sama.
+      if (typeof nomorTerakhir !== "undefined") {
+        // eslint-disable-next-line no-global-assign
+        nomorTerakhir = "";
+      }
+    } catch {
+      /* panel hanya kemudahan */
+    }
+  }
+
+  /** Muat ulang halaman perkara: konfirmasi bila ada isian belum disimpan, buang tembolok, ingat tab, muat ulang. */
+  async function muatUlang() {
+    if (S.memuatUlang) return false;
+    const nomor = nomorHalaman();
+    if (adaBorangBelumDisimpan()) {
+      let lanjut = false;
+      try {
+        lanjut = globalThis.confirm("Ada isian di halaman ini yang belum disimpan. Jika dimuat ulang, isian itu akan hilang. Tetap muat ulang?");
+      } catch {
+        lanjut = false;
+      }
+      if (!lanjut) return false;
+    }
+    S.memuatUlang = true;
+    await buangTembolok(nomor);
+    try {
+      await chrome.storage.local.set({ [KUNCI_TAB]: { kunci: kunciNomor(nomor), tab: tabAktif(), waktu: Date.now() } });
+    } catch {
+      /* tab hanya kemudahan */
+    }
+    const mu = globalThis.aletaMuatUlangSipp;
+    if (mu && typeof mu.muatUlangSekarang === "function") {
+      const jalan = await mu.muatUlangSekarang(nomor, null);
+      if (jalan === false) S.memuatUlang = false;
+      return jalan !== false;
+    }
+    S.memuatUlang = false;
+    return false;
+  }
+
+  /** Sesudah dimuat ulang: kembali ke tab yang tadi terbuka (sekali saja; catatan dicabut lebih dulu). */
+  async function pulihkanTab(nomor) {
+    if (S.tabDipulihkan === nomor) return;
+    S.tabDipulihkan = nomor;
+    let rec = null;
+    try {
+      const s = await chrome.storage.local.get([KUNCI_TAB]);
+      rec = s && s[KUNCI_TAB];
+      if (rec) await chrome.storage.local.remove(KUNCI_TAB);
+    } catch {
+      return;
+    }
+    if (!rec || rec.kunci !== kunciNomor(nomor) || !rec.tab || Date.now() - Number(rec.waktu || 0) > UMUR_TAB_MS) return;
+    const mulaiMs = Date.now();
+    const coba = () => {
+      const a = document.querySelector(`a[href="${rec.tab}"]`);
+      if (a) {
+        a.click();
+        return;
+      }
+      if (Date.now() - mulaiMs < 10000) setTimeout(coba, 300);
+    };
+    coba();
+  }
+
+  function buatTombolMuat() {
+    const t = el("button", "aleta-ts-tombol aleta-ts-muat");
+    t.type = "button";
+    t.setAttribute("data-aleta-muat-ulang", "perkara");
+    const ikon = el("i", "fa fa-repeat");
+    ikon.setAttribute("aria-hidden", "true");
+    t.append(ikon, el("span", "aleta-ts-label-muat", "Muat ulang"));
+    t.title = "Muat ulang halaman perkara ini (tetap di perkara dan tab yang sama) supaya berkas dan data terbaru tampil";
+    t.addEventListener("click", () => void muatUlang());
+    return t;
+  }
+
+  /** Memasang tombol: di samping "Tarik data" bila ada, kalau tidak berdiri sendiri di tempat yang sama. */
+  function pasangMuat(k, nomor) {
+    pasangGaya();
+    const tarik = document.getElementById(ID);
+    let mandiri = document.getElementById(ID_MU);
+    if (tarik) {
+      if (mandiri) mandiri.remove();
+      if (!tarik.querySelector("[data-aleta-muat-ulang]")) tarik.appendChild(buatTombolMuat());
+    } else {
+      if (!mandiri) {
+        mandiri = el("div", "aleta-sisip aleta-ts");
+        mandiri.id = ID_MU;
+        mandiri.appendChild(buatTombolMuat());
+        k.h.insertBefore(mandiri, k.h.firstChild);
+      }
+      selarasLetak(mandiri, k);
+    }
+    void pulihkanTab(nomor);
+  }
+
+  function lepasMuat() {
+    const m = document.getElementById(ID_MU);
+    if (m) m.remove();
+  }
+
   function pasang() {
     if (!nyala || !document.body || !halamanPerkara()) {
       if (S.akar || document.getElementById(ID)) bersihkan();
-      return { tombol: false };
+      lepasMuat();
+      return { tombol: false, muat: false };
     }
     const k = kepala();
     const nomor = nomorHalaman();
-    if (!k || !nomor || !berhak()) {
+    if (!k || !nomor) {
       if (S.akar || document.getElementById(ID)) bersihkan();
-      return { tombol: false };
+      lepasMuat();
+      return { tombol: false, muat: false };
+    }
+    if (!berhak()) {
+      if (S.akar || document.getElementById(ID)) bersihkan();
+      pasangMuat(k, nomor);
+      return { tombol: false, muat: true };
     }
     pasangGaya();
     if (S.nomor && S.nomor !== nomor) bersihkan();
@@ -477,7 +652,8 @@
       void tanya(true);
     }
     gambar();
-    return { tombol: true, nomor };
+    pasangMuat(k, nomor);
+    return { tombol: true, muat: true, nomor };
   }
 
   let detak = null;
@@ -523,6 +699,8 @@
     bersihkan,
     tanya,
     minta,
+    muatUlang,
+    adaBorangBelumDisimpan,
     keadaan: () => S,
     murni: { umurTeks, susunKabar },
   };
