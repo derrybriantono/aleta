@@ -1,0 +1,10 @@
+22c0aea7a8afcd61337d40d6495df6e1  abt-x10-audit-ringan-21okt-PASANG.sql
+b5f800db994bd97ebf395c80a2f2a68d  abt-x10-audit-ringan-21okt-PERIKSA.sql
+b0e5ec09d6547df66dcc9330944b1833  abt-x10-audit-ringan-21okt-PRASYARAT.sql
+11d73e7088a5aa6ede3bf45b3a664084  abt-x10-audit-ringan-21okt-PULIH.sql
+897316929176464ebc9ad085f31e7284  nomor-baru.txt
+e3053e45449c5a4fb53c2d2d3a2d80ce  nomor-ubah.txt
+8b6263856a195126b2df509f316fcaaa  pasang-satker.sh
+ceebc0a1dc437532e575c7dbde690c49  perkara-uji.txt
+66876df1889488a02186c64e8a046850  pulih-satker.sh
+783e632dcbb02dd1d5a97993e5dd2c7c  uji-kueri.tsv
