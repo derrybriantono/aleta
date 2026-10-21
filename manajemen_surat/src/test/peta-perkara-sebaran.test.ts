@@ -419,8 +419,9 @@ describe("lapisan panggilan tidak bertemu - dan sandi yang berganti arti", () =>
    */
   const petaLayar = baca("manajemen_surat/src/components/portal/peta-titik-perkara.tsx");
 
-  it("hanya baris bersandi Y/T yang dihitung", () => {
-    expect(kode).toContain('const SANDI_TEMU = ["Y", "T"];');
+  it("hanya baris bersandi Y/T/E yang dihitung - E (elektronik) dianggap bertemu", () => {
+    expect(kode).toContain('const SANDI_TEMU = ["Y", "T", "E"];');
+    expect(kode).toContain("SUM(r.ket_temu = 'T') AS takTemu");
     expect(kode).toContain("r.ket_temu IN (");
   });
 
