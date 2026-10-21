@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.24",
+    dirilis: "2026-10-21T12:48:00+08:00",
+    judul: "Isian dan putusan mengikuti tuntutan dalam petitum",
+    butir: [
+      "Blangko ABT by Derry: kartu isian kini persis sama dengan tabel variabel ABT untuk blangko yang dibuka (urutan dan isinya); isian yang hanya dibaca bagian otomatis dipindah ke bagian tertutup.",
+      "Tuntutan dalam posita dan petitum: status tiap tuntutan (diminta, tidak diminta, ragu) beserta kutipan petitumnya; isian mut'ah, nafkah iddah, madliyah, hak asuh dan nafkah anak hanya tampil bila diminta, sudah diisi, atau ditetapkan karena jabatan oleh hakim.",
+      "Putusan cerai: pembaca petitum tidak lagi salah menyala karena nama pihak, sehingga tanda periksa nafkah iddah/mut'ah/madliyah tidak muncul pada perkara yang tidak menuntutnya; nomor amar tetap urut.",
+      "Kartu Alasan perceraian menjelaskan bahwa pertimbangan alasan baru terisi sesudah alasan dipilih dan disimpan.",
+    ],
+  },
+  {
     versi: "1.205.23",
     dirilis: "2026-10-21T11:29:00+08:00",
     judul: "Penetapan, putusan dan jadwal putusan di SIPP lebih rapi",
