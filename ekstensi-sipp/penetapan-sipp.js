@@ -194,7 +194,7 @@
   function buatCtx(nomor) {
     return {
       nomor,
-      terbuka: true,
+      terbuka: false, // 21 Okt: bawaan TERLIPAT; dibuka dengan klik tombol (atau yang sengaja dibuka petugas pada kunjungan lalu)
       lipatDibaca: false,
       data: null,
       memuat: false,
@@ -328,7 +328,7 @@
       }
       ctx.data = data;
       gambarRinci();
-      void muatPetaEdoc();
+      if (ctx.terbuka) void muatPetaEdoc();
     } catch (galat) {
       ctx.galat = String((galat && galat.message) || galat).slice(0, 200);
     } finally {
@@ -1117,6 +1117,27 @@
     return nyala && !modeLama();
   }
 
+  /**
+   * Keempat penetapan (PMH, PPP, PJS, PHS) perkara ini SUDAH tercatat di SIPP? Sumber yang sama dengan "sudah tercatat - dilewati"
+   * (keadaanPenetapanUsulan). Belum terbaca / gagal baca = false (tombol tetap tampil). Sesudah petugas menjalankan penetapan di
+   * halaman ini, tombol tidak dicabut di tengah jalan (hasilnya masih dibaca di panel).
+   */
+  function semuaPenetapanTercatat() {
+    const d = ctx && ctx.data;
+    if (!d || ctx.galat || ctx.sibuk || ctx.dibukaPetugas || ctx.laporan || Object.keys(ctx.hasil || {}).length) return false;
+    const u = d.usulan;
+    if (!u || u.ok === false || !u.penetapan || typeof u.penetapan !== "object") return false;
+    const t = tercatatDi(d);
+    return URUTAN.every((j) => Boolean(t[j]));
+  }
+
+  function buangTombol(tr) {
+    const td = tr.querySelector(":scope > .aleta-pensipp-sel");
+    if (td) td.remove();
+    if (ctx && ctx.akar) ctx.akar.hidden = true;
+    if (typeof alatUrutkanTombolSipp === "function") alatUrutkanTombolSipp(tr);
+  }
+
   function pasangTombol(tr, sudahMuncul) {
     let td = tr.querySelector(":scope > .aleta-pensipp-sel");
     if (!td) {
@@ -1129,8 +1150,13 @@
       b.addEventListener("click", () => {
         if (!ctx) return;
         ctx.terbuka = !ctx.terbuka;
+        if (ctx.terbuka) ctx.dibukaPetugas = true; // panel yang sengaja dibuka petugas tidak dicabut walau semua penetapan tercatat
         ctx.lipatDibaca = true;
-        void tulisPenyimpanan({ [KUNCI_LIPAT]: { ...((ctx.lipatan || {})), [KUNCI_LIPAT_PANEL]: !ctx.terbuka } });
+        const lipat = !ctx.terbuka;
+        void bacaPenyimpanan([KUNCI_LIPAT]).then((simpan) => {
+          const lip = simpan && simpan[KUNCI_LIPAT] && typeof simpan[KUNCI_LIPAT] === "object" ? simpan[KUNCI_LIPAT] : {};
+          void tulisPenyimpanan({ [KUNCI_LIPAT]: { ...lip, [KUNCI_LIPAT_PANEL]: lipat } });
+        });
         pasangPanel(tr);
       });
       td.appendChild(b);
@@ -1162,8 +1188,10 @@
     ctx.akar.hidden = !ctx.terbuka;
     const tb = tr.querySelector(".aleta-pensipp-tombol");
     if (tb) tb.setAttribute("aria-expanded", ctx.terbuka ? "true" : "false");
-    if (ctx.terbuka && !ctx.data && !ctx.memuat && !ctx.galat) void muat();
+    // Keadaan penetapan dibaca walau panel terlipat: tombolnya disembunyikan bila keempat penetapan sudah tercatat di SIPP.
+    if (!ctx.data && !ctx.memuat && !ctx.galat) void muat();
     else if (ctx.dirender === false) render();
+    if (ctx.terbuka && ctx.data && !ctx.edocPetaDimuat) void muatPetaEdoc();
   }
 
   function bersihkan(doc) {
@@ -1195,14 +1223,19 @@
         if (!ctx || ctx.nomor !== nomor) return;
         const lip = simpan && simpan[KUNCI_LIPAT] && typeof simpan[KUNCI_LIPAT] === "object" ? simpan[KUNCI_LIPAT] : {};
         ctx.lipatan = lip;
-        // Bawaan TERBENTANG; hanya yang sengaja dilipat petugas yang tetap terlipat.
-        if (lip[KUNCI_LIPAT_PANEL] === true && !ctx.lipatDibaca) {
-          ctx.terbuka = false;
+        // Bawaan TERLIPAT (21 Okt 2026, sama dengan Putusan Otomatis); hanya yang sengaja dibuka petugas (false) yang terbuka lagi.
+        if (lip[KUNCI_LIPAT_PANEL] === false && !ctx.lipatDibaca) {
+          ctx.terbuka = true;
           const baris = barisTombol(document);
           if (baris) pasangPanel(baris);
         }
         ctx.lipatDibaca = true;
       });
+    }
+    if (semuaPenetapanTercatat()) {
+      // 21 Okt: keempat penetapan sudah tercatat - tidak ada yang perlu dikerjakan, tombol dan panel tidak dimunculkan.
+      buangTombol(tr);
+      return { tombol: false, panel: false, lengkap: true };
     }
     pasangTombol(tr);
     pasangPanel(tr);

@@ -620,11 +620,10 @@ describe("panel Penetapan Otomatis: ringkasan beban, rincian terlipat, aksi di b
     expect(semua.closest("[data-bebanstat]")).toBeNull();
   });
 
-  it("Putusan Otomatis dan Jadwalkan Putusan: panel TERLIPAT bawaan, belum membaca apa pun; Penetapan tetap terbentang", async () => {
+  it("Putusan Otomatis dan Jadwalkan Putusan: ketiga panel (Penetapan, Putusan, Jadwalkan) TERLIPAT bawaan; Putusan/Jadwalkan belum membaca apa pun", async () => {
     const h = buka();
     await sampai(() => (pasangSemua(h), h.d.getElementById("aleta-pensipp-panel")), "panel penetapan");
-    expect(h.d.getElementById("aleta-pensipp-panel")!.hidden).toBe(false);
-    for (const [id, tombol] of [["aleta-pusipp-panel", "aleta-pusipp-tombol"], ["aleta-ptj-panel", "aleta-ptj-tombol"]]) {
+    for (const [id, tombol] of [["aleta-pensipp-panel", "aleta-pensipp-tombol"], ["aleta-pusipp-panel", "aleta-pusipp-tombol"], ["aleta-ptj-panel", "aleta-ptj-tombol"]]) {
       const p = h.d.getElementById(id)!;
       expect(p, id).toBeTruthy();
       expect(p.hidden, id).toBe(true);
@@ -660,9 +659,12 @@ describe.skipIf(!process.env.ALETA_TANGKAP_SIPP23)("tangkapan layar tampilan bar
     await tunggu(400);
   }
 
-  it("halaman detil perkara: tiga tombol berurutan, Penetapan terbentang, Putusan dan Jadwalkan terlipat", async () => {
+  it("halaman detil perkara: tiga tombol berurutan, semua panel terlipat bawaan; Penetapan dibuka dengan klik tombol", async () => {
     const h = buka();
     await sampai(() => (pasangSemua(h), h.d.querySelector("[data-bebanstat]")), "panel");
+    expect(h.d.getElementById("aleta-pensipp-panel")!.hidden).toBe(true);
+    await tekan(h, ".aleta-pensipp-tombol");
+    expect(h.d.getElementById("aleta-pensipp-panel")!.hidden).toBe(false);
     await tunggu(60);
     simpanTangkapan(h, "1-detil-awal");
     (h.d.querySelector("[data-bebanstat] summary") as HTMLElement).click();

@@ -382,9 +382,19 @@ async function tombolSiap(h: Halaman) {
   }, () => `tombol Penetapan Otomatis; badan: ${String(h.d.body.textContent || "").slice(0, 200)}`);
 }
 
+/** Petugas sudah membuka panel sebelum keadaan terbaca (tombol yang dibuka petugas tidak dicabut walau keempat penetapan tercatat). */
+async function bukaSebelumTerbaca(h: Halaman) {
+  await sampai(() => (api(h)?.pasang(h.d), api(h)?.keadaan()), "ctx panel");
+  const c = api(h).keadaan();
+  c.dibukaPetugas = true;
+  c.terbuka = true;
+}
+
 /** Panel dengan usulan termuat: empat langkah bertulis dan tombol utama hidup. */
 async function panelSiap(h: Halaman) {
   await tombolSiap(h);
+  // 21 Okt: panel TERLIPAT bawaan - dibuka dengan klik tombol (pembukaan oleh petugas juga menahan tombol bila semua penetapan sudah tercatat).
+  if (panel(h)?.hidden !== false) tombolPen(h)!.click();
   await sampai(() => {
     api(h).pasang(h.d);
     const p = panel(h);
@@ -510,8 +520,13 @@ describe("tombol: paling kiri, tebal, hanya untuk yang berhak", () => {
 });
 
 describe("panel: terbentang, empat langkah, e-Doc tercentang semua", () => {
-  it("bawaan terbentang; empat langkah dengan pejabat, isi, dan status 'akan ditulis'", async () => {
+  it("bawaan TERLIPAT (tombol belum ditekan); dibuka dengan klik; empat langkah dengan pejabat, isi, dan status 'akan ditulis'", async () => {
     const h = buka(kosong());
+    await tombolSiap(h);
+    await sampai(() => (api(h).pasang(h.d), panel(h) && api(h).keadaan()?.data ? panel(h) : null), "panel terpasang dan usulan terbaca");
+    expect(panel(h)!.hidden).toBe(true);
+    expect(tombolPen(h)!.getAttribute("aria-expanded")).toBe("false");
+    simpanTangkapan(h, "0-terlipat");
     const p = await panelSiap(h);
     expect(p.hidden).toBe(false);
     expect(tombolPen(h)!.getAttribute("aria-expanded")).toBe("true");
@@ -562,6 +577,23 @@ describe("panel: terbentang, empat langkah, e-Doc tercentang semua", () => {
     expect(tombolPen(h)!.getAttribute("aria-expanded")).toBe("false");
     tombolPen(h)!.click();
     expect(panel(h)!.hidden).toBe(false);
+  });
+
+  it("21 Okt: keempat penetapan SUDAH tercatat di SIPP -> tombol dan panel tidak dimunculkan; belum tercatat satu pun / sebagian -> tombol tampil", async () => {
+    const lengkap = buka({ pmh: HARI, ppp: HARI, pjs: HARI, phs: HARI });
+    await tombolSiap(lengkap).catch(() => null);
+    await sampai(() => (api(lengkap).pasang(lengkap.d), api(lengkap).keadaan()?.data && tombolPen(lengkap) === null ? true : null), () => `tombol harus hilang; ada=${Boolean(tombolPen(lengkap))}`);
+    expect(tombolPen(lengkap)).toBeNull();
+    expect(panel(lengkap)?.hidden ?? true).toBe(true);
+    simpanTangkapan(lengkap, "5-semua-tercatat");
+    // tetap tidak muncul lagi pada detak berikutnya
+    await tunggu(1200);
+    expect(tombolPen(lengkap)).toBeNull();
+
+    const sebagian = buka({ pmh: HARI, ppp: HARI, pjs: HARI, phs: "" });
+    await tombolSiap(sebagian);
+    await sampai(() => (api(sebagian).pasang(sebagian.d), api(sebagian).keadaan()?.data ? true : null), "usulan terbaca");
+    expect(tombolPen(sebagian)).not.toBeNull();
   });
 
   it("memakai objek data yang SAMA dengan papan di panel ALETA (satu sumber keadaan)", async () => {
@@ -721,6 +753,7 @@ describe("satu klik: konfirmasi di halaman, tulis lalu unggah", () => {
 
   it("keempatnya sudah tercatat: tidak ada yang ditulis; konfirmasi hanya soal e-Doc; e-Doc yang sudah ada disebut menimpa", async () => {
     const h = buka({ pmh: HARI, ppp: HARI, pjs: HARI, phs: HARI }, { edocSudah: ["pmh", "phs"] });
+    await bukaSebelumTerbaca(h);
     const p = await panelSiap(h);
     await sampai(() => p.querySelectorAll(".aleta-pensipp-chip-edoc").length === 2, () => `chip e-Doc; ${p.textContent}`);
     for (const j of JENIS) expect(statusTeks(h, j)).toBe("sudah tercatat · dilewati");
@@ -736,6 +769,7 @@ describe("satu klik: konfirmasi di halaman, tulis lalu unggah", () => {
 
   it("keempatnya tercatat dan tidak ada e-Doc dicentang: tombol utama mati dan jujur", async () => {
     const h = buka({ pmh: HARI, ppp: HARI, pjs: HARI, phs: HARI });
+    await bukaSebelumTerbaca(h);
     const p = await panelSiap(h).catch(async () => panel(h)!);
     const semua = p.querySelector('[data-pensipp="semua"]') as HTMLInputElement;
     semua.checked = false;
