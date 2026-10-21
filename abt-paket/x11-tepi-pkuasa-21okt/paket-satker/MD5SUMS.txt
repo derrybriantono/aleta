@@ -1,0 +1,9 @@
+e570af68a4b4e0a3ec7ec1f1e3567c2a *abt-x11-tepi-pkuasa-21okt-DAFTAR.sql
+69748f1eaff9c50c337b2f80fcfcaadc *abt-x11-tepi-pkuasa-21okt-HAPUS.sql
+55ef185b57abed8d6688b9c3d1b4bc7f *abt-x11-tepi-pkuasa-21okt-HITUNG.sql
+1e72b26e442e99f02c35d58f7e2b2d45 *abt-x11-tepi-pkuasa-21okt-PERIKSA.sql
+67f8343ec763573afd532b5b38999517 *abt-x11-tepi-pkuasa-21okt-PERKARA.sql
+112fd96ad596465370821671e9c19cbe *abt-x11-tepi-pkuasa-21okt-PRASYARAT.sql
+57586f4a071b1e7e2251e46dcc599fdb *pasang-satker.sh
+0e006115bb72168f915f8f81e3b4dd54 *pulih-satker.sh
+a55a69c557518f0c596fba2e93373842 *rtf-md5.txt

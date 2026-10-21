@@ -7915,6 +7915,46 @@ router.post("/abt/pekerjaan-terbaca", requireInternalToken, async (req, res) => 
 });
 /* === AKHIR PEKERJAAN === */
 
+/* === BERSIH PENUTUP SAKSI 21 Okt 2026 (x11) === */
+/**
+ * Membersihkan baris kalimat penutup saksi TERSIMPAN (abt_keterangan_saksi) pada perkara BELUM minutasi, dengan cadangan lengkap di folder
+ * yang di-mount (lihat bersihPenutupSaksiService). Perkara yang sudah minutasi tidak disentuh.
+ *   POST /abt/bersih-penutup-saksi  { perkaraId?, kering? }   -> { ok, kandidat, perkara, dihapus, gagal, cadangan, kering }
+ *   POST /abt/pulih-penutup-saksi   { berkas, kering? }       -> { ok, tercadang, dipulihkan, sudahAda }   (berkas = nama berkas di folder cadangan)
+ */
+const bersihPenutupSaksiService = require("../services/bersihPenutupSaksiService");
+
+router.post("/abt/bersih-penutup-saksi", requireInternalToken, async (req, res) => {
+  try {
+    const perkaraId = Number(req.body?.perkaraId);
+    const hasil = await bersihPenutupSaksiService.bersihkanPenutupTersimpan({
+      abt: require("../db_config5"),
+      sipp: require("../db_config"),
+      perkaraId: Number.isFinite(perkaraId) && perkaraId > 0 ? perkaraId : 0,
+      kering: Boolean(req.body?.kering),
+    });
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.code || error?.message || error).slice(0, 160) });
+  }
+});
+
+router.post("/abt/pulih-penutup-saksi", requireInternalToken, async (req, res) => {
+  try {
+    const nama = require("path").basename(String(req.body?.berkas || ""));
+    if (!/^penutup-saksi-[\d-]+\.jsonl$/.test(nama)) return res.status(400).json({ ok: false, error: "nama berkas cadangan tidak sah" });
+    const hasil = await bersihPenutupSaksiService.pulihkanPenutupTersimpan({
+      abt: require("../db_config5"),
+      berkas: require("path").join(bersihPenutupSaksiService.folderCadangan(), nama),
+      kering: Boolean(req.body?.kering),
+    });
+    res.json({ ok: true, ...hasil });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error?.code || error?.message || error).slice(0, 160) });
+  }
+});
+/* === AKHIR BERSIH PENUTUP SAKSI === */
+
 /* === TAHAP L2 (16 Okt 2026): SIPP DENGAN IDE ALETA - SEPULUH PENANDA === */
 /**
  * HANYA MEMBACA SIPP.
