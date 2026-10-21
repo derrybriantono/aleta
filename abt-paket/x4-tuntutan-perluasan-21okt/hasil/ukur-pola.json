@@ -1,0 +1,478 @@
+{
+ "hbi_pi": {
+  "label": "hak bekas istri pi",
+  "jenis": [
+   346,
+   347,
+   351
+  ],
+  "hitung": {
+   "baru D0": 142,
+   "baru D0A0": 8743,
+   "baru D0A1": 226,
+   "baru D1": 1,
+   "baru D1A0": 9,
+   "baru D1A1": 13,
+   "beda lama->baru: 1->0": 28,
+   "lama D0": 142,
+   "lama D0A0": 8716,
+   "lama D0A1": 225,
+   "lama D1": 1,
+   "lama D1A0": 36,
+   "lama D1A1": 14,
+   "petitum kosong": 31
+  }
+ },
+ "hbi_pk": {
+  "label": "hak bekas istri pk",
+  "jenis": [
+   346,
+   347,
+   351
+  ],
+  "hitung": {
+   "baru D0": 143,
+   "baru D0A0": 8991,
+   "beda lama->baru: 1->0": 26,
+   "lama D0": 142,
+   "lama D0A0": 8966,
+   "lama D1": 1,
+   "lama D1A0": 25,
+   "petitum kosong": 31
+  }
+ },
+ "hbi_ps": {
+  "label": "hak bekas istri ps",
+  "jenis": [
+   346,
+   347,
+   351
+  ],
+  "hitung": {
+   "baru D0": 143,
+   "baru D0A0": 8991,
+   "beda lama->baru: 1->0": 3,
+   "lama D0": 143,
+   "lama D0A0": 8988,
+   "lama D1A0": 3,
+   "petitum kosong": 31
+  }
+ },
+ "hbi_pt": {
+  "label": "hak bekas istri pt",
+  "jenis": [
+   346,
+   347,
+   351
+  ],
+  "hitung": {
+   "baru D0": 142,
+   "baru D0A0": 8839,
+   "baru D0A1": 138,
+   "baru D1": 1,
+   "baru D1A0": 10,
+   "baru D1A1": 4,
+   "beda lama->baru: 1->0": 2,
+   "lama D0": 142,
+   "lama D0A0": 8837,
+   "lama D0A1": 138,
+   "lama D1": 1,
+   "lama D1A0": 12,
+   "lama D1A1": 4,
+   "petitum kosong": 31
+  }
+ },
+ "hbi_pm": {
+  "label": "hak bekas istri pm",
+  "jenis": [
+   346,
+   347,
+   351
+  ],
+  "hitung": {
+   "baru D0": 143,
+   "baru D0A0": 8885,
+   "baru D0A1": 87,
+   "baru D1A0": 10,
+   "baru D1A1": 9,
+   "beda lama->baru: 0->1": 1,
+   "beda lama->baru: 1->0": 1,
+   "lama D0": 143,
+   "lama D0A0": 8884,
+   "lama D0A1": 88,
+   "lama D1A0": 11,
+   "lama D1A1": 8,
+   "petitum kosong": 31
+  }
+ },
+ "hbi_ph": {
+  "label": "hak bekas istri ph",
+  "jenis": [
+   346,
+   347,
+   351
+  ],
+  "hitung": {
+   "baru D0": 143,
+   "baru D0A0": 8986,
+   "baru D0A1": 4,
+   "baru D1A0": 1,
+   "beda lama->baru: 1->0": 11,
+   "lama D0": 143,
+   "lama D0A0": 8975,
+   "lama D0A1": 4,
+   "lama D1A0": 12,
+   "petitum kosong": 31
+  }
+ },
+ "hbi_pa": {
+  "label": "hak bekas istri pa",
+  "jenis": [
+   346,
+   347,
+   351
+  ],
+  "hitung": {
+   "baru D0": 140,
+   "baru D0A0": 8742,
+   "baru D0A1": 187,
+   "baru D1": 3,
+   "baru D1A0": 28,
+   "baru D1A1": 34,
+   "lama D0": 140,
+   "lama D0A0": 8742,
+   "lama D0A1": 187,
+   "lama D1": 3,
+   "lama D1A0": 28,
+   "lama D1A1": 34,
+   "petitum kosong": 31
+  }
+ },
+ "keb_tsita": {
+  "label": "kebendaan tsita",
+  "jenis": [
+   346,
+   347,
+   348,
+   364,
+   365,
+   366,
+   367,
+   370
+  ],
+  "hitung": {
+   "baru D0": 146,
+   "baru D0A0": 9008,
+   "baru D0A1": 1,
+   "baru D1": 5,
+   "baru D1A0": 43,
+   "baru D1A1": 10,
+   "beda lama->baru: 1->0": 23,
+   "lama D0": 146,
+   "lama D0A0": 8985,
+   "lama D0A1": 1,
+   "lama D1": 5,
+   "lama D1A0": 66,
+   "lama D1A1": 10,
+   "petitum kosong": 34
+  }
+ },
+ "keb_tutang": {
+  "label": "kebendaan tutang",
+  "jenis": [
+   346,
+   347,
+   348,
+   364,
+   365,
+   366,
+   367,
+   370
+  ],
+  "hitung": {
+   "baru D0": 149,
+   "baru D0A0": 9045,
+   "baru D0A1": 7,
+   "baru D1": 2,
+   "baru D1A0": 9,
+   "baru D1A1": 1,
+   "lama D0": 149,
+   "lama D0A0": 9045,
+   "lama D0A1": 7,
+   "lama D1": 2,
+   "lama D1A0": 9,
+   "lama D1A1": 1,
+   "petitum kosong": 34
+  }
+ },
+ "keb_tjam": {
+  "label": "kebendaan tjam",
+  "jenis": [
+   346,
+   347,
+   348,
+   364,
+   365,
+   366,
+   367,
+   370
+  ],
+  "hitung": {
+   "baru D0": 146,
+   "baru D0A0": 9032,
+   "baru D0A1": 6,
+   "baru D1": 5,
+   "baru D1A0": 14,
+   "baru D1A1": 10,
+   "beda lama->baru: 1->0": 27,
+   "lama D0": 145,
+   "lama D0A0": 9008,
+   "lama D0A1": 4,
+   "lama D1": 6,
+   "lama D1A0": 38,
+   "lama D1A1": 12,
+   "petitum kosong": 34
+  }
+ },
+ "keb_tbat": {
+  "label": "kebendaan tbat",
+  "jenis": [
+   346,
+   347,
+   348,
+   364,
+   365,
+   366,
+   367,
+   370
+  ],
+  "hitung": {
+   "baru D0": 149,
+   "baru D0A0": 8981,
+   "baru D0A1": 29,
+   "baru D1": 2,
+   "baru D1A0": 38,
+   "baru D1A1": 14,
+   "beda lama->baru: 1->0": 1,
+   "lama D0": 149,
+   "lama D0A0": 8980,
+   "lama D0A1": 29,
+   "lama D1": 2,
+   "lama D1A0": 39,
+   "lama D1A1": 14,
+   "petitum kosong": 34
+  }
+ },
+ "kel_nafkah": {
+  "label": "kelalaian kewajiban nafkah",
+  "jenis": [
+   345,
+   346,
+   347
+  ],
+  "hitung": {
+   "baru D0": 9064,
+   "baru D1": 70,
+   "petitum kosong": 31
+  }
+ },
+ "kel_lampau": {
+  "label": "kelalaian kewajiban lampau",
+  "jenis": [
+   345,
+   346,
+   347
+  ],
+  "hitung": {
+   "baru D0": 9115,
+   "baru D1": 19,
+   "petitum kosong": 31
+  }
+ },
+ "kel_kiswah": {
+  "label": "kelalaian kewajiban kiswah",
+  "jenis": [
+   345,
+   346,
+   347
+  ],
+  "hitung": {
+   "baru D0": 9132,
+   "baru D1": 2,
+   "petitum kosong": 31
+  }
+ },
+ "kel_kediaman": {
+  "label": "kelalaian kewajiban kediaman",
+  "jenis": [
+   345,
+   346,
+   347
+  ],
+  "hitung": {
+   "baru D0": 9133,
+   "baru D1": 1,
+   "petitum kosong": 31
+  }
+ },
+ "kel_biaya": {
+  "label": "kelalaian kewajiban biaya",
+  "jenis": [
+   345,
+   346,
+   347
+  ],
+  "hitung": {
+   "baru D0": 9133,
+   "baru D1": 1,
+   "petitum kosong": 31
+  }
+ },
+ "kel_pemotongan": {
+  "label": "kelalaian kewajiban pemotongan",
+  "jenis": [
+   345,
+   346,
+   347
+  ],
+  "hitung": {
+   "baru D0": 9134,
+   "petitum kosong": 31
+  }
+ },
+ "kel_sita": {
+  "label": "kelalaian kewajiban sita",
+  "jenis": [
+   345,
+   346,
+   347
+  ],
+  "hitung": {
+   "baru D0": 9131,
+   "baru D1": 3,
+   "petitum kosong": 31
+  }
+ },
+ "kel_paksa": {
+  "label": "kelalaian kewajiban paksa",
+  "jenis": [
+   345,
+   346,
+   347
+  ],
+  "hitung": {
+   "baru D0": 9134,
+   "petitum kosong": 31
+  }
+ },
+ "anak_penyerahan": {
+  "label": "anak penyerahan",
+  "jenis": [
+   346,
+   347,
+   349,
+   350,
+   353,
+   354
+  ],
+  "hitung": {
+   "baru D0": 143,
+   "baru D0A0": 9129,
+   "baru D0A1": 14,
+   "baru D1A0": 3,
+   "petitum kosong": 31
+  }
+ },
+ "anak_kenaikan": {
+  "label": "anak kenaikan",
+  "jenis": [
+   346,
+   347,
+   349,
+   350,
+   353,
+   354
+  ],
+  "hitung": {
+   "baru D0": 143,
+   "baru D0A0": 9032,
+   "baru D0A1": 108,
+   "baru D1A0": 5,
+   "baru D1A1": 1,
+   "petitum kosong": 31
+  }
+ },
+ "anak_pendidikan": {
+  "label": "anak pendidikan",
+  "jenis": [
+   346,
+   347,
+   349,
+   350,
+   353,
+   354
+  ],
+  "hitung": {
+   "baru D0": 142,
+   "baru D0A0": 9006,
+   "baru D0A1": 120,
+   "baru D1": 1,
+   "baru D1A0": 16,
+   "baru D1A1": 4,
+   "petitum kosong": 31
+  }
+ },
+ "anak_pemotongan": {
+  "label": "anak pemotongan",
+  "jenis": [
+   346,
+   347,
+   349,
+   350,
+   353,
+   354
+  ],
+  "hitung": {
+   "baru D0": 143,
+   "baru D0A0": 9146,
+   "petitum kosong": 31
+  }
+ },
+ "anak_lampau": {
+  "label": "anak lampau",
+  "jenis": [
+   346,
+   347,
+   349,
+   350,
+   353,
+   354
+  ],
+  "hitung": {
+   "baru D0": 143,
+   "baru D0A0": 9143,
+   "baru D1A0": 2,
+   "baru D1A1": 1,
+   "petitum kosong": 31
+  }
+ },
+ "anak_sita": {
+  "label": "anak sita",
+  "jenis": [
+   346,
+   347,
+   349,
+   350,
+   353,
+   354
+  ],
+  "hitung": {
+   "baru D0": 142,
+   "baru D0A0": 9143,
+   "baru D0A1": 1,
+   "baru D1": 1,
+   "baru D1A0": 2,
+   "petitum kosong": 31
+  }
+ }
+}

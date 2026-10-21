@@ -1,0 +1,1216 @@
+{
+ "baru": [
+  {
+   "no": 3401,
+   "nama": "PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT NAFKAH IDDAH (OTOMATIS dari petitum SIPP; \"ya\" bila menuntut; pola sama dengan 3764)",
+   "kelompok": 1,
+   "butir": "pemicu layar nafkah iddah",
+   "panjang": 190
+  },
+  {
+   "no": 3402,
+   "nama": "PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT MASKAN (TEMPAT TINGGAL) SELAMA IDDAH (OTOMATIS dari petitum SIPP; \"ya\" bila menuntut; pola sama dengan 3764)",
+   "kelompok": 1,
+   "butir": "pemicu layar maskan (tempat tinggal) selama iddah",
+   "panjang": 291
+  },
+  {
+   "no": 3403,
+   "nama": "PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT KISWAH (PAKAIAN) SELAMA IDDAH (OTOMATIS dari petitum SIPP; \"ya\" bila menuntut; pola sama dengan 3764)",
+   "kelompok": 1,
+   "butir": "pemicu layar kiswah (pakaian) selama iddah",
+   "panjang": 210
+  },
+  {
+   "no": 3404,
+   "nama": "PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT MUT'AH (OTOMATIS dari petitum SIPP; \"ya\" bila menuntut; pola sama dengan 3764)",
+   "kelompok": 1,
+   "butir": "pemicu layar mut'ah",
+   "panjang": 159
+  },
+  {
+   "no": 3405,
+   "nama": "PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT NAFKAH LAMPAU (MADLIYAH) (OTOMATIS dari petitum SIPP; \"ya\" bila menuntut; pola sama dengan 3764)",
+   "kelompok": 1,
+   "butir": "pemicu layar nafkah lampau (madliyah)",
+   "panjang": 288
+  },
+  {
+   "no": 3406,
+   "nama": "PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT MAHAR YANG MASIH TERHUTANG (OTOMATIS dari petitum SIPP; \"ya\" bila menuntut; pola sama dengan 3764)",
+   "kelompok": 1,
+   "butir": "pemicu layar mahar yang masih terhutang",
+   "panjang": 399
+  },
+  {
+   "no": 3407,
+   "nama": "PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT BIAYA HADHANAH ATAU NAFKAH ANAK (OTOMATIS dari petitum SIPP; \"ya\" bila menuntut; pola sama dengan 3764)",
+   "kelompok": 1,
+   "butir": "pemicu layar biaya hadhanah atau nafkah anak",
+   "panjang": 207
+  },
+  {
+   "no": 3408,
+   "nama": "PEMICU HAK BEKAS ISTRI: PETITUM MENUNTUT SITA JAMINAN (OTOMATIS dari petitum SIPP; \"ya\" bila menuntut sita)",
+   "kelompok": 1,
+   "butir": "pemicu layar sita jaminan hak bekas istri",
+   "panjang": 208
+  },
+  {
+   "no": 3410,
+   "nama": "PERTIMBANGAN AKIBAT CERAI LAIN PADA VARIAN MUT'AH IDDAH (OTOMATIS: hak asuh, nafkah anak, madliyah, harta bersama menurut petitum dan keputusan 4100, 4101, 4104, 4105)",
+   "kelompok": 2,
+   "butir": "pertimbangan tuntutan lain varian Mut'ah Iddah",
+   "panjang": 35991
+  },
+  {
+   "no": 3411,
+   "nama": "AMAR AKIBAT CERAI LAIN PADA VARIAN MUT'AH IDDAH (OTOMATIS: hak asuh, nafkah anak, harta bersama, menolak selebihnya; sesudah 4139)",
+   "kelompok": 2,
+   "butir": "amar tuntutan lain varian Mut'ah Iddah",
+   "panjang": 11782
+  },
+  {
+   "no": 3412,
+   "nama": "PERTIMBANGAN AKIBAT CERAI LAIN PADA CT EX OFFICIO MUT'AH IDDAH NAFKAH ANAK (OTOMATIS: hak asuh, madliyah, harta bersama menurut petitum dan keputusan)",
+   "kelompok": 2,
+   "butir": "pertimbangan tuntutan lain CT [01a] ex officio",
+   "panjang": 28516
+  },
+  {
+   "no": 3413,
+   "nama": "AMAR AKIBAT CERAI LAIN PADA CT EX OFFICIO MUT'AH IDDAH NAFKAH ANAK (OTOMATIS: hak asuh, madliyah, harta bersama, menolak selebihnya)",
+   "kelompok": 2,
+   "butir": "amar tuntutan lain CT [01a] ex officio",
+   "panjang": 11778
+  },
+  {
+   "no": 3414,
+   "nama": "PERTIMBANGAN AKIBAT CERAI LAIN PADA CG KUMULASI NAFKAH ISTRI (OTOMATIS: hak asuh, nafkah anak, harta bersama menurut petitum dan keputusan)",
+   "kelompok": 2,
+   "butir": "pertimbangan tuntutan lain CG kumulasi nafkah istri",
+   "panjang": 33922
+  },
+  {
+   "no": 3415,
+   "nama": "AMAR AKIBAT CERAI LAIN PADA CG KUMULASI NAFKAH ISTRI (OTOMATIS: hak asuh, nafkah anak, harta bersama, menolak selebihnya)",
+   "kelompok": 2,
+   "butir": "amar tuntutan lain CG kumulasi nafkah istri",
+   "panjang": 10873
+  },
+  {
+   "no": 3416,
+   "nama": "PERTIMBANGAN AKIBAT CERAI LAIN PADA CG KUMULASI HAK ASUH (OTOMATIS: nafkah anak, iddah, mut'ah, madliyah, harta bersama, waktu bayar)",
+   "kelompok": 2,
+   "butir": "pertimbangan tuntutan lain 1d hak asuh",
+   "panjang": 40638
+  },
+  {
+   "no": 3417,
+   "nama": "AMAR AKIBAT CERAI LAIN PADA CG KUMULASI HAK ASUH (OTOMATIS: nafkah anak, nafkah istri, harta bersama, menolak selebihnya; daftar bernomor otomatis)",
+   "kelompok": 2,
+   "butir": "amar tuntutan lain 1d hak asuh (daftar otomatis)",
+   "panjang": 11595
+  },
+  {
+   "no": 3418,
+   "nama": "PERTIMBANGAN AKIBAT CERAI LAIN PADA CG KUMULASI HAK ASUH DAN NAFKAH ANAK (OTOMATIS: iddah, mut'ah, madliyah, harta bersama, waktu bayar)",
+   "kelompok": 2,
+   "butir": "pertimbangan tuntutan lain 1d hak asuh + nafkah anak",
+   "panjang": 33163
+  },
+  {
+   "no": 3419,
+   "nama": "AMAR AKIBAT CERAI LAIN PADA CG KUMULASI HAK ASUH DAN NAFKAH ANAK (OTOMATIS: nafkah istri, harta bersama, menolak selebihnya; daftar bernomor otomatis)",
+   "kelompok": 2,
+   "butir": "amar tuntutan lain 1d hak asuh + nafkah anak (daftar otomatis)",
+   "panjang": 11055
+  },
+  {
+   "no": 3420,
+   "nama": "AMAR AKIBAT CERAI LAIN PADA CG KUMULASI HAK ASUH, NOMOR TETAP MULAI 4 (OTOMATIS: butir bernomor; diakhiri nomor butir biaya perkara)",
+   "kelompok": 2,
+   "butir": "amar tuntutan lain 1d hak asuh (nomor tetap 4)",
+   "panjang": 12033
+  },
+  {
+   "no": 3421,
+   "nama": "AMAR AKIBAT CERAI LAIN PADA CG KUMULASI HAK ASUH DAN NAFKAH ANAK, NOMOR TETAP MULAI 5 (OTOMATIS: butir bernomor; diakhiri nomor butir biaya perkara)",
+   "kelompok": 2,
+   "butir": "amar tuntutan lain 1d hak asuh + nafkah anak (nomor tetap 5)",
+   "panjang": 11367
+  },
+  {
+   "no": 3430,
+   "nama": "PEMICU ANAK: PETITUM MENUNTUT PENYERAHAN ANAK KEPADA PEMEGANG HADHANAH (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 4,
+   "butir": "pemicu layar penyerahan anak kepada pemegang hadhanah",
+   "panjang": 685
+  },
+  {
+   "no": 3431,
+   "nama": "PEMICU ANAK: PETITUM MENUNTUT KENAIKAN NAFKAH ANAK SETIAP TAHUN (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 4,
+   "butir": "pemicu layar kenaikan nafkah anak setiap tahun",
+   "panjang": 555
+  },
+  {
+   "no": 3432,
+   "nama": "PEMICU ANAK: PETITUM MENUNTUT BIAYA PENDIDIKAN DAN KESEHATAN ANAK (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 4,
+   "butir": "pemicu layar biaya pendidikan dan kesehatan anak",
+   "panjang": 491
+  },
+  {
+   "no": 3433,
+   "nama": "PEMICU ANAK: PETITUM MENUNTUT PEMOTONGAN LANGSUNG PENGHASILAN (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 4,
+   "butir": "pemicu layar pemotongan langsung penghasilan",
+   "panjang": 549
+  },
+  {
+   "no": 3434,
+   "nama": "PEMICU ANAK: PETITUM MENUNTUT NAFKAH LAMPAU ANAK (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 4,
+   "butir": "pemicu layar nafkah lampau anak",
+   "panjang": 650
+  },
+  {
+   "no": 3435,
+   "nama": "PEMICU ANAK: PETITUM MENUNTUT SITA JAMINAN NAFKAH ANAK (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 4,
+   "butir": "pemicu layar sita jaminan nafkah anak",
+   "panjang": 492
+  },
+  {
+   "no": 3440,
+   "nama": "PEMICU KEBENDAAN: PETITUM MENYEBUT UTANG BERSAMA (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menyebut utang/hutang/piutang)",
+   "kelompok": 3,
+   "butir": "pemicu layar utang bersama",
+   "panjang": 466
+  },
+  {
+   "no": 3441,
+   "nama": "PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT NAFKAH (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 5,
+   "butir": "pemicu layar nafkah",
+   "panjang": 431
+  },
+  {
+   "no": 3442,
+   "nama": "PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT NAFKAH LAMPAU (MADLIYAH) (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 5,
+   "butir": "pemicu layar nafkah lampau (madliyah)",
+   "panjang": 572
+  },
+  {
+   "no": 3443,
+   "nama": "PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT KISWAH (PAKAIAN) (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 5,
+   "butir": "pemicu layar kiswah (pakaian)",
+   "panjang": 449
+  },
+  {
+   "no": 3444,
+   "nama": "PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT TEMPAT KEDIAMAN (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 5,
+   "butir": "pemicu layar tempat kediaman",
+   "panjang": 517
+  },
+  {
+   "no": 3445,
+   "nama": "PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT BIAYA RUMAH TANGGA, PERAWATAN ATAU PENGOBATAN (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 5,
+   "butir": "pemicu layar biaya rumah tangga, perawatan atau pengobatan",
+   "panjang": 507
+  },
+  {
+   "no": 3446,
+   "nama": "PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT PEMOTONGAN LANGSUNG PENGHASILAN (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 5,
+   "butir": "pemicu layar pemotongan langsung penghasilan",
+   "panjang": 549
+  },
+  {
+   "no": 3447,
+   "nama": "PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT SITA JAMINAN (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 5,
+   "butir": "pemicu layar sita jaminan",
+   "panjang": 492
+  },
+  {
+   "no": 3448,
+   "nama": "PEMICU KELALAIAN KEWAJIBAN: PETITUM MENUNTUT UANG PAKSA (DWANGSOM) (OTOMATIS dari petitum dan rekonvensi SIPP; \"ya\" bila menuntut)",
+   "kelompok": 5,
+   "butir": "pemicu layar uang paksa (dwangsom)",
+   "panjang": 424
+  }
+ ],
+ "ubah": [
+  {
+   "no": 3760,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "5a7e954fdc42ff3b26d8f73faeaddd5b",
+   "baru_md5": "2f02874df8baf1085712c151a6de82ef",
+   "lama_panjang": 8627,
+   "baru_panjang": 9475
+  },
+  {
+   "no": 3761,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "98fe307fe753d8883830bdc965b3906d",
+   "baru_md5": "f36fe4107fdfce4dbec17d81b3bbbaed",
+   "lama_panjang": 8678,
+   "baru_panjang": 9526
+  },
+  {
+   "no": 3762,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "8955088e6b82dbc78d6063b01cbe622d",
+   "baru_md5": "19cd1856e3939b632325976ecd19f14d",
+   "lama_panjang": 12404,
+   "baru_panjang": 13252
+  },
+  {
+   "no": 3763,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "3ed67b0c27fd7e49ea2659756ad740e8",
+   "baru_md5": "1d0a94fe4e6fa5829356fef17f6cd2dc",
+   "lama_panjang": 9478,
+   "baru_panjang": 10326
+  },
+  {
+   "no": 3764,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "e0486dae86ce6dd31ca1f924510f4783",
+   "baru_md5": "a0a95454082976730559d79ae5baa163",
+   "lama_panjang": 9202,
+   "baru_panjang": 10050
+  },
+  {
+   "no": 3765,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "f809004328f8706c42f867b26e30803e",
+   "baru_md5": "e93ee8d5024245678100684ca25a71e3",
+   "lama_panjang": 10448,
+   "baru_panjang": 11296
+  },
+  {
+   "no": 3766,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "b2323616c763e4829b218e24a650a588",
+   "baru_md5": "826b7e45809906da6a21e458959bebce",
+   "lama_panjang": 11344,
+   "baru_panjang": 12192
+  },
+  {
+   "no": 3767,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "5167984bdfd63a583df5f2f85ae00087",
+   "baru_md5": "2368ce34ab7637bf274b0fdbf8e2e3f7",
+   "lama_panjang": 10650,
+   "baru_panjang": 11498
+  },
+  {
+   "no": 3768,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "b2de4f6c5a6876de5e33df24b20a48c1",
+   "baru_md5": "f525ae74bd661d79eb81501ff18fe987",
+   "lama_panjang": 9543,
+   "baru_panjang": 10391
+  },
+  {
+   "no": 3769,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "6a19cd17e9d1e2eaeb9147405d6a25a6",
+   "baru_md5": "9abc9309a26556f4117495f4c9313b2a",
+   "lama_panjang": 9202,
+   "baru_panjang": 10050
+  },
+  {
+   "no": 3770,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "8c6ddca545347054bc09366456af4616",
+   "baru_md5": "4f41e21df7ee094e03d8b4a8d4b22d54",
+   "lama_panjang": 10031,
+   "baru_panjang": 10879
+  },
+  {
+   "no": 3771,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "f70eb120df81812e4bdd2e669cc7949f",
+   "baru_md5": "41c5c305e106730577b7309aeed29bed",
+   "lama_panjang": 9773,
+   "baru_panjang": 10621
+  },
+  {
+   "no": 3772,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "238d619b627a6b073c1cdd04b5721c85",
+   "baru_md5": "ba9fe6e492b60d7bc5485971f8045e35",
+   "lama_panjang": 9106,
+   "baru_panjang": 9954
+  },
+  {
+   "no": 3773,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "51d6e29c430779c0c87ed48ddad8e947",
+   "baru_md5": "447a7ddd1191c1a57c49a1a0c7a9d2ac",
+   "lama_panjang": 9763,
+   "baru_panjang": 10611
+  },
+  {
+   "no": 3774,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "40402d92c863f9937fc164942c3ecd11",
+   "baru_md5": "3a373e8e6798d0343efec25807a59e5b",
+   "lama_panjang": 9029,
+   "baru_panjang": 9877
+  },
+  {
+   "no": 3775,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "3ca9a5b843c573cd4f980482e6f23123",
+   "baru_md5": "e60a14cd236b4f1a343b94a4db02efbd",
+   "lama_panjang": 8666,
+   "baru_panjang": 9514
+  },
+  {
+   "no": 3776,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "62656b3be64b2a6bf5f189ce7cbda950",
+   "baru_md5": "f73e92c29c7a3e0dad117487e515429d",
+   "lama_panjang": 9385,
+   "baru_panjang": 10233
+  },
+  {
+   "no": 3777,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "6e8dc111bd81d06fedc1e09a5b7dd290",
+   "baru_md5": "7e03791080d18b69b15eec33b3dafd26",
+   "lama_panjang": 8782,
+   "baru_panjang": 9630
+  },
+  {
+   "no": 3778,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "e12e7292d0206a08b094d6046dd6cbcc",
+   "baru_md5": "bc0c20da5574affcdf90b62a5a4b8905",
+   "lama_panjang": 9141,
+   "baru_panjang": 9989
+  },
+  {
+   "no": 3779,
+   "kelompok": 1,
+   "butir": "pola petitum hak bekas istri dan penjaga daftar pilihan bawaan",
+   "lama_md5": "ac096357c2ac09a9b36ebd3a5d726c87",
+   "baru_md5": "3bb9cad7e9647c3b9f592e325f087e30",
+   "lama_panjang": 8749,
+   "baru_panjang": 9597
+  },
+  {
+   "no": 4110,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "330753f09640361f5cd21c0d0c329690",
+   "baru_md5": "46eb13652a3e1c868037748dde6e79d1",
+   "lama_panjang": 22805,
+   "baru_panjang": 23124
+  },
+  {
+   "no": 4111,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "1fe7b9f4c11db7ff25a601777e73c6f9",
+   "baru_md5": "17261b554d42da0cd729cdf04efd428b",
+   "lama_panjang": 16481,
+   "baru_panjang": 16800
+  },
+  {
+   "no": 4112,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "dc302f9da1903fab7003b2ec6336a4b2",
+   "baru_md5": "cd9a9c313d604fd6a42b5ed816944900",
+   "lama_panjang": 17556,
+   "baru_panjang": 17875
+  },
+  {
+   "no": 4113,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "7ff592fb31678eac6a7317bcf597dcef",
+   "baru_md5": "dc8a00edbc3769683ac5c3dada9e6589",
+   "lama_panjang": 16965,
+   "baru_panjang": 17284
+  },
+  {
+   "no": 4114,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "96ced06213bae42f5fb30c7e5eb631d3",
+   "baru_md5": "8b925586cef80393e13f3cd2cc621e82",
+   "lama_panjang": 11075,
+   "baru_panjang": 11394
+  },
+  {
+   "no": 4115,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "b99e76ac771c24e07baaa73506cfd940",
+   "baru_md5": "bab90ca136a4a8a0cba6a73fc7d5136a",
+   "lama_panjang": 12321,
+   "baru_panjang": 12640
+  },
+  {
+   "no": 4116,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "71fd318769194901f841fc05c1fa800a",
+   "baru_md5": "b3ecb8527f1fba571d7fe3953f69e83d",
+   "lama_panjang": 10943,
+   "baru_panjang": 11262
+  },
+  {
+   "no": 4117,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "2d9f39375eb0a816961a94b3b7d7d1c5",
+   "baru_md5": "b877099aedb52ede26b79e0e86f36d7e",
+   "lama_panjang": 9858,
+   "baru_panjang": 10177
+  },
+  {
+   "no": 4118,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "360515bc02decd458a047c63098619b5",
+   "baru_md5": "50ae102b0ced8fb47cd61fcc489d9472",
+   "lama_panjang": 11688,
+   "baru_panjang": 12007
+  },
+  {
+   "no": 4119,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "060c11209bb79ca150b9d3380551540d",
+   "baru_md5": "4ccd9e88533d461fc5edc84c362308ce",
+   "lama_panjang": 54118,
+   "baru_panjang": 54437
+  },
+  {
+   "no": 4130,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "3339c3d032a1baca16b43bf635c905d8",
+   "baru_md5": "4433252fa6e4d5ce4522f53dde24aba3",
+   "lama_panjang": 9491,
+   "baru_panjang": 9810
+  },
+  {
+   "no": 4131,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "d9b7968366b008cf86fad52cdce638a6",
+   "baru_md5": "f1cc5df0a33e5415dcf81bd5ccc65c2b",
+   "lama_panjang": 9525,
+   "baru_panjang": 9844
+  },
+  {
+   "no": 4132,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "70afc24c94b10d520fbbbe8837d174c2",
+   "baru_md5": "d8c4e8fa8ea5dc60bbc6be08019926c6",
+   "lama_panjang": 10171,
+   "baru_panjang": 10490
+  },
+  {
+   "no": 4133,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "033c6f9bf0b9ae208b402d0bb3853b41",
+   "baru_md5": "abb63d856994e66e75ed4facf837391d",
+   "lama_panjang": 9408,
+   "baru_panjang": 9727
+  },
+  {
+   "no": 4134,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "d725712c494877642a37f9227f3fe964",
+   "baru_md5": "ce31d95de569ed6a1d217764877e9aaf",
+   "lama_panjang": 9203,
+   "baru_panjang": 9522
+  },
+  {
+   "no": 4138,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "99f7e0fb55fecd6c8a2522df8b73b538",
+   "baru_md5": "864ef72824969bfc74671e581bfda33d",
+   "lama_panjang": 11782,
+   "baru_panjang": 12101
+  },
+  {
+   "no": 4139,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "465a961641ae042eb43825dd4f45ec01",
+   "baru_md5": "1facc429dace8fbef58ea73494783808",
+   "lama_panjang": 10927,
+   "baru_panjang": 11336
+  },
+  {
+   "no": 4140,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "c80d5e5c792636c7f2d0b426fb4ccdaf",
+   "baru_md5": "2187680f8a638c2f915f402cd916d3e5",
+   "lama_panjang": 8961,
+   "baru_panjang": 9280
+  },
+  {
+   "no": 4141,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "4c19b9eacaa9939146c4db2e1b4b29c4",
+   "baru_md5": "a6674fe99227a5426bf4f6104bd12af5",
+   "lama_panjang": 8961,
+   "baru_panjang": 9280
+  },
+  {
+   "no": 4142,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "2c9d405da0ec95ccf80cded7957e47cf",
+   "baru_md5": "23601dac58058c6ccedca2c181f40656",
+   "lama_panjang": 8961,
+   "baru_panjang": 9280
+  },
+  {
+   "no": 4143,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "14232a4becd28953512220b66f528095",
+   "baru_md5": "f64fe944cfb51c26f786894aa10dcc66",
+   "lama_panjang": 8961,
+   "baru_panjang": 9280
+  },
+  {
+   "no": 4144,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "566e642a191971b71e6359871138717f",
+   "baru_md5": "1a84d570383215c1b65aee2993290a12",
+   "lama_panjang": 8961,
+   "baru_panjang": 9280
+  },
+  {
+   "no": 4145,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "52338485826a406401d24897a7cc5004",
+   "baru_md5": "d9d8fd54a45b145ddd8cc85a85e69d72",
+   "lama_panjang": 8961,
+   "baru_panjang": 9280
+  },
+  {
+   "no": 4146,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "799456b68389afdc9a282b59f396daf2",
+   "baru_md5": "af21cb68e3085fda31d5361fc246a313",
+   "lama_panjang": 9172,
+   "baru_panjang": 9491
+  },
+  {
+   "no": 4150,
+   "kelompok": 2,
+   "butir": "penjaga daftar pilihan bawaan keputusan dan waktu bayar",
+   "lama_md5": "5c1889632ed309c0adb0c2531709ac53",
+   "baru_md5": "d9ddb263b4c84099c0d9d7a2ae510393",
+   "lama_panjang": 9656,
+   "baru_panjang": 9975
+  },
+  {
+   "no": 4788,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "be3965b29d8e2a07e994a0965dc56393",
+   "baru_md5": "74ba670a43e8527129bc7cf68c2cfc66",
+   "lama_panjang": 3997,
+   "baru_panjang": 4122
+  },
+  {
+   "no": 4789,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "cb0eb96563b41fb1b4c0b2350ad32b7f",
+   "baru_md5": "6b8e384df63485de67859c242d35738a",
+   "lama_panjang": 3996,
+   "baru_panjang": 4121
+  },
+  {
+   "no": 4790,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "ed6015a5962efdeeb4e9babee8f6fe0a",
+   "baru_md5": "15ea27d9bd8e165fc926b76bfac528d0",
+   "lama_panjang": 3997,
+   "baru_panjang": 4122
+  },
+  {
+   "no": 4791,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "3281caa4b03a53987b2ec8b0e44cc96e",
+   "baru_md5": "efd7b61ffce12db5ea59893d41eebe54",
+   "lama_panjang": 3998,
+   "baru_panjang": 4123
+  },
+  {
+   "no": 4792,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "b230b951dd0ac34213e9d7d2373046fc",
+   "baru_md5": "42f95ff2b8381c112d4d06e229307e78",
+   "lama_panjang": 4341,
+   "baru_panjang": 4466
+  },
+  {
+   "no": 4793,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "31a616e60c504e68fa2a82f08da0dd87",
+   "baru_md5": "a9a8f05a35a16bae7acb9722c7aaedc5",
+   "lama_panjang": 5151,
+   "baru_panjang": 5276
+  },
+  {
+   "no": 4794,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "6156ddc095b3e90904cbd5adae95a514",
+   "baru_md5": "198e098662822a6c6fdb25652a1d3d75",
+   "lama_panjang": 5356,
+   "baru_panjang": 5481
+  },
+  {
+   "no": 4795,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "18b2597f3e4da3d7dfdf0ea672b3a7b9",
+   "baru_md5": "b2bce07e49036ac80dfe1efa02c90bc5",
+   "lama_panjang": 4415,
+   "baru_panjang": 4540
+  },
+  {
+   "no": 4796,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "defc08eea32bf44f001b97fb94f9be91",
+   "baru_md5": "74b6e929eda3d120be40b65877688104",
+   "lama_panjang": 4363,
+   "baru_panjang": 4488
+  },
+  {
+   "no": 4797,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "3179a04979933fbf7b1ecd4e9a0515c1",
+   "baru_md5": "e7708c9ef37ec1ae87807b04b2137c83",
+   "lama_panjang": 5138,
+   "baru_panjang": 5263
+  },
+  {
+   "no": 4798,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "1da48fe9ad9c9f059ea0d2b3068b007a",
+   "baru_md5": "f07f29a9d09421ba484098afce0d080a",
+   "lama_panjang": 5104,
+   "baru_panjang": 5229
+  },
+  {
+   "no": 4799,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "b2df31d219a25226e911720dee9c6da3",
+   "baru_md5": "aca9ce25c7ab12e5ce45e0ebddf9ee36",
+   "lama_panjang": 8416,
+   "baru_panjang": 8541
+  },
+  {
+   "no": 4800,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "f63a61ee6601d3495ddbdd4fdb9a05db",
+   "baru_md5": "d7918abe50b22159594ba19fa2b86cf2",
+   "lama_panjang": 7942,
+   "baru_panjang": 8067
+  },
+  {
+   "no": 4801,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "413ea40ed5160ec8a42f36ca40b103ac",
+   "baru_md5": "a52c0b995a85e502c3d3c34f3dfc1837",
+   "lama_panjang": 4212,
+   "baru_panjang": 4337
+  },
+  {
+   "no": 4802,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "0380cbd8b626001ef3cc931b4391f5e8",
+   "baru_md5": "7b19f6d00ac845acf1e42bbe99125b12",
+   "lama_panjang": 7713,
+   "baru_panjang": 7838
+  },
+  {
+   "no": 4803,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "8b920ca780e928830a7b88f8e017cfb4",
+   "baru_md5": "cd1df1db8e6abbaaf1fc3783c649ab48",
+   "lama_panjang": 4208,
+   "baru_panjang": 4333
+  },
+  {
+   "no": 4804,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "b0475c07748efb3a2af3b83cfcf7628d",
+   "baru_md5": "550e8ae61d4980284eb833d9798ccd27",
+   "lama_panjang": 9165,
+   "baru_panjang": 9290
+  },
+  {
+   "no": 4810,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "c0fc02241cd3fe1829c24d708d79ddb8",
+   "baru_md5": "68fac63c42521d05f43dd89e65df0a2d",
+   "lama_panjang": 6525,
+   "baru_panjang": 6650
+  },
+  {
+   "no": 4811,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "2ec54dfcd76fb82d646f153b39b25bfc",
+   "baru_md5": "8f04cbf4a9e1e8b43c05d8c772fdb0ce",
+   "lama_panjang": 6482,
+   "baru_panjang": 6607
+  },
+  {
+   "no": 4812,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "67a74659269ae77dd2a1191610bb157e",
+   "baru_md5": "d3858e51742222f2baa7d13f232a84de",
+   "lama_panjang": 5301,
+   "baru_panjang": 5426
+  },
+  {
+   "no": 4813,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "010ab0fe08ca193641245fa98a089d0a",
+   "baru_md5": "90137622d60b5f747b217ce7b9b07e62",
+   "lama_panjang": 6468,
+   "baru_panjang": 6593
+  },
+  {
+   "no": 4814,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "3c577a7b6c52c9e4007547cf539efec8",
+   "baru_md5": "caeb0c4cc9a859cb750de11c20fbddad",
+   "lama_panjang": 4983,
+   "baru_panjang": 5108
+  },
+  {
+   "no": 4823,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "01027c770602ef6049f9989f2f5492c0",
+   "baru_md5": "f14dee4a280326c5824f898b7b3b4548",
+   "lama_panjang": 4861,
+   "baru_panjang": 4937
+  },
+  {
+   "no": 4824,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "f64e74825022fc621ee58dd0f34c167d",
+   "baru_md5": "6bac0ba8d69cd426842e4c8f17d9afde",
+   "lama_panjang": 7886,
+   "baru_panjang": 7962
+  },
+  {
+   "no": 4825,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "cd44ff7511aa5637a03f9d261fe09c81",
+   "baru_md5": "85efc12ba6b33c6d1d1a4a54c2e5ec43",
+   "lama_panjang": 8321,
+   "baru_panjang": 8397
+  },
+  {
+   "no": 4826,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "c6a88cdd3a8e9e01a719f2d7f45a79d8",
+   "baru_md5": "6264db584866a624e54e016408039215",
+   "lama_panjang": 3982,
+   "baru_panjang": 4058
+  },
+  {
+   "no": 4827,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "8ad8f590746cd6cbaf75e919ead3c7c0",
+   "baru_md5": "5cf4e454228cf9309b691bde3ee27e5a",
+   "lama_panjang": 8092,
+   "baru_panjang": 8168
+  },
+  {
+   "no": 4828,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "64047b36b89f235e18714e1dff9fa404",
+   "baru_md5": "40b1e5f4a9cf7c7eef94f88369d8a361",
+   "lama_panjang": 3978,
+   "baru_panjang": 4054
+  },
+  {
+   "no": 4832,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "a3633d5b1648b98e58eb2dd5452293a3",
+   "baru_md5": "8f0ba5c6550a6adbb11615b9aca77e9a",
+   "lama_panjang": 4346,
+   "baru_panjang": 4422
+  },
+  {
+   "no": 4835,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "46daeb8298587d443231da6a71d0e07b",
+   "baru_md5": "1527ac2c45d966c56a02fac3686c1624",
+   "lama_panjang": 10557,
+   "baru_panjang": 10830
+  },
+  {
+   "no": 4836,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "15ba2e637e2ef5c1e1f530f054c3bceb",
+   "baru_md5": "38af3d2221f9328e6f755d27aba4c366",
+   "lama_panjang": 3964,
+   "baru_panjang": 4237
+  },
+  {
+   "no": 4837,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "321da3dd6316b08c28896b76bb79574f",
+   "baru_md5": "ac3654d6c20b42762de9c8d625b31fa9",
+   "lama_panjang": 6976,
+   "baru_panjang": 7249
+  },
+  {
+   "no": 4838,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "1cf915157dab1aee9b5586438a83e2a3",
+   "baru_md5": "b4fef88c65127b67526a2246bd40466e",
+   "lama_panjang": 4128,
+   "baru_panjang": 4401
+  },
+  {
+   "no": 4839,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "4c25887cc61c35725c78c77bf319995c",
+   "baru_md5": "9974f38873e272ae509213984e43bcf4",
+   "lama_panjang": 3983,
+   "baru_panjang": 4256
+  },
+  {
+   "no": 4840,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "6fa7cd66a2bc0c2715f44327d7b677ba",
+   "baru_md5": "f965e91572037829a6a104cb9ba54dea",
+   "lama_panjang": 6976,
+   "baru_panjang": 7249
+  },
+  {
+   "no": 4841,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "3c4c26ad82120cc0bea686cb208feab7",
+   "baru_md5": "5b397696672d9f268ca4189a05514297",
+   "lama_panjang": 4128,
+   "baru_panjang": 4401
+  },
+  {
+   "no": 4845,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "e46aa04d194903d63394139fb184f8eb",
+   "baru_md5": "525fe103488df719c3656a4fdf98ec60",
+   "lama_panjang": 3831,
+   "baru_panjang": 4104
+  },
+  {
+   "no": 4846,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "d4348bb9a6be648c63780a21f6f47467",
+   "baru_md5": "5ff7531c01e94d15de85ab84bceca539",
+   "lama_panjang": 3831,
+   "baru_panjang": 4104
+  },
+  {
+   "no": 4847,
+   "kelompok": 3,
+   "butir": "pola sita/utang/jaminan/batal berdiri sendiri",
+   "lama_md5": "7885a8a301dfd88688ddb4cf8229bceb",
+   "baru_md5": "a4a926fb094f9af215d7fe79a0e96455",
+   "lama_panjang": 3831,
+   "baru_panjang": 4104
+  }
+ ],
+ "rtf": [
+  {
+   "kode": "R001",
+   "rel": "1a Perceraian CT/[01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah - (3 Saksi).rtf",
+   "m0": "dc0ca284ca1a609cd4a6ded4a05cc1a2",
+   "m1": "ed8cfe281fdd974f4631715100089513",
+   "n": 2,
+   "jenis": "mi"
+  },
+  {
+   "kode": "R002",
+   "rel": "1a Perceraian CT/[01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah - (4 Saksi).rtf",
+   "m0": "5f199d63ddc8febaecbad2fc14d43aa0",
+   "m1": "dffa9db3c287156d7b3430169a1219f4",
+   "n": 2,
+   "jenis": "mi"
+  },
+  {
+   "kode": "R003",
+   "rel": "1a Perceraian CT/[01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah - (5 Saksi).rtf",
+   "m0": "ba567115191611244ed6f84cdac57026",
+   "m1": "1450a1e4460f7434d585b73ad2657ce0",
+   "n": 2,
+   "jenis": "mi"
+  },
+  {
+   "kode": "R004",
+   "rel": "1a Perceraian CT/[01] [Kabul Verstek] Cerai (Format Lengkap) - Mut'ah Iddah.rtf",
+   "m0": "8812d9a04e73cd4ee911dd2c13a737c9",
+   "m1": "e3c42306ef55099ec5a1157eb93a1f8f",
+   "n": 2,
+   "jenis": "mi"
+  },
+  {
+   "kode": "R005",
+   "rel": "1a Perceraian CT/[01c] [Kabul] Cerai (Format Lengkap) - T Tidak Hadir Setelah Mediasi - Mut'ah Iddah - (3 Saksi).rtf",
+   "m0": "b00b0cc92a482c055a2a9dff58834065",
+   "m1": "b47bb9017374da92512dd0fadee6966f",
+   "n": 2,
+   "jenis": "mi"
+  },
+  {
+   "kode": "R006",
+   "rel": "1a Perceraian CT/[01c] [Kabul] Cerai (Format Lengkap) - T Tidak Hadir Setelah Mediasi - Mut'ah Iddah - (4 Saksi).rtf",
+   "m0": "d50c6461ebbbbece3317746cf98098b0",
+   "m1": "8db1a3a6d254f91d6e74efa66d80a371",
+   "n": 2,
+   "jenis": "mi"
+  },
+  {
+   "kode": "R007",
+   "rel": "1a Perceraian CT/[01c] [Kabul] Cerai (Format Lengkap) - T Tidak Hadir Setelah Mediasi - Mut'ah Iddah - (5 Saksi).rtf",
+   "m0": "897006e90b83eccb748981ec9600f02d",
+   "m1": "5152fa5ff15e9fbcaa3a150ee1ac8ba1",
+   "n": 2,
+   "jenis": "mi"
+  },
+  {
+   "kode": "R008",
+   "rel": "1a Perceraian CT/[01c] [Kabul] Cerai (Format Lengkap) - T Tidak Hadir Setelah Mediasi - Mut'ah Iddah.rtf",
+   "m0": "0d106bb2ef31d0b7072c624f7a2c3483",
+   "m1": "7d35adaccf363486b3a3dd780b156451",
+   "n": 2,
+   "jenis": "mi"
+  },
+  {
+   "kode": "R009",
+   "rel": "1a Perceraian CT/[01a] [Kabul Verstek] CT - F (Ex Offiicio mutah iddah dan nafkah anak).rtf",
+   "m0": "87410531061099ad05120a98d02ec069",
+   "m1": "b4dd2ca94f4c3b776cb3191da872109d",
+   "n": 2,
+   "jenis": "ex"
+  },
+  {
+   "kode": "R010",
+   "rel": "1 Perceraian CG/[01d] [Kabul Verstek] Cerai (Format Lengkap) - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah).rtf",
+   "m0": "a1429526855bd27fb76e5e94ea9a6ce0",
+   "m1": "af60d063dfcd5b08a9f6acbafec1cd51",
+   "n": 2,
+   "jenis": "ni"
+  },
+  {
+   "kode": "R011",
+   "rel": "1 Perceraian CG/[02c] [Kabul] CG - Kumulasi Nafkah Istri (Madliyah, Iddah, Mutah) - Kontradiktoir.rtf",
+   "m0": "0675a7c1d9a71e4424fd56042afc7220",
+   "m1": "1dec0921564364b6722d58e650c000f2",
+   "n": 2,
+   "jenis": "ni"
+  },
+  {
+   "kode": "R012",
+   "rel": "1 Perceraian CG/[01a] [Kabul Verstek] Cerai - Alasan E (Qabla Ad Dukhul).rtf",
+   "m0": "3ea6fea145bfc628fe727720e30018a6",
+   "m1": "0e6455afa3937ff9b5a61158917ef4a9",
+   "n": 1,
+   "jenis": "qd"
+  },
+  {
+   "kode": "R013",
+   "rel": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[01] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak - Anak Belum Mumayyiz.rtf",
+   "m0": "53e7eb497ab941f3f47d4270389a1435",
+   "m1": "d3c4b5ca3161c35693854ed6319a652f",
+   "n": 2,
+   "jenis": "ha"
+  },
+  {
+   "kode": "R014",
+   "rel": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[01b] [Kabul Verstek] Putusan CG Kumulasi Hak Asuh Anak dan Nafkah Anak - Anak Belum Mumayyiz.rtf",
+   "m0": "b884c96c705bb6ef5bbd6c82a1730481",
+   "m1": "ab6973409e1040c952549c826df2214e",
+   "n": 2,
+   "jenis": "han"
+  },
+  {
+   "kode": "R015",
+   "rel": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[01c] [Kabul] Putusan CG Kumulasi Hak Asuh Anak - T Tidak Hadir Setelah Mediasi.rtf",
+   "m0": "de22f0d0f5ac44ee8ecdf07ca3e46763",
+   "m1": "8bde7d6ea27878dd5de2cde8432522ef",
+   "n": 2,
+   "jenis": "ha4"
+  },
+  {
+   "kode": "R016",
+   "rel": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[01d] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - T Tidak Hadir Setelah Mediasi.rtf",
+   "m0": "d52f1ca997c04b761ca6a27123648ff8",
+   "m1": "5756df84007ec58815622987fa5fe59b",
+   "n": 2,
+   "jenis": "han5"
+  },
+  {
+   "kode": "R017",
+   "rel": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02] [Kabul] Putusan CG Kumulasi Hak Asuh Anak - Kontradiktoir.rtf",
+   "m0": "492f033b488ab3559aa074bbdbafde21",
+   "m1": "7b8fafb098cd2f287e01e9dececa4a34",
+   "n": 2,
+   "jenis": "ha4"
+  },
+  {
+   "kode": "R018",
+   "rel": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak/[02b] [Kabul] Putusan CG Kumulasi Hak Asuh dan Nafkah Anak - Kontradiktoir.rtf",
+   "m0": "bfa1b7be58197fdd3a8306186d5eb4ed",
+   "m1": "121d08b0fdb44dca51e1a62ce480843b",
+   "n": 2,
+   "jenis": "han5"
+  },
+  {
+   "kode": "R019",
+   "rel": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS/BAS KUMULASI [2] BAS Putus Verstek CG Kumulasi Hak Asuh Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
+   "m0": "d73ad9b264deaf6a4d7b041b59822800",
+   "m1": "78e1f65755d8ef15784524e9e77d0989",
+   "n": 1,
+   "jenis": "bha"
+  },
+  {
+   "kode": "R020",
+   "rel": "1d Putusan Cerai Gugat Kumulasi Hak Asuh Anak - BAS/BAS KUMULASI [2b] BAS Putus Verstek CG Kumulasi Hak Asuh Anak dan Nafkah Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
+   "m0": "282c75886c3aa3080931a5cc61139507",
+   "m1": "f1dc75498f28b988e06a9bf21686cfdb",
+   "n": 1,
+   "jenis": "bhan"
+  },
+  {
+   "kode": "R021",
+   "rel": "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)/[2] BAS Putus Verstek CG Kumulasi Hak Asuh Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
+   "m0": "d73ad9b264deaf6a4d7b041b59822800",
+   "m1": "78e1f65755d8ef15784524e9e77d0989",
+   "n": 1,
+   "jenis": "bha"
+  },
+  {
+   "kode": "R022",
+   "rel": "BAS Kumulasi Cerai Gugat Verstek (Hak Asuh Anak)/[2b] BAS Putus Verstek CG Kumulasi Hak Asuh Anak dan Nafkah Anak - P Hadir & T Tidak Hadir (2 Saksi).rtf",
+   "m0": "c2adc314826dd57a5b92dcb5f21e6c28",
+   "m1": "47775d05f84602c81d6bcc7ce66fe169",
+   "n": 1,
+   "jenis": "bhan"
+  }
+ ],
+ "dependensi": [
+  46,
+  47,
+  53,
+  100,
+  104,
+  218,
+  222,
+  246,
+  1025,
+  1246,
+  1509,
+  2026,
+  3761,
+  3762,
+  3772,
+  4821,
+  5114,
+  5271,
+  7037,
+  7777,
+  8008,
+  8554,
+  8602,
+  9302,
+  9304,
+  9759,
+  9944
+ ],
+ "harap": "0|0|84|0|27|0",
+ "ulang": "0|35|0|84|27|0"
+}
