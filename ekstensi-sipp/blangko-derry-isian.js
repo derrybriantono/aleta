@@ -5027,53 +5027,129 @@
   }
   /**
    * Membuang PARAGRAF kalimat penutup keterangan saksi ("Bahwa cukup sekian", "sudah cukup", "tidak ada lagi, terima kasih") dari RTF cetak
-   * putusan - pola pembersih yang sama dengan editor saksi (bersihkanPenutup -> abt.js). Hanya paragraf yang SELURUHNYA kalimat penutup;
-   * ekor kalimat di tengah/akhir paragraf lain, sel tabel, dan paragraf yang memuat grup/kolom/gambar/bidang TIDAK disentuh (tidak aman
-   * dipotong dari RTF). Brace tiap paragraf yang dibuang harus seimbang sehingga RTF tetap sah. Murni: tanpa tulisan ke ABT/SIPP.
+   * putusan - pola pembersih yang sama dengan editor saksi (bersihkanPenutup -> abt.js). Hanya paragraf yang SELURUHNYA kalimat penutup
+   * (satu-satunya teks di paragraf itu); ekor kalimat di tengah/akhir paragraf lain, sel tabel, dan paragraf yang memuat grup/kolom/gambar/
+   * bidang TIDAK disentuh. Murni: tanpa tulisan ke ABT/SIPP.
+   *
+   * 21 Okt (x6): dulu RTF dipotong per \par dan paragraf yang kurung kurawalnya tidak seimbang dilewati. Padahal keterangan saksi dari
+   * variabel SQL 9259-9265 / list_keterangan ABT masuk SATU grup {...#9259#} dan tiap butir dipisah \par di DALAM grup itu, sehingga butir
+   * PERTAMA (membawa "{" pembuka grup) dan butir TERAKHIR (membawa "}" penutup grup) - tempat "Bahwa sudah cukup;" hampir selalu berada -
+   * lolos dari pembersihan. Kini RTF dipecah jadi token (kata kendali, kurung, teks); yang dibuang hanya TOKEN TEKS penutup beserta satu
+   * \par pemisahnya, sehingga kurung kurawal dan format paragraf tidak pernah terpotong:
+   *   - teks diikuti \par (tanpa kurung di antaranya)  -> teks dan \par sesudahnya dibuang (butir di tengah / butir pertama);
+   *   - teks diikuti kurung penutup grup (butir terakhir) -> teks dan \par SEBELUMNYA dibuang, sehingga butir sebelumnya menjadi akhir
+   *     paragraf dan tidak tersisa paragraf kosong; bila tidak ada \par sebelumnya hanya teksnya yang dibuang.
    */
   function bersihkanPenutupSaksiRtf(rtf) {
     const asalString = typeof rtf === "string";
     const sumber = latin1(rtf);
-    const polaPar = /\\par(?![a-zA-Z])/g;
-    const terlarang = /\\(?:cell|row|trowd|intbl|sect|page|pict|field|fldinst|bkmkstart|shp|object)(?![a-zA-Z])|\\\*/;
-    let hasil = "";
-    let awal = 0; // awal paragraf berjalan
-    let akhirSalin = 0;
+    const token = sumber.match(/\\[a-zA-Z]+-?\d* ?|\\'[0-9a-fA-F]{2}|\\[^a-zA-Z]|[{}]|[^\\{}]+/g) || [];
+    if (token.join("") !== sumber) return { rtf, jumlah: 0 };
+    const terlarang = /^\\(?:cell|nestcell|row|nestrow|trowd|intbl|sect|page|pict|field|fldinst|bkmkstart|shp|object|\*)(?![a-zA-Z])|^\\\*/;
+    const adalahPar = (t) => /^\\par(?![a-zA-Z])/.test(t);
+    const adalahKendali = (t) => t.charAt(0) === "\\";
+    const adalahKurung = (t) => t === "{" || t === "}";
+    // penanda butir "-" (disusul \tab) bukan isi: ia ikut dibuang bersama butirnya
+    const adalahPenandaButir = (t) => !adalahKendali(t) && !adalahKurung(t) && /^[\s\-\u2013\u2022*]*$/.test(t);
+    const adalahTab = (t) => /^\\tab(?![a-zA-Z])/.test(t);
+    const adaTeks = (t) => !adalahKendali(t) && !adalahKurung(t) && !adalahPenandaButir(t);
+    const hapus = new Set();
     let jumlah = 0;
-    let m;
-    while ((m = polaPar.exec(sumber))) {
-      const ujung = m.index + m[0].length;
-      const isi = sumber.slice(awal, m.index);
-      let ok = isi.length < 400 && !terlarang.test(isi);
-      if (ok) {
-        let dalam = 0;
-        for (let i = 0; i < isi.length && ok; i += 1) {
-          const c = isi[i];
-          if (c === "\\") i += 1;
-          else if (c === "{") dalam += 1;
-          else if (c === "}" && --dalam < 0) ok = false;
-        }
-        if (dalam !== 0) ok = false;
-      }
-      if (ok) {
-        const polos = isi
-          .replace(/\\'([0-9a-fA-F]{2})/g, (_x, h) => String.fromCharCode(parseInt(h, 16)))
-          .replace(/\\(?:~|tab)(?![a-zA-Z])/g, " ")
-          .replace(/\\[a-zA-Z]+-?\d* ?/g, "")
-          .replace(/[{}\\]/g, "")
-          .replace(/\s+/g, " ")
-          .trim()
-          .replace(/^\(?\d{1,2}\s*[.)]\s*/, "");
-        if (polos && polos.length < 160 && bersihkanPenutup(polos, "") === "") {
-          hasil += sumber.slice(akhirSalin, awal);
-          akhirSalin = ujung;
-          jumlah += 1;
+    for (let i = 0; i < token.length; i += 1) {
+      const t = token[i];
+      if (!adaTeks(t)) continue;
+      const isi = t.trim().replace(/^\(?\d{1,2}\s*[.)]\s*/, "");
+      if (!isi || isi.length >= 160 || bersihkanPenutup(isi, "") !== "") continue;
+      // paragraf yang memuat teks ini: dari \par sebelumnya (a) sampai \par sesudahnya (b); teks ini harus SATU-SATUNYA teks di dalamnya
+      let a = i - 1;
+      let ok = true;
+      for (; a >= 0 && !adalahPar(token[a]); a -= 1) {
+        if (adaTeks(token[a]) || terlarang.test(token[a])) {
+          ok = false;
+          break;
         }
       }
-      awal = ujung;
+      let b = i + 1;
+      for (; ok && b < token.length && !adalahPar(token[b]); b += 1) {
+        if (adaTeks(token[b]) || terlarang.test(token[b])) ok = false;
+      }
+      if (!ok) continue;
+      const antaraSesudah = token.slice(i + 1, b);
+      const kurungSesudah = antaraSesudah.some(adalahKurung);
+      // penanda butir ("-" dan \tab) yang mendahului teks di paragraf yang sama ikut dibuang
+      const penanda = [];
+      for (let k = a + 1; k < i; k += 1) if (adalahPenandaButir(token[k]) || adalahTab(token[k])) penanda.push(k);
+      if (b < token.length && !kurungSesudah) {
+        // butir di tengah / pertama: buang penanda + teks + \par pemisah sesudahnya
+        penanda.forEach((k) => hapus.add(k));
+        hapus.add(i);
+        hapus.add(b);
+      } else {
+        // butir terakhir (disusul kurung penutup grup / akhir berkas): buang penanda + teks + \par sebelumnya bila antara \par itu dan teks
+        // hanya ada penanda butir / \tab / spasi (kata kendali format paragraf tidak boleh tertinggal tanpa \par-nya)
+        penanda.forEach((k) => hapus.add(k));
+        hapus.add(i);
+        const antaraSebelum = a >= 0 ? token.slice(a + 1, i) : null;
+        if (a >= 0 && antaraSebelum.every((x) => adalahPenandaButir(x) || adalahTab(x))) hapus.add(a);
+      }
+      jumlah += 1;
     }
     if (!jumlah) return { rtf, jumlah: 0 };
-    const baru = hasil + sumber.slice(akhirSalin);
+    const baru = token.filter((_x, i) => !hapus.has(i)).join("");
+    return { rtf: asalString ? baru : bufDariLatin1(baru), jumlah };
+  }
+  /**
+   * 21 Okt (x6): BAS - tabel tanya-jawab saksi (variabel tanya_jawab bertanda multi_sidang 'tanyajawab', mis. 5058 / 6120) dicetak ABT per
+   * pasangan baris (Abt_model::kolom_kode_A4 / kolom_kode_A4s): baris 1 = pertanyaan (\irow0), baris 2 = "- " + jawaban (\irow1\lastrow),
+   * masing-masing berakhir \row. Pasangan yang jawabannya SELURUHNYA kalimat penutup ("Sudah cukup;" atas "Apakah masih ada yang ingin
+   * Saudara sampaikan?") dibuang utuh, pertanyaannya ikut. Pasangan lain, tabel lain, dan teks di luar tabel tidak disentuh. Murni.
+   */
+  function bersihkanPenutupTabelRtf(rtf) {
+    const asalString = typeof rtf === "string";
+    const sumber = latin1(rtf);
+    const token = sumber.match(/\\[a-zA-Z]+-?\d* ?|\\'[0-9a-fA-F]{2}|\\[^a-zA-Z]|[{}]|[^\\{}]+/g) || [];
+    if (token.join("") !== sumber) return { rtf, jumlah: 0 };
+    const adalah = (t, kata) => new RegExp("^\\\\" + kata + "(?![a-zA-Z0-9])").test(t);
+    const potong = [];
+    let mulai = 0;
+    token.forEach((t, i) => {
+      if (adalah(t, "row")) {
+        potong.push([mulai, i]);
+        mulai = i + 1;
+      }
+    });
+    // teks tiap sel (dipisah \cell) dari satu potongan baris
+    const sel = (a, b) => {
+      const hasil = [];
+      let buf = "";
+      for (let i = a; i <= b; i += 1) {
+        const t = token[i];
+        if (adalah(t, "cell")) {
+          hasil.push(buf.replace(/\s+/g, " ").trim());
+          buf = "";
+        } else if (/^\\'[0-9a-fA-F]{2}$/.test(t)) buf += String.fromCharCode(parseInt(t.slice(2), 16));
+        else if (t.charAt(0) !== "\\" && t !== "{" && t !== "}") buf += t;
+      }
+      return hasil;
+    };
+    const punya = (a, b, kata) => token.slice(a, b + 1).some((t) => adalah(t, kata));
+    const hapus = new Set();
+    let jumlah = 0;
+    for (let k = 0; k + 1 < potong.length; k += 1) {
+      const [a1, b1] = potong[k];
+      const [a2, b2] = potong[k + 1];
+      if (!punya(a1, b1, "irow0") || !punya(a2, b2, "irow1") || !punya(a2, b2, "lastrow")) continue;
+      const tanya = sel(a1, b1)[0] || "";
+      const sel2 = sel(a2, b2);
+      const jawab = sel2.length ? sel2[sel2.length - 1] : "";
+      if (!jawab || jawab.length >= 400 || sel2.length !== 2) continue;
+      if (bersihkanPenutup(jawab, tanya) !== "") continue;
+      for (let i = a1; i <= b2; i += 1) hapus.add(i);
+      jumlah += 1;
+      k += 1;
+    }
+    if (!jumlah) return { rtf, jumlah: 0 };
+    const baru = token.filter((_x, i) => !hapus.has(i)).join("");
     return { rtf: asalString ? baru : bufDariLatin1(baru), jumlah };
   }
   async function ambilRtf(paksa) {
@@ -5090,6 +5166,11 @@
     S.prat.penutupDibuang = 0;
     if (S.blangko.jenis === "put") {
       const tutup = bersihkanPenutupSaksiRtf(h.rtf);
+      h.rtf = tutup.rtf;
+      S.prat.penutupDibuang = tutup.jumlah;
+    } else if (S.blangko.jenis === "bas") {
+      // 21 Okt (x6): BAS - pasangan baris tabel tanya-jawab saksi yang jawabannya hanya kalimat penutup tidak ikut tercetak.
+      const tutup = bersihkanPenutupTabelRtf(h.rtf);
       h.rtf = tutup.rtf;
       S.prat.penutupDibuang = tutup.jumlah;
     }
@@ -7277,7 +7358,7 @@
       tuntutan: S.susunan ? keadaanTuntutan().map((t) => ({ pemicu: t.pemicu, status: t.status, jabatan: t.jabatan, dipilih: t.dipilih })) : [],
       tandaKosong: Array.from(S.tandaKosong),
     }),
-    murni: { bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
+    murni: { bersihkanHeaderPenanda, bersihkanPenutupSaksiRtf, bersihkanPenutupTabelRtf, perkiraanSidang, keadaanBerlakuMurni, golonganIsianMurni, tuntutanAktifMurni, uraiKutipanTuntutan, rtfKeHtml, rtfKeTeks, uraiRtf, cekPenandaRtf, susunKalimatBukti, uraiBukti, kalimatBukti, jenisBukti, sisipkanTtdRtf, ukuranTtdBerlaku, berhakCap, UKURAN_TTD_CAP_BAWAAN, ukuranPng, bersihkanPenutup, gantiKalimat, mirip, keIso, namaUnduhan, hurufDiLuarAbt, normalAbt, hurufAlasanDari, nilaiSimpan8503, jenisKelompok, namaTampil, adalahBlangkoIkrar, uraikanIkrar, kumpulkanIkrar, saranIkrarCadangan, saranDariPortal, kelompokUntukSaran, barisSidangSaran, alamatEditVariabel, ramahkanAlasan, pilihVarianSaksi },
   };
   globalThis.aletaBlangkoDerryIsian = apiIsian;
   if (!mulai()) {

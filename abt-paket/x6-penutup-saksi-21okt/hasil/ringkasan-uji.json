@@ -1,0 +1,58 @@
+{
+  "tanggal": "2026-10-21",
+  "sumber_data": "abt_keterangan_saksi server (baca saja, lihat-jejak.sh): 69.427 baris, 2.340 perkara, 4.789 kelompok saksi (perkara+saksi); salinan lokal di luar repo",
+  "ukur_pola_penutup": {
+    "baris_jawaban": 69427,
+    "penutup_utuh_tertangkap_pola_js": 4334,
+    "jawaban_kosong_tertangkap_sebagai_kosong": 124,
+    "bentuk_penutup_berbeda": 10,
+    "baris_dengan_pertanyaan_penutup": 4337,
+    "pertanyaan_penutup_tertangkap": 4334,
+    "pertanyaan_penutup_lolos": 3,
+    "catatan_lolos": "3 baris berpertanyaan mirip penutup ('Apakah masih ada yang menyebabkan ...') adalah keterangan perkara, bukan penutup",
+    "penutup_lolos_deteksi": 0,
+    "bentuk_sengaja_dibiarkan": 59,
+    "contoh_dibiarkan": ["saya tidak sanggup lagi; (463x, jawaban atas 'masih sanggup mendamaikan?')", "selama pisah ... sudah tidak ada komunikasi; (2.125x)", "tidak ada pekerjaan lain; / tidak ada halangan secara hukum;"],
+    "bentuk_penutup_tertangkap": ["sudah cukup; (4.291x)", "sudah cukup ; (8)", "tidak ada, sudah cukup; (7)", "tidak ada, sudah cukup (6)", "sudah cukup (6)", "sudah cukup. (5)", "cukup sekian; (5)", "tidak, sudah cukup; (3)", "tidak ada, sudah cukup. (2)", "tidak ada, cukup. (1)"],
+    "pemotongan_keliru_ditemukan": 1,
+    "pemotongan_keliru_contoh": "jawaban 'nafkah ... tidak<baris baru>cukup;' kehilangan 'cukup;' karena pecahan baris dikira penutup - diperbaiki (baris penutup hanya dibuang sesudah kalimat yang selesai)",
+    "penutup_sebagian_dalam_satu_jawaban": 0
+  },
+  "kesetaraan_pola_sql_js": {
+    "string_diuji": 32896,
+    "penutup_menurut_js": 210,
+    "beda_di_mariadb_10_4": 0,
+    "beda_di_server_mariadb_5_5_68": 0
+  },
+  "fungsi_baru_vs_lama_pada_data_nyata": {
+    "kelompok_saksi": 4789,
+    "keluaran_fungsi_baru_sama_dengan_fungsi_lama_atas_tabel_tanpa_baris_penutup": 4789,
+    "beda": 0
+  },
+  "server_baca_saja": {
+    "kelompok_saksi_mencetak_butir_penutup_sebelum_paket": 4179,
+    "dari_kelompok": 4789,
+    "prasyarat": "1|0|1|0|7|20"
+  },
+  "isian_tersimpan_masih_memuat_penutup": {
+    "baris": 4334,
+    "perkara": 2057,
+    "perkara_belum_putus": 25,
+    "baris_perkara_belum_putus": 48,
+    "perkara_putus_30_hari_terakhir": 65,
+    "baris_putus_30_hari_terakhir": 139,
+    "catatan": "tidak diubah oleh paket; hanya cetakan/penyusunan baru yang bersih. Untuk perkara berjalan yang memakai blangko non-Derry (variabel tanya_jawab bawaan ABT) hanya Rapikan/Input ke ABT yang membersihkan isian tersimpan"
+  },
+  "render_php56_putusan_cg_verstek_2_saksi": {
+    "blangko": "[01] [Kabul Verstek] Cerai (Format Lengkap) CG",
+    "data": "baris saksi sintetis (bukan data perkara) pada perkara uji laptop",
+    "sebelum": {"butir_penutup": 2, "contoh": ["Bahwa sudah cukup;", "Bahwa tidak ada, sudah cukup."]},
+    "sesudah_fungsi_sql_baru": {"butir_penutup": 0, "butir_perkara_utuh": ["tidak sanggup lagi (jawaban atas pertanyaan mendamaikan)", "...nafkah ... tidak cukup; (baris terbelah, utuh)"]},
+    "ekstensi_pembersih_rtf_atas_keluaran_lama": {"dibuang": 4, "kurung_seimbang": true, "catatan": "4 = 2 butir terlihat + 2 salinan di tujuan tersembunyi isianasal"}
+  },
+  "render_php56_bas_cg_2_saksi": {
+    "pasangan_baris_tabel_dibuang_pembersih_ekstensi": 2,
+    "baris_tabel": "18 -> 14",
+    "pertanyaan_dan_jawaban_perkara_utuh": true
+  }
+}
