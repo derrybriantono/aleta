@@ -163,6 +163,8 @@ const BERKAS = [
   "putusan-sipp.css",
   // Pratinjau BAS/relaas di SIPP sebelum diunduh (20 Okt 2026).
   "pratinjau-bas-relaas.js",
+  // Unggah hasil mediasi ke arsip perkara, tepat di bawah "Edit Hasil Mediasi" (21 Okt 2026).
+  "mediasi-arsip.js",
   // Tombol "Tarik data" di kepala halaman perkara SIPP (21 Okt 2026): menarik e-Court satu perkara saja,
   // di sela penarikan utama (antrean & batas laju di server); sebelah kiri "Selamat Datang <pengguna>".
   "tarik-satu-perkara.js",
