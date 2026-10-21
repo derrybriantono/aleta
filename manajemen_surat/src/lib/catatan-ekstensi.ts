@@ -57,6 +57,17 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.25",
+    dirilis: "2026-10-21T15:12:00+08:00",
+    judul: "Tuntutan, penetapan dan pratinjau dokumen lebih tepat",
+    butir: [
+      "Blangko ABT by Derry: tuntutan yang tidak diminta tidak lagi tampil sebagai ditetapkan karena jabatan; keputusan atas tuntutan dipilih dari satu pilihan (dengan alasan bila ditolak atau tidak dapat diterima); karena jabatan hanya lewat saklar hakim.",
+      "Blangko ABT by Derry dibuka di Sidang hari ini; Pilih tanggal cukup diisi satu tanggal.",
+      "Penetapan Otomatis di SIPP terlipat bawaan; tombolnya tidak tampil bila PMH, PPP, PJS dan PHS sudah tercatat dan e-Doc-nya lengkap.",
+      "Pratinjau dokumen sebelum unduh untuk semua dokumen SIPP: BAS, relaas, putusan dan anonimisasi, gugatan/permohonan, penetapan PMH/PPP/PJS/PHS, e-Doc e-Court, arsip dan cetakan RTF; berkas diambil lewat jalur latar ekstensi sehingga pengelola unduhan tidak merebutnya.",
+    ],
+  },
+  {
     versi: "1.205.24",
     dirilis: "2026-10-21T12:48:00+08:00",
     judul: "Isian dan putusan mengikuti tuntutan dalam petitum",
