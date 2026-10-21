@@ -164,8 +164,12 @@ async function keadaan(nomorPerkaraMentah) {
   const row = rows && rows[0];
   if (!row) return null;
 
+  // Tarikan satu perkara dari kepala SIPP (ecourtTarikSatuService) memakai tabel
+  // ini dengan status sendiri; layar lama membacanya sebagai menunggu/dikerjakan.
+  const status = { sela: "menunggu", "sela-jalan": "dikerjakan" }[cleanText(row.status)] || cleanText(row.status);
+
   return {
-    status: cleanText(row.status),
+    status,
     dimintaPada: botDb.fromMysqlDate(row.diminta_pada),
     dikerjakanPada: botDb.fromMysqlDate(row.dikerjakan_pada),
     selesaiPada: botDb.fromMysqlDate(row.selesai_pada),

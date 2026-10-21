@@ -3485,6 +3485,35 @@ router.get("/ecourt/permintaan", requireInternalToken, async (req, res) => {
   }
 });
 
+/**
+ * Tarik data SATU perkara dari kepala halaman perkara SIPP (21 Okt 2026).
+ *
+ * Antrean satu pintu di sela penarikan utama - aturannya di
+ * ecourtTarikSatuService (jangan menghitung ulang di sini). `paksa` hanya
+ * dikirim portal untuk Admin/Super Admin. Bot menjawab 200 untuk semua hasil
+ * yang wajar (segar, bukan e-Court, diantrekan); 500 hanya untuk galat.
+ */
+router.post("/ecourt/tarik-satu", requireInternalToken, async (req, res) => {
+  try {
+    const hasil = await require("../services/ecourtTarikSatuService").minta({
+      nomorPerkara: String(req.body?.nomorPerkara || ""),
+      olehSiapa: String(req.body?.olehSiapa || ""),
+      paksa: req.body?.paksa === true,
+    });
+    res.json(hasil);
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
+router.get("/ecourt/tarik-satu", requireInternalToken, async (req, res) => {
+  try {
+    res.json(await require("../services/ecourtTarikSatuService").keadaan(String(req.query.nomor || "")));
+  } catch (error) {
+    res.status(500).json({ ok: false, error: String(error.message || error).slice(0, 300) });
+  }
+});
+
 router.get("/sipp/berkas", requireInternalToken, async (req, res) => {
   try {
     const hasil = await sippKonteksService.getBerkas(
