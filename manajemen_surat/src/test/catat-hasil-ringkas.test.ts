@@ -123,7 +123,7 @@ describe("langsung dieksekusi, ringkasannya sesudah menulis (butir 13, 30 Sep 20
     expect(ringkas.match(/const kirim = useCallback\(/g)?.length).toBe(1);
     expect(ringkas).toContain("onClick={() => void kirim()}");
     expect(ringkas.match(/kering: false,/g)?.length).toBe(2);
-    expect(ringkas).toContain('{sibuk ? "Menulis…" : jalan === "tunda" ? "Tunda sekarang" : "Catat putus"}');
+    expect(ringkas).toContain('{sibuk ? "Menyimpan…" : hasil && !hasil.ok ? "Coba lagi" : "Simpan"}');
   });
 
   it("tombolnya mati selama isian belum lengkap atau sedang menulis, dan tekan kedua ditolak", () => {
@@ -131,11 +131,14 @@ describe("langsung dieksekusi, ringkasannya sesudah menulis (butir 13, 30 Sep 20
     expect(ringkas).toContain("if (!keadaan || sibuk || sudahTertulis) return;");
   });
 
-  it("sesudah tertulis borangnya berganti ringkasan dari jawaban server", () => {
+  it("sesudah tertulis borangnya berganti konfirmasi singkat, tanpa daftar tabel (22 Okt 2026)", () => {
     expect(ringkas).toContain("if (isi.ok && isi.kering !== true) {");
-    expect(ringkas).toContain("langkahUntukPetugas(hasil?.selesai).map(");
-    expect(ringkas).toContain('aria-label="Yang ditulis ke SIPP"');
-    // Ringkasan itu cabang TERSENDIRI - tidak ada tombol tulis di dalamnya.
+    // Daftar "Yang ditulis ke SIPP" (nama tabel) sudah dibuang dari menu ini;
+    // yang tertinggal hanya kalimat "ditunda ke ..." / "Putusan ... tercatat".
+    expect(ringkas).not.toContain("langkahUntukPetugas(");
+    expect(ringkas).not.toContain("Yang ditulis ke SIPP");
+    expect(ringkas).toContain("data-konfirmasi-simpan");
+    // Konfirmasi itu cabang TERSENDIRI - tidak ada tombol tulis di dalamnya.
     const i = ringkas.indexOf("if (sudahTertulis) {");
     const j = ringkas.indexOf("return (", ringkas.indexOf("return (", i) + 1);
     expect(i).toBeGreaterThan(-1);

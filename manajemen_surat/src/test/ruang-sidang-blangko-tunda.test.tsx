@@ -265,7 +265,7 @@ describe("blangko Tunda sidang: ruang sidang + sidang keliling", () => {
       fireEvent.change(agenda, { target: { value: "__ketik__" } });
       fireEvent.change(screen.getByLabelText("Agenda sidang berikutnya"), { target: { value: "Pembacaan Gugatan" } });
     }
-    fireEvent.click(screen.getByRole("button", { name: "Tunda sekarang" }));
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
     await waitFor(() => expect(kiriman).toHaveLength(1));
     expect(kiriman[0]).toMatchObject({ ruanganIdBerikut: 3, sidangKelilingBerikut: true });
   });
@@ -323,8 +323,8 @@ describe("blangko Tunda sidang: ruang sidang + sidang keliling", () => {
     await screen.findByLabelText("Ruang sidang", {}, { timeout: 10000 });
     const tanggal = document.querySelector('input[type="date"]') as HTMLInputElement;
     expect(tanggal.value).toBe("2026-10-01");
-    await waitFor(() => expect((screen.getByRole("button", { name: "Catat putus" }) as HTMLButtonElement).disabled).toBe(false));
-    fireEvent.click(screen.getByRole("button", { name: "Catat putus" }));
+    await waitFor(() => expect((screen.getByRole("button", { name: "Simpan" }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
     await waitFor(() => expect(kiriman).toHaveLength(1));
     expect(kiriman[0]).toMatchObject({ tanggalPutus: "2026-10-01", statusPutusanId: 62 });
   });

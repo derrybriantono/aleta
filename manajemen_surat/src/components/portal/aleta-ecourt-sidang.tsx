@@ -8193,7 +8193,7 @@ export function AletaEcourtSidang({
                               // dijaga sebagai janji bahwa sidang yang sudah tercatat
                               // tidak pernah ditawari penundaan kedua.
                               tampil(tampilan, "tombol-tunda-putus") ? (
-                              <span className="inline-flex align-middle">
+                              <span className="inline-flex align-middle" data-tombol-tunda-putus="">
                                 <button
                                   type="button"
                                   onClick={() =>

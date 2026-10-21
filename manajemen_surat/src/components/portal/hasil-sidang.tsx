@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, FileSearch, Gavel, Info, PauseCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { KabarDiantrekan, TanyaJamKerja, type PilihJamKerja } from "@/components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiPath } from "@/lib/base-path";
+import { sebutTanggalPanjang } from "@/lib/hari-libur";
 import { adaHasilSidang, hasilSidangPutusan } from "@/lib/hasil-sidang";
 import { kalimatLangkah, langkahUntukPetugas } from "@/lib/ringkasan-langkah-sipp";
 import {
@@ -1189,7 +1190,19 @@ export function CatatHasilRingkas({
   const [keadaan, setKeadaan] = useState<KeadaanSidang | null>(null);
   const [riwayat, setRiwayat] = useState<RiwayatTunda>(null);
   const [galatMuat, setGalatMuat] = useState<string | null>(null);
+  /** Dinaikkan oleh "Coba lagi" supaya jadwal dibaca ulang tanpa menutup menu. */
+  const [muatKe, setMuatKe] = useState(0);
   const [status, setStatus] = useState<StatusPutusan[]>([]);
+
+  // Menu ini tidak punya tombol Tutup (22 Okt 2026): tertutup sendiri sesudah
+  // tersimpan, dan bila ditekan di luarnya atau Esc tanpa menyimpan.
+  const wadah = useRef<HTMLDivElement | null>(null);
+  const tutupRef = useRef(onTutup);
+  useEffect(() => {
+    tutupRef.current = onTutup;
+  }, [onTutup]);
+  /** Penjaga SINKRON klik ganda: state `sibuk` baru berlaku sesudah digambar ulang. */
+  const sedangKirim = useRef(false);
 
   const [alasanTundaIsi, setAlasanTunda] = useState("");
   const [tanggalBerikutIsi, setTanggalBerikut] = useState("");
@@ -1305,7 +1318,7 @@ export function CatatHasilRingkas({
         setGalatMuat(e instanceof Error ? e.message : "Jadwal sidang tidak dapat dibaca.");
       }
     })();
-  }, [jadwalId]);
+  }, [jadwalId, muatKe]);
 
   useEffect(() => {
     if (jalan !== "putus") return;
@@ -1390,6 +1403,9 @@ export function CatatHasilRingkas({
 
   const kirim = useCallback(async (pilihJam?: PilihJamKerja) => {
     if (!keadaan || sibuk || sudahTertulis) return;
+    // Klik ganda dalam satu helaan napas: `sibuk` belum sempat digambar ulang.
+    if (sedangKirim.current) return;
+    sedangKirim.current = true;
     setSibuk(true);
     try {
       const alamat = jalan === "tunda" ? "/api/aleta-ecourt/sidang-tunda" : "/api/aleta-ecourt/sidang-putus";
@@ -1441,6 +1457,7 @@ export function CatatHasilRingkas({
     } catch (e) {
       setHasil({ ok: false, alasan: e instanceof Error ? e.message : "Permintaan gagal." });
     } finally {
+      sedangKirim.current = false;
       setSibuk(false);
     }
   }, [
@@ -1469,80 +1486,117 @@ export function CatatHasilRingkas({
         ? ikrarDilaksanakan
         : Boolean(statusId && tanggalPutus);
 
+  // TERTUTUP SENDIRI - tanpa tombol Tutup (permintaan hakim, 22 Okt 2026).
+  // Ditekan di luar menu atau Esc menutupnya tanpa menyimpan; selama server
+  // sedang menulis, keduanya diabaikan supaya tulisan yang berjalan tidak
+  // kehilangan layarnya. Tombol tunda | putus pada baris tidak dihitung "di
+  // luar": menekannya sendiri yang membuka atau mengganti menu.
+  useEffect(() => {
+    const luar = (e: MouseEvent) => {
+      const sasaran = e.target;
+      if (!(sasaran instanceof Element) || sasaran === document.documentElement) return;
+      if (sedangKirim.current) return;
+      const kotak = wadah.current?.closest("td") ?? wadah.current;
+      if (kotak?.contains(sasaran)) return;
+      if (sasaran.closest("[data-tombol-tunda-putus]")) return;
+      tutupRef.current();
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || sedangKirim.current) return;
+      tutupRef.current();
+    };
+    document.addEventListener("mousedown", luar);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", luar);
+      document.removeEventListener("keydown", esc);
+    };
+  }, []);
+
+  // Catatan tambahan dari server yang layak dibaca sebelum menu hilang.
+  const catatanSelesai: string[] = [];
+  if (sudahTertulis) {
+    if (hasil?.formIkrar && !hasil.formIkrar.ok) {
+      catatanSelesai.push("Form ikrar talak di SIPP belum terisi - isi dari baris sidang ini.");
+    }
+    if (hasil?.edocIkrar && !hasil.edocIkrar.kering && !hasil.edocIkrar.ok) {
+      const sebab = hasil.edocIkrar.pesan ?? hasil.edocIkrar.alasan;
+      catatanSelesai.push(
+        `e-Doc penetapan ikrar belum terunggah${sebab ? `: ${sebab}` : "."} Unggah lewat tombol Isi form ikrar di baris sidang ini.`
+      );
+    }
+    if (hasil?.antrian && !hasil.antrian.ok) catatanSelesai.push("Antrian sidang belum ikut ditandai selesai.");
+  }
+  const catatanLain = sudahTertulis ? (hasil?.andaian ?? []) : [];
+  const perluDibaca = catatanSelesai.length > 0 || catatanLain.length > 0 || Boolean(hasil?.diantrekan);
+
+  useEffect(() => {
+    if (!sudahTertulis) return;
+    const pewaktu = setTimeout(() => tutupRef.current(), perluDibaca ? 12000 : 1800);
+    return () => clearTimeout(pewaktu);
+  }, [sudahTertulis, perluDibaca]);
+
   if (galatMuat) {
     return (
-      <div className="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+      <div
+        ref={wadah}
+        data-menu-tunda-putus=""
+        role="alert"
+        className="flex flex-wrap items-start gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
+      >
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
         <span>{galatMuat}</span>
-        <Button size="sm" variant="ghost" className="ml-auto" onClick={onTutup}>
-          Tutup
+        <Button size="sm" variant="outline" className="ml-auto" onClick={() => setMuatKe((n) => n + 1)}>
+          Coba lagi
         </Button>
       </div>
     );
   }
 
   if (!keadaan) {
-    return <div className="min-h-[3rem]" aria-busy="true" />;
+    return <div ref={wadah} data-menu-tunda-putus="" className="min-h-[3rem]" aria-busy="true" />;
   }
 
   if (sudahTertulis) {
+    const tglBerikut = hasil?.sidangBerikutnya?.tanggal ?? tanggalBerikut;
+    const jamBerikutTulis = hasil?.sidangBerikutnya?.jam ?? jamBerikut;
+    const namaStatus = hasil?.putusan?.status ?? status.find((s) => String(s.id) === statusId)?.nama ?? "";
+    const kalimat = hasil?.diantrekan
+      ? hasil.pesan || "Diantrekan - dikerjakan pada jam kerja berikutnya."
+      : jalan === "tunda"
+        ? `Sidang ${nomorPerkara} ditunda ke ${sebutTanggalPanjang(tglBerikut)} pukul ${jamBerikutTulis}.`
+        : modeIkrarPutus
+          ? `Ikrar talak ${nomorPerkara} tercatat dilaksanakan.`
+          : `Putusan ${nomorPerkara} tercatat${namaStatus ? `: ${namaStatus}${hasil?.putusan?.verstek || verstek ? " (verstek)" : ""}` : ""}.`;
     return (
-      <div className="flex items-start gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100">
+      <div
+        ref={wadah}
+        data-menu-tunda-putus=""
+        role="status"
+        className="flex items-start gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100"
+      >
         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
         <div className="min-w-0">
-          <p className="font-semibold">
-            {jalan === "tunda" ? "Penundaan" : modeIkrarPutus ? "Ikrar talak dilaksanakan -" : "Hasil sidang putus"}{" "}
-            {nomorPerkara} tercatat di SIPP.
+          <p className="font-semibold" data-konfirmasi-simpan="">
+            {kalimat}
           </p>
-          {modeIkrarPutus && hasil?.formIkrar ? (
-            <p className="text-xs" data-form-ikrar="">
-              {hasil.formIkrar.ok
-                ? `Form ikrar talak di SIPP terisi (tanggal ikrar ${hasil.formIkrar.tanggalIkrar ?? ""}).`
-                : "Form ikrar talak di SIPP belum terisi - lihat catatan di bawah, lalu isi dari baris sidang ini."}
-            </p>
-          ) : null}
-          {modeIkrarPutus && hasil?.edocIkrar && !hasil.edocIkrar.kering ? (
-            <p className="text-xs" data-edoc-ikrar="">
-              {hasil.edocIkrar.ok
-                ? `e-Doc penetapan ikrar terunggah (${hasil.edocIkrar.nama ?? "berkas"}).`
-                : `e-Doc penetapan ikrar BELUM terunggah: ${hasil.edocIkrar.pesan ?? hasil.edocIkrar.alasan ?? "sebab tidak dikenali"} Unggah lewat tombol Isi form ikrar di baris sidang ini.`}
-            </p>
-          ) : null}
-          {hasil?.atasNama ? (
-            <p className="text-xs">
-              Atas nama {hasil.atasNama.namaLengkap} ({hasil.atasNama.username})
-              {hasil.sidangBerikutnya
-                ? ` · sidang berikutnya ${hasil.sidangBerikutnya.tanggal} pukul ${hasil.sidangBerikutnya.jam}`
-                : ""}
-              {hasil.putusan ? ` · ${hasil.putusan.status}${hasil.putusan.verstek ? " (verstek)" : ""}` : ""}.
-            </p>
-          ) : null}
-          {/* RINGKASAN YANG DITULIS - dari jawaban server sesudah menulis
-              (baris yang SUNGGUH tertulis), bukan dari rencana. */}
-          {langkahUntukPetugas(hasil?.selesai).length > 0 ? (
-            <ul className="mt-1 space-y-0.5 text-xs" aria-label="Yang ditulis ke SIPP">
-              {langkahUntukPetugas(hasil?.selesai).map((l, n) => (
-                <li key={`${l.tabel}-${n}`}>{kalimatLangkah(l)}</li>
-              ))}
-            </ul>
-          ) : null}
-          {(hasil?.andaian ?? []).map((a) => (
-            <p key={a} className="mt-1 flex items-start gap-1 text-xs text-amber-800 dark:text-amber-200">
+          {catatanSelesai.map((c) => (
+            <p key={c} className="mt-1 flex items-start gap-1 text-xs text-amber-800 dark:text-amber-200">
               <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-              <span>{a}</span>
+              <span>{c}</span>
             </p>
           ))}
-          {hasil?.antrian ? (
-            <p className="mt-1 text-xs">
-              {hasil.antrian.ok
-                ? `Antrian sidang ditandai selesai (${hasil.antrian.baris ?? 0} baris).`
-                : `Antrian tidak tergerakkan: ${hasil.antrian.alasan}.`}
-            </p>
+          {catatanLain.length > 0 ? (
+            <details className="mt-1 text-xs">
+              <summary className="cursor-pointer">Catatan</summary>
+              {catatanLain.map((a) => (
+                <p key={a} className="mt-0.5">
+                  {a}
+                </p>
+              ))}
+            </details>
           ) : null}
         </div>
-        <Button size="sm" variant="ghost" className="ml-auto" onClick={onTutup}>
-          Tutup
-        </Button>
       </div>
     );
   }
@@ -1554,9 +1608,10 @@ export function CatatHasilRingkas({
     dihadiri
   );
   const sebutanKontak = sebutanPihakPerkara(sebutanDari(keadaan));
+  const kalimatNama = kalimatAtasNama(atasNama);
 
   return (
-    <div className="space-y-2.5">
+    <div ref={wadah} data-menu-tunda-putus="" className="space-y-2.5">
       <div className="flex flex-wrap items-center gap-2">
         {jalan === "tunda" ? (
           <PauseCircle className="h-4 w-4 text-amber-600" aria-hidden="true" />
@@ -1569,9 +1624,6 @@ export function CatatHasilRingkas({
         </span>
         <Badge variant="muted">{keadaan.agenda || "tanpa agenda"}</Badge>
         {usulan ? <Badge variant="outline">sidang ke-{usulan.sidangKe}</Badge> : null}
-        <Button size="sm" variant="ghost" className="ml-auto" onClick={onTutup}>
-          Tutup
-        </Button>
       </div>
 
       {modeIkrarTunda ? (
@@ -1600,16 +1652,6 @@ export function CatatHasilRingkas({
               </button>
             ))}
           </div>
-          <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
-            <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-            <span>
-              {bawaanIkrar ? bawaanIkrar.penjelasan : ""}{" "}
-              Semua isian dapat diubah sebelum disimpan.
-              {jenisIkrar === "belum-siap"
-                ? " Catatan: pada cerai talak, pembayaran akibat perceraian (nafkah iddah, mut’ah, dan sejenisnya) dapat diperintahkan sebelum ikrar talak, kecuali istri tidak keberatan (Buku II 2026)."
-                : ""}
-            </span>
-          </p>
           {peringatanIkrar ? (
             <p
               data-batas-ikrar=""
@@ -1679,13 +1721,6 @@ export function CatatHasilRingkas({
               }}
               className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             />
-            <span className="mt-0.5 block text-[10px] leading-tight text-muted-foreground">
-              {tundaKarenaMediasi(alasanTunda)
-                ? "Tundaan mediasi: 09:00."
-                : jamSidangBerikut(agendaBerikut, alasanTunda) === "15:00"
-                  ? "Jawab-menjawab dan kesimpulan: 15:00."
-                  : "Bawaan pukul 09:00."}
-            </span>
           </label>
         </div>
       ) : modeIkrarPutus ? (
@@ -1702,23 +1737,12 @@ export function CatatHasilRingkas({
               <strong>{String(keadaan.tanggalSidang || "").slice(0, 10)}</strong>
             </span>
           </label>
-          <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
-            <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-            <span>
-              Keterangan sidang di SIPP otomatis berisi “Ikrar Telah Dilaksanakan”, lalu form ikrar talak di SIPP
-              terisi (tanggal ikrar sama dengan tanggal sidang ini) atas nama ketua majelis ikrar.
-            </span>
-          </p>
         </div>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           <label className="text-xs">
             <span className="mb-0.5 block font-medium text-muted-foreground">Status putusan</span>
-            <NativeSelect
-              value={statusId}
-              onChange={(e) => setStatusId(e.target.value)}
-              className="h-8 text-sm"
-            >
+            <NativeSelect value={statusId} onChange={(e) => setStatusId(e.target.value)} className="h-8 text-sm">
               <option value="">Pilih status</option>
               {status.map((s) => (
                 <option key={s.id} value={String(s.id)}>
@@ -1748,135 +1772,155 @@ export function CatatHasilRingkas({
         </div>
       )}
 
-      {/* Butir 25 (5 Okt 2026): ruang sidang + sidang keliling, seperti blangko
-          tunda SIPP. Tunda = untuk sidang BERIKUTNYA; putus = sidang INI
-          (ditulis hanya bila diubah). */}
-      <div className={cn("flex flex-wrap items-end gap-3", modeIkrarPutus && "hidden")} data-ruang-sidang-blangko="">
-        <label className="block min-w-[14rem] text-xs sm:max-w-md">
-          <span className="mb-0.5 block font-medium text-muted-foreground">
-            {jalan === "tunda" ? "Ruang sidang berikutnya" : "Ruang sidang"}
-          </span>
-          <NativeSelect
-            aria-label={jalan === "tunda" ? "Ruang sidang berikutnya" : "Ruang sidang"}
-            value={ruangPilih.ruanganId}
-            onChange={(e) => {
-              const id = e.target.value;
-              const ikut = kelilingUntukRuangan(daftarRuangan, id);
-              setRuangPilih((lama) => ({
-                ruanganId: id,
-                keliling: !kelilingDisentuh && ikut !== null ? ikut : lama.keliling,
-              }));
-            }}
-            className="h-8 text-sm"
-          >
-            {ruangPilih.ruanganId === "" || !ruanganMenurutId(daftarRuangan, ruangPilih.ruanganId) ? (
-              <option value="">{keadaan.ruangan ? `${keadaan.ruangan} (tercatat)` : "Seperti tercatat di SIPP"}</option>
-            ) : null}
-            {daftarRuangan.map((r) => (
-              <option key={r.id} value={String(r.id)}>
-                {r.nama}
-              </option>
-            ))}
-          </NativeSelect>
-        </label>
-        <label className="flex items-center gap-2 pb-1.5 text-sm">
-          <input
-            type="checkbox"
-            aria-label="Sidang keliling"
-            checked={ruangPilih.keliling}
-            onChange={(e) => {
-              setKelilingDisentuh(true);
-              const keliling = e.target.checked;
-              setRuangPilih((lama) => ({ ...lama, keliling }));
-            }}
-            className="h-4 w-4"
+      {/* PILIHAN LAIN - terlipat. Yang jarang diubah (ruang sidang, sidang
+          keliling, kehadiran pihak, dan dasar usulan) tidak dihapus; ia hanya
+          tidak lagi memenuhi menu. Tetap ada di halaman sehingga isian
+          bawaannya ikut terkirim walau tidak dibuka. */}
+      <details className="text-xs" data-pilihan-lain="">
+        <summary className="cursor-pointer select-none text-muted-foreground hover:text-foreground">
+          Pilihan lain
+        </summary>
+        <div className="mt-2 space-y-2.5">
+          {/* Butir 25 (5 Okt 2026): ruang sidang + sidang keliling, seperti blangko
+              tunda SIPP. Tunda = untuk sidang BERIKUTNYA; putus = sidang INI
+              (ditulis hanya bila diubah). */}
+          <div className={cn("flex flex-wrap items-end gap-3", modeIkrarPutus && "hidden")} data-ruang-sidang-blangko="">
+            <label className="block min-w-[14rem] text-xs sm:max-w-md">
+              <span className="mb-0.5 block font-medium text-muted-foreground">
+                {jalan === "tunda" ? "Ruang sidang berikutnya" : "Ruang sidang"}
+              </span>
+              <NativeSelect
+                aria-label={jalan === "tunda" ? "Ruang sidang berikutnya" : "Ruang sidang"}
+                value={ruangPilih.ruanganId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  const ikut = kelilingUntukRuangan(daftarRuangan, id);
+                  setRuangPilih((lama) => ({
+                    ruanganId: id,
+                    keliling: !kelilingDisentuh && ikut !== null ? ikut : lama.keliling,
+                  }));
+                }}
+                className="h-8 text-sm"
+              >
+                {ruangPilih.ruanganId === "" || !ruanganMenurutId(daftarRuangan, ruangPilih.ruanganId) ? (
+                  <option value="">{keadaan.ruangan ? `${keadaan.ruangan} (tercatat)` : "Seperti tercatat di SIPP"}</option>
+                ) : null}
+                {daftarRuangan.map((r) => (
+                  <option key={r.id} value={String(r.id)}>
+                    {r.nama}
+                  </option>
+                ))}
+              </NativeSelect>
+            </label>
+            <label className="flex items-center gap-2 pb-1.5 text-sm">
+              <input
+                type="checkbox"
+                aria-label="Sidang keliling"
+                checked={ruangPilih.keliling}
+                onChange={(e) => {
+                  setKelilingDisentuh(true);
+                  const keliling = e.target.checked;
+                  setRuangPilih((lama) => ({ ...lama, keliling }));
+                }}
+                className="h-4 w-4"
+              />
+              <span>Sidang keliling</span>
+            </label>
+          </div>
+
+          <label className="block text-xs sm:max-w-md">
+            <span className="mb-0.5 block font-medium text-muted-foreground">Kehadiran pihak</span>
+            <NativeSelect
+              value={String(dihadiri)}
+              onChange={(e) => gantiKehadiran(Number(e.target.value))}
+              className="h-8 text-sm"
+            >
+              {KEHADIRAN.filter(
+                (k) => !k.hanyaGugatan || perkaraGugatan(keadaan.nomorPerkara) || k.nilai === dihadiri
+              ).map((k) => (
+                <option key={k.nilai} value={String(k.nilai)}>
+                  {k.label}
+                </option>
+              ))}
+            </NativeSelect>
+          </label>
+
+          {/* F3.2: siapa yang tercatat hadir + usulan Dihadiri oleh. */}
+          <UsulanKehadiranBlangko
+            kehadiran={kehadiranRinci}
+            antrian={antrianDariRingkas(antrian)}
+            bahan={bahanKehadiranDariKeadaan(keadaan)}
+            dihadiri={dihadiri}
+            pilihanSah={KEHADIRAN.map((k) => k.nilai)}
+            onPakai={gantiKehadiran}
           />
-          <span>Sidang keliling</span>
-        </label>
-      </div>
 
-      <label className="block text-xs sm:max-w-md">
-        <span className="mb-0.5 block font-medium text-muted-foreground">Kehadiran pihak</span>
-        <NativeSelect
-          value={String(dihadiri)}
-          onChange={(e) => gantiKehadiran(Number(e.target.value))}
-          className="h-8 text-sm"
-        >
-          {KEHADIRAN.filter(
-            (k) => !k.hanyaGugatan || perkaraGugatan(keadaan.nomorPerkara) || k.nilai === dihadiri
-          ).map((k) => (
-            <option key={k.nilai} value={String(k.nilai)}>
-              {k.label}
-            </option>
-          ))}
-        </NativeSelect>
-      </label>
+          {jalan === "tunda" ? (
+            <p className="text-[11px] text-muted-foreground">
+              {tundaKarenaMediasi(alasanTunda)
+                ? "Tundaan mediasi: pukul 09:00."
+                : jamSidangBerikut(agendaBerikut, alasanTunda) === "15:00"
+                  ? "Jawab-menjawab dan kesimpulan: pukul 15:00."
+                  : "Bawaan pukul 09:00."}
+            </p>
+          ) : null}
+          {usulan && jalan === "tunda" ? (
+            <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
+              <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+              <span>
+                Usulan dari riwayat sidang: {usulan.penjelasan}
+                {usulan.kehadiranTercatat ? " Kehadiran diambil dari yang sudah tercatat di SIPP." : ""} Semua
+                isian dapat diganti.
+              </span>
+            </p>
+          ) : null}
+          {usulan && jalan === "tunda" ? (
+            <p className="flex items-start gap-1 text-[11px] text-muted-foreground" data-kontak-pihak="">
+              <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+              <span>{kalimatKontak(usulan.dasar.kontak, sebutanKontak.dua, sebutanKontak.satu)}</span>
+            </p>
+          ) : null}
+          {modeIkrarTunda && bawaanIkrar ? (
+            <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
+              <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+              <span>
+                {bawaanIkrar.penjelasan} Semua isian dapat diubah sebelum disimpan.
+                {jenisIkrar === "belum-siap"
+                  ? " Catatan: pada cerai talak, pembayaran akibat perceraian (nafkah iddah, mut’ah, dan sejenisnya) dapat diperintahkan sebelum ikrar talak, kecuali istri tidak keberatan (Buku II 2026)."
+                  : ""}
+              </span>
+            </p>
+          ) : null}
+          {keteranganAntrian(antrian) ? (
+            <p className="flex items-start gap-1 text-[11px] text-muted-foreground" data-antrian-sidang="">
+              <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+              <span>{keteranganAntrian(antrian)} Kehadiran, jam mulai, dan ruang mengikuti antrian sidang.</span>
+            </p>
+          ) : null}
+        </div>
+      </details>
 
-      {/* F3.2: siapa yang tercatat hadir + usulan Dihadiri oleh. */}
-      <UsulanKehadiranBlangko
-        kehadiran={kehadiranRinci}
-        antrian={antrianDariRingkas(antrian)}
-        bahan={bahanKehadiranDariKeadaan(keadaan)}
-        dihadiri={dihadiri}
-        pilihanSah={KEHADIRAN.map((k) => k.nilai)}
-        onPakai={gantiKehadiran}
-      />
-
-      {usulan && jalan === "tunda" ? (
-        <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
-          <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-          <span>
-            Usulan dari riwayat sidang: {usulan.penjelasan}
-            {usulan.kehadiranTercatat ? " Kehadiran diambil dari yang sudah tercatat di SIPP." : ""} Semua
-            isian dapat diganti.
-          </span>
-        </p>
-      ) : null}
-      {usulan && jalan === "tunda" ? (
-        <p className="flex items-start gap-1 text-[11px] text-muted-foreground" data-kontak-pihak="">
-          <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-          <span>{kalimatKontak(usulan.dasar.kontak, sebutanKontak.dua, sebutanKontak.satu)}</span>
-        </p>
-      ) : null}
-
-      {jalan === "putus" && !modeIkrarPutus ? (
-        <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
-          <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-          <span>
-            Hanya hasil sidang di jadwal sidang yang dicatat. Putusan akhir dan tahapan perkara tidak
-            ditulis dari tombol ini.
-          </span>
-        </p>
-      ) : null}
-
-      {keteranganAntrian(antrian) ? (
-        <p className="flex items-start gap-1 text-[11px] text-muted-foreground" data-antrian-sidang="">
-          <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-          <span>{keteranganAntrian(antrian)} Kehadiran, jam mulai, dan ruang mengikuti antrian sidang.</span>
-        </p>
-      ) : null}
-
-      {kalimatAtasNama(atasNama) ? (
+      {/* Hanya bila MENGHALANGI menyimpan (panitera sidang belum tercatat di
+          SIPP); keterangan "atas nama siapa" yang berjalan baik tidak lagi
+          ditampilkan - audit tetap ditulis di belakang. */}
+      {kalimatNama && !kalimatNama.ok ? (
         <p
           data-atas-nama=""
-          className={cn(
-            "flex items-start gap-1 text-xs",
-            kalimatAtasNama(atasNama)!.ok ? "text-muted-foreground" : "rounded-md border border-red-300 bg-red-50 px-3 py-2 text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
-          )}
+          role="alert"
+          className="flex items-start gap-1 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
         >
-          {kalimatAtasNama(atasNama)!.ok ? (
-            <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-          ) : (
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          )}
-          <span>{kalimatAtasNama(atasNama)!.teks}</span>
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span>{kalimatNama.teks}</span>
         </p>
       ) : null}
 
       {hasil && !hasil.ok ? (
-        <p className="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200"
+        >
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>{hasil.alasan || "Permintaan ditolak server."}</span>
+          <span>{hasil.alasan || "Belum tersimpan. Silakan coba lagi."}</span>
         </p>
       ) : null}
       {tanyaJam !== null ? <TanyaJamKerja pesan={tanyaJam} sibuk={sibuk} onPilih={(p) => void kirim(p)} /> : null}
@@ -1889,10 +1933,7 @@ export function CatatHasilRingkas({
           disabled={!lengkap || sibuk || atasNama?.ok === false}
           onClick={() => void kirim()}
         >
-          {modeIkrarPutus && !sibuk ? "Catat ikrar dilaksanakan" : null}
-          {modeIkrarPutus && !sibuk ? null : (
-            <>{sibuk ? "Menulis…" : jalan === "tunda" ? "Tunda sekarang" : "Catat putus"}</>
-          )}
+          {sibuk ? "Menyimpan…" : hasil && !hasil.ok ? "Coba lagi" : "Simpan"}
         </Button>
         {!lengkap ? (
           <span className="text-xs text-muted-foreground">
@@ -1901,8 +1942,8 @@ export function CatatHasilRingkas({
                 ? "Tanggal melewati batas 6 bulan ikrar - ubah tanggal berikutnya."
                 : "Alasan, agenda, tanggal, dan jam harus terisi."
               : modeIkrarPutus
-                ? "Centang konfirmasi ikrar dilaksanakan."
-                : "Status putusan dan tanggalnya harus terisi."}
+                ? "Centang bahwa ikrar sudah dilaksanakan."
+                : "Pilih status putusan dan tanggalnya."}
           </span>
         ) : null}
       </div>
