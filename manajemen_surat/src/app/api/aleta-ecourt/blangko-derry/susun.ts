@@ -134,10 +134,109 @@ const CADANGAN_TUNTUTAN: Record<string, Array<"cg" | "ct">> = {
   "9711": ["ct"], "9712": ["ct"], "9713": ["ct"], "9715": ["ct"],
   "6071": ["cg", "ct"], "6072": ["cg", "ct"], "9050": ["cg", "ct"],
 };
-/** Kode isian -> pemicu tuntutan yang dilayaninya. */
+/** Kode isian -> pemicu tuntutan akibat perceraian yang dilayaninya. */
 export function tuntutanIsian(kode: string): string[] {
   if (TUNTUTAN_BERSAMA[kode]) return [...TUNTUTAN_BERSAMA[kode]];
   return TUNTUTAN_CERAI.filter((t) => t.isian.includes(kode)).map((t) => t.pemicu);
+}
+
+/**
+ * 21 Okt (perluasan x4): tuntutan di luar akibat perceraian. Pemicu = variabel ABT paket x4 (3401-3408 hak bekas istri, 3430-3435
+ * tuntutan tambahan perkara anak, 3440 utang bersama, 3441-3448 kelalaian kewajiban suami/istri) atau pemicu kebendaan yang sudah ada (4788-4791, 4845-4847; pola diperbaiki x4).
+ * keputusan "" = blangko tidak memakai isian keputusan; isiannya kosong = tidak tercetak (bagian otomatisnya bersyarat isian).
+ */
+export const TUNTUTAN_LAIN: ReadonlyArray<TuntutanBlangko> = [
+  { pemicu: "3401", label: "Nafkah iddah", keputusan: "", isian: ["9712"] },
+  { pemicu: "3402", label: "Maskan (tempat tinggal) selama iddah", keputusan: "", isian: ["3751"] },
+  { pemicu: "3403", label: "Kiswah (pakaian) selama iddah", keputusan: "", isian: ["3752"] },
+  { pemicu: "3404", label: "Mut'ah", keputusan: "", isian: ["9713"] },
+  { pemicu: "3405", label: "Nafkah lampau (madliyah)", keputusan: "", isian: ["9711"] },
+  { pemicu: "3406", label: "Mahar yang masih terhutang", keputusan: "", isian: ["3753"] },
+  { pemicu: "3407", label: "Biaya hadhanah / nafkah anak", keputusan: "", isian: ["9740", "9741", "9746", "9747"] },
+  { pemicu: "3408", label: "Sita jaminan biaya hadhanah", keputusan: "", isian: ["3754"] },
+  { pemicu: "4788", label: "Sita jaminan", keputusan: "4783", isian: ["4783"] },
+  { pemicu: "4789", label: "Bagian selain seperdua", keputusan: "4782", isian: ["4782"] },
+  { pemicu: "4790", label: "Uang paksa (dwangsom)", keputusan: "4784", isian: ["4784"] },
+  { pemicu: "4791", label: "Putusan serta merta", keputusan: "4785", isian: ["4785"] },
+  { pemicu: "3440", label: "Utang bersama", keputusan: "", isian: ["4786"] },
+  { pemicu: "4845", label: "Denda / ganti rugi (ta'widh)", keputusan: "4842", isian: ["4842"] },
+  { pemicu: "4846", label: "Penyelesaian jaminan / agunan", keputusan: "4843", isian: ["4843"] },
+  { pemicu: "4847", label: "Pembatalan akad", keputusan: "4844", isian: ["4844"] },
+  { pemicu: "3430", label: "Penyerahan anak", keputusan: "", isian: ["4890"] },
+  { pemicu: "3431", label: "Kenaikan nafkah anak setiap tahun", keputusan: "", isian: ["9741", "3931"] },
+  { pemicu: "3432", label: "Biaya pendidikan dan kesehatan anak", keputusan: "", isian: ["9742"] },
+  { pemicu: "3433", label: "Pemotongan langsung penghasilan", keputusan: "", isian: ["9745"] },
+  { pemicu: "3434", label: "Nafkah lampau anak", keputusan: "", isian: ["9746", "9747"] },
+  { pemicu: "3435", label: "Sita jaminan nafkah anak", keputusan: "", isian: ["9743"] },
+  { pemicu: "3441", label: "Nafkah", keputusan: "", isian: ["3700"] },
+  { pemicu: "3442", label: "Nafkah lampau (madliyah)", keputusan: "", isian: ["3701", "3702"] },
+  { pemicu: "3443", label: "Kiswah (pakaian)", keputusan: "", isian: ["3703"] },
+  { pemicu: "3444", label: "Tempat kediaman", keputusan: "", isian: ["3704"] },
+  { pemicu: "3445", label: "Biaya rumah tangga, perawatan, pengobatan", keputusan: "", isian: ["3705"] },
+  { pemicu: "3446", label: "Pemotongan langsung penghasilan", keputusan: "", isian: ["3708"] },
+  { pemicu: "3447", label: "Sita jaminan", keputusan: "", isian: ["3709"] },
+  { pemicu: "3448", label: "Uang paksa (dwangsom)", keputusan: "", isian: ["3710"] },
+];
+/** Semua tuntutan yang dikenal panel (urut: akibat perceraian dulu). */
+export const TUNTUTAN_SEMUA: ReadonlyArray<TuntutanBlangko> = [...TUNTUTAN_CERAI, ...TUNTUTAN_LAIN];
+const TUNTUTAN_BERSAMA_LAIN: Record<string, string[]> = {
+  "9714": ["3401", "3402", "3403", "3404", "3405"], // dasar kemampuan (hak bekas istri)
+  "3756": ["3401", "3402", "3403", "3404", "3405", "3406", "3407"], // waktu pembayaran hak bekas istri
+  "3707": ["3441", "3442", "3443", "3444", "3445"], // dasar kemampuan (kelalaian kewajiban)
+};
+const rentang = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => String(a + i));
+const HBI_BAGIAN = rentang(3760, 3779);
+/**
+ * 21 Okt (x4): bagian otomatis yang mencetak tuntutan itu HANYA bila diminta/diputus/diisi. Tuntutan dikenal sebuah blangko (isiannya
+ * dapat disembunyikan bila tidak diminta) hanya bila blangko itu - sampai lapis mana pun - memakai salah satu variabel ini dan pemicunya
+ * ada di katalog. Blangko cerai (memakai bagian akibat cerai paket u2/x4 atau nafkah istri 9716/9717) mengenal keenam tuntutan akibat
+ * cerai - termasuk isian yang tertulis langsung pada varian (Mut'ah Iddah, ex officio): disembunyikan bila tidak diminta dan tampil
+ * lewat saklar karena jabatan (aturan w25). Blangko lain TIDAK mengenal tuntutan akibat cerai: hak asuh / nafkah anak sebagai pokok
+ * perkara anak, nama anak pada asal usul / pengesahan anak, isi tetap Rekonvensi - isiannya tidak pernah disembunyikan.
+ */
+const CERAI_BAGIAN = [...rentang(4110, 4119), ...rentang(4130, 4139), "4150", "9716", "9717", ...rentang(3410, 3421)];
+const BAGIAN_BERSYARAT: Record<string, string[]> = {
+  ...Object.fromEntries(["4140", "4141", "4142", "4143", "4144", "4145"].map((p) => [p, CERAI_BAGIAN])),
+  ...Object.fromEntries(["3401", "3402", "3403", "3404", "3405", "3406", "3407", "3408"].map((p) => [p, HBI_BAGIAN])),
+  // kebendaan: hanya bagian yang MENCETAK tuntutan itu bersyarat petitum/keputusan (blangko Konvensi Rekonvensi Sita Jaminan menetapkan
+  // sita sendiri lewat 4804/4814 - tidak termasuk)
+  "4788": ["4793", "4799", "4800", "4802", "4824", "4825", "4827", "4835", "4837", "4840"],
+  "4789": ["4794", "4800", "4802", "4804", "4813"],
+  "4790": ["4797", "4799", "4800", "4802", "4804", "4810", "4824", "4825", "4827", "4835", "4837", "4840"],
+  "4791": ["4798", "4799", "4800", "4802", "4804", "4811", "4824", "4825", "4827", "4835", "4837", "4840"],
+  "3440": ["4795", "4799", "4812"],
+  "4845": ["4835", "4837", "4840"],
+  "4846": ["4835", "4837", "4840"],
+  "4847": ["4835", "4837", "4840"],
+  "3430": ["4891", "4892", "4893", "4894", "4895", "4908"],
+  "3431": ["9751", "9752", "3934", "3935"], // + nafkah anak oleh ibu (6h): kenaikan bagian ayah
+  "3432": ["9753", "9754"],
+  "3433": ["9753", "9754"],
+  "3434": ["9757", "9758"],
+  "3435": ["9753", "9754", "9755", "9756"],
+  // kelalaian kewajiban suami/istri (1e): tiap tuntutan dicetak hanya bila isiannya terisi; kewajiban lain (3706) tidak terbaca mesin
+  "3441": ["3720", "3721"],
+  "3442": ["3722", "3723"],
+  "3443": ["3724", "3725"],
+  "3444": ["3724", "3725"],
+  "3445": ["3724", "3725"],
+  "3446": ["3724", "3725"],
+  "3447": ["3724", "3725", "3732", "3733"],
+  "3448": ["3728", "3729"],
+};
+/** Pemicu tuntutan yang bagian bersyaratnya dipakai blangko (closure = semua variabel yang dicapai dari penanda blangko). */
+export function tuntutanAktif(closure: ReadonlySet<string>, katalog: ReadonlyMap<string, unknown>): Set<string> {
+  return new Set(Object.entries(BAGIAN_BERSYARAT).filter(([p, bag]) => katalog.has(p) && bag.some((v) => closure.has(v))).map(([p]) => p));
+}
+/**
+ * Pemicu tuntutan sebuah isian DI BLANGKO INI: hanya tuntutan yang aktif (bagian bersyaratnya dipakai blangko). Isian bersama
+ * (nama anak, dasar kemampuan, waktu bayar) yang tertulis langsung tidak pernah diberi tuntutan - ia juga dipakai isi tetap blangko.
+ */
+export function tuntutanIsianDi(kode: string, aktif: ReadonlySet<string>, langsung: boolean): string[] {
+  const bersama = [...(TUNTUTAN_BERSAMA[kode] || []), ...(TUNTUTAN_BERSAMA_LAIN[kode] || [])];
+  if (langsung && bersama.length) return [];
+  const semua = [...new Set([...bersama, ...TUNTUTAN_SEMUA.filter((t) => t.isian.includes(kode)).map((t) => t.pemicu)])];
+  return semua.filter((p) => aktif.has(p));
 }
 
 export const PILIHAN_ALASAN = [
@@ -822,6 +921,7 @@ export function susunIsian(
     return false;
   };
   const pemicuDipakai = new Map<string, string>();
+  const aktifTuntutan = tuntutanAktif(dilihat, katalog);
   const isian: ButirIsian[] = [];
   const tjAda = new Set<string>();
   for (const k of manual) {
@@ -855,6 +955,8 @@ export function susunIsian(
       tj = { kunci: t.kunci, sebutan: t.sebutan, peran: t.peran, kodeSunting };
     }
     const pihakBukti = pihakBuktiDari(k, namaPolos);
+    // 21 Okt (x4): tuntutan isian ini hanya bila bagian bersyarat tuntutan itu dipakai blangko ini (bukan ditetapkan isi tetap blangko).
+    const tuntutanK = tuntutanIsianDi(k, aktifTuntutan, urutanRtf.has(k));
     const pemakai = [...(dipakaiOleh.get(k) || [])];
     // Penting: tertulis langsung di naskah, atau dibaca bagian yang tertulis langsung / amar / pertimbangan / duduk
     // perkara. Tambahan: berbawaan ("kosong = ...", "bila SIPP tidak memuat") atau keterangan tambahan (kesimpulan).
@@ -886,14 +988,14 @@ export function susunIsian(
       opsi: (r && r.opsi) || [],
       ...(ISIAN_OPSIONAL[k] ? { opsional: true, labelPengguna: ISIAN_OPSIONAL[k] } : {}),
       ...(ISIAN_MANUAL[k] ? { manual: true, alasanManual: ISIAN_MANUAL[k] } : {}),
-      ...(tuntutanIsian(k).length ? { tuntutan: tuntutanIsian(k), ...(CADANGAN_TUNTUTAN[k] ? { cadangan: CADANGAN_TUNTUTAN[k] } : {}) } : {}),
+      ...(tuntutanK.length ? { tuntutan: tuntutanK, ...(CADANGAN_TUNTUTAN[k] ? { cadangan: CADANGAN_TUNTUTAN[k] } : {}) } : {}),
     });
   }
   // 21 Okt: tuntutan yang isiannya hanya dibaca bagian otomatis (tidak tertulis langsung) - pemicu petitumnya ikut dinilai bot
   // supaya layar tahu tuntutan mana yang diminta. 21 Okt (w25): isian yang tertulis langsung di blangko ikut dihitung - tuntutan yang
   // tidak diminta tetap disembunyikan walau tertulis langsung ("tidak diminta = tidak ada pertimbangan dan form-nya").
   const tuntutan: TuntutanBlangko[] = [];
-  for (const t of TUNTUTAN_CERAI) {
+  for (const t of TUNTUTAN_SEMUA) {
     const isianT = isian.filter((b) => (b.tuntutan || []).includes(t.pemicu)).map((b) => b.kode);
     if (!isianT.length || !katalog.has(t.pemicu)) continue;
     tuntutan.push({ ...t, isian: isianT });
