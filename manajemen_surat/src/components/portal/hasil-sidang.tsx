@@ -174,7 +174,7 @@ type StatusPutusan = { id: number; nama: string; dipakai: number };
  * memilih alasan yang bukan alasannya, dan alasan yang keliru pada berkas
  * perkara lebih buruk daripada alasan yang diketik panjang.
  */
-const ALASAN_LAZIM = [
+export const ALASAN_LAZIM = [
   "Para pihak tidak hadir",
   "Tergugat tidak hadir",
   "Penggugat tidak hadir",
@@ -186,7 +186,7 @@ const ALASAN_LAZIM = [
   "Majelis hakim berhalangan",
 ];
 
-const AGENDA_LAZIM = [
+export const AGENDA_LAZIM = [
   "Pembacaan Gugatan",
   "Jawaban",
   "Replik",

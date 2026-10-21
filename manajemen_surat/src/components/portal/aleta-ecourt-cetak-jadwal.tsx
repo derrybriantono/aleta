@@ -70,9 +70,16 @@ export function AletaEcourtCetakJadwal({
   dari,
   sampai,
   namaPengadilan,
+  bagianHakim,
   onSelesai,
 }: {
   sidang: BarisCetak[];
+  /**
+   * CETAK PER HAKIM (22 Okt 2026): bila diisi, lembarnya dipecah menjadi satu
+   * bagian per hakim yang menyidangkan - tiap bagian di halaman sendiri, dengan
+   * nama hakim di kepalanya. hakim "" = perkara yang belum dipilih satu hakim.
+   */
+  bagianHakim?: Array<{ hakim: string; baris: BarisCetak[] }>;
   antrian?: Record<string, { nomor: number | null }>;
   catatanSaringan?: string;
   dari: string;
@@ -93,42 +100,8 @@ export function AletaEcourtCetakJadwal({
 
   if (typeof document === "undefined") return null;
 
-  const isi = (
-    <div id="aleta-cetak-jadwal" style={{ color: "#000", background: "#fff" }}>
-      <style>{GAYA_CETAK}</style>
-
-      <div style={{ fontFamily: "serif", padding: "0 0 10px" }}>
-        <h1 style={{ margin: 0, fontSize: "16pt", textAlign: "center" }}>JADWAL SIDANG</h1>
-        <h2 style={{ margin: "2px 0 0", fontSize: "13pt", textAlign: "center", fontWeight: 600 }}>
-          {namaPengadilan}
-        </h2>
-        <p style={{ margin: "6px 0 0", fontSize: "10pt", textAlign: "center" }}>
-          {dari === sampai ? tanggalPanjangDenganHari(dari) : `${tanggalPanjangDenganHari(dari)} s.d. ${tanggalPanjangDenganHari(sampai)}`}
-          {" · "}
-          {sidang.length} perkara
-        </p>
-
-        {/* Lembar yang dicetak dari hasil yang SEDANG DISARING harus
-            mengatakannya. Tanpa kalimat ini, daftar berisi tiga perkara
-            dibaca orang berikutnya sebagai seluruh sidang hari itu. */}
-        {catatanSaringan ? (
-          <p style={{ margin: "3px 0 0", fontSize: "9pt", textAlign: "center", fontStyle: "italic" }}>
-            {catatanSaringan}
-          </p>
-        ) : null}
-
-        {/* Ringkasan keadaan - yang menuntut tindakan disebut lebih dulu.
-            Lembar ini kerap dibaca sambil berjalan; angka di kepala
-            menghemat menyisir sepuluh halaman untuk tahu ada berapa
-            relaas yang retur. */}
-        {ringkasKeadaan(sidang) ? (
-          <p style={{ margin: "4px 0 0", fontSize: "9pt", textAlign: "center" }}>
-            {ringkasKeadaan(sidang)}
-          </p>
-        ) : null}
-      </div>
-
-      <table
+  const tabelLembar = (daftar: BarisCetak[]) => (
+    <table
         style={{
           width: "100%",
           borderCollapse: "collapse",
@@ -170,7 +143,7 @@ export function AletaEcourtCetakJadwal({
         </thead>
 
         <tbody>
-          {sidang.map((baris, urutan) => (
+          {daftar.map((baris, urutan) => (
             <tr key={`${baris.nomorPerkara}|${baris.sidangId}`}>
               <td style={sel({ textAlign: "right" })}>{urutan + 1}</td>
               <td style={sel({ whiteSpace: "nowrap" })}>
@@ -228,6 +201,67 @@ export function AletaEcourtCetakJadwal({
           ))}
         </tbody>
       </table>
+  );
+
+  const kepalaLembar = (daftar: BarisCetak[], hakim: string | null) => (
+    <>
+
+      <div style={{ fontFamily: "serif", padding: "0 0 10px" }}>
+        <h1 style={{ margin: 0, fontSize: "16pt", textAlign: "center" }}>JADWAL SIDANG</h1>
+        <h2 style={{ margin: "2px 0 0", fontSize: "13pt", textAlign: "center", fontWeight: 600 }}>
+          {namaPengadilan}
+        </h2>
+        {hakim !== null ? (
+          <p data-cetak-hakim="" style={{ margin: "4px 0 0", fontSize: "12pt", textAlign: "center", fontWeight: 700 }}>
+            {hakim ? `Hakim: ${hakim}` : "Majelis (belum dipilih satu hakim)"}
+          </p>
+        ) : null}
+        <p style={{ margin: "6px 0 0", fontSize: "10pt", textAlign: "center" }}>
+          {dari === sampai ? tanggalPanjangDenganHari(dari) : `${tanggalPanjangDenganHari(dari)} s.d. ${tanggalPanjangDenganHari(sampai)}`}
+          {" · "}
+          {daftar.length} perkara
+        </p>
+
+        {/* Lembar yang dicetak dari hasil yang SEDANG DISARING harus
+            mengatakannya. Tanpa kalimat ini, daftar berisi tiga perkara
+            dibaca orang berikutnya sebagai seluruh sidang hari itu. */}
+        {catatanSaringan ? (
+          <p style={{ margin: "3px 0 0", fontSize: "9pt", textAlign: "center", fontStyle: "italic" }}>
+            {catatanSaringan}
+          </p>
+        ) : null}
+
+        {/* Ringkasan keadaan - yang menuntut tindakan disebut lebih dulu.
+            Lembar ini kerap dibaca sambil berjalan; angka di kepala
+            menghemat menyisir sepuluh halaman untuk tahu ada berapa
+            relaas yang retur. */}
+        {ringkasKeadaan(daftar) ? (
+          <p style={{ margin: "4px 0 0", fontSize: "9pt", textAlign: "center" }}>
+            {ringkasKeadaan(daftar)}
+          </p>
+        ) : null}
+      </div>
+
+    </>
+  );
+
+  const bagian = bagianHakim && bagianHakim.length > 0 ? bagianHakim : null;
+  const isi = (
+    <div id="aleta-cetak-jadwal" style={{ color: "#000", background: "#fff" }}>
+      <style>{GAYA_CETAK}</style>
+      {bagian
+        ? bagian.map((b, i) => (
+            <section key={b.hakim || "majelis"} data-bagian-hakim={b.hakim} style={i > 0 ? { pageBreakBefore: "always", breakBefore: "page" } : undefined}>
+              {kepalaLembar(b.baris, b.hakim)}
+              {tabelLembar(b.baris)}
+            </section>
+          ))
+        : (
+          <>
+            {kepalaLembar(sidang, null)}
+            {tabelLembar(sidang)}
+          </>
+        )}
 
       <p style={{ marginTop: "10px", fontSize: "8pt", fontFamily: "sans-serif" }}>
         Dicetak dari ALETA pada {new Date().toLocaleString("id-ID")}. Sumber data: SIPP.
