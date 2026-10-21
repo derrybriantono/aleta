@@ -128,6 +128,23 @@ describe("x9 - variabel baru dan cabang sisipan", () => {
     }
   });
 
+  it("dua salah cetak lama diperbaiki: koma kalimat kuasa 4 Pemohon (7047) dan 7097 dengan 2-3 Pemohon + kuasa", () => {
+    const q47 = updateSql(pasang, 7047);
+    expect(q47).toContain("Dalam hal ini #0046# I, #0046# II, #0046# III dan #0046# IV #8540#");
+    expect(q47).not.toContain("#0046# I #0046# II");
+    const q97 = updateSql(pasang, 7097);
+    const i2 = q97.indexOf("WHEN p1.urutan = 2 THEN");
+    const i3 = q97.indexOf("WHEN p1.urutan = 3 THEN");
+    const i4 = q97.indexOf("WHEN p1.urutan = 4 THEN");
+    const b2 = q97.slice(i2, i3);
+    const b3 = q97.slice(i3, i4);
+    expect(b2).not.toContain("#1033#</strong>");
+    expect(b2).not.toMatch(/#0046# II;"/); // <strong> II tanpa penutup
+    expect((b2.match(/#1033#, sebagai <strong>#0046# II<\/strong>;"/g) ?? []).length).toBe(2);
+    // 3 Pemohon: kedua cabang (dengan dan tanpa kuasa) mencetak I, II dan III
+    expect((b3.match(/#3111#, sebagai <strong>#0046# III<\/strong>;"/g) ?? []).length).toBe(2);
+  });
+
   it("8710 dan 7054 kini memanggil fungsi tambahan (Turut Tergugat = perkara_pihak4, intervensi = perkara_pihak3)", () => {
     expect(updateSql(pasang, 8710)).toBe("SELECT aps_badilag.isian_rtf_pihak_tambahan(#perkara_id#, 4) AS data");
     expect(updateSql(pasang, 7054)).toBe("SELECT aps_badilag.isian_rtf_pihak_tambahan(#perkara_id#, 3) AS data");

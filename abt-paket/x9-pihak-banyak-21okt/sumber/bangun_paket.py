@@ -85,8 +85,34 @@ def sisip_cabang(q, nl, cabang, ganti_else):
 KUASA = "IF(EXISTS (SELECT 1 FROM perkara WHERE perkara_id = '#perkara_id#' AND \"#%s#\" != \"\"), \"<br>Dalam hal ini #%s# #%s#, %s\", \"\")"
 
 
+# ---- perbaikan salah cetak LAMA (permintaan sesi utama, 21 Okt): hanya teks yang SALAH yang berubah; keluaran yang selama ini benar tetap persis.
+LIT_II = '"#0098#, sebagai <strong>#0046# I</strong>;<br>#1033#, sebagai <strong>#0046# II</strong>;"'
+LIT_II_RUSAK = '"#0098#, sebagai <strong>#0046# I</strong>;<br>#1033#</strong>, sebagai <strong>#0046# II;"'
+LIT_III = '"#0098#, sebagai <strong>#0046# I</strong>;<br>#1033#, sebagai <strong>#0046# II</strong>;<br>#3111#, sebagai <strong>#0046# III</strong>;"'
+
+
+def perbaiki_7047(q):
+    """kalimat kuasa untuk 4 Pemohon: 'Pemohon I Pemohon II, ...' kehilangan koma sesudah I"""
+    lama = '#0046# I #0046# II, #0046# III dan #0046# IV #8540#'
+    baru_ = '#0046# I, #0046# II, #0046# III dan #0046# IV #8540#'
+    assert q.count(lama) == 1, q.count(lama)
+    return q.replace(lama, baru_)
+
+
+def perbaiki_7097(q):
+    """(a) 3 Pemohon + kuasa hanya mencetak I dan II (cabang urutan 3, kueri THEN); (b) 2 Pemohon + kuasa: tag </strong> salah tempat dan <strong> II tak tertutup"""
+    i2, i3, i4 = q.index('WHEN p1.urutan = 2 THEN'), q.index('WHEN p1.urutan = 3 THEN'), q.index('WHEN p1.urutan = 4 THEN')
+    b2, b3 = q[i2:i3], q[i3:i4]
+    assert b2.count(LIT_II_RUSAK) == 1 and b2.count(LIT_II) == 1, (b2.count(LIT_II_RUSAK), b2.count(LIT_II))
+    assert b3.count(LIT_II) == 1 and b3.count(LIT_III) == 1
+    assert b3.index(LIT_II) < b3.index(LIT_III) and b3.index(LIT_II) + len(LIT_II) < b3.index(LIT_III) - 30
+    b2n = b2.replace(LIT_II_RUSAK, LIT_II)
+    b3n = b3.replace(LIT_II, LIT_III, 1)
+    return q[:i2] + b2n + b3n + q[i4:]
+
+
 def ubah_7047(b):
-    q = b.decode('latin1')
+    q = perbaiki_7047(b.decode('latin1'))
     nl = '\r\n' if '\r\n' in q else '\n'
     i4 = q.index('WHEN p1.urutan = 4 THEN')
     e = q.index('ELSE', i4)  # ELSE pertama sesudah cabang 4 = ELSE kueri tanpa kuasa
@@ -108,7 +134,7 @@ def ubah_7048(b):
 
 
 def ubah_7097(b):
-    q = b.decode('latin1')
+    q = perbaiki_7097(b.decode('latin1'))
     nl = '\r\n' if '\r\n' in q else '\n'
     i5 = q.index('WHEN p1.urutan = 5 THEN')
     e = q.index('ELSE', i5)
@@ -166,6 +192,10 @@ for no in (7047, 7048, 7097, 7098):
     nb = ubah[no]['baru_b']
     t = nb.decode('latin1')
     a = lama.decode('latin1')
+    if no == 7047:
+        a = perbaiki_7047(a)
+    if no == 7097:
+        a = perbaiki_7097(a)
     # buang cabang sisipan -> harus sama dengan lama
     i = 0
     while i < len(a) and a[i] == t[i]:

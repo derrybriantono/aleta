@@ -147,7 +147,7 @@ async function evalVar(ctx, noStr, pid, stack) {
         const sa = a.value == null ? null : String(a.value);
         const sb = b.value == null ? null : String(b.value);
         if (sa === sb) { hasil.sama[n]++; if (!sa || sa === 'DATA_TIDAK_ADA' || sa === '') hasil.kosongSama[n]++; }
-        else { hasil.beda[n].push(pid); if (!hasil.contohBeda[n]) hasil.contohBeda[n] = []; if (hasil.contohBeda[n].length < 40) hasil.contohBeda[n].push({ pid, sebelum: (sa || '').slice(0, 1500), sesudah: (sb || '').slice(0, 1500), pjSeb: (sa || '').length, pjSes: (sb || '').length }); }
+        else { hasil.beda[n].push(pid); if (!hasil.contohBeda[n]) hasil.contohBeda[n] = []; if (hasil.contohBeda[n].length < 40) hasil.contohBeda[n].push({ pid, sebelum: (sa || '').slice(0, Number(process.env.BATAS_CONTOH || 1500)), sesudah: (sb || '').slice(0, Number(process.env.BATAS_CONTOH || 1500)), pjSeb: (sa || '').length, pjSes: (sb || '').length }); }
       }
       for (const g of galat) hasil.galat.push(g);
       selesai++;

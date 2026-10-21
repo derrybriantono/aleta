@@ -1,0 +1,59 @@
+{
+ "7047": {
+  "A: di atas batas lama (>=5 Pemohon)": [
+   16,
+   [
+    5979,
+    6759,
+    6326,
+    7154,
+    7315,
+    7450
+   ]
+  ],
+  "B: tepat 4 Pemohon + kuasa - hanya koma": [
+   5,
+   [
+    6426,
+    6770,
+    6810,
+    7299,
+    8028
+   ]
+  ]
+ },
+ "7097": {
+  "A: di atas batas lama (>=6 Pemohon)": [
+   11,
+   [
+    5979,
+    6759,
+    6326,
+    7154,
+    7315,
+    6949
+   ]
+  ],
+  "B: tepat 3 Pemohon + kuasa - III ditambah": [
+   5,
+   [
+    6425,
+    9292,
+    9348,
+    9430,
+    10155
+   ]
+  ],
+  "C: tepat 2 Pemohon + kuasa - tag HTML dibetulkan": [
+   13,
+   [
+    6428,
+    6065,
+    6311,
+    7287,
+    2305,
+    7609
+   ]
+  ]
+ }
+}

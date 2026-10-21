@@ -67,9 +67,9 @@
    "kolom": "sql_query",
    "ket": "7047: cabang urutan >= 5 (dulu ELSE kosong) memakai #3507# dan #3508#",
    "lama_md5": "a7955dd37306ae7033c8efaec385d396",
-   "baru_md5": "253fbf7688001c36b64ce0044a5e098f",
+   "baru_md5": "4768ceb89c86ce434e89654add897548",
    "lama_panjang": 7663,
-   "baru_panjang": 9030
+   "baru_panjang": 9031
   },
   {
    "no": 7048,
@@ -94,9 +94,9 @@
    "kolom": "sql_query",
    "ket": "7097: cabang urutan >= 6 memakai #3511#",
    "lama_md5": "8066a1f0f34a09b007ff7f9659ec5cb0",
-   "baru_md5": "0f60c7df35377afa58cc83163a74141b",
+   "baru_md5": "34861e8bbe329026885e141001b2eaa5",
    "lama_panjang": 4592,
-   "baru_panjang": 5012
+   "baru_panjang": 5060
   },
   {
    "no": 7098,
