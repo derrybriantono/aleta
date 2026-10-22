@@ -208,6 +208,53 @@ const idKiri = (h: Halaman) => qq(h, ".bd-mkiri [data-kelmodal]").map((b) => b.g
 const berkasKanan = (h: Halaman) => qq(h, ".bd-mkanan [data-bl]").map((b) => b.getAttribute("data-bl"));
 
 // ============================================================================
+describe("9. Sembunyikan yang selesai", () => {
+  it("bawaan TERCENTANG: perkara berprioritas Selesai disembunyikan dan jumlahnya disebut jujur", async () => {
+    const h = buka();
+    await bukaDaftar(h);
+    const kotak = q(h, "#bd-sembunyi") as HTMLInputElement;
+    expect(kotak.checked).toBe(true);
+    expect(kotak.parentElement!.textContent).toContain("Sembunyikan yang selesai");
+    expect(nomorKartu(h)).not.toContain(N_CT_SELESAI);
+    expect(nomorKartu(h)).toHaveLength(3);
+    expect(q(h, "#bd-ketsembunyi")!.textContent).toContain("1 perkara yang selesai disembunyikan");
+    expect(q(h, "#bd-ketdaftar")!.textContent).toContain("3 perkara");
+  });
+
+  it("hilangkan centang: yang selesai tampil lagi (berlabel Selesai), pilihan diingat per pengguna", async () => {
+    const h = buka();
+    await bukaDaftar(h);
+    ubah(h, q(h, "#bd-sembunyi") as HTMLInputElement, false);
+    await sampai(() => nomorKartu(h).includes(N_CT_SELESAI), "yang selesai tampil");
+    expect(nomorKartu(h)).toHaveLength(4);
+    expect(q(h, `[data-pk="${N_CT_SELESAI}"] .bd-prio`)!.textContent).toBe("Selesai");
+    expect(q(h, "#bd-ketsembunyi")).toBeNull();
+    expect((h.simpanan.blangkoDerryDaftar as { sembunyi?: boolean }).sembunyi).toBe(false);
+  });
+
+  it("pilihan tersimpan dibaca di kunjungan berikutnya: tak tercentang tetap tak tercentang; tercentang kembali bila diceklis", async () => {
+    const h = buka({ simpanan: { blangkoDerryDaftar: { sembunyi: false } } });
+    await bukaDaftar(h);
+    expect((q(h, "#bd-sembunyi") as HTMLInputElement).checked).toBe(false);
+    expect(nomorKartu(h)).toContain(N_CT_SELESAI);
+    ubah(h, q(h, "#bd-sembunyi") as HTMLInputElement, true);
+    await sampai(() => !nomorKartu(h).includes(N_CT_SELESAI), "disembunyikan lagi");
+    expect((h.simpanan.blangkoDerryDaftar as { sembunyi?: boolean }).sembunyi).toBe(true);
+  });
+
+  it("semua perkara selesai: bukan 'kosong' yang menyesatkan, melainkan kalimat jujur + tombol Tampilkan yang selesai", async () => {
+    const h = buka({ daftar: [DAFTAR_LENGKAP[3]] });
+    await sampai(() => D_(h).getElementById("aleta-bd-tawar") || h.w.aletaBlangkoDerry.keadaan().peran.length, "siap");
+    (Array.from(D_(h).querySelectorAll("#navbar .accordion")).find((b) => /Blangko Derry/.test(b.textContent || "")) as HTMLElement).click();
+    await sampai(() => q(h, '[data-bd="tampil-selesai"]'), "kalimat semua selesai");
+    expect(q(h, ".bd-catat")!.textContent).toContain("Semua 1 perkara pada daftar ini sudah selesai");
+    expect(nomorKartu(h)).toEqual([]);
+    klik(h, '[data-bd="tampil-selesai"]');
+    await sampai(() => nomorKartu(h).includes(N_CT_SELESAI), "yang selesai tampil");
+    expect((q(h, "#bd-sembunyi") as HTMLInputElement).checked).toBe(false);
+  });
+});
+
 describe("4. Tanggal tertentu", () => {
   it("tombol baru 'Tanggal tertentu' memuat SATU tanggal (dari = sampai); 'Rentang tanggal' tetap dua isian", async () => {
     const h = buka();
@@ -246,6 +293,34 @@ describe("4. Tanggal tertentu", () => {
     await tunggu(40);
     expect(h.minta.slice(sebelum).filter((m) => m.url.includes("perkara-saya"))).toEqual([]);
     expect(q(h, ".bd-peringatan")).toBeNull();
+  });
+});
+
+describe("8. Sidang ke-N dan agenda di kolom Perkara", () => {
+  it("kartu: 'Sidang ke-3 · Musyawarah majelis' di bawah nomor perkara", async () => {
+    const h = buka();
+    await bukaDaftar(h);
+    expect(q(h, `[data-pk="${N_ITSBAT}"] [data-kesidang]`)!.textContent).toBe("Sidang ke-3 · Musyawarah majelis");
+    expect(q(h, `[data-pk="${N_CG}"] [data-kesidang]`)!.textContent).toBe("Sidang ke-2 · Pembuktian Penggugat");
+  });
+
+  it("daftar ringkas dan tabel detail memuat keterangan yang sama", async () => {
+    const h = buka();
+    await bukaDaftar(h);
+    klik(h, '[data-lihat="ringkas"]');
+    await sampai(() => q(h, `.bd-brs[data-pk="${N_ITSBAT}"] [data-kesidang]`), "daftar ringkas");
+    expect(q(h, `.bd-brs[data-pk="${N_ITSBAT}"] [data-kesidang]`)!.textContent).toBe("Sidang ke-3 · Musyawarah majelis");
+    klik(h, '[data-lihat="tabel"]');
+    await sampai(() => q(h, `tr[data-pk="${N_ITSBAT}"] [data-kesidang]`), "tabel detail");
+    const sel = q(h, `tr[data-pk="${N_ITSBAT}"] td.nw`)!;
+    expect(sel.textContent).toContain("225/Pdt.P/2026");
+    expect(sel.textContent).toContain("Sidang ke-3 · Musyawarah majelis");
+  });
+
+  it("tanpa nomor urut dari SIPP: hanya agenda (tidak ada 'ke-0')", async () => {
+    const h = buka({ daftar: [PK("910/Pdt.G/2026", "Cerai Gugat", [SI(HARI_INI, "Sidang Pertama", "", 0)])] });
+    await bukaDaftar(h);
+    expect(q(h, '[data-pk="910/Pdt.G/2026/PA.Dgl"] [data-kesidang]')!.textContent).toBe("Sidang Pertama");
   });
 });
 

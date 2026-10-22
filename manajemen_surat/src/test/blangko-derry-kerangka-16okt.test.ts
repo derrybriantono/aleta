@@ -126,7 +126,9 @@ function buka(p: Opsi = {}): Halaman {
   terbuka.push(dom);
   const w = dom.window as any;
   for (const [k, v] of Object.entries(p.sesi || {})) w.sessionStorage.setItem(k, v);
-  const simpanan: Record<string, unknown> = polos(p.simpanan ?? {});
+  // 22 Okt 2026: "Sembunyikan yang selesai" kini bawaan tercentang. Uji ini mengukur isi daftar lengkap (perkara selesai ikut), jadi
+  // pilihannya dimatikan di sini; perilaku bawaan dan saklarnya diuji di blangko-derry-tampilan-22okt.test.ts.
+  const simpanan: Record<string, unknown> = polos({ blangkoDerryDaftar: { sembunyi: false }, ...(p.simpanan ?? {}) });
   const pendengar: Array<(u: any, wilayah: string) => void> = [];
   const tulis: Array<Record<string, unknown>> = [];
   const local = {
