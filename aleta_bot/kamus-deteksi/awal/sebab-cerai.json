@@ -1,7 +1,7 @@
 {
   "kelompok": "sebab-cerai",
   "versi": 1,
-  "catatan": "R2 14 Okt 2026: SEBAB perselisihan untuk 5227 (Alasan-Alasan Cerai) yang tidak tertangkap ciri lama (kamus alasan) - terutama cerai talak, yang pelakunya istri (Termohon): keluarga ikut campur, merendahkan/tidak menghargai Pemohon sebagai kepala keluarga, tidak taat, tidak mendengar nasihat, keluar rumah tanpa izin, tidak merasa cukup dengan nafkah, tidak mau ikut suami, dst. Bentuk dan ragamnya dari keterangan saksi & isian 5227 hakim PA Donggala 2024-2026 (dibaca baca-saja). untuk = CT | CG | semua; subjek = siapa pelakunya menurut klausa kalimat (pelaku | keluarga | pelaku/keluarga | lawan-pasif | bersama); frasa = predikat sesudah subjek ({pelaku}=0047, {lawan}=0046); urutan = letak di kalimat 5227; urut = varian sekunci, yang pertama cocok menang; negasi = tolak bila didahului 'tidak/bukan'; menutupiCiri = ciri lama (kamus alasan) yang diwakili sebab ini. Dipakai deteksi/sebabCerai.js. Tiap kalimat tetap USULAN. W49 22 Okt 2026: 24 pola sebab baru dari klausa sebab posita yang tak tertangkap (marah bila dinasihati, keuangan tertutup, pergi berhari-hari, keluar tanpa sepengetahuan CG, mengucapkan talak/cerai, kurang perhatian, merusak barang, anak bawaan, menjual harta, mengungkit pemberian, memfitnah, lalai ibadah, mencuri/menipu, ingkar janji, tidak membantu mengurus anak, komunikasi, mementingkan diri, pemalas, keturunan, memilih tinggal dengan orang tua).",
+  "catatan": "R2 14 Okt 2026: SEBAB perselisihan untuk 5227 (Alasan-Alasan Cerai) yang tidak tertangkap ciri lama (kamus alasan) - terutama cerai talak, yang pelakunya istri (Termohon): keluarga ikut campur, merendahkan/tidak menghargai Pemohon sebagai kepala keluarga, tidak taat, tidak mendengar nasihat, keluar rumah tanpa izin, tidak merasa cukup dengan nafkah, tidak mau ikut suami, dst. Bentuk dan ragamnya dari keterangan saksi & isian 5227 hakim PA Donggala 2024-2026 (dibaca baca-saja). untuk = CT | CG | semua; subjek = siapa pelakunya menurut klausa kalimat (pelaku | keluarga | pelaku/keluarga | lawan-pasif | bersama); frasa = predikat sesudah subjek ({pelaku}=0047, {lawan}=0046); urutan = letak di kalimat 5227; urut = varian sekunci, yang pertama cocok menang; negasi = tolak bila didahului 'tidak/bukan'; menutupiCiri = ciri lama (kamus alasan) yang diwakili sebab ini. Dipakai deteksi/sebabCerai.js. Tiap kalimat tetap USULAN. W49 22 Okt 2026: 26 pola sebab baru dari klausa sebab posita yang tak tertangkap (marah bila dinasihati, keuangan tertutup, pergi berhari-hari, keluar tanpa sepengetahuan CG, mengucapkan talak/cerai, kurang perhatian, merusak barang, anak bawaan, menjual harta, mengungkit pemberian, memfitnah, lalai ibadah, mencuri/menipu, ingkar janji, tidak membantu mengurus anak, komunikasi, mementingkan diri, pemalas, keturunan, memilih tinggal dengan orang tua, nafkah batin cerai gugat).",
   "pola": [
     {
       "kode": "sebab-keluarga-campur",
@@ -1201,6 +1201,53 @@
         "telah dikaruniai dua orang anak"
       ],
       "subjekTeks": "antara {lawan} dan {pelaku}"
+    },
+    {
+      "kode": "sebab-nafkah-batin-cg",
+      "label": "nafkah batin (CG)",
+      "kunci": "nafkah batin",
+      "jenis": "sebab",
+      "regex": "\\b(?:tidak|sulit|enggan|menolak|jarang|kurang(?:nya)?)\\b[^.;,]{0,30}?\\b(?:nafkah\\s+batin|berhubungan\\s+(?:badan|suami\\s+ist(?:e)?ri)|hubungan\\s+(?:badan|suami\\s+ist(?:e)?ri|intim))",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "CG",
+      "subjek": "pelaku",
+      "negasi": false,
+      "frasa": "tidak memenuhi nafkah batin {lawan}",
+      "urutan": 72,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat juga tidak pernah memberikan nafkah batin kepada Penggugat",
+        "Tergugat kurang memberikan perhatian hingga kurangnya memberikan nafkah batin"
+      ],
+      "contohSalah": [
+        "Tergugat memberikan nafkah lahir"
+      ]
+    },
+    {
+      "kode": "sebab-nafkah-batin-cg-pasif",
+      "label": "nafkah batin (CG, pasif)",
+      "kunci": "nafkah batin",
+      "jenis": "sebab",
+      "regex": "\\b(?:tidak|belum)\\s+(?:pernah\\s+)?(?:lagi\\s+)?(?:mendapat(?:kan)?|menerima|diberi(?:kan)?)\\s+nafkah\\s+batin\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 2,
+      "untuk": "CG",
+      "subjek": "lawan-pasif",
+      "negasi": false,
+      "frasa": "tidak memenuhi nafkah batin {lawan}",
+      "urutan": 72,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "penggugat tidak pernah mendapatkan Nafkah Batin dari Tergugat"
+      ],
+      "contohSalah": [
+        "Penggugat mendapatkan nafkah batin"
+      ]
     },
     {
       "kode": "sebab-pilih-orang-tua",

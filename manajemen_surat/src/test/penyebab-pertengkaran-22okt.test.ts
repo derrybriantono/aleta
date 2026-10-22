@@ -10,7 +10,7 @@
  * Teks di bawah dipetik dari posita SIPP dan BAS saksi (abt_keterangan_saksi) sungguhan, dibaca baca-saja
  * 22 Okt 2026; nama, tempat, dan tanggal diganti. Ukur (D:/aleta-dev/kerja/w49): 1.060 perkara cerai ber-BAS
  * 2025-2026 - 5227 "hanya perselisihan" 44 -> 29, 87 perkara bertambah sebabnya; sebab isian 5227 hakim/PP yang
- * terbaca dari posita 651/774 -> 695/774 (lengkap 216 -> 252 dari 318 perkara).
+ * terbaca dari posita 649/777 -> 698/777 (lengkap 214 -> 251 dari 318 perkara).
  */
 import path from "node:path";
 import { createRequire } from "node:module";
