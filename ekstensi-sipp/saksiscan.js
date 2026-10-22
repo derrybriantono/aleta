@@ -2402,7 +2402,8 @@ async function saksibantuTulisKeterangan(kotak, paksa) {
     saksibantuKeadaan.pilihan.ditulis = hasil;
     saksibantuKeadaan.pilihan.namaSaat = saksibantuNilai(f, "#fullname");
     kotak.querySelector(".aleta-c2-sbantu-ganti").hidden = true;
-    saksibantuStatus(status, `Keterangan: "${hasil}" - BELUM TERSIMPAN, tekan Simpan SIPP sendiri.`, "aman");
+    // Keterangan terisi di blangko; kalimat "belum tersimpan" tidak ditampilkan (22 Okt).
+    saksibantuStatus(status, "", "");
   } else {
     saksibantuStatus(status, "Keterangan tidak dapat diisi - ketik sendiri di kotak Keterangan SIPP.", "lewat");
   }
@@ -2428,40 +2429,9 @@ async function saksibantuSimpanKeDaftar(kotak) {
   saksibantuStatus(status, `"${baru}" ${j.isi.sudahAda ? "sudah ada di" : "ditambahkan ke"} daftar hubungan.`, "aman");
 }
 
-async function saksibantuAturHubungan(kotak, kunci, aktif) {
-  const j = await saksibantuKirim({ aksi: aktif ? "tampilkan" : "sembunyikan", kunci });
-  const status = kotak.querySelector(".aleta-c2-sbantu-status");
-  if (!j.ok || !j.isi || j.isi.ok === false) {
-    saksibantuStatus(status, saksiscanTeksPesan((j.isi && j.isi.alasan) || j.pesan) || "Tidak berhasil.", "lewat");
-    return;
-  }
-  await saksibantuMuatData(true);
-  saksibantuIsiPilihanHubungan(kotak.querySelector(".aleta-c2-sbantu-hub"));
-  saksibantuIsiKelola(kotak);
-}
-
-function saksibantuIsiKelola(kotak) {
-  const wadah = kotak.querySelector(".aleta-c2-sbantu-kelola-isi");
-  if (!wadah) return;
-  wadah.textContent = "";
-  const semua = (saksibantuKeadaan.data && saksibantuKeadaan.data.hubungan) || [];
-  for (const h of semua) {
-    const baris = saksiscanEl("div", "aleta-c2-sbantu-kelola-baris");
-    baris.appendChild(saksiscanEl("span", "", `${h.teks}${h.bawaan ? "" : " (tambahan)"}${h.aktif === false ? " - disembunyikan" : ""}`));
-    const b = saksiscanEl("button", "aleta-tombol", h.aktif === false ? "Tampilkan" : "Sembunyikan");
-    b.type = "button";
-    b.addEventListener("click", () => void saksibantuAturHubungan(kotak, h.kunci, h.aktif === false));
-    baris.appendChild(b);
-    wadah.appendChild(baris);
-  }
-}
-
 function saksibantuBuatKotak() {
   const kotak = saksiscanEl("div", "aleta-c2-sbantu");
   kotak.appendChild(saksiscanEl("div", "aleta-c2-sbantu-judul", "Hubungan saksi (ALETA)"));
-  kotak.appendChild(
-    saksiscanEl("div", "aleta-c2-sbantu-lembut", "Pilih sebelum [Cari] - jenis kelamin ikut diusulkan di blangko data pihak. Keterangan diisi lengkap dengan sebutan pihak menurut jenis perkara.")
-  );
   const baris = saksiscanEl("div", "aleta-c2-sbantu-baris");
   const hub = saksiscanEl("select", "aleta-c2-sbantu-hub");
   hub.setAttribute("aria-label", "Hubungan saksi dengan pihak");
@@ -2500,16 +2470,6 @@ function saksibantuBuatKotak() {
   const status = saksiscanEl("div", "aleta-c2-sbantu-status");
   status.hidden = true;
   kotak.appendChild(status);
-
-  const kelola = document.createElement("details");
-  kelola.className = "aleta-c2-sbantu-kelola";
-  kelola.hidden = true;
-  kelola.appendChild(saksiscanEl("summary", "", "Kelola daftar hubungan (Admin)"));
-  kelola.appendChild(saksiscanEl("div", "aleta-c2-sbantu-kelola-isi"));
-  kelola.addEventListener("toggle", () => {
-    if (kelola.open) saksibantuIsiKelola(kotak);
-  });
-  kotak.appendChild(kelola);
 
   const segarkan = () => {
     const h = saksibantuHasilKini(kotak);
@@ -2550,7 +2510,7 @@ function saksibantuBuatKotak() {
     if (ok) {
       saksibantuKeadaan.pilihan.ditulis = rapi;
       rapikan.hidden = true;
-      saksibantuStatus(status, `Keterangan dirapikan: "${rapi}" - BELUM TERSIMPAN, tekan Simpan SIPP sendiri.`, "aman");
+      saksibantuStatus(status, "", "");
     }
   });
   return kotak;
@@ -2623,8 +2583,6 @@ function saksibantuSegarkanKotak(f) {
   } else {
     peringatan.hidden = true;
   }
-  const kelola = kotak.querySelector(".aleta-c2-sbantu-kelola");
-  kelola.hidden = !(data && data.bolehKelola);
 }
 
 function saksibantuPasangKotak(f) {

@@ -178,6 +178,10 @@
   .tarik-ecourt[data-keadaan="aktif"] { --tarik-warna: #2e9d62; }
   .tarik-ecourt[data-keadaan="perhatian"] { --tarik-warna: #d99a1e; }
   .tarik-ecourt[data-keadaan="tidak-terjangkau"] { --tarik-warna: #d4483b; }
+  .hubungan-saksi-isi { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; max-height: 220px; overflow: auto; }
+  .hubungan-saksi-baris { display: flex; align-items: center; gap: 6px; font-size: 11.5px; }
+  .hubungan-saksi-baris[data-sembunyi="ya"] > span { opacity: .6; text-decoration: line-through; }
+  .hubungan-saksi-baris > span { flex: 1 1 auto; }
   .tarik-baris { display: flex; align-items: center; gap: 7px; }
   .tarik-titik { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--tarik-warna); }
   .tarik-ecourt[data-keadaan="mati"] .tarik-titik { background: transparent; border: 2px solid var(--tarik-warna); box-sizing: border-box; }
@@ -879,6 +883,18 @@
   </div>
 </div>
 <!-- === AKHIR 12OKT-F === -->
+<!-- === 22OKT-W50: Daftar hubungan saksi - ADMIN DAN SUPER ADMIN SAJA ===
+     Dulu tautan "Kelola daftar hubungan" ada di kotak hubungan blangko saksi
+     SIPP; kotak itu kini hanya dropdown. Menyembunyikan / menampilkan pilihan
+     hubungan dilakukan di sini; rute server menolak peran lain. -->
+<div id="bagianHubunganSaksi" class="bagian-uji" hidden>
+  <details id="hubunganSaksiLaci">
+    <summary class="saklar-ket">Daftar hubungan saksi (pilihan di blangko saksi SIPP)</summary>
+    <div id="hubunganSaksiIsi" class="hubungan-saksi-isi"></div>
+    <p id="hubunganSaksiKet" class="saklar-ket" aria-live="polite"></p>
+  </details>
+</div>
+<!-- === AKHIR 22OKT-W50 === -->
 
 <!-- Bagi yang BUKAN Super Admin, bila Super Admin meninggalkan tampilan uji
      menyala di PC ini: disebut, dan dapat dikembalikan ke Lama. Kembali ke

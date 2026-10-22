@@ -11216,10 +11216,6 @@ html[data-aleta-tema-sipp="gelap"] .aleta-c2-sbantu {
 .aleta-c2-sbantu-calon-nama { font-weight: 600; }
 .aleta-c2-sbantu-chip { display: flex; flex-wrap: wrap; gap: 4px; margin: 3px 0; }
 .aleta-c2-sbantu-kurang { color: var(--c2-mendesak); margin: 3px 0; }
-.aleta-c2-sbantu-kelola { margin-top: 4px; }
-.aleta-c2-sbantu-kelola summary { cursor: pointer; color: var(--c2-lembut); }
-.aleta-c2-sbantu-kelola-isi { max-height: 180px; overflow: auto; }
-.aleta-c2-sbantu-kelola-baris { display: flex; justify-content: space-between; gap: 6px; align-items: center; margin: 2px 0; }
 /* === AKHIR 1.189.x BANTU DATA SAKSI === */
 
 /* === S5/H3 10 Okt: tingkat yakin + Input semua yang pasti === */

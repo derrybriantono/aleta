@@ -860,6 +860,8 @@ async function periksaAkunAleta(asal) {
     void pasangModeLatihan(peran);
     // 12OKT-F: baris "Tarik data e-Court" - Super Admin dan Admin; server menjaga juga.
     void pasangTarikEcourt(asal, peran);
+    // 22OKT-W50: daftar hubungan saksi (dulu tautan di kotak blangko saksi SIPP) - Admin dan Super Admin.
+    pasangHubunganSaksi(asal);
 
     // Versi yang disajikan portal ikut datang pada jawaban yang sama - satu
     // permintaan, dua pertanyaan terjawab.
@@ -1540,6 +1542,97 @@ async function pasangTarikEcourt(asal, peran) {
   gambarTarikEcourt();
 }
 /* === AKHIR 12OKT-F === */
+
+/* === 22OKT-W50: daftar hubungan saksi (ADMIN DAN SUPER ADMIN) === */
+const hubunganSaksi = { asal: "", sibuk: false };
+
+async function panggilHubunganSaksi(cara, badan) {
+  const pembatal = new AbortController();
+  const penghenti = setTimeout(() => pembatal.abort(), 8000);
+  try {
+    const r = await fetch(`${hubunganSaksi.asal}/api/aleta-ecourt/saksi-bantu`, {
+      method: cara,
+      credentials: "include",
+      cache: "no-store",
+      signal: pembatal.signal,
+      ...(badan ? { headers: { "content-type": "application/json" }, body: JSON.stringify(badan) } : {}),
+    });
+    if (r.status === 401) return { galat: "Belum masuk portal ALETA." };
+    if (r.status === 403) return { galat: "Hanya Super Admin dan Admin." };
+    const luar = await r.json().catch(() => null);
+    const isi = luar && luar.data ? luar.data : luar;
+    if (!r.ok || !isi) return { galat: `Server menjawab ${r.status}.` };
+    return { data: isi };
+  } catch (galat) {
+    return { galat: galat && galat.name === "AbortError" ? "Server tidak menjawab." : "Server tidak terjangkau." };
+  } finally {
+    clearTimeout(penghenti);
+  }
+}
+
+function gambarHubunganSaksi(daftar, kabar) {
+  const isi = document.getElementById("hubunganSaksiIsi");
+  const ket = document.getElementById("hubunganSaksiKet");
+  if (!isi || !ket) return;
+  isi.textContent = "";
+  for (const h of Array.isArray(daftar) ? daftar : []) {
+    const baris = document.createElement("div");
+    baris.className = "hubungan-saksi-baris";
+    if (h.aktif === false) baris.setAttribute("data-sembunyi", "ya");
+    const nama = document.createElement("span");
+    nama.textContent = `${h.teks}${h.bawaan ? "" : " (tambahan)"}${h.aktif === false ? " - disembunyikan" : ""}`;
+    const tombol = document.createElement("button");
+    tombol.type = "button";
+    tombol.className = "uji-kecil";
+    tombol.textContent = h.aktif === false ? "Tampilkan" : "Sembunyikan";
+    tombol.addEventListener("click", () => void aturHubunganSaksi(h.kunci, h.aktif === false));
+    baris.appendChild(nama);
+    baris.appendChild(tombol);
+    isi.appendChild(baris);
+  }
+  ket.textContent = kabar || "";
+}
+
+async function muatHubunganSaksi() {
+  gambarHubunganSaksi([], "Memuat…");
+  const j = await panggilHubunganSaksi("GET");
+  if (j.galat || !j.data) return gambarHubunganSaksi([], j.galat || "Jawaban server tidak terbaca.");
+  gambarHubunganSaksi(j.data.hubungan, "");
+}
+
+async function aturHubunganSaksi(kunci, tampilkan) {
+  if (hubunganSaksi.sibuk) return;
+  hubunganSaksi.sibuk = true;
+  try {
+    const j = await panggilHubunganSaksi("POST", { aksi: tampilkan ? "tampilkan" : "sembunyikan", kunci });
+    if (j.galat || !j.data || j.data.ok === false) {
+      return gambarHubunganSaksi([], j.galat || (j.data && j.data.alasan) || "Tidak berhasil.");
+    }
+    await muatHubunganSaksi();
+  } finally {
+    hubunganSaksi.sibuk = false;
+  }
+}
+
+function pasangHubunganSaksi(asal) {
+  const bagian = document.getElementById("bagianHubunganSaksi");
+  const laci = document.getElementById("hubunganSaksiLaci");
+  if (!bagian || !laci) return;
+  if (!asal || !popupAdmin()) {
+    bagian.hidden = true;
+    return;
+  }
+  hubunganSaksi.asal = asal;
+  if (!laci.dataset.terpasang) {
+    laci.dataset.terpasang = "ya";
+    laci.addEventListener("toggle", () => {
+      if (laci.open) void muatHubunganSaksi();
+    });
+  }
+  bagian.hidden = false;
+}
+/* === AKHIR 22OKT-W50 === */
+
 
 const tombolTema = document.getElementById("tombolTema");
 let temaPopup = "ikut";
@@ -2235,6 +2328,7 @@ function kelompokkanSaklar(denganAdmin) {
     wadah.admin = adm;
     pindahkan(document.getElementById("bagianLatihan"), adm, null);
     pindahkan(document.getElementById("bagianTarikEcourt"), adm, null);
+    pindahkan(document.getElementById("bagianHubunganSaksi"), adm, null);
   }
   return wadah;
 }
