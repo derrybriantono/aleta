@@ -22,6 +22,7 @@ dengan judul bagian biasa.
 | SIPP | Tandai halaman SIPP | `tandaiHalaman` | nyala | konten.js, panel-alat.js | semua |
 | SIPP | Sisipkan berkas ke Jadwal Sidang | `sisipJadwal` | mati | konten.js | semua |
 | SIPP | Pratinjau dokumen sebelum unduh | `pratinjauBasRelaas` | menyala | pratinjau-bas-relaas.js | semua |
+| SIPP | Menu ABT By Derry dan ALETA di bilah atas SIPP | `menuAtasSipp` | menyala | menu-atas.js | semua |
 | SIPP | Kotak ringkasan di halaman perkara SIPP | `sippPenyatu` | nyala | sipp-ide-m2.js | semua |
 | SIPP | Tampilkan tombol ALETA yang dobel | `sippTampilDobel` | mati | sipp-ide-m2.js | semua |
 | SIPP | Gembok panel ALETA di SIPP: selalu tampil penuh | `gembokKepalaSipp` | mati | panel-alat.js | semua |

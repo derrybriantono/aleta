@@ -785,6 +785,14 @@ async function tampilkanPdfTitipan(pesan) {
 chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
   if (!pesan || pesan.sumber !== "aleta-panel") return undefined;
 
+  // Menu ABT By Derry / ALETA di bilah atas SIPP (22 Okt 2026) - lihat menu-atas.js.
+  if (pesan.jenis === "menu-buka-tab") {
+    layaniMenuBukaTab(pesan, pengirim)
+      .then(jawab)
+      .catch(() => jawab({ ok: false, sebab: "gagal" }));
+    return true; // jawaban menyusul
+  }
+
   // Masuk SIPP & ABT otomatis (7 Okt 2026) - lihat layaniMasuk di kaki berkas.
   // MASUK-SESI-SIPP 11 Okt: masuk-sesi-boleh / masuk-sesi-lepas (panel SIPP).
   if (["masuk-titip", "masuk-lupakan", "masuk-minta", "masuk-gagal", "masuk-sesi-boleh", "masuk-sesi-lepas"].includes(pesan.jenis)) {
@@ -3396,6 +3404,28 @@ function masukTeks(nilai, batas) {
   return nilai.length > batas ? "" : nilai;
 }
 
+/**
+ * Menu bilah atas SIPP (22 Okt 2026): membuka tab baru ke tujuan yang DISUSUN DI SINI dari asal halaman
+ * pengirim - skrip konten hanya menyebut nama tujuannya ("abt" | "aleta"), tidak pernah alamatnya, jadi
+ * pesan palsu tidak dapat membuka alamat sembarang. Hanya dari halaman SIPP, bingkai teratas, ekstensi ini.
+ */
+async function layaniMenuBukaTab(pesan, pengirim) {
+  if (!masukPengirimSah(pengirim)) return { ok: false, sebab: "pengirim tidak dikenal" };
+  const alamat = (pengirim && (pengirim.url || (pengirim.tab && pengirim.tab.url))) || "";
+  if (masukJenisHalaman(alamat) !== "sipp") return { ok: false, sebab: "bukan halaman SIPP yang dikenal" };
+  const asalUrai = masukUrai(alamat) || {};
+  const asal = asalUrai.origin || "";
+  // Hanya server satker (atau SIPP setempat): host lain tidak pernah dijadikan dasar alamat tujuan.
+  if (!asal || !["192.168.10.10", "127.0.0.1", "localhost"].includes(String(asalUrai.hostname || ""))) return { ok: false, sebab: "asal tidak dikenal" };
+  const tujuan = String(pesan.tujuan || "");
+  let url = "";
+  if (tujuan === "abt") url = `${asal}/aps_badilag/abt/main/beranda#aleta-derry=1`;
+  else if (tujuan === "aleta") url = `${asal}/aleta`;
+  if (!url) return { ok: false, sebab: "tujuan tidak dikenal" };
+  const tab = await chrome.tabs.create({ url, active: true });
+  return { ok: true, tab: tab && tab.id };
+}
+
 async function layaniMasuk(pesan, pengirim) {
   const gudang = masukPenyimpanan();
   if (!gudang) return { ok: false, sebab: "chrome.storage.session tidak tersedia; titipan tidak disimpan di tempat lain" };
@@ -3529,6 +3559,7 @@ const KUNCI_SETELAN_AKUN = [
   "widgetKehadiran",
   "widgetDrafH7",
   "pratinjauBasRelaas",
+  "menuAtasSipp",
   "gembokKepalaAbt",
   "panelRingkas",
   "gembokKepalaSipp",
