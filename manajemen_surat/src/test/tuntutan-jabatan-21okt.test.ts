@@ -206,7 +206,9 @@ describe("E. Pilih tanggal (Blangko ABT by Derry, bagian Perkara)", () => {
   it("bawaan panel = Sidang hari ini: mode tersimpan TIDAK dipulihkan; tanpa tanggal tidak ada permintaan ke server", () => {
     expect(JS_DERRY).toContain('mode: "hari",');
     expect(JS_DERRY).not.toMatch(/S\.mode = d\.mode/);
-    expect(JS_DERRY).toMatch(/async function muatDaftar\(paksa\) \{[\s\S]{0,260}!rentangDari\(S\.dari, S\.sampai\)[\s\S]{0,200}return;/);
+    // 22 Okt: "Tanggal tertentu" ikut aturan yang sama - rentangMode() memakai rentangDari (rentang) / rentangDari(S.tgl, S.tgl) (satu tanggal).
+    expect(JS_DERRY).toMatch(/async function muatDaftar\(paksa\) \{[\s\S]{0,260}!rentangMode\(\)[\s\S]{0,200}return;/);
+    expect(JS_DERRY).toMatch(/function rentangMode\(\) \{[\s\S]{0,200}rentangDari\(S\.tgl, S\.tgl\)[\s\S]{0,120}rentangDari\(S\.dari, S\.sampai\)/);
     expect(JS_DERRY).toContain("Pilih tanggal dulu - cukup satu tanggal untuk melihat satu hari.");
   });
 });

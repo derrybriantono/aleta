@@ -667,3 +667,17 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
   #aleta-bd-akar .bd-ms-baris { grid-template-columns: 28px 1fr; }
   #aleta-bd-akar .bd-ms-bl, #aleta-bd-akar .bd-ms-st { grid-column: 2; }
 }
+
+/* 22 Okt 2026: "Sidang ke-N · agenda sidang" di kolom Perkara (kartu, daftar ringkas, tabel detail) */
+#aleta-bd-akar .bd-kesidang { color: var(--muted); font-size: 12.3px; line-height: 1.35; }
+#aleta-bd-akar .bd-kesidang.blok { display: block; max-width: 30ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#aleta-bd-akar .bd-kpk .bd-kesidang { display: block; }
+
+/* 22 Okt 2026: kategori terpilih di jendela Pilih blangko diberi sorot yang jelas (latar berbeda + garis kiri); terang dan gelap lewat token. */
+#aleta-bd-akar .bd-kel.aktif {
+  background: var(--accentbg);
+  box-shadow: inset 4px 0 0 var(--accent), inset 0 0 0 1px var(--accentln);
+  font-weight: 700;
+}
+#aleta-bd-akar .bd-kel.aktif .kn { color: var(--fg); }
+#aleta-bd-akar .bd-kel.cocokperkara:not(.aktif) .ks { color: var(--ok); }

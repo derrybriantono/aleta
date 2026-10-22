@@ -556,7 +556,15 @@ describe("E. saran blangko mengikuti jenis blangko dan peran", () => {
   const teksSaran = (h: Halaman) => q(h, "#bd-saranblangko")!.textContent || "";
 
   it("blangko putusan terpilih: saran putusan, BAS yang kebetulan paling depan tidak ikut; teks tanpa istilah teknis", async () => {
-    const h = buka({ orang: "admin", usulan: [] });
+    // 22 Okt: Super Admin tanpa "Lihat sebagai" (Semua akun) belum punya peran, jadi tanpa saran di langkah 2; saran jenisnya diuji pada peran sebenarnya.
+    const admin = buka({ orang: "admin", usulan: [] });
+    await sampaiPerkara(admin);
+    isian(admin).pasangRekomendasi(SARAN_CAMPUR);
+    await pilih(admin, BLANGKO_PUT);
+    expect(teksSaran(admin)).toBe("Pilih blangko lewat tombol Pilih blangko.");
+    expect(q(admin, '[data-bd2="pakairek"]')).toBeNull();
+    // Hakim: blangko putusan terpilih -> saran putusan.
+    const h = buka({ orang: "hakim", usulan: [] });
     await sampaiPerkara(h);
     isian(h).pasangRekomendasi(SARAN_CAMPUR);
     await pilih(h, BLANGKO_PUT);
@@ -564,14 +572,17 @@ describe("E. saran blangko mengikuti jenis blangko dan peran", () => {
     expect(t).toContain("Blangko ini sesuai saran untuk sidang ke-2");
     expect(t).not.toMatch(/BAS|folder|alur|salin/i);
     expect(t).not.toMatch(/ALETA/);
-    // Blangko BAS terpilih: sebaliknya.
-    await pilih(h, BLANGKO_BAS, "bas");
-    const b = teksSaran(h);
+    // Panitera pengganti: blangko BAS terpilih -> saran BAS, sebaliknya.
+    const pp = buka({ orang: "pp", usulan: [] });
+    await sampaiPerkara(pp);
+    isian(pp).pasangRekomendasi(SARAN_CAMPUR);
+    await pilih(pp, BLANGKO_BAS, "bas");
+    const b = teksSaran(pp);
     expect(b).toContain("Saran untuk sidang ke-2");
     expect(b).toContain("BAS 1 P Hadir & T Tidak Hadir - Tunda Panggil T");
     expect(b).not.toContain("Kabul Verstek");
     expect(b).not.toMatch(/folder|alur 01|disalin/i);
-    expect(q(h, '[data-bd2="pakairek"]')).not.toBeNull();
+    expect(q(pp, '[data-bd2="pakairek"]')).not.toBeNull();
   });
 
   it("tanpa blangko: hakim dapat putusan, panitera pengganti BAS, juru sita relaas; tidak pernah jenis lain", async () => {
@@ -593,7 +604,8 @@ describe("E. saran blangko mengikuti jenis blangko dan peran", () => {
   });
 
   it("tidak ada saran yang cocok jenisnya: dikatakan terus terang, tidak menyarankan jenis lain", async () => {
-    const h = buka({ orang: "admin", usulan: [] });
+    // 22 Okt: dicoba sebagai hakim (peran sebenarnya); Semua akun memang tanpa kalimat saran apa pun.
+    const h = buka({ orang: "hakim", usulan: [] });
     await sampaiPerkara(h);
     isian(h).pasangRekomendasi(() => [{ berkas: BLANGKO_BAS_1, kelompok: "BAS CG", jenis: "bas", alasan: "dari keadaan perkara" }]);
     await pilih(h, BLANGKO_PUT);

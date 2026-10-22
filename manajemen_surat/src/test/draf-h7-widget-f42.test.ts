@@ -238,11 +238,23 @@ describe("widget ALETA: kotak Draf putusan H-7", () => {
       ["Draf putusan · 3 dari 4 siap", "kuning"],
       ["Draf putusan siap", "hijau"],
     ]);
-    const tautan = qs(h, "[data-draf-h7-widget] a.aleta-cmw-h7-aksi");
+    const tautan = qs(h, "[data-draf-h7-widget] a[data-h7-tahapan]");
     expect(tautan).toHaveLength(2);
     // 19 Okt: tautan "Lihat tahapan" membuka pop-up draf di Jadwal Sidang (?drafH7=<perkara>) - satu per perkara.
     expect(tautan.map((a) => a.getAttribute("href"))).toEqual(["http://192.168.10.10/aleta/aleta-ecourt?drafH7=12", "http://192.168.10.10/aleta/aleta-ecourt?drafH7=15"]);
     expect(tautan[0].textContent).toBe("Lihat tahapan");
+    // 22 Okt: dari SIPP draf putusan diarahkan ke Blangko ABT by Derry Briantono (tautan #bd= yang sama dengan Jadwal Sidang portal).
+    const derry = qs(h, "[data-draf-h7-widget] a[data-h7-derry]");
+    expect(derry.map((a) => a.getAttribute("data-h7-derry"))).toEqual(["12", "15"]);
+    expect(derry[0].textContent).toBe("Buka di Blangko Derry");
+    const href = derry[0].getAttribute("href") as string;
+    expect(href.startsWith("http://192.168.10.10/aps_badilag/abt/#bd=")).toBe(true);
+    expect(derry[0].getAttribute("target")).toBe("_blank");
+    expect(derry[0].getAttribute("rel")).toBe("noopener");
+    const muatan = JSON.parse(decodeURIComponent(href.slice(href.indexOf("#bd=") + 4)));
+    expect(muatan).toMatchObject({ v: 1, perkaraId: 12, jenis: "putusan", draf: "h7", varian: "dikabulkan" });
+    expect(muatan.nomor).toBeTruthy();
+    expect(muatan.tanggalSidang).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(h.minta).toEqual([API_H7]);
     expect(kotak.textContent).not.toMatch(/undefined|null|#\d{4}#/);
   });
@@ -257,6 +269,25 @@ describe("widget ALETA: kotak Draf putusan H-7", () => {
     const kotak = await sampai(() => q(h, ".aleta-cmw-dok [data-draf-h7-widget]"), "kotak di dok");
     expect(kotak.getAttribute("data-terbuka")).toBe("tidak");
     expect(kotak.querySelector(".aleta-lipat-kepala").getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("22 Okt: kotak TERLIPAT di setiap tab baru walau ingatan lama menyimpan 'terbuka'; yang dibentangkan petugas diingat hanya pada sesi tab ini", async () => {
+    const h = buka({ ujiTampilan: "ui", lipatTerbuka: { "widget:drafH7": true, "widget:kehadiran": true } });
+    const kotak = await sampai(() => q(h, ".aleta-cmw-dok [data-draf-h7-widget]"), "kotak di dok");
+    expect(kotak.getAttribute("data-terbuka")).toBe("tidak");
+    expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:widget:drafH7")).toBeNull();
+    // Petugas membentangkan: berlaku pada sesi tab ini, tidak ditulis ke chrome.storage.local.
+    kotak.querySelector(".aleta-lipat-kepala").click();
+    expect(q(h, "[data-draf-h7-widget]").getAttribute("data-terbuka")).toBe("ya");
+    expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:widget:drafH7")).toBe("1");
+    // Penyegaran/penggambaran ulang tidak melipatnya lagi.
+    await h.ubahSimpanan({ widgetDrafH7: true });
+    await tunggu(120);
+    expect(q(h, "[data-draf-h7-widget]").getAttribute("data-terbuka")).toBe("ya");
+    // Dilipat lagi oleh petugas: ingatan sesi dihapus.
+    q(h, "[data-draf-h7-widget] .aleta-lipat-kepala").click();
+    expect(q(h, "[data-draf-h7-widget]").getAttribute("data-terbuka")).toBe("tidak");
+    expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:widget:drafH7")).toBeNull();
   });
 
   it("saklar popup dimatikan: tanpa kotak dan tanpa permintaan; dinyalakan/dimatikan tanpa muat ulang", async () => {

@@ -360,6 +360,16 @@
     return Array.isArray(p) ? p : [];
   };
   /**
+   * 22 Okt 2026: Super Admin/Admin yang belum memilih "Lihat sebagai" (Semua akun) belum punya peran: saran blangko di langkah 2 tidak
+   * ditampilkan (peran menentukan jenis dokumennya). Saran tetap muncul di jendela Pilih blangko, mengikuti tab yang aktif.
+   */
+  const semuaAkun = () => {
+    if (!adm()) return false;
+    const a = api();
+    const kd = a && typeof a.keadaan === "function" ? a.keadaan() : null;
+    return !(kd && kd.sebagai && kd.sebagai.peran);
+  };
+  /**
    * Jenis dokumen yang boleh dibuka & ditulis (16 Okt malam): dari kerangka - Super Admin/Admin tanpa
    * "Lihat sebagai" semuanya; akun yang ditiru dan akun biasa hanya jenis perannya + saklar Pengaturan SIPP & ABT.
    */
@@ -1207,6 +1217,49 @@
     const m = cari("#bd-modal", wadah.akar);
     if (m) m.hidden = true;
   }
+  /**
+   * 22 Okt 2026: kunci kelompok (nama menu Derry) yang cocok dengan JENIS perkara terpilih, untuk jenis dokumen `jenisDok`.
+   * Sumbernya SATU: peta blangko putusan panel-alat.js (ALAT_PETA_BAWAAN, kunci jenis dari alatKunciJenis - padanan nama SIPP,
+   * bukan tebakan kata). Putusan: menu putusan jenis itu ("Putusan Itsbat Nikah" / "Itsbat - Putusan"); BAS: pasangan menu
+   * "<Jenis> - BAS". Relaas dan PTSP bukan per jenis perkara -> kosong. Murni terhadap peta; diuji.
+   */
+  function kunciKategoriPerkara(jenisDok) {
+    const kosong = new Set();
+    try {
+      if (!S.pk || (jenisDok !== "put" && jenisDok !== "bas")) return kosong;
+      if (typeof alatKunciJenis !== "function" || typeof alatKunciKelompok !== "function" || typeof ALAT_PETA_BAWAAN === "undefined") return kosong;
+      const j = alatKunciJenis(S.pk.jenisPerkara || "");
+      if (!j) return kosong;
+      // Menu putusan yang paling sering dipakai baris-baris jenis itu (jenis polos dan per status; baris kumulasi "+" tidak ikut).
+      // Baris "<jenis>|<status>" (dua ruas) mewakili jenis itu; baris berkeadaan ("<jenis>|<status>|kontensius") milik varian lain dan hanya
+      // dipakai bila perkaranya gugatan (nomor Pdt.G) dan jenis itu punya baris kontensius (mis. Itsbat Nikah Kontensius, menu sendiri).
+      const baru = Object.entries(ALAT_PETA_BAWAAN).filter(([kunci, baris]) => (kunci === j || kunci.startsWith(`${j}|`)) && baris && baris.blangko);
+      const polos = baru.filter(([kunci]) => kunci.split("|").length <= 2);
+      const kontensius = baru.filter(([kunci]) => kunci.split("|")[2] === "kontensius");
+      const gugatan = /\/Pdt\.G(?:\.|\/)/i.test(String(S.pk.nomorPerkara || ""));
+      const sumber = gugatan && kontensius.length ? kontensius : polos.length ? polos : baru;
+      const hitung = new Map();
+      for (const [, baris] of sumber) {
+        const nama = alatKunciKelompok(baris.blangko);
+        const ada = hitung.get(nama) || { n: 0, baris };
+        ada.n += 1;
+        hitung.set(nama, ada);
+      }
+      let terbaik = null;
+      for (const v of hitung.values()) if (!terbaik || v.n > terbaik.n) terbaik = v;
+      if (!terbaik) return kosong;
+      const nama = [terbaik.baris.blangko, ...(Array.isArray(terbaik.baris.blangkoLain) ? terbaik.baris.blangkoLain : [])];
+      if (jenisDok === "put") return new Set(nama.map(alatKunciKelompok));
+      const bas = new Set();
+      for (const n of nama) {
+        const m = String(n).match(/^(.+?)\s+-\s+putusan$/i) || String(n).match(/^putusan\s+(.+)$/i);
+        if (m) bas.add(alatKunciKelompok(`${m[1].trim()} - BAS`));
+      }
+      return bas;
+    } catch {
+      return kosong;
+    }
+  }
   function kelompokModal() {
     if (!S.menu || !S.modal) return [];
     const rek = rekomendasi();
@@ -1230,6 +1283,18 @@
       // 20 Okt: kelompok yang memuat blangko disarankan ikut ditandai (nama menebal berwarna), walau kelompok lain berisi lebih banyak blangko.
       const adaSaran = rekDiJenis.some((r) => r.kelompok === k.nama || (k.berkas || []).some((b) => samaBerkasSaran(b.berkas, r.berkas)));
       daftar.push({ id: `k:${k.nama}`, nama: k.judul || namaMenuTampil(k.nama), sub: adaSaran ? "ada yang disarankan untuk sidang ini" : f ? `dipakai ${f.toLocaleString("id-ID")} perkara` : k.jumlah ? `${k.jumlah} blangko` : "", adaSaran, berkas: (k.berkas || []).map((b) => ({ ...b, kelompok: k.nama })), memuat: !k.berkas && !k.galat, galat: k.galat || "" });
+    }
+    // 22 Okt: kategori yang cocok dengan jenis perkara terpilih (mis. Putusan Itsbat Nikah untuk perkara Istbat Nikah) dipindah ke ATAS,
+    // tepat di bawah Disarankan. Kelompok maya Ikrar Talak di bawah ini mengikuti letak menu cerai talak yang baru.
+    const kunciCocok = kunciKategoriPerkara(S.modal.jenis);
+    if (kunciCocok.size) {
+      const i = daftar.findIndex((x) => !x.saran && x.id.startsWith("k:") && kunciCocok.has(alatKunciKelompok(x.id.slice(2))));
+      if (i >= 0) {
+        const [cocokPerkara] = daftar.splice(i, 1);
+        cocokPerkara.cocokPerkara = true;
+        cocokPerkara.sub = ["sesuai jenis perkara ini", cocokPerkara.sub].filter(Boolean).join(" · ");
+        daftar.splice(daftar.length && daftar[0].saran ? 1 : 0, 0, cocokPerkara);
+      }
     }
     // Kelompok maya "Ikrar Talak": tepat di bawah menu cerai talak (atau di bawah Disarankan bila tidak ada), berisi butir dari tiga folder.
     if (ikrar.berkas.length || ikrar.memuat) {
@@ -1293,7 +1358,8 @@
     const kiri = daftar
       .map((k) => {
         const n = k.berkas.filter(cocok).length;
-        return `<button type="button" class="bd-kel${k.saran ? " saran" : ""}${k.adaSaran ? " adasaran" : ""}${k.ikrar ? " ikrar" : ""}${k.id === S.modal.kelompok && !q ? " aktif" : ""}${q && n ? " ada" : ""}${q && !n ? " kosong" : ""}" data-kelmodal="${esc(k.id)}"><span class="kn">${esc(k.nama)}</span><span class="kj">${k.memuat ? "…" : q ? n : k.berkas.length}</span>${k.sub ? `<span class="ks">${esc(k.sub)}</span>` : ""}</button>`;
+        const aktifKel = k.id === S.modal.kelompok && !q;
+        return `<button type="button" class="bd-kel${k.saran ? " saran" : ""}${k.adaSaran ? " adasaran" : ""}${k.ikrar ? " ikrar" : ""}${aktifKel ? " aktif" : ""}${k.cocokPerkara ? " cocokperkara" : ""}${q && n ? " ada" : ""}${q && !n ? " kosong" : ""}" data-kelmodal="${esc(k.id)}"${aktifKel ? ' aria-current="true"' : ""}><span class="kn">${esc(k.nama)}</span><span class="kj">${k.memuat ? "…" : q ? n : k.berkas.length}</span>${k.sub ? `<span class="ks">${esc(k.sub)}</span>` : ""}</button>`;
       })
       .join("");
     let kanan = "";
@@ -1311,12 +1377,52 @@
       else if (k.galat) kanan = `<p class="bd-peringatan">${esc(k.galat)} <button type="button" class="bd-btn kecil" data-bd2="ulangkel" data-kel="${esc(k.id.replace(/^k:/, ""))}">Coba lagi</button></p>`;
       else kanan = (k.sub ? `<p class="bd-ksub">${esc(k.nama)} · ${esc(k.sub)}</p>` : "") + (k.saran ? k.berkas.map((b) => `${tombolBlangko(b, S.modal.jenis, rek)}<p class="bd-catat bd-alasanrek">${esc(b.alasan || "")}</p>`).join("") : k.berkas.map(tombol).join("") || `<p class="bd-catat">Kelompok ini kosong.</p>`);
     }
+    // 22 Okt: innerHTML diganti utuh, jadi gulir daftar kiri dan kanan ikut hilang (memilih kategori di bagian bawah melompatkan daftar ke atas
+    // dan kategori terpilih tak terlihat; daftar blangko yang selesai dimuat di latar juga menarik gulir ke atas). Gulir dicatat lalu dipulihkan;
+    // daftar kanan hanya kembali ke atas bila isinya memang berganti (kategori, tab, atau kata cari lain).
+    const gulirLama = {
+      kiriY: 0, kiriX: 0, kananY: 0,
+      sidik: "",
+    };
+    const kiriLama = cari(".bd-mkiri", m);
+    const kananLama = cari(".bd-mkanan", m);
+    if (kiriLama) {
+      gulirLama.kiriY = kiriLama.scrollTop;
+      gulirLama.kiriX = kiriLama.scrollLeft;
+    }
+    if (kananLama) gulirLama.kananY = kananLama.scrollTop;
+    gulirLama.sidik = S.modal.sidikGulir || "";
+    const sidikBaru = [S.modal.jenis, q ? `cari:${q}` : S.modal.kelompok].join("|");
+    S.modal.sidikGulir = sidikBaru;
+    // Daftar kiri berganti isi hanya saat tab jenis dokumen berganti: baru itu kembali ke atas.
+    if ((S.modal.jenisGulir || S.modal.jenis) !== S.modal.jenis) {
+      gulirLama.kiriY = 0;
+      gulirLama.kiriX = 0;
+    }
+    S.modal.jenisGulir = S.modal.jenis;
     m.innerHTML =
       `<div class="bd-mkotak" role="document"><div class="bd-mkepala"><b>Pilih blangko</b>` +
       `<div class="bd-seg" role="tablist" aria-label="Jenis dokumen">${jenisAda.map((j) => `<button type="button" role="tab" data-jenismodal="${j}" aria-selected="${S.modal.jenis === j}">${esc(NAMA_JENIS[j])}${adm() ? "" : ""}</button>`).join("")}</div>` +
       `<input class="bd-cari" id="bd-caribl" placeholder="cari, mis. 3 saksi" aria-label="Cari blangko" value="${esc(S.modal.cari)}">` +
       `<button type="button" class="bd-btn kecil" data-bd2="tutupmodal">Tutup</button></div>` +
       `<div class="bd-mbadan"><nav class="bd-mkiri" aria-label="Kelompok blangko">${kiri}</nav><div class="bd-mkanan">${kanan}</div></div></div>`;
+    const kiriBaru = cari(".bd-mkiri", m);
+    const kananBaru = cari(".bd-mkanan", m);
+    if (kiriBaru) {
+      kiriBaru.scrollTop = gulirLama.kiriY;
+      kiriBaru.scrollLeft = gulirLama.kiriX;
+    }
+    if (kananBaru && gulirLama.sidik === sidikBaru) kananBaru.scrollTop = gulirLama.kananY;
+    // Butir terpilih harus tetap kelihatan: bila di luar jendela gulir, digeser seperlunya ("nearest" - tidak menggeser bila sudah tampak).
+    for (const [wadahGulir, butir] of [[kiriBaru, kiriBaru && cari(".bd-kel.aktif", kiriBaru)], [kananBaru, kananBaru && cari(".bd-bl.aktif", kananBaru)]]) {
+      if (wadahGulir && butir && typeof butir.scrollIntoView === "function") {
+        try {
+          butir.scrollIntoView({ block: "nearest", inline: "nearest" });
+        } catch {
+          /* peramban lama: gulir tetap seperti dipulihkan */
+        }
+      }
+    }
     const c = cari("#bd-caribl", m);
     if (c && q !== undefined && document.activeElement !== c && S.modal.fokusCari) {
       c.focus();
@@ -3733,7 +3839,9 @@
     if (!w) return;
     selaraskanPeran(); // peran berganti sejak blangko dipilih: pilihan lama dibuang sebelum saran dihitung
     const b = S.blangko;
-    const jenisSaran = S.pk ? jenisSaranAktif() : "";
+    // 22 Okt: "Semua akun" (Super Admin/Admin tanpa peran terpilih) tanpa saran di langkah 2; saran ada di jendela Pilih blangko per tab.
+    const tanpaSaran = semuaAkun();
+    const jenisSaran = S.pk && !tanpaSaran ? jenisSaranAktif() : "";
     const rek = jenisSaran ? rekomendasiJenis(jenisSaran) : [];
     const disaran = b && rek.some((r) => samaBerkasSaran(r.berkas, b.berkas));
     const saranPertama = rek[0];
