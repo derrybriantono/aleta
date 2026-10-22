@@ -440,7 +440,7 @@ export function tentukanFormatTanpaHadir(
   if (permohonan) return tunda("Perkara permohonan (Pdt.P) tidak digugurkan - ditunda untuk memanggil Pemohon.", false);
   if (!gugatan) return tunda("Jenis alur perkara (gugatan/permohonan) tidak terbaca.", true);
   if (s.sidangIkrarTalak === true) {
-    return tunda("Sidang ikrar talak - berlaku Pasal 70 ayat (6) UU 7/1989, bukan pengguguran Pasal 124 HIR.", false);
+    return tunda("Sidang ikrar talak - berlaku Pasal 70 ayat (6) UU 7/1989, bukan pengguguran Pasal 148 RBg.", false);
   }
   if (s.sudahPutus === true) return tunda("Perkara sudah diputus - pengguguran tidak berlaku.", false);
 
@@ -459,7 +459,7 @@ export function tentukanFormatTanpaHadir(
   }
   if (pernah === true) {
     return tunda(
-      "Penggugat pernah hadir pada sidang sebelumnya - tidak digugurkan (Pasal 124 HIR / 148 RBg bagi penggugat yang tidak pernah datang); ditunda untuk memanggil para pihak.",
+      "Penggugat pernah hadir pada sidang sebelumnya - tidak digugurkan (Pasal 148 RBg bagi penggugat yang tidak pernah datang); ditunda untuk memanggil para pihak.",
       false
     );
   }
@@ -490,7 +490,7 @@ export function tentukanFormatTanpaHadir(
     return tunda("Antrian sidang hari itu tidak terbaca - ketidakhadiran hanya menurut SIPP yang kosong.", true);
   }
   const alasan =
-    "Penggugat tidak hadir (tidak tercatat di SIPP, tidak mengambil nomor antrian) padahal telah dipanggil resmi dan patut - Pasal 124 HIR / Pasal 148 RBg.";
+    "Penggugat tidak hadir (tidak tercatat di SIPP, tidak mengambil nomor antrian) padahal telah dipanggil resmi dan patut - Pasal 148 RBg.";
   return { jenis: "gugur", ragu: false, alasan, dasar: [...dasar, alasan] };
 }
 

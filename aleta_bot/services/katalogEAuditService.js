@@ -174,7 +174,7 @@ const KATALOG = [
   { kode: "KT05", bab: 3, nama: "Ketaatan Penetapan Hari Sidang",
     bentuk: "NTBGK", satuanBaris: "majelis", mutuRuas: "kode", lantai: "harian",
     keterangan: "Dihitung dari dokumen penetapan hari sidang." },
-  { kode: "KT06", bab: 3, nama: "Ketaatan Tenggang Pemanggilan Pasal 122 HIR",
+  { kode: "KT06", bab: 3, nama: "Ketaatan Tenggang Pemanggilan Pasal 146 RBg",
     bentuk: "NTBK", satuanBaris: "js", mutuRuas: "kode", lantai: "harian",
     keterangan: "Panggilan sah sekurangnya tiga hari kerja sebelum sidang." },
   { kode: "KT07", bab: 3, nama: "Ketaatan Penginputan Relaas Panggilan",

@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 
 import { bacaBentukKontak } from "@/lib/jadwal-sidang-kontak";
+import { nilaiRelaas } from "@/lib/kepatutan-relaas";
 import {
   cekTanggalSidang,
   dokumenJawaban,
@@ -103,6 +104,30 @@ export async function GET(request: NextRequest) {
         cara: x.caraRelaas ? x.caraRelaas.cara : "",
         sandi: x.caraRelaas ? x.caraRelaas.sandi : "",
         jurusitaNama: x.jurusitaNama,
+        sidangId: String(x.sidangId || ""),
+        // W63 22 Okt: hasil panggilan menurut aturan bersama (SEMA 1/2023 untuk
+        // surat tercatat, Pasal 718 RBg untuk jurusita) - ekstensi menampilkan
+        // label ini apa adanya, tidak menyusun aturannya sendiri.
+        kepatutan: (() => {
+          const k = nilaiRelaas({
+            ketTemu: x.caraRelaas ? x.caraRelaas.sandi : "",
+            statusPos: x.statusPos,
+            hasil: x.ketHasilRelaas,
+            noResiPos: x.noResiPos,
+            tanggalKirimPos: x.tanggalKirimPos,
+            namaPihak: x.namaPihak,
+            pihakKe: x.pihakKe,
+          });
+          const retur = k.retur || Boolean(x.retur);
+          return {
+            label: k.label,
+            warna: k.warna,
+            keterangan: k.keterangan,
+            dasar: k.dasar,
+            retur,
+            labelRetur: retur ? k.labelRetur || "Retur" : "",
+          };
+        })(),
       })),
     };
 

@@ -84,12 +84,16 @@ export async function POST(request: NextRequest) {
       hariElektronik?: number;
       hariSuratTercatat?: number;
       hariBiasa?: number;
+      hariTerimaSuratTercatat?: number;
     }>(request);
 
     const hasil = await simpanGatewayPengaturanPanggilan({
       hariElektronik: Number(body.hariElektronik) || 0,
       hariSuratTercatat: Number(body.hariSuratTercatat) || 0,
       hariBiasa: Number(body.hariBiasa) || 0,
+      // Tidak dikirim (layar lama) = bot mempertahankan setelan tersimpan.
+      hariTerimaSuratTercatat:
+        body.hariTerimaSuratTercatat === undefined ? undefined : Number(body.hariTerimaSuratTercatat) || 0,
       olehSiapa: actor.name,
     });
 

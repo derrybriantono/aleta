@@ -49,7 +49,7 @@ const AMBANG = Object.assign(Object.create(null), {
     sifat: "peraturan",
     keterangan: "Panggilan sah sekurangnya tiga hari kerja sebelum sidang.",
     riwayat: [
-      { mulai: "1848-01-01", nilai: 3, dasar: "Pasal 122 HIR / Pasal 146 R.Bg" },
+      { mulai: "1848-01-01", nilai: 3, dasar: "Pasal 146 RBg" },
     ],
   },
   /**

@@ -1019,7 +1019,7 @@ async function analisaPanggilan(id) {
       {
         label: "Tenggang kurang 3 hari",
         nilai: String(kurangTiga),
-        keterangan: "Pasal 146 RBg (Pasal 122 HIR); surat tercatat: SEMA 1/2023 angka 11",
+        keterangan: "Pasal 146 RBg; surat tercatat: SEMA 1/2023 angka 11",
       },
       { label: "Tenggang tengah", nilai: median(tenggang) === null ? "—" : `${median(tenggang)} hari` },
     ],
@@ -1751,7 +1751,7 @@ async function tenggangPanggilan(id) {
   }
 
   return {
-    judul: 'Kepatuhan tenggang panggilan (Pasal 146 RBg / Pasal 122 HIR)',
+    judul: 'Kepatuhan tenggang panggilan (Pasal 146 RBg)',
     ringkas:
       berhari.length === 0
         ? 'Belum ada relaas yang tenggangnya dapat dihitung.'
@@ -3505,7 +3505,7 @@ const DAFTAR_ANALISA = [
   { kunci: "kesehatan", lingkup: "perkara", label: "Kesehatan berkas", keterangan: "Satu angka kelengkapan berkas perkara ini." },
   { kunci: "suntingan", lingkup: "perkara", label: "Jejak suntingan", keterangan: "Data yang diubah sesudah diinput, oleh siapa." },
   { kunci: "pegawai", lingkup: "perkara", label: "Rapor pegawai", keterangan: "Rekam jejak penginput perkara ini di seluruh perkara." },
-  { kunci: "tenggang", lingkup: "perkara", label: "Tenggang panggilan", keterangan: "Kepatuhan Pasal 122 HIR dan rekam juru sitanya." },
+  { kunci: "tenggang", lingkup: "perkara", label: "Tenggang panggilan", keterangan: "Kepatuhan Pasal 146 RBg dan rekam juru sitanya." },
   { kunci: "aturan", lingkup: "perkara", label: "Pemantau SEMA/PERMA", keterangan: "Kepatuhan aturan yang berlaku pada perkara ini." },
   { kunci: "majelisBanding", lingkup: "perkara", label: "Majelis vs pengadilan", keterangan: "Majelis perkara ini dibanding nilai tengah pengadilan." },
   { kunci: "mutuPertimbangan", lingkup: "perkara", label: "Mutu pertimbangan", keterangan: "Panjang dan kepadatan rujukan pertimbangan hukumnya." },

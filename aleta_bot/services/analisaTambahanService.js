@@ -273,7 +273,7 @@ async function kecepatanRelaas(perkara, alat) {
       { kunci: "tanggalRelaas", label: "Relaas" },
       { kunci: "tanggalSidang", label: "Sidang" },
       { kunci: "jarakHari", label: "Jarak (hari)", angka: true },
-      { kunci: "patuh", label: "Pasal 122 HIR" },
+      { kunci: "patuh", label: "Pasal 146 RBg" },
     ],
     baris: daftar,
     catatan:
@@ -776,7 +776,7 @@ async function rombonganSepekan(perkara, alat) {
 const DAFTAR_TAMBAHAN = [
   { kunci: "jedaTahapan", lingkup: "perkara", label: "Jeda antar tahapan", keterangan: "Di mana perkara ini berhenti lama." },
   { kunci: "hariSidang", lingkup: "perkara", label: "Hari sidang", keterangan: "Hari apa perkara ini bersidang, dibanding pengadilan." },
-  { kunci: "kecepatanRelaas", lingkup: "perkara", label: "Kecepatan relaas", keterangan: "Jarak panggilan ke sidang, dan Pasal 122 HIR." },
+  { kunci: "kecepatanRelaas", lingkup: "perkara", label: "Kecepatan relaas", keterangan: "Jarak panggilan ke sidang, dan Pasal 146 RBg." },
   { kunci: "kehadiranPihak", lingkup: "perkara", label: "Kehadiran pihak", keterangan: "Siapa yang datang pada tiap sidang." },
   { kunci: "desaPihak", lingkup: "perkara", label: "Perkara sedesa", keterangan: "Perkara lain dari desa pihak pertama." },
   { kunci: "bebanMajelisBulan", lingkup: "perkara", label: "Beban majelis bulan itu", keterangan: "Berapa perkara dipikul majelisnya bulan pendaftaran." },

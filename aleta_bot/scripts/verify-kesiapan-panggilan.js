@@ -72,7 +72,7 @@ console.log("\n== Ambang tiap jalur sesuai dasar hukumnya ==");
   periksa("perkara biasa 3 hari", biasa.hari === 3);
   // Pasal 122 HIR menghitung hari KERJA - berbeda dari SK KMA.
   periksa("perkara biasa memakai hari kerja", biasa.hariKerja === true);
-  periksa("dasar perkara biasa disebut", /122 HIR/.test(biasa.dasar));
+  periksa("dasar perkara biasa disebut", /146 RBg/.test(biasa.dasar));
 }
 
 console.log("\n== Jalur seharusnya ==");
@@ -180,10 +180,12 @@ console.log("\n== Kepatutan: surat tercatat (ambang 6 hari + wajib diterima) =="
       diterima: true,
     }).patut === false
   );
+  // SEMA 1/2023 angka 11, tafsir ketat (keputusan pengguna 22 Okt 2026): 6
+  // hari kalender PENUH di antara - dikirim 31 Agu, hari 1..6 Sep, sidang 7 Sep.
   periksa(
-    "6 hari kalender dan diterima: patut",
+    "6 hari kalender penuh dan diterima: patut",
     panggilan.nilaiKepatutan({
-      tanggalPanggilan: "2026-09-01",
+      tanggalPanggilan: "2026-08-31",
       tanggalSidang: "2026-09-07",
       jalur: "surat_tercatat",
       diterima: true,
@@ -636,7 +638,9 @@ const taufik = (h) => h.pihak.find((x) => /Taufik/.test(x.nama));
   periksa("dihitung sebagai saluran belum pasti", h.ringkasan.saluranBelumPasti === 1);
   periksa("relaas SIDANG INI yang dipakai (17 Sep)", t.tanggalPanggilan === "2026-09-17");
   periksa("dinilai dengan ambang surat tercatat", t.kepatutan.ambang === 6);
-  periksa("6 hari kalender: patut", t.kepatutan.patut === true);
+  // 17 -> 23 Sep = 5 hari kalender PENUH (18..22): tidak patut menurut tafsir
+  // ketat SEMA 1/2023 angka 11 (keputusan pengguna 22 Okt 2026).
+  periksa("5 hari kalender penuh: tidak patut", t.kepatutan.patut === false && t.kepatutan.alasan === "tenggang_kurang_dari_ambang");
   periksa("sidang yang dinilai disebutkan", h.sidangId === "S9" && h.tanggalSidang === "2026-09-23");
 
   const siap = kesiapan.nilaiKesiapan({
@@ -647,7 +651,10 @@ const taufik = (h) => h.pihak.find((x) => /Taufik/.test(x.nama));
   periksa("penghambat berat salah saluran tidak menyala", !siap.penghambat.some((x) => x.kunci === "salah_saluran"));
   const catatan = siap.penghambat.find((x) => x.kunci === "saluran_belum_pasti");
   periksa("diganti catatan ringan", Boolean(catatan) && catatan.tingkat === "ringan");
-  periksa("sidang tidak disebut bermasalah karena itu", siap.keadaan !== "bermasalah");
+  periksa(
+    "sidang tidak disebut bermasalah karena saluran (hanya karena tenggang)",
+    siap.keadaan !== "bermasalah" || siap.penghambat.filter((x) => x.tingkat === "berat").every((x) => x.kunci === "tenggang_tidak_patut")
+  );
 }
 {
   // Sifat yang dijaga: penjagaan asli TIDAK dibungkam. e-Summons yang tercatat
@@ -717,7 +724,10 @@ console.log("\n== Tinjauan 24 Sep 2026: pihak yang tidak wajib dipanggil tidak d
   periksa("penggugat yang hadir: kepatutannya tidak dinilai", isabella.kepatutan.alasan === "tidak_wajib_dipanggil");
   periksa("penggugat yang hadir: bukan patut=false", isabella.kepatutan.patut !== false);
   periksa("penggugat yang hadir: penerimaan tidak disyaratkan", isabella.kepatutan.perluDiterima === false);
-  periksa("penggugat yang hadir: tidak dihitung tidak patut", h.ringkasan.tidakPatut === 0);
+  periksa(
+    "penggugat yang hadir: tidak dihitung tidak patut",
+    h.pihak.filter((x) => x.kepatutan.patut === false).every((x) => !x.tidakPerluDipanggil)
+  );
   // Pihak tidak wajib yang TOH dipanggil tetap dinilai - relaasnya fakta.
   const dipanggilJuga = panggilan.susunKeadaanPanggilan({
     ...isian385,

@@ -4272,6 +4272,8 @@ router.post("/ecourt/panggilan/pengaturan", requireInternalToken, (req, res) => 
       hariElektronik: req.body?.hariElektronik,
       hariSuratTercatat: req.body?.hariSuratTercatat,
       hariBiasa: req.body?.hariBiasa,
+      // SEMA 1/2023 angka 11: hari kerja antara surat DITERIMA dan sidang.
+      hariTerimaSuratTercatat: req.body?.hariTerimaSuratTercatat,
       olehSiapa: String(req.body?.olehSiapa || ""),
     });
     res.status(hasil.ok ? 200 : 400).json({ ...hasil, jalur: ecourtPanggilanService.JALUR });

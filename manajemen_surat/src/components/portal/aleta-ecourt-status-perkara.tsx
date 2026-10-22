@@ -114,7 +114,7 @@ import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import { cn } from "@/lib/utils";
 import { kelasTulisanPutusan, warnaStatusPutusan } from "@/lib/warna-putusan";
 import { relaasElektronik } from "@/lib/hasil-relaas";
-import { LencanaKepatutanRelaas } from "@/components/portal/lencana-kepatutan-relaas";
+import { LencanaKepatutanRelaas, LencanaRetur, kepatutanBarisRelaas } from "@/components/portal/lencana-kepatutan-relaas";
 
 /**
  * Status satu perkara.
@@ -6132,7 +6132,9 @@ export function susunPeristiwa(status: Status): PeristiwaKalender[] {
         relaas.jurusitaNama ? `jurusita ${relaas.jurusitaNama}` : "",
         relaas.tanggalSidang ? `untuk sidang ${tanggalHariPendek(relaas.tanggalSidang, relaas.tanggalSidang)}` : "",
         relaas.caraRelaas?.cara || (relaas.bertemu ? "bertemu orangnya" : ""),
-        relaas.retur ? "surat RETUR" : "",
+        // Hasil dan sebab retur menurut aturan bersama (SEMA 1/2023 / Pasal 718 RBg).
+        relaas.tanggalRelaas || relaas.ketHasilRelaas ? kepatutanBarisRelaas(relaas).label : "",
+        relaas.retur ? kepatutanBarisRelaas(relaas).labelRetur || "surat RETUR" : "",
       ]
         .filter(Boolean)
         .join(" · "),
@@ -6571,7 +6573,7 @@ function bunyiAlasanKepatutan(alasan: string) {
 const SEBUTAN_JALUR: Record<string, string> = {
   elektronik: "panggilan elektronik",
   surat_tercatat: "surat tercatat",
-  biasa: "jurusita (Pasal 122 HIR)",
+  biasa: "jurusita (Pasal 146 RBg)",
   delegasi: "delegasi",
 };
 
@@ -6982,7 +6984,8 @@ function BarisRelaas({
           {relaas.noResiPos ? ` · resi ${relaas.noResiPos}` : ""}
         </span>
       ) : null}
-      {relaas.retur ? <Badge variant="danger">surat RETUR</Badge> : null}
+      {/* Sebab returnya disebut (keputusan pengguna 22 Okt 2026). */}
+      {relaas.retur ? <LencanaRetur baris={relaas} varian="lencana" /> : null}
       {relaas.statusPos === 1 ? <Badge variant="success">pos sampai</Badge> : null}
 
       <span className="ml-auto flex flex-wrap items-center gap-1">

@@ -235,7 +235,7 @@ describe("lewat 14.00 tanpa kehadiran -> gugur atau tunda panggil para pihak", (
     expect(b.tandaKehadiran.keadaan).toBe("lewat-batas");
     expect(b.tandaKehadiran.teks).toBe("lewat 14.00 tanpa kehadiran - usulan: gugur");
     expect(b.formatTanpaHadir).toMatchObject({ jenis: "gugur", ragu: false });
-    expect(b.formatTanpaHadir?.alasan).toMatch(/Pasal 124 HIR \/ Pasal 148 RBg/);
+    expect(b.formatTanpaHadir?.alasan).toMatch(/Pasal 148 RBg\.$/);
     expect(b.blangko.usulan).toMatchObject({ folder: PUTUS_STANDAR, berkas: GUGUR, format: "gugur" });
     // Format lainnya tetap di pilihan untuk ditukar petugas.
     expect(b.blangko.pilihan.map((p) => p.berkas)).toContain(TUNDA_1);

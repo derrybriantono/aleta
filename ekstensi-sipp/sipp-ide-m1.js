@@ -64,6 +64,10 @@
   const POLA_NOMOR_PENUH = /^\d{1,5}\/[A-Za-z]{1,10}(?:\.[A-Za-z]{1,4}){0,2}\/\d{4}\/[A-Za-z]{2,4}\.[A-Za-z]{2,6}$/;
   /** Sandi dihadiri_oleh SIPP (jadwal_sidang_p_edit.php) - lihat sandi-kehadiran-sidang-sipp. */
   const KEHADIRAN = { 1: "Semua Pihak", 2: "Pihak pertama saja", 3: "Pihak kedua saja", 4: "Para Pihak Tidak Hadir", 7: "Pihak pertama dan Intervensi", 8: "Pihak kedua dan Intervensi", 9: "Pihak pertama dan kedua", 14: "Pihak pertama dan Turut Tergugat", 15: "Pihak kedua dan Turut Tergugat" };
+  // Sebutan pilihan dropdown SIPP sendiri (nilai yang diusulkan ke borang) - BUKAN
+  // hasil panggilan. Hasilnya (bertemu orang serumah, melalui kepala desa, retur
+  // beserta sebabnya) dibaca dari rute jendela: kepatutan per relaas menurut
+  // SEMA 1/2023 dan Pasal 718 RBg (aturan bersama portal/bot, W63 22 Okt).
   const CARA_RELAAS = { E: "Panggilan Elektronik", S: "Surat Tercatat POS", Y: "Bertemu", T: "Tidak Bertemu" };
   const NAMA_HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
   const NAMA_BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
@@ -1228,13 +1232,29 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
   }
 
 
-  function tandaiRelaas(tabel, panggilan) {
+  /**
+   * Lencana HASIL panggilan satu relaas dari rute jendela (kepatutan bersama):
+   * mis. "Bertemu orang serumah (ayah kandung)" (SEMA 1/2023 angka 12 huruf c),
+   * "Melalui kepala desa" (Pasal 718 ayat (1) RBg), dan retur beserta sebabnya.
+   * Rute lama tanpa ruas kepatutan: tidak ada lencana (bukan tebakan).
+   */
+  function lencanaHasilRelaas(relaas) {
+    const k = relaas && relaas.kepatutan;
+    if (!k || !k.label) return [];
+    const arti = [k.keterangan, k.dasar ? `Dasar: ${k.dasar}.` : ""].filter(Boolean).join(" ");
+    // Retur: satu lencana merah yang sudah menyebut sebabnya.
+    if (k.retur) return [lencana(k.labelRetur || "Retur", "merah", arti)];
+    return [lencana(k.label, k.warna || "abu", arti)];
+  }
+
+  function tandaiRelaas(tabel, panggilan, relaasSidang) {
     let n = 0;
     const ringkas = { patut: 0, tidak: 0, belum: 0, lain: 0 };
     for (const b of barisRelaas(tabel)) {
       const lama = b.sel.querySelector(".aleta-m1-relaas");
       if (lama) lama.remove();
       const p = (panggilan || []).find((x) => cocokNama(x.nama, b.nama.textContent)) || null;
+      const hasilRelaas = (relaasSidang || []).find((x) => cocokNama(x.namaPihak, b.nama.textContent)) || null;
       // Baris yang tidak ada di kesiapan sidang (kuasa, saksi ahli) tidak diberi keterangan.
       if (!p) {
         ringkas.lain += 1;
@@ -1242,6 +1262,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
       }
       const k = kalimatPatut(p);
       const s = el("div", `${KELAS} aleta-m1-relaas`);
+      s.append(...lencanaHasilRelaas(hasilRelaas));
       s.append(lencana(`${k.teks} menurut ALETA`, k.nada, k.arti), document.createTextNode(k.rinci));
       b.sel.appendChild(s);
       n += 1;
@@ -1291,7 +1312,9 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
         kabar(p, b.data.sidang ? "Kesiapan sidang ini belum dapat dibaca ALETA." : `Sidang ${teksTanggal(tanggal)} tidak ditemukan di jadwal perkara menurut ALETA.`, true);
         return null;
       }
-      const r = tandaiRelaas(p.tabel, b.data.panggilan);
+      const idSidang = b.data.sidang && b.data.sidang.sidangId ? String(b.data.sidang.sidangId) : "";
+      const relaasSidang = (Array.isArray(b.data.relaas) ? b.data.relaas : []).filter((x) => !idSidang || !x.sidangId || String(x.sidangId) === idSidang);
+      const r = tandaiRelaas(p.tabel, b.data.panggilan, relaasSidang);
       kabar(
         p,
         `${r.n} pihak diperiksa: ${r.patut} patut, ${r.tidak} tidak patut, ${r.belum} belum dapat dinilai` +

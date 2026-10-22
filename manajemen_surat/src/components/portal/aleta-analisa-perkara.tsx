@@ -73,7 +73,7 @@ const ANALISA: Array<{
   { kunci: "kesehatan", lingkup: "perkara", label: "Kesehatan berkas", keterangan: "Satu angka kelengkapan berkas perkara ini" },
   { kunci: "suntingan", lingkup: "perkara", label: "Jejak suntingan", keterangan: "Data yang diubah sesudah diinput, oleh siapa" },
   { kunci: "pegawai", lingkup: "perkara", label: "Rapor pegawai", keterangan: "Rekam jejak penginput perkara ini di seluruh perkara" },
-  { kunci: "tenggang", lingkup: "perkara", label: "Tenggang panggilan", keterangan: "Kepatuhan Pasal 122 HIR dan rekam juru sitanya" },
+  { kunci: "tenggang", lingkup: "perkara", label: "Tenggang panggilan", keterangan: "Kepatuhan Pasal 146 RBg dan rekam juru sitanya" },
   { kunci: "aturan", lingkup: "perkara", label: "Pemantau SEMA/PERMA", keterangan: "Kepatuhan aturan yang berlaku pada perkara ini" },
   { kunci: "majelisBanding", lingkup: "perkara", label: "Majelis vs pengadilan", keterangan: "Majelis perkara ini dibanding nilai tengah pengadilan" },
   { kunci: "sejenis", lingkup: "perkara", label: "Banding sejenis", keterangan: "Dibandingkan perkara jenis yang sama" },
@@ -112,7 +112,7 @@ const ANALISA: Array<{
   // kunci yang berbeda berarti tombol yang menjawab "jenis tidak dikenali".
   { kunci: "jedaTahapan", lingkup: "perkara", label: "Jeda antar tahapan", keterangan: "Di mana perkara ini berhenti lama" },
   { kunci: "hariSidang", lingkup: "perkara", label: "Hari sidang", keterangan: "Hari apa perkara ini bersidang, dibanding pengadilan" },
-  { kunci: "kecepatanRelaas", lingkup: "perkara", label: "Kecepatan relaas", keterangan: "Jarak panggilan ke sidang, dan Pasal 122 HIR" },
+  { kunci: "kecepatanRelaas", lingkup: "perkara", label: "Kecepatan relaas", keterangan: "Jarak panggilan ke sidang, dan Pasal 146 RBg" },
   { kunci: "kehadiranPihak", lingkup: "perkara", label: "Kehadiran pihak", keterangan: "Siapa yang datang pada tiap sidang" },
   { kunci: "desaPihak", lingkup: "perkara", label: "Perkara sedesa", keterangan: "Perkara lain dari desa pihak pertama" },
   { kunci: "bebanMajelisBulan", lingkup: "perkara", label: "Beban majelis bulan itu", keterangan: "Berapa perkara dipikul majelisnya bulan pendaftaran" },

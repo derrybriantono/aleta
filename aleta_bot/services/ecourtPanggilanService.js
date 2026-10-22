@@ -62,7 +62,7 @@
 const { readRuntimeConfig, writeRuntimeConfig } = require("../config/runtime-config");
 const logService = require("./logService");
 // Kepatutan satu relaas (SEMA 1/2023 & Pasal 718 RBg) - berkas murni, tidak melingkar.
-const { nilaiRelaas } = require("./kepatutanRelaas");
+const { nilaiRelaas, TENGGANG } = require("./kepatutanRelaas");
 
 /**
  * Ambang bawaan beserta dasar hukum dan cara hitungnya.
@@ -82,19 +82,27 @@ const JALUR = {
   surat_tercatat: {
     label: "Panggilan surat tercatat",
     // SEMA 1/2023 angka 11: DIKIRIM paling lambat 6 hari kalender sebelum
-    // sidang DAN DITERIMA paling lambat 3 hari KERJA sebelum sidang. Ambang
-    // terima tidak dapat disetel dari layar - ia melekat pada SEMA-nya.
+    // sidang DAN DITERIMA paling lambat 3 hari KERJA sebelum sidang. Kedua
+    // angkanya dapat disetel (Pengaturan, Super Admin/Admin); cara hitungnya
+    // tidak. Bawaannya dari kepatutanRelaas.TENGGANG - satu sumber bot+portal.
+    //
+    // hariPenuh (keputusan hakim pengguna 22 Okt 2026, tafsir yang LEBIH
+    // KETAT): N hari PENUH di antara - hari kirim/terima dan hari sidang
+    // tidak dihitung. Contoh: dikirim tgl 2 -> hari 3..8 = 6 hari kalender;
+    // diterima Rabu tgl 3 -> Kamis 4, Jumat 5, Senin 8 = 3 hari kerja; sidang
+    // paling cepat Selasa tgl 9.
     dasar: "SEMA 1/2023 angka 11; SK KMA 363/KMA/SK/XII/2022 Bab III Bagian B angka 8 huruf c",
-    bawaan: 6,
-    hariKerja: false,
+    bawaan: TENGGANG.surat_tercatat.kirimHari,
+    hariKerja: TENGGANG.surat_tercatat.kirimHariKerja,
     perluDiterima: true,
-    terimaHari: 3,
-    terimaHariKerja: true,
+    terimaHari: TENGGANG.surat_tercatat.terimaHari,
+    terimaHariKerja: TENGGANG.surat_tercatat.terimaHariKerja,
+    hariPenuh: true,
   },
   biasa: {
     label: "Panggilan biasa oleh jurusita (perkara non-e-Court)",
-    // PA Donggala memakai RBg; Pasal 146 RBg sepadan dengan Pasal 122 HIR.
-    dasar: "Pasal 146 RBg (Pasal 122 HIR)",
+    // PA Donggala memakai RBg (keputusan pengguna 22 Okt: dasar RBg, bukan HIR).
+    dasar: "Pasal 146 RBg",
     bawaan: 3,
     hariKerja: true,
     perluDiterima: false,
@@ -105,6 +113,7 @@ const BAWAAN = {
   hariElektronik: JALUR.elektronik.bawaan,
   hariSuratTercatat: JALUR.surat_tercatat.bawaan,
   hariBiasa: JALUR.biasa.bawaan,
+  hariTerimaSuratTercatat: JALUR.surat_tercatat.terimaHari,
 };
 
 function angka(nilai, bawaan, min, maks) {
@@ -119,14 +128,24 @@ function getSettings() {
     hariElektronik: angka(tersimpan.hariElektronik, BAWAAN.hariElektronik, 0, 60),
     hariSuratTercatat: angka(tersimpan.hariSuratTercatat, BAWAAN.hariSuratTercatat, 0, 60),
     hariBiasa: angka(tersimpan.hariBiasa, BAWAAN.hariBiasa, 0, 60),
+    hariTerimaSuratTercatat: angka(tersimpan.hariTerimaSuratTercatat, BAWAAN.hariTerimaSuratTercatat, 0, 60),
   };
 }
 
-function saveSettings({ hariElektronik, hariSuratTercatat, hariBiasa, olehSiapa = "" }) {
+function saveSettings({ hariElektronik, hariSuratTercatat, hariBiasa, hariTerimaSuratTercatat, olehSiapa = "" }) {
   const isi = {
     hariElektronik: angka(hariElektronik, BAWAAN.hariElektronik, 0, 60),
     hariSuratTercatat: angka(hariSuratTercatat, BAWAAN.hariSuratTercatat, 0, 60),
     hariBiasa: angka(hariBiasa, BAWAAN.hariBiasa, 0, 60),
+    // Layar lama tanpa medan ini tidak menghapus setelan yang tersimpan.
+    hariTerimaSuratTercatat: angka(
+      hariTerimaSuratTercatat === undefined || hariTerimaSuratTercatat === null || hariTerimaSuratTercatat === ""
+        ? getSettings().hariTerimaSuratTercatat
+        : hariTerimaSuratTercatat,
+      BAWAAN.hariTerimaSuratTercatat,
+      0,
+      60
+    ),
   };
 
   const sekarang = readRuntimeConfig();
@@ -197,8 +216,10 @@ function ambangJalur(jalur) {
     hariKerja: acuan.hariKerja,
     perluDiterima: acuan.perluDiterima,
     // Hanya surat tercatat: ambang hari antara DITERIMA dan sidang (SEMA 1/2023 angka 11).
-    terimaHari: acuan.terimaHari === undefined ? null : acuan.terimaHari,
+    terimaHari: acuan.terimaHari === undefined ? null : jalur === "surat_tercatat" ? pengaturan.hariTerimaSuratTercatat : acuan.terimaHari,
     terimaHariKerja: Boolean(acuan.terimaHariKerja),
+    // Hari penuh di antara (hari sidang tidak dihitung) - lihat JALUR.surat_tercatat.
+    hariPenuh: Boolean(acuan.hariPenuh),
   };
 }
 
@@ -258,6 +279,21 @@ function selisihHari(dari, sampai, { hariKerja = false } = {}) {
 }
 
 /**
+ * Hari PENUH di antara dua tanggal: hari awal dan hari sidang tidak dihitung
+ * (SEMA 1/2023 angka 11, tafsir ketat - keputusan pengguna 22 Okt 2026).
+ * Tanggal yang sama atau sesudah sidang dipulangkan seperti selisihHari biasa
+ * (0 atau negatif), supaya alasan "pada/sesudah hari sidang" tetap terbaca.
+ */
+function selisihHariPenuh(dari, sampai, { hariKerja = false } = {}) {
+  const biasa = selisihHari(dari, sampai, { hariKerja });
+  if (biasa === null || biasa <= 0) return biasa;
+  const akhir = tanggalSaja(sampai);
+  const kemarin = new Date(akhir);
+  kemarin.setDate(kemarin.getDate() - 1);
+  return Math.max(0, selisihHari(dari, kemarin, { hariKerja }));
+}
+
+/**
  * Jalur panggilan yang SEHARUSNYA dipakai untuk satu pihak.
  *
  * @param {{ peran?: string, persetujuan?: string, lewatEcourt?: boolean }} pihak
@@ -302,6 +338,7 @@ function nilaiKepatutan({ tanggalPanggilan, tanggalSidang, jalur = "biasa", dite
     dasarHukum: ambang.dasar,
     jalur: ambang.jalur,
     perluDiterima: ambang.perluDiterima,
+    hariPenuh: Boolean(ambang.hariPenuh),
   };
 
   if (!tanggalPanggilan) {
@@ -311,7 +348,8 @@ function nilaiKepatutan({ tanggalPanggilan, tanggalSidang, jalur = "biasa", dite
     return { ...dasar, dinilai: false, patut: null, selisih: null, alasan: "tanggal_sidang_tidak_diketahui" };
   }
 
-  const selisih = selisihHari(tanggalPanggilan, tanggalSidang, { hariKerja: ambang.hariKerja });
+  const hitung = ambang.hariPenuh ? selisihHariPenuh : selisihHari;
+  const selisih = hitung(tanggalPanggilan, tanggalSidang, { hariKerja: ambang.hariKerja });
   if (selisih === null) {
     return { ...dasar, dinilai: false, patut: null, selisih: null, alasan: "tanggal_tidak_terbaca" };
   }
@@ -337,7 +375,7 @@ function nilaiKepatutan({ tanggalPanggilan, tanggalSidang, jalur = "biasa", dite
   if (ambang.perluDiterima && diterima === true && tanggalDiterima) {
     const ambangTerima = ambang.terimaHari === null || ambang.terimaHari === undefined ? ambang.hari : ambang.terimaHari;
     const terimaHariKerja = ambang.terimaHari === null || ambang.terimaHari === undefined ? ambang.hariKerja : ambang.terimaHariKerja;
-    const selisihTerima = selisihHari(tanggalDiterima, tanggalSidang, { hariKerja: terimaHariKerja });
+    const selisihTerima = hitung(tanggalDiterima, tanggalSidang, { hariKerja: terimaHariKerja });
     if (selisihTerima !== null) {
       const tambahan = {
         selisihKirim: selisih,

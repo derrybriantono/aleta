@@ -17,7 +17,8 @@ import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
  * ============================================================================
  *
  * Hari kalender atau hari kerja melekat pada dasar hukum tiap jalur - SK KMA
- * 363/2022 memakai Hari kalender, Pasal 122 HIR memakai hari kerja. Membiarkan
+ * 363/2022 memakai Hari kalender, Pasal 146 RBg memakai hari kerja, SEMA 1/2023
+ * angka 11 memakai keduanya (dikirim: hari kalender, diterima: hari kerja). Membiarkan
  * itu diubah dari layar berarti membiarkan aturan diputarbalikkan dengan satu
  * klik.
  *
@@ -29,11 +30,22 @@ type Pengaturan = {
   hariElektronik: number;
   hariSuratTercatat: number;
   hariBiasa: number;
+  /** SEMA 1/2023 angka 11 - bot lama belum mengirimnya. */
+  hariTerimaSuratTercatat?: number;
 };
 
 type Jalur = Record<
   "elektronik" | "surat_tercatat" | "biasa",
-  { label: string; dasar: string; bawaan: number; hariKerja: boolean; perluDiterima: boolean }
+  {
+    label: string;
+    dasar: string;
+    bawaan: number;
+    hariKerja: boolean;
+    perluDiterima: boolean;
+    terimaHari?: number;
+    terimaHariKerja?: boolean;
+    hariPenuh?: boolean;
+  }
 >;
 
 const URUTAN: Array<{ kunci: keyof Jalur; medan: keyof Pengaturan }> = [
@@ -142,11 +154,12 @@ export function AletaEcourtPanggilanPengaturan() {
                   </div>
 
                   <label className="flex items-center gap-2 text-xs">
+                    {kunci === "surat_tercatat" ? <span>dikirim</span> : null}
                     <Input
                       type="number"
                       min={0}
                       max={60}
-                      value={nilai[medan]}
+                      value={nilai[medan] ?? 0}
                       onChange={(peristiwa) =>
                         setNilai({ ...nilai, [medan]: Number(peristiwa.target.value) })
                       }
@@ -157,6 +170,35 @@ export function AletaEcourtPanggilanPengaturan() {
                       {jalur[kunci].hariKerja ? "hari kerja" : "hari kalender"}
                     </Badge>
                   </label>
+
+                  {/* SEMA 1/2023 angka 11: selain dikirim, surat tercatat harus
+                      DITERIMA sekian hari kerja penuh sebelum sidang. */}
+                  {kunci === "surat_tercatat" && nilai.hariTerimaSuratTercatat !== undefined ? (
+                    <label className="flex items-center gap-2 text-xs">
+                      <span>diterima</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={60}
+                        value={nilai.hariTerimaSuratTercatat}
+                        onChange={(peristiwa) =>
+                          setNilai({ ...nilai, hariTerimaSuratTercatat: Number(peristiwa.target.value) })
+                        }
+                        className="w-20"
+                        aria-label="Tenggang surat tercatat diterima sebelum sidang"
+                      />
+                      <Badge variant="muted">hari kerja</Badge>
+                    </label>
+                  ) : null}
+
+                  {jalur[kunci].hariPenuh ? (
+                    <Badge
+                      variant="muted"
+                      title="Hari kirim/terima dan hari sidang tidak dihitung. Contoh: dikirim tanggal 2, diterima Rabu tanggal 3 - sidang paling cepat Selasa tanggal 9."
+                    >
+                      hari penuh di antara
+                    </Badge>
+                  ) : null}
 
                   {jalur[kunci].perluDiterima ? (
                     <Badge variant="warning" title="Selain tenggang waktu, suratnya harus terbukti diterima.">
@@ -180,14 +222,16 @@ export function AletaEcourtPanggilanPengaturan() {
               </p>
               <p>
                 <strong className="text-foreground">Perkara biasa (non-e-Court).</strong> Seluruh
-                pihak dipanggil jurusita seperti biasa, dengan tenggang hari kerja menurut Pasal 122
-                HIR.
+                pihak dipanggil jurusita seperti biasa, dengan tenggang hari kerja menurut Pasal 146
+                RBg. Bila pihak tidak dijumpai, relaas disampaikan melalui kepala desa/lurah (Pasal 718
+                ayat (1) RBg).
               </p>
               <p>
-                <strong className="text-foreground">Surat tercatat menuntut dua hal.</strong> Selain
-                dikirim tepat waktu, suratnya harus terbukti diterima di alamat tergugat berdasarkan
-                lacak kiriman. Surat yang terkirim tepat waktu tetapi belum terbukti sampai ditandai
-                kuning, bukan hijau.
+                <strong className="text-foreground">Surat tercatat menuntut dua hal.</strong> Menurut
+                SEMA 1/2023 angka 11 surat dikirim paling lambat sekian hari kalender dan diterima
+                paling lambat sekian hari kerja sebelum sidang - keduanya dihitung hari penuh di
+                antara (hari sidang tidak dihitung). Surat yang terkirim tepat waktu tetapi belum
+                terbukti sampai ditandai kuning, bukan hijau.
               </p>
               <p>
                 <strong className="text-foreground">Libur nasional tidak diperhitungkan.</strong>{" "}
