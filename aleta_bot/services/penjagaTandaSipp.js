@@ -1084,6 +1084,11 @@ function pasangJaring(kolam, sumber) {
 
 const JALUR_TULIS_SIPP = Object.freeze([
   {
+    berkas: "services/bersihPenutupSaksiService.js",
+    penjaga: ["adalahKalimatPenutupSaksi(", "pp.proses_id = ?"],
+    sasaran: "MENGHAPUS (dengan cadangan lengkap berkas, dapat dipulihkan) baris kalimat penutup saksi di ABT abt_keterangan_saksi, hanya perkara tanpa proses Minutasi 220; tidak menulis teks apa pun",
+  },
+  {
     berkas: "services/penetapanTulisService.js",
     penjaga: ["penjagaTandaSipp.periksaRencana(", "penjagaTandaSipp.periksaIsian("],
     sasaran: "penjalan rencana bersama (penetapan PMH/PPP/PJS/PHS, bongkar, tunda/putus sidang, putusan, penetapan kembali) + sebab majelis & Data Umum",

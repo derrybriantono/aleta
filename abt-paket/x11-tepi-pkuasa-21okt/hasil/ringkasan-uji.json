@@ -1,0 +1,7 @@
+{
+  "tanggal": "2026-10-21",
+  "server_baca_saja_sesudah_x7": {"T": 69375, "R_tanpa_catatan_minutasi": 1136, "C_dihapus": 17, "perkara": [9825, 9878, 9941, 9975, 9991, 10000, 10010], "per_perkara_baris_penutup": {"9825": [48, 3], "9878": [82, 4], "9941": [30, 2], "9975": [28, 2], "9991": [30, 2], "10000": [28, 2], "10010": [28, 2]}, "prasyarat": "1|1|2|1", "daftar_id_sama_dengan_js": true},
+  "rtf": {"folder": "berita_acara_sidang/1 BAS Pertama Standar", "berkas": 2, "md5": [["c64698d83858d625204d43e9ddcef794", "58703bde7c2335e33eb01c1835846fac"], ["3d3ad23d726f3b4ace6ed76dd7e3bfce", "be3ce1b8bfc74665bd8402b9035d772a"]], "penanda_sebelum": {"#0184#": 1, "#0207#": 1, "#0111#": 0}},
+  "lab_laptop": {"sebelum": "6077|1136|17", "sesudah": "6060|1119|0", "id_dihapus_sama_dengan_js": true, "minutasi_tak_berubah": true, "pulih_isi_dan_md5_rtf_sama_persis": true, "pasang_lagi_sama_dengan_pasang_pertama": true},
+  "otomatis_bot": {"cron": "05.40 harian", "rute": ["/abt/bersih-penutup-saksi", "/abt/pulih-penutup-saksi"], "cadangan": "reports/cadangan-penutup-saksi/*.jsonl (di-mount)", "uji": "bersih-penutup-saksi-otomatis-21okt.test.ts 5 lolos"}
+}

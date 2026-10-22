@@ -2098,6 +2098,16 @@ cron.schedule("10 07 * * Monday-Friday", () => {
   }));
 });
 
+// 21 Okt 2026 (x11): bersihkan baris kalimat penutup saksi ("Sudah cukup;") yang TERSIMPAN di ABT pada perkara BELUM minutasi, tiap hari 05.40,
+// dengan cadangan lengkap di reports/cadangan-penutup-saksi (dapat dipulihkan). Perkara yang sudah minutasi tidak disentuh. Matikan: ALETA_BERSIH_PENUTUP_OTOMATIS=0.
+cron.schedule("40 05 * * *", () => {
+  if (kembaranMode.aktif() || process.env.ALETA_BERSIH_PENUTUP_OTOMATIS === "0") return;
+  require("./services/bersihPenutupSaksiService")
+    .bersihkanPenutupTersimpan({ abt: require("./db_config5"), sipp: require("./db_config") })
+    .then((h) => console.log(`[bersih-penutup-saksi] kandidat=${h.kandidat} perkara=${h.perkara} dihapus=${h.dihapus} gagal=${h.gagal} cadangan=${h.cadangan || "-"}`))
+    .catch((error) => console.error("[bersih-penutup-saksi] gagal:", error && error.message ? error.message : error));
+});
+
 cron.schedule("00 20 * * *", () => {
   runLegacyNotificationIfAllowed("sendPenjagaSidangBesok", [{ id: "penjaga-sidang-besok", queryId: "legacy-jadwal-sidang-internal" }], () => sendPenjagaSidangBesok().then((message) => {
     if (!message) return;
