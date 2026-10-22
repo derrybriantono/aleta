@@ -306,7 +306,7 @@ describe("calon hakim & tampilan", () => {
     const layar = baca("components/portal/aleta-ecourt-sidang.tsx");
     expect(layar).toContain("{baris.majelisKode || \"—\"}");
     expect(layar).toContain("majelisTampil(baris, pilihanHakim).diganti ? (");
-    expect(layar).toContain("{!modeUrl && satuTanggalJadwal ? <PemilihHakimBaris baris={baris} kh={kh} /> : null}");
+    expect(layar).toContain("{!modeUrl && satuTanggalJadwal && tampil(tampilan, \"pilih-hakim-baris\") ? <PemilihHakimBaris baris={baris} kh={kh} /> : null}");
   });
 });
 

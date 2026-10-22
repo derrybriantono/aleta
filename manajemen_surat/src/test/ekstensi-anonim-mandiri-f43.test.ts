@@ -112,7 +112,7 @@ describe("Blangko Derry - titik sambung 16OKT-F43", () => {
     const iAbt = isi.indexOf("await klienAbt().anonim(");
     expect(iMandiri).toBeGreaterThan(0);
     expect(iAbt).toBeGreaterThan(iMandiri);
-    expect(isi).toMatch(/const h = anonimAleta && anonimAleta\.ok \? anonimAleta : await klienAbt\(\)\.anonim\(/);
+    expect(isi).toMatch(/const h = anonimAleta && anonimAleta\.ok \? anonimAleta : tes\(\) \? \{ ok: false, pesan: "[^"]+" \} : await klienAbt\(\)\.anonim\(/); // 22 Okt: Tes putusan tidak memakai anonim ABT
   });
   it("pratinjau anonim ALETA tampil sebelum unggah e-Doc; 'Unggah putusan saja' mengirim tanpa anonim", () => {
     const iPrat = isi.indexOf("alatPratinjauAnonim(anonimAleta, { nomor })");

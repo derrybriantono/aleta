@@ -424,7 +424,7 @@
   }
   /**
    * Tes putusan: hanya BACA yang lewat ke ABT. GET selalu; POST hanya pencarian nomor perkara (get_nomor_perkara*) dan pengisian
-   * templat tanya jawab TANPA menyimpan (load_template). Selain itu - simpan isian, simpan tanya jawab, simpan templat, validasi BAS,
+   * blangko tanya jawab TANPA menyimpan (load_template). Selain itu - simpan isian, simpan tanya jawab, simpan templat, validasi BAS,
    * anonimisasi (menulis berkas sementara di ABT), main/cari - ditolak di sini, apa pun yang memanggilnya.
    */
   function permintaanAbtAman(alamat, opsi) {
