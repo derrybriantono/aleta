@@ -306,21 +306,23 @@ describe("1. kotak Tes putusan di samping Lihat sebagai", () => {
     }
   });
 
-  it("dicentang: pita tampil dengan nomor perkara acuan, status diingat per pengguna; kunjungan berikutnya tercentang", async () => {
+  it("dicentang: pita tampil dengan nomor perkara acuan; status hanya selama halaman ini - panel berikutnya selalu mati (22 Okt malam)", async () => {
     const h = buka({ orang: "super" });
     await pilihAcuan(h);
     await nyalakanTes(h);
-    expect(h.simpanan.blangkoDerryTesPutusan).toBe(true);
+    expect(h.simpanan.blangkoDerryTesPutusan).toBeUndefined();
+    expect(kerangka(h).tesPutusan()).toBe(true);
     const pita = q(h, "#bd-pitates")!;
     expect(pita.textContent).toContain("TES PUTUSAN");
     expect(pita.textContent).toContain(`perkara acuan ${NOMOR_ACUAN}`);
     expect(pita.textContent).toContain("tidak ada yang ditulis ke ABT, SIPP, atau e-Court");
     expect(pita.textContent).not.toMatch(/aleta/i);
-    const lagi = buka({ orang: "super", simpanan: h.simpanan });
+    // Sisa simpanan lama "nyala" pun tidak menyalakannya lagi.
+    const lagi = buka({ orang: "super", simpanan: { ...h.simpanan, blangkoDerryTesPutusan: true } });
     await bukaPanel(lagi);
-    expect((q(lagi, "#bd-tes") as HTMLInputElement).checked).toBe(true);
-    expect(q(lagi, "#bd-pitates")!.hidden).toBe(false);
-    expect(lagi.w.aletaBlangkoDerry.tesPutusan()).toBe(true);
+    expect((q(lagi, "#bd-tes") as HTMLInputElement).checked).toBe(false);
+    expect(q(lagi, "#bd-pitates")!.hidden).toBe(true);
+    expect(lagi.w.aletaBlangkoDerry.tesPutusan()).toBe(false);
   });
 
   it("Cetak massal mati pada mode tes (tombol tersembunyi, pemanggilan langsung ditolak)", async () => {
@@ -393,7 +395,7 @@ describe("2. jendela Pilih blangko pada mode tes", () => {
     ubah(h, q(h, "#bd-tes") as HTMLInputElement, false);
     await sampai(() => kerangka(h).tesPutusan() === false && q(h, "#bd-pitates")!.hidden, "tes mati");
     await sampai(() => !isian(h).keadaan().blangko, "blangko tes dibuang");
-    expect(h.simpanan.blangkoDerryTesPutusan).toBe(false);
+    expect(h.simpanan.blangkoDerryTesPutusan).toBeUndefined();
     expect(q(h, "#bd-pitates")!.hidden).toBe(true);
     await bukaModal(h);
     expect(tabModal(h)).toEqual(["put"]);

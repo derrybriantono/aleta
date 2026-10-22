@@ -704,7 +704,8 @@
       isiOto: s[K.isiOto] !== false,
       pratinjau: s[K.pratinjau] !== false,
       gembok: s[K.gembok] === true,
-      tesPutusan: s[K.tesPutusan] === true,
+      // 22 Okt malam (pengguna): Tes putusan SELALU mati setiap panel dibuka; hanya bertahan selama halaman ini.
+      tesPutusan: S.cfg.tesPutusan === true,
     };
     S.tema = s[K.tema] === "terang" ? "terang" : "gelap";
     S.ukuran = Object.prototype.hasOwnProperty.call(UKURAN, s[K.ukuran]) ? s[K.ukuran] : "biasa";
@@ -1017,13 +1018,12 @@
       pita.innerHTML = `<b>TES PUTUSAN</b> · perkara acuan ${S.pk ? `<b>${esc(S.pk)}</b>` : "belum dipilih"} · blangko dari jenis perkara mana pun dapat dicoba; tidak ada yang ditulis ke ABT, SIPP, atau e-Court (isian tidak disimpan, tidak diunggah, tidak dicatat). Unduhan berakhiran -TES.`;
     }
   }
-  /** Memasang/melepas Tes putusan: diingat per pengguna; blangko yang sedang terbuka dibuang (peran kunci berganti) dan daftar digambar ulang. */
+  /** Memasang/melepas Tes putusan: hanya selama halaman ini (tidak disimpan); blangko yang sedang terbuka dibuang (peran kunci berganti) dan daftar digambar ulang. */
   function aturTes(nyala) {
     const baru = nyala === true && superAdmin();
     if (S.cfg.tesPutusan === baru) return;
     tutupFloat();
     S.cfg.tesPutusan = baru;
-    void tulisPenyimpanan({ [K.tesPutusan]: baru });
     renderSemua();
     umumkanPerkara();
     toast(baru ? "Tes putusan menyala: blangko apa pun dapat dicoba, tidak ada yang ditulis." : "Tes putusan mati: saringan jenis perkara dan peran berlaku lagi.");
@@ -2076,7 +2076,7 @@
     if (wilayah !== "local" || !ubah) return;
     const s = {};
     let berubah = false;
-    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.pratinjau, K.gembok, K.tesPutusan, K.tema, K.ukuran]) {
+    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.pratinjau, K.gembok, K.tema, K.ukuran]) {
       if (ubah[k]) {
         berubah = true;
         s[k] = ubah[k].newValue;
