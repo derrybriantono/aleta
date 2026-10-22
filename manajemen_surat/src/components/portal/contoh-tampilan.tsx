@@ -278,6 +278,44 @@ export const CONTOH_TAMPILAN: Record<string, { letak: string; contoh: ReactNode 
   "pertanyaan-saksi": { letak: "kolom paling kanan, di bawah Status (setelah masuk pemeriksaan)", contoh: tombol("Pertanyaan saksi") },
   "ringkasan-ruang": { letak: "di atas tabel", contoh: redup("Ruang 1: 321/Pdt.G/2026 sedang disidang · 1 diskors") },
   "tombol-layar-penuh": { letak: "kepala layar", contoh: tombol("Layar penuh") },
+  // === 22 Okt 2026 (W57): unsur yang sudah tampil tetapi belum punya saklar ===
+  "tautan-jadwal": { letak: "kepala layar, di kanan judul", contoh: tombol("Tautan jadwal") },
+  "tombol-tunda-otomatis": { letak: "kepala layar, di kanan judul", contoh: tombol("Tunda otomatis 16.30") },
+  "tombol-perkara-saya": { letak: "kepala layar, di kanan judul", contoh: tombol("Perkara saya", "bg-primary text-primary-foreground") },
+  "identitas-pembuka": { letak: "kepala layar, di bawah judul", contoh: redup("Nama Pengguna · Hakim") },
+  "tombol-kalender-sidang": { letak: "baris tanggal, di kanan kotak tanggal", contoh: tombol("📅") },
+  "kalender-libur": { letak: "kotak tanggal (Jadwal Sidang dan Jadwal Mediasi)", contoh: redup("📅 · Kamis, 17 Agustus 2026 hari libur (HUT RI)") },
+  "tanggal-dan-jumlah": {
+    letak: "sudut kanan baris tanggal",
+    contoh: (
+      <span className="text-[11px]">
+        <strong>Rabu, 21 Oktober 2026</strong> <span className="text-muted-foreground">· 12 sidang</span>
+      </span>
+    ),
+  },
+  "tanda-diperbarui": { letak: "di samping jumlah sidang", contoh: redup("· diperbarui 08:41:07") },
+  "pencarian-lanjutan": { letak: "di samping kotak pencarian", contoh: tombol("Pencarian lanjutan") },
+  "menu-per-panitera": { letak: "di dalam tombol Menu", contoh: tombol("Per panitera sidang") },
+  "menu-pengingat-kasir": { letak: "di dalam tombol Menu", contoh: tombol("Pengingat tugas kasir") },
+  "saklar-sidang-keliling": { letak: "pita ruang sidang di atas tabel", contoh: tombol("Sidang keliling") },
+  "pilih-hakim-baris": { letak: "kolom Majelis & Petugas", contoh: tombol("Pilih hakim", "border-dashed") },
+  "status-putusan": {
+    letak: "kolom Putusan, dan kolom Agenda di mode Ringkas",
+    contoh: (
+      <span className="inline-flex flex-wrap items-center gap-1">
+        {lencana("bg-emerald-100 text-emerald-900", "Dikabulkan")}
+        {lencana("bg-amber-100 text-amber-900", "verstek")}
+      </span>
+    ),
+  },
+  "warna-baris": { letak: "seluruh baris", contoh: redup("tepi hijau = selesai · bingkai biru = berjalan · tepi kuning = diskors") },
+  "jam-dipanggil": { letak: "kolom Antrian / Jam", contoh: <span className="text-[10px] text-emerald-600">dipanggil 09:12</span> },
+  // === Jadwal Mediasi ===
+  "pengantar-layar": { letak: "di bawah judul Jadwal mediasi", contoh: redup("Pertemuan mediasi tersimpan terpisah dari jadwal sidang di SIPP…") },
+  "sebutan-mediator": { letak: "kolom Mediator, di bawah nama", contoh: redup("Mediator Hakim") },
+  "dihadiri-sipp": { letak: "kolom Tempat, di bawah ruang", contoh: redup("dihadiri Semua Pihak") },
+  "batas-dan-laporan": { letak: "kolom Tenggang, di bawah lencana", contoh: redup("batas Sel, 3 Nov · laporan Sen, 2 Nov") },
+  "kehadiran-rincian": { letak: "rincian satu pertemuan mediasi", contoh: redup("Kehadiran pertemuan - dicatat di ALETA") },
 };
 
 /** Dua keadaan berdampingan: tampil dan disembunyikan; yang berlaku sekarang ditandai. */

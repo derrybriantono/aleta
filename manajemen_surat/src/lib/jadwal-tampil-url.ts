@@ -97,6 +97,12 @@ export const ALAT_ATAS_DIIZINKAN_URL: readonly string[] = [
   "tombol-cetak-relaas",
   "kartu-ruang",
   "ringkasan-ruang",
+  // 22 Okt 2026: tiga unsur bacaan yang SUDAH tampil di tampilan ini sebelum
+  // punya saklar - tetap tampil (tanggal terbaca + jumlah, tanda diperbarui,
+  // kalender libur pada kotak tanggal).
+  "tanggal-dan-jumlah",
+  "tanda-diperbarui",
+  "kalender-libur",
 ];
 
 /**

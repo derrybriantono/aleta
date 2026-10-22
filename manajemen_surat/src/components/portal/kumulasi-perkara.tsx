@@ -49,6 +49,30 @@ export function useSaklarKumulasi(): boolean {
   return menyala;
 }
 
+/**
+ * Menulis saklar "Kumulasi perkara" ke simpanan panel Tampilan Jadwal Sidang -
+ * dipakai panel Tampilan Jadwal Mediasi (22 Okt 2026), supaya satu saklar tetap
+ * satu: mematikannya di sini mematikannya di Jadwal Sidang, Jadwal Mediasi, dan
+ * Status Perkara. Layar yang sama di jendela ini diberi tahu lewat peristiwa
+ * storage buatan (peristiwa asli hanya sampai ke tab lain).
+ */
+export function ubahSaklarKumulasi(menyala: boolean): void {
+  try {
+    const sekarang = bacaTampilan(window.localStorage.getItem(KUNCI_SIMPANAN_TAMPILAN));
+    window.localStorage.setItem(
+      KUNCI_SIMPANAN_TAMPILAN,
+      JSON.stringify({ ...sekarang, [KUNCI_SAKLAR_KUMULASI]: menyala })
+    );
+  } catch {
+    /* penyimpanan tertutup: tidak tersimpan, layar ini tetap mengikuti pilihannya sendiri */
+  }
+  try {
+    window.dispatchEvent(new StorageEvent("storage", { key: KUNCI_SIMPANAN_TAMPILAN }));
+  } catch {
+    /* peramban lama tanpa konstruktor StorageEvent */
+  }
+}
+
 /** Lencana kecil "dari petitum" - bacaan ALETA, bukan catatan SIPP. */
 export function LencanaDariPetitum({ kumulasi }: { kumulasi: KumulasiPerkara | null | undefined }) {
   if (!adaDariPetitum(kumulasi)) return null;

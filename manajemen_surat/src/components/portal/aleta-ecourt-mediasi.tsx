@@ -60,6 +60,7 @@ import { bolehBuatHasilMediasi, type PenggunaHasilMediasi } from "@/lib/hasil-me
 import { usePenggunaAktifOpsional } from "@/lib/app-state";
 import { bolehAksiLayar } from "@/lib/matriks-peran";
 import {
+  SAKLAR_BERSAMA_MEDIASI,
   KUNCI_SIMPANAN_TAMPILAN_MEDIASI,
   SAKLAR_TAMPILAN_MEDIASI,
   bacaTampilanMediasi,
@@ -69,7 +70,8 @@ import {
 } from "@/lib/tampilan-jadwal-mediasi";
 /* === 12OKT-A: kumulasi perkara === */
 import { PemilihTanggalSidang } from "@/components/ui/pemilih-tanggal-sidang";
-import { JenisDenganKumulasi, RincianKumulasi, useSaklarKumulasi } from "@/components/portal/kumulasi-perkara";
+import { JenisDenganKumulasi, RincianKumulasi, ubahSaklarKumulasi, useSaklarKumulasi } from "@/components/portal/kumulasi-perkara";
+import { InfoContohSaklar } from "@/components/portal/contoh-tampilan";
 import { namaJenisDenganKumulasi, type KumulasiPerkara } from "@/lib/kumulasi-perkara";
 /* === AKHIR 12OKT-A === */
 
@@ -262,7 +264,16 @@ function KeteranganTenggang({ baris }: { baris: Mediasi }) {
  * tahu ruas mana yang dapat diperbaiki di sini dan mana yang harus diperbaiki
  * di SIPP.
  */
-function RincianMediasi({ baris, bolehCatat = true }: { baris: Mediasi; bolehCatat?: boolean }) {
+function RincianMediasi({
+  baris,
+  bolehCatat = true,
+  tampilKehadiran = true,
+}: {
+  baris: Mediasi;
+  bolehCatat?: boolean;
+  /** Saklar "kehadiran-rincian" (22 Okt 2026): bagian catatan kehadiran milik ALETA. */
+  tampilKehadiran?: boolean;
+}) {
   const [kehadiran, setKehadiran] = useState<BarisKehadiran[] | null>(null);
   const [galat, setGalat] = useState("");
   const [sibuk, setSibuk] = useState(false);
@@ -433,6 +444,7 @@ function RincianMediasi({ baris, bolehCatat = true }: { baris: Mediasi; bolehCat
           Yang dicatat di sini fakta kehadirannya saja. Kesimpulan iktikad baik
           menurut Pasal 6 adalah kewenangan mediator dan majelis, dan sengaja
           TIDAK dihitung layar ini. */}
+      {tampilKehadiran ? (
       <section className="rounded-lg border bg-card p-3">
         <h5 className="mb-2 border-b pb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Kehadiran pertemuan — dicatat di ALETA
@@ -544,6 +556,7 @@ function RincianMediasi({ baris, bolehCatat = true }: { baris: Mediasi; bolehCat
           </>
         )}
       </section>
+      ) : null}
     </div>
   );
 }
@@ -897,6 +910,12 @@ export function AletaEcourtMediasi({
   // tidak tersaring oleh isian yang tak terlihat.
   const saringKeadaanTampil = tampilMediasi(tampilan, "saring-keadaan");
   const pencarianTampil = tampilMediasi(tampilan, "pencarian-mediasi");
+  // 22 Okt 2026 (W57): unsur yang dulu tanpa centang.
+  const kalenderLiburTampil = tampilMediasi(tampilan, "kalender-libur");
+  const sebutanMediatorTampil = tampilMediasi(tampilan, "sebutan-mediator");
+  const dihadiriTampil = tampilMediasi(tampilan, "dihadiri-sipp");
+  const batasLaporanTampil = tampilMediasi(tampilan, "batas-dan-laporan");
+  const kehadiranRincianTampil = tampilMediasi(tampilan, "kehadiran-rincian");
 
   const alihkanKeadaan = (kunci: string) =>
     setKeadaanTerpilih((sekarang) =>
@@ -1064,11 +1083,13 @@ export function AletaEcourtMediasi({
             Tampilan
           </Button>
         </div>
+        {tampilMediasi(tampilan, "pengantar-layar") ? (
         <p className="text-sm text-muted-foreground">
           Pertemuan mediasi tersimpan terpisah dari jadwal sidang di SIPP, sehingga tidak muncul di
           layar Jadwal Sidang. Tenggangnya 30 hari sejak mediator ditetapkan &mdash; PERMA 1/2016
           Pasal 24.
         </p>
+        ) : null}
         {panelTampilan ? (
           <div className="mt-2 rounded-lg border bg-card p-2">
             <p className="mb-1.5 text-xs text-muted-foreground">
@@ -1077,7 +1098,8 @@ export function AletaEcourtMediasi({
             <ul className="space-y-1">
               {SAKLAR_TAMPILAN_MEDIASI.map((saklar) => (
                 <li key={saklar.kunci}>
-                  <label className="flex cursor-pointer items-start gap-2 text-sm" title={saklar.keterangan}>
+                  <div className="flex items-start gap-1">
+                  <label className="flex flex-1 cursor-pointer items-start gap-2 text-sm" title={saklar.keterangan}>
                     <input
                       type="checkbox"
                       className="mt-0.5 h-3.5 w-3.5 accent-primary"
@@ -1090,6 +1112,40 @@ export function AletaEcourtMediasi({
                       <span className="block text-xs text-muted-foreground">{saklar.keterangan}</span>
                     </span>
                   </label>
+                  <InfoContohSaklar
+                    kunci={saklar.kunci}
+                    label={saklar.label}
+                    keterangan={saklar.keterangan}
+                    menyala={tampilMediasi(tampilan, saklar.kunci)}
+                  />
+                  </div>
+                </li>
+              ))}
+              {/* Saklar milik Jadwal Sidang yang berlaku juga di sini: ditulis ke simpanan Jadwal Sidang. */}
+              {SAKLAR_BERSAMA_MEDIASI.map((saklar) => (
+                <li key={saklar.kunci}>
+                  <div className="flex items-start gap-1">
+                  <label className="flex flex-1 cursor-pointer items-start gap-2 text-sm" title={saklar.keterangan}>
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-3.5 w-3.5 accent-primary"
+                      checked={saklarKumulasi}
+                      onChange={(e) => ubahSaklarKumulasi(e.target.checked)}
+                      data-saklar-mediasi={saklar.kunci}
+                      data-saklar-bersama=""
+                    />
+                    <span className="leading-tight">
+                      {saklar.label}
+                      <span className="block text-xs text-muted-foreground">{saklar.keterangan}</span>
+                    </span>
+                  </label>
+                  <InfoContohSaklar
+                    kunci={saklar.kunci}
+                    label={saklar.label}
+                    keterangan={saklar.keterangan}
+                    menyala={saklarKumulasi}
+                  />
+                  </div>
                 </li>
               ))}
             </ul>
@@ -1106,11 +1162,11 @@ export function AletaEcourtMediasi({
           <label className="text-sm">
             <span className="mb-1 block text-xs text-muted-foreground">Dari tanggal</span>
             {/* 22 Okt 2026: kalender bersama bertanda libur (tanggal tampilan: libur boleh dibuka). */}
-            <PemilihTanggalSidang value={dari} onChange={setDari} liburBolehDipilih sebutan="Tanggal mediasi" aria-label="Dari tanggal" kelasBungkus="w-44" className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" />
+            <PemilihTanggalSidang value={dari} onChange={setDari} liburBolehDipilih tampilKalender={kalenderLiburTampil} sebutan="Tanggal mediasi" aria-label="Dari tanggal" kelasBungkus="w-44" className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" />
           </label>
           <label className="text-sm">
             <span className="mb-1 block text-xs text-muted-foreground">Sampai tanggal</span>
-            <PemilihTanggalSidang value={sampai} onChange={setSampai} min={dari} liburBolehDipilih sebutan="Tanggal mediasi" aria-label="Sampai tanggal" kelasBungkus="w-44" className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" />
+            <PemilihTanggalSidang value={sampai} onChange={setSampai} min={dari} liburBolehDipilih tampilKalender={kalenderLiburTampil} sebutan="Tanggal mediasi" aria-label="Sampai tanggal" kelasBungkus="w-44" className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" />
           </label>
           <Button size="sm" variant="outline" onClick={() => geserHari(1)} title="Hari berikutnya">
             ›
@@ -1436,6 +1492,7 @@ export function AletaEcourtMediasi({
                         daftarMediator(baris.mediator, baris.statusMediator).map((orang, ke) => (
                           <div key={`${orang.nama}-${ke}`} className={ke > 0 ? "mt-1" : undefined}>
                             <div className="font-medium"><NamaDapatDipanggil golongan={orang.nama ? "mediator" : null} perkaraId={String(baris.perkaraId)} tanggal={baris.tanggal} nomorPerkara={baris.nomorPerkara} ruang={baris.tempat} konteks="mediasi" mediasiId={String(baris.mediasiId)}>{orang.nama || "Nama mediator belum tercatat"}</NamaDapatDipanggil></div>
+                            {sebutanMediatorTampil ? (
                             <div
                               className={
                                 orang.golongan === "belum-tercatat"
@@ -1445,6 +1502,7 @@ export function AletaEcourtMediasi({
                             >
                               {orang.sebutan}
                             </div>
+                            ) : null}
                           </div>
                         ))
                       )}
@@ -1461,19 +1519,19 @@ export function AletaEcourtMediasi({
 
                     <td className="px-3 py-2 text-xs">
                       {baris.tempat || "—"}
-                      {baris.dihadiri ? (
+                      {dihadiriTampil && baris.dihadiri ? (
                         <div className="text-muted-foreground">dihadiri {baris.dihadiri}</div>
                       ) : null}
                     </td>
 
                     <td className="px-3 py-2 text-xs">
                       <KeteranganTenggang baris={baris} />
-                      {baris.tenggatPerma && !baris.selesai ? (
+                      {batasLaporanTampil && baris.tenggatPerma && !baris.selesai ? (
                         <div className="mt-0.5 text-muted-foreground">
                           batas {tanggalHariPendek(baris.tenggatPerma, baris.tenggatPerma)}
                         </div>
                       ) : null}
-                      {baris.laporanMediator ? (
+                      {batasLaporanTampil && baris.laporanMediator ? (
                         <div className="mt-0.5 text-muted-foreground">
                           laporan{" "}
                           {tanggalHariPendek(baris.laporanMediator, baris.laporanMediator)}
@@ -1557,7 +1615,7 @@ export function AletaEcourtMediasi({
                   {dibuka === kunciBaris ? (
                     <tr className="border-t bg-muted/40">
                       <td colSpan={8} className="px-3 py-3">
-                        <RincianMediasi baris={baris} bolehCatat={bolehCatatMediasi} />
+                        <RincianMediasi baris={baris} bolehCatat={bolehCatatMediasi} tampilKehadiran={kehadiranRincianTampil} />
                       </td>
                     </tr>
                   ) : null}

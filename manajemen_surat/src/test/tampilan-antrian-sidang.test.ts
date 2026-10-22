@@ -292,7 +292,13 @@ describe("24 Sep - saklar untuk yang baru, dan Sembunyikan semua", () => {
     // (dijaga checklist-tampilan-18okt.test.ts, yang juga menjaga bahwa tiap fitur di layar punya baris).
     // 75 sejak 19 Okt 2026 (JADWAL-3 butir 4): + saksi-lipat (nama saksi terlipat bawaan).
     // 76 sejak 19 Okt 2026 (JADWAL-3 tambahan B): + tombol-blangko.
-    expect(SAKLAR_TAMPILAN.length).toBe(76);
+    // 92 sejak 22 Okt 2026 (W57): + 16 unsur yang sudah tampil tetapi belum punya saklar
+    // (tautan-jadwal, tombol-tunda-otomatis, tombol-perkara-saya, identitas-pembuka,
+    // tombol-kalender-sidang, kalender-libur, tanggal-dan-jumlah, tanda-diperbarui,
+    // pencarian-lanjutan, menu-per-panitera, menu-pengingat-kasir, saklar-sidang-keliling,
+    // pilih-hakim-baris, status-putusan, warna-baris, jam-dipanggil) - dijaga
+    // saklar-tampilan-lengkap-22okt.test.tsx.
+    expect(SAKLAR_TAMPILAN.length).toBe(92);
   });
 
   it("saklar yang hanya hidup di satu mode MENYEBUT modenya", () => {

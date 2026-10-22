@@ -101,6 +101,7 @@ export function PemilihTanggalSidang({
   id,
   usulan,
   liburBolehDipilih = false,
+  tampilKalender = true,
 }: {
   value: string;
   onChange: (iso: string) => void;
@@ -116,6 +117,12 @@ export function PemilihTanggalSidang({
   usulan?: string;
   /** Hanya untuk tanggal tampilan (tidak menulis): libur bertanda tetapi boleh dipilih. */
   liburBolehDipilih?: boolean;
+  /**
+   * Saklar Tampilan "kalender-libur" (22 Okt 2026): false = tombol kalender dan
+   * keterangan "hari libur (nama)" tidak digambar. Kotak tanggalnya tetap dapat
+   * diketik; tanggal libur yang ditolak (pemilih penulis) tetap disebut.
+   */
+  tampilKalender?: boolean;
 }) {
   useHariLibur();
   const [buka, setBuka] = useState(false);
@@ -163,8 +170,9 @@ export function PemilihTanggalSidang({
           aria-label={ariaLabel}
           aria-invalid={sebabNilai ? true : undefined}
           onChange={(e) => pilih(e.target.value)}
-          className={cn("min-w-0 flex-1", className, sebabNilai && "border-amber-500")}
+          className={cn("min-w-0 flex-1", className, sebabNilai && tampilKalender && "border-amber-500")}
         />
+        {tampilKalender ? (
         <button
           type="button"
           disabled={disabled}
@@ -179,19 +187,20 @@ export function PemilihTanggalSidang({
         >
           <CalendarDays className="h-4 w-4" />
         </button>
+        ) : null}
       </div>
       {ditolak ? (
         <span role="alert" className="text-[0.7rem] font-medium text-amber-700 dark:text-amber-400" data-tanggal-libur-ditolak="">
           {ditolak}
         </span>
-      ) : sebabNilai ? (
+      ) : !tampilKalender ? null : sebabNilai ? (
         <span className="text-[0.7rem] font-medium text-amber-700 dark:text-amber-400" data-tanggal-libur="">
           {sebutTanggalPanjang(value)} hari libur ({sebabNilai.nama}).{liburBolehDipilih ? "" : " Pilih hari kerja lain."}
         </span>
       ) : tanpaSkb ? (
         <span className="text-[0.7rem] text-muted-foreground">Daftar libur nasional tahun {value.slice(0, 4)} belum ada - periksa SKB-nya.</span>
       ) : null}
-      {buka ? (
+      {buka && tampilKalender ? (
         <KalenderLibur
           bulan={bulan}
           gantiBulan={setBulan}

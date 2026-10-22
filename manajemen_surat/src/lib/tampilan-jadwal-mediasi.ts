@@ -77,6 +77,61 @@ export const SAKLAR_TAMPILAN_MEDIASI: readonly SaklarTampilanMediasi[] = [
     keterangan:
       "Kalimat di dasar layar yang menerangkan tenggang 30 hari dihitung sejak penetapan mediator (PERMA 1/2016 Pasal 24), bukan sejak pertemuan pertama. Sama pada tiap perkara.",
   },
+  // 22 Okt 2026 (W57, permintaan hakim: "tambahkan yang belum ada checklist on/off nya").
+  // Unsur yang sudah tampil tetapi belum punya centang. Semuanya menyala bawaan - layar
+  // tidak berubah bagi siapa pun. Yang dimatikan hanya tidak digambar; datanya tetap.
+  {
+    kunci: "pengantar-layar",
+    label: "Kalimat pengantar di bawah judul",
+    keterangan:
+      "Dua kalimat di bawah judul Jadwal mediasi: mediasi tersimpan terpisah dari jadwal sidang di SIPP, dan tenggangnya 30 hari sejak mediator ditetapkan.",
+  },
+  {
+    kunci: "kalender-libur",
+    label: "Kalender dan tanda hari libur",
+    keterangan:
+      "Tombol kalender kecil di samping kotak Dari tanggal dan Sampai tanggal, beserta keterangan \"hari libur (nama liburnya)\" bila tanggalnya libur. Kotak tanggalnya sendiri tetap dapat diketik.",
+  },
+  {
+    kunci: "sebutan-mediator",
+    label: "Sebutan mediator (Hakim atau Non Hakim)",
+    keterangan:
+      "Tulisan kecil di bawah nama mediator: Mediator Hakim, Mediator Non Hakim, atau \"status belum tercatat\" yang perlu dilengkapi di SIPP. Nama mediator tetap tampil.",
+  },
+  {
+    kunci: "dihadiri-sipp",
+    label: "Keterangan dihadiri menurut SIPP",
+    keterangan:
+      "Tulisan kecil \"dihadiri ...\" di bawah tempat pertemuan, diambil dari catatan SIPP. Catatan kehadiran yang ditulis di ALETA (di Rincian) tidak terpengaruh.",
+  },
+  {
+    kunci: "batas-dan-laporan",
+    label: "Tanggal batas tenggang dan tanggal laporan",
+    keterangan:
+      "Dua baris kecil di bawah lencana tenggang: \"batas ...\" (hari ke-30 sejak mediator ditetapkan) dan \"laporan ...\" (kapan laporan mediator masuk). Lencana tenggangnya tetap tampil.",
+  },
+  {
+    kunci: "kehadiran-rincian",
+    label: "Catatan kehadiran di Rincian",
+    keterangan:
+      "Bagian \"Kehadiran pertemuan - dicatat di ALETA\" di dalam Rincian satu pertemuan: kolom hadir, nama yang hadir, alasan, dan tombol Simpan kehadiran. Catatan yang sudah tersimpan tidak terhapus. Keterangan dari SIPP di Rincian tetap tampil.",
+  },
+];
+
+/**
+ * Saklar yang DIPEGANG layar lain dan hanya ditampilkan ulang di panel ini
+ * supaya mudah ditemukan. Menyalakan atau mematikannya di sini sama dengan di
+ * Jadwal Sidang (satu saklar untuk ketiga layar: Jadwal Sidang, Jadwal
+ * Mediasi, Status Perkara - keputusan 12 Okt 2026). Tidak masuk
+ * SAKLAR_TAMPILAN_MEDIASI karena simpanannya bukan simpanan layar ini.
+ */
+export const SAKLAR_BERSAMA_MEDIASI: readonly SaklarTampilanMediasi[] = [
+  {
+    kunci: "kumulasi-perkara",
+    label: "Kumulasi perkara (sama dengan Jadwal Sidang)",
+    keterangan:
+      "Jenis perkara ditulis lengkap dengan gugatan yang dikumulasikan (mis. Cerai Gugat Kumulasi Hak Asuh Anak) beserta lencana \"dari petitum\", di daftar dan di Rincian. Satu saklar yang sama dengan Jadwal Sidang dan Status Perkara.",
+  },
 ];
 
 export type PilihanTampilanMediasi = Record<string, boolean>;
