@@ -4322,6 +4322,8 @@
    * (kehadiran & draf H-7, keputusan 17 Okt butir 41). ringkas(teks) mengisi
    * keterangan pendek di kepala - terbaca walau terlipat.
    */
+  /** Kotak widget yang dibentangkan petugas pada muat halaman INI saja (22 Okt malam). */
+  const BENTANG_HALAMAN = {};
   function kotakWidget(id, judul, opsi) {
     const o = opsi && typeof opsi === "object" ? opsi : {};
     const lipat = modern() && id !== "atur" && typeof alatLipat === "function";
@@ -4337,12 +4339,15 @@
       // dibuka terbuka di setiap kunjungan berikutnya.
       const sesi = o.sesiTab === true && typeof alatPanelTerbuka === "function" && typeof alatIngatPanel === "function";
       const kunciSesi = `widget:${id}`;
+      // 22 Okt 2026 malam (pengguna: "defaultnya hidden"): terlipat di SETIAP muat halaman. Bentangan petugas
+      // hanya diingat selama halaman ini hidup (kotak yang dibangun ulang karena setelan berubah tidak tiba-tiba
+      // terlipat); tidak lagi per sesi tab atau di penyimpanan.
       const opsiLipat = sesi
         ? {
             ingat: false,
-            terbuka: alatPanelTerbuka(kunciSesi, { sesiTab: true }),
+            terbuka: BENTANG_HALAMAN[kunciSesi] === true,
             saatUbah: (terbuka, olehOrang) => {
-              if (olehOrang) alatIngatPanel(kunciSesi, terbuka, { sesiTab: true });
+              if (olehOrang) BENTANG_HALAMAN[kunciSesi] = terbuka;
             },
           }
         : o.terbuka === false

@@ -261,7 +261,8 @@ describe("widget ALETA: kotak Kehadiran sidang hari ini", () => {
     expect(kotak.getAttribute("data-terbuka")).toBe("tidak");
     kotak.querySelector(".aleta-lipat-kepala").click();
     expect(q(h, "[data-kehadiran-widget]").getAttribute("data-terbuka")).toBe("ya");
-    expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:widget:kehadiran")).toBe("1");
+    // 22 Okt malam: bentangan hanya untuk halaman ini - tidak ditulis ke sesi tab.
+    expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:widget:kehadiran")).toBeNull();
     await h.ubahSimpanan({ widgetKehadiran: true });
     await tunggu(120);
     expect(q(h, "[data-kehadiran-widget]").getAttribute("data-terbuka")).toBe("ya");

@@ -279,7 +279,8 @@ describe("widget ALETA: kotak Draf putusan H-7", () => {
     // Petugas membentangkan: berlaku pada sesi tab ini, tidak ditulis ke chrome.storage.local.
     kotak.querySelector(".aleta-lipat-kepala").click();
     expect(q(h, "[data-draf-h7-widget]").getAttribute("data-terbuka")).toBe("ya");
-    expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:widget:drafH7")).toBe("1");
+    // 22 Okt malam: bentangan hanya untuk halaman ini - tidak ditulis ke sesi tab.
+    expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:widget:drafH7")).toBeNull();
     // Penyegaran/penggambaran ulang tidak melipatnya lagi.
     await h.ubahSimpanan({ widgetDrafH7: true });
     await tunggu(120);
