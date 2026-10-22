@@ -199,9 +199,88 @@ async function jalurWilayah({ kode } = {}) {
   return { ok: true, lengkap: true, sandi, data: hasil };
 }
 
+/**
+ * ============================================================================
+ * DAFTAR RINGKAS SATU PROVINSI (22 Okt 2026) - untuk "ketik nama desa"
+ * ============================================================================
+ *
+ * Ekstensi mengisi alamat lengkap dari awal nama desa/kelurahan atau kecamatan.
+ * Supaya tidak ada permintaan per ketikan, seluruh provinsi diambil SEKALI,
+ * dipadatkan, dan disimpan di peramban (30 hari). Bentuknya:
+ *
+ *   { ok, versi, provinsi:{kode,nama},
+ *     kab:  [["72.03","KAB. DONGGALA"], ...],
+ *     kec:  [["72.03.11","SINDUE"], ...],
+ *     desa: { "72.03.11": [["2001","DALAKA"], ["1001","SINDUE"]], ... } }
+ *
+ * Kode desa penuh = kunci kecamatan + "." + ruas empat angka. TANPA nilaiSipp:
+ * nilai bersandi ratusan karakter per desa akan menggembungkan muatan; ekstensi
+ * memintanya untuk SATU desa terpilih lewat ?kode= (jalurWilayah). Hanya SELECT,
+ * kode provinsi dibatasi dua angka, dan hasil diingat 12 jam di memori bot
+ * (data wilayah praktis tidak berubah).
+ */
+const RINGKAS_VERSI = 1;
+const RINGKAS_UMUR_MS = 12 * 60 * 60 * 1000;
+const RINGKAS_BATAS = 30000;
+const singgahRingkas = new Map();
+
+async function daftarRingkas({ provinsi } = {}) {
+  const kode = String(provinsi === undefined || provinsi === null ? "" : provinsi).trim();
+  if (!/^\d{2}$/.test(kode)) return gagal("provinsi_tidak_sah", "Kode provinsi harus dua angka.");
+  const ada = singgahRingkas.get(kode);
+  if (ada && Date.now() - ada.waktu < RINGKAS_UMUR_MS) return ada.hasil;
+
+  let prov;
+  let kab;
+  let kec;
+  let desa;
+  try {
+    prov = await runQuery("SELECT provinsi_kode AS kode, provinsi_nama AS nama FROM ref_provinsi_new WHERE provinsi_kode = ? LIMIT 1", [kode]);
+    if (!prov[0]) return gagal("provinsi_tidak_ada", "Provinsi tidak ditemukan.");
+    const awalan = `${kode}.%`;
+    kab = await runQuery(
+      `SELECT kabupaten_kode AS kode, kabupaten_nama AS nama FROM ref_kabupaten_new WHERE provinsi_kode = ? ORDER BY kabupaten_kode LIMIT ${RINGKAS_BATAS}`,
+      [kode]
+    );
+    kec = await runQuery(
+      `SELECT kecamatan_kode AS kode, kecamatan_nama AS nama FROM ref_kecamatan_new WHERE kecamatan_kode LIKE ? ORDER BY kecamatan_kode LIMIT ${RINGKAS_BATAS}`,
+      [awalan]
+    );
+    desa = await runQuery(
+      `SELECT kelurahan_kode AS kode, kelurahan_nama AS nama FROM ref_kelurahan_new WHERE kelurahan_kode LIKE ? ORDER BY kelurahan_kode LIMIT ${RINGKAS_BATAS}`,
+      [awalan]
+    );
+  } catch (galat) {
+    console.warn(`[sippWilayah] ringkas ${kode} tidak terbaca: ${galat.message}`);
+    return gagal("sipp_tidak_terbaca", "Data wilayah SIPP tidak dapat dibaca saat ini.");
+  }
+
+  const pasang = (baris) => baris.map((b) => [bersihNama(b.kode), bersihNama(b.nama)]).filter(([k, n]) => k && n);
+  const kelompok = {};
+  for (const [kodeDesa, nama] of pasang(desa)) {
+    const m = /^(\d{2}\.\d{2}\.\d{2})\.(\d{4})$/.exec(kodeDesa);
+    if (!m) continue;
+    (kelompok[m[1]] = kelompok[m[1]] || []).push([m[2], nama]);
+  }
+  const hasil = {
+    ok: true,
+    versi: RINGKAS_VERSI,
+    provinsi: { kode: bersihNama(prov[0].kode), nama: bersihNama(prov[0].nama) },
+    kab: pasang(kab),
+    kec: pasang(kec),
+    desa: kelompok,
+  };
+  singgahRingkas.set(kode, { waktu: Date.now(), hasil });
+  return hasil;
+}
+
 /** Pintu rute: ?induk= daftar anak, ?kode= rantai sampai kode itu. */
 async function jawabRute(query = {}) {
   const kode = String(query.kode || "").trim();
+  if (query.ringkas !== undefined) {
+    const ringkas = await daftarRingkas({ provinsi: query.provinsi });
+    return { status: ringkas.ok ? 200 : ringkas.alasan === "sipp_tidak_terbaca" ? 500 : 400, body: ringkas };
+  }
   const hasil = kode ? await jalurWilayah({ kode }) : await daftarWilayah({ induk: query.induk });
   if (hasil.ok) return { status: 200, body: hasil };
   const status = hasil.alasan === "sipp_tidak_terbaca" ? 500 : 400;
@@ -210,6 +289,7 @@ async function jawabRute(query = {}) {
 
 module.exports = {
   daftarWilayah,
+  daftarRingkas,
   jalurWilayah,
   jawabRute,
   POLA_KODE,

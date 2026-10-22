@@ -2918,6 +2918,17 @@ export async function getGatewayWilayahSipp(pilihan: {
 }
 
 /**
+ * Daftar ringkas satu provinsi (kabupaten, kecamatan, desa tanpa nilai bersandi) -
+ * sekali ambil untuk pencarian nama desa di peramban. Bot lama (belum dibangun
+ * ulang) mengabaikan `ringkas` dan menjawab daftar provinsi biasa: pemanggil
+ * memeriksa bentuk jawabannya.
+ */
+export async function getGatewayWilayahRingkas(provinsi: string): Promise<GatewayResult<Record<string, unknown>>> {
+  const kueri = new URLSearchParams({ ringkas: "1", provinsi });
+  return gatewayFetch(`/internal/aleta-bot/sipp/wilayah?${kueri.toString()}`, { timeoutMs: 30_000 });
+}
+
+/**
  * Bantu data saksi (1.189.x butir 10-12): sebutan para pihak menurut jenis
  * perkara, para pihak, dan saksi yang sudah ada pada satu perkara. Hanya
  * membaca - lihat saksiBantuService di bot.
