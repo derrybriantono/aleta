@@ -57,6 +57,15 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.33",
+    dirilis: "2026-10-22T20:35:00+08:00",
+    judul: "Hakim pengganti mengikuti saklar sidang keliling",
+    butir: [
+      "Saklar Sidang keliling mati: nama hakim pengganti di kolom Majelis dan cetak per hakim tidak dipakai.",
+      "Cetak Jadwal Sidang kembali satu langkah; saat Sidang keliling menyala, halaman otomatis dipisah per hakim pengganti.",
+    ],
+  },
+  {
     versi: "1.205.32",
     dirilis: "2026-10-22T20:10:00+08:00",
     judul: "Jadwal Sidang cepat dan ringkas, alasan cerai, form pihak, Blangko Derry",
