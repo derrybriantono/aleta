@@ -57,6 +57,21 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.32",
+    dirilis: "2026-10-22T20:10:00+08:00",
+    judul: "Jadwal Sidang cepat dan ringkas, alasan cerai, form pihak, Blangko Derry",
+    butir: [
+      "Hasil putus yang diketik petugas di kolom Keterangan jadwal sidang kini dikenali; tunda otomatis tidak menunda sidang yang sudah diputus.",
+      "Jadwal Sidang diperbarui tiap beberapa detik dan langsung berubah sesudah Tunda atau Putus.",
+      "Jadwal Sidang lebih ringkas: Cetak dan Menu di baris pencarian, saklar Sidang keliling di bar ruang; Pilih hakim hanya tampil saat sidang keliling menyala.",
+      "Faktor penyebab perceraian pokok mengikuti fakta hukum sehingga Putusan Otomatis dan Jadwalkan Putusan tidak lagi berhenti karena ragu.",
+      "Penyebab pertengkaran dan keterangan saksi otomatis lebih rinci, berpegang pada posita.",
+      "Form saksi lebih ringkas; alamat dan wilayah saling mengisi di referensi data pihak; isi dengan Tab; pengingat merah identitas dan telepon yang belum diisi.",
+      "Blangko ABT by Derry: pilihan satu tanggal, saran mengikuti tab, kategori yang cocok di atas, gulir tidak melompat, sidang ke-N dan agenda, sembunyikan yang selesai.",
+      "Widget Kehadiran dan Draf putusan di SIPP terlipat bawaan; Draf putusan membuka Blangko ABT by Derry.",
+    ],
+  },
+  {
     versi: "1.205.31",
     dirilis: "2026-10-22T17:05:00+08:00",
     judul: "Deteksi putusan e-Court, TTE panitera, verstek bawaan",
