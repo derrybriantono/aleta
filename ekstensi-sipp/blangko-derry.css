@@ -688,3 +688,8 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 #aleta-bd-akar .bd-pitates { margin: 0; padding: 7px 16px; border-block: 2px solid var(--warn); background: var(--warnbg); color: var(--warn); font-size: 13.2px; line-height: 1.4; }
 #aleta-bd-akar .bd-pitates[hidden] { display: none !important; }
 #aleta-bd-akar .bd-pitates.kecil { margin: 0 0 8px; border: 2px solid var(--warn); border-radius: 12px; padding: 6px 12px; font-size: 12.6px; }
+/* 22 Okt malam: Tes putusan - cari perkara acuan mana pun menurut nomor (di luar jadwal sidang). */
+#aleta-bd-akar .bd-tescari .bd-cari { flex: 1 1 220px; min-width: 0; }
+#aleta-bd-akar .bd-tescarihasil { display: grid; gap: 6px; margin-bottom: 8px; }
+#aleta-bd-akar .bd-tespk { display: grid; gap: 2px; text-align: left; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--fg); font: inherit; cursor: pointer; }
+#aleta-bd-akar .bd-tespk:hover, #aleta-bd-akar .bd-tespk:focus-visible { border-color: var(--accentln); background: var(--accentbg); outline: none; }

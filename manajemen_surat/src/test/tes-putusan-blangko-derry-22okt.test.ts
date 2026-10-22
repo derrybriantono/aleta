@@ -168,6 +168,10 @@ function buka(p: { orang?: string; simpanan?: Record<string, unknown> } = {}): H
       return json({ ok: true, data: { hariIni: HARI_INI, mode: "hari", dari: HARI_INI, sampai: HARI_INI, lihatSemua: adm, nama: orang.nama, sebagaiNama: "", sebagaiPeran: null, terpotong: false, jumlahSemua: 1, adaYangCocok: true, akun: adm ? AKUN : null, perkara: [polos(PERKARA_ACUAN)] } });
     }
     if (url.includes("/aleta-ecourt/sidang?nomor=")) return json({ ok: false }, 404);
+    // 22 Okt malam (W62): naskah tes dihitung ALETA (POST hanya menghitung) - ABT tidak diminta preview-nya.
+    if (url.includes("/aleta-ecourt/blangko-derry/tes-naskah") && cara === "POST") {
+      return json({ ok: true, data: { berkas: "naskah.rtf", rtfBase64: Buffer.from(RTF, "latin1").toString("base64"), byte: RTF.length, jumlahTerisi: 3, tersisa: [], kosong: [], sumber: {}, mesinGalat: "", ketikanDipakai: Object.keys(JSON.parse(badanMinta).isian || {}).length } });
+    }
     if (url.includes("/aleta-ecourt/blangko-derry")) {
       const q = new URL(url, ASAL).searchParams;
       // Hak folder ABT: folder "Itsbat - Putusan" HANYA untuk grup 999 (bukan hakim) - saringan yang harus dilewati Tes putusan.
@@ -410,7 +414,7 @@ describe("2. jendela Pilih blangko pada mode tes", () => {
 // 3. Tidak ada permintaan tulis
 // ============================================================================
 describe("3. mode tes tidak menulis apa pun", () => {
-  const BOLEH_NON_GET = [/\/aleta-bot\/abt\/pdf$/, /\/aleta-bot\/abt\/usulan$/]; // hanya MENGHITUNG (PDF, usulan jawaban saksi); tidak menyimpan
+  const BOLEH_NON_GET = [/\/aleta-bot\/abt\/pdf$/, /\/aleta-bot\/abt\/usulan$/, /\/blangko-derry\/tes-naskah$/]; // hanya MENGHITUNG (PDF, usulan jawaban saksi, naskah tes); tidak menyimpan
   const TULIS_TERLARANG = /edit_data.*POST|tanyajawab_perkara_edit\?aksi=simpan|validasi_bas|main\/anonim|main\/cari|unggah-sipp|konseptor-langkah|tanya_jawab|ecourt|simpan/i;
 
   it("memilih perkara, memilih blangko, mengetik, pratinjau, cetak RTF+PDF, centang e-Doc: NOL permintaan tulis; unduhan berakhiran -TES; tanpa catatan cetak", async () => {
@@ -453,13 +457,14 @@ describe("3. mode tes tidak menulis apa pun", () => {
     expect(tulisan.length).toBeGreaterThan(0);
     for (const m of tulisan) {
       expect(BOLEH_NON_GET.some((p) => p.test(m.url.split("?")[0]))).toBe(true);
-      expect(`${m.cara} ${m.url}`).not.toMatch(TULIS_TERLARANG);
+      expect(`${m.cara} ${m.url.replace("/aleta-ecourt/blangko-derry/tes-naskah", "/tes-naskah")}`).not.toMatch(TULIS_TERLARANG);
     }
     expect(mintaKe(h, /edit_data/, "POST")).toEqual([]);
     expect(mintaKe(h, /tanyajawab_perkara_edit/, "POST")).toEqual([]);
     expect(mintaKe(h, /unggah-sipp|main\/anonim|validasi_bas|konseptor-langkah/)).toEqual([]);
-    expect(mintaKe(h, /abt\/preview\?/).every((m) => m.cara === "GET")).toBe(true);
-    expect(mintaKe(h, /abt\/preview\?/).length).toBeGreaterThan(0);
+    // Pratinjau tes dihitung ALETA (POST tes-naskah), bukan GET abt/preview.
+    expect(mintaKe(h, /abt\/preview\?/)).toEqual([]);
+    expect(mintaKe(h, /blangko-derry\/tes-naskah/, "POST").length).toBeGreaterThan(0);
   });
 
   it("PEMBANDING: tanpa tes, ketikan yang sama MENULIS ke ABT (edit_data POST) dan memeriksa hak (main/cari)", async () => {

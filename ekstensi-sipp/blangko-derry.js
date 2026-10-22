@@ -65,6 +65,8 @@
   const API_SIDANG = "/aleta/api/aleta-ecourt/sidang";
   /** Hak folder Blangko Derry + saklar Pengaturan SIPP & ABT (baca saja, 16 Okt malam). */
   const API_HAK = "/aleta/api/aleta-ecourt/blangko-derry?hak=1";
+  /** 22 Okt malam: Tes putusan - cari perkara acuan MANA PUN di SIPP menurut nomor (baca saja; Super Admin). */
+  const API_TES_CARI = "/aleta/api/aleta-ecourt/blangko-derry/tes-cari";
   const UMUR_HAK_MS = 5 * 60 * 1000;
   const K = {
     bawaan: "blangkoDerryBawaan",
@@ -556,6 +558,9 @@
     cariNomor: "",
     /** Jenis pencarian di kotak cari (19 Okt 2026): "semua" = saringan kata kunci otomatis. */
     cariJenis: "semua",
+    /** 22 Okt malam: Tes putusan - hasil cari nomor perkara di SIPP (di luar jadwal) dan perkara acuan yang dipilih darinya. Hanya di memori halaman. */
+    tesCari: { kata: "", memuat: false, galat: "", hasil: null },
+    tesAcuan: null,
     data: null,
     memuat: false,
     galat: "",
@@ -867,6 +872,11 @@
     akar.addEventListener("focusin", saatTunjuk);
     akar.addEventListener("focusout", saatLepas);
     akar.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && e.target && e.target.id === "bd-tescari") {
+        e.preventDefault();
+        void cariTes();
+        return;
+      }
       if (e.key === "Escape") {
         tutupFloat();
         sembunyiTip();
@@ -1024,6 +1034,12 @@
     if (S.cfg.tesPutusan === baru) return;
     tutupFloat();
     S.cfg.tesPutusan = baru;
+    if (!baru) {
+      // Perkara acuan hasil cari nomor (di luar jadwal) tidak berlaku lagi bila tes dimatikan.
+      S.tesCari = { kata: "", memuat: false, galat: "", hasil: null };
+      if (S.pk && !(S.data && S.data.perkara.some((x) => x.nomorPerkara === S.pk))) S.pk = null;
+      S.tesAcuan = null;
+    }
     renderSemua();
     umumkanPerkara();
     toast(baru ? "Tes putusan menyala: blangko apa pun dapat dicoba, tidak ada yang ditulis." : "Tes putusan mati: saringan jenis perkara dan peran berlaku lagi.");
@@ -1470,6 +1486,7 @@
         .map(([m, t]) => `<button type="button" role="tab" data-mode="${m}" aria-selected="${S.mode === m}">${t}</button>`)
         .join("") +
       `</div>${kotakCari()}</div>`;
+    if (tesAktif()) isi += htmlTesCari();
     if (S.mode === "tanggal") {
       isi +=
         `<div class="bd-kontrol"><label class="bd-lbl" for="bd-tgl">Tanggal</label><input type="date" id="bd-tgl" value="${esc(S.tgl)}">` +
@@ -1554,13 +1571,91 @@
     }
   }
 
+  // ── Tes putusan: perkara acuan mana pun, dicari menurut nomor di SIPP (22 Okt malam) ────────────────────────────────
+  /** Satu baris hasil cari -> bentuk perkara pada daftar jadwal (riwayat sidangnya dimuat sesudah dipilih). */
+  function perkaraAcuanTes(x) {
+    const l = (v) => (Array.isArray(v) ? v.map((n) => String(n || "").trim()).filter(Boolean) : []);
+    return {
+      nomorPerkara: String((x && x.nomorPerkara) || "").trim(),
+      perkaraId: String((x && x.perkaraId) || "").trim(),
+      jenisPerkara: String((x && x.jenisPerkara) || "").trim(),
+      alurPerkaraId: Number(x && x.alurPerkaraId) || 0,
+      sudahPutus: Boolean(x && x.sudahPutus),
+      tanggalPutusan: String((x && x.tanggalPutusan) || ""),
+      tanggalMinutasi: String((x && x.tanggalMinutasi) || ""),
+      adaBerkasPutusan: null,
+      lewatEcourt: null,
+      ghaib: false,
+      prodeo: false,
+      majelisKode: "",
+      majelisNama: "",
+      paniteraNama: "",
+      jurusitaNama: "",
+      sebagai: [],
+      pihak: { penggugat: l(x && x.pihak && x.pihak.penggugat), tergugat: l(x && x.pihak && x.pihak.tergugat) },
+      sidang: [],
+    };
+  }
+  function htmlTesCari() {
+    const t = S.tesCari;
+    let hasil = "";
+    if (t.memuat) hasil = `<p class="bd-catat" role="status">Mencari di SIPP…</p>`;
+    else if (t.galat) hasil = `<p class="bd-catat" role="alert">${esc(t.galat)}</p>`;
+    else if (t.hasil) {
+      hasil = t.hasil.length
+        ? `<div class="bd-tescarihasil" role="list">${t.hasil
+            .map((p) => {
+              const pihak = [p.pihak.penggugat.join("; "), p.pihak.tergugat.join("; ")].filter(Boolean).join(" melawan ");
+              return `<button type="button" class="bd-tespk" role="listitem" data-tespk="${esc(p.nomorPerkara)}"><b>${esc(p.nomorPerkara)}</b><span>${esc(p.jenisPerkara)}${p.sudahPutus ? " · sudah putus" : ""}</span><span class="bd-catat">${esc(pihak || "-")}</span></button>`;
+            })
+            .join("")}</div>`
+        : `<p class="bd-catat">Tidak ada perkara yang nomornya memuat "${esc(t.kata)}".</p>`;
+    }
+    return (
+      `<div class="bd-kontrol bd-tescari"><label class="bd-lbl" for="bd-tescari">Cari perkara acuan di SIPP</label>` +
+      `<input class="bd-cari" id="bd-tescari" placeholder="nomor perkara, mis. 600/Pdt.G/2026" aria-label="Cari perkara acuan menurut nomor" value="${esc(t.kata)}">` +
+      `<button type="button" class="bd-btn kecil" data-bd="tescari">Cari</button>` +
+      `<span class="bd-catat">Perkara mana pun, tidak dibatasi jadwal sidang. Hanya dibaca; tidak ada yang diubah.</span></div>${hasil}`
+    );
+  }
+  async function cariTes() {
+    if (!tesAktif()) return;
+    const kata = S.tesCari.kata.trim();
+    if (kata.length < 3) {
+      S.tesCari = { kata, memuat: false, galat: "Ketik paling sedikit tiga karakter nomor perkara.", hasil: null };
+      return renderPerkara();
+    }
+    S.tesCari = { kata, memuat: true, galat: "", hasil: null };
+    renderPerkara();
+    try {
+      const d = await ambil(`${API_TES_CARI}?nomor=${encodeURIComponent(kata)}`, "Mencari perkara di SIPP");
+      if (!tesAktif() || S.tesCari.kata !== kata) return;
+      S.tesCari = { kata, memuat: false, galat: "", hasil: (Array.isArray(d && d.perkara) ? d.perkara : []).map(perkaraAcuanTes).filter((p) => p.nomorPerkara && p.perkaraId) };
+    } catch (e) {
+      if (S.tesCari.kata !== kata) return;
+      S.tesCari = { kata, memuat: false, galat: String((e && e.message) || e), hasil: null };
+    }
+    if (!S.pk) renderPerkara();
+  }
+  function pilihAcuanTes(nomor) {
+    const p = S.tesCari.hasil && S.tesCari.hasil.find((x) => x.nomorPerkara === nomor);
+    if (!p || !tesAktif()) return;
+    S.tesAcuan = p;
+    pilihPerkara(nomor);
+  }
   function riwayatPerkara(p) {
     const lengkap = S.riwayat.get(p.nomorPerkara);
     return lengkap && lengkap.length ? lengkap : p.sidang;
   }
+  /** Perkara menurut nomor: dari daftar jadwal, atau (Tes putusan) perkara acuan hasil cari nomor di SIPP. */
+  function perkaraDiDaftar(nomor) {
+    const p = S.data && S.data.perkara.find((x) => x.nomorPerkara === nomor);
+    if (p) return p;
+    return tesAktif() && S.tesAcuan && S.tesAcuan.nomorPerkara === nomor ? S.tesAcuan : null;
+  }
   function perkaraTerpilih() {
-    if (!S.pk || !S.data) return null;
-    return S.data.perkara.find((x) => x.nomorPerkara === S.pk) || null;
+    if (!S.pk) return null;
+    return perkaraDiDaftar(S.pk);
   }
   function renderRingkasPerkara(wad) {
     const p = perkaraTerpilih();
@@ -1588,7 +1683,7 @@
 
   // ── Memilih perkara ───────────────────────────────────────────────────────
   function pilihPerkara(nomor) {
-    const p = S.data && S.data.perkara.find((x) => x.nomorPerkara === nomor);
+    const p = perkaraDiDaftar(nomor);
     if (!p) return;
     S.pk = nomor;
     S.sidIdx = Math.max(0, indeksAcuan(riwayatPerkara(p), hariIni()));
@@ -1662,7 +1757,7 @@
   // ── Tip nama pihak: hanya saat kursor ─────────────────────────────────────
   function tampilTip(el) {
     const n = el.getAttribute("data-tipn");
-    const p = S.data && S.data.perkara.find((x) => x.nomorPerkara === n);
+    const p = perkaraDiDaftar(n);
     const t = cari("#bd-tip", akar);
     if (!p || !t) return;
     const pg = p.pihak.penggugat.join("; ") || "-";
@@ -1889,6 +1984,9 @@
     if (kode === "ganti") return gantiPerkara();
     if (kode === "massal") return bukaMassal();
     if (kode === "coba") return void muatDaftar(true);
+    if (kode === "tescari") return void cariTes();
+    const tesPk = c("[data-tespk]");
+    if (tesPk) return pilihAcuanTes(tesPk.getAttribute("data-tespk"));
     if (kode === "arah") {
       S.arah = -S.arah;
       simpanPref();
@@ -2034,6 +2132,10 @@
   }
   function saatMasuk(e) {
     const t = e.target;
+    if (t.id === "bd-tescari") {
+      S.tesCari.kata = t.value;
+      return;
+    }
     if (t.id === "bd-cari") {
       S.cariNomor = t.value;
       renderPerkara();
