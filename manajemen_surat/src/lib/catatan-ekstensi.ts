@@ -67,6 +67,7 @@ export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
       "Kalender pemilih tanggal menandai libur nasional, cuti bersama dan libur tambahan; hari libur tidak dapat dipilih untuk tanggal tunda.",
       "Pilih hakim per perkara hanya untuk Admin dan Super Admin.",
       "Kalimat penutup keterangan saksi dibersihkan otomatis setiap pagi pada perkara yang belum minutasi; tanggal surat kuasa tidak lagi tercetak dua kali di BAS P (Kuasa).",
+      "Relaas yang hasilnya memuat kata failed (mis. FAILED TO DELIVERY dari pos) kini dihitung retur di semua tempat ALETA.",
     ],
   },
   {
