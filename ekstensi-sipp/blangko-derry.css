@@ -681,3 +681,10 @@ html.aleta-bd-aktif aleta-cm-widget { display: none !important; }
 }
 #aleta-bd-akar .bd-kel.aktif .kn { color: var(--fg); }
 #aleta-bd-akar .bd-kel.cocokperkara:not(.aktif) .ks { color: var(--ok); }
+
+/* 22 Okt 2026: TES PUTUSAN (hanya Super Admin) - kotak centang di kepala panel dan pita penanda di panel, pratinjau, cetak. Tanda memakai token, terang dan gelap. */
+#aleta-bd-akar .bd-teswrap { cursor: pointer; font-weight: 600; }
+#aleta-bd-akar .bd-teswrap input { margin: 0; }
+#aleta-bd-akar .bd-pitates { margin: 0; padding: 7px 16px; border-block: 2px solid var(--warn); background: var(--warnbg); color: var(--warn); font-size: 13.2px; line-height: 1.4; }
+#aleta-bd-akar .bd-pitates[hidden] { display: none !important; }
+#aleta-bd-akar .bd-pitates.kecil { margin: 0 0 8px; border: 2px solid var(--warn); border-radius: 12px; padding: 6px 12px; font-size: 12.6px; }
