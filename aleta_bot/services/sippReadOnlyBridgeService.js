@@ -2708,19 +2708,27 @@ async function bacaBlangko(params = {}) {
  */
 let mesinAbt = null;
 const ingatanIsi = new Map();
+function kueriMesinSipp(sql, params, opsi) {
+  return externalDbService.query(
+    DEFAULT_CONNECTION_KEY,
+    { sql, timeout: (opsi && opsi.timeoutMs) || undefined, typeCast: (field) => field.string() },
+    params || []
+  );
+}
 function mesinVariabelAbt() {
   if (!mesinAbt) {
     const { buatMesin } = require("./abtMesinVariabel");
-    mesinAbt = buatMesin({
-      kueri: (sql, params, opsi) =>
-        externalDbService.query(
-          DEFAULT_CONNECTION_KEY,
-          { sql, timeout: (opsi && opsi.timeoutMs) || undefined, typeCast: (field) => field.string() },
-          params || []
-        ),
-    });
+    mesinAbt = buatMesin({ kueri: kueriMesinSipp });
   }
   return mesinAbt;
+}
+/**
+ * Tes putusan (22 Okt 2026): mesin SEKALI PAKAI untuk satu naskah yang memuat ketikan petugas "seolah tersimpan" (isianTangan).
+ * Tidak dipakai ulang dan tidak diingat: ketikan hanya hidup di memori selama satu permintaan, tanpa jejak.
+ */
+function mesinTesAbt(perkaraId, nilai) {
+  const { buatMesin } = require("./abtMesinVariabel");
+  return buatMesin({ kueri: kueriMesinSipp, isianTangan: { perkaraId, nilai } });
 }
 
 /**
@@ -2770,6 +2778,24 @@ async function isiBlangko(params = {}) {
         cadangan: params.cadangan && typeof params.cadangan === "object" ? params.cadangan : {},
         tanyaJawabSaksi: params.tanyaJawabSaksi && typeof params.tanyaJawabSaksi === "object" ? params.tanyaJawabSaksi : {},
       };
+      // TES PUTUSAN: ketikan petugas ("seolah tersimpan") dihitung di memori; tanpa ingatan 60 dtk, tanpa menulis apa pun.
+      if (params.tes === true) {
+        const ketikan = params.isianTangan && typeof params.isianTangan === "object" ? params.isianTangan : {};
+        const hTes = await mesinTesAbt(perkaraId, ketikan).isiRtf(rtf, opsi);
+        return {
+          ok: true,
+          berkas: path.basename(jalur),
+          jumlahTerisi: hTes.terisi.length,
+          terisi: hTes.terisi,
+          tersisa: hTes.kosong.map((k) => k.noVar),
+          kosong: hTes.kosong,
+          sumber: hTes.sumber,
+          terpecahDisatukan: hTes.terpecahDisatukan,
+          jumlahKueri: hTes.jumlahKueri,
+          mesinGalat: hTes.mesinGalat,
+          rtfBase64: params.tanpaRtf ? "" : Buffer.from(hTes.rtf, "latin1").toString("base64"),
+        };
+      }
       // Pratinjau lalu Unduh atas blangko & isian yang sama berselang detik: hasil
       // pertama dipakai ulang (60 dtk) - puluhan kueri SIPP tidak dijalankan dua kali.
       const kunci = crypto
@@ -3059,6 +3085,82 @@ LIMIT 1`;
   }
 }
 
+/**
+ * Tes putusan (22 Okt 2026): mencari perkara MANA PUN menurut sebagian nomornya (bukan hanya yang ada di jadwal sidang) sebagai
+ * perkara ACUAN. Hanya membaca. Bentuk jawabannya sama dengan satu perkara pada daftar "perkara saya" supaya panel dapat
+ * memakainya langsung; riwayat sidangnya dimuat panel sendiri dari rute sidang.
+ */
+async function cariPerkaraTes(params = {}) {
+  const connectionKey = normalizeConnectionKey(params.connectionKey);
+  const nomor = safeString(params.nomorPerkara).replace(/[%_\\]/g, "").slice(0, 60);
+  if (nomor.length < 3) return { ok: false, sebab: "Ketik paling sedikit tiga karakter nomor perkara.", perkara: [] };
+  const batas = Math.max(1, Math.min(20, Number(params.limit) || 12));
+  const kolom = await getTableColumns(connectionKey, "perkara");
+  if (kolom.size === 0) return { ok: false, sebab: "Tabel perkara SIPP tidak terbaca.", perkara: [] };
+  const jenis = columnExpr("p", kolom, ["jenis_perkara_nama", "jenis_perkara_text", "jenis_perkara"], "''");
+  const alur = columnExpr("p", kolom, ["alur_perkara_id"], "0");
+  const baris = await runReadOnly(
+    connectionKey,
+    `SELECT CAST(p.${quoteIdentifier("perkara_id")} AS CHAR) AS perkara_id, p.${quoteIdentifier("nomor_perkara")} AS nomor_perkara, ${jenis} AS jenis_perkara, ${alur} AS alur_id
+       FROM ${quoteIdentifier("perkara")} p
+      WHERE LOWER(p.${quoteIdentifier("nomor_perkara")}) LIKE LOWER(?)
+      ORDER BY p.${quoteIdentifier("perkara_id")} DESC
+      LIMIT ${batas}`,
+    [`%${nomor}%`]
+  );
+  const daftar = (Array.isArray(baris) ? baris : []).filter((b) => safeNumericId(b.perkara_id) && safeString(b.nomor_perkara));
+  const putusan = new Map();
+  if (daftar.length) {
+    try {
+      const pu = await runReadOnly(
+        connectionKey,
+        `SELECT CAST(perkara_id AS CHAR) AS perkara_id, MAX(tanggal_putusan) AS tanggal_putusan, MAX(tanggal_minutasi) AS tanggal_minutasi
+           FROM perkara_putusan WHERE perkara_id IN (${daftar.map(() => "?").join(",")}) GROUP BY perkara_id`,
+        daftar.map((b) => safeNumericId(b.perkara_id))
+      );
+      for (const r of Array.isArray(pu) ? pu : []) putusan.set(safeString(r.perkara_id), r);
+    } catch {
+      /* putusan tak terbaca: perkara tampil tanpa tanggal putusan */
+    }
+  }
+  const perkara = [];
+  for (const b of daftar) {
+    const id = safeNumericId(b.perkara_id);
+    let pihak = [];
+    try {
+      pihak = await getParties({ connectionKey, perkaraId: id });
+    } catch {
+      /* nama pihak tak terbaca */
+    }
+    const pu = putusan.get(id) || {};
+    const tp = dateString(pu.tanggal_putusan);
+    perkara.push({
+      nomorPerkara: safeString(b.nomor_perkara),
+      perkaraId: id,
+      jenisPerkara: safeString(b.jenis_perkara),
+      alurPerkaraId: Number(b.alur_id) || 0,
+      sudahPutus: Boolean(tp),
+      tanggalPutusan: tp ? tp.slice(0, 10) : "",
+      tanggalMinutasi: (dateString(pu.tanggal_minutasi) || "").slice(0, 10),
+      adaBerkasPutusan: null,
+      lewatEcourt: null,
+      ghaib: false,
+      prodeo: false,
+      majelisKode: "",
+      majelisNama: "",
+      paniteraNama: "",
+      jurusitaNama: "",
+      sebagai: [],
+      pihak: {
+        penggugat: pihak.filter((x) => /penggugat|pemohon/i.test(x.role) && !/turut/i.test(x.role)).map((x) => x.name),
+        tergugat: pihak.filter((x) => /tergugat|termohon/i.test(x.role) && !/turut/i.test(x.role)).map((x) => x.name),
+      },
+      sidang: [],
+    });
+  }
+  return { ok: true, perkara };
+}
+
 async function handleBridgeOperation(operation, params = {}) {
   const op = String(operation || "").trim();
   const handlers = {
@@ -3092,6 +3194,7 @@ async function handleBridgeOperation(operation, params = {}) {
     "ecourt.dokumenPerkara": getDokumenECourt,
     "blangko.baca": bacaBlangko,
     "blangko.isi": isiBlangko,
+    "tes.cariPerkara": cariPerkaraTes,
     "abt.nilaiPenanda": nilaiPenandaAbt,
     "blangko.pohon": getPohonBlangko,
     "blangko.alinea": getAlineaBlangko,

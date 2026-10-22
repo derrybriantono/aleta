@@ -46,6 +46,8 @@
  */
 
 const POLA_PENANDA = /#(\d{3,5})#/g;
+/** Kata kendali RTF yang ditulis rumus katalog (\trowd, \cellx8400, \b, \par ...) dan hurufnya (\'e9). */
+const KENDALI_RTF_RUMUS = /\\(?:[a-z]{1,32}-?\d{0,10} ?|'[0-9a-fA-F]{2})/g;
 const UMUR_KATALOG_MS = 30 * 1000;
 const BATAS_KUERI_MS = 10 * 1000;
 const PARALEL = 6;
@@ -522,6 +524,66 @@ function jalurPengisian(def) {
 }
 
 // ---------------------------------------------------------------------------
+// Isian tangan "seolah tersimpan" (Tes putusan) - TANPA menulis apa pun
+// ---------------------------------------------------------------------------
+
+/** Kata yang BUKAN nama alias bila muncul sesudah nama tabel. */
+const KATA_BUKAN_ALIAS = new Set(
+  "where join left right inner outer cross natural straight_join on using group order limit having union for lock procedure into set and or not as select from".split(" ")
+);
+
+/** Teks -> literal heksa latin1 (karakter di luar latin1 jadi "?") - tanpa kutip, garis miring, maupun tanda tanya. */
+function heksaLatin1(nilai) {
+  const t = String(nilai ?? "");
+  if (t === "") return "''";
+  let h = "";
+  for (const ch of t) {
+    const k = ch.codePointAt(0);
+    h += (k > 255 ? 63 : k).toString(16).padStart(2, "0");
+  }
+  return `CONVERT(0x${h} USING latin1)`;
+}
+
+/**
+ * Penulisan ulang SATU kueri baca: setiap rujukan ke tabel isian tangan ABT (abt_data_teks / abt_data_tanggal) diganti
+ * tabel turunan = isi tabel aslinya, kecuali baris perkara ini untuk nomor variabel yang diketik, yang diganti nilai
+ * ketikan. Hasilnya SATU SELECT yang tetap melewati pagarBaca; ketikan tidak pernah masuk ke basis data - hanya ke teks kueri,
+ * sebagai heksa (jadi tanpa kutip/garis miring/tanda tanya yang dapat menyusup).
+ *
+ * @param {string} sql
+ * @param {{perkaraId: string, teks: Record<string,string>, tanggal: Record<string,string>, skema: string}} isian
+ * @returns {string}
+ */
+function terapkanIsianTangan(sql, isian) {
+  const perkaraId = String(isian.perkaraId || "");
+  if (!/^\d+$/.test(perkaraId)) return sql;
+  const skema = String(isian.skema || "").toLowerCase();
+  const POLA = /(?:`?([A-Za-z0-9_]+)`?\s*\.\s*)?`?abt_data_(teks|tanggal)`?(?![A-Za-z0-9_])/gi;
+  return String(sql).replace(POLA, (utuh, sk, jenis, posisi, seluruh) => {
+    // Hanya skema ABT (yang dibaca mesin atau yang tertulis di katalog); skema lain tidak disentuh.
+    if (sk && ![skema, "aps_badilag"].includes(String(sk).toLowerCase())) return utuh;
+    const kunci = String(jenis).toLowerCase() === "teks" ? "teks" : "tanggal";
+    const peta = isian[kunci] || {};
+    const kode = Object.keys(peta).filter((k) => /^\d{3,5}$/.test(k));
+    if (!kode.length) return utuh;
+    const sesudah = seluruh.slice(posisi + utuh.length);
+    const alias = sesudah.match(/^\s*(?:as\s+)?`?([A-Za-z_][A-Za-z0-9_]*)`?/i);
+    const adaAlias = Boolean(alias) && !KATA_BUKAN_ALIAS.has(alias[1].toLowerCase());
+    const daftar = kode.map((k) => String(Number(k))).join(",");
+    const baris = kode
+      .map((k) => {
+        const n = String(Number(k));
+        if (kunci === "teks") return `SELECT ${n}, ${perkaraId}, ${heksaLatin1(peta[k])}, NULL, NULL`;
+        const t = String(peta[k] ?? "");
+        return /^\d{4}-\d{2}-\d{2}$/.test(t) ? `SELECT ${n}, ${perkaraId}, CAST('${t}' AS DATE), NULL, NULL` : `SELECT ${n}, ${perkaraId}, NULL, NULL, NULL`;
+      })
+      .join(" UNION ALL ");
+    const turunan = `(SELECT d.no_var, d.perkara_id, d.data, d.modifier, d.modified FROM ${utuh} d WHERE NOT (d.perkara_id = ${perkaraId} AND d.no_var IN (${daftar})) UNION ALL ${baris})`;
+    return adaAlias ? turunan : `${turunan} abt_data_${kunci}`;
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Mesin
 // ---------------------------------------------------------------------------
 
@@ -539,6 +601,32 @@ function buatMesin(p) {
   const umurMs = p.umurKatalogMs === undefined ? UMUR_KATALOG_MS : Number(p.umurKatalogMs);
   /** {noVar: {sql_query?, default_data?}} - definisi pengganti untuk uji, tidak pernah ditulis. */
   const timpaKatalog = p.timpaKatalog && typeof p.timpaKatalog === "object" ? p.timpaKatalog : {};
+  /**
+   * Tes putusan (22 Okt 2026): { perkaraId, nilai: {noVar: teks} } = ketikan yang BELUM (dan tidak akan) disimpan. Diperlakukan seolah
+   * baris abt_data_teks / abt_data_tanggal perkara itu sudah ada - lewat penulisan ulang kueri baca, bukan penulisan basis data.
+   */
+  const isianTangan = p.isianTangan && typeof p.isianTangan === "object" && /^\d+$/.test(String(p.isianTangan.perkaraId || "")) ? p.isianTangan : null;
+  let klasIsianJanji = null;
+  /** Ketikan dibagi menurut jenis variabel katalog: data_tanggal -> tabel tanggal, data_teks -> tabel teks, selain itu -> dititipkan ke `timpa`. */
+  function klasifikasiIsian() {
+    if (!isianTangan) return Promise.resolve({ teks: {}, tanggal: {}, timpa: {} });
+    if (klasIsianJanji) return klasIsianJanji;
+    klasIsianJanji = katalog().then((kat) => {
+      const hasil = { teks: {}, tanggal: {}, timpa: {} };
+      for (const [k, v] of Object.entries(isianTangan.nilai || {})) {
+        if (!/^\d{3,5}$/.test(k)) continue;
+        const jenis = (kat.get(k) || {}).data_type;
+        if (jenis === "data_tanggal") hasil.tanggal[k] = String(v ?? "");
+        else if (jenis === "data_teks") hasil.teks[k] = String(v ?? "");
+        else hasil.timpa[k] = String(v ?? "");
+      }
+      return hasil;
+    });
+    klasIsianJanji.catch(() => {
+      klasIsianJanji = null;
+    });
+    return klasIsianJanji;
+  }
 
   let katalogJanji = null;
   let katalogSaat = 0;
@@ -551,7 +639,22 @@ function buatMesin(p) {
       g.ditolak = true;
       throw g;
     }
-    const baris = await kueriMentah(String(sql).trim().replace(/;\s*$/, ""), params, { timeoutMs: batasMs });
+    let teksKueri = String(sql).trim().replace(/;\s*$/, "");
+    if (isianTangan && /abt_data_(teks|tanggal)/i.test(teksKueri)) {
+      const k = await klasifikasiIsian();
+      const ulang = terapkanIsianTangan(teksKueri, { perkaraId: isianTangan.perkaraId, teks: k.teks, tanggal: k.tanggal, skema });
+      if (ulang !== teksKueri) {
+        // Hasil penulisan ulang diperiksa pagar yang sama: tetap satu SELECT tanpa kata penulis.
+        const sebabUlang = pagarBaca(ulang);
+        if (sebabUlang) {
+          const g = new Error(`kueri ditolak: ${sebabUlang}`);
+          g.ditolak = true;
+          throw g;
+        }
+        teksKueri = ulang;
+      }
+    }
+    const baris = await kueriMentah(teksKueri, params, { timeoutMs: batasMs });
     return Array.isArray(baris) ? baris : [];
   }
 
@@ -732,7 +835,8 @@ function buatMesin(p) {
 
   /** Abt_model::data_variabel_detil - pulang {value, varData, valueType, status, sebab, wakil?}. */
   function detil(ctx, noVar, tumpuk = []) {
-    const kunci = String(noVar);
+    // ABT menyimpan no_var sebagai bilangan berangka-nol (zerofill 4): "#7#" di dalam kueri = variabel 0007.
+    const kunci = /^\d{1,3}$/.test(String(noVar)) ? String(noVar).padStart(4, "0") : String(noVar);
     const lingkar = { value: "DATA_TIDAK_ADA", varData: null, valueType: "-", status: "galat", sebab: "lingkaran/kedalaman penanda" };
     // Lingkaran diperiksa SEBELUM ingatan: kueri yang menyebut dirinya sendiri akan
     // menunggu janjinya sendiri selamanya.
@@ -834,7 +938,8 @@ function buatMesin(p) {
       }
       if (tanggalYmd(d)) return { value: tglIndo2(d), varData: d.split("-").join("/"), valueType: "tanggal", status: "terisi", sebab: "" };
       if (phpNumerik(d) && String(d).includes("0.00")) return { value: formatAngka(d), varData: d, valueType: "angka", status: "terisi", sebab: "" };
-      if (jenis === "data_teks" || jenis === "data_sql") return { value: nl2br(d), varData: d, valueType: "teks_biasa", status: "terisi", sebab: "" };
+      // sql: nilai dihitung rumus katalog (bukan ketikan) - kode RTF di dalamnya (mis. 8500: tabel tanda tangan majelis lewat REPLACE '~' -> garis miring) ABT cetak apa adanya.
+      if (jenis === "data_teks" || jenis === "data_sql") return { value: nl2br(d), varData: d, valueType: "teks_biasa", status: "terisi", sebab: "", sql: jenis === "data_sql" };
       return { value: d, varData: d, valueType: "teks_sipp", status: "terisi", sebab: "" };
     }
 
@@ -855,12 +960,14 @@ function buatMesin(p) {
     const wakil = (rtf) => {
       const c = String.fromCharCode(0xe100 + nomor++);
       peta.set(c, rtf);
-      polos.set(c, /\\row/.test(rtf) ? "\n" : /\\cell/.test(rtf) ? "\t" : "");
+      polos.set(c, /\\row/.test(rtf) ? "\n" : /\\cell/.test(rtf) ? "\t" : /^\\par(?![a-z])/.test(rtf) ? "\n" : /^\\tab(?![a-z])/.test(rtf) ? "\t" : "");
       return c;
     };
     let mentah;
     if (d.tabel) mentah = tabelTanyaJawab(d.tabel, d.kertas, wakil) ?? "";
     else mentah = d.value === null || d.value === undefined ? "" : String(d.value);
+    // Kode RTF dari rumus katalog dipertahankan (tidak dilolos) - persis ABT, yang tidak melolos garis miring apa pun.
+    if (d.sql && !d.tabel) mentah = mentah.replace(KENDALI_RTF_RUMUS, (m) => wakil(m));
     if (mentah.length > PANJANG_NILAI_MAKS) mentah = mentah.slice(0, PANJANG_NILAI_MAKS);
     const bersih = bersihkanHtmlAbt(mentah);
     return { status: d.status, sebab: d.sebab, nama, rtf: keRtf(bersih, peta), polos: kePolos(bersih, polos) };
@@ -900,7 +1007,8 @@ function buatMesin(p) {
    */
   async function isiRtf(rtfAsli, opsi = {}) {
     const ctx = konteks(opsi);
-    const timpa = opsi.timpa && typeof opsi.timpa === "object" ? opsi.timpa : {};
+    const titipan = (await klasifikasiIsian()).timpa;
+    const timpa = { ...(opsi.timpa && typeof opsi.timpa === "object" ? opsi.timpa : {}), ...titipan };
     const cadangan = opsi.cadangan && typeof opsi.cadangan === "object" ? opsi.cadangan : {};
     const ada = (o, k) => Object.prototype.hasOwnProperty.call(o, k) && String(o[k] ?? "").trim() !== "";
 
@@ -976,6 +1084,7 @@ function buatMesin(p) {
 
 module.exports = {
   buatMesin,
+  terapkanIsianTangan,
   jalurPengisian,
   pagarBaca,
   kerangkaKueri,

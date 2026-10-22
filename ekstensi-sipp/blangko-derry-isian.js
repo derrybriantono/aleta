@@ -40,6 +40,8 @@
   /** F3.1: riwayat skors satu sidang + usulan kalimat BAS (hanya baca). */
   const API_SKORS_SIDANG = "/aleta/api/aleta-ecourt/sidang/skors";
   const API_PDF = "/aleta/api/aleta-bot/abt/pdf";
+  /** 22 Okt malam: Tes putusan - naskah dihitung di ALETA (data perkara acuan + ketikan petugas). Hanya MENGHITUNG, tidak menyimpan apa pun. */
+  const API_TES_NASKAH = "/aleta/api/aleta-ecourt/blangko-derry/tes-naskah";
   const API_USULAN = "/aleta/api/aleta-bot/abt/usulan";
   const API_TTD = "/aleta/api/aleta-ecourt/tanda-tangan";
   const API_UKURAN_TTD = "/aleta/api/aleta-ecourt/ukuran-ttd-cap"; // 20 Okt: ukuran TTD & cap satu set (kartu portal)
@@ -217,8 +219,8 @@
 
   /** Permintaan ke portal ALETA (JSON). alatAmbil (panel-alat.js) bila ada - memakai batas waktu & pesan baku. */
   async function ambilPortal(alamat, opsi, yang) {
-    // Tes putusan: ke portal hanya membaca, ditambah dua permintaan yang cuma MENGHITUNG (usulan jawaban saksi, pengubah PDF) - tidak menyimpan apa pun.
-    if (tes() && String((opsi && opsi.method) || "GET").toUpperCase() !== "GET" && alamat !== API_USULAN && alamat !== API_PDF) throw new Error(PESAN_TES);
+    // Tes putusan: ke portal hanya membaca, ditambah tiga permintaan yang cuma MENGHITUNG (usulan jawaban saksi, pengubah PDF, naskah tes) - tidak menyimpan apa pun.
+    if (tes() && String((opsi && opsi.method) || "GET").toUpperCase() !== "GET" && alamat !== API_USULAN && alamat !== API_PDF && alamat !== API_TES_NASKAH) throw new Error(PESAN_TES);
     const o = { credentials: "include", cache: "no-store", ...(opsi || {}) };
     const r = typeof alatAmbil === "function" ? await alatAmbil(alamat, o, yang) : await fetch(alamat, o);
     const luar = await r.json().catch(() => null);
@@ -295,6 +297,7 @@
     nilai: {}, // kode -> { status, teks }
     isi: {}, // kode -> teks yang terlihat di layar (tersimpan atau diketik)
     diketik: new Set(), // kode yang benar-benar diketik petugas sejak terakhir disimpan (blur hanya menyimpan ini)
+    tesIsian: {}, // Tes putusan: kode -> ketikan yang "seolah tersimpan" (HANYA di memori halaman; dikirim ke pratinjau, tidak pernah disimpan)
     ganti: {}, // kode -> huruf yang diganti ALETA ke bentuk aman ABT (normalAbt)
     tersimpan: {}, // kode -> "tersimpan" | "menyimpan" | "gagal: ..."
     saran: {}, // kode -> teks saran (bayangan)
@@ -358,6 +361,9 @@
    * perapian posita, sunting pratinjau, unggah e-Doc, anonimisasi lewat ABT, cetak massal, dan catatan cetak semuanya mati. Yang tersisa
    * hanya membaca, pratinjau, dan mengunduh (nama berakhiran -TES). Pengaman berlapis: bolehTulis() mati, jalur tulis kembali lebih dulu,
    * dan klien ABT menolak setiap permintaan tulis (lihat klienAbt).
+   * KETIKAN petugas di kotak isian tetap boleh (22 Okt malam): dicatat HANYA di memori halaman (S.tesIsian) lalu dikirim sebagai badan
+   * permintaan POST tes-naskah, tempat ALETA menyusun naskah dari data perkara acuan dan menimpakan ketikan seolah tersimpan di ABT
+   * (lihat cetakTes / catatKetikanTes). Pratinjau tes TIDAK memanggil abt/preview; satu-satunya POST yang lolos hanya MENGHITUNG.
    */
   const tes = () => {
     const a = api();
@@ -367,7 +373,12 @@
   /** Kalimat sebab "tidak boleh menulis" yang benar: karena Tes putusan, atau karena peran akun. */
   const sebabTakTulis = (bawaan) => (tes() ? PESAN_TES : bawaan);
   /** Pita penanda Tes putusan di pratinjau, cetak, dan jendela pilih blangko. */
-  const pitaTes = () => (tes() ? `<div class="bd-pitates kecil" role="status"><b>TES PUTUSAN</b> · perkara acuan <b>${esc(nomorPerkara() || "-")}</b> · hanya contoh; tidak disimpan ke ABT, SIPP, atau e-Court. Unduhan berakhiran -TES.</div>` : "");
+  const infoNaskahTes = () => {
+    const t = S.prat && S.prat.tes;
+    if (!t) return "";
+    return ` Naskah dihitung dari data perkara acuan${t.ketikan ? ` dan ${t.ketikan} isian yang Anda ketik` : ""}; ${t.kosong ? `${t.kosong} bagian belum punya data dan ditandai "..." berlatar kuning` : "semua bagian punya data"}.${t.galat ? " Sebagian data tidak terbaca; periksa sambungan ke SIPP." : ""}`;
+  };
+  const pitaTes = () => (tes() ? `<div class="bd-pitates kecil" role="status"><b>TES PUTUSAN</b> · perkara acuan <b>${esc(nomorPerkara() || "-")}</b> · hanya contoh; tidak disimpan ke ABT, SIPP, atau e-Court. Unduhan berakhiran -TES.${esc(infoNaskahTes())}</div>` : "");
   const cfg = () => {
     const a = api();
     return a && typeof a.setelan === "function" ? a.setelan() : { saran: true, ingat: true, isiOto: true };
@@ -424,7 +435,7 @@
   }
   /**
    * Tes putusan: hanya BACA yang lewat ke ABT. GET selalu; POST hanya pencarian nomor perkara (get_nomor_perkara*) dan pengisian
-   * templat tanya jawab TANPA menyimpan (load_template). Selain itu - simpan isian, simpan tanya jawab, simpan templat, validasi BAS,
+   * blangko tanya jawab TANPA menyimpan (load_template). Selain itu - simpan isian, simpan tanya jawab, simpan templat, validasi BAS,
    * anonimisasi (menulis berkas sementara di ABT), main/cari - ditolak di sini, apa pun yang memanggilnya.
    */
   function permintaanAbtAman(alamat, opsi) {
@@ -1598,6 +1609,8 @@
         // 21 Okt (w25): bawaan ABT berupa DAFTAR pilihan (mis. keputusan 4100-4105) bukan isian: kotak tetap kosong, belum dipilih.
         if (v && v.status === "terisi" && b.jenis !== "tj" && !daftarPilihanMurni(b, v.teks)) S.isi[b.kode] = b.jenis === "tanggal" ? keIso(v.teks) || v.teks : v.teks;
       }
+      // Tes putusan: ketikan pada blangko sebelumnya (perkara acuan yang sama) ikut, seolah sudah tersimpan di ABT.
+      if (tes()) for (const b of d.isian) if (Object.prototype.hasOwnProperty.call(S.tesIsian, b.kode)) S.isi[b.kode] = S.tesIsian[b.kode];
       S.memuatSusunan = false;
       renderRingkasBlangko();
       renderIsian();
@@ -2629,8 +2642,56 @@
   // Menyimpan satu isian ke ABT (edit_data) - hanya bila peran sesuai
   // ──────────────────────────────────────────────────────────────────────────
   const antreSimpan = new Map();
+  /** Isian yang hanya hurufnya disimpan ke ABT (lihat simpanIsian) - Tes putusan memperlakukannya sama supaya pratinjau setia. */
+  const KODE_HURUF_SAJA_TES = new Set(["8503", "9463", "9475", "9790", "9820", "9865"]);
+  /**
+   * Tes putusan: ketikan dicatat HANYA di memori halaman (S.tesIsian) lalu dihitung pratinjau seolah sudah tersimpan di ABT. Aturan
+   * bentuk aman ABT sama dengan simpan sungguhan (huruf diganti / ditolak), tanpa satu permintaan pun ke ABT, SIPP, atau e-Court.
+   */
+  function catatKetikanTes(kode, nilai) {
+    let t = String(nilai ?? "");
+    if (KODE_HURUF_SAJA_TES.has(kode)) t = nilaiSimpan8503(t);
+    const norm = normalAbt(t);
+    if (norm.diganti.length) {
+      t = norm.teks;
+      S.ganti[kode] = norm.diganti.join(" ");
+    } else delete S.ganti[kode];
+    const luar = hurufDiLuarAbt(t);
+    if (luar.length) {
+      delete S.tesIsian[kode];
+      S.tersimpan[kode] = `gagal: huruf ${luar.join(" ")} tidak dapat disimpan ABT - ganti dengan huruf biasa`;
+      renderStatusIsian(kode);
+      return false;
+    }
+    S.isi[kode] = t;
+    S.tesIsian[kode] = t;
+    S.tersimpan[kode] = "dicoba";
+    S.prat.kotor = true;
+    const el = cari(`#bd-i${kode}`, wadah.isian);
+    if (el && el.value !== t && el.tagName !== "SELECT") el.value = t;
+    renderStatusIsian(kode);
+    renderProgres();
+    // Pratinjau yang sedang terbuka diberi penanda "isian berubah - muat ulang" (tidak dimuat ulang sendiri: menyusun naskah makan waktu).
+    if (S.prat.terbuka && S.prat.html && !S.prat.memuat) renderPratinjau();
+    return true;
+  }
+  /** Ketikan yang ikut dihitung pratinjau tes: yang sudah dicatat + yang masih di kotak (belum dilepas fokusnya). */
+  function ketikanTes() {
+    const hasil = { ...S.tesIsian };
+    for (const k of S.diketik) {
+      if (!/^\d{3,5}$/.test(k)) continue;
+      let t = String(S.isi[k] ?? "");
+      if (KODE_HURUF_SAJA_TES.has(k)) t = nilaiSimpan8503(t);
+      t = normalAbt(t).teks;
+      if (!hurufDiLuarAbt(t).length) hasil[k] = t;
+    }
+    return hasil;
+  }
   function jadwalkanSimpan(kode, nilai, segera) {
-    if (tes()) return segera ? Promise.resolve(false) : undefined;
+    if (tes()) {
+      catatKetikanTes(kode, nilai);
+      return segera ? Promise.resolve(false) : undefined;
+    }
     S.isi[kode] = nilai;
     clearTimeout(antreSimpan.get(kode));
     if (segera) return simpanIsian(kode, nilai);
@@ -4231,7 +4292,7 @@
     const alasan = alasanTuntutan || ((b.keadaan || b.pemicu) && b.keadaan !== "ecourt" ? keteranganKeadaan(b) : "");
     const muncul = alasan ? `<span class="bd-muncul">muncul karena ${esc(alasan)}</span>` : "";
     const tanda = S.tandaKosong.has(b.kode) && !v.trim() ? ` bd-kosongcetak${b.tingkat === "tambahan" ? " tambahan" : ""}` : "";
-    const ro = bolehTulis() ? "" : "disabled";
+    const ro = bolehTulis() || tes() ? "" : "disabled";
     let isian;
     let panjang = false;
     let lebarSelalu = false;
@@ -4290,7 +4351,7 @@
       `</div>`
     );
   }
-  const teksStatus = (st, kode) => (st === "tersimpan" ? `✓ ${kode && S.dariSipp.has(kode) ? "terisi dari SIPP, tersimpan di ABT" : "tersimpan di ABT"}${kode && S.ganti[kode] ? ` (huruf ${S.ganti[kode]} diganti ke bentuk aman ABT)` : ""}` : st === "menyimpan" ? "menyimpan…" : st.startsWith("gagal") ? st : "");
+  const teksStatus = (st, kode) => (st === "tersimpan" ? `✓ ${kode && S.dariSipp.has(kode) ? "terisi dari SIPP, tersimpan di ABT" : "tersimpan di ABT"}${kode && S.ganti[kode] ? ` (huruf ${S.ganti[kode]} diganti ke bentuk aman ABT)` : ""}` : st === "menyimpan" ? "menyimpan…" : st === "dicoba" ? "dipakai di pratinjau, tidak disimpan" : st.startsWith("gagal") ? st : "");
   function renderStatusIsian(kode) {
     const e = cari(`[data-status="${kode}"]`, wadah.isian);
     if (e) {
@@ -4431,7 +4492,7 @@
       if (!S.susunan.nilaiAda && S.susunan.nilaiSebab) catatTeknis("nilai dibaca langsung dari jendela ABT:", S.susunan.nilaiSebab);
     }
     w.innerHTML =
-      `<p class="bd-petunjuk">Tulisan samar di kotak adalah saran. Tekan <kbd>Tab</kbd> untuk memakainya, atau <kbd>↓</kbd> untuk pilihan lain. Data lain sudah terisi sendiri.${bolehTulis() ? "" : tes() ? ` <b>${esc(PESAN_TES)} Kotak isian dikunci; bagian yang tidak punya data di perkara acuan tampil kosong.</b>` : ` <b>Akun Anda hanya dapat melihat; ${esc(NAMA_JENIS[S.blangko.jenis].toLowerCase())} ditulis ${esc(NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]] || "pejabat perkara")}.</b>`}</p>` +
+      `<p class="bd-petunjuk">Tulisan samar di kotak adalah saran. Tekan <kbd>Tab</kbd> untuk memakainya, atau <kbd>↓</kbd> untuk pilihan lain. Data lain sudah terisi sendiri.${bolehTulis() ? "" : tes() ? ` <b>Mode Tes putusan: ketikan Anda hanya dipakai di pratinjau dan unduhan -TES, tidak disimpan ke ABT, SIPP, atau e-Court. Bagian yang tidak punya data di perkara acuan tampil kosong.</b>` : ` <b>Akun Anda hanya dapat melihat; ${esc(NAMA_JENIS[S.blangko.jenis].toLowerCase())} ditulis ${esc(NAMA_PERAN[JENIS_PERAN[S.blangko.jenis]] || "pejabat perkara")}.</b>`}</p>` +
       `<div class="bd-bar"><span id="bd-barisi"></span></div><div class="bd-alatkecil" id="bd-alatisi"></div>` +
       `<div class="bd-pgrid" id="bd-perlu">${grid.length ? grid.map((b) => (b.khusus === "bukti" ? kotakBukti(b) : kotakIsian(b))).join("") : tj.length ? "" : `<p class="bd-ok">Blangko ini tidak perlu diisi tangan; semua terisi sendiri dari SIPP dan aturan ABT.</p>`}</div>` +
       htmlIsianTambahan() +
@@ -4860,8 +4921,8 @@
       return `<div class="bd-vbaris"><span>${esc(nama)}</span>${
         bisaUbah
           ? /\n/.test(isiNya)
-            ? `<textarea data-k="${kode}" rows="${Math.min(6, isiNya.split("\n").length + 1)}" placeholder="kosong = dari SIPP" ${bolehTulis() ? "" : "readonly"} aria-label="${esc(nama)}">${esc(isiNya)}</textarea>`
-            : `<input data-k="${kode}" value="${esc(isiNya)}" placeholder="kosong = dari SIPP" ${bolehTulis() ? "" : "readonly"} aria-label="${esc(nama)}">`
+            ? `<textarea data-k="${kode}" rows="${Math.min(6, isiNya.split("\n").length + 1)}" placeholder="kosong = dari SIPP" ${bolehTulis() || tes() ? "" : "readonly"} aria-label="${esc(nama)}">${esc(isiNya)}</textarea>`
+            : `<input data-k="${kode}" value="${esc(isiNya)}" placeholder="kosong = dari SIPP" ${bolehTulis() || tes() ? "" : "readonly"} aria-label="${esc(nama)}">`
           : `<span class="bd-nilai${samar ? " bd-sembunyi" : ""}" ${samar ? 'tabindex="0" title="Arahkan penunjuk ke sini untuk melihat"' : ""}>${esc(teks || "—")}</span>`
       }<span class="bd-chip">${esc(asal)}</span></div>`;
     };
@@ -5386,11 +5447,34 @@
     const baru = token.filter((_x, i) => !hapus.has(i)).join("");
     return { rtf: asalString ? baru : bufDariLatin1(baru), jumlah };
   }
+  /**
+   * Tes putusan: naskah dihitung di ALETA (blangko Derry dibaca, penanda diisi dari data perkara acuan seperti abt/preview, lalu
+   * ketikan petugas ditimpakan seolah tersimpan). Satu POST yang hanya MENGHITUNG; ABT, SIPP, dan e-Court tidak ditulis.
+   * Pulang bentuk yang sama dengan klienAbt().cetak: { ok, rtf: ArrayBuffer, periksa }.
+   */
+  async function cetakTes() {
+    const d = await ambilPortal(
+      API_TES_NASKAH,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ perkaraId: perkaraId(), sidangKe: Number(sidangUrutan()) || 0, folder: S.blangko.folder || "", berkas: S.blangko.berkas, isian: ketikanTes() }),
+        batasMs: BATAS_LAMA_MS,
+      },
+      "Menyusun naskah tes"
+    );
+    const mentah = atob(String((d && d.rtfBase64) || ""));
+    if (mentah.length < 6 || !mentah.startsWith("{\\rtf")) return { ok: false, pesan: "Naskah tes tidak berbentuk RTF." };
+    const biner = new Uint8Array(mentah.length);
+    for (let i = 0; i < mentah.length; i += 1) biner[i] = mentah.charCodeAt(i);
+    S.prat.tes = { terisi: Number(d.jumlahTerisi) || 0, kosong: Array.isArray(d.kosong) ? d.kosong.length : 0, ketikan: Number(d.ketikanDipakai) || 0, galat: String(d.mesinGalat || "") };
+    return { ok: true, rtf: biner.buffer, nama: "", ukuran: biner.length, periksa: typeof abtKlienPeriksaRtf === "function" ? abtKlienPeriksaRtf(mentah) : { jumlahTitikTiga: 0 } };
+  }
   async function ambilRtf(paksa) {
     if (!S.blangko || !S.pk) throw new Error("Pilih perkara dan blangko dulu.");
     if (S.blangko.hak !== "ok") throw new Error(S.blangko.hak === "periksa" ? "Hak buka blangko ini masih diperiksa ke ABT; tunggu sebentar." : "ABT tidak mengizinkan blangko ini untuk perkara ini.");
     if (S.prat.rtf && !S.prat.kotor && !paksa) return S.prat.rtf;
-    const h = await klienAbt().cetak({ a: S.blangko.a, b: S.blangko.b, perkaraId: perkaraId(), sidang: sidangUrutan() });
+    const h = tes() ? await cetakTes() : await klienAbt().cetak({ a: S.blangko.a, b: S.blangko.b, perkaraId: perkaraId(), sidang: sidangUrutan() });
     if (!h.ok) throw new Error(h.pesan || "ABT tidak mengembalikan naskah.");
     // Header penanda kecil buang dari semua keluaran cetak (RTF, PDF, salinan, anonim, e-Doc); berkas di ABT tidak diubah.
     const bersih = bersihkanHeaderPenanda(h.rtf);
@@ -5442,12 +5526,12 @@
       `<button type="button" class="bd-pratbuka" data-bd2="bukaprat" aria-expanded="${p.terbuka}"><span class="bd-pana">${p.terbuka ? "▾" : "▸"}</span><span class="bd-tj">Pratinjau naskah</span><span class="bd-catat">${p.terbuka ? "klik untuk melipat" : "klik untuk melihat hasil (ABT menyusun naskahnya; blangko besar bisa 1-5 menit)"}</span>${p.kotor && p.html && p.terbuka ? `<span class="bd-chip sebagian">isian berubah - muat ulang</span>` : ""}</button>` +
       (p.terbuka
         ? `<div class="bd-pisi">` +
-          (p.memuat ? `<p class="bd-catat" role="status">ABT sedang menyusun naskah perkara ini… (menghitung semua bagian otomatis)</p>` : "") +
+          (p.memuat ? `<p class="bd-catat" role="status">${tes() ? "Naskah tes sedang disusun dari data perkara acuan… (menghitung semua bagian otomatis)" : "ABT sedang menyusun naskah perkara ini… (menghitung semua bagian otomatis)"}</p>` : "") +
           (p.galat ? `<p class="bd-peringatan">${esc(p.galat)} <button type="button" class="bd-btn kecil" data-bd2="muatprat">Coba lagi</button></p>` : "") +
           (p.html
             ? `<div class="bd-baris"><p class="bd-petunjukedit">${sunting ? "Ubah kotak yang berwarna, lalu Simpan ke ABT." : "Klik dua kali bagian berwarna (isian Anda) untuk mengubahnya di sini; bagian lain berasal dari SIPP."}</p>` +
               (bolehTulis() ? (sunting ? `<button type="button" class="bd-btn kecil utama" data-bd2="simpansunting">Simpan ke ABT</button><button type="button" class="bd-btn kecil" data-bd2="batalsunting">Batal</button>` : `<button type="button" class="bd-btn kecil" data-bd2="suntingpenuh">Sunting pratinjau</button>`) : "") +
-              `<button type="button" class="bd-btn kecil" data-bd2="muatprat">Muat ulang dari ABT</button>` +
+              `<button type="button" class="bd-btn kecil" data-bd2="muatprat">${tes() ? "Muat ulang dengan ketikan terbaru" : "Muat ulang dari ABT"}</button>` +
               (p.penanda.length ? `<span class="bd-chip belum">${p.penanda.length} penanda belum terbaca: ${esc(p.penanda.map((k) => `#${k}#`).join(" "))}</span>` : "") +
               `</div><div class="bd-kertas${sunting ? " edit" : ""}" id="bd-kertas">${p.html}</div>`
             : "") +
@@ -7230,6 +7314,7 @@
     S.galatSusunan = "";
     S.isi = {};
     S.diketik.clear();
+    S.tesIsian = {};
     S.nilai = {};
     S.tersimpan = {};
     S.saran = {};
