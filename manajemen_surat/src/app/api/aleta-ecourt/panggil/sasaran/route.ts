@@ -41,12 +41,18 @@ export async function GET(request: NextRequest) {
       .map((x) => x.trim())
       .filter((x): x is GolonganSasaran => (GOLONGAN as string[]).includes(x));
 
+    // ringan=1 (papan panggil antrian, 22 Okt 2026): hanya butuh nama dan sebutan -
+    // keadaan WhatsApp dan riwayat panggilan WA tidak dibaca (dua panggilan ke bot lebih hemat).
+    const ringan = url.searchParams.get("ringan") === "1";
+
     const [sasaran, wa, riwayat] = await Promise.all([
       bacaSasaran(db, { perkaraId, tanggal }),
-      keadaanWhatsApp(db),
-      panggilBotPanggil<{ ok: boolean; daftar?: Array<Record<string, unknown>> }>(
-        `/riwayat?perkaraId=${encodeURIComponent(perkaraId)}&tanggal=${encodeURIComponent(tanggal)}`
-      ),
+      ringan ? Promise.resolve(null) : keadaanWhatsApp(db),
+      ringan
+        ? Promise.resolve(null)
+        : panggilBotPanggil<{ ok: boolean; daftar?: Array<Record<string, unknown>> }>(
+            `/riwayat?perkaraId=${encodeURIComponent(perkaraId)}&tanggal=${encodeURIComponent(tanggal)}`
+          ),
     ]);
     if (!sasaran.ok) return ok({ available: false, alasan: sasaran.alasan, whatsapp: wa });
 
@@ -59,11 +65,15 @@ export async function GET(request: NextRequest) {
         nomorPerkara: sasaran.perkara.nomorPerkara,
         ruang: sasaran.perkara.ruang,
         agenda: sasaran.perkara.agenda,
+        // Bahan panggilan para pihak di papan panggil antrian (22 Okt 2026).
+        jenisPerkaraNama: sasaran.perkara.jenisPerkaraNama ?? "",
+        alurPerkaraId: sasaran.perkara.alurPerkaraId ?? null,
+        jenisPerkaraId: sasaran.perkara.jenisPerkaraId ?? null,
       },
       orang,
       tidakTerbaca: sasaran.tidakTerbaca,
       whatsapp: wa,
-      riwayat: riwayat.ok && riwayat.data.ok ? (riwayat.data.daftar ?? []).slice(0, 20) : [],
+      riwayat: riwayat && riwayat.ok && riwayat.data.ok ? (riwayat.data.daftar ?? []).slice(0, 20) : [],
     });
   } catch (error) {
     return handleAdminRouteError(error, request, {
