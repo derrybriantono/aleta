@@ -1,7 +1,7 @@
 {
   "kelompok": "sebab-cerai",
   "versi": 1,
-  "catatan": "R2 14 Okt 2026: SEBAB perselisihan untuk 5227 (Alasan-Alasan Cerai) yang tidak tertangkap ciri lama (kamus alasan) - terutama cerai talak, yang pelakunya istri (Termohon): keluarga ikut campur, merendahkan/tidak menghargai Pemohon sebagai kepala keluarga, tidak taat, tidak mendengar nasihat, keluar rumah tanpa izin, tidak merasa cukup dengan nafkah, tidak mau ikut suami, dst. Bentuk dan ragamnya dari keterangan saksi & isian 5227 hakim PA Donggala 2024-2026 (dibaca baca-saja). untuk = CT | CG | semua; subjek = siapa pelakunya menurut klausa kalimat (pelaku | keluarga | pelaku/keluarga | lawan-pasif | bersama); frasa = predikat sesudah subjek ({pelaku}=0047, {lawan}=0046); urutan = letak di kalimat 5227; urut = varian sekunci, yang pertama cocok menang; negasi = tolak bila didahului 'tidak/bukan'; menutupiCiri = ciri lama (kamus alasan) yang diwakili sebab ini. Dipakai deteksi/sebabCerai.js. Tiap kalimat tetap USULAN.",
+  "catatan": "R2 14 Okt 2026: SEBAB perselisihan untuk 5227 (Alasan-Alasan Cerai) yang tidak tertangkap ciri lama (kamus alasan) - terutama cerai talak, yang pelakunya istri (Termohon): keluarga ikut campur, merendahkan/tidak menghargai Pemohon sebagai kepala keluarga, tidak taat, tidak mendengar nasihat, keluar rumah tanpa izin, tidak merasa cukup dengan nafkah, tidak mau ikut suami, dst. Bentuk dan ragamnya dari keterangan saksi & isian 5227 hakim PA Donggala 2024-2026 (dibaca baca-saja). untuk = CT | CG | semua; subjek = siapa pelakunya menurut klausa kalimat (pelaku | keluarga | pelaku/keluarga | lawan-pasif | bersama); frasa = predikat sesudah subjek ({pelaku}=0047, {lawan}=0046); urutan = letak di kalimat 5227; urut = varian sekunci, yang pertama cocok menang; negasi = tolak bila didahului 'tidak/bukan'; menutupiCiri = ciri lama (kamus alasan) yang diwakili sebab ini. Dipakai deteksi/sebabCerai.js. Tiap kalimat tetap USULAN. W49 22 Okt 2026: 26 pola sebab baru dari klausa sebab posita yang tak tertangkap (marah bila dinasihati, keuangan tertutup, pergi berhari-hari, keluar tanpa sepengetahuan CG, mengucapkan talak/cerai, kurang perhatian, merusak barang, anak bawaan, menjual harta, mengungkit pemberian, memfitnah, lalai ibadah, mencuri/menipu, ingkar janji, tidak membantu mengurus anak, komunikasi, mementingkan diri, pemalas, keturunan, memilih tinggal dengan orang tua, nafkah batin cerai gugat).",
   "pola": [
     {
       "kode": "sebab-keluarga-campur",
@@ -645,6 +645,632 @@
       ],
       "contohSalah": [
         "pendapat Pemohon"
+      ]
+    },
+    {
+      "kode": "sebab-marah-dinasihati",
+      "label": "marah bila dinasihati",
+      "kunci": "marah dinasihati",
+      "jenis": "sebab",
+      "regex": "\\bmarah(?:-marah)?\\s+(?:(?:setiap|tiap)\\s*kali|ketika|jika|apabila|bila|kalau|saat|manakala)\\s+(?:\\S+\\s+){0,3}?(?:(?:dinase?hati|dinasihati|di\\s+nase?hati|diingatkan|di\\s+ingatkan|ditegur|ditanya|ditanyakan)|(?:menase?hati(?:nya)?|menasihati(?:nya)?|mengingatkan(?:nya)?|menegur(?:nya)?|menanyakan|bertanya|memberi(?:kan)?\\s+(?:nase?hat|nasihat|masukan|teguran)))\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": true,
+      "frasa": "marah setiap kali dinasihati atau diingatkan oleh {lawan}",
+      "urutan": 26,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat marah setiap kali diingatkan oleh Penggugat",
+        "Termohon marah jika Pemohon bertanya",
+        "Tergugat marah ketika Penggugat mengingatkan Tergugat"
+      ],
+      "contohSalah": [
+        "Tergugat sering marah-marah",
+        "Penggugat menasehati Tergugat"
+      ]
+    },
+    {
+      "kode": "sebab-marah-dinasihati-2",
+      "label": "marah bila dinasihati (urutan terbalik)",
+      "kunci": "marah dinasihati",
+      "jenis": "sebab",
+      "regex": "(?:\\b(?:penggugat|pemohon)\\s+(?:\\S+\\s+){0,2}?(?:menase?hati(?:nya)?|menasihati(?:nya)?|mengingatkan(?:nya)?|menegur(?:nya)?|menanyakan|bertanya|memberi(?:kan)?\\s+(?:nase?hat|nasihat|masukan|teguran))|(?:dinase?hati|dinasihati|di\\s+nase?hati|diingatkan|di\\s+ingatkan|ditegur|ditanya|ditanyakan)\\s+(?:oleh\\s+)?(?:penggugat|pemohon))\\b[^.;]{0,80}?\\b(?:tergugat|termohon)\\b(?:\\s+\\S+){0,3}?\\s+marah\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 2,
+      "untuk": "semua",
+      "subjek": "bersama",
+      "negasi": true,
+      "frasa": "marah setiap kali dinasihati atau diingatkan oleh {lawan}",
+      "urutan": 26,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "jika Penggugat memberi nasehat Tergugat marah kepada Penggugat",
+        "apabila Penggugat menasehati Tergugat, Tergugat hanya marah kepada Penggugat"
+      ],
+      "contohSalah": [
+        "Tergugat menasehati Penggugat",
+        "Penggugat marah kepada Tergugat"
+      ],
+      "subjekTeks": "{pelaku}"
+    },
+    {
+      "kode": "sebab-keuangan-tertutup",
+      "label": "tidak terbuka soal keuangan",
+      "kunci": "keuangan tertutup",
+      "jenis": "sebab",
+      "regex": "\\btidak\\s+(?:pernah\\s+|mau\\s+|lagi\\s+)?terbuka\\b[^.;]{0,40}?\\b(?:keuangan|penghasilan|pendapatan|gaji|uang)\\b|\\b(?:penghasilan|gaji|pendapatan)(?:nya)?\\s+(?:selalu\\s+)?(?:di\\s*simpan|dipakai|digunakan|dinikmati)\\s+sendiri\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": false,
+      "frasa": "tidak terbuka kepada {lawan} mengenai keuangan rumah tangga",
+      "urutan": 63,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat tidak terbuka tentang masalah keuangan rumah tangga",
+        "Termohon tidak terbuka masalah pengelolaan keuangan rumah tangga kepada Pemohon"
+      ],
+      "contohSalah": [
+        "Tergugat terbuka tentang keuangan"
+      ]
+    },
+    {
+      "kode": "sebab-tidak-pulang",
+      "label": "pergi berhari-hari",
+      "kunci": "tidak pulang berhari-hari",
+      "jenis": "sebab",
+      "regex": "\\bjarang\\s+pulang\\b|\\btidak\\s+pulang\\b[^.;]{0,30}?\\bberhari[\\s–-]*hari\\b|\\b(?:keluar|pergi|meninggalkan|berada\\s+di\\s*luar|berkunjung\\s+ke)\\s+(?:dari\\s+)?(?:rumah|kediaman)\\w*\\b[^.;]{0,50}?\\b(?:hingga|sampai|selama)\\s+berhari[\\s–-]*hari\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": true,
+      "frasa": "sering pergi meninggalkan rumah hingga berhari-hari",
+      "urutan": 43,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat sering keluar rumah tanpa sepengetahuan Penggugat hingga berhari-hari",
+        "Tergugat jarang pulang",
+        "Termohon sering berkunjung ke rumah orangtua Termohon selama berhari-hari"
+      ],
+      "contohSalah": [
+        "Tergugat pergi meninggalkan rumah sejak tahun 2022"
+      ]
+    },
+    {
+      "kode": "sebab-keluar-tanpa-izin-cg",
+      "label": "keluar rumah tanpa sepengetahuan (CG)",
+      "kunci": "keluar rumah tanpa izin",
+      "jenis": "sebab",
+      "regex": "\\b(?:keluar(?:\\s+rumah)?|keluyuran|kelayapan|bepergian|jalan-jalan)\\b(?![^.;]{0,20}\\bmeninggalkan\\b)[^.;]{0,60}?\\b(?:tanpa|tidak)\\s+(?:adanya\\s+|ada\\s+)?(?:izin|ijin|seizin|seijin|pamit|sepengetahuan|persetujuan)|\\bkeluyuran\\b|\\bkelayapan\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "CG",
+      "subjek": "pelaku",
+      "negasi": true,
+      "frasa": "sering keluar rumah tanpa sepengetahuan {lawan}",
+      "urutan": 40,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat sering keluar rumah tanpa sepengetahuan Penggugat"
+      ],
+      "contohSalah": [
+        "Tergugat keluar rumah untuk bekerja"
+      ]
+    },
+    {
+      "kode": "sebab-ucap-cerai-cg",
+      "label": "mengucapkan talak/cerai (CG)",
+      "kunci": "mengucapkan cerai",
+      "jenis": "sebab",
+      "regex": "\\b(?:mengucap|mengatakan|mengeluarkan|melontarkan|menyebut|mengucapkan)\\w*\\s+(?:kata[\\s-]+(?:kata\\s+)?)?(?:talak|cerai|pisah)\\b|\\bmenjatuhkan\\s+talak\\b|\\bmenceraikan\\s+(?:penggugat|pemohon)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "CG",
+      "subjek": "pelaku",
+      "negasi": true,
+      "frasa": "mengucapkan kata talak atau cerai kepada {lawan}",
+      "urutan": 34,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "ketika Tergugat marah selalu mengucapkan kata cerai",
+        "Tergugat sering mengucapkan kata Talak"
+      ],
+      "contohSalah": [
+        "Penggugat mengajukan cerai"
+      ],
+      "pendamping": true
+    },
+    {
+      "kode": "sebab-ucap-cerai-ct",
+      "label": "mengucapkan cerai (CT)",
+      "kunci": "mengucapkan cerai",
+      "jenis": "sebab",
+      "regex": "\\b(?:mengucap|mengatakan|mengeluarkan|melontarkan|menyebut|mengucapkan)\\w*\\s+(?:kata[\\s-]+(?:kata\\s+)?)?(?:cerai|pisah|talak)\\b|\\b(?:sering|selalu)\\s+meminta\\s+(?:untuk\\s+)?(?:di)?cerai(?:kan)?\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "CT",
+      "subjek": "pelaku",
+      "negasi": true,
+      "frasa": "mengucapkan kata cerai kepada {lawan}",
+      "urutan": 34,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Termohon sering mengucapkan kata cerai",
+        "Termohon selalu meminta cerai"
+      ],
+      "contohSalah": [
+        "Pemohon mengajukan permohonan cerai talak"
+      ],
+      "pendamping": true
+    },
+    {
+      "kode": "sebab-kurang-perhatian",
+      "label": "kurang perhatian",
+      "kunci": "kurang perhatian",
+      "jenis": "sebab",
+      "regex": "\\bkurang\\s+(?:dalam\\s+)?(?:memberi(?:kan)?\\s+)?(?:perhatian|kasih\\s+sayang)\\b|\\btidak\\s+(?:pernah\\s+|bisa\\s+|lagi\\s+)?(?:memberi(?:kan)?\\s+)?(?:perhatian|kasih\\s+sayang)\\b|\\btidak\\s+(?:pernah\\s+)?(?:peduli|memperdulikan|mempedulikan)\\s+(?:lagi\\s+)?(?:(?:dengan|pada|kepada|terhadap)\\s+)?(?:penggugat|pemohon|anak\\w*|ist(?:e)?ri\\w*|suami\\w*|kondisi|keadaan)\\b|\\b(?:bersikap|sifat|sikap)\\s+(?:acuh(?:\\s+tak\\s+acuh)?|cuek|dingin)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": false,
+      "frasa": "kurang memberikan perhatian dan kasih sayang kepada {lawan}",
+      "urutan": 73,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat kurang dalam memberikan perhatian kepada Penggugat",
+        "Termohon tidak memberikan kasih sayang",
+        "Tergugat bersikap acuh ketika Penggugat menasehatinya"
+      ],
+      "contohSalah": [
+        "Penggugat dan Tergugat sudah tidak saling mempedulikan"
+      ]
+    },
+    {
+      "kode": "sebab-merusak-barang",
+      "label": "merusak barang",
+      "kunci": "merusak barang",
+      "jenis": "sebab",
+      "regex": "\\b(?:merusak|meghancurkan|menghancurkan)\\s+(?:barang|perabot|perabotan|dinding|pintu|isi\\s+rumah)\\w*|\\b(?:membanting|melempar(?:kan)?|memecahkan)\\s+(?:barang|piring|perabot\\w*|hp|handphone|pintu|gelas|kursi|meja|kaca|televisi|tv)\\w*",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": true,
+      "frasa": "merusak barang-barang rumah tangga",
+      "urutan": 44,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat sering merusak barang rumah tangga ketika terjadi perselisihan",
+        "merusak perabotan rumah bersama Penggugat"
+      ],
+      "contohSalah": [
+        "Tergugat memperbaiki barang"
+      ],
+      "pendamping": true
+    },
+    {
+      "kode": "sebab-anak-bawaan",
+      "label": "tidak menerima anak bawaan",
+      "kunci": "anak bawaan",
+      "jenis": "sebab",
+      "regex": "\\b(?:tidak\\s+(?:\\S+\\s+){0,2}?(?:suka|menerima|menyayangi|akur|peduli|memperhatikan|memberi(?:kan)?\\s+kasih\\s+sayang)|enggan|membeda[\\s-]*bedakan|memarahi|kasar)\\b[^.;]{0,60}?\\banak\\s+(?:bawaan|tiri)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": false,
+      "frasa": "tidak dapat menerima dan menyayangi anak bawaan {lawan}",
+      "urutan": 77,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat tidak suka dengan keberadaan anak bawaan Penggugat dengan suami sebelumnya",
+        "Termohon tidak bisa memberikan kasih sayang kepada anak bawaan Pemohon"
+      ],
+      "contohSalah": [
+        "Penggugat membawa anak bawaan"
+      ]
+    },
+    {
+      "kode": "sebab-menjual-harta",
+      "label": "menjual harta tanpa sepengetahuan",
+      "kunci": "menjual harta",
+      "jenis": "sebab",
+      "regex": "\\bmenjual\\b[^.;]{0,50}?\\b(?:harta|barang|tanah|rumah|kendaraan|motor|mobil|perhiasan|emas|sertifikat|kebun)\\w*\\b[^.;]{0,50}?\\btanpa\\s+(?:sepengetahuan|izin|ijin|seizin|persetujuan)",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": true,
+      "frasa": "menjual harta bersama tanpa sepengetahuan {lawan}",
+      "urutan": 64,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat menjual harta bersama tanpa sepengetahuan Penggugat"
+      ],
+      "contohSalah": [
+        "Tergugat menjual hasil kebun"
+      ]
+    },
+    {
+      "kode": "sebab-mengungkit-pemberian",
+      "label": "mengungkit pemberian",
+      "kunci": "mengungkit pemberian",
+      "jenis": "sebab",
+      "regex": "\\bmengungkit[\\s-]*(?:ungkit\\s+)?(?:\\S+\\s+)?(?:pemberian|nafkah|uang|harta|jasa|biaya)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": true,
+      "frasa": "sering mengungkit-ungkit pemberiannya kepada {lawan}",
+      "urutan": 66,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat juga sering mengungkit pemberian yang telah Tergugat berikan"
+      ],
+      "contohSalah": [
+        "Tergugat memberi uang"
+      ]
+    },
+    {
+      "kode": "sebab-memfitnah",
+      "label": "memfitnah / menyebar aib",
+      "kunci": "memfitnah",
+      "jenis": "sebab",
+      "regex": "\\bmemfitnah\\b|\\b(?:menyebar(?:kan)?|membuka|mengumbar)\\s+aib\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": true,
+      "frasa": "memfitnah {lawan} atau menyebarkan aib rumah tangga kepada orang lain",
+      "urutan": 21,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat sering memfitnah Penggugat di hadapan orang lain",
+        "Termohon sering menyebar Aib Pemohon"
+      ],
+      "contohSalah": [
+        "Tergugat difitnah"
+      ]
+    },
+    {
+      "kode": "sebab-ibadah",
+      "label": "lalai beribadah",
+      "kunci": "lalai ibadah",
+      "jenis": "sebab",
+      "regex": "\\btidak\\s+(?:pernah\\s+|mau\\s+)?(?:menjalankan|melaksanakan|mengerjakan|mendirikan)\\s+(?:\\S+\\s+){0,2}?(?:sholat|shalat|salat|ibadah|puasa)\\b|\\blalai\\s+(?:dalam\\s+)?(?:beribadah|sholat|shalat|salat)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": false,
+      "frasa": "lalai dalam menjalankan ibadah",
+      "urutan": 68,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat tidak menjalankan kewajibannya sholat lima waktu"
+      ],
+      "contohSalah": [
+        "Tergugat rajin sholat"
+      ]
+    },
+    {
+      "kode": "sebab-teladan-agama",
+      "label": "tidak memberi teladan agama",
+      "kunci": "lalai ibadah",
+      "jenis": "sebab",
+      "regex": "\\btidak\\s+(?:\\S+\\s+)?mencontoh\\w*\\s+(?:\\S+\\s+){0,4}?keaga\\w*",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 2,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": false,
+      "frasa": "tidak memberikan teladan yang baik dalam hal keagamaan",
+      "urutan": 68,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat tidak mencontohkan yang baik dalam hal keagaaman",
+        "Tergugat tidak mencontohlan yang baik dalam hal keagamaan kepada Penggugat"
+      ],
+      "contohSalah": [
+        "Tergugat rajin sholat"
+      ]
+    },
+    {
+      "kode": "sebab-mencuri",
+      "label": "mencuri",
+      "kunci": "mencuri",
+      "jenis": "sebab",
+      "regex": "\\b(?:mencuri|pencurian)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": true,
+      "frasa": "melakukan perbuatan pencurian",
+      "urutan": 69,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat diketahui sering melakukan tindakan mencuri"
+      ],
+      "contohSalah": [
+        "Tergugat bekerja jujur"
+      ]
+    },
+    {
+      "kode": "sebab-menipu",
+      "label": "menipu",
+      "kunci": "menipu",
+      "jenis": "sebab",
+      "regex": "\\b(?:menipu|penipuan)\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": true,
+      "frasa": "melakukan perbuatan penipuan",
+      "urutan": 69,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat sering melakukan tindakan penipuan kepada oranglain"
+      ],
+      "contohSalah": [
+        "Tergugat bekerja jujur"
+      ]
+    },
+    {
+      "kode": "sebab-ingkar-janji",
+      "label": "tidak menepati janji",
+      "kunci": "ingkar janji",
+      "jenis": "sebab",
+      "regex": "\\btidak\\s+(?:pernah\\s+)?menepati\\s+janji\\w*|\\bingkar\\s+janji\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": false,
+      "frasa": "tidak menepati janjinya kepada {lawan}",
+      "urutan": 76,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat tidak menepati janji sesuai kesepakatan Penggugat"
+      ],
+      "contohSalah": [
+        "Tergugat berjanji"
+      ]
+    },
+    {
+      "kode": "sebab-tidak-bantu-anak",
+      "label": "tidak membantu mengurus anak",
+      "kunci": "tidak membantu anak",
+      "jenis": "sebab",
+      "regex": "\\btidak\\s+(?:pernah\\s+|mau\\s+)?(?:membantu|ikut)\\s+(?:\\S+\\s+)?(?:mengurus|merawat|mengasuh|menjaga)\\s+(?:\\S+\\s+)?(?:anak|bayi|rumah)\\w*",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": false,
+      "frasa": "tidak mau membantu mengurus anak dan rumah tangga",
+      "urutan": 71,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "tidak membantu Penggugat mengurus anak yang saat itu masih bayi"
+      ],
+      "contohSalah": [
+        "Tergugat membantu mengurus anak"
+      ]
+    },
+    {
+      "kode": "sebab-komunikasi",
+      "label": "komunikasi buruk",
+      "kunci": "komunikasi",
+      "jenis": "sebab",
+      "regex": "\\bkurang\\s+(?:dalam\\s+(?:hal\\s+)?)?(?:ber)?komunikasi\\b|\\btidak\\s+(?:mau\\s+)?membangun\\s+komunikasi\\b|\\bkomunikasi\\s+(?:yang\\s+)?kurang\\s+baik\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": false,
+      "frasa": "kurang menjalin komunikasi yang baik dengan {lawan}",
+      "urutan": 74,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat Kurang dalam hal Komunikasi kepada Penggugat",
+        "Tergugat tidak membangun komunikasi yang baik dalam rumah tangga"
+      ],
+      "contohSalah": [
+        "sudah tidak saling berkomunikasi lagi"
+      ],
+      "tolakSebelum": "(?:selama|sejak|setelah|semenjak)\\s+(?:\\S+\\s+){0,5}$"
+    },
+    {
+      "kode": "sebab-mementingkan-diri",
+      "label": "mementingkan diri / orang tua",
+      "kunci": "mementingkan diri",
+      "jenis": "sebab",
+      "regex": "\\blebih\\s+(?:mementingkan|mengutamakan)\\s+(?:\\S+\\s+){0,2}?(?:kebutuhan|kepentingan|keinginan|keluarga|orang\\s*tua|orangtua)\\w*(?:\\s+(?:pribadi|sendiri|orang\\s*tua|orangtua|keluarga)\\w*)?",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": true,
+      "frasa": "lebih mementingkan kepentingan pribadi atau keluarganya daripada kebutuhan rumah tangga",
+      "urutan": 67,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat lebih mengutamakan kebutuhan orangtuanya dari pada kebutuhan Penggugat",
+        "lebih mementingkan kebutuhan pribadinya ketimbang kebutuhan rumah tangga"
+      ],
+      "contohSalah": [
+        "Tergugat mementingkan rumah tangga"
+      ]
+    },
+    {
+      "kode": "sebab-pemalas",
+      "label": "pemalas",
+      "kunci": "pemalas",
+      "jenis": "sebab",
+      "regex": "\\bpemalas\\b|\\bmalas[\\s-]+malasan\\b|\\btidak\\s+(?:lagi\\s+)?(?:memiliki\\s+)?(?:kemauan|keinginan)\\s+untuk\\s+bekerja\\b|\\btidak\\s+kunjung\\s+mencari\\s+pekerjaan\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": false,
+      "frasa": "malas bekerja",
+      "urutan": 15,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "selain itu Tergugat pemalas",
+        "Tergugat tidak kunjung mencari pekerjaan"
+      ],
+      "contohSalah": [
+        "Tergugat rajin bekerja"
+      ]
+    },
+    {
+      "kode": "sebab-keturunan",
+      "label": "belum dikaruniai keturunan",
+      "kunci": "keturunan",
+      "jenis": "sebab",
+      "regex": "\\b(?:belum|tidak)\\s+(?:\\S+\\s+){0,2}?(?:dikaruniai|diberikan|diberi|memiliki|mempunyai)\\s+(?:\\S+\\s+)?keturunan\\b|\\bmenginginkan\\s+(?:adanya\\s+)?keturunan\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "bersama",
+      "negasi": false,
+      "frasa": "terdapat persoalan mengenai keturunan",
+      "urutan": 86,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "sampai sekarang belum diberikan keturunan",
+        "Pemohon menginginkan adanya keturunan"
+      ],
+      "contohSalah": [
+        "telah dikaruniai dua orang anak"
+      ],
+      "subjekTeks": "antara {lawan} dan {pelaku}"
+    },
+    {
+      "kode": "sebab-nafkah-batin-cg",
+      "label": "nafkah batin (CG)",
+      "kunci": "nafkah batin",
+      "jenis": "sebab",
+      "regex": "\\b(?:tidak|sulit|enggan|menolak|jarang|kurang(?:nya)?)\\b[^.;,]{0,30}?\\b(?:nafkah\\s+batin|berhubungan\\s+(?:badan|suami\\s+ist(?:e)?ri)|hubungan\\s+(?:badan|suami\\s+ist(?:e)?ri|intim))",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "CG",
+      "subjek": "pelaku",
+      "negasi": false,
+      "frasa": "tidak memenuhi nafkah batin {lawan}",
+      "urutan": 72,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Tergugat juga tidak pernah memberikan nafkah batin kepada Penggugat",
+        "Tergugat kurang memberikan perhatian hingga kurangnya memberikan nafkah batin"
+      ],
+      "contohSalah": [
+        "Tergugat memberikan nafkah lahir"
+      ]
+    },
+    {
+      "kode": "sebab-nafkah-batin-cg-pasif",
+      "label": "nafkah batin (CG, pasif)",
+      "kunci": "nafkah batin",
+      "jenis": "sebab",
+      "regex": "\\b(?:tidak|belum)\\s+(?:pernah\\s+)?(?:lagi\\s+)?(?:mendapat(?:kan)?|menerima|diberi(?:kan)?)\\s+nafkah\\s+batin\\b",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 2,
+      "untuk": "CG",
+      "subjek": "lawan-pasif",
+      "negasi": false,
+      "frasa": "tidak memenuhi nafkah batin {lawan}",
+      "urutan": 72,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "penggugat tidak pernah mendapatkan Nafkah Batin dari Tergugat"
+      ],
+      "contohSalah": [
+        "Penggugat mendapatkan nafkah batin"
+      ]
+    },
+    {
+      "kode": "sebab-pilih-orang-tua",
+      "label": "memilih tinggal dengan orang tua",
+      "kunci": "memilih orang tua",
+      "jenis": "sebab",
+      "regex": "\\b(?:tetap|lebih)\\s+(?:ingin|memilih|mau)\\s+(?:untuk\\s+)?tinggal\\s+(?:bersama|dengan|di\\s+rumah)\\s+(?:orang\\s*tua|orangtua|keluarga)\\w*",
+      "flags": "i",
+      "status": "aktif",
+      "yakin": "ragu",
+      "urut": 1,
+      "untuk": "semua",
+      "subjek": "pelaku",
+      "negasi": true,
+      "frasa": "lebih memilih tinggal bersama orang tuanya daripada bersama {lawan}",
+      "urutan": 65,
+      "menutupiCiri": [],
+      "contohBenar": [
+        "Termohon lebih memilih tinggal bersama Keluarga Termohon",
+        "Termohon tetap ingin tinggal bersama orangtua Termohon"
+      ],
+      "contohSalah": [
+        "tinggal bersama orang tua Penggugat setelah menikah"
       ]
     }
   ],

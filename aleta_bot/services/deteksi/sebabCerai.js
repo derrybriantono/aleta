@@ -313,6 +313,7 @@ function deteksi({ b1, b2, butirPosita, pihak }) {
       kalimat: { saksi1: a ? a.kalimat : "", saksi2: b ? b.kalimat : "", posita: c ? c.kalimat : "" },
       kodePola: p.kode,
       menutupiCiri: Array.isArray(p.menutupiCiri) ? p.menutupiCiri : [],
+      pendamping: Boolean(p.pendamping),
     };
   });
   const bobot = { kedua: 0, satu: 1, posita: 2 };
@@ -411,16 +412,26 @@ function perluas5227(o) {
   const urut = (a, b) => bobot[a.tingkat] - bobot[b.tingkat] || Number(b.posita) - Number(a.posita) || a.urutan - b.urutan;
 
   const baruKedua = det.butir.filter((b) => b.tingkat === "kedua");
+  // W49 22 Okt: sebab PENDAMPING (mengucapkan talak/cerai, merusak barang) adalah
+  // wujud pertengkaran, bukan pokok sebabnya. Sendirian ia tidak menggantikan
+  // kalimat dari dalil posita; diukur atas 1.060 perkara cerai ber-BAS: tanpa
+  // aturan ini 5227 "Tergugat bersikap temperamental serta berkata kasar" (dari
+  // posita) berganti menjadi hanya "Tergugat mengucapkan kata talak atau cerai".
+  const pokokKedua = baruKedua.filter((b) => !b.pendamping);
+  const pendampingKedua = baruKedua.filter((b) => b.pendamping);
+  const lamaDariSaksi = Boolean(o.lama && o.lama.nilai && !o.lama.hanyaPerselisihan && !o.lama.dariPosita);
   const sepihakLuar = det.butir.filter((b) => b.tingkat === "satu" && !b.posita);
   let butir;
   let mode;
-  if (baruKedua.length) {
+  const pokokPositaAda =
+    det.butir.some((b) => b.posita && b.tingkat !== "kedua" && !b.pendamping) || dariCiri(o.ciriPositaPelaku, "posita").length > 0;
+  if (pokokKedua.length || (pendampingKedua.length && (lamaDariSaksi || !pokokPositaAda))) {
     butir = [...dariCiri(o.ciri, "kedua"), ...baruKedua].sort(urut);
     mode = "saksi";
-  } else if (!o.lama || !o.lama.nilai || o.lama.hanyaPerselisihan || o.lama.dariPosita) {
+  } else if (!lamaDariSaksi) {
     // Kalimat lama dari posita (dariPosita) hanya disusun ulang bila ada sebab baru;
     // kalimat lama yang kosong / hanya perselisihan juga memakai ciri posita lama.
-    const cadangan = det.butir.filter((b) => b.posita && b.tingkat !== "kedua");
+    const cadangan = det.butir.filter((b) => b.posita && (b.tingkat !== "kedua" || b.pendamping));
     if (!cadangan.length && o.lama && o.lama.dariPosita) return null;
     butir = [...cadangan, ...dariCiri(o.ciriPositaPelaku, "posita")].sort(urut);
     if (!butir.length) return null;

@@ -381,7 +381,27 @@ function ciriDariKalimat(butir, daftarCiri) {
  * supaya kalimat pemicu yang ditampilkan selalu kalimat yang menyalakannya.
  */
 function barisBerlaku(kalimatKecil, baris, daftar) {
-  return kalimatBerciri(kalimatKecil, baris) && !objekMenikahLagi(kalimatKecil, baris, daftar) && menikahLagiTerjadi(kalimatKecil, baris);
+  return (
+    kalimatBerciri(kalimatKecil, baris) &&
+    !objekMenikahLagi(kalimatKecil, baris, daftar) &&
+    menikahLagiTerjadi(kalimatKecil, baris) &&
+    !hanyaNafkahBatin(kalimatKecil, baris)
+  );
+}
+
+/**
+ * W49 22 Okt 2026: baris ciri "nafkah" (kata tunggal) tidak berlaku bila SETIAP
+ * kata nafkah di kalimat itu "nafkah batin" - "Tergugat kurang memberikan
+ * perhatian ... hingga kurangnya memberikan nafkah batin" (87/Pdt.G/2026) dahulu
+ * menjadi "Tergugat melalaikan kewajiban nafkah lahir" di 5227 dan di keterangan
+ * saksi susunan. Nafkah batin punya sebabnya sendiri (sebab-nafkah-batin).
+ */
+function hanyaNafkahBatin(kalimatKecil, baris) {
+  if (!baris || baris.kunci !== "tidak memberi nafkah") return false;
+  const kata = Array.isArray(baris.kata) ? baris.kata : [];
+  if (kata.length !== 1 || kata[0] !== "nafkah") return false;
+  const semua = kalimatKecil.match(/nafkah(?:\s+(?:lahir|batin|lahir\s+(?:dan|maupun)\s+batin|lahir\s*\/\s*batin))?/g) || [];
+  return semua.length > 0 && semua.every((x) => /^nafkah\s+batin$/.test(x));
 }
 
 /**
@@ -3164,6 +3184,26 @@ function pilihPembuka(teks, jenis, benih, bank) {
  * ia akibat, bukan penyebab perselisihan. Ciri tanpa frasa diucapkan dengan
  * labelnya, tanpa kurung dan garis miring.
  */
+/**
+ * Ucapan ciri lama ditambah sebab kamus sebab-cerai (W49 22 Okt):
+ *   "Tergugat melalaikan kewajiban nafkah lahir, selain itu Tergugat kurang
+ *    memberikan perhatian dan kasih sayang kepada Penggugat".
+ * Sebab yang bunyinya sudah ada di ucapan ciri tidak diulang. Cerai talak:
+ * sebab bersubjek Termohon tentang nafkah lahir memang tidak ada di kamus.
+ */
+function gabungUcapanSebab(daftarCiri, butir, pihak) {
+  const awal = String(daftarCiri || "").trim();
+  const kecil = awal.toLowerCase();
+  const sisa = (butir || [])
+    .filter((b) => b && b.frasa && !kecil.includes(String(b.frasa).toLowerCase()))
+    .slice()
+    .sort((a, b) => (a.urutan || 0) - (b.urutan || 0));
+  if (!sisa.length) return awal;
+  const tambah = sebabCerai.susun(sisa);
+  if (!tambah) return awal;
+  return awal ? `${awal}, selain itu ${tambah}` : tambah;
+}
+
 function daftarUcapan(alasan, pihak, peta, pilih) {
   const pelaku = pihak.pelaku || "Tergugat";
   const lawan = pihak.lawan || "Penggugat";
@@ -5231,6 +5271,23 @@ function susunKeteranganSaksiSdg(opsi) {
 
   const bank = bacaBankBas(o);
   const frasa = kalimatBaku.frasaCiriEfektif(o);
+  // Sebab kamus sebab-cerai yang didalilkan posita (W49 22 Okt) - lihat susun().
+  let sebabPositaSdg = [];
+  let tertutupPositaSdg = new Set();
+  if (asalAlasan === "posita" && o.posita) {
+    try {
+      const det = sebabCerai.deteksi({
+        b1: [],
+        b2: [],
+        butirPosita: kalimatPositaSambung(o.posita),
+        pihak: { pelaku: String(o.pelaku || "").trim() || "Tergugat", lawan: String(o.lawan || "").trim() || "Penggugat" },
+      });
+      sebabPositaSdg = det.butir.filter((b) => b.frasa);
+      tertutupPositaSdg = new Set(sebabPositaSdg.flatMap((b) => b.menutupiCiri || []));
+    } catch (_) {
+      sebabPositaSdg = [];
+    }
+  }
   const pihak = { pelaku: String(o.pelaku || "").trim(), lawan: String(o.lawan || "").trim() };
   const nomorPerkara = String(o.nomorPerkara || "").trim();
   const kodeKumpulan = String(o.kodeKumpulan || "").trim();
@@ -5297,7 +5354,20 @@ function susunKeteranganSaksiSdg(opsi) {
     const m = modusUntuk(saksi.m);
     const benihSaksi = (kunci) => `${nomorPerkara}|${kodeKumpulan}|${kunci}|${ke}`;
     const indeksUntuk = (kunci, n) => pemilih.indeksVarian({ nomorPerkara, kodeKumpulan, kunciTanya: kunci, n, ke });
-    const daftar = daftarUcapan(m.alasan, pihak, frasa.peta, (pool, kunciCiri) => pool[indeksUntuk(`alasan ${kunciCiri}`, pool.length)]);
+    // W49 22 Okt: alasan yang dibaca dari POSITA (bukan pilihan petugas) juga
+    // memuat sebab kamus sebab-cerai yang didalilkan (keluarga ikut campur, kurang
+    // perhatian, marah bila dinasihati, keuangan tertutup, ...) - dahulu hanya ciri
+    // lama, sehingga saksi "sama dengan gugatan" menerangkan sebab yang lebih
+    // sempit dari dalilnya. Ciri lama yang diwakili sebab itu (menutupiCiri) tidak
+    // diulang. Alasan yang dipilih petugas tidak ditambah.
+    const pakaiSebabPosita = asalAlasan === "posita" && m.alasan === alasan && sebabPositaSdg.length > 0;
+    const alasanUcap = pakaiSebabPosita ? m.alasan.filter((k) => !tertutupPositaSdg.has(k)) : m.alasan;
+    const daftarCiri = daftarUcapan(alasanUcap, pihak, frasa.peta, (pool, kunciCiri) => pool[indeksUntuk(`alasan ${kunciCiri}`, pool.length)]);
+    // Tanpa ucapan ciri lama, jawaban penyebab tetap klausa sebab posita apa
+    // adanya (lengkapiJawabanTemplat) - ia lebih rinci dari daftar kamus (diukur:
+    // "tidak pernah pamit keluar rumah, pelit dengan keluarga Pemohon, ..." akan
+    // menyempit menjadi satu sebab).
+    const daftar = pakaiSebabPosita && daftarCiri ? gabungUcapanSebab(daftarCiri, sebabPositaSdg, pihak) : daftarCiri;
 
     const jawaban = templat.map((baris, i) => {
       const no = String((baris && (baris.no || baris.urutan_pertanyaan)) || i + 1);
