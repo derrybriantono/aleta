@@ -341,7 +341,8 @@
     }
     if (p && p.tanpaOtomatis) {
       // Dikerjakan sendiri di latar (tanpa ditekan petugas): halaman yang sedang dipakai tidak direbut.
-      ket.textContent = "Selesai dikerjakan di latar. Halaman tidak disegarkan sendiri; segarkan bila ingin melihat data terbaru.";
+      ket.textContent =
+        p.keteranganTanpaOtomatis || "Selesai dikerjakan di latar. Halaman tidak disegarkan sendiri; segarkan bila ingin melihat data terbaru.";
       sekarang.textContent = "Segarkan halaman";
       return { otomatis: false };
     }

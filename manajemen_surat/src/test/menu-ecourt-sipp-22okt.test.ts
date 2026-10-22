@@ -117,11 +117,11 @@ const SESI_ADA = (akun: unknown[], sesi: unknown[] = []) => ({ status: 200, data
 describe("urutan menu: Perdata | ABT By Derry | ALETA | E-Court | Jinayat", () => {
   it("empat butir berurutan tepat sesudah Perdata, bergaya butir SIPP; e-Court milik SIPP sendiri tetap ada", async () => {
     const h = bukaSipp();
-    await sampai(() => butir(h.d).includes("E-Court"), "terpasang");
+    await sampai(() => butir(h.d).includes("E-Court MA"), "terpasang");
     const urut = butir(h.d);
     const i = urut.indexOf("Perdata");
-    expect(urut.slice(i, i + 5)).toEqual(["Perdata", "ABT By Derry", "ALETA", "E-Court", "Jinayat"]);
-    expect(urut.filter((x) => !["ABT By Derry", "ALETA", "E-Court"].includes(x))).toEqual(MENU_SIPP);
+    expect(urut.slice(i, i + 5)).toEqual(["Perdata", "ABT By Derry", "ALETA", "E-Court MA", "Jinayat"]);
+    expect(urut.filter((x) => !["ABT By Derry", "ALETA", "E-Court MA"].includes(x))).toEqual(MENU_SIPP);
     const li = h.d.querySelector('li[data-aleta-menu="ecourt"]') as HTMLElement;
     expect(Array.from(li.children).map((c) => c.tagName)).toEqual(["A", "UL"]);
     expect(li.classList.contains("has-sub")).toBe(true);
@@ -131,7 +131,7 @@ describe("urutan menu: Perdata | ABT By Derry | ALETA | E-Court | Jinayat", () =
 
   it("tidak ganda walau SIPP menggambar ulang bilahnya", async () => {
     const h = bukaSipp();
-    await sampai(() => butir(h.d).includes("E-Court"), "terpasang");
+    await sampai(() => butir(h.d).includes("E-Court MA"), "terpasang");
     h.d.getElementById("cssmenu")!.outerHTML = halamanSipp().match(/<div id="cssmenu">[\s\S]*<\/div>/)![0];
     await sampai(() => h.d.querySelectorAll("[data-aleta-menu]").length === 3, "dipasang ulang");
     await tunggu(300);

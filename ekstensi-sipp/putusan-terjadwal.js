@@ -1537,6 +1537,9 @@
           [{ jenis: "Jadwal", teks: `${pertama} sampai ${terakhir} WITA${akun ? ` atas akun SIPP ${akun}` : ""}`, ok: true }],
           "Jadwal belum selesai seluruhnya."
         ),
+        // 22 Okt malam (pengguna): Jadwalkan Putusan TIDAK menyegarkan sendiri - tab Antrean terjadwal tetap terbuka.
+        tanpaOtomatis: true,
+        keteranganTanpaOtomatis: "Antrean terjadwal tetap terbuka. Halaman tidak disegarkan sendiri; tekan Segarkan halaman bila ingin melihat data terbaru.",
       });
     } catch {
       /* penyegaran hanya kenyamanan: jadwal sudah tersimpan di server */

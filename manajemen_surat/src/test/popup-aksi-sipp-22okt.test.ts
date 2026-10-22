@@ -551,7 +551,9 @@ describe("berhasil -> pesan + segarkan di halaman yang sama", () => {
     (await sampai(() => h.d.querySelector('#aleta-ptj-panel [data-ptj="ya"]'), "Ya")).dispatchEvent(new h.w.MouseEvent("click", { bubbles: true }));
   }
 
-  it("detil perkara: 'Berhasil: ...' + hitung mundur; sesudahnya DISEGARKAN lewat pintu masuk perkara (bukan reload, bukan dasbor); tab aktif tersimpan", async () => {
+  // 22 Okt malam (pengguna): Jadwalkan Putusan TIDAK menyegarkan sendiri - tab Antrean terjadwal tetap terbuka;
+  // penyegaran hanya lewat tombol, tetap di halaman yang sama (pintu masuk perkara / alamat daftar).
+  it("detil perkara: 'Berhasil: ...' tanpa segar sendiri; tombol Segarkan halaman -> pintu masuk perkara (bukan reload, bukan dasbor); tab aktif tersimpan", async () => {
     const h = buka({ halaman: "perkara", jeda: 350 });
     // Petugas sedang di tab Penetapan.
     h.d.querySelector('#usual2 a.selected')!.classList.remove("selected");
@@ -559,11 +561,12 @@ describe("berhasil -> pesan + segarkan di halaman yang sama", () => {
     await jadwalkanSatu(h, "perkara");
     const kotakMu = await sampai(() => h.d.querySelector(".aleta-mu"), "kotak hasil");
     expect(kotakMu.textContent).toContain("Berhasil: 1 perkara dijadwalkan.");
-    expect(kotakMu.textContent).toMatch(/disegarkan dalam \d+ detik/);
-    expect(kotakMu.textContent).toContain("tetap di halaman ini");
-    expect(Array.from(kotakMu.querySelectorAll("button")).map((b) => b.textContent)).toEqual(["Segarkan sekarang", "Jangan segarkan"]);
+    expect(kotakMu.textContent).toContain("Antrean terjadwal tetap terbuka");
+    expect(Array.from(kotakMu.querySelectorAll("button")).map((b) => b.textContent)).toEqual(["Segarkan halaman"]);
+    await tunggu(600);
     expect(h.navigasi).toEqual([]);
-    await sampai(() => h.navigasi.length > 0, "segar sendiri");
+    (kotakMu.querySelector('[data-mu="sekarang"]') as HTMLButtonElement).click();
+    await sampai(() => h.navigasi.length > 0, "segar lewat tombol");
     await tunggu(500);
     expect(h.navigasi).toEqual([URL_PINTU_PERKARA]); // sekali, di perkara yang sama
     expect(h.navigasi[0]).not.toMatch(/\/(main|dashboard|beranda|home)(\/|$)/);
@@ -578,12 +581,15 @@ describe("berhasil -> pesan + segarkan di halaman yang sama", () => {
     await jadwalkanSatu(h, "daftar");
     const kotakMu = await sampai(() => h.d.querySelector(".aleta-mu"), "kotak hasil");
     expect(kotakMu.textContent).toContain("Berhasil: 1 perkara dijadwalkan.");
-    await sampai(() => h.navigasi.length > 0, "segar sendiri");
-    await tunggu(500);
+    await tunggu(600);
+    expect(h.navigasi).toEqual([]);
+    (kotakMu.querySelector('[data-mu="sekarang"]') as HTMLButtonElement).click();
+    await sampai(() => h.navigasi.length > 0, "segar lewat tombol");
+    await tunggu(300);
     expect(h.navigasi).toEqual([URL_PINTU_DAFTAR]);
   });
 
-  it("'Segarkan sekarang' seketika dan sekali; 'Jangan segarkan' membatalkan", async () => {
+  it("'Segarkan halaman' seketika dan sekali walau ditekan dua kali", async () => {
     const h = buka({ halaman: "perkara", jeda: 60000 });
     await jadwalkanSatu(h, "perkara");
     const kotakMu = await sampai(() => h.d.querySelector(".aleta-mu"), "kotak hasil");
@@ -592,14 +598,6 @@ describe("berhasil -> pesan + segarkan di halaman yang sama", () => {
     await sampai(() => h.navigasi.length > 0, "segar");
     await tunggu(100);
     expect(h.navigasi).toEqual([URL_PINTU_PERKARA]);
-
-    const g = buka({ halaman: "perkara", jeda: 300 });
-    await jadwalkanSatu(g, "perkara");
-    const kotakG = await sampai(() => g.d.querySelector(".aleta-mu"), "kotak hasil");
-    (kotakG.querySelector('[data-mu="jangan"]') as HTMLButtonElement).click();
-    await tunggu(600);
-    expect(g.navigasi).toEqual([]);
-    expect(kotakG.textContent).toContain("Tidak disegarkan");
   });
 
   it("GAGAL: pesan galat tetap di pop-up, pop-up tetap terbuka, TIDAK menyegarkan", async () => {

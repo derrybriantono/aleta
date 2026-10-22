@@ -88,7 +88,7 @@
   const BUTIR = [
     { kode: "abt", teks: "ABT By Derry", judul: "Blangko ABT by Derry Briantono: perkara, isian, dan cetak dalam satu halaman (tab baru)" },
     { kode: "aleta", teks: "ALETA", judul: "Portal ALETA (tab baru)" },
-    { kode: "ecourt", teks: "E-Court", judul: "e-Court Mahkamah Agung dengan akun e-Court Anda sendiri (tab baru)" },
+    { kode: "ecourt", teks: "E-Court MA", judul: "e-Court Mahkamah Agung dengan akun e-Court Anda sendiri (tab baru)" },
   ];
 
   // ──────────────────────────────────────────────────────────────────────────

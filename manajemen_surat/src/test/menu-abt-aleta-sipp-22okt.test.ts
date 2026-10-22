@@ -195,8 +195,8 @@ describe("bilah atas SIPP: urutan, bentuk, dan tidak ganda", () => {
     await sampai(() => butir(h.d).includes("ABT By Derry"), "butir terpasang");
     const urut = butir(h.d);
     const i = urut.indexOf("Perdata");
-    expect(urut.slice(i, i + 5)).toEqual(["Perdata", "ABT By Derry", "ALETA", "E-Court", "Jinayat"]);
-    expect(urut.filter((x) => !["ABT By Derry", "ALETA", "E-Court"].includes(x))).toEqual(MENU_SIPP);
+    expect(urut.slice(i, i + 5)).toEqual(["Perdata", "ABT By Derry", "ALETA", "E-Court MA", "Jinayat"]);
+    expect(urut.filter((x) => !["ABT By Derry", "ALETA", "E-Court MA"].includes(x))).toEqual(MENU_SIPP);
     // butir "e-Court" milik SIPP sendiri tetap ada dan tidak tertukar dengan "E-Court" kita
     expect(urut.filter((x) => x === "e-Court").length).toBe(1);
   });
@@ -236,7 +236,7 @@ describe("bilah atas SIPP: urutan, bentuk, dan tidak ganda", () => {
     await tunggu(300);
     const urut = butir(h.d);
     const i = urut.indexOf("Perdata");
-    expect(urut.slice(i, i + 5)).toEqual(["Perdata", "ABT By Derry", "ALETA", "E-Court", "Jinayat"]);
+    expect(urut.slice(i, i + 5)).toEqual(["Perdata", "ABT By Derry", "ALETA", "E-Court MA", "Jinayat"]);
     expect(h.d.querySelectorAll('li[data-aleta-menu]').length).toBe(3);
   });
 
@@ -244,8 +244,8 @@ describe("bilah atas SIPP: urutan, bentuk, dan tidak ganda", () => {
     const h = bukaHalaman({ html: halamanSipp(["Perdata"]) });
     await sampai(() => butir(h.d).includes("ALETA"), "terpasang");
     const urut = butir(h.d);
-    expect(urut.slice(urut.indexOf("ABT By Derry"), urut.indexOf("ABT By Derry") + 3)).toEqual(["ABT By Derry", "ALETA", "E-Court"]);
-    expect(urut[urut.indexOf("E-Court") + 1]).toBe("Jinayat");
+    expect(urut.slice(urut.indexOf("ABT By Derry"), urut.indexOf("ABT By Derry") + 3)).toEqual(["ABT By Derry", "ALETA", "E-Court MA"]);
+    expect(urut[urut.indexOf("E-Court MA") + 1]).toBe("Jinayat");
     const masuk = bukaHalaman({ html: `<!doctype html><html><body><div id="cssmenu" style="height:15px;"></div></body></html>` });
     await tunggu(150);
     expect(masuk.d.querySelectorAll("[data-aleta-menu]").length).toBe(0);
