@@ -57,6 +57,20 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.35",
+    dirilis: "2026-10-22T23:10:00+08:00",
+    judul: "Pop-up aksi, menu SIPP, Tes putusan, relaas SEMA 1/2023, panggilan antrian, alamat dari nama desa",
+    butir: [
+      "Penetapan Otomatis, Putusan Otomatis, Jadwalkan Putusan dan Jadwalkan Putusan Massal dibuka sebagai pop-up; sesudah berhasil halaman disegarkan di tempat yang sama.",
+      "Bilah menu SIPP mendapat ABT By Derry, ALETA dan E-Court.",
+      "Tes putusan (Super Admin): semua blangko Derry dapat dicoba pada perkara acuan apa pun tanpa menulis ke ABT, SIPP atau e-Court.",
+      "Status relaas mengikuti SEMA 1/2023 untuk surat tercatat (diterima orang serumah = bertemu) dan RBg/Buku II untuk jurusita.",
+      "Panggilan antrian menyebut nama, jabatan, ruang, nomor dan jenis perkara, para pihak, panggilan ke berapa, per hakim, saksi dan mediator.",
+      "Alamat referensi pihak dan saksi terisi lengkap cukup dengan mengetik awal nama desa atau kecamatan lalu Tab.",
+      "Saklar Tampilan untuk semua unsur Jadwal Sidang dan Jadwal Mediasi yang sebelumnya tidak dapat dimatikan.",
+    ],
+  },
+  {
     versi: "1.205.34",
     dirilis: "2026-10-22T21:20:00+08:00",
     judul: "Widget SIPP selalu terlipat",
