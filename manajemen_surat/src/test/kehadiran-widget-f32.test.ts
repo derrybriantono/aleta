@@ -255,6 +255,18 @@ describe("widget ALETA: kotak Kehadiran sidang hari ini", () => {
     expect(h.minta).toEqual([API_KH]);
   });
 
+  it("22 Okt: kotak Kehadiran TERLIPAT di setiap tab baru walau ingatan lama menyimpan 'terbuka'; dibentangkan petugas diingat per sesi tab", async () => {
+    const h = buka({ ujiTampilan: "ui", widgetKehadiran: undefined, lipatTerbuka: { "widget:kehadiran": true } });
+    const kotak = await sampai(() => q(h, ".aleta-cmw-dok [data-kehadiran-widget]"), "kotak di dok");
+    expect(kotak.getAttribute("data-terbuka")).toBe("tidak");
+    kotak.querySelector(".aleta-lipat-kepala").click();
+    expect(q(h, "[data-kehadiran-widget]").getAttribute("data-terbuka")).toBe("ya");
+    expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:widget:kehadiran")).toBe("1");
+    await h.ubahSimpanan({ widgetKehadiran: true });
+    await tunggu(120);
+    expect(q(h, "[data-kehadiran-widget]").getAttribute("data-terbuka")).toBe("ya");
+  });
+
   it("saklar popup dimatikan: tanpa kotak dan tanpa permintaan; dinyalakan tanpa muat ulang", async () => {
     const h = buka({ ujiTampilan: "ui", widgetKehadiran: false });
     await sampai(() => q(h, ".aleta-cmw-dok"), "dok UI Baru");

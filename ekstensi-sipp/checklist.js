@@ -3852,7 +3852,7 @@
 
   function susunKehadiranWidget() {
     // Butir 41 (17 Okt): terlipat bawaan - jumlahnya tetap terbaca di kepala.
-    const w = kotakWidget("kehadiran", "Kehadiran sidang hari ini", { terbuka: false });
+    const w = kotakWidget("kehadiran", "Kehadiran sidang hari ini", { terbuka: false, sesiTab: true });
     w.kotak.setAttribute("data-kehadiran-widget", "");
     if (!kh.data) {
       const sebab =
@@ -4006,6 +4006,34 @@
   }
 
   /**
+   * Tautan ke Blangko ABT by Derry Briantono untuk draf putusan H-7 perkara `p` (kontrak #bd= v1 yang sama dengan
+   * tautanBlangkoDerry di portal, manajemen_surat/src/lib/tautan-blangko-derry.ts). Kosong bila alamat ABT atau
+   * perkaranya tidak diketahui. Tidak membawa data pihak - hanya nomor, id, tanggal sidang, jenis, dan petunjuk draf.
+   */
+  function tautanDerryH7(dasar, p, varian) {
+    const pid = String((p && p.perkaraId) || "");
+    if (!dasar || !/^\d{1,12}$/.test(pid)) return "";
+    const muatan = {
+      v: 1,
+      nomor: String(p.nomorPerkara || ""),
+      perkaraId: Number(pid),
+      sidangKe: null,
+      tanggalSidang: String(p.tanggalSidang || "").slice(0, 10),
+      jenis: "putusan",
+      agenda: "",
+      tunda: "",
+      keterangan: "",
+      amar: varian === "ditolak" ? "Ditolak" : "",
+      verstek: p.perkiraan === true ? true : null,
+      jumlahSaksiP: 0,
+      jumlahSaksiT: 0,
+      draf: "h7",
+      varian: varian === "ditolak" ? "ditolak" : "dikabulkan",
+    };
+    return `${dasar}/#bd=${encodeURIComponent(JSON.stringify(muatan))}`;
+  }
+
+  /**
    * Varian selain "dikabulkan" yang punya blangko (17 Okt: "ditolak") dari
    * checklist.varian portal. draf = { blangko, saran } apa adanya untuk
    * pakaiDrafH7 - bentuknya sama dengan kartu utama.
@@ -4029,7 +4057,7 @@
 
   function susunDrafH7Widget() {
     // Butir 41 (17 Okt): terlipat bawaan - jumlahnya tetap terbaca di kepala.
-    const w = kotakWidget("drafH7", "Draf putusan", { terbuka: false });
+    const w = kotakWidget("drafH7", "Draf putusan", { terbuka: false, sesiTab: true });
     w.kotak.setAttribute("data-draf-h7-widget", "");
     if (!h7.data) {
       const sebab =
@@ -4074,6 +4102,26 @@
         a.setAttribute("data-h7-tahapan", p.perkaraId);
         a.title = "Membuka pop-up tahapan draf putusan di Jadwal Sidang ALETA (ringkasan, isian otomatis, yang perlu diisi hakim).";
         aksi.appendChild(a);
+      }
+      if (!bd) {
+        // 22 Okt 2026: draf putusan diarahkan ke Blangko ABT by Derry Briantono - dari SIPP (atau perkara lain di ABT)
+        // lewat tautan #bd= yang sama dengan Jadwal Sidang portal (perkara, jenis putusan, draf H-7, varian).
+        // Panel ABT memilih perkara, sidang, dan blangkonya sendiri; hak peran dijaga di sana.
+        const dasar = dasarAbt();
+        const buatTautan = (teks, status, ket) => {
+          const href = tautanDerryH7(dasar, p, status);
+          if (!href) return;
+          const a = el("a", "aleta-cmw-h7-aksi", teks);
+          a.href = href;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.setAttribute("data-h7-derry", p.perkaraId);
+          a.setAttribute("data-h7-varian", status);
+          a.title = `${ket ? `${ket} ` : ""}Membuka Blangko ABT by Derry Briantono dengan perkara ini terpilih dan blangko putusan draf; isian agen menjadi saran, belum tersimpan ke ABT.`;
+          aksi.appendChild(a);
+        };
+        buatTautan("Buka di Blangko Derry", "dikabulkan", String(p.checklist && p.checklist.alasanBlangko ? p.checklist.alasanBlangko : ""));
+        for (const x of varian) buatTautan(`Buka varian ${x.teks.toLowerCase()} di Blangko Derry`, x.status, x.alasan);
       }
       if (bd) {
         const judulTombol = "Membuka blangko putusan draf di Blangko Derry; isian agen menjadi saran, belum tersimpan ke ABT.";
@@ -4283,7 +4331,24 @@
     let lipatan = null;
     const teksJudul = el("span", "aleta-cmw-judul", judul);
     if (lipat) {
-      const l = alatLipat(teksJudul, { kunci: `widget:${id}`, kelas: "aleta-cmw-kotak", ...(o.terbuka === false ? { terbuka: false } : {}) });
+      // 22 Okt 2026 (aturan 21 Okt: semua tampilan ekstensi bawaannya minimize): kotak yang meminta sesiTab (Kehadiran
+      // sidang, Draf putusan) TERLIPAT di setiap tab baru. Yang dibentangkan petugas diingat per SESI TAB saja
+      // (alatPanelTerbuka sesiTab, panel-alat.js) - bukan lagi di chrome.storage.local yang membuat kotak yang sekali
+      // dibuka terbuka di setiap kunjungan berikutnya.
+      const sesi = o.sesiTab === true && typeof alatPanelTerbuka === "function" && typeof alatIngatPanel === "function";
+      const kunciSesi = `widget:${id}`;
+      const opsiLipat = sesi
+        ? {
+            ingat: false,
+            terbuka: alatPanelTerbuka(kunciSesi, { sesiTab: true }),
+            saatUbah: (terbuka, olehOrang) => {
+              if (olehOrang) alatIngatPanel(kunciSesi, terbuka, { sesiTab: true });
+            },
+          }
+        : o.terbuka === false
+          ? { terbuka: false }
+          : {};
+      const l = alatLipat(teksJudul, { kunci: kunciSesi, kelas: "aleta-cmw-kotak", ...opsiLipat });
       lipatan = l;
       kotak = l.akar;
       isi = l.isi;
