@@ -305,7 +305,7 @@ describe("calon hakim & tampilan", () => {
   it("layar jadwal: kode majelis tetap digambar, nama lewat majelisTampil, pemilih hanya satu tanggal & bukan tampilan alamat", () => {
     const layar = baca("components/portal/aleta-ecourt-sidang.tsx");
     expect(layar).toContain("{baris.majelisKode || \"—\"}");
-    expect(layar).toContain("majelisTampil(baris, kh.pilihan).diganti ? (");
+    expect(layar).toContain("majelisTampil(baris, pilihanHakim).diganti ? (");
     expect(layar).toContain("{!modeUrl && satuTanggalJadwal ? <PemilihHakimBaris baris={baris} kh={kh} /> : null}");
   });
 });
@@ -376,10 +376,22 @@ describe("cetak per hakim", () => {
     cleanup();
   });
 
-  it("tombol Cetak menawarkan per hakim / gabungan bila ada pilihan", () => {
+  it("Cetak seperti semula; saklar keliling menyala + ada hakim pengganti = langsung dipisah per hakim (22 Okt)", () => {
     const layar = baca("components/portal/aleta-ecourt-sidang.tsx");
-    expect(layar).toContain("if (adaPilihanHakim(sidangTampil, kh.pilihan)) setPilihCetak((b) => !b);");
+    expect(layar).toContain("setCetakPerHakim(adaPilihanHakim(sidangTampil, pilihanHakim));");
+    expect(layar).not.toContain("<PilihanCetak");
     expect(layar).toMatch(/bagianHakim=\{\s*cetakPerHakim\s*\?\s*kelompokPerHakim\(/);
+  });
+
+  it("saklar keliling mati: hakim pengganti tidak dipakai di nama Majelis maupun cetak", () => {
+    const layar = baca("components/portal/aleta-ecourt-sidang.tsx");
+    expect(layar).toContain("const pilihanHakim: typeof kh.pilihan = kh.kelilingAktif ? kh.pilihan : TANPA_PILIHAN_HAKIM;");
+    // Tidak ada lagi bacaan langsung kh.pilihan selain gerbang di atas.
+    expect(layar.split("kh.pilihan").length - 1).toBe(2);
+    expect(layar).toContain("<NamaHakimMenyidangkan baris={baris} pilihan={pilihanHakim} />");
+    // Tanpa pilihan, nama majelis tidak diganti dan cetak tidak dipecah.
+    expect(majelisTampil({ perkaraId: "1", majelisNama: "Majelis A" } as never, {}).diganti).toBe(false);
+    expect(adaPilihanHakim([{ perkaraId: "1" }] as never, {})).toBe(false);
   });
 });
 

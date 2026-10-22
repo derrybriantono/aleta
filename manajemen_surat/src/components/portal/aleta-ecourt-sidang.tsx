@@ -211,11 +211,12 @@ import {
   MejaPaniteraSidang,
   NamaHakimMenyidangkan,
   PemilihHakimBaris,
-  PilihanCetak,
   SaklarSidangKeliling,
   useKelilingHakim,
 } from "@/components/portal/jadwal-keliling-hakim";
 import { adaPilihanHakim, kelompokPerHakim, majelisTampil } from "@/lib/jadwal-keliling-hakim";
+/** Saklar Sidang keliling mati: tidak ada hakim pengganti yang dipakai. */
+const TANPA_PILIHAN_HAKIM = Object.freeze({});
 import {
   AGENDA_ELITIGASI,
   AGENDA_MUSYAWARAH,
@@ -4824,6 +4825,10 @@ export function AletaEcourtSidang({
   // bukan di tampilan lewat alamat. Lihat jadwal-keliling-hakim.tsx.
   const satuTanggalJadwal = dari === sampai;
   const kh = useKelilingHakim({ tanggal: dari, nyala: satuTanggalJadwal && !modeUrl && Boolean(currentUser) });
+  // 22 Okt 2026 (pengguna): saklar Sidang keliling mati -> hakim per perkara yang
+  // tersimpan tidak dipakai di mana pun (nama di kolom Majelis, cetak per hakim).
+  // Datanya tetap; menyala lagi = tampil lagi.
+  const pilihanHakim: typeof kh.pilihan = kh.kelilingAktif ? kh.pilihan : TANPA_PILIHAN_HAKIM;
   const bolehTundaPutusMassal = bolehAksi(currentUser, "sidang.tunda-putus");
   const [mejaPp, setMejaPp] = useState(false);
   // 22 Okt 2026: butir Menu (Penetapan kembali, Kasir, Kasir harian) memegang
@@ -4833,7 +4838,6 @@ export function AletaEcourtSidang({
   const bolehKasirJurnal = bolehMengerjakanKasir(currentUser);
   const [kasirTerbuka, setKasirTerbuka] = useState(false);
   const kasirHarian = useKasirHarian();
-  const [pilihCetak, setPilihCetak] = useState(false);
   const [cetakPerHakim, setCetakPerHakim] = useState(false);
   /* === AKHIR HAK-PERAN === */
   /* === 12OKT-B: saklar penanda perkara & pihak, panggil saksi === */
@@ -6826,34 +6830,15 @@ export function AletaEcourtSidang({
                 variant="outline"
                 disabled={sidang.length === 0}
                 onClick={() => {
-                  // 22 Okt 2026: ada hakim per perkara -> tawarkan cetak per hakim.
-                  if (adaPilihanHakim(sidangTampil, kh.pilihan)) setPilihCetak((b) => !b);
-                  else {
-                    setCetakPerHakim(false);
-                    setSedangCetak(true);
-                  }
+                  // 22 Okt 2026 (pengguna): cetak seperti semula; saat Sidang keliling
+                  // menyala dan ada hakim pengganti, halamannya langsung dipisah per hakim.
+                  setCetakPerHakim(adaPilihanHakim(sidangTampil, pilihanHakim));
+                  setSedangCetak(true);
                 }}
-                aria-expanded={pilihCetak}
               >
                 <Printer className="mr-1.5 h-4 w-4" />
                 Cetak
               </Button>
-              {pilihCetak ? (
-                <PilihanCetak
-                  jumlahBagian={kelompokPerHakim(sidangTampil, kh.pilihan).length}
-                  onTutup={() => setPilihCetak(false)}
-                  onPerHakim={() => {
-                    setPilihCetak(false);
-                    setCetakPerHakim(true);
-                    setSedangCetak(true);
-                  }}
-                  onGabungan={() => {
-                    setPilihCetak(false);
-                    setCetakPerHakim(false);
-                    setSedangCetak(true);
-                  }}
-                />
-              ) : null}
               </div>
               ) : null}
 
@@ -8316,10 +8301,10 @@ export function AletaEcourtSidang({
                                 <NamaDapatDipanggil golongan="majelis" {...konteksPanggil}>
                                   <span className={cn(KELAS_KODE_MAJELIS, "text-foreground")}>{baris.majelisKode}</span>
                                 </NamaDapatDipanggil>
-                                {majelisTampil(baris, kh.pilihan).diganti ? (
+                                {majelisTampil(baris, pilihanHakim).diganti ? (
                                   <>
                                     {" "}
-                                    <NamaHakimMenyidangkan baris={baris} pilihan={kh.pilihan} />
+                                    <NamaHakimMenyidangkan baris={baris} pilihan={pilihanHakim} />
                                   </>
                                 ) : null}
                               </span>
@@ -8869,8 +8854,8 @@ export function AletaEcourtSidang({
                             </span>
                             {/* 22 Okt 2026: hakim yang menyidangkan menggantikan
                                 nama majelis; KODE majelis di sebelahnya tetap. */}
-                            {majelisTampil(baris, kh.pilihan).diganti ? (
-                              <NamaHakimMenyidangkan baris={baris} pilihan={kh.pilihan} />
+                            {majelisTampil(baris, pilihanHakim).diganti ? (
+                              <NamaHakimMenyidangkan baris={baris} pilihan={pilihanHakim} />
                             ) : baris.majelisNama ? (
                               <span
                                 className="min-w-0 break-words text-muted-foreground"
@@ -9428,12 +9413,12 @@ export function AletaEcourtSidang({
         {sedangCetak ? (
           <AletaEcourtCetakJadwal
             /* 22 Okt 2026: nama majelis diganti hakim yang menyidangkan (kode tetap). */
-            sidang={sidangTampil.map((b) => ({ ...b, majelisNama: majelisTampil(b, kh.pilihan).nama }))}
+            sidang={sidangTampil.map((b) => ({ ...b, majelisNama: majelisTampil(b, pilihanHakim).nama }))}
             bagianHakim={
               cetakPerHakim
                 ? kelompokPerHakim(
-                    sidangTampil.map((b) => ({ ...b, majelisNama: majelisTampil(b, kh.pilihan).nama })),
-                    kh.pilihan
+                    sidangTampil.map((b) => ({ ...b, majelisNama: majelisTampil(b, pilihanHakim).nama })),
+                    pilihanHakim
                   )
                 : undefined
             }
