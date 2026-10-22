@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { PanelRuangPapanPanggil } from "@/components/portal/jadwal-sidang-2okt";
 import { apiPath } from "@/lib/base-path";
@@ -11,6 +11,25 @@ import { cn } from "@/lib/utils";
 import { KELAS_KODE_MAJELIS } from "@/lib/kode-majelis";
 import { kalimatRingkas, ringkasKehadiran, susunKehadiran, type KehadiranOrang } from "@/lib/kehadiran-rinci"; /* F3.2 */
 import { RingkasKehadiran } from "@/components/portal/kehadiran-rinci-sidang"; /* F3.2 */
+import {
+  hakimYangDipanggil,
+  jabatanHakim,
+  kalimatHakim,
+  kalimatJuruSita,
+  kalimatMediator,
+  kalimatPanggilPihak,
+  kalimatPanitera,
+  kalimatPetugasMediasi,
+  kalimatPetugasPersidangan,
+  kalimatRohaniwan,
+  kalimatSaksi,
+  kalimatSaksiKetik,
+  kalimatSemuaMajelis,
+  kalimatSemuaSaksi,
+  sisiSaksi,
+  type HakimSidangPilihan,
+  type OrangPanggil,
+} from "@/lib/kalimat-panggilan"; /* W59: kalimat panggilan lengkap */
 
 /**
  * ============================================================================
@@ -82,7 +101,30 @@ type Jawaban = {
   panggilan?: Record<string, Panggilan>;
 };
 
+/** Bahan kalimat panggilan satu perkara - dari rute sasaran (mode ringan). */
+type SasaranPanggil = {
+  nomorPerkara: string;
+  jenisPerkara: string;
+  orang: OrangPanggil[];
+};
+
 const SELANG_MS = 10000;
+const SELANG_HAKIM_MS = 60000;
+const UMUR_SASARAN_MS = 120000;
+const KUNCI_NAMA_UMUM = "aleta.antrian.nama-petugas";
+
+/** Tanggal setempat YYYY-MM-DD - hari sidang menurut jam petugas, bukan UTC. */
+function tanggalLokal(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Petugas yang tidak tercatat di SIPP: namanya diketik sekali, diingat di peramban ini. */
+type NamaUmum = { rohaniwan: string; mediasi: string; persidangan: string };
+const NAMA_UMUM_KOSONG: NamaUmum = { rohaniwan: "", mediasi: "", persidangan: "" };
+
+function namaDari(sasaran: SasaranPanggil | null, golongan: string): string[] {
+  return (sasaran?.orang ?? []).filter((o) => o.golongan === golongan).map((o) => o.nama);
+}
 
 /**
  * ============================================================================
@@ -105,31 +147,54 @@ const SELANG_MS = 10000;
  * tunggu memantul, dan kata pertama yang terdengar harus sudah menjawab
  * "apakah ini untuk saya".
  */
-const PANGGILAN_PETUGAS: Array<{ kunci: string; label: string; kalimat: (ruang: string) => string }> = [
+type KonteksPetugas = { ruang: string; sasaran: SasaranPanggil | null; namaUmum: NamaUmum };
+
+/**
+ * Setiap panggilan menyebut NAMA, JABATAN, dan RUANG (kalimat-panggilan.ts).
+ * Majelis hakim dipanggil per nama hakim di bagian tersendiri; yang di sini
+ * panitera sidang dan petugas lain. Tombol-tombol ini tidak membaca apa pun
+ * dari jaringan - bahannya sudah dimuat layar.
+ */
+const PANGGILAN_PETUGAS: Array<{ kunci: string; label: string; kalimat: (k: KonteksPetugas) => string }> = [
   {
     kunci: "majelis",
-    label: "Majelis / PP",
-    kalimat: (r) => `Majelis hakim dan panitera pengganti, dimohon memasuki ${r}.`,
+    label: "Semua majelis",
+    kalimat: (k) =>
+      kalimatSemuaMajelis(
+        (k.sasaran?.orang ?? []).filter((o) => o.golongan === "majelis").map((o) => ({ nama: o.nama, peran: o.peran })),
+        k.ruang
+      ),
+  },
+  {
+    kunci: "panitera",
+    label: "Panitera sidang",
+    kalimat: (k) => kalimatPanitera(namaDari(k.sasaran, "pp"), k.ruang),
   },
   {
     kunci: "jurusita",
     label: "Juru sita",
-    kalimat: (r) => `Juru sita pengganti, dimohon menuju ${r}.`,
+    kalimat: (k) => kalimatJuruSita(namaDari(k.sasaran, "js"), k.ruang),
   },
   {
     kunci: "rohaniwan",
     label: "Rohaniwan",
-    kalimat: (r) => `Petugas rohaniwan, dimohon menuju ${r}.`,
+    kalimat: (k) => kalimatRohaniwan(k.namaUmum.rohaniwan, k.ruang),
   },
   {
     kunci: "mediasi",
     label: "Petugas mediasi",
-    kalimat: (r) => `Petugas mediasi, dimohon menuju ${r}.`,
+    kalimat: (k) => kalimatPetugasMediasi(k.namaUmum.mediasi, k.ruang),
   },
   {
     kunci: "persidangan",
     label: "Petugas persidangan",
-    kalimat: (r) => `Petugas persidangan, dimohon menuju ${r}.`,
+    kalimat: (k) => kalimatPetugasPersidangan(k.namaUmum.persidangan, k.ruang),
+  },
+  {
+    // Mediator dipanggil ke RUANG MEDIASI, bukan ruang sidang.
+    kunci: "mediator",
+    label: "Mediator",
+    kalimat: (k) => kalimatMediator(namaDari(k.sasaran, "mediator")),
   },
 ];
 
@@ -139,6 +204,11 @@ export function AletaAntrianPanggil() {
   const [sibuk, setSibuk] = useState("");
   const [pesan, setPesan] = useState("");
   const [namaSaksi, setNamaSaksi] = useState("");
+  const [namaUmum, setNamaUmum] = useState<NamaUmum>(NAMA_UMUM_KOSONG);
+  const [muatanSasaran, setMuatanSasaran] = useState<{ id: string; data: SasaranPanggil | null }>({ id: "", data: null });
+  const [kelilingAktif, setKelilingAktif] = useState(false);
+  const [pilihanHakim, setPilihanHakim] = useState<Record<string, HakimSidangPilihan>>({});
+  const cacheSasaran = useRef(new Map<string, { waktu: number; data: SasaranPanggil | null }>());
 
   /**
    * Suara mati sampai petugas menyalakannya sekali.
@@ -199,6 +269,101 @@ export function AletaAntrianPanggil() {
     };
   }, [bacaAntrian]);
 
+  /**
+   * Nama dan sebutan orang pada satu perkara (hakim, panitera, juru sita,
+   * mediator, para pihak, saksi). Dibaca dari rute sasaran mode ringan - baca
+   * saja, tidak menulis apa pun - lalu diingat dua menit per perkara supaya
+   * Panggil ulang tidak menunggu jaringan. Gagal baca = null: kalimat jatuh ke
+   * bentuk lama (nomor antrian dan ruang), bukan diam.
+   */
+  const muatSasaran = useCallback(async (perkaraId: string): Promise<SasaranPanggil | null> => {
+    const id = String(perkaraId || "");
+    if (!id) return null;
+    const ada = cacheSasaran.current.get(id);
+    if (ada && Date.now() - ada.waktu < UMUR_SASARAN_MS && ada.data) return ada.data;
+    try {
+      const respons = await fetch(
+        apiPath(
+          `/api/aleta-ecourt/panggil/sasaran?perkaraId=${encodeURIComponent(id)}&tanggal=${tanggalLokal()}&ringan=1`
+        ),
+        { cache: "no-store" }
+      );
+      const isi = (await respons.json()) as { data?: Record<string, unknown> } & Record<string, unknown>;
+      const j = (isi.data ?? isi) as {
+        available?: boolean;
+        perkara?: { nomorPerkara?: string; jenisPerkaraNama?: string };
+        orang?: Array<Record<string, unknown>>;
+      };
+      if (!j || j.available === false || !Array.isArray(j.orang)) return null;
+      const data: SasaranPanggil = {
+        nomorPerkara: String(j.perkara?.nomorPerkara ?? ""),
+        jenisPerkara: String(j.perkara?.jenisPerkaraNama ?? ""),
+        orang: j.orang.map((o) => ({
+          kunci: String(o.kunci ?? ""),
+          nama: String(o.nama ?? ""),
+          peran: String(o.peran ?? ""),
+          golongan: String(o.golongan ?? ""),
+        })),
+      };
+      cacheSasaran.current.set(id, { waktu: Date.now(), data });
+      return data;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Nama petugas umum (rohaniwan dst.) - diingat di peramban ini saja.
+  useEffect(() => {
+    try {
+      const mentah = window.localStorage.getItem(KUNCI_NAMA_UMUM);
+      // Nama tersimpan hanya ada di peramban, tidak di server: harus dibaca sesudah komponen terpasang.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (mentah) setNamaUmum({ ...NAMA_UMUM_KOSONG, ...(JSON.parse(mentah) as Partial<NamaUmum>) });
+    } catch {
+      /* penyimpanan peramban dapat tertutup - isian tetap berfungsi tanpa ingatan */
+    }
+  }, []);
+
+  const ubahNamaUmum = useCallback((kunci: keyof NamaUmum, nilai: string) => {
+    setNamaUmum((lama) => {
+      const baru = { ...lama, [kunci]: nilai };
+      try {
+        window.localStorage.setItem(KUNCI_NAMA_UMUM, JSON.stringify(baru));
+      } catch {
+        /* lihat di atas */
+      }
+      return baru;
+    });
+  }, []);
+
+  // Sidang keliling: hakim yang dipilih untuk satu perkara menggantikan majelis
+  // BILA saklar keliling hari ini menyala. Gagal baca = majelis seperti biasa.
+  useEffect(() => {
+    let hidup = true;
+    const baca = async () => {
+      const tanggal = tanggalLokal();
+      try {
+        const [k, h] = await Promise.all([
+          fetch(apiPath(`/api/aleta-ecourt/sidang/keliling?tanggal=${tanggal}`), { cache: "no-store" }).then((r) => r.json()),
+          fetch(apiPath(`/api/aleta-ecourt/sidang/hakim-sidang?tanggal=${tanggal}`), { cache: "no-store" }).then((r) => r.json()),
+        ]);
+        if (!hidup) return;
+        const kd = (k?.data ?? k) as { keliling?: { aktif?: boolean } };
+        const hd = (h?.data ?? h) as { pilihan?: Record<string, HakimSidangPilihan> };
+        setKelilingAktif(Boolean(kd?.keliling?.aktif));
+        setPilihanHakim(hd?.pilihan && typeof hd.pilihan === "object" ? hd.pilihan : {});
+      } catch {
+        /* tanpa keterangan keliling, majelis tetap dipanggil per nama */
+      }
+    };
+    void baca();
+    const detak = setInterval(() => void baca(), SELANG_HAKIM_MS);
+    return () => {
+      hidup = false;
+      clearInterval(detak);
+    };
+  }, []);
+
   const baris = useMemo(() => {
     const semua = Object.entries(data?.peta || {}).map(([perkaraId, satu]) => ({
       perkaraId,
@@ -222,35 +387,49 @@ export function AletaAntrianPanggil() {
   const laju = useMemo(() => selangPanggilan(baris.semua), [baris.semua]);
 
   const panggil = useCallback(
-    async (satu: { perkaraId: string; nomor: number | null; noRuang: number | null }) => {
+    async (satu: {
+      perkaraId: string;
+      nomor: number | null;
+      noRuang: number | null;
+      panggilan?: Panggilan | null;
+    }) => {
       setSibuk(satu.perkaraId);
       setPesan("");
       try {
-        const respons = await fetch(apiPath("/api/aleta-ecourt/antrian/panggil"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            perkaraId: satu.perkaraId,
-            nomorAntrian: satu.nomor,
-            noRuang: satu.noRuang,
+        // Nama dan sebutan para pihak dimuat BERSAMAAN dengan pencatatan panggilan.
+        const [respons, sasaran] = await Promise.all([
+          fetch(apiPath("/api/aleta-ecourt/antrian/panggil"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              perkaraId: satu.perkaraId,
+              nomorAntrian: satu.nomor,
+              noRuang: satu.noRuang,
+            }),
           }),
-        });
+          suaraNyala ? muatSasaran(satu.perkaraId) : Promise.resolve(null),
+        ]);
         const isi = (await respons.json()) as { data?: Record<string, unknown> };
-        const hasil = (isi.data ?? isi) as { ok?: boolean; alasan?: string; keterangan?: string };
-        setPesan(
-          hasil.ok === false ? hasil.alasan || "Panggilan gagal." : hasil.keterangan || "Dipanggil."
-        );
+        const hasil = (isi.data ?? isi) as { ok?: boolean; alasan?: string; keterangan?: string; urutan?: number };
+        const keterangan = hasil.ok === false ? hasil.alasan || "Panggilan gagal." : hasil.keterangan || "Dipanggil.";
+        setPesan(keterangan);
 
         // Diucapkan hanya bila panggilannya BERHASIL tercatat. Suara yang
         // berbunyi atas panggilan yang gagal membuat petugas mengira nomornya
         // sudah bergerak, lalu meneruskan ke nomor berikutnya - dan yang
         // pertama tidak pernah benar-benar dipanggil.
         if (hasil.ok !== false && suaraNyala && satu.nomor !== null) {
-          bunyikan(
-            satu.noRuang && satu.noRuang > 0
-              ? `Nomor antrian ${satu.nomor}, silakan menuju Ruang Sidang ${satu.noRuang}.`
-              : `Nomor antrian ${satu.nomor}, silakan memasuki ruang sidang.`
-          );
+          const kalimat = kalimatPanggilPihak({
+            nomorAntrian: satu.nomor,
+            noRuang: satu.noRuang,
+            // Urutan dari catatan (sesudah panggilan ini dicatat); cadangannya hitungan lama + 1.
+            panggilanKe: Number(hasil.urutan) || (satu.panggilan?.jumlah ?? 0) + 1,
+            nomorPerkara: sasaran?.nomorPerkara,
+            jenisPerkara: sasaran?.jenisPerkara,
+            orang: sasaran?.orang,
+          });
+          bunyikan(kalimat);
+          setPesan(`${keterangan} Diucapkan: ${kalimat}`);
         }
 
         await ambil();
@@ -260,7 +439,7 @@ export function AletaAntrianPanggil() {
         setSibuk("");
       }
     },
-    [ambil, suaraNyala, bunyikan]
+    [ambil, suaraNyala, bunyikan, muatSasaran]
   );
 
   const berikutnya = baris.menunggu[0] || null;
@@ -278,17 +457,53 @@ export function AletaAntrianPanggil() {
     return nomor && nomor > 0 ? `Ruang Sidang ${nomor}` : "ruang sidang";
   }, [berikutnya, ruang]);
 
-  /** Mengucapkan satu kalimat, bila suaranya sudah dinyalakan petugas. */
+  /** Perkara pada kartu BERIKUTNYA - nama petugas dan para pihaknya dimuat lebih dulu. */
+  const idBerikutnya = berikutnya?.perkaraId ?? "";
+  useEffect(() => {
+    let hidup = true;
+    if (!idBerikutnya) return () => undefined;
+    void muatSasaran(idBerikutnya).then((hasil) => {
+      if (!hidup) return;
+      setMuatanSasaran({ id: idBerikutnya, data: hasil });
+    });
+    return () => {
+      hidup = false;
+    };
+  }, [idBerikutnya, muatSasaran]);
+  // Muatan milik perkara lain (kartu sudah berganti) tidak dipakai.
+  const sasaranBerikutnya = muatanSasaran.id === idBerikutnya ? muatanSasaran.data : null;
+
+  /** Mengucapkan satu kalimat (atau beberapa, berurutan), bila suaranya sudah dinyalakan petugas. */
   const suarakan = useCallback(
-    (kalimat: string) => {
+    (kalimat: string | string[]) => {
       if (!suaraNyala) {
         setPesan("Suara masih mati. Nyalakan lebih dulu pada kendali suara di atas.");
         return;
       }
-      bunyikan(kalimat);
-      setPesan(`Diucapkan: ${kalimat}`);
+      const daftar = (Array.isArray(kalimat) ? kalimat : [kalimat]).filter(Boolean);
+      for (const satu of daftar) bunyikan(satu);
+      setPesan(`Diucapkan: ${daftar.join(" ")}`);
     },
     [suaraNyala, bunyikan]
+  );
+
+  const konteksPetugas: KonteksPetugas = { ruang: sebutanRuang, sasaran: sasaranBerikutnya, namaUmum };
+
+  // Majelis perkara pada kartu: satu per nama hakim; sidang keliling dengan satu hakim pilihan
+  // menggantikan majelis penuh.
+  const hakimTombol = useMemo(() => {
+    const majelis = (sasaranBerikutnya?.orang ?? [])
+      .filter((o) => o.golongan === "majelis")
+      .map((o) => ({ nama: o.nama, peran: o.peran }));
+    return hakimYangDipanggil(majelis, pilihanHakim[idBerikutnya], kelilingAktif);
+  }, [sasaranBerikutnya, pilihanHakim, idBerikutnya, kelilingAktif]);
+
+  const saksiTercatat = useMemo(
+    () =>
+      (sasaranBerikutnya?.orang ?? [])
+        .filter((o) => o.golongan === "saksi1" || o.golongan === "saksi2")
+        .map((o) => ({ kunci: o.kunci || o.nama, nama: o.nama, peran: o.peran })),
+    [sasaranBerikutnya]
   );
 
   const panggilSaksi = useCallback(() => {
@@ -300,7 +515,7 @@ export function AletaAntrianPanggil() {
     // Nama diucapkan apa adanya. Menyingkatnya - "saksi pertama" - membuat
     // orang yang dipanggil tidak yakin dirinya yang dimaksud, lalu bertanya
     // kepada petugas, yang justru menghabiskan waktu yang hendak dihemat.
-    suarakan(`Saksi atas nama ${nama}, dimohon memasuki ${sebutanRuang}.`);
+    suarakan(kalimatSaksiKetik(nama, sebutanRuang));
   }, [namaSaksi, sebutanRuang, suarakan]);
 
   return (
@@ -496,13 +711,49 @@ export function AletaAntrianPanggil() {
             Panggilan pengeras suara · tidak mengubah antrian
           </p>
 
+          {/* Majelis hakim: satu tombol per nama hakim, ditambah Semua majelis. */}
+          <p className="mb-1 text-xs text-muted-foreground">Majelis hakim</p>
           <div className="flex flex-wrap gap-2">
-            {PANGGILAN_PETUGAS.map((satu) => (
+            {PANGGILAN_PETUGAS.filter((x) => x.kunci === "majelis").map((satu) => (
               <button
                 key={satu.kunci}
                 type="button"
                 disabled={!suaraNyala}
-                onClick={() => suarakan(satu.kalimat(sebutanRuang))}
+                onClick={() => suarakan(satu.kalimat(konteksPetugas))}
+                className="rounded-xl border px-3.5 py-2 text-sm transition hover:border-primary/40 disabled:opacity-50"
+              >
+                {satu.label}
+              </button>
+            ))}
+            {hakimTombol.map((h) => (
+              <button
+                key={`hakim-${h.nama}`}
+                type="button"
+                disabled={!suaraNyala}
+                onClick={() => suarakan(kalimatHakim(h.nama, h.peran, sebutanRuang))}
+                title={h.pengganti ? "Hakim pengganti sidang keliling" : undefined}
+                className="rounded-xl border px-3.5 py-2 text-sm transition hover:border-primary/40 disabled:opacity-50"
+              >
+                {h.nama}
+                <span className="ml-1 text-xs text-muted-foreground">({jabatanHakim(h.peran)})</span>
+              </button>
+            ))}
+            {hakimTombol.length === 0 ? (
+              <span className="self-center text-xs text-muted-foreground">
+                Nama hakim muncul bila ada perkara berikutnya.
+              </span>
+            ) : null}
+          </div>
+
+          {/* Panitera sidang dan petugas lain. */}
+          <p className="mb-1 mt-3 text-xs text-muted-foreground">Panitera sidang dan petugas</p>
+          <div className="flex flex-wrap gap-2">
+            {PANGGILAN_PETUGAS.filter((x) => x.kunci !== "majelis").map((satu) => (
+              <button
+                key={satu.kunci}
+                type="button"
+                disabled={!suaraNyala}
+                onClick={() => suarakan(satu.kalimat(konteksPetugas))}
                 className="rounded-xl border px-3.5 py-2 text-sm transition hover:border-primary/40 disabled:opacity-50"
               >
                 {satu.label}
@@ -518,7 +769,17 @@ export function AletaAntrianPanggil() {
                 type="button"
                 disabled={!suaraNyala}
                 onClick={() =>
-                  suarakan(`Nomor antrian ${berikutnya.nomor}, silakan menuju ${sebutanRuang}.`)
+                  suarakan(
+                    kalimatPanggilPihak({
+                      nomorAntrian: berikutnya.nomor,
+                      noRuang: berikutnya.noRuang,
+                      // Mengulang TIDAK mencatat panggilan baru: hitungannya tetap.
+                      panggilanKe: Math.max(1, berikutnya.panggilan?.jumlah ?? 0),
+                      nomorPerkara: sasaranBerikutnya?.nomorPerkara,
+                      jenisPerkara: sasaranBerikutnya?.jenisPerkara,
+                      orang: sasaranBerikutnya?.orang,
+                    })
+                  )
                 }
                 className="rounded-xl border px-3.5 py-2 text-sm transition hover:border-primary/40 disabled:opacity-50"
               >
@@ -526,6 +787,56 @@ export function AletaAntrianPanggil() {
               </button>
             ) : null}
           </div>
+
+          {/* Petugas yang tidak tercatat di SIPP: nama diketik sekali, diingat di peramban ini. */}
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-xs text-muted-foreground">Nama petugas (diingat di peramban ini):</span>
+            {(
+              [
+                ["rohaniwan", "Nama rohaniwan"],
+                ["mediasi", "Nama petugas mediasi"],
+                ["persidangan", "Nama petugas persidangan"],
+              ] as Array<[keyof NamaUmum, string]>
+            ).map(([kunci, placeholder]) => (
+              <input
+                key={kunci}
+                value={namaUmum[kunci]}
+                onChange={(e) => ubahNamaUmum(kunci, e.target.value)}
+                placeholder={placeholder}
+                aria-label={placeholder}
+                className="min-w-[10rem] flex-1 rounded-lg border bg-card px-2.5 py-1.5 text-sm"
+              />
+            ))}
+          </div>
+
+          {/* Saksi: satu per satu menurut nama, atau semuanya berurutan. */}
+          {saksiTercatat.length > 0 ? (
+            <div className="mt-3">
+              <p className="mb-1 text-xs text-muted-foreground">Saksi perkara ini</p>
+              <div className="flex flex-wrap gap-2">
+                {saksiTercatat.map((saksi) => (
+                  <button
+                    key={`saksi-${saksi.kunci}`}
+                    type="button"
+                    disabled={!suaraNyala}
+                    onClick={() => suarakan(kalimatSaksi(saksi, sebutanRuang))}
+                    className="rounded-xl border px-3.5 py-2 text-sm transition hover:border-primary/40 disabled:opacity-50"
+                  >
+                    {saksi.nama}
+                    <span className="ml-1 text-xs text-muted-foreground">(saksi {sisiSaksi(saksi.peran)})</span>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  disabled={!suaraNyala}
+                  onClick={() => suarakan(kalimatSemuaSaksi(saksiTercatat, sebutanRuang))}
+                  className="rounded-xl border border-primary/40 px-3.5 py-2 text-sm transition hover:bg-muted disabled:opacity-50"
+                >
+                  Panggil semua saksi
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <input

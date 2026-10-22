@@ -170,7 +170,10 @@ describe("panggilan petugas hanya bersuara", () => {
   });
 
   it("saksi dipanggil dengan namanya", () => {
-    expect(berkas).toContain("Saksi atas nama ${nama}");
+    // Kalimatnya kini disusun di lib/kalimat-panggilan (W59, 22 Okt 2026); bunyinya tetap.
+    expect(berkas).toContain("kalimatSaksiKetik(nama");
+    const lib = readFileSync(path.resolve(process.cwd(), "src/lib/kalimat-panggilan.ts"), "utf8");
+    expect(lib).toContain("Saksi atas nama ${bersih(nama)}");
   });
 
   it("suara hanya berbunyi bila panggilan berhasil tercatat", () => {
