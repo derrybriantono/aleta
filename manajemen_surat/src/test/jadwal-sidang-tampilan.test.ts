@@ -693,8 +693,11 @@ describe("ketiganya ada apa adanya di komponen", () => {
     // mousedown, bukan click: penutupan harus terjadi sebelum tekanan itu
     // sempat mengenai tombol di baris jadwal di belakangnya.
     expect(isi).toContain('document.addEventListener("mousedown", diLuar)');
-    // Dipakai KEDUA menu - bukan satu saja.
-    expect(isi.split("useTutupSaatDiLuar(terbuka, tutup)").length - 1).toBe(2);
+    // 22 Okt: menu Layar antrian kini butir Menu alat (Radix DropdownMenu, menutup
+    // sendiri saat ditekan di luar); menu turun lain tetap memakai penutup ini.
+    expect(isi.split("useTutupSaatDiLuar(terbuka, tutup)").length - 1).toBe(1);
+    const menuAlat = readFileSync(path.resolve(process.cwd(), "src/components/portal/menu-alat-jadwal.tsx"), "utf8");
+    expect(menuAlat).toMatch(/<DropdownMenu modal=\{false\}/);
   });
 
   it("penanda hari putusan melebur musyawarah, bukan berdiri di sebelahnya", () => {
