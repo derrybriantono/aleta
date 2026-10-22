@@ -29,6 +29,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import { apiPath } from "@/lib/base-path";
+import { tujuanKembaliAman } from "@/lib/tujuan-kembali";
 import { adalahGangguan, pesanGangguan } from "@/lib/pesan-gangguan";
 import { APP_VERSION } from "@/lib/patch-notes";
 import {
@@ -111,6 +112,15 @@ function normalizeWhatsappNumber(value = "") {
   return digits;
 }
 
+/** Tujuan sesudah masuk: ?kembali=<jalur di dalam portal> (menu E-Court di SIPP), selain itu /portal. */
+function tujuanSesudahMasuk(): string {
+  try {
+    return tujuanKembaliAman(new URLSearchParams(window.location.search).get("kembali"));
+  } catch {
+    return "/portal";
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { data: session, refetch: refetchSession } = authClient.useSession();
@@ -175,7 +185,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isClientReady && !isSubmitting && session?.user) {
-      router.replace("/portal");
+      router.replace(tujuanSesudahMasuk());
     }
   }, [isClientReady, isSubmitting, router, session?.user]);
 
@@ -325,7 +335,7 @@ export default function LoginPage() {
           : "Login berhasil. Menyiapkan Portal ALETA..."
       );
       await refetchSession().catch(() => undefined);
-      router.replace("/portal");
+      router.replace(tujuanSesudahMasuk());
     } catch (loginError) {
       // ====================================================================
       // "Failed to fetch" BERHENTI DI SINI

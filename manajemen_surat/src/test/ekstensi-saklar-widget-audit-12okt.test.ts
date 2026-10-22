@@ -370,6 +370,8 @@ describe("A. popup: tiap saklar menulis kunci dan nilai yang benar (dan membaca 
     { id: "widgetDrafH7", kunci: "widgetDrafH7", bawaan: true },
     // 20 Okt: pratinjau BAS & relaas di SIPP sebelum diunduh - bawaan menyala.
     { id: "pratinjauBasRelaas", kunci: "pratinjauBasRelaas", bawaan: true },
+    // 22 Okt: butir ABT By Derry dan ALETA di bilah menu atas SIPP - bawaan menyala.
+    { id: "menuAtasSipp", kunci: "menuAtasSipp", bawaan: true },
     // F1.5 (17 Okt): gembok panel ALETA di ABT biasa - menyala = terkunci (tampil penuh).
     { id: "gembokAbt", kunci: "gembokKepalaAbt", bawaan: false },
     // X1 (21 Okt): ringkas keterangan panel - kunci sama dengan tombol panah di kaki panel.

@@ -185,6 +185,11 @@ const BERKAS = [
   // Menu kiri ABT bisa digulir (19 Okt 2026) - skrip konten ABT: #navbar diberi
   // max-height + overflow-y supaya submenu Blangko Derry terjangkau; gaya saja.
   "abt-gulir.js",
+  // Menu ABT By Derry dan ALETA di bilah atas SIPP (22 Okt 2026) - skrip konten SIPP dan ABT;
+  // butir menu bergaya SIPP, tab baru lewat pekerja latar, tanpa sandi apa pun.
+  "menu-atas.js",
+  // Halaman e-Court yang dibuka dari menu E-Court (22 Okt 2026) - mengisi nama pengguna saja dan menjaga sesi.
+  "ecourt-masuk.js",
   // Penjaga batas (17 Okt 2026): tidak ada kata ALETA yang ditulis ekstensi ke
   // SIPP/ABT. Dimuat document_start, SEBELUM tema-awal.js, supaya fetch sudah
   // terbungkus saat skrip konten lain berjalan.

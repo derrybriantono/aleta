@@ -38,6 +38,8 @@ const SAKLAR_SIPP_IDE = {
   widgetDrafH7: ["widgetDrafH7", true],
   /* 20 Okt: klik unduh BAS/relaas di SIPP menampilkan pratinjau dulu (pratinjau-bas-relaas.js), bawaan MENYALA. */
   pratinjauBasRelaas: ["pratinjauBasRelaas", true],
+  /* 22 Okt: butir ABT By Derry, ALETA (dan E-Court) di bilah menu atas SIPP (menu-atas.js), bawaan MENYALA. */
+  menuAtasSipp: ["menuAtasSipp", true],
 };
 /* F1.5 (17 Okt): gembok panel ALETA di ABT biasa - kunci yang sama dengan tombol
    gembok di bawah kepala panel dan Widget ALETA. Menyala = terkunci (tampil penuh). */
@@ -138,6 +140,7 @@ const KUNCI_SETELAN_AKUN = [
   "widgetKehadiran",
   "widgetDrafH7",
   "pratinjauBasRelaas",
+  "menuAtasSipp",
   "gembokKepalaAbt",
   "panelRingkas",
   "gembokKepalaSipp",
@@ -189,6 +192,7 @@ const BAWAAN_AKUN = {
   widgetKehadiran: true,
   widgetDrafH7: true,
   pratinjauBasRelaas: true,
+  menuAtasSipp: true,
   gembokKepalaAbt: false,
   panelRingkas: false,
   gembokKepalaSipp: false,
@@ -2240,7 +2244,7 @@ function pasangRingkas(gayaUi) {
  */
 const KELOMPOK_SAKLAR = [
   { kode: "tampilan", judul: "Tampilan", isi: ["panelRingkas"] },
-  { kode: "sipp", judul: "SIPP", isi: ["tandaiHalaman", "sisipJadwal", "pratinjauBasRelaas", "sippPenyatu", "sippTampilDobel", "gembokSipp"], unsur: ["ideL2Kotak"] },
+  { kode: "sipp", judul: "SIPP", isi: ["tandaiHalaman", "sisipJadwal", "pratinjauBasRelaas", "menuAtasSipp", "sippPenyatu", "sippTampilDobel", "gembokSipp"], unsur: ["ideL2Kotak"] },
   { kode: "abt", judul: "ABT", isi: ["suntingLangsungAbt", "cetakTigaBerkas", "gembokAbt"] },
   {
     kode: "derry",

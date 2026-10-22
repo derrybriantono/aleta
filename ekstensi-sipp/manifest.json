@@ -78,7 +78,8 @@
         "mediasi-arsip.js",
         "putusan-terjadwal-pasangan.js",
         "putusan-terjadwal.js",
-        "putusan-terjadwal-peramban.js"
+        "putusan-terjadwal-peramban.js",
+        "menu-atas.js"
       ],
       "css": [
         "panel.css",
@@ -126,7 +127,8 @@
         "konseptor-langkah.js",
         "putusan-advance.js",
         "sipp-ide-l1.js",
-        "abt-gulir.js"
+        "abt-gulir.js",
+        "menu-atas.js"
       ],
       "css": [
         "panel.css",
@@ -147,6 +149,15 @@
       ],
       "css": [
         "panel.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://ecourt.mahkamahagung.go.id/*"
+      ],
+      "js": [
+        "ecourt-masuk.js"
       ],
       "run_at": "document_idle"
     },
