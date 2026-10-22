@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { statusTanpaVerstek, verstekBawaan } from "@/lib/verstek-bawaan";
 import { AlertTriangle, CheckCircle2, FileSearch, Gavel, Info, PauseCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -249,6 +250,25 @@ function hadirDariRinci(
   return usul !== null && KEHADIRAN.some((k) => k.nilai === usul) ? usul : null;
 }
 
+/**
+ * Centang Verstek bawaan (22 Okt 2026): tercentang bila Tergugat belum pernah hadir;
+ * jenis putusan cabut/tidak dapat diterima/dicoret/gugur langsung melepasnya.
+ * Centang yang diubah petugas dihormati sampai jenis putusan diganti.
+ */
+function useVerstekBawaan(bahan: Parameters<typeof verstekBawaan>[0], setVerstek: (v: boolean) => void) {
+  const [disentuh, setDisentuh] = useState(false);
+  const nilai = verstekBawaan(bahan);
+  const tanpa = statusTanpaVerstek(bahan.namaStatus);
+  useEffect(() => {
+    setDisentuh(false);
+  }, [bahan.namaStatus]);
+  useEffect(() => {
+    if (tanpa) setVerstek(false);
+    else if (!disentuh) setVerstek(nilai);
+  }, [nilai, tanpa, disentuh, setVerstek]);
+  return useCallback(() => setDisentuh(true), []);
+}
+
 /** Gugatan dikenali dari nomor perkaranya - "Pdt.G" lawan "Pdt.P". */
 function perkaraGugatan(nomorPerkara: string) {
   return /pdt\.\s*g/i.test(String(nomorPerkara || ""));
@@ -369,6 +389,16 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
   }, []);
   const [statusId, setStatusId] = useState("");
   const [verstek, setVerstek] = useState(false);
+  const sentuhVerstek = useVerstekBawaan(
+    {
+      gugatan: perkaraGugatan(keadaan?.nomorPerkara ?? ""),
+      riwayat: riwayat?.sidang,
+      jadwalIdSekarang: Number(keadaan?.jadwalId ?? 0),
+      dihadiriHariIni: dihadiri,
+      namaStatus: status.find((s) => String(s.id) === statusId)?.nama,
+    },
+    setVerstek
+  );
 
   const [hasil, setHasil] = useState<Hasil | null>(null);
   const [sibuk, setSibuk] = useState(false);
@@ -838,7 +868,10 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                         <input
                           type="checkbox"
                           checked={verstek}
-                          onChange={(e) => setVerstek(e.target.checked)}
+                          onChange={(e) => {
+                            sentuhVerstek();
+                            setVerstek(e.target.checked);
+                          }}
                           className="h-4 w-4"
                         />
                         Verstek
@@ -1228,6 +1261,16 @@ export function CatatHasilRingkas({
   const [tanggalPutus, setTanggalPutus] = useState(() => hariIni());
   const [statusId, setStatusId] = useState("");
   const [verstek, setVerstek] = useState(false);
+  const sentuhVerstek = useVerstekBawaan(
+    {
+      gugatan: perkaraGugatan(keadaan?.nomorPerkara ?? ""),
+      riwayat: riwayat?.sidang,
+      jadwalIdSekarang: Number(keadaan?.jadwalId ?? 0),
+      dihadiriHariIni: dihadiri,
+      namaStatus: status.find((s) => String(s.id) === statusId)?.nama,
+    },
+    setVerstek
+  );
 
   const [hasil, setHasil] = useState<Hasil | null>(null);
   const [sibuk, setSibuk] = useState(false);
@@ -1771,7 +1814,10 @@ export function CatatHasilRingkas({
             <input
               type="checkbox"
               checked={verstek}
-              onChange={(e) => setVerstek(e.target.checked)}
+              onChange={(e) => {
+                            sentuhVerstek();
+                            setVerstek(e.target.checked);
+                          }}
               className="mb-1.5 h-4 w-4"
             />
             <span className="mb-1">Putusan verstek</span>
