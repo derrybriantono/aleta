@@ -57,6 +57,19 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.30",
+    dirilis: "2026-10-22T08:04:00+08:00",
+    judul: "Tunda dan putus hari itu, putus otomatis, kalender libur",
+    butir: [
+      "Tunda dan keterangan putus ditulis pada hari itu juga walau lewat jam kerja; tidak pernah dipindah ke hari berikutnya.",
+      "Tunda otomatis memakai aturan baru: 14 hari (7 hari bila Tergugat sebelumnya dipanggil lewat panggilan elektronik); Penggugat tidak hadir pada perkara yang lawannya belum pernah hadir ditunda 14 hari dengan memanggil kedua pihak.",
+      "Saklar Putus otomatis gugur / tidak dapat diterima (Super Admin, bawaan mati, ada mode kering): keterangan putus dan e-Doc putusan dari blangko Derry, dengan pemberitahuan ke majelis dan tombol batal.",
+      "Kalender pemilih tanggal menandai libur nasional, cuti bersama dan libur tambahan; hari libur tidak dapat dipilih untuk tanggal tunda.",
+      "Pilih hakim per perkara hanya untuk Admin dan Super Admin.",
+      "Kalimat penutup keterangan saksi dibersihkan otomatis setiap pagi pada perkara yang belum minutasi; tanggal surat kuasa tidak lagi tercetak dua kali di BAS P (Kuasa).",
+    ],
+  },
+  {
     versi: "1.205.29",
     dirilis: "2026-10-22T06:59:00+08:00",
     judul: "Jadwal Sidang: tunda otomatis, sidang keliling, hakim per perkara",
