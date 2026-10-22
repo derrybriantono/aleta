@@ -1145,6 +1145,7 @@
     const td = tr.querySelector(":scope > .aleta-pensipp-sel");
     if (td) td.remove();
     if (ctx && ctx.akar) ctx.akar.hidden = true;
+    if (globalThis.aletaPopupAksi) globalThis.aletaPopupAksi.lepas("penetapan:");
     if (typeof alatUrutkanTombolSipp === "function") alatUrutkanTombolSipp(tr);
   }
 
@@ -1179,6 +1180,28 @@
     return td;
   }
 
+  /**
+   * 22 Okt 2026: panel dibuka sebagai POP-UP di tengah layar (popup-aksi.js), bukan menurunkan tabel di halaman.
+   * Isi panel, hak peran, dan tombol jalankannya tidak berubah. Ditutup petugas (x, klik dua kali di luar,
+   * Escape) = terlipat lagi; selama penetapan sedang ditulis, penutupan ditahan.
+   */
+  function sinkronModal() {
+    const m = globalThis.aletaPopupAksi;
+    if (!m || !ctx || !ctx.akar) return;
+    const nomor = ctx.nomor;
+    m.atur(`penetapan:${nomor}`, ctx.akar, ctx.terbuka, {
+      judul: `Penetapan Otomatis · ${nomor}`,
+      sibuk: () => Boolean(ctx && ctx.sibuk),
+      saatTutup: () => {
+        if (!ctx || ctx.nomor !== nomor) return;
+        ctx.terbuka = false;
+        ingatTerbuka(nomor, false);
+        const tb = document.getElementById("aleta-pensipp-tombol");
+        if (tb) tb.setAttribute("aria-expanded", "false");
+      },
+    });
+  }
+
   function pasangPanel(tr) {
     const tabel = tr.closest("table#submenus") || (tr.closest("table") && tr.closest("table").closest("table#submenus")) || tr.closest("table");
     const ada = document.getElementById(ID_PANEL);
@@ -1191,6 +1214,7 @@
       ctx.dirender = false;
     }
     ctx.akar.hidden = !ctx.terbuka;
+    sinkronModal();
     const tb = tr.querySelector(".aleta-pensipp-tombol");
     if (tb) tb.setAttribute("aria-expanded", ctx.terbuka ? "true" : "false");
     // Keadaan penetapan dibaca walau panel terlipat: tombolnya disembunyikan bila keempat penetapan sudah tercatat di SIPP.
@@ -1200,6 +1224,7 @@
 
   function bersihkan(doc) {
     const d = doc || document;
+    if (globalThis.aletaPopupAksi) globalThis.aletaPopupAksi.lepas("penetapan:");
     for (const e of Array.from(d.querySelectorAll(".aleta-pensipp"))) e.remove();
     ctx = null;
   }

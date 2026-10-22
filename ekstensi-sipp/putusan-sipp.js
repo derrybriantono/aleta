@@ -852,6 +852,28 @@
     return td;
   }
 
+  /**
+   * 22 Okt 2026: panel dibuka sebagai POP-UP di tengah layar (popup-aksi.js), bukan menurunkan tabel di halaman.
+   * Isi panel, hak peran, dan tombol jalankannya tidak berubah. Ditutup petugas (x, klik dua kali di luar,
+   * Escape) = terlipat lagi; selama putusan sedang ditulis ke SIPP, penutupan ditahan.
+   */
+  function sinkronModal() {
+    const m = globalThis.aletaPopupAksi;
+    if (!m || !ctx || !ctx.akar) return;
+    const nomor = ctx.nomor;
+    m.atur(`putusan:${nomor}`, ctx.akar, ctx.terbuka, {
+      judul: `Putusan Otomatis · ${nomor}`,
+      sibuk: () => Boolean(ctx && ctx.sibuk),
+      saatTutup: () => {
+        if (!ctx || ctx.nomor !== nomor) return;
+        ctx.terbuka = false;
+        ingatTerbuka(nomor, false);
+        const tb = document.getElementById("aleta-pusipp-tombol");
+        if (tb) tb.setAttribute("aria-expanded", "false");
+      },
+    });
+  }
+
   function pasangPanel(tr) {
     const tabel = tr.closest("table#submenus") || (tr.closest("table") && tr.closest("table").closest("table#submenus")) || tr.closest("table");
     const ada = document.getElementById(ID_PANEL);
@@ -866,6 +888,7 @@
       ctx.dirender = false;
     }
     ctx.akar.hidden = !ctx.terbuka;
+    sinkronModal();
     const tb = tr.querySelector(".aleta-pusipp-tombol");
     if (tb) tb.setAttribute("aria-expanded", ctx.terbuka ? "true" : "false");
     if (ctx.terbuka && !ctx.dibaca && !ctx.memuat && !ctx.sibuk) void muat();
@@ -874,6 +897,7 @@
 
   function bersihkan(doc) {
     const d = doc || document;
+    if (globalThis.aletaPopupAksi) globalThis.aletaPopupAksi.lepas("putusan:");
     for (const e of Array.from(d.querySelectorAll(".aleta-pusipp"))) e.remove();
     ctx = null;
   }

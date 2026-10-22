@@ -15,8 +15,8 @@
  *                          perkara, kalau tidak alamat saat ini) di
  *                          chrome.storage.local.
  *   jadwalkan({...})       SESUDAH selesai: ringkasan per langkah + hitung
- *                          mundur (3 detik) + tombol "Muat ulang sekarang" /
- *                          "Jangan muat ulang". Ada yang GAGAL = tidak dimuat
+ *                          mundur (2 detik) + tombol "Segarkan sekarang" /
+ *                          "Jangan segarkan". Ada yang GAGAL = tidak dimuat
  *                          ulang sendiri, hanya tombol (sebab terbaca dulu).
  *   pasangPengawal(kunci)  Untuk jalur yang menekan Simpan borang SIPP: SIPP
  *                          sendiri yang memuat ulang. Pengawal hanya menjaga
@@ -47,9 +47,10 @@
   const IDTAB = Math.random().toString(36).slice(2);
   const DASBOR = /\/(main|beranda|dashboard|home)(\/|$|\?)|\/(sipp|index\.php)\/?$/i;
 
-  const konf = { jeda: 3000, tungguNomorMs: 15000, pengawalMs: 15000 };
+  const konf = { jeda: 2000, tungguNomorMs: 15000, pengawalMs: 15000 };
   let terjadwal = null;
   let sudahMemuat = false;
+  let sedangMenyiapkan = false;
   let tahanHitung = 0;
   let tahanSejak = 0;
   let tertunda = null;
@@ -98,12 +99,59 @@
     }
   }
 
-  /** Alamat yang dapat dibuka ulang: pintu masuk perkara bila terbaca, dan alamat halaman ini. */
+  /**
+   * 22 Okt 2026: DAFTAR perkara (judul "DAFTAR PERKARA ..."; di SIPP beralamat /main, rute 'main' = perkara_list)
+   * tidak dapat dimuat ulang apa adanya: controller perkara_list membaca jenis daftar, halaman, dan kata kunci dari
+   * flash session yang habis begitu dibaca, lalu mengalihkan ke dasbor. Pintu masuk yang sah adalah alamat yang
+   * dipakai tombol halamannya sendiri: perkara_list/page/<halaman>/<enc>/<kata kunci>/col=<kolom>. Alamat itu
+   * tercetak di skrip halaman (pagination), jadi halaman, kata kunci, dan urutan yang sama ikut kembali.
+   */
+  function alamatMasukDaftar() {
+    const judul = document.getElementById("pageTitle");
+    if (!judul || !/DAFTAR\s+(?:PERKARA|PERMOHONAN)/i.test(String(judul.textContent || ""))) return "";
+    let skrip = "";
+    try {
+      skrip = Array.from(document.scripts || [])
+        .map((x) => String(x.textContent || ""))
+        .join("\n");
+    } catch {
+      return "";
+    }
+    const url = /window\.open\(\s*(['"])([^'"]*\/page\/)\1\s*\+\s*pageNumber\s*\+\s*(['"])(\/[^'"]*)\3/.exec(skrip);
+    if (!url) return "";
+    const hal = /\bvar\s+page\s*=\s*['"]?(\d+)['"]?/.exec(skrip);
+    const nomorHal = hal && Number(hal[1]) > 0 ? hal[1] : "1";
+    return `${url[2]}${nomorHal}${url[4]}`;
+  }
+
+  /** Tab aktif di halaman detil perkara (idTabs: a.selected), mis. "#tabs2"; "" bila tidak terbaca. */
+  function tabAktifPerkara() {
+    if (!halamanPerkara()) return "";
+    const a = document.querySelector("#usual2 ul a.selected, ul a.selected[href^='#tabs']");
+    const href = a ? String(a.getAttribute("href") || "") : "";
+    return /^#tabs\d+$/.test(href) ? href : "";
+  }
+  /** Sesudah dimuat ulang: tab yang tadi aktif dibuka lagi (menunggu tab-nya tergambar, paling lama 10 detik). */
+  function pulihkanTab(href) {
+    if (!/^#tabs\d+$/.test(String(href || ""))) return;
+    const mulai = Date.now();
+    const coba = () => {
+      const a = document.querySelector(`#usual2 ul a[href="${href}"]`) || document.querySelector(`ul a[href="${href}"]`);
+      if (a) {
+        if (!a.classList.contains("selected")) a.click();
+        return;
+      }
+      if (Date.now() - mulai < 10000) setTimeout(coba, 300);
+    };
+    coba();
+  }
+
+  /** Alamat yang dapat dibuka ulang: pintu masuk perkara/daftar bila terbaca, dan alamat halaman ini. */
   function alamatSekarang() {
     const f = fungsi("alamatMasukPerkara");
     let masuk = "";
     try {
-      masuk = f && halamanPerkara() ? f() : "";
+      masuk = halamanPerkara() ? (f ? f() : "") : alamatMasukDaftar();
     } catch {
       masuk = "";
     }
@@ -137,6 +185,18 @@
       baris,
       adaGagal,
     };
+  }
+
+  /**
+   * 22 Okt 2026: yang berhasil SELALU dikabarkan jelas: judul diawali "Berhasil: " (yang gagal tidak diubah).
+   * Awalan "Selesai" dibuang supaya tidak ganda ("Berhasil: Selesai: ...").
+   */
+  function berhasilkan(r) {
+    if (!r || r.adaGagal) return r;
+    const judul = sebaris(r.judul);
+    if (/^berhasil\b/i.test(judul)) return r;
+    const isi = judul.replace(/^selesai\s*[:.]?\s*/i, "");
+    return { ...r, judul: isi ? `Berhasil: ${isi}` : "Berhasil." };
   }
 
   /** Ringkasan umum untuk jalur lain: baris = [{ jenis(label), teks, ok }]. */
@@ -187,15 +247,25 @@
 
   /** Memuat ulang SEKARANG (satu kali per halaman), tetap di halamannya, dan menyimpan ringkasannya. */
   async function muatUlangSekarang(nomorAtauKunci, r) {
-    if (sudahMemuat) return false;
+    // Penjaga dipasang SEBELUM menunggu penyimpanan: dua tekanan cepat pada "Segarkan sekarang" tidak bernavigasi dua kali.
+    if (sudahMemuat || sedangMenyiapkan) return false;
+    sedangMenyiapkan = true;
     const k = kunciDari(nomorAtauKunci);
-    const peta = await baca();
+    let peta;
+    try {
+      peta = await baca();
+    } catch (galat) {
+      sedangMenyiapkan = false;
+      throw galat;
+    }
     const lain = peta[k];
     if (lain && lain.menunggu && lain.tab && lain.tab !== IDTAB && Date.now() - Number(lain.saatMuat || 0) < BATAS_TAB_GANDA_MS) {
       // Tab lain sudah dalam perjalanan memuat ulang halaman ini: tidak ganda.
+      sedangMenyiapkan = false;
       return false;
     }
     sudahMemuat = true;
+    sedangMenyiapkan = false;
     if (terjadwal) {
       clearTimeout(terjadwal.jam);
       clearInterval(terjadwal.detik);
@@ -216,6 +286,7 @@
       menunggu: true,
       tampilkan: Boolean(r),
       tab: IDTAB,
+      tabAktif: tabAktifPerkara(),
     };
     await tulis(peta);
     pindah(alamat);
@@ -234,7 +305,7 @@
       return { otomatis: false, tertunda: true };
     }
     const nomor = String((p && (p.nomor || p.kunci)) || "");
-    const r = (p && p.ringkasan) || { judul: "Selesai.", baris: [], adaGagal: false };
+    const r = berhasilkan((p && p.ringkasan) || { judul: "Selesai.", baris: [], adaGagal: false });
     if (terjadwal) return { otomatis: true, sudah: true };
     const kotak = el("div", "aleta-sisip aleta-mu");
     kotak.setAttribute("role", "status");
@@ -243,13 +314,19 @@
     const ket = el("p", "aleta-mu-ket");
     const baris = el("div", "aleta-mu-aksi");
     kotak.append(ket, baris);
-    const sekarang = tombolKotak("Muat ulang sekarang", "sekarang", true);
+    const sekarang = tombolKotak("Segarkan sekarang", "sekarang", true);
     sekarang.addEventListener("click", () => void muatUlangSekarang(nomor, r));
     baris.appendChild(sekarang);
 
     if (p && p.wadah) {
       p.wadah.textContent = "";
       p.wadah.appendChild(kotak);
+      // Di dalam pop-up yang bergulir: kabar berhasil/gagal digulirkan ke tempat yang terlihat.
+      try {
+        if (typeof kotak.scrollIntoView === "function") kotak.scrollIntoView({ block: "nearest" });
+      } catch {
+        /* menggulir hanya kenyamanan */
+      }
     } else {
       kotak.classList.add("aleta-mu-melayang");
       for (const lama of Array.from(document.querySelectorAll(".aleta-mu-melayang"))) lama.remove();
@@ -258,23 +335,23 @@
 
     if (r.adaGagal) {
       // Ada yang gagal: tidak dimuat ulang sebelum sebabnya terbaca. Tombol saja.
-      ket.textContent = "Halaman tidak dimuat ulang sendiri karena ada yang gagal. Baca sebabnya di atas; muat ulang bila sudah siap.";
-      sekarang.textContent = "Muat ulang halaman";
+      ket.textContent = "Halaman tidak disegarkan sendiri karena ada yang gagal. Baca sebabnya di atas; segarkan bila sudah siap.";
+      sekarang.textContent = "Segarkan halaman";
       return { otomatis: false };
     }
     if (p && p.tanpaOtomatis) {
       // Dikerjakan sendiri di latar (tanpa ditekan petugas): halaman yang sedang dipakai tidak direbut.
-      ket.textContent = "Selesai dikerjakan di latar. Halaman tidak dimuat ulang sendiri; muat ulang bila ingin melihat data terbaru.";
-      sekarang.textContent = "Muat ulang halaman";
+      ket.textContent = "Selesai dikerjakan di latar. Halaman tidak disegarkan sendiri; segarkan bila ingin melihat data terbaru.";
+      sekarang.textContent = "Segarkan halaman";
       return { otomatis: false };
     }
 
     let sisa = Math.max(1, Math.round(konf.jeda / 1000));
     const tulisKet = () => {
-      ket.textContent = `Halaman dimuat ulang dalam ${sisa} detik supaya data baru tampil - tetap di halaman ini.`;
+      ket.textContent = `Halaman disegarkan dalam ${sisa} detik supaya data baru tampil - tetap di halaman ini.`;
     };
     tulisKet();
-    const jangan = tombolKotak("Jangan muat ulang", "jangan", false);
+    const jangan = tombolKotak("Jangan segarkan", "jangan", false);
     baris.appendChild(jangan);
     const detik = setInterval(() => {
       sisa = Math.max(1, sisa - 1);
@@ -289,9 +366,9 @@
       clearTimeout(jam);
       clearInterval(detik);
       terjadwal = null;
-      ket.textContent = "Tidak dimuat ulang. Muat ulang sendiri bila data di halaman perlu diperbarui.";
+      ket.textContent = "Tidak disegarkan. Segarkan sendiri bila data di halaman perlu diperbarui.";
       jangan.remove();
-      sekarang.textContent = "Muat ulang halaman";
+      sekarang.textContent = "Segarkan halaman";
     });
     return { otomatis: true };
   }
@@ -370,6 +447,9 @@
   // ──────────────────────────────────────────────────────────────────────────
   function halamanDasbor() {
     if (halamanPerkara()) return false;
+    // Daftar perkara beralamat /main juga (rute 'main' = perkara_list): itu halaman yang dituju, bukan dasbor.
+    const judul = document.getElementById("pageTitle");
+    if (judul && /DAFTAR\s+(?:PERKARA|PERMOHONAN)/i.test(String(judul.textContent || ""))) return false;
     return DASBOR.test(String(location.pathname || ""));
   }
 
@@ -411,6 +491,18 @@
       if (halamanDasbor() && (rec.alamat || rec.alamatDetil)) {
         pindah(rec.alamat || rec.alamatDetil);
         return;
+      }
+      // Detil perkara: tab yang tadi aktif dibuka lagi (perkara yang sama saja).
+      if (rec.tabAktif && halamanPerkara()) {
+        let sama = true;
+        try {
+          const f = fungsi("alamatMasukPerkara");
+          const kini = f ? f() : "";
+          if (kini && rec.alamat && kini !== rec.alamat) sama = false;
+        } catch {
+          sama = true;
+        }
+        if (sama) pulihkanTab(rec.tabAktif);
       }
     }
     // 2. Ringkasan yang menunggu ditampilkan di halaman yang cocok.
@@ -454,7 +546,7 @@
     ringkasanDariHasil,
     muatUlangSekarang,
     sesudahMemuat,
-    murni: { kunciNomor, kunciDari, DASBOR },
+    murni: { kunciNomor, kunciDari, DASBOR, alamatMasukDaftar, tabAktifPerkara, pulihkanTab, berhasilkan },
   };
   void sesudahMemuat().catch(() => undefined);
 })();

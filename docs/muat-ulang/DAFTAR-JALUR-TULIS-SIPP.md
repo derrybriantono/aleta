@@ -69,3 +69,16 @@ Yang bukan penulisan ke SIPP (ABT, e-Court, data ALETA sendiri, hanya mengisi bo
   tidak pernah membajak dasbor yang dibuka petugas sendiri sesudahnya.
 - Uji: `ekstensi-penetapan-sipp-tombol-20okt.test.ts` (modul, kembali dari dasbor, tanpa perulangan, ringkasan sesudah
   memuat, dua tab, penetapan, e-Doc, pengawal Simpan), `kasir-otomatis.test.ts` (Kasir per perkara dan massal).
+
+## Tambahan 22 Okt 2026 (agen W54): pop-up, "Berhasil", daftar perkara, tab
+
+- Penetapan Otomatis, Putusan Otomatis, dan Jadwalkan Putusan (satu/massal) dibuka sebagai pop-up (`popup-aksi.js`);
+  jalur 1, 12, 17, dan jadwal (jalur 18) tidak berubah, hanya wadahnya. Selama proses tulis berjalan pop-up tidak dapat ditutup.
+- `jadwalkan` kini menulis judul "Berhasil: ..." (yang gagal tidak diubah), jeda 2 detik, tombol "Segarkan sekarang" /
+  "Jangan segarkan". Mengirim jadwal putusan yang berhasil juga menyegarkan halaman asalnya.
+- DAFTAR perkara (SIPP rute `main` = `perkara_list`) tidak dapat dimuat ulang apa adanya: `Perkara_list::index` membaca
+  jenis daftar, halaman, dan kata kunci dari flash session yang habis dibaca, lalu `redirect('dashboard')`. Pintu masuk yang sah
+  = alamat tombol halamannya sendiri `perkara_list/page/<halaman>/<enc>/<kata kunci>/col=<kolom>` (`redirect_view::setParams`),
+  yang tercetak di skrip pagination halaman; `alamatMasukDaftar()` membacanya. Daftar di `/main` tidak lagi dianggap dasbor.
+- Detil perkara: tab aktif (`#usual2 ul a.selected`, mis. `#tabs2`) disimpan sebelum memuat ulang dan dibuka lagi sesudahnya
+  (perkara yang sama saja).

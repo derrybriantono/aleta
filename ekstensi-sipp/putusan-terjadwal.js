@@ -1514,6 +1514,9 @@
       S.tab = "antrean";
       await muatAntrean();
       void tanyaPeramban();
+      // 22 Okt 2026: berhasil -> pesan "Berhasil" + halaman disegarkan sendiri sesudah beberapa detik, TETAP di
+      // halaman ini (perkara yang sama / daftar yang sama; tidak kembali ke dasbor). Gagal tidak sampai sini.
+      segarkanSesudahJadwal(d.butir ? d.butir.length : 0, pertama, terakhir, d.akunSipp || "");
     } catch (galat) {
       S.pesan = { jenis: "galat", teks: sebaris((galat && galat.message) || galat) };
     } finally {
@@ -1521,6 +1524,22 @@
         S.sibuk = false;
         gambarSemua();
       }
+    }
+  }
+  function segarkanSesudahJadwal(jumlah, pertama, terakhir, akun) {
+    const mu = globalThis.aletaMuatUlangSipp;
+    if (!mu || !jumlah) return;
+    try {
+      mu.jadwalkan({
+        nomor: S && S.mode === "perkara" ? S.nomor : "",
+        ringkasan: mu.ringkasan(
+          `${jumlah} perkara dijadwalkan.`,
+          [{ jenis: "Jadwal", teks: `${pertama} sampai ${terakhir} WITA${akun ? ` atas akun SIPP ${akun}` : ""}`, ok: true }],
+          "Jadwal belum selesai seluruhnya."
+        ),
+      });
+    } catch {
+      /* penyegaran hanya kenyamanan: jadwal sudah tersimpan di server */
     }
   }
   function tanyaPeramban() {
@@ -1861,6 +1880,28 @@
     return td;
   }
 
+  /**
+   * 22 Okt 2026: panel (satu perkara maupun massal) dibuka sebagai POP-UP di tengah layar (popup-aksi.js), bukan
+   * menurunkan tabel di halaman. Isi panel, hak peran, dan tombol jadwalkannya tidak berubah. Ditutup petugas
+   * (x, klik dua kali di luar, Escape) = terlipat lagi; selama jadwal sedang dikirim, penutupan ditahan.
+   */
+  function sinkronModal() {
+    const m = globalThis.aletaPopupAksi;
+    if (!m || !S || !S.akar) return;
+    const kunci = kunciPanel(S.mode, S.nomor, S.tempat);
+    m.atur(`jadwal:${kunci}`, S.akar, S.terbuka, {
+      judul: S.mode === "perkara" ? `Jadwalkan Putusan · ${S.nomor}` : "Jadwalkan Putusan Massal",
+      sibuk: () => Boolean(S && S.sibuk),
+      saatTutup: () => {
+        if (!S || kunciPanel(S.mode, S.nomor, S.tempat) !== kunci) return;
+        S.terbuka = false;
+        ingatTerbuka(kunci, false);
+        const tb = document.getElementById("aleta-ptj-tombol");
+        if (tb) tb.setAttribute("aria-expanded", "false");
+      },
+    });
+  }
+
   function pasangPanel(tr) {
     const tabel = tr.closest("table#submenus") || (tr.closest("table") && tr.closest("table").closest("table#submenus")) || tr.closest("table");
     const ada = document.getElementById(ID_PANEL);
@@ -1877,6 +1918,7 @@
       void muatRingkasanForm();
     }
     S.akar.hidden = !S.terbuka;
+    sinkronModal();
     const tb = tr.querySelector(".aleta-ptj-tombol");
     if (tb) tb.setAttribute("aria-expanded", S.terbuka ? "true" : "false");
   }
@@ -1945,6 +1987,7 @@
       if (tempat === "daftar") tambahDariHalamanDiam();
     }
     S.akar.hidden = !S.terbuka;
+    sinkronModal();
     const b = document.querySelector("#aleta-ptj-massal button");
     if (b) b.setAttribute("aria-expanded", S.terbuka ? "true" : "false");
   }
@@ -1962,6 +2005,7 @@
 
   function bersihkan(doc) {
     const d = doc || document;
+    if (globalThis.aletaPopupAksi) globalThis.aletaPopupAksi.lepas("jadwal:");
     for (const e of Array.from(d.querySelectorAll(".aleta-ptj"))) e.remove();
     S = null;
   }

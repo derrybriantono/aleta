@@ -1020,11 +1020,11 @@ describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
     expect(saatTulis[KUNCI_NOMOR].alamat).toBe(ALAMAT_MASUK);
     expect(saatTulis[KUNCI_NOMOR].alamatDetil).toContain("/SIPP/detil_perkara_agama");
     const n = await sampai(() => notis(h), "kotak muat ulang");
-    expect(n.textContent).toContain("Selesai: 4 penetapan ditulis, 4 e-Doc terunggah.");
+    expect(n.textContent).toContain("Berhasil: 4 penetapan ditulis, 4 e-Doc terunggah.");
     for (const j of JENIS) expect(n.querySelector(`[data-jenis="${j}"]`)!.textContent).toMatch(/tercatat/);
-    expect(n.textContent).toMatch(/dimuat ulang dalam \d+ detik/);
+    expect(n.textContent).toMatch(/disegarkan dalam \d+ detik/);
     expect(n.textContent).toContain("tetap di halaman ini");
-    expect(Array.from(n.querySelectorAll("button")).map((b) => b.textContent)).toEqual(["Muat ulang sekarang", "Jangan muat ulang"]);
+    expect(Array.from(n.querySelectorAll("button")).map((b) => b.textContent)).toEqual(["Segarkan sekarang", "Jangan segarkan"]);
     expect(h.navigasi).toEqual([]); // belum memuat ulang: ringkasan sempat terbaca
     simpanTangkapan(h, "7-muat-ulang");
   });
@@ -1043,7 +1043,7 @@ describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
     expect(r.ringkasan.baris.map((b: { jenis: string }) => b.jenis)).toEqual(JENIS);
   });
 
-  it("'Muat ulang sekarang': seketika, sekali; pewaktu tidak memuat ulang lagi", async () => {
+  it("'Segarkan sekarang': seketika, sekali; pewaktu tidak memuat ulang lagi", async () => {
     const h = buka(kosong(), { jedaMuatUlang: 400 });
     await panelSiap(h);
     await klikSatuKali(h);
@@ -1054,7 +1054,7 @@ describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
     expect(h.navigasi).toEqual([ALAMAT_MASUK]);
   });
 
-  it("'Jangan muat ulang': tidak dimuat ulang; tombol manual tetap ada", async () => {
+  it("'Jangan segarkan': tidak dimuat ulang; tombol manual tetap ada", async () => {
     const h = buka(kosong(), { jedaMuatUlang: 300 });
     await panelSiap(h);
     await klikSatuKali(h);
@@ -1062,8 +1062,8 @@ describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
     jangan.click();
     await tunggu(700);
     expect(h.navigasi).toEqual([]);
-    expect(notis(h)!.textContent).toContain("Tidak dimuat ulang");
-    expect(notis(h)!.querySelector('[data-mu="sekarang"]')!.textContent).toBe("Muat ulang halaman");
+    expect(notis(h)!.textContent).toContain("Tidak disegarkan");
+    expect(notis(h)!.querySelector('[data-mu="sekarang"]')!.textContent).toBe("Segarkan halaman");
   });
 
   it("ada yang gagal (e-Doc PPP gagal): TIDAK dimuat ulang sendiri, hanya tombol, sebab terbaca", async () => {
@@ -1075,7 +1075,7 @@ describe("muat ulang otomatis sesudah penetapan - tetap di perkaranya", () => {
     await tunggu(600);
     expect(h.navigasi).toEqual([]);
     expect(n.querySelector('[data-mu="jangan"]')).toBeNull();
-    expect(n.textContent).toContain("tidak dimuat ulang sendiri karena ada yang gagal");
+    expect(n.textContent).toContain("tidak disegarkan sendiri karena ada yang gagal");
     expect(n.textContent).toContain("tanda tangan pejabat belum disahkan");
     // tombol manual tetap memuat ulang, sekali, di perkara yang sama
     (n.querySelector('[data-mu="sekarang"]') as HTMLButtonElement).click();
@@ -1233,7 +1233,7 @@ describe("modul muat ulang bersama (muat-ulang-sipp.js)", () => {
     expect(h.navigasi).toEqual([]);
     expect(mu(h).lepasTahan()).toBe(true);
     expect(h.d.querySelectorAll(".aleta-mu").length).toBe(1);
-    expect(h.d.querySelector(".aleta-mu")!.textContent).toMatch(/dimuat ulang dalam \d+ detik/);
+    expect(h.d.querySelector(".aleta-mu")!.textContent).toMatch(/disegarkan dalam \d+ detik/);
   });
 
   it("muatUlangHalamanPerkara lama lewat modul: ke pintu masuk perkara; ditahan selama antrean; sekali di akhir", async () => {
@@ -1272,7 +1272,7 @@ describe("modul muat ulang bersama (muat-ulang-sipp.js)", () => {
     // halaman daftar yang dimuat ulang: ringkasan hasil tampil (kunci = halamannya)
     const h2 = buka(kosong(), { url: `${ASAL}/SIPP/perkara`, dasbor: true, simpananAwal: { muatUlangSipp: polos(rekaman(h)) } });
     const kotak = await sampai(() => h2.d.querySelector(".aleta-mu-sesudah") as HTMLElement | null, "ringkasan di daftar");
-    expect(kotak.textContent).toContain("Selesai.");
+    expect(kotak.textContent).toContain("Berhasil.");
     expect(h2.navigasi).toEqual([]);
   });
 
@@ -1283,7 +1283,7 @@ describe("modul muat ulang bersama (muat-ulang-sipp.js)", () => {
     expect(hasil.otomatis).toBe(false);
     await tunggu(500);
     expect(h.navigasi).toEqual([]);
-    expect(h.d.querySelector('[data-mu="sekarang"]')!.textContent).toBe("Muat ulang halaman");
+    expect(h.d.querySelector('[data-mu="sekarang"]')!.textContent).toBe("Segarkan halaman");
     expect(h.d.querySelector('[data-mu="jangan"]')).toBeNull();
   });
 });
@@ -1321,7 +1321,7 @@ describe("jalur tulis memakai modul bersama", () => {
     const n2 = g.d.querySelector(".aleta-mu-melayang") as HTMLElement;
     await tunggu(450);
     expect(g.navigasi).toEqual([]);
-    expect(n2.textContent).toContain("tidak dimuat ulang sendiri karena ada yang gagal");
+    expect(n2.textContent).toContain("tidak disegarkan sendiri karena ada yang gagal");
   });
 
   it("e-Doc dengan tanpaMuatUlang (pemanggil yang mengurutkan banyak langkah): tidak ada kotak sendiri", async () => {

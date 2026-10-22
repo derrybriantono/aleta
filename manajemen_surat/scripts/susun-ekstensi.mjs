@@ -154,6 +154,9 @@ const BERKAS = [
   // Muat ulang otomatis sesudah penetapan, tetap di perkaranya (20 Okt 2026): ringkasan,
   // hitung mundur, kembali dari dasbor sekali, ringkasan tampil lagi sesudah memuat.
   "muat-ulang-sipp.js",
+  // Pop-up (menu di tengah layar) untuk tombol aksi di halaman SIPP (22 Okt 2026, agen W54): Penetapan Otomatis,
+  // Putusan Otomatis, Jadwalkan Putusan (satu/massal). Wadah saja; isi panel tidak berubah.
+  "popup-aksi.js",
   "penetapan-sipp.js",
   // Putusan otomatis + e-Doc putusan + e-Doc anonimisasi dalam satu kali kerja (20 Okt 2026, agen B2):
   // skrip konten SIPP paling belakang; memakai abt-klien.js (kini juga dimuat di SIPP) untuk mencetak

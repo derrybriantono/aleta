@@ -584,7 +584,7 @@ describe("6. ekstensi - tab Kasir (basmassal.js IIFE)", () => {
     simpan.click();
     const notis = await sampai(() => h.wadah.querySelector('[data-mu="muat-ulang"]') as HTMLElement | null, "kotak muat ulang");
     expect(notis.textContent).toContain("Kasir tersimpan di jurnal SIPP.");
-    expect(notis.textContent).toMatch(/dimuat ulang dalam \d+ detik/);
+    expect(notis.textContent).toMatch(/disegarkan dalam \d+ detik/);
     expect(h.navigasi).toEqual([]);
     await sampai(() => h.navigasi.length === 1, "memuat ulang");
     await tunggu(500);
