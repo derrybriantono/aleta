@@ -177,7 +177,7 @@
     g.textContent = [
       // Kelas aleta-sisip tetap dipakai (penanda "buatan kita" bagi pembaca halaman dan penyembunyi cetak), tetapi
       // kotak hijau bawaannya dinetralkan: di kepala SIPP tombol ini harus tampak seperti tombol, bukan kotak sisipan.
-      `#${ID}.aleta-sisip{position:absolute;right:100%;width:max-content;margin:0 8px 0 0;padding:0;border:0;border-radius:0;background:none;display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:12px;line-height:1.25;text-align:right;}`,
+      `#${ID}.aleta-sisip{position:absolute;z-index:2147483000;pointer-events:auto;right:100%;width:max-content;margin:0 8px 0 0;padding:0;border:0;border-radius:0;background:none;display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:12px;line-height:1.25;text-align:right;}`,
       `#${ID} [hidden]{display:none !important;}`,
       `#${ID} .aleta-ts-kabar{display:flex;flex-direction:column;align-items:flex-end;max-width:240px;white-space:normal;text-align:right;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.55);}`,
       `#${ID} .aleta-ts-kabar[data-nada="galat"]{color:#ffd0d0;}`,
@@ -196,7 +196,7 @@
       `html[data-aleta-tema-sipp="gelap"] #${ID} .aleta-ts-tombol{background:#164e63;border-color:#67e8f9;}`,
       `html[data-aleta-tema-sipp="gelap"] #${ID} .aleta-ts-tombol:hover:not(:disabled){background:#155e75;}`,
       // Tombol "Muat ulang" yang berdiri sendiri (peran tanpa hak tarik data): gaya sama dengan tombol di atas.
-      `#${ID_MU}.aleta-sisip{position:absolute;right:100%;width:max-content;margin:0 8px 0 0;padding:0;border:0;border-radius:0;background:none;display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:12px;line-height:1.25;}`,
+      `#${ID_MU}.aleta-sisip{position:absolute;z-index:2147483000;pointer-events:auto;right:100%;width:max-content;margin:0 8px 0 0;padding:0;border:0;border-radius:0;background:none;display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:12px;line-height:1.25;}`,
       `#${ID_MU} .aleta-ts-tombol{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid rgba(255,255,255,.6);border-radius:3px;background:#0e7490;color:#fff;font-size:12px;font-weight:600;cursor:pointer;}`,
       `#${ID_MU} .aleta-ts-tombol:hover:not(:disabled){background:#155e75;}`,
       `#${ID_MU} .aleta-ts-tombol:focus-visible{outline:2px solid #fff;outline-offset:2px;}`,
@@ -594,6 +594,22 @@
   }
 
   /** Memasang tombol: di samping "Tarik data" bila ada, kalau tidak berdiri sendiri di tempat yang sama. */
+  /**
+   * 22 Okt: gambar besar "705" di kepala SIPP menutupi tombol sehingga tidak dapat diklik. z-index wadah kita
+   * hanya berlaku bila .h_right tidak membentuk lapisan sendiri; bila membentuk (z-index bukan auto), wadah
+   * .h_right dinaikkan sekali. Tidak mengubah isi atau letak SIPP.
+   */
+  function naikkanLapisan(h) {
+    try {
+      if (!h || h.dataset.aletaLapisan === "1") return;
+      const zi = getComputedStyle(h).zIndex;
+      if (zi && zi !== "auto") h.style.zIndex = "2147483000";
+      h.dataset.aletaLapisan = "1";
+    } catch {
+      /* gaya tidak terbaca: biarkan */
+    }
+  }
+
   function pasangMuat(k, nomor) {
     pasangGaya();
     const tarik = document.getElementById(ID);
@@ -607,6 +623,7 @@
         mandiri.id = ID_MU;
         mandiri.appendChild(buatTombolMuat());
         k.h.insertBefore(mandiri, k.h.firstChild);
+        naikkanLapisan(k.h);
       }
       selarasLetak(mandiri, k);
     }
@@ -642,6 +659,7 @@
     if (!akar) {
       akar = buatAkar();
       k.h.insertBefore(akar, k.h.firstChild);
+      naikkanLapisan(k.h);
       S.akar = akar;
       S.teksTerakhir = "";
     }
