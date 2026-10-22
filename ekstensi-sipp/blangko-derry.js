@@ -75,6 +75,8 @@
     tjJawab: "blangkoDerryTjJawab",
     // 19 Okt: isi otomatis dari SIPP (bawaan NYALA), diingat per pengguna seperti saklar lain.
     isiOto: "blangkoDerryIsiOto",
+    // 22 Okt: "Tes putusan" (hanya Super Admin): blangko apa pun dicoba pada perkara acuan, tanpa menulis apa pun. Bawaan mati, diingat per pengguna.
+    tesPutusan: "blangkoDerryTesPutusan",
     // 20 Okt: pratinjau BAS & relaas di SIPP sebelum diunduh (bawaan NYALA), saklarnya di Alat saya.
     pratinjau: "pratinjauBasRelaas",
     // F1.5 (17 Okt): gembok panel ALETA di ABT biasa (sama dengan popup & tombol gembok panel).
@@ -526,7 +528,7 @@
   // Keadaan
   // ──────────────────────────────────────────────────────────────────────────
   const S = {
-    cfg: { bawaan: false, tawar: true, saran: true, ingat: true, tjJawab: true, isiOto: true, pratinjau: true },
+    cfg: { bawaan: false, tawar: true, saran: true, ingat: true, tjJawab: true, isiOto: true, pratinjau: true, tesPutusan: false },
     /** 19 Okt: tautan dari Jadwal Sidang portal (ABT dibuka dengan #bd=...): perkara, sidang, jenis, petunjuk. Null bila tidak ada/rusak. */
     tautan: null,
     tema: "gelap",
@@ -582,6 +584,8 @@
    * menyempit); akun biasa = peran dokumennya. Berubah = pilihan blangko lama (mis. BAS milik PP) tidak boleh terbawa ke peran lain.
    */
   function peranKunci() {
+    // 22 Okt: mode Tes putusan = keadaan lain (semua blangko terbuka); memasang/melepasnya membuang blangko yang sedang terbuka.
+    if (tesAktif()) return "adm:tes";
     return adm() ? `adm:${S.sebagai.peran || "semua"}` : `akun:${["hakim", "pp", "js", "ptsp"].filter((x) => S.peranSet.has(x)).join(",")}`;
   }
   /** Peran yang menentukan dokumen/daftar saat ini. */
@@ -599,7 +603,21 @@
   const nomorCariPtsp = () => (ptspCari() ? S.cariNomor.trim() : "");
   /** Bahan aturan hak dokumen untuk keadaan sekarang (akun + "Lihat sebagai" + saklar). */
   const bahanHak = () => ({ admin: adm(), sebagaiPeran: adm() ? S.sebagai.peran : "", peran: ["hakim", "pp", "js", "ptsp"].filter((x) => S.peranSet.has(x)), hak: S.hak });
-  const jenisDokumen = () => jenisDokumenBoleh(bahanHak());
+  const jenisDokumen = () => (tesAktif() ? ["put", "bas", "rel"] : jenisDokumenBoleh(bahanHak()));
+  /**
+   * 22 Okt 2026 - TES PUTUSAN. Super Admin saja (peran akun di portal, bukan nama orang). Saat tercentang, perkara yang dipilih menjadi ACUAN
+   * data dan blangko dari jenis perkara/tahapan/folder mana pun boleh dibuka; sebagai gantinya TIDAK ADA yang ditulis ke ABT, SIPP, atau
+   * e-Court (blangko-derry-isian.js mematikan semua jalur tulisnya lewat api.tesPutusan()).
+   */
+  function superAdmin() {
+    const s = S.siapa;
+    if (!s) return false;
+    if (String(s.roleId || "").toLowerCase() === "super-admin") return true;
+    return typeof alatKelasPeran === "function" ? alatKelasPeran(s.peran) === "aleta-peran-super" : /super/i.test(String(s.peran || ""));
+  }
+  function tesAktif() {
+    return S.cfg.tesPutusan === true && superAdmin();
+  }
   /** Hak folder & saklar dari portal (paling lama 5 menit); gagal = null, saklar dianggap mati. */
   let janjiHak = null;
   function muatHak(paksa) {
@@ -686,12 +704,13 @@
       isiOto: s[K.isiOto] !== false,
       pratinjau: s[K.pratinjau] !== false,
       gembok: s[K.gembok] === true,
+      tesPutusan: s[K.tesPutusan] === true,
     };
     S.tema = s[K.tema] === "terang" ? "terang" : "gelap";
     S.ukuran = Object.prototype.hasOwnProperty.call(UKURAN, s[K.ukuran]) ? s[K.ukuran] : "biasa";
   }
   async function muatSetelan() {
-    const s = await bacaPenyimpanan([K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.pratinjau, K.gembok, K.tema, K.daftar, K.aktif, K.ukuran]);
+    const s = await bacaPenyimpanan([K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.pratinjau, K.gembok, K.tesPutusan, K.tema, K.daftar, K.aktif, K.ukuran]);
     terapkanSetelan(s);
     const d = s[K.daftar];
     if (d && typeof d === "object") {
@@ -803,10 +822,12 @@
     akar.innerHTML =
       `<div class="bd-layar">` +
       `<div class="bd-atas"><div class="bd-atasnama"><b>Blangko ABT by Derry Briantono</b> <small id="bd-siapa"></small>` +
-      `<span class="bd-lihatwrap" id="bd-lihatwrap" hidden><label for="bd-lihat">Lihat sebagai</label><select id="bd-lihat" aria-label="Lihat sebagai akun"></select></span></div>` +
+      `<span class="bd-lihatwrap" id="bd-lihatwrap" hidden><label for="bd-lihat">Lihat sebagai</label><select id="bd-lihat" aria-label="Lihat sebagai akun"></select></span>` +
+      `<label class="bd-lihatwrap bd-teswrap" id="bd-teswrap" hidden title="Coba blangko apa pun pada perkara acuan yang dipilih. Tidak ada yang ditulis ke ABT, SIPP, atau e-Court."><input type="checkbox" id="bd-tes" aria-label="Tes putusan"> Tes putusan</label></div>` +
       `<div class="bd-baris"><button type="button" class="bd-btn kecil" id="bd-alat-btn" data-bd="alat" aria-expanded="false" aria-controls="bd-alat">Alat saya ▾</button>` +
       `<button type="button" class="bd-btn kecil" id="bd-widget-btn" data-bd="widget" aria-expanded="false" aria-controls="bd-widget" title="Pengaturan ALETA untuk tampilan ini">Widget ALETA ▾</button>` +
       `<button type="button" class="bd-btn kecil" data-bd="keabt">Tampilan ABT lama</button></div></div>` +
+      `<div class="bd-pitates" id="bd-pitates" role="status" hidden></div>` +
       `<div class="bd-isi">` +
       `<section class="bd-tahap" id="bd-t1"><div class="bd-tk"><span class="bd-tno">1</span><span class="bd-tj">Perkara</span>` +
       `<div class="bd-ringkas" id="bd-pkringkas" hidden></div><button type="button" class="bd-btn kecil" id="bd-ganti" data-bd="ganti" hidden>Ganti perkara</button>` +
@@ -947,6 +968,7 @@
   function renderAtas() {
     const siapa = cari("#bd-siapa", akar);
     if (siapa) siapa.textContent = sebutAkun();
+    renderTes();
     const wrap = cari("#bd-lihatwrap", akar);
     if (!wrap) return;
     wrap.hidden = !adm();
@@ -980,6 +1002,33 @@
     }
   }
 
+  /** Kotak centang "Tes putusan" (hanya Super Admin) dan pita penandanya. */
+  function renderTes() {
+    const bungkus = cari("#bd-teswrap", akar);
+    const kotak = cari("#bd-tes", akar);
+    const pita = cari("#bd-pitates", akar);
+    const boleh = superAdmin();
+    if (bungkus) bungkus.hidden = !boleh;
+    if (kotak) kotak.checked = tesAktif();
+    if (!pita) return;
+    const nyala = tesAktif();
+    pita.hidden = !nyala;
+    if (nyala) {
+      pita.innerHTML = `<b>TES PUTUSAN</b> · perkara acuan ${S.pk ? `<b>${esc(S.pk)}</b>` : "belum dipilih"} · blangko dari jenis perkara mana pun dapat dicoba; tidak ada yang ditulis ke ABT, SIPP, atau e-Court (isian tidak disimpan, tidak diunggah, tidak dicatat). Unduhan berakhiran -TES.`;
+    }
+  }
+  /** Memasang/melepas Tes putusan: diingat per pengguna; blangko yang sedang terbuka dibuang (peran kunci berganti) dan daftar digambar ulang. */
+  function aturTes(nyala) {
+    const baru = nyala === true && superAdmin();
+    if (S.cfg.tesPutusan === baru) return;
+    tutupFloat();
+    S.cfg.tesPutusan = baru;
+    void tulisPenyimpanan({ [K.tesPutusan]: baru });
+    renderSemua();
+    umumkanPerkara();
+    toast(baru ? "Tes putusan menyala: blangko apa pun dapat dicoba, tidak ada yang ditulis." : "Tes putusan mati: saringan jenis perkara dan peran berlaku lagi.");
+  }
+
   function renderMenuDerry() {
     const wad = cari("#bd-menuderry", akar);
     if (!wad) return;
@@ -996,7 +1045,7 @@
     renderPerkara();
     renderMenuDerry();
     const tombolMassal = cari("#bd-massal", akar);
-    if (tombolMassal) tombolMassal.hidden = !berhakDaftar();
+    if (tombolMassal) tombolMassal.hidden = !berhakDaftar() || tesAktif();
     const ada = Boolean(S.pk);
     cari("#bd-setelah", akar).hidden = !ada;
   }
@@ -1550,6 +1599,7 @@
   }
   /** Cetak massal (blangko-derry-massal.js memasang fungsinya lewat api.pasangMassal); belum terpasang = kabar singkat. */
   function bukaMassal() {
+    if (tesAktif()) return toast("Cetak massal dimatikan pada mode Tes putusan: ia mengisi dan mencatat ke banyak perkara.");
     if (typeof S.massal === "function") return S.massal();
     return toast("Cetak massal belum siap. Muat ulang halaman ABT.");
   }
@@ -1799,8 +1849,11 @@
         .join("") + (adm() ? `<p class="bd-catat" style="padding:4px 8px">Admin melihat semua peran. Pilih "Lihat sebagai akun" untuk menyempitkan.</p>` : "")
     );
   }
+  /** Alat yang menulis ke ABT/SIPP/e-Court atau mencatat kemajuan perkara: mati pada mode Tes putusan. */
+  const ALAT_MENULIS = new Set(["unggah", "massal:unggah", "massal:bas", "massal:rel", "konseptor", "kasir:otomatis", "ptsp:dataumum", "ptsp:ktp"]);
   function jalankanAlat(id) {
     tutupFloat();
+    if (tesAktif() && ALAT_MENULIS.has(id)) return toast("Alat ini menulis atau mencatat; dimatikan pada mode Tes putusan.");
     const fn = S.alatDaftar.get(id);
     if (typeof fn === "function") {
       try {
@@ -1955,6 +2008,7 @@
       renderSemua();
       return umumkanPerkara();
     }
+    if (t.id === "bd-tes") return aturTes(t.checked);
     if (t.id === "bd-lihat") {
       const [peran, ...nama] = String(t.value || "").split("|");
       S.sebagai = t.value ? { peran, nama: nama.join("|") } : { peran: "", nama: "" };
@@ -2022,7 +2076,7 @@
     if (wilayah !== "local" || !ubah) return;
     const s = {};
     let berubah = false;
-    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.pratinjau, K.gembok, K.tema, K.ukuran]) {
+    for (const k of [K.bawaan, K.tawar, K.saran, K.ingat, K.tjJawab, K.isiOto, K.pratinjau, K.gembok, K.tesPutusan, K.tema, K.ukuran]) {
       if (ubah[k]) {
         berubah = true;
         s[k] = ubah[k].newValue;
@@ -2039,11 +2093,17 @@
         [K.isiOto]: S.cfg.isiOto,
         [K.pratinjau]: S.cfg.pratinjau,
         [K.gembok]: S.cfg.gembok,
+        [K.tesPutusan]: S.cfg.tesPutusan,
         [K.tema]: S.tema,
         [K.ukuran]: S.ukuran,
       };
+      const tesLama = tesAktif();
       terapkanSetelan({ ...dasar, ...s });
       terapkanTema();
+      if (tesLama !== tesAktif()) {
+        renderSemua();
+        umumkanPerkara();
+      }
       terapkanSkala();
       if (lama.tawar !== S.cfg.tawar) segarkanTawar();
       const w = akar && cari("#bd-widget", akar);
@@ -2143,7 +2203,9 @@
     /** Jenis dokumen (put/bas/rel) yang boleh dibuka & ditulis sekarang - "Lihat sebagai" ikut membatasi. */
     jenisDokumen,
     /** Kelompok menu Blangko Derry { nama, jenis } boleh tampil/dibuka/ditulis sekarang? */
-    kelompokBoleh: (k) => kelompokBoleh(k, bahanHak()),
+    kelompokBoleh: (k) => (tesAktif() ? Boolean(k) : kelompokBoleh(k, bahanHak())),
+    /** 22 Okt: Tes putusan menyala (Super Admin)? Jalur tulis di blangko-derry-isian.js dan alat lain mati bila benar. */
+    tesPutusan: () => tesAktif(),
     muatHak,
     siapa: () => (S.siapa ? { ...S.siapa, sebagai: { ...S.sebagai } } : null),
     /** Tahap F-G sudah mengisi wadah ini: tanda "menyusul" dan isi penampung dihapus. */
@@ -2219,6 +2281,7 @@
       sebagai: { ...S.sebagai },
       tema: S.tema,
       cfg: { ...S.cfg },
+      tes: tesAktif(),
     }),
     murni: { isoTanggalRentang, rentangDari, kunciOrang, satukanOrang, bacaTautanBd, ringkasan, cocokCari, JENIS_CARI, urutkan, indeksAcuan, peranDariGolongan, KUNCI_URUT, ARAH_ALAMI, jenisDokumenBoleh, kelompokBoleh, folderTerbukaUntuk, perkiraanZoom, ikrarJenisBoleh },
   };
