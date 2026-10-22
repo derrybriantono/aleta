@@ -12,7 +12,7 @@
  * muat digeser DI DALAM pita, sehingga halaman tidak ikut menggulir ke samping.
  */
 import { ChevronDown, MapPin, PauseCircle } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import type { DiskorsRingkas } from "@/lib/jadwal-sidang-2okt";
 import { jamSingkat } from "@/lib/jadwal-sidang-2okt";
@@ -32,6 +32,7 @@ export function PitaRuangSidang({
   onLihat,
   keteranganPerlu,
   sekarangMs,
+  awal,
 }: {
   pil: ReadonlyArray<PilRuang>;
   /** Saklar "kartu-ruang": jumlah perkara dan perlu diperiksa. */
@@ -47,6 +48,12 @@ export function PitaRuangSidang({
   keteranganPerlu: string;
   /** Jam sekarang menurut patokan bot (bila ada). */
   sekarangMs: () => number;
+  /**
+   * Kendali yang berdiri di AWAL pita (22 Okt 2026: saklar Sidang keliling).
+   * Bila ada, pita tetap digambar walau tak satu ruang pun terbaca - saklarnya
+   * dipakai justru pada hari ketika jadwal belum memperlihatkan ruangnya.
+   */
+  awal?: ReactNode;
 }) {
   const [rincian, setRincian] = useState<Rincian | null>(null);
   const wadah = useRef<HTMLElement | null>(null);
@@ -76,7 +83,7 @@ export function PitaRuangSidang({
   }, [rincian]);
 
   const tampakDiskors = tampilBerjalan ? diskors : [];
-  if (pil.length === 0 && tampakDiskors.length === 0) return null;
+  if (pil.length === 0 && tampakDiskors.length === 0 && !awal) return null;
   const ringkas = ringkasPita(pil);
   const kini = sekarangMs();
   const buka = (nama: string, tombol: HTMLElement) => {
@@ -95,6 +102,11 @@ export function PitaRuangSidang({
       className="relative rounded-xl border bg-muted/20"
     >
       <div className="flex min-h-[2.25rem] items-center gap-1.5 overflow-x-auto whitespace-nowrap px-2 py-1 text-xs [scrollbar-width:thin]">
+        {awal ? (
+          <span className="inline-flex shrink-0 items-center" data-pita-awal="">
+            {awal}
+          </span>
+        ) : null}
         <MapPin className="hidden h-3.5 w-3.5 shrink-0 text-muted-foreground sm:block" aria-hidden="true" />
         {tampilJumlah ? (
           <>

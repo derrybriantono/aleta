@@ -720,6 +720,13 @@ describe("dialog Cetak relaas - mengirim ke ekstensi", () => {
 // ============================================================================
 // TOMBOL DI ANTRIAN SIDANG, DAN TAB LAMA YANG HILANG
 // ============================================================================
+/** 22 Okt 2026: alat Jadwal Sidang pindah ke tombol Menu di baris pencarian. */
+async function bukaMenuAlat() {
+  const tombol = await screen.findByRole("button", { name: /^Menu$/ }, { timeout: 15_000 });
+  await userEvent.click(tombol);
+  return tombol;
+}
+
 describe("tombol Cetak relaas di Antrian Sidang", () => {
   beforeEach(() => pasangFetch());
 
@@ -727,13 +734,16 @@ describe("tombol Cetak relaas di Antrian Sidang", () => {
     const { AletaEcourtSidang } = await import("@/components/portal/aleta-ecourt-sidang");
     render(createElement(AletaEcourtSidang));
     await waitFor(() => expect(screen.getByRole("button", { name: /^Cetak$/ })).toBeTruthy());
+    await bukaMenuAlat();
+    expect(screen.queryByRole("menuitem", { name: /Cetak relaas/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Cetak relaas/ })).toBeNull();
   }, 30_000);
 
-  it("tampil dengan bolehCetakRelaas, dan membuka DIALOG - bukan tab", async () => {
+  it("tampil dengan bolehCetakRelaas (butir Menu), dan membuka DIALOG - bukan tab", async () => {
     const { AletaEcourtSidang } = await import("@/components/portal/aleta-ecourt-sidang");
     render(<AletaEcourtSidang bolehCetakRelaas />);
-    const tombol = await screen.findByRole("button", { name: /Cetak relaas/ });
+    await bukaMenuAlat();
+    const tombol = await screen.findByRole("menuitem", { name: /Cetak relaas/ });
     await userEvent.click(tombol);
     const dialog = await screen.findByRole("dialog", { name: "Cetak relaas" }, { timeout: 10_000 });
     await waitFor(() => expect(within(dialog).getByText("102/Pdt.G/2026/PA.Dgl")).toBeTruthy());
@@ -754,7 +764,8 @@ describe("halaman ALETA e-Court - tab Cetak Relaas Massal sudah hilang", () => {
     expect(within(menu).queryByText("Cetak Relaas Massal")).toBeNull();
     expect(within(menu).queryByText(/Relaas/i)).toBeNull();
     await userEvent.click(within(menu).getByRole("button", { name: /Jadwal Sidang/ }));
-    expect(await screen.findByRole("button", { name: /Cetak relaas/ }, { timeout: 15_000 })).toBeTruthy();
+    await bukaMenuAlat();
+    expect(await screen.findByRole("menuitem", { name: /Cetak relaas/ }, { timeout: 15_000 })).toBeTruthy();
   }, 30_000);
 
   it("peran lain (hakim): Jadwal Sidang TANPA tombol Cetak relaas", async () => {
@@ -764,7 +775,8 @@ describe("halaman ALETA e-Court - tab Cetak Relaas Massal sudah hilang", () => {
     const menu = screen.getByRole("navigation", { name: "Menu ALETA e-Court" });
     await userEvent.click(within(menu).getByRole("button", { name: /Jadwal Sidang/ }));
     await waitFor(() => expect(screen.getByRole("button", { name: /^Cetak$/ })).toBeTruthy(), { timeout: 15_000 });
-    expect(screen.queryByRole("button", { name: /Cetak relaas/ })).toBeNull();
+    await bukaMenuAlat();
+    expect(screen.queryByRole("menuitem", { name: /Cetak relaas/ })).toBeNull();
   }, 30_000);
 });
 

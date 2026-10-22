@@ -552,12 +552,16 @@ describe("layar Kasir", () => {
     expect(periksaBarisKasir({ ...u, tanggal: "2026-09-30" }, bahan)).toBe("");
   });
 
-  it("tombol Kasir disisipkan SATU kali, tepat sesudah tombol Daftarkan ke antrian", () => {
+  it("Kasir menjadi SATU butir Menu (22 Okt 2026), tepat sesudah Daftarkan ke antrian, dengan hak dan saklar yang sama", () => {
     const isi = readFileSync(path.join(AKAR, "manajemen_surat/src/components/portal/aleta-ecourt-sidang.tsx"), "utf8").replace(/\r\n/g, "\n");
-    expect(isi.match(/<TombolKasirJurnal /g)).toHaveLength(1);
-    const antrian = isi.indexOf('"Daftarkan ke antrian"}');
-    const tombol = isi.indexOf("<TombolKasirJurnal daftar={sidang} />");
+    expect(isi.match(/kunci: "kasir",/g)).toHaveLength(1);
+    expect(isi.match(/<DialogKasir /g)).toHaveLength(1);
+    const antrian = isi.indexOf('kunci: "daftar-antrian"');
+    const butir = isi.indexOf('kunci: "kasir",');
     expect(antrian).toBeGreaterThan(0);
-    expect(isi.slice(antrian, tombol)).toMatch(/^"Daftarkan ke antrian"\}\n\s*<\/Button>\n\s*\) : null\}\n\s*\{tampil\(tampilan, "tombol-kasir"\) \? $/);
+    expect(butir).toBeGreaterThan(antrian);
+    // Syaratnya sama dengan tombolnya dulu: saklar Tampilan + hak mengerjakan kasir.
+    expect(isi.slice(antrian, butir)).toContain('if (tampil(tampilan, "tombol-kasir") && bolehKasirJurnal) {');
+    expect(isi).toContain("const bolehKasirJurnal = bolehMengerjakanKasir(currentUser);");
   });
 });

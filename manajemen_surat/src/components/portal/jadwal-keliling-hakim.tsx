@@ -223,10 +223,13 @@ export function SaklarSidangKeliling({
   kh,
   daftar,
   penggunaId,
+  ringkas = false,
 }: {
   kh: KelilingHakim;
   daftar: ReadonlyArray<Pick<BarisJadwalMin, "ruangan" | "sidangKeliling">>;
   penggunaId: string;
+  /** Tinggi pas di dalam pita ruang sidang (bar ruang). */
+  ringkas?: boolean;
 }) {
   const [sibuk, setSibuk] = useState(false);
   const [galat, setGalat] = useState("");
@@ -273,7 +276,8 @@ export function SaklarSidangKeliling({
       <label
         data-saklar-keliling=""
         className={cn(
-          "inline-flex h-8 items-center gap-2 rounded-md border px-2.5 text-sm",
+          "inline-flex items-center gap-2 rounded-md border text-sm",
+          ringkas ? "h-7 px-2 text-xs" : "h-8 px-2.5",
           aktif ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:border-emerald-400/60 dark:bg-emerald-500/10 dark:text-emerald-100" : "text-foreground"
         )}
         title={
