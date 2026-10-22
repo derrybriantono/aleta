@@ -276,7 +276,8 @@ import { useTarikBelumUpload } from "@/components/portal/use-tarik-belum-upload"
 import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import { PanduanPemeriksaanSaksi, type PropsPanduanSaksi } from "@/components/portal/panduan-pemeriksaan-saksi";
 import { agendaPembuktianSaksi, keadaanAwalDariSidang, sudahMasukPemeriksaan } from "@/lib/pandu-saksi";
-import { relaasBertemu, relaasElektronik } from "@/lib/hasil-relaas";
+import { relaasBertemu } from "@/lib/hasil-relaas";
+import { LencanaKepatutanRelaas } from "@/components/portal/lencana-kepatutan-relaas";
 
 /**
  * Dialog Cetak relaas dimuat SAAT DIBUKA, bukan bersama jadwal.
@@ -520,6 +521,9 @@ type SidangBaris = {
       selisih: number | null;
       ambang?: number;
       hariKerja?: boolean;
+      /** Surat tercatat: ambang hari antara DITERIMA dan sidang (SEMA 1/2023 angka 11). */
+      ambangTerima?: number;
+      terimaHariKerja?: boolean;
       patut: boolean | null;
       alasan: string;
       dasarHukum?: string;
@@ -1872,6 +1876,19 @@ function jenisRelaas(baris: {
   return "Belum dilaksanakan";
 }
 
+/**
+ * Sandi SIPP di balik cara panggilnya. Sejak W58 (22 Okt 2026) warna hasil
+ * panggilan mengikuti kepatutannya (@/lib/kepatutan-relaas), bukan lagi
+ * menurut ruas "sampai" sandinya; sandi yang artinya ditebak tetap dikatakan di sini.
+ */
+function judulSandiRelaas(baris: { caraRelaas?: CaraRelaas }): string | undefined {
+  const cara = baris.caraRelaas;
+  if (!cara?.sandi) return undefined;
+  return cara.terbaca
+    ? `Sandi SIPP "${cara.sandi}".`
+    : `Sandi SIPP "${cara.sandi}" tidak ada di daftar pilihan SIPP; artinya dibaca dari keterangan relaasnya sendiri.`;
+}
+
 /** Hasil lacak kiriman pos - SIPP menyimpannya sebagai angka. */
 function sebutanStatusPos(status: number | null | undefined): string {
   if (status === null || status === undefined) return "";
@@ -2674,8 +2691,8 @@ function sebabTenggang(panggilan: NonNullable<SidangBaris["panggilan"]>) {
     );
   } else if (t?.alasan === "diterima_kurang_dari_ambang") {
     bagian.push(
-      `Surat tercatat baru diterima ${t.selisih ?? "?"} hari sebelum sidang, ` +
-        `sedangkan yang berlaku ${t.ambang ?? "?"} hari sejak diterima.`
+      `Surat tercatat baru diterima ${t.selisih ?? "?"} hari${t.terimaHariKerja ? " kerja" : ""} sebelum sidang, ` +
+        `sedangkan SEMA 1/2023 angka 11 menuntut diterima paling lambat ${t.ambangTerima ?? t.ambang ?? "?"} hari${t.terimaHariKerja ? " kerja" : ""} sebelum sidang.`
     );
   } else if (t?.alasan === "diterima_setelah_hari_sidang") {
     bagian.push("Surat tercatat baru diterima SESUDAH hari sidang.");
@@ -10031,7 +10048,7 @@ export function RincianSidang({
                         surat DIKIRIM ke pos. Menampilkan satu saja membuat
                         tenggang panggilan dihitung dari tanggal yang keliru. */}
                     <td className="px-3 py-2 text-sm">
-                      <Badge variant="muted">{jenisRelaas(baris)}</Badge>
+                      <Badge variant="muted" title={judulSandiRelaas(baris)}>{jenisRelaas(baris)}</Badge>
                       <div className="mt-0.5">
                         <span className="text-muted-foreground">dilaksanakan </span>
                         {tanggalHariPendek(baris.tanggalRelaas) || "—"}
@@ -10046,43 +10063,17 @@ export function RincianSidang({
 
                     <td className="px-3 py-2">
                       {/* Retur didahulukan: surat yang kembali menuntut
-                          tindakan, sedangkan "tidak bertemu" belum tentu. */}
+                          tindakan. Hasilnya menurut SATU aturan
+                          (@/lib/kepatutan-relaas): SEMA 1/2023 angka 12 untuk
+                          surat tercatat - mis. "Bertemu orang serumah (ayah)",
+                          huruf c, bukan "Tidak bertemu" - Pasal 718 RBg untuk
+                          jurusita, elektronik dianggap bertemu. */}
                       {baris.retur ? (
                         <span className="rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold text-white">
                           Retur
                         </span>
-                      ) : relaasElektronik(baris) ? (
-                        // Panggilan elektronik yang dilaksanakan dianggap
-                        // bertemu: lencana hijau yang sama dengan bertemu langsung.
-                        <Badge variant="success" title="Panggilan elektronik dianggap bertemu.">
-                          Bertemu (elektronik)
-                        </Badge>
-                      ) : baris.caraRelaas?.cara ? (
-                        // Warnanya mengikuti SAMPAI atau tidaknya, bukan
-                        // mengikuti "bertemu langsung". Panggilan elektronik
-                        // dan relaas yang diterima orang serumah sama-sama
-                        // sampai - dan keduanya bukan pertemuan langsung.
-                        <Badge
-                          variant={
-                            baris.caraRelaas.sampai === true
-                              ? "success"
-                              : baris.caraRelaas.sampai === false
-                                ? "warning"
-                                : "muted"
-                          }
-                          title={
-                            baris.caraRelaas.terbaca
-                              ? `Sandi SIPP "${baris.caraRelaas.sandi}".`
-                              : `Sandi SIPP "${baris.caraRelaas.sandi}" tidak ada di daftar pilihan SIPP; artinya dibaca dari keterangan relaasnya sendiri.`
-                          }
-                        >
-                          {baris.caraRelaas.cara}
-                        </Badge>
-                      ) : baris.bertemu ? (
-                        <Badge variant="success">Bertemu langsung</Badge>
-                      ) : (
-                        <Badge variant="warning">Tidak bertemu</Badge>
-                      )}
+                      ) : null}
+                      <LencanaKepatutanRelaas baris={baris} pihak={rincian.pihak} tanpaRetur={baris.retur} />
                       {baris.noResiPos ? (
                         <div className="mt-0.5 font-mono text-xs text-muted-foreground">
                           resi {baris.noResiPos}
@@ -10172,7 +10163,7 @@ export function RincianSidang({
                     untuk sidang {tanggalHariPendek(baris.tanggalSidang, baris.tanggalSidang)}
                   </span>
                 ) : null}
-                <Badge variant="muted">{jenisRelaas(baris)}</Badge>
+                <Badge variant="muted" title={judulSandiRelaas(baris)}>{jenisRelaas(baris)}</Badge>
                 <span className="text-xs text-muted-foreground">
                   {tanggalHariPendek(baris.tanggalRelaas) || "belum dilaksanakan"}
                 </span>
@@ -10180,12 +10171,12 @@ export function RincianSidang({
                   <span className="rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold text-white">
                     Retur
                   </span>
-                ) : relaasBertemu(baris) ? (
-                  <Badge variant="success" title={relaasElektronik(baris) ? "Panggilan elektronik dianggap bertemu." : undefined}>
-                    bertemu
-                  </Badge>
-                ) : baris.tanggalRelaas ? (
-                  <Badge variant="warning">tidak bertemu</Badge>
+                ) : null}
+                {/* W58 22 Okt: dulu segala yang bukan bertemu langsung/elektronik
+                    jatuh ke "tidak bertemu" - termasuk surat tercatat yang
+                    diterima orang serumah (SEMA 1/2023 angka 12 huruf c). */}
+                {baris.retur || baris.tanggalRelaas || baris.ketHasilRelaas ? (
+                  <LencanaKepatutanRelaas baris={baris} pihak={rincian.pihak} tanpaRetur={baris.retur} />
                 ) : null}
                 {baris.noResiPos ? (
                   <span className="font-mono text-[11px] text-muted-foreground">

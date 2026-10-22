@@ -172,14 +172,13 @@ describe("B5 - sembilan sandi ket_temu, bukan ya/tidak", () => {
   });
 
   it("warnanya mengikuti SAMPAI, bukan mengikuti bertemu langsung", () => {
-    for (const [nama, isi] of [
-      ["sidang", sidang],
-      ["status", status],
-    ] as const) {
-      expect(isi, `${nama}: warnanya tidak mengikuti sampai`).toContain(
-        "caraRelaas.sampai === true"
-      );
-    }
+    // Status perkara: lencana cara tetap berwarna menurut sampai.
+    expect(status, "status: warnanya tidak mengikuti sampai").toContain("caraRelaas.sampai === true");
+    // Jadwal sidang (W58, 22 Okt): warna hasil panggilan kini menurut
+    // kepatutannya (SEMA 1/2023 / Pasal 718 RBg) - penerus "sampai" yang lebih
+    // rinci. Diuji perilakunya di relaas-sema-1-2023-22okt.test.ts.
+    expect(sidang).toContain("<LencanaKepatutanRelaas");
+    expect(sidang).not.toContain('<Badge variant="warning">tidak bertemu</Badge>');
   });
 
   it("yang artinya ditebak dikatakan pada title, bukan didiamkan", () => {

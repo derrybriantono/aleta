@@ -24,8 +24,10 @@ describe("panggilan elektronik dianggap bertemu", () => {
   it("bot menandai E sebagai bertemu; layar riwayat dan tabel memakai satu aturan", () => {
     expect(botJadwal).toMatch(/bertemu: \["Y", "E"\]\.includes/);
     expect(sidang).toContain("relaasBertemu(baris)");
-    expect(sidang).toContain("relaasElektronik(baris)");
-    expect(sidang).toContain("relaasBertemu(baris) ? (");
+    // W58 22 Okt: riwayat dan tabel kini satu lencana dengan aturan bersama
+    // (@/lib/kepatutan-relaas) yang tetap menyebut E "Bertemu (elektronik)" -
+    // diuji perilakunya di relaas-sema-1-2023-22okt.test.ts.
+    expect(sidang.match(/<LencanaKepatutanRelaas\b/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
   });
 });
 
