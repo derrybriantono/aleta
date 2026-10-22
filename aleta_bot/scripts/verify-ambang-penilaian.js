@@ -59,7 +59,7 @@ console.log("== Ambang yang berlaku pada sebuah tanggal ==");
 {
   const a = A.ambangBerlaku("tenggangPanggilan", "2026-09-06");
   periksa("tenggang panggilan tiga hari kerja", a.nilai === 3, JSON.stringify(a));
-  periksa("dan menyebut Pasal 122 HIR", /Pasal 122 HIR/.test(a.dasar), a.dasar);
+  periksa("dan menyebut Pasal 146 RBg", /Pasal 146 RBg/.test(a.dasar), a.dasar);
 
   const m = A.ambangBerlaku("minutasiBerkas", "2026-09-06");
   periksa("minutasi empat belas hari", m.nilai === 14);

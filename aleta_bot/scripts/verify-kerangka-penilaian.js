@@ -248,8 +248,8 @@ async function utama() {
     periksa("dua ambang ikut dipulangkan", hasil.ambangDipakai.length === 2);
     periksa("masing-masing menyebut nilai dan dasarnya", hasil.ambangDipakai.every((a) => a.nilai !== undefined && a.dasar));
     periksa(
-      "tenggang panggilan tiga hari kerja menurut Pasal 122 HIR",
-      hasil.ambangDipakai[0].nilai === 3 && /Pasal 122 HIR/.test(hasil.ambangDipakai[0].dasar)
+      "tenggang panggilan tiga hari kerja menurut Pasal 146 RBg",
+      hasil.ambangDipakai[0].nilai === 3 && /Pasal 146 RBg/.test(hasil.ambangDipakai[0].dasar)
     );
   }
 

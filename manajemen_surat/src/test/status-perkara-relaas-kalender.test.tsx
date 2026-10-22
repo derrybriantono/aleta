@@ -579,7 +579,8 @@ describe("relaas panggilan digambar runut per sidang", () => {
   it("jejak pos, retur, dan hasil relaas ikut tergambar", () => {
     render(<RelaasPanggilan status={status()} />);
     expect(screen.getByText(/dikirim pos Sab, 25-07-2026 · resi RESI-77/)).toBeTruthy();
-    expect(screen.getByText("Surat RETUR")).toBeTruthy();
+    // 22 Okt 2026: lencana retur menyebut sebabnya; status_pos 2 tanpa sebab tertulis = "Retur pos".
+    expect(screen.getByText("Retur pos")).toBeTruthy();
     expect(screen.getByText("Disampaikan lewat Kepala Desa")).toBeTruthy();
     expect(screen.getByText("Bertemu orangnya")).toBeTruthy();
     // Dua relaas dilaksanakan jurusita yang sama - keduanya harus menyebutnya.

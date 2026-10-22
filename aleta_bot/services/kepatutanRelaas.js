@@ -152,7 +152,7 @@ function jalurRelaas({ ketTemu, noResiPos, tanggalKirimPos } = {}) {
 
 function hasil(kunci, jalur, sah, label, dasar, keterangan, tambahan = {}) {
   const warna = sah === true ? "hijau" : sah === false ? "merah" : "kuning";
-  return { kunci, jalur, sah, warna, label, dasar, keterangan, retur: false, huruf: "", penerima: "", hubungan: "", ...tambahan };
+  return { kunci, jalur, sah, warna, label, dasar, keterangan, retur: false, labelRetur: "", huruf: "", penerima: "", hubungan: "", ...tambahan };
 }
 
 /** Sebab retur surat tercatat dari kalimatnya (SEMA angka 4, 9, 10, 12 huruf b/e/f/g). */
@@ -180,7 +180,11 @@ function sebabReturPos(t, jalur) {
  *            keterangan:string, retur:boolean, huruf:string, penerima:string, hubungan:string}}
  */
 function nilaiRelaas(r = {}) {
-  const k = nilaiDasar(r);
+  const k = sesuaikanRetur(nilaiDasar(r), r);
+  return { ...k, labelRetur: labelRetur(k, r) };
+}
+
+function sesuaikanRetur(k, r) {
   // Retur satu sumber dengan returRelaas.js (dan penggalan SQL-nya), supaya
   // daftar yang menghitung retur dan lencana satu relaas tidak berselisih.
   const retur = relaasRetur(r.statusPos, r.hasil, r.ketTemu, r.noResiPos);
@@ -189,6 +193,30 @@ function nilaiRelaas(r = {}) {
     return { ...k, sah: null, warna: "kuning", retur: true, label: `${k.label} - tertanda retur`, keterangan: `${k.keterangan} Keterangan yang sama juga menyebut surat dikembalikan - periksa.` };
   }
   return { ...k, retur };
+}
+
+/**
+ * Sebab retur dalam satu kalimat pendek (keputusan pengguna 22 Okt 2026):
+ * retur TETAP dihitung retur, tetapi lencananya menyebut sebabnya, mis.
+ * "Retur - alamat tidak ditemukan (SEMA 1/2023 angka 12 huruf e)".
+ */
+const SEBAB_RETUR = {
+  tidak_ditemukan: `alamat tidak ditemukan (${SEMA} angka 12 huruf e)`,
+  tidak_tinggal: `tidak tinggal di alamat (${SEMA} angka 12 huruf f)`,
+  meninggal: `meninggal dunia (${SEMA} angka 12 huruf g)`,
+  menolak: `menolak menerima (${SEMA} angka 12 huruf b)`,
+  ditolak_desa: `ditolak aparat desa (${SEMA} angka 7-8)`,
+};
+
+function labelRetur(k, r) {
+  if (!k.retur) return "";
+  if (SEBAB_RETUR[k.kunci]) return `Retur - ${SEBAB_RETUR[k.kunci]}`;
+  if (k.jalur !== "surat_tercatat") return "Retur";
+  const t = bersih(r.hasil);
+  if (/failed/.test(t)) return "Retur - FAILED TO DELIVERY";
+  if (POLA_RUMAH_KOSONG.test(t)) return "Retur - rumah kosong";
+  if (k.kunci !== "retur") return `Retur pos - ${k.label.replace(/ - tertanda retur$/, "").toLowerCase()}`;
+  return "Retur pos";
 }
 
 function nilaiDasar(r = {}) {

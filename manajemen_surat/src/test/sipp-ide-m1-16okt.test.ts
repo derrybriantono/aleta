@@ -507,7 +507,7 @@ describe("E. Relaas", () => {
   const PANGGILAN = ringkasPanggilan({
     panggilan: {
       pihak: [
-        { nama: "SITI CONTOH BINTI FULAN", peran: "Penggugat", seharusnya: "elektronik", eSummonsTerkirim: true, tanggalPanggilan: "2026-06-02", kepatutan: { dinilai: true, patut: true, selisih: 3, ambang: 3, hariKerja: true, dasarHukum: "Pasal 122 HIR" } },
+        { nama: "SITI CONTOH BINTI FULAN", peran: "Penggugat", seharusnya: "elektronik", eSummonsTerkirim: true, tanggalPanggilan: "2026-06-02", kepatutan: { dinilai: true, patut: true, selisih: 3, ambang: 3, hariKerja: true, dasarHukum: "Pasal 146 RBg" } },
         { nama: "AHMAD CONTOH BIN FULAN", peran: "Tergugat", seharusnya: "surat_tercatat", eSummonsTerkirim: false, tanggalPanggilan: "2026-05-25", kepatutan: { dinilai: true, patut: false, alasan: "relaas kembali", dasarHukum: "PERMA 7/2022", selisih: 3, ambang: 3, hariKerja: true } },
       ],
     },
@@ -533,6 +533,39 @@ describe("E. Relaas", () => {
     expect(w.document.querySelector("#r_pelaks3 .aleta-m1-relaas")).toBeNull();
   });
 
+  it("daftar pelaksanaan: HASIL panggilan dari aturan bersama (SEMA 1/2023 / Pasal 718 RBg), retur beserta sebabnya", async () => {
+    const sidangId = String(JADWAL[0].sidangId);
+    const relaas = [
+      { namaPihak: "SITI CONTOH BINTI FULAN", sidangId, kepatutan: { label: "Bertemu (elektronik)", warna: "hijau", keterangan: "Panggilan elektronik.", dasar: "SK KMA 363", retur: false, labelRetur: "" } },
+      {
+        namaPihak: "AHMAD CONTOH BIN FULAN",
+        sidangId,
+        kepatutan: { label: "Bertemu orang serumah (ayah kandung)", warna: "hijau", keterangan: "Diterima orang serumah.", dasar: "SEMA 1/2023 angka 3, 6 & 12 huruf c", retur: false, labelRetur: "" },
+      },
+      // Relaas sidang LAIN tidak dipakai.
+      { namaPihak: "AHMAD CONTOH BIN FULAN", sidangId: "lain", kepatutan: { label: "Retur", warna: "merah", retur: true, labelRetur: "Retur pos" } },
+    ];
+    const w = buka(RELAAS_DAFTAR, { jawab: () => bahan("relaas", { sidang: JADWAL[0], panggilan: PANGGILAN, relaas }) });
+    w.aletaSippIdeM1.pasang(w.document);
+    await w.aletaSippIdeM1.periksaRelaas(w.document.querySelector("#pelaks_relaas").__aletaM1);
+    const l2 = w.document.querySelector("#r_pelaks2 .aleta-m1-relaas");
+    const tanda = l2.querySelectorAll(".aleta-m1-tanda");
+    expect(tanda[0].textContent).toBe("Bertemu orang serumah (ayah kandung)");
+    expect(tanda[0].className).toBe("aleta-m1-tanda aleta-m1-tanda-hijau");
+    expect(tanda[0].title).toBe("Diterima orang serumah. Dasar: SEMA 1/2023 angka 3, 6 & 12 huruf c.");
+    expect(l2.textContent).not.toMatch(/Tidak Bertemu|Retur pos/);
+
+    const retur = [{ namaPihak: "AHMAD CONTOH BIN FULAN", sidangId, kepatutan: { label: "Alamat tidak ditemukan", warna: "merah", keterangan: "Alamat pihak tidak ditemukan.", dasar: "SEMA 1/2023 angka 9, 10 & 12 huruf e", retur: true, labelRetur: "Retur - alamat tidak ditemukan (SEMA 1/2023 angka 12 huruf e)" } }];
+    const w2 = buka(RELAAS_DAFTAR, { jawab: () => bahan("relaas", { sidang: JADWAL[0], panggilan: PANGGILAN, relaas: retur }) });
+    w2.aletaSippIdeM1.pasang(w2.document);
+    await w2.aletaSippIdeM1.periksaRelaas(w2.document.querySelector("#pelaks_relaas").__aletaM1);
+    const t2 = w2.document.querySelectorAll("#r_pelaks2 .aleta-m1-relaas .aleta-m1-tanda");
+    expect(t2[0].textContent).toBe("Retur - alamat tidak ditemukan (SEMA 1/2023 angka 12 huruf e)");
+    expect(t2[0].className).toBe("aleta-m1-tanda aleta-m1-tanda-merah");
+    // Lencana kepatutan tenggang yang lama tetap ada (fitur lama tidak dikurangi).
+    expect(t2[1].textContent).toBe("Tidak patut menurut ALETA");
+  });
+
   it("isi pelaksanaan: e-Summons tercatat -> Panggilan Elektronik + tanggalnya; hari kerja sebelum sidang diperiksa", async () => {
     const w = buka(RELAAS_ISI, { jawab: () => bahan("relaas", { sidang: JADWAL[0], panggilan: PANGGILAN }) });
     w.aletaSippIdeM1.pasang(w.document);
@@ -543,7 +576,7 @@ describe("E. Relaas", () => {
     const cek = () => pita(w, "relaas").querySelector('[data-m1="cek"]').textContent;
     expect(cek()).toBe("3 hari kerja di antara pelaksanaan dan hari sidang.");
     ubah(w, "tgl_relaas", "04/06/2026");
-    expect(cek()).toBe("1 hari kerja sebelum sidang - kurang dari 3 hari kerja (Pasal 122 HIR).");
+    expect(cek()).toBe("1 hari kerja sebelum sidang - kurang dari 3 hari kerja (Pasal 146 RBg).");
     ubah(w, "tgl_relaas", "09/06/2026");
     expect(cek()).toMatch(/sesudah hari sidang/);
   });
@@ -904,7 +937,7 @@ const KESIAPAN_BOT = {
           buktiPenerimaan: "e-Summons",
           noResiPos: "",
           tanggalPelaksanaanRelaas: "2026-06-02",
-          kepatutan: { dinilai: true, patut: true, selisih: 3, ambang: 3, hariKerja: true, dasarHukum: "Pasal 122 HIR", jalur: "elektronik", perluDiterima: false, alasan: "" },
+          kepatutan: { dinilai: true, patut: true, selisih: 3, ambang: 3, hariKerja: true, dasarHukum: "Pasal 146 RBg", jalur: "elektronik", perluDiterima: false, alasan: "" },
         },
       ],
       ringkasan: { jumlahPihak: 1, belumDipanggil: 0, salahSaluran: 0, tidakPatut: 0, penerimaanBelumTerbukti: 0, patut: 1 },
@@ -995,7 +1028,18 @@ describe("K. rute portal sipp-ide/jendela -> bot (siap pakai)", () => {
     expect(data.panggilan).toEqual([
       expect.objectContaining({ nama: "SITI CONTOH BINTI FULAN", seharusnya: "elektronik", eSummonsTerkirim: true, tanggalPanggilan: "2026-06-02", patut: true, ambang: 3, hariKerja: true }),
     ]);
-    expect(data.relaas[0]).toEqual({ namaPihak: "SITI CONTOH BINTI FULAN", peran: "Penggugat", tanggalRelaas: "2026-06-02", bertemu: false, cara: "Panggilan elektronik", sandi: "E", jurusitaNama: "Juru Sita Contoh" });
+    expect(data.relaas[0]).toEqual({
+      namaPihak: "SITI CONTOH BINTI FULAN",
+      peran: "Penggugat",
+      tanggalRelaas: "2026-06-02",
+      bertemu: false,
+      cara: "Panggilan elektronik",
+      sandi: "E",
+      jurusitaNama: "Juru Sita Contoh",
+      sidangId: expect.any(String),
+      // Hasil panggilan menurut aturan bersama (@/lib/kepatutan-relaas).
+      kepatutan: expect.objectContaining({ label: "Bertemu (elektronik)", warna: "hijau", retur: false, labelRetur: "" }),
+    });
     const w = buka(RELAAS_DAFTAR, { jawab: () => data });
     w.aletaSippIdeM1.pasang(w.document);
     const t = w.document.querySelector("#pelaks_relaas");

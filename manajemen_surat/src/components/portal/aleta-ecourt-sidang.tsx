@@ -277,7 +277,7 @@ import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import { PanduanPemeriksaanSaksi, type PropsPanduanSaksi } from "@/components/portal/panduan-pemeriksaan-saksi";
 import { agendaPembuktianSaksi, keadaanAwalDariSidang, sudahMasukPemeriksaan } from "@/lib/pandu-saksi";
 import { relaasBertemu } from "@/lib/hasil-relaas";
-import { LencanaKepatutanRelaas } from "@/components/portal/lencana-kepatutan-relaas";
+import { LencanaKepatutanRelaas, LencanaRetur } from "@/components/portal/lencana-kepatutan-relaas";
 
 /**
  * Dialog Cetak relaas dimuat SAAT DIBUKA, bukan bersama jadwal.
@@ -506,6 +506,8 @@ type SidangBaris = {
     // 1 penggugat/pemohon, 2 tergugat/termohon.
     sisiBelumDipanggil?: number[];
     retur: number;
+    /** Sebab tiap retur, mis. "Retur - alamat tidak ditemukan (SEMA 1/2023 angka 12 huruf e)". Bot lama: tidak ada. */
+    returSebab?: string[];
     aman: boolean;
     /**
      * Berapa hari lagi sidangnya. Negatif berarti sudah lewat, null bila
@@ -1120,7 +1122,7 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     kelompok: "panggilan",
     judul:
       "Jarak panggilan ke hari sidang kurang dari ambang yang berlaku untuk jalurnya - " +
-      "SK KMA 363/2022 untuk e-Summons, Pasal 122 HIR untuk panggilan biasa.",
+      "SK KMA 363/2022 untuk e-Summons, SEMA 1/2023 angka 11 untuk surat tercatat, Pasal 146 RBg untuk panggilan biasa.",
     cocok: (x) => x.panggilan.tenggangMepet === true,
   },
   {
@@ -1868,7 +1870,7 @@ function jenisRelaas(baris: {
   // Terukur pada SIPP satker: 6.725 dari 14.495 baris, 46,4%, salah dilabeli.
   //
   // Yang paling merugikan "diterima orang serumah": penyampaian itu SAH
-  // menurut HIR, relaasnya patut, dan sidangnya boleh berjalan. Menyebutnya
+  // menurut SEMA 1/2023 angka 12 huruf c, relaasnya patut, dan sidangnya boleh berjalan. Menyebutnya
   // "tidak bertemu" membuat yang membacanya menunda sidang yang sudah boleh.
   if (baris.caraRelaas?.cara) return baris.caraRelaas.cara;
   if (relaasBertemu(baris)) return "Bertemu";
@@ -2632,7 +2634,11 @@ function PenandaPanggilan({
       {panggilan.retur > 0 ? (
         <span
           className="rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold text-white"
-          title="Surat panggilan dikembalikan - alamat perlu ditelusuri."
+          title={
+            panggilan.returSebab && panggilan.returSebab.length
+              ? `${panggilan.returSebab.join("; ")}. Panggilan perlu diulang.`
+              : "Surat panggilan dikembalikan - alamat perlu ditelusuri."
+          }
         >
           retur{panggilan.retur > 1 ? ` ${panggilan.retur}` : ""}
         </span>
@@ -10068,11 +10074,7 @@ export function RincianSidang({
                           surat tercatat - mis. "Bertemu orang serumah (ayah)",
                           huruf c, bukan "Tidak bertemu" - Pasal 718 RBg untuk
                           jurusita, elektronik dianggap bertemu. */}
-                      {baris.retur ? (
-                        <span className="rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold text-white">
-                          Retur
-                        </span>
-                      ) : null}
+                      {baris.retur ? <LencanaRetur baris={baris} /> : null}
                       <LencanaKepatutanRelaas baris={baris} pihak={rincian.pihak} tanpaRetur={baris.retur} />
                       {baris.noResiPos ? (
                         <div className="mt-0.5 font-mono text-xs text-muted-foreground">
@@ -10167,11 +10169,7 @@ export function RincianSidang({
                 <span className="text-xs text-muted-foreground">
                   {tanggalHariPendek(baris.tanggalRelaas) || "belum dilaksanakan"}
                 </span>
-                {baris.retur ? (
-                  <span className="rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-semibold text-white">
-                    Retur
-                  </span>
-                ) : null}
+                {baris.retur ? <LencanaRetur baris={baris} /> : null}
                 {/* W58 22 Okt: dulu segala yang bukan bertemu langsung/elektronik
                     jatuh ke "tidak bertemu" - termasuk surat tercatat yang
                     diterima orang serumah (SEMA 1/2023 angka 12 huruf c). */}

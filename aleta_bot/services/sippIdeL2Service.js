@@ -228,7 +228,7 @@ const KATALOG = Object.freeze({
   "potensi-verstek": {
     nama: "Potensi verstek",
     dasar:
-      "Pasal 149 RBg / Pasal 125 HIR: tergugat yang tidak hadir walau dipanggil patut dapat diputus verstek (tanpa hadirnya tergugat).",
+      "Pasal 149 RBg: tergugat yang tidak hadir walau dipanggil patut dapat diputus verstek (tanpa hadirnya tergugat).",
     sumber: "Kolom 'Dihadiri oleh' pada sidang-sidang yang sudah lewat.",
   },
   "umur-perkara": {

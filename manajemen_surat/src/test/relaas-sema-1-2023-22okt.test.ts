@@ -210,3 +210,112 @@ describe("dipakai semua penghitung", () => {
     expect(portal("lencana-kepatutan-relaas.tsx")).toContain('from "@/lib/kepatutan-relaas"');
   });
 });
+
+// ============================================================================
+// Keputusan pengguna 22 Okt 2026 (W63): retur menyebut sebabnya, angka 11
+// ditafsir ketat (hari penuh di antara), ambang terima dapat disetel, RBg.
+// ============================================================================
+describe("retur tetap retur, lencananya menyebut sebab", () => {
+  const SEBAB: Array<[string, ts.BahanRelaas, string]> = [
+    ["e", pos("Alamat pihak penerima tidak ditemukan sesuai keterangan aparat kelurahan"), "Retur - alamat tidak ditemukan (SEMA 1/2023 angka 12 huruf e)"],
+    ["f", pos("pihak penerima tidak tinggal di alamat yang dituju", { statusPos: 2 }), "Retur - tidak tinggal di alamat (SEMA 1/2023 angka 12 huruf f)"],
+    ["g", pos("pihak penerima telah meninggal dunia sesuai keterangan kepala desa"), "Retur - meninggal dunia (SEMA 1/2023 angka 12 huruf g)"],
+    ["b", pos("delivery return ( penerima tidak bersedia menerima )", { statusPos: 2 }), "Retur - menolak menerima (SEMA 1/2023 angka 12 huruf b)"],
+    ["failed", pos("FAILED TO DELIVERY", { statusPos: null }), "Retur - FAILED TO DELIVERY"],
+    ["pos", pos("RETUR", { statusPos: 2 }), "Retur pos"],
+    ["kosong", pos("", { statusPos: 2 }), "Retur pos"],
+  ];
+  for (const [nama, bahan, label] of SEBAB) {
+    it(nama, () => {
+      const k = ts.nilaiRelaas(bahan);
+      expect(k.retur).toBe(true);
+      expect(k.labelRetur).toBe(label);
+      expect(js.nilaiRelaas(bahan).labelRetur).toBe(label);
+    });
+  }
+  it("bukan retur: labelRetur kosong", () => {
+    expect(ts.nilaiRelaas(pos("diterima oleh Andi/ayah kandung")).labelRetur).toBe("");
+    expect(ts.nilaiRelaas(jurusita("T", "tidak bertemu tergugat")).labelRetur).toBe("");
+  });
+  it("dipasang di Jadwal Sidang (tabel, riwayat, penanda baris), Status Perkara, ekstensi, dan tag retur", () => {
+    const portal = (berkas: string) => readFileSync(path.resolve(process.cwd(), "src", "components", "portal", berkas), "utf8");
+    const sidang = portal("aleta-ecourt-sidang.tsx");
+    expect(sidang.match(/<LencanaRetur baris=\{baris\} \/>/g)?.length).toBe(2);
+    expect(sidang).toContain('panggilan.returSebab.join("; ")');
+    const status = portal("aleta-ecourt-status-perkara.tsx");
+    expect(status).toContain('<LencanaRetur baris={relaas} varian="lencana" />');
+    expect(status).not.toContain('<Badge variant="danger">surat RETUR</Badge>');
+    expect(readFileSync(bot("sippJadwalSidangService.js"), "utf8")).toContain("returSebab,");
+    expect(readFileSync(bot("tagPerkaraService.js"), "utf8")).toMatch(/retur: \{[\s\S]*?SEMA 1\/2023 angka 12[\s\S]*?syarat: sqlRetur\("a"\)/);
+    const jendela = readFileSync(path.resolve(process.cwd(), "src", "app", "api", "aleta-ecourt", "sipp-ide", "jendela", "route.ts"), "utf8");
+    expect(jendela).toContain("labelRetur: retur ? k.labelRetur");
+    const m1 = readFileSync(path.resolve(process.cwd(), "..", "ekstensi-sipp", "sipp-ide-m1.js"), "utf8");
+    expect(m1).toContain("function lencanaHasilRelaas(relaas)");
+  });
+});
+
+describe("SEMA 1/2023 angka 11 - tafsir ketat dan setelan Pengaturan", () => {
+  const svc = panggilan as unknown as {
+    nilaiKepatutan: (o: Record<string, unknown>) => { patut: boolean | null; selisih: number | null; selisihKirim?: number; alasan: string; ambangTerima?: number };
+    getSettings: () => Record<string, number>;
+    ambangJalur: (j: string) => { hari: number; terimaHari: number | null; hariPenuh: boolean; dasar: string };
+  };
+  it("hari penuh di antara: dikirim Senin 2 Nov, diterima Selasa 3 Nov -> sidang Senin 9 Nov patut, Jumat 6 Nov tidak", () => {
+    const nilai = (sidang: string) =>
+      svc.nilaiKepatutan({ tanggalPanggilan: "2026-11-02", tanggalSidang: sidang, jalur: "surat_tercatat", diterima: true, tanggalDiterima: "2026-11-03" });
+    // Kirim: 3..8 Nov = 6 hari kalender penuh. Terima: Rabu 4, Kamis 5, Jumat 6 = 3 hari kerja penuh.
+    expect(nilai("2026-11-09").patut).toBe(true);
+    expect(nilai("2026-11-09").selisihKirim).toBe(6);
+    expect(nilai("2026-11-09").selisih).toBe(3);
+    // Sidang Jumat 6 Nov: kirim 3..5 = 3 hari kalender penuh - kurang.
+    expect(nilai("2026-11-06").patut).toBe(false);
+    expect(nilai("2026-11-06").alasan).toBe("tenggang_kurang_dari_ambang");
+  });
+  it("hari sidang tidak dihitung: diterima Senin, sidang Kamis = 2 hari kerja penuh", () => {
+    const n = svc.nilaiKepatutan({ tanggalPanggilan: "2026-10-01", tanggalSidang: "2026-10-22", jalur: "surat_tercatat", diterima: true, tanggalDiterima: "2026-10-19" });
+    expect(n.selisih).toBe(2);
+    expect(n.patut).toBe(false);
+    expect(n.alasan).toBe("diterima_kurang_dari_ambang");
+  });
+  it("ambang terima 3 hari kerja dan kirim 6 hari kalender dari Pengaturan; bawaan dari aturan bersama", () => {
+    const s = svc.getSettings();
+    expect(s.hariTerimaSuratTercatat).toBe(ts.TENGGANG.surat_tercatat.terimaHari);
+    expect(s.hariSuratTercatat).toBe(ts.TENGGANG.surat_tercatat.kirimHari);
+    const a = svc.ambangJalur("surat_tercatat");
+    expect(a.terimaHari).toBe(s.hariTerimaSuratTercatat);
+    expect(a.hariPenuh).toBe(true);
+    expect(svc.ambangJalur("biasa").dasar).toBe("Pasal 146 RBg");
+    const rute = readFileSync(path.resolve(process.cwd(), "src", "app", "api", "aleta-ecourt", "panggilan", "route.ts"), "utf8");
+    expect(rute).toContain("hariTerimaSuratTercatat");
+    expect(rute).toContain("isPrivilegedAdmin(actor)");
+    const layar = readFileSync(path.resolve(process.cwd(), "src", "components", "portal", "aleta-ecourt-panggilan-pengaturan.tsx"), "utf8");
+    expect(layar).toContain("nilai.hariTerimaSuratTercatat");
+    expect(readFileSync(path.resolve(process.cwd(), "..", "aleta_bot", "routes", "internalGatewayRoutes.js"), "utf8")).toContain(
+      "hariTerimaSuratTercatat: req.body?.hariTerimaSuratTercatat"
+    );
+  });
+});
+
+describe("dasar panggilan disebut RBg, bukan HIR", () => {
+  const berkas = [
+    "../aleta_bot/services/ecourtPanggilanService.js",
+    "../aleta_bot/services/analisaTambahanService.js",
+    "../aleta_bot/services/penilaianPerkaraService.js",
+    "../aleta_bot/services/ambangPenilaianService.js",
+    "../aleta_bot/services/katalogEAuditService.js",
+    "src/components/portal/aleta-analisa-perkara.tsx",
+    "src/components/portal/aleta-ecourt-panggilan-pengaturan.tsx",
+    "src/components/portal/aleta-ecourt-status-perkara.tsx",
+    "src/app/api/aleta-ecourt/bas-massal/susun.ts",
+    "src/lib/checklist-milestone-katalog.ts",
+  ];
+  it("tidak ada teks tampil yang memuat Pasal 122/124/126/129 HIR", () => {
+    for (const b of berkas) {
+      const isi = readFileSync(path.resolve(process.cwd(), b), "utf8")
+        .split("\n")
+        .filter((x) => !/^\s*(\/\/|\*|\/\*)/.test(x)) // komentar boleh menyebut padanannya
+        .join("\n");
+      expect(isi, b).not.toMatch(/"[^"\n]*Pasal 12[2469] HIR[^"\n]*"|'[^'\n]*Pasal 12[2469] HIR[^'\n]*'|>[^<\n]*Pasal 12[2469][\s\n]*HIR/);
+    }
+  });
+});

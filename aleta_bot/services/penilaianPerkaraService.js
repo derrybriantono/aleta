@@ -83,7 +83,7 @@ const BUTIR = [
     kunci: "panggilanPatut",
     label: "Panggilan patut",
     keterangan: "Seluruh pihak dipanggil lewat jalur yang sesuai dan dalam tenggang yang cukup.",
-    dasar: "SK KMA 363/2022 dan Pasal 122 HIR - lihat pengaturan tenggang panggilan.",
+    dasar: "SK KMA 363/2022, SEMA 1/2023 angka 11, dan Pasal 146 RBg - lihat pengaturan tenggang panggilan.",
     bobot: 20,
   },
   {

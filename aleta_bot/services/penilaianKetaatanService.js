@@ -243,7 +243,7 @@ const DEFINISI = [
     kunci: "ketaatanTenggangPanggilan",
     judul: "Ketaatan Tenggang Pemanggilan",
     keterangan:
-      "Panggilan sah sekurangnya tiga hari kerja sebelum sidang, menurut Pasal 122 HIR dan Pasal 146 R.Bg.",
+      "Panggilan sah sekurangnya tiga hari kerja sebelum sidang, menurut Pasal 146 RBg.",
     lantai: "harian",
     // Naik dari hariKerja-v1 saat daftar hari libur 2026 disahkan terhadap
     // SKB. Delapan tanggal yang sebelumnya hilang membuat hitungan hari kerja

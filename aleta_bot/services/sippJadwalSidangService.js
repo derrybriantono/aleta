@@ -2656,7 +2656,19 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
 
     // Retur dihitung dari SELURUH relaas sidang ini, bukan hanya sisi yang
     // wajib: surat yang kembali tetap perlu ditindaklanjuti.
-    const retur = relaas.filter((r) => relaasRetur(r.statusPos, r.ketHasilRelaas, r.ketTemu, r.noResiPos)).length;
+    const relaasRetur_ = relaas.filter((r) => relaasRetur(r.statusPos, r.ketHasilRelaas, r.ketTemu, r.noResiPos));
+    const retur = relaasRetur_.length;
+    // Sebab tiap retur dalam bahasa awam (keputusan pengguna 22 Okt 2026), mis.
+    // "Retur - alamat tidak ditemukan (SEMA 1/2023 angka 12 huruf e)".
+    const returSebab = [
+      ...new Set(
+        relaasRetur_.map(
+          (r) =>
+            nilaiRelaas({ ketTemu: r.ketTemu, statusPos: r.statusPos, hasil: r.ketHasilRelaas, noResiPos: r.noResiPos }).labelRetur ||
+            "Retur"
+        )
+      ),
+    ];
 
     // ======================================================================
     // HITUNG MUNDUR TENGGANG - ATURANNYA TIDAK DIKARANG DI SINI
@@ -2702,6 +2714,7 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
       // penandanya: yang perlu diketahui siapa yang harus dipanggil.
       sisiBelumDipanggil: belumDipanggil,
       retur,
+      returSebab,
       // Aman berarti tidak ada yang perlu ditindaklanjuti - penandanya tidak
       // usah muncul sama sekali.
       aman: belumDipanggil.length === 0 && retur === 0,

@@ -874,7 +874,9 @@ const TAG = Object.freeze({
     kelompok: "panggilan",
     label: "Relaas retur",
     nada: "bahaya",
-    judul: "Relaas kembali tidak terlaksana - panggilan harus diulang.",
+    // Sebabnya (SEMA 1/2023 angka 12) tampil per relaas di Jadwal Sidang dan Status Perkara.
+    judul:
+      "Relaas kembali tidak terlaksana - panggilan harus diulang. Termasuk surat tercatat yang dikembalikan pos (retur pos, FAILED TO DELIVERY) dan yang keterangannya menurut SEMA 1/2023 angka 12: menolak menerima (huruf b), alamat tidak ditemukan (huruf e), tidak tinggal di alamat (huruf f), atau meninggal dunia (huruf g).",
     tabel: "perkara_pelaksanaan_relaas a",
     syarat: sqlRetur("a"),
   },

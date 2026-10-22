@@ -1796,6 +1796,11 @@ export type RincianSidang = {
     jurusitaNama: string;
     adaDokumen: boolean;
     adaResi: boolean;
+    // Sudah dikirim bot (relaasSidang); dipakai aturan kepatutan bersama.
+    sidangId?: string;
+    tanggalSidang?: string;
+    ketHasilRelaas?: string;
+    pihakKe?: number | null;
   }>;
   dokumenSipp: Array<{
     id: string;
@@ -1955,12 +1960,23 @@ export type PengaturanPanggilan = {
   hariElektronik: number;
   hariSuratTercatat: number;
   hariBiasa: number;
+  /** SEMA 1/2023 angka 11: hari kerja penuh antara surat DITERIMA dan sidang (bawaan 3). */
+  hariTerimaSuratTercatat?: number;
 };
 
 /** Keterangan tiap jalur panggilan beserta dasar hukumnya. */
 export type JalurPanggilan = Record<
   "elektronik" | "surat_tercatat" | "biasa",
-  { label: string; dasar: string; bawaan: number; hariKerja: boolean; perluDiterima: boolean }
+  {
+    label: string;
+    dasar: string;
+    bawaan: number;
+    hariKerja: boolean;
+    perluDiterima: boolean;
+    terimaHari?: number;
+    terimaHariKerja?: boolean;
+    hariPenuh?: boolean;
+  }
 >;
 
 /** Tenggang waktu kepatutan panggilan. */
