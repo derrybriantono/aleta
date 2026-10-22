@@ -462,6 +462,205 @@
     return masalah;
   }
 
+  /* ─── 1b. Indeks wilayah untuk "ketik awal nama desa" ─────────────────── */
+  //
+  // Data (kabupaten, kecamatan, desa, tanpa nilai bersandi) diambil SEKALI per provinsi dari portal,
+  // disimpan di peramban 30 hari, lalu semua pencarian dikerjakan di sini: indeks per huruf pertama,
+  // tanpa permintaan per ketikan. Pencarian ribuan desa < 5 ms (diukur di uji).
+
+  const KATA_DESA = ["DESA", "DS", "KEL", "KELURAHAN"];
+  const KATA_KEC = ["KECAMATAN", "KEC"];
+  const KATA_ATAS = ["KECAMATAN", "KEC", "KABUPATEN", "KAB", "KOTA", "PROVINSI", "PROV", "PROPINSI", "PROP"];
+  /** Kata yang bukan nama wilayah bila berdiri sendiri sebagai ekor ketikan. */
+  const KATA_BUKAN_WILAYAH = [
+    "JALAN", "JL", "JLN", "GANG", "GG", "LORONG", "LRG", "PERUMAHAN", "PERUM", "KOMPLEKS", "KOMP", "BLOK", "NOMOR", "NO",
+    "DUSUN", "DSN", "KAMPUNG", "KP", "RT", "RW",
+  ];
+  const PENANDA_JALAN = ["JALAN", "JL", "JLN", "GANG", "GG", "LORONG", "LRG"];
+  const KAB_UTAMA_BAWAAN = ["72.03", "72.71", "72.10"]; // Donggala, Palu, Sigi
+  const PROVINSI_UTAMA_BAWAAN = ["72"];
+  const MAKS_PILIHAN = 6;
+
+  function buatIndeks() {
+    const ind = {
+      prov: [],
+      kab: [],
+      kec: [],
+      desa: [],
+      hurufDesa: new Map(),
+      hurufKec: new Map(),
+      kodeProvinsi: new Set(),
+      tambah(data) {
+        if (!data || data.versi !== 1 || !data.provinsi || !Array.isArray(data.kab) || !Array.isArray(data.kec) || !data.desa) return false;
+        if (ind.kodeProvinsi.has(data.provinsi.kode)) return true;
+        ind.kodeProvinsi.add(data.provinsi.kode);
+        const p = ind.prov.push({ kode: data.provinsi.kode, nama: data.provinsi.nama }) - 1;
+        const kabIdx = new Map();
+        for (const [kode, nama] of data.kab) kabIdx.set(kode, ind.kab.push({ kode, nama, n: inti(nama), prov: p }) - 1);
+        const kecIdx = new Map();
+        for (const [kode, nama] of data.kec) {
+          const k = kabIdx.get(kode.split(".").slice(0, 2).join("."));
+          if (k === undefined) continue;
+          const n = normal(nama);
+          const i = ind.kec.push({ kode, nama, n, kab: k }) - 1;
+          kecIdx.set(kode, i);
+          const huruf = n.charAt(0);
+          if (!ind.hurufKec.has(huruf)) ind.hurufKec.set(huruf, []);
+          ind.hurufKec.get(huruf).push(i);
+        }
+        for (const kecKode of Object.keys(data.desa)) {
+          const c = kecIdx.get(kecKode);
+          if (c === undefined) continue;
+          for (const [akhir, nama] of data.desa[kecKode]) {
+            const n = normal(nama);
+            const i = ind.desa.push({ kode: `${kecKode}.${akhir}`, nama, n, kec: c }) - 1;
+            const huruf = n.charAt(0);
+            if (!ind.hurufDesa.has(huruf)) ind.hurufDesa.set(huruf, []);
+            ind.hurufDesa.get(huruf).push(i);
+          }
+        }
+        return true;
+      },
+    };
+    return ind;
+  }
+
+  function pecahToken(teks) {
+    const hasil = [];
+    const re = /\S+/g;
+    let m;
+    while ((m = re.exec(teks))) hasil.push({ s: m.index, k: m[0] });
+    return hasil;
+  }
+
+  function kataSemuaAngka(q) {
+    return /^[0-9 ]+$/.test(q) || /^(?:[IVXLC]+ ?)+$/.test(q);
+  }
+
+  /** Rantai (desa?, kecamatan, kabupaten, provinsi) satu rekaman indeks. */
+  function rantaiRekaman(ind, jenis, r) {
+    const kec = jenis === "desa" ? ind.kec[r.kec] : r;
+    const kab = ind.kab[kec.kab];
+    const prov = ind.prov[kab.prov];
+    return { desa: jenis === "desa" ? r : null, kec, kab, prov };
+  }
+
+  function bagianKandidat(ind, jenis, r) {
+    const c = rantaiRekaman(ind, jenis, r);
+    const bagian = {
+      kecamatan: { nama: c.kec.nama },
+      kabupaten: { nama: c.kab.nama },
+      provinsi: { nama: c.prov.nama },
+    };
+    const label = [];
+    if (c.desa) {
+      bagian.kelurahan = { nama: c.desa.nama, sebutan: sebutanDesa(c.desa.kode) };
+      label.push(labelBagian("kelurahan", c.desa.nama, sebutanDesa(c.desa.kode)));
+    }
+    label.push(labelBagian("kecamatan", c.kec.nama), labelBagian("kabupaten", c.kab.nama), labelBagian("provinsi", c.prov.nama));
+    return { bagian, label, rantai: c };
+  }
+
+  /** head + bagian wilayah: ", " menempel di akhir teks lama; tanpa head = bagian saja. */
+  function susunAlamatWilayah(head, label) {
+    const kepala = head ? bakuAlamat(head).replace(/[\s,;]+$/, "") : "";
+    return kepala ? kepala + label.map((x) => `, ${x}`).join("") : label.join(", ");
+  }
+
+  /**
+   * Awal nama desa/kelurahan atau kecamatan di ujung teks -> alamat wilayah LENGKAP.
+   * opsi: { terisi:[prov,kab,kec,kel nama dropdown terisi atau ""], pakai:Map(kode->jumlah), utamaKab:[], utamaProv:[] }.
+   * Hasil: { kandidat:[{jenis,kode,nama,label,teks,bagian}], kuat, lemah, head, q }.
+   */
+  function cariWilayah(ind, teks, opsi) {
+    const kosong = { kandidat: [], kuat: false, lemah: false, head: "", q: "", jumlah: 0 };
+    const asli = String(teks || "");
+    if (!ind || !ind.desa.length || !asli.trim() || /[\s,;]$/.test(asli)) return kosong;
+    const o = opsi || {};
+    const tok = pecahToken(asli);
+    let kiri = tok.length;
+    for (let i = tok.length - 1; i >= 0 && tok.length - i <= 3; i -= 1) {
+      if (i < tok.length - 1 && /[,;]$/.test(tok[i].k)) break;
+      kiri = i;
+    }
+    for (let k = tok.length - kiri; k >= 1; k -= 1) {
+      const ekor = tok.slice(tok.length - k);
+      const q = normal(ekor.map((t) => t.k).join(" "));
+      if (q.length < 3 || kataSemuaAngka(q)) continue;
+      const kataEkor = q.split(" ");
+      if (kataEkor.some((w) => KATA_DESA.includes(w) || KATA_KEC.includes(w) || KATA_ATAS.includes(w))) continue;
+      if (k === 1 && KATA_BUKAN_WILAYAH.includes(q)) continue;
+      const sebelum = tok[tok.length - k - 1];
+      const kw = sebelum ? normal(sebelum.k) : "";
+      const jenisKata = KATA_DESA.includes(kw) ? "desa" : KATA_KEC.includes(kw) ? "kec" : "";
+      const head = asli.slice(0, jenisKata ? sebelum.s : ekor[0].s).replace(/[\s,;]+$/, "");
+      const kataHead = normal(head).split(" ").filter(Boolean);
+      if (kataHead.some((w) => KATA_ATAS.includes(w))) return kosong; // petugas sudah menulis kecamatan/kabupaten sendiri
+      // "Jalan Mawar": satu kata setelah penanda jalan hampir pasti nama jalan.
+      if (!jenisKata && kataHead.length === 1 && PENANDA_JALAN.includes(kataHead[0])) continue;
+
+      const temu = [];
+      const huruf = q.charAt(0);
+      if (jenisKata !== "kec") for (const i of ind.hurufDesa.get(huruf) || []) if (ind.desa[i].n.startsWith(q)) temu.push({ jenis: "desa", r: ind.desa[i] });
+      if (jenisKata !== "desa") for (const i of ind.hurufKec.get(huruf) || []) if (ind.kec[i].n.startsWith(q)) temu.push({ jenis: "kec", r: ind.kec[i] });
+      let lemah = false;
+      if (!temu.length && k === 1 && q.length >= 4) {
+        // Awal salah satu kata nama berikutnya (mis. "salumbone" di "Labuan Salumbone").
+        const sisip = ` ${q}`;
+        if (jenisKata !== "kec") for (const r of ind.desa) if (` ${r.n}`.includes(sisip)) temu.push({ jenis: "desa", r });
+        if (jenisKata !== "desa") for (const r of ind.kec) if (` ${r.n}`.includes(sisip)) temu.push({ jenis: "kec", r });
+        lemah = temu.length > 0;
+      }
+      if (!temu.length) continue;
+
+      // Selaras dengan dropdown yang sudah terisi (tidak pernah ditimpa).
+      const terisi = o.terisi || [];
+      const sejalan = temu.filter(({ jenis, r }) => {
+        const c = rantaiRekaman(ind, jenis, r);
+        const nama = [c.prov.nama, c.kab.nama, c.kec.nama, c.desa ? c.desa.nama : ""];
+        for (let i = 0; i < 4; i += 1) {
+          if (!terisi[i]) continue;
+          if (i === 3 && !c.desa) return false;
+          if (inti(terisi[i]) !== inti(nama[i])) return false;
+        }
+        return true;
+      });
+      if (!sejalan.length) return kosong;
+
+      const pakai = o.pakai || new Map();
+      const utamaKab = o.utamaKab || KAB_UTAMA_BAWAAN;
+      const utamaProv = o.utamaProv || PROVINSI_UTAMA_BAWAAN;
+      const nilai = sejalan.map(({ jenis, r }) => {
+        const c = rantaiRekaman(ind, jenis, r);
+        const iKab = utamaKab.indexOf(c.kab.kode);
+        return {
+          jenis,
+          r,
+          kunci: [
+            -(pakai.get(r.kode) || 0),
+            r.n === q ? 0 : 1,
+            iKab < 0 ? 99 : iKab,
+            utamaProv.includes(c.prov.kode) ? 0 : 1,
+            jenis === "kec" ? 0 : 1,
+            r.n.length,
+          ],
+        };
+      });
+      nilai.sort((a, b) => {
+        for (let i = 0; i < a.kunci.length; i += 1) if (a.kunci[i] !== b.kunci[i]) return a.kunci[i] - b.kunci[i];
+        return a.r.nama < b.r.nama ? -1 : a.r.nama > b.r.nama ? 1 : 0;
+      });
+      const kandidat = nilai.slice(0, MAKS_PILIHAN).map(({ jenis, r }) => {
+        const { bagian, label } = bagianKandidat(ind, jenis, r);
+        return { jenis, kode: r.kode, nama: r.nama, bagian, label, teks: susunAlamatWilayah(head, label) };
+      });
+      const tepat = nilai.filter((x) => x.r.n === q);
+      const kuat = !lemah && (nilai.length === 1 || (tepat.length === 1 && q.length >= 5 && nilai[0].r === tepat[0].r));
+      return { kandidat, kuat, lemah, head, q, jumlah: nilai.length };
+    }
+    return kosong;
+  }
+
   /* ─── 2. Lapisan halaman ─────────────────────────────────────────────── */
 
   const BLANGKO = [
@@ -615,7 +814,7 @@
   function kosakataAlamat(s, doc) {
     const frasa = [];
     for (const t of s.kosakataWilayah || []) frasa.push(t);
-    const { alamat } = panenTabel(doc);
+    const { alamat } = panenCepat();
     for (const a of alamat) {
       for (const seg of String(a).split(",")) {
         const potong = seg.trim();
@@ -628,71 +827,304 @@
     return frasa;
   }
 
+  /* ─── Data wilayah: diambil sekali, disimpan 30 hari, dicari di peramban ─── */
+
+  const KUNCI_DATA = "aletaWilayahRingkas";
+  const KUNCI_PAKAI = "aletaWilayahPakai";
+  const UMUR_DATA_MS = 30 * 24 * 60 * 60 * 1000;
+  const RINGKAS_API = "/aleta/api/aleta-ecourt/wilayah-ringkas";
+  const PROVINSI_TETANGGA_BAWAAN = ["76", "75", "73"]; // Sulawesi Barat, Gorontalo, Sulawesi Selatan
+  const JEDA_GAMBAR_MS = JEDA_UJI.gambar || 100;
+  const TUNDA_TETANGGA_MS = JEDA_UJI.tetangga === undefined ? 5000 : JEDA_UJI.tetangga;
+  const ULANG_GAGAL_MS = 10 * 60 * 1000;
+
+  const wilayahKini = {
+    indeks: buatIndeks(),
+    janji: null,
+    selesai: false,
+    gagalSampai: 0,
+    pakai: new Map(),
+    permintaanRingkas: 0,
+    pencarian: 0,
+  };
+
+  function penyimpananLokal() {
+    try {
+      return typeof chrome !== "undefined" && chrome && chrome.storage && chrome.storage.local ? chrome.storage.local : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function ambilRingkas(kode) {
+    wilayahKini.permintaanRingkas += 1;
+    try {
+      const opsi = { credentials: "include", cache: "no-store" };
+      const alamat = `${RINGKAS_API}?provinsi=${encodeURIComponent(kode)}`;
+      const r = typeof alatAmbil === "function" ? await alatAmbil(alamat, opsi, "Membaca daftar wilayah SIPP") : await fetch(alamat, opsi);
+      const luar = await r.json();
+      const isi = luar && luar.data ? luar.data : luar;
+      if (!r.ok || !isi || isi.ok !== true || isi.versi !== 1) return null;
+      return { versi: 1, provinsi: isi.provinsi, kab: isi.kab, kec: isi.kec, desa: isi.desa };
+    } catch {
+      return null;
+    }
+  }
+
+  /** Satu provinsi: dari simpanan peramban bila masih segar, selain itu SATU permintaan lalu disimpan. */
+  async function pastikanProvinsi(kode, simpanan, st) {
+    const ada = simpanan[kode];
+    const segar = ada && ada.data && Date.now() - Number(ada.diambil || 0) < UMUR_DATA_MS;
+    if (segar) return wilayahKini.indeks.tambah(ada.data);
+    const baru = await ambilRingkas(kode);
+    if (baru) {
+      simpanan[kode] = { diambil: Date.now(), data: baru };
+      wilayahKini.indeks.tambah(baru);
+      if (st) {
+        try {
+          await st.set({ [KUNCI_DATA]: simpanan });
+        } catch {
+          /* simpanan penuh/ditolak: indeks memori tetap berfungsi */
+        }
+      }
+      return true;
+    }
+    // Gagal tetapi ada salinan lama: lebih baik basi daripada tidak ada.
+    if (ada && ada.data) return wilayahKini.indeks.tambah(ada.data);
+    return false;
+  }
+
+  function pastikanIndeks() {
+    if (wilayahKini.janji) {
+      if (wilayahKini.selesai && !wilayahKini.indeks.desa.length && Date.now() > wilayahKini.gagalSampai) wilayahKini.janji = null;
+      else return wilayahKini.janji;
+    }
+    wilayahKini.selesai = false;
+    wilayahKini.janji = (async () => {
+      const st = penyimpananLokal();
+      let simpanan = {};
+      try {
+        const baca = st ? await st.get([KUNCI_DATA, KUNCI_PAKAI]) : {};
+        simpanan = (baca && baca[KUNCI_DATA]) || {};
+        for (const kode of (baca && baca[KUNCI_PAKAI]) || []) wilayahKini.pakai.set(kode, (wilayahKini.pakai.get(kode) || 0) + 1);
+      } catch {
+        simpanan = {};
+      }
+      const pengaturan = globalThis.ALETA_PL_WILAYAH || {};
+      let berhasil = false;
+      for (const kode of pengaturan.utama || PROVINSI_UTAMA_BAWAAN) berhasil = (await pastikanProvinsi(kode, simpanan, st)) || berhasil;
+      if (!berhasil) wilayahKini.gagalSampai = Date.now() + ULANG_GAGAL_MS;
+      wilayahKini.selesai = true;
+      // Provinsi tetangga menyusul saat peramban senggang, satu per satu.
+      setTimeout(() => {
+        void (async () => {
+          for (const kode of pengaturan.tetangga || PROVINSI_TETANGGA_BAWAAN) await pastikanProvinsi(kode, simpanan, st);
+        })();
+      }, TUNDA_TETANGGA_MS);
+    })();
+    return wilayahKini.janji;
+  }
+
+  function catatPakai(kode) {
+    wilayahKini.pakai.set(kode, (wilayahKini.pakai.get(kode) || 0) + 1);
+    const st = penyimpananLokal();
+    if (!st) return;
+    void (async () => {
+      try {
+        const baca = await st.get(KUNCI_PAKAI);
+        const daftar = ((baca && baca[KUNCI_PAKAI]) || []).filter((x) => x !== kode);
+        daftar.push(kode);
+        await st.set({ [KUNCI_PAKAI]: daftar.slice(-30) });
+      } catch {
+        /* catatan pemakaian boleh hilang */
+      }
+    })();
+  }
+
+  const singgahJalur = new Map();
+  /** Rantai satu kode (4 tingkat, dengan nilai bersandi SIPP) - SATU permintaan, hanya saat usulan diterima. */
+  async function ambilJalur(kode) {
+    if (singgahJalur.has(kode)) return singgahJalur.get(kode);
+    try {
+      const opsi = { credentials: "include", cache: "no-store" };
+      const alamat = `${WILAYAH_API}?kode=${encodeURIComponent(kode)}`;
+      const r = typeof alatAmbil === "function" ? await alatAmbil(alamat, opsi, "Membaca wilayah SIPP") : await fetch(alamat, opsi);
+      const luar = await r.json();
+      const isi = luar && luar.data ? luar.data : luar;
+      if (!r.ok || !isi || isi.ok !== true || !Array.isArray(isi.data)) return { ok: false, data: [] };
+      const hasil = { ok: true, sandi: isi.sandi || { ok: true }, data: isi.data };
+      singgahJalur.set(kode, hasil);
+      return hasil;
+    } catch {
+      return { ok: false, data: [] };
+    }
+  }
+
+  async function terapkanWilayah(s, f, el, k) {
+    if (s.sedangSinkron) return;
+    s.sedangSinkron = true;
+    try {
+      if (!tulisKolom(el, k.teks)) return;
+      catatPakai(k.kode);
+      const j = await ambilJalur(k.kode);
+      if (j.ok && j.sandi && j.sandi.ok !== false) {
+        const rencana = [];
+        j.data.forEach((w, i) => {
+          if (i < TINGKAT.length && w && w.nilaiSipp && !dropdownTerisi(f.querySelector(TINGKAT[i].penunjuk))) rencana.push({ indeks: i, wilayah: w });
+        });
+        await isiDropdown(f, s.b.form, rencana);
+      }
+      s.potret = potretDropdown(f);
+    } finally {
+      s.sedangSinkron = false;
+    }
+  }
+
+  /* panenan tabel disinggahkan beberapa detik: tidak memindai seluruh tabel halaman tiap ketikan */
+  let panenSinggah = { t: 0, v: null };
+  function panenCepat() {
+    const sekarang = Date.now();
+    if (!panenSinggah.v || sekarang - panenSinggah.t > 3000) panenSinggah = { t: sekarang, v: panenTabel(document) };
+    return panenSinggah.v;
+  }
+
   /* ─── Usulan Tab ─────────────────────────────────────────────────────── */
+
+  function butirTeks(el, teks, sesudah) {
+    return {
+      label: teks,
+      jalankan: () => {
+        if (!tulisKolom(el, teks)) return;
+        if (sesudah) sesudah();
+      },
+    };
+  }
 
   function pasangUsulan(s, f, el, jenis) {
     if (s.terpasang.has(el)) return;
     s.terpasang.add(el);
     const kotak = buatKotak("aleta-pl-saran", el);
+    let tampil = { unik: null, pilihan: [] };
+    let aktifIdx = -1;
+    let jam = null;
+    let ditutup = false;
+
     const ambilUsulan = () => {
+      const kosong = { unik: null, pilihan: [] };
       const nilai = String(el.value || "");
       const diAkhir = el.selectionStart === undefined || el.selectionStart === null || el.selectionStart >= nilai.length;
-      if (!diAkhir || !nilai.trim()) return { unik: "", pilihan: [] };
-      if (jenis === "pekerjaan") return saranPekerjaan(nilai, panenTabel(document).pekerjaan);
+      if (!diAkhir || !nilai.trim()) return kosong;
+      if (jenis === "pekerjaan") {
+        const r = saranPekerjaan(nilai, panenCepat().pekerjaan);
+        return {
+          unik: r.unik ? butirTeks(el, r.unik) : null,
+          pilihan: r.pilihan.map((p) => butirTeks(el, p)),
+        };
+      }
+      const akhirnya = () => void jadwalkanAlamatKeDropdown(s, f, 0);
+      // 1. awal nama desa/kelurahan/kecamatan -> alamat wilayah lengkap (indeks di peramban, tanpa permintaan)
+      wilayahKini.pencarian += 1;
+      const w = cariWilayah(wilayahKini.indeks, nilai, { terisi: bacaDropdown(f).map((x) => x.nama), pakai: wilayahKini.pakai });
+      if (w.kandidat.length) {
+        const butir = w.kandidat.map((k) => ({ label: k.teks, jalankan: () => void terapkanWilayah(s, f, el, k) }));
+        return w.kuat ? { unik: butir[0], pilihan: [] } : { unik: null, pilihan: butir };
+      }
+      // 2. selain itu: bentuk baku + melengkapi kata terakhir dari kosakata
       const hasil = saranAlamat(nilai, kosakataAlamat(s, document));
-      return { unik: hasil, pilihan: [] };
+      return { unik: hasil ? butirTeks(el, hasil, akhirnya) : null, pilihan: [] };
     };
+
     const gambar = () => {
+      clearTimeout(jam);
+      jam = null;
       kotak.textContent = "";
-      if (!tampak(el)) {
+      aktifIdx = -1;
+      if (!tampak(el) || ditutup) {
+        tampil = { unik: null, pilihan: [] };
         kotak.hidden = true;
         return;
       }
-      const u = ambilUsulan();
-      s.usulan.set(el, u);
-      if (u.unik) {
+      tampil = ambilUsulan();
+      if (tampil.unik) {
         kotak.appendChild(document.createTextNode("Tab: "));
         const tebal = document.createElement("strong");
-        tebal.textContent = u.unik;
+        tebal.textContent = tampil.unik.label;
         kotak.appendChild(tebal);
         kotak.hidden = false;
-      } else if (u.pilihan.length) {
-        for (const p of u.pilihan) {
+      } else if (tampil.pilihan.length) {
+        tampil.pilihan.forEach((p, i) => {
           const tombol = document.createElement("button");
           tombol.type = "button";
           tombol.className = "aleta-pl-chip";
-          tombol.textContent = p;
+          tombol.textContent = p.label;
           tombol.addEventListener("mousedown", (e) => e.preventDefault());
-          tombol.addEventListener("click", () => terapkan(p));
+          tombol.addEventListener("click", () => {
+            p.jalankan();
+            gambar();
+          });
+          tombol.dataset.nomor = String(i);
           kotak.appendChild(tombol);
+        });
+        if (tampil.pilihan.length > 1 && jenis === "alamat") {
+          const petunjuk = document.createElement("span");
+          petunjuk.className = "aleta-pl-petunjuk";
+          petunjuk.textContent = "panah atas/bawah lalu Enter atau Tab";
+          kotak.appendChild(petunjuk);
         }
         kotak.hidden = false;
       } else {
         kotak.hidden = true;
       }
     };
-    const terapkan = (nilai) => {
-      if (!tulisKolom(el, nilai)) return;
-      gambar();
-      if (jenis === "alamat") void jadwalkanAlamatKeDropdown(s, f, 0);
+    const jadwal = () => {
+      ditutup = false;
+      clearTimeout(jam);
+      jam = setTimeout(gambar, JEDA_GAMBAR_MS); // jeda ketik: tidak memproses di tiap tombol
     };
+    const geser = (arah) => {
+      const n = tampil.pilihan.length;
+      if (!n) return false;
+      aktifIdx = aktifIdx < 0 ? (arah > 0 ? 0 : n - 1) : (aktifIdx + arah + n) % n;
+      Array.from(kotak.querySelectorAll(".aleta-pl-chip")).forEach((t, i) => t.classList.toggle("aleta-pl-aktif", i === aktifIdx));
+      return true;
+    };
+
     el.addEventListener("input", () => {
       if (s.sedangSinkron) return;
-      gambar();
-    });
-    el.addEventListener("keyup", (e) => {
-      if (e.key !== "Tab" && e.key !== "Shift") gambar();
+      jadwal();
     });
     el.addEventListener("focus", gambar);
     el.addEventListener("blur", () => {
+      clearTimeout(jam);
       kotak.hidden = true;
     });
     el.addEventListener("keydown", (e) => {
-      if (e.key !== "Tab" || e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
-      const u = ambilUsulan();
-      if (!u.unik) return; // tanpa usulan: Tab biasa
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      if ((e.key === "ArrowDown" || e.key === "ArrowUp") && !e.shiftKey && !kotak.hidden && tampil.pilihan.length) {
+        e.preventDefault();
+        geser(e.key === "ArrowDown" ? 1 : -1);
+        return;
+      }
+      if (e.key === "Enter" && !kotak.hidden && aktifIdx >= 0 && tampil.pilihan[aktifIdx]) {
+        e.preventDefault();
+        const p = tampil.pilihan[aktifIdx];
+        p.jalankan();
+        gambar();
+        return;
+      }
+      if (e.key === "Escape" && !kotak.hidden) {
+        ditutup = true;
+        kotak.hidden = true;
+        return;
+      }
+      if (e.key !== "Tab" || e.shiftKey) return;
+      // Hitung ulang saat ini (jeda ketik mungkin belum selesai); pilihan panah lebih dulu.
+      const u = jam !== null || !tampil.unik ? ambilUsulan() : tampil;
+      const dipilih = aktifIdx >= 0 && u.pilihan[aktifIdx] ? u.pilihan[aktifIdx] : u.unik;
+      if (!dipilih) return; // tanpa usulan: Tab biasa
       e.preventDefault();
-      terapkan(u.unik);
+      dipilih.jalankan();
+      gambar();
     });
     s.gambarUsulan.push(gambar);
   }
@@ -870,6 +1302,7 @@
       s.aktif = true;
       s.potret = null;
       void muatKosakataWilayah(s, f);
+      void pastikanIndeks();
     }
 
     const alamat = kolomUtama(f, b);
@@ -919,6 +1352,7 @@
   }
 
   function denyut() {
+    if (wilayahKini.janji) void pastikanIndeks(); // mencoba lagi sesudah gagal (paling cepat tiap 10 menit)
     for (const b of BLANGKO) {
       try {
         sambungkan(b);
@@ -947,6 +1381,11 @@
     rantaiWilayah,
     periksaIdentitas,
     sebutanDesa,
+    buatIndeks,
+    cariWilayah,
+    susunAlamatWilayah,
+    pastikanIndeks,
+    wilayahKini,
     panenTabel,
     mulai,
     denyut,
