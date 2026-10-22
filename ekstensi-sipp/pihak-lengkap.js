@@ -36,8 +36,8 @@
  * D. PENGINGAT MERAH. Jenis identitas, nomor identitas, dan nomor telepon.
  *    Sumber aturan SAMA dengan penilaian bot (aleta_bot/services/
  *    sippTahapanService.js, saksiLengkapPerkaraBaru - "SK Tabel 2 I.12": tiga
- *    isian itu dihitung TERISI atau tidak). Pemeriksaan bentuk (NIK 16 angka,
- *    panjang telepon) adalah aturan umum yang aman. Hanya mengingatkan -
+ *    isian itu dihitung TERISI atau tidak). Bentuk NIK/KK dan nomor telepon
+ *    sengaja tidak diperiksa (keputusan pengguna 22 Okt). Hanya mengingatkan -
  *    tidak pernah menahan tombol Simpan SIPP.
  *
  * TIDAK PERNAH: menekan Simpan; menimpa dropdown yang sudah terisi; mengubah
@@ -455,27 +455,10 @@
     const nomor = String(x.nomor || "").trim();
     const telp = String(x.telp || "").trim();
     if (x.jenisAda !== false && !jenis) masalah.push({ medan: "jenis", pesan: "Jenis identitas belum dipilih." });
-    if (x.nomorAda !== false) {
-      if (!nomor) {
-        masalah.push({ medan: "nomor", pesan: "Nomor identitas belum diisi." });
-      } else if (jenis === "4" || jenis === "2") {
-        const angka = nomor.replace(/[\s.-]/g, "");
-        if (!/^\d{16}$/.test(angka)) {
-          masalah.push({ medan: "nomor", pesan: `${jenis === "4" ? "NIK KTP" : "Nomor KK"} harus 16 angka${/\d/.test(angka) ? ` (sekarang ${angka.replace(/\D/g, "").length})` : ""}.` });
-        }
-      } else if (!/[A-Za-z0-9]{5,}/.test(nomor.replace(/[\s.-]/g, ""))) {
-        masalah.push({ medan: "nomor", pesan: "Nomor identitas tampak tidak wajar." });
-      }
-    }
-    if (x.telpAda !== false) {
-      if (!telp) {
-        masalah.push({ medan: "telp", pesan: "Nomor telepon belum diisi." });
-      } else {
-        const angka = telp.replace(/[\s().-]/g, "");
-        const sah = /^(?:\+62|62|0)\d{8,13}$/.test(angka);
-        if (!sah) masalah.push({ medan: "telp", pesan: "Nomor telepon tampak tidak wajar - contoh 081234567890 atau +6281234567890." });
-      }
-    }
+    // Keputusan pengguna 22 Okt: hanya nilai SK (terisi atau belum). Panjang NIK/KK
+    // dan bentuk nomor telepon tidak diperiksa - bot sudah menyeragamkan 0 -> +62.
+    if (x.nomorAda !== false && !nomor) masalah.push({ medan: "nomor", pesan: "Nomor identitas belum diisi." });
+    if (x.telpAda !== false && !telp) masalah.push({ medan: "telp", pesan: "Nomor telepon belum diisi." });
     return masalah;
   }
 
