@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.31",
+    dirilis: "2026-10-22T17:05:00+08:00",
+    judul: "Deteksi putusan e-Court dan TTE panitera",
+    butir: [
+      "Penanda merah untuk putusan yang belum diunggah ke e-Court dan putusan di e-Court yang belum ditandatangani panitera, di halaman perkara dan daftar perkara SIPP.",
+      "Jadwal Sidang menampilkan lencana merah yang sama pada baris perkara dan panel rinciannya.",
+      "Status Perkara mendapat dua tag merah baru di kelompok e-Court untuk menyaring kedua keadaan itu.",
+    ],
+  },
+  {
     versi: "1.205.30",
     dirilis: "2026-10-22T08:04:00+08:00",
     judul: "Tunda dan putus hari itu, putus otomatis, kalender libur",
