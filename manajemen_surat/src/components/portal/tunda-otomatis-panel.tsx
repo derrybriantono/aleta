@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { BagianPutusOtomatis } from "@/components/portal/putus-otomatis-bagian";
 import { apiPath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import type { KeputusanTundaOtomatis, SetelanTundaOtomatis } from "@/lib/tunda-otomatis";
@@ -306,10 +307,11 @@ export function TombolTundaOtomatis({ tanggal }: { tanggal: string }) {
               </table>
               {daftar && daftar.butir.length === 0 ? <p className="p-3 text-sm text-muted-foreground">Tidak ada sidang pada tanggal ini.</p> : null}
             </div>
+            <BagianPutusOtomatis tanggal={tanggal} />
             <p className="mt-3 text-[11px] text-muted-foreground">
-              Gugur dan tidak dapat diterima adalah putusan majelis: keduanya hanya diusulkan di sini, tidak pernah ditulis ke SIPP. Tundaan
-              ditulis atas nama panitera sidang perkara lewat penulis tunda yang sama dengan tombol Tunda; di luar jam kerja tulisannya
-              diantrekan ke jam kerja berikutnya dan diperiksa ulang sesaat sebelum ditulis.
+              Gugur dan tidak dapat diterima tidak ditulis oleh tunda otomatis (lihat Putus otomatis di atas): di daftar tunda keduanya hanya diusulkan, tidak pernah ditulis ke SIPP. Tundaan
+              ditulis atas nama panitera sidang perkara lewat penulis tunda yang sama dengan tombol Tunda, pada jam pemicu itu juga (walau
+              di luar jam kerja - tidak pernah dipindah ke hari berikutnya), sesudah keadaan sidangnya diperiksa ulang.
             </p>
           </div>
         </div>

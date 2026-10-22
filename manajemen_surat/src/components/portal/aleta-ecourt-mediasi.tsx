@@ -68,6 +68,7 @@ import {
   type PilihanTampilanMediasi,
 } from "@/lib/tampilan-jadwal-mediasi";
 /* === 12OKT-A: kumulasi perkara === */
+import { PemilihTanggalSidang } from "@/components/ui/pemilih-tanggal-sidang";
 import { JenisDenganKumulasi, RincianKumulasi, useSaklarKumulasi } from "@/components/portal/kumulasi-perkara";
 import { namaJenisDenganKumulasi, type KumulasiPerkara } from "@/lib/kumulasi-perkara";
 /* === AKHIR 12OKT-A === */
@@ -1104,21 +1105,12 @@ export function AletaEcourtMediasi({
           </Button>
           <label className="text-sm">
             <span className="mb-1 block text-xs text-muted-foreground">Dari tanggal</span>
-            <Input
-              type="date"
-              value={dari}
-              onChange={(e) => setDari(e.target.value)}
-              className="w-40"
-            />
+            {/* 22 Okt 2026: kalender bersama bertanda libur (tanggal tampilan: libur boleh dibuka). */}
+            <PemilihTanggalSidang value={dari} onChange={setDari} liburBolehDipilih sebutan="Tanggal mediasi" aria-label="Dari tanggal" kelasBungkus="w-44" className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" />
           </label>
           <label className="text-sm">
             <span className="mb-1 block text-xs text-muted-foreground">Sampai tanggal</span>
-            <Input
-              type="date"
-              value={sampai}
-              onChange={(e) => setSampai(e.target.value)}
-              className="w-40"
-            />
+            <PemilihTanggalSidang value={sampai} onChange={setSampai} min={dari} liburBolehDipilih sebutan="Tanggal mediasi" aria-label="Sampai tanggal" kelasBungkus="w-44" className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" />
           </label>
           <Button size="sm" variant="outline" onClick={() => geserHari(1)} title="Hari berikutnya">
             ›

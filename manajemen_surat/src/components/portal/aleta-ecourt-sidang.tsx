@@ -53,6 +53,7 @@ import {
 /* === 12OKT-C: kartu ruang sidang & mediator === */
 import { PitaRuangSidang } from "@/components/portal/pita-ruang-sidang";
 import { TombolTundaOtomatis } from "@/components/portal/tunda-otomatis-panel";
+import { PemilihTanggalSidang } from "@/components/ui/pemilih-tanggal-sidang";
 import { TombolBlangkoDerry } from "@/components/portal/tombol-blangko-derry";
 import { jenisBlangkoBoleh, jenisBlangkoMenurutKeadaan, saringJenisBlangko } from "@/lib/tautan-blangko-derry";
 import { susunPitaRuang } from "@/lib/pita-ruang-sidang";
@@ -6599,10 +6600,12 @@ export function AletaEcourtSidang({
               </button>
 
               <div className="flex items-center border-x bg-background/40">
-                <Input
-                  type="date"
+                {/* 22 Okt 2026: kalender bersama bertanda libur - tanggal tampilan, jadi libur boleh dibuka. */}
+                <PemilihTanggalSidang
                   value={dari}
-                  onChange={(peristiwa) => pilihHari(peristiwa.target.value)}
+                  onChange={(v) => pilihHari(v)}
+                  liburBolehDipilih
+                  sebutan="Tanggal sidang"
                   className="h-9 w-[8.75rem] rounded-none border-0 bg-transparent text-center focus-visible:ring-0"
                   aria-label="Tanggal sidang mulai"
                 />
@@ -6611,11 +6614,12 @@ export function AletaEcourtSidang({
                 <span aria-hidden className="select-none px-0.5 text-muted-foreground">
                   –
                 </span>
-                <Input
-                  type="date"
+                <PemilihTanggalSidang
                   value={sampai}
                   min={dari}
-                  onChange={(peristiwa) => setSampai(peristiwa.target.value)}
+                  onChange={(v) => setSampai(v)}
+                  liburBolehDipilih
+                  sebutan="Tanggal sidang"
                   className="h-9 w-[8.75rem] rounded-none border-0 bg-transparent text-center focus-visible:ring-0"
                   aria-label="Tanggal sidang sampai"
                 />

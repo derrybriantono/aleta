@@ -18,7 +18,7 @@ Saklar di Jadwal Sidang (tombol **Tunda otomatis** di kepala, sebelah "Tautan ja
 - Jam pemicu: 16.30 WITA. Pada hari yang saklar Sidang keliling-nya aktif (`aleta_sidang_keliling_hari`, migrasi 0083 milik fitur itu), jamnya 14.00. Tabel atau baris yang belum ada dibaca sebagai 16.30. Satu tanggal hanya dijalankan sekali.
 - Sebelum jam pemicu, daftar berupa **pratinjau** (yang akan terjadi). Pada jam pemicu daftar **dibekukan** dan tiap tunda dikirim ke **penulis tunda yang sudah ada** (`/sidang/tunda`, atas akun PP perkara) dengan `otomatis: true`.
   - Mode kering mengirim `kering: true`: bot menyusun rencananya (akun PP, hari libur, tanggal) tetapi tidak menulis apa pun.
-  - Di luar jam kerja (16.30 sudah lewat jam kerja Senin-Kamis), tulisan diantrekan ke jam kerja berikutnya. Antrean memakai kunci `sidang-tunda:otomatis:<jadwal>` dan asal `otomatis`.
+  - Tundaan DITULIS SAAT JAM PEMICU itu juga walau di luar jam kerja (`jamKerja: "sekarang"`) - keputusan pengguna 22 Okt: tundaan/keterangan putus tidak boleh lewat dari hari itu. Antrean (kunci `sidang-tunda:otomatis:<jadwal>`, asal `otomatis`) hanya dipakai bila jam kerja berikutnya masih hari yang sama; baris yang tiba gilirannya di hari lain digagalkan ("lewat_hari"), tidak ditulis besok.
   - Sesaat sebelum menulis, bot membaca ulang keadaan sidang dan menolak bila: hasil sidang sudah diisi (termasuk "putus ..."), perkara sudah diputus, tanggal sidang berubah, sudah ada sidang berikutnya, sidang ikrar, atau perkara sedang dikunci petugas.
 - **Jangan tunda otomatis** per baris. Sebelum jam pemicu, baris itu dilewati. Sesudahnya, baris otomatis yang masih menunggu di antrean dibatalkan. Baris yang dibuat manual tidak pernah disentuh.
 - Alamat audit: alamat peramban Super Admin saat menyimpan saklar, sama dengan cara Jadwalkan Putusan. Kolom penekan (operator) hanya tercatat di jejak ALETA. Tidak ada kata "Aleta" yang dikirim ke SIPP.
@@ -47,3 +47,11 @@ Gugur dan tidak dapat diterima tidak ditulis. Di SIPP, kedua hasil itu hanya ter
 ## Ukur kering
 
 Diukur atas data server dengan SELECT saja: 294 sidang dari 21 Sep sampai 21 Okt 2026. Skripnya ada di luar repo, `D:/aleta-dev/kerja/tunda-otomatis-42/ukur.ts`. Rinciannya ada di laporan agen W42.
+
+## Tambahan 22 Okt siang (keputusan pengguna)
+
+- **Tulis hari itu**: tunda dan keterangan putus (manual, massal, otomatis) di luar jam kerja bawaannya *tulis sekarang*. Antrean hanya bila jam kerja berikutnya masih hari yang sama; baris yang gilirannya jatuh di hari lain digagalkan (`lewat_hari`). Jenis tulisan lain tetap aturan keputusan 104.
+- **Aturan 4**: 14 hari; 7 hari bila panggilan Tergugat/Termohon sebelumnya panggilan elektronik (relaas SIPP `ket_temu = E`).
+- **Perkiraan verstek**: dilewati hanya bila Penggugat/Pemohon tercatat hadir; selain itu tunda 14 hari "Panggil Penggugat dan Tergugat".
+- **Putus otomatis gugur / tidak dapat diterima** (`src/lib/putus-otomatis.ts`, `src/server/modules/putus-otomatis/layanan.ts`): saklar terpisah, bawaan MATI + mode kering, Super Admin; pemberitahuan pagi, batal per perkara, keterangan putus lewat penulis putus yang ada (atas PP), lalu (sub-pilihan, aktif bila saklar menyala) putusan disusun dari blangko Derry yang pas (ditolak bila ada isian kosong) dan dijadwalkan lewat Jadwalkan Putusan.
+- **Kalender libur bersama** (`src/components/ui/pemilih-tanggal-sidang.tsx`): libur nasional, cuti bersama, libur tambahan, Sabtu/Minggu dibedakan; tanggal yang menulis tidak dapat memilih hari libur, tanggal tampilan boleh.

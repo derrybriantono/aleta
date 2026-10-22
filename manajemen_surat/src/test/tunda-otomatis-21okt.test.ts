@@ -115,19 +115,20 @@ describe("aturan tunda otomatis", () => {
     expect(h.tanggal).toBe("2026-11-05");
   });
 
-  it("aturan 4: Court Calendar + pembuktian + Tergugat ber-email -> 7 hari; tanpa email -> 14 hari", () => {
+  it("aturan 4 (keputusan 22 Okt): Court Calendar + pembuktian + panggilan Tergugat sebelumnya ELEKTRONIK -> 7 hari; selain itu 14 hari", () => {
     const dasar = {
       agenda: "Pembuktian Penggugat",
       kalender: [{ tanggal: "2026-11-20", agenda: "Kesimpulan" }],
       riwayat: [sidang(80, "2026-10-08", 1, "Duplik"), { ...sidang(100, HARI, null, "Pembuktian Penggugat"), ditunda: false }],
     };
+    const a = tunda(putuskanTundaOtomatis(masukan({ ...dasar, panggilanTergugat: { ada: true, elektronik: true, sandi: "E" } })));
+    expect([a.aturan, a.nomorAturan, a.tanggal]).toEqual(["pembuktian-elektronik-7", 4, "2026-10-29"]);
+    // Surat tercatat (POS) / delegasi -> 14 hari; email tidak lagi syarat.
     const email = { ecourtTerbaca: true, sebab: "", penggugat: { adaEmail: true, sumber: "sipp" as const }, tergugat: { adaEmail: true, persetujuan: "setuju" as const } };
-    const a = tunda(putuskanTundaOtomatis(masukan({ ...dasar, kontak: email })));
-    expect([a.aturan, a.nomorAturan, a.tanggal]).toEqual(["pembuktian-email-7", 4, "2026-10-29"]);
-    const b = tunda(putuskanTundaOtomatis(masukan({ ...dasar, kontak: { ...email, tergugat: { adaEmail: false, persetujuan: "belum" } } })));
-    expect([b.aturan, b.tanggal]).toEqual(["pembuktian-tanpa-email-14", "2026-11-05"]);
-    // Kontak tidak terbaca = tanpa email (tidak menebak).
-    expect(tunda(putuskanTundaOtomatis(masukan({ ...dasar, kontak: null }))).aturan).toBe("pembuktian-tanpa-email-14");
+    const b = tunda(putuskanTundaOtomatis(masukan({ ...dasar, kontak: email, panggilanTergugat: { ada: true, elektronik: false, sandi: "S" } })));
+    expect([b.aturan, b.tanggal]).toEqual(["pembuktian-14", "2026-11-05"]);
+    // Cara panggil tidak terbaca = 14 hari (tidak menebak).
+    expect(tunda(putuskanTundaOtomatis(masukan({ ...dasar, panggilanTergugat: null }))).aturan).toBe("pembuktian-14");
   });
 
   it("aturan 5: permohonan (Pdt.P) -> 7 hari; cerai talak (Pdt.G) BUKAN permohonan", () => {
@@ -200,7 +201,7 @@ describe("urutan prioritas aturan", () => {
     const h = tunda(
       putuskanTundaOtomatis(masukan({ agenda: "Pembuktian Tergugat", kalender: [{ tanggal: "2026-10-23", agenda: "Kesimpulan" }], riwayat: [sidang(90, "2026-10-15", 1), { ...sidang(100, HARI, null, "Pembuktian Tergugat"), ditunda: false }] }))
     );
-    expect(h.aturan).toBe("pembuktian-tanpa-email-14");
+    expect(h.aturan).toBe("pembuktian-14");
   });
 
   it("3 mendahului 2", () => {
@@ -271,8 +272,12 @@ describe("dilewati dengan sebab", () => {
     expect(sebab({ kalender: null })).toBe("bahan-tidak-terbaca");
     expect(sebab({ ppJelas: false })).toBe("pp-tidak-jelas");
   });
-  it("perkiraan verstek: sidang ke-2+ dan lawan belum pernah hadir -> tidak ditunda", () => {
-    expect(sebab({ riwayat: [sidang(90, "2026-10-08", 2), { ...sidang(100, HARI, null), ditunda: false }] })).toBe("perkiraan-verstek");
+  it("perkiraan verstek (keputusan 22 Okt): Penggugat TERCATAT hadir -> dilewati; tidak tercatat -> tunda 14 hari panggil kedua pihak", () => {
+    const riwayatV = [sidang(90, "2026-10-08", 2), { ...sidang(100, HARI, null), ditunda: false }];
+    expect(sebab({ riwayat: riwayatV, dihadiriOlehSekarang: 2 })).toBe("perkiraan-verstek");
+    expect(sebab({ riwayat: riwayatV, hadirRinciPertama: true })).toBe("perkiraan-verstek");
+    const u = tunda(putuskanTundaOtomatis(masukan({ riwayat: riwayatV })));
+    expect([u.aturan, u.tanggal, u.alasan, u.agenda, u.kehadiran]).toEqual(["panggil-ulang-14", "2026-11-05", "Panggil Penggugat dan Tergugat", "Panggil Penggugat dan Tergugat", 4]);
     // Lawan pernah hadir -> tunda biasa.
     expect(sebab({ riwayat: [sidang(90, "2026-10-08", 1), { ...sidang(100, HARI, null), ditunda: false }] })).toBe("tunda");
     // Permohonan tanpa lawan tidak terkena.
@@ -405,7 +410,8 @@ describe("layanan tunda otomatis (basis data dalam memori)", () => {
     const c = await jalankanTundaOtomatis(db, { pemicu: "jadwal", tanggal: HARI, sumber: sumber() });
     expect(c.jalan?.mode).toBe("kering");
     expect(dikirim).toHaveLength(1);
-    expect(dikirim[0]).toMatchObject({ jadwalId: "1", kering: true, otomatis: true, tanggalSidangHarap: HARI, tanggalBerikut: "2026-11-05", ip: "192.168.10.21", jamKerja: "antrekan" });
+    // Keputusan 22 Okt: ditulis saat jam pemicu itu juga (tidak diantrekan ke pagi berikutnya).
+    expect(dikirim[0]).toMatchObject({ jadwalId: "1", kering: true, otomatis: true, tanggalSidangHarap: HARI, tanggalBerikut: "2026-11-05", ip: "192.168.10.21", jamKerja: "sekarang" });
     const per = Object.fromEntries(c.butir.map((b) => [b.jadwalId, b]));
     expect(per["1"].tulis?.status).toBe("kering-lolos");
     expect(per["2"].keputusan.jenis).toBe("gugur");
@@ -417,7 +423,7 @@ describe("layanan tunda otomatis (basis data dalam memori)", () => {
     await simpanSetelan(db, SUPER, { nyala: true, kering: false }, "192.168.10.21");
     const c = await jalankanTundaOtomatis(db, { pemicu: "jadwal", tanggal: HARI, sumber: sumber() });
     expect(dikirim).toHaveLength(1);
-    expect(dikirim[0]).toMatchObject({ kering: false, otomatis: true, jamKerja: "antrekan", dihadiriOleh: expect.any(Number) });
+    expect(dikirim[0]).toMatchObject({ kering: false, otomatis: true, jamKerja: "sekarang", dihadiriOleh: expect.any(Number) });
     for (const isi of dikirim) {
       expect(isi).not.toHaveProperty("statusPutusanId");
       expect(isi).not.toHaveProperty("tulisPutusan");
@@ -453,9 +459,9 @@ describe("layanan tunda otomatis (basis data dalam memori)", () => {
   });
 
   it("hari sidang keliling aktif: jalan pukul 14.00 dan TIDAK lagi pukul 16.30", async () => {
-    // Tabel dibuat migrasi 0083 (fitur Sidang keliling); aktif disimpan 0/1.
+    // Tabel milik saklar Sidang keliling (migrasi 0083) sudah ada di skema.
     const TGL = "2026-10-29";
-    await db.run("INSERT INTO aleta_sidang_keliling_hari (tanggal, aktif, diubah_oleh, diubah_pada) VALUES (?, ?, ?, ?)", [TGL, 1, "Derry", "x"]);
+    await db.run("INSERT INTO aleta_sidang_keliling_hari (tanggal, aktif, diubah_oleh, diubah_nama, diubah_pada) VALUES (?, ?, ?, ?, ?)", [TGL, 1, "u1", "Derry", "x"]);
     await simpanSetelan(db, SUPER, { nyala: true, kering: true }, "");
     expect(await jamTundaOtomatis(db, TGL)).toBe("14:00");
     expect(await jamTundaOtomatis(db, HARI)).toBe("16:30");
@@ -533,12 +539,22 @@ describe("bot: penjaga tunda otomatis dan antrean", () => {
       aktif: () => true,
       libur: () => null,
     });
-    const g = await layanan.gerbangManual({ badan: { kering: false, jamKerja: "antrekan", otomatis: true }, jenis: "sidang-tunda", kunci: "sidang-tunda:otomatis:1", muatan: {} });
+    // Keputusan 22 Okt: pukul 16.30 antrean ke besok TIDAK pernah - tulis sekarang (gerbang null).
+    expect(await layanan.gerbangManual({ badan: { kering: false, jamKerja: "antrekan", otomatis: true }, jenis: "sidang-tunda", kunci: "sidang-tunda:otomatis:1", muatan: {} })).toBeNull();
+    expect(kueri.some(([s]) => /INSERT INTO aleta_bot_antrean_tulis_sipp/.test(s))).toBe(false);
+    // Pagi sebelum 07.30 hari yang sama: antrean boleh (masih hari itu).
+    const pagi = buatLayanan({
+      db: { query: async (sql: string, p: unknown[] = []) => (kueri.push([sql, p]), sql.trim().startsWith("UPDATE") ? { affectedRows: 1 } : { affectedRows: 1, insertId: 7 }) },
+      sekarang: () => "2026-10-22 06:50:00",
+      aktif: () => true,
+      libur: () => null,
+    });
+    const g = await pagi.gerbangManual({ badan: { kering: false, jamKerja: "antrekan", otomatis: true }, jenis: "sidang-tunda", kunci: "sidang-tunda:otomatis:1", muatan: {} });
     expect(g.body.diantrekan).toBe(true);
     const sisip = kueri.find(([s]) => /INSERT INTO aleta_bot_antrean_tulis_sipp/.test(s))!;
     expect(sisip[1][0]).toBe("sidang-tunda:otomatis:1");
     expect(sisip[1][4]).toBe("otomatis");
-    expect(String(sisip[1][6]) >= "2026-10-23 07:35:00").toBe(true);
+    expect(String(sisip[1][6]).slice(0, 10)).toBe("2026-10-22");
     const r = await layanan.batalkanOtomatis("sidang-tunda:otomatis:1");
     expect(r.dibatalkan).toBe(true);
     expect(kueri.find(([s]) => /SET status = 'batal'/.test(s))![0]).toMatch(/asal = 'otomatis' AND status = 'menunggu'/);

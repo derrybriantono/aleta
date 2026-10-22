@@ -138,7 +138,7 @@ Catatan kewenangan:
 | Pilih mediator | U | U | U | U | U | U | U | - | - | - | - | - | - | - | - | - |
 | Keterangan perkara | U | U | U | U | U | U | U | U | - | - | - | U | - | - | - | - |
 | Nyalakan / matikan Sidang keliling per tanggal | U | U | U | U | U | - | U | - | - | - | - | - | - | - | - | - |
-| Pilih hakim yang menyidangkan per perkara | U | U | U | U | - | - | U | - | - | - | - | - | - | - | - | - |
+| Pilih hakim yang menyidangkan per perkara | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Tunjuk konseptor sementara | U | U | U | U | U | U | - | - | - | - | - | - | - | - | - | - |
 | Kehadiran pihak untuk BAS | U | U | U | U | U | U | U | - | - | - | - | U | - | - | - | - |
 | Isi Court Calendar ke SIPP | U | U | - | - | U | U | U | - | - | - | - | - | - | - | - | - |

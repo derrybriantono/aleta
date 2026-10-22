@@ -728,6 +728,33 @@ async function tanggalKelilingLokasi(ruangan, setelah) {
   return baris.map((b) => bersih(b.tanggal)).filter(tanggalSah);
 }
 
+/**
+ * Cara panggil Tergugat/Termohon pada panggilan TERAKHIR sampai sidang ini (keputusan
+ * pengguna 22 Okt 2026, aturan 4 tunda otomatis: pembuktian 7 hari bila panggilan
+ * sebelumnya PANGGILAN ELEKTRONIK, selain itu 14 hari). Dibaca dari
+ * perkara_pelaksanaan_relaas.ket_temu (sandi E = panggilan elektronik; S surat
+ * tercatat, delegasi dan lainnya bukan elektronik), hanya relaas yang pihaknya
+ * tersambung ke perkara_pihak2. Hanya SELECT. null = tidak terbaca / tidak ada.
+ */
+async function caraPanggilTergugatTerakhir(perkaraId, jadwalId) {
+  const id = Number(perkaraId);
+  const sidang = Number(jadwalId);
+  if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(sidang) || sidang <= 0) return null;
+  const baris = await kueri(
+    `SELECT r.ket_temu AS sandi, DATE_FORMAT(r.tanggal_relaas, '%Y-%m-%d') AS tanggal
+       FROM perkara_pelaksanaan_relaas r
+       JOIN perkara_pihak2 p2 ON p2.perkara_id = r.perkara_id AND p2.pihak_id = r.pihak_id
+      WHERE r.perkara_id = ? AND r.sidang_id <= ?
+      ORDER BY r.sidang_id DESC, r.tanggal_relaas DESC
+      LIMIT 1`,
+    [id, sidang]
+  ).catch(() => null);
+  if (!Array.isArray(baris)) return null;
+  if (!baris[0]) return { ada: false, sandi: "", elektronik: false, tanggal: "" };
+  const sandi = bersih(baris[0].sandi).toUpperCase();
+  return { ada: true, sandi, elektronik: sandi === "E", tanggal: bersih(baris[0].tanggal) };
+}
+
 /** Akun pejabat yang dipakai menulis - harus benar-benar ada di SIPP. */
 async function akunSipp(username) {
   const nama = bersih(username);
@@ -1383,6 +1410,20 @@ async function susunRencanaPutus(minta = {}) {
     if (utuh !== false) return { ok: false, alasan: "sidang_ditunda_tidak_dapat_diputus" };
   }
 
+  // Putus otomatis gugur / tidak dapat diterima (22 Okt 2026): penjaga baca-ulang
+  // yang sama dengan tunda otomatis + pihak pertama TERCATAT HADIR hari itu = tidak
+  // pernah diputus otomatis; verzet dan eksekusi dilewati. Hanya keterangan putus
+  // jadwal (tanpa perkara_putusan) - tulisPutusan tidak pernah dari jalur otomatis.
+  if (minta.otomatis === true) {
+    if (minta.tulisPutusan === true) return { ok: false, alasan: "putus_otomatis_tanpa_putusan_akhir" };
+    const tolak = await penjagaTundaOtomatis(keadaan, minta);
+    if (tolak) return tolak;
+    if (bersih(keadaan.verzet) === "Y" || /eksekusi/i.test(bersih(keadaan.jenisPerkara))) return { ok: false, alasan: "putus_otomatis_dilewati_jenis" };
+    const hadirRow = [1, 2, 10].includes(Number(keadaan.dihadiriOleh));
+    const antrianHadir = await antrianSidangUntuk(keadaan).catch(() => null);
+    if (hadirRow || (antrianHadir && antrianHadir.hadirPihak1)) return { ok: false, alasan: "pihak_tercatat_hadir" };
+  }
+
   // Penginput di SIPP = panitera sidang (PP) perkara itu - keputusan 7 Okt
   // 2026, lihat pilihPaniteraSidang. Hakim hanya untuk jalur tulisPutusan.
   const pp = await paniteraSidang(keadaan.perkaraId, keadaan.tanggalSidang);
@@ -1825,6 +1866,7 @@ module.exports = {
   susunRencanaTunda,
   penjagaTundaOtomatis,
   tanggalKelilingLokasi,
+  caraPanggilTergugatTerakhir,
   susunRencanaPutus,
   susunRencanaPutusIkrar,
   AMAR_BELUM,

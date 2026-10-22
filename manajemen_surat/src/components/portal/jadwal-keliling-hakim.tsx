@@ -1020,7 +1020,7 @@ export function MejaPaniteraSidang({
 
           {tanyaJam ? (
             <div className="mt-2">
-              <TanyaJamKerja pesan={tanyaJam.pesan} sibuk={false} onPilih={tanyaJam.lanjut} />
+              <TanyaJamKerja pesan={tanyaJam.pesan} sibuk={false} bawaan="sekarang" onPilih={tanyaJam.lanjut} />
             </div>
           ) : null}
 

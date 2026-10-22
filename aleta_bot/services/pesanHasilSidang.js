@@ -143,6 +143,12 @@ function pesanHasilSidang(hasil, jalan = "tunda") {
       return `Perkara ini sudah punya jadwal sidang berikutnya - tunda otomatis tidak menulis apa pun. ${tidakAdaPerubahan}`;
     case "jadwal_tidak_terbaca":
       return `Jadwal sidang perkara ini tidak dapat dibaca dari SIPP saat ini. ${tidakAdaPerubahan}`;
+    case "pihak_tercatat_hadir":
+      return `Penggugat/Pemohon tercatat hadir hari ini - tidak diputus otomatis. ${tidakAdaPerubahan}`;
+    case "putus_otomatis_dilewati_jenis":
+      return `Perlawanan (verzet) atau eksekusi tidak diputus otomatis. ${tidakAdaPerubahan}`;
+    case "putus_otomatis_tanpa_putusan_akhir":
+      return `Putus otomatis hanya mencatat keterangan putus di jadwal sidang, bukan Putusan Akhir. ${tidakAdaPerubahan}`;
     case "perkara_sedang_dikerjakan":
       return `Petugas sedang mengerjakan perkara ini (atau kuncinya tidak terbaca) - tunda otomatis menunggu, tidak menulis. ${tidakAdaPerubahan}`;
     case "bukan_sidang_ikrar":

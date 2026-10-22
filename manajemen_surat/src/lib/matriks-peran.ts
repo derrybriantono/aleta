@@ -688,10 +688,11 @@ export const AKSI = {
   "sidang.pilih-hakim": {
     label: "Pilih hakim yang menyidangkan per perkara",
     crud: "CUD",
-    golongan: ["pimpinan", "hakim", "pp"],
+    // Keputusan pengguna 22 Okt 2026: HANYA Admin & Super Admin (golongan kosong).
+    golongan: [],
     lingkup: "semua",
     rute: ["PUT|DELETE /api/aleta-ecourt/sidang/hakim-sidang"],
-    alasan: "Satu hakim menyidangkan perkara pada hari itu (mis. sidang keliling); dipilih majelis, pimpinan, atau panitera sidang. Konseptor sementara ikut diisi hakim itu.",
+    alasan: "Satu hakim menyidangkan perkara pada hari itu (mis. sidang keliling); konseptor sementara ikut diisi hakim itu. Hanya Admin dan Super Admin (keputusan pengguna 22 Okt 2026).",
   },
   "sidang.konseptor": {
     label: "Tunjuk konseptor sementara",

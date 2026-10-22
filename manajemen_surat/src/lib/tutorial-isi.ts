@@ -334,7 +334,7 @@ export const TUTORIAL: readonly Tutorial[] = [
     langkah: [
       "Buka Jadwal Sidang pada satu tanggal. Saklar Sidang keliling ada di samping tombol Cetak; bawaannya mati.",
       "Bila sebagian besar perkara hari itu bersidang di luar gedung, muncul pertanyaan Aktifkan Sidang keliling. Pertanyaan ini muncul sekali per tanggal untuk tiap pengguna. Pada hari Sidang keliling, tunda otomatis berjalan pukul 14.00.",
-      "Untuk memilih satu hakim yang menyidangkan, tekan pilih hakim di kolom majelis. Hakim majelis perkara itu tampil paling atas, lalu hakim aktif lainnya. Nama hakim itu menggantikan nama majelis di jadwal, sedangkan kode majelis tetap tampil.",
+      "Admin dan Super Admin memilih satu hakim yang menyidangkan: tekan pilih hakim di kolom majelis. Hakim majelis perkara itu tampil paling atas, lalu hakim aktif lainnya. Nama hakim itu menggantikan nama majelis di jadwal, sedangkan kode majelis tetap tampil.",
       "Konseptor sementara perkara itu ikut terisi nama hakim yang dipilih. Bila sudah ada konseptor yang ditunjuk, Anda ditanya dulu apakah konseptornya diganti.",
       "Tombol kembali di samping nama hakim mengembalikan perkara ke majelisnya, dan konseptor sementara kembali seperti semula.",
       "Tekan Per panitera sidang, lalu pilih nama panitera sidang. Semua perkaranya hari itu langsung terpilih. Pada Pilih hakim, pilih hakimnya lalu tekan Simpan hakim.",
@@ -346,7 +346,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Saklar Sidang keliling dan pilihan hakim hanya disimpan di ALETA dan tidak ditulis ke SIPP.",
       "Tunda dan putus massal ditulis ke SIPP atas akun Panitera Pengganti perkara masing-masing, sama seperti tombol tunda dan putus di baris.",
       "Sidang ikrar talak tidak ikut keterangan putus massal. Catat dari tombol putus di barisnya supaya form ikrar dan e-Doc ikut terisi.",
-      "Saklar Sidang keliling dapat diubah Hakim, Ketua atau Wakil Ketua, Panitera, dan Panitera Pengganti. Hakim dapat dipilih oleh Hakim, Ketua atau Wakil Ketua, dan Panitera Pengganti.",
+      "Saklar Sidang keliling dapat diubah Hakim, Ketua atau Wakil Ketua, Panitera, dan Panitera Pengganti. Hakim yang menyidangkan hanya dapat dipilih Admin dan Super Admin.",
     ],
     kataKunci: ["sidang keliling", "pilih hakim", "hakim tunggal", "cetak per hakim", "tunda massal", "putus massal", "panitera sidang", "konseptor"],
   },

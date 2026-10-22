@@ -121,8 +121,9 @@ describe("hak per peran", () => {
   });
 
   it("Pilih hakim: Hakim, Ketua, PP, Admin; bukan juru sita/kasir", () => {
-    for (const r of ["hakim", "ketua", "panitera-pengganti", "admin"]) expect(bolehAksi(orang(r, r), "sidang.pilih-hakim"), r).toBe(true);
-    for (const r of ["jurusita", "analis-keuangan", "operator"]) expect(bolehAksi(orang(r, r), "sidang.pilih-hakim"), r).toBe(false);
+    // Keputusan pengguna 22 Okt 2026: pilih hakim per perkara hanya Admin & Super Admin.
+    for (const r of ["admin", "super-admin"]) expect(bolehAksi(orang(r, r), "sidang.pilih-hakim"), r).toBe(true);
+    for (const r of ["hakim", "ketua", "panitera-pengganti", "jurusita", "analis-keuangan", "operator"]) expect(bolehAksi(orang(r, r), "sidang.pilih-hakim"), r).toBe(false);
   });
 
   it("rute menulis memasang pagar matriksnya; tunda/putus massal memakai rute lama (pagar sidang.tunda-putus)", () => {

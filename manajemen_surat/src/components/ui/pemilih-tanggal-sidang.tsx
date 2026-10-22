@@ -26,6 +26,20 @@ import { cn } from "@/lib/utils";
  * kecil: Sabtu, Minggu, libur nasional, cuti bersama, dan libur tambahan
  * Pengaturan tampil kelabu bergaris beserta namanya dan tidak dapat ditekan.
  * Tanggal libur yang diketik ditolak - nilai lama tetap - dan sebabnya disebut.
+ *
+ * 22 Okt 2026 - SATU kalender untuk semua pemilih tanggal Jadwal Sidang (tunda
+ * ringkas & Hasil Sidang, Per panitera sidang, tanggal tampilan Jadwal Sidang,
+ * Jadwal Mediasi): Libur nasional (merah), Cuti bersama (jingga), Libur tambahan
+ * Pengaturan (ungu), Sabtu/Minggu (kelabu), dengan namanya saat diarahkan /
+ * disentuh dan di daftar bawah; hari ini dan tanggal usulan bertanda. Papan
+ * ketik: panah (hari/pekan), PageUp/PageDown (bulan), Home/End, Enter memilih,
+ * Esc menutup. Lebar mengikuti layar HP; sel membesar di layar TV.
+ *
+ * PILIHAN: tanggal yang MENULIS (tunda, sidang berikutnya) - hari libur TIDAK
+ * dapat dipilih sama sekali (SIPP sendiri menolak Sabtu/Minggu; sidang pada hari
+ * libur tidak pernah benar, jadi konfirmasi tidak ditawarkan). Tanggal yang
+ * hanya MELIHAT (tampilan Jadwal Sidang/Mediasi) memakai `liburBolehDipilih`:
+ * tetap bertanda, boleh dibuka - melihat jadwal hari libur tidak menulis apa pun.
  */
 
 let muatan: Promise<void> | null = null;
@@ -85,6 +99,8 @@ export function PemilihTanggalSidang({
   sebutan = "Tanggal sidang",
   "aria-label": ariaLabel,
   id,
+  usulan,
+  liburBolehDipilih = false,
 }: {
   value: string;
   onChange: (iso: string) => void;
@@ -96,6 +112,10 @@ export function PemilihTanggalSidang({
   sebutan?: string;
   "aria-label"?: string;
   id?: string;
+  /** Tanggal usulan aturan - bertanda di kalender. */
+  usulan?: string;
+  /** Hanya untuk tanggal tampilan (tidak menulis): libur bertanda tetapi boleh dipilih. */
+  liburBolehDipilih?: boolean;
 }) {
   useHariLibur();
   const [buka, setBuka] = useState(false);
@@ -118,7 +138,7 @@ export function PemilihTanggalSidang({
       onChange("");
       return;
     }
-    const pesan = tolakTanggalLibur(iso, petaLiburBerlaku(), sebutan);
+    const pesan = liburBolehDipilih ? "" : tolakTanggalLibur(iso, petaLiburBerlaku(), sebutan);
     if (pesan) {
       setDitolak(pesan);
       return;
@@ -166,7 +186,7 @@ export function PemilihTanggalSidang({
         </span>
       ) : sebabNilai ? (
         <span className="text-[0.7rem] font-medium text-amber-700 dark:text-amber-400" data-tanggal-libur="">
-          {sebutTanggalPanjang(value)} hari libur ({sebabNilai.nama}). Pilih hari kerja lain.
+          {sebutTanggalPanjang(value)} hari libur ({sebabNilai.nama}).{liburBolehDipilih ? "" : " Pilih hari kerja lain."}
         </span>
       ) : tanpaSkb ? (
         <span className="text-[0.7rem] text-muted-foreground">Daftar libur nasional tahun {value.slice(0, 4)} belum ada - periksa SKB-nya.</span>
@@ -178,6 +198,9 @@ export function PemilihTanggalSidang({
           terpilih={value}
           min={min}
           max={max}
+          usulan={usulan}
+          liburBolehDipilih={liburBolehDipilih}
+          tutup={() => setBuka(false)}
           pilih={(iso) => {
             pilih(iso);
             setBuka(false);
@@ -187,14 +210,44 @@ export function PemilihTanggalSidang({
     </div>
   );
 }
+const LABEL_JENIS: Record<string, string> = {
+  nasional: "Libur nasional",
+  "cuti-bersama": "Cuti bersama",
+  daerah: "Libur tambahan",
+  lain: "Libur tambahan",
+  sabtu: "Sabtu",
+  minggu: "Minggu",
+};
 
-function KalenderLibur({
+/** Kelas warna sel menurut jenis libur - tema terang dan gelap. */
+function warnaLibur(jenis: string): string {
+  if (jenis === "nasional") return "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10";
+  if (jenis === "cuti-bersama") return "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10";
+  if (jenis === "daerah" || jenis === "lain") return "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10";
+  return "text-muted-foreground";
+}
+
+function geserTanggal(iso: string, hari: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + hari)).toISOString().slice(0, 10);
+}
+
+function geserBulan(iso: string, n: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const akhir = new Date(Date.UTC(y, m - 1 + n + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(y, m - 1 + n, Math.min(d, akhir))).toISOString().slice(0, 10);
+}
+
+export function KalenderLibur({
   bulan,
   gantiBulan,
   terpilih,
   min,
   max,
   pilih,
+  usulan,
+  liburBolehDipilih = false,
+  tutup,
 }: {
   bulan: string;
   gantiBulan: (b: string) => void;
@@ -202,9 +255,15 @@ function KalenderLibur({
   min?: string;
   max?: string;
   pilih: (iso: string) => void;
+  usulan?: string;
+  liburBolehDipilih?: boolean;
+  tutup?: () => void;
 }) {
   const [th, bl] = bulan.split("-").map(Number);
   const awal = `${bulan}-01`;
+  const kini = hariIni();
+  const [fokus, setFokus] = useState(() => (tanggalSah(terpilih) && terpilih.startsWith(bulan) ? terpilih : kini.startsWith(bulan) ? kini : awal));
+  const grid = useRef<HTMLDivElement | null>(null);
   const sel = useMemo(() => {
     const geser = (hariKe(awal) + 6) % 7; // Senin = 0
     const jumlah = new Date(Date.UTC(th, bl, 0)).getUTCDate();
@@ -212,33 +271,76 @@ function KalenderLibur({
     for (let d = 1; d <= jumlah; d += 1) hasil.push(`${bulan}-${String(d).padStart(2, "0")}`);
     return hasil;
   }, [awal, bulan, th, bl]);
-  const liburBulan = sel.filter((x): x is string => Boolean(x)).map((x) => ({ x, s: sebabLibur(x) })).filter((y) => y.s && y.s.jenis !== "sabtu" && y.s.jenis !== "minggu");
+  const liburBulan = sel
+    .filter((x): x is string => Boolean(x))
+    .map((x) => ({ x, s: sebabLibur(x) }))
+    .filter((y) => y.s && y.s.jenis !== "sabtu" && y.s.jenis !== "minggu");
   const pindah = (n: number) => {
     const d = new Date(Date.UTC(th, bl - 1 + n, 1));
     gantiBulan(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`);
   };
-  const kini = hariIni();
+
+  // Fokus papan ketik mengikuti tanggal aktif, juga sesudah bulan berganti.
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const el = grid.current?.querySelector<HTMLButtonElement>(`[data-tanggal="${fokus}"]`);
+      if (el && grid.current?.contains(document.activeElement ?? null)) el.focus();
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, [fokus, bulan]);
+
+  const pindahFokus = (iso: string) => {
+    setFokus(iso);
+    if (iso.slice(0, 7) !== bulan) gantiBulan(iso.slice(0, 7));
+  };
+
+  const tombolKunci = (e: { key: string; preventDefault: () => void; stopPropagation: () => void }, iso: string, bisa: boolean) => {
+    const arah: Record<string, () => string> = {
+      ArrowLeft: () => geserTanggal(iso, -1),
+      ArrowRight: () => geserTanggal(iso, 1),
+      ArrowUp: () => geserTanggal(iso, -7),
+      ArrowDown: () => geserTanggal(iso, 7),
+      PageUp: () => geserBulan(iso, -1),
+      PageDown: () => geserBulan(iso, 1),
+      Home: () => geserTanggal(iso, -((hariKe(iso) + 6) % 7)),
+      End: () => geserTanggal(iso, 6 - ((hariKe(iso) + 6) % 7)),
+    };
+    if (arah[e.key]) {
+      e.preventDefault();
+      pindahFokus(arah[e.key]());
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (bisa) pilih(iso);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      tutup?.();
+    }
+  };
 
   return (
     <div
       role="dialog"
       aria-label={`Kalender ${BULAN[bl - 1]} ${th}`}
-      className="absolute left-0 top-full z-50 mt-1 w-[17.5rem] rounded-lg border bg-card p-2 text-xs text-foreground shadow-lg"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") tutup?.();
+      }}
+      className="absolute left-0 top-full z-50 mt-1 w-[min(19rem,calc(100vw-2rem))] rounded-lg border bg-card p-2 text-xs text-foreground shadow-lg 2xl:w-[24rem] 2xl:text-sm"
     >
       <div className="mb-1 flex items-center justify-between">
-        <button type="button" aria-label="Bulan sebelumnya" onClick={() => pindah(-1)} className="rounded p-1 hover:bg-muted">
+        <button type="button" aria-label="Bulan sebelumnya" onClick={() => pindah(-1)} className="rounded p-1.5 hover:bg-muted">
           <ChevronLeft className="h-4 w-4" />
         </button>
         <span className="font-semibold">
           {BULAN[bl - 1]} {th}
         </span>
-        <button type="button" aria-label="Bulan berikutnya" onClick={() => pindah(1)} className="rounded p-1 hover:bg-muted">
+        <button type="button" aria-label="Bulan berikutnya" onClick={() => pindah(1)} className="rounded p-1.5 hover:bg-muted">
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-0.5 text-center">
-        {HARI_PENDEK.map((h) => (
-          <span key={h} className="py-0.5 text-[0.65rem] font-medium text-muted-foreground">
+      <div ref={grid} className="grid grid-cols-7 gap-0.5 text-center">
+        {HARI_PENDEK.map((h, i) => (
+          <span key={h} className={cn("py-0.5 text-[0.65rem] font-medium text-muted-foreground 2xl:text-xs", i === 6 && "text-red-600 dark:text-red-400")}>
             {h}
           </span>
         ))}
@@ -246,26 +348,37 @@ function KalenderLibur({
           if (!iso) return <span key={`k${i}`} />;
           const s = sebabLibur(iso);
           const luar = Boolean((min && iso < min) || (max && iso > max));
-          const mati = Boolean(s) || luar;
-          const nama = s ? s.nama : "";
+          const mati = (Boolean(s) && !liburBolehDipilih) || luar;
+          const label = s ? LABEL_JENIS[s.jenis] || "Libur" : "";
+          const tambahan = [iso === kini ? "hari ini" : "", usulan && iso === usulan ? "tanggal usulan" : ""].filter(Boolean).join(", ");
+          const aria = s
+            ? `${sebutTanggalPanjang(iso)}, hari libur ${s.nama}${liburBolehDipilih ? "" : ", tidak dapat dipilih"} - ${label}${tambahan ? `, ${tambahan}` : ""}`
+            : `${sebutTanggalPanjang(iso)}${tambahan ? `, ${tambahan}` : ""}`;
           return (
             <button
               key={iso}
               type="button"
+              data-tanggal={iso}
+              tabIndex={iso === fokus ? 0 : -1}
               disabled={mati}
               data-libur={s ? "ya" : undefined}
-              title={s ? `${sebutTanggalPanjang(iso)} - libur: ${nama}` : sebutTanggalPanjang(iso)}
-              aria-label={s ? `${sebutTanggalPanjang(iso)}, hari libur ${nama}, tidak dapat dipilih` : sebutTanggalPanjang(iso)}
+              data-jenis-libur={s ? s.jenis : undefined}
+              data-usulan={usulan && iso === usulan ? "ya" : undefined}
+              aria-pressed={iso === terpilih}
+              title={s ? `${sebutTanggalPanjang(iso)} - ${label}: ${s.nama}` : sebutTanggalPanjang(iso)}
+              aria-label={aria}
               onClick={() => pilih(iso)}
+              onKeyDown={(e) => tombolKunci(e, iso, !mati)}
+              onFocus={() => setFokus(iso)}
               className={cn(
-                "h-7 rounded text-[0.75rem] tabular-nums",
-                s
-                  ? "cursor-not-allowed text-muted-foreground line-through [background-image:repeating-linear-gradient(135deg,transparent_0_4px,rgba(127,127,127,0.18)_4px_6px)]"
-                  : luar
-                    ? "cursor-not-allowed text-muted-foreground/50"
-                    : "hover:bg-primary/10",
-                iso === terpilih && !s && "bg-primary font-semibold text-primary-foreground hover:bg-primary",
-                iso === kini && iso !== terpilih && "ring-1 ring-primary/50"
+                "h-9 rounded text-[0.8rem] tabular-nums sm:h-8 2xl:h-10 2xl:text-sm",
+                s ? warnaLibur(s.jenis) : "",
+                s && !liburBolehDipilih && "cursor-not-allowed line-through",
+                s && liburBolehDipilih && "hover:ring-1 hover:ring-primary/40",
+                !s && (luar ? "cursor-not-allowed text-muted-foreground/50" : "hover:bg-primary/10"),
+                usulan && iso === usulan && iso !== terpilih && "ring-2 ring-sky-500",
+                iso === terpilih && (!s || liburBolehDipilih) && "bg-primary font-semibold text-primary-foreground hover:bg-primary",
+                iso === kini && iso !== terpilih && "font-semibold underline decoration-2 underline-offset-2"
               )}
             >
               {Number(iso.slice(8))}
@@ -274,15 +387,28 @@ function KalenderLibur({
         })}
       </div>
       {liburBulan.length ? (
-        <ul className="mt-1.5 space-y-0.5 border-t pt-1.5 text-[0.7rem] text-muted-foreground">
+        <ul className="mt-1.5 space-y-0.5 border-t pt-1.5 text-[0.7rem] text-muted-foreground 2xl:text-xs">
           {liburBulan.map(({ x, s }) => (
-            <li key={x}>
-              <span className="font-medium text-foreground">{Number(x.slice(8))}</span> {s!.nama}
+            <li key={x} className="flex items-baseline gap-1">
+              <span className={cn("min-w-[1.5rem] rounded px-1 text-center font-medium", warnaLibur(s!.jenis))}>{Number(x.slice(8))}</span>
+              <span>
+                {s!.nama} <span className="opacity-75">({LABEL_JENIS[s!.jenis] || "Libur"})</span>
+              </span>
             </li>
           ))}
         </ul>
       ) : null}
-      <p className="mt-1 text-[0.65rem] text-muted-foreground">Tanggal bergaris: hari libur, tidak dapat dipilih.</p>
+      <div className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 border-t pt-1 text-[0.65rem] text-muted-foreground 2xl:text-xs" aria-hidden="true">
+        <span className="text-red-600 dark:text-red-400">Libur nasional</span>
+        <span className="text-orange-600 dark:text-orange-400">Cuti bersama</span>
+        <span className="text-violet-600 dark:text-violet-400">Libur tambahan</span>
+        <span>Sabtu/Minggu</span>
+        <span className="underline decoration-2 underline-offset-2">Hari ini</span>
+        {usulan ? <span className="rounded px-0.5 ring-1 ring-sky-500">Usulan</span> : null}
+      </div>
+      <p className="mt-1 text-[0.65rem] text-muted-foreground 2xl:text-xs">
+        {liburBolehDipilih ? "Hari libur bertanda; boleh dibuka untuk melihat jadwal." : "Hari libur dicoret dan tidak dapat dipilih."}
+      </p>
     </div>
   );
 }

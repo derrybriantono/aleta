@@ -58,6 +58,8 @@ describe("TombolTundaOtomatis", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string, init?: RequestInit) => {
+        // Bagian Putus otomatis (22 Okt) punya rutenya sendiri - di uji ini kosong.
+        if (String(url).includes("putus-otomatis")) return new Response(JSON.stringify({ ok: true, data: { ada: false } }), { status: 200 });
         kiriman.push({ url: String(url), badan: init?.body ? JSON.parse(String(init.body)) : undefined });
         return new Response(JSON.stringify(init?.method === "POST" ? { ok: true, data: { ok: true, pesan: "Perkara ini tidak akan ditunda otomatis hari ini." } } : daftar(false)), { status: 200 });
       })
@@ -79,7 +81,12 @@ describe("TombolTundaOtomatis", () => {
   });
 
   it("Super Admin dapat menyalakan/mematikan saklar", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(daftar(true)), { status: 200 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        String(url).includes("putus-otomatis") ? new Response(JSON.stringify({ ok: true, data: { ada: false } }), { status: 200 }) : new Response(JSON.stringify(daftar(true)), { status: 200 })
+      )
+    );
     render(createElement(TombolTundaOtomatis, { tanggal: "2026-10-22" }));
     fireEvent.click(screen.getByRole("button", { name: /Tunda otomatis/ }));
     await screen.findByText("600/Pdt.G/2026/PA.Dgl");
