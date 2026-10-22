@@ -542,6 +542,8 @@
     mode: "hari",
     dari: "",
     sampai: "",
+    /** 22 Okt 2026: satu tanggal tertentu (mode "tanggal") - berbeda dari rentang DARI-SAMPAI. */
+    tgl: "",
     lihat: "kartu",
     urut: "prioritas",
     arah: -1,
@@ -997,17 +999,24 @@
   }
 
   // ── Daftar perkara ────────────────────────────────────────────────────────
+  /** Rentang tanggal yang berlaku: "Tanggal tertentu" = satu hari, "Rentang tanggal" = DARI-SAMPAI; mode lain tanpa. */
+  function rentangMode() {
+    if (S.mode === "tanggal") return rentangDari(S.tgl, S.tgl);
+    if (S.mode === "rentang") return rentangDari(S.dari, S.sampai);
+    return null;
+  }
   function kunciPermintaan() {
-    const r = S.mode === "rentang" ? rentangDari(S.dari, S.sampai) : null;
-    return [S.mode, r ? r.dari : "", r ? r.sampai : "", S.sebagai.nama, S.sebagai.peran, nomorCariPtsp()].join("|");
+    const r = rentangMode();
+    // "Tanggal tertentu" dan rentang sehari memuat hal yang sama dari server: ikut satu kunci singgahan.
+    return [S.mode === "tanggal" ? "rentang" : S.mode, r ? r.dari : "", r ? r.sampai : "", S.sebagai.nama, S.sebagai.peran, nomorCariPtsp()].join("|");
   }
   function alamatPermintaan() {
     const q = new URLSearchParams();
     // PTSP mencari di seluruh rentang jadwal satker: nomor yang diketik menentukan hasilnya, bukan tab tanggal.
-    q.set("mode", nomorCariPtsp() ? "semua" : S.mode);
+    q.set("mode", nomorCariPtsp() ? "semua" : S.mode === "tanggal" ? "rentang" : S.mode);
     if (nomorCariPtsp()) q.set("nomor", nomorCariPtsp());
-    if (!nomorCariPtsp() && S.mode === "rentang") {
-      const r = rentangDari(S.dari, S.sampai) || { dari: hariIni(), sampai: hariIni() };
+    if (!nomorCariPtsp() && (S.mode === "rentang" || S.mode === "tanggal")) {
+      const r = rentangMode() || { dari: hariIni(), sampai: hariIni() };
       q.set("dari", r.dari);
       q.set("sampai", r.sampai);
     }
@@ -1020,7 +1029,7 @@
 
   async function muatDaftar(paksa) {
     // Pilih tanggal tanpa satu tanggal pun: tidak ada yang dimuat dan tidak ada galat - petunjuk lembut saja.
-    if (S.mode === "rentang" && !nomorCariPtsp() && !rentangDari(S.dari, S.sampai)) {
+    if ((S.mode === "rentang" || S.mode === "tanggal") && !nomorCariPtsp() && !rentangMode()) {
       S.data = null;
       S.galat = "";
       S.memuat = false;
@@ -1329,6 +1338,7 @@
         : "Ketik sebagian nomor perkara untuk mencari perkara satker (hanya baca; blangko PTSP).";
     }
     if (d.mode === "hari") return "Tidak ada sidang hari ini untuk Anda.";
+    if (S.mode === "tanggal") return "Tidak ada sidang Anda pada tanggal itu.";
     return "Tidak ada perkara pada rentang ini.";
   }
 
@@ -1367,12 +1377,18 @@
       `<div class="bd-kontrol"><div class="bd-seg" role="tablist" aria-label="Perkara yang ditampilkan">` +
       [
         ["hari", "Sidang hari ini"],
-        ["rentang", "Pilih tanggal"],
+        ["tanggal", "Tanggal tertentu"],
+        ["rentang", "Rentang tanggal"],
         ["semua", "Semua perkara saya"],
       ]
         .map(([m, t]) => `<button type="button" role="tab" data-mode="${m}" aria-selected="${S.mode === m}">${t}</button>`)
         .join("") +
       `</div>${kotakCari()}</div>`;
+    if (S.mode === "tanggal") {
+      isi +=
+        `<div class="bd-kontrol"><label class="bd-lbl" for="bd-tgl">Tanggal</label><input type="date" id="bd-tgl" value="${esc(S.tgl)}">` +
+        `<button type="button" class="bd-btn kecil" data-bd="tanggal">Tampilkan</button></div>`;
+    }
     if (S.mode === "rentang") {
       isi +=
         `<div class="bd-kontrol"><label class="bd-lbl" for="bd-dari">Dari</label><input type="date" id="bd-dari" value="${esc(S.dari)}">` +
@@ -1404,6 +1420,7 @@
     }
     let badan;
     if (S.mode === "rentang" && !S.data && !S.memuat && !S.galat) badan = `<p class="bd-catat">Pilih tanggal (cukup satu tanggal untuk satu hari), lalu tekan Tampilkan.</p>`;
+    else if (S.mode === "tanggal" && !S.data && !S.memuat && !S.galat) badan = `<p class="bd-catat">Pilih satu tanggal, lalu tekan Tampilkan.</p>`;
     else if (S.memuat || (!S.data && !S.galat)) badan = `<p class="bd-catat" role="status">Membaca daftar perkara dari SIPP…</p>`;
     else if (S.galat) {
       badan = `<div class="bd-peringatan" role="alert">${esc(S.galat)} <button type="button" class="bd-btn kecil" data-bd="coba">Coba lagi</button></div>`;
@@ -1789,6 +1806,12 @@
       S.sampai = r.sampai;
       return void muatDaftar();
     }
+    if (kode === "tanggal") {
+      const t = isoTanggalRentang(cari("#bd-tgl", akar).value);
+      if (!t) return toast("Pilih satu tanggal dulu.");
+      S.tgl = t;
+      return void muatDaftar();
+    }
     const alat = c("[data-alat]");
     if (alat) return jalankanAlat(alat.getAttribute("data-alat"));
     const mode = c("[data-mode]");
@@ -1815,9 +1838,13 @@
   }
 
   function gantiMode(mode) {
-    if (!["hari", "rentang", "semua"].includes(mode)) return;
+    if (!["hari", "tanggal", "rentang", "semua"].includes(mode)) return;
     S.mode = mode;
     simpanPref();
+    if (mode === "tanggal") {
+      // Satu tanggal: bawaannya hari ini (atau tanggal terakhir yang dipilih) dan langsung dimuat.
+      if (!isoTanggalRentang(S.tgl)) S.tgl = hariIni();
+    }
     if (mode === "rentang") {
       if (!S.dari) S.dari = hariIni();
       if (!S.sampai) S.sampai = tambah(S.dari, 6);
@@ -1857,6 +1884,13 @@
       S.depan = t.checked;
       simpanPref();
       return renderPerkara();
+    }
+    if (t.id === "bd-tgl") {
+      // Tanggal yang sah dimuat langsung; tanggal yang belum lengkap (sedang diketik) ditunggu.
+      const tgl = isoTanggalRentang(t.value);
+      if (!tgl) return;
+      S.tgl = tgl;
+      return void muatDaftar();
     }
     if (t.hasAttribute && t.hasAttribute("data-ketk")) {
       S.ket[t.getAttribute("data-ketk")] = t.checked;
