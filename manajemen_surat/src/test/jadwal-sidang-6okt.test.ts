@@ -57,7 +57,7 @@ describe("butir 5: tombol ruang sidang", () => {
     expect(ruangPilihanBerlaku("Ruang Sidang 3", daftar)).toBeNull();
   });
 
-  it("tersambung ke tabel, di ujung kanan deretan alat, dan punya saklar tampilan (menyala bawaan)", () => {
+  it("tersambung ke tabel lewat pita ruang, dan punya saklar tampilan (menyala bawaan)", () => {
     expect(layar).toContain("const sidangSesudahRuang = saringKeRuang(milikSaya.baris, ruangSaring)");
     // 12 Okt 2026 (agen C, butir 3): kartu ruang memakai saringan yang sama, jadi
     // saringannya hidup bila SALAH SATU saklar (tombol ruang / kartu ruang) menyala.
@@ -65,12 +65,10 @@ describe("butir 5: tombol ruang sidang", () => {
     expect(layar).toContain("? ruangPilihanBerlaku(ruangDipilih ?? (ruangAlamat ? cocokkanRuang(ruangAlamat, ruangAktif) : null), ruangAktif)");
     // Jumlahnya dari SELURUH sidang, bukan yang tersaring.
     expect(layar).toContain("const ruangAktif = useMemo(() => daftarRuangAktif(sidang), [sidang]);");
-    // Sesudah tombol Daftarkan ke antrian, rata kanan.
-    const iDaftar = layar.indexOf('{sinkronSibuk ? "Memeriksa…" : "Daftarkan ke antrian"}');
-    const iRuang = layar.indexOf('data-saring-ruang=""');
-    expect(iDaftar).toBeGreaterThan(-1);
-    expect(iRuang).toBeGreaterThan(iDaftar);
-    expect(layar.slice(iRuang - 120, iRuang)).toContain("ml-auto");
+    // 22 Okt 2026: baris pil ruang di bawah baris alat dihapus; menyaring ruang kini lewat
+    // pita ruang (rincian pil -> "Saring ruang ini"), yang digambar bila saklar menyala.
+    expect(layar).not.toContain('data-saring-ruang=""');
+    expect(layar).toContain('onPilih={tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang") ? setRuangDipilih : undefined}');
     expect(SAKLAR_TAMPILAN.find((x) => x.kunci === "saring-ruang")).toBeTruthy();
     expect(tampil(tampilanBawaan(), "saring-ruang")).toBe(true);
     expect(tampil({ ...tampilanBawaan(), "saring-ruang": false }, "saring-ruang")).toBe(false);

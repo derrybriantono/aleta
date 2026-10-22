@@ -201,10 +201,12 @@ describe("butir 3: warna dan kartu ruang", () => {
     expect(layar).toContain('tampil(tampilan, "kartu-ruang")');
     // Menyaring ruang tidak mati bersama tombol ruang: kartu memakai saringan yang sama.
     expect(layar).toContain('tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang")');
-    expect(layar).toContain('tampil(tampilan, "saring-ruang") && ruangAktif.length > 0');
-    // Tombol ruang yang lama tidak dihapus dan kartu berdiri di luar baris alat yang bisa terciut.
-    // 19 Okt 2026 (JADWAL-3 butir 3): kartu ruang menyatu dalam pita di atas tabel.
-    expect(layar.indexOf("<PitaRuangSidang")).toBeGreaterThan(layar.indexOf('data-saring-ruang=""'));
+    // 22 Okt 2026: baris pil ruang di bawah baris alat DIHAPUS (informasinya sudah ada di
+    // pita ruang). Fungsi menyaring ruang pindah ke pita: pita digambar bila saklar
+    // "saring-ruang" menyala, dan rincian pilnya memuat "Saring ruang ini" (onPilih).
+    expect(layar).not.toContain('data-saring-ruang=""');
+    expect(layar).toContain('tampil(tampilan, "kartu-ruang") || tampil(tampilan, "saring-ruang") || adaSaklarKeliling');
+    expect(layar).toContain('onPilih={tampil(tampilan, "saring-ruang") || tampil(tampilan, "kartu-ruang") ? setRuangDipilih : undefined}');
   });
 
   it("saklar kartu-ruang menyala bawaan", () => {

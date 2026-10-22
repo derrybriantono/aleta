@@ -18,6 +18,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -272,7 +273,9 @@ describe("Jadwal Sidang mode alamat - komponen yang sama, tombol terbatas", () =
     expect(screen.getAllByRole("button", { name: /^Tunda sidang 902/ }).length).toBe(1);
     expect(screen.getAllByRole("button", { name: "Rincian" }).length).toBe(2);
     expect(screen.getByRole("button", { name: /^Cetak$/ })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Cetak relaas/ })).toBeTruthy();
+    // 22 Okt 2026: Cetak relaas kini butir tombol Menu.
+    await userEvent.click(screen.getByRole("button", { name: /^Menu$/ }));
+    expect(await screen.findByRole("menuitem", { name: /Cetak relaas/ })).toBeTruthy();
     expect(container.querySelector("[data-nama-tautan]")).not.toBeNull();
   }, 60_000);
 
@@ -280,6 +283,8 @@ describe("Jadwal Sidang mode alamat - komponen yang sama, tombol terbatas", () =
     pasangFetch();
     await gambarJadwal({ bolehCetakRelaas: false });
     expect(screen.queryByRole("button", { name: /Cetak relaas/ })).toBeNull();
+    // Tanpa butir lain yang diizinkan, tombol Menu tidak tampil sama sekali.
+    expect(screen.queryByRole("button", { name: /^Menu$/ })).toBeNull();
     expect(screen.getByRole("button", { name: /^Cetak$/ })).toBeTruthy();
   }, 60_000);
 

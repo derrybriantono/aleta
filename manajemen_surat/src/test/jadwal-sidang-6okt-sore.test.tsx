@@ -6,7 +6,8 @@
  *   butir 3  deretan tombol tindakan (Hitung skor ...) bawaannya terciut
  * (butir 1 - Court Calendar - di jadwal-sidang-6okt.test.ts)
  */
-import { act, cleanup, render, renderHook } from "@testing-library/react";
+import { act, cleanup, render, renderHook, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -23,7 +24,6 @@ import {
 } from "@/lib/disidang-langsung";
 import { DATA_BERJALAN_KOSONG, petaSidangBerjalan, type DataBerjalan } from "@/lib/jadwal-sidang-2okt";
 import { WAKTU_ANTRIAN_KOSONG, type BarisWaktuAntrian, type WaktuAntrian } from "@/lib/tiga-jarak-sidang";
-import { ALAT_CIUT_BAWAAN } from "@/lib/alat-jadwal-sidang";
 import { useDisidangLangsung } from "@/components/portal/use-disidang-langsung";
 
 const akar = path.resolve(process.cwd(), "..");
@@ -323,7 +323,7 @@ vi.mock("next/link", () => ({
   default: ({ href, children, ...sisa }: { href: string; children: unknown }) => createElement("a", { href, ...sisa }, children as never),
 }));
 
-describe("butir 3: deretan Hitung skor dkk. bawaannya terciut", () => {
+describe("butir 3 (diganti 22 Okt 2026): alat Hitung skor dkk. dalam satu tombol Menu", () => {
   beforeEach(() => {
     window.localStorage.clear();
     vi.stubGlobal(
@@ -336,24 +336,23 @@ describe("butir 3: deretan Hitung skor dkk. bawaannya terciut", () => {
     vi.unstubAllGlobals();
   });
 
-  it("bawaannya terciut, dan tidak ada simpanan yang membukanya", () => {
-    expect(ALAT_CIUT_BAWAAN).toBe(true);
-    expect(layar).toContain("const [alatCiut, setAlatCiut] = useState(ALAT_CIUT_BAWAAN);");
+  it("penciut baris alat sudah tiada, dan tidak ada simpanan yang mengingatnya", () => {
+    expect(layar).not.toContain("ALAT_CIUT_BAWAAN");
+    expect(layar).not.toContain("setAlatCiut");
     expect(layar).not.toMatch(/localStorage[^\n]*alat/i);
   });
 
-  it("layar yang baru dibuka: baris tombol tindakan tersembunyi", async () => {
+  it("layar yang baru dibuka: tombol Menu ada di baris pencarian dan memuat Hitung skor", async () => {
     const { AletaEcourtSidang } = await import("@/components/portal/aleta-ecourt-sidang");
     const { container } = render(createElement(AletaEcourtSidang));
     await act(async () => {
       await Promise.resolve();
       await new Promise((r) => setTimeout(r, 0));
     });
-    const ciutkan = container.querySelector('button[title="Sembunyikan tombol tindakan supaya daftar sidang lebih panjang"]');
-    expect(ciutkan, "tombol penciut baris tindakan").not.toBeNull();
-    // Pembungkus baris tindakan (dua tingkat di atas tombol penciutnya) berkelas hidden.
-    const baris = ciutkan?.parentElement?.parentElement as HTMLElement;
-    expect(baris.className.split(/\s+/)).toContain("hidden");
-    expect(baris.textContent).toContain("Hitung skor");
+    const menu = container.querySelector("button[data-menu-alat-jadwal]") as HTMLElement | null;
+    expect(menu, "tombol Menu").not.toBeNull();
+    expect(container.querySelector('button[title="Sembunyikan tombol tindakan supaya daftar sidang lebih panjang"]')).toBeNull();
+    await userEvent.click(menu as HTMLElement);
+    expect(await screen.findByRole("menuitem", { name: /Hitung skor/ })).toBeTruthy();
   }, 60_000);
 });

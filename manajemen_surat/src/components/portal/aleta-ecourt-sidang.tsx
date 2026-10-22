@@ -17,6 +17,7 @@ import { apiPath, withBasePath } from "@/lib/base-path";
 import { pesanGalatPortal } from "@/lib/pesan-galat-portal";
 import { tanganiUnduhan } from "@/lib/unduh-berkas";
 import {
+  CalendarClock,
   CalendarDays,
   ChevronDown,
   ChevronLeft,
@@ -29,6 +30,7 @@ import {
   Filter,
   Gauge,
   Link2,
+  ListChecks,
   ListOrdered,
   MapPin,
   MonitorPlay,
@@ -40,6 +42,7 @@ import {
   StickyNote,
   UserRound,
   Users,
+  Wallet,
 } from "lucide-react";
 
 import { AletaEcourtCetakJadwal } from "@/components/portal/aleta-ecourt-cetak-jadwal";
@@ -106,9 +109,11 @@ import { cocokNamaPenerimaLawan } from "@/lib/nama-penerima-lawan";
 import { CatatHasilRingkas } from "@/components/portal/hasil-sidang";
 import { IsiIkrarTalak } from "@/components/portal/isi-ikrar-talak";
 import { CourtCalendarSidang } from "@/components/portal/court-calendar-sidang";
-import { TombolPenetapanKembali } from "@/components/portal/penetapan-kembali";
-import { TombolKasirJurnal } from "@/components/portal/kasir-jurnal";
-import { TombolKasirHarian } from "@/components/portal/kasir-otomatis";
+import { PopupPenetapanKembali, useBolehPenetapanKembali } from "@/components/portal/penetapan-kembali";
+import { DialogKasir } from "@/components/portal/kasir-jurnal";
+import { DialogKasirHarian, useKasirHarian } from "@/components/portal/kasir-otomatis";
+import { MenuAlatJadwal, type ButirMenuAlat } from "@/components/portal/menu-alat-jadwal";
+import { bolehMengerjakanKasir } from "@/lib/kasir-jurnal";
 import { NamaDapatDipanggil, SaklarPanggil } from "@/components/portal/panggil-petugas";
 /* === 12OKT-B: penanda perkara & pihak, panggil saksi === */
 import { LencanaPekerjaanBaris, LencanaPerkaraBaris } from "@/components/portal/penanda-perkara-pihak";
@@ -254,7 +259,6 @@ import { KELAS_KODE_MAJELIS, KELAS_LENCANA_KODE_MAJELIS } from "@/lib/kode-majel
 import { GalatJawaban, bacaJsonAman, botTakTerjangkau, useCobaLagiOtomatis } from "@/lib/coba-lagi-otomatis";
 import { useHilangSendiri, usePesanSementara } from "@/lib/pesan-sementara";
 import { perluMuatPenuh, saringProsesLangsung, terapkanDisidangLangsung } from "@/lib/disidang-langsung";
-import { ALAT_CIUT_BAWAAN } from "@/lib/alat-jadwal-sidang";
 import { useDisidangLangsung } from "@/components/portal/use-disidang-langsung";
 import { BannerGangguan } from "@/components/portal/banner-gangguan";
 import {
@@ -2008,64 +2012,6 @@ function useTutupSaatDiLuar(terbuka: boolean, tutup: () => void) {
   }, [terbuka, tutup]);
 
   return wadah;
-}
-
-function MenuLayarAntrian() {
-  const [terbuka, setTerbuka] = useState(false);
-  const tutup = useCallback(() => setTerbuka(false), []);
-  const wadah = useTutupSaatDiLuar(terbuka, tutup);
-
-  return (
-    <div className="relative" ref={wadah}>
-      {/* "Layar antrian", BUKAN "Tampilan".
-          Sampai 2.32.0 tombol ini berbunyi "Tampilan" - kata yang SAMA PERSIS
-          dengan tombol saklar tampilan di kepala layar yang sama. Dua tombol
-          sewarna dan sebentuk dengan satu nama, mengerjakan hal yang sama
-          sekali berbeda: yang satu menyetel kepadatan daftar, yang ini membuka
-          layar untuk televisi ruang tunggu. */}
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => setTerbuka((buka) => !buka)}
-        title="Membuka layar antrian untuk televisi ruang tunggu dan layar operator"
-      >
-        <MonitorPlay className="mr-1.5 h-4 w-4" />
-        Layar antrian
-      </Button>
-
-      {terbuka ? (
-        // bg-card, BUKAN bg-popover: token --popover tidak pernah didefinisikan
-        // di globals.css, sehingga bg-popover menghasilkan warna yang tidak sah
-        // dan menu tampil TEMBUS PANDANG di atas tabel di bawahnya. Tidak ada
-        // galat apa pun - hanya tulisan yang bertumpuk dan tidak terbaca.
-        <div className="absolute right-0 z-30 mt-1 w-72 rounded-md border bg-card text-card-foreground p-2 shadow-lg">
-          {[
-            { judul: "Untuk pihak", daftar: LAYAR_PIHAK },
-            { judul: "Untuk operator", daftar: LAYAR_OPERATOR },
-          ].map((kelompok) => (
-            <div key={kelompok.judul} className="mb-1 last:mb-0">
-              <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {kelompok.judul}
-              </p>
-              {kelompok.daftar.map((layar) => (
-                <a
-                  key={layar.jalur}
-                  href={withBasePath(layar.jalur)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block rounded px-2 py-1.5 transition hover:bg-muted"
-                  onClick={() => setTerbuka(false)}
-                >
-                  <span className="block text-sm font-medium">{layar.nama}</span>
-                  <span className="block text-[11px] text-muted-foreground">{layar.guna}</span>
-                </a>
-              ))}
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
 }
 
 /**
@@ -4612,26 +4558,6 @@ export function AletaEcourtSidang({
   const [penandaCiut, setPenandaCiut] = useState(false);
 
   /**
-   * Baris tombol TINDAKAN diciutkan sendiri - diminta pengguna 22 Sep 2026.
-   *
-   * Berbeda dari kendaliCiut, yang menyembunyikan seluruh kendali termasuk
-   * pencarian. Yang ini hanya Hitung skor, Layar antrian, Cetak, dan
-   * Daftarkan ke antrian - tiga di antaranya tidak dikerjakan tiap kali layar
-   * dibuka, dan barisnya tetap memakan tempat sepanjang hari.
-   *
-   * TIDAK diingat peramban, alasan yang sama dengan hanyaMilikSaya: yang
-   * diingat terbawa ke akun lain pada komputer bersama di ruang panitera, dan
-   * orang berikutnya mendapati tombol yang hilang tanpa tahu sebabnya.
-   *
-   * BAWAANNYA TERCIUT sejak 6 Okt 2026 (diminta pengguna): deretan Hitung
-   * skor, Layar antrian, Cetak, Cetak relaas, Daftarkan ke antrian, dan tombol
-   * ruang sidang tidak dipakai tiap kali layar dibuka. Karena pilihan ini
-   * tidak disimpan, tiap layar dibuka mulai terciut; ikon pembentang di kepala
-   * deretan penanda membukanya. Lihat ALAT_CIUT_BAWAAN.
-   */
-  const [alatCiut, setAlatCiut] = useState(ALAT_CIUT_BAWAAN);
-
-  /**
    * Kelompok penanda mana saja yang sedang diciutkan.
    *
    * Empat kelompoknya - Panggilan, Jalannya sidang, Putusan, Antrian - dapat
@@ -4895,6 +4821,13 @@ export function AletaEcourtSidang({
   const kh = useKelilingHakim({ tanggal: dari, nyala: satuTanggalJadwal && !modeUrl && Boolean(currentUser) });
   const bolehTundaPutusMassal = bolehAksi(currentUser, "sidang.tunda-putus");
   const [mejaPp, setMejaPp] = useState(false);
+  // 22 Okt 2026: butir Menu (Penetapan kembali, Kasir, Kasir harian) memegang
+  // dialognya DI SINI, di luar menu - isi menu dilepas begitu menu menutup.
+  const bolehPenetapanKembali = useBolehPenetapanKembali();
+  const [penetapanKembaliTerbuka, setPenetapanKembaliTerbuka] = useState(false);
+  const bolehKasirJurnal = bolehMengerjakanKasir(currentUser);
+  const [kasirTerbuka, setKasirTerbuka] = useState(false);
+  const kasirHarian = useKasirHarian();
   const [pilihCetak, setPilihCetak] = useState(false);
   const [cetakPerHakim, setCetakPerHakim] = useState(false);
   /* === AKHIR HAK-PERAN === */
@@ -6132,6 +6065,96 @@ export function AletaEcourtSidang({
     [dibuka]
   );
 
+  // 22 Okt 2026: SATU tombol Menu di baris pencarian menggantikan baris alat.
+  // Butirnya hanya yang boleh dilihat peran ini - syaratnya SAMA dengan syarat
+  // tombolnya dulu, termasuk saklar "Tampilan" (tampil(tampilan, ...)).
+  const butirMenuAlat: ButirMenuAlat[] = [];
+  if (tampil(tampilan, "skor-kesiapan")) {
+    butirMenuAlat.push({
+      kunci: "hitung-skor",
+      label: nilaiKesiapan ? "Skor: nyala" : "Hitung skor",
+      ikon: Gauge,
+      judul: "Menghitung kesiapan tiap sidang dari SIPP dan arsip e-Court: relaas, berkas, identitas pihak. Perlu beberapa detik.",
+      nonaktif: pertamaMuat && memuat,
+      menyala: nilaiKesiapan,
+    });
+  }
+  if (tampil(tampilan, "layar-antrian")) {
+    // "Layar antrian", BUKAN "Tampilan": kata itu sudah dipakai tombol saklar
+    // tampilan di kepala layar yang sama.
+    butirMenuAlat.push({
+      kunci: "layar-antrian",
+      label: "Layar antrian",
+      ikon: MonitorPlay,
+      judul: "Membuka layar antrian untuk televisi ruang tunggu dan layar operator",
+      kelompokTautan: [
+        { judul: "Untuk pihak", daftar: LAYAR_PIHAK.map((l) => ({ ...l, href: withBasePath(l.jalur) })) },
+        { judul: "Untuk operator", daftar: LAYAR_OPERATOR.map((l) => ({ ...l, href: withBasePath(l.jalur) })) },
+      ],
+    });
+  }
+  if (!modeUrl && satuTanggalJadwal && kh.keliling && (kh.bolehHakim || bolehTundaPutusMassal) && sidang.length > 0) {
+    butirMenuAlat.push({
+      kunci: "per-panitera-sidang",
+      label: "Per panitera sidang",
+      ikon: Users,
+      judul: "Pilih hakim, tunda massal, atau keterangan putus massal untuk semua perkara satu panitera sidang",
+      menyala: mejaPp,
+    });
+  }
+  if (bolehCetakRelaas && tampil(tampilan, "tombol-cetak-relaas")) {
+    butirMenuAlat.push({
+      kunci: "cetak-relaas",
+      label: "Cetak relaas",
+      ikon: FileText,
+      judul: "Cetak relaas panggilan sidang dan pemberitahuan putusan yang lahir pada hari itu, lewat ekstensi ALETA",
+    });
+  }
+  if (tampil(tampilan, "tombol-penetapan-kembali") && bolehPenetapanKembali) {
+    butirMenuAlat.push({
+      kunci: "penetapan-kembali",
+      label: "Penetapan kembali",
+      ikon: RotateCcw,
+      judul: "Penetapan kembali PMH, PPP, PJS, atau PHS - satu perkara atau massal, beserta alasannya. Dipratinjau dulu sebelum ditulis ke SIPP.",
+    });
+  }
+  if (tampil(tampilan, "daftar-antrian")) {
+    // Dua tekanan, bukan satu: yang pertama hanya MEMPERLIHATKAN apa yang akan
+    // didaftarkan, yang kedua benar-benar menulis (lihat periksaSinkron).
+    butirMenuAlat.push({
+      kunci: "daftar-antrian",
+      label: "Daftarkan ke antrian",
+      labelSibuk: sinkronSibuk ? "Memeriksa…" : undefined,
+      ikon: ListOrdered,
+      judul: "Mendaftarkan perkara yang tampil ke aplikasi antrian ruang tunggu, supaya para pihak dapat mengambil nomor. Diperlihatkan dulu sebelum ditulis, dan hanya menambah yang belum terdaftar.",
+      nonaktif: sinkronSibuk || sidang.length === 0,
+    });
+  }
+  if (tampil(tampilan, "tombol-kasir") && bolehKasirJurnal) {
+    butirMenuAlat.push({
+      kunci: "kasir",
+      label: "Kasir",
+      ikon: Wallet,
+      judul: "Kasir: isi Buku Jurnal Keuangan Perkara SIPP - uraian, pihak, jumlah, dan tanggal disusun otomatis dari keadaan perkara",
+    });
+  }
+  if (tampil(tampilan, "tombol-kasir-harian") && kasirHarian.boleh) {
+    butirMenuAlat.push({
+      kunci: "kasir-harian",
+      label: "Kasir harian",
+      ikon: CalendarClock,
+      judul: "Kasir harian: jurnal otomatis massal satu hari, rekap pengeluaran (PDF), dan pengingat tugas kasir",
+    });
+    butirMenuAlat.push({
+      kunci: "pengingat-kasir",
+      label: "Pengingat tugas kasir",
+      ikon: ListChecks,
+      judul: "Pengingat tugas kasir",
+    });
+  }
+  const adaTombolCetak = tampil(tampilan, "cetak");
+  const adaSaklarKeliling = !modeUrl && satuTanggalJadwal && Boolean(kh.keliling);
+
   return (
     <Card
       className={cn(
@@ -6701,7 +6724,7 @@ export function AletaEcourtSidang({
 
               Sekarang: mengetik menyaring seketika; menekan Enter melebarkan
               pencarian ke SIPP. Lihat catatan pada kirimCariKeSipp. */}
-          <div className={cn("space-y-1.5", (kendaliCiut || modeUrl) && "hidden")}>
+          <div className={cn("space-y-1.5", kendaliCiut && "hidden")}>
             {/* ==============================================================
                 LEBARNYA DIBATASI, DAN TEMANNYA DI SEBELAHNYA
                 ==============================================================
@@ -6721,6 +6744,7 @@ export function AletaEcourtSidang({
                 tempatnya memang di sebelah kotak saringnya. Yang tinggal di
                 baris tindakan hanya yang MENGERJAKAN sesuatu. */}
             <div className="flex flex-wrap items-center gap-2">
+              {modeUrl ? null : (
               <div className="relative min-w-[15rem] flex-1 sm:max-w-xl" data-cari-pintar-sidang="">
                 <FileSearch
                   aria-hidden="true"
@@ -6749,8 +6773,9 @@ export function AletaEcourtSidang({
                   onPilih={(kata) => setCariCepat((lama) => `${lama.trim()} ${kata}`.trim() + " ")}
                 />
               </div>
+              )}
 
-              {sidang.length > 0 ? (
+              {!modeUrl && sidang.length > 0 ? (
                 <Button
                   size="sm"
                   variant={lanjutTerbuka || cariLanjut.jumlahAktif > 0 ? "default" : "outline"}
@@ -6762,114 +6787,10 @@ export function AletaEcourtSidang({
                 </Button>
               ) : null}
 
-              {/* Angka "x dari y" menempel pada Reset: yang paling sering
-                  ditanyakan saat daftar menyusut adalah berapa yang
-                  disembunyikan. */}
-              {adaSaringan && sidang.length > 0 ? (
-                <>
-                  <span className="text-sm text-muted-foreground">
-                    {sidangTampil.length} dari {sidang.length} perkara
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={resetSemuaSaringan}
-                    title={`Lepaskan seluruh saringan dan kembali ke ${sidang.length} perkara`}
-                  >
-                    <RotateCcw className="mr-1 h-3.5 w-3.5" />
-                    Reset ke {sidang.length} perkara
-                  </Button>
-                </>
-              ) : null}
-            </div>
-
-            {/* Kata kunci yang sedang berlaku DI SISI SIPP disebutkan, karena
-                ia tidak terlihat di mana pun selain di sini: daftarnya sudah
-                menyusut sebelum sampai ke layar. Tanpa baris ini, jadwal yang
-                tersaring akan disangka jadwal yang memang sepi. */}
-            {cari ? (
-              <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                <span>
-                  Dicari ke SIPP: <strong className="text-foreground">{cari}</strong>
-                </span>
-                <button
-                  type="button"
-                  onClick={lepasCariSipp}
-                  disabled={pertamaMuat && memuat}
-                  className="rounded border px-1.5 py-0.5 transition hover:bg-muted hover:text-foreground disabled:opacity-50"
-                >
-                  lepaskan
-                </button>
-              </p>
-            ) : null}
-          </div>
-
-          {/* ==============================================================
-              BARIS TOMBOL TINDAKAN - DAPAT DICIUTKAN SENDIRI
-              ==============================================================
-
-              Diminta pengguna 22 September 2026: "buat tab ini ada logo
-              diciutkan agar bisa tersembunyi (kalau diciutkan tab yang rounded
-              tag itu naik menempati tabnya)".
-
-              Berbeda dari tombol Ciutkan di kepala, yang menyembunyikan
-              SELURUH kendali termasuk pencarian dan kotak penanda. Yang ini
-              menyembunyikan tombol TINDAKAN saja - Hitung skor, Layar antrian,
-              Cetak, Daftarkan ke antrian - dan justru itu yang paling jarang
-              dipakai: ketiganya tidak dikerjakan tiap kali layar dibuka.
-
-              Ketika diciutkan barisnya benar-benar HILANG, bukan dikosongkan,
-              sehingga deretan kotak penanda naik menempati tempatnya. Ikon
-              pembentangnya pindah ke deretan itu - lihat di bawah - supaya
-              jalan kembalinya tidak ikut hilang bersama barisnya. */}
-          <div
-            className={cn(
-              "flex flex-wrap items-center gap-2",
-              !modeUrl && (kendaliCiut || alatCiut) && "hidden"
-            )}
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              {modeUrl ? null : (
-              <button
-                type="button"
-                onClick={() => setAlatCiut(true)}
-                aria-expanded={true}
-                title="Sembunyikan tombol tindakan supaya daftar sidang lebih panjang"
-                className="inline-flex h-8 w-6 items-center justify-center rounded-md border text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              >
-                <ChevronsDownUp className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-              )}
-              {/* Tombol skor ikut saklarnya. Yang mematikannya juga
-                  memadamkan lencana nilai di tiap baris - lihat LencanaKesiapan
-                  di bawah. Membiarkan lencananya hidup sementara tombolnya
-                  hilang akan meninggalkan kolom yang tidak dapat dimatikan lagi
-                  oleh siapa pun. */}
-              {tampil(tampilan, "skor-kesiapan") ? (
-              <Button
-                size="sm"
-                variant={nilaiKesiapan ? "default" : "outline"}
-                disabled={pertamaMuat && memuat}
-                onClick={() => {
-                  // Menyalakan skor HARUS memuat ulang. Sebelumnya tombolnya
-                  // hanya membalik penanda, sehingga tulisannya berubah jadi
-                  // "Skor: nyala" tetapi kolom Siap tetap bergaris - skornya
-                  // memang belum pernah diminta ke bot.
-                  const menyala = !nilaiKesiapan;
-                  setNilaiKesiapan(menyala);
-                  if (menyala) void muatTanggal(dari, sampai, true);
-                  else setKesiapan({});
-                }}
-                title="Menghitung kesiapan tiap sidang dari SIPP dan arsip e-Court: relaas, berkas, identitas pihak. Perlu beberapa detik."
-              >
-                <Gauge className="mr-1.5 h-4 w-4" />
-                {nilaiKesiapan ? "Skor: nyala" : "Hitung skor"}
-              </Button>
-              ) : null}
-
-              {tampil(tampilan, "layar-antrian") ? <MenuLayarAntrian /> : null}
-
-              {tampil(tampilan, "cetak") ? (
+              {/* 22 Okt 2026 (diminta pengguna): Cetak tepat di samping
+                  Pencarian lanjutan, lalu SATU tombol Menu yang memuat alat
+                  lainnya. Baris alat lama dan baris pil ruang sudah tiada. */}
+              {adaTombolCetak ? (
               <div className="relative">
               <Button
                 size="sm"
@@ -6907,98 +6828,67 @@ export function AletaEcourtSidang({
               </div>
               ) : null}
 
-              {/* 22 Okt 2026: Sidang keliling (saklar per tanggal) dan meja per
-                  panitera sidang - TERPISAH dari Layar antrian. */}
-              {!modeUrl && satuTanggalJadwal ? (
-                <SaklarSidangKeliling kh={kh} daftar={sidang} penggunaId={String(currentUser?.id ?? "")} />
+              <MenuAlatJadwal
+                butir={butirMenuAlat}
+                onPilih={(kunci) => {
+                  if (kunci === "hitung-skor") {
+                    // Menyalakan skor HARUS memuat ulang. Sebelumnya tombolnya
+                    // hanya membalik penanda, sehingga tulisannya berubah jadi
+                    // "Skor: nyala" tetapi kolom Siap tetap bergaris - skornya
+                    // memang belum pernah diminta ke bot.
+                    const menyala = !nilaiKesiapan;
+                    setNilaiKesiapan(menyala);
+                    if (menyala) void muatTanggal(dari, sampai, true);
+                    else setKesiapan({});
+                  } else if (kunci === "per-panitera-sidang") setMejaPp((b) => !b);
+                  else if (kunci === "cetak-relaas") setCetakRelaasTerbuka(true);
+                  else if (kunci === "penetapan-kembali") setPenetapanKembaliTerbuka(true);
+                  else if (kunci === "daftar-antrian") void periksaSinkron();
+                  else if (kunci === "kasir") setKasirTerbuka(true);
+                  else if (kunci === "kasir-harian") kasirHarian.setBuka("massal");
+                  else if (kunci === "pengingat-kasir") kasirHarian.setBuka("pengingat");
+                }}
+              />
+
+              {/* Angka "x dari y" menempel pada Reset: yang paling sering
+                  ditanyakan saat daftar menyusut adalah berapa yang
+                  disembunyikan. */}
+              {!modeUrl && adaSaringan && sidang.length > 0 ? (
+                <>
+                  <span className="text-sm text-muted-foreground">
+                    {sidangTampil.length} dari {sidang.length} perkara
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={resetSemuaSaringan}
+                    title={`Lepaskan seluruh saringan dan kembali ke ${sidang.length} perkara`}
+                  >
+                    <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                    Reset ke {sidang.length} perkara
+                  </Button>
+                </>
               ) : null}
-              {!modeUrl && satuTanggalJadwal && kh.keliling && (kh.bolehHakim || bolehTundaPutusMassal) && sidang.length > 0 ? (
-                <Button
-                  size="sm"
-                  variant={mejaPp ? "default" : "outline"}
-                  aria-pressed={mejaPp}
-                  data-tombol-meja-pp=""
-                  onClick={() => setMejaPp((b) => !b)}
-                  title="Pilih hakim, tunda massal, atau keterangan putus massal untuk semua perkara satu panitera sidang"
-                >
-                  <Users className="mr-1.5 h-4 w-4" />
-                  Per panitera sidang
-                </Button>
-              ) : null}
-
-              {/* Cetak relaas panggilan dan pemberitahuan putusan yang lahir
-                  pada hari itu - termasuk perkara yang baru didaftarkan.
-                  TIDAK bergantung pada daftar sidang yang tampil: hari tanpa
-                  sidang pun dapat berisi perkara baru yang harus dipanggil. */}
-              {bolehCetakRelaas && tampil(tampilan, "tombol-cetak-relaas") ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setCetakRelaasTerbuka(true)}
-                title="Cetak relaas panggilan sidang dan pemberitahuan putusan yang lahir pada hari itu, lewat ekstensi ALETA"
-              >
-                <FileText className="mr-1.5 h-4 w-4" />
-                Cetak relaas
-              </Button>
-              ) : null}
-
-              {tampil(tampilan, "tombol-penetapan-kembali") ? <TombolPenetapanKembali sidang={sidang} /> : null}
-              {/* Pendaftaran ke aplikasi antrian ruang tunggu.
-
-                  Dua tekanan, bukan satu: yang pertama hanya MEMPERLIHATKAN
-                  apa yang akan didaftarkan, yang kedua benar-benar menulis.
-                  Yang ditulis tabel milik aplikasi antrian, dan satu tekanan
-                  yang tidak disengaja di sana tidak dapat dibatalkan dari sini.
-
-                  ALETA hanya MENAMBAH perkara yang belum terdaftar. Nomor
-                  antriannya tidak ditulis: nomor lahir dari pengambilan, bukan
-                  dari pendaftaran, sehingga baris baru masuk sebagai "belum
-                  diambil" dan tidak menggeser nomor siapa pun. */}
-              {tampil(tampilan, "daftar-antrian") ? (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={sinkronSibuk || sidang.length === 0}
-                onClick={() => void periksaSinkron()}
-                title="Mendaftarkan perkara yang tampil ke aplikasi antrian ruang tunggu, supaya para pihak dapat mengambil nomor. Diperlihatkan dulu sebelum ditulis, dan hanya menambah yang belum terdaftar."
-              >
-                <ListOrdered className="mr-1.5 h-4 w-4" />
-                {sinkronSibuk ? "Memeriksa…" : "Daftarkan ke antrian"}
-              </Button>
-              ) : null}
-              {tampil(tampilan, "tombol-kasir") ? <TombolKasirJurnal daftar={sidang} /> : null}
-              {tampil(tampilan, "tombol-kasir-harian") ? <TombolKasirHarian /> : null}
-
             </div>
 
-            {/* Butir 5 (6 Okt 2026): ruang sidang yang dipakai pada jadwal ini,
-                di UJUNG KANAN deretan. Ditekan = hanya perkara di ruang itu;
-                ditekan lagi = semua. Tidak ada ruang terbaca = tidak tampil. */}
-            {tampil(tampilan, "saring-ruang") && ruangAktif.length > 0 ? (
-              <div className="ml-auto flex flex-wrap items-center gap-1.5" data-saring-ruang="">
-                {ruangAktif.map((r) => {
-                  const aktif = ruangSaring === r.nama;
-                  return (
-                    <Button
-                      key={r.nama}
-                      size="sm"
-                      variant={aktif ? "default" : "outline"}
-                      aria-pressed={aktif}
-                      data-ruang={r.nama}
-                      onClick={() => setRuangDipilih(aktif ? null : r.nama)}
-                      title={
-                        aktif
-                          ? `Menampilkan ${r.jumlah} perkara di ${r.nama}. Tekan lagi untuk menampilkan semua ruang.`
-                          : `Tampilkan hanya ${r.jumlah} perkara yang bersidang di ${r.nama}.`
-                      }
-                    >
-                      <MapPin className="mr-1.5 h-4 w-4" />
-                      {r.nama}
-                      <span className="ml-1.5 rounded bg-muted px-1 text-xs font-semibold text-foreground">{r.jumlah}</span>
-                    </Button>
-                  );
-                })}
-              </div>
+            {/* Kata kunci yang sedang berlaku DI SISI SIPP disebutkan, karena
+                ia tidak terlihat di mana pun selain di sini: daftarnya sudah
+                menyusut sebelum sampai ke layar. Tanpa baris ini, jadwal yang
+                tersaring akan disangka jadwal yang memang sepi. */}
+            {!modeUrl && cari ? (
+              <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                <span>
+                  Dicari ke SIPP: <strong className="text-foreground">{cari}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={lepasCariSipp}
+                  disabled={pertamaMuat && memuat}
+                  className="rounded border px-1.5 py-0.5 transition hover:bg-muted hover:text-foreground disabled:opacity-50"
+                >
+                  lepaskan
+                </button>
+              </p>
             ) : null}
           </div>
 
@@ -7082,30 +6972,6 @@ export function AletaEcourtSidang({
                 tidak dapat dimatikan lagi: daftarnya tampak kehilangan baris
                 tanpa satu pun keterangan mengapa. Aturan yang sama sudah
                 berlaku bagi kotak bernilai nol tepat di bawah ini. */}
-            {/* ==============================================================
-                JALAN KEMBALI KE TOMBOL TINDAKAN YANG DICIUTKAN
-                ==============================================================
-
-                Barisnya benar-benar hilang saat diciutkan - itulah yang
-                membuat deretan ini naik menempati tempatnya, sebagaimana
-                diminta. Tetapi ikon pembentangnya TIDAK boleh ikut hilang:
-                tombol yang menyembunyikan dirinya sendiri tanpa jalan kembali
-                mengubah penciutan menjadi penghapusan, dan yang menekannya
-                sekali harus memuat ulang halaman untuk mendapatkannya lagi.
-                Karena itu ia pindah ke sini, di kepala deretan yang naik. */}
-            {alatCiut && !modeUrl ? (
-              <button
-                type="button"
-                onClick={() => setAlatCiut(false)}
-                aria-expanded={false}
-                aria-label="Tampilkan tombol tindakan"
-                title="Tampilkan kembali Hitung skor, Layar antrian, Cetak, dan Daftarkan ke antrian"
-                className="mr-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-border/70 bg-muted/40 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              >
-                <ChevronsUpDown className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            ) : null}
-
             {/* IKON SAJA - TETAPI NAMANYA TIDAK IKUT HILANG.
 
                 Diminta pengguna 22 September 2026. Kata "Penanda" dibuang dari
@@ -7651,8 +7517,13 @@ export function AletaEcourtSidang({
             ringkasan ruang ("ringkasan-ruang": yang sedang disidang, diskors)
             menyatu dalam satu baris setinggi ±36 px. Rancangan dan alasannya:
             docs/rancangan/ruang-sidang-ringkas.html (pilihan A). */}
-        {tampil(tampilan, "ringkasan-ruang") || tampil(tampilan, "kartu-ruang") ? (
+        {tampil(tampilan, "ringkasan-ruang") || tampil(tampilan, "kartu-ruang") || tampil(tampilan, "saring-ruang") || adaSaklarKeliling ? (
           <PitaRuangSidang
+            awal={
+              adaSaklarKeliling ? (
+                <SaklarSidangKeliling ringkas kh={kh} daftar={sidang} penggunaId={String(currentUser?.id ?? "")} />
+              ) : undefined
+            }
             pil={pitaRuang}
             tampilJumlah={tampil(tampilan, "kartu-ruang")}
             tampilBerjalan={tampil(tampilan, "ringkasan-ruang")}
@@ -9556,6 +9427,14 @@ export function AletaEcourtSidang({
             hariIniAntrian={hariIni()}
             onTutup={() => setCetakRelaasTerbuka(false)}
           />
+        ) : null}
+
+        {penetapanKembaliTerbuka && bolehPenetapanKembali ? (
+          <PopupPenetapanKembali sidang={sidang} onTutup={() => setPenetapanKembaliTerbuka(false)} />
+        ) : null}
+        {kasirTerbuka && bolehKasirJurnal ? <DialogKasir daftar={sidang} onTutup={() => setKasirTerbuka(false)} /> : null}
+        {kasirHarian.boleh && kasirHarian.buka ? (
+          <DialogKasirHarian tabAwal={kasirHarian.buka} onTutup={kasirHarian.tutup} hanyaBaca={kasirHarian.hanyaBaca} />
         ) : null}
 
         {kalenderTerbuka ? (

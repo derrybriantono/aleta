@@ -586,9 +586,9 @@ export function BagianPengingatKasir({ onSunting, hanyaBaca = false }: { onSunti
 
 // ─── Dialog & tombol ─────────────────────────────────────────────────────────
 
-type TabKasir = "massal" | "rekap" | "pengingat";
+export type TabKasir = "massal" | "rekap" | "pengingat";
 
-function DialogKasirHarian({ onTutup, tabAwal, hanyaBaca = false }: { onTutup: () => void; tabAwal: TabKasir; hanyaBaca?: boolean }) {
+export function DialogKasirHarian({ onTutup, tabAwal, hanyaBaca = false }: { onTutup: () => void; tabAwal: TabKasir; hanyaBaca?: boolean }) {
   const [tab, setTab] = useState<TabKasir>(hanyaBaca && tabAwal === "massal" ? "pengingat" : tabAwal);
   const [sunting, setSunting] = useState("");
   useEffect(() => {
@@ -646,8 +646,12 @@ function DialogKasirHarian({ onTutup, tabAwal, hanyaBaca = false }: { onTutup: (
   );
 }
 
-/** Tombol "Kasir harian" di deretan alat Jadwal Sidang. Jangkar #kasir membukanya langsung (tab Pengingat). */
-export function TombolKasirHarian() {
+/**
+ * Keadaan Kasir harian - hak, buka-tutup dialog, dan jangkar #kasir (membuka
+ * tab Pengingat). Dipakai tombolnya sendiri maupun menu alat Jadwal Sidang,
+ * yang memegang dialognya di luar menu supaya tidak ikut tertutup bersamanya.
+ */
+export function useKasirHarian() {
   const { currentUser } = usePortal();
   const [buka, setBuka] = useState<TabKasir | "">("");
   const tutup = useCallback(() => setBuka(""), []);
@@ -665,6 +669,12 @@ export function TombolKasirHarian() {
     }, 0);
     return () => clearTimeout(jam);
   }, [boleh]);
+  return { boleh, hanyaBaca, buka, setBuka, tutup };
+}
+
+/** Tombol "Kasir harian" di deretan alat Jadwal Sidang. Jangkar #kasir membukanya langsung (tab Pengingat). */
+export function TombolKasirHarian() {
+  const { boleh, hanyaBaca, buka, setBuka, tutup } = useKasirHarian();
   if (!boleh) return null;
   return (
     <>
