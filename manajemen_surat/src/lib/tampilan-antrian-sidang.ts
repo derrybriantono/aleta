@@ -772,6 +772,131 @@ export const SAKLAR_TAMPILAN: SaklarTampilan[] = [
     keterangan: "Tautan ke layar antrian dan layar panggil.",
     kelompok: "atas",
   },
+
+  // ==========================================================================
+  // 22 Okt 2026 (W57, permintaan hakim): "tambahkan yang belum ada checklist
+  // on/off nya". Hasil pemeriksaan unsur satu per satu: semua di bawah ini
+  // sudah tampil sebelumnya tetapi belum punya saklar. BAWAANNYA MENYALA -
+  // tampilan hari ini tidak berubah. Yang mematikan hanya menyembunyikan
+  // gambarnya: datanya, pembaruan ringan di latar, dan hak peran tetap.
+  // Yang sengaja TIDAK diberi saklar didaftar di src/test/saklar-tampilan-lengkap-22okt.test.tsx.
+  // ==========================================================================
+
+  // --- Kepala dan baris tanggal -------------------------------------------
+  {
+    kunci: "tautan-jadwal",
+    label: "Tombol Tautan jadwal",
+    keterangan:
+      "Tombol di kepala layar untuk membuat atau mencabut tautan rahasia Jadwal Sidang (tanpa masuk akun, hanya dari jaringan kantor). Hanya tampil bagi pengelola akses publik.",
+    kelompok: "atas",
+  },
+  {
+    kunci: "tombol-tunda-otomatis",
+    label: "Tombol Tunda otomatis",
+    keterangan:
+      "Tombol di kepala layar: daftar sidang yang ditunda otomatis pukul 16.30 pada hari itu, dan tombol nyala-matinya bagi Super Admin. Penundaan otomatisnya tetap berjalan menurut pengaturan; yang disembunyikan hanya tombolnya.",
+    kelompok: "atas",
+  },
+  {
+    kunci: "tombol-perkara-saya",
+    label: "Tombol Perkara saya | Semua perkara",
+    keterangan:
+      "Tombol di kepala layar untuk menyaring jadwal ke perkara milik Anda (sebagai majelis, panitera pengganti, atau juru sita). Saat tombolnya disembunyikan, saringan Perkara saya tidak dipakai: yang tampil seluruh perkara.",
+    kelompok: "atas",
+  },
+  {
+    kunci: "identitas-pembuka",
+    label: "Nama dan jabatan Anda di kepala",
+    keterangan:
+      "Baris kecil di bawah judul yang menyebut nama dan jabatan akun yang sedang membuka layar ini.",
+    kelompok: "atas",
+  },
+  {
+    kunci: "tombol-kalender-sidang",
+    label: "Tombol kalender sidang",
+    keterangan:
+      "Tombol bergambar kalender di sebelah panah hari: membuka kalender bulanan yang menandai hari mana saja yang ada sidangnya. Panah hari dan kotak tanggal tetap ada.",
+    kelompok: "atas",
+  },
+  {
+    kunci: "kalender-libur",
+    label: "Kalender dan tanda hari libur",
+    keterangan:
+      "Tombol kalender kecil di samping kotak tanggal beserta keterangan \"hari libur (nama liburnya)\" bila tanggal yang dipilih jatuh pada hari libur. Kotak tanggalnya sendiri tetap dapat diketik. Berlaku juga di Jadwal Mediasi (saklar sendiri di sana).",
+    kelompok: "atas",
+  },
+  {
+    kunci: "tanggal-dan-jumlah",
+    label: "Tanggal terbaca dan jumlah sidang",
+    keterangan:
+      "Di sudut kanan baris tanggal: hari dan tanggal dalam tulisan (mis. Senin, 21 Oktober 2026) beserta jumlah sidang yang tampil.",
+    kelompok: "atas",
+  },
+  {
+    kunci: "tanda-diperbarui",
+    label: "Tanda diperbarui jam berapa",
+    keterangan:
+      "Tulisan \"diperbarui hh:mm:ss\" di samping jumlah sidang: kapan terakhir jadwal berhasil dibaca. Pembaruan ringan di latar tetap berjalan walau tandanya disembunyikan.",
+    kelompok: "atas",
+  },
+  {
+    kunci: "pencarian-lanjutan",
+    label: "Tombol Pencarian lanjutan",
+    keterangan:
+      "Tombol di samping kotak pencarian yang membuka isian nomor, pihak, majelis, ruang, jam, dan lainnya. Kotak pencarian biasa tetap ada. Saat dimatikan, isian lanjutan yang sedang terisi tidak dipakai menyaring.",
+    kelompok: "atas",
+  },
+  {
+    kunci: "menu-per-panitera",
+    label: "Menu: Per panitera sidang",
+    keterangan:
+      "Butir di dalam tombol Menu: papan tunda, putus, dan pilih hakim massal untuk semua perkara satu panitera sidang. Hanya ada pada Sidang keliling satu tanggal dan bagi yang berwenang.",
+    kelompok: "atas",
+  },
+  {
+    kunci: "menu-pengingat-kasir",
+    label: "Menu: Pengingat tugas kasir",
+    keterangan:
+      "Butir di dalam tombol Menu untuk membuka pengingat tugas kasir. Hanya bagi kasir, keuangan, panitera, dan admin; ikut hilang bila Tombol Kasir harian dimatikan.",
+    kelompok: "atas",
+  },
+  {
+    kunci: "saklar-sidang-keliling",
+    label: "Tombol nyala-mati Sidang keliling",
+    keterangan:
+      "Tombol nyala-mati Sidang keliling pada pita ruang di atas tabel (hakim per perkara, Per panitera sidang, cetak per hakim). Keadaan keliling pada hari itu tidak berubah saat tombolnya disembunyikan. Hanya ada untuk satu tanggal.",
+    kelompok: "atas",
+  },
+
+  // --- Pada baris ------------------------------------------------------------
+  {
+    kunci: "pilih-hakim-baris",
+    label: "Tombol pilih hakim yang menyidangkan",
+    keterangan:
+      "Tombol kecil di kolom Majelis & Petugas untuk mengganti hakim yang menyidangkan satu perkara pada Sidang keliling. Nama hakim pilihan yang sudah tersimpan tetap tampil. Hanya bagi yang berwenang dan hanya untuk satu tanggal.",
+    kelompok: "alat",
+  },
+  {
+    kunci: "status-putusan",
+    label: "Status putusan",
+    keterangan:
+      "Lencana amar putusan (mis. Dikabulkan, Dicabut), lencana verstek, \"putus (hasil sidang)\", dan tulisan \"belum putus\" di kolom Putusan dan di kolom Agenda mode Ringkas. Peringatan \"belum minutasi\" dan \"belum tercatat di SIPP\" tetap tampil.",
+    kelompok: "penanda",
+  },
+  {
+    kunci: "warna-baris",
+    label: "Warna dan bingkai baris",
+    keterangan:
+      "Warna hijau pada baris yang sidangnya sudah selesai, bingkai biru pada yang sedang berjalan, dan tepi kuning pada yang diskors. Lencana dan tombolnya punya saklar sendiri.",
+    kelompok: "penanda",
+  },
+  {
+    kunci: "jam-dipanggil",
+    label: "Jam dipanggil masuk",
+    keterangan:
+      "Tulisan hijau kecil \"dipanggil hh:mm\" di kolom Antrian / Jam pada perkara yang sudah dipanggil masuk ruang sidang. Nomor antrian tetap tampil.",
+    kelompok: "keterangan",
+  },
 ];
 
 /** Kunci yang tidak dapat dimatikan - dihitung dari daftarnya, bukan didaftar ulang. */

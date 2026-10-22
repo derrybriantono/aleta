@@ -3701,6 +3701,7 @@ export function SelAntrianJam({
   tampilMenunggu = true,
   tampilRincianAntrian = true,
   tampilTandaOnline = true,
+  tampilJamPanggil = true,
   tungguBerjalan,
   patokan = null,
 }: {
@@ -3724,6 +3725,8 @@ export function SelAntrianJam({
    * dengan tanda "online" yang sudah ada sebelumnya tanpa saklar.
    */
   tampilTandaOnline?: boolean;
+  /** Saklar "jam-dipanggil" (22 Okt 2026): tulisan "dipanggil hh:mm". */
+  tampilJamPanggil?: boolean;
   /**
    * Dihitung di tingkat BARIS, bukan di sini.
    *
@@ -3960,7 +3963,7 @@ export function SelAntrianJam({
         </div>
       ) : null}
 
-      {antrian.keadaan === "dipanggil" && antrian.jamPanggil ? (
+      {tampilJamPanggil && antrian.keadaan === "dipanggil" && antrian.jamPanggil ? (
         <div className="text-[10px] text-emerald-600 dark:text-emerald-400">
           dipanggil {antrian.jamPanggil}
         </div>
@@ -4518,16 +4521,8 @@ export function AletaEcourtSidang({
    * jejak apa pun di layar - kalau ia tidak ikut dilepas, tombol yang
    * berbunyi "Reset ke 27 perkara" tidak pernah sampai ke 27.
    */
-  const adaSaringan =
-    Boolean(alurTerpilih) ||
-    keadaanTerpilih.length > 0 ||
-    Boolean(cariCepat) ||
-    Boolean(cari) ||
-    cariLanjut.jumlahAktif > 0 ||
-    Boolean(saringJenis) ||
-    Boolean(saringTahap) ||
-    Boolean(saringMajelis) ||
-    Boolean(saringRuang);
+  // adaSaringan dihitung SESUDAH saklar Tampilan terbaca (lihat di bawah, dekat
+  // `dimatikan`): pencarian lanjutan yang sakelarnya mati tidak dihitung.
 
   const alihkanKeadaan = (kunci: string) =>
     setKeadaanTerpilih((sekarang) =>
@@ -4952,6 +4947,21 @@ export function AletaEcourtSidang({
 
   const dimatikan = useMemo(() => jumlahDimatikan(tampilan), [tampilan]);
 
+  // 22 Okt 2026 (W57): saklar yang mematikan tombolnya juga melepas saringannya -
+  // isian yang tersembunyi tidak boleh diam-diam menyempitkan daftar.
+  const cariLanjutBerlaku = tampil(tampilan, "pencarian-lanjutan") && cariLanjut.jumlahAktif > 0;
+  const perkaraSayaAktif = hanyaMilikSaya && tampil(tampilan, "tombol-perkara-saya");
+  const adaSaringan =
+    Boolean(alurTerpilih) ||
+    keadaanTerpilih.length > 0 ||
+    Boolean(cariCepat) ||
+    Boolean(cari) ||
+    cariLanjutBerlaku ||
+    Boolean(saringJenis) ||
+    Boolean(saringTahap) ||
+    Boolean(saringMajelis) ||
+    Boolean(saringRuang);
+
   /**
    * Berapa kolom yang benar-benar digambar - dipakai seluruh colSpan.
    *
@@ -5212,7 +5222,7 @@ export function AletaEcourtSidang({
     // pintar (JADWAL-3 butir 1) ia membaca keadaan antrian dan ruang sidang
     // yang baru dihitung di bawah - lihat sidangTampil.
 
-    if (cariLanjut.jumlahAktif > 0) {
+    if (cariLanjutBerlaku) {
       hasil = hasil.filter((baris) =>
         cocokCariLanjutSidang(baris, cariLanjut.isian, antrian.peta)
       );
@@ -5258,7 +5268,7 @@ export function AletaEcourtSidang({
     sidangSealur,
     keadaanTerpilih,
     cariLanjut.isian,
-    cariLanjut.jumlahAktif,
+    cariLanjutBerlaku,
     urutTabel,
     kesiapan,
     antrian.peta,
@@ -5307,7 +5317,7 @@ export function AletaEcourtSidang({
           peranTambahan: currentUser.additionalRoleIds ?? [],
         }
       : null,
-    hanyaMilikSaya
+    perkaraSayaAktif
   );
   // Butir 5 (6 Okt 2026): saringan ruang sidang - PALING akhir, sesudah
   // "Perkara saya", dan hanya bila saklarnya menyala. Lihat @/lib/ruang-sidang-saring.
@@ -6124,7 +6134,7 @@ export function AletaEcourtSidang({
       ],
     });
   }
-  if (!modeUrl && satuTanggalJadwal && kh.keliling && (kh.bolehHakim || bolehTundaPutusMassal) && sidang.length > 0) {
+  if (!modeUrl && satuTanggalJadwal && kh.keliling && (kh.bolehHakim || bolehTundaPutusMassal) && sidang.length > 0 && tampil(tampilan, "menu-per-panitera")) {
     butirMenuAlat.push({
       kunci: "per-panitera-sidang",
       label: "Per panitera sidang",
@@ -6176,15 +6186,21 @@ export function AletaEcourtSidang({
       ikon: CalendarClock,
       judul: "Kasir harian: jurnal otomatis massal satu hari, rekap pengeluaran (PDF), dan pengingat tugas kasir",
     });
-    butirMenuAlat.push({
-      kunci: "pengingat-kasir",
-      label: "Pengingat tugas kasir",
-      ikon: ListChecks,
-      judul: "Pengingat tugas kasir",
-    });
+    if (tampil(tampilan, "menu-pengingat-kasir")) {
+      butirMenuAlat.push({
+        kunci: "pengingat-kasir",
+        label: "Pengingat tugas kasir",
+        ikon: ListChecks,
+        judul: "Pengingat tugas kasir",
+      });
+    }
   }
   const adaTombolCetak = tampil(tampilan, "cetak");
-  const adaSaklarKeliling = !modeUrl && satuTanggalJadwal && Boolean(kh.keliling);
+  // 22 Okt 2026 (W57): saklar "Sidang keliling" di pita ruang punya saklar tampilannya;
+  // keadaan keliling pada hari itu tidak berubah saat tombolnya disembunyikan.
+  const adaSaklarKeliling = !modeUrl && satuTanggalJadwal && Boolean(kh.keliling) && tampil(tampilan, "saklar-sidang-keliling");
+  const warnaBaris = tampil(tampilan, "warna-baris");
+  const statusPutusanTampil = tampil(tampilan, "status-putusan");
 
   return (
     <Card
@@ -6266,7 +6282,7 @@ export function AletaEcourtSidang({
             TIDAK boleh menjadi title hanya peringatan namanya tidak ketemu -
             title tidak terlihat tanpa disentuh, dan peringatan yang tidak
             terlihat sama saja tidak ada. Itu tetap tinggal di atas tabel. */}
-        {!modeUrl && bolehKelolaTautan ? (
+        {!modeUrl && bolehKelolaTautan && tampil(tampilan, "tautan-jadwal") ? (
           <a
             href={withBasePath("/admin/akses-publik")}
             data-tautan-jadwal=""
@@ -6278,8 +6294,8 @@ export function AletaEcourtSidang({
           </a>
         ) : null}
         {/* Tunda otomatis 16.30 (22 Okt 2026): daftar harian + saklar Super Admin. */}
-        {currentUser && !modeUrl ? <TombolTundaOtomatis tanggal={dari} /> : null}
-        {currentUser && !modeUrl ? (
+        {currentUser && !modeUrl && tampil(tampilan, "tombol-tunda-otomatis") ? <TombolTundaOtomatis tanggal={dari} /> : null}
+        {currentUser && !modeUrl && tampil(tampilan, "tombol-perkara-saya") ? (
           <Button
             type="button"
             size="sm"
@@ -6404,7 +6420,7 @@ export function AletaEcourtSidang({
           <p className="w-full basis-full text-xs text-muted-foreground" data-nama-tautan="">
             {namaTautan ? `Tautan: ${namaTautan}` : "Tautan jadwal sidang"}
           </p>
-        ) : currentUser ? (
+        ) : currentUser && tampil(tampilan, "identitas-pembuka") ? (
           <p className="w-full basis-full text-xs text-muted-foreground">
             {currentUser.name}
             {jabatanSaya ? ` · ${jabatanSaya}` : ""}
@@ -6660,6 +6676,7 @@ export function AletaEcourtSidang({
                   value={dari}
                   onChange={(v) => pilihHari(v)}
                   liburBolehDipilih
+                  tampilKalender={tampil(tampilan, "kalender-libur")}
                   sebutan="Tanggal sidang"
                   className="h-9 w-[8.75rem] rounded-none border-0 bg-transparent text-center focus-visible:ring-0"
                   aria-label="Tanggal sidang mulai"
@@ -6674,6 +6691,7 @@ export function AletaEcourtSidang({
                   min={dari}
                   onChange={(v) => setSampai(v)}
                   liburBolehDipilih
+                  tampilKalender={tampil(tampilan, "kalender-libur")}
                   sebutan="Tanggal sidang"
                   className="h-9 w-[8.75rem] rounded-none border-0 bg-transparent text-center focus-visible:ring-0"
                   aria-label="Tanggal sidang sampai"
@@ -6703,7 +6721,7 @@ export function AletaEcourtSidang({
                   namanya hanya menambah lebar tanpa menambah keterangan.
                   aria-label dan title menjaganya tetap terbaca bagi yang
                   memakai pembaca layar maupun yang ragu. */}
-              {modeUrl ? null : (
+              {modeUrl || !tampil(tampilan, "tombol-kalender-sidang") ? null : (
               <button
                 type="button"
                 aria-label="Pilih tanggal dari kalender"
@@ -6727,18 +6745,28 @@ export function AletaEcourtSidang({
 
             {/* Tanggal terbacanya, bukan angka - "Senin" adalah yang dicari
                 orang, bukan "31/08". */}
+            {/* 22 Okt 2026 (W57): dua saklar - tanggal terbaca + jumlah sidang, dan tanda
+                "diperbarui". Keduanya hanya gambar; pembaruan ringan di latar tetap jalan. */}
+            {tampil(tampilan, "tanggal-dan-jumlah") || tampil(tampilan, "tanda-diperbarui") ? (
             <div className="ml-auto text-right">
-              <p className="text-sm font-semibold leading-tight">{tanggalHariPanjang(dari)}</p>
+              {tampil(tampilan, "tanggal-dan-jumlah") ? (
+                <p className="text-sm font-semibold leading-tight">{tanggalHariPanjang(dari)}</p>
+              ) : null}
               <p className="text-sm text-muted-foreground">
-                {pertamaMuat && memuat
-                  ? "\u00a0"
-                  : sidang.length === 0
-                    ? "tidak ada sidang"
-                    : `${sidang.length} sidang${dari !== sampai ? " pada rentang ini" : ""}`}
+                {tampil(tampilan, "tanggal-dan-jumlah")
+                  ? pertamaMuat && memuat
+                    ? "\u00a0"
+                    : sidang.length === 0
+                      ? "tidak ada sidang"
+                      : `${sidang.length} sidang${dari !== sampai ? " pada rentang ini" : ""}`
+                  : null}
                 {/* 22 Okt 2026: waktu bacaan terakhir yang berhasil (ringan atau lengkap). */}
-                {pertamaMuat && memuat ? null : <TandaDiperbarui penyimpan={penyimpanDiperbarui} awalan=" · " />}
+                {(pertamaMuat && memuat) || !tampil(tampilan, "tanda-diperbarui") ? null : (
+                  <TandaDiperbarui penyimpan={penyimpanDiperbarui} awalan={tampil(tampilan, "tanggal-dan-jumlah") ? " · " : ""} />
+                )}
               </p>
             </div>
+            ) : null}
           </div>
 
           {/* ==============================================================
@@ -6808,7 +6836,7 @@ export function AletaEcourtSidang({
               </div>
               )}
 
-              {!modeUrl && sidang.length > 0 ? (
+              {!modeUrl && sidang.length > 0 && tampil(tampilan, "pencarian-lanjutan") ? (
                 <Button
                   size="sm"
                   variant={lanjutTerbuka || cariLanjut.jumlahAktif > 0 ? "default" : "outline"}
@@ -6906,7 +6934,7 @@ export function AletaEcourtSidang({
             ) : null}
           </div>
 
-          {mejaPp && !modeUrl && satuTanggalJadwal && kh.keliling ? (
+          {mejaPp && !modeUrl && satuTanggalJadwal && kh.keliling && tampil(tampilan, "menu-per-panitera") ? (
             <MejaPaniteraSidang
               daftar={sidang}
               kh={kh}
@@ -7210,7 +7238,7 @@ export function AletaEcourtSidang({
           </div>
         ) : null}
 
-        {lanjutTerbuka && sidang.length > 0 ? (
+        {lanjutTerbuka && sidang.length > 0 && tampil(tampilan, "pencarian-lanjutan") ? (
           <PanelCariLanjut
             medan={MEDAN_CARI_SIDANG}
             isian={cariLanjut.isian}
@@ -7445,7 +7473,7 @@ export function AletaEcourtSidang({
             X" dan "Seluruh perkara satker" - sudah menjadi title tombolnya:
             keduanya hanya mengulang apa yang sudah dikatakan tombol yang
             sedang menyala. */}
-        {currentUser && hanyaMilikSaya && milikSaya.berlaku && !milikSaya.adaYangCocok ? (
+        {currentUser && perkaraSayaAktif && milikSaya.berlaku && !milikSaya.adaYangCocok ? (
           <p className="mb-2 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
             Nama <strong>{currentUser.name}</strong> tidak tercatat sebagai majelis,
             panitera pengganti, atau jurusita pada perkara yang tampil — seluruh perkara
@@ -7794,16 +7822,19 @@ export function AletaEcourtSidang({
                           // Garis kiri 4 piksel dipilih sebab ia terbaca tanpa
                           // bergantung pada warna: tebalnya sendiri sudah
                           // isyarat, dan pada tema gelap kontrasnya 9,12:1.
-                          selesaiTanda.hijau &&
+                          warnaBaris &&
+                            selesaiTanda.hijau &&
                             dibuka !== kunci &&
                             "border-l-4 border-l-emerald-500 bg-emerald-500/[0.07] dark:border-l-emerald-400",
                           // SEDANG DISIDANGKAN (butir 10) - garis kiri biru
                           // dan bingkai; tidak pernah bersamaan dengan hijau
                           // (yang selesai tidak berjalan). Tetap tampak saat
                           // rinciannya terbuka.
-                          berjalanIni &&
+                          warnaBaris &&
+                            berjalanIni &&
                             "border-l-4 border-l-sky-500 bg-sky-500/[0.09] outline outline-2 -outline-offset-2 outline-sky-500/50 dark:border-l-sky-400",
-                          skorsIni &&
+                          warnaBaris &&
+                            skorsIni &&
                             !berjalanIni &&
                             dibuka !== kunci &&
                             "border-l-4 border-l-amber-500 bg-amber-500/[0.06] dark:border-l-amber-400"
@@ -7847,6 +7878,7 @@ export function AletaEcourtSidang({
                             tampilMenunggu={tampil(tampilan, "menunggu-lama")}
                             tampilRincianAntrian={tampil(tampilan, "rincian-antrian")}
                             tampilTandaOnline={tampil(tampilan, "tanda-antrian-online")}
+                            tampilJamPanggil={tampil(tampilan, "jam-dipanggil")}
                             tungguBerjalan={tigaBaris?.tunggu}
                             patokan={patokanWaktu}
                           />
@@ -8796,6 +8828,7 @@ export function AletaEcourtSidang({
                               perkara yang sudah putus tidak dapat dibedakan
                               dari yang belum - padahal itulah pertanyaan
                               pertama yang diajukan orang tentang satu perkara. */}
+                          {statusPutusanTampil ? (
                           <div className="hanya-ringkas mt-1">
                             {baris.sudahPutus ? (
                               <Badge variant="success">{baris.statusPutusan || "Putus"}</Badge>
@@ -8803,6 +8836,7 @@ export function AletaEcourtSidang({
                               <span className="text-xs text-muted-foreground">belum putus</span>
                             )}
                           </div>
+                          ) : null}
 
                           {/* Court Calendar perkara ini - PALING BAWAH sel
                               Agenda (permintaan 6 Okt 2026, butir 3): lihat,
@@ -8864,7 +8898,7 @@ export function AletaEcourtSidang({
                                 <NamaDapatDipanggil golongan="majelis" {...konteksPanggil}>{baris.majelisNama}</NamaDapatDipanggil>
                               </span>
                             ) : null}
-                            {!modeUrl && satuTanggalJadwal ? <PemilihHakimBaris baris={baris} kh={kh} /> : null}
+                            {!modeUrl && satuTanggalJadwal && tampil(tampilan, "pilih-hakim-baris") ? <PemilihHakimBaris baris={baris} kh={kh} /> : null}
                           </div>
 
                           {/* JADWAL-3 tambahan A (19 Okt 2026): PP dan JS
@@ -8909,14 +8943,16 @@ export function AletaEcourtSidang({
                                   untuk semuanya: "Ditolak" yang berwarna hijau
                                   terbaca sebagai kabar baik oleh siapa pun yang
                                   hanya sempat melihat warnanya. */}
+                              {statusPutusanTampil ? (
                               <Badge variant={warnaStatusPutusan(baris.statusPutusan)}>
                                 {baris.statusPutusan || "Putus"}
                               </Badge>
+                              ) : null}
 
                               {/* Verstek: putusan tanpa hadirnya tergugat.
                                   Menentukan tenggang verzet, dan karena itu
                                   perlu terbaca tanpa membuka rincian. */}
-                              {baris.verstekPutusan ? (
+                              {statusPutusanTampil && baris.verstekPutusan ? (
                                 <Badge variant="warning">verstek</Badge>
                               ) : null}
 
@@ -9005,6 +9041,7 @@ export function AletaEcourtSidang({
                                dan menghapusnya membuat tunggakan itu tidak
                                terlihat oleh siapa pun. */
                             <div className="flex flex-wrap gap-1">
+                              {statusPutusanTampil ? (
                               <Badge
                                 variant="success"
                                 title={`Menurut catatan ruang sidang: ${hasilSidangPutusan(
@@ -9014,6 +9051,7 @@ export function AletaEcourtSidang({
                               >
                                 putus (hasil sidang)
                               </Badge>
+                              ) : null}
                               <Badge
                                 variant="warning"
                                 title="Data putusannya belum diisi di SIPP - yang tertinggal pencatatannya, bukan keadaan perkaranya."
@@ -9021,9 +9059,9 @@ export function AletaEcourtSidang({
                                 belum tercatat di SIPP
                               </Badge>
                             </div>
-                          ) : (
+                          ) : statusPutusanTampil ? (
                             <span className="text-muted-foreground">belum putus</span>
-                          )}
+                          ) : null}
 
                           {/* Pembebanan saat ikrar talak (6 Okt 2026): di
                               BAWAH penanda putusan, hanya pada sidang ikrar

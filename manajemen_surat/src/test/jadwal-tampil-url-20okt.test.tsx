@@ -193,10 +193,18 @@ describe("daftar izin tampilan alamat", () => {
     for (const k of TOMBOL_BARIS_DIIZINKAN_URL) expect(SAKLAR_TAMPILAN.some((x) => x.kunci === k), k).toBe(true);
   });
 
-  it("alat di atas tabel: hanya yang mencetak (dan dua keterangan pita ruang)", () => {
+  it("alat di atas tabel: hanya yang mencetak, dua keterangan pita ruang, dan tiga bacaan di baris tanggal (22 Okt)", () => {
     for (const k of ALAT_ATAS_DIIZINKAN_URL) expect(SAKLAR_TAMPILAN.some((x) => x.kunci === k), k).toBe(true);
     const atas = SAKLAR_TAMPILAN.filter((x) => x.kelompok === "atas").map((x) => x.kunci);
-    expect(atas.filter((k) => tampil(pilihan, k)).sort()).toEqual(["cetak", "kartu-ruang", "ringkasan-ruang", "tombol-cetak-relaas"]);
+    expect(atas.filter((k) => tampil(pilihan, k)).sort()).toEqual([
+      "cetak",
+      "kalender-libur",
+      "kartu-ruang",
+      "ringkasan-ruang",
+      "tanda-diperbarui",
+      "tanggal-dan-jumlah",
+      "tombol-cetak-relaas",
+    ]);
     for (const k of ["skor-kesiapan", "layar-antrian", "daftar-antrian", "tombol-kasir", "tombol-kasir-harian", "tombol-penetapan-kembali", "saring-ruang", "tombol-layar-penuh", "ciutkan-selesai"]) {
       expect(tampil(pilihan, k), k).toBe(false);
     }

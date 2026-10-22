@@ -129,9 +129,16 @@ describe("checklist Jadwal Mediasi", () => {
     "saring-keadaan",
     "pencarian-mediasi",
     "catatan-tenggang",
+    // 22 Okt 2026 (W57): enam unsur yang dulu tampil tanpa centang.
+    "pengantar-layar",
+    "kalender-libur",
+    "sebutan-mediator",
+    "dihadiri-sipp",
+    "batas-dan-laporan",
+    "kehadiran-rincian",
   ];
 
-  it("sembilan baris, semuanya menyala bawaan", () => {
+  it("lima belas baris (sembilan + enam dari 22 Okt), semuanya menyala bawaan", () => {
     expect(SAKLAR_TAMPILAN_MEDIASI.map((x) => x.kunci)).toEqual(KUNCI);
     const bawaan = tampilanMediasiBawaan();
     for (const kunci of KUNCI) {
@@ -139,7 +146,7 @@ describe("checklist Jadwal Mediasi", () => {
       expect(tampilMediasi({}, kunci), kunci).toBe(true);
       expect(tampilMediasi({ [kunci]: false }, kunci), kunci).toBe(false);
     }
-    // simpanan lama yang hanya memuat tombol hasil: delapan lainnya menyala
+    // simpanan lama yang hanya memuat tombol hasil: empat belas lainnya menyala
     const lama = bacaTampilanMediasi(JSON.stringify({ "tombol-hasil-mediasi": false }));
     expect(lama["tombol-hasil-mediasi"]).toBe(false);
     for (const kunci of KUNCI.slice(1)) expect(lama[kunci], kunci).toBe(true);
