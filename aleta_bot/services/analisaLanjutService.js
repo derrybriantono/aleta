@@ -1,5 +1,7 @@
 "use strict";
 
+const { relaasRetur, sqlRetur } = require("./returRelaas");
+
 /**
  * ============================================================================
  * ANALISIS LANJUTAN SATU PERKARA - DIMUAT SAAT DIMINTA, BUKAN SAAT DIBUKA
@@ -986,7 +988,7 @@ async function analisaPanggilan(id) {
       // hari kerja antara panggilan dan sidang.
       tenggangHari: selisihHari(relaas, sidang),
       cara: CARA[cleanText(row.ketTemu).toUpperCase()] || cleanText(row.ketTemu),
-      retur: angka(row.statusPos) === 2 || /retur/i.test(cleanText(row.hasil)),
+      retur: relaasRetur(row.statusPos, cleanText(row.hasil)),
       jurusita: cleanText(row.jurusita),
     };
   });

@@ -1,5 +1,7 @@
 "use strict";
 
+const { relaasRetur, sqlRetur } = require("./returRelaas");
+
 /**
  * ============================================================================
  * REKAP PETUGAS - SATU ORANG, SELURUH PERKARANYA
@@ -1220,7 +1222,7 @@ async function relaasJurusita(daftarId) {
               r.ket_temu AS sandi,
               COUNT(*) AS n,
               SUM(CASE WHEN r.status_pos = 1 THEN 1 ELSE 0 END) AS sampai,
-              SUM(CASE WHEN r.status_pos = 2 THEN 1 ELSE 0 END) AS retur
+              SUM(CASE WHEN ${sqlRetur("r")} THEN 1 ELSE 0 END) AS retur
          FROM perkara_pelaksanaan_relaas r
         WHERE r.perkara_id IN (${isian})
         GROUP BY r.perkara_id, r.ket_temu

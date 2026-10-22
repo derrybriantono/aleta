@@ -1,5 +1,7 @@
 "use strict";
 
+const { relaasRetur, sqlRetur } = require("./returRelaas");
+
 /**
  * ============================================================================
  * LAPISAN PETA PERKARA - SEMBILAN PERTANYAAN, SATU BENTUK JAWABAN
@@ -518,7 +520,7 @@ async function sebaranJurusita(dari, sampai) {
     `SELECT COALESCE(NULLIF(u.fullname, ''), NULLIF(r.diinput_oleh, '')) AS jurusita,
             p.kelurahan AS desa,
             COUNT(*) AS n,
-            SUM(CASE WHEN r.status_pos = 2 THEN 1 ELSE 0 END) AS retur
+            SUM(CASE WHEN ${sqlRetur("r")} THEN 1 ELSE 0 END) AS retur
        FROM perkara_pelaksanaan_relaas r
        LEFT JOIN pihak p ON p.id = r.pihak_id
        LEFT JOIN sys_users u ON u.userid = r.jurusita_id

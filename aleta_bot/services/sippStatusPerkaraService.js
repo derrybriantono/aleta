@@ -1,5 +1,7 @@
 "use strict";
 
+const { relaasRetur, sqlRetur } = require("./returRelaas");
+
 /**
  * Status satu perkara, dari pendaftaran sampai produk pengadilan.
  *
@@ -199,7 +201,7 @@ const RELAAS_SYARAT = {
   retur:
     `EXISTS (SELECT 1 FROM perkara_pelaksanaan_relaas r
               WHERE r.perkara_id = p.perkara_id
-                AND (r.ket_hasil_relaas LIKE '%retur%' OR r.status_pos = 2))`,
+                AND ${sqlRetur("r")})`,
   // Dipanggil lewat surat tercatat - saluran, bukan hasil. Kuncinya dulu
   // bernama `gagal`; sebabnya di blok penjelasan di atas.
   surat_tercatat:

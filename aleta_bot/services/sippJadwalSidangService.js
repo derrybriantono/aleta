@@ -1,5 +1,7 @@
 "use strict";
 
+const { relaasRetur, sqlRetur } = require("./returRelaas");
+
 /**
  * Jadwal perkara yang bersidang, beserta seluruh keterangannya.
  *
@@ -2647,7 +2649,7 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
 
     // Retur dihitung dari SELURUH relaas sidang ini, bukan hanya sisi yang
     // wajib: surat yang kembali tetap perlu ditindaklanjuti.
-    const retur = relaas.filter((r) => r.statusPos === 2).length;
+    const retur = relaas.filter((r) => relaasRetur(r.statusPos, r.ketHasilRelaas)).length;
 
     // ======================================================================
     // HITUNG MUNDUR TENGGANG - ATURANNYA TIDAK DIKARANG DI SINI
@@ -3125,7 +3127,7 @@ async function relaasSidang(perkaraId, sidangId) {
     statusPos: row.statusPos === null || row.statusPos === undefined ? null : Number(row.statusPos),
     // status_pos 2 berarti surat DIKEMBALIKAN. Berbeda dari belum dipanggil:
     // yang ini sudah dikerjakan jurusita, tetapi tidak sampai.
-    retur: Number(row.statusPos) === 2,
+    retur: relaasRetur(row.statusPos, row.ketHasilRelaas),
     ketHasilRelaas: cleanText(row.ketHasilRelaas),
     // 'Y' berarti jurusita bertemu langsung dengan yang dipanggil.
     //

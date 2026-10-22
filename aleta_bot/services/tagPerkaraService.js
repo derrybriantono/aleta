@@ -1,5 +1,7 @@
 "use strict";
 
+const { relaasRetur, sqlRetur } = require("./returRelaas");
+
 /**
  * ============================================================================
  * TAG PERKARA - SARINGAN TERSIMPAN PADA LAYAR AWAL STATUS PERKARA
@@ -847,7 +849,7 @@ const TAG = Object.freeze({
     nada: "bahaya",
     judul: "Relaas kembali tidak terlaksana - panggilan harus diulang.",
     tabel: "perkara_pelaksanaan_relaas a",
-    syarat: "a.ket_hasil_relaas LIKE '%retur%' OR a.status_pos = 2",
+    syarat: sqlRetur("a"),
   },
   "panggil-surat-tercatat": {
     kelompok: "panggilan",

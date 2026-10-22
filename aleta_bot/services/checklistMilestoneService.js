@@ -1,5 +1,7 @@
 "use strict";
 
+const { relaasRetur, sqlRetur } = require("./returRelaas");
+
 const { sqlDariSetempat } = require("../utils/waktuUtc");
 
 /**
@@ -816,12 +818,12 @@ async function koleksiRetur(lingkup, { acuan, alat = ALAT_DIAM }) {
               WHERE j2.perkara_id = r.perkara_id AND j2.tanggal_sidang >= ?) AS sidangBerikut,
             (SELECT MAX(r2.diinput_tanggal) FROM perkara_pelaksanaan_relaas r2
               WHERE r2.perkara_id = r.perkara_id AND r2.pihak_id = r.pihak_id AND r2.id > r.id
-                AND (r2.status_pos IS NULL OR r2.status_pos <> 2)) AS susulanDiinput
+                AND NOT ${sqlRetur("r2")}) AS susulanDiinput
        FROM perkara_pelaksanaan_relaas r
        JOIN perkara_jadwal_sidang j ON j.id = r.sidang_id
        JOIN perkara p ON p.perkara_id = r.perkara_id
        LEFT JOIN perkara_putusan pu ON pu.perkara_id = r.perkara_id
-      WHERE r.status_pos = 2
+      WHERE ${sqlRetur("r")}
         AND j.tanggal_sidang >= ?
         AND ${syarat.sql}
       ORDER BY j.tanggal_sidang ASC
