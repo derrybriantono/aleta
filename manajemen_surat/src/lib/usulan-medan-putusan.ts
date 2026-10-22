@@ -1588,6 +1588,7 @@ export function usulkanMedanPutusan(
     teksFakta,
     bawaan,
     jenisPerkara,
+    pertimbangan: typeof opsi.pertimbangan === "string" ? opsi.pertimbangan : teks,
   });
 
   return faktor.map((usul, indeks) => {
@@ -1636,7 +1637,115 @@ type KonteksFaktor = {
   teksFakta: string;
   bawaan: BawaanMedan[];
   jenisPerkara: string;
+  /** Pertimbangan hukum saja (tanpa duduk perkara) - tempat bagian fakta hukum dicari. */
+  pertimbangan?: string;
 };
+
+/**
+ * ============================================================================
+ * FAKTA HUKUM MENENTUKAN ARAH FAKTOR POKOK (keputusan pengguna 22 Okt 2026)
+ * ============================================================================
+ *
+ * "Apabila dalam pertimbangan hukum pada fakta hukum penjelasannya mengarah
+ * kepada sesuatu maka ikuti itu." Penyebab yang tidak berdiri sendiri - judi,
+ * narkoba, minuman keras, KDRT, Tergugat sering marah, keluarga ikut campur,
+ * tidak mendengar nasihat - adalah PEMICU perselisihan: bila fakta hukum
+ * menyebut perselisihan/pertengkaran, faktor pokoknya Perselisihan dan
+ * Pertengkaran Terus Menerus (pemicunya menjadi sekunder). Bila fakta hukum
+ * tidak menyebut pertengkaran (saksi tidak pernah melihat/mendengarnya) dan
+ * yang diketahui hanya pisah dua tahun atau lebih: Meninggalkan Salah Satu
+ * Pihak.
+ *
+ * Sebelum aturan ini 450 dari 1.055 putusan cerai dikabulkan 2025-2026 PA
+ * Donggala (server, 22 Okt 2026) berakhir "naskah menyebut lebih dari satu"
+ * pada faktor pokok - tidak tercentang, dan Putusan Otomatis / Jadwalkan
+ * Putusan berhenti karena Faktor Penyebab Perceraian wajib diisi. Sesudahnya
+ * (skrip D:/aleta-dev/kerja/w49/ukur-faktor.ts):
+ *
+ *                                   sebelum   sesudah
+ *   pokok tidak tercentang (ragu)     450         8   (sisanya tanpa rumusan fakta hukum)
+ *   pokok sama dengan isian petugas   651       664
+ *   tercentang, beda dengan petugas   150       362
+ *     - searah aturan pengguna        136       351   (pemicu -> Perselisihan; pisah tanpa pertengkaran -> Meninggalkan)
+ *     - lainnya                        14        11
+ *   faktor pokok petugas ada di pokok ATAU sekunder usulan: 782 -> 888
+ *
+ * Atas 23 draf ALETA yang sudah diputus (masukan rute isian-sipp): tercentang
+ * sama dengan petugas 7 -> 21, ragu 16 -> 0, beda 0 -> 2 (keduanya fakta
+ * hukum menyebut pertengkaran, petugas memilih Meninggalkan).
+ */
+const POLA_BUKA_FAKTA_HUKUM =
+  /\bfakta(?:[\s-]+fakta)?(?:\s+(?:hukum|persidangan))?\b[^.]{0,80}?(?:sebagai\s+berikut|berikut\s+ini|:\s*$)|(?:ditemukan|diperoleh|terungkap|didapatkan|ditemukannya|menemukan|memperoleh)\s+(?:adanya\s+)?fakta[^.]{0,80}?(?:sebagai\s+berikut|berikut\s+ini|:\s*$)/i;
+
+/** Fakta hukum sebaris: "ditemukan fakta bahwa ...", "telah terbukti fakta hukum bahwa ...". */
+const POLA_BUKA_FAKTA_SEBARIS =
+  /(?:ditemukan|diperoleh|terungkap|didapatkan|ditemukannya|menemukan|memperoleh|terbukti)\s+(?:adanya\s+)?fakta(?:[\s-]+fakta)?(?:\s+(?:hukum|persidangan))?/i;
+
+/** Pertengkaran yang DIINGKARI - "saksi tidak pernah melihat/mendengar Penggugat dan Tergugat bertengkar". */
+const POLA_SELISIH_DIINGKARI =
+  /(?:tidak|belum)\s+(?:pernah\s+)?(?:(?:melihat|mendengar|mengetahui|menyaksikan)(?:\s+(?:dan|atau|maupun)\s+(?:melihat|mendengar|mengetahui|menyaksikan))?|terjadi|ada)[^.;]{0,80}?(?:perselisihan|pertengkaran|bertengkar|berselisih|cekcok|percekcokan|ribut|keributan)/gi;
+
+/** Tanda pertengkaran pada fakta hukum. Lebih sempit dari POLA_ADA_PERSELISIHAN - "tidak harmonis" saja bukan pertengkaran. */
+const POLA_SELISIH_FAKTA =
+  /perselisihan|pertengkaran|bertengkar|berselisih|cekcok|percekcokan|selisih\s+paham|keributan|\bribut\b|syiqaq/i;
+
+/** Pisah, pergi, atau ditinggal dua tahun atau lebih. */
+const POLA_PISAH_DUA_TAHUN_LEBIH =
+  /(?:meninggalkan|ditinggalkan|pergi|tidak\s+(?:pernah\s+)?kembali|pisah|berpisah)[^.;]{0,160}?\b(?:2|dua|[3-9]|1\d|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|dua\s+belas)\b\s*(?:\([^)]*\)\s*)?tahun|\b(?:2|dua|[3-9]|1\d|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh|sebelas|dua\s+belas)\b\s*(?:\([^)]*\)\s*)?tahun[^.;]{0,120}?(?:berturut|tidak\s+(?:pernah\s+)?kembali|tidak\s+diketahui|meninggalkan|berpisah|pisah)/i;
+
+/**
+ * Bagian fakta hukum pertimbangan: kalimat "Menimbang, bahwa berdasarkan ...
+ * ditemukan fakta hukum sebagai berikut:" beserta butir-butirnya sampai
+ * "Menimbang" berikutnya. Kosong bila naskah tidak merumuskannya - pemanggil
+ * lalu memakai perilaku lama. Diukur: ditemukan pada 1.007 dari 1.055
+ * pertimbangan putusan cerai PA Donggala.
+ */
+export function bagianFaktaHukum(pertimbangan: string): string {
+  const baris = String(pertimbangan ?? "")
+    .split(/\n+/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+  // Dua putaran: rumusan berbutir ("... sebagai berikut:") didahulukan dari
+  // rumusan sebaris ("telah terbukti fakta hukum bahwa ..."). Kalimat yang
+  // mengutip SEMA/indikator/surat edaran bukan fakta perkara ini.
+  for (const putaran of [POLA_BUKA_FAKTA_HUKUM, POLA_BUKA_FAKTA_SEBARIS]) {
+    const hasil: string[] = [];
+    for (let i = 0; i < baris.length; i++) {
+      const cocok = putaran.exec(baris[i]);
+      if (!cocok) continue;
+      if (/\bsema\b|surat\s+edaran|\bindikator\b|\bkaidah\b/i.test(baris[i].slice(0, cocok.index + cocok[0].length))) continue;
+      // "membuktikan fakta-fakta sebagaimana tersebut dalam keterangan para saksi yang terurai dalam duduk perkara"
+      if (/dalam\s+duduk\s+perkara/i.test(baris[i]) && !/berikut/i.test(baris[i])) continue;
+      const sisa = baris[i].slice(cocok.index + cocok[0].length).replace(/^[\s:,-]+/, "");
+      if (sisa.length > 30) hasil.push(sisa);
+      if (putaran === POLA_BUKA_FAKTA_HUKUM) {
+        for (let j = i + 1; j < baris.length && j < i + 40; j++) {
+          if (/^menimbang\b/i.test(baris[j])) break;
+          hasil.push(baris[j]);
+        }
+      }
+      if (hasil.length) return hasil.join("\n");
+    }
+  }
+  return "";
+}
+
+/** Arah fakta hukum: pertengkaran yang dinyatakan (bukan diingkari) dan pisah dua tahun atau lebih. */
+export function arahFaktaHukum(pertimbangan: string): {
+  faktaHukum: string;
+  adaPertengkaran: boolean;
+  pertengkaranDiingkari: boolean;
+  pisahDuaTahun: boolean;
+} {
+  const faktaHukum = bagianFaktaHukum(pertimbangan);
+  const tanpaIngkar = faktaHukum.replace(POLA_SELISIH_DIINGKARI, " ");
+  return {
+    faktaHukum,
+    adaPertengkaran: Boolean(faktaHukum) && POLA_SELISIH_FAKTA.test(tanpaIngkar),
+    pertengkaranDiingkari: new RegExp(POLA_SELISIH_DIINGKARI.source, "i").test(String(pertimbangan ?? "")),
+    pisahDuaTahun: Boolean(faktaHukum) && POLA_PISAH_DUA_TAHUN_LEBIH.test(faktaHukum),
+  };
+}
 
 /**
  * ============================================================================
@@ -1704,6 +1813,12 @@ function susunFaktorPerceraian(hasil: UsulanDalam[], medan: MedanPilihan[], kont
     return hitung.sort((a, b) => b.n - a.n || a.urutan - b.urutan);
   };
 
+  // Arah fakta hukum (keputusan pengguna 22 Okt 2026) - lihat bagianFaktaHukum.
+  const arah = arahFaktaHukum(konteks.pertimbangan ?? teks);
+  const adaFaktaHukum = Boolean(arah.faktaHukum);
+  /** Pokok yang ditentukan fakta hukum berpertengkaran - sekundernya pemicu dari fakta hukum. */
+  let pokokDariPertengkaranFakta = false;
+
   // ── Pokok ────────────────────────────────────────────────────────────────
   if (iPokok >= 0) {
     const pokokLama = hasil[iPokok];
@@ -1737,6 +1852,12 @@ function susunFaktorPerceraian(hasil: UsulanDalam[], medan: MedanPilihan[], kont
         // (b) bersama (f) tanpa kepergian dua tahun: pokoknya tetap perselisihan.
         continue;
       }
+      // (b) bersama (f) dengan fakta hukum yang terumus: fakta hukum yang
+      // menentukan (langkah 1a). Diukur atas 122 putusan berhuruf (b)+(f)
+      // berfakta hukum: yang faktanya menyebut pertengkaran dipilih petugas
+      // Perselisihan 41 kali dan Meninggalkan 26 kali; yang tidak, Meninggalkan
+      // 41 dari 42.
+      if (aturan.huruf === "b" && adaF && adaFaktaHukum) continue;
       if (aturan.ciriA) {
         if (adaF) continue;
         const kandidatA = ciri.filter((x) => /madat|narkoba|narkotika|mabuk|judi|zina/i.test(x.pilihan.label));
@@ -1752,7 +1873,14 @@ function susunFaktorPerceraian(hasil: UsulanDalam[], medan: MedanPilihan[], kont
       // dicentang sendiri. Diukur atas 960 putusan cerai (hampir semuanya
       // huruf (b)+(f) dengan kepergian dua tahun): aturan ini mencabut
       // centang dari 26 usulan salah dan 8 usulan benar (pembetul-banding).
-      const kuatLain = tegas ? [] : ciriKuat.filter((x) => String(x.pilihan.nilai) !== String(pil?.nilai));
+      // Huruf (c), (d), (e), (h) yang disebut bersama (f) dengan fakta hukum
+      // terumus: dasar khusus yang dipilih majelis sendiri - tidak lagi
+      // "pilih sendiri" hanya karena pemicu lain ikut disebut (diukur: (c)+(f),
+      // (d)+(f), (f)+(h) dipilih petugas sesuai hurufnya 7 dari 7). Huruf (d)
+      // tetap diusulkan (keputusan 10 Okt 2026).
+      const khususDenganFakta = !tegas && adaFaktaHukum && aturan.huruf !== "b";
+      const kuatLain =
+        tegas || khususDenganFakta ? [] : ciriKuat.filter((x) => String(x.pilihan.nilai) !== String(pil?.nilai));
       putusanPokok = {
         ...pokokLama,
         nilai: String(pil.nilai),
@@ -1774,6 +1902,65 @@ function susunFaktorPerceraian(hasil: UsulanDalam[], medan: MedanPilihan[], kont
             : "Periksa sendiri mana yang pokok."),
       };
       break;
+    }
+
+    // 1a. Fakta hukum menentukan arah (keputusan pengguna 22 Okt 2026).
+    //
+    //   pertengkaran dinyatakan fakta hukum          -> Perselisihan (pemicunya sekunder)
+    //   tidak ada pertengkaran, pisah >= dua tahun   -> Meninggalkan Salah Satu Pihak
+    //   tidak keduanya, tetapi huruf (f) disebut     -> Perselisihan
+    //
+    // Keyakinan "cukup": tercentang sendiri, jadi Putusan Otomatis dan
+    // Jadwalkan Putusan tidak berhenti di faktor pokok. Pemicu yang disebut
+    // fakta hukum (KDRT, mabuk, judi, ekonomi, ...) TIDAK lagi menjadikannya
+    // "pilih sendiri" - ia pemicu perselisihan, bukan alasan tersendiri.
+    if (!putusanPokok && adaFaktaHukum) {
+      const meninggalkan = pilihanBerlabel(pilihanPokok, POLA_FAKTOR_MENINGGALKAN);
+      const kalimatFH = pecahKalimat(arah.faktaHukum);
+      const pemicu = CIRI_FAKTOR.filter(
+        (c) => !/meninggalkan|ekonomi/.test(c.ciri) && kalimatFH.some((k) => c.kata.test(k))
+      ).map((c) => c.ciri);
+      if (/ekonomi|nafkah/i.test(arah.faktaHukum)) pemicu.push("ekonomi");
+      let pil: PilihanMedan | undefined;
+      let kutipan = "";
+      let alasan = "";
+      if (arah.adaPertengkaran && perselisihan && !pilihanKosong(perselisihan)) {
+        pil = perselisihan;
+        pokokDariPertengkaranFakta = true;
+        kutipan = kalimatBerpola(kalimatFH, POLA_SELISIH_FAKTA);
+        alasan =
+          "Fakta hukum menyebut perselisihan dan pertengkaran" +
+          (pemicu.length ? ` (pemicunya: ${pemicu.join(", ")} - menjadi sekunder, bukan pokok)` : "") +
+          ".";
+      } else if (
+        meninggalkan &&
+        !pilihanKosong(meninggalkan) &&
+        (arah.pisahDuaTahun || (hurufLain.includes("b") && POLA_PERGI_DUA_TAHUN_LEBIH.test(teks)))
+      ) {
+        pil = meninggalkan;
+        kutipan = kalimatBerpola(kalimatFH, POLA_PISAH_DUA_TAHUN_LEBIH);
+        alasan =
+          "Fakta hukum tidak menyebut pertengkaran" +
+          (arah.pertengkaranDiingkari ? " (saksi tidak pernah melihat atau mendengarnya)" : "") +
+          ", yang diketahui pisah dua tahun atau lebih - Pasal 19 huruf (b) PP 9/1975 jo. Pasal 116 huruf (b) KHI.";
+      } else if (adaF && perselisihan && !pilihanKosong(perselisihan)) {
+        pil = perselisihan;
+        kutipan = kalimatBerpola(pecahKalimat(teks), /pasal\s*(?:116|19)\b[^.;]*\(?\s*f\s*\)?/i);
+        alasan = "Pertimbangan menyebut dasar huruf (f) dan fakta hukum tidak mengarah ke faktor lain.";
+      }
+      if (pil) {
+        putusanPokok = {
+          ...pokokLama,
+          nilai: String(pil.nilai),
+          nilaiLabel: pil.label,
+          keyakinan: "cukup",
+          kutipan: kutipan || pokokLama.kutipan,
+          saingan: sainganDari(String(pil.nilai)),
+          sumberUsulan: "pertimbangan",
+          tegas: false,
+          alasan,
+        };
+      }
     }
 
     // 2. Bawaan satker untuk medan faktor, bila ada.
@@ -1896,8 +2083,35 @@ function susunFaktorPerceraian(hasil: UsulanDalam[], medan: MedanPilihan[], kont
         ? kalimatBerpola(kalimatFakta, POLA_MASALAH_EKONOMI)
         : "";
 
+    // Pemicu pertengkaran yang disebut FAKTA HUKUM (keputusan pengguna 22 Okt
+    // 2026): bila pokoknya Perselisihan karena fakta hukum menyebut
+    // pertengkaran, pemicu khususnya - KDRT, madat, mabuk, judi, zina,
+    // poligami, ekonomi - menjadi sekunder, didahulukan dari "pisah rumah".
+    let pemicuFakta: { pilihan: PilihanMedan; kalimat: string; n: number } | null = null;
+    if (pokokDariPertengkaranFakta && pokokPerselisihan && !pokokHalaman) {
+      const kalimatFH = pecahKalimat(arah.faktaHukum);
+      const calon: Array<{ pilihan: PilihanMedan; kalimat: string; n: number; urutan: number }> = [];
+      CIRI_FAKTOR.forEach((c) => {
+        if (c.ciri === "meninggalkan") return;
+        const pil = pilihanBerlabel(pilihanSekunder, c.label);
+        if (!pil || pilihanKosong(pil) || String(pil.nilai) === nilaiPokok) return;
+        const kena = kalimatFH.filter((k) => c.kata.test(k));
+        // Seri dipecah oleh yang LEBIH DULU disebut fakta hukum.
+        const awal = arah.faktaHukum.search(c.kata);
+        if (kena.length) calon.push({ pilihan: pil, kalimat: pangkas(kena[0]), n: kena.length, urutan: awal < 0 ? 1e9 : awal });
+      });
+      calon.sort((a, b) => b.n - a.n || a.urutan - b.urutan);
+      pemicuFakta = calon[0] ?? null;
+    }
+
     let pilih: { pilihan: PilihanMedan; kalimat: string; alasan: string } | null = null;
-    if (nilaiPokok && !pokokPerselisihan && perselisihan && adaPerselisihan && String(perselisihan.nilai) !== nilaiPokok) {
+    if (pemicuFakta) {
+      pilih = {
+        pilihan: pemicuFakta.pilihan,
+        kalimat: pemicuFakta.kalimat,
+        alasan: `Fakta hukum menyebut ${pemicuFakta.pilihan.label} sebagai pemicu pertengkaran; pokoknya ${labelPokok}, jadi pemicunya menjadi sekunder.`,
+      };
+    } else if (nilaiPokok && !pokokPerselisihan && perselisihan && adaPerselisihan && String(perselisihan.nilai) !== nilaiPokok) {
       pilih = {
         pilihan: perselisihan,
         kalimat: kalimatBerpola(kalimatFakta, POLA_ADA_PERSELISIHAN),
