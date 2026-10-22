@@ -57,6 +57,16 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.36",
+    dirilis: "2026-10-23T01:05:00+08:00",
+    judul: "Tes putusan memuat isian ketikan dan cari perkara per nomor",
+    butir: [
+      "Tes putusan: pratinjau dan unduhan -TES memuat isian yang diketik, dihitung di ALETA tanpa menulis ke ABT, SIPP atau e-Court.",
+      "Tes putusan: perkara acuan dapat dicari dengan nomor perkara apa pun.",
+      "Variabel #7# dan tabel tanda tangan majelis di blangko kini terisi seperti ABT.",
+    ],
+  },
+  {
     versi: "1.205.35",
     dirilis: "2026-10-22T23:10:00+08:00",
     judul: "Pop-up aksi, menu SIPP, Tes putusan, relaas SEMA 1/2023, panggilan antrian, alamat dari nama desa",
