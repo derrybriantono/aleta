@@ -249,3 +249,145 @@ describe("4. Tanggal tertentu", () => {
   });
 });
 
+describe("5. Semua akun: tanpa saran di langkah 2; Disarankan mengikuti tab", () => {
+  it("Super Admin tanpa 'Lihat sebagai': kalimat saran dan tombol Pakai saran ini tidak tampil", async () => {
+    const h = buka({ orang: "admin" });
+    await pilihPerkara(h, N_ITSBAT);
+    const p = await sampai(() => q(h, "#bd-saranblangko"), "baris langkah 2");
+    expect(p.textContent).not.toMatch(/Saran untuk|Belum ada saran|Pakai saran/);
+    expect(q(h, '[data-bd2="pakairek"]')).toBeNull();
+    expect(p.textContent).toContain("Pilih blangko lewat tombol Pilih blangko");
+  });
+
+  it("memilih 'Lihat sebagai' hakim: saran langkah 2 muncul seperti biasa (perilaku peran dipertahankan)", async () => {
+    const h = buka({ orang: "admin" });
+    await bukaDaftar(h);
+    ubah(h, q(h, "#bd-lihat") as HTMLSelectElement, "hakim|Hakim Satu");
+    await sampai(() => (q(h, "#bd-siapa")?.textContent || "").includes("dilihat sebagai Hakim Satu") && q(h, "[data-pk]"), "daftar sebagai hakim");
+    klik(h, `[data-pk="${N_ITSBAT}"]`);
+    const p = await sampai(() => q(h, "#bd-saranblangko"), "baris langkah 2");
+    expect(p.textContent).toContain("Saran untuk sidang ke-");
+    expect(q(h, '[data-bd2="pakairek"]')).not.toBeNull();
+  });
+
+  it("akun hakim biasa (bukan admin) tetap mendapat saran di langkah 2", async () => {
+    const h = buka({ orang: "hakim" });
+    await pilihPerkara(h, N_ITSBAT);
+    const p = await sampai(() => q(h, "#bd-saranblangko"), "baris langkah 2");
+    expect(p.textContent).toContain("Saran untuk sidang ke-");
+  });
+
+  it("jendela Pilih blangko (Semua akun): kelompok Disarankan mengikuti TAB - Putusan, BAS, lalu Relaas dan PTSP tanpa Disarankan", async () => {
+    const h = buka({ orang: "admin" });
+    await pilihPerkara(h, N_ITSBAT);
+    await bukaModal(h, `.bd-mkanan [data-bl="${B_IN}"]`);
+    // Tab Putusan: Disarankan memuat saran putusan saja.
+    expect(qq(h, ".bd-mkepala [data-jenismodal]").map((b) => b.getAttribute("data-jenismodal"))).toEqual(["put", "bas", "rel"]);
+    expect(idKiri(h)[0]).toBe("saran");
+    expect(berkasKanan(h)).toEqual([B_IN]);
+    // Tab BAS: Disarankan memuat saran BAS.
+    klik(h, '[data-jenismodal="bas"]');
+    await sampai(() => q(h, ".bd-mkiri .bd-kel.saran") && idKiri(h)[0] === "saran", "Disarankan tab BAS");
+    expect(berkasKanan(h)).toEqual([B_BAS_IN]);
+    expect(q(h, ".bd-mkiri .bd-kel.saran .ks")!.textContent).toContain("sidang ke-");
+    // Tab Relaas: tidak ada saran -> tidak ada kelompok Disarankan.
+    klik(h, '[data-jenismodal="rel"]');
+    await sampai(() => idKiri(h).length > 0 && !idKiri(h).includes("saran"), "tanpa Disarankan di tab Relaas");
+    expect(q(h, ".bd-mkiri .bd-kel.saran")).toBeNull();
+  });
+});
+
+describe("6. Kategori yang cocok dengan jenis perkara di atas", () => {
+  it("perkara Itsbat Nikah: 'Itsbat - Putusan' naik ke atas, di bawah Disarankan (bukan di urutan menu aslinya)", async () => {
+    const h = buka({ orang: "admin" });
+    await pilihPerkara(h, N_ITSBAT);
+    await bukaModal(h, `.bd-mkanan [data-bl="${B_IN}"]`);
+    expect(idKiri(h)).toEqual(["saran", "k:Itsbat - Putusan", "k:CG - Putusan", "k:CT - Putusan"]);
+    expect(q(h, '[data-kelmodal="k:Itsbat - Putusan"] .ks')!.textContent).toContain("sesuai jenis perkara ini");
+  });
+
+  it("tanpa saran: kategori yang cocok jadi yang paling atas dan langsung terbuka", async () => {
+    const h = buka({ orang: "admin" });
+    await pilihPerkara(h, N_ITSBAT_2);
+    await bukaModal(h, `.bd-mkanan [data-bl]`);
+    expect(idKiri(h)).toEqual(["k:Itsbat - Putusan", "k:CG - Putusan", "k:CT - Putusan"]);
+    expect(q(h, '[data-kelmodal="k:Itsbat - Putusan"]')!.classList.contains("aktif")).toBe(true);
+    expect(berkasKanan(h)).toEqual([B_IN]);
+  });
+
+  it("perkara Cerai Talak: 'CT - Putusan' paling atas; perkara Itsbat di tab BAS: 'Itsbat - BAS' paling atas", async () => {
+    const h = buka({ orang: "admin", simpanan: { blangkoDerryDaftar: { sembunyi: false } } });
+    await pilihPerkara(h, N_CT_SELESAI);
+    await bukaModal(h, ".bd-mkanan [data-bl]");
+    // Perkara ini sudah putus ("putus DIKABULKAN"): mesin saran memberi Disarankan; kategori yang cocok langsung di bawahnya.
+    expect(idKiri(h).filter((x) => x !== "saran")[0]).toBe("k:CT - Putusan");
+    expect(idKiri(h).indexOf("k:CT - Putusan")).toBeLessThanOrEqual(1);
+    const h2 = buka({ orang: "admin" });
+    await pilihPerkara(h2, N_ITSBAT_2);
+    await bukaModal(h2, ".bd-mkanan [data-bl]");
+    klik(h2, '[data-jenismodal="bas"]');
+    await sampai(() => idKiri(h2)[0] === "k:Itsbat - BAS" && berkasKanan(h2).length > 0, "BAS Itsbat di atas");
+    expect(idKiri(h2)).toEqual(["k:Itsbat - BAS", "k:CG - BAS"]);
+  });
+});
+
+describe("7. Gulir jendela Pilih blangko dan sorot kategori terpilih", () => {
+  it("memilih kategori di bagian bawah tidak melompatkan gulir daftar kiri ke atas; butir terpilih digulirkan ke tempat terlihat ('nearest')", async () => {
+    const h = buka({ orang: "admin" });
+    await pilihPerkara(h, N_ITSBAT_2);
+    await bukaModal(h, ".bd-mkanan [data-bl]");
+    (q(h, ".bd-mkiri") as HTMLElement).scrollTop = 300;
+    h.gulirKe.length = 0;
+    klik(h, '[data-kelmodal="k:CT - Putusan"]');
+    await sampai(() => q(h, '[data-kelmodal="k:CT - Putusan"]')?.classList.contains("aktif") && berkasKanan(h).includes(B_CT), "kategori terpilih");
+    expect((q(h, ".bd-mkiri") as HTMLElement).scrollTop).toBe(300);
+    const ke = h.gulirKe.filter((g) => g.id === "k:CT - Putusan");
+    expect(ke.length).toBeGreaterThan(0);
+    expect(ke[ke.length - 1].opsi).toMatchObject({ block: "nearest" });
+    // Kategori terpilih bertanda dan bersorot.
+    const aktif = q(h, ".bd-kel.aktif")!;
+    expect(aktif.getAttribute("data-kelmodal")).toBe("k:CT - Putusan");
+    expect(aktif.getAttribute("aria-current")).toBe("true");
+    expect(qq(h, ".bd-kel.aktif")).toHaveLength(1);
+  });
+
+  it("daftar kanan: gulir bertahan saat jendela digambar ulang pada isi yang sama, kembali ke atas hanya saat kategori berganti", async () => {
+    const h = buka({ orang: "admin" });
+    await pilihPerkara(h, N_ITSBAT_2);
+    await bukaModal(h, ".bd-mkanan [data-bl]");
+    (q(h, ".bd-mkanan") as HTMLElement).scrollTop = 150;
+    // Digambar ulang tanpa pergantian isi (memilih kategori yang sedang aktif): gulir kanan bertahan.
+    klik(h, '[data-kelmodal="k:Itsbat - Putusan"]');
+    await tunggu(30);
+    expect((q(h, ".bd-mkanan") as HTMLElement).scrollTop).toBe(150);
+    // Berganti kategori: isi kanan baru, mulai dari atas.
+    klik(h, '[data-kelmodal="k:CG - Putusan"]');
+    await sampai(() => berkasKanan(h).includes(B_CG), "kategori CG");
+    expect((q(h, ".bd-mkanan") as HTMLElement).scrollTop).toBe(0);
+  });
+
+  it("berganti tab jenis dokumen: daftar kiri berisi hal baru dan kembali ke atas", async () => {
+    const h = buka({ orang: "admin" });
+    await pilihPerkara(h, N_ITSBAT_2);
+    await bukaModal(h, ".bd-mkanan [data-bl]");
+    (q(h, ".bd-mkiri") as HTMLElement).scrollTop = 200;
+    klik(h, '[data-jenismodal="bas"]');
+    await sampai(() => idKiri(h)[0] === "k:Itsbat - BAS", "tab BAS");
+    expect((q(h, ".bd-mkiri") as HTMLElement).scrollTop).toBe(0);
+  });
+
+  it("sorot kategori terpilih: latar berbeda + garis kiri, memakai token tema sehingga jelas di gelap dan terang", () => {
+    const css = baca("blangko-derry.css");
+    const aturan = css.match(/#aleta-bd-akar \.bd-kel\.aktif\s*\{([^}]*)\}/g) || [];
+    const terakhir = aturan[aturan.length - 1] || "";
+    expect(terakhir).toMatch(/background:\s*var\(--accentbg\)/);
+    expect(terakhir).toMatch(/box-shadow:\s*inset 4px 0 0 var\(--accent\)/);
+    // Token ada di tema gelap (bawaan) maupun terang.
+    const gelap = css.match(/#aleta-bd-akar, #aleta-bd-tawar \{([^}]*)\}/)![1];
+    const terang = css.match(/#aleta-bd-akar\[data-tema="terang"\][^{]*\{([^}]*)\}/)![1];
+    for (const tema of [gelap, terang]) {
+      expect(tema).toMatch(/--accentbg:/);
+      expect(tema).toMatch(/--accent:/);
+    }
+  });
+});
