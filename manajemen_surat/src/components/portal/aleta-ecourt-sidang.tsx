@@ -1156,7 +1156,8 @@ const KEADAAN_DASAR: KeadaanSidang[] = [
     kelompok: "sidang",
     judul:
       "Pada sidang sebelumnya hanya penggugat/pemohon yang hadir dan tergugat/termohon belum pernah hadir; bila hari ini pun tergugat tidak datang, jalan putusan verstek terbuka. Keputusannya milik majelis.",
-    cocok: (x) => potensiVerstek(x),
+    // 22 Okt 2026: sidang yang sudah diputus hari ini tidak lagi "potensi" verstek.
+    cocok: (x) => potensiVerstek(x) && !sudahPutusHariIni(x),
   },
   {
     kunci: "ditunda",
@@ -8498,6 +8499,7 @@ export function AletaEcourtSidang({
                             {/* F4.2: draf H-7 agen ALETA untuk sidang INI - juga perkiraan putusan verstek (agenda bukan putusan). */}
                             {tampil(tampilan, "hari-putusan") &&
                             tampil(tampilan, "draf-putusan-agen") &&
+                            !sudahPutusHariIni(baris) &&
                             drafH7[String(baris.perkaraId)]?.tanggalSidang === String(baris.tanggalSidang).slice(0, 10) ? (
                               <LencanaDrafH7 ringkas={drafH7[String(baris.perkaraId)]} />
                             ) : null}
@@ -8553,7 +8555,7 @@ export function AletaEcourtSidang({
                                 keduanya sekaligus: saklar yang mematikan satu
                                 hal tidak boleh diam-diam mematikan hal kedua
                                 yang tidak disebut namanya. */}
-                            {tampil(tampilan, "potensi-verstek") && potensiVerstek(baris) ? (
+                            {tampil(tampilan, "potensi-verstek") && potensiVerstek(baris) && !sudahPutusHariIni(baris) ? (
                               <Badge
                                 variant="warning"
                                 title="Pada sidang sebelumnya hanya penggugat/pemohon yang hadir dan tergugat/termohon belum pernah hadir; bila hari ini pun tergugat tidak datang, jalan putusan verstek terbuka. Keputusannya milik majelis."

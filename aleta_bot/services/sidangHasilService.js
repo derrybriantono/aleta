@@ -55,6 +55,7 @@
 const db = require("../db_config");
 const penetapan = require("./penetapanTulisService");
 const hariLiburService = require("./hariLiburService");
+const { sqlAlasanHasil } = require("./hasilSidangKolom");
 const { menyebutAleta } = require("./tandaAletaService");
 const ikrar = require("./ikrarTalakService");
 const externalDbService = require("./externalDbService");
@@ -552,7 +553,7 @@ async function keadaanJadwal(jadwalId) {
             j.agenda_id     AS agendaId,
             j.urutan        AS urutan,
             j.ditunda       AS ditunda,
-            j.alasan_ditunda AS alasanDitunda,
+            ${sqlAlasanHasil("j")} AS alasanDitunda,
             j.ruangan_id    AS ruanganId,
             j.ruangan       AS ruangan,
             j.sidang_keliling AS sidangKeliling,
@@ -621,7 +622,7 @@ async function riwayatSidangPerkara(perkaraId, tanggalSidang) {
   if (!Number.isInteger(id) || id <= 0) return null;
   const sidang = await kueri(
     `SELECT id AS jadwalId, tanggal_sidang AS tanggal, agenda, ditunda,
-            alasan_ditunda AS alasan, dihadiri_oleh AS dihadiriOleh, ikrar_talak AS ikrar
+            ${sqlAlasanHasil("")} AS alasan, dihadiri_oleh AS dihadiriOleh, ikrar_talak AS ikrar
        FROM perkara_jadwal_sidang
       WHERE perkara_id = ?
       ORDER BY tanggal_sidang ASC, id ASC`,

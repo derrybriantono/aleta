@@ -87,7 +87,7 @@ describe("potensi verstek menjadi kotak keadaan berwarna", () => {
     // ini sendiri. Saklarnya tidak boleh menjadi celah untuk diam-diam
     // menggantinya dengan perhitungan sendiri.
     const isi = komponen();
-    expect(isi).toContain("potensiVerstek(baris) ? (");
+    expect(isi).toContain("potensiVerstek(baris) && !sudahPutusHariIni(baris) ? (");
     expect(isi).not.toContain("potensiVerstek(baris.dihadiriOleh)");
   });
 
@@ -95,7 +95,7 @@ describe("potensi verstek menjadi kotak keadaan berwarna", () => {
     // Kalau merah, ia ikut masuk kotak gabungan "Perlu diperiksa" - dan verstek
     // bukan sesuatu yang harus diurus supaya sidangnya jadi.
     const isi = komponen();
-    const awal = isi.indexOf("potensiVerstek(baris) ? (");
+    const awal = isi.indexOf("potensiVerstek(baris) && !sudahPutusHariIni(baris) ? (");
     expect(isi.slice(awal, awal + 200)).toContain('variant="warning"');
   });
 });

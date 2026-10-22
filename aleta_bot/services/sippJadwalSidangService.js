@@ -1,6 +1,7 @@
 "use strict";
 
 const { relaasRetur, sqlRetur } = require("./returRelaas");
+const { sqlAlasanHasil } = require("./hasilSidangKolom");
 
 /**
  * Jadwal perkara yang bersidang, beserta seluruh keterangannya.
@@ -186,7 +187,7 @@ async function daftarSidang({ dari = "", sampai = "", cari = "", batas = 200 } =
             -- 1 semua pihak, 2 penggugat saja, 3 tergugat saja, 4 tidak hadir.
             j.dihadiri_oleh       AS dihadiriOleh,
             j.edoc_bas            AS edocBas,
-            j.alasan_ditunda      AS alasanDitunda
+            ${sqlAlasanHasil("j")} AS alasanDitunda
        FROM perkara_jadwal_sidang j
        JOIN perkara p ON p.perkara_id = j.perkara_id
       WHERE ${syarat.join(" AND ")}
@@ -681,7 +682,7 @@ async function jadwalPerkara(nomorPerkaraMentah) {
             j.agenda         AS agenda,
             j.ruangan        AS ruangan,
             j.ditunda        AS ditunda,
-            j.alasan_ditunda AS alasanDitunda,
+            ${sqlAlasanHasil("j")} AS alasanDitunda,
             j.dihadiri_oleh  AS dihadiriOleh,
             j.urutan         AS urutanSidang,
             j.edoc_bas       AS edocBas

@@ -358,6 +358,6 @@ describe("sidang yang sudah dicatat tidak ditawari blangko - dan yang belum, dit
   });
 
   it("alasan tunda ikut dibaca layanan - tanpanya pemisahnya tidak ada", () => {
-    expect(kodeLayanan).toContain("j.alasan_ditunda AS alasanDitunda,");
+    expect(kodeLayanan).toContain('${sqlAlasanHasil("j")} AS alasanDitunda,');
   });
 });
