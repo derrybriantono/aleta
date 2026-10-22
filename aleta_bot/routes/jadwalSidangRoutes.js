@@ -14,6 +14,9 @@
  *   GET  /selesai/diagnosa        nilai disidang yang hidup hari ini
  *   GET  /disidang                keadaan disidang hari ini, satu kueri ringan
  *                                 (6 Okt 2026) - "sedang berjalan" seketika
+ *   GET  /ringan?dari&sampai      hanya kolom yang berubah sepanjang hari (ditunda,
+ *                                 hasil/putus, kehadiran, sidang berikutnya) untuk
+ *                                 satu rentang (empat kueri berindeks) - 22 Okt 2026
  *   POST /skors                   skors / lanjutkan sidang (kering bawaan) -
  *                                 perbaikan 2 Okt 2026, butir 10; F3.1 (17 Okt):
  *                                 + alasanKode baku dan perkiraanLanjut
@@ -56,6 +59,7 @@ const express = require("express");
 const { readRuntimeConfig } = require("../config/runtime-config");
 const sidangSelesaiService = require("../services/sidangSelesaiService");
 const disidangLangsungService = require("../services/disidangLangsungService");
+const jadwalRinganService = require("../services/jadwalRinganService");
 const sidangHasilService = require("../services/sidangHasilService");
 const sidangKontakService = require("../services/sidangKontakService");
 const mediatorTulisService = require("../services/mediatorTulisService");
@@ -122,6 +126,18 @@ router.get("/selesai", wajibToken, async (req, res) => {
 router.get("/disidang", wajibToken, async (req, res) => {
   try {
     res.json({ ok: true, ...(await disidangLangsungService.disidangHariIni()) });
+  } catch (galat) {
+    galat500(res, galat);
+  }
+});
+
+// 22 Okt 2026: bacaan RINGAN jadwal (empat kueri berindeks untuk seluruh daftar,
+// tanpa view; ~10 ms, 15 KB). Portal menanyakannya tiap 8 detik saat tab terlihat;
+// jadwal penuh (~40 kueri, ~250 ms) tetap tiap 45 detik. Keadaan `disidang`
+// tetap lewat /disidang (5 detik).
+router.get("/ringan", wajibToken, async (req, res) => {
+  try {
+    res.json(await jadwalRinganService.jadwalRingan({ dari: req.query.dari, sampai: req.query.sampai }));
   } catch (galat) {
     galat500(res, galat);
   }

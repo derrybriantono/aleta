@@ -68,6 +68,7 @@ export const RUTE_TAUTAN: Readonly<Record<string, readonly MetodeTautan[]>> = {
   // Bacaan Jadwal Sidang
   "aleta-ecourt/sidang": ["GET"],
   "aleta-ecourt/sidang/disidang": ["GET"],
+  "aleta-ecourt/sidang/ringan": ["GET"],
   "aleta-ecourt/sidang/kalender": ["GET"],
   "aleta-ecourt/sidang/verifikasi-ecourt": ["GET"],
   "aleta-ecourt/antrian": ["GET"],

@@ -57,6 +57,7 @@ import { PapanRuangSidang } from "@/components/portal/jadwal-sidang-2okt";
 import { KartuPanggil } from "@/components/portal/panggil-petugas";
 import { PemilihTanggalSidang } from "@/components/ui/pemilih-tanggal-sidang";
 import { sebabBerbauMediasi } from "@/lib/mediasi-sidang";
+import type { HasilTulisRingkas } from "@/lib/jadwal-ringan";
 import type { Ruangan } from "@/lib/ruangan-sidang";
 import {
   bawaanRuangSidang,
@@ -1220,7 +1221,8 @@ export function CatatHasilRingkas({
   nomorPerkara: string;
   jalan: "tunda" | "putus";
   onTutup: () => void;
-  onSelesai: () => void;
+  /** Sesudah tersimpan; membawa yang diketahui dari jawaban penulisan supaya barisnya berubah seketika (22 Okt 2026). */
+  onSelesai: (hasilTulis?: HasilTulisRingkas) => void;
 }) {
   const [keadaan, setKeadaan] = useState<KeadaanSidang | null>(null);
   const [riwayat, setRiwayat] = useState<RiwayatTunda>(null);
@@ -1501,7 +1503,20 @@ export function CatatHasilRingkas({
       if (isi.ok && isi.kering !== true) {
         setSudahTertulis(true);
         // Diantrekan: blangko tetap terbuka supaya kabarnya terbaca.
-        if (!isi.diantrekan) onSelesai();
+        if (!isi.diantrekan) {
+          onSelesai({
+            jalan,
+            tertulis: true,
+            dihadiriOleh: dihadiri,
+            alasanTunda,
+            sidangBerikutnya: isi.sidangBerikutnya ?? null,
+            putusan: isi.putusan
+              ? { tanggalPutus: isi.putusan.tanggalPutus, status: isi.putusan.status, verstek: isi.putusan.verstek }
+              : null,
+            ikrarDilaksanakan: modeIkrarPutus,
+            tanggalPutus: modeIkrarPutus ? String(keadaan.tanggalSidang || "").slice(0, 10) : tanggalPutus,
+          });
+        }
       }
     } catch (e) {
       setHasil({ ok: false, alasan: e instanceof Error ? e.message : "Permintaan gagal." });

@@ -256,6 +256,9 @@ import { useHilangSendiri, usePesanSementara } from "@/lib/pesan-sementara";
 import { perluMuatPenuh, saringProsesLangsung, terapkanDisidangLangsung } from "@/lib/disidang-langsung";
 import { ALAT_CIUT_BAWAAN } from "@/lib/alat-jadwal-sidang";
 import { useDisidangLangsung } from "@/components/portal/use-disidang-langsung";
+// 22 Okt 2026: pembaruan RINGAN (tunda/putus/kehadiran dalam hitungan detik) + pembaruan setempat sesudah tombol.
+import { TandaDiperbarui, buatPenyimpanDiperbarui, useJadwalRingan } from "@/components/portal/use-jadwal-ringan";
+import { terapkanHasilTulis, type HasilTulisRingkas } from "@/lib/jadwal-ringan";
 import { BannerGangguan } from "@/components/portal/banner-gangguan";
 import {
   DATA_VERIFIKASI_KOSONG,
@@ -4726,6 +4729,8 @@ export function AletaEcourtSidang({
   const [pertamaMuat, setPertamaMuat] = useState(true);
   // Dibaca dari dalam pemuatan ulang berkala - lihat catatannya di muatTanggal.
   const memuatRef = useRef(false);
+  // 22 Okt 2026: waktu bacaan terakhir (ringan/lengkap) untuk tanda "diperbarui hh:mm:ss"; di luar state agar layar tidak dilukis ulang.
+  const [penyimpanDiperbarui] = useState(buatPenyimpanDiperbarui);
   const [galat, setGalat] = useState("");
 
   const [kalenderTerbuka, setKalenderTerbuka] = useState(false);
@@ -5785,6 +5790,7 @@ export function AletaEcourtSidang({
       // dihitung dari beda Date.now() sesudahnya, tidak dari jam komputernya.
       const sekarangMs = bacaWaktu(waktu.sekarang);
       setPatokanWaktu(sekarangMs === null ? null : { sekarangMs, diterimaMs: Date.now() });
+      penyimpanDiperbarui.catatPenuh(Date.now());
     } catch (kesalahan) {
       // Gangguan jaringan: banner kuning + coba lagi sendiri, data lama tetap.
       // Galat lain tetap merah seperti semula.
@@ -5799,7 +5805,7 @@ export function AletaEcourtSidang({
       setPertamaMuat(false);
     }
     },
-    [cari, nilaiKesiapan, laporGagalJadwal, laporBerhasilJadwal]
+    [cari, nilaiKesiapan, laporGagalJadwal, laporBerhasilJadwal, penyimpanDiperbarui]
   );
   useEffect(() => {
     muatTanggalRef.current = muatTanggal;
@@ -6015,6 +6021,27 @@ export function AletaEcourtSidang({
 
     return () => window.clearInterval(putaran);
   }, [sedangHariIni, muat]);
+
+  // ==========================================================================
+  // 22 Okt 2026 - PEMBARUAN RINGAN: TUNDA / PUTUS / KEHADIRAN DALAM HITUNGAN DETIK
+  // ==========================================================================
+  // Jadwal lengkap (~40 kueri, 216-277 ms, 83-96 KB) tiap 45 detik adalah satu-
+  // satunya jalur yang membawa tunda/putus yang dibuat petugas di SIPP: terlihat
+  // 0-49 detik kemudian. Bacaan ringan (4 kueri berindeks, 10-12 ms, 15 KB)
+  // hanya membawa kolom yang berubah, tiap 8 detik hari ini / 30 detik tanggal
+  // lain, hanya saat tab terlihat. Lihat @/lib/jadwal-ringan.
+  const { segarkan: segarkanRingan } = useJadwalRingan({
+    aktif: Boolean(dari) && dari === sampai,
+    dari,
+    sampai,
+    hariIni: sedangHariIni,
+    adaPencarian: Boolean(cari.trim()),
+    sidang,
+    setSidang,
+    sibuk: () => memuatRef.current,
+    muatPenuh: () => void muat(),
+    penyimpan: penyimpanDiperbarui,
+  });
 
   // 6 Okt 2026: perkara yang di-PROSES tetapi belum punya baris waktu antrian
   // (antriannya diambil sesudah jadwal dimuat) - muat penuh SEKALI per perubahan.
@@ -6681,6 +6708,8 @@ export function AletaEcourtSidang({
                   : sidang.length === 0
                     ? "tidak ada sidang"
                     : `${sidang.length} sidang${dari !== sampai ? " pada rentang ini" : ""}`}
+                {/* 22 Okt 2026: waktu bacaan terakhir yang berhasil (ringan atau lengkap). */}
+                {pertamaMuat && memuat ? null : <TandaDiperbarui penyimpan={penyimpanDiperbarui} awalan=" · " />}
               </p>
             </div>
           </div>
@@ -9445,7 +9474,12 @@ export function AletaEcourtSidang({
                                 nomorPerkara={baris.nomorPerkara}
                                 jalan={catat.jalan}
                                 onTutup={() => setCatat(null)}
-                                onSelesai={() => void muatTanggal(dari, sampai, nilaiKesiapan)}
+                                onSelesai={(hasilTulis) => {
+                                  // 22 Okt 2026: baris langsung berubah dari jawaban penulisan, satu bacaan ringan
+                                  // membenarkannya seketika, lalu jadwal lengkap menyusul seperti semula.
+                                  if (hasilTulis) setSidang((lama) => terapkanHasilTulis(lama, baris.sidangId, hasilTulis));
+                                  void segarkanRingan().finally(() => void muatTanggal(dari, sampai, nilaiKesiapan));
+                                }}
                               />
                             </div>
                           </td>
