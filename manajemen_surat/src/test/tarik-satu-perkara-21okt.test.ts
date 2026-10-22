@@ -846,7 +846,7 @@ describe("D. tombol Tarik data di kepala halaman perkara SIPP (jsdom)", () => {
     expect(a.nextElementSibling).toBe(badge);
     expect(kepala.firstElementChild).toBe(a);
     const gaya = h.d.getElementById("aleta-tarik-satu-gaya")!.textContent!;
-    expect(gaya).toMatch(/#aleta-tarik-satu\.aleta-sisip\{position:absolute;right:100%;width:max-content;/);
+    expect(gaya).toMatch(/#aleta-tarik-satu\.aleta-sisip\{position:absolute;z-index:2147483000;pointer-events:auto;right:100%;width:max-content;/);
     expect(tombol(h)!.textContent).toContain("Tarik data");
     // SIPP tidak diubah: tabel sapaan dan tombol Keluar utuh, "Selamat Datang" masih di sel yang sama.
     expect(badge.textContent).toContain("Selamat Datang");
