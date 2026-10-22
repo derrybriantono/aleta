@@ -11658,3 +11658,16 @@ html[data-aleta-kulit="modern"] #aleta-panel-abt[data-t6="ui"]:not(.aleta-panel-
   }
 }
 
+/* === 22 Okt 2026 (W50): alamat <-> wilayah, usulan Tab, pengingat merah (pihak-lengkap.js) === */
+.aleta-pl-saran { margin: 2px 0 0; font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); color: #5b6b66; }
+.aleta-pl-saran[hidden], .aleta-pl-ingat[hidden] { display: none !important; }
+.aleta-pl-saran strong { font-weight: 600; color: #1f3b33; }
+.aleta-pl-chip { margin: 0 4px 2px 0; padding: 1px 8px; border: 1px solid #9fb3ad; border-radius: 999px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.aleta-pl-chip:hover { border-color: #2e7d5b; }
+.aleta-pl-ingat { margin: 2px 0 0; font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); font-weight: 600; color: #c62828; }
+.aleta-pl-merah { outline: 2px solid #c62828 !important; outline-offset: 0; border-radius: 3px; }
+html[data-aleta-tema-sipp="gelap"] .aleta-pl-saran { color: #a8b8b3; }
+html[data-aleta-tema-sipp="gelap"] .aleta-pl-saran strong { color: #e4efeb; }
+html[data-aleta-tema-sipp="gelap"] .aleta-pl-ingat { color: #ff8a80; }
+html[data-aleta-tema-sipp="gelap"] .aleta-pl-merah { outline-color: #ff8a80 !important; }
+/* === AKHIR 22 Okt (W50) === */

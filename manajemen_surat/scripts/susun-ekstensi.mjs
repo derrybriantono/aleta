@@ -87,6 +87,8 @@ const BERKAS = [
   // C) - skrip konten SIPP yang memasang dirinya sendiri pada blangko "Tambah
   // Referensi Data Pihak"; dimuat sesudah basmassal.js, sebelum konten.js.
   "saksiscan.js",
+  // Alamat <-> wilayah, isi dengan Tab, dan pengingat merah di blangko data pihak/kuasa SIPP (22 Okt 2026).
+  "pihak-lengkap.js",
   // Susun saksi menurut keadaan dan jenis perkara (18 Okt 2026): mesin katalog
   // (murni, tanpa DOM), data katalog yang DIHASILKAN dari saksi-katalog/*.json
   // oleh scripts/susun-saksi-katalog.mjs, dan borangnya. Dimuat di ABT sebelum
