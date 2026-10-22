@@ -57,6 +57,14 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.34",
+    dirilis: "2026-10-22T21:20:00+08:00",
+    judul: "Widget SIPP selalu terlipat",
+    butir: [
+      "Widget Kehadiran sidang hari ini dan Draf putusan di SIPP terlipat di setiap halaman yang dibuka.",
+    ],
+  },
+  {
     versi: "1.205.33",
     dirilis: "2026-10-22T20:35:00+08:00",
     judul: "Hakim pengganti mengikuti saklar sidang keliling",
