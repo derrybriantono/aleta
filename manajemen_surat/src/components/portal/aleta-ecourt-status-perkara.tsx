@@ -114,6 +114,7 @@ import { TombolTutupPesan } from "@/components/portal/tombol-tutup-pesan";
 import { cn } from "@/lib/utils";
 import { kelasTulisanPutusan, warnaStatusPutusan } from "@/lib/warna-putusan";
 import { relaasElektronik } from "@/lib/hasil-relaas";
+import { LencanaKepatutanRelaas } from "@/components/portal/lencana-kepatutan-relaas";
 
 /**
  * Status satu perkara.
@@ -6899,6 +6900,9 @@ function BarisRelaas({
     return Number.isFinite(selisih) ? selisih : null;
   })();
 
+  const lencanaHasil = Boolean(relaas.tanggalRelaas || relaas.ketHasilRelaas || relaas.retur);
+  const caraBerulang = lencanaHasil && ["Y", "T", "E", "N"].includes(String(relaas.caraRelaas?.sandi ?? "").trim().toUpperCase());
+
   return (
     <li className="flex flex-wrap items-baseline gap-x-2 gap-y-1 border-l-2 border-border pl-2">
       <span className="font-medium">{relaas.namaPihak || "tanpa nama pihak"}</span>
@@ -6927,7 +6931,14 @@ function BarisRelaas({
       {/* Bertemu orangnya atau tidak - inilah yang menentukan panggilan sah
           disampaikan langsung, atau lewat kepala desa. Diam berarti tidak
           tercatat, dan itu berbeda dari "tidak bertemu". */}
-      {relaasElektronik(relaas) ? (
+      {/* W58 22 Okt: HASIL panggilan menurut satu aturan (@/lib/kepatutan-relaas) -
+          SEMA 1/2023 angka 12 untuk surat tercatat, Pasal 718 RBg untuk
+          jurusita. Lencana cara di bawahnya tetap (salurannya), lencana ini
+          menyebut apa yang terjadi beserta dasarnya. */}
+      {lencanaHasil ? <LencanaKepatutanRelaas baris={relaas} tanpaRetur={relaas.retur} /> : null}
+      {/* Sandi Y/T/E/N sudah terbaca penuh pada lencana hasil - lencana cara
+          di bawah hanya untuk saluran lain (surat tercatat, pengumuman). */}
+      {caraBerulang ? null : relaasElektronik(relaas) ? (
         <Badge variant="success" title="Panggilan elektronik dianggap bertemu.">
           Panggilan elektronik - bertemu
         </Badge>

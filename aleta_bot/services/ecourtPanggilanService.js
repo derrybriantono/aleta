@@ -61,6 +61,8 @@
 
 const { readRuntimeConfig, writeRuntimeConfig } = require("../config/runtime-config");
 const logService = require("./logService");
+// Kepatutan satu relaas (SEMA 1/2023 & Pasal 718 RBg) - berkas murni, tidak melingkar.
+const { nilaiRelaas } = require("./kepatutanRelaas");
 
 /**
  * Ambang bawaan beserta dasar hukum dan cara hitungnya.
@@ -79,14 +81,20 @@ const JALUR = {
   },
   surat_tercatat: {
     label: "Panggilan surat tercatat",
-    dasar: "SK KMA 363/KMA/SK/XII/2022 Bab III Bagian B angka 8 huruf c",
+    // SEMA 1/2023 angka 11: DIKIRIM paling lambat 6 hari kalender sebelum
+    // sidang DAN DITERIMA paling lambat 3 hari KERJA sebelum sidang. Ambang
+    // terima tidak dapat disetel dari layar - ia melekat pada SEMA-nya.
+    dasar: "SEMA 1/2023 angka 11; SK KMA 363/KMA/SK/XII/2022 Bab III Bagian B angka 8 huruf c",
     bawaan: 6,
     hariKerja: false,
     perluDiterima: true,
+    terimaHari: 3,
+    terimaHariKerja: true,
   },
   biasa: {
     label: "Panggilan biasa oleh jurusita (perkara non-e-Court)",
-    dasar: "Pasal 122 HIR",
+    // PA Donggala memakai RBg; Pasal 146 RBg sepadan dengan Pasal 122 HIR.
+    dasar: "Pasal 146 RBg (Pasal 122 HIR)",
     bawaan: 3,
     hariKerja: true,
     perluDiterima: false,
@@ -188,6 +196,9 @@ function ambangJalur(jalur) {
     hari,
     hariKerja: acuan.hariKerja,
     perluDiterima: acuan.perluDiterima,
+    // Hanya surat tercatat: ambang hari antara DITERIMA dan sidang (SEMA 1/2023 angka 11).
+    terimaHari: acuan.terimaHari === undefined ? null : acuan.terimaHari,
+    terimaHariKerja: Boolean(acuan.terimaHariKerja),
   };
 }
 
@@ -317,14 +328,27 @@ function nilaiKepatutan({ tanggalPanggilan, tanggalSidang, jalur = "biasa", dite
 
   // Surat tercatat yang tanggal diterimanya diketahui: tenggang sungguhan
   // adalah jarak dari tanggal diterima ke hari sidang.
+  //
+  // SEMA 1/2023 angka 11 (W58, 22 Okt 2026): yang diterima diukur dengan
+  // HARI KERJA dan ambangnya 3 - bukan 6 hari kalender seperti ambang kirim.
+  // Sampai 1.205.34 tanggal terima diukur dengan ambang kirim, sehingga surat
+  // yang dikirim 7 hari sebelum sidang dan diterima 5 hari kalender (3 hari
+  // kerja) sebelumnya dinilai tidak patut padahal memenuhi SEMA.
   if (ambang.perluDiterima && diterima === true && tanggalDiterima) {
-    const selisihTerima = selisihHari(tanggalDiterima, tanggalSidang, { hariKerja: ambang.hariKerja });
+    const ambangTerima = ambang.terimaHari === null || ambang.terimaHari === undefined ? ambang.hari : ambang.terimaHari;
+    const terimaHariKerja = ambang.terimaHari === null || ambang.terimaHari === undefined ? ambang.hariKerja : ambang.terimaHariKerja;
+    const selisihTerima = selisihHari(tanggalDiterima, tanggalSidang, { hariKerja: terimaHariKerja });
     if (selisihTerima !== null) {
-      const tambahan = { selisihKirim: selisih, tanggalDiterima: teksTanggal(tanggalDiterima) };
+      const tambahan = {
+        selisihKirim: selisih,
+        tanggalDiterima: teksTanggal(tanggalDiterima),
+        ambangTerima,
+        terimaHariKerja,
+      };
       if (selisihTerima < 0) {
         return { ...dasar, ...tambahan, dinilai: true, patut: false, selisih: selisihTerima, alasan: "diterima_setelah_hari_sidang" };
       }
-      if (selisihTerima < ambang.hari) {
+      if (selisihTerima < ambangTerima) {
         return { ...dasar, ...tambahan, dinilai: true, patut: false, selisih: selisihTerima, alasan: "diterima_kurang_dari_ambang" };
       }
       return { ...dasar, ...tambahan, dinilai: true, patut: true, selisih: selisihTerima, alasan: "" };
@@ -433,6 +457,37 @@ function bacaRelaas(relaas) {
     .toUpperCase();
   const jalurSandi = JALUR_SANDI[sandi] || "";
 
+  // Kepatutan bersama (kepatutanRelaas.js): SEMA 1/2023 untuk surat tercatat,
+  // Pasal 718 RBg untuk jurusita. Keterangan hasil dibaca dari ketHasilRelaas.
+  const kepatutan = nilaiRelaas({
+    ketTemu: sandi,
+    statusPos: relaas.statusPos,
+    hasil: relaas.ketHasilRelaas !== undefined ? relaas.ketHasilRelaas : relaas.hasil,
+    noResiPos: relaas.noResiPos,
+    tanggalKirimPos: relaas.tanggalKirimPos,
+    namaPihak: relaas.namaPihak,
+    pihakKe: relaas.pihakKe,
+  });
+
+  // ==========================================================================
+  // "TIDAK BERTEMU" YANG DITERUSKAN KE KEPALA DESA ADALAH PANGGILAN YANG SAMPAI
+  // ==========================================================================
+  //
+  // Pasal 718 ayat (1) RBg: bila pihak tidak dijumpai, relaas disampaikan
+  // melalui kepala desa/lurah yang wajib meneruskannya - panggilannya sah.
+  // Diukur 22 Okt atas 2.668 relaas bersandi T: 1.398 keterangannya menyebut
+  // penyampaian melalui kepala desa/lurah/aparat. Sisanya tetap tidak sampai.
+  if (sandi === "T" && kepatutan.kunci === "kepala_desa") {
+    return {
+      jalur: "langsung",
+      sandi,
+      tanggalKirim: relaas.tanggalRelaas || null,
+      diterima: relaas.tanggalRelaas ? true : null,
+      bukti: "relaas: melalui kepala desa",
+      kepatutan,
+    };
+  }
+
   // Panggilan yang sandinya menyatakan GAGAL tidak pernah dihitung sampai,
   // walau jurusita mencatat tanggal pelaksanaannya.
   if (SANDI_GAGAL.has(sandi)) {
@@ -442,6 +497,7 @@ function bacaRelaas(relaas) {
       tanggalKirim: relaas.tanggalRelaas || null,
       diterima: false,
       bukti: sandi === "N" ? "relaas: tidak dapat dilaksanakan" : "relaas: tidak bertemu",
+      kepatutan,
     };
   }
 
@@ -458,23 +514,30 @@ function bacaRelaas(relaas) {
       tanggalKirim: relaas.tanggalRelaas || null,
       diterima: relaas.tanggalRelaas ? true : null,
       bukti: relaas.tanggalRelaas ? "relaas jurusita" : "",
+      kepatutan,
     };
   }
 
   const statusBerhasil = Number(relaas.statusPos) === 1;
   const adaPelaksanaan = Boolean(relaas.tanggalRelaas);
 
+  // SEMA 1/2023: surat yang dikembalikan (retur) atau keterangannya huruf
+  // b/e/f/g TIDAK diterima, walau tanggal pelaksanaannya terisi - tanggal itu
+  // tanggal kembalinya surat, bukan tanggal diterima pihak.
+  const gagalPos = kepatutan.retur || kepatutan.sah === false;
+
   return {
     jalur: "pos",
     sandi,
+    kepatutan,
     tanggalKirim: relaas.tanggalKirimPos || relaas.tanggalRelaas || null,
     // Diterima bila lacak kiriman berhasil ATAU jurusita sudah mencatat
     // pelaksanaan relaasnya - keduanya bukti penerimaan yang sah.
-    diterima: statusBerhasil || adaPelaksanaan ? true : relaas.statusPos === null ? null : false,
+    diterima: gagalPos ? false : statusBerhasil || adaPelaksanaan ? true : relaas.statusPos === null ? null : false,
     // Tanggal relaas surat tercatat adalah tanggal DITERIMANYA (lihat di
     // atas). Lacak kiriman tanpa relaas tidak membawa tanggal terima.
-    tanggalDiterima: adaPelaksanaan ? relaas.tanggalRelaas : null,
-    bukti: statusBerhasil ? "lacak kiriman" : adaPelaksanaan ? "relaas jurusita" : "",
+    tanggalDiterima: adaPelaksanaan && !gagalPos ? relaas.tanggalRelaas : null,
+    bukti: gagalPos ? `relaas: ${kepatutan.label.toLowerCase()}` : statusBerhasil ? "lacak kiriman" : adaPelaksanaan ? "relaas jurusita" : "",
   };
 }
 

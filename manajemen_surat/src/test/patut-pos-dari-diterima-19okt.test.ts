@@ -54,7 +54,46 @@ describe("kepatutan surat tercatat dihitung dari tanggal diterima", () => {
       tanggalDiterima: "2026-10-08",
     });
     expect(nilai.patut).toBe(true);
-    expect(nilai.selisih).toBe(11);
+    // SEMA 1/2023 angka 11 (W58, 22 Okt): jarak DITERIMA dihitung hari KERJA -
+    // 8 Okt (Kamis) ke 19 Okt (Senin) = 7 hari kerja (dulu 11 hari kalender).
+    expect(nilai.selisih).toBe(7);
+    expect(nilai.terimaHariKerja).toBe(true);
+    expect(nilai.ambangTerima).toBe(3);
+  });
+
+  it("SEMA 1/2023 angka 11: dikirim 6 hari kalender, diterima 3 hari kerja sebelum sidang -> patut", () => {
+    // Sidang Senin 19 Okt; dikirim Selasa 13 Okt (6 hari kalender);
+    // diterima Rabu 14 Okt -> 15, 16, 19 = 3 hari kerja.
+    const nilai = panggilan.nilaiKepatutan({
+      tanggalPanggilan: "2026-10-13",
+      tanggalSidang: "2026-10-19",
+      jalur: "surat_tercatat",
+      diterima: true,
+      tanggalDiterima: "2026-10-14",
+    });
+    expect(nilai.patut).toBe(true);
+    expect(nilai.selisih).toBe(3);
+    expect(nilai.dasarHukum).toContain("SEMA 1/2023 angka 11");
+    // Diterima Kamis 15 Okt -> 16, 19 = 2 hari kerja: tidak patut.
+    const kurang = panggilan.nilaiKepatutan({
+      tanggalPanggilan: "2026-10-13",
+      tanggalSidang: "2026-10-19",
+      jalur: "surat_tercatat",
+      diterima: true,
+      tanggalDiterima: "2026-10-15",
+    });
+    expect(kurang.patut).toBe(false);
+    expect(kurang.alasan).toBe("diterima_kurang_dari_ambang");
+    // Dikirim 5 hari kalender sebelum sidang: tidak patut walau cepat diterima.
+    const telatKirim = panggilan.nilaiKepatutan({
+      tanggalPanggilan: "2026-10-14",
+      tanggalSidang: "2026-10-19",
+      jalur: "surat_tercatat",
+      diterima: true,
+      tanggalDiterima: "2026-10-14",
+    });
+    expect(telatKirim.patut).toBe(false);
+    expect(telatKirim.alasan).toBe("tenggang_kurang_dari_ambang");
   });
 
   it("diterima sesudah hari sidang", () => {

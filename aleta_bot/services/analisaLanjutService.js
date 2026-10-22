@@ -1,6 +1,7 @@
 "use strict";
 
 const { relaasRetur, sqlRetur } = require("./returRelaas");
+const { nilaiRelaas } = require("./kepatutanRelaas");
 
 /**
  * ============================================================================
@@ -940,6 +941,7 @@ async function analisaPanggilan(id) {
   const rows = await runQuery(
     `SELECT r.ket_temu AS ketTemu,
             r.status_pos AS statusPos,
+            r.no_resi_pos AS noResiPos,
             r.tanggal_relaas AS tanggalRelaas,
             r.ket_hasil_relaas AS hasil,
             sd.tanggal_sidang AS tanggalSidang,
@@ -969,7 +971,9 @@ async function analisaPanggilan(id) {
   const CARA = {
     Y: "bertemu langsung",
     S: "surat tercatat",
-    T: "tidak bertemu, diteruskan lewat pemerintah desa",
+    // Hanya 1.398 dari 2.668 baris T menyebut penyampaian lewat desa (22 Okt);
+    // hasil sebenarnya ada di kolom "Hasil" (kepatutanRelaas).
+    T: "jurusita, tidak bertemu",
     E: "elektronik (dianggap bertemu)",
     R: "radio",
     M: "media massa cetak/elektronik",
@@ -988,7 +992,13 @@ async function analisaPanggilan(id) {
       // hari kerja antara panggilan dan sidang.
       tenggangHari: selisihHari(relaas, sidang),
       cara: CARA[cleanText(row.ketTemu).toUpperCase()] || cleanText(row.ketTemu),
-      retur: relaasRetur(row.statusPos, cleanText(row.hasil)),
+      // Hasil menurut aturan bersama (SEMA 1/2023 / Pasal 718 RBg), mis.
+      // "Bertemu orang serumah (ayah)" untuk surat tercatat huruf c.
+      hasilPanggilan: (() => {
+        const k = nilaiRelaas({ ketTemu: row.ketTemu, statusPos: row.statusPos, hasil: row.hasil, noResiPos: row.noResiPos, namaPihak: row.namaPihak });
+        return k.dasar ? `${k.label} (${k.dasar})` : k.label;
+      })(),
+      retur: relaasRetur(row.statusPos, cleanText(row.hasil), row.ketTemu, row.noResiPos),
       jurusita: cleanText(row.jurusita),
     };
   });
@@ -1009,7 +1019,7 @@ async function analisaPanggilan(id) {
       {
         label: "Tenggang kurang 3 hari",
         nilai: String(kurangTiga),
-        keterangan: "Pasal 122 HIR",
+        keterangan: "Pasal 146 RBg (Pasal 122 HIR); surat tercatat: SEMA 1/2023 angka 11",
       },
       { label: "Tenggang tengah", nilai: median(tenggang) === null ? "—" : `${median(tenggang)} hari` },
     ],
@@ -1019,11 +1029,12 @@ async function analisaPanggilan(id) {
       { kunci: "tanggalSidang", label: "Untuk sidang" },
       { kunci: "tenggangHari", label: "Tenggang (hari)", angka: true },
       { kunci: "cara", label: "Cara" },
+      { kunci: "hasilPanggilan", label: "Hasil" },
       { kunci: "jurusita", label: "Juru sita" },
     ],
     baris,
     catatan:
-      "Tenggang dihitung hari kalender, bukan hari kerja - angka di bawah tiga perlu diperiksa terhadap hari liburnya.",
+      "Tenggang dihitung hari kalender, bukan hari kerja - angka di bawah tiga perlu diperiksa terhadap hari liburnya. Surat tercatat: dikirim paling lambat 6 hari kalender dan diterima paling lambat 3 hari kerja sebelum sidang (SEMA 1/2023 angka 11).",
   };
 }
 
@@ -1740,7 +1751,7 @@ async function tenggangPanggilan(id) {
   }
 
   return {
-    judul: 'Kepatuhan tenggang panggilan (Pasal 122 HIR)',
+    judul: 'Kepatuhan tenggang panggilan (Pasal 146 RBg / Pasal 122 HIR)',
     ringkas:
       berhari.length === 0
         ? 'Belum ada relaas yang tenggangnya dapat dihitung.'

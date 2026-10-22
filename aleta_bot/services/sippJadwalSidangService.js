@@ -1,6 +1,8 @@
 "use strict";
 
 const { relaasRetur, sqlRetur } = require("./returRelaas");
+// Kepatutan satu relaas: SEMA 1/2023 (surat tercatat) & Pasal 718 RBg (jurusita).
+const { nilaiRelaas } = require("./kepatutanRelaas");
 const { sqlAlasanHasil } = require("./hasilSidangKolom");
 
 /**
@@ -2529,6 +2531,7 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
       // sebelumnya salah pada 69% baris.
       `SELECT r.sidang_id AS sidangId,
               r.status_pos AS statusPos,
+              r.ket_hasil_relaas AS ketHasilRelaas,
               r.tanggal_relaas AS tanggalRelaas,
               r.tanggal_jursit_pos AS tanggalKirimPos,
               r.ket_temu AS ketTemu,
@@ -2571,6 +2574,9 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
       tanggalKirimPos: isoTanggal(baris.tanggalKirimPos),
       ketTemu: cleanText(baris.ketTemu),
       noResiPos: cleanText(baris.noResiPos),
+      // Dulu tidak dibaca, sehingga retur karena kata "failed"/"retur" pada
+      // keterangan (returRelaas) tidak pernah terhitung di daftar sidang.
+      ketHasilRelaas: cleanText(baris.ketHasilRelaas),
     });
   }
 
@@ -2650,7 +2656,7 @@ async function keadaanPanggilanSidang(daftarSidang = []) {
 
     // Retur dihitung dari SELURUH relaas sidang ini, bukan hanya sisi yang
     // wajib: surat yang kembali tetap perlu ditindaklanjuti.
-    const retur = relaas.filter((r) => relaasRetur(r.statusPos, r.ketHasilRelaas)).length;
+    const retur = relaas.filter((r) => relaasRetur(r.statusPos, r.ketHasilRelaas, r.ketTemu, r.noResiPos)).length;
 
     // ======================================================================
     // HITUNG MUNDUR TENGGANG - ATURANNYA TIDAK DIKARANG DI SINI
@@ -3128,8 +3134,21 @@ async function relaasSidang(perkaraId, sidangId) {
     statusPos: row.statusPos === null || row.statusPos === undefined ? null : Number(row.statusPos),
     // status_pos 2 berarti surat DIKEMBALIKAN. Berbeda dari belum dipanggil:
     // yang ini sudah dikerjakan jurusita, tetapi tidak sampai.
-    retur: relaasRetur(row.statusPos, row.ketHasilRelaas),
+    retur: relaasRetur(row.statusPos, row.ketHasilRelaas, row.ketTemu, row.noResiPos),
     ketHasilRelaas: cleanText(row.ketHasilRelaas),
+    // Kepatutan relaas (kepatutanRelaas.js): kategori, sah/tidak, warna, dan
+    // dasar hukumnya - SEMA 1/2023 angka 12 untuk surat tercatat, Pasal 718
+    // RBg untuk jurusita. Mis. surat tercatat "diterima oleh A/ayah kandung"
+    // = "Bertemu orang serumah (ayah)" (huruf c), bukan "Tidak bertemu".
+    kepatutan: nilaiRelaas({
+      ketTemu: row.ketTemu,
+      statusPos: row.statusPos,
+      hasil: row.ketHasilRelaas,
+      noResiPos: row.noResiPos,
+      tanggalKirimPos: isoTanggal(row.tanggalKirimPos),
+      namaPihak: row.namaPihak,
+      pihakKe: row.pihakKe,
+    }),
     // 'Y' berarti jurusita bertemu langsung dengan yang dipanggil.
     //
     // TIDAK dibuang walau caranya sekarang dibaca terpisah: empat tempat di
