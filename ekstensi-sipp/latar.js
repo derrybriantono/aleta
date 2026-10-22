@@ -3547,6 +3547,7 @@ const KUNCI_SETELAN_AKUN = [
   "ideL2AktaCerai",
   "ideL2LimaBulan",
   "ideL2EcourtVerifikasi",
+  "ideL2PutusanEcourt",
   "skalaHuruf",
   "temaPopup",
   "temaPanel",

@@ -55,6 +55,8 @@ export interface EcourtLencanaPutusanProps {
   /** Bila pemanggil sudah memegang keadaannya, tidak ada permintaan sama sekali. */
   keadaan?: KeadaanPutusanRingkas | null;
   className?: string;
+  /** Kalimat awam penuh ("Putusan belum diunggah ke e-Court") alih-alih bentuk ringkas. */
+  kalimat?: boolean;
 }
 
 type Dokumen = {
@@ -145,21 +147,29 @@ function mintaKeadaan(nomor: string): Promise<KeadaanPutusanRingkas | null> {
 }
 
 /** Lencana E11 untuk satu putusan. Tidak menampilkan apa pun bila tidak perlu tindakan. */
-export function LencanaKeadaanPutusan({ keadaan, className }: { keadaan: KeadaanPutusanRingkas | null; className?: string }) {
+export function LencanaKeadaanPutusan({ keadaan, className, kalimat }: { keadaan: KeadaanPutusanRingkas | null; className?: string; kalimat?: boolean }) {
   if (!keadaan || !keadaan.perluTindakan) return null;
   const belumDiunggah = keadaan.belumDiunggah ?? keadaan.keadaan === "salinan_belum_diunggah";
   const belumTte = keadaan.belumTte ?? keadaan.keadaan === "belum_tte_panitera";
+  // Kalimat awam untuk layar jadwal dan rincian perkara; bentuk ringkas tetap untuk tabel padat.
+  const awam = belumDiunggah
+    ? "Putusan belum diunggah ke e-Court"
+    : belumTte
+      ? "Putusan di e-Court belum ditandatangani panitera"
+      : "";
   const teks =
-    keadaan.keadaan === "putusan_ecourt_error"
-      ? "Putusan e-Court error"
-      : belumDiunggah
-        ? "Belum diunggah ke e-Court"
-        : belumTte
-          ? "Belum TTE panitera"
-          : keadaan.sebutan;
+    kalimat && awam
+      ? awam
+      : keadaan.keadaan === "putusan_ecourt_error"
+        ? "Putusan e-Court error"
+        : belumDiunggah
+          ? "Belum diunggah ke e-Court"
+          : belumTte
+            ? "Belum TTE panitera"
+            : keadaan.sebutan;
   return (
     <Badge
-      variant={keadaan.keadaan === "putusan_ecourt_error" ? "danger" : "warning"}
+      variant="danger"
       className={cn("whitespace-nowrap px-2 py-0.5", className)}
       title={`${keadaan.sebutan}${keadaan.diperiksaPada ? ` - menurut pemeriksaan e-Court ${new Date(keadaan.diperiksaPada).toLocaleString("id-ID")}` : ""}`}
       data-ecourt-lencana={keadaan.keadaan}
@@ -169,7 +179,7 @@ export function LencanaKeadaanPutusan({ keadaan, className }: { keadaan: Keadaan
   );
 }
 
-export function EcourtLencanaPutusan({ nomorPerkara, keadaan: dariPemanggil, className }: EcourtLencanaPutusanProps) {
+export function EcourtLencanaPutusan({ nomorPerkara, keadaan: dariPemanggil, className, kalimat }: EcourtLencanaPutusanProps) {
   const nomor = String(nomorPerkara || "").trim();
   const [keadaan, setKeadaan] = useState<KeadaanPutusanRingkas | null>(dariPemanggil ?? null);
   useEffect(() => {
@@ -182,7 +192,7 @@ export function EcourtLencanaPutusan({ nomorPerkara, keadaan: dariPemanggil, cla
       hidup = false;
     };
   }, [nomor, dariPemanggil]);
-  return <LencanaKeadaanPutusan keadaan={dariPemanggil !== undefined ? dariPemanggil : keadaan} className={className} />;
+  return <LencanaKeadaanPutusan keadaan={dariPemanggil !== undefined ? dariPemanggil : keadaan} className={className} kalimat={kalimat} />;
 }
 
 // ===========================================================================
@@ -586,7 +596,7 @@ function BagianPutusan({ ringkasan, onSelesai }: { ringkasan: Ringkasan; onSeles
     <section className="space-y-1">
       <div className="flex flex-wrap items-center gap-2">
         <h4 className="font-semibold">Putusan di e-Court</h4>
-        <LencanaKeadaanPutusan keadaan={p} />
+        <LencanaKeadaanPutusan keadaan={p} kalimat />
         {!p.perluTindakan ? <span className="text-muted-foreground">{p.sebutan}</span> : null}
       </div>
       <p className="text-muted-foreground">

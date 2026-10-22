@@ -38,6 +38,7 @@ dengan judul bagian biasa.
 | SIPP | Penanda: Akta cerai dan pemberitahuan putusan | `ideL2AktaCerai` | nyala | sipp-ide-l2.js | ketua, panitera, PP, PTSP |
 | SIPP | Penanda: Lewat 5 bulan | `ideL2LimaBulan` | nyala | sipp-ide-l2.js | ketua |
 | SIPP | Penanda: Dokumen e-Court belum diverifikasi | `ideL2EcourtVerifikasi` | nyala | sipp-ide-l2.js | ketua, hakim, PP |
+| SIPP | Penanda: Putusan di e-Court | `ideL2PutusanEcourt` | nyala | sipp-ide-l2.js | ketua, hakim, PP, panitera |
 | ABT | Sunting langsung (klik dua kali) | `suntingLangsungAbt` | mati | panel-alat.js | hakim, PP (menurut profil peran) |
 | ABT | Tekan CETAK di ABT menjadi 3 berkas | `cetakTigaBerkas` | mati | abt.js, panel-alat.js | hakim, PP (menurut profil peran) |
 | ABT | Gembok panel ALETA di ABT: selalu tampil penuh | `gembokKepalaAbt` | mati | panel-alat.js, blangko-derry.js | peran yang memakai panel ABT |

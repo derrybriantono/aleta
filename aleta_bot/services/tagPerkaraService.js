@@ -168,6 +168,20 @@ async function kueriTag(sql, params, keterangan, kunciTerpengaruh = []) {
   }
 }
 
+/**
+ * Tabel putusan e-Court dibuat malas oleh layanannya. Tag e-Court menyambungnya
+ * ke kueri register, jadi tabelnya dipastikan ada dahulu - kalau tidak,
+ * pemasangan baru yang belum pernah menarik e-Court gagal menghitung SEMUA tag.
+ */
+async function pastikanTabelPutusanEcourt() {
+  try {
+    // eslint-disable-next-line global-require
+    await require("./putusanEcourtService").ensureSchema();
+  } catch {
+    // Dibiarkan: kegagalan sebenarnya muncul, disebut, pada kueri tag.
+  }
+}
+
 /** Kelompok tag, urut sebagaimana digambar layar. */
 const KELOMPOK_TAG = Object.freeze([
   { kunci: "keadaan", label: "Keadaan perkara" },
@@ -259,6 +273,19 @@ const SAMBUNGAN = Object.freeze({
     syarat: "",
     kelompok: "",
     pada: "ar.nomor = p.nomor_perkara",
+    tanpaLingkup: true,
+  },
+  // Hasil bacaan tab Putusan e-Court (tabel milik ALETA, basis data lain di
+  // peladen yang sama - akun SIPP membacanya). Tertaut lewat NOMOR perkara.
+  // Perkara yang belum pernah ditarik dari e-Court tidak punya baris di sini,
+  // sehingga TIDAK ikut tertandai: penanda yang menuduh lebih merugikan.
+  pe: {
+    pilih:
+      "TRIM(TRAILING '.' FROM a.nomor_perkara) AS nomor, a.ada_baris AS adaBaris, a.dokumen_ada AS dokAda, a.panitera_tte AS tte",
+    dari: `\`${process.env.ALETA_BOT_INTERNAL_DB_NAME || process.env.ALETA_BOT_DB_NAME || "aleta_bot"}\`.aleta_bot_ecourt_putusan a`,
+    syarat: "",
+    kelompok: "",
+    pada: "pe.nomor = p.nomor_perkara",
     tanpaLingkup: true,
   },
   // Sisa panjar tiap perkara. jenis_transaksi bernilai -1 dan 1 pada basis
@@ -1028,6 +1055,25 @@ const TAG = Object.freeze({
     balik: true,
   },
 
+  "putusan-belum-unggah-ecourt": {
+    kelompok: "ecourt",
+    label: "Putusan belum diunggah ke e-Court",
+    nada: "bahaya",
+    judul:
+      "Sudah putus di SIPP, tetapi salinan putusannya belum terunggah di e-Court (menurut pembacaan e-Court terakhir). Perkara yang belum pernah dibaca tidak ikut.",
+    tabel: REGISTER,
+    syarat: "pu.tglPutus IS NOT NULL AND pe.nomor IS NOT NULL AND (pe.adaBaris = 0 OR pe.dokAda = 0)",
+  },
+  "putusan-belum-tte-ecourt": {
+    kelompok: "ecourt",
+    label: "Putusan di e-Court belum ditandatangani panitera",
+    nada: "bahaya",
+    judul:
+      "Salinan putusan sudah terunggah di e-Court, tetapi panitera belum menandatanganinya secara elektronik, sehingga para pihak belum dapat mengambilnya.",
+    tabel: REGISTER,
+    syarat: "pu.tglPutus IS NOT NULL AND pe.nomor IS NOT NULL AND pe.adaBaris = 1 AND pe.dokAda = 1 AND pe.tte = 0",
+  },
+
   // --- keuangan ------------------------------------------------------------
   prodeo: {
     kelompok: "keuangan",
@@ -1367,6 +1413,7 @@ function sambunganSql(nama, batasId) {
  * membuat tag lain tampak nol dan mustahil dilepas kembali.
  */
 async function hitungSemua({ dasar = "daftar", periode = "total", acuan = "", dari = "", sampai = "" } = {}) {
+  await pastikanTabelPutusanEcourt();
   const lingkup = rentang(periode, acuan, dari, sampai);
   const batas = await idLingkup(dasar, lingkup.dari, lingkup.sampai);
 
@@ -1522,6 +1569,7 @@ const BATAS_ID = 20000;
 async function idPerkaraTag(kunci, { dasar = "daftar", periode = "total", acuan = "", dari = "", sampai = "" } = {}) {
   const tag = TAG[String(kunci || "")];
   if (!tag) return [];
+  await pastikanTabelPutusanEcourt();
 
   const lingkup = rentang(periode, acuan, dari, sampai);
   const batas = await idLingkup(dasar, lingkup.dari, lingkup.sampai);

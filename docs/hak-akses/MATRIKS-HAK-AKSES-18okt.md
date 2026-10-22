@@ -263,6 +263,7 @@ Catatan kewenangan:
 | Penanda: akta cerai dan BHT verstek | L | L | L | - | L | L | L | - | - | L | - | - | - | - | - | - |
 | Penanda: perkara lewat 5 bulan | L | L | L | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Penanda: dokumen e-Court belum diverifikasi | L | L | L | L | - | - | L | - | - | - | - | - | - | - | - | - |
+| Penanda: putusan belum diunggah / belum TTE panitera di e-Court | L | L | L | L | L | L | L | - | - | - | - | - | - | - | - | - |
 | Popup: tandai halaman SIPP | P | P | P | P | P | P | P | P | - | P | P | P | P | P | P | P |
 | Popup: sisipkan berkas ke Jadwal Sidang | P | P | P | P | P | P | P | - | - | - | P | - | - | - | - | - |
 | Popup: cetak tiga berkas dari ABT | P | P | P | P | - | - | P | - | - | - | - | - | - | - | - | - |

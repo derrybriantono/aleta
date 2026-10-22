@@ -377,7 +377,7 @@ describe("F. saklar penanda SIPP (ideL2*) ikut setelan per akun", () => {
       return (m![1].match(/"[^"]+"/g) || []).map((x) => x.slice(1, -1));
     };
     const kunciIde = Array.from(ideL2Js.matchAll(/^\s{4}(ideL2\w*): \["(ideL2\w*)"/gm)).map((m) => m[2]);
-    expect(kunciIde.length).toBe(13);
+    expect(kunciIde.length).toBe(14);
     expect(ambil(popupJs)).toEqual(ambil(latarJs));
     for (const k of kunciIde) expect(ambil(popupJs), k).toContain(k);
   });

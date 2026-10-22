@@ -240,6 +240,14 @@ async function catatanBanyak(daftarNomor = []) {
  * @param {object|null} ecourt catatan dari catatanBanyak
  */
 function simpulkan(sipp, ecourt) {
+  const h = simpulkanDasar(sipp, ecourt);
+  // Dua keadaan yang diminta petugas, dalam bentuk yang langsung dapat dipakai layar.
+  h.belumDiunggah = h.keadaan === KEADAAN.BELUM_UNGGAH || h.keadaan === KEADAAN.ERROR_ECOURT;
+  h.belumTte = h.keadaan === KEADAAN.BELUM_TTE;
+  return h;
+}
+
+function simpulkanDasar(sipp, ecourt) {
   const sudahPutus = Boolean(sipp && sipp.sudahPutus);
 
   if (!sudahPutus) {

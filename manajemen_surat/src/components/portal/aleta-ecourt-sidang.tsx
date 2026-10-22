@@ -8716,6 +8716,8 @@ export function AletaEcourtSidang({
                               <EcourtLencanaPutusan
                                 nomorPerkara={baris.nomorPerkara}
                                 perkaraId={baris.perkaraId}
+                                keadaan={baris.putusanEcourt ?? undefined}
+                                kalimat
                                 className="text-xs"
                               />
                             ) : null}

@@ -56,6 +56,7 @@ const TABEL: Baris[] = [
   L2("AktaCerai"),
   L2("LimaBulan"),
   L2("EcourtVerifikasi"),
+  L2("PutusanEcourt"),
   { id: "suntingLangsungAbt", kunci: "suntingLangsungAbt", bagian: "abt", bawaan: false, pembaca: ["panel-alat.js"] },
   { id: "cetakTigaBerkas", kunci: "cetakTigaBerkas", bagian: "abt", bawaan: false, pembaca: ["abt.js", "panel-alat.js"] },
   { id: "gembokAbt", kunci: "gembokKepalaAbt", bagian: "abt", bawaan: false, pembaca: ["panel-alat.js", "blangko-derry.js"] },

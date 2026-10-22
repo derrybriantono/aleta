@@ -253,6 +253,7 @@ const LABEL_PENANDA: Record<KodeIdeL2, string> = {
   "akta-cerai": "Penanda: akta cerai dan BHT verstek",
   "lewat-5-bulan": "Penanda: perkara lewat 5 bulan",
   "ecourt-verifikasi": "Penanda: dokumen e-Court belum diverifikasi",
+  "putusan-ecourt": "Penanda: putusan belum diunggah / belum TTE panitera di e-Court",
 };
 
 /** Golongan popup ekstensi (lib/golongan-popup.ts) -> golongan matriks. Panitera popup memuat Panmud. */

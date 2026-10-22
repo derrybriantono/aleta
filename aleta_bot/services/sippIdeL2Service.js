@@ -267,6 +267,12 @@ const KATALOG = Object.freeze({
     sumber: "Arsip tarikan e-Court ALETA (status verifikasi tiap dokumen pihak) untuk perkara e-Court pada agenda jawab-menjawab/kesimpulan.",
     // Dasarnya dipastikan pengguna (keputusan 17 Okt butir 31) - tidak lagi "perlu dicek".
   },
+  "putusan-ecourt": {
+    nama: "Putusan di e-Court",
+    dasar:
+      "Salinan putusan harus terunggah di e-Court dan ditandatangani elektronik (TTE) oleh Panitera agar para pihak dapat mengambilnya (PERMA 1/2019 jo. PERMA 7/2022).",
+    sumber: "Pembacaan tab Putusan e-Court oleh ALETA (terunggah atau belum, TTE panitera) dibandingkan dengan tanggal putusan di SIPP. Perkara yang belum pernah dibaca tidak ditandai.",
+  },
 });
 
 const KODE_SAKLAR = Object.freeze(Object.keys(KATALOG));
@@ -603,6 +609,40 @@ function nilaiVerifikasiEcourt(f, kini) {
   ];
 }
 
+// ---------------------------------------------------------------------------
+// Penanda ke-12: putusan belum diunggah ke e-Court / belum TTE panitera
+// (permintaan hakim 22 Okt). Hanya perkara yang SUDAH putus dan SUDAH pernah
+// dibaca dari e-Court; yang belum pernah dibaca tidak dituduh apa pun.
+// ---------------------------------------------------------------------------
+
+function nilaiPutusanEcourt(f) {
+  const c = f.putusanEcourt;
+  if (!f.putus || !c) return [];
+  if (!c.adaBaris || !c.dokumenAda) {
+    return [
+      penanda(
+        "putusan-ecourt",
+        "merah",
+        "Putusan belum diunggah ke e-Court",
+        `Putusan diucapkan ${tanggalIndo(f.putus.tanggal)} di SIPP, tetapi salinan putusannya belum terunggah di e-Court. Tugas Panitera Pengganti / Panitera mengunggahnya agar para pihak dapat mengambilnya.`,
+        { angka: 1 }
+      ),
+    ];
+  }
+  if (!c.paniteraTte) {
+    return [
+      penanda(
+        "putusan-ecourt",
+        "merah",
+        "Putusan di e-Court belum ditandatangani panitera",
+        `Salinan putusan (${tanggalIndo(f.putus.tanggal)}) sudah terunggah di e-Court, tetapi belum ditandatangani secara elektronik oleh Panitera, sehingga para pihak belum dapat mengambilnya.`,
+        { angka: 2 }
+      ),
+    ];
+  }
+  return [];
+}
+
 const WARNA_NILAI_SK = { 5: "hijau", 3: "kuning", 1: "oranye", 0: "merah" };
 
 function nilaiUmur(f) {
@@ -658,6 +698,7 @@ function nilaiPerkara(f, kini) {
     ...nilaiAkta(f, kini),
     ...nilaiLimaBulan(f),
     ...nilaiVerifikasiEcourt(f, kini),
+    ...nilaiPutusanEcourt(f),
   ];
 }
 
@@ -797,6 +838,15 @@ async function faktaBanyakPerkara(id, deps = {}) {
       )
     : [];
 
+  // Keadaan putusan di e-Court (hasil bacaan ALETA); hanya untuk perkara yang tertaut nomornya.
+  const putusanEcourt = daftarNomor.length
+    ? await aman(
+        "putusanEcourt",
+        () => (deps.putusanEcourt || require("./putusanEcourtService").catatanBanyak)(daftarNomor),
+        {}
+      )
+    : {};
+
   const sitaEks = await aman(
     "sita",
     () => (deps.sita || require("./sitaEksekusiPerkaraService").sitaEksekusiBanyakPerkara)(id),
@@ -831,6 +881,7 @@ async function faktaBanyakPerkara(id, deps = {}) {
     durasi: durasi || {},
     ecourt: new Set(ecourt.map((b) => String(b.perkaraId))),
     dokumen: petaPer(dokumen, "nomor"),
+    putusanEcourt: putusanEcourt || {},
   };
 }
 
@@ -865,6 +916,7 @@ function susunFakta(p, kumpulan) {
       jam: cleanText(j.jam).slice(0, 5),
     })),
     ecourt: kumpulan.ecourt ? kumpulan.ecourt.has(k) : false,
+    putusanEcourt: (kumpulan.putusanEcourt && kumpulan.putusanEcourt[normalizeCaseNumber(cleanText(p.nomor))]) || null,
     dokumenEcourt: (kumpulan.dokumen && kumpulan.dokumen[cleanText(p.nomor).toLowerCase()]) || [],
     tunjuk: { pmh: tgl(t.pmh), ppp: tgl(t.ppp), pjs: tgl(t.pjs), phs: tgl(t.phs) },
     ikrar: it ? { phs: tgl(it.phs), ikrar: tgl(it.ikrar), status: cleanText(it.status) } : null,
@@ -891,6 +943,7 @@ const BAGIAN_PENANDA = Object.freeze({
   "akta-cerai": ["aktaCerai", "putusan", "ikrar", "pemberitahuan"],
   "lewat-5-bulan": ["durasi", "putusan"],
   "ecourt-verifikasi": ["ecourt", "dokumenEcourt", "jadwal", "putusan"],
+  "putusan-ecourt": ["putusanEcourt", "putusan"],
 });
 
 function kodeTerbaca(terbaca) {
@@ -978,6 +1031,7 @@ module.exports = {
   nilaiUmur,
   nilaiLimaBulan,
   nilaiVerifikasiEcourt,
+  nilaiPutusanEcourt,
   hariKerjaSesudah,
   waktuUtc,
   susunFakta,

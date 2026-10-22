@@ -33,6 +33,7 @@
     ideL2AktaCerai: ["ideL2AktaCerai", "akta-cerai"],
     ideL2LimaBulan: ["ideL2LimaBulan", "lewat-5-bulan"],
     ideL2EcourtVerifikasi: ["ideL2EcourtVerifikasi", "ecourt-verifikasi"],
+    ideL2PutusanEcourt: ["ideL2PutusanEcourt", "putusan-ecourt"],
   };
 
   /** Golongan (selain Super Admin/Admin) yang melihat tiap penanda - sama dengan lib/sipp-ide-l2.ts. */
@@ -49,6 +50,7 @@
     "akta-cerai": ["ketua", "panitera", "panitera-pengganti", "ptsp"],
     "lewat-5-bulan": ["ketua"],
     "ecourt-verifikasi": ["ketua", "hakim", "panitera-pengganti"],
+    "putusan-ecourt": ["ketua", "hakim", "panitera-pengganti", "panitera"],
   };
 
   const gudang =
