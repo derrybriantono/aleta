@@ -1375,7 +1375,7 @@ router.post(
 router.post(
   "/sidang/putus-sidang",
   requireInternalToken,
-  manualJamKerja("sidang-putus", (b) => String(b.jadwalId || ""), async (req, res) => {
+  manualJamKerja("sidang-putus", (b) => (b.otomatis === true ? `otomatis:${String(b.jadwalId || "")}` : String(b.jadwalId || "")), async (req, res) => {
   try {
     // Alur yang sama dengan tunda - sidangHasilAlur (7 Okt 2026).
     const { status, body } = await sidangHasilAlur.jalankanHasilSidang("putus", req.body || {}, {

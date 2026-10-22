@@ -25,7 +25,8 @@ import { sebutanPihakPerkara } from "@/lib/sebutan-pihak";
  * ini HANYA memutuskan; ia tidak membaca dan tidak menulis apa pun. Pengumpul
  * bahan, penyimpan daftar, dan penjadwal di src/server/modules/tunda-otomatis;
  * penulisnya PENULIS TUNDA YANG SUDAH ADA (bot sidangHasilAlur, atas akun PP
- * perkara, lewat antrean jam kerja).
+ * perkara). Sejak 22 Okt 2026 tundaan DITULIS SAAT JAM PEMICU walau di luar
+ * jam kerja - tidak pernah berpindah ke hari berikutnya (keputusan pengguna).
  *
  * SASARAN (tafsir 1): sidang bertanggal hari ini yang pada jam pemicu belum
  * ditunda, belum diputus, alasan/hasilnya masih kosong, dan belum punya sidang
@@ -90,8 +91,9 @@ export const JAM_PEMICU_BAWAAN = "16:30";
 
 export type AturanTunda =
   | "permohonan-7"
-  | "pembuktian-email-7"
-  | "pembuktian-tanpa-email-14"
+  | "pembuktian-elektronik-7"
+  | "pembuktian-14"
+  | "panggil-ulang-14"
   | "court-calendar"
   | "court-calendar-habis-14"
   | "tanpa-court-calendar-14";
@@ -120,8 +122,9 @@ export const NOMOR_ATURAN: Readonly<Record<AturanTunda | AturanPutusan, number>>
   gugur: 7,
   "tidak-dapat-diterima": 8,
   "permohonan-7": 5,
-  "pembuktian-email-7": 4,
-  "pembuktian-tanpa-email-14": 4,
+  "pembuktian-elektronik-7": 4,
+  "pembuktian-14": 4,
+  "panggil-ulang-14": 2,
   "court-calendar": 3,
   "court-calendar-habis-14": 3,
   "tanpa-court-calendar-14": 2,
@@ -141,6 +144,7 @@ export const KALIMAT_LEWATI: Readonly<Record<SebabLewati, string>> = {
   "bahan-tidak-terbaca": "Riwayat sidang atau Court Calendar tidak terbaca - tidak menebak.",
   "pp-tidak-jelas": "Panitera sidang perkara ini tidak jelas di SIPP.",
   "perkiraan-verstek":
+    // Keputusan pengguna 22 Okt: dilewati HANYA bila Penggugat/Pemohon tercatat hadir hari itu.
     "Sidang kedua atau lebih dan pihak lawan belum pernah hadir - kemungkinan besar diputus verstek hari ini, jadi tidak ditunda otomatis; petugas mencatat hasilnya.",
   "dibatalkan-petugas": "Ditandai \"jangan tunda otomatis\".",
   "tanggal-tidak-terhitung": "Tanggal sidang berikutnya tidak dapat dihitung.",
@@ -169,6 +173,10 @@ export type MasukanTundaOtomatis = {
   ruangan?: string | null;
   /** dihadiri_oleh baris hari ini bila sudah terisi. */
   dihadiriOlehSekarang?: number | null;
+  /** Kehadiran rinci per orang hari ini (antrian ALETA): pihak pertama tercatat hadir. null/undefined = tidak terbaca. */
+  hadirRinciPertama?: boolean | null;
+  /** Cara panggil Tergugat/Termohon pada panggilan terakhir (relaas SIPP). null = tidak terbaca. */
+  panggilanTergugat?: { ada: boolean; elektronik: boolean; sandi?: string } | null;
   /** Antrian sidang hari ini; null = tidak ada baris antrian. */
   antrian?: { hadirPihak1: boolean; hadirPihak2: boolean; keadaan?: string } | null;
   /** Seluruh sidang perkara (urutan bebas). null = tidak terbaca. */
@@ -227,7 +235,8 @@ export function hadirPihakPertama(sandi: number | null | undefined): boolean | n
 }
 
 /** Kehadiran Penggugat/Pemohon HARI INI: baris hari ini, lalu antrian. */
-export function hadirPertamaHariIni(m: Pick<MasukanTundaOtomatis, "dihadiriOlehSekarang" | "antrian">): boolean | null {
+export function hadirPertamaHariIni(m: Pick<MasukanTundaOtomatis, "dihadiriOlehSekarang" | "antrian" | "hadirRinciPertama">): boolean | null {
+  if (m.hadirRinciPertama === true) return true;
   const tercatat = hadirPihakPertama(m.dihadiriOlehSekarang ?? null);
   if (tercatat !== null) return tercatat;
   const a = m.antrian;
@@ -409,7 +418,12 @@ export function putuskanTundaOtomatis(m: MasukanTundaOtomatis, peta?: PetaLibur)
   const lawanPernahHadir = sebelum.some((r) => r.dihadiriOleh === KEHADIRAN_SEMUA || r.dihadiriOleh === KEHADIRAN_KEDUA);
   const lawanHadirHariIni =
     Number(m.dihadiriOlehSekarang) === KEHADIRAN_SEMUA || Number(m.dihadiriOlehSekarang) === KEHADIRAN_KEDUA || Boolean(m.antrian?.hadirPihak2);
-  if (!perkaraPermohonan(m) && sidangKe >= 2 && !lawanPernahHadir && !lawanHadirHariIni) return lewati("perkiraan-verstek");
+  // Keputusan pengguna 22 Okt 2026: Penggugat/Pemohon TERCATAT HADIR hari itu -> tetap dilewati
+  // (majelis memutus verstek bila terbukti); tidak hadir / tidak tercatat -> TUNDA 14 hari,
+  // Penggugat dan Tergugat dipanggil kembali (2 minggu mengikuti panggilan Tergugat).
+  const kemungkinanVerstek = !perkaraPermohonan(m) && sidangKe >= 2 && !lawanPernahHadir && !lawanHadirHariIni;
+  if (kemungkinanVerstek && tercatatHariIni === true) return lewati("perkiraan-verstek");
+  const panggilUlang = kemungkinanVerstek;
 
   if (m.ppJelas === false) return lewati("pp-tidak-jelas");
   if (!ISO.test(iso(m.tanggalSidang))) return lewati("tanggal-tidak-terhitung");
@@ -439,7 +453,7 @@ export function putuskanTundaOtomatis(m: MasukanTundaOtomatis, peta?: PetaLibur)
     aturan: AturanTunda,
     tanggalAturan: string,
     penjelasan: string,
-    pilihan: { agenda?: string; jam?: string; dariKalender?: boolean } = {}
+    pilihan: { agenda?: string; jam?: string; dariKalender?: boolean; alasan?: string; kehadiran?: number } = {}
   ): HasilTunda | HasilLewati => {
     if (!ISO.test(tanggalAturan)) return lewati("tanggal-tidak-terhitung");
     const akhir = tanggalAkhir(m, tanggalAturan, peta, Boolean(pilihan.dariKalender));
@@ -452,14 +466,25 @@ export function putuskanTundaOtomatis(m: MasukanTundaOtomatis, peta?: PetaLibur)
       nomorAturan: NOMOR_ATURAN[aturan],
       tanggal: akhir.tanggal,
       jam,
-      alasan: bawaan.alasan,
+      alasan: teks(pilihan.alasan) || bawaan.alasan,
       agenda,
-      kehadiran: bawaan.kehadiran,
+      kehadiran: pilihan.kehadiran ?? bawaan.kehadiran,
       penjelasan: [penjelasan, ...akhir.catatan].join(" "),
       bergeserDari: akhir.bergeserDari,
       tanda: akhir.tanda,
     };
   };
+
+  // ---- Panggil ulang (kemungkinan verstek, Penggugat tidak tercatat hadir) ---
+  if (panggilUlang) {
+    const kalimat = `Panggil ${satu} dan ${dua}`;
+    return jadi(
+      "panggil-ulang-14",
+      tambahHari(dasar, HARI_DUA_PEKAN),
+      `${dua} belum pernah hadir dan ${satu} tidak tercatat hadir hari ini: ${satu} dan ${dua} dipanggil kembali, tunda ${HARI_DUA_PEKAN} hari.`,
+      { alasan: kalimat, agenda: kalimat, kehadiran: diketahui ?? KEHADIRAN_TIDAK_ADA }
+    );
+  }
 
   // ---- 5. Permohonan ------------------------------------------------------
   if (voluntair) {
@@ -469,14 +494,15 @@ export function putuskanTundaOtomatis(m: MasukanTundaOtomatis, peta?: PetaLibur)
   if (adaKalender) {
     // ---- 4. Court Calendar + pembuktian -----------------------------------
     if (tahapPembuktian(m.agenda)) {
-      const k = m.kontak;
-      const adaEmail = Boolean(k && k.ecourtTerbaca && k.tergugat?.adaEmail);
-      return adaEmail
-        ? jadi("pembuktian-email-7", tambahHari(dasar, HARI_SATU_PEKAN), `Ada Court Calendar, tahap pembuktian, ${dua} punya email: tunda ${HARI_SATU_PEKAN} hari.`)
+      // Keputusan pengguna 22 Okt 2026: bawaan 14 hari; 7 hari bila panggilan Tergugat
+      // sebelumnya PANGGILAN ELEKTRONIK (relaas SIPP sandi E) - email tidak lagi syarat.
+      const p = m.panggilanTergugat;
+      return p?.elektronik === true
+        ? jadi("pembuktian-elektronik-7", tambahHari(dasar, HARI_SATU_PEKAN), `Ada Court Calendar, tahap pembuktian, ${dua} dipanggil lewat panggilan elektronik: tunda ${HARI_SATU_PEKAN} hari.`)
         : jadi(
-            "pembuktian-tanpa-email-14",
+            "pembuktian-14",
             tambahHari(dasar, HARI_DUA_PEKAN),
-            `Ada Court Calendar, tahap pembuktian, ${!k ? "data email belum dibaca" : !k.ecourtTerbaca ? "data e-Court tidak terbaca" : `${dua} tidak punya email`}: tunda ${HARI_DUA_PEKAN} hari.`
+            `Ada Court Calendar, tahap pembuktian, ${!p ? "cara panggil sebelumnya tidak terbaca" : !p.ada ? `belum ada relaas ${dua}` : `${dua} tidak dipanggil elektronik`}: tunda ${HARI_DUA_PEKAN} hari.`
           );
     }
     // ---- 3. Court Calendar ------------------------------------------------

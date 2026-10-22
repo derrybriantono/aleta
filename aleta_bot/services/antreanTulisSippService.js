@@ -69,6 +69,28 @@ const SEBARAN_PAGI_DETIK = [5 * 60, 45 * 60];
 const SEBARAN_PAGI_PER_JENIS = Object.freeze({ "penetapan-rantai": [45 * 60, 120 * 60] });
 const BATAS_PERCOBAAN = 3;
 
+/**
+ * ============================================================================
+ * TUNDA DAN KETERANGAN PUTUS TIDAK PERNAH PINDAH HARI (keputusan pengguna 22 Okt 2026)
+ * ============================================================================
+ *
+ * "tundaan sidang atau keterangan putus tidak masalah lewat dari jam kerja
+ * (diatas jam 16.30), justru tundaan sidang atau keterangan putus jangan lewat
+ * lebih dari hari itu."
+ *
+ * Untuk jenis di bawah, di luar jam kerja bawaannya TULIS SEKARANG (hari yang
+ * sama). Antrean hanya boleh bila jam kerja berikutnya masih HARI ITU (mis.
+ * ditekan pukul 06.50, dikerjakan 07.35); tidak pernah ke hari berikutnya.
+ * Baris yang ternyata baru tiba gilirannya di hari lain (proses mati semalam,
+ * percobaan ulang) DIGAGALKAN dengan sebabnya - tidak dipindah ke besok.
+ * Jenis lain (penetapan, Kasir, ikrar, ...) tetap aturan keputusan 104.
+ */
+const JENIS_HARI_SAMA = new Set(["sidang-tunda", "sidang-putus"]);
+
+function hariSama(jenis) {
+  return JENIS_HARI_SAMA.has(String(jenis || ""));
+}
+
 function logSeragam([min, maks], acak = Math.random) {
   const u = Math.min(Math.max(Number(acak()) || 0, 0), 1);
   return Math.round(min * Math.pow(maks / min, u));
@@ -227,7 +249,7 @@ function buatLayanan({ db, sekarang = () => jamKerja.sekarangSatker(), acak = Ma
     const kini = sekarang();
     if (!jamKerja.dalamJamKerja(kini, opsiLibur)) return { dikerjakan: false, sebab: "di_luar_jam_kerja" };
     const calon = await q(
-      `SELECT id, jenis, muatan FROM ${TABEL}
+      `SELECT id, jenis, muatan, DATE_FORMAT(dibuat_satker, '%Y-%m-%d') AS dibuat FROM ${TABEL}
         WHERE status = 'menunggu' AND jadwal_satker <= ?
         ORDER BY jadwal_satker, id LIMIT 1`,
       [kini]
@@ -242,6 +264,16 @@ function buatLayanan({ db, sekarang = () => jamKerja.sekarangSatker(), acak = Ma
     if (Number(ambil && ambil.affectedRows) !== 1) return { dikerjakan: false, sebab: "diambil_pekerja_lain" };
     const fungsi = pelaksana.get(String(satu.jenis));
     let hasil;
+    // Tunda/putus yang gilirannya jatuh di hari lain dari hari ditekan: digagalkan, tidak ditulis besok.
+    if (hariSama(satu.jenis) && teks(satu.dibuat).slice(0, 10) !== String(kini).slice(0, 10)) {
+      hasil = {
+        ok: false,
+        alasan: "lewat_hari",
+        pesan: `Tidak ditulis: diantrekan ${teks(satu.dibuat).slice(0, 10)}, sedangkan tundaan/keterangan putus tidak boleh berpindah hari. Catat ulang lewat Jadwal Sidang/SIPP.`,
+      };
+      await q(`UPDATE ${TABEL} SET status = 'gagal', selesai_satker = ?, hasil = ? WHERE id = ?`, [kini, JSON.stringify(hasil), satu.id]);
+      return { dikerjakan: true, id: Number(satu.id), jenis: String(satu.jenis), ok: false, status: "gagal" };
+    }
     try {
       if (!fungsi) throw new Error(`pelaksana_tidak_ada:${satu.jenis}`);
       hasil = await fungsi(JSON.parse(String(satu.muatan || "{}")));
@@ -312,6 +344,38 @@ function buatLayanan({ db, sekarang = () => jamKerja.sekarangSatker(), acak = Ma
     if (jamKerja.dalamJamKerja(kini, opsiLibur)) return null;
     const pilihan = String(badan.jamKerja || "").toLowerCase();
     if (pilihan === "sekarang") return null;
+    if (hariSama(jenis)) {
+      // Keputusan 22 Okt: tunda/putus tidak pernah ke hari berikutnya.
+      const awal = jamKerja.jamKerjaBerikutnya(kini, opsiLibur);
+      const masihHariIni = Boolean(awal) && awal.slice(0, 10) === String(kini).slice(0, 10);
+      if (!masihHariIni) return null; // tulis sekarang, hari ini
+      if (pilihan === "antrekan") {
+        const asal = badan.otomatis === true ? "otomatis" : "manual";
+        const r = await antrekan({ jenis, kunci, muatan: { ...muatan, jamKerja: "sekarang" }, keterangan, asal });
+        return { status: r.ok ? 200 : 500, body: { ...r, pesan: r.kalimat || r.alasan } };
+      }
+      if (badan.tanyaJamKerja !== true) return null;
+      const kalimat = `Sekarang di luar jam kerja. Bawaannya ditulis sekarang (hari ini). Bila diantrekan, dikerjakan hari ini juga, ${jamKerja
+        .sebutWaktu(awal)
+        .replace(" pukul ", " mulai pukul ")} WITA - tidak pernah ke hari berikutnya.`;
+      return {
+        status: 200,
+        body: {
+          ok: false,
+          alasan: "di_luar_jam_kerja",
+          kode: "di_luar_jam_kerja",
+          perluPilihan: true,
+          dikerjakanPada: awal,
+          pesan: kalimat,
+          error: kalimat,
+          bawaan: "sekarang",
+          pilihan: [
+            { nilai: "sekarang", label: "Tulis sekarang", bawaan: true },
+            { nilai: "antrekan", label: "Antrekan (hari ini)" },
+          ],
+        },
+      };
+    }
     if (pilihan === "antrekan") {
       // Tunda otomatis 16.30 (22 Okt 2026) tercatat sebagai tulisan OTOMATIS di antrean.
       const asal = badan.otomatis === true ? "otomatis" : "manual";
@@ -431,6 +495,8 @@ function manualJamKerja(jenis, kunciDari, penangan, keteranganDari = () => "") {
 
 module.exports = {
   aktif,
+  JENIS_HARI_SAMA,
+  hariSama,
   TABEL,
   SQL_SKEMA,
   JEDA_ANTARBARIS,

@@ -783,6 +783,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                             setTanggalBerikut(v);
                           }}
                           sebutan="Tanggal sidang berikutnya"
+                          usulan={usulan?.tanggal}
                           className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                         />
                         <span className="text-[0.7rem]" data-sumber-tanggal={tanggalDisentuh ? "manual" : sumberDasarTanggal.sumber}>
@@ -932,7 +933,7 @@ export function HasilSidang({ jadwalId }: { jadwalId: string }) {
                   </Button>
                 </div>
                 {tanyaJam !== null ? (
-                  <TanyaJamKerja pesan={tanyaJam} sibuk={sibuk} onPilih={(p) => void kirim(false, p)} />
+                  <TanyaJamKerja pesan={tanyaJam} sibuk={sibuk} bawaan="sekarang" onPilih={(p) => void kirim(false, p)} />
                 ) : null}
                 {hasil?.diantrekan ? <KabarDiantrekan pesan={hasil.pesan || ""} /> : null}
                 {!rencanaKering ? (
@@ -1207,6 +1208,8 @@ export function CatatHasilRingkas({
 
   const [alasanTundaIsi, setAlasanTunda] = useState("");
   const [tanggalBerikutIsi, setTanggalBerikut] = useState("");
+  // 22 Okt 2026: tanggal usulan aturan, ditandai di kalender pemilih tanggal.
+  const [tanggalUsulan, setTanggalUsulan] = useState("");
   const [jamBerikutIsi, setJamBerikut] = useState("09:00");
   const [agendaBerikutIsi, setAgendaBerikut] = useState("");
   const [dihadiri, setDihadiri] = useState(KEHADIRAN_BAWAAN);
@@ -1304,6 +1307,7 @@ export function CatatHasilRingkas({
           setAgendaBerikut(usul.agenda);
           setJamBerikut(usul.jam);
           if (usul.tanggal) setTanggalBerikut(usul.tanggal);
+          setTanggalUsulan(usul.tanggal || "");
         } else {
           // Bot lama tanpa riwayat: bawaan sebelumnya, apa adanya.
           const sudahAda = Number(isi.keadaan.dihadiriOleh);
@@ -1354,6 +1358,7 @@ export function CatatHasilRingkas({
       }
       // Tanggal ikut kehadiran: kedua pihak hadir -> Court Calendar.
       if (!tanggalDisentuh) setTanggalBerikut(usul.tanggal);
+      setTanggalUsulan(usul.tanggal || "");
     },
     [keadaan, riwayat, alasanDisentuh, agendaDisentuh, tanggalDisentuh, jamDisentuh]
   );
@@ -1701,6 +1706,7 @@ export function CatatHasilRingkas({
                 setTanggalBerikut(v);
               }}
               sebutan="Tanggal sidang berikutnya"
+              usulan={tanggalUsulan}
               className="h-8 w-full rounded-md border bg-background px-2 text-sm"
             />
             {/* Dari mana tanggalnya - Court Calendar atau dua pekan. */}
@@ -1924,7 +1930,7 @@ export function CatatHasilRingkas({
           <span>{hasil.alasan || "Belum tersimpan. Silakan coba lagi."}</span>
         </p>
       ) : null}
-      {tanyaJam !== null ? <TanyaJamKerja pesan={tanyaJam} sibuk={sibuk} onPilih={(p) => void kirim(p)} /> : null}
+      {tanyaJam !== null ? <TanyaJamKerja pesan={tanyaJam} sibuk={sibuk} bawaan="sekarang" onPilih={(p) => void kirim(p)} /> : null}
       {hasil?.diantrekan ? <KabarDiantrekan pesan={hasil.pesan || ""} /> : null}
 
       <div className="flex flex-wrap items-center gap-2">

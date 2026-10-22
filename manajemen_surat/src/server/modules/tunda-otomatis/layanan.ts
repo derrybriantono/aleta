@@ -17,6 +17,7 @@ import type { AletaDatabase } from "@/server/db/client";
 import { getGatewayJadwalSidang, postGatewayTundaSidang } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { panggilBotJadwalSidang } from "@/server/modules/aleta-ecourt/jadwal-sidang-gateway";
 import { bacaHariLibur } from "@/server/modules/hari-libur/sumber";
+import { bacaKehadiranSidang } from "@/server/modules/aleta-ecourt/kehadiran-rinci";
 
 /**
  * ============================================================================
@@ -37,8 +38,10 @@ import { bacaHariLibur } from "@/server/modules/hari-libur/sumber";
  *   - MENULIS hanya lewat PENULIS TUNDA YANG SUDAH ADA: rute bot /sidang/tunda
  *     (sidangHasilAlur -> susunRencanaTunda atas akun PP perkara), dengan
  *     `otomatis: true` (penjaga dibaca ulang sesaat sebelum menulis) dan
- *     `jamKerja: "antrekan"` (di luar jam kerja diantrekan ke jam kerja
- *     berikutnya oleh antreanTulisSippService). Mode kering mengirim
+ *     `jamKerja: "sekarang"`: DITULIS SAAT ITU JUGA pada jam pemicu, walau di
+ *     luar jam kerja - keputusan pengguna 22 Okt 2026 ("tundaan sidang ...
+ *     jangan lewat lebih dari hari itu"); tidak pernah diantrekan ke pagi
+ *     berikutnya. Mode kering mengirim
  *     `kering: true`: bot menyusun rencananya (akun PP, hari libur, tanggal)
  *     TANPA menulis.
  *   - GUGUR / TIDAK DAPAT DITERIMA tidak pernah ditulis ke SIPP: SIPP hanya
@@ -109,7 +112,7 @@ const CATATAN_KOSONG = (tanggal: string): CatatanHari => ({ tanggal, batal: {}, 
 // SIMPANAN (aleta_ekstensi_setelan)
 // ============================================================================
 
-async function bacaKunci<T>(db: AletaDatabase, kunci: string): Promise<T | null> {
+export async function bacaKunci<T>(db: AletaDatabase, kunci: string): Promise<T | null> {
   try {
     const b = await db.queryOne<{ nilai: string }>("SELECT nilai FROM aleta_ekstensi_setelan WHERE pengguna_id = ? AND kunci = ?", [
       PENGGUNA_SISTEM,
@@ -121,7 +124,7 @@ async function bacaKunci<T>(db: AletaDatabase, kunci: string): Promise<T | null>
   }
 }
 
-async function tulisKunci(db: AletaDatabase, kunci: string, nilai: unknown) {
+export async function tulisKunci(db: AletaDatabase, kunci: string, nilai: unknown) {
   const sekarang = new Date().toISOString();
   const isi = JSON.stringify(nilai);
   const ada = await db.queryOne<{ kunci: string }>("SELECT kunci FROM aleta_ekstensi_setelan WHERE pengguna_id = ? AND kunci = ?", [
@@ -230,6 +233,10 @@ export type BahanSidang = {
   kontak?: KontakPihak | null;
   kunci?: { aktif?: boolean; tidakTerbaca?: boolean } | null;
   kelilingBerikut?: string[] | null;
+  /** Cara panggil Tergugat terakhir (aturan 4, keputusan 22 Okt). */
+  panggilanTergugat?: { ada: boolean; elektronik: boolean; sandi?: string } | null;
+  /** Pihak pertama tercatat hadir di kehadiran rinci ALETA hari ini (diisi portal). */
+  hadirRinciPertama?: boolean | null;
 };
 
 export type SumberTundaOtomatis = {
@@ -239,6 +246,8 @@ export type SumberTundaOtomatis = {
   antrean(sejak: string): Promise<Array<{ kunci: string; status: string; hasil?: string; jadwal?: string; kalimat?: string }>>;
   batalAntrean(jadwalId: string): Promise<{ ok: boolean; alasan?: string }>;
   libur(db: AletaDatabase): Promise<PetaLibur>;
+  /** Kehadiran rinci per orang hari ini (F3.2). Opsional - sumber uji lama tidak memilikinya. */
+  kehadiranRinci?(perkaraId: string, tanggal: string): Promise<Array<{ sisi: string }> | null>;
 };
 
 export const SUMBER_BAWAAN: SumberTundaOtomatis = {
@@ -268,6 +277,9 @@ export const SUMBER_BAWAAN: SumberTundaOtomatis = {
   async libur(db) {
     await bacaHariLibur(db);
     return petaLiburBerlaku();
+  },
+  async kehadiranRinci(perkaraId, tanggal) {
+    return bacaKehadiranSidang(perkaraId, tanggal);
   },
 };
 
@@ -309,6 +321,8 @@ export function masukanDariBahan(
     kalender: bahan?.ok && Array.isArray(bahan.kalender) ? bahan.kalender : null,
     kontak: bahan?.kontak ?? null,
     kelilingBerikut: Array.isArray(bahan?.kelilingBerikut) ? bahan!.kelilingBerikut! : null,
+    panggilanTergugat: bahan?.panggilanTergugat ?? null,
+    hadirRinciPertama: bahan?.hadirRinciPertama ?? null,
     sedangDikerjakan: Boolean(bahan?.kunci?.aktif || bahan?.kunci?.tidakTerbaca),
     ppJelas: bahan?.atasNama ? bahan.atasNama.ok === true : undefined,
     dibatalkan: batal ? { oleh: batal.nama || batal.oleh, pada: batal.pada } : null,
@@ -344,6 +358,10 @@ export async function susunDaftar(
     if (!cukupDariBaris(b) && !batal[id]) {
       try {
         bahan = await sumber.bahan(id);
+        if (bahan?.ok && sumber.kehadiranRinci) {
+          const rinci = await sumber.kehadiranRinci(teks(b.perkaraId), tanggal).catch(() => null);
+          bahan.hadirRinciPertama = Array.isArray(rinci) ? rinci.some((o) => o.sisi === "pihak_1") : null;
+        }
       } catch (e) {
         bahan = { ok: false, alasan: teks((e as Error)?.message) };
       }
@@ -530,7 +548,8 @@ export async function jalankanTundaOtomatis(
           kering: setelan.kering,
           otomatis: true,
           tanggalSidangHarap: tanggal,
-          jamKerja: "antrekan",
+          // Keputusan 22 Okt: ditulis hari itu juga, tidak diantrekan ke pagi berikutnya.
+          jamKerja: "sekarang",
         })
         .catch((e) => ({ ok: false as const, galat: teks((e as Error)?.message) || "ALETA Bot tidak menjawab." }));
       b.tulis = hasilDariTulis(r, setelan.kering);

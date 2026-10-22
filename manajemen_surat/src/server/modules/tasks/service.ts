@@ -30,6 +30,7 @@ import { getPositionsFromDb, requireActorUser } from "@/server/modules/organizat
 import { daftarAksesTerbaru } from "@/server/modules/satker/akses-global";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { pemberitahuanTundaOtomatis } from "@/server/modules/tunda-otomatis/layanan";
+import { pemberitahuanPutusOtomatis } from "@/server/modules/putus-otomatis/layanan";
 
 export type TaskQuery = {
   source?: string | null;
@@ -1183,17 +1184,16 @@ async function buildEStatusTaskSource(
  */
 async function buildTundaOtomatisTasks(db: AletaDatabase, readSet: Set<string>, actor: Awaited<ReturnType<typeof requireActorUser>>): Promise<TaskItem[]> {
   try {
-    const daftar = await pemberitahuanTundaOtomatis(db, {
-      nama: String(actor.name || ""),
-      lihatSemua: isPrivilegedAdmin(actor),
-      cocokNama: namaAdaDi,
-    });
+    const opsi = { nama: String(actor.name || ""), lihatSemua: isPrivilegedAdmin(actor), cocokNama: namaAdaDi };
+    // Putus otomatis (22 Okt): peringatan pagi "akan diputus otomatis" dan hasilnya - mendesak.
+    const putus = await pemberitahuanPutusOtomatis(db, opsi).catch(() => []);
+    const daftar = [...putus, ...(await pemberitahuanTundaOtomatis(db, opsi))];
     return daftar.map((p) => ({
       id: `system_task:${p.id}`,
       entityType: "system_task" as const,
       entityId: p.id,
       sourceApp: "aleta-bot",
-      sourceLabel: "Tunda otomatis",
+      sourceLabel: p.id.startsWith("putus") ? "Putus otomatis" : "Tunda otomatis",
       title: p.judul,
       description: p.uraian,
       href: "/aleta-ecourt#tunda-otomatis",
@@ -1201,7 +1201,7 @@ async function buildTundaOtomatisTasks(db: AletaDatabase, readSet: Set<string>, 
       priority: p.penting ? ("urgent" as const) : ("normal" as const),
       sourceType: "system_task" as const,
       createdAt: p.waktu,
-      footer: "Tunda otomatis",
+      footer: p.id.startsWith("putus") ? "Putus otomatis" : "Tunda otomatis",
       seen: isSeen(readSet, "system_task", p.id),
     }));
   } catch {

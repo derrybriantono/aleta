@@ -147,6 +147,9 @@ async function jalankanHasilSidang(jalan, badan = {}, konteks = {}, deps = layan
           jamSekarang: String(badan.jamSekarang || ""),
           dihadiriOleh: badan.dihadiriOleh,
           tulisPutusan: badan.tulisPutusan === true,
+          // Putus otomatis gugur/NO (22 Okt): penjaga baca-ulang sebelum menulis.
+          otomatis: badan.otomatis === true,
+          tanggalSidangHarap: String(badan.tanggalSidangHarap || ""),
           ruanganIdSidang: badan.ruanganIdSidang,
           sidangKelilingSidang:
             typeof badan.sidangKelilingSidang === "boolean" ? badan.sidangKelilingSidang : undefined,

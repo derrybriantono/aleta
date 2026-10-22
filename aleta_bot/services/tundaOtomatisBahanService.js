@@ -39,7 +39,7 @@ async function bahanSidang(jadwalId, deps = depsBawaan()) {
   if (status !== 200 || !body || !body.ok) return { ok: false, alasan: (body && body.alasan) || "jadwal_tidak_ketemu" };
   const keadaan = body.keadaan;
   const keliling = bersih(keadaan.sidangKeliling) === "Y";
-  const [kalender, kontak, kunci, kelilingBerikut] = await Promise.all([
+  const [kalender, kontak, kunci, kelilingBerikut, panggilanTergugat] = await Promise.all([
     deps.hasil.kalenderPerkara(keadaan.perkaraId).catch(() => null),
     deps.kontak
       .kontakPerkara(keadaan.perkaraId)
@@ -49,6 +49,10 @@ async function bahanSidang(jadwalId, deps = depsBawaan()) {
       .then(() => deps.kunci().lihat(keadaan.perkaraId))
       .catch(() => ({ aktif: false, tidakTerbaca: true })),
     keliling ? deps.hasil.tanggalKelilingLokasi(keadaan.ruangan, keadaan.tanggalSidang).catch(() => null) : Promise.resolve(null),
+    // Aturan 4 (keputusan 22 Okt): cara panggil Tergugat terakhir - elektronik = 7 hari.
+    typeof deps.hasil.caraPanggilTergugatTerakhir === "function"
+      ? deps.hasil.caraPanggilTergugatTerakhir(keadaan.perkaraId, keadaan.jadwalId).catch(() => null)
+      : Promise.resolve(null),
   ]);
   return {
     ok: true,
@@ -60,6 +64,7 @@ async function bahanSidang(jadwalId, deps = depsBawaan()) {
     kontak,
     kunci: { aktif: Boolean(kunci && kunci.aktif), tidakTerbaca: Boolean(kunci && kunci.tidakTerbaca), oleh: bersih(kunci && kunci.oleh) },
     kelilingBerikut,
+    panggilanTergugat,
   };
 }
 

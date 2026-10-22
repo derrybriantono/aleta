@@ -17,11 +17,19 @@ export function TanyaJamKerja({
   pesan,
   sibuk,
   onPilih,
+  bawaan = "antrekan",
 }: {
   pesan: string;
   sibuk?: boolean;
   onPilih: (pilihan: PilihJamKerja) => void;
+  /**
+   * Pilihan bawaan (fokus pertama). Tunda dan keterangan putus: "sekarang" -
+   * keputusan pengguna 22 Okt 2026, tidak pernah pindah ke hari berikutnya; antrean
+   * hanya ditawarkan bot bila jam kerja berikutnya masih hari itu.
+   */
+  bawaan?: PilihJamKerja;
 }) {
+  const sekarangDulu = bawaan === "sekarang";
   return (
     <div
       role="alertdialog"
@@ -33,12 +41,25 @@ export function TanyaJamKerja({
         <span>{pesan || "Sekarang di luar jam kerja. Tulisan ini akan dikerjakan pada jam kerja berikutnya."}</span>
       </p>
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" autoFocus disabled={sibuk} onClick={() => onPilih("antrekan")}>
-          Antrekan
-        </Button>
-        <Button size="sm" variant="outline" disabled={sibuk} onClick={() => onPilih("sekarang")}>
-          Tulis sekarang
-        </Button>
+        {sekarangDulu ? (
+          <>
+            <Button size="sm" autoFocus disabled={sibuk} onClick={() => onPilih("sekarang")}>
+              Tulis sekarang
+            </Button>
+            <Button size="sm" variant="outline" disabled={sibuk} onClick={() => onPilih("antrekan")}>
+              Antrekan (hari ini)
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button size="sm" autoFocus disabled={sibuk} onClick={() => onPilih("antrekan")}>
+              Antrekan
+            </Button>
+            <Button size="sm" variant="outline" disabled={sibuk} onClick={() => onPilih("sekarang")}>
+              Tulis sekarang
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

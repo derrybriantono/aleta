@@ -69,6 +69,17 @@ export async function register() {
     mulaiTundaOtomatisBerkala(getDatabase);
   }
   /* === AKHIR TUNDA OTOMATIS === */
+  /* === PUTUS OTOMATIS 22 Okt === gugur / tidak dapat diterima: saklar TERPISAH (bawaan MATI, mode kering, Super Admin);
+     pagi hari menyusun calon + pemberitahuan, jam pemicu (16.30 / 14.00 keliling) mencatat keterangan putus lewat penulis
+     putus yang ada dan (sub-pilihan) menjadwalkan e-Doc. Matikan seluruhnya dengan ALETA_PUTUS_OTOMATIS=0. */
+  if (process.env.ALETA_PUTUS_OTOMATIS !== "0") {
+    const [{ mulaiPutusOtomatisBerkala }, { getDatabase }] = await Promise.all([
+      import("@/server/modules/putus-otomatis/layanan"),
+      import("@/server/db/client"),
+    ]);
+    mulaiPutusOtomatisBerkala(getDatabase);
+  }
+  /* === AKHIR PUTUS OTOMATIS === */
   if (process.env.ALETA_SINKRON_PENJADWAL === "0") return;
   const { mulaiPenjadwalSinkron } = await import("@/server/modules/sinkron/penjadwal");
   mulaiPenjadwalSinkron();

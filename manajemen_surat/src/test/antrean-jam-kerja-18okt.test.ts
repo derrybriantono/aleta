@@ -288,8 +288,8 @@ describe("gerbang manual", () => {
     const jam = { kini: "2026-10-23 19:00:00" };
     const g = await antreanDengan(dbTiruan(), jam, { libur: () => false }).gerbangManual({
       badan: dasar,
-      jenis: "sidang-tunda",
-      kunci: "sidang-tunda:20400",
+      jenis: "kasir-manual", // 22 Okt: tunda/putus kini tidak pernah pindah hari - aturan lama diuji pada jenis lain
+      kunci: "kasir-manual:20400",
       muatan: { badan: dasar },
     });
     expect(g?.status).toBe(200);
@@ -306,7 +306,7 @@ describe("gerbang manual", () => {
     const db = dbTiruan();
     const jam = { kini: "2026-10-23 19:00:00" };
     const a = antreanDengan(db, jam, { libur: () => false });
-    const antre = await a.gerbangManual({ badan: { ...dasar, jamKerja: "antrekan" }, jenis: "sidang-tunda", kunci: "sidang-tunda:20400", muatan: { badan: dasar } });
+    const antre = await a.gerbangManual({ badan: { ...dasar, jamKerja: "antrekan" }, jenis: "kasir-manual", kunci: "kasir-manual:20400", muatan: { badan: dasar } });
     expect(antre?.body).toMatchObject({ ok: true, diantrekan: true });
     expect(db.baris).toHaveLength(1);
     expect(JSON.parse(db.baris[0].muatan)).toMatchObject({ badan: dasar, jamKerja: "sekarang" });
