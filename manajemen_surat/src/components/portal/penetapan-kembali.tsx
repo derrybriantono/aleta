@@ -175,10 +175,12 @@ const WARNA: Record<HasilButir["keadaan"], string> = {
   dilewati: "border-border text-muted-foreground",
 };
 
-export function TombolPenetapanKembali({ sidang }: { sidang: ReadonlyArray<{ perkaraId: string; nomorPerkara: string }> }) {
+/**
+ * Hak memakai Penetapan kembali - dibaca sekali dari server. Dipakai tombolnya
+ * sendiri maupun menu alat Jadwal Sidang (butirnya baru ada bila hak ini ada).
+ */
+export function useBolehPenetapanKembali(): boolean {
   const [boleh, setBoleh] = useState(false);
-  const [terbuka, setTerbuka] = useState(false);
-
   useEffect(() => {
     let hidup = true;
     void bolehPenetapanKembali().then((x) => {
@@ -188,6 +190,12 @@ export function TombolPenetapanKembali({ sidang }: { sidang: ReadonlyArray<{ per
       hidup = false;
     };
   }, []);
+  return boleh;
+}
+
+export function TombolPenetapanKembali({ sidang }: { sidang: ReadonlyArray<{ perkaraId: string; nomorPerkara: string }> }) {
+  const boleh = useBolehPenetapanKembali();
+  const [terbuka, setTerbuka] = useState(false);
 
   if (!boleh) return null;
   return (

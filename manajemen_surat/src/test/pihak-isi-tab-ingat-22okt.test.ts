@@ -320,17 +320,18 @@ describe("D. aturan pengingat (murni) - satu sumber dengan bot", () => {
     tutup();
   });
 
-  it("bentuk: NIK KTP dan nomor KK 16 angka; paspor bebas bila wajar; telepon Indonesia", () => {
+  it("hanya nilai SK (terisi atau belum): panjang NIK/KK dan bentuk telepon tidak diperiksa (keputusan 22 Okt)", () => {
     const { pl, tutup } = PL();
     const pesan = (x: any) => pl.periksaIdentitas(x).map((m: any) => m.pesan);
-    expect(pesan({ jenis: "4", nomor: "720301123456", telp: "081234567890" })).toEqual(["NIK KTP harus 16 angka (sekarang 12)."]);
-    expect(pesan({ jenis: "4", nomor: "7203011234560001", telp: "081234567890" })).toEqual([]);
-    expect(pesan({ jenis: "4", nomor: "7203 0112 3456 0001", telp: "+6281234567890" })).toEqual([]);
-    expect(pesan({ jenis: "2", nomor: "7203011234560", telp: "08123456789" })).toEqual(["Nomor KK harus 16 angka (sekarang 13)."]);
-    expect(pesan({ jenis: "5", nomor: "B1234567", telp: "6281234567890" })).toEqual([]);
-    expect(pesan({ jenis: "5", nomor: "-", telp: "081234567890" })).toEqual(["Nomor identitas tampak tidak wajar."]);
-    expect(pesan({ jenis: "4", nomor: "7203011234560001", telp: "123" })[0]).toMatch(/^Nomor telepon tampak tidak wajar/);
-    expect(pesan({ jenis: "4", nomor: "7203011234560001", telp: "08123" })[0]).toMatch(/tidak wajar/);
+    expect(pesan({ jenis: "4", nomor: "720301123456", telp: "081234567890" })).toEqual([]);
+    expect(pesan({ jenis: "2", nomor: "7203011234560", telp: "08123" })).toEqual([]);
+    expect(pesan({ jenis: "5", nomor: "-", telp: "123" })).toEqual([]);
+    expect(pesan({ jenis: "4", nomor: "7203011234560001", telp: "+6281234567890" })).toEqual([]);
+    expect(pesan({ jenis: "", nomor: "", telp: "" })).toEqual([
+      "Jenis identitas belum dipilih.",
+      "Nomor identitas belum diisi.",
+      "Nomor telepon belum diisi.",
+    ]);
     // medan yang tidak ada/tersembunyi tidak diperiksa
     expect(pl.periksaIdentitas({ jenisAda: false, nomorAda: false, telpAda: false, jenis: "", nomor: "", telp: "" })).toEqual([]);
     tutup();
@@ -359,12 +360,8 @@ describe("D. pengingat merah di halaman", () => {
     jenis.dispatchEvent(new h.w.Event("change", { bubbles: true }));
     isi(h, "pihak_no_identitas", "72030112345");
     isi(h, "pihak_no_tlp", "0812");
-    await sampai(() => !merah(h, "pihak_jenis_identitas") && pesanDi(h, "pihak_no_identitas").startsWith("NIK KTP harus 16 angka"), "jenis benar, NIK salah");
-    expect(pesanDi(h, "pihak_no_tlp")).toMatch(/tidak wajar/);
-
-    isi(h, "pihak_no_identitas", "7203011234560001");
-    isi(h, "pihak_no_tlp", "081234567890");
-    await sampai(() => !merah(h, "pihak_no_identitas") && !merah(h, "pihak_no_tlp"), "semua benar");
+    // NIK 11 angka dan telepon pendek tetap dianggap terisi - hanya nilai SK yang diperiksa.
+    await sampai(() => !merah(h, "pihak_jenis_identitas") && !merah(h, "pihak_no_identitas") && !merah(h, "pihak_no_tlp"), "semua terisi");
     expect(pesanDi(h, "pihak_no_identitas")).toBe("");
     expect(pesanDi(h, "pihak_no_tlp")).toBe("");
 

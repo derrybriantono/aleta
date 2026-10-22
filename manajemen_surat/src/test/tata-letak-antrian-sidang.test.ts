@@ -63,91 +63,56 @@ describe("butir 2 - kotak pencarian dan temannya", () => {
 
   it("Pencarian lanjutan, x dari y, dan Reset ADA di baris pencarian", () => {
     const i = layar.indexOf("LEBARNYA DIBATASI, DAN TEMANNYA DI SEBELAHNYA");
-    // 4500 sejak 19 Okt 2026: kotak cari memuat petunjuk kata kunci (JADWAL-3 butir 1).
-    const blok = layar.slice(i, i + 4500);
+    // 9000 sejak 22 Okt 2026: Cetak dan Menu ikut pindah ke baris ini.
+    const blok = layar.slice(i, i + 9000);
     expect(blok).toContain("Pencarian lanjutan");
     expect(blok).toContain("dari {sidang.length} perkara");
     expect(blok).toContain("resetSemuaSaringan");
   });
 
-  it("ketiganya TIDAK tertinggal juga di baris tombol tindakan", () => {
+  it("Pencarian lanjutan hanya satu tombol, dan baris tombol tindakan lama sudah tiada", () => {
     // Dua salinan tombol yang sama pada satu layar adalah cacat yang paling
     // mudah lahir dari pemindahan - yang lama lupa dibuang, dan keduanya
     // tampak sah.
     // Yang dihitung TULISAN TOMBOLNYA - simpul teks JSX yang berdiri sendiri
-    // di satu baris - bukan penyebutannya. Catatan di atas kodenya memang
-    // menyebut namanya untuk menerangkan kepindahannya, dan penjaga yang
-    // melarang katanya akan melarang keterangannya juga.
+    // di satu baris - bukan penyebutannya.
     const sebagaiTombol = layar.match(/\n\s+Pencarian lanjutan\n/g) ?? [];
     expect(sebagaiTombol.length, "tombol Pencarian lanjutan lebih dari satu").toBe(1);
-
-    // Reset yang KEDUA bukan salinan: ia tombol pemulih pada baris "tidak ada
-    // hasil", yang justru hanya muncul ketika tabelnya kosong. Karena itu
-    // yang diperiksa BUKAN jumlahnya, melainkan bahwa baris tombol tindakan
-    // tidak lagi memuat satu pun dari ketiganya.
-    const iTindak = layar.indexOf("BARIS TOMBOL TINDAKAN - DAPAT DICIUTKAN SENDIRI");
-    expect(iTindak, "baris tombol tindakan tidak ditemukan").toBeGreaterThan(-1);
-    const barisTindak = layar.slice(iTindak, layar.indexOf("Daftarkan ke antrian", iTindak) + 400);
-    expect(barisTindak, "Pencarian lanjutan tertinggal di baris tindakan").not.toContain(
-      "setLanjutTerbuka"
-    );
-    expect(barisTindak, "Reset tertinggal di baris tindakan").not.toContain("resetSemuaSaringan");
+    // 22 Okt 2026: baris alat diganti SATU tombol Menu di baris pencarian.
+    expect(layar).not.toContain("BARIS TOMBOL TINDAKAN - DAPAT DICIUTKAN SENDIRI");
   });
 });
 
-describe("butir 8 - baris tombol tindakan dapat diciutkan", () => {
-  it("punya keadaannya sendiri, terpisah dari kendaliCiut", () => {
-    // kendaliCiut menyembunyikan SELURUH kendali termasuk pencarian. Yang ini
-    // hanya tombol tindakan.
-    // 6 Okt 2026: bawaannya terciut (ALAT_CIUT_BAWAAN) - lihat jadwal-sidang-6okt-sore.test.tsx.
-    expect(layar).toContain("const [alatCiut, setAlatCiut] = useState(ALAT_CIUT_BAWAAN);");
-    expect(layar).toContain("(kendaliCiut || alatCiut) && \"hidden\"");
+describe("22 Okt 2026 - baris alat diganti satu tombol Menu", () => {
+  it("tidak ada lagi penciut baris alat: alatCiut, ALAT_CIUT_BAWAAN, ikon pembentang", () => {
+    expect(layar).not.toContain("setAlatCiut");
+    expect(layar).not.toContain("ALAT_CIUT_BAWAAN");
+    expect(layar).not.toContain("Tampilkan tombol tindakan");
   });
 
-  it("barisnya HILANG saat diciutkan - itulah yang menaikkan kotak penanda", () => {
-    // Dikosongkan tidak cukup: baris kosong tetap memakan tinggi, dan yang
-    // diminta pengguna justru deretan penanda naik menempati tempatnya.
-    const i = layar.indexOf("BARIS TOMBOL TINDAKAN - DAPAT DICIUTKAN SENDIRI");
-    expect(i).toBeGreaterThan(-1);
-    const blok = layar.slice(i, i + 2200);
-    expect(blok).toContain('"hidden"');
-  });
-
-  it("JALAN KEMBALINYA tidak ikut hilang", () => {
-    // Tombol yang menyembunyikan dirinya sendiri tanpa jalan kembali mengubah
-    // penciutan menjadi penghapusan: yang menekannya sekali harus memuat
-    // ulang halaman untuk mendapatkannya lagi. Ikon pembentangnya karena itu
-    // pindah ke deretan penanda yang naik.
-    const i = layar.indexOf("JALAN KEMBALI KE TOMBOL TINDAKAN YANG DICIUTKAN");
-    expect(i, "ikon pembentang tidak ditemukan").toBeGreaterThan(-1);
-    const blok = layar.slice(i, i + 1400);
-    expect(blok).toContain("{alatCiut && !modeUrl ? (");
-    expect(blok).toContain("setAlatCiut(false)");
-    expect(blok).toContain("aria-label=\"Tampilkan tombol tindakan\"");
-  });
-
-  it("pembentangnya berada di deretan penanda, BUKAN di baris yang disembunyikan", () => {
-    const iCiut = layar.indexOf("onClick={() => setAlatCiut(true)}");
-    const iBentang = layar.indexOf("onClick={() => setAlatCiut(false)}");
-    const iPenanda = layar.indexOf("onClick={alihkanSeluruhPenanda}");
-    expect(iCiut).toBeGreaterThan(-1);
-    expect(iBentang).toBeGreaterThan(iCiut);
-    // Pembentang duduk tepat sebelum saklar penanda - artinya di dalam
-    // deretan yang naik, bukan di baris yang hilang.
-    expect(iBentang).toBeLessThan(iPenanda);
+  it("urutan di baris pencarian: Pencarian lanjutan, Cetak, Menu", () => {
+    const i = layar.indexOf("LEBARNYA DIBATASI, DAN TEMANNYA DI SEBELAHNYA");
+    const blok = layar.slice(i);
+    const iLanjut = blok.indexOf("setLanjutTerbuka((buka) => !buka)");
+    const iCetak = blok.indexOf("<Printer ");
+    const iMenu = blok.indexOf("<MenuAlatJadwal");
+    expect(iLanjut).toBeGreaterThan(-1);
+    expect(iCetak).toBeGreaterThan(iLanjut);
+    expect(iMenu).toBeGreaterThan(iCetak);
+    expect(layar.match(/<MenuAlatJadwal/g)).toHaveLength(1);
   });
 });
 
 describe("butir 7 - dua tombol tidak boleh bernama sama", () => {
-  it('tombol layar ruang tunggu berbunyi "Layar antrian", bukan "Tampilan"', () => {
+  it('butir menu layar ruang tunggu berbunyi "Layar antrian", bukan "Tampilan"', () => {
     // Dua tombol sewarna dan sebentuk dengan satu nama pada layar yang sama,
     // mengerjakan hal yang sama sekali berbeda: yang satu menyetel kepadatan
     // daftar, yang lain membuka layar untuk televisi ruang tunggu.
-    const i = layar.indexOf("function MenuLayarAntrian()");
+    const i = layar.indexOf('kunci: "layar-antrian"');
     expect(i).toBeGreaterThan(-1);
-    const blok = layar.slice(i, i + 1600);
-    expect(blok).toContain("Layar antrian");
-    expect(blok, 'masih memakai nama "Tampilan"').not.toMatch(/<MonitorPlay[^>]*\/>\s*\n\s*Tampilan\s*\n/);
+    const blok = layar.slice(i, i + 900);
+    expect(blok).toContain('label: "Layar antrian"');
+    expect(blok, 'masih memakai nama "Tampilan"').not.toMatch(/label: "Tampilan"/);
   });
 
   it('kata "Tampilan" sebagai nama tombol hanya tinggal satu', () => {

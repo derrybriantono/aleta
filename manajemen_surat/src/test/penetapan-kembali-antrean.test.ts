@@ -199,12 +199,14 @@ describe("sambungan: portal, bot, dan satu baris tombol", () => {
     expect(r).toContain("const kering = badan.kering !== false;");
   });
 
-  it("Jadwal Sidang: tombol tepat sebelum 'Daftarkan ke antrian'", () => {
+  it("Jadwal Sidang: butir Menu 'Penetapan kembali' tepat sebelum 'Daftarkan ke antrian' (22 Okt 2026)", () => {
     const s = baca("manajemen_surat/src/components/portal/aleta-ecourt-sidang.tsx");
-    const tombol = s.indexOf("<TombolPenetapanKembali sidang={sidang} />");
-    const antrian = s.indexOf('{tampil(tampilan, "daftar-antrian") ? (');
-    expect(tombol).toBeGreaterThan(0);
-    expect(antrian).toBeGreaterThan(tombol);
-    expect(s.slice(tombol, antrian)).not.toMatch(/<Button/);
+    const butir = s.indexOf('kunci: "penetapan-kembali"');
+    const antrian = s.indexOf('kunci: "daftar-antrian"');
+    expect(butir).toBeGreaterThan(0);
+    expect(antrian).toBeGreaterThan(butir);
+    // Hak dan saklar tampilannya tetap menjaga butir ini; dialognya dipegang layar, di luar menu.
+    expect(s).toContain('if (tampil(tampilan, "tombol-penetapan-kembali") && bolehPenetapanKembali) {');
+    expect(s).toContain("<PopupPenetapanKembali sidang={sidang}");
   });
 });
