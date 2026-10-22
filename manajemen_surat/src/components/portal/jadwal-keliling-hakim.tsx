@@ -109,10 +109,15 @@ export function useKelilingHakim({ tanggal, nyala }: { tanggal: string; nyala: b
   const [bolehHakim, setBolehHakim] = useState(false);
   const [galat, setGalat] = useState("");
   const [muatKe, setMuatKe] = useState(0);
+  // Cacah penulisan saklar. Bacaan yang DIMULAI sebelum saklar diubah (atau selagi
+  // diubah) membawa keadaan lama; tanpa penjaga ini ia bisa mendarat sesudah
+  // jawaban penyimpanan dan menyalakan kembali menu yang baru dimatikan.
+  const tulisKe = useRef(0);
 
   useEffect(() => {
     if (!nyala || !/^\d{4}-\d{2}-\d{2}$/.test(tanggal)) return;
     let batal = false;
+    const mulai = tulisKe.current;
     void (async () => {
       try {
         const [k, h] = await Promise.all([
@@ -124,7 +129,7 @@ export function useKelilingHakim({ tanggal, nyala }: { tanggal: string; nyala: b
           ),
         ]);
         if (batal) return;
-        setKeliling(k.keliling ?? null);
+        if (tulisKe.current === mulai) setKeliling(k.keliling ?? null);
         setBolehKeliling(Boolean(k.bolehUbah));
         setPilihan({ tanggal, peta: h.pilihan ?? {} });
         setCalon(Array.isArray(h.calon) ? h.calon : []);
@@ -144,14 +149,20 @@ export function useKelilingHakim({ tanggal, nyala }: { tanggal: string; nyala: b
 
   const ubahKeliling = useCallback(
     async (aktif: boolean) => {
-      const r = await fetch(apiPath("/api/aleta-ecourt/sidang/keliling"), {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tanggal, aktif }),
-      });
-      const isi = await bukaBungkus<{ keliling?: KelilingHariLayar }>(r);
-      if (isi.keliling) setKeliling(isi.keliling);
-      return isi.keliling ?? null;
+      tulisKe.current += 1;
+      try {
+        const r = await fetch(apiPath("/api/aleta-ecourt/sidang/keliling"), {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ tanggal, aktif }),
+        });
+        const isi = await bukaBungkus<{ keliling?: KelilingHariLayar }>(r);
+        if (isi.keliling) setKeliling(isi.keliling);
+        return isi.keliling ?? null;
+      } finally {
+        // Bacaan yang berangkat selagi PUT berjalan juga sudah usang.
+        tulisKe.current += 1;
+      }
     },
     [tanggal]
   );
@@ -185,6 +196,9 @@ export function useKelilingHakim({ tanggal, nyala }: { tanggal: string; nyala: b
   );
 
   const berlaku = nyala && keliling?.tanggal === tanggal;
+  // Saklar Sidang keliling tanggal ini MENYALA. `keliling` sendiri berisi catatan hari
+  // itu - juga yang sudah dimatikan - jadi BUKAN dasar untuk menampilkan menu hakim.
+  const kelilingAktif = berlaku && Boolean(keliling?.aktif);
   const pilihan = nyala && pilihanData.tanggal === tanggal ? pilihanData.peta : KOSONG;
   return {
     tanggal,
@@ -193,7 +207,10 @@ export function useKelilingHakim({ tanggal, nyala }: { tanggal: string; nyala: b
     pilihan,
     calon,
     alasanCalon,
-    bolehHakim: berlaku && bolehHakim,
+    kelilingAktif,
+    // Menu pilih hakim (hakim per perkara + konseptor sementara) hanya saat saklar menyala.
+    // Pilihan yang sudah tersimpan TIDAK dihapus - hanya menunya yang disembunyikan.
+    bolehHakim: kelilingAktif && bolehHakim,
     galat,
     muatUlang,
     ubahKeliling,
@@ -457,7 +474,7 @@ export function PemilihHakimBaris({ baris, kh }: { baris: BarisJadwalMin; kh: Ke
   const tutup = useCallback(() => setBuka(false), []);
   const wadah = useTutupLuar(buka, tutup);
   const kini = kh.pilihan[String(baris.perkaraId)];
-  if (!kh.keliling || (!kh.bolehHakim && !kini)) return null;
+  if (!kh.kelilingAktif || (!kh.bolehHakim && !kini)) return null;
 
   const simpan = async (isian: IsianHakimLayar, timpa = false) => {
     setSibuk(true);
