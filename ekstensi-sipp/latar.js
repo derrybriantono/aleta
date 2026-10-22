@@ -786,8 +786,8 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
   if (!pesan || pesan.sumber !== "aleta-panel") return undefined;
 
   // Menu ABT By Derry / ALETA di bilah atas SIPP (22 Okt 2026) - lihat menu-atas.js.
-  if (pesan.jenis === "menu-buka-tab") {
-    layaniMenuBukaTab(pesan, pengirim)
+  if (pesan.jenis === "menu-buka-tab" || pesan.jenis === "menu-ecourt-buka" || pesan.jenis === "menu-ecourt-nama") {
+    (pesan.jenis === "menu-buka-tab" ? layaniMenuBukaTab(pesan, pengirim) : layaniMenuEcourt(pesan, pengirim))
       .then(jawab)
       .catch(() => jawab({ ok: false, sebab: "gagal" }));
     return true; // jawaban menyusul
@@ -3421,9 +3421,75 @@ async function layaniMenuBukaTab(pesan, pengirim) {
   let url = "";
   if (tujuan === "abt") url = `${asal}/aps_badilag/abt/main/beranda#aleta-derry=1`;
   else if (tujuan === "aleta") url = `${asal}/aleta`;
+  // Menu "E-Court": formulir "Akun e-Court saya" di portal, dengan penanda asal supaya portal menyebut perannya.
+  else if (tujuan === "formulir-ecourt") url = `${asal}/aleta/admin/aleta-ecourt?dari=menu#sesi-ecourt-saya`;
   if (!url) return { ok: false, sebab: "tujuan tidak dikenal" };
   const tab = await chrome.tabs.create({ url, active: true });
   return { ok: true, tab: tab && tab.id };
+}
+
+/*
+ * Menu "E-Court" di bilah atas SIPP (22 Okt 2026) - lihat menu-atas.js dan ecourt-masuk.js.
+ *
+ *   menu-ecourt-buka  (dari halaman SIPP)  membuka tab BARU ke alamat e-Court yang TETAP di sini dan
+ *       mencatat tab itu di chrome.storage.session: { surel, saat }. Yang dititipkan hanya SUREL
+ *       akun e-Court milik pengguna - sandi tidak pernah sampai ke ekstensi (disandi di bot).
+ *   menu-ecourt-nama  (dari tab e-Court itu)  dijawab HANYA untuk tab yang dicatat tadi:
+ *       { ok, surel, jaga }. Tab e-Court lain (dibuka pengguna sendiri) dijawab ok:false dan tidak
+ *       disentuh sama sekali. Catatan hidup 12 jam lalu dibuang; catatan basi dibersihkan saat
+ *       membuka tab baru.
+ */
+const URL_ECOURT_MASUK = "https://ecourt.mahkamahagung.go.id/Login";
+const HOST_ECOURT = "ecourt.mahkamahagung.go.id";
+const AWALAN_TAB_ECOURT = "menuEcourt:";
+const UMUR_TAB_ECOURT_MS = 12 * 60 * 60 * 1000;
+const BATAS_SUREL_ECOURT = 120;
+
+/** Surel/nama pengguna e-Court yang wajar; selain itu "" (tab tetap dibuka, tanpa pengisian). */
+function menuSurelBersih(nilai) {
+  const t = masukTeks(typeof nilai === "string" ? nilai.trim() : "", BATAS_SUREL_ECOURT);
+  return /^[^\s<>"'`\\]{1,120}$/.test(t) ? t : "";
+}
+
+async function layaniMenuEcourt(pesan, pengirim) {
+  const gudang = masukPenyimpanan();
+  if (!masukPengirimSah(pengirim)) return { ok: false, sebab: "pengirim tidak dikenal" };
+  const alamat = (pengirim && (pengirim.url || (pengirim.tab && pengirim.tab.url))) || "";
+
+  if (pesan.jenis === "menu-ecourt-buka") {
+    if (!gudang) return { ok: false, sebab: "chrome.storage.session tidak tersedia" };
+    if (masukJenisHalaman(alamat) !== "sipp") return { ok: false, sebab: "bukan halaman SIPP yang dikenal" };
+    const u = masukUrai(alamat) || {};
+    if (!["192.168.10.10", "127.0.0.1", "localhost"].includes(String(u.hostname || ""))) return { ok: false, sebab: "asal tidak dikenal" };
+    // Catatan basi dibersihkan lebih dulu (tab yang sudah lama ditutup).
+    try {
+      const semua = (await gudang.get(null)) || {};
+      const basi = Object.keys(semua).filter((k) => k.startsWith(AWALAN_TAB_ECOURT) && Date.now() - Number((semua[k] && semua[k].saat) || 0) > UMUR_TAB_ECOURT_MS);
+      if (basi.length) await gudang.remove(basi);
+    } catch {
+      /* pembersihan hanya pembantu */
+    }
+    const tab = await chrome.tabs.create({ url: URL_ECOURT_MASUK, active: true });
+    if (tab && typeof tab.id === "number") {
+      await gudang.set({ [`${AWALAN_TAB_ECOURT}${tab.id}`]: { surel: menuSurelBersih(pesan.surel), saat: Date.now() } });
+    }
+    return { ok: true, tab: tab && tab.id };
+  }
+
+  // menu-ecourt-nama: hanya dari halaman e-Court (https, host tepat) milik tab yang tercatat.
+  if (!gudang) return { ok: false, sebab: "chrome.storage.session tidak tersedia" };
+  const u = masukUrai(alamat);
+  if (!u || u.protocol !== "https:" || u.hostname !== HOST_ECOURT) return { ok: false, sebab: "bukan halaman e-Court" };
+  const idTab = pengirim && pengirim.tab && typeof pengirim.tab.id === "number" ? pengirim.tab.id : null;
+  if (idTab === null) return { ok: false, sebab: "tab tidak dikenal" };
+  const kunci = `${AWALAN_TAB_ECOURT}${idTab}`;
+  const isi = (await gudang.get(kunci))[kunci];
+  if (!isi || typeof isi !== "object") return { ok: false, sebab: "bukan tab dari menu" };
+  if (Date.now() - Number(isi.saat || 0) > UMUR_TAB_ECOURT_MS) {
+    await gudang.remove(kunci);
+    return { ok: false, sebab: "catatan tab kedaluwarsa" };
+  }
+  return { ok: true, surel: menuSurelBersih(isi.surel), jaga: true };
 }
 
 async function layaniMasuk(pesan, pengirim) {

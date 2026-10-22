@@ -153,6 +153,15 @@
     },
     {
       "matches": [
+        "https://ecourt.mahkamahagung.go.id/*"
+      ],
+      "js": [
+        "ecourt-masuk.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
         "http://192.168.10.10/SIPP/*",
         "http://192.168.10.10/aps_badilag/*",
         "http://192.168.10.10/aleta/*",

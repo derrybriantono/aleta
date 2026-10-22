@@ -195,10 +195,10 @@ describe("bilah atas SIPP: urutan, bentuk, dan tidak ganda", () => {
     await sampai(() => butir(h.d).includes("ABT By Derry"), "butir terpasang");
     const urut = butir(h.d);
     const i = urut.indexOf("Perdata");
-    expect(urut.slice(i, i + 4)).toEqual(["Perdata", "ABT By Derry", "ALETA", "Jinayat"]);
-    expect(urut.filter((x) => !["ABT By Derry", "ALETA"].includes(x))).toEqual(MENU_SIPP);
-    // tidak ada butir "E-Court" milik kita pada tahap ini; "e-Court" SIPP tetap satu
-    expect(urut.filter((x) => /^e-court$/i.test(x)).length).toBe(1);
+    expect(urut.slice(i, i + 5)).toEqual(["Perdata", "ABT By Derry", "ALETA", "E-Court", "Jinayat"]);
+    expect(urut.filter((x) => !["ABT By Derry", "ALETA", "E-Court"].includes(x))).toEqual(MENU_SIPP);
+    // butir "e-Court" milik SIPP sendiri tetap ada dan tidak tertukar dengan "E-Court" kita
+    expect(urut.filter((x) => x === "e-Court").length).toBe(1);
   });
 
   it("bentuknya SAMA dengan butir SIPP: li.has-sub > a + ul kosong, tanpa kelas/gaya ALETA di tautan", async () => {
@@ -228,23 +228,24 @@ describe("bilah atas SIPP: urutan, bentuk, dan tidak ganda", () => {
     const api = h.w.aletaMenuAtas;
     api.pasangMenu(h.d, {});
     api.pasangMenu(h.d, {});
-    expect(h.d.querySelectorAll('li[data-aleta-menu]').length).toBe(2);
+    expect(h.d.querySelectorAll('li[data-aleta-menu]').length).toBe(3);
     // SIPP memuat ulang sebagian halaman: bilah diganti utuh (butir kita hilang)
     h.d.getElementById("cssmenu")!.outerHTML = bilahSipp();
     expect(h.d.querySelectorAll('li[data-aleta-menu]').length).toBe(0);
-    await sampai(() => h.d.querySelectorAll('li[data-aleta-menu]').length === 2, "dipasang ulang oleh pengamat");
+    await sampai(() => h.d.querySelectorAll('li[data-aleta-menu]').length === 3, "dipasang ulang oleh pengamat");
     await tunggu(300);
     const urut = butir(h.d);
     const i = urut.indexOf("Perdata");
-    expect(urut.slice(i, i + 4)).toEqual(["Perdata", "ABT By Derry", "ALETA", "Jinayat"]);
-    expect(h.d.querySelectorAll('li[data-aleta-menu]').length).toBe(2);
+    expect(urut.slice(i, i + 5)).toEqual(["Perdata", "ABT By Derry", "ALETA", "E-Court", "Jinayat"]);
+    expect(h.d.querySelectorAll('li[data-aleta-menu]').length).toBe(3);
   });
 
   it("tanpa Perdata di akun itu: disisipkan sebelum Jinayat; halaman tanpa bilah (masuk SIPP): tidak ada yang ditambahkan", async () => {
     const h = bukaHalaman({ html: halamanSipp(["Perdata"]) });
     await sampai(() => butir(h.d).includes("ALETA"), "terpasang");
     const urut = butir(h.d);
-    expect(urut.slice(urut.indexOf("ABT By Derry"), urut.indexOf("ABT By Derry") + 3)).toEqual(["ABT By Derry", "ALETA", "Jinayat"]);
+    expect(urut.slice(urut.indexOf("ABT By Derry"), urut.indexOf("ABT By Derry") + 3)).toEqual(["ABT By Derry", "ALETA", "E-Court"]);
+    expect(urut[urut.indexOf("E-Court") + 1]).toBe("Jinayat");
     const masuk = bukaHalaman({ html: `<!doctype html><html><body><div id="cssmenu" style="height:15px;"></div></body></html>` });
     await tunggu(150);
     expect(masuk.d.querySelectorAll("[data-aleta-menu]").length).toBe(0);
@@ -274,7 +275,7 @@ describe("saklar di popup mematikan butir", () => {
     expect(h.d.querySelectorAll("[data-aleta-menu]").length).toBe(0);
     expect(butir(h.d)).toEqual(MENU_SIPP);
     await h.w.chrome.storage.local.set({ menuAtasSipp: true });
-    await sampai(() => h.d.querySelectorAll("[data-aleta-menu]").length === 2, "menyala");
+    await sampai(() => h.d.querySelectorAll("[data-aleta-menu]").length === 3, "menyala");
     await h.w.chrome.storage.local.set({ menuAtasSipp: false });
     await sampai(() => h.d.querySelectorAll("[data-aleta-menu]").length === 0, "padam");
     expect(butir(h.d)).toEqual(MENU_SIPP);
@@ -282,7 +283,7 @@ describe("saklar di popup mematikan butir", () => {
 
   it("bawaan MENYALA (kunci belum pernah ditulis)", async () => {
     const h = bukaHalaman();
-    await sampai(() => h.d.querySelectorAll("[data-aleta-menu]").length === 2, "menyala");
+    await sampai(() => h.d.querySelectorAll("[data-aleta-menu]").length === 3, "menyala");
     expect(h.lokal.menuAtasSipp).toBeUndefined();
   });
 });

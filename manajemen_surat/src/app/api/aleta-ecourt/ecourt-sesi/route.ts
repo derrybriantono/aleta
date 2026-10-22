@@ -11,6 +11,8 @@ import {
   panggilBot,
   sinkronLoginWa,
 } from "@/server/modules/aleta-ecourt/ecourt-aksi";
+import { periksaAkunSippTerbuka } from "@/server/modules/aleta-ecourt/ecourt-akun-pengguna";
+import { usernameSippDariPermintaan } from "@/server/modules/aleta-ecourt/ecourt-menu-sipp";
 import { requireActorUser } from "@/server/modules/organization/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { appendAuditLog } from "@/server/shared/audit";
@@ -56,6 +58,14 @@ export async function GET(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     const actor = await requireActorUser(db, actorUserId);
+    // Menu "E-Court" di bilah atas SIPP (?dariSipp=1): akun SIPP yang terbuka di peramban ini tidak boleh
+    // tertaut ke pengguna ALETA lain - lihat ecourt-menu-sipp.ts. Tanpa parameter, perilaku GET tidak berubah.
+    if (request.nextUrl.searchParams.get("dariSipp") === "1") {
+      const sipp = await periksaAkunSippTerbuka(db, actor.id, await usernameSippDariPermintaan(request.headers));
+      if (!sipp.ok) {
+        return ok({ tersedia: false, alasan: sipp.alasan, pesan: kalimatAlasan(sipp.alasan), sesi: [], akun: [], peranTersedia: [], jejak: [] });
+      }
+    }
     const hasil = await panggilBot<{
       sesi: SesiBaris[];
       akun?: AkunBaris[];

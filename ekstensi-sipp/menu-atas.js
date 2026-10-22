@@ -39,10 +39,25 @@
  * "ALETA" - tautan biasa ke portal (tab baru). Portal sendiri yang menampilkan
  *   beranda atau halaman masuk menurut keadaan sesinya.
  *
+ * "E-COURT" (butir ketiga, sesudah ALETA) - pintu ke https://ecourt.mahkamahagung.go.id/Login
+ *   lewat akun e-Court milik pengguna ALETA itu sendiri (peran e-Court mengikuti akunnya):
+ *   1. Wajib masuk ALETA (sama dengan ABT By Derry; sesi SIPP dicoba dulu).
+ *   2. Akun SIPP yang terbuka dijaga: tertaut ke pengguna ALETA lain -> ditolak
+ *      (server: periksaAkunSippTerbuka lewat ?dariSipp=1).
+ *   3. Belum menyimpan akun e-Court -> tab baru ke formulir "Akun e-Court saya" di portal
+ *      (penyimpanan sandi yang SUDAH ada: disandi di bot, tidak pernah dikirim balik).
+ *      Sesudah tersimpan, pengguna klik E-Court lagi.
+ *   4. Sudah ada -> tab baru ke halaman Login e-Court. Surel akun tersimpan diisikan ke
+ *      kolom nama pengguna (ecourt-masuk.js, lewat pekerja latar); sandi, captcha, dan
+ *      tombol masuk TIDAK pernah disentuh. Selama tab itu terbuka dan pengguna sudah
+ *      masuk, ecourt-masuk.js menjaga sesi tetap hidup dengan satu permintaan ringan
+ *      berkala ke halaman Login e-Court (yang mengalihkan bila sesinya sah).
+ *   Tidak satu kata pun milik ALETA ditulis ke halaman e-Court.
+ *
  * Hak: "ABT By Derry" hanya untuk akun yang boleh membuka Blangko Derry (admin,
  * hakim, panitera/pp, jurusita, ptsp - aturan berhakDaftar blangko-derry.js).
  * Selagi akunnya belum diketahui (belum masuk ALETA) butirnya tampil. Saklar di
- * popup ("menuAtasSipp", bawaan menyala) mematikan kedua butir.
+ * popup ("menuAtasSipp", bawaan menyala) mematikan ketiga butir.
  *
  * Tidak satu pun nilai ditulis ke isian SIPP/ABT; hanya label menu di tampilan
  * halaman (sama seperti tombol ALETA yang sudah ada di SIPP).
@@ -58,6 +73,11 @@
   const BATAS_NIAT_MS = 5 * 60 * 1000;
   const HASH_DERRY = "aleta-derry=1";
   const API_SIAPA = "/aleta/api/aleta-ecourt/ekstensi/siapa";
+  /** Sesi e-Court pribadi + akun e-Court tersimpan (surel, tanpa sandi). ?dariSipp=1 = penjaga identitas SIPP di server. */
+  const API_ECOURT_SESI = "/aleta/api/aleta-ecourt/ecourt-sesi?dariSipp=1";
+  /** Formulir "Akun e-Court saya" di portal (jalur di dalam portal, tanpa basePath). */
+  const JALUR_FORMULIR_ECOURT = "/admin/aleta-ecourt?dari=menu#sesi-ecourt-saya";
+  const URL_ECOURT_LOGIN = "https://ecourt.mahkamahagung.go.id/Login";
   const KUNCI_HAK = "aletaMenuAtasHak";
   const UMUR_HAK_MS = 5 * 60 * 1000;
   const KUNCI_ALIH = "aletaMenuAtasAlih";
@@ -68,6 +88,7 @@
   const BUTIR = [
     { kode: "abt", teks: "ABT By Derry", judul: "Blangko ABT by Derry Briantono: perkara, isian, dan cetak dalam satu halaman (tab baru)" },
     { kode: "aleta", teks: "ALETA", judul: "Portal ALETA (tab baru)" },
+    { kode: "ecourt", teks: "E-Court", judul: "e-Court Mahkamah Agung dengan akun e-Court Anda sendiri (tab baru)" },
   ];
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -125,8 +146,14 @@
   function alamatAleta(loc) {
     return `${(loc || location).origin}/aleta`;
   }
-  function alamatMasukAleta(loc) {
-    return `${alamatAleta(loc)}/login`;
+  /** Halaman masuk portal; `kembali` = jalur di dalam portal tujuan sesudah masuk (login/page.tsx tujuanKembaliAman). */
+  function alamatMasukAleta(loc, kembali) {
+    const dasar = `${alamatAleta(loc)}/login`;
+    return kembali ? `${dasar}?kembali=${encodeURIComponent(kembali)}` : dasar;
+  }
+  /** Formulir akun e-Court di portal (tab baru), dengan penanda asal supaya portal menyebut peran dan jalan pulang. */
+  function alamatFormulirEcourt(loc) {
+    return `${alamatAleta(loc)}${JALUR_FORMULIR_ECOURT}`;
   }
   /** Blangko ABT by Derry Briantono: beranda ABT dengan penanda niat di hash (tidak dikirim ke server ABT). */
   function alamatAbtDerry(loc) {
@@ -315,7 +342,93 @@
     return { ok: dibuka === true, sebab: dibuka ? "" : "tab-gagal" };
   }
 
-  const KLIK = { abt: klikAbtDerry };
+  // ──────────────────────────────────────────────────────────────────────────
+  // E-Court
+  // ──────────────────────────────────────────────────────────────────────────
+  /**
+   * Membaca akun e-Court tersimpan milik pengguna ALETA yang masuk (surel saja; sandinya tidak pernah keluar dari bot).
+   * Pulang { status: "ada", surel } | { status: "belum-ada" } | { status: "tak-bisa-periksa" } |
+   * { status: "sipp-orang-lain", pesan } | { status: "tak-didukung" } | { status: "belum-masuk" } | { status: "galat" }
+   */
+  async function bacaAkunEcourt() {
+    let r;
+    try {
+      r = await fetch(API_ECOURT_SESI, { credentials: "include", cache: "no-store" });
+    } catch {
+      return { status: "galat" };
+    }
+    if (r.status === 401 || r.status === 403) return { status: "belum-masuk" };
+    if (!r.ok) return { status: "galat" };
+    const j = await r.json().catch(() => null);
+    const d = j && typeof j === "object" ? (j.data !== undefined ? j.data : j) : null;
+    if (!d || typeof d !== "object") return { status: "galat" };
+    if (d.alasan === "akun_sipp_milik_pengguna_lain") return { status: "sipp-orang-lain", pesan: String(d.pesan || "") };
+    if (d.tersedia !== true) return { status: "tak-bisa-periksa" };
+    if (d.akunDidukung === false) return { status: "tak-didukung" };
+    const akun = (Array.isArray(d.akun) ? d.akun : []).filter((a) => a && a.adaSandi === true && sebaris(a.email));
+    if (!akun.length) return { status: "belum-ada" };
+    // Akun yang sesinya sedang tersambung didahulukan; selain itu yang terakhir diperbarui.
+    const tersambung = new Set((Array.isArray(d.sesi) ? d.sesi : []).filter((s) => s && s.keadaan === "tersambung").map((s) => s.peran));
+    akun.sort((a, b) => Number(tersambung.has(b.peran)) - Number(tersambung.has(a.peran)) || String(b.diperbaruiPada || "").localeCompare(String(a.diperbaruiPada || "")));
+    return { status: "ada", surel: sebaris(akun[0].email) };
+  }
+
+  const KEMBALI_ECOURT = JALUR_FORMULIR_ECOURT;
+
+  async function klikEcourt(opsi) {
+    const o = opsi || {};
+    const h = await pastikanMasukAleta(o);
+    if (h.status === "belum-masuk") {
+      kabar("Masuk ke ALETA dulu, lalu klik E-Court lagi. Sesudah masuk, formulir akun e-Court Anda terbuka.", { teks: "Masuk ke ALETA", href: alamatMasukAleta(o.loc, KEMBALI_ECOURT) }, o.doc);
+      return { ok: false, sebab: "belum-masuk" };
+    }
+    if (h.status !== "ok") {
+      kabar("ALETA belum dapat dihubungi. Coba lagi sebentar lagi.", null, o.doc);
+      return { ok: false, sebab: "tak-terjangkau" };
+    }
+    const a = await (o.bacaAkunEcourt || bacaAkunEcourt)();
+    if (a.status === "belum-masuk") {
+      kabar("Masuk ke ALETA dulu, lalu klik E-Court lagi.", { teks: "Masuk ke ALETA", href: alamatMasukAleta(o.loc, KEMBALI_ECOURT) }, o.doc);
+      return { ok: false, sebab: "belum-masuk" };
+    }
+    if (a.status === "sipp-orang-lain") {
+      kabar(a.pesan || "Akun SIPP yang terbuka tersimpan atas nama pengguna ALETA lain. Masuk ALETA dengan akun Anda sendiri.", null, o.doc);
+      return { ok: false, sebab: "sipp-orang-lain" };
+    }
+    if (a.status === "belum-ada" || a.status === "tak-bisa-periksa") {
+      const dibuka = await (o.bukaTab || bukaTab)("formulir-ecourt", alamatFormulirEcourt(o.loc));
+      kabar(
+        a.status === "belum-ada"
+          ? "Isi akun e-Court Anda dulu (sesuai akun e-Court Anda sendiri - ini menentukan peran Anda). Sesudah tersimpan, klik E-Court lagi."
+          : "ALETA belum dapat memeriksa akun e-Court Anda. Periksa atau isi akunnya di halaman yang dibuka, lalu klik E-Court lagi.",
+        null,
+        o.doc
+      );
+      return { ok: dibuka === true, sebab: "akun-belum-diisi" };
+    }
+    if (a.status === "tak-didukung") {
+      kabar("Penyimpanan akun e-Court belum didukung server ini, jadi e-Court dibuka tanpa pengisian nama pengguna.", null, o.doc);
+    } else if (a.status !== "ada") {
+      kabar("ALETA belum dapat memeriksa akun e-Court Anda. Coba lagi sebentar lagi.", null, o.doc);
+      return { ok: false, sebab: "tak-terjangkau" };
+    }
+    const dibuka = await (o.bukaEcourt || bukaEcourt)(a.status === "ada" ? a.surel : "");
+    return { ok: dibuka === true, sebab: dibuka ? "" : "tab-gagal", surel: a.status === "ada" };
+  }
+
+  /** Tab baru ke Login e-Court; pekerja latar mencatat surelnya untuk tab itu (skrip e-Court mengisinya, tanpa sandi). */
+  async function bukaEcourt(surel) {
+    const h = await kirimLatar({ jenis: "menu-ecourt-buka", surel: String(surel || "") });
+    if (h && h.ok) return true;
+    try {
+      const w = window.open(URL_ECOURT_LOGIN, "_blank", "noopener");
+      return w !== undefined;
+    } catch {
+      return false;
+    }
+  }
+
+  const KLIK = { abt: klikAbtDerry, ecourt: klikEcourt };
 
   // ──────────────────────────────────────────────────────────────────────────
   // Bilah menu SIPP

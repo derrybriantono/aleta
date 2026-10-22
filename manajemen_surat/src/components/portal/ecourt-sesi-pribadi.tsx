@@ -110,6 +110,8 @@ export function EcourtSesiPribadi() {
   /** Surel akun tersimpan yang dipakai login ini; kosong = surel+sandi diketik. */
   const [loginTersimpan, setLoginTersimpan] = useState("");
   const [simpanSaatMasuk, setSimpanSaatMasuk] = useState(false);
+  /** Dibuka dari menu "E-Court" di bilah atas SIPP (?dari=menu): menyebut perlunya akun sendiri dan jalan pulang. */
+  const [dariMenu, setDariMenu] = useState(false);
   /** Peran yang formulir "Akun e-Court saya"-nya sedang terbuka. */
   const [peranAkun, setPeranAkun] = useState("");
   const surelRef = useRef<HTMLInputElement | null>(null);
@@ -139,6 +141,17 @@ export function EcourtSesiPribadi() {
     const t = window.setTimeout(() => void muat(), 0);
     return () => window.clearTimeout(t);
   }, [muat]);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      try {
+        setDariMenu(new URLSearchParams(window.location.search).get("dari") === "menu");
+      } catch {
+        setDariMenu(false);
+      }
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, []);
 
   const kirimAksi = async (badan: Record<string, unknown>) => {
     const r = await fetch(apiPath("/api/aleta-ecourt/ecourt-sesi"), {
@@ -224,7 +237,13 @@ export function EcourtSesiPribadi() {
     setPesan("Menyimpan akun e-Court...");
     try {
       const d = await kirimAksi({ aksi: "simpan-akun", peran: peranAkun, email, sandi });
-      setPesan(d?.ok ? "Akun e-Court tersimpan. Tekan Uji masuk untuk memastikan e-Court menerimanya." : d?.pesan || "Akun belum tersimpan.");
+      setPesan(
+        d?.ok
+          ? dariMenu
+            ? "Akun e-Court tersimpan. Kembali ke SIPP lalu klik menu E-Court - e-Court terbuka di tab baru dengan surel Anda sudah terisi. Tekan Uji masuk bila ingin memastikan e-Court menerimanya."
+            : "Akun e-Court tersimpan. Tekan Uji masuk untuk memastikan e-Court menerimanya."
+          : d?.pesan || "Akun belum tersimpan."
+      );
       if (d?.ok) setPeranAkun("");
       await muat();
     } finally {
@@ -280,6 +299,13 @@ export function EcourtSesiPribadi() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
+        {dariMenu ? (
+          <p className="rounded-md bg-muted/40 p-3" data-dari-menu-ecourt="">
+            Menu E-Court di SIPP memerlukan akun e-Court Anda. Pilih peran Anda di bawah, tekan Simpan akun, lalu isi surel dan sandi
+            sesuai akun e-Court Anda sendiri - akun itulah yang menentukan peran Anda di e-Court. Sandi disandi di server dan tidak
+            pernah ditampilkan lagi; captcha tetap Anda ketik sendiri saat masuk.
+          </p>
+        ) : null}
         {memuat && !data ? <p className="text-muted-foreground">Memuat...</p> : null}
         {data && !data.tersedia ? <p className="text-amber-700 dark:text-amber-300">{data.pesan}</p> : null}
         {data?.tersedia ? (
