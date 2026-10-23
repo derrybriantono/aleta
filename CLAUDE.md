@@ -1,5 +1,7 @@
 # CLAUDE.md — ALETA: hemat token, tetap benar
 
+> **Sesi di CLOUD (claude.ai/code, lingkungan "Default")? Baca `AWAN.md` dulu** - mulai dari cabang `integrasi-1205-38`, bukan `main`; bagian laptop (drive D:, papan localhost, server 192.168.10.10) tidak berlaku.
+
 Prioritas: **hasil benar/terverifikasi > hemat token > cepat.** Jangan hemat token dengan melewati verifikasi.
 
 ## Pilih model & effort (oleh pengguna: pemilih model / `/model`, dan pengaturan effort)
