@@ -109,6 +109,18 @@
         "D:/aleta-dev/kerja"
       ],
       "port": 8098
+    },
+    {
+      "name": "portal-aleta-produksi",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "D:/aleta-dev/kerja/jalankan-portal-produksi.ps1"
+      ],
+      "port": 3000
     }
   ]
 }

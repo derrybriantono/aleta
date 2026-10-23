@@ -350,6 +350,11 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // 2 Oktober 2026 (0056): cap pengadilan untuk edoc penetapan. Tanpa kunci
   // asing - urutannya bebas.
   "aleta_ecourt_cap",
+  // 4 Oktober 2026 (0057): Agen ALETA - jejak, antrean, setelan. Tanpa
+  // kunci asing - urutannya bebas.
+  "aleta_agen_jejak",
+  "aleta_agen_antrean",
+  "aleta_agen_setelan",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

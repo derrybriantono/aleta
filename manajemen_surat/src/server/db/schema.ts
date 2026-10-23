@@ -244,6 +244,68 @@ export const DDL_ECOURT_CAP = {
   indeks: [`CREATE INDEX IF NOT EXISTS idx_ecourt_cap_peruntukan ON aleta_ecourt_cap(peruntukan, aktif)`],
 } as const;
 
+/**
+ * Agen ALETA tahap 1 - cermin PERSIS dari drizzle/0057_aleta_agen.sql
+ * (4 Okt 2026). Penjaga agen-tahap1.test.ts membandingkan konstanta ini
+ * dengan isi berkasnya.
+ */
+export const DDL_AGEN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_agen_jejak (
+  id TEXT PRIMARY KEY,
+  pengguna_id TEXT NOT NULL,
+  pengguna_nama TEXT NOT NULL DEFAULT '',
+  peran TEXT NOT NULL,
+  tugas TEXT NOT NULL,
+  kelas TEXT NOT NULL CHECK (kelas IN ('A', 'B', 'C')),
+  sistem TEXT NOT NULL CHECK (sistem IN ('aleta', 'sipp', 'abt', 'ecourt')),
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  ringkas TEXT NOT NULL,
+  rincian TEXT NOT NULL DEFAULT '',
+  sebelum_json TEXT NOT NULL DEFAULT '',
+  sesudah_json TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL CHECK (status IN ('dikerjakan', 'dicoba', 'gagal', 'dibatalkan', 'diurungkan', 'diketuk')),
+  alasan TEXT NOT NULL DEFAULT '',
+  alamat_ip TEXT NOT NULL DEFAULT '',
+  lewat TEXT NOT NULL DEFAULT 'ALETA',
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_agen_antrean (
+  id TEXT PRIMARY KEY,
+  pengguna_id TEXT NOT NULL,
+  peran TEXT NOT NULL,
+  tugas TEXT NOT NULL,
+  kelas TEXT NOT NULL CHECK (kelas IN ('B', 'C')),
+  sistem TEXT NOT NULL CHECK (sistem IN ('aleta', 'sipp', 'abt', 'ecourt')),
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  kunci TEXT NOT NULL,
+  ringkas TEXT NOT NULL,
+  rincian TEXT NOT NULL DEFAULT '',
+  muatan_json TEXT NOT NULL DEFAULT '{}',
+  jadwal_pada TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL CHECK (status IN ('menunggu', 'dikerjakan', 'dibatalkan', 'kedaluwarsa')),
+  dibuat_pada TEXT NOT NULL,
+  diubah_pada TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_agen_setelan (
+  peran TEXT NOT NULL,
+  tugas TEXT NOT NULL,
+  kelas TEXT NOT NULL CHECK (kelas IN ('A', 'B', 'C')),
+  aktif INTEGER NOT NULL DEFAULT 1,
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_pada TEXT NOT NULL,
+  PRIMARY KEY (peran, tugas)
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_agen_jejak_pengguna ON aleta_agen_jejak(pengguna_id, dibuat_pada)`,
+    `CREATE INDEX IF NOT EXISTS idx_agen_jejak_tugas ON aleta_agen_jejak(tugas, dibuat_pada)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_agen_antrean_kunci ON aleta_agen_antrean(pengguna_id, kunci)`,
+    `CREATE INDEX IF NOT EXISTS idx_agen_antrean_status ON aleta_agen_antrean(pengguna_id, status)`,
+  ],
+} as const;
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
@@ -1245,6 +1307,8 @@ const schemaStatements = [
   ...DDL_ECOURT_AKSI_JEJAK.tabel,
   // Cap pengadilan untuk edoc penetapan (0056).
   ...DDL_ECOURT_CAP.tabel,
+  // Agen ALETA tahap 1: jejak, antrean, setelan (0057).
+  ...DDL_AGEN.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -3187,6 +3251,7 @@ const indexStatements = [
   ...DDL_KOMENTAR_TEMPLAT_WAJIB.indeks,
   ...DDL_ECOURT_AKSI_JEJAK.indeks,
   ...DDL_ECOURT_CAP.indeks,
+  ...DDL_AGEN.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.
