@@ -1,0 +1,9 @@
+{
+  "kalkulator-nafkah": { "skrip": "kalkulator_nafkah.py" },
+  "kalkulator-iddah": { "skrip": "kalkulator_iddah.py" },
+  "kalkulator-mutah": { "skrip": "kalkulator_mutah.py" },
+  "cek-blangko": { "skrip": "cek_blangko.py" },
+  "cek-konsistensi": { "skrip": "cek_konsistensi.py" },
+  "anonim": { "skrip": "anonim.py" },
+  "analisa-docx": { "skrip": "analisa_docx.py" }
+}
