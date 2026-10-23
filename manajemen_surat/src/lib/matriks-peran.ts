@@ -1205,6 +1205,8 @@ export function pesanTolakKemampuanAi(kemampuan: KemampuanAi, timpaan?: TimpaanK
  *   = tidak boleh. Rekap "semua" untuk hakim = rekap umum (angka satker).
  * PTSP/staf, sekretariat (non-perkara), TI, mediator, petugas sidang: tanpa
  * data perkara ("info umum" saja).
+ * Analis Perkara: perkara, relaas, rekap SEMUA perkara - keputusan pengguna
+ * 23 Okt 2026 (bukan lagi aturan sementara).
  */
 export type BidangDataAi = "perkara" | "relaas" | "rekap";
 export type LingkupDataAi = "semua" | "milik";

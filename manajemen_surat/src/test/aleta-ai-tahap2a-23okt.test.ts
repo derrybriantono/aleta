@@ -280,6 +280,8 @@ describe("matriks kemampuan per peran (rencana 10.3) - tiap peran x tiap kemampu
     expect(a(KASIR)).toBe("-,-,-");
     expect(a(PTSP)).toBe("-,-,-");
     expect(a(SEKRETARIS)).toBe("-,-,-");
+    // Keputusan pengguna 23 Okt: Analis Perkara membaca semua perkara (aturan tetap).
+    expect(a(pelaku("an", "Analis Rekaan", "analis-perkara"))).toBe("semua,semua,semua");
   });
 
   it("pengenal permintaan: hanya permintaan MEMBUAT yang dinilai; jenis penetapan terbaca", () => {
