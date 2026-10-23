@@ -363,6 +363,85 @@ async function paketPerkara(query, p) {
   };
 }
 
+// ─── Keuangan perkara (kasir/panjar) - 23 Okt 2026 ───────────────────────────
+
+/** Tahapan jurnal keuangan tingkat pertama - sama dengan kasirJurnalService (TAHAPAN = 10). */
+const TAHAPAN_KEUANGAN = 10;
+
+/** Saldo panjar (Σ jenis_transaksi × jumlah) per perkara, rumus yang sama dengan kasirJurnalService. */
+async function saldoPerkara(query, ids) {
+  const peta = new Map();
+  const rows = await dalamPotongan(
+    query,
+    ids,
+    (isian) =>
+      `SELECT perkara_id, SUM(jenis_transaksi * jumlah) AS saldo FROM perkara_biaya WHERE tahapan_id = ${TAHAPAN_KEUANGAN} AND perkara_id IN (${isian}) GROUP BY perkara_id`
+  );
+  for (const r of rows) peta.set(teks(r.perkara_id), Math.round(Number(r.saldo) || 0));
+  return peta;
+}
+
+/** Perkara yang bertransaksi dalam rentang: uang masuk/keluar dalam rentang + sisa panjar sekarang. */
+async function rekapKeuangan(query, p) {
+  const dari = tanggalParam(p.dari, "dari");
+  const sampai = tanggalParam(p.sampai, "sampai");
+  const { rows, terpotong } = batasi(
+    await query(
+      `SELECT pb.perkara_id AS perkara_id, pk.nomor_perkara AS nomor, pk.jenis_perkara_nama AS jenis,
+              SUM(CASE WHEN pb.jenis_transaksi = 1 THEN pb.jumlah ELSE 0 END) AS masuk,
+              SUM(CASE WHEN pb.jenis_transaksi = -1 THEN pb.jumlah ELSE 0 END) AS keluar
+         FROM perkara_biaya pb
+         JOIN perkara pk ON pk.perkara_id = pb.perkara_id
+        WHERE pb.tahapan_id = ${TAHAPAN_KEUANGAN} AND pb.tanggal_transaksi >= ? AND pb.tanggal_transaksi <= ?
+        GROUP BY pb.perkara_id, pk.nomor_perkara, pk.jenis_perkara_nama
+        ORDER BY pb.perkara_id
+        LIMIT ${BATAS_BARIS + 1}`,
+      [dari, sampai]
+    )
+  );
+  const saldo = await saldoPerkara(query, rows.map((r) => teks(r.perkara_id)));
+  const baris = rows.map((r) => ({
+    perkaraId: teks(r.perkara_id),
+    nomor: teks(r.nomor),
+    jenis: teks(r.jenis),
+    masuk: Math.round(Number(r.masuk) || 0),
+    keluar: Math.round(Number(r.keluar) || 0),
+    sisa: saldo.get(teks(r.perkara_id)) ?? 0,
+  }));
+  return { baris: await denganPetugas(query, baris), terpotong, sumber: "SIPP perkara_biaya (tahapan tingkat pertama, tanggal_transaksi; sisa = Σ jenis_transaksi × jumlah)" };
+}
+
+/** Jurnal keuangan satu perkara. Nama pihak penyetor dibaca dari tabel pihak (disamarkan portal). */
+async function keuanganPerkara(query, p) {
+  const nomor = teks(p.nomor);
+  if (!nomor) throw new Error("parameter_nomor_kosong");
+  const perkara = (await query(`SELECT * FROM perkara WHERE nomor_perkara = ? LIMIT 1`, [nomor]))[0];
+  if (!perkara) return { ditemukan: false, kandidat: [] };
+  const id = teks(perkara.perkara_id);
+  const petugas = (await petugasUntuk(query, [id])).get(id);
+  const rows =
+    (await query(
+      `SELECT pb.tanggal_transaksi AS tanggal, pb.uraian AS uraian, pb.jenis_transaksi AS arah, pb.jumlah AS jumlah, ph.nama AS nama
+         FROM perkara_biaya pb LEFT JOIN pihak ph ON ph.id = pb.pihak_id
+        WHERE pb.perkara_id = ? AND pb.tahapan_id = ${TAHAPAN_KEUANGAN}
+        ORDER BY pb.tanggal_transaksi, pb.id`,
+      [id]
+    )) || [];
+  const transaksi = rows.map((r) => ({
+    tanggal: iso(r.tanggal),
+    uraian: teks(r.uraian),
+    arah: Number(r.arah) === -1 ? "keluar" : "masuk",
+    jumlah: Math.round(Number(r.jumlah) || 0),
+    nama: teks(r.nama),
+  }));
+  return {
+    ditemukan: true,
+    perkara: { perkaraId: id, nomor: teks(perkara.nomor_perkara), jenis: teks(pilih(perkara, ["jenis_perkara_nama", "jenis_perkara_text"])) },
+    petugas: petugas || { majelis: [], ketua: "", pp: [], js: [] },
+    transaksi,
+  };
+}
+
 const KATALOG = {
   "rekap.relaas": rekapRelaas,
   "rekap.sisa": rekapSisa,
@@ -370,6 +449,8 @@ const KATALOG = {
   "rekap.penunjukan": rekapPenunjukan,
   "rekap.sidang": rekapSidang,
   "perkara.paket": paketPerkara,
+  "rekap.keuangan": rekapKeuangan,
+  "keuangan.perkara": keuanganPerkara,
 };
 
 /** Menjalankan satu alat katalog. Nama di luar katalog DITOLAK - tidak ada SQL bebas. */

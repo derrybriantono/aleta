@@ -18,7 +18,7 @@
  *     sumber dan cara hitungnya, dan dapat dibuka menjadi daftar perkara).
  */
 
-import type { BidangDataAi, LingkupDataAi } from "@/lib/matriks-peran";
+import type { BidangDataAi, KemampuanAi, LingkupDataAi } from "@/lib/matriks-peran";
 import { namaCocokSatu } from "@/lib/perkara-sendiri";
 
 export type NamaAlatData =
@@ -28,7 +28,9 @@ export type NamaAlatData =
   | "rekap_bht_tertunda"
   | "rekap_beban_majelis"
   | "rekap_jadwal_sidang"
-  | "data_perkara";
+  | "data_perkara"
+  | "rekap_keuangan_perkara"
+  | "data_keuangan_perkara";
 
 export type AlatApi = { name: string; description: string; input_schema: Record<string, unknown> };
 
@@ -38,7 +40,9 @@ export type DefinisiAlat = AlatApi & {
   /** Bidang yang dibaca; lingkup = yang TERLUAS di antara bidang ini. */
   bidang: readonly BidangDataAi[];
   /** Operasi katalog bot. */
-  operasi: "rekap.relaas" | "rekap.sisa" | "rekap.bht" | "rekap.penunjukan" | "rekap.sidang" | "perkara.paket";
+  operasi: "rekap.relaas" | "rekap.sisa" | "rekap.bht" | "rekap.penunjukan" | "rekap.sidang" | "perkara.paket" | "rekap.keuangan" | "keuangan.perkara";
+  /** Kemampuan matriks 10.3 yang DIPERLUKAN selain hak bidang (mis. rekap kasir/panjar). */
+  kemampuan?: KemampuanAi;
 };
 
 const TANGGAL = { type: "string", description: "Tanggal YYYY-MM-DD." };
@@ -118,6 +122,30 @@ export const KATALOG_ALAT: readonly DefinisiAlat[] = [
     bidang: ["perkara"],
     operasi: "perkara.paket",
   },
+  {
+    name: "rekap_keuangan_perkara",
+    description:
+      "Rekap keuangan perkara (kasir/panjar, BACA-SAJA): uang masuk dan keluar dalam rentang tanggal transaksi, jumlah perkara bertransaksi, dan perkara yang sisa panjarnya habis atau minus. Bawaan: awal bulan ini sampai hari ini.",
+    input_schema: { type: "object", properties: { dari: TANGGAL, sampai: TANGGAL }, additionalProperties: false },
+    jenis: "rekap",
+    bidang: ["keuangan"],
+    operasi: "rekap.keuangan",
+    kemampuan: "rekap-kasir",
+  },
+  {
+    name: "data_keuangan_perkara",
+    description:
+      "Jurnal keuangan SATU perkara (BACA-SAJA): transaksi panjar masuk/keluar, total, dan sisa panjar. Nama penyetor DISAMARKAN dengan kode seperti [NAMA-1].",
+    input_schema: {
+      type: "object",
+      properties: { nomor: { type: "string", description: "Nomor perkara lengkap." } },
+      required: ["nomor"],
+      additionalProperties: false,
+    },
+    jenis: "perkara",
+    bidang: ["keuangan"],
+    operasi: "keuangan.perkara",
+  },
 ];
 
 export const PETA_ALAT: ReadonlyMap<string, DefinisiAlat> = new Map(KATALOG_ALAT.map((a) => [a.name, a]));
@@ -191,6 +219,8 @@ export function parameterOperasi(alat: DefinisiAlat, masukan: Record<string, unk
       return rentang(geserBulan(hariIni, -3), hariIni);
     case "rekap_beban_majelis":
       return rentang(`${hariIni.slice(0, 4)}-01-01`, hariIni);
+    case "rekap_keuangan_perkara":
+      return rentang(`${hariIni.slice(0, 7)}-01`, hariIni);
     case "rekap_jadwal_sidang": {
       const hari = new Date(`${hariIni}T00:00:00Z`).getUTCDay();
       const senin = geserHari(hariIni, hari === 0 ? -6 : 1 - hari);
@@ -205,7 +235,8 @@ export function parameterOperasi(alat: DefinisiAlat, masukan: Record<string, unk
       if (!Number.isFinite(minimal) || minimal < 0 || minimal > 3650) throw new GalatParameterAlat("minimal_hari harus 0-3650.");
       return { per, dari: geserBulan(per, -12), minimal_hari: Math.trunc(minimal) };
     }
-    case "data_perkara": {
+    case "data_perkara":
+    case "data_keuangan_perkara": {
       const nomor = String(masukan.nomor ?? "").trim();
       if (!nomor || nomor.length > 60 || /[\r\n]/.test(nomor)) throw new GalatParameterAlat("Nomor perkara tidak sah.");
       return { nomor };
@@ -350,6 +381,20 @@ export function hitungRekap(
         rincian: { per_tanggal: hitungPer(baris, (b) => String(b.tanggal ?? "")).sort((a, b) => a.kunci.localeCompare(b.kunci)), per_ketua_majelis: hitungPer(baris, (b) => b.ketua) },
         nomor_perkara: unikNomor(baris),
       };
+    case "rekap_keuangan_perkara": {
+      const jumlah = (f: (b: BarisRekap) => number) => baris.reduce((n, b) => n + f(b), 0);
+      const habis = baris.filter((b) => Number(b.sisa ?? 0) <= 0);
+      const masuk = jumlah((b) => Number(b.masuk ?? 0));
+      const keluar = jumlah((b) => Number(b.keluar ?? 0));
+      return {
+        ...dasar,
+        judul: "Rekap keuangan perkara",
+        cara_hitung: `Jurnal keuangan SIPP bertanggal ${parameter.dari} s.d. ${parameter.sampai}: ${baris.length} perkara bertransaksi, masuk Rp${masuk.toLocaleString("id-ID")}, keluar Rp${keluar.toLocaleString("id-ID")}; ${habis.length} perkara sisa panjarnya habis/minus (sisa dihitung dari seluruh jurnal tingkat pertama).`,
+        angka: { perkara_bertransaksi: baris.length, masuk_rp: masuk, keluar_rp: keluar, perkara_panjar_habis: habis.length },
+        rincian: { masuk_per_jenis: [...new Map(baris.map((b) => [b.jenis, 0])).keys()].map((j) => ({ kunci: j || "(kosong)", jumlah: jumlah((b) => (b.jenis === j ? Number(b.masuk ?? 0) : 0)) })).sort((a, b) => b.jumlah - a.jumlah) },
+        nomor_perkara: unikNomor(habis),
+      };
+    }
     default:
       throw new Error(`bukan alat rekap: ${alat.name}`);
   }

@@ -107,6 +107,7 @@ CREATE TABLE perkara_pelaksanaan_relaas (id INTEGER, perkara_id INTEGER, pihak_i
 CREATE TABLE perkara_jadwal_sidang (id INTEGER, perkara_id INTEGER, urutan INTEGER, tanggal_sidang DATE, jam_sidang TEXT, agenda TEXT, ditunda TEXT, alasan_ditunda TEXT);
 CREATE TABLE perkara_pihak1 (id INTEGER, perkara_id INTEGER, pihak_id INTEGER, nama TEXT, alamat TEXT, urutan INTEGER);
 CREATE TABLE perkara_pihak2 (id INTEGER, perkara_id INTEGER, pihak_id INTEGER, nama TEXT, alamat TEXT, urutan INTEGER);
+CREATE TABLE perkara_biaya (id INTEGER, perkara_id INTEGER, tahapan_id INTEGER, pihak_id INTEGER, jenis_transaksi INTEGER, tanggal_transaksi DATE, uraian TEXT, jumlah INTEGER);
 CREATE TABLE pihak (id INTEGER, nama TEXT, nomor_indentitas TEXT, alamat TEXT, telepon TEXT, email TEXT, tempat_lahir TEXT, tanggal_lahir DATE, jenis_kelamin TEXT, agama_nama TEXT, pekerjaan TEXT);
 `;
 
@@ -160,6 +161,17 @@ const SIDANG = [
   [4, 2, 2, "2026-10-14", "Jawaban"],
 ] as const;
 
+// id, perkara, tahapan, pihak, jenis_transaksi (1 masuk / -1 keluar), tanggal, uraian, jumlah
+const BIAYA = [
+  [1, 1, 10, 11, 1, "2026-03-02", "Panjar biaya perkara", 500000],
+  [2, 1, 10, null, -1, "2026-03-05", "Biaya pendaftaran", 30000],
+  [3, 1, 10, null, -1, "2026-10-05", "Biaya panggilan Siti Rekaan", 480000],
+  [4, 2, 10, null, 1, "2026-07-10", "Panjar biaya perkara", 400000],
+  [5, 2, 10, null, -1, "2026-10-10", "Biaya panggilan", 100000],
+  [6, 3, 10, null, 1, "2026-08-01", "Panjar biaya perkara", 300000],
+  [7, 3, 20, null, -1, "2026-10-02", "Biaya tahapan lain", 50000],
+] as const;
+
 const lit = (v: unknown) => (v === null ? "NULL" : typeof v === "number" ? String(v) : `'${String(v).replace(/'/g, "''")}'`);
 const sisip = (tabel: string, kolom: string, baris: ReadonlyArray<ReadonlyArray<unknown>>) =>
   baris.map((b) => `INSERT INTO ${tabel} (${kolom}) VALUES (${b.map(lit).join(", ")});`).join("\n");
@@ -175,6 +187,7 @@ function sippRekaan() {
       sisip("perkara_panitera_pn", "perkara_id, panitera_nama, aktif", PP.map((x) => [...x, "Y"])),
       sisip("perkara_jurusita", "perkara_id, jurusita_nama, aktif", JS.map((x) => [...x, "Y"])),
       sisip("perkara_pelaksanaan_relaas", "id, perkara_id, pihak_id, tanggal_relaas, ket_temu, status_pos, ket_hasil_relaas, no_resi_pos", RELAAS),
+      sisip("perkara_biaya", "id, perkara_id, tahapan_id, pihak_id, jenis_transaksi, tanggal_transaksi, uraian, jumlah", BIAYA),
       sisip("perkara_jadwal_sidang", "id, perkara_id, urutan, tanggal_sidang, agenda", SIDANG),
       sisip("perkara_pihak1", "id, perkara_id, pihak_id, nama, alamat, urutan", [[1, 1, 11, PIHAK_ASLI.sitiNama, PIHAK_ASLI.sitiAlamat, 1]]),
       sisip("perkara_pihak2", "id, perkara_id, pihak_id, nama, alamat, urutan", [[1, 1, 12, PIHAK_ASLI.budiNama, PIHAK_ASLI.budiAlamat, 1]]),
@@ -278,6 +291,8 @@ describe("matriks kemampuan per peran (rencana 10.3) - tiap peran x tiap kemampu
     expect(a(PP_ALFA)).toBe("milik,milik,milik");
     expect(a(JS_BETA)).toBe("-,milik,-");
     expect(a(KASIR)).toBe("-,-,-");
+    expect(aksesDataAi(golonganPelakuAi(KASIR), "keuangan")).toBe("semua");
+    expect(aksesDataAi(golonganPelakuAi(HAKIM_SATU), "keuangan")).toBeNull();
     expect(a(PTSP)).toBe("-,-,-");
     expect(a(SEKRETARIS)).toBe("-,-,-");
     // Keputusan pengguna 23 Okt: Analis Perkara membaca semua perkara (aturan tetap).
@@ -336,7 +351,7 @@ describe("katalog alat bot (SELECT berparameter) di pg-mem - angka = hitungan ma
     await expect(bot.jalankan("DROP TABLE perkara", {}, { query: sipp.query })).rejects.toThrow(/alat_tidak_dikenal/);
     await expect(bot.jalankan("rekap.relaas", { dari: "2026-07-23'; --", sampai: "2026-10-23" }, { query: sipp.query })).rejects.toThrow(/parameter_tanggal_salah/);
     expect(new Set(KATALOG_ALAT.map((a) => a.operasi))).toEqual(new Set(bot.KATALOG));
-    for (const a of KATALOG_ALAT) await bot.jalankan(a.operasi, parameterOperasi(a, a.name === "data_perkara" ? { nomor: "101/Pdt.G/2026/PA.Dgl" } : {}, SEKARANG), { query: sipp.query });
+    for (const a of KATALOG_ALAT) await bot.jalankan(a.operasi, parameterOperasi(a, a.jenis === "perkara" ? { nomor: "101/Pdt.G/2026/PA.Dgl" } : {}, SEKARANG), { query: sipp.query });
     expect(sipp.kueri.length).toBeGreaterThan(10);
     for (const q of sipp.kueri) expect(q.trim()).toMatch(/^SELECT\b/i);
   });
@@ -482,6 +497,66 @@ describe("pelaksana alat: hak peran, lingkup milik, fitur mati", () => {
     // Untuk pengguna (rute daftar): data asli.
     const asli = await jalankanAlat(k(HAKIM_SATU), "data_perkara", { nomor: "101/Pdt.G/2026/PA.Dgl", bagian: ["pihak"] });
     expect(JSON.stringify(asli.isi)).toContain(PIHAK_ASLI.sitiNama);
+  });
+});
+
+// ─── 5b. Alat keuangan kasir/panjar (keputusan pengguna 23 Okt) ──────────────
+
+describe("alat keuangan perkara (kasir/panjar, baca-saja)", () => {
+  let db: AletaDatabase;
+  beforeAll(async () => {
+    db = await createAletaDatabase({ useInMemory: true, seed: false });
+  }, 180000);
+  afterAll(async () => {
+    suntikSumberDataAi(undefined);
+    await db?.close();
+  });
+  const k = (p: PelakuAi, penyamar: Penyamar | null = null, timpaan: Record<string, unknown> | null = null) => ({ db, pelaku: p, timpaan: timpaan as never, sekarang: SEKARANG, penyamar });
+
+  it("SQL bot: masuk/keluar dalam rentang dan sisa panjar = SQL manual (tahapan tingkat pertama saja)", async () => {
+    const r = (await bot.jalankan("rekap.keuangan", { dari: "2026-10-01", sampai: "2026-10-23" }, { query: sipp.query })) as { baris: Array<{ nomor: string; masuk: number; keluar: number; sisa: number }> };
+    const manual = sipp.mem.public.many(
+      `SELECT perkara_id, SUM(jenis_transaksi * jumlah) AS sisa FROM perkara_biaya WHERE tahapan_id = 10 GROUP BY perkara_id ORDER BY perkara_id`
+    ) as Array<{ perkara_id: number; sisa: number }>;
+    expect(r.baris.map((b) => [b.nomor, b.masuk, b.keluar, b.sisa])).toEqual([
+      ["101/Pdt.G/2026/PA.Dgl", 0, 480000, Number(manual[0]!.sisa)],
+      ["102/Pdt.G/2026/PA.Dgl", 0, 100000, Number(manual[1]!.sisa)],
+    ]);
+    expect(Number(manual[0]!.sisa)).toBe(-10000);
+  });
+
+  it("kasir: rekap & jurnal satu perkara; nama penyetor dan nama di uraian disamarkan untuk model", async () => {
+    suntikSumberDataAi(sumberRekaan);
+    expect(alatUntukPelaku(KASIR, null).map((a) => a.name)).toEqual(["rekap_keuangan_perkara", "data_keuangan_perkara"]);
+    const rekap = await jalankanAlat(k(KASIR), "rekap_keuangan_perkara", {});
+    expect(rekap.rekap?.angka).toEqual({ perkara_bertransaksi: 2, masuk_rp: 0, keluar_rp: 580000, perkara_panjar_habis: 1 });
+    expect(rekap.rekap?.nomor_perkara).toEqual(["101/Pdt.G/2026/PA.Dgl"]);
+    expect(rekap.rekap?.cara_hitung).toMatch(/2026-10-01 s\.d\. 2026-10-23: 2 perkara bertransaksi/);
+    const penyamar = new Penyamar();
+    const satu = await jalankanAlat(k(KASIR, penyamar), "data_keuangan_perkara", { nomor: "101/Pdt.G/2026/PA.Dgl" });
+    expect(satu.status).toBe("ok");
+    const d = (satu.isi as { data_keuangan: { transaksi: Array<{ nama: string; uraian: string }>; sisa_panjar_rp: number } }).data_keuangan;
+    expect(d.sisa_panjar_rp).toBe(-10000);
+    expect(d.transaksi[0]!.nama).toBe("[NAMA-1]");
+    expect(d.transaksi[2]!.uraian).toBe("Biaya panggilan [NAMA-1]");
+    expect(dataAsliTersisa(JSON.stringify(satu.isi), [PIHAK_ASLI.sitiNama, "Siti Rekaan"])).toEqual([]);
+  });
+
+  it("hak: kasir tanpa data perkara; hakim/PP/JS/PTSP tanpa keuangan; sekretaris rekap; timpaan Super Admin mencabut rekap kasir", async () => {
+    suntikSumberDataAi(sumberRekaan);
+    expect((await jalankanAlat(k(KASIR), "rekap_sisa_perkara", {})).status).toBe("tolak");
+    expect((await jalankanAlat(k(KASIR), "data_perkara", { nomor: "101/Pdt.G/2026/PA.Dgl" })).status).toBe("tolak");
+    for (const p of [HAKIM_SATU, PP_ALFA, JS_BETA, PTSP]) {
+      expect((await jalankanAlat(k(p), "rekap_keuangan_perkara", {})).status, p.peranId).toBe("tolak");
+      expect((await jalankanAlat(k(p), "data_keuangan_perkara", { nomor: "101/Pdt.G/2026/PA.Dgl" })).status, p.peranId).toBe("tolak");
+    }
+    for (const p of [SEKRETARIS, KETUA, PANITERA]) expect((await jalankanAlat(k(p), "rekap_keuangan_perkara", {})).status, p.peranId).toBe("ok");
+    const timpaan = { "rekap-kasir": ["pimpinan", "panitera"] };
+    const ditolak = await jalankanAlat(k(KASIR, null, timpaan), "rekap_keuangan_perkara", {});
+    expect(ditolak.status).toBe("tolak");
+    expect(String(ditolak.isi.galat)).toMatch(/Rekap kasir\/panjar/);
+    expect((await jalankanAlat(k(KASIR, null, timpaan), "data_keuangan_perkara", { nomor: "101/Pdt.G/2026/PA.Dgl" })).status).toBe("ok");
+    expect(alatUntukPelaku(KASIR, timpaan as never).map((a) => a.name)).toEqual(["data_keuangan_perkara"]);
   });
 });
 

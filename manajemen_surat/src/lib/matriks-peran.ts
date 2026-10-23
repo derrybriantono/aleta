@@ -1203,22 +1203,27 @@ export function pesanTolakKemampuanAi(kemampuan: KemampuanAi, timpaan?: TimpaanK
  *   "semua" = seluruh perkara satker; "milik" = perkara yang ia tangani
  *   (majelis/PP/JS-nya, dicocokkan nama seperti Unggah massal); tidak disebut
  *   = tidak boleh. Rekap "semua" untuk hakim = rekap umum (angka satker).
- * PTSP/staf, sekretariat (non-perkara), TI, mediator, petugas sidang: tanpa
- * data perkara ("info umum" saja).
+ * PTSP/staf, TI, mediator, petugas sidang: tanpa data perkara ("info umum"
+ * saja). Sekretariat: non-perkara, kecuali keuangan perkara (rekap kasir).
+ * "keuangan" = jurnal keuangan/panjar perkara (baca-saja): Kasir, pimpinan,
+ * Panitera/Panmud, Sekretaris/Kasubag (matriks 10.3 "Rekap kasir/panjar";
+ * keputusan pengguna 23 Okt: alat keuangan baca-saja untuk kasir).
  * Analis Perkara: perkara, relaas, rekap SEMUA perkara - keputusan pengguna
  * 23 Okt 2026 (bukan lagi aturan sementara).
  */
-export type BidangDataAi = "perkara" | "relaas" | "rekap";
+export type BidangDataAi = "perkara" | "relaas" | "rekap" | "keuangan";
 export type LingkupDataAi = "semua" | "milik";
 
 export const AKSES_DATA_AI: Partial<Record<GolonganPeran, Partial<Record<BidangDataAi, LingkupDataAi>>>> = {
-  pimpinan: { perkara: "semua", relaas: "semua", rekap: "semua" },
+  pimpinan: { perkara: "semua", relaas: "semua", rekap: "semua", keuangan: "semua" },
   hakim: { perkara: "milik", relaas: "milik", rekap: "semua" },
-  panitera: { perkara: "semua", relaas: "semua", rekap: "semua" },
-  panmud: { perkara: "semua", relaas: "semua", rekap: "semua" },
+  panitera: { perkara: "semua", relaas: "semua", rekap: "semua", keuangan: "semua" },
+  panmud: { perkara: "semua", relaas: "semua", rekap: "semua", keuangan: "semua" },
   pp: { perkara: "milik", relaas: "milik", rekap: "milik" },
   jurusita: { relaas: "milik" },
   "analis-perkara": { perkara: "semua", relaas: "semua", rekap: "semua" },
+  kasir: { keuangan: "semua" },
+  sekretariat: { keuangan: "semua" },
 };
 
 /** Lingkup terluas yang dimiliki pengguna atas bidang itu; null = tidak boleh. */

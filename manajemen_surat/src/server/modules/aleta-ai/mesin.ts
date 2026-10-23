@@ -116,6 +116,8 @@ const LABEL_ALAT: Record<string, string> = {
   rekap_beban_majelis: "beban majelis",
   rekap_jadwal_sidang: "jadwal sidang",
   data_perkara: "data perkara",
+  rekap_keuangan_perkara: "rekap keuangan perkara",
+  data_keuangan_perkara: "jurnal keuangan perkara",
 };
 
 export const PESAN_NONAKTIF_PROYEK = "ALETA Ai belum diaktifkan: proyek ALETA AI PA V4.5 belum dipasang oleh Super Admin.";
