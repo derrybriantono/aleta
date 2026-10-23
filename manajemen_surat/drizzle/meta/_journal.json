@@ -540,6 +540,20 @@
       "when": 1792227600001,
       "tag": "0084_aleta_ai_samaran",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1792231200001,
+      "tag": "0086_aleta_ai_tugas",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1792234800001,
+      "tag": "0087_aleta_ai_templat_kiriman",
+      "breakpoints": true
     }
   ]
 }

@@ -1051,6 +1051,118 @@ export const DDL_ALETA_AI_SAMARAN = {
 } as const;
 
 /**
+ * ALETA Ai tahap 3 (0086, 25 Okt 2026): tugas (cowork), langkah, berkas keluaran.
+ * Cermin PERSIS dari drizzle/0086_aleta_ai_tugas.sql; penjaga
+ * aleta-ai-tugas-25okt.test.ts membandingkan keduanya. Tanpa kunci asing.
+ */
+export const DDL_ALETA_AI_TUGAS = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ai_tugas (
+  id TEXT PRIMARY KEY,
+  pemilik_id TEXT NOT NULL,
+  peran_id TEXT NOT NULL DEFAULT '',
+  jenis TEXT NOT NULL,
+  judul TEXT NOT NULL DEFAULT '',
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  instruksi TEXT NOT NULL DEFAULT '',
+  format_berkas TEXT NOT NULL DEFAULT 'docx',
+  kelompok TEXT NOT NULL DEFAULT '',
+  model TEXT NOT NULL DEFAULT '',
+  effort TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'antre',
+  pesan_status TEXT NOT NULL DEFAULT '',
+  minta_berhenti INTEGER NOT NULL DEFAULT 0,
+  segmen INTEGER NOT NULL DEFAULT 0,
+  tahan_rp INTEGER NOT NULL DEFAULT 0,
+  biaya_rp INTEGER NOT NULL DEFAULT 0,
+  biaya_usd REAL NOT NULL DEFAULT 0,
+  usd_segmen REAL NOT NULL DEFAULT 0,
+  gratis INTEGER NOT NULL DEFAULT 0,
+  proyek_versi INTEGER NOT NULL DEFAULT 0,
+  hasil TEXT NOT NULL DEFAULT '',
+  detak_at TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL,
+  diperbarui_at TEXT NOT NULL,
+  selesai_at TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_tugas_langkah (
+  id TEXT PRIMARY KEY,
+  tugas_id TEXT NOT NULL,
+  urutan INTEGER NOT NULL,
+  kode TEXT NOT NULL,
+  judul TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'menunggu',
+  catatan TEXT NOT NULL DEFAULT '',
+  hasil TEXT NOT NULL DEFAULT '',
+  model TEXT NOT NULL DEFAULT '',
+  effort TEXT NOT NULL DEFAULT '',
+  token_masuk INTEGER NOT NULL DEFAULT 0,
+  token_keluar INTEGER NOT NULL DEFAULT 0,
+  token_cache_tulis INTEGER NOT NULL DEFAULT 0,
+  token_cache_baca INTEGER NOT NULL DEFAULT 0,
+  biaya_usd REAL NOT NULL DEFAULT 0,
+  segmen INTEGER NOT NULL DEFAULT 0,
+  mulai_at TEXT NOT NULL DEFAULT '',
+  selesai_at TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_berkas (
+  id TEXT PRIMARY KEY,
+  tugas_id TEXT NOT NULL,
+  pemilik_id TEXT NOT NULL,
+  nama TEXT NOT NULL,
+  format TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  templat TEXT NOT NULL DEFAULT '',
+  isi TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_ai_tugas_pemilik ON aleta_ai_tugas(pemilik_id, dibuat_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_tugas_status ON aleta_ai_tugas(status)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_tugas_langkah_urut ON aleta_ai_tugas_langkah(tugas_id, urutan)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_berkas_tugas ON aleta_ai_berkas(tugas_id)`,
+  ],
+} as const;
+
+/**
+ * ALETA Ai tahap 3 (0087, 25 Okt 2026): isi templat proyek V4.5 dan kiriman ke
+ * alur ALETA (wajib dikonfirmasi petugas). Cermin PERSIS dari
+ * drizzle/0087_aleta_ai_templat_kiriman.sql. Tanpa kunci asing.
+ */
+export const DDL_ALETA_AI_TEMPLAT_KIRIMAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ai_proyek_berkas (
+  id TEXT PRIMARY KEY,
+  proyek_id TEXT NOT NULL,
+  nama TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  ukuran INTEGER NOT NULL DEFAULT 0,
+  isi TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_ai_kiriman (
+  id TEXT PRIMARY KEY,
+  tugas_id TEXT NOT NULL,
+  pemilik_id TEXT NOT NULL,
+  tujuan TEXT NOT NULL,
+  nomor_perkara TEXT NOT NULL DEFAULT '',
+  nilai TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'menunggu-konfirmasi',
+  dikonfirmasi_oleh TEXT NOT NULL DEFAULT '',
+  dikonfirmasi_at TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_ai_proyek_berkas_proyek ON aleta_ai_proyek_berkas(proyek_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_kiriman_tujuan ON aleta_ai_kiriman(tujuan, nomor_perkara, status)`,
+    `CREATE INDEX IF NOT EXISTS idx_ai_kiriman_tugas ON aleta_ai_kiriman(tugas_id)`,
+  ],
+} as const;
+
+/**
  * Sidang keliling per hari & hakim yang menyidangkan per perkara (0083, 22 Okt
  * 2026). Cermin PERSIS dari drizzle/0083_aleta_sidang_keliling_hakim.sql;
  * penjaga jadwal-keliling-hakim-massal-22okt.test.ts membandingkan keduanya.
@@ -2198,6 +2310,9 @@ const schemaStatements = [
   ...DDL_SIDANG_KELILING_HAKIM.tabel,
   // ALETA Ai tahap 2a: kode samaran per percakapan (0084).
   ...DDL_ALETA_AI_SAMARAN.tabel,
+  // ALETA Ai tahap 3: tugas, langkah, berkas keluaran (0086); templat proyek & kiriman (0087).
+  ...DDL_ALETA_AI_TUGAS.tabel,
+  ...DDL_ALETA_AI_TEMPLAT_KIRIMAN.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -4151,6 +4266,8 @@ const indexStatements = [
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,
   ...DDL_ALETA_AI_SAMARAN.indeks,
+  ...DDL_ALETA_AI_TUGAS.indeks,
+  ...DDL_ALETA_AI_TEMPLAT_KIRIMAN.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.
