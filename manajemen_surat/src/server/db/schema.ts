@@ -1071,6 +1071,117 @@ export const DDL_SIDANG_KELILING_HAKIM = {
 } as const;
 
 /**
+ * Jejak masuk & perangkat (0085, 23 Okt 2026). Cermin PERSIS dari
+ * drizzle/0085_aleta_jejak_masuk_perangkat.sql; penjaga
+ * jejak-masuk-perangkat.test.ts membandingkan keduanya. Tanpa kunci asing.
+ */
+export const DDL_JEJAK_PERANGKAT = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_jejak_masuk (
+  id TEXT PRIMARY KEY,
+  waktu TEXT NOT NULL,
+  peristiwa TEXT NOT NULL,
+  alasan TEXT NOT NULL DEFAULT '',
+  jalur TEXT NOT NULL DEFAULT '',
+  user_id TEXT NOT NULL DEFAULT '',
+  username TEXT NOT NULL DEFAULT '',
+  nama TEXT NOT NULL DEFAULT '',
+  peran TEXT NOT NULL DEFAULT '',
+  identitas_samar TEXT NOT NULL DEFAULT '',
+  sesi_ref TEXT NOT NULL DEFAULT '',
+  perangkat_id TEXT NOT NULL DEFAULT '',
+  ip TEXT NOT NULL DEFAULT '',
+  rantai_xff TEXT NOT NULL DEFAULT '',
+  agen TEXT NOT NULL DEFAULT '',
+  jenis_perangkat TEXT NOT NULL DEFAULT '',
+  os TEXT NOT NULL DEFAULT '',
+  peramban TEXT NOT NULL DEFAULT '',
+  model TEXT NOT NULL DEFAULT '',
+  ingat TEXT NOT NULL DEFAULT '',
+  nama_komputer TEXT NOT NULL DEFAULT '',
+  mac TEXT NOT NULL DEFAULT '',
+  mac_sumber TEXT NOT NULL DEFAULT '',
+  pelaku_id TEXT NOT NULL DEFAULT '',
+  pelaku_nama TEXT NOT NULL DEFAULT '',
+  rincian TEXT NOT NULL DEFAULT '{}'
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_perangkat (
+  id TEXT PRIMARY KEY,
+  perangkat_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  nama_terbaca TEXT NOT NULL DEFAULT '',
+  jenis TEXT NOT NULL DEFAULT '',
+  os TEXT NOT NULL DEFAULT '',
+  os_rinci TEXT NOT NULL DEFAULT '',
+  peramban TEXT NOT NULL DEFAULT '',
+  model TEXT NOT NULL DEFAULT '',
+  agen TEXT NOT NULL DEFAULT '',
+  nama_komputer TEXT NOT NULL DEFAULT '',
+  akun_windows TEXT NOT NULL DEFAULT '',
+  mac TEXT NOT NULL DEFAULT '',
+  mac_sumber TEXT NOT NULL DEFAULT '',
+  mac_catatan TEXT NOT NULL DEFAULT '',
+  label TEXT NOT NULL DEFAULT '',
+  ip_terakhir TEXT NOT NULL DEFAULT '',
+  pertama_dilihat TEXT NOT NULL,
+  terakhir_dilihat TEXT NOT NULL,
+  data_ekstensi_pada TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_sesi_perangkat (
+  session_id TEXT PRIMARY KEY,
+  sesi_ref TEXT NOT NULL,
+  perangkat_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  jalur TEXT NOT NULL DEFAULT '',
+  ip_awal TEXT NOT NULL DEFAULT '',
+  ip_terakhir TEXT NOT NULL DEFAULT '',
+  ingat TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  terakhir_aktif TEXT NOT NULL
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_batas_perangkat (
+  id TEXT PRIMARY KEY,
+  cakupan TEXT NOT NULL,
+  sasaran TEXT NOT NULL,
+  maks INTEGER NOT NULL DEFAULT 0,
+  perilaku TEXT NOT NULL DEFAULT 'keluarkan-terlama',
+  berlaku_sampai TEXT NOT NULL DEFAULT '',
+  alasan TEXT NOT NULL DEFAULT '',
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_nama TEXT NOT NULL DEFAULT '',
+  diubah_pada TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_tiket_perangkat (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  perangkat_id TEXT NOT NULL,
+  jalur TEXT NOT NULL DEFAULT '',
+  dibuat_pada TEXT NOT NULL,
+  kedaluwarsa_pada TEXT NOT NULL,
+  dipakai_pada TEXT NOT NULL DEFAULT ''
+)`,
+    `CREATE TABLE IF NOT EXISTS aleta_setelan_jejak_masuk (
+  kunci TEXT PRIMARY KEY,
+  nilai TEXT NOT NULL DEFAULT '',
+  diubah_oleh TEXT NOT NULL DEFAULT '',
+  diubah_pada TEXT NOT NULL DEFAULT ''
+)`,
+  ],
+  indeks: [
+    `CREATE INDEX IF NOT EXISTS idx_jejak_masuk_waktu ON aleta_jejak_masuk(waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_jejak_masuk_akun ON aleta_jejak_masuk(user_id, waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_jejak_masuk_perangkat ON aleta_jejak_masuk(perangkat_id, waktu)`,
+    `CREATE INDEX IF NOT EXISTS idx_jejak_masuk_ip ON aleta_jejak_masuk(ip, waktu)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_perangkat_kunci ON aleta_perangkat(perangkat_id, user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_perangkat_akun ON aleta_perangkat(user_id, terakhir_dilihat)`,
+    `CREATE INDEX IF NOT EXISTS idx_sesi_perangkat_akun ON aleta_sesi_perangkat(user_id, perangkat_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_sesi_perangkat_ref ON aleta_sesi_perangkat(sesi_ref)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_batas_perangkat_kunci ON aleta_batas_perangkat(cakupan, sasaran)`,
+    `CREATE INDEX IF NOT EXISTS idx_tiket_perangkat_akun ON aleta_tiket_perangkat(user_id, kedaluwarsa_pada)`,
+  ],
+} as const;
+
+/**
  * SKP jabatan perkara (0070, 17 Okt 2026, rancangan disetujui pengguna):
  * pemetaan akun SIPP ke pegawai (bertanggal), target, isian manual, dan
  * tangkapan realisasi yang dikunci. Cermin PERSIS dari
@@ -2177,6 +2288,8 @@ const schemaStatements = [
   ...DDL_MEDIASI_ARSIP.tabel,
   // Sidang keliling per hari & hakim yang menyidangkan per perkara (0083).
   ...DDL_SIDANG_KELILING_HAKIM.tabel,
+  // Jejak masuk & perangkat, batas perangkat (0085).
+  ...DDL_JEJAK_PERANGKAT.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -4129,6 +4242,7 @@ const indexStatements = [
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,
+  ...DDL_JEJAK_PERANGKAT.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.
