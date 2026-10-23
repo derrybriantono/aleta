@@ -59,6 +59,8 @@ type Opsi = {
   simpanan?: Record<string, unknown>;
   sse?: string;
   tema?: string;
+  /** e-Court: permintaan lewat port ke relai pekerja latar (dijalankan sungguhan di sisi node). */
+  relai?: { connect: (info: { name: string }) => unknown };
 };
 
 const sseDari = (peristiwa: unknown[]) => peristiwa.map((p) => `data: ${JSON.stringify(p)}\n\n`).join("");
@@ -75,7 +77,7 @@ function buka(o: Opsi = {}) {
   const simpanan: Record<string, unknown> = { ...(o.simpanan ?? {}) };
   const pendengar: Array<(ubah: Record<string, unknown>, tempat: string) => void> = [];
   w.chrome = {
-    runtime: { id: "uji" },
+    runtime: { id: "uji", ...(o.relai ? { connect: o.relai.connect } : {}) },
     storage: {
       local: {
         get: async (k?: string | string[]) => {
@@ -103,6 +105,12 @@ function buka(o: Opsi = {}) {
       return { ok: true, status: 200, json: async () => ({}), text: async () => o.sse ?? sseDari([{ jenis: "selesai", pesanId: "p", mode: "Cepat", biayaRp: 0, saldoRp: 0 }]) };
     return json(null, 404);
   };
+  if (o.relai) {
+    // e-Court beda asal: fetch halaman tidak boleh dipakai sama sekali.
+    w.fetch = async () => {
+      throw new Error("fetch langsung dipakai di e-Court");
+    };
+  }
   w.navigator.clipboard = { tersalin: "", writeText: async (t: string) => void (w.navigator.clipboard.tersalin = t) };
   const ctx = (dom as unknown as { getInternalVMContext(): vm.Context }).getInternalVMContext();
   vm.runInContext(SKRIP, ctx, { filename: "aleta-ai-gelembung.js" });
@@ -237,16 +245,154 @@ describe("gelembung chat ALETA Ai - percakapan lewat rute portal", () => {
 });
 
 describe("pemasangan: manifest, popup, dan tanam ke portal", () => {
-  it("dimuat di SIPP, ABT, portal (bukan e-Court); saklar popup ada di kelompok Tampilan; berkas tertanam sama persis", () => {
+  it("dimuat di SIPP, ABT, portal, dan e-Court (lewat relai); saklar popup ada di kelompok Tampilan; berkas tertanam sama persis", () => {
     const m = JSON.parse(baca("manifest.json")) as { content_scripts: Array<{ matches: string[]; js?: string[] }> };
     const memuat = m.content_scripts.filter((c) => c.js?.includes("aleta-ai-gelembung.js")).flatMap((c) => c.matches);
     expect(memuat).toEqual(expect.arrayContaining(["http://192.168.10.10/SIPP/*", "http://192.168.10.10/aps_badilag/*", "http://192.168.10.10/aleta/*"]));
-    expect(memuat.some((x) => x.includes("ecourt"))).toBe(false);
+    expect(memuat).toContain("https://ecourt.mahkamahagung.go.id/*");
+    expect(baca("latar.js")).toMatch(/importScripts\("aleta-ai-relai\.js"\)/);
+    expect(EKSTENSI_BERKAS["aleta-ai-relai.js"]?.replace(/\r\n/g, "\n")).toBe(baca("aleta-ai-relai.js"));
     const html = new JSDOM(baca("popup.html")).window.document;
     expect((html.getElementById("aletaAiGelembung") as HTMLInputElement).checked).toBe(true);
     const popup = baca("popup.js");
     expect(popup).toMatch(/aletaAiGelembung: \["aletaAiGelembung", true\]/);
     expect(popup).toMatch(/kode: "tampilan", judul: "Tampilan", isi: \["panelRingkas", "aletaAiGelembung"\]/);
     expect(EKSTENSI_BERKAS["aleta-ai-gelembung.js"]?.replace(/\r\n/g, "\n")).toBe(SKRIP);
+  });
+});
+
+// ─── e-Court lewat relai pekerja latar (keputusan pengguna 23 Okt) ───────────
+
+type Relai = {
+  NAMA_PORT: string;
+  izinRelai: (m: unknown) => { metode: string; jalur: string; aliran: boolean } | null;
+  pasangRelaiAletaAi: (chromeApi: unknown, ambil: (u: string, o: any) => Promise<any>, asal: () => Promise<string>) => void;
+};
+
+function muatRelai(): Relai {
+  const konteks: Record<string, unknown> = { AbortController, TextDecoder, JSON, Promise, String, Number };
+  konteks.self = konteks;
+  vm.runInNewContext(baca("aleta-ai-relai.js"), konteks, { filename: "aleta-ai-relai.js" });
+  return konteks.AletaAiRelai as Relai;
+}
+
+/** Sepasang port tiruan: sisi halaman <-> sisi pekerja latar. */
+function pasanganPort(nama: string, sender: Record<string, unknown>) {
+  const buat = () => ({ pesan: [] as Array<(m: any) => void>, putus: [] as Array<() => void> });
+  const a = buat();
+  const b = buat();
+  let tertutup = false;
+  const tutup = () => {
+    if (tertutup) return;
+    tertutup = true;
+    setTimeout(() => [...a.putus, ...b.putus].forEach((f) => f()));
+  };
+  const sisi = (milik: ReturnType<typeof buat>, lawan: ReturnType<typeof buat>, extra: Record<string, unknown> = {}) => ({
+    name: nama,
+    ...extra,
+    postMessage: (m: unknown) => {
+      if (tertutup) return;
+      const salinan = JSON.parse(JSON.stringify(m));
+      setTimeout(() => lawan.pesan.forEach((f) => f(salinan)));
+    },
+    disconnect: tutup,
+    onMessage: { addListener: (f: (m: any) => void) => void milik.pesan.push(f) },
+    onDisconnect: { addListener: (f: () => void) => void milik.putus.push(f) },
+  });
+  return { halaman: sisi(a, b), latar: sisi(b, a, { sender }) };
+}
+
+describe("gelembung di e-Court lewat relai pekerja latar", () => {
+  it("izin relai: hanya ringkas, buat percakapan, dan kirim pesan ALETA Ai; selain itu ditolak", () => {
+    const r = muatRelai();
+    expect(r.izinRelai({ jalur: "/api/aleta-ai/ringkas" })).toMatchObject({ metode: "GET", aliran: false });
+    expect(r.izinRelai({ jalur: "/api/aleta-ai/percakapan", metode: "POST", badan: { perkara: "" } })).toMatchObject({ aliran: false });
+    expect(r.izinRelai({ jalur: "/api/aleta-ai/percakapan/aic-1/pesan", metode: "post", badan: { teks: "x" } })).toMatchObject({ aliran: true });
+    for (const m of [
+      { jalur: "/api/aleta-ai/pengaturan", metode: "PUT" },
+      { jalur: "/api/aleta-ai/kemampuan", metode: "PUT" },
+      { jalur: "/api/aleta-ecourt/sidang" },
+      { jalur: "/api/aleta-ai/percakapan/../../x/pesan", metode: "POST" },
+      { jalur: "http://lain.test/api/aleta-ai/ringkas" },
+      { jalur: "/api/aleta-ai/percakapan/aic-1/pesan", metode: "POST", badan: { teks: "x".repeat(80_000) } },
+    ])
+      expect(r.izinRelai(m), JSON.stringify(m).slice(0, 80)).toBeNull();
+  });
+
+  it("ujung ke ujung: halaman e-Court -> port -> pekerja latar -> portal ALETA (sesi), jawaban SSE mengalir kembali", async () => {
+    const relai = muatRelai();
+    const pendengar: Array<(p: unknown) => void> = [];
+    const chromeLatar = { runtime: { id: "uji", onConnect: { addListener: (f: (p: unknown) => void) => void pendengar.push(f) } } };
+    const ambilan: Array<{ alamat: string; opsi: any }> = [];
+    const enc = new TextEncoder();
+    const portal = async (alamat: string, opsi: any) => {
+      ambilan.push({ alamat, opsi });
+      const json = (data: unknown) => ({ ok: true, status: 200, json: async () => ({ ok: true, data }) });
+      if (alamat.endsWith("/api/aleta-ai/ringkas")) return json({ aktif: true });
+      if (alamat.endsWith("/api/aleta-ai/percakapan")) return json({ id: "aic-ec" });
+      const body = new ReadableStream<Uint8Array>({
+        start(c) {
+          c.enqueue(enc.encode(sseDari([{ jenis: "teks", delta: "Perkara ini " }]).slice(0, 25)));
+          c.enqueue(enc.encode(sseDari([{ jenis: "teks", delta: "Perkara ini " }]).slice(25)));
+          c.enqueue(enc.encode(sseDari([{ jenis: "teks", delta: "masih tahap jawaban." }, { jenis: "selesai", pesanId: "p", mode: "Cepat", biayaRp: 1000, saldoRp: 1 }])));
+          c.close();
+        },
+      });
+      return { ok: true, status: 200, body };
+    };
+    relai.pasangRelaiAletaAi(chromeLatar, portal, async () => "http://192.168.10.10/aleta");
+    const h = buka({
+      url: "https://ecourt.mahkamahagung.go.id/perkara/detail?nomor=1",
+      simpanan: { asalPortal: "http://192.168.10.10/aleta" },
+      relai: {
+        connect: (info) => {
+          const pasangan = pasanganPort(info.name, { id: "uji", url: "https://ecourt.mahkamahagung.go.id/perkara/detail?nomor=1" });
+          pendengar.forEach((f) => f(pasangan.latar));
+          return pasangan.halaman;
+        },
+      },
+    });
+    const t = await sampai(() => h.tuan(), "gelembung di e-Court");
+    const b = t.shadowRoot!;
+    expect((b.querySelector(".kaki a") as HTMLAnchorElement).getAttribute("href")).toBe("http://192.168.10.10/aleta/aleta-ai");
+    (b.querySelector("button.gelembung") as HTMLButtonElement).click();
+    expect(b.querySelector(".konteks span")!.textContent).toBe(`Tanya tentang ${NOMOR}?`);
+    (b.querySelector("textarea") as HTMLTextAreaElement).value = "Ringkas posisi perkara ini";
+    (b.querySelector("button.kirim") as HTMLButtonElement).click();
+    await sampai(() => b.querySelector(".status")!.textContent!.startsWith("Selesai"), "jawaban selesai");
+    expect(b.querySelector(".pesan.ai .teks")!.textContent).toBe("Perkara ini masih tahap jawaban.");
+    expect(ambilan.map((x) => [x.opsi.method, x.alamat, x.opsi.credentials])).toEqual([
+      ["GET", "http://192.168.10.10/aleta/api/aleta-ai/ringkas", "include"],
+      ["POST", "http://192.168.10.10/aleta/api/aleta-ai/percakapan", "include"],
+      ["POST", "http://192.168.10.10/aleta/api/aleta-ai/percakapan/aic-ec/pesan", "include"],
+    ]);
+    expect(JSON.parse(ambilan[1]!.opsi.body)).toEqual({ perkara: NOMOR });
+    for (const x of ambilan) expect(JSON.stringify(x.opsi.headers ?? {})).not.toMatch(/x-api-key|authorization|anthropic/i);
+  });
+
+  it("port dari ekstensi lain diputus; alamat portal belum diketahui -> pesan jelas, gelembung tidak tampil", async () => {
+    const relai = muatRelai();
+    const pendengar: Array<(p: any) => void> = [];
+    relai.pasangRelaiAletaAi({ runtime: { id: "uji", onConnect: { addListener: (f: (p: unknown) => void) => void pendengar.push(f) } } }, async () => {
+      throw new Error("tidak boleh dipanggil");
+    }, async () => "");
+    const asing = pasanganPort("aleta-ai-relai", { id: "ekstensi-lain" });
+    let diputus = false;
+    asing.halaman.onDisconnect.addListener(() => void (diputus = true));
+    pendengar.forEach((f) => f(asing.latar));
+    await sampai(() => diputus, "port asing diputus");
+
+    const h = buka({
+      url: "https://ecourt.mahkamahagung.go.id/beranda",
+      relai: {
+        connect: (info) => {
+          const p = pasanganPort(info.name, { id: "uji" });
+          pendengar.forEach((f) => f(p.latar));
+          return p.halaman;
+        },
+      },
+    });
+    await tunggu(80);
+    expect(h.tuan()).toBeNull();
   });
 });

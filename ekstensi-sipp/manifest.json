@@ -173,7 +173,8 @@
         "https://ecourt.mahkamahagung.go.id/*"
       ],
       "js": [
-        "ecourt-masuk.js"
+        "ecourt-masuk.js",
+        "aleta-ai-gelembung.js"
       ],
       "run_at": "document_idle"
     },

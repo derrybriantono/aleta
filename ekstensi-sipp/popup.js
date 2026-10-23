@@ -145,6 +145,7 @@ const KUNCI_SETELAN_AKUN = [
   "menuAtasSipp",
   "gembokKepalaAbt",
   "panelRingkas",
+  "aletaAiGelembung",
   "gembokKepalaSipp",
   "gembokKepalaAleta",
   /* Saklar penanda SIPP (popup-ide-l2.js) - per akun seperti saklar lain (audit 17 Okt). */
@@ -199,6 +200,7 @@ const BAWAAN_AKUN = {
   menuAtasSipp: true,
   gembokKepalaAbt: false,
   panelRingkas: false,
+  aletaAiGelembung: true,
   gembokKepalaSipp: false,
   gembokKepalaAleta: false,
   skalaHuruf: 100,

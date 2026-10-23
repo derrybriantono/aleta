@@ -19,6 +19,7 @@ dengan judul bagian biasa.
 | Bagian | Label di popup | Kunci | Bawaan | Dibaca oleh | Dilihat oleh |
 | --- | --- | --- | --- | --- | --- |
 | Tampilan | Ringkas keterangan di panel | `panelRingkas` | mati | panel-alat.js | semua |
+| Tampilan | Gelembung chat ALETA Ai | `aletaAiGelembung` | nyala | aleta-ai-gelembung.js | semua (tampil hanya bila ALETA Ai aktif untuk akunnya) |
 | SIPP | Tandai halaman SIPP | `tandaiHalaman` | nyala | konten.js, panel-alat.js | semua |
 | SIPP | Sisipkan berkas ke Jadwal Sidang | `sisipJadwal` | mati | konten.js | semua |
 | SIPP | Pratinjau dokumen sebelum unduh | `pratinjauBasRelaas` | menyala | pratinjau-bas-relaas.js | semua |

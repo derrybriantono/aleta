@@ -191,6 +191,9 @@ const BERKAS = [
   // Gelembung chat ALETA Ai (23 Okt 2026, T1 tahap 2b) - skrip konten SIPP, ABT, portal; hanya memanggil
   // rute portal seasal /aleta/api/aleta-ai (sesi ALETA), tanpa kunci API, tidak menulis ke SIPP/ABT.
   "aleta-ai-gelembung.js",
+  // Relai pekerja latar untuk gelembung ALETA Ai di e-Court (23 Okt 2026) - dimuat latar.js lewat importScripts;
+  // hanya meneruskan tiga permintaan rute ALETA Ai ke portal, tanpa kunci API.
+  "aleta-ai-relai.js",
   // Halaman e-Court yang dibuka dari menu E-Court (22 Okt 2026) - mengisi nama pengguna saja dan menjaga sesi.
   "ecourt-masuk.js",
   // Penjaga batas (17 Okt 2026): tidak ada kata ALETA yang ditulis ekstensi ke

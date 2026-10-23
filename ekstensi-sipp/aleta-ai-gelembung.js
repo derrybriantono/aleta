@@ -22,6 +22,10 @@
  *   - Isi halaman SIPP tidak dikirim; hanya nomor perkara sebagai konteks,
  *     dan itu dapat dilepas ("Pertanyaan umum").
  *
+ * e-COURT (23 Okt, keputusan pengguna): situsnya beda asal, jadi permintaan
+ *   lewat port "aleta-ai-relai" ke pekerja latar (aleta-ai-relai.js) yang
+ *   meneruskannya ke portal dengan sesi ALETA. Tidak ada data situs e-Court
+ *   yang dikirim selain nomor perkara sebagai konteks.
  * SAKLAR: "aletaAiGelembung" (popup, bawaan menyala) dan saklar induk "aktif".
  * RIWAYAT: satu percakapan per perkara (atau "umum"), disimpan di server -
  *   tampil juga di layar ALETA Ai portal, dan sebaliknya.
@@ -103,10 +107,93 @@
     return m ? m[1] : "";
   }
 
-  // ─── Jaringan (seasal, sesi ALETA) ────────────────────────────────────────
+  // ─── Jaringan (seasal, sesi ALETA; e-Court lewat relai pekerja latar) ─────
+
+  /** e-Court beda asal dengan portal: permintaan diteruskan pekerja latar (aleta-ai-relai.js). */
+  const LEWAT_RELAI = /(^|\.)ecourt\.mahkamahagung\.go\.id$/i.test(String(akar.location && akar.location.hostname));
+
+  /**
+   * Permintaan lewat port "aleta-ai-relai" dengan bentuk jawaban mirip fetch:
+   * {ok, status, json(), text(), body.getReader()} - pemanggil tidak perlu tahu jalurnya.
+   */
+  function mintaRelai(alamat, opsi = {}) {
+    return new Promise((selesai) => {
+      let port;
+      try {
+        port = akar.chrome.runtime.connect({ name: "aleta-ai-relai" });
+      } catch {
+        selesai({ ok: false, status: 502, json: async () => ({ ok: false, error: { message: "Pekerja latar ALETA tidak tersedia." } }), text: async () => "" });
+        return;
+      }
+      const antre = [];
+      let tunggu = null;
+      let habis = false;
+      let mulai = false;
+      const dorong = (x) => {
+        if (tunggu) {
+          const t = tunggu;
+          tunggu = null;
+          t(x);
+        } else antre.push(x);
+      };
+      const body = {
+        getReader: () => ({
+          read: () => (antre.length ? Promise.resolve(antre.shift()) : habis ? Promise.resolve({ done: true }) : new Promise((r) => (tunggu = r))),
+        }),
+      };
+      const akhiri = () => {
+        if (habis) return;
+        habis = true;
+        dorong({ done: true });
+      };
+      port.onMessage.addListener((m) => {
+        if (m && typeof m.potong === "string") {
+          if (!mulai) {
+            mulai = true;
+            selesai({ ok: true, status: 200, body, json: async () => ({}), text: async () => "" });
+          }
+          dorong({ value: m.potong, done: false });
+          return;
+        }
+        if (m && m.selesai) {
+          if (!mulai) {
+            mulai = true;
+            const status = Number(m.status) || 502;
+            selesai({ ok: status < 400, status, json: async () => m.isi, text: async () => "" });
+          }
+          akhiri();
+          try {
+            port.disconnect();
+          } catch {
+            /* sudah putus */
+          }
+        }
+      });
+      port.onDisconnect.addListener(() => {
+        if (!mulai) {
+          mulai = true;
+          selesai({ ok: false, status: 502, json: async () => ({ ok: false, error: { message: "Pekerja latar ALETA tidak menjawab." } }), text: async () => "" });
+        }
+        akhiri();
+      });
+      if (opsi.signal) {
+        opsi.signal.addEventListener("abort", () => {
+          try {
+            port.disconnect();
+          } catch {
+            /* sudah putus */
+          }
+          akhiri();
+        });
+      }
+      port.postMessage({ jalur: String(alamat).replace(/^\/aleta/, ""), metode: String(opsi.method || "GET"), badan: opsi.body ? JSON.parse(opsi.body) : undefined });
+    });
+  }
+
+  const minta = (alamat, opsi = {}) => (LEWAT_RELAI ? mintaRelai(alamat, opsi) : akar.fetch(alamat, opsi));
 
   async function ambilJson(alamat, opsi = {}) {
-    const r = await akar.fetch(alamat, { credentials: "include", cache: "no-store", ...opsi });
+    const r = await minta(alamat, { credentials: "include", cache: "no-store", ...opsi });
     let isi = null;
     try {
       isi = await r.json();
@@ -146,11 +233,16 @@
     };
     if (jawab.body && typeof jawab.body.getReader === "function") {
       const pembaca = jawab.body.getReader();
-      const dekoder = new akar.TextDecoder();
+      let dekoder = null; // relai mengirim teks; Uint8Array hanya dari fetch seasal
+
       for (;;) {
         const { value, done } = await pembaca.read();
         if (done) break;
-        olah(dekoder.decode(value, { stream: true }));
+        if (typeof value === "string") olah(value);
+        else {
+          if (!dekoder) dekoder = new akar.TextDecoder();
+          olah(dekoder.decode(value, { stream: true }));
+        }
       }
     } else {
       olah(await jawab.text());
@@ -226,9 +318,16 @@ textarea { flex: 1; resize: none; min-height: 40px; max-height: 140px; font: inh
   function terapkanTema() {
     if (!tuan) return;
     const html = doc.documentElement;
-    const gelap =
-      (html && html.getAttribute("data-aleta-tema") === "gelap") ||
-      (html && html.classList && html.classList.contains("dark"));
+    const tanda = html && html.getAttribute("data-aleta-tema");
+    let gelap = tanda === "gelap" || Boolean(html && html.classList && html.classList.contains("dark"));
+    // e-Court tidak memuat tema-pusat.js: tanpa tanda, ikuti tema sistem.
+    if (!tanda && LEWAT_RELAI) {
+      try {
+        gelap = Boolean(akar.matchMedia && akar.matchMedia("(prefers-color-scheme: dark)").matches);
+      } catch {
+        /* terang */
+      }
+    }
     tuan.setAttribute("data-tema", gelap ? "gelap" : "terang");
   }
 
@@ -295,7 +394,7 @@ textarea { flex: 1; resize: none; min-height: 40px; max-height: 140px; font: inh
     try {
       let id = await idPercakapan();
       pengendali = new akar.AbortController();
-      let jawab = await akar.fetch(`${API}/percakapan/${encodeURIComponent(id)}/pesan`, {
+      let jawab = await minta(`${API}/percakapan/${encodeURIComponent(id)}/pesan`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
@@ -306,7 +405,7 @@ textarea { flex: 1; resize: none; min-height: 40px; max-height: 140px; font: inh
         // Percakapan disembunyikan dari portal: mulai yang baru untuk konteks ini.
         delete percakapanPerKonteks[kunciKonteks()];
         id = await idPercakapan();
-        jawab = await akar.fetch(`${API}/percakapan/${encodeURIComponent(id)}/pesan`, {
+        jawab = await minta(`${API}/percakapan/${encodeURIComponent(id)}/pesan`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
@@ -388,7 +487,7 @@ textarea { flex: 1; resize: none; min-height: 40px; max-height: 140px; font: inh
     el.kepala.addEventListener("pointercancel", akhiri);
   }
 
-  function bangun(posisi) {
+  function bangun(posisi, asalPortal) {
     tuan = buatElemen("div", { id: "aleta-ai-gelembung", "data-aleta-ui": "aleta-ai" });
     bayang = tuan.attachShadow({ mode: "open" });
     bayang.appendChild(buatElemen("style", { teks: CSS }));
@@ -407,8 +506,10 @@ textarea { flex: 1; resize: none; min-height: 40px; max-height: 140px; font: inh
     el.masukan = buatElemen("textarea", { rows: "2", "aria-label": "Pertanyaan untuk ALETA Ai", placeholder: "Tulis pertanyaan... (Enter kirim, Shift+Enter baris baru)" });
     el.kirim = buatElemen("button", { type: "button", class: "kirim", teks: "Kirim" });
     el.tulis = buatElemen("div", { class: "tulis" }, [el.masukan, el.kirim]);
-    const tautan = buatElemen("a", { href: "/aleta/aleta-ai", target: "_blank", rel: "noopener", teks: "Buka riwayat di portal" });
-    el.kaki = buatElemen("div", { class: "kaki" }, [doc.createTextNode("Draf AI - wajib diperiksa. "), tautan]);
+    // Di e-Court tautan memakai alamat portal tersimpan; tanpa itu tautannya tidak ditampilkan.
+    const alamatPortal = LEWAT_RELAI ? (asalPortal ? `${String(asalPortal).replace(/\/+$/, "")}/aleta-ai` : "") : "/aleta/aleta-ai";
+    const tautan = alamatPortal ? buatElemen("a", { href: alamatPortal, target: "_blank", rel: "noopener", teks: "Buka riwayat di portal" }) : null;
+    el.kaki = buatElemen("div", { class: "kaki" }, tautan ? [doc.createTextNode("Draf AI - wajib diperiksa. "), tautan] : [doc.createTextNode("Draf AI - wajib diperiksa.")]);
     el.panel = buatElemen("div", { class: "panel", role: "dialog", "aria-label": "ALETA Ai" }, [el.kepala, el.konteks, el.isi, el.status, el.tulis, el.kaki]);
     el.panel.hidden = true;
     if (posisi && posisi.left && posisi.top) {
@@ -467,7 +568,7 @@ textarea { flex: 1; resize: none; min-height: 40px; max-height: 140px; font: inh
   }
 
   async function nilai() {
-    const s = await bacaSimpan(["aktif", KUNCI_SAKLAR, KUNCI_PERCAKAPAN, KUNCI_POSISI]);
+    const s = await bacaSimpan(["aktif", KUNCI_SAKLAR, KUNCI_PERCAKAPAN, KUNCI_POSISI, "asalPortal"]);
     const hidup = s.aktif !== false && s[KUNCI_SAKLAR] !== false;
     if (!hidup) {
       lepas();
@@ -486,7 +587,7 @@ textarea { flex: 1; resize: none; min-height: 40px; max-height: 140px; font: inh
     }
     if (!ringkas || ringkas.aktif !== true || tuan) return;
     if (!doc.body) return;
-    bangun(s[KUNCI_POSISI]);
+    bangun(s[KUNCI_POSISI], s.asalPortal);
   }
 
   try {
