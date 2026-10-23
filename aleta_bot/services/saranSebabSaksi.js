@@ -11,7 +11,8 @@
  *     kuning di panel, dan keterangannya menyebut bahwa itu dalil yang belum dikuatkan saksi;
  *   - tanpa kalimat penutup (dijaga penutupSaksi.js di seluruh jalur tulis).
  *
- * Perceraian (cg/ct) TIDAK lewat sini: sebab perceraian sudah punya jalurnya sendiri (abtUsulanService, W49 22 Okt).
+ * Perceraian (cg/ct) ikut aturan yang sama (keputusan pengguna 23 Okt): "penyebab" yang hanya dari posita = saran. Jalur
+ * "Susun keterangan saksi 1 & 2" menandainya sendiri di abtUsulanService (saranSebab).
  *
  * Sebutan pihak yang kosong (variabel #0046#/#0047# belum terbaca) diturunkan dari alur_perkara_id / jenis_perkara_id
  * lewat sebutanPihakService - satu sumber, bukan tebakan kata. Murni (tanpa jaringan/basis data).
@@ -29,7 +30,6 @@ const KUNCI_SEBAB_DALIL = Object.freeze([
   "tujuan", // itsbat / perwalian / ahli waris: keperluan permohonan
 ]);
 const SEBAB = new Set(KUNCI_SEBAB_DALIL);
-const JENIS_CERAI = new Set(["cg", "ct"]);
 
 const KET_SARAN = "Saran dari posita: sebab/alasan ini baru didalilkan dan belum dikuatkan saksi - sesuaikan dengan keterangan saksi yang sesungguhnya.";
 
@@ -42,9 +42,8 @@ function hanyaDariPosita(f) {
   return s.length > 0 && s.every((x) => x === "gugatan");
 }
 
-/** Kunci sebab dalil yang dipakai `pakai` dan hanya bersumber posita. Perceraian selalu []. */
-function sebabBelumDikuatkan(pakai, jenis) {
-  if (JENIS_CERAI.has(String(jenis || ""))) return [];
+/** Kunci sebab dalil yang dipakai `pakai` dan hanya bersumber posita (semua jenis, termasuk perceraian). */
+function sebabBelumDikuatkan(pakai) {
   const hasil = [];
   for (const f of Array.isArray(pakai) ? pakai : []) {
     const k = String((f && f.kunci) || "");
@@ -57,9 +56,9 @@ function sebabBelumDikuatkan(pakai, jenis) {
  * Menandai satu hasil isian {teks, yakin, sumber, ket} sebagai saran bila memakai sebab dalil yang belum dikuatkan.
  * Mengembalikan objek BARU; masukan tidak diubah.
  */
-function tandaiSaran(hasil, pakai, jenis) {
+function tandaiSaran(hasil, pakai) {
   if (!hasil || typeof hasil !== "object") return hasil;
-  const kunci = sebabBelumDikuatkan(pakai, jenis);
+  const kunci = sebabBelumDikuatkan(pakai);
   if (!kunci.length) return hasil;
   const ket = String(hasil.ket || "");
   return { ...hasil, yakin: "ragu", saran: kunci, ket: ket.includes(KET_SARAN) ? ket : `${KET_SARAN} ${ket}`.trim() };
@@ -87,4 +86,17 @@ function sebutanUntuk(k) {
   return { P: lawan || s.satu, T: pelaku || s.dua, sumber: s.sumber };
 }
 
-module.exports = { KUNCI_SEBAB_DALIL, KET_SARAN, hanyaDariPosita, sebabBelumDikuatkan, tandaiSaran, sebutanUntuk };
+/**
+ * Fakta perkara publik (faktaPerkara) -> fakta yang sama, dengan sebab dalil yang hanya dari posita ditandai saran.
+ * Dipakai penyusun saksi katalog (slot dan variabel cerai: #5227# penyebab).
+ */
+function tandaiFaktaSaran(fakta) {
+  const hasil = fakta && typeof fakta === "object" ? fakta : {};
+  for (const [kunci, f] of Object.entries(hasil)) {
+    if (!f || typeof f !== "object" || !SEBAB.has(kunci) || !hanyaDariPosita(f)) continue;
+    hasil[kunci] = { ...f, yakin: "ragu", saran: [kunci], ket: String(f.ket || "").includes(KET_SARAN) ? f.ket : `${KET_SARAN} ${f.ket || ""}`.trim() };
+  }
+  return hasil;
+}
+
+module.exports = { tandaiFaktaSaran, KUNCI_SEBAB_DALIL, KET_SARAN, hanyaDariPosita, sebabBelumDikuatkan, tandaiSaran, sebutanUntuk };

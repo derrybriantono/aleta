@@ -16,7 +16,7 @@
 
 const isi = require("./isiJawabanSaksi");
 const { positaTambahan } = require("./isiJawabanSaksiPosita");
-const { sebutanUntuk } = require("./saranSebabSaksi");
+const { sebutanUntuk, tandaiFaktaSaran } = require("./saranSebabSaksi");
 
 /** Kode jenis jawaban saksi dari id jenis perkara SIPP, kunci katalog, atau namanya. */
 const JENIS_ID = Object.freeze({ 346: "ct", 347: "cg", 360: "itsbat", 362: "dk", 363: "wa", 354: "perwalian", 358: "aua", 371: "paw", 364: "waris", 348: "hb", 341: "ip", 342: "cegah", 344: "batal", 349: "asuh", 743: "nafkahAnak", 365: "wasiat", 366: "hibah", 367: "wakaf", 370: "eksyar" });
@@ -319,7 +319,8 @@ function faktaPerkara(o) {
   } catch (_galat) {
     /* kosong = tidak ada fakta; penyusun memakai isian petugas */
   }
-  return hasil;
+  // T2: sebab dalil (penyebab, tujuan, alasan wali, ...) yang hanya dari posita = saran, belum dikuatkan saksi.
+  return tandaiFaktaSaran(hasil);
 }
 
 module.exports = { lengkapi, isiBaris, faktaPerkara, KUNCI_FAKTA_PUBLIK, bacaSippSaksi, deteksiPosita, saringIsian, kodeJenis, hubunganDariSipp, sertakanFaktaBersama };

@@ -5826,6 +5826,8 @@ function susunPanelAbt(jatiDiri) {
 
     const perlu = new Set((hasil.perluDiisi || []).map((x) => String(x.no)));
     const diisiGugatan = new Set((hasil.terisiDariPosita || []).map((x) => String(x.no)));
+    // T2 (25 Okt): sebab perselisihan yang hanya dari posita = saran, belum dikuatkan saksi (juga perkara cerai)
+    const saranSebab = new Set((hasil.saranSebab || []).map((x) => String(x.no)));
 
     // ========================================================================
     // SATU KOLOM PER SAKSI - SAMPAI EMPAT SAKSI P DAN DUA SAKSI T
@@ -5986,7 +5988,8 @@ function susunPanelAbt(jatiDiri) {
             : diisiGugatan.has(b.no)
               ? " aleta-sdg-dari-gugatan"
               : "";
-          const baris = buatElemen("div", `aleta-sdg-baris${tanda}`);
+          const baris = buatElemen("div", `aleta-sdg-baris${tanda}${!tanda.trim() && saranSebab.has(b.no) ? " aleta-sdg-dari-gugatan" : ""}`);
+          if (saranSebab.has(b.no)) baris.setAttribute("data-saran", "1");
           baris.draggable = true;
 
           const alat = buatElemen("div", "aleta-sdg-alat");
@@ -6087,6 +6090,8 @@ function susunPanelAbt(jatiDiri) {
           } else if (perlu.has(b.no)) {
             jawab.title =
               "Jawaban blangko tanya jawab ini masih memuat titik-titik dan tidak terbaca dari gugatan; lengkapi dari keterangan saksi yang sesungguhnya.";
+          } else if (saranSebab.has(b.no)) {
+            jawab.title = "Saran dari gugatan: sebab perselisihan ini baru didalilkan, belum dikuatkan saksi - sesuaikan dengan keterangan saksi.";
           } else if (diisiGugatan.has(b.no)) {
             jawab.title = "Diisi ALETA dari gugatan - periksa dahulu sebelum disimpan.";
           }

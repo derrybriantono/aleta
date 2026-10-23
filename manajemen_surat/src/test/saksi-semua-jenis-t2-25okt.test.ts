@@ -85,13 +85,11 @@ describe("bot: variabel katalog non-cerai dari posita, sebab dalil = saran", () 
     expect(v["1014"].saran).toEqual(["eratHubungan"]);
   });
 
-  it("perceraian tidak lewat penanda saran (jalurnya sendiri)", () => {
-    const pakai = [{ kunci: "penyebab", sumber: "gugatan", yakin: "cukup" }];
-    expect(Saran.sebabBelumDikuatkan(pakai, "cg")).toEqual([]);
-    expect(Saran.sebabBelumDikuatkan(pakai, "ct")).toEqual([]);
-    expect(Saran.sebabBelumDikuatkan(pakai, "umum")).toEqual(["penyebab"]);
-    // sumber campuran (data SIPP + gugatan) = sudah ada di luar posita: bukan saran
-    expect(Saran.sebabBelumDikuatkan([{ kunci: "tujuan", sumber: "data SIPP + gugatan" }], "itsbat")).toEqual([]);
+  it("sumber campuran (data SIPP / isian + gugatan) bukan saran; hanya posita yang saran", () => {
+    expect(Saran.sebabBelumDikuatkan([{ kunci: "tujuan", sumber: "data SIPP + gugatan" }])).toEqual([]);
+    expect(Saran.sebabBelumDikuatkan([{ kunci: "tujuan", sumber: "gugatan" }])).toEqual(["tujuan"]);
+    // fakta identitas/peristiwa (nama wali) dari posita bukan sebab dalil
+    expect(Saran.sebabBelumDikuatkan([{ kunci: "waliNama", sumber: "gugatan" }])).toEqual([]);
   });
 
   it("tidak satu pun nilai berupa kalimat penutup atau memuat nama aplikasi", () => {
@@ -173,6 +171,66 @@ describe("mesin katalog: variabel non-cerai dari server mengisi yang KOSONG, sar
 });
 
 // ---------------------------------------------------------------------------
+// Perceraian (keputusan pengguna 23 Okt): aturan saran juga berlaku
+// ---------------------------------------------------------------------------
+
+const POSITA_CG = [
+  "Bahwa sejak awal tahun 2021 rumah tangga Penggugat dan Tergugat mulai tidak harmonis dan sering terjadi perselisihan dan pertengkaran yang disebabkan karena Tergugat tidak memberikan nafkah yang cukup kepada Penggugat;",
+  "Bahwa sejak Juni 2024 Penggugat dan Tergugat telah pisah tempat tinggal;",
+].join("\n");
+const U: Apa = muatBot(path.join(REPO, "aleta_bot/services/abtUsulanService.js"));
+const A1 = [
+  { no: "6", tanya: "Kenapa Penggugat mengajukan cerai terhadap Tergugat?", jawab: "Penggugat mengajukan cerai terhadap Tergugat karena sudah tidak rukun dalam rumah tangganya;" },
+  { no: "8", tanya: "Apa yang biasa menjadi penyebab perselisihan dan pertengkaran antara Penggugat dan Tergugat?", jawab: "Yang biasa menjadi penyebab perselisihan dan pertengkaran antara Penggugat dan Tergugat adalah karena ........;" },
+  { no: "11", tanya: "Apakah Penggugat dan Tergugat masih tinggal satu rumah sampai saat ini?", jawab: "Penggugat dan Tergugat sudah pisah tempat tinggal sejak ....., kira-kira sampai sekarang sudah sekitar ........ tahun;" },
+];
+const susunCg = (opsi: Apa = {}) =>
+  U.susunKeteranganSaksiSdg({ templat: A1, posita: POSITA_CG, pelaku: "Tergugat", lawan: "Penggugat", nomorPerkara: "3/Pdt.G/2026/PA.Dgl", kodeKumpulan: "A1", jenisPerkara: "347", alur: "15", modus: { saksi1: { modus: "sama" }, saksi2: { modus: "sama" } }, ...opsi });
+
+describe("perceraian: sebab dari posita = saran, sebab pilihan petugas tidak", () => {
+  it("Susun keterangan saksi 1 & 2 (cerai gugat): jawaban penyebab dari posita bertanda saran; jawaban lain tidak", () => {
+    const h = susunCg();
+    expect(h.asalAlasan).toBe("posita");
+    const penyebab = h.saksi[0].jawaban.find((b: Apa) => b.no === "8");
+    expect(penyebab.jawab).toMatch(/nafkah/);
+    expect(penyebab.saran).toBe(true);
+    expect(h.saranSebab.map((x: Apa) => x.no)).toEqual(["8"]);
+    expect(h.saksi[0].jawaban.find((b: Apa) => b.no === "11").saran).toBeUndefined();
+    expect(h.catatan).toMatch(/belum dikuatkan saksi/);
+  });
+
+  it("alasan yang DIPILIH petugas bukan saran; saksi 'tidak tahu' tidak diberi saran sebab", () => {
+    expect(susunCg({ alasan: ["nafkah"] }).saranSebab).toEqual([]);
+    const h = susunCg({ modus: { saksi1: { modus: "tidak-tahu" }, saksi2: { modus: "tidak-tahu" } } });
+    expect(h.saranSebab).toEqual([]);
+  });
+
+  it("fakta perkara cerai untuk penyusun katalog: penyebab dari gugatan = saran (ragu)", () => {
+    const f = Isi.faktaPerkara({ posita: POSITA_CG, jenisPerkara: "347", alur: "15", pelaku: "Tergugat", lawan: "Penggugat" });
+    expect(f.penyebab.nilai).toMatch(/nafkah/);
+    expect(f.penyebab.saran).toEqual(["penyebab"]);
+    expect(f.penyebab.yakin).toBe("ragu");
+    // fakta bukan sebab (pisah sejak) tidak berubah
+    expect(f.pisahSejak?.saran).toBeUndefined();
+  });
+
+  it("mesin katalog cerai gugat: penyebab bertanda saran dan kuning; variabel #5227# yang terisi tetap menang", () => {
+    const kat = M.kenaliPaket([katalog("cerai-gugat")], { jenisPerkaraId: "347", alurPerkaraId: "15", nama: "Cerai Gugat" });
+    const keadaan = Object.assign(M.keadaanBawaan(kat, {}), { kehadiran: "kontradiktoir", alasan: ["F"], suami: "lawan" });
+    const fakta = { penyebab: { nilai: "Tergugat tidak memberikan nafkah yang cukup", yakin: "ragu", sumber: "gugatan", ket: "", saran: true } };
+    const jalan = (v: Record<string, string>) =>
+      M.susunSaksi(kat, { keadaan, benih: "3/Pdt.G/2026/PA.Dgl", saksi: [{ pihak: "P", jenis: "melihat" }], variabel: (k: string) => ({ "0046": "Penggugat", "0047": "Tergugat", ...v })[k], slot: {}, slotSaksi: [{}], fakta, tingkat: ["inti", "pilihan", "tambahan"] });
+    const b = jalan({}).saksi[0].baris.find((x: Apa) => x.butir === "q-penyebab");
+    expect(b.jawab).toMatch(/nafkah yang cukup/);
+    expect(b.dariGugatan).toEqual([expect.objectContaining({ kunci: "penyebab", saran: true, yakin: "ragu" })]);
+    expect(b.tandaKuning).toBe(true);
+    const terisi = jalan({ "5227": "Tergugat sering mabuk" }).saksi[0].baris.find((x: Apa) => x.butir === "q-penyebab");
+    expect(terisi.jawab).toMatch(/sering mabuk/);
+    expect(terisi.dariGugatan).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Panel ABT (jsdom): "Susun saksi" meminta fakta untuk jenis non-cerai
 // ---------------------------------------------------------------------------
 
@@ -244,6 +302,15 @@ describe("panel ABT: Susun saksi itsbat nikah memakai fakta perkara dari server"
     const wadah = panel.querySelector(".aleta-ssk");
     tombolDi(wadah, "Susun pertanyaan dan jawaban").click();
     await tunggu(() => wadah.querySelectorAll(".aleta-ssk-saksi").length === 2, "dua saksi");
+
+    // butir penutup katalog tidak ditampilkan (keputusan pengguna 23 Okt)
+    const idPenutup = katalog("itsbat-nikah").pertanyaan.filter((q: Apa) => q.kelompok === "penutup").map((q: Apa) => q.id);
+    expect(idPenutup.length).toBeGreaterThan(0);
+    const tampil = Array.from(wadah.querySelectorAll(".aleta-ssk-baris")).map((b: Apa) => b.getAttribute("data-butir"));
+    expect(tampil.length).toBeGreaterThan(10);
+    for (const id of idPenutup) expect(tampil).not.toContain(id);
+    const nomor = Array.from(wadah.querySelectorAll(".aleta-ssk-saksi")[0].querySelectorAll(".aleta-ssk-tanya")).map((t: Apa) => Number(String(t.textContent).split(".")[0]));
+    expect(nomor).toEqual(nomor.map((_, i) => i + 1));
 
     const minta = dipanggil.find((m) => m.sumber === "isi-jawaban" && m.mintaFakta === true);
     expect(minta).toBeTruthy();

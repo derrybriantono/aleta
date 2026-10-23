@@ -508,3 +508,34 @@ describe("F1.1: Susun keterangan saksi dibuka, lalu Isi dari SIPP - keduanya tet
     expect(q(h, ".aleta-sdg-hasil .aleta-sdg-baris")).toBe(baris);
   });
 });
+
+// ============================================================================
+// T2 (23 Okt 2026, keputusan pengguna): sebab perselisihan cerai yang hanya dari posita = saran
+// ============================================================================
+describe("T2: Susun keterangan saksi 1 & 2 (cerai) menandai sebab dari posita sebagai saran", () => {
+  const SDG_SARAN = {
+    ...SDG_BELUM,
+    saranSebab: [{ no: "2", tanya: "Apa penyebab pertengkaran?", alasan: ["nafkah"] }],
+    saksi: SDG_BELUM.saksi.map((s) => ({
+      ...s,
+      jawaban: [s.jawaban[0], { no: "2", tanya: "Apa penyebab pertengkaran?", jawab: "Penyebabnya karena Tergugat tidak memberi nafkah yang cukup;", saran: true }],
+    })),
+  };
+  const sdgSaran: Pengganti = (url, _c, badan) =>
+    url.includes("/abt/usulan") && JSON.parse(badan || "{}").sumber === "saksi-sdg" ? { isi: { data: { available: true, saksiSdg: SDG_SARAN } } } : undefined;
+
+  it("baris penyebab bertanda saran (data-saran, keterangan 'belum dikuatkan saksi'); baris lain tidak", async () => {
+    const h = buka({ simpanan: ui([]), isi: kosongSaksi, ganti: (u, c, b) => sdgSaran(u, c, b) || sdgBelum(u, c, b) });
+    await selesaiIsi(h);
+    await siapLipat(h);
+    tombolKepala(h, "susun").click();
+    await sampai(() => q(h, ".aleta-sdg-hasil .aleta-sdg-baris"), "penyunting saksi tersusun");
+    for (const kolom of [0, 1]) {
+      const penyebab = barisSdg(h, kolom, 1);
+      expect(penyebab.getAttribute("data-saran")).toBe("1");
+      expect(penyebab.classList.contains("aleta-sdg-dari-gugatan")).toBe(true);
+      expect(penyebab.querySelector("textarea").title).toMatch(/Saran dari gugatan.*belum dikuatkan saksi/);
+      expect(barisSdg(h, kolom, 0).getAttribute("data-saran")).toBeNull();
+    }
+  });
+});

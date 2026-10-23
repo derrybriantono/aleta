@@ -1181,6 +1181,15 @@
         slotSaksi,
         tingkat: ["inti", "pilihan", "tambahan"],
       });
+      // T2 (25 Okt, keputusan pengguna): butir penutup ("Apakah masih ada yang ingin saksi sampaikan?" - "saya sudah cukup")
+      // tidak ditampilkan dan tidak disimpan untuk SEMUA jenis perkara; nomor diurutkan ulang.
+      const idPenutup = new Set((S.kat.pertanyaan || []).filter((q) => q && q.kelompok === "penutup").map((q) => q.id));
+      for (const sk of hasilSusun.saksi || []) {
+        sk.baris = (sk.baris || []).filter((b) => !idPenutup.has(b.butir));
+        sk.baris.forEach((b, i) => {
+          b.no = i + 1;
+        });
+      }
       // saksi Tergugat tanpa bantahan yang ditandai hanya mendapat butir netral: ingatkan petugas
       if (adaButirTergugat() && S.saksi.some((x) => x.pihak === "T") && ![].concat(keadaan.bantahan === undefined ? [] : keadaan.bantahan).length) {
         hasilSusun.peringatan.push(`Saksi ${sebutan("0047", TULISAN_PIHAK.T)} belum menerangkan versinya: tandai bantahan ${sebutan("0047", TULISAN_PIHAK.T)} pada keadaan perkara, lalu susun lagi.`);

@@ -718,8 +718,8 @@ function isiJawaban(baris, fakta, ctx) {
   if (sisaTitik > 0) yakin = minYakin(yakin, "cukup");
   const ragu = yakin === "ragu";
   const { sumber, ket } = susunKet(pakai, ragu);
-  // T2: sebab/alasan yang hanya didalilkan posita (jenis non-cerai) = saran, bukan keterangan pasti.
-  return Saran.tandaiSaran({ teks, terisi, total, yakin, sumber, ket: sisaTitik > 0 ? `${ket} Sisanya belum ada datanya; lengkapi dari keterangan saksi.` : ket }, pakai, ctx.jenis);
+  // T2: sebab/alasan yang hanya didalilkan posita = saran, bukan keterangan pasti (semua jenis, termasuk cerai).
+  return Saran.tandaiSaran({ teks, terisi, total, yakin, sumber, ket: sisaTitik > 0 ? `${ket} Sisanya belum ada datanya; lengkapi dari keterangan saksi.` : ket }, pakai);
 }
 const RE_ALETA_JAWAB = /aleta/i;
 
@@ -744,7 +744,7 @@ function nilaiVariabel(kode, fakta, ctx) {
   for (const f of pakai) yakin = minYakin(yakin, f.yakin);
   const { sumber, ket } = susunKet(pakai, yakin === "ragu");
   const label = [...new Set(pakai.map((f) => F.LABEL_FAKTA[f.kunci]).filter(Boolean))].slice(0, 3).join(", ");
-  return Saran.tandaiSaran({ teks, yakin, sumber, ket, ...(label ? { label } : {}) }, pakai, (ctx || {}).jenis);
+  return Saran.tandaiSaran({ teks, yakin, sumber, ket, ...(label ? { label } : {}) }, pakai);
 }
 
 // ============================================================================
