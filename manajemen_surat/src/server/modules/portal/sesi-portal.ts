@@ -40,7 +40,7 @@ import { type AletaDatabase } from "@/server/db/client";
  */
 export const SESI_TANPA_DIINGAT_DETIK = 2 * 60 * 60;
 
-type BarisSesi = { diingat: number; versi_aplikasi: string };
+export type BarisSesi = { diingat: number; versi_aplikasi: string };
 
 /** Menandai sesi yang baru dibuat: diingat atau tidak, beserta versi aplikasinya. */
 export async function tandaiSesi(
@@ -80,7 +80,18 @@ export async function periksaSesi(
     .prepare("SELECT diingat, versi_aplikasi FROM sesi_portal WHERE session_id = ?")
     .all<BarisSesi>(String(sessionId || ""));
 
-  const penanda = baris[0];
+  return putuskanSesi(baris[0], dibuatPada, sekarang);
+}
+
+/**
+ * Aturan periksaSesi tanpa basis data - dipakai juga penghitung perangkat aktif
+ * (server/modules/perangkat/sesi.ts) supaya "aktif" berarti hal yang sama.
+ */
+export function putuskanSesi(
+  penanda: BarisSesi | undefined,
+  dibuatPada: Date | string | null | undefined,
+  sekarang: Date = new Date()
+): PutusanSesi {
   const diingat = penanda ? Number(penanda.diingat) === 1 : false;
 
   // Versi hanya dibandingkan bila penandanya ada DAN versinya tercatat. Sesi
@@ -122,4 +133,6 @@ export async function hapusSesi(db: AletaDatabase, sessionId: string) {
   if (!id) return;
   await db.prepare("DELETE FROM sesi_portal WHERE session_id = ?").run(id);
   await db.prepare("DELETE FROM sessions WHERE id = ?").run(id);
+  // Peta sesi -> perangkat (0085) ikut dibuang; peristiwanya dicatat pemanggil.
+  await db.prepare("DELETE FROM aleta_sesi_perangkat WHERE session_id = ?").run(id).catch(() => undefined);
 }

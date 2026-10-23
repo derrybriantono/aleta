@@ -44,8 +44,39 @@ function isSetupPath(pathname: string) {
   return normalizedPath === "/setup" || normalizedPath.startsWith("/setup/");
 }
 
+// ============================================================================
+// KUKI PERANGKAT (23 Okt 2026) - jejak masuk & batas perangkat
+// ============================================================================
+//
+// Satu peramban = satu perangkat: UUID acak, httpOnly, masa 400 hari (batas
+// atas peramban; rancangan awal 2 tahun dipotong peramban). Dipasang
+// bila belum ada, dan masanya diperbarui saat halaman dibuka (bukan pada tiap
+// panggilan API). Nama & bentuknya sama dengan server/modules/perangkat/
+// jaringan.ts; disalin di sini supaya proxy tidak memuat modul node:crypto.
+const KUKI_PERANGKAT = "aleta_perangkat";
+const POLA_ID_PERANGKAT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+function pasangKukiPerangkat(request: NextRequest, response: NextResponse) {
+  const ada = request.cookies.get(KUKI_PERANGKAT)?.value?.toLowerCase() ?? "";
+  const sah = POLA_ID_PERANGKAT.test(ada);
+  const halaman = (request.headers.get("accept") ?? "").includes("text/html");
+  if (sah && !halaman) return;
+  const nilai = sah ? ada : globalThis.crypto.randomUUID();
+  response.cookies.set(KUKI_PERANGKAT, nilai, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/+$/, "") || "/",
+    maxAge: 400 * 24 * 60 * 60,
+  });
+}
+
 export function proxy(request: NextRequest) {
   const response = NextResponse.next();
+  try {
+    pasangKukiPerangkat(request, response);
+  } catch {
+    /* kuki perangkat tidak boleh menahan halaman apa pun */
+  }
   const adminPath = isAdminPath(request.nextUrl.pathname);
   const setupPath = isSetupPath(request.nextUrl.pathname);
 

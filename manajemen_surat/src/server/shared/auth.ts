@@ -69,9 +69,14 @@ export async function resolveActorUserId(request: NextRequest, fallbackUserId?: 
         const db = await getDatabase();
         const putusan = await periksaSesi(db, String(sessionId), session?.session?.createdAt);
         if (!putusan.berlaku) {
+          // Jejak masuk (23 Okt 2026): kedaluwarsa dicatat SEBELUM petanya dihapus.
+          const { catatSesiKedaluwarsa } = await import("@/server/modules/perangkat/aktivitas");
+          await catatSesiKedaluwarsa(db, { sessionId: String(sessionId), userId: String(userId), sebab: putusan.sebab, headers: request.headers });
           await hapusSesi(db, String(sessionId));
           return extractActorUserId(request, fallbackUserId);
         }
+        const { catatAktivitasSesi } = await import("@/server/modules/perangkat/aktivitas");
+        await catatAktivitasSesi(db, { sessionId: String(sessionId), userId: String(userId), headers: request.headers });
       } catch {
         /* tidak dapat diperiksa: dibiarkan lewat, lihat catatan di atas */
       }
