@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { PARAMETER_HARGA_BAWAAN, TARIF_BAWAAN, type ParameterHarga, type Tarif } from "@/lib/aleta-ai/biaya";
 import { EFFORT_SAH, RUTE_BAWAAN, type EffortAi, type RuteKelompok } from "@/lib/aleta-ai/rute";
 import type { AletaDatabase } from "@/server/db/client";
+import { hentikanSemuaPekerjaanAi } from "@/server/modules/aleta-ai/saklar";
 import { ApiError } from "@/server/shared/errors";
 
 /**
@@ -33,6 +34,12 @@ export type PengaturanAi = ParameterHarga & {
   faktorTahan: number;
   /** Retensi percakapan (hari). Dicatat di tahap 1; penghapusan otomatis tahap 6. */
   retensiHari: number;
+  /** Batas satker per bulan: biaya API (Rp, kurs dasar) seluruh pengguna termasuk Super Admin. 0 = tanpa batas. */
+  batasSatkerBulananRp: number;
+  /** Saldo di bawah angka ini = "saldo menipis" (pemberitahuan di Dompet dan layar ALETA Ai). */
+  ambangSaldoMenipisRp: number;
+  /** Isi saldo berbayar (QRIS, tahap 5). MATI bawaan dan belum dapat dinyalakan (pengingat hukum rencana bagian 9). */
+  isiBerbayarAktif: boolean;
 };
 
 export const PENGATURAN_BAWAAN: PengaturanAi = {
@@ -44,6 +51,9 @@ export const PENGATURAN_BAWAAN: PengaturanAi = {
   kursAwal: 16_500,
   faktorTahan: 1.5,
   retensiHari: 90,
+  batasSatkerBulananRp: 5_000_000,
+  ambangSaldoMenipisRp: 5_000,
+  isiBerbayarAktif: false,
 };
 
 const KUNCI: Record<keyof PengaturanAi, string> = {
@@ -59,6 +69,9 @@ const KUNCI: Record<keyof PengaturanAi, string> = {
   kursAwal: "kurs_awal",
   faktorTahan: "faktor_tahan",
   retensiHari: "retensi_hari",
+  batasSatkerBulananRp: "batas_satker_bulanan_rp",
+  ambangSaldoMenipisRp: "ambang_saldo_menipis_rp",
+  isiBerbayarAktif: "isi_berbayar_aktif",
 };
 
 /** Rentang yang masuk akal; di luar itu hampir pasti salah ketik. */
@@ -74,6 +87,8 @@ const RENTANG: Partial<Record<keyof PengaturanAi, [number, number]>> = {
   kursAwal: [1_000, 100_000],
   faktorTahan: [1, 10],
   retensiHari: [1, 3650],
+  batasSatkerBulananRp: [0, 10_000_000_000],
+  ambangSaldoMenipisRp: [0, 10_000_000],
 };
 
 const seedSudah = new WeakSet<AletaDatabase>();
@@ -167,6 +182,11 @@ export async function simpanPengaturan(db: AletaDatabase, olehId: string, masuka
     if (nama === "aktif") {
       if (typeof nilai !== "boolean") throw new ApiError(400, "Saklar ALETA Ai harus berupa ya/tidak.");
       simpan = nilai ? "1" : "0";
+    } else if (nama === "isiBerbayarAktif") {
+      if (typeof nilai !== "boolean") throw new ApiError(400, "Saklar isi saldo berbayar harus berupa ya/tidak.");
+      // Tahap 5 (QRIS) belum dibangun dan menunggu keputusan pengguna (PNBP/pungli, pajak, ASN, UU PDP).
+      if (nilai) throw new ApiError(400, "Isi saldo berbayar belum tersedia. Saldo diisi manual oleh Super Admin.");
+      simpan = "0";
     } else {
       const n = Number(nilai);
       const r = RENTANG[nama];
@@ -182,6 +202,8 @@ export async function simpanPengaturan(db: AletaDatabase, olehId: string, masuka
     diubah.push(nama);
   }
   if (diubah.length) await catatJejakPengaturan(db, olehId, "pengaturan", `Mengubah: ${diubah.join(", ")}`);
+  // Saklar darurat: giliran dan tugas yang sedang berjalan di proses ini dihentikan seketika.
+  if (perubahan.aktif === false) hentikanSemuaPekerjaanAi();
   return bacaPengaturan(db);
 }
 
