@@ -188,6 +188,9 @@ const BERKAS = [
   // Menu ABT By Derry dan ALETA di bilah atas SIPP (22 Okt 2026) - skrip konten SIPP dan ABT;
   // butir menu bergaya SIPP, tab baru lewat pekerja latar, tanpa sandi apa pun.
   "menu-atas.js",
+  // Gelembung chat ALETA Ai (23 Okt 2026, T1 tahap 2b) - skrip konten SIPP, ABT, portal; hanya memanggil
+  // rute portal seasal /aleta/api/aleta-ai (sesi ALETA), tanpa kunci API, tidak menulis ke SIPP/ABT.
+  "aleta-ai-gelembung.js",
   // Halaman e-Court yang dibuka dari menu E-Court (22 Okt 2026) - mengisi nama pengguna saja dan menjaga sesi.
   "ecourt-masuk.js",
   // Penjaga batas (17 Okt 2026): tidak ada kata ALETA yang ditulis ekstensi ke
