@@ -31,6 +31,8 @@ import { afterEach, describe, expect, it } from "vitest";
  *   - tidak ada permintaan selain GET, dan tidak ada akar baru di <html>.
  */
 
+/** 23 Okt 2026: widget tersembunyi bawaannya - uji lama meminta semua bagian ditampilkan seperti sebelum aturan itu. */
+const BUKA_SEMUA = 'document.dispatchEvent(new CustomEvent("aleta-widget-tampilkan", { detail: { bagian: "semua" } }));';
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (berkas: string) => readFileSync(berkas, "utf8").replace(/\r\n/g, "\n");
 const SUMBER_ALAT = baca(path.join(EKSTENSI, "panel-alat.js"));
@@ -208,7 +210,7 @@ afterEach(async () => {
   while (terbuka.length) terbuka.pop()!.dom.window.close();
 });
 
-function buka(p: { alamat?: string; simpanan?: Record<string, unknown>; jawab?: Jawab; sumber?: string } = {}): Halaman {
+function buka(p: { alamat?: string; simpanan?: Record<string, unknown>; jawab?: Jawab; sumber?: string; tersembunyi?: boolean } = {}): Halaman {
   const dom = jsdomBaru(`<!doctype html><html><head></head><body></body></html>`, {
     url: p.alamat ?? `${ASAL}/SIPP/detil_perkara_agama`,
     runScripts: "outside-only",
@@ -275,6 +277,7 @@ function buka(p: { alamat?: string; simpanan?: Record<string, unknown>; jawab?: 
   const ctx = dom.getInternalVMContext();
   vm.runInContext(SUMBER_ALAT, ctx, { filename: "panel-alat.js" });
   vm.runInContext(p.sumber ?? SUMBER_CHECKLIST, ctx, { filename: "checklist.js" });
+  if (!p.tersembunyi) vm.runInContext(BUKA_SEMUA, ctx);
   return {
     dom,
     w,
@@ -644,8 +647,8 @@ describe("popup-6: angka belum selesai ke ikon ekstensi", () => {
 // ============================================================================
 describe("popup-8 dan D10: lencana logo berkabar", () => {
   it("Baru + popup-8: bentuk ciutnya lencana berangka dengan cincin hijau; tanpa saklar tetap pil", async () => {
-    const h = buka({ simpanan: baru(["popup-8"], { posisiChecklistSipp: { kecil: true } }) });
-    const pil = buka({ simpanan: baru([], { posisiChecklistSipp: { kecil: true } }) });
+    const h = buka({ simpanan: baru(["popup-8"], { posisiChecklistSipp: { kecil: true } }), tersembunyi: true });
+    const pil = buka({ simpanan: baru([], { posisiChecklistSipp: { kecil: true } }), tersembunyi: true });
     const l = await sampai(() => (q(h, ".aleta-cmw-lencana-angka") ? q(h, ".aleta-cmw-lencana") : null), "lencana berangka");
     expect(q(h, ".aleta-cmw-lencana-angka").textContent).toBe("6");
     expect(q(h, ".aleta-cmw-lencana-angka").getAttribute("data-nada")).toBe("lewat");

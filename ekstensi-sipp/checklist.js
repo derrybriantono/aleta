@@ -924,6 +924,80 @@
       font-size: calc(11px * var(--aleta-skala-huruf, 1));
     }
 
+    /* 23 Okt 2026: Checklist milestone, Kehadiran sidang, dan Draf putusan TERSEMBUNYI bawaannya.
+       Gelembung ALETA = satu-satunya yang tampak; kliknya membuka menu kecil, titik di sudutnya
+       memberi tahu ada yang mendesak walau kotaknya tersembunyi. */
+    .aleta-cmw-lencana-titik {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--aleta-latar);
+      background: var(--aleta-lewat);
+    }
+    .aleta-cmw-lencana-titik[data-nada="mendesak"] { background: var(--aleta-mendesak); }
+    .aleta-cmw-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      width: 100%;
+      padding: 6px;
+      border: 1px solid var(--aleta-garis-kuat);
+      border-radius: 12px;
+      background: var(--aleta-latar);
+      box-shadow: var(--cm-bayang);
+    }
+    .aleta-cmw-menu-judul {
+      padding: 4px 8px 6px;
+      color: var(--aleta-tulisan-lembut);
+      font-size: calc(12px * var(--aleta-skala-huruf, 1));
+      font-weight: 700;
+    }
+    .aleta-cmw-menu-butir {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 7px 8px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--aleta-tulisan);
+      font-size: calc(13px * var(--aleta-skala-huruf, 1));
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+    }
+    .aleta-cmw-menu-butir:hover { background: var(--aleta-latar-naik); }
+    .aleta-cmw-menu-centang { flex: none; width: 1.2em; color: var(--aleta-aman); font-weight: 800; }
+    .aleta-cmw-menu-nama { flex: 1 1 auto; min-width: 0; }
+    .aleta-cmw-menu-ket {
+      flex: none;
+      color: var(--aleta-tulisan-lembut);
+      font-size: calc(12px * var(--aleta-skala-huruf, 1));
+      font-weight: 600;
+    }
+    .aleta-cmw-menu-ket[data-nada="lewat"] { color: var(--aleta-lewat); }
+    .aleta-cmw-menu-ket[data-nada="mendesak"] { color: var(--aleta-mendesak); }
+    .aleta-cmw-menu-sembunyi { color: var(--aleta-tulisan-lembut); border-top: 1px solid var(--aleta-garis); border-radius: 0 0 8px 8px; margin-top: 2px; }
+    .aleta-cmw-tutup-kotak {
+      flex: none;
+      margin-left: auto;
+      width: calc(26px * var(--aleta-v2-oto, 1));
+      height: calc(26px * var(--aleta-v2-oto, 1));
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--aleta-tulisan-lembut);
+      font-size: calc(14px * var(--aleta-skala-huruf, 1));
+      line-height: 1;
+      cursor: pointer;
+    }
+    .aleta-cmw-tutup-kotak:hover { background: var(--aleta-garis); color: var(--aleta-tulisan); }
+
     /* Butir 3 (6 Okt): indikator sumber daya server - RAM, CPU, Disk, GPU */
     .aleta-cmw-lencana-baris:has(.aleta-cmw-sd) { flex-wrap: wrap; }
     .aleta-cmw-sd {
@@ -1586,25 +1660,70 @@
 
   /* === CHECKLIST-POSISI 12 Okt === */
   /**
-   * Bawaan TERTUTUP: sesi baru (belum ada posisi tersimpan) memulai widget
-   * sebagai lencana/pil - daftarnya tidak menutupi halaman sebelum diminta.
-   * Yang pernah membentangkannya (kecil:false tersimpan) tetap terbentang -
-   * pilihan petugas diingat.
+   * 23 Okt 2026 (pengguna: "checklist milestone itu hide defaultnya di semua aleta, sipp dan abt ... sama juga
+   * kehadiran para pihak dan draf putusan"): TIGA bagian - Checklist milestone, Kehadiran sidang hari ini, Draf
+   * putusan - TERSEMBUNYI setiap halaman dimuat; yang tampak hanya gelembung ALETA. Petugas memilih yang
+   * ditampilkan dari gelembung (menu kecil) atau dari popup ekstensi; pilihan itu diingat HANYA selama halaman
+   * ini hidup (memori skrip ini) - muat ulang, kembali ke halaman, atau perkara lain = tersembunyi lagi. Tidak
+   * ada yang ditulis ke penyimpanan, jadi saklar popup dan posisi gelembung tidak berubah.
+   *
+   *   checklist  panel Checklist milestone        kehadiran  kotak Kehadiran sidang hari ini
+   *   drafH7     kotak Draf putusan               lain       Catatan cepat, Lama sidang, Kalender tenggat
+   *                                                          (hanya bila dinyalakan di Atur widget)
+   */
+  const TAMPIL_HALAMAN = { checklist: false, kehadiran: false, drafH7: false, lain: false };
+  const BAGIAN_LAIN = ["catatan", "lama-sidang", "kalender"];
+  /** Menu kecil di gelembung terbuka? Tidak disimpan. */
+  let menuGelembungTerbuka = false;
+
+  function lainTersedia() {
+    if (!keadaan.nyala || modeUji() === "lama") return false;
+    return WIDGET.some((w) => BAGIAN_LAIN.includes(w.id) && widgetTersedia(w) && (!modern() || widgetTampil().includes(w.id)));
+  }
+
+  /** Bagian yang boleh ditampilkan di halaman ini (menurut saklar popup), berurutan seperti di menu. */
+  function bagianTersedia() {
+    const daftar = [];
+    if (keadaan.nyala) daftar.push({ id: "checklist", judul: "Checklist milestone" });
+    if (khBerlaku()) daftar.push({ id: "kehadiran", judul: "Kehadiran sidang hari ini" });
+    if (h7Berlaku()) daftar.push({ id: "drafH7", judul: "Draf putusan" });
+    if (lainTersedia()) daftar.push({ id: "lain", judul: "Widget lainnya" });
+    return daftar;
+  }
+
+  /** Bagian ini sedang ditampilkan petugas pada halaman ini (dan saklarnya masih menyala)? */
+  function bagianTampil(id) {
+    return TAMPIL_HALAMAN[id] === true && bagianTersedia().some((b) => b.id === id);
+  }
+
+  function adaBagianTampil() {
+    return bagianTersedia().some((b) => TAMPIL_HALAMAN[b.id] === true);
+  }
+
+  /** Widget galeri (dok) tampil menurut pilihan "lain"/"checklist"; id lain tidak dibatasi. */
+  function widgetGaleriTampil(id) {
+    if (id === "checklist") return bagianTampil("checklist");
+    if (BAGIAN_LAIN.includes(id)) return bagianTampil("lain");
+    return true;
+  }
+
+  /**
+   * Semua bagian tersembunyi (bawaan) -> yang tampak hanya gelembung.
+   * Tampilan Lama TIDAK berubah (syarat mutlak Lama, dijaga uji "Lama IDENTIK"): ia tetap mengikuti
+   * kecil/terbentang yang tersimpan di posisinya, dan hanya Super Admin yang masih dapat memilih Lama.
    */
   function sedangKecil() {
-    // 21 Okt 2026 (semua panel ekstensi bawaannya terlipat; Baru & UI Baru - Lama tidak berubah): KECIL di
-    // setiap tab baru. Yang dibentangkan petugas diingat per SESI TAB (alatPanelTerbuka sesiTab, panel-alat.js)
-    // - berpindah halaman di tab yang sama tidak menciutkannya lagi; kecil:false yang tersimpan dari sesi
-    // lain tidak lagi membentangkannya.
-    if (modeUji() !== "lama" && !terbentangSesiIni()) return true;
-    return keadaan.posisi ? keadaan.posisi.kecil === true : true;
+    if (modeUji() === "lama") return keadaan.posisi ? keadaan.posisi.kecil === true : true;
+    return !adaBagianTampil();
   }
-  function terbentangSesiIni() {
-    try {
-      return typeof alatPanelTerbuka === "function" && alatPanelTerbuka("checklist-widget", { sesiTab: true });
-    } catch {
-      return false;
-    }
+
+  /** Hanya tampilan Lama: pil <-> panel yang diingat di posisi (jalan lama persis). */
+  function setelKecilLama(kecil) {
+    keadaan.posisi = { ...(keadaan.posisi || {}), kecil };
+    simpanPosisi();
+    gambar();
+    terapkanPosisi();
+    fokuskan(kecil ? "pil" : "kecilkan");
   }
   /* === AKHIR CHECKLIST-POSISI === */
 
@@ -2842,7 +2961,7 @@
         "aleta-cm-kecilkan",
         "–",
         lencanaDipakai() ? "Ciutkan menjadi lencana" : "Kecilkan menjadi pil",
-        () => setelKecil(true),
+        () => sembunyikanSemua(),
         "kecilkan"
       )
     );
@@ -3244,6 +3363,11 @@
     pil.setAttribute("data-fokus", "pil");
     pil.title = "Bentangkan checklist. Geser untuk memindahkan.";
     pil.setAttribute("aria-label", `${teks}. Bentangkan checklist`);
+    if (bagianTersedia().length > 1) {
+      pil.title = "Pilih yang ditampilkan: Checklist milestone, Kehadiran sidang, Draf putusan. Geser untuk memindahkan.";
+      pil.setAttribute("aria-haspopup", "menu");
+      pil.setAttribute("aria-expanded", menuGelembungTerbuka ? "true" : "false");
+    }
     const h = keadaan.data ? hitunganTampil(keadaan.data) : null;
     pil.setAttribute("data-nada", h && h.lewat > 0 ? "lewat" : h && h.hariIni > 0 ? "mendesak" : "tenang");
     pil.addEventListener("click", () => {
@@ -3252,7 +3376,7 @@
         abaikanKlikPil = false;
         return;
       }
-      setelKecil(false);
+      klikGelembung("pil");
     });
     return pil;
   }
@@ -3285,19 +3409,205 @@
       n.setAttribute("data-nada", a.lewat > 0 ? "lewat" : a.hariIni > 0 ? "mendesak" : "tenang");
       t.appendChild(n);
     }
-    const ringkas = keadaan.data ? `${a.belum} tugas belum selesai (${a.lewat} lewat tenggat)` : teksPil();
-    const judul = `${ringkas}${bolehKeteranganTeknis() ? ` · ${teksSambungan()}` : ""}. ${kecil ? "Bentangkan widget" : "Ciutkan menjadi lencana"} - geser untuk memindahkan.`;
+    // 23 Okt 2026: yang mendesak di kotak yang TERSEMBUNYI tetap terbaca - titik kecil di sudut gelembung.
+    const mendesak = ringkasMendesakTersembunyi();
+    if (mendesak.jumlah > 0) {
+      const titik = el("i", "aleta-cmw-lencana-titik");
+      titik.setAttribute("data-nada", mendesak.nada);
+      titik.setAttribute("data-titik-mendesak", "ya");
+      t.appendChild(titik);
+    }
+    const banyak = bagianTersedia().length > 1;
+    const hanyaSidang = !keadaan.nyala;
+    const ringkas = hanyaSidang
+      ? "Kehadiran sidang dan draf putusan"
+      : keadaan.data
+        ? `${a.belum} tugas belum selesai (${a.lewat} lewat tenggat)`
+        : teksPil();
+    const aksi = banyak ? "Pilih yang ditampilkan" : kecil ? "Bentangkan widget" : "Ciutkan menjadi lencana";
+    const judul = `${ringkas}${bolehKeteranganTeknis() && !hanyaSidang ? ` · ${teksSambungan()}` : ""}${mendesak.jumlah > 0 ? `. Perlu dicek: ${mendesak.teks}` : ""}. ${aksi} - geser untuk memindahkan.`;
     t.title = judul;
     t.setAttribute("aria-label", judul);
-    t.setAttribute("aria-expanded", kecil ? "false" : "true");
+    if (banyak) {
+      t.setAttribute("aria-haspopup", "menu");
+      t.setAttribute("aria-expanded", menuGelembungTerbuka ? "true" : "false");
+    } else {
+      t.setAttribute("aria-expanded", kecil ? "false" : "true");
+    }
     t.addEventListener("click", () => {
       if (abaikanKlikPil) {
         abaikanKlikPil = false;
         return;
       }
-      setelKecil(!kecil);
+      klikGelembung("lencana");
     });
     return t;
+  }
+
+  // ─── 23 Okt 2026: tersembunyi bawaan - gelembung, menu kecil, dan pesan dari popup ──────────────
+
+  /**
+   * Yang mendesak di kotak yang sedang tersembunyi: kehadiran dengan keterangan merah, dan draf putusan yang
+   * belum siap padahal Hari Putusan-nya dua hari lagi atau kurang. Checklist sudah punya angkanya di gelembung.
+   */
+  function ringkasMendesakTersembunyi() {
+    let kehadiran = 0;
+    let draf = 0;
+    if (khBerlaku() && !bagianTampil("kehadiran") && kh.data) {
+      kehadiran = kh.data.perkara.filter((p) => p.ringkas.some((r) => r.nada === "merah")).length;
+    }
+    if (h7Berlaku() && !bagianTampil("drafH7") && h7.data) {
+      draf = h7.data.perkara.filter((p) => p.tingkat === "belum" && p.sisaHari <= 2).length;
+    }
+    const bagian = [];
+    if (kehadiran) bagian.push(`${kehadiran} sidang`);
+    if (draf) bagian.push(`${draf} draf putusan`);
+    return { jumlah: kehadiran + draf, kehadiran, draf, teks: bagian.join(", "), nada: draf > 0 ? "lewat" : "mendesak" };
+  }
+
+  /** Keterangan singkat di baris menu: jumlahnya, supaya pilihan tidak buta. */
+  function ketMenu(id) {
+    if (id === "checklist") {
+      if (!keadaan.data) return { teks: "", nada: "" };
+      const a = angkaBelum();
+      return { teks: a.belum ? `${a.belum} tugas` : "tidak ada tugas", nada: a.lewat > 0 ? "lewat" : a.hariIni > 0 ? "mendesak" : "" };
+    }
+    const m = ringkasMendesakTersembunyi();
+    if (id === "kehadiran") {
+      if (!kh.data) return { teks: "", nada: "" };
+      return { teks: kh.data.jumlah ? `${kh.data.jumlah} sidang` : "tidak ada sidang", nada: m.kehadiran > 0 ? "mendesak" : "" };
+    }
+    if (id === "drafH7") {
+      if (!h7.data) return { teks: "", nada: "" };
+      return { teks: h7.data.jumlah ? `${h7.data.jumlah} perkara` : "tidak ada", nada: m.draf > 0 ? "lewat" : "" };
+    }
+    return { teks: "", nada: "" };
+  }
+
+  /** Tampilkan atau sembunyikan satu bagian di halaman ini. */
+  function ubahTampil(id, nilai) {
+    const kunci = id === "semua" ? Object.keys(TAMPIL_HALAMAN) : [id];
+    if (!kunci.every((k) => Object.prototype.hasOwnProperty.call(TAMPIL_HALAMAN, k))) return;
+    const baru = nilai === true;
+    for (const k of kunci) {
+      if (baru && TAMPIL_HALAMAN[k] !== true) {
+        // Dibuka dengan sengaja = langsung terbentang, bukan bilah terlipat yang perlu diklik sekali lagi.
+        if (k === "kehadiran") BENTANG_HALAMAN["widget:kehadiran"] = true;
+        if (k === "drafH7") BENTANG_HALAMAN["widget:drafH7"] = true;
+      }
+      TAMPIL_HALAMAN[k] = baru;
+    }
+    menuGelembungTerbuka = false;
+    gambar();
+    terapkanPosisi();
+  }
+
+  function sembunyikanSemua() {
+    if (modeUji() === "lama") {
+      setelKecilLama(true);
+      return;
+    }
+    for (const k of Object.keys(TAMPIL_HALAMAN)) TAMPIL_HALAMAN[k] = false;
+    menuGelembungTerbuka = false;
+    gambar();
+    terapkanPosisi();
+    fokuskan(lencanaDipakai() ? "lencana" : "pil");
+  }
+
+  /** Klik gelembung: satu-satunya bagian dibuka/ditutup langsung; lebih dari satu = menu kecil. */
+  function klikGelembung(fokusKunci) {
+    if (modeUji() === "lama") {
+      setelKecilLama(false);
+      return;
+    }
+    const t = bagianTersedia();
+    if (!t.length) return;
+    if (t.length === 1) {
+      ubahTampil(t[0].id, TAMPIL_HALAMAN[t[0].id] !== true);
+    } else {
+      menuGelembungTerbuka = !menuGelembungTerbuka;
+      gambar();
+      terapkanPosisi();
+    }
+    fokuskan(fokusKunci);
+  }
+
+  /** Menu kecil di atas gelembung; null bila tertutup. */
+  function susunMenuGelembung() {
+    if (!menuGelembungTerbuka) return null;
+    const t = bagianTersedia();
+    if (t.length < 2) return null;
+    const menu = el("div", "aleta-cmw-menu");
+    menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-label", "Tampilkan di halaman ini");
+    menu.setAttribute("data-menu-gelembung", "ya");
+    menu.appendChild(el("div", "aleta-cmw-menu-judul", "Tampilkan di halaman ini"));
+    for (const b of t) {
+      const aktif = TAMPIL_HALAMAN[b.id] === true;
+      const judul = aktif ? `Sembunyikan ${b.judul}` : `Tampilkan ${b.judul}`;
+      const baris = tombol("aleta-cmw-menu-butir", "", judul, () => ubahTampil(b.id, !aktif), `menu-${b.id}`);
+      baris.setAttribute("role", "menuitemcheckbox");
+      baris.setAttribute("aria-checked", aktif ? "true" : "false");
+      baris.setAttribute("data-menu-bagian", b.id);
+      baris.appendChild(el("span", "aleta-cmw-menu-centang", aktif ? "✓" : ""));
+      baris.appendChild(el("span", "aleta-cmw-menu-nama", b.judul));
+      const ket = ketMenu(b.id);
+      if (ket.teks) {
+        const k = el("span", "aleta-cmw-menu-ket", ket.teks);
+        if (ket.nada) k.setAttribute("data-nada", ket.nada);
+        baris.appendChild(k);
+      }
+      menu.appendChild(baris);
+    }
+    if (adaBagianTampil()) {
+      const semua = tombol("aleta-cmw-menu-butir aleta-cmw-menu-sembunyi", "Sembunyikan semua", "Sembunyikan semua - tinggal gelembung ALETA", sembunyikanSemua, "menu-sembunyi");
+      semua.setAttribute("role", "menuitem");
+      menu.appendChild(semua);
+    }
+    menu.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      menuGelembungTerbuka = false;
+      gambar();
+      fokuskan("lencana");
+    });
+    return menu;
+  }
+
+  /**
+   * Pesan dari popup ekstensi ("Tampilkan di halaman ini"): bagian yang diminta ditampilkan di halaman ini
+   * bila saklarnya menyala. Jawabannya memberi tahu popup bila tidak ada yang bisa ditampilkan.
+   */
+  function tampilkanDariPesan(pesan) {
+    const bagian = pesan && typeof pesan === "object" ? String(pesan.bagian || "") : "";
+    const id = bagian === "checklist" || bagian === "kehadiran" || bagian === "drafH7" ? bagian : "";
+    if (!id) return { ok: false, alasan: "bagian-tidak-dikenal" };
+    if (!akar || !akar.isConnected || !bagianTersedia().some((b) => b.id === id)) return { ok: false, alasan: "tidak-tersedia" };
+    ubahTampil(id, true);
+    return { ok: true };
+  }
+
+  /**
+   * Peristiwa dokumen "aleta-widget-tampilkan" { bagian: checklist | kehadiran | drafH7 | lain | semua, tampil?: false }
+   * - jalan yang sama dengan menu gelembung, untuk bagian ekstensi lain dan uji. Hanya berlaku di halaman ini.
+   */
+  function dengarPeristiwaTampil() {
+    document.addEventListener("aleta-widget-tampilkan", (e) => {
+      const d = e && e.detail && typeof e.detail === "object" ? e.detail : {};
+      ubahTampil(String(d.bagian || ""), d.tampil !== false);
+    });
+  }
+
+  function dengarPesanPopup() {
+    try {
+      if (!chrome.runtime || !chrome.runtime.onMessage || typeof chrome.runtime.onMessage.addListener !== "function") return;
+      chrome.runtime.onMessage.addListener((pesan, pengirim, balas) => {
+        if (!pesan || pesan.jenis !== "aleta-widget-tampilkan") return undefined;
+        if (typeof balas === "function") balas(tampilkanDariPesan(pesan));
+        return undefined;
+      });
+    } catch {
+      /* di luar konteks ekstensi: popup tidak dapat membuka, gelembung tetap bisa */
+    }
   }
 
   // ─── Performa muat 19 Okt 2026: denyut widget ─────────────────────────────
@@ -3852,7 +4162,7 @@
 
   function susunKehadiranWidget() {
     // Butir 41 (17 Okt): terlipat bawaan - jumlahnya tetap terbaca di kepala.
-    const w = kotakWidget("kehadiran", "Kehadiran sidang hari ini", { terbuka: false, sesiTab: true });
+    const w = kotakWidget("kehadiran", "Kehadiran sidang hari ini", { terbuka: false, sesiTab: true, saatTutup: () => ubahTampil("kehadiran", false) });
     w.kotak.setAttribute("data-kehadiran-widget", "");
     if (!kh.data) {
       const sebab =
@@ -4057,7 +4367,7 @@
 
   function susunDrafH7Widget() {
     // Butir 41 (17 Okt): terlipat bawaan - jumlahnya tetap terbaca di kepala.
-    const w = kotakWidget("drafH7", "Draf putusan", { terbuka: false, sesiTab: true });
+    const w = kotakWidget("drafH7", "Draf putusan", { terbuka: false, sesiTab: true, saatTutup: () => ubahTampil("drafH7", false) });
     w.kotak.setAttribute("data-draf-h7-widget", "");
     if (!h7.data) {
       const sebab =
@@ -4221,12 +4531,18 @@
   function susunDok(kecil) {
     const dok = el("div", "aleta-cmw-dok");
     if (!keadaan.nyala) {
-      // Checklist milestone mati (butir 41): hanya kotak sidang, selalu bentang (kotaknya sendiri terlipat).
+      // Checklist milestone mati (butir 41): hanya kotak sidang. 23 Okt 2026: tersembunyi bawaannya - yang tampak
+      // gelembung ALETA; kotaknya muncul bila dipilih dari menu gelembung.
       dok.setAttribute("data-dok", "kotak-sidang");
       const tumpuk = el("div", "aleta-cmw-tumpuk");
-      if (khBerlaku()) tumpuk.appendChild(susunKehadiranWidget());
-      if (h7Berlaku()) tumpuk.appendChild(susunDrafH7Widget());
+      if (khBerlaku() && bagianTampil("kehadiran")) tumpuk.appendChild(susunKehadiranWidget());
+      if (h7Berlaku() && bagianTampil("drafH7")) tumpuk.appendChild(susunDrafH7Widget());
       if (tumpuk.childNodes.length) dok.appendChild(tumpuk);
+      const menuSidang = susunMenuGelembung();
+      if (menuSidang) dok.appendChild(menuSidang);
+      const barisSidang = el("div", "aleta-cmw-lencana-baris");
+      barisSidang.appendChild(susunLencana(kecil));
+      dok.appendChild(barisSidang);
       return dok;
     }
     dok.setAttribute("data-dok", kecil ? "ciut" : "bentang");
@@ -4238,6 +4554,8 @@
         for (const id of widgetTampil()) {
           // Butir 7: bagian yang dipisah tinggal di jendela melayangnya.
           if (terpisah(id)) continue;
+          // 23 Okt 2026: tersembunyi bawaan - hanya yang dipilih dari gelembung.
+          if (!widgetGaleriTampil(id)) continue;
           const w = susunWidget(id);
           if (w) {
             pasangKendaliBagian(w, id, false);
@@ -4245,12 +4563,14 @@
           }
         }
         // F3.2: kehadiran sidang hari ini - saklar sendiri di popup.
-        if (khBerlaku()) tumpuk.appendChild(susunKehadiranWidget());
+        if (khBerlaku() && bagianTampil("kehadiran")) tumpuk.appendChild(susunKehadiranWidget());
         // F4.2: draf putusan H-7 - saklar sendiri di popup.
-        if (h7Berlaku()) tumpuk.appendChild(susunDrafH7Widget());
+        if (h7Berlaku() && bagianTampil("drafH7")) tumpuk.appendChild(susunDrafH7Widget());
         if (tumpuk.childNodes.length) dok.appendChild(tumpuk);
       }
     }
+    const menuGelembung = susunMenuGelembung();
+    if (menuGelembung) dok.appendChild(menuGelembung);
     const baris = el("div", "aleta-cmw-lencana-baris");
     baris.appendChild(susunLencana(kecil));
     // Butir 3 (6 Okt): RAM / Disk / GPU di samping lencana, ciut maupun bentang.
@@ -4286,27 +4606,40 @@
    */
   function susunTumpukKlasik(kecil) {
     const frag = document.createDocumentFragment();
+    // 23 Okt 2026: tersembunyi bawaan. Gelembung (lencana atau pil) SELALU ada di kaki; yang dipilih dari
+    // menunya tampil di atasnya.
+    const gelembung = fitur("popup-8") ? susunLencana(kecil) : susunPil();
     if (kecil) {
-      frag.appendChild(fitur("popup-8") ? susunLencana(true) : susunPil());
+      const menuKecil = susunMenuGelembung();
+      if (menuKecil) frag.appendChild(menuKecil);
+      frag.appendChild(gelembung);
       return frag;
     }
     // Butir 3 (6 Okt): indikator sumber daya - di Baru hanya dengan saklar portal-7.
     const indikator = indikatorSdUntukGambar(false);
     if (indikator) frag.appendChild(indikator);
-    const tambahan = WIDGET.filter((w) => w.id !== "checklist" && widgetTersedia(w));
-    if (tambahan.length || khBerlaku() || h7Berlaku()) {
+    const tambahan = WIDGET.filter((w) => w.id !== "checklist" && widgetTersedia(w) && widgetGaleriTampil(w.id));
+    const tampilKh = khBerlaku() && bagianTampil("kehadiran");
+    const tampilH7 = h7Berlaku() && bagianTampil("drafH7");
+    if (tambahan.length || tampilKh || tampilH7) {
       const tumpuk = el("div", "aleta-cmw-tumpuk aleta-cmw-tumpuk-klasik");
       for (const w of tambahan) {
         const isi = susunWidget(w.id);
         if (isi) tumpuk.appendChild(isi);
       }
       // F3.2: kehadiran sidang hari ini - saklar sendiri di popup.
-      if (khBerlaku()) tumpuk.appendChild(susunKehadiranWidget());
+      if (tampilKh) tumpuk.appendChild(susunKehadiranWidget());
       // F4.2: draf putusan H-7 - saklar sendiri di popup.
-      if (h7Berlaku()) tumpuk.appendChild(susunDrafH7Widget());
+      if (tampilH7) tumpuk.appendChild(susunDrafH7Widget());
       frag.appendChild(tumpuk);
     }
-    frag.appendChild(susunPanel());
+    if (bagianTampil("checklist")) frag.appendChild(susunPanel());
+    // Satu-satunya bagian (checklist) = susunan lama persis: panel saja, "–" mengembalikan ke gelembung.
+    if (bagianTersedia().length > 1) {
+      const menuBentang = susunMenuGelembung();
+      if (menuBentang) frag.appendChild(menuBentang);
+      frag.appendChild(gelembung);
+    }
     return frag;
   }
 
@@ -4372,6 +4705,10 @@
     kepala.setAttribute("data-geser", "1");
     kepala.title = `${judul}. Geser dari sini.`;
     kepala.appendChild(tombolLipat || teksJudul);
+    // 23 Okt 2026: kotak yang dibuka dari gelembung dapat disembunyikan lagi (hanya untuk halaman ini).
+    if (typeof o.saatTutup === "function") {
+      kepala.appendChild(tombol("aleta-cmw-tutup-kotak", "×", `Sembunyikan ${judul}`, o.saatTutup, `tutup-${id}`));
+    }
     kotak.insertBefore(kepala, kotak.firstChild);
     if (!isi.parentNode) kotak.appendChild(isi);
     const ringkas = (teks) => {
@@ -5566,9 +5903,9 @@
 
   function idTerpisah() {
     if (!modern()) return [];
-    const atas = widgetTampil().filter((id) => terpisah(id));
+    const atas = widgetTampil().filter((id) => terpisah(id) && widgetGaleriTampil(id));
     // Kelompok hanya bila checklistnya sendiri tampil (bukan disembunyikan dari dok).
-    const checklistAda = widgetTampil().includes("checklist");
+    const checklistAda = widgetTampil().includes("checklist") && bagianTampil("checklist");
     const kel = checklistAda
       ? urutanKelompok()
           .filter((k) => !kelompokMati(k.kunci) && terpisah(`kel-${k.kunci}`))
@@ -6110,19 +6447,6 @@
     tulis({ [KUNCI_POSISI]: isi });
   }
 
-  function setelKecil(kecil) {
-    try {
-      if (typeof alatIngatPanel === "function") alatIngatPanel("checklist-widget", !kecil, { sesiTab: true });
-    } catch {
-      /* ingatan lipatan hanya kenyamanan */
-    }
-    keadaan.posisi = { ...(keadaan.posisi || {}), kecil };
-    simpanPosisi();
-    gambar();
-    terapkanPosisi();
-    fokuskan(kecil ? (lencanaDipakai() ? "lencana" : "pil") : modern() ? "lencana" : "kecilkan");
-  }
-
   function setelLipatan(kunci, buka) {
     keadaan.lipatan = { ...keadaan.lipatan, [kunci]: buka };
     tulis({ [KUNCI_LIPATAN]: keadaan.lipatan });
@@ -6646,6 +6970,20 @@
   // Pendengar dipasang SEBELUM penyimpanan terbaca: saklar yang diubah
   // selama pembacaan pertama tidak boleh hilang.
   dengarkan();
+  dengarPesanPopup();
+  dengarPeristiwaTampil();
+  // 23 Okt 2026: menu gelembung menutup sendiri bila orang mengklik di luar widget.
+  document.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (!menuGelembungTerbuka) return;
+      const jalur = typeof e.composedPath === "function" ? e.composedPath() : [];
+      if (akar && jalur.includes(akar)) return;
+      menuGelembungTerbuka = false;
+      if (akar && akar.isConnected) gambar();
+    },
+    true
+  );
   window.addEventListener("focus", saatKembali);
   // CHECKLIST-POSISI 12 Okt: lepas/batal di mana pun - juga di luar widget.
   window.addEventListener("pointerup", lepasTekan, true);

@@ -19,6 +19,8 @@ import { susunKehadiranSaya, type BarisKehadiranSaya } from "@/app/api/aleta-eco
  *     tanpa memuat ulang; 401 dijawab dengan kalimat awam.
  */
 
+/** 23 Okt 2026: widget tersembunyi bawaannya - uji lama meminta semua bagian ditampilkan seperti sebelum aturan itu. */
+const BUKA_SEMUA = 'document.dispatchEvent(new CustomEvent("aleta-widget-tampilkan", { detail: { bagian: "semua" } }));';
 const HARI = "2026-10-17";
 
 describe("rute kehadiran-saya: susunKehadiranSaya", () => {
@@ -201,6 +203,7 @@ function buka(awal: Record<string, unknown>, statusKh = 200) {
   const ctx = dom.getInternalVMContext();
   vm.runInContext(SUMBER_ALAT, ctx, { filename: "panel-alat.js" });
   vm.runInContext(SUMBER_CHECKLIST, ctx, { filename: "checklist.js" });
+  if (awal.__tersembunyi !== true) vm.runInContext(BUKA_SEMUA, ctx);
   const ubahSimpanan = (isi: Record<string, unknown>) => w.chrome.storage.local.set(isi);
   return { w, minta, ubahSimpanan };
 }
@@ -247,25 +250,35 @@ describe("widget ALETA: kotak Kehadiran sidang hari ini", () => {
     await sampai(() => q(h, ".aleta-cmw-tumpuk-klasik [data-kehadiran-widget] .aleta-cmw-kh-chip"), "kotak di tumpukan Baru");
   });
 
-  it("butir 41 (17 Okt): saklar belum disentuh = MENYALA di UI Baru, kotak TERLIPAT di dok kiri bawah dengan jumlah di kepala", async () => {
-    const h = buka({ ujiTampilan: "ui", widgetKehadiran: undefined });
+  it("butir 41 + 23 Okt: saklar belum disentuh = MENYALA di UI Baru, tetapi kotak TERSEMBUNYI sampai dipilih dari gelembung; lalu terbentang di dok kiri bawah dengan jumlah di kepala", async () => {
+    const h = buka({ ujiTampilan: "ui", widgetKehadiran: undefined, __tersembunyi: true });
+    await sampai(() => q(h, ".aleta-cmw-lencana"), "gelembung");
+    await sampai(() => h.minta.includes(API_KH), "data kehadiran tetap diminta");
+    expect(q(h, "[data-kehadiran-widget]")).toBeNull();
+    q(h, ".aleta-cmw-lencana").click();
+    await sampai(() => q(h, '[data-menu-bagian="kehadiran"]'), "menu");
+    q(h, '[data-menu-bagian="kehadiran"]').click();
     const kotak = await sampai(() => q(h, ".aleta-cmw-dok [data-kehadiran-widget]"), "kotak di dok");
-    expect(kotak.getAttribute("data-terbuka")).toBe("tidak");
+    expect(kotak.getAttribute("data-terbuka")).toBe("ya");
     await sampai(() => /1 sidang/.test(kotak.querySelector(".aleta-lipat-ringkas")?.textContent || ""), "jumlah di kepala");
-    expect(h.minta).toEqual([API_KH]);
   });
 
-  it("22 Okt: kotak Kehadiran TERLIPAT di setiap tab baru walau ingatan lama menyimpan 'terbuka'; dibentangkan petugas diingat per sesi tab", async () => {
-    const h = buka({ ujiTampilan: "ui", widgetKehadiran: undefined, lipatTerbuka: { "widget:kehadiran": true } });
+  it("23 Okt: ingatan lama 'terbuka' tidak memunculkan kotak di muat halaman; sekali dipilih bertahan (juga saat setelan berubah), dapat dilipat dan disembunyikan dengan ×; tidak ditulis ke sesi tab", async () => {
+    const h = buka({ ujiTampilan: "ui", widgetKehadiran: undefined, lipatTerbuka: { "widget:kehadiran": true }, __tersembunyi: true });
+    await sampai(() => q(h, ".aleta-cmw-lencana"), "gelembung");
+    await tunggu(80);
+    expect(q(h, "[data-kehadiran-widget]")).toBeNull();
+    h.w.document.dispatchEvent(new h.w.CustomEvent("aleta-widget-tampilkan", { detail: { bagian: "kehadiran" } }));
     const kotak = await sampai(() => q(h, ".aleta-cmw-dok [data-kehadiran-widget]"), "kotak di dok");
-    expect(kotak.getAttribute("data-terbuka")).toBe("tidak");
-    kotak.querySelector(".aleta-lipat-kepala").click();
-    expect(q(h, "[data-kehadiran-widget]").getAttribute("data-terbuka")).toBe("ya");
-    // 22 Okt malam: bentangan hanya untuk halaman ini - tidak ditulis ke sesi tab.
+    expect(kotak.getAttribute("data-terbuka")).toBe("ya");
     expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:widget:kehadiran")).toBeNull();
     await h.ubahSimpanan({ widgetKehadiran: true });
     await tunggu(120);
     expect(q(h, "[data-kehadiran-widget]").getAttribute("data-terbuka")).toBe("ya");
+    q(h, "[data-kehadiran-widget] .aleta-lipat-kepala").click();
+    expect(q(h, "[data-kehadiran-widget]").getAttribute("data-terbuka")).toBe("tidak");
+    q(h, "[data-kehadiran-widget] .aleta-cmw-tutup-kotak").click();
+    await sampai(() => !q(h, "[data-kehadiran-widget]"), "kotak disembunyikan oleh x");
   });
 
   it("saklar popup dimatikan: tanpa kotak dan tanpa permintaan; dinyalakan tanpa muat ulang", async () => {

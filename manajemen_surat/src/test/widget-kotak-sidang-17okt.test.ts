@@ -20,6 +20,8 @@ import { afterEach, describe, expect, it } from "vitest";
  *      tidak dapat diubah.
  */
 
+/** 23 Okt 2026: widget tersembunyi bawaannya - uji lama meminta semua bagian ditampilkan seperti sebelum aturan itu. */
+const BUKA_SEMUA = 'document.dispatchEvent(new CustomEvent("aleta-widget-tampilkan", { detail: { bagian: "semua" } }));';
 const EKSTENSI = path.resolve(__dirname, "../../../ekstensi-sipp");
 const baca = (b: string) => readFileSync(path.join(EKSTENSI, b), "utf8").replace(/\r\n/g, "\n");
 const polos = <T>(x: T): T => (x === undefined ? x : JSON.parse(JSON.stringify(x)));
@@ -102,6 +104,7 @@ function bukaWidget(awal: Record<string, unknown>) {
   const ctx = dom.getInternalVMContext();
   vm.runInContext(baca("panel-alat.js"), ctx, { filename: "panel-alat.js" });
   vm.runInContext(baca("checklist.js"), ctx, { filename: "checklist.js" });
+  if (!awal.tersembunyi) vm.runInContext(BUKA_SEMUA, ctx);
   const q = (p: string) => {
     const a = w.document.querySelector("aleta-cm-widget");
     return a && a.shadowRoot ? (a.shadowRoot.querySelector(p) as HTMLElement | null) : null;
@@ -110,17 +113,21 @@ function bukaWidget(awal: Record<string, unknown>) {
 }
 
 describe("1. widget: kotak sidang tanpa Checklist milestone", () => {
-  it("UI Baru, Checklist milestone MATI, saklar belum disentuh: kedua kotak tampil terlipat di dok; checklist tidak tampil dan tidak diminta", async () => {
-    const h = bukaWidget({ ujiTampilan: "ui", checklistMilestone: false });
-    const kh = await sampai(() => h.q(".aleta-cmw-dok [data-kehadiran-widget]"), "kotak kehadiran di dok");
-    expect(h.q(".aleta-cmw-dok [data-draf-h7-widget]")).not.toBeNull();
-    expect(kh.getAttribute("data-terbuka")).toBe("tidak");
+  it("UI Baru, Checklist milestone MATI, saklar belum disentuh: kedua kotak TERSEMBUNYI bawaannya (23 Okt), dibuka dari gelembung di dok; checklist tidak tampil dan tidak diminta", async () => {
+    const h = bukaWidget({ ujiTampilan: "ui", checklistMilestone: false, tersembunyi: true });
+    await sampai(() => h.q(".aleta-cmw-dok .aleta-cmw-lencana"), "gelembung di dok");
     await sampai(() => h.minta.some((a) => a.includes(API_KH)) && h.minta.some((a) => a.includes(API_H7)), "kedua permintaan");
     await tunggu(100);
+    expect(h.q("[data-kehadiran-widget]")).toBeNull();
+    expect(h.q("[data-draf-h7-widget]")).toBeNull();
+    h.w.document.dispatchEvent(new h.w.CustomEvent("aleta-widget-tampilkan", { detail: { bagian: "semua" } }));
+    const kh = await sampai(() => h.q(".aleta-cmw-dok [data-kehadiran-widget]"), "kotak kehadiran di dok");
+    expect(h.q(".aleta-cmw-dok [data-draf-h7-widget]")).not.toBeNull();
+    expect(kh.getAttribute("data-terbuka")).toBe("ya");
     expect(h.minta.some((a) => a.includes(API_CHECKLIST))).toBe(false);
-    // Tanpa lencana/Atur widget/panel checklist.
+    // Tanpa Atur widget/panel checklist.
     expect(h.q(".aleta-cmw-atur-buka")).toBeNull();
-    expect(h.q(".aleta-cm-panel, .aleta-cmw-lencana-baris")).toBeNull();
+    expect(h.q(".aleta-cm-panel")).toBeNull();
   });
 
   it("kedua saklar dimatikan: tidak ada widget; dinyalakan lagi: muncul tanpa memuat ulang", async () => {

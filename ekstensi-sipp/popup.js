@@ -2253,7 +2253,7 @@ const KELOMPOK_SAKLAR = [
     isi: ["derryBawaan", "derryTawar", "derrySaran", "derryIngat", "derryIsiOto", "derryTjJawab"],
   },
   { kode: "aleta", judul: "Portal ALETA", isi: ["gembokAleta"] },
-  { kode: "portal", judul: "Widget", isi: ["checklistMilestone", "widgetKehadiran", "widgetDrafH7"] },
+  { kode: "portal", judul: "Widget", isi: ["checklistMilestone", "widgetKehadiran", "widgetDrafH7"], unsur: ["bukaWidgetHalaman"] },
 ];
 
 /** Bagian yang dilipat pengguna (kode -> true), diingat di PC ini: kunci "popupLipat". */
@@ -2323,7 +2323,12 @@ function kelompokkanSaklar(denganAdmin) {
       const label = kotak ? kotak.closest("label.saklar") : null;
       if (label) pindahkan(label, sek, null);
     }
-    for (const id of k.unsur || []) pindahkan(document.getElementById(id), sek, null);
+    for (const id of k.unsur || []) {
+      const unsur = document.getElementById(id);
+      pindahkan(unsur, sek, null);
+      // Blok "Tampilkan di halaman ini" tersembunyi di Lama; hanya tampil bersama bagian-bagian ini.
+      if (id === "bukaWidgetHalaman") ubahSementara(unsur, "hidden", false);
+    }
   }
   if (denganAdmin) {
     // Latihan dan Tarik data e-Court hanya untuk Admin/Super Admin; dua blok ini DIPINDAH, bukan disalin.
@@ -4252,4 +4257,39 @@ try {
   });
 } catch {
   /* di luar konteks ekstensi: jendela ini digambar sekali saat dibuka */
+}
+
+// 23 Okt 2026: "Tampilkan di halaman ini" - membuka kotak widget yang tersembunyi bawaannya di tab yang sedang
+// terbuka. Pesannya sampai ke checklist.js di halaman itu; tidak ada yang ditulis ke penyimpanan.
+function kabarBukaWidget(teks) {
+  const k = document.getElementById("bukaWidgetKabar");
+  if (!k) return;
+  k.textContent = teks || "";
+  k.hidden = !teks;
+}
+async function bukaWidgetDiTabAktif(bagian) {
+  const tabs = typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.query && chrome.tabs.sendMessage ? chrome.tabs : null;
+  if (!tabs) {
+    kabarBukaWidget("Tab tidak dapat dihubungi dari jendela ini.");
+    return;
+  }
+  try {
+    const hasil = await tabs.query({ active: true, currentWindow: true });
+    const tab = Array.isArray(hasil) ? hasil[0] : null;
+    if (!tab || tab.id === undefined || tab.id === null) {
+      kabarBukaWidget("Tidak ada tab yang terbuka.");
+      return;
+    }
+    const jawab = await tabs.sendMessage(tab.id, { jenis: "aleta-widget-tampilkan", bagian });
+    kabarBukaWidget(
+      jawab && jawab.ok
+        ? "Tampil di halaman ini."
+        : "Belum dapat ditampilkan: saklarnya di atas mati, atau halaman ini belum memuat widget."
+    );
+  } catch {
+    kabarBukaWidget("Halaman ini tidak memuat widget ALETA. Buka halaman SIPP, ABT, atau portal ALETA.");
+  }
+}
+for (const tombolBuka of Array.from(document.querySelectorAll("[data-buka-widget]"))) {
+  tombolBuka.addEventListener("click", () => void bukaWidgetDiTabAktif(tombolBuka.getAttribute("data-buka-widget")));
 }
