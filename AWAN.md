@@ -81,8 +81,14 @@ isinya tampilan kerja Kasir yang sama dengan ekstensi (`kasir` di ekstensi/porta
 tema gelap/terang. Hak: kasir (+ Admin/Super Admin); pengawas (panitera/panmud) hanya membaca.
 
 ### T4. Mode gelap/terang di E-Keuangan dan E-Court
-E-Keuangan = modul portal ALETA (masih kerangka). "E-Court" — PASTIKAN dulu ke pengguna lewat laporan: halaman
-ALETA e-Court di portal, atau situs ecourt.mahkamahagung.go.id yang diwarnai ekstensi. Ikuti pusat tema yang ada.
+- E-Keuangan = modul portal ALETA (masih kerangka): ikuti pusat tema portal yang ada.
+- E-Court = situs **ecourt.mahkamahagung.go.id** (milik MA; keputusan pengguna 23 Okt). Diwarnai oleh EKSTENSI
+  (content script; pencocokan host sudah ada di `ekstensi-sipp/manifest.json`, lihat `ecourt-masuk.js`): lapisan CSS
+  gelap/terang memakai pusat tema (`tema-pusat.js`, pilihan terang | gelap | sistem), dipasang `document_start` tanpa
+  kedip, tidak mengubah isi/perilaku situs, tidak menyembunyikan apa pun, tidak mengirim apa pun, dan dapat dimatikan
+  (saklar popup, pola saklar yang ada). JANGAN menyimpan data dari situs e-Court ke repo. Susunan halaman e-Court
+  tidak bisa dibuka dari cloud: tulis CSS berbasis elemen umum (body, tabel, form, kartu, navbar Bootstrap) dan minta
+  sesi laptop menyalin contoh halaman (data disamarkan) bila perlu penyesuaian.
 
 ### T5. Panduan langkah kerja kasir bersorot di halaman SIPP
 Sorotan bertahap (highlight) pada elemen SIPP yang ditandai ALETA untuk kasir: apa yang dikerjakan, urutannya.
