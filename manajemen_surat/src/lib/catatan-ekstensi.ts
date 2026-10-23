@@ -57,6 +57,14 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.38",
+    dirilis: "2026-10-23T17:45:00+08:00",
+    judul: "Kalender libur Jadwal Sidang tidak terpotong",
+    butir: [
+      "Kalender libur di Jadwal Sidang tidak lagi terpotong; ikon kalender bawaan peramban disembunyikan; Sabtu dan Minggu berwarna merah.",
+    ],
+  },
+  {
     versi: "1.205.37",
     dirilis: "2026-10-23T10:20:00+08:00",
     judul: "Pembaruan otomatis, widget tersembunyi, tema tanpa kedip, hak per peran",
