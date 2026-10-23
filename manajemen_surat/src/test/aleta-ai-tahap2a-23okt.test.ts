@@ -287,6 +287,11 @@ describe("matriks kemampuan per peran (rencana 10.3) - tiap peran x tiap kemampu
     expect(kemampuanDiminta("buatkan draf penetapan PMH perkara 101", "teliti-ringkas")).toEqual([{ kemampuan: "draf-penetapan", jenisPenetapan: "PMH" }]);
     expect(kemampuanDiminta("susun BAS sidang kedua", "teliti-ringkas")).toEqual([{ kemampuan: "draf-bas" }]);
     expect(kemampuanDiminta("Putusan Lengkap", "mendalam-putusan")).toEqual([{ kemampuan: "draf-putusan" }]);
+    expect(kemampuanDiminta("buatkan ringkasan putusan perkara 101/Pdt.G/2026/PA.Dgl", "teliti-ringkas")).toEqual([]);
+    expect(kemampuanDiminta("tolong buat daftar perkara yang belum putusan", "cepat-bantuan")).toEqual([]);
+    expect(kemampuanDiminta("Buatkan draf putusan verstek", "teliti-ringkas")).toEqual([{ kemampuan: "draf-putusan" }]);
+    expect(kemampuanDiminta("tolong susunkan konsep surat dinas ke Badilag", "teliti-ringkas")).toEqual([{ kemampuan: "surat-dinas" }]);
+    expect(kemampuanDiminta("buat ringkasan sidang hari ini", "teliti-ringkas")).toEqual([{ kemampuan: "draf-bas" }]);
   });
 });
 
