@@ -298,6 +298,22 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["saksi", "pertanyaan saksi", "pembuktian", "pemandu sidang", "layar sidang", "lembar panduan", "pokok wajib"],
   },
   {
+    id: "isian-perkara-naskah",
+    judul: "Isian perkara untuk naskah",
+    ringkas: "Isian tambahan yang tidak terbaca dari SIPP dan dipakai mengisi naskah (BAS, relaas, blangko).",
+    kelompok: "persidangan",
+    mencakup: { aksi: ["isian.perkara"] },
+    halaman: ["/aleta-ecourt"],
+    tautan: { teks: "Buka Jadwal Sidang", href: "/aleta-ecourt" },
+    langkah: [
+      "Isian perkara adalah keterangan yang tidak ada di SIPP tetapi dibutuhkan naskah, misalnya data yang dicatat petugas untuk berita acara atau relaas.",
+      "Yang boleh menyimpan isian hanya orang yang menangani perkara itu: majelis, kepaniteraan, dan juru sita untuk relaas. Peran lain tetap dapat membacanya, tetapi tidak dapat mengubahnya.",
+      "Bila bagian isian tidak tampil pada sebuah perkara, berarti isiannya masih kosong dan peran Anda memang tidak bertugas mengisinya.",
+    ],
+    peringatan: ["Isian yang sudah ada tidak pernah disembunyikan, supaya keterangan orang sebelumnya tidak hilang dari pandangan."],
+    kataKunci: ["isian perkara", "naskah", "keterangan perkara", "BAS", "relaas"],
+  },
+  {
     id: "jadwal-sidang-tunda-putus",
     judul: "Menunda atau memutus sidang",
     ringkas: "Mencatat hasil sidang ke SIPP: ditunda ke tanggal berikutnya atau diputus.",

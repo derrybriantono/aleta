@@ -339,7 +339,10 @@ describe("3 - pindah halaman: atribut benar SEBELUM lukis pertama dan tidak berb
   async function muatHalaman(jalur: string, chrome: Bebas) {
     for (const n of Array.from(akar().getAttributeNames())) if (n.startsWith("data-aleta")) akar().removeAttribute(n);
     pindahKe(jalur);
-    const rekam = rekamAkar(["data-aleta-tema-sipp", "data-aleta-tema", "data-aleta-tema-pilihan", "class"]);
+    // Kelas transisi (aleta-ganti-tema) dicabut dua bingkai SESUDAH pergantian dan dapat
+    // jatuh ke jendela rekam halaman berikutnya; yang dijaga di sini atribut tema.
+    await reda(4);
+    const rekam = rekamAkar(["data-aleta-tema-sipp", "data-aleta-tema", "data-aleta-tema-pilihan"]);
     const pusat = muatPusat(chrome);
     // document_start: tema-awal.js memulai pusat; satu kali, sinkron.
     new Function(SUMBER_AWAL)();
@@ -709,8 +712,14 @@ describe("7 - sambungan antar berkas", () => {
   it("tombol di kepala tiap panel memanggil pusat (tidak menulis penyimpanan atau atribut sendiri)", () => {
     const alat = bacaEkstensi("panel-alat.js");
     const konten = bacaEkstensi("konten.js");
-    expect(alat).toContain("pusat.pilih(ALAT_URUTAN_TEMA[sekarang] || \"terang\");");
-    expect(konten).toContain("pusat.pilih(ALAT_URUTAN_TEMA[sekarang] || \"terang\");");
+    expect(alat).toContain("ALAT_URUTAN_TEMA[kini.pilihan] || \"terang\"");
+    expect(konten).toContain("ALAT_URUTAN_TEMA[kini.pilihan] || \"terang\"");
+    // Lama dan Baru: tombol tetap DUA keadaan (DOM identik dengan fd9aad7) dan memilih kebalikan
+    // hasil uraian secara tegas; tiga pilihan hanya di UI Baru.
+    for (const isi of [alat, konten]) {
+      expect(isi).toContain('kini.resolusi === "gelap" ? "terang" : "gelap"');
+    }
+    expect(alat).toContain('return alatUjiMode() !== "ui";');
     // Tidak ada lagi penulis atribut tema halaman selain pusat dan terapkanTemaSipp (aturan yang sama).
     expect(alat).not.toContain("alatTerapkanTemaHalaman");
     const dariBlangko = bacaEkstensi("blangko-derry.js");

@@ -1096,7 +1096,26 @@ const ALAT_GLIF_TEMA = { terang: "☀", gelap: "☾", sistem: "◐" };
 const ALAT_URUTAN_TEMA = { terang: "gelap", gelap: "sistem", sistem: "terang" };
 const ALAT_SEBUTAN_TEMA = { terang: "terang", gelap: "gelap", sistem: "ikuti sistem" };
 
+/**
+ * Tampilan LAMA (dan Baru) wajib identik dengan sebelum pusat tema (syarat mutlak
+ * "tampilan Lama tidak berubah"): tombolnya tetap dua keadaan - glif dan judul
+ * lama menurut hasil uraian - dan tanpa atribut tambahan. Ketiga pilihan
+ * (terang, gelap, ikuti sistem) tersedia di popup, di portal, dan di tombol
+ * panel pada UI Baru. Satu sumbernya tetap pusat tema: klik
+ * di Lama memilih terang atau gelap TEGAS (kebalikan dari yang tampak).
+ */
+function alatTemaDuaKeadaan() {
+  try {
+    // Lama dan Baru (tanpa saklar ide) identik dengan sebelumnya; hanya UI Baru
+    // yang memakai tombol tiga pilihan.
+    return alatUjiMode() !== "ui";
+  } catch {
+    return true;
+  }
+}
+
 function alatJudulTombolTema(pilihan) {
+  if (alatTemaDuaKeadaan()) return "Ganti tema ALETA dan halaman ini";
   const sekarang = pilihan in ALAT_URUTAN_TEMA ? pilihan : "gelap";
   return (
     `Tema: ${ALAT_SEBUTAN_TEMA[sekarang]}. Tekan untuk ganti ke ` +
@@ -1107,6 +1126,10 @@ function alatJudulTombolTema(pilihan) {
 /** Menyamakan tampilan satu tombol tema dengan pilihan yang berlaku. */
 function alatTampilkanTombolTema(tombol, pilihan) {
   if (!tombol) return;
+  if (alatTemaDuaKeadaan()) {
+    tombol.textContent = alatKeadaanTema().resolusi === "gelap" ? "☀" : "☾";
+    return;
+  }
   const sekarang = pilihan in ALAT_URUTAN_TEMA ? pilihan : "gelap";
   tombol.textContent = ALAT_GLIF_TEMA[sekarang];
   tombol.title = alatJudulTombolTema(sekarang);
@@ -1644,8 +1667,8 @@ function alatTombolKepala(panel, kunci, opsi) {
   const tema = buat("aleta-tema", "", alatJudulTombolTema(alatKeadaanTema().pilihan), () => {
     const pusat = alatPusatTema();
     if (!pusat) return;
-    const sekarang = pusat.keadaan().pilihan;
-    pusat.pilih(ALAT_URUTAN_TEMA[sekarang] || "terang");
+    const kini = pusat.keadaan();
+    pusat.pilih(alatTemaDuaKeadaan() ? (kini.resolusi === "gelap" ? "terang" : "gelap") : ALAT_URUTAN_TEMA[kini.pilihan] || "terang");
   });
   alatTampilkanTombolTema(tema, alatKeadaanTema().pilihan);
 

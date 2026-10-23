@@ -38,7 +38,7 @@ describe("tema halaman ABT dapat dimatikan", () => {
     // 2026) tombol tidak menulis penanda sendiri: ia memanggil pusat, dan
     // pusat memasang penanda halaman seketika.
     const isi = baca("panel-alat.js");
-    expect(isi).toContain("pusat.pilih(ALAT_URUTAN_TEMA[sekarang] || \"terang\");");
+    expect(isi).toContain("ALAT_URUTAN_TEMA[kini.pilihan] || \"terang\"");
     expect(isi).not.toContain("function alatTerapkanTemaHalaman(");
     const pusat = baca("tema-pusat.js");
     const tandai = pusat.slice(pusat.indexOf("function tandai()"));

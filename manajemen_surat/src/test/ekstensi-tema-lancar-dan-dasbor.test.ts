@@ -84,7 +84,7 @@ describe("tema berganti tanpa tersendat", () => {
     expect(badan.indexOf('terima(p, waktu, "pengguna")')).toBeGreaterThan(0);
     expect(badan.indexOf('terima(p, waktu, "pengguna")')).toBeLessThan(badan.indexOf("tulisKeChrome()"));
     // Dan pergantiannya dibungkus tanpa-transisi di pusat.
-    expect(pusat).toContain("if (tampilBerubah) tanpaTransisi(tandai);");
+    expect(pusat).toContain('if (tampilBerubah && halaman !== "portal") tanpaTransisi(tandai);');
   });
 });
 

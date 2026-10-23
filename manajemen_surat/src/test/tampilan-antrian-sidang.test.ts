@@ -323,7 +323,9 @@ describe("24 Sep - saklar untuk yang baru, dan Sembunyikan semua", () => {
     expect(pulang).toBeGreaterThan(blokK.lastIndexOf("useState("));
     const iT = layar.indexOf("function SelKeteranganPerkara(");
     const blokT = layar.slice(iT, layar.indexOf("function BorangKeteranganPerkara(", iT));
-    expect(blokT).toContain("if (!terbuka && !adaIsi && !tampilKosong) return null;");
+    // Sejak audit hak (23 Okt, isian.perkara) yang KOSONG juga disembunyikan bagi yang
+    // tidak boleh menulis; yang SUDAH berisi tidak pernah disembunyikan (adaIsi).
+    expect(blokT).toContain("if (!terbuka && !adaIsi && (!tampilKosong || !bolehTulis)) return null;");
   });
 
   it("Sembunyikan semua mematikan yang dapat dimatikan, yang wajib tetap menyala", () => {

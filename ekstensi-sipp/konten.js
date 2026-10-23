@@ -11626,6 +11626,81 @@ function keadaanTemaPusat() {
   return { pilihan: "gelap", resolusi: "gelap", waktu: 0, lapisan: true };
 }
 
+
+/** Penanda gaya yang disisipkan ke dalam bingkai CKEditor. */
+const GAYA_CKEDITOR = "aleta-tema-ckeditor";
+
+/**
+ * ==========================================================================
+ * BIDANG KETIKNYA IFRAME, DAN BERKAS GAYA BERHENTI DI TEPINYA
+ * ==========================================================================
+ *
+ * Layar Putusan Akhir memuat tiga CKEditor. Bilah alatnya bagian dari
+ * halaman dan sudah diwarnai panel.css, tetapi bidang ketiknya dokumen
+ * TERSENDIRI di dalam iframe, dengan contents.css milik SIPP yang memaksa
+ * latar putih.
+ *
+ * Karena keduanya satu origin, contentDocument-nya dapat dicapai - dan
+ * itulah satu-satunya jalan. Tanpa ini, tiga bidang putih seluas layar
+ * tetap berdiri di atas halaman gelap, dan justru bidang itulah yang paling
+ * lama dipandang saat menulis putusan.
+ *
+ * ==========================================================================
+ * GAYANYA DISISIPKAN KE <head>, TIDAK PERNAH KE <body>
+ * ==========================================================================
+ *
+ * getData() milik CKEditor membaca body.innerHTML - itulah yang tersimpan
+ * sebagai amar dan pertimbangan di SIPP. Satu elemen <style> di dalam body
+ * akan ikut tersimpan ke dalam putusan, lalu ikut tercetak.
+ *
+ * Di dalam <head> ia tidak pernah terbaca getData(), sehingga naskah yang
+ * tersimpan sama persis dengan tanpa ekstensi ini.
+ */
+function warnaiSatuBingkai(bingkai, gelap) {
+  let dok = null;
+  try {
+    dok = bingkai.contentDocument;
+  } catch {
+    // Bingkai yang belum siap atau berbeda origin - dilewati diam-diam;
+    // yang hilang hanya warnanya.
+    return;
+  }
+  if (!dok || !dok.head) return;
+
+  const lama = dok.getElementById(GAYA_CKEDITOR);
+  if (!gelap) {
+    // Mencabutnya mengembalikan bidang ketik persis seperti semula - sifat
+    // yang sama dengan penanda tema di halaman induknya.
+    if (lama) lama.remove();
+    return;
+  }
+  if (lama) return;
+
+  const gaya = dok.createElement("style");
+  gaya.id = GAYA_CKEDITOR;
+  gaya.textContent = [
+    "html, body { background: #141d19 !important; color: #dfe8e2 !important; }",
+    "body { caret-color: #7fd0a6; }",
+    "a { color: #7fd0a6 !important; }",
+    "table, td, th { border-color: #27342e !important; }",
+    "hr { border-color: #27342e !important; }",
+    "::selection { background: #22432f; color: #ffffff; }",
+    // Naskah yang ditempel dari Word membawa warnanya sendiri, dan warna
+    // itu hampir selalu hitam - hitam di atas gelap berarti hilang sama
+    // sekali. Yang dibatalkan HANYA yang mendekati hitam; warna yang
+    // sengaja dipilih penulis, seperti merah pada catatan, dibiarkan.
+    '[style*="color:#000"], [style*="color: #000"], [style*="color:black"],' +
+      ' [style*="color: black"], [style*="color:rgb(0,0,0)"], [style*="color: rgb(0, 0, 0)"],' +
+      ' font[color="#000000"], font[color="black"] { color: inherit !important; }',
+    // Begitu pula latar putih yang ikut tertempel.
+    '[style*="background-color:#fff"], [style*="background-color: #fff"],' +
+      ' [style*="background:#fff"], [style*="background: #fff"],' +
+      ' [style*="background-color:white"], [style*="background-color: white"]' +
+      " { background-color: transparent !important; }",
+  ].join("\n");
+  dok.head.appendChild(gaya);
+}
+
 /**
  * Mewarnai seluruh bingkai CKEditor yang ada di halaman.
  *
@@ -11718,6 +11793,25 @@ async function muatTema() {
  * aplikasi milik orang lain, dan hal semacam itu tidak boleh terjadi karena
  * tangan meleset satu piksel.
  */
+/** Judul tombol tema SIPP. Tampilan Lama memakai judul lamanya, persis. */
+function judulTombolTemaSipp(pilihan) {
+  // Keadaan SIPP disebut apa adanya, termasuk ketika saklarnya menyala
+  // tetapi lapisannya memang tidak dipasang karena temanya terang. Tanpa
+  // itu, tombolnya berkata "menyala" sementara SIPP tampak tidak berubah -
+  // dan yang membacanya menyimpulkan saklarnya rusak.
+  const keadaanSipp = !temaSippMenyala
+    ? "mati"
+    : temaSekarang === "gelap"
+      ? "menyala"
+      : "menyala, tetapi tidak dipasang pada tema terang";
+  const awal = alatTemaDuaKeadaan() ? `Ganti ke tema ${temaSekarang === "gelap" ? "terang" : "gelap"}. ` : `${alatJudulTombolTema(pilihan)} `;
+  return (
+    awal +
+    `Tahan Shift untuk ${temaSippMenyala ? "mematikan" : "menyalakan"} tema gelap pada halaman SIPP ` +
+    `(sekarang ${keadaanSipp}). Tema terang selalu mengembalikan SIPP seperti semula.`
+  );
+}
+
 function tombolTema(panel) {
   const tombol = buatElemen("button", "aleta-tema", "");
   tombol.type = "button";
@@ -11725,19 +11819,7 @@ function tombolTema(panel) {
   const perbaruiJudul = () => {
     const kini = keadaanTemaPusat();
     alatTampilkanTombolTema(tombol, kini.pilihan);
-    // Keadaan SIPP disebut apa adanya, termasuk ketika saklarnya menyala
-    // tetapi lapisannya memang tidak dipasang karena temanya terang. Tanpa
-    // itu, tombolnya berkata "menyala" sementara SIPP tampak tidak berubah -
-    // dan yang membacanya menyimpulkan saklarnya rusak.
-    const keadaanSipp = !temaSippMenyala
-      ? "mati"
-      : temaSekarang === "gelap"
-        ? "menyala"
-        : "menyala, tetapi tidak dipasang pada tema terang";
-    tombol.title =
-      `${alatJudulTombolTema(kini.pilihan)} ` +
-      `Tahan Shift untuk ${temaSippMenyala ? "mematikan" : "menyalakan"} tema gelap pada halaman SIPP ` +
-      `(sekarang ${keadaanSipp}). Tema terang selalu mengembalikan SIPP seperti semula.`;
+    tombol.title = judulTombolTemaSipp(kini.pilihan);
   };
   perbaruiJudul();
 
@@ -11749,8 +11831,8 @@ function tombolTema(panel) {
     if (peristiwa.shiftKey) {
       pusat.aturLapisan(!pusat.keadaan().lapisan);
     } else {
-      const sekarang = pusat.keadaan().pilihan;
-      pusat.pilih(ALAT_URUTAN_TEMA[sekarang] || "terang");
+      const kini = pusat.keadaan();
+      pusat.pilih(alatTemaDuaKeadaan() ? (kini.resolusi === "gelap" ? "terang" : "gelap") : ALAT_URUTAN_TEMA[kini.pilihan] || "terang");
     }
   });
 
@@ -11773,11 +11855,7 @@ function ikutiPusatTemaSipp(kabar) {
     const tombol = panel && panel.querySelector(".aleta-tema");
     if (tombol) {
       alatTampilkanTombolTema(tombol, kabar.pilihan);
-      tombol.title =
-        `${alatJudulTombolTema(kabar.pilihan)} ` +
-        `Tahan Shift untuk ${temaSippMenyala ? "mematikan" : "menyalakan"} tema gelap pada halaman SIPP ` +
-        `(sekarang ${!temaSippMenyala ? "mati" : temaSekarang === "gelap" ? "menyala" : "menyala, tetapi tidak dipasang pada tema terang"}). ` +
-        `Tema terang selalu mengembalikan SIPP seperti semula.`;
+      tombol.title = judulTombolTemaSipp(kabar.pilihan);
     }
   });
 }
