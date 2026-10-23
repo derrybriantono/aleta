@@ -87,11 +87,12 @@ export async function masukLewatSipp(
   // menempuh jalur lama, supaya jalur baru tidak pernah menutup jalur lama.
   if (![400, 401, 403, 429].includes(jawaban.status)) return { jenis: "bukan-sipp" };
 
+  const batas = bacaBatasPerangkat(isi);
   return {
     jenis: "tolak",
     status: jawaban.status,
     pesan: String(isi?.message || "Login belum berhasil. Silakan coba lagi."),
-    batas: bacaBatasPerangkat(isi),
+    ...(batas ? { batas } : {}),
   };
 }
 

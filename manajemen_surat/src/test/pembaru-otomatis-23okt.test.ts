@@ -1146,7 +1146,12 @@ describe("setelan petugas TETAP sesudah pembaruan", () => {
     expect(dengar?.[1]).toContain("periksaSesudahMasuk");
     expect(dengar?.[1]).not.toMatch(/storage/);
     // Satu-satunya kunci setelan yang ditulis jalur pembaruan baru: dua kunci catatan.
-    const blok = SUMBER_LATAR.slice(SUMBER_LATAR.indexOf("/* === PEMBARU-OTOMATIS 23 Okt === */"));
+    // Sampai akhir blok POPUP-PERAN (tempat jalur pembaruan berakhir); blok JEJAK-MASUK sesudahnya
+    // menulis kuncinya sendiri dan dijaga di jejak-masuk (23 Okt 2026).
+    const blok = SUMBER_LATAR.slice(
+      SUMBER_LATAR.indexOf("/* === PEMBARU-OTOMATIS 23 Okt === */"),
+      SUMBER_LATAR.indexOf("/* === AKHIR POPUP-PERAN === */")
+    );
     const ditulis = [...blok.matchAll(/storage\.local\.set\(\{\s*\[?([A-Za-z_]+)/g)].map((m) => m[1]);
     expect(ditulis.every((k) => ["KUNCI_PEMBARU", "KUNCI_PEMBARUAN_OTOMATIS"].includes(k)), ditulis.join(",")).toBe(true);
   });
@@ -1214,5 +1219,13 @@ describe("latar.js: data perangkat untuk riwayat masuk", () => {
     d.atur({ statusPerangkat: 200 });
     expect(await d.kirim({ sumber: "aleta-panel", jenis: "kirim-perangkat" })).toMatchObject({ ok: true, pembantu: "tidak-ada" });
     expect(typeof d.lokal.perangkatTerkirimPada).toBe("number");
+  });
+
+  it("blok jejak-masuk hanya menulis catatan waktu kirim ke storage.local, tanpa sandi/kuki", () => {
+    const blok = SUMBER_LATAR.slice(SUMBER_LATAR.indexOf("/* === JEJAK-MASUK 23 Okt === */"), SUMBER_LATAR.indexOf("/* === AKHIR JEJAK-MASUK === */"));
+    expect(blok.length).toBeGreaterThan(500);
+    const ditulis = [...blok.matchAll(/storage\.local\.set\(\{\s*\[?([A-Za-z_]+)/g)].map((m) => m[1]);
+    expect(ditulis).toEqual(["KUNCI_PERANGKAT_TERKIRIM"]);
+    expect(blok).not.toMatch(/sandi|password|cookie|storage\.session/i);
   });
 });
