@@ -16,10 +16,32 @@
 
 import { apiPath } from "@/lib/base-path";
 
+/** Penolakan batas perangkat (23 Okt 2026): tiket sekali pakai + perangkat yang sedang masuk. */
+export type InfoBatasPerangkat = {
+  tiket: string;
+  pesan: string;
+  perangkat: Array<{ perangkatId: string; nama: string; terakhirAktif: string; ip: string }>;
+};
+
+/** Jawaban 403 code BATAS_PERANGKAT (Better Auth / better-fetch menyebar badannya) -> info, atau null. */
+export function bacaBatasPerangkat(isi: unknown): InfoBatasPerangkat | null {
+  const x = isi as { code?: unknown; tiket?: unknown; message?: unknown; perangkat?: unknown } | null;
+  if (!x || x.code !== "BATAS_PERANGKAT" || typeof x.tiket !== "string" || !x.tiket) return null;
+  const perangkat = Array.isArray(x.perangkat)
+    ? x.perangkat.map((p: Record<string, unknown>) => ({
+        perangkatId: String(p?.perangkatId ?? ""),
+        nama: String(p?.nama ?? ""),
+        terakhirAktif: String(p?.terakhirAktif ?? ""),
+        ip: String(p?.ip ?? ""),
+      }))
+    : [];
+  return { tiket: x.tiket, pesan: String(x.message ?? ""), perangkat };
+}
+
 export type HasilMasukSipp =
   | { jenis: "masuk"; lewat: "sipp" | "aleta"; usernameSipp: string; catatan: string }
   | { jenis: "bukan-sipp" }
-  | { jenis: "tolak"; status: number; pesan: string };
+  | { jenis: "tolak"; status: number; pesan: string; batas?: InfoBatasPerangkat | null };
 
 export const KUNCI_ISI_OTOMATIS_SIPP = "aleta:isi-otomatis-sipp";
 
@@ -69,6 +91,7 @@ export async function masukLewatSipp(
     jenis: "tolak",
     status: jawaban.status,
     pesan: String(isi?.message || "Login belum berhasil. Silakan coba lagi."),
+    batas: bacaBatasPerangkat(isi),
   };
 }
 
