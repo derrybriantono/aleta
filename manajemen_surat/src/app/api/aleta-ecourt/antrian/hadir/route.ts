@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanAksiAktor } from "@/server/modules/akses/hak-peran";
 import {
   catatKehadiranAntrian,
   getGatewayPeranAntrian,
@@ -62,6 +63,9 @@ export async function POST(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     const actor = await pastikanKapabilitas(db, actorUserId, "panel");
+    // Keputusan pengguna 23 Okt 2026: mencatat kehadiran = aksi sidang.antrian (majelis, panitera, panmud, PP,
+    // PTSP, petugas sidang, Admin, Super Admin). Membaca (GET) tetap semua pemegang panel.
+    pastikanAksiAktor(actor, "sidang.antrian"); // HAK-PERAN
 
     const isi = (await request.json().catch(() => ({}))) as {
       perkaraId?: string;

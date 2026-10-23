@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { usePenggunaAktifOpsional } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
+import { bolehAksiLayar } from "@/lib/matriks-peran";
 import { cn } from "@/lib/utils";
 
 /**
@@ -95,7 +97,11 @@ type Bacaan = {
 const URUTAN = ["", "I", "II", "III", "IV", "V"];
 
 export function AletaAntrianAmbil() {
-  const [tampilan, setTampilan] = useState<"pihak" | "petugas">("petugas");
+  // Keputusan pengguna 23 Okt 2026: mencatat kehadiran = aksi sidang.antrian (rute antrian/hadir 403 bagi yang
+  // lain). Yang tidak berhak tetap melihat daftar hari ini, tanpa tombol catat dan tanpa tampilan pihak.
+  const bolehCatat = bolehAksiLayar(usePenggunaAktifOpsional(), "sidang.antrian");
+  const [tampilanPilihan, setTampilan] = useState<"pihak" | "petugas">("petugas");
+  const tampilan = bolehCatat ? tampilanPilihan : "petugas";
   const [sidang, setSidang] = useState<SidangBaris[]>([]);
   const [kehadiran, setKehadiran] = useState<Record<string, { hadir: KehadiranBaris[] }>>({});
   const [antrian, setAntrian] = useState<Record<string, { nomor: number | null; keadaan: string }>>({});
@@ -285,6 +291,7 @@ export function AletaAntrianAmbil() {
 
         {/* Pemilih tampilan berbentuk pil, sama dengan penyaring ruang di layar
             antrian lainnya - kelimanya harus terasa satu alat. */}
+        {bolehCatat ? (
         <div className="inline-flex gap-1.5">
           {(["pihak", "petugas"] as const).map((mode) => (
             <button
@@ -302,6 +309,11 @@ export function AletaAntrianAmbil() {
             </button>
           ))}
         </div>
+        ) : (
+          <p className="text-sm text-muted-foreground" data-antrian-hanya-baca="">
+            Hanya dibaca - kehadiran dicatat majelis, kepaniteraan, PTSP, dan petugas sidang.
+          </p>
+        )}
       </div>
 
       {/* ================================================================
@@ -362,7 +374,7 @@ export function AletaAntrianAmbil() {
           antrian={antrian}
           kehadiran={kehadiran}
           peran={peran}
-          onCatat={catat}
+          onCatat={bolehCatat ? catat : undefined}
         />
       )}
     </div>
@@ -607,7 +619,8 @@ function TampilanPetugas({
   antrian: Record<string, { nomor: number | null; keadaan: string }>;
   kehadiran: Record<string, { hadir: KehadiranBaris[] }>;
   peran: PeranPilihan[];
-  onCatat: (m: {
+  /** Tanpa onCatat = hanya dibaca (audit hak 23 Okt 2026): tombol "Catat hadir" tidak digambar. */
+  onCatat?: (m: {
     perkaraId: string;
     nomorPerkara: string;
     peran: string;
@@ -674,6 +687,8 @@ function TampilanPetugas({
                   )}
                 </td>
                 <td className="px-3 py-2 text-right">
+                  {onCatat ? (
+                  <>
                   <Button
                     variant="outline"
                     size="sm"
@@ -690,6 +705,8 @@ function TampilanPetugas({
                         setTerbuka("");
                       }}
                     />
+                  ) : null}
+                  </>
                   ) : null}
                 </td>
               </tr>

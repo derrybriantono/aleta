@@ -14,7 +14,9 @@ import {
   type CaraHitung,
   type HasilPenilaian,
 } from "@/components/portal/penilaian-hasil";
+import { usePenggunaAktifOpsional } from "@/lib/app-state";
 import { apiPath } from "@/lib/base-path";
+import { bolehAksiLayar } from "@/lib/matriks-peran";
 
 /**
  * ============================================================================
@@ -309,6 +311,9 @@ export function AletaPenilaianBerjenjang() {
  * bukti ketepatan waktu.
  */
 function PencatatanLaporanPerkara() {
+  // Keputusan pengguna 23 Okt 2026: mencatat = Panitera, Panitera Muda, Admin, Super Admin (penilaian.catat-laporan;
+  // rutenya 403 bagi yang lain). Peran lain tetap membaca blangko dan nilainya.
+  const bolehCatat = bolehAksiLayar(usePenggunaAktifOpsional(), "penilaian.catat-laporan");
   const [lipa, setLipa] = useState<ButirLipa[]>([]);
   const [nomor, setNomor] = useState<number>(0);
   const [blangko, setBlangko] = useState<Blangko | null>(null);
@@ -482,6 +487,7 @@ function PencatatanLaporanPerkara() {
                         <Input
                           type="date"
                           className="h-9 w-40"
+                          disabled={!bolehCatat}
                           value={isi.tanggalKirim}
                           onChange={(e) =>
                             setIsian((s) => ({
@@ -504,6 +510,7 @@ function PencatatanLaporanPerkara() {
                         <Input
                           type="number"
                           className="h-9 w-32"
+                          disabled={!bolehCatat}
                           value={isi.angkaLaporan}
                           onChange={(e) =>
                             setIsian((s) => ({
@@ -526,6 +533,7 @@ function PencatatanLaporanPerkara() {
                         )}
                       </td>
                       <td className="px-3 py-2">
+                        {bolehCatat ? (
                         <Button
                           size="sm"
                           variant="outline"
@@ -534,6 +542,9 @@ function PencatatanLaporanPerkara() {
                         >
                           {sedangSimpan === b.bulanLaporan ? "..." : "Simpan"}
                         </Button>
+                        ) : (
+                          <span className="text-[11.5px] text-muted-foreground">Hanya dibaca</span>
+                        )}
                       </td>
                     </tr>
                   );

@@ -165,6 +165,7 @@ Catatan kewenangan:
 | Menyusun dan menyimpan lembar BAS | U | U | - | U | U | U | U | - | - | - | - | - | U | - | - | - |
 | Set pertanyaan saksi untuk tanya jawab ABT | L | L | L | L | L | L | L | - | - | - | - | - | L | - | - | - |
 | Menyimpan isian perkara untuk naskah (Kelas B) | U | U | U | U | U | U | U | U | - | - | - | - | U | - | - | - |
+| Mencatat kirim laporan perkara (LIPA) | U | U | - | - | U | U | - | - | - | - | - | - | - | - | - | - |
 | Peta perkara & beban konseptor | L | L | L | L | L | L | - | - | - | - | - | - | - | L | - | - |
 | Tunda otomatis 16.30 dan putus otomatis gugur / tidak dapat diterima | U | P | P | P | P | P | P | L | L | L | L | L | L | L | L | L |
 | Tautan rahasia Jadwal Sidang (tanpa masuk akun) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
@@ -213,7 +214,7 @@ Catatan kewenangan:
 | Eviden SKP hakim, PP, juru sita, dan mediator (unduhan) | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L | L |
 | Sesi e-Court saya (sambungkan akun e-Court sendiri) | P | P | P | P | P | P | P | P | P | P | P | P | P | P | P | P |
 | Sesi e-Court semua akun dan riwayat login WhatsApp | U | L | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
-| Lihat sebagai peran atau akun lain | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Lihat sebagai peran atau akun lain | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Tautan akun ALETA ke akun SIPP | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 
 Catatan kewenangan:
@@ -231,6 +232,7 @@ Catatan kewenangan:
 - **SKP: menyetujui isian manual dan mengunci penetapan**: Ketua menyetujui; Wakil Ketua hanya bila ia atasan langsungnya.
 - **Eviden SKP hakim, PP, juru sita, dan mediator (unduhan)**: BELUM DIBATASI per orang: unduhan lama ini terbuka bagi semua pegawai berpanel. SKP jabatan di menu SKP sudah memakai hak sendiri, atasan, dan pimpinan. Menunggu keputusan pengguna.
 - **Sesi e-Court semua akun dan riwayat login WhatsApp**: Keputusan 18 Okt 2026: riwayat login WhatsApp hanya Super Admin dan Admin.
+- **Lihat sebagai peran atau akun lain**: Keputusan pengguna 23 Okt 2026: Super Admin dan Admin (Blangko ABT by Derry Briantono dan Perkara saya). Hanya meniru tampilan; tulisan tetap atas akun yang masuk, tanpa hak tambahan.
 - **Tautan akun ALETA ke akun SIPP**: Keputusan 14 Okt 2026: alat tidak pernah mengubah peran utama; akun baru memulai dari peran terendah.
 
 ## Ekstensi di SIPP dan ABT
