@@ -17,6 +17,7 @@ import {
 } from "@/server/modules/external-apps/service";
 import { getPositionByIdFromDb, getUserByIdFromDb, getUsersFromDb, requireActorUser } from "@/server/modules/organization/service";
 import { hashSecret } from "@/server/shared/security";
+import { cabutSesiAkun, type AlasanCabut } from "@/server/modules/perangkat/sesi";
 
 type ManagedUserPayload = {
   username: string;
@@ -125,6 +126,20 @@ function isPasswordRecoveryOtpMatch(userId: string, storedValue: string, inputOt
 // ─── Role & Block Guards ──────────────────────────────────────────────────────
 
 /** Count active (non-deleted, is_active=1) super-admin accounts. */
+/**
+ * Celah 23 Okt 2026: blokir, reset password (admin/OTP), dan ganti peran dulu
+ * TIDAK memutus sesi yang sudah ada - akun yang diblokir tetap bekerja sampai
+ * sesinya habis sendiri. Kini sesi akun itu dicabut di transaksi yang sama dan
+ * dicatat SESI_DICABUT (pelaku + alasan). Untuk penggantian password oleh
+ * pemiliknya sendiri, sesi pemanggil dipertahankan.
+ */
+async function cabutSesiSesudahPerubahan(
+  tx: AletaDatabase,
+  m: { userId: string; alasan: AlasanCabut; pelaku: { id: string; nama: string }; kecualiSessionId?: string | null }
+) {
+  return cabutSesiAkun(tx, { userId: m.userId, alasan: m.alasan, pelaku: m.pelaku, semua: true, kecualiSessionId: m.kecualiSessionId ?? null });
+}
+
 async function countActiveSuperAdmins(db: AletaDatabase): Promise<number> {
   const row = await db.prepare(
     `SELECT COUNT(*) AS cnt FROM users
@@ -726,10 +741,13 @@ export async function updateManagedUserInDb(
     actorUserId,
     userId,
     payload,
+    sesiPemanggilId,
   }: {
     actorUserId: string;
     userId: string;
     payload: Partial<ManagedUserPayload>;
+    /** Sesi pemanggil - dipertahankan saat pemilik akun mengganti passwordnya sendiri. */
+    sesiPemanggilId?: string | null;
   }
 ) {
   const actor = await requireActorUser(db, actorUserId);
@@ -875,6 +893,23 @@ export async function updateManagedUserInDb(
       },
     });
 
+    const alasanCabut: AlasanCabut | null =
+      !isSelfUpdate && activeChanged && !nextIsActive
+        ? "akun-diblokir"
+        : !isSelfUpdate && roleChanged
+          ? "peran-diganti"
+          : trimmedPassword
+            ? "password-direset"
+            : null;
+    if (alasanCabut) {
+      await cabutSesiSesudahPerubahan(tx, {
+        userId: currentUser.id,
+        alasan: alasanCabut,
+        pelaku: { id: actor.id, nama: actor.name },
+        kecualiSessionId: isSelfUpdate ? sesiPemanggilId : null,
+      });
+    }
+
     if (canManageOthers && payload.externalCredentials !== undefined) {
       await upsertExternalCredentialsForUser(tx, {
         actor,
@@ -1019,6 +1054,8 @@ export async function confirmPasswordRecoveryInDb(
         via: "otp-whatsapp",
       },
     });
+
+    await cabutSesiSesudahPerubahan(tx, { userId, alasan: "password-direset", pelaku: { id: userId, nama: "Pemilik akun (OTP)" } });
 
     return {
       userId,
@@ -1222,6 +1259,8 @@ export async function resolveAdminResetRequestInDb(
       payload: { requestId, note: note?.trim() || null, tempPasswordSet: true },
     });
 
+    await cabutSesiSesudahPerubahan(tx, { userId: request.user_id, alasan: "password-direset", pelaku: { id: actor.id, nama: actor.name } });
+
     return { tempPassword };
   });
 }
@@ -1270,6 +1309,8 @@ export async function adminManualResetPasswordInDb(
         note: "Password sementara dibuat oleh admin. User disarankan segera menggantinya.",
       },
     });
+
+    await cabutSesiSesudahPerubahan(tx, { userId: targetUserId, alasan: "password-direset", pelaku: { id: actor.id, nama: actor.name } });
 
     return { tempPassword };
   });
