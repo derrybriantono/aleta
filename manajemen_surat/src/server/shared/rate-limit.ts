@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
 
+import { ipKlien } from "@/server/modules/perangkat/jaringan";
 import { ApiError } from "@/server/shared/errors";
 
 type RateLimitScope =
@@ -92,13 +93,13 @@ const RATE_LIMIT_CONFIG: Record<RateLimitScope, RateLimitConfig> = {
   },
 };
 
+/**
+ * IP UJUNG X-Forwarded-For (23 Okt 2026, keputusan Derry). Apache menambahkan
+ * alamat penyambung di ujung; entri pertama dapat dikarang peramban, dan dulu
+ * cukup mengganti entri itu tiap percobaan untuk lolos dari batas.
+ */
 function getClientIp(request: NextRequest) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0]?.trim() || "unknown";
-  }
-
-  return request.headers.get("x-real-ip")?.trim() || "local";
+  return ipKlien(request.headers) || "local";
 }
 
 function normalizeIdentifier(identifier: string | null | undefined) {

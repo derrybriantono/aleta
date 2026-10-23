@@ -32,6 +32,26 @@ export function ipKlien(headers: BawaHeader | null | undefined) {
   return ipSah(daftar[daftar.length - 1] ?? "") || ipSah(String(headers.get("x-real-ip") ?? ""));
 }
 
+/**
+ * Header yang dibaca Better Auth sebagai IP (advanced.ipAddress, lihat
+ * lib/auth.ts). Better Auth selalu membaca entri PERTAMA header IP-nya;
+ * dengan header tunggal berisi IP ujung X-Forwarded-For, pembatas laju
+ * bawaannya tidak dapat dielakkan dengan entri karangan di depan.
+ */
+export const HEADER_IP_KLIEN = "x-aleta-ip-klien";
+
+/**
+ * Salinan permintaan dengan HEADER_IP_KLIEN = ipKlien(asli). Nilai kiriman
+ * peramban untuk header itu SELALU ditimpa/dibuang, jadi tidak dapat dikarang.
+ */
+export function denganIpKlien<T extends Request>(asli: T): Request {
+  const headers = new Headers(asli.headers);
+  headers.delete(HEADER_IP_KLIEN);
+  const ip = ipKlien(asli.headers);
+  if (ip) headers.set(HEADER_IP_KLIEN, ip);
+  return new Request(asli, { headers });
+}
+
 export function rantaiXff(headers: BawaHeader | null | undefined) {
   return String(headers?.get("x-forwarded-for") ?? "").slice(0, 300);
 }

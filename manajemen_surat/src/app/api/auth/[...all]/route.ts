@@ -5,7 +5,7 @@ import { getAuth } from "@/lib/auth";
 import { getDatabase } from "@/server/db/client";
 import { KODE_BATAS_PERANGKAT } from "@/server/modules/perangkat/kait-auth";
 import { catatPeristiwaAman } from "@/server/modules/perangkat/jejak";
-import { idPerangkatDariHeader } from "@/server/modules/perangkat/jaringan";
+import { denganIpKlien, idPerangkatDariHeader } from "@/server/modules/perangkat/jaringan";
 import { tolakJalurLamaBilaSippNonaktif } from "@/server/modules/portal/masuk-sipp-plugin";
 import { appendAuditLog } from "@/server/shared/audit";
 import { ApiError } from "@/server/shared/errors";
@@ -27,7 +27,7 @@ function maskLoginEmail(value: string) {
 export async function GET(request: NextRequest) {
   await getDatabase();
   const handler = toNextJsHandler(await getAuth());
-  return handler.GET(request);
+  return handler.GET(denganIpKlien(request));
 }
 
 /**
@@ -135,7 +135,8 @@ export async function POST(request: NextRequest) {
     }
 
     const handler = toNextJsHandler(await getAuth());
-    const response = await handler.POST(request);
+    // IP klien yang benar untuk pembatas laju Better Auth (lihat lib/auth.ts).
+    const response = await handler.POST(denganIpKlien(request));
 
     if (pathname.endsWith("/sign-in/email")) {
       if (response.ok) {
