@@ -206,6 +206,7 @@ type BridgeOperation =
   | "case.mediator"
   | "case.decision"
   | "legacy.sqlValue"
+  | "ai.alat"
   | "satker.config"
   | "user.byUsername"
   | "user.byNip"
@@ -298,6 +299,15 @@ async function fetchBridgeOperation<T>(operation: BridgeOperation, params: Recor
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/**
+ * ALETA Ai tahap 2a: satu pintu ke katalog alat data bot (`ai.alat`). Bot
+ * menjalankannya HANYA dengan akun SIPP baca-saja khusus; tanpa akun itu
+ * jawabannya galat "akun_baca_ai_belum_ada".
+ */
+export async function panggilAlatAiBot<T>(alat: string, parameter: Record<string, unknown>) {
+  return fetchBridgeOperation<T>("ai.alat", { alat, parameter });
 }
 
 function formatBridgeError(bridge: BridgeConfig, rawMessage: string) {

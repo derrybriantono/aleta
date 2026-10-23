@@ -414,6 +414,8 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   // 22 Oktober 2026 (0083): saklar sidang keliling per hari + hakim yang menyidangkan per perkara.
   "aleta_sidang_keliling_hari",
   "aleta_hakim_sidang_perkara",
+  // 23 Oktober 2026 (0084): ALETA Ai tahap 2a - kode samaran per percakapan.
+  "aleta_ai_samaran",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

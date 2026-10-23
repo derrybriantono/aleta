@@ -203,6 +203,8 @@ export function AletaAiChat() {
       } else if (e.jenis === "teks") {
         kumpul += e.delta;
         setAlir((a) => ({ ...(a ?? { teks: "" }), teks: kumpul }));
+      } else if (e.jenis === "alat") {
+        setStatus(`Membaca ${e.label || "data"} dari SIPP...`);
       } else if (e.jenis === "selesai") {
         ditangani = true;
         setPesan((p) => [
