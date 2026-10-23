@@ -21390,6 +21390,18 @@ function f41Pasang() {
       return;
     }
     if (panel.querySelector(".aleta-f41-bagian")) return;
+    // Audit hak 23 Okt 2026: sama dengan hakUnggahMassal di portal (rute unggah-massal 403 bagi yang lain) -
+    // putusan: Hakim, Ketua/Wakil; BAS: PP, Panitera, Panmud, staf kepaniteraan; plus Admin/Super Admin.
+    // Akun belum terbaca = tetap ditawarkan (rutenya yang menjaga).
+    try {
+      const akun = typeof alatPenggunaAkunAleta === "function" ? alatPenggunaAkunAleta() : null;
+      if (akun && typeof alatGolonganMenuSemua === "function") {
+        const g = alatGolonganMenuSemua(akun);
+        if (!g.some((x) => ["admin", "ketua", "hakim", "pp", "panitera", "panitera-utama", "panmud", "analis"].includes(x))) return;
+      }
+    } catch {
+      /* gerbang tak terbaca: biarkan rute yang menjaga */
+    }
     const kotak = document.createElement("div");
     kotak.className = "aleta-bagian aleta-f41-bagian";
     const tombolBuka = document.createElement("button");

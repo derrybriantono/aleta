@@ -15872,6 +15872,11 @@ const ALASAN_PERMINTAAN = {
  * menghasilkan dua penarikan, tetapi juga tidak perlu dibuat bingung.
  */
 async function sisipkanPermintaan(panel, nomorPerkara) {
+  // Audit hak 23 Okt 2026: "Tarik dari e-Court" menitip permintaan (kemampuan
+  // "permintaan", rute aleta-bot/ecourt/permintaan menolak 403 tanpanya) - sama
+  // dengan tombol di tarik-satu-perkara.js. Peran yang pasti tidak diberi tidak
+  // ditawari tombolnya; belum terbaca tetap ditawari (aturan boleh()).
+  if (boleh("permintaan") === false) return;
   let keadaan = null;
   try {
     const respons = await fetch(
