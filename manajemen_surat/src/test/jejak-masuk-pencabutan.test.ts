@@ -293,21 +293,52 @@ describe("laporan riwayat masuk", () => {
     expect(csv).not.toMatch(/,=HYPERLINK/);
   });
 
-  it("peringatan: banyak gagal dari satu IP, luar kantor, dua jaringan berdekatan, luar jam kerja, perangkat baru pimpinan", async () => {
+  it("peringatan: gagal per IP, luar kantor, LEBIH DARI 5 jaringan dalam 15 menit, perangkat baru pimpinan; luar jam = info", async () => {
     const { susunPeringatan } = await import("@/server/modules/perangkat/laporan");
     const { SETELAN_BAWAAN } = await import("@/server/modules/perangkat/jejak");
     const dasar = { id: "", alasan: "", jalur: "email", username: "u", identitas_samar: "", sesi_ref: "", perangkat_id: "", rantai_xff: "", agen: "", jenis_perangkat: "", os: "", peramban: "", model: "", ingat: "", nama_komputer: "", mac: "", mac_sumber: "", pelaku_id: "", pelaku_nama: "", rincian: "{}" };
     const b = (waktu: string, peristiwa: string, ip: string, user_id = "usr-x", peran = "hakim", nama = "Rekaan") => ({ ...dasar, waktu, peristiwa, ip, user_id, peran, nama });
+    const menit = (m: number) => `2026-10-22T03:${String(m).padStart(2, "0")}:00.000Z`;
     const baris = [
       ...[0, 1, 2, 3, 4].map((i) => b(`2026-10-22T02:0${i}:00.000Z`, "MASUK_GAGAL", "192.168.9.66", "")),
-      b("2026-10-22T03:00:00.000Z", "MASUK", "36.80.1.2"),
-      b("2026-10-22T03:05:00.000Z", "MASUK", "192.168.10.40"),
+      b(menit(0), "MASUK", "36.80.1.2"),
+      // usr-lima: 5 jaringan dalam 15 menit = WAJAR.
+      ...[1, 2, 3, 4, 5].map((i) => b(menit(i), "MASUK", `192.168.${i}.10`, "usr-lima")),
+      // usr-enam: 6 jaringan dalam 15 menit = peringatan.
+      ...[1, 2, 3, 4, 5, 6].map((i) => b(menit(i), "MASUK", `10.0.${i}.10`, "usr-enam")),
+      // usr-lambat: 6 jaringan tetapi tersebar > 15 menit = wajar.
+      ...[0, 10, 20, 30, 40, 50].map((m, i) => b(menit(m), "MASUK", `10.1.${i}.10`, "usr-lambat")),
       b("2026-10-22T14:00:00.000Z", "MASUK", "192.168.10.40", "usr-y"),
-      b("2026-10-22T03:00:00.000Z", "PERANGKAT_BARU", "192.168.10.41", "usr-k", "ketua"),
+      b(menit(0), "PERANGKAT_BARU", "192.168.10.41", "usr-k", "ketua"),
     ];
-    const jenis = susunPeringatan(baris, SETELAN_BAWAAN).map((p) => p.jenis);
-    expect(jenis).toEqual(expect.arrayContaining(["gagal-ip", "luar-kantor", "dua-tempat", "luar-jam", "perangkat-baru"]));
-    // 22.00 WITA = luar jam; 11.00 WITA (03.00Z) = jam kerja.
-    expect(susunPeringatan(baris, SETELAN_BAWAAN).filter((p) => p.jenis === "luar-jam").map((p) => p.userId)).toEqual(["usr-y"]);
+    const hasil = susunPeringatan(baris, SETELAN_BAWAAN);
+    expect(hasil.map((p) => p.jenis)).toEqual(expect.arrayContaining(["gagal-ip", "luar-kantor", "banyak-jaringan", "luar-jam", "perangkat-baru"]));
+    expect(hasil.filter((p) => p.jenis === "banyak-jaringan").map((p) => [p.userId, p.tingkat])).toEqual([["usr-enam", "tinggi"]]);
+    expect(hasil.some((p) => p.jenis === "dua-tempat")).toBe(false);
+    // 22.00 WITA = luar jam, tingkat INFO (bukan bahaya); 11.00 WITA = jam kerja.
+    expect(hasil.filter((p) => p.jenis === "luar-jam").map((p) => [p.userId, p.tingkat])).toEqual([["usr-y", "info"]]);
+  });
+
+  it("lonceng admin (/api/tasks): masuk di luar jam kerja = butir Informasi prioritas rendah; hakim tidak menerimanya", async () => {
+    const { catatPeristiwa } = await import("@/server/modules/perangkat/jejak");
+    const kemarin22Wita = new Date(Date.now() - 86_400_000);
+    kemarin22Wita.setUTCHours(14, 0, 0, 0);
+    await catatPeristiwa(db, { peristiwa: "MASUK", jalur: "email", userId: "usr-hakim", ip: "192.168.10.50", waktu: kemarin22Wita.toISOString() });
+    const { getTaskSourcesForUser } = await import("@/server/modules/tasks/service");
+    const butirAdmin = (await getTaskSourcesForUser(db, "usr-admin")).sources.flatMap((x) => x.tasks).filter((t) => t.href === "/admin/riwayat-masuk");
+    expect(butirAdmin).toHaveLength(1);
+    expect(butirAdmin[0]).toMatchObject({ status: "Informasi", priority: "low", footer: "Masuk di luar jam kerja" });
+    expect(butirAdmin[0].description).toMatch(/Bukan tanda bahaya/);
+    const butirHakim = (await getTaskSourcesForUser(db, "usr-hakim")).sources.flatMap((x) => x.tasks).filter((t) => t.href === "/admin/riwayat-masuk");
+    expect(butirHakim).toHaveLength(0);
+  });
+
+  it("riwayat menyertakan akun Windows perangkat (untuk rincian dan CSV)", async () => {
+    await masuk("hakim@pa.go.id", "hakim123", A);
+    await db.run("UPDATE aleta_perangkat SET akun_windows = 'nur.aisyah' WHERE perangkat_id = ?", [A]);
+    const { cariJejak, jejakKeCsv } = await import("@/server/modules/perangkat/laporan");
+    const r = await cariJejak(db, { userId: "usr-hakim", peristiwa: ["MASUK"] });
+    expect(r.baris[0].akun_windows).toBe("nur.aisyah");
+    expect(jejakKeCsv(r.baris)).toContain("nur.aisyah");
   });
 });

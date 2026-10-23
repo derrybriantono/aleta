@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Download, LoaderCircle, LogOut, RefreshCcw, Trash2 } from "lucide-react";
+import { AlertTriangle, Download, Info, LoaderCircle, LogOut, RefreshCcw, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,8 @@ export function RiwayatMasukBoard() {
   const superAdmin = bolehAksiLayar(currentUser, "perangkat.batas-peran");
   const [galat, setGalat] = useState("");
   const [peringatan, setPeringatan] = useState<Peringatan[]>([]);
+  const perhatian = peringatan.filter((p) => p.tingkat !== "info");
+  const informasi = peringatan.filter((p) => p.tingkat === "info");
 
   useEffect(() => {
     void ambil<{ peringatan: Peringatan[] }>("/api/admin/jejak-masuk?tab=peringatan")
@@ -52,25 +54,35 @@ export function RiwayatMasukBoard() {
   return (
     <div className="space-y-6">
       {galat && <p className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{galat}</p>}
-      {peringatan.length > 0 && (
+      {perhatian.length > 0 && (
         <Card className="border-amber-500/50 bg-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="h-5 w-5 text-amber-600" /> Perlu diperhatikan (7 hari terakhir)
             </CardTitle>
             <CardDescription>
-              Banyak gagal dari satu alamat/ke satu akun (5 dalam satu jam), masuk dari luar jaringan kantor, satu akun dari dua jaringan dalam 15 menit,
-              perangkat baru untuk pimpinan/admin, dan masuk di luar jam kerja.
+              Banyak gagal dari satu alamat/ke satu akun (5 dalam satu jam), masuk dari luar jaringan kantor, satu akun dari lebih dari 5 jaringan
+              berbeda dalam 15 menit, dan perangkat baru untuk pimpinan/admin.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            {peringatan.slice(0, 12).map((p, i) => (
-              <div key={`${p.jenis}-${i}`} className="flex flex-wrap items-baseline gap-2 text-sm">
-                <Badge variant={p.tingkat === "tinggi" ? "danger" : "outline"}>{p.tingkat === "tinggi" ? "Penting" : "Catatan"}</Badge>
-                <span className="font-medium text-foreground">{p.judul}</span>
-                <span className="text-muted-foreground">{p.rincian}</span>
-                <span className="text-xs text-muted-foreground">{waktuWita(p.waktu)}</span>
-              </div>
+            {perhatian.slice(0, 12).map((p, i) => (
+              <BarisPeringatan key={`${p.jenis}-${i}`} p={p} />
+            ))}
+          </CardContent>
+        </Card>
+      )}
+      {informasi.length > 0 && (
+        <Card className="border-sky-500/40 bg-card" data-informasi-masuk>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Info className="h-5 w-5 text-sky-600" /> Informasi: masuk di luar jam kerja (7 hari terakhir)
+            </CardTitle>
+            <CardDescription>Bukan tanda bahaya - hanya kabar. Jam kerja diatur di tab Batas perangkat.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {informasi.slice(0, 12).map((p, i) => (
+              <BarisPeringatan key={`${p.jenis}-${i}`} p={p} />
             ))}
           </CardContent>
         </Card>
@@ -96,6 +108,18 @@ export function RiwayatMasukBoard() {
           <TabBatas superAdmin={superAdmin} users={users} roles={roles} onGalat={setGalat} />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function BarisPeringatan({ p }: { p: Peringatan }) {
+  const label = p.tingkat === "tinggi" ? "Penting" : p.tingkat === "info" ? "Info" : "Catatan";
+  return (
+    <div className="flex flex-wrap items-baseline gap-2 text-sm">
+      <Badge variant={p.tingkat === "tinggi" ? "danger" : p.tingkat === "info" ? "info" : "outline"}>{label}</Badge>
+      <span className="font-medium text-foreground">{p.judul}</span>
+      <span className="text-muted-foreground">{p.rincian}</span>
+      <span className="text-xs text-muted-foreground">{waktuWita(p.waktu)}</span>
     </div>
   );
 }
@@ -248,6 +272,7 @@ function BarisRiwayat({ b, terbuka, onKlik }: { b: Baris; terbuka: boolean; onKl
               <Rinci k="Peran" v={b.peran ? getRoleLabel(b.peran as RoleId) : "-"} />
               <Rinci k="Jenis perangkat" v={b.jenis_perangkat || "-"} />
               <Rinci k="Nama komputer" v={b.nama_komputer || "tidak terbaca"} />
+              <Rinci k="Akun Windows" v={b.akun_windows || "tidak terbaca"} />
               <Rinci k="MAC" v={teksMac(b.mac, b.mac_sumber, b.jenis_perangkat === "hp" ? "tidak terbaca (HP)" : "")} />
               <Rinci k="Rantai alamat" v={b.rantai_xff || "-"} />
               <Rinci k="Simpan login" v={b.ingat === "ya" ? "Ya" : b.ingat === "tidak" ? "Tidak" : "-"} />
@@ -353,7 +378,7 @@ function TabPerangkat({ users }: { users: Akun[] }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-left text-muted-foreground">
-              <tr><th className="p-2">Akun</th><th className="p-2">Perangkat</th><th className="p-2">Nama komputer</th><th className="p-2">MAC</th><th className="p-2">Pertama</th><th className="p-2">Terakhir</th><th className="p-2">IP terakhir</th></tr>
+              <tr><th className="p-2">Akun</th><th className="p-2">Perangkat</th><th className="p-2">Nama komputer</th><th className="p-2">Akun Windows</th><th className="p-2">MAC</th><th className="p-2">Pertama</th><th className="p-2">Terakhir</th><th className="p-2">IP terakhir</th></tr>
             </thead>
             <tbody>
               {daftar.map((p) => (
@@ -361,6 +386,7 @@ function TabPerangkat({ users }: { users: Akun[] }) {
                   <td className="p-2">{p.nama || p.username}</td>
                   <td className="p-2">{p.label || p.nama_terbaca}{p.os_rinci ? <span className="block text-xs text-muted-foreground">{p.os_rinci}</span> : null}</td>
                   <td className="p-2">{p.nama_komputer || "-"}</td>
+                  <td className="p-2">{p.akun_windows || "-"}</td>
                   <td className="p-2 text-xs">{teksMac(p.mac, p.mac_sumber, p.mac_catatan)}</td>
                   <td className="p-2 whitespace-nowrap">{waktuWita(p.pertama_dilihat)}</td>
                   <td className="p-2 whitespace-nowrap">{waktuWita(p.terakhir_dilihat)}</td>
@@ -509,7 +535,7 @@ function TabBatas({ superAdmin, users, roles, onGalat }: { superAdmin: boolean; 
             </label>
             <label className="flex items-end gap-2 pb-3 text-sm">
               <input type="checkbox" checked={setelan.catatAkunWindows} disabled={!superAdmin} onChange={(e) => void simpanSetelan({ catatAkunWindows: e.target.checked })} />
-              Catat nama akun Windows (dari ekstensi)
+              Catat nama akun Windows (dari ekstensi; bawaan menyala)
             </label>
           </CardContent>
         </Card>

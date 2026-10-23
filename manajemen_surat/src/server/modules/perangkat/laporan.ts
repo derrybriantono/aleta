@@ -37,6 +37,8 @@ export type BarisJejak = {
   pelaku_id: string;
   pelaku_nama: string;
   rincian: string;
+  /** Dari aleta_perangkat (hanya terisi bila saklar "catat akun Windows" menyala). */
+  akun_windows?: string;
 };
 
 export type SaringanJejak = {
@@ -59,51 +61,54 @@ export async function cariJejak(db: AletaDatabase, s: SaringanJejak) {
   const syarat: string[] = [];
   const nilai: Array<string | number> = [];
   if (s.dari) {
-    syarat.push("waktu >= ?");
+    syarat.push("j.waktu >= ?");
     nilai.push(new Date(s.dari).toISOString());
   }
   if (s.sampai) {
-    syarat.push("waktu <= ?");
+    syarat.push("j.waktu <= ?");
     nilai.push(new Date(s.sampai).toISOString());
   }
   if (s.userId) {
-    syarat.push("user_id = ?");
+    syarat.push("j.user_id = ?");
     nilai.push(s.userId);
   }
   if (s.peran) {
-    syarat.push("peran = ?");
+    syarat.push("j.peran = ?");
     nilai.push(s.peran);
   }
   const peristiwa = (s.hanyaGagal ? PERISTIWA_GAGAL : s.peristiwa ?? []).filter((p) => (PERISTIWA_MASUK as readonly string[]).includes(p));
   if (peristiwa.length) {
-    syarat.push(`peristiwa IN (${peristiwa.map(() => "?").join(", ")})`);
+    syarat.push(`j.peristiwa IN (${peristiwa.map(() => "?").join(", ")})`);
     nilai.push(...peristiwa);
   }
   if (s.jalur) {
-    syarat.push("jalur = ?");
+    syarat.push("j.jalur = ?");
     nilai.push(s.jalur);
   }
   if (s.ip) {
     // "192.168.9" atau "192.168.9." = subnet; alamat lengkap = persis.
     const ip = s.ip.trim();
     if (/^\d{1,3}(\.\d{1,3}){3}$/.test(ip) || ip.includes(":")) {
-      syarat.push("ip = ?");
+      syarat.push("j.ip = ?");
       nilai.push(ip);
     } else {
-      syarat.push("ip LIKE ?");
+      syarat.push("j.ip LIKE ?");
       nilai.push(`${ip.replace(/\.$/, "").replace(/[%_]/g, "")}.%`);
     }
   }
   if (s.perangkatId) {
-    syarat.push("perangkat_id = ?");
+    syarat.push("j.perangkat_id = ?");
     nilai.push(s.perangkatId);
   }
   const where = syarat.length ? `WHERE ${syarat.join(" AND ")}` : "";
   const perHalaman = Math.max(1, Math.min(Number(s.perHalaman) || 50, 5000));
   const halaman = Math.max(1, Math.floor(Number(s.halaman) || 1));
-  const total = await db.queryOne<{ n: number | string }>(`SELECT COUNT(*) AS n FROM aleta_jejak_masuk ${where}`, nilai);
+  const total = await db.queryOne<{ n: number | string }>(`SELECT COUNT(*) AS n FROM aleta_jejak_masuk j ${where}`, nilai);
   const baris = await db.queryAll<BarisJejak>(
-    `SELECT * FROM aleta_jejak_masuk ${where} ORDER BY waktu DESC, id DESC LIMIT ${perHalaman} OFFSET ${(halaman - 1) * perHalaman}`,
+    `SELECT j.*, COALESCE(p.akun_windows, '') AS akun_windows
+     FROM aleta_jejak_masuk j
+     LEFT JOIN aleta_perangkat p ON p.perangkat_id = j.perangkat_id AND p.user_id = j.user_id AND j.perangkat_id <> ''
+     ${where} ORDER BY j.waktu DESC, j.id DESC LIMIT ${perHalaman} OFFSET ${(halaman - 1) * perHalaman}`,
     nilai
   );
   return { total: Number(total?.n ?? 0), halaman, perHalaman, baris };
@@ -125,6 +130,7 @@ const KOLOM_CSV: Array<[keyof BarisJejak, string]> = [
   ["peramban", "Peramban"],
   ["model", "Model"],
   ["nama_komputer", "Nama komputer"],
+  ["akun_windows", "Akun Windows"],
   ["mac", "MAC"],
   ["mac_sumber", "Sumber MAC"],
   ["perangkat_id", "ID perangkat"],
@@ -215,9 +221,16 @@ export async function sesiAktifSemua(db: AletaDatabase, s: { userId?: string }) 
 
 // ─── Peringatan ──────────────────────────────────────────────────────────────
 
-export type Peringatan = { jenis: string; tingkat: "tinggi" | "sedang"; judul: string; rincian: string; waktu: string; userId?: string; ip?: string };
+/**
+ * Tingkat: "tinggi" = patut dicurigai; "sedang" = perlu dilihat; "info" = hanya
+ * kabar untuk admin, bukan tanda bahaya (keputusan Derry 23 Okt 2026: masuk di
+ * luar jam kerja tidak masalah, tetapi admin diberi tahu).
+ */
+export type Peringatan = { jenis: string; tingkat: "tinggi" | "sedang" | "info"; judul: string; rincian: string; waktu: string; userId?: string; ip?: string };
 
 const PERAN_PENTING = ["super-admin", "admin", "ketua", "wakil-ketua"];
+export const MAKS_JARINGAN_WAJAR = 5;
+const JENDELA_JARINGAN_MS = 15 * 60_000;
 
 /** Jam & hari WITA (UTC+8) dari ISO. */
 function waktuWita(iso: string) {
@@ -283,11 +296,14 @@ export function susunPeringatan(baris: BarisJejak[], setelan: SetelanJejak): Per
     }
     // 5. Di luar jam kerja.
     if (diLuarJamKerja(b.waktu, setelan)) {
-      hasil.push({ jenis: "luar-jam", tingkat: "sedang", judul: `${b.nama || b.username} masuk di luar jam kerja`, rincian: `Jam kerja ${setelan.jamKerjaMulai}-${setelan.jamKerjaSelesai} WITA.`, waktu: b.waktu, userId: b.user_id, ip: b.ip });
+      hasil.push({ jenis: "luar-jam", tingkat: "info", judul: `${b.nama || b.username} masuk di luar jam kerja`, rincian: `Jam kerja ${setelan.jamKerjaMulai}-${setelan.jamKerjaSelesai} WITA.`, waktu: b.waktu, userId: b.user_id, ip: b.ip });
     }
   }
 
-  // 3. Akun yang sama dari dua subnet berbeda dalam 15 menit.
+  // 3. Satu akun dari LEBIH DARI 5 jaringan (subnet /24) berbeda dalam satu
+  //    jendela 15 menit. Sampai 5 jaringan dianggap wajar (keputusan Derry 23
+  //    Okt 2026: pegawai berpindah ruang, Wi-Fi, dan HP). Satu peringatan per
+  //    akun, pada saat jaringan keenam muncul.
   const perAkun = new Map<string, BarisJejak[]>();
   for (const b of masuk) {
     if (!b.user_id || !b.ip) continue;
@@ -296,19 +312,24 @@ export function susunPeringatan(baris: BarisJejak[], setelan: SetelanJejak): Per
     perAkun.set(b.user_id, d);
   }
   for (const [userId, daftar] of perAkun) {
-    for (let i = 1; i < daftar.length; i++) {
-      const a = daftar[i - 1];
-      const b = daftar[i];
-      const selisih = new Date(b.waktu).getTime() - new Date(a.waktu).getTime();
-      if (selisih <= 15 * 60_000 && subnetIp(a.ip) !== subnetIp(b.ip)) {
+    for (let i = 0; i < daftar.length; i++) {
+      const ujung = new Date(daftar[i].waktu).getTime();
+      const jendela = daftar.filter((x) => {
+        const t = new Date(x.waktu).getTime();
+        return t <= ujung && ujung - t <= JENDELA_JARINGAN_MS;
+      });
+      const jaringan = [...new Set(jendela.map((x) => subnetIp(x.ip)))];
+      if (jaringan.length > MAKS_JARINGAN_WAJAR) {
+        const b = daftar[i];
         hasil.push({
-          jenis: "dua-tempat",
+          jenis: "banyak-jaringan",
           tingkat: "tinggi",
-          judul: `${b.nama || b.username} masuk dari dua jaringan berbeda dalam ${Math.max(1, Math.round(selisih / 60_000))} menit`,
-          rincian: `${a.ip} lalu ${b.ip}.`,
+          judul: `${b.nama || b.username} masuk dari ${jaringan.length} jaringan berbeda dalam 15 menit`,
+          rincian: `Wajar sampai ${MAKS_JARINGAN_WAJAR}. Jaringan: ${jaringan.map((j) => `${j}.x`).join(", ")}.`,
           waktu: b.waktu,
           userId,
         });
+        break;
       }
     }
   }

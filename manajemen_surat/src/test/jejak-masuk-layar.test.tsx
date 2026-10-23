@@ -114,7 +114,7 @@ describe("halaman admin Riwayat Masuk & Perangkat", () => {
       rantai_xff: "1.2.3.4, 192.168.9.77", agen: "UA", jenis_perangkat: "komputer", os: "Windows 10/11", peramban: "Chrome 130", model: "", ingat: "", nama_komputer: "", mac: "", mac_sumber: "", pelaku_id: "", pelaku_nama: "", rincian: "{}",
     };
     vi.stubGlobal("fetch", vi.fn(async (url: string) => {
-      if (url.includes("tab=peringatan")) return jawab(200, { ok: true, data: { peringatan: [{ jenis: "luar-kantor", tingkat: "tinggi", judul: "Hakim Rekaan masuk dari luar jaringan kantor", rincian: "Alamat 36.80.1.2.", waktu: "2026-10-23T01:00:00.000Z" }] } });
+      if (url.includes("tab=peringatan")) return jawab(200, { ok: true, data: { peringatan: [{ jenis: "luar-kantor", tingkat: "tinggi", judul: "Hakim Rekaan masuk dari luar jaringan kantor", rincian: "Alamat 36.80.1.2.", waktu: "2026-10-23T01:00:00.000Z" }, { jenis: "luar-jam", tingkat: "info", judul: "Hakim Rekaan masuk di luar jam kerja", rincian: "Jam kerja 07:30-17:00 WITA.", waktu: "2026-10-22T14:00:00.000Z" }] } });
       return jawab(200, { ok: true, data: { total: 1, halaman: 1, perHalaman: 50, baris: [baris] } });
     }));
     portal.nilai = { currentUser: akun("admin"), users: [{ id: "usr-hakim", name: "Hakim Rekaan", username: "hakim" }], roles: [{ id: "hakim", name: "Hakim" }] };
@@ -127,6 +127,10 @@ describe("halaman admin Riwayat Masuk & Perangkat", () => {
     expect(row.textContent).toContain("Sesi SIPP (ekstensi)");
     expect(row.textContent).toContain("192.168.9.77");
     expect(screen.getByText("Hakim Rekaan masuk dari luar jaringan kantor")).toBeTruthy();
+    // Luar jam kerja tampil di kartu Informasi terpisah, berlencana "Info" - bukan di kartu "Perlu diperhatikan".
+    const info = container.querySelector("[data-informasi-masuk]")!;
+    expect(info.textContent).toContain("Hakim Rekaan masuk di luar jam kerja");
+    expect(info.textContent).toContain("Info");
     fireEvent.click(container.querySelector('[data-baris-riwayat="j1"]')!);
     expect(screen.getByText("1.2.3.4, 192.168.9.77")).toBeTruthy();
   });
