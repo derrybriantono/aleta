@@ -228,6 +228,77 @@ describe("B. jurnal per perkara (detil_biaya)", () => {
 });
 
 // ============================================================================
+describe("B2. tombol Kasir ALETA (T3) - disorot bila ada, dilewati bila tidak", () => {
+  const tombolT3 = (w: Jendela, bagian: string) => {
+    const wadah = w.document.createElement("div");
+    wadah.id = "aleta-kj-wadah";
+    wadah.className = "aleta-kj-baris aleta-sisip";
+    wadah.innerHTML = '<button type="button" id="aleta-kj-tombol" class="btn btn-sm aleta-kj-tombol aleta-sisip">Kasir ALETA</button>';
+    w.document.querySelector(bagian).insertAdjacentElement("afterend", wadah);
+    return wadah;
+  };
+
+  it("jurnal per perkara: tombol ada -> langkah kedua, menyorot tombol itu", async () => {
+    const w = buka(JURNAL());
+    await tunggu(30);
+    tombolT3(w, "h3");
+    w.aletaPanduanKasir.segarkan();
+    expect(telusuri(w)).toEqual(["nomor", "kasir-aleta", "usulan", "tambah", "tabel"]);
+    w.aletaPanduanKasir.mulai();
+    klik(w, "berikut");
+    expect(judul(w)).toBe("Tombol Kasir ALETA");
+    expect(sorot(w).map((e) => e.id)).toEqual(["aleta-kj-tombol"]);
+    expect(kepala(w)).toBe("Panduan kasir · langkah 2 dari 5");
+  });
+
+  it("jurnal per perkara: tombol belum ada -> dilewati tanpa galat", async () => {
+    const w = buka(JURNAL());
+    await tunggu(30);
+    expect(telusuri(w)).toEqual(["nomor", "usulan", "tambah", "tabel"]);
+  });
+
+  it("tombol disembunyikan -> dilewati", async () => {
+    const w = buka(JURNAL());
+    await tunggu(30);
+    tombolT3(w, "h3").style.display = "none";
+    expect(telusuri(w)).toEqual(["nomor", "usulan", "tambah", "tabel"]);
+  });
+
+  it("tombol muncul belakangan saat panduan berjalan: langkah ikut bertambah, sorotan tetap satu", async () => {
+    const w = buka(JURNAL());
+    await tunggu(30);
+    w.aletaPanduanKasir.mulai();
+    expect(kepala(w)).toContain("dari 4");
+    tombolT3(w, "h3");
+    await tunggu(300);
+    expect(kepala(w)).toBe("Panduan kasir · langkah 1 dari 5");
+    expect(sorot(w)).toHaveLength(1);
+  });
+
+  it("daftar jurnal: tombol ada -> di antara daftar dan Kasir harian; tidak ada -> dilewati", async () => {
+    const w = buka(DAFTAR, { jalur: "jurnal_perkara_list/index" });
+    await tunggu(30);
+    tombolT3(w, "h3");
+    expect(telusuri(w)).toEqual(["daftar", "kasir-aleta-daftar", "harian"]);
+    const w2 = buka(DAFTAR, { jalur: "jurnal_perkara_list/index" });
+    await tunggu(30);
+    expect(telusuri(w2)).toEqual(["daftar", "harian"]);
+  });
+
+  it("jendela Tambah Biaya terbuka: tombol T3 tidak ikut dipandu", async () => {
+    const w = buka(JURNAL());
+    await tunggu(30);
+    tombolT3(w, "h3");
+    const wadah = w.document.createElement("div");
+    wadah.innerHTML = BIAYA();
+    w.document.body.appendChild(wadah);
+    w.aletaSippIdeM1.pasang(w.document);
+    w.aletaPanduanKasir.segarkan();
+    expect(telusuri(w)).not.toContain("kasir-aleta");
+  });
+});
+
+// ============================================================================
 describe("C. jendela Tambah Biaya (frm_add_biaya)", () => {
   const sisip = (w: Jendela, isi: string) => {
     const wadah = w.document.createElement("div");

@@ -16,6 +16,9 @@
  *                                      pembayar -> kategori -> jenis -> jurusita
  *                                      -> jumlah -> Simpan
  *
+ * Tombol "Kasir ALETA" (kasir-jurnal-popup.js, T3, #aleta-kj-tombol) ikut disorot bila ada di halaman;
+ * bila belum ada (cabang T3 belum digabung / bukan haknya) langkahnya dilewati tanpa galat.
+ *
  * Hanya elemen yang TAMPAK disorot (SIPP menyembunyikan medan dengan .hide() -
  * display:none, elemennya tetap ada): langkah yang elemennya tersembunyi atau
  * tidak ada dilewati, jadi urutannya selalu cocok dengan yang dilihat kasir.
@@ -157,6 +160,13 @@
       cari: (d) => judulJurnal(d),
     },
     {
+      kunci: "kasir-aleta",
+      lingkup: "perkara",
+      judul: "Tombol Kasir ALETA",
+      teks: "Tombol ini membuka tampilan Kasir perkara ini di jendela tengah layar: usulan baris jurnal dari keadaan perkara. Mulailah dari sini bila tidak ingin mencari tab Kasir di panel.",
+      cari: (d) => pertamaAleta(d, "#aleta-kj-tombol"),
+    },
+    {
       kunci: "usulan",
       lingkup: "perkara",
       judul: "Baca usulan Kasir ALETA",
@@ -184,6 +194,13 @@
       judul: "Pilih perkara",
       teks: "Daftar perkara yang punya jurnal keuangan. Buka perkara yang hendak dicatat; di dalamnya Anda dibawa ke Buku Jurnal perkara itu.",
       cari: (d) => tabelDaftar(d),
+    },
+    {
+      kunci: "kasir-aleta-daftar",
+      lingkup: "daftar",
+      judul: "Tombol Kasir ALETA",
+      teks: "Tombol ini membuka Kasir harian di jendela tengah layar: perkara yang bergerak pada satu tanggal, rekap, dan pengingat.",
+      cari: (d) => pertamaAleta(d, "#aleta-kj-tombol"),
     },
     {
       kunci: "harian",
@@ -505,11 +522,14 @@
     tampilkan(daftar, j >= 0 ? j : daftar.length - 1);
   }
 
+  /** Hanya sisipan panduan sendiri yang diabaikan: sisipan ALETA lain (tombol Kasir, pita Isi) mengubah langkah yang tersedia. */
+  const milikSendiri = (n) => Boolean(n && n.nodeType === 1 && typeof n.closest === "function" && n.closest(".aleta-pk"));
+
   function relevan(m) {
-    if (milikAleta(m.target)) return false;
+    if (milikSendiri(m.target)) return false;
     if (m.type === "childList") {
       const n = [...m.addedNodes, ...m.removedNodes];
-      if (n.length && n.every((x) => x.nodeType !== 1 || milikAleta(x))) return false;
+      if (n.length && n.every((x) => x.nodeType !== 1 || milikSendiri(x))) return false;
     }
     return true;
   }
