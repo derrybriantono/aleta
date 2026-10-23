@@ -112,127 +112,40 @@ function selaraskanDenganAleta(panel) {
  * SATU TEMA UNTUK POPUP, WIDGET, SIPP, ABT, DAN PORTAL INI
  * ============================================================================
  *
- * Sebelumnya ada dua saklar yang tidak saling mengenal:
+ * Pilihan tema (terang | gelap | ikuti sistem) kini dipegang SATU pusat -
+ * tema-pusat.js - dan portal menjadi salah satu penggunanya, bukan pihak
+ * yang "disamakan" lewat pembacaan chrome.storage di tiap pemuatan panel.
  *
- *   temaPanel   dipakai panel SIPP dan ABT, diubah dari tombol ☀/☾ di kepala
- *   temaPopup   dipakai jendela popup ikon Chrome, bawaannya "ikut peramban"
+ * Sebab pengacau yang dihapus dari sini:
  *
- * dan portal ALETA punya yang ketiga lagi - kelas `dark` miliknya sendiri.
- * Akibatnya persis yang dilaporkan: panel gelap, popupnya putih menyilaukan,
- * dan tombol tema di salah satunya tidak pernah menyentuh yang lain.
+ *   - Panel portal tidak dibangun di /login dan /verifikasi-dokumen, padahal
+ *     tombol tema portal ada di sana. Pilihan yang diambil di sana tidak
+ *     pernah sampai ke chrome.storage; begitu panel dibangun di halaman
+ *     berikutnya, ia "menyamakan" portal dengan nilai LAMA - pilihan yang
+ *     baru diambil terbalik seketika.
+ *   - Peristiwa yang dikirim ke portal dibuang bila PortalProvider belum
+ *     terhidrasi; keberhasilannya bergantung pada siapa yang lebih cepat.
+ *   - Pengamat kelas <html> menulis chrome.storage tiap kali kelas apa pun
+ *     berubah, dan penyamaan berjalan lagi tiap panel dibangun ulang.
  *
- * Sekarang temaPanel satu-satunya kebenaran. Di halaman ini ia disambungkan
- * DUA ARAH dengan tema portal:
- *
- *   portal berubah   -> ditulis ke temaPanel, sehingga popup, SIPP, dan ABT
- *                       ikut seketika
- *   temaPanel berubah -> portal diminta berganti lewat satu peristiwa DOM,
- *                       yang didengar PortalProvider (lihat app-state.tsx)
- *
- * Kenapa peristiwa, bukan menulis localStorage portal: temanya dipegang
- * keadaan React, dan localStorage yang diubah dari luar baru terbaca pada
- * pemuatan berikutnya - halamannya akan tampak menolak.
- *
- * Portal yang belum membawa pendengarnya tidak rusak sama sekali: peristiwa
- * itu tidak ditangkap siapa pun, dan panel tetap mengikuti tema portal
- * seperti sedia kala.
+ * Sekarang: portal menulis salinan "pilihan|waktu" (localStorage origin yang
+ * sama dengan SIPP dan ABT) dan menaruhnya di atribut data-aleta-tema-salinan;
+ * pusat menjembatani dua arah dan yang lebih baru menang. Panel ini hanya
+ * mengikuti kelas `dark` portal untuk WARNA-nya (variabel CSS portal) - tidak
+ * menulis penyimpanan apa pun.
  */
-const KUNCI_TEMA_BERSAMA = "temaPanel";
-let temaBersamaTerakhir = "";
-let pendengarTemaTerpasang = false;
-
-function mintaPortalBertema(tema) {
-  const bersih = tema === "terang" ? "terang" : "gelap";
-  if (temaAleta() === bersih) return;
-  try {
-    window.dispatchEvent(new CustomEvent("aleta-ekstensi-tema", { detail: { tema: bersih } }));
-  } catch {
-    /* portal tetap pada temanya sendiri - panel mengikutinya */
-  }
-}
-
-/**
- * ============================================================================
- * SAAT HALAMAN DIBUKA: YANG MEMAKSA HANYA PILIHAN YANG SUNGGUH PERNAH DIAMBIL
- * ============================================================================
- *
- * Dua arah sudah tersambung, tetapi PEMUATAN PERTAMA menuntut keputusan
- * tersendiri: siapa yang menang ketika keduanya berbeda dan belum ada yang
- * menekan apa pun?
- *
- * Bila petugas memang pernah memilih tema - dari popup, dari panel SIPP, dari
- * panel ABT - pilihan itu yang berlaku, dan portal diminta mengikutinya.
- * Itulah arti "temanya satu".
- *
- * Bila BELUM pernah ada yang memilih, tidak ada yang pantas dipaksakan.
- * Memaksakan bawaan ekstensi berarti membalik tampilan portal orang atas
- * sesuatu yang tidak pernah ia minta - sekali, tepat sesudah pembaruan, dan
- * tanpa keterangan apa pun. Yang dikerjakan justru sebaliknya: tema portal
- * DIADOPSI menjadi tema bersama, sehingga popup dan panel di tab lain ikut
- * kepadanya.
- */
-async function samakanTemaDenganPortal() {
-  try {
-    const simpan = await chrome.storage.local.get([KUNCI_TEMA_BERSAMA]);
-    const tersimpan = simpan[KUNCI_TEMA_BERSAMA];
-    if (tersimpan !== "terang" && tersimpan !== "gelap") {
-      temaBersamaTerakhir = temaAleta();
-      await chrome.storage.local.set({ [KUNCI_TEMA_BERSAMA]: temaBersamaTerakhir });
-      return;
-    }
-    temaBersamaTerakhir = tersimpan;
-    mintaPortalBertema(tersimpan);
-  } catch {
-    /* di luar konteks ekstensi: portal memakai temanya sendiri */
-  }
-}
-
 function ikutiTemaAleta(panel) {
   selaraskanDenganAleta(panel);
   // ALETA mengganti tema dengan menambah/membuang kelas pada <html>; itulah
-  // satu-satunya sinyal yang perlu didengar.
+  // sinyal untuk menyalin variabel warna portal ke panel.
   const pengamat = new MutationObserver(() => {
     if (!panel.isConnected) {
       pengamat.disconnect();
       return;
     }
     selaraskanDenganAleta(panel);
-    // Tema portal yang baru diganti orangnya - dari tombol ALETA sendiri
-    // maupun dari tombol panel ini - dituliskan ke penyimpanan bersama.
-    // Dari sanalah popup ekstensi dan panel di tab SIPP/ABT mengikutinya.
-    const kini = temaAleta();
-    if (kini === temaBersamaTerakhir) return;
-    temaBersamaTerakhir = kini;
-    try {
-      void chrome.storage.local.set({ [KUNCI_TEMA_BERSAMA]: kini });
-    } catch {
-      /* temanya tetap berlaku di halaman ini */
-    }
   });
   pengamat.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-
-  // Arah sebaliknya: tema yang diganti dari popup atau dari tab SIPP/ABT
-  // meminta portal ini ikut berganti.
-  //
-  // SEKALI SEUMUR HALAMAN, dan itu perlu disebut: fungsi ini dipanggil tiap
-  // kali panel dibangun - saat tombol segarkan ditekan, dan saat saklar
-  // induknya dinyalakan lagi - sedangkan pendengar penyimpanan hidup di
-  // halamannya, bukan di panelnya. Tanpa pagar ini, tiap pembangunan ulang
-  // meninggalkan satu pendengar tambahan yang mengerjakan hal yang sama.
-  if (!pendengarTemaTerpasang) {
-    pendengarTemaTerpasang = true;
-    try {
-      chrome.storage.onChanged.addListener((ubah, tempat) => {
-        if (tempat !== "local" || !ubah[KUNCI_TEMA_BERSAMA]) return;
-        const baru = ubah[KUNCI_TEMA_BERSAMA].newValue === "terang" ? "terang" : "gelap";
-        temaBersamaTerakhir = baru;
-        mintaPortalBertema(baru);
-      });
-    } catch {
-      /* tanpa pendengarnya, temanya berlaku di halaman tempat ia ditekan saja */
-    }
-  }
-  void samakanTemaDenganPortal();
 }
 
 // ─── Pita identitas: bentuk yang sama dengan panel SIPP dan ABT ──────────────

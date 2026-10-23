@@ -206,7 +206,11 @@ describe("tema terang dan gelap", () => {
     // Yang berubah siapa yang meminta - pemakainya sendiri yang memutuskan
     // gelap sebagai bawaan, dan satu tekanan mengembalikannya.
     const isi = konten();
-    expect(isi).toContain("simpan[KUNCI_TEMA_SIPP] !== false");
+    // Sejak pusat tema (23 Okt 2026) saklarnya dibaca di tema-pusat.js dan
+    // konten.js mengikutinya; aturan "!== false" tetap sama.
+    expect(isi).toContain("temaSippMenyala = kini.lapisan !== false;");
+    const pusat = readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/tema-pusat.js"), "utf8");
+    expect(pusat).toContain("simpan[KUNCI.lapisan] !== false");
   });
 
   it("yang pernah mematikan lapisannya tetap mendapati SIPP asli", () => {
@@ -214,6 +218,8 @@ describe("tema terang dan gelap", () => {
     // pilihan yang sudah dibuat orang.
     const isi = konten();
     expect(isi).not.toContain("simpan[KUNCI_TEMA_SIPP] === true");
+    const pusat = readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/tema-pusat.js"), "utf8");
+    expect(pusat).not.toContain("simpan[KUNCI.lapisan] === true");
   });
 
   it("tema SIPP tinggal di panel.css, bukan sebagai teks di dalam konten.js", () => {

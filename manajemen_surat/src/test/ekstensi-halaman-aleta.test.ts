@@ -103,31 +103,33 @@ describe("aleta.js: mengikuti tema ALETA dan tidak membawa temanya sendiri", () 
     expect(isi).toContain("temaHalaman: false");
   });
 
-  it("tema disambungkan dua arah dengan portal", () => {
+  it("tema disambungkan dua arah dengan portal LEWAT SATU PUSAT, tanpa penyamaan di tiap pemuatan", () => {
     const isi = aletaJs();
-    // portal berubah -> ditulis ke temaPanel, sehingga popup, SIPP, dan ABT
-    // ikut seketika
-    expect(isi).toContain('const KUNCI_TEMA_BERSAMA = "temaPanel";');
-    expect(isi).toContain("chrome.storage.local.set({ [KUNCI_TEMA_BERSAMA]: kini })");
-    // temaPanel berubah -> portal DIMINTA berganti lewat satu peristiwa DOM.
-    // Meminta, bukan menulis localStorage portal: temanya dipegang keadaan
-    // React, dan localStorage yang diubah dari luar baru terbaca pada
-    // pemuatan berikutnya - halamannya akan tampak menolak.
-    expect(isi).toContain('new CustomEvent("aleta-ekstensi-tema"');
-    expect(isi).toContain("function mintaPortalBertema(");
-    // Tidak meminta apa-apa bila temanya memang sudah sama - tanpa pagar ini
-    // keduanya saling mendorong tanpa henti.
-    expect(isi).toContain("if (temaAleta() === bersih) return;");
+    // 23 Okt 2026: panel portal tidak lagi menyamakan portal dengan
+    // chrome.storage tiap kali dibangun (itu yang membalik pilihan baru dengan
+    // nilai lama) dan tidak lagi menulis chrome.storage dari pengamat kelas.
+    expect(isi).not.toContain("function samakanTemaDenganPortal(");
+    expect(isi).not.toContain("function mintaPortalBertema(");
+    expect(isi).not.toContain("chrome.storage.local.set({ [KUNCI_TEMA_BERSAMA]");
+    // Yang tersisa hanya menyalin variabel warna portal ke panel.
+    expect(isi).toContain("function ikutiTemaAleta(panel)");
+    // Jembatannya ada di pusat: atribut salinan yang ditulis portal diamati
+    // di sana, dan permintaan ke portal berupa satu peristiwa DOM.
+    const pusat = readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/tema-pusat.js"), "utf8");
+    expect(pusat).toContain('new akar.CustomEvent("aleta-ekstensi-tema"');
+    expect(pusat).toContain('jembatan: "data-aleta-tema-salinan"');
   });
 
-  it("portal mendengarkan permintaan itu, dan hanya menerima satu kata", () => {
-    const portal = readFileSync(
-      path.resolve(process.cwd(), "src/lib/app-state.tsx"),
-      "utf8"
-    );
-    expect(portal).toContain('window.addEventListener("aleta-ekstensi-tema", dengar)');
-    expect(portal).toContain('if (tema !== "gelap" && tema !== "terang") return;');
-    expect(portal).toContain('window.removeEventListener("aleta-ekstensi-tema", dengar)');
+  it("portal mengikuti salinan pilihannya; peristiwa ekstensi hanya memicu pembacaan ulang", () => {
+    const portal = readFileSync(path.resolve(process.cwd(), "src/lib/tema-pilihan.ts"), "utf8");
+    expect(portal).toContain("window.addEventListener(PERISTIWA_EKSTENSI_TEMA, saatEkstensi)");
+    expect(portal).toContain("window.removeEventListener(PERISTIWA_EKSTENSI_TEMA, saatEkstensi)");
+    expect(portal).toContain('export const PERISTIWA_EKSTENSI_TEMA = "aleta-ekstensi-tema";');
+    // Ekstensi lama yang hanya mengirim satu kata tetap dilayani.
+    expect(portal).toContain('if (lama === "gelap" || lama === "terang") {');
+    const keadaan = readFileSync(path.resolve(process.cwd(), "src/lib/app-state.tsx"), "utf8");
+    expect(keadaan).toContain("mulaiTemaPortal()");
+    expect(keadaan).not.toContain('document.documentElement.classList.toggle("dark", state.theme === "dark")');
   });
 
   it("panel yang ditutup dapat dibuka lagi tanpa memuat ulang", () => {

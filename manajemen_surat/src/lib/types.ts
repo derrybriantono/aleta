@@ -169,7 +169,8 @@ export interface ExternalAppCredentialInput {
   clearPassword?: boolean;
 }
 
-export type ThemeMode = "light" | "dark";
+/** Pilihan tema: terang, gelap, atau ikuti sistem (lihat tema-pilihan.ts). */
+export type ThemeMode = "light" | "dark" | "system";
 export type FooterMode = "auto" | "compact" | "full";
 export type WhatsAppDeliveryStatus = "Diantrekan" | "Terkirim" | "Dibaca" | "Gagal";
 

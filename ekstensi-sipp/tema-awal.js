@@ -1,50 +1,34 @@
-"use strict";
-
 /**
  * ============================================================================
- * TEMA DIPASANG SEBELUM HALAMAN DIGAMBAR
+ * TEMA DIPASANG SEBELUM HALAMAN DIGAMBAR - OLEH SATU PUSAT
  * ============================================================================
  *
- * Gejalanya: halaman SIPP berkelebat PUTIH lebih dulu, lalu berubah gelap
- * sepersekian detik kemudian. Paling terasa pada daftar perkara yang panjang
- * dan tiap kali membuka satu perkara - yakni pada dua halaman yang paling
- * sering dibuka. Bagi mata, kelebat putih di antara dua halaman gelap lebih
- * menyakitkan daripada halaman yang terang sepanjang waktu.
+ * Gejalanya: halaman berkelebat PUTIH lebih dulu lalu gelap (atau sebaliknya),
+ * dan berganti-ganti tiap pindah halaman. Penyebab dan aturan lengkapnya ada di
+ * tema-pusat.js; berkas ini hanya MEMULAINYA pada document_start, sebelum
+ * satu piksel pun digambar.
  *
- * SEBABNYA URUTAN, BUKAN BERAT
+ * Yang dikerjakan pusat pada saat ini, semuanya sinkron:
  *
- * Gayanya sendiri sudah siap sejak awal - panel.css dipasang sebagai berkas
- * gaya content script, dan peramban menerapkannya sebelum menggambar. Yang
- * datang terlambat adalah PENANDANYA: data-aleta-tema-sipp baru dipasang di
- * dalam segarkan(), yang berjalan pada document_idle, sesudah menunggu
- * chrome.storage.local yang asinkron.
+ *   - membaca salinan pilihan (terang | gelap | sistem) dari localStorage
+ *     origin yang sama - kunci aleta-tema-pilihan, juga dipakai portal ALETA
+ *     sehingga ketiga aplikasi memakai SATU salinan;
+ *   - bila pilihannya "sistem", menanyakan prefers-color-scheme di jendela
+ *     halaman ini (matchMedia) dan memantau perubahannya;
+ *   - memasang data-aleta-tema-sipp / data-aleta-tema pada <html>.
  *
- * Jadi halaman digambar dulu dengan gaya SIPP asli, dan baru sesudah itu
- * penandanya menyala dan seluruh warna berubah sekaligus.
+ * chrome.storage hanya asinkron - apa pun yang menunggunya terlambat. Ia
+ * dibaca SESUDAH itu hanya untuk menyegarkan: bila isinya sama dengan yang
+ * sudah terpasang, tidak ada penulisan dan tidak ada perubahan atribut
+ * sama sekali (itulah yang menghentikan kedip antar halaman).
  *
- * KENAPA localStorage, PADAHAL SUMBER KEBENARANNYA chrome.storage
+ * Nilai lama tetap terbaca (aleta-tema-sipp: terang/gelap/mati) dan
+ * dipetakan oleh pusat; "mati" menjadi pilihan gelap dengan lapisan SIPP
+ * dimatikan - saklar itu kini punya kunci sendiri (aleta-tema-lapisan).
  *
- * chrome.storage.local hanya dapat dibaca secara asinkron. Apa pun yang
- * menunggunya sudah pasti terlambat - janji yang paling cepat pun selesai
- * sesudah gambar pertama.
- *
- * localStorage halaman ini SINKRON. Berkas ini karena itu membaca salinan
- * temanya dari sana pada document_start - sebelum satu piksel pun digambar -
- * lalu memasang penandanya seketika. chrome.storage tetap sumber kebenarannya;
- * salinan di localStorage hanya cache yang ditulis ulang tiap kali temanya
- * berubah (lihat simpanSalinanTema di konten.js).
- *
- * Yang dititipkan ke penyimpanan aplikasi orang lain hanya SATU kunci berisi
- * satu kata, "gelap" atau "terang". Itu harga yang disebut terus-terang: tanpa
- * cache sinkron, kelebat putihnya tidak dapat dihilangkan sama sekali.
- *
- * Pada kunjungan pertama - ketika cache-nya memang belum ada - dipakai bawaan
- * yang sama dengan bawaan panel: gelap. Yang pernah memilih terang tidak akan
- * pernah melihat kelebat gelap, sebab pilihannya sudah tersalin sejak
- * pemuatan sebelumnya.
+ * Pada kunjungan pertama - ketika salinannya memang belum ada - dipakai bawaan
+ * yang sama dengan bawaan panel: gelap.
  */
-
-const KUNCI_SALINAN = "aleta-tema-sipp";
 
 /**
  * ============================================================================
@@ -79,24 +63,13 @@ const KUNCI_SALINAN = "aleta-tema-sipp";
 })();
 
 (function pasangSedini() {
-  let tema = "gelap";
-  try {
-    const tersimpan = window.localStorage.getItem(KUNCI_SALINAN);
-    if (tersimpan === "terang" || tersimpan === "gelap" || tersimpan === "mati") {
-      tema = tersimpan;
-    }
-  } catch {
-    // Penyimpanan halaman tidak tersedia - mode penjelajahan tertentu
-    // menolaknya. Bawaan gelap tetap dipakai, dan konten.js akan
-    // memperbaikinya sesudah membaca chrome.storage.
-  }
+  const pusat = globalThis.AletaTemaPusat;
+  if (!pusat) return;
+  const keadaan = pusat.mulai();
 
-  // "mati" berarti petugas mematikan lapisan gelap untuk SIPP. Tidak ada
-  // penanda yang dipasang, dan halamannya tampil asli sejak awal - tanpa
-  // kelebat gelap sedikit pun.
-  if (tema === "gelap") {
-    document.documentElement.setAttribute("data-aleta-tema-sipp", "gelap");
-  }
+  // Portal ALETA memegang tampilannya sendiri; di sana pusat hanya menjembatani.
+  if (pusat.halaman() === "portal") return;
+  const tema = keadaan.resolusi;
 
   // ==========================================================================
   // WARNA GELAP PILIHAN - DIPASANG PADA GAMBAR PERTAMA, SEPERTI TEMANYA
@@ -110,14 +83,22 @@ const KUNCI_SALINAN = "aleta-tema-sipp";
   //
   // Hanya dipasang bila temanya gelap: palet gelap di atas halaman terang
   // bukan warna, melainkan kerusakan.
-  if (tema === "gelap") {
+  const pasangWarna = () => {
     try {
       const warna = window.localStorage.getItem("aleta-warna-gelap");
       if (warna && /^[a-z]{3,12}$/.test(warna)) {
-        document.documentElement.setAttribute("data-aleta-warna", warna);
+        if (document.documentElement.getAttribute("data-aleta-warna") !== warna) {
+          document.documentElement.setAttribute("data-aleta-warna", warna);
+        }
       }
     } catch {
       /* tanpa salinannya, warna bawaan berlaku sampai panel memperbaikinya */
     }
-  }
+  };
+  if (tema === "gelap") pasangWarna();
+  // Tema yang kemudian berganti menjadi gelap (dari popup, tab lain, atau
+  // sistem) membawa palet pilihannya pula.
+  pusat.dengar((s) => {
+    if (s.resolusi === "gelap") pasangWarna();
+  });
 })();

@@ -200,6 +200,8 @@ const BERKAS = [
   // dimuat paling depan di blok skrip konten SIPP/ABT/portal.
   "deteksi-sisa-blangko.js",
   "tema-awal.js",
+  // Pusat tema (terang | gelap | sistem): satu sumber kebenaran, dimuat sebelum tema-awal.js (SIPP, ABT, portal).
+  "tema-pusat.js",
   // Unduhan universal (17 Okt 2026): unduhan SIPP/ALETA/Blangko Derry lewat
   // chrome.downloads supaya tidak diblokir Chrome di situs http.
   "unduh-universal.js",

@@ -11578,8 +11578,6 @@ function simpanUkuran(lebar, tinggi) {
 // Bawaannya MATI untuk SIPP. Mengubah tampilan aplikasi orang lain tanpa
 // diminta adalah hal terakhir yang boleh dilakukan lapisan bantu.
 
-const KUNCI_TEMA = "temaPanel";
-const KUNCI_TEMA_SIPP = "temaSipp";
 
 let temaSekarang = "gelap";
 let temaSippMenyala = false;
@@ -11608,109 +11606,24 @@ let temaSippMenyala = false;
  */
 /**
  * ============================================================================
- * SALINAN TEMA UNTUK PEMUATAN BERIKUTNYA
+ * SALINAN TEMA DIURUS tema-pusat.js
  * ============================================================================
  *
- * chrome.storage.local hanya dapat dibaca secara asinkron, dan apa pun yang
- * menunggunya sudah pasti terlambat: halaman digambar lebih dulu, putih, lalu
- * berubah gelap - kelebat yang paling terasa justru pada daftar perkara
- * panjang dan tiap kali membuka satu perkara.
+ * Dulu berkas ini menulis salinan aleta-tema-sipp sendiri dengan tiga nilai
+ * (terang / gelap / mati), sementara panel ABT menulis kunci yang sama dengan
+ * dua nilai. SIPP dan ABT satu origin, sehingga tiap pindah di antara
+ * keduanya salinannya saling menimpa dan halaman berkedip gelap-terang.
  *
- * Karena itu keputusannya disalin ke localStorage halaman ini, yang SINKRON,
- * dan dibaca tema-awal.js pada document_start - sebelum satu piksel pun
- * digambar. chrome.storage tetap sumber kebenarannya; yang di sini hanya
- * cache, ditulis ulang tiap kali temanya berubah.
- *
- * Tiga nilai, bukan dua, sebab keadaannya memang tiga: panel gelap dengan
- * lapisan SIPP menyala, panel terang (lapisannya dilepas), dan panel gelap
- * dengan lapisan SIPP sengaja dimatikan. Yang ketiga harus dapat dibedakan
- * dari yang pertama, kalau tidak halaman akan berkelebat gelap bagi orang yang
- * justru mematikannya.
+ * Sekarang pilihan (terang | gelap | sistem), lapisan gelap SIPP, salinan
+ * sinkronnya, dan penanda <html> semuanya ditulis SATU penulis - pusat tema.
+ * Yang tersisa di sini hanya mengikuti hasilnya: temaSekarang adalah tema
+ * yang SUDAH DIURAIKAN (sistem sudah menjadi terang atau gelap), temaSippMenyala
+ * adalah saklar lapisan.
  */
-const KUNCI_SALINAN_TEMA = "aleta-tema-sipp";
-
-function simpanSalinanTema() {
-  const nilai = temaSekarang !== "gelap" ? "terang" : temaSippMenyala ? "gelap" : "mati";
-  try {
-    window.localStorage.setItem(KUNCI_SALINAN_TEMA, nilai);
-  } catch {
-    // Penyimpanan halaman tidak tersedia. Temanya tetap berlaku untuk halaman
-    // ini; yang hilang hanya kecepatan pada pemuatan berikutnya.
-  }
-}
-
-/** Penanda gaya yang disisipkan ke dalam bingkai CKEditor. */
-const GAYA_CKEDITOR = "aleta-tema-ckeditor";
-
-/**
- * ==========================================================================
- * BIDANG KETIKNYA IFRAME, DAN BERKAS GAYA BERHENTI DI TEPINYA
- * ==========================================================================
- *
- * Layar Putusan Akhir memuat tiga CKEditor. Bilah alatnya bagian dari
- * halaman dan sudah diwarnai panel.css, tetapi bidang ketiknya dokumen
- * TERSENDIRI di dalam iframe, dengan contents.css milik SIPP yang memaksa
- * latar putih.
- *
- * Karena keduanya satu origin, contentDocument-nya dapat dicapai - dan
- * itulah satu-satunya jalan. Tanpa ini, tiga bidang putih seluas layar
- * tetap berdiri di atas halaman gelap, dan justru bidang itulah yang paling
- * lama dipandang saat menulis putusan.
- *
- * ==========================================================================
- * GAYANYA DISISIPKAN KE <head>, TIDAK PERNAH KE <body>
- * ==========================================================================
- *
- * getData() milik CKEditor membaca body.innerHTML - itulah yang tersimpan
- * sebagai amar dan pertimbangan di SIPP. Satu elemen <style> di dalam body
- * akan ikut tersimpan ke dalam putusan, lalu ikut tercetak.
- *
- * Di dalam <head> ia tidak pernah terbaca getData(), sehingga naskah yang
- * tersimpan sama persis dengan tanpa ekstensi ini.
- */
-function warnaiSatuBingkai(bingkai, gelap) {
-  let dok = null;
-  try {
-    dok = bingkai.contentDocument;
-  } catch {
-    // Bingkai yang belum siap atau berbeda origin - dilewati diam-diam;
-    // yang hilang hanya warnanya.
-    return;
-  }
-  if (!dok || !dok.head) return;
-
-  const lama = dok.getElementById(GAYA_CKEDITOR);
-  if (!gelap) {
-    // Mencabutnya mengembalikan bidang ketik persis seperti semula - sifat
-    // yang sama dengan penanda tema di halaman induknya.
-    if (lama) lama.remove();
-    return;
-  }
-  if (lama) return;
-
-  const gaya = dok.createElement("style");
-  gaya.id = GAYA_CKEDITOR;
-  gaya.textContent = [
-    "html, body { background: #141d19 !important; color: #dfe8e2 !important; }",
-    "body { caret-color: #7fd0a6; }",
-    "a { color: #7fd0a6 !important; }",
-    "table, td, th { border-color: #27342e !important; }",
-    "hr { border-color: #27342e !important; }",
-    "::selection { background: #22432f; color: #ffffff; }",
-    // Naskah yang ditempel dari Word membawa warnanya sendiri, dan warna
-    // itu hampir selalu hitam - hitam di atas gelap berarti hilang sama
-    // sekali. Yang dibatalkan HANYA yang mendekati hitam; warna yang
-    // sengaja dipilih penulis, seperti merah pada catatan, dibiarkan.
-    '[style*="color:#000"], [style*="color: #000"], [style*="color:black"],' +
-      ' [style*="color: black"], [style*="color:rgb(0,0,0)"], [style*="color: rgb(0, 0, 0)"],' +
-      ' font[color="#000000"], font[color="black"] { color: inherit !important; }',
-    // Begitu pula latar putih yang ikut tertempel.
-    '[style*="background-color:#fff"], [style*="background-color: #fff"],' +
-      ' [style*="background:#fff"], [style*="background: #fff"],' +
-      ' [style*="background-color:white"], [style*="background-color: white"]' +
-      " { background-color: transparent !important; }",
-  ].join("\n");
-  dok.head.appendChild(gaya);
+function keadaanTemaPusat() {
+  const pusat = globalThis.AletaTemaPusat;
+  if (pusat) return pusat.keadaan();
+  return { pilihan: "gelap", resolusi: "gelap", waktu: 0, lapisan: true };
 }
 
 /**
@@ -11769,57 +11682,49 @@ function terapkanTemaSipp() {
   //
   // Penanda yang sama dipakai lencana baris untuk memilih warnanya, sehingga
   // keduanya mustahil berselisih.
+  //
+  // Penandanya SAMA dengan yang dipasang pusat pada document_start (aturan
+  // yang sama: gelap DAN lapisan menyala); dipasang di sini juga hanya bila
+  // berbeda, supaya tidak ada penulisan atribut yang sia-sia.
   const akar = document.documentElement;
-  simpanSalinanTema();
   if (!temaSippMenyala || temaSekarang !== "gelap") {
-    akar.removeAttribute("data-aleta-tema-sipp");
+    if (akar.hasAttribute("data-aleta-tema-sipp")) akar.removeAttribute("data-aleta-tema-sipp");
     warnaiCkeditor();
     return;
   }
-  akar.setAttribute("data-aleta-tema-sipp", "gelap");
+  if (akar.getAttribute("data-aleta-tema-sipp") !== "gelap") akar.setAttribute("data-aleta-tema-sipp", "gelap");
   warnaiCkeditor();
 }
 
 async function muatTema() {
-  try {
-    const simpan = await chrome.storage.local.get([KUNCI_TEMA, KUNCI_TEMA_SIPP]);
-    temaSekarang = simpan[KUNCI_TEMA] === "terang" ? "terang" : "gelap";
-    // ========================================================================
-    // GELAP ADALAH BAWAAN, TERMASUK UNTUK HALAMAN SIPP
-    // ========================================================================
-    //
-    // Sebelumnya lapisan gelap pada SIPP bawaannya MATI, dengan alasan yang
-    // masih benar: mengubah tampilan aplikasi orang lain tanpa diminta bukan
-    // keputusan yang pantas diambil sendiri oleh sebuah pembaruan.
-    //
-    // Yang berubah bukan alasannya, melainkan siapa yang meminta. Pemakainya
-    // sendiri yang memutuskan gelap sebagai bawaan, dan keputusan itu murah
-    // untuk dibatalkan: satu tekanan pada tombol tema mengembalikan SIPP persis
-    // seperti semula, dan pilihan itu diingat.
-    //
-    // Dibaca sebagai "!== false", bukan "=== true": yang pernah mematikannya
-    // tetap mendapati SIPP-nya asli sesudah pembaruan ini.
-    temaSippMenyala = simpan[KUNCI_TEMA_SIPP] !== false;
-  } catch {
-    // Penyimpanan tidak tersedia - tema bawaan tetap dipakai, dan panelnya
-    // tetap terbaca. Ini kenyamanan, bukan syarat.
-  }
+  // Sinkron dari pusat: tidak menunggu chrome.storage, jadi panel yang digambar
+  // ulang (SIPP memicunya terus-menerus) tidak pernah membaca nilai usang
+  // yang sedang dalam perjalanan ditulis.
+  const kini = keadaanTemaPusat();
+  temaSekarang = kini.resolusi === "terang" ? "terang" : "gelap";
+  // Gelap adalah bawaan, termasuk untuk halaman SIPP; yang pernah mematikan
+  // lapisannya tetap mendapati SIPP-nya asli (saklar disimpan pusat).
+  temaSippMenyala = kini.lapisan !== false;
 }
 
 /**
  * Tombol tema di kepala panel.
  *
- * Satu tekanan mengganti tema PANEL. Tekanan sambil menahan Shift ikut
- * menyalakan atau mematikan tema untuk halaman SIPP - dipisah karena yang
- * kedua mengubah aplikasi milik orang lain, dan hal semacam itu tidak boleh
- * terjadi karena tangan meleset satu piksel.
+ * Satu tekanan mengganti pilihan tema: terang -> gelap -> ikuti sistem ->
+ * terang. Pilihan DIMINTA dari pusat tema (tema-pusat.js), yang memasang
+ * penanda halaman seketika dan menyimpannya; panel mengikuti hasilnya lewat
+ * pendengar di bawah. Tekanan sambil menahan Shift menyalakan atau mematikan
+ * lapisan gelap untuk halaman SIPP - dipisah karena yang kedua mengubah
+ * aplikasi milik orang lain, dan hal semacam itu tidak boleh terjadi karena
+ * tangan meleset satu piksel.
  */
 function tombolTema(panel) {
-  const tombol = buatElemen("button", "aleta-tema", temaSekarang === "gelap" ? "☀" : "☾");
+  const tombol = buatElemen("button", "aleta-tema", "");
   tombol.type = "button";
 
   const perbaruiJudul = () => {
-    tombol.textContent = temaSekarang === "gelap" ? "☀" : "☾";
+    const kini = keadaanTemaPusat();
+    alatTampilkanTombolTema(tombol, kini.pilihan);
     // Keadaan SIPP disebut apa adanya, termasuk ketika saklarnya menyala
     // tetapi lapisannya memang tidak dipasang karena temanya terang. Tanpa
     // itu, tombolnya berkata "menyala" sementara SIPP tampak tidak berubah -
@@ -11830,38 +11735,54 @@ function tombolTema(panel) {
         ? "menyala"
         : "menyala, tetapi tidak dipasang pada tema terang";
     tombol.title =
-      `Ganti ke tema ${temaSekarang === "gelap" ? "terang" : "gelap"}. ` +
+      `${alatJudulTombolTema(kini.pilihan)} ` +
       `Tahan Shift untuk ${temaSippMenyala ? "mematikan" : "menyalakan"} tema gelap pada halaman SIPP ` +
       `(sekarang ${keadaanSipp}). Tema terang selalu mengembalikan SIPP seperti semula.`;
   };
   perbaruiJudul();
 
   tombol.addEventListener("click", (peristiwa) => {
+    const pusat = globalThis.AletaTemaPusat;
+    if (!pusat) return;
+    // Pusat memasang penanda halaman SEKETIKA (sinkron) dan menyimpan
+    // sesudahnya; pendengar tema di bawah menyegarkan panel dan tombol ini.
     if (peristiwa.shiftKey) {
-      temaSippMenyala = !temaSippMenyala;
+      pusat.aturLapisan(!pusat.keadaan().lapisan);
     } else {
-      temaSekarang = temaSekarang === "gelap" ? "terang" : "gelap";
-    }
-    // Tampilan didahulukan; penyimpanan menyusul. Lihat catatan yang sama di
-    // alatTombolKepala - menunggu chrome.storage membuat tombolnya terasa
-    // tidak berfungsi, dan yang menekannya menekan sekali lagi.
-    alatTanpaTransisi(() => {
-      panel.setAttribute("data-tema", temaSekarang);
-      terapkanTemaSipp();
-      perbaruiJudul();
-    });
-    try {
-      void chrome.storage.local.set({
-        [KUNCI_TEMA]: temaSekarang,
-        [KUNCI_TEMA_SIPP]: temaSippMenyala,
-      });
-    } catch {
-      /* tidak tersimpan - temanya tetap berlaku untuk halaman ini */
+      const sekarang = pusat.keadaan().pilihan;
+      pusat.pilih(ALAT_URUTAN_TEMA[sekarang] || "terang");
     }
   });
 
   return tombol;
 }
+
+/**
+ * Mengikuti pusat tema: setiap perubahan efektif - dari tombol ini, dari tab
+ * lain, dari popup, atau dari tampilan sistem yang berganti - sampai ke sini
+ * SEKALI, dan yang sudah sama tidak dikabarkan. Menggantikan pendengar
+ * chrome.storage yang dahulu membaca temaPanel mentah (terang/gelap).
+ */
+function ikutiPusatTemaSipp(kabar) {
+  temaSekarang = kabar.resolusi === "terang" ? "terang" : "gelap";
+  temaSippMenyala = kabar.lapisan !== false;
+  const panel = document.getElementById(PENANDA);
+  alatTanpaTransisi(() => {
+    if (panel && panel.getAttribute("data-tema") !== temaSekarang) panel.setAttribute("data-tema", temaSekarang);
+    terapkanTemaSipp();
+    const tombol = panel && panel.querySelector(".aleta-tema");
+    if (tombol) {
+      alatTampilkanTombolTema(tombol, kabar.pilihan);
+      tombol.title =
+        `${alatJudulTombolTema(kabar.pilihan)} ` +
+        `Tahan Shift untuk ${temaSippMenyala ? "mematikan" : "menyalakan"} tema gelap pada halaman SIPP ` +
+        `(sekarang ${!temaSippMenyala ? "mati" : temaSekarang === "gelap" ? "menyala" : "menyala, tetapi tidak dipasang pada tema terang"}). ` +
+        `Tema terang selalu mengembalikan SIPP seperti semula.`;
+    }
+  });
+}
+
+if (globalThis.AletaTemaPusat) globalThis.AletaTemaPusat.dengar(ikutiPusatTemaSipp);
 
 function kembalikanBawaan(panel) {
   // Perbaikan 2 Okt (S, butir 11 - UI Baru): panel yang dilepas dari labuh
@@ -16884,28 +16805,13 @@ chrome.storage.onChanged.addListener((perubahan, wilayah) => {
   if (perubahan.sisipJadwal) saklar.sisipJadwal = perubahan.sisipJadwal.newValue === true;
 
   // ==========================================================================
-  // TEMA DAN PALET IKUT SEKETIKA, TERMASUK DARI TAB LAIN
+  // TEMA IKUT SEKETIKA, TERMASUK DARI TAB LAIN - LEWAT PUSAT
   // ==========================================================================
   //
-  // Petugas lazim membuka SIPP di beberapa tab sekaligus - daftar perkara,
-  // detail, jadwal sidang. Mengganti tema di salah satunya dulu tidak
-  // menyentuh yang lain sampai dimuat ulang, dan yang terbaca dari situ bukan
-  // "berlaku per tab" melainkan "saklarnya tidak berfungsi".
-  if (perubahan[KUNCI_TEMA] || perubahan[KUNCI_TEMA_SIPP]) {
-    if (perubahan[KUNCI_TEMA]) {
-      temaSekarang = perubahan[KUNCI_TEMA].newValue === "terang" ? "terang" : "gelap";
-    }
-    if (perubahan[KUNCI_TEMA_SIPP]) {
-      temaSippMenyala = perubahan[KUNCI_TEMA_SIPP].newValue !== false;
-    }
-    const panel = document.getElementById(PENANDA);
-    alatTanpaTransisi(() => {
-      if (panel) panel.setAttribute("data-tema", temaSekarang);
-      terapkanTemaSipp();
-      const tombol = panel && panel.querySelector(".aleta-tema");
-      if (tombol) tombol.textContent = temaSekarang === "gelap" ? "☀" : "☾";
-    });
-  }
+  // Petugas lazim membuka SIPP di beberapa tab sekaligus. Perubahan tema dari
+  // tab lain, popup, atau tampilan sistem sampai lewat ikutiPusatTemaSipp
+  // (pusat memantau chrome.storage, localStorage, dan matchMedia sendiri);
+  // pendengar ini tidak lagi membaca temaPanel mentah.
 
   // ==========================================================================
   // WARNA PALET IKUT SEKETIKA JUGA - INI YANG DULU TERTINGGAL

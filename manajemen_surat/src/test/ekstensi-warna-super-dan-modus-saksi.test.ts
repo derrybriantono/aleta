@@ -157,8 +157,11 @@ describe("pemilih warnanya", () => {
     const blok = awal.slice(awal.indexOf("WARNA GELAP PILIHAN"));
     expect(blok).toContain('window.localStorage.getItem("aleta-warna-gelap")');
     expect(blok).toContain('document.documentElement.setAttribute("data-aleta-warna", warna)');
-    // Penjaganya: di dalam if (tema === "gelap").
-    expect(blok.indexOf('if (tema === "gelap")')).toBeLessThan(blok.indexOf('getItem("aleta-warna-gelap")'));
+    // Penjaganya: dipasang hanya bila temanya gelap - pada gambar pertama
+    // (if (tema === "gelap") pasangWarna()) dan saat tema kemudian berganti
+    // menjadi gelap (pendengar pusat tema, s.resolusi === "gelap").
+    expect(blok).toContain('if (tema === "gelap") pasangWarna();');
+    expect(blok).toContain('if (s.resolusi === "gelap") pasangWarna();');
   });
 
   it("popup dan panel memakai daftar yang SAMA", () => {

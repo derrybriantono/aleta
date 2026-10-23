@@ -369,3 +369,18 @@
     transform: translateY(-5px);
   }
 }
+
+/*
+ * Pergantian tema (atau tema yang dikoreksi saat halaman dibuka) tidak boleh
+ * dianimasikan: transisi warna 300 ms di body dan ratusan elemen membuat tiap
+ * koreksi tampak sebagai kedip gelap-terang. Kelas ini dipasang tema-pilihan.ts
+ * selama dua bingkai lalu dicabut; namanya sama dengan yang dipakai ekstensi.
+ */
+html.aleta-ganti-tema,
+html.aleta-ganti-tema *,
+html.aleta-ganti-tema *::before,
+html.aleta-ganti-tema *::after {
+  transition: none !important;
+  animation-duration: 0.001s !important;
+  animation-delay: 0s !important;
+}

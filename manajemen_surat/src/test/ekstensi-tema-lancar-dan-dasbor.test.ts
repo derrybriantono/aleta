@@ -69,17 +69,22 @@ describe("tema berganti tanpa tersendat", () => {
     expect(b).not.toContain("visibility");
   });
 
-  it("tombol tema memasang penandanya DAHULU, menyimpan belakangan", () => {
+  it("tombol tema memasang penandanya DAHULU (sinkron, lewat pusat), menyimpan belakangan", () => {
     // Menunggu chrome.storage - panggilan lintas proses - membuat tekanan
     // tombol terasa tidak menghasilkan apa-apa, dan yang menekannya menekan
-    // sekali lagi, yang justru mengembalikannya.
+    // sekali lagi, yang justru mengembalikannya. Pusat memasang penanda dan
+    // menulis salinan localStorage SINKRON di dalam terima(), lalu baru
+    // menulis chrome.storage.
     for (const [nama, isi] of [["panel-alat", alat], ["konten", konten]] as const) {
-      const letakTerap = isi.indexOf("alatTanpaTransisi(() => {");
-      expect(letakTerap, `${nama} tidak membungkus pergantiannya`).toBeGreaterThan(0);
+      expect(isi, `${nama} tidak lagi menulis penyimpanan dari klik`).toContain("pusat.pilih(");
     }
-    const klik = alat.slice(alat.indexOf('const tema = buat("aleta-tema"'));
-    const badan = klik.slice(0, klik.indexOf("\n  });"));
-    expect(badan.indexOf("alatTanpaTransisi(")).toBeLessThan(badan.indexOf("chrome.storage.local.set"));
+    const pusat = readFileSync(path.join(AKAR, "tema-pusat.js"), "utf8");
+    const pilih = pusat.slice(pusat.indexOf("function pilih(pilihan)"));
+    const badan = pilih.slice(0, pilih.indexOf("\n  }\n"));
+    expect(badan.indexOf('terima(p, waktu, "pengguna")')).toBeGreaterThan(0);
+    expect(badan.indexOf('terima(p, waktu, "pengguna")')).toBeLessThan(badan.indexOf("tulisKeChrome()"));
+    // Dan pergantiannya dibungkus tanpa-transisi di pusat.
+    expect(pusat).toContain("if (tampilBerubah) tanpaTransisi(tandai);");
   });
 });
 
@@ -141,13 +146,16 @@ describe("tema dan palet ikut seketika di seluruh tab", () => {
     expect(konten).toContain("alatDaftarkanPanelTema(panel, { temaHalaman: false }, KUNCI_POSISI);");
   });
 
-  it("panel SIPP menyimpan keadaannya sendiri, jadi ia mendengar sendiri", () => {
+  it("panel SIPP menyimpan keadaannya sendiri, jadi ia mendengar sendiri - lewat pusat", () => {
     // konten.js memegang temaSekarang dan temaSippMenyala di memori; pendengar
     // umum di panel-alat tidak dapat memperbaruinya, dan keadaan yang basi
-    // membuat tekanan berikutnya melompat ke arah yang salah.
-    expect(konten).toContain("if (perubahan[KUNCI_TEMA] || perubahan[KUNCI_TEMA_SIPP]) {");
-    expect(konten).toContain('temaSekarang = perubahan[KUNCI_TEMA].newValue === "terang" ? "terang" : "gelap";');
-    expect(konten).toContain("temaSippMenyala = perubahan[KUNCI_TEMA_SIPP].newValue !== false;");
+    // membuat tekanan berikutnya melompat ke arah yang salah. Sumber kabarnya
+    // kini pusat tema (sudah menguraikan "ikuti sistem" dan memilih yang lebih
+    // baru), bukan pembacaan mentah temaPanel.
+    expect(konten).toContain("function ikutiPusatTemaSipp(kabar)");
+    expect(konten).toContain('temaSekarang = kabar.resolusi === "terang" ? "terang" : "gelap";');
+    expect(konten).toContain("temaSippMenyala = kabar.lapisan !== false;");
+    expect(konten).toContain("globalThis.AletaTemaPusat.dengar(ikutiPusatTemaSipp)");
   });
 });
 

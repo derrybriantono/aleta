@@ -77,6 +77,14 @@ import {
 } from "@/lib/task-sources";
 import { PETA_ATURAN_APLIKASI } from "@/lib/matriks-peran";
 import { portalApps } from "@/lib/mock-data";
+import {
+  aturPilihanTema,
+  ambilKeadaanTema,
+  berlanggananTema,
+  modeKePilihan,
+  mulaiTemaPortal,
+  pilihanKeMode,
+} from "@/lib/tema-pilihan";
 
 const STORAGE_KEY = "portal-terpadu-pa-v2";
 const SEEN_DISPOSITION_STORAGE_PREFIX = "aleta:seen-dispositions";
@@ -642,7 +650,9 @@ function portalReducer(state: PortalStateData, action: PortalAction): PortalStat
     case "sign-out":
       return { ...state, currentUserId: null };
     case "set-theme":
-      return { ...state, theme: action.theme };
+      // Tema yang sama tidak membuat state baru: tanpa itu tiap kabar dari
+      // pusat tema menggambar ulang seluruh konteks portal.
+      return state.theme === action.theme ? state : { ...state, theme: action.theme };
     case "set-ai-config":
       return {
         ...state,
@@ -1184,7 +1194,7 @@ export function PortalProvider({
             letters: defaultState.letters,
             dispositions: defaultState.dispositions,
             moduleVisibility: defaultState.moduleVisibility,
-            theme: parsed.theme ?? defaultState.theme,
+            theme: pilihanKeMode(ambilKeadaanTema().pilihan),
             aiConfig: defaultState.aiConfig,
             whatsAppWeb: defaultState.whatsAppWeb,
             institutionIdentity: defaultState.institutionIdentity,
@@ -1207,7 +1217,10 @@ export function PortalProvider({
       STORAGE_KEY,
       JSON.stringify({
         currentUserId: nextState.currentUserId,
-        theme: nextState.theme,
+        // `theme` SENGAJA tidak ditulis lagi di sini: pilihan tema punya
+        // satu kunci sendiri dengan waktu pilihannya (tema-pilihan.ts). Tab
+        // lain dengan state basi dulu menimpa pilihan yang baru diambil lewat
+        // baris ini. Nilai lama di kunci ini tetap terbaca sebagai cadangan.
       } satisfies Partial<PortalStateData>)
     );
   });
@@ -1732,44 +1745,28 @@ export function PortalProvider({
     });
   };
 
-  useEffect(() => {
-    if (!isHydrated) return;
-
-    document.documentElement.classList.toggle("dark", state.theme === "dark");
-  }, [isHydrated, state.theme]);
-
   // ==========================================================================
-  // TEMA YANG DIMINTA EKSTENSI ALETA
+  // TEMA: SATU SUMBER, DIIKUTI DI SINI
   // ==========================================================================
   //
-  // Ekstensi peramban memakai satu tema untuk jendela popup-nya, panel di
-  // halaman SIPP, panel di halaman ABT, dan panel di portal ini. Portal punya
-  // temanya sendiri, dan selama keduanya tidak saling mengenal petugas melihat
-  // panel gelap di atas portal terang - atau sebaliknya - lalu menyimpulkan
-  // salah satunya rusak.
-  //
-  // Ekstensi tidak dapat menyetel tema portal dengan menulis localStorage:
-  // temanya dipegang keadaan React di sini, dan localStorage yang diubah dari
-  // luar baru terbaca pada pemuatan berikutnya. Karena itu ia MEMINTA, lewat
-  // satu peristiwa DOM, dan permintaan itu dilayani di sini seperti tekanan
-  // tombol tema biasa - tersimpan, dan berlaku seketika.
-  //
-  // Peristiwanya hanya membawa satu kata, "gelap" atau "terang". Tidak ada
-  // data, tidak ada wewenang, dan yang tidak dikenali diabaikan - halaman ini
-  // tidak mengerjakan apa pun atas suruhan siapa pun selain mengganti warna.
+  // Pilihan (terang | gelap | ikuti sistem) tidak lagi dipegang reducer lalu
+  // "disalin" ke kelas <html> dan localStorage lewat dua efek: itulah yang
+  // membuat tab basi menimpa pilihan baru dan kelas `dark` ditulis tiga
+  // penulis. Sumbernya salinan "pilihan|waktu" di tema-pilihan.ts; skrip awal
+  // di <head> sudah menerapkannya sebelum lukis pertama, dan di sini
+  // `theme` hanya MENGIKUTINYA - dari klik, tab lain, ekstensi, atau
+  // tampilan sistem yang berganti. Klik meneruskan pilihan tegas (bukan
+  // "kebalikan dari state"), sehingga state basi tidak dapat membalik apa pun.
   useEffect(() => {
-    if (!isHydrated) return;
-
-    const dengar = (peristiwa: Event) => {
-      const rinci = (peristiwa as CustomEvent<{ tema?: unknown }>).detail;
-      const tema = rinci && typeof rinci === "object" ? String(rinci.tema ?? "") : "";
-      if (tema !== "gelap" && tema !== "terang") return;
-      dispatch({ type: "set-theme", theme: tema === "gelap" ? "dark" : "light" });
+    const berhenti = mulaiTemaPortal();
+    const ikuti = () => dispatch({ type: "set-theme", theme: pilihanKeMode(ambilKeadaanTema().pilihan) });
+    ikuti();
+    const lepas = berlanggananTema(ikuti);
+    return () => {
+      lepas();
+      berhenti();
     };
-
-    window.addEventListener("aleta-ekstensi-tema", dengar);
-    return () => window.removeEventListener("aleta-ekstensi-tema", dengar);
-  }, [isHydrated]);
+  }, []);
 
   return (
     <PortalContext.Provider
@@ -1822,7 +1819,7 @@ export function PortalProvider({
           setTaskSourcesSnapshot(null);
           dispatch({ type: "sign-out" });
         },
-        setTheme: (theme) => dispatch({ type: "set-theme", theme }),
+        setTheme: (theme) => aturPilihanTema(modeKePilihan(theme)),
         setAIConfig: async (payload) => {
           if (!currentUser) {
             return { ok: false, message: "Silakan login ulang untuk mengubah konfigurasi AI." };

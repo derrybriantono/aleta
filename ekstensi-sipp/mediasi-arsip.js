@@ -293,6 +293,12 @@
     const sebelumFokus = document.activeElement;
     (async () => {
       try {
+        // Pusat tema (terang | gelap | sistem) lebih dahulu: sinkron dan sudah
+        // menguraikan "ikuti sistem". Cermin temaPanel hanya cadangan.
+        if (globalThis.AletaTemaPusat) {
+          latar.setAttribute("data-tema", globalThis.AletaTemaPusat.keadaan().resolusi === "terang" ? "terang" : "gelap");
+          return;
+        }
         const s = await chrome.storage.local.get([KUNCI_TEMA]);
         latar.setAttribute("data-tema", s && s[KUNCI_TEMA] === "terang" ? "terang" : s && s[KUNCI_TEMA] === "gelap" ? "gelap" : "terang");
       } catch {
