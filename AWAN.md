@@ -25,7 +25,11 @@ Fixture baru wajib memakai nama dan NIK rekaan.
 
 1. Mulai dari cabang **`integrasi-1205-38`** (sama dengan yang terpasang di server). `main` di GitHub sudah lama
    tertinggal — JANGAN mulai dari `main`, JANGAN push ke `main`.
-2. Satu tugas = satu cabang: `git switch -c fitur/<nama-singkat> origin/integrasi-1205-38`.
+   Periksa dulu cabangnya ada: `git ls-remote --heads origin integrasi-1205-38`. Bila kosong (belum di-push
+   laptop), pakai **`awan-panduan-69`** — cabang ini memuat rilis ekstensi 1.205.38 beserta panduan ini. Jangan
+   menebak cabang lain; tulis cabang dasar yang dipakai di laporan.
+2. Satu tugas = satu cabang: `git switch -c fitur/<nama-singkat> origin/integrasi-1205-38` (atau
+   `origin/awan-panduan-69` bila cabang integrasi belum ada).
 3. Commit bergaya conventional, bahasa Indonesia, badan 1-3 baris menjelaskan SEBAB, akhiri dengan baris
    `Co-Authored-By` yang diminta lingkunganmu. Push cabangmu; jangan merge ke cabang lain.
 4. **Jangan naikkan versi** (`ekstensi-sipp/manifest.json`, `APP_VERSION` portal) dan jangan menulis catatan rilis —
