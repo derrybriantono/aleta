@@ -162,7 +162,7 @@ type Percobaan = {
 };
 
 function parameterHarga(p: PengaturanAi): ParameterHarga {
-  return { marginPersen: p.marginPersen, penyanggaKursPersen: p.penyanggaKursPersen, minimumRp: p.minimumRp, pembulatanRp: p.pembulatanRp };
+  return { marginPersen: p.marginPersen, penyanggaKursPersen: p.penyanggaKursPersen, minimumRp: p.minimumRp, pembulatanRp: p.pembulatanRp, mdrPersen: p.mdrPersen };
 }
 
 /** Biaya satu panggilan; tarif model yang tak dikenal (mis. model fallback) memakai tarif model yang diminta. */
@@ -416,7 +416,7 @@ export async function* kirimPesan(
 
     await db.run(
       `UPDATE aleta_ai_obrolan_pesan SET isi = ?, kelompok = ?, model = ?, effort = ?, mode_label = ?, status = ?, token_masuk = ?, token_keluar = ?, token_cache_tulis = ?, token_cache_baca = ?,
-         biaya_usd = ?, kurs_dasar = ?, kurs = ?, biaya_api_rp = ?, biaya_rp = ?, perkiraan_rp = ?, gratis = ? WHERE id = ?`,
+         biaya_usd = ?, kurs_dasar = ?, kurs = ?, kurs_tanggal = ?, kurs_sumber = ?, biaya_api_rp = ?, biaya_mdr_rp = ?, biaya_rp = ?, perkiraan_rp = ?, gratis = ? WHERE id = ?`,
       [
         sandiIsi(jawaban),
         rute.kelompok,
@@ -431,7 +431,11 @@ export async function* kirimPesan(
         totalUsd,
         harga.kursDasar,
         harga.kurs,
+        kurs.tanggal,
+        kurs.sumber.slice(0, 120),
         harga.biayaApiRp,
+        // MDR mengikuti yang benar-benar terpotong (giliran gagal/gratis = 0).
+        potong.dipotongRp > 0 ? harga.biayaMdrRp * (potong.dipotongRp / Math.max(1, harga.tagihRp)) : 0,
         potong.dipotongRp,
         perkiraan.perkiraanRp,
         pelaku.superAdmin ? 1 : 0,

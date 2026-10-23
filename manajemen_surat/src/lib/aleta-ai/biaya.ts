@@ -9,9 +9,12 @@
  *
  *   biaya_usd = token x tarif model (masuk, keluar, tulis cache, baca cache)
  *   kurs      = kurs hari itu x (1 + penyangga kurs)
- *   harga_rp  = biaya_usd x kurs x (1 + margin)
- *               dibulatkan KE ATAS kelipatan pembulatan (bawaan Rp500),
- *               minimum Rp1.000 per giliran
+ *   pokok     = biaya_usd x kurs x (1 + margin)
+ *   MDR       = pokok x persen MDR QRIS (bawaan 0,7%)
+ *   harga_rp  = pokok + MDR, dibulatkan KE ATAS kelipatan pembulatan
+ *               (bawaan Rp500), minimum Rp1.000 per giliran
+ *
+ * Rumus ini keputusan pengguna (19 Okt 2026); jangan diubah tanpa izinnya.
  *
  * Super Admin gratis: yang ditagih Rp0, tetapi biaya asli tetap dihitung dan
  * dicatat oleh pemanggil.
@@ -163,6 +166,8 @@ export type ParameterHarga = {
   minimumRp: number;
   /** Kelipatan pembulatan KE ATAS (bawaan Rp500). */
   pembulatanRp: number;
+  /** Biaya MDR QRIS, persen dari pokok harga (bawaan 0,7). Tidak diisi = 0. */
+  mdrPersen?: number;
 };
 
 export const PARAMETER_HARGA_BAWAAN: ParameterHarga = {
@@ -170,6 +175,7 @@ export const PARAMETER_HARGA_BAWAAN: ParameterHarga = {
   penyanggaKursPersen: 3,
   minimumRp: 1000,
   pembulatanRp: 500,
+  mdrPersen: 0.7,
 };
 
 /** Bulatkan ke atas ke kelipatan; galat kecil pecahan biner tidak menaikkan satu kelipatan penuh. */
@@ -190,6 +196,8 @@ export type HasilHarga = {
   kurs: number;
   /** Biaya API dalam rupiah pada kurs dasar (tanpa penyangga dan margin) - untuk laporan laba. */
   biayaApiRp: number;
+  /** Bagian MDR QRIS dalam harga (pokok x persen MDR; 0 bila gratis) - untuk laporan laba. */
+  biayaMdrRp: number;
   /** Harga menurut rumus sebelum pengecualian gratis. */
   hargaRp: number;
   /** Yang benar-benar ditagih (0 untuk Super Admin atau bila tak ada token terpakai). */
@@ -199,9 +207,11 @@ export type HasilHarga = {
 export function hitungHarga(biayaUsdNilai: number, kursDasar: number, param: ParameterHarga, opsi: { gratis?: boolean } = {}): HasilHarga {
   const kurs = kursEfektif(kursDasar, param.penyanggaKursPersen);
   const biayaApiRp = biayaUsdNilai * kursDasar;
-  const mentah = biayaUsdNilai * kurs * (1 + Math.max(0, param.marginPersen) / 100);
-  const hargaRp = biayaUsdNilai > 0 ? Math.max(param.minimumRp, bulatkanKeAtas(mentah, param.pembulatanRp)) : 0;
-  return { kursDasar, kurs, biayaApiRp, hargaRp, tagihRp: opsi.gratis ? 0 : hargaRp };
+  const pokok = biayaUsdNilai * kurs * (1 + Math.max(0, param.marginPersen) / 100);
+  const mdr = pokok * (Math.max(0, param.mdrPersen ?? 0) / 100);
+  const hargaRp = biayaUsdNilai > 0 ? Math.max(param.minimumRp, bulatkanKeAtas(pokok + mdr, param.pembulatanRp)) : 0;
+  const tagihRp = opsi.gratis ? 0 : hargaRp;
+  return { kursDasar, kurs, biayaApiRp, biayaMdrRp: tagihRp > 0 ? mdr : 0, hargaRp, tagihRp };
 }
 
 /** Perkiraan kasar token = karakter/4 (bila count_tokens tak tersedia, mis. tanpa kunci); dana yang ditahan memakai penyangga 1,5x. */
