@@ -172,10 +172,12 @@ function buka(p: { simpanan?: Record<string, unknown>; checklist?: boolean; port
   for (const k of ["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"]) {
     if (!(k in awalSimpanan)) awalSimpanan[k] = { kecil: false };
   }
+  // 23 Okt 2026: widget tersembunyi bawaannya - posisi "terbentang" diminta lewat peristiwa halaman (setelah checklist.js).
+  let bukaSemua = false;
   // 21 Okt 2026: widget terbentang hanya bila dibentangkan pada SESI TAB ini (panel-alat.js alatPanelTerbuka
   // sesiTab) - posisi "terbentang" yang tersimpan saja tidak lagi membentangkannya di tab baru.
   if (["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"].some((k) => (awalSimpanan[k] as { kecil?: boolean } | undefined)?.kecil === false)) {
-    w.sessionStorage.setItem("aleta-panel-terbuka:checklist-widget", "1");
+    bukaSemua = true;
   }
   const { simpanan, storage } = penyimpanan(awalSimpanan);
   w.chrome = {
@@ -203,6 +205,7 @@ function buka(p: { simpanan?: Record<string, unknown>; checklist?: boolean; port
   vm.runInContext(SUMBER_ALAT, ctx, { filename: "panel-alat.js" });
   if (p.portal) vm.runInContext(SUMBER_ALETA, ctx, { filename: "aleta.js" });
   if (p.checklist) vm.runInContext(SUMBER_CHECKLIST, ctx, { filename: "checklist.js" });
+  if (p.checklist && bukaSemua) vm.runInContext('document.dispatchEvent(new CustomEvent("aleta-widget-tampilkan", { detail: { bagian: "semua" } }));', ctx);
   return { w, d: w.document, simpanan, setel: (x) => storage.local.set(x) };
 }
 

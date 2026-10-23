@@ -78,6 +78,8 @@ describe("susunDrafSaya: draf milik akun untuk widget", () => {
 // Widget
 // ============================================================================
 
+/** 23 Okt 2026: widget tersembunyi bawaannya - uji lama meminta semua bagian ditampilkan seperti sebelum aturan itu. */
+const BUKA_SEMUA = 'document.dispatchEvent(new CustomEvent("aleta-widget-tampilkan", { detail: { bagian: "semua" } }));';
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (b: string) => readFileSync(path.join(EKSTENSI, b), "utf8").replace(/\r\n/g, "\n");
 const SUMBER_ALAT = baca("panel-alat.js");
@@ -203,6 +205,7 @@ function buka(awal: Record<string, unknown>, opsi: { url?: string; status?: numb
   const ctx = dom.getInternalVMContext();
   vm.runInContext(SUMBER_ALAT, ctx, { filename: "panel-alat.js" });
   vm.runInContext(SUMBER_CHECKLIST, ctx, { filename: "checklist.js" });
+  if (awal.__tersembunyi !== true) vm.runInContext(BUKA_SEMUA, ctx);
   const ubahSimpanan = (isi: Record<string, unknown>) => w.chrome.storage.local.set(isi);
   return { w, minta, dipakai, ubahSimpanan };
 }
@@ -264,21 +267,28 @@ describe("widget ALETA: kotak Draf putusan H-7", () => {
     await sampai(() => q(h, ".aleta-cmw-tumpuk-klasik [data-draf-h7-widget] .aleta-cmw-kh-chip"), "kotak di tumpukan Baru");
   });
 
-  it("butir 41 (17 Okt): saklar belum disentuh = MENYALA di UI Baru, kotak TERLIPAT di dok kiri bawah", async () => {
-    const h = buka({ ujiTampilan: "ui", widgetDrafH7: undefined });
+  it("butir 41 + 23 Okt: saklar belum disentuh = MENYALA di UI Baru, kotak TERSEMBUNYI sampai dipilih dari gelembung; lalu terbentang di dok kiri bawah", async () => {
+    const h = buka({ ujiTampilan: "ui", widgetDrafH7: undefined, __tersembunyi: true });
+    await sampai(() => q(h, ".aleta-cmw-lencana"), "gelembung");
+    await sampai(() => h.minta.length > 0, "data draf tetap diminta");
+    expect(q(h, "[data-draf-h7-widget]")).toBeNull();
+    q(h, ".aleta-cmw-lencana").click();
+    await sampai(() => q(h, '[data-menu-bagian="drafH7"]'), "menu");
+    q(h, '[data-menu-bagian="drafH7"]').click();
     const kotak = await sampai(() => q(h, ".aleta-cmw-dok [data-draf-h7-widget]"), "kotak di dok");
-    expect(kotak.getAttribute("data-terbuka")).toBe("tidak");
-    expect(kotak.querySelector(".aleta-lipat-kepala").getAttribute("aria-expanded")).toBe("false");
+    expect(kotak.getAttribute("data-terbuka")).toBe("ya");
+    expect(kotak.querySelector(".aleta-lipat-kepala").getAttribute("aria-expanded")).toBe("true");
   });
 
-  it("22 Okt: kotak TERLIPAT di setiap tab baru walau ingatan lama menyimpan 'terbuka'; yang dibentangkan petugas diingat hanya pada sesi tab ini", async () => {
-    const h = buka({ ujiTampilan: "ui", lipatTerbuka: { "widget:drafH7": true, "widget:kehadiran": true } });
+  it("23 Okt: ingatan lama 'terbuka' tidak memunculkan kotak di muat halaman; sekali dipilih bertahan selama halaman ini, tidak ditulis ke sesi tab", async () => {
+    const h = buka({ ujiTampilan: "ui", lipatTerbuka: { "widget:drafH7": true, "widget:kehadiran": true }, __tersembunyi: true });
+    await sampai(() => q(h, ".aleta-cmw-lencana"), "gelembung");
+    await tunggu(80);
+    expect(q(h, "[data-draf-h7-widget]")).toBeNull();
+    h.w.document.dispatchEvent(new h.w.CustomEvent("aleta-widget-tampilkan", { detail: { bagian: "drafH7" } }));
     const kotak = await sampai(() => q(h, ".aleta-cmw-dok [data-draf-h7-widget]"), "kotak di dok");
-    expect(kotak.getAttribute("data-terbuka")).toBe("tidak");
     expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:widget:drafH7")).toBeNull();
-    // Petugas membentangkan: berlaku pada sesi tab ini, tidak ditulis ke chrome.storage.local.
-    kotak.querySelector(".aleta-lipat-kepala").click();
-    expect(q(h, "[data-draf-h7-widget]").getAttribute("data-terbuka")).toBe("ya");
+    expect(kotak.getAttribute("data-terbuka")).toBe("ya");
     // 22 Okt malam: bentangan hanya untuk halaman ini - tidak ditulis ke sesi tab.
     expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:widget:drafH7")).toBeNull();
     // Penyegaran/penggambaran ulang tidak melipatnya lagi.

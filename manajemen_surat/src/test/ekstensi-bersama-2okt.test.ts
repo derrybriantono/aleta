@@ -108,10 +108,12 @@ function halaman(
   terbuka.push(dom);
   const w = dom.window as any;
   const { simpanan, storage } = penyimpanan(p.simpanan ?? {});
-  // 21 Okt 2026: widget checklist terbentang hanya bila dibentangkan pada SESI TAB ini (alatPanelTerbuka sesiTab).
+  // 23 Okt 2026: widget tersembunyi bawaannya; uji yang menyimpan posisi "terbentang" meminta semua bagian ditampilkan
+  // lewat peristiwa halaman (jalan yang sama dengan menu gelembung).
+  let bukaSemua = false;
   const awalPosisi = p.simpanan ?? {};
   if (["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"].some((k) => (awalPosisi[k] as { kecil?: boolean } | undefined)?.kecil === false)) {
-    w.sessionStorage.setItem("aleta-panel-terbuka:checklist-widget", "1");
+    bukaSemua = true;
   }
   w.chrome = {
     runtime: { id: "aleta-uji", getManifest: () => ({ version: "0.0.0" }), getURL: (x: string) => x, sendMessage: async () => ({}) },
@@ -130,6 +132,7 @@ function halaman(
   const ctx = dom.getInternalVMContext();
   vm.runInContext(p.sumber ?? SUMBER_ALAT, ctx, { filename: "panel-alat.js" });
   for (const [nama, sumber] of p.tambahan ?? []) vm.runInContext(sumber, ctx, { filename: nama });
+  if (bukaSemua) vm.runInContext('document.dispatchEvent(new CustomEvent("aleta-widget-tampilkan", { detail: { bagian: "semua" } }));', ctx);
   return { dom, w, d: w.document as Document, simpanan, cara };
 }
 
@@ -722,9 +725,10 @@ describe("butir 13 - checklist milestone: bawaan hanya checklist", () => {
       const k = h.qs(".aleta-cmw-dok .aleta-cmw-tumpuk > [data-widget-isi]").filter((x: any) => ["kehadiran", "drafH7"].includes(x.getAttribute("data-widget-isi")));
       return k.length === 2 ? k : null;
     }, "dua kotak saklar sendiri");
+    // 23 Okt 2026: kedua kotak tersembunyi bawaannya (uji ini memintanya ditampilkan); yang dibuka sengaja terbentang.
     for (const k of kotak) {
-      expect(k.getAttribute("data-terbuka"), k.getAttribute("data-widget-isi")).toBe("tidak");
-      expect(k.querySelector(".aleta-lipat-kepala").getAttribute("aria-expanded")).toBe("false");
+      expect(k.getAttribute("data-terbuka"), k.getAttribute("data-widget-isi")).toBe("ya");
+      expect(k.querySelector(".aleta-lipat-kepala").getAttribute("aria-expanded")).toBe("true");
     }
     const baru = halamanWidget({ ujiTampilan: "baru", ujiFitur: {} });
     await sampai(() => baru.q(".aleta-cm-kelompok") || baru.q(".aleta-cm-isi"), "widget Baru");

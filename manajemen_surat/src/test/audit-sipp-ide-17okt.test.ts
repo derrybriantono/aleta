@@ -399,11 +399,12 @@ describe("G. widget kehadiran: jadwal sidang tidak terbaca bukan 'tidak ada sida
     } as ConstructorParameters<typeof JSDOM>[1]) as JSDOM & { getInternalVMContext(): vm.Context };
     terbuka.push(dom);
     const w = dom.window as Jendela;
+    let bukaSemua = false; // 23 Okt 2026: widget tersembunyi bawaannya - uji ini meminta kotak ditampilkan lewat peristiwa halaman
     const simpanan: Record<string, unknown> = { posisiChecklistSipp: { kecil: false }, checklistMilestone: true, widgetKehadiran: true, ujiTampilan: "ui" };
     // 21 Okt 2026: widget terbentang hanya bila dibentangkan pada SESI TAB ini (panel-alat.js alatPanelTerbuka
     // sesiTab) - posisi "terbentang" yang tersimpan saja tidak lagi membentangkannya di tab baru.
     if (["posisiChecklistSipp", "posisiChecklistAbt", "posisiChecklistAleta"].some((k) => (simpanan[k] as { kecil?: boolean } | undefined)?.kecil === false)) {
-      w.sessionStorage.setItem("aleta-panel-terbuka:checklist-widget", "1");
+      bukaSemua = true;
     }
     w.chrome = {
       runtime: { id: "aleta-uji", getManifest: () => ({ version: "0.0.0" }), getURL: (x: string) => `chrome-extension://aleta-uji/${x}`, sendMessage: async () => ({}) },
@@ -451,6 +452,7 @@ describe("G. widget kehadiran: jadwal sidang tidak terbaca bukan 'tidak ada sida
     const ctx = dom.getInternalVMContext();
     vm.runInContext(SUMBER_ALAT, ctx, { filename: "panel-alat.js" });
     vm.runInContext(SUMBER_CHECKLIST, ctx, { filename: "checklist.js" });
+    if (bukaSemua) vm.runInContext('document.dispatchEvent(new CustomEvent("aleta-widget-tampilkan", { detail: { bagian: "semua" } }));', ctx);
     const kotak = () => {
       const a = w.document.querySelector("aleta-cm-widget");
       return a && a.shadowRoot ? (a.shadowRoot.querySelector("[data-kehadiran-widget]") as HTMLElement | null) : null;

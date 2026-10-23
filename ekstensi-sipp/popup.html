@@ -1270,7 +1270,7 @@
       <span class="saklar-ket">
         Kotak di widget kiri bawah: perkara sidang Anda hari ini - siapa yang sudah hadir dan jamnya,
         saksi yang datang dari yang diajukan, dan yang sedang disidang. Sama dengan Jadwal Sidang ALETA.
-        Tampil terlipat - tekan judulnya untuk membuka. Hanya membaca. Di UI Baru tampil walau Checklist milestone mati; di tampilan Baru hanya bersama Checklist milestone.
+        Tersembunyi bawaannya - buka dari gelembung ALETA atau dari tombol "Tampilkan di halaman ini". Hanya membaca. Di UI Baru tampil walau Checklist milestone mati; di tampilan Baru hanya bersama Checklist milestone.
       </span>
     </span>
   </label>
@@ -1283,10 +1283,27 @@
       <span class="saklar-ket">
         Kotak di widget kiri bawah: perkara Anda (majelis, PP, konseptor) yang Hari Putusan-nya tujuh hari ke depan,
         dan kesiapan draf yang disiapkan agen ALETA. Di ABT dapat membuka blangko draf sebagai saran - tidak ada yang
-        tersimpan sebelum Anda memakainya. Tampil terlipat - tekan judulnya untuk membuka. Di UI Baru tampil walau Checklist milestone mati; di tampilan Baru hanya bersama Checklist milestone.
+        tersimpan sebelum Anda memakainya. Tersembunyi bawaannya - buka dari gelembung ALETA atau dari tombol "Tampilkan di halaman ini". Di UI Baru tampil walau Checklist milestone mati; di tampilan Baru hanya bersama Checklist milestone.
       </span>
     </span>
   </label>
+
+  <!-- 23 Okt 2026: Checklist milestone, Kehadiran sidang, dan Draf putusan TERSEMBUNYI bawaannya di setiap halaman.
+       Tombol di bawah menampilkannya di tab yang sedang terbuka (hanya sampai halaman dimuat ulang; tidak mengubah
+       saklar di atas). Tersembunyi di tampilan Lama - popup Lama tidak berubah. -->
+  <div class="skala" id="bukaWidgetHalaman" hidden>
+    <span class="saklar-nama">Tampilkan di halaman ini</span>
+    <span class="saklar-ket">
+      Ketiga kotak widget tersembunyi setiap halaman dimuat; yang tampak hanya gelembung ALETA. Pilih yang ingin
+      dilihat di tab yang sedang terbuka - sampai halaman dimuat ulang.
+    </span>
+    <div class="skala-atur">
+      <button type="button" class="skala-pulih" data-buka-widget="checklist">Checklist milestone</button>
+      <button type="button" class="skala-pulih" data-buka-widget="kehadiran">Kehadiran sidang</button>
+      <button type="button" class="skala-pulih" data-buka-widget="drafH7">Draf putusan</button>
+    </div>
+    <p id="bukaWidgetKabar" class="saklar-ket" role="status" hidden></p>
+  </div>
 
   <h3 class="bag-judul" data-bag="tampilan">Tampilan</h3>
 

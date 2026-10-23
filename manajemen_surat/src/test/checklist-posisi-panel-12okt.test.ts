@@ -34,6 +34,8 @@ import { createAletaDatabase, type AletaDatabase } from "@/server/db/client";
  * ditiru.
  */
 
+/** 23 Okt 2026: widget tersembunyi bawaannya - uji lama meminta semua bagian ditampilkan seperti sebelum aturan itu. */
+const BUKA_SEMUA = 'document.dispatchEvent(new CustomEvent("aleta-widget-tampilkan", { detail: { bagian: "semua" } }));';
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (berkas: string) => readFileSync(berkas, "utf8").replace(/\r\n/g, "\n");
 const SUMBER_ALAT = baca(path.join(EKSTENSI, "panel-alat.js"));
@@ -189,7 +191,7 @@ function buka(
     lebar?: number;
     tinggi?: number;
     /** Jalankan panel-alat.js saja (tanpa checklist.js). */
-    tanpaChecklist?: boolean;
+    tanpaChecklist?: boolean; tersembunyi?: boolean;
     /**
      * 21 Okt 2026: posisi "terbentang" yang tersimpan hanya membentangkan widget pada SESI TAB yang sama
      * (alatPanelTerbuka sesiTab). Bawaan helper ini: sesi tab yang sama (tanda sesi diisi bila kecil:false
@@ -231,7 +233,10 @@ function buka(
   w.document.addEventListener("click", (e: any) => e.preventDefault(), true);
   const ctx = dom.getInternalVMContext();
   vm.runInContext(SUMBER_ALAT, ctx, { filename: "panel-alat.js" });
-  if (!p.tanpaChecklist) vm.runInContext(SUMBER_CHECKLIST, ctx, { filename: "checklist.js" });
+  if (!p.tanpaChecklist) {
+    vm.runInContext(SUMBER_CHECKLIST, ctx, { filename: "checklist.js" });
+    if (!p.tersembunyi) vm.runInContext(BUKA_SEMUA, ctx);
+  }
   return {
     dom,
     w,
@@ -258,9 +263,9 @@ const ptr = (h: Halaman, sasaran: any, jenis: string, x = 10, y = 10) =>
   );
 
 // ============================================================================
-describe("7. checklist BAWAAN TERTUTUP; pilihan petugas diingat", () => {
-  it("sesi baru (tanpa posisi tersimpan), UI Baru: hanya lencana - daftar tidak terbentang; dibuka dari lencana dan diingat", async () => {
-    const h = buka({ simpanan: UI });
+describe("7. checklist BAWAAN TERTUTUP; dibuka petugas hanya selama halaman ini", () => {
+  it("sesi baru (tanpa posisi tersimpan), UI Baru: hanya lencana - daftar tidak terbentang; dibuka dari menu lencana, tidak diingat", async () => {
+    const h = buka({ simpanan: UI, tersembunyi: true });
     const lencana = await sampai(() => q(h, ".aleta-cmw-lencana"), "lencana");
     expect(q(h, ".aleta-cm")).toBeNull();
     expect(q(h, ".aleta-cm-kelompok")).toBeNull();
@@ -268,10 +273,14 @@ describe("7. checklist BAWAAN TERTUTUP; pilihan petugas diingat", () => {
     expect(h.simpanan.posisiChecklistSipp).toBeUndefined();
 
     lencana.click();
+    const menu = await sampai(() => q(h, "[data-menu-gelembung]"), "menu lencana");
+    expect(menu).not.toBeNull();
+    q(h, '[data-menu-bagian="checklist"]').click();
     await sampai(() => q(h, ".aleta-cm-kelompok"), "daftar terbentang");
-    await sampai(() => (h.simpanan.posisiChecklistSipp as any)?.kecil === false, "bentangan diingat");
-    // 21 Okt 2026: diingat per SESI TAB - berpindah halaman di tab yang sama tetap terbentang.
-    expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:checklist-widget")).toBe("1");
+    // 23 Okt 2026: pilihan hanya hidup di halaman ini - tidak ada yang ditulis ke posisi maupun sesi tab.
+    await tunggu(80);
+    expect(h.simpanan.posisiChecklistSipp).toBeUndefined();
+    expect(h.w.sessionStorage.getItem("aleta-panel-terbuka:checklist-widget")).toBeNull();
   });
 
   it("tampilan Lama: pil, bukan daftar; klik pil membentangkan", async () => {
@@ -282,25 +291,20 @@ describe("7. checklist BAWAAN TERTUTUP; pilihan petugas diingat", () => {
     await sampai(() => q(h, ".aleta-cm-kelompok"), "terbentang");
   });
 
-  it("yang dibentangkan pada sesi tab yang sama tetap terbentang (berpindah halaman / muat ulang)", async () => {
-    const h = buka({ simpanan: { ...UI, posisiChecklistSipp: { kecil: false } } });
-    await sampai(() => q(h, ".aleta-cm-kelompok"), "terbentang dari ingatan");
-    expect(q(h, ".aleta-cmw-lencana")).not.toBeNull(); // lencana tetap di kaki dok
-    expect(q(h, ".aleta-cmw-lencana").getAttribute("aria-expanded")).toBe("true");
-  });
-
-  it("21 Okt 2026: tab baru = BAWAAN TERTUTUP walau kunjungan lalu terbentang (kecil:false tersimpan)", async () => {
-    const h = buka({ simpanan: { ...UI, posisiChecklistSipp: { kecil: false } }, tabBaru: true });
+  it("23 Okt 2026: kecil:false tersimpan (kunjungan lalu terbentang) TIDAK membentangkan lagi - tersembunyi di setiap muat halaman", async () => {
+    const h = buka({ simpanan: { ...UI, posisiChecklistSipp: { kecil: false } }, tersembunyi: true });
     const lencana = await sampai(() => q(h, ".aleta-cmw-lencana"), "lencana");
     await tunggu(50);
     expect(q(h, ".aleta-cm-kelompok")).toBeNull();
     expect(lencana.getAttribute("aria-expanded")).toBe("false");
     lencana.click();
+    await sampai(() => q(h, "[data-menu-gelembung]"), "menu");
+    q(h, '[data-menu-bagian="checklist"]').click();
     await sampai(() => q(h, ".aleta-cm-kelompok"), "dibentangkan petugas");
   });
 
   it("digeser selagi tertutup: tetap tertutup, posisinya diingat", async () => {
-    const h = buka({ simpanan: UI });
+    const h = buka({ simpanan: UI, tersembunyi: true });
     const lencana = await sampai(() => q(h, ".aleta-cmw-lencana"), "lencana");
     ptr(h, lencana, "pointerdown", 100, 700);
     ptr(h, lencana, "pointermove", 140, 650);
@@ -308,13 +312,17 @@ describe("7. checklist BAWAAN TERTUTUP; pilihan petugas diingat", () => {
     await sampai(() => h.simpanan.posisiChecklistSipp, "posisi tersimpan");
     expect((h.simpanan.posisiChecklistSipp as any).kecil).toBe(true);
     expect(q(h, ".aleta-cm")).toBeNull();
+    expect(q(h, "[data-menu-gelembung]")).toBeNull();
   });
 
-  it("Kembalikan posisi panel (kunci dihapus) = kembali ke bawaan tertutup", async () => {
-    const h = buka({ simpanan: { ...UI, posisiChecklistSipp: { kecil: false, kiri: 40, bawah: 40 } } });
-    await sampai(() => q(h, ".aleta-cm-kelompok"), "terbentang");
+  it("Kembalikan posisi panel (kunci dihapus) = posisi bawaan; tetap tertutup", async () => {
+    const h = buka({ simpanan: { ...UI, posisiChecklistSipp: { kecil: false, kiri: 40, bawah: 40 } }, tersembunyi: true });
+    await sampai(() => q(h, ".aleta-cmw-lencana"), "lencana");
+    expect(q(h, ".aleta-cm-kelompok")).toBeNull();
     await h.hapus(["posisiChecklistSipp"]);
-    await sampai(() => !q(h, ".aleta-cm-kelompok") && q(h, ".aleta-cmw-lencana"), "tertutup lagi");
+    await tunggu(80);
+    expect(q(h, ".aleta-cm-kelompok")).toBeNull();
+    expect(q(h, ".aleta-cmw-lencana")).not.toBeNull();
   });
 });
 
@@ -490,7 +498,6 @@ describe("8. tombol kepala checklist bekerja - klik tidak hilang saat widget dig
     tombol.click();
 
     await sampai(() => !q(h, ".aleta-cm-kelompok") && q(h, ".aleta-cmw-lencana"), "diminimize");
-    await sampai(() => (h.simpanan.posisiChecklistSipp as any)?.kecil === true, "minimize diingat");
   });
 
   it("PEMBUKTI GIGITAN: tanpa penekanan yang sedang berlangsung, penggambaran ulang MEMANG mengganti simpul tombol", async () => {

@@ -805,7 +805,10 @@ describe("D. panel ekstensi bawaannya TERLIPAT (kecuali Blangko ABT by Derry Bri
       expect(isi, b).toContain("alatIngatPanel");
     }
     for (const b of ["blangko-derry.js", "blangko-derry-isian.js", "blangko-derry-massal.js"]) expect(baca(b), b).not.toMatch(/alatPanelTerbuka|alatBawaanTerlipat|alatIngatPanel/);
-    expect(baca("checklist.js")).toContain('alatPanelTerbuka("checklist-widget", { sesiTab: true })');
+    // 23 Okt 2026: widget checklist tersembunyi bawaannya dan yang dibuka petugas hanya hidup di memori halaman
+    // (TAMPIL_HALAMAN) - tidak lagi diingat per sesi tab.
+    expect(baca("checklist.js")).toContain("const TAMPIL_HALAMAN");
+    expect(baca("checklist.js")).not.toContain('alatIngatPanel("checklist-widget"');
     // Kotak "Perkara ini di SIPP, ABT, dan ALETA" tidak lagi terbuka sendiri.
     expect(baca("sipp-ide-m2.js")).not.toMatch(/badan\.hidden = !r\.perluPerhatian/);
   });

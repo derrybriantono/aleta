@@ -24,6 +24,8 @@ import { GalatSetelan, KUNCI_SETELAN, normalkanSetelan } from "@/lib/tampilan-ek
  * halaman, chrome.storage tiruan.
  */
 
+/** 23 Okt 2026: widget tersembunyi bawaannya - uji lama meminta semua bagian ditampilkan seperti sebelum aturan itu. */
+const BUKA_SEMUA = 'document.dispatchEvent(new CustomEvent("aleta-widget-tampilkan", { detail: { bagian: "semua" } }));';
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (berkas: string) => readFileSync(berkas, "utf8").replace(/\r\n/g, "\n");
 const SUMBER_ALAT = baca(process.env.ALETA_UJI_ALAT || path.join(EKSTENSI, "panel-alat.js"));
@@ -385,7 +387,7 @@ const ui = (lain: Record<string, unknown> = {}) => ({
   ...lain,
 });
 
-function halamanWidget(p: { simpanan?: Record<string, unknown>; server?: ServerUji; alamat?: string; sumber?: string } = {}) {
+function halamanWidget(p: { simpanan?: Record<string, unknown>; server?: ServerUji; alamat?: string; sumber?: string; tersembunyi?: boolean } = {}) {
   const dom = jsdomUji(p.alamat ?? "http://192.168.10.10/SIPP/detil_perkara_agama");
   terbuka.push(dom);
   const w = dom.window as any;
@@ -434,6 +436,7 @@ function halamanWidget(p: { simpanan?: Record<string, unknown>; server?: ServerU
   const ctx = dom.getInternalVMContext();
   vm.runInContext(SUMBER_ALAT, ctx, { filename: "panel-alat.js" });
   vm.runInContext(p.sumber ?? SUMBER_CHECKLIST, ctx, { filename: "checklist.js" });
+  if (!p.tersembunyi) vm.runInContext(BUKA_SEMUA, ctx);
   const akar = () => w.document.querySelector("aleta-cm-widget") as any;
   const q = (pemilih: string) => (akar() && akar().shadowRoot ? (akar().shadowRoot.querySelector(pemilih) as any) : null);
   const qs = (pemilih: string) => (akar() && akar().shadowRoot ? Array.from(akar().shadowRoot.querySelectorAll(pemilih)) : []) as any[];

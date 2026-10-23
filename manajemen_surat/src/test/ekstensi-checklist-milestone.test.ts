@@ -43,6 +43,8 @@ import { ALAMAT_ALETA, KATALOG_CHECKLIST, KUNCI_PERAN, LABEL_PERAN } from "@/lib
  * ALETA_UJI_ALETA (aleta.js) menunjuk SALINAN berkas untuk pembukti gigitan.
  */
 
+/** 23 Okt 2026: widget tersembunyi bawaannya - uji lama meminta semua bagian ditampilkan seperti sebelum aturan itu. */
+const BUKA_SEMUA = 'document.dispatchEvent(new CustomEvent("aleta-widget-tampilkan", { detail: { bagian: "semua" } }));';
 const EKSTENSI = path.resolve(process.cwd(), "../ekstensi-sipp");
 const baca = (berkas: string) => readFileSync(berkas, "utf8").replace(/\r\n/g, "\n");
 const BERKAS_CHECKLIST = process.env.ALETA_UJI_CHECKLIST || path.join(EKSTENSI, "checklist.js");
@@ -314,7 +316,7 @@ function buka(
      * berkas ini sendiri menyebut posisinya, atau tanpaPosisiAwal: true.
      * Perilaku bawaan tertutup diuji di checklist-posisi-panel-12okt.test.ts.
      */
-    tanpaPosisiAwal?: boolean;
+    tanpaPosisiAwal?: boolean; tersembunyi?: boolean;
   } = {}
 ): Halaman {
   const dom = jsdomBaru(`<!doctype html><html><head></head><body>${p.html ?? ""}</body></html>`, {
@@ -400,6 +402,7 @@ function buka(
     vm.runInContext(baca(SALINAN_SKRIP[nama] || path.join(EKSTENSI, nama)), ctx, { filename: nama });
   }
   vm.runInContext(SUMBER_CHECKLIST, ctx, { filename: "checklist.js" });
+  if (!p.tersembunyi) vm.runInContext(BUKA_SEMUA, ctx);
   return {
     dom,
     w,
