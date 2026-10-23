@@ -32,8 +32,9 @@ Fixture baru wajib memakai nama dan NIK rekaan.
    sesi laptop yang menggabung, menguji penuh, menaikkan versi, dan memasang.
 5. Bila mengubah `ekstensi-sipp/`, jalankan `ALETA_TANAM_PAKSA=1 node scripts/susun-ekstensi.mjs` dari `manajemen_surat/`
    agar `src/server/shared/ekstensi-berkas.ts` ikut terbarui (bila bentrok saat digabung, sesi laptop menanam ulang).
-6. Migrasi Drizzle: nomor berikutnya yang bebas **0084** (cek `manajemen_surat/drizzle/meta/_journal.json`); tulis
-   nomor yang kamu pakai di laporan.
+6. Migrasi Drizzle - nomor DIBAGI per tugas agar sesi cloud yang berjalan bersamaan tidak bentrok
+   (idx `_journal.json` juga bentrok diam-diam): **T1 = 0084-0085, T9 = 0086-0087, T10 = 0088-0089, tugas lain = 0090+**
+   (minta nomor ke sesi laptop). Tulis nomor dan idx jurnal yang kamu pakai di laporan.
 
 ## 3. Aturan keras proyek (berlaku juga di cloud)
 
@@ -110,6 +111,62 @@ TIDAK diperiksa (keputusan 22 Okt).
 
 Catatan T3/T5-T8: susunan DOM halaman SIPP dibaca dari fixture uji yang ada (mis. form tiruan di uji di atas). Bila
 kurang, tulis di laporan halaman SIPP mana yang perlu disalin oleh sesi laptop (dengan nama disamarkan).
+
+### T9. ALETA Ai tahap 3 - Tugas (cowork), keluaran berkas, alat bantu, kirim ke alur ALETA
+Rencana: `docs/awan/rencana-aleta-ai-v2.md` bagian 3 butir 4-7 dan bagian 8 tahap 3. **Kerjakan sesudah T1 (tahap 2)
+digabung** - tugas memakai alat data baca-saja dan penyamaran dari tahap 2. Kode tahap 1 yang ada:
+`manajemen_surat/src/server/modules/aleta-ai/` (mesin.ts = panggilan model + SSE, percakapan.ts, proyek.ts = proyek
+V4.5 dari zip yang diunggah Super Admin, saldo.ts, laporan.ts, akses.ts), rute `src/app/api/aleta-ai/*`, tabel
+`drizzle/0078_aleta_ai.sql`.
+1. **Tugas (cowork)**: perintah kerja panjang (draf putusan, panduan sidang, komparasi arah putusan) yang berjalan sebagai
+   rangkaian langkah terlihat (rencana -> ambil data -> susun -> periksa -> berkas), dapat dihentikan, dilanjutkan,
+   dan bertahan bila peramban ditutup (status di tabel baru, bukan memori proses). Satu tugas = satu tahan saldo;
+   tiap langkah mencatat model/effort/token/biaya (pola `aleta_ai_penggunaan`). Rute model mengikuti tabel bagian 2
+   (draf putusan = Opus high; perkara rumit = max) dan batas per peran bagian 10.3 (draf putusan hanya Ketua/Wakil/Hakim).
+2. **Keluaran berkas** DOCX/RTF/PDF/HTML/XLSX dari templat proyek V4.5 dan format putusan Donggala. Templat TIDAK ada di
+   repo: dibaca dari proyek aktif di basis data (proyek.ts). Uji dengan zip proyek REKAAN kecil (buat fixture sendiri,
+   tanpa isi V4.5 asli). Data asli dikembalikan dari kode samaran HANYA di berkas untuk pengguna; berkas draf putusan
+   diberi tanda "Draf AI - wajib diperiksa". Rujukan pasal yang belum terverifikasi ditandai dan tidak dicetak di
+   berkas resmi.
+3. **Alat bantu deterministik** (skrip `aleta/*.py` di proyek V4.5: kalkulator nafkah/iddah/mut'ah, cek blangko,
+   cek konsistensi, anonim, analisa docx) dijalankan di **sandbox server**: kontainer Python terpisah tanpa jaringan,
+   batas waktu & memori, berkas masuk/keluar lewat folder sementara, daftar skrip yang diizinkan saja; model hanya
+   meminta "jalankan alat X dengan masukan Y", tidak pernah menjalankan kode bebas. Di cloud: tulis layanan, berkas
+   compose/Dockerfile sandbox, dan uji dengan skrip rekaan; pemasangan kontainer dikerjakan sesi laptop.
+4. **Kirim ke alur ALETA**: hasil dapat dikirim ke Blangko ABT by Derry (isian), Draf H-7, atau BAS - selalu lewat
+   tombol + konfirmasi petugas; AI TIDAK PERNAH menulis langsung ke SIPP/ABT/e-Court, dan tanpa kata "ALETA" di nilai
+   yang dikirim.
+5. Penolakan model, batas token, dan galat langkah: hasil sementara tersimpan; saldo dipotong hanya sesuai pemakaian.
+6. Uji: hak per peran x kemampuan (server menolak), kebocoran (tidak ada data asli di permintaan ke model - pakai
+   klien model tiruan), berkas keluaran terbuka dan memuat tanda draf, sandbox menolak skrip di luar daftar.
+
+### T10. ALETA Ai tahap 4 - Dompet lengkap
+Rencana: bagian 6 (harga, kurs) dan 8 tahap 4. Fondasinya SUDAH ADA di `saldo.ts` (buku mutasi isi/kuota/tahan/
+lepas/potong/koreksi, saldo = jumlah mutasi, idempoten), `kurs.ts`, `laporan.ts`, rute `api/aleta-ai/saldo|kurs|
+laporan|pengaturan`. **Audit dulu yang sudah jalan**, lalu lengkapi yang belum:
+1. **Perkiraan biaya sebelum jalan**: hitung token masukan (count tokens / perkiraan) + perkiraan keluaran menurut
+   kelompok rute -> tampilkan rupiah ke pengguna SEBELUM giliran/tugas berjalan; dana ditahan; biaya aktual dipotong;
+   selisih kembali; gagal = tidak dipotong (pola tahan/lepas/potong yang ada).
+2. **Rumus harga** (keputusan pengguna, jangan diubah): biaya API aktual (tarif resmi per model, diisi Super Admin) x kurs
+   x (1 + margin) + MDR QRIS, dibulatkan KE ATAS Rp500, minimum Rp1.000 per giliran; margin bawaan 30%; kurs harian
+   otomatis (kurs tengah JISDOR BI, cadangan sumber terbuka) x (1 + penyangga 3%), kurs terakhir dipakai bila gagal
+   ambil; tiap giliran mencatat kurs yang dipakai. Uji pengambil kurs dengan HTTP tiruan (cloud tidak boleh bergantung
+   pada situs luar saat uji).
+3. **Kuota hibah per peran** (opsional, Super Admin) tercatat sebagai mutasi `kuota`; Super Admin gratis dalam batas wajar.
+4. **Batas**: per pengguna per hari (token & rupiah), per satker per bulan, batas laju; **saklar darurat** mematikan
+   ALETA Ai seketika (sudah ada saklar - pastikan juga menghentikan tugas T9 yang berjalan).
+5. **Laporan Super Admin**: pendapatan, biaya API, MDR, laba (= pendapatan - biaya API - MDR) per pengguna/peran/
+   kelompok/model/bulan; ekspor XLSX/CSV; rekonsiliasi harian (saldo = jumlah mutasi; selisih ditandai).
+6. **Pengguna**: halaman Dompet - saldo, mutasi, rincian biaya per giliran, struk (PDF/HTML), notifikasi saldo menipis.
+7. **BUKAN bagian T10**: QRIS/gateway pembayaran (tahap 5, butuh akun merchant) - sediakan antarmuka "isi saldo"
+   manual oleh Super Admin saja. Ingat pengingat hukum di rencana bagian 9 (PNBP/pungli, pajak, ASN, UU PDP): fitur
+   isi saldo berbayar tetap MATI bawaan sampai pengguna memutuskan.
+8. Uji: rumus harga (pembulatan, minimum, kurs, margin) dengan angka contoh; tahan/lepas/potong idempoten di bawah
+   pemanggilan ganda; batas harian & saklar darurat; laporan laba = jumlah mutasi.
+
+Urutan yang disarankan: T1 (tahap 2) -> T10 (tahap 4, boleh paralel dengan T1 karena memakai saldo.ts) -> T9 (tahap 3).
+Prasyarat dari pengguna untuk menyalakan di server (dikerjakan sesi laptop): kunci API Anthropic di env server, akun
+DB SIPP baca-saja, persetujuan matriks kemampuan per peran, keputusan tarif/margin/kurs, izin pimpinan.
 
 ## 5. Perintah berguna
 
