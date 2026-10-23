@@ -971,6 +971,23 @@ export const AKSI = {
     rute: ["GET /api/aleta-ecourt/peta-perkara", "GET /api/aleta-ecourt/konseptor"],
     alasan: "Rekap lintas perkara & lintas orang - pimpinan, majelis, kepaniteraan, sekretaris.",
   },
+  // ALETA Ai tahap 4 (25 Okt 2026, T10). Pagar aplikasi "aleta-ai" (Akses Menu) tetap berlaku lebih dulu.
+  "aleta-ai.dompet": {
+    label: "Dompet ALETA Ai milik sendiri (saldo, mutasi, perkiraan biaya, struk)",
+    crud: "R",
+    golongan: SEMUA_GOLONGAN,
+    lingkup: "milik",
+    rute: ["GET /api/aleta-ai/dompet", "POST /api/aleta-ai/perkiraan", "GET /api/aleta-ai/struk/[id]"],
+    alasan: "Setiap pemakai ALETA Ai melihat dompet dan biayanya SENDIRI; tidak ada data pengguna lain.",
+  },
+  "aleta-ai.kelola-dompet": {
+    label: "Kelola dompet ALETA Ai (isi saldo manual, kuota peran, laporan laba, ekspor, rekonsiliasi)",
+    crud: "CUD",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["POST /api/aleta-ai/saldo/isi", "GET|PUT|POST /api/aleta-ai/kuota", "GET /api/aleta-ai/laporan/ekspor", "GET|POST /api/aleta-ai/rekonsiliasi"],
+    alasan: "Uang dan laba pengelola - rute menegakkan HANYA Super Admin (Admin pun ditolak: wajibSuperAdmin).",
+  },
 } as const satisfies Record<string, AturanAksi>;
 
 export type KunciAksi = keyof typeof AKSI;

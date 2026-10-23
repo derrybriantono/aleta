@@ -18,6 +18,9 @@ export type RingkasAi = {
   aktif: boolean;
   alasanNonaktif?: string;
   saldoRp: number;
+  /** Tahap 4: saldo di bawah ambang Super Admin. */
+  saldoMenipis?: boolean;
+  ambangSaldoMenipisRp?: number;
   superAdmin: boolean;
   pemicu: Pemicu[];
   proyekVersi?: string | number;
@@ -67,6 +70,10 @@ export type PengaturanAi = {
   aktif: boolean;
   tarif: TarifModel[];
   rute: RuteModel[];
+  /** Tahap 4: MDR QRIS (persen), batas satker per bulan (Rp biaya API), ambang saldo menipis (Rp). */
+  mdrPersen?: number;
+  batasSatkerBulananRp?: number;
+  ambangSaldoMenipisRp?: number;
 };
 
 const NAMA_MODEL = /(opus|sonnet|haiku|claude|fable|gpt|gemini)/i;

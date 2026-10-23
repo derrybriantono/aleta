@@ -17,12 +17,20 @@ type Props = {
   saldoKurang?: boolean;
   /** Teks yang diisikan dari luar (mis. contoh pertanyaan) - berubah = isi ulang. */
   isianLuar?: { teks: string; nomor: number } | null;
+  /** Tahap 4: perkiraan biaya SEBELUM kirim (server; tidak menahan dana). Tanpa ini, perkiraan tidak ditampilkan. */
+  perkirakan?: (teks: string, pemicu?: string) => Promise<PerkiraanTampil | null>;
 };
+
+export type PerkiraanTampil = { perkiraanRp: number; label: string; bolehJalan: boolean; alasan?: string; gratis?: boolean };
+
+const JEDA_PERKIRAAN_MS = 600;
 
 const BATAS_CHIP_RINGKAS = 8;
 
-export function KotakTulis({ pemicu, mengalir, dipilih, onPilihPemicu, onKirim, onHentikan, saldoKurang, isianLuar }: Props) {
+export function KotakTulis({ pemicu, mengalir, dipilih, onPilihPemicu, onKirim, onHentikan, saldoKurang, isianLuar, perkirakan }: Props) {
   const [teks, setTeks] = useState("");
+  // Perkiraan beserta kunci (teks|pemicu) yang diperkirakannya; yang tidak cocok dengan isian sekarang tidak ditampilkan.
+  const [perkiraanUntuk, setPerkiraanUntuk] = useState<{ kunci: string; hasil: PerkiraanTampil | null } | null>(null);
   const [semua, setSemua] = useState(false);
   const area = useRef<HTMLTextAreaElement | null>(null);
   const sedangMenyusun = useRef(false);
@@ -36,6 +44,24 @@ export function KotakTulis({ pemicu, mengalir, dipilih, onPilihPemicu, onKirim, 
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 220)}px`;
   }, [teks]);
+
+  // Perkiraan biaya ditampilkan sebelum kirim; diminta ulang sesudah pengguna berhenti mengetik sebentar.
+  useEffect(() => {
+    if (!perkirakan || mengalir) return;
+    const isi = teks.trim();
+    if (!isi && !dipilih) return;
+    let batal = false;
+    const kunci = `${isi}|${dipilih ?? ""}`;
+    const pewaktu = setTimeout(() => {
+      void perkirakan(isi, dipilih ?? undefined).then((hasil) => {
+        if (!batal) setPerkiraanUntuk({ kunci, hasil });
+      });
+    }, JEDA_PERKIRAAN_MS);
+    return () => {
+      batal = true;
+      clearTimeout(pewaktu);
+    };
+  }, [teks, dipilih, perkirakan, mengalir]);
 
   useEffect(() => {
     if (isianLuar) {
@@ -65,6 +91,7 @@ export function KotakTulis({ pemicu, mengalir, dipilih, onPilihPemicu, onKirim, 
   }
 
   const tampil = semua ? pemicu : pemicu.slice(0, BATAS_CHIP_RINGKAS);
+  const perkiraan = perkiraanUntuk && perkiraanUntuk.kunci === `${teks.trim()}|${dipilih ?? ""}` && (teks.trim() || pemicuTerpilih) ? perkiraanUntuk.hasil : null;
 
   return (
     <div className="border-t border-border/60 bg-card/60 px-3 pb-3 pt-2 sm:px-4">
@@ -175,6 +202,15 @@ export function KotakTulis({ pemicu, mengalir, dipilih, onPilihPemicu, onKirim, 
             )}
           </div>
         </div>
+        {perkiraan && !mengalir ? (
+          <p className={cn("mt-2 text-center text-xs", perkiraan.bolehJalan ? "text-muted-foreground" : "text-amber-700 dark:text-amber-300")} data-testid="perkiraan-biaya" aria-live="polite">
+            {perkiraan.bolehJalan
+              ? perkiraan.gratis
+                ? `Mode ${perkiraan.label}. Tanpa biaya untuk akun Anda.`
+                : `Perkiraan biaya: ${formatRupiah(perkiraan.perkiraanRp)} (mode ${perkiraan.label}). Dana ditahan dulu; yang dipotong biaya sebenarnya, sisanya kembali.`
+              : perkiraan.alasan}
+          </p>
+        ) : null}
         <p className="mt-2 text-center text-xs text-muted-foreground">
           {saldoKurang ? "Saldo Anda hampir habis; hubungi admin untuk mengisi. " : ""}
           ALETA Ai dapat keliru. Periksa kembali sebelum dipakai dalam perkara.

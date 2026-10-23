@@ -43,6 +43,41 @@ export type Mutasi = {
 const teks = (n: unknown) => String(n ?? "").trim();
 const sekarangIso = () => new Date().toISOString();
 
+const antrean = new Map<string, Promise<unknown>>();
+
+/**
+ * Menjalankan kerja saldo SATU pengguna berurutan di proses ini, sehingga
+ * pemanggilan ganda yang bersamaan (mis. klik dua kali, finally + jalur
+ * normal, tugas T9 yang diulang) melihat hasil satu sama lain. Antar proses,
+ * penguncian baris aleta_ai_saldo di dalam transaksi yang menjaganya.
+ * JANGAN dipanggil bersarang untuk pengguna yang sama (akan saling menunggu).
+ */
+export function antreSaldo<T>(penggunaId: string, kerja: () => Promise<T>): Promise<T> {
+  const kunci = teks(penggunaId);
+  const sebelum = antrean.get(kunci) ?? Promise.resolve();
+  const jalan = sebelum.then(kerja, kerja);
+  const ekor = jalan.then(
+    () => undefined,
+    () => undefined
+  );
+  antrean.set(kunci, ekor);
+  void ekor.then(() => {
+    if (antrean.get(kunci) === ekor) antrean.delete(kunci);
+  });
+  return jalan;
+}
+
+/** Di luar transaksi: antre per pengguna. Di dalam transaksi pemanggil: langsung (pemanggil yang mengatur). */
+function berurutan<T>(db: AletaDatabase, penggunaId: string, kerja: () => Promise<T>): Promise<T> {
+  return db.isTransactionClient() ? kerja() : antreSaldo(penggunaId, kerja);
+}
+
+/** Mengunci baris saldo pengguna sampai transaksi selesai (Postgres: UPDATE memegang kunci baris). */
+async function kunciBaris(tx: AletaDatabase, penggunaId: string) {
+  await pastikanBaris(tx, penggunaId);
+  await tx.run(`UPDATE aleta_ai_saldo SET diubah_at = diubah_at WHERE pengguna_id = ?`, [penggunaId]);
+}
+
 /** Memakai transaksi yang sudah berjalan bila ada (tanpa savepoint); membuka transaksi baru bila tidak. */
 function dalamTransaksi<T>(db: AletaDatabase, kerja: (tx: AletaDatabase) => Promise<T>): Promise<T> {
   return db.isTransactionClient() ? kerja(db) : withTransaction(db, kerja);
@@ -100,11 +135,37 @@ export async function terapkanMutasi(db: AletaDatabase, m: MasukanMutasi): Promi
   });
 }
 
-/** Tahan dana sebelum giliran. false = saldo tidak cukup (tidak ada yang berubah). */
-export async function tahanDana(db: AletaDatabase, penggunaId: string, jumlahRp: number, rujukanId: string): Promise<boolean> {
+/**
+ * Tahan dana sebelum giliran. false = saldo tidak cukup (tidak ada yang berubah).
+ *
+ * `opsi.sekali` (tahap 4): idempoten per rujukan - bila rujukan itu sudah
+ * punya tahanan, tidak ada tahanan kedua (true); bila giliran/tugasnya sudah
+ * ditutup (ada "lepas"), tidak menahan lagi (false). Tanpa opsi, perilaku lama
+ * (dipakai tambahTahanan untuk naik tingkat).
+ */
+export async function tahanDana(
+  db: AletaDatabase,
+  penggunaId: string,
+  jumlahRp: number,
+  rujukanId: string,
+  opsi: { sekali?: boolean } = {}
+): Promise<boolean> {
   if (jumlahRp <= 0) return true;
-  const hasil = await terapkanMutasi(db, { penggunaId, jenis: "tahan", jumlahRp: -jumlahRp, rujukanId, catatan: "Dana ditahan untuk giliran" });
-  return hasil !== null;
+  if (!opsi.sekali) {
+    const hasil = await terapkanMutasi(db, { penggunaId, jenis: "tahan", jumlahRp: -jumlahRp, rujukanId, catatan: "Dana ditahan untuk giliran" });
+    return hasil !== null;
+  }
+  const id = teks(penggunaId);
+  return berurutan(db, id, () =>
+    dalamTransaksi(db, async (tx) => {
+      await kunciBaris(tx, id);
+      const { tahan, sudahLepas } = await totalTahanan(tx, id, rujukanId);
+      if (sudahLepas) return false;
+      if (tahan > 0) return true;
+      const hasil = await terapkanMutasi(tx, { penggunaId: id, jenis: "tahan", jumlahRp: -jumlahRp, rujukanId, catatan: "Dana ditahan untuk giliran" });
+      return hasil !== null;
+    })
+  );
 }
 
 /** Menambah tahanan yang sudah ada (naik tingkat). false = saldo tidak cukup. */
@@ -137,7 +198,12 @@ export async function selesaikanTahanan(
   rujukanId: string,
   tagihRp: number
 ): Promise<{ dipotongRp: number; tidakTertagihRp: number; saldoSetelah: number; sudahDiproses: boolean }> {
+  return berurutan(db, penggunaId, () => tutupTahanan(db, penggunaId, rujukanId, tagihRp));
+}
+
+function tutupTahanan(db: AletaDatabase, penggunaId: string, rujukanId: string, tagihRp: number) {
   return dalamTransaksi(db, async (tx) => {
+    await kunciBaris(tx, penggunaId);
     const { tahan, sudahLepas } = await totalTahanan(tx, penggunaId, rujukanId);
     if (sudahLepas) return { dipotongRp: 0, tidakTertagihRp: 0, saldoSetelah: await saldoPengguna(tx, penggunaId), sudahDiproses: true };
 

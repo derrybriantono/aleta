@@ -19,7 +19,7 @@ import { ambil, kirimJson, kirimPesanAlir } from "@/lib/aleta-ai/klien";
 import { cn } from "@/lib/utils";
 
 import { DaftarPesan, Sambutan, type AlirAktif } from "./daftar-pesan";
-import { KotakTulis } from "./kotak-tulis";
+import { KotakTulis, type PerkiraanTampil } from "./kotak-tulis";
 import { RiwayatPercakapan } from "./riwayat-percakapan";
 
 let penghitungLokal = 0;
@@ -88,6 +88,16 @@ export function AletaAiChat() {
     setRingkas(r.data);
     setSaldoRp(r.data.saldoRp ?? 0);
   }, []);
+
+  // Tahap 4: perkiraan biaya sebelum kirim. Gagal/kosong = tidak menampilkan apa-apa (kirim tetap jalan seperti biasa).
+  const perkirakan = useCallback(
+    async (teks: string, pemicu?: string): Promise<PerkiraanTampil | null> => {
+      const r = await kirimJson<Partial<PerkiraanTampil>>("/api/aleta-ai/perkiraan", "POST", { percakapanId: aktifId ?? "", teks, pemicu });
+      if (!r.ok || typeof r.data?.perkiraanRp !== "number" || typeof r.data.bolehJalan !== "boolean") return null;
+      return { perkiraanRp: r.data.perkiraanRp, label: String(r.data.label ?? ""), bolehJalan: r.data.bolehJalan, alasan: r.data.alasan, gratis: r.data.gratis };
+    },
+    [aktifId]
+  );
 
   const muatDaftar = useCallback(async () => {
     setMemuatDaftar(true);
@@ -378,8 +388,9 @@ export function AletaAiChat() {
           onPilihPemicu={setPemicuDipilih}
           onKirim={(teks, pemicu) => void kirim(teks, pemicu)}
           onHentikan={hentikan}
-          saldoKurang={!ringkas.superAdmin && saldoRp < 1000}
+          saldoKurang={!ringkas.superAdmin && saldoRp < Math.max(1000, ringkas.ambangSaldoMenipisRp ?? 0)}
           isianLuar={isianLuar}
+          perkirakan={perkirakan}
         />
       </section>
     </div>
