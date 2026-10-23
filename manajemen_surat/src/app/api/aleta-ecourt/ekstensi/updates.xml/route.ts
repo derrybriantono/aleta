@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase } from "@/server/db/client";
 import { bacaSaluranEfektif } from "@/server/modules/satker/kanal";
 import { idEkstensi, naskahUpdatesXml } from "@/server/shared/crx";
+import { alamatDasarPortal as alamatDasar } from "@/server/shared/ekstensi-alamat";
 import { kunciCrx, versiEkstensi } from "@/server/shared/ekstensi-paket";
 
 export const runtime = "nodejs";
@@ -40,28 +41,6 @@ export const dynamic = "force-dynamic";
  * disediakan untuk pemasangan yang proxy-nya berbeda, dan tidak dipakai selama
  * headernya sudah benar.
  */
-function alamatDasar(request: NextRequest): string {
-  const setelan = String(process.env.ALETA_EKSTENSI_ALAMAT_DASAR || "").trim();
-  if (setelan) return setelan.replace(/\/+$/, "");
-
-  // Header X-Forwarded-* dapat berisi BEBERAPA nilai dipisah koma - Apache di
-  // sini menyetelnya sendiri sekaligus menambahkan asal permintaannya, sehingga
-  // terbaca "192.168.10.10, 192.168.10.10". Yang berlaku selalu yang PERTAMA,
-  // yaitu yang paling dekat dengan pengguna.
-  const pertama = (nilai: string | null) => String(nilai || "").split(",")[0].trim();
-
-  const host =
-    pertama(request.headers.get("x-forwarded-host")) ||
-    pertama(request.headers.get("host")) ||
-    request.nextUrl.host;
-  const proto =
-    pertama(request.headers.get("x-forwarded-proto")) ||
-    request.nextUrl.protocol.replace(":", "") ||
-    "http";
-  const awalan = String(process.env.NEXT_PUBLIC_BASE_PATH || "").replace(/\/+$/, "");
-
-  return `${proto}://${host}${awalan}`;
-}
 export async function GET(request: NextRequest) {
   const kunci = kunciCrx();
   const versi = versiEkstensi();

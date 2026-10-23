@@ -644,7 +644,9 @@ describe("butir 6 - latar.js: pembaruan otomatis sesudah masuk ALETA", () => {
       downloads: {
         onDeterminingFilename: { addListener() {} },
         onChanged: { addListener() {}, removeListener() {} },
-        search: (_q: unknown, f: (x: unknown[]) => void) => f([]),
+        // Unduhan paket kini diperiksa (selesai + ukuran sama dengan yang diterima: "PK-zip-palsu" = 12 bita).
+        search: (q: { id?: number }, f: (x: unknown[]) => void) =>
+          f(typeof q?.id === "number" && q.id > 900 && q.id <= 900 + dunia.unduhan.length ? [{ id: q.id, state: "complete", fileSize: 12, exists: true }] : []),
         download: (o: { url: string; filename: string }, cb: (id: number) => void) => {
           dunia.unduhan.push({ url: o.url, filename: o.filename });
           cb(900 + dunia.unduhan.length);

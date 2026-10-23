@@ -60,6 +60,35 @@ ditolak Chrome. Gunakan klik kanan → **Extract All**.
 Setelah diekstrak, folder hasilnya **boleh diseret langsung** ke halaman Extensions —
 cara itu berhasil dan setara dengan Load unpacked.
 
+## Pembaruan otomatis (pasang sekali per komputer)
+
+Ekstensi yang dimuat dari folder tidak dapat memperbarui dirinya, dan unduhan ZIP
+sering dicegat **Internet Download Manager (IDM)** sehingga berkasnya 0 KB. Karena itu
+ada **pembaru otomatis**: dipasang SEKALI per komputer, sesudahnya setiap versi baru
+terpasang sendiri — tanpa unduhan, tanpa bertanya.
+
+1. Muat ekstensi di Chrome lebih dulu (langkah di atas)
+2. Di portal ALETA, halaman Ekstensi → **Unduh pemasang** (atau tombol
+   **Pasang pembaruan otomatis** di ikon ALETA pada Chrome); bila Chrome bertanya,
+   pilih **Simpan**
+3. Klik dua kali berkas `pasang-pembaru-aleta` hingga tampil tulisan **SELESAI**
+4. Ikon ALETA di Chrome menampilkan **Pembaruan otomatis: aktif**
+
+Yang terjadi sesudahnya: bila ada versi baru dan tidak ada antrean cetak/penetapan
+yang sedang berjalan, pembantu mengunduh paket langsung dari server (alamat server
+yang tercatat saja), mencocokkan sidiknya, menukar isi folder ekstensi, lalu ekstensi
+dimuat ulang. Halaman SIPP/ABT yang sudah terbuka menampilkan tulisan kecil agar
+dimuat ulang (F5) saat sempat.
+
+**Setelan tidak berubah.** Folder dan ID ekstensi tetap sama, sehingga semua setelan
+di popup (peran, saklar, tampilan, posisi widget) tetap seperti yang Anda atur. Pembaru
+tidak menyentuh profil Chrome.
+
+Dipasang hanya di akun Windows yang menjalankannya: berkas pembantu di
+`%LOCALAPPDATA%\ALETA\pembaru` dan satu kunci milik pengguna (HKCU). Tanpa hak admin.
+Mencabut: jalankan pemasang itu dengan argumen `/cabut`. Versi sebelumnya disimpan di
+samping folder ekstensi (`....aleta-lama`) untuk jalan pulang.
+
 ## Tiga saklar di popup ekstensi
 
 Klik ikon ALETA di bilah ekstensi Chrome.

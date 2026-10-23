@@ -569,7 +569,7 @@ describe("latar.js: titipan password hanya di chrome.storage.session", () => {
     const tulisan = kode.match(/chrome\.storage\.local\.set\([^;]*\);/g) || [];
     expect(tulisan.length).toBeGreaterThan(0);
     for (const t of tulisan) {
-      expect(t).toMatch(/\[k\]|KUNCI_PEMBARUAN_OTOMATIS|KUNCI_MENUNGGU_LATAR|KUNCI_PERALIHAN_LATAR/);
+      expect(t).toMatch(/\[k\]|KUNCI_PEMBARUAN_OTOMATIS|KUNCI_PEMBARU\b|KUNCI_MENUNGGU_LATAR|KUNCI_PERALIHAN_LATAR/); // KUNCI_PEMBARU = catatan pembaru otomatis (23 Okt 2026), bukan setelan
     }
     // Daftar kunci setelan per akun tertutup dan tanpa kunci rahasia.
     const mulaiDaftar = kode.indexOf("const KUNCI_SETELAN_AKUN");

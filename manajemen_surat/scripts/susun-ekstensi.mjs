@@ -225,6 +225,10 @@ const BERKAS = [
   // di popup (dimuat popup.html sesudah popup.js).
   "sipp-ide-l2.js",
   "popup-ide-l2.js",
+  // Pembaru otomatis (23 Okt 2026): pembantu lokal (native messaging host) dan pemasangnya.
+  // Disajikan juga sebagai satu berkas .cmd oleh rute /ekstensi/pembaru/pemasang.
+  "pembaru/pembaru-aleta.ps1",
+  "pembaru/pasang-pembaru-aleta.cmd",
   "PASANG.md",
 ];
 

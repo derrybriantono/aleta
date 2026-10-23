@@ -167,7 +167,9 @@ describe("isi ekstensi yang ditanam", () => {
     // "downloads" sejak 1.145.0: unduhan diterbitkan pekerja latar supaya
     // Chrome tidak memblokirnya sebagai unduhan dari halaman http. Izinnya
     // tetap dua - daftar ini menjaga agar tidak diam-diam bertambah lagi.
-    expect(manifest.permissions).toEqual(["storage", "downloads"]);
+    // "nativeMessaging" sejak pembaru otomatis (23 Okt 2026): satu-satunya jalan
+    // ekstensi folder memasang versi baru tanpa unduhan peramban (dicegat IDM).
+    expect(manifest.permissions).toEqual(["storage", "downloads", "nativeMessaging"]);
   });
 
   it("ikonnya ikut tertanam sebagai PNG yang utuh", async () => {

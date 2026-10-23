@@ -669,8 +669,8 @@ describe("lapis 2: unduhan terblokir diulang lewat tab asal", () => {
 describe("berkas, manifest, dan izin", () => {
   const manifest = JSON.parse(baca("manifest.json"));
 
-  it("tidak ada izin baru: tetap storage + downloads; host satker (+ port ALETA 8008, K1 19 Okt) dan lokal", () => {
-    expect(manifest.permissions).toEqual(["storage", "downloads"]);
+  it("izin: storage + downloads (+ nativeMessaging untuk pembaru otomatis, 23 Okt); host satker (+ port ALETA 8008, K1 19 Okt) dan lokal", () => {
+    expect(manifest.permissions).toEqual(["storage", "downloads", "nativeMessaging"]);
     expect(manifest.host_permissions).toEqual(["http://192.168.10.10/*", "http://192.168.10.10:8008/*", "http://127.0.0.1/*"]);
   });
 

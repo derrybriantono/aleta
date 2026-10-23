@@ -530,7 +530,7 @@ describe("pendaftaran: manifest, popup, penyusun", () => {
 
   it("izin host: e-Court hanya lewat pencocokan skrip konten; host_permissions tidak bertambah", () => {
     expect(MANIFEST.host_permissions).toEqual(["http://192.168.10.10/*", "http://192.168.10.10:8008/*", "http://127.0.0.1/*"]);
-    expect(MANIFEST.permissions).toEqual(["storage", "downloads"]);
+    expect(MANIFEST.permissions).toEqual(["storage", "downloads", "nativeMessaging"]);
   });
 
   it("menu-atas.js, ecourt-masuk.js terdaftar di penyusun ekstensi dan saklar popup menyebut E-Court", () => {

@@ -4137,6 +4137,76 @@ function catatPembaruanLatar(x) {
 
 pasangPemberitahuanVersi();
 
+/**
+ * ----------------------------------------------------------------------------
+ * PEMBARUAN OTOMATIS (pembantu lokal) - status dan pemasangnya (23 Okt 2026)
+ * ----------------------------------------------------------------------------
+ * Ekstensi yang dimuat sebagai folder tidak dapat memperbarui dirinya; pembantu
+ * lokal kecil dipasang SEKALI per komputer dan sesudah itu versi baru terpasang
+ * sendiri tanpa bertanya. Popup hanya menampilkan keadaannya (jawaban latar.js
+ * "status-pembaru") dan mengunduh pemasangnya (satu berkas .cmd, bukan ZIP).
+ */
+const TEKS_PEMBARU = {
+  aktif: ["aktif", false],
+  chrome: ["aktif (diurus Chrome)", false],
+  "belum-dipasang": ["belum dipasang", true],
+  "folder-rusak": ["perlu dipasang ulang", true],
+  "id-tak-cocok": ["perlu dipasang ulang", true],
+  "pembantu-lama": ["perlu dipasang ulang", true],
+  "tak-terjangkau": ["tidak menjawab", true],
+};
+
+function gambarStatusPembaru(st) {
+  const kolom = document.getElementById("pembaruStatus");
+  const aksi = document.getElementById("pembaruAksi");
+  const petunjuk = document.getElementById("pembaruPetunjuk");
+  const kunci = st && st.keadaan ? String(st.keadaan) : "tak-terjangkau";
+  const [teks, usang] = TEKS_PEMBARU[kunci] || ["tidak diketahui", true];
+  tulisKeadaan(kolom, teks, { kosong: false, usang });
+  if (!aksi) return;
+  const perluPasang = ["belum-dipasang", "folder-rusak", "id-tak-cocok", "pembantu-lama"].includes(kunci);
+  aksi.hidden = !perluPasang;
+  if (petunjuk && perluPasang) {
+    petunjuk.textContent =
+      kunci === "belum-dipasang"
+        ? "Pembaruan otomatis belum dipasang di komputer ini. Pasang sekali saja: unduh pemasangnya, buka berkas itu dengan klik dua kali, selesai. Setelan Anda tidak berubah."
+        : (st && st.pesan) || "Jalankan ulang pemasang pembaruan otomatis (sekali saja). Setelan Anda tidak berubah.";
+  }
+}
+
+function pasangPembaruOtomatis() {
+  const tombol = document.getElementById("pasangPembaru");
+  const lihat = document.getElementById("tampilkanPemasang");
+  const petunjuk = document.getElementById("pembaruPetunjuk");
+  if (tombol && !tombol.dataset.terpasang) {
+    tombol.dataset.terpasang = "ya";
+    tombol.addEventListener("click", async () => {
+      tombol.disabled = true;
+      const j = await mintaKeLatar("unduh-pemasang-pembaru");
+      tombol.disabled = false;
+      if (petunjuk) {
+        petunjuk.textContent =
+          j && j.ok
+            ? "Pemasang sudah diunduh. Bila Chrome bertanya, pilih Simpan/Keep. Lalu klik dua kali berkas pasang-pembaru-aleta di folder Unduhan/ALETA, dan tunggu tulisan SELESAI."
+            : (j && j.pesan) || "Pemasang gagal diunduh.";
+      }
+      if (lihat) {
+        lihat.hidden = !(j && j.ok && j.id);
+        lihat.dataset.id = j && j.id ? String(j.id) : "";
+      }
+    });
+  }
+  if (lihat && !lihat.dataset.terpasang) {
+    lihat.dataset.terpasang = "ya";
+    lihat.addEventListener("click", () => {
+      if (lihat.dataset.id) void mintaKeLatar("tampilkan-unduhan", false, { id: lihat.dataset.id });
+    });
+  }
+  void mintaKeLatar("status-pembaru").then(gambarStatusPembaru);
+}
+
+pasangPembaruOtomatis();
+
 /* === AKHIR POPUP-PERAN === */
 
 // ── Diikuti selama jendela terbuka ───────────────────────────────────────────

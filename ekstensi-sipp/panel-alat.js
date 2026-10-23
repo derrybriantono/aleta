@@ -4661,6 +4661,26 @@ async function alatCekSesudahPerbarui() {
   }
 }
 
+/**
+ * Pembaru otomatis (23 Okt 2026): latar.js memasang versi baru dari disk lalu memuat ulang
+ * ekstensi. Skrip di halaman ini TIDAK ikut diganti - panel di tab yang sudah terbuka tetap
+ * kode lama dan tak lagi terhubung. Halaman TIDAK dimuat ulang sendiri (isian borang yang
+ * sedang diketik akan hilang); cukup tulisan kecil agar petugas menekan F5 saat sempat.
+ */
+try {
+  if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage && !globalThis.__aletaDengarDiperbarui) {
+    globalThis.__aletaDengarDiperbarui = true;
+    chrome.runtime.onMessage.addListener((pesan) => {
+      if (pesan && pesan.sumber === "aleta-latar" && pesan.jenis === "aleta-diperbarui") {
+        alatTampilkanCatatanPerbarui(`ALETA diperbarui ke ${String(pesan.versi || "").slice(0, 20)}. Muat ulang halaman ini (F5) bila sudah selesai mengetik.`, false, 0);
+      }
+      return undefined;
+    });
+  }
+} catch {
+  /* tanpa pendengar: panel lama tetap bisa dimuat ulang dengan F5 */
+}
+
 /** Memperbarui sendiri bila pagar di atas mengizinkan. Pulang true bila dijalankan. */
 async function alatPembaruanOtomatis(info) {
   if (!info || !info.portal || alatOtomatisJalan) return false;

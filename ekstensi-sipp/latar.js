@@ -163,6 +163,10 @@ async function perbaruiSekarang(opsi) {
   // POPUP-PERAN 12 Okt: pemasangan folder (Load unpacked) tidak dapat memasang
   // sendiri - yang dapat dikerjakan: mengunduh paket ZIP terbarunya.
   if ((await jenisPemasangan()) === "development") {
+    // PEMBARU-OTOMATIS 23 Okt: pembantu lokal memasang langsung dari server (tanpa unduhan
+    // peramban). Hanya bila belum dipasang / tak ada versi baru, jalan unduh manual di bawah.
+    const lewat = await perbaruiLewatPembantuDariTombol(versiSekarang, paksa);
+    if (lewat) return lewat;
     const paket = await siapkanPaketManual(versiSekarang);
     if (paket) return paket;
   }
@@ -571,7 +575,7 @@ async function ambilBerkasSipp(pesan, pengirim) {
  *
  * Pulang { ok, id } atau { ok: false, pesan } - tidak pernah melempar.
  */
-function terbitkanUnduhan(alamatMentah, nama) {
+function terbitkanUnduhan(alamatMentah, nama, tuntasMs) {
   const alamat = String(alamatMentah || "");
   return new Promise((jawab) => {
     if (!alamat.startsWith("data:")) {
@@ -601,6 +605,14 @@ function terbitkanUnduhan(alamatMentah, nama) {
         // Diikuti sebentar saja. Yang berakhir "interrupted" dilaporkan
         // sebagai gagal, sehingga panel menurunkannya lewat tautan halaman -
         // cara lama yang lolos, hanya bertanda peringatan.
+        //
+        // tuntasMs (pembaru otomatis, 23 Okt 2026): untuk berkas BESAR yang
+        // ukurannya harus diperiksa, ditunggu SAMPAI SELESAI (atau batas waktu)
+        // dan dilaporkan fileSize-nya - bukan "dianggap berhasil" setelah 2,5 detik.
+        if (tuntasMs > 0) {
+          tungguUnduhan(id, tuntasMs, (h) => jawab({ ok: h.state === "complete", id, ...h }));
+          return;
+        }
         ikutiUnduhan(id, (hasil) => jawab(hasil));
       });
     } catch (e) {
@@ -838,6 +850,20 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
     periksaSesudahMasuk({ paksa: pesan.paksa === true })
       .then(jawab)
       .catch((e) => jawab({ ok: false, keadaan: "galat", pesan: String((e && e.message) || e).slice(0, 200) }));
+    return true;
+  }
+
+  // PEMBARU-OTOMATIS 23 Okt: keadaan pembantu lokal (popup) dan pengunduhan pemasangnya.
+  if (pesan.jenis === "status-pembaru") {
+    statusPembaru(pesan.segar === true)
+      .then((st) => jawab({ ok: true, ...st }))
+      .catch((e) => jawab({ ok: false, keadaan: "tak-terjangkau", pesan: String((e && e.message) || e).slice(0, 160) }));
+    return true;
+  }
+  if (pesan.jenis === "unduh-pemasang-pembaru") {
+    unduhPemasangPembaru()
+      .then(jawab)
+      .catch((e) => jawab({ ok: false, pesan: String((e && e.message) || e).slice(0, 160) }));
     return true;
   }
 
@@ -3708,11 +3734,114 @@ function kePembaruanBase64(buf) {
   return btoa(teks);
 }
 
-/** Mengunduh paket ZIP ekstensi terbaru ke Unduhan/ALETA. Pulang { ok, id, nama } atau { ok:false, pesan }. */
+/**
+ * Mengunduh paket ZIP ekstensi terbaru ke Unduhan/ALETA, lalu MEMASTIKAN berkasnya utuh.
+ * Pulang { ok, id, nama } atau { ok:false, pesan, kosong }.
+ *
+ * ============================================================================
+ * BERKAS 0 BYTE (dilaporkan 23 Okt 2026) - DIUKUR, BUKAN DITEBAK
+ * ============================================================================
+ *
+ * Folder Unduhan/ALETA berisi 15 ZIP, semuanya 0 KB sejak 13 Okt, dan popup tetap
+ * berkata "Paketnya sudah diunduh otomatis". Sebabnya dua lapis:
+ *
+ *   1. Chrome sendiri TIDAK bersalah: diuji dengan data: base64 16 MB (ukuran paket
+ *      nyata, 22 MB sebagai teks) lewat chrome.downloads - tersimpan utuh.
+ *   2. Internet Download Manager di komputer ini (modul integrasinya di Chrome,
+ *      daftar tangkapannya memuat ZIP) mencegat unduhan BERAKHIRAN .zip lalu
+ *      menyerahkannya ke aplikasinya, yang tak dapat mengambil alamat data:.
+ *      Hasilnya berkas 0 byte yang tampak "selesai".
+ *
+ * Dulu ikutiUnduhan menganggap unduhan "berhasil" setelah 2,5 detik tanpa melihat
+ * ukuran, dan catatan "sudah diunduh" tak pernah diperiksa lagi - jadi 15 berkas
+ * kosong menumpuk tanpa satu pun tanda. Kini: menunggu SELESAI, membandingkan
+ * ukuran berkas dengan ukuran yang diterima dari server, dan bila kosong mencoba
+ * SEKALI lagi dengan akhiran yang tak ditangkap IDM (.aleta). Jalan sebenarnya
+ * yang tak melewati unduhan peramban adalah pembaru otomatis (pembantu lokal).
+ */
+const BATAS_UNDUH_PAKET_MS = 120000;
+
+function tungguUnduhan(id, batasMs, panggil) {
+  const sudahJawab = new Promise((selesai) => {
+    let sudah = false;
+    let henti = 0;
+    let dengar = null;
+    const akhir = (h) => {
+      if (sudah) return;
+      sudah = true;
+      clearTimeout(henti);
+      try {
+        if (dengar) chrome.downloads.onChanged.removeListener(dengar);
+      } catch {
+        /* pendengar sudah lepas */
+      }
+      selesai(h);
+    };
+    const periksa = () => {
+      try {
+        chrome.downloads.search({ id }, (r) => {
+          const d = r && r[0];
+          if (!d) return akhir({ state: "hilang" });
+          if (d.state === "complete") return akhir({ state: "complete", fileSize: Number(d.fileSize) || 0, ada: d.exists !== false });
+          if (d.state === "interrupted") return akhir({ state: "interrupted", galat: String(d.error || "") });
+          return undefined;
+        });
+      } catch {
+        akhir({ state: "tidak-terbaca" });
+      }
+    };
+    dengar = (u) => {
+      if (u && u.id === id && u.state) periksa();
+    };
+    try {
+      chrome.downloads.onChanged.addListener(dengar);
+    } catch {
+      /* tanpa pendengar: hanya pemeriksaan awal dan batas waktu */
+    }
+    henti = setTimeout(() => akhir({ state: "waktu" }), batasMs);
+    periksa();
+  });
+  // Bentuk callback dipakai terbitkanUnduhan (pendengar nama berkas dijaga tanpa .then); Promise-nya tetap dipulangkan.
+  if (typeof panggil === "function") sudahJawab.then(panggil, () => {});
+  return sudahJawab;
+}
+
+/** Menghapus unduhan yang gagal/kosong (berkas dan catatannya) - kegagalan membersihkan tidak berarti apa-apa. */
+function buangUnduhan(id) {
+  try {
+    if (chrome.downloads && typeof chrome.downloads.removeFile === "function") {
+      chrome.downloads.removeFile(id, () => {
+        void chrome.runtime.lastError;
+        try {
+          chrome.downloads.erase({ id }, () => void chrome.runtime.lastError);
+        } catch {
+          /* dibiarkan */
+        }
+      });
+    }
+  } catch {
+    /* dibiarkan */
+  }
+}
+
+/** Unduhan paket yang tercatat masih ada di disk, selesai, dan tidak kosong? */
+function unduhanPaketMasihUtuh(id) {
+  return new Promise((selesai) => {
+    try {
+      chrome.downloads.search({ id: Number(id) }, (r) => {
+        const d = r && r[0];
+        selesai(Boolean(d && d.state === "complete" && d.exists !== false && Number(d.fileSize) > 0));
+      });
+    } catch {
+      selesai(false);
+    }
+  });
+}
+
 async function unduhPaketTerbaru(asal, versi) {
-  const nama = `ALETA/aleta-ekstensi-sipp-${String(versi).replace(/[^0-9A-Za-z.\-]/g, "_")}.zip`;
+  const dasar = `ALETA/aleta-ekstensi-sipp-${String(versi).replace(/[^0-9A-Za-z.-]/g, "_")}`;
   const pembatal = typeof AbortController !== "undefined" ? new AbortController() : null;
-  const henti = pembatal ? setTimeout(() => pembatal.abort(), 30000) : 0;
+  const henti = pembatal ? setTimeout(() => pembatal.abort(), 60000) : 0;
   try {
     const r = await fetch(`${asal}/api/aleta-ecourt/ekstensi`, {
       credentials: "include",
@@ -3721,10 +3850,27 @@ async function unduhPaketTerbaru(asal, versi) {
     });
     if (!r.ok) return { ok: false, pesan: `portal menjawab ${r.status}` };
     const buf = await r.arrayBuffer();
+    if (!buf.byteLength) return { ok: false, pesan: "portal mengirim paket kosong" };
+    const alamat = `data:application/zip;base64,${kePembaruanBase64(buf)}`;
     // Lewat data: dan antrean nama yang sama dengan unduhan panel - unduhan
     // http langsung dari ekstensi dapat diblokir Chrome ("insecure download").
-    const hasil = await terbitkanUnduhan(`data:application/zip;base64,${kePembaruanBase64(buf)}`, nama);
-    return hasil && hasil.ok ? { ok: true, id: hasil.id, nama } : { ok: false, pesan: (hasil && hasil.pesan) || "unduhan ditolak" };
+    let kosong = false;
+    for (const nama of [`${dasar}.zip`, `${dasar}.aleta`]) {
+      const h = await terbitkanUnduhan(alamat, nama, BATAS_UNDUH_PAKET_MS);
+      if (h.ok && h.ada !== false && h.fileSize === buf.byteLength) return { ok: true, id: h.id, nama, ukuran: h.fileSize };
+      if (h.id !== undefined) buangUnduhan(h.id);
+      // Selesai tetapi ukuran tidak cocok / 0 byte, atau "dibatalkan" tanpa pengguna menekan apa pun:
+      // tanda khas pencegat unduhan (IDM membatalkan unduhan Chrome lalu mengambilnya sendiri).
+      if (h.ok || h.galat === "USER_CANCELED") kosong = true;
+      else if (h.galat) return { ok: false, pesan: `unduhan diblokir peramban (${h.galat})` };
+    }
+    return {
+      ok: false,
+      kosong,
+      pesan: kosong
+        ? "berkas terunduh 0 byte - program pengunduh (mis. Internet Download Manager) mencegatnya. Pasang pembaru otomatis (tombol di jendela ini), atau tambahkan 192.168.10.10 ke pengecualian situs IDM"
+        : "unduhan tidak selesai",
+    };
   } catch (e) {
     return { ok: false, pesan: String((e && e.message) || e).slice(0, 160) };
   } finally {
@@ -3787,6 +3933,22 @@ async function periksaSesudahMasukInti(opsi) {
   catatan.periksaPada = kini;
   await chrome.storage.local.set({ [KUNCI_PEMBARUAN_OTOMATIS]: catatan });
 
+  // PEMBARU-OTOMATIS 23 Okt: pemasangan folder + pembantu lokal terpasang = versi baru dipasang
+  // sendiri, TANPA sesi ALETA (versi dan sidik dibaca dari rute terbuka) dan tanpa bertanya.
+  if ((await jenisPemasangan()) === "development") {
+    const otomatis = await jalankanPembaruPembantu(asal, { paksa: false });
+    if (otomatis.dipakai) {
+      if (otomatis.keadaan === "ditunda") {
+        // Jangan menunggu 30 menit penuh: coba lagi sebentar lagi (antrean/putaran cetak itu cepat atau lambat selesai).
+        const segarkan = (await chrome.storage.local.get([KUNCI_PEMBARUAN_OTOMATIS]))[KUNCI_PEMBARUAN_OTOMATIS] || {};
+        await chrome.storage.local.set({
+          [KUNCI_PEMBARUAN_OTOMATIS]: { ...segarkan, periksaPada: Date.now() - JEDA_PERIKSA_MASUK_MS + JEDA_ULANG_TUNDA_MS },
+        });
+      }
+      if (otomatis.keadaan !== "terbaru") return { ok: otomatis.keadaan === "dipasang", keadaan: `pembaru-${otomatis.keadaan}`, versiPortal: otomatis.versiBaru || "" };
+    }
+  }
+
   let data = null;
   const pembatal = typeof AbortController !== "undefined" ? new AbortController() : null;
   const henti = pembatal ? setTimeout(() => pembatal.abort(), BATAS_WAKTU_PERIKSA_MS) : 0;
@@ -3836,13 +3998,26 @@ async function periksaSesudahMasukInti(opsi) {
   const tipe = await jenisPemasangan();
   let hasil = { ok: true, keadaan: "versi-baru", versiPortal, tipe };
   if (tipe === "development") {
-    const sudah = catatan.diunduh && catatan.diunduh.versi === versiPortal && catatan.diunduh.id;
-    if (!sudah) {
+    // Catatan "sudah diunduh" TIDAK dipercaya begitu saja (13-23 Okt: 15 berkas 0 byte tercatat berhasil):
+    // berkasnya harus masih ada, selesai, dan tidak kosong.
+    const tercatat = catatan.diunduh && catatan.diunduh.versi === versiPortal && catatan.diunduh.id;
+    const sudah = tercatat && (await unduhanPaketMasihUtuh(catatan.diunduh.id));
+    // Dua kali gagal untuk versi yang sama: berhenti mencoba sendiri (17 MB per percobaan);
+    // tombol "Perbarui sekarang" (opsi.unduh) tetap boleh mencoba lagi.
+    const gagalDulu = catatan.unduhGagal && catatan.unduhGagal.versi === versiPortal ? Number(catatan.unduhGagal.n) || 0 : 0;
+    if (!sudah && gagalDulu >= 2 && !(opsi && opsi.unduh)) {
+      hasil = { ok: false, keadaan: "unduh-gagal", versiPortal, tipe, pesan: String(catatan.unduhGagal.pesan || "unduhan gagal") };
+    } else if (!sudah) {
       const u = await unduhPaketTerbaru(asal, versiPortal);
       if (u.ok) {
         catatan.diunduh = { versi: versiPortal, id: u.id, nama: u.nama, pada: kini };
+        delete catatan.unduhGagal;
         hasil = { ok: true, keadaan: "paket-diunduh", versiPortal, tipe, id: u.id, nama: u.nama };
-      } else hasil = { ok: false, keadaan: "unduh-gagal", versiPortal, tipe, pesan: u.pesan };
+      } else {
+        delete catatan.diunduh;
+        catatan.unduhGagal = { versi: versiPortal, n: gagalDulu + 1, pesan: String(u.pesan || "").slice(0, 300), pada: kini };
+        hasil = { ok: false, keadaan: "unduh-gagal", versiPortal, tipe, pesan: u.pesan };
+      }
     } else hasil = { ok: true, keadaan: "paket-diunduh", versiPortal, tipe, id: catatan.diunduh.id, nama: catatan.diunduh.nama };
   } else if (chrome.runtime && typeof chrome.runtime.requestUpdateCheck === "function") {
     try {
@@ -3872,8 +4047,11 @@ async function siapkanPaketManual(versiSekarang) {
       namaBerkas: h.nama,
       pesan:
         `Versi ${h.versiPortal} sudah diunduh ke folder Unduhan (${String(h.nama).replace(/\//g, "\\")}). ` +
+        (/\.aleta$/i.test(String(h.nama))
+          ? 'Berkas ini sengaja berakhiran ".aleta" karena program pengunduh mencegat ".zip": ganti namanya menjadi .zip dulu. '
+          : "") +
         "Ekstensi yang dimuat sebagai folder tidak dapat mengganti berkasnya sendiri: ekstrak ZIP itu ke folder ekstensi " +
-        "(timpa semua berkas), lalu tekan muat ulang ekstensi.",
+        "(timpa semua berkas), lalu tekan muat ulang ekstensi. Lebih mudah: pasang pembaru otomatis sekali saja (tombol di jendela ini).",
     };
   }
   if (h.keadaan === "unduh-gagal") {
@@ -3885,6 +4063,337 @@ async function siapkanPaketManual(versiSekarang) {
     };
   }
   return null;
+}
+
+/* === PEMBARU-OTOMATIS 23 Okt === */
+/*
+ * ============================================================================
+ * PEMBARUAN OTOMATIS TANPA BERTANYA UNTUK EKSTENSI YANG DIMUAT SEBAGAI FOLDER (23 Okt 2026)
+ * ============================================================================
+ *
+ * Ekstensi Load unpacked tidak dapat menimpa berkasnya sendiri, dan unduhan lewat
+ * Chrome dicegat Internet Download Manager (ZIP-nya 0 byte). Maka satu pembantu
+ * lokal kecil (native messaging host, pembaru-aleta.ps1) dipasang SEKALI per
+ * komputer, tanpa hak admin. Alurnya:
+ *
+ *   1. Versi dan SHA-256 paket dibaca dari rute terbuka /ekstensi/pembaru/info
+ *      (tanpa sesi: pembaruan tidak bergantung pada petugas yang sedang masuk).
+ *   2. Bila lebih baru dan tidak ada putaran/antrean kerja (penghalangMuatUlang
+ *      yang sama dengan tombol Perbarui), pembantu diminta "siapkan": unduh
+ *      LANGSUNG dari server, cocokkan sidik, ekstrak ke folder sementara.
+ *   3. Cek penghalang sekali lagi, lalu "pasang": folder ditukar dalam satu
+ *      langkah (manifest terakhir bila terpaksa menyalin).
+ *   4. chrome.runtime.reload(). Folder dan ID ekstensi TETAP, jadi chrome.storage
+ *      (setelan petugas) tidak tersentuh sama sekali; kode ini tidak menulis
+ *      satu pun setelan pribadi - hanya kunci catatan pembaruan di bawah.
+ *
+ * Bila pembantu belum dipasang, jalan lama (unduh paket + muat ulang manual)
+ * berlaku, kini dengan pemeriksaan ukuran berkas.
+ */
+const NAMA_PEMBANTU = "id.aleta.pembaru";
+const VERSI_PEMBANTU_MIN = 1;
+const KUNCI_PEMBARU = "pembaruPembantu";
+const BATAS_PING_MS = 15000;
+const BATAS_SIAPKAN_MS = 240000;
+const BATAS_PASANG_MS = 90000;
+const BATAS_INFO_PEMBARU_MS = 8000;
+const JEDA_ULANG_TUNDA_MS = 2 * 60 * 1000;
+const MAKS_GAGAL_BERUNTUN = 3;
+const JEDA_GAGAL_MS = 30 * 60 * 1000;
+
+/**
+ * Satu percakapan dengan pembantu: kirim satu perintah, tunggu jawaban akhir
+ * ("selesai": true). Tidak pernah melempar. Galat Chrome dipetakan:
+ *   tidakAda  - pembantu belum terdaftar (belum dipasang)
+ *   dilarang  - ID ekstensi ini tidak ada di allowed_origins (folder pindah / ID lain)
+ */
+function bicaraDenganPembantu(muatan, batasMs) {
+  return new Promise((selesai) => {
+    let port = null;
+    let sudah = false;
+    let henti = 0;
+    const tutup = (hasil) => {
+      if (sudah) return;
+      sudah = true;
+      clearTimeout(henti);
+      try {
+        if (port) port.disconnect();
+      } catch {
+        /* sudah putus */
+      }
+      selesai(hasil);
+    };
+    if (!chrome.runtime || typeof chrome.runtime.connectNative !== "function") {
+      selesai({ ok: false, galat: "tanpa-dukungan", pesan: "Chrome ini tidak mendukung pembantu lokal." });
+      return;
+    }
+    try {
+      port = chrome.runtime.connectNative(NAMA_PEMBANTU);
+    } catch (e) {
+      tutup({ ok: false, galat: "tanpa-dukungan", pesan: String((e && e.message) || e).slice(0, 160) });
+      return;
+    }
+    port.onMessage.addListener((m) => {
+      if (m && m.selesai === false) return; // kabar kemajuan
+      tutup(m && typeof m === "object" ? m : { ok: false, galat: "jawaban-aneh" });
+    });
+    port.onDisconnect.addListener(() => {
+      let pesan = "";
+      try {
+        pesan = String((chrome.runtime.lastError && chrome.runtime.lastError.message) || "");
+      } catch {
+        pesan = "";
+      }
+      tutup({
+        ok: false,
+        galat: /not found/i.test(pesan) ? "tidak-ada" : /forbidden/i.test(pesan) ? "dilarang" : "putus",
+        tidakAda: /not found/i.test(pesan),
+        dilarang: /forbidden/i.test(pesan),
+        pesan: pesan.slice(0, 200),
+      });
+    });
+    henti = setTimeout(() => tutup({ ok: false, galat: "waktu", pesan: "pembantu tidak menjawab" }), batasMs);
+    try {
+      port.postMessage(muatan);
+    } catch (e) {
+      tutup({ ok: false, galat: "putus", pesan: String((e && e.message) || e).slice(0, 160) });
+    }
+  });
+}
+
+async function bacaCatatanPembaru() {
+  try {
+    const s = await chrome.storage.local.get([KUNCI_PEMBARU]);
+    const x = s && s[KUNCI_PEMBARU];
+    return x && typeof x === "object" && !Array.isArray(x) ? { ...x } : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Menggabung ke catatan pembaru - satu-satunya kunci setelan yang ditulis jalur ini. */
+async function ubahCatatanPembaru(ubah) {
+  try {
+    const c = await bacaCatatanPembaru();
+    await chrome.storage.local.set({ [KUNCI_PEMBARU]: { ...c, ...ubah } });
+  } catch {
+    /* catatan menyusul pada pemeriksaan berikutnya */
+  }
+}
+
+/** Keadaan pembaru otomatis untuk popup: aktif / belum-dipasang / folder-rusak / id-tak-cocok / tak-terjangkau / chrome. */
+async function statusPembaru(segar) {
+  const tipe = await jenisPemasangan();
+  if (tipe && tipe !== "development") return { keadaan: "chrome", pesan: "Chrome memperbarui ekstensi ini sendiri." };
+  // Membuka popup tidak menyalakan PowerShell tiap kali: jawaban "aktif" 10 menit terakhir dipakai (kecuali diminta segar);
+  // keadaan lain selalu ditanyakan ulang supaya selesai memasang langsung terbaca.
+  if (!segar) {
+    const c = await bacaCatatanPembaru();
+    if (c.status && c.status.keadaan === "aktif" && Date.now() - Number(c.status.pada || 0) < 10 * 60 * 1000) return { ...c.status };
+  }
+  const j = await bicaraDenganPembantu({ perintah: "ping" }, BATAS_PING_MS);
+  let status;
+  if (j.ok && Number(j.versiPembantu) >= VERSI_PEMBANTU_MIN) {
+    status = j.folderSah
+      ? { keadaan: "aktif", versiPembantu: j.versiPembantu, versiFolder: String(j.versiFolder || "") }
+      : { keadaan: "folder-rusak", pesan: String(j.sebab || "folder ekstensi tidak sah") };
+  } else if (j.ok) {
+    status = { keadaan: "pembantu-lama", pesan: "Pembantu lokal perlu dipasang ulang (versinya terlalu lama)." };
+  } else if (j.tidakAda) status = { keadaan: "belum-dipasang" };
+  else if (j.dilarang) status = { keadaan: "id-tak-cocok", pesan: "Folder ekstensi berpindah. Jalankan ulang pemasang pembaru otomatis." };
+  else if (j.galat === "tanpa-dukungan") status = { keadaan: "belum-dipasang", pesan: String(j.pesan || "") };
+  else status = { keadaan: "tak-terjangkau", pesan: String(j.pesan || "pembantu tidak menjawab") };
+  await ubahCatatanPembaru({ status: { ...status, pada: Date.now() } });
+  return status;
+}
+
+async function ambilInfoPaketPembaru(asal) {
+  const pembatal = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const henti = pembatal ? setTimeout(() => pembatal.abort(), BATAS_INFO_PEMBARU_MS) : 0;
+  try {
+    const r = await fetch(`${asal}/api/aleta-ecourt/ekstensi/pembaru/info`, {
+      credentials: "omit",
+      cache: "no-store",
+      ...(pembatal ? { signal: pembatal.signal } : {}),
+    });
+    if (!r.ok) return null;
+    const x = await r.json();
+    if (!x || x.ok !== true) return null;
+    const versi = String(x.versi || "");
+    const sha256 = String(x.sha256 || "").toLowerCase();
+    if (!/^\d+(?:\.\d+){1,3}$/.test(versi) || !/^[0-9a-f]{64}$/.test(sha256)) return null;
+    return { versi, sha256, ukuran: Math.max(0, Math.floor(Number(x.ukuran) || 0)) };
+  } catch {
+    return null;
+  } finally {
+    if (henti) clearTimeout(henti);
+  }
+}
+
+/** Memberi tahu tab ALETA/SIPP/ABT yang terbuka bahwa ekstensi akan dimuat ulang (skrip lamanya masih hidup di sana). */
+async function beritahuTabPembaruan(versi) {
+  try {
+    if (!chrome.tabs || typeof chrome.tabs.query !== "function") return;
+    const tab = await chrome.tabs.query({ url: ["http://192.168.10.10/*", "http://127.0.0.1/*"] });
+    for (const t of tab || []) {
+      if (!t || !Number.isInteger(t.id)) continue;
+      try {
+        const p = chrome.tabs.sendMessage(t.id, { sumber: "aleta-latar", jenis: "aleta-diperbarui", versi });
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      } catch {
+        /* tab tanpa panel */
+      }
+    }
+  } catch {
+    /* tanpa pemberitahuan: versi baru tetap terpasang */
+  }
+}
+
+let pembaruPembantuBerjalan = null;
+/** Versi yang SUDAH ditulis ke disk oleh pembantu dan tinggal menunggu reload - tidak dipasang dua kali. */
+let pembaruSudahDipasang = "";
+
+/**
+ * Memasang versi portal lewat pembantu bila ada yang lebih baru.
+ * Pulang { dipakai, keadaan, ... }:
+ *   dipakai:false  - pembantu tidak dapat dipakai (belum dipasang / portal tak terjangkau): pakai jalan lama
+ *   keadaan: "terbaru" | "dipasang" | "ditunda" (+cegah) | "gagal" (+pesan) | "menyerah"
+ */
+function jalankanPembaruPembantu(asal, opsi) {
+  if (pembaruPembantuBerjalan) return pembaruPembantuBerjalan;
+  const p = jalankanPembaruPembantuInti(asal, opsi || {}).finally(() => {
+    pembaruPembantuBerjalan = null;
+  });
+  pembaruPembantuBerjalan = p;
+  return p;
+}
+
+async function jalankanPembaruPembantuInti(asal, opsi) {
+  const terpasang = String(chrome.runtime.getManifest().version || "");
+  const info = await ambilInfoPaketPembaru(asal);
+  if (!info) return { dipakai: false, keadaan: "portal", terpasang };
+  if (bandingkanVersi(info.versi, terpasang) <= 0) return { dipakai: true, keadaan: "terbaru", terpasang, versiBaru: info.versi };
+  if (pembaruSudahDipasang === info.versi) return { dipakai: true, keadaan: "dipasang", terpasang, versiBaru: info.versi };
+
+  const catatan = await bacaCatatanPembaru();
+  const gagal = catatan.gagal && catatan.gagal.versi === info.versi ? catatan.gagal : null;
+  const kini = Date.now();
+  if (!opsi.tombol && gagal && Number(gagal.n) >= MAKS_GAGAL_BERUNTUN) {
+    return { dipakai: true, keadaan: "menyerah", terpasang, versiBaru: info.versi, pesan: String(gagal.pesan || "") };
+  }
+  if (!opsi.tombol && gagal && kini - Number(gagal.pada || 0) < JEDA_GAGAL_MS) {
+    return { dipakai: true, keadaan: "menyerah", terpasang, versiBaru: info.versi, pesan: String(gagal.pesan || "") };
+  }
+
+  const ping = await bicaraDenganPembantu({ perintah: "ping" }, BATAS_PING_MS);
+  if (!ping.ok || Number(ping.versiPembantu) < VERSI_PEMBANTU_MIN) {
+    await ubahCatatanPembaru({ status: { keadaan: ping.tidakAda ? "belum-dipasang" : ping.dilarang ? "id-tak-cocok" : "tak-terjangkau", pada: kini } });
+    return { dipakai: false, keadaan: "tanpa-pembantu", terpasang, versiBaru: info.versi, ping };
+  }
+  if (!ping.folderSah) {
+    await ubahCatatanPembaru({ status: { keadaan: "folder-rusak", pesan: String(ping.sebab || ""), pada: kini } });
+    return { dipakai: false, keadaan: "tanpa-pembantu", terpasang, versiBaru: info.versi, ping };
+  }
+
+  const catatGagal = async (pesan) => {
+    const n = (gagal ? Number(gagal.n) || 0 : 0) + 1;
+    await ubahCatatanPembaru({ gagal: { versi: info.versi, n, pada: Date.now(), pesan: String(pesan || "").slice(0, 240) } });
+    return { dipakai: true, keadaan: "gagal", terpasang, versiBaru: info.versi, pesan: String(pesan || "") };
+  };
+
+  // Titik aman 1: sebelum menyentuh disk.
+  let cegah = opsi.paksa ? null : await penghalangMuatUlang();
+  if (cegah) return { dipakai: true, keadaan: "ditunda", cegah, terpasang, versiBaru: info.versi };
+
+  const siap = await bicaraDenganPembantu(
+    { perintah: "siapkan", asal, versi: info.versi, sha256: info.sha256, ukuran: info.ukuran },
+    BATAS_SIAPKAN_MS
+  );
+  if (!siap.ok) return catatGagal(siap.pesan || siap.galat || "pembantu gagal menyiapkan paket");
+
+  // Titik aman 2: antrean dapat muncul selama paket diunduh.
+  cegah = opsi.paksa ? null : await penghalangMuatUlang();
+  if (cegah) return { dipakai: true, keadaan: "ditunda", cegah, terpasang, versiBaru: info.versi };
+
+  const pasang = await bicaraDenganPembantu({ perintah: "pasang", versi: info.versi }, BATAS_PASANG_MS);
+  if (!pasang.ok) return catatGagal(pasang.pesan || pasang.galat || "pembantu gagal memasang");
+
+  // Terpasang di disk. Catatan untuk panel ("ALETA diperbarui ke ...") memakai kunci yang sudah dibacanya.
+  try {
+    const s = await chrome.storage.local.get([KUNCI_PEMBARUAN_OTOMATIS]);
+    const lama = s && s[KUNCI_PEMBARUAN_OTOMATIS] && typeof s[KUNCI_PEMBARUAN_OTOMATIS] === "object" ? s[KUNCI_PEMBARUAN_OTOMATIS] : {};
+    await chrome.storage.local.set({
+      [KUNCI_PEMBARUAN_OTOMATIS]: { ...lama, versi: info.versi, dari: terpasang, pada: new Date().toISOString(), diberitahu: false },
+    });
+  } catch {
+    /* catatan panel menyusul */
+  }
+  await ubahCatatanPembaru({ gagal: null, terakhir: { dari: terpasang, ke: info.versi, pada: Date.now(), cara: String(pasang.cara || "") } });
+  pembaruSudahDipasang = info.versi;
+  await beritahuTabPembaruan(info.versi);
+  muatUlangSebentarLagi();
+  return { dipakai: true, keadaan: "dipasang", terpasang, versiBaru: info.versi };
+}
+
+/**
+ * Jalan tombol "Perbarui sekarang" / pita panel pada pemasangan folder.
+ * Pulang null bila pembantu tidak dipakai (lanjut ke jalan unduh), selain itu jawaban untuk tombol.
+ */
+async function perbaruiLewatPembantuDariTombol(versiSekarang, paksa) {
+  let asal = "";
+  try {
+    const s = await chrome.storage.local.get(["asalPortal"]);
+    asal = await asalPortalHidup(s && s.asalPortal);
+  } catch {
+    asal = "";
+  }
+  if (!asal) return null;
+  const h = await jalankanPembaruPembantu(asal, { paksa: Boolean(paksa), tombol: true });
+  if (!h.dipakai || h.keadaan === "terbaru") return null;
+  if (h.keadaan === "dipasang") {
+    return {
+      ok: true,
+      keadaan: "dipasang",
+      versiSekarang,
+      versiBaru: h.versiBaru,
+      pesan: `Versi ${h.versiBaru} dipasang otomatis dari server. Muat ulang halaman ini sebentar lagi.`,
+    };
+  }
+  if (h.keadaan === "ditunda") return tahanMuatUlang(h.cegah, versiSekarang, h.versiBaru);
+  return {
+    ok: false,
+    keadaan: "pembaru_gagal",
+    versiSekarang,
+    versiBaru: h.versiBaru,
+    pesan: `Pembaru otomatis belum berhasil memasang ${h.versiBaru}${h.pesan ? ` (${h.pesan})` : ""}. Setelan Anda tidak berubah. Coba lagi beberapa menit lagi.`,
+  };
+}
+
+/** Mengunduh pemasang pembaru otomatis (satu berkas .cmd; bukan ZIP, jadi tidak dicegat IDM). */
+async function unduhPemasangPembaru() {
+  let asal = "";
+  try {
+    const s = await chrome.storage.local.get(["asalPortal"]);
+    asal = await asalPortalHidup(s && s.asalPortal);
+  } catch {
+    asal = "";
+  }
+  if (!asal) return { ok: false, pesan: "Alamat server belum diketahui. Buka portal ALETA sekali dulu." };
+  const id = String((chrome.runtime && chrome.runtime.id) || "");
+  let r;
+  try {
+    r = await fetch(`${asal}/api/aleta-ecourt/ekstensi/pembaru/pemasang?id=${encodeURIComponent(id)}`, { credentials: "include", cache: "no-store" });
+  } catch (e) {
+    return { ok: false, pesan: `Server tidak terjangkau (${String((e && e.message) || e).slice(0, 80)}).` };
+  }
+  if (r.status === 401 || r.status === 403) return { ok: false, pesan: "Masuk dulu ke ALETA di Chrome ini, lalu coba lagi." };
+  if (!r.ok) return { ok: false, pesan: `Server menjawab ${r.status}.` };
+  const buf = await r.arrayBuffer();
+  if (!buf.byteLength) return { ok: false, pesan: "Server mengirim berkas kosong." };
+  const h = await terbitkanUnduhan(`data:application/octet-stream;base64,${kePembaruanBase64(buf)}`, "ALETA/pasang-pembaru-aleta.cmd", 60000);
+  // Chrome menahan berkas .cmd sampai petugas memilih Simpan: itu bukan kegagalan.
+  if (h.ok || h.state === "waktu") return { ok: true, id: h.id, nama: "ALETA/pasang-pembaru-aleta.cmd" };
+  return { ok: false, pesan: h.galat ? `Unduhan diblokir peramban (${h.galat}).` : String(h.pesan || "Unduhan gagal.") };
 }
 
 // Sesudah masuk ALETA: tiap pekerja bangun / peramban dibuka / ekstensi baru terpasang.

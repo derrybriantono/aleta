@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { kunciPublikDer } from "@/server/shared/crx";
 import { EKSTENSI_BERKAS, EKSTENSI_BINER } from "@/server/shared/ekstensi-berkas";
 import { susunZip, type BerkasZip } from "@/server/shared/zip";
@@ -42,6 +44,15 @@ function isiManifest(): string {
 }
 
 /**
+ * Skrip Windows (.cmd/.ps1) disajikan dengan akhir baris CRLF. Repositori
+ * menyimpan semuanya dengan LF, sedangkan cmd.exe dapat salah menguraikan
+ * berkas .cmd ber-LF saja. Teks lain tidak disentuh.
+ */
+function akhirBarisWindows(nama: string, isi: string): string {
+  return /\.(?:cmd|ps1)$/i.test(nama) ? isi.replace(/\r?\n/g, "\r\n") : isi;
+}
+
+/**
  * Menyusun isi ekstensi menjadi satu ZIP.
  *
  * ============================================================================
@@ -63,7 +74,7 @@ export function berkasEkstensi(awalan: string): BerkasZip[] {
   return [
     ...Object.entries(EKSTENSI_BERKAS).map(([nama, isi]) => ({
       nama: namai(nama),
-      isi: Buffer.from(nama === "manifest.json" ? isiManifest() : isi, "utf8"),
+      isi: Buffer.from(nama === "manifest.json" ? isiManifest() : akhirBarisWindows(nama, isi), "utf8"),
     })),
     // Ikon disandikan base64 saat ditanam - PNG tidak selamat melewati utf8.
     // Tanpa ikon, Chrome MENOLAK memasang ekstensinya sama sekali, karena
@@ -104,4 +115,31 @@ export function kunciCrx(): string {
   const mentah = String(process.env.ALETA_EKSTENSI_CRX_KEY || "").trim();
   if (!mentah) return "";
   return mentah.includes("\\n") ? mentah.replace(/\\n/g, "\n") : mentah;
+}
+
+/** ZIP unduhan petugas (berawalan folder "ekstensi-sipp/") - satu rumus untuk rute unduh dan pembaru. */
+export function zipEkstensiUnduh(): Buffer {
+  return susunZip(berkasEkstensi("ekstensi-sipp"));
+}
+
+export type SidikPaket = { versi: string; sha256: string; ukuran: number };
+
+let ingatanSidik: { kunci: string; nilai: SidikPaket } | null = null;
+
+/**
+ * Versi, SHA-256, dan ukuran ZIP yang disajikan rute pembaru.
+ *
+ * ZIP-nya deterministik (waktu tetap, tanpa pemampatan), jadi sidik ini sama
+ * setiap kali selama isi tertanam dan kunci .crx tidak berubah. Diingat per
+ * proses supaya pemeriksaan berkala dari puluhan komputer tidak menyusun ulang
+ * 17 MB setiap kali.
+ */
+export function sidikPaketEkstensi(): SidikPaket {
+  const versi = versiEkstensi();
+  const kunci = `${versi}|${createHash("sha256").update(kunciCrx()).digest("hex")}|${Object.keys(EKSTENSI_BERKAS).length}`;
+  if (ingatanSidik && ingatanSidik.kunci === kunci) return ingatanSidik.nilai;
+  const zip = zipEkstensiUnduh();
+  const nilai: SidikPaket = { versi, sha256: createHash("sha256").update(zip).digest("hex"), ukuran: zip.length };
+  ingatanSidik = { kunci, nilai };
+  return nilai;
 }

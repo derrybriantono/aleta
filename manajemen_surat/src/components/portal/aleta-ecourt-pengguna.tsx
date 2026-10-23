@@ -193,6 +193,7 @@ export function AletaEcourtPengguna() {
   const [pesan, setPesan] = useState("");
   const [memuat, setMemuat] = useState(true);
   const [mengunduh, setMengunduh] = useState(false);
+  const [mengunduhPemasang, setMengunduhPemasang] = useState(false);
   const [catatan, setCatatan] = useState("");
   // ==========================================================================
   // NOMOR PATCH EKSTENSI YANG SEDANG DISAJIKAN PORTAL
@@ -377,6 +378,41 @@ export function AletaEcourtPengguna() {
       setCatatan(error instanceof Error ? error.message : "Gagal mengunduh ekstensi.");
     } finally {
       setMengunduh(false);
+    }
+  }, []);
+
+  /**
+   * Mengunduh pemasang pembaruan otomatis (satu berkas .cmd, bukan ZIP).
+   *
+   * Dipasang SEKALI per komputer; sesudahnya versi baru ekstensi terpasang
+   * sendiri tanpa unduhan dan tanpa bertanya, dan setelan petugas tidak
+   * berubah. Berkasnya .cmd - bukan .zip - supaya tidak dicegat Internet
+   * Download Manager yang mengosongkan ZIP.
+   */
+  const unduhPemasang = useCallback(async () => {
+    setMengunduhPemasang(true);
+    setCatatan("");
+    try {
+      const respons = await fetch(apiPath("/api/aleta-ecourt/ekstensi/pembaru/pemasang"), { cache: "no-store" });
+      if (!respons.ok) {
+        const galat = (await respons.json().catch(() => null)) as { error?: { message?: string } } | null;
+        setCatatan(galat?.error?.message || `Gagal mengunduh pemasang (HTTP ${respons.status}).`);
+        return;
+      }
+      const blob = await respons.blob();
+      const alamat = URL.createObjectURL(blob);
+      const tautan = document.createElement("a");
+      tautan.href = alamat;
+      tautan.download = "pasang-pembaru-aleta.cmd";
+      document.body.appendChild(tautan);
+      tautan.click();
+      tautan.remove();
+      URL.revokeObjectURL(alamat);
+      setCatatan("Pemasang terunduh. Bila Chrome bertanya, pilih Simpan. Lalu klik dua kali berkasnya.");
+    } catch (error) {
+      setCatatan(error instanceof Error ? error.message : "Gagal mengunduh pemasang.");
+    } finally {
+      setMengunduhPemasang(false);
     }
   }, []);
 
@@ -1109,7 +1145,9 @@ export function AletaEcourtPengguna() {
                 ekstrak
               </li>
               <li>
-                5. Untuk memperbarui: unduh yang baru, ekstrak menimpa folder lama, lalu tekan{" "}
+                5. Untuk memperbarui: pasang <strong className="text-foreground">pembaruan otomatis</strong>{" "}
+                (kotak di bawah) sekali saja, sesudah itu versi baru terpasang sendiri. Tanpa itu: unduh
+                yang baru, ekstrak menimpa folder lama, lalu tekan{" "}
                 <strong className="text-foreground">Muat ulang</strong> pada kartu ekstensinya
               </li>
             </ol>
@@ -1123,6 +1161,39 @@ export function AletaEcourtPengguna() {
               <br />
               Setelah diekstrak, folder hasilnya boleh diseret langsung ke halaman Extensions -
               itu berhasil.
+            </p>
+          </div>
+
+          <div className="rounded border border-border bg-muted/30 p-3">
+            <p className="text-sm font-medium">Pembaruan otomatis (pasang sekali per komputer)</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Sesudah dipasang, setiap versi baru ekstensi terpasang sendiri di komputer ini - tanpa
+              mengunduh ZIP, tanpa bertanya, dan <strong className="text-foreground">setelan Anda tidak
+              berubah</strong>. Pemasangan baru dikerjakan saat tidak ada antrean cetak atau penetapan
+              yang sedang berjalan.
+            </p>
+            <ol className="mt-2 space-y-1 text-sm text-muted-foreground">
+              <li>1. Muat ekstensi di Chrome lebih dulu (langkah di atas)</li>
+              <li>
+                2. Tekan <strong className="text-foreground">Unduh pemasang</strong>; bila Chrome bertanya,
+                pilih Simpan
+              </li>
+              <li>
+                3. Klik dua kali berkas <code className="rounded bg-background px-1">pasang-pembaru-aleta</code>{" "}
+                sampai tampil tulisan SELESAI
+              </li>
+            </ol>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <Button size="sm" variant="outline" disabled={mengunduhPemasang} onClick={() => void unduhPemasang()}>
+                {mengunduhPemasang ? "Menyiapkan…" : "Unduh pemasang"}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Keadaannya terlihat di ikon ALETA pada Chrome: &quot;Pembaruan otomatis: aktif&quot;.
+              </p>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Bila berkas ZIP yang diunduh berukuran 0 KB, Internet Download Manager (IDM) mencegatnya.
+              Pemasang ini sengaja bukan ZIP; atau tambahkan 192.168.10.10 ke pengecualian situs di IDM.
             </p>
           </div>
 

@@ -931,12 +931,26 @@
     <span class="keadaan-nilai kosong" id="versiEkstensi">memuat…</span>
   </div>
   <div class="keadaan-baris">
+    <span class="keadaan-label">Pembaruan otomatis</span>
+    <span class="keadaan-nilai kosong" id="pembaruStatus">memeriksa…</span>
+  </div>
+  <div class="keadaan-baris">
     <span class="keadaan-label">Masuk ALETA</span>
     <span class="keadaan-nilai kosong" id="akunAleta">memuat…</span>
   </div>
   <div class="keadaan-baris">
     <span class="keadaan-label">Masuk SIPP</span>
     <span class="keadaan-nilai kosong" id="akunSipp">memuat…</span>
+  </div>
+</div>
+
+<!-- Pembaruan otomatis (23 Okt 2026): tampil hanya bila belum aktif pada pemasangan folder.
+     Pemasang cukup dijalankan SEKALI; setelan Anda tidak berubah oleh pembaruan. -->
+<div id="pembaruAksi" class="pita-versi" role="status" hidden>
+  <p id="pembaruPetunjuk"></p>
+  <div class="uji-fitur-aksi">
+    <button type="button" id="pasangPembaru" class="uji-kecil">Pasang pembaruan otomatis (sekali saja)</button>
+    <button type="button" id="tampilkanPemasang" class="uji-kecil" hidden>tampilkan berkas pemasang</button>
   </div>
 </div>
 
