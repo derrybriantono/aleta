@@ -421,6 +421,16 @@ describe("batas perangkat", () => {
     expect((await masukEmail("hakim@pa.go.id", "hakim123", { perangkat: PERANGKAT.C })).status).toBe(403);
   });
 
+  it("sesi yang dibuat jalur lain (mis. /change-password) tidak ditolak batas", async () => {
+    await setBatas("peran", "hakim", 1, "tolak");
+    await masukEmail("hakim@pa.go.id", "hakim123", { perangkat: PERANGKAT.A });
+    const { kaitSesiPerangkat } = await import("@/server/modules/perangkat/kait-auth");
+    const kait = kaitSesiPerangkat(async () => db);
+    const h = new Headers({ cookie: `aleta_perangkat=${PERANGKAT.B}`, "x-forwarded-for": "192.168.10.9" });
+    await expect(kait.session.create.before({ userId: "usr-hakim" }, { path: "/change-password", headers: h })).resolves.toEqual({ data: { ipAddress: "192.168.10.9" } });
+    await expect(kait.session.create.before({ userId: "usr-hakim" }, { path: "/sign-in/email", headers: h })).rejects.toMatchObject({ body: { code: "BATAS_PERANGKAT" } });
+  });
+
   it("Super Admin tidak pernah terkunci: 'tolak' ditolak saat disimpan, dan dipaksa keluarkan-terlama saat ditegakkan", async () => {
     const { simpanKebijakan } = await import("@/server/modules/perangkat/batas");
     await expect(

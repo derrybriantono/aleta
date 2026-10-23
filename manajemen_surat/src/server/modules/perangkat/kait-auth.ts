@@ -2,7 +2,7 @@ import { APIError } from "better-auth/api";
 
 import { type AletaDatabase } from "@/server/db/client";
 import { buatTiket, ringkasPerangkat, tegakkanBatas } from "@/server/modules/perangkat/batas";
-import { catatPeristiwaAman, catatPerangkat, jalurDariPath } from "@/server/modules/perangkat/jejak";
+import { JALUR_MASUK, catatPeristiwaAman, catatPerangkat, jalurDariPath } from "@/server/modules/perangkat/jejak";
 import {
   MASA_KUKI_PERANGKAT_DETIK,
   NAMA_KUKI_PERANGKAT,
@@ -80,9 +80,12 @@ export function kaitSesiPerangkat(ambilDb: () => Promise<AletaDatabase>) {
 
           let db: AletaDatabase | null = null;
           let hasil: Awaited<ReturnType<typeof tegakkanBatas>> | null = null;
+          // Batas hanya untuk MASUK (email/sipp/sipp-sesi). Sesi yang dibuat
+          // Better Auth di jalur lain (mis. ganti password) tidak ditolak.
+          const jalurMasuk = (JALUR_MASUK as readonly string[]).includes(jalur);
           try {
             db = await ambilDb();
-            hasil = await tegakkanBatas(db, { userId: String(data.userId), perangkatId });
+            if (jalurMasuk) hasil = await tegakkanBatas(db, { userId: String(data.userId), perangkatId });
           } catch (galat) {
             console.warn("[BATAS PERANGKAT] tidak dapat diperiksa; masuk diteruskan:", galat instanceof Error ? galat.message : "tidak diketahui");
           }
