@@ -954,9 +954,30 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
   // ──────────────────────────────────────────────────────────────────────────
   // Pita di jendela
   // ──────────────────────────────────────────────────────────────────────────
+  /**
+   * Pita terlipat membuka SENDIRI bila muncul peringatan BARU (kuning/merah),
+   * supaya peringatan tidak tersembunyi. Peringatan yang sama yang sudah
+   * dilihat tidak membuka paksa lagi bila pengguna menutupnya; yang hilang
+   * lalu muncul kembali dihitung baru. Bukaan otomatis tidak disimpan sebagai
+   * pilihan pengguna (ingatan lipat dikembalikan ke nilai sebelumnya).
+   */
+  function bukaBilaPeringatanBaru(p, sumber, daftar) {
+    if (!p || !p.pita) return;
+    const peta = p.peringatanTerlihat || (p.peringatanTerlihat = {});
+    const lama = peta[sumber] || new Set();
+    peta[sumber] = new Set(daftar);
+    const l = p.pita.__aletaLipat;
+    if (!l || l.terbuka() || !daftar.some((t) => !lama.has(t))) return;
+    const kunci = p.pita.getAttribute("data-kunci") || "";
+    const sebelum = kunci && typeof alatLipatDiingat === "function" ? alatLipatDiingat(kunci) : undefined;
+    l.buka(true);
+    if (kunci && typeof alatSimpanLipat === "function") alatSimpanLipat(kunci, sebelum === undefined ? false : sebelum);
+  }
+
   function kabar(p, teks, gagal) {
     setelTeks(p.kabar, teks || "");
     p.kabar.classList.toggle("aleta-m1-gagal", Boolean(gagal));
+    bukaBilaPeringatanBaru(p, "kabar", gagal && teks ? [teks] : []);
   }
 
   /** L1 sudah memasang pita + penghitung di form ini (jendela Saksi) -> pita M1 tanpa penghitung kedua. */
@@ -979,6 +1000,7 @@ html[data-aleta-tema-sipp="gelap"] .aleta-m1-cek div.aleta-m1-info{color:#bfe6cc
       if (p.chip) p.chip.hidden = true;
     }
     const cek = cekJendela(p);
+    bukaBilaPeringatanBaru(p, "cek", cek.filter((c) => c.nada === "merah" || c.nada === "kuning").map((c) => c.teks));
     // Digambar ulang hanya bila isinya berubah (tiap ketikan memanggil ini).
     const sidik = JSON.stringify(cek.map((c) => [c.nada, c.teks]));
     if (p.cekSidik !== sidik) {

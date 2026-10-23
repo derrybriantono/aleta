@@ -720,10 +720,31 @@ html[data-aleta-tema-sipp="gelap"] .aleta-l1-awas{color:#f3e2b5}
     );
   }
 
+  /**
+   * Pita terlipat membuka SENDIRI bila muncul peringatan BARU (kuning/merah),
+   * supaya peringatan tidak tersembunyi. Peringatan yang sama yang sudah
+   * dilihat tidak membuka paksa lagi bila pengguna menutupnya; yang hilang
+   * lalu muncul kembali dihitung baru. Bukaan otomatis tidak disimpan sebagai
+   * pilihan pengguna (ingatan lipat dikembalikan ke nilai sebelumnya).
+   */
+  function bukaBilaPeringatanBaru(p, sumber, daftar) {
+    if (!p || !p.pita) return;
+    const peta = p.peringatanTerlihat || (p.peringatanTerlihat = {});
+    const lama = peta[sumber] || new Set();
+    peta[sumber] = new Set(daftar);
+    const l = p.pita.__aletaLipat;
+    if (!l || l.terbuka() || !daftar.some((t) => !lama.has(t))) return;
+    const kunci = p.pita.getAttribute("data-kunci") || "";
+    const sebelum = kunci && typeof alatLipatDiingat === "function" ? alatLipatDiingat(kunci) : undefined;
+    l.buka(true);
+    if (kunci && typeof alatSimpanLipat === "function") alatSimpanLipat(kunci, sebelum === undefined ? false : sebelum);
+  }
+
   function kabar(p, teks, gagal) {
     if (!p || !p.kabar) return;
     setelTeks(p.kabar, teks || "");
     p.kabar.classList.toggle("aleta-l1-gagal", Boolean(gagal));
+    bukaBilaPeringatanBaru(p, "kabar", gagal && teks ? [teks] : []);
   }
 
   function isiDenganAleta(p) {

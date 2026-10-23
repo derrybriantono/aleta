@@ -24,10 +24,10 @@ const CSS = baca("panel.css")
   .filter((b) => b.startsWith(".aleta-lipatan"))
   .join("\n");
 
-const FORM = `<div id="popup_form"><div id="form_pop"><div class="aleta-c2-sbantu"></div>
+const FORM = (pilih = "0") => `<div id="popup_form"><div id="form_pop"><div class="aleta-c2-sbantu"></div>
 <form id="frm_user" method="post" action="http://127.0.0.1:8056/addPihak/validateInput"><table id="tableDetilPerkara">
 <tr><td>Pihak <font color="red">*</font></td><td><input type="text" id="pihak" name="pihak" value="Saksi" readonly="readonly"></td></tr>
-<tr><td>Saksi Putusan<font color="red">*</font></td><td><select name="is_sela" id="is_sela"><option value="-1">- Pilih Salah Satu -</option><option value="0">Akhir</option><option value="1">Sela</option></select></td></tr>
+<tr><td>Saksi Putusan<font color="red">*</font></td><td><select name="is_sela" id="is_sela"><option value="-1" ${pilih === "-1" ? "selected" : ""}>- Pilih Salah Satu -</option><option value="0" ${pilih === "0" ? "selected" : ""}>Akhir</option><option value="1">Sela</option></select></td></tr>
 <tr><td>Nama Lengkap <font color="red">*</font></td><td><input type="text" id="fullname" name="fullname" value=""></td></tr>
 <tr><td><input type="submit" id="simpan" value="Simpan" class="btn"></td></tr></table></form></div></div>`;
 const HALAMAN = `<div id="tabs1"><table id="tableinfo"><tr><td id="first-child">Nomor Perkara</td><td>565/Pdt.G/2026/PA.Dgl</td></tr></table></div>`;
@@ -54,8 +54,8 @@ async function sampai<T>(f: () => T, ket: string): Promise<NonNullable<T>> {
   }
 }
 
-function buka(opsi: { simpanan?: Record<string, unknown>; tanpaAlat?: boolean } = {}) {
-  const dom = new JSDOM(`<!doctype html><html><head></head><body>${HALAMAN}${FORM}</body></html>`, {
+function buka(opsi: { simpanan?: Record<string, unknown>; tanpaAlat?: boolean; pilih?: string } = {}) {
+  const dom = new JSDOM(`<!doctype html><html><head></head><body>${HALAMAN}${FORM(opsi.pilih)}</body></html>`, {
     url: "http://127.0.0.1:8056/index.php/perkara_detil_agama/x",
     runScripts: "outside-only",
     pretendToBeVisual: true,
@@ -161,5 +161,66 @@ describe("tidak merusak fungsi", () => {
     const w = buka();
     await sampai(() => pita(w, "m1"), "pita m1");
     expect(w.document.querySelectorAll(".aleta-lipatan").length).toBe(2);
+  });
+});
+
+describe("peringatan membuka pita sendiri (keputusan 23 Okt)", () => {
+  const ubahPilih = (w: W, v: string) => {
+    const e = w.document.querySelector("#is_sela");
+    e.value = v;
+    e.dispatchEvent(new w.Event("change", { bubbles: true }));
+    w.aletaSippIdeM1.pasang(w.document);
+  };
+  const butirKuning = (p: Element) => p.querySelector('[data-m1="cek"]')!.textContent;
+
+  it("tanpa peringatan tetap terlipat", async () => {
+    const w = buka({ pilih: "0" });
+    const p = (await sampai(() => pita(w, "m1"), "pita m1")) as HTMLElement;
+    expect(butirKuning(p)).toBe("");
+    expect(p.getAttribute("data-terbuka")).toBe("tidak");
+  });
+
+  it("peringatan kuning (Saksi Putusan belum dipilih) membuka pita; pita L1 tetap terlipat", async () => {
+    const w = buka({ pilih: "-1" });
+    const p = (await sampai(() => pita(w, "m1"), "pita m1")) as HTMLElement;
+    await sampai(() => p.getAttribute("data-terbuka") === "ya", "pita m1 terbuka sendiri");
+    expect(butirKuning(p)).toMatch(/Saksi Putusan belum dipilih/);
+    expect(tampil(w, p.querySelector('[data-m1="cek"]'))).toBe(true);
+    expect((await sampai(() => pita(w, "l1"), "pita l1")).getAttribute("data-terbuka")).toBe("tidak");
+  });
+
+  it("bukaan otomatis tidak diingat sebagai pilihan pengguna", async () => {
+    const w = buka({ pilih: "-1" });
+    const p = (await sampai(() => pita(w, "m1"), "pita m1")) as HTMLElement;
+    await sampai(() => p.getAttribute("data-terbuka") === "ya", "terbuka");
+    await tunggu(30);
+    const peta = (w.__simpanan.lipatTerbuka || {}) as Record<string, boolean>;
+    expect(peta["sipp-ide-m1:saksi"]).not.toBe(true);
+  });
+
+  it("ditutup pengguna selagi peringatan yang sama masih ada: tidak dibuka paksa lagi", async () => {
+    const w = buka({ pilih: "-1" });
+    const p = (await sampai(() => pita(w, "m1"), "pita m1")) as HTMLElement;
+    await sampai(() => p.getAttribute("data-terbuka") === "ya", "terbuka");
+    kepala(p).click();
+    expect(p.getAttribute("data-terbuka")).toBe("tidak");
+    for (let i = 0; i < 3; i += 1) {
+      w.aletaSippIdeM1.pasang(w.document);
+      await tunggu(20);
+    }
+    expect(p.getAttribute("data-terbuka")).toBe("tidak");
+  });
+
+  it("peringatan BARU membuka lagi pita yang ditutup pengguna", async () => {
+    const w = buka({ pilih: "-1" });
+    const p = (await sampai(() => pita(w, "m1"), "pita m1")) as HTMLElement;
+    await sampai(() => p.getAttribute("data-terbuka") === "ya", "terbuka");
+    kepala(p).click();
+    expect(p.getAttribute("data-terbuka")).toBe("tidak");
+    ubahPilih(w, "0"); // peringatan hilang
+    await tunggu(20);
+    expect(p.getAttribute("data-terbuka")).toBe("tidak");
+    ubahPilih(w, "-1"); // muncul lagi = peringatan baru
+    await sampai(() => p.getAttribute("data-terbuka") === "ya", "terbuka lagi oleh peringatan baru");
   });
 });
