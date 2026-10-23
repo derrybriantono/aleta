@@ -31,22 +31,27 @@ function gayaTanpaCatatan(isi: string) {
 }
 
 describe("tema halaman ABT dapat dimatikan", () => {
-  it("tombol tema menyentuh HALAMAN, bukan panel saja", () => {
+  it("tombol tema meminta pusat - yang menyentuh HALAMAN, bukan panel saja", () => {
     // Sebelumnya ia hanya membalik data-tema pada panel selebar telapak
     // tangan, sementara halaman di belakangnya tetap gelap. Itulah sebabnya
-    // light mode terbaca sebagai tidak berfungsi.
+    // light mode terbaca sebagai tidak berfungsi. Sejak pusat tema (23 Okt
+    // 2026) tombol tidak menulis penanda sendiri: ia memanggil pusat, dan
+    // pusat memasang penanda halaman seketika.
     const isi = baca("panel-alat.js");
-    expect(isi).toContain("function alatTerapkanTemaHalaman(");
-    expect(isi).toContain("if (pilihan.temaHalaman) alatTerapkanTemaHalaman(baru);");
+    expect(isi).toContain("pusat.pilih(ALAT_URUTAN_TEMA[sekarang] || \"terang\");");
+    expect(isi).not.toContain("function alatTerapkanTemaHalaman(");
+    const pusat = baca("tema-pusat.js");
+    const tandai = pusat.slice(pusat.indexOf("function tandai()"));
+    expect(tandai.slice(0, tandai.indexOf("\n  }\n"))).toContain('"data-aleta-tema-sipp"');
   });
 
   it("terang berarti penandanya DILEPAS - bukan diganti nilai lain", () => {
     // ABT harus kembali ke tampilan bawaannya sendiri, bukan ke tema terang
     // buatan ALETA. Melepas penandanya membuat seluruh aturan gelap berhenti
     // berlaku sekaligus, tanpa satu pun aturan tandingan.
-    const isi = baca("panel-alat.js");
-    const potong = isi.slice(isi.indexOf("function alatTerapkanTemaHalaman"));
-    expect(potong).toContain('akar.removeAttribute("data-aleta-tema-sipp")');
+    const pusat = baca("tema-pusat.js");
+    const potong = pusat.slice(pusat.indexOf("function tandai()"));
+    expect(potong).toContain('cabutAtribut(html, "data-aleta-tema-sipp")');
   });
 
   it("panel ABT menyalakannya, panel SIPP tidak", () => {
@@ -55,21 +60,24 @@ describe("tema halaman ABT dapat dimatikan", () => {
     expect(baca("abt.js")).toContain("temaHalaman: true,");
   });
 
-  it("salinan sinkron ikut ditulis - itu yang menghapus kelebatnya", () => {
+  it("salinan sinkron ditulis pusat saja - itu yang menghapus kelebatnya", () => {
     // chrome.storage hanya asinkron; halaman berikutnya akan lahir dengan
     // tema lama lalu berubah di depan mata. localStorage dibaca tema-awal.js
     // pada document_start, sebelum satu piksel digambar.
-    const isi = baca("panel-alat.js");
-    expect(isi).toContain('KUNCI_SALINAN_TEMA_HALAMAN = "aleta-tema-sipp"');
-    expect(isi).toContain("window.localStorage.setItem(KUNCI_SALINAN_TEMA_HALAMAN");
+    const pusat = baca("tema-pusat.js");
+    expect(pusat).toContain('salinan: "aleta-tema-pilihan"');
+    expect(pusat).toContain("s.setItem(KUNCI.salinan, nilai)");
+    // Panel tidak lagi menulis salinan: dua penulis dengan arti berbeda
+    // adalah sebab kedip antar halaman SIPP dan ABT.
+    expect(baca("panel-alat.js")).not.toContain("KUNCI_SALINAN_TEMA_HALAMAN");
   });
 
-  it("kuncinya SAMA dengan SIPP - satu tema untuk kedua halaman", () => {
-    const awal = baca("tema-awal.js");
-    const alat = baca("panel-alat.js");
-    const kunciAwal = awal.match(/KUNCI_SALINAN\s*=\s*"([^"]+)"/);
-    const kunciAlat = alat.match(/KUNCI_SALINAN_TEMA_HALAMAN\s*=\s*"([^"]+)"/);
-    expect(kunciAwal?.[1]).toBe(kunciAlat?.[1]);
+  it("kuncinya SAMA untuk SIPP, ABT, dan portal - satu tema untuk ketiga halaman", () => {
+    const pusat = baca("tema-pusat.js");
+    const kunci = pusat.match(/salinan:\s*"([^"]+)"/);
+    const portal = readFileSync(path.resolve(process.cwd(), "src/lib/tema-pilihan.ts"), "utf8");
+    const kunciPortal = portal.match(/KUNCI_SALINAN_TEMA\s*=\s*"([^"]+)"/);
+    expect(kunci?.[1]).toBe(kunciPortal?.[1]);
   });
 });
 

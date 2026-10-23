@@ -1144,28 +1144,42 @@ describe("nomor 2 - tema dipasang sebelum halaman digambar", () => {
     // Catatannya memang MENYEBUT chrome.storage - justru untuk menerangkan
     // kenapa ia tidak dipakai di sini. Yang diperiksa kodenya, bukan
     // kalimatnya.
+    // Sejak pusat tema (23 Okt 2026) bacaan sinkronnya ada di tema-pusat.js
+    // (bacaSalinan), dan tema-awal.js hanya memulainya pada document_start.
     const isi = temaAwal().replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
-    expect(isi).toContain("window.localStorage.getItem");
+    expect(isi).toContain("pusat.mulai()");
     expect(isi).not.toContain("chrome.storage");
+    const pusat = readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/tema-pusat.js"), "utf8");
+    const bacaSalinan = pusat.slice(pusat.indexOf("function bacaSalinan()"));
+    expect(bacaSalinan.slice(0, bacaSalinan.indexOf("\n  }\n"))).toContain("s.getItem(KUNCI.salinan)");
   });
 
-  it("tiga keadaan dibedakan, supaya yang mematikannya tidak berkelebat gelap", () => {
-    const isi = temaAwal();
-    expect(isi).toContain('tersimpan === "mati"');
-    expect(isi).toContain('if (tema === "gelap")');
+  it("lapisan SIPP yang dimatikan punya kunci sendiri, bukan nilai \"mati\" di kunci tema", () => {
+    // Dahulu "mati" ikut dicatat di salinan tema yang ditulis dua penulis
+    // dengan arti berbeda (konten.js dan panel ABT) - itulah kedip antar
+    // halaman. Nilai lama "mati" tetap terbaca dan dipetakan.
+    const pusat = readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/tema-pusat.js"), "utf8");
+    expect(pusat).toContain('salinanLapisan: "aleta-tema-lapisan"');
+    expect(pusat).toContain('if (lama === "mati") return { pilihan: "gelap", waktu: 0 };');
   });
 
-  it("salinannya ditulis ulang tiap kali tema berubah", () => {
-    const isi = readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/konten.js"), "utf8");
-    expect(isi).toContain("function simpanSalinanTema()");
-    expect(isi).toContain('window.localStorage.setItem(KUNCI_SALINAN_TEMA, nilai)');
+  it("salinannya ditulis SATU penulis, tidak oleh panel maupun konten.js", () => {
+    const konten = readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/konten.js"), "utf8");
+    const alat = readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/panel-alat.js"), "utf8");
+    for (const isi of [konten, alat]) {
+      expect(isi).not.toContain('setItem("aleta-tema-sipp"');
+      expect(isi).not.toContain("KUNCI_SALINAN_TEMA");
+      expect(isi).not.toContain("function simpanSalinanTema(");
+    }
+    const pusat = readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/tema-pusat.js"), "utf8");
+    expect(pusat).toContain("function tulisSalinan()");
   });
 });
 
 describe("nomor 1 - tema jendela popup", () => {
   it("tiga keadaan, satu tombol", () => {
     const js = popupJs();
-    expect(js).toContain('const URUTAN_TEMA = ["ikut", "terang", "gelap"];');
+    expect(js).toContain('const URUTAN_TEMA = ["terang", "gelap", "sistem"];');
     expect(popupHtml()).toContain('id="tombolTema"');
   });
 
@@ -1179,7 +1193,8 @@ describe("nomor 1 - tema jendela popup", () => {
     // Jendela ini hidup di origin chrome-extension:// dan tidak berbagi apa
     // pun dengan halaman SIPP.
     const js = popupJs();
-    expect(js).toContain('penyimpanan.set({ [KUNCI_TEMA_POPUP]: temaPopup })');
+    expect(js).toContain("penyimpanan.set(pusat.tulisanChrome(temaPopup, temaWaktu, temaPopupBerlaku()))");
+    expect(js).not.toContain("window.localStorage");
   });
 });
 

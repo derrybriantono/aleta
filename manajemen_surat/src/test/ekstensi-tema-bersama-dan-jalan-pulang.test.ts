@@ -166,23 +166,29 @@ describe("4 - jalan pulang untuk panel yang sudah disingkirkan", () => {
 });
 
 describe("5 - satu tema untuk popup, widget, SIPP, ABT, dan portal", () => {
-  it("popup membaca DAN menulis temaPanel", () => {
+  // 23 Okt 2026: pilihan tema kini terang | gelap | sistem, disimpan bersama
+  // waktunya (pilihanTema + pilihanTemaWaktu); temaPanel tinggal CERMIN hasil
+  // uraian. Perilakunya diuji sungguhan di tema-tanpa-kedip-23okt.test.ts;
+  // di sini yang dijaga hanya sambungan antar berkasnya.
+  it("popup membaca DAN menulis pilihan + waktunya, dan menjaga cermin temaPanel", () => {
+    expect(popupJs).toContain('const KUNCI_TEMA_PILIHAN = "pilihanTema";');
     expect(popupJs).toContain('const KUNCI_TEMA_PANEL = "temaPanel";');
-    expect(popupJs).toContain("penyimpanan.set({ [KUNCI_TEMA_PANEL]: temaPopup })");
-    // Pilihan tegas menggerakkan panel; "ikut" tidak - yang mengikuti tidak
-    // menyuruh.
-    expect(popupJs).toContain('if (temaPopup === "terang" || temaPopup === "gelap")');
+    expect(popupJs).toContain("penyimpanan.set(pusat.tulisanChrome(temaPopup, temaWaktu, temaPopupBerlaku()))");
+    // Pilihan yang sama dengan yang berlaku tidak menulis apa pun.
+    expect(popupJs).toContain("if (!URUTAN_TEMA.includes(pilihan) || pilihan === temaPopup) return;");
   });
 
-  it("popup ikut berubah ketika temanya diganti dari panel", () => {
-    expect(popupJs).toContain("if (tempat !== \"local\" || !ubah[KUNCI_TEMA_PANEL]) return;");
+  it("popup ikut berubah ketika temanya diganti dari panel, yang lebih baru menang", () => {
+    expect(popupJs).toContain("if (tempat !== \"local\" || !(ubah[KUNCI_TEMA_PILIHAN] || ubah[KUNCI_TEMA_WAKTU])) return;");
+    expect(popupJs).toContain("pusat.chromeMenang({ pilihan: p, waktu: t }, { pilihan: temaPopup, waktu: temaWaktu })");
     expect(popupJs).toContain("terapkanTemaPopup();");
   });
 
-  it('"ikut" tidak lagi berarti tanpa atribut', () => {
+  it('atribut popup selalu tegas dan "sistem" ditanyakan ke jendelanya sendiri', () => {
     // Membiarkannya tanpa atribut menyerahkan warnanya kepada peramban - dan
     // itulah jendela putih di atas SIPP yang gelap.
-    expect(popupJs).toContain("const berlaku = temaPopup === \"ikut\" ? temaPanelSekarang : temaPopup;");
+    expect(popupJs).toContain("const berlaku = temaPopupBerlaku();");
+    expect(popupJs).toContain("return pusat.resolusiDari(temaPopup, pusat.sistemGelap());");
     expect(popupJs).not.toContain('akar.removeAttribute("data-tema")');
   });
 
@@ -193,23 +199,27 @@ describe("5 - satu tema untuk popup, widget, SIPP, ABT, dan portal", () => {
     expect(popupHtml).toContain('<html lang="id" data-tema="gelap">');
   });
 
-  it("portal ALETA disambungkan dua arah", () => {
-    expect(aleta).toContain('const KUNCI_TEMA_BERSAMA = "temaPanel";');
-    expect(aleta).toContain('new CustomEvent("aleta-ekstensi-tema"');
-    expect(aleta).toContain("if (temaAleta() === bersih) return;");
+  it("portal ALETA disambungkan dua arah lewat pusat, dengan penanda asal dan waktu", () => {
+    const pusat = readFileSync(path.join(AKAR, "tema-pusat.js"), "utf8");
+    // Portal -> chrome: atribut salinan yang ditulis portal diamati pusat.
+    expect(pusat).toContain('jembatan: "data-aleta-tema-salinan"');
+    // chrome -> portal: satu peristiwa DOM, hanya bila ada yang berubah.
+    expect(pusat).toContain('new akar.CustomEvent("aleta-ekstensi-tema"');
+    expect(pusat).toContain("if (kini.ada && kini.pilihan === p && kini.waktu === t && kini.resolusi === resolusi) return false;");
+    // Panel portal tidak lagi memegang jembatan sendiri.
+    expect(aleta).not.toContain("temaBersamaTerakhir");
   });
 
   it("pemuatan pertama tidak memaksakan bawaan ke portal orang", () => {
-    // Bila belum pernah ada yang memilih tema, tidak ada yang pantas
-    // dipaksakan: memaksakan bawaan ekstensi berarti membalik tampilan portal
-    // orang atas sesuatu yang tidak pernah ia minta, sekali, tepat sesudah
-    // pembaruan, dan tanpa keterangan apa pun. Tema portal yang diadopsi.
-    const fungsi = aleta.slice(aleta.indexOf("async function samakanTemaDenganPortal()"));
-    const badan = fungsi.slice(0, fungsi.indexOf("\n}\n"));
-    expect(badan).toContain('if (tersimpan !== "terang" && tersimpan !== "gelap")');
-    expect(badan).toContain("temaBersamaTerakhir = temaAleta();");
-    // Dan yang SUDAH dipilih tetap menang - itulah arti "temanya satu".
-    expect(badan).toContain("mintaPortalBertema(tersimpan);");
+    // Bila chrome belum pernah mencatat pilihan, halaman yang sudah punya
+    // salinan menjadi sumbernya (diadopsi, bukan dipaksakan); dan yang LEBIH
+    // BARU menang di kedua arah.
+    const pusat = readFileSync(path.join(AKAR, "tema-pusat.js"), "utf8");
+    const fungsi = pusat.slice(pusat.indexOf("function selarasDenganChrome("));
+    const badan = fungsi.slice(0, fungsi.indexOf("\n  }\n"));
+    expect(badan).toContain("if (lokal) tulisKeChrome();");
+    expect(badan).toContain("if (chromeMenang(dariC, lokal))");
+    expect(badan).toContain("lokal.waktu > dariC.waktu");
   });
 });
 

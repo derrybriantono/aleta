@@ -1067,27 +1067,51 @@ function alatPasangUbahUkuran(panel, kunci) {
  */
 /**
  * ============================================================================
- * TEMA HALAMAN - PENANDA DAN SALINAN SINKRONNYA
+ * TEMA HALAMAN - DIURUS SATU PUSAT, BUKAN TIAP PANEL
  * ============================================================================
  *
- * Satu penanda pada <html>, dan satu salinan di localStorage halaman itu.
- * Keduanya harus bergerak bersama:
+ * Dulu tiap panel (dan konten.js) menulis penanda <html> DAN salinan
+ * aleta-tema-sipp sendiri-sendiri, dengan arti nilai yang berbeda ("mati" hanya
+ * dikenal SIPP). SIPP dan ABT satu origin, sehingga tiap pindah SIPP <-> ABT
+ * salinannya ditimpa penulis lain dan halaman berkedip gelap-terang.
  *
- *   penanda      yang mengubah warna SEKARANG, seketika, tanpa satu pun
- *                permintaan - CSS-nya sudah terpasang sejak awal
- *   salinan      yang membuat halaman BERIKUTNYA lahir sudah benar, sebab
- *                tema-awal.js membacanya pada document_start
- *
- * Tanpa salinannya, tiap perpindahan halaman menampilkan tema lama sepersekian
- * detik lebih dulu. Itulah "lag" yang dikeluhkan - bukan lambatnya penggantian,
- * melainkan halaman berikutnya yang lahir salah lalu diperbaiki di depan mata.
- *
- * Nama kuncinya SAMA dengan yang dipakai SIPP - aleta-tema-sipp - dan itu
- * disengaja: keduanya satu origin, sehingga tema yang dipilih di halaman SIPP
- * langsung berlaku di halaman ABT dan sebaliknya. Dua kunci terpisah berarti
- * dua tema yang berselisih pada satu layar yang sama.
+ * Sekarang HANYA tema-pusat.js yang menulis penanda halaman dan salinannya
+ * (aleta-tema-pilihan, "pilihan|waktu"). Panel cuma MEMINTA pilihan
+ * (AletaTemaPusat.pilih) dan MENGIKUTI hasilnya (AletaTemaPusat.dengar) -
+ * tampilan tombol dan data-tema panel dibaca dari pusat, tidak dari
+ * penyimpanan yang asinkron.
  */
-const KUNCI_SALINAN_TEMA_HALAMAN = "aleta-tema-sipp";
+function alatPusatTema() {
+  return globalThis.AletaTemaPusat || null;
+}
+
+/** Keadaan tema yang berlaku; tanpa pusat (tidak seharusnya): gelap, bawaan produk. */
+function alatKeadaanTema() {
+  const pusat = alatPusatTema();
+  if (pusat) return pusat.keadaan();
+  return { pilihan: "gelap", resolusi: "gelap", waktu: 0, lapisan: true };
+}
+
+const ALAT_GLIF_TEMA = { terang: "☀", gelap: "☾", sistem: "◐" };
+const ALAT_URUTAN_TEMA = { terang: "gelap", gelap: "sistem", sistem: "terang" };
+const ALAT_SEBUTAN_TEMA = { terang: "terang", gelap: "gelap", sistem: "ikuti sistem" };
+
+function alatJudulTombolTema(pilihan) {
+  const sekarang = pilihan in ALAT_URUTAN_TEMA ? pilihan : "gelap";
+  return (
+    `Tema: ${ALAT_SEBUTAN_TEMA[sekarang]}. Tekan untuk ganti ke ` +
+    `${ALAT_SEBUTAN_TEMA[ALAT_URUTAN_TEMA[sekarang]]} - panel, halaman ini, popup, SIPP, ABT, dan portal sekaligus.`
+  );
+}
+
+/** Menyamakan tampilan satu tombol tema dengan pilihan yang berlaku. */
+function alatTampilkanTombolTema(tombol, pilihan) {
+  if (!tombol) return;
+  const sekarang = pilihan in ALAT_URUTAN_TEMA ? pilihan : "gelap";
+  tombol.textContent = ALAT_GLIF_TEMA[sekarang];
+  tombol.title = alatJudulTombolTema(sekarang);
+  tombol.setAttribute("data-pilihan-tema", sekarang);
+}
 
 /**
  * ============================================================================
@@ -1155,18 +1179,19 @@ function alatDaftarkanPanelTema(panel, pilihan, kunci) {
   alatPanelTema.push({ panel, pilihan: pilihan || {}, kunci: String(kunci || "") });
 }
 
-/** Satu tema diberlakukan ke panel yang terdaftar dan ke halamannya. */
-function alatSelaraskanTema(tema) {
-  const bersih = tema === "terang" ? "terang" : "gelap";
-  alatTanpaTransisi(() => {
-    for (const { panel, pilihan } of alatPanelTema) {
-      if (!panel.isConnected) continue;
-      panel.setAttribute("data-tema", bersih);
-      const tombol = panel.querySelector(".aleta-tema");
-      if (tombol) tombol.textContent = bersih === "gelap" ? "☀" : "☾";
-      if (pilihan.temaHalaman) alatTerapkanTemaHalaman(bersih);
-    }
-  });
+/**
+ * Satu keadaan tema diberlakukan ke panel yang terdaftar. Halamannya sudah
+ * ditandai pusat; di sini hanya data-tema panel dan tampilan tombolnya.
+ * Tidak menulis apa pun bila panel sudah benar.
+ */
+function alatSelaraskanTema(keadaan) {
+  const resolusi = keadaan && keadaan.resolusi === "terang" ? "terang" : "gelap";
+  const pilihan = keadaan && keadaan.pilihan in ALAT_URUTAN_TEMA ? keadaan.pilihan : resolusi;
+  for (const { panel } of alatPanelTema) {
+    if (!panel.isConnected) continue;
+    if (panel.getAttribute("data-tema") !== resolusi) panel.setAttribute("data-tema", resolusi);
+    alatTampilkanTombolTema(panel.querySelector(".aleta-tema"), pilihan);
+  }
 }
 
 async function alatSelaraskanWarna(nama) {
@@ -1201,6 +1226,10 @@ function alatDengarkanTemaPalet() {
   const tanda = "__aletaDengarTema";
   if (globalThis[tanda]) return;
   globalThis[tanda] = true;
+  // Tema (terang | gelap | sistem) diikuti lewat pusat; chrome.storage di
+  // bawah ini tinggal untuk palet warna.
+  const pusat = alatPusatTema();
+  if (pusat) pusat.dengar(alatSelaraskanTema);
   try {
     chrome.storage.onChanged.addListener((ubah, tempat) => {
       if (tempat !== "local") return;
@@ -1208,26 +1237,12 @@ function alatDengarkanTemaPalet() {
         const nama = String(ubah[KUNCI_WARNA_GELAP].newValue || "");
         alatSelaraskanWarna(DAFTAR_WARNA_GELAP.some(([k]) => k === nama) ? nama : "");
       }
-      if (ubah.temaPanel) {
-        alatSelaraskanTema(ubah.temaPanel.newValue === "terang" ? "terang" : "gelap");
-      }
     });
   } catch {
     /* tanpa pendengarnya, temanya berlaku di tab tempat ia ditekan saja */
   }
 }
 
-function alatTerapkanTemaHalaman(tema) {
-  const akar = document.documentElement;
-  if (tema === "gelap") akar.setAttribute("data-aleta-tema-sipp", "gelap");
-  else akar.removeAttribute("data-aleta-tema-sipp");
-  try {
-    window.localStorage.setItem(KUNCI_SALINAN_TEMA_HALAMAN, tema === "gelap" ? "gelap" : "terang");
-  } catch {
-    // Penyimpanan halaman ditolak - temanya tetap berlaku untuk halaman ini,
-    // hanya halaman berikutnya yang akan berkelebat sekali.
-  }
-}
 /**
  * ============================================================================
  * ENAM WARNA GELAP SUPER ADMIN - SATU NILAI, TIGA APLIKASI
@@ -1616,25 +1631,23 @@ function alatTombolKepala(panel, kunci, opsi) {
   // sinkron dan dibaca tema-awal.js pada document_start, sebelum satu piksel
   // digambar. Keduanya ditulis: chrome.storage tetap sumber kebenarannya,
   // localStorage cache yang membuat halaman berikutnya lahir sudah benar.
-  const tema = buat("aleta-tema", "", "Ganti tema ALETA dan halaman ini", async () => {
-    const baru = panel.getAttribute("data-tema") === "gelap" ? "terang" : "gelap";
-    // Penanda dipasang LEBIH DAHULU dan tanpa menunggu apa pun. Menyimpan ke
-    // chrome.storage adalah panggilan asinkron lintas proses; menunggunya
-    // sebelum mengubah tampilan membuat tekanan tombol terasa tidak
-    // menghasilkan apa-apa selama sepersekian detik - dan yang menekannya
-    // menekan sekali lagi, yang justru mengembalikannya.
-    alatTanpaTransisi(() => {
-      panel.setAttribute("data-tema", baru);
-      tema.textContent = baru === "gelap" ? "☀" : "☾";
-      if (pilihan.temaHalaman) alatTerapkanTemaHalaman(baru);
-    });
-    try {
-      await chrome.storage.local.set({ [pilihan.kunciTema || "temaPanel"]: baru });
-    } catch {
-      /* temanya tetap berlaku untuk halaman ini */
-    }
+  //
+  // ==========================================================================
+  // TIGA KEADAAN, SATU PUSAT
+  // ==========================================================================
+  //
+  // Terang -> gelap -> ikuti sistem -> terang. Tombol TIDAK lagi menyimpulkan
+  // pilihan baru dari data-tema panel (itu hasil uraian, bukan pilihan) dan
+  // tidak menulis penyimpanan sendiri: ia meminta pusat, yang memasang
+  // penanda halaman SEKETIKA, menyalin ke localStorage, lalu chrome.storage.
+  // Tampilan tombol dan data-tema panel ikut lewat alatSelaraskanTema.
+  const tema = buat("aleta-tema", "", alatJudulTombolTema(alatKeadaanTema().pilihan), () => {
+    const pusat = alatPusatTema();
+    if (!pusat) return;
+    const sekarang = pusat.keadaan().pilihan;
+    pusat.pilih(ALAT_URUTAN_TEMA[sekarang] || "terang");
   });
-  tema.textContent = panel.getAttribute("data-tema") === "gelap" ? "☀" : "☾";
+  alatTampilkanTombolTema(tema, alatKeadaanTema().pilihan);
 
   // Enam warna gelap - hanya bagi super admin, dan hanya ikon. Dipasang
   // sesudah tombol tema sebab warnanya memang anak dari tema gelap.
@@ -1751,20 +1764,12 @@ async function alatPasangPanel(panel, kepala, kunci, opsi) {
   // penulisan posisi ke penyimpanan, dan dua kali tangkapan penunjuk.
   alatPasangLencana(panel, kunci);
 
-  try {
-    const simpan = await chrome.storage.local.get([pilihan.kunciTema || "temaPanel"]);
-    const tema = simpan[pilihan.kunciTema || "temaPanel"];
-    panel.setAttribute("data-tema", tema === "terang" ? "terang" : "gelap");
-    const tombolTema = kepala.querySelector(".aleta-tema");
-    if (tombolTema) tombolTema.textContent = tema === "terang" ? "☾" : "☀";
-    // Penanda halaman diselaraskan dengan pilihan tersimpan. tema-awal.js
-    // sudah memasangnya dari salinan sinkron; baris ini yang memperbaikinya
-    // bila salinannya tertinggal - misalnya sesudah pilihan diganti dari
-    // popup, yang menulis ke chrome.storage tetapi tidak ke localStorage.
-    if (pilihan.temaHalaman) alatTerapkanTemaHalaman(tema === "terang" ? "terang" : "gelap");
-  } catch {
-    panel.setAttribute("data-tema", "gelap");
-    if (pilihan.temaHalaman) alatTerapkanTemaHalaman("gelap");
+  // Tema dibaca dari pusat (sinkron): tidak ada penantian chrome.storage
+  // yang dapat membuat panel lahir dengan tema lama lalu berpindah.
+  {
+    const kini = alatKeadaanTema();
+    panel.setAttribute("data-tema", kini.resolusi);
+    alatTampilkanTombolTema(kepala.querySelector(".aleta-tema"), kini.pilihan);
   }
 
   // Warna gelap pilihan dipulihkan sesudah temanya - ia anak dari tema gelap.

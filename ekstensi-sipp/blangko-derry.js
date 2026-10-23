@@ -712,7 +712,7 @@
       // 22 Okt malam (pengguna): Tes putusan SELALU mati setiap panel dibuka; hanya bertahan selama halaman ini.
       tesPutusan: S.cfg.tesPutusan === true,
     };
-    S.tema = s[K.tema] === "terang" ? "terang" : "gelap";
+    S.tema = temaDariPusat(s[K.tema]);
     S.ukuran = Object.prototype.hasOwnProperty.call(UKURAN, s[K.ukuran]) ? s[K.ukuran] : "biasa";
   }
   async function muatSetelan() {
@@ -735,7 +735,22 @@
     void tulisPenyimpanan({ [K.daftar]: { lihat: S.lihat, urut: S.urut, arah: S.arah, depan: S.depan, sembunyi: S.sembunyiSelesai, mode: S.mode, ket: { ...S.ket } } });
   }
   function terapkanTema() {
-    for (const e of [akar, tawar]) if (e) e.setAttribute("data-tema", S.tema);
+    for (const e of [akar, tawar]) if (e && e.getAttribute("data-tema") !== S.tema) e.setAttribute("data-tema", S.tema);
+  }
+  // Tema (terang | gelap | ikuti sistem) dipegang SATU pusat (tema-pusat.js);
+  // tampilan ini hanya mengikuti hasil uraiannya. Cermin temaPanel dibaca
+  // hanya bila pusat tidak ada, dan tidak pernah ditulis dari sini lagi.
+  function pusatTema() {
+    return globalThis.AletaTemaPusat || null;
+  }
+  function temaDariPusat(cadangan) {
+    const p = pusatTema();
+    if (p) return p.keadaan().resolusi === "terang" ? "terang" : "gelap";
+    return cadangan === "terang" ? "terang" : "gelap";
+  }
+  function pilihanTemaKini() {
+    const p = pusatTema();
+    return p ? p.keadaan().pilihan : S.tema;
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -1873,7 +1888,7 @@
             `<label class="bd-wbaris"><span>${esc(w[1])}${w[2] ? `<small>${esc(w[2])}</small>` : ""}</span><input type="checkbox" data-cfg="${w[0]}" ${S.cfg[w[0]] ? "checked" : ""}></label>`
         )
         .join("") +
-      `<label class="bd-wbaris"><span>Tema<small>popup, panel SIPP, panel ABT, dan Blangko ABT by Derry Briantono</small></span><select data-cfgtema="1" aria-label="Tema"><option value="gelap" ${S.tema === "gelap" ? "selected" : ""}>Gelap</option><option value="terang" ${S.tema === "terang" ? "selected" : ""}>Terang</option></select></label>` +
+      `<label class="bd-wbaris"><span>Tema<small>popup, panel SIPP, panel ABT, dan Blangko ABT by Derry Briantono</small></span><select data-cfgtema="1" aria-label="Tema"><option value="gelap" ${pilihanTemaKini() === "gelap" ? "selected" : ""}>Gelap</option><option value="terang" ${pilihanTemaKini() === "terang" ? "selected" : ""}>Terang</option><option value="sistem" ${pilihanTemaKini() === "sistem" ? "selected" : ""}>Ikuti sistem</option></select></label>` +
       `<label class="bd-wbaris"><span>Ukuran tampilan<small>huruf mengikuti rancangan walau halaman ABT diperkecil (Ctrl -)</small></span><select data-cfgukuran="1" aria-label="Ukuran tampilan">${[["kecil", "Kecil"], ["biasa", "Biasa"], ["besar", "Besar"], ["lebihbesar", "Lebih besar"]].map(([k, t]) => `<option value="${k}" ${S.ukuran === k ? "selected" : ""}>${t}</option>`).join("")}</select></label>` +
       `<p class="bd-catat">Pengaturan disimpan di ekstensi dan berlaku di semua tab; saklar yang sama ada di popup ekstensi.</p>`
     );
@@ -2125,9 +2140,16 @@
       return;
     }
     if (t.hasAttribute && t.hasAttribute("data-cfgtema")) {
-      S.tema = t.value === "terang" ? "terang" : "gelap";
-      terapkanTema();
-      void tulisPenyimpanan({ [K.tema]: S.tema });
+      const pusat = pusatTema();
+      if (pusat) {
+        // Pusat memasang penanda halaman, menyimpan, dan mengabarkan kembali;
+        // pendengar di bawah menyegarkan tampilan ini.
+        pusat.pilih(t.value);
+      } else {
+        S.tema = t.value === "terang" ? "terang" : "gelap";
+        terapkanTema();
+        void tulisPenyimpanan({ [K.tema]: S.tema });
+      }
     }
   }
   function saatMasuk(e) {
@@ -2267,6 +2289,14 @@
         chrome.storage.onChanged.addListener(saatPenyimpananBerubah);
       } catch {
         /* di luar konteks ekstensi */
+      }
+      if (pusatTema()) {
+        pusatTema().dengar((kabar) => {
+          const baru = kabar.resolusi === "terang" ? "terang" : "gelap";
+          if (baru === S.tema) return;
+          S.tema = baru;
+          terapkanTema();
+        });
       }
       if (tombolDerry()) return void siap();
       // Bilah kiri ABT belum ada (halaman lain, atau belum tergambar): menunggu sebentar.

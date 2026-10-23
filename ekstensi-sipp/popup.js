@@ -163,6 +163,8 @@ const KUNCI_SETELAN_AKUN = [
   "skalaHuruf",
   "temaPopup",
   "temaPanel",
+  "pilihanTema",
+  "pilihanTemaWaktu",
   "warnaGelap",
   "warnaMandiri",
   "warnaSendiri",
@@ -200,6 +202,8 @@ const BAWAAN_AKUN = {
   skalaHuruf: 100,
   temaPopup: "ikut",
   temaPanel: "gelap",
+  // Pilihan tema akun baru: gelap (bawaan produk). Waktunya SEGAR saat dipulihkan.
+  pilihanTema: "gelap",
   sembunyikanTeknis: true,
   ujiTampilan: "lama",
   ujiFitur: {},
@@ -972,8 +976,24 @@ if (penyimpanan) {
  */
 const KUNCI_TEMA_POPUP = "temaPopup";
 const KUNCI_TEMA_PANEL = "temaPanel";
-const URUTAN_TEMA = ["ikut", "terang", "gelap"];
-const SEBUTAN_TEMA = { ikut: "ikut ALETA", terang: "terang", gelap: "gelap" };
+/**
+ * ============================================================================
+ * TIGA PILIHAN, SATU SUMBER (DIPERBARUI 23 OKT 2026)
+ * ============================================================================
+ *
+ * "Otomatis" di atas dahulu berarti "ikut temaPanel", BUKAN ikut sistem:
+ * Windows gelap + temaPanel terang = popup terang. Sekarang pilihannya
+ * terang | gelap | sistem, disimpan bersama waktunya (pilihanTema +
+ * pilihanTemaWaktu) dan dibagi dengan SEMUA halaman lewat tema-pusat.js;
+ * "sistem" diuraikan di jendela ini lewat matchMedia dan benar-benar
+ * mengikuti tampilan sistem. temaPopup (ikut/terang/gelap) dan temaPanel
+ * hanya terbaca untuk memetakan pilihan lama; temaPanel tetap ditulis sebagai
+ * cermin hasil uraian untuk tab lama.
+ */
+const KUNCI_TEMA_PILIHAN = "pilihanTema";
+const KUNCI_TEMA_WAKTU = "pilihanTemaWaktu";
+const URUTAN_TEMA = ["terang", "gelap", "sistem"];
+const SEBUTAN_TEMA = { sistem: "ikuti sistem", terang: "terang", gelap: "gelap" };
 
 /**
  * ============================================================================
@@ -1639,69 +1659,158 @@ function pasangHubunganSaksi(asal) {
 
 
 const tombolTema = document.getElementById("tombolTema");
-let temaPopup = "ikut";
-/** Tema panel yang sedang berlaku - bawaannya gelap, sama dengan panel. */
-let temaPanelSekarang = "gelap";
+/** Pilihan yang berlaku (terang | gelap | sistem) dan waktu pilihannya. */
+let temaPopup = "gelap";
+let temaWaktu = 0;
+
+/**
+ * Salinan fungsi MURNI dari tema-pusat.js (bukan skripnya): popup hidup di
+ * origin chrome-extension:// sendiri dan, seperti daftar warna, aturan kecil
+ * ini disalin. Uji menjaga keduanya tidak berselisih (tema-tanpa-kedip-23okt).
+ */
+const PUSAT_TEMA_POPUP = (() => {
+  const DAFTAR = ["terang", "gelap", "sistem"];
+  const bersihkan = (p) => (DAFTAR.indexOf(p) >= 0 ? p : "");
+  return {
+    bersihkan,
+    sistemGelap() {
+      try {
+        if (window.matchMedia) return window.matchMedia("(prefers-color-scheme: dark)").matches === true;
+      } catch {
+        /* jatuh ke bawaan produk */
+      }
+      return true;
+    },
+    resolusiDari(pilihan, gelapSistem) {
+      if (pilihan === "sistem") return gelapSistem ? "gelap" : "terang";
+      return pilihan === "terang" ? "terang" : "gelap";
+    },
+    dariChrome(simpan) {
+      const s = simpan || {};
+      const p = bersihkan(s.pilihanTema);
+      if (p) return { pilihan: p, waktu: Number(s.pilihanTemaWaktu) || 0 };
+      const lama = s.temaPanel;
+      if (lama === "terang" || lama === "gelap") return { pilihan: lama, waktu: 0 };
+      return null;
+    },
+    tulisanChrome(pilihan, waktu, resolusi) {
+      return { pilihanTema: pilihan, pilihanTemaWaktu: waktu, temaPanel: resolusi };
+    },
+    chromeMenang(dariC, lokal) {
+      if (!dariC) return false;
+      if (!lokal) return true;
+      if (dariC.waktu > lokal.waktu) return true;
+      return dariC.waktu === lokal.waktu && dariC.pilihan !== lokal.pilihan;
+    },
+  };
+})();
+
+function pusatTemaPopup() {
+  return PUSAT_TEMA_POPUP;
+}
+
+/** Hasil uraian pilihan sekarang: sistem ditanyakan ke jendela ini. */
+function temaPopupBerlaku() {
+  const pusat = pusatTemaPopup();
+  return pusat.resolusiDari(temaPopup, pusat.sistemGelap());
+}
 
 function terapkanTemaPopup() {
   const akar = document.documentElement;
-  // "ikut" tidak lagi berarti "tanpa atribut": ia berarti memakai tema panel.
-  // Membiarkannya tanpa atribut menyerahkan warnanya kepada peramban, dan
-  // itulah jendela putih di atas SIPP yang gelap.
-  const berlaku = temaPopup === "ikut" ? temaPanelSekarang : temaPopup;
-  akar.setAttribute("data-tema", berlaku === "terang" ? "terang" : "gelap");
-  if (tombolTema) tombolTema.textContent = `tema: ${SEBUTAN_TEMA[temaPopup]}`;
+  // Selalu atribut tegas: membiarkannya tanpa atribut menyerahkan warnanya
+  // kepada peramban, dan itulah jendela putih di atas SIPP yang gelap.
+  const berlaku = temaPopupBerlaku();
+  if (akar.getAttribute("data-tema") !== berlaku) akar.setAttribute("data-tema", berlaku);
+  const teks = `tema: ${SEBUTAN_TEMA[temaPopup]}`;
+  if (tombolTema && tombolTema.textContent !== teks) tombolTema.textContent = teks;
+}
+
+/** Memasang pilihan dari isi penyimpanan (nilai lama dipetakan pusat). */
+function pasangTemaPopupDariSimpanan(simpan) {
+  const pusat = pusatTemaPopup();
+  const dari = pusat ? pusat.dariChrome(simpan || {}) : null;
+  if (dari) {
+    temaPopup = dari.pilihan;
+    temaWaktu = dari.waktu;
+  }
 }
 
 if (penyimpanan) {
   void penyimpanan
-    .get([KUNCI_TEMA_POPUP, KUNCI_TEMA_PANEL])
+    .get([KUNCI_TEMA_PILIHAN, KUNCI_TEMA_WAKTU, KUNCI_TEMA_PANEL])
     .then((simpan) => {
-      const tersimpan = String((simpan && simpan[KUNCI_TEMA_POPUP]) || "");
-      if (URUTAN_TEMA.includes(tersimpan)) temaPopup = tersimpan;
-      temaPanelSekarang = (simpan && simpan[KUNCI_TEMA_PANEL]) === "terang" ? "terang" : "gelap";
+      pasangTemaPopupDariSimpanan(simpan);
       terapkanTemaPopup();
+      segarkanTampilanTemaPopup();
     })
     .catch(() => terapkanTemaPopup());
 } else {
   terapkanTemaPopup();
 }
 
+// "Sistem" mengikuti tampilan sistem yang berganti selama jendela terbuka.
+try {
+  const pemantau = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+  if (pemantau) {
+    const saatBerganti = () => {
+      if (temaPopup === "sistem") terapkanTemaPopup();
+    };
+    if (typeof pemantau.addEventListener === "function") pemantau.addEventListener("change", saatBerganti);
+    else if (typeof pemantau.addListener === "function") pemantau.addListener(saatBerganti);
+  }
+} catch {
+  /* tampilan sistem terbaca saat dibuka */
+}
+
 if (tombolTema) {
   tombolTema.title =
-    "Tema ALETA - jendela ini, panel di SIPP dan ABT, dan panel di portal ALETA sekaligus";
+    "Tema ALETA: terang, gelap, atau ikuti sistem - jendela ini, panel di SIPP dan ABT, dan portal ALETA sekaligus";
   tombolTema.addEventListener("click", () => {
     pilihTemaPopup(URUTAN_TEMA[(URUTAN_TEMA.indexOf(temaPopup) + 1) % URUTAN_TEMA.length]);
   });
 }
 
+function segarkanTampilanTemaPopup() {
+  if (typeof segarkanSusunan === "function") segarkanSusunan();
+}
+
 /**
  * Satu jalan untuk memilih tema - dipakai tombol berputar di kepala DAN
- * segmen Otomatis/Gelap/Terang (UI Baru, ide popup-5). Dua salinan aturan
- * "pilihan tegas ikut menggerakkan panel" pasti berselisih suatu hari.
+ * segmen Ikuti sistem/Gelap/Terang (UI Baru, ide popup-5). Dua salinan aturan
+ * pasti berselisih suatu hari.
+ *
+ * Yang ditulis: pilihan + waktunya + cermin temaPanel (hasil uraian). Pilihan
+ * yang sama dengan yang berlaku diabaikan - tidak ada penulisan sia-sia yang
+ * membangunkan pendengar di semua tab.
  */
 function pilihTemaPopup(pilihan) {
-  if (!URUTAN_TEMA.includes(pilihan)) return;
+  if (!URUTAN_TEMA.includes(pilihan) || pilihan === temaPopup) return;
   temaPopup = pilihan;
+  temaWaktu = Math.max(Date.now(), temaWaktu + 1);
   terapkanTemaPopup();
-  segarkanSusunan();
+  segarkanTampilanTemaPopup();
   if (!penyimpanan) return;
-  void penyimpanan.set({ [KUNCI_TEMA_POPUP]: temaPopup });
-  // Pilihan tegas ikut menggerakkan panel. "ikut" tidak: ia mengikuti, dan
-  // yang mengikuti tidak menyuruh.
-  if (temaPopup === "terang" || temaPopup === "gelap") {
-    temaPanelSekarang = temaPopup;
-    void penyimpanan.set({ [KUNCI_TEMA_PANEL]: temaPopup });
-  }
+  const pusat = pusatTemaPopup();
+  if (!pusat) return;
+  void penyimpanan.set(pusat.tulisanChrome(temaPopup, temaWaktu, temaPopupBerlaku()));
 }
 
 // Tema yang diganti dari panel - di tab SIPP, ABT, atau portal ALETA -
-// terbaca di sini seketika, selama jendela ini masih terbuka.
+// terbaca di sini seketika, selama jendela ini masih terbuka. Yang lebih baru
+// menang; yang sama dengan sekarang tidak menyentuh apa pun.
 try {
   chrome.storage.onChanged.addListener((ubah, tempat) => {
-    if (tempat !== "local" || !ubah[KUNCI_TEMA_PANEL]) return;
-    temaPanelSekarang = ubah[KUNCI_TEMA_PANEL].newValue === "terang" ? "terang" : "gelap";
+    if (tempat !== "local" || !(ubah[KUNCI_TEMA_PILIHAN] || ubah[KUNCI_TEMA_WAKTU])) return;
+    const pusat = pusatTemaPopup();
+    if (!pusat) return;
+    const p = ubah[KUNCI_TEMA_PILIHAN] ? ubah[KUNCI_TEMA_PILIHAN].newValue : temaPopup;
+    const t = ubah[KUNCI_TEMA_WAKTU] ? Number(ubah[KUNCI_TEMA_WAKTU].newValue) || 0 : temaWaktu;
+    if (!pusat.bersihkan(p)) return;
+    if (!pusat.chromeMenang({ pilihan: p, waktu: t }, { pilihan: temaPopup, waktu: temaWaktu })) return;
+    temaPopup = p;
+    temaWaktu = t;
     terapkanTemaPopup();
+    segarkanTampilanTemaPopup();
   });
 } catch {
   /* di luar konteks ekstensi: jendela ini memakai pilihannya sendiri */
@@ -2611,7 +2720,7 @@ function komponenProfil() {
 // ── D13 / popup-5: tema Otomatis / Gelap / Terang ────────────────────────────
 
 const PILIHAN_TEMA = [
-  ["ikut", "Otomatis", "Ikut tema panel ALETA di SIPP, ABT, dan portal"],
+  ["sistem", "Ikuti sistem", "Mengikuti tampilan sistem (Windows/peramban) - popup, SIPP, ABT, dan portal"],
   ["gelap", "Gelap", "Popup dan semua panel gelap"],
   ["terang", "Terang", "Popup dan semua panel terang"],
 ];
@@ -3067,7 +3176,11 @@ const ATURAN_PENGATURAN = {
   // Perbaikan 30 Sep sore butir 3 (K5) - setelan pribadi, ikut diekspor.
   [KUNCI_TEKNIS]: benarSalah,
   [SKALA_KUNCI]: (v) => typeof v === "number" && v >= SKALA_MIN && v <= SKALA_MAKS && v % SKALA_LANGKAH === 0,
-  [KUNCI_TEMA_POPUP]: (v) => URUTAN_TEMA.includes(v),
+  // Pilihan baru (terang | gelap | sistem) + waktunya; kunci lama tetap sah
+  // supaya berkas ekspor dari versi sebelumnya masih dapat diimpor.
+  [KUNCI_TEMA_PILIHAN]: (v) => URUTAN_TEMA.includes(v),
+  [KUNCI_TEMA_WAKTU]: (v) => typeof v === "number" && Number.isFinite(v) && v >= 0,
+  [KUNCI_TEMA_POPUP]: (v) => v === "ikut" || URUTAN_TEMA.includes(v),
   [KUNCI_TEMA_PANEL]: (v) => v === "terang" || v === "gelap",
   [KUNCI_WARNA_GELAP]: (v) => typeof v === "string" && DAFTAR_WARNA_GELAP.some(([n]) => n === v),
 };
@@ -3141,6 +3254,20 @@ async function terimaImporPengaturan(teks) {
   const jumlah = Object.keys(diterima).length;
   if (!jumlah) return `Tidak ada yang diimpor.${ditolak.length ? ` Ditolak: ${ditolak.join("; ")}.` : ""}`;
   if (!penyimpanan) return "Penyimpanan ekstensi tidak tersedia di jendela ini.";
+  // Tema: pilihan yang diimpor dianggap pilihan BARU (waktu segar) supaya
+  // halaman yang terbuka mengikutinya; berkas lama hanya membawa temaPanel
+  // (terang/gelap) dan dipetakan ke pilihan yang sama.
+  const pusatImpor = pusatTemaPopup();
+  if (pusatImpor) {
+    const dariBerkas = pusatImpor.dariChrome(diterima);
+    if (dariBerkas) {
+      const waktuBaru = Math.max(Date.now(), temaWaktu + 1);
+      Object.assign(
+        diterima,
+        pusatImpor.tulisanChrome(dariBerkas.pilihan, waktuBaru, pusatImpor.resolusiDari(dariBerkas.pilihan, pusatImpor.sistemGelap()))
+      );
+    }
+  }
   await penyimpanan.set(diterima);
   // Kotak centang, skala, dan tema digambar ulang dari penyimpanan - jalan
   // yang sama dengan saat popup dibuka, bukan salinan aturannya.
@@ -3153,13 +3280,12 @@ async function terimaImporPengaturan(teks) {
     "checklistMilestone",
     "asalPortal",
     SKALA_KUNCI,
-    KUNCI_TEMA_POPUP,
+    KUNCI_TEMA_PILIHAN,
+    KUNCI_TEMA_WAKTU,
     KUNCI_TEMA_PANEL,
   ]);
   pasangNilai(s || {});
-  const tp = String((s && s[KUNCI_TEMA_POPUP]) || "");
-  if (URUTAN_TEMA.includes(tp)) temaPopup = tp;
-  temaPanelSekarang = (s && s[KUNCI_TEMA_PANEL]) === "terang" ? "terang" : "gelap";
+  pasangTemaPopupDariSimpanan(s);
   terapkanTemaPopup();
   if (KUNCI_TEKNIS in diterima) {
     tahap2.teknis = diterima[KUNCI_TEKNIS] !== false;
@@ -3893,8 +4019,26 @@ async function selaraskanIdentitas(id) {
       const hapus = [];
       for (const k of KUNCI_SETELAN_AKUN) {
         if (k in target || s[k] === undefined) continue;
+        // Waktu pilihan tema tidak dikembalikan ke bawaan: ia dihitung ulang
+        // (segar) sesudah perulangan ini, bersama pilihannya.
+        if (k === KUNCI_TEMA_WAKTU) continue;
         if (k in BAWAAN_AKUN) tulis[k] = BAWAAN_AKUN[k];
         else hapus.push(k);
+      }
+      // Pilihan tema akun yang masuk dipulihkan dengan WAKTU SEGAR: ia pilihan
+      // terbaru petugas ini di PC ini, jadi halaman yang terbuka mengikutinya
+      // (waktu lama dari catatan akun akan kalah oleh salinan halaman).
+      const pusatAkun = pusatTemaPopup();
+      const temaAkun = pusatAkun ? pusatAkun.dariChrome(tulis) : null;
+      if (temaAkun) {
+        Object.assign(
+          tulis,
+          pusatAkun.tulisanChrome(
+            temaAkun.pilihan,
+            Math.max(Date.now(), temaWaktu + 1),
+            pusatAkun.resolusiDari(temaAkun.pilihan, pusatAkun.sistemGelap())
+          )
+        );
       }
       if (hapus.length && penyimpanan.remove) await penyimpanan.remove(hapus);
     }
@@ -3966,15 +4110,14 @@ async function bacaUlangSetelanPopup() {
       "checklistMilestone",
       "asalPortal",
       SKALA_KUNCI,
-      KUNCI_TEMA_POPUP,
+      KUNCI_TEMA_PILIHAN,
+      KUNCI_TEMA_WAKTU,
       KUNCI_TEMA_PANEL,
       // X1: saklar Derry, SIPP, widget, gembok, dan ringkas ikut dibaca ulang saat akun berganti.
       ...Object.values(SEMUA_SAKLAR_POPUP).map((x) => x[0]),
     ]);
     pasangNilai(s || {});
-    const t = String((s && s[KUNCI_TEMA_POPUP]) || "");
-    temaPopup = URUTAN_TEMA.includes(t) ? t : "ikut";
-    temaPanelSekarang = (s && s[KUNCI_TEMA_PANEL]) === "terang" ? "terang" : "gelap";
+    pasangTemaPopupDariSimpanan(s);
     terapkanTemaPopup();
     await muatUjiPopup();
     await muatTahap2();

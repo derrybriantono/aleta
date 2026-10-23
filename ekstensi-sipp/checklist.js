@@ -6502,7 +6502,9 @@
           if (!keadaan.nyala) lupakanTautanSipp();
         }
         if (ubah[KUNCI_TEMA] || ubah[KUNCI_WARNA]) {
-          if (ubah[KUNCI_TEMA]) keadaan.tema = ubah[KUNCI_TEMA].newValue === "terang" ? "terang" : "gelap";
+          // Tema (terang | gelap | sistem) diikuti lewat pusat tema (lihat mulai);
+          // cermin temaPanel hanya dibaca bila pusat tidak ada.
+          if (ubah[KUNCI_TEMA] && !globalThis.AletaTemaPusat) keadaan.tema = ubah[KUNCI_TEMA].newValue === "terang" ? "terang" : "gelap";
           if (ubah[KUNCI_WARNA]) keadaan.warna = warnaBersih(ubah[KUNCI_WARNA].newValue);
           terapkanTema();
         }
@@ -6626,6 +6628,17 @@
     if (lama(KUNCI_INDUK)) keadaan.induk = simpan[KUNCI_INDUK] !== false;
     if (lama(KUNCI_SAKLAR)) keadaan.nyala = simpan[KUNCI_SAKLAR] === true;
     if (lama(KUNCI_TEMA)) keadaan.tema = simpan[KUNCI_TEMA] === "terang" ? "terang" : "gelap";
+    // Pusat tema: hasil uraian terkini (termasuk "ikuti sistem") dan setiap
+    // perubahannya, tanpa menunggu cermin di penyimpanan.
+    if (globalThis.AletaTemaPusat) {
+      keadaan.tema = globalThis.AletaTemaPusat.keadaan().resolusi === "terang" ? "terang" : "gelap";
+      globalThis.AletaTemaPusat.dengar((kabar) => {
+        const baru = kabar.resolusi === "terang" ? "terang" : "gelap";
+        if (baru === keadaan.tema) return;
+        keadaan.tema = baru;
+        terapkanTema();
+      });
+    }
     if (lama(KUNCI_WARNA)) keadaan.warna = warnaBersih(simpan[KUNCI_WARNA]);
     if (lama(KUNCI_POSISI)) keadaan.posisi = posisiBersih(simpan[KUNCI_POSISI]);
     if (lama(KUNCI_PERAN)) keadaan.peran = peranBersih(simpan[KUNCI_PERAN]);

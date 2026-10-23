@@ -281,13 +281,14 @@ describe("UI Baru: susunan baru dari elemen yang sama", () => {
     expect(p.d.getElementById("uiSaklarInduk")!.textContent).toMatch(/Mati/);
   });
 
-  it("tema segmen menulis temaPopup dan temaPanel seperti tombol lama", async () => {
+  it("tema segmen menulis pilihan + waktunya dan cermin temaPanel seperti tombol lama", async () => {
     const p = bukaPopup({ simpan: { ujiTampilan: "ui" } });
     await tenang(p);
     await sampai(() => p.d.getElementById("tbTema") !== null, "tema");
     (p.d.querySelector('[data-tema-pilih="terang"]') as HTMLButtonElement).click();
     await sampai(() => p.simpanan.temaPanel === "terang", "tema panel");
-    expect(p.simpanan.temaPopup).toBe("terang");
+    expect(p.simpanan.pilihanTema).toBe("terang");
+    expect(Number(p.simpanan.pilihanTemaWaktu)).toBeGreaterThan(0);
     expect(p.d.documentElement.getAttribute("data-tema")).toBe("terang");
   });
 

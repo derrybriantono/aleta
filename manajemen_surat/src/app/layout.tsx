@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 
 import "@/app/globals.css";
 import { DEFAULT_INSTITUTION_LOGO_PATH } from "@/lib/institution-logo";
@@ -7,6 +6,7 @@ import { InstallGate } from "@/components/install/install-gate";
 import { PortalProvider } from "@/lib/app-state";
 import { withBasePath } from "@/lib/base-path";
 import { GlobalLoadingProvider } from "@/lib/global-loading";
+import { SKRIP_TEMA_AWAL } from "@/lib/tema-skrip-awal";
 
 export const metadata: Metadata = {
   title: "ALETA | Akses Layanan Elektronik Terpadu Aksesibel",
@@ -19,41 +19,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" suppressHydrationWarning className="dark" data-scroll-behavior="smooth" style={{ scrollBehavior: 'smooth' }}>
+    <html lang="id" suppressHydrationWarning data-scroll-behavior="smooth" style={{ scrollBehavior: 'smooth' }}>
       <head>
         <link rel="icon" href={withBasePath(DEFAULT_INSTITUTION_LOGO_PATH)} />
+        {/*
+          Tema (terang | gelap | ikuti sistem) dipasang SINKRON di sini, sebelum lukis pertama dan sebelum
+          React. Kelas `dark` TIDAK lagi ditulis di <html> oleh layout: satu penulis saja (skrip ini lalu
+          tema-pilihan.ts), supaya React tidak pernah menulis ulang kelas yang sudah diputuskan skrip.
+          Lihat tema-pilihan.ts untuk sebab kedip dan aturannya.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: SKRIP_TEMA_AWAL }} />
       </head>
       <body className="font-sans bg-background text-foreground transition-colors duration-300">
-        <Script id="theme-init" strategy="beforeInteractive">
-          {`
-            try {
-              var storageKey = "portal-terpadu-pa-v2";
-              var legacyStorageKey = "portal-terpadu-pa-v1";
-              var darkDefaultMarker = "aleta:theme-default-dark-v1";
-              var raw = window.localStorage.getItem(storageKey) || window.localStorage.getItem(legacyStorageKey);
-              var hasDarkDefault = window.localStorage.getItem(darkDefaultMarker) === "1";
-              var parsed = raw ? JSON.parse(raw) : {};
-
-              if (!hasDarkDefault) {
-                var nextState = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
-                nextState.theme = "dark";
-                window.localStorage.setItem(storageKey, JSON.stringify(nextState));
-                window.localStorage.setItem(darkDefaultMarker, "1");
-                document.documentElement.classList.add("dark");
-              } else if (raw) {
-                if (parsed && parsed.theme === "light") {
-                  document.documentElement.classList.remove("dark");
-                } else {
-                  document.documentElement.classList.add("dark");
-                }
-              } else {
-                document.documentElement.classList.add("dark");
-              }
-            } catch (error) {
-              document.documentElement.classList.add("dark");
-            }
-          `}
-        </Script>
         <GlobalLoadingProvider>
           <PortalProvider>
             <InstallGate />

@@ -3648,6 +3648,8 @@ const KUNCI_SETELAN_AKUN = [
   "skalaHuruf",
   "temaPopup",
   "temaPanel",
+  "pilihanTema",
+  "pilihanTemaWaktu",
   "warnaGelap",
   "warnaMandiri",
   "warnaSendiri",

@@ -42,6 +42,7 @@
       ],
       "js": [
         "penjaga-tanda.js",
+        "tema-pusat.js",
         "tema-awal.js"
       ],
       "run_at": "document_start"
@@ -151,6 +152,17 @@
         "panel.css"
       ],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://192.168.10.10/aleta/*",
+        "http://127.0.0.1/aleta/*"
+      ],
+      "js": [
+        "tema-pusat.js",
+        "tema-awal.js"
+      ],
+      "run_at": "document_start"
     },
     {
       "matches": [
