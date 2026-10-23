@@ -656,6 +656,8 @@ export const AKSI = {
       "POST /api/aleta-ecourt/antrian",
       "POST /api/aleta-ecourt/antrian/panggil",
       "POST /api/aleta-ecourt/panggil",
+      // 23 Okt 2026 (keputusan pengguna): catat kehadiran pihak di layar Ambil Antrian.
+      "POST /api/aleta-ecourt/antrian/hadir",
     ],
     alasan: "Antrean dikelola meja PTSP/informasi dan petugas sidang; majelis/PP memanggil.",
   },
@@ -858,7 +860,8 @@ export const AKSI = {
     golongan: [...PEMEGANG_PERKARA, "ptsp"],
     lingkup: "semua",
     rute: ["POST /api/aleta-ecourt/penarikan (tindakan perkara)"],
-    alasan: "Kemampuan 'permintaan' (bawaan pemegang perkara); PTSP memverifikasi pendaftaran e-Court.",
+    alasan:
+      "Kemampuan 'permintaan' (bawaan pemegang perkara); PTSP memverifikasi pendaftaran e-Court - keputusan pengguna 23 Okt 2026: PTSP memegangnya sebagai bawaan (kapabilitasPengguna), tanpa diatur per peran.",
   },
   "berkas.sinkron-sipp": {
     label: "Mulai sinkron Kendali Berkas SIPP",
@@ -948,6 +951,16 @@ export const AKSI = {
     rute: ["POST /api/aleta-ecourt/isian"],
     alasan:
       "Isian diisi orang yang menangani perkara (majelis, kepaniteraan, juru sita untuk relaas) - sama dengan yang menyusun BAS dan blangko. Dulu cukup kemampuan panel (semua peran), sehingga kasir, PTSP, dan kesekretariatan dapat mengubah isi naskah perkara orang. Membaca isian tetap terbuka bagi pemegang panel.",
+  },
+  // 23 Okt 2026 (keputusan pengguna): pencatatan tanggal kirim & angka laporan perkara (LIPA 1-22).
+  "penilaian.catat-laporan": {
+    label: "Mencatat kirim laporan perkara (LIPA)",
+    crud: "CU",
+    golongan: ["panitera", "panmud"],
+    lingkup: "semua",
+    rute: ["POST /api/aleta-penilaian/laporan"],
+    alasan:
+      "Laporan perkara disusun dan dikirim kepaniteraan (terutama Panitera Muda Hukum); tanggal kirimnya menjadi dasar penilaian ketepatan waktu, jadi hanya Panitera, Panitera Muda, Admin, dan Super Admin yang mencatat. Peran lain tetap membaca.",
   },
   // Analitik
   "analitik.peta-beban": {

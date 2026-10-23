@@ -491,8 +491,10 @@ const BUTIR_FITUR: readonly ButirPeta[] = [
     judul: "Lihat sebagai peran atau akun lain",
     keterangan: "Meniru tampilan dan hak peran/akun lain untuk memeriksa menu yang tidak muncul.",
     hak: { "super-admin": "U" },
-    admin: false,
-    sumber: "alatPeranAktif / Lihat sebagai",
+    admin: "U",
+    catatan:
+      "Keputusan pengguna 23 Okt 2026: Super Admin dan Admin (Blangko ABT by Derry Briantono dan Perkara saya). Hanya meniru tampilan; tulisan tetap atas akun yang masuk, tanpa hak tambahan.",
+    sumber: "blangko-derry / perkara-saya: sebagai & sebagaiPeran (admin)",
   }),
   buat({
     id: "fitur.tautan-akun-sipp",

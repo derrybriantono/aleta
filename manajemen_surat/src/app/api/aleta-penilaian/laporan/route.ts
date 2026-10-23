@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import {
   getGatewayBlangkoLaporanPerkara,
   getGatewayDaftarLaporanPerkara,
@@ -83,6 +84,8 @@ export async function POST(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
+    // Keputusan pengguna 23 Okt 2026: hanya Panitera, Panitera Muda, Admin, Super Admin (matriks penilaian.catat-laporan).
+    await pastikanAksi(db, actorUserId, "penilaian.catat-laporan");
 
     const isi = (await request.json()) as Record<string, unknown>;
     const lipaNomor = Number(isi.lipaNomor);

@@ -1,5 +1,5 @@
 import { roles as defaultRoles } from "@/lib/mock-data";
-import { bolehMenjalankanPenetapan, type PenggunaGolongan } from "@/lib/matriks-peran";
+import { bolehMenjalankanPenetapan, golonganPengguna, type PenggunaGolongan } from "@/lib/matriks-peran";
 import { isPrivilegedAdmin } from "@/lib/permissions";
 import { type RoleId } from "@/lib/types";
 import { type AletaDatabase, withTransaction } from "@/server/db/client";
@@ -471,6 +471,11 @@ export async function kapabilitasPengguna(
       if (dariTambahan[kunci]) hasil[kunci] = true;
     }
   }
+
+  // Keputusan pengguna 23 Okt 2026: PTSP (jabatan, peran tambahan keluarga PTSP, Operator, Meja 1) memegang
+  // "permintaan" - tarik satu perkara di Kendali Berkas (matriks berkas.tarik) - sebagai BAWAAN, karena PTSP
+  // memverifikasi pendaftaran e-Court. Ditaruh SEBELUM pengecualian, sehingga pencabutan per orang tetap berlaku.
+  if (golonganPengguna(pengguna).includes("ptsp")) hasil.permintaan = true;
 
   for (const kecuali of await bacaPengecualianPengguna(db, pengguna.id)) {
     // Yang sudah lewat tanggalnya diabaikan diam-diam - ia memang sudah

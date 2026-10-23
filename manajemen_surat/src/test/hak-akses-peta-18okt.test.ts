@@ -117,7 +117,7 @@ describe("2. Super Admin memegang dan melihat semua", () => {
       "pengaturan.sinkron-kembaran",
       "pengaturan.database",
       "pengaturan.ai",
-      "fitur.lihat-sebagai",
+      // 23 Okt 2026 (keputusan pengguna): "Lihat sebagai akun" untuk Super Admin DAN Admin - tidak lagi khusus Super Admin.
       "fitur.bas-acc",
     ]) {
       expect(butir(id).hak.admin, id).toBeUndefined();
