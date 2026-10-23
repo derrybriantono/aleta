@@ -356,7 +356,7 @@ describe("4. popup ekstensi: Tampilkan di halaman ini", () => {
   it("pesan dari popup menampilkan bagian yang diminta bila saklarnya menyala; selain itu ditolak", async () => {
     const h = bukaWidget({ widgetKehadiran: false });
     await sampai(() => h.q(".aleta-cmw-lencana"), "gelembung");
-    expect(h.pesanMasuk.length).toBe(1);
+    expect(h.pesanMasuk.length).toBeGreaterThanOrEqual(1); // 23 Okt: pusat tema (W66) ikut mendengar pesan
     expect(h.kirimPesan({ jenis: "aleta-widget-tampilkan", bagian: "kehadiran" })).toEqual({ ok: false, alasan: "tidak-tersedia" });
     expect(h.kirimPesan({ jenis: "lain", bagian: "drafH7" })).toBeUndefined();
     expect(h.kirimPesan({ jenis: "aleta-widget-tampilkan", bagian: "entah" })).toEqual({ ok: false, alasan: "bagian-tidak-dikenal" });
