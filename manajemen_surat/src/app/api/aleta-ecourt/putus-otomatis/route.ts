@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { kalimatSetelanPutus } from "@/lib/putus-otomatis";
 import { getDatabase } from "@/server/db/client";
 import { bolehMenyuntingAkses, pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { bolehAksi } from "@/lib/matriks-peran";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import { bacaDaftarPutus, jalankanPutusOtomatis, simpanSetelanPutus, tandaiBatalPutus } from "@/server/modules/putus-otomatis/layanan";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
@@ -39,7 +40,10 @@ export async function GET(request: NextRequest) {
     const { ip: _ip, diubahOlehId: _id, ...setelan } = daftar.setelan;
     void _ip;
     void _id;
-    return ok({ ada: true, ...daftar, setelan, kalimatSetelan: kalimatSetelanPutus(daftar.setelan), bolehUbahSetelan: bolehMenyuntingAkses(aktor) });
+    return ok({ ada: true, ...daftar, setelan, kalimatSetelan: kalimatSetelanPutus(daftar.setelan), bolehUbahSetelan: bolehMenyuntingAkses(aktor),
+      // Audit hak 23 Okt 2026: "Jangan putus otomatis" / "Ikutkan lagi" = aksi sidang.tunda-putus (POST batal/pulihkan).
+      bolehBatal: bolehAksi(aktor, "sidang.tunda-putus"),
+    });
   } catch (error) {
     return handleAdminRouteError(error, request, { db, actorUserId, action: "PUTUS_OTOMATIS_BACA_FAILED", feature: "aleta_ecourt", entityId: "putus-otomatis" });
   }

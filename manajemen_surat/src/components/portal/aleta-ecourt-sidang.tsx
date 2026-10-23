@@ -5,7 +5,7 @@ import { labelTidakPatut } from "@/lib/label-kepatutan";
 import type { CaraRelaas } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 
 import dynamic from "next/dynamic";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { TombolUnduhZip } from "@/components/portal/tombol-unduh-zip";
@@ -205,7 +205,7 @@ import { tandaAntrianOnline, type TandaAntrianOnline as TandaOnline } from "@/li
 import { bahanKehadiranDariBaris, kunciKehadiran, ringkasKehadiran, susunKehadiran, type KehadiranOrang } from "@/lib/kehadiran-rinci"; /* F3.2 */
 import { DaftarHadirRinci, RingkasKehadiran, daftarPilihanHadir, type PilihanHadir } from "@/components/portal/kehadiran-rinci-sidang"; /* F3.2 */
 import { EcourtAksiPerkara, EcourtLencanaPutusan } from "@/components/portal/ecourt-aksi-perkara";
-import { bolehAksi, saringSaklarSidang, type PenggunaGolongan } from "@/lib/matriks-peran";
+import { bolehAksi, bolehAksiLayar, saringSaklarSidang, type PenggunaGolongan } from "@/lib/matriks-peran";
 /* 22 Okt 2026: sidang keliling, hakim per perkara, meja panitera sidang, cetak per hakim */
 import {
   MejaPaniteraSidang,
@@ -3077,19 +3077,27 @@ function CatatanCaraHitung({
   return <p className="mt-2 text-xs text-muted-foreground">{children}</p>;
 }
 
-function SelKeteranganPerkara({
+export function SelKeteranganPerkara({
   baris,
   keadaan,
   terbuka,
   onBuka,
   onSimpan,
   tampilKosong = true,
+  bolehTulis = true,
 }: {
   baris: SidangBaris;
   keadaan?: KeteranganPerkara;
   terbuka: boolean;
   onBuka: () => void;
   onSimpan: () => void;
+  /**
+   * Audit hak 23 Okt 2026: hak menulis keterangan (aksi sidang.keterangan -
+   * majelis, panitera, panmud, PP, juru sita, petugas sidang, Admin). Yang tidak
+   * berhak tetap MEMBACA keterangan yang sudah ada, tanpa kotak tulis; tombol
+   * kosong tidak ditawarkan kepadanya. Rutenya juga menolak 403.
+   */
+  bolehTulis?: boolean;
   /**
    * Saklar "keterangan-perkara". Hanya tombol yang KOSONG yang disembunyikan;
    * keterangan yang sudah berisi tetap tampil - ia ditulis untuk orang
@@ -3100,7 +3108,7 @@ function SelKeteranganPerkara({
 }) {
   const adaIsi = Boolean(keadaan?.terkini?.isi);
 
-  if (!terbuka && !adaIsi && !tampilKosong) return null;
+  if (!terbuka && !adaIsi && (!tampilKosong || !bolehTulis)) return null;
 
   if (!terbuka) {
     return (
@@ -3111,7 +3119,7 @@ function SelKeteranganPerkara({
           title={
             adaIsi
               ? `Ada keterangan - ${keadaan?.jumlahRevisi ?? 1} kali diubah. Tekan untuk membacanya.`
-              : "Belum ada keterangan. Tekan untuk menulis - siapa pun pegawai boleh mengisi."
+              : "Belum ada keterangan. Tekan untuk menulis."
           }
           className={cn(
             "inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition",
@@ -3131,7 +3139,7 @@ function SelKeteranganPerkara({
     );
   }
 
-  return <BorangKeteranganPerkara baris={baris} onTutup={onBuka} onSimpan={onSimpan} />;
+  return <BorangKeteranganPerkara baris={baris} onTutup={onBuka} onSimpan={onSimpan} bolehTulis={bolehTulis} />;
 }
 
 /**
@@ -3145,10 +3153,12 @@ function BorangKeteranganPerkara({
   baris,
   onTutup,
   onSimpan,
+  bolehTulis = true,
 }: {
   baris: SidangBaris;
   onTutup: () => void;
   onSimpan: () => void;
+  bolehTulis?: boolean;
 }) {
   const [riwayat, setRiwayat] = useState<KeteranganRevisi[]>([]);
   const [memuat, setMemuat] = useState(true);
@@ -3278,6 +3288,8 @@ function BorangKeteranganPerkara({
         </div>
       ) : null}
 
+      {bolehTulis ? (
+      <>
       <textarea
         value={isian}
         onChange={(e) => setIsian(e.target.value)}
@@ -3296,6 +3308,12 @@ function BorangKeteranganPerkara({
           {sibuk ? "Menyimpan…" : terkini ? "Simpan perubahan" : "Simpan"}
         </button>
       </div>
+      </>
+      ) : (
+        <p className="mt-1.5 text-[11.5px] text-muted-foreground" data-keterangan-hanya-baca="">
+          Hanya dibaca - keterangan ditulis majelis, kepaniteraan, juru sita, dan petugas sidang.
+        </p>
+      )}
 
       {galat ? <p className="mt-1 text-[11px] text-red-600">{galat}</p> : null}
 
@@ -4155,6 +4173,14 @@ function LencanaVerifikasi({ status }: { status: string }) {
   return <Badge variant="warning">Menunggu majelis</Badge>;
 }
 
+/**
+ * Audit hak 23 Okt 2026: tampilan lewat TAUTAN RAHASIA Jadwal Sidang tidak memuat
+ * unduhan berkas (BAS, relaas, resi, putusan) - rute berkas-sipp tidak ada di
+ * daftar izin tautan (server/modules/tautan-jadwal), jadi tombolnya hanya akan
+ * menjawab ditolak. Bernilai true di dalam Jadwal Sidang bermode alamat.
+ */
+export const UnduhTertutupTautan = createContext(false);
+
 /** Tombol unduh yang menampilkan sebab kegagalan, bukan sekadar kata gagal. */
 export function TombolUnduh({
   alamat,
@@ -4165,6 +4191,7 @@ export function TombolUnduh({
   label: string;
   namaCadangan: string;
 }) {
+  const tertutupTautan = useContext(UnduhTertutupTautan);
   const [sibuk, setSibuk] = useState(false);
   const [galat, setGalat] = useState("");
 
@@ -4184,6 +4211,8 @@ export function TombolUnduh({
       setSibuk(false);
     }
   };
+
+  if (tertutupTautan) return null;
 
   return (
     <span className="inline-flex flex-col gap-1">
@@ -4838,6 +4867,9 @@ export function AletaEcourtSidang({
     [modeUrl, tampilanPilihan, currentUser]
   );
   const bolehJalannya = bolehAksi(currentUser, "sidang.jalannya");
+  // Audit hak 23 Okt 2026: keterangan yang sudah berisi tetap terbaca semua, tetapi
+  // kotak tulisnya hanya bagi aksi sidang.keterangan (rute keterangan-perkara 403).
+  const bolehTulisKeterangan = bolehAksiLayar(currentUser, "sidang.keterangan");
   // 22 Okt 2026: Sidang keliling per tanggal, hakim per perkara, meja panitera
   // sidang (tunda/putus massal), cetak per hakim - hanya untuk SATU tanggal dan
   // bukan di tampilan lewat alamat. Lihat jadwal-keliling-hakim.tsx.
@@ -6162,7 +6194,10 @@ export function AletaEcourtSidang({
       kunci: "per-panitera-sidang",
       label: "Per panitera sidang",
       ikon: Users,
-      judul: "Pilih hakim, tunda massal, atau keterangan putus massal untuk semua perkara satu panitera sidang",
+      // Audit hak 23 Okt 2026: "Pilih hakim" hanya disebut bagi yang memegangnya (Admin/Super Admin).
+      judul: kh.bolehHakim
+        ? "Pilih hakim, tunda massal, atau keterangan putus massal untuk semua perkara satu panitera sidang"
+        : "Tunda massal atau keterangan putus massal untuk semua perkara satu panitera sidang",
       menyala: mejaPp,
     });
   }
@@ -6226,6 +6261,7 @@ export function AletaEcourtSidang({
   const statusPutusanTampil = tampil(tampilan, "status-putusan");
 
   return (
+    <UnduhTertutupTautan.Provider value={Boolean(modeUrl)}>
     <Card
       className={cn(
         // Layar penuh BERJENDELA (J4): kartu menutupi seluruh jendela
@@ -9155,6 +9191,7 @@ export function AletaEcourtSidang({
                             }
                             onSimpan={() => void muatKeterangan()}
                             tampilKosong={tampil(tampilan, "keterangan-perkara")}
+                            bolehTulis={bolehTulisKeterangan}
                           />
                         </td>
 
@@ -9527,6 +9564,7 @@ export function AletaEcourtSidang({
         ) : null}
       </CardContent>
     </Card>
+    </UnduhTertutupTautan.Provider>
   );
 }
 

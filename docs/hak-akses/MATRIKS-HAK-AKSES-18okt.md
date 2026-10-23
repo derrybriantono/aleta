@@ -164,7 +164,10 @@ Catatan kewenangan:
 | Membaca lembar BAS dan naskahnya | L | L | L | L | L | L | L | - | - | - | - | - | L | - | - | - |
 | Menyusun dan menyimpan lembar BAS | U | U | - | U | U | U | U | - | - | - | - | - | U | - | - | - |
 | Set pertanyaan saksi untuk tanya jawab ABT | L | L | L | L | L | L | L | - | - | - | - | - | L | - | - | - |
+| Menyimpan isian perkara untuk naskah (Kelas B) | U | U | U | U | U | U | U | U | - | - | - | - | U | - | - | - |
 | Peta perkara & beban konseptor | L | L | L | L | L | L | - | - | - | - | - | - | - | L | - | - |
+| Tunda otomatis 16.30 dan putus otomatis gugur / tidak dapat diterima | U | P | P | P | P | P | P | L | L | L | L | L | L | L | L | L |
+| Tautan rahasia Jadwal Sidang (tanpa masuk akun) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 
 Catatan kewenangan:
 
@@ -186,6 +189,9 @@ Catatan kewenangan:
 - **Unggah putusan ke SIPP/e-Court**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Membaca lembar BAS dan naskahnya**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
 - **Menyusun dan menyimpan lembar BAS**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
+- **Menyimpan isian perkara untuk naskah (Kelas B)**: Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara.
+- **Tunda otomatis 16.30 dan putus otomatis gugur / tidak dapat diterima**: Saklar dan Jalankan sekarang HANYA Super Admin (keputusan 22 Okt 2026). Mengecualikan satu perkara (Jangan tunda/putus otomatis, Ikutkan lagi) mengikuti aksi Tunda / Putus sidang. Tidak tampil pada tautan rahasia Jadwal Sidang.
+- **Tautan rahasia Jadwal Sidang (tanpa masuk akun)**: Mengelola tautan hanya Super Admin dan Admin. Pemakai tautan tidak mendapat unduhan berkas, Kasir, antrean, tunda/putus otomatis, pilih hakim, maupun penetapan; tulisannya terbatas daftar izin rute dan 60 tindakan per jam.
 
 ## Fitur kerja perkara
 
@@ -231,6 +237,8 @@ Catatan kewenangan:
 
 | Fitur | SA | Adm | Pim | Hak | Pan | Pmd | PP | JS | Ksr | PTS | Med | Sdg | Anl | Sek | TI | Plk |
 | :-- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| Tombol Putusan Otomatis dan Jadwalkan Putusan di halaman SIPP | P | P | P | P | - | - | - | - | - | - | - | - | - | - | - | - |
+| Tombol Penetapan Otomatis di halaman SIPP | P | P | P | - | - | - | - | - | - | P | - | - | - | - | - | - |
 | Panel SIPP: tab Penetapan | P | P | P | - | - | - | - | - | - | P | - | - | - | - | - | - |
 | Panel SIPP: tab PTSP | P | P | P | - | P | P | - | - | - | P | - | - | - | - | - | - |
 | Panel SIPP: tab Putusan | P | P | P | P | - | - | - | - | - | - | - | - | - | - | - | - |
@@ -272,6 +280,8 @@ Catatan kewenangan:
 
 Catatan kewenangan:
 
+- **Tombol Putusan Otomatis dan Jadwalkan Putusan di halaman SIPP**: Keputusan pengguna 21 Okt 2026: hanya Ketua, Wakil Ketua, Hakim, Admin, dan Super Admin. Unggahnya dijaga hak unggah putusan (keputusan 9 Okt).
+- **Tombol Penetapan Otomatis di halaman SIPP**: Keputusan pengguna 21 Okt 2026: hanya PTSP (termasuk Operator dan Petugas Meja), Ketua, Wakil Ketua, Admin, dan Super Admin. Tombolnya juga menuntut kemampuan Kerjakan (menulis ke SIPP) yang bawaannya hanya Operator; peran lain mendapatkannya dari Super Admin di Akses ekstensi.
 - **Panel SIPP: tab Penetapan**: Keputusan 111: Ketua, Wakil, Admin, PTSP, Operator, dan Petugas Meja (termasuk Meja 2 dan 3 lewat sub-peran) mendapat tab ini; hakim dan Panitera tidak.
 - **Panel SIPP: tab Kasir**: Panitera dan panmud: tab ditambahkan ekstensi sesuai aturan Kasir (hanya membaca bagi mereka).
 - **Daftar SIPP: penetapan massal**: Keputusan 111: Petugas Meja 2 dan 3 serta Operator (sub-peran) juga mendapat menu ini.
@@ -281,6 +291,7 @@ Catatan kewenangan:
 
 | Fitur | SA | Adm | Pim | Hak | Pan | Pmd | PP | JS | Ksr | PTS | Med | Sdg | Anl | Sek | TI | Plk |
 | :-- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| Tes putusan di Blangko ABT by Derry Briantono | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Blangko putusan dan penetapan hakim (Blangko Derry, folder per jenis perkara) | P | P | P | P | - | - | - | - | - | - | - | - | - | - | - | - |
 | Blangko BAS (pasangan '<Jenis> - BAS') | P | P | - | - | P | P | P | - | - | - | - | - | P | - | - | - |
 | Blangko relaas (folder '98 Relaas') | P | P | - | - | - | - | - | P | - | - | - | - | - | - | - | - |
@@ -298,6 +309,7 @@ Catatan kewenangan:
 
 Catatan kewenangan:
 
+- **Tes putusan di Blangko ABT by Derry Briantono**: Hanya Super Admin. Selama mode tes tidak ada yang ditulis ke ABT, SIPP, maupun e-Court (keputusan 22 Okt 2026).
 - **Blangko putusan dan penetapan hakim (Blangko Derry, folder per jenis perkara)**: Panitera Pengganti ikut membukanya hanya bila saklar 'Panitera Pengganti boleh blangko putusan' di Pengaturan SIPP & ABT menyala (bawaan mati).
 - **Blangko BAS (pasangan '<Jenis> - BAS')**: Hakim ikut membukanya hanya bila saklar 'Hakim boleh blangko BAS' di Pengaturan SIPP & ABT menyala (bawaan mati). BAS di-acc hakim sebelum dipakai.
 - **Blangko relaas (folder '98 Relaas')**: Keputusan 16 Okt 2026: Panitera, PP, Ketua/Wakil, panmud, dan hakim tidak. Relaas tidak pernah terbuka lewat saklar.

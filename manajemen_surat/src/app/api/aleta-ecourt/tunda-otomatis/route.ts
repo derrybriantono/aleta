@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server";
 import { kalimatSetelan } from "@/lib/tunda-otomatis";
 import { getDatabase } from "@/server/db/client";
 import { bolehMenyuntingAkses, pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { bolehAksi } from "@/lib/matriks-peran";
 import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import {
   bacaDaftarHari,
@@ -58,6 +59,8 @@ export async function GET(request: NextRequest) {
       setelan,
       kalimatSetelan: kalimatSetelan(daftar.setelan),
       bolehUbahSetelan: bolehMenyuntingAkses(aktor),
+      // Audit hak 23 Okt 2026: "Jangan tunda otomatis" / "Ikutkan lagi" = aksi sidang.tunda-putus (POST batal/pulihkan).
+      bolehBatal: bolehAksi(aktor, "sidang.tunda-putus"),
     });
   } catch (error) {
     return handleAdminRouteError(error, request, { db, actorUserId, action: "TUNDA_OTOMATIS_BACA_FAILED", feature: "aleta_ecourt", entityId: "tunda-otomatis" });

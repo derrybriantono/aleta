@@ -32,6 +32,8 @@ type Daftar = {
   butir: Butir[];
   galat: string;
   bolehUbahSetelan: boolean;
+  /** Audit hak 23 Okt 2026: boleh menekan "Jangan putus otomatis" / "Ikutkan lagi" (aksi sidang.tunda-putus). */
+  bolehBatal?: boolean;
 };
 
 export function BagianPutusOtomatis({ tanggal }: { tanggal: string }) {
@@ -122,7 +124,7 @@ export function BagianPutusOtomatis({ tanggal }: { tanggal: string }) {
               <span className="min-w-0 flex-1 text-muted-foreground">
                 {k.penjelasan} {b.tulis ? b.tulis.pesan : ""} {b.edoc ? b.edoc.pesan : ""}
               </span>
-              {daftar?.tahap === "pratinjau" ? (
+              {daftar?.tahap === "pratinjau" && daftar.bolehBatal !== false ? (
                 k.jenis === "putus" ? (
                   <Button type="button" size="sm" variant="outline" disabled={sibuk} onClick={() => void kirim({ aksi: "batal", tanggal, jadwalId: b.jadwalId })}>
                     Jangan putus otomatis

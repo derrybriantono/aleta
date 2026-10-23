@@ -47,6 +47,8 @@ type Daftar = {
   galat: string;
   hariLibur: boolean;
   bolehUbahSetelan: boolean;
+  /** Audit hak 23 Okt 2026: boleh menekan "Jangan tunda otomatis" / "Ikutkan lagi" (aksi sidang.tunda-putus). */
+  bolehBatal?: boolean;
 };
 
 const LABEL_JENIS: Record<string, string> = {
@@ -278,7 +280,7 @@ export function TombolTundaOtomatis({ tanggal }: { tanggal: string }) {
                           )}
                         </td>
                         <td className="p-2">
-                          {bisaBatal ? (
+                          {daftar?.bolehBatal === false ? null : bisaBatal ? (
                             <Button
                               type="button"
                               size="sm"

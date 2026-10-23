@@ -939,6 +939,16 @@ export const AKSI = {
       "Panduan pertanyaan saksi per jenis perkara untuk Blangko Derry: majelis dan kepaniteraan penyusun BAS. Hanya katalog pertanyaan; menyimpan ke ABT tetap oleh sesi petugas sendiri.",
   },
   // === AKHIR 18OKT-PERAN ===
+  // Audit hak 23 Okt 2026: isian Kelas B perkara (variabel naskah yang tidak terbaca dari SIPP).
+  "isian.perkara": {
+    label: "Menyimpan isian perkara untuk naskah (Kelas B)",
+    crud: "CU",
+    golongan: PEMEGANG_PERKARA,
+    lingkup: "milik",
+    rute: ["POST /api/aleta-ecourt/isian"],
+    alasan:
+      "Isian diisi orang yang menangani perkara (majelis, kepaniteraan, juru sita untuk relaas) - sama dengan yang menyusun BAS dan blangko. Dulu cukup kemampuan panel (semua peran), sehingga kasir, PTSP, dan kesekretariatan dapat mengubah isi naskah perkara orang. Membaca isian tetap terbuka bagi pemegang panel.",
+  },
   // Analitik
   "analitik.peta-beban": {
     label: "Peta perkara & beban konseptor",
