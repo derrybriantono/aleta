@@ -40,6 +40,8 @@ const SAKLAR_SIPP_IDE = {
   pratinjauBasRelaas: ["pratinjauBasRelaas", true],
   /* 22 Okt: butir ABT By Derry, ALETA (dan E-Court) di bilah menu atas SIPP (menu-atas.js), bawaan MENYALA. */
   menuAtasSipp: ["menuAtasSipp", true],
+  /* 23 Okt: lapisan tema gelap di situs e-Court (ecourt-tema.js), bawaan MENYALA; mati = e-Court persis aslinya. */
+  ecourtTema: ["temaEcourt", true],
 };
 /* F1.5 (17 Okt): gembok panel ALETA di ABT biasa - kunci yang sama dengan tombol
    gembok di bawah kepala panel dan Widget ALETA. Menyala = terkunci (tampil penuh). */
@@ -141,6 +143,7 @@ const KUNCI_SETELAN_AKUN = [
   "widgetDrafH7",
   "pratinjauBasRelaas",
   "menuAtasSipp",
+  "temaEcourt",
   "gembokKepalaAbt",
   "panelRingkas",
   "gembokKepalaSipp",
@@ -195,6 +198,7 @@ const BAWAAN_AKUN = {
   widgetDrafH7: true,
   pratinjauBasRelaas: true,
   menuAtasSipp: true,
+  temaEcourt: true,
   gembokKepalaAbt: false,
   panelRingkas: false,
   gembokKepalaSipp: false,
@@ -2358,6 +2362,7 @@ function pasangRingkas(gayaUi) {
 const KELOMPOK_SAKLAR = [
   { kode: "tampilan", judul: "Tampilan", isi: ["panelRingkas"] },
   { kode: "sipp", judul: "SIPP", isi: ["tandaiHalaman", "sisipJadwal", "pratinjauBasRelaas", "menuAtasSipp", "sippPenyatu", "sippTampilDobel", "gembokSipp"], unsur: ["ideL2Kotak"] },
+  { kode: "ecourt", judul: "E-Court", isi: ["ecourtTema"] },
   { kode: "abt", judul: "ABT", isi: ["suntingLangsungAbt", "cetakTigaBerkas", "gembokAbt"] },
   {
     kode: "derry",

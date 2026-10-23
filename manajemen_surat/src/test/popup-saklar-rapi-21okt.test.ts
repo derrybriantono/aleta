@@ -41,6 +41,7 @@ const TABEL: Baris[] = [
   { id: "sisipJadwal", kunci: "sisipJadwal", bagian: "sipp", bawaan: false, pembaca: ["konten.js"] },
   { id: "pratinjauBasRelaas", kunci: "pratinjauBasRelaas", bagian: "sipp", bawaan: true, pembaca: ["pratinjau-bas-relaas.js"] },
   { id: "menuAtasSipp", kunci: "menuAtasSipp", bagian: "sipp", bawaan: true, pembaca: ["menu-atas.js"] },
+  { id: "ecourtTema", kunci: "temaEcourt", bagian: "ecourt", bawaan: true, pembaca: ["tema-pusat.js"] },
   { id: "sippPenyatu", kunci: "sippPenyatu", bagian: "sipp", bawaan: true, pembaca: ["sipp-ide-m2.js"] },
   { id: "sippTampilDobel", kunci: "sippTampilDobel", bagian: "sipp", bawaan: false, pembaca: ["sipp-ide-m2.js"] },
   { id: "gembokSipp", kunci: "gembokKepalaSipp", bagian: "sipp", bawaan: false, pembaca: ["panel-alat.js"] },
@@ -169,11 +170,11 @@ describe("X1 - saklar popup di bagian yang benar (UI Baru, Super Admin)", () => 
     expect(asing, "saklar baru: tambahkan ke TABEL dan docs/popup/SAKLAR.md").toEqual([]);
   });
 
-  it("urutan bagian logis: Tampilan, Panel, SIPP, ABT, Derry, Portal ALETA, Widget, Admin", async () => {
+  it("urutan bagian logis: Tampilan, Panel, SIPP, E-Court, ABT, Derry, Portal ALETA, Widget, Admin", async () => {
     const p = bukaPopup("Super Admin");
     await tenang(p);
     const urut = Array.from(p.d.querySelectorAll(".isi > .tb-kelompok")).map((g) => (g as HTMLElement).dataset.kelompok);
-    expect(urut).toEqual(["tampilan", "bawaan-panel", "sipp", "abt", "derry", "aleta", "portal", "admin"]);
+    expect(urut).toEqual(["tampilan", "bawaan-panel", "sipp", "ecourt", "abt", "derry", "aleta", "portal", "admin"]);
   });
 
   it("judul statis tampilan Lama tidak ikut tampil di UI Baru", async () => {
@@ -224,7 +225,7 @@ describe("X1 - tampilan Lama: tiap saklar ada tepat sekali, urut logis, tanpa el
     for (const b of TABEL) expect(p.d.querySelectorAll(`#${b.id}`).length, b.id).toBe(1);
     expect(p.d.querySelectorAll(".tb-kelompok").length).toBe(0);
     const judul = Array.from(p.d.querySelectorAll(".isi .bag-judul")).map((h) => h.textContent);
-    expect(judul).toEqual(["SIPP", "ABT", "Blangko ABT by Derry Briantono", "Portal ALETA", "Widget", "Tampilan"]);
+    expect(judul).toEqual(["SIPP", "E-Court", "ABT", "Blangko ABT by Derry Briantono", "Portal ALETA", "Widget", "Tampilan"]);
   });
 });
 
