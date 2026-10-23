@@ -153,7 +153,9 @@ export function IsianKelasB({
         sebab: string;
       };
       if (!hasil.ok) {
-        setPesan(hasil.sebab || "Penyimpanan gagal.");
+        // 403 dari penjaga peran berbentuk { ok:false, error:{ message } } - tampilkan sebabnya.
+        const sebabTolak = (luar as { error?: { message?: string } } | null)?.error?.message;
+        setPesan(hasil.sebab || sebabTolak || "Penyimpanan gagal.");
         return;
       }
       const ditolak = hasil.ditolak ?? [];

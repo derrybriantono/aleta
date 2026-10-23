@@ -1371,6 +1371,10 @@ const KUNCI_MODE_LATIHAN = "modeLatihan";
 let latihanPeranDiketahui = false;
 
 function peranBolehLatihan(peran) {
+  // Audit hak 23 Okt 2026: golongan dari portal (Super Admin/Admin) menang atas tebakan nama peran.
+  if (identitasPopup && identitasPopup.golongan && Array.isArray(identitasPopup.golongan.semua) && identitasPopup.golongan.semua.length) {
+    return popupAdmin();
+  }
   const p = String(peran || "").toLowerCase();
   return /super/.test(p) || /admin/.test(p);
 }

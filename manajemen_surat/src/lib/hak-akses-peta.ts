@@ -505,6 +505,67 @@ const BUTIR_FITUR: readonly ButirPeta[] = [
     sumber: "users/tautan-sipp",
     rute: ["POST /api/users/[id]/tautan-sipp", "POST /api/users/tautan-sipp-semua"],
   }),
+  // ── Audit hak 23 Okt 2026: fitur yang kuncinya hidup di luar matriks, kini tercatat di peta ──
+  buat({
+    id: "fitur.tombol-putusan-sipp",
+    kelompok: "ekstensi",
+    judul: "Tombol Putusan Otomatis dan Jadwalkan Putusan di halaman SIPP",
+    keterangan: "Tombol di halaman perkara dan daftar SIPP untuk menyusun lalu mengunggah putusan, sekarang atau terjadwal.",
+    hak: dari(["pimpinan", "hakim"], "P"),
+    admin: "P",
+    catatan:
+      "Keputusan pengguna 21 Okt 2026: hanya Ketua, Wakil Ketua, Hakim, Admin, dan Super Admin. Unggahnya dijaga hak unggah putusan (keputusan 9 Okt).",
+    sumber: "panel-alat.js alatBolehTombolPutusanSipp",
+    rute: ["GET|POST|PATCH /api/aleta-ecourt/putusan-terjadwal"],
+  }),
+  buat({
+    id: "fitur.tombol-penetapan-sipp",
+    kelompok: "ekstensi",
+    judul: "Tombol Penetapan Otomatis di halaman SIPP",
+    keterangan: "Tombol di halaman perkara SIPP untuk menuliskan PMH, PPP, PJS, dan PHS.",
+    hak: dari(["pimpinan", "ptsp"], "P"),
+    admin: "P",
+    catatan:
+      "Keputusan pengguna 21 Okt 2026: hanya PTSP (termasuk Operator dan Petugas Meja), Ketua, Wakil Ketua, Admin, dan Super Admin. Tombolnya juga menuntut kemampuan Kerjakan (menulis ke SIPP) yang bawaannya hanya Operator; peran lain mendapatkannya dari Super Admin di Akses ekstensi.",
+    sumber: "panel-alat.js alatBolehTombolPenetapanSipp + kapabilitas penunjukan & kerjakan",
+  }),
+  buat({
+    id: "fitur.tunda-putus-otomatis",
+    kelompok: "ecourt",
+    judul: "Tunda otomatis 16.30 dan putus otomatis gugur / tidak dapat diterima",
+    keterangan: "Daftar harian di kepala Jadwal Sidang; saklar, mode kering, dan Jalankan sekarang.",
+    hak: gabung(dari(SEMUA_BIASA, "L"), dari(["pimpinan", "hakim", "panitera", "panmud", "pp"], "P")),
+    admin: "P",
+    maks: "U",
+    catatan:
+      "Saklar dan Jalankan sekarang HANYA Super Admin (keputusan 22 Okt 2026). Mengecualikan satu perkara (Jangan tunda/putus otomatis, Ikutkan lagi) mengikuti aksi Tunda / Putus sidang. Tidak tampil pada tautan rahasia Jadwal Sidang.",
+    sumber: "bolehMenyuntingAkses + sidang.tunda-putus",
+    rute: ["GET|POST /api/aleta-ecourt/tunda-otomatis", "GET|POST /api/aleta-ecourt/putus-otomatis"],
+  }),
+  buat({
+    id: "fitur.tes-putusan",
+    kelompok: "blangko",
+    judul: "Tes putusan di Blangko ABT by Derry Briantono",
+    keterangan: "Perkara apa pun menjadi acuan data; semua blangko tampil; hanya pratinjau dan unduh berakhiran -TES.",
+    hak: {},
+    admin: false,
+    maks: "U",
+    catatan: "Hanya Super Admin. Selama mode tes tidak ada yang ditulis ke ABT, SIPP, maupun e-Court (keputusan 22 Okt 2026).",
+    sumber: "blangko-derry.js superAdmin() / tesAktif()",
+  }),
+  buat({
+    id: "fitur.tautan-jadwal",
+    kelompok: "ecourt",
+    judul: "Tautan rahasia Jadwal Sidang (tanpa masuk akun)",
+    keterangan: "Membuat dan mencabut tautan; yang membuka tautan bekerja atas akun PP/panitera yang diwakili, hanya tombol baris yang diizinkan.",
+    hak: {},
+    admin: "U",
+    maks: "U",
+    catatan:
+      "Mengelola tautan hanya Super Admin dan Admin. Pemakai tautan tidak mendapat unduhan berkas, Kasir, antrean, tunda/putus otomatis, pilih hakim, maupun penetapan; tulisannya terbatas daftar izin rute dan 60 tindakan per jam.",
+    sumber: "server/modules/tautan-jadwal RUTE_TAUTAN",
+    rute: ["GET|POST /api/aleta-ecourt/tautan-jadwal"],
+  }),
 ];
 
 // ─── 5. Menu panel ekstensi (cermin ALAT_MENU_PERAN di panel-alat.js) ────────

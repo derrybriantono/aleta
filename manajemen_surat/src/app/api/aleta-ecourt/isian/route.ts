@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
+import { pastikanAksi } from "@/server/modules/akses/hak-peran";
 import {
   kesiapanIsian,
   penandaKelasB,
@@ -90,6 +91,8 @@ export async function POST(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     await pastikanKapabilitas(db, actorUserId, "panel");
+    // Audit hak 23 Okt 2026: menulis isian = pemegang perkara (matriks isian.perkara), bukan semua pemegang panel.
+    await pastikanAksi(db, actorUserId, "isian.perkara");
 
     const masukan = (await request.json()) as Masukan;
     return ok(
