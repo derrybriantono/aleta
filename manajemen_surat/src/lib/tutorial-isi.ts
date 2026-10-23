@@ -314,6 +314,21 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["isian perkara", "naskah", "keterangan perkara", "BAS", "relaas"],
   },
   {
+    id: "catat-kirim-laporan-perkara",
+    judul: "Catat kirim laporan perkara (LIPA)",
+    ringkas: "Mencatat tanggal laporan perkara dikirim, sebagai bahan penilaian kinerja.",
+    kelompok: "kinerja",
+    mencakup: { aksi: ["penilaian.catat-laporan"] },
+    halaman: ["/aleta-sipp"],
+    tautan: { teks: "Buka ALETA SIPP", href: "/aleta-sipp" },
+    langkah: [
+      "Buka ALETA SIPP, lalu bagian penilaian berjenjang.",
+      "Isi tanggal laporan perkara (LIPA) dikirim, lalu tekan Simpan.",
+      "Yang boleh mencatat hanya Panitera, Panmud, Admin, dan Super Admin. Peran lain dapat melihat catatannya tetapi tidak dapat mengubahnya.",
+    ],
+    kataKunci: ["LIPA", "laporan perkara", "penilaian", "kinerja"],
+  },
+  {
     id: "jadwal-sidang-tunda-putus",
     judul: "Menunda atau memutus sidang",
     ringkas: "Mencatat hasil sidang ke SIPP: ditunda ke tanggal berikutnya atau diputus.",
