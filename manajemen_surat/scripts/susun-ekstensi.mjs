@@ -140,6 +140,9 @@ const BERKAS = [
   // blangko, BAS belum diunggah, tugas, selisih 3 sumber) dan penyembunyi
   // tombol ALETA yang dobel penuh (saklar sippTampilDobel memunculkannya).
   "sipp-ide-m2.js",
+  // Panduan langkah kerja kasir bersorot (T5): kartu + penyorot elemen SIPP di jurnal keuangan
+  // dan jendela Tambah Biaya; hanya kasir/Admin/Super Admin; tidak menulis ke SIPP.
+  "panduan-kasir.js",
   // Isi otomatis di borang penetapan SIPP (19 Okt 2026) - skrip konten SIPP
   // paling belakang (memakai ambilUsulanPenunjukan/idUntukTulis konten.js):
   // tombol "Isi otomatis" di borang PMH/PPP/PJS/PHS, hanya mengisi kolom.

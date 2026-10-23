@@ -1117,4 +1117,14 @@ const GOLONGAN_BAS_MASSAL: GolonganMenuEkstensi[] = ["admin", "panitera", "panmu
 export function bolehBasMassal(pengguna: PenggunaGolongan | null | undefined): boolean {
   return golonganMenuEkstensi(pengguna).some((g) => GOLONGAN_BAS_MASSAL.includes(g));
 }
+/**
+ * Panduan langkah kerja kasir bersorot di halaman SIPP (T5): kasir dan admin
+ * (Admin, Super Admin) saja - golongan "kasir" ekstensi. Panitera/panmud boleh
+ * menu Kasir (sidang.kasir) tetapi tidak diberi panduan kerja kasir. Kembaran
+ * ekstensi-sipp/panduan-kasir.js (bolehPanduan); uji panduan-kasir-sorot.test.ts
+ * menuntut keduanya sama.
+ */
+export function bolehPanduanKasir(pengguna: PenggunaGolongan | null | undefined): boolean {
+  return golonganMenuEkstensi(pengguna).some((g) => g === "kasir" || g === "admin");
+}
 /* === AKHIR HAK-PERAN === */
