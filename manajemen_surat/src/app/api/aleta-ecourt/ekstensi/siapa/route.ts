@@ -3,7 +3,7 @@ import { type NextRequest } from "next/server";
 import { getDatabase, type AletaDatabase } from "@/server/db/client";
 import { roles as daftarPeran } from "@/lib/mock-data";
 import { DIRILIS_EKSTENSI_TERBARU } from "@/lib/catatan-ekstensi";
-import { bolehKasir } from "@/lib/kasir-jurnal";
+import { bolehKasir, bolehMengerjakanKasir } from "@/lib/kasir-jurnal";
 import { golonganMenuEkstensi } from "@/lib/matriks-peran";
 import {
   KETERANGAN_KAPABILITAS,
@@ -74,6 +74,8 @@ export async function GET(request: NextRequest) {
       bolehUnggahPutusan: bolehUnggahPutusan(actor),
       // Tab Kasir ekstensi (1.189.x): kasir/keuangan/panitera/admin - aturan Kasir 1.186.
       bolehKasir: bolehKasir(actor),
+      // T3: Kasir menulis = pelaksana + admin; panitera/panmud (pengawas) membaca saja.
+      bolehMengerjakanKasir: bolehMengerjakanKasir(actor),
       // HAK-PERAN 12 Okt: golongan menu panel SIPP/ABT dari matriks peran
       // (jabatan + peran tambahan) - panel-alat.js memakainya lebih dulu.
       golonganMenu: golonganMenuEkstensi(actor),

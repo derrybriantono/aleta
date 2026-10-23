@@ -1878,6 +1878,9 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
   const modeLama = () => typeof alatUjiMode !== "function" || alatUjiMode() === "lama";
   const pengguna = () => (typeof alatPenggunaAkunAleta === "function" ? alatPenggunaAkunAleta() : null);
   const boleh = (p) => (typeof alatBolehKasir === "function" ? alatBolehKasir(p === undefined ? pengguna() : p) : null);
+  /** T3 (23 Okt): pengawas (panitera/panmud) hanya membaca - tombol tulis dimatikan; rute tulis menolak (403) sendiri. */
+  const bacaSaja = (data) => (data && data.bolehUbah === false) || (typeof alatKasirBacaSaja === "function" && alatKasirBacaSaja(pengguna()) === true);
+  const KABAR_BACA_SAJA = "Mode baca: Anda mengawasi jurnal keuangan perkara. Mencatat jurnal dan setoran dikerjakan kasir atau petugas keuangan.";
 
   /** JSON portal dibuka bungkusnya; HTTP gagal = Error berbunyi pesan portal. */
   async function ambil(alamat, opsi) {
@@ -2228,6 +2231,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       const sungguh = !keringKah;
       kabar(kotakKabar, sungguh ? `Menyimpan ${baris.length} baris ke jurnal SIPP…` : "Menyusun pratinjau…");
       for (const b of aksi.querySelectorAll("button")) b.disabled = true;
+      akar.setAttribute("data-kasir-sibuk", "");
       try {
         // Sebelum menulis: alamat halaman disimpan supaya muat ulang sesudahnya tetap di sini (muat-ulang-sipp.js).
         if (sungguh && globalThis.aletaMuatUlangSipp) await globalThis.aletaMuatUlangSipp.catatAlamat("").catch(() => undefined);
@@ -2297,6 +2301,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       } catch (galat) {
         kabar(kotakKabar, String((galat && galat.message) || galat), "salah");
       } finally {
+        akar.removeAttribute("data-kasir-sibuk");
         for (const b of aksi.querySelectorAll("button")) b.disabled = false;
       }
     };
@@ -2320,6 +2325,11 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
     aksi.appendChild(tPratinjau);
     aksi.appendChild(tSimpan);
     aksi.appendChild(tombol("Susun ulang", "", () => void muatUlang()));
+    if (bacaSaja(data)) {
+      for (const b of [tPratinjau, tSimpan]) b.disabled = true;
+      akar.setAttribute("data-kasir-baca", "");
+      kotakKabar.appendChild(el("div", "aleta-basmassal-kabar aleta-basmassal-kabar-peringatan", KABAR_BACA_SAJA));
+    }
     akar.appendChild(aksi);
     akar.appendChild(kotakKabar);
   }
@@ -2398,7 +2408,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       }
       aksi.appendChild(tombol("Pratinjau", "", () => void jalankan(true)));
       aksi.appendChild(tombol(kering() ? `Simpan ${n} perkara (mode kering: pratinjau)` : `Simpan ${n} perkara ke SIPP`, "aleta-basmassal-tombol-utama", tekanSimpan));
-      for (const b of aksi.querySelectorAll("button")) b.disabled = !n || !(akun && akun.keadaan.username);
+      for (const b of aksi.querySelectorAll("button")) b.disabled = !n || !(akun && akun.keadaan.username) || bacaSaja();
     };
     let yakin = false;
     const tekanSimpan = (e) => {
@@ -2423,6 +2433,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
       }
       const sungguh = !keringKah;
       sedang = true;
+      isi.setAttribute("data-kasir-sibuk", "");
       henti = false;
       laporan.clear();
       gambar();
@@ -2484,6 +2495,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         gambar();
       }
       sedang = false;
+      isi.removeAttribute("data-kasir-sibuk");
       const semua = [...laporan.values()];
       kabar(
         kotakKabar,
@@ -2694,6 +2706,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
           baris.appendChild(ntpn);
           const hasil = el("span", "aleta-basmassal-lembut");
           const t = tombol("Tandai sudah disetor", "", async () => {
+            if (bacaSaja()) return;
             if (!pilihSetor.size) return (hasil.textContent = "Centang tanggal PNBP-nya dulu.");
             t.disabled = true;
             try {
@@ -2710,6 +2723,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
               t.disabled = false;
             }
           });
+          if (bacaSaja()) t.disabled = true;
           baris.appendChild(t);
           baris.appendChild(hasil);
           wadah.appendChild(baris);
@@ -2963,6 +2977,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         return kabar(kotakKabar, `Mode kering menyala - Kasir otomatis tidak mengirim apa pun. Yang akan diisi: ${antre.map((p) => `${p.nomorPerkara} (${p.kirim.length} baris)`).join(", ")}.`, "peringatan");
       }
       berjalan = true;
+      isi.setAttribute("data-kasir-sibuk", "");
       laporan.clear();
       gambar();
       let ke = 0;
@@ -3008,6 +3023,7 @@ globalThis.aletaBasMassalPasang = aletaBasMassalPasang;
         }
       }
       berjalan = false;
+      isi.removeAttribute("data-kasir-sibuk");
       const semua = [...laporan.values()];
       await baca();
       kabar(

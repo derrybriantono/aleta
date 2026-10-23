@@ -1,4 +1,5 @@
 import { bolehKasir, pengawasKasir } from "@/lib/kasir-jurnal";
+import { bolehAksi } from "@/lib/matriks-peran";
 import {
   periodeSah,
   rentangPeriode,
@@ -25,7 +26,7 @@ import { ApiError } from "@/server/shared/errors";
  */
 export async function pastikanHakKasir(db: AletaDatabase, actorUserId: string | null) {
   const aktor = await pastikanKapabilitas(db, actorUserId, "panel");
-  if (!bolehKasir(aktor)) {
+  if (!bolehKasir(aktor) || !bolehAksi(aktor, "sidang.kasir-baca")) {
     throw new ApiError(403, "Kasir hanya dapat dibuka kasir, bendahara, panitera, dan admin.");
   }
   return aktor;
@@ -38,7 +39,7 @@ export async function pastikanHakKasir(db: AletaDatabase, actorUserId: string | 
  */
 export async function pastikanHakKasirTulis(db: AletaDatabase, actorUserId: string | null) {
   const aktor = await pastikanHakKasir(db, actorUserId);
-  if (pengawasKasir(aktor)) {
+  if (pengawasKasir(aktor) || !bolehAksi(aktor, "sidang.kasir")) {
     throw new ApiError(403, "Panitera hanya dapat membaca Kasir - mencatat jurnal dan setoran dikerjakan kasir atau petugas keuangan.");
   }
   return aktor;

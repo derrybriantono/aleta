@@ -72,6 +72,7 @@
         "penetapan-kerja.js",
         "muat-ulang-sipp.js",
         "popup-aksi.js",
+        "kasir-jurnal-popup.js",
         "penetapan-sipp.js",
         "abt-klien.js",
         "putusan-edoc-sekaligus.js",
@@ -87,7 +88,8 @@
         "panel.css",
         "penetapan-sipp.css",
         "putusan-sipp.css",
-        "putusan-terjadwal.css"
+        "putusan-terjadwal.css",
+        "kasir-jurnal-popup.css"
       ],
       "run_at": "document_idle"
     },

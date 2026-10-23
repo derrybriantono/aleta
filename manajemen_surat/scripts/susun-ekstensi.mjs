@@ -180,6 +180,10 @@ const BERKAS = [
   "putusan-terjadwal.js",
   "putusan-terjadwal-peramban.js",
   "putusan-terjadwal.css",
+  // Tombol "Kasir ALETA" di SIPP > Jurnal Perkara > Jurnal Keuangan Perkara (23 Okt 2026, T3): membuka tampilan Kasir
+  // ekstensi di pop-up (popup-aksi.js); pengawas (panitera/panmud) hanya membaca.
+  "kasir-jurnal-popup.js",
+  "kasir-jurnal-popup.css",
   "penetapan-sipp.css",
   "blangko-derry.css",
   // Menu kiri ABT bisa digulir (19 Okt 2026) - skrip konten ABT: #navbar diberi
