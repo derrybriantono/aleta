@@ -1117,4 +1117,130 @@ const GOLONGAN_BAS_MASSAL: GolonganMenuEkstensi[] = ["admin", "panitera", "panmu
 export function bolehBasMassal(pengguna: PenggunaGolongan | null | undefined): boolean {
   return golonganMenuEkstensi(pengguna).some((g) => GOLONGAN_BAS_MASSAL.includes(g));
 }
+// ─── ALETA Ai: matriks kemampuan & akses data per peran (23 Okt 2026) ───────
+
+/**
+ * Rencana ALETA Ai v2 bagian 10.3: apa yang boleh DIBUAT ALETA Ai, dan bagian
+ * 4/10.2: data apa yang boleh DIBACA alatnya. Ditegakkan DI SERVER pada tiap
+ * permintaan (mesin.ts: pilihan kemampuan + alat yang ditawarkan + alat yang
+ * dijalankan; rute /api/aleta-ai/rekap) - bukan hanya menyembunyikan tombol.
+ *
+ * Kemampuan dapat DITIMPA Super Admin (Pengaturan ALETA Ai, kunci
+ * "matriks_kemampuan"): timpaan menggantikan daftar golongan satu kemampuan.
+ * Super Admin & Admin tetap boleh semuanya (pengelola satker); rahasia
+ * musyawarah tetap dijaga di percakapan (hanya pemilik), bukan di sini.
+ */
+export const KEMAMPUAN_AI = {
+  "tanya-data": {
+    label: "Tanya data & rekap (sesuai hak lihat)",
+    golongan: ["pimpinan", "hakim", "panitera", "panmud", "pp", "jurusita", "sekretariat", "kasir", "analis-perkara"],
+  },
+  "draf-putusan": { label: "Draf putusan / pertimbangan / amar", golongan: ["pimpinan", "hakim"] },
+  "draf-penetapan": { label: "Draf penetapan (PMH, PHS, PPP, PJS, dll.)", golongan: ["pimpinan", "hakim", "panitera", "panmud"] },
+  "draf-bas": { label: "Draf BAS & ringkasan sidang", golongan: ["pimpinan", "hakim", "panitera", "panmud", "pp"] },
+  relaas: { label: "Relaas & analisa panggilan", golongan: ["pimpinan", "hakim", "panitera", "panmud", "pp", "jurusita"] },
+  "surat-dinas": { label: "Surat dinas, nota, laporan kepegawaian", golongan: ["pimpinan", "panitera", "panmud", "sekretariat"] },
+  "laporan-kinerja": { label: "Laporan statistik/kinerja satker", golongan: ["pimpinan", "hakim", "panitera", "panmud", "sekretariat"] },
+  "rekap-kasir": { label: "Rekap kasir/panjar", golongan: ["pimpinan", "panitera", "panmud", "sekretariat", "kasir"] },
+} as const satisfies Record<string, { label: string; golongan: readonly GolonganPeran[] }>;
+
+export type KemampuanAi = keyof typeof KEMAMPUAN_AI;
+export const DAFTAR_KEMAMPUAN_AI = Object.keys(KEMAMPUAN_AI) as KemampuanAi[];
+
+/** Timpaan Super Admin: kemampuan -> golongan yang boleh (menggantikan bawaan). */
+export type TimpaanKemampuanAi = Partial<Record<KemampuanAi, readonly GolonganPeran[]>>;
+
+/** Jenis penetapan yang boleh didrafkan per golongan (matriks 10.3: hakim PHS, panitera PPP/PJS). */
+export const JENIS_PENETAPAN_AI: Partial<Record<GolonganPeran, readonly string[] | "semua">> = {
+  pimpinan: "semua",
+  hakim: ["PHS"],
+  panitera: ["PPP", "PJS"],
+  panmud: ["PPP", "PJS"],
+};
+
+function golonganKemampuan(kemampuan: KemampuanAi, timpaan?: TimpaanKemampuanAi | null): readonly GolonganPeran[] {
+  const t = timpaan?.[kemampuan];
+  return Array.isArray(t) ? t : KEMAMPUAN_AI[kemampuan].golongan;
+}
+
+/** Boleh meminta ALETA Ai membuat `kemampuan`? Super Admin & Admin selalu. */
+export function bolehKemampuanAi(
+  pengguna: PenggunaGolongan | null | undefined,
+  kemampuan: KemampuanAi,
+  timpaan?: TimpaanKemampuanAi | null
+): boolean {
+  const golongan = golonganPengguna(pengguna);
+  if (golongan.length === 0 || !KEMAMPUAN_AI[kemampuan]) return false;
+  if (golongan.includes("super-admin") || golongan.includes("admin")) return true;
+  const boleh = golonganKemampuan(kemampuan, timpaan);
+  return golongan.some((g) => boleh.includes(g));
+}
+
+/** Penetapan: jenis tertentu (PMH/PHS/PPP/PJS) hanya bagi golongan yang memegangnya. Jenis kosong = penetapan umum. */
+export function bolehDrafPenetapanAi(
+  pengguna: PenggunaGolongan | null | undefined,
+  jenis: string,
+  timpaan?: TimpaanKemampuanAi | null
+): boolean {
+  if (!bolehKemampuanAi(pengguna, "draf-penetapan", timpaan)) return false;
+  const golongan = golonganPengguna(pengguna);
+  if (golongan.includes("super-admin") || golongan.includes("admin")) return true;
+  const kode = String(jenis || "").toUpperCase();
+  if (!kode) return true;
+  return golongan.some((g) => {
+    const j = JENIS_PENETAPAN_AI[g];
+    return j === "semua" || (Array.isArray(j) && j.includes(kode));
+  });
+}
+
+export function pesanTolakKemampuanAi(kemampuan: KemampuanAi, timpaan?: TimpaanKemampuanAi | null): string {
+  const siapa = ["Admin", ...golonganKemampuan(kemampuan, timpaan).map((g) => LABEL_GOLONGAN[g])].join(", ");
+  return `Maaf, fitur "${KEMAMPUAN_AI[kemampuan].label}" di ALETA Ai hanya untuk ${siapa}. Peran Anda tidak diberi hak ini.`;
+}
+
+/**
+ * Bidang data yang dibaca alat ALETA Ai, dan lingkupnya per golongan:
+ *   "semua" = seluruh perkara satker; "milik" = perkara yang ia tangani
+ *   (majelis/PP/JS-nya, dicocokkan nama seperti Unggah massal); tidak disebut
+ *   = tidak boleh. Rekap "semua" untuk hakim = rekap umum (angka satker).
+ * PTSP/staf, TI, mediator, petugas sidang: tanpa data perkara ("info umum"
+ * saja). Sekretariat: non-perkara, kecuali keuangan perkara (rekap kasir).
+ * "keuangan" = jurnal keuangan/panjar perkara (baca-saja): Kasir, pimpinan,
+ * Panitera/Panmud, Sekretaris/Kasubag (matriks 10.3 "Rekap kasir/panjar";
+ * keputusan pengguna 23 Okt: alat keuangan baca-saja untuk kasir).
+ * Analis Perkara: perkara, relaas, rekap SEMUA perkara - keputusan pengguna
+ * 23 Okt 2026 (bukan lagi aturan sementara).
+ */
+export type BidangDataAi = "perkara" | "relaas" | "rekap" | "keuangan";
+export type LingkupDataAi = "semua" | "milik";
+
+export const AKSES_DATA_AI: Partial<Record<GolonganPeran, Partial<Record<BidangDataAi, LingkupDataAi>>>> = {
+  pimpinan: { perkara: "semua", relaas: "semua", rekap: "semua", keuangan: "semua" },
+  hakim: { perkara: "milik", relaas: "milik", rekap: "semua" },
+  panitera: { perkara: "semua", relaas: "semua", rekap: "semua", keuangan: "semua" },
+  panmud: { perkara: "semua", relaas: "semua", rekap: "semua", keuangan: "semua" },
+  pp: { perkara: "milik", relaas: "milik", rekap: "milik" },
+  jurusita: { relaas: "milik" },
+  "analis-perkara": { perkara: "semua", relaas: "semua", rekap: "semua" },
+  kasir: { keuangan: "semua" },
+  sekretariat: { keuangan: "semua" },
+};
+
+/** Lingkup terluas yang dimiliki pengguna atas bidang itu; null = tidak boleh. */
+export function aksesDataAi(
+  pengguna: PenggunaGolongan | null | undefined,
+  bidang: BidangDataAi,
+  timpaan?: TimpaanKemampuanAi | null
+): LingkupDataAi | null {
+  const golongan = golonganPengguna(pengguna);
+  if (golongan.includes("super-admin") || golongan.includes("admin")) return "semua";
+  if (!bolehKemampuanAi(pengguna, "tanya-data", timpaan)) return null;
+  let hasil: LingkupDataAi | null = null;
+  for (const g of golongan) {
+    const l = AKSES_DATA_AI[g]?.[bidang];
+    if (l === "semua") return "semua";
+    if (l === "milik") hasil = "milik";
+  }
+  return hasil;
+}
 /* === AKHIR HAK-PERAN === */

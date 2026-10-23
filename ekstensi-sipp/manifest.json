@@ -81,7 +81,8 @@
         "putusan-terjadwal-pasangan.js",
         "putusan-terjadwal.js",
         "putusan-terjadwal-peramban.js",
-        "menu-atas.js"
+        "menu-atas.js",
+        "aleta-ai-gelembung.js"
       ],
       "css": [
         "panel.css",
@@ -130,7 +131,8 @@
         "putusan-advance.js",
         "sipp-ide-l1.js",
         "abt-gulir.js",
-        "menu-atas.js"
+        "menu-atas.js",
+        "aleta-ai-gelembung.js"
       ],
       "css": [
         "panel.css",
@@ -147,7 +149,8 @@
         "deteksi-sisa-blangko.js",
         "panel-alat.js",
         "aleta.js",
-        "checklist.js"
+        "checklist.js",
+        "aleta-ai-gelembung.js"
       ],
       "css": [
         "panel.css"
@@ -170,7 +173,8 @@
         "https://ecourt.mahkamahagung.go.id/*"
       ],
       "js": [
-        "ecourt-masuk.js"
+        "ecourt-masuk.js",
+        "aleta-ai-gelembung.js"
       ],
       "run_at": "document_idle"
     },

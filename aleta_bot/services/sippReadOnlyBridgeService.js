@@ -3161,6 +3161,25 @@ async function cariPerkaraTes(params = {}) {
   return { ok: true, perkara };
 }
 
+/**
+ * ALETA Ai tahap 2a (23 Okt 2026): alat data BACA-SAJA untuk ALETA Ai.
+ * HANYA lewat akun basis data SIPP baca-saja khusus yang terdaftar di registry
+ * koneksi (kunci ALETA_AI_SIPP_KONEKSI, bawaan "sipp_ai_baca"). Tanpa akun itu
+ * DITOLAK ("akun_baca_ai_belum_ada") - tidak pernah jatuh ke sipp_primary
+ * seperti getConnectionConfig. Nama alat dari katalog aletaAiAlatService; tiap
+ * kueri tetap lewat assertReadOnlySql.
+ */
+async function aiAlat(params = {}) {
+  const kunci = String(process.env.ALETA_AI_SIPP_KONEKSI || "sipp_ai_baca").trim();
+  const terdaftar = externalDbService
+    .listConnections()
+    .some((c) => c.key === kunci && c.source === "registry" && c.isActive !== false && c.isActive !== 0);
+  if (!terdaftar) throw new Error("akun_baca_ai_belum_ada");
+  return require("./aletaAiAlatService").jalankan(String(params.alat || ""), params.parameter || {}, {
+    query: (sql, isian = []) => runReadOnly(kunci, sql, isian),
+  });
+}
+
 async function handleBridgeOperation(operation, params = {}) {
   const op = String(operation || "").trim();
   const handlers = {
@@ -3201,6 +3220,7 @@ async function handleBridgeOperation(operation, params = {}) {
     "kamus.jalankanKueri": jalankanKueriKamus,
     "kamus.bacaKolom": bacaKolomSipp,
     "legacy.sqlValue": executeLegacySqlValue,
+    "ai.alat": aiAlat,
     "user.search": searchUsers,
     "user.byUsername": async (input) => (await searchUsers({ ...input, query: input.username, limit: 1 }))[0] || null,
     "user.byNip": async (input) => (await searchUsers({ ...input, query: input.nip, limit: 1 }))[0] || null,

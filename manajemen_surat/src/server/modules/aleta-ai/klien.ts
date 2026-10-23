@@ -36,7 +36,10 @@ import type { PermintaanAi } from "@/lib/aleta-ai/penyusun";
  * seluruh respons); server harus dapat menjangkau api.anthropic.com langsung.
  */
 
-export type BerhentiAi = "selesai" | "ditolak" | "batas" | "lain";
+export type BerhentiAi = "selesai" | "ditolak" | "batas" | "alat" | "lain";
+
+/** Tahap 2a: satu permintaan alat dari model (stop_reason tool_use). */
+export type PanggilanAlat = { id: string; name: string; input: unknown };
 
 export type HasilAi = {
   teks: string;
@@ -49,6 +52,10 @@ export type HasilAi = {
   iterasi: IterasiPenggunaan[];
   kategoriTolak: string;
   dialihkan: boolean;
+  /** Tahap 2a: isi pesan akhir APA ADANYA (dikirim balik pada putaran alat). */
+  konten?: unknown[];
+  /** Tahap 2a: alat yang diminta (berhenti = "alat"). */
+  alat?: PanggilanAlat[];
 };
 
 export type OpsiAlir = {
@@ -108,6 +115,7 @@ function berhentiDari(stopReason: unknown): BerhentiAi {
   if (stopReason === "refusal") return "ditolak";
   if (stopReason === "max_tokens") return "batas";
   if (stopReason === "end_turn" || stopReason === "stop_sequence") return "selesai";
+  if (stopReason === "tool_use") return "alat";
   return "lain";
 }
 
@@ -150,6 +158,7 @@ export function buatKlienAnthropic(apiKey: string): KlienAi {
           system: permintaan.system,
           messages: permintaan.messages,
           output_config: { effort: permintaan.effort },
+          ...(permintaan.tools?.length ? { tools: permintaan.tools } : {}),
         };
         const aliran = permintaan.fallback
           ? c.beta.messages.stream({ ...dasar, betas: [BETA_FALLBACK], fallbacks: "default" } as never, { signal: opsi.sinyal })
@@ -163,13 +172,20 @@ export function buatKlienAnthropic(apiKey: string): KlienAi {
           }
         }
         const akhir = (await aliran.finalMessage()) as {
+          content?: unknown;
           stop_reason?: unknown;
           stop_details?: { category?: string | null } | null;
           model?: string;
           usage?: unknown;
         };
         const iterasi = iterasiDariUsage(akhir.usage, permintaan.model);
+        const konten = Array.isArray(akhir.content) ? (akhir.content as unknown[]) : [];
+        const alat = konten
+          .filter((b): b is { type: "tool_use"; id: string; name: string; input: unknown } => (b as { type?: string })?.type === "tool_use")
+          .map((b) => ({ id: String(b.id), name: String(b.name), input: b.input }));
         return {
+          konten,
+          alat,
           teks,
           berhenti: berhentiDari(akhir.stop_reason),
           model: typeof akhir.model === "string" && akhir.model ? akhir.model : permintaan.model,
@@ -192,6 +208,7 @@ export function buatKlienAnthropic(apiKey: string): KlienAi {
         model: permintaan.model,
         system: permintaan.system,
         messages: permintaan.messages,
+        ...(permintaan.tools?.length ? { tools: permintaan.tools } : {}),
       } as never);
       return Number((hasil as { input_tokens?: number }).input_tokens ?? 0);
     },

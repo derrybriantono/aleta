@@ -18,6 +18,7 @@ import {
   susunPermintaan,
   susunPermintaanKlasifikasi,
   BATAS_KARAKTER_PESAN_PENGGUNA,
+  type BlokPesan,
   type PermintaanAi,
 } from "@/lib/aleta-ai/penyusun";
 import {
@@ -31,8 +32,14 @@ import {
   type RuteKelompok,
 } from "@/lib/aleta-ai/rute";
 import type { AletaDatabase } from "@/server/db/client";
-import type { PelakuAi } from "@/server/modules/aleta-ai/akses";
+import { kemampuanDiminta } from "@/lib/aleta-ai/kemampuan";
+import { PemulihAliran } from "@/lib/aleta-ai/samaran";
+import { bolehDrafPenetapanAi, bolehKemampuanAi, pesanTolakKemampuanAi } from "@/lib/matriks-peran";
+import { golonganPelakuAi, type PelakuAi } from "@/server/modules/aleta-ai/akses";
+import { alatApiUntukPelaku, jalankanAlat } from "@/server/modules/aleta-ai/alat";
 import { ambilKlienAi, GalatKlienAi, jinakkanGalat, type HasilAi, type KlienAi } from "@/server/modules/aleta-ai/klien";
+import { bacaTimpaanKemampuan } from "@/server/modules/aleta-ai/kemampuan";
+import { muatPenyamar, simpanPenyamar } from "@/server/modules/aleta-ai/samaran";
 import { kursBerlaku, segarkanKursBilaPerlu, tanggalLokal, type PengambilKurs } from "@/server/modules/aleta-ai/kurs";
 import { ambilMilik, bukaIsi, JUDUL_BAWAAN, riwayatUntukPermintaan, sandiIsi } from "@/server/modules/aleta-ai/percakapan";
 import { bacaPengaturan, bacaRute, bacaTarif, catatJejak, type PengaturanAi } from "@/server/modules/aleta-ai/pengaturan";
@@ -60,6 +67,17 @@ import { saldoPengguna, selesaikanTahanan, tahanDana, tambahTahanan } from "@/se
  *      (tidak lebih dari saldo; giliran gagal tidak dipotong)
  *   6. simpan pesan terenkripsi, pemakaian per panggilan, jejak audit
  *
+ * TAHAP 2a (23 Okt 2026)
+ *   - matriks kemampuan per peran (matriks-peran.ts KEMAMPUAN_AI) diperiksa
+ *     sesudah rute: permintaan membuat naskah yang tidak berhak = ditolak sopan
+ *     tanpa panggilan API, dicatat di jejak ("tolak-kemampuan");
+ *   - PENYAMARAN DUA ARAH: semua teks yang keluar (pengklasifikasi, riwayat,
+ *     pesan, hasil alat) lewat Penyamar percakapan ini; jawaban model
+ *     dipulihkan (PemulihAliran) sebelum dialirkan dan disimpan;
+ *   - ALAT DATA BACA-SAJA: alat yang ditawarkan sudah disaring hak peran;
+ *     stop_reason tool_use -> jalankanAlat (hak diperiksa ULANG di sana) ->
+ *     tool_result -> panggilan lanjut, paling banyak BATAS_PUTARAN_ALAT kali.
+ *
  * Penyelesaian (langkah 5-6) ada di blok finally: pelanggan yang memutus
  * sambungan atau galat di tengah jalan tetap melepas tahanannya.
  */
@@ -69,6 +87,7 @@ const teks = (n: unknown) => String(n ?? "").trim();
 export type EventAi =
   | { jenis: "perkiraan"; mode: string; label: string; perkiraanRp: number }
   | { jenis: "teks"; delta: string }
+  | { jenis: "alat"; nama: string; label: string }
   | { jenis: "selesai"; pesanId: string; mode: string; label: string; biayaRp: number; saldoRp: number }
   | { jenis: "gagal"; pesan: string };
 
@@ -85,6 +104,22 @@ export const CATATAN_TERPOTONG = "\n\n[Jawaban terhenti karena mencapai batas pa
 export const PESAN_DITOLAK = "Permintaan ini ditolak oleh pengaman layanan AI. Coba rumuskan ulang dengan lebih umum, tanpa rincian yang tidak diperlukan.";
 export const PESAN_NONAKTIF_KUNCI = "ALETA Ai belum diaktifkan.";
 export const PESAN_NONAKTIF_SAKLAR = "ALETA Ai sedang dimatikan oleh admin.";
+/** Putaran alat paling banyak per giliran (tiap putaran = satu panggilan API berbayar). */
+export const BATAS_PUTARAN_ALAT = 5;
+export const CATATAN_BATAS_ALAT = "\n\n[Pembacaan data dihentikan karena mencapai batas putaran alat. Persempit pertanyaannya bila perlu.]";
+
+const LABEL_ALAT: Record<string, string> = {
+  rekap_relaas_retur: "rekap relaas retur",
+  rekap_sisa_perkara: "rekap sisa perkara",
+  rekap_perkara_lewat_5_bulan: "perkara lewat 5 bulan",
+  rekap_bht_tertunda: "BHT tertunda",
+  rekap_beban_majelis: "beban majelis",
+  rekap_jadwal_sidang: "jadwal sidang",
+  data_perkara: "data perkara",
+  rekap_keuangan_perkara: "rekap keuangan perkara",
+  data_keuangan_perkara: "jurnal keuangan perkara",
+};
+
 export const PESAN_NONAKTIF_PROYEK = "ALETA Ai belum diaktifkan: proyek ALETA AI PA V4.5 belum dipasang oleh Super Admin.";
 
 // ----------------------------------------------------------------------------
@@ -317,6 +352,10 @@ export async function* kirimPesan(
   const tarif = new Map(tarifDaftar.map((t) => [t.model, t]));
   const tabel = tabelRuteDari(await bacaRute(db));
 
+  // Penyamaran dua arah: SEMUA teks yang keluar ke layanan AI lewat penyamar ini.
+  const penyamar = await muatPenyamar(db, percakapanId);
+  const timpaan = await bacaTimpaanKemampuan(db);
+
   // 2. Rute -------------------------------------------------------------------
   let pemicu: PemicuMenu | null = kodePemicu ? (proyek.menu.find((p) => p.kode === kodePemicu) ?? null) : null;
   if (!pemicu) pemicu = cariPemicuDiAwalTeks(proyek.menu, teksPengguna);
@@ -328,7 +367,7 @@ export async function* kirimPesan(
 
   let klas: HasilKlasifikasi = pemicu
     ? { kelompok: pemicu.kelompok, yakin: 1, sumber: "pemicu" }
-    : await klasifikasikan(klien, tabel, tarif, teksKerja, opsi.sinyal, catat);
+    : await klasifikasikan(klien, tabel, tarif, penyamar.samarkan(teksKerja), opsi.sinyal, catat);
   if (klas.sumber !== "pemicu" && terlaluRagu(klas)) {
     const naik = naikSatuTingkat(tabel, klas.kelompok, pelaku.peranId);
     if (naik) klas = { ...klas, kelompok: naik.kelompok };
@@ -341,12 +380,38 @@ export async function* kirimPesan(
   }
   let rute = pilihan.rute;
 
+  // Matriks kemampuan per peran (rencana v2 10.3), ditegakkan di server.
+  const golongan = golonganPelakuAi(pelaku);
+  for (const diminta of kemampuanDiminta(teksKerja, rute.kelompok)) {
+    const boleh =
+      diminta.kemampuan === "draf-penetapan"
+        ? bolehDrafPenetapanAi(golongan, diminta.jenisPenetapan ?? "", timpaan)
+        : bolehKemampuanAi(golongan, diminta.kemampuan, timpaan);
+    if (boleh) continue;
+    await catatPemakaianTanpaPesan(db, pelaku, percakapanId, percobaan, kurs.kurs);
+    await simpanPenyamar(db, percakapanId, penyamar);
+    await catatJejak(db, {
+      penggunaId: pelaku.id,
+      peranId: pelaku.peranId,
+      aksi: "tolak-kemampuan",
+      percakapanId,
+      hasil: "tolak",
+      ringkas: `kemampuan=${diminta.kemampuan}${diminta.jenisPenetapan ? `; jenis=${diminta.jenisPenetapan}` : ""}`,
+    });
+    yield gagal(pesanTolakKemampuanAi(diminta.kemampuan, timpaan));
+    return;
+  }
+
   // 3. Permintaan, perkiraan, tahan dana --------------------------------------
-  const riwayat = await riwayatUntukPermintaan(db, percakapanId);
+  // Riwayat & pesan disamarkan; konteks perkara percakapan (bila ada) ikut sebagai catatan.
+  const riwayat = (await riwayatUntukPermintaan(db, percakapanId)).map((p) => ({ ...p, isi: penyamar.samarkan(p.isi) }));
+  const alatApi = alatApiUntukPelaku(pelaku, timpaan);
+  const perkaraRef = teks(percakapan.perkara_ref);
+  const teksKeluar = `${perkaraRef && alatApi.length ? `[Konteks perkara percakapan ini: ${perkaraRef}]\n` : ""}${penyamar.samarkan(teksKerja)}`;
   const buatPermintaan = (r: RuteKelompok): PermintaanAi => {
     const modul = pilihModul({ modul: proyek.modul, teks: teksKerja, pemicu, kelompok: r.kelompok, labelMode: r.label }).terpilih;
     const adaFallback = tarif.get(r.model)?.fallback === true;
-    return susunPermintaan({ rute: r, corePrompt: proyek.corePrompt, modul, riwayat, teksPengguna: teksKerja, fallback: adaFallback });
+    return susunPermintaan({ rute: r, corePrompt: proyek.corePrompt, modul, riwayat, teksPengguna: teksKeluar, fallback: adaFallback, alat: alatApi });
   };
 
   let permintaan = buatPermintaan(rute);
@@ -399,6 +464,11 @@ export async function* kirimPesan(
   const tutup = async (): Promise<{ biayaRp: number; saldoRp: number }> => {
     if (hasilTutup) return hasilTutup;
     ditutup = true;
+    try {
+      await simpanPenyamar(db, percakapanId, penyamar);
+    } catch {
+      /* kode baru yang gagal disimpan hanya membuat kode lain di giliran berikutnya */
+    }
     const totalUsd = percobaan.reduce((n, p) => n + p.usd, 0);
     const totalToken = percobaan.reduce<PenggunaanToken>((a, p) => jumlahkanPenggunaan(a, p.penggunaan), PENGGUNAAN_NOL);
     const harga = hitungHarga(totalUsd, kurs.kurs, parameterHarga(pengaturan), { gratis: pelaku.superAdmin });
@@ -474,8 +544,10 @@ export async function* kirimPesan(
     yield { jenis: "perkiraan", mode: rute.label, label: rute.label, perkiraanRp: perkiraan.perkiraanRp };
 
     let percobaanKe = 0;
+    let putaranAlat = 0;
     for (;;) {
       percobaanKe += 1;
+      const pemulih = new PemulihAliran(penyamar);
       const antrian = new Antrian<string>();
       const janji = klien.alirkan(permintaan, { onTeks: (d) => antrian.dorong(d), sinyal: kendali.signal }).then(
         (h) => {
@@ -491,8 +563,16 @@ export async function* kirimPesan(
       let teksPercobaan = "";
       for await (const delta of antrian) {
         teksPercobaan += delta;
-        jawaban += delta;
-        yield { jenis: "teks", delta };
+        const pulih = pemulih.dorong(delta);
+        if (pulih) {
+          jawaban += pulih;
+          yield { jenis: "teks", delta: pulih };
+        }
+      }
+      const sisaPulih = pemulih.akhir();
+      if (sisaPulih) {
+        jawaban += sisaPulih;
+        yield { jenis: "teks", delta: sisaPulih };
       }
       const { h, galat } = await janji;
 
@@ -510,6 +590,40 @@ export async function* kirimPesan(
       const biaya = biayaPanggilan(tarif, rute.model, h);
       percobaan.push({ jenis: "jawaban", model: h.model || rute.model, effort: rute.effort, kelompok: rute.kelompok, penggunaan: biaya.penggunaan, usd: biaya.usd });
       modelAkhir = h.model || rute.model;
+
+      // Putaran alat: jalankan (hak diperiksa ulang), kirim hasil TERSAMAR, panggil lagi.
+      if (h.berhenti === "alat" && (h.alat?.length ?? 0) > 0 && alatApi.length > 0) {
+        if (putaranAlat >= BATAS_PUTARAN_ALAT) {
+          status = "terpotong";
+          jawaban += CATATAN_BATAS_ALAT;
+          yield { jenis: "teks", delta: CATATAN_BATAS_ALAT };
+          const t = await tutup();
+          yield { jenis: "selesai", pesanId, mode: rute.label, label: rute.label, biayaRp: t.biayaRp, saldoRp: t.saldoRp };
+          return;
+        }
+        putaranAlat += 1;
+        const hasilAlat: BlokPesan[] = [];
+        for (const a of h.alat ?? []) {
+          yield { jenis: "alat", nama: a.name, label: LABEL_ALAT[a.name] ?? "data" };
+          const r = await jalankanAlat({ db, pelaku, timpaan, sekarang, penyamar, percakapanId, pesanId }, a.name, a.input);
+          hasilAlat.push({
+            type: "tool_result",
+            tool_use_id: a.id,
+            // Jaring pengaman: apa pun yang keluar lewat penyamar sekali lagi.
+            content: penyamar.samarkan(JSON.stringify(r.isi)),
+            ...(r.status === "ok" || r.status === "tidak-ditemukan" ? {} : { is_error: true }),
+          });
+        }
+        permintaan = {
+          ...permintaan,
+          messages: [...permintaan.messages, { role: "assistant", content: (h.konten ?? []) as BlokPesan[] }, { role: "user", content: hasilAlat }],
+        };
+        if (jawaban && !/\n$/.test(jawaban)) {
+          jawaban += "\n\n";
+          yield { jenis: "teks", delta: "\n\n" };
+        }
+        continue;
+      }
 
       if (h.berhenti === "ditolak") {
         // Ditolak sebelum keluaran apa pun: coba sekali pada tingkat di atasnya.

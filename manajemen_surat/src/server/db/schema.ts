@@ -1032,6 +1032,25 @@ export const DDL_MEDIASI_ARSIP = {
 } as const;
 
 /**
+ * ALETA Ai tahap 2a (0084, 23 Okt 2026): kode samaran per percakapan (isi asli
+ * terenkripsi). Cermin PERSIS dari drizzle/0084_aleta_ai_samaran.sql; penjaga
+ * aleta-ai-tahap2a-23okt.test.ts membandingkan keduanya. Tanpa kunci asing.
+ */
+export const DDL_ALETA_AI_SAMARAN = {
+  tabel: [
+    `CREATE TABLE IF NOT EXISTS aleta_ai_samaran (
+  id TEXT PRIMARY KEY,
+  percakapan_id TEXT NOT NULL,
+  kode TEXT NOT NULL,
+  jenis TEXT NOT NULL,
+  asli TEXT NOT NULL DEFAULT '',
+  dibuat_at TEXT NOT NULL
+)`,
+  ],
+  indeks: [`CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_samaran_kode ON aleta_ai_samaran(percakapan_id, kode)`],
+} as const;
+
+/**
  * Sidang keliling per hari & hakim yang menyidangkan per perkara (0083, 22 Okt
  * 2026). Cermin PERSIS dari drizzle/0083_aleta_sidang_keliling_hakim.sql;
  * penjaga jadwal-keliling-hakim-massal-22okt.test.ts membandingkan keduanya.
@@ -2177,6 +2196,8 @@ const schemaStatements = [
   ...DDL_MEDIASI_ARSIP.tabel,
   // Sidang keliling per hari & hakim yang menyidangkan per perkara (0083).
   ...DDL_SIDANG_KELILING_HAKIM.tabel,
+  // ALETA Ai tahap 2a: kode samaran per percakapan (0084).
+  ...DDL_ALETA_AI_SAMARAN.tabel,
   `CREATE TABLE IF NOT EXISTS aleta_uji_mandiri (
     id TEXT PRIMARY KEY,
     dijalankan_at TEXT NOT NULL,
@@ -4129,6 +4150,7 @@ const indexStatements = [
   ...DDL_PUTUSAN_TERJADWAL.indeks,
   ...DDL_MEDIASI_ARSIP.indeks,
   ...DDL_SIDANG_KELILING_HAKIM.indeks,
+  ...DDL_ALETA_AI_SAMARAN.indeks,
   `CREATE INDEX IF NOT EXISTS idx_uji_mandiri_waktu ON aleta_uji_mandiri(dijalankan_at)`,
   // Satu kedudukan hanya boleh punya SATU catatan per pertemuan - tanpa ini,
   // simpan dua kali menghasilkan dua baris yang saling bertentangan.
