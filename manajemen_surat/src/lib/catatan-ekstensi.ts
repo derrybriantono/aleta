@@ -57,6 +57,18 @@ export type CatatanEkstensi = {
 
 export const CATATAN_EKSTENSI: CatatanEkstensi[] = [
   {
+    versi: "1.205.37",
+    dirilis: "2026-10-23T10:20:00+08:00",
+    judul: "Pembaruan otomatis, widget tersembunyi, tema tanpa kedip, hak per peran",
+    butir: [
+      "Pembaruan ekstensi otomatis tanpa bertanya lewat pembantu kecil di laptop (pasang sekali); setelan pengguna tetap.",
+      "Unduhan paket ekstensi yang kosong (0 KB, dicegat IDM) kini terdeteksi dan dicoba ulang.",
+      "Checklist milestone, Kehadiran sidang hari ini dan Draf putusan tersembunyi bawaan; dibuka dari gelembung ALETA.",
+      "Tema gelap/terang/ikuti sistem tidak lagi terbalik atau berkedip saat pindah halaman.",
+      "Hak tampil per peran dirapikan: tombol yang pasti ditolak server tidak lagi ditampilkan.",
+    ],
+  },
+  {
     versi: "1.205.36",
     dirilis: "2026-10-23T01:05:00+08:00",
     judul: "Tes putusan memuat isian ketikan dan cari perkara per nomor",
