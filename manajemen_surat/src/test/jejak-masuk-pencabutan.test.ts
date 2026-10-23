@@ -168,21 +168,21 @@ describe("halaman Akun: perangkat sendiri", () => {
     expect(await jumlahSesi("usr-ketua")).toBe(1);
   });
 
-  it("data ekstensi: MAC dinormalkan, sumber 'ekstensi', akun Windows dibuang selama saklar mati", async () => {
+  it("data ekstensi: MAC dinormalkan, sumber 'ekstensi'; akun Windows dicatat (bawaan menyala) dan dibuang bila saklar dimatikan", async () => {
     const kuki = await masuk("hakim@pa.go.id", "hakim123", A);
     const { POST } = await import("@/app/api/portal/perangkat/route");
     const kirim = (badan: unknown) => POST(minta("/api/portal/perangkat", { method: "POST", kuki, badan }));
     const r = await kirim({ namaKomputer: "PC-HAKIM-02", mac: ["aa-bb-cc-00-11-22"], osRinci: "Windows 11 Pro 23H2 (22631)", akunWindows: "nur.aisyah" });
-    expect((await r.json()).data).toMatchObject({ diterima: true, mac: "AA:BB:CC:00:11:22", akunWindowsDicatat: false });
+    expect((await r.json()).data).toMatchObject({ diterima: true, mac: "AA:BB:CC:00:11:22", akunWindowsDicatat: true });
     const p = await db.queryOne<Record<string, string>>("SELECT * FROM aleta_perangkat WHERE perangkat_id = ?", [A]);
-    expect(p).toMatchObject({ nama_komputer: "PC-HAKIM-02", mac: "AA:BB:CC:00:11:22", mac_sumber: "ekstensi", os_rinci: "Windows 11 Pro 23H2 (22631)", akun_windows: "" });
+    expect(p).toMatchObject({ nama_komputer: "PC-HAKIM-02", mac: "AA:BB:CC:00:11:22", mac_sumber: "ekstensi", os_rinci: "Windows 11 Pro 23H2 (22631)", akun_windows: "nur.aisyah" });
     const masukBaris = await db.queryOne<Record<string, string>>("SELECT * FROM aleta_jejak_masuk WHERE peristiwa = 'MASUK'", []);
     expect(masukBaris).toMatchObject({ nama_komputer: "PC-HAKIM-02", mac: "AA:BB:CC:00:11:22", mac_sumber: "ekstensi" });
 
     const { simpanSetelanJejak } = await import("@/server/modules/perangkat/jejak");
-    await simpanSetelanJejak(db, { catatAkunWindows: true }, "usr-super");
+    await simpanSetelanJejak(db, { catatAkunWindows: false }, "usr-super");
     await kirim({ akunWindows: "nur.aisyah", petunjuk: { platform: "Windows", platformVersion: "15.0.0" } });
-    expect((await db.queryOne<Record<string, string>>("SELECT akun_windows FROM aleta_perangkat WHERE perangkat_id = ?", [A]))?.akun_windows).toBe("nur.aisyah");
+    expect((await db.queryOne<Record<string, string>>("SELECT akun_windows FROM aleta_perangkat WHERE perangkat_id = ?", [A]))?.akun_windows).toBe("");
     // Tanpa sesi = 401.
     expect((await POST(minta("/api/portal/perangkat", { method: "POST", badan: {} }))).status).toBe(401);
   });

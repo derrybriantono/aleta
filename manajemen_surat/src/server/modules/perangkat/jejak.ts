@@ -58,7 +58,8 @@ export const SETELAN_BAWAAN: SetelanJejak = {
   jamKerjaMulai: "07:30",
   jamKerjaSelesai: "17:00",
   hariKerja: [1, 2, 3, 4, 5],
-  catatAkunWindows: false,
+  // Keputusan Derry 23 Okt 2026: nama akun Windows dicatat (bawaan menyala).
+  catatAkunWindows: true,
 };
 
 export async function bacaSetelanJejak(db: AletaDatabase): Promise<SetelanJejak> {
