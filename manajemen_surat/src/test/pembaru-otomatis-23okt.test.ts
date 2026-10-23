@@ -663,12 +663,14 @@ type OpsiDunia = {
   awalLokal?: Record<string, unknown>;
   masuk?: boolean;
   lokal?: Record<string, unknown>;
+  /** Status jawaban POST /api/portal/perangkat (jejak masuk 23 Okt). */
+  statusPerangkat?: number;
 };
 
 function buatDuniaLatar(o: OpsiDunia = {}) {
   const lokal: Record<string, unknown> = o.lokal || {};
   const sesi: Record<string, unknown> = {};
-  const catat = { reload: 0, clear: 0, hapus: [] as string[][], native: [] as any[], unduh: [] as { nama: string; id: number }[], dibuang: [] as number[], tabKabar: [] as any[] };
+  const catat = { reload: 0, clear: 0, hapus: [] as string[][], native: [] as any[], unduh: [] as { nama: string; id: number }[], dibuang: [] as number[], tabKabar: [] as any[], perangkat: [] as any[] };
   const gudang = (isi: Record<string, unknown>, tandai = false) => ({
     get: async (k?: string | string[] | null) => {
       if (k === null || k === undefined) return structuredClone(isi);
@@ -772,7 +774,7 @@ function buatDuniaLatar(o: OpsiDunia = {}) {
     },
   };
 
-  const fetchTiruan = async (alamat: string) => {
+  const fetchTiruan = async (alamat: string, init?: { body?: string }) => {
     const balas = (status: number, isi: string | Uint8Array, json?: unknown) => ({
       ok: status >= 200 && status < 300,
       status,
@@ -794,6 +796,10 @@ function buatDuniaLatar(o: OpsiDunia = {}) {
     if (alamat.endsWith("/api/aleta-ecourt/ekstensi")) return balas(200, o.paket || new Uint8Array(3000));
     if (alamat.includes("/ekstensi/pembaru/pemasang")) return balas(200, "@echo off\r\nrem pemasang uji\r\n");
     if (alamat.includes(":8008/aleta/api/install")) return balas(404, "");
+    if (alamat.endsWith("/api/portal/perangkat")) {
+      catat.perangkat.push(JSON.parse(String(init?.body ?? "{}")));
+      return balas(o.statusPerangkat ?? 200, "{}", { ok: (o.statusPerangkat ?? 200) === 200 });
+    }
     throw new Error(`fetch tak dikenal: ${alamat}`);
   };
 
@@ -1176,3 +1182,37 @@ describe("popup, panel, dan portal menyebut pembaruan otomatis", () => {
 
 // Dipakai agar beforeAll tidak dilaporkan tidak terpakai pada penyaringan tertentu.
 beforeAll(() => undefined);
+
+// ---------------------------------------------------------------------------
+// JEJAK MASUK (23 Okt 2026): data perangkat dari pekerja latar
+// ---------------------------------------------------------------------------
+describe("latar.js: data perangkat untuk riwayat masuk", () => {
+  const LOKAL = { asalPortal: "http://192.168.10.10/aleta" };
+
+  it("pembantu LAMA tanpa perintah `perangkat`: tidak galat, tetap terkirim tanpa MAC", async () => {
+    const d = buatDuniaLatar({ native: pembantuSehat, lokal: { ...LOKAL } });
+    const j = await d.kirim({ sumber: "aleta-panel", jenis: "kirim-perangkat" });
+    expect(j).toMatchObject({ ok: true, keadaan: "terkirim", pembantu: "perintah-tidak-dikenal", adaMac: false });
+    expect(d.catat.native.map((m) => m.perintah)).toEqual(["perangkat"]);
+    expect(d.catat.perangkat).toEqual([expect.objectContaining({ namaKomputer: "", mac: [], osRinci: "" })]);
+  });
+
+  it("pembantu baru: nama komputer, MAC, dan versi Windows rinci ikut terkirim", async () => {
+    const baru: Native = (m) =>
+      m.perintah === "perangkat"
+        ? { ok: true, namaKomputer: "PC-PTSP-01", mac: ["AA:BB:CC:00:11:22"], osRinci: "Windows 11 Pro 23H2 (22631)", akunWindows: "ptsp" }
+        : pembantuSehat(m);
+    const d = buatDuniaLatar({ native: baru, lokal: { ...LOKAL } });
+    expect(await d.kirim({ sumber: "aleta-panel", jenis: "kirim-perangkat" })).toMatchObject({ ok: true, pembantu: "ada", adaMac: true });
+    expect(d.catat.perangkat[0]).toMatchObject({ namaKomputer: "PC-PTSP-01", mac: ["AA:BB:CC:00:11:22"], osRinci: "Windows 11 Pro 23H2 (22631)" });
+  });
+
+  it("pembantu belum dipasang: tetap terkirim; belum masuk (401) tidak dicatat terkirim", async () => {
+    const d = buatDuniaLatar({ native: "tidak-ada", lokal: { ...LOKAL }, statusPerangkat: 401 });
+    expect(await d.kirim({ sumber: "aleta-panel", jenis: "kirim-perangkat" })).toMatchObject({ ok: false, keadaan: "belum-masuk" });
+    expect(d.lokal.perangkatTerkirimPada).toBeUndefined();
+    d.atur({ statusPerangkat: 200 });
+    expect(await d.kirim({ sumber: "aleta-panel", jenis: "kirim-perangkat" })).toMatchObject({ ok: true, pembantu: "tidak-ada" });
+    expect(typeof d.lokal.perangkatTerkirimPada).toBe("number");
+  });
+});
