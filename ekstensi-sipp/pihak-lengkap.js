@@ -40,6 +40,16 @@
  *    sengaja tidak diperiksa (keputusan pengguna 22 Okt). Hanya mengingatkan -
  *    tidak pernah menahan tombol Simpan SIPP.
  *
+ * E. ISIAN OTOMATIS (T8, 23 Okt 2026) - hanya form#frm_ref_pihak. Kolom yang
+ *    KOSONG dan dapat dideteksi diisi sekali: jenis kelamin (BIN/BINTI pada
+ *    nama), umur (dari tanggal lahir), warga negara (Indonesia). Yang ragu
+ *    (agama Islam di luar alur saksi, status kawin anak) tampil sebagai usulan
+ *    yang diklik petugas. Kolom yang pernah terisi (oleh siapa pun) atau
+ *    pernah disentuh tidak diisi lagi; blangko Edit hanya mendapat usulan.
+ *    Tiap isian tercantum dengan tombol Batalkan. Agama, pekerjaan, status
+ *    kawin, dan alamat pada alur saksi tetap milik lajur usulan saksiscan.js.
+ *    Hanya kolom yang TAMPAK (SIPP menyembunyikan dengan .hide()).
+ *
  * TIDAK PERNAH: menekan Simpan; menimpa dropdown yang sudah terisi; mengubah
  * ketikan yang sedang berlangsung (kolom yang sedang difokus ditunda); menulis
  * kata "Aleta" ke nilai form SIPP (AletaPenjagaTanda bila ada).
@@ -462,6 +472,96 @@
     return masalah;
   }
 
+  /* ─── E. Isian otomatis: bagian murni ────────────────────────────────── */
+
+  /** "L" | "P" | "" - dari BIN / BINTI pada nama (SK: nama orang Indonesia bernasab). */
+  function jenisKelaminDariNama(nama) {
+    const t = ` ${normal(nama)} `;
+    const p = /\s(?:BINTI|BINTE|BNT)\s/.test(t);
+    const l = /\s(?:BIN|BN)\s/.test(t);
+    if (p && !l) return "P";
+    if (l && !p) return "L";
+    return "";
+  }
+
+  /** Umur penuh (tahun) dari "dd/mm/yyyy"; "" bila tidak masuk akal atau sama dengan tanggal bawaan SIPP (hari ini). */
+  function umurDariTanggal(teks, sekarang) {
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(teks || "").trim());
+    if (!m) return "";
+    const [h, b, t] = [Number(m[1]), Number(m[2]), Number(m[3])];
+    const lahir = new Date(t, b - 1, h);
+    if (lahir.getFullYear() !== t || lahir.getMonth() !== b - 1 || lahir.getDate() !== h) return "";
+    const kini = sekarang && typeof sekarang.getFullYear === "function" ? sekarang : new Date();
+    let umur = kini.getFullYear() - t;
+    if (kini.getMonth() < b - 1 || (kini.getMonth() === b - 1 && kini.getDate() < h)) umur -= 1;
+    if (umur <= 0 || umur > 120) return "";
+    return String(umur);
+  }
+
+  function pilihanCocok(pilihan, pola) {
+    return (pilihan || []).find((o) => o && String(o.nilai || "") !== "" && pola.test(String(o.tulisan || "").trim())) || null;
+  }
+
+  /**
+   * Rencana isian kolom referensi pihak - MURNI. Hanya kolom KOSONG yang masuk;
+   * `kuat` = boleh diisi otomatis, selain itu usulan klik.
+   *   k: { nama, tglLahir, umur, jenisKelamin, agama, statusKawin, wargaNegara,
+   *        pilihan: { jenisKelamin, agama, statusKawin, wargaNegara } (daftar {nilai,tulisan}),
+   *        alurSaksi (agama dst. milik lajur saksiscan), sekarang }
+   */
+  function rencanaReferensi(k) {
+    const x = k || {};
+    const pil = x.pilihan || {};
+    const kosong = (v) => !String(v === undefined || v === null ? "" : v).trim() || String(v) === "0";
+    const hasil = [];
+    const jk = jenisKelaminDariNama(x.nama);
+    if (jk && kosong(x.jenisKelamin)) {
+      const o = pilihanCocok(pil.jenisKelamin, jk === "L" ? /^laki/i : /^perempuan/i);
+      if (o) {
+        hasil.push({
+          medan: "jenisKelamin", label: "Jenis kelamin", tulisan: String(o.tulisan).trim(), kuat: true,
+          alasan: `${jk === "L" ? "bin" : "binti"} pada nama`,
+          langkah: [{ penunjuk: "#pihak_jenis_kelamin", jenis: "pilih", nilai: String(o.nilai) }],
+        });
+      }
+    }
+    const tglUmur = kosong(x.umur) ? umurDariTanggal(x.tglLahir, x.sekarang) : "";
+    if (tglUmur) {
+      hasil.push({
+        medan: "umur", label: "Umur", tulisan: `${tglUmur} tahun`, kuat: true, alasan: "dari tanggal lahir",
+        langkah: [{ penunjuk: "#pihak_umur", jenis: "teks", nilai: tglUmur }],
+      });
+    }
+    if (kosong(x.wargaNegara) && x.wargaNegaraPenunjuk) {
+      const o = pilihanCocok(pil.wargaNegara, /indonesia|^wni$/i);
+      if (o) {
+        hasil.push({
+          medan: "wargaNegara", label: "Warga negara", tulisan: String(o.tulisan).trim(), kuat: true, alasan: "bawaan pihak di perkara ini",
+          langkah: [{ penunjuk: x.wargaNegaraPenunjuk, jenis: "pilih", nilai: String(o.nilai) }],
+        });
+      }
+    }
+    if (!x.alurSaksi && kosong(x.agama)) {
+      const o = pilihanCocok(pil.agama, /^islam$/i);
+      if (o) {
+        hasil.push({
+          medan: "agama", label: "Agama", tulisan: "Islam", kuat: false, alasan: "perkara Peradilan Agama - periksa dulu",
+          langkah: [{ penunjuk: "#pihak_agama", jenis: "pilih", nilai: String(o.nilai) }],
+        });
+      }
+    }
+    if (!x.alurSaksi && kosong(x.statusKawin) && Number(x.umur || tglUmur) > 0 && Number(x.umur || tglUmur) < 17) {
+      const o = pilihanCocok(pil.statusKawin, /^belum\s*kawin$/i);
+      if (o) {
+        hasil.push({
+          medan: "statusKawin", label: "Status kawin", tulisan: String(o.tulisan).trim(), kuat: false, alasan: "umur di bawah 17 tahun - periksa dulu",
+          langkah: [{ penunjuk: "#pihak_status_kawin", jenis: "pilih", nilai: String(o.nilai) }],
+        });
+      }
+    }
+    return hasil;
+  }
+
   /* ─── 1b. Indeks wilayah untuk "ketik awal nama desa" ─────────────────── */
   //
   // Data (kabupaten, kecamatan, desa, tanpa nilai bersandi) diambil SEKALI per provinsi dari portal,
@@ -670,6 +770,7 @@
       alamatLain: [],
       pekerjaan: 'input[name="pihak_pekerjaan"]',
       identitas: { jenis: "#pihak_jenis_identitas", nomor: "#pihak_no_identitas", telp: "#pihak_no_tlp" },
+      referensi: true,
     },
     {
       form: "form#frm_ref_pengacara",
@@ -1265,6 +1366,146 @@
     }
   }
 
+  /* ─── E. Isian otomatis: lapisan halaman ─────────────────────────────── */
+
+  const WARGA_NEGARA = '#pihak_warga_negara, #pihak_warganegara, select[name*="warga"]';
+
+  function nilaiTampak(f, penunjuk) {
+    const el = f.querySelector(penunjuk);
+    return el && tampak(el) ? el : null;
+  }
+
+  function bacaReferensi(f) {
+    const nilai = (p) => {
+      const el = nilaiTampak(f, p);
+      return el ? String(el.value || "").trim() : "";
+    };
+    const pil = (p) => {
+      const el = nilaiTampak(f, p);
+      return el && el.options ? Array.from(el.options).map((o) => ({ nilai: o.value, tulisan: String(o.textContent || "").trim() })) : [];
+    };
+    const warga = nilaiTampak(f, WARGA_NEGARA);
+    const aksi = f.querySelector("#act_frm_ref_pihak");
+    return {
+      mode: aksi && String(aksi.value) === "updt" ? "updt" : "add",
+      ada: {
+        jenisKelamin: Boolean(nilaiTampak(f, "#pihak_jenis_kelamin")),
+        umur: Boolean(nilaiTampak(f, "#pihak_umur")),
+        wargaNegara: Boolean(warga),
+        agama: Boolean(nilaiTampak(f, "#pihak_agama")),
+        statusKawin: Boolean(nilaiTampak(f, "#pihak_status_kawin")),
+      },
+      k: {
+        nama: nilai("#pihak_fullname"),
+        tglLahir: nilai("#pihak_tgl_lahir"),
+        umur: nilai("#pihak_umur"),
+        jenisKelamin: nilai("#pihak_jenis_kelamin"),
+        agama: nilai("#pihak_agama"),
+        statusKawin: nilai("#pihak_status_kawin"),
+        wargaNegara: warga ? String(warga.value || "").trim() : "",
+        wargaNegaraPenunjuk: warga ? (warga.id ? `#${warga.id}` : `select[name="${warga.getAttribute("name")}"]`) : "",
+        pilihan: { jenisKelamin: pil("#pihak_jenis_kelamin"), agama: pil("#pihak_agama"), statusKawin: pil("#pihak_status_kawin"), wargaNegara: warga ? Array.from(warga.options || []).map((o) => ({ nilai: o.value, tulisan: String(o.textContent || "").trim() })) : [] },
+        alurSaksi: Boolean(document.querySelector(".aleta-c2-sbantu-ref")),
+        sekarang: new Date(),
+      },
+    };
+  }
+
+  function kotakIsian(s, f) {
+    if (s.kotakIsian && s.kotakIsian.isConnected) return s.kotakIsian;
+    const kotak = document.createElement("div");
+    kotak.className = "aleta-pl-isian";
+    kotak.hidden = true;
+    f.insertBefore(kotak, f.firstChild);
+    s.kotakIsian = kotak;
+    return kotak;
+  }
+
+  async function isiLangkah(s, usulan) {
+    let semua = true;
+    for (const l of usulan.langkah) {
+      const j = await jembatan({ jenis: "isi", penunjuk: `${s.b.form} ${l.penunjuk}`, jenisMedan: l.jenis, nilai: l.nilai });
+      if (!j || j.ok !== true) semua = false;
+    }
+    if (semua) s.isi.diisi.set(usulan.medan, { ...usulan, nilai: usulan.langkah[usulan.langkah.length - 1].nilai, otomatis: Boolean(usulan.otomatis) });
+    return semua;
+  }
+
+  function gambarIsian(s, f, usulan) {
+    const kotak = kotakIsian(s, f);
+    kotak.textContent = "";
+    if (s.isi.diisi.size) {
+      const ul = document.createElement("ul");
+      for (const [medan, u] of s.isi.diisi) {
+        const li = document.createElement("li");
+        li.textContent = `${u.label}: ${u.tulisan} - ${u.otomatis ? "terisi otomatis" : "usulan dipakai"} (${u.alasan}) `;
+        const batal = document.createElement("button");
+        batal.type = "button";
+        batal.className = "aleta-pl-chip";
+        batal.textContent = "Batalkan";
+        batal.addEventListener("click", () => void batalkanIsian(s, f, medan));
+        li.appendChild(batal);
+        ul.appendChild(li);
+      }
+      kotak.appendChild(ul);
+    }
+    for (const u of usulan) {
+      const t = document.createElement("button");
+      t.type = "button";
+      t.className = "aleta-pl-chip";
+      t.textContent = `Usulan ${u.label}: ${u.tulisan}`;
+      t.title = u.alasan;
+      t.addEventListener("click", () => {
+        void isiLangkah(s, u).then(() => {
+          s.isi.pernah.add(u.medan);
+          s.potretIsian = null;
+        });
+      });
+      kotak.appendChild(t);
+    }
+    kotak.hidden = !kotak.childNodes.length;
+  }
+
+  async function batalkanIsian(s, f, medan) {
+    const u = s.isi.diisi.get(medan);
+    if (!u) return;
+    for (const l of u.langkah) await jembatan({ jenis: "isi", penunjuk: `${s.b.form} ${l.penunjuk}`, jenisMedan: l.jenis, nilai: "" });
+    s.isi.diisi.delete(medan);
+    s.isi.pernah.add(medan);
+    s.potretIsian = null;
+  }
+
+  /** Dipanggil tiap denyut pada form#frm_ref_pihak yang tampak. */
+  async function perbaruiIsian(s, f) {
+    if (s.sedangIsi) return;
+    s.sedangIsi = true;
+    try {
+      if (!s.isi) s.isi = { pernah: new Set(), diisi: new Map() };
+      const { mode, ada, k } = bacaReferensi(f);
+      const nilaiKini = { jenisKelamin: k.jenisKelamin, umur: k.umur, wargaNegara: k.wargaNegara, agama: k.agama, statusKawin: k.statusKawin };
+      // Kolom yang pernah berisi (oleh siapa pun) tidak diisi lagi; isian ALETA yang diubah petugas dilepas.
+      for (const [medan, v] of Object.entries(nilaiKini)) {
+        if (!ada[medan]) continue;
+        if (v && v !== "0") s.isi.pernah.add(medan);
+        const u = s.isi.diisi.get(medan);
+        if (u && String(v) !== String(u.nilai)) s.isi.diisi.delete(medan);
+      }
+      const rencana = rencanaReferensi(k).filter((u) => ada[u.medan] && !s.isi.pernah.has(u.medan));
+      const potret = JSON.stringify([rencana.map((u) => [u.medan, u.langkah[0].nilai]), [...s.isi.diisi.keys()], mode]);
+      if (potret === s.potretIsian) return;
+      for (const u of rencana) {
+        if (u.kuat && mode === "add") {
+          u.otomatis = true;
+          if (await isiLangkah(s, u)) s.isi.pernah.add(u.medan);
+        }
+      }
+      s.potretIsian = potret;
+      gambarIsian(s, f, rencana.filter((u) => !(u.kuat && mode === "add" && s.isi.diisi.has(u.medan))));
+    } finally {
+      s.sedangIsi = false;
+    }
+  }
+
   /* ─── Denyut ─────────────────────────────────────────────────────────── */
 
   function sambungkan(b) {
@@ -1297,10 +1538,15 @@
       s.gambarUsulan = [];
       s.ingat = new Map();
       s.potret = null;
+      s.isi = null;
+      s.kotakIsian = null;
+      s.potretIsian = null;
     }
     if (!s.aktif) {
       s.aktif = true;
       s.potret = null;
+      s.isi = null; // blangko dibuka lagi: catatan isian baru (SIPP mengosongkan isiannya)
+      s.potretIsian = null;
       void muatKosakataWilayah(s, f);
       void pastikanIndeks();
     }
@@ -1337,6 +1583,7 @@
 
     pasangPengingat(s, f);
     perbaruiPengingat(s, f);
+    if (b.referensi) void perbaruiIsian(s, f);
 
     // Dropdown berubah (SIPP memakai select2: tak ada peristiwa asli yang dapat didengar) -> alamat.
     const potret = potretDropdown(f);
@@ -1380,6 +1627,9 @@
     rencanaDropdown,
     rantaiWilayah,
     periksaIdentitas,
+    jenisKelaminDariNama,
+    umurDariTanggal,
+    rencanaReferensi,
     sebutanDesa,
     buatIndeks,
     cariWilayah,

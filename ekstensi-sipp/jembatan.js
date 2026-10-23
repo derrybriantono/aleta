@@ -394,7 +394,9 @@
             }
           }
         }
-        if (!terpilih) {
+        // Mengosongkan pilihan ("") sah bila select punya option kosong (Batalkan isian otomatis).
+        const kosongkan = !terpilih && teks === "" && Array.from(elemen.options || []).some((x) => String(x.value) === "");
+        if (!terpilih && !kosongkan) {
           return {
             ok: false,
             alasan: "pilihan_tidak_ada",

@@ -11590,6 +11590,9 @@ html[data-aleta-lencana="rancangan"][data-aleta-tema-sipp="gelap"] .aleta-tanda-
 .aleta-pl-merah { outline: 2px solid var(--s-merah, #c62828) !important; outline-offset: 0; border-radius: 3px; }
 .aleta-pl-chip.aleta-pl-aktif { border-color: var(--s-hijau-terang, #2e7d5b); outline: 2px solid var(--s-hijau-terang, #2e7d5b); outline-offset: 0; }
 .aleta-pl-petunjuk { display: block; margin: 2px 0 0; font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); color: var(--s-tulisan-lembut, #5b6b66); }
+.aleta-pl-isian { margin: 0 0 6px; font-size: calc(11.5px * var(--aleta-skala-huruf, 1)); color: var(--s-tulisan-lembut, #5b6b66); }
+.aleta-pl-isian[hidden] { display: none !important; }
+.aleta-pl-isian ul { margin: 2px 0; padding-left: 16px; }
 /* === AKHIR 22 Okt (W50) === */
 
 /* ==========================================================================
