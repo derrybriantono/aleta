@@ -83,6 +83,14 @@ export function useHariLibur(): number {
 const HARI_PENDEK = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
+/**
+ * 23 Okt 2026: pemilih tampilan berdiri di baris alat bersama tombol lain.
+ * Keterangan "hari libur" yang ikut mengalir menambah tinggi kotaknya dan
+ * mendorong tombol di sebelahnya turun - kini ia melayang di bawah kotak.
+ */
+const keteranganMelayang =
+  "pointer-events-none absolute left-0 top-full z-10 mt-0.5 whitespace-nowrap rounded bg-card/90 px-1 leading-tight";
+
 function hariIni() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -170,7 +178,14 @@ export function PemilihTanggalSidang({
           aria-label={ariaLabel}
           aria-invalid={sebabNilai ? true : undefined}
           onChange={(e) => pilih(e.target.value)}
-          className={cn("min-w-0 flex-1", className, sebabNilai && tampilKalender && "border-amber-500")}
+          className={cn(
+            "min-w-0 flex-1",
+            // 23 Okt 2026: ikon kalender bawaan peramban tidak mengenal hari libur -
+            // disembunyikan selama tombol kalender libur di sebelahnya tampil.
+            tampilKalender && "[&::-webkit-calendar-picker-indicator]:hidden",
+            className,
+            sebabNilai && tampilKalender && "border-amber-500"
+          )}
         />
         {tampilKalender ? (
         <button
@@ -194,11 +209,13 @@ export function PemilihTanggalSidang({
           {ditolak}
         </span>
       ) : !tampilKalender ? null : sebabNilai ? (
-        <span className="text-[0.7rem] font-medium text-amber-700 dark:text-amber-400" data-tanggal-libur="">
+        <span className={cn("text-[0.7rem] font-medium text-amber-700 dark:text-amber-400", liburBolehDipilih && keteranganMelayang)} data-tanggal-libur="">
           {sebutTanggalPanjang(value)} hari libur ({sebabNilai.nama}).{liburBolehDipilih ? "" : " Pilih hari kerja lain."}
         </span>
       ) : tanpaSkb ? (
-        <span className="text-[0.7rem] text-muted-foreground">Daftar libur nasional tahun {value.slice(0, 4)} belum ada - periksa SKB-nya.</span>
+        <span className={cn("text-[0.7rem] text-muted-foreground", liburBolehDipilih && keteranganMelayang)}>
+          Daftar libur nasional tahun {value.slice(0, 4)} belum ada - periksa SKB-nya.
+        </span>
       ) : null}
       {buka && tampilKalender ? (
         <KalenderLibur
@@ -233,7 +250,8 @@ function warnaLibur(jenis: string): string {
   if (jenis === "nasional") return "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10";
   if (jenis === "cuti-bersama") return "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10";
   if (jenis === "daerah" || jenis === "lain") return "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10";
-  return "text-muted-foreground";
+  // 23 Okt 2026: Sabtu/Minggu merah seperti kalender dinding, tanpa latar - latar merah milik libur nasional.
+  return "text-red-600 dark:text-red-400";
 }
 
 function geserTanggal(iso: string, hari: number): string {
@@ -349,7 +367,7 @@ export function KalenderLibur({
       </div>
       <div ref={grid} className="grid grid-cols-7 gap-0.5 text-center">
         {HARI_PENDEK.map((h, i) => (
-          <span key={h} className={cn("py-0.5 text-[0.65rem] font-medium text-muted-foreground 2xl:text-xs", i === 6 && "text-red-600 dark:text-red-400")}>
+          <span key={h} className={cn("py-0.5 text-[0.65rem] font-medium text-muted-foreground 2xl:text-xs", i >= 5 && "text-red-600 dark:text-red-400")}>
             {h}
           </span>
         ))}
@@ -383,7 +401,8 @@ export function KalenderLibur({
                 "h-9 rounded text-[0.8rem] tabular-nums sm:h-8 2xl:h-10 2xl:text-sm",
                 s ? warnaLibur(s.jenis) : "",
                 s && !liburBolehDipilih && "cursor-not-allowed line-through",
-                s && liburBolehDipilih && "hover:ring-1 hover:ring-primary/40",
+                s && liburBolehDipilih && !luar && "hover:ring-1 hover:ring-primary/40",
+                s && luar && "cursor-not-allowed opacity-50",
                 !s && (luar ? "cursor-not-allowed text-muted-foreground/50" : "hover:bg-primary/10"),
                 usulan && iso === usulan && iso !== terpilih && "ring-2 ring-sky-500",
                 iso === terpilih && (!s || liburBolehDipilih) && "bg-primary font-semibold text-primary-foreground hover:bg-primary",
@@ -411,7 +430,7 @@ export function KalenderLibur({
         <span className="text-red-600 dark:text-red-400">Libur nasional</span>
         <span className="text-orange-600 dark:text-orange-400">Cuti bersama</span>
         <span className="text-violet-600 dark:text-violet-400">Libur tambahan</span>
-        <span>Sabtu/Minggu</span>
+        <span className="text-red-600 dark:text-red-400">Sabtu/Minggu</span>
         <span className="underline decoration-2 underline-offset-2">Hari ini</span>
         {usulan ? <span className="rounded px-0.5 ring-1 ring-sky-500">Usulan</span> : null}
       </div>

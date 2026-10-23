@@ -4347,8 +4347,8 @@ function KalenderSidang({
         ) : null}
 
         <div className="grid grid-cols-7 gap-1 text-center text-sm">
-          {HARI_PENDEK.map((nama) => (
-            <div key={nama} className="py-1 font-medium text-muted-foreground">
+          {HARI_PENDEK.map((nama, urutan) => (
+            <div key={nama} className={`py-1 font-medium ${urutan % 6 === 0 ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}>
               {nama}
             </div>
           ))}
@@ -4373,7 +4373,8 @@ function KalenderSidang({
                   "flex min-h-[3rem] flex-col items-center justify-center rounded-md border p-1 transition",
                   terpilih ? "border-primary bg-primary/10 font-semibold" : "border-transparent",
                   isi ? "bg-muted/60 hover:bg-muted" : "hover:bg-muted/40",
-                  akhirPekan && !isi ? "text-muted-foreground" : "",
+                  // 23 Okt 2026: Sabtu/Minggu merah, sama dengan kalender libur.
+                  akhirPekan ? "text-red-600 dark:text-red-400" : "",
                 ].join(" ")}
                 aria-label={`${tanggalHariPanjang(tanggal)}${isi ? `, ${isi.jumlah} sidang` : ", tanpa sidang"}`}
               >
@@ -6719,12 +6720,15 @@ export function AletaEcourtSidang({
                 pisah, dan panah maju-mundur mengapitnya. Kotak pencarian pindah
                 ke baris tindakan di bawah: ia menyaring yang SUDAH tampil, dan
                 itu pekerjaan yang lain sama sekali. */}
-            <div className="flex items-center overflow-hidden rounded-lg border bg-card shadow-sm">
+            {/* 23 Okt 2026: tanpa overflow-hidden - bingkai ini memotong kalender
+                libur yang membuka ke bawah, sehingga tombolnya tampak tidak
+                berfungsi. Sudut tombol tepi dibulatkan sendiri (first:/last:). */}
+            <div className="flex items-center rounded-lg border bg-card shadow-sm">
               <button
                 type="button"
                 aria-label="Hari sebelumnya"
                 onClick={() => pilihHari(geserHari(dari, -1))}
-                className="px-2.5 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                className="rounded-l-lg px-2.5 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -6771,7 +6775,7 @@ export function AletaEcourtSidang({
               <button
                 type="button"
                 onClick={() => pilihHari(hariIni())}
-                className="border-l px-3 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                className="border-l px-3 py-2 text-sm text-muted-foreground transition last:rounded-r-lg hover:bg-muted hover:text-foreground"
               >
                 Hari ini
               </button>
@@ -6786,7 +6790,7 @@ export function AletaEcourtSidang({
                 aria-label="Pilih tanggal dari kalender"
                 title="Pilih tanggal dari kalender"
                 onClick={() => setKalenderTerbuka(true)}
-                className="border-l px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                className="rounded-r-lg border-l px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
               >
                 <CalendarDays className="h-4 w-4" />
               </button>
