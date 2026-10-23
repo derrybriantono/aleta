@@ -166,6 +166,9 @@ Catatan kewenangan:
 | Set pertanyaan saksi untuk tanya jawab ABT | L | L | L | L | L | L | L | - | - | - | - | - | L | - | - | - |
 | Menyimpan isian perkara untuk naskah (Kelas B) | U | U | U | U | U | U | U | U | - | - | - | - | U | - | - | - |
 | Mencatat kirim laporan perkara (LIPA) | U | U | - | - | U | U | - | - | - | - | - | - | - | - | - | - |
+| Melihat riwayat masuk, sesi aktif, dan perangkat semua akun; mengeluarkan sesi | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Mengatur pengecualian batas perangkat per akun | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Mengatur batas perangkat per peran dan setelan riwayat masuk | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | Peta perkara & beban konseptor | L | L | L | L | L | L | - | - | - | - | - | - | - | L | - | - |
 | Tunda otomatis 16.30 dan putus otomatis gugur / tidak dapat diterima | U | P | P | P | P | P | P | L | L | L | L | L | L | L | L | L |
 | Tautan rahasia Jadwal Sidang (tanpa masuk akun) | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - | - |

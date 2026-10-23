@@ -624,6 +624,8 @@ export type AturanAksi = {
   /** Rute API yang menegakkannya (dokumentasi + uji). */
   rute: readonly string[];
   alasan: string;
+  /** Hanya Super Admin - Admin TIDAK otomatis boleh (23 Okt 2026). */
+  hanyaSuperAdmin?: boolean;
 };
 
 const PERSIDANGAN: GolonganPeran[] = ["pimpinan", "hakim", "panitera", "panmud", "pp"];
@@ -962,6 +964,33 @@ export const AKSI = {
     alasan:
       "Laporan perkara disusun dan dikirim kepaniteraan (terutama Panitera Muda Hukum); tanggal kirimnya menjadi dasar penilaian ketepatan waktu, jadi hanya Panitera, Panitera Muda, Admin, dan Super Admin yang mencatat. Peran lain tetap membaca.",
   },
+  // 23 Okt 2026 (permintaan Super Admin): riwayat masuk & batas perangkat.
+  "jejak-masuk.lihat": {
+    label: "Melihat riwayat masuk, sesi aktif, dan perangkat semua akun; mengeluarkan sesi",
+    crud: "CUD",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["GET /api/admin/jejak-masuk", "POST /api/admin/jejak-masuk/cabut"],
+    alasan:
+      "Riwayat masuk memuat IP, perangkat, dan MAC seluruh pegawai - hanya Admin dan Super Admin. Pegawai lain melihat riwayat dan perangkatnya sendiri di halaman Akun.",
+  },
+  "perangkat.batas-akun": {
+    label: "Mengatur pengecualian batas perangkat per akun",
+    crud: "CUD",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["POST|DELETE /api/admin/batas-perangkat (cakupan akun)"],
+    alasan: "Pengecualian satu akun (misalnya pegawai yang memakai dua komputer) diatur Admin dan Super Admin.",
+  },
+  "perangkat.batas-peran": {
+    label: "Mengatur batas perangkat per peran dan setelan riwayat masuk",
+    crud: "CUD",
+    golongan: [],
+    lingkup: "semua",
+    rute: ["POST|DELETE /api/admin/batas-perangkat (cakupan peran)", "POST /api/admin/jejak-masuk/setelan"],
+    alasan: "Batas per peran berlaku untuk seluruh satker dan dapat mengeluarkan banyak orang sekaligus - hanya Super Admin.",
+    hanyaSuperAdmin: true,
+  },
   // Analitik
   "analitik.peta-beban": {
     label: "Peta perkara & beban konseptor",
@@ -979,8 +1008,10 @@ export type KunciAksi = keyof typeof AKSI;
 export function bolehAksi(pengguna: PenggunaGolongan | null | undefined, aksi: KunciAksi): boolean {
   const golongan = golonganPengguna(pengguna);
   if (golongan.length === 0) return false;
-  if (golongan.includes("super-admin") || golongan.includes("admin")) return true;
+  if (golongan.includes("super-admin")) return true;
   const aturan: AturanAksi = AKSI[aksi];
+  if (aturan?.hanyaSuperAdmin) return false;
+  if (golongan.includes("admin")) return true;
   if (!aturan) return false;
   return golongan.some((g) => aturan.golongan.includes(g));
 }
@@ -996,6 +1027,7 @@ export function bolehAksiLayar(pengguna: PenggunaGolongan | null | undefined, ak
 
 export function pesanTolakAksi(aksi: KunciAksi): string {
   const aturan: AturanAksi = AKSI[aksi];
+  if (aturan.hanyaSuperAdmin) return `${aturan.label} hanya untuk Super Admin.`;
   const siapa = ["Admin", ...aturan.golongan.map((g) => LABEL_GOLONGAN[g])].join(", ");
   return `${aturan.label} hanya untuk ${siapa}. Peran Anda tidak diberi hak ini (matriks peran 12 Okt).`;
 }
