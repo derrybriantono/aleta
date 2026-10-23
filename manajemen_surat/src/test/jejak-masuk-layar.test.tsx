@@ -131,3 +131,19 @@ describe("halaman admin Riwayat Masuk & Perangkat", () => {
     expect(screen.getByText("1.2.3.4, 192.168.9.77")).toBeTruthy();
   });
 });
+
+describe("Audit Trail lama: saringan dasar", () => {
+  it("menyaring catatan yang sudah dimuat menurut kata", async () => {
+    const items = [
+      { id: "a1", actorUserId: "u1", actorName: "Admin Rekaan", actorRoleId: "admin", action: "BLOCK_USER", entityType: "user", entityId: "usr-x", payload: {}, createdAt: "2026-10-23T01:00:00Z" },
+      { id: "a2", actorUserId: "u2", actorName: "Hakim Rekaan", actorRoleId: "hakim", action: "LOGIN_SUCCESS", entityType: "auth", entityId: "usr-y", payload: {}, createdAt: "2026-10-23T02:00:00Z" },
+    ];
+    vi.stubGlobal("fetch", vi.fn(async () => jawab(200, { ok: true, data: { items } })));
+    const { AuditTrailBoard } = await import("@/components/portal/audit-trail-board");
+    render(createElement(AuditTrailBoard));
+    await waitFor(() => expect(screen.getByText("Block User")).toBeTruthy());
+    fireEvent.change(screen.getByLabelText("Saring audit trail"), { target: { value: "login" } });
+    expect(screen.queryByText("Block User")).toBeNull();
+    expect(screen.getByText("Login Success")).toBeTruthy();
+  });
+});
