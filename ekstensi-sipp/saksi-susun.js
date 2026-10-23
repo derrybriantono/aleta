@@ -1084,10 +1084,34 @@
       pekerjaanT: "pekerjaan Tergugat/Termohon",
     };
 
-    /** Katalog ini memakai fakta perkara dari server: untuk sekarang perkara perceraian saja (346/347). */
-    function pakaiFakta() {
+    /** Katalog perceraian (346/347): fakta cerai (slotDari, KODE_KE_FAKTA). */
+    function katalogCerai() {
       const idJenis = ((S.kat && S.kat.syarat && S.kat.syarat.jenisPerkaraId) || []).map(String);
       return idJenis.includes("346") || idJenis.includes("347");
+    }
+
+    /**
+     * T2 (25 Okt 2026): SEMUA katalog jenis perkara memakai fakta perkara dari server - dahulu hanya perceraian, sehingga
+     * itsbat, dispensasi kawin, wali adhal, asal usul anak, harta bersama, waris, hadhanah, ... tetap "..." walau posita
+     * menyebutnya. Katalog contoh dan katalog tanpa jenis perkara tidak.
+     */
+    function pakaiFakta() {
+      if (!S.kat || S.kat.contoh === true) return false;
+      return ((S.kat.syarat && S.kat.syarat.jenisPerkaraId) || []).length > 0;
+    }
+
+    /** Sebutan pihak (#0046#/#0047#/#0048#) tidak pernah dihitung dari posita: nilainya milik ABT (alur/jenis_perkara_id). */
+    const KODE_SEBUTAN = new Set(["0046", "0047", "0048"]);
+
+    /** Variabel katalog ini yang KOSONG di ABT dan tidak dilayani fakta cerai - dihitung bot dari data perkara (non-cerai). */
+    function kodeVariabelKosong(v) {
+      if (katalogCerai()) return [];
+      const kode = new Set();
+      for (const x of JSON.stringify(S.kat.pertanyaan || []).match(/#\d{4}#/g) || []) kode.add(x.slice(1, 5));
+      return Array.from(kode)
+        .filter((x) => !KODE_SEBUTAN.has(x) && !m.KODE_KE_FAKTA[x] && m.tidakTerisi(v(x)))
+        .sort()
+        .slice(0, 60);
     }
 
     /** Memuat fakta perkara sekali per pembukaan (atau paksa). Gagal = tanpa fakta; isian petugas dan variabel ABT tetap dipakai. */
@@ -1108,14 +1132,17 @@
           if (x && !m.tidakTerisi(x)) variabel[kode] = x;
         }
         const { alur, id } = kenali();
+        const kodeVariabel = kodeVariabelKosong(v);
         S.fakta = await api.ambilFakta({
           perkara: { nomorPerkara: nomor(), jenisPerkaraId: id, alurPerkaraId: alur },
           sebutan: { P: sebutan("0046", ""), T: sebutan("0047", "") },
           posita: v("5125"),
           tanggalSidang: v("0033"),
           variabel,
+          ...(kodeVariabel.length ? { kodeVariabel, kunciKatalog: S.kat.kunci } : {}),
         });
-        S.faktaStatus = Object.keys(S.fakta || {}).length ? "ada" : "kosong";
+        const adaVariabel = Boolean(S.fakta && S.fakta.variabel && Object.keys(S.fakta.variabel).length);
+        S.faktaStatus = Object.keys(S.fakta || {}).length || adaVariabel ? "ada" : "kosong";
       } catch {
         S.fakta = {};
         S.faktaStatus = "kosong";
@@ -1149,6 +1176,7 @@
         saksi: saksiMasuk,
         variabel: kodeVar,
         fakta: S.fakta,
+        variabelFakta: (S.fakta && S.fakta.variabel) || {},
         slot,
         slotSaksi,
         tingkat: ["inti", "pilihan", "tambahan"],
@@ -1199,8 +1227,16 @@
             const rendah = b.dariGugatan.some((x) => x.yakin === "ragu");
             const sumber = Array.from(new Set(b.dariGugatan.flatMap((x) => String(x.sumber || "").split(" + ").filter(Boolean)))).join(" dan ") || "data perkara";
             const apa = Array.from(new Set(b.dariGugatan.map((x) => NAMA_FAKTA[x.kunci] || x.kunci))).join(", ");
-            const ket = buat("div", rendah ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar", `Diisi dari ${sumber} (${apa}), keyakinan ${rendah ? "ragu - periksa dulu" : b.dariGugatan.every((x) => x.yakin === "yakin") ? "yakin" : "cukup"}.`);
+            const saran = b.dariGugatan.some((x) => x.saran);
+            const ket = buat(
+              "div",
+              rendah ? "aleta-abt-kabar aleta-abt-gagal" : "aleta-abt-kabar",
+              saran
+                ? `Saran dari ${sumber} (${apa}): sebab/alasan ini baru didalilkan, belum dikuatkan saksi - sesuaikan dengan keterangan saksi.`
+                : `Diisi dari ${sumber} (${apa}), keyakinan ${rendah ? "ragu - periksa dulu" : b.dariGugatan.every((x) => x.yakin === "yakin") ? "yakin" : "cukup"}.`
+            );
             ket.setAttribute("data-sumber-fakta", "1");
+            if (saran) ket.setAttribute("data-saran", "1");
             const rinciKet = b.dariGugatan.map((x) => x.ket).filter(Boolean).join(" ");
             if (rinciKet) ket.title = rinciKet;
             baris.appendChild(ket);

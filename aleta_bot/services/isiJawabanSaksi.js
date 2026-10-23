@@ -19,6 +19,7 @@
 
 const F = require("./isiJawabanSaksiFakta");
 const V = require("./isiJawabanSaksiVariabel");
+const Saran = require("./saranSebabSaksi");
 const { T, RE_SEBUTAN, adaTitik, hitungTitik, minYakin, kecilAwal, norm, rapat, tanpaProvinsi } = F;
 
 const RE_TITIK_G = /\.{3,}|…/g;
@@ -717,7 +718,8 @@ function isiJawaban(baris, fakta, ctx) {
   if (sisaTitik > 0) yakin = minYakin(yakin, "cukup");
   const ragu = yakin === "ragu";
   const { sumber, ket } = susunKet(pakai, ragu);
-  return { teks, terisi, total, yakin, sumber, ket: sisaTitik > 0 ? `${ket} Sisanya belum ada datanya; lengkapi dari keterangan saksi.` : ket };
+  // T2: sebab/alasan yang hanya didalilkan posita (jenis non-cerai) = saran, bukan keterangan pasti.
+  return Saran.tandaiSaran({ teks, terisi, total, yakin, sumber, ket: sisaTitik > 0 ? `${ket} Sisanya belum ada datanya; lengkapi dari keterangan saksi.` : ket }, pakai, ctx.jenis);
 }
 const RE_ALETA_JAWAB = /aleta/i;
 
@@ -741,7 +743,8 @@ function nilaiVariabel(kode, fakta, ctx) {
   let yakin = "yakin";
   for (const f of pakai) yakin = minYakin(yakin, f.yakin);
   const { sumber, ket } = susunKet(pakai, yakin === "ragu");
-  return { teks, yakin, sumber, ket };
+  const label = [...new Set(pakai.map((f) => F.LABEL_FAKTA[f.kunci]).filter(Boolean))].slice(0, 3).join(", ");
+  return Saran.tandaiSaran({ teks, yakin, sumber, ket, ...(label ? { label } : {}) }, pakai, (ctx || {}).jenis);
 }
 
 // ============================================================================
@@ -797,7 +800,7 @@ function lengkapiSusunan(hasil, opsi) {
       if (!ganti) return;
       if (adaPilihan) delete j.pilihan;
       j.jawab = isi.teks;
-      j.usulan = { teks: isi.teks, yakin: isi.yakin, sumber: isi.sumber, ket: isi.ket };
+      j.usulan = { teks: isi.teks, yakin: isi.yakin, sumber: isi.sumber, ket: isi.ket, ...(isi.saran ? { saran: isi.saran } : {}) };
       j.perluDiisi = titikBaru > 0;
       if (kosongPenyusun) delete j.belumTerisi;
       ringkas.terisi += 1;

@@ -87,18 +87,31 @@
     return luar.data !== undefined ? luar.data : luar;
   }
 
+  /**
+   * Variabel ABT (kode -> {teks, yakin, sumber, ket?, label?, saran?}) yang dihitung bot dari data perkara (`__variabel`).
+   * T2: `saran` = sebab/alasan yang hanya didalilkan posita (belum dikuatkan saksi) - panel menandainya kuning.
+   */
+  function petakanVariabel(isi) {
+    const variabel = {};
+    const asal = isi && typeof isi === "object" && isi["__variabel"] && typeof isi["__variabel"] === "object" ? isi["__variabel"] : {};
+    for (const [kode, v] of Object.entries(asal)) {
+      const t = v && typeof v === "object" ? teks(v.teks).trim() : "";
+      if (!/^\d{4}$/.test(kode) || !t || /aleta/i.test(t)) continue;
+      const saran = Array.isArray(v.saran) && v.saran.length;
+      variabel[kode] = { teks: t, yakin: v.yakin === "ragu" || saran ? "ragu" : "yakin", sumber: teks(v.sumber) };
+      if (v.ket) variabel[kode].ket = teks(v.ket).slice(0, 300);
+      if (v.label) variabel[kode].label = teks(v.label).slice(0, 80);
+      if (saran) variabel[kode].saran = true;
+    }
+    return variabel;
+  }
+
   /** Hasil rute -> peta kunci -> {teks, yakin, sumber, ket}; hanya bentuk yang sah dan tanpa nama aplikasi. */
   function petakan(isi) {
     const hasil = {};
     if (!isi || typeof isi !== "object") return hasil;
     // variabel ABT (kode -> nilai) yang dihitung dari data: tidak ikut peta jawaban, dibawa sebagai properti terpisah
-    const variabel = {};
-    if (isi["__variabel"] && typeof isi["__variabel"] === "object") {
-      for (const [kode, v] of Object.entries(isi["__variabel"])) {
-        const t = v && typeof v === "object" ? teks(v.teks).trim() : "";
-        if (/^\d{4}$/.test(kode) && t && !/aleta/i.test(t)) variabel[kode] = { teks: t, yakin: v.yakin === "ragu" ? "ragu" : "yakin", sumber: teks(v.sumber) };
-      }
-    }
+    const variabel = petakanVariabel(isi);
     Object.defineProperty(hasil, "variabel", { value: variabel, enumerable: false });
     for (const [kunci, v] of Object.entries(isi)) {
       if (kunci === "__variabel") continue;
@@ -106,6 +119,7 @@
       if (!t || /aleta/i.test(t)) continue;
       const yakin = v.yakin === "yakin" || v.yakin === "ragu" ? v.yakin : "cukup";
       hasil[kunci] = { teks: t, yakin, sumber: teks(v.sumber), ket: teks(v.ket) };
+      if (Array.isArray(v.saran) && v.saran.length) Object.assign(hasil[kunci], { yakin: "ragu", saran: true });
     }
     return hasil;
   }
@@ -139,13 +153,17 @@
    * Fakta perkara apa adanya (tanggal dan tempat nikah, anak, awal dan sebab perselisihan, puncak, pisah sejak, alamat, pekerjaan)
    * dari isian blangko > data SIPP > gugatan, lewat permintaan 'isi-jawaban' dengan mintaFakta. Dipakai penyusun saksi katalog di panel
    * ABT; gagal = {} (penyusun memakai isian petugas dan variabel ABT saja).
-   *   o = { perkara: {nomorPerkara, jenisPerkaraId, alurPerkaraId}, sebutan: {P, T}, posita, tanggalSidang, variabel: {kode: nilai} }
+   *   o = { perkara: {nomorPerkara, jenisPerkaraId, alurPerkaraId}, sebutan: {P, T}, posita, tanggalSidang, variabel: {kode: nilai},
+   *         kodeVariabel?: [kode], kunciKatalog? }
+   * T2 (semua jenis): `kodeVariabel` = variabel katalog yang KOSONG di ABT; nilainya dihitung bot dari data yang sama dan dibawa
+   * sebagai properti tak-terhitung `variabel` ({kode: {teks, yakin, sumber, ket, label, saran}}).
    */
   async function ambilFakta(o) {
     const r = o && typeof o === "object" ? o : {};
     const p = r.perkara && typeof r.perkara === "object" ? r.perkara : {};
     const seb = r.sebutan && typeof r.sebutan === "object" ? r.sebutan : {};
     if (!teks(p.nomorPerkara)) return {};
+    const kodeVariabel = (Array.isArray(r.kodeVariabel) ? r.kodeVariabel : []).map(teks).filter((x) => /^\d{4}$/.test(x)).slice(0, 60);
     const isian = {};
     try {
       const dariPanel = typeof globalThis !== "undefined" && typeof globalThis.AletaBdIsianSaksi === "function" ? globalThis.AletaBdIsianSaksi() : null;
@@ -170,15 +188,19 @@
         tanggalSidang: teks(r.tanggalSidang).slice(0, 40),
         isian,
         saksiIsi: [],
+        ...(kodeVariabel.length ? { kodeVariabel } : {}),
+        ...(teks(r.kunciKatalog) ? { kunciKatalog: teks(r.kunciKatalog).slice(0, 60) } : {}),
       });
       if (!data || data.available === false) return {};
-      return petakanFakta(data.faktaPerkara);
+      const fakta = petakanFakta(data.faktaPerkara);
+      Object.defineProperty(fakta, "variabel", { value: kodeVariabel.length ? petakanVariabel(data.isiJawaban) : {}, enumerable: false });
+      return fakta;
     } catch {
       return {};
     }
   }
 
-  const api = { usulkan, susunMuatan, petakan, modusDariJenis, ambilFakta, petakanFakta };
+  const api = { usulkan, susunMuatan, petakan, petakanVariabel, modusDariJenis, ambilFakta, petakanFakta };
   globalThis.AletaBdJawabanKatalog = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
