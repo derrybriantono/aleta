@@ -11,8 +11,8 @@ Panduan untuk sesi Claude Code **LAPTOP**. Isinya: menggabungkan semua kerja clo
 ```
 git fetch origin, lalu baca docs/awan/ambil-laptop-24okt.md dari origin/fitur/panduan-laptop-24okt
 (git show origin/fitur/panduan-laptop-24okt:docs/awan/ambil-laptop-24okt.md) dan kerjakan
-Bagian 1 sampai 3, audit Bagian 5a (baca saja), lalu Bagian 6 sesuai urutannya.
-Bagian 4 hanya untuk rantai yang laporannya sudah ada di origin.
+Bagian 1 sampai 3, audit Bagian 5a (baca saja), Bagian 6, lalu Bagian 7 (rantai upgrade
+A-G dikerjakan di laptop, satu rantai per sesi, dimulai dari rantai A).
 Perbarui papan kemajuan di setiap langkah. Laporkan ke saya dalam bahasa Indonesia.
 ```
 
@@ -22,9 +22,15 @@ Perbarui papan kemajuan di setiap langkah. Laporkan ke saya dalam bahasa Indones
 | :--- | :--- | :--- |
 | `integrasi-awan-24okt` | `integrasi-1205-38` (GitHub, `24fa2f74`) + 16 cabang: kalender libur, T1–T10, audit login perangkat, PWA, rencana fitur admin, perbaikan AWAN, panduan gabung 23 Okt, rencana upgrade 24 Okt. Bentrok jurnal migrasi 0084–0088 dan penyelarasan T9↔T10 sudah dikerjakan | **Selesai** (ujung `f5e181c3`): `tsc` bersih, lint = dasar; uji penuh cloud 914 berkas hijau, 28 merah = 23 sama dengan dasar (lingkungan cloud) + 5 merah baru yang sudah diperbaiki. Rincian di `docs/awan/laporan-integrasi-awan-24okt.md`; laptop mengulang uji penuh |
 | `fitur/panduan-laptop-24okt` | panduan ini | — |
-| Rantai A–F (`docs/awan/rantai-upgrade-24okt.md`) | Cermin Perkara, kinerja, jejak isian, saksi, blangko, admin, server | **Belum dimulai.** Cloud mulai Minggu 25 Okt 10.15 WITA bila kuota langganan pulih, dua rantai sekaligus (A + C dulu) |
+| `fitur/rencana-upgrade-otomatisasi` | Rencana upgrade (`docs/rancangan/upgrade-otomatisasi-24okt/README.md`, `TAHAPAN.md`) dan **kartu kerja rantai A–G terbaru** (`docs/awan/rantai-upgrade-24okt.md`; salinan di `integrasi-awan-24okt` sudah usang) | Dokumen saja |
+| Rantai A–G | Cermin Perkara, kinerja, jejak isian, saksi, blangko, admin, server, tenggat & berkas e-Court | **Belum dimulai. 24 Okt: dipindah ke LAPTOP** karena kredit cloud hampir habis (Bagian 7). Tidak ada sesi cloud yang berjalan dan tidak ada jadwal cloud |
 
 **Yang hanya ada di laptop:** perbaikan error 1.205.38 yang sudah terpasang di lokal dan server, tetapi belum di-push. Jangan sampai hilang.
+
+**Tampilan rancangan** (artifact claude.ai, privat milik Derry; hanya referensi, tidak perlu digabung):
+- Tampilan Rencana Upgrade ALETA (12 layar realistis, dikelompokkan "hanya data / tambahan kecil / layar baru"): https://claude.ai/artifact/PDxgf4mHJ7KpnV7E4RUth8
+- Peta Rencana ALETA: https://claude.ai/artifact/1G8a4rq5dLBRKT3N8GNKp2
+- Mockup Fitur Admin ALETA: https://claude.ai/artifact/1zvgkn9pxggeDmYLaB3mSi
 
 ## Bagian 1 — Amankan perbaikan lokal
 
@@ -40,7 +46,7 @@ Perbarui papan kemajuan di setiap langkah. Laporkan ke saya dalam bahasa Indones
 2. Gabungkan **ujung terbaru** `origin/integrasi-awan-24okt` (merge, bukan rebase).
    - Bentrok yang mungkin muncul hanya antara perbaikan error lokal dan kerja cloud. Satukan keduanya, jangan ada perilaku yang hilang.
    - Bila memilih salah satu sisi menghilangkan perilaku, BERHENTI dan tanyakan Derry.
-3. Gabungkan juga `origin/fitur/panduan-laptop-24okt` (dokumen ini).
+3. Gabungkan juga `origin/fitur/panduan-laptop-24okt` (dokumen ini) dan `origin/fitur/rencana-upgrade-otomatisasi` (rencana + kartu rantai terbaru). Kedua cabang hanya berisi dokumen.
 4. Baca `docs/awan/laporan-integrasi-awan-24okt.md` (bentrok yang sudah diselesaikan cloud) dan `docs/awan/gabung-23okt.md`, bagian "Bentrok dan penyelarasan". Periksa:
    - jurnal migrasi urut 0083 → 0088 tanpa idx ganda;
    - kembaran `schema.ts` dan daftar tabel `client.ts` lengkap;
@@ -82,9 +88,11 @@ Sesudah terpasang, kerjakan **pengukuran Tahap 0** (`docs/rancangan/upgrade-otom
 
 Commit dan push ke `integrasi-1205-39`. Angka ini dipakai rantai A, E, dan F.
 
-## Bagian 4 — Ambil rantai upgrade yang sudah selesai di cloud
+## Bagian 4 — Gabung dan pasang hasil rantai
 
-Setiap rantai menulis laporan `docs/awan/laporan-rantai-<huruf>.md` di cabang terakhirnya. Gabungkan **hanya** rantai yang laporannya sudah ada, dengan urutan ini:
+Rantai sekarang dikerjakan di laptop (Bagian 7). Bagian ini mengatur **urutan memasang** hasilnya ke server.
+
+Setiap rantai menulis laporan `docs/awan/laporan-rantai-<huruf>.md` di cabang terakhirnya. Pasang **hanya** rantai yang laporannya sudah ada dan uji penuhnya hijau. Urutan pasang yang disarankan (boleh berbeda dari urutan kerja):
 
 | Urut | Rantai | Cabang terakhir (gabungkan ini; cabang dalam rantai bertumpuk) | Langkah laptop sesudah gabung |
 | :--- | :--- | :--- | :--- |
@@ -155,7 +163,7 @@ Dikerjakan di **laptop**, bukan oleh rantai cloud. Ketentuannya:
 
 | Urut | Cabang | Butir | Bawaan sesudah dipasang |
 | :--- | :--- | :--- | :--- |
-| 6a | `fitur/kebijakan-sandi` | Admin 8: panjang minimal 10; tolak sandi umum, nama, NIP, username; campuran huruf-angka; larang pakai ulang 5 sandi terakhir; masa berlaku opsional; "paksa ganti saat masuk berikutnya" per akun; daftar akun yang belum memenuhi. Berlaku hanya untuk sandi **baru/diganti**, sehingga sandi lama tetap bisa masuk. Migrasi 0107 bila perlu riwayat sandi (simpan hash saja). | Aturan baru aktif untuk penggantian sandi; paksa ganti mati |
+| 6a | `fitur/kebijakan-sandi` | Admin 8 dengan **saklar "Kebijakan sandi" di Pengaturan admin, MATI bawaan** (keputusan Derry 24 Okt). Selama mati, aturan sandi persis seperti sekarang. Bila dinyalakan, aturannya dapat diatur Super Admin, bukan dipatok: panjang minimal (bawaan = panjang sekarang), tolak sandi umum/nama/NIP/username, campuran huruf-angka, larang pakai ulang N sandi terakhir, masa berlaku opsional, "paksa ganti saat masuk berikutnya" per akun, dan daftar akun yang belum memenuhi. Hanya berlaku untuk sandi baru/diganti. Migrasi 0107 bila perlu riwayat sandi (hash saja). | Mati |
 | 6b | `fitur/batas-jaringan-peran` | Admin 12: daftar subnet kantor (mis. 192.168.10.0/24, 192.168.9.0/24) dan aturan per peran: mana pun / kantor saja / luar kantor wajib verifikasi (menyambung E5 bila sudah digabung). IP dibaca dari ujung XFF (`alamatIpPeramban`). Penolakan tercatat di Riwayat Masuk. Migrasi 0108. | Semua peran "mana pun", sehingga perilakunya sama dengan sekarang |
 | 6c | `fitur/pengaman-aksi-admin` | Admin 13: aksi berdampak besar meminta **sandi ulang + ketik konfirmasi**. Contoh aksi: hapus massal >20 baris, pulihkan cadangan, ubah hak peran, angkat Admin/Super Admin, matikan audit/ubah retensi, Lihat sebagai, ubah batas perangkat/jaringan, nyalakan OTP. Kode WhatsApp/authenticator ditambahkan sebagai langkah kedua sesudah E5 digabung (kait disiapkan). Semua tercatat `appendAuditLog`. | Mati; dinyalakan Super Admin |
 | 6d | `fitur/uji-pulih-cadangan` | Admin 4: mingguan (saran Minggu 03.00, sesudah pencocokan Cermin 02.00). Cadangan terbaru dipulihkan ke basis data sementara, migrasi diperiksa, jumlah baris tabel penting dicocokkan, basis data sementara dihapus, lalu laporan ke Pusat kesehatan + WhatsApp admin bila gagal. Tidak pernah menyentuh basis data produksi. Migrasi 0109 (hasil uji). | Mati |
@@ -164,15 +172,36 @@ Dikerjakan di **laptop**, bukan oleh rantai cloud. Ketentuannya:
 
 Sesudah tiap butir: perbarui papan kemajuan, catat skor keamanan perkiraan per bidang (lihat percakapan 24 Okt: sekarang ±45, sasaran 85–90), dan laporkan ke Derry.
 
-## Bila kuota cloud habis: kerjakan rantai di laptop
+## Bagian 7 — Kerjakan rantai upgrade A–G di laptop (keputusan Derry 24 Okt)
 
-Rantai yang belum dimulai cloud boleh dikerjakan di laptop dengan kartu yang sama, `docs/awan/rantai-upgrade-24okt.md`. Ketentuannya:
-- dasar `integrasi-1205-39`;
-- aturan bersama 1–10 di kartu itu berlaku, plus aturan laptop di `CLAUDE.md`;
-- **cek dulu di origin** apakah cabang rantai itu sudah ada (`git ls-remote origin "fitur/*"`), supaya tidak mengerjakan ulang;
-- tulis keadaan di papan kemajuan dan push tiap cabang.
+Kartu kerja: `git show origin/fitur/rencana-upgrade-otomatisasi:docs/awan/rantai-upgrade-24okt.md`. Isi tiap cabang, nomor migrasi cadangan, dan aturan bersama 1–10 ada di sana.
 
-Urutan saran bila dikerjakan di laptop: A → C → E → F → B → D (D dimulai sesudah `fitur/jejak-isian` dari C ada).
+**Aturan di laptop:**
+- **Dasar:** `integrasi-1205-39`, sesudah Bagian 1–3. Cabang di dalam satu rantai bertumpuk.
+- **Kartu menyebut "sesi awan":** baca sebagai "sesi laptop", lalu tambahkan aturan laptop `CLAUDE.md`: drive D:/C:, papan kemajuan, `periksa-uji` untuk uji penuh.
+- **Model per `CLAUDE.md`:**
+  - Sonnet 5.5 effort medium untuk fitur harian;
+  - Sonnet effort **high** untuk kode yang menulis ke SIPP/ABT (C1, C6, D, G2);
+  - Opus untuk aturan hukum (G1 dasar tenggat, D4 huruf alasan).
+- **Satu rantai per sesi.** Jalankan `/clear` di antara rantai supaya konteks dan kuota hemat. Push tiap commit hijau.
+- **Kuota habis di tengah rantai:** commit WIP, push, lalu lanjut di sesi berikut dari cabang terakhir. Sebelum memulai, cek `git ls-remote origin "fitur/*"` supaya tidak mengerjakan ulang.
+- **Saklar:** semua saklar baru mati bawaan.
+- **Laporan:** `docs/awan/laporan-rantai-<huruf>.md`.
+
+**Urutan kerja yang disarankan:**
+
+| Urut | Rantai | Isi singkat | Catatan |
+| :--- | :--- | :--- | :--- |
+| 1 | A Cermin Perkara (A1–A8) | Singgahan jadwal, Cermin Perkara + pemindai + pemantau, Jadwal Sidang/Mediasi/Status/panel SIPP membaca cermin, tabel ringan, kabar perubahan | Dampak terbesar untuk 100+ perangkat |
+| 2 | C Jejak & saksi (C1–C6) | Jejak isian + Urungkan, katalog saksi per jenis lalu ke basis data, mesin saksi tunggal, non-cerai, saksi ke BAS SIPP | C1 dulu, karena D memakai tabelnya |
+| 3 | E Ukur & admin (E1–E6) | Uji beban, Pusat kesehatan + galat, mode pemeliharaan, Lihat sebagai, OTP WA + authenticator (mati), penjaga integritas berkas | Uji beban hanya ke kembaran laptop |
+| 4 | F Server (F1–F3) | Kolam SIPP terpisah, port 8008, riwayat tunda/putus | Butuh angka `max_connections` dari Bagian 3 |
+| 5 | B Ekstensi & PC tua (B1–B6) | Satu pengamat, mode ringan, data peramban ke DB, berkas di server, konteks lintas PC, ejaan nama | Regresi ekstensi paling mungkin di sini; uji berat |
+| 6 | D Blangko (D1–D6) | Ketepatan isian, tutup isian manual, wajib sebelum CETAK, huruf alasan, sebutan pihak, isian per sidang | Dasar `fitur/jejak-isian` |
+| 7 | G Tenggat & e-Court (G1–G2) | Penjaga tenggat terjadwal + banding/kasasi/mediasi + pengingat per orang; kesimpulan dan daftar bukti e-Court ke ABT | Dasar ujung rantai A |
+| 8 | K11 | Pecah `konten.js`, persempit `matches` | Paling akhir, sesudah semua rantai digabung |
+
+**Ditunda:** K4/K5/SSE, diputuskan dari hasil uji beban.
 
 ## Laporan akhir ke Derry
 - cabang dan commit gabungan;
