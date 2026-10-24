@@ -13,7 +13,7 @@ import type { PelakuAi } from "@/server/modules/aleta-ai/akses";
 import { PESAN_BATAS_HARIAN, PESAN_BATAS_SATKER } from "@/server/modules/aleta-ai/batas";
 import { strukGiliran, tampilDompet } from "@/server/modules/aleta-ai/dompet";
 import { GalatKlienAi, suntikKlienAi, type HasilAi, type KlienAi, type OpsiAlir } from "@/server/modules/aleta-ai/klien";
-import { pastikanKuotaBulanIni, simpanKuotaPeran } from "@/server/modules/aleta-ai/kuota";
+import { pastikanKuotaBulanIni, simpanKuotaPeran, tanggalHangus } from "@/server/modules/aleta-ai/kuota";
 import { angkaKurs, bacaJisdorBi, buatPengambilKurs, kursBerlaku, segarkanKursBilaPerlu, simpanKurs, tanggalLokal, type PengambilHttp } from "@/server/modules/aleta-ai/kurs";
 import { laporanBulanan, laporanKeCsv, laporanKeXlsx, laporanRentang } from "@/server/modules/aleta-ai/laporan";
 import { izinkanLaju, kirimPesan, PESAN_NONAKTIF_SAKLAR, perkirakanPesan, ulangiBatasLaju, type EventAi } from "@/server/modules/aleta-ai/mesin";
@@ -478,12 +478,65 @@ describe("dompet ALETA Ai (pg-mem)", () => {
     const hasil = await Promise.all([1, 2, 3].map(() => pastikanKuotaBulanIni(db, hakim(id), okt)));
     expect(hasil.sort()).toEqual([0, 0, 20_000]);
     expect(await pastikanKuotaBulanIni(db, hakim(id), new Date("2026-11-01T02:00:00Z"))).toBe(20_000);
-    expect(await jenisMutasi(db, id)).toEqual(["kuota:20000", "kuota:20000"]);
-    expect((await daftarMutasi(db, id)).map((m) => m.rujukanId).sort()).toEqual(["kuota:2026-10:hakim", "kuota:2026-11:hakim"]);
+    // Sisa kuota Oktober (belum terpakai) hangus lebih dulu, baru kuota November diberikan.
+    expect(await jenisMutasi(db, id)).toEqual(["kuota:20000", "kuota-hangus:-20000", "kuota:20000"]);
+    expect((await daftarMutasi(db, id)).map((m) => m.rujukanId).sort()).toEqual(["kuota-hangus:2026-10", "kuota:2026-10:hakim", "kuota:2026-11:hakim"]);
     expect(await pastikanKuotaBulanIni(db, superAdmin, okt)).toBe(0);
     await expect(simpanKuotaPeran(db, superAdmin.id, [{ peranId: "hakim", kuotaBulananRp: -1 }])).rejects.toMatchObject({ status: 400 });
     await simpanKuotaPeran(db, superAdmin.id, [{ peranId: "hakim", kuotaBulananRp: 0 }]);
     expect(await pastikanKuotaBulanIni(db, hakim("u-kuota-2"), okt)).toBe(0);
+  });
+
+  it("kuota HANGUS akhir bulan: kuota dipakai lebih dulu, sisa ditarik saat pergantian bulan WITA, saldo isi tidak ikut; idempoten", async () => {
+    const bulanIni = tanggalLokal().slice(0, 7);
+    const [t, b] = bulanIni.split("-").map(Number) as [number, number];
+    const bulanDepan = new Date(Date.UTC(t, b, 1, 2)); // tgl 1 bulan berikut, 10.00 WITA
+    const akhirBulanWita = new Date(Date.UTC(t, b - 1 + 1, 0, 15, 59)); // hari terakhir, 23.59 WITA
+    await simpanKuotaPeran(db, superAdmin.id, [{ peranId: "hakim", kuotaBulananRp: 20_000 }]);
+    try {
+      // A: kuota 20.000 + isi 5.000; terpakai 3.000 -> dari kuota. Bulan depan: 17.000 hangus, isi 5.000 tetap.
+      const a = "u-hangus-a";
+      expect(await pastikanKuotaBulanIni(db, hakim(a))).toBe(20_000);
+      await isi(db, a, 5000);
+      await tahanDana(db, a, 4500, "aip-hangus-a");
+      await selesaikanTahanan(db, a, "aip-hangus-a", 3000);
+      const d = await tampilDompet(db, hakim(a));
+      expect(d.kuota).toMatchObject({ diberikanRp: 20_000, terpakaiRp: 3000, sisaRp: 17_000 });
+      expect(d.kuota?.teks).toBe(`Kuota bulan ini Rp17.000, hangus ${tanggalHangus(bulanIni).replace(/ \d{4}$/, "")}.`);
+      // Masih bulan yang sama (23.59 WITA hari terakhir): belum hangus.
+      await pastikanKuotaBulanIni(db, hakim(a), akhirBulanWita);
+      expect(await saldoPengguna(db, a)).toBe(22_000);
+      // Pergantian bulan, dipanggil tiga kali bersamaan: satu hangus, satu kuota baru.
+      const r = await Promise.all([1, 2, 3].map(() => pastikanKuotaBulanIni(db, hakim(a), bulanDepan)));
+      expect(r.sort((x, y) => x - y)).toEqual([0, 0, 20_000]);
+      const m = await jenisMutasi(db, a);
+      expect(m).toEqual(["kuota:20000", "isi:5000", "tahan:-4500", "lepas:4500", "potong:-3000", "kuota-hangus:-17000", "kuota:20000"]);
+      expect(await saldoPengguna(db, a)).toBe(5000 + 20_000);
+      expect((await daftarMutasi(db, a)).find((x) => x.jenis === "kuota-hangus")?.catatan).toBe(`Sisa kuota ${bulanIni} hangus`);
+      expect((await verifikasiSaldo(db, a)).seimbang).toBe(true);
+
+      // B: pemakaian melebihi kuota -> sisanya dari saldo isi; tidak ada yang hangus (penanda Rp0 tidak tampil).
+      const bb = "u-hangus-b";
+      await pastikanKuotaBulanIni(db, hakim(bb));
+      await isi(db, bb, 10_000);
+      await tahanDana(db, bb, 25_000, "aip-hangus-b");
+      await selesaikanTahanan(db, bb, "aip-hangus-b", 25_000);
+      expect((await tampilDompet(db, hakim(bb))).kuota).toMatchObject({ terpakaiRp: 20_000, sisaRp: 0 });
+      await Promise.all([pastikanKuotaBulanIni(db, hakim(bb), bulanDepan), pastikanKuotaBulanIni(db, hakim(bb), bulanDepan)]);
+      expect(await saldoPengguna(db, bb)).toBe(5000 + 20_000);
+      expect((await jenisMutasi(db, bb)).filter((x) => x.startsWith("kuota-hangus"))).toEqual([]);
+      expect(await db.queryAll(`SELECT jumlah_rp FROM aleta_ai_mutasi WHERE pengguna_id = ? AND jenis = 'kuota-hangus'`, [bb])).toHaveLength(1);
+
+      // C: peran tidak berkuota lagi -> sisa bulan lalu tetap hangus, kuota baru tidak diberikan.
+      const c = "u-hangus-c";
+      await pastikanKuotaBulanIni(db, hakim(c));
+      await simpanKuotaPeran(db, superAdmin.id, [{ peranId: "hakim", kuotaBulananRp: 0 }]);
+      expect(await pastikanKuotaBulanIni(db, hakim(c), bulanDepan)).toBe(0);
+      expect(await jenisMutasi(db, c)).toEqual(["kuota:20000", "kuota-hangus:-20000"]);
+      expect(await saldoPengguna(db, c)).toBe(0);
+    } finally {
+      await simpanKuotaPeran(db, superAdmin.id, [{ peranId: "hakim", kuotaBulananRp: 0 }]);
+    }
   });
 
   it("isi saldo berbayar MATI bawaan dan tidak dapat dinyalakan (tahap 5); pengaturan MDR tersimpan dalam rentang", async () => {

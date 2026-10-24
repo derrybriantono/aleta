@@ -1,7 +1,8 @@
 import type { AletaDatabase } from "@/server/db/client";
 import type { PelakuAi } from "@/server/modules/aleta-ai/akses";
 import { pemakaianHariIni } from "@/server/modules/aleta-ai/batas";
-import { pastikanKuotaBulanIni } from "@/server/modules/aleta-ai/kuota";
+import { tanggalLokal } from "@/server/modules/aleta-ai/kurs";
+import { pastikanKuotaBulanIni, rincianKuota } from "@/server/modules/aleta-ai/kuota";
 import { bacaPengaturan } from "@/server/modules/aleta-ai/pengaturan";
 import { daftarMutasi, saldoPengguna, type JenisMutasi } from "@/server/modules/aleta-ai/saldo";
 import { ApiError } from "@/server/shared/errors";
@@ -21,6 +22,7 @@ import { ApiError } from "@/server/shared/errors";
 const KETERANGAN_JENIS: Record<JenisMutasi, string> = {
   isi: "Isi saldo",
   kuota: "Kuota hibah",
+  "kuota-hangus": "Sisa kuota hangus",
   tahan: "Dana ditahan",
   lepas: "Tahanan dilepas",
   potong: "Biaya giliran",
@@ -107,6 +109,7 @@ export async function tampilDompet(db: AletaDatabase, pelaku: PelakuAi, sekarang
     keterangan: m.catatan || KETERANGAN_JENIS[m.jenis] || m.jenis,
     saldoSesudahRp: m.saldoSetelah,
   }));
+  const kuota = await rincianKuota(db, pelaku.id, tanggalLokal(sekarang).slice(0, 7));
   const menipis = !pelaku.superAdmin && pengaturan.ambangSaldoMenipisRp > 0 && saldoRp < pengaturan.ambangSaldoMenipisRp;
   return {
     saldoRp,
@@ -114,6 +117,17 @@ export async function tampilDompet(db: AletaDatabase, pelaku: PelakuAi, sekarang
     saldoMenipis: menipis,
     ambangSaldoMenipisRp: pengaturan.ambangSaldoMenipisRp,
     ...(menipis ? { pemberitahuan: `Saldo ALETA Ai Anda tinggal Rp${saldoRp.toLocaleString("id-ID")}. Hubungi Super Admin untuk mengisi saldo.` } : {}),
+    // Kuota hibah bulan ini (dipakai lebih dulu; sisanya hangus di akhir bulan). null = tidak ada kuota.
+    kuota:
+      kuota.diberikanRp > 0
+        ? {
+            diberikanRp: kuota.diberikanRp,
+            terpakaiRp: kuota.terpakaiRp,
+            sisaRp: kuota.sisaRp,
+            hangus: kuota.hangus,
+            teks: `Kuota bulan ini Rp${kuota.sisaRp.toLocaleString("id-ID")}, hangus ${kuota.hangus.replace(/ \d{4}$/, "")}.`,
+          }
+        : null,
     hariIni: { terpakaiRp: hari.rp, batasRp: pengaturan.batasHarianRp, token: hari.token, batasToken: pengaturan.batasHarianToken },
     // Tahap 5 (QRIS) belum ada: isi saldo hanya manual oleh Super Admin.
     isiBerbayarAktif: false,

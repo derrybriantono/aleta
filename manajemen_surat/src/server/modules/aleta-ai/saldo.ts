@@ -17,6 +17,7 @@ import { ApiError } from "@/server/shared/errors";
  * Jenis mutasi (jumlah bertanda; positif menambah saldo):
  *   isi      +  Super Admin mengisi saldo (tahap 5: QRIS)
  *   kuota    +  kuota hibah per peran (tercatat sebagai mutasi)
+ *   kuota-hangus - sisa kuota bulan lalu ditarik (kuota.ts; saldo isi tidak ikut)
  *   tahan    -  dana ditahan sebelum giliran berjalan
  *   lepas    +  dana tahanan dikembalikan utuh saat giliran selesai
  *   potong   -  biaya aktual giliran itu
@@ -28,7 +29,7 @@ import { ApiError } from "@/server/shared/errors";
  * rujukan (idempoten) sehingga pemanggilan ganda tidak menggandakan apa pun.
  */
 
-export type JenisMutasi = "isi" | "kuota" | "tahan" | "lepas" | "potong" | "koreksi";
+export type JenisMutasi = "isi" | "kuota" | "kuota-hangus" | "tahan" | "lepas" | "potong" | "koreksi";
 
 export type Mutasi = {
   id: string;

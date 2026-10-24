@@ -31,6 +31,7 @@ type DataSaldo = {
   gratis?: boolean;
   caraIsi?: string;
   hariIni?: { terpakaiRp: number; batasRp: number; token: number; batasToken: number };
+  kuota?: { diberikanRp: number; sisaRp: number; hangus: string; teks: string } | null;
 };
 
 const LABEL_STATUS: Record<string, string> = { selesai: "Selesai", terpotong: "Terpotong", ditolak: "Ditolak", gagal: "Gagal (tidak dipotong)" };
@@ -91,6 +92,11 @@ export function AletaAiSaldo() {
               {data.gratis ? "Akun Anda tidak dikenai biaya (dalam batas wajar)." : "Saldo dipakai per jawaban. "}
               {data.caraIsi ?? "Untuk mengisi saldo, hubungi admin."}
             </p>
+            {data.kuota ? (
+              <p className="mt-1 text-sm text-muted-foreground" data-testid="kuota-bulan-ini">
+                {data.kuota.teks} Kuota dipakai lebih dulu; saldo yang diisi tidak ikut hangus.
+              </p>
+            ) : null}
             {data.hariIni ? (
               <p className="mt-1 text-sm text-muted-foreground" data-testid="pemakaian-hari-ini">
                 Hari ini: {formatRupiah(data.hariIni.terpakaiRp)} dari batas {formatRupiah(data.hariIni.batasRp)}; {data.hariIni.token.toLocaleString("id-ID")} dari{" "}
