@@ -171,23 +171,24 @@ describe("migrasi 0088 - berkas = DDL schema.ts, jurnal idx 76, ikut cadangan", 
 describe("rumus harga = biaya API x kurs x (1 + margin) + MDR, ke atas Rp500, minimum Rp1.000", () => {
   const polos = { marginPersen: 0, penyanggaKursPersen: 0, minimumRp: 1000, pembulatanRp: 500, mdrPersen: 0 };
 
-  it("bawaan: margin 30%, penyangga kurs 3%, MDR 0,7%, minimum Rp1.000, pembulatan Rp500", () => {
-    expect(PARAMETER_HARGA_BAWAAN).toEqual({ marginPersen: 30, penyanggaKursPersen: 3, minimumRp: 1000, pembulatanRp: 500, mdrPersen: 0.7 });
+  it("bawaan: margin 30%, penyangga kurs 3%, MDR 1%, minimum Rp1.000, pembulatan Rp500", () => {
+    expect(PARAMETER_HARGA_BAWAAN).toEqual({ marginPersen: 30, penyanggaKursPersen: 3, minimumRp: 1000, pembulatanRp: 500, mdrPersen: 1 });
   });
 
-  it("contoh lengkap: $0,118 pada kurs 16.000 -> kurs 16.480; pokok Rp2.528,03 + MDR Rp17,70 = Rp2.545,73 -> Rp3.000", () => {
+  it("contoh lengkap: $0,118 pada kurs 16.000 -> kurs 16.480; pokok Rp2.528,03 + MDR 1% Rp25,28 = Rp2.553,31 -> Rp3.000", () => {
     const h = hitungHarga(0.118, 16000, PARAMETER_HARGA_BAWAAN);
     expect(h.kursDasar).toBe(16000);
     expect(h.kurs).toBeCloseTo(16480, 6);
     expect(h.biayaApiRp).toBeCloseTo(1888, 6); // biaya API pada kurs dasar (untuk laba)
-    expect(h.biayaMdrRp).toBeCloseTo(0.118 * 16480 * 1.3 * 0.007, 6);
+    expect(h.biayaMdrRp).toBeCloseTo(25.28032, 6);
     expect(h.hargaRp).toBe(3000);
     expect(h.tagihRp).toBe(3000);
   });
 
-  it("MDR dapat menaikkan satu kelipatan: tepat Rp1.500 tanpa MDR, Rp1.510,50 dengan MDR 0,7% -> Rp2.000", () => {
+  it("MDR dapat menaikkan satu kelipatan: tepat Rp1.500 tanpa MDR, Rp1.515 dengan MDR 1% -> Rp2.000; pokok Rp1.300 + MDR Rp13 -> Rp1.500", () => {
     expect(hitungHarga(0.15, 10000, polos).tagihRp).toBe(1500);
-    expect(hitungHarga(0.15, 10000, { ...polos, mdrPersen: 0.7 }).tagihRp).toBe(2000);
+    expect(hitungHarga(0.15, 10000, { ...polos, mdrPersen: 1 })).toMatchObject({ tagihRp: 2000, biayaMdrRp: 15 });
+    expect(hitungHarga(0.1, 10000, { ...polos, marginPersen: 30, mdrPersen: 1 })).toMatchObject({ tagihRp: 1500, biayaMdrRp: 13 });
   });
 
   it("margin dan penyangga kurs: $0,1 x 10.000 -> Rp1.300 (margin 30%) dan Rp1.030 (penyangga 3%), keduanya -> Rp1.500", () => {
@@ -348,8 +349,8 @@ describe("dompet ALETA Ai (pg-mem)", () => {
     const b = await db.queryOne<Record<string, unknown>>(`SELECT kurs_dasar, kurs, kurs_tanggal, kurs_sumber, biaya_mdr_rp, biaya_rp, biaya_api_rp FROM aleta_ai_obrolan_pesan WHERE pemilik_id = ? AND peran = 'ai'`, [id]);
     expect(b).toMatchObject({ kurs_dasar: 16000, kurs_tanggal: tanggalLokal(), kurs_sumber: "uji", biaya_rp: 3000 });
     expect(Number(b?.kurs)).toBeCloseTo(16480, 6);
-    // Opus $0,118 -> MDR = 0,118 x 16.480 x 1,3 x 0,7%.
-    expect(Number(b?.biaya_mdr_rp)).toBeCloseTo(0.118 * 16480 * 1.3 * 0.007, 6);
+    // Opus $0,118 -> MDR = 0,118 x 16.480 x 1,3 x 1%.
+    expect(Number(b?.biaya_mdr_rp)).toBeCloseTo(25.28032, 6);
     expect(Number(b?.biaya_api_rp)).toBeCloseTo(1888, 6);
   });
 
@@ -489,7 +490,9 @@ describe("dompet ALETA Ai (pg-mem)", () => {
     expect((await bacaPengaturan(db)).isiBerbayarAktif).toBe(false);
     await expect(atur({ isiBerbayarAktif: true })).rejects.toMatchObject({ status: 400 });
     await expect(atur({ mdrPersen: 6 })).rejects.toMatchObject({ status: 400 });
-    expect((await atur({ mdrPersen: 0.7 })).mdrPersen).toBe(0.7);
+    expect((await bacaPengaturan(db)).mdrPersen).toBe(1);
+    expect((await atur({ mdrPersen: 0.7 })).mdrPersen).toBe(0.7); // tetap dapat diubah Super Admin
+    expect((await atur({ mdrPersen: 1 })).mdrPersen).toBe(1);
   });
 
   // ── 10. Dompet & struk ──

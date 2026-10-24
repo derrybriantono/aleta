@@ -10,7 +10,7 @@
  *   biaya_usd = token x tarif model (masuk, keluar, tulis cache, baca cache)
  *   kurs      = kurs hari itu x (1 + penyangga kurs)
  *   pokok     = biaya_usd x kurs x (1 + margin)
- *   MDR       = pokok x persen MDR QRIS (bawaan 0,7%)
+ *   MDR       = pokok x persen MDR QRIS (bawaan 1%, keputusan pengguna 24 Okt)
  *   harga_rp  = pokok + MDR, dibulatkan KE ATAS kelipatan pembulatan
  *               (bawaan Rp500), minimum Rp1.000 per giliran
  *
@@ -166,7 +166,7 @@ export type ParameterHarga = {
   minimumRp: number;
   /** Kelipatan pembulatan KE ATAS (bawaan Rp500). */
   pembulatanRp: number;
-  /** Biaya MDR QRIS, persen dari pokok harga (bawaan 0,7). Tidak diisi = 0. */
+  /** Biaya MDR QRIS, persen dari pokok harga (bawaan 1). Tidak diisi = 0. */
   mdrPersen?: number;
 };
 
@@ -175,7 +175,7 @@ export const PARAMETER_HARGA_BAWAAN: ParameterHarga = {
   penyanggaKursPersen: 3,
   minimumRp: 1000,
   pembulatanRp: 500,
-  mdrPersen: 0.7,
+  mdrPersen: 1,
 };
 
 /** Bulatkan ke atas ke kelipatan; galat kecil pecahan biner tidak menaikkan satu kelipatan penuh. */
