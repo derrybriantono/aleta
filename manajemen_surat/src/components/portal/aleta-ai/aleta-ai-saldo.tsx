@@ -34,6 +34,9 @@ type DataSaldo = {
   kuota?: { diberikanRp: number; sisaRp: number; hangus: string; teks: string } | null;
 };
 
+/** Mutasi di luar giliran yang punya struk sendiri (struk giliran ada di tabel rincian). */
+const JENIS_BERSTRUK = new Set(["isi", "kuota", "kuota-hangus", "koreksi"]);
+
 const LABEL_STATUS: Record<string, string> = { selesai: "Selesai", terpotong: "Terpotong", ditolak: "Ditolak", gagal: "Gagal (tidak dipotong)" };
 
 function jumlahToken(g: GiliranDompet) {
@@ -174,6 +177,7 @@ export function AletaAiSaldo() {
                       <th scope="col" className="px-3 py-2 font-semibold">Keterangan</th>
                       <th scope="col" className="px-3 py-2 text-right font-semibold">Jumlah</th>
                       <th scope="col" className="px-3 py-2 text-right font-semibold">Saldo</th>
+                      <th scope="col" className="px-3 py-2 font-semibold">Struk</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -186,6 +190,13 @@ export function AletaAiSaldo() {
                           {formatRupiah(Math.abs(m.jumlahRp))}
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums">{m.saldoSesudahRp != null ? formatRupiah(m.saldoSesudahRp) : "-"}</td>
+                        <td className="px-3 py-2">
+                          {m.id && m.jenis && JENIS_BERSTRUK.has(m.jenis) ? (
+                            <a href={apiPath(`/api/aleta-ai/struk/${encodeURIComponent(m.id)}`)} target="_blank" rel="noopener" className="text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                              Struk
+                            </a>
+                          ) : null}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

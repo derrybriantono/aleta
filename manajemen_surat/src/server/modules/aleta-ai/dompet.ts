@@ -179,9 +179,13 @@ export async function strukGiliran(db: AletaDatabase, pelaku: PelakuAi, pesanId:
     ["Biaya dipotong", g.gratis ? "Rp0 (gratis)" : rupiah(g.biayaRp)],
     ...(saldoAkhir !== null ? ([["Saldo sesudahnya", rupiah(saldoAkhir)]] as Array<[string, string]>) : []),
   ];
+  return halamanStruk(g.pesanId, "Struk pemakaian ALETA Ai", "Rincian biaya satu giliran. Isi percakapan tidak dimuat.", baris);
+}
+
+function halamanStruk(nomor: string, judul: string, uraian: string, baris: Array<[string, string]>): string {
   return `<!doctype html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Struk ${aman(g.pesanId)}</title>
+<title>Struk ${aman(nomor)}</title>
 <style>
 :root{color-scheme:light dark;--latar:#ffffff;--teks:#1f2937;--garis:#d1d5db;--redup:#6b7280}
 @media (prefers-color-scheme:dark){:root{--latar:#111827;--teks:#f3f4f6;--garis:#374151;--redup:#9ca3af}}
@@ -196,9 +200,29 @@ button{margin-top:16px;font:inherit;padding:6px 14px}
 @media print{button{display:none}body{padding:0}}
 </style></head>
 <body><main>
-<h1>Struk pemakaian ALETA Ai</h1>
-<p>Rincian biaya satu giliran. Isi percakapan tidak dimuat.</p>
+<h1>${aman(judul)}</h1>
+<p>${aman(uraian)}</p>
 <table>${baris.map(([k, v]) => `<tr><th scope="row">${aman(k)}</th><td>${aman(v)}</td></tr>`).join("")}</table>
 <button type="button" onclick="window.print()">Cetak / simpan PDF</button>
 </main></body></html>`;
+}
+
+/** Struk satu mutasi non-giliran milik pelaku (isi, kuota, kuota hangus, koreksi admin). */
+export async function strukMutasi(db: AletaDatabase, pelaku: PelakuAi, mutasiId: string): Promise<string> {
+  const m = await db.queryOne<{ id: string; jenis: string; jumlah_rp: number | string; saldo_setelah: number | string; catatan: string; dibuat_at: string }>(
+    `SELECT id, jenis, jumlah_rp, saldo_setelah, catatan, dibuat_at FROM aleta_ai_mutasi WHERE id = ? AND pengguna_id = ? AND jenis IN ('isi', 'kuota', 'kuota-hangus', 'koreksi') AND jumlah_rp <> 0`,
+    [String(mutasiId ?? "").trim(), pelaku.id]
+  );
+  if (!m) throw new ApiError(404, "Struk tidak ditemukan.");
+  const jumlah = Number(m.jumlah_rp);
+  const baris: Array<[string, string]> = [
+    ["Nomor struk", m.id],
+    ["Waktu", waktuWita(m.dibuat_at)],
+    ["Pengguna", pelaku.nama || pelaku.id],
+    ["Jenis", KETERANGAN_JENIS[m.jenis as JenisMutasi] ?? m.jenis],
+    ["Keterangan", m.catatan || "-"],
+    ["Jumlah", `${jumlah < 0 ? "-" : "+"}${rupiah(Math.abs(jumlah))}`],
+    ["Saldo sesudahnya", rupiah(Number(m.saldo_setelah))],
+  ];
+  return halamanStruk(m.id, "Struk mutasi saldo ALETA Ai", "Rincian satu perubahan saldo.", baris);
 }

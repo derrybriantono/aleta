@@ -278,3 +278,62 @@ export async function isiSaldo(
   await catatJejak(db, { penggunaId: olehId, peranId: "super-admin", aksi: "saldo.isi", hasil: "ok", biayaRp: jumlah, ringkas: `Isi saldo ${penggunaId}: Rp${jumlah}` });
   return { saldoRp: hasil.saldoSetelah };
 }
+
+export const PANJANG_MIN_ALASAN_KOREKSI = 5;
+
+/**
+ * Koreksi saldo oleh Super Admin (tahap 4, keputusan pengguna 24 Okt 2026):
+ * mutasi "koreksi" bertanda (+ menambah, - mengurangi), ALASAN WAJIB, tidak
+ * boleh membuat saldo negatif, tercatat di jejak audit, dan tampil di mutasi
+ * pengguna sebagai "Koreksi oleh admin: <alasan>".
+ *
+ * `kunci` (dari layar, satu per pengisian formulir) membuat koreksi idempoten:
+ * kiriman ulang dengan kunci yang sama tidak menambah mutasi kedua.
+ */
+export async function koreksiSaldo(
+  db: AletaDatabase,
+  olehId: string,
+  masukan: { penggunaId: string; jumlahRp: number; alasan: string; kunci?: string },
+  penggunaAda: (id: string) => Promise<boolean>
+): Promise<{ saldoRp: number; mutasiId: string; sudahAda: boolean }> {
+  const penggunaId = teks(masukan.penggunaId);
+  const jumlah = Number(masukan.jumlahRp);
+  const alasan = teks(masukan.alasan).replace(/\s+/g, " ");
+  const kunci = teks(masukan.kunci);
+  if (!penggunaId) throw new ApiError(400, "Pilih pengguna yang saldonya dikoreksi.");
+  if (!Number.isInteger(jumlah) || jumlah === 0 || Math.abs(jumlah) > BATAS_ISI_SALDO_RP) {
+    throw new ApiError(400, `Jumlah koreksi harus bilangan bulat bukan nol, paling besar Rp${BATAS_ISI_SALDO_RP.toLocaleString("id-ID")} (minus = mengurangi).`);
+  }
+  if (alasan.length < PANJANG_MIN_ALASAN_KOREKSI) throw new ApiError(400, `Alasan koreksi wajib diisi (minimal ${PANJANG_MIN_ALASAN_KOREKSI} huruf).`);
+  if (kunci && !/^[a-z0-9-]{8,64}$/i.test(kunci)) throw new ApiError(400, "Kunci koreksi tidak sah.");
+  if (!(await penggunaAda(penggunaId))) throw new ApiError(404, "Pengguna tidak ditemukan.");
+  const rujukanId = `koreksi:${kunci || randomUUID()}`;
+
+  const hasil = await antreSaldo(penggunaId, async () => {
+    const ada = await db.queryOne<{ id: string; jumlah_rp: number | string }>(
+      `SELECT id, jumlah_rp FROM aleta_ai_mutasi WHERE pengguna_id = ? AND jenis = 'koreksi' AND rujukan_id = ? LIMIT 1`,
+      [penggunaId, rujukanId]
+    );
+    if (ada) {
+      if (Number(ada.jumlah_rp) !== jumlah) throw new ApiError(409, "Koreksi dengan kunci ini sudah tercatat dengan jumlah lain. Muat ulang halaman lalu ulangi.");
+      return { saldoRp: await saldoPengguna(db, penggunaId), mutasiId: ada.id, sudahAda: true };
+    }
+    const m = await terapkanMutasi(db, { penggunaId, jenis: "koreksi", jumlahRp: jumlah, rujukanId, catatan: `Koreksi oleh admin: ${alasan}`, olehId });
+    if (!m) {
+      const saldo = await saldoPengguna(db, penggunaId);
+      throw new ApiError(400, `Koreksi ditolak: saldo pengguna Rp${saldo.toLocaleString("id-ID")}, saldo tidak boleh menjadi negatif.`);
+    }
+    return { saldoRp: m.saldoSetelah, mutasiId: m.mutasiId, sudahAda: false };
+  });
+  if (!hasil.sudahAda) {
+    await catatJejak(db, {
+      penggunaId: olehId,
+      peranId: "super-admin",
+      aksi: "saldo.koreksi",
+      hasil: "ok",
+      biayaRp: jumlah,
+      ringkas: `Koreksi saldo ${penggunaId}: ${jumlah > 0 ? "+" : "-"}Rp${Math.abs(jumlah)}; alasan: ${alasan}`,
+    });
+  }
+  return hasil;
+}

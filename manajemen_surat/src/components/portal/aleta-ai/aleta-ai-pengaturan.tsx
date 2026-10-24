@@ -176,6 +176,10 @@ function TabelLaporan({ judul, baris }: { judul: string; baris?: BarisLaporan[] 
   );
 }
 
+function kunciBaru(): string {
+  return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `k-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function bulanIni() {
   const t = new Date();
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}`;
@@ -196,6 +200,11 @@ export function AletaAiPengaturan({ pengguna }: { pengguna: PenggunaPilihan[] })
   const [jumlah, setJumlah] = useState("");
   const [catatan, setCatatan] = useState("");
   const [pesanSaldo, setPesanSaldo] = useState<{ teks: string; baik: boolean }>({ teks: "", baik: true });
+  const [jumlahKoreksi, setJumlahKoreksi] = useState("");
+  const [alasanKoreksi, setAlasanKoreksi] = useState("");
+  // Satu kunci per pengisian formulir: klik ganda/kirim ulang tidak menggandakan koreksi.
+  const [kunciKoreksi, setKunciKoreksi] = useState(() => kunciBaru());
+  const [pesanKoreksi, setPesanKoreksi] = useState<{ teks: string; baik: boolean }>({ teks: "", baik: true });
   const [bulan, setBulan] = useState(bulanIni());
   const [sampai, setSampai] = useState(bulanIni());
   const [kuota, setKuota] = useState<KuotaPeran[]>([]);
@@ -275,6 +284,7 @@ export function AletaAiPengaturan({ pengguna }: { pengguna: PenggunaPilihan[] })
     const jumlahRp = Math.round(angka(jumlah));
     if (!penggunaId) return setPesanSaldo({ teks: "Pilih pengguna dulu.", baik: false });
     if (jumlahRp === 0) return setPesanSaldo({ teks: "Isi jumlah rupiah yang akan ditambahkan.", baik: false });
+    if (jumlahRp < 0) return setPesanSaldo({ teks: "Isi saldo hanya menambah. Untuk mengurangi, pakai Koreksi saldo di bawah dengan alasannya.", baik: false });
     const r = await kirimJson<{ saldoRp?: number }>("/api/aleta-ai/saldo/isi", "POST", { penggunaId, jumlahRp, catatan: catatan.trim() });
     if (!r.ok) return setPesanSaldo({ teks: r.galat, baik: false });
     setPesanSaldo({
@@ -283,6 +293,22 @@ export function AletaAiPengaturan({ pengguna }: { pengguna: PenggunaPilihan[] })
     });
     setJumlah("");
     setCatatan("");
+  }
+
+  async function koreksi() {
+    const jumlahRp = Math.round(angka(jumlahKoreksi));
+    if (!penggunaId) return setPesanKoreksi({ teks: "Pilih pengguna dulu.", baik: false });
+    if (jumlahRp === 0) return setPesanKoreksi({ teks: "Isi jumlah koreksi (minus untuk mengurangi).", baik: false });
+    if (alasanKoreksi.trim().length < 5) return setPesanKoreksi({ teks: "Alasan koreksi wajib diisi (minimal 5 huruf).", baik: false });
+    const r = await kirimJson<{ saldoRp?: number }>("/api/aleta-ai/saldo/koreksi", "POST", { penggunaId, jumlahRp, alasan: alasanKoreksi.trim(), kunci: kunciKoreksi });
+    if (!r.ok) return setPesanKoreksi({ teks: r.galat, baik: false });
+    setPesanKoreksi({
+      teks: `Saldo ${penggunaTerpilih?.name ?? "pengguna"} dikoreksi ${jumlahRp > 0 ? "+" : "-"}${formatRupiah(Math.abs(jumlahRp))}${r.data?.saldoRp != null ? `; saldo kini ${formatRupiah(r.data.saldoRp)}` : ""}.`,
+      baik: true,
+    });
+    setJumlahKoreksi("");
+    setAlasanKoreksi("");
+    setKunciKoreksi(kunciBaru());
   }
 
   async function simpanKuota() {
@@ -553,7 +579,7 @@ export function AletaAiPengaturan({ pengguna }: { pengguna: PenggunaPilihan[] })
         ) : null}
       </Bagian>
 
-      <Bagian judul="Isi saldo pengguna" deskripsi="Menambah (atau mengurangi, dengan angka minus) saldo. Setiap perubahan tercatat sebagai mutasi.">
+      <Bagian judul="Isi saldo pengguna" deskripsi="Menambah saldo pengguna. Untuk mengurangi atau membetulkan saldo, pakai Koreksi saldo (alasan wajib). Setiap perubahan tercatat sebagai mutasi.">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Medan label="Cari pengguna" htmlFor="ai-cari-pengguna">
@@ -599,6 +625,26 @@ export function AletaAiPengaturan({ pengguna }: { pengguna: PenggunaPilihan[] })
         <div className="flex flex-wrap items-center gap-3">
           <Button onClick={() => void isiSaldo()}>Isi saldo</Button>
           <Pesan teks={pesanSaldo.teks} baik={pesanSaldo.baik} />
+        </div>
+        <div className="space-y-3 rounded-xl border border-border/70 bg-muted/30 px-4 py-3" data-testid="koreksi-saldo">
+          <p className="text-sm font-medium">Koreksi saldo (pengguna yang dipilih di atas)</p>
+          <p className="text-sm text-muted-foreground">
+            Angka plus menambah, minus mengurangi. Saldo tidak boleh menjadi negatif. Pengguna melihatnya di mutasi sebagai &quot;Koreksi oleh admin: alasan&quot;.
+          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Medan label="Jumlah koreksi (Rp)" htmlFor="ai-jumlah-koreksi">
+              <Input id="ai-jumlah-koreksi" type="number" inputMode="numeric" step="1000" value={jumlahKoreksi} onChange={(e) => setJumlahKoreksi(e.target.value)} />
+            </Medan>
+            <Medan label="Alasan koreksi (wajib)" htmlFor="ai-alasan-koreksi">
+              <Input id="ai-alasan-koreksi" value={alasanKoreksi} maxLength={200} placeholder="Mis. salah ketik isi saldo 20 Okt" onChange={(e) => setAlasanKoreksi(e.target.value)} />
+            </Medan>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="outline" onClick={() => void koreksi()}>
+              Koreksi saldo
+            </Button>
+            <Pesan teks={pesanKoreksi.teks} baik={pesanKoreksi.baik} />
+          </div>
         </div>
       </Bagian>
 

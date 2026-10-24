@@ -11,7 +11,7 @@ import { IN_MEMORY_TABLE_PERSISTENCE_ORDER, createAletaDatabase, type AletaDatab
 import { DDL_ALETA_AI_DOMPET } from "@/server/db/schema";
 import type { PelakuAi } from "@/server/modules/aleta-ai/akses";
 import { PESAN_BATAS_HARIAN, PESAN_BATAS_SATKER } from "@/server/modules/aleta-ai/batas";
-import { strukGiliran, tampilDompet } from "@/server/modules/aleta-ai/dompet";
+import { strukGiliran, strukMutasi, tampilDompet } from "@/server/modules/aleta-ai/dompet";
 import { GalatKlienAi, suntikKlienAi, type HasilAi, type KlienAi, type OpsiAlir } from "@/server/modules/aleta-ai/klien";
 import { pastikanKuotaBulanIni, simpanKuotaPeran, tanggalHangus } from "@/server/modules/aleta-ai/kuota";
 import { angkaKurs, bacaJisdorBi, buatPengambilKurs, kursBerlaku, segarkanKursBilaPerlu, simpanKurs, tanggalLokal, type PengambilHttp } from "@/server/modules/aleta-ai/kurs";
@@ -23,7 +23,7 @@ import { perkirakanBiayaTugas } from "@/server/modules/aleta-ai/perkiraan";
 import { unggahProyek } from "@/server/modules/aleta-ai/proyek";
 import { jalankanRekonsiliasi } from "@/server/modules/aleta-ai/rekonsiliasi";
 import { ALASAN_SAKLAR, aletaAiDihentikan, daftarkanPekerjaanAi, jumlahPekerjaanAiBerjalan, pantauSaklar } from "@/server/modules/aleta-ai/saklar";
-import { daftarMutasi, saldoPengguna, selesaikanTahanan, tahanDana, terapkanMutasi, verifikasiSaldo } from "@/server/modules/aleta-ai/saldo";
+import { daftarMutasi, koreksiSaldo, saldoPengguna, selesaikanTahanan, tahanDana, terapkanMutasi, verifikasiSaldo } from "@/server/modules/aleta-ai/saldo";
 import { susunZip } from "@/server/shared/zip";
 
 /**
@@ -539,6 +539,49 @@ describe("dompet ALETA Ai (pg-mem)", () => {
     }
   });
 
+  it("koreksi saldo: alasan wajib, tidak boleh negatif, idempoten per kunci, tampil 'Koreksi oleh admin', masuk audit/laporan/rekonsiliasi", async () => {
+    const id = "u-koreksi-1";
+    const ada = async (x: string) => x === id;
+    await isi(db, id, 10_000);
+    const dasar = { penggunaId: id, jumlahRp: -3000 };
+    await expect(koreksiSaldo(db, superAdmin.id, { ...dasar, alasan: "" }, ada)).rejects.toMatchObject({ status: 400 });
+    await expect(koreksiSaldo(db, superAdmin.id, { ...dasar, alasan: "    " }, ada)).rejects.toMatchObject({ status: 400 });
+    await expect(koreksiSaldo(db, superAdmin.id, { ...dasar, jumlahRp: 0, alasan: "salah ketik" }, ada)).rejects.toMatchObject({ status: 400 });
+    await expect(koreksiSaldo(db, superAdmin.id, { ...dasar, jumlahRp: -10_001, alasan: "terlalu banyak" }, ada)).rejects.toMatchObject({
+      status: 400,
+      message: expect.stringMatching(/tidak boleh menjadi negatif/),
+    });
+    await expect(koreksiSaldo(db, superAdmin.id, { ...dasar, penggunaId: "tidak-ada", alasan: "salah ketik" }, ada)).rejects.toMatchObject({ status: 404 });
+    expect(await jenisMutasi(db, id)).toEqual(["isi:10000"]);
+
+    // Dua kiriman bersamaan dengan kunci yang sama = satu mutasi.
+    const kunci = "kunci-koreksi-0001";
+    const dua = await Promise.all([1, 2].map(() => koreksiSaldo(db, superAdmin.id, { ...dasar, alasan: "salah ketik isi 20 Okt", kunci }, ada)));
+    expect(dua.map((h) => h.sudahAda).sort()).toEqual([false, true]);
+    expect(dua.map((h) => h.saldoRp)).toEqual([7000, 7000]);
+    await expect(koreksiSaldo(db, superAdmin.id, { ...dasar, jumlahRp: -2000, alasan: "salah ketik isi 20 Okt", kunci }, ada)).rejects.toMatchObject({ status: 409 });
+    expect((await koreksiSaldo(db, superAdmin.id, { penggunaId: id, jumlahRp: 500, alasan: "pembulatan dikembalikan" }, ada)).saldoRp).toBe(7500);
+    expect(await jenisMutasi(db, id)).toEqual(["isi:10000", "koreksi:-3000", "koreksi:500"]);
+
+    const d = await tampilDompet(db, hakim(id));
+    expect(d.mutasi.map((m) => m.keterangan)).toEqual(["Koreksi oleh admin: pembulatan dikembalikan", "Koreksi oleh admin: salah ketik isi 20 Okt", "uji"]);
+    const struk = await strukMutasi(db, hakim(id), d.mutasi[1]!.id);
+    expect(struk).toContain("Koreksi oleh admin: salah ketik isi 20 Okt");
+    expect(struk).toContain("-Rp3.000");
+    await expect(strukMutasi(db, hakim("orang-lain"), d.mutasi[1]!.id)).rejects.toMatchObject({ status: 404 });
+
+    const jejak = await db.queryAll<{ ringkas: string }>(`SELECT ringkas FROM aleta_ai_jejak WHERE aksi = 'saldo.koreksi' AND ringkas LIKE ?`, [`%${id}%`]);
+    expect(jejak.map((j) => j.ringkas)).toEqual(expect.arrayContaining([expect.stringContaining("-Rp3000; alasan: salah ketik isi 20 Okt")]));
+    expect(jejak).toHaveLength(2); // kiriman ulang tidak menulis jejak kedua
+    expect((await laporanBulanan(db)).mutasiSaldo).toMatchObject({ koreksiTambahRp: expect.any(Number), koreksiKurangRp: expect.any(Number) });
+    const lap = await laporanBulanan(db);
+    expect(lap.mutasiSaldo.koreksiKurangRp).toBeGreaterThanOrEqual(3000);
+    expect(lap.mutasiSaldo.koreksiTambahRp).toBeGreaterThanOrEqual(500);
+    expect(laporanKeCsv(lap)).toContain("Mutasi saldo,Koreksi admin (kurang),");
+    const rek = await jalankanRekonsiliasi(db, {});
+    expect(rek.rincian.filter((r) => r.jenis === "saldo" || r.jenis === "rantai")).toEqual([]);
+  });
+
   it("isi saldo berbayar MATI bawaan dan tidak dapat dinyalakan (tahap 5); pengaturan MDR tersimpan dalam rentang", async () => {
     expect((await bacaPengaturan(db)).isiBerbayarAktif).toBe(false);
     await expect(atur({ isiBerbayarAktif: true })).rejects.toMatchObject({ status: 400 });
@@ -738,6 +781,24 @@ describe("hak per peran di rute dompet (matriks peran + Akses Menu + wajibSuperA
     expect((await db.queryAll(`SELECT peran_id, kuota_bulanan_rp FROM aleta_ai_kuota_peran`)).map((b) => ({ ...b, kuota_bulanan_rp: Number((b as { kuota_bulanan_rp: unknown }).kuota_bulanan_rp) }))).toEqual([
       { peran_id: "hakim", kuota_bulanan_rp: 5000 },
     ]);
+  });
+
+  it("koreksi saldo lewat rute: hakim 403, Admin 403, Super Admin 200; alasan kosong 400; tercatat di mutasi pengguna", async () => {
+    const { POST } = await import("@/app/api/aleta-ai/saldo/koreksi/route");
+    const kirim = (badan: unknown) => POST(req("/api/aleta-ai/saldo/koreksi", { method: "POST", body: JSON.stringify(badan) }));
+    const badan = { penggunaId: "u-hakim", jumlahRp: -1000, alasan: "koreksi uji rute", kunci: "kunci-rute-00001" };
+    for (const aktor of ["u-hakim", "u-admin"]) {
+      ctx.aktor = aktor;
+      expect((await kirim(badan)).status, aktor).toBe(403);
+    }
+    ctx.aktor = "u-sa";
+    expect((await kirim({ ...badan, alasan: "" })).status).toBe(400);
+    const sebelum = await saldoPengguna(db, "u-hakim");
+    const r = await status(await kirim(badan));
+    expect(r.status).toBe(200);
+    expect(r.isi?.data).toMatchObject({ saldoRp: sebelum - 1000, sudahAda: false });
+    expect((await status(await kirim(badan))).isi?.data).toMatchObject({ saldoRp: sebelum - 1000, sudahAda: true });
+    expect((await daftarMutasi(db, "u-hakim"))[0]).toMatchObject({ jenis: "koreksi", jumlahRp: -1000, catatan: "Koreksi oleh admin: koreksi uji rute" });
   });
 
   it("struk: hanya giliran milik sendiri (orang lain 404), HTML tanpa isi pesan", async () => {

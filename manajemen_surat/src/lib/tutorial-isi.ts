@@ -804,6 +804,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Harga mengikuti kurs dolar harian, jadi biaya pertanyaan yang sama dapat sedikit berbeda dari hari ke hari.",
       "Ada batas pemakaian harian per pengguna dan batas bulanan satker. Bila tercapai, jawaban baru ditolak sebelum berjalan.",
       "Saldo diisi manual oleh Super Admin. Pengisian berbayar belum tersedia.",
+      "Kuota hibah dari kantor dipakai lebih dulu dan sisanya hangus di akhir bulan. Saldo yang diisi tidak ikut hangus.",
     ],
     kataKunci: ["dompet", "saldo", "perkiraan biaya", "struk", "rincian biaya", "kurs", "saldo menipis"],
   },
@@ -818,7 +819,8 @@ export const TUTORIAL: readonly Tutorial[] = [
     langkah: [
       "Buka Pengaturan ALETA Ai. Di bagian Harga dan batas, atur margin, penyangga kurs, MDR QRIS, minimum, pembulatan, batas harian per pengguna, dan batas satker per bulan.",
       "Isi tarif resmi per model di bagian Tarif per model.",
-      "Di bagian Kuota hibah per peran, isi rupiah per bulan untuk peran yang diberi kuota, lalu simpan. Kuota diberikan sekali sebulan dan tercatat di mutasi pengguna.",
+      "Untuk mengurangi atau membetulkan saldo, pakai Koreksi saldo: isi jumlah (minus untuk mengurangi) dan alasannya. Saldo tidak dapat dibuat negatif, dan pengguna melihat alasannya di mutasi.",
+      "Di bagian Kuota hibah per peran, isi rupiah per bulan untuk peran yang diberi kuota, lalu simpan. Kuota diberikan sekali sebulan, dipakai lebih dulu, dan sisanya hangus di akhir bulan.",
       "Di bagian Laporan bulanan, pilih bulan awal dan akhir, lalu tampilkan atau unduh XLSX/CSV. Laba sama dengan pendapatan dikurangi biaya layanan AI dan MDR.",
       "Di bagian Rekonsiliasi harian, jalankan pemeriksaan: saldo tiap pengguna dicocokkan dengan mutasinya dan selisih ditandai.",
     ],
@@ -826,7 +828,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Saklar ALETA Ai di bagian Layanan adalah saklar darurat: bila dimatikan, jawaban dan tugas yang sedang berjalan dihentikan seketika tanpa memotong saldo.",
       "Laporan hanya memuat angka biaya, bukan isi percakapan.",
     ],
-    kataKunci: ["kuota", "laporan laba", "rekonsiliasi", "ekspor", "isi saldo", "mdr", "batas satker"],
+    kataKunci: ["kuota", "laporan laba", "rekonsiliasi", "ekspor", "isi saldo", "koreksi saldo", "mdr", "batas satker"],
   },
   {
     id: "bas-alat-tulis",

@@ -113,6 +113,24 @@ export async function laporanRentang(db: AletaDatabase, dariMasukan?: string, sa
     tambah(ambil(perBulan, tanggalLokal(new Date(b.dibuat_at)).slice(0, 7)), b);
   }
 
+  // Mutasi saldo di luar giliran (isi, kuota, kuota hangus, koreksi admin) pada rentang yang sama.
+  const mutasi = await db.queryAll<{ jenis: string; jumlah_rp: number | string }>(
+    `SELECT jenis, jumlah_rp FROM aleta_ai_mutasi WHERE jenis IN ('isi', 'kuota', 'kuota-hangus', 'koreksi') AND jumlah_rp <> 0 AND dibuat_at >= ? AND dibuat_at < ?`,
+    [dari.awal, sampai.akhir]
+  );
+  const mutasiSaldo = { isiRp: 0, kuotaRp: 0, kuotaHangusRp: 0, koreksiTambahRp: 0, koreksiKurangRp: 0, koreksiJumlah: 0 };
+  for (const m of mutasi) {
+    const n = Number(m.jumlah_rp);
+    if (m.jenis === "isi") mutasiSaldo.isiRp += n;
+    else if (m.jenis === "kuota") mutasiSaldo.kuotaRp += n;
+    else if (m.jenis === "kuota-hangus") mutasiSaldo.kuotaHangusRp += -n;
+    else if (m.jenis === "koreksi") {
+      mutasiSaldo.koreksiJumlah += 1;
+      if (n > 0) mutasiSaldo.koreksiTambahRp += n;
+      else mutasiSaldo.koreksiKurangRp += -n;
+    }
+  }
+
   // Bentuk datar sesuai kesepakatan dengan layar: total di tingkat atas, dan tiap kelompok
   // memuat `nama` (pengguna: nama akun; peran/kelompok/model: nilainya) di samping angkanya.
   return {
@@ -128,6 +146,7 @@ export async function laporanRentang(db: AletaDatabase, dariMasukan?: string, sa
     perPeran: urutkan(perPeran).map(([peran, k]) => ({ nama: peran, peran, ...k })),
     perKelompok: urutkan(perKelompok).map(([kelompok, k]) => ({ nama: kelompok, kelompok, ...k })),
     perModel: urutkan(perModel).map(([model, k]) => ({ nama: model, model, ...k })),
+    mutasiSaldo,
     perBulan: [...perBulan.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([bln, k]) => ({ nama: bln, bulan: bln, ...k })),
   };
 }
@@ -162,6 +181,17 @@ function selCsv(nilai: string | number): string {
   return /[",;\n\r]/.test(aman) ? `"${aman.replace(/"/g, '""')}"` : aman;
 }
 
+function barisMutasiSaldo(lap: LaporanAi): Array<[string, number]> {
+  const m = lap.mutasiSaldo;
+  return [
+    ["Isi saldo", m.isiRp],
+    ["Kuota hibah", m.kuotaRp],
+    ["Kuota hangus", m.kuotaHangusRp],
+    ["Koreksi admin (tambah)", m.koreksiTambahRp],
+    ["Koreksi admin (kurang)", m.koreksiKurangRp],
+  ];
+}
+
 /** CSV satu tabel: Bagian, Nama, angka... (baris "Total" lebih dulu). Pemisah koma, UTF-8 dengan BOM untuk Excel. */
 export function laporanKeCsv(lap: LaporanAi): string {
   const kepala = ["Bagian", "Nama", ...KOLOM_ANGKA.map((k) => k.header)];
@@ -170,6 +200,8 @@ export function laporanKeCsv(lap: LaporanAi): string {
   for (const bag of BAGIAN) {
     for (const r of lap[bag.kunci]) baris.push([bag.judul, r.nama, ...KOLOM_ANGKA.map((k) => bulat(k.key, r[k.key]))]);
   }
+  baris.push([], ["Mutasi saldo", "Jenis", "Jumlah (Rp)"]);
+  for (const [nama, rp] of barisMutasiSaldo(lap)) baris.push(["Mutasi saldo", nama, rp]);
   return `\uFEFF${baris.map((r) => r.map(selCsv).join(",")).join("\r\n")}\r\n`;
 }
 
@@ -180,6 +212,15 @@ export function laporanKeXlsx(lap: LaporanAi): Buffer {
   const lembar = [
     { name: "Ringkasan", columns: kolom, rows: [keBaris(`Total ${lap.dari} s.d. ${lap.sampai}`, lap.ringkasan)], freezeHeader: true },
     ...BAGIAN.map((bag) => ({ name: bag.judul, columns: kolom, rows: lap[bag.kunci].map((r) => keBaris(r.nama, r)), autoFilter: true, freezeHeader: true })),
+    {
+      name: "Mutasi saldo",
+      columns: [
+        { key: "jenis", header: "Jenis", width: 28 },
+        { key: "jumlah", header: "Jumlah (Rp)", width: 16 },
+      ],
+      rows: barisMutasiSaldo(lap).map(([jenis, jumlah]) => ({ jenis, jumlah })),
+      freezeHeader: true,
+    },
   ];
   return createXlsxWorkbook(lembar, { creator: "", aplikasi: "" });
 }
