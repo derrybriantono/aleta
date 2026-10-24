@@ -5,6 +5,8 @@ Permintaan Derry: saran dan rencana untuk meng-upgrade fitur yang **sudah ada**,
 - isi data otomatis dari SIPP ke ABT dan Blangko ABT by Derry Briantono;
 - ekstensi ALETA.
 
+Urutan pengerjaan lengkap per tahap: **`TAHAPAN.md`**.
+
 Disusun dari peta kode `integrasi-1205-38` (ekstensi 1.205.38) ditambah cabang yang belum digabung: T2 saksi semua jenis, dan T7/T8 Referensi Data Pihak. **Belum ada yang dikerjakan.** Kerjakan bertahap, satu butir per cabang `fitur/<nama>`, mengikuti `AWAN.md`/`CLAUDE.md`.
 
 ## Temuan utama
@@ -31,7 +33,7 @@ Karena itu urutan rencana: **fondasi data dan lingkar belajar dulu, baru menamba
 - Isian yang sudah berisi tidak pernah ditimpa tanpa persetujuan. Isian hukum (huruf alasan 8503, keputusan majelis 4100–4105, dasar hukum) **paling jauh usulan**.
 - Hanya blangko dan variabel milik `derry_briantono` yang boleh diubah.
 - Data koreksi berisi nama asli, jadi hanya disimpan di Postgres ALETA di server kantor. Tidak masuk repo atau cloud; fixture memakai nama rekaan. Retensi dapat diatur.
-- Migrasi memakai nomor **0090+** (0084 T1, 0085 audit login, 0086–0087 T9, 0088 T10).
+- Migrasi memakai nomor **0090+** (0084 T1, 0085 audit login, 0086–0087 T9, 0088 T10). Pembagian nomor per butir ada di `TAHAPAN.md`.
 - Kenaikan status isian (mis. dari "saran" ke "otomatis") **tidak pernah otomatis**: sistem mengusulkan, Super Admin menyetujui.
 
 ---
@@ -61,7 +63,7 @@ Karena itu urutan rencana: **fondasi data dan lingkar belajar dulu, baru menamba
    - Sesaat sebelum menulis, ALETA tetap membaca ulang SIPP. Aturan ini tidak berubah.
    - Tidak ada trigger atau ubahan apa pun di basis data SIPP.
 
-### Isi cermin (perkiraan tabel, migrasi 0090+)
+### Isi cermin (perkiraan tabel, migrasi 0090)
 - `aleta_cermin_perkara`, satu baris per perkara:
   - identitas: nomor, jenis, alur, tanggal daftar;
   - pelaksana: tahapan/proses terakhir, majelis, PP, JS;
@@ -323,11 +325,11 @@ Angka di bawah dihitung dari kode `integrasi-1205-38` dan dari `docs/audit/PERFO
 
 | Gelombang | Butir | Kenapa duluan | Migrasi (perkiraan) |
 | :--- | :--- | :--- | :--- |
-| 1 | U1, U2, U6 | Tanpa jejak, tidak ada yang bisa diukur atau diurungkan lintas PC | 0090 (`aleta_saksi_butir`, `aleta_isian_jejak`) |
-| 2 | U3, U4 (U5 digantikan C0) | Ketepatan hidup; dasar menaikkan isian otomatis | 0091 (`aleta_ketepatan_isian`) |
-| 3 | U7, U8, U9 (sesudah T2 digabung) | Saksi satu mesin, katalog tanpa rilis, non-cerai terisi | 0092 (`aleta_saksi_katalog`) |
+| 1 | U1, U2, U6 | Tanpa jejak, tidak ada yang bisa diukur atau diurungkan lintas PC | 0091 (`aleta_saksi_butir`, `aleta_isian_jejak`) |
+| 2 | U3, U4 (U5 digantikan C0) | Ketepatan hidup; dasar menaikkan isian otomatis | 0092 (`aleta_ketepatan_isian`) |
+| 3 | U7, U8, U9 (sesudah T2 digabung) | Saksi satu mesin, katalog tanpa rilis, non-cerai terisi | 0093 (`aleta_saksi_katalog`) |
 | 4 | U11, U13, U14, U15 | Menutup isian manual terbanyak, dibimbing data gelombang 2 | pakai 0035/0067 + kolom baru bila perlu |
-| 5 | U12, U10, U16–U19 | Perlu uji hati-hati di ABT/SIPP atau lintas PC | 0093+ |
+| 5 | U12, U10, U16–U19 | Perlu uji hati-hati di ABT/SIPP atau lintas PC | 0096+ |
 
 Gelombang kinerja K-1/K-2/K-3 (Tahap K di atas) berjalan sejajar. **K-1 sebaiknya sebelum atau bersama gelombang 1.**
 
@@ -338,5 +340,5 @@ Tiap gelombang kira-kira satu sampai dua sesi cloud per butir. Lalu digabung, di
 2. Siapa yang boleh menyetujui naik/turun status isian (U3) dan menyunting katalog saksi (U8): saran Super Admin + akun Derry.
 3. Ambang naik status otomatis: saran presisi ≥ 0,95 dengan n ≥ 30 per kode dan jenis perkara.
 4. Butir mana yang dikerjakan lebih dulu: saran **C0 + K-1 + gelombang 1**.
-6. C0: jam pemindaian awal (saran mulai 18.00, berhenti otomatis 06.30 dan lanjut malam berikutnya bila belum selesai) dan selang pembaruan (saran 1 menit).
-5. Boleh memakai kembaran laptop sebagai tempat uji beban (K9). Uji beban tidak boleh dijalankan ke server produksi pada jam kerja.
+5. C0: jam pemindaian awal (saran mulai 18.00, berhenti otomatis 06.30 dan lanjut malam berikutnya bila belum selesai) dan selang pembaruan (saran 1 menit).
+6. Boleh memakai kembaran laptop sebagai tempat uji beban (K9). Uji beban tidak boleh dijalankan ke server produksi pada jam kerja.
