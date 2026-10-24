@@ -108,7 +108,8 @@ Dasar: **`origin/fitur/jejak-isian`** (C1), bukan `integrasi-awan-24okt`.
 | E2 | `fitur/pusat-kesehatan` | Admin 2+3 (0094): Pusat kesehatan + catatan galat; menampilkan hasil uji beban terakhir |
 | E3 | `fitur/mode-pemeliharaan` | Admin 5 |
 | E4 | `fitur/lihat-sebagai` | Admin 1. Periksa dulu `origin/fitur/lihat-sebagai-unik` dan kode yang ada; lengkapi, jangan menggandakan |
-| E5 | `fitur/otp-whatsapp` | Admin 6 (0095): OTP WhatsApp per peran, percayai perangkat 30 hari, kode cadangan; memakai kuki perangkat dari audit login |
+| E5 | `fitur/otp-whatsapp` | Admin 6 (0095): verifikasi dua langkah, **mati bawaan**. Cara: OTP WhatsApp (bawaan) + **authenticator TOTP** (pilihan; QR boleh dipindai di 2 HP); passkey disiapkan tetapi hanya aktif bila HTTPS. Aturan per peran: Super Admin/Admin wajib, hakim/pejabat "hanya dari luar kantor", lainnya opsional. Kode hanya diminta di perangkat baru atau dari luar subnet kantor; "percayai perangkat 30 hari"; kode cadangan dari admin. Memakai kuki perangkat dari audit login dan batas perangkat (5 per akun tetap berlaku) |
+| E6 | `fitur/penjaga-integritas-berkas` | **Baru (permintaan Derry 24 Okt, isu judol di website satker; surat Dirjen):** bot ALETA mencatat sidik (sha256, ukuran, waktu ubah) berkas di folder web yang didaftarkan Super Admin, yaitu website satker yang dihosting di server kantor, ditambah SIPP/ABT bila diizinkan. Folder dibaca saja, tidak pernah ditulis. Berkas `.php` baru/berubah, `.php` di folder unggahan, pola webshell (`eval(base64_decode`, `assert(`, `gzinflate`, `preg_replace /e`), dan kata judol pada halaman publik → peringatan WhatsApp ke admin + merah di Pusat kesehatan (E2). Ada daftar "diketahui aman" untuk pembaruan resmi. Tidak menghapus apa pun secara otomatis. Migrasi 0104 |
 
 ## Rantai F — Server (K3, K7, U19)
 
