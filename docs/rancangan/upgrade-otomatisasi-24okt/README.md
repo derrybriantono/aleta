@@ -1,4 +1,4 @@
-# Rencana upgrade otomatisasi yang sudah ada (24 Okt 2026)
+# Rencana upgrade otomatisasi dan kinerja (24 Okt 2026)
 
 Permintaan Derry: saran dan rencana untuk meng-upgrade fitur yang **sudah ada**, dengan dukungan basis data. Fokusnya:
 - susun keterangan saksi otomatis;
@@ -169,6 +169,82 @@ Karena itu urutan rencana: **fondasi data dan lingkar belajar dulu, baru menamba
 
 ---
 
+## Tahap K — Kinerja: 100+ perangkat bersamaan dan PC tua
+
+Ditambahkan atas permintaan Derry: Jadwal Sidang, Jadwal Mediasi, Status Perkara, dan isian ALETA di SIPP/ABT. Ia khawatir ALETA lambat atau galat bila dipakai 100+ perangkat sekaligus, dan bila banyak PC/laptop tua (4 GB RAM, Core i3 lama/Celeron).
+
+Angka di bawah dihitung dari kode `integrasi-1205-38` dan dari `docs/audit/PERFORMA-MUAT-19okt.md`. Angka beban 100 perangkat adalah **perkiraan** (interval × jumlah perangkat) dan wajib dibuktikan dengan uji beban (K9) sebelum dan sesudah perbaikan.
+
+### Keadaan sekarang
+- **Satu layar Jadwal Sidang** (hari ini, tab terlihat) mengirim **±21 permintaan/menit**:
+  - jadwal penuh tiap 45 dtk, ±40 kueri SIPP;
+  - bacaan ringan tiap 8 dtk, 4 kueri SIPP, **tanpa singgahan**;
+  - keadaan "disidang" tiap 5 dtk.
+
+  Untuk 100 layar: ±2.100 permintaan/menit ke portal dan **±3.000–8.000 kueri SIPP/menit**.
+- Semua kueri SIPP lewat **satu proses bot** dengan **kolam 10 sambungan** (`aleta_bot/db_config.js:23`). Proses yang sama juga menjalankan WhatsApp, e-Court (dua Chromium), dan ±20 cron.
+  - Batas waktu kueri efektif hanya 17 dtk di sisi klien; MariaDB mengabaikan `MAX_EXECUTION_TIME`.
+  - Lima kali habis waktu membuka pemutus arus 30 dtk (`sippCircuitBreakerService.js`). **Semua layar** lalu menampilkan "ALETA Bot belum dapat dihubungi".
+- **Portal satu proses** Next.js dengan kolam Postgres bawaan 10 dan tanpa `statement_timeout`. Kerja latar (OCR, putusan terjadwal, sinkron, tunda/putus otomatis) berjalan di proses yang sama. Tidak ada batas CPU/memori di kontainer.
+  - `tandaiTulisan()` membuang **seluruh** singgahan setiap ada satu tulisan (`singgah-singkat.ts:109-113`).
+  - Setiap pemanggil menerima salinan `structuredClone` jawaban sampai 1 MB.
+- **Postgres:** setiap muat penuh Jadwal menulis transaksi `rekamAntrian` (±20 UPDATE) di disk berputar, ±133 transaksi/menit pada 100 perangkat.
+- **Peramban:** SIPP, ABT, dan ALETA memakai satu host `:80`, dan peramban hanya membuka 6 sambungan per host. Antrean 26–56 dtk sudah pernah terukur. Port 8008 (K1 audit 19 Okt) belum dipastikan terpasang.
+- **Jadwal Mediasi** (tanpa polling, <50 ms) **bukan titik macet**.
+- **Status Perkara:** aman untuk pemakaian biasa. Hitungan tag menahan sambungan SIPP 1,2–6,6 dtk, dan pencarian serta satu perkara tidak bersinggah.
+- **PC tua:**
+  - **Halaman ABT memuat ±12,4 MB JavaScript per tab**, 9,4 MB di antaranya literal katalog saksi (`saksi-katalog-data.js`).
+  - **Setiap halaman SIPP memuat ±3,45 MB JS + 0,49 MB CSS**, termasuk halaman daftar dan menu.
+  - ±10 MutationObserver di seluruh `document.body` dan ±8 interval 0,7–1,5 dtk berjalan terus, sehingga CPU latar tidak pernah diam.
+  - Tabel Jadwal sampai 200 baris × ±74 ruas digambar ulang penuh tiap 45 dtk, tanpa virtualisasi.
+  - Hakim/Admin/Ketua: polling putusan terjadwal berjalan di **setiap tab SIPP**, juga yang tersembunyi.
+- **Belum disimpan ke basis data:**
+  - riwayat Urungkan ABT (`abtRiwayat`; salinan ke server gagal diam-diam);
+  - antrean cetak massal dan relaas massal (hilang saat Chrome ditutup);
+  - catatan pengerjaan putusan terjadwal;
+  - tampilan per peramban;
+  - rate-limit dan singgahan di memori proses (hilang saat mulai ulang, dan tidak dapat dibagi bila kelak portal >1 proses).
+
+### Sisi server (100+ perangkat)
+| No | Butir | Isi | Dampak perkiraan |
+| :--- | :--- | :--- | :--- |
+| K1 | **Satu bacaan untuk semua perangkat** | Bacaan ringan (8 dtk) dan disidang (5 dtk) disinggahkan 2–3 dtk **bersama** di portal, dengan penyatuan permintaan serentak antarperangkat. Tahap 2: portal membaca sekali lalu **mendorong** perubahan lewat SSE (`EventSource`) ke semua layar Jadwal, layar publik, dan antrean, sehingga beban SIPP tidak lagi bergantung pada jumlah perangkat. | ±3.000 → ±40 kueri SIPP/menit untuk bacaan ringan |
+| K2 | **Singgahan jadwal lebih pintar** | `tandaiTulisan` hanya membuang kunci tanggal/perkara yang terkena, bukan semuanya. Jawaban disimpan sekali sebagai teks JSON tanpa `structuredClone` per pemanggil. Kunci layar publik disamakan dengan layar Jadwal supaya singgahannya terbagi. `getGatewayAntrianSidang` ikut bersinggah. | Jadwal penuh tembus ke bot ±15×/menit, bukan sampai 133× |
+| K3 | **Kolam SIPP dipisah dan dijaga** | Kolam **interaktif** (layar) terpisah dari kolam **latar** (WhatsApp, penilaian, cron), supaya kerja latar tidak pernah merebut sambungan layar. Ukuran kolam dinaikkan menurut `max_connections` MariaDB (diukur di server). Ada `acquireTimeout`/`queueLimit` supaya gagal cepat, bukan menunggu 17 dtk. Kueri lambat diputus dari sisi bot (`KILL QUERY`). | Tidak ada lagi efek domino ke pemutus arus |
+| K4 | **Pisahkan proses bot** | Satu image, dua kontainer: (a) jembatan data SIPP/ABT, dan (b) WhatsApp + e-Court (Chromium) + cron. Masalah Chromium tidak lagi mematikan semua layar. | Isolasi kegagalan |
+| K5 | **Portal lebih dari satu proses** | Kerja latar dipindah ke kontainer pekerja sendiri. Portal web dijalankan 2–4 proses sesudah rate-limit dan singgahan bersama pindah ke Postgres (atau satu proses pemimpin). Batas CPU/memori per kontainer. Kolam pg dan `statement_timeout` diatur. | Lonjakan permintaan dibagi ke beberapa inti CPU |
+| K6 | **Kurangi tulisan Postgres** | `rekamAntrian` hanya menulis bila datanya berubah (dibandingkan dulu), bukan setiap muat. Indeks untuk kueri tersering diperiksa. | ±133 → beberapa transaksi/menit |
+| K7 | **Lepas dari batas 6 sambungan peramban** | Pastikan Apache port 8008 terpasang dan dipakai portal **dan** widget di halaman SIPP/ABT. Dengan SSE (K1), satu sambungan cukup menggantikan puluhan polling. | Antrean 26–56 dtk hilang |
+| K8 | **Status Perkara** | Pencarian dan satu perkara disinggahkan singkat. Hitungan tag dihitung **di latar** ke tabel ringkasan Postgres (diperbarui berkala dan saat ada tulisan), bukan 19 kueri SIPP per klik. | Klik tag <100 ms, tanpa menahan SIPP |
+| K9 | **Uji beban** | Skrip yang meniru 100 dan 200 perangkat (Jadwal, widget, konteks SIPP) dijalankan di **kembaran laptop**, bukan server produksi. Diukur p95 waktu jawab, sambungan SIPP terpakai, CPU/RAM. Dijalankan sebelum dan sesudah tiap butir K. Hasilnya tampil di Pusat kesehatan (rencana fitur admin no. 2). | Bukti angka, bukan perkiraan |
+
+### Sisi PC tua
+| No | Butir | Isi | Dampak perkiraan |
+| :--- | :--- | :--- | :--- |
+| K10 | **Katalog saksi dimuat sesuai kebutuhan** | Katalog 9,4 MB tidak lagi disuntik ke **setiap** halaman ABT. Yang dimuat hanya katalog jenis perkara yang dibuka, dari portal/basis data (sejalan dengan U8), dan disinggahkan di peramban. | Halaman ABT ±12,4 MB → ±3 MB JS |
+| K11 | **Skrip hanya di halaman yang memakainya** | Pola `matches` di manifest dipersempit (mis. modul putusan hanya di halaman putusan). Modul besar dipecah dan dimuat saat dipakai (`import()` dari `chrome.runtime.getURL`). `konten.js` (1,2 MB) dipecah per fitur. | Halaman daftar/menu SIPP jauh lebih ringan |
+| K12 | **Satu pengamat dan berhenti saat tab tersembunyi** | Kesepuluh MutationObserver disatukan menjadi satu pengirim kejadian yang dibatasi. Interval 0,7–1,5 dtk diganti reaksi atas kejadian. Polling putusan terjadwal hanya berjalan di **satu** tab yang terlihat per PC (koordinasi lewat pekerja latar). Semua penyegaran berhenti di tab tersembunyi. | CPU latar mendekati nol saat diam |
+| K13 | **Tabel Jadwal ringan** | Baris tabel divirtualisasi dan di-`memo`. Yang diperbarui hanya baris yang berubah, bukan seluruh tabel. Komponen 543 KB dipecah dan dimuat bertahap. Ruas jadwal dipangkas (K4 audit 19 Okt, −20–25% ukuran). | Gambar ulang dari ratusan ms jadi puluhan ms |
+| K14 | **Kerja berkas di server** | Cetak massal (RTF+ZIP+PDF), relaas massal, dan pemeriksaan sisa blangko dikerjakan server. Salinan TS pemeriksa sisa blangko sudah ada (`src/lib/deteksi-sisa-blangko.ts`). Peramban hanya menerima hasil jadi dan dapat ditutup tanpa menghentikan kerja. | PC tua tidak tersendat saat cetak massal |
+| K15 | **Data peramban pindah ke basis data** | Riwayat Urungkan ABT (U6), antrean cetak/relaas massal (bisa dilanjutkan sesudah Chrome ditutup), catatan putusan terjadwal, dan tampilan per pengguna (U16) disimpan di Postgres. | Tidak ada kerja yang hilang; ringan di `chrome.storage` |
+| K16 | **Mode ringan otomatis** | Bila `navigator.deviceMemory` ≤ 4 atau `hardwareConcurrency` ≤ 2, ekstensi dan portal otomatis mematikan hiasan, memperpanjang interval, dan memuat modul seperlunya. Dapat dinyalakan/dimatikan per pengguna. | PC tua tetap lancar |
+
+### Urutan kinerja yang disarankan
+| Gelombang | Butir | Kenapa |
+| :--- | :--- | :--- |
+| K-1 (cepat, risiko kecil, dampak besar) | K9 (uji beban dulu), K1 tahap 1, K2, K6, K10, K12 | Memangkas beban SIPP/Postgres terbesar dan memori PC tua tanpa mengubah arsitektur |
+| K-2 | K3, K7, K8, K11, K13, K16 | Penjagaan kolam, port 8008, Status Perkara, dan pengurangan skrip |
+| K-3 (perubahan arsitektur) | K4, K5, K1 tahap 2 (SSE), K14, K15 | Butuh uji di kembaran laptop dan jendela pemasangan |
+
+**Gelombang K-1 disarankan dikerjakan bersama atau sebelum gelombang 1 (U1, U2, U6)**, karena menambah fitur di atas fondasi yang sudah mendekati batas akan memperparah lambatnya.
+
+### Perlu diukur di server/laptop (sesi laptop)
+- Jumlah perangkat yang benar-benar dipakai bersamaan, termasuk jumlah layar Jadwal dan layar publik yang selalu menyala.
+- Spesifikasi server: inti CPU, RAM, disk.
+- `max_connections` serta versi MariaDB SIPP dan ABT.
+- Apakah Apache 8008 sudah terpasang dan terbuka di firewall.
+- Contoh PC tua: memori Chrome per tab SIPP/ABT sebelum dan sesudah K10–K12 (Pengelola Tugas Chrome).
+
 ## Urutan kerja yang disarankan
 
 | Gelombang | Butir | Kenapa duluan | Migrasi (perkiraan) |
@@ -179,10 +255,13 @@ Karena itu urutan rencana: **fondasi data dan lingkar belajar dulu, baru menamba
 | 4 | U11, U13, U14, U15 | Menutup isian manual terbanyak, dibimbing data gelombang 2 | pakai 0035/0067 + kolom baru bila perlu |
 | 5 | U12, U10, U16–U19 | Perlu uji hati-hati di ABT/SIPP atau lintas PC | 0093+ |
 
+Gelombang kinerja K-1/K-2/K-3 (Tahap K di atas) berjalan sejajar. **K-1 sebaiknya sebelum atau bersama gelombang 1.**
+
 Tiap gelombang kira-kira satu sampai dua sesi cloud per butir. Lalu digabung, diuji penuh, dan dipasang lewat sesi laptop.
 
 ## Yang perlu diputuskan Derry sebelum mulai
 1. Retensi `aleta_saksi_butir` dan `aleta_isian_jejak`: berisi teks keterangan saksi asli, saran 2 tahun.
 2. Siapa yang boleh menyetujui naik/turun status isian (U3) dan menyunting katalog saksi (U8): saran Super Admin + akun Derry.
 3. Ambang naik status otomatis: saran presisi ≥ 0,95 dengan n ≥ 30 per kode dan jenis perkara.
-4. Butir mana dari gelombang 1 yang dikerjakan lebih dulu.
+4. Butir mana yang dikerjakan lebih dulu: saran **K-1 + gelombang 1 sekaligus**.
+5. Boleh memakai kembaran laptop sebagai tempat uji beban (K9). Uji beban tidak boleh dijalankan ke server produksi pada jam kerja.
