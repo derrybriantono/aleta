@@ -11,7 +11,7 @@ Panduan untuk sesi Claude Code **LAPTOP**. Isinya: menggabungkan semua kerja clo
 ```
 git fetch origin, lalu baca docs/awan/ambil-laptop-24okt.md dari origin/fitur/panduan-laptop-24okt
 (git show origin/fitur/panduan-laptop-24okt:docs/awan/ambil-laptop-24okt.md) dan kerjakan
-Bagian 1 sampai 3. Bagian 4 hanya untuk rantai yang laporannya sudah ada di origin.
+Bagian 1 sampai 3, lalu audit Bagian 5a (baca saja). Bagian 4 hanya untuk rantai yang laporannya sudah ada di origin.
 Perbarui papan kemajuan di setiap langkah. Laporkan ke saya dalam bahasa Indonesia.
 ```
 
@@ -78,7 +78,7 @@ Setiap rantai menulis laporan `docs/awan/laporan-rantai-<huruf>.md` di cabang te
 | Urut | Rantai | Cabang terakhir (gabungkan ini; cabang dalam rantai bertumpuk) | Langkah laptop sesudah gabung |
 | :--- | :--- | :--- | :--- |
 | 1 | F Server | `fitur/riwayat-tunda-putus` | Isi ukuran kolam SIPP dari `max_connections`; pasang Apache 8008 bila belum; mulai ulang bot |
-| 2 | E Ukur & admin | `fitur/otp-whatsapp` | **Uji beban K9 di kembaran laptop saja** (sebelum rantai A/B dipasang), simpan angka awal; OTP tetap mati |
+| 2 | E Ukur & admin | `fitur/penjaga-integritas-berkas` | **Uji beban K9 di kembaran laptop saja** (sebelum rantai A/B dipasang), simpan angka awal; OTP/authenticator tetap mati; daftarkan folder website satker di penjaga integritas (baca saja) |
 | 3 | C Jejak & saksi | `fitur/saksi-ke-bas-sipp` | Rilis ekstensi; kirim saksi ke BAS SIPP tetap mati |
 | 4 | D Blangko | `fitur/isian-per-sidang` | Rilis ekstensi |
 | 5 | A Cermin | `fitur/kabar-perubahan` | Pasang dengan saklar mati. Malam pertama pemindaian awal (18.00–06.30), pantau di Pemantau Cermin. Sesudah 100% dan pencocokan bersih, Super Admin menyalakan per layar: Mediasi → Status Perkara → Jadwal Sidang → panel ekstensi |
@@ -94,6 +94,42 @@ Untuk setiap rantai:
 Sesudah semua rantai digabung, sisanya:
 - **K11** (pecah `konten.js`, persempit `matches`), dikerjakan paling akhir;
 - **K4/K5/SSE**, diputuskan dari hasil uji beban (TAHAPAN, keputusan 8).
+
+## Bagian 5 — Pengamanan website satker dan server (isu judol, surat Dirjen)
+
+Website satker dihosting di server kantor. Belum ada laporan terkena, jadi ini pencegahan. **Kerjakan audit (5a) dulu, lalu laporkan ke Derry. Ubahan 5b hanya sesudah Derry setuju, satu per satu.** Sebelum setiap ubahan: cadangkan berkas konfigurasi, jalankan `apachectl configtest`, lalu `reload` (bukan restart) di luar jam kerja.
+
+**5a. Audit, hanya membaca:**
+- Daftar vhost Apache dan alamat dengarnya. Cari tahu apakah website satker satu mesin/satu Apache dengan SIPP, ABT, dan ALETA.
+- `ss -tlnp`: port yang terbuka.
+- `bind-address` MySQL/MariaDB SIPP dan ABT.
+- Port forwarding di router: hanya 80/443 website yang boleh menghadap internet. Ditanyakan ke Derry/pengelola jaringan.
+- Di folder website:
+  - berkas `.php` yang berubah 30 hari terakhir;
+  - `.php` di folder unggahan;
+  - pola `eval(base64_decode`, `assert(`, `gzinflate`;
+  - kata judol (slot, gacor, togel, maxwin) di berkas dan halaman;
+  - akun admin CMS yang tidak dikenal;
+  - versi CMS dan plugin.
+- Laporkan temuan tanpa menyalin isi berkas mencurigakan ke repo/cloud.
+
+**5b. Pengerasan, sesudah Derry setuju:**
+1. Vhost SIPP, ABT, dan ALETA hanya menerima subnet kantor (`Require ip 192.168.0.0/16` atau subnet nyata).
+2. Website:
+   - eksekusi PHP dimatikan di folder unggahan;
+   - daftar isi folder dimatikan;
+   - pool PHP-FPM dan pengguna sistem sendiri dengan `open_basedir`, supaya website tidak bisa membaca berkas SIPP/ABT/ALETA;
+   - akun basis data sendiri yang hanya berhak atas basis datanya;
+   - folder web tidak dapat ditulis oleh proses web, kecuali folder unggahan.
+3. ModSecurity + OWASP CRS untuk vhost website: **DetectionOnly** seminggu, periksa log, baru **On**.
+4. fail2ban untuk percobaan masuk admin CMS.
+5. Cloudflare untuk domain website, bila Derry memegang DNS:
+   - proxy DNS + WAF gratis;
+   - Apache website hanya menerima IP Cloudflare.
+
+   SIPP, ABT, dan ALETA **tidak** dimasukkan Cloudflare.
+6. Cadangan website di luar server, dengan uji pulih.
+7. Ideal jangka menengah: website dipindah ke kontainer/VM terpisah dari SIPP/ABT/ALETA.
 
 ## Bila kuota cloud habis: kerjakan rantai di laptop
 
