@@ -716,3 +716,17 @@ describe("pemilih tanggal bersama: saklar kalender libur", () => {
     mati.unmount();
   });
 });
+
+describe("Jadwal Sidang: kalender libur terbuka di baris tanggal (23 Okt 2026)", () => {
+  it("menekan tombol kalender libur menampilkan kalendernya, tidak dipotong bingkai overflow-hidden", async () => {
+    await gambarSidang();
+    const [tombol] = screen.getAllByRole("button", { name: /Buka kalender/ });
+    fireEvent.click(tombol);
+    const kalender = await screen.findByRole("dialog", { name: /^Kalender / });
+    // Bingkai rentang tanggal dulu overflow-hidden: kalender yang membuka ke bawah
+    // terpotong, sehingga tombolnya tampak tidak berfungsi.
+    for (let el = kalender.parentElement; el && el !== document.body; el = el.parentElement) {
+      expect(el.classList.contains("overflow-hidden"), el.className).toBe(false);
+    }
+  }, 60_000);
+});
