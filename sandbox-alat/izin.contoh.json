@@ -1,9 +1,18 @@
 {
-  "kalkulator-nafkah": { "skrip": "kalkulator_nafkah.py" },
-  "kalkulator-iddah": { "skrip": "kalkulator_iddah.py" },
-  "kalkulator-mutah": { "skrip": "kalkulator_mutah.py" },
-  "cek-blangko": { "skrip": "cek_blangko.py" },
-  "cek-konsistensi": { "skrip": "cek_konsistensi.py" },
-  "anonim": { "skrip": "anonim.py" },
-  "analisa-docx": { "skrip": "analisa_docx.py" }
+  "_catatan": "Contoh. Kunci = id alat di manajemen_surat/src/server/modules/aleta-ai/sandbox.ts. Bentuk argumen tiap skrip WAJIB dicocokkan sesi laptop dengan skrip V4.5 asli (lihat --help skripnya). {nama} diisi dari masukan; berkas masuk di masuk/, keluaran ke keluar/.",
+  "terbilang": { "skrip": "aleta_alat.py", "argumen": ["terbilang", "{angka}"] },
+  "hijriah": { "skrip": "aleta_alat.py", "argumen": ["hijriah", "{tanggal}"] },
+  "penutup": { "skrip": "aleta_alat.py", "argumen": ["penutup", "{tanggal}"] },
+  "cek-angka": { "skrip": "aleta_alat.py", "argumen": ["cek", "masuk/naskah.md"] },
+  "cek-blangko": { "skrip": "aleta_cek_blangko.py", "argumen": ["masuk/naskah.md"] },
+  "cek-konsistensi": { "skrip": "aleta_cek_konsistensi.py", "argumen": ["masuk/naskah.md"] },
+  "anonim": { "skrip": "aleta_anonim.py", "argumen": ["masuk/naskah.md"] },
+  "analisa-docx": { "skrip": "aleta_analisa_docx.py", "argumen": ["masuk/naskah.md"] },
+  "bas-ks-ekstrak": { "skrip": "aleta_bas_ks.py", "argumen": ["ekstrak", "masuk/naskah.md"] },
+  "bas-ks-verifikasi": { "skrip": "aleta_bas_ks.py", "argumen": ["verifikasi", "masuk/naskah.md"] },
+  "perkara-cek-bukti": { "skrip": "aleta_perkara.py", "argumen": ["cek-bukti", "masuk/naskah.md"] },
+  "perkara-ringkas": { "skrip": "aleta_perkara.py", "argumen": ["ringkas", "masuk/naskah.md"] },
+  "putusan-docx": { "skrip": "aleta_putusan_docx.py", "argumen": ["masuk/naskah.txt", "{judul}", "keluar/putusan.{format}", "--bismillah", "/skrip/bismillah.jpeg"] },
+  "sidang-docx": { "skrip": "aleta_sidang_docx.py", "argumen": ["masuk/data.json", "keluar/panduan_sidang.docx"] },
+  "komparasi-docx": { "skrip": "aleta_komparasi_docx.py", "argumen": ["masuk/data.json", "keluar/komparasi.docx"] }
 }

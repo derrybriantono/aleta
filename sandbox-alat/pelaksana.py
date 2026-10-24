@@ -19,14 +19,21 @@
 #     batas waktu, memori (RLIMIT_AS), CPU, ukuran berkas, jumlah berkas;
 #   - folder kerja sementara per tugas, dihapus sesudahnya.
 #
-# Kontrak skrip: baca JSON dari stdin, tulis JSON (atau teks) ke stdout, berkas
-# keluaran ke ./keluar/. Berkas masuk ada di ./masuk/.
+# IZIN per alat: {"skrip": "aleta_alat.py", "argumen": ["terbilang", "{angka}"]}
+#   - SUBPERINTAH tetap ditulis di izin (bukan dari model/portal);
+#   - "{nama}" diisi dari masukan; nilainya wajib teks/angka pendek tanpa
+#     karakter kendali dan TIDAK diawali "-" (tidak bisa menyisipkan opsi);
+#     "{format}" hanya docx/rtf/pdf.
+# Kontrak skrip: argumen di atas; masukan juga dikirim sebagai JSON di stdin;
+# keluaran JSON/teks di stdout; berkas keluaran ke ./keluar/; berkas masuk di
+# ./masuk/ (naskah.md, naskah.txt, data.json).
 #
 #   python3 pelaksana.py            jalan terus (kontainer)
 #   python3 pelaksana.py --sekali   kerjakan antrian yang ada lalu keluar (uji)
 # =============================================================================
 import json
 import os
+import re
 import resource
 import shutil
 import subprocess
@@ -42,6 +49,36 @@ MEMORI_MB = int(os.environ.get("SANDBOX_MEMORI_MB", "256"))
 BATAS_DETIK_MAKS = int(os.environ.get("SANDBOX_BATAS_DETIK", "60"))
 BATAS_KELUARAN = 256 * 1024
 BATAS_BERKAS = 5 * 1024 * 1024
+
+
+FORMAT_SAH = {"docx", "rtf", "pdf"}
+POLA_ISI = re.compile(r"\{([a-z_]{1,30})\}")
+
+
+def isi_argumen(argumen, masukan):
+    """Isi "{nama}" dari masukan. ValueError bila kurang atau tidak aman."""
+    hasil = []
+    for a in argumen:
+        if not isinstance(a, (str, int, float)):
+            raise ValueError("argumen izin tidak sah")
+        a = str(a)
+
+        def ganti(m):
+            kunci = m.group(1)
+            if kunci not in masukan:
+                raise ValueError("Masukan alat kurang: " + kunci)
+            nilai = masukan[kunci]
+            if isinstance(nilai, bool) or not isinstance(nilai, (str, int, float)):
+                raise ValueError("Masukan alat tidak sah: " + kunci)
+            nilai = str(nilai)
+            if kunci == "format" and nilai not in FORMAT_SAH:
+                raise ValueError("Format tidak sah.")
+            if len(nilai) > 200 or nilai.startswith("-") or any(ord(c) < 32 for c in nilai):
+                raise ValueError("Masukan alat tidak sah: " + kunci)
+            return nilai
+
+        hasil.append(POLA_ISI.sub(ganti, a))
+    return hasil
 
 
 def baca_izin():
@@ -94,7 +131,13 @@ def kerjakan(tugas_id):
         skrip = os.path.realpath(os.path.join(SKRIP, str(izin.get("skrip", ""))))
         if not skrip.startswith(SKRIP + os.sep) or not skrip.endswith(".py") or not os.path.isfile(skrip):
             return tulis_hasil(tugas_id, {"ok": False, "galat": "Skrip alat tidak tersedia."})
-        argumen = [str(a) for a in izin.get("argumen", []) if isinstance(a, (str, int, float))]
+        masukan = tugas.get("masukan", {})
+        if not isinstance(masukan, dict):
+            masukan = {}
+        try:
+            argumen = isi_argumen(izin.get("argumen", []), masukan)
+        except ValueError as e:
+            return tulis_hasil(tugas_id, {"ok": False, "galat": str(e)[:200]})
         detik = max(1, min(int(tugas.get("batas_detik", 30) or 30), BATAS_DETIK_MAKS))
 
         kerja = tempfile.mkdtemp(prefix="alat-", dir=KERJA)
@@ -103,9 +146,6 @@ def kerjakan(tugas_id):
             shutil.copytree(os.path.join(masuk, "berkas"), os.path.join(kerja, "masuk"))
         else:
             os.makedirs(os.path.join(kerja, "masuk"))
-        masukan = tugas.get("masukan", {})
-        if not isinstance(masukan, dict):
-            masukan = {}
         masukan = dict(masukan, berkas=sorted(os.listdir(os.path.join(kerja, "masuk"))))
         try:
             p = subprocess.run(

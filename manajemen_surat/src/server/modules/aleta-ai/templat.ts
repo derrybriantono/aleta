@@ -8,13 +8,15 @@ import { bacaDaftarZip } from "@/server/modules/aleta-ai/zip-baca";
 /**
  * ALETA Ai tahap 3 - TEMPLAT PROYEK V4.5 (tabel aleta_ai_proyek_berkas, 0087).
  *
- * Templat TIDAK ada di repo. Saat Super Admin mengunggah ZIP proyek, berkas
- * HTML/RTF/DOCX/XLSX di dalamnya disimpan isinya (base64) per versi proyek;
- * tugas memilih templat dari versi proyek AKTIF. Skrip .py TIDAK disimpan di
- * sini - skrip dipasang terpisah di sandbox (lihat sandbox.ts).
+ * Templat TIDAK ada di repo. Saat Super Admin mengunggah ZIP proyek, templat
+ * HTML di dalamnya (ALETA_13_Template_Panduan_Sidang.html, ALETA_18_..., yang
+ * membaca satu objek data global window.SIDANG/KOMPARASI/...) disimpan isinya
+ * (base64) per versi proyek; tugas memilih templat dari versi proyek AKTIF
+ * menurut NAMA BERKAS. DOCX/RTF/PDF dicetak skrip V4.5 di sandbox, jadi skrip
+ * .py TIDAK disimpan di sini (dipasang terpisah, lihat sandbox.ts).
  */
 
-const JENIS_TEMPLAT: Record<string, FormatBerkas> = { html: "html", htm: "html", rtf: "rtf", docx: "docx", xlsx: "xlsx" };
+const JENIS_TEMPLAT: Record<string, FormatBerkas> = { html: "html", htm: "html" };
 const BATAS_SATU = 5 * 1024 * 1024;
 const BATAS_TOTAL = 30 * 1024 * 1024;
 const BATAS_JUMLAH = 200;
@@ -52,19 +54,9 @@ export async function simpanTemplatProyek(db: AletaDatabase, proyekId: string, z
   return { jumlah, peringatan };
 }
 
-/**
- * Pilih templat untuk satu berkas: format sama, lalu yang namanya cocok
- * dengan jenis tugas DAN "donggala", lalu cocok jenis tugas, lalu nama
- * "templat/template". null = susunan bawaan.
- */
-export async function pilihTemplat(db: AletaDatabase, proyekId: string, format: FormatBerkas, kata: RegExp): Promise<TemplatBerkas | null> {
-  const baris = await db.queryAll<{ nama: string; jenis: string; isi: string }>(
-    `SELECT nama, jenis, isi FROM aleta_ai_proyek_berkas WHERE proyek_id = ? AND jenis = ? ORDER BY nama`,
-    [proyekId, format]
-  );
-  if (!baris.length) return null;
-  const nilai = (n: string) => (kata.test(n) && /donggala/i.test(n) ? 3 : kata.test(n) ? 2 : /templa?te?/i.test(n) ? 1 : 0);
-  const terbaik = baris.map((b) => ({ b, n: nilai(b.nama) })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n)[0];
-  if (!terbaik) return null;
-  return { nama: terbaik.b.nama, jenis: terbaik.b.jenis, bita: Buffer.from(terbaik.b.isi, "base64") };
+/** Templat HTML proyek aktif yang namanya cocok `pola` (mis. /ALETA_13_.*\.html$/). null = susunan bawaan. */
+export async function pilihTemplat(db: AletaDatabase, proyekId: string, pola: RegExp): Promise<TemplatBerkas | null> {
+  const baris = await db.queryAll<{ nama: string; isi: string }>(`SELECT nama, isi FROM aleta_ai_proyek_berkas WHERE proyek_id = ? AND jenis = 'html' ORDER BY nama`, [proyekId]);
+  const b = baris.find((x) => pola.test(x.nama));
+  return b ? { nama: b.nama, bita: Buffer.from(b.isi, "base64") } : null;
 }

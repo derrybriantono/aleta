@@ -10,23 +10,30 @@ import { susunZip } from "@/server/shared/zip";
  * ALETA Ai TAHAP 3 - BERKAS KELUARAN (DOCX / RTF / PDF / HTML / XLSX)
  * ============================================================================
  *
- * Masukan: naskah Markdown sederhana yang SUDAH berisi data asli (kode samaran
- * dikembalikan oleh pemanggil) dan rujukan belum terverifikasi sudah ditandai.
+ * Masukan: naskah yang SUDAH berisi data asli (kode samaran dikembalikan oleh
+ * pemanggil) dan rujukan belum terverifikasi sudah bertanda [PERLU VERIFIKASI].
+ * Naskah boleh Markdown sederhana atau naskah berpenanda baris ALETA_08
+ * (#JUDUL #NOMOR #P #AMAR #TTD ...).
  *
- * TEMPLAT: dari proyek V4.5 aktif (tabel aleta_ai_proyek_berkas), TIDAK dari
- * repo. Penanda yang diganti: {{ISI}} {{JUDUL}} {{NOMOR_PERKARA}} {{TANGGAL}}
- * {{TANDA_DRAF}}. Tanpa templat yang cocok dipakai susunan bawaan bergaya
- * putusan PA Donggala (Bookman/Times 12, rata kiri-kanan, judul di tengah).
+ * MEKANISME V4.5 (dari proyek aktif di basis data, TIDAK dari repo):
+ *   - templat HTML (ALETA_13 panduan sidang, ALETA_18 komparasi, ...) membaca
+ *     SATU objek data global (window.SIDANG, window.KOMPARASI, ...) dan
+ *     menggambar sendiri; keluaran = templat apa adanya + satu
+ *     <script>window.X = {...}</script> sebelum skrip templat;
+ *   - DOCX/RTF/PDF putusan dicetak skrip aleta_putusan_docx.py di SANDBOX
+ *     (lihat tugas.ts); berkas di sini = CADANGAN bila sandbox mati/gagal, dan
+ *     bubuhkanTanda() membubuhkan tanda draf pada hasil skrip.
  *
  * TANDA DRAF: setiap berkas memuat "Draf AI - wajib diperiksa" - di kepala
- * halaman (DOCX/PDF tiap halaman), baris pertama (RTF/HTML/XLSX) - termasuk bila
- * templatnya lupa menaruh {{TANDA_DRAF}}.
+ * halaman (DOCX/PDF tiap halaman), baris pertama (RTF/HTML/XLSX).
  *
  * Metadata berkas (penulis/aplikasi) dikosongkan: berkas ini dapat diunggah
  * petugas ke tempat lain, jadi tidak membawa nama aplikasi.
  */
 
-export type TemplatBerkas = { nama: string; jenis: string; bita: Buffer };
+export type TemplatBerkas = { nama: string; bita: Buffer };
+/** Objek data templat V4.5: nama global (SIDANG/KOMPARASI/...) dan isinya (data asli). */
+export type ObjekTemplat = { nama: string; data: Record<string, unknown> };
 
 export type MasukanBerkas = {
   format: FormatBerkas;
@@ -34,7 +41,9 @@ export type MasukanBerkas = {
   nomorPerkara: string;
   naskah: string;
   tanggal: string;
+  /** HTML: templat V4.5 yang membaca `objek` (keduanya wajib; tanpa itu susunan bawaan). */
   templat?: TemplatBerkas | null;
+  objek?: ObjekTemplat | null;
 };
 
 export type BerkasJadi = { nama: string; format: FormatBerkas; mime: string; bita: Buffer; templat: string };
@@ -81,6 +90,17 @@ export function bacaBlok(naskah: string): Blok[] {
       continue;
     }
     tutupTabel();
+    // Penanda baris naskah putusan ALETA_08: #JUDUL, #NOMOR, #P, #AMAR, #TTD, ...
+    const pen = /^#([A-Z]{1,12})(?:\s+(.*))?$/.exec(baris.trim());
+    if (pen) {
+      tutupParagraf();
+      const [, tag, isi = ""] = pen;
+      if (tag === "BR" || !isi.trim()) continue;
+      if (["BISMILLAH", "JUDUL", "NOMOR", "AMAR"].includes(tag!)) hasil.push({ jenis: "judul", tingkat: 2, teks: bersihInline(isi.trim()) });
+      else if (tag === "SISIP") hasil.push({ jenis: "paragraf", teks: `[kutipan berkas: ${isi.trim()}]` });
+      else hasil.push({ jenis: "paragraf", teks: bersihInline(isi.trim()) });
+      continue;
+    }
     const j = /^(#{1,3})\s+(.+)$/.exec(baris);
     if (j) {
       tutupParagraf();
@@ -110,14 +130,6 @@ const namaAman = (s: string) =>
     .replace(/\s+/g, "_")
     .slice(0, 80) || "naskah";
 
-const isiPenanda = (teks: string, m: MasukanBerkas, isi: string) =>
-  teks
-    .split("{{ISI}}").join(isi)
-    .split("{{JUDUL}}").join(m.judul)
-    .split("{{NOMOR_PERKARA}}").join(m.nomorPerkara)
-    .split("{{TANGGAL}}").join(m.tanggal)
-    .split("{{TANDA_DRAF}}").join(TANDA_DRAF);
-
 // ----------------------------------------------------------------------------
 // HTML
 // ----------------------------------------------------------------------------
@@ -139,11 +151,16 @@ function blokHtml(blok: Blok[]): string {
 function susunHtml(m: MasukanBerkas): Buffer {
   const isi = blokHtml(bacaBlok(m.naskah));
   const banner = `<div class="tanda-draf" role="note">${escHtml(TANDA_DRAF)}</div>`;
-  if (m.templat) {
+  if (m.templat && m.objek) {
+    // JSON aman di dalam <script>: "<" dan pemisah baris U+2028/2029 diloloskan.
+    const json = JSON.stringify(m.objek.data).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+    const data = `<script>window.${m.objek.nama} = ${json};</script>\n`;
     let t = m.templat.bita.toString("utf8");
-    const adaTanda = t.includes("{{TANDA_DRAF}}");
-    t = isiPenanda(t, { ...m, judul: escHtml(m.judul), nomorPerkara: escHtml(m.nomorPerkara) }, isi);
-    if (!adaTanda) t = /<body[^>]*>/i.test(t) ? t.replace(/<body[^>]*>/i, (x) => `${x}\n${banner}`) : `${banner}\n${t}`;
+    const i = t.search(/<script\b/i);
+    if (i >= 0) t = `${t.slice(0, i)}${data}${t.slice(i)}`;
+    else if (/<\/body>/i.test(t)) t = t.replace(/<\/body>/i, `${data}</body>`);
+    else t = `${t}\n${data}`;
+    t = /<body[^>]*>/i.test(t) ? t.replace(/<body[^>]*>/i, (x) => `${x}\n${banner}`) : `${banner}\n${t}`;
     return Buffer.from(t, "utf8");
   }
   return Buffer.from(
@@ -198,17 +215,6 @@ function blokRtf(blok: Blok[]): string {
 function susunRtf(m: MasukanBerkas): Buffer {
   const isi = blokRtf(bacaBlok(m.naskah));
   const tanda = `{\\pard\\qc\\b\\cf1 ${escRtf(TANDA_DRAF)}\\cf0\\b0\\par}`;
-  if (m.templat) {
-    let t = m.templat.bita.toString("latin1");
-    const adaTanda = t.includes("{{TANDA_DRAF}}");
-    t = isiPenanda(t, { ...m, judul: escRtf(m.judul), nomorPerkara: escRtf(m.nomorPerkara), tanggal: escRtf(m.tanggal) }, isi).split(TANDA_DRAF).join(escRtf(TANDA_DRAF));
-    if (!adaTanda) {
-      // Sisipkan sesudah tabel kepala (fonttbl/colortbl), sebelum paragraf pertama.
-      const i = t.search(/\\pard/);
-      t = i > 0 ? `${t.slice(0, i)}${tanda}\n${t.slice(i)}` : t.replace(/\}\s*$/, `${tanda}}`);
-    }
-    return Buffer.from(t, "latin1");
-  }
   return Buffer.from(
     `{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0\\froman Bookman Old Style;}}{\\colortbl;\\red176\\green0\\blue32;}\\paperw11906\\paperh18709\\margl1701\\margr1134\\margt1134\\margb1134\\f0\\fs24
 ${tanda}
@@ -283,24 +289,45 @@ function docxBawaan(m: MasukanBerkas): Buffer {
 
 const BATAS_BAGIAN_DOCX = 20 * 1024 * 1024;
 
-/** Templat DOCX: paragraf yang memuat {{ISI}} diganti paragraf naskah; tanda draf disisipkan di awal badan. */
-function docxDariTemplat(m: MasukanBerkas, t: TemplatBerkas): Buffer {
-  const entri = bacaDaftarZip(t.bita).filter((e) => !e.direktori);
-  const isiBaru = blokDocx(bacaBlok(m.naskah));
-  const berkas = entri.map((e) => {
-    let isi = e.baca(BATAS_BAGIAN_DOCX);
-    if (e.nama === "word/document.xml" || /^word\/(header|footer)\d*\.xml$/.test(e.nama)) {
-      let xml = isi.toString("utf8");
-      if (e.nama === "word/document.xml") {
-        xml = xml.replace(/<w:p[ >](?:(?!<\/w:p>)[\s\S])*\{\{ISI\}\}(?:(?!<\/w:p>)[\s\S])*<\/w:p>/, isiBaru);
-        if (!xml.includes("{{TANDA_DRAF}}")) xml = xml.replace(/<w:body>/, `<w:body>${pXml(TANDA_DRAF, { tengah: true, tebal: true, merah: true })}`);
-      }
-      xml = isiPenanda(xml, { ...m, judul: escXml(m.judul), nomorPerkara: escXml(m.nomorPerkara), tanggal: escXml(m.tanggal) }, isiBaru);
-      isi = Buffer.from(xml, "utf8");
+/**
+ * Tanda draf pada berkas hasil skrip V4.5 di sandbox (skrip tidak mengenalnya):
+ * DOCX = paragraf merah di awal badan; RTF = paragraf sebelum paragraf
+ * pertama; PDF = kepala tiap halaman. Melempar bila berkas tidak terbaca
+ * (pemanggil lalu memakai cadangan).
+ */
+export async function bubuhkanTanda(format: FormatBerkas, bita: Buffer): Promise<Buffer> {
+  if (format === "docx") {
+    const berkas = bacaDaftarZip(bita)
+      .filter((e) => !e.direktori)
+      .map((e) => {
+        let isi = e.baca(BATAS_BAGIAN_DOCX);
+        if (e.nama === "word/document.xml") {
+          const xml = isi.toString("utf8");
+          if (!/<w:body>/.test(xml)) throw new Error("document.xml tanpa badan");
+          isi = Buffer.from(xml.replace(/<w:body>/, `<w:body>${pXml(TANDA_DRAF, { tengah: true, tebal: true, merah: true })}`), "utf8");
+        }
+        return { nama: e.nama, isi };
+      });
+    if (!berkas.some((b) => b.nama === "word/document.xml")) throw new Error("bukan DOCX");
+    return susunZip(berkas);
+  }
+  if (format === "rtf") {
+    const t = bita.toString("latin1");
+    if (!t.startsWith("{\\rtf")) throw new Error("bukan RTF");
+    const tanda = `{\\pard\\qc\\b ${escRtf(TANDA_DRAF)}\\b0\\par}\n`;
+    const i = t.search(/\\pard/);
+    return Buffer.from(i > 0 ? `${t.slice(0, i)}${tanda}${t.slice(i)}` : t.replace(/\}\s*$/, `${tanda}}`), "latin1");
+  }
+  if (format === "pdf") {
+    const pdf = await PDFDocument.load(bita);
+    const tebal = await pdf.embedFont(StandardFonts.TimesRomanBold);
+    for (const p of pdf.getPages()) {
+      const { width, height } = p.getSize();
+      p.drawText(TANDA_DRAF, { x: (width - tebal.widthOfTextAtSize(TANDA_DRAF, 11)) / 2, y: height - 30, size: 11, font: tebal, color: rgb(0.69, 0, 0.13) });
     }
-    return { nama: e.nama, isi };
-  });
-  return susunZip(berkas);
+    return Buffer.from(await pdf.save());
+  }
+  return bita;
 }
 
 // ----------------------------------------------------------------------------
@@ -398,6 +425,22 @@ function susunXlsx(m: MasukanBerkas): Buffer {
       ],
     },
   ];
+  // Komparasi V4.5: angka {kolom, baris} jadi lembar sendiri.
+  const angka = m.objek?.data?.angka as { kolom?: unknown; baris?: unknown } | undefined;
+  if (angka && Array.isArray(angka.kolom) && Array.isArray(angka.baris)) {
+    const kolom = angka.kolom.map((k) => String(k ?? ""));
+    sheets.push({
+      name: "Angka",
+      columns: kolom.map((h, k) => ({ key: `k${k}`, header: h || `Kolom ${k + 1}`, width: 24 })),
+      rows: [
+        Object.fromEntries(kolom.map((_, k) => [`k${k}`, k === 0 ? TANDA_DRAF : ""])),
+        ...angka.baris.map((r) => {
+          const sel = Array.isArray(r) ? r : r && typeof r === "object" ? kolom.map((k) => (r as Record<string, unknown>)[k]) : [r];
+          return Object.fromEntries(sel.map((c, k) => [`k${k}`, typeof c === "number" ? c : String(c ?? "")]));
+        }),
+      ],
+    });
+  }
   tabel.forEach((t, i) => {
     const kepala = t.baris[0] ?? [];
     sheets.push({
@@ -411,9 +454,12 @@ function susunXlsx(m: MasukanBerkas): Buffer {
 
 // ----------------------------------------------------------------------------
 
+export const namaBerkas = (judul: string, nomorPerkara: string, format: FormatBerkas) =>
+  `${namaAman(judul)}${nomorPerkara ? `_${namaAman(nomorPerkara.replace(/\//g, "-"))}` : ""}.${format}`;
+
 export async function susunBerkas(m: MasukanBerkas): Promise<BerkasJadi> {
-  const nama = `${namaAman(m.judul)}${m.nomorPerkara ? `_${namaAman(m.nomorPerkara.replace(/\//g, "-"))}` : ""}.${m.format}`;
-  const templat = m.templat && m.templat.jenis === m.format ? m.templat : null;
+  const nama = namaBerkas(m.judul, m.nomorPerkara, m.format);
+  const templat = m.format === "html" && m.templat && m.objek ? m.templat : null;
   const mm = { ...m, templat };
   let bita: Buffer;
   switch (m.format) {
@@ -424,7 +470,7 @@ export async function susunBerkas(m: MasukanBerkas): Promise<BerkasJadi> {
       bita = susunRtf(mm);
       break;
     case "docx":
-      bita = templat ? docxDariTemplat(mm, templat) : docxBawaan(mm);
+      bita = docxBawaan(mm);
       break;
     case "pdf":
       bita = await susunPdf(mm);

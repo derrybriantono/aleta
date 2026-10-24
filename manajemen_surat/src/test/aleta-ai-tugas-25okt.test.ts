@@ -149,24 +149,31 @@ const sumberRekaan: SumberDataAi = {
 
 const PENGETAHUAN_REKAAN = "Rujukan baku: Pasal 116 huruf f Kompilasi Hukum Islam; Pasal 39 ayat (2) UU Nomor 1 Tahun 1974.";
 
+/**
+ * Zip proyek REKAAN meniru BENTUK V4.5 (tanpa isi asli): templat HTML yang membaca
+ * SATU objek data global lalu menggambar sendiri, dan menyorot penanda V4.5.
+ */
+const TEMPLAT_SIDANG_REKAAN = `<!doctype html><html><head><meta charset="utf-8"><title>Panduan Sidang Rekaan</title></head><body>
+<h1 id="judul"></h1><p id="agenda"></p><ol id="langkah"></ol>
+<script>
+(function () {
+  var d = window.SIDANG || {};
+  document.getElementById("judul").textContent = (d.meta && d.meta.judul) || "(tanpa data)";
+  document.getElementById("agenda").textContent = d.agenda_berikut || "";
+  (d.langkah || []).forEach(function (x) { var li = document.createElement("li"); li.textContent = x; document.getElementById("langkah").appendChild(li); });
+  var tampil = ["judul", "agenda", "langkah"].map(function (i) { return document.getElementById(i).textContent; }).join(" ");
+  var sorot = tampil.match(/\[(?:placeholder|MASUKKAN|PERLU VERIFIKASI|verifikasi|juz\/hlm)[^\]]*\]/gi) || [];
+  document.body.setAttribute("data-sorot", String(sorot.length));
+})();
+</script></body></html>`;
+
 function zipProyekRekaan(): Buffer {
-  const templatHtml = `<!doctype html><html><body><div class="kop">KOP PENGADILAN REKAAN</div><h1>{{JUDUL}}</h1><p>{{NOMOR_PERKARA}}</p>{{ISI}}</body></html>`;
-  const templatDocx = susunZip([
-    { nama: "[Content_Types].xml", isi: Buffer.from(`<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`) },
-    { nama: "_rels/.rels", isi: Buffer.from(`<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`) },
-    {
-      nama: "word/document.xml",
-      isi: Buffer.from(
-        `<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>KOP DOCX REKAAN {{NOMOR_PERKARA}}</w:t></w:r></w:p><w:p><w:r><w:t>{{ISI}}</w:t></w:r></w:p><w:p><w:r><w:t>PENUTUP REKAAN</w:t></w:r></w:p><w:sectPr/></w:body></w:document>`
-      ),
-    },
-  ]);
   return susunZip([
     { nama: "Rekaan_Core_Prompt.md", isi: Buffer.from(`# Core Prompt Rekaan\nAnda asisten hukum rekaan untuk uji. ${PENGETAHUAN_REKAAN}`) },
-    { nama: "ALETA_08_Putusan_Rekaan.md", isi: Buffer.from("# Format Putusan Rekaan\nKepala, duduk perkara, pertimbangan, amar.") },
-    { nama: "templat/putusan_donggala_rekaan.html", isi: Buffer.from(templatHtml) },
-    { nama: "templat/putusan_donggala_rekaan.docx", isi: templatDocx },
-    { nama: "aleta/kalkulator_rekaan.py", isi: Buffer.from("print('tidak disimpan portal')") },
+    { nama: "ALETA_08_Format_Putusan_Rekaan.md", isi: Buffer.from("# Format Putusan Rekaan\nPenanda baris #JUDUL #NOMOR #P #AMAR #TTD.") },
+    { nama: "ALETA_13_Template_Panduan_Sidang_Rekaan.html", isi: Buffer.from(TEMPLAT_SIDANG_REKAAN) },
+    { nama: "ALETA_18_Template_Komparasi_Rekaan.html", isi: Buffer.from(`<html><body><div id="k"></div><script>document.getElementById("k").textContent = (window.KOMPARASI || {}).kesimpulan || "";</script></body></html>`) },
+    { nama: "aleta/aleta_putusan_docx.py", isi: Buffer.from("print('skrip rekaan - tidak disimpan portal')") },
   ]);
 }
 
@@ -303,7 +310,11 @@ describe("penjaga keluaran: rujukan & kata ALETA", () => {
     expect(draf).not.toContain(`Kompilasi Hukum Islam ${TANDA_RUJUKAN}`);
     const resmi = buangRujukanBelumTerverifikasi(draf, PENGETAHUAN_REKAAN);
     expect(resmi).toContain("Pasal 116 huruf f Kompilasi Hukum Islam");
-    expect(resmi).not.toMatch(/PP Nomor 9|SEMA Nomor 3|perlu verifikasi/);
+    expect(resmi).not.toMatch(/PP Nomor 9|SEMA Nomor 3|perlu verifikasi/i);
+    // Penanda yang ditulis MODEL (kosakata V4.5): rujukan bertanda dan penanda berisi ikut dibuang; [MASUKKAN ...] tetap.
+    const olehModel = "Menurut Pasal 116 huruf f Kompilasi Hukum Islam [PERLU VERIFIKASI] dan [PERLU VERIFIKASI: SEMA 3/2023], nafkah [MASUKKAN jumlah].";
+    expect(tandaiRujukan(olehModel, PENGETAHUAN_REKAAN)).toBe(olehModel);
+    expect(buangRujukanBelumTerverifikasi(olehModel, PENGETAHUAN_REKAAN)).toBe("Menurut (dasar hukum diisi petugas) dan (dasar hukum diisi petugas), nafkah [MASUKKAN jumlah].");
   });
 
   it("tanpaKataAleta membuang semua bentuk kata ALETA", () => {
@@ -398,6 +409,27 @@ describe("berkas keluaran DOCX/RTF/PDF/HTML/XLSX: terbuka dan memuat tanda draf"
     expect([...isi.keys()].filter((n) => n.startsWith("xl/worksheets/sheet"))).toHaveLength(2);
     expect(semua.join("")).not.toMatch(/ALETA/);
   });
+
+  it("naskah berpenanda ALETA_08 (#JUDUL #P #AMAR ...) terbaca di cadangan tanpa tanda pagar", async () => {
+    const naskah = `#BISMILLAH Bismillah\n#JUDUL PUTUSAN\n#NOMOR ${NOMOR}\n#P Penggugat ${ASLI.penggugat}.\n#BR\n#AMAR MENGADILI\n#AR 1. Mengabulkan gugatan Penggugat;\n#TTD Hakim Rekaan`;
+    const b = await susunBerkas({ ...m("docx"), naskah });
+    const dok = bacaZip(b.bita).get("word/document.xml")!.toString("utf8");
+    expect(dok).toContain("MENGADILI");
+    expect(dok).toContain(`Penggugat ${ASLI.penggugat}.`);
+    expect(dok).not.toMatch(/#(JUDUL|AMAR|P|AR|TTD|BR)\b/);
+  });
+
+  it("XLSX komparasi: objek KOMPARASI.angka {kolom, baris} menjadi lembar Angka", async () => {
+    const objek = { nama: "KOMPARASI", data: { angka: { kolom: ["Komponen", "Arah A", "Arah B"], baris: [["Nafkah iddah", 3000000, 1500000], { Komponen: "Mut'ah", "Arah A": 5000000, "Arah B": 2000000 }] } } };
+    const b = await susunBerkas({ ...m("xlsx"), objek });
+    const isi = bacaZip(b.bita);
+    const lembar = [...isi.keys()].filter((n) => n.startsWith("xl/worksheets/sheet"));
+    expect(lembar).toHaveLength(3);
+    const semua = [...isi.values()].map((v) => v.toString("utf8")).join("");
+    expect(semua).toContain("Nafkah iddah");
+    expect(semua).toContain("3000000");
+    expect(semua).toMatch(/Mut(?:&apos;|&#39;|')ah/);
+  });
 });
 
 // ─── 5. Sandbox ──────────────────────────────────────────────────────────────
@@ -417,16 +449,17 @@ describe("sandbox alat bantu: hanya daftar izin; model hanya meminta 'alat X mas
     suntikPelariSandbox({ jalankan: async (p) => (dipanggil.push(p), { ok: true, keluaran: {} }) });
     const penyamar = await muatPenyamar(db, "ait-uji-sandbox");
     const k = { db, pelaku: HAKIM, tugasId: "ait-uji-sandbox", penyamar, naskah: () => "" };
-    for (const alat of ["hapus-semua", "../../bin/sh", "os.system", ""]) {
+    // Alat CETAK (putusan-docx) hanya untuk sistem: model memintanya = ditolak juga.
+    for (const alat of ["hapus-semua", "../../bin/sh", "os.system", "", "putusan-docx"]) {
       expect((await jalankanAlatBantu(k, { alat, masukan: {} })).status).toBe("tolak");
     }
-    expect((await jalankanAlatBantu(k, { alat: "kalkulator-nafkah", masukan: { kode: { bersarang: true } } })).status).toBe("galat");
+    expect((await jalankanAlatBantu(k, { alat: "terbilang", masukan: { kode: { bersarang: true } } })).status).toBe("galat");
     expect(dipanggil).toHaveLength(0);
     const jejak = await db.queryAll<{ hasil: string }>(`SELECT hasil FROM aleta_ai_jejak WHERE aksi = 'alat-bantu' AND hasil = 'tolak'`);
-    expect(jejak.length).toBe(4);
+    expect(jejak.length).toBe(5);
 
     suntikPelariSandbox(null);
-    expect((await jalankanAlatBantu(k, { alat: "kalkulator-nafkah", masukan: { gaji: 3_000_000 } })).status).toBe("mati");
+    expect((await jalankanAlatBantu(k, { alat: "terbilang", masukan: { angka: 3_000_000 } })).status).toBe("mati");
 
     // Alat yang diizinkan: hasilnya disamarkan sebelum ke model; naskah ikut sebagai berkas.
     suntikPelariSandbox({ jalankan: async (p) => (dipanggil.push(p), { ok: true, keluaran: { nama: ASLI.penggugat, total: 1_500_000 } }) });
@@ -444,13 +477,24 @@ describe("sandbox alat bantu: hanya daftar izin; model hanya meminta 'alat X mas
     writeFileSync(path.join(skrip, "lambat.py"), "import time\ntime.sleep(30)\n");
     writeFileSync(path.join(akar, "rahasia.py"), "print('tidak boleh')\n");
     const izin = path.join(akar, "izin.json");
-    writeFileSync(izin, JSON.stringify({ "kalkulator-nafkah": { skrip: "kalkulator_rekaan.py" }, "cek-blangko": { skrip: "../rahasia.py" }, anonim: { skrip: "lambat.py" } }));
+    writeFileSync(path.join(skrip, "aleta_alat_rekaan.py"), "import json,sys\nprint(json.dumps({'argv': sys.argv[1:]}))\n");
+    writeFileSync(
+      izin,
+      JSON.stringify({
+        "kalkulator-nafkah": { skrip: "kalkulator_rekaan.py" },
+        "cek-blangko": { skrip: "../rahasia.py" },
+        anonim: { skrip: "lambat.py" },
+        terbilang: { skrip: "aleta_alat_rekaan.py", argumen: ["terbilang", "{angka}"] },
+        "putusan-docx": { skrip: "aleta_alat_rekaan.py", argumen: ["masuk/naskah.txt", "{judul}", "keluar/putusan.{format}"] },
+      })
+    );
     const spool = path.join(akar, "spool");
     mkdirSync(path.join(spool, "masuk"), { recursive: true });
     const pelari: PelariSandbox = pelariAntrian(spool, 20);
     const env = { ...process.env, SANDBOX_SPOOL: spool, SANDBOX_SKRIP: skrip, SANDBOX_IZIN: izin, SANDBOX_KERJA: akar };
-    const jalan = async (alat: string, batasMs = 5000) => {
-      const janji = pelari.jalankan({ id: `uji-${alat}`, alat, masukan: { gaji: 3_000_000 }, berkas: [{ nama: "naskah.md", bita: Buffer.from("isi") }], batasMs });
+    let urut = 0;
+    const jalan = async (alat: string, batasMs = 5000, masukan: Record<string, unknown> = { gaji: 3_000_000 }) => {
+      const janji = pelari.jalankan({ id: `uji-${alat}-${++urut}`, alat, masukan, berkas: [{ nama: "naskah.md", bita: Buffer.from("isi") }], batasMs });
       await sampai(() => readdirSync(path.join(spool, "masuk")).some((n) => !n.startsWith(".")));
       await jalankanBerkas("python3", [PELAKSANA, "--sekali"], { env, timeout: 20_000 });
       return janji;
@@ -459,9 +503,15 @@ describe("sandbox alat bantu: hanya daftar izin; model hanya meminta 'alat X mas
     expect(await jalan("hapus-semua")).toMatchObject({ ok: false, galat: "Alat di luar daftar izin." });
     expect(await jalan("cek-blangko")).toMatchObject({ ok: false, galat: "Skrip alat tidak tersedia." });
     expect(await jalan("anonim", 1000)).toMatchObject({ ok: false, galat: "Alat melewati batas waktu." });
+    // Subperintah TETAP dari izin; "{nama}" diisi masukan; nilai berawalan "-" / format asing / kurang ditolak.
+    expect(await jalan("terbilang", 5000, { angka: 1500000 })).toMatchObject({ ok: true, keluaran: { argv: ["terbilang", "1500000"] } });
+    expect(await jalan("putusan-docx", 5000, { judul: `${NOMOR} - Cerai Gugat`, format: "rtf" })).toMatchObject({ ok: true, keluaran: { argv: ["masuk/naskah.txt", `${NOMOR} - Cerai Gugat`, "keluar/putusan.rtf"] } });
+    expect(await jalan("putusan-docx", 5000, { judul: "--hapus", format: "rtf" })).toMatchObject({ ok: false, galat: "Masukan alat tidak sah: judul" });
+    expect(await jalan("putusan-docx", 5000, { judul: "x", format: "exe" })).toMatchObject({ ok: false, galat: "Format tidak sah." });
+    expect(await jalan("terbilang", 5000, {})).toMatchObject({ ok: false, galat: "Masukan alat kurang: angka" });
     // Antrian bersih sesudahnya.
     expect(readdirSync(path.join(spool, "masuk"))).toEqual([]);
-    expect(existsSync(path.join(spool, "keluar", "uji-kalkulator-nafkah"))).toBe(false);
+    expect(readdirSync(path.join(spool, "keluar"))).toEqual([]);
   }, 60_000);
 
   it("berkas compose/Dockerfile sandbox: tanpa jaringan, baca-saja, batas memori/proses, skrip baca-saja", () => {
@@ -519,11 +569,11 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
     const proyek = (await proyekAktif(db))!;
     const baris = await db.queryAll<{ nama: string; jenis: string }>(`SELECT nama, jenis FROM aleta_ai_proyek_berkas WHERE proyek_id = ? ORDER BY nama`, [proyek.id]);
     expect(baris).toEqual([
-      { nama: "templat/putusan_donggala_rekaan.docx", jenis: "docx" },
-      { nama: "templat/putusan_donggala_rekaan.html", jenis: "html" },
+      { nama: "ALETA_13_Template_Panduan_Sidang_Rekaan.html", jenis: "html" },
+      { nama: "ALETA_18_Template_Komparasi_Rekaan.html", jenis: "html" },
     ]);
-    expect(await pilihTemplat(db, proyek.id, "pdf", /putusan/i)).toBeNull();
-    expect((await pilihTemplat(db, proyek.id, "html", /putusan/i))?.nama).toBe("templat/putusan_donggala_rekaan.html");
+    expect(await pilihTemplat(db, proyek.id, /(^|\/)ALETA_10_[^/]*\.html?$/i)).toBeNull();
+    expect((await pilihTemplat(db, proyek.id, /(^|\/)ALETA_13_[^/]*\.html?$/i))?.nama).toBe("ALETA_13_Template_Panduan_Sidang_Rekaan.html");
   });
 
   it("TUGAS PENUH + UJI KEBOCORAN: langkah terlihat, tidak ada data asli ke model, berkas berdata asli & bertanda draf, saldo = pemakaian", async () => {
@@ -552,24 +602,21 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
     expect(pakai).toHaveLength(3);
     expect(pakai.every((p) => p.jenis === "tugas" && p.model === "claude-opus-5-5" && p.effort === "high" && Number(p.token_masuk) === 2000)).toBe(true);
 
-    // Berkas: DOCX (templat Donggala rekaan) + HTML pratinjau; data ASLI, tanda draf, rujukan belum terverifikasi ditandai.
+    // Berkas: sandbox mati -> DOCX CADANGAN + HTML pratinjau; data ASLI, tanda draf, rujukan belum terverifikasi ditandai.
     expect(t.berkas?.map((b) => [b.format, b.templat])).toEqual([
-      ["docx", "templat/putusan_donggala_rekaan.docx"],
-      ["html", "templat/putusan_donggala_rekaan.html"],
+      ["docx", ""],
+      ["html", ""],
     ]);
+    expect(t.langkah?.at(-1)?.catatan).toBe("DOCX, HTML; DOCX cadangan");
     const docx = await unduhBerkas(db, HAKIM, id, t.berkas![0]!.id);
     const dok = bacaZip(docx.bita).get("word/document.xml")!.toString("utf8");
     expect(dok).toContain(TANDA_DRAF);
-    expect(dok).toContain(`KOP DOCX REKAAN ${NOMOR}`);
-    expect(dok).toContain("PENUTUP REKAAN");
-    expect(dok).not.toContain("{{ISI}}");
     expect(dok).toContain(ASLI.penggugat);
     expect(dok).toMatch(new RegExp(`${ASLI.saksiNik}|${ASLI.penggugatNik}`));
     expect(dok).not.toMatch(/\[(NAMA|NIK)-\d+\]/);
     expect(dok).toContain(`PP Nomor 9 Tahun 1975 ${TANDA_RUJUKAN}`);
     expect(dok).not.toContain(`Kompilasi Hukum Islam ${TANDA_RUJUKAN}`);
     const html = (await unduhBerkas(db, HAKIM, id, t.berkas![1]!.id)).bita.toString("utf8");
-    expect(html).toContain("KOP PENGADILAN REKAAN");
     expect(new JSDOM(html).window.document.querySelector(".tanda-draf")?.textContent).toBe(TANDA_DRAF);
     // Hasil langkah DISIMPAN tersamar; berkas & hasil akhir berdata asli dan terenkripsi.
     const mentah = await db.queryAll<{ hasil: string }>(`SELECT hasil FROM aleta_ai_tugas_langkah WHERE tugas_id = ? AND hasil <> ''`, [id]);
@@ -587,6 +634,81 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
     // Rahasia musyawarah: pemilik lain / Super Admin tidak dapat membuka.
     await expect(ambilTugas(db, SUPER, id)).rejects.toMatchObject({ status: 404 });
     await expect(unduhBerkas(db, KETUA, id, t.berkas![0]!.id)).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("PANDUAN SIDANG: templat HTML V4.5 (rekaan) membaca window.SIDANG berdata asli; penanda V4.5 tersorot; tanpa kode samaran", async () => {
+    const klien = new KlienTiruan((langkah, p) => {
+      if (langkah === "rencana") return null;
+      const kode = [...new Set(JSON.stringify(p.messages).match(/\[NAMA-\d+\]/g) ?? [])];
+      const objek = {
+        meta: { judul: `Panduan Sidang ${kode.at(-2) ?? ""} melawan ${kode.at(-1) ?? ""}` },
+        agenda_berikut: "Pembuktian, dasar Pasal 19 huruf f PP Nomor 9 Tahun 1975",
+        langkah: [`Periksa saksi ${kode[0] ?? ""}`, "Nafkah [MASUKKAN jumlah]"],
+      };
+      return { teks: `## PANDUAN\nPeriksa ${kode.at(-2) ?? ""}.\n\n\`\`\`json\n${JSON.stringify(objek)}\n\`\`\`` };
+    });
+    suntikKlienAi(klien);
+    const id = await tugasBaru(PP, "panduan-sidang", "pdf");
+    expect((await jalanSampaiAkhir(PP, id)).status).toBe("selesai");
+    expect(JSON.stringify(klien.panggilan.find((x) => x.langkah === "susun")!.p.messages)).toMatch(/blok ```json berisi objek data SIDANG/);
+    const t = await ambilTugas(db, PP, id);
+    expect(t.berkas?.map((b) => [b.format, b.templat])).toEqual([
+      ["pdf", ""],
+      ["html", "ALETA_13_Template_Panduan_Sidang_Rekaan.html"],
+    ]);
+    const html = (await unduhBerkas(db, PP, id, t.berkas![1]!.id)).bita.toString("utf8");
+    expect(html.indexOf("window.SIDANG = ")).toBeLessThan(html.indexOf("var d = window.SIDANG"));
+    expect(html).not.toMatch(/\[(NAMA|NIK)-\d+\]/);
+    const dom = new JSDOM(html, { runScripts: "dangerously" });
+    const doc = dom.window.document;
+    expect(doc.getElementById("judul")?.textContent).toBe(`Panduan Sidang ${ASLI.penggugat} melawan ${ASLI.tergugat}`);
+    expect(doc.querySelectorAll("#langkah li")).toHaveLength(2);
+    expect(doc.getElementById("agenda")?.textContent).toContain(`PP Nomor 9 Tahun 1975 ${TANDA_RUJUKAN}`);
+    expect(doc.body.getAttribute("data-sorot")).toBe("2"); // [PERLU VERIFIKASI] + [MASUKKAN jumlah]
+    expect(doc.querySelector(".tanda-draf")?.textContent).toBe(TANDA_DRAF);
+    // Hasil akhir (untuk kiriman) = naskah tanpa blok JSON.
+    expect(t.hasil).toContain(`Periksa ${ASLI.penggugat}.`);
+    expect(t.hasil).not.toContain("```json");
+  });
+
+  it("DRAF PUTUSAN dicetak skrip V4.5 di sandbox (naskah berpenanda + judul '<Nomor> - <Jenis>'), tanda draf dibubuhkan; gagal = cadangan", async () => {
+    const naskahModel = (p: PermintaanAi) => {
+      const kode = [...new Set(JSON.stringify(p.messages).match(/\[NAMA-\d+\]/g) ?? [])];
+      return `#JUDUL PUTUSAN\n#NOMOR ${NOMOR}\n#P Penggugat ${kode.at(-2)} melawan Tergugat ${kode.at(-1)}.\n#AMAR MENGADILI\n#AR Mengabulkan gugatan Penggugat;`;
+    };
+    suntikKlienAi(new KlienTiruan((langkah, p) => (langkah === "rencana" ? null : { teks: naskahModel(p) })));
+    const diminta: PermintaanSandbox[] = [];
+    const docxSkrip = susunZip([{ nama: "word/document.xml", isi: Buffer.from(`<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>PUTUSAN SKRIP REKAAN</w:t></w:r></w:p></w:body></w:document>`) }]);
+    suntikPelariSandbox({ jalankan: async (p) => (diminta.push(p), { ok: true, keluaran: {}, berkas: [{ nama: "putusan.docx", bita: docxSkrip }] }) });
+    const id = await tugasBaru(HAKIM, "draf-putusan", "docx");
+    expect((await jalanSampaiAkhir(HAKIM, id)).status).toBe("selesai");
+    expect(diminta).toHaveLength(1);
+    expect(diminta[0]).toMatchObject({ alat: "putusan-docx", masukan: { judul: `${NOMOR} - Cerai Gugat`, format: "docx" } });
+    const naskahKeSandbox = diminta[0]!.berkas[0]!;
+    expect(naskahKeSandbox.nama).toBe("naskah.txt");
+    expect(naskahKeSandbox.bita.toString("utf8")).toContain(`#P Penggugat ${ASLI.penggugat} melawan Tergugat ${ASLI.tergugat}.`);
+    const t = await ambilTugas(db, HAKIM, id);
+    expect(t.berkas?.map((b) => [b.format, b.templat])).toEqual([
+      ["docx", "sandbox:putusan-docx"],
+      ["html", ""],
+    ]);
+    const dok = bacaZip((await unduhBerkas(db, HAKIM, id, t.berkas![0]!.id)).bita).get("word/document.xml")!.toString("utf8");
+    expect(dok).toContain("PUTUSAN SKRIP REKAAN");
+    expect(dok).toContain(TANDA_DRAF);
+
+    // Kiriman Draf H-7: penanda baris tidak ikut.
+    const u = await usulkanKiriman(db, HAKIM, id, { tujuan: "draf-h7" });
+    expect(u.nilai.teks).toContain(`Penggugat ${ASLI.penggugat} melawan`);
+    expect(u.nilai.teks).not.toMatch(/^#/m);
+
+    // Sandbox gagal -> penyusun cadangan, dicatat.
+    suntikPelariSandbox({ jalankan: async () => ({ ok: false, galat: "Alat gagal" }) });
+    const id2 = await tugasBaru(HAKIM, "draf-putusan", "rtf");
+    expect((await jalanSampaiAkhir(HAKIM, id2)).status).toBe("selesai");
+    const t2 = await ambilTugas(db, HAKIM, id2);
+    expect(t2.berkas?.[0]).toMatchObject({ format: "rtf", templat: "" });
+    expect(t2.langkah?.at(-1)?.catatan).toBe("RTF, HTML; RTF cadangan");
+    expect((await unduhBerkas(db, HAKIM, id2, t2.berkas![0]!.id)).bita.toString("latin1")).toContain(TANDA_DRAF);
   });
 
   it("perkara rumit (instruksi waris) -> Opus max; panduan sidang -> Sonnet high; PP ditolak draf putusan", async () => {
@@ -782,7 +904,7 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
     let putaran = 0;
     suntikPelariSandbox({ jalankan: async () => ({ ok: true, keluaran: { nafkah: 1_000_000, untuk: ASLI.penggugat } }) });
     const klien = new KlienTiruan((langkah) =>
-      langkah === "susun" && putaran++ === 0 ? { teks: "", berhenti: "alat", alat: [{ id: "tu-1", name: "jalankan_alat_bantu", input: { alat: "kalkulator-nafkah", masukan: { gaji: 3_000_000 } } }], konten: [{ type: "tool_use", id: "tu-1", name: "jalankan_alat_bantu", input: {} }] } : null
+      langkah === "susun" && putaran++ === 0 ? { teks: "", berhenti: "alat", alat: [{ id: "tu-1", name: "jalankan_alat_bantu", input: { alat: "terbilang", masukan: { angka: 3_000_000 } } }], konten: [{ type: "tool_use", id: "tu-1", name: "jalankan_alat_bantu", input: {} }] } : null
     );
     suntikKlienAi(klien);
     const id = await tugasBaru();
@@ -804,7 +926,7 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
     expect(adaKataAleta(u.nilai.teks!)).toBe(false);
     expect(u.nilai.teks).toContain(ASLI.penggugat);
     expect(u.nilai.teks).toContain("Pasal 116 huruf f Kompilasi Hukum Islam");
-    expect(u.nilai.teks).not.toMatch(/PP Nomor 9 Tahun 1975|perlu verifikasi|Draf AI/);
+    expect(u.nilai.teks).not.toMatch(/PP Nomor 9 Tahun 1975|perlu verifikasi|Draf AI/i);
     // Belum terkirim sebelum dikonfirmasi.
     expect(await kirimanUntukAlur(db, HAKIM, "draf-h7", NOMOR)).toEqual([]);
     await expect(konfirmasiKiriman(db, KETUA, u.id, true)).rejects.toMatchObject({ status: 404 });

@@ -55,7 +55,8 @@ function tampil(b: BarisKiriman): KirimanTampil {
 }
 
 function bersihkan(nilai: string, pengetahuan: string): string {
-  const tanpaTanda = String(nilai ?? "").split(TANDA_DRAF).join("");
+  // Tanda draf dan penanda baris naskah putusan (#JUDUL, #P, ...) bukan bagian nilai resmi.
+  const tanpaTanda = String(nilai ?? "").split(TANDA_DRAF).join("").replace(/^#[A-Z]{1,12}(?:[ \t]+|$)/gm, "");
   const hasil = tanpaKataAleta(buangRujukanBelumTerverifikasi(tanpaTanda, pengetahuan)).slice(0, BATAS_NILAI);
   if (adaKataAleta(hasil)) throw new ApiError(500, "Nilai kiriman masih memuat kata terlarang.");
   return hasil;

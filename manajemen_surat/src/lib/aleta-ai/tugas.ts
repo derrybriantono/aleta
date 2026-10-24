@@ -63,8 +63,13 @@ export type DefinisiTugas = {
   petunjuk: string;
   /** Pemicu V4.5 yang modulnya dimuat (dicocokkan dengan label/alias menu). */
   pemicu: string;
-  /** Kata untuk mencari templat proyek (nama berkas). */
-  kataTemplat: RegExp;
+  /**
+   * Templat HTML V4.5 yang membaca SATU objek data global (window.<nama>):
+   * nama berkasnya di proyek aktif dan kunci objek yang diminta dari model.
+   */
+  objekData?: { nama: string; templat: RegExp; kunci: readonly string[] };
+  /** Alat sandbox pencetak DOCX/RTF/PDF (skrip V4.5) dan berkas masukannya. */
+  cetak?: { alat: string; masukan: "naskah" | "data" };
   /** Tujuan kiriman yang boleh. */
   tujuanKirim: TujuanKiriman[];
 };
@@ -84,9 +89,9 @@ export const DEFINISI_TUGAS: Record<JenisTugas, DefinisiTugas> = {
     kelompok: "mendalam-putusan",
     bagianData: ["ringkas", "pihak", "jadwal", "relaas", "putusan"],
     petunjuk:
-      "Susun DRAF PUTUSAN lengkap format putusan PA Donggala (kepala putusan, duduk perkara, pertimbangan hukum, amar, penutup) dari data perkara di bawah. Tulis dalam Markdown sederhana (judul ## dan paragraf).",
+      "Susun DRAF PUTUSAN lengkap format putusan PA Donggala (ALETA_08) dari data perkara di bawah, sebagai NASKAH BERPENANDA BARIS: tiap baris diawali penanda #BISMILLAH #JUDUL #NOMOR #PIHAK #P #PK #N #KS #H #C #CB #AR #AMAR #BIAYA #JUMLAH #TJ #TTD #KAKI #SALINAN #BR (atau #SISIP/#VERBATIM bila perlu), persis seperti modul format putusan. Tanpa Markdown.",
     pemicu: "putusan lengkap",
-    kataTemplat: /putusan/i,
+    cetak: { alat: "putusan-docx", masukan: "naskah" },
     tujuanKirim: ["draf-h7", "blangko-derry"],
   },
   "panduan-sidang": {
@@ -96,9 +101,14 @@ export const DEFINISI_TUGAS: Record<JenisTugas, DefinisiTugas> = {
     kelompok: "teliti-sidang",
     bagianData: ["ringkas", "pihak", "jadwal", "relaas"],
     petunjuk:
-      "Susun PANDUAN SIDANG berikutnya: agenda, urutan pemeriksaan, pertanyaan untuk para pihak dan saksi, dan hal yang perlu dicatat di BAS. Tulis dalam Markdown sederhana.",
+      "Susun PANDUAN SIDANG berikutnya: agenda, urutan pemeriksaan, pertanyaan untuk para pihak dan saksi, dan hal yang perlu dicatat di BAS. Tulis naskahnya dalam Markdown sederhana.",
     pemicu: "panduan sidang",
-    kataTemplat: /panduan|sidang/i,
+    objekData: {
+      nama: "SIDANG",
+      templat: /(^|\/)ALETA_13_[^/]*\.html?$/i,
+      kunci: ["meta", "unsur", "pertanyaan", "alat_bukti", "analisa_awal", "langkah", "cek_acara", "agenda_berikut", "penutup"],
+    },
+    cetak: { alat: "sidang-docx", masukan: "data" },
     tujuanKirim: ["bas", "blangko-derry"],
   },
   "komparasi-arah": {
@@ -108,9 +118,10 @@ export const DEFINISI_TUGAS: Record<JenisTugas, DefinisiTugas> = {
     kelompok: "mendalam-analisa",
     bagianData: ["ringkas", "pihak", "jadwal", "putusan"],
     petunjuk:
-      "Bandingkan kemungkinan ARAH PUTUSAN (dikabulkan, dikabulkan sebagian, ditolak, tidak dapat diterima): dasar hukum, fakta pendukung, risiko tiap arah. Tulis dalam Markdown; sajikan tabel perbandingan dengan baris '| arah | dasar | fakta | risiko |'.",
+      "Bandingkan kemungkinan ARAH PUTUSAN (dikabulkan, dikabulkan sebagian, ditolak, tidak dapat diterima): dasar hukum, fakta pendukung, risiko tiap arah. Tulis naskahnya dalam Markdown; sajikan tabel perbandingan dengan baris '| arah | dasar | fakta | risiko |'.",
     pemicu: "komparasi",
-    kataTemplat: /komparasi|analisa|analisis/i,
+    objekData: { nama: "KOMPARASI", templat: /(^|\/)ALETA_18_[^/]*\.html?$/i, kunci: ["meta", "arah", "kesimpulan", "angka"] },
+    cetak: { alat: "komparasi-docx", masukan: "data" },
     tujuanKirim: ["draf-h7"],
   },
 };
@@ -147,7 +158,10 @@ export function jabatanPutusan(golongan: readonly string[], positionId: string):
 // ----------------------------------------------------------------------------
 
 export const TANDA_DRAF = "Draf AI - wajib diperiksa";
-export const TANDA_RUJUKAN = "[perlu verifikasi]";
+/** Kosakata penanda V4.5 (templat menyorot teks yang cocok POLA_PENANDA_V45). */
+export const TANDA_RUJUKAN = "[PERLU VERIFIKASI]";
+export const POLA_PENANDA_V45 = /\[(?:placeholder|MASUKKAN|PERLU VERIFIKASI|verifikasi|juz\/hlm)[^\]]*\]/gi;
+const POLA_TANDA_VERIFIKASI = /\[\s*(?:PERLU\s+VERIFIKASI|verifikasi)\s*([^\]]*)\]/gi;
 
 /**
  * Rujukan pasal/peraturan: "Pasal 116 huruf f Kompilasi Hukum Islam",
@@ -187,7 +201,10 @@ export function bacaRujukan(teks: string, pengetahuan: string): RujukanTerbaca[]
 export function tandaiRujukan(teks: string, pengetahuan: string): string {
   const belum = new Set(bacaRujukan(teks, pengetahuan).filter((r) => !r.terverifikasi).map((r) => r.teks));
   if (!belum.size) return teks;
-  return String(teks).replace(POLA_RUJUKAN, (r) => (belum.has(r.trim()) ? `${r} ${TANDA_RUJUKAN}` : r));
+  // Rujukan yang sudah diberi penanda oleh model tidak ditandai dua kali.
+  return String(teks).replace(POLA_RUJUKAN, (r, letak: number, utuh: string) =>
+    belum.has(r.trim()) && !/^\s*\[\s*(?:PERLU\s+VERIFIKASI|verifikasi)/i.test(utuh.slice(letak + r.length)) ? `${r} ${TANDA_RUJUKAN}` : r
+  );
 }
 
 /**
@@ -196,10 +213,15 @@ export function tandaiRujukan(teks: string, pengetahuan: string): string {
  * harus diisi petugas.
  */
 export function buangRujukanBelumTerverifikasi(teks: string, pengetahuan: string): string {
-  const belum = new Set(bacaRujukan(teks, pengetahuan).filter((r) => !r.terverifikasi).map((r) => r.teks));
-  const tanpaTanda = String(teks).split(` ${TANDA_RUJUKAN}`).join("");
-  if (!belum.size) return tanpaTanda;
-  return tanpaTanda.replace(POLA_RUJUKAN, (r) => (belum.has(r.trim()) ? "(dasar hukum diisi petugas)" : r));
+  const KOSONG = "(dasar hukum diisi petugas)";
+  // 1. Rujukan yang diberi penanda verifikasi (oleh sistem atau model) dibuang bersama penandanya.
+  let hasil = String(teks).replace(new RegExp(`(?:${POLA_RUJUKAN.source})\\s*\\[\\s*(?:PERLU\\s+VERIFIKASI|verifikasi)[^\\]]*\\]`, "gi"), KOSONG);
+  // 2. Penanda berisi ("[PERLU VERIFIKASI: SEMA 3/2023]") diganti; penanda kosong dibuang.
+  hasil = hasil.replace(POLA_TANDA_VERIFIKASI, (_m, isi: string) => (isi.replace(/^[\s:,-]+/, "").trim() ? KOSONG : "")).replace(/[ \t]{2,}/g, " ");
+  // 3. Rujukan lain yang tidak ada di pengetahuan proyek.
+  const belum = new Set(bacaRujukan(hasil, pengetahuan).filter((r) => !r.terverifikasi).map((r) => r.teks));
+  if (!belum.size) return hasil;
+  return hasil.replace(POLA_RUJUKAN, (r) => (belum.has(r.trim()) ? KOSONG : r));
 }
 
 /**
