@@ -53,6 +53,16 @@ Perbarui papan kemajuan di setiap langkah. Laporkan ke saya dalam bahasa Indones
 
 ## Bagian 3 — Rilis 1.205.39 dan pasang
 
+**Sebelum memasang (wajib, supaya bisa mundur bila ada yang rusak):**
+- catat commit yang sedang berjalan di server, lalu beri tag `server-sebelum-1205-39` dan push tag-nya;
+- `pg_dump` basis data ALETA ke folder cadangan di luar folder aplikasi;
+- catat versi ekstensi yang terpasang di PC;
+- pasang di luar jam kerja, karena bot dimulai ulang.
+
+**Rencana mundur:** bila sesudah pasang ada fitur lama yang rusak dan tidak bisa diperbaiki cepat, pasang ulang commit `server-sebelum-1205-39` dengan skrip pasang yang sama. Migrasi 0084–0088 hanya menambah tabel/kolom (tanpa DROP/RENAME/UPDATE), sehingga kode lama tetap berjalan di atas basis data baru. `pg_dump` hanya dipakai bila data rusak. Ekstensi lama di PC tetap boleh dipakai selama peralihan.
+
+**Pantau 1–3 hari kerja** sesudah setiap pemasangan sebelum memasang rantai berikutnya. Yang dipantau: layar utama (Jadwal Sidang, Mediasi, Status Perkara, panel SIPP/ABT, Blangko Derry, susun saksi, kasir, e-Court), log galat portal/bot, dan keluhan pengguna. Satu pemasangan berisi satu rantai, jangan digabung beberapa rantai sekaligus.
+
 Ikuti `docs/awan/gabung-23okt.md` bagian **"Rilis dan pasang"** langkah 1–8. Ringkasnya:
 - `rilis-ekstensi` → 1.205.39;
 - push `integrasi-1205-39`;
