@@ -37,9 +37,9 @@ type Laporan = {
   perBulan?: BarisLaporan[];
 };
 type KuotaPeran = { peranId: string; kuotaBulananRp: number };
-type Rekonsiliasi = { tanggal: string; status: string; jumlahSelisih: number; tahananMenggantung: number; pendapatanGiliranRp: number; potongMutasiRp: number };
+type Rekonsiliasi = { tanggal: string; status: string; olehId?: string; dijalankanAt?: string; jumlahSelisih: number; tahananMenggantung: number; pendapatanGiliranRp: number; potongMutasiRp: number };
 
-const LABEL_REKONSILIASI: Record<string, string> = { seimbang: "Seimbang", selisih: "Ada selisih", menggantung: "Tahanan menggantung" };
+const LABEL_REKONSILIASI: Record<string, string> = { seimbang: "Cocok", selisih: "Ada selisih", menggantung: "Tahanan menggantung" };
 
 const angkaAtau = (n: unknown, cadangan = 0) => (typeof n === "number" && Number.isFinite(n) ? n : cadangan);
 
@@ -89,6 +89,8 @@ function keServer(form: PengaturanAi) {
       ...(datar.mdrPersen != null ? { mdrPersen: datar.mdrPersen } : {}),
       ...(datar.batasSatkerBulananRp != null ? { batasSatkerBulananRp: datar.batasSatkerBulananRp } : {}),
       ...(datar.ambangSaldoMenipisRp != null ? { ambangSaldoMenipisRp: datar.ambangSaldoMenipisRp } : {}),
+      ...(datar.rekonsiliasiOtomatis != null ? { rekonsiliasiOtomatis: datar.rekonsiliasiOtomatis } : {}),
+      ...(datar.jamRekonsiliasi != null ? { jamRekonsiliasi: datar.jamRekonsiliasi } : {}),
     },
     tarif: tarif.map((t) => ({ ...t, masukPerJuta: t.masuk, keluarPerJuta: t.keluar, cacheTulisPerJuta: t.cacheTulis, cacheBacaPerJuta: t.cacheBaca })),
     rute,
@@ -673,7 +675,24 @@ export function AletaAiPengaturan({ pengguna }: { pengguna: PenggunaPilihan[] })
         </div>
       </Bagian>
 
-      <Bagian judul="Rekonsiliasi harian" deskripsi="Saldo setiap pengguna dicocokkan dengan jumlah mutasinya, pendapatan giliran dengan potongan saldo, dan tahanan yang belum ditutup ditandai.">
+      <Bagian
+        id="rekonsiliasi"
+        judul="Rekonsiliasi harian"
+        deskripsi="Tiap hari, data kemarin diperiksa otomatis: saldo setiap pengguna dicocokkan dengan jumlah mutasinya, pendapatan giliran dengan potongan saldo, dan tahanan dana yang lebih dari 24 jam belum ditutup ditandai. Bila tidak cocok, Super Admin diberi tahu di lonceng. Tidak ada saldo yang diubah otomatis."
+      >
+        {form.rekonsiliasiOtomatis != null ? (
+          <div className="flex flex-wrap items-end gap-4 rounded-xl border border-border/70 bg-muted/30 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <Switch checked={form.rekonsiliasiOtomatis} onCheckedChange={(v) => ubah("rekonsiliasiOtomatis", v)} aria-labelledby="label-rekon-otomatis" />
+              <p className="text-sm font-medium" id="label-rekon-otomatis">
+                Rekonsiliasi otomatis {form.rekonsiliasiOtomatis ? "menyala" : "mati"}
+              </p>
+            </div>
+            <Medan label="Jam pemeriksaan (WITA, 0-23)" htmlFor="ai-jam-rekon" hint="Simpan dengan tombol Simpan pengaturan.">
+              <Input id="ai-jam-rekon" type="number" inputMode="numeric" min={0} max={23} step={1} className="w-32" value={form.jamRekonsiliasi ?? 1} onChange={(e) => ubah("jamRekonsiliasi", angka(e.target.value))} />
+            </Medan>
+          </div>
+        ) : null}
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="outline" onClick={() => void jalankanRekonsiliasi()}>
             Jalankan rekonsiliasi hari ini
@@ -685,6 +704,7 @@ export function AletaAiPengaturan({ pengguna }: { pengguna: PenggunaPilihan[] })
             {rekon.slice(0, 14).map((r) => (
               <li key={r.tanggal} className={r.status === "seimbang" ? "text-muted-foreground" : "font-medium text-amber-700 dark:text-amber-300"}>
                 {r.tanggal}: {LABEL_REKONSILIASI[r.status] ?? r.status}
+                {r.olehId === "sistem:jadwal" ? " (otomatis)" : r.olehId ? " (manual)" : ""}
                 {r.jumlahSelisih ? `, ${r.jumlahSelisih} selisih` : ""}
                 {r.tahananMenggantung ? `, ${r.tahananMenggantung} tahanan menggantung` : ""}; pendapatan {formatRupiah(r.pendapatanGiliranRp)}, potongan {formatRupiah(r.potongMutasiRp)}
               </li>

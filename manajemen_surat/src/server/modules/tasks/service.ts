@@ -30,6 +30,7 @@ import { getPositionsFromDb, requireActorUser } from "@/server/modules/organizat
 import { daftarAksesTerbaru } from "@/server/modules/satker/akses-global";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { pemberitahuanTundaOtomatis } from "@/server/modules/tunda-otomatis/layanan";
+import { pemberitahuanRekonsiliasi } from "@/server/modules/aleta-ai/rekonsiliasi";
 import { pemberitahuanPutusOtomatis } from "@/server/modules/putus-otomatis/layanan";
 
 export type TaskQuery = {
@@ -517,6 +518,32 @@ async function buildAdminSettingsTasks(
     }
   } catch {
     /* jejak akses tidak terbaca: tidak menambah pemberitahuan */
+  }
+
+  // ALETA Ai (24 Okt, T10): rekonsiliasi harian yang tidak cocok - HANYA Super Admin (uang pengelola).
+  if (String(getEffectiveRoleId(actor) ?? actor.roleId ?? "") === "super-admin") {
+    try {
+      for (const p of await pemberitahuanRekonsiliasi(db)) {
+        tasks.push({
+          id: `system_task:${p.id}`,
+          entityType: "system_task",
+          entityId: p.id,
+          sourceApp: "admin",
+          sourceLabel: "ALETA Ai",
+          title: p.judul,
+          description: p.uraian,
+          href: "/aleta-ai/pengaturan#rekonsiliasi",
+          status: "Perlu perhatian",
+          priority: "high",
+          sourceType: "system_task",
+          createdAt: p.waktu,
+          footer: "Rekonsiliasi ALETA Ai",
+          seen: isSeen(readSet, "system_task", p.id),
+        });
+      }
+    } catch {
+      /* tabel rekonsiliasi tak terbaca: tidak menambah pemberitahuan */
+    }
   }
 
   try {

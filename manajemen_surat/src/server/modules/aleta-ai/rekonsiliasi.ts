@@ -1,6 +1,6 @@
 import type { AletaDatabase } from "@/server/db/client";
 import { tanggalLokal } from "@/server/modules/aleta-ai/kurs";
-import { catatJejak } from "@/server/modules/aleta-ai/pengaturan";
+import { bacaPengaturan, catatJejak } from "@/server/modules/aleta-ai/pengaturan";
 import { ApiError } from "@/server/shared/errors";
 
 /**
@@ -15,7 +15,7 @@ import { ApiError } from "@/server/shared/errors";
  *   2. pendapatan giliran hari itu (aleta_ai_obrolan_pesan.biaya_rp) = jumlah
  *      potongan di buku mutasi yang merujuk giliran-giliran itu.
  *   3. tahanan menggantung: rujukan dengan "tahan" tetapi tanpa "lepas" yang
- *      lebih tua dari 2 jam (giliran/tugas yang tidak pernah ditutup).
+ *      lebih tua dari 24 jam (giliran/tugas T9 yang tidak pernah ditutup).
  *
  * status: 'selisih' bila (1) atau (2) tidak cocok; 'menggantung' bila hanya
  * (3); selain itu 'seimbang'. Pemeriksaan hanya MEMBACA - tidak ada saldo yang
@@ -42,7 +42,8 @@ export type HasilRekonsiliasi = {
   rincian: SelisihRekonsiliasi[];
 };
 
-const BATAS_MENGGANTUNG_MS = 2 * 60 * 60 * 1000;
+/** Tahanan tanpa lepas/potong lebih lama dari ini = menggantung (dicatat dengan rujukannya, TIDAK dilepas otomatis). */
+export const BATAS_MENGGANTUNG_MS = 24 * 60 * 60 * 1000;
 
 function rentangHari(tanggal: string): { awal: string; akhir: string } {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal)) throw new ApiError(400, "Format tanggal harus YYYY-MM-DD.");
@@ -195,18 +196,105 @@ export async function daftarRekonsiliasi(db: AletaDatabase, batas = 31): Promise
   });
 }
 
+export const OLEH_JADWAL = "sistem:jadwal";
+
 /**
- * Rekonsiliasi KEMARIN bila belum pernah dijalankan (malas: dipanggil saat
- * Super Admin membuka laporan/rekonsiliasi - server tidak punya penjadwal
- * khusus ALETA Ai). Tidak pernah melempar.
+ * Tanggal itu SUDAH diperiksa = ada baris yang dijalankan SESUDAH hari itu
+ * berakhir (WITA). Pemeriksaan manual di tengah hari tidak menggantikan
+ * pemeriksaan penutup harian.
  */
-export async function rekonsiliasiHarianBilaPerlu(db: AletaDatabase, sekarang: Date = new Date()): Promise<HasilRekonsiliasi | null> {
-  try {
-    const kemarin = tanggalLokal(new Date(sekarang.getTime() - 86_400_000));
-    const ada = await db.queryOne<{ id: string }>(`SELECT id FROM aleta_ai_rekonsiliasi WHERE id = ?`, [`rek-${kemarin}`]);
-    if (ada) return null;
-    return await jalankanRekonsiliasi(db, { tanggal: kemarin, sekarang });
-  } catch {
-    return null;
-  }
+async function sudahDiperiksaTuntas(db: AletaDatabase, tanggal: string): Promise<boolean> {
+  const b = await db.queryOne<{ dijalankan_at: string }>(`SELECT dijalankan_at FROM aleta_ai_rekonsiliasi WHERE id = ?`, [`rek-${tanggal}`]);
+  return Boolean(b && b.dijalankan_at >= rentangHari(tanggal).akhir);
+}
+
+const SIMPAN = globalThis as unknown as { __aletaAiRekonsiliasi?: { berjalan: Map<string, Promise<HasilRekonsiliasi | null>>; detak: NodeJS.Timeout | null } };
+const wadah = () => (SIMPAN.__aletaAiRekonsiliasi ??= { berjalan: new Map(), detak: null });
+
+/**
+ * Rekonsiliasi KEMARIN bila belum diperiksa tuntas. Sekali per tanggal:
+ * pemanggilan ganda di proses ini menunggu janji yang sama; antar proses /
+ * sesudah mulai ulang, baris tersimpan yang menjaganya (hasil yang sama
+ * ditulis ulang, pemberitahuan dibaca dari baris itu sehingga tidak ganda).
+ * Tidak pernah melempar.
+ */
+export function rekonsiliasiHarianBilaPerlu(db: AletaDatabase, sekarang: Date = new Date()): Promise<HasilRekonsiliasi | null> {
+  const kemarin = tanggalLokal(new Date(sekarang.getTime() - 86_400_000));
+  const w = wadah();
+  const ada = w.berjalan.get(kemarin);
+  if (ada) return ada;
+  const janji = (async () => {
+    try {
+      if (await sudahDiperiksaTuntas(db, kemarin)) return null;
+      return await jalankanRekonsiliasi(db, { tanggal: kemarin, sekarang, olehId: OLEH_JADWAL });
+    } catch (e) {
+      console.error("[ALETA Ai] rekonsiliasi harian gagal:", e);
+      return null;
+    } finally {
+      w.berjalan.delete(kemarin);
+    }
+  })();
+  w.berjalan.set(kemarin, janji);
+  return janji;
+}
+
+/**
+ * Satu detak penjadwal: bila rekonsiliasi otomatis menyala (bawaan) dan jam
+ * WITA sudah melewati jam pemicu (bawaan 01.00), periksa kemarin. `awal` =
+ * detak pertama sesudah server menyala: jam diabaikan (kemarin yang belum
+ * diperiksa langsung diperiksa). Saklar darurat ALETA Ai TIDAK menghentikan
+ * rekonsiliasi - ia hanya membaca.
+ */
+export async function detakRekonsiliasi(
+  db: AletaDatabase,
+  opsi: { kini?: Date; awal?: boolean; bacaSetelan?: (db: AletaDatabase) => Promise<{ rekonsiliasiOtomatis: boolean; jamRekonsiliasi: number }> } = {}
+): Promise<HasilRekonsiliasi | null> {
+  const kini = opsi.kini ?? new Date();
+  const setelan = await (opsi.bacaSetelan ?? bacaPengaturan)(db);
+  if (!setelan.rekonsiliasiOtomatis) return null;
+  const jam = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Makassar", hour: "2-digit", hourCycle: "h23" }).format(kini));
+  if (!opsi.awal && jam < setelan.jamRekonsiliasi) return null;
+  return rekonsiliasiHarianBilaPerlu(db, kini);
+}
+
+/** Dinyalakan instrumentation.ts: detak 5 menit + sekali 60 detik sesudah server menyala. Matikan dengan ALETA_AI_REKONSILIASI=0. */
+export function mulaiRekonsiliasiBerkala(getDb: () => Promise<AletaDatabase>, env: Record<string, string | undefined> = process.env) {
+  if (env.ALETA_AI_REKONSILIASI === "0") return;
+  const w = wadah();
+  if (w.detak) return;
+  const detak = async (awal: boolean) => {
+    try {
+      await detakRekonsiliasi(await getDb(), { awal });
+    } catch (e) {
+      console.error("[ALETA Ai] detak rekonsiliasi gagal:", e);
+    }
+  };
+  w.detak = setInterval(() => void detak(false), 5 * 60 * 1000);
+  w.detak.unref?.();
+  setTimeout(() => void detak(true), 60 * 1000).unref?.();
+}
+
+export type PemberitahuanRekonsiliasi = { id: string; judul: string; uraian: string; waktu: string };
+
+/**
+ * Lonceng Super Admin (/api/tasks): hasil rekonsiliasi 7 hari terakhir yang
+ * TIDAK cocok. Hasil cocok tidak memberi tahu (cukup tercatat). Hanya membaca.
+ */
+export async function pemberitahuanRekonsiliasi(db: AletaDatabase, kini: Date = new Date()): Promise<PemberitahuanRekonsiliasi[]> {
+  const batas = tanggalLokal(new Date(kini.getTime() - 7 * 86_400_000));
+  const baris = await db.queryAll<{ id: string; tanggal: string; dijalankan_at: string; status: string; jumlah_selisih: number | string; tahanan_menggantung: number | string }>(
+    `SELECT id, tanggal, dijalankan_at, status, jumlah_selisih, tahanan_menggantung FROM aleta_ai_rekonsiliasi WHERE status <> 'seimbang' AND tanggal >= ? ORDER BY tanggal DESC`,
+    [batas]
+  );
+  return baris.map((b) => {
+    const selisih = Number(b.jumlah_selisih);
+    const gantung = Number(b.tahanan_menggantung);
+    const bagian = [selisih ? `${selisih} selisih saldo/pendapatan` : "", gantung ? `${gantung} tahanan dana menggantung lebih dari 24 jam` : ""].filter(Boolean);
+    return {
+      id: `aleta-ai-rekonsiliasi:${b.tanggal}`,
+      judul: `Rekonsiliasi ALETA Ai ${b.tanggal}: perlu perhatian`,
+      uraian: `${bagian.join(", ")}. Rinciannya di Pengaturan ALETA Ai, bagian Rekonsiliasi harian. Tidak ada saldo yang diubah otomatis.`,
+      waktu: b.dijalankan_at,
+    };
+  });
 }

@@ -822,7 +822,7 @@ export const TUTORIAL: readonly Tutorial[] = [
       "Untuk mengurangi atau membetulkan saldo, pakai Koreksi saldo: isi jumlah (minus untuk mengurangi) dan alasannya. Saldo tidak dapat dibuat negatif, dan pengguna melihat alasannya di mutasi.",
       "Di bagian Kuota hibah per peran, isi rupiah per bulan untuk peran yang diberi kuota, lalu simpan. Kuota diberikan sekali sebulan, dipakai lebih dulu, dan sisanya hangus di akhir bulan.",
       "Di bagian Laporan bulanan, pilih bulan awal dan akhir, lalu tampilkan atau unduh XLSX/CSV. Laba sama dengan pendapatan dikurangi biaya layanan AI dan MDR.",
-      "Di bagian Rekonsiliasi harian, jalankan pemeriksaan: saldo tiap pengguna dicocokkan dengan mutasinya dan selisih ditandai.",
+      "Rekonsiliasi harian berjalan otomatis tiap pukul 01.00 WITA (jamnya dapat diubah) atas data kemarin. Bila ada selisih atau tahanan dana yang menggantung, lonceng Super Admin memberi tahu; riwayatnya ada di bagian Rekonsiliasi harian, dan pemeriksaan dapat juga dijalankan manual.",
     ],
     peringatan: [
       "Saklar ALETA Ai di bagian Layanan adalah saklar darurat: bila dimatikan, jawaban dan tugas yang sedang berjalan dihentikan seketika tanpa memotong saldo.",

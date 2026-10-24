@@ -21,7 +21,8 @@ import { buatPercakapan } from "@/server/modules/aleta-ai/percakapan";
 import { bacaPengaturan, simpanPengaturan, type PerubahanPengaturan } from "@/server/modules/aleta-ai/pengaturan";
 import { perkirakanBiayaTugas } from "@/server/modules/aleta-ai/perkiraan";
 import { unggahProyek } from "@/server/modules/aleta-ai/proyek";
-import { jalankanRekonsiliasi } from "@/server/modules/aleta-ai/rekonsiliasi";
+import { detakRekonsiliasi, jalankanRekonsiliasi, OLEH_JADWAL, pemberitahuanRekonsiliasi, rekonsiliasiHarianBilaPerlu } from "@/server/modules/aleta-ai/rekonsiliasi";
+import { getTaskSourcesForUser } from "@/server/modules/tasks/service";
 import { ALASAN_SAKLAR, aletaAiDihentikan, daftarkanPekerjaanAi, jumlahPekerjaanAiBerjalan, pantauSaklar } from "@/server/modules/aleta-ai/saklar";
 import { daftarMutasi, koreksiSaldo, saldoPengguna, selesaikanTahanan, tahanDana, terapkanMutasi, verifikasiSaldo } from "@/server/modules/aleta-ai/saldo";
 import { susunZip } from "@/server/shared/zip";
@@ -676,7 +677,9 @@ describe("laporan laba = jumlah mutasi; ekspor; rekonsiliasi menandai selisih", 
     expect(r1.pendapatanGiliranRp).toBe(r1.potongMutasiRp);
 
     await tahanDana(db, "u-lap-2", 1500, "aip-ditinggal");
-    const nanti = new Date(Date.now() + 3 * 3600_000);
+    // Batas menggantung 24 jam: 3 jam kemudian belum ditandai, 25 jam kemudian ditandai.
+    expect((await jalankanRekonsiliasi(db, { tanggal: tanggalLokal(), sekarang: new Date(Date.now() + 3 * 3600_000) })).tahananMenggantung).toBe(0);
+    const nanti = new Date(Date.now() + 25 * 3600_000);
     const r2 = await jalankanRekonsiliasi(db, { tanggal: tanggalLokal(), sekarang: nanti });
     expect(r2).toMatchObject({ status: "menggantung", tahananMenggantung: 1, jumlahSelisih: 0 });
     expect(r2.rincian).toEqual([expect.objectContaining({ jenis: "tahanan", penggunaId: "u-lap-2", rujukanId: "aip-ditinggal", ditahanRp: 1500 })]);
@@ -816,5 +819,118 @@ describe("hak per peran di rute dompet (matriks peran + Akses Menu + wajibSuperA
     expect(html).not.toContain("Isi rahasia");
     ctx.aktor = "u-sa";
     expect((await GET(req(`/api/aleta-ai/struk/${pesanId}`), { params: Promise.resolve({ id: pesanId }) })).status).toBe(404);
+  });
+});
+
+// ─── 11. Rekonsiliasi terjadwal (penjadwal 01.00 WITA, lonceng Super Admin) ──
+
+describe("rekonsiliasi harian terjadwal: sekali per tanggal, selisih -> lonceng Super Admin, cocok -> hanya tercatat", () => {
+  let db: AletaDatabase;
+  const hari = tanggalLokal();
+  /** Jam WITA pada `geser` hari sesudah hari ini. */
+  const pada = (geser: number, jam: string) => new Date(new Date(`${hari}T${jam}:00+08:00`).getTime() + geser * 86_400_000);
+  const baris = () => db.queryAll<{ id: string; tanggal: string; status: string; oleh_id: string; dijalankan_at: string }>(`SELECT id, tanggal, status, oleh_id, dijalankan_at FROM aleta_ai_rekonsiliasi ORDER BY tanggal`);
+  const lonceng = async (aktor: string) =>
+    (await getTaskSourcesForUser(db, aktor)).sources.flatMap((s) => s.tasks).filter((t) => String(t.id).includes("aleta-ai-rekonsiliasi"));
+
+  beforeAll(async () => {
+    db = await dbBaru();
+    ctx.db = db;
+    const kini = new Date().toISOString();
+    for (const r of ["hakim", "admin", "super-admin"]) await db.run(`INSERT INTO roles (id, name, description) VALUES (?, ?, '')`, [r, r]);
+    await db.run(`INSERT INTO positions (id, name, unit_kerja, level_hierarchy, created_at, updated_at) VALUES ('pos-uji', 'Uji', 'Uji', 1, ?, ?)`, [kini, kini]);
+    for (const [id, peran] of [
+      ["u-admin", "admin"],
+      ["u-sa", "super-admin"],
+    ]) {
+      await db.run(
+        `INSERT INTO users (id, username, password_hash, name, email, whatsapp_number, role_id, position_id, created_at, updated_at) VALUES (?, ?, 'x', ?, ?, '0', ?, 'pos-uji', ?, ?)`,
+        [id, id, `Nama ${id}`, `${id}@rekaan.test`, peran, kini, kini]
+      );
+    }
+    suntikKlienAi(new KlienTiruan([{ teks: ["x"], penggunaan: { masuk: 2000, keluar: 3000, cacheTulis: 10_000 } }]));
+    await isi(db, "u-rek-1", 50_000);
+    await kumpulkan(kirimPesan(db, hakim("u-rek-1"), (await buatPercakapan(db, "u-rek-1")).id, { teks: TEKS_DP }));
+    ulangiBatasLaju();
+  }, 180000);
+
+  afterAll(async () => {
+    suntikKlienAi(undefined);
+    await db?.close();
+  });
+
+  it("bawaan menyala pukul 01.00 WITA; sebelum jam pemicu tidak jalan; sesudahnya memeriksa KEMARIN sekali walau dipicu ganda", async () => {
+    expect(await bacaPengaturan(db)).toMatchObject({ rekonsiliasiOtomatis: true, jamRekonsiliasi: 1 });
+    expect(await detakRekonsiliasi(db, { kini: pada(1, "00:40") })).toBeNull();
+    expect(await baris()).toEqual([]);
+    const hasil = await Promise.all([1, 2, 3].map(() => detakRekonsiliasi(db, { kini: pada(1, "01:05") })));
+    expect(hasil.filter(Boolean)).toHaveLength(3); // satu janji yang sama untuk ketiganya
+    expect(new Set(hasil)).toHaveProperty("size", 1);
+    expect(hasil[0]).toMatchObject({ tanggal: hari, status: "seimbang", olehId: OLEH_JADWAL });
+    expect(hasil[0]!.pendapatanGiliranRp).toBe(3000);
+    expect(hasil[0]!.potongMutasiRp).toBe(3000);
+    const sesudah = await baris();
+    expect(sesudah).toEqual([expect.objectContaining({ id: `rek-${hari}`, status: "seimbang", oleh_id: OLEH_JADWAL })]);
+    // Detak berikutnya (dan sesudah "mulai ulang": hanya baris tersimpan yang tersisa) tidak menjalankan ulang.
+    expect(await detakRekonsiliasi(db, { kini: pada(1, "01:10") })).toBeNull();
+    expect(await detakRekonsiliasi(db, { kini: pada(1, "09:00"), awal: true })).toBeNull();
+    expect(await baris()).toEqual(sesudah);
+    // Cocok: tidak ada pemberitahuan, cukup tercatat.
+    expect(await pemberitahuanRekonsiliasi(db)).toEqual([]);
+    expect(await lonceng("u-sa")).toEqual([]);
+  });
+
+  it("pemeriksaan manual di tengah hari tidak menggantikan pemeriksaan penutup; saat server menyala jam diabaikan", async () => {
+    await jalankanRekonsiliasi(db, { tanggal: tanggalLokal(pada(1, "12:00")), sekarang: pada(1, "12:00"), olehId: "u-sa" });
+    // Server menyala 00.10 hari berikutnya: kemarin baru diperiksa manual di tengah hari -> diperiksa lagi sekarang.
+    const r = await detakRekonsiliasi(db, { kini: pada(2, "00:10"), awal: true });
+    expect(r).toMatchObject({ tanggal: tanggalLokal(pada(1, "12:00")), olehId: OLEH_JADWAL });
+    expect(await rekonsiliasiHarianBilaPerlu(db, pada(2, "05:00"))).toBeNull();
+  });
+
+  it("selisih saldo dan tahanan T9 menggantung > 24 jam -> lonceng HANYA Super Admin 'Perlu perhatian'; tahanan tidak dilepas; saklar darurat tidak menghentikan", async () => {
+    await simpanPengaturan(db, superAdmin.id, { aktif: false });
+    await isi(db, "u-rek-2", 10_000);
+    await tahanDana(db, "u-rek-2", 4000, "tugas-t9-rekaan-1", { sekali: true });
+    await db.run(`UPDATE aleta_ai_mutasi SET dibuat_at = ? WHERE rujukan_id = 'tugas-t9-rekaan-1'`, [new Date(pada(2, "00:00").getTime() - 30 * 3600_000).toISOString()]);
+    await db.run(`UPDATE aleta_ai_saldo SET saldo_rp = saldo_rp + 250 WHERE pengguna_id = 'u-rek-1'`);
+    try {
+      const r = await detakRekonsiliasi(db, { kini: pada(3, "01:30") });
+      expect(r?.status).toBe("selisih");
+      expect(r?.rincian).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ jenis: "saldo", penggunaId: "u-rek-1", selisihRp: 250 }),
+          expect.objectContaining({ jenis: "tahanan", penggunaId: "u-rek-2", rujukanId: "tugas-t9-rekaan-1", ditahanRp: 4000 }),
+        ])
+      );
+      // Dicatat saja: tahanan T9 tidak dilepas otomatis, saldo tidak dikoreksi.
+      expect(await jenisMutasi(db, "u-rek-2")).toEqual(["isi:10000", "tahan:-4000"]);
+      expect(await saldoPengguna(db, "u-rek-1")).toBe(47_250);
+
+      const p = await pemberitahuanRekonsiliasi(db);
+      expect(p).toEqual([expect.objectContaining({ id: `aleta-ai-rekonsiliasi:${r!.tanggal}`, judul: `Rekonsiliasi ALETA Ai ${r!.tanggal}: perlu perhatian` })]);
+      // Saldo diubah di luar mutasi = dua temuan: saldo != jumlah mutasi dan rantai saldo_setelah putus.
+    expect(p[0]!.uraian).toMatch(/2 selisih saldo\/pendapatan, 1 tahanan dana menggantung lebih dari 24 jam/);
+      const sa = await lonceng("u-sa");
+      expect(sa).toEqual([expect.objectContaining({ status: "Perlu perhatian", priority: "high", href: "/aleta-ai/pengaturan#rekonsiliasi" })]);
+      expect(await lonceng("u-admin")).toEqual([]);
+      // Dipicu ganda / mulai ulang: tetap satu baris dan satu pemberitahuan per tanggal.
+      await Promise.all([detakRekonsiliasi(db, { kini: pada(3, "02:00") }), detakRekonsiliasi(db, { kini: pada(3, "03:00"), awal: true })]);
+      expect((await baris()).filter((b) => b.tanggal === r!.tanggal)).toHaveLength(1);
+      expect(await lonceng("u-sa")).toHaveLength(1);
+    } finally {
+      await db.run(`UPDATE aleta_ai_saldo SET saldo_rp = saldo_rp - 250 WHERE pengguna_id = 'u-rek-1'`);
+      await simpanPengaturan(db, superAdmin.id, { aktif: true });
+    }
+  });
+
+  it("dimatikan Super Admin -> tidak jalan; jam dapat diubah (bulat 0-23)", async () => {
+    await simpanPengaturan(db, superAdmin.id, { rekonsiliasiOtomatis: false });
+    expect(await detakRekonsiliasi(db, { kini: pada(4, "05:00"), awal: true })).toBeNull();
+    await simpanPengaturan(db, superAdmin.id, { rekonsiliasiOtomatis: true, jamRekonsiliasi: 6 });
+    expect(await detakRekonsiliasi(db, { kini: pada(4, "05:00") })).toBeNull();
+    expect(await detakRekonsiliasi(db, { kini: pada(4, "06:01") })).toMatchObject({ tanggal: tanggalLokal(pada(3, "12:00")) });
+    await expect(simpanPengaturan(db, superAdmin.id, { jamRekonsiliasi: 24 })).rejects.toMatchObject({ status: 400 });
+    await expect(simpanPengaturan(db, superAdmin.id, { jamRekonsiliasi: 1.5 })).rejects.toMatchObject({ status: 400 });
   });
 });

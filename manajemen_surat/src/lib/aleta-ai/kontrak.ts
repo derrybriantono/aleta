@@ -74,6 +74,9 @@ export type PengaturanAi = {
   mdrPersen?: number;
   batasSatkerBulananRp?: number;
   ambangSaldoMenipisRp?: number;
+  /** Rekonsiliasi harian otomatis (bawaan menyala) dan jam pemicunya (WITA, 0-23). */
+  rekonsiliasiOtomatis?: boolean;
+  jamRekonsiliasi?: number;
 };
 
 const NAMA_MODEL = /(opus|sonnet|haiku|claude|fable|gpt|gemini)/i;
