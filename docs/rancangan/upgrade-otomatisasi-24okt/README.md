@@ -36,6 +36,65 @@ Karena itu urutan rencana: **fondasi data dan lingkar belajar dulu, baru menamba
 
 ---
 
+## C0 — Cermin Perkara: keadaan tiap perkara selalu siap di basis data (usulan Derry 24 Okt)
+
+**Ide:** sekali di awal, ALETA memindai **seluruh** perkara SIPP lalu menyimpan keadaannya di basis data ALETA (Postgres). Sesudah itu tidak perlu memindai ulang: hanya perkara **baru atau berubah** yang diperbarui otomatis. Semua layar dan ekstensi membaca dari cermin ini, bukan menanyai SIPP berkali-kali.
+
+**Kenapa bisa:** tabel SIPP punya `diinput_tanggal` dan `diperbaharui_tanggal`, dan sudah dipakai ratusan kali di kode bot, termasuk `perkara_jadwal_sidang.diperbaharui_tanggal`. Mekanisme kembaran (`sinkronDumpService.js`) juga sudah membaca struktur SIPP.
+
+### Cara kerja
+1. **Pemindai awal (sekali)**
+   - Membaca semua perkara dalam **kelompok kecil** (mis. 200–500 perkara per kelompok, jeda di antaranya).
+   - Berjalan **malam hari/di luar jam kerja** supaya SIPP tidak terbebani.
+   - **Bisa dilanjutkan**: titik terakhir disimpan, jadi bila terputus atau server mulai ulang, pemindaian lanjut dari situ, bukan dari awal.
+   - Ada layar kemajuan untuk Super Admin, mis. "18.400 dari 23.100 perkara, perkiraan selesai 02.40".
+2. **Pembaruan berkala**
+   - Tiap 1–2 menit, bot membaca baris SIPP yang `diinput_tanggal`/`diperbaharui_tanggal`-nya lebih baru dari tanda terakhir: perkara, jadwal sidang, pihak, putusan, biaya, mediasi, panggilan.
+   - Hanya perkara yang tersentuh yang dihitung ulang. Perkara baru otomatis masuk.
+3. **Tulisan dari ALETA langsung masuk cermin**
+   - Tunda, putus, penetapan, kehadiran, dan isian yang ditulis lewat ALETA memperbarui cermin seketika, tanpa menunggu putaran berkala.
+4. **Pencocokan mingguan**
+   - Untuk tabel yang tidak punya kolom waktu, dan untuk data yang **dihapus** di SIPP (penghapusan tidak terlihat dari kolom waktu).
+   - Selisih diperbaiki dan dicatat.
+5. **SIPP tetap sumber kebenaran**
+   - Cermin hanya untuk **dibaca**. Semua tulisan tetap ke SIPP/ABT dengan penjaga yang sudah ada.
+   - Sesaat sebelum menulis, ALETA tetap membaca ulang SIPP. Aturan ini tidak berubah.
+   - Tidak ada trigger atau ubahan apa pun di basis data SIPP.
+
+### Isi cermin (perkiraan tabel, migrasi 0090+)
+- `aleta_cermin_perkara`, satu baris per perkara:
+  - identitas: nomor, jenis, alur, tanggal daftar;
+  - pelaksana: tahapan/proses terakhir, majelis, PP, JS;
+  - sidang: sidang terakhir dan berikutnya;
+  - akhir perkara: status putus, minutasi, BHT;
+  - mediasi dan biaya: status mediasi, sisa panjar;
+  - penanda: ghaib, prodeo, sita/eksekusi, e-Court, belum upload;
+  - waktu: `sipp_diperbarui`, `cermin_diperbarui`.
+- `aleta_cermin_sidang`: satu baris per jadwal sidang (agenda, ruang, hasil, ditunda, kehadiran), dipakai layar Jadwal Sidang dan layar publik.
+- `aleta_cermin_pihak`: nama dan sebutan pihak, kuasa, alamat ringkas. Dipakai pencarian dan isian; berisi data pribadi, jadi hanya di server kantor.
+- `aleta_cermin_tag`: penanda Status Perkara yang sudah dihitung, sehingga klik tag cukup sekali baca Postgres, tanpa 19 kueri SIPP.
+- `aleta_cermin_jejak`: tanda terakhir per tabel SIPP, kemajuan pemindai awal, dan hasil pencocokan.
+
+### Dampak (perkiraan, dibuktikan dengan uji beban K9)
+| Hal | Sekarang | Dengan cermin |
+| :--- | :--- | :--- |
+| Buka Jadwal Sidang / Status Perkara | ±40 kueri SIPP lewat bot per muat penuh; hitung tag 1,2–6,6 dtk | 1–2 kueri Postgres yang sudah siap; jawaban kecil dan cepat |
+| 100 perangkat membuka Jadwal | ±3.000–8.000 kueri SIPP/menit | Beban SIPP hanya dari putaran pembaruan, **tetap sama berapa pun perangkatnya** |
+| Ekstensi saat membuka perkara di SIPP | Beberapa panggilan + bot membaca SIPP tiap kali | Satu panggilan kecil "keadaan perkara" dari cermin |
+| SIPP lambat/bot mulai ulang | Semua layar galat | Layar tetap tampil dari cermin dengan tanda "diperbarui hh:mm" |
+
+### Batas yang perlu jujur disampaikan
+- **Keringanan laptop:** cermin terutama meringankan **server, SIPP, dan waktu tunggu**. Laptop ikut lebih ringan karena jawaban lebih kecil dan cepat, dan ekstensi tidak perlu banyak memanggil. Tetapi beban terbesar di PC tua tetap **ukuran skrip ekstensi** (12,4 MB di halaman ABT). Itu tetap diselesaikan oleh K10–K12, jadi C0 dan K-1 saling melengkapi.
+- **Kesegaran data:** perubahan yang dibuat **langsung di SIPP** (bukan lewat ALETA) masuk cermin dalam ±1–2 menit. Yang perlu detik demi detik, seperti antrean "sedang disidang", tetap dibaca langsung tetapi bersama untuk semua layar (K1).
+- **Pemindai awal** butuh beberapa jam pada malam pertama, tergantung jumlah perkara dan kecepatan SIPP; diukur di kembaran laptop lebih dulu.
+
+### Hubungan dengan butir lain
+- C0 **menggantikan dan memperluas U5** (fakta perkara terpadu) **dan K8** (Status Perkara dihitung di latar).
+- C0 **memudahkan K1**: layar membaca cermin, bukan SIPP.
+- C0 menjadi **sumber data U3/U4** (ketepatan per jenis perkara) dan **U17** (kabar perubahan data SIPP).
+
+---
+
 ## Tahap A — Fondasi data dan lingkar belajar (prioritas tertinggi)
 
 ### U1. Simpan usulan dan hasil akhir per butir jawaban saksi
@@ -232,7 +291,7 @@ Angka di bawah dihitung dari kode `integrasi-1205-38` dan dari `docs/audit/PERFO
 ### Urutan kinerja yang disarankan
 | Gelombang | Butir | Kenapa |
 | :--- | :--- | :--- |
-| K-1 (cepat, risiko kecil, dampak besar) | K9 (uji beban dulu), K1 tahap 1, K2, K6, K10, K12 | Memangkas beban SIPP/Postgres terbesar dan memori PC tua tanpa mengubah arsitektur |
+| K-1 (cepat, risiko kecil, dampak besar) | K9 (uji beban dulu), **C0 Cermin Perkara**, K1 tahap 1, K2, K6, K10, K12 | Memangkas beban SIPP/Postgres terbesar dan memori PC tua; C0 membuat beban SIPP tidak lagi bergantung pada jumlah perangkat |
 | K-2 | K3, K7, K8, K11, K13, K16 | Penjagaan kolam, port 8008, Status Perkara, dan pengurangan skrip |
 | K-3 (perubahan arsitektur) | K4, K5, K1 tahap 2 (SSE), K14, K15 | Butuh uji di kembaran laptop dan jendela pemasangan |
 
@@ -250,7 +309,7 @@ Angka di bawah dihitung dari kode `integrasi-1205-38` dan dari `docs/audit/PERFO
 | Gelombang | Butir | Kenapa duluan | Migrasi (perkiraan) |
 | :--- | :--- | :--- | :--- |
 | 1 | U1, U2, U6 | Tanpa jejak, tidak ada yang bisa diukur atau diurungkan lintas PC | 0090 (`aleta_saksi_butir`, `aleta_isian_jejak`) |
-| 2 | U3, U4, U5 | Ketepatan hidup + data terpadu; dasar menaikkan isian otomatis | 0091 (`aleta_ketepatan_isian`, `aleta_fakta_perkara`) |
+| 2 | U3, U4 (U5 digantikan C0) | Ketepatan hidup; dasar menaikkan isian otomatis | 0091 (`aleta_ketepatan_isian`) |
 | 3 | U7, U8, U9 (sesudah T2 digabung) | Saksi satu mesin, katalog tanpa rilis, non-cerai terisi | 0092 (`aleta_saksi_katalog`) |
 | 4 | U11, U13, U14, U15 | Menutup isian manual terbanyak, dibimbing data gelombang 2 | pakai 0035/0067 + kolom baru bila perlu |
 | 5 | U12, U10, U16–U19 | Perlu uji hati-hati di ABT/SIPP atau lintas PC | 0093+ |
@@ -263,5 +322,6 @@ Tiap gelombang kira-kira satu sampai dua sesi cloud per butir. Lalu digabung, di
 1. Retensi `aleta_saksi_butir` dan `aleta_isian_jejak`: berisi teks keterangan saksi asli, saran 2 tahun.
 2. Siapa yang boleh menyetujui naik/turun status isian (U3) dan menyunting katalog saksi (U8): saran Super Admin + akun Derry.
 3. Ambang naik status otomatis: saran presisi ≥ 0,95 dengan n ≥ 30 per kode dan jenis perkara.
-4. Butir mana yang dikerjakan lebih dulu: saran **K-1 + gelombang 1 sekaligus**.
+4. Butir mana yang dikerjakan lebih dulu: saran **C0 + K-1 + gelombang 1**.
+6. C0: jam pemindaian awal (saran mulai 18.00, berhenti otomatis 06.30 dan lanjut malam berikutnya bila belum selesai) dan selang pembaruan (saran 1 menit).
 5. Boleh memakai kembaran laptop sebagai tempat uji beban (K9). Uji beban tidak boleh dijalankan ke server produksi pada jam kerja.
