@@ -170,6 +170,19 @@
         "https://ecourt.mahkamahagung.go.id/*"
       ],
       "js": [
+        "tema-pusat.js",
+        "ecourt-tema.js"
+      ],
+      "css": [
+        "ecourt-tema.css"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://ecourt.mahkamahagung.go.id/*"
+      ],
+      "js": [
         "ecourt-masuk.js"
       ],
       "run_at": "document_idle"

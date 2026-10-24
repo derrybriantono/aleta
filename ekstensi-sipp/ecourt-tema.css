@@ -1,0 +1,245 @@
+/*
+ * ============================================================================
+ * LAPISAN GELAP e-COURT (ecourt.mahkamahagung.go.id) - 23 Okt 2026
+ * ============================================================================
+ *
+ * Hanya warna: latar, tulisan, garis. Tidak ada display, ukuran, posisi, huruf,
+ * isi (content) atau elemen tambahan - jadi tidak ada yang tersembunyi, bergeser,
+ * atau berubah arti. Berlaku HANYA bila <html data-aleta-tema-ecourt="gelap">
+ * (dipasang ecourt-tema.js lewat pusat tema, hanya saat tema gelap dan
+ * saklarnya menyala); tanpa atribut itu berkas ini tidak berbuat apa pun.
+ *
+ * Susunan halaman e-Court tidak dapat dibuka dari cloud, jadi pemilihnya
+ * berbasis elemen umum (body, tabel, form, kartu/panel, navbar Bootstrap).
+ * Gambar, ikon, kanvas, bingkai (iframe), captcha, video, dan tautan berkas
+ * sengaja TIDAK disentuh. Penyesuaian per halaman menunggu contoh halaman
+ * dari laptop (data disamarkan).
+ *
+ * Warna dipakai lewat token --ec-* dengan cadangan di dalam var().
+ */
+html[data-aleta-tema-ecourt="gelap"] {
+  --ec-latar: #14181d;
+  --ec-permukaan: #1b2128;
+  --ec-permukaan-2: #222a33;
+  --ec-permukaan-3: #2a343f;
+  --ec-garis: #34404c;
+  --ec-tulisan: #dde3ea;
+  --ec-tulisan-lembut: #a3afbd;
+  --ec-tautan: #7db4ff;
+  --ec-tautan-sorot: #a8cbff;
+  --ec-merek: #274c7a;
+  --ec-merek-sorot: #2f5e96;
+  --ec-tulisan-atas: #f2f6fb;
+  --ec-sorot: #2c3b4d;
+  --ec-mati: #171c21;
+  --ec-bahaya: #ff9d92;
+  --ec-peringatan: #ffcf6b;
+  --ec-sukses: #86d9a6;
+
+  background-color: var(--ec-latar, #14181d) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  color-scheme: dark;
+}
+
+/* --- Halaman dan pembungkus umum ---------------------------------------- */
+html[data-aleta-tema-ecourt="gelap"] body {
+  background-color: var(--ec-latar, #14181d) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(
+  #wrapper, #page-wrapper, #content, #konten, #main, #container, #page,
+  .wrapper, .content, .content-wrapper, .main, .main-content, .container, .container-fluid,
+  .row, section, article, main, header, footer, aside, nav
+) {
+  background-color: var(--ec-latar, #14181d) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+/* --- Kartu, panel, kotak (Bootstrap 3/4/5 dan AdminLTE) ------------------ */
+html[data-aleta-tema-ecourt="gelap"] :is(
+  .card, .card-body, .card-header, .card-footer,
+  .panel, .panel-body, .panel-default, .panel-default > .panel-heading, .panel-footer,
+  .box, .box-body, .box-header, .box-footer,
+  .well, .jumbotron, .thumbnail, .list-group-item,
+  .modal-content, .modal-header, .modal-body, .modal-footer,
+  .popover, .popover-content, .popover-body, .dropdown-menu,
+  .tab-content, .tab-pane, .accordion-item, .accordion-body, .callout
+) {
+  background-color: var(--ec-permukaan, #1b2128) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(.card-header, .panel-heading, .box-header, .modal-header, .accordion-button) {
+  background-color: var(--ec-permukaan-2, #222a33) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(.list-group-item:hover, .dropdown-menu > li > a:hover, .dropdown-item:hover) {
+  background-color: var(--ec-sorot, #2c3b4d) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+}
+
+/* --- Bilah navigasi (navbar Bootstrap) ----------------------------------- */
+html[data-aleta-tema-ecourt="gelap"] :is(.navbar, .navbar-default, .navbar-light, .navbar-inverse, .main-header, .main-sidebar, .sidebar, .topbar) {
+  background-color: var(--ec-permukaan-2, #222a33) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(
+  .navbar a, .navbar-brand, .navbar-nav > li > a, .navbar-text, .nav-link, .main-header a, .sidebar a
+) {
+  color: var(--ec-tulisan, #dde3ea) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(
+  .navbar a:hover, .navbar-nav > li > a:hover, .navbar-nav > .active > a, .nav-link:hover, .nav-link.active,
+  .sidebar a:hover, .sidebar .active > a
+) {
+  background-color: var(--ec-sorot, #2c3b4d) !important;
+  color: var(--ec-tulisan-atas, #f2f6fb) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] .navbar-toggle,
+html[data-aleta-tema-ecourt="gelap"] .navbar-toggler {
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(.nav-tabs, .nav-tabs > li > a, .nav-tabs .nav-link, .nav-pills > li > a, .breadcrumb, .pagination > li > a, .pagination > li > span, .page-link) {
+  background-color: var(--ec-permukaan, #1b2128) !important;
+  color: var(--ec-tautan, #7db4ff) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(.nav-tabs > li.active > a, .nav-tabs .nav-link.active, .nav-pills > li.active > a, .pagination > .active > a, .pagination > .active > span, .page-item.active .page-link) {
+  background-color: var(--ec-merek, #274c7a) !important;
+  color: var(--ec-tulisan-atas, #f2f6fb) !important;
+}
+
+/* --- Tabel (termasuk DataTables) ----------------------------------------- */
+html[data-aleta-tema-ecourt="gelap"] :is(table, .table, .dataTables_wrapper, .dataTable) {
+  background-color: var(--ec-permukaan, #1b2128) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(td, th, tr, caption)  {
+  background-color: transparent !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(thead th, thead td, th, .table > thead > tr > th) {
+  background-color: var(--ec-merek, #274c7a) !important;
+  color: var(--ec-tulisan-atas, #f2f6fb) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(tbody tr:nth-child(even), .table-striped > tbody > tr:nth-of-type(odd)) {
+  background-color: var(--ec-permukaan-2, #222a33) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(tbody tr:hover, .table-hover > tbody > tr:hover) {
+  background-color: var(--ec-sorot, #2c3b4d) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(table[bgcolor], td[bgcolor], th[bgcolor], tr[bgcolor]) {
+  background-color: var(--ec-permukaan, #1b2128) !important;
+}
+
+/* --- Formulir ------------------------------------------------------------- */
+html[data-aleta-tema-ecourt="gelap"] input:not([type="checkbox"]):not([type="radio"]):not([type="image"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]),
+html[data-aleta-tema-ecourt="gelap"] :is(select, textarea, .form-control, .input-group-addon, .input-group-text, .select2-selection, .select2-dropdown) {
+  background-color: var(--ec-mati, #171c21) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(input, textarea)::placeholder {
+  color: var(--ec-tulisan-lembut, #a3afbd) !important;
+  opacity: 1;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(input:disabled, select:disabled, textarea:disabled, .form-control[disabled], .form-control[readonly]) {
+  background-color: var(--ec-permukaan, #1b2128) !important;
+  color: var(--ec-tulisan-lembut, #a3afbd) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(input:focus, select:focus, textarea:focus, .form-control:focus) {
+  border-color: var(--ec-tautan, #7db4ff) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(label, legend, .control-label, .form-group, fieldset, .help-block, .form-text) {
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] select option {
+  background-color: var(--ec-permukaan, #1b2128);
+  color: var(--ec-tulisan, #dde3ea);
+}
+
+/* --- Tombol --------------------------------------------------------------- */
+html[data-aleta-tema-ecourt="gelap"] button:not([class*="btn-"]),
+html[data-aleta-tema-ecourt="gelap"] :is(.btn-default, .btn-light, .btn-secondary, .btn-outline-secondary, input[type="button"], input[type="submit"], input[type="reset"]) {
+  background-color: var(--ec-permukaan-3, #2a343f) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(.btn-default:hover, .btn-light:hover, .btn-secondary:hover, input[type="button"]:hover, input[type="submit"]:hover) {
+  background-color: var(--ec-merek-sorot, #2f5e96) !important;
+  color: var(--ec-tulisan-atas, #f2f6fb) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(.btn-primary, .btn-info) {
+  background-color: var(--ec-merek, #274c7a) !important;
+  color: var(--ec-tulisan-atas, #f2f6fb) !important;
+  border-color: var(--ec-merek-sorot, #2f5e96) !important;
+}
+
+/* --- Tautan, teks, penanda ------------------------------------------------ */
+html[data-aleta-tema-ecourt="gelap"] a:not(.btn):not(.nav-link):not(.navbar-brand) {
+  color: var(--ec-tautan, #7db4ff);
+}
+
+html[data-aleta-tema-ecourt="gelap"] a:not(.btn):not(.nav-link):not(.navbar-brand):hover {
+  color: var(--ec-tautan-sorot, #a8cbff);
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(h1, h2, h3, h4, h5, h6, p, span, li, dt, dd, strong, b, small, blockquote, pre, code, .page-header, .title, .judul) {
+  color: var(--ec-tulisan, #dde3ea);
+  border-color: var(--ec-garis, #34404c);
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(.text-muted, .help-block, small.text-muted, .form-text.text-muted) {
+  color: var(--ec-tulisan-lembut, #a3afbd) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(hr, .divider) {
+  border-color: var(--ec-garis, #34404c) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(pre, code, .well-sm) {
+  background-color: var(--ec-mati, #171c21) !important;
+}
+
+/* --- Pemberitahuan dan label --------------------------------------------- */
+html[data-aleta-tema-ecourt="gelap"] :is(.alert, .alert-info, .alert-warning, .alert-danger, .alert-success) {
+  background-color: var(--ec-permukaan-2, #222a33) !important;
+  border-color: var(--ec-garis, #34404c) !important;
+  color: var(--ec-tulisan, #dde3ea) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(.alert-danger, .text-danger, .has-error .help-block, .has-error .control-label, .invalid-feedback) {
+  color: var(--ec-bahaya, #ff9d92) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(.alert-warning, .text-warning) {
+  color: var(--ec-peringatan, #ffcf6b) !important;
+}
+
+html[data-aleta-tema-ecourt="gelap"] :is(.alert-success, .text-success) {
+  color: var(--ec-sukses, #86d9a6) !important;
+}

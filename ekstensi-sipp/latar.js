@@ -3652,6 +3652,7 @@ const KUNCI_SETELAN_AKUN = [
   "widgetDrafH7",
   "pratinjauBasRelaas",
   "menuAtasSipp",
+  "temaEcourt",
   "gembokKepalaAbt",
   "panelRingkas",
   "gembokKepalaSipp",

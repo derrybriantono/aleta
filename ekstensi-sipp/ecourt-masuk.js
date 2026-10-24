@@ -20,8 +20,9 @@
  *      sendiri bila sesinya habis, bila gagal berturut-turut, atau setelah 12 jam.
  *      Tidak menyentuh isi halaman dan tidak mengirim apa pun selain GET tanpa badan.
  *
- * Tidak ada tulisan, kelas, atau atribut milik ekstensi yang ditambahkan ke halaman
- * e-Court; satu-satunya perubahan pada halaman adalah nilai kolom nama pengguna.
+ * Skrip ini tidak menambahkan tulisan, kelas, atau atribut ke halaman e-Court;
+ * satu-satunya perubahan olehnya adalah nilai kolom nama pengguna. (Warna gelap
+ * dipasang skrip terpisah, ecourt-tema.js, lewat satu atribut di <html>.)
  */
 (function ecourtMasukModul() {
   if (typeof globalThis === "undefined" || globalThis.aletaEcourtMasuk) return;

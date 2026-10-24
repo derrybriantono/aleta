@@ -48,6 +48,16 @@
  *     (light/dark). temaPanel tetap ditulis sebagai CERMIN hasil uraian supaya
  *     tab lama yang belum dimuat ulang tidak buta.
  *
+ * HALAMAN e-COURT (situs ecourt.mahkamahagung.go.id, 23 Okt 2026)
+ *
+ * Situs milik MA itu origin lain, jadi salinan localStorage SIPP tidak
+ * terbaca di sana. Pusat yang sama dipakai ecourt-tema.js dengan aturan lebih
+ * sempit: halaman "ecourt" hanya MENGIKUTI (chrome.storage -> salinan origin
+ * e-Court -> satu penanda `data-aleta-tema-ecourt="gelap"` di <html>), tidak
+ * pernah menulis pilihan ke chrome.storage, tidak menambah kelas, dan
+ * "terang" berarti situs apa adanya (tanpa lapisan). Saklar lapisannya
+ * punya kunci sendiri (temaEcourt / aleta-tema-ecourt), bawaan menyala.
+ *
  * Portal ALETA memegang tampilannya sendiri (kelas `dark`); di sana pusat ini
  * hanya menjembatani: menyalin pilihan portal ke chrome.storage dan sebaliknya
  * lewat salinan yang sama, tanpa menyentuh kelas portal.
@@ -66,7 +76,11 @@
     salinanLama: "aleta-tema-sipp",
     portalLama: "portal-terpadu-pa-v2",
     jembatan: "data-aleta-tema-salinan",
+    lapisanEcourt: "temaEcourt",
+    salinanEcourt: "aleta-tema-ecourt",
+    penandaEcourt: "data-aleta-tema-ecourt",
   };
+  const HOST_ECOURT = "ecourt.mahkamahagung.go.id";
 
   function bersihkan(p) {
     return DAFTAR.indexOf(p) >= 0 ? p : "";
@@ -130,7 +144,7 @@
 
   // ─── Keadaan halaman ───────────────────────────────────────────────────────
 
-  let halaman = "sipp"; // "sipp" | "abt" | "portal"
+  let halaman = "sipp"; // "sipp" | "abt" | "portal" | "ecourt"
   let sudahMulai = false;
   /** Pembersih semua pendengar yang dipasang mulai(); dipakai hentikan(). */
   const penghenti = [];
@@ -149,7 +163,21 @@
     }
   }
 
+  /** Kunci lapisan menurut halaman: e-Court punya saklar sendiri. */
+  function kunciLapisan() {
+    return halaman === "ecourt" ? KUNCI.lapisanEcourt : KUNCI.lapisan;
+  }
+
+  function kunciSalinanLapisan() {
+    return halaman === "ecourt" ? KUNCI.salinanEcourt : KUNCI.salinanLapisan;
+  }
+
   function deteksiHalaman() {
+    try {
+      if (String(akar.location.hostname || "").toLowerCase() === HOST_ECOURT) return "ecourt";
+    } catch {
+      /* bawaan: sipp */
+    }
     let jalur = "";
     try {
       jalur = String(akar.location.pathname || "");
@@ -167,6 +195,7 @@
     try {
       const baru = urai(s.getItem(KUNCI.salinan));
       if (baru) return baru;
+      if (halaman === "ecourt") return null;
       if (halaman === "portal") {
         const mentah = s.getItem(KUNCI.portalLama);
         if (mentah) {
@@ -190,9 +219,10 @@
     const s = penyimpananHalaman();
     if (!s) return true;
     try {
-      const baru = s.getItem(KUNCI.salinanLapisan);
+      const baru = s.getItem(kunciSalinanLapisan());
       if (baru === "0") return false;
       if (baru === "1") return true;
+      if (halaman === "ecourt") return true;
       // Lama: lapisan dimatikan dahulu dicatat sebagai "mati" di kunci tema.
       if (s.getItem(KUNCI.salinanLama) === "mati") return false;
     } catch {
@@ -217,7 +247,7 @@
     if (!s) return;
     try {
       const nilai = kini.lapisan ? "1" : "0";
-      if (s.getItem(KUNCI.salinanLapisan) !== nilai) s.setItem(KUNCI.salinanLapisan, nilai);
+      if (s.getItem(kunciSalinanLapisan()) !== nilai) s.setItem(kunciSalinanLapisan(), nilai);
     } catch {
       /* ditulis ulang pada pergantian berikutnya */
     }
@@ -237,6 +267,13 @@
     const d = dok();
     const html = d && d.documentElement;
     if (!html) return;
+    if (halaman === "ecourt") {
+      // Satu-satunya jejak di situs e-Court: gelap + saklar menyala = penanda;
+      // selain itu halaman dibiarkan persis seperti aslinya.
+      if (kini.resolusi === "gelap" && kini.lapisan) setAtribut(html, KUNCI.penandaEcourt, "gelap");
+      else cabutAtribut(html, KUNCI.penandaEcourt);
+      return;
+    }
     setAtribut(html, "data-aleta-tema", kini.resolusi);
     setAtribut(html, "data-aleta-tema-pilihan", kini.pilihan);
     // SIPP: lapisan gelap hanya bila temanya gelap DAN saklarnya menyala.
@@ -248,7 +285,7 @@
 
   /** Mematikan transisi sesaat (dua bingkai) selama `kerjakan` berjalan. */
   function tanpaTransisi(kerjakan) {
-    if (halaman === "portal") {
+    if (halaman === "portal" || halaman === "ecourt") {
       // Portal mematikan transisinya sendiri (tema-pilihan.ts); pusat tidak
       // menyentuh kelas <html> di sana.
       kerjakan();
@@ -320,9 +357,9 @@
 
   function tulisLapisanKeChrome(nilai) {
     const c = chromeAda();
-    if (!c) return;
+    if (!c || halaman === "ecourt") return;
     try {
-      const jawab = c.storage.local.set({ [KUNCI.lapisan]: nilai });
+      const jawab = c.storage.local.set({ [kunciLapisan()]: nilai });
       if (jawab && typeof jawab.catch === "function") jawab.catch(() => undefined);
     } catch {
       /* berlaku di halaman ini */
@@ -331,7 +368,7 @@
 
   function tulisKeChrome() {
     const c = chromeAda();
-    if (!c) return;
+    if (!c || halaman === "ecourt") return;
     try {
       const jawab = c.storage.local.set(tulisanChrome(kini.pilihan, kini.waktu, kini.resolusi));
       if (jawab && typeof jawab.catch === "function") jawab.catch(() => undefined);
@@ -379,12 +416,20 @@
     // pernah mencatatnya, salinan halaman yang sengaja mematikannya (nilai
     // lama "mati") yang dibawa ke chrome - bukan sebaliknya.
     if (halaman !== "portal") {
-      const tercatat = simpan ? simpan[KUNCI.lapisan] : undefined;
+      const tercatat = simpan ? simpan[kunciLapisan()] : undefined;
       if (typeof tercatat === "boolean") {
         if (tercatat !== kini.lapisan) {
           kini.lapisan = tercatat;
           tulisSalinanLapisan();
           tanpaTransisi(tandai);
+          kabarkan("chrome");
+        }
+      } else if (halaman === "ecourt") {
+        // e-Court hanya mengikuti: chrome belum mencatat saklarnya = bawaan (menyala).
+        if (kini.lapisan === false) {
+          kini.lapisan = true;
+          tulisSalinanLapisan();
+          tandai();
           kabarkan("chrome");
         }
       } else if (kini.lapisan === false) {
@@ -412,7 +457,7 @@
     if (!c) return;
     try {
       // sudahMulai: jawaban yang tiba sesudah hentikan() diabaikan.
-      c.storage.local.get([KUNCI.pilihan, KUNCI.waktu, KUNCI.cermin, KUNCI.lapisan], (simpan) => {
+      c.storage.local.get([KUNCI.pilihan, KUNCI.waktu, KUNCI.cermin, kunciLapisan()], (simpan) => {
         if (sudahMulai) selarasDenganChrome(simpan || {});
       });
     } catch {
@@ -426,8 +471,8 @@
     try {
       const saatBerubah = (ubah, tempat) => {
         if (tempat !== "local") return;
-        if (ubah[KUNCI.lapisan] && halaman !== "portal") {
-          const menyala = ubah[KUNCI.lapisan].newValue !== false;
+        if (ubah[kunciLapisan()] && halaman !== "portal") {
+          const menyala = ubah[kunciLapisan()].newValue !== false;
           if (menyala !== kini.lapisan) {
             kini.lapisan = menyala;
             tulisSalinanLapisan();
@@ -494,7 +539,7 @@
             // Penulisnya mungkin tab tanpa ekstensi: pastikan chrome ikut.
             muatDariChrome();
           }
-        } else if (peristiwa.key === KUNCI.salinanLapisan && halaman !== "portal") {
+        } else if (peristiwa.key === kunciSalinanLapisan() && halaman !== "portal") {
           const menyala = peristiwa.newValue !== "0";
           if (menyala !== kini.lapisan) {
             kini.lapisan = menyala;

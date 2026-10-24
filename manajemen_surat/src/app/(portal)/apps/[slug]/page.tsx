@@ -48,7 +48,7 @@ export default function PlaceholderAppPage() {
 
           <div className="rounded-[1.8rem] border border-dashed border-primary/30 bg-primary/5 p-6">
             <div className="flex items-start gap-4">
-              <div className="rounded-2xl bg-white p-3 text-primary shadow-sm dark:bg-slate-900">
+              <div className="rounded-2xl bg-card p-3 text-primary shadow-sm">
                 <Construction className="h-6 w-6" />
               </div>
               <div className="space-y-3">

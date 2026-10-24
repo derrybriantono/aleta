@@ -23,6 +23,7 @@ dengan judul bagian biasa.
 | SIPP | Sisipkan berkas ke Jadwal Sidang | `sisipJadwal` | mati | konten.js | semua |
 | SIPP | Pratinjau dokumen sebelum unduh | `pratinjauBasRelaas` | menyala | pratinjau-bas-relaas.js | semua |
 | SIPP | Menu ABT By Derry, ALETA, dan E-Court di bilah atas SIPP | `menuAtasSipp` | menyala | menu-atas.js | semua |
+| E-Court | Tema gelap di situs e-Court | `temaEcourt` | menyala | tema-pusat.js (ecourt-tema.js) | semua |
 | SIPP | Kotak ringkasan di halaman perkara SIPP | `sippPenyatu` | nyala | sipp-ide-m2.js | semua |
 | SIPP | Tampilkan tombol ALETA yang dobel | `sippTampilDobel` | mati | sipp-ide-m2.js | semua |
 | SIPP | Gembok panel ALETA di SIPP: selalu tampil penuh | `gembokKepalaSipp` | mati | panel-alat.js | semua |

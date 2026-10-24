@@ -524,6 +524,14 @@ describe("pendaftaran: manifest, popup, penyusun", () => {
     // tidak ada skrip ALETA lain yang menyentuh e-Court
     for (const c of MANIFEST.content_scripts) {
       if (c === grup[0]) continue;
+      // Satu-satunya tambahan (T4, 23 Okt): lapisan warna tema gelap, document_start, hanya warna
+      // (perilakunya diuji di tema-ecourt-23okt.test.ts).
+      if ((c.js || []).includes("ecourt-tema.js")) {
+        expect(c.js).toEqual(["tema-pusat.js", "ecourt-tema.js"]);
+        expect(c.css).toEqual(["ecourt-tema.css"]);
+        expect(c.run_at).toBe("document_start");
+        continue;
+      }
       expect((c.matches as string[]).some((m) => m.includes("ecourt.mahkamahagung"))).toBe(false);
     }
   });

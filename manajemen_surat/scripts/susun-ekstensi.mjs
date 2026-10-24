@@ -190,6 +190,8 @@ const BERKAS = [
   "menu-atas.js",
   // Halaman e-Court yang dibuka dari menu E-Court (22 Okt 2026) - mengisi nama pengguna saja dan menjaga sesi.
   "ecourt-masuk.js",
+  "ecourt-tema.js",
+  "ecourt-tema.css",
   // Penjaga batas (17 Okt 2026): tidak ada kata ALETA yang ditulis ekstensi ke
   // SIPP/ABT. Dimuat document_start, SEBELUM tema-awal.js, supaya fetch sudah
   // terbungkus saat skrip konten lain berjalan.

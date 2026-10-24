@@ -210,7 +210,7 @@ describe("tema terang dan gelap", () => {
     // konten.js mengikutinya; aturan "!== false" tetap sama.
     expect(isi).toContain("temaSippMenyala = kini.lapisan !== false;");
     const pusat = readFileSync(path.resolve(process.cwd(), "../ekstensi-sipp/tema-pusat.js"), "utf8");
-    expect(pusat).toContain("const tercatat = simpan ? simpan[KUNCI.lapisan] : undefined;");
+    expect(pusat).toContain("const tercatat = simpan ? simpan[kunciLapisan()] : undefined;");
     expect(pusat).toContain('if (typeof tercatat === "boolean") {');
   });
 
