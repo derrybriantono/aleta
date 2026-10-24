@@ -75,6 +75,21 @@ Karena itu urutan rencana: **fondasi data dan lingkar belajar dulu, baru menamba
 - `aleta_cermin_tag`: penanda Status Perkara yang sudah dihitung, sehingga klik tag cukup sekali baca Postgres, tanpa 19 kueri SIPP.
 - `aleta_cermin_jejak`: tanda terakhir per tabel SIPP, kemajuan pemindai awal, dan hasil pencocokan.
 
+### Cakupan: layar dan fitur yang membaca dari cermin (permintaan Derry)
+| Layar / fitur | Dibaca dari cermin | Tetap dibaca langsung (bersama untuk semua layar, K1) |
+| :--- | :--- | :--- |
+| **Jadwal Sidang** (portal + tautan `/jadwal`) | Daftar sidang per tanggal/rentang, agenda, ruang, majelis/PP/JS, pihak, hasil & tunda, penanda (ghaib, prodeo, e-Court, belum upload, sita), kesiapan | Antrean "sedang disidang" detik demi detik |
+| **Jadwal Mediasi** | Pertemuan mediasi per tanggal, mediator, tenggang 30 hari sejak penetapan mediator, laporan mediator, ditunda | — |
+| **Status Perkara** | Pencarian, rincian satu perkara, **semua tag beserta hitungannya** (tanpa 19 kueri SIPP per klik), tahapan, putus/minutasi/BHT | — |
+| **Layar publik & antrean** (`antrian-layar`, `antrian-ruang`, `antrian-tampil`, `sidang-ruang`, panggil) | Jadwal hari itu, ruang, urutan | Panggilan/kehadiran saat itu |
+| **Ekstensi di halaman SIPP/ABT** | "Keadaan perkara" satu panggilan (`sipp-konteks`), penanda/pita, widget checklist & kehadiran | — |
+| **Isian Blangko Derry / susun saksi** | Fakta perkara (pernikahan, anak, pihak, mediasi, identitas saksi) sebagai sumber pertama, sebelum SIPP | SIPP dibaca ulang bila fakta di cermin lebih tua dari batas atau sebelum menulis |
+| **Kasir** | Sisa panjar, biaya, jurnal ringkas per perkara | Pembacaan ulang sebelum menulis jurnal |
+| **Relaas & panggilan, penunjukan, statistik, SKP/penilaian, laporan** | Daftar per juru sita/majelis, rekap per bulan | — |
+| **Kerja otomatis** (tunda/putus otomatis, H-7, putusan terjadwal) | Bahan daftar/pratinjau | **Penjaga sebelum menulis tetap membaca SIPP langsung** (aturan lama tidak berubah) |
+
+Tabel cermin bertambah: `aleta_cermin_mediasi` (satu baris per pertemuan/perkara mediasi) dan ringkasan biaya di `aleta_cermin_perkara`. Setiap layar menampilkan tanda "diperbarui hh:mm" dari `cermin_diperbarui`.
+
 ### Dampak (perkiraan, dibuktikan dengan uji beban K9)
 | Hal | Sekarang | Dengan cermin |
 | :--- | :--- | :--- |
