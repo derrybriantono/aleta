@@ -19,7 +19,7 @@ Perbarui papan kemajuan di setiap langkah. Laporkan ke saya dalam bahasa Indones
 
 | Cabang di origin | Isi | Keadaan |
 | :--- | :--- | :--- |
-| `integrasi-awan-24okt` | `integrasi-1205-38` (GitHub, `24fa2f74`) + 16 cabang: kalender libur, T1–T10, audit login perangkat, PWA, rencana fitur admin, perbaikan AWAN, panduan gabung 23 Okt, rencana upgrade 24 Okt. Bentrok jurnal migrasi 0084–0088 dan penyelarasan T9↔T10 sudah dikerjakan | `tsc` bersih, lint = dasar, 26 berkas uji sasaran hijau; hasil uji penuh di `docs/awan/laporan-integrasi-awan-24okt.md` |
+| `integrasi-awan-24okt` | `integrasi-1205-38` (GitHub, `24fa2f74`) + 16 cabang: kalender libur, T1–T10, audit login perangkat, PWA, rencana fitur admin, perbaikan AWAN, panduan gabung 23 Okt, rencana upgrade 24 Okt. Bentrok jurnal migrasi 0084–0088 dan penyelarasan T9↔T10 sudah dikerjakan | **Selesai** (ujung `f5e181c3`): `tsc` bersih, lint = dasar; uji penuh cloud 914 berkas hijau, 28 merah = 23 sama dengan dasar (lingkungan cloud) + 5 merah baru yang sudah diperbaiki. Rincian di `docs/awan/laporan-integrasi-awan-24okt.md`; laptop mengulang uji penuh |
 | `fitur/panduan-laptop-24okt` | panduan ini | — |
 | Rantai A–F (`docs/awan/rantai-upgrade-24okt.md`) | Cermin Perkara, kinerja, jejak isian, saksi, blangko, admin, server | **Belum dimulai.** Cloud mulai Minggu 25 Okt 10.15 WITA bila kuota langganan pulih, dua rantai sekaligus (A + C dulu) |
 
