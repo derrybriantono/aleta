@@ -1,0 +1,41 @@
+/*
+ * Tombol "Kasir ALETA" di SIPP > Jurnal Perkara > Jurnal Keuangan Perkara (kasir-jurnal-popup.js, T3 23 Okt 2026).
+ * Warna dari token halaman SIPP (--s-*, cadangan di dalam var()); tema gelap ikut mengganti token itu, jadi tidak
+ * ada angka warna di aturan tema gelap. Isi pop-upnya memakai kotak .aleta-pa-* (penetapan-sipp.css) dan gaya Kasir
+ * (.aleta-basmassal, panel.css).
+ */
+.aleta-kj-baris {
+  margin: 6px 0 10px;
+}
+.aleta-kj-tombol {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 14px;
+  border: 2px solid var(--s-hijau, #0f5f4f);
+  border-radius: 4px;
+  background: var(--s-hijau, #0f5f4f);
+  color: var(--s-tulisan-atas, #ffffff) !important;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.aleta-kj-tombol:hover {
+  filter: brightness(1.12);
+}
+.aleta-kj-tombol[aria-expanded="true"] {
+  box-shadow: inset 0 -4px 0 var(--s-hijau-terang, #7fd0a6);
+}
+.aleta-kj-tombol:focus-visible {
+  outline: 3px solid var(--s-kuning, #e0a800);
+  outline-offset: 2px;
+}
+.aleta-kj-akar {
+  display: grid;
+  gap: 8px;
+}
+.aleta-kj-baca {
+  font-size: 12px;
+}

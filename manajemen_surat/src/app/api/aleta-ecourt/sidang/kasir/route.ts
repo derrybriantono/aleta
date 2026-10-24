@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 
-import { bolehKasir, pengawasKasir } from "@/lib/kasir-jurnal";
+import { bolehKasir, bolehMengerjakanKasir, pengawasKasir } from "@/lib/kasir-jurnal";
+import { bolehAksi } from "@/lib/matriks-peran";
 import { getDatabase } from "@/server/db/client";
 import { pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { akunSippPengguna, type PilihanAkunSipp } from "@/server/modules/aleta-ecourt/court-calendar-akun";
@@ -33,7 +34,7 @@ export const dynamic = "force-dynamic";
  */
 async function pastikanHak(db: Awaited<ReturnType<typeof getDatabase>>, actorUserId: string | null) {
   const aktor = await pastikanKapabilitas(db, actorUserId, "panel");
-  if (!bolehKasir(aktor)) {
+  if (!bolehKasir(aktor) || !bolehAksi(aktor, "sidang.kasir-baca")) {
     throw new ApiError(403, "Kasir jurnal hanya dapat dibuka kasir, bendahara, panitera, dan admin.");
   }
   return aktor;
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
       akunSippPengguna(db, aktor.id),
     ]);
     if (!hasil.ok) return ok({ available: false, ok: false, alasan: hasil.error });
-    return ok({ available: true, ...hasil.data, akun: akunKasir(akun) });
+    return ok({ available: true, ...hasil.data, akun: akunKasir(akun), bolehUbah: bolehMengerjakanKasir(aktor) && bolehAksi(aktor, "sidang.kasir") });
   } catch (error) {
     return handleAdminRouteError(error, request, {
       db,
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
     db = await getDatabase();
     actorUserId = await resolveActorUserId(request);
     const aktor = await pastikanHak(db, actorUserId);
-    if (pengawasKasir(aktor)) {
+    if (pengawasKasir(aktor) || !bolehAksi(aktor, "sidang.kasir")) {
       throw new ApiError(403, "Panitera hanya dapat membaca Kasir - mencatat jurnal dikerjakan kasir atau petugas keuangan.");
     }
     const badan = (await request.json()) as Record<string, unknown>;

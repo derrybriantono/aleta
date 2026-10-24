@@ -729,12 +729,20 @@ export const AKSI = {
     alasan: "Menyiapkan verifikasi dokumen e-Litigasi - majelis & PP.",
   },
   "sidang.kasir": {
-    label: "Kasir (jurnal, harian, pengingat, rekap)",
+    label: "Kasir (menulis jurnal, setoran, saklar otomatis)",
     crud: "CU",
+    golongan: ["kasir"],
+    lingkup: "semua",
+    rute: ["POST /api/aleta-ecourt/sidang/kasir", "POST /api/aleta-ecourt/sidang/kasir/otomatis", "POST /api/aleta-ecourt/sidang/kasir/pengingat"],
+    alasan: "Pelaksana kasir (kasir/keuangan perkara/bendahara/analis keuangan) + Admin. Panitera dan panitera muda mengawasi: tidak menulis (keputusan 12 Okt; 403 di rute, bukan hanya tombol disembunyikan).",
+  },
+  "sidang.kasir-baca": {
+    label: "Kasir (membaca jurnal, usulan, harian, pengingat, rekap)",
+    crud: "R",
     golongan: ["kasir", "panitera", "panmud"],
     lingkup: "semua",
-    rute: ["POST /api/aleta-ecourt/sidang/kasir", "GET|POST /api/aleta-ecourt/sidang/kasir/*"],
-    alasan: "Aturan Kasir 1.186 (bolehKasir): kasir/keuangan perkara/bendahara, panitera, panitera muda - keuangan SEMUA perkara.",
+    rute: ["GET /api/aleta-ecourt/sidang/kasir", "GET /api/aleta-ecourt/sidang/kasir/*"],
+    alasan: "Aturan Kasir 1.186 (bolehKasir): kasir/keuangan perkara/bendahara, panitera, panitera muda - keuangan SEMUA perkara. Pengawas (panitera/panmud) hanya membaca; dipakai juga tombol Kasir di Jurnal Keuangan Perkara SIPP (T3).",
   },
   "sidang.cetak-relaas": {
     label: "Cetak relaas massal",

@@ -7,7 +7,7 @@ import {
 } from "@/server/modules/aleta-bot/whatsapp-gateway-client";
 import { kapabilitasPeran, pastikanKapabilitas } from "@/server/modules/aleta-ecourt/akses";
 import { bolehUnggahPutusan } from "@/server/modules/aleta-ecourt/hak-putusan";
-import { bolehKasir } from "@/lib/kasir-jurnal";
+import { bolehKasir, bolehMengerjakanKasir } from "@/lib/kasir-jurnal";
 import { golonganMenuEkstensi } from "@/lib/matriks-peran";
 import { roles as daftarPeran } from "@/lib/mock-data";
 import { type RoleId } from "@/lib/types";
@@ -109,6 +109,7 @@ export async function GET(request: NextRequest) {
         bolehUnggahPutusan: bolehUnggahPutusan(actor),
         // Tab Kasir (1.189.x) - aturan Kasir 1.186; rute kasir memeriksa ulang.
         bolehKasir: bolehKasir(actor),
+        bolehMengerjakanKasir: bolehMengerjakanKasir(actor),
         // Peran tambahan (kasir, petugas_ptsp, ...) - golongan menu Kasir/PTSP
         // panel ekstensi (11 Okt 2026); sama dengan ruas di /ekstensi/siapa.
         peranTambahan: actor.additionalRoleIds ?? [],

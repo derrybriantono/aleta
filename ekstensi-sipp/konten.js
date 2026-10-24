@@ -16074,6 +16074,7 @@ async function muatPenggunaAleta() {
       if (typeof isi.bolehUnggahPutusan === "boolean") penggunaTerakhir.bolehUnggahPutusan = isi.bolehUnggahPutusan;
       // Hak Kasir (1.189.x) dari peladen - tab/bagian Kasir.
       if (typeof isi.bolehKasir === "boolean") penggunaTerakhir.bolehKasir = isi.bolehKasir;
+      if (typeof isi.bolehMengerjakanKasir === "boolean") penggunaTerakhir.bolehMengerjakanKasir = isi.bolehMengerjakanKasir;
       // R 11 Okt: peran tambahan (kasir, petugas_ptsp, ...) - golongan menu Kasir/PTSP.
       if (Array.isArray(isi.peranTambahan)) penggunaTerakhir.peranTambahan = isi.peranTambahan.slice();
       /* === HAK-PERAN 12 Okt === */

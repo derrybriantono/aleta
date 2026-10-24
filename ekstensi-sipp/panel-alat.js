@@ -3156,6 +3156,22 @@ function alatBolehKasir(pengguna) {
 }
 
 /**
+ * Kasir hanya membaca? (T3, 23 Okt 2026) Pengawas = panitera / panitera muda tanpa peran tambahan kasir. Jawaban
+ * server (bolehMengerjakanKasir dari siapa / sipp-konteks) menang; tanpa itu dihitung dari nama perannya.
+ * true = baca saja, false = boleh menulis, null = belum diketahui. Rute tulis tetap menolak (403) sendiri.
+ */
+function alatKasirBacaSaja(pengguna) {
+  if (!pengguna || typeof pengguna !== "object") return null;
+  if (typeof pengguna.bolehMengerjakanKasir === "boolean") return !pengguna.bolehMengerjakanKasir && alatBolehKasir(pengguna) !== false;
+  if (alatBolehKasir(pengguna) !== true) return null;
+  const tambahan = (Array.isArray(pengguna.peranTambahan) ? pengguna.peranTambahan : []).map((x) => String(x).toLowerCase());
+  if (tambahan.some((x) => /^(kasir|petugas_keuangan_perkara|bendahara_)/.test(x))) return false;
+  const p = String(pengguna.peran || "").toLowerCase().replace(/[-_]+/g, " ").trim();
+  if (/kasir|keuangan|bendahara/.test(p) || alatGolonganPeran(p) === "admin") return false;
+  return p === "panitera" || /\bpanitera muda\b/.test(p);
+}
+
+/**
  * Rentang periode rekap kasir yang MEMUAT tanggal itu - kembaran
  * rentangPeriode di manajemen_surat/src/lib/kasir-otomatis.ts (uji
  * kasir-otomatis.test.ts menuntut jawabannya sama). Minggu = Senin-Minggu.
