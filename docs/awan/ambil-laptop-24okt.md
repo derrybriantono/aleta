@@ -94,6 +94,7 @@ Setiap rantai menulis laporan `docs/awan/laporan-rantai-<huruf>.md` di cabang te
 | 4 | D Blangko | `fitur/isian-per-sidang` | Rilis ekstensi |
 | 5 | A Cermin | `fitur/kabar-perubahan` | Pasang dengan saklar mati. Malam pertama pemindaian awal (18.00–06.30), pantau di Pemantau Cermin. Sesudah 100% dan pencocokan bersih, Super Admin menyalakan per layar: Mediasi → Status Perkara → Jadwal Sidang → panel ekstensi |
 | 6 | B Ekstensi & PC tua | `fitur/ejaan-nama-pihak` | Rilis ekstensi; ukur ulang memori Chrome di PC tua |
+| 7 | G Tenggat & berkas e-Court | `fitur/ecourt-kesimpulan-bukti` | Verifikasi dasar hukum tiap aturan tenggat bersama Derry sebelum pengingat WA dinyalakan; jalankan skrip ukur ketepatan kesimpulan/daftar bukti pada berkas e-Court sungguhan (hasil angka saja); rilis ekstensi |
 
 Untuk setiap rantai:
 1. Baca laporannya, lalu merge ke cabang integrasi berikutnya, misalnya `integrasi-1205-40`.
