@@ -42,8 +42,9 @@
  *
  * E. ISIAN OTOMATIS (T8, 23 Okt 2026) - hanya form#frm_ref_pihak. Kolom yang
  *    KOSONG dan dapat dideteksi diisi sekali: jenis kelamin (BIN/BINTI pada
- *    nama), umur (dari tanggal lahir), warga negara (Indonesia). Yang ragu
- *    (agama Islam di luar alur saksi, status kawin anak) tampil sebagai usulan
+ *    nama), umur (dari tanggal lahir), warga negara (Indonesia), agama
+ *    Islam untuk pihak pertama (pihak_ke 1; di luar alur saksi). Yang ragu
+ *    (agama pihak kedua/tak diketahui, status kawin anak) tampil sebagai usulan
  *    yang diklik petugas. Kolom yang pernah terisi (oleh siapa pun) atau
  *    pernah disentuh tidak diisi lagi; blangko Edit hanya mendapat usulan.
  *    Tiap isian tercantum dengan tombol Batalkan. Agama, pekerjaan, status
@@ -541,11 +542,14 @@
         });
       }
     }
+    // Pihak pertama (pihak_ke = 1) di Peradilan Agama beragama Islam; pihak kedua bisa non-Muslim = usulan klik.
+    const pihakPertama = String(x.pihakKe) === "1";
     if (!x.alurSaksi && kosong(x.agama)) {
       const o = pilihanCocok(pil.agama, /^islam$/i);
       if (o) {
         hasil.push({
-          medan: "agama", label: "Agama", tulisan: "Islam", kuat: false, alasan: "perkara Peradilan Agama - periksa dulu",
+          medan: "agama", label: "Agama", tulisan: "Islam", kuat: pihakPertama,
+          alasan: pihakPertama ? "pihak pertama (Pemohon/Penggugat) di Peradilan Agama" : "perkara Peradilan Agama; pihak kedua bisa non-Muslim - periksa dulu",
           langkah: [{ penunjuk: "#pihak_agama", jenis: "pilih", nilai: String(o.nilai) }],
         });
       }
@@ -1406,6 +1410,10 @@
         wargaNegaraPenunjuk: warga ? (warga.id ? `#${warga.id}` : `select[name="${warga.getAttribute("name")}"]`) : "",
         pilihan: { jenisKelamin: pil("#pihak_jenis_kelamin"), agama: pil("#pihak_agama"), statusKawin: pil("#pihak_status_kawin"), wargaNegara: warga ? Array.from(warga.options || []).map((o) => ({ nilai: o.value, tulisan: String(o.textContent || "").trim() })) : [] },
         alurSaksi: Boolean(document.querySelector(".aleta-c2-sbantu-ref")),
+        pihakKe: (() => {
+          const ke = document.querySelector("form#frm_user #pihak_ke");
+          return ke ? String(ke.value || "").trim() : "";
+        })(),
         sekarang: new Date(),
       },
     };

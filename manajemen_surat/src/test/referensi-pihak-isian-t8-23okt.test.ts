@@ -43,11 +43,12 @@ const HARI_INI = (() => {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 })();
 
-type Isi = { nama?: string; tgl?: string; umur?: string; jk?: string; agama?: string; kawin?: string; warga?: string; wargaTersembunyi?: boolean; aksi?: string; lajurSaksi?: boolean };
+type Isi = { nama?: string; tgl?: string; umur?: string; jk?: string; agama?: string; kawin?: string; warga?: string; wargaTersembunyi?: boolean; aksi?: string; lajurSaksi?: boolean; pihakKe?: string };
 function halaman(o: Isi = {}) {
   const sel = (id: string, awal: string, opsi: string, nilai = "") =>
     `<select id="${id}" name="${id}"><option value="">${awal}</option>${opsi.replace(`value="${nilai}"`, `value="${nilai}" selected`)}</select>`;
   return `
+${o.pihakKe ? `<form id="frm_user" style="display:none"><input type="hidden" id="pihak_ke" name="pihak_ke" value="${o.pihakKe}"></form>` : ""}
 <div id="popup_pihak" class="popup" style="display:block">
   ${o.lajurSaksi ? '<div class="aleta-c2-sbantu aleta-c2-sbantu-ref"></div>' : ""}
   <form id="frm_ref_pihak" method="post" action="${ASAL}/SIPP/pihak_list/validateInput">
@@ -138,6 +139,7 @@ describe("T8. blangko Tambah", () => {
     await sampai(() => nilai(h, "pihak_umur") !== "", "umur terisi");
     expect(Number(nilai(h, "pihak_umur"))).toBeGreaterThanOrEqual(36);
     await sampai(() => nilai(h, "pihak_warga_negara") === "1", "warga negara Indonesia");
+    // pihak tidak diketahui (tanpa pihak_ke): agama hanya usulan
     expect(nilai(h, "pihak_agama")).toBe("");
     const usul = await sampai(() => chip(h, "Usulan Agama: Islam"), "usulan agama tampil");
     usul.click();
@@ -207,6 +209,32 @@ describe("T8. blangko Tambah", () => {
     expect(nilai(h, "pihak_status_kawin")).toBe("");
     usul.click();
     await sampai(() => nilai(h, "pihak_status_kawin") === "2", "terisi setelah klik");
+  });
+});
+
+describe("T8. agama Islam menurut pihak", () => {
+  it("pihak pertama: agama kosong terisi Islam otomatis", async () => {
+    const h = bukaSipp(halaman({ nama: "ANDI BIN ALI", pihakKe: "1" }));
+    await sampai(() => nilai(h, "pihak_agama") === "1", "agama Islam terisi");
+    expect(kotak(h)!.textContent).toMatch(/Agama: Islam - terisi otomatis \(pihak pertama/);
+    expect(chip(h, "Usulan Agama")).toBeUndefined();
+    expect(h.simpan()).toBe(0);
+  });
+  it("pihak pertama: agama yang sudah terisi tidak ditimpa", async () => {
+    const h = bukaSipp(halaman({ nama: "ANDI BIN ALI", pihakKe: "1", agama: "2" }));
+    await tunggu(900);
+    expect(nilai(h, "pihak_agama")).toBe("2");
+  });
+  it("pihak kedua: hanya usulan, kolom tetap kosong", async () => {
+    const h = bukaSipp(halaman({ nama: "ANDI BIN ALI", pihakKe: "2" }));
+    await sampai(() => chip(h, "Usulan Agama: Islam"), "usulan tampil");
+    await tunggu(500);
+    expect(nilai(h, "pihak_agama")).toBe("");
+  });
+  it("blangko Edit pihak pertama: hanya usulan", async () => {
+    const h = bukaSipp(halaman({ nama: "ANDI BIN ALI", pihakKe: "1", aksi: "updt" }));
+    await sampai(() => chip(h, "Usulan Agama: Islam"), "usulan tampil");
+    expect(nilai(h, "pihak_agama")).toBe("");
   });
 });
 
