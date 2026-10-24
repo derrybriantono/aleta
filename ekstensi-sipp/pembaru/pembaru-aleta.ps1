@@ -23,7 +23,7 @@
 #
 # Protokol: pesan JSON berbingkai (4 bita panjang little-endian + UTF-8), satu
 # jawaban akhir per perintah ("selesai": true). Perintah: ping, siapkan, pasang,
-# pulihkan. Berkas ini sengaja ASCII saja.
+# pulihkan, perangkat (23 Okt 2026, BACA SAJA). Berkas ini sengaja ASCII saja.
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -348,7 +348,54 @@ function Perintah-Ping {
     } catch {
         $sebab = Ringkas $_.Exception.Message
     }
-    return @{ ok = $true; versiPembantu = $VERSI_PEMBANTU; folder = $folder; folderSah = ($sebab -eq ''); sebab = $sebab; versiFolder = $versiFolder; id = $ids }
+    return @{ ok = $true; versiPembantu = $VERSI_PEMBANTU; folder = $folder; folderSah = ($sebab -eq ''); sebab = $sebab; versiFolder = $versiFolder; id = $ids; perintah = @('ping', 'siapkan', 'pasang', 'pulihkan', 'perangkat') }
+}
+
+# ---------------------------------------------------------------------------
+# perangkat (23 Okt 2026): identitas komputer untuk jejak masuk ALETA.
+# HANYA MEMBACA - tidak menulis berkas, registri, atau setelan apa pun.
+#   namaKomputer  $env:COMPUTERNAME
+#   mac           MAC adaptor yang menyala DAN punya gateway (yang benar-benar
+#                 dipakai ke server), bukan adaptor virtual/Bluetooth
+#   osRinci       "Windows 11 Pro 23H2 (22631)" - peramban membekukan
+#                 "Windows NT 10.0" sehingga Windows 11 tampil sebagai 10
+#   akunWindows   nama akun Windows; server MEMBUANGNYA kecuali saklar Super
+#                 Admin "catat akun Windows" dinyalakan (bawaan mati)
+# Bagian yang gagal dibaca dikosongkan; perintah ini tidak pernah gagal total.
+# ---------------------------------------------------------------------------
+function Perintah-Perangkat {
+    $mac = @()
+    try {
+        $cfg = @(Get-NetIPConfiguration -ErrorAction Stop | Where-Object { $null -ne $_.IPv4DefaultGateway -and $null -ne $_.NetAdapter -and [string]$_.NetAdapter.Status -eq 'Up' })
+        foreach ($c in $cfg) {
+            $m = [string]$c.NetAdapter.MacAddress
+            if ($m) { $mac += ($m -replace '-', ':').ToUpper() }
+        }
+    } catch {
+        try {
+            $wmi = @(Get-CimInstance Win32_NetworkAdapterConfiguration -Filter 'IPEnabled=True' -ErrorAction Stop | Where-Object { $null -ne $_.DefaultIPGateway })
+            foreach ($w in $wmi) {
+                $m = [string]$w.MACAddress
+                if ($m) { $mac += ($m -replace '-', ':').ToUpper() }
+            }
+        } catch {
+            $mac = @()
+        }
+    }
+    $osRinci = ''
+    try {
+        $os = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
+        $cv = Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -ErrorAction SilentlyContinue
+        $rilis = [string](Ambil $cv 'DisplayVersion')
+        if (-not $rilis) { $rilis = [string](Ambil $cv 'ReleaseId') }
+        $judul = ([string]$os.Caption) -replace '^Microsoft\s+', ''
+        $osRinci = ($judul + ' ' + $rilis + ' (' + [string]$os.BuildNumber + ')') -replace '\s+', ' '
+    } catch {
+        $osRinci = ''
+    }
+    $akun = ''
+    try { $akun = [string]$env:USERNAME } catch { $akun = '' }
+    return @{ ok = $true; namaKomputer = [string]$env:COMPUTERNAME; mac = @($mac | Select-Object -Unique); osRinci = $osRinci.Trim(); akunWindows = $akun }
 }
 
 function Bisa-Buat([string]$jalur) {
@@ -518,6 +565,7 @@ function Tangani($m) {
         'siapkan' { return (Perintah-Siapkan $m) }
         'pasang' { return (Perintah-Pasang $m) }
         'pulihkan' { return (Perintah-Pulihkan) }
+        'perangkat' { return (Perintah-Perangkat) }
         default { return (Galat 'perintah-tidak-dikenal' 'perintah tidak dikenal') }
     }
 }

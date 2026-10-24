@@ -868,6 +868,14 @@ chrome.runtime.onMessage.addListener((pesan, pengirim, jawab) => {
     return true;
   }
 
+  // JEJAK-MASUK 23 Okt: kirim data perangkat sekarang (popup / uji).
+  if (pesan.jenis === "kirim-perangkat") {
+    kirimDataPerangkat({ paksa: true })
+      .then(jawab)
+      .catch((e) => jawab({ ok: false, pesan: String((e && e.message) || e).slice(0, 200) }));
+    return true;
+  }
+
   // PEMBARU-OTOMATIS 23 Okt: keadaan pembantu lokal (popup) dan pengunduhan pemasangnya.
   if (pesan.jenis === "status-pembaru") {
     statusPembaru(pesan.segar === true)
@@ -3728,6 +3736,8 @@ try {
     if (KUNCI_SETELAN_AKUN.some((k) => ubah[k])) void catatSalinanAkunLatar();
     // Halaman portal ALETA mencatat "sesiPortalMasuk" tiap panelnya terpasang (sudah masuk).
     if (ubah.sesiPortalMasuk) void periksaSesudahMasuk({}).catch(() => {});
+    // JEJAK-MASUK 23 Okt: data perangkat (nama komputer, MAC, versi Windows) sesudah masuk.
+    if (ubah.sesiPortalMasuk) void kirimDataPerangkat({}).catch(() => {});
   });
 } catch {
   /* tanpa pendengar perubahan: salinan dicatat popup saat dibuka */
@@ -4084,6 +4094,7 @@ async function siapkanPaketManual(versiSekarang) {
   return null;
 }
 
+
 /* === PEMBARU-OTOMATIS 23 Okt === */
 /*
  * ============================================================================
@@ -4424,3 +4435,90 @@ try {
 }
 void periksaSesudahMasuk({}).catch(() => {});
 /* === AKHIR POPUP-PERAN === */
+
+/* === JEJAK-MASUK 23 Okt === */
+/**
+ * Data perangkat untuk riwayat masuk ALETA: nama komputer, MAC adaptor aktif,
+ * dan versi Windows rinci dari pembantu lokal (perintah `perangkat`, BACA
+ * SAJA), ditambah client hints pekerja latar (konteks aman - di halaman http
+ * portal peramban tidak mengirimnya). Dikirim ke POST /api/portal/perangkat
+ * dengan kuki sesi + kuki perangkat; server menempelkannya ke perangkat dan
+ * sesi itu.
+ *
+ * Pembantu LAMA yang belum mengenal `perangkat` menjawab galat
+ * "perintah-tidak-dikenal"; pembantu yang belum dipasang menjawab "tidak-ada".
+ * Keduanya bukan kegagalan: yang terkirim hanya client hints, tanpa MAC.
+ *
+ * Paling sering sekali per 20 menit (pemicunya "sesiPortalMasuk", dicatat tiap
+ * panel portal terpasang), jadi masuk baru mendapat datanya dalam hitungan
+ * menit dan perangkat yang dipakai tiap hari terkirim sedikitnya sekali sehari.
+ */
+const KUNCI_PERANGKAT_TERKIRIM = "perangkatTerkirimPada";
+const JEDA_KIRIM_PERANGKAT_MS = 20 * 60 * 1000;
+const BATAS_PERANGKAT_MS = 8000;
+
+async function petunjukPeramban() {
+  try {
+    const uad = typeof navigator !== "undefined" ? navigator.userAgentData : null;
+    if (!uad || typeof uad.getHighEntropyValues !== "function") return null;
+    const h = await uad.getHighEntropyValues(["platformVersion", "model", "fullVersionList"]);
+    return {
+      platform: String(h.platform || uad.platform || ""),
+      platformVersion: String(h.platformVersion || ""),
+      model: String(h.model || ""),
+      fullVersionList: Array.isArray(h.fullVersionList) ? h.fullVersionList.slice(0, 6) : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function kirimDataPerangkat(opsi) {
+  const paksa = Boolean(opsi && opsi.paksa);
+  let s;
+  try {
+    s = await chrome.storage.local.get(["asalPortal", KUNCI_PERANGKAT_TERKIRIM]);
+  } catch {
+    return { ok: false, keadaan: "penyimpanan" };
+  }
+  const kini = Date.now();
+  if (!paksa && kini - Number((s && s[KUNCI_PERANGKAT_TERKIRIM]) || 0) < JEDA_KIRIM_PERANGKAT_MS) return { ok: true, keadaan: "dilewati" };
+  const asal = await asalPortalHidup(s && s.asalPortal);
+  if (!asal) return { ok: false, keadaan: "tanpa-portal" };
+
+  const jawabPembantu = await bicaraDenganPembantu({ perintah: "perangkat" }, BATAS_PERANGKAT_MS);
+  const dariPembantu = jawabPembantu && jawabPembantu.ok === true ? jawabPembantu : null;
+  const badan = {
+    namaKomputer: dariPembantu ? String(dariPembantu.namaKomputer || "") : "",
+    osRinci: dariPembantu ? String(dariPembantu.osRinci || "") : "",
+    mac: dariPembantu && Array.isArray(dariPembantu.mac) ? dariPembantu.mac.slice(0, 4) : [],
+    akunWindows: dariPembantu ? String(dariPembantu.akunWindows || "") : "",
+    petunjuk: await petunjukPeramban(),
+  };
+  let r;
+  try {
+    r = await fetch(`${asal}/api/portal/perangkat`, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(badan),
+    });
+  } catch {
+    return { ok: false, keadaan: "jaringan" };
+  }
+  // Belum masuk: tidak dicatat terkirim, dicoba lagi pada pemicu berikutnya.
+  if (!r || !r.ok) return { ok: false, keadaan: r && r.status === 401 ? "belum-masuk" : "ditolak", status: r ? r.status : 0 };
+  try {
+    await chrome.storage.local.set({ [KUNCI_PERANGKAT_TERKIRIM]: kini });
+  } catch {
+    /* dikirim lagi pada pemicu berikutnya */
+  }
+  return {
+    ok: true,
+    keadaan: "terkirim",
+    pembantu: dariPembantu ? "ada" : String((jawabPembantu && jawabPembantu.galat) || "tidak-ada"),
+    adaMac: badan.mac.length > 0,
+  };
+}
+/* === AKHIR JEJAK-MASUK === */

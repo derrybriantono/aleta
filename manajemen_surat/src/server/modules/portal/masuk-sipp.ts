@@ -58,6 +58,7 @@
 
 import { type NextRequest } from "next/server";
 
+import { ipKlien } from "@/server/modules/perangkat/jaringan";
 import { ApiError } from "@/server/shared/errors";
 import { assertRateLimit, clearRateLimit, recordRateLimitFailure } from "@/server/shared/rate-limit";
 
@@ -176,12 +177,9 @@ export function masukSippDinyalakan(env: Record<string, string | undefined> = pr
   return !(nilai === "0" || nilai === "false" || nilai === "mati" || nilai === "off");
 }
 
+/** IP ujung X-Forwarded-For (entri pertama dapat dikarang peramban) - 23 Okt 2026. */
 function alamatIp(headers: Headers) {
-  return (
-    headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    headers.get("x-real-ip")?.trim() ||
-    "unknown"
-  ).slice(0, 80);
+  return (ipKlien(headers) || "unknown").slice(0, 80);
 }
 
 const PESAN_DIBATASI = "Terlalu banyak percobaan login. Coba lagi beberapa menit lagi.";

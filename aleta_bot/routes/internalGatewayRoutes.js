@@ -7987,4 +7987,18 @@ router.get("/sipp/ide-l2/lima-bulan", requireInternalToken, async (_req, res) =>
 
 router.setRuntimeLifecycleHandlers = setRuntimeLifecycleHandlers;
 
+// Jejak masuk portal (23 Okt 2026): MAC satu IP dari tabel ARP SERVER - baca
+// saja. Menjawab ok:true walau tidak terbaca ({ mac: "", sebab }) supaya
+// portal mencatat sebabnya; lihat services/arpPerangkatService.js.
+const arpPerangkatService = require("../services/arpPerangkatService");
+router.get("/perangkat/arp", requireInternalToken, (req, res) => {
+  const ip = String(req.query.ip || "").trim().slice(0, 45);
+  try {
+    const hasil = arpPerangkatService.bacaArp(ip);
+    return res.json({ ok: true, mac: hasil.mac, sebab: hasil.sebab, antarmuka: hasil.antarmuka || "" });
+  } catch (error) {
+    return res.json({ ok: true, mac: "", sebab: "tabel ARP tidak terbaca" });
+  }
+});
+
 module.exports = router;

@@ -6,6 +6,7 @@ import { LoaderCircle, RefreshCcw, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { apiPath } from "@/lib/base-path";
 
 type AuditItem = {
@@ -41,6 +42,17 @@ export function AuditTrailBoard() {
   const [items, setItems] = useState<AuditItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  // Saringan dasar (23 Okt 2026): cari di aksi, pelaku, entitas, dan isi catatan yang sudah dimuat.
+  const [cari, setCari] = useState("");
+  const kata = cari.trim().toLowerCase();
+  const tampil = kata
+    ? items.filter((item) =>
+        [item.action, formatActionLabel(item.action), item.actorName, item.entityType, item.entityId, JSON.stringify(item.payload)]
+          .join(" ")
+          .toLowerCase()
+          .includes(kata)
+      )
+    : items;
 
   const loadAuditLogs = useCallback(async () => {
     setIsLoading(true);
@@ -103,8 +115,15 @@ export function AuditTrailBoard() {
           </div>
         ) : null}
 
+        <Input
+          value={cari}
+          onChange={(event) => setCari(event.target.value)}
+          placeholder="Saring: aksi, nama pelaku, entitas, atau isi (mis. LOGIN, BLOCK_USER)"
+          aria-label="Saring audit trail"
+        />
+
         <div className="space-y-3">
-          {items.map((item) => (
+          {tampil.map((item) => (
             <div key={item.id} className="rounded-[1.2rem] border border-border bg-card px-4 py-4">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">

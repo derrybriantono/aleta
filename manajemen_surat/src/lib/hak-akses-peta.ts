@@ -225,8 +225,8 @@ function butirAksi(): ButirPeta[] {
       judul: a.label,
       keterangan: a.alasan,
       hak: dari(a.golongan, t),
-      // Penjaga bolehAksi: Admin selalu boleh kecuali golongannya dikosongkan khusus (pengaturan satker).
-      admin: t,
+      // Penjaga bolehAksi: Admin selalu boleh kecuali aksi khusus Super Admin.
+      admin: "hanyaSuperAdmin" in a && a.hanyaSuperAdmin ? false : t,
       catatan: a.lingkup === "milik" ? "Hanya atas perkara yang ia tangani (majelis, PP, atau juru sitanya); Ketua, Wakil, dan Admin semua perkara." : undefined,
       sumber: `AKSI.${kunci}`,
       rute: a.rute,

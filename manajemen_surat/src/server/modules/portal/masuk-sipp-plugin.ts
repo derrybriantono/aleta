@@ -33,6 +33,8 @@ import {
   type BahanPilih,
   type JawabanSesiSipp,
 } from "@/server/modules/portal/masuk-sipp-nama";
+import { catatPeristiwaAman } from "@/server/modules/perangkat/jejak";
+import { idPerangkatDariHeader } from "@/server/modules/perangkat/jaringan";
 import { appendAuditLog } from "@/server/shared/audit";
 import { nextPrefixedId } from "@/server/shared/ids";
 
@@ -97,7 +99,7 @@ function pemeriksaSesi(m: ModulMasuk, headers: Headers) {
 }
 
 /** Jejak sesi -> baris aleta_masuk_jejak (lewat "sipp" hanya bila berhasil). */
-function jejakSesi(db: AletaDatabase, headers: Headers) {
+function jejakSesi(db: AletaDatabase, headers: Headers, jalurMasuk?: "sipp-sesi") {
   return (baris: {
     aletaUserId: string | null;
     usernameSipp: string;
@@ -105,15 +107,45 @@ function jejakSesi(db: AletaDatabase, headers: Headers) {
     hasil: "berhasil" | "ditolak" | "dibatasi";
     alasan: string;
   }) =>
-    catatJejakMasuk(db, {
+    (jalurMasuk ? catatGagalSipp(db, headers, jalurMasuk, { ...baris, identitas: baris.usernameSipp }) : Promise.resolve()).then(() => catatJejakMasuk(db, {
       ...baris,
       identitas: baris.usernameSipp,
       lewat: baris.hasil === "berhasil" ? "sipp" : "",
       alamatIp: (headers.get("x-forwarded-for")?.split(",")[0]?.trim() || headers.get("x-real-ip")?.trim() || "unknown").slice(0, 80),
       agenPeramban: (headers.get("user-agent") ?? "").slice(0, 240),
-    }).catch((galat) => {
+    })).catch((galat) => {
       console.warn("[ALETA MASUK SIPP] jejak sesi tidak tertulis:", galat instanceof Error ? galat.message : "tidak diketahui");
     });
+}
+
+/** "sandi_tidak_cocok" dkk. -> kalimat riwayat masuk (23 Okt 2026). */
+export function alasanGagalSipp(hasil: string, alasan: string) {
+  const a = String(alasan ?? "").toLowerCase();
+  if (hasil === "dibatasi" || a.includes("batas_percobaan")) return "batas percobaan";
+  if (/diblokir|kedaluwarsa|nonaktif/.test(a)) return a.startsWith("akun_aleta") ? "akun nonaktif" : "SIPP nonaktif";
+  if (/tidak_cocok|sandi|password/.test(a)) return "sandi salah";
+  if (/tak_dikenal|tidak_ada|tidak_ditemukan|tanpa_akun|bukan/.test(a)) return "akun tak dikenal";
+  return a.replace(/_/g, " ").slice(0, 80) || "ditolak";
+}
+
+/** Percobaan SIPP yang TIDAK berhasil -> MASUK_GAGAL di aleta_jejak_masuk. Berhasil dicatat kait sesi. */
+async function catatGagalSipp(
+  db: AletaDatabase,
+  headers: Headers,
+  jalur: "sipp" | "sipp-sesi",
+  baris: { aletaUserId: string | null; identitas: string; hasil: string; alasan: string }
+) {
+  if (baris.hasil === "berhasil") return;
+  await catatPeristiwaAman(db, {
+    peristiwa: "MASUK_GAGAL",
+    alasan: alasanGagalSipp(baris.hasil, baris.alasan),
+    jalur,
+    userId: baris.aletaUserId,
+    identitas: baris.identitas,
+    perangkatId: idPerangkatDariHeader(headers),
+    headers,
+    rincian: { kode: baris.alasan.slice(0, 80) },
+  });
 }
 
 /** Untuk jalur password SIPP di layar masuk: akun ALETA dari username SIPP terbukti. */
@@ -269,7 +301,10 @@ export function masukSippPlugin() {
                   timeoutMs: BATAS_TUNGGU_BOT_MS,
                 })) as JawabanVerifikasiSipp,
               verifikasiSandiAleta: (userId, sandi) => cocokkanSandiAleta(ctx.context, userId, sandi),
-              catatJejak: (baris) => catatJejakMasuk(db, baris),
+              catatJejak: async (baris) => {
+                await catatGagalSipp(db, headers, "sipp", baris);
+                await catatJejakMasuk(db, baris);
+              },
               // 11 Okt 2026: username SIPP tanpa tautan -> tautan/NIP/nama.
               akunAletaDariSipp: akunAletaDariSippUntuk(db, m),
             },
@@ -332,7 +367,7 @@ export function masukSippPlugin() {
             periksaSesi: pemeriksaSesi(m, headers),
             bacaBahan: () => bacaBahanPilih(db, m),
             tulisTautan: (p) => m.tulisTautanSippOtomatis(db, p),
-            catatJejak: jejakSesi(db, headers),
+            catatJejak: jejakSesi(db, headers, "sipp-sesi"),
           });
 
           if (keputusan.jenis === "tolak") {

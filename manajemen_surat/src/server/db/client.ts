@@ -416,6 +416,13 @@ export const IN_MEMORY_TABLE_PERSISTENCE_ORDER = [
   "aleta_hakim_sidang_perkara",
   // 23 Oktober 2026 (0084): ALETA Ai tahap 2a - kode samaran per percakapan.
   "aleta_ai_samaran",
+  // 23 Oktober 2026 (0085): jejak masuk & perangkat, batas perangkat. Tanpa kunci asing.
+  "aleta_jejak_masuk",
+  "aleta_perangkat",
+  "aleta_sesi_perangkat",
+  "aleta_batas_perangkat",
+  "aleta_tiket_perangkat",
+  "aleta_setelan_jejak_masuk",
   "feedback_requests",
   "user_notification_reads",
   "knowledge_base_regulations",

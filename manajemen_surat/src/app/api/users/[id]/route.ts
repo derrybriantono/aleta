@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 
 import { getDatabase } from "@/server/db/client";
+import { sesiPemanggil } from "@/server/modules/perangkat/sesi-pemanggil";
 import { getUserForApiById, updateManagedUserInDb } from "@/server/modules/users/service";
 import { handleAdminRouteError } from "@/server/shared/admin-access-audit";
 import { resolveActorUserId } from "@/server/shared/auth";
@@ -74,6 +75,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       actorUserId,
       userId: id,
       payload: body,
+      sesiPemanggilId: (await sesiPemanggil(request.headers))?.sessionId ?? null,
     });
 
     return ok({

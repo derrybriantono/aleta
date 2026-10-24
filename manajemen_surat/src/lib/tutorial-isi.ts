@@ -1316,6 +1316,26 @@ export const TUTORIAL: readonly Tutorial[] = [
     kataKunci: ["admin", "pengelola", "pengaturan"],
   },
   {
+    id: "pengelola-riwayat-masuk",
+    judul: "Riwayat Masuk & Perangkat",
+    ringkas: "Siapa masuk kapan, dari perangkat dan alamat mana; sesi aktif; batas perangkat per peran dan per akun.",
+    kelompok: "pengelola",
+    mencakup: { aksi: ["jejak-masuk.lihat", "perangkat.batas-akun", "perangkat.batas-peran"] },
+    halaman: ["/admin/riwayat-masuk"],
+    tautan: { teks: "Buka Riwayat Masuk", href: "/admin/riwayat-masuk" },
+    langkah: [
+      "Buka Pusat Kendali, lalu Riwayat Masuk & Perangkat.",
+      "Tab Riwayat masuk: saring menurut tanggal, akun, peristiwa, jalur, atau alamat IP. Tekan satu baris untuk rinciannya; unduh CSV bila perlu.",
+      "Tab Sesi aktif: keluarkan perangkat yang tidak dikenal pemiliknya.",
+      "Tab Batas perangkat: Super Admin mengatur batas per peran; Admin dan Super Admin menambah pengecualian per akun.",
+    ],
+    peringatan: [
+      "Satu peramban dihitung satu perangkat. Bila data peramban dihapus, perangkat itu terhitung baru.",
+      "MAC address hanya terbaca dari ekstensi di PC kantor atau dari komputer yang satu jaringan dengan server; HP selalu \"tidak terbaca\".",
+    ],
+    kataKunci: ["login", "masuk", "perangkat", "sesi", "IP", "MAC", "batas perangkat", "riwayat"],
+  },
+  {
     id: "pengelola-akun-akses",
     judul: "Manajemen Akun dan Akses Menu",
     ringkas: "Mengatur siapa memegang jabatan apa, dan aplikasi apa yang terbuka untuk tiap peran.",

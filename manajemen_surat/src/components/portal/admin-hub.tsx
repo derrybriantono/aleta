@@ -348,6 +348,16 @@ export function AdminHub() {
               icon={<DatabaseBackup className="h-5 w-5 text-cyan-600" />}
               badge="Backup"
             />
+            {/* Admin biasa: Riwayat Masuk tampil di sini; Super Admin melihatnya di samping Audit Trail. */}
+            {!isSuperAdmin && (
+              <AdminMenuAction
+                href="/admin/riwayat-masuk"
+                title="Riwayat Masuk & Perangkat"
+                description="Siapa masuk kapan, dari perangkat dan alamat mana; sesi yang sedang aktif; batas perangkat per peran dan per akun."
+                icon={<ShieldCheck className="h-5 w-5 text-rose-600" />}
+                badge="Keamanan"
+              />
+            )}
             <AdminMenuAction
               href="/admin/sinkron-cadangan"
               title="Sinkron & cadangan"
@@ -403,6 +413,13 @@ export function AdminHub() {
                 title="Audit Trail"
                 description="Monitor seluruh perubahan penting sistem dan aktivitas administratif dalam satu jejak audit."
                 badge="Super Admin"
+              />
+              <AdminMenuAction
+                href="/admin/riwayat-masuk"
+                title="Riwayat Masuk & Perangkat"
+                description="Siapa masuk kapan, dari perangkat dan alamat mana; sesi yang sedang aktif; batas perangkat per peran dan per akun."
+                icon={<ShieldCheck className="h-5 w-5 text-rose-600" />}
+                badge="Keamanan"
               />
               <AdminMenuAction
                 href="/admin/database"

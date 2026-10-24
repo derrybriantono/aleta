@@ -24,6 +24,7 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { AletaLogo } from "@/components/branding/aleta-logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { PilihPerangkatMasuk } from "@/components/portal/pilih-perangkat-masuk";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -35,7 +36,9 @@ import { APP_VERSION } from "@/lib/patch-notes";
 import {
   bacaPilihanIsiOtomatis,
   lupakanSandiDiEkstensi,
+  bacaBatasPerangkat,
   masukLewatSipp,
+  type InfoBatasPerangkat,
   simpanPilihanIsiOtomatis,
   titipSandiKeEkstensi,
 } from "@/lib/masuk-sipp-klien";
@@ -139,6 +142,8 @@ export default function LoginPage() {
 
   // Shared error
   const [error, setError] = useState("");
+  // Batas perangkat penuh (23 Okt 2026): tiket + daftar perangkat untuk dipilih.
+  const [batasPerangkat, setBatasPerangkat] = useState<InfoBatasPerangkat | null>(null);
 
   // Recovery shared fields
   const [recoveryPath, setRecoveryPath] = useState<RecoveryPath>("otp");
@@ -243,6 +248,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     setError("");
     setLoginNotice("");
+    setBatasPerangkat(null);
 
     try {
       // ======================================================================
@@ -255,6 +261,10 @@ export default function LoginPage() {
       // bawah ini PERSIS seperti sebelumnya.
       const sipp = await masukLewatSipp(normalizedIdentifier, normalizedPassword, rememberAccount);
       if (sipp.jenis === "tolak") {
+        if (sipp.batas) {
+          setBatasPerangkat(sipp.batas);
+          return;
+        }
         throw new Error(sipp.pesan);
       }
 
@@ -289,6 +299,11 @@ export default function LoginPage() {
         });
 
         if (authError) {
+          const batas = bacaBatasPerangkat(authError);
+          if (batas) {
+            setBatasPerangkat(batas);
+            return;
+          }
           throw new Error(getAuthErrorMessage(authError));
         }
       }
@@ -692,6 +707,17 @@ export default function LoginPage() {
                   <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-300/40 dark:bg-rose-500/10 dark:text-rose-100">
                     {error}
                   </div>
+                ) : null}
+
+                {batasPerangkat ? (
+                  <PilihPerangkatMasuk
+                    info={batasPerangkat}
+                    onBatal={() => setBatasPerangkat(null)}
+                    onLanjut={() => {
+                      setBatasPerangkat(null);
+                      void handleLogin();
+                    }}
+                  />
                 ) : null}
 
                 {loginNotice ? (

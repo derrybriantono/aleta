@@ -6,6 +6,8 @@ import path from "node:path";
 
 import { getDatabase } from "@/server/db/client";
 import { schema } from "@/server/db/drizzle-schema";
+import { kaitSesiPerangkat } from "@/server/modules/perangkat/kait-auth";
+import { HEADER_IP_KLIEN } from "@/server/modules/perangkat/jaringan";
 import { masukSippPlugin } from "@/server/modules/portal/masuk-sipp-plugin";
 import { hashSecret } from "@/server/shared/security";
 
@@ -199,6 +201,15 @@ function createAuthInstance(database: Parameters<typeof drizzleAdapter>[0]) {
     // Masuk ALETA dengan akun SIPP (POST /api/auth/sign-in/sipp, 7 Okt 2026).
     // Jalur /sign-in/email tetap utuh untuk akun tanpa tautan SIPP.
     plugins: [masukSippPlugin()],
+    // Jejak masuk & batas perangkat (23 Okt 2026): SATU titik untuk email,
+    // sipp, dan sipp-sesi - semuanya membuat sesi lewat createWithHooks. Kait
+    // ini juga menulis IP klien yang benar (ujung X-Forwarded-For) ke
+    // sessions.ip_address. Pembatas laju Better Auth tidak diubah.
+    databaseHooks: kaitSesiPerangkat(getDatabase),
+    // Pembatas laju bawaan Better Auth (dan IP sesi bawaannya) membaca IP dari
+    // header yang diisi route.ts dengan ujung X-Forwarded-For - bukan entri
+    // pertama yang dapat dikarang peramban (keputusan Derry 23 Okt 2026).
+    advanced: { ipAddress: { ipAddressHeaders: [HEADER_IP_KLIEN] } },
 
   });
 }

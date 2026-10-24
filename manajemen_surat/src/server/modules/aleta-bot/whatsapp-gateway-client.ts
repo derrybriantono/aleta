@@ -5691,3 +5691,15 @@ export async function getGatewayKonseptorKeadaan(perkaraId: string[]) {
 }
 /* === AKHIR 17OKT-F16 === */
 
+
+// ---- Jejak masuk & perangkat (23 Okt 2026) ----
+
+export type GatewayArpResponse = { ok: boolean; mac: string; sebab: string; antarmuka?: string };
+
+/**
+ * MAC satu IP dari tabel ARP SERVER (bot berjalan di jaringan host). Baca saja.
+ * Bot menolak IP di luar subnet antarmuka server dan MAC gateway/router.
+ */
+export async function bacaArpGateway(ip: string, timeoutMs = 1500): Promise<GatewayResult<GatewayArpResponse>> {
+  return gatewayFetch<GatewayArpResponse>(`/internal/aleta-bot/perangkat/arp?ip=${encodeURIComponent(ip)}`, { timeoutMs });
+}

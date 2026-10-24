@@ -27,6 +27,7 @@ import { searchLettersInDb } from "@/server/modules/letters/service";
 import { kalimatPemberitahuan } from "@/lib/super-admin-global";
 import { listNotificationReadsFromDb } from "@/server/modules/notifications/service";
 import { getPositionsFromDb, requireActorUser } from "@/server/modules/organization/service";
+import { peringatanTerbaru } from "@/server/modules/perangkat/laporan";
 import { daftarAksesTerbaru } from "@/server/modules/satker/akses-global";
 import { namaAdaDi } from "@/lib/perkara-sendiri";
 import { pemberitahuanTundaOtomatis } from "@/server/modules/tunda-otomatis/layanan";
@@ -517,6 +518,34 @@ async function buildAdminSettingsTasks(
     }
   } catch {
     /* jejak akses tidak terbaca: tidak menambah pemberitahuan */
+  }
+
+  // Riwayat masuk (23 Okt 2026, keputusan Derry): masuk di luar jam kerja
+  // bukan tanda bahaya, tetapi admin diberi tahu - prioritas rendah, status
+  // "Informasi". Jejak yang tidak terbaca tidak menambah pemberitahuan.
+  try {
+    const info = (await peringatanTerbaru(db, 7)).filter((p) => p.tingkat === "info").slice(0, 10);
+    for (const p of info) {
+      const entityId = `masuk_luar_jam_${p.userId ?? ""}_${p.waktu}`;
+      tasks.push({
+        id: `system_task:${entityId}`,
+        entityType: "system_task",
+        entityId,
+        sourceApp: "admin",
+        sourceLabel: "Riwayat Masuk",
+        title: p.judul,
+        description: `${p.rincian} Bukan tanda bahaya - hanya informasi.`,
+        href: "/admin/riwayat-masuk",
+        status: "Informasi",
+        priority: "low",
+        sourceType: "system_task",
+        createdAt: p.waktu,
+        footer: "Masuk di luar jam kerja",
+        seen: isSeen(readSet, "system_task", entityId),
+      });
+    }
+  } catch {
+    /* jejak masuk tidak terbaca: tidak menambah pemberitahuan */
   }
 
   try {
