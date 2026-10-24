@@ -1477,7 +1477,8 @@ describe("layar yang menghadap masyarakat", () => {
   /** Rute tingkat atas di luar (portal) yang memuat halaman publik. */
   const PUBLIK = ["antrian", "antrian-layar", "antrian-tampil", "antrian-ruang", "sidang-ruang", "jadwal", "public", "judicia"];
   /** Rute tingkat atas lain: halaman kerja petugas, halaman masuk, atau bukan halaman. */
-  const BUKAN_PUBLIK = ["(portal)", "api", "login", "pdf-viewer", "setup"];
+  // ikon-aplikasi (Pasang di HP, 23 Okt): rute gambar ikon PWA, bukan layar - panel tidak pernah tampil di sana.
+  const BUKAN_PUBLIK = ["(portal)", "api", "login", "pdf-viewer", "setup", "ikon-aplikasi"];
   /** Satu alamat nyata untuk tiap rute publik, ditambah verifikasi dokumen. */
   const ALAMAT_PUBLIK = [
     "/aleta/antrian",

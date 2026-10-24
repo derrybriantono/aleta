@@ -110,7 +110,27 @@ VERIFIKASI `docs/awan/gabung-23okt.md`. Bagian rilis/pasang tetap untuk laptop (
   bertambah. Eslint atas semua berkas .ts/.tsx/.js yang berubah: 3 galat, ketiganya sudah ada di dasar.
 - Uji baru di tabel panduan + `tabel-cadangan-terdaftar` + `hak-akses-peta-18okt`: 26 berkas hijau
   (442 uji; 13 dilewati oleh `skipIf` bawaan `pembaru-otomatis-23okt` - butuh PowerShell/Windows).
-- Uji penuh: **verifikasi berjalan** (dimulai 24 Okt; angka dan perbandingan dengan dasar menyusul di commit berikutnya cabang ini).
+- Uji penuh (sekali, `ALETA_FOLDER_KERJA=<scratchpad> ALETA_UJI_TMP=<scratchpad>/tmp node scripts/periksa-uji.mjs`):
+  944 berkas - **914 hijau, 28 merah, 2 dilewati**; uji 17.508 hijau, 31 merah, 206 dilewati.
+  Ke-28 berkas merah dijalankan di dasar `origin/integrasi-1205-38` (worktree terpisah, `node_modules` sama):
+  - **23 berkas / 22 uji merah juga di dasar, nama ujinya identik** (lingkungan cloud: MySQL lokal, Python/LibreOffice,
+    berkas laptop, dll.) - dibiarkan, tidak bertambah: `arsip-berkas-urut`, `docx-tabel-gambar`, `eviden-skp-cetak`,
+    `w2a-kebendaan`, `w2b-keluarga-lain-paket-21okt`, `w3a-hak-bekas-istri-21okt`, `w3a-izin-kawin-21okt`,
+    `w3a-kelalaian-kewajiban-21okt`, `w3a-pengesahan-anak-21okt`, `w3a-penolakan-perkawinan-21okt`,
+    `w3a-perkawinan-campuran-21okt`, `w3b-blangko-baru-21okt`, `xlsx-lembar-bebas`, `backend-db`, `jlf-ai-legal-kb`,
+    `kembaran-laptop`, `paket-abt-u4-dk-wali-perwalian-20okt`, `root-redirect`, `saksi-katalog-penjaga`,
+    `sinkron-cadangan`, `sumber-daya-rute`, `system-preflight`, `tema-tanpa-kedip-23okt`.
+  - **5 berkas / 9 uji merah BARU (hijau di dasar) - diperbaiki** (commit sesudah laporan awal), semuanya uji lama
+    yang menuntut keadaan sebelum perubahan sengaja cabang lain:
+    - `abt-usulan`: urutan skrip ABT kini diakhiri `aleta-ai-gelembung.js` (T1);
+    - `sipp-ide-l1-16okt`: `panduan-kasir.js` (T5) dan `kasir-jurnal-popup.js` (T3) boleh sesudah L1;
+    - `ekstensi-checklist-milestone`: rute `ikon-aplikasi` (PWA) digolongkan bukan layar publik;
+    - `hak-tampilan-per-peran-12okt`: `sidang.kasir` (menulis) = kasir, `sidang.kasir-baca` = kasir/panitera/panmud,
+      `bolehKasir` lama sejalan dengan `sidang.kasir-baca` (T3);
+    - `tutorial-hidup`: tutorial Kasir kini juga mencakup aksi baru `sidang.kasir-baca` (`src/lib/tutorial-isi.ts`)
+      sehingga panitera/panmud tetap melihat tutorialnya.
+    Sesudah perbaikan: kelima berkas + `hak-akses-peta-18okt` hijau (404 uji), `tsc` bersih. Uji penuh tidak diulang
+    (hemat kredit); sesi laptop mengulang uji penuh.
 
 ## 5. Langkah yang tetap untuk laptop
 

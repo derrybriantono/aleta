@@ -266,7 +266,9 @@ describe("3. e-Court: tab, aksi, saklar Jadwal Sidang", () => {
 
   const BOLEH: Record<string, NamaAkun[]> = {
     "sidang.tunda-putus": ["ketua", "hakim", "panitera", "panmudGugatan", "pp"],
-    "sidang.kasir": ["panitera", "panmudGugatan", "kasir"],
+    // T3 (keputusan 12 Okt): menulis hanya pelaksana kasir; panitera/panmud membaca (sidang.kasir-baca).
+    "sidang.kasir": ["kasir"],
+    "sidang.kasir-baca": ["panitera", "panmudGugatan", "kasir"],
     "sidang.court-calendar": ["panitera", "panmudGugatan", "pp"],
     "sidang.antrian": ["ketua", "hakim", "panitera", "panmudGugatan", "pp", "ptsp", "operator"],
     "sidang.cetak-relaas": ["js", "jsp"],
@@ -294,7 +296,9 @@ describe("3. e-Court: tab, aksi, saklar Jadwal Sidang", () => {
     const { bolehKasir } = await import("@/lib/kasir-jurnal");
     const { bolehIsiCourtCalendar } = await import("@/lib/court-calendar-hak");
     for (const nama of Object.keys(AKUN) as NamaAkun[]) {
-      expect(bolehAksi(AKUN[nama], "sidang.kasir"), `kasir ${nama}`).toBe(bolehKasir(AKUN[nama]));
+      // bolehKasir lama = boleh membuka Kasir (membaca); menulis kini lebih sempit (sidang.kasir).
+      expect(bolehAksi(AKUN[nama], "sidang.kasir-baca"), `kasir ${nama}`).toBe(bolehKasir(AKUN[nama]));
+      if (bolehAksi(AKUN[nama], "sidang.kasir")) expect(bolehKasir(AKUN[nama]), `kasir tulis ${nama}`).toBe(true);
       expect(bolehAksi(AKUN[nama], "sidang.court-calendar"), `cc ${nama}`).toBe(bolehIsiCourtCalendar(AKUN[nama]));
     }
   });

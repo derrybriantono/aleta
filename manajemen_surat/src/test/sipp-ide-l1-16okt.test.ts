@@ -613,7 +613,8 @@ describe("F. Tampilan Lama tetap persis, tanpa jaringan, manifest & penyusun", (
     // abt-klien.js, putusan-edoc-sekaligus.js, dan putusan-sipp.js (tombol/panel Putusan Otomatis);
     // 21 Okt (agen B3): putusan-terjadwal-pasangan.js, putusan-terjadwal.js, putusan-terjadwal-peramban.js (Jadwalkan Putusan).
     // 21 Okt malam: mediasi-arsip.js (Unggah hasil mediasi, tab Mediasi) juga paling akhir.
-    expect(sesudahL1.filter((x) => x !== "penetapan-borang.js" && x !== "penetapan-kerja.js" && x !== "penetapan-sipp.js" && x !== "muat-ulang-sipp.js" && x !== "popup-aksi.js" && !["abt-klien.js", "putusan-edoc-sekaligus.js", "putusan-sipp.js", "pratinjau-bas-relaas.js", "mediasi-arsip.js", "putusan-terjadwal-pasangan.js", "putusan-terjadwal.js", "putusan-terjadwal-peramban.js", "menu-atas.js", "ecourt-masuk.js", "aleta-ai-gelembung.js"].includes(x)).every((x) => /^sipp-ide-[a-z0-9]+\.js$/.test(x))).toBe(true);
+    // 23 Okt: panduan-kasir.js (T5) dan kasir-jurnal-popup.js (T3) - tidak memakai penghitung kolom L1.
+    expect(sesudahL1.filter((x) => x !== "penetapan-borang.js" && x !== "penetapan-kerja.js" && x !== "penetapan-sipp.js" && x !== "muat-ulang-sipp.js" && x !== "popup-aksi.js" && !["abt-klien.js", "putusan-edoc-sekaligus.js", "putusan-sipp.js", "pratinjau-bas-relaas.js", "mediasi-arsip.js", "putusan-terjadwal-pasangan.js", "putusan-terjadwal.js", "putusan-terjadwal-peramban.js", "menu-atas.js", "ecourt-masuk.js", "aleta-ai-gelembung.js", "panduan-kasir.js", "kasir-jurnal-popup.js"].includes(x)).every((x) => /^sipp-ide-[a-z0-9]+\.js$/.test(x))).toBe(true);
     expect(sipp.indexOf("sipp-ide-l1.js")).toBeGreaterThan(sipp.indexOf("konten.js"));
     // 19 Okt: abt-gulir.js (gaya gulir menu kiri ABT) boleh sesudahnya - tidak memakai penghitung kolom L1.
     // 23 Okt: aleta-ai-gelembung.js (gelembung chat ALETA Ai) boleh sesudahnya - tidak memakai penghitung kolom L1.

@@ -573,7 +573,7 @@ export const TUTORIAL: readonly Tutorial[] = [
     judul: "Kasir: mengisi jurnal keuangan perkara",
     ringkas: "ALETA menyusun usulan baris jurnal dari keadaan perkara, lalu Anda periksa dan simpan ke SIPP.",
     kelompok: "persidangan",
-    mencakup: { aksi: ["sidang.kasir"] },
+    mencakup: { aksi: ["sidang.kasir", "sidang.kasir-baca"] },
     halaman: ["/aleta-ecourt"],
     tautan: { teks: "Buka Jadwal Sidang", href: "/aleta-ecourt" },
     langkah: [
