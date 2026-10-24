@@ -68,7 +68,7 @@ Panduan ini MENGGANTIKAN kartu tugas "Gabung semua hasil 23 Okt dan pasang ke se
   | T5 | `panduan-kasir-sorot` |
   | T1 | `aleta-ai-tahap2a-23okt`, `aleta-ai-gelembung-23okt`, `aleta-ai-matriks-kemampuan-23okt` |
   | Audit login | `jejak-masuk-perangkat`, `jejak-masuk-pencabutan`, `jejak-masuk-layar`, `jejak-masuk-batas-laju`, `pembaru-otomatis-23okt` |
-  | T10 | `aleta-ai-dompet-25okt` (35), `aleta-ai-server-20okt` |
+  | T10 | `aleta-ai-dompet-25okt` (39), `aleta-ai-server-20okt` |
   | T9 | `aleta-ai-tugas-25okt`, `aleta-ai-tugas-layar-25okt` |
   | Pasang di HP | `pasang-aplikasi-23okt`, `ikon-aplikasi-23okt` |
 
@@ -113,7 +113,10 @@ Panduan ini MENGGANTIKAN kartu tugas "Gabung semua hasil 23 Okt dan pasang ke se
 ## Pertanyaan pengguna yang masih terbuka (laporkan, jangan menunggu)
 - **T7+T8:** agama Islam otomatis di luar alur saksi? Masih usulan.
 - **Sudah diputuskan Derry 24 Okt:** MDR 1%; batas satker Rp5 jt termasuk Super Admin; kuota hibah hangus akhir bulan; koreksi saldo perlu; penyamaran T9 diperluas; satu tahan per jalan tugas; templat mengikuti mekanisme V4.5.
-- **T10 (masih terbuka):** penjadwal rekonsiliasi harian (sudah dijelaskan ke Derry, menunggu ya/tidak).
+- **T10 rekonsiliasi harian: DIBUAT** (keputusan Derry 24 Okt, commit `1687e32e`).
+  - Pukul 01.00 WITA memeriksa data kemarin; lonceng "perlu perhatian" hanya untuk Super Admin bila ada selisih atau tahanan menggantung lebih dari 24 jam.
+  - Diatur di Pengaturan ALETA Ai → Rekonsiliasi harian; dimatikan seluruhnya dengan env `ALETA_AI_REKONSILIASI=0`.
+  - Detaknya dari `instrumentation.ts` (pola tunda-otomatis). Sesudah T9 digabung, pastikan tahanan tugas T9 (`rujukanTugas`) dan pendapatan tugas ikut terhitung (lihat butir dana tugas di atas).
 - **T10 (lama, abaikan bila sudah dijawab):**
   1. MDR 0,7% dipungut selama QRIS belum ada, atau 0% dulu?
   2. Batas satker Rp5.000.000 biaya API/bulan, termasuk Super Admin: cocok?
