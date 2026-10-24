@@ -22,8 +22,9 @@
 # IZIN per alat: {"skrip": "aleta_alat.py", "argumen": ["terbilang", "{angka}"]}
 #   - SUBPERINTAH tetap ditulis di izin (bukan dari model/portal);
 #   - "{nama}" diisi dari masukan; nilainya wajib teks/angka pendek tanpa
-#     karakter kendali dan TIDAK diawali "-" (tidak bisa menyisipkan opsi);
-#     "{format}" hanya docx/rtf/pdf.
+#     karakter kendali, tanpa "/", "\\" atau "..", dan TIDAK diawali "-"
+#     (tidak bisa menyisipkan opsi atau keluar dari folder kerja);
+#     "{format}" hanya docx/rtf/pdf; "{ekst}" hanya rtf/docx/txt/json.
 # Kontrak skrip: argumen di atas; masukan juga dikirim sebagai JSON di stdin;
 # keluaran JSON/teks di stdout; berkas keluaran ke ./keluar/; berkas masuk di
 # ./masuk/ (naskah.md, naskah.txt, data.json).
@@ -52,6 +53,7 @@ BATAS_BERKAS = 5 * 1024 * 1024
 
 
 FORMAT_SAH = {"docx", "rtf", "pdf"}
+EKST_SAH = {"rtf", "docx", "txt", "json"}
 POLA_ISI = re.compile(r"\{([a-z_]{1,30})\}")
 
 
@@ -73,7 +75,16 @@ def isi_argumen(argumen, masukan):
             nilai = str(nilai)
             if kunci == "format" and nilai not in FORMAT_SAH:
                 raise ValueError("Format tidak sah.")
-            if len(nilai) > 200 or nilai.startswith("-") or any(ord(c) < 32 for c in nilai):
+            if kunci == "ekst" and nilai not in EKST_SAH:
+                raise ValueError("Jenis berkas tidak sah.")
+            if (
+                len(nilai) > 200
+                or nilai.startswith("-")
+                or any(ord(c) < 32 for c in nilai)
+                or "/" in nilai
+                or "\\" in nilai
+                or ".." in nilai
+            ):
                 raise ValueError("Masukan alat tidak sah: " + kunci)
             return nilai
 

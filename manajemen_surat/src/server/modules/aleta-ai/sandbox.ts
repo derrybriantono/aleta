@@ -33,32 +33,29 @@ import { catatJejak } from "@/server/modules/aleta-ai/pengaturan";
 
 /**
  * untukModel=false: alat CETAK yang hanya dipanggil sistem pada langkah "berkas"
- * (bukan oleh model). perluNaskah: naskah tugas ikut sebagai masuk/naskah.md.
+ * (bukan oleh model). perluNaskah: naskah tugas (TERSAMAR) ikut sebagai
+ * masuk/naskah.txt (masukan ekst="txt").
  */
 export type DefinisiAlatBantu = { id: string; label: string; keterangan: string; perluNaskah?: boolean; untukModel?: boolean };
 
 /**
- * DAFTAR IZIN. Id = kunci izin.json di sandbox; skrip & SUBPERINTAH-nya ada di
- * sana (aleta_alat.py terbilang, aleta_bas_ks.py ekstrak, ...), bukan baris
- * perintah bebas. Lihat sandbox-alat/izin.contoh.json.
+ * DAFTAR IZIN portal. Id = kunci izin.json di sandbox; skrip & SUBPERINTAH ada
+ * di sana (dicocokkan dengan kode V4.5 23-24 Okt). Hanya alat yang masukannya
+ * TERSEDIA di tugas yang ditawarkan ke model. Tidak ditawarkan (masukannya
+ * belum ada di tugas): cek-blangko (blangko RTF/DOCX), bas-ks (berkas BAS),
+ * aleta_perkara (perkara.json), analisa-docx (objek ANALISA); cek-konsistensi
+ * adalah alat pemeliharaan folder proyek, bukan alat model.
  */
 export const ALAT_BANTU: readonly DefinisiAlatBantu[] = [
   { id: "terbilang", label: "Terbilang", keterangan: "Menulis angka rupiah sebagai kata (masukan: angka)." },
   { id: "hijriah", label: "Tanggal hijriah", keterangan: "Mengubah tanggal masehi ke hijriah (masukan: tanggal YYYY-MM-DD)." },
-  { id: "penutup", label: "Kalimat penutup", keterangan: "Menyusun kalimat penutup bertanggal masehi & hijriah (masukan: tanggal)." },
-  { id: "cek-angka", label: "Cek angka", keterangan: "Memeriksa angka dan terbilang dalam naskah.", perluNaskah: true },
-  { id: "cek-blangko", label: "Cek blangko", keterangan: "Memeriksa penanda blangko yang belum terisi pada naskah.", perluNaskah: true },
-  { id: "cek-konsistensi", label: "Cek konsistensi", keterangan: "Memeriksa konsistensi nama sebutan, tanggal, nomor, dan angka dalam naskah.", perluNaskah: true },
-  { id: "anonim", label: "Anonimisasi", keterangan: "Mengaburkan identitas pada naskah untuk publikasi.", perluNaskah: true },
-  { id: "analisa-docx", label: "Analisa naskah", keterangan: "Membaca struktur dan gaya naskah.", perluNaskah: true },
-  { id: "bas-ks-ekstrak", label: "Ekstrak keterangan saksi dari BAS", keterangan: "Mengambil keterangan saksi dari naskah BAS.", perluNaskah: true },
-  { id: "bas-ks-verifikasi", label: "Verifikasi keterangan saksi", keterangan: "Mencocokkan keterangan saksi di naskah dengan BAS.", perluNaskah: true },
-  { id: "perkara-cek-bukti", label: "Cek bukti", keterangan: "Memeriksa daftar bukti pada naskah.", perluNaskah: true },
-  { id: "perkara-ringkas", label: "Ringkas perkara", keterangan: "Ringkasan terstruktur dari naskah perkara.", perluNaskah: true },
+  { id: "penutup", label: "Kalimat penutup", keterangan: "Menyusun kalimat penutup bertanggal masehi & hijriah (masukan: tanggal YYYY-MM-DD)." },
+  { id: "cek-angka", label: "Cek angka", keterangan: "Memeriksa angka dan terbilang dalam naskah tugas.", perluNaskah: true },
+  { id: "anonim", label: "Anonimisasi", keterangan: "Mengaburkan identitas pada naskah tugas untuk publikasi.", perluNaskah: true },
   // Pencetak berkas (langkah "berkas"; tidak ditawarkan ke model).
   { id: "putusan-docx", label: "Cetak putusan", keterangan: "aleta_putusan_docx.py: naskah berpenanda -> RTF/DOCX/PDF.", untukModel: false },
-  { id: "sidang-docx", label: "Cetak panduan sidang", keterangan: "aleta_sidang_docx.py: objek SIDANG -> DOCX.", untukModel: false },
-  { id: "komparasi-docx", label: "Cetak komparasi", keterangan: "aleta_komparasi_docx.py: objek KOMPARASI -> DOCX.", untukModel: false },
+  { id: "sidang-docx", label: "Cetak panduan sidang", keterangan: "aleta_sidang_docx.py: objek SIDANG -> RTF/DOCX/PDF.", untukModel: false },
+  { id: "komparasi-docx", label: "Cetak komparasi", keterangan: "aleta_komparasi_docx.py: objek KOMPARASI -> RTF/DOCX/PDF.", untukModel: false },
 ];
 export const PETA_ALAT_BANTU = new Map(ALAT_BANTU.map((a) => [a.id, a]));
 const ALAT_MODEL = ALAT_BANTU.filter((a) => a.untukModel !== false);
@@ -211,7 +208,8 @@ export async function jalankanAlatBantu(k: KonteksAlatBantu, input: unknown): Pr
     await jejak("mati", "sandbox belum dipasang");
     return { status: "mati", isi: { galat: "Alat bantu belum diaktifkan di server. Hitung/periksa secara manual dan tandai untuk diperiksa petugas." } };
   }
-  const berkas: BerkasSandbox[] = def.perluNaskah ? [{ nama: "naskah.md", bita: Buffer.from(k.naskah(), "utf8") }] : [];
+  const berkas: BerkasSandbox[] = def.perluNaskah ? [{ nama: "naskah.txt", bita: Buffer.from(k.naskah(), "utf8") }] : [];
+  if (def.perluNaskah) masukan.ekst = "txt";
   let hasil: HasilSandbox;
   try {
     hasil = await pelari.jalankan({ id: `aib-${randomUUID()}`, alat: def.id, masukan, berkas, batasMs: BATAS_WAKTU_ALAT_MS });
@@ -241,6 +239,24 @@ export async function jalankanAlatBantu(k: KonteksAlatBantu, input: unknown): Pr
  * data asli tidak keluar dari server. null = sandbox mati/gagal/berkas tidak
  * ada (pemanggil memakai penyusun cadangan).
  */
+/**
+ * Judul cetak dipakai skrip sebagai NAMA BERKAS keluaran ("keluar/{judul}.{format}"):
+ * garis miring nomor perkara jadi "-", hanya huruf/angka/spasi/.,()_- yang tersisa,
+ * tidak diawali "-" atau ".".
+ */
+export function namaBerkasCetak(judul: string): string {
+  return (
+    String(judul ?? "")
+      .replace(/[/\\]+/g, "-")
+      .replace(/[^\p{L}\p{N} .,()_-]/gu, "")
+      .replace(/\s+/g, " ")
+      .replace(/^[\s.-]+/, "")
+      .replace(/\.{2,}/g, ".")
+      .trim()
+      .slice(0, 120) || "naskah"
+  );
+}
+
 export async function cetakLewatSandbox(
   alat: string,
   berkas: BerkasSandbox,
@@ -250,7 +266,7 @@ export async function cetakLewatSandbox(
   const pelari = pelariSandbox();
   if (!def || def.untukModel !== false || !pelari) return null;
   try {
-    const h = await pelari.jalankan({ id: `aic-${randomUUID()}`, alat, masukan: { judul: masukan.judul.slice(0, 200), format: masukan.format }, berkas: [berkas], batasMs: BATAS_WAKTU_ALAT_MS * 2 });
+    const h = await pelari.jalankan({ id: `aic-${randomUUID()}`, alat, masukan: { judul: namaBerkasCetak(masukan.judul), format: masukan.format }, berkas: [berkas], batasMs: BATAS_WAKTU_ALAT_MS * 2 });
     const b = h.ok ? (h.berkas ?? []).find((x) => x.nama.toLowerCase().endsWith(`.${masukan.format}`)) : undefined;
     return b ? { bita: b.bita, nama: b.nama } : null;
   } catch {

@@ -36,7 +36,7 @@ import { bacaPengaturan, bacaTarif, simpanPengaturan } from "@/server/modules/al
 import { proyekAktif, unggahProyek } from "@/server/modules/aleta-ai/proyek";
 import { saldoPengguna, tahanDana, terapkanMutasi, verifikasiSaldo } from "@/server/modules/aleta-ai/saldo";
 import { muatPenyamar } from "@/server/modules/aleta-ai/samaran";
-import { jalankanAlatBantu, pelariAntrian, suntikPelariSandbox, type PelariSandbox, type PermintaanSandbox } from "@/server/modules/aleta-ai/sandbox";
+import { jalankanAlatBantu, namaBerkasCetak, pelariAntrian, suntikPelariSandbox, type PelariSandbox, type PermintaanSandbox } from "@/server/modules/aleta-ai/sandbox";
 import { pilihTemplat } from "@/server/modules/aleta-ai/templat";
 import {
   ambilAlihTugas,
@@ -463,10 +463,14 @@ describe("sandbox alat bantu: hanya daftar izin; model hanya meminta 'alat X mas
 
     // Alat yang diizinkan: hasilnya disamarkan sebelum ke model; naskah ikut sebagai berkas.
     suntikPelariSandbox({ jalankan: async (p) => (dipanggil.push(p), { ok: true, keluaran: { nama: ASLI.penggugat, total: 1_500_000 } }) });
-    const h = await jalankanAlatBantu({ ...k, naskah: () => "naskah [NAMA-1]" }, { alat: "cek-konsistensi", masukan: {} });
+    const h = await jalankanAlatBantu({ ...k, naskah: () => "naskah [NAMA-1]" }, { alat: "anonim", masukan: {} });
     expect(h.status).toBe("ok");
     expect(JSON.stringify(h.isi)).not.toContain(ASLI.penggugat);
-    expect(dipanggil[0]).toMatchObject({ alat: "cek-konsistensi", berkas: [expect.objectContaining({ nama: "naskah.md" })] });
+    expect(dipanggil[0]).toMatchObject({ alat: "anonim", masukan: { ekst: "txt" }, berkas: [expect.objectContaining({ nama: "naskah.txt" })] });
+    // Alat pemeliharaan / yang masukannya belum ada di tugas tidak ditawarkan ke model.
+    for (const alat of ["cek-konsistensi", "cek-blangko", "bas-ks-ekstrak", "perkara-ringkas", "analisa-docx"]) {
+      expect((await jalankanAlatBantu(k, { alat, masukan: {} })).status).toBe("tolak");
+    }
   });
 
   it("pelaksana Python SUNGGUHAN lewat folder antrian: skrip izin jalan; alat di luar izin, jalur menaik, dan batas waktu ditolak", async () => {
@@ -485,7 +489,11 @@ describe("sandbox alat bantu: hanya daftar izin; model hanya meminta 'alat X mas
         "cek-blangko": { skrip: "../rahasia.py" },
         anonim: { skrip: "lambat.py" },
         terbilang: { skrip: "aleta_alat_rekaan.py", argumen: ["terbilang", "{angka}"] },
-        "putusan-docx": { skrip: "aleta_alat_rekaan.py", argumen: ["masuk/naskah.txt", "{judul}", "keluar/putusan.{format}"] },
+        // Bentuk argumen V4.5 (kode 23-24 Okt): putusan 2 posisional, sidang --lengkap, komparasi --dok, bas-ks verifikasi 2 berkas.
+        "putusan-docx": { skrip: "aleta_alat_rekaan.py", argumen: ["masuk/naskah.txt", "keluar/{judul}.{format}", "--bismillah", "/skrip/bismillah.jpeg"] },
+        "sidang-docx": { skrip: "aleta_alat_rekaan.py", argumen: ["masuk/data.json", "--lengkap", "keluar/panduan_sidang.{format}"] },
+        "komparasi-docx": { skrip: "aleta_alat_rekaan.py", argumen: ["masuk/data.json", "--dok", "keluar/komparasi.{format}"] },
+        "bas-ks-verifikasi": { skrip: "aleta_alat_rekaan.py", argumen: ["verifikasi", "masuk/bas.{ekst}", "masuk/naskah.{ekst}"] },
       })
     );
     const spool = path.join(akar, "spool");
@@ -493,8 +501,8 @@ describe("sandbox alat bantu: hanya daftar izin; model hanya meminta 'alat X mas
     const pelari: PelariSandbox = pelariAntrian(spool, 20);
     const env = { ...process.env, SANDBOX_SPOOL: spool, SANDBOX_SKRIP: skrip, SANDBOX_IZIN: izin, SANDBOX_KERJA: akar };
     let urut = 0;
-    const jalan = async (alat: string, batasMs = 5000, masukan: Record<string, unknown> = { gaji: 3_000_000 }) => {
-      const janji = pelari.jalankan({ id: `uji-${alat}-${++urut}`, alat, masukan, berkas: [{ nama: "naskah.md", bita: Buffer.from("isi") }], batasMs });
+    const jalan = async (alat: string, batasMs = 5000, masukan: Record<string, unknown> = { gaji: 3_000_000 }, berkas = [{ nama: "naskah.md", bita: Buffer.from("isi") }]) => {
+      const janji = pelari.jalankan({ id: `uji-${alat}-${++urut}`, alat, masukan, berkas, batasMs });
       await sampai(() => readdirSync(path.join(spool, "masuk")).some((n) => !n.startsWith(".")));
       await jalankanBerkas("python3", [PELAKSANA, "--sekali"], { env, timeout: 20_000 });
       return janji;
@@ -505,8 +513,21 @@ describe("sandbox alat bantu: hanya daftar izin; model hanya meminta 'alat X mas
     expect(await jalan("anonim", 1000)).toMatchObject({ ok: false, galat: "Alat melewati batas waktu." });
     // Subperintah TETAP dari izin; "{nama}" diisi masukan; nilai berawalan "-" / format asing / kurang ditolak.
     expect(await jalan("terbilang", 5000, { angka: 1500000 })).toMatchObject({ ok: true, keluaran: { argv: ["terbilang", "1500000"] } });
-    expect(await jalan("putusan-docx", 5000, { judul: `${NOMOR} - Cerai Gugat`, format: "rtf" })).toMatchObject({ ok: true, keluaran: { argv: ["masuk/naskah.txt", `${NOMOR} - Cerai Gugat`, "keluar/putusan.rtf"] } });
-    expect(await jalan("putusan-docx", 5000, { judul: "--hapus", format: "rtf" })).toMatchObject({ ok: false, galat: "Masukan alat tidak sah: judul" });
+    const judul = namaBerkasCetak(`${NOMOR} - Cerai Gugat`);
+    expect(judul).toBe("101-Pdt.G-2026-PA.Dgl - Cerai Gugat");
+    expect(await jalan("putusan-docx", 5000, { judul, format: "rtf" })).toMatchObject({
+      ok: true,
+      keluaran: { argv: ["masuk/naskah.txt", `keluar/${judul}.rtf`, "--bismillah", "/skrip/bismillah.jpeg"] },
+    });
+    expect(await jalan("sidang-docx", 5000, { format: "docx" })).toMatchObject({ ok: true, keluaran: { argv: ["masuk/data.json", "--lengkap", "keluar/panduan_sidang.docx"] } });
+    expect(await jalan("komparasi-docx", 5000, { format: "pdf" })).toMatchObject({ ok: true, keluaran: { argv: ["masuk/data.json", "--dok", "keluar/komparasi.pdf"] } });
+    const duaBerkas = [{ nama: "bas.rtf", bita: Buffer.from("{\\rtf1 bas}") }, { nama: "naskah.rtf", bita: Buffer.from("{\\rtf1 naskah}") }];
+    expect(await jalan("bas-ks-verifikasi", 5000, { ekst: "rtf" }, duaBerkas)).toMatchObject({ ok: true, keluaran: { argv: ["verifikasi", "masuk/bas.rtf", "masuk/naskah.rtf"] } });
+    // Nilai yang dapat keluar dari folder kerja atau menyisipkan opsi ditolak.
+    for (const buruk of ["--hapus", `${NOMOR} - Cerai Gugat`, "../../etc/passwd", "a\\b"]) {
+      expect(await jalan("putusan-docx", 5000, { judul: buruk, format: "rtf" })).toMatchObject({ ok: false, galat: "Masukan alat tidak sah: judul" });
+    }
+    expect(await jalan("bas-ks-verifikasi", 5000, { ekst: "exe" }, duaBerkas)).toMatchObject({ ok: false, galat: "Jenis berkas tidak sah." });
     expect(await jalan("putusan-docx", 5000, { judul: "x", format: "exe" })).toMatchObject({ ok: false, galat: "Format tidak sah." });
     expect(await jalan("terbilang", 5000, {})).toMatchObject({ ok: false, galat: "Masukan alat kurang: angka" });
     // Antrian bersih sesudahnya.
@@ -683,7 +704,7 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
     const id = await tugasBaru(HAKIM, "draf-putusan", "docx");
     expect((await jalanSampaiAkhir(HAKIM, id)).status).toBe("selesai");
     expect(diminta).toHaveLength(1);
-    expect(diminta[0]).toMatchObject({ alat: "putusan-docx", masukan: { judul: `${NOMOR} - Cerai Gugat`, format: "docx" } });
+    expect(diminta[0]).toMatchObject({ alat: "putusan-docx", masukan: { judul: "101-Pdt.G-2026-PA.Dgl - Cerai Gugat", format: "docx" } });
     const naskahKeSandbox = diminta[0]!.berkas[0]!;
     expect(naskahKeSandbox.nama).toBe("naskah.txt");
     expect(naskahKeSandbox.bita.toString("utf8")).toContain(`#P Penggugat ${ASLI.penggugat} melawan Tergugat ${ASLI.tergugat}.`);
