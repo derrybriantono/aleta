@@ -9,12 +9,22 @@ Panduan untuk sesi Claude Code **LAPTOP**. Isinya: menggabungkan semua kerja clo
 ## Prompt untuk ditempel di sesi laptop
 
 ```
-git fetch origin, lalu baca docs/awan/ambil-laptop-24okt.md dari origin/fitur/panduan-laptop-24okt
-(git show origin/fitur/panduan-laptop-24okt:docs/awan/ambil-laptop-24okt.md) dan kerjakan
-Bagian 1 sampai 3, audit Bagian 5a (baca saja), Bagian 6, lalu Bagian 7 (rantai upgrade
-A-G dikerjakan di laptop, satu rantai per sesi, dimulai dari rantai A).
+Ambil hasil kerja cloud dari GitHub: jalankan git fetch origin di repo ALETA lokal, lalu baca
+panduan dari cloud dengan
+  git show origin/fitur/panduan-laptop-24okt:docs/awan/ambil-laptop-24okt.md
+dan kerjakan berurutan:
+1. Bagian 1-3: amankan perbaikan lokal 1.205.38, gabung origin/integrasi-awan-24okt +
+   origin/fitur/panduan-laptop-24okt + origin/fitur/rencana-upgrade-otomatisasi, uji penuh,
+   rilis 1.205.39, pasang ke server 192.168.10.10 (tag + pg_dump dulu), lalu cek layar utama.
+2. Sesudah 1.205.39 terpasang dan normal: Bagian 7, mulai rantai A (Cermin Perkara), lalu
+   rantai berikutnya sesuai urutan. Satu rantai per sesi.
+3. Audit keamanan Bagian 5a (baca saja) dan Bagian 6 dikerjakan sesudah rantai A, atau bila saya minta.
 Perbarui papan kemajuan di setiap langkah. Laporkan ke saya dalam bahasa Indonesia.
 ```
+
+**Alamat server yang benar: `192.168.10.10`** (dikonfirmasi Derry 24 Okt), sama dengan yang tercatat di ekstensi (`alamat-portal.js`, `host_permissions`). Jangan ubah alamat.
+
+**Urutan besar:** pasang 1.205.39 (Bagian 1–3) → rantai A → audit 5a → C → E → F → B → D → G → K11. Bagian 6 diselipkan sesudah rantai A, saat Derry memintanya. Pemasangan hasil tiap rantai mengikuti Bagian 4.
 
 ## Keadaan per 24 Okt (yang belum ada di lokal)
 
@@ -159,7 +169,7 @@ Dikerjakan di **laptop**, bukan oleh rantai cloud. Ketentuannya:
 - nomor migrasi cadangan untuk laptop: **0107, 0108, 0109**;
 - cloud rantai E sejajar mengerjakan OTP/authenticator (E5) dan penjaga integritas (E6), jadi jangan menyentuh berkas inti E5 kecuali butir 6c di bawah.
 
-**Urutan bila kuota laptop terbatas:** Bagian 1–3 → 5a → 6a → 6b → 6c → 6d → 5b → 6e → 6f.
+**Urutan butir Bagian 6** (dikerjakan sesudah 1.205.39 terpasang dan rantai A selesai, atau saat Derry meminta): 6a → 6b → 6c → 6d → 5b → 6e → 6f.
 
 | Urut | Cabang | Butir | Bawaan sesudah dipasang |
 | :--- | :--- | :--- | :--- |
