@@ -42,6 +42,7 @@ const LABEL_STATUS: Record<string, string> = {
   berjalan: "Berjalan",
   dijeda: "Dijeda",
   dihentikan: "Dihentikan (saklar)",
+  "saldo-habis": "Berhenti: saldo habis",
   gagal: "Gagal",
   selesai: "Selesai",
   menunggu: "Menunggu",
@@ -54,6 +55,7 @@ const WARNA_STATUS: Record<string, string> = {
   gagal: "text-destructive",
   dihentikan: "text-amber-700 dark:text-amber-300",
   dijeda: "text-amber-700 dark:text-amber-300",
+  "saldo-habis": "text-destructive",
 };
 
 export function AletaAiTugas() {

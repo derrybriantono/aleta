@@ -32,7 +32,7 @@ import { susunBerkas } from "@/server/modules/aleta-ai/berkas-keluaran";
 import { GalatKlienAi, suntikKlienAi, type HasilAi, type KlienAi, type OpsiAlir } from "@/server/modules/aleta-ai/klien";
 import { konfirmasiKiriman, kirimanUntukAlur, usulkanKiriman } from "@/server/modules/aleta-ai/kiriman";
 import { simpanKurs, tanggalLokal } from "@/server/modules/aleta-ai/kurs";
-import { bacaPengaturan, simpanPengaturan } from "@/server/modules/aleta-ai/pengaturan";
+import { bacaPengaturan, bacaTarif, simpanPengaturan } from "@/server/modules/aleta-ai/pengaturan";
 import { proyekAktif, unggahProyek } from "@/server/modules/aleta-ai/proyek";
 import { saldoPengguna, tahanDana, terapkanMutasi, verifikasiSaldo } from "@/server/modules/aleta-ai/saldo";
 import { muatPenyamar } from "@/server/modules/aleta-ai/samaran";
@@ -694,6 +694,50 @@ describe("tugas (cowork): kebocoran, berkas, berhenti/lanjut/bertahan, saklar, g
     await simpanPengaturan(db, SUPER.id, { aktif: true });
     expect((await jalanSampaiAkhir(HAKIM, id)).status).toBe("selesai");
     expect((await verifikasiSaldo(db, HAKIM.id)).seimbang).toBe(true);
+  });
+
+  it("SALDO HABIS: berhenti \"saldo habis\" sebelum langkah yang tak tertutup; hasil sementara tersimpan; isi saldo lalu lanjut dari langkah terakhir", async () => {
+    const H = pelaku("usr-h-saldo", "Hakim Satu", "hakim");
+    // Tanpa saldo: berhenti sebelum memanggil model, tanpa menahan apa pun.
+    const awal = new KlienTiruan();
+    suntikKlienAi(awal);
+    const id = await tugasBaru(H);
+    const h0 = await jalanSampaiAkhir(H, id);
+    expect(h0.status).toBe("saldo-habis");
+    expect(h0.pesan).toMatch(/^Berhenti: saldo habis\./);
+    expect(awal.panggilan).toHaveLength(0);
+
+    // Saldo S; "rencana" memakai hampir seluruh S -> sebelum "susun" tahanan tidak dapat ditambah.
+    const S = 200_000;
+    await terapkanMutasi(db, { penggunaId: H.id, jenis: "isi", jumlahRp: S, catatan: "uji" });
+    const pg = await bacaPengaturan(db);
+    const tarif = (await bacaTarif(db)).find((x) => x.model === "claude-opus-5-5")!;
+    const faktor = 16000 * (1 + pg.penyanggaKursPersen / 100) * (1 + pg.marginPersen / 100);
+    const keluar = Math.floor((((S - 700) / faktor) * 1e6) / tarif.keluarPerJuta);
+    const klien = new KlienTiruan((langkah) => (langkah === "rencana" ? { penggunaan: { masuk: 0, keluar, cacheTulis: 0, cacheBaca: 0 } } : null));
+    suntikKlienAi(klien);
+    const h1 = await jalanSampaiAkhir(H, id);
+    expect(h1.status).toBe("saldo-habis");
+    expect(klien.panggilan.map((x) => x.langkah)).toEqual(["rencana"]);
+    const t1 = await ambilTugas(db, H, id);
+    expect(t1.langkah?.map((l) => l.status)).toEqual(["selesai", "selesai", "menunggu", "menunggu", "menunggu"]);
+    const harga1 = await hargaUsd(await usdLangkah(id, "rencana"));
+    expect(harga1).toBeLessThan(S);
+    expect(t1.biayaRp).toBe(harga1);
+    expect(await saldoPengguna(db, H.id)).toBe(S - harga1);
+
+    // Isi saldo -> jalan baru (tahanan baru) dari langkah "susun"; rencana tidak diulang.
+    await terapkanMutasi(db, { penggunaId: H.id, jenis: "isi", jumlahRp: 1_000_000, catatan: "uji" });
+    const lanjut = new KlienTiruan();
+    suntikKlienAi(lanjut);
+    const h2 = await jalanSampaiAkhir(H, id);
+    expect(h2.status).toBe("selesai");
+    expect(lanjut.panggilan.map((x) => x.langkah)).toEqual(["susun", "periksa"]);
+    const m = (await mutasiTugas(H, id)).filter((x) => Number(x.jumlah_rp) !== 0);
+    const jalan = [...new Set(m.map((x) => x.rujukan_id))];
+    expect(jalan).toHaveLength(2);
+    for (const r of jalan) expect(m.filter((x) => x.rujukan_id === r).map((x) => x.jenis)).toEqual(["tahan", "lepas", "potong"]);
+    expect((await verifikasiSaldo(db, H.id)).seimbang).toBe(true);
   });
 
   it("PENOLAKAN model: hasil sementara tersimpan, langkah ditolak tidak ditagih, saldo = pemakaian sebelumnya", async () => {

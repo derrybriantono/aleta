@@ -33,7 +33,7 @@ import { biayaPanggilan, PESAN_DITOLAK, PESAN_NONAKTIF_KUNCI, PESAN_NONAKTIF_PRO
 import { bukaIsi, sandiIsi } from "@/server/modules/aleta-ai/percakapan";
 import { bacaPengaturan, bacaRute, bacaTarif, catatJejak, type PengaturanAi } from "@/server/modules/aleta-ai/pengaturan";
 import { proyekAktif, type ProyekAktif } from "@/server/modules/aleta-ai/proyek";
-import { saldoPengguna, selesaikanTahanan, tahanDana } from "@/server/modules/aleta-ai/saldo";
+import { saldoPengguna, selesaikanTahanan, tahanDana, tambahTahanan } from "@/server/modules/aleta-ai/saldo";
 import { muatPenyamar, simpanPenyamar } from "@/server/modules/aleta-ai/samaran";
 import { alatApiBantu, jalankanAlatBantu, NAMA_ALAT_API_BANTU, pelariSandbox } from "@/server/modules/aleta-ai/sandbox";
 import { pilihTemplat } from "@/server/modules/aleta-ai/templat";
@@ -80,6 +80,8 @@ const BATAS_PUTARAN_ALAT_TUGAS = 4;
 
 export const PESAN_DIHENTIKAN_SAKLAR = "Tugas dihentikan karena ALETA Ai dimatikan admin (saklar darurat). Hasil yang sudah ada tetap tersimpan.";
 export const PESAN_DIJEDA = "Tugas dijeda atas permintaan Anda. Tekan Lanjutkan untuk meneruskan.";
+export const pesanSaldoHabis = (saldo: number, perluRp: number) =>
+  `Berhenti: saldo habis. Saldo ALETA Ai Anda (Rp${saldo.toLocaleString("id-ID")}) tidak cukup untuk langkah berikutnya (perkiraan Rp${perluRp.toLocaleString("id-ID")}). Hasil yang sudah ada tersimpan dan hanya pemakaian yang dipotong; isi saldo lalu tekan Lanjutkan.`;
 
 /**
  * SAKLAR DARURAT - satu fungsi kecil supaya mudah diganti saat digabung
@@ -369,7 +371,7 @@ export async function ambilAlihTugas(db: AletaDatabase, pelaku: PelakuAi, id: st
   const batasBasi = new Date(Date.now() - DENYUT_BASI_MS).toISOString();
   const r = await db.run(
     `UPDATE aleta_ai_tugas SET status = 'berjalan', pesan_status = '', minta_berhenti = 0, segmen = segmen + 1, usd_segmen = 0, tahan_rp = 0, detak_at = ?, diperbarui_at = ?
-     WHERE id = ? AND segmen = ? AND (status IN ('antre', 'dijeda', 'dihentikan', 'gagal') OR (status = 'berjalan' AND detak_at < ?))`,
+     WHERE id = ? AND segmen = ? AND (status IN ('antre', 'dijeda', 'dihentikan', 'saldo-habis', 'gagal') OR (status = 'berjalan' AND detak_at < ?))`,
     [waktu, waktu, b.id, Number(b.segmen), batasBasi]
   );
   if (!r.changes) throw new ApiError(409, "Tugas sedang dijalankan dari tempat lain.");
@@ -389,7 +391,7 @@ export type OpsiPelari = { sekarang?: Date; jedaPantauMs?: number };
 
 class Berhenti extends Error {
   constructor(
-    readonly status: "dijeda" | "dihentikan" | "gagal",
+    readonly status: "dijeda" | "dihentikan" | "saldo-habis" | "gagal",
     readonly pesan: string
   ) {
     super(pesan);
@@ -411,6 +413,8 @@ type Kerja = {
   timpaan: TimpaanKemampuanAi | null;
   /** Biaya API jalan ini yang DITAGIH (ditolak tanpa keluaran / diputus tidak ikut). */
   usdTagih: number;
+  /** Dana yang ditahan jalan ini (satu rujukan mutasi; bertambah bila perlu). */
+  ditahan: number;
   jedaPantauMs: number;
   sekarang: Date;
 };
@@ -528,16 +532,39 @@ async function tulisLangkah(db: AletaDatabase, id: string, ubah: { status?: Stat
 
 const hasilLangkah = (semua: BarisLangkah[], kode: KodeLangkah) => bukaIsi(semua.find((l) => l.kode === kode)?.hasil ?? "");
 
-/** Perkiraan biaya sisa langkah model (rencana/susun/periksa) untuk tahanan jalan ini. */
-function perkiraanTahan(k: Kerja, sisa: KodeLangkah[]): number {
-  const model = sisa.filter((s) => s === "rencana" || s === "susun" || s === "periksa").length;
-  if (!model) return 0;
+/** Perkiraan biaya API (USD) `n` langkah model dengan rute tugas ini. */
+function perkiraanUsd(k: Kerja, n: number): number {
+  if (n <= 0) return 0;
   const contoh = permintaan(k, "x".repeat(8000));
   const { sistem, pesan } = hitungKarakterPermintaan(contoh);
   const t = k.tarif.get(k.rute.model);
-  const usd = t ? biayaUsd(t, { masuk: perkirakanTokenDariKarakter(pesan), cacheTulis: perkirakanTokenDariKarakter(sistem), cacheBaca: 0, keluar: k.rute.perkiraanKeluaran }) * model : 0;
-  const harga = hitungHarga(usd, k.kurs, parameterHarga(k.pengaturan));
-  return bulatkanKeAtas(harga.hargaRp * k.pengaturan.faktorTahan, k.pengaturan.pembulatanRp);
+  return t ? biayaUsd(t, { masuk: perkirakanTokenDariKarakter(pesan), cacheTulis: perkirakanTokenDariKarakter(sistem), cacheBaca: 0, keluar: k.rute.perkiraanKeluaran }) * n : 0;
+}
+
+const LANGKAH_MODEL: readonly KodeLangkah[] = ["rencana", "susun", "periksa"];
+
+/** Tahanan jalan ini: perkiraan semua sisa langkah model x faktor tahan. */
+function perkiraanTahan(k: Kerja, sisa: KodeLangkah[]): number {
+  const usd = perkiraanUsd(k, sisa.filter((s) => LANGKAH_MODEL.includes(s)).length);
+  if (!usd) return 0;
+  return bulatkanKeAtas(hitungHarga(usd, k.kurs, parameterHarga(k.pengaturan)).hargaRp * k.pengaturan.faktorTahan, k.pengaturan.pembulatanRp);
+}
+
+/**
+ * Sebelum langkah model: pemakaian jalan ini + perkiraan langkah berikutnya
+ * harus tertutup tahanan. Kurang = tahanan yang SAMA ditambah dari saldo;
+ * saldo tidak cukup = berhenti "saldo habis" (hasil sementara tetap).
+ */
+async function pastikanTahanan(k: Kerja): Promise<void> {
+  if (k.pelaku.superAdmin) return;
+  const perlu = hitungHarga(k.usdTagih + perkiraanUsd(k, 1), k.kurs, parameterHarga(k.pengaturan)).hargaRp;
+  if (perlu <= k.ditahan) return;
+  const kurang = perlu - k.ditahan;
+  if (!(await tambahTahanan(k.db, k.pelaku.id, kurang, rujukanJalan(k.tugas.id, k.segmen)))) {
+    throw new Berhenti("saldo-habis", pesanSaldoHabis(await saldoPengguna(k.db, k.pelaku.id), kurang));
+  }
+  k.ditahan += kurang;
+  await k.db.run(`UPDATE aleta_ai_tugas SET tahan_rp = ? WHERE id = ?`, [k.ditahan, k.tugas.id]);
 }
 
 async function kerjakanLangkah(k: Kerja, l: BarisLangkah, semua: BarisLangkah[]): Promise<void> {
@@ -664,7 +691,6 @@ async function kerjakanLangkah(k: Kerja, l: BarisLangkah, semua: BarisLangkah[])
 export async function jalankanTugas(db: AletaDatabase, pelaku: PelakuAi, tugas: BarisTugas, opsi: OpsiPelari = {}): Promise<TugasTampil> {
   const segmen = Number(tugas.segmen);
   const rujukan = rujukanJalan(tugas.id, segmen);
-  let ditahan = 0;
   let k: Kerja | null = null;
   let akhir: { status: StatusTugas; pesan: string } = { status: "gagal", pesan: "Terjadi gangguan." };
 
@@ -696,6 +722,7 @@ export async function jalankanTugas(db: AletaDatabase, pelaku: PelakuAi, tugas: 
       penyamar: await muatPenyamar(db, tugas.id),
       timpaan,
       usdTagih: 0,
+      ditahan: 0,
       jedaPantauMs: opsi.jedaPantauMs ?? JEDA_PANTAU_MS,
       sekarang,
     };
@@ -705,20 +732,22 @@ export async function jalankanTugas(db: AletaDatabase, pelaku: PelakuAi, tugas: 
 
     // Satu jalan = satu tahan saldo.
     if (!pelaku.superAdmin) {
+      // Ditahan sebanyak yang ada sampai perkiraan seluruh sisa; minimal cukup untuk SATU langkah berikutnya.
       const tahan = perkiraanTahan(k, sisa);
       const saldo = await saldoPengguna(db, pelaku.id);
-      if (tahan > 0 && saldo < Math.max(tahan / k.pengaturan.faktorTahan, k.pengaturan.minimumRp)) {
-        throw new Berhenti("gagal", `Saldo ALETA Ai Anda (Rp${saldo.toLocaleString("id-ID")}) tidak cukup untuk tugas ini (perkiraan Rp${Math.ceil(tahan / k.pengaturan.faktorTahan).toLocaleString("id-ID")}).`);
-      }
-      ditahan = Math.min(saldo, tahan);
-      if (ditahan > 0 && !(await tahanDana(db, pelaku.id, ditahan, rujukan))) throw new Berhenti("gagal", "Saldo ALETA Ai Anda tidak cukup.");
-      await db.run(`UPDATE aleta_ai_tugas SET tahan_rp = ? WHERE id = ?`, [ditahan, tugas.id]);
+      const satuLangkah = sisa.some((s) => LANGKAH_MODEL.includes(s)) ? hitungHarga(perkiraanUsd(k, 1), k.kurs, parameterHarga(k.pengaturan)).hargaRp : 0;
+      if (saldo < satuLangkah) throw new Berhenti("saldo-habis", pesanSaldoHabis(saldo, satuLangkah));
+      const awal = Math.min(saldo, tahan);
+      if (awal > 0 && !(await tahanDana(db, pelaku.id, awal, rujukan))) throw new Berhenti("saldo-habis", pesanSaldoHabis(saldo, satuLangkah));
+      k.ditahan = awal;
+      await db.run(`UPDATE aleta_ai_tugas SET tahan_rp = ? WHERE id = ?`, [awal, tugas.id]);
     }
 
     for (const kode of URUTAN_LANGKAH) {
       const l = semua.find((x) => x.kode === kode);
       if (!l || l.status === "selesai" || l.status === "dilewati") continue;
       await periksaHenti(k);
+      if (LANGKAH_MODEL.includes(kode)) await pastikanTahanan(k);
       await tulisLangkah(db, l.id, { status: "berjalan", segmen, mulai: true, catatan: "" });
       try {
         await kerjakanLangkah(k, l, semua);

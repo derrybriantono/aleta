@@ -43,10 +43,12 @@ export const JUDUL_LANGKAH: Record<KodeLangkah, string> = {
  *   berjalan    pelari sedang bekerja (detak_at diperbarui tiap langkah)
  *   dijeda      dihentikan pengguna; dapat dilanjutkan
  *   dihentikan  dihentikan SAKLAR DARURAT; dapat dilanjutkan bila saklar hidup lagi
- *   gagal       galat / penolakan model / saldo; hasil sementara tersimpan; dapat dilanjutkan
+ *   saldo-habis "Berhenti: saldo habis" - tahanan tidak cukup untuk langkah berikutnya;
+ *               hasil sementara tersimpan; dilanjutkan sesudah saldo diisi (jalan baru)
+ *   gagal       galat / penolakan model; hasil sementara tersimpan; dapat dilanjutkan
  *   selesai     semua langkah selesai, berkas siap
  */
-export type StatusTugas = "antre" | "berjalan" | "dijeda" | "dihentikan" | "gagal" | "selesai";
+export type StatusTugas = "antre" | "berjalan" | "dijeda" | "dihentikan" | "saldo-habis" | "gagal" | "selesai";
 export type StatusLangkah = "menunggu" | "berjalan" | "selesai" | "dilewati" | "gagal";
 
 export type DefinisiTugas = {
